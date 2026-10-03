@@ -1,0 +1,9 @@
+// -*- C++ -*-  libycxx: <climits>   [core]
+#ifndef YCXX_CLIMITS
+#define YCXX_CLIMITS
+
+#include <ycxx/config.hpp>
+#include <ycxx/core/climits.hpp>
+#include <ycxx/core/version.hpp>
+
+#endif

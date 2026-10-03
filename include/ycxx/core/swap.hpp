@@ -1,6 +1,5 @@
 // libycxx core: std::swap (needed by <type_traits> for is_swappable).
-#ifndef YCXX_CORE_SWAP_HPP
-#define YCXX_CORE_SWAP_HPP
+#pragma once
 
 #include <ycxx/core/meta_base.hpp>
 #include <ycxx/core/move.hpp>
@@ -93,4 +92,3 @@ constexpr void swap(T (&a)[N], T (&b)[N]) noexcept(ycxx::detail::swappable_elem<
 
 } // namespace std
 
-#endif // YCXX_CORE_SWAP_HPP

@@ -1,6 +1,5 @@
 // libycxx core: the complete <type_traits>.
-#ifndef YCXX_CORE_TYPE_TRAITS_HPP
-#define YCXX_CORE_TYPE_TRAITS_HPP
+#pragma once
 
 #include <ycxx/core/meta_base.hpp>
 #include <ycxx/core/move.hpp>
@@ -13,13 +12,13 @@ namespace std {
 // [meta.unary.prop]
 // ---------------------------------------------------------------------------------------------
 template <class T>
-struct is_signed : bool_constant<__is_signed(T)> {};
+struct is_signed : bool_constant<::ycxx::detail::is_signed_v<T>> {};
 template <class T>
-inline constexpr bool is_signed_v = __is_signed(T);
+inline constexpr bool is_signed_v = ::ycxx::detail::is_signed_v<T>;
 template <class T>
-struct is_unsigned : bool_constant<__is_unsigned(T)> {};
+struct is_unsigned : bool_constant<::ycxx::detail::is_unsigned_v<T>> {};
 template <class T>
-inline constexpr bool is_unsigned_v = __is_unsigned(T);
+inline constexpr bool is_unsigned_v = ::ycxx::detail::is_unsigned_v<T>;
 
 template <class T>
 struct is_bounded_array : bool_constant<__is_bounded_array(T)> {};
@@ -175,9 +174,15 @@ template <class T>
 inline constexpr size_t rank_v = __array_rank(T);
 
 template <class T, unsigned I = 0>
-struct extent : integral_constant<size_t, __array_extent(T, I)> {};
+inline constexpr size_t extent_v = 0;
+template <class T, size_t N>
+inline constexpr size_t extent_v<T[N], 0> = N;
+template <class T, unsigned I>
+inline constexpr size_t extent_v<T[], I> = extent_v<T, I - 1>;
+template <class T, size_t N, unsigned I>
+inline constexpr size_t extent_v<T[N], I> = extent_v<T, I - 1>;
 template <class T, unsigned I = 0>
-inline constexpr size_t extent_v = __array_extent(T, I);
+struct extent : integral_constant<size_t, extent_v<T, I>> {};
 
 // ---------------------------------------------------------------------------------------------
 // [meta.rel]
@@ -197,13 +202,11 @@ struct is_pointer_interconvertible_base_of : bool_constant<__is_pointer_intercon
 template <class Base, class Derived>
 inline constexpr bool is_pointer_interconvertible_base_of_v = __is_pointer_interconvertible_base_of(Base, Derived);
 
-#if YCXX_HAS_IS_POINTER_INTERCONVERTIBLE_WITH_CLASS
+#if YCXX_HAS_MEMBER_INTERCONVERTIBILITY
 template <class S, class M>
 constexpr bool is_pointer_interconvertible_with_class(M S::* m) noexcept {
   return __builtin_is_pointer_interconvertible_with_class(m);
 }
-#endif
-#if YCXX_HAS_IS_CORRESPONDING_MEMBER
 template <class S1, class S2, class M1, class M2>
 constexpr bool is_corresponding_member(M1 S1::* m1, M2 S2::* m2) noexcept {
   return __builtin_is_corresponding_member(m1, m2);
@@ -213,18 +216,80 @@ constexpr bool is_corresponding_member(M1 S1::* m1, M2 S2::* m2) noexcept {
 // ---------------------------------------------------------------------------------------------
 // [meta.trans.sign]
 // ---------------------------------------------------------------------------------------------
+} // namespace std
+
+namespace ycxx::detail {
 template <class T>
-struct make_signed {
-  using type = __make_signed(T);
+struct sign_pair; // {signed, unsigned} for each standard integer type
+template <class S, class U>
+struct sign_pair_def {
+  using s = S;
+  using u = U;
+};
+template <> struct sign_pair<signed char> : sign_pair_def<signed char, unsigned char> {};
+template <> struct sign_pair<unsigned char> : sign_pair_def<signed char, unsigned char> {};
+template <> struct sign_pair<short> : sign_pair_def<short, unsigned short> {};
+template <> struct sign_pair<unsigned short> : sign_pair_def<short, unsigned short> {};
+template <> struct sign_pair<int> : sign_pair_def<int, unsigned int> {};
+template <> struct sign_pair<unsigned int> : sign_pair_def<int, unsigned int> {};
+template <> struct sign_pair<long> : sign_pair_def<long, unsigned long> {};
+template <> struct sign_pair<unsigned long> : sign_pair_def<long, unsigned long> {};
+template <> struct sign_pair<long long> : sign_pair_def<long long, unsigned long long> {};
+template <> struct sign_pair<unsigned long long> : sign_pair_def<long long, unsigned long long> {};
+template <> struct sign_pair<int128> : sign_pair_def<int128, uint128> {};
+template <> struct sign_pair<uint128> : sign_pair_def<int128, uint128> {};
+
+// Smallest-rank standard integer type with the same size (for character types and enums).
+template <class T>
+consteval auto same_size_signed() {
+  if constexpr (sizeof(T) == sizeof(signed char))
+    return static_cast<signed char*>(nullptr);
+  else if constexpr (sizeof(T) == sizeof(short))
+    return static_cast<short*>(nullptr);
+  else if constexpr (sizeof(T) == sizeof(int))
+    return static_cast<int*>(nullptr);
+  else if constexpr (sizeof(T) == sizeof(long))
+    return static_cast<long*>(nullptr);
+  else if constexpr (sizeof(T) == sizeof(long long))
+    return static_cast<long long*>(nullptr);
+  else
+    return static_cast<int128*>(nullptr);
+}
+
+template <class T>
+struct sign_base {
+  using type = sign_pair<__remove_pointer(decltype(same_size_signed<T>()))>;
 };
 template <class T>
-using make_signed_t = __make_signed(T);
+  requires requires { typename sign_pair<T>::s; }
+struct sign_base<T> {
+  using type = sign_pair<T>;
+};
+
 template <class T>
-struct make_unsigned {
-  using type = __make_unsigned(T);
+concept sign_changeable = (is_integral_v<T> && !__is_same(__remove_cv(T), bool)) || __is_enum(T);
+} // namespace ycxx::detail
+
+namespace std {
+template <class T>
+struct make_signed {};
+template <class T>
+  requires ycxx::detail::sign_changeable<T>
+struct make_signed<T> {
+  using type = ycxx::detail::copy_cv<T, typename ycxx::detail::sign_base<__remove_cv(T)>::type::s>;
 };
 template <class T>
-using make_unsigned_t = __make_unsigned(T);
+using make_signed_t = typename make_signed<T>::type;
+template <class T>
+struct make_unsigned {};
+template <class T>
+  requires ycxx::detail::sign_changeable<T>
+struct make_unsigned<T> {
+  using type = ycxx::detail::copy_cv<T, typename ycxx::detail::sign_base<__remove_cv(T)>::type::u>;
+};
+template <class T>
+using make_unsigned_t = typename make_unsigned<T>::type;
+
 
 // ---------------------------------------------------------------------------------------------
 // [meta.trans.arr], [meta.trans.ptr]
@@ -386,10 +451,10 @@ struct common_ref<X&, Y&> {
 // A = X&&, B = Y&&
 template <class X, class Y>
   requires requires { typename common_ref_t<X&, Y&>; } &&
-           __is_convertible(X &&, __remove_reference_t(common_ref_t<X&, Y&>) &&) &&
-           __is_convertible(Y &&, __remove_reference_t(common_ref_t<X&, Y&>) &&)
+           __is_convertible(X &&, ::ycxx::detail::remove_ref_t<common_ref_t<X&, Y&>> &&) &&
+           __is_convertible(Y &&, ::ycxx::detail::remove_ref_t<common_ref_t<X&, Y&>> &&)
 struct common_ref<X&&, Y&&> {
-  using type = __remove_reference_t(common_ref_t<X&, Y&>) &&;
+  using type = ::ycxx::detail::remove_ref_t<common_ref_t<X&, Y&>> &&;
 };
 
 // A = X&&, B = Y&
@@ -460,11 +525,12 @@ using common_reference_t = typename common_reference<T...>::type;
 // ---------------------------------------------------------------------------------------------
 // [meta.const.eval]
 // ---------------------------------------------------------------------------------------------
+#if YCXX_HAS_IS_WITHIN_LIFETIME
 template <class T>
 consteval bool is_within_lifetime(const T* p) noexcept {
   return __builtin_is_within_lifetime(p);
 }
+#endif
 
 } // namespace std
 
-#endif // YCXX_CORE_TYPE_TRAITS_HPP

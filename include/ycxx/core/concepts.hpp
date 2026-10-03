@@ -1,6 +1,5 @@
 // libycxx core: <concepts>
-#ifndef YCXX_CORE_CONCEPTS_HPP
-#define YCXX_CORE_CONCEPTS_HPP
+#pragma once
 
 #include <ycxx/core/type_traits.hpp>
 #include <ycxx/core/compare.hpp>
@@ -30,18 +29,18 @@ concept common_with =
                           common_reference_t<add_lvalue_reference_t<const T>, add_lvalue_reference_t<const U>>>;
 
 template <class T>
-concept integral = __is_integral(T);
+concept integral = ::ycxx::detail::is_integral_v<T>;
 template <class T>
-concept signed_integral = integral<T> && __is_signed(T);
+concept signed_integral = integral<T> && ::ycxx::detail::is_signed_v<T>;
 template <class T>
 concept unsigned_integral = integral<T> && !signed_integral<T>;
 template <class T>
-concept floating_point = __is_floating_point(T);
+concept floating_point = ::ycxx::detail::is_floating_v<T>;
 
 template <class LHS, class RHS>
 concept assignable_from =
-    __is_lvalue_reference(LHS) &&
-    common_reference_with<const __remove_reference_t(LHS)&, const __remove_reference_t(RHS)&> &&
+    ::ycxx::detail::is_lref_v<LHS> &&
+    common_reference_with<const ::ycxx::detail::remove_ref_t<LHS>&, const ::ycxx::detail::remove_ref_t<RHS>&> &&
     requires(LHS lhs, RHS&& rhs) {
       { lhs = static_cast<RHS&&>(rhs) } -> same_as<LHS>;
     };
@@ -129,7 +128,7 @@ concept equality_comparable = ycxx::detail::weakly_equality_comparable_with<T, T
 template <class T, class U>
 concept equality_comparable_with =
     equality_comparable<T> && equality_comparable<U> && ycxx::detail::comparison_common_type_with<T, U> &&
-    equality_comparable<common_reference_t<const __remove_reference_t(T)&, const __remove_reference_t(U)&>> &&
+    equality_comparable<common_reference_t<const ::ycxx::detail::remove_ref_t<T>&, const ::ycxx::detail::remove_ref_t<U>&>> &&
     ycxx::detail::weakly_equality_comparable_with<T, U>;
 
 template <class T>
@@ -138,7 +137,7 @@ concept totally_ordered = equality_comparable<T> && ycxx::detail::partially_orde
 template <class T, class U>
 concept totally_ordered_with =
     totally_ordered<T> && totally_ordered<U> && equality_comparable_with<T, U> &&
-    totally_ordered<common_reference_t<const __remove_reference_t(T)&, const __remove_reference_t(U)&>> &&
+    totally_ordered<common_reference_t<const ::ycxx::detail::remove_ref_t<T>&, const ::ycxx::detail::remove_ref_t<U>&>> &&
     ycxx::detail::partially_ordered_with<T, U>;
 
 template <class T>
@@ -168,4 +167,3 @@ concept strict_weak_order = relation<R, T, U>;
 
 } // namespace std
 
-#endif // YCXX_CORE_CONCEPTS_HPP

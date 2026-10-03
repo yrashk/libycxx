@@ -1,6 +1,5 @@
 // libycxx core: <compare>
-#ifndef YCXX_CORE_COMPARE_HPP
-#define YCXX_CORE_COMPARE_HPP
+#pragma once
 
 #include <ycxx/core/type_traits.hpp>
 
@@ -195,7 +194,7 @@ concept boolean_testable = boolean_testable_impl<T> && requires(T&& t) {
 
 template <class T, class U>
 concept weakly_equality_comparable_with =
-    requires(const __remove_reference_t(T)& t, const __remove_reference_t(U)& u) {
+    requires(const ::ycxx::detail::remove_ref_t<T>& t, const ::ycxx::detail::remove_ref_t<U>& u) {
       { t == u } -> boolean_testable;
       { t != u } -> boolean_testable;
       { u == t } -> boolean_testable;
@@ -203,7 +202,7 @@ concept weakly_equality_comparable_with =
     };
 
 template <class T, class U>
-concept partially_ordered_with = requires(const __remove_reference_t(T)& t, const __remove_reference_t(U)& u) {
+concept partially_ordered_with = requires(const ::ycxx::detail::remove_ref_t<T>& t, const ::ycxx::detail::remove_ref_t<U>& u) {
   { t < u } -> boolean_testable;
   { t > u } -> boolean_testable;
   { t <= u } -> boolean_testable;
@@ -245,7 +244,7 @@ namespace std {
 template <class T, class Cat = partial_ordering>
 concept three_way_comparable =
     ycxx::detail::weakly_equality_comparable_with<T, T> && ycxx::detail::partially_ordered_with<T, T> &&
-    requires(const __remove_reference_t(T)& a, const __remove_reference_t(T)& b) {
+    requires(const ::ycxx::detail::remove_ref_t<T>& a, const ::ycxx::detail::remove_ref_t<T>& b) {
       { a <=> b } -> ycxx::detail::compares_as<Cat>;
     };
 
@@ -253,9 +252,9 @@ template <class T, class U, class Cat = partial_ordering>
 concept three_way_comparable_with =
     three_way_comparable<T, Cat> && three_way_comparable<U, Cat> &&
     ycxx::detail::comparison_common_type_with<T, U> &&
-    three_way_comparable<common_reference_t<const __remove_reference_t(T)&, const __remove_reference_t(U)&>, Cat> &&
+    three_way_comparable<common_reference_t<const ::ycxx::detail::remove_ref_t<T>&, const ::ycxx::detail::remove_ref_t<U>&>, Cat> &&
     ycxx::detail::weakly_equality_comparable_with<T, U> && ycxx::detail::partially_ordered_with<T, U> &&
-    requires(const __remove_reference_t(T)& t, const __remove_reference_t(U)& u) {
+    requires(const ::ycxx::detail::remove_ref_t<T>& t, const ::ycxx::detail::remove_ref_t<U>& u) {
       { t <=> u } -> ycxx::detail::compares_as<Cat>;
       { u <=> t } -> ycxx::detail::compares_as<Cat>;
     };
@@ -263,10 +262,10 @@ concept three_way_comparable_with =
 template <class T, class U = T>
 struct compare_three_way_result {};
 template <class T, class U>
-  requires requires(const __remove_reference_t(T)& t, const __remove_reference_t(U)& u) { t <=> u; }
+  requires requires(const ::ycxx::detail::remove_ref_t<T>& t, const ::ycxx::detail::remove_ref_t<U>& u) { t <=> u; }
 struct compare_three_way_result<T, U> {
-  using type = decltype(std::declval<const __remove_reference_t(T)&>() <=>
-                        std::declval<const __remove_reference_t(U)&>());
+  using type = decltype(std::declval<const ::ycxx::detail::remove_ref_t<T>&>() <=>
+                        std::declval<const ::ycxx::detail::remove_ref_t<U>&>());
 };
 template <class T, class U = T>
 using compare_three_way_result_t = typename compare_three_way_result<T, U>::type;
@@ -309,4 +308,3 @@ struct compare_three_way {
 
 } // namespace std
 
-#endif // YCXX_CORE_COMPARE_HPP

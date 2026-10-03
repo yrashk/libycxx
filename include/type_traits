@@ -1,9 +1,7 @@
 // -*- C++ -*-  libycxx: <type_traits>   [core]
-#ifndef YCXX_TYPE_TRAITS
-#define YCXX_TYPE_TRAITS
+#pragma once
 
 #include <ycxx/config.hpp>
 #include <ycxx/core/type_traits.hpp>
 #include <ycxx/core/version.hpp>
 
-#endif

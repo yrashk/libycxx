@@ -1,6 +1,5 @@
 // libycxx core: the tuple protocol (tuple_size / tuple_element) and the tuple-like concept.
-#ifndef YCXX_CORE_TUPLE_LIKE_HPP
-#define YCXX_CORE_TUPLE_LIKE_HPP
+#pragma once
 
 #include <ycxx/core/type_traits.hpp>
 
@@ -75,4 +74,3 @@ concept pair_like = tuple_like<T> && std::tuple_size_v<__remove_cvref(T)> == 2;
 
 } // namespace ycxx::detail
 
-#endif // YCXX_CORE_TUPLE_LIKE_HPP

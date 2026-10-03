@@ -2,8 +2,7 @@
 //
 // A macro is only defined once the corresponding feature is implemented. Every public header
 // includes this file, which is permitted: each header must define *at least* its own macros.
-#ifndef YCXX_CORE_VERSION_HPP
-#define YCXX_CORE_VERSION_HPP
+#pragma once
 
 #define __cpp_lib_freestanding_feature_test_macros 202306L
 
@@ -33,8 +32,7 @@
 #define __cpp_lib_type_trait_variable_templates 201510L
 #define __cpp_lib_unwrap_ref 201811L
 #define __cpp_lib_void_t 201411L
-#if YCXX_HAS_IS_POINTER_INTERCONVERTIBLE_WITH_CLASS && YCXX_HAS_IS_CORRESPONDING_MEMBER
+#if YCXX_HAS_MEMBER_INTERCONVERTIBILITY
 #  define __cpp_lib_is_pointer_interconvertible 201907L
 #endif
 
-#endif // YCXX_CORE_VERSION_HPP

@@ -1,26 +1,7 @@
 // libycxx core: <cstdint> types and macros, defined from compiler-predefined macros only.
-#ifndef YCXX_CORE_CSTDINT_HPP
-#define YCXX_CORE_CSTDINT_HPP
+#pragma once
 
 #include <ycxx/config.hpp>
-
-// Clang's predefined fast types do not match glibc's on 64-bit Linux (glibc uses `long` for
-// int_fast16_t/int_fast32_t). Match the C library so std::int_fast16_t == ::int_fast16_t.
-#if YCXX_COMPILER_CLANG && defined(__gnu_linux__) && __SIZEOF_POINTER__ == 8
-#  define YCXX_INT_FAST16_TYPE long
-#  define YCXX_INT_FAST32_TYPE long
-#  define YCXX_UINT_FAST16_TYPE unsigned long
-#  define YCXX_UINT_FAST32_TYPE unsigned long
-#  define YCXX_INT_FAST16_WIDTH 64
-#  define YCXX_INT_FAST32_WIDTH 64
-#else
-#  define YCXX_INT_FAST16_TYPE __INT_FAST16_TYPE__
-#  define YCXX_INT_FAST32_TYPE __INT_FAST32_TYPE__
-#  define YCXX_UINT_FAST16_TYPE __UINT_FAST16_TYPE__
-#  define YCXX_UINT_FAST32_TYPE __UINT_FAST32_TYPE__
-#  define YCXX_INT_FAST16_WIDTH __INT_FAST16_WIDTH__
-#  define YCXX_INT_FAST32_WIDTH __INT_FAST32_WIDTH__
-#endif
 
 namespace std {
 using int8_t = __INT8_TYPE__;
@@ -42,12 +23,22 @@ using uint_least32_t = __UINT_LEAST32_TYPE__;
 using uint_least64_t = __UINT_LEAST64_TYPE__;
 
 using int_fast8_t = __INT_FAST8_TYPE__;
-using int_fast16_t = YCXX_INT_FAST16_TYPE;
-using int_fast32_t = YCXX_INT_FAST32_TYPE;
+#if YCXX_FAST16_IS_LONG
+using int_fast16_t = long;
+using int_fast32_t = long;
+#else
+using int_fast16_t = __INT_FAST16_TYPE__;
+using int_fast32_t = __INT_FAST32_TYPE__;
+#endif
 using int_fast64_t = __INT_FAST64_TYPE__;
 using uint_fast8_t = __UINT_FAST8_TYPE__;
-using uint_fast16_t = YCXX_UINT_FAST16_TYPE;
-using uint_fast32_t = YCXX_UINT_FAST32_TYPE;
+#if YCXX_FAST16_IS_LONG
+using uint_fast16_t = unsigned long;
+using uint_fast32_t = unsigned long;
+#else
+using uint_fast16_t = __UINT_FAST16_TYPE__;
+using uint_fast32_t = __UINT_FAST32_TYPE__;
+#endif
 using uint_fast64_t = __UINT_FAST64_TYPE__;
 
 using intmax_t = __INTMAX_TYPE__;
@@ -92,7 +83,7 @@ using uintptr_t = __UINTPTR_TYPE__;
 #  define INT_FAST64_MIN (-__INT_FAST64_MAX__ - 1)
 #  define INT_FAST64_MAX __INT_FAST64_MAX__
 #  define UINT_FAST64_MAX __UINT_FAST64_MAX__
-#  if YCXX_INT_FAST16_WIDTH == 64
+#  if YCXX_FAST16_IS_LONG
 #    define INT_FAST16_MIN (-__INT64_MAX__ - 1)
 #    define INT_FAST16_MAX __INT64_MAX__
 #    define UINT_FAST16_MAX __UINT64_MAX__
@@ -160,4 +151,3 @@ using uintptr_t = __UINTPTR_TYPE__;
 #  define UINT64_WIDTH 64
 #endif
 
-#endif // YCXX_CORE_CSTDINT_HPP

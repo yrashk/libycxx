@@ -1,6 +1,5 @@
 // -*- C++ -*-  libycxx: <initializer_list>   [core]
-#ifndef YCXX_INITIALIZER_LIST
-#define YCXX_INITIALIZER_LIST
+#pragma once
 
 #include <ycxx/config.hpp>
 #include <ycxx/core/cstddef.hpp>
@@ -36,4 +35,3 @@ public:
 
 } // namespace std
 
-#endif

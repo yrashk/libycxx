@@ -1,6 +1,5 @@
 // libycxx core: <climits> macros from compiler-predefined macros only.
-#ifndef YCXX_CORE_CLIMITS_HPP
-#define YCXX_CORE_CLIMITS_HPP
+#pragma once
 
 #ifndef CHAR_BIT
 #  define CHAR_BIT __CHAR_BIT__
@@ -50,4 +49,3 @@
 #  define BITINT_MAXWIDTH __BITINT_MAXWIDTH__
 #endif
 
-#endif // YCXX_CORE_CLIMITS_HPP

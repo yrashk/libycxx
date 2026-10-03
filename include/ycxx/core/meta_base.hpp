@@ -1,10 +1,10 @@
 // libycxx core: the most basic metaprogramming vocabulary, used by nearly every header.
 // Everything here is declared in namespace std because it is part of <type_traits>.
-#ifndef YCXX_CORE_META_BASE_HPP
-#define YCXX_CORE_META_BASE_HPP
+#pragma once
 
 #include <ycxx/config.hpp>
 #include <ycxx/core/cstddef.hpp>
+#include <ycxx/core/prim_traits.hpp>
 
 namespace std {
 
@@ -88,10 +88,10 @@ using remove_cv_t = __remove_cv(T);
 
 template <class T>
 struct remove_reference {
-  using type = __remove_reference_t(T);
+  using type = ::ycxx::detail::remove_ref_t<T>;
 };
 template <class T>
-using remove_reference_t = __remove_reference_t(T);
+using remove_reference_t = ::ycxx::detail::remove_ref_t<T>;
 
 template <class T>
 struct remove_cvref {
@@ -145,13 +145,13 @@ add_rvalue_reference_t<T> declval() noexcept {
 }
 
 template <class T>
-struct is_lvalue_reference : bool_constant<__is_lvalue_reference(T)> {};
+struct is_lvalue_reference : bool_constant<::ycxx::detail::is_lref_v<T>> {};
 template <class T>
-inline constexpr bool is_lvalue_reference_v = __is_lvalue_reference(T);
+inline constexpr bool is_lvalue_reference_v = ::ycxx::detail::is_lref_v<T>;
 template <class T>
-struct is_rvalue_reference : bool_constant<__is_rvalue_reference(T)> {};
+struct is_rvalue_reference : bool_constant<::ycxx::detail::is_rref_v<T>> {};
 template <class T>
-inline constexpr bool is_rvalue_reference_v = __is_rvalue_reference(T);
+inline constexpr bool is_rvalue_reference_v = ::ycxx::detail::is_rref_v<T>;
 template <class T>
 struct is_reference : bool_constant<__is_reference(T)> {};
 template <class T>
@@ -167,27 +167,27 @@ template <class T>
 inline constexpr bool is_volatile_v = __is_volatile(T);
 
 template <class T>
-struct is_void : bool_constant<__is_same(__remove_cv(T), void)> {};
+struct is_void : bool_constant<::ycxx::detail::is_void_v<T>> {};
 template <class T>
-inline constexpr bool is_void_v = __is_same(__remove_cv(T), void);
+inline constexpr bool is_void_v = ::ycxx::detail::is_void_v<T>;
 
 template <class T>
-struct is_null_pointer : bool_constant<__is_same(__remove_cv(T), decltype(nullptr))> {};
+struct is_null_pointer : bool_constant<::ycxx::detail::is_null_pointer_v<T>> {};
 template <class T>
-inline constexpr bool is_null_pointer_v = __is_same(__remove_cv(T), decltype(nullptr));
+inline constexpr bool is_null_pointer_v = ::ycxx::detail::is_null_pointer_v<T>;
 
 template <class T>
-struct is_integral : bool_constant<__is_integral(T)> {};
+struct is_integral : bool_constant<::ycxx::detail::is_integral_v<T>> {};
 template <class T>
-inline constexpr bool is_integral_v = __is_integral(T);
+inline constexpr bool is_integral_v = ::ycxx::detail::is_integral_v<T>;
 template <class T>
-struct is_floating_point : bool_constant<__is_floating_point(T)> {};
+struct is_floating_point : bool_constant<::ycxx::detail::is_floating_v<T>> {};
 template <class T>
-inline constexpr bool is_floating_point_v = __is_floating_point(T);
+inline constexpr bool is_floating_point_v = ::ycxx::detail::is_floating_v<T>;
 template <class T>
-struct is_arithmetic : bool_constant<__is_arithmetic(T)> {};
+struct is_arithmetic : bool_constant<::ycxx::detail::is_arithmetic_v<T>> {};
 template <class T>
-inline constexpr bool is_arithmetic_v = __is_arithmetic(T);
+inline constexpr bool is_arithmetic_v = ::ycxx::detail::is_arithmetic_v<T>;
 
 template <class T>
 struct is_array : bool_constant<__is_array(T)> {};
@@ -230,17 +230,17 @@ struct is_object : bool_constant<__is_object(T)> {};
 template <class T>
 inline constexpr bool is_object_v = __is_object(T);
 template <class T>
-struct is_scalar : bool_constant<__is_scalar(T)> {};
+struct is_scalar : bool_constant<::ycxx::detail::is_scalar_v<T>> {};
 template <class T>
-inline constexpr bool is_scalar_v = __is_scalar(T);
+inline constexpr bool is_scalar_v = ::ycxx::detail::is_scalar_v<T>;
 template <class T>
-struct is_fundamental : bool_constant<__is_fundamental(T)> {};
+struct is_fundamental : bool_constant<::ycxx::detail::is_fundamental_v<T>> {};
 template <class T>
-inline constexpr bool is_fundamental_v = __is_fundamental(T);
+inline constexpr bool is_fundamental_v = ::ycxx::detail::is_fundamental_v<T>;
 template <class T>
-struct is_compound : bool_constant<__is_compound(T)> {};
+struct is_compound : bool_constant<!::ycxx::detail::is_fundamental_v<T>> {};
 template <class T>
-inline constexpr bool is_compound_v = __is_compound(T);
+inline constexpr bool is_compound_v = !::ycxx::detail::is_fundamental_v<T>;
 
 template <class T>
 struct is_trivially_copyable : bool_constant<__is_trivially_copyable(T)> {};
@@ -317,10 +317,6 @@ constexpr bool is_constant_evaluated() noexcept {
 
 namespace ycxx::detail {
 
-// Lightweight "first true wins" helpers that do not instantiate class templates.
-template <class T, class... Us>
-inline constexpr bool is_any_of = (__is_same(T, Us) || ...);
-
 template <class T>
 inline constexpr bool always_false = false;
 
@@ -370,20 +366,10 @@ inline constexpr bool is_char_like =
 // "Standard" integers: signed/unsigned integer types (excludes bool and character types).
 template <class T>
 inline constexpr bool is_standard_signed_integer =
-    is_any_of<__remove_cv(T), signed char, short, int, long, long long
-#if YCXX_HAS_INT128
-              ,
-              __int128
-#endif
-              >;
+    is_any_of<__remove_cv(T), signed char, short, int, long, long long, int128>;
 template <class T>
 inline constexpr bool is_standard_unsigned_integer =
-    is_any_of<__remove_cv(T), unsigned char, unsigned short, unsigned int, unsigned long, unsigned long long
-#if YCXX_HAS_INT128
-              ,
-              unsigned __int128
-#endif
-              >;
+    is_any_of<__remove_cv(T), unsigned char, unsigned short, unsigned int, unsigned long, unsigned long long, uint128>;
 // [basic.fundamental] "signed or unsigned integer type" (not bool / char types).
 template <class T>
 inline constexpr bool is_signed_or_unsigned_integer =
@@ -391,4 +377,3 @@ inline constexpr bool is_signed_or_unsigned_integer =
 
 } // namespace ycxx::detail
 
-#endif // YCXX_CORE_META_BASE_HPP

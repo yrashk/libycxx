@@ -1,6 +1,5 @@
 // libycxx core: the INVOKE protocol ([func.require]) and its traits.
-#ifndef YCXX_CORE_INVOKE_HPP
-#define YCXX_CORE_INVOKE_HPP
+#pragma once
 
 #include <ycxx/core/meta_base.hpp>
 #include <ycxx/core/move.hpp>
@@ -52,40 +51,40 @@ struct invoker;
 template <>
 struct invoker<invoke_kind::plain> {
   template <class F, class... Args>
-  static constexpr auto call(F&& f, Args&&... args) noexcept(noexcept(YCXX_FWD(f)(YCXX_FWD(args)...)))
-      -> decltype(YCXX_FWD(f)(YCXX_FWD(args)...)) {
-    return YCXX_FWD(f)(YCXX_FWD(args)...);
+  static constexpr auto call(F&& f, Args&&... args) noexcept(noexcept(static_cast<decltype(f)&&>(f)(static_cast<decltype(args)&&>(args)...)))
+      -> decltype(static_cast<decltype(f)&&>(f)(static_cast<decltype(args)&&>(args)...)) {
+    return static_cast<decltype(f)&&>(f)(static_cast<decltype(args)&&>(args)...);
   }
 };
 template <>
 struct invoker<invoke_kind::mem_fn_ref> {
   template <class F, class T1, class... Args>
-  static constexpr auto call(F f, T1&& t1, Args&&... args) noexcept(noexcept((YCXX_FWD(t1).*f)(YCXX_FWD(args)...)))
-      -> decltype((YCXX_FWD(t1).*f)(YCXX_FWD(args)...)) {
-    return (YCXX_FWD(t1).*f)(YCXX_FWD(args)...);
+  static constexpr auto call(F f, T1&& t1, Args&&... args) noexcept(noexcept((static_cast<decltype(t1)&&>(t1).*f)(static_cast<decltype(args)&&>(args)...)))
+      -> decltype((static_cast<decltype(t1)&&>(t1).*f)(static_cast<decltype(args)&&>(args)...)) {
+    return (static_cast<decltype(t1)&&>(t1).*f)(static_cast<decltype(args)&&>(args)...);
   }
 };
 template <>
 struct invoker<invoke_kind::mem_fn_rw> {
   template <class F, class T1, class... Args>
-  static constexpr auto call(F f, T1&& t1, Args&&... args) noexcept(noexcept((t1.get().*f)(YCXX_FWD(args)...)))
-      -> decltype((t1.get().*f)(YCXX_FWD(args)...)) {
-    return (t1.get().*f)(YCXX_FWD(args)...);
+  static constexpr auto call(F f, T1&& t1, Args&&... args) noexcept(noexcept((t1.get().*f)(static_cast<decltype(args)&&>(args)...)))
+      -> decltype((t1.get().*f)(static_cast<decltype(args)&&>(args)...)) {
+    return (t1.get().*f)(static_cast<decltype(args)&&>(args)...);
   }
 };
 template <>
 struct invoker<invoke_kind::mem_fn_ptr> {
   template <class F, class T1, class... Args>
-  static constexpr auto call(F f, T1&& t1, Args&&... args) noexcept(noexcept(((*YCXX_FWD(t1)).*f)(YCXX_FWD(args)...)))
-      -> decltype(((*YCXX_FWD(t1)).*f)(YCXX_FWD(args)...)) {
-    return ((*YCXX_FWD(t1)).*f)(YCXX_FWD(args)...);
+  static constexpr auto call(F f, T1&& t1, Args&&... args) noexcept(noexcept(((*static_cast<decltype(t1)&&>(t1)).*f)(static_cast<decltype(args)&&>(args)...)))
+      -> decltype(((*static_cast<decltype(t1)&&>(t1)).*f)(static_cast<decltype(args)&&>(args)...)) {
+    return ((*static_cast<decltype(t1)&&>(t1)).*f)(static_cast<decltype(args)&&>(args)...);
   }
 };
 template <>
 struct invoker<invoke_kind::mem_obj_ref> {
   template <class F, class T1>
-  static constexpr auto call(F f, T1&& t1) noexcept -> decltype(YCXX_FWD(t1).*f) {
-    return YCXX_FWD(t1).*f;
+  static constexpr auto call(F f, T1&& t1) noexcept -> decltype(static_cast<decltype(t1)&&>(t1).*f) {
+    return static_cast<decltype(t1)&&>(t1).*f;
   }
 };
 template <>
@@ -98,8 +97,8 @@ struct invoker<invoke_kind::mem_obj_rw> {
 template <>
 struct invoker<invoke_kind::mem_obj_ptr> {
   template <class F, class T1>
-  static constexpr auto call(F f, T1&& t1) noexcept(noexcept((*YCXX_FWD(t1)).*f)) -> decltype((*YCXX_FWD(t1)).*f) {
-    return (*YCXX_FWD(t1)).*f;
+  static constexpr auto call(F f, T1&& t1) noexcept(noexcept((*static_cast<decltype(t1)&&>(t1)).*f)) -> decltype((*static_cast<decltype(t1)&&>(t1)).*f) {
+    return (*static_cast<decltype(t1)&&>(t1)).*f;
   }
 };
 
@@ -108,18 +107,18 @@ using invoker_for = invoker<classify_invoke<F, Args...>()>;
 
 // The INVOKE expression itself.
 template <class F, class... Args>
-YCXX_INTRINSIC constexpr auto invoke(F&& f, Args&&... args) noexcept(
-    noexcept(invoker_for<F, Args...>::call(YCXX_FWD(f), YCXX_FWD(args)...)))
-    -> decltype(invoker_for<F, Args...>::call(YCXX_FWD(f), YCXX_FWD(args)...)) {
-  return invoker_for<F, Args...>::call(YCXX_FWD(f), YCXX_FWD(args)...);
+[[gnu::always_inline]] constexpr auto invoke(F&& f, Args&&... args) noexcept(
+    noexcept(invoker_for<F, Args...>::call(static_cast<decltype(f)&&>(f), static_cast<decltype(args)&&>(args)...)))
+    -> decltype(invoker_for<F, Args...>::call(static_cast<decltype(f)&&>(f), static_cast<decltype(args)&&>(args)...)) {
+  return invoker_for<F, Args...>::call(static_cast<decltype(f)&&>(f), static_cast<decltype(args)&&>(args)...);
 }
 
 template <class F, class... Args>
-concept invocable_ = requires(F&& f, Args&&... args) { ::ycxx::detail::invoke(YCXX_FWD(f), YCXX_FWD(args)...); };
+concept invocable_ = requires(F&& f, Args&&... args) { ::ycxx::detail::invoke(static_cast<decltype(f)&&>(f), static_cast<decltype(args)&&>(args)...); };
 
 template <class F, class... Args>
 concept nothrow_invocable_ = requires(F&& f, Args&&... args) {
-  { ::ycxx::detail::invoke(YCXX_FWD(f), YCXX_FWD(args)...) } noexcept;
+  { ::ycxx::detail::invoke(static_cast<decltype(f)&&>(f), static_cast<decltype(args)&&>(args)...) } noexcept;
 };
 
 template <class F, class... Args>
@@ -133,7 +132,7 @@ template <class R, class F, class... Args>
 consteval bool is_invocable_r_impl() {
   if constexpr (!invocable_<F, Args...>)
     return false;
-  else if constexpr (__is_void(R))
+  else if constexpr (::ycxx::detail::is_void_v<R>)
     return true;
   else
     return requires { implicitly_convert_to<R>(::ycxx::detail::invoke(std::declval<F>(), std::declval<Args>()...)); } &&
@@ -144,7 +143,7 @@ template <class R, class F, class... Args>
 consteval bool is_nothrow_invocable_r_impl() {
   if constexpr (!nothrow_invocable_<F, Args...>)
     return false;
-  else if constexpr (__is_void(R))
+  else if constexpr (::ycxx::detail::is_void_v<R>)
     return true;
   else
     return requires {
@@ -154,11 +153,11 @@ consteval bool is_nothrow_invocable_r_impl() {
 
 // INVOKE<R>
 template <class R, class F, class... Args>
-YCXX_INTRINSIC constexpr R invoke_r(F&& f, Args&&... args) noexcept(is_nothrow_invocable_r_impl<R, F, Args...>()) {
-  if constexpr (__is_void(R))
-    static_cast<void>(::ycxx::detail::invoke(YCXX_FWD(f), YCXX_FWD(args)...));
+[[gnu::always_inline]] constexpr R invoke_r(F&& f, Args&&... args) noexcept(is_nothrow_invocable_r_impl<R, F, Args...>()) {
+  if constexpr (::ycxx::detail::is_void_v<R>)
+    static_cast<void>(::ycxx::detail::invoke(static_cast<decltype(f)&&>(f), static_cast<decltype(args)&&>(args)...));
   else
-    return ::ycxx::detail::invoke(YCXX_FWD(f), YCXX_FWD(args)...);
+    return ::ycxx::detail::invoke(static_cast<decltype(f)&&>(f), static_cast<decltype(args)&&>(args)...);
 }
 
 } // namespace ycxx::detail
@@ -198,15 +197,14 @@ inline constexpr bool is_nothrow_invocable_r_v = ycxx::detail::is_nothrow_invoca
 template <class F, class... Args>
   requires is_invocable_v<F, Args...>
 constexpr invoke_result_t<F, Args...> invoke(F&& f, Args&&... args) noexcept(is_nothrow_invocable_v<F, Args...>) {
-  return ycxx::detail::invoke(YCXX_FWD(f), YCXX_FWD(args)...);
+  return ycxx::detail::invoke(static_cast<decltype(f)&&>(f), static_cast<decltype(args)&&>(args)...);
 }
 
 template <class R, class F, class... Args>
   requires is_invocable_r_v<R, F, Args...>
 constexpr R invoke_r(F&& f, Args&&... args) noexcept(is_nothrow_invocable_r_v<R, F, Args...>) {
-  return ycxx::detail::invoke_r<R>(YCXX_FWD(f), YCXX_FWD(args)...);
+  return ycxx::detail::invoke_r<R>(static_cast<decltype(f)&&>(f), static_cast<decltype(args)&&>(args)...);
 }
 
 } // namespace std
 
-#endif // YCXX_CORE_INVOKE_HPP

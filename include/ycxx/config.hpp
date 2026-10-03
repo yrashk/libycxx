@@ -121,9 +121,6 @@
 #  define YCXX_HARDENED 0
 #endif
 
-namespace ycxx::detail {
-[[noreturn]] void assertion_failed(const char* msg) noexcept;
-} // namespace ycxx::detail
 
 #if YCXX_HARDENED
 #  define YCXX_ASSERT(cond, msg)                                                               \

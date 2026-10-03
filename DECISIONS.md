@@ -30,10 +30,28 @@ variable templates. The preprocessor is used only where the language cannot do t
    `-fno-exceptions`, or a standard macro whose value must be usable inside `#if`. Such an `#if`
    tests a `YCXX_HAS_*` switch, never a compiler name. Prefer restructuring (an out-of-line
    function, a dependent expression) over adding an `#if`.
-5. **`#pragma once`** instead of include guards.
-6. **Preconditions are a function, not a macro.** `ycxx::detail::precondition(cond, msg)` is
+   **Probing builtins without the preprocessor.** A function-style builtin is detected with a
+   concept over a dependent call, e.g.
+   `template <class T> concept has_is_within_lifetime = requires(const T* p) { __builtin_is_within_lifetime(p); };`.
+   If the builtin does not exist, the call is an ordinary failed lookup and the concept is false
+   (verified on GCC 16.2 and Clang 23.1). These probes live in `ycxx::detail::builtin` in
+   `config.hpp`. The library entity is then declared unconditionally with a `requires` clause,
+   so no `#if` is needed. Type-taking builtins (`__is_integral(T)`, `__builtin_type_order(T, U)`)
+   cannot be probed this way: an unknown one is a hard parse error. They still need
+   `__has_builtin` in `config.hpp`. `__cpp_lib_*` macros still need a preprocessor switch
+   because they must be usable in `#if`.
+5. **Builtins stay inside trait definitions.** Compiler trait builtins (`__is_constructible`, ...)
+   appear only in the definitions of `std::` traits, `ycxx::detail` variable templates, and
+   concepts. Function signatures (return types, `requires`, `noexcept`, `explicit`) use the
+   `_v` traits or concepts. GCC rejects builtins in mangled signatures, and named concepts are
+   needed anyway for constraint subsumption.
+6. **`#pragma once`** instead of include guards.
+7. **Preconditions are a function, not a macro.** `ycxx::detail::precondition(cond, msg)` is
    `constexpr`. It always diagnoses a violation during constant evaluation, and checks at run
    time when `YCXX_HARDENED=1` (via `cfg::hardened`).
+
+8. **Keep looking for replacements.** Every remaining preprocessor use is technical debt. When a
+   new language feature or an in-language probe can replace one, replace it.
 
 Rationale: `if constexpr` branches are type-checked, so both configurations stay compilable.
 Templates and constants respect scope and namespaces, show up in diagnostics, and are visible to
@@ -82,6 +100,6 @@ under the same name. Otherwise it gets one alias template in `config.hpp`.
 
 | Feature | GCC 16.2 | Clang 23.1 | Result |
 |---|---|---|---|
-| `__builtin_is_within_lifetime` | no | yes | `std::is_within_lifetime` Clang-only |
-| `__builtin_is_corresponding_member` / `..._with_class` | yes | no | GCC-only |
+| `__builtin_is_within_lifetime` | no | yes | `std::is_within_lifetime` usable on Clang only (constraint) |
+| `__builtin_is_corresponding_member` / `..._with_class` | yes | no | usable on GCC only (constraint) |
 | `__builtin_type_order` | yes | no | `std::type_order` via a portable fallback (TBD) |

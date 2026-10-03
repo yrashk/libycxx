@@ -202,16 +202,17 @@ struct is_pointer_interconvertible_base_of : bool_constant<__is_pointer_intercon
 template <class Base, class Derived>
 inline constexpr bool is_pointer_interconvertible_base_of_v = __is_pointer_interconvertible_base_of(Base, Derived);
 
-#if YCXX_HAS_MEMBER_INTERCONVERTIBILITY
+// Available where the compiler provides the builtin (GCC 16); a constraint failure otherwise.
 template <class S, class M>
+  requires ycxx::detail::builtin::has_is_pointer_interconvertible_with_class<S, M>
 constexpr bool is_pointer_interconvertible_with_class(M S::* m) noexcept {
   return __builtin_is_pointer_interconvertible_with_class(m);
 }
 template <class S1, class S2, class M1, class M2>
+  requires ycxx::detail::builtin::has_is_corresponding_member<S1, S2, M1, M2>
 constexpr bool is_corresponding_member(M1 S1::* m1, M2 S2::* m2) noexcept {
   return __builtin_is_corresponding_member(m1, m2);
 }
-#endif
 
 // ---------------------------------------------------------------------------------------------
 // [meta.trans.sign]
@@ -525,12 +526,12 @@ using common_reference_t = typename common_reference<T...>::type;
 // ---------------------------------------------------------------------------------------------
 // [meta.const.eval]
 // ---------------------------------------------------------------------------------------------
-#if YCXX_HAS_IS_WITHIN_LIFETIME
+// Available where the compiler provides the builtin (Clang 23); a constraint failure otherwise.
 template <class T>
+  requires ycxx::detail::builtin::has_is_within_lifetime<T>
 consteval bool is_within_lifetime(const T* p) noexcept {
   return __builtin_is_within_lifetime(p);
 }
-#endif
 
 } // namespace std
 

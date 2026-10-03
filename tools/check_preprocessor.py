@@ -14,7 +14,7 @@ CONFIG = ROOT / "ycxx/config.hpp"
 # Files whose job is to define macros the standard mandates.
 MANDATED_MACRO_FILES = {
     "ycxx/core/cstdint.hpp", "ycxx/core/climits.hpp", "ycxx/core/cstddef.hpp",
-    "ycxx/core/version.hpp", "ycxx/pal.h",
+    "ycxx/core/version.hpp", "ycxx/core/cfloat.hpp", "ycxx/pal.h",
 }
 COND = re.compile(r"^\s*#\s*(if|ifdef|ifndef|elif|elifdef|elifndef)\b(.*)")
 DEFINE = re.compile(r"^\s*#\s*(define|undef)\s+(\w+)")

@@ -91,6 +91,12 @@ inline constexpr bool has_int128 = true;
 #else
 inline constexpr bool has_int128 = false;
 #endif
+// Integer division by zero raises a hardware trap (numeric_limits<int>::traps).
+#if defined(__x86_64__) || defined(__i386__)
+inline constexpr bool integer_division_traps = true;
+#else
+inline constexpr bool integer_division_traps = false;
+#endif
 inline constexpr unsigned pointer_bits = __SIZEOF_POINTER__ * __CHAR_BIT__;
 inline constexpr unsigned long biggest_alignment = __BIGGEST_ALIGNMENT__;
 inline constexpr unsigned long default_new_alignment = __STDCPP_DEFAULT_NEW_ALIGNMENT__;
@@ -118,32 +124,58 @@ using int128 = int128_unavailable;
 using uint128 = int128_unavailable;
 #endif
 
+// Floating-point formats: the only per-type facts read from the compiler. Everything else in
+// numeric_limits is derived from these three numbers in constexpr code (see <limits>).
+struct fp_format_info {
+  int digits;  // mantissa digits including the implicit bit (radix 2)
+  int min_exp; // 1 + exponent of the smallest normal number
+  int max_exp; // 1 + exponent of the largest finite number
+};
+template <class T>
+inline constexpr fp_format_info fp_format{0, 0, 0};
+template <>
+inline constexpr fp_format_info fp_format<float>{__FLT_MANT_DIG__, __FLT_MIN_EXP__, __FLT_MAX_EXP__};
+template <>
+inline constexpr fp_format_info fp_format<double>{__DBL_MANT_DIG__, __DBL_MIN_EXP__, __DBL_MAX_EXP__};
+template <>
+inline constexpr fp_format_info fp_format<long double>{__LDBL_MANT_DIG__, __LDBL_MIN_EXP__, __LDBL_MAX_EXP__};
+
 // Extended floating-point types ([basic.extended.fp]). Unavailable ones alias a distinct
 // incomplete type, so generic code (type lists, overload sets) stays well-formed.
 template <int>
 struct fp_unavailable;
 #if defined(__STDCPP_FLOAT16_T__)
 using float16 = _Float16;
+template <>
+inline constexpr fp_format_info fp_format<float16>{__FLT16_MANT_DIG__, __FLT16_MIN_EXP__, __FLT16_MAX_EXP__};
 #else
 using float16 = fp_unavailable<16>;
 #endif
 #if defined(__STDCPP_FLOAT32_T__)
 using float32 = _Float32;
+template <>
+inline constexpr fp_format_info fp_format<float32>{__FLT32_MANT_DIG__, __FLT32_MIN_EXP__, __FLT32_MAX_EXP__};
 #else
 using float32 = fp_unavailable<32>;
 #endif
 #if defined(__STDCPP_FLOAT64_T__)
 using float64 = _Float64;
+template <>
+inline constexpr fp_format_info fp_format<float64>{__FLT64_MANT_DIG__, __FLT64_MIN_EXP__, __FLT64_MAX_EXP__};
 #else
 using float64 = fp_unavailable<64>;
 #endif
 #if defined(__STDCPP_FLOAT128_T__)
 using float128 = _Float128;
+template <>
+inline constexpr fp_format_info fp_format<float128>{__FLT128_MANT_DIG__, __FLT128_MIN_EXP__, __FLT128_MAX_EXP__};
 #else
 using float128 = fp_unavailable<128>;
 #endif
 #if defined(__STDCPP_BFLOAT16_T__)
 using bfloat16 = decltype(0.0bf16);
+template <>
+inline constexpr fp_format_info fp_format<bfloat16>{__BFLT16_MANT_DIG__, __BFLT16_MIN_EXP__, __BFLT16_MAX_EXP__};
 #else
 using bfloat16 = fp_unavailable<-16>;
 #endif

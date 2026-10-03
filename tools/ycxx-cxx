@@ -1,0 +1,20 @@
+#!/bin/sh
+# Compile and link against libycxx.
+#   ycxx-cxx gcc|clang [compiler args...]
+# Uses build/<compiler>/libycxx.a and the ABI runtime (libsupc++) from GCC 16.
+here=$(cd "$(dirname "$0")/.." && pwd)
+which=$1; shift
+gcc_dir=/opt/gcc-16
+case $which in
+  gcc)   cxx=g++-16; extra="" ;;
+  clang) cxx=clang++-23; extra="--gcc-install-dir=$gcc_dir/lib/gcc/x86_64-pc-linux-gnu/16.2.0" ;;
+  *) echo "usage: ycxx-cxx gcc|clang args..." >&2; exit 2 ;;
+esac
+link=1
+for a in "$@"; do case $a in -c|-S|-E|-fsyntax-only|-M|-MM) link=0 ;; esac; done
+if [ $link = 1 ]; then
+  exec $cxx $extra -std=c++26 -nostdinc++ -isystem "$here/include" "$@" \
+    -nostdlib++ "$here/build/$which/libycxx.a" "$gcc_dir/lib64/libsupc++.a" -static-libgcc
+else
+  exec $cxx $extra -std=c++26 -nostdinc++ -isystem "$here/include" "$@"
+fi

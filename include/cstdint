@@ -1,0 +1,9 @@
+// -*- C++ -*-  libycxx: <cstdint>   [core]
+#ifndef YCXX_CSTDINT
+#define YCXX_CSTDINT
+
+#include <ycxx/config.hpp>
+#include <ycxx/core/cstdint.hpp>
+#include <ycxx/core/version.hpp>
+
+#endif

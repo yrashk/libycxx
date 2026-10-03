@@ -1,0 +1,8 @@
+// -*- C++ -*-  libycxx: <version>   [core]
+#ifndef YCXX_VERSION_HEADER
+#define YCXX_VERSION_HEADER
+
+#include <ycxx/config.hpp>
+#include <ycxx/core/version.hpp>
+
+#endif

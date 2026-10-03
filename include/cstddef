@@ -1,0 +1,9 @@
+// -*- C++ -*-  libycxx: <cstddef>   [core]
+#ifndef YCXX_CSTDDEF
+#define YCXX_CSTDDEF
+
+#include <ycxx/config.hpp>
+#include <ycxx/core/cstddef.hpp>
+#include <ycxx/core/version.hpp>
+
+#endif

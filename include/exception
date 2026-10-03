@@ -1,0 +1,6 @@
+// -*- C++ -*-  libycxx: <exception>
+#pragma once
+
+#include <ycxx/config.hpp>
+#include <ycxx/core/version.hpp>
+#include <ycxx/core/exception.hpp>

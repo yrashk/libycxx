@@ -7,8 +7,8 @@
 namespace std {
 
 template <class T>
-  requires(__is_constructible(T, T &&) && __is_assignable(T&, T &&))
-constexpr void swap(T& a, T& b) noexcept(__is_nothrow_constructible(T, T &&) && __is_nothrow_assignable(T&, T &&)) {
+  requires(is_constructible_v<T, T &&> && is_assignable_v<T&, T &&>)
+constexpr void swap(T& a, T& b) noexcept(is_nothrow_constructible_v<T, T &&> && is_nothrow_assignable_v<T&, T &&>) {
   T tmp(static_cast<T&&>(a));
   a = static_cast<T&&>(b);
   b = static_cast<T&&>(tmp);

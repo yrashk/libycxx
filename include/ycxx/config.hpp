@@ -31,6 +31,13 @@
 
 // ---------------------------------------------------------------------------------------------
 // Parse-level switches. Use with #if only where the code cannot be written otherwise.
+//
+// Function-style builtins are NOT detected here: a concept over a dependent call
+// (`requires(T* p) { __builtin_foo(p); }`) is false when the builtin does not exist, so they are
+// probed in-language (see ycxx::detail::builtin below). The YCXX_HAS_* switches for them exist
+// only because the standard's __cpp_lib_* feature-test macros must be preprocessor-visible.
+// Type-taking builtins (__is_integral(T), __builtin_type_order(T, U)) cannot be probed that way:
+// an unknown one is a hard parse error.
 // ---------------------------------------------------------------------------------------------
 #if defined(__cpp_exceptions) && __cpp_exceptions
 #  define YCXX_HAS_EXCEPTIONS 1
@@ -88,6 +95,18 @@ inline constexpr unsigned pointer_bits = __SIZEOF_POINTER__ * __CHAR_BIT__;
 inline constexpr unsigned long biggest_alignment = __BIGGEST_ALIGNMENT__;
 inline constexpr unsigned long default_new_alignment = __STDCPP_DEFAULT_NEW_ALIGNMENT__;
 } // namespace cfg
+
+// In-language probes for function-style builtins (no preprocessor needed).
+namespace builtin {
+template <class T>
+concept has_is_within_lifetime = requires(const T* p) { __builtin_is_within_lifetime(p); };
+template <class S1, class S2, class M1, class M2>
+concept has_is_corresponding_member =
+    requires(M1 S1::* a, M2 S2::* b) { __builtin_is_corresponding_member(a, b); };
+template <class S, class M>
+concept has_is_pointer_interconvertible_with_class =
+    requires(M S::* m) { __builtin_is_pointer_interconvertible_with_class(m); };
+} // namespace builtin
 
 // ---- types whose availability or spelling depends on the compiler ---------------------------
 #if defined(__SIZEOF_INT128__)

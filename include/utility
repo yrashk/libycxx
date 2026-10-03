@@ -1,0 +1,10 @@
+// -*- C++ -*-  libycxx: <utility>   [core]
+#pragma once
+
+#include <ycxx/config.hpp>
+#include <ycxx/core/version.hpp>
+#include <ycxx/core/type_traits.hpp>
+#include <ycxx/core/compare.hpp>
+#include <initializer_list>
+#include <ycxx/core/utility_base.hpp>
+#include <ycxx/core/pair.hpp>

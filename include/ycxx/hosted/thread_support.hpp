@@ -168,12 +168,13 @@ bool atomic_wait_until_done_by(const volatile void* addr, Done done, const std::
   for (;;) {
     if (!(Clock::now() < abs))
       return done();
+    // Computed before registering: Clock::now() may throw, and must not leave a registration.
+    const pal_deadline d = ::ycxx::detail::deadline_at(abs);
     const std::uint32_t ticket = ::ycxx::detail::atomic_wait_prepare(addr);
     if (done()) {
       ::ycxx::detail::atomic_wait_cancel(addr);
       return true;
     }
-    const pal_deadline d = ::ycxx::detail::deadline_at(abs);
     ::ycxx::detail::atomic_wait_block_until(addr, ticket, d.clock, d.sec, d.nsec);
     if (done())
       return true;

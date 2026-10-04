@@ -191,6 +191,9 @@
 #define __cpp_lib_generic_unordered_lookup 201811L
 #define __cpp_lib_unordered_map_try_emplace 201411L
 
+// <hive>
+#define __cpp_lib_hive 202502L
+
 // Features of headers above that had no macro yet.
 #define __cpp_lib_ssize 201902L
 #define __cpp_lib_null_iterators 201304L

@@ -144,6 +144,16 @@ struct md_ext_tables {
       ::ycxx::detail::md_make_ext_tables<rank_dynamic, E...>();
 };
 
+// The second Mandate of [mdspan.extents.overview]/1 (vacuous when the first fails, so that only
+// one diagnostic is issued).
+template <class IndexType, std::size_t... E>
+consteval bool md_static_extents_fit() {
+  if constexpr (md_index_type<IndexType>)
+    return ((E == std::dynamic_extent || std::in_range<IndexType>(E)) && ...);
+  else
+    return true;
+}
+
 template <class T>
 inline constexpr bool md_is_extents = false;
 template <class IndexType, std::size_t... E>
@@ -165,12 +175,13 @@ template <class IndexType, size_t... Extents>
 class extents {
   static_assert(ycxx::detail::md_index_type<IndexType>,
                 "std::extents: IndexType must be a signed or unsigned integer type");
-  static_assert(((Extents == dynamic_extent || in_range<IndexType>(Extents)) && ...),
+  static_assert(ycxx::detail::md_static_extents_fit<IndexType, Extents...>(),
                 "std::extents: every static extent must be representable as a value of IndexType");
 
 public:
   using index_type = IndexType;
-  using size_type = make_unsigned_t<index_type>;
+  // (unsigned for a rejected IndexType, so that the Mandate above is the only diagnostic)
+  using size_type = make_unsigned_t<conditional_t<ycxx::detail::md_index_type<IndexType>, IndexType, unsigned>>;
   using rank_type = size_t;
 
 private:

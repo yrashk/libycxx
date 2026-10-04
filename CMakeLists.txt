@@ -80,6 +80,7 @@ add_library(ycxx STATIC
   src/hosted/cmath_check.cpp
   src/hosted/syncstream.cpp
   src/hosted/system_error.cpp
+  src/hosted/text_encoding.cpp
   # iostreams and localization
   src/hosted/fstream.cpp
   src/hosted/ios.cpp
@@ -89,6 +90,7 @@ add_library(ycxx STATIC
   src/hosted/time.cpp
   src/pal/posix/pal.c
   src/pal/posix/pal_debug.c
+  src/pal/posix/pal_encoding.c
 )
 set_target_properties(ycxx PROPERTIES EXPORT_NAME core)
 target_link_libraries(ycxx PRIVATE ycxx_headers)

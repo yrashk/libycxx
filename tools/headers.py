@@ -47,3 +47,6 @@ ABI = ["exception", "stdexcept", "typeinfo", "typeindex"]
 # <generator>: core code, but a generator's promise stores and rethrows exceptions
 # (current_exception/rethrow_exception) through the ABI runtime.
 ABI += ["generator"]
+# <text_encoding>: the class is constexpr core code (ycxx/core/text_encoding.hpp); environment()
+# and locale::encoding() are in the hosted runtime.
+HOSTED += ["text_encoding"]

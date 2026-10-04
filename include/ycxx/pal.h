@@ -112,6 +112,11 @@ int ycxx_pal_error_message(int ev, char* buf, ycxx_pal_size n) YCXX_PAL_NOEXCEPT
    An immediate query: the answer is not cached. */
 int ycxx_pal_debugger_present(void) YCXX_PAL_NOEXCEPT;
 
+/* ---- character encoding ------------------------------------------------------------------- */
+/* Writes the name of the environment's character encoding (POSIX: the codeset of the locale "")
+   to buf as a null-terminated string, truncated to n bytes (std::text_encoding::environment). */
+int ycxx_pal_environment_encoding(char* buf, ycxx_pal_size n) YCXX_PAL_NOEXCEPT;
+
 /* Filesystem and time zone hooks are added with phase 5. */
 
 #ifdef __cplusplus

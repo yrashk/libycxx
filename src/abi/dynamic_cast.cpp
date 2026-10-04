@@ -32,6 +32,30 @@ struct cast_walk {
   int across_count = 0;     // distinct dst subobjects (saturating at 2)
   bool across_public = false;
 
+  // Virtual-base subtrees already walked in a given state: walking one again in the same state
+  // adds nothing (the results only collect distinct addresses and or-ed flags), and stacked
+  // diamonds would otherwise be walked along exponentially many paths. Past its capacity the
+  // walk simply enters again.
+  struct seen_state {
+    const char* addr;
+    const char* in_dst;
+    unsigned flags;
+  };
+  static constexpr int capacity = 64;
+  seen_state seen[capacity];
+  int nseen = 0;
+  bool enter(const char* addr, const char* in_dst, unsigned flags) noexcept {
+    for (int i = 0; i < nseen; ++i)
+      if (seen[i].addr == addr && seen[i].in_dst == in_dst && seen[i].flags == flags)
+        return false;
+    if (nseen < capacity)
+      seen[nseen++] = {addr, in_dst, flags};
+    return true;
+  }
+
+  cast_walk(const __class_type_info* s, const char* at, const __class_type_info* d, bool unique) noexcept
+      : src(s), sub(at), dst(d), unique_bases(unique) {}
+
   // The subobject of type t at addr. pub: the path from the most derived object is public;
   // in_dst: the dst subobject on this path, or null; dst_pub: the path from in_dst is public;
   // below_src: the source is on this path. Returns true to end the walk.
@@ -78,10 +102,14 @@ struct cast_walk {
         // As in walk_bases (rtti.hpp): a virtual base's offset is stored in this subobject's
         // vtable, at b.offset() from its virtual pointer.
         const char* child = addr + b.offset();
-        if (b.is_virtual())
+        const bool p = b.is_public();
+        if (b.is_virtual()) {
           child = addr + *reinterpret_cast<const std::ptrdiff_t*>(*reinterpret_cast<const char* const*>(addr) +
                                                                   b.offset());
-        const bool p = b.is_public();
+          const unsigned flags = (pub && p ? 1u : 0u) | (dst_pub && p ? 2u : 0u) | (below_src ? 4u : 0u);
+          if (!enter(child, in_dst, flags))
+            continue;
+        }
         if (visit(b.__base_type, child, pub && p, in_dst, dst_pub && p, below_src))
           return true;
       }
@@ -139,7 +167,7 @@ extern "C" void* __dynamic_cast(const void* sub, const __class_type_info* src, c
 
   // The classes above t occur once each (none can be a base of t), so t's flags tell whether
   // any base class repeats.
-  cast_walk w{src, source, dst, static_cast<const __vmi_class_type_info*>(t)->__flags == 0};
+  cast_walk w(src, source, dst, static_cast<const __vmi_class_type_info*>(t)->__flags == 0);
   w.visit(mdo_type, mdo, true, nullptr, true, false);
   if (w.down_count == 1 && w.down_public)
     return const_cast<char*>(w.down);

@@ -124,7 +124,11 @@ file(GLOB YCXX_ABI_SOURCES CONFIGURE_DEPENDS src/abi/*.cpp)
 add_library(ycxx_abi STATIC ${YCXX_ABI_SOURCES})
 set_target_properties(ycxx_abi PROPERTIES OUTPUT_NAME ycxx-abi EXPORT_NAME abi)
 target_link_libraries(ycxx_abi PRIVATE ycxx_headers)
-target_compile_options(ycxx_abi PRIVATE -std=c++26 ${_ycxx_warnings} -fexceptions -frtti)
+target_compile_options(ycxx_abi PRIVATE -std=c++26 ${_ycxx_warnings} -fexceptions -frtti
+  # The hierarchy walks keep fixed tables of visited virtual bases on the stack, written before
+  # they are read; GCC 16 would zero-fill them on every dynamic_cast and handler search (C++26
+  # erroneous values).
+  $<$<CXX_COMPILER_ID:GNU>:-ftrivial-auto-var-init=uninitialized>)
 set_source_files_properties(src/abi/exception_classes.cpp src/hosted/stdexcept.cpp
                             PROPERTIES COMPILE_DEFINITIONS YCXX_EXCEPTION_KEY_FUNCTIONS)
 # The standard stream objects are initialized with a priority reserved for the implementation,

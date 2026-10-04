@@ -138,17 +138,6 @@ private:
       deallocate_block(alloc_, ptr_, cap_);
   }
 
-  // Frees the storage of a block unless released; keeps a fresh allocation exception-safe.
-  struct block_guard {
-    Allocator& a;
-    block b;
-    bool armed = true;
-    constexpr ~block_guard() {
-      if (armed)
-        deallocate_block(a, b.p, b.cap);
-    }
-  };
-
   constexpr void check_length(size_type n, const char* what) const {
     if (n > max_size())
       ycxx::detail::throw_length_error(what);
@@ -256,18 +245,21 @@ private:
     }
     charT* const p = ptr_;
     const size_type off = n2 == 0 ? npos : offset_of(s);
-    if (off == npos || n1 == n2) {
+    if (off == npos) {
       if (n1 != n2)
         traits::move(p + pos + n2, p + pos + n1, tail);
-      traits::move(p + pos, s, n2);
+      traits::copy(p + pos, s, n2);
+    } else if (n1 == n2) {
+      traits::move(p + pos, p + off, n2);
     } else if (n2 < n1) {
       // Shrinking: place the source first (it ends up inside the replaced range), then close
       // the gap.
       traits::move(p + pos, p + off, n2);
       traits::move(p + pos + n2, p + pos + n1, tail);
     } else {
-      // Growing: open the gap first. Source characters at or after pos + n1 move by n2 - n1.
-      traits::move(p + pos + n2, p + pos + n1, tail);
+      // Growing: open the gap first (moving the terminator too, which the source may include).
+      // Source characters at or after pos + n1 move by n2 - n1.
+      traits::move(p + pos + n2, p + pos + n1, tail + 1);
       if (off + n2 <= pos + n1) {
         traits::move(p + pos, p + off, n2);
       } else if (off >= pos + n1) {

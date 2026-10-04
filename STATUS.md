@@ -34,6 +34,7 @@ Conformance oracles (run only, never edited): libc++ tests from `llvmorg-23.1.2`
 | containers/sequences/{deque,list,forwardlist} + container.adaptors/{stack,queue,priority.queue} | 197/371 | 197/371 | yes | was 0; adaptor tests need `<vector>` (338/371 with a local stand-in `<vector>`); rest: `<map>`/`<set>`/`<random>` |
 | containers/unord + container.node | 303/422 | 303/422 | yes | was 0; 417/422 on both with stand-in `<cmath>`/`<map>`/`<set>`; rest below |
 | numerics/{c.math,numbers,complex.number,numarray} + utilities/ratio | 325/348 | 327/348 | yes (run-time `<cmath>` calls need libm) | was 6; rest below (numerics) |
+| input.output + localization (iostreams, `<locale>`) | 583/855 | 590/855 | no (hosted) | was 39; 213 of the failures need `<filesystem>`, `<codecvt>` (removed), `<format>`/`<print>`, `<mutex>`/`<chrono>` or `EOF` from `constexpr_char_traits.h`; rest under Known limitations |
 
 Whole-suite baseline (clang, before iterators/tuple/array/optional): 976 pass / ~8,000 run.
 
@@ -99,6 +100,19 @@ libc++ utilities/utility/mem.res 0 -> 57/78, allocator.adaptor 0 -> 32/32, alloc
 scoped_allocator 0 -> 20/20, *_pool_resource 0 -> 4/9 (both compilers). Remaining failures
 need missing containers, `<initializer_list>` from `<memory_resource>`, libstdc++'s
 `bits/move.h`, or are noted below.
+
+Iostreams and localization (Phase 4, hosted; DECISIONS §7): `<iosfwd>`, `<ios>`, `<streambuf>`,
+`<istream>`, `<ostream>` (no `print`/`println` overloads yet), `<iostream>`, `<sstream>`,
+`<spanstream>`, `<fstream>`, `<syncstream>`, `<iomanip>`, `<locale>` (all standard facets for char
+and wchar_t, the char8_t and deprecated char UTF-16/UTF-32 codecvts, the `_byname` facets for
+"C"/"POSIX"/"C.UTF-8"/""), the stream iterators, and the stream operators of `<string>`,
+`<string_view>`, `<bitset>`, `<memory>`, `<system_error>` and `<complex>`. Own suite ios, iostreams,
+sstream, fstream, spanstream, syncstream, iomanip, locale, complex, system_error, bitset, string,
+string_view, memory, iterator: 301/305 (GCC, plus 1 XFAIL), 302/305 (Clang); the three failures need
+`<filesystem>`, `<thread>`, `<format>`. Clean under ASan (Clang). libc++ input.output + localization
+39 -> 590/855 (GCC), 39 -> 583/855 (Clang); libstdc++ 27_io + 22_locale 8 -> 806/925 (GCC),
+8 -> 805/925 (Clang); most remaining failures need missing headers or libstdc++ extensions
+(`char_traits<unsigned char>`, deprecated manipulator overloads, transitive C headers).
 
 ## Freestanding
 `tools/check_freestanding.sh`: every core header compiles with `-ffreestanding -nostdlib -nostdinc
@@ -170,8 +184,20 @@ Deprecated and removed features are not implemented (`is_pod`, `is_trivial`, `al
   C library does (`0x0.000000000000001p-16385` is the smallest), so that both forms agree there.
 
 ## Known limitations and draft defects
-- `<memory>`: no `atomic<shared_ptr<T>>` / `atomic<weak_ptr<T>>`, no `operator<<` for
-  unique_ptr/shared_ptr (no `<ostream>`), no execution-policy overloads of the specialized
+- Iostreams/locale: named locales other than "C", "POSIX", "C.UTF-8" and "" throw
+  `runtime_error` (the environment's conventions are not supported); `codecvt<wchar_t, char>`
+  is UTF-8 in the classic locale, so `encoding()` is 0 and wide file streams cannot seek by an
+  offset other than 0 (libc++ filebuf move/swap/seekoff wide cases and wchar_t encoding/max_length
+  tests expect a single-byte C locale); long double hexfloat output is normalized (`0x1.…p+N`,
+  not glibc's `0x9.…p+N`); `time_get` stops a number at the digit that leaves its range ("24" for
+  %H reads "2"), as libstdc++ does and libc++ does not; `stringbuf` with `app` but not `ate`
+  starts writing at the beginning ([stringbuf.members] init-buf-ptrs); bitmask types are
+  enumerations, so `basic_stringbuf(s, 0)` does not compile; `basic_iostream`/`basic_istream`
+  have no default constructor (libstdc++ extension); no `wstring_convert`/`wbuffer_convert`
+  (removed in C++26), no `<codecvt>`; `fstream`'s path overloads are templates (no
+  `<filesystem>` yet). Standard stream objects synchronized with stdio write character by
+  character through `putc` (bulk writes through `fwrite`).
+- `<memory>`: no `atomic<shared_ptr<T>>` / `atomic<weak_ptr<T>>`, no execution-policy overloads of the specialized
   algorithms, no `pointer_tag_pair`, `indirect`, `polymorphic`. shared_ptr reference counts use
   the `__atomic` builtins unconditionally (no single-threaded fast path). get_deleter identifies
   the deleter type by a per-type tag address (same shared-library caveat as `any`).
@@ -214,7 +240,7 @@ Deprecated and removed features are not implemented (`is_pod`, `is_trivial`, `al
   `except/handler_function_pointer` and `except/handler_array_decay` fail on GCC.
 - Programs link the shared unwinder (`-shared-libgcc`): glibc's pthread_exit/pthread_cancel
   unwind through libgcc_s.so, and a second, static unwinder copy would abort.
-- `<system_error>`: no `operator<<` for `error_code` (no `<ostream>` yet) and no
+- `<system_error>`: no
   `formatter<error_code>` (no `<format>` yet). `errc` has no `no_message_available`,
   `no_stream_resources`, `not_a_stream`, `stream_timeout` (removed from the draft; libstdc++'s
   `errc_std_c++0x.cc` still expects them). Messages are the C library's `strerror_r` text for

@@ -157,7 +157,7 @@ Clang rejects code GCC accepts.
 | Test(s) | Cause |
 |---|---|
 | `string/literals`, `string/cons_pointer`, `string/string_view_conversion` | constexpr `basic_string` construction: Clang reports "undefined function `_M_construct`" (libstdc++'s explicit-instantiation declarations hide the definition from constant evaluation) |
-| `expected/bad_expected_access_constexpr`, `variant/bad_access` | libstdc++'s constexpr exception classes are only constexpr with GCC (Clang 23 cannot throw in constant evaluation) |
+| `expected/bad_expected_access_constexpr`, `variant/bad_access`, `stdexcept/constexpr_classes` | libstdc++'s constexpr exception classes are only constexpr with GCC (Clang 23 cannot throw in constant evaluation) |
 | `compare/type_order`, `version/header_compare` | `std::type_order` (needs a builtin only GCC has) |
 | `utility/observable_checkpoint_monostate`, `version/header_utility` | `std::observable_checkpoint` |
 | `version/header_type_traits` | `is_layout_compatible` (needs builtins Clang lacks) |

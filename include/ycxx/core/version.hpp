@@ -218,3 +218,4 @@
 // <ratio> <numbers> <cmath> <complex> <valarray>
 #define __cpp_lib_ratio 202306L
 #define __cpp_lib_freestanding_ratio 202306L
+#define __cpp_lib_math_constants 201907L

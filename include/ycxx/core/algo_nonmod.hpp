@@ -86,26 +86,64 @@ constexpr std::pair<I, I> search_n_impl(I first, S last, std::iter_difference_t<
   return {first, first};
 }
 
-// The last occurrence; an empty pattern gives {last1, last1}.
+// The last occurrence; an empty pattern gives {last1, last1}. [alg.find.end]/3 allows
+// M * (N - M + 1) comparisons (M, N the pattern and sequence lengths): each of the N - M + 1
+// candidate positions is compared at most once, the pattern in order. With bidirectional
+// iterators the candidates are tried from the back and the first match ends the search;
+// otherwise a window of M elements slides forward and the last match is kept.
 template <class I1, class S1, class I2, class S2, class P>
 constexpr std::pair<I1, I1> find_end_impl(I1 first1, S1 last1, I2 first2, S2 last2, P eq) {
+  // Whether the pattern occurs at start; on success stop is the end of the match.
+  auto match_at = [&](I1 start, I1& stop) {
+    for (I2 j = first2; j != last2; (void)++start, (void)++j)
+      if (!eq(*start, *j))
+        return false;
+    stop = start;
+    return true;
+  };
   if (first2 == last2) {
-    I1 end = ::ycxx::detail::iter_at(first1, last1);
+    I1 end = ::ycxx::detail::iter_at(std::move(first1), std::move(last1));
     return {end, end};
   }
-  I1 found{}, found_end{};
-  bool any = false;
-  for (;;) {
-    auto m = ::ycxx::detail::search_impl(first1, last1, first2, last2, eq);
-    if (m.first == m.second) { // no further match (the pattern is not empty)
-      if (!any)
-        return m;
-      return {found, found_end};
+  if constexpr (bidi_iter<I1>) {
+    const I1 end = ::ycxx::detail::iter_at(first1, std::move(last1));
+    // the last candidate: M elements before the end
+    I1 start = end;
+    for (I2 j = first2; j != last2; ++j) {
+      if (start == first1)
+        return {end, end}; // the pattern is longer than the sequence
+      --start;
     }
-    found = m.first;
-    found_end = m.second;
-    any = true;
-    first1 = ++m.first;
+    for (;;) {
+      I1 stop = end;
+      if (match_at(start, stop))
+        return {std::move(start), std::move(stop)};
+      if (start == first1)
+        return {end, end};
+      --start;
+    }
+  } else {
+    // [start, probe) is the window of M elements under test
+    I1 probe = first1;
+    for (I2 j = first2; j != last2; (void)++j, (void)++probe)
+      if (probe == last1)
+        return {probe, probe}; // the pattern is longer than the sequence
+    I1 start = std::move(first1);
+    I1 found = probe, found_end = probe;
+    bool any = false;
+    for (;;) {
+      if (match_at(start, found_end)) {
+        found = start;
+        any = true;
+      }
+      if (probe == last1)
+        break;
+      ++start;
+      ++probe;
+    }
+    if (!any)
+      return {probe, probe};
+    return {std::move(found), std::move(found_end)};
   }
 }
 

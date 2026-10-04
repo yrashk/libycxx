@@ -30,6 +30,8 @@ Conformance oracles (run only, never edited): libc++ tests from `llvmorg-23.1.2`
 
 Whole-suite baseline (clang, before iterators/tuple/array/optional): 976 pass / ~8,000 run.
 
+<typeindex>: libc++ utilities/type.index 8/9 (rest: `<string>`), libstdc++ 20_util/typeindex 5/5,
+both compilers.
 libstdc++ testsuite: 20_util/{function,move_only_function,copyable_function,function_ref,
 constant_wrapper}: all pass on GCC except tests needing `<string>`/`<iostream>`; Clang also fails
 constant_wrapper/generic.cc (throws during constant evaluation). libc++ utilities/const.wrap.class:
@@ -117,7 +119,7 @@ Deprecated and removed features are not implemented (`is_pod`, `is_trivial`, `al
 
 ## Open issues / next
 - Phase 2 remaining: <exception> propagation (exception_ptr, nested_exception,
-  exception_ptr_cast), <typeindex>.
+  exception_ptr_cast).
 - Then Phase 3 (containers, algorithms), Phase 4 (ranges, charconv, format, ...).
 - Constexpr exceptions (P3068): done for `exception`, `bad_alloc`, `bad_array_new_length`,
   `bad_exception`, `bad_cast`, `bad_typeid`, `bad_optional_access`, `bad_variant_access`, and

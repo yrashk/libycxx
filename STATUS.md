@@ -62,6 +62,16 @@ make_shared.pass and make_unique.pass need `<string>`. libc++ utilities/memory
 and specialized-algorithm directories 37 -> 189 (GCC), 36 -> 190 (Clang). The remaining failures
 need `<string>`, `<vector>`, `<algorithm>`, `<ranges>`, `<sstream>`, `<atomic>` or are noted below.
 
+<memory_resource> and <scoped_allocator>: memory_resource, polymorphic_allocator (core; `<string>`
+includes it, so `pmr::string` works with `<string>` alone), new_delete/null resources, the atomic
+default resource, pool_options, synchronized/unsynchronized_pool_resource and
+monotonic_buffer_resource (hosted runtime, DECISIONS §3); scoped_allocator_adaptor (core).
+libc++ utilities/utility/mem.res 0 -> 57/78, allocator.adaptor 0 -> 32/32, allocator.uses
+2 -> 3/4; libstdc++ 20_util memory_resource, monotonic_buffer_resource, polymorphic_allocator,
+scoped_allocator 0 -> 20/20, *_pool_resource 0 -> 4/9 (both compilers). Remaining failures
+need missing containers, `<initializer_list>` from `<memory_resource>`, libstdc++'s
+`bits/move.h`, or are noted below.
+
 ## Freestanding
 `tools/check_freestanding.sh`: every core header compiles with `-ffreestanding -nostdlib -nostdinc
 -fno-exceptions -fno-rtti`; the smoke test links on x86_64-unknown-none-elf and
@@ -182,9 +192,6 @@ Deprecated and removed features are not implemented (`is_pod`, `is_trivial`, `al
   `resize_and_overwrite` passes `p` and `m` as prvalues and leaves the string unchanged if the
   (precondition-violating) operation throws; the libstdc++ tests checking
   `__cpp_lib_constexpr_string == 201907` see 202511 (constexpr integral `to_string`).
-- `pmr::basic_string` and friends are declared, but `polymorphic_allocator` is only
-  forward-declared (`ycxx/core/memory_resource_fwd.hpp`) until `<memory_resource>` exists, so
-  the pmr strings cannot be instantiated yet.
 - Floating-point `to_string` is implemented in the hosted runtime with `snprintf("%.*Le")` and
   `strto*` round-trip checks (no `<charconv>` dependency); switching it to `to_chars` once that
   exists would be faster.
@@ -203,6 +210,15 @@ Deprecated and removed features are not implemented (`is_pod`, `is_trivial`, `al
 - `std::is_permutation` enforces its Mandates (same value type); libc++'s sort/heap tests call
   it with `MoveOnly*` and `int*` and fail to compile for that reason (12 tests).
 - shuffle/sample assume the generator's results fit in 64 bits.
+
+- `<memory_resource>`: synchronized_pool_resource is the unsynchronized pool behind one lock
+  (no thread-specific pools). Pool block sizes are powers of two from 8 bytes to 64 KiB (the
+  `largest_required_pool_block` limit; `max_blocks_per_chunk` limit 65536, chunks also capped
+  at about 1 MiB); every chunk is aligned to its block size. monotonic_buffer_resource starts
+  at 1 KiB and doubles. new_delete_resource uses the aligned allocation functions only above
+  `__STDCPP_DEFAULT_NEW_ALIGNMENT__`. libc++ `construct_piecewise_pair_evil` expects
+  polymorphic_allocator::construct to pass a non-const allocator; the draft's uses-allocator
+  construction passes `const Alloc&`, so libycxx rejects it.
 
 ## Open issues / next
 - Phase 2 is complete. The ABI runtime (src/abi) replaced libsupc++: broad sweep 4483 -> 4535

@@ -100,6 +100,14 @@ unsigned ycxx_pal_hardware_concurrency(void) YCXX_PAL_NOEXCEPT;
 /* Blocks the calling thread until the absolute time sec:nsec of `clock` has passed. */
 void ycxx_pal_sleep_until(int clock, ycxx_pal_i64 sec, ycxx_pal_i64 nsec) YCXX_PAL_NOEXCEPT;
 
+/* Points to a flag that is nonzero only while the process certainly has a single thread: it is
+   cleared before a second thread starts, and set again (if ever) only once the process is back to
+   one thread, in a way that synchronizes with the other threads' ends. While it is set, the
+   library updates the reference counts and uncontended locks of process-private objects with
+   plain instead of atomic read-modify-write instructions. A port that cannot tell points it to
+   a constant zero (the freestanding default). POSIX/glibc: glibc's __libc_single_threaded. */
+extern const char* const ycxx_pal_single_threaded;
+
 /* ---- thread exit --------------------------------------------------------------------------- */
 /* Registers f(obj) to run when the calling thread exits (thread_local destructors); dso is the
    registering object's __dso_handle. Returns 0 on success. */

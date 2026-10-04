@@ -13,6 +13,7 @@
 #include <ycxx/core/chrono_base.hpp>
 #include <ycxx/core/errc.hpp>
 #include <ycxx/core/error.hpp>
+#include <ycxx/core/single_threaded.hpp>
 #include <ycxx/hosted/chrono_clocks.hpp>
 #include <ycxx/pal.h>
 
@@ -119,7 +120,16 @@ public:
   futex_mutex(const futex_mutex&) = delete;
   futex_mutex& operator=(const futex_mutex&) = delete;
 
+  // In a single-threaded process (single_threaded.hpp) nobody can contend or wait, so the state
+  // is read and written plainly: a timed lock attempt on a mutex the thread already holds may
+  // have left it at 2, which the plain unlock clears without a wake.
   bool try_lock() noexcept {
+    if (::ycxx::detail::single_threaded()) {
+      if (state_ != 0)
+        return false;
+      state_ = 1;
+      return true;
+    }
     ycxx_pal_u32 e = 0;
     return __atomic_compare_exchange_n(&state_, &e, 1, false, __ATOMIC_ACQUIRE, __ATOMIC_RELAXED);
   }
@@ -141,6 +151,10 @@ public:
     }
   }
   void unlock() noexcept {
+    if (::ycxx::detail::single_threaded()) {
+      state_ = 0;
+      return;
+    }
     if (__atomic_exchange_n(&state_, 0, __ATOMIC_RELEASE) == 2)
       ::ycxx_pal_wake_one(&state_);
   }

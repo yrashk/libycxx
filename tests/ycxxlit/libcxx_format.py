@@ -42,7 +42,7 @@ class LibcxxFormat(lit.formats.FileBasedTest):
                 flags += [f for f in m.group(2).split() if not f.startswith('-D_LIBCPP')]
             m = FILE_DEPS.search(line)
             if m:
-                deps += m.group(1).split()
+                deps += [d for d in re.split(r"[,\s]+", m.group(1)) if d]  # "a.dat, b.dat"
 
         exec_dir = os.path.join(test.suite.exec_root, *test.path_in_suite[:-1])
         os.makedirs(exec_dir, exist_ok=True)

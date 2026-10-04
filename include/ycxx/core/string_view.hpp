@@ -5,6 +5,7 @@
 #include <ycxx/core/concepts.hpp>
 #include <ycxx/core/error.hpp>
 #include <ycxx/core/hash.hpp>
+#include <ycxx/core/iosfwd.hpp>
 #include <ycxx/core/iterator_adaptors.hpp>
 #include <ycxx/core/limits.hpp>
 #include <ycxx/core/range_access.hpp>
@@ -420,5 +421,9 @@ constexpr u32string_view operator""sv(const char32_t* str, size_t len) noexcept 
 constexpr wstring_view operator""sv(const wchar_t* str, size_t len) noexcept { return wstring_view{str, len}; }
 } // namespace string_view_literals
 } // namespace literals
+
+// [string.view.io]: declared here, defined with basic_ostream (ycxx/hosted/ostream.hpp).
+template <class charT, class traits>
+basic_ostream<charT, traits>& operator<<(basic_ostream<charT, traits>& os, basic_string_view<charT, traits> str);
 
 } // namespace std

@@ -3,9 +3,10 @@
 //
 // The deleter is stored with [[no_unique_address]], so unique_ptr<T> with an empty deleter is
 // the size of a pointer. A reference deleter (D = A&) is stored as a reference member.
-// operator<< ([unique.ptr.io]) is not provided yet (no <ostream>).
+// operator<< ([unique.ptr.io]) is written against the declaration of basic_ostream.
 #pragma once
 
+#include <ycxx/core/iosfwd.hpp>
 #include <ycxx/core/type_traits.hpp>
 #include <ycxx/core/swap.hpp>
 #include <ycxx/core/compare.hpp>
@@ -416,5 +417,14 @@ struct hash<unique_ptr<T, D>> {
     return hash<typename unique_ptr<T, D>::pointer>()(p.get());
   }
 };
+
+// [unique.ptr.io]: written against the declaration of basic_ostream; usable once <ostream> is
+// included (anything holding a stream has).
+template <class E, class T, class Y, class D>
+  requires requires(basic_ostream<E, T>& os, const unique_ptr<Y, D>& p) { os << p.get(); }
+basic_ostream<E, T>& operator<<(basic_ostream<E, T>& os, const unique_ptr<Y, D>& p) {
+  os << p.get();
+  return os;
+}
 
 } // namespace std

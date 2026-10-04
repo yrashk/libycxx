@@ -1,0 +1,9 @@
+// -*- C++ -*-  libycxx: <spanstream>   [hosted]
+#pragma once
+
+#include <ycxx/config.hpp>
+#include <ycxx/core/version.hpp>
+#include <istream>
+#include <ostream>
+#include <span>
+#include <ycxx/hosted/spanstream.hpp>

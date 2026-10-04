@@ -15,7 +15,7 @@
 // needs no RTTI and works in constant evaluation (the same caveat as std::any applies across
 // shared libraries built with hidden visibility).
 //
-// Not provided: atomic<shared_ptr<T>> / atomic<weak_ptr<T>>, operator<< (no <ostream>).
+// Not provided: atomic<shared_ptr<T>> / atomic<weak_ptr<T>>.
 #pragma once
 
 #include <ycxx/core/memory_base.hpp>
@@ -1191,5 +1191,13 @@ struct hash<shared_ptr<T>> {
     return hash<typename shared_ptr<T>::element_type*>()(p.get());
   }
 };
+
+// [util.smartptr.shared.io]: written against the declaration of basic_ostream (unique_ptr.hpp
+// includes it); usable once <ostream> is included.
+template <class E, class T, class Y>
+basic_ostream<E, T>& operator<<(basic_ostream<E, T>& os, const shared_ptr<Y>& p) {
+  os << p.get();
+  return os;
+}
 
 } // namespace std

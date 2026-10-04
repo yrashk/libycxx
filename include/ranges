@@ -11,3 +11,6 @@
 #include <ycxx/core/ranges_factories.hpp>
 #include <ycxx/core/ranges_adaptors.hpp>
 #include <ycxx/core/ranges_zip.hpp>
+#include <ycxx/core/ranges_join.hpp>
+#include <ycxx/core/ranges_chunk.hpp>
+#include <ycxx/core/ranges_to.hpp>

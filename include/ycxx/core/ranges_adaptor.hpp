@@ -323,7 +323,15 @@ public:
 // A non-propagating-cache member that is present only when Present is true.
 struct empty_cache {};
 template <bool Present, class T>
-using cache_if = std::conditional_t<Present, non_propagating_cache<T>, empty_cache>;
+struct cache_select {
+  using type = empty_cache;
+};
+template <class T>
+struct cache_select<true, T> {
+  using type = non_propagating_cache<T>;
+};
+template <bool Present, class T>
+using cache_if = typename cache_select<Present, T>::type;
 
 } // namespace ycxx::detail
 

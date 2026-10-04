@@ -52,6 +52,13 @@ unreachable error branch is removed. `dg-options -fno-inline` is passed through.
 -fno-exceptions -fno-rtti`; the smoke test links on x86_64-unknown-none-elf and
 riscv64-unknown-elf (Clang) and x86_64 (GCC). Core headers: see `tools/headers.py`.
 
+## Reference runs against libstdc++
+`YCXX_STDLIB=libstdcxx tools/run-conformance ycxx gcc|clang` runs the own suite against GCC 16's
+libstdc++. `tests/ycxx/REFERENCE.md` lists every failure: libstdc++ bugs (e.g. `variant::swap`
+with a valueless operand, `numeric_limits<bool>::traps`, `function_ref` assignment), C++26 parts
+libstdc++ 16 lacks, GCC/Clang differences, C-header gaps and ABI limits. No failure was traced to
+a defect in a test.
+
 ## Known compiler gaps and bugs
 - GCC 16.2: no `__builtin_is_within_lifetime`, so `std::is_within_lifetime` is unavailable on GCC
   (constraint, probed in-language). Consequence: `std::start_lifetime` cannot detect an

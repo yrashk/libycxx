@@ -1005,6 +1005,19 @@ struct iterator_traits<counted_iterator<I>> : iterator_traits<I> {
 // =============================================================================================
 // common_iterator
 // =============================================================================================
+} // namespace std
+
+namespace ycxx::detail {
+// [common.iter.nav]/5: the second condition of it++'s first form. A concept, so that
+// iter_value_t<I> is formed only for a readable I (its conjuncts are checked in order).
+template <class I>
+concept common_iter_postfix_proxy = std::indirectly_readable<I> &&
+                                    std::constructible_from<std::iter_value_t<I>, std::iter_reference_t<I>> &&
+                                    std::move_constructible<std::iter_value_t<I>>;
+} // namespace ycxx::detail
+
+namespace std {
+
 template <input_or_output_iterator I, sentinel_for<I> S>
   requires(!same_as<I, S> && copyable<I>)
 class common_iterator {
@@ -1172,8 +1185,7 @@ public:
       return tmp;
     } else if constexpr (requires(I& i) {
                            { *i++ } -> ycxx::detail::can_reference;
-                         } || !(indirectly_readable<I> && constructible_from<iter_value_t<I>, iter_reference_t<I>> &&
-                                move_constructible<iter_value_t<I>>)) {
+                         } || !ycxx::detail::common_iter_postfix_proxy<I>) {
       return it_++;
     } else {
       postfix_proxy p(*it_);
@@ -1265,11 +1277,11 @@ namespace rbegin_ns {
 void rbegin() = delete; // hides outer declarations: the call below uses argument-dependent lookup only
 template <class T>
 concept member = requires(T& t) {
-  { ::ycxx::detail::decay_copy(t.rbegin()) } -> std::input_or_output_iterator;
+  { auto(t.rbegin()) } -> std::input_or_output_iterator;
 };
 template <class T>
 concept adl = class_or_enum<T> && requires(T& t) {
-  { ::ycxx::detail::decay_copy(rbegin(t)) } -> std::input_or_output_iterator;
+  { auto(rbegin(t)) } -> std::input_or_output_iterator;
 };
 template <class T>
 concept reversible = requires(T& t) {
@@ -1280,9 +1292,9 @@ struct fn {
   template <class T>
   static consteval bool nothrow() {
     if constexpr (member<T>)
-      return noexcept(::ycxx::detail::decay_copy(std::declval<T&>().rbegin()));
+      return noexcept(auto(std::declval<T&>().rbegin()));
     else if constexpr (adl<T>)
-      return noexcept(::ycxx::detail::decay_copy(rbegin(std::declval<T&>())));
+      return noexcept(auto(rbegin(std::declval<T&>())));
     else
       return noexcept(std::make_reverse_iterator(std::ranges::end(std::declval<T&>())));
   }
@@ -1311,19 +1323,19 @@ namespace rend_ns {
 void rend() = delete; // hides outer declarations: the call below uses argument-dependent lookup only
 template <class T>
 concept member = requires(T& t) {
-  { ::ycxx::detail::decay_copy(t.rend()) } -> std::sentinel_for<decltype(std::ranges::rbegin(t))>;
+  { auto(t.rend()) } -> std::sentinel_for<decltype(std::ranges::rbegin(t))>;
 };
 template <class T>
 concept adl = class_or_enum<T> && requires(T& t) {
-  { ::ycxx::detail::decay_copy(rend(t)) } -> std::sentinel_for<decltype(std::ranges::rbegin(t))>;
+  { auto(rend(t)) } -> std::sentinel_for<decltype(std::ranges::rbegin(t))>;
 };
 struct fn {
   template <class T>
   static consteval bool nothrow() {
     if constexpr (member<T>)
-      return noexcept(::ycxx::detail::decay_copy(std::declval<T&>().rend()));
+      return noexcept(auto(std::declval<T&>().rend()));
     else if constexpr (adl<T>)
-      return noexcept(::ycxx::detail::decay_copy(rend(std::declval<T&>())));
+      return noexcept(auto(rend(std::declval<T&>())));
     else
       return noexcept(std::make_reverse_iterator(std::ranges::begin(std::declval<T&>())));
   }

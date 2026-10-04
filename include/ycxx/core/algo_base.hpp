@@ -17,6 +17,7 @@
 #include <ycxx/core/ranges_subrange.hpp>
 #include <ycxx/core/algo_results.hpp>
 #include <ycxx/core/algo_ranges_parallel.hpp>
+#include <ycxx/core/bit_iter_algos.hpp>
 #include <ycxx/core/pair.hpp>
 #include <ycxx/core/swap.hpp>
 #include <initializer_list>
@@ -181,6 +182,12 @@ template <class Comp, class P1, class P2>
 constexpr proj_comp2<Comp, P1, P2> make_comp2(Comp& comp, P1& p1, P2& p2) noexcept {
   return {comp, p1, p2};
 }
+
+// fill, find and count work a word at a time on vector<bool>'s iterators (bit_iter_algos.hpp),
+// for a bool value without a projection.
+template <class I, class S, class T, class Proj = std::identity>
+concept bit_algo_args = bit_algos<I>::enabled && std::same_as<I, S> && std::same_as<T, bool> &&
+                        std::same_as<Proj, std::identity>;
 
 // invoke(proj, x) == value, for find / count / remove / replace with a value.
 template <class T, class Proj>
@@ -627,8 +634,12 @@ constexpr BidirectionalIterator2 move_backward(BidirectionalIterator1 first, Bid
 // [alg.fill]
 template <class ForwardIterator, class T = typename iterator_traits<ForwardIterator>::value_type>
 constexpr void fill(ForwardIterator first, ForwardIterator last, const T& value) {
-  for (; first != last; ++first)
-    *first = value;
+  if constexpr (ycxx::detail::bit_algo_args<ForwardIterator, ForwardIterator, T>) {
+    ycxx::detail::bit_algos<ForwardIterator>::fill(first, last, value);
+  } else {
+    for (; first != last; ++first)
+      *first = value;
+  }
 }
 template <class OutputIterator, class Size, class T = typename iterator_traits<OutputIterator>::value_type>
 constexpr OutputIterator fill_n(OutputIterator first, Size n, const T& value) {
@@ -642,7 +653,10 @@ constexpr OutputIterator fill_n(OutputIterator first, Size n, const T& value) {
 // [alg.find]
 template <class InputIterator, class T = typename iterator_traits<InputIterator>::value_type>
 [[nodiscard]] constexpr InputIterator find(InputIterator first, InputIterator last, const T& value) {
-  return ::ycxx::detail::find_if_impl(first, last, ::ycxx::detail::equals_value_plain<T>{value});
+  if constexpr (ycxx::detail::bit_algo_args<InputIterator, InputIterator, T>)
+    return ycxx::detail::bit_algos<InputIterator>::find(first, last, value);
+  else
+    return ::ycxx::detail::find_if_impl(first, last, ::ycxx::detail::equals_value_plain<T>{value});
 }
 template <class InputIterator, class Predicate>
 [[nodiscard]] constexpr InputIterator find_if(InputIterator first, InputIterator last, Predicate pred) {
@@ -1071,9 +1085,14 @@ struct fill_fn {
   template <class O, std::sentinel_for<O> S, class T = std::iter_value_t<O>>
     requires std::output_iterator<O, const T&>
   constexpr O operator()(O first, S last, const T& value) const {
-    for (; first != last; ++first)
-      *first = value;
-    return first;
+    if constexpr (ycxx::detail::bit_algo_args<O, S, T>) {
+      ycxx::detail::bit_algos<O>::fill(first, last, value);
+      return last;
+    } else {
+      for (; first != last; ++first)
+        *first = value;
+      return first;
+    }
   }
   template <class R, class T = std::ranges::range_value_t<R>>
     requires std::ranges::output_range<R, const T&>
@@ -1099,14 +1118,16 @@ struct find_fn {
             class T = std::projected_value_t<I, Proj>>
     requires std::indirect_binary_predicate<std::ranges::equal_to, std::projected<I, Proj>, const T*>
   [[nodiscard]] constexpr I operator()(I first, S last, const T& value, Proj proj = {}) const {
-    return ::ycxx::detail::find_if_impl(std::move(first), last, ::ycxx::detail::equals_value<T, Proj>{value, proj});
+    if constexpr (ycxx::detail::bit_algo_args<I, S, T, Proj>)
+      return ycxx::detail::bit_algos<I>::find(first, last, value);
+    else
+      return ::ycxx::detail::find_if_impl(std::move(first), last, ::ycxx::detail::equals_value<T, Proj>{value, proj});
   }
   template <std::ranges::input_range R, class Proj = std::identity,
             class T = std::projected_value_t<iterator_t<R>, Proj>>
     requires std::indirect_binary_predicate<std::ranges::equal_to, std::projected<iterator_t<R>, Proj>, const T*>
   [[nodiscard]] constexpr borrowed_iterator_t<R> operator()(R&& r, const T& value, Proj proj = {}) const {
-    return ::ycxx::detail::find_if_impl(std::ranges::begin(r), std::ranges::end(r),
-                                        ::ycxx::detail::equals_value<T, Proj>{value, proj});
+    return (*this)(std::ranges::begin(r), std::ranges::end(r), value, std::move(proj));
   }
 };
 struct find_if_fn {

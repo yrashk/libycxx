@@ -45,7 +45,8 @@ features = {
 if compiler == 'clang':
     features |= {'verify-support', 'clang-diagnostics', 'has-fconstexpr-steps'}
 else:
-    features |= {'gcc-style-warnings'}
+    # GCC's constexpr operation limit; the tests that need a raised one set it under this feature.
+    features |= {'gcc-style-warnings', 'has-fconstexpr-ops-limit'}
 if sanitizer:
     for s in sanitizer.split(','):
         features.add({'asan': 'asan', 'ubsan': 'ubsan'}[s])

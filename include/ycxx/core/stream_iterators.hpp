@@ -59,13 +59,24 @@ public:
     return tmp;
   }
 
-  friend bool operator==(const istream_iterator& x, const istream_iterator& y) { return x.in_stream_ == y.in_stream_; }
   friend bool operator==(const istream_iterator& i, default_sentinel_t) { return !i.in_stream_; }
 
 private:
+  template <class T2, class charT2, class traits2, class Distance2>
+  friend bool operator==(const istream_iterator<T2, charT2, traits2, Distance2>& x,
+                         const istream_iterator<T2, charT2, traits2, Distance2>& y);
+
   basic_istream<charT, traits>* in_stream_;
   T value_;
 };
+
+// [iterator.synopsis] declares the comparison of two iterators as a namespace-scope template
+// (only the default_sentinel_t comparison is a hidden friend), so std::operator== names it.
+template <class T, class charT, class traits, class Distance>
+bool operator==(const istream_iterator<T, charT, traits, Distance>& x,
+                const istream_iterator<T, charT, traits, Distance>& y) {
+  return x.in_stream_ == y.in_stream_;
+}
 
 // [ostream.iterator]
 template <class T, class charT = char, class traits = char_traits<charT>>
@@ -145,7 +156,6 @@ public:
   proxy operator++(int) { return proxy(traits::to_char_type(sbuf_->sbumpc()), sbuf_); }
 
   bool equal(const istreambuf_iterator& b) const { return at_end() == b.at_end(); }
-  friend bool operator==(const istreambuf_iterator& a, const istreambuf_iterator& b) { return a.equal(b); }
   friend bool operator==(const istreambuf_iterator& i, default_sentinel_t) { return i.at_end(); }
 
 private:
@@ -157,6 +167,11 @@ private:
   }
   mutable streambuf_type* sbuf_;
 };
+
+template <class charT, class traits>
+bool operator==(const istreambuf_iterator<charT, traits>& a, const istreambuf_iterator<charT, traits>& b) {
+  return a.equal(b);
+}
 
 // [ostreambuf.iterator]
 template <class charT, class traits>

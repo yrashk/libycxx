@@ -289,7 +289,8 @@ namespace ycxx::detail::iter_move_cpo {
 void iter_move() = delete;
 
 template <class T>
-concept adl_iter_move = (std::is_class_v<std::remove_cvref_t<T>> || std::is_enum_v<std::remove_cvref_t<T>>) &&
+concept adl_iter_move = (std::is_class_v<std::remove_cvref_t<T>> || std::is_union_v<std::remove_cvref_t<T>> ||
+                         std::is_enum_v<std::remove_cvref_t<T>>) &&
                         requires(T&& t) { iter_move(static_cast<T&&>(t)); };
 
 template <class T>
@@ -635,8 +636,9 @@ void iter_swap(I1, I2) = delete;
 
 template <class T, class U>
 concept adl_iter_swap =
-    (std::is_class_v<std::remove_cvref_t<T>> || std::is_enum_v<std::remove_cvref_t<T>> ||
-     std::is_class_v<std::remove_cvref_t<U>> || std::is_enum_v<std::remove_cvref_t<U>>) &&
+    (std::is_class_v<std::remove_cvref_t<T>> || std::is_union_v<std::remove_cvref_t<T>> ||
+     std::is_enum_v<std::remove_cvref_t<T>> || std::is_class_v<std::remove_cvref_t<U>> ||
+     std::is_union_v<std::remove_cvref_t<U>> || std::is_enum_v<std::remove_cvref_t<U>>) &&
     requires(T&& t, U&& u) { iter_swap(static_cast<T&&>(t), static_cast<U&&>(u)); };
 
 template <class T, class U>

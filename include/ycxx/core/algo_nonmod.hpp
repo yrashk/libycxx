@@ -309,7 +309,10 @@ template <class InputIterator, class T = typename iterator_traits<InputIterator>
 [[nodiscard]] constexpr typename iterator_traits<InputIterator>::difference_type count(InputIterator first,
                                                                                        InputIterator last,
                                                                                        const T& value) {
-  return ::ycxx::detail::count_if_impl(first, last, ::ycxx::detail::equals_value_plain<T>{value});
+  if constexpr (ycxx::detail::bit_algo_args<InputIterator, InputIterator, T>)
+    return ycxx::detail::bit_algos<InputIterator>::count(first, last, value);
+  else
+    return ::ycxx::detail::count_if_impl(first, last, ::ycxx::detail::equals_value_plain<T>{value});
 }
 template <class InputIterator, class Predicate>
 [[nodiscard]] constexpr typename iterator_traits<InputIterator>::difference_type count_if(InputIterator first,
@@ -634,7 +637,10 @@ struct count_fn {
             class T = std::projected_value_t<I, Proj>>
     requires std::indirect_binary_predicate<std::ranges::equal_to, std::projected<I, Proj>, const T*>
   [[nodiscard]] constexpr std::iter_difference_t<I> operator()(I first, S last, const T& value, Proj proj = {}) const {
-    return ::ycxx::detail::count_if_impl(std::move(first), last, ::ycxx::detail::equals_value<T, Proj>{value, proj});
+    if constexpr (ycxx::detail::bit_algo_args<I, S, T, Proj>)
+      return ycxx::detail::bit_algos<I>::count(first, last, value);
+    else
+      return ::ycxx::detail::count_if_impl(std::move(first), last, ::ycxx::detail::equals_value<T, Proj>{value, proj});
   }
   template <std::ranges::input_range R, class Proj = std::identity,
             class T = std::projected_value_t<iterator_t<R>, Proj>>

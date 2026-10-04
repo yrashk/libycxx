@@ -278,14 +278,21 @@ using compare_three_way_result_t = typename compare_three_way_result<T, U>::type
 } // namespace std
 
 namespace ycxx::detail {
+// Neither operand has class or enumeration type, so an operator expression on them is always
+// the built-in one ([over.match.oper]/1). Checked first: looking for operator functions by
+// ADL would complete the classes that pointer operands point to.
+template <class T, class U>
+concept no_class_operand = !__is_class(__remove_cvref(T)) && !__is_enum(__remove_cvref(T)) &&
+                           !__is_class(__remove_cvref(U)) && !__is_enum(__remove_cvref(U));
+
 // BUILTIN-PTR-CMP(T, op, U): the comparison resolves to a built-in pointer comparison.
 template <class T, class U>
-concept builtin_ptr_three_way = requires(T&& t, U&& u) {
-  static_cast<T&&>(t) <=> static_cast<U&&>(u);
-} && __is_convertible(T, const volatile void*) && __is_convertible(U, const volatile void*) &&
-                                !requires(T&& t, U&& u) {
-                                  operator<=>(static_cast<T&&>(t), static_cast<U&&>(u));
-                                } && !requires(T&& t, U&& u) { static_cast<T&&>(t).operator<=>(static_cast<U&&>(u)); };
+concept builtin_ptr_three_way =
+    requires(T&& t, U&& u) { static_cast<T&&>(t) <=> static_cast<U&&>(u); } &&
+    __is_convertible(T, const volatile void*) && __is_convertible(U, const volatile void*) &&
+    (no_class_operand<T, U> ||
+     (!requires(T&& t, U&& u) { operator<=>(static_cast<T&&>(t), static_cast<U&&>(u)); } &&
+      !requires(T&& t, U&& u) { static_cast<T&&>(t).operator<=>(static_cast<U&&>(u)); }));
 } // namespace ycxx::detail
 
 namespace std {

@@ -222,10 +222,27 @@ concept memmovable_pair =
     std::same_as<std::iter_reference_t<O>, std::iter_value_t<O>&> && std::is_trivially_copyable_v<std::iter_value_t<O>> &&
     std::is_trivially_assignable_v<std::iter_value_t<O>&, Ref>;
 
+template <class I>
+constexpr auto raw_address(const I& it) noexcept {
+  if constexpr (std::is_pointer_v<I>)
+    return it;
+  else
+    return std::to_address(it);
+}
+// Copies [in_first, in_last) to [out_first, out_last) through pointers. As P3349 requires of
+// such lowering, the ends are reached by advancing the iterators (in_first + n, ...) and all
+// four go through to_address, so a checked contiguous iterator still sees them.
 template <class I, class O>
-constexpr void bulk_move(I first, std::iter_difference_t<I> n, O result) noexcept {
-  __builtin_memmove(std::to_address(result), std::to_address(first),
-                    static_cast<std::size_t>(n) * sizeof(std::iter_value_t<O>));
+constexpr void bulk_move(const I& in_first, const I& in_last, const O& out_first, const O& out_last) noexcept {
+  auto src = ::ycxx::detail::raw_address(in_first);
+  auto src_end = ::ycxx::detail::raw_address(in_last);
+  auto dst = ::ycxx::detail::raw_address(out_first);
+  (void)::ycxx::detail::raw_address(out_last);
+  // void* arguments: the builtin is found by unqualified lookup, so typed pointers would make
+  // ADL complete their pointee classes.
+  __builtin_memmove(const_cast<void*>(static_cast<const volatile void*>(dst)),
+                    const_cast<const void*>(static_cast<const volatile void*>(src)),
+                    static_cast<std::size_t>(src_end - src) * sizeof(std::iter_value_t<O>));
 }
 
 // ---- min / max -------------------------------------------------------------------------------
@@ -287,9 +304,10 @@ constexpr std::pair<I, I> minmax_element_impl(I first, S last, C less) {
 
 // ---- copy / move -----------------------------------------------------------------------------
 // A count argument of the std:: forms ("Size is convertible to an integral type").
+// Taken by non-const reference: a class type may convert only through a non-const function.
 template <class Size>
-constexpr auto integral_count(const Size& n) {
-  if constexpr (std::is_integral_v<Size>)
+constexpr auto integral_count(Size& n) {
+  if constexpr (std::is_integral_v<Size> && !std::is_same_v<std::remove_cv_t<Size>, bool>)
     return n;
   else
     return static_cast<long long>(n);
@@ -301,8 +319,10 @@ constexpr std::pair<I, O> copy_dispatch(I first, S last, O result) {
     if !consteval {
       auto n = last - first;
       if (n > 1) {
-        ::ycxx::detail::bulk_move(first, n, result);
-        return {first + n, result + n};
+        I in_last = first + n;
+        O out_last = result + n;
+        ::ycxx::detail::bulk_move(first, in_last, result, out_last);
+        return {static_cast<I&&>(in_last), static_cast<O&&>(out_last)};
       }
     }
   }
@@ -320,8 +340,10 @@ constexpr std::pair<I, O> move_dispatch(I first, S last, O result) {
     if !consteval {
       auto n = last - first;
       if (n > 1) {
-        ::ycxx::detail::bulk_move(first, n, result);
-        return {first + n, result + n};
+        I in_last = first + n;
+        O out_last = result + n;
+        ::ycxx::detail::bulk_move(first, in_last, result, out_last);
+        return {static_cast<I&&>(in_last), static_cast<O&&>(out_last)};
       }
     }
   }
@@ -336,9 +358,9 @@ constexpr O copy_backward_dispatch(I first, I last, O result) {
     if !consteval {
       auto n = last - first;
       if (n > 1) {
-        result -= n;
-        ::ycxx::detail::bulk_move(first, n, result);
-        return result;
+        O out_first = result - n;
+        ::ycxx::detail::bulk_move(first, first + n, out_first, result);
+        return out_first;
       }
     }
   }
@@ -353,9 +375,9 @@ constexpr O move_backward_dispatch(I first, I last, O result) {
     if !consteval {
       auto n = last - first;
       if (n > 1) {
-        result -= n;
-        ::ycxx::detail::bulk_move(first, n, result);
-        return result;
+        O out_first = result - n;
+        ::ycxx::detail::bulk_move(first, first + n, out_first, result);
+        return out_first;
       }
     }
   }
@@ -871,10 +893,15 @@ struct clamp_fn {
   template <class T, class Proj = std::identity,
             std::indirect_strict_weak_order<std::projected<const T*, Proj>> Comp = std::ranges::less>
   [[nodiscard]] constexpr const T& operator()(const T& v, const T& lo, const T& hi, Comp comp = {}, Proj proj = {}) const {
+    // proj(v) is computed once ("at most three applications of the projection") and passed
+    // on with its value category; a prvalue result is passed as an lvalue, so that a
+    // comparator taking its parameters by value cannot move from it twice.
+    using PV = decltype(::ycxx::detail::invoke(proj, v));
+    using Arg = std::conditional_t<std::is_reference_v<PV>, PV, PV&>;
     auto&& pv = ::ycxx::detail::invoke(proj, v);
-    if (::ycxx::detail::invoke(comp, pv, ::ycxx::detail::invoke(proj, lo)))
+    if (::ycxx::detail::invoke(comp, static_cast<Arg>(pv), ::ycxx::detail::invoke(proj, lo)))
       return lo;
-    if (::ycxx::detail::invoke(comp, ::ycxx::detail::invoke(proj, hi), pv))
+    if (::ycxx::detail::invoke(comp, ::ycxx::detail::invoke(proj, hi), static_cast<Arg>(pv)))
       return hi;
     return v;
   }

@@ -34,16 +34,18 @@ class single_view : public view_interface<single_view<T>> {
   ycxx::detail::movable_box<T> value_;
 
 public:
+  // The constructors are noexcept when constructing T is (a permitted strengthening).
   single_view()
     requires default_initializable<T>
   = default;
-  constexpr explicit single_view(const T& t)
+  constexpr explicit single_view(const T& t) noexcept(is_nothrow_copy_constructible_v<T>)
     requires copy_constructible<T>
       : value_(in_place, t) {}
-  constexpr explicit single_view(T&& t) : value_(in_place, std::move(t)) {}
+  constexpr explicit single_view(T&& t) noexcept(is_nothrow_move_constructible_v<T>) : value_(in_place, std::move(t)) {}
   template <class... Args>
     requires constructible_from<T, Args...>
-  constexpr explicit single_view(in_place_t, Args&&... args) : value_(in_place, static_cast<Args&&>(args)...) {}
+  constexpr explicit single_view(in_place_t, Args&&... args) noexcept(is_nothrow_constructible_v<T, Args...>)
+      : value_(in_place, static_cast<Args&&>(args)...) {}
 
   constexpr T* begin() noexcept { return data(); }
   constexpr const T* begin() const noexcept { return data(); }
@@ -296,11 +298,14 @@ public:
   iota_view()
     requires default_initializable<W>
   = default;
-  constexpr explicit iota_view(W value) : value_(value) {
+  // The constructors are noexcept when copying W and Bound is (a permitted strengthening).
+  constexpr explicit iota_view(W value) noexcept(is_nothrow_copy_constructible_v<W>) : value_(value) {
     if constexpr (totally_ordered_with<W, Bound>)
       ::ycxx::detail::precondition(bool(value_ <= bound_), "iota_view: the bound is not reachable from the value");
   }
-  constexpr explicit iota_view(type_identity_t<W> value, type_identity_t<Bound> bound) : value_(value), bound_(bound) {
+  constexpr explicit iota_view(type_identity_t<W> value, type_identity_t<Bound> bound) noexcept(
+      is_nothrow_copy_constructible_v<W> && is_nothrow_copy_constructible_v<Bound>)
+      : value_(value), bound_(bound) {
     if constexpr (totally_ordered_with<W, Bound>)
       ::ycxx::detail::precondition(bool(value_ <= bound_), "iota_view: the bound is not reachable from the value");
   }
@@ -332,12 +337,18 @@ public:
             (ycxx::detail::integer_like<W> && ycxx::detail::integer_like<Bound>) || sized_sentinel_for<Bound, W>
   {
     using ycxx::detail::to_unsigned_like;
-    if constexpr (ycxx::detail::integer_like<W> && ycxx::detail::integer_like<Bound>)
-      return (value_ < 0) ? ((bound_ < 0) ? to_unsigned_like(-value_) - to_unsigned_like(-bound_)
-                                          : to_unsigned_like(bound_) + to_unsigned_like(-value_))
-                          : to_unsigned_like(bound_) - to_unsigned_like(value_);
-    else
+    if constexpr (ycxx::detail::integer_like<W> && ycxx::detail::integer_like<Bound>) {
+      // The value of the specified expression, computed without negating a minimum value: both
+      // operands converted (sign-extended) to a common unsigned type, whose modular difference
+      // is the exact size. The result type is the specified one, made unsigned where integral
+      // promotion turned it signed (narrow W).
+      using R0 = decltype(to_unsigned_like(bound_) - to_unsigned_like(value_));
+      using R = conditional_t<signed_integral<R0>, make_unsigned_t<R0>, R0>;
+      using UC = make_unsigned_t<common_type_t<W, Bound>>;
+      return static_cast<R>(static_cast<UC>(static_cast<UC>(bound_) - static_cast<UC>(value_)));
+    } else {
       return to_unsigned_like(bound_ - value_);
+    }
   }
 };
 
@@ -378,7 +389,7 @@ class repeat_view : public view_interface<repeat_view<T, Bound>> {
   // views::take / views::drop read the value ([range.take.overview]/2.5).
   friend struct ycxx::detail::repeat_access;
 
-  ycxx::detail::movable_box<T> value_;
+  [[no_unique_address]] ycxx::detail::movable_box<T> value_;
   Bound bound_ = Bound();
 
   class iterator {

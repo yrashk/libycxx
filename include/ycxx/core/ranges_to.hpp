@@ -89,7 +89,7 @@ namespace std::ranges {
 template <class C, input_range R, class... Args>
   requires(!view<C>)
 constexpr C to(R&& r, Args&&... args) {
-  if constexpr (!is_class_v<C> || is_const_v<C> || is_volatile_v<C>) {
+  if constexpr (!(is_class_v<C> || is_union_v<C>) || is_const_v<C> || is_volatile_v<C>) {
     static_assert(false, "ranges::to: C must be a cv-unqualified class type");
   } else if constexpr (!input_range<C> || convertible_to<range_reference_t<R>, range_value_t<C>>) {
     if constexpr (constructible_from<C, R, Args...>) {
@@ -157,7 +157,7 @@ namespace std::ranges {
 template <class C, class... Args>
   requires(!view<C>)
 constexpr auto to(Args&&... args) {
-  if constexpr (!is_class_v<C> || is_const_v<C> || is_volatile_v<C>)
+  if constexpr (!(is_class_v<C> || is_union_v<C>) || is_const_v<C> || is_volatile_v<C>)
     static_assert(false, "ranges::to: C must be a cv-unqualified class type");
   else
     return ycxx::adl_free::adaptor_closure<ycxx::detail::to_fn<C>, decay_t<Args>...>(

@@ -121,7 +121,7 @@ class filter_view : public view_interface<filter_view<V, Pred>> {
 
   V base_ = V();
   [[no_unique_address]] ycxx::detail::movable_box<Pred> pred_;
-  [[no_unique_address]] ycxx::detail::cache_if<forward_range<V>, iterator_t<V>> begin_;
+  [[no_unique_address]] ycxx::detail::position_cache_if<forward_range<V>, V> begin_;
 
   template <bool Const>
   static consteval auto category() {
@@ -264,8 +264,8 @@ public:
     ::ycxx::detail::precondition(pred_.has_value(), "filter_view::begin: no predicate");
     if constexpr (forward_range<V>) {
       if (!begin_.has_value())
-        begin_.emplace(ranges::find_if(base_, std::ref(*pred_)));
-      return {*this, *begin_};
+        begin_.set(base_, ranges::find_if(base_, std::ref(*pred_)));
+      return {*this, begin_.get(base_)};
     } else {
       return {*this, ranges::find_if(base_, std::ref(*pred_))};
     }
@@ -767,7 +767,7 @@ class drop_view : public view_interface<drop_view<V>> {
 
   V base_ = V();
   range_difference_t<V> count_ = 0;
-  [[no_unique_address]] ycxx::detail::cache_if<caches, iterator_t<V>> begin_;
+  [[no_unique_address]] ycxx::detail::position_cache_if<caches, V> begin_;
 
 public:
   drop_view()
@@ -787,18 +787,22 @@ public:
   constexpr auto begin()
     requires(!(ycxx::detail::simple_view<V> && random_access_range<const V> && sized_range<const V>))
   {
-    if constexpr (caches) {
+    if constexpr (random_access_range<V> && sized_range<V>) {
+      return ranges::begin(base_) + std::min<range_difference_t<V>>(count_, ranges::distance(base_));
+    } else if constexpr (caches) {
       if (!begin_.has_value())
-        begin_.emplace(ranges::next(ranges::begin(base_), count_, ranges::end(base_)));
-      return *begin_;
+        begin_.set(base_, ranges::next(ranges::begin(base_), count_, ranges::end(base_)));
+      return begin_.get(base_);
     } else {
       return ranges::next(ranges::begin(base_), count_, ranges::end(base_));
     }
   }
+  // For sized random-access ranges ranges::next(begin, count_, end) is computed in O(1) without
+  // comparing against the sentinel.
   constexpr auto begin() const
     requires random_access_range<const V> && sized_range<const V>
   {
-    return ranges::next(ranges::begin(base_), count_, ranges::end(base_));
+    return ranges::begin(base_) + std::min<range_difference_t<const V>>(count_, ranges::distance(base_));
   }
   constexpr auto end()
     requires(!ycxx::detail::simple_view<V>)
@@ -850,7 +854,7 @@ template <view V, class Pred>
 class drop_while_view : public view_interface<drop_while_view<V, Pred>> {
   V base_ = V();
   [[no_unique_address]] ycxx::detail::movable_box<Pred> pred_;
-  [[no_unique_address]] ycxx::detail::cache_if<forward_range<V>, iterator_t<V>> begin_;
+  [[no_unique_address]] ycxx::detail::position_cache_if<forward_range<V>, V> begin_;
 
 public:
   drop_while_view()
@@ -870,8 +874,8 @@ public:
     ::ycxx::detail::precondition(pred_.has_value(), "drop_while_view::begin: no predicate");
     if constexpr (forward_range<V>) {
       if (!begin_.has_value())
-        begin_.emplace(ranges::find_if_not(base_, std::cref(*pred_)));
-      return *begin_;
+        begin_.set(base_, ranges::find_if_not(base_, std::cref(*pred_)));
+      return begin_.get(base_);
     } else {
       return ranges::find_if_not(base_, std::cref(*pred_));
     }
@@ -969,7 +973,7 @@ template <view V>
   requires bidirectional_range<V>
 class reverse_view : public view_interface<reverse_view<V>> {
   V base_ = V();
-  [[no_unique_address]] ycxx::detail::cache_if<!common_range<V>, reverse_iterator<iterator_t<V>>> begin_;
+  [[no_unique_address]] ycxx::detail::position_cache_if<!common_range<V>, V> begin_;
 
 public:
   reverse_view()
@@ -986,8 +990,8 @@ public:
 
   constexpr reverse_iterator<iterator_t<V>> begin() {
     if (!begin_.has_value())
-      begin_.emplace(std::make_reverse_iterator(ranges::next(ranges::begin(base_), ranges::end(base_))));
-    return *begin_;
+      begin_.set(base_, ranges::next(ranges::begin(base_), ranges::end(base_)));
+    return std::make_reverse_iterator(begin_.get(base_));
   }
   constexpr reverse_iterator<iterator_t<V>> begin()
     requires common_range<V>
@@ -1415,11 +1419,11 @@ struct take_fn {
       (void)f;
       return ::ycxx::detail::decay_copy(static_cast<E&&>(e));
     } else if constexpr (is_optional<T> && std::ranges::view<T>) {
-      return static_cast<D>(f) == D() ? ((void)e, T()) : ::ycxx::detail::decay_copy(static_cast<E&&>(e));
+      return static_cast<D>(static_cast<F&&>(f)) == D() ? ((void)e, T()) : ::ycxx::detail::decay_copy(static_cast<E&&>(e));
     } else if constexpr (sized_ra<T> && (is_span<T> || is_string_view<T> || is_subrange<T>)) {
       auto&& r = e;
       auto first = std::ranges::begin(r);
-      auto n = std::min<D>(std::ranges::distance(r), static_cast<D>(f));
+      auto n = std::min<D>(std::ranges::distance(r), static_cast<D>(static_cast<F&&>(f)));
       if constexpr (is_span<T>)
         return std::span<typename T::element_type>(first, first + n);
       else if constexpr (is_string_view<T>)
@@ -1429,15 +1433,15 @@ struct take_fn {
     } else if constexpr (is_iota_view<T> && sized_ra<T>) {
       auto&& r = e;
       auto first = std::ranges::begin(r);
-      auto n = std::min<D>(std::ranges::distance(r), static_cast<D>(f));
+      auto n = std::min<D>(std::ranges::distance(r), static_cast<D>(static_cast<F&&>(f)));
       return std::ranges::iota_view(*first, *(first + n));
     } else if constexpr (is_repeat_view<T>) {
       if constexpr (std::ranges::sized_range<T>) {
         auto&& r = e;
-        auto n = std::min<D>(std::ranges::distance(r), static_cast<D>(f));
+        auto n = std::min<D>(std::ranges::distance(r), static_cast<D>(static_cast<F&&>(f)));
         return std::views::repeat(repeat_access::value(static_cast<E&&>(r)), n);
       } else {
-        return std::views::repeat(repeat_access::value(static_cast<E&&>(e)), static_cast<D>(f));
+        return std::views::repeat(repeat_access::value(static_cast<E&&>(e)), static_cast<D>(static_cast<F&&>(f)));
       }
     } else {
       return std::ranges::take_view(static_cast<E&&>(e), static_cast<F&&>(f));
@@ -1462,12 +1466,12 @@ struct drop_fn {
       (void)f;
       return ::ycxx::detail::decay_copy(static_cast<E&&>(e));
     } else if constexpr (is_optional<T> && std::ranges::view<T>) {
-      return static_cast<D>(f) == D() ? ::ycxx::detail::decay_copy(static_cast<E&&>(e)) : ((void)e, T());
+      return static_cast<D>(static_cast<F&&>(f)) == D() ? ::ycxx::detail::decay_copy(static_cast<E&&>(e)) : ((void)e, T());
     } else if constexpr (sized_ra<T> &&
                          (is_span<T> || is_string_view<T> || is_iota_view<T> ||
                           (is_subrange<T> && !subrange_stores_size<T>))) {
       auto&& r = e;
-      auto n = std::min<D>(std::ranges::distance(r), static_cast<D>(f));
+      auto n = std::min<D>(std::ranges::distance(r), static_cast<D>(static_cast<F&&>(f)));
       if constexpr (is_span<T>)
         return std::span<typename T::element_type>(std::ranges::begin(r) + n, std::ranges::end(r));
       else
@@ -1475,13 +1479,13 @@ struct drop_fn {
     } else if constexpr (is_subrange<T> && sized_ra<T>) {
       auto&& r = e;
       auto d = std::ranges::distance(r);
-      auto n = std::min<D>(d, static_cast<D>(f));
+      auto n = std::min<D>(d, static_cast<D>(static_cast<F&&>(f)));
       return T(std::ranges::begin(r) + n, std::ranges::end(r), ::ycxx::detail::to_unsigned_like(d - n));
     } else if constexpr (is_repeat_view<T>) {
       if constexpr (std::ranges::sized_range<T>) {
         auto&& r = e;
         auto d = std::ranges::distance(r);
-        return std::views::repeat(repeat_access::value(static_cast<E&&>(r)), d - std::min<D>(d, static_cast<D>(f)));
+        return std::views::repeat(repeat_access::value(static_cast<E&&>(r)), d - std::min<D>(d, static_cast<D>(static_cast<F&&>(f))));
       } else {
         (void)f;
         return ::ycxx::detail::decay_copy(static_cast<E&&>(e));
@@ -1529,18 +1533,25 @@ struct drop_while_fn {
   }
 };
 
+// The selected form of views::counted(E, F) is well-formed.
+template <class E, class F>
+concept counted_ok =
+    std::input_or_output_iterator<std::decay_t<E>> && std::convertible_to<F, std::iter_difference_t<std::decay_t<E>>> &&
+    (std::contiguous_iterator<std::decay_t<E>> ||
+     (std::random_access_iterator<std::decay_t<E>> && std::constructible_from<std::decay_t<E>, E>) ||
+     requires(E&& e, std::iter_difference_t<std::decay_t<E>> n) { std::counted_iterator(static_cast<E&&>(e), n); });
+
 struct counted_fn {
   template <class E, class F>
-    requires std::input_or_output_iterator<std::decay_t<E>> &&
-             std::convertible_to<F, std::iter_difference_t<std::decay_t<E>>>
+    requires counted_ok<E, F>
   [[nodiscard]] constexpr auto operator()(E&& e, F&& f) const {
     using T = std::decay_t<E>;
     using D = std::iter_difference_t<T>;
     if constexpr (std::contiguous_iterator<T>) {
-      return std::span(std::to_address(e), static_cast<std::size_t>(static_cast<D>(f)));
+      return std::span(std::to_address(e), static_cast<std::size_t>(static_cast<D>(static_cast<F&&>(f))));
     } else if constexpr (std::random_access_iterator<T>) {
       T it = static_cast<E&&>(e);
-      auto last = it + static_cast<D>(f);
+      auto last = it + static_cast<D>(static_cast<F&&>(f));
       return std::ranges::subrange(std::move(it), std::move(last));
     } else {
       return std::ranges::subrange(std::counted_iterator(static_cast<E&&>(e), static_cast<F&&>(f)), std::default_sentinel);

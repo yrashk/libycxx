@@ -156,6 +156,27 @@
 #define __cpp_lib_ranges_fold 202207L
 #define __cpp_lib_ranges_iota 202202L
 #define __cpp_lib_ranges_starts_ends_with 202106L
+// <ranges>
+#define __cpp_lib_ranges 202406L
+#define __cpp_lib_freestanding_ranges 202306L
+#define __cpp_lib_ranges_as_const 202311L
+#define __cpp_lib_ranges_as_input 202502L
+#define __cpp_lib_ranges_as_rvalue 202207L
+#define __cpp_lib_ranges_cache_latest 202411L
+#define __cpp_lib_ranges_cartesian_product 202207L
+#define __cpp_lib_ranges_chunk 202202L
+#define __cpp_lib_ranges_chunk_by 202202L
+#define __cpp_lib_ranges_concat 202403L
+#define __cpp_lib_ranges_enumerate 202302L
+#define __cpp_lib_ranges_filter 202603L
+#define __cpp_lib_ranges_indices 202506L
+#define __cpp_lib_ranges_join_with 202202L
+#define __cpp_lib_ranges_repeat 202207L
+#define __cpp_lib_ranges_reserve_hint 202502L
+#define __cpp_lib_ranges_slide 202202L
+#define __cpp_lib_ranges_stride 202207L
+#define __cpp_lib_ranges_to_container 202202L
+#define __cpp_lib_ranges_zip 202110L
 #define __cpp_lib_robust_nonmodifying_seq_ops 201304L
 #define __cpp_lib_sample 201603L
 #define __cpp_lib_saturation_arithmetic 202603L

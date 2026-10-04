@@ -1,0 +1,11 @@
+// -*- C++ -*-  libycxx: <vector>   [core]
+#pragma once
+
+#include <ycxx/config.hpp>
+#include <ycxx/core/version.hpp>
+#include <compare>
+#include <initializer_list>
+#include <ycxx/core/vector.hpp>
+#include <ycxx/core/vector_bool.hpp>
+// The pmr:: aliases must be usable with <vector> alone: complete polymorphic_allocator.
+#include <ycxx/core/memory_resource.hpp>

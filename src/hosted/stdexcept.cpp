@@ -1,4 +1,5 @@
-// libycxx hosted runtime: <stdexcept> members and the out-of-line throw hook.
+// libycxx hosted runtime: the run-time message storage of the <stdexcept> classes, their key
+// functions for -fno-rtti programs, and the out-of-line throw hook.
 #include <stdexcept>
 #include <new>
 #include <string>
@@ -7,14 +8,17 @@
 namespace ycxx::detail {
 
 namespace {
-// Block layout: [refcount (size_t)] [characters ... '\0']. text_ points at the characters.
+// Block layout: [refcount (size_t)] [characters ... '\0']. The text pointer points at the
+// characters.
 struct header {
   __SIZE_TYPE__ refs;
 };
 header* header_of(const char* text) noexcept {
   return reinterpret_cast<header*>(const_cast<char*>(text)) - 1;
 }
-const char* make(const char* s, std::size_t n) {
+} // namespace
+
+const char* message_create(const char* s, std::size_t n) {
   void* mem = ::operator new(sizeof(header) + n + 1);
   auto* h = ::new (mem) header{1};
   char* text = reinterpret_cast<char*>(h + 1);
@@ -22,24 +26,9 @@ const char* make(const char* s, std::size_t n) {
   text[n] = '\0';
   return text;
 }
-} // namespace
-
-shared_message::shared_message(const char* s) : text_(make(s, __builtin_strlen(s))) {}
-shared_message::shared_message(const char* s, std::size_t n) : text_(make(s, n)) {}
-shared_message::shared_message(const shared_message& o) noexcept : text_(o.text_) {
-  __atomic_fetch_add(&header_of(text_)->refs, 1, __ATOMIC_RELAXED);
-}
-shared_message& shared_message::operator=(const shared_message& o) noexcept {
-  if (text_ != o.text_) {
-    shared_message tmp(o);
-    const char* t = tmp.text_;
-    tmp.text_ = text_;
-    text_ = t;
-  }
-  return *this;
-}
-shared_message::~shared_message() {
-  header* h = header_of(text_);
+void message_retain(const char* text) noexcept { __atomic_fetch_add(&header_of(text)->refs, 1, __ATOMIC_RELAXED); }
+void message_release(const char* text) noexcept {
+  header* h = header_of(text);
   if (__atomic_fetch_sub(&h->refs, 1, __ATOMIC_ACQ_REL) == 1)
     ::operator delete(h);
 }
@@ -63,27 +52,17 @@ shared_message::~shared_message() {
 
 } // namespace ycxx::detail
 
+// This file is built with YCXX_EXCEPTION_KEY_FUNCTIONS (CMakeLists.txt), so the classes declare
+// their destructors out of line here, and this translation unit, built with RTTI, emits their
+// vtables for programs whose other translation units are built without RTTI (stdexcept.hpp).
 namespace std {
-logic_error::logic_error(const string& s) : msg_(s.c_str(), s.size()) {}
-logic_error::logic_error(const char* s) : msg_(s) {}
-logic_error::~logic_error() noexcept = default;
-const char* logic_error::what() const noexcept { return msg_.c_str(); }
-runtime_error::runtime_error(const string& s) : msg_(s.c_str(), s.size()) {}
-runtime_error::runtime_error(const char* s) : msg_(s) {}
-runtime_error::~runtime_error() noexcept = default;
-const char* runtime_error::what() const noexcept { return msg_.c_str(); }
-domain_error::~domain_error() noexcept = default;
-invalid_argument::~invalid_argument() noexcept = default;
-length_error::~length_error() noexcept = default;
-out_of_range::~out_of_range() noexcept = default;
-range_error::~range_error() noexcept = default;
-overflow_error::~overflow_error() noexcept = default;
-underflow_error::~underflow_error() noexcept = default;
-domain_error::domain_error(const string& s) : logic_error(s) {}
-invalid_argument::invalid_argument(const string& s) : logic_error(s) {}
-length_error::length_error(const string& s) : logic_error(s) {}
-out_of_range::out_of_range(const string& s) : logic_error(s) {}
-range_error::range_error(const string& s) : runtime_error(s) {}
-overflow_error::overflow_error(const string& s) : runtime_error(s) {}
-underflow_error::underflow_error(const string& s) : runtime_error(s) {}
+logic_error::~logic_error() {}
+runtime_error::~runtime_error() {}
+domain_error::~domain_error() {}
+invalid_argument::~invalid_argument() {}
+length_error::~length_error() {}
+out_of_range::~out_of_range() {}
+range_error::~range_error() {}
+overflow_error::~overflow_error() {}
+underflow_error::~underflow_error() {}
 } // namespace std

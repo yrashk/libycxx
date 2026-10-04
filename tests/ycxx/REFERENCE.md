@@ -90,6 +90,12 @@ Legend: **G** fails with GCC + libstdc++, **C** with Clang + libstdc++.
 | `iterator/istreambuf_iterator` | G | C | an iterator built from `it++`'s proxy dereferences to the cached old character, not `sgetc()` (the proxy is exposition-only, so this is interpretive) | [istreambuf.iterator.cons]/5, [istreambuf.iterator.ops]/1 |
 | `list/fancy_pointer_allocator` | G | C | with a class-type allocator pointer, `list::swap` corrupts both lists (endless iteration, then a double free) | [container.reqmts]/64 Note 2, /65; [allocator.requirements.general] |
 | `deque/allocator_construct` | G | C | `deque::insert(p, n, t)` in the middle creates a copy of `t` without `allocator_traits::construct` | [container.alloc.reqmts]/2 and Note 2; [sequence.reqmts] (insert needs only Cpp17CopyInsertable) |
+| `map/complexity`, `set/complexity` | G | C | `X(from_range, rg)` on sorted input makes N log N comparisons (`X(i, j)` is linear) | [associative.reqmts.general]/31: "linear if rg is sorted with respect to value_comp()" |
+| `flat_map/complexity`, `flat_set/complexity` | G | C | construction from already sorted containers makes N log N comparisons | [flat.map.cons]/2, [flat.set.cons]/2: "Linear in N if ... already sorted" |
+| `flat_map/exception_invariants` | G | C | a copy assignment that throws part-way leaves keys and values mismatched (vector and deque storage) | [flat.map.overview]/6: the invariants are restored |
+| `flat_set/exception_invariants` | G | C | `erase(first, last)` with a throwing move leaves the set unsorted (vector storage) | [flat.set.overview]/6 |
+| `flat_map/range_kinds_move_only` | G | C | `insert_range`/`from_range` with a move-only mapped type do not compile (`ranges::inplace_merge`'s buffer copies `tuple<K, M>` from `tuple<K&, M&>`) | [flat.map.modifiers]/11 needs only moves |
+| `unordered_map/fancy_pointer_node_handle`, `unordered_set/fancy_pointer_node_handle` | G | C | `extract`/`insert(nh)`/`merge` do not compile with a class-type allocator pointer | [container.reqmts]/64 Note 2, [container.node.overview] |
 ## 2. Missing in libstdc++ 16 (newer C++26 additions, constexpr, API revisions)
 
 | Test(s) | G | C | Missing |

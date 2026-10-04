@@ -7,3 +7,5 @@
 #include <initializer_list>
 #include <ycxx/core/basic_string.hpp>
 #include <ycxx/core/stdexcept.hpp>
+// The pmr:: aliases must be usable with <string> alone: complete polymorphic_allocator.
+#include <ycxx/core/memory_resource.hpp>

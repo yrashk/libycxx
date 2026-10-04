@@ -19,7 +19,7 @@ DG = re.compile(r'\{\s*dg-([a-z-]+)\s*(.*)\}\s*$')
 EFFECTIVE = {'hosted', 'cxx11_abi', 'gthreads', 'threads', 'pthread', 'std_allocator_new', 'tls',
              'tls_native', 'cstdint', 'string_conversions', 'c99_math', 'random_device',
              'x86_64-*-*', '*-*-linux*', 'linux', 'native', 'lp64', 'exceptions', 'rtti',
-             'atomic_wait', 'net_ts_ip', 'fenv', 'little_endian'}
+             'atomic_wait', 'net_ts_ip', 'fenv', 'little_endian', 'ieee_floats', 'size32plus'}
 
 
 def eval_selector(sel):

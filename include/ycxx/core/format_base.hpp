@@ -891,10 +891,10 @@ constexpr const charT* fmt_parse_fill_align(const charT* p, const charT* e, fmt_
   if (p == e)
     return p;
   const uni::decoded d = ::ycxx::detail::uni::decode(p, e);
-  if (!colon_ok && *p == charT(':'))
-    return p; // a range-fill or tuple-fill is never ':', which starts the underlying spec
+  if (*p == charT('}') || (!colon_ok && *p == charT(':')))
+    return p; // '}' ends the spec; a range-fill or tuple-fill is never ':', which starts the underlying spec
   if (static_cast<std::size_t>(e - p) > d.len && ::ycxx::detail::fmt_is_align(static_cast<char32_t>(p[d.len]))) {
-    if (!d.ok || *p == charT('{') || *p == charT('}'))
+    if (!d.ok || *p == charT('{'))
       ::ycxx::detail::throw_format_error("std::format: invalid fill character");
     for (unsigned i = 0; i != d.len; ++i)
       s.fill[i] = p[i];

@@ -15,9 +15,9 @@
 // -fno-exceptions they reach ycxx_error_handler instead. The lexical members of path that do
 // not depend on a template argument are out of line as well.
 //
-// Not provided: formatter<filesystem::path, charT> ([fs.path.fmtr]) — <format> is not merged
-// yet; display_string() and generic_display_string() return what it would produce for char
-// (the native string, since no transcoding is needed).
+// formatter<filesystem::path, charT> ([fs.path.fmtr]) is in ycxx/hosted/filesystem_format.hpp;
+// display_string() and generic_display_string() return what it produces for char (the native
+// string, since no transcoding is needed).
 #pragma once
 
 #include <ycxx/core/basic_string.hpp>

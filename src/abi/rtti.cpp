@@ -145,6 +145,39 @@ unsigned function_qualifiers(const __pbase_type_info* p, rtti_kind kind) {
 // _ZTIPA3_Ki: __flags 1, __pointee _ZTIA3_i), which is exactly [conv.qual]/1's view. The
 // conversion to an array of unknown bound cannot arise: a handler cannot be a pointer to that
 // incomplete type ([except.handle]/1).
+// For a pointer to member function: whether the member function types agree apart from a
+// noexcept the conversion may drop (checked with __flags by the caller). GCC 16 records the
+// member function's cv- and ref-qualifiers only in the name (M1BKFivE, M1BFivRE and M1BFivE
+// all have __pointee _ZTIFivE), so the names are compared after "M<context>": the cv-qualifiers
+// [rVK]* must be equal, and after an optional Do/Dx the function types F...E must be equal.
+bool same_member_function(const __pbase_type_info* t, const __pbase_type_info* h) {
+  auto suffix = [](const __pbase_type_info* p) -> const char* {
+    const char* name = p->name();
+    const char* context = static_cast<const __pointer_to_member_type_info*>(p)->__context->name();
+    std::size_t n = __builtin_strlen(context);
+    if (name[0] != 'M' || __builtin_strncmp(name + 1, context, n) != 0)
+      return nullptr;
+    return name + 1 + n;
+  };
+  const char* ts = suffix(t);
+  const char* hs = suffix(h);
+  if (!ts || !hs)
+    return *t->__pointee == *h->__pointee;
+  auto is_cv = [](char c) { return c == 'r' || c == 'V' || c == 'K'; };
+  while (is_cv(*ts) && *ts == *hs) {
+    ++ts;
+    ++hs;
+  }
+  if (is_cv(*ts) || is_cv(*hs))
+    return false; // different cv-qualifiers
+  auto skip_exception_spec = [](const char* s) {
+    while (s[0] == 'D' && (s[1] == 'o' || s[1] == 'x'))
+      s += 2;
+    return s;
+  };
+  return __builtin_strcmp(skip_exception_spec(ts), skip_exception_spec(hs)) == 0;
+}
+
 bool qualification_convertible(const __pbase_type_info* t, const __pbase_type_info* h, rtti_kind kind) {
   bool outer_const = true; // whether the handler is const at every level so far
   bool top = true;
@@ -168,6 +201,8 @@ bool qualification_convertible(const __pbase_type_info* t, const __pbase_type_in
 
     rtti_kind tk = kind_of(*t->__pointee);
     rtti_kind hk = kind_of(*h->__pointee);
+    if (kind == rtti_kind::member_pointer && tk == rtti_kind::function && hk == rtti_kind::function)
+      return same_member_function(t, h);
     if (tk != hk || !is_pointer_like(tk))
       return *t->__pointee == *h->__pointee;
     t = static_cast<const __pbase_type_info*>(t->__pointee);

@@ -122,6 +122,7 @@ if [ "${YCXX_TEST_PROVISION:-0}" = 1 ]; then
   if YCXX_TOOLCHAINS=$cache cmake -S "$repo/examples/add_subdirectory" -B "$work/tc-download" -G Ninja \
        -DCMAKE_TOOLCHAIN_FILE="$repo/cmake/ycxx-toolchain.cmake" -DYCXX_COMPILER=clang \
        -DYCXX_LLVM_VERSION=${YCXX_TEST_LLVM_VERSION:-23.1.2} -DYCXX_PROVISION=ON \
+       -DYCXX_USE_SYSTEM_COMPILERS=OFF \
        -DLIBYCXX_SOURCE_DIR="$repo" >"$work/tc-download.log" 2>&1 &&
      grep -q "^YCXX_CLANGXX=$cache/llvm-" "$cache/toolchains.env" &&
      cmake --build "$work/tc-download" >>"$work/tc-download.log" 2>&1 &&

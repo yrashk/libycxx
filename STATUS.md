@@ -118,8 +118,18 @@ Deprecated and removed features are not implemented (`is_pod`, `is_trivial`, `al
 - The Itanium ABI records a handler's type without its reference-ness, so `catch (T*&)` also
   accepts pointer conversions that only `catch (T*)`/`catch (T* const&)` may ([except.handle]/3;
   own tests `except/handler_pointer_reference*`). libsupc++ behaves the same.
-- GCC 16 omits `__noexcept_mask` in the type_info of pointers to noexcept member functions; the
-  runtime reads the mangled name instead.
+- GCC 16 omits `__noexcept_mask` in the type_info of pointers to noexcept member functions, and
+  records a member function's cv- and ref-qualifiers only in the name (`M1BKFivE` has the same
+  `__pointee` as `M1BFivE`); the runtime compares the mangled names instead.
+- GCC 16 records `catch (int(&)())` as a handler for `int(*)()` and `catch (int(&)[3])` as one
+  for `int*` ([except.handle] Note 1: neither may match); the runtime cannot tell. Own tests
+  `except/handler_function_pointer` and `except/handler_array_decay` fail on GCC.
+- Programs link the shared unwinder (`-shared-libgcc`): glibc's pthread_exit/pthread_cancel
+  unwind through libgcc_s.so, and a second, static unwinder copy would abort.
+- Not yet provided: `<cxxabi.h>` (`abi::__cxa_demangle`, `__cxa_vec_*`,
+  `abi::__forced_unwind`). Catch matching against deep virtual-diamond hierarchies enumerates
+  every inheritance path (exponential), and `dynamic_cast` other than to the most derived type
+  is about 2x slower than libsupc++'s.
 - The default terminate handler prints the thrown type's mangled name (no demangler yet).
 - `any` without RTTI identifies types by the address of a per-type table, so `any_cast` across a
   shared library built with hidden visibility or `-Bsymbolic` does not recognise the type.

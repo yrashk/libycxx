@@ -24,7 +24,7 @@ enum : ycxx_pal_u32 { idle = 0, busy = 1, busy_waiters = 2 };
 // The guards this thread is initializing, innermost last. Re-entering one of them is recursive
 // initialization, undefined by [stmt.dcl]/3; it would otherwise wait for itself forever, so it
 // terminates. (Nesting deeper than the stack is not tracked.)
-constexpr int max_nesting = 32;
+constexpr int max_nesting = 128;
 constinit thread_local std::int64_t* initializing[max_nesting];
 constinit thread_local int nesting;
 

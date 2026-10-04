@@ -27,6 +27,7 @@ Conformance oracles (run only, never edited): libc++ tests from `llvmorg-23.1.2`
 | strings/string.view + char.traits | 36/170 | 36/170 | yes | 127 need `<string>` |
 | utilities/template.bitset | 16/46 | 16/46 | yes | rest: `<vector>`, `<algorithm>`, `<sstream>`, `<string>` |
 | iterators + range.access + concepts + function.objects | 185/515 | 185/515 | yes | most failures need `<ranges>`, `bind`, `function`, containers |
+| algorithms + numerics/numeric.ops | 236/370 | 237/370 | yes | was 2; rest: `<vector>`/`<deque>`/`<random>` (107), is_permutation Mandates (12), `<atomic>`/`<map>`/`<list>`..., views |
 | strings/basic.string + string.conversions + hash/literals/erasure | 137/252 | 137/252 | yes (sto*/fp to_string: hosted runtime) | was 0; 109 need `<vector>`/`<deque>` (via asan_testing.h), `<algorithm>`, `<sstream>`, `<ranges>`, `<cmath>`; rest below |
 
 Whole-suite baseline (clang, before iterators/tuple/array/optional): 976 pass / ~8,000 run.
@@ -37,6 +38,8 @@ libstdc++ testsuite: 20_util/{function,move_only_function,copyable_function,func
 constant_wrapper}: all pass on GCC except tests needing `<string>`/`<iostream>`; Clang also fails
 constant_wrapper/generic.cc (throws during constant evaluation). libc++ utilities/const.wrap.class:
 15/15 on both; func.wrap: all failures need `<algorithm>`/`<string>`.
+libstdc++ testsuite: 25_algorithms + 26_numerics: 263/714 run (clang), 261 (gcc), was 38/36; nearly
+all the rest need `<random>`, `<vector>`, `<valarray>`, `<cmath>`, `<complex>`, `<sstream>`.
 libstdc++ testsuite: 20_util/{tuple,pair,uses_allocator}: 107 pass on both compilers.
 20_util/variant: 27/31 on both (rest: missing `<string>`, `<vector>`, `<any>`).
 20_util/any: 22/30 on both (rest: `<vector>`, `<string>`, `<set>`, `unique_ptr`).
@@ -185,6 +188,21 @@ Deprecated and removed features are not implemented (`is_pod`, `is_trivial`, `al
 - Floating-point `to_string` is implemented in the hosted runtime with `snprintf("%.*Le")` and
   `strto*` round-trip checks (no `<charconv>` dependency); switching it to `to_chars` once that
   exists would be faster.
+
+- `<algorithm>`/`<numeric>`/`<execution>` (core): every std:: and ranges:: algorithm of the
+  draft, constexpr where specified. The std:: ExecutionPolicy overloads run sequentially and
+  are noexcept (an escaping exception calls terminate). Not provided: the ranges::
+  ExecutionPolicy overloads (P3179, so `__cpp_lib_parallel_algorithm` is undefined), the
+  senders/receivers part of `<execution>`, `boyer_moore(_horspool)_searcher` (need hashing
+  containers), `__cpp_lib_interpolate` (needs `std::lerp` in `<cmath>`).
+- stable_sort / stable_partition / inplace_merge take their buffer from `operator new(nothrow)`
+  (std::allocator during constant evaluation) and fall back to O(N log^2 N) / O(N log N)
+  rotation algorithms when it fails; sort and nth_element are introsort/introselect.
+- `<ranges>` is partial: concepts, range access, `view_interface`, `subrange`, `dangling`,
+  `views::all` (callable, not yet pipeable). No other factories or adaptors.
+- `std::is_permutation` enforces its Mandates (same value type); libc++'s sort/heap tests call
+  it with `MoveOnly*` and `int*` and fail to compile for that reason (12 tests).
+- shuffle/sample assume the generator's results fit in 64 bits.
 
 ## Open issues / next
 - Phase 2 is complete. The ABI runtime (src/abi) replaced libsupc++: broad sweep 4483 -> 4535

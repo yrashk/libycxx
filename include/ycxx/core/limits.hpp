@@ -19,9 +19,9 @@ enum float_round_style {
 
 // [depr.numeric.limits.has.denorm] (Annex D)
 enum [[deprecated("float_denorm_style is deprecated ([depr.numeric.limits.has.denorm])")]] float_denorm_style {
-  denorm_indeterminate = -1,
-  denorm_absent = 0,
-  denorm_present = 1
+  denorm_indeterminate [[deprecated("denorm_indeterminate is deprecated ([depr.numeric.limits.has.denorm])")]] = -1,
+  denorm_absent [[deprecated("denorm_absent is deprecated ([depr.numeric.limits.has.denorm])")]] = 0,
+  denorm_present [[deprecated("denorm_present is deprecated ([depr.numeric.limits.has.denorm])")]] = 1
 };
 
 } // namespace std

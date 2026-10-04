@@ -1461,6 +1461,10 @@ using atomic_unsigned_lock_free = atomic<unsigned int>;
 static_assert(atomic_signed_lock_free::is_always_lock_free && atomic_unsigned_lock_free::is_always_lock_free);
 
 // ---- [atomics.nonmembers] ----------------------------------------------------------------------
+// A volatile overload calls the volatile member; for a T that is not always lock-free that member
+// is Annex D ([depr.atomics.volatile]), so the overload is split the same way as the member. The
+// volatile store_key members exist only for always lock-free types ([atomics.types.int]), and so
+// do their non-member functions.
 template <class T>
 bool atomic_is_lock_free(const volatile atomic<T>* object) noexcept {
   return object->is_lock_free();
@@ -1470,6 +1474,14 @@ bool atomic_is_lock_free(const atomic<T>* object) noexcept {
   return object->is_lock_free();
 }
 template <class T>
+  requires atomic<T>::is_always_lock_free
+void atomic_store(volatile atomic<T>* object, typename atomic<T>::value_type desired) noexcept {
+  object->store(desired);
+}
+template <class T>
+  requires(!atomic<T>::is_always_lock_free)
+[[deprecated("a volatile atomic operation on a type that is not always lock-free is deprecated "
+             "([depr.atomics.volatile])")]]
 void atomic_store(volatile atomic<T>* object, typename atomic<T>::value_type desired) noexcept {
   object->store(desired);
 }
@@ -1478,6 +1490,14 @@ constexpr void atomic_store(atomic<T>* object, typename atomic<T>::value_type de
   object->store(desired);
 }
 template <class T>
+  requires atomic<T>::is_always_lock_free
+void atomic_store_explicit(volatile atomic<T>* object, typename atomic<T>::value_type desired, memory_order o) noexcept {
+  object->store(desired, o);
+}
+template <class T>
+  requires(!atomic<T>::is_always_lock_free)
+[[deprecated("a volatile atomic operation on a type that is not always lock-free is deprecated "
+             "([depr.atomics.volatile])")]]
 void atomic_store_explicit(volatile atomic<T>* object, typename atomic<T>::value_type desired, memory_order o) noexcept {
   object->store(desired, o);
 }
@@ -1486,6 +1506,14 @@ constexpr void atomic_store_explicit(atomic<T>* object, typename atomic<T>::valu
   object->store(desired, o);
 }
 template <class T>
+  requires atomic<T>::is_always_lock_free
+T atomic_load(const volatile atomic<T>* object) noexcept {
+  return object->load();
+}
+template <class T>
+  requires(!atomic<T>::is_always_lock_free)
+[[deprecated("a volatile atomic operation on a type that is not always lock-free is deprecated "
+             "([depr.atomics.volatile])")]]
 T atomic_load(const volatile atomic<T>* object) noexcept {
   return object->load();
 }
@@ -1494,6 +1522,14 @@ constexpr T atomic_load(const atomic<T>* object) noexcept {
   return object->load();
 }
 template <class T>
+  requires atomic<T>::is_always_lock_free
+T atomic_load_explicit(const volatile atomic<T>* object, memory_order o) noexcept {
+  return object->load(o);
+}
+template <class T>
+  requires(!atomic<T>::is_always_lock_free)
+[[deprecated("a volatile atomic operation on a type that is not always lock-free is deprecated "
+             "([depr.atomics.volatile])")]]
 T atomic_load_explicit(const volatile atomic<T>* object, memory_order o) noexcept {
   return object->load(o);
 }
@@ -1502,6 +1538,14 @@ constexpr T atomic_load_explicit(const atomic<T>* object, memory_order o) noexce
   return object->load(o);
 }
 template <class T>
+  requires atomic<T>::is_always_lock_free
+T atomic_exchange(volatile atomic<T>* object, typename atomic<T>::value_type desired) noexcept {
+  return object->exchange(desired);
+}
+template <class T>
+  requires(!atomic<T>::is_always_lock_free)
+[[deprecated("a volatile atomic operation on a type that is not always lock-free is deprecated "
+             "([depr.atomics.volatile])")]]
 T atomic_exchange(volatile atomic<T>* object, typename atomic<T>::value_type desired) noexcept {
   return object->exchange(desired);
 }
@@ -1510,6 +1554,14 @@ constexpr T atomic_exchange(atomic<T>* object, typename atomic<T>::value_type de
   return object->exchange(desired);
 }
 template <class T>
+  requires atomic<T>::is_always_lock_free
+T atomic_exchange_explicit(volatile atomic<T>* object, typename atomic<T>::value_type desired, memory_order o) noexcept {
+  return object->exchange(desired, o);
+}
+template <class T>
+  requires(!atomic<T>::is_always_lock_free)
+[[deprecated("a volatile atomic operation on a type that is not always lock-free is deprecated "
+             "([depr.atomics.volatile])")]]
 T atomic_exchange_explicit(volatile atomic<T>* object, typename atomic<T>::value_type desired, memory_order o) noexcept {
   return object->exchange(desired, o);
 }
@@ -1518,6 +1570,15 @@ constexpr T atomic_exchange_explicit(atomic<T>* object, typename atomic<T>::valu
   return object->exchange(desired, o);
 }
 template <class T>
+  requires atomic<T>::is_always_lock_free
+bool atomic_compare_exchange_weak(volatile atomic<T>* object, typename atomic<T>::value_type* expected,
+                                  typename atomic<T>::value_type desired) noexcept {
+  return object->compare_exchange_weak(*expected, desired);
+}
+template <class T>
+  requires(!atomic<T>::is_always_lock_free)
+[[deprecated("a volatile atomic operation on a type that is not always lock-free is deprecated "
+             "([depr.atomics.volatile])")]]
 bool atomic_compare_exchange_weak(volatile atomic<T>* object, typename atomic<T>::value_type* expected,
                                   typename atomic<T>::value_type desired) noexcept {
   return object->compare_exchange_weak(*expected, desired);
@@ -1528,6 +1589,15 @@ constexpr bool atomic_compare_exchange_weak(atomic<T>* object, typename atomic<T
   return object->compare_exchange_weak(*expected, desired);
 }
 template <class T>
+  requires atomic<T>::is_always_lock_free
+bool atomic_compare_exchange_strong(volatile atomic<T>* object, typename atomic<T>::value_type* expected,
+                                    typename atomic<T>::value_type desired) noexcept {
+  return object->compare_exchange_strong(*expected, desired);
+}
+template <class T>
+  requires(!atomic<T>::is_always_lock_free)
+[[deprecated("a volatile atomic operation on a type that is not always lock-free is deprecated "
+             "([depr.atomics.volatile])")]]
 bool atomic_compare_exchange_strong(volatile atomic<T>* object, typename atomic<T>::value_type* expected,
                                     typename atomic<T>::value_type desired) noexcept {
   return object->compare_exchange_strong(*expected, desired);
@@ -1538,6 +1608,16 @@ constexpr bool atomic_compare_exchange_strong(atomic<T>* object, typename atomic
   return object->compare_exchange_strong(*expected, desired);
 }
 template <class T>
+  requires atomic<T>::is_always_lock_free
+bool atomic_compare_exchange_weak_explicit(volatile atomic<T>* object, typename atomic<T>::value_type* expected,
+                                           typename atomic<T>::value_type desired, memory_order s,
+                                           memory_order f) noexcept {
+  return object->compare_exchange_weak(*expected, desired, s, f);
+}
+template <class T>
+  requires(!atomic<T>::is_always_lock_free)
+[[deprecated("a volatile atomic operation on a type that is not always lock-free is deprecated "
+             "([depr.atomics.volatile])")]]
 bool atomic_compare_exchange_weak_explicit(volatile atomic<T>* object, typename atomic<T>::value_type* expected,
                                            typename atomic<T>::value_type desired, memory_order s,
                                            memory_order f) noexcept {
@@ -1550,6 +1630,16 @@ constexpr bool atomic_compare_exchange_weak_explicit(atomic<T>* object, typename
   return object->compare_exchange_weak(*expected, desired, s, f);
 }
 template <class T>
+  requires atomic<T>::is_always_lock_free
+bool atomic_compare_exchange_strong_explicit(volatile atomic<T>* object, typename atomic<T>::value_type* expected,
+                                             typename atomic<T>::value_type desired, memory_order s,
+                                             memory_order f) noexcept {
+  return object->compare_exchange_strong(*expected, desired, s, f);
+}
+template <class T>
+  requires(!atomic<T>::is_always_lock_free)
+[[deprecated("a volatile atomic operation on a type that is not always lock-free is deprecated "
+             "([depr.atomics.volatile])")]]
 bool atomic_compare_exchange_strong_explicit(volatile atomic<T>* object, typename atomic<T>::value_type* expected,
                                              typename atomic<T>::value_type desired, memory_order s,
                                              memory_order f) noexcept {
@@ -1562,6 +1652,14 @@ constexpr bool atomic_compare_exchange_strong_explicit(atomic<T>* object, typena
   return object->compare_exchange_strong(*expected, desired, s, f);
 }
 template <class T>
+  requires atomic<T>::is_always_lock_free
+T atomic_fetch_add(volatile atomic<T>* object, typename atomic<T>::difference_type operand) noexcept {
+  return object->fetch_add(operand);
+}
+template <class T>
+  requires(!atomic<T>::is_always_lock_free)
+[[deprecated("a volatile atomic operation on a type that is not always lock-free is deprecated "
+             "([depr.atomics.volatile])")]]
 T atomic_fetch_add(volatile atomic<T>* object, typename atomic<T>::difference_type operand) noexcept {
   return object->fetch_add(operand);
 }
@@ -1570,6 +1668,14 @@ constexpr T atomic_fetch_add(atomic<T>* object, typename atomic<T>::difference_t
   return object->fetch_add(operand);
 }
 template <class T>
+  requires atomic<T>::is_always_lock_free
+T atomic_fetch_add_explicit(volatile atomic<T>* object, typename atomic<T>::difference_type operand, memory_order o) noexcept {
+  return object->fetch_add(operand, o);
+}
+template <class T>
+  requires(!atomic<T>::is_always_lock_free)
+[[deprecated("a volatile atomic operation on a type that is not always lock-free is deprecated "
+             "([depr.atomics.volatile])")]]
 T atomic_fetch_add_explicit(volatile atomic<T>* object, typename atomic<T>::difference_type operand, memory_order o) noexcept {
   return object->fetch_add(operand, o);
 }
@@ -1578,6 +1684,14 @@ constexpr T atomic_fetch_add_explicit(atomic<T>* object, typename atomic<T>::dif
   return object->fetch_add(operand, o);
 }
 template <class T>
+  requires atomic<T>::is_always_lock_free
+T atomic_fetch_sub(volatile atomic<T>* object, typename atomic<T>::difference_type operand) noexcept {
+  return object->fetch_sub(operand);
+}
+template <class T>
+  requires(!atomic<T>::is_always_lock_free)
+[[deprecated("a volatile atomic operation on a type that is not always lock-free is deprecated "
+             "([depr.atomics.volatile])")]]
 T atomic_fetch_sub(volatile atomic<T>* object, typename atomic<T>::difference_type operand) noexcept {
   return object->fetch_sub(operand);
 }
@@ -1586,6 +1700,14 @@ constexpr T atomic_fetch_sub(atomic<T>* object, typename atomic<T>::difference_t
   return object->fetch_sub(operand);
 }
 template <class T>
+  requires atomic<T>::is_always_lock_free
+T atomic_fetch_sub_explicit(volatile atomic<T>* object, typename atomic<T>::difference_type operand, memory_order o) noexcept {
+  return object->fetch_sub(operand, o);
+}
+template <class T>
+  requires(!atomic<T>::is_always_lock_free)
+[[deprecated("a volatile atomic operation on a type that is not always lock-free is deprecated "
+             "([depr.atomics.volatile])")]]
 T atomic_fetch_sub_explicit(volatile atomic<T>* object, typename atomic<T>::difference_type operand, memory_order o) noexcept {
   return object->fetch_sub(operand, o);
 }
@@ -1594,6 +1716,14 @@ constexpr T atomic_fetch_sub_explicit(atomic<T>* object, typename atomic<T>::dif
   return object->fetch_sub(operand, o);
 }
 template <class T>
+  requires atomic<T>::is_always_lock_free
+T atomic_fetch_and(volatile atomic<T>* object, typename atomic<T>::value_type operand) noexcept {
+  return object->fetch_and(operand);
+}
+template <class T>
+  requires(!atomic<T>::is_always_lock_free)
+[[deprecated("a volatile atomic operation on a type that is not always lock-free is deprecated "
+             "([depr.atomics.volatile])")]]
 T atomic_fetch_and(volatile atomic<T>* object, typename atomic<T>::value_type operand) noexcept {
   return object->fetch_and(operand);
 }
@@ -1602,6 +1732,14 @@ constexpr T atomic_fetch_and(atomic<T>* object, typename atomic<T>::value_type o
   return object->fetch_and(operand);
 }
 template <class T>
+  requires atomic<T>::is_always_lock_free
+T atomic_fetch_and_explicit(volatile atomic<T>* object, typename atomic<T>::value_type operand, memory_order o) noexcept {
+  return object->fetch_and(operand, o);
+}
+template <class T>
+  requires(!atomic<T>::is_always_lock_free)
+[[deprecated("a volatile atomic operation on a type that is not always lock-free is deprecated "
+             "([depr.atomics.volatile])")]]
 T atomic_fetch_and_explicit(volatile atomic<T>* object, typename atomic<T>::value_type operand, memory_order o) noexcept {
   return object->fetch_and(operand, o);
 }
@@ -1610,6 +1748,14 @@ constexpr T atomic_fetch_and_explicit(atomic<T>* object, typename atomic<T>::val
   return object->fetch_and(operand, o);
 }
 template <class T>
+  requires atomic<T>::is_always_lock_free
+T atomic_fetch_or(volatile atomic<T>* object, typename atomic<T>::value_type operand) noexcept {
+  return object->fetch_or(operand);
+}
+template <class T>
+  requires(!atomic<T>::is_always_lock_free)
+[[deprecated("a volatile atomic operation on a type that is not always lock-free is deprecated "
+             "([depr.atomics.volatile])")]]
 T atomic_fetch_or(volatile atomic<T>* object, typename atomic<T>::value_type operand) noexcept {
   return object->fetch_or(operand);
 }
@@ -1618,6 +1764,14 @@ constexpr T atomic_fetch_or(atomic<T>* object, typename atomic<T>::value_type op
   return object->fetch_or(operand);
 }
 template <class T>
+  requires atomic<T>::is_always_lock_free
+T atomic_fetch_or_explicit(volatile atomic<T>* object, typename atomic<T>::value_type operand, memory_order o) noexcept {
+  return object->fetch_or(operand, o);
+}
+template <class T>
+  requires(!atomic<T>::is_always_lock_free)
+[[deprecated("a volatile atomic operation on a type that is not always lock-free is deprecated "
+             "([depr.atomics.volatile])")]]
 T atomic_fetch_or_explicit(volatile atomic<T>* object, typename atomic<T>::value_type operand, memory_order o) noexcept {
   return object->fetch_or(operand, o);
 }
@@ -1626,6 +1780,14 @@ constexpr T atomic_fetch_or_explicit(atomic<T>* object, typename atomic<T>::valu
   return object->fetch_or(operand, o);
 }
 template <class T>
+  requires atomic<T>::is_always_lock_free
+T atomic_fetch_xor(volatile atomic<T>* object, typename atomic<T>::value_type operand) noexcept {
+  return object->fetch_xor(operand);
+}
+template <class T>
+  requires(!atomic<T>::is_always_lock_free)
+[[deprecated("a volatile atomic operation on a type that is not always lock-free is deprecated "
+             "([depr.atomics.volatile])")]]
 T atomic_fetch_xor(volatile atomic<T>* object, typename atomic<T>::value_type operand) noexcept {
   return object->fetch_xor(operand);
 }
@@ -1634,6 +1796,14 @@ constexpr T atomic_fetch_xor(atomic<T>* object, typename atomic<T>::value_type o
   return object->fetch_xor(operand);
 }
 template <class T>
+  requires atomic<T>::is_always_lock_free
+T atomic_fetch_xor_explicit(volatile atomic<T>* object, typename atomic<T>::value_type operand, memory_order o) noexcept {
+  return object->fetch_xor(operand, o);
+}
+template <class T>
+  requires(!atomic<T>::is_always_lock_free)
+[[deprecated("a volatile atomic operation on a type that is not always lock-free is deprecated "
+             "([depr.atomics.volatile])")]]
 T atomic_fetch_xor_explicit(volatile atomic<T>* object, typename atomic<T>::value_type operand, memory_order o) noexcept {
   return object->fetch_xor(operand, o);
 }
@@ -1642,6 +1812,14 @@ constexpr T atomic_fetch_xor_explicit(atomic<T>* object, typename atomic<T>::val
   return object->fetch_xor(operand, o);
 }
 template <class T>
+  requires atomic<T>::is_always_lock_free
+T atomic_fetch_max(volatile atomic<T>* object, typename atomic<T>::value_type operand) noexcept {
+  return object->fetch_max(operand);
+}
+template <class T>
+  requires(!atomic<T>::is_always_lock_free)
+[[deprecated("a volatile atomic operation on a type that is not always lock-free is deprecated "
+             "([depr.atomics.volatile])")]]
 T atomic_fetch_max(volatile atomic<T>* object, typename atomic<T>::value_type operand) noexcept {
   return object->fetch_max(operand);
 }
@@ -1650,6 +1828,14 @@ constexpr T atomic_fetch_max(atomic<T>* object, typename atomic<T>::value_type o
   return object->fetch_max(operand);
 }
 template <class T>
+  requires atomic<T>::is_always_lock_free
+T atomic_fetch_max_explicit(volatile atomic<T>* object, typename atomic<T>::value_type operand, memory_order o) noexcept {
+  return object->fetch_max(operand, o);
+}
+template <class T>
+  requires(!atomic<T>::is_always_lock_free)
+[[deprecated("a volatile atomic operation on a type that is not always lock-free is deprecated "
+             "([depr.atomics.volatile])")]]
 T atomic_fetch_max_explicit(volatile atomic<T>* object, typename atomic<T>::value_type operand, memory_order o) noexcept {
   return object->fetch_max(operand, o);
 }
@@ -1658,6 +1844,14 @@ constexpr T atomic_fetch_max_explicit(atomic<T>* object, typename atomic<T>::val
   return object->fetch_max(operand, o);
 }
 template <class T>
+  requires atomic<T>::is_always_lock_free
+T atomic_fetch_min(volatile atomic<T>* object, typename atomic<T>::value_type operand) noexcept {
+  return object->fetch_min(operand);
+}
+template <class T>
+  requires(!atomic<T>::is_always_lock_free)
+[[deprecated("a volatile atomic operation on a type that is not always lock-free is deprecated "
+             "([depr.atomics.volatile])")]]
 T atomic_fetch_min(volatile atomic<T>* object, typename atomic<T>::value_type operand) noexcept {
   return object->fetch_min(operand);
 }
@@ -1666,6 +1860,14 @@ constexpr T atomic_fetch_min(atomic<T>* object, typename atomic<T>::value_type o
   return object->fetch_min(operand);
 }
 template <class T>
+  requires atomic<T>::is_always_lock_free
+T atomic_fetch_min_explicit(volatile atomic<T>* object, typename atomic<T>::value_type operand, memory_order o) noexcept {
+  return object->fetch_min(operand, o);
+}
+template <class T>
+  requires(!atomic<T>::is_always_lock_free)
+[[deprecated("a volatile atomic operation on a type that is not always lock-free is deprecated "
+             "([depr.atomics.volatile])")]]
 T atomic_fetch_min_explicit(volatile atomic<T>* object, typename atomic<T>::value_type operand, memory_order o) noexcept {
   return object->fetch_min(operand, o);
 }
@@ -1674,6 +1876,7 @@ constexpr T atomic_fetch_min_explicit(atomic<T>* object, typename atomic<T>::val
   return object->fetch_min(operand, o);
 }
 template <class T>
+  requires atomic<T>::is_always_lock_free
 void atomic_store_add(volatile atomic<T>* object, typename atomic<T>::difference_type operand) noexcept {
   object->store_add(operand);
 }
@@ -1682,6 +1885,7 @@ constexpr void atomic_store_add(atomic<T>* object, typename atomic<T>::differenc
   object->store_add(operand);
 }
 template <class T>
+  requires atomic<T>::is_always_lock_free
 void atomic_store_add_explicit(volatile atomic<T>* object, typename atomic<T>::difference_type operand, memory_order o) noexcept {
   object->store_add(operand, o);
 }
@@ -1690,6 +1894,7 @@ constexpr void atomic_store_add_explicit(atomic<T>* object, typename atomic<T>::
   object->store_add(operand, o);
 }
 template <class T>
+  requires atomic<T>::is_always_lock_free
 void atomic_store_sub(volatile atomic<T>* object, typename atomic<T>::difference_type operand) noexcept {
   object->store_sub(operand);
 }
@@ -1698,6 +1903,7 @@ constexpr void atomic_store_sub(atomic<T>* object, typename atomic<T>::differenc
   object->store_sub(operand);
 }
 template <class T>
+  requires atomic<T>::is_always_lock_free
 void atomic_store_sub_explicit(volatile atomic<T>* object, typename atomic<T>::difference_type operand, memory_order o) noexcept {
   object->store_sub(operand, o);
 }
@@ -1706,6 +1912,7 @@ constexpr void atomic_store_sub_explicit(atomic<T>* object, typename atomic<T>::
   object->store_sub(operand, o);
 }
 template <class T>
+  requires atomic<T>::is_always_lock_free
 void atomic_store_and(volatile atomic<T>* object, typename atomic<T>::value_type operand) noexcept {
   object->store_and(operand);
 }
@@ -1714,6 +1921,7 @@ constexpr void atomic_store_and(atomic<T>* object, typename atomic<T>::value_typ
   object->store_and(operand);
 }
 template <class T>
+  requires atomic<T>::is_always_lock_free
 void atomic_store_and_explicit(volatile atomic<T>* object, typename atomic<T>::value_type operand, memory_order o) noexcept {
   object->store_and(operand, o);
 }
@@ -1722,6 +1930,7 @@ constexpr void atomic_store_and_explicit(atomic<T>* object, typename atomic<T>::
   object->store_and(operand, o);
 }
 template <class T>
+  requires atomic<T>::is_always_lock_free
 void atomic_store_or(volatile atomic<T>* object, typename atomic<T>::value_type operand) noexcept {
   object->store_or(operand);
 }
@@ -1730,6 +1939,7 @@ constexpr void atomic_store_or(atomic<T>* object, typename atomic<T>::value_type
   object->store_or(operand);
 }
 template <class T>
+  requires atomic<T>::is_always_lock_free
 void atomic_store_or_explicit(volatile atomic<T>* object, typename atomic<T>::value_type operand, memory_order o) noexcept {
   object->store_or(operand, o);
 }
@@ -1738,6 +1948,7 @@ constexpr void atomic_store_or_explicit(atomic<T>* object, typename atomic<T>::v
   object->store_or(operand, o);
 }
 template <class T>
+  requires atomic<T>::is_always_lock_free
 void atomic_store_xor(volatile atomic<T>* object, typename atomic<T>::value_type operand) noexcept {
   object->store_xor(operand);
 }
@@ -1746,6 +1957,7 @@ constexpr void atomic_store_xor(atomic<T>* object, typename atomic<T>::value_typ
   object->store_xor(operand);
 }
 template <class T>
+  requires atomic<T>::is_always_lock_free
 void atomic_store_xor_explicit(volatile atomic<T>* object, typename atomic<T>::value_type operand, memory_order o) noexcept {
   object->store_xor(operand, o);
 }
@@ -1754,6 +1966,7 @@ constexpr void atomic_store_xor_explicit(atomic<T>* object, typename atomic<T>::
   object->store_xor(operand, o);
 }
 template <class T>
+  requires atomic<T>::is_always_lock_free
 void atomic_store_max(volatile atomic<T>* object, typename atomic<T>::value_type operand) noexcept {
   object->store_max(operand);
 }
@@ -1762,6 +1975,7 @@ constexpr void atomic_store_max(atomic<T>* object, typename atomic<T>::value_typ
   object->store_max(operand);
 }
 template <class T>
+  requires atomic<T>::is_always_lock_free
 void atomic_store_max_explicit(volatile atomic<T>* object, typename atomic<T>::value_type operand, memory_order o) noexcept {
   object->store_max(operand, o);
 }
@@ -1770,6 +1984,7 @@ constexpr void atomic_store_max_explicit(atomic<T>* object, typename atomic<T>::
   object->store_max(operand, o);
 }
 template <class T>
+  requires atomic<T>::is_always_lock_free
 void atomic_store_min(volatile atomic<T>* object, typename atomic<T>::value_type operand) noexcept {
   object->store_min(operand);
 }
@@ -1778,6 +1993,7 @@ constexpr void atomic_store_min(atomic<T>* object, typename atomic<T>::value_typ
   object->store_min(operand);
 }
 template <class T>
+  requires atomic<T>::is_always_lock_free
 void atomic_store_min_explicit(volatile atomic<T>* object, typename atomic<T>::value_type operand, memory_order o) noexcept {
   object->store_min(operand, o);
 }
@@ -1786,6 +2002,14 @@ constexpr void atomic_store_min_explicit(atomic<T>* object, typename atomic<T>::
   object->store_min(operand, o);
 }
 template <class T>
+  requires atomic<T>::is_always_lock_free
+void atomic_wait(const volatile atomic<T>* object, typename atomic<T>::value_type old) noexcept {
+  object->wait(old);
+}
+template <class T>
+  requires(!atomic<T>::is_always_lock_free)
+[[deprecated("a volatile atomic operation on a type that is not always lock-free is deprecated "
+             "([depr.atomics.volatile])")]]
 void atomic_wait(const volatile atomic<T>* object, typename atomic<T>::value_type old) noexcept {
   object->wait(old);
 }
@@ -1794,6 +2018,14 @@ constexpr void atomic_wait(const atomic<T>* object, typename atomic<T>::value_ty
   object->wait(old);
 }
 template <class T>
+  requires atomic<T>::is_always_lock_free
+void atomic_wait_explicit(const volatile atomic<T>* object, typename atomic<T>::value_type old, memory_order o) noexcept {
+  object->wait(old, o);
+}
+template <class T>
+  requires(!atomic<T>::is_always_lock_free)
+[[deprecated("a volatile atomic operation on a type that is not always lock-free is deprecated "
+             "([depr.atomics.volatile])")]]
 void atomic_wait_explicit(const volatile atomic<T>* object, typename atomic<T>::value_type old, memory_order o) noexcept {
   object->wait(old, o);
 }
@@ -1802,6 +2034,14 @@ constexpr void atomic_wait_explicit(const atomic<T>* object, typename atomic<T>:
   object->wait(old, o);
 }
 template <class T>
+  requires atomic<T>::is_always_lock_free
+void atomic_notify_one(volatile atomic<T>* object) noexcept {
+  object->notify_one();
+}
+template <class T>
+  requires(!atomic<T>::is_always_lock_free)
+[[deprecated("a volatile atomic operation on a type that is not always lock-free is deprecated "
+             "([depr.atomics.volatile])")]]
 void atomic_notify_one(volatile atomic<T>* object) noexcept {
   object->notify_one();
 }
@@ -1810,6 +2050,14 @@ constexpr void atomic_notify_one(atomic<T>* object) noexcept {
   object->notify_one();
 }
 template <class T>
+  requires atomic<T>::is_always_lock_free
+void atomic_notify_all(volatile atomic<T>* object) noexcept {
+  object->notify_all();
+}
+template <class T>
+  requires(!atomic<T>::is_always_lock_free)
+[[deprecated("a volatile atomic operation on a type that is not always lock-free is deprecated "
+             "([depr.atomics.volatile])")]]
 void atomic_notify_all(volatile atomic<T>* object) noexcept {
   object->notify_all();
 }

@@ -61,9 +61,16 @@ if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
 endif()
 # Floating-point <charconv> (also in the freestanding runtime archive).
 file(GLOB YCXX_CHARCONV_SOURCES CONFIGURE_DEPENDS src/runtime/charconv/*.cpp)
+# The lock and wait tables of <atomic> (also in the freestanding runtime archive).
+file(GLOB YCXX_ATOMIC_SOURCES CONFIGURE_DEPENDS src/runtime/atomic/*.cpp)
 add_library(ycxx STATIC
   ${YCXX_NEW_SOURCES}
   ${YCXX_CHARCONV_SOURCES}
+  ${YCXX_ATOMIC_SOURCES}
+  src/hosted/thread.cpp
+  src/hosted/future.cpp
+  src/hosted/rcu.cpp
+  src/hosted/hazard_pointer.cpp
   src/hosted/stdexcept.cpp
   src/hosted/memory_resource.cpp
   src/hosted/string.cpp
@@ -80,6 +87,8 @@ add_library(ycxx STATIC
   # formatting
   src/hosted/format.cpp
   src/hosted/print.cpp
+  # file systems
+  src/hosted/filesystem.cpp
   src/pal/posix/pal.c
 )
 set_target_properties(ycxx PROPERTIES EXPORT_NAME core)

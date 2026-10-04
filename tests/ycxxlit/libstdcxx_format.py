@@ -19,7 +19,17 @@ DG = re.compile(r'\{\s*dg-([a-z-]+)\s*(.*)\}\s*$')
 EFFECTIVE = {'hosted', 'cxx11_abi', 'gthreads', 'threads', 'pthread', 'std_allocator_new', 'tls',
              'tls_native', 'cstdint', 'string_conversions', 'c99_math', 'random_device',
              'x86_64-*-*', '*-*-linux*', 'linux', 'native', 'lp64', 'exceptions', 'rtti',
-             'atomic_wait', 'net_ts_ip', 'fenv', 'little_endian', 'ieee_floats', 'size32plus'}
+             'atomic_wait', 'net_ts_ip', 'fenv', 'little_endian', 'ieee_floats', 'size32plus',
+             # <atomic> needs no libatomic (DECISIONS: lock-based atomics in the runtime archive).
+             'libatomic_available'}
+# dg-require-* checks the target passes (beyond the effective targets above).
+REQUIRES = {'require-gthreads', 'require-cstdint', 'require-string-conversions', 'require-normal-namespace',
+            'require-normal-mode', 'require-effective-target', 'require-atomic-builtins',
+            'require-atomic-cmpxchg-word', 'require-thread-fence', 'require-sleep', 'require-gthreads-timed',
+            'require-sched-yield', 'require-time',
+            # <filesystem> (POSIX): symlinks, space, last_write_time, mkfifo
+            'require-filesystem-ts', 'require-target-fs-symlinks', 'require-target-fs-space',
+            'require-target-fs-lwt', 'require-mkfifo'}
 
 
 def eval_selector(sel):
@@ -143,7 +153,14 @@ class LibstdcxxFormat(lit.formats.FileBasedTest):
                     tsel = f' {tsel} '.partition(' xfail ')[0].strip()
                 if tsel is not None and not eval_selector(tsel):
                     continue
-                for o in opts[0].split():
+                # Tcl command substitutions ([atomic_link_flags [get_multilibs]]) name DejaGnu
+                # helpers for libatomic, which libycxx does not need; -latomic likewise.
+                text = opts[0]
+                while re.search(r'\[[^\[\]]*\]', text):
+                    text = re.sub(r'\[[^\[\]]*\]', '', text)
+                for o in text.split():
+                    if o == '-latomic':
+                        continue
                     sm = re.fullmatch(r'-std=(?:gnu|c)\+\+(\w+)', o)
                     if sm:
                         v = sm.group(1)
@@ -163,8 +180,7 @@ class LibstdcxxFormat(lit.formats.FileBasedTest):
                 if not eval_selector(t):
                     return lit.Test.Result(lit.Test.UNSUPPORTED, f'effective target {t} not provided')
             elif kind.startswith('require-'):
-                if kind not in ('require-gthreads', 'require-cstdint', 'require-string-conversions',
-                                'require-normal-namespace', 'require-normal-mode', 'require-effective-target'):
+                if kind not in REQUIRES:
                     return lit.Test.Result(lit.Test.UNSUPPORTED, f'dg-{kind} not provided')
             elif kind == 'error':
                 tsel = selector_of(args, 'target')
@@ -172,7 +188,7 @@ class LibstdcxxFormat(lit.formats.FileBasedTest):
                     errors = True
             elif kind == 'add-options':
                 if args and args[0] == 'libatomic':
-                    flags.append('-latomic')
+                    pass  # libycxx's atomics need no libatomic
         if not saw_do:
             action = 'compile'
 

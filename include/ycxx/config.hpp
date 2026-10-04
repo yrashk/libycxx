@@ -124,6 +124,19 @@
 #else
 #  define YCXX_HAS_BFLOAT16_T 0
 #endif
+// <atomic>'s ATOMIC_*_LOCK_FREE macros must be usable in #if: the compiler's answers, which match
+// atomic<T>::is_always_lock_free (ycxx/core/atomic_base.hpp asks __atomic_always_lock_free).
+#define YCXX_ATOMIC_BOOL_LOCK_FREE __GCC_ATOMIC_BOOL_LOCK_FREE
+#define YCXX_ATOMIC_CHAR_LOCK_FREE __GCC_ATOMIC_CHAR_LOCK_FREE
+#define YCXX_ATOMIC_CHAR8_T_LOCK_FREE __GCC_ATOMIC_CHAR8_T_LOCK_FREE
+#define YCXX_ATOMIC_CHAR16_T_LOCK_FREE __GCC_ATOMIC_CHAR16_T_LOCK_FREE
+#define YCXX_ATOMIC_CHAR32_T_LOCK_FREE __GCC_ATOMIC_CHAR32_T_LOCK_FREE
+#define YCXX_ATOMIC_WCHAR_T_LOCK_FREE __GCC_ATOMIC_WCHAR_T_LOCK_FREE
+#define YCXX_ATOMIC_SHORT_LOCK_FREE __GCC_ATOMIC_SHORT_LOCK_FREE
+#define YCXX_ATOMIC_INT_LOCK_FREE __GCC_ATOMIC_INT_LOCK_FREE
+#define YCXX_ATOMIC_LONG_LOCK_FREE __GCC_ATOMIC_LONG_LOCK_FREE
+#define YCXX_ATOMIC_LLONG_LOCK_FREE __GCC_ATOMIC_LLONG_LOCK_FREE
+#define YCXX_ATOMIC_POINTER_LOCK_FREE __GCC_ATOMIC_POINTER_LOCK_FREE
 // <cmath> macros that depend on the target and the options; they must be usable in #if.
 // FP_FAST_FMA* are defined where fma is as fast as a multiply and an add.
 #if defined(__FP_FAST_FMA)

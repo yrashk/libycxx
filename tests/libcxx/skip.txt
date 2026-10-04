@@ -60,3 +60,10 @@ ranges/range\.adaptors/range\.lazy\.split/begin\.pass\.cpp | divergence | expect
 ranges/range\.utility/range\.utility\.conv/to\.pass\.cpp | divergence | expects ranges::to to append with c.emplace(c.end(), x); container-append ([range.utility.conv.general]/5) uses emplace_back, push_back, emplace_hint and insert
 content:#include "test_format_context.h" | implementation-specific | creates a basic_format_context through libc++'s internal std::__format_context_create (test_format_context.h has no hook for other vendors; [format.context] gives the class no public constructor)
 content:\bvisit_format_arg\b | deprecated | std::visit_format_arg is deprecated in C++26 ([depr.format.arg])
+atomics/atomics\.ref/address\.pass\.cpp | divergence | instantiates atomic_ref<volatile LargeUserAtomicType>; [atomics.ref.generic.general]/5 makes atomic_ref<volatile T> ill-formed when is_always_lock_free is false
+atomics/atomics\.ref/member_types\.compile\.pass\.cpp | divergence | expects atomic_ref<void*>::difference_type; [atomics.ref.pointer]/1 specializes atomic_ref only for pointer-to-object types
+atomics/atomics\.types\.generic/integral(_typedefs)?\.pass\.cpp | extension | names ::int8_t etc. without including <cstdint>/<stdint.h>; <atomic> declares only std::int8_t's atomic aliases
+atomics/stdatomic\.h\.syn/types\.compile\.pass\.cpp | extension | names ::int8_t etc. without including <stdint.h>
+thread/futures/futures\.promise/uses_allocator\.pass\.cpp | removed | uses_allocator<promise<R>, Alloc> is not in the current draft ([futures.promise])
+thread/futures/futures\.task/futures\.task\.members/ctor2\.compile\.pass\.cpp | pre-c++26 | expects no packaged_task(allocator_arg_t, const Alloc&, F&&) (removed in C++17, LWG 2921); the current draft has it again ([futures.task.members]/3)
+thread/futures/futures\.async/thread_create_failure\.pass\.cpp | infrastructure | lowers RLIMIT_NPROC to make thread creation fail, which does not apply when the tests run as root

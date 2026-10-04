@@ -35,6 +35,8 @@ Conformance oracles (run only, never edited): libc++ tests from `llvmorg-23.1.2`
 | containers/unord + container.node | 303/422 | 303/422 | yes | was 0; 417/422 on both with stand-in `<cmath>`/`<map>`/`<set>`; rest below |
 | numerics/{c.math,numbers,complex.number,numarray} + utilities/ratio | 325/348 | 327/348 | yes (run-time `<cmath>` calls need libm) | was 6; rest below (numerics) |
 | input.output + localization (iostreams, `<locale>`) | 583/855 | 590/855 | no (hosted) | was 39; 213 of the failures need `<filesystem>`, `<codecvt>` (removed), `<format>`/`<print>`, `<mutex>`/`<chrono>` or `EOF` from `constexpr_char_traits.h`; rest under Known limitations |
+| atomics + thread (incl. futures, stop tokens, latch/barrier/semaphore) | 449/453 | 449/453 | `<atomic>` yes (runtime archive); the rest hosted | was 16; rest: `<format>` for thread::id (4) |
+| input.output + localization (iostreams, `<locale>`, `<filesystem>`) | 668/855 | 668/855 | no (hosted) | was 583 (Clang) / 590 (GCC) before `<filesystem>`; most failures need `<chrono>`, `<codecvt>` (removed), `<format>`/`<print>`, `<mutex>`/`<thread>` or `EOF` from `constexpr_char_traits.h`; rest under Known limitations |
 
 Whole-suite baseline (clang, before iterators/tuple/array/optional): 976 pass / ~8,000 run.
 
@@ -114,6 +116,15 @@ string_view, memory, iterator: 301/305 (GCC, plus 1 XFAIL), 302/305 (Clang); the
 8 -> 805/925 (Clang); most remaining failures need missing headers or libstdc++ extensions
 (`char_traits<unsigned char>`, deprecated manipulator overloads, transitive C headers).
 
+File systems (hosted, POSIX; DECISIONS §8): `<filesystem>` in full except `formatter<path>`
+(waits for `<format>`). Own suite filesystem/ 16/17 on both compilers (path_format needs
+`<format>`), fstream/ 5/5; clean under ASan and UBSan (Clang). libc++ input.output/filesystems
+5 -> 67/149 (both compilers); with the concurrent `<chrono>` overlaid locally 117/149, the other
+32: 29 permission tests that cannot fail as root (all but 2 pass when run as `nobody`), toctou
+(`<thread>`), and two below. libstdc++ 27_io/filesystem 0 -> 28/35 run (both; 90 more are skipped
+by the harness because they use `__gnu_test` helpers, whose `testsuite_fs.h` needs `<random>`);
+5 of the 7 failures need `<random>`.
+
 ## Freestanding
 `tools/check_freestanding.sh`: every core header compiles with `-ffreestanding -nostdlib -nostdinc
 -fno-exceptions -fno-rtti`; the smoke test links on x86_64-unknown-none-elf and
@@ -152,6 +163,11 @@ a defect in a test.
 - GCC 16.2: `PR31384` (conversion function vs converting constructor in direct-init of `tuple`)
   resolves differently from Clang; the libc++ expectation matches Clang.
 
+- Clang 23.1: copy-list-initialization `f({T()})` with candidates `f(X)` (X(T)) and
+  `f(atomic_ref<T>)` (explicit, deleted `atomic_ref(T&&)`) picks `f(X)`; GCC (and the libstdc++
+  test 29_atomics/atomic_ref/ctor) treat the explicit constructor as a candidate and find the call
+  ambiguous ([over.match.list]).
+
 ## Deliberate omissions
 Deprecated and removed features are not implemented (`is_pod`, `is_trivial`, `aligned_storage`,
 `has_denorm`, `tuple_size<volatile T>`, ...). See `tests/SKIPPED.md`.
@@ -184,6 +200,17 @@ Deprecated and removed features are not implemented (`is_pod`, `is_trivial`, `al
   C library does (`0x0.000000000000001p-16385` is the smallest), so that both forms agree there.
 
 ## Known limitations and draft defects
+- `<filesystem>`: no `formatter<path>`/`__cpp_lib_format_path` (no `<format>`);
+  `ycxx/hosted/file_clock.hpp` holds a minimal `duration`/`time_point`/`file_clock` until
+  `<chrono>` is merged (then it becomes an include of `chrono_clocks.hpp`). The native encoding
+  is assumed UTF-8 whatever the C locale; ill-formed UTF-8 converts to U+FFFD rather than
+  throwing (libstdc++ u8path test02 expects an exception; unspecified by the draft). No
+  root-names (`//host` is not special). `file_time_type` spans 1677-2262; setting
+  `file_time_type::min()` succeeds where the file system clamps the time silently (libc++
+  last_write_time test_write_min_time expects `value_too_large`). `directory_entry(p, ec)`
+  clears the path on errors other than "not found" as [fs.dir.entry.cons]/2 says (libc++ test
+  path_ctor_cannot_resolve expects it kept). `permissions(..., nofollow)` on a symbolic link
+  fails with `ENOTSUP` on Linux. Permission-error tests need a non-root user.
 - Iostreams/locale: named locales other than "C", "POSIX", "C.UTF-8" and "" throw
   `runtime_error` (the environment's conventions are not supported); `codecvt<wchar_t, char>`
   is UTF-8 in the classic locale, so `encoding()` is 0 and wide file streams cannot seek by an
@@ -194,8 +221,8 @@ Deprecated and removed features are not implemented (`is_pod`, `is_trivial`, `al
   starts writing at the beginning ([stringbuf.members] init-buf-ptrs); bitmask types are
   enumerations, so `basic_stringbuf(s, 0)` does not compile; `basic_iostream`/`basic_istream`
   have no default constructor (libstdc++ extension); no `wstring_convert`/`wbuffer_convert`
-  (removed in C++26), no `<codecvt>`; `fstream`'s path overloads are templates (no
-  `<filesystem>` yet). Standard stream objects synchronized with stdio write character by
+  (removed in C++26), no `<codecvt>`; `fstream`'s path overloads are constrained templates.
+  Standard stream objects synchronized with stdio write character by
   character through `putc` (bulk writes through `fwrite`).
 - `<memory>`: no `atomic<shared_ptr<T>>` / `atomic<weak_ptr<T>>`, no execution-policy overloads of the specialized
   algorithms, no `pointer_tag_pair`, `indirect`, `polymorphic`. shared_ptr reference counts use
@@ -461,6 +488,28 @@ Deprecated and removed features are not implemented (`is_pod`, `is_trivial`, `al
   from `<stdlib.h>` (no `<stdlib.h>` wrapper), the valarray `mask-*_neg` tests (abort only with
   `_GLIBCXX_ASSERTIONS`; libycxx checks only under YCXX_HARDENED), and tests needing
   `<sstream>`/`<iostream>`/`<chrono>`/`<map>`/`<limits>`.
+
+- Concurrency support (`<atomic>`, `<stdatomic.h>`, `<thread>`, `<stop_token>`, `<mutex>`,
+  `<shared_mutex>`, `<condition_variable>`, `<semaphore>`, `<latch>`, `<barrier>`, `<future>`,
+  `<rcu>`, `<hazard_pointer>`; DECISIONS §3): own suite atomic, thread, mutex,
+  condition_variable, future, latch, barrier, semaphore, stop_token, ratio and
+  memory_resource/synchronized_pool_threads 127/128 on both compilers (thread_id needs `<format>`),
+  stable over repeated runs, clean under ASan and under TSan (Clang, with a runtime built with
+  `-fsanitize=thread`: `YCXX_LIBDIR=build/clang-tsan SANITIZER=tsan`; `atomic/fences` is reported
+  because TSan does not model fences). The time arithmetic of `<chrono>` (24 own chrono tests)
+  passes; the other 30 chrono tests need calendars, formatting and the utc/tai/gps clocks. libc++
+  atomics 5 -> 115/115 and thread 11 -> 334/338 (both compilers); libstdc++ 29_atomics 0 -> 82/82
+  (GCC), 81/82 (Clang, compiler gap above) and 30_threads 0 -> 309/315 (both; the rest need
+  `<iostream>`/`<sstream>`/`<format>` or utc_clock). Limitations: `notify_one` can wake more than
+  one waiter when another waiter has registered but not yet blocked (a permitted spurious wakeup;
+  libc++ `condvar/notify_one.pass` assumes none and can fail rarely); atomic wait slots are shared
+  between addresses, so notify wakes every waiter of the slot; no `native_handle` for mutexes and
+  condition variables; `notify_all_at_thread_exit` and the `*_at_thread_exit` results never run
+  for the thread that ends the process; RCU has one domain, and `rcu_barrier` called from inside
+  a scheduled evaluation returns without waiting (waiting would deadlock); retired hazard-pointer
+  and RCU objects still pending at exit are not reclaimed. `atomic<T>` for a non-default-
+  constructible T has a constrained (not mandated) default constructor. The deprecated atomics
+  features are kept (DECISIONS §3).
 
 ## Open issues / next
 - Phase 2 is complete. The ABI runtime (src/abi) replaced libsupc++: broad sweep 4483 -> 4535

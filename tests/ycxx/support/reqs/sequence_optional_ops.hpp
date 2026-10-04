@@ -10,7 +10,9 @@
 
 namespace reqs::sequence_optional_ops {
 
-template <class X>
+// PushBackResult: the result type of push_back, void per [sequence.reqmts]/101-108 except for
+// inplace_vector, whose push_back returns a reference ([inplace.vector.modifiers]/4).
+template <class X, class PushBackResult = void>
 constexpr bool test() {
   using T = typename X::value_type;
   using S = typename X::size_type;
@@ -29,8 +31,8 @@ constexpr bool test() {
     static_assert(std::is_same_v<decltype(std::declval<X&>().at(S())), R>);
     static_assert(std::is_same_v<decltype(std::declval<const X&>().at(S())), CR>);
   }
-  static_assert(std::is_same_v<decltype(std::declval<X&>().push_back(std::declval<const T&>())), void>);
-  static_assert(std::is_same_v<decltype(std::declval<X&>().push_back(std::declval<T>())), void>);
+  static_assert(std::is_same_v<decltype(std::declval<X&>().push_back(std::declval<const T&>())), PushBackResult>);
+  static_assert(std::is_same_v<decltype(std::declval<X&>().push_back(std::declval<T>())), PushBackResult>);
   static_assert(std::is_same_v<decltype(std::declval<X&>().pop_back()), void>);
 
   X a;

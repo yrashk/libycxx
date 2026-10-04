@@ -6,8 +6,8 @@
 // ([ios.base.storage]/4). Its non-template members are defined in the hosted runtime
 // (src/hosted/ios.cpp). The bitmask types fmtflags, iostate and openmode and the enumeration
 // seekdir are enumerations nested in ios_base, with their bitmask operators as hidden friends.
-// basic_ios computes fill() lazily on first use (widen(' ') through the locale at that time), so
-// streams of character types whose ctype facet is not in the locale can still be built.
+// basic_ios::init sets fill() to widen(' ') when the locale has a ctype<charT>; otherwise fill()
+// is computed on first use, so streams of character types without a ctype facet can be built.
 #pragma once
 
 #include <ycxx/core/system_error.hpp>
@@ -33,6 +33,9 @@ public:
   void state(stateT s) { st_ = s; }
 
   friend bool operator==(const fpos& p, const fpos& q) noexcept { return p.off_ == q.off_; }
+  // `p == o` for an integer o: without this overload, the comparison would be ambiguous between
+  // converting o to fpos and converting p to streamoff.
+  friend bool operator==(const fpos& p, streamoff o) noexcept { return p.off_ == o; }
   friend streamoff operator-(const fpos& p, const fpos& q) noexcept { return p.off_ - q.off_; }
   fpos& operator+=(streamoff o) noexcept {
     off_ += o;
@@ -391,7 +394,11 @@ protected:
     init_base(sb != nullptr);
     sb_ = sb;
     tie_ = nullptr;
-    fill_set_ = false;
+    // [basic.ios.cons] Table: fill() is widen(' ') in the locale at this point; without a
+    // ctype<charT> there, it is computed on first use
+    fill_set_ = has_facet<ctype<charT>>(getloc());
+    if (fill_set_)
+      fill_ = widen(' ');
   }
   void move(basic_ios& rhs) {
     move_base(rhs);

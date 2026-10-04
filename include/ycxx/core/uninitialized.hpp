@@ -12,8 +12,8 @@
 #include <ycxx/core/memory_base.hpp>
 #include <ycxx/core/pair.hpp>
 #include <ycxx/core/iterator_adaptors.hpp>
-#include <ycxx/core/range_dangling.hpp>
-#include <ycxx/core/algorithm_results.hpp>
+#include <ycxx/core/ranges_subrange.hpp>
+#include <ycxx/core/algo_results.hpp>
 
 namespace ycxx::detail {
 

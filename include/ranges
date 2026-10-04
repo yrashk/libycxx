@@ -1,0 +1,12 @@
+// -*- C++ -*-  libycxx: <ranges>   [core]
+// Partial: the range concepts, range access, view_interface, subrange, dangling and views::all.
+// The other range factories and adaptors ([range.factories], [range.adaptors]) are not provided yet.
+#pragma once
+
+#include <ycxx/config.hpp>
+#include <ycxx/core/version.hpp>
+#include <compare>
+#include <initializer_list>
+#include <iterator>
+#include <ycxx/core/ranges_subrange.hpp>
+#include <ycxx/core/ranges_all.hpp>

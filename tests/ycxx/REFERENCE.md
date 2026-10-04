@@ -66,6 +66,7 @@ Legend: **G** fails with GCC + libstdc++, **C** with Clang + libstdc++.
 | `ranges/concat_view_iterator_category` | G | C | `concat_view`'s iterator has no `iterator_category` for forward ranges | [range.concat.iterator]/2: declared iff all-forward<Const, Views...> |
 | `ranges/as_input_view_borrowed` | G | C | `as_input_view` is not a borrowed range for a borrowed V | [ranges.syn]: `enable_borrowed_range<as_input_view<V>> = enable_borrowed_range<V>` |
 | `ranges/ranges_to_emplace_hint` | G | C | `ranges::to` calls `insert` where only `emplace_hint` exists | [range.utility.conv.general]/4-5: `c.emplace_hint(c.end(), std::forward<Ref>(ref))` |
+| `format/extended_float` | G |  | `format("{}", float16_t(0.1))` gives "0.099975586", the shortest representation as a `float` (`to_chars` of the same `float16_t` gives "0.1"; Clang defines no extended types) | [format.formatter.spec]/2.4: a formatter for every cv-unqualified floating-point type; [format.string.std] Table 110: none without precision is `to_chars(first, last, value)` |
 | `format/format_to_n_negative` | G | C | `format_to_n` with n < 0 writes every character | [format.functions]/19: M = clamp(n, 0, N) |
 | `sstream/stringbuf_view_no_mode` | G | C | `stringbuf("abc", openmode()).view()` returns "abc" | [stringbuf.members]/12.3: neither in nor out set: "Otherwise, sv() is returned" |
 | `syncstream/null_wrapped` | G | C | `osyncstream(nullptr).emit()` does not set badbit although `syncbuf::emit()` returns false | [syncstream.osyncstream.members]/1 |
@@ -156,7 +157,7 @@ Clang rejects code GCC accepts.
 | Test(s) | Cause |
 |---|---|
 | `string/literals`, `string/cons_pointer`, `string/string_view_conversion` | constexpr `basic_string` construction: Clang reports "undefined function `_M_construct`" (libstdc++'s explicit-instantiation declarations hide the definition from constant evaluation) |
-| `expected/bad_expected_access_constexpr`, `variant/bad_access` | libstdc++'s constexpr exception classes are only constexpr with GCC (Clang 23 cannot throw in constant evaluation) |
+| `expected/bad_expected_access_constexpr`, `variant/bad_access`, `stdexcept/constexpr_classes` | libstdc++'s constexpr exception classes are only constexpr with GCC (Clang 23 cannot throw in constant evaluation) |
 | `compare/type_order`, `version/header_compare` | `std::type_order` (needs a builtin only GCC has) |
 | `utility/observable_checkpoint_monostate`, `version/header_utility` | `std::observable_checkpoint` |
 | `version/header_type_traits` | `is_layout_compatible` (needs builtins Clang lacks) |

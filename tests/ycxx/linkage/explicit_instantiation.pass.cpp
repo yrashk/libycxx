@@ -10,7 +10,8 @@
 // list::remove, list::sort, vector::resize, is instantiated) and the program must link and
 // behave normally ([temp.explicit]/14: the declarations suppress implicit instantiation of
 // non-inline members, which the definitions then provide).
-// FLAGS: -latomic ../../../../tests/ycxx/support/linkage/explicit_inst_tu2.cpp
+// FLAGS: -latomic
+// FILES: ../support/linkage/explicit_inst_tu2.cpp
 //   (relative to the per-test temporary directory build/lit-*/linkage/<name>.XXXX)
 #include "linkage/explicit_inst.hpp"
 #include "check.hpp"

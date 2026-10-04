@@ -20,20 +20,24 @@ template <class T>
   return static_cast<remove_reference_t<T>&&>(t);
 }
 
+} // namespace std
+
+namespace ycxx::detail {
+// [forward]/6: V = OVERRIDE_REF(T&&, COPY_CONST(remove_reference_t<T>, remove_reference_t<U>)).
 template <class T, class U>
-[[nodiscard]] [[gnu::always_inline]] constexpr auto&& forward_like(U&& x) noexcept {
-  constexpr bool is_adding_const = __is_const(::ycxx::detail::remove_ref_t<T>);
-  if constexpr (::ycxx::detail::is_lref_v<T&&>) {
-    if constexpr (is_adding_const)
-      return static_cast<const ::ycxx::detail::remove_ref_t<U>&>(x);
-    else
-      return static_cast<::ycxx::detail::remove_ref_t<U>&>(x);
-  } else {
-    if constexpr (is_adding_const)
-      return static_cast<const ::ycxx::detail::remove_ref_t<U>&&>(x);
-    else
-      return static_cast<::ycxx::detail::remove_ref_t<U>&&>(x);
-  }
+using forward_like_base = std::conditional_t<std::is_const_v<std::remove_reference_t<T>>,
+                                             const std::remove_reference_t<U>, std::remove_reference_t<U>>;
+template <class T, class U>
+using forward_like_t =
+    std::conditional_t<is_lref_v<T&&>, forward_like_base<T, U>&, forward_like_base<T, U>&&>;
+} // namespace ycxx::detail
+
+namespace std {
+
+template <class T, class U>
+[[nodiscard]] [[gnu::always_inline]] constexpr auto forward_like(U&& x) noexcept
+    -> ::ycxx::detail::forward_like_t<T, U> {
+  return static_cast<::ycxx::detail::forward_like_t<T, U>>(x);
 }
 
 template <class T>

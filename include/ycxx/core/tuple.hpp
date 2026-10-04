@@ -877,19 +877,12 @@ constexpr auto uses_allocator_construction_args(const Alloc& alloc, Args&&... ar
   }
 }
 
+// Declared here, defined after every other overload: its recursive calls for T1 and T2 use
+// qualified lookup, which only sees overloads declared before the definition.
 template <class T, class Alloc, class Tuple1, class Tuple2>
   requires ycxx::detail::is_pair_v<remove_cv_t<T>>
 constexpr auto uses_allocator_construction_args(const Alloc& alloc, piecewise_construct_t, Tuple1&& x,
-                                                Tuple2&& y) noexcept {
-  using T1 = typename remove_cv_t<T>::first_type;
-  using T2 = typename remove_cv_t<T>::second_type;
-  return std::make_tuple(
-      piecewise_construct,
-      std::apply([&alloc](auto&&... a) { return std::uses_allocator_construction_args<T1>(alloc, static_cast<decltype(a)&&>(a)...); },
-                 static_cast<Tuple1&&>(x)),
-      std::apply([&alloc](auto&&... a) { return std::uses_allocator_construction_args<T2>(alloc, static_cast<decltype(a)&&>(a)...); },
-                 static_cast<Tuple2&&>(y)));
-}
+                                                Tuple2&& y) noexcept;
 template <class T, class Alloc>
   requires ycxx::detail::is_pair_v<remove_cv_t<T>>
 constexpr auto uses_allocator_construction_args(const Alloc& alloc) noexcept {
@@ -976,6 +969,20 @@ template <class T, class Alloc, class U>
             (!ycxx::detail::pair_like<U> && !ycxx::detail::pair_fun_callable<U>))
 constexpr auto uses_allocator_construction_args(const Alloc& alloc, U&& u) noexcept {
   return std::make_tuple(ycxx::detail::pair_converter<T, Alloc, U>(alloc, u));
+}
+
+template <class T, class Alloc, class Tuple1, class Tuple2>
+  requires ycxx::detail::is_pair_v<remove_cv_t<T>>
+constexpr auto uses_allocator_construction_args(const Alloc& alloc, piecewise_construct_t, Tuple1&& x,
+                                                Tuple2&& y) noexcept {
+  using T1 = typename remove_cv_t<T>::first_type;
+  using T2 = typename remove_cv_t<T>::second_type;
+  return std::make_tuple(
+      piecewise_construct,
+      std::apply([&alloc](auto&&... a) { return std::uses_allocator_construction_args<T1>(alloc, static_cast<decltype(a)&&>(a)...); },
+                 static_cast<Tuple1&&>(x)),
+      std::apply([&alloc](auto&&... a) { return std::uses_allocator_construction_args<T2>(alloc, static_cast<decltype(a)&&>(a)...); },
+                 static_cast<Tuple2&&>(y)));
 }
 
 template <class T, class Alloc, class... Args>

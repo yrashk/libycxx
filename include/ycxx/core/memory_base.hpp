@@ -138,11 +138,17 @@ template <size_t Alignment, class T>
 
 // [obj.lifetime]
 template <class T>
-  requires(is_implicit_lifetime_v<T> && is_aggregate_v<T>)
 constexpr void start_lifetime(T& r) noexcept {
+  static_assert(is_implicit_lifetime_v<T> && is_aggregate_v<T>,
+                "std::start_lifetime: T must be an implicit-lifetime aggregate type");
   if consteval {
     // No builtin exists on either compiler; in constant evaluation a default-initializing
-    // placement new begins the lifetime without initializing subobjects of trivial types.
+    // placement new begins the lifetime without initializing subobjects of trivial types. An
+    // object already within its lifetime must be left alone ([obj.lifetime]/2).
+    if constexpr (ycxx::detail::builtin::has_is_within_lifetime<T>) {
+      if (__builtin_is_within_lifetime(__builtin_addressof(r)))
+        return;
+    }
     ::new (static_cast<void*>(__builtin_addressof(r))) T;
   }
   // At run time storage of an implicit-lifetime type needs no action.
@@ -150,6 +156,7 @@ constexpr void start_lifetime(T& r) noexcept {
 
 template <class T>
 T* start_lifetime_as(void* p) noexcept {
+  static_assert(is_implicit_lifetime_v<T>, "std::start_lifetime_as: T must be an implicit-lifetime type");
   // Implicit object creation: memmove onto itself is specified to create objects ([intro.object]).
   return std::launder(static_cast<T*>(__builtin_memmove(p, p, sizeof(T))));
 }
@@ -185,8 +192,18 @@ const volatile T* start_lifetime_as_array(const volatile void* p, size_t n) noex
 }
 
 // [specialized.construct], [specialized.destroy]
+} // namespace std
+
+namespace ycxx::detail {
 template <class T, class... Args>
-  requires requires(void* p, Args&&... args) { ::new (p) T(static_cast<Args&&>(args)...); }
+concept construct_at_ok =
+    !std::is_unbounded_array_v<T> && requires(void* p, Args&&... args) { ::new (p) T(static_cast<Args&&>(args)...); };
+} // namespace ycxx::detail
+
+namespace std {
+
+template <class T, class... Args>
+  requires ycxx::detail::construct_at_ok<T, Args...>
 constexpr T* construct_at(T* location, Args&&... args) noexcept(noexcept(::new(static_cast<void*>(location))
                                                                               T(static_cast<Args&&>(args)...))) {
   if constexpr (is_array_v<T>) {
@@ -218,6 +235,33 @@ constexpr ForwardIt destroy_n(ForwardIt first, Size n) {
     std::destroy_at(__builtin_addressof(*first));
   return first;
 }
+
+} // namespace std
+
+namespace ycxx::detail {
+struct construct_at_fn {
+  template <class T, class... Args>
+    requires construct_at_ok<T, Args...>
+  static constexpr T* operator()(T* location, Args&&... args) noexcept(
+      noexcept(std::construct_at(location, static_cast<Args&&>(args)...))) {
+    return std::construct_at(location, static_cast<Args&&>(args)...);
+  }
+};
+struct destroy_at_fn {
+  template <class T>
+    requires std::is_nothrow_destructible_v<T> // destructible<T>
+  static constexpr void operator()(T* location) noexcept {
+    std::destroy_at(location);
+  }
+};
+} // namespace ycxx::detail
+
+namespace std::ranges {
+inline constexpr ycxx::detail::construct_at_fn construct_at{};
+inline constexpr ycxx::detail::destroy_at_fn destroy_at{};
+} // namespace std::ranges
+
+namespace std {
 
 // [allocator.tag]
 struct allocator_arg_t {

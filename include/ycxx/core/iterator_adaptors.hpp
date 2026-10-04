@@ -343,6 +343,7 @@ public:
   using iterator_concept = typename decltype(ycxx::detail::const_iter_concept<Iter>())::type;
   using value_type = iter_value_t<Iter>;
   using difference_type = iter_difference_t<Iter>;
+  using iterator_type = Iter;
 
   basic_const_iterator()
     requires default_initializable<Iter>
@@ -920,10 +921,10 @@ public:
   friend constexpr iter_difference_t<I2> operator-(const counted_iterator& x, const counted_iterator<I2>& y) {
     return y.length_ - x.length_;
   }
-  friend constexpr iter_difference_t<I> operator-(const counted_iterator& x, default_sentinel_t) {
+  friend constexpr iter_difference_t<I> operator-(const counted_iterator& x, default_sentinel_t) noexcept {
     return -x.length_;
   }
-  friend constexpr iter_difference_t<I> operator-(default_sentinel_t, const counted_iterator& y) {
+  friend constexpr iter_difference_t<I> operator-(default_sentinel_t, const counted_iterator& y) noexcept {
     return y.length_;
   }
   constexpr counted_iterator& operator-=(iter_difference_t<I> n)
@@ -943,7 +944,7 @@ public:
   friend constexpr bool operator==(const counted_iterator& x, const counted_iterator<I2>& y) {
     return x.length_ == y.length_;
   }
-  friend constexpr bool operator==(const counted_iterator& x, default_sentinel_t) { return x.length_ == 0; }
+  friend constexpr bool operator==(const counted_iterator& x, default_sentinel_t) noexcept { return x.length_ == 0; }
   template <common_with<I> I2>
   friend constexpr strong_ordering operator<=>(const counted_iterator& x, const counted_iterator<I2>& y) {
     return y.length_ <=> x.length_;

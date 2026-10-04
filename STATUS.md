@@ -33,7 +33,9 @@ riscv64-unknown-elf (Clang) and x86_64 (GCC). Core headers: see `tools/headers.p
 
 ## Known compiler gaps and bugs
 - GCC 16.2: no `__builtin_is_within_lifetime`, so `std::is_within_lifetime` is unavailable on GCC
-  (constraint, probed in-language).
+  (constraint, probed in-language). Consequence: `std::start_lifetime` cannot detect an
+  already-live object in constant evaluation on GCC, so it re-begins its lifetime and loses
+  the values (own test `memory/start_lifetime`, XFAIL on GCC).
 - Clang 23.1: no `__builtin_is_corresponding_member` or
   `__builtin_is_pointer_interconvertible_with_class`.
 - Clang 23.1: `std::optional<Inner>` declared as a member of the class enclosing `Inner`, where

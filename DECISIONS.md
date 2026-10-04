@@ -126,5 +126,17 @@ under the same name. Otherwise it gets one alias template in `config.hpp`.
    libstdc++ tests, or any implementation, libycxx's own included. A failing pure test is
    treated as a library bug until the draft shows otherwise; tests are never weakened to fit
    the library. Run with `tools/run-conformance ycxx gcc|clang`.
+   - **The test author always runs.** One spec-only test-author agent is kept running in the
+     background at all times, relaunched as soon as a batch finishes. It does two things:
+     (a) widens coverage on its own, walking the draft for clauses of already-implemented
+     headers that have no pure test yet; (b) takes nudges from current work. Whenever a header
+     is being implemented or reworked, the agent is told which draft sections (stable names)
+     that work covers, and those sections come first. The nudge names sections only, never
+     files or code.
+   - Each batch is committed on its own ("Own test suite: ..."), failures and all, before the
+     library fixes, which go in a separate commit.
+   - A failure caused by a missing compiler builtin is marked `// XFAIL-COMPILER: gcc|clang
+     <reason>` and listed under compiler gaps in `STATUS.md`. The test body stays unchanged and
+     reports XPASS once the compiler catches up.
 5. **Gate before pushing:** `tools/check-all`, plus the affected conformance directories on
    both compilers and both suites.

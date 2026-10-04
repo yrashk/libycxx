@@ -207,6 +207,15 @@
 #define __cpp_lib_constexpr_stack 202502L
 #define __cpp_lib_list_remove_return_type 201806L
 
+// <unordered_map> <unordered_set>
+#define __cpp_lib_constexpr_unordered_map 202502L
+#define __cpp_lib_constexpr_unordered_set 202502L
+#define __cpp_lib_generic_unordered_lookup 201811L
+#define __cpp_lib_unordered_map_try_emplace 201411L
+
+// <hive>
+#define __cpp_lib_hive 202502L
+
 // Features of headers above that had no macro yet.
 #define __cpp_lib_ssize 201902L
 #define __cpp_lib_null_iterators 201304L

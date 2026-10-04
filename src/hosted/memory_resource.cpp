@@ -6,6 +6,7 @@
 #include <new>
 #include <ycxx/core/bit.hpp>
 #include <ycxx/core/error.hpp>
+#include <ycxx/core/single_threaded.hpp>
 #include <ycxx/pal.h>
 
 namespace ycxx::detail {
@@ -165,6 +166,11 @@ void pool_core::release() noexcept {
 // ---- pal_lock --------------------------------------------------------------------------------
 
 void pal_lock::lock() noexcept {
+  // Single-threaded (single_threaded.hpp): nobody else can hold or wait for the lock.
+  if (::ycxx::detail::single_threaded() && state == 0) {
+    state = 1;
+    return;
+  }
   std::uint32_t expected = 0;
   if (__atomic_compare_exchange_n(&state, &expected, 1, false, __ATOMIC_ACQUIRE, __ATOMIC_RELAXED))
     return;
@@ -174,6 +180,10 @@ void pal_lock::lock() noexcept {
 }
 
 void pal_lock::unlock() noexcept {
+  if (::ycxx::detail::single_threaded()) {
+    state = 0;
+    return;
+  }
   if (__atomic_exchange_n(&state, 0, __ATOMIC_RELEASE) == 2)
     ycxx_pal_wake_all(&state);
 }

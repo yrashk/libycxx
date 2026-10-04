@@ -31,11 +31,14 @@
 #define __cpp_lib_unreachable 202202L
 #define __cpp_lib_constexpr_utility 201811L
 #define __cpp_lib_tuples_by_type 201304L
+#define __cpp_lib_tuple_like 202311L
+#define __cpp_lib_apply 202603L
 #define __cpp_lib_observable_checkpoint 202506L
 #define __cpp_lib_freestanding_utility 202306L
 #define __cpp_lib_constrained_equality 202411L
 #define __cpp_lib_invoke 201411L
 #define __cpp_lib_invoke_r 202106L
+#define __cpp_lib_result_of_sfinae 201210L
 
 // <source_location> <coroutine> <memory>
 #define __cpp_lib_source_location 201907L
@@ -45,6 +48,12 @@
 #define __cpp_lib_assume_aligned 201811L
 #define __cpp_lib_is_sufficiently_aligned 202411L
 #define __cpp_lib_start_lifetime_as 202207L
+// start_lifetime must leave an object already within its lifetime alone ([obj.lifetime]/2); in
+// constant evaluation that needs __builtin_is_within_lifetime.
+#if YCXX_HAS_IS_WITHIN_LIFETIME
+#  define __cpp_lib_start_lifetime 202603L
+#endif
+#define __cpp_lib_freestanding_memory 202502L
 #define __cpp_lib_allocate_at_least 202302L
 #define __cpp_lib_allocator_traits_is_always_equal 201411L
 #define __cpp_lib_constexpr_dynamic_alloc 201907L
@@ -179,6 +188,7 @@
 #define __cpp_lib_constexpr_algorithms 202306L
 #define __cpp_lib_constexpr_numeric 201911L
 #define __cpp_lib_execution 201902L
+#define __cpp_lib_freestanding_execution 202502L
 #define __cpp_lib_freestanding_algorithm 202502L
 #define __cpp_lib_freestanding_numeric 202502L
 #define __cpp_lib_gcd_lcm 201606L
@@ -286,6 +296,8 @@
 #define __cpp_lib_reference_wrapper 202403L
 #define __cpp_lib_bind_front 202306L
 #define __cpp_lib_bind_back 202306L
+#define __cpp_lib_constexpr_functional 201907L
+#define __cpp_lib_freestanding_functional 202306L
 #define __cpp_lib_not_fn 202306L
 #define __cpp_lib_constant_wrapper 202606L
 #define __cpp_lib_move_only_function 202110L
@@ -322,9 +334,11 @@
 #  define __cpp_lib_rcu 202306L
 #  define __cpp_lib_hazard_pointer 202606L
 #  define __cpp_lib_freestanding_operator_new 202306L
-// The freestanding parts of <cstring>/<cwchar> exist only as the hosted C library wrappers.
+// The freestanding parts of <cstdlib>/<cstring>/<cwchar> exist only as the hosted C library
+// wrappers.
 #  define __cpp_lib_freestanding_cstring 202311L
 #  define __cpp_lib_freestanding_cwchar 202306L
+#  define __cpp_lib_freestanding_cstdlib 202306L
 #else
 #  define __cpp_lib_freestanding_operator_new 0
 #endif

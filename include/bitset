@@ -4,3 +4,4 @@
 #include <ycxx/config.hpp>
 #include <ycxx/core/version.hpp>
 #include <ycxx/core/bitset.hpp>
+#include <string> // [bitset.syn]

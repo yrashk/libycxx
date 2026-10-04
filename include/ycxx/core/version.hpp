@@ -207,6 +207,28 @@
 #define __cpp_lib_constexpr_stack 202502L
 #define __cpp_lib_list_remove_return_type 201806L
 
+// <map> <set>
+#define __cpp_lib_constexpr_map 202502L
+#define __cpp_lib_constexpr_set 202502L
+#define __cpp_lib_generic_associative_lookup 201304L
+
+// <flat_map> <flat_set>
+#define __cpp_lib_constexpr_flat_map 202502L
+#define __cpp_lib_constexpr_flat_set 202502L
+#define __cpp_lib_flat_map 202511L
+#define __cpp_lib_flat_set 202511L
+
+// Shared by several container headers, all of which now provide the feature.
+#define __cpp_lib_associative_heterogeneous_erasure 202110L
+#define __cpp_lib_associative_heterogeneous_insertion 202306L
+#define __cpp_lib_containers_ranges 202202L
+#define __cpp_lib_erase_if 202002L
+#define __cpp_lib_incomplete_container_elements 201505L
+#define __cpp_lib_map_lookup 202606L
+#define __cpp_lib_map_try_emplace 201411L
+#define __cpp_lib_node_extract 201606L
+#define __cpp_lib_nonmember_container_access 201411L
+
 // <unordered_map> <unordered_set>
 #define __cpp_lib_constexpr_unordered_map 202502L
 #define __cpp_lib_constexpr_unordered_set 202502L

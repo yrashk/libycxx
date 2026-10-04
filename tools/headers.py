@@ -13,6 +13,7 @@ CORE += ["algorithm", "numeric", "execution", "ranges"]
 CORE += ["scoped_allocator"]
 CORE += ["vector", "inplace_vector"]
 CORE += ["deque", "list", "forward_list", "stack", "queue"]
+CORE += ["map", "set", "flat_map", "flat_set"]
 CORE += ["unordered_map", "unordered_set", "hive"]
 # Numerics (<cmath>: see DECISIONS §3; the run-time calls of its functions need libm).
 CORE += ["ratio", "numbers", "cmath", "complex", "valarray"]

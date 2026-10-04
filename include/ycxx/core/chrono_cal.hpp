@@ -19,7 +19,18 @@ constexpr long long chrono_floor_div(long long a, long long b) noexcept {
   const long long q = a / b;
   return (a % b != 0 && ((a < 0) != (b < 0))) ? q - 1 : q;
 }
-constexpr long long chrono_modulo(long long a, long long b) noexcept { return a - chrono_floor_div(a, b) * b; }
+constexpr long long chrono_modulo(long long a, long long b) noexcept {
+  const long long r = a % b;
+  return r != 0 && ((r < 0) != (b < 0)) ? r + b : r;
+}
+// a + b and a - b modulo 2^64: for results that are truncated to a narrow field anyway (day,
+// year), and for counts at the ends of the range, without signed overflow.
+constexpr unsigned long long wrap_add(long long a, long long b) noexcept {
+  return static_cast<unsigned long long>(a) + static_cast<unsigned long long>(b);
+}
+constexpr unsigned long long wrap_sub(long long a, long long b) noexcept {
+  return static_cast<unsigned long long>(a) - static_cast<unsigned long long>(b);
+}
 
 struct civil_date {
   int y;
@@ -117,11 +128,11 @@ public:
     return t;
   }
   constexpr day& operator+=(const days& d) noexcept {
-    *this = day(static_cast<unsigned>(d_ + d.count()));
+    *this = day(static_cast<unsigned>(::ycxx::detail::wrap_add(d_, d.count())));
     return *this;
   }
   constexpr day& operator-=(const days& d) noexcept {
-    *this = day(static_cast<unsigned>(d_ - d.count()));
+    *this = day(static_cast<unsigned>(::ycxx::detail::wrap_sub(d_, d.count())));
     return *this;
   }
   constexpr explicit operator unsigned() const noexcept { return d_; }
@@ -135,11 +146,11 @@ constexpr strong_ordering operator<=>(const day& x, const day& y) noexcept {
   return static_cast<unsigned>(x) <=> static_cast<unsigned>(y);
 }
 constexpr day operator+(const day& x, const days& y) noexcept {
-  return day(static_cast<unsigned>(static_cast<long long>(static_cast<unsigned>(x)) + y.count()));
+  return day(static_cast<unsigned>(::ycxx::detail::wrap_add(static_cast<unsigned>(x), y.count())));
 }
 constexpr day operator+(const days& x, const day& y) noexcept { return y + x; }
 constexpr day operator-(const day& x, const days& y) noexcept {
-  return day(static_cast<unsigned>(static_cast<long long>(static_cast<unsigned>(x)) - y.count()));
+  return day(static_cast<unsigned>(::ycxx::detail::wrap_sub(static_cast<unsigned>(x), y.count())));
 }
 constexpr days operator-(const day& x, const day& y) noexcept {
   return days(static_cast<int>(static_cast<unsigned>(x)) - static_cast<int>(static_cast<unsigned>(y)));
@@ -184,12 +195,18 @@ constexpr strong_ordering operator<=>(const month& x, const month& y) noexcept {
 }
 constexpr month operator+(const month& x, const months& y) noexcept {
   return month(static_cast<unsigned>(
-      ::ycxx::detail::chrono_modulo(static_cast<long long>(static_cast<unsigned>(x)) + y.count() - 1, 12) + 1));
+      ::ycxx::detail::chrono_modulo(static_cast<long long>(static_cast<unsigned>(x)) - 1 +
+                                        ::ycxx::detail::chrono_modulo(y.count(), 12),
+                                    12) +
+      1));
 }
 constexpr month operator+(const months& x, const month& y) noexcept { return y + x; }
 constexpr month operator-(const month& x, const months& y) noexcept {
   return month(static_cast<unsigned>(
-      ::ycxx::detail::chrono_modulo(static_cast<long long>(static_cast<unsigned>(x)) - y.count() - 1, 12) + 1));
+      ::ycxx::detail::chrono_modulo(static_cast<long long>(static_cast<unsigned>(x)) - 1 -
+                                        ::ycxx::detail::chrono_modulo(y.count(), 12),
+                                    12) +
+      1));
 }
 constexpr months operator-(const month& x, const month& y) noexcept {
   return months(static_cast<int>(::ycxx::detail::chrono_modulo(
@@ -230,11 +247,11 @@ public:
     return t;
   }
   constexpr year& operator+=(const years& y) noexcept {
-    *this = year(y_ + y.count());
+    *this = year(static_cast<int>(::ycxx::detail::wrap_add(y_, y.count())));
     return *this;
   }
   constexpr year& operator-=(const years& y) noexcept {
-    *this = year(y_ - y.count());
+    *this = year(static_cast<int>(::ycxx::detail::wrap_sub(y_, y.count())));
     return *this;
   }
   constexpr year operator+() const noexcept { return *this; }
@@ -251,11 +268,11 @@ constexpr strong_ordering operator<=>(const year& x, const year& y) noexcept {
   return static_cast<int>(x) <=> static_cast<int>(y);
 }
 constexpr year operator+(const year& x, const years& y) noexcept {
-  return year(static_cast<int>(static_cast<long long>(static_cast<int>(x)) + y.count()));
+  return year(static_cast<int>(::ycxx::detail::wrap_add(static_cast<int>(x), y.count())));
 }
 constexpr year operator+(const years& x, const year& y) noexcept { return y + x; }
 constexpr year operator-(const year& x, const years& y) noexcept {
-  return year(static_cast<int>(static_cast<long long>(static_cast<int>(x)) - y.count()));
+  return year(static_cast<int>(::ycxx::detail::wrap_sub(static_cast<int>(x), y.count())));
 }
 constexpr years operator-(const year& x, const year& y) noexcept {
   return years(static_cast<int>(x) - static_cast<int>(y));
@@ -304,13 +321,13 @@ public:
 
 constexpr bool operator==(const weekday& x, const weekday& y) noexcept { return x.c_encoding() == y.c_encoding(); }
 constexpr weekday operator+(const weekday& x, const days& y) noexcept {
-  return weekday(
-      static_cast<unsigned>(::ycxx::detail::chrono_modulo(static_cast<long long>(x.c_encoding()) + y.count(), 7)));
+  return weekday(static_cast<unsigned>(::ycxx::detail::chrono_modulo(
+      static_cast<long long>(x.c_encoding()) + ::ycxx::detail::chrono_modulo(y.count(), 7), 7)));
 }
 constexpr weekday operator+(const days& x, const weekday& y) noexcept { return y + x; }
 constexpr weekday operator-(const weekday& x, const days& y) noexcept {
-  return weekday(
-      static_cast<unsigned>(::ycxx::detail::chrono_modulo(static_cast<long long>(x.c_encoding()) - y.count(), 7)));
+  return weekday(static_cast<unsigned>(::ycxx::detail::chrono_modulo(
+      static_cast<long long>(x.c_encoding()) - ::ycxx::detail::chrono_modulo(y.count(), 7), 7)));
 }
 constexpr days operator-(const weekday& x, const weekday& y) noexcept {
   return days(static_cast<int>(::ycxx::detail::chrono_modulo(
@@ -434,8 +451,9 @@ class year_month;
 } // namespace std::chrono
 
 namespace ycxx::detail {
-// ym + n months, n in long long (so that subtracting months::min() does not overflow).
-constexpr std::chrono::year_month add_months(const std::chrono::year_month& ym, long long n) noexcept;
+// ym + n months, or ym - n months with `subtract`, without signed overflow for any n.
+constexpr std::chrono::year_month add_months(const std::chrono::year_month& ym, long long n,
+                                             bool subtract = false) noexcept;
 } // namespace ycxx::detail
 
 namespace std::chrono {
@@ -472,11 +490,18 @@ constexpr strong_ordering operator<=>(const year_month& x, const year_month& y) 
 }
 } // namespace std::chrono
 
-constexpr std::chrono::year_month ycxx::detail::add_months(const std::chrono::year_month& ym, long long n) noexcept {
-  const long long z = static_cast<long long>(static_cast<int>(ym.year())) * 12 +
-                      (static_cast<long long>(static_cast<unsigned>(ym.month())) - 1) + n;
-  const long long y = ::ycxx::detail::chrono_floor_div(z, 12);
-  return {std::chrono::year(static_cast<int>(y)), std::chrono::month(static_cast<unsigned>(z - y * 12 + 1))};
+constexpr std::chrono::year_month ycxx::detail::add_months(const std::chrono::year_month& ym, long long n,
+                                                          bool subtract) noexcept {
+  // n = 12q + r with r in [0, 11]; the month moves by r, the year by q and the carry.
+  const long long q = ::ycxx::detail::chrono_floor_div(n, 12);
+  const long long r = ::ycxx::detail::chrono_modulo(n, 12);
+  const long long m = static_cast<long long>(static_cast<unsigned>(ym.month())) - 1 + (subtract ? -r : r);
+  const long long carry = ::ycxx::detail::chrono_floor_div(m, 12);
+  const unsigned long long y = (subtract ? ::ycxx::detail::wrap_sub(static_cast<int>(ym.year()), q)
+                                         : ::ycxx::detail::wrap_add(static_cast<int>(ym.year()), q)) +
+                               static_cast<unsigned long long>(carry);
+  return {std::chrono::year(static_cast<int>(y)),
+          std::chrono::month(static_cast<unsigned>(::ycxx::detail::chrono_modulo(m, 12) + 1))};
 }
 
 namespace std::chrono {
@@ -490,7 +515,7 @@ constexpr year_month operator+(const months& dm, const year_month& ym) noexcept 
 }
 template <class = void>
 constexpr year_month operator-(const year_month& ym, const months& dm) noexcept {
-  return ::ycxx::detail::add_months(ym, -static_cast<long long>(dm.count()));
+  return ::ycxx::detail::add_months(ym, dm.count(), true);
 }
 constexpr months operator-(const year_month& x, const year_month& y) noexcept {
   return months(
@@ -580,7 +605,7 @@ constexpr year_month_day operator+(const months& dm, const year_month_day& ymd) 
 }
 template <class = void>
 constexpr year_month_day operator-(const year_month_day& ymd, const months& dm) noexcept {
-  const year_month ym = ::ycxx::detail::add_months({ymd.year(), ymd.month()}, -static_cast<long long>(dm.count()));
+  const year_month ym = ::ycxx::detail::add_months({ymd.year(), ymd.month()}, dm.count(), true);
   return {ym.year(), ym.month(), ymd.day()};
 }
 constexpr year_month_day operator+(const year_month_day& ymd, const years& dy) noexcept {
@@ -654,7 +679,7 @@ constexpr year_month_day_last operator+(const months& dm, const year_month_day_l
 }
 template <class = void>
 constexpr year_month_day_last operator-(const year_month_day_last& ymdl, const months& dm) noexcept {
-  const year_month ym = ::ycxx::detail::add_months({ymdl.year(), ymdl.month()}, -static_cast<long long>(dm.count()));
+  const year_month ym = ::ycxx::detail::add_months({ymdl.year(), ymdl.month()}, dm.count(), true);
   return {ym.year(), month_day_last(ym.month())};
 }
 constexpr year_month_day_last operator+(const year_month_day_last& ymdl, const years& dy) noexcept {
@@ -749,7 +774,7 @@ constexpr year_month_weekday operator+(const months& dm, const year_month_weekda
 }
 template <class = void>
 constexpr year_month_weekday operator-(const year_month_weekday& ymwd, const months& dm) noexcept {
-  const year_month ym = ::ycxx::detail::add_months({ymwd.year(), ymwd.month()}, -static_cast<long long>(dm.count()));
+  const year_month ym = ::ycxx::detail::add_months({ymwd.year(), ymwd.month()}, dm.count(), true);
   return {ym.year(), ym.month(), ymwd.weekday_indexed()};
 }
 constexpr year_month_weekday operator+(const year_month_weekday& ymwd, const years& dy) noexcept {
@@ -820,7 +845,7 @@ constexpr year_month_weekday_last operator+(const months& dm, const year_month_w
 template <class = void>
 constexpr year_month_weekday_last operator-(const year_month_weekday_last& ymwdl, const months& dm) noexcept {
   const year_month ym =
-      ::ycxx::detail::add_months({ymwdl.year(), ymwdl.month()}, -static_cast<long long>(dm.count()));
+      ::ycxx::detail::add_months({ymwdl.year(), ymwdl.month()}, dm.count(), true);
   return {ym.year(), ym.month(), ymwdl.weekday_last()};
 }
 constexpr year_month_weekday_last operator+(const year_month_weekday_last& ymwdl, const years& dy) noexcept {

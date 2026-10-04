@@ -378,10 +378,9 @@ under the same name. Otherwise it gets one alias template in `config.hpp`.
   (D.23), without `[[deprecated]]` (as for the Annex D codecvt facets).
 - **file_time_type** is `chrono::time_point<chrono::file_clock>`, nanoseconds in a `long long`
   since the Unix epoch (range 1677-2262); a time stamp outside it is `errc::value_too_large`.
-  Until `<chrono>` is merged, `ycxx/hosted/file_clock.hpp` defines the minimal `duration`,
-  `time_point` and `file_clock` with the same names and layout as the concurrent
-  `ycxx/core/chrono_base.hpp`/`ycxx/hosted/chrono_clocks.hpp`; on merge its body becomes an
-  include of `chrono_clocks.hpp`.
+  `ycxx/hosted/file_clock.hpp` (what `<filesystem>` includes) is `ycxx/hosted/chrono_clocks.hpp`;
+  file_clock has `to_sys`/`from_sys` ([time.clock.file.members]), so `clock_cast` reaches every
+  clock through system_clock.
 - **directory_entry caching.** `refresh()` caches the results of `lstat` (and `stat` for a
   symbolic link) including their errors, so the observers return what the operations would.
   Directory iteration caches only the file type from `d_type` (no `refresh`, [fs.class.directory.

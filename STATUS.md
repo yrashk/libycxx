@@ -366,7 +366,12 @@ Deprecated and removed features are not implemented (`is_pod`, `is_trivial`, `al
   have no default constructor (libstdc++ extension); no `wstring_convert`/`wbuffer_convert`
   (removed in C++26), no `<codecvt>`; `fstream`'s path overloads are constrained templates.
   Standard stream objects synchronized with stdio write character by
-  character through `putc` (bulk writes through `fwrite`).
+  character through `putc` (bulk writes through `fwrite`). The UTF-16 codecvts' `out` takes a
+  high surrogate into the state (so out(from, from + 1) succeeds, as [locale.codecvt.virtuals]/4
+  requires of a filebuf facet); `unshift` reports `error` while one is pending. libstdc++'s
+  `codecvt_unicode.h` expects `partial` with from_next before it instead; `money_get` with
+  frac_digits() > 0 accepts a value without a decimal point as the digits that appear ("1056"),
+  but a decimal point must be followed by exactly frac_digits() digits.
 - `<memory>`: no `atomic<shared_ptr<T>>` / `atomic<weak_ptr<T>>`, no execution-policy overloads of the specialized
   algorithms, no `pointer_tag_pair`. shared_ptr reference counts use
   the `__atomic` builtins unconditionally (no single-threaded fast path). get_deleter identifies

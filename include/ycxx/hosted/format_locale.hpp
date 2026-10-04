@@ -1,10 +1,42 @@
-// libycxx hosted: the formatting functions taking a locale ([format.functions]). The other
-// locale-dependent parts (basic_format_context::locale() and the numpunct values of the L
-// option) are defined in the hosted runtime (src/hosted/format.cpp) for the two context types.
+// libycxx hosted: the locale-dependent parts of <format>: basic_format_context::locale(), the
+// numpunct values of the L option and the formatting functions taking a locale. The first two
+// are also instantiated in the hosted runtime (src/hosted/format.cpp) for format_context and
+// wformat_context, for code that has only the core of <format>.
 #pragma once
 
 #include <ycxx/core/format_base.hpp>
 #include <ycxx/hosted/locale_base.hpp>
+
+template <class Out, class charT>
+std::locale std::basic_format_context<Out, charT>::locale() {
+  const std::locale* loc = ycxx::detail::fmt_access::locale_ptr(*this);
+  return loc != nullptr ? *loc : std::locale();
+}
+
+namespace ycxx::detail {
+template <class charT, class Context>
+fmt_numpunct<charT> fmt_get_numpunct(Context& ctx) {
+  const std::locale loc = ctx.locale();
+  const std::numpunct<charT>& np = std::use_facet<std::numpunct<charT>>(loc);
+  return {np.grouping(), np.thousands_sep(), np.decimal_point()};
+}
+
+template <class charT, class Context>
+std::basic_string<charT> fmt_get_boolname(Context& ctx, bool value) {
+  const std::locale loc = ctx.locale();
+  const std::numpunct<charT>& np = std::use_facet<std::numpunct<charT>>(loc);
+  return value ? np.truename() : np.falsename();
+}
+
+// Instantiated in the hosted runtime.
+extern template fmt_numpunct<char> fmt_get_numpunct<char, fmt_context<char>>(fmt_context<char>&);
+extern template fmt_numpunct<wchar_t> fmt_get_numpunct<wchar_t, fmt_context<wchar_t>>(fmt_context<wchar_t>&);
+extern template std::string fmt_get_boolname<char, fmt_context<char>>(fmt_context<char>&, bool);
+extern template std::wstring fmt_get_boolname<wchar_t, fmt_context<wchar_t>>(fmt_context<wchar_t>&, bool);
+} // namespace ycxx::detail
+
+extern template std::locale std::format_context::locale();
+extern template std::locale std::wformat_context::locale();
 
 namespace std {
 

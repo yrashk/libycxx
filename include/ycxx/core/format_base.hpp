@@ -531,7 +531,7 @@ public:
   basic_format_context& operator=(const basic_format_context&) = delete;
 
   constexpr basic_format_arg<basic_format_context> arg(size_t id) const noexcept { return args_.get(id); }
-  std::locale locale(); // defined in the hosted runtime (src/hosted/format.cpp)
+  std::locale locale(); // defined in ycxx/hosted/format_locale.hpp
   constexpr iterator out() { return static_cast<Out&&>(out_); }
   constexpr void advance_to(iterator it) { out_ = static_cast<Out&&>(it); }
 };
@@ -1065,8 +1065,9 @@ constexpr Out fmt_write_padded(Out out, const fmt_spec<charT>& s, fmt_align def,
 // ---- numbers -------------------------------------------------------------------------------
 
 // The numpunct values the L option uses ([format.string.std]/17), from the context's locale; the
-// two functions are defined in the hosted runtime (src/hosted/format.cpp), for fmt_context<char>
-// and fmt_context<wchar_t>, as is basic_format_context::locale().
+// two functions are defined with <format> (ycxx/hosted/format_locale.hpp), as is
+// basic_format_context::locale(), and instantiated for format_context and wformat_context in the
+// hosted runtime (for the headers that include only this one).
 template <class charT>
 struct fmt_numpunct {
   std::string grouping;

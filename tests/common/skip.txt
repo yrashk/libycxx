@@ -1,5 +1,3 @@
 # Content rules shared by all suites (see tests/SKIPPED.md).
-content:\bhas_denorm(_loss)?\b|\bdenorm_present\b|\bdenorm_absent\b|\bdenorm_indeterminate\b|\bfloat_denorm_style\b | deprecated | numeric_limits::has_denorm / has_denorm_loss / float_denorm_style are deprecated (C++23)
-content:std::is_pod\b|std::is_literal_type\b|std::is_trivial\b|std::is_trivial_v\b|std::is_pod_v\b | deprecated | is_pod / is_literal_type / is_trivial are deprecated or removed
-content:std::aligned_storage\b|std::aligned_union\b | deprecated | aligned_storage / aligned_union are deprecated (C++23)
+content:std::is_literal_type\b | removed | is_literal_type was removed in C++20
 content:std::result_of\b | removed | result_of was removed in C++20

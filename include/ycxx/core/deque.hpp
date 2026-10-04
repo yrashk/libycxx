@@ -131,9 +131,9 @@ public:
   friend constexpr difference_type operator-(const deque_iter& a, const deque_iter& b) noexcept {
     return static_cast<difference_type>((a.node_ - b.node_) * B + (a.cur_ - a.blk_) - (b.cur_ - b.blk_));
   }
-  friend constexpr bool operator==(const deque_iter& a, const deque_iter& b) noexcept {
-    return a.cur_ == b.cur_ && a.node_ == b.node_;
-  }
+  // Element addresses identify positions: the only null cur_ in a deque is its past-the-end
+  // position after a full last block (and a value-initialized iterator).
+  friend constexpr bool operator==(const deque_iter& a, const deque_iter& b) noexcept { return a.cur_ == b.cur_; }
   friend constexpr std::strong_ordering operator<=>(const deque_iter& a, const deque_iter& b) noexcept {
     if (a.node_ != b.node_)
       return a.node_ <=> b.node_;
@@ -766,6 +766,14 @@ public:
   // ---- [deque.modifiers] ----
   template <class... Args>
   constexpr reference emplace_front(Args&&... args) {
+    if (map_ != nullptr && start_ % B != 0) { // room in the first block
+      check_grow(1);
+      T* const p = ptr_at(start_ - 1);
+      alloc_traits::construct(alloc_, p, static_cast<Args&&>(args)...);
+      --start_;
+      ++size_;
+      return *p;
+    }
     check_grow(1);
     reserve_front(1);
     ycxx::detail::rollback rb{[this] { trim_front(); }};
@@ -775,6 +783,13 @@ public:
   }
   template <class... Args>
   constexpr reference emplace_back(Args&&... args) {
+    if (map_ != nullptr && (size_ == 0 || (start_ + size_) % B != 0)) { // room in the last block
+      check_grow(1);
+      T* const p = ptr_at(start_ + size_);
+      alloc_traits::construct(alloc_, p, static_cast<Args&&>(args)...);
+      ++size_;
+      return *p;
+    }
     check_grow(1);
     reserve_back(1);
     ycxx::detail::rollback rb{[this] { trim_back(); }};
@@ -885,10 +900,21 @@ public:
 
   constexpr void pop_front() {
     ycxx::detail::precondition(size_ != 0, "std::deque::pop_front: empty deque");
+    if (size_ > 1 && (start_ + 1) % B != 0) { // the first block keeps elements
+      alloc_traits::destroy(alloc_, elem(0));
+      ++start_;
+      --size_;
+      return;
+    }
     erase_front(1);
   }
   constexpr void pop_back() {
     ycxx::detail::precondition(size_ != 0, "std::deque::pop_back: empty deque");
+    if (size_ > 1 && (start_ + size_ - 1) % B != 0) { // the last block keeps elements
+      alloc_traits::destroy(alloc_, elem(size_ - 1));
+      --size_;
+      return;
+    }
     erase_back(1);
   }
   constexpr iterator erase(const_iterator position) { return erase(position, position + 1); }

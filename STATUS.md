@@ -36,6 +36,7 @@ Conformance oracles (run only, never edited): libc++ tests from `llvmorg-23.1.2`
 | numerics/{c.math,numbers,complex.number,numarray} + utilities/ratio | 325/348 | 327/348 | yes (run-time `<cmath>` calls need libm) | was 6; rest below (numerics) |
 | input.output + localization (iostreams, `<locale>`) | 583/855 | 590/855 | no (hosted) | was 39; 213 of the failures need `<filesystem>`, `<codecvt>` (removed), `<format>`/`<print>`, `<mutex>`/`<chrono>` or `EOF` from `constexpr_char_traits.h`; rest under Known limitations |
 | atomics + thread (incl. futures, stop tokens, latch/barrier/semaphore) | 449/453 | 449/453 | `<atomic>` yes (runtime archive); the rest hosted | was 16; rest: `<format>` for thread::id (4) |
+| input.output + localization (iostreams, `<locale>`, `<filesystem>`) | 668/855 | 668/855 | no (hosted) | was 583 (Clang) / 590 (GCC) before `<filesystem>`; most failures need `<chrono>`, `<codecvt>` (removed), `<format>`/`<print>`, `<mutex>`/`<thread>` or `EOF` from `constexpr_char_traits.h`; rest under Known limitations |
 
 Whole-suite baseline (clang, before iterators/tuple/array/optional): 976 pass / ~8,000 run.
 
@@ -115,6 +116,15 @@ string_view, memory, iterator: 301/305 (GCC, plus 1 XFAIL), 302/305 (Clang); the
 8 -> 805/925 (Clang); most remaining failures need missing headers or libstdc++ extensions
 (`char_traits<unsigned char>`, deprecated manipulator overloads, transitive C headers).
 
+File systems (hosted, POSIX; DECISIONS §8): `<filesystem>` in full except `formatter<path>`
+(waits for `<format>`). Own suite filesystem/ 16/17 on both compilers (path_format needs
+`<format>`), fstream/ 5/5; clean under ASan and UBSan (Clang). libc++ input.output/filesystems
+5 -> 67/149 (both compilers); with the concurrent `<chrono>` overlaid locally 117/149, the other
+32: 29 permission tests that cannot fail as root (all but 2 pass when run as `nobody`), toctou
+(`<thread>`), and two below. libstdc++ 27_io/filesystem 0 -> 28/35 run (both; 90 more are skipped
+by the harness because they use `__gnu_test` helpers, whose `testsuite_fs.h` needs `<random>`);
+5 of the 7 failures need `<random>`.
+
 ## Freestanding
 `tools/check_freestanding.sh`: every core header compiles with `-ffreestanding -nostdlib -nostdinc
 -fno-exceptions -fno-rtti`; the smoke test links on x86_64-unknown-none-elf and
@@ -190,6 +200,17 @@ Deprecated and removed features are not implemented (`is_pod`, `is_trivial`, `al
   C library does (`0x0.000000000000001p-16385` is the smallest), so that both forms agree there.
 
 ## Known limitations and draft defects
+- `<filesystem>`: no `formatter<path>`/`__cpp_lib_format_path` (no `<format>`);
+  `ycxx/hosted/file_clock.hpp` holds a minimal `duration`/`time_point`/`file_clock` until
+  `<chrono>` is merged (then it becomes an include of `chrono_clocks.hpp`). The native encoding
+  is assumed UTF-8 whatever the C locale; ill-formed UTF-8 converts to U+FFFD rather than
+  throwing (libstdc++ u8path test02 expects an exception; unspecified by the draft). No
+  root-names (`//host` is not special). `file_time_type` spans 1677-2262; setting
+  `file_time_type::min()` succeeds where the file system clamps the time silently (libc++
+  last_write_time test_write_min_time expects `value_too_large`). `directory_entry(p, ec)`
+  clears the path on errors other than "not found" as [fs.dir.entry.cons]/2 says (libc++ test
+  path_ctor_cannot_resolve expects it kept). `permissions(..., nofollow)` on a symbolic link
+  fails with `ENOTSUP` on Linux. Permission-error tests need a non-root user.
 - Iostreams/locale: named locales other than "C", "POSIX", "C.UTF-8" and "" throw
   `runtime_error` (the environment's conventions are not supported); `codecvt<wchar_t, char>`
   is UTF-8 in the classic locale, so `encoding()` is 0 and wide file streams cannot seek by an
@@ -200,8 +221,8 @@ Deprecated and removed features are not implemented (`is_pod`, `is_trivial`, `al
   starts writing at the beginning ([stringbuf.members] init-buf-ptrs); bitmask types are
   enumerations, so `basic_stringbuf(s, 0)` does not compile; `basic_iostream`/`basic_istream`
   have no default constructor (libstdc++ extension); no `wstring_convert`/`wbuffer_convert`
-  (removed in C++26), no `<codecvt>`; `fstream`'s path overloads are templates (no
-  `<filesystem>` yet). Standard stream objects synchronized with stdio write character by
+  (removed in C++26), no `<codecvt>`; `fstream`'s path overloads are constrained templates.
+  Standard stream objects synchronized with stdio write character by
   character through `putc` (bulk writes through `fwrite`).
 - `<memory>`: no `atomic<shared_ptr<T>>` / `atomic<weak_ptr<T>>`, no execution-policy overloads of the specialized
   algorithms, no `pointer_tag_pair`, `indirect`, `polymorphic`. shared_ptr reference counts use

@@ -9,6 +9,7 @@
 #include <ycxx/core/ranges_base.hpp>
 #include <ycxx/core/range_access.hpp>
 #include <ycxx/core/iterator_adaptors.hpp> // [iterator.range]/1: all of it, incl. rbegin/crend
+#include <ycxx/core/format_kind.hpp>
 #include <initializer_list>
 
 namespace std {
@@ -56,6 +57,31 @@ template <class T>
 inline constexpr bool is_optional = false;
 template <class T>
 inline constexpr bool is_optional<std::optional<T>> = true;
+
+// The Constraints of optional's equality operators, as default template arguments (see there).
+template <bool C>
+struct optional_check_t {};
+template <>
+struct optional_check_t<true> {
+  using type = void;
+};
+template <bool C>
+using optional_check = typename optional_check_t<C>::type;
+template <class T, class U>
+concept optional_eq = requires(const T& a, const U& b) {
+  { a == b } -> std::convertible_to<bool>;
+};
+template <class T, class U>
+concept optional_ne = requires(const T& a, const U& b) {
+  { a != b } -> std::convertible_to<bool>;
+};
+
+// optional<T&>::value_or's return type remove_cv_t<T>, named through U so that it is formed only
+// when the member is used (never for the function and array types it is not declared for).
+template <class T, class U>
+struct optional_value_or {
+  using type = std::remove_cv_t<T>;
+};
 
 template <class T>
 concept derived_from_optional = requires(const T& t) { []<class U>(const std::optional<U>&) {}(t); };
@@ -116,14 +142,21 @@ class optional {
     engaged_ = true;
   }
   constexpr void destroy() noexcept {
-    if constexpr (!is_trivially_destructible_v<T>)
+    if constexpr (!is_trivially_destructible_v<T>) {
       u_.val.~stored();
+      // Clang 23 still takes the destroyed member for the union's active member during constant
+      // evaluation (a constexpr optional<T> that was reset is "not initialized"), so 'empty' is
+      // made active again.
+      if consteval {
+        std::construct_at(__builtin_addressof(u_.empty));
+      }
+    }
     engaged_ = false;
   }
   template <class Opt>
   constexpr void assign_from(Opt&& rhs) {
     if (engaged_ && rhs.has_value())
-      u_.val = *static_cast<Opt&&>(rhs);
+      static_cast<T&>(u_.val) = *static_cast<Opt&&>(rhs);
     else if (rhs.has_value())
       construct(*static_cast<Opt&&>(rhs));
     else if (engaged_)
@@ -172,21 +205,24 @@ public:
       : u_(in_place, il, static_cast<Args&&>(args)...), engaged_(true) {}
 
   template <class U = remove_cv_t<T>>
-    requires is_constructible_v<T, U> && (!is_same_v<remove_cvref_t<U>, in_place_t>) &&
-             (!is_same_v<remove_cvref_t<U>, optional>) &&
-             (!is_same_v<remove_cv_t<T>, bool> || !ycxx::detail::is_optional<remove_cvref_t<U>>)
+    requires(!is_same_v<remove_cvref_t<U>, in_place_t>) && (!is_same_v<remove_cvref_t<U>, optional>) &&
+            (!is_same_v<remove_cv_t<T>, bool> || !ycxx::detail::is_optional<remove_cvref_t<U>>) &&
+            is_constructible_v<T, U>
   constexpr explicit(!is_convertible_v<U, T>) optional(U&& v) : u_(in_place, static_cast<U&&>(v)), engaged_(true) {}
 
+  // The converting members from optional<U> are never better than the copy and move members
+  // when U is T; excluding that case first keeps the constraints from recursing for a T
+  // constructible from anything (is_constructible_v<T, optional<T>&> would ask for them again).
   template <class U>
-    requires is_constructible_v<T, const U&> &&
-             (is_same_v<remove_cv_t<T>, bool> || !ycxx::detail::converts_from_any_cvref<T, optional<U>>)
+    requires(!is_same_v<U, T>) && is_constructible_v<T, const U&> &&
+            (is_same_v<remove_cv_t<T>, bool> || !ycxx::detail::converts_from_any_cvref<T, optional<U>>)
   constexpr explicit(!is_convertible_v<const U&, T>) optional(const optional<U>& rhs) : u_(), engaged_(false) {
     if (rhs.has_value())
       construct(*rhs);
   }
   template <class U>
-    requires is_constructible_v<T, U> &&
-             (is_same_v<remove_cv_t<T>, bool> || !ycxx::detail::converts_from_any_cvref<T, optional<U>>)
+    requires(!is_same_v<U, T>) && is_constructible_v<T, U> &&
+            (is_same_v<remove_cv_t<T>, bool> || !ycxx::detail::converts_from_any_cvref<T, optional<U>>)
   constexpr explicit(!is_convertible_v<U, T>) optional(optional<U>&& rhs) : u_(), engaged_(false) {
     if (rhs.has_value())
       construct(*static_cast<optional<U>&&>(rhs));
@@ -248,14 +284,14 @@ public:
             is_constructible_v<T, U> && is_assignable_v<T&, U>
   constexpr optional& operator=(U&& v) {
     if (engaged_)
-      u_.val = static_cast<U&&>(v);
+      static_cast<T&>(u_.val) = static_cast<U&&>(v); // *val is an lvalue of type T, maybe const
     else
       construct(static_cast<U&&>(v));
     return *this;
   }
 
   template <class U>
-    requires is_constructible_v<T, const U&> && is_assignable_v<T&, const U&> &&
+    requires(!is_same_v<U, T>) && is_constructible_v<T, const U&> && is_assignable_v<T&, const U&> &&
              (!ycxx::detail::converts_from_any_cvref<T, optional<U>>) && (!is_assignable_v<T&, optional<U>&>) &&
              (!is_assignable_v<T&, optional<U> &&>) && (!is_assignable_v<T&, const optional<U>&>) &&
              (!is_assignable_v<T&, const optional<U> &&>)
@@ -264,7 +300,7 @@ public:
     return *this;
   }
   template <class U>
-    requires is_constructible_v<T, U> && is_assignable_v<T&, U> &&
+    requires(!is_same_v<U, T>) && is_constructible_v<T, U> && is_assignable_v<T&, U> &&
              (!ycxx::detail::converts_from_any_cvref<T, optional<U>>) && (!is_assignable_v<T&, optional<U>&>) &&
              (!is_assignable_v<T&, optional<U> &&>) && (!is_assignable_v<T&, const optional<U>&>) &&
              (!is_assignable_v<T&, const optional<U> &&>)
@@ -292,7 +328,7 @@ public:
   constexpr void swap(optional& rhs) noexcept(is_nothrow_move_constructible_v<T> && is_nothrow_swappable_v<T>) {
     static_assert(is_move_constructible_v<T>, "optional::swap: T must be move constructible");
     if (engaged_ && rhs.engaged_) {
-      ycxx::detail::swap_adl::do_swap(u_.val, rhs.u_.val);
+      ycxx::detail::swap_adl::do_swap(static_cast<T&>(u_.val), static_cast<T&>(rhs.u_.val));
     } else if (rhs.engaged_) {
       construct(static_cast<stored&&>(rhs.u_.val));
       rhs.destroy();
@@ -608,10 +644,10 @@ public:
       ycxx::detail::throw_bad_optional_access();
     return *val_;
   }
-  // Return type is unspecified for array and non-object T ([optional.ref.observe]/12).
+  // Not declared for array and non-object T ([optional.ref.observe]/12 leaves it unspecified).
   template <class U = remove_cv_t<T>>
     requires is_object_v<T> && (!is_array_v<T>)
-  constexpr auto value_or(U&& u) const {
+  constexpr typename ycxx::detail::optional_value_or<T, U>::type value_or(U&& u) const {
     static_assert(is_constructible_v<remove_cv_t<T>, T&> && is_convertible_v<U, remove_cv_t<T>>,
                   "optional<T&>::value_or: Mandates not met");
     return val_ ? remove_cv_t<T>(*val_) : static_cast<remove_cv_t<T>>(static_cast<U&&>(u));
@@ -648,22 +684,24 @@ public:
 template <class T>
 constexpr bool ranges::enable_view<optional<T>> = true;
 template <class T>
+constexpr range_format format_kind<optional<T>> = range_format::disabled;
+template <class T>
 constexpr bool ranges::enable_borrowed_range<optional<T&>> = true;
 
 // ---- [optional.relops] ----
-template <class T, class U>
-  requires requires(const T& a, const U& b) {
-    { a == b } -> convertible_to<bool>;
-  }
+// The equality operators: each operator!= corresponds to its operator== ([basic.scope.scope]/4:
+// the same template-head, parameters and return type), so no operator== is a rewrite target
+// ([over.match.oper]/4) and `x != y` and the reversed `y == x` are not formed from it, as the
+// draft's declarations of both with one signature intend. Their differing Constraints are
+// therefore checked in default template arguments (substituted in order, so a later check is
+// not reached when an earlier one fails).
+template <class T, class U, class = ycxx::detail::optional_check<ycxx::detail::optional_eq<T, U>>>
 constexpr bool operator==(const optional<T>& x, const optional<U>& y) {
   if (x.has_value() != y.has_value())
     return false;
   return !x.has_value() || static_cast<bool>(*x == *y);
 }
-template <class T, class U>
-  requires requires(const T& a, const U& b) {
-    { a != b } -> convertible_to<bool>;
-  }
+template <class T, class U, class = ycxx::detail::optional_check<ycxx::detail::optional_ne<T, U>>>
 constexpr bool operator!=(const optional<T>& x, const optional<U>& y) {
   if (x.has_value() != y.has_value())
     return true;
@@ -731,31 +769,23 @@ constexpr strong_ordering operator<=>(const optional<T>& x, nullopt_t) noexcept 
 }
 
 // ---- [optional.comp.with.t] ----
-template <class T, class U>
-  requires(!ycxx::detail::is_optional<U>) && requires(const T& a, const U& b) {
-    { a == b } -> convertible_to<bool>;
-  }
+template <class T, class U, class = ycxx::detail::optional_check<!ycxx::detail::is_optional<U>>,
+          class = ycxx::detail::optional_check<ycxx::detail::optional_eq<T, U>>>
 constexpr bool operator==(const optional<T>& x, const U& v) {
   return x.has_value() ? static_cast<bool>(*x == v) : false;
 }
-template <class T, class U>
-  requires(!ycxx::detail::is_optional<T>) && requires(const T& a, const U& b) {
-    { a == b } -> convertible_to<bool>;
-  }
+template <class T, class U, class = ycxx::detail::optional_check<!ycxx::detail::is_optional<T>>,
+          class = ycxx::detail::optional_check<ycxx::detail::optional_eq<T, U>>>
 constexpr bool operator==(const T& v, const optional<U>& x) {
   return x.has_value() ? static_cast<bool>(v == *x) : false;
 }
-template <class T, class U>
-  requires(!ycxx::detail::is_optional<U>) && requires(const T& a, const U& b) {
-    { a != b } -> convertible_to<bool>;
-  }
+template <class T, class U, class = ycxx::detail::optional_check<!ycxx::detail::is_optional<U>>,
+          class = ycxx::detail::optional_check<ycxx::detail::optional_ne<T, U>>>
 constexpr bool operator!=(const optional<T>& x, const U& v) {
   return x.has_value() ? static_cast<bool>(*x != v) : true;
 }
-template <class T, class U>
-  requires(!ycxx::detail::is_optional<T>) && requires(const T& a, const U& b) {
-    { a != b } -> convertible_to<bool>;
-  }
+template <class T, class U, class = ycxx::detail::optional_check<!ycxx::detail::is_optional<T>>,
+          class = ycxx::detail::optional_check<ycxx::detail::optional_ne<T, U>>>
 constexpr bool operator!=(const T& v, const optional<U>& x) {
   return x.has_value() ? static_cast<bool>(v != *x) : true;
 }
@@ -815,8 +845,10 @@ template <class T, class U>
 constexpr bool operator>=(const T& v, const optional<U>& x) {
   return x.has_value() ? static_cast<bool>(v >= *x) : true;
 }
+// three_way_comparable<U> is part of three_way_comparable_with<T, U>; testing it first rejects
+// a U without <=> before T's own comparisons are examined, which can depend on this operator.
 template <class T, class U>
-  requires(!ycxx::detail::derived_from_optional<U>) && three_way_comparable_with<T, U>
+  requires(!ycxx::detail::derived_from_optional<U>) && three_way_comparable<U> && three_way_comparable_with<T, U>
 constexpr compare_three_way_result_t<T, U> operator<=>(const optional<T>& x, const U& v) {
   return x.has_value() ? *x <=> v : strong_ordering::less;
 }

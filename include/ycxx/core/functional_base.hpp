@@ -17,19 +17,48 @@ constexpr __UINTPTR_TYPE__ ptr_value(const T& p) noexcept {
     return reinterpret_cast<__UINTPTR_TYPE__>(static_cast<const volatile void*>(p));
 }
 
-// BUILTIN-PTR-CMP(T, op, U): `t op u` resolves to a built-in operator comparing pointers.
+// BUILTIN-PTR-CMP(T, op, U): `t op u` resolves to a built-in operator comparing pointers. Both
+// operands convert to pointers and no user-declared operator can be selected instead: neither an
+// `op` taking (t, u) nor, for the relational operators, an operator<=> in either operand order
+// (a rewritten candidate, [over.match.oper]/3.4), nor, for ==, a reversed operator==. The test
+// for class operands comes second, so pointers to incomplete classes are never completed.
 template <class T, class U>
-concept builtin_ptr_less = requires(T&& t, U&& u) { static_cast<T&&>(t) < static_cast<U&&>(u); } &&
-                           std::is_convertible_v<T, const volatile void*> && std::is_convertible_v<U, const volatile void*> &&
-                           (no_class_operand<T, U> ||
-                            (!requires(T&& t, U&& u) { operator<(static_cast<T&&>(t), static_cast<U&&>(u)); } &&
-                             !requires(T&& t, U&& u) { static_cast<T&&>(t).operator<(static_cast<U&&>(u)); }));
+concept ptr_operands = std::is_convertible_v<T, const volatile void*> && std::is_convertible_v<U, const volatile void*>;
 template <class T, class U>
-concept builtin_ptr_eq = requires(T&& t, U&& u) { static_cast<T&&>(t) == static_cast<U&&>(u); } &&
-                         std::is_convertible_v<T, const volatile void*> && std::is_convertible_v<U, const volatile void*> &&
-                         (no_class_operand<T, U> ||
-                          (!requires(T&& t, U&& u) { operator==(static_cast<T&&>(t), static_cast<U&&>(u)); } &&
-                           !requires(T&& t, U&& u) { static_cast<T&&>(t).operator==(static_cast<U&&>(u)); }));
+concept user_less = requires(T&& t, U&& u) { operator<(static_cast<T&&>(t), static_cast<U&&>(u)); } ||
+                    requires(T&& t, U&& u) { static_cast<T&&>(t).operator<(static_cast<U&&>(u)); };
+template <class T, class U>
+concept user_greater = requires(T&& t, U&& u) { operator>(static_cast<T&&>(t), static_cast<U&&>(u)); } ||
+                       requires(T&& t, U&& u) { static_cast<T&&>(t).operator>(static_cast<U&&>(u)); };
+template <class T, class U>
+concept user_less_equal = requires(T&& t, U&& u) { operator<=(static_cast<T&&>(t), static_cast<U&&>(u)); } ||
+                          requires(T&& t, U&& u) { static_cast<T&&>(t).operator<=(static_cast<U&&>(u)); };
+template <class T, class U>
+concept user_greater_equal = requires(T&& t, U&& u) { operator>=(static_cast<T&&>(t), static_cast<U&&>(u)); } ||
+                             requires(T&& t, U&& u) { static_cast<T&&>(t).operator>=(static_cast<U&&>(u)); };
+template <class T, class U>
+concept user_equal = requires(T&& t, U&& u) { operator==(static_cast<T&&>(t), static_cast<U&&>(u)); } ||
+                     requires(T&& t, U&& u) { static_cast<T&&>(t).operator==(static_cast<U&&>(u)); } ||
+                     requires(T&& t, U&& u) { operator==(static_cast<U&&>(u), static_cast<T&&>(t)); } ||
+                     requires(T&& t, U&& u) { static_cast<U&&>(u).operator==(static_cast<T&&>(t)); };
+
+template <class T, class U>
+concept builtin_ptr_less = requires(T&& t, U&& u) { static_cast<T&&>(t) < static_cast<U&&>(u); } && ptr_operands<T, U> &&
+                           (no_class_operand<T, U> || !(user_less<T, U> || user_three_way_candidate<T, U>));
+template <class T, class U>
+concept builtin_ptr_greater = requires(T&& t, U&& u) { static_cast<T&&>(t) > static_cast<U&&>(u); } && ptr_operands<T, U> &&
+                              (no_class_operand<T, U> || !(user_greater<T, U> || user_three_way_candidate<T, U>));
+template <class T, class U>
+concept builtin_ptr_less_equal = requires(T&& t, U&& u) { static_cast<T&&>(t) <= static_cast<U&&>(u); } &&
+                                 ptr_operands<T, U> &&
+                                 (no_class_operand<T, U> || !(user_less_equal<T, U> || user_three_way_candidate<T, U>));
+template <class T, class U>
+concept builtin_ptr_greater_equal = requires(T&& t, U&& u) { static_cast<T&&>(t) >= static_cast<U&&>(u); } &&
+                                    ptr_operands<T, U> &&
+                                    (no_class_operand<T, U> || !(user_greater_equal<T, U> || user_three_way_candidate<T, U>));
+template <class T, class U>
+concept builtin_ptr_eq = requires(T&& t, U&& u) { static_cast<T&&>(t) == static_cast<U&&>(u); } && ptr_operands<T, U> &&
+                         (no_class_operand<T, U> || !user_equal<T, U>);
 
 template <class T, class U>
 constexpr bool total_less(const T& a, const U& b) {
@@ -210,7 +239,7 @@ struct greater<void> {
   template <class T, class U>
   constexpr auto operator()(T&& t, U&& u) const noexcept(noexcept(static_cast<T&&>(t) > static_cast<U&&>(u)))
       -> decltype(static_cast<T&&>(t) > static_cast<U&&>(u)) {
-    if constexpr (ycxx::detail::builtin_ptr_less<U, T>)
+    if constexpr (ycxx::detail::builtin_ptr_greater<T, U>)
       return ycxx::detail::total_less(u, t);
     else
       return static_cast<T&&>(t) > static_cast<U&&>(u);
@@ -222,7 +251,7 @@ struct less_equal<void> {
   template <class T, class U>
   constexpr auto operator()(T&& t, U&& u) const noexcept(noexcept(static_cast<T&&>(t) <= static_cast<U&&>(u)))
       -> decltype(static_cast<T&&>(t) <= static_cast<U&&>(u)) {
-    if constexpr (ycxx::detail::builtin_ptr_less<U, T>)
+    if constexpr (ycxx::detail::builtin_ptr_less_equal<T, U>)
       return !ycxx::detail::total_less(u, t);
     else
       return static_cast<T&&>(t) <= static_cast<U&&>(u);
@@ -234,7 +263,7 @@ struct greater_equal<void> {
   template <class T, class U>
   constexpr auto operator()(T&& t, U&& u) const noexcept(noexcept(static_cast<T&&>(t) >= static_cast<U&&>(u)))
       -> decltype(static_cast<T&&>(t) >= static_cast<U&&>(u)) {
-    if constexpr (ycxx::detail::builtin_ptr_less<T, U>)
+    if constexpr (ycxx::detail::builtin_ptr_greater_equal<T, U>)
       return !ycxx::detail::total_less(t, u);
     else
       return static_cast<T&&>(t) >= static_cast<U&&>(u);

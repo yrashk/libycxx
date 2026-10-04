@@ -297,6 +297,15 @@ Deprecated and removed features are not implemented (`is_pod`, `is_trivial`, `al
   C library does (`0x0.000000000000001p-16385` is the smallest), so that both forms agree there.
 
 ## Known limitations and draft defects
+- `<optional>`: on Clang 23, `x != y` (and the reversed `y == x`) still compile through
+  `operator==` when `*x != *y` is unusable: Clang forms rewritten candidates from a template
+  `operator==` although a corresponding template `operator!=` exists ([over.match.oper]/4;
+  GCC does not). libstdc++ relops/constrained.cc fails there.
+- `std::start_lifetime` on GCC 16 (no `__builtin_is_within_lifetime`): in constant evaluation it
+  re-creates an object that is already within its lifetime, so `__cpp_lib_start_lifetime` is
+  defined only on Clang.
+- `std::div`/`ldiv`/`lldiv` are constexpr templates (like `abs`): an unqualified call under
+  `using namespace std;` picks the C library's `::div`, which is not constexpr.
 - `<format>`: own tests `format/float_shortest_plain_style` (1e-4f) and `format/extended_float`
   (16777217.0f, float16 65504, bfloat16 256) expect fixed notation for values outside
   [charconv.to.chars]/7's [l, u): float(1e-4) is below 10^-4, and u is 1e7 (float), 1000
@@ -724,6 +733,15 @@ Deprecated and removed features are not implemented (`is_pod`, `is_trivial`, `al
 - Next (Phase 5): full libc++/libstdc++ sweeps with triage (tests/libcxx/TRIAGE.md,
   tests/libstdcxx/TRIAGE.md), fixing the libycxx bugs they find; then performance and a
   whole-library review.
+- libstdc++ triage (A) fixed (outcomes in tests/libstdcxx/TRIAGE.md): `<compare>` CPO noexcept
+  and `compare_three_way`'s constraint (LWG 3530); `less<>` & co. no longer take a rewritten
+  `operator<=>` for a built-in pointer comparison; `std::ignore` from `<utility>`; `<bitset>`
+  includes `<string>`; `tuple t(func)`; `<optional>` (const T assignment, `optional<T&>::value_or`,
+  corresponding `==`/`!=`, `format_kind<optional<T>>`, PR 117858/104606 recursion, Clang reset
+  workaround); `any_cast<T>(any*)` for non-copyable T; `basic_const_iterator` PR 112490. New
+  macros: `apply`, `tuple_like`, `constexpr_functional`, `result_of_sfinae`,
+  `freestanding_{cstdlib,execution,functional,memory}`, `start_lifetime` (Clang only); `div`,
+  `ldiv`, `lldiv` are constexpr and `memalignment` exists.
 - Constexpr exceptions (P3068): done for `exception`, `bad_alloc`, `bad_array_new_length`,
   `bad_exception`, `bad_cast`, `bad_typeid`, `bad_optional_access`, `bad_variant_access`, and
   `bad_expected_access`. Those the library throws are thrown from headers through `raise_with`,

@@ -285,21 +285,29 @@ template <class T, class U>
 concept no_class_operand = !__is_class(__remove_cvref(T)) && !__is_enum(__remove_cvref(T)) &&
                            !__is_class(__remove_cvref(U)) && !__is_enum(__remove_cvref(U));
 
+// A user-declared operator<=> (member or non-member) accepts the operands in either order, so
+// it is a candidate for `t <=> u` and, as a rewritten or synthesized candidate, for `t < u`,
+// `t > u`, `t <= u` and `t >= u` ([over.match.oper]/3.4).
+template <class T, class U>
+concept user_three_way_candidate =
+    requires(T&& t, U&& u) { operator<=>(static_cast<T&&>(t), static_cast<U&&>(u)); } ||
+    requires(T&& t, U&& u) { static_cast<T&&>(t).operator<=>(static_cast<U&&>(u)); } ||
+    requires(T&& t, U&& u) { operator<=>(static_cast<U&&>(u), static_cast<T&&>(t)); } ||
+    requires(T&& t, U&& u) { static_cast<U&&>(u).operator<=>(static_cast<T&&>(t)); };
+
 // BUILTIN-PTR-CMP(T, op, U): the comparison resolves to a built-in pointer comparison.
 template <class T, class U>
 concept builtin_ptr_three_way =
     requires(T&& t, U&& u) { static_cast<T&&>(t) <=> static_cast<U&&>(u); } &&
     __is_convertible(T, const volatile void*) && __is_convertible(U, const volatile void*) &&
-    (no_class_operand<T, U> ||
-     (!requires(T&& t, U&& u) { operator<=>(static_cast<T&&>(t), static_cast<U&&>(u)); } &&
-      !requires(T&& t, U&& u) { static_cast<T&&>(t).operator<=>(static_cast<U&&>(u)); }));
+    (no_class_operand<T, U> || !user_three_way_candidate<T, U>);
 } // namespace ycxx::detail
 
 namespace std {
 
 struct compare_three_way {
   template <class T, class U>
-    requires three_way_comparable_with<T, U> || ycxx::detail::builtin_ptr_three_way<T, U>
+    requires three_way_comparable_with<T, U>
   constexpr auto operator()(T&& t, U&& u) const noexcept(noexcept(static_cast<T&&>(t) <=> static_cast<U&&>(u))) {
     if constexpr (ycxx::detail::builtin_ptr_three_way<T, U>) {
       auto pt = static_cast<const volatile void*>(t);

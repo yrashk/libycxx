@@ -190,6 +190,12 @@
 #define __cpp_lib_constexpr_set 202502L
 #define __cpp_lib_generic_associative_lookup 201304L
 
+// <flat_map> <flat_set>
+#define __cpp_lib_constexpr_flat_map 202502L
+#define __cpp_lib_constexpr_flat_set 202502L
+#define __cpp_lib_flat_map 202511L
+#define __cpp_lib_flat_set 202511L
+
 // Features of headers above that had no macro yet.
 #define __cpp_lib_ssize 201902L
 #define __cpp_lib_null_iterators 201304L

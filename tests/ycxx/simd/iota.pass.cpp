@@ -20,8 +20,14 @@ constexpr bool check() {
 static_assert(check<simd::vec<int, 7>>() && check<simd::vec<float, 16>>() && check<simd::vec<unsigned char, 64>>());
 static_assert(check<simd::vec<signed char, 64>>() && check<simd::vec<double>>());
 
+// [simd.ctor]/2: the broadcast constructor takes an arithmetic From only when the conversion to
+// value_type is value-preserving, so int -> short is excluded and vec<short> * 2 has no
+// operator*; short(2) is accepted.
+template <class V, class S> concept multipliable = requires(const V& v, S s) { v * s; };
+static_assert(!multipliable<simd::vec<short, 9>, int> && multipliable<simd::vec<short, 9>, short>);
+
 int main() {
-  simd::vec<short, 9> v = simd::iota<simd::vec<short, 9>> * 2;
+  simd::vec<short, 9> v = simd::iota<simd::vec<short, 9>> * short(2);
   CHECK(v[0] == 0 && v[8] == 16);
   return 0;
 }

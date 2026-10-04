@@ -13,9 +13,13 @@ YCXX_STDLIB=libstdcxx tools/run-conformance ycxx clang   # clang++-23 -stdlib=li
 This checks the tests themselves (a test that fails everywhere deserves a second look) and
 records where libstdc++ and the current draft disagree. The draft is the reference throughout:
 a failure below is a libstdc++ gap, a libstdc++ bug, or a compiler issue, never a reason to
-change a test. **After triage no failure was traced to a defect in a test.**
+change a test. **After triage no remaining failure is traced to a defect in a test.** (The batch 27 audit
+corrected `print/vprint_no_partial_output` (P3107 allows partial output from the unbuffered
+`FILE*` overloads), `format/float_shortest_plain_style` and `format/extended_float` (the f/e
+bounds of [charconv.to.chars]/7), `regex/syntax_options` ([re.grammar]/14.2), `simd/iota` and
+`simd/compress_expand`.)
 
-Run of 2026-10-04, 1768 tests: GCC 1527 pass / 240 fail / 1 xfail; Clang 1505 pass / 256 fail / 7 xfail
+Run of 2026-10-04 (batch 27), 1822 tests: GCC 1560 pass / 261 fail / 1 xfail; Clang 1529 pass / 282 fail / 11 xfail
 (threaded tests rerun serially: under `-j32` on 4 cores `stmt_dcl/static_local_concurrent_once` and
 `stop_token/stop_callback_thread` occasionally exceed their time limits).
 The same suite against libycxx: see `STATUS.md`.

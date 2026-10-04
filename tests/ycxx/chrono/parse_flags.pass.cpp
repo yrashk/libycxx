@@ -43,11 +43,11 @@ int main() {
     CHECK(off == 345min && tp == midnight2000 - 5h - 45min);
     CHECK(parses("2000-01-01 00:00:00 -04:30", "%F %T %Ez", tp, off));
     CHECK(off == -270min && tp == midnight2000 + 4h + 30min);
-    CHECK(parses("2000-01-01 00:00:00 4", "%F %T %Ez", tp, off));
+    CHECK(parses("2000-01-01 00:00:00 4 ", "%F %T %Ez", tp, off));
     CHECK(off == 240min && tp == midnight2000 - 4h);
     CHECK(parses("2000-01-01 00:00:00 +05:45", "%F %T %Oz", tp, off));
     CHECK(off == 345min && tp == midnight2000 - 5h - 45min);
-    CHECK(parses("2000-01-01 00:00:00 -9", "%F %T %Oz", tp, off));
+    CHECK(parses("2000-01-01 00:00:00 -9 ", "%F %T %Oz", tp, off));
     CHECK(off == -540min && tp == midnight2000 + 9h);
     CHECK(parses("2000-01-01 00:00:00 +10:00", "%F %T %Ez", tp, off));
     CHECK(off == 600min);
@@ -78,9 +78,9 @@ int main() {
     year_month_day ymd;
     CHECK(parses("2024 060", "%Y %j", ymd) && ymd == 2024y / February / 29);
     CHECK(parses("2023 365", "%Y %j", ymd) && ymd == 2023y / December / 31);
-    CHECK(parses("2023 1", "%Y %j", ymd) && ymd == 2023y / January / 1);  // leading zeroes optional
+    CHECK(parses("2023 1 ", "%Y %j", ymd) && ymd == 2023y / January / 1);  // leading zeroes optional
     hours h;
-    CHECK(parses("2", "%j", h) && h == 48h);  // a duration: a number of days
+    CHECK(parses("2 ", "%j", h) && h == 48h);  // a duration: a number of days
     days d;
     CHECK(parses("045", "%j", d) && d == days(45));
   }
@@ -118,7 +118,7 @@ int main() {
     CHECK(parses("99", "%y", y) && y == 1999y);
     CHECK(parses("00", "%y", y) && y == 2000y);
     CHECK(parses("68", "%y", y) && y == 2068y);
-    CHECK(parses("5", "%y", y) && y == 2005y);
+    CHECK(parses("5 ", "%y", y) && y == 2005y);
     CHECK(parses("-20 76", "%3C %y", y) && y == year(-1976));  // [time.parse] Example 2
     CHECK(parses("19 05", "%C %y", y) && y == 1905y);
     CHECK(parses("2105", "%C%y", y) && y == 2105y);
@@ -140,7 +140,7 @@ int main() {
     CHECK(parses("SUN", "%A", wd) && wd == Sunday);
     CHECK(parses("Thursday", "%A", wd) && wd == Thursday);
     day dd;
-    CHECK(parses("5", "%e", dd) && dd == 5d);
+    CHECK(parses("5 ", "%e", dd) && dd == 5d);
   }
   // time of day into durations
   {
@@ -165,6 +165,22 @@ int main() {
     CHECK(parses("202407", "%Y%t%m", ym) && ym == 2024y / July);
     year y;
     CHECK(parses("2024\t  x", "%Y%n x", y) && y == 2024y);  // "%n " matches one or more
+  }
+  // A numeric field may be shorter than its maximum width N ("the maximum number of characters
+  // to read", "Leading zeroes are permitted but not required"), also when the input ends there:
+  // everything in fmt was parsed, so [time.parse]/17 does not apply.
+  {
+    sys_seconds tp;
+    minutes off{};
+    CHECK(parses("2000-01-01 00:00:00 4", "%F %T %Ez", tp, off) && off == 240min);
+    year_month_day ymd;
+    CHECK(parses("2023 1", "%Y %j", ymd) && ymd == 2023y / January / 1);
+    hours h;
+    CHECK(parses("2", "%j", h) && h == 48h);
+    day dd;
+    CHECK(parses("5", "%d", dd) && dd == 5d);
+    minutes m;
+    CHECK(parses("7:5", "%H:%M", m) && m == 7h + 5min);
   }
   // wide characters
   {

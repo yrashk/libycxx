@@ -1,0 +1,7 @@
+// -*- C++ -*-  libycxx: <optional>   [core]
+#pragma once
+
+#include <ycxx/config.hpp>
+#include <ycxx/core/version.hpp>
+#include <compare>
+#include <ycxx/core/optional.hpp>

@@ -1,5 +1,6 @@
 // libycxx hosted runtime: <stdexcept> members and the out-of-line throw hook.
 #include <stdexcept>
+#include <optional>
 #include <new>
 #include <ycxx/core/error.hpp>
 
@@ -56,6 +57,7 @@ shared_message::~shared_message() {
   case ycxx_error_underflow_error: throw std::underflow_error(what);
   case ycxx_error_bad_alloc: throw std::bad_alloc();
   case ycxx_error_bad_array_new_length: throw std::bad_array_new_length();
+  case ycxx_error_bad_optional_access: throw std::bad_optional_access();
   default: ::ycxx_error_handler(kind, what);
   }
 }

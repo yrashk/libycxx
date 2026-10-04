@@ -13,4 +13,4 @@ HOSTED = [
 ]
 # Language-support headers whose *declarations* are core but which need the C++ ABI runtime
 # (libsupc++) to be used with exceptions/RTTI enabled.
-ABI = ["exception", "stdexcept", "typeinfo"]
+ABI = ["exception", "stdexcept", "typeinfo", "typeindex"]

@@ -1,0 +1,8 @@
+// -*- C++ -*-  libycxx: <typeindex>
+#pragma once
+
+#include <ycxx/config.hpp>
+#include <ycxx/core/version.hpp>
+#include <compare>
+#include <typeinfo>
+#include <ycxx/core/typeindex.hpp>

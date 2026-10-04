@@ -1,8 +1,8 @@
-// libycxx core: views::all, ref_view and owning_view ([range.all]). views::all is callable but
-// not yet a range adaptor closure object (no `r | views::all`), pending the adaptor machinery.
+// libycxx core: views::all, ref_view and owning_view ([range.all]).
 #pragma once
 
 #include <ycxx/core/ranges_subrange.hpp>
+#include <ycxx/core/ranges_adaptor.hpp>
 
 namespace ycxx::detail {
 template <class R>
@@ -129,7 +129,7 @@ constexpr bool enable_borrowed_range<owning_view<T>> = enable_borrowed_range<T>;
 } // namespace std::ranges
 
 namespace ycxx::detail::range_all {
-struct fn {
+struct fn : std::ranges::range_adaptor_closure<fn> {
   template <class R>
   static consteval bool nothrow() {
     if constexpr (std::ranges::view<std::decay_t<R>>)

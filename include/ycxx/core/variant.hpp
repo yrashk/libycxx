@@ -45,6 +45,13 @@ template <class T>
 struct variant_size;
 template <class T>
 struct variant_size<const T> : variant_size<T> {};
+// [depr.variant] (Annex D)
+template <class T>
+struct [[deprecated("variant_size<volatile T> is deprecated ([depr.variant])")]] variant_size<volatile T>
+    : integral_constant<size_t, variant_size<T>::value> {};
+template <class T>
+struct [[deprecated("variant_size<const volatile T> is deprecated ([depr.variant])")]] variant_size<const volatile T>
+    : integral_constant<size_t, variant_size<T>::value> {};
 template <class T>
 constexpr size_t variant_size_v = variant_size<T>::value;
 template <class... Types>
@@ -55,6 +62,15 @@ struct variant_alternative;
 template <size_t I, class T>
 struct variant_alternative<I, const T> {
   using type = const typename variant_alternative<I, T>::type;
+};
+template <size_t I, class T>
+struct [[deprecated("variant_alternative<I, volatile T> is deprecated ([depr.variant])")]] variant_alternative<I, volatile T> {
+  using type = volatile typename variant_alternative<I, T>::type;
+};
+template <size_t I, class T>
+struct [[deprecated("variant_alternative<I, const volatile T> is deprecated ([depr.variant])")]]
+    variant_alternative<I, const volatile T> {
+  using type = const volatile typename variant_alternative<I, T>::type;
 };
 template <size_t I, class T>
 using variant_alternative_t = typename variant_alternative<I, T>::type;

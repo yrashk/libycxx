@@ -62,7 +62,7 @@ template <class T>
 inline constexpr bool is_structural_v = __builtin_is_structural(T);
 #endif
 
-// is_trivial / is_trivial_v are deprecated in C++26 (P3247) and intentionally not provided.
+// is_trivial / is_trivial_v ([depr.meta.types]) are in type_traits_depr.hpp.
 
 template <class T>
 struct is_implicit_lifetime : bool_constant<__builtin_is_implicit_lifetime(T)> {};

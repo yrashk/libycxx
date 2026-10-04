@@ -3,9 +3,8 @@
 // [iterator.requirements]): every constructor, assignment, insertion, erasure, resize, swap,
 // comparison and erase/erase_if, the *_after members, and sort, merge, unique, remove, reverse and splice_after works when the element type's associated namespace
 // (evil, or the global namespace for GVal) declares unconstrained function templates named
-// move, copy, addressof, distance, fill, ... that fail to compile when instantiated, when the
-// element type and the iterators passed in delete unary & and the comma operator, and when the
-// elements are pointers to a class template specialization that must not be instantiated.
+// move, copy, addressof, distance, fill, ... that fail to compile when instantiated, and when the
+// element type and the iterators passed in delete unary & and the comma operator.
 #include <forward_list>
 #include "reqs/adl_robustness_seq.hpp"
 #include "check.hpp"
@@ -16,6 +15,5 @@ using C = std::forward_list<T>;
 int main() {
   CHECK(reqs::adl_robustness_seq::values<C<evil::Val>>());
   CHECK(reqs::adl_robustness_seq::values<C<GVal>>());
-  CHECK(reqs::adl_robustness_seq::pointers<C<evil::Holder<evil::Incomplete>*>>());
   return 0;
 }

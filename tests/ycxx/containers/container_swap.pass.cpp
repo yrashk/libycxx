@@ -13,45 +13,9 @@
 #include "container_values.hpp"
 #include "check.hpp"
 
-template <class X>
-constexpr bool contents() {
-  static_assert(std::is_same_v<decltype(std::declval<X&>().swap(std::declval<X&>())), void>);
-  X a = make<X>({1, 2, 3});
-  X b = make<X>({4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24});
-  a.swap(b);
-  if (!holds(b, {1, 2, 3}) || !holds(a, {4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24}))
-    return false;
-  using std::swap;
-  swap(a, b);
-  if (!holds(a, {1, 2, 3}) || b.size() != 21) return false;
-  X e;
-  a.swap(e);
-  if (!a.empty() || !holds(e, {1, 2, 3})) return false;
-  swap(e, a);
-  if (!e.empty() || !holds(a, {1, 2, 3})) return false;
-  a.swap(a);
-  if (!holds(a, {1, 2, 3})) return false;
-  return true;
-}
+#include "reqs/container_swap.hpp"
 
-template <class X>
-constexpr bool iterators_follow() {
-  X a = make<X>({1, 2, 3});
-  X b = make<X>({4, 5});
-  auto ia = a.begin() + 1;
-  auto pa = std::addressof(*ia);
-  auto ib = b.begin();
-  auto pb = std::addressof(*ib);
-  a.swap(b);
-  // ia now refers to an element of b, ib to an element of a
-  if (std::addressof(*ia) != pa || std::addressof(*ib) != pb) return false;
-  if (!(*ia == val<typename X::value_type>(2)) || !(*ib == val<typename X::value_type>(4))) return false;
-  if (std::addressof(*(b.begin() + 1)) != pa || std::addressof(*a.begin()) != pb) return false;
-  ++ia;
-  ++ia;
-  if (ia != b.end()) return false;
-  return true;
-}
+using namespace reqs::container_swap;
 
 struct CountOps {
   static inline int copies = 0, moves = 0, swaps = 0;

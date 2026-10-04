@@ -1,11 +1,12 @@
 // Values and observers for the generic container-requirement tests in tests/ycxx/containers,
 // written from [container.requirements]. Deliberately independent of every other test suite.
 // Only iterator operations are used to observe a container, so the helpers work for any
-// container (vector, basic_string now; deque, list, forward_list later).
+// container (vector, basic_string, deque, list, ...).
 #pragma once
 #include <compare>
 #include <cstddef>
 #include <initializer_list>
+#include <iterator>
 #include <type_traits>
 
 // A non-trivial, constexpr-friendly element type with value semantics.
@@ -65,12 +66,18 @@ constexpr bool holds(const C& c, std::initializer_list<int> idx) {
   return it == c.end();
 }
 
-// make<C>({i0, i1, ...}): a container holding val(i0), val(i1), ... built with insert(end, t).
+// make<C>({i0, i1, ...}): a container holding val(i0), val(i1), ... built with insert(end, t)
+// (or, for forward_list, with insert_after on the last element).
 template <class C>
 constexpr C make(std::initializer_list<int> idx) {
   using T = typename C::value_type;
   C c;
-  for (int i : idx) c.insert(c.end(), val<T>(i));
+  if constexpr (requires { c.insert_after(c.cbefore_begin(), val<T>(0)); }) {
+    auto last = c.cbefore_begin();
+    for (int i : idx) last = c.insert_after(last, val<T>(i));
+  } else {
+    for (int i : idx) c.insert(c.end(), val<T>(i));
+  }
   return c;
 }
 
@@ -80,4 +87,20 @@ constexpr std::ptrdiff_t count_elems(const C& c) {
   std::ptrdiff_t n = 0;
   for (auto it = c.begin(); it != c.end(); ++it) ++n;
   return n;
+}
+
+// nth(c, k) / cnth(c, k): iterator / const_iterator to the k-th element (0 <= k <= size),
+// using only forward-iterator operations, so the generic checks work for node-based
+// containers too.
+template <class C>
+constexpr auto nth(C& c, std::ptrdiff_t k) {
+  auto it = c.begin();
+  while (k-- > 0) ++it;
+  return it;
+}
+template <class C>
+constexpr typename C::const_iterator cnth(const C& c, std::ptrdiff_t k) {
+  auto it = c.cbegin();
+  while (k-- > 0) ++it;
+  return it;
 }

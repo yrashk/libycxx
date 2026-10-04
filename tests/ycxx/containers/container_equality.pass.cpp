@@ -15,27 +15,9 @@ struct Mod10 {
   friend constexpr bool operator==(const Mod10& a, const Mod10& b) { return a.v % 10 == b.v % 10; }
 };
 
-template <class X>
-constexpr bool generic() {
-  static_assert(std::is_same_v<decltype(std::declval<const X&>() == std::declval<const X&>()), bool>);
-  static_assert(std::is_same_v<decltype(std::declval<const X&>() != std::declval<const X&>()), bool>);
-  X a = make<X>({1, 2, 3});
-  X b = make<X>({1, 2, 3});
-  X c = make<X>({1, 2, 3});
-  X shorter = make<X>({1, 2});
-  X longer = make<X>({1, 2, 3, 4});
-  X diff = make<X>({1, 2, 4});
-  X e1, e2;
-  // reflexive, symmetric, transitive
-  if (!(a == a) || !(a == b) || !(b == a) || !(b == c) || !(a == c)) return false;
-  if (a == shorter || shorter == a || a == longer || longer == a || e1 == a || a == e1) return false;
-  if (!(e1 == e2)) return false;
-  if (!(a != shorter) || !(a != longer) || a != b || e1 != e2) return false;
-  if constexpr (!std::is_same_v<typename X::value_type, bool>) {
-    if (a == diff || !(a != diff)) return false;
-  }
-  return true;
-}
+#include "reqs/container_equality.hpp"
+
+using namespace reqs::container_equality;
 
 constexpr bool custom_eq() {
   std::vector<Mod10> a{1, 22, 333}, b{11, 2, 3}, c{1, 22, 334};

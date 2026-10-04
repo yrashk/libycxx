@@ -22,35 +22,9 @@ struct Two {
   constexpr bool operator==(const Two& o) const { return a == o.a && b == o.b; }
 };
 
-template <class X>
-constexpr bool generic() {
-  using T = typename X::value_type;
-  using It = typename X::iterator;
-  static_assert(std::is_same_v<decltype(std::declval<X&>().emplace(std::declval<X&>().cbegin(), val<T>(1))), It>);
-  static_assert(std::is_same_v<decltype(std::declval<X&>().emplace_back(val<T>(1))), typename X::reference>);
-  X a = make<X>({1, 2, 3});
-  It r = a.emplace(a.cbegin() + 1, val<T>(5));
-  if (r != a.begin() + 1 || !holds(a, {1, 5, 2, 3})) return false;
-  r = a.emplace(a.cend(), val<T>(6));
-  if (r != a.end() - 1 || !holds(a, {1, 5, 2, 3, 6})) return false;
-  r = a.emplace(a.cbegin(), val<T>(7));
-  if (r != a.begin() || !holds(a, {7, 1, 5, 2, 3, 6})) return false;
-  // argument referring to an element of a, with and without reallocation
-  for (int k = 0; k < 40; ++k) a.emplace(a.cbegin() + 1, a.back());
-  if (count_elems(a) != 46 || !(a[1] == val<T>(6)) || !(a[40] == val<T>(6)) || !(a[41] == val<T>(1))) return false;
-  a.emplace(a.cbegin(), a[2]);
-  if (!(a[0] == val<T>(6))) return false;
+#include "reqs/sequence_emplace.hpp"
 
-  X b;
-  auto&& ref = b.emplace_back(val<T>(4));
-  if (!(ref == val<T>(4))) return false;
-  for (int k = 0; k < 40; ++k) {
-    auto&& r2 = b.emplace_back(b.front());  // refers into b, reallocation along the way
-    if (!(r2 == val<T>(4))) return false;
-  }
-  if (count_elems(b) != 41) return false;
-  return true;
-}
+using namespace reqs::sequence_emplace;
 
 constexpr bool multi_arg() {
   std::vector<Two> v;

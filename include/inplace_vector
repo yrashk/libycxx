@@ -1,0 +1,8 @@
+// -*- C++ -*-  libycxx: <inplace_vector>   [core]
+#pragma once
+
+#include <ycxx/config.hpp>
+#include <ycxx/core/version.hpp>
+#include <compare>
+#include <initializer_list>
+#include <ycxx/core/inplace_vector.hpp>

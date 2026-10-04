@@ -134,6 +134,19 @@ template <class U, std::size_t... I>
 struct get_types<U, std::index_sequence<I...>> {
   using type = std::tuple<decltype(get<I>(std::declval<U>()))...>;
 };
+// For a tuple specialization the types are spelled out, without the unqualified call: its
+// argument-dependent lookup would instantiate the element types' template arguments
+// (a tuple<Holder<Incomplete>*> must stay copyable).
+template <class U, std::size_t... I>
+  requires is_tuple_specialization<std::remove_cvref_t<U>>
+struct get_types<U, std::index_sequence<I...>> {
+  template <std::size_t J>
+  using elem = std::tuple_element_t<J, std::remove_cvref_t<U>>;
+  template <std::size_t J>
+  using cv_elem = std::conditional_t<std::is_const_v<std::remove_reference_t<U>>, const elem<J>, elem<J>>;
+  // get<J>(u) on an lvalue gives cv_elem<J>&, on an rvalue cv_elem<J>&& (collapsing for references).
+  using type = std::tuple<std::conditional_t<std::is_lvalue_reference_v<U>, cv_elem<I>&, cv_elem<I>&&>...>;
+};
 template <class U>
 using get_types_t =
     typename get_types<U, std::make_index_sequence<std::tuple_size_v<std::remove_cvref_t<U>>>>::type;

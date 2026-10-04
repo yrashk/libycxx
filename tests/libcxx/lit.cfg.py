@@ -35,6 +35,8 @@ features = {
     'std-at-least-c++20', 'std-at-least-c++23', 'std-at-least-c++26',
     compiler, f'{compiler}-{ver[0]}', f'{compiler}-{ver[0]}.{ver[1]}',
     'target=x86_64-pc-linux-gnu', 'linux', 'has-unix-headers', 'has-64-bit-atomics',
+    # Atomics of any size work without libatomic (lock-based in libycxx's runtime).
+    'has-1024-bit-atomics',
     'stdlib=libycxx', 'can-create-symlinks', 'has-fblocks-off',
 }
 if compiler == 'clang':

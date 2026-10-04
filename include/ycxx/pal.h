@@ -62,11 +62,44 @@ typedef __UINT32_TYPE__ ycxx_pal_u32;
 void ycxx_pal_wait(const ycxx_pal_u32* addr, ycxx_pal_u32 expected) YCXX_PAL_NOEXCEPT;
 /* Wakes every thread blocked in ycxx_pal_wait on addr. */
 void ycxx_pal_wake_all(const ycxx_pal_u32* addr) YCXX_PAL_NOEXCEPT;
+/* Wakes at least one thread blocked in ycxx_pal_wait on addr, if any (may wake more). */
+void ycxx_pal_wake_one(const ycxx_pal_u32* addr) YCXX_PAL_NOEXCEPT;
+/* As ycxx_pal_wait, but returns no later than (about) the absolute time sec:nsec of `clock`
+   (ycxx_pal_clock_realtime or ycxx_pal_clock_monotonic). Returns 0 when woken, when *addr !=
+   expected, or spuriously, and a nonzero value when it returned because the time passed.
+   Callers re-check both their condition and the clock. */
+int ycxx_pal_wait_until(const ycxx_pal_u32* addr, ycxx_pal_u32 expected, int clock, ycxx_pal_i64 sec,
+                        ycxx_pal_i64 nsec) YCXX_PAL_NOEXCEPT;
+
+/* ---- threads ------------------------------------------------------------------------------- */
+/* Starts a thread running start(arg); stack_size 0 means the default. Stores its handle in
+   *thread. The handle is also the thread's identity (ycxx_pal_thread_self in that thread
+   returns it) until the thread is joined or, if detached, ends. */
+int ycxx_pal_thread_create(ycxx_pal_handle* thread, void* (*start)(void*), void* arg,
+                           ycxx_pal_size stack_size) YCXX_PAL_NOEXCEPT;
+/* Waits for the thread to end and releases its handle. */
+int ycxx_pal_thread_join(ycxx_pal_handle thread) YCXX_PAL_NOEXCEPT;
+/* Releases the handle; the thread's resources are freed when it ends. */
+int ycxx_pal_thread_detach(ycxx_pal_handle thread) YCXX_PAL_NOEXCEPT;
+/* The calling thread's handle. */
+ycxx_pal_handle ycxx_pal_thread_self(void) YCXX_PAL_NOEXCEPT;
+/* Names the calling thread (best effort: may be truncated or ignored). */
+void ycxx_pal_thread_set_name(const char* name) YCXX_PAL_NOEXCEPT;
+/* Offers the rest of the calling thread's time slice to other threads. */
+void ycxx_pal_thread_yield(void) YCXX_PAL_NOEXCEPT;
+/* The number of hardware threads available, or 0 if unknown. */
+unsigned ycxx_pal_hardware_concurrency(void) YCXX_PAL_NOEXCEPT;
+/* Blocks the calling thread until the absolute time sec:nsec of `clock` has passed. */
+void ycxx_pal_sleep_until(int clock, ycxx_pal_i64 sec, ycxx_pal_i64 nsec) YCXX_PAL_NOEXCEPT;
 
 /* ---- thread exit --------------------------------------------------------------------------- */
 /* Registers f(obj) to run when the calling thread exits (thread_local destructors); dso is the
    registering object's __dso_handle. Returns 0 on success. */
 int ycxx_pal_thread_atexit(void (*f)(void*), void* obj, void* dso) YCXX_PAL_NOEXCEPT;
+/* Registers f(arg) to run when the calling thread ends, after its thread_local objects are
+   destroyed (std::notify_all_at_thread_exit, promise::set_value_at_thread_exit). Not run for the
+   thread that ends the process. Returns 0 on success. */
+int ycxx_pal_at_thread_end(void (*f)(void*), void* arg) YCXX_PAL_NOEXCEPT;
 
 /* ---- error messages ----------------------------------------------------------------------- */
 /* Writes the C library's description of error number `ev` (as strerror, but thread-safe) to buf
@@ -74,7 +107,7 @@ int ycxx_pal_thread_atexit(void (*f)(void*), void* obj, void* dso) YCXX_PAL_NOEX
    std::generic_category() and std::system_category(). */
 int ycxx_pal_error_message(int ev, char* buf, ycxx_pal_size n) YCXX_PAL_NOEXCEPT;
 
-/* Threads, filesystem and time zone hooks are added with phase 5. */
+/* Filesystem and time zone hooks are added with phase 5. */
 
 #ifdef __cplusplus
 }

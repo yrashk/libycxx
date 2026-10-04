@@ -1,0 +1,6 @@
+// -*- C++ -*-  libycxx: <condition_variable>   [hosted]
+#pragma once
+
+#include <ycxx/config.hpp>
+#include <ycxx/core/version.hpp>
+#include <ycxx/hosted/condition_variable.hpp>

@@ -1,4 +1,5 @@
 // Freestanding smoke test: exercises core headers with no OS, no libc, no exceptions, no RTTI.
+#include <atomic>
 #include <bit>
 #include <cassert>
 #include <charconv>
@@ -41,6 +42,19 @@ extern "C" int ycxx_freestanding_main() {
   tc = std::to_chars(text, text + sizeof text, r, 7);
   if (std::from_chars(text, tc.ptr, i, 7) && i == r)
     ++r;
+  // <atomic>: lock-free operations inline, a lock-based type and waiting from the runtime archive.
+  std::atomic<int> ai(r);
+  ai.fetch_add(1);
+  ai.wait(0); // returns: the value differs
+  ai.notify_all();
+  struct big {
+    long a, b, c;
+  };
+  std::atomic<big> ab(big{1, 2, 3});
+  big e{1, 2, 3};
+  if (ab.compare_exchange_strong(e, big{4, 5, 6}) && ab.load().c == 6)
+    ++r;
+  r += ai.load() - r;
   assert(r > 0);
   return r;
 }

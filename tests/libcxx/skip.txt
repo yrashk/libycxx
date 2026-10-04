@@ -9,3 +9,5 @@ utilities/meta/meta.trans/meta.trans.other/aligned_storage\.pass\.cpp | deprecat
 utilities/meta/meta.trans/meta.trans.other/aligned_union\.pass\.cpp | deprecated | std::aligned_union is deprecated (C++23)
 utilities/meta/meta.trans/meta.trans.other/result_of.*\.pass\.cpp | removed | std::result_of was removed in C++20
 utilities/meta/meta.rel/is_invocable_r(_v)?\.compile\.pass\.cpp | divergence | expects is_invocable_r<const int&, int()> true; the draft ([func.require]/2, P2255) makes INVOKE<R> ill-formed when a reference binds to a temporary
+language.support/cmp/cmp.alg/strong_order_long_double\.verify\.cpp | extension | checks a libc++ limitation (strong_order on long double unimplemented); libycxx implements it
+language.support/cmp/cmp.concept/three_way_comparable_with\.compile\.pass\.cpp | divergence | expects Clang's buggy answer for NonMovableIntComparable on Clang (llvm.org/PR171438); [cmp.concept] gives false, which libycxx returns on both compilers

@@ -36,6 +36,13 @@
 #define __cpp_lib_invoke 201411L
 #define __cpp_lib_invoke_r 202106L
 
+// <bit>
+#define __cpp_lib_bit_cast 201806L
+#define __cpp_lib_bitops 202607L
+#define __cpp_lib_byteswap 202110L
+#define __cpp_lib_endian 201907L
+#define __cpp_lib_int_pow2 202002L
+
 // <type_traits>
 #define __cpp_lib_bool_constant 201505L
 #define __cpp_lib_bounded_array_traits 201902L

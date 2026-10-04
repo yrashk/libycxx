@@ -4,6 +4,9 @@
 #ifndef FLT_RADIX
 #  define FLT_RADIX __FLT_RADIX__
 #endif
+#ifndef FLT_ROUNDS
+#  define FLT_ROUNDS (__builtin_flt_rounds())
+#endif
 #ifndef FLT_EVAL_METHOD
 #  define FLT_EVAL_METHOD __FLT_EVAL_METHOD__
 #endif

@@ -2,7 +2,3 @@
 # Format:  <path regex> | <category> | <reason>   (see tests/SKIPPED.md)
 # Content rules: "content:<regex>" matches the test source instead of the path.
 content:std::__[a-zA-Z] | extension | uses libstdc++ internal names (std::__*)
-content:\bhas_denorm(_loss)?\b|\bdenorm_present\b|\bdenorm_absent\b|\bfloat_denorm_style\b | deprecated | numeric_limits::has_denorm / has_denorm_loss are deprecated (C++23)
-content:\bis_pod(_v)?\b|\bis_literal_type\b|\bis_trivial(_v)?\b | deprecated | is_pod / is_literal_type / is_trivial are deprecated or removed
-content:\baligned_storage\b|\baligned_union\b | deprecated | aligned_storage / aligned_union are deprecated (C++23)
-content:\bresult_of\b | removed | result_of was removed in C++20

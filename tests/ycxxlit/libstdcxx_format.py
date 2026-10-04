@@ -10,6 +10,7 @@ implementation-specific.
 """
 import os, re, shutil, subprocess, tempfile
 import lit.formats, lit.Test
+from ycxxlit.skips import load_skips, match_skip
 
 STD = 26
 DG = re.compile(r'\{\s*dg-([a-z-]+)\s*(.*)\}\s*$')
@@ -94,30 +95,18 @@ def selector_of(args, key):
     return None
 
 
-def load_skips(path):
-    skips = []
-    if os.path.exists(path):
-        for line in open(path):
-            line = line.strip()
-            if line and not line.startswith('#'):
-                pat, cat, why = [x.strip() for x in line.split('|', 2)]
-                on_content = pat.startswith('content:')
-                skips.append((on_content, re.compile(pat[8:] if on_content else pat), f'skipped ({cat}): {why}'))
-    return skips
-
-
 class LibstdcxxFormat(lit.formats.FileBasedTest):
     def __init__(self, wrapper, compiler, base_flags, skip_file):
         self.wrapper, self.compiler, self.base_flags = wrapper, compiler, base_flags
-        self.skips = load_skips(skip_file)
+        self.skips = load_skips(os.path.join(os.path.dirname(os.path.dirname(skip_file)), 'common', 'skip.txt'), skip_file)
 
     def execute(self, test, lit_config):
         path = test.getSourcePath()
         rel = '/'.join(test.path_in_suite)
         src = open(path, encoding='utf-8', errors='replace').read()
-        for on_content, pat, why in self.skips:
-            if (pat.search(src) if on_content else pat.fullmatch(rel)):
-                return lit.Test.Result(lit.Test.UNSUPPORTED, why)
+        why = match_skip(self.skips, rel, src)
+        if why:
+            return lit.Test.Result(lit.Test.UNSUPPORTED, why)
         if re.search(r'#\s*include\s*<(ext|bits|tr1|tr2|backward|debug|parallel|profile)/', src) or '__gnu_' in src:  # extension
             return lit.Test.Result(lit.Test.UNSUPPORTED, 'skipped (extension): uses libstdc++ extensions')
 

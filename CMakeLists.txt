@@ -88,6 +88,7 @@ add_library(ycxx STATIC
   src/hosted/stacktrace.cpp
   src/hosted/demangle.cpp
   src/hosted/random.cpp
+  src/hosted/regex.cpp
   # iostreams and localization
   src/hosted/fstream.cpp
   src/hosted/ios.cpp

@@ -38,6 +38,7 @@ Conformance oracles (run only, never edited): libc++ tests from `llvmorg-23.1.2`
 | input.output + localization (iostreams, `<locale>`) | 583/855 | 590/855 | no (hosted) | was 39; 213 of the failures need `<filesystem>`, `<codecvt>` (removed), `<format>`/`<print>`, `<mutex>`/`<chrono>` or `EOF` from `constexpr_char_traits.h`; rest under Known limitations |
 | atomics + thread (incl. futures, stop tokens, latch/barrier/semaphore) | 449/453 | 449/453 | `<atomic>` yes (runtime archive); the rest hosted | was 16; rest: `<format>` for thread::id (4) |
 | input.output + localization (iostreams, `<locale>`, `<filesystem>`) | 668/855 | 668/855 | no (hosted) | was 583 (Clang) / 590 (GCC) before `<filesystem>`; most failures need `<chrono>`, `<codecvt>` (removed), `<format>`/`<print>`, `<mutex>`/`<thread>` or `EOF` from `constexpr_char_traits.h`; rest under Known limitations |
+| re (`<regex>`) | 163/164 | 163/164 | no (hosted) | was 12; 5 skipped (draft divergences, see tests/libcxx/skip.txt); rest: `EOF` from `constexpr_char_traits.h` |
 
 Whole-suite baseline (clang, before iterators/tuple/array/optional): 976 pass / ~8,000 run.
 
@@ -165,6 +166,17 @@ localization 668 -> 726/850 (GCC). libstdc++ std/format + 27_io/print 0 -> 24/29
 `<cstdio>` transitively or `-fno-char8_t`; 4 are skipped as implementation-specific or deprecated.
 Header cost (GCC, `-fsyntax-only`): `<format>` 0.27 s, `<ostream>` 0.18 -> 0.26 s (its print
 overloads need the core of `<format>`).
+<regex> (hosted): regex_traits<char>/<wchar_t> (on the locale's ctype and collate facets),
+basic_regex with all six grammars, sub_match, match_results (allocator-aware, pmr aliases),
+regex_match/regex_search/regex_replace with every match_flag_type, regex_iterator and
+regex_token_iterator. ECMAScript backtracks on an explicit stack (ECMA-262 capture and empty-
+iteration rules; failure memo for programs without back-references, so `(a|b)*c` and `(a*)*b`
+are linear); the POSIX grammars find the leftmost-longest match with an NFA simulation and assign
+subexpressions by the POSIX left-to-right longest rule. Own suite regex/: 8/8 on both compilers,
+clean under ASan (Clang). libc++ std/re 12 -> 163/164 (+5 skipped; the failure needs `EOF` from
+`constexpr_char_traits.h`); libstdc++ 28_regex 0 -> 103/104 (+6 skipped; the failure needs
+`bits/move.h`; 61 others need `__gnu_test` helpers); both compilers. Checked against V8 on 63,000
+random ECMAScript patterns (with and without icase): identical results.
 
 ## Freestanding
 `tools/check_freestanding.sh`: every core header compiles with `-ffreestanding -nostdlib -nostdinc
@@ -237,6 +249,12 @@ Deprecated and removed features are not implemented (`is_pod`, `is_trivial`, `al
   libstdc++'s `to_chars/version.cc` expects `__cpp_lib_to_chars` 202306L, not 202606L.
 - Floating-point `from_chars` leaves the value unmodified on `result_out_of_range` (overflow, or a
   nonzero value that rounds to zero), as the draft says; MSVC stores +-inf or +-0.
+- `<regex>` ECMAScript follows ECMA-262 where libc++'s tests expect otherwise: `\a` is an
+  identity escape ([re.grammar]/3: "SourceCharacter but not c"), a back-reference may precede its
+  group, and `(a*)*` leaves group 1 unmatched after a rejected empty iteration. Under
+  `match_prev_avail`, `^` matches at `first` only in multiline mode after a line terminator (the
+  previous character exists, so `first` is not the beginning of the input), which keeps
+  regex_iterator from matching `^a` at every position. Details in `tests/libcxx/skip.txt`.
 - x87 `long double` `%a`: normal values print with a leading 1 (`1.8p+0`), subnormal ones as the
   C library does (`0x0.000000000000001p-16385` is the smallest), so that both forms agree there.
 
@@ -273,6 +291,18 @@ Deprecated and removed features are not implemented (`is_pod`, `is_trivial`, `al
   `detection_mode::predicate_false` (it passes the unmodified violation object).
 - `<text_encoding>`: comp-name assumes an ASCII-compatible ordinary literal encoding.
 - `<contracts>`: Clang 23 has no contracts (`-fcontracts` is unknown); the header only declares.
+- `<regex>`: the backtracking matcher stops with `regex_error(error_stack)` beyond 4M stack frames
+  (about 2M iterations of a quantified group, e.g. `(?:a|b)*` over 2M characters) and with
+  `error_complexity` beyond a step budget that grows with the input (reached by exponential
+  patterns with back-references, or with counted loops `(..){m,n}` or nullable-body loops with
+  min 1 that the failure memo does not cover). POSIX patterns with back-references, or whose
+  bounded repetitions expand beyond 256 copies or 65536 nodes, backtrack exhaustively (longest
+  match; subexpressions in first-found order rather than by the POSIX rule). A combination of
+  several grammar flags throws `regex_error(error_complexity)` (error_type has no code for it).
+  Multi-character collating elements (`[[.ch.]]`) are not supported (no locale defines them).
+  regex_traits::transform_primary returns the full sort key (the provided collate facets have no
+  secondary weights) for collate and collate_byname facets alike; [re.traits]/7 would return an
+  empty key for the classic locale's collate facet, making every `[[=x=]]` invalid.
 - Iostreams/locale: named locales other than "C", "POSIX", "C.UTF-8" and "" throw
   `runtime_error` (the environment's conventions are not supported); `codecvt<wchar_t, char>`
   is UTF-8 in the classic locale, so `encoding()` is 0 and wide file streams cannot seek by an

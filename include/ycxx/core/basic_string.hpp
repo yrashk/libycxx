@@ -319,8 +319,8 @@ private:
       if (size_ + n > cap())
         reallocate(grow_cap(size_ + n));
       charT* p = ptr_ + size_;
-      for (; first != last; ++first, ++p)
-        traits::assign(*p, static_cast<charT>(*first));
+      for (; first != last; ++first) // no ',' on the user's iterator
+        traits::assign(*p++, static_cast<charT>(*first));
       size_ += n;
       traits::assign(ptr_[size_], charT());
     } else {

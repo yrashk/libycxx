@@ -3,8 +3,10 @@
 // Capture: _Unwind_Backtrace of the toolchain's unwinder (libgcc_s), the same one exception
 // handling uses. Symbolization: the PAL names the loaded object containing the address and its
 // load bias; the object file is mapped (through the PAL) and read as ELF:
-//   - the function: the symbol of .symtab (else .dynsym; else what the dynamic linker knows)
-//     containing the address, demangled (demangle.cpp);
+//   - the function: the innermost subprogram or inlined subroutine of .debug_info containing
+//     the address (so code inlined from another function is described by that function), else
+//     the symbol of .symtab (else .dynsym; else what the dynamic linker knows) containing it;
+//     demangled (demangle.cpp);
 //   - the file and line: the DWARF line-number program of .debug_line (DWARF 2-5, 32- and
 //     64-bit formats) whose row ranges contain the address.
 // Not supported: compressed debug sections (SHF_COMPRESSED), separate debug files
@@ -143,6 +145,7 @@ struct object_file {
   ycxx_pal_size map_size = 0;
   bool is64 = false;
   section symtab, symstr, dynsym, dynstr, line, line_str, str;
+  section info, abbrev, ranges, rnglists, addr, str_offsets;
   unsigned long long last_use = 0;
 };
 
@@ -228,6 +231,18 @@ bool parse_elf(object_file& f) {
       f.line_str = to_section(s);
     } else if (is(".debug_str")) {
       f.str = to_section(s);
+    } else if (is(".debug_info")) {
+      f.info = to_section(s);
+    } else if (is(".debug_abbrev")) {
+      f.abbrev = to_section(s);
+    } else if (is(".debug_ranges")) {
+      f.ranges = to_section(s);
+    } else if (is(".debug_rnglists")) {
+      f.rnglists = to_section(s);
+    } else if (is(".debug_addr")) {
+      f.addr = to_section(s);
+    } else if (is(".debug_str_offsets")) {
+      f.str_offsets = to_section(s);
     }
   }
   const auto with_strings = [&](const raw& tab, section& syms, section& strs) {
@@ -549,6 +564,534 @@ line_result find_line(const object_file& f, std::uint64_t addr) {
   return res;
 }
 
+// ---- DWARF debugging information entries: the function (inlined or not) at an address -------------
+//
+// The innermost DW_TAG_subprogram or DW_TAG_inlined_subroutine whose address ranges contain the
+// address names the function: an inlined call's code is described by the function that was
+// inlined. Its name is the DW_AT_linkage_name (demangled later) of the entry or of the entries
+// its DW_AT_abstract_origin / DW_AT_specification refer to, else their DW_AT_name. DWARF 2-5,
+// 32- and 64-bit formats, including DWARF 5's indexed forms (strx, addrx, rnglistx).
+
+struct dwarf_unit {
+  const unsigned char* begin = nullptr; // the unit header
+  const unsigned char* dies = nullptr;  // the first entry
+  const unsigned char* end = nullptr;
+  bool dwarf64 = false;
+  unsigned version = 0;
+  unsigned addr_size = 8;
+  std::uint64_t abbrev_offset = 0;
+  std::uint64_t str_offsets_base = 0, addr_base = 0, rnglists_base = 0, base_address = 0;
+  bool has_str_offsets_base = false, has_rnglists_base = false;
+};
+
+struct abbrev_entry {
+  std::uint64_t tag = 0;
+  bool children = false;
+  const unsigned char* attrs = nullptr; // (attribute, form [, implicit const]) pairs
+};
+
+// The unit header at p (in .debug_info); false if it is not one this reader handles.
+bool read_unit_header(const object_file& f, const unsigned char* p, dwarf_unit& u) {
+  reader r{p, f.info.data + f.info.size};
+  std::uint64_t len = r.u(4);
+  u.dwarf64 = len == 0xffffffffu;
+  if (u.dwarf64)
+    len = r.u(8);
+  if (!r.ok || len > static_cast<std::uint64_t>(r.end - r.p))
+    return false;
+  u.begin = p;
+  u.end = r.p + len;
+  r.end = u.end;
+  u.version = static_cast<unsigned>(r.u(2));
+  if (u.version < 2 || u.version > 5)
+    return false;
+  if (u.version >= 5) {
+    const unsigned type = static_cast<unsigned>(r.u(1));
+    u.addr_size = static_cast<unsigned>(r.u(1));
+    u.abbrev_offset = r.u(u.dwarf64 ? 8 : 4);
+    if (type == 4 || type == 5) // skeleton, split compile: dwo id
+      r.u(8);
+    else if (type == 2 || type == 6) // type units
+      return false;
+  } else {
+    u.abbrev_offset = r.u(u.dwarf64 ? 8 : 4);
+    u.addr_size = static_cast<unsigned>(r.u(1));
+  }
+  u.dies = r.p;
+  return r.ok && (u.addr_size == 4 || u.addr_size == 8);
+}
+
+// The abbreviation table of a unit, indexed by code.
+bool read_abbrevs(const object_file& f, std::uint64_t offset, std::vector<abbrev_entry>& out) {
+  if (!f.abbrev.usable() || offset >= f.abbrev.size)
+    return false;
+  reader r{f.abbrev.data + offset, f.abbrev.data + f.abbrev.size};
+  out.clear();
+  for (;;) {
+    const std::uint64_t code = r.uleb();
+    if (!r.ok)
+      return false;
+    if (code == 0)
+      return true;
+    if (code > 100000)
+      return false;
+    abbrev_entry e;
+    e.tag = r.uleb();
+    e.children = r.u(1) != 0;
+    e.attrs = r.p;
+    for (;;) {
+      const std::uint64_t at = r.uleb(), form = r.uleb();
+      if (!r.ok)
+        return false;
+      if (form == 0x21) // DW_FORM_implicit_const
+        r.sleb();
+      if (at == 0 && form == 0)
+        break;
+    }
+    if (out.size() <= code)
+      out.resize(code + 1);
+    out[code] = e;
+  }
+}
+
+struct attr_value {
+  std::uint64_t form = 0;
+  std::uint64_t u = 0;
+  const char* str = nullptr;
+};
+
+// Reads one attribute value of the given form; false for an unknown form.
+bool read_attr(reader& r, std::uint64_t form, std::int64_t implicit, const dwarf_unit& u, attr_value& v) {
+  v.form = form;
+  v.str = nullptr;
+  const std::size_t off = u.dwarf64 ? 8 : 4;
+  switch (form) {
+  case 0x01: v.u = r.u(u.addr_size); break;                 // addr
+  case 0x03: r.skip(static_cast<std::size_t>(r.u(2))); break; // block2
+  case 0x04: r.skip(static_cast<std::size_t>(r.u(4))); break; // block4
+  case 0x05: v.u = r.u(2); break;                            // data2
+  case 0x06: v.u = r.u(4); break;                            // data4
+  case 0x07: v.u = r.u(8); break;                            // data8
+  case 0x08: v.str = r.str(); break;                         // string
+  case 0x09: case 0x18: r.skip(static_cast<std::size_t>(r.uleb())); break; // block, exprloc
+  case 0x0a: r.skip(static_cast<std::size_t>(r.u(1))); break; // block1
+  case 0x0b: v.u = r.u(1); break;                            // data1
+  case 0x0c: v.u = r.u(1); break;                            // flag
+  case 0x0d: v.u = static_cast<std::uint64_t>(r.sleb()); break; // sdata
+  case 0x0e: case 0x1f: case 0x17: v.u = r.u(off); break;    // strp, line_strp, sec_offset
+  case 0x0f: v.u = r.uleb(); break;                          // udata
+  case 0x10: v.u = r.u(u.version <= 2 ? u.addr_size : off); break; // ref_addr
+  case 0x11: v.u = r.u(1); break;                            // ref1
+  case 0x12: v.u = r.u(2); break;                            // ref2
+  case 0x13: v.u = r.u(4); break;                            // ref4
+  case 0x14: v.u = r.u(8); break;                            // ref8
+  case 0x15: v.u = r.uleb(); break;                          // ref_udata
+  case 0x16: {                                               // indirect
+    const std::uint64_t real = r.uleb();
+    return real != 0x16 && read_attr(r, real, implicit, u, v);
+  }
+  case 0x19: v.u = 1; break;                                 // flag_present
+  case 0x1a: case 0x1b: case 0x22: case 0x23: v.u = r.uleb(); break; // strx, addrx, loclistx, rnglistx
+  case 0x1c: v.u = r.u(4); break;                            // ref_sup4
+  case 0x1d: v.u = r.u(off); break;                          // strp_sup
+  case 0x1e: r.skip(16); break;                              // data16
+  case 0x20: case 0x24: v.u = r.u(8); break;                 // ref_sig8, ref_sup8
+  case 0x21: v.u = static_cast<std::uint64_t>(implicit); break; // implicit_const
+  case 0x25: case 0x29: v.u = r.u(1); break;                 // strx1, addrx1
+  case 0x26: case 0x2a: v.u = r.u(2); break;                 // strx2, addrx2
+  case 0x27: case 0x2b: v.u = r.u(3); break;                 // strx3, addrx3
+  case 0x28: case 0x2c: v.u = r.u(4); break;                 // strx4, addrx4
+  case 0x1f01: case 0x1f02: v.u = r.uleb(); break;           // GNU_addr_index, GNU_str_index
+  case 0x1f20: case 0x1f21: v.u = r.u(off); break;           // GNU_ref_alt, GNU_strp_alt
+  default: return false;
+  }
+  return r.ok;
+}
+
+bool is_strx(std::uint64_t form) { return form == 0x1a || (form >= 0x25 && form <= 0x28) || form == 0x1f02; }
+bool is_addrx(std::uint64_t form) { return form == 0x1b || (form >= 0x29 && form <= 0x2c) || form == 0x1f01; }
+
+const char* section_string(const section& s, std::uint64_t off) {
+  if (!s.usable() || off >= s.size || std::memchr(s.data + off, 0, s.size - off) == nullptr)
+    return nullptr;
+  return reinterpret_cast<const char*>(s.data + off);
+}
+
+// The string an attribute value denotes, if any.
+const char* attr_string(const object_file& f, const dwarf_unit& u, const attr_value& v) {
+  if (v.str)
+    return v.str;
+  if (v.form == 0x0e)
+    return section_string(f.str, v.u);
+  if (v.form == 0x1f)
+    return section_string(f.line_str, v.u);
+  if (is_strx(v.form) && u.has_str_offsets_base) {
+    const std::size_t w = u.dwarf64 ? 8 : 4;
+    const std::uint64_t at = u.str_offsets_base + v.u * w;
+    if (!f.str_offsets.usable() || at + w > f.str_offsets.size)
+      return nullptr;
+    reader r{f.str_offsets.data + at, f.str_offsets.data + f.str_offsets.size};
+    return section_string(f.str, r.u(w));
+  }
+  return nullptr;
+}
+
+// The address an attribute value denotes (addr or addrx forms).
+bool attr_address(const object_file& f, const dwarf_unit& u, const attr_value& v, std::uint64_t& out) {
+  if (v.form == 0x01) {
+    out = v.u;
+    return true;
+  }
+  if (is_addrx(v.form)) {
+    const std::uint64_t at = u.addr_base + v.u * u.addr_size;
+    if (!f.addr.usable() || at + u.addr_size > f.addr.size)
+      return false;
+    reader r{f.addr.data + at, f.addr.data + f.addr.size};
+    out = r.u(u.addr_size);
+    return r.ok;
+  }
+  return false;
+}
+
+// The attributes of an entry this reader uses.
+struct die_info {
+  std::uint64_t tag = 0;
+  bool children = false;
+  attr_value low, high, ranges, name, linkage, origin, spec;
+  bool has_low = false, has_high = false, has_ranges = false, has_name = false, has_linkage = false,
+       has_origin = false, has_spec = false;
+  attr_value str_offsets_base, addr_base, rnglists_base;
+  bool has_str_offsets_base = false, has_addr_base = false, has_rnglists_base = false;
+};
+
+// Reads the entry at r (its code already known to be abbrev a); false on malformed data.
+bool read_die(reader& r, const abbrev_entry& a, const dwarf_unit& u, die_info& d) {
+  d = die_info();
+  d.tag = a.tag;
+  d.children = a.children;
+  reader spec{a.attrs, r.end};
+  for (;;) {
+    const std::uint64_t at = spec.uleb(), form = spec.uleb();
+    std::int64_t implicit = 0;
+    if (form == 0x21)
+      implicit = spec.sleb();
+    if (!spec.ok)
+      return false;
+    if (at == 0 && form == 0)
+      return true;
+    attr_value v;
+    if (!read_attr(r, form, implicit, u, v))
+      return false;
+    switch (at) {
+    case 0x11: d.low = v; d.has_low = true; break;
+    case 0x12: d.high = v; d.has_high = true; break;
+    case 0x55: d.ranges = v; d.has_ranges = true; break;
+    case 0x03: d.name = v; d.has_name = true; break;
+    case 0x6e: case 0x2007: d.linkage = v; d.has_linkage = true; break;
+    case 0x31: d.origin = v; d.has_origin = true; break;
+    case 0x47: d.spec = v; d.has_spec = true; break;
+    case 0x72: d.str_offsets_base = v; d.has_str_offsets_base = true; break;
+    case 0x73: d.addr_base = v; d.has_addr_base = true; break;
+    case 0x74: d.rnglists_base = v; d.has_rnglists_base = true; break;
+    default: break;
+    }
+  }
+}
+
+// Whether the address ranges of an entry (low_pc/high_pc or DW_AT_ranges) contain addr.
+bool die_contains(const object_file& f, const dwarf_unit& u, const die_info& d, std::uint64_t addr) {
+  if (d.has_low && d.has_high) {
+    std::uint64_t low;
+    if (!attr_address(f, u, d.low, low))
+      return false;
+    std::uint64_t high;
+    if (d.high.form == 0x01 || is_addrx(d.high.form)) {
+      if (!attr_address(f, u, d.high, high))
+        return false;
+    } else {
+      high = low + d.high.u;
+    }
+    return low <= addr && addr < high;
+  }
+  if (!d.has_ranges)
+    return false;
+  if (u.version < 5) { // .debug_ranges: (begin, end) pairs relative to the base address
+    if (!f.ranges.usable() || d.ranges.u >= f.ranges.size)
+      return false;
+    reader r{f.ranges.data + d.ranges.u, f.ranges.data + f.ranges.size};
+    const std::uint64_t all_ones = u.addr_size == 8 ? ~std::uint64_t(0) : 0xffffffffu;
+    std::uint64_t base = u.base_address;
+    while (r.ok) {
+      const std::uint64_t b = r.u(u.addr_size), e = r.u(u.addr_size);
+      if (!r.ok || (b == 0 && e == 0))
+        return false;
+      if (b == all_ones) {
+        base = e;
+        continue;
+      }
+      if (base + b <= addr && addr < base + e)
+        return true;
+    }
+    return false;
+  }
+  // .debug_rnglists
+  std::uint64_t off = d.ranges.u;
+  if (d.ranges.form == 0x23) { // rnglistx: an index into the offsets after the header
+    if (!u.has_rnglists_base)
+      return false;
+    const std::size_t w = u.dwarf64 ? 8 : 4;
+    const std::uint64_t at = u.rnglists_base + off * w;
+    if (!f.rnglists.usable() || at + w > f.rnglists.size)
+      return false;
+    reader r{f.rnglists.data + at, f.rnglists.data + f.rnglists.size};
+    off = u.rnglists_base + r.u(w);
+  }
+  if (!f.rnglists.usable() || off >= f.rnglists.size)
+    return false;
+  reader r{f.rnglists.data + off, f.rnglists.data + f.rnglists.size};
+  std::uint64_t base = u.base_address;
+  const auto addrx = [&](std::uint64_t idx, std::uint64_t& out) {
+    attr_value v;
+    v.form = 0x1b;
+    v.u = idx;
+    return attr_address(f, u, v, out);
+  };
+  while (r.ok) {
+    const unsigned kind = static_cast<unsigned>(r.u(1));
+    std::uint64_t b = 0, e = 0;
+    switch (kind) {
+    case 0: return false; // end_of_list
+    case 1:               // base_addressx
+      if (!addrx(r.uleb(), base))
+        return false;
+      continue;
+    case 2: // startx_endx
+      if (!addrx(r.uleb(), b) || !addrx(r.uleb(), e))
+        return false;
+      break;
+    case 3: // startx_length
+      if (!addrx(r.uleb(), b))
+        return false;
+      e = b + r.uleb();
+      break;
+    case 4: // offset_pair
+      b = base + r.uleb();
+      e = base + r.uleb();
+      break;
+    case 5: base = r.u(u.addr_size); continue; // base_address
+    case 6: // start_end
+      b = r.u(u.addr_size);
+      e = r.u(u.addr_size);
+      break;
+    case 7: // start_length
+      b = r.u(u.addr_size);
+      e = b + r.uleb();
+      break;
+    default: return false;
+    }
+    if (r.ok && b <= addr && addr < e)
+      return true;
+  }
+  return false;
+}
+
+// Sets the unit's bases from its unit entry.
+void apply_unit_die(const object_file& f, dwarf_unit& u, const die_info& d) {
+  if (d.has_str_offsets_base) {
+    u.str_offsets_base = d.str_offsets_base.u;
+    u.has_str_offsets_base = true;
+  } else if (u.version >= 5 && f.str_offsets.usable()) { // the first contribution's header
+    u.str_offsets_base = u.dwarf64 ? 16 : 8;
+    u.has_str_offsets_base = true;
+  }
+  if (d.has_addr_base)
+    u.addr_base = d.addr_base.u;
+  if (d.has_rnglists_base) {
+    u.rnglists_base = d.rnglists_base.u;
+    u.has_rnglists_base = true;
+  }
+  if (d.has_low)
+    attr_address(f, u, d.low, u.base_address);
+}
+
+// The unit containing the .debug_info offset off, its bases set; false if none.
+bool unit_at(const object_file& f, std::uint64_t off, dwarf_unit& u, std::vector<abbrev_entry>& abbrevs) {
+  const unsigned char* p = f.info.data;
+  const unsigned char* end = f.info.data + f.info.size;
+  while (p < end) {
+    if (!read_unit_header(f, p, u)) {
+      // Skip a unit of a kind this reader does not handle.
+      reader r{p, end};
+      std::uint64_t len = r.u(4);
+      if (len == 0xffffffffu)
+        len = r.u(8);
+      if (!r.ok || len > static_cast<std::uint64_t>(end - r.p))
+        return false;
+      p = r.p + len;
+      continue;
+    }
+    if (f.info.data + off < u.end) {
+      if (f.info.data + off < u.dies || !read_abbrevs(f, u.abbrev_offset, abbrevs))
+        return false;
+      reader r{u.dies, u.end};
+      const std::uint64_t code = r.uleb();
+      die_info d;
+      if (!r.ok || code == 0 || code >= abbrevs.size() || abbrevs[code].attrs == nullptr ||
+          !read_die(r, abbrevs[code], u, d))
+        return false;
+      apply_unit_die(f, u, d);
+      return true;
+    }
+    p = u.end;
+  }
+  return false;
+}
+
+// The scopes enclosing the entry at .debug_info offset off in the unit u ("ns::C::"): the
+// named namespaces, classes, structures, unions and functions among its ancestors.
+std::string die_scope(const object_file& f, const dwarf_unit& u, const std::vector<abbrev_entry>& abbrevs,
+                      std::uint64_t off) {
+  struct level {
+    std::uint64_t tag;
+    const char* name;
+  };
+  std::vector<level> stack;
+  const unsigned char* target = f.info.data + off;
+  reader r{u.dies, u.end};
+  die_info d;
+  while (r.ok && r.p < target) {
+    const std::uint64_t code = r.uleb();
+    if (!r.ok)
+      break;
+    if (code == 0) {
+      if (!stack.empty())
+        stack.pop_back();
+      continue;
+    }
+    if (code >= abbrevs.size() || abbrevs[code].attrs == nullptr || !read_die(r, abbrevs[code], u, d))
+      break;
+    if (d.children)
+      stack.push_back({d.tag, d.has_name ? attr_string(f, u, d.name) : nullptr});
+  }
+  std::string scope;
+  for (const level& l : stack) {
+    const bool named_scope = l.tag == 0x39 || l.tag == 0x02 || l.tag == 0x13 || l.tag == 0x17 || l.tag == 0x2e;
+    if (!named_scope)
+      continue;
+    if (l.name != nullptr)
+      scope += l.name;
+    else if (l.tag == 0x39)
+      scope += "(anonymous namespace)";
+    else
+      continue;
+    scope += "::";
+  }
+  return scope;
+}
+
+// The name of the function the entry at .debug_info offset off describes.
+bool die_name(const object_file& f, std::uint64_t off, int depth, std::string& name) {
+  if (depth > 8)
+    return false;
+  dwarf_unit u;
+  std::vector<abbrev_entry> abbrevs;
+  if (!unit_at(f, off, u, abbrevs))
+    return false;
+  reader r{f.info.data + off, u.end};
+  const std::uint64_t code = r.uleb();
+  die_info d;
+  if (!r.ok || code == 0 || code >= abbrevs.size() || abbrevs[code].attrs == nullptr || !read_die(r, abbrevs[code], u, d))
+    return false;
+  if (d.has_linkage)
+    if (const char* s = attr_string(f, u, d.linkage)) {
+      name = s;
+      return true;
+    }
+  const auto ref_target = [&](const attr_value& v, std::uint64_t& target) {
+    if (v.form == 0x10) { // ref_addr: an offset in .debug_info
+      target = v.u;
+      return true;
+    }
+    if (v.form >= 0x11 && v.form <= 0x15) { // relative to the unit
+      target = static_cast<std::uint64_t>(u.begin - f.info.data) + v.u;
+      return true;
+    }
+    return false;
+  };
+  std::uint64_t target;
+  if (d.has_origin && ref_target(d.origin, target) && die_name(f, target, depth + 1, name))
+    return true;
+  if (d.has_spec && ref_target(d.spec, target) && die_name(f, target, depth + 1, name))
+    return true;
+  if (d.has_name)
+    if (const char* s = attr_string(f, u, d.name)) {
+      name = die_scope(f, u, abbrevs, off) + s; // no linkage name: qualify it by its scopes
+      return true;
+    }
+  return false;
+}
+
+// The name of the innermost function (inlined or not) containing addr, from .debug_info.
+bool find_function(const object_file& f, std::uint64_t addr, std::string& name) {
+  if (!f.info.usable() || !f.abbrev.usable())
+    return false;
+  const unsigned char* p = f.info.data;
+  const unsigned char* end = f.info.data + f.info.size;
+  std::vector<abbrev_entry> abbrevs;
+  while (p < end) {
+    dwarf_unit u;
+    if (!read_unit_header(f, p, u)) {
+      reader r{p, end};
+      std::uint64_t len = r.u(4);
+      if (len == 0xffffffffu)
+        len = r.u(8);
+      if (!r.ok || len > static_cast<std::uint64_t>(end - r.p))
+        return false;
+      p = r.p + len;
+      continue;
+    }
+    p = u.end;
+    if (!read_abbrevs(f, u.abbrev_offset, abbrevs))
+      continue;
+    reader r{u.dies, u.end};
+    // The unit entry: its bases, and whether the unit covers addr at all.
+    std::uint64_t code = r.uleb();
+    die_info d;
+    if (!r.ok || code == 0 || code >= abbrevs.size() || abbrevs[code].attrs == nullptr || !read_die(r, abbrevs[code], u, d))
+      continue;
+    apply_unit_die(f, u, d);
+    if ((d.has_low && d.has_high) || d.has_ranges) {
+      if (!die_contains(f, u, d, addr))
+        continue;
+    }
+    if (!d.children)
+      continue;
+    int depth = 1, best_depth = -1;
+    const unsigned char* best = nullptr;
+    while (r.ok && r.p < r.end && depth > 0) {
+      const unsigned char* at = r.p;
+      code = r.uleb();
+      if (!r.ok)
+        break;
+      if (code == 0) {
+        --depth;
+        continue;
+      }
+      if (code >= abbrevs.size() || abbrevs[code].attrs == nullptr || !read_die(r, abbrevs[code], u, d))
+        break;
+      if ((d.tag == 0x2e || d.tag == 0x1d) && depth > best_depth && die_contains(f, u, d, addr)) {
+        best = at;
+        best_depth = depth;
+      }
+      if (d.children)
+        ++depth;
+    }
+    if (best != nullptr)
+      return die_name(f, static_cast<std::uint64_t>(best - f.info.data), 0, name);
+  }
+  return false;
+}
+
 // ---- the object cache -------------------------------------------------------------------------------
 
 constexpr int cache_size = 8;
@@ -577,8 +1120,13 @@ object_file* object_named(const char* path) {
   }
   std::strncpy(victim->path, path, sizeof victim->path - 1);
   if (!parse_elf(*victim)) {
-    victim->line = section(); // nothing usable; keep the mapping cached as a negative answer
-    victim->symtab = victim->dynsym = section();
+    // Nothing usable; the mapping stays cached as a negative answer.
+    const ycxx_pal_size size = victim->map_size;
+    const void* map = victim->map;
+    *victim = object_file();
+    victim->map = map;
+    victim->map_size = size;
+    std::strncpy(victim->path, path, sizeof victim->path - 1);
   }
   victim->last_use = ++cache_clock;
   return victim;
@@ -599,7 +1147,7 @@ symbolized symbolize(std::uintptr_t pc, bool want_function, bool want_line) {
     if (ycxx_pal_object_of(pc, path, sizeof path, &bias) == 0) {
       if (object_file* f = object_named(path)) {
         const std::uint64_t addr = pc - bias;
-        if (want_function) {
+        if (want_function && !find_function(*f, addr, out.function)) {
           raw_name = find_symbol(*f, f->symtab, f->symstr, addr);
           if (raw_name == nullptr)
             raw_name = find_symbol(*f, f->dynsym, f->dynstr, addr);

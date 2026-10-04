@@ -37,7 +37,10 @@ concept duration_type = is_duration<T>;
 // ratio_divide<P1, P2> is a valid ratio specialization (no overflow): the converting constructor
 // of duration is constrained on it ([time.duration.cons]/3).
 template <class P1, class P2>
-concept ratio_divide_valid = ::ycxx::detail::ratio_div(P1::num, P1::den, P2::num, P2::den).ok;
+concept ratio_divide_valid =
+    P2::num != 0 && ::ycxx::detail::ratio_mul_values(P1::num, P1::den, P2::num < 0 ? -P2::den : P2::den,
+                                                     P2::num < 0 ? -P2::num : P2::num)
+                        .ok;
 
 template <std::intmax_t A, std::intmax_t B>
 inline constexpr std::intmax_t static_gcd = ::ycxx::detail::ratio_gcd(A, B);

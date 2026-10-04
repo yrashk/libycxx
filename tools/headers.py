@@ -13,9 +13,13 @@ CORE += ["algorithm", "numeric", "execution", "ranges"]
 CORE += ["scoped_allocator"]
 CORE += ["vector", "inplace_vector"]
 CORE += ["deque", "list", "forward_list", "stack", "queue"]
+CORE += ["map", "set", "flat_map", "flat_set"]
+CORE += ["unordered_map", "unordered_set", "hive"]
+# Numerics (<cmath>: see DECISIONS §3; the run-time calls of its functions need libm).
+CORE += ["ratio", "numbers", "cmath", "complex", "valarray"]
 # <atomic>: operations that are not lock-free and the waits use the runtime archive's tables
 # (libycxx.a and the freestanding archive).
-CORE += ["ratio", "atomic", "stdatomic.h"]
+CORE += ["atomic", "stdatomic.h"]
 # Hosted: need an OS (through the PAL) or the C library.
 HOSTED = [
     "any", "cctype", "cerrno", "cfenv", "cinttypes", "clocale", "csetjmp", "csignal", "cstdarg", "cstdio",
@@ -30,6 +34,8 @@ HOSTED += ["chrono"]
 # The thread support library: threads, mutexes and condition variables need the OS (PAL).
 HOSTED += ["thread", "stop_token", "mutex", "shared_mutex", "condition_variable", "semaphore", "latch", "barrier",
            "future"]
+# <math.h>: the C library's header plus <cmath>'s names in the global namespace.
+HOSTED += ["math.h"]
 # Language-support headers whose *declarations* are core but which need the C++ ABI runtime
 # (libycxx-abi) to be used with exceptions/RTTI enabled.
 ABI = ["exception", "stdexcept", "typeinfo", "typeindex"]

@@ -72,6 +72,7 @@ add_library(ycxx STATIC
   src/hosted/stdexcept.cpp
   src/hosted/memory_resource.cpp
   src/hosted/string.cpp
+  src/hosted/cmath_check.cpp
   src/hosted/system_error.cpp
   src/pal/posix/pal.c
 )
@@ -104,6 +105,11 @@ set_target_properties(ycxx ycxx_abi PROPERTIES POSITION_INDEPENDENT_CODE ON)
 add_library(ycxx_ycxx INTERFACE)
 set_target_properties(ycxx_ycxx PROPERTIES EXPORT_NAME ycxx)
 target_link_libraries(ycxx_ycxx INTERFACE ycxx_headers ycxx)
+# <cmath> calls the C library's math functions at run time; libm is separate from libc on
+# glibc and musl (on Darwin it is part of libSystem).
+if(NOT APPLE)
+  target_link_libraries(ycxx_ycxx INTERFACE m)
+endif()
 # -shared-libgcc: one unwinder per process. glibc's pthread_exit/pthread_cancel unwind through
 # libgcc_s.so; a second, static copy (libgcc_eh) used by the personality routine would abort.
 target_link_options(ycxx_ycxx INTERFACE $<$<LINK_LANGUAGE:CXX>:-nostdlib++>

@@ -16,6 +16,7 @@ MANDATED_MACRO_FILES = {
     "ycxx/core/cstdint.hpp", "ycxx/core/climits.hpp", "ycxx/core/cstddef.hpp",
     "ycxx/core/version.hpp", "cassert", "ycxx/core/cfloat.hpp", "ycxx/pal.h", "cwchar", "cuchar",
     "atomic", "stdatomic.h",
+    "ycxx/core/cmath.hpp", "ycxx/core/cmath_c_macros.hpp", "math.h",
 }
 # Headers the standard requires to be re-includable with different effect.
 REINCLUDABLE = {"cassert"}

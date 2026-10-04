@@ -172,7 +172,11 @@ constexpr T fp_scale(T x, long n) noexcept {
   constexpr long lim = 1L << 20; // far beyond every format's exponent range
   if (n > lim) n = lim;
   if (n < -lim) n = -lim;
-  return ycxx::detail::fpm::fp_finish(ycxx::detail::fpm::fp_round<T>(v.neg, v.sig, v.exp + static_cast<int>(n)));
+  using L = fp_layout<T>;
+  const long e = long(v.exp) + n;
+  if (v.exp > L::qmin && e > L::qmin && e <= L::emax - (L::p - 1)) // normal in, normal out: exact
+    return ycxx::detail::fpm::fp_encode_finite<T>(v.neg, v.sig, static_cast<int>(e));
+  return ycxx::detail::fpm::fp_finish(ycxx::detail::fpm::fp_round<T>(v.neg, v.sig, static_cast<int>(e)));
 }
 
 // ilogb: the exponent; FP_ILOGB0 / INT_MAX / FP_ILOGBNAN (with "invalid", F.10.3.5) otherwise.

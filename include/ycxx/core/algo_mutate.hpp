@@ -151,7 +151,7 @@ constexpr I shift_left_impl(I first, S last, std::iter_difference_t<I> n) {
   if constexpr (std::sized_sentinel_for<S, I>) {
     if (n >= last - first)
       return first;
-    mid += n;
+    ::ycxx::detail::iter_advance(mid, n);
   } else {
     for (; n > 0; --n, (void)++mid)
       if (mid == last)
@@ -404,7 +404,8 @@ void shuffle(RandomAccessIterator first, RandomAccessIterator last, UniformRando
   D n = last - first;
   for (D i = 1; i < n; ++i) {
     D j = static_cast<D>(::ycxx::detail::uniform_upto(g, static_cast<unsigned long long>(i)));
-    std::iter_swap(first + i, first + j);
+    if (j != i) // no self-swap: it would move an element onto itself
+      std::iter_swap(first + i, first + j);
   }
 }
 
@@ -869,7 +870,8 @@ struct shuffle_fn {
     D n = end - first;
     for (D i = 1; i < n; ++i) {
       D j = static_cast<D>(::ycxx::detail::uniform_upto(g, static_cast<unsigned long long>(i)));
-      std::ranges::iter_swap(first + i, first + j);
+      if (j != i)
+        std::ranges::iter_swap(first + i, first + j);
     }
     return end;
   }

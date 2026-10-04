@@ -4,6 +4,7 @@
 #include <ycxx/config.hpp>
 #include <ycxx/core/version.hpp>
 #include <ycxx/core/cstddef.hpp>
+#include <ycxx/core/math_abs.hpp>
 #include <stdlib.h>
 
 namespace std {
@@ -43,18 +44,11 @@ using ::bsearch;
 using ::qsort;
 using ::rand;
 using ::srand;
-using ::abs;
-using ::labs;
-using ::llabs;
 using ::div;
 using ::ldiv;
 using ::lldiv;
 
-inline long abs(long x) noexcept { return x < 0 ? -x : x; }
-inline long long abs(long long x) noexcept { return x < 0 ? -x : x; }
+// abs, labs, llabs ([c.math.abs]): constexpr, shared with <cmath> (ycxx/core/math_abs.hpp).
 inline ldiv_t div(long a, long b) noexcept { return ::ldiv(a, b); }
 inline lldiv_t div(long long a, long long b) noexcept { return ::lldiv(a, b); }
-inline float abs(float x) noexcept { return __builtin_fabsf(x); }
-inline double abs(double x) noexcept { return __builtin_fabs(x); }
-inline long double abs(long double x) noexcept { return __builtin_fabsl(x); }
 } // namespace std

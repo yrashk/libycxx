@@ -1,0 +1,6 @@
+// -*- C++ -*-  libycxx: <cmath>   [core; the run-time calls need libm]
+#pragma once
+
+#include <ycxx/config.hpp>
+#include <ycxx/core/version.hpp>
+#include <ycxx/core/cmath.hpp>

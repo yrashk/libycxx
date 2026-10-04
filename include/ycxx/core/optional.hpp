@@ -8,6 +8,7 @@
 #include <ycxx/core/error.hpp>
 #include <ycxx/core/ranges_base.hpp>
 #include <ycxx/core/range_access.hpp>
+#include <ycxx/core/iterator_adaptors.hpp> // [iterator.range]/1: all of it, incl. rbegin/crend
 #include <initializer_list>
 
 namespace std {

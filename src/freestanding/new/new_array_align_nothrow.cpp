@@ -1,12 +1,12 @@
 // libycxx freestanding runtime (libycxx-freestanding.a): there is no heap, so the default
 // allocation functions fail. A program with a heap replaces operator new/delete (each lives in
-// its own archive member, so its definitions win). Without exceptions the nothrow forms cannot
-// detect a failure of a forwarded call, so they return a null pointer themselves; a program that
-// replaces operator new should replace the nothrow forms too.
+// its own archive member, so its definitions win). The nothrow forms return null when the
+// heap-less default is what is linked, and otherwise forward (try_or_null.hpp).
 #include <new>
 #include <ycxx/core/error.hpp>
 #include "try_or_null.hpp"
 
 void* operator new[](std::size_t n, std::align_val_t a, const std::nothrow_t&) noexcept {
-  return ycxx::detail::try_or_null([&] { return ::operator new[](n, a); });
+  // The array default forwards to the single form, so both must be the defaults for null.
+  return ycxx::detail::try_or_null(&ycxx_default_new_array_align != nullptr && &ycxx_fs_default_new_align != nullptr, [&] { return ::operator new[](n, a); });
 }

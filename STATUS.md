@@ -80,13 +80,19 @@ Deprecated and removed features are not implemented (`is_pod`, `is_trivial`, `al
   accepted on the left.
 
 ## Known limitations and draft defects
+- `FLT_ROUNDS` is the constant 1 with GCC (no `__builtin_flt_rounds`), as in GCC's own
+  `<float.h>`; it does not follow `fesetround`. Clang reports the current mode.
+- `<cwchar>` with Clang on glibc: glibc declares `::wcschr` etc. only with the C signature, so an
+  unqualified call on a const pointer under `using namespace std;` returns `wchar_t*`. Qualified
+  `std::` calls are const-correct. (A `<wchar.h>` wrapper would be needed.)
+- `std::any` allocates large values with a plain new-expression, honouring a class-specific
+  `operator new`. A type that deletes it cannot be stored (libstdc++ any/83658 relies on this).
+- Freestanding programs built with GCC link libgcc (helpers such as `__popcountdi2`).
 - `char_traits<char16_t>::eof()`: [char.traits.require] wants a value distinct from
   `to_int_type(c)` for every `c`, but `int_type` is `uint_least16_t` (16 bits here), so no such
   value exists. libycxx returns 0xFFFF (own test `char_traits/eof` fails by design).
 - `any` without RTTI identifies types by the address of a per-type table, so `any_cast` across a
   shared library built with hidden visibility or `-Bsymbolic` does not recognise the type.
-- Freestanding, without exceptions: the default nothrow allocation forms return null without
-  calling a replaced `operator new` (failure cannot be detected); replace them too.
 - No `<stddef.h>` wrapper: `::max_align_t` comes from the compiler's header and is not
   `std::max_align_t` (see Deliberate divergences).
 

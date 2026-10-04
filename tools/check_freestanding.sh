@@ -39,5 +39,7 @@ build_fsrt() {
 }
 run "clang++-23 --target=x86_64-unknown-none-elf" clang-x86_64 "clang-23 --target=x86_64-unknown-none-elf" "ld.lld-23 -e _start"
 run "clang++-23 --target=riscv64-unknown-elf -march=rv64gc -mabi=lp64d" clang-riscv64 "clang-23 --target=riscv64-unknown-elf -march=rv64gc -mabi=lp64d" "ld.lld-23 -e _start"
-run "g++-16" gcc-x86_64 "gcc-16" "ld.lld-23 -e _start"
+# GCC lowers some builtins (e.g. __builtin_popcountll without -mpopcnt) to libgcc helpers, so
+# freestanding programs built with GCC link libgcc, as GCC itself requires.
+run "g++-16" gcc-x86_64 "gcc-16" "ld.lld-23 -e _start $(gcc-16 -print-libgcc-file-name)"
 exit $fail

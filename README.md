@@ -7,9 +7,11 @@ for the design rules.
 
 ## Toolchains
 
-`tools/toolchain/provision` finds GCC 16.2 and Clang 23.1 (with lld) or installs them under
-`~/.local/share/ycxx/toolchains` (or `$YCXX_TOOLCHAINS`): Clang from the LLVM release tarball,
-GCC built from source. Then load them into your shell:
+Linux and macOS. `tools/toolchain/provision` finds GCC 16.2 and Clang 23.1 (with lld) or
+installs them under `~/.local/share/ycxx/toolchains` (or `$YCXX_TOOLCHAINS`): Clang from the
+LLVM release tarball, GCC built from source (on macOS against the SDK from `xcrun`). It also
+picks up compilers you already have, including Homebrew's `gcc` and `llvm` kegs; `--use-brew`
+installs those with Homebrew instead. Then load them into your shell:
 
 ```sh
 source tools/toolchain/activate.sh            # bash, zsh
@@ -19,8 +21,22 @@ ycxx-unload                                   # restore the previous environment
 ```
 
 Activation exports `YCXX_GCC`, `YCXX_GXX`, `YCXX_CLANG`, `YCXX_CLANGXX`, `YCXX_LLD`,
-`YCXX_LLVM_AR`, `YCXX_GCC_INSTALL_DIR` and `YCXX_ROOT`, and puts the compilers and `tools/` on
-`PATH`. The repository's tools use these variables, falling back to `g++-16` / `clang++-23`.
+`YCXX_LLVM_AR`, `YCXX_GCC_INSTALL_DIR` and `YCXX_ROOT` (on macOS also `SDKROOT`), and puts the
+compilers and `tools/` on `PATH`. The repository's tools use these variables, falling back to
+`g++-16` / `clang++-23`.
+
+### From CMake alone
+
+`cmake/ycxx-toolchain.cmake` does the same from CMake, sharing the same cache (it reads and
+updates the same `toolchains.env` and installations):
+
+```sh
+cmake -S . -B build -DCMAKE_TOOLCHAIN_FILE=<libycxx>/cmake/ycxx-toolchain.cmake -DYCXX_COMPILER=clang
+```
+
+It only downloads or builds a compiler when asked with `-DYCXX_PROVISION=ON`; otherwise a
+missing or unsupported compiler stops the configuration with instructions.
+`-DYCXX_GCC_VERSION=` / `-DYCXX_LLVM_VERSION=` select other versions.
 
 ## Using libycxx from CMake
 
@@ -51,7 +67,8 @@ Without CMake, `tools/ycxx-cxx gcc|clang <args>` compiles and links against the 
 
 ```sh
 tools/check-all                       # policy checks, both library builds, freestanding check
-tests/cmake/run.sh                    # CMake package: install, find_package, add_subdirectory
+tests/cmake/run.sh                    # CMake package and toolchain file (YCXX_TEST_PROVISION=1:
+                                      #   also download Clang through the toolchain file)
 tools/run-conformance ycxx clang      # libycxx's own spec-derived suite (tests/ycxx)
 tools/run-conformance libcxx gcc <dirs>     # libc++'s tests (run only)
 tools/run-conformance libstdcxx gcc <dirs>  # libstdc++'s testsuite (run only)

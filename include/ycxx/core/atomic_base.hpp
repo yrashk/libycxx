@@ -34,9 +34,10 @@
 namespace std {
 
 // [atomics.order]; consume is [depr.atomics.order].
-enum class memory_order : int { relaxed = 0, consume [[deprecated]] = 1, acquire = 2, release = 3, acq_rel = 4, seq_cst = 5 };
+enum class memory_order : int { relaxed = 0, consume [[deprecated("memory_order::consume is deprecated ([depr.atomics.order]); use acquire")]] = 1, acquire = 2, release = 3, acq_rel = 4, seq_cst = 5 };
 inline constexpr memory_order memory_order_relaxed = memory_order::relaxed;
-[[deprecated]] inline constexpr memory_order memory_order_consume = static_cast<memory_order>(1);
+[[deprecated("memory_order_consume is deprecated ([depr.atomics.order]); use memory_order_acquire")]]
+inline constexpr memory_order memory_order_consume = static_cast<memory_order>(1);
 inline constexpr memory_order memory_order_acquire = memory_order::acquire;
 inline constexpr memory_order memory_order_release = memory_order::release;
 inline constexpr memory_order memory_order_acq_rel = memory_order::acq_rel;
@@ -44,7 +45,7 @@ inline constexpr memory_order memory_order_seq_cst = memory_order::seq_cst;
 
 // [depr.atomics.order]/2
 template <class T>
-[[deprecated]] constexpr T kill_dependency(T y) noexcept {
+[[deprecated("kill_dependency is deprecated ([depr.atomics.order])")]] constexpr T kill_dependency(T y) noexcept {
   return y;
 }
 

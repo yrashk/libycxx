@@ -92,6 +92,12 @@
 #else
 #  define YCXX_HAS_MEMBER_INTERCONVERTIBILITY 0
 #endif
+// Contract assertions (P2900): __cpp_lib_contracts is defined only where the compiler has them.
+#if defined(__cpp_contracts)
+#  define YCXX_HAS_CONTRACTS 1
+#else
+#  define YCXX_HAS_CONTRACTS 0
+#endif
 #if __has_builtin(__builtin_type_order)
 #  define YCXX_HAS_BUILTIN_TYPE_ORDER 1
 #else
@@ -199,6 +205,29 @@ inline constexpr bool has_int128 = false;
 inline constexpr bool integer_division_traps = true;
 #else
 inline constexpr bool integer_division_traps = false;
+#endif
+// The processor family, for the few run-time functions that need an instruction of their own
+// (std::breakpoint).
+enum class cpu_family { x86, aarch64, arm, riscv, other };
+#if defined(__x86_64__) || defined(__i386__)
+inline constexpr cpu_family cpu = cpu_family::x86;
+#elif defined(__aarch64__)
+inline constexpr cpu_family cpu = cpu_family::aarch64;
+#elif defined(__arm__)
+inline constexpr cpu_family cpu = cpu_family::arm;
+#elif defined(__riscv)
+inline constexpr cpu_family cpu = cpu_family::riscv;
+#else
+inline constexpr cpu_family cpu = cpu_family::other;
+#endif
+// The name of the ordinary literal encoding (std::text_encoding::literal()); empty if the
+// compiler does not say.
+#if defined(__clang_literal_encoding__)
+inline constexpr char literal_encoding[] = __clang_literal_encoding__;
+#elif defined(__GNUC_EXECUTION_CHARSET_NAME)
+inline constexpr char literal_encoding[] = __GNUC_EXECUTION_CHARSET_NAME;
+#else
+inline constexpr char literal_encoding[] = "";
 #endif
 // FLT_EVAL_METHOD (<cfloat>), which selects float_t and double_t (<cmath>).
 inline constexpr int flt_eval_method = __FLT_EVAL_METHOD__;

@@ -33,11 +33,13 @@ run() { # compiler-command target-label
   fi
 }
 # libycxx-freestanding.a for one target: the allocation-function defaults, std::nothrow and
-# floating-point <charconv>, the <atomic> lock and wait tables and default PAL wait hooks.
+# floating-point <charconv>, the <atomic> lock and wait tables, <debugging> and the default PAL
+# wait and debugger hooks.
 build_fsrt() {
   rm -rf "$out/fsrt.$2" && mkdir -p "$out/fsrt.$2"
   for f in "$repo"/src/runtime/new/*.cpp "$repo"/src/freestanding/new/*.cpp "$repo"/src/runtime/charconv/*.cpp \
-           "$repo"/src/runtime/atomic/*.cpp "$repo"/src/freestanding/pal/*.cpp; do
+           "$repo"/src/runtime/atomic/*.cpp "$repo"/src/runtime/debugging/*.cpp \
+           "$repo"/src/runtime/contracts/*.cpp "$repo"/src/freestanding/contracts/*.cpp "$repo"/src/freestanding/pal/*.cpp; do
     case "$2" in gcc*) nw=-Wno-sized-deallocation ;; *) nw= ;; esac # one function per file
     $1 $flags $nw -c "$f" -o "$out/fsrt.$2/$(basename "$f" .cpp).o" || return 1
   done

@@ -330,8 +330,8 @@ constexpr void chrono_iso_week(const chrono_fields<charT>& f, int& year, unsigne
 }
 
 template <class charT, class PC>
-void chrono_write_specs(chrono_out<charT>& o, const PC* p, std::type_identity_t<const PC*> e, const chrono_fields<charT>& f,
-                        bool sign);
+void chrono_write_specs(chrono_out<charT>& o, const PC* p, std::type_identity_t<const PC*> e,
+                        const chrono_fields<charT>& f, bool sign);
 
 // f without its subseconds: the locale's representations %c, %r and %X show whole seconds.
 template <class charT>
@@ -356,7 +356,7 @@ void chrono_write_one(chrono_out<charT>& o, const chrono_fields<charT>& f, char 
     if (f.month < 1 || f.month > 12)
       ::ycxx::detail::chrono_missing("std::format: the value does not contain a valid month");
     if (L)
-      return o.localized(f, full ? 'B' : 'b', 0);
+      return o.localized(f, spec, 0); // %b, %h or %B, as written
     const char* n = chrono_month_names[f.month - 1];
     full ? o.ascii(n) : o.ascii(n, 3);
   };
@@ -382,7 +382,8 @@ void chrono_write_one(chrono_out<charT>& o, const chrono_fields<charT>& f, char 
   case 'c':
     if (L)
       return o.localized(f, 'c', mod);
-    return ::ycxx::detail::chrono_write_specs(o, "%a %b %e %H:%M:%S %Y", nullptr, ::ycxx::detail::chrono_whole_seconds(f), false);
+    return ::ycxx::detail::chrono_write_specs(o, "%a %b %e %H:%M:%S %Y", nullptr,
+                                              ::ycxx::detail::chrono_whole_seconds(f), false);
   case 'C': {
     const long long c = ::ycxx::detail::chrono_floor_div(f.year, 100);
     return o.snum(c, 2);
@@ -421,8 +422,10 @@ void chrono_write_one(chrono_out<charT>& o, const chrono_fields<charT>& f, char 
   case 'r':
     if (L)
       return o.localized(f, 'r', 0);
-    return ::ycxx::detail::chrono_write_specs(o, "%I:%M:%S %p", nullptr, ::ycxx::detail::chrono_whole_seconds(f), false);
-  case 'R': return ::ycxx::detail::chrono_write_specs(o, "%H:%M", nullptr, f, false);
+    return ::ycxx::detail::chrono_write_specs(o, "%I:%M:%S %p", nullptr, ::ycxx::detail::chrono_whole_seconds(f),
+                                              false);
+  case 'R':
+    return ::ycxx::detail::chrono_write_specs(o, "%H:%M", nullptr, f, false);
   case 'S': return secs(true);
   case 't': return o.ch('\t');
   case 'T':
@@ -479,8 +482,8 @@ void chrono_write_one(chrono_out<charT>& o, const chrono_fields<charT>& f, char 
 // The chrono-specs [p, e) (or the NTBS p when e is null); with `sign`, a negative duration gets
 // its '-' before the first conversion specifier ([time.format]/4).
 template <class charT, class PC>
-void chrono_write_specs(chrono_out<charT>& o, const PC* p, std::type_identity_t<const PC*> e, const chrono_fields<charT>& f,
-                        bool sign) {
+void chrono_write_specs(chrono_out<charT>& o, const PC* p, std::type_identity_t<const PC*> e,
+                        const chrono_fields<charT>& f, bool sign) {
   for (; e == nullptr ? *p != PC(0) : p != e; ++p) {
     if (*p != PC('%')) {
       o.b.push_back(static_cast<charT>(*p));
@@ -1113,7 +1116,8 @@ template <class T, class charT>
 struct chrono_formatter {
   chrono_spec<charT> spec_;
 
-  constexpr typename std::basic_format_parse_context<charT>::iterator parse(std::basic_format_parse_context<charT>& pc) {
+  constexpr typename std::basic_format_parse_context<charT>::iterator
+  parse(std::basic_format_parse_context<charT>& pc) {
     return ::ycxx::detail::chrono_parse_spec(pc, spec_, chrono_traits<T>::info, chrono_float_duration<T>);
   }
   template <class FormatContext>
@@ -1161,13 +1165,17 @@ template <class Rep, class Period, ycxx::detail::fmt_char charT>
 struct formatter<chrono::duration<Rep, Period>, charT>
     : ycxx::detail::chrono_formatter<chrono::duration<Rep, Period>, charT> {};
 template <class Duration, ycxx::detail::fmt_char charT>
-struct formatter<chrono::sys_time<Duration>, charT> : ycxx::detail::chrono_formatter<chrono::sys_time<Duration>, charT> {};
+struct formatter<chrono::sys_time<Duration>, charT>
+    : ycxx::detail::chrono_formatter<chrono::sys_time<Duration>, charT> {};
 template <class Duration, ycxx::detail::fmt_char charT>
-struct formatter<chrono::utc_time<Duration>, charT> : ycxx::detail::chrono_formatter<chrono::utc_time<Duration>, charT> {};
+struct formatter<chrono::utc_time<Duration>, charT>
+    : ycxx::detail::chrono_formatter<chrono::utc_time<Duration>, charT> {};
 template <class Duration, ycxx::detail::fmt_char charT>
-struct formatter<chrono::tai_time<Duration>, charT> : ycxx::detail::chrono_formatter<chrono::tai_time<Duration>, charT> {};
+struct formatter<chrono::tai_time<Duration>, charT>
+    : ycxx::detail::chrono_formatter<chrono::tai_time<Duration>, charT> {};
 template <class Duration, ycxx::detail::fmt_char charT>
-struct formatter<chrono::gps_time<Duration>, charT> : ycxx::detail::chrono_formatter<chrono::gps_time<Duration>, charT> {};
+struct formatter<chrono::gps_time<Duration>, charT>
+    : ycxx::detail::chrono_formatter<chrono::gps_time<Duration>, charT> {};
 template <class Duration, ycxx::detail::fmt_char charT>
 struct formatter<chrono::file_time<Duration>, charT>
     : ycxx::detail::chrono_formatter<chrono::file_time<Duration>, charT> {};

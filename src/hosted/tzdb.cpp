@@ -663,7 +663,7 @@ bool load_leapseconds(const string& dir, vector<chr::leap_second>& out) {
     const bool positive = f[5] == "+";
     const int64_t at = days_from_civil(y, static_cast<unsigned>(m), static_cast<unsigned>(d)) * 86400 + hms +
                        (positive ? 0 : 1);
-    out.emplace_back(tz_ctor_tag{}, to_sys(at), chr::seconds(positive ? 1 : -1));
+    out.emplace_back(ycxx::detail::leap_second_tag{}, to_sys(at), chr::seconds(positive ? 1 : -1));
     any = true;
   });
   return any;
@@ -688,7 +688,7 @@ bool load_leap_seconds_list(const string& dir, vector<chr::leap_second>& out) {
     if (!ok)
       return;
     if (!first && diff != prev) {
-      out.emplace_back(tz_ctor_tag{}, to_sys(ntp - 2208988800LL), chr::seconds(diff - prev));
+      out.emplace_back(ycxx::detail::leap_second_tag{}, to_sys(ntp - 2208988800LL), chr::seconds(diff - prev));
       any = true;
     }
     first = false;
@@ -703,7 +703,8 @@ void load_leaps(const string& dir, vector<chr::leap_second>& out) {
     if (!load_leap_seconds_list(dir, out)) {
       out.clear();
       for (const auto& l : builtin_leaps)
-        out.emplace_back(tz_ctor_tag{}, to_sys(days_from_civil(l[0], l[1], l[2]) * 86400), chr::seconds(1));
+        out.emplace_back(ycxx::detail::leap_second_tag{}, to_sys(days_from_civil(l[0], l[1], l[2]) * 86400),
+                         chr::seconds(1));
     }
   }
   std::sort(out.begin(), out.end());

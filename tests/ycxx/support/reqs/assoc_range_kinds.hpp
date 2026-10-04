@@ -25,6 +25,7 @@
 #pragma once
 #include <array>
 #include <cstddef>
+#include <flat_set>  // std::sorted_unique / sorted_equivalent, named for every container kind
 #include <iterator>
 #include <ranges>
 #include <tuple>

@@ -24,7 +24,12 @@ from ycxxlit.ycxx_format import YcxxFormat
 
 flags = ['-I' + os.path.join(repo, 'tests', 'ycxx', 'support'), '-Wall', '-Wextra']
 if sanitizer:
-    flags += ['-fsanitize=' + ','.join({'asan': 'address', 'ubsan': 'undefined'}[s] for s in sanitizer.split(',')),
+    flags += ['-fsanitize=' + ','.join({'asan': 'address', 'ubsan': 'undefined', 'tsan': 'thread'}[s] for s in sanitizer.split(',')),
               '-fno-sanitize-recover=all', '-g']
+    if 'tsan' in sanitizer.split(','):
+        # The TSan runtime defines __cxa_guard_* too (interceptors); keep its definitions. Link
+        # against a runtime built with -fsanitize=thread (YCXX_LIBDIR, see tools/ycxx-cxx) so
+        # that its atomics are seen.
+        flags += ['-Wl,--allow-multiple-definition']
 wrapper = 'ref-cxx' if reference else 'ycxx-cxx'
 config.test_format = YcxxFormat(os.path.join(repo, 'tools', wrapper), compiler, flags)

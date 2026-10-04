@@ -45,8 +45,17 @@ concept adl = class_or_enum<T> && requires(T& t) {
 
 struct fn {
   template <class T>
+  static consteval bool nothrow() {
+    if constexpr (std::is_array_v<std::remove_reference_t<T>>)
+      return true;
+    else if constexpr (member<T>)
+      return noexcept(decay_copy(std::declval<T&>().begin()));
+    else
+      return noexcept(decay_copy(begin(std::declval<T&>())));
+  }
+  template <class T>
     requires maybe_borrowed<T> && (std::is_array_v<std::remove_reference_t<T>> || member<T> || adl<T>)
-  [[nodiscard]] constexpr auto operator()(T&& t) const noexcept {
+  [[nodiscard]] constexpr auto operator()(T&& t) const noexcept(nothrow<T>()) {
     if constexpr (std::is_array_v<std::remove_reference_t<T>>) {
       static_assert(complete_array_elem<T>, "ranges::begin: array of incomplete type");
       return t + 0;
@@ -89,8 +98,17 @@ concept adl = class_or_enum<T> && requires(T& t) {
 
 struct fn {
   template <class T>
+  static consteval bool nothrow() {
+    if constexpr (std::is_bounded_array_v<std::remove_reference_t<T>>)
+      return true;
+    else if constexpr (member<T>)
+      return noexcept(decay_copy(std::declval<T&>().end()));
+    else
+      return noexcept(decay_copy(end(std::declval<T&>())));
+  }
+  template <class T>
     requires maybe_borrowed<T> && (std::is_bounded_array_v<std::remove_reference_t<T>> || member<T> || adl<T>)
-  [[nodiscard]] constexpr auto operator()(T&& t) const noexcept {
+  [[nodiscard]] constexpr auto operator()(T&& t) const noexcept(nothrow<T>()) {
     if constexpr (std::is_bounded_array_v<std::remove_reference_t<T>>) {
       static_assert(complete_array_elem<T>, "ranges::end: array of incomplete type");
       return t + std::extent_v<std::remove_reference_t<T>>;
@@ -164,8 +182,19 @@ concept difference = requires(T& t) {
 
 struct fn {
   template <class T>
+  static consteval bool nothrow() {
+    if constexpr (std::is_bounded_array_v<std::remove_reference_t<T>>)
+      return true;
+    else if constexpr (member<T>)
+      return noexcept(decay_copy(std::declval<T&>().size()));
+    else if constexpr (adl<T>)
+      return noexcept(decay_copy(size(std::declval<T&>())));
+    else
+      return noexcept(std::ranges::end(std::declval<T&>()) - std::ranges::begin(std::declval<T&>()));
+  }
+  template <class T>
     requires std::is_bounded_array_v<std::remove_reference_t<T>> || member<T> || adl<T> || difference<T>
-  [[nodiscard]] constexpr auto operator()(T&& t) const noexcept {
+  [[nodiscard]] constexpr auto operator()(T&& t) const noexcept(nothrow<T>()) {
     if constexpr (std::is_bounded_array_v<std::remove_reference_t<T>>)
       return decay_copy(std::extent_v<std::remove_reference_t<T>>);
     else if constexpr (member<T>)
@@ -192,7 +221,7 @@ namespace ycxx::detail::range_access {
 struct ssize_fn {
   template <class T>
     requires requires(T&& t) { std::ranges::size(t); }
-  [[nodiscard]] constexpr auto operator()(T&& t) const noexcept {
+  [[nodiscard]] constexpr auto operator()(T&& t) const noexcept(noexcept(std::ranges::size(t))) {
     using size_type = decltype(std::ranges::size(t));
     using signed_type = std::make_signed_t<size_type>;
     using result = std::conditional_t<(sizeof(std::ptrdiff_t) > sizeof(signed_type)), std::ptrdiff_t, signed_type>;
@@ -213,8 +242,17 @@ concept via_iter = requires(T& t) {
 };
 struct fn {
   template <class T>
+  static consteval bool nothrow() {
+    if constexpr (member<T>)
+      return noexcept(bool(std::declval<T&>().empty()));
+    else if constexpr (via_size<T>)
+      return noexcept(std::ranges::size(std::declval<T&>()) == 0);
+    else
+      return noexcept(bool(std::ranges::begin(std::declval<T&>()) == std::ranges::end(std::declval<T&>())));
+  }
+  template <class T>
     requires member<T> || via_size<T> || via_iter<T>
-  [[nodiscard]] constexpr bool operator()(T&& t) const noexcept {
+  [[nodiscard]] constexpr bool operator()(T&& t) const noexcept(nothrow<T>()) {
     if constexpr (member<T>)
       return bool(t.empty());
     else if constexpr (via_size<T>)
@@ -239,8 +277,15 @@ concept via_begin = requires(T& t) {
 };
 struct fn {
   template <class T>
+  static consteval bool nothrow() {
+    if constexpr (member<T>)
+      return noexcept(decay_copy(std::declval<T&>().data()));
+    else
+      return noexcept(std::ranges::begin(std::declval<T&>()));
+  }
+  template <class T>
     requires maybe_borrowed<T> && (member<T> || via_begin<T>)
-  [[nodiscard]] constexpr auto operator()(T&& t) const noexcept {
+  [[nodiscard]] constexpr auto operator()(T&& t) const noexcept(nothrow<T>()) {
     if constexpr (member<T>)
       return decay_copy(t.data());
     else
@@ -263,8 +308,17 @@ concept adl = class_or_enum<T> && requires(T& t) {
 };
 struct fn {
   template <class T>
+  static consteval bool nothrow() {
+    if constexpr (requires(T& t) { std::ranges::size(t); })
+      return noexcept(std::ranges::size(std::declval<T&>()));
+    else if constexpr (member<T>)
+      return noexcept(decay_copy(std::declval<T&>().reserve_hint()));
+    else
+      return noexcept(decay_copy(reserve_hint(std::declval<T&>())));
+  }
+  template <class T>
     requires requires(T& t) { std::ranges::size(t); } || member<T> || adl<T>
-  [[nodiscard]] constexpr auto operator()(T&& t) const noexcept {
+  [[nodiscard]] constexpr auto operator()(T&& t) const noexcept(nothrow<T>()) {
     if constexpr (requires { std::ranges::size(t); })
       return std::ranges::size(t);
     else if constexpr (member<T>)
@@ -317,19 +371,19 @@ concept common_range = range<T> && same_as<iterator_t<T>, sentinel_t<T>>;
 namespace std {
 
 template <class C>
-constexpr auto begin(C& c) -> decltype(c.begin()) {
+constexpr auto begin(C& c) noexcept(noexcept(c.begin())) -> decltype(c.begin()) {
   return c.begin();
 }
 template <class C>
-constexpr auto begin(const C& c) -> decltype(c.begin()) {
+constexpr auto begin(const C& c) noexcept(noexcept(c.begin())) -> decltype(c.begin()) {
   return c.begin();
 }
 template <class C>
-constexpr auto end(C& c) -> decltype(c.end()) {
+constexpr auto end(C& c) noexcept(noexcept(c.end())) -> decltype(c.end()) {
   return c.end();
 }
 template <class C>
-constexpr auto end(const C& c) -> decltype(c.end()) {
+constexpr auto end(const C& c) noexcept(noexcept(c.end())) -> decltype(c.end()) {
   return c.end();
 }
 template <class T, size_t N>
@@ -349,7 +403,7 @@ constexpr auto cend(const C& c) noexcept(noexcept(std::end(c))) -> decltype(std:
   return std::end(c);
 }
 template <class C>
-constexpr auto size(const C& c) -> decltype(c.size()) {
+constexpr auto size(const C& c) noexcept(noexcept(c.size())) -> decltype(c.size()) {
   return c.size();
 }
 template <class T, size_t N>
@@ -357,7 +411,7 @@ constexpr size_t size(const T (&)[N]) noexcept {
   return N;
 }
 template <class C>
-constexpr auto ssize(const C& c) -> common_type_t<ptrdiff_t, make_signed_t<decltype(c.size())>> {
+constexpr auto ssize(const C& c) noexcept(noexcept(c.size())) -> common_type_t<ptrdiff_t, make_signed_t<decltype(c.size())>> {
   return static_cast<common_type_t<ptrdiff_t, make_signed_t<decltype(c.size())>>>(c.size());
 }
 template <class T, ptrdiff_t N>
@@ -365,7 +419,7 @@ constexpr ptrdiff_t ssize(const T (&)[N]) noexcept {
   return N;
 }
 template <class C>
-[[nodiscard]] constexpr auto empty(const C& c) -> decltype(c.empty()) {
+[[nodiscard]] constexpr auto empty(const C& c) noexcept(noexcept(c.empty())) -> decltype(c.empty()) {
   return c.empty();
 }
 template <class T, size_t N>
@@ -373,11 +427,11 @@ template <class T, size_t N>
   return false;
 }
 template <class C>
-constexpr auto data(C& c) -> decltype(c.data()) {
+constexpr auto data(C& c) noexcept(noexcept(c.data())) -> decltype(c.data()) {
   return c.data();
 }
 template <class C>
-constexpr auto data(const C& c) -> decltype(c.data()) {
+constexpr auto data(const C& c) noexcept(noexcept(c.data())) -> decltype(c.data()) {
   return c.data();
 }
 template <class T, size_t N>

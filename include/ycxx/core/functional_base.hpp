@@ -10,8 +10,11 @@ namespace ycxx::detail {
 // Converts any pointer-ish operand to an integer so that pointer comparisons form a strict
 // total order even across unrelated objects ([comparisons.general]/2).
 template <class T>
-constexpr __UINTPTR_TYPE__ ptr_value(T p) noexcept {
-  return reinterpret_cast<__UINTPTR_TYPE__>(static_cast<const volatile void*>(p));
+constexpr __UINTPTR_TYPE__ ptr_value(const T& p) noexcept {
+  if constexpr (std::is_pointer_v<T>)
+    return reinterpret_cast<__UINTPTR_TYPE__>(p); // object and function pointers alike
+  else
+    return reinterpret_cast<__UINTPTR_TYPE__>(static_cast<const volatile void*>(p));
 }
 
 // BUILTIN-PTR-CMP(T, op, U): `t op u` resolves to a built-in operator comparing pointers.
@@ -425,7 +428,8 @@ public:
   template <class... Args>
   constexpr invoke_result_t<T&, Args...> operator()(Args&&... args) const
       noexcept(is_nothrow_invocable_v<T&, Args...>) {
-    static_assert(sizeof(T) != 0 || is_function_v<T>, "reference_wrapper: incomplete type");
+    if constexpr (!is_function_v<T>)
+      static_assert(sizeof(T) != 0, "reference_wrapper: incomplete type");
     return ycxx::detail::invoke(get(), static_cast<Args&&>(args)...);
   }
 

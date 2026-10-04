@@ -113,42 +113,42 @@ protected:
 
 template <class I1, class I2>
   requires requires(const I1& x, const I2& y) {
-    { x == y } -> ycxx::detail::boolean_testable;
+    { x == y } -> convertible_to<bool>;
   }
 constexpr bool operator==(const reverse_iterator<I1>& x, const reverse_iterator<I2>& y) {
   return x.base() == y.base();
 }
 template <class I1, class I2>
   requires requires(const I1& x, const I2& y) {
-    { x != y } -> ycxx::detail::boolean_testable;
+    { x != y } -> convertible_to<bool>;
   }
 constexpr bool operator!=(const reverse_iterator<I1>& x, const reverse_iterator<I2>& y) {
   return x.base() != y.base();
 }
 template <class I1, class I2>
   requires requires(const I1& x, const I2& y) {
-    { x > y } -> ycxx::detail::boolean_testable;
+    { x > y } -> convertible_to<bool>;
   }
 constexpr bool operator<(const reverse_iterator<I1>& x, const reverse_iterator<I2>& y) {
   return x.base() > y.base();
 }
 template <class I1, class I2>
   requires requires(const I1& x, const I2& y) {
-    { x < y } -> ycxx::detail::boolean_testable;
+    { x < y } -> convertible_to<bool>;
   }
 constexpr bool operator>(const reverse_iterator<I1>& x, const reverse_iterator<I2>& y) {
   return x.base() < y.base();
 }
 template <class I1, class I2>
   requires requires(const I1& x, const I2& y) {
-    { x >= y } -> ycxx::detail::boolean_testable;
+    { x >= y } -> convertible_to<bool>;
   }
 constexpr bool operator<=(const reverse_iterator<I1>& x, const reverse_iterator<I2>& y) {
   return x.base() >= y.base();
 }
 template <class I1, class I2>
   requires requires(const I1& x, const I2& y) {
-    { x <= y } -> ycxx::detail::boolean_testable;
+    { x <= y } -> convertible_to<bool>;
   }
 constexpr bool operator>=(const reverse_iterator<I1>& x, const reverse_iterator<I2>& y) {
   return x.base() <= y.base();
@@ -333,6 +333,8 @@ namespace std {
 
 template <input_iterator Iter>
 class basic_const_iterator : public ycxx::detail::const_iter_category<Iter> {
+  template <input_iterator>
+  friend class basic_const_iterator;
   Iter current_ = Iter();
   using reference = iter_const_reference_t<Iter>;
   using rvalue_reference = ycxx::detail::iter_const_rvalue_reference_t<Iter>;
@@ -347,14 +349,13 @@ public:
   = default;
   constexpr basic_const_iterator(Iter x) : current_(static_cast<Iter&&>(x)) {}
   template <convertible_to<Iter> U>
-  constexpr basic_const_iterator(basic_const_iterator<U> other) : current_(static_cast<U&&>(other.base_ref())) {}
+  constexpr basic_const_iterator(basic_const_iterator<U> other) : current_(static_cast<U&&>(other.current_)) {}
   template <ycxx::detail::different_from<basic_const_iterator> T>
     requires convertible_to<T, Iter>
   constexpr basic_const_iterator(T&& x) : current_(static_cast<T&&>(x)) {}
 
   constexpr const Iter& base() const& noexcept { return current_; }
   constexpr Iter base() && { return static_cast<Iter&&>(current_); }
-  constexpr Iter& base_ref() noexcept { return current_; } // for the converting constructor
 
   constexpr reference operator*() const { return static_cast<reference>(*current_); }
   constexpr const auto* operator->() const
@@ -1009,9 +1010,9 @@ class common_iterator {
   constexpr void copy_from(Other&& o) {
     if (o.index_ == 0)
       std::construct_at(__builtin_addressof(it_), static_cast<Other&&>(o).it_);
-    else
+    else if (o.index_ == 1)
       std::construct_at(__builtin_addressof(sent_), static_cast<Other&&>(o).sent_);
-    index_ = o.index_;
+    index_ = o.index_; // 2 (valueless) copies as valueless
   }
 
 public:
@@ -1113,6 +1114,7 @@ public:
              (requires(const I& i) { i.operator->(); } || is_reference_v<iter_reference_t<I>> ||
               constructible_from<iter_value_t<I>, iter_reference_t<I>>)
   {
+    ycxx::detail::precondition(index_ == 0, "common_iterator: operator-> on a sentinel");
     if constexpr (is_pointer_v<I> || requires(const I& i) { i.operator->(); }) {
       return it_;
     } else if constexpr (is_reference_v<iter_reference_t<I>>) {
@@ -1202,9 +1204,16 @@ namespace std {
 template <input_iterator I, class S>
 struct iterator_traits<common_iterator<I, S>> {
   using iterator_concept = conditional_t<forward_iterator<I>, forward_iterator_tag, input_iterator_tag>;
-  using iterator_category = conditional_t<
-      derived_from<typename iterator_traits<I>::iterator_category, forward_iterator_tag>, forward_iterator_tag,
-      input_iterator_tag>;
+  using iterator_category = decltype([] {
+    if constexpr (requires { typename iterator_traits<I>::iterator_category; }) {
+      if constexpr (derived_from<typename iterator_traits<I>::iterator_category, forward_iterator_tag>)
+        return forward_iterator_tag{};
+      else
+        return input_iterator_tag{};
+    } else {
+      return input_iterator_tag{};
+    }
+  }());
   using value_type = iter_value_t<I>;
   using difference_type = iter_difference_t<I>;
   using pointer = typename decltype(ycxx::detail::common_iter_pointer<I, S>())::type;
@@ -1236,8 +1245,17 @@ concept reversible = requires(T& t) {
 };
 struct fn {
   template <class T>
+  static consteval bool nothrow() {
+    if constexpr (member<T>)
+      return noexcept(decay_copy(std::declval<T&>().rbegin()));
+    else if constexpr (adl<T>)
+      return noexcept(decay_copy(rbegin(std::declval<T&>())));
+    else
+      return noexcept(std::make_reverse_iterator(std::ranges::end(std::declval<T&>())));
+  }
+  template <class T>
     requires maybe_borrowed<T> && (member<T> || adl<T> || reversible<T>)
-  [[nodiscard]] constexpr auto operator()(T&& t) const {
+  [[nodiscard]] constexpr auto operator()(T&& t) const noexcept(nothrow<T>()) {
     if constexpr (member<T>)
       return decay_copy(t.rbegin());
     else if constexpr (adl<T>)
@@ -1269,8 +1287,17 @@ concept adl = class_or_enum<T> && requires(T& t) {
 };
 struct fn {
   template <class T>
+  static consteval bool nothrow() {
+    if constexpr (member<T>)
+      return noexcept(decay_copy(std::declval<T&>().rend()));
+    else if constexpr (adl<T>)
+      return noexcept(decay_copy(rend(std::declval<T&>())));
+    else
+      return noexcept(std::make_reverse_iterator(std::ranges::begin(std::declval<T&>())));
+  }
+  template <class T>
     requires maybe_borrowed<T> && (member<T> || adl<T> || rbegin_ns::reversible<T>)
-  [[nodiscard]] constexpr auto operator()(T&& t) const {
+  [[nodiscard]] constexpr auto operator()(T&& t) const noexcept(nothrow<T>()) {
     if constexpr (member<T>)
       return decay_copy(t.rend());
     else if constexpr (adl<T>)
@@ -1296,7 +1323,7 @@ namespace ycxx::detail::range_access {
 
 template <std::ranges::input_range R>
 constexpr auto& possibly_const_range(R& r) noexcept {
-  if constexpr (std::ranges::constant_range<const R> && !std::ranges::constant_range<R>)
+  if constexpr (std::ranges::input_range<const R>)
     return const_cast<const R&>(r);
   else
     return r;
@@ -1310,7 +1337,9 @@ constexpr auto as_const_pointer(const T* p) noexcept {
 struct cbegin_fn {
   template <class T>
     requires maybe_borrowed<T> && requires(T& t) { std::ranges::begin(possibly_const_range(t)); }
-  [[nodiscard]] constexpr auto operator()(T&& t) const {
+  [[nodiscard]] constexpr auto operator()(T&& t) const
+      noexcept(noexcept(std::const_iterator<decltype(std::ranges::begin(possibly_const_range(t)))>(
+          std::ranges::begin(possibly_const_range(t))))) {
     return std::const_iterator<decltype(std::ranges::begin(possibly_const_range(t)))>(
         std::ranges::begin(possibly_const_range(t)));
   }
@@ -1318,7 +1347,9 @@ struct cbegin_fn {
 struct cend_fn {
   template <class T>
     requires maybe_borrowed<T> && requires(T& t) { std::ranges::end(possibly_const_range(t)); }
-  [[nodiscard]] constexpr auto operator()(T&& t) const {
+  [[nodiscard]] constexpr auto operator()(T&& t) const
+      noexcept(noexcept(std::const_sentinel<decltype(std::ranges::end(possibly_const_range(t)))>(
+          std::ranges::end(possibly_const_range(t))))) {
     return std::const_sentinel<decltype(std::ranges::end(possibly_const_range(t)))>(
         std::ranges::end(possibly_const_range(t)));
   }
@@ -1326,7 +1357,9 @@ struct cend_fn {
 struct crbegin_fn {
   template <class T>
     requires maybe_borrowed<T> && requires(T& t) { std::ranges::rbegin(possibly_const_range(t)); }
-  [[nodiscard]] constexpr auto operator()(T&& t) const {
+  [[nodiscard]] constexpr auto operator()(T&& t) const
+      noexcept(noexcept(std::const_iterator<decltype(std::ranges::rbegin(possibly_const_range(t)))>(
+          std::ranges::rbegin(possibly_const_range(t))))) {
     return std::const_iterator<decltype(std::ranges::rbegin(possibly_const_range(t)))>(
         std::ranges::rbegin(possibly_const_range(t)));
   }
@@ -1334,7 +1367,9 @@ struct crbegin_fn {
 struct crend_fn {
   template <class T>
     requires maybe_borrowed<T> && requires(T& t) { std::ranges::rend(possibly_const_range(t)); }
-  [[nodiscard]] constexpr auto operator()(T&& t) const {
+  [[nodiscard]] constexpr auto operator()(T&& t) const
+      noexcept(noexcept(std::const_sentinel<decltype(std::ranges::rend(possibly_const_range(t)))>(
+          std::ranges::rend(possibly_const_range(t))))) {
     return std::const_sentinel<decltype(std::ranges::rend(possibly_const_range(t)))>(
         std::ranges::rend(possibly_const_range(t)));
   }
@@ -1342,7 +1377,8 @@ struct crend_fn {
 struct cdata_fn {
   template <class T>
     requires maybe_borrowed<T> && requires(T& t) { std::ranges::data(possibly_const_range(t)); }
-  [[nodiscard]] constexpr auto operator()(T&& t) const {
+  [[nodiscard]] constexpr auto operator()(T&& t) const
+      noexcept(noexcept(std::ranges::data(possibly_const_range(t)))) {
     return as_const_pointer(std::ranges::data(possibly_const_range(t)));
   }
 };
@@ -1368,43 +1404,43 @@ using range_const_reference_t = iter_const_reference_t<iterator_t<R>>;
 
 namespace std {
 template <class C>
-constexpr auto rbegin(C& c) -> decltype(c.rbegin()) {
+constexpr auto rbegin(C& c) noexcept(noexcept(c.rbegin())) -> decltype(c.rbegin()) {
   return c.rbegin();
 }
 template <class C>
-constexpr auto rbegin(const C& c) -> decltype(c.rbegin()) {
+constexpr auto rbegin(const C& c) noexcept(noexcept(c.rbegin())) -> decltype(c.rbegin()) {
   return c.rbegin();
 }
 template <class C>
-constexpr auto rend(C& c) -> decltype(c.rend()) {
+constexpr auto rend(C& c) noexcept(noexcept(c.rend())) -> decltype(c.rend()) {
   return c.rend();
 }
 template <class C>
-constexpr auto rend(const C& c) -> decltype(c.rend()) {
+constexpr auto rend(const C& c) noexcept(noexcept(c.rend())) -> decltype(c.rend()) {
   return c.rend();
 }
 template <class T, size_t N>
-constexpr reverse_iterator<T*> rbegin(T (&a)[N]) {
+constexpr reverse_iterator<T*> rbegin(T (&a)[N]) noexcept {
   return reverse_iterator<T*>(a + N);
 }
 template <class T, size_t N>
-constexpr reverse_iterator<T*> rend(T (&a)[N]) {
+constexpr reverse_iterator<T*> rend(T (&a)[N]) noexcept {
   return reverse_iterator<T*>(a);
 }
 template <class E>
-constexpr reverse_iterator<const E*> rbegin(initializer_list<E> il) {
+constexpr reverse_iterator<const E*> rbegin(initializer_list<E> il) noexcept {
   return reverse_iterator<const E*>(il.end());
 }
 template <class E>
-constexpr reverse_iterator<const E*> rend(initializer_list<E> il) {
+constexpr reverse_iterator<const E*> rend(initializer_list<E> il) noexcept {
   return reverse_iterator<const E*>(il.begin());
 }
 template <class C>
-constexpr auto crbegin(const C& c) -> decltype(std::rbegin(c)) {
+constexpr auto crbegin(const C& c) noexcept(noexcept(std::rbegin(c))) -> decltype(std::rbegin(c)) {
   return std::rbegin(c);
 }
 template <class C>
-constexpr auto crend(const C& c) -> decltype(std::rend(c)) {
+constexpr auto crend(const C& c) noexcept(noexcept(std::rend(c))) -> decltype(std::rend(c)) {
   return std::rend(c);
 }
 } // namespace std

@@ -1,0 +1,14 @@
+// -*- C++ -*-  libycxx: <regex>   [hosted]
+//
+// The six grammars of [re.synopt]: ECMAScript (backtracking, ECMA-262 semantics) and the POSIX
+// grammars basic, extended, awk, grep and egrep (leftmost-longest, POSIX subexpression rules).
+// See ycxx/hosted/regex_engine.hpp for the matchers and their complexity limits.
+#pragma once
+
+#include <ycxx/config.hpp>
+#include <ycxx/core/version.hpp>
+#include <compare>
+#include <initializer_list>
+#include <string>
+#include <ycxx/core/memory_resource.hpp>
+#include <ycxx/hosted/regex.hpp>

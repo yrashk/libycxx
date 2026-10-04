@@ -389,3 +389,7 @@
 #define __cpp_lib_freestanding_random 202502L
 #define __cpp_lib_philox_engine 202406L
 #define __cpp_lib_ranges_generate_random 202403L
+
+// <chrono>
+#define __cpp_lib_chrono 202306L
+#define __cpp_lib_chrono_udls 201304L

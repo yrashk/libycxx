@@ -175,11 +175,16 @@ public:
     rep_ /= rhs;
     return *this;
   }
-  constexpr duration& operator%=(const rep& rhs) {
+  // Constrained, so that an explicit instantiation for a floating-point rep is well-formed.
+  constexpr duration& operator%=(const rep& rhs)
+    requires requires(rep& r) { r %= rhs; }
+  {
     rep_ %= rhs;
     return *this;
   }
-  constexpr duration& operator%=(const duration& rhs) {
+  constexpr duration& operator%=(const duration& rhs)
+    requires requires(rep& r) { r %= rhs.count(); }
+  {
     rep_ %= rhs.count();
     return *this;
   }
@@ -195,10 +200,12 @@ using milliseconds = duration<long long, milli>;
 using seconds = duration<long long>;
 using minutes = duration<long long, ratio<60>>;
 using hours = duration<long long, ratio<3600>>;
-using days = duration<int, ratio_multiply<ratio<24>, hours::period>>;
-using weeks = duration<int, ratio_multiply<ratio<7>, days::period>>;
-using years = duration<int, ratio_multiply<ratio<146097, 400>, days::period>>;
-using months = duration<int, ratio_divide<years::period, ratio<12>>>;
+// The calendar durations count in long long too: sys_days + seconds then stays exact for every
+// representable date (a 32-bit count overflows when converted to seconds before 1902).
+using days = duration<long long, ratio_multiply<ratio<24>, hours::period>>;
+using weeks = duration<long long, ratio_multiply<ratio<7>, days::period>>;
+using years = duration<long long, ratio_multiply<ratio<146097, 400>, days::period>>;
+using months = duration<long long, ratio_divide<years::period, ratio<12>>>;
 
 // [time.duration.nonmember]
 template <class Rep1, class Period1, class Rep2, class Period2>
@@ -329,7 +336,9 @@ private:
   duration d_;
 
 public:
-  constexpr time_point() : d_(duration::zero()) {}
+  // noexcept (a permitted strengthening): `noexcept(tai_clock::to_utc(tai_seconds()))` is then
+  // true, as the noexcept conversions of [time.clock.tai] lead one to expect.
+  constexpr time_point() noexcept(is_nothrow_copy_constructible_v<duration>) : d_(duration::zero()) {}
   constexpr explicit time_point(const duration& d) : d_(d) {}
   template <class Duration2>
     requires is_convertible_v<Duration2, duration>

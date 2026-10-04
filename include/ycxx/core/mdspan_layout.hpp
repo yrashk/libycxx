@@ -45,13 +45,11 @@ template <class Layout, class Mapping>
 concept md_mapping_of = requires { typename Mapping::extents_type; } &&
                         std::is_same_v<typename Layout::template mapping<typename Mapping::extents_type>, Mapping>;
 template <class M>
-concept md_left_padded_mapping =
-    requires { typename std::integral_constant<std::size_t, M::padding_value>; } &&
-    md_mapping_of<std::layout_left_padded<M::padding_value>, M>;
+concept md_left_padded_mapping = requires { typename std::integral_constant<std::size_t, M::padding_value>; } &&
+                                 md_mapping_of<std::layout_left_padded<M::padding_value>, M>;
 template <class M>
-concept md_right_padded_mapping =
-    requires { typename std::integral_constant<std::size_t, M::padding_value>; } &&
-    md_mapping_of<std::layout_right_padded<M::padding_value>, M>;
+concept md_right_padded_mapping = requires { typename std::integral_constant<std::size_t, M::padding_value>; } &&
+                                  md_mapping_of<std::layout_right_padded<M::padding_value>, M>;
 
 // layout-mapping-alike ([mdspan.layout.stride.expo]/4)
 template <class M>
@@ -198,7 +196,8 @@ namespace std {
 // ---------------------------------------------------------------------------------------------
 template <class Extents>
 class layout_left::mapping {
-  static_assert(ycxx::detail::md_is_extents<Extents>, "layout_left::mapping: Extents must be a specialization of extents");
+  static_assert(ycxx::detail::md_is_extents<Extents>,
+                "layout_left::mapping: Extents must be a specialization of extents");
   static_assert(ycxx::detail::md_static_size_fits<Extents>(),
                 "layout_left::mapping: the size of Extents() must be representable as index_type");
 
@@ -319,7 +318,8 @@ private:
 // ---------------------------------------------------------------------------------------------
 template <class Extents>
 class layout_right::mapping {
-  static_assert(ycxx::detail::md_is_extents<Extents>, "layout_right::mapping: Extents must be a specialization of extents");
+  static_assert(ycxx::detail::md_is_extents<Extents>,
+                "layout_right::mapping: Extents must be a specialization of extents");
   static_assert(ycxx::detail::md_static_size_fits<Extents>(),
                 "layout_right::mapping: the size of Extents() must be representable as index_type");
 
@@ -440,7 +440,8 @@ private:
 // ---------------------------------------------------------------------------------------------
 template <class Extents>
 class layout_stride::mapping {
-  static_assert(ycxx::detail::md_is_extents<Extents>, "layout_stride::mapping: Extents must be a specialization of extents");
+  static_assert(ycxx::detail::md_is_extents<Extents>,
+                "layout_stride::mapping: Extents must be a specialization of extents");
   static_assert(ycxx::detail::md_static_size_fits<Extents>(),
                 "layout_stride::mapping: the size of Extents() must be representable as index_type");
 
@@ -532,9 +533,8 @@ private:
 public:
   // [mdspan.layout.stride.cons]
   constexpr mapping() noexcept : extents_(extents_type()) {
-    ycxx::detail::precondition(
-        in_range<index_type>(ycxx::detail::md_fwd_prod(extents_type(), rank_)),
-        "layout_stride::mapping: the default extents' size is not representable as index_type");
+    ycxx::detail::precondition(in_range<index_type>(ycxx::detail::md_fwd_prod(extents_type(), rank_)),
+                               "layout_stride::mapping: the default extents' size is not representable as index_type");
     for (size_t d = 0; d < rank_; ++d)
       strides_[d] = static_cast<index_type>(ycxx::detail::md_rev_prod(extents_, d));
   }
@@ -725,7 +725,8 @@ public:
     ycxx::detail::precondition((cmp_greater(ycxx::detail::md_as_int(pad), 0) || ycxx::detail::md_empty(ext)) &&
                                    in_range<index_type>(ycxx::detail::md_as_int(pad)),
                                "layout_left_padded::mapping: padding must be positive and representable");
-    ycxx::detail::precondition(padding_value == dynamic_extent || cmp_equal(padding_value, ycxx::detail::md_as_int(pad)),
+    ycxx::detail::precondition(padding_value == dynamic_extent ||
+                                   cmp_equal(padding_value, ycxx::detail::md_as_int(pad)),
                                "layout_left_padded::mapping: padding differs from padding_value");
     ycxx::detail::precondition(ycxx::detail::md_size_fits<index_type>(ext),
                                "layout_left_padded::mapping: the size of ext is not representable as index_type");
@@ -763,7 +764,8 @@ public:
             "layout_left_padded::mapping: stride(1) of the source is not the padded extent(0)");
       }
       if constexpr (rank_ > 0)
-        ycxx::detail::precondition(other.stride(0) == 1, "layout_left_padded::mapping: stride(0) of the source is not 1");
+        ycxx::detail::precondition(other.stride(0) == 1,
+                                   "layout_left_padded::mapping: stride(0) of the source is not 1");
       for (size_t r = 2; r < rank_ && other.extents().extent(0) != 0; ++r)
         ycxx::detail::precondition(
             cmp_equal(other.stride(r), (ycxx::detail::md_fwd_prod(other.extents(), r) / other.extents().extent(0)) *
@@ -777,8 +779,8 @@ public:
     requires(ycxx::detail::md_left_padded_mapping<LayoutLeftPaddedMapping> &&
              is_constructible_v<extents_type, typename LayoutLeftPaddedMapping::extents_type>)
   constexpr explicit(!is_convertible_v<typename LayoutLeftPaddedMapping::extents_type, extents_type> ||
-                     (rank_ > 1 && (padding_value != dynamic_extent ||
-                                    LayoutLeftPaddedMapping::padding_value == dynamic_extent)))
+                     (rank_ > 1 &&
+                      (padding_value != dynamic_extent || LayoutLeftPaddedMapping::padding_value == dynamic_extent)))
       mapping(const LayoutLeftPaddedMapping& other)
       : extents_(other.extents()) {
     static_assert(rank_ <= 1 || padding_value == dynamic_extent ||
@@ -955,7 +957,8 @@ public:
     ycxx::detail::precondition((cmp_greater(ycxx::detail::md_as_int(pad), 0) || ycxx::detail::md_empty(ext)) &&
                                    in_range<index_type>(ycxx::detail::md_as_int(pad)),
                                "layout_right_padded::mapping: padding must be positive and representable");
-    ycxx::detail::precondition(padding_value == dynamic_extent || cmp_equal(padding_value, ycxx::detail::md_as_int(pad)),
+    ycxx::detail::precondition(padding_value == dynamic_extent ||
+                                   cmp_equal(padding_value, ycxx::detail::md_as_int(pad)),
                                "layout_right_padded::mapping: padding differs from padding_value");
     ycxx::detail::precondition(ycxx::detail::md_size_fits<index_type>(ext),
                                "layout_right_padded::mapping: the size of ext is not representable as index_type");
@@ -999,9 +1002,9 @@ public:
       if constexpr (rank_ > 2) {
         for (size_t r = 0; r < rank_ - 2 && other.extents().extent(rank_ - 1) != 0; ++r)
           ycxx::detail::precondition(
-              cmp_equal(other.stride(r), (ycxx::detail::md_rev_prod(other.extents(), r) /
-                                          other.extents().extent(rank_ - 1)) *
-                                             static_cast<size_t>(other.stride(rank_ - 2))),
+              cmp_equal(other.stride(r),
+                        (ycxx::detail::md_rev_prod(other.extents(), r) / other.extents().extent(rank_ - 1)) *
+                            static_cast<size_t>(other.stride(rank_ - 2))),
               "layout_right_padded::mapping: the source's strides are not those of a padded layout");
       }
       ycxx::detail::precondition(in_range<index_type>(other.required_span_size()),
@@ -1012,8 +1015,8 @@ public:
     requires(ycxx::detail::md_right_padded_mapping<LayoutRightPaddedMapping> &&
              is_constructible_v<extents_type, typename LayoutRightPaddedMapping::extents_type>)
   constexpr explicit(!is_convertible_v<typename LayoutRightPaddedMapping::extents_type, extents_type> ||
-                     (rank_ > 1 && (padding_value != dynamic_extent ||
-                                    LayoutRightPaddedMapping::padding_value == dynamic_extent)))
+                     (rank_ > 1 &&
+                      (padding_value != dynamic_extent || LayoutRightPaddedMapping::padding_value == dynamic_extent)))
       mapping(const LayoutRightPaddedMapping& other)
       : extents_(other.extents()) {
     static_assert(rank_ <= 1 || padding_value == dynamic_extent ||
@@ -1158,7 +1161,8 @@ template <class ElementType, size_t ByteAlignment>
 struct aligned_accessor {
   static_assert(ByteAlignment != 0 && (ByteAlignment & (ByteAlignment - 1)) == 0,
                 "aligned_accessor: byte_alignment must be a power of two");
-  static_assert(ByteAlignment >= alignof(ElementType), "aligned_accessor: byte_alignment must be at least alignof(ElementType)");
+  static_assert(ByteAlignment >= alignof(ElementType),
+                "aligned_accessor: byte_alignment must be at least alignof(ElementType)");
   static_assert(is_object_v<ElementType> && !is_abstract_v<ElementType> && !is_array_v<ElementType>,
                 "aligned_accessor: ElementType must be a complete object type, not abstract, not an array");
 
@@ -1182,7 +1186,9 @@ struct aligned_accessor {
     return {};
   }
 
-  constexpr reference access(data_handle_type p, size_t i) const noexcept { return std::assume_aligned<byte_alignment>(p)[i]; }
+  constexpr reference access(data_handle_type p, size_t i) const noexcept {
+    return std::assume_aligned<byte_alignment>(p)[i];
+  }
   constexpr typename offset_policy::data_handle_type offset(data_handle_type p, size_t i) const noexcept {
     return std::assume_aligned<byte_alignment>(p) + i;
   }

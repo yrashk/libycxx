@@ -71,8 +71,8 @@ template <class T>
 void swap(T&, T&) = delete;
 
 template <class T, class U>
-concept adl_swappable = (__is_class(__remove_cvref(T)) || __is_enum(__remove_cvref(T)) ||
-                         __is_class(__remove_cvref(U)) || __is_enum(__remove_cvref(U))) &&
+concept adl_swappable = (__is_class(__remove_cvref(T)) || __is_union(__remove_cvref(T)) || __is_enum(__remove_cvref(T)) ||
+                         __is_class(__remove_cvref(U)) || __is_union(__remove_cvref(U)) || __is_enum(__remove_cvref(U))) &&
                         requires(T&& t, U&& u) { swap(static_cast<T&&>(t), static_cast<U&&>(u)); };
 
 template <class T>

@@ -16,6 +16,8 @@ namespace ycxx::detail {
 // Helpers of the range-access CPOs. They live here, not in the CPOs' namespaces, and are always
 // called qualified: a CPO object's namespace is an associated namespace of its type, so it must
 // declare nothing ADL could find, and an unqualified call could reach a user's decay_copy.
+// The CPOs themselves write the draft's auto(x), not decay_copy(x): a prvalue x is not moved, so
+// their noexcept does not count a move ([range.access.begin]/2.3).
 template <class T>
 constexpr std::decay_t<T> decay_copy(T&& t) noexcept(std::is_nothrow_convertible_v<T, std::decay_t<T>>) {
   return static_cast<T&&>(t);
@@ -29,7 +31,8 @@ constexpr auto to_unsigned_like(T t) noexcept {
 namespace ycxx::detail::range_access {
 
 template <class T>
-concept class_or_enum = std::is_class_v<std::remove_cvref_t<T>> || std::is_enum_v<std::remove_cvref_t<T>>;
+concept class_or_enum = std::is_class_v<std::remove_cvref_t<T>> || std::is_union_v<std::remove_cvref_t<T>> ||
+                        std::is_enum_v<std::remove_cvref_t<T>>;
 
 // An rvalue may only be accessed if the range is borrowed.
 template <class T>
@@ -45,11 +48,11 @@ void begin() = delete; // hides outer declarations: the call below uses argument
 
 template <class T>
 concept member = requires(T& t) {
-  { ::ycxx::detail::decay_copy(t.begin()) } -> std::input_or_output_iterator;
+  { auto(t.begin()) } -> std::input_or_output_iterator;
 };
 template <class T>
 concept adl = class_or_enum<T> && requires(T& t) {
-  { ::ycxx::detail::decay_copy(begin(t)) } -> std::input_or_output_iterator;
+  { auto(begin(t)) } -> std::input_or_output_iterator;
 };
 
 struct fn {
@@ -58,9 +61,9 @@ struct fn {
     if constexpr (std::is_array_v<std::remove_reference_t<T>>)
       return true;
     else if constexpr (member<T>)
-      return noexcept(::ycxx::detail::decay_copy(std::declval<T&>().begin()));
+      return noexcept(auto(std::declval<T&>().begin()));
     else
-      return noexcept(::ycxx::detail::decay_copy(begin(std::declval<T&>())));
+      return noexcept(auto(begin(std::declval<T&>())));
   }
   template <class T>
     requires maybe_borrowed<T> && (std::is_array_v<std::remove_reference_t<T>> || member<T> || adl<T>)
@@ -96,12 +99,12 @@ void end() = delete; // hides outer declarations: the call below uses argument-d
 template <class T>
 concept member = requires(T& t) {
   typename std::ranges::iterator_t<T>;
-  { ::ycxx::detail::decay_copy(t.end()) } -> std::sentinel_for<std::ranges::iterator_t<T>>;
+  { auto(t.end()) } -> std::sentinel_for<std::ranges::iterator_t<T>>;
 };
 template <class T>
 concept adl = class_or_enum<T> && requires(T& t) {
   typename std::ranges::iterator_t<T>;
-  { ::ycxx::detail::decay_copy(end(t)) } -> std::sentinel_for<std::ranges::iterator_t<T>>;
+  { auto(end(t)) } -> std::sentinel_for<std::ranges::iterator_t<T>>;
 };
 
 struct fn {
@@ -110,9 +113,9 @@ struct fn {
     if constexpr (std::is_bounded_array_v<std::remove_reference_t<T>>)
       return true;
     else if constexpr (member<T>)
-      return noexcept(::ycxx::detail::decay_copy(std::declval<T&>().end()));
+      return noexcept(auto(std::declval<T&>().end()));
     else
-      return noexcept(::ycxx::detail::decay_copy(end(std::declval<T&>())));
+      return noexcept(auto(end(std::declval<T&>())));
   }
   template <class T>
     requires maybe_borrowed<T> && (std::is_bounded_array_v<std::remove_reference_t<T>> || member<T> || adl<T>)
@@ -171,11 +174,11 @@ void size() = delete; // hides outer declarations: the call below uses argument-
 
 template <class T>
 concept member = !std::ranges::disable_sized_range<std::remove_cvref_t<T>> && requires(T& t) {
-  { ::ycxx::detail::decay_copy(t.size()) } -> integer_like_;
+  { auto(t.size()) } -> integer_like_;
 };
 template <class T>
 concept adl = !std::ranges::disable_sized_range<std::remove_cvref_t<T>> && class_or_enum<T> && requires(T& t) {
-  { ::ycxx::detail::decay_copy(size(t)) } -> integer_like_;
+  { auto(size(t)) } -> integer_like_;
 };
 template <class T>
 concept difference = requires(T& t) {
@@ -189,14 +192,15 @@ struct fn {
     if constexpr (std::is_bounded_array_v<std::remove_reference_t<T>>)
       return true;
     else if constexpr (member<T>)
-      return noexcept(::ycxx::detail::decay_copy(std::declval<T&>().size()));
+      return noexcept(auto(std::declval<T&>().size()));
     else if constexpr (adl<T>)
-      return noexcept(::ycxx::detail::decay_copy(size(std::declval<T&>())));
+      return noexcept(auto(size(std::declval<T&>())));
     else
       return noexcept(std::ranges::end(std::declval<T&>()) - std::ranges::begin(std::declval<T&>()));
   }
   template <class T>
-    requires std::is_bounded_array_v<std::remove_reference_t<T>> || member<T> || adl<T> || difference<T>
+    requires(!std::is_unbounded_array_v<std::remove_reference_t<T>>) &&
+            (std::is_bounded_array_v<std::remove_reference_t<T>> || member<T> || adl<T> || difference<T>)
   [[nodiscard]] constexpr auto operator()(T&& t) const noexcept(nothrow<T>()) {
     if constexpr (std::is_bounded_array_v<std::remove_reference_t<T>>)
       return ::ycxx::detail::decay_copy(std::extent_v<std::remove_reference_t<T>>);
@@ -256,7 +260,7 @@ struct fn {
       return noexcept(bool(std::ranges::begin(std::declval<T&>()) == std::ranges::end(std::declval<T&>())));
   }
   template <class T>
-    requires member<T> || via_size<T> || via_iter<T>
+    requires(!std::is_unbounded_array_v<std::remove_reference_t<T>>) && (member<T> || via_size<T> || via_iter<T>)
   [[nodiscard]] constexpr bool operator()(T&& t) const noexcept(nothrow<T>()) {
     if constexpr (member<T>)
       return bool(t.empty());
@@ -274,7 +278,7 @@ template <class T>
 concept pointer_to_object = std::is_pointer_v<T> && std::is_object_v<std::remove_pointer_t<T>>;
 template <class T>
 concept member = requires(T& t) {
-  { ::ycxx::detail::decay_copy(t.data()) } -> pointer_to_object;
+  { auto(t.data()) } -> pointer_to_object;
 };
 template <class T>
 concept via_begin = requires(T& t) {
@@ -284,7 +288,7 @@ struct fn {
   template <class T>
   static consteval bool nothrow() {
     if constexpr (member<T>)
-      return noexcept(::ycxx::detail::decay_copy(std::declval<T&>().data()));
+      return noexcept(auto(std::declval<T&>().data()));
     else
       return noexcept(std::ranges::begin(std::declval<T&>()));
   }
@@ -304,11 +308,11 @@ namespace reserve_hint_ns {
 void reserve_hint() = delete; // hides outer declarations: the call below uses argument-dependent lookup only
 template <class T>
 concept member = requires(T& t) {
-  { ::ycxx::detail::decay_copy(t.reserve_hint()) } -> integer_like_;
+  { auto(t.reserve_hint()) } -> integer_like_;
 };
 template <class T>
 concept adl = class_or_enum<T> && requires(T& t) {
-  { ::ycxx::detail::decay_copy(reserve_hint(t)) } -> integer_like_;
+  { auto(reserve_hint(t)) } -> integer_like_;
 };
 struct fn {
   template <class T>
@@ -316,9 +320,9 @@ struct fn {
     if constexpr (requires(T& t) { std::ranges::size(t); })
       return noexcept(std::ranges::size(std::declval<T&>()));
     else if constexpr (member<T>)
-      return noexcept(::ycxx::detail::decay_copy(std::declval<T&>().reserve_hint()));
+      return noexcept(auto(std::declval<T&>().reserve_hint()));
     else
-      return noexcept(::ycxx::detail::decay_copy(reserve_hint(std::declval<T&>())));
+      return noexcept(auto(reserve_hint(std::declval<T&>())));
   }
   template <class T>
     requires requires(T& t) { std::ranges::size(t); } || member<T> || adl<T>

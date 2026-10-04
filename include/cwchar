@@ -4,11 +4,10 @@
 #include <ycxx/config.hpp>
 #include <ycxx/core/version.hpp>
 #include <ycxx/core/cstddef.hpp>
+#include <ycxx/core/char_traits.hpp>
 #include <wchar.h>
 
 namespace std {
-using ::mbstate_t;
-using ::wint_t;
 using ::tm;
 using ::fwprintf;
 using ::fwscanf;
@@ -69,4 +68,26 @@ using ::mbrtowc;
 using ::wcrtomb;
 using ::mbsrtowcs;
 using ::wcsrtombs;
+
+static_assert(sizeof(mbstate_t) == sizeof(::mbstate_t) && alignof(mbstate_t) == alignof(::mbstate_t),
+              "libycxx: std::mbstate_t does not match this C library's ::mbstate_t layout");
+
+// Overloads for std::mbstate_t (core's freestanding type, DECISIONS §3), forwarding to the C
+// library's ::mbstate_t versions brought in above.
+inline int mbsinit(const mbstate_t* ps) noexcept { return ::mbsinit(reinterpret_cast<const ::mbstate_t*>(ps)); }
+inline size_t mbrlen(const char* s, size_t n, mbstate_t* ps) noexcept {
+  return ::mbrlen(s, n, reinterpret_cast<::mbstate_t*>(ps));
+}
+inline size_t mbrtowc(wchar_t* pwc, const char* s, size_t n, mbstate_t* ps) noexcept {
+  return ::mbrtowc(pwc, s, n, reinterpret_cast<::mbstate_t*>(ps));
+}
+inline size_t wcrtomb(char* s, wchar_t wc, mbstate_t* ps) noexcept {
+  return ::wcrtomb(s, wc, reinterpret_cast<::mbstate_t*>(ps));
+}
+inline size_t mbsrtowcs(wchar_t* dst, const char** src, size_t len, mbstate_t* ps) noexcept {
+  return ::mbsrtowcs(dst, src, len, reinterpret_cast<::mbstate_t*>(ps));
+}
+inline size_t wcsrtombs(char* dst, const wchar_t** src, size_t len, mbstate_t* ps) noexcept {
+  return ::wcsrtombs(dst, src, len, reinterpret_cast<::mbstate_t*>(ps));
+}
 } // namespace std

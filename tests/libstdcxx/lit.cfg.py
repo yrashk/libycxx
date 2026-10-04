@@ -19,8 +19,9 @@ config.excludes = ['ext', 'tr1', 'tr2', 'backward', 'experimental', 'decimal', '
 sys.path.insert(0, os.path.join(repo, 'tests'))
 from ycxxlit.libstdcxx_format import LibstdcxxFormat
 
+# Configuration macros of the libstdc++ build that some tests branch on; both features exist here.
 flags = ['-I' + os.path.join(tests_root, 'util'), '-I' + os.path.join(repo, 'tests', 'libstdcxx', 'shim'),
-         '-O2', '-w', '-fdiagnostics-color=never' if compiler == 'gcc' else '-fno-diagnostics-color']
+         '-O2', '-D_GLIBCXX_USE_CHAR8_T=1', '-D_GLIBCXX_USE_WCHAR_T=1', '-w', '-fdiagnostics-color=never' if compiler == 'gcc' else '-fno-diagnostics-color']
 if sanitizer:
     flags += ['-fsanitize=' + ','.join({'asan': 'address', 'ubsan': 'undefined'}[s] for s in sanitizer.split(',')),
               '-fno-sanitize-recover=all', '-g']

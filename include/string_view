@@ -1,0 +1,7 @@
+// -*- C++ -*-  libycxx: <string_view> [core]
+#pragma once
+
+#include <ycxx/config.hpp>
+#include <ycxx/core/version.hpp>
+#include <compare>
+#include <ycxx/core/string_view.hpp>

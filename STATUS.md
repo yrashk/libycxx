@@ -24,6 +24,7 @@ Conformance oracles (run only, never edited): libc++ tests from `llvmorg-23.1.2`
 | utilities/expected | 75/87 | 75/87 | yes | rest: `unique_ptr`, `<algorithm>` |
 | containers/views/views.span | 10/41 | 10/41 | yes | rest: `<string>` (23), `<ranges>`, `<algorithm>`, `<any>` |
 | utilities/any | 9/25 | 9/25 | no (hosted) | all 16 failures: `<string>` |
+| strings/string.view + char.traits | 36/170 | 36/170 | yes | 127 need `<string>` |
 | iterators + range.access + concepts + function.objects | 185/515 | 185/515 | yes | most failures need `<ranges>`, `bind`, `function`, containers |
 
 Whole-suite baseline (clang, before iterators/tuple/array/optional): 976 pass / ~8,000 run.
@@ -31,6 +32,7 @@ Whole-suite baseline (clang, before iterators/tuple/array/optional): 976 pass / 
 libstdc++ testsuite: 20_util/{tuple,pair,uses_allocator}: 107 pass on both compilers.
 20_util/variant: 27/31 on both (rest: missing `<string>`, `<vector>`, `<any>`).
 20_util/any: 22/30 on both (rest: `<vector>`, `<string>`, `<set>`, `unique_ptr`).
+21_strings/basic_string_view + char_traits: 98/130 on both (rest: `<string>`, `<sstream>`, `<iosfwd>`).
 23_containers/span: 30/35 on both (rest: `<vector>`, `<deque>`).
 20_util/expected: clang 18/20, gcc 18/20 (rest: `<string_view>`, `<vector>`). The libstdc++ harness
 compiles with `-O2`, as DejaGnu's default flags do. Some tests rely on dead-code elimination:
@@ -71,7 +73,7 @@ Deprecated and removed features are not implemented (`is_pod`, `is_trivial`, `al
 
 ## Open issues / next
 - Phase 2 remaining: function family (function, move_only_function,
-  copyable_function, function_ref, bind, mem_fn, not_fn), string_view, bitset; <exception>
+  copyable_function, function_ref, bind, mem_fn, not_fn), bitset; <exception>
   propagation (exception_ptr, nested_exception, exception_ptr_cast).
 - Then Phase 3 (containers, algorithms), Phase 4 (ranges, charconv, format, ...).
 - Constexpr exceptions (P3068): done for `exception`, `bad_alloc`, `bad_array_new_length`,

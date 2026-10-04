@@ -6,8 +6,7 @@ UNSUPPORTED with the reason.
 
 | Category | Meaning |
 |---|---|
-| `deprecated` | Tests a feature deprecated in the current standard. libycxx does not implement deprecated features (`is_pod`, `is_trivial`, `aligned_storage`, `aligned_union`, `has_denorm`, ...). |
-| `removed` | Tests a feature removed from the standard (`result_of`, `is_literal_type`, `auto_ptr`, ...). |
+| `removed` | Tests a feature removed from the standard (`result_of`, `is_literal_type`, `auto_ptr`, `<strstream>`, `<codecvt>`, ...). Deprecated features that the current draft still specifies (Annex D, [depr]) are implemented and their tests run; there is no `deprecated` category. |
 | `divergence` | The test expects behaviour that contradicts the current working draft. Each entry cites the draft section. |
 | `extension` | Tests a libc++ or libstdc++ extension, not standard behaviour. |
 | `implementation-specific` | Asserts something the standard leaves unspecified (object sizes, hash values, behaviour after `#undef` of a reserved macro). |

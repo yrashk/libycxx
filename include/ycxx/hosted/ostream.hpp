@@ -402,10 +402,12 @@ basic_ostream<char, traits>& operator<<(basic_ostream<char, traits>& out, char c
   return ::ycxx::detail::ostream_insert(out, __builtin_addressof(c), 1);
 }
 template <class traits>
+[[deprecated("signed char / unsigned char stream insertion is deprecated ([depr.ostream.inserters]); use char")]]
 basic_ostream<char, traits>& operator<<(basic_ostream<char, traits>& out, signed char c) {
   return out << static_cast<char>(c);
 }
 template <class traits>
+[[deprecated("signed char / unsigned char stream insertion is deprecated ([depr.ostream.inserters]); use char")]]
 basic_ostream<char, traits>& operator<<(basic_ostream<char, traits>& out, unsigned char c) {
   return out << static_cast<char>(c);
 }
@@ -441,10 +443,12 @@ basic_ostream<char, traits>& operator<<(basic_ostream<char, traits>& out, const 
   return ::ycxx::detail::ostream_insert(out, s, static_cast<streamsize>(traits::length(s)));
 }
 template <class traits>
+[[deprecated("signed char / unsigned char stream insertion is deprecated ([depr.ostream.inserters]); use char")]]
 basic_ostream<char, traits>& operator<<(basic_ostream<char, traits>& out, const signed char* s) {
   return out << reinterpret_cast<const char*>(s);
 }
 template <class traits>
+[[deprecated("signed char / unsigned char stream insertion is deprecated ([depr.ostream.inserters]); use char")]]
 basic_ostream<char, traits>& operator<<(basic_ostream<char, traits>& out, const unsigned char* s) {
   return out << reinterpret_cast<const char*>(s);
 }

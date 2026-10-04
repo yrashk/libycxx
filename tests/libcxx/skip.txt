@@ -1,27 +1,12 @@
 # libc++ conformance tests that libycxx deliberately does not run.
 # Format:  <path regex relative to libcxx/test/std> | <category> | <reason>
 # Every category is explained in tests/SKIPPED.md. Tests are never edited.
-utilities/meta/meta.unary/meta.unary.prop/is_pod\.pass\.cpp | deprecated | std::is_pod is deprecated (C++20)
 utilities/meta/meta.unary/meta.unary.prop/is_literal_type\.pass\.cpp | removed | std::is_literal_type was removed in C++20
-utilities/meta/meta.unary/meta.unary.prop/is_trivial\.pass\.cpp | deprecated | std::is_trivial is deprecated in C++26 (P3247)
-utilities/meta/derived_from_integral_constant\.compile\.pass\.cpp | deprecated | uses std::is_trivial / is_pod (deprecated)
-utilities/meta/meta.trans/meta.trans.other/aligned_storage\.pass\.cpp | deprecated | std::aligned_storage is deprecated (C++23)
-utilities/meta/meta.trans/meta.trans.other/aligned_union\.pass\.cpp | deprecated | std::aligned_union is deprecated (C++23)
 utilities/meta/meta.trans/meta.trans.other/result_of.*\.pass\.cpp | removed | std::result_of was removed in C++20
 utilities/meta/meta.rel/is_invocable_r(_v)?\.compile\.pass\.cpp | divergence | expects is_invocable_r<const int&, int()> true; the draft ([func.require]/2, P2255) makes INVOKE<R> ill-formed when a reference binds to a temporary
 language.support/cmp/cmp.alg/strong_order_long_double\.verify\.cpp | extension | checks a libc++ limitation (strong_order on long double unimplemented); libycxx implements it
 language.support/cmp/cmp.concept/three_way_comparable_with\.compile\.pass\.cpp | divergence | expects Clang's buggy answer for NonMovableIntComparable on Clang (llvm.org/PR171438); [cmp.concept] gives false, which libycxx returns on both compilers
-utilities/tuple/tuple.tuple/tuple.helper/tuple\.include\.utility\.pass\.cpp | deprecated | tests tuple_size<volatile T> / tuple_size<const volatile T> (Annex D, [depr.tuple]) -- deliberately not implemented: deprecated (Annex D) features are excluded by project rule (DECISIONS.md)
-utilities/tuple/tuple.tuple/tuple.helper/tuple_size\.pass\.cpp | deprecated | tests tuple_size<volatile T> (Annex D, [depr.tuple]) -- deliberately not implemented: deprecated (Annex D) features are excluded by project rule (DECISIONS.md)
-utilities/utility/pairs/pair.astuple/tuple_size\.pass\.cpp | deprecated | tests tuple_size<volatile pair> (Annex D, [depr.tuple]) -- deliberately not implemented: deprecated (Annex D) features are excluded by project rule (DECISIONS.md)
-utilities/tuple/tuple.tuple/tuple.helper/tuple\.include\.array\.pass\.cpp | deprecated | tests tuple_element<I, volatile T> (Annex D, [depr.tuple]) -- deliberately not implemented: deprecated (Annex D) features are excluded by project rule (DECISIONS.md)
-utilities/tuple/tuple.tuple/tuple.helper/tuple_element\.pass\.cpp | deprecated | tests tuple_element<I, volatile T> (Annex D, [depr.tuple]) -- deliberately not implemented: deprecated (Annex D) features are excluded by project rule (DECISIONS.md)
 containers/sequences/array/array\.swap/swap\.verify\.cpp | divergence | expects array<const T, 0>::swap to be ill-formed; [array.members]/4 and [array.zero] only specify swap_ranges semantics and a non-throwing exception specification
-utilities/tuple/tuple.tuple/tuple.helper/tuple_size_incomplete\.pass\.cpp | deprecated | checks tuple_size<volatile tuple<...>> completeness (Annex D, [depr.tuple])
-utilities/tuple/tuple.tuple/tuple.helper/tuple_size_value_sfinae\.pass\.cpp | deprecated | checks tuple_size<volatile pair> (Annex D, [depr.tuple])
-utilities/tuple/tuple.tuple/tuple.helper/tuple_size_v\.pass\.cpp | deprecated | uses tuple_size_v<volatile tuple<...>> (Annex D, [depr.tuple])
-utilities/utility/pairs/pair.astuple/tuple_element\.pass\.cpp | deprecated | uses tuple_element<I, volatile pair> (Annex D, [depr.tuple])
-utilities/variant/variant\.helpers/variant_size\.pass\.cpp | deprecated | tests variant_size<volatile T> (Annex D, [depr.variant]) -- deliberately not implemented: deprecated (Annex D) features are excluded by project rule (DECISIONS.md)
 utilities/function\.objects/func\.bind\.partial/bind_front\.nttp\.pass\.cpp | extension | also asserts libc++'s extension of calling a volatile call wrapper ([func.require]/4: cv shall be neither volatile nor const volatile)
 utilities/smartptr/unique\.ptr/unique\.ptr\.class/unique\.ptr\.asgn/move\.pass\.cpp | divergence | expects unique_ptr<T, const NCDeleter&> to be move-assignable; [unique.ptr.single.asgn]/1 constrains on is_move_assignable_v<D>, false for a non-assignable const deleter reference
 utilities/smartptr/unique\.ptr/unique\.ptr\.class/unique\.ptr\.asgn/move_convert\.(single|runtime)\.pass\.cpp | divergence | expects converting assignment with non-assignable converting deleters; [unique.ptr.single.asgn]/6.3 and [unique.ptr.runtime.asgn]/2.5 require is_assignable_v<D&, E&&>
@@ -59,7 +44,6 @@ ranges/range\.adaptors/range\.join/range\.join\.iterator/arrow\.pass\.cpp | dive
 ranges/range\.adaptors/range\.lazy\.split/begin\.pass\.cpp | divergence | expects const begin() with a pattern that is not a forward range when const; [range.lazy.split.view] requires forward_range<const Pattern>
 ranges/range\.utility/range\.utility\.conv/to\.pass\.cpp | divergence | expects ranges::to to append with c.emplace(c.end(), x); container-append ([range.utility.conv.general]/5) uses emplace_back, push_back, emplace_hint and insert
 content:#include "test_format_context.h" | implementation-specific | creates a basic_format_context through libc++'s internal std::__format_context_create (test_format_context.h has no hook for other vendors; [format.context] gives the class no public constructor)
-content:\bvisit_format_arg\b | deprecated | std::visit_format_arg is deprecated in C++26 ([depr.format.arg])
 atomics/atomics\.ref/address\.pass\.cpp | divergence | instantiates atomic_ref<volatile LargeUserAtomicType>; [atomics.ref.generic.general]/5 makes atomic_ref<volatile T> ill-formed when is_always_lock_free is false
 atomics/atomics\.ref/member_types\.compile\.pass\.cpp | divergence | expects atomic_ref<void*>::difference_type; [atomics.ref.pointer]/1 specializes atomic_ref only for pointer-to-object types
 atomics/atomics\.types\.generic/integral(_typedefs)?\.pass\.cpp | extension | names ::int8_t etc. without including <cstdint>/<stdint.h>; <atomic> declares only std::int8_t's atomic aliases
@@ -86,15 +70,8 @@ numerics/c\.math/ctgmath\.pass\.cpp | removed | <ctgmath> was removed in C++20
 numerics/complex\.number/ccmplx/ccomplex\.pass\.cpp | removed | <ccomplex> was removed in C++20
 utilities/function\.objects/negators/.*\.pass\.cpp | removed | not1/not2/unary_negate/binary_negate were removed in C++20 (P0619)
 language\.support/support\.exception/uncaught/uncaught_exception\.pass\.cpp | removed | std::uncaught_exception was removed in C++20 (P0619)
-iterators/iterator\.primitives/iterator\.basic/iterator\.pass\.cpp | deprecated | std::iterator is deprecated ([depr.iterator])
-utilities/utility/operators/rel_ops\.pass\.cpp | deprecated | std::rel_ops is deprecated ([depr.relops])
-containers/iterator\.rel_ops\.compile\.pass\.cpp | deprecated | std::rel_ops is deprecated ([depr.relops])
-iterators/predef\.iterators/move\.iterators/move\.iter\.ops/move\.iter\.op\.ref/op_arrow\.pass\.cpp | deprecated | move_iterator::operator-> is deprecated ([depr.move.iter.elem])
-containers/sequences/vector\.bool/reference\.swap\.pass\.cpp | removed | static vector<bool>::swap(reference, reference) is no longer in [vector.bool.pspc] (reference has friend swap functions instead)
 strings/basic\.string/string\.capacity/reserve\.pass\.cpp | removed | basic_string::reserve() without argument was removed in C++26 (P2870)
 language\.support/support\.initlist/support\.initlist\.range/begin_end\.pass\.cpp | removed | free begin/end(initializer_list) were removed from [initializer.list.syn] (P3016)
-containers/sequences/array/array\.tuple/tuple_element\.pass\.cpp | deprecated | tests tuple_element<I, volatile array> (Annex D, [depr.tuple])
-utilities/variant/variant\.helpers/variant_alternative\.pass\.cpp | deprecated | tests variant_alternative<I, volatile variant> (Annex D, [depr.variant])
 utilities/utility/ignore/ignore\.include\.compile\.pass\.cpp | divergence | expects std::ignore from <utility>; the draft declares it only in <tuple> ([tuple.syn])
 strings/c\.strings/no_c8rtomb_mbrtoc8\.verify\.cpp | implementation-specific | expects c8rtomb/mbrtoc8 absent unless libc++'s _LIBCPP_HAS_C8RTOMB_MBRTOC8; [cuchar.syn] declares them and libycxx provides them
 input\.output/file\.streams/fstreams/filebuf\.members/close\.pass\.cpp | implementation-specific | calls libc++'s internal basic_filebuf::__open

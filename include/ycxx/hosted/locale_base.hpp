@@ -11,8 +11,8 @@
 // initialization.
 //
 // The classic locale holds every facet of [locale.category] Table 91 for char and wchar_t, plus
-// codecvt<char16_t, char8_t> and codecvt<char32_t, char8_t> (and the deprecated char versions); it
-// is built on first use and never
+// the Annex D codecvt<char16_t/char32_t, char8_t> and codecvt<char16_t/char32_t, char>
+// ([depr.locale.category], declared [[deprecated]]); it is built on first use and never
 // destroyed. Named locales: "C", "POSIX" (named "C") and "C.UTF-8" / "C.utf8" have the classic
 // semantics; "" names the environment's locale (LC_ALL, LC_<category>, LANG), which is one of
 // those or, for any other name, the classic locale named "C" (the environment's own conventions
@@ -581,7 +581,8 @@ protected:
 };
 
 template <>
-class codecvt<char16_t, char8_t, mbstate_t> : public locale::facet, public codecvt_base {
+class [[deprecated("codecvt<char16_t, char8_t, mbstate_t> is deprecated ([depr.locale.category])")]]
+codecvt<char16_t, char8_t, mbstate_t> : public locale::facet, public codecvt_base {
 public:
   using intern_type = char16_t;
   using extern_type = char8_t;
@@ -622,7 +623,8 @@ protected:
 };
 
 template <>
-class codecvt<char32_t, char8_t, mbstate_t> : public locale::facet, public codecvt_base {
+class [[deprecated("codecvt<char32_t, char8_t, mbstate_t> is deprecated ([depr.locale.category])")]]
+codecvt<char32_t, char8_t, mbstate_t> : public locale::facet, public codecvt_base {
 public:
   using intern_type = char32_t;
   using extern_type = char8_t;
@@ -663,9 +665,10 @@ protected:
 };
 
 // [depr.locale.category]: the deprecated UTF-16 / UTF-32 <-> UTF-8 conversions with char as the
-// UTF-8 code unit (not marked [[deprecated]]).
+// UTF-8 code unit.
 template <>
-class codecvt<char16_t, char, mbstate_t> : public locale::facet, public codecvt_base {
+class [[deprecated("codecvt<char16_t, char, mbstate_t> is deprecated ([depr.locale.category])")]]
+codecvt<char16_t, char, mbstate_t> : public locale::facet, public codecvt_base {
 public:
   using intern_type = char16_t;
   using extern_type = char;
@@ -706,7 +709,8 @@ protected:
 };
 
 template <>
-class codecvt<char32_t, char, mbstate_t> : public locale::facet, public codecvt_base {
+class [[deprecated("codecvt<char32_t, char, mbstate_t> is deprecated ([depr.locale.category])")]]
+codecvt<char32_t, char, mbstate_t> : public locale::facet, public codecvt_base {
 public:
   using intern_type = char32_t;
   using extern_type = char;
@@ -751,6 +755,55 @@ template <class internT, class externT, class stateT>
 class codecvt_byname : public codecvt<internT, externT, stateT> {
 public:
   explicit codecvt_byname(const char* name, size_t refs = 0) : codecvt<internT, externT, stateT>(refs) {
+    ::ycxx::detail::check_locale_name(name, "std::codecvt_byname");
+  }
+  explicit codecvt_byname(const string& name, size_t refs = 0) : codecvt_byname(name.c_str(), refs) {}
+
+protected:
+  ~codecvt_byname() override {}
+};
+// [depr.locale.category]/2: the Annex D codecvt_byname facets.
+template <>
+class [[deprecated("codecvt_byname<char16_t, char, mbstate_t> is deprecated ([depr.locale.category])")]]
+codecvt_byname<char16_t, char, mbstate_t> : public codecvt<char16_t, char, mbstate_t> {
+public:
+  explicit codecvt_byname(const char* name, size_t refs = 0) : codecvt(refs) {
+    ::ycxx::detail::check_locale_name(name, "std::codecvt_byname");
+  }
+  explicit codecvt_byname(const string& name, size_t refs = 0) : codecvt_byname(name.c_str(), refs) {}
+
+protected:
+  ~codecvt_byname() override {}
+};
+template <>
+class [[deprecated("codecvt_byname<char32_t, char, mbstate_t> is deprecated ([depr.locale.category])")]]
+codecvt_byname<char32_t, char, mbstate_t> : public codecvt<char32_t, char, mbstate_t> {
+public:
+  explicit codecvt_byname(const char* name, size_t refs = 0) : codecvt(refs) {
+    ::ycxx::detail::check_locale_name(name, "std::codecvt_byname");
+  }
+  explicit codecvt_byname(const string& name, size_t refs = 0) : codecvt_byname(name.c_str(), refs) {}
+
+protected:
+  ~codecvt_byname() override {}
+};
+template <>
+class [[deprecated("codecvt_byname<char16_t, char8_t, mbstate_t> is deprecated ([depr.locale.category])")]]
+codecvt_byname<char16_t, char8_t, mbstate_t> : public codecvt<char16_t, char8_t, mbstate_t> {
+public:
+  explicit codecvt_byname(const char* name, size_t refs = 0) : codecvt(refs) {
+    ::ycxx::detail::check_locale_name(name, "std::codecvt_byname");
+  }
+  explicit codecvt_byname(const string& name, size_t refs = 0) : codecvt_byname(name.c_str(), refs) {}
+
+protected:
+  ~codecvt_byname() override {}
+};
+template <>
+class [[deprecated("codecvt_byname<char32_t, char8_t, mbstate_t> is deprecated ([depr.locale.category])")]]
+codecvt_byname<char32_t, char8_t, mbstate_t> : public codecvt<char32_t, char8_t, mbstate_t> {
+public:
+  explicit codecvt_byname(const char* name, size_t refs = 0) : codecvt(refs) {
     ::ycxx::detail::check_locale_name(name, "std::codecvt_byname");
   }
   explicit codecvt_byname(const string& name, size_t refs = 0) : codecvt_byname(name.c_str(), refs) {}

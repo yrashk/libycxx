@@ -127,6 +127,9 @@ set_source_files_properties(src/abi/exception_classes.cpp src/hosted/stdexcept.c
 # (src/hosted/locale.cpp).
 set_source_files_properties(src/hosted/iostream.cpp src/hosted/locale.cpp PROPERTIES COMPILE_OPTIONS
   $<IF:$<CXX_COMPILER_ID:GNU>,-Wno-prio-ctor-dtor,-Wno-init-priority-reserved>)
+# The classic locale holds the Annex D codecvt facets ([depr.locale.category]), which are
+# declared [[deprecated]].
+set_property(SOURCE src/hosted/locale.cpp APPEND PROPERTY COMPILE_OPTIONS -Wno-deprecated-declarations)
 
 # The two archives refer to each other (the runtime uses the platform layer and operator
 # delete; the library throws through the runtime): a cyclic static dependency, which CMake

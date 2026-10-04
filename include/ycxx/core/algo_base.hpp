@@ -255,10 +255,11 @@ constexpr void bulk_move(const I& in_first, const I& in_last, const O& out_first
 
 // ---- byte search ------------------------------------------------------------------------------
 // find over a contiguous range of narrow character elements for an integral value is memchr
-// (outside constant evaluation). The comparison `x == value` promotes both sides, and every
-// narrow character type converts injectively to the common type, so it holds exactly when x
-// equals the value converted to the element type, provided that conversion round-trips; a value
-// that does not (out of the element type's range) goes through the ordinary loop.
+// (outside constant evaluation). With e the value converted to the element type E: an element x
+// equals the value exactly when x == e and e itself equals the value (both comparisons as the
+// language performs them, after promotion). x and the value agree modulo 2^CHAR_BIT whenever
+// they compare equal, so x == e then; and promotion of E to the common type is injective. So
+// memchr for e when e == value, and no element can match otherwise.
 template <class E>
 concept narrow_char_elem = std::same_as<E, char> || std::same_as<E, signed char> || std::same_as<E, unsigned char> ||
                            std::same_as<E, char8_t>;
@@ -268,20 +269,21 @@ concept memchr_find_args =
     narrow_char_elem<std::remove_cvref_t<std::iter_reference_t<I>>> &&
     std::is_lvalue_reference_v<std::iter_reference_t<I>> && std::is_integral_v<T> && !std::is_same_v<T, bool>;
 
-// Returns false (and leaves `first` alone) when the value is out of the element type's range.
+// Advances first to the first element equal to value, or to last.
 template <class I, class S, class T>
-constexpr bool find_byte(I& first, const S& last, const T& value) noexcept {
+constexpr void find_byte(I& first, const S& last, const T& value) noexcept {
   using E = std::remove_cvref_t<std::iter_reference_t<I>>;
-  const E e = static_cast<E>(value);
-  if (static_cast<T>(e) != value)
-    return false;
   const auto n = last - first;
   if (n <= 0)
-    return true;
+    return;
+  const E e = static_cast<E>(value);
+  if (!(e == value)) {
+    first += n;
+    return;
+  }
   const E* p = ::ycxx::detail::raw_address(first);
   const void* r = __builtin_memchr(static_cast<const void*>(p), static_cast<unsigned char>(e), static_cast<std::size_t>(n));
   first += r ? static_cast<const E*>(r) - p : n;
-  return true;
 }
 
 // ---- min / max -------------------------------------------------------------------------------
@@ -689,8 +691,8 @@ template <class InputIterator, class T = typename iterator_traits<InputIterator>
   } else {
     if constexpr (ycxx::detail::memchr_find_args<InputIterator, InputIterator, T>)
       if !consteval {
-        if (::ycxx::detail::find_byte(first, last, value))
-          return first;
+        ::ycxx::detail::find_byte(first, last, value);
+        return first;
       }
     return ::ycxx::detail::find_if_impl(first, last, ::ycxx::detail::equals_value_plain<T>{value});
   }
@@ -1160,8 +1162,8 @@ struct find_fn {
     } else {
       if constexpr (std::same_as<Proj, std::identity> && ycxx::detail::memchr_find_args<I, S, T>)
         if !consteval {
-          if (::ycxx::detail::find_byte(first, last, value))
-            return first;
+          ::ycxx::detail::find_byte(first, last, value);
+          return first;
         }
       return ::ycxx::detail::find_if_impl(std::move(first), last, ::ycxx::detail::equals_value<T, Proj>{value, proj});
     }

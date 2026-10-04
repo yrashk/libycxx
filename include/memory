@@ -7,3 +7,4 @@
 #include <ycxx/core/memory_base.hpp>
 #include <ycxx/core/tuple.hpp>
 #include <ycxx/core/uninitialized.hpp>
+#include <ycxx/core/unique_ptr.hpp>

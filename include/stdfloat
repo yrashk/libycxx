@@ -1,0 +1,23 @@
+// -*- C++ -*-  libycxx: <stdfloat>   [core]
+#pragma once
+
+#include <ycxx/config.hpp>
+#include <ycxx/core/version.hpp>
+
+namespace std {
+#if YCXX_HAS_FLOAT16_T
+using float16_t = ycxx::detail::float16;
+#endif
+#if YCXX_HAS_FLOAT32_T
+using float32_t = ycxx::detail::float32;
+#endif
+#if YCXX_HAS_FLOAT64_T
+using float64_t = ycxx::detail::float64;
+#endif
+#if YCXX_HAS_FLOAT128_T
+using float128_t = ycxx::detail::float128;
+#endif
+#if YCXX_HAS_BFLOAT16_T
+using bfloat16_t = ycxx::detail::bfloat16;
+#endif
+} // namespace std

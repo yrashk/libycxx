@@ -14,7 +14,9 @@
 using reqs::assoc_complexity::CountLess;
 
 int main() {
-  CHECK((reqs::assoc_complexity::test<std::set<int, CountLess>>()));
-  CHECK((reqs::assoc_complexity::test<std::multiset<int, CountLess>>()));
+  bool ok = true;  // run every instantiation, so that every violation is reported
+  ok = reqs::assoc_complexity::test<std::set<int, CountLess>>() && ok;
+  ok = reqs::assoc_complexity::test<std::multiset<int, CountLess>>() && ok;
+  CHECK(ok);
   return 0;
 }

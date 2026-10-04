@@ -14,6 +14,8 @@
 //   [container.node.modifiers]/1-2: swap exchanges ptr_ and, "If !alloc_ is true, or
 //     !nh.alloc_ is true, or ator-traits::propagate_on_container_swap::value is true",
 //     the allocators; noexcept(propagate_on_container_swap || is_always_equal).
+//   [res.on.exception.handling]/5: an implementation may strengthen a noexcept-specification,
+//     so only "noexcept when propagating" is checked.
 //   [associative.reqmts.general]/84-99, [unord.req.general]: extract and insert(nh) move
 //     the node without constructing, destroying, allocating or deallocating anything.
 // X's allocator is NAlloc<value_type, POCMA, POCS>.
@@ -99,8 +101,10 @@ bool test() {
   static_assert(!std::is_copy_constructible_v<N> && !std::is_copy_assignable_v<N>);
   static_assert(!std::is_convertible_v<N, bool> && std::is_constructible_v<bool, N>);
   static_assert(noexcept(std::declval<const N&>().empty()) && noexcept(static_cast<bool>(std::declval<const N&>())));
-  static_assert(noexcept(std::declval<N&>().swap(std::declval<N&>())) == pocs);  // is_always_equal is false
-  static_assert(noexcept(swap(std::declval<N&>(), std::declval<N&>())) == pocs);
+  // noexcept when propagating (otherwise unspecified: [res.on.exception.handling]/5 lets an
+  // implementation add a non-throwing exception specification)
+  static_assert(!pocs || noexcept(std::declval<N&>().swap(std::declval<N&>())));
+  static_assert(!pocs || noexcept(swap(std::declval<N&>(), std::declval<N&>())));
 
   X a = make<X>(7, {1, 2, 3, 4});
   X b = make<X>(8, {10, 20});

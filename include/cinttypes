@@ -7,6 +7,10 @@
 #include <cstdint>
 #include <inttypes.h>
 
+#ifndef __STDC_VERSION_INTTYPES_H__
+#  define __STDC_VERSION_INTTYPES_H__ 202311L
+#endif
+
 namespace std {
 using ::imaxdiv_t;
 using ::imaxabs;

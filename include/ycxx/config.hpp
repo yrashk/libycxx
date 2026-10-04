@@ -49,6 +49,13 @@
 #else
 #  define YCXX_HOSTED 0
 #endif
+// va_start with one argument (<cstdarg>): GCC has the C23 builtin in C++ as well, Clang 23 only
+// in C.
+#if __has_builtin(__builtin_c23_va_start)
+#  define YCXX_HAS_C23_VA_START 1
+#else
+#  define YCXX_HAS_C23_VA_START 0
+#endif
 // FLT_ROUNDS (<cfloat>): the current rounding mode where the compiler can report it, otherwise
 // 1 (to nearest), which is also what GCC's own <float.h> defines.
 #if __has_builtin(__builtin_flt_rounds)

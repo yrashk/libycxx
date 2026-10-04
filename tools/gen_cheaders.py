@@ -16,47 +16,22 @@ MBSTATE_CHECK = """static_assert(sizeof(mbstate_t) == sizeof(::mbstate_t) && ali
 HEADERS = {
     "cstdlib": ("stdlib.h", "div_t ldiv_t lldiv_t "
                 "abort atexit at_quick_exit _Exit exit quick_exit getenv system malloc calloc realloc free "
-                "aligned_alloc atof atoi atol atoll strtod strtof strtold strtol strtoll strtoul strtoull "
-                "mblen mbtowc wctomb mbstowcs wcstombs bsearch qsort rand srand",
-                """// abs, labs, llabs ([c.math.abs]): constexpr, shared with <cmath> (ycxx/core/math_abs.hpp).
-// div, ldiv, lldiv are constexpr ([cstdlib.syn]), so they are not the C library's. Templates, as
-// abs is: under `using namespace std;` an unqualified call prefers the C library's ::div.
+                "aligned_alloc atof atoi atol atoll strtod strfromd strfromf strfroml strtof strtold strtol strtoll "
+                "strtoul strtoull mblen mbtowc wctomb mbstowcs wcstombs bsearch qsort rand srand",
+                """// free_sized, free_aligned_sized (C23 7.24.3.4-5): free with the allocation's size (and
+// alignment), which this C library does not take. Templates, as <cmath>'s functions are: a later C
+// library's ::free_sized then wins unqualified calls under `using namespace std;`.
 template <class = void>
-constexpr div_t div(int numer, int denom) noexcept {
-  div_t r{};
-  r.quot = numer / denom;
-  r.rem = numer % denom;
-  return r;
+inline void free_sized(void* ptr, size_t) noexcept {
+  ::free(ptr);
 }
 template <class = void>
-constexpr ldiv_t div(long numer, long denom) noexcept {
-  ldiv_t r{};
-  r.quot = numer / denom;
-  r.rem = numer % denom;
-  return r;
-}
-template <class = void>
-constexpr lldiv_t div(long long numer, long long denom) noexcept {
-  lldiv_t r{};
-  r.quot = numer / denom;
-  r.rem = numer % denom;
-  return r;
-}
-template <class = void>
-constexpr ldiv_t ldiv(long numer, long denom) noexcept {
-  return std::div<>(numer, denom);
-}
-template <class = void>
-constexpr lldiv_t lldiv(long long numer, long long denom) noexcept {
-  return std::div<>(numer, denom);
-}
-// memalignment (C23 7.24.3.1): the largest power of two dividing the address; 0 for a null pointer.
-inline size_t memalignment(const void* p) noexcept {
-  auto v = reinterpret_cast<__UINTPTR_TYPE__>(p);
-  return static_cast<size_t>(v & (~v + 1));
+inline void free_aligned_sized(void* ptr, size_t, size_t) noexcept {
+  ::free(ptr);
 }"""),
-    "cstring": ("string.h", "memcpy memmove strcpy strncpy strcat strncat memcmp strcmp strcoll strncmp strxfrm "
-                "memchr strchr strcspn strpbrk strrchr strspn strstr strtok memset strerror strlen", ""),
+    "cstring": ("string.h", "memcpy memccpy memmove strcpy strncpy strdup strndup strcat strncat memcmp strcmp "
+                "strcoll strncmp strxfrm memchr strchr strcspn strpbrk strrchr strspn strstr strtok memset strerror "
+                "strlen", ""),
     "cstdio": ("stdio.h", "FILE fpos_t remove rename tmpfile tmpnam fclose fflush fopen freopen setbuf setvbuf "
                "fprintf fscanf printf scanf snprintf sprintf sscanf vfprintf vfscanf vprintf vscanf vsnprintf "
                "vsprintf vsscanf fgetc fgets fputc fputs getc getchar putc putchar puts ungetc fread fwrite "
@@ -124,7 +99,6 @@ inline wchar_t* wmemchr(wchar_t* s, wchar_t c, size_t n) noexcept { return const
     "clocale": ("locale.h", "lconv setlocale localeconv", ""),
     "cinttypes": ("inttypes.h", "imaxdiv_t imaxabs imaxdiv strtoimax strtoumax wcstoimax wcstoumax", ""),
     "csetjmp": ("setjmp.h", "jmp_buf longjmp", ""),
-    "cstdarg": ("stdarg.h", "va_list", ""),
     "cfenv": ("fenv.h", "fenv_t fexcept_t feclearexcept fegetexceptflag feraiseexcept fesetexceptflag "
               "fetestexcept fegetround fesetround fegetenv feholdexcept fesetenv feupdateenv", ""),
     "cuchar": ("uchar.h", "mbrtoc8 c8rtomb mbrtoc16 c16rtomb mbrtoc32 c32rtomb", MBSTATE_CHECK + """
@@ -154,26 +128,96 @@ inline size_t c32rtomb(char* s, char32_t c32, mbstate_t* ps) noexcept {
   return ::c32rtomb(s, c32, reinterpret_cast<::mbstate_t*>(ps));
 }"""),
 }
-# Standard-mandated macros the C library header may lack ([cwchar.syn]; WCHAR_WIDTH comes from
-# core's cstdint.hpp).
-MACROS = {"cwchar": ["#ifndef __STDC_VERSION_WCHAR_H__", "#  define __STDC_VERSION_WCHAR_H__ 202311L", "#endif", ""],
-          "cuchar": ["#ifndef __STDC_VERSION_UCHAR_H__", "#  define __STDC_VERSION_UCHAR_H__ 202311L", "#endif", ""]}
+# Headers with a freestanding subset ([compliance]): without a C library (YCXX_HOSTED 0) they
+# include the core header given here instead of the C library's, and declare none of the names
+# above. COMMON holds what both modes share.
+FREESTANDING = {"cstdlib": "<ycxx/core/c_stdlib.hpp>", "cstring": "<ycxx/core/c_string.hpp>",
+                "cwchar": "<ycxx/core/c_string.hpp>", "cerrno": "<ycxx/core/cerrno_macros.hpp>"}
+COMMON = {
+    "cstdlib": """// abs, labs, llabs ([c.math.abs]): constexpr, shared with <cmath> (ycxx/core/math_abs.hpp).
+// div, ldiv, lldiv are constexpr ([cstdlib.syn]), so they are not the C library's. Templates, as
+// abs is: under `using namespace std;` an unqualified call prefers the C library's ::div.
+template <class = void>
+constexpr div_t div(int numer, int denom) noexcept {
+  div_t r{};
+  r.quot = numer / denom;
+  r.rem = numer % denom;
+  return r;
+}
+template <class = void>
+constexpr ldiv_t div(long numer, long denom) noexcept {
+  ldiv_t r{};
+  r.quot = numer / denom;
+  r.rem = numer % denom;
+  return r;
+}
+template <class = void>
+constexpr lldiv_t div(long long numer, long long denom) noexcept {
+  lldiv_t r{};
+  r.quot = numer / denom;
+  r.rem = numer % denom;
+  return r;
+}
+template <class = void>
+constexpr ldiv_t ldiv(long numer, long denom) noexcept {
+  return std::div<>(numer, denom);
+}
+template <class = void>
+constexpr lldiv_t lldiv(long long numer, long long denom) noexcept {
+  return std::div<>(numer, denom);
+}
+// memalignment (C23 7.24.3.1): the largest power of two dividing the address; 0 for a null pointer.
+inline size_t memalignment(const void* p) noexcept {
+  auto v = reinterpret_cast<__UINTPTR_TYPE__>(p);
+  return static_cast<size_t>(v & (~v + 1));
+}""",
+    "cstring": """// memset_explicit (C23 7.26.6.2): memset whose stores are kept even when the object is never read
+// again: the empty asm statement claims to read all memory through s. A template, as <cmath>'s
+// functions are, so a C library's ::memset_explicit wins unqualified calls.
+template <class = void>
+inline void* memset_explicit(void* s, int c, size_t n) noexcept {
+  __builtin_memset(s, c, n);
+  asm volatile("" : : "r"(s) : "memory");
+  return s;
+}""",
+}
+# Standard-mandated macros the C library header may lack (each synopsis; WCHAR_WIDTH comes from
+# core's cstdint.hpp, the version macros of <cfloat>/<cstdint>/<cstdarg> from core too).
+def version_macro(header):
+    m = f"__STDC_VERSION_{header}_H__"
+    return [f"#ifndef {m}", f"#  define {m} 202311L", "#endif", ""]
+MACROS = {"cwchar": version_macro("WCHAR") + [
+              "#if !YCXX_HOSTED", "#  define WEOF (static_cast<__WINT_TYPE__>(-1))", "#endif", ""],
+          "cuchar": version_macro("UCHAR"), "cstring": version_macro("STRING"),
+          "cstdio": version_macro("STDIO"), "ctime": version_macro("TIME"),
+          "cinttypes": version_macro("INTTYPES"), "csetjmp": version_macro("SETJMP")}
 EXTRA_INCLUDES = {"cstdlib": ["<ycxx/core/math_abs.hpp>"], "cinttypes": ["<cstdint>"], "cwchar": ["<ycxx/core/char_traits.hpp>", "<ycxx/core/cstdint.hpp>"],
                   "cuchar": ["<ycxx/core/char_traits.hpp>"], "cwctype": ["<ycxx/core/char_traits.hpp>"]}
 
 root = pathlib.Path(__file__).resolve().parent.parent / "include"
 for name, (cheader, names, extra) in HEADERS.items():
-    lines = [f"// -*- C++ -*-  libycxx: <{name}>   [hosted]  (generated by tools/gen_cheaders.py)",
+    fs = FREESTANDING.get(name)
+    kind = "hosted; freestanding subset without the C library" if fs else "hosted"
+    lines = [f"// -*- C++ -*-  libycxx: <{name}>   [{kind}]  (generated by tools/gen_cheaders.py)",
              "#pragma once", "", "#include <ycxx/config.hpp>", "#include <ycxx/core/version.hpp>",
              "#include <ycxx/core/cstddef.hpp>"]
     lines += [f"#include {h}" for h in EXTRA_INCLUDES.get(name, [])]
-    lines += [f"#include <{cheader}>", ""]
+    if fs:
+        lines += ["#if YCXX_HOSTED", f"#  include <{cheader}>", "#else", f"#  include {fs}", "#endif", ""]
+    else:
+        lines += [f"#include <{cheader}>", ""]
     lines += MACROS.get(name, [])
     if names or extra:
+        if fs:
+            lines.append("#if YCXX_HOSTED")
         lines.append("namespace std {")
         lines += [f"using ::{n};" for n in names.split()]
         if extra:
             lines += ["", extra]
         lines.append("} // namespace std")
+        if fs:
+            lines.append("#endif")
+    if name in COMMON:
+        lines += ["", "namespace std {", COMMON[name], "} // namespace std"]
     (root / name).write_text("\n".join(lines) + "\n")
 print("generated", len(HEADERS), "headers")

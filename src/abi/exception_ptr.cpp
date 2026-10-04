@@ -31,6 +31,18 @@ void* current_exception_object() noexcept {
 
 [[noreturn]] void rethrow_exception_object(void* object) { rethrow_primary(object); }
 
+// make_exception_ptr without exceptions: a primary exception that is never thrown. Its header
+// is what __cxa_throw would record; the unwind fields are set if it is ever rethrown (as a
+// dependent exception, rethrow_primary).
+void* exception_object_create(std::size_t size, const std::type_info* type, void (*destroy)(void*)) noexcept {
+  void* obj = __cxa_allocate_exception(size);
+  exception_header* h = header_of_object(obj);
+  h->exception_type = const_cast<std::type_info*>(type);
+  h->exception_destructor = destroy;
+  h->unwind_header.exception_class = primary_class;
+  return obj;
+}
+
 const void* exception_object_as(void* object, const std::type_info& handler) noexcept {
   exception_header* h = header_of_object(object);
   void* adjusted = object;

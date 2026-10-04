@@ -209,9 +209,14 @@ leaves open (8: `%OS` without fraction, LWG 4118 character reps, file_clock's ep
 when parsing, `fractional_width` of ratio<1, 2^62>, `hh_mm_ss` layout, an error message).
 
 ## Freestanding
-`tools/check_freestanding.sh`: every core header compiles with `-ffreestanding -nostdlib -nostdinc
--fno-exceptions -fno-rtti`; the smoke test links on x86_64-unknown-none-elf and
-riscv64-unknown-elf (Clang) and x86_64 (GCC). Core headers: see `tools/headers.py`.
+`tools/check_freestanding.sh`: every core header, every header with a freestanding subset and
+every header of [compliance]'s Table 27 compiles with `-ffreestanding -nostdlib -nostdinc
+-fno-exceptions -fno-rtti`; the smoke test (which also uses the freestanding parts of `<cstdlib>`,
+`<cstring>`, `<cwchar>`, `<cerrno>`, `<cstdarg>`, `<stdbit.h>`, `<system_error>`) links on
+x86_64-unknown-none-elf and riscv64-unknown-elf (Clang) and x86_64 (GCC). Header lists: see
+`tools/headers.py` (CORE, FREESTANDING_SUBSET, FREESTANDING_REQUIRED). The C headers' freestanding
+subsets (DECISIONS §3) need from the environment only memcpy/memmove/memset/memcmp (as the
+compilers do) and, when called, abort/atexit/at_quick_exit/exit/_Exit/quick_exit.
 
 ## Reference runs against libstdc++
 `YCXX_STDLIB=libstdcxx tools/run-conformance ycxx gcc|clang` runs the own suite against GCC 16's
@@ -297,6 +302,19 @@ Deprecated and removed features are not implemented (`is_pod`, `is_trivial`, `al
   C library does (`0x0.000000000000001p-16385` is the smallest), so that both forms agree there.
 
 ## Known limitations and draft defects
+- C library wrappers: `std::free_sized`/`free_aligned_sized` call `free` (glibc 2.39 has neither);
+  `memset_explicit` is memset plus a compiler barrier; `strfrom*`, `memccpy`, `strdup`, `strndup`
+  are the C library's. Freestanding (`-ffreestanding`), `<cstdlib>`/`<cstring>`/`<cwchar>` are
+  libycxx's own code; their `bsearch` has C's single signature (not the draft's const/non-const
+  pair), and the termination functions forward to the environment's.
+- `make_exception_ptr` under `-fno-exceptions -fno-rtti` returns a null exception_ptr (the
+  object's type_info cannot be named; DECISIONS §4). With RTTI it works without exceptions.
+- `recursive_directory_iterator` with `follow_directory_symlink` opens a followed symbolic link by
+  its whole path, so in a loop it reports ELOOP once the path holds more links than the system
+  resolves (40 on Linux), and a followed link deeper than PATH_MAX reports ENAMETOOLONG.
+- Own test `bit/oracle_cxx26` (Clang only): its `static_assert(all8_shifts())` needs 4-8 million
+  constant-evaluation steps, beyond Clang's default `-fconstexpr-steps` (1,048,576); the oracle
+  alone needs more than 2 million (test defect; the run-time checks pass, GCC passes).
 - `<optional>`: on Clang 23, `x != y` (and the reversed `y == x`) still compile through
   `operator==` when `*x != *y` is unusable: Clang forms rewritten candidates from a template
   `operator==` although a corresponding template `operator!=` exists ([over.match.oper]/4;
@@ -726,11 +744,11 @@ Deprecated and removed features are not implemented (`is_pod`, `is_trivial`, `al
 
 ## Open issues / next
 - Every header of the C++26 library is provided (Phases 1-4 complete; `<meta>` needs GCC's
-  `-freflection`, `<contracts>` GCC's `-fcontracts`). Own suite (1822 tests): GCC 1811 pass /
-  10 fail / 1 xfail, Clang 1805 / 6 / 11. Every remaining failure is a documented limitation:
+  `-freflection`, `<contracts>` GCC's `-fcontracts`). Own suite (1928 tests, after batch 31): GCC 1917 pass /
+  10 fail / 1 xfail, Clang 1910 / 7 / 11. Every remaining failure is a documented limitation:
   `char_traits<char16_t>::eof`, the Itanium ABI handler limits (`except/handler_*`), GCC's
   contract detection mode, non-null constexpr `exception_ptr`, `std::mbstate_t` being core's own
-  type, and no `<stddef.h>` wrapper.
+  type, no `<stddef.h>` wrapper, and (Clang) `bit/oracle_cxx26`'s constant-evaluation step count.
 - Next (Phase 5): full libc++/libstdc++ sweeps with triage (tests/libcxx/TRIAGE.md,
   tests/libstdcxx/TRIAGE.md), fixing the libycxx bugs they find; then performance and a
   whole-library review.

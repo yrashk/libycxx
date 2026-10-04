@@ -71,7 +71,6 @@ void cleanup_native(_Unwind_Reason_Code reason, _Unwind_Exception* ue) {
   release(header_of_unwind(ue));
 }
 
-std::terminate_handler terminate_handler_v;
 
 constinit thread_local eh_globals thread_globals{};
 
@@ -102,6 +101,9 @@ void default_terminate() {
     ycxx_pal_abort("terminate called after throwing a foreign exception");
   ycxx_pal_abort("terminate called without an active exception");
 }
+
+// The current handler; starts as (and a null argument to set_terminate restores) the default.
+std::terminate_handler terminate_handler_v = default_terminate;
 
 [[noreturn]] void call_terminate_handler(std::terminate_handler f) noexcept {
   // [terminate.handler]/2: a terminate handler shall not return; one that does (or throws)
@@ -276,12 +278,13 @@ std::type_info* __cxa_current_exception_type() noexcept {
 
 namespace std {
 
+// [set.terminate]/2 leaves open whether null designates the default handler; here it does.
 terminate_handler set_terminate(terminate_handler f) noexcept {
-  return __atomic_exchange_n(&ycxx::abi::terminate_handler_v, f, __ATOMIC_ACQ_REL);
+  return __atomic_exchange_n(&ycxx::abi::terminate_handler_v, f ? f : ycxx::abi::default_terminate,
+                             __ATOMIC_ACQ_REL);
 }
 terminate_handler get_terminate() noexcept {
-  terminate_handler f = __atomic_load_n(&ycxx::abi::terminate_handler_v, __ATOMIC_ACQUIRE);
-  return f ? f : ycxx::abi::default_terminate;
+  return __atomic_load_n(&ycxx::abi::terminate_handler_v, __ATOMIC_ACQUIRE);
 }
 [[noreturn]] void terminate() noexcept { ycxx::abi::call_terminate_handler(get_terminate()); }
 

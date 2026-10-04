@@ -17,6 +17,13 @@ enum float_round_style {
   round_toward_neg_infinity = 3
 };
 
+// [depr.numeric.limits.has.denorm] (Annex D)
+enum [[deprecated("float_denorm_style is deprecated ([depr.numeric.limits.has.denorm])")]] float_denorm_style {
+  denorm_indeterminate = -1,
+  denorm_absent = 0,
+  denorm_present = 1
+};
+
 } // namespace std
 
 namespace ycxx::detail {
@@ -62,6 +69,10 @@ struct limits_base {
   static constexpr bool traps = false;
   static constexpr bool tinyness_before = false;
   static constexpr std::float_round_style round_style = std::round_toward_zero;
+  [[deprecated("has_denorm is deprecated ([depr.numeric.limits.has.denorm])")]]
+  static constexpr std::float_denorm_style has_denorm = std::denorm_absent;
+  [[deprecated("has_denorm_loss is deprecated ([depr.numeric.limits.has.denorm])")]]
+  static constexpr bool has_denorm_loss = false;
 };
 
 template <class T>
@@ -158,6 +169,11 @@ struct fp_limits : limits_base {
   static constexpr bool is_iec559 = fmt.digits != 8;
   static constexpr bool is_bounded = true;
   static constexpr std::float_round_style round_style = std::round_to_nearest;
+  // Every supported format has subnormals (denorm_min() is one); the values are unspecified.
+  [[deprecated("has_denorm is deprecated ([depr.numeric.limits.has.denorm])")]]
+  static constexpr std::float_denorm_style has_denorm = std::denorm_present;
+  [[deprecated("has_denorm_loss is deprecated ([depr.numeric.limits.has.denorm])")]]
+  static constexpr bool has_denorm_loss = false;
 
   static constexpr T(min)() noexcept { return pow2<T>(fmt.min_exp - 1); }
   static constexpr T(max)() noexcept {

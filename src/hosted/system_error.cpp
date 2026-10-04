@@ -45,6 +45,9 @@ bool is_posix_errno(int ev) noexcept {
       errc::timed_out, errc::too_many_files_open_in_system, errc::too_many_files_open,
       errc::too_many_links, errc::too_many_symbolic_link_levels, errc::value_too_large,
       errc::wrong_protocol_type,
+      // [depr.cerrno]: no_message_available, no_stream_resources, not_a_stream, stream_timeout
+      // (deprecated enumerators, named by their errno values).
+      errc(ENODATA), errc(ENOSR), errc(ENOSTR), errc(ETIME),
   };
   for (errc e : posix)
     if (static_cast<int>(e) == ev)

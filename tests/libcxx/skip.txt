@@ -17,3 +17,7 @@ utilities/utility/pairs/pair.astuple/tuple_size\.pass\.cpp | deprecated | tests 
 utilities/tuple/tuple.tuple/tuple.helper/tuple\.include\.array\.pass\.cpp | deprecated | tests tuple_element<I, volatile T> (Annex D, [depr.tuple])
 utilities/tuple/tuple.tuple/tuple.helper/tuple_element\.pass\.cpp | deprecated | tests tuple_element<I, volatile T> (Annex D, [depr.tuple])
 containers/sequences/array/array\.swap/swap\.verify\.cpp | divergence | expects array<const T, 0>::swap to be ill-formed; [array.members]/4 and [array.zero] only specify swap_ranges semantics and a non-throwing exception specification
+utilities/tuple/tuple.tuple/tuple.helper/tuple_size_incomplete\.pass\.cpp | deprecated | checks tuple_size<volatile tuple<...>> completeness (Annex D, [depr.tuple])
+utilities/tuple/tuple.tuple/tuple.helper/tuple_size_value_sfinae\.pass\.cpp | deprecated | checks tuple_size<volatile pair> (Annex D, [depr.tuple])
+utilities/tuple/tuple.tuple/tuple.helper/tuple_size_v\.pass\.cpp | deprecated | uses tuple_size_v<volatile tuple<...>> (Annex D, [depr.tuple])
+utilities/utility/pairs/pair.astuple/tuple_element\.pass\.cpp | deprecated | uses tuple_element<I, volatile pair> (Annex D, [depr.tuple])

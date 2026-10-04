@@ -2,7 +2,7 @@
 include-graph check, the freestanding check and STATUS.md."""
 
 CORE = [
-    "bit", "cassert", "functional", "iterator", "tuple", "cfloat", "climits", "compare", "concepts", "coroutine", "cstddef", "cstdint",
+    "array", "bit", "cassert", "functional", "iterator", "tuple", "cfloat", "climits", "compare", "concepts", "coroutine", "cstddef", "cstdint",
     "initializer_list", "limits", "memory", "new", "source_location", "type_traits", "utility",
     "version",
 ]

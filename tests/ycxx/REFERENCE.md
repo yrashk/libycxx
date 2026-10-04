@@ -142,6 +142,10 @@ Legend: **G** fails with GCC + libstdc++, **C** with Clang + libstdc++.
 | `simd/loadstore` | G |  | at -O0, `partial_store(v, p, n)` / `partial_store(v, first, last)` with n < size() store only element 0 (correct with -O2; line 64) | [simd.loadstore]/19: data(r)[i] = v[i] for every i < ranges::size(r) |
 | `simd/disabled` | G |  | `basic_mask<3, Abi>` (no vectorizable type has size 3) is a hard error (static_assert) instead of a disabled specialization with deleted special members | [simd.mask.overview]/1.1 and /1 (disabled specializations are complete with deleted default constructor, destructor, copy operations) |
 | `simd/mask_to_vec_explicit` | G |  | the explicit conversion of `mask<int, 6>` to `vec<short, 6>`, `vec<unsigned char, 6>` does not compile (an internal `_DataType0` is missing) | [simd.mask.conv]/1-2 |
+| `ranges/ranges_to_exception_cleanup`, `integration/throwing_callbacks_algorithms` | G | C | when a filter predicate in the source throws, `vector(from_range, r)`, `deque(from_range, r)`, `ranges::to<vector>` / `<deque>` (filter\|transform or filter only) leave one constructed element never destroyed (`list`, `set` do not) | every element object constructed is destroyed ([container.reqmts], [res.on.exception.handling]); [range.utility.conv.to]/2.1.2: `C(from_range, r)` |
+| `containers/range_insert_iterator_throws` | G | C | when the source iterator throws: `deque::insert_range(mid, r)`, `insert(mid, i, j)`, `prepend_range(input range)` change the deque (no-effect guarantee broken); `deque`/`vector` `append_range`, `insert_range`, `assign_range` and the constructors leak the element constructed before the throwing increment | [deque.modifiers]/3: "If an exception is thrown other than by the copy constructor, move constructor, assignment operator, or move assignment operator of T, there are no effects"; [res.on.exception.handling] |
+| `memory/uninitialized_iterator_throws` | G | C | `std::uninitialized_copy`, `_copy_n`, `_move`, `_move_n` do not destroy the element just constructed when the source iterator's increment throws (the `ranges::` forms do) | [specialized.algorithms.general]/2: "objects constructed by a placement new-expression are destroyed ... before allowing the exception to propagate" |
+| `containers/assoc_range_source_throws` | G | C | `flat_set`/`flat_multiset` `insert_range` of a single-pass range whose iterator throws leaves one element object never destroyed | [flat.set.overview]/6, [res.on.exception.handling] |
 | `simd/permute` | G |  | static `permute` of a `basic_mask` does not compile (`_S_static_permute` missing); the vec cases work | [simd.permute.static] (both overloads) |
 ## 2. Missing in libstdc++ 16 (newer C++26 additions, constexpr, API revisions)
 
@@ -193,6 +197,8 @@ Legend: **G** fails with GCC + libstdc++, **C** with Clang + libstdc++.
 | `linalg/views_solves` | G | C | `<linalg>` |
 | `cmath/annex_f_all`, `cmath/annex_f_extended` (GCC only: Clang has no extended types), `complex/edge_values_constexpr` | G | C | constexpr `<cmath>`/`<complex>` (the run-time values all agree with Annex F / the draft) |
 | `cstdlib/constexpr_abs_div` | G | C | constexpr `div`/`ldiv`/`lldiv` (P0533R9); with Clang also `abs(long)`, `labs` |
+| `integration/matrix_linalg_complex` | G | C | `<linalg>` (an integration test: mdspan + linalg + complex) |
+| `containers/range_insert_iterator_throws_hive_inplace` | G | C | `<hive>` |
 | `modes/freestanding_items`, `modes/freestanding_items_numeric` | G | C | with `-ffreestanding`: `std::abs`, `div`, `lldiv`, `qsort`, `bsearch` are missing from `<cstdlib>`; `<charconv>`, `<cmath>`, `<execution>`, `<inplace_vector>`, `<random>`, `<string>`, `<system_error>` are "not available in freestanding mode" ([compliance] Table 27 lists them; their freestanding items: [charconv.syn], [cmath.syn], [execution.syn], [inplace.vector.syn], [rand.synopsis], [string.syn], [system.error.syn]) |
 ## 3. Differences between GCC and Clang with the same libstdc++
 
@@ -217,6 +223,7 @@ Clang rejects code GCC accepts.
 | `simd/*` | `std::simd` is not declared with Clang (libstdc++'s `<simd>` is GCC-only); the `simd/*_mandates` compile.fail tests then pass with Clang for that reason, not the intended one |
 | `contracts/synopsis` | without contract support `<contracts>` declares nothing with Clang; `contracts/observe`, `contracts/enforce_throw` (`-fcontracts`) and `meta/*` (`-freflection`) are XFAIL-COMPILER: clang (Clang 23 has neither contracts nor reflection) |
 | `scoped_allocator/equality_rebound` | `a == b` for `scoped_allocator_adaptor`s whose outer allocator types differ (e.g. `scoped_allocator_adaptor<allocator<int>>` and `scoped_allocator_adaptor<allocator<long>>`) is rejected: Clang reports the `==` of libstdc++'s internal inner-allocator holder types as ambiguous (a candidate and its reversed form); GCC accepts. [scoped.adaptor.operators]/1 declares `operator==(const scoped_allocator_adaptor<OuterA1, InnerAllocs...>&, const scoped_allocator_adaptor<OuterA2, InnerAllocs...>&)` |
+| `integration/matrix_simd_kernel` | `std::simd` is not declared with Clang (as `simd/*`) |
 
 ## 4. C library headers
 

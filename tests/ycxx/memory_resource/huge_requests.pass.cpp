@@ -14,6 +14,7 @@
 #include <memory_resource>
 #include <cstddef>
 #include <cstdint>
+#include <initializer_list>
 #include <limits>
 #include <new>
 #include "check.hpp"

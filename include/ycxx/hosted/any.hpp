@@ -268,7 +268,7 @@ T* any_cast(any* operand) noexcept {
 
 namespace ycxx::detail {
 [[noreturn]] [[gnu::cold]] inline void throw_bad_any_cast() {
-  raise_with(ycxx_error_bad_any_cast, "std::bad_any_cast", [] { return std::bad_any_cast(); });
+  ::ycxx::detail::raise_with(ycxx_error_bad_any_cast, "std::bad_any_cast", [] { return std::bad_any_cast(); });
 }
 } // namespace ycxx::detail
 

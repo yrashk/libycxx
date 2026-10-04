@@ -239,7 +239,7 @@ namespace std {
 
 template <auto X, class T>
 struct constant_wrapper : ::ycxx::adl_free::cw_operators {
-  static_assert(__is_same(T, decltype(X)), "constant_wrapper: the second template argument must be decltype(X)");
+  static_assert(std::is_same_v<T, decltype(X)>, "constant_wrapper: the second template argument must be decltype(X)");
 
   static constexpr ::ycxx::detail::cw_value_type<decltype(X)> value = X;
   using type = constant_wrapper;

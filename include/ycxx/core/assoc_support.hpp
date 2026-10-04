@@ -5,7 +5,7 @@
 
 #include <ycxx/core/container_base.hpp>
 #include <ycxx/core/pair.hpp>
-#include <ycxx/core/seq_support.hpp>
+#include <ycxx/core/sequence_support.hpp>
 
 namespace ycxx::detail {
 

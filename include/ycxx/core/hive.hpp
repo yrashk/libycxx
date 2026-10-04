@@ -33,7 +33,6 @@
 #include <ycxx/core/limits.hpp>
 #include <ycxx/core/memory_base.hpp>
 #include <ycxx/core/memory_resource_fwd.hpp>
-#include <ycxx/core/seq_support.hpp>
 #include <ycxx/core/sequence_support.hpp>
 #include <ycxx/core/swap.hpp>
 #include <ycxx/core/utility_base.hpp>

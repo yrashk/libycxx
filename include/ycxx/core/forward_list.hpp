@@ -5,7 +5,7 @@
 // forward_list only moves the head's pointer. The node allocator and the node layout follow
 // list.hpp: elements are constructed through the allocator rebound to the node type, multi-
 // element insertions build a detached chain first (no effects on an exception), and sort is the
-// allocation-free merge sort of seq_support.hpp. T may be incomplete until a member is used.
+// allocation-free merge sort of sequence_support.hpp. T may be incomplete until a member is used.
 #pragma once
 
 #include <initializer_list>
@@ -18,7 +18,7 @@
 #include <ycxx/core/limits.hpp>
 #include <ycxx/core/memory_base.hpp>
 #include <ycxx/core/memory_resource_fwd.hpp>
-#include <ycxx/core/seq_support.hpp>
+#include <ycxx/core/sequence_support.hpp>
 #include <ycxx/core/swap.hpp>
 #include <ycxx/core/utility_base.hpp>
 

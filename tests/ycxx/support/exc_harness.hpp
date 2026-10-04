@@ -42,13 +42,13 @@ enum Kind : int {
   compare,      // exh::less, exh::equal
   pred,         // exh::pred_odd, exh::pred_less
   gnew,         // replaced global operator new (exc_new.hpp only)
-  facet,        // used by iostream tests for virtuals they override
+  virt,         // a user-overridden virtual function (streambuf, locale facets)
   n_kinds
 };
 inline const char* const kind_name[n_kinds] = {"copy_ctor", "move_ctor", "copy_assign", "move_assign",
                                                "default_ctor", "value_ctor", "iter_inc", "iter_deref",
                                                "iter_cmp", "alloc", "hash", "compare", "pred", "gnew",
-                                               "facet"};
+                                               "virtual"};
 
 // The exception thrown at an injection point. Allocation points throw alloc_failure, which is
 // a bad_alloc ([allocator.requirements.general]; [new.delete.single]/3: a replaceable operator
@@ -182,12 +182,13 @@ struct Block {
   void* p;
   std::size_t n;
   std::size_t elem;
+  int id; // id of the allocating exh::alloc (-1: not tracked)
 };
 inline Block blocks[16384];
 inline int nblocks = 0;
 inline long alloc_calls = 0;
 
-inline void* registry_alloc(std::size_t n, std::size_t elem, std::size_t align) {
+inline void* registry_alloc(std::size_t n, std::size_t elem, std::size_t align, int id = -1) {
   std::size_t bytes = n * elem;
   if (bytes == 0) bytes = 1;
   if (align < alignof(std::max_align_t)) align = alignof(std::max_align_t);
@@ -198,13 +199,20 @@ inline void* registry_alloc(std::size_t n, std::size_t elem, std::size_t align) 
     report("allocator registry full", __LINE__);
     return p;
   }
-  blocks[nblocks++] = Block{p, n, elem};
+  blocks[nblocks++] = Block{p, n, elem, id};
   ++alloc_calls;
   return p;
 }
-inline void registry_dealloc(void* p, std::size_t n, std::size_t elem) {
+inline void registry_dealloc(void* p, std::size_t n, std::size_t elem, int id = -1) {
   for (int i = nblocks - 1; i >= 0; --i)
     if (blocks[i].p == p) {
+      if (id != -1 && blocks[i].id != -1 && blocks[i].id != id) {
+        char buf[160];
+        __builtin_snprintf(buf, sizeof buf,
+                           "deallocate by an allocator (id %d) that does not compare equal to the allocating one (id %d) (for a memory_resource: another alignment)",
+                           id, blocks[i].id);
+        basic_tracked<false>::report_dyn(buf);
+      }
       if (blocks[i].n != n || blocks[i].elem != elem) {
         char buf[160];
         __builtin_snprintf(buf, sizeof buf,
@@ -238,9 +246,11 @@ struct alloc {
   alloc(const alloc<U, Prop>& o) noexcept : id(o.id) {}
   V* allocate(std::size_t n) {
     alloc_point(allocation);
-    return static_cast<V*>(registry_alloc(n, sizeof(V), alignof(V)));
+    return static_cast<V*>(registry_alloc(n, sizeof(V), alignof(V), id));
   }
-  void deallocate(V* p, std::size_t n) noexcept { registry_dealloc(p, n, sizeof(V)); }
+  // [allocator.requirements.general]: a.deallocate(p, n): "p has been returned by a prior call
+  // to allocate on an allocator that compares equal to a"
+  void deallocate(V* p, std::size_t n) noexcept { registry_dealloc(p, n, sizeof(V), id); }
   template <class U>
   friend bool operator==(const alloc& a, const alloc<U, Prop>& b) noexcept {
     return a.id == b.id;

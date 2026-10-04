@@ -24,7 +24,7 @@
 namespace exh::seq {
 
 enum class G { strong, basic, prefix };
-enum class Pos { front, mid, end, back /* push_back, emplace_back */, none };
+enum class Pos { front, mid, late /* before the last element */, end, back /* push_back, emplace_back */, none };
 enum class Op { single, multi, resize, reserve, shrink, assign, erase, ctor };
 
 template <class C>
@@ -44,12 +44,12 @@ auto at(C& c, Pos p) {
   if constexpr (is_fwd<C>) {
     // insert_after position: before_begin / after the second element / the last element
     auto it = c.before_begin();
-    long steps = p == Pos::front ? 0 : p == Pos::mid ? 2 : count(c);
+    long steps = p == Pos::front ? 0 : p == Pos::mid ? 2 : p == Pos::late ? count(c) - 1 : count(c);
     for (long i = 0; i < steps; ++i) ++it;
     return it;
   } else {
     auto it = c.begin();
-    long steps = p == Pos::front ? 0 : p == Pos::mid ? 2 : count(c);
+    long steps = p == Pos::front ? 0 : p == Pos::mid ? 2 : p == Pos::late ? count(c) - 1 : count(c);
     std::advance(it, steps);
     return typename C::const_iterator(it);
   }
@@ -71,6 +71,17 @@ struct runner {
   static E* src() {
     static E s[6] = {mk(50), mk(51), mk(52), mk(53), mk(54), mk(55)};
     return s;
+  }
+  // A longer source (several deque/hive blocks, several vector growth steps).
+  static constexpr int big_n = 70;
+  static E* big() {
+    static E* b = [] {
+      alignas(E) static unsigned char raw[big_n * sizeof(E)];
+      E* p = reinterpret_cast<E*>(raw);
+      for (int i = 0; i < big_n; ++i) ::new (p + i) E(mk(100 + i));
+      return p;
+    }();
+    return b;
   }
 
   // Runs op(c, tmp) on a fresh container (all variants) under a sweep of every kind in ks.
@@ -101,7 +112,7 @@ struct runner {
               else
                 EXH_EXPECT(after.sorted() == before.sorted(), "strong guarantee violated: contents changed");
             } else if (g == G::prefix) {
-              long pre = pos == Pos::front ? 0 : pos == Pos::mid ? 2 : n0;
+              long pre = pos == Pos::front ? 0 : pos == Pos::mid ? 2 : pos == Pos::late ? n0 - 1 : n0;
               bool ok = after.n >= pre;
               for (long i = 0; ok && i < pre; ++i) ok = after.v[i] == before.v[i];
               EXH_EXPECT(ok, "[inplace.vector.modifiers]/3 violated: the first n elements changed or were removed");
@@ -125,8 +136,8 @@ struct runner {
   static void insertions() {
     constexpr bool fwd = is_fwd<C>;
     constexpr bool hive = is_hive<C>;
-    for (Pos p : {Pos::front, Pos::mid, Pos::end}) {
-      const char* pn = p == Pos::front ? "front" : p == Pos::mid ? "mid" : "end";
+    for (Pos p : {Pos::front, Pos::mid, Pos::late, Pos::end}) {
+      const char* pn = p == Pos::front ? "front" : p == Pos::mid ? "mid" : p == Pos::late ? "late" : "end";
       char nm[96];
       auto name = [&](const char* what) {
         __builtin_snprintf(nm, sizeof nm, "%s @%s", what, pn);
@@ -213,6 +224,20 @@ struct runner {
       go("emplace_back(int)", Pos::back, Op::single, {value_ctor, allocation, copy_ctor, move_ctor},
          [](C& c, E&) { c.emplace_back(66); });
       go("emplace_back()", Pos::back, Op::single, {default_ctor}, [](C& c, E&) { c.emplace_back(); });
+    }
+    // Arguments that alias elements of the container ([sequence.reqmts]: t may refer to an
+    // element; [container.reqmts]/66 and the per-container remarks apply unchanged).
+    if constexpr (requires(C& c) { c.push_back(src()[0]); c.front(); c.back(); }) {
+      go("push_back(front()) [aliasing]", Pos::back, Op::single, elem_kinds, [](C& c, E&) { c.push_back(c.front()); });
+      go("emplace_back(back()) [aliasing]", Pos::back, Op::single, elem_kinds, [](C& c, E&) { c.emplace_back(c.back()); });
+      go("insert(mid, back()) [aliasing]", Pos::mid, Op::single, elem_kinds,
+         [](C& c, E&) { c.insert(at(c, Pos::mid), c.back()); });
+      go("insert(late, front()) [aliasing]", Pos::late, Op::single, elem_kinds,
+         [](C& c, E&) { c.insert(at(c, Pos::late), c.front()); });
+      go("insert(mid, 4, back()) [aliasing]", Pos::mid, Op::multi, elem_kinds,
+         [](C& c, E&) { c.insert(at(c, Pos::mid), 4, c.back()); });
+      if constexpr (requires(C& c) { c.resize(9, c.front()); })
+        go("resize(9, front()) [aliasing]", Pos::end, Op::resize, elem_kinds, [](C& c, E&) { c.resize(9, c.front()); });
     }
     if constexpr (requires(C& c) { c.push_front(src()[0]); }) {
       go("push_front(const T&)", Pos::front, Op::single, elem_kinds, [](C& c, E&) { c.push_front(src()[0]); });
@@ -351,8 +376,44 @@ struct runner {
     }
   }
 
+  static void bigops() {
+    using I = range<in_tag, E>;
+    using R = range<ra_tag, E>;
+    const auto ks = {copy_ctor, allocation, iter_inc};
+    if constexpr (is_fwd<C>) {
+      go("insert_range_after(mid, 70 input)", Pos::mid, Op::multi, ks,
+         [](C& c, E&) { c.insert_range_after(at(c, Pos::mid), I{big(), big() + big_n}); });
+    } else if constexpr (is_hive<C>) {
+      go("insert_range(70 input)", Pos::end, Op::multi, ks, [](C& c, E&) { c.insert_range(I{big(), big() + big_n}); });
+      go("insert_range(70 ra)", Pos::end, Op::multi, ks, [](C& c, E&) { c.insert_range(R{big(), big() + big_n}); });
+      go("insert(70, x)", Pos::end, Op::multi, ks, [](C& c, E&) { c.insert(70, src()[0]); });
+    } else if constexpr (requires { typename C::allocator_type; }) { // (inplace_vector<E, 16> cannot hold 75)
+      go("insert_range(mid, 70 input)", Pos::mid, Op::multi, ks,
+         [](C& c, E&) { c.insert_range(at(c, Pos::mid), I{big(), big() + big_n}); });
+      go("insert_range(mid, 70 ra)", Pos::mid, Op::multi, ks,
+         [](C& c, E&) { c.insert_range(at(c, Pos::mid), R{big(), big() + big_n}); });
+      go("insert(mid, 70, x)", Pos::mid, Op::multi, ks, [](C& c, E&) { c.insert(at(c, Pos::mid), 70, src()[0]); });
+      go("insert(front, 70 ra first, last)", Pos::front, Op::multi, ks, [](C& c, E&) {
+        R r{big(), big() + big_n};
+        c.insert(at(c, Pos::front), r.begin(), r.end());
+      });
+      if constexpr (requires(C& c) { c.append_range(I{}); })
+        go("append_range(70 input)", Pos::end, Op::multi, ks, [](C& c, E&) { c.append_range(I{big(), big() + big_n}); });
+      if constexpr (requires(C& c) { c.prepend_range(I{}); })
+        go("prepend_range(70 input)", Pos::front, Op::multi, ks, [](C& c, E&) { c.prepend_range(I{big(), big() + big_n}); });
+      go("assign_range(70 input)", Pos::none, Op::assign, ks, [](C& c, E&) { c.assign_range(I{big(), big() + big_n}); });
+      if constexpr (requires(C& c) { c.resize(80); })
+        go("resize(80, x)", Pos::end, Op::resize, ks, [](C& c, E&) { c.resize(80, src()[1]); });
+      go("emplace at front 70 times (each call separately)", Pos::front, Op::assign, {copy_ctor, allocation, value_ctor}, [](C& c, E&) {
+        for (int i = 0; i < 70; ++i) c.emplace(c.begin(), mk(i));
+      });
+    }
+  }
+
   static void all() {
     (void)src(); // the sources live across all sweeps
+    (void)big();
+    bigops();
     insertions();
     capacity();
     assignments();

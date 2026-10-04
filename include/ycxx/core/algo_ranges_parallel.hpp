@@ -131,6 +131,10 @@ constexpr std::ranges::in_in_out_result<I1, I2, O> set_op_bounded(I1 first1, S1 
   constexpr bool keep1 = K != kind::set_intersection; // elements only in the first range
   constexpr bool keep2 = K == kind::set_union || K == kind::set_symmetric_difference;
   constexpr bool keep_both = K == kind::set_union || K == kind::set_intersection;
+  // set_intersection with a complete output: the elements after the last one copied are not
+  // skipped ([set.intersection]/3), so the result points just past it.
+  I1 after_copy1 = first1;
+  I2 after_copy2 = first2;
   while (first1 != last1 && first2 != last2) {
     if (::ycxx::detail::invoke(comp, ::ycxx::detail::invoke(proj1, *first1), ::ycxx::detail::invoke(proj2, *first2))) {
       if constexpr (keep1) {
@@ -158,6 +162,10 @@ constexpr std::ranges::in_in_out_result<I1, I2, O> set_op_bounded(I1 first1, S1 
       }
       ++first1;
       ++first2;
+      if constexpr (K == kind::set_intersection) {
+        after_copy1 = first1;
+        after_copy2 = first2;
+      }
     }
   }
   if constexpr (keep1) {
@@ -175,10 +183,9 @@ constexpr std::ranges::in_in_out_result<I1, I2, O> set_op_bounded(I1 first1, S1 
     }
   }
   if constexpr (K == kind::set_intersection || K == kind::set_difference) {
-    // The output is complete: what remains of a range whose elements are not output is not
-    // skipped ([set.intersection]/3, [set.difference]/3).
+    // The output is complete ([set.intersection]/4.3, [set.difference]/4.3.1).
     if constexpr (K == kind::set_intersection)
-      return {std::move(first1), std::move(first2), std::move(result)};
+      return {std::move(after_copy1), std::move(after_copy2), std::move(result)};
     else
       return {end_iter(first1, last1), std::move(first2), std::move(result)};
   } else {

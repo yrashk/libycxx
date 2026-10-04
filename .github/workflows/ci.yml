@@ -25,8 +25,14 @@ jobs:
           mkdir -p /opt/gcc-16/lib64 /opt/gcc-16/lib/gcc/x86_64-pc-linux-gnu
           ln -sfn "$(dirname "$(g++ -print-libgcc-file-name)")" /opt/gcc-16/lib/gcc/x86_64-pc-linux-gnu/16.2.0
 
+      - name: Toolchain detection (tools/toolchain/provision)
+        run: tools/toolchain/provision --detect-only
+
       - name: Policy, builds, freestanding
         run: tools/check-all
+
+      - name: CMake package (install, find_package, add_subdirectory)
+        run: tests/cmake/run.sh
 
       - name: Fetch conformance suites (run only)
         run: |

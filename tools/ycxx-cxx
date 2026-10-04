@@ -5,10 +5,13 @@
 # stack unwinding comes from the toolchain's libgcc_eh.
 here=$(cd "$(dirname "$0")/.." && pwd)
 which=$1; shift
-gcc_dir=/opt/gcc-16
+# Compilers: $YCXX_GXX / $YCXX_CLANGXX (set by tools/toolchain/activate.*), else g++-16 / clang++-23.
+# Clang uses GCC 16's installation for the C runtime startup files and libgcc.
+gxx=${YCXX_GXX:-g++-16}
+gcc_install_dir=${YCXX_GCC_INSTALL_DIR:-$(dirname "$($gxx -print-libgcc-file-name)")}
 case $which in
-  gcc)   cxx=g++-16; extra="" ;;
-  clang) cxx=clang++-23; extra="--gcc-install-dir=$gcc_dir/lib/gcc/x86_64-pc-linux-gnu/16.2.0" ;;
+  gcc)   cxx=$gxx; extra="" ;;
+  clang) cxx=${YCXX_CLANGXX:-clang++-23}; extra="--gcc-install-dir=$gcc_install_dir" ;;
   *) echo "usage: ycxx-cxx gcc|clang args..." >&2; exit 2 ;;
 esac
 abi="$here/build/$which/libycxx-abi.a"

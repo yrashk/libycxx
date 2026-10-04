@@ -245,15 +245,12 @@ concept expected_void_converts_from = !(std::is_same_v<T, U> && std::is_same_v<E
 // a base's namespace is an associated namespace for ADL ([basic.lookup.argdep]/3), so a
 // ycxx::detail base would expose every internal function to lookup on the std type.
 namespace ycxx::adl_free {
-// A using-directive affects only unqualified lookup inside this namespace, never ADL.
-using namespace ycxx::detail;
-
 // Common machinery of expected<T, E> and expected<void, E>: storage, lifetime, assignment.
 template <class T, class E>
 class expected_base {
 protected:
-  using V = expected_value_t<T>;
-  using storage = expected_union<V, E>;
+  using V = ycxx::detail::expected_value_t<T>;
+  using storage = ycxx::detail::expected_union<V, E>;
 
   storage u_;
   bool has_val_;
@@ -269,10 +266,10 @@ protected:
   constexpr explicit expected_base(std::unexpect_t t, Args&&... args)
       : u_(t, static_cast<Args&&>(args)...), has_val_(false) {}
   template <class F, class... Args>
-  constexpr expected_base(expected_invoke_val_tag t, F&& f, Args&&... args)
+  constexpr expected_base(ycxx::detail::expected_invoke_val_tag t, F&& f, Args&&... args)
       : u_(t, static_cast<F&&>(f), static_cast<Args&&>(args)...), has_val_(true) {}
   template <class F, class... Args>
-  constexpr expected_base(expected_invoke_err_tag t, F&& f, Args&&... args)
+  constexpr expected_base(ycxx::detail::expected_invoke_err_tag t, F&& f, Args&&... args)
       : u_(t, static_cast<F&&>(f), static_cast<Args&&>(args)...), has_val_(false) {}
   // From another expected (same or converting): rhs is any expected<U, G> cvref; its value is
   // forwarded with rhs's qualification.
@@ -355,19 +352,19 @@ public:
   constexpr bool has_error() const noexcept { return !has_val_; }
 
   constexpr const E& error() const& noexcept {
-    precondition(!has_val_, "std::expected::error: has_value() is true");
+    ycxx::detail::precondition(!has_val_, "std::expected::error: has_value() is true");
     return u_.unex;
   }
   constexpr E& error() & noexcept {
-    precondition(!has_val_, "std::expected::error: has_value() is true");
+    ycxx::detail::precondition(!has_val_, "std::expected::error: has_value() is true");
     return u_.unex;
   }
   constexpr const E&& error() const&& noexcept {
-    precondition(!has_val_, "std::expected::error: has_value() is true");
+    ycxx::detail::precondition(!has_val_, "std::expected::error: has_value() is true");
     return static_cast<const E&&>(u_.unex);
   }
   constexpr E&& error() && noexcept {
-    precondition(!has_val_, "std::expected::error: has_value() is true");
+    ycxx::detail::precondition(!has_val_, "std::expected::error: has_value() is true");
     return static_cast<E&&>(u_.unex);
   }
 

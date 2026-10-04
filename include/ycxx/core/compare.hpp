@@ -216,8 +216,13 @@ concept partially_ordered_with = requires(const ::ycxx::detail::remove_ref_t<T>&
 template <class T, class Cat>
 concept compares_as = __is_same(std::common_comparison_category_t<T, Cat>, Cat);
 
+// [concept.same]: same-as-impl applied in both orders. One atomic constraint used twice is what
+// makes same_as<T, U> and same_as<U, T> subsume each other; two different atoms
+// (__is_same(T, U) && __is_same(U, T)) do not.
 template <class T, class U>
-concept same_as_ = __is_same(T, U) && __is_same(U, T);
+concept same_as_impl = __is_same(T, U);
+template <class T, class U>
+concept same_as_ = same_as_impl<T, U> && same_as_impl<U, T>;
 
 template <class From, class To>
 concept convertible_to_ = __is_convertible(From, To) && requires { static_cast<To>(std::declval<From>()); };

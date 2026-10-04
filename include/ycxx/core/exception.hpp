@@ -10,7 +10,11 @@ public:
   constexpr bad_exception() noexcept {}
   constexpr bad_exception(const bad_exception&) noexcept = default;
   constexpr bad_exception& operator=(const bad_exception&) noexcept = default;
+#if YCXX_HAS_RTTI
   constexpr ~bad_exception() override {}
+#else
+  ~bad_exception() override; // see the header comment of exception_base.hpp
+#endif
   constexpr const char* what() const noexcept override { return "std::bad_exception"; }
 };
 

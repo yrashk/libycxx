@@ -88,22 +88,31 @@ tooling.
 
 ## 4. Error handling
 
-- Every library "throw" goes through `ycxx::detail::raise(kind, what)`.
-  - With exceptions on, it calls `ycxx::detail::throw_std`, defined out of line in the hosted
-    runtime, which throws the standard exception type. Core headers therefore never include
-    `<stdexcept>`.
-  - With `-fno-exceptions`, it calls `extern "C" ycxx_error_handler(kind, what)`. The default
-    definition is a weak symbol emitted from the header that calls `__builtin_trap()`; a strong
-    user definition replaces it at link time with no library rebuild.
-- Exception types that are class templates (`bad_expected_access<E>`) cannot cross the
-  C-linkage runtime boundary. They go through the companion hook
-  `ycxx::detail::raise_with(kind, what, make)`: with exceptions on, it throws `make()` from the
-  header; without exceptions, it calls the same `ycxx_error_handler(kind, what)`, and `make` is
-  never called.
-- The language-support ABI (`__cxa_*`, `std::type_info`, `std::exception` vtables, unwinding)
-  comes from the toolchain's ABI runtime (GCC's `libsupc++` plus `libgcc_s`/`libgcc_eh`), which
-  is linked for both compilers. Our declarations of `std::exception`, `std::type_info`, etc.
-  follow the Itanium C++ ABI layout.
+- Every library "throw" goes through one of two hooks in `ycxx/core/error.hpp`. Both take an
+  `ycxx_error_kind`. Without exceptions, both call the same handler.
+  - `ycxx::detail::raise_with(kind, what, make)` is for exception classes defined inline in
+    core headers (`bad_alloc`, `bad_optional_access`, `bad_variant_access`,
+    `bad_expected_access<E>`, ...). With exceptions on, it throws `make()` from the header,
+    which also works during constant evaluation (P3068, constexpr exceptions).
+  - `ycxx::detail::raise(kind, what)` is for the `<stdexcept>` classes, whose message storage
+    lives in the hosted runtime. With exceptions on, it calls `ycxx::detail::throw_std`, defined
+    out of line there.
+  - With `-fno-exceptions`, either hook calls `extern "C" ycxx_error_handler(kind, what)`; `make`
+    is never called. The default definition is a weak symbol emitted from the header (PAL abort
+    when hosted, `__builtin_trap()` when freestanding). A strong user definition replaces it at
+    link time with no library rebuild.
+- The language-support ABI (`__cxa_*`, `std::type_info`, unwinding) comes from the toolchain's
+  ABI runtime (GCC's `libsupc++` plus `libgcc_s`/`libgcc_eh`), linked for both compilers. The
+  exception classes are declared with Itanium layout and inline constexpr members (no key
+  function). Their vtables and type_info are emitted where needed and merge with libsupc++'s
+  copies; see `exception_base.hpp`. `std::nothrow` is `extern` and defined by libsupc++.
+- **Unsupported: mixing translation units built with different `-fexceptions`/`-fno-exceptions`
+  or `-frtti`/`-fno-rtti` settings in one program.** The inline error hooks differ between the
+  modes, and the linker keeps one copy. The vtables of header-defined exception classes emitted
+  without RTTI lack type_info. The one mitigation: without RTTI, the classes libsupc++ also
+  defines declare an out-of-line destructor (their key function), so their vtables always come
+  from libsupc++ (`YCXX_HAS_RTTI`). Whole-program `-fno-rtti` and whole-program
+  `-fno-exceptions` are fully supported.
 
 ## 5. Compiler-builtin portability
 

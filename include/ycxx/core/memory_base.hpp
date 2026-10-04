@@ -239,7 +239,8 @@ constexpr ForwardIt destroy_n(ForwardIt first, Size n) {
 } // namespace std
 
 namespace ycxx::detail {
-struct construct_at_fn {
+namespace construct_at_ns {
+struct fn {
   template <class T, class... Args>
     requires construct_at_ok<T, Args...>
   static constexpr T* operator()(T* location, Args&&... args) noexcept(
@@ -247,18 +248,21 @@ struct construct_at_fn {
     return std::construct_at(location, static_cast<Args&&>(args)...);
   }
 };
-struct destroy_at_fn {
+} // namespace construct_at_ns
+namespace destroy_at_ns {
+struct fn {
   template <class T>
     requires std::is_nothrow_destructible_v<T> // destructible<T>
   static constexpr void operator()(T* location) noexcept {
     std::destroy_at(location);
   }
 };
+} // namespace destroy_at_ns
 } // namespace ycxx::detail
 
 namespace std::ranges {
-inline constexpr ycxx::detail::construct_at_fn construct_at{};
-inline constexpr ycxx::detail::destroy_at_fn destroy_at{};
+inline constexpr ycxx::detail::construct_at_ns::fn construct_at{};
+inline constexpr ycxx::detail::destroy_at_ns::fn destroy_at{};
 } // namespace std::ranges
 
 namespace std {
@@ -308,12 +312,8 @@ public:
 
   [[nodiscard]] constexpr T* allocate(size_t n) {
     static_assert(sizeof(T) != 0, "std::allocator: incomplete type");
-    if (n > static_cast<size_t>(-1) / sizeof(T)) {
-      if consteval {
-        ycxx::detail::assertion_failed("std::allocator::allocate: size overflow");
-      }
-      ycxx::detail::throw_bad_array_new_length();
-    }
+    if (n > static_cast<size_t>(-1) / sizeof(T))
+      ycxx::detail::throw_bad_array_new_length(); // constexpr: throws in constant evaluation too
     if consteval {
       return static_cast<T*>(::operator new(n * sizeof(T)));
     } else {

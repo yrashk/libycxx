@@ -641,14 +641,14 @@ constexpr const T&& get(const tuple<Types...>&& t) noexcept {
 // ---- ignore ----
 } // namespace std
 
-namespace ycxx::detail {
+namespace ycxx::adl_free { // std::ignore's type; see DECISIONS §2
 struct ignore_type {
   constexpr const ignore_type& operator=(const auto&) const noexcept { return *this; }
 };
-} // namespace ycxx::detail
+} // namespace ycxx::adl_free
 
 namespace std {
-inline constexpr ycxx::detail::ignore_type ignore;
+inline constexpr ycxx::adl_free::ignore_type ignore;
 
 // ---- [tuple.creation] ----
 template <class... TTypes>

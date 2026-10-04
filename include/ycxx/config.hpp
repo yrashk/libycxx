@@ -44,6 +44,13 @@
 #else
 #  define YCXX_HAS_EXCEPTIONS 0
 #endif
+// RTTI selects how the exception classes that libsupc++ also defines are declared
+// (exception_base.hpp): a non-template class cannot constrain its destructor.
+#if defined(__cpp_rtti) || defined(__GXX_RTTI)
+#  define YCXX_HAS_RTTI 1
+#else
+#  define YCXX_HAS_RTTI 0
+#endif
 #if __has_builtin(__builtin_is_within_lifetime)
 #  define YCXX_HAS_IS_WITHIN_LIFETIME 1
 #else
@@ -79,11 +86,7 @@ inline constexpr bool clang = false;
 inline constexpr bool gcc = !clang;
 
 inline constexpr bool exceptions = YCXX_HAS_EXCEPTIONS;
-#if defined(__cpp_rtti) || defined(__GXX_RTTI)
-inline constexpr bool rtti = true;
-#else
-inline constexpr bool rtti = false;
-#endif
+inline constexpr bool rtti = YCXX_HAS_RTTI;
 inline constexpr bool hosted = __STDC_HOSTED__;
 inline constexpr bool hardened = YCXX_HARDENED;
 #if defined(__SIZEOF_INT128__)

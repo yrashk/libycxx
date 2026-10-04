@@ -54,6 +54,8 @@ shared_message::~shared_message() {
   case ycxx_error_range_error: throw std::range_error(what);
   case ycxx_error_overflow_error: throw std::overflow_error(what);
   case ycxx_error_underflow_error: throw std::underflow_error(what);
+  // Exception classes defined in core headers are thrown there (raise_with), never via raise(),
+  // so no other kind reaches this point; report it rather than throw something unrelated.
   default: ::ycxx_error_handler(kind, what);
   }
 }

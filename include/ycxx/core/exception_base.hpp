@@ -1,11 +1,19 @@
 // libycxx core: the std::exception class and the language-support exception types that core
 // headers name (bad_alloc, bad_array_new_length).
 //
-// All members are inline and constexpr (P3068, constexpr exceptions), so these classes have no
-// key function: their vtables and type_info objects are emitted as COMDAT in the translation
-// units that need them. The toolchain's Itanium ABI runtime (libsupc++), which throws some of
-// them itself (operator new), also defines them. The linker keeps one definition of each symbol,
-// and both agree on layout and behaviour (Itanium ABI, same what() strings).
+// Constexpr exceptions (P3068) need every member inline and constexpr, so these classes have
+// no key function: their vtables and type_info objects are emitted (COMDAT) by each translation
+// unit that needs them. The toolchain's Itanium ABI runtime (libsupc++), which throws some of
+// them itself (operator new, dynamic_cast), defines the same symbols; the linker keeps one, and
+// all copies agree (Itanium layout, same what() strings).
+//
+// Exception: a translation unit built with -fno-rtti would emit vtables with an empty RTTI slot,
+// and if one of those won the link, dynamic_cast/typeid in RTTI code would crash. So without
+// RTTI, the classes libsupc++ defines (exception, bad_alloc, bad_array_new_length, bad_exception,
+// bad_cast, bad_typeid) declare their destructor out of line. It is then the key function, and
+// only libsupc++ emits the vtable. The cost: no constexpr destruction of these classes in -fno-rtti
+// code. Classes libsupc++ does not define (bad_optional_access, ...) have no such fallback, so a
+// program that mixes RTTI and -fno-rtti translation units is unsupported for them (DECISIONS §4).
 #pragma once
 
 #include <ycxx/config.hpp>
@@ -17,7 +25,11 @@ public:
   constexpr exception() noexcept {}
   constexpr exception(const exception&) noexcept = default;
   constexpr exception& operator=(const exception&) noexcept = default;
+#if YCXX_HAS_RTTI
   constexpr virtual ~exception() {}
+#else
+  virtual ~exception(); // see the header comment
+#endif
   constexpr virtual const char* what() const noexcept { return "std::exception"; }
 };
 
@@ -26,14 +38,24 @@ public:
   constexpr bad_alloc() noexcept {}
   constexpr bad_alloc(const bad_alloc&) noexcept = default;
   constexpr bad_alloc& operator=(const bad_alloc&) noexcept = default;
+#if YCXX_HAS_RTTI
   constexpr ~bad_alloc() override {}
+#else
+  ~bad_alloc() override; // see the header comment of exception_base.hpp
+#endif
   constexpr const char* what() const noexcept override { return "std::bad_alloc"; }
 };
 
 class bad_array_new_length : public bad_alloc {
 public:
   constexpr bad_array_new_length() noexcept {}
+  constexpr bad_array_new_length(const bad_array_new_length&) noexcept = default;
+  constexpr bad_array_new_length& operator=(const bad_array_new_length&) noexcept = default;
+#if YCXX_HAS_RTTI
   constexpr ~bad_array_new_length() override {}
+#else
+  ~bad_array_new_length() override; // see the header comment of exception_base.hpp
+#endif
   constexpr const char* what() const noexcept override { return "std::bad_array_new_length"; }
 };
 

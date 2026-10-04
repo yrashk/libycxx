@@ -16,8 +16,10 @@ enum class align_val_t : size_t {};
 struct nothrow_t {
   explicit nothrow_t() = default;
 };
-// An inline constexpr object instead of `extern const`: usable without any runtime library.
-inline constexpr nothrow_t nothrow{};
+// [new.syn]: declared, not defined. The definition comes from the ABI runtime (libsupc++), as
+// with the rest of the language-support library. An inline definition here clashed with it at
+// link time ("multiple definition of std::nothrow" on GCC).
+extern const nothrow_t nothrow;
 
 using new_handler = void (*)();
 new_handler get_new_handler() noexcept;

@@ -112,10 +112,10 @@ template <class Make>
 // whose message storage lives in the hosted runtime, go through raise() and throw_std. The
 // throw_bad_* helpers for other header-defined classes live next to those classes.
 [[noreturn]] [[gnu::cold]] constexpr void throw_bad_alloc() {
-  raise_with(ycxx_error_bad_alloc, "std::bad_alloc", [] { return std::bad_alloc(); });
+  ::ycxx::detail::raise_with(ycxx_error_bad_alloc, "std::bad_alloc", [] { return std::bad_alloc(); });
 }
 [[noreturn]] [[gnu::cold]] constexpr void throw_bad_array_new_length() {
-  raise_with(ycxx_error_bad_array_new_length, "std::bad_array_new_length", [] { return std::bad_array_new_length(); });
+  ::ycxx::detail::raise_with(ycxx_error_bad_array_new_length, "std::bad_array_new_length", [] { return std::bad_array_new_length(); });
 }
 
 } // namespace ycxx::detail

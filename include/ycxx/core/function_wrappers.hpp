@@ -50,7 +50,7 @@ class function_ref;
 
 namespace ycxx::detail {
 [[noreturn]] [[gnu::cold]] inline void throw_bad_function_call() {
-  raise_with(ycxx_error_bad_function_call, "std::bad_function_call", [] { return std::bad_function_call(); });
+  ::ycxx::detail::raise_with(ycxx_error_bad_function_call, "std::bad_function_call", [] { return std::bad_function_call(); });
 }
 } // namespace ycxx::detail
 
@@ -113,6 +113,7 @@ template <class A>
 using param_t = std::conditional_t<std::is_scalar_v<A>, A, A&&>;
 
 inline constexpr std::size_t small_size = 3 * sizeof(void*);
+// fn_base's move assignment relies on no wrapper fitting in the buffer.
 union storage {
   void* p;
   alignas(void*) unsigned char buf[small_size];
@@ -198,7 +199,7 @@ inline constexpr ops ops_for = {relocate_fn<VT>(), destroy_fn<VT>(), copy_fn<VT,
   if (op->relocate)
     op->relocate(d, s);
   else
-    d = s;
+    __builtin_memcpy(&d, &s, sizeof(storage)); // implicitly creates the trivially copyable target
 }
 
 template <class VT, class Inv, bool N, class R, class... A>
@@ -381,6 +382,8 @@ class fn_base {
   // Another owning wrapper with the same R and argument passing ([func.wrap.general]/3: avoid double wrapping).
   // Its target, invoked through its own thunk, is what invoking it would do; is-callable-from
   // has already checked that our qualifiers may call it.
+  static_assert(sizeof(storage) + 2 * sizeof(void*) > ::ycxx::detail::fw::small_size);
+
   // The thunks need only agree on how arguments travel: T and T&& both pass a class-type
   // argument as T&&, and [func.wrap.general]/2 lets the inner invocation alias it.
   template <class... A2>
@@ -404,9 +407,13 @@ class fn_base {
       return ::ycxx::detail::fw::is_small<VT> && std::is_nothrow_constructible_v<VT, Args...>;
   }
 
+  // Not for std::function: its target_type() and target() expose the target's type, which must
+  // be the source wrapper ([func.wrap.func.con]/13, [func.wrap.func.targ]).
   template <class Src>
   static consteval bool adoptable() {
-    if constexpr (requires(Src* p) { fn_base::self_of(p); })
+    if constexpr (K == kind::function)
+      return false;
+    else if constexpr (requires(Src* p) { fn_base::self_of(p); })
       return std::is_same_v<decltype(fn_base::self_of(static_cast<Src*>(nullptr))), Src*>;
     else
       return false;
@@ -442,7 +449,7 @@ class fn_base {
   }
 
   void swap_impl(fn_base& o) noexcept {
-    if (this == &o)
+    if (this == __builtin_addressof(o))
       return;
     storage tmp;
     if (o.ops_)
@@ -499,9 +506,9 @@ public:
     requires(!std::is_same_v<std::remove_cvref_t<F>, Self>) && (!std::is_same_v<std::remove_cvref_t<F>, fn_base>) &&
             (!::ycxx::detail::fw::is_in_place_type<std::remove_cvref_t<F>>) && (callable_from<VT>())
   fn_base(F&& f) noexcept(ctor_noexcept<VT, F>()) {
-    static_assert(std::is_constructible_v<VT, F>, "std function wrapper: Mandates: is_constructible_v<VT, F>");
+    static_assert(std::is_constructible_v<VT, F>, "std::function/move_only_function/copyable_function: Mandates: is_constructible_v<VT, F>");
     if constexpr (copyable)
-      static_assert(std::is_copy_constructible_v<VT>, "std function wrapper: Mandates: VT is copy constructible");
+      static_assert(std::is_copy_constructible_v<VT>, "std::function/move_only_function/copyable_function: Mandates: VT is copy constructible");
     if constexpr (std::is_constructible_v<VT, F> && (!copyable || std::is_copy_constructible_v<VT>)) {
       if constexpr (::ycxx::detail::fw::is_nullable_pointer<VT>) {
         if (f == nullptr)
@@ -531,7 +538,7 @@ public:
           return;
         }
       } else if constexpr (::ycxx::detail::fw::empty_carries<K, VT>) {
-        if (!f)
+        if (!static_cast<bool>(f))
           return;
       }
       emplace<VT>(static_cast<F&&>(f));
@@ -541,9 +548,9 @@ public:
   template <class T, class... Args, class VT = std::decay_t<T>>
     requires(K != kind::function) && std::is_constructible_v<VT, Args...> && (callable_from<VT>())
   explicit fn_base(std::in_place_type_t<T>, Args&&... args) noexcept(ctor_noexcept<VT, Args...>()) {
-    static_assert(std::is_same_v<VT, T>, "std function wrapper: Mandates: VT is the same type as T");
+    static_assert(std::is_same_v<VT, T>, "std::function/move_only_function/copyable_function: Mandates: VT is the same type as T");
     if constexpr (copyable)
-      static_assert(std::is_copy_constructible_v<VT>, "std function wrapper: Mandates: VT is copy constructible");
+      static_assert(std::is_copy_constructible_v<VT>, "std::function/move_only_function/copyable_function: Mandates: VT is copy constructible");
     if constexpr (std::is_same_v<VT, T> && (!copyable || std::is_copy_constructible_v<VT>))
       emplace<VT>(static_cast<Args&&>(args)...);
   }
@@ -551,17 +558,29 @@ public:
     requires(K != kind::function) && std::is_constructible_v<VT, std::initializer_list<U>&, Args...> &&
             (callable_from<VT>())
   explicit fn_base(std::in_place_type_t<T>, std::initializer_list<U> il, Args&&... args) {
-    static_assert(std::is_same_v<VT, T>, "std function wrapper: Mandates: VT is the same type as T");
+    static_assert(std::is_same_v<VT, T>, "std::function/move_only_function/copyable_function: Mandates: VT is the same type as T");
     if constexpr (copyable)
-      static_assert(std::is_copy_constructible_v<VT>, "std function wrapper: Mandates: VT is copy constructible");
+      static_assert(std::is_copy_constructible_v<VT>, "std::function/move_only_function/copyable_function: Mandates: VT is copy constructible");
     if constexpr (std::is_same_v<VT, T> && (!copyable || std::is_copy_constructible_v<VT>))
       emplace<VT>(il, static_cast<Args&&>(args)...);
   }
 
+  // "Equivalent to: W(std::move(f)).swap(*this)": the old target is destroyed only after the
+  // source's has been taken, since the source may live inside it. The old target is first moved
+  // aside; one that can contain a wrapper (at least 40 bytes) is never in the 24-byte buffer, so
+  // that move leaves it, and the source inside it, where they are. The source's target is
+  // relocated once.
   fn_base& operator=(fn_base&& o) noexcept {
-    if (this != &o) {
-      reset();
+    if (this != __builtin_addressof(o)) {
+      storage old;
+      const ops* old_ops = ops_;
+      if (old_ops)
+        ::ycxx::detail::fw::relocate(old_ops, old, s_);
+      ops_ = nullptr;
+      call_ = empty_thunk();
       take(o);
+      if (old_ops && old_ops->destroy)
+        old_ops->destroy(old);
     }
     return *this;
   }
@@ -700,10 +719,8 @@ public:
     if constexpr (::ycxx::detail::fw::fref_from_spec<C, N, R(A...), std::remove_cv_t<T>>) {
       be_ = f.be_;
       thunk_ = f.thunk_;
-    } else if constexpr (std::is_function_v<T>) {
-      be_.fn = reinterpret_cast<void (*)()>(&f);
-      thunk_ = &fn_thunk<T>;
     } else {
+      // (A function lvalue picks the F* constructor by partial ordering.)
       be_.obj = __builtin_addressof(f);
       thunk_ = &obj_thunk<cv<T>>;
     }

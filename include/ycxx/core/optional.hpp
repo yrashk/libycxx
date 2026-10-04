@@ -39,7 +39,7 @@ public:
 
 namespace ycxx::detail {
 [[noreturn]] [[gnu::cold]] constexpr void throw_bad_optional_access() {
-  raise_with(ycxx_error_bad_optional_access, "std::bad_optional_access", [] { return std::bad_optional_access(); });
+  ::ycxx::detail::raise_with(ycxx_error_bad_optional_access, "std::bad_optional_access", [] { return std::bad_optional_access(); });
 }
 } // namespace ycxx::detail
 

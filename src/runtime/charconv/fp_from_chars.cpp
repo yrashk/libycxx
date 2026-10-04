@@ -189,12 +189,13 @@ rounded decimal_exact(const char* d, int n, long long e10) {
   return ycxx::detail::fpconv::round_to<K>(q, -static_cast<long long>(s) - k, !a.is_zero());
 }
 
+// A value that overflows, or is nonzero and rounds to zero, is outside the range of the type
+// ([charconv.from.chars]/1): result_out_of_range, value unmodified.
 template <kind K>
-std::from_chars_result finish(const char* first, const char* end, const rounded& r, bool negative, fp_raw& out) {
+std::from_chars_result finish(const char* end, const rounded& r, bool negative, fp_raw& out) {
   if (r.status != round_status::ok)
     return {end, std::errc::result_out_of_range};
   out = ycxx::detail::fpconv::encode<K>(negative, r.m, r.biased);
-  (void)first;
   return {end, std::errc{}};
 }
 
@@ -272,14 +273,14 @@ std::from_chars_result parse_decimal(const char* first, const char* p, const cha
     rounded r;
     if (q >= pow10_min && q <= pow10_max &&
         ycxx::detail::fpconv::eisel_lemire<K>(w, static_cast<int>(q), truncated, r))
-      return ycxx::detail::fpconv::finish<K>(first, p, r, negative, out);
+      return ycxx::detail::fpconv::finish<K>(p, r, negative, out);
   }
   if (sticky) {
     d[n++] = '1';
     --e10;
   }
   rounded r = ycxx::detail::fpconv::decimal_exact<K>(d, n, e10);
-  return ycxx::detail::fpconv::finish<K>(first, p, r, negative, out);
+  return ycxx::detail::fpconv::finish<K>(p, r, negative, out);
 }
 
 template <kind K>
@@ -328,7 +329,7 @@ std::from_chars_result parse_hex(const char* first, const char* p, const char* l
     return {p, std::errc{}};
   }
   rounded r = ycxx::detail::fpconv::round_to<K>(q, e2, sticky);
-  return ycxx::detail::fpconv::finish<K>(first, p, r, negative, out);
+  return ycxx::detail::fpconv::finish<K>(p, r, negative, out);
 }
 
 template <kind K>

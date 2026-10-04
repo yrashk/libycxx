@@ -78,7 +78,9 @@ inline constexpr limits limits_of = [] {
   long long bits_digits = (l.max_digits + 1) * 33220LL / 10000 + 8;
   long long bits_int = (l.int_digits + 2) * 33220LL / 10000 + f.p + 8; // m * 10^E or the integer part
   long long bits_frac = (1 - f.qmin()) + 40 + f.p;                     // fractions of the exact expansion
-  long long bits_scaled = f.p + 8 + static_cast<long long>(-low10 + 2) * 33220 / 10000; // m * 10^-k
+  // m * 10^-k in the shortest-digit loop, whose bounds grow by a factor 10 per digit (at most
+  // p * log10(2) + 2 digits).
+  long long bits_scaled = 2 * f.p + 24 + static_cast<long long>(-low10 + 2) * 33220 / 10000;
   auto max = [](long long a, long long b) { return a > b ? a : b; };
   l.limbs_in = ceil_div(max(max(bits_parse, bits_digits), bits_int), 32) + 4;
   l.limbs_out = ceil_div(max(max(bits_int, bits_frac), bits_scaled), 32) + 4;

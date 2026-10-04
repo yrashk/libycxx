@@ -292,8 +292,8 @@ std::from_chars_result from_chars_float(const char* first, const char* last, T& 
 }
 
 // The shortest round-trip form, exactly as std::to_chars(first, last, value) writes it (plain
-// overload, [charconv.to.chars]/7). For std::to_string and <format>, which need not include
-// <charconv>'s overload set.
+// overload, [charconv.to.chars]/7), under an internal name for std::to_string and <format>: any
+// floating-point type, without overload resolution against the integer overloads.
 template <class T>
   requires is_floating_v<T>
 std::to_chars_result to_chars_shortest(char* first, char* last, T value) noexcept {
@@ -302,6 +302,8 @@ std::to_chars_result to_chars_shortest(char* first, char* last, T value) noexcep
 
 template <class T>
 concept charconv_extended_float = is_any_of<T, float16, float32, float64, float128, bfloat16>;
+template <class T>
+concept charconv_int128 = is_any_of<T, int128, uint128>;
 
 } // namespace ycxx::detail
 
@@ -343,8 +345,7 @@ constexpr to_chars_result to_chars(char* first, char* last, unsigned long long v
 }
 // __int128 (extension; an integer type where the compiler has it). A template, so that the
 // declaration stays well-formed where the type does not exist.
-template <class T>
-  requires(__is_same(T, ycxx::detail::int128) || __is_same(T, ycxx::detail::uint128))
+template <ycxx::detail::charconv_int128 T>
 constexpr to_chars_result to_chars(char* first, char* last, T value, int base = 10) {
   return ycxx::detail::to_chars_integer(first, last, value, base);
 }
@@ -426,8 +427,7 @@ constexpr from_chars_result from_chars(const char* first, const char* last, unsi
                                        int base = 10) {
   return ycxx::detail::from_chars_integer(first, last, value, base);
 }
-template <class T>
-  requires(__is_same(T, ycxx::detail::int128) || __is_same(T, ycxx::detail::uint128))
+template <ycxx::detail::charconv_int128 T>
 constexpr from_chars_result from_chars(const char* first, const char* last, T& value, int base = 10) {
   return ycxx::detail::from_chars_integer(first, last, value, base);
 }

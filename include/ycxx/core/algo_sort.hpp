@@ -4,8 +4,8 @@
 //
 // sort and nth_element are introsort / introselect (median-of-three or ninther pivots, Hoare
 // partitioning, heapsort when the recursion gets too deep). stable_sort, stable_partition and
-// inplace_merge use a temporary buffer from ::operator new(nothrow) when one can be had (never
-// during constant evaluation) and fall back to in-place rotation-based algorithms otherwise.
+// inplace_merge use a temporary buffer (operator new(nothrow) at run time, std::allocator in
+// constant evaluation) and fall back to in-place rotation-based algorithms when none is had.
 #pragma once
 
 #include <ycxx/core/algo_base.hpp>
@@ -15,8 +15,9 @@
 namespace ycxx::detail {
 
 // ---- temporary buffer --------------------------------------------------------------------
-// Uninitialized storage for up to `capacity` objects of type T. Requests that cannot be met
-// are halved until they can; capacity 0 means no buffer.
+// Uninitialized storage for up to `capacity` objects of type T. At run time it comes from
+// operator new(nothrow); requests that cannot be met are halved until they can, and capacity 0
+// means no buffer.
 template <class T>
 class temp_buffer {
   T* data_ = nullptr;
@@ -27,7 +28,12 @@ class temp_buffer {
 public:
   constexpr explicit temp_buffer(std::ptrdiff_t want) noexcept {
     if consteval {
-      return;
+      // Constant evaluation: std::allocator is the only allocation available, and it cannot
+      // fail short of the evaluation itself failing.
+      if (want > 0) {
+        data_ = std::allocator<T>().allocate(static_cast<std::size_t>(want));
+        capacity_ = want;
+      }
     } else {
       constexpr std::ptrdiff_t max_count = static_cast<std::ptrdiff_t>(~std::size_t(0) / 2 / sizeof(T));
       if (want > max_count)
@@ -49,7 +55,10 @@ public:
   temp_buffer(const temp_buffer&) = delete;
   temp_buffer& operator=(const temp_buffer&) = delete;
   constexpr ~temp_buffer() {
-    if !consteval {
+    if consteval {
+      if (data_)
+        std::allocator<T>().deallocate(data_, static_cast<std::size_t>(capacity_));
+    } else {
       if (data_) {
         if constexpr (overaligned)
           ::operator delete(data_, std::align_val_t(alignof(T)));
@@ -77,7 +86,7 @@ struct buffer_objects {
 template <class Ops, class I, class T>
 constexpr void move_into_buffer(I first, I last, buffer_objects<T>& objs) {
   for (; first != last; ++first) {
-    ::new (static_cast<void*>(objs.p + objs.n)) T(Ops::iter_move(first));
+    std::construct_at(objs.p + objs.n, Ops::iter_move(first));
     ++objs.n;
   }
 }
@@ -421,14 +430,14 @@ constexpr I stable_partition_adaptive(I first, I last, std::iter_difference_t<I>
     // The false elements go to the buffer, the true ones are packed at the front.
     buffer_objects<T> objs{buf};
     I out = first;
-    ::new (static_cast<void*>(buf)) T(Ops::iter_move(first));
+    std::construct_at(buf, Ops::iter_move(first));
     objs.n = 1;
     for (I i = ::ycxx::detail::iter_next(first, 1); i != last; ++i) {
       if (pred(*i)) {
         *out = Ops::iter_move(i);
         ++out;
       } else {
-        ::new (static_cast<void*>(buf + objs.n)) T(Ops::iter_move(i));
+        std::construct_at(buf + objs.n, Ops::iter_move(i));
         ++objs.n;
       }
     }

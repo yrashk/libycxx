@@ -153,7 +153,7 @@ constexpr I shift_left_impl(I first, S last, std::iter_difference_t<I> n) {
       return first;
     mid += n;
   } else {
-    for (; n > 0; --n, ++mid)
+    for (; n > 0; --n, (void)++mid)
       if (mid == last)
         return first;
   }
@@ -177,7 +177,7 @@ constexpr std::pair<I, I> shift_right_impl(I first, S last, std::iter_difference
     // Forward iterators: [first, result) is a ring of elements waiting to be placed; each
     // position from result on swaps its element with the oldest waiting one.
     I result = first;
-    for (std::iter_difference_t<I> k = n; k > 0; --k, ++result)
+    for (std::iter_difference_t<I> k = n; k > 0; --k, (void)++result)
       if (result == last)
         return {result, result};
     I slot = first;
@@ -701,9 +701,15 @@ struct unique_fn {
 };
 struct unique_copy_fn {
   template <class I, class O>
-  static constexpr int kind = std::forward_iterator<I>                                                          ? 0
-                              : (std::input_iterator<O> && std::same_as<std::iter_value_t<I>, std::iter_value_t<O>>) ? 1
-                                                                                                                  : 2;
+  static consteval int kind() {
+    if constexpr (std::forward_iterator<I>)
+      return 0;
+    else if constexpr (requires { requires std::input_iterator<O>; } &&
+                       requires { requires std::same_as<std::iter_value_t<I>, std::iter_value_t<O>>; })
+      return 1;
+    else
+      return 2;
+  }
   template <std::input_iterator I, std::sentinel_for<I> S, std::weakly_incrementable O, class Proj = std::identity,
             std::indirect_equivalence_relation<std::projected<I, Proj>> C = std::ranges::equal_to>
     requires std::indirectly_copyable<I, O> &&
@@ -711,7 +717,7 @@ struct unique_copy_fn {
               std::indirectly_copyable_storable<I, O>)
   constexpr std::ranges::unique_copy_result<I, O> operator()(I first, S last, O result, C comp = {},
                                                             Proj proj = {}) const {
-    auto r = ::ycxx::detail::unique_copy_impl<kind<I, O>>(std::move(first), std::move(last), std::move(result),
+    auto r = ::ycxx::detail::unique_copy_impl<kind<I, O>()>(std::move(first), std::move(last), std::move(result),
                                                           ::ycxx::detail::make_comp(comp, proj));
     return {std::move(r.first), std::move(r.second)};
   }

@@ -392,10 +392,9 @@ under the same name. Otherwise it gets one alias template in `config.hpp`.
   (D.23), without `[[deprecated]]` (as for the Annex D codecvt facets).
 - **file_time_type** is `chrono::time_point<chrono::file_clock>`, nanoseconds in a `long long`
   since the Unix epoch (range 1677-2262); a time stamp outside it is `errc::value_too_large`.
-  Until `<chrono>` is merged, `ycxx/hosted/file_clock.hpp` defines the minimal `duration`,
-  `time_point` and `file_clock` with the same names and layout as the concurrent
-  `ycxx/core/chrono_base.hpp`/`ycxx/hosted/chrono_clocks.hpp`; on merge its body becomes an
-  include of `chrono_clocks.hpp`.
+  `ycxx/hosted/file_clock.hpp` (what `<filesystem>` includes) is `ycxx/hosted/chrono_clocks.hpp`;
+  file_clock has `to_sys`/`from_sys` ([time.clock.file.members]), so `clock_cast` reaches every
+  clock through system_clock.
 - **directory_entry caching.** `refresh()` caches the results of `lstat` (and `stat` for a
   symbolic link) including their errors, so the observers return what the operations would.
   Directory iteration caches only the file type from `d_type` (no `refresh`, [fs.class.directory.
@@ -563,3 +562,59 @@ under the same name. Otherwise it gets one alias template in `config.hpp`.
   `is_fundamental` and `is_scalar` need no `#if`. `is_structural` uses the type-taking
   `__builtin_is_structural` (GCC 16, also without `-freflection`), behind
   `YCXX_HAS_IS_STRUCTURAL`.
+## 14. `<chrono>`
+
+- **Layering.** The time arithmetic (`ycxx/core/chrono_base.hpp`) and the civil calendar,
+  `hh_mm_ss` and the 12/24-hour functions (`ycxx/core/chrono_cal.hpp`) are core and constexpr.
+  The clocks, the leap-second clocks, `clock_cast` and the time zones (`ycxx/hosted/chrono_tz.hpp`),
+  the formatters and stream inserters (`chrono_io.hpp`) and the parsers (`chrono_parse.hpp`) are
+  hosted. Days and dates convert with the era-based algorithm (March-based years, 400-year eras).
+  The months overloads of the calendar arithmetic are `template <class = void>` functions, so an
+  argument convertible to both months and years picks the years overload ([time.cal.ym.members]).
+  Every duration alias counts in `long long`, the calendar ones (`days` to `years`) included, so
+  `sys_days + seconds` is exact for every representable date; calendar arithmetic with counts at
+  the ends of the range wraps instead of overflowing.
+- **Time zone database: the system's compiled zoneinfo**, read by the hosted runtime
+  (`src/hosted/tzdb.cpp`, POSIX file calls like `filesystem.cpp`) from `$TZDIR`, else
+  `/usr/share/zoneinfo`. Names come from `tzdata.zi` (`Z` and `L` lines; without it, every TZif file
+  of the tree is a zone and every symbolic link to one a link); the version from `+VERSION`, else
+  `tzdata.zi`'s `# version` line. A `time_zone` holds its name and an opaque pointer; its TZif file
+  (versions 1-4, the 64-bit block when present) is read on the first query under a `once_flag`, and
+  times after the last transition come from the file's POSIX TZ footer (`Mm.w.d`, `Jn`, `n`, times
+  beyond 24 h and negative). Consecutive transitions to the same offset, save and abbreviation are
+  merged, so a `sys_info` spans the whole period its values hold; before the first transition
+  `begin` is `sys_seconds::min()`, without a later one `end` is `sys_seconds::max()`. TZif records
+  only an is-DST flag, so `save` is the offset minus the nearest standard-time offset (60 min when
+  that is zero). `local_info` examines the periods within 30 hours of the local time.
+  `current_zone()` is `$TZ` (a zone or link name, optionally `:`-prefixed or a path into the
+  directory), else the target of the `/etc/localtime` symbolic link below `zoneinfo/`, else
+  `/etc/timezone`, else UTC. The "remote" database is the directory as it is now:
+  `remote_version()` rereads the version, `reload_tzdb()` pushes a newly loaded database when it
+  differs (under a lock; `front()` and iteration use acquire loads). The list and its databases
+  are never destroyed.
+- **Leap seconds**: the `leapseconds` file, else `leap-seconds.list`, else the 27 IERS insertions of
+  1972-2016 built in. `leap_second::date()` is the first second after the insertion. `utc_clock`
+  reads them from `get_tzdb()`; during a leap second `to_sys` returns the last tick before it (for a
+  floating-point duration, the insertion's date).
+- **Errors are thrown in the header** (`raise_with`): unknown zone names, unreadable zone data,
+  `nonexistent_local_time`/`ambiguous_local_time`. The runtime's entry points return null/false.
+- **Formatting.** Each value becomes one set of fields (date, weekday, day of the year, time of
+  day with its fractional digits, zone abbreviation and offset); the chrono-specs run over them into
+  a local buffer that is padded as a whole (default alignment left). A specifier for information
+  the type lacks is rejected by `parse` (a compile-time error for a checked format string), a
+  value-dependent one (`%a` of an invalid weekday, `%b` of an invalid month, `%Z` of a
+  `local_time_format` without abbreviation) by `format`. Without `L` the "C" locale's names are
+  built in; with it the locale-dependent conversions (`%a %A %b %B %c %p %r %x %X` and the E/O
+  forms) go through the formatting locale's `time_put` (runtime: `src/hosted/chrono.cpp`) and
+  `%S` takes its decimal point. `%c`, `%r` and `%X` show whole seconds, `%S` and `%T` the fraction.
+  Without chrono-specs a value is written as its stream inserter would; a floating-point duration
+  then uses `%g` with precision 6 (or the format precision). The micro suffix is "µs" (U+00B5) when
+  the literal encoding is Unicode. The stream inserters write the same text (no `<sstream>`
+  dependency: the duration inserter formats the count through a private stream on a string
+  buffer). `time_point`'s default constructor is `noexcept` (a strengthening).
+- **Parsing** reads the stream buffer directly after an unformatted-input sentry. Names (`%a %b %p`)
+  and `%c %x %X %r` are the "C" locale's; white space is the stream's `ctype`; `%S`'s decimal point
+  is `.` or the stream locale's. A width counts digits only (a sign does not count). The fields
+  must agree (a weekday with a date, `%H` with `%I`/`%p`); a date comes from y/m/d, y + `%j`, an ISO
+  week date or y + `%U`/`%W` + weekday. A duration parsed with a finer field than it can hold is
+  truncated (`duration_cast`). For `utc_time`, a seconds field of 60 names the leap second.

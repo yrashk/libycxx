@@ -62,6 +62,7 @@ endif()
 add_library(ycxx STATIC
   ${YCXX_NEW_SOURCES}
   src/hosted/stdexcept.cpp
+  src/hosted/memory_resource.cpp
   src/hosted/string.cpp
   src/pal/posix/pal.c
 )

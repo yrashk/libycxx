@@ -1,14 +1,17 @@
 // libycxx core: declarations from <memory_resource> ([mem.res.syn]) that the containers'
-// pmr:: aliases name before <memory_resource> exists.
+// pmr:: aliases name without including the whole of <memory_resource>.
 //
-// polymorphic_allocator is declared without its default template argument (Tp = byte): the
-// definition in <memory_resource> must supply it, and a default argument may be given only once.
+// polymorphic_allocator's default template argument (Tp = byte) is given here and only here: a
+// default argument may be specified once, and every declaration, the definition in
+// ycxx/core/memory_resource.hpp included, comes after this one.
 #pragma once
+
+#include <ycxx/core/cstddef.hpp>
 
 namespace std::pmr {
 
 class memory_resource;
-template <class Tp>
+template <class Tp = byte>
 class polymorphic_allocator;
 
 } // namespace std::pmr

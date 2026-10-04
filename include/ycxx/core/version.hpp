@@ -84,6 +84,10 @@
 // <any>
 #define __cpp_lib_any 201606L
 
+// <memory_resource>
+#define __cpp_lib_memory_resource 201603L
+#define __cpp_lib_polymorphic_allocator 201902L
+
 // <string_view>, <string>
 #define __cpp_lib_string_view 202403L
 #define __cpp_lib_constexpr_string_view 201811L

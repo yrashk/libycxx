@@ -89,7 +89,7 @@ constexpr void chrono_set_days(chrono_fields<charT>& f, long long z) noexcept {
   f.day = c.d;
   f.weekday = ::ycxx::detail::weekday_from_days(z);
   f.weekday_ok = true;
-  f.yday = static_cast<int>(z - ::ycxx::detail::days_from_civil(c.y, 1, 1));
+  f.yday = static_cast<int>(::ycxx::detail::wrap_sub(z, ::ycxx::detail::days_from_civil(c.y, 1, 1)));
 }
 
 // y/m/d as given (not necessarily a valid date); the weekday only for a valid one.
@@ -126,9 +126,25 @@ constexpr void chrono_set_time(chrono_fields<charT>& f, const Dur& d) {
 // A time point's date and time of day.
 template <class charT, class Duration>
 constexpr void chrono_set_point(chrono_fields<charT>& f, const Duration& since_epoch) {
-  const std::chrono::days dp = std::chrono::floor<std::chrono::days>(since_epoch);
-  ::ycxx::detail::chrono_set_days(f, dp.count());
-  ::ycxx::detail::chrono_set_time(f, since_epoch - dp);
+  if constexpr (std::chrono::treat_as_floating_point_v<typename Duration::rep>) {
+    const std::chrono::days dp = std::chrono::floor<std::chrono::days>(since_epoch);
+    ::ycxx::detail::chrono_set_days(f, dp.count());
+    ::ycxx::detail::chrono_set_time(f, since_epoch - dp);
+  } else {
+    // Day and time of day by a floored division of the count, which cannot overflow even for
+    // time_point::min() (floor<days> would compare in the finer type).
+    using cd = std::common_type_t<Duration, std::chrono::days>;
+    const cd c(since_epoch);
+    const auto ticks = cd(std::chrono::days(1)).count();
+    long long q = static_cast<long long>(c.count() / ticks);
+    auto r = c.count() % ticks;
+    if (r < 0) {
+      --q;
+      r += ticks;
+    }
+    ::ycxx::detail::chrono_set_days(f, q);
+    ::ycxx::detail::chrono_set_time(f, cd(r));
+  }
 }
 
 // [time.duration.io]/1: the units suffix.

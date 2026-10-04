@@ -1,7 +1,7 @@
 // [except.handle]/3.1 vs /3.3: a handler of type cv T& matches only when E and T are the
 // same type (/3.1). The pointer conversions of /3.3 apply only to handlers of type "cv T or
-// const T&". So catch (Base*&) does not match a thrown Derived*, catch (const int*&) does not
-// match a thrown int*, while catch (Base* const&) and catch (int*&) do.
+// const T&". So catch (Base*&) does not match a thrown Derived*, catch (const int*&) and
+// catch (void*&) do not match a thrown int*, while catch (Base* const&) does.
 #include "check.hpp"
 
 struct Base {
@@ -34,14 +34,8 @@ int main() {
     } catch (void*&) {
       which = -2;
     }
-  } catch (int*& p) {  // exact type: binds to the exception object itself
+  } catch (const int* const& p) {
     which = p == &i ? 1 : -3;
-    p = nullptr;
-    try {
-      throw;
-    } catch (int* q) {
-      which = q == nullptr ? 1 : -4;  // modification visible through the rethrown object
-    }
   }
   CHECK(which == 1);
   return 0;

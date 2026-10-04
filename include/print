@@ -1,0 +1,10 @@
+// -*- C++ -*-  libycxx: <print>   [hosted]
+//
+// The functions are defined in the hosted runtime (src/hosted/print.cpp); see
+// ycxx/hosted/print.hpp. <print> includes <format>, whose formatters print uses.
+#pragma once
+
+#include <ycxx/config.hpp>
+#include <ycxx/core/version.hpp>
+#include <format>
+#include <ycxx/hosted/print.hpp>

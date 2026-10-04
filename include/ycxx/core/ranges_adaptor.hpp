@@ -35,15 +35,13 @@ constexpr T& as_lvalue(T&& t) noexcept {
   return static_cast<T&>(t);
 }
 
-// The type is derived from range_adaptor_closure of itself (an unambiguous base, so a cast works)
-// and is not a range.
+// The type is publicly derived from range_adaptor_closure of itself, from no other specialization
+// (deduction from a pointer then finds exactly one base), and is not a range.
 template <class T>
 concept range_adaptor_closure_object =
     !std::ranges::range<std::remove_cvref_t<T>> &&
-    requires(std::remove_cvref_t<T>& t) {
-      static_cast<std::ranges::range_adaptor_closure<std::remove_cvref_t<T>>&>(t);
-    } &&
-    std::derived_from<std::remove_cvref_t<T>, std::ranges::range_adaptor_closure<std::remove_cvref_t<T>>>;
+    std::derived_from<std::remove_cvref_t<T>, std::ranges::range_adaptor_closure<std::remove_cvref_t<T>>> &&
+    requires(std::remove_cvref_t<T>* p) { []<class U>(const std::ranges::range_adaptor_closure<U>*) {}(p); };
 
 // iterator_category of the views' iterators: iterator_traits<I>::iterator_category.
 template <class I>

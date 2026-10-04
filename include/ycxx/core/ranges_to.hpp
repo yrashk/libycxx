@@ -44,6 +44,11 @@ constexpr auto container_append(Container& c) {
   return container_appender<Container>{__builtin_addressof(c)};
 }
 
+// [range.utility.conv.to]/2.1: C is not an input range, or R's elements convert to its values.
+template <class C, class R>
+concept to_direct = !std::ranges::input_range<C> ||
+                    std::convertible_to<std::ranges::range_reference_t<R>, std::ranges::range_value_t<C>>;
+
 // iterator_traits<iterator_t<R>>::iterator_category is valid and models
 // derived_from<input_iterator_tag>.
 template <class R>
@@ -91,7 +96,7 @@ template <class C, input_range R, class... Args>
 constexpr C to(R&& r, Args&&... args) {
   if constexpr (!(is_class_v<C> || is_union_v<C>) || is_const_v<C> || is_volatile_v<C>) {
     static_assert(false, "ranges::to: C must be a cv-unqualified class type");
-  } else if constexpr (!input_range<C> || convertible_to<range_reference_t<R>, range_value_t<C>>) {
+  } else if constexpr (ycxx::detail::to_direct<C, R>) {
     if constexpr (constructible_from<C, R, Args...>) {
       return C(static_cast<R&&>(r), static_cast<Args&&>(args)...);
     } else if constexpr (constructible_from<C, from_range_t, R, Args...>) {

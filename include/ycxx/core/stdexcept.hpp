@@ -2,8 +2,7 @@
 //
 // Each class stores its message in one pointer to an immutable, reference-counted heap block,
 // so copying never throws ([exception]/2). Member definitions live in the hosted runtime
-// (src/hosted/stdexcept.cpp). The constructors taking `const string&` are defined inline by
-// <string> -- any TU that can call them has a std::string and so has included <string>.
+// (src/hosted/stdexcept.cpp), including the constructors taking `const string&`.
 #pragma once
 
 #include <ycxx/core/cstddef.hpp>

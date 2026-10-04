@@ -558,6 +558,17 @@ char32_t load_state(const std::mbstate_t& st) noexcept {
 }
 void store_state(std::mbstate_t& st, char32_t v) noexcept { __builtin_memcpy(st.__state, &v, sizeof v); }
 
+// do_unshift of the UTF-16 facets. A high surrogate taken by utf16_out and still waiting for its
+// low half cannot be terminated: alone it is not a character UTF-8 can encode (Table 94: error,
+// rather than noconv, which would drop it silently). A low surrogate pending from utf16_in
+// belongs to the other direction and needs no termination.
+template <class E>
+result utf16_unshift(const std::mbstate_t& state, E* to, E*& to_next) noexcept {
+  to_next = to;
+  const char32_t pending = load_state(state);
+  return pending >= 0xD800 && pending <= 0xDBFF ? std::codecvt_base::error : std::codecvt_base::noconv;
+}
+
 // Decodes one UTF-8 sequence at [p, end): returns its length (0: incomplete, -1: invalid).
 int decode_utf8(const unsigned char* p, const unsigned char* end, char32_t& cp) noexcept {
   const unsigned char b = p[0];
@@ -681,18 +692,23 @@ template <class E>
 result utf16_out(std::mbstate_t& state, const char16_t* from, const char16_t* from_end, const char16_t*& from_next,
                  E* to, E* to_end, E*& to_next) {
   char32_t high = load_state(state);
+  // where the pending high surrogate was taken: the start when it came in through the state
+  const char16_t* high_at = from;
   for (; from != from_end; ++from) {
     const char16_t u = *from;
     char32_t cp;
     if (high != 0) {
       if (u < 0xDC00 || u > 0xDFFF) {
-        from_next = from;
+        // the unpaired high surrogate is the character that cannot be converted
+        // ([locale.codecvt.virtuals]/3: from_next is one beyond the last converted element)
+        from_next = high_at;
         to_next = to;
         return std::codecvt_base::error;
       }
       cp = 0x10000 + ((high - 0xD800) << 10) + (u - 0xDC00);
     } else if (u >= 0xD800 && u <= 0xDBFF) {
       high = u;
+      high_at = from;
       store_state(state, high);
       continue;
     } else if (u >= 0xDC00 && u <= 0xDFFF) {
@@ -886,10 +902,9 @@ codecvt_base::result codecvt<char16_t, char8_t, mbstate_t>::do_in(mbstate_t& sta
                                                                   char16_t*& to_next) const {
   return utf16_in(state, from, from_end, from_next, to, to_end, to_next);
 }
-codecvt_base::result codecvt<char16_t, char8_t, mbstate_t>::do_unshift(mbstate_t&, char8_t* to, char8_t*,
+codecvt_base::result codecvt<char16_t, char8_t, mbstate_t>::do_unshift(mbstate_t& state, char8_t* to, char8_t*,
                                                                        char8_t*& to_next) const {
-  to_next = to;
-  return noconv;
+  return utf16_unshift(state, to, to_next);
 }
 int codecvt<char16_t, char8_t, mbstate_t>::do_encoding() const noexcept { return 0; }
 bool codecvt<char16_t, char8_t, mbstate_t>::do_always_noconv() const noexcept { return false; }
@@ -944,10 +959,9 @@ codecvt_base::result codecvt<char16_t, char, mbstate_t>::do_in(mbstate_t& state,
                                                                   char16_t*& to_next) const {
   return utf16_in(state, from, from_end, from_next, to, to_end, to_next);
 }
-codecvt_base::result codecvt<char16_t, char, mbstate_t>::do_unshift(mbstate_t&, char* to, char*,
+codecvt_base::result codecvt<char16_t, char, mbstate_t>::do_unshift(mbstate_t& state, char* to, char*,
                                                                        char*& to_next) const {
-  to_next = to;
-  return noconv;
+  return utf16_unshift(state, to, to_next);
 }
 int codecvt<char16_t, char, mbstate_t>::do_encoding() const noexcept { return 0; }
 bool codecvt<char16_t, char, mbstate_t>::do_always_noconv() const noexcept { return false; }

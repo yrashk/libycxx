@@ -98,8 +98,16 @@ public:
     }
   }
   constexpr node_handle& operator=(node_handle&& nh) {
-    if (this == __builtin_addressof(nh))
+    if (this == __builtin_addressof(nh)) {
+      // [container.node.cons]/3 applied to the same object: the element is destroyed and the
+      // handle ends up empty.
+      if (ptr_) {
+        destroy_node();
+        std::destroy_at(__builtin_addressof(alloc_));
+        ptr_ = nullptr;
+      }
       return *this;
+    }
     if constexpr (!pocma && !always_equal)
       ::ycxx::detail::precondition(!ptr_ || !nh.ptr_ || alloc_ == nh.alloc_,
                                    "node handle move assignment: unequal allocators that do not propagate");

@@ -298,16 +298,6 @@ constexpr void rb_erase(rb_base* z, rb_base* header, rb_base*& first) noexcept {
     x->red = false;
 }
 
-// The key type of a tree of V: V for sets, the pair's first type without const for maps.
-template <class V, bool IsMap>
-struct rb_key {
-  using type = V;
-};
-template <class V>
-struct rb_key<V, true> {
-  using type = std::remove_const_t<typename V::first_type>;
-};
-
 template <class Compare>
 concept transparent_compare = requires { typename Compare::is_transparent; };
 
@@ -317,14 +307,13 @@ concept transparent_non_iter =
     transparent_compare<Compare> && !std::is_convertible_v<K&&, It> && !std::is_convertible_v<K&&, CIt>;
 
 // The key of the element a set (IsMap false) or map would build from args, when it can be read
-// from the arguments without constructing anything: a single key_type argument (set), a
-// key_type first argument of two (map), or a pair whose first member is a key_type (map).
-template <class Key, bool IsMap, class... Args>
-inline constexpr bool key_in_args = false;
+// from the arguments without constructing an element: a single key argument (set), a key first
+// argument of two (map), or a pair whose first member is a key (map). A key argument is a
+// key_type, or an arithmetic value when key_type is arithmetic (converted as the element's
+// construction converts it; such a temporary key is not observable).
 template <class Key, class A>
-inline constexpr bool key_in_args<Key, false, A> = std::is_same_v<std::remove_cvref_t<A>, Key>;
-template <class Key, class A, class B>
-inline constexpr bool key_in_args<Key, true, A, B> = std::is_same_v<std::remove_cvref_t<A>, Key>;
+inline constexpr bool key_like = std::is_same_v<std::remove_cvref_t<A>, Key> ||
+                                 (std::is_arithmetic_v<Key> && std::is_arithmetic_v<std::remove_cvref_t<A>>);
 template <class P>
 struct pair_first {
   using type = void;
@@ -333,16 +322,29 @@ template <class X, class Y>
 struct pair_first<std::pair<X, Y>> {
   using type = X;
 };
+template <class Key, bool IsMap, class... Args>
+inline constexpr bool key_in_args = false;
+template <class Key, class A>
+inline constexpr bool key_in_args<Key, false, A> = key_like<Key, A>;
+template <class Key, class A, class B>
+inline constexpr bool key_in_args<Key, true, A, B> = key_like<Key, A>;
 template <class Key, class P>
-inline constexpr bool key_in_args<Key, true, P> =
-    std::is_same_v<std::remove_cvref_t<typename pair_first<std::remove_cvref_t<P>>::type>, Key>;
+  requires(!std::is_void_v<typename pair_first<std::remove_cvref_t<P>>::type>)
+inline constexpr bool key_in_args<Key, true, P> = key_like<Key, typename pair_first<std::remove_cvref_t<P>>::type>;
 
-template <bool IsMap, class A, class... Rest>
-constexpr const auto& key_arg(const A& a, const Rest&...) noexcept {
-  if constexpr (IsMap && sizeof...(Rest) == 0)
-    return a.first;
-  else
+template <class Key, class A>
+constexpr decltype(auto) as_key(const A& a) noexcept {
+  if constexpr (std::is_same_v<A, Key>)
     return a;
+  else
+    return static_cast<Key>(a);
+}
+template <class Key, bool IsMap, class A, class... Rest>
+constexpr decltype(auto) key_arg(const A& a, const Rest&...) noexcept {
+  if constexpr (IsMap && sizeof...(Rest) == 0)
+    return ::ycxx::detail::as_key<Key>(a.first);
+  else
+    return ::ycxx::detail::as_key<Key>(a);
 }
 
 } // namespace ycxx::detail
@@ -358,7 +360,7 @@ class rb_iter {
 
   template <class, class>
   friend class rb_iter;
-  template <class, class, class, bool, bool>
+  template <class, class, class, class, bool, bool>
   friend class rb_tree;
 
 public:
@@ -399,12 +401,13 @@ public:
 };
 
 // The common part of map, multimap (IsMap: V is pair<const Key, T>), set and multiset (V is
-// Key; iterator is const_iterator). Multi: equivalent keys. The public members here are those
+// Key; iterator is const_iterator). Key is passed separately so that V is not instantiated:
+// map<K, T> may be named while T is incomplete. Multi: equivalent keys. The public members here are those
 // the four containers share with identical semantics; the containers add constructors,
 // assignment, insertion and their own members, built on the protected interface.
-template <class V, class Compare, class Allocator, bool IsMap, bool Multi>
+template <class Key, class V, class Compare, class Allocator, bool IsMap, bool Multi>
 class rb_tree {
-  template <class, class, class, bool, bool>
+  template <class, class, class, class, bool, bool>
   friend class rb_tree;
 
   using info = ::ycxx::detail::alloc_info<Allocator>;
@@ -417,7 +420,7 @@ protected:
   using node_traits = std::allocator_traits<node_alloc>;
 
 public:
-  using key_type = typename ::ycxx::detail::rb_key<V, IsMap>::type;
+  using key_type = Key;
   using value_type = V;
   using key_compare = Compare;
   using allocator_type = Allocator;
@@ -571,16 +574,12 @@ protected:
   // Unique keys: the position for key k, or the element with an equivalent key.
   template <class K>
   constexpr pos pos_unique(const K& k) {
-    pos p = pos_upper(k);
-    node_base* j = p.parent;
-    if (p.left) {
-      if (j == first_)
-        return p;
-      j = ::ycxx::detail::rb_prev(j);
-    }
-    if (lt(key(j), k))
-      return p;
-    return {nullptr, false, j};
+    // The lower bound: of several elements equivalent to a heterogeneous k, the first is found.
+    pos p = pos_lower(k);
+    node_base* lb = p.left ? p.parent : ::ycxx::detail::rb_next(p.parent);
+    if (lb != hdr_ && !lt(k, key(lb)))
+      return {nullptr, false, lb};
+    return p;
   }
   // Between the adjacent nodes a (or begin) and b (or end): the free child link.
   constexpr pos between(node_base* a, node_base* b) noexcept {
@@ -653,7 +652,7 @@ protected:
   template <class... Args>
   constexpr std::pair<node_base*, bool> emplace_unique(Args&&... args) {
     if constexpr (::ycxx::detail::key_in_args<key_type, IsMap, Args...>) {
-      pos p = pos_unique(::ycxx::detail::key_arg<IsMap>(args...));
+      pos p = pos_unique(::ycxx::detail::key_arg<key_type, IsMap>(args...));
       if (p.existing)
         return {p.existing, false};
       node* n = make_node(static_cast<Args&&>(args)...);
@@ -672,7 +671,7 @@ protected:
   template <class... Args>
   constexpr node_base* emplace_hint_unique(node_base* hint, Args&&... args) {
     if constexpr (::ycxx::detail::key_in_args<key_type, IsMap, Args...>) {
-      pos p = pos_unique_hint(hint, ::ycxx::detail::key_arg<IsMap>(args...));
+      pos p = pos_unique_hint(hint, ::ycxx::detail::key_arg<key_type, IsMap>(args...));
       if (p.existing)
         return p.existing;
       node* n = make_node(static_cast<Args&&>(args)...);
@@ -835,19 +834,43 @@ protected:
   constexpr void copy_from(const rb_tree& o) {
     clone_from(o, [this](const V& v) -> node_base* { return make_node(v); });
   }
+  // Element-wise move: for maps, key_type and mapped_type are moved ([associative.reqmts.general]/8
+  // puts the move-insertable requirement on them), so a move-only key is moved out of the source
+  // node, whose element is destroyed afterwards without being compared again. During constant
+  // evaluation a copyable key is copied instead.
   constexpr void move_from(rb_tree& o) {
-    clone_from(o, [this](V& v) -> node_base* { return make_node(static_cast<V&&>(v)); });
+    clone_from(o, [this](V& v) -> node_base* {
+      if constexpr (IsMap) {
+        using M = typename V::second_type;
+        if constexpr (std::is_copy_constructible_v<Key>) {
+          if consteval {
+            return make_node(v.first, static_cast<M&&>(v.second));
+          }
+        }
+        return make_node(static_cast<Key&&>(const_cast<Key&>(v.first)), static_cast<M&&>(v.second));
+      } else {
+        return make_node(static_cast<V&&>(v));
+      }
+    });
   }
 
   // ---- construction and assignment ----
-  constexpr rb_tree(const Compare& c, const Allocator& a) : comp_(c), na_(a) {}
+  // noexcept strengthenings: default construction and the allocator-extended move with an
+  // always-equal allocator allocate nothing.
+  static constexpr bool nothrow_default = std::is_nothrow_default_constructible_v<Compare> &&
+                                          std::is_nothrow_copy_constructible_v<Compare> &&
+                                          std::is_nothrow_default_constructible_v<Allocator>;
+  static constexpr bool nothrow_move_alloc = always_equal && std::is_nothrow_copy_constructible_v<Compare>;
+
+  constexpr rb_tree(const Compare& c, const Allocator& a) noexcept(std::is_nothrow_copy_constructible_v<Compare>)
+      : comp_(c), na_(a) {}
   constexpr rb_tree(const rb_tree& o, const Allocator& a) : comp_(o.comp_), na_(a) { copy_from(o); }
   // The comparison object is copied: the source stays usable.
   constexpr rb_tree(rb_tree&& o) noexcept(std::is_nothrow_copy_constructible_v<Compare>)
       : comp_(o.comp_), na_(static_cast<node_alloc&&>(o.na_)) {
     take(o);
   }
-  constexpr rb_tree(rb_tree&& o, const Allocator& a) : comp_(o.comp_), na_(a) {
+  constexpr rb_tree(rb_tree&& o, const Allocator& a) noexcept(nothrow_move_alloc) : comp_(o.comp_), na_(a) {
     if (always_equal || na_ == o.na_)
       take(o);
     else
@@ -901,7 +924,7 @@ protected:
   // Moves the elements of source into *this ([associative.reqmts.general]/112-117); with
   // unique keys, those whose keys are present stay behind.
   template <class C2, bool M2>
-  constexpr void merge_from(rb_tree<V, C2, Allocator, IsMap, M2>& source) {
+  constexpr void merge_from(rb_tree<Key, V, C2, Allocator, IsMap, M2>& source) {
     if (static_cast<void*>(this) == static_cast<void*>(__builtin_addressof(source)) || source.size_ == 0)
       return;
     if constexpr (!always_equal)

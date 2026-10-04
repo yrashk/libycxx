@@ -7,6 +7,7 @@
 #include <ycxx/core/memory_base.hpp>
 #include <ycxx/core/tuple.hpp>
 #include <ycxx/core/uninitialized.hpp>
+#include <ycxx/core/uninitialized_parallel.hpp>
 #include <ycxx/core/unique_ptr.hpp>
 #include <ycxx/core/shared_ptr.hpp>
 #include <ycxx/core/out_ptr.hpp>

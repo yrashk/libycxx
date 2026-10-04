@@ -8,3 +8,4 @@
 #include <ycxx/core/algo_nonmod.hpp>
 #include <ycxx/core/algo_mutate.hpp>
 #include <ycxx/core/algo_sort.hpp>
+#include <ycxx/core/algo_parallel.hpp>

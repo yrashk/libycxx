@@ -88,6 +88,8 @@ Legend: **G** fails with GCC + libstdc++, **C** with Clang + libstdc++.
 | `memory/allocate_shared_cv` | G | C | `allocate_shared<const T>` rebinds the allocator to `const T` and does not compile | [util.smartptr.shared.create]/7.5, /7.12: `remove_cv_t<U>*`; [allocator.requirements.general]: cv-unqualified value_type |
 | `string/fancy_pointer_allocator` | G | C | `basic_string` with a class-type allocator pointer does not compile | [string.require]/3, [allocator.requirements.general] |
 | `iterator/istreambuf_iterator` | G | C | an iterator built from `it++`'s proxy dereferences to the cached old character, not `sgetc()` (the proxy is exposition-only, so this is interpretive) | [istreambuf.iterator.cons]/5, [istreambuf.iterator.ops]/1 |
+| `list/fancy_pointer_allocator` | G | C | with a class-type allocator pointer, `list::swap` corrupts both lists (endless iteration, then a double free) | [container.reqmts]/64 Note 2, /65; [allocator.requirements.general] |
+| `deque/allocator_construct` | G | C | `deque::insert(p, n, t)` in the middle creates a copy of `t` without `allocator_traits::construct` | [container.alloc.reqmts]/2 and Note 2; [sequence.reqmts] (insert needs only Cpp17CopyInsertable) |
 ## 2. Missing in libstdc++ 16 (newer C++26 additions, constexpr, API revisions)
 
 | Test(s) | G | C | Missing |
@@ -126,6 +128,7 @@ Legend: **G** fails with GCC + libstdc++, **C** with Clang + libstdc++.
 | `linalg/*` | G | C | `<linalg>` |
 | `debugging/debugging`, `stacktrace/*`, `text_encoding/text_encoding` | G | C | link only with `-lstdc++exp` (the tests add no flags; with it they pass) |
 | `execution/ranges_algorithms`, `execution/ranges_constraints` | G | C | the parallel range algorithms (P3179) |
+| `ranges/reserve_hint` | G | C | `ranges::reserve_hint`, `approximately_sized_range`, the views' `reserve_hint` members (P2846) |
 
 ## 3. Differences between GCC and Clang with the same libstdc++
 

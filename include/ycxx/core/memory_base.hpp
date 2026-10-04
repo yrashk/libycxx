@@ -99,7 +99,10 @@ constexpr T* to_address(T* p) noexcept {
   static_assert(!is_function_v<T>, "std::to_address: function pointer");
   return p;
 }
+// Constrained (the draft's deduced return type would make an invalid call a hard error).
 template <class Ptr>
+  requires requires(const Ptr& p) { pointer_traits<Ptr>::to_address(p); } ||
+           requires(const Ptr& p) { p.operator->(); }
 constexpr auto to_address(const Ptr& p) noexcept {
   if constexpr (requires { pointer_traits<Ptr>::to_address(p); })
     return pointer_traits<Ptr>::to_address(p);
@@ -208,7 +211,11 @@ constexpr T* construct_at(T* location, Args&&... args) noexcept(noexcept(::new(s
                                                                               T(static_cast<Args&&>(args)...))) {
   if constexpr (is_array_v<T>) {
     static_assert(sizeof...(Args) == 0, "std::construct_at: arrays take no arguments");
-    return ::new (static_cast<void*>(location)) T[1]();
+    // [specialized.construct]/3 specifies `::new (voidify(*location)) T[1]()`. Value-initializing
+    // the array object T itself has the same effect, and Clang's constant evaluator rejects the
+    // T[1] form ("would change type of storage").
+    ::new (static_cast<void*>(location)) T();
+    return std::launder(location);
   } else {
     return ::new (static_cast<void*>(location)) T(static_cast<Args&&>(args)...);
   }

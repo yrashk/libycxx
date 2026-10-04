@@ -1,0 +1,9 @@
+// -*- C++ -*-  libycxx: <string>      [core; the numeric conversions need the hosted runtime]
+#pragma once
+
+#include <ycxx/config.hpp>
+#include <ycxx/core/version.hpp>
+#include <compare>
+#include <initializer_list>
+#include <ycxx/core/basic_string.hpp>
+#include <ycxx/core/stdexcept.hpp>

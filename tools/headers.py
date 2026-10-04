@@ -5,6 +5,9 @@ CORE = [
     "array", "bit", "cassert", "functional", "iterator", "tuple", "cfloat", "climits", "compare", "concepts", "coroutine", "cstddef", "cstdint",
     "initializer_list", "limits", "memory", "new", "optional", "source_location", "variant", "expected", "span", "string_view", "bitset", "type_traits", "utility",
     "version",
+    # <string>: the sto* functions and floating-point to_string are declared in core and
+    # defined in the hosted runtime (libycxx.a), like the <stdexcept> members.
+    "string",
 ]
 CORE += ["algorithm", "numeric", "execution", "ranges"]
 # Hosted: need an OS (through the PAL) or the C library.

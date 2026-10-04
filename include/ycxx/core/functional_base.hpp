@@ -34,6 +34,14 @@ concept builtin_ptr_eq = requires(T&& t, U&& u) { static_cast<T&&>(t) == static_
 template <class T, class U>
 constexpr bool total_less(const T& a, const U& b) {
   if consteval {
+    // A null pointer orders before every other pointer; the core language leaves comparing
+    // it with a pointer to an object unspecified, which constant evaluation rejects.
+    const volatile void* pa = a;
+    const volatile void* pb = b;
+    if (pb == nullptr)
+      return false;
+    if (pa == nullptr)
+      return true;
     return a < b;
   } else {
     return ::ycxx::detail::ptr_value(a) < ::ycxx::detail::ptr_value(b);

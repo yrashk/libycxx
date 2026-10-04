@@ -139,11 +139,8 @@ class LibstdcxxFormat(lit.formats.FileBasedTest):
                 if not opts:
                     continue
                 tsel = selector_of(args, 'target')
-                xsel = selector_of(args, 'xfail')
-                # DejaGnu also accepts both in one group: { target c++14 xfail *-*-* }.
-                if tsel is not None and ' xfail ' in f' {tsel} ':
-                    tsel, _, xsel = f' {tsel} '.partition(' xfail ')
-                    tsel, xsel = tsel.strip(), xsel.strip()
+                if tsel is not None and ' xfail ' in f' {tsel} ':  # xfail does not apply to options
+                    tsel = f' {tsel} '.partition(' xfail ')[0].strip()
                 if tsel is not None and not eval_selector(tsel):
                     continue
                 for o in opts[0].split():

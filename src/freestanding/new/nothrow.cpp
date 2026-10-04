@@ -1,8 +1,7 @@
 // libycxx freestanding runtime (libycxx-freestanding.a): there is no heap, so the default
 // allocation functions fail. A program with a heap replaces operator new/delete (each lives in
-// its own archive member, so its definitions win). Without exceptions the nothrow forms cannot
-// detect a failure of a forwarded call, so they return a null pointer themselves; a program that
-// replaces operator new should replace the nothrow forms too.
+// its own archive member, so its definitions win). The nothrow forms return null when the
+// heap-less default is what is linked, and otherwise forward (try_or_null.hpp).
 #include <new>
 #include <ycxx/core/error.hpp>
 

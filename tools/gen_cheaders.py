@@ -36,55 +36,57 @@ inline long double abs(long double x) noexcept { return __builtin_fabsl(x); }"""
     "cwctype": ("wctype.h", "wctrans_t wctype_t iswalnum iswalpha iswblank iswcntrl iswdigit iswgraph "
                 "iswlower iswprint iswpunct iswspace iswupper iswxdigit iswctype towctrans towlower towupper "
                 "wctrans wctype", ""),
-    "cwchar": ("wchar.h", "tm fwprintf fwscanf swprintf swscanf vfwprintf vfwscanf vswprintf vswscanf vwprintf vwscanf wprintf wscanf fgetwc fgetws fputwc fputws fwide getwc getwchar putwc putwchar ungetwc wcstod wcstof wcstold wcstol wcstoll wcstoul wcstoull wcscpy wcsncpy wmemcpy wmemmove wcscat wcsncat wcscmp wcscoll wcsncmp wcsxfrm wmemcmp wcscspn wcsspn wcstok wcslen wmemset wcsftime btowc wctob", MBSTATE_CHECK + """
-// The conversion functions taking a state. The overloads for std::mbstate_t (core's freestanding
-// type, DECISIONS §3) forward to the C functions; those for the C library's ::mbstate_t are
-// templates, so that a null state pointer (nullptr, 0) prefers the non-template overload instead
-// of being ambiguous.
+    "cwchar": ("wchar.h", "tm fwprintf fwscanf swprintf swscanf vfwprintf vfwscanf vswprintf vswscanf vwprintf vwscanf wprintf wscanf fgetwc fgetws fputwc fputws fwide getwc getwchar putwc putwchar ungetwc wcstod wcstof wcstold wcstol wcstoll wcstoul wcstoull wcscpy wcsncpy wmemcpy wmemmove wcscat wcsncat wcscmp wcscoll wcsncmp wcsxfrm wmemcmp wcscspn wcsspn wcstok wcslen wmemset wcsftime btowc wctob mbsinit mbrlen mbrtowc wcrtomb mbsrtowcs wcsrtombs", MBSTATE_CHECK + """
+// Additions, all templates (template <class = void>): a non-template C function then wins every
+// tie, so unqualified calls under `using namespace std;` stay unambiguous (null state pointers
+// too), while qualified std:: calls find these where the C function does not fit.
+// - Overloads for std::mbstate_t (core's freestanding type, DECISIONS §3), forwarding to the C
+//   functions.
+template <class = void>
 inline int mbsinit(const mbstate_t* ps) noexcept { return ::mbsinit(reinterpret_cast<const ::mbstate_t*>(ps)); }
 template <class = void>
-inline int mbsinit(const ::mbstate_t* ps) noexcept { return ::mbsinit(ps); }
 inline size_t mbrlen(const char* s, size_t n, mbstate_t* ps) noexcept {
   return ::mbrlen(s, n, reinterpret_cast<::mbstate_t*>(ps));
 }
 template <class = void>
-inline size_t mbrlen(const char* s, size_t n, ::mbstate_t* ps) noexcept { return ::mbrlen(s, n, ps); }
 inline size_t mbrtowc(wchar_t* pwc, const char* s, size_t n, mbstate_t* ps) noexcept {
   return ::mbrtowc(pwc, s, n, reinterpret_cast<::mbstate_t*>(ps));
 }
 template <class = void>
-inline size_t mbrtowc(wchar_t* pwc, const char* s, size_t n, ::mbstate_t* ps) noexcept { return ::mbrtowc(pwc, s, n, ps); }
 inline size_t wcrtomb(char* s, wchar_t wc, mbstate_t* ps) noexcept {
   return ::wcrtomb(s, wc, reinterpret_cast<::mbstate_t*>(ps));
 }
 template <class = void>
-inline size_t wcrtomb(char* s, wchar_t wc, ::mbstate_t* ps) noexcept { return ::wcrtomb(s, wc, ps); }
 inline size_t mbsrtowcs(wchar_t* dst, const char** src, size_t len, mbstate_t* ps) noexcept {
   return ::mbsrtowcs(dst, src, len, reinterpret_cast<::mbstate_t*>(ps));
 }
 template <class = void>
-inline size_t mbsrtowcs(wchar_t* dst, const char** src, size_t len, ::mbstate_t* ps) noexcept {
-  return ::mbsrtowcs(dst, src, len, ps);
-}
 inline size_t wcsrtombs(char* dst, const wchar_t** src, size_t len, mbstate_t* ps) noexcept {
   return ::wcsrtombs(dst, src, len, reinterpret_cast<::mbstate_t*>(ps));
 }
-template <class = void>
-inline size_t wcsrtombs(char* dst, const wchar_t** src, size_t len, ::mbstate_t* ps) noexcept {
-  return ::wcsrtombs(dst, src, len, ps);
-}
 
-// [library.c]: the const-correct overload pairs.
+// - [library.c]: the const-correct pairs, for C libraries that declare only
+//   `wchar_t* f(const wchar_t*, ...)`.
+template <class = void>
 inline const wchar_t* wcschr(const wchar_t* s, wchar_t c) noexcept { return ::wcschr(s, c); }
-inline wchar_t* wcschr(wchar_t* s, wchar_t c) noexcept { return ::wcschr(s, c); }
+template <class = void>
+inline wchar_t* wcschr(wchar_t* s, wchar_t c) noexcept { return const_cast<wchar_t*>(::wcschr(s, c)); }
+template <class = void>
 inline const wchar_t* wcspbrk(const wchar_t* s1, const wchar_t* s2) noexcept { return ::wcspbrk(s1, s2); }
-inline wchar_t* wcspbrk(wchar_t* s1, const wchar_t* s2) noexcept { return ::wcspbrk(s1, s2); }
+template <class = void>
+inline wchar_t* wcspbrk(wchar_t* s1, const wchar_t* s2) noexcept { return const_cast<wchar_t*>(::wcspbrk(s1, s2)); }
+template <class = void>
 inline const wchar_t* wcsrchr(const wchar_t* s, wchar_t c) noexcept { return ::wcsrchr(s, c); }
-inline wchar_t* wcsrchr(wchar_t* s, wchar_t c) noexcept { return ::wcsrchr(s, c); }
+template <class = void>
+inline wchar_t* wcsrchr(wchar_t* s, wchar_t c) noexcept { return const_cast<wchar_t*>(::wcsrchr(s, c)); }
+template <class = void>
 inline const wchar_t* wcsstr(const wchar_t* s1, const wchar_t* s2) noexcept { return ::wcsstr(s1, s2); }
-inline wchar_t* wcsstr(wchar_t* s1, const wchar_t* s2) noexcept { return ::wcsstr(s1, s2); }
+template <class = void>
+inline wchar_t* wcsstr(wchar_t* s1, const wchar_t* s2) noexcept { return const_cast<wchar_t*>(::wcsstr(s1, s2)); }
+template <class = void>
 inline const wchar_t* wmemchr(const wchar_t* s, wchar_t c, size_t n) noexcept { return ::wmemchr(s, c, n); }
-inline wchar_t* wmemchr(wchar_t* s, wchar_t c, size_t n) noexcept { return ::wmemchr(s, c, n); }"""),
+template <class = void>
+inline wchar_t* wmemchr(wchar_t* s, wchar_t c, size_t n) noexcept { return const_cast<wchar_t*>(::wmemchr(s, c, n)); }"""),
     "cerrno": ("errno.h", "", ""),
     "csignal": ("signal.h", "sig_atomic_t signal raise", ""),
     "ctime": ("time.h", "clock_t time_t tm timespec clock difftime mktime time timespec_get asctime ctime "
@@ -95,42 +97,37 @@ inline wchar_t* wmemchr(wchar_t* s, wchar_t c, size_t n) noexcept { return ::wme
     "cstdarg": ("stdarg.h", "va_list", ""),
     "cfenv": ("fenv.h", "fenv_t fexcept_t feclearexcept fegetexceptflag feraiseexcept fesetexceptflag "
               "fetestexcept fegetround fesetround fegetenv feholdexcept fesetenv feupdateenv", ""),
-    "cuchar": ("uchar.h", "", MBSTATE_CHECK + """
-// Overloads for std::mbstate_t and (as templates) ::mbstate_t; see <cwchar>.
+    "cuchar": ("uchar.h", "mbrtoc8 c8rtomb mbrtoc16 c16rtomb mbrtoc32 c32rtomb", MBSTATE_CHECK + """
+// Overloads for std::mbstate_t, as templates; see <cwchar>.
+template <class = void>
 inline size_t mbrtoc8(char8_t* pc8, const char* s, size_t n, mbstate_t* ps) noexcept {
   return ::mbrtoc8(pc8, s, n, reinterpret_cast<::mbstate_t*>(ps));
 }
+template <class = void>
 inline size_t c8rtomb(char* s, char8_t c8, mbstate_t* ps) noexcept {
   return ::c8rtomb(s, c8, reinterpret_cast<::mbstate_t*>(ps));
 }
+template <class = void>
 inline size_t mbrtoc16(char16_t* pc16, const char* s, size_t n, mbstate_t* ps) noexcept {
   return ::mbrtoc16(pc16, s, n, reinterpret_cast<::mbstate_t*>(ps));
 }
+template <class = void>
 inline size_t c16rtomb(char* s, char16_t c16, mbstate_t* ps) noexcept {
   return ::c16rtomb(s, c16, reinterpret_cast<::mbstate_t*>(ps));
 }
+template <class = void>
 inline size_t mbrtoc32(char32_t* pc32, const char* s, size_t n, mbstate_t* ps) noexcept {
   return ::mbrtoc32(pc32, s, n, reinterpret_cast<::mbstate_t*>(ps));
 }
+template <class = void>
 inline size_t c32rtomb(char* s, char32_t c32, mbstate_t* ps) noexcept {
   return ::c32rtomb(s, c32, reinterpret_cast<::mbstate_t*>(ps));
-}
-template <class = void>
-inline size_t mbrtoc8(char8_t* pc8, const char* s, size_t n, ::mbstate_t* ps) noexcept { return ::mbrtoc8(pc8, s, n, ps); }
-template <class = void>
-inline size_t c8rtomb(char* s, char8_t c8, ::mbstate_t* ps) noexcept { return ::c8rtomb(s, c8, ps); }
-template <class = void>
-inline size_t mbrtoc16(char16_t* pc16, const char* s, size_t n, ::mbstate_t* ps) noexcept { return ::mbrtoc16(pc16, s, n, ps); }
-template <class = void>
-inline size_t c16rtomb(char* s, char16_t c16, ::mbstate_t* ps) noexcept { return ::c16rtomb(s, c16, ps); }
-template <class = void>
-inline size_t mbrtoc32(char32_t* pc32, const char* s, size_t n, ::mbstate_t* ps) noexcept { return ::mbrtoc32(pc32, s, n, ps); }
-template <class = void>
-inline size_t c32rtomb(char* s, char32_t c32, ::mbstate_t* ps) noexcept { return ::c32rtomb(s, c32, ps); }"""),
+}"""),
 }
 # Standard-mandated macros the C library header may lack ([cwchar.syn]; WCHAR_WIDTH comes from
 # core's cstdint.hpp).
-MACROS = {"cwchar": ["#ifndef __STDC_VERSION_WCHAR_H__", "#  define __STDC_VERSION_WCHAR_H__ 202311L", "#endif", ""]}
+MACROS = {"cwchar": ["#ifndef __STDC_VERSION_WCHAR_H__", "#  define __STDC_VERSION_WCHAR_H__ 202311L", "#endif", ""],
+          "cuchar": ["#ifndef __STDC_VERSION_UCHAR_H__", "#  define __STDC_VERSION_UCHAR_H__ 202311L", "#endif", ""]}
 EXTRA_INCLUDES = {"cinttypes": ["<cstdint>"], "cwchar": ["<ycxx/core/char_traits.hpp>", "<ycxx/core/cstdint.hpp>"],
                   "cuchar": ["<ycxx/core/char_traits.hpp>"], "cwctype": ["<ycxx/core/char_traits.hpp>"]}
 

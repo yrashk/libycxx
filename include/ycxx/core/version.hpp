@@ -263,4 +263,17 @@
 #  define __cpp_lib_hardened_span 202502L
 #  define __cpp_lib_hardened_vector 202502L
 #  define __cpp_lib_hardened_inplace_vector 202502L
+#  define __cpp_lib_hardened_valarray 202502L
 #endif
+
+// <ratio> <numbers> <cmath> <complex> <valarray>
+#define __cpp_lib_ratio 202306L
+#define __cpp_lib_freestanding_ratio 202306L
+#define __cpp_lib_math_constants 201907L
+#define __cpp_lib_constexpr_cmath 202306L
+#define __cpp_lib_hypot 201603L
+#define __cpp_lib_interpolate 201902L
+#define __cpp_lib_math_special_functions 201603L
+#define __cpp_lib_complex_udls 201309L
+#define __cpp_lib_constexpr_complex 202306L
+#define __cpp_lib_valarray 202511L

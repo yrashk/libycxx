@@ -44,7 +44,8 @@ template <class T>
 [[nodiscard]] [[gnu::always_inline]] constexpr conditional_t<
     !is_nothrow_constructible_v<T, T&&> && is_constructible_v<T, const T&>, const T&, T&&>
 move_if_noexcept(T& x) noexcept {
-  return x;
+  using R = conditional_t<!is_nothrow_constructible_v<T, T&&> && is_constructible_v<T, const T&>, const T&, T&&>;
+  return static_cast<R>(x);
 }
 
 template <class T>

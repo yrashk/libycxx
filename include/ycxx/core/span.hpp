@@ -109,10 +109,7 @@ public:
     requires ycxx::detail::span_compatible<remove_reference_t<iter_reference_t<It>>, element_type> &&
              contiguous_iterator<It> && sized_sentinel_for<End, It> && (!is_convertible_v<End, size_t>)
   constexpr explicit(extent != dynamic_extent) span(It first, End last) noexcept(noexcept(last - first))
-      : data_(std::to_address(first)), size_(static_cast<size_type>(last - first)) {
-    if constexpr (extent != dynamic_extent)
-      ycxx::detail::precondition(static_cast<size_type>(last - first) == extent, "std::span: last - first != extent");
-  }
+      : span(checked{}, std::to_address(first), static_cast<size_type>(last - first)) {}
 
   template <size_t N>
     requires(extent == dynamic_extent || N == extent)
@@ -131,10 +128,7 @@ public:
              (!is_array_v<remove_cvref_t<R>>) &&
              ycxx::detail::span_compatible<remove_reference_t<ranges::range_reference_t<R>>, element_type>
   constexpr explicit(extent != dynamic_extent) span(R&& r)
-      : data_(ranges::data(r)), size_(static_cast<size_type>(ranges::size(r))) {
-    if constexpr (extent != dynamic_extent)
-      ycxx::detail::precondition(static_cast<size_type>(ranges::size(r)) == extent, "std::span: size != extent");
-  }
+      : span(checked{}, ranges::data(r), static_cast<size_type>(ranges::size(r))) {}
 
   constexpr span(const span& other) noexcept = default;
 
@@ -222,6 +216,15 @@ public:
   constexpr const_reverse_iterator crend() const noexcept { return rend(); }
 
 private:
+  // Every size-taking constructor ends here, so the size expression is evaluated exactly once
+  // ([span.cons]) and the hardened extent check sees that one value.
+  struct checked {};
+  template <class P>
+  constexpr span(checked, P* p, size_type n) noexcept : data_(p), size_(n) {
+    if constexpr (extent != dynamic_extent)
+      ycxx::detail::precondition(n == extent, "std::span: size != extent");
+  }
+
   pointer data_;
   [[no_unique_address]] ycxx::detail::span_extent<Extent> size_;
 };

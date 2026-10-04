@@ -18,8 +18,9 @@ run() { # compiler-command target-label
     fi
   done
   if $cc $flags -c "$repo/tests/freestanding/smoke.cpp" -o "$out/smoke.$label.o" 2> "$out/smoke.$label.log" &&
+     $cc $flags -O0 -c "$repo/tests/freestanding/smoke_o0.cpp" -o "$out/smoke_o0.$label.o" 2>> "$out/smoke.$label.log" &&
      $3 -ffreestanding -nostdlib -O2 -c "$repo/tests/freestanding/rt.c" -o "$out/rt.$label.o" &&
-     $4 "$out/smoke.$label.o" "$out/rt.$label.o" -o "$out/smoke.$label.elf" 2>> "$out/smoke.$label.log"; then
+     $4 "$out/smoke.$label.o" "$out/smoke_o0.$label.o" "$out/rt.$label.o" -o "$out/smoke.$label.elf" 2>> "$out/smoke.$label.log"; then
     echo "ok   [$label] all core headers + smoke link"
   else
     echo "FAIL [$label] smoke"; sed 's/^/    /' "$out/smoke.$label.log" | head -20; fail=1

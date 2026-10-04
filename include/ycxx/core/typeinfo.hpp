@@ -53,7 +53,7 @@ public:
   constexpr bad_cast() noexcept {}
   constexpr bad_cast(const bad_cast&) noexcept = default;
   constexpr bad_cast& operator=(const bad_cast&) noexcept = default;
-#if YCXX_HAS_RTTI
+#if !YCXX_EXCEPTION_DTOR_OUT_OF_LINE
   constexpr ~bad_cast() override {}
 #else
   ~bad_cast() override; // see the header comment of exception_base.hpp
@@ -66,7 +66,7 @@ public:
   constexpr bad_typeid() noexcept {}
   constexpr bad_typeid(const bad_typeid&) noexcept = default;
   constexpr bad_typeid& operator=(const bad_typeid&) noexcept = default;
-#if YCXX_HAS_RTTI
+#if !YCXX_EXCEPTION_DTOR_OUT_OF_LINE
   constexpr ~bad_typeid() override {}
 #else
   ~bad_typeid() override; // see the header comment of exception_base.hpp

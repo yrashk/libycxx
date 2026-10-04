@@ -598,6 +598,18 @@ concept indirectly_copyable_storable =
 
 } // namespace std
 
+namespace ycxx::detail {
+// iter-exchange-move ([iterator.cust.swap]). Outside the CPO's namespace, which must declare
+// nothing ADL could find on the iter_swap object.
+template <class X, class Y>
+constexpr std::iter_value_t<X> iter_exchange_move(X&& x, Y&& y) noexcept(
+    noexcept(std::iter_value_t<X>(std::ranges::iter_move(x))) && noexcept(*x = std::ranges::iter_move(y))) {
+  std::iter_value_t<X> old(std::ranges::iter_move(x));
+  *x = std::ranges::iter_move(y);
+  return old;
+}
+} // namespace ycxx::detail
+
 namespace ycxx::detail::iter_swap_cpo {
 
 template <class I1, class I2>
@@ -609,14 +621,6 @@ concept adl_iter_swap =
      std::is_class_v<std::remove_cvref_t<U>> || std::is_enum_v<std::remove_cvref_t<U>>) &&
     requires(T&& t, U&& u) { iter_swap(static_cast<T&&>(t), static_cast<U&&>(u)); };
 
-template <class X, class Y>
-constexpr std::iter_value_t<X> iter_exchange_move(X&& x, Y&& y) noexcept(
-    noexcept(std::iter_value_t<X>(std::ranges::iter_move(x))) && noexcept(*x = std::ranges::iter_move(y))) {
-  std::iter_value_t<X> old(std::ranges::iter_move(x));
-  *x = std::ranges::iter_move(y);
-  return old;
-}
-
 template <class T, class U>
 consteval bool iter_swap_noexcept() {
   if constexpr (adl_iter_swap<T, U>)
@@ -625,7 +629,7 @@ consteval bool iter_swap_noexcept() {
                      std::swappable_with<std::iter_reference_t<T>, std::iter_reference_t<U>>)
     return noexcept(std::ranges::swap(*std::declval<T>(), *std::declval<U>()));
   else
-    return noexcept((void)(*std::declval<T>() = iter_exchange_move(std::declval<U>(), std::declval<T>())));
+    return noexcept((void)(*std::declval<T>() = ::ycxx::detail::iter_exchange_move(std::declval<U>(), std::declval<T>())));
 }
 
 struct fn {
@@ -641,7 +645,7 @@ struct fn {
                        std::swappable_with<std::iter_reference_t<T>, std::iter_reference_t<U>>)
       std::ranges::swap(*t, *u);
     else
-      (void)(*t = iter_swap_cpo::iter_exchange_move(u, t));
+      (void)(*t = ::ycxx::detail::iter_exchange_move(u, t));
   }
 };
 

@@ -10,7 +10,7 @@ public:
   constexpr bad_exception() noexcept {}
   constexpr bad_exception(const bad_exception&) noexcept = default;
   constexpr bad_exception& operator=(const bad_exception&) noexcept = default;
-#if YCXX_HAS_RTTI
+#if !YCXX_EXCEPTION_DTOR_OUT_OF_LINE
   constexpr ~bad_exception() override {}
 #else
   ~bad_exception() override; // see the header comment of exception_base.hpp

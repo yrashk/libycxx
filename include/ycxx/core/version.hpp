@@ -73,7 +73,7 @@
 // <any>
 #define __cpp_lib_any 201606L
 
-// <string_view>, <string> (char_traits)
+// <string_view>, <string>
 #define __cpp_lib_string_view 202403L
 #define __cpp_lib_constexpr_string_view 201811L
 #define __cpp_lib_freestanding_string_view 202311L
@@ -81,6 +81,10 @@
 #define __cpp_lib_starts_ends_with 201711L
 #define __cpp_lib_string_contains 202011L
 #define __cpp_lib_string_subview 202506L
+#define __cpp_lib_constexpr_string 202511L
+#define __cpp_lib_string_resize_and_overwrite 202110L
+#define __cpp_lib_string_udls 201304L
+#define __cpp_lib_to_string 202306L
 
 // <bitset>
 #define __cpp_lib_bitset 202306L
@@ -162,6 +166,7 @@
 // whose hardened preconditions are checked.
 #if YCXX_HARDENED
 #  define __cpp_lib_hardened_array 202502L
+#  define __cpp_lib_hardened_basic_string 202502L
 #  define __cpp_lib_hardened_basic_string_view 202502L
 #  define __cpp_lib_hardened_bitset 202502L
 #  define __cpp_lib_hardened_expected 202502L

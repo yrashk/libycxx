@@ -190,4 +190,11 @@ inline constexpr synth_three_way_fn synth_three_way{};
 template <class T, class U = T>
 using synth_three_way_result = decltype(synth_three_way(std::declval<T&>(), std::declval<U&>()));
 
+// converts-from-any-cvref ([optional.ctor]/1), shared with <expected>
+template <class T, class W>
+concept converts_from_any_cvref =
+    std::is_constructible_v<T, W&> || std::is_convertible_v<W&, T> || std::is_constructible_v<T, W> ||
+    std::is_convertible_v<W, T> || std::is_constructible_v<T, const W&> || std::is_convertible_v<const W&, T> ||
+    std::is_constructible_v<T, const W> || std::is_convertible_v<const W, T>;
+
 } // namespace ycxx::detail

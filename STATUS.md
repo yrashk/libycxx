@@ -21,12 +21,15 @@ Conformance oracles (run only, never edited): libc++ tests from `llvmorg-23.1.2`
 | containers/sequences/array | 39/49 | 39/49 | yes | rest: `<string>`, `<regex>`, `<ranges>`, `unique_ptr` |
 | utilities/optional | 74/87 | 75/87 | yes | rest: `<string>`/`<vector>`/`<ranges>`, `unique_ptr` |
 | utilities/variant | 18/50 | 18/50 | yes | all 32 failures are missing `<string>` (libc++ `type_id.h`/tests) |
+| utilities/expected | 75/87 | 75/87 | yes | rest: `unique_ptr`, `<algorithm>` |
 | iterators + range.access + concepts + function.objects | 185/515 | 185/515 | yes | most failures need `<ranges>`, `bind`, `function`, containers |
 
 Whole-suite baseline (clang, before iterators/tuple/array/optional): 976 pass / ~8,000 run.
 
 libstdc++ testsuite: 20_util/{tuple,pair,uses_allocator}: 107 pass on both compilers.
 20_util/variant: 27/31 on both (rest: missing `<string>`, `<vector>`, `<any>`).
+20_util/expected: clang 18/20, gcc 18/20 (rest: `<string_view>`, `<vector>`). The libstdc++ harness
+compiles with `-O2`, as DejaGnu's default flags do (some tests rely on dead-code elimination).
 
 ## Freestanding
 `tools/check_freestanding.sh`: every core header compiles with `-ffreestanding -nostdlib -nostdinc
@@ -54,7 +57,7 @@ Deprecated and removed features are not implemented (`is_pod`, `is_trivial`, `al
 `has_denorm`, `tuple_size<volatile T>`, ...). See `tests/SKIPPED.md`.
 
 ## Open issues / next
-- Phase 2 remaining: expected, any, function family (function, move_only_function,
+- Phase 2 remaining: any, function family (function, move_only_function,
   copyable_function, function_ref, bind, mem_fn, not_fn), span, string_view, bitset.
 - Then Phase 3 (containers, algorithms), Phase 4 (ranges, charconv, format, ...).
 - Constexpr exceptions (P3068): `std::exception` and the standard exception classes, including

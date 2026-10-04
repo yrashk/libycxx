@@ -73,6 +73,18 @@ namespace ycxx::detail {
     ::ycxx_error_handler(kind, what);
 }
 
+// The same hook for exception types that cannot cross the C-linkage runtime boundary (class
+// templates such as bad_expected_access<E>): `make()` builds the exception object, which is
+// thrown here when exceptions are enabled; otherwise `kind` goes to the handler like raise() and
+// make() is never called.
+template <class Make>
+[[noreturn]] [[gnu::cold]] constexpr void raise_with(ycxx_error_kind kind, const char* what, Make&& make) {
+  if constexpr (cfg::exceptions)
+    throw static_cast<Make&&>(make)();
+  else
+    ::ycxx_error_handler(kind, what);
+}
+
 // Library precondition check: active when YCXX_HARDENED=1. During constant evaluation a
 // violated precondition is always a compile-time error.
 [[gnu::always_inline]] constexpr void precondition(bool ok, const char* msg) noexcept {

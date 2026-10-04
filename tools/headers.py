@@ -39,6 +39,8 @@ HOSTED += ["math.h"]
 # Iostreams and localization (Phase 4): the non-template parts are in the hosted runtime.
 HOSTED += ["iosfwd", "ios", "streambuf", "istream", "ostream", "iostream", "sstream", "spanstream", "fstream",
            "syncstream", "iomanip", "locale"]
+# <regex>: the name tables and regex_error's members are in the hosted runtime.
+HOSTED += ["regex"]
 # Language-support headers whose *declarations* are core but which need the C++ ABI runtime
 # (libycxx-abi) to be used with exceptions/RTTI enabled.
 ABI = ["exception", "stdexcept", "typeinfo", "typeindex"]

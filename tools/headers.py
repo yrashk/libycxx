@@ -10,11 +10,16 @@ CORE = [
     "string",
 ]
 CORE += ["algorithm", "numeric", "execution", "ranges"]
+CORE += ["scoped_allocator"]
 # Hosted: need an OS (through the PAL) or the C library.
 HOSTED = [
     "any", "cctype", "cerrno", "cfenv", "cinttypes", "clocale", "csetjmp", "csignal", "cstdarg", "cstdio",
     "cstdlib", "cstring", "ctime", "cuchar", "cwchar", "cwctype",
 ]
+# <memory_resource>: memory_resource and polymorphic_allocator are core (ycxx/core/
+# memory_resource.hpp, which <string> includes); the global resources, the pools and
+# monotonic_buffer_resource are defined in the hosted runtime.
+HOSTED += ["memory_resource"]
 # Language-support headers whose *declarations* are core but which need the C++ ABI runtime
 # (libycxx-abi) to be used with exceptions/RTTI enabled.
 ABI = ["exception", "stdexcept", "typeinfo", "typeindex"]

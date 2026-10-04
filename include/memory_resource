@@ -1,0 +1,7 @@
+// -*- C++ -*-  libycxx: <memory_resource>   [hosted; memory_resource and polymorphic_allocator are core]
+#pragma once
+
+#include <ycxx/config.hpp>
+#include <ycxx/core/version.hpp>
+#include <ycxx/core/memory_resource.hpp>
+#include <ycxx/hosted/memory_resource.hpp>

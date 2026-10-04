@@ -32,6 +32,7 @@ Conformance oracles (run only, never edited): libc++ tests from `llvmorg-23.1.2`
 | utilities/charconv | 7/12 | 7/12 | yes (fp: runtime archive) | rest need `<algorithm>`, `<cmath>`, `<string>` |
 | containers/sequences/vector + vector.bool | 99/155 | 100/155 | yes | was 0; 134/155 (Clang), 136 (GCC) with `<deque>` declared (asan_testing.h); rest below |
 | containers/sequences/{deque,list,forwardlist} + container.adaptors/{stack,queue,priority.queue} | 197/371 | 197/371 | yes | was 0; adaptor tests need `<vector>` (338/371 with a local stand-in `<vector>`); rest: `<map>`/`<set>`/`<random>` |
+| numerics/{c.math,numbers,complex.number,numarray} + utilities/ratio | 325/348 | 327/348 | yes (run-time `<cmath>` calls need libm) | was 6; rest below (numerics) |
 
 Whole-suite baseline (clang, before iterators/tuple/array/optional): 976 pass / ~8,000 run.
 
@@ -299,7 +300,7 @@ Deprecated and removed features are not implemented (`is_pod`, `is_trivial`, `al
   are noexcept (an escaping exception calls terminate). Not provided: the ranges::
   ExecutionPolicy overloads (P3179, so `__cpp_lib_parallel_algorithm` is undefined), the
   senders/receivers part of `<execution>`, `boyer_moore(_horspool)_searcher` (need hashing
-  containers), `__cpp_lib_interpolate` (needs `std::lerp` in `<cmath>`).
+  containers).
 - stable_sort / stable_partition / inplace_merge take their buffer from `operator new(nothrow)`
   (std::allocator during constant evaluation) and fall back to O(N log^2 N) / O(N log N)
   rotation algorithms when it fails; sort and nth_element are introsort/introselect.
@@ -317,6 +318,32 @@ Deprecated and removed features are not implemented (`is_pod`, `is_trivial`, `al
   `__STDCPP_DEFAULT_NEW_ALIGNMENT__`. libc++ `construct_piecewise_pair_evil` expects
   polymorphic_allocator::construct to pass a non-const allocator; the draft's uses-allocator
   construction passes `const Alloc&`, so libycxx rejects it.
+
+- Numerics (`<cmath>`, `<math.h>`, `<numbers>`, `<ratio>`, `<complex>`, `<valarray>`):
+  own suite 70/71 on both compilers (complex/io needs `<sstream>`); libstdc++
+  26_numerics + 20_util/ratio + special_functions 164/208 on both (was 13). Every `<cmath>` function
+  is a template per floating-point type (extended types included), so the C library's `::sin` wins
+  unqualified calls under `using namespace std` instead of being ambiguous. Constant evaluation
+  follows Annex F: exact functions use soft code; transcendentals use the compiler's folding
+  where it folds (GCC/MPFR) and otherwise correctly rounded multiprecision soft code; operations
+  that raise invalid, divide-by-zero or overflow are not constant expressions. At run time the
+  calls go to libm (linked by CMake and `tools/ycxx-cxx`). Hosted, the macros come from the C
+  library's `<math.h>` (freestanding: `cmath_c_macros.hpp`, checked against glibc at build time);
+  libycxx's `<math.h>` adds the global names except the special functions and lerp
+  ([support.c.headers.other]/1). Special functions report domain errors as EDOM/FE_INVALID and
+  return NaN. `<complex>` is constexpr throughout, with Annex G special values (the libc++
+  `complex_times_complex`/`complex_divide_complex` constexpr stress tests exceed Clang's step
+  limit); I/O is not provided yet (no streams). valarray evaluates eagerly (no expression templates).
+  Remaining external failures: `<ctgmath>`/`<ccomplex>`/`<complex.h>` (not provided), libc++
+  `cmath.pass` (expects overloads in the global namespace without `<math.h>`), `abs` of
+  `_BitInt` (Clang), `numbers/value.pass` (expects the double value for long double),
+  `polar(-0.0, θ)` (libc++ expects NaN; -0 is not negative, so libycxx computes it), the
+  mask_array tests (call `std::count` without `<algorithm>`), libstdc++ `special_functions/*/compile_2`
+  (global names `<math.h>` must not declare), `fabs(complex)` (extension), `complex/synopsis`
+  (explicit specialisation declarations), `abs(__float128)` returning `__float128`, `::abs(long)`
+  from `<stdlib.h>` (no `<stdlib.h>` wrapper), the valarray `mask-*_neg` tests (abort only with
+  `_GLIBCXX_ASSERTIONS`; libycxx checks only under YCXX_HARDENED), and tests needing
+  `<sstream>`/`<iostream>`/`<chrono>`/`<map>`/`<limits>`.
 
 ## Open issues / next
 - Phase 2 is complete. The ABI runtime (src/abi) replaced libsupc++: broad sweep 4483 -> 4535

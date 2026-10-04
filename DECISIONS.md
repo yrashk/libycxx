@@ -137,6 +137,13 @@ tooling.
   [new.delete] specifies. (Weak definitions in headers were tried and rejected: they made
   replacement a redefinition error, and in hosted builds a weak definition keeps the linker from
   pulling the real `operator new` out of the archive.)
+- **Floating-point `<charconv>` is out of line, in both archives** (`src/runtime/charconv`).
+  The draft makes it freestanding-deleted, but nothing in it needs the OS: it works on
+  stack-allocated big integers, so libycxx provides it freestanding too. The header passes the
+  value's bits and a format tag (`fp_kind`) to one entry point per direction, so the extended
+  floating-point types need neither `#if` nor per-type symbols, and the 128-bit power-of-ten
+  table is computed once, at the library's compile time, instead of in every user TU. Integer
+  conversions stay in the header (they are constexpr).
 
 ## 4. Error handling
 

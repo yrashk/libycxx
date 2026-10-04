@@ -15,7 +15,7 @@ records where libstdc++ and the current draft disagree. The draft is the referen
 a failure below is a libstdc++ gap, a libstdc++ bug, or a compiler issue, never a reason to
 change a test. **After triage no failure was traced to a defect in a test.**
 
-Run of 2026-10-04, 1003 tests: GCC 872 pass / 130 fail / 1 xfail; Clang 855 pass / 144 fail /
+Run of 2026-10-04, 1057 tests: GCC 922 pass / 134 fail / 1 xfail; Clang 905 pass / 148 fail /
 4 xfail. (Most of the difference to earlier runs is the container tests of `deque/` ...
 `hive/`, which mainly wait on C++26 constexpr containers in libstdc++.)
 The same suite against libycxx: see `STATUS.md`.
@@ -49,6 +49,10 @@ Legend: **G** fails with GCC + libstdc++, **C** with Clang + libstdc++.
 | `flat_set/deduction` | G | C | `flat_set(first, last)` does not deduce | [flat.set.defn]: `flat_set(InputIterator, InputIterator, Compare = Compare())` guide |
 | `priority_queue/deduction` | G | C | no `priority_queue(InputIterator, InputIterator, Allocator)` guide | [priority.queue] synopsis |
 | `inplace_vector/noexcept` | G | C | `shrink_to_fit` is not `noexcept` | [inplace.vector.overview]: `static constexpr void shrink_to_fit() noexcept;` |
+| `algorithm/stable_partition` | G | C | in constant evaluation `ranges::stable_partition` returns `{i, last - 1}` (correct at run time) | [alg.partitions]/12.2: "{i, last} for the overloads in namespace ranges" |
+| `algorithm/clamp` | G | C | 3 comparisons (and 5 projections for `ranges::clamp`) with libstdc++'s default -O0 assertions, which re-check the precondition | [alg.clamp]/5: "At most two comparisons and three applications of the projection" |
+| `charconv/to_chars_float_plain_style` | G | C | `to_chars(1e5)` gives "1e+05": f/e chosen by the shorter result (the C++17 wording) | [charconv.to.chars]/7: f if \|value\| is in [l, u) (for double [1e-4, 1e16)), otherwise e |
+| `charconv/to_chars_float_general_shortest` | G | C | `to_chars(1234567.0, general)` gives "1.234567e+06", not the shorter "1234567" (interpretive: /2's smallest number of characters with the g specifier) | [charconv.to.chars]/2-3 |
 | `inplace_vector/from_range_mandates` (compile.fail) | G | C | a constant-size range larger than N is accepted | [inplace.vector.cons]/9: Mandates: ranges::size(rg) <= N when it is a constant expression |
 
 ## 2. Missing in libstdc++ 16 (newer C++26 additions, constexpr, API revisions)

@@ -681,11 +681,14 @@ public:
   }
   constexpr basic_string& append(initializer_list<charT> il) { return append(il.begin(), il.size()); }
   constexpr void push_back(charT c) {
-    if (size_ == cap())
-      reallocate(grow_cap(size_ + 1));
-    traits::assign(ptr_[size_], c);
-    ++size_;
-    traits::assign(ptr_[size_], charT());
+    const size_type n = size_;
+    if (n == cap())
+      reallocate(grow_cap(n + 1));
+    // Through locals: a store of a char could alias ptr_ and size_ and force their reload.
+    charT* const p = ptr_;
+    traits::assign(p[n], c);
+    traits::assign(p[n + 1], charT());
+    size_ = n + 1;
   }
 
   // ---- [string.assign] ----
@@ -1407,10 +1410,31 @@ constexpr std::basic_string<charT> integer_to_string(T v) {
   [[indeterminate]] charT buf[std::numeric_limits<U>::digits10 + 2];
   charT* const end = buf + sizeof(buf) / sizeof(charT);
   charT* p = end;
-  do {
-    *--p = static_cast<charT>('0' + static_cast<int>(u % 10));
-    u /= 10;
-  } while (u != 0);
+  // Two digits per division.
+  static constexpr auto pairs = [] {
+    struct table {
+      char c[200];
+    } t{};
+    for (int i = 0; i < 100; ++i) {
+      t.c[2 * i] = static_cast<char>('0' + i / 10);
+      t.c[2 * i + 1] = static_cast<char>('0' + i % 10);
+    }
+    return t;
+  }();
+  while (u >= 100) {
+    const auto r = static_cast<unsigned>(u % 100);
+    u /= 100;
+    p -= 2;
+    p[0] = static_cast<charT>(pairs.c[2 * r]);
+    p[1] = static_cast<charT>(pairs.c[2 * r + 1]);
+  }
+  if (u >= 10) {
+    p -= 2;
+    p[0] = static_cast<charT>(pairs.c[2 * u]);
+    p[1] = static_cast<charT>(pairs.c[2 * u + 1]);
+  } else {
+    *--p = static_cast<charT>('0' + static_cast<int>(u));
+  }
   if (neg)
     *--p = static_cast<charT>('-');
   return std::basic_string<charT>(p, static_cast<std::size_t>(end - p));

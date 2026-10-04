@@ -46,3 +46,8 @@ std/ranges/indices/1\.cc | implementation-specific | expects views::indices to r
 30_threads/condition_variable/members/103382\.cc | extension | calls pthread_cancel through a declaration <condition_variable> does not provide
 29_atomics/atomic_flag/test/(explicit|implicit)\.cc | extension | constructs atomic_flag from bool ({true}); [atomics.flag] has only the default constructor
 30_threads/this_thread/60421\.cc | extension | calls sched_yield/pthread_kill through declarations <thread> does not provide
+28_regex/traits/(char|wchar_t)/transform_primary\.cc | implementation-specific | expects case-insensitive primary sort keys from the classic locale's collate facet; [re.traits]/7 leaves the key to the facet (the C locale's equivalence classes hold one character each)
+28_regex/traits/char/user_defined\.cc | implementation-specific | expects transform() calls for single characters under collate, and icase ignored for collating ranges of user traits; [re.grammar]/14 calls transform for ranges only
+28_regex/basic_regex/84110\.cc | implementation-specific | expects a NUL character in a POSIX-grammar pattern to throw regex_error; no rule of [re.synopt] or [re.grammar] makes it invalid
+28_regex/algorithms/regex_match/multiline\.cc | extension | uses regex_constants::__multiline
+28_regex/traits/wchar_t/lookup_classname\.cc | extension | calls toupper through a declaration <regex> does not provide

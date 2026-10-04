@@ -58,6 +58,10 @@
 #define __cpp_lib_optional_range_support 202406L
 #define __cpp_lib_freestanding_optional 202506L
 
+// <variant>
+#define __cpp_lib_variant 202306L
+#define __cpp_lib_freestanding_variant 202311L
+
 // <bit>
 #define __cpp_lib_bit_cast 201806L
 #define __cpp_lib_bitops 202607L

@@ -85,12 +85,17 @@ set_source_files_properties(src/abi/exception_classes.cpp PROPERTIES COMPILE_DEF
 target_link_libraries(ycxx INTERFACE ycxx_abi)
 target_link_libraries(ycxx_abi INTERFACE ycxx)
 set_property(TARGET ycxx ycxx_abi PROPERTY LINK_INTERFACE_MULTIPLICITY 3)
+# Usable in shared objects and position-independent executables.
+set_target_properties(ycxx ycxx_abi PROPERTIES POSITION_INDEPENDENT_CODE ON)
 
 # ---- ycxx::ycxx: what applications link ----
 add_library(ycxx_ycxx INTERFACE)
 set_target_properties(ycxx_ycxx PROPERTIES EXPORT_NAME ycxx)
 target_link_libraries(ycxx_ycxx INTERFACE ycxx_headers ycxx)
-target_link_options(ycxx_ycxx INTERFACE $<$<LINK_LANGUAGE:CXX>:-nostdlib++>)
+# -shared-libgcc: one unwinder per process. glibc's pthread_exit/pthread_cancel unwind through
+# libgcc_s.so; a second, static copy (libgcc_eh) used by the personality routine would abort.
+target_link_options(ycxx_ycxx INTERFACE $<$<LINK_LANGUAGE:CXX>:-nostdlib++>
+                    $<$<AND:$<LINK_LANGUAGE:CXX>,$<PLATFORM_ID:Linux>>:-shared-libgcc>)
 
 add_library(ycxx::headers ALIAS ycxx_headers)
 add_library(ycxx::core ALIAS ycxx)

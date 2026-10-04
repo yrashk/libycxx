@@ -266,7 +266,12 @@ scan_result scan(_Unwind_Action actions, bool native, _Unwind_Exception* ue, _Un
       if (filter > 0) {
         const std::type_info* t = type_entry(h, filter, b);
         void* adjusted = obj;
-        // A forced unwind (thread cancellation) runs cleanups only.
+        // A forced unwind (thread cancellation, pthread_exit) runs cleanups but no handler of
+        // its own choosing. Clang folds a frame's cleanups into its catch(...) landing pad and
+        // records no separate cleanup action, so catch(...) counts as a cleanup: the landing
+        // pad runs (entering catch(...), which must rethrow, as with GCC's code).
+        if (t == nullptr && (actions & _UA_FORCE_UNWIND))
+          has_cleanup = true;
         if (!(actions & _UA_FORCE_UNWIND) &&
             (t == nullptr || (native && catch_matches(t, thrown, &adjusted)))) {
           r.kind = found::handler;

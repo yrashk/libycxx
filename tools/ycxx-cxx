@@ -2,7 +2,7 @@
 # Compile and link against libycxx.
 #   ycxx-cxx gcc|clang [compiler args...]
 # Links build/<compiler>/libycxx.a and libycxx's own ABI runtime (build/<compiler>/libycxx-abi.a);
-# stack unwinding comes from the toolchain's libgcc_eh.
+# stack unwinding comes from the toolchain's libgcc_s.
 here=$(cd "$(dirname "$0")/.." && pwd)
 which=$1; shift
 # Compilers: $YCXX_GXX / $YCXX_CLANGXX (set by tools/toolchain/activate.*), else g++-16 / clang++-23.
@@ -18,7 +18,9 @@ if [ "$(uname -s)" = Darwin ]; then
   group_begin= group_end= static_libgcc=
   [ $which = gcc ] && static_libgcc=-static-libgcc
 else
-  group_begin=-Wl,--start-group group_end=-Wl,--end-group static_libgcc=-static-libgcc
+  # -shared-libgcc: one unwinder per process (glibc's pthread_exit/pthread_cancel unwind
+  # through libgcc_s.so; a static libgcc_eh copy in the program would make them abort).
+  group_begin=-Wl,--start-group group_end=-Wl,--end-group static_libgcc=-shared-libgcc
   # Clang uses GCC 16's installation for the C runtime startup files and libgcc.
   if [ $which = clang ]; then
     gcc_install_dir=${YCXX_GCC_INSTALL_DIR:-$(dirname "$($gxx -print-libgcc-file-name)")}

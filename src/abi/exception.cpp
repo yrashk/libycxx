@@ -9,13 +9,23 @@
 namespace ycxx::abi {
 namespace {
 
+// ---- Layout ----
+// Thrown objects are aligned for any type a compiler may throw without extra care: GCC stores
+// an over-aligned exception with aligned vector moves right after __cxa_allocate_exception
+// (alignas(64) types included), so the object is placed on a 64-byte boundary. Each block is
+// 64-byte aligned and starts with `header_pad` unused bytes, so that the header ends there.
+constexpr std::size_t object_alignment = 64;
+constexpr std::size_t header_pad =
+    (sizeof(exception_header) + object_alignment - 1) / object_alignment * object_alignment -
+    sizeof(exception_header);
+
 // ---- Emergency pool ----
 // When the heap is exhausted, exceptions (typically bad_alloc) come from a fixed pool of
-// blocks, claimed with an atomic bitmap. [ABI-EH] 3.4.1 allows this; an allocation that cannot
-// be served at all terminates (2.4.2).
-constexpr std::size_t pool_block = 512;
+// 1 KiB blocks ([ABI-EH] 3.4.1), claimed with an atomic bitmap. An allocation that cannot be
+// served at all terminates (2.4.2).
+constexpr std::size_t pool_block = 1024;
 constexpr std::size_t pool_blocks = 64;
-alignas(alignof(exception_header)) unsigned char pool[pool_blocks * pool_block];
+alignas(object_alignment) unsigned char pool[pool_blocks * pool_block];
 unsigned long long pool_used; // bit i: block i in use
 
 void* pool_allocate(std::size_t size) noexcept {
@@ -39,28 +49,29 @@ bool pool_free(void* p) noexcept {
   return true;
 }
 
-// A header followed by `thrown_size` bytes, zero-initialized like [ABI-EH] implementations
-// commonly do (so unset cached fields read as null).
+// A header followed by `thrown_size` bytes, the header zero-initialized (so unset cached fields
+// read as null).
 exception_header* allocate_header(std::size_t thrown_size) noexcept {
-  const std::size_t size = sizeof(exception_header) + thrown_size;
-  void* p = ycxx_pal_allocate(size, alignof(exception_header));
+  const std::size_t size = header_pad + sizeof(exception_header) + thrown_size;
+  void* p = ycxx_pal_allocate(size, object_alignment);
   std::size_t recorded = size;
   if (!p) {
     p = pool_allocate(size);
     recorded = 0;
   }
   if (!p)
-    std::terminate();
-  __builtin_memset(p, 0, sizeof(exception_header));
-  exception_header* h = static_cast<exception_header*>(p);
+    ycxx_pal_abort("cannot allocate an exception object");
+  exception_header* h = reinterpret_cast<exception_header*>(static_cast<unsigned char*>(p) + header_pad);
+  __builtin_memset(h, 0, sizeof(exception_header));
   h->allocation_size = recorded;
   return h;
 }
 void free_header(exception_header* h) noexcept {
+  unsigned char* block = reinterpret_cast<unsigned char*>(h) - header_pad;
   if (h->allocation_size == 0)
-    pool_free(h);
+    pool_free(block);
   else
-    ycxx_pal_deallocate(h, h->allocation_size, alignof(exception_header));
+    ycxx_pal_deallocate(block, h->allocation_size, object_alignment);
 }
 
 // Called when something other than this runtime deletes one of our exceptions
@@ -68,6 +79,9 @@ void free_header(exception_header* h) noexcept {
 void cleanup_native(_Unwind_Reason_Code reason, _Unwind_Exception* ue) {
   if (reason != _URC_FOREIGN_EXCEPTION_CAUGHT && reason != _URC_NO_REASON)
     std::terminate();
+  // Caught (and finished) by another runtime's handler: no longer uncaught.
+  if (reason == _URC_FOREIGN_EXCEPTION_CAUGHT)
+    --globals()->uncaught_exceptions;
   release(header_of_unwind(ue));
 }
 
@@ -83,7 +97,13 @@ void write_err(const char* s) noexcept {
 
 // The default terminate handler: reports the current exception (its mangled type name, and
 // what() for a std::exception) and aborts.
+constinit thread_local bool in_default_terminate = false;
+
 void default_terminate() {
+  // what() may itself end in terminate; report once.
+  if (in_default_terminate)
+    ycxx_pal_abort("terminate called recursively");
+  in_default_terminate = true;
   eh_globals* g = globals();
   exception_header* h = g->caught_exceptions;
   if (h && is_native(h->unwind_header.exception_class)) {
@@ -95,7 +115,7 @@ void default_terminate() {
       write_err(static_cast<const std::exception*>(obj)->what());
     }
     write_err("\n");
-    ycxx_pal_abort("terminate called after throwing an exception");
+    ycxx_pal_abort(nullptr);
   }
   if (h)
     ycxx_pal_abort("terminate called after throwing a foreign exception");
@@ -248,6 +268,11 @@ void __cxa_end_catch() {
   if (!h)
     std::terminate();
   if (is_native(h->unwind_header.exception_class)) {
+    // Already being rethrown (a `throw;` while unwinding from an earlier one, e.g. in a
+    // destructor's handler): its unwind header is in use, so throw a dependent exception that
+    // refers to the same object.
+    if (h->handler_count < 0)
+      rethrow_primary(object_of(h));
     h->handler_count = -h->handler_count;
     ++g->uncaught_exceptions;
   } else {

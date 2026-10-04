@@ -1,0 +1,6 @@
+// -*- C++ -*-  libycxx: <contracts>   [core; the default handler is in the runtime archives]
+#pragma once
+
+#include <ycxx/config.hpp>
+#include <ycxx/core/version.hpp>
+#include <ycxx/core/contracts.hpp>

@@ -5,6 +5,10 @@
 
 namespace std {
 
+namespace contracts {
+class contract_violation;
+}
+
 struct source_location {
 private:
   // Name and member names are fixed by GCC and Clang: __builtin_source_location() returns a
@@ -17,6 +21,14 @@ private:
     unsigned _M_column;
   };
   const __impl* impl_ = nullptr;
+
+  // contract_violation::location(): the data a compiler-built violation object points to.
+  friend class contracts::contract_violation;
+  static constexpr source_location from_builtin(const void* p) noexcept {
+    source_location s;
+    s.impl_ = static_cast<const __impl*>(p);
+    return s;
+  }
 
 public:
   static consteval source_location current(const void* p = __builtin_source_location()) noexcept {

@@ -22,6 +22,8 @@ CORE += ["ratio", "numbers", "cmath", "complex", "valarray"]
 CORE += ["atomic", "stdatomic.h"]
 # <debugging>: defined in the runtime archives (is_debugger_present asks the PAL).
 CORE += ["debugging"]
+# <contracts>: the default contract-violation handler is in the runtime archives.
+CORE += ["contracts"]
 # Hosted: need an OS (through the PAL) or the C library.
 HOSTED = [
     "any", "cctype", "cerrno", "cfenv", "cinttypes", "clocale", "csetjmp", "csignal", "cstdarg", "cstdio",

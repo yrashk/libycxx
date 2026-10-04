@@ -186,6 +186,10 @@
 #define __cpp_lib_debugging 202403L
 // <text_encoding>
 #define __cpp_lib_text_encoding 202306L
+// <contracts>: the language feature is the compiler's (GCC 16; not Clang 23)
+#if YCXX_HAS_CONTRACTS
+#  define __cpp_lib_contracts 202502L
+#endif
 #define __cpp_lib_ranges_cache_latest 202411L
 #define __cpp_lib_ranges_cartesian_product 202207L
 #define __cpp_lib_ranges_chunk 202202L

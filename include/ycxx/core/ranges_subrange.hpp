@@ -6,6 +6,7 @@
 #include <ycxx/core/ranges_base.hpp>
 #include <ycxx/core/iterator_adaptors.hpp>
 #include <ycxx/core/tuple_like.hpp>
+#include <ycxx/core/pair.hpp>
 #include <ycxx/core/error.hpp>
 
 namespace ycxx::detail {
@@ -370,4 +371,8 @@ struct tuple_element<1, const ranges::subrange<I, S, K>> {
 namespace ycxx::detail {
 template <class I, class S, std::ranges::subrange_kind K>
 inline constexpr bool is_tuple_like_impl<std::ranges::subrange<I, S, K>> = true;
+// Excluded from pair's and tuple's pair-like/tuple-like constructors and from the pair-like
+// uses_allocator_construction_args overload (pair.hpp).
+template <class I, class S, std::ranges::subrange_kind K>
+inline constexpr bool is_subrange<std::ranges::subrange<I, S, K>> = true;
 } // namespace ycxx::detail

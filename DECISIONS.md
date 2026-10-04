@@ -114,6 +114,21 @@ tooling.
   out of line in `src/hosted/string.cpp` (libycxx.a), as the `<stdexcept>` members are; a
   freestanding program that calls them gets a link error. So `<string>` includes no C header
   (unlike the C wrappers, it does not provide `errno`, `EOF`, `::uint32_t`, ...).
+- **`<memory_resource>`: the classes are core, their definitions hosted.** `memory_resource`
+  and `polymorphic_allocator` are defined in core (`ycxx/core/memory_resource.hpp`), so `<string>`
+  (and the other containers, whose `pmr::` aliases name `polymorphic_allocator` through
+  `ycxx/core/memory_resource_fwd.hpp`, which carries the one default template argument) can
+  make `pmr::string` complete without a hosted include. Everything that needs a single
+  definition is in the hosted runtime (`src/hosted/memory_resource.cpp`, libycxx.a): the
+  destructor of `memory_resource` (its key function, so its vtable and type_info are emitted
+  there, with RTTI), `new_delete_resource`/`null_memory_resource` (constant-initialized
+  objects; their destructors run at exit and do nothing), the default-resource pointer
+  (`__atomic` load/exchange), and all members of the pool resources and
+  `monotonic_buffer_resource` (declared in `ycxx/hosted/memory_resource.hpp`).
+  `synchronized_pool_resource` is the unsynchronized pool behind a three-state lock built on
+  the PAL's `ycxx_pal_wait`/`ycxx_pal_wake_all` (no `<mutex>` dependency, no per-thread pools).
+  The `<memory_resource>` header is hosted; a freestanding program can name the core types but
+  gets a link error if it uses them.
 - **Freestanding runtime archive.** `libycxx-freestanding.a` holds what a freestanding program
   may need defined but core headers must not define: the default replaceable allocation
   functions (no heap: `bad_alloc`/handler, `nullptr` for the nothrow forms) and `std::nothrow`.

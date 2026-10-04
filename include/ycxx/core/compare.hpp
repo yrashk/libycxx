@@ -282,8 +282,9 @@ namespace ycxx::detail {
 // the built-in one ([over.match.oper]/1). Checked first: looking for operator functions by
 // ADL would complete the classes that pointer operands point to.
 template <class T, class U>
-concept no_class_operand = !__is_class(__remove_cvref(T)) && !__is_enum(__remove_cvref(T)) &&
-                           !__is_class(__remove_cvref(U)) && !__is_enum(__remove_cvref(U));
+concept no_class_operand = !__is_class(__remove_cvref(T)) && !__is_union(__remove_cvref(T)) &&
+                           !__is_enum(__remove_cvref(T)) && !__is_class(__remove_cvref(U)) &&
+                           !__is_union(__remove_cvref(U)) && !__is_enum(__remove_cvref(U));
 
 // A user-declared operator<=> (member or non-member) accepts the operands in either order, so
 // it is a candidate for `t <=> u` and, as a rewritten or synthesized candidate, for `t < u`,

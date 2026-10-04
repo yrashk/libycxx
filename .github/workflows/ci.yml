@@ -23,7 +23,6 @@ jobs:
           ln -sf "$(command -v g++)" /usr/local/bin/g++-16
           ln -sf "$(command -v gcc)" /usr/local/bin/gcc-16
           mkdir -p /opt/gcc-16/lib64 /opt/gcc-16/lib/gcc/x86_64-pc-linux-gnu
-          ln -sf "$(g++ -print-file-name=libsupc++.a)" /opt/gcc-16/lib64/libsupc++.a
           ln -sfn "$(dirname "$(g++ -print-libgcc-file-name)")" /opt/gcc-16/lib/gcc/x86_64-pc-linux-gnu/16.2.0
 
       - name: Policy, builds, freestanding

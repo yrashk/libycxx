@@ -1,8 +1,8 @@
 #!/bin/sh
 # Compile and link against libycxx.
 #   ycxx-cxx gcc|clang [compiler args...]
-# Uses build/<compiler>/libycxx.a and the ABI runtime (libsupc++) from GCC 16.
-# YCXX_ABI=own links libycxx's own ABI runtime (build/<compiler>/libycxx-abi.a) instead.
+# Links build/<compiler>/libycxx.a and libycxx's own ABI runtime (build/<compiler>/libycxx-abi.a);
+# stack unwinding comes from the toolchain's libgcc_eh.
 here=$(cd "$(dirname "$0")/.." && pwd)
 which=$1; shift
 gcc_dir=/opt/gcc-16
@@ -11,8 +11,7 @@ case $which in
   clang) cxx=clang++-23; extra="--gcc-install-dir=$gcc_dir/lib/gcc/x86_64-pc-linux-gnu/16.2.0" ;;
   *) echo "usage: ycxx-cxx gcc|clang args..." >&2; exit 2 ;;
 esac
-abi="$gcc_dir/lib64/libsupc++.a"
-[ "${YCXX_ABI:-}" = own ] && abi="$here/build/$which/libycxx-abi.a"
+abi="$here/build/$which/libycxx-abi.a"
 link=1
 for a in "$@"; do case $a in -c|-S|-E|-fsyntax-only|-M|-MM) link=0 ;; esac; done
 if [ $link = 1 ]; then

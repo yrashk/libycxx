@@ -65,11 +65,15 @@ file(GLOB YCXX_CHARCONV_SOURCES CONFIGURE_DEPENDS src/runtime/charconv/*.cpp)
 file(GLOB YCXX_ATOMIC_SOURCES CONFIGURE_DEPENDS src/runtime/atomic/*.cpp)
 # <debugging> (also in the freestanding runtime archive); is_debugger_present is replaceable.
 file(GLOB YCXX_DEBUGGING_SOURCES CONFIGURE_DEPENDS src/runtime/debugging/*.cpp)
+# <contracts>: the replaceable default ::handle_contract_violation (also freestanding).
+file(GLOB YCXX_CONTRACTS_SOURCES CONFIGURE_DEPENDS src/runtime/contracts/*.cpp)
 add_library(ycxx STATIC
   ${YCXX_NEW_SOURCES}
   ${YCXX_CHARCONV_SOURCES}
   ${YCXX_ATOMIC_SOURCES}
   ${YCXX_DEBUGGING_SOURCES}
+  ${YCXX_CONTRACTS_SOURCES}
+  src/hosted/contracts.cpp
   src/hosted/thread.cpp
   src/hosted/future.cpp
   src/hosted/rcu.cpp

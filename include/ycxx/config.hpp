@@ -92,6 +92,12 @@
 #else
 #  define YCXX_HAS_MEMBER_INTERCONVERTIBILITY 0
 #endif
+// Contract assertions (P2900): __cpp_lib_contracts is defined only where the compiler has them.
+#if defined(__cpp_contracts)
+#  define YCXX_HAS_CONTRACTS 1
+#else
+#  define YCXX_HAS_CONTRACTS 0
+#endif
 #if __has_builtin(__builtin_type_order)
 #  define YCXX_HAS_BUILTIN_TYPE_ORDER 1
 #else

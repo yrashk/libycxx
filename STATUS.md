@@ -27,6 +27,7 @@ Conformance oracles (run only, never edited): libc++ tests from `llvmorg-23.1.2`
 | strings/string.view + char.traits | 36/170 | 36/170 | yes | 127 need `<string>` |
 | utilities/template.bitset | 16/46 | 16/46 | yes | rest: `<vector>`, `<algorithm>`, `<sstream>`, `<string>` |
 | iterators + range.access + concepts + function.objects | 185/515 | 185/515 | yes | most failures need `<ranges>`, `bind`, `function`, containers |
+| strings/basic.string + string.conversions + hash/literals/erasure | 137/252 | 137/252 | yes (sto*/fp to_string: hosted runtime) | was 0; 109 need `<vector>`/`<deque>` (via asan_testing.h), `<algorithm>`, `<sstream>`, `<ranges>`, `<cmath>`; rest below |
 
 Whole-suite baseline (clang, before iterators/tuple/array/optional): 976 pass / ~8,000 run.
 
@@ -40,12 +41,23 @@ libstdc++ testsuite: 20_util/{tuple,pair,uses_allocator}: 107 pass on both compi
 20_util/variant: 27/31 on both (rest: missing `<string>`, `<vector>`, `<any>`).
 20_util/any: 22/30 on both (rest: `<vector>`, `<string>`, `<set>`, `unique_ptr`).
 21_strings/basic_string_view + char_traits: 98/130 on both (rest: `<string>`, `<sstream>`, `<iosfwd>`).
+21_strings/basic_string (+ basic_string_view): 97 -> 266/307 on both compilers (33 need missing
+headers, mostly `<sstream>`; the rest are listed under Known limitations). Own suite string/:
+55/60 on both (rest: `<algorithm>`, `<ranges>`, `<list>`, and `pmr::string` needs
+`polymorphic_allocator`); also clean under ASan on Clang (GCC 16 here has no ASan runtime).
 20_util/bitset + 23_containers/bitset: 22/38 on both (rest: `<string>`, `<sstream>`).
 23_containers/span: 30/35 on both (rest: `<vector>`, `<deque>`).
 20_util/expected: clang 18/20, gcc 18/20 (rest: `<string_view>`, `<vector>`). The libstdc++ harness
 compiles with `-O2`, as DejaGnu's default flags do. Some tests rely on dead-code elimination:
 `expected/cons.cc` declares `E(const int&)` without defining it, and links only when the
 unreachable error branch is removed. `dg-options -fno-inline` is passed through.
+<memory> (Phase 3): specialized algorithms (std and ranges, constexpr), unique_ptr, shared_ptr /
+weak_ptr / enable_shared_from_this / make_shared family (constexpr), owner_less / owner_hash /
+owner_equal, out_ptr / inout_ptr. Own suite memory: Clang 81/83, GCC 80/83 plus 1 XFAIL;
+make_shared.pass and make_unique.pass need `<string>`. libc++ utilities/memory
+67 -> 141 and utilities/smartptr 15 -> 51 (GCC) / 52 (Clang); libstdc++ 20_util smart pointer
+and specialized-algorithm directories 37 -> 189 (GCC), 36 -> 190 (Clang). The remaining failures
+need `<string>`, `<vector>`, `<algorithm>`, `<ranges>`, `<sstream>`, `<atomic>` or are noted below.
 
 ## Freestanding
 `tools/check_freestanding.sh`: every core header compiles with `-ffreestanding -nostdlib -nostdinc
@@ -101,6 +113,18 @@ Deprecated and removed features are not implemented (`is_pod`, `is_trivial`, `al
   accepted on the left.
 
 ## Known limitations and draft defects
+- `<memory>`: no `atomic<shared_ptr<T>>` / `atomic<weak_ptr<T>>`, no `operator<<` for
+  unique_ptr/shared_ptr (no `<ostream>`), no execution-policy overloads of the specialized
+  algorithms, no `pointer_tag_pair`, `indirect`, `polymorphic`. shared_ptr reference counts use
+  the `__atomic` builtins unconditionally (no single-threaded fast path). get_deleter identifies
+  the deleter type by a per-type tag address (same shared-library caveat as `any`).
+  make_shared of a multi-dimensional array of a non-trivial class type cannot be
+  constant-evaluated on Clang (Clang will not let element construction begin the enclosing
+  array's lifetime).
+- GCC 16.2: `new T[3]` of a class with a non-trivial destructor and a 256-byte
+  `std::array` member (default member initializer) reads back wrong values in a generic lambda
+  (libc++ unique.ptr.observers/op_subscript.runtime; fails with libstdc++ too). libstdc++
+  destroy/121024.cc fails on GCC (PR c++/102284, marked dg-xfail-if, which the harness ignores).
 - `FLT_ROUNDS` is the constant 1 with GCC (no `__builtin_flt_rounds`), as in GCC's own
   `<float.h>`; it does not follow `fesetround`. Clang reports the current mode.
 - `<cwchar>` with Clang on glibc: glibc declares `::wcschr` etc. only with the C signature, so an
@@ -142,6 +166,25 @@ Deprecated and removed features are not implemented (`is_pod`, `is_trivial`, `al
   shared library built with hidden visibility or `-Bsymbolic` does not recognise the type.
 - No `<stddef.h>` wrapper: `::max_align_t` comes from the compiler's header and is not
   `std::max_align_t` (see Deliberate divergences).
+
+- `<string>`: the libc++ tests using `constexpr_char_traits.h`/`nasty_string.h` (`EOF`),
+  `deallocate_size` (`::uint32_t`) and libstdc++'s `errno.cc` expect `<string>` to pull in C
+  headers, which core `<string>` does not (DECISIONS §3). With those headers and `<vector>`/
+  `<deque>`/`<algorithm>` stubbed, libc++ strings passes 225/252 on Clang; the remaining
+  failures are missing headers, `reserve()` without argument (removed in C++26), and
+  `to_string(double)` tests that expect the pre-C++26 `"%f"` output (libycxx implements
+  `format("{}", v)`, P2587).
+- `<string>` deviations by design: the string-view-like constraint also excludes classes derived
+  from `basic_string` (so a derived rvalue is moved, not copied through a `string_view`);
+  `resize_and_overwrite` passes `p` and `m` as prvalues and leaves the string unchanged if the
+  (precondition-violating) operation throws; the libstdc++ tests checking
+  `__cpp_lib_constexpr_string == 201907` see 202511 (constexpr integral `to_string`).
+- `pmr::basic_string` and friends are declared, but `polymorphic_allocator` is only
+  forward-declared (`ycxx/core/memory_resource_fwd.hpp`) until `<memory_resource>` exists, so
+  the pmr strings cannot be instantiated yet.
+- Floating-point `to_string` is implemented in the hosted runtime with `snprintf("%.*Le")` and
+  `strto*` round-trip checks (no `<charconv>` dependency); switching it to `to_chars` once that
+  exists would be faster.
 
 ## Open issues / next
 - Phase 2 is complete. The ABI runtime (src/abi) replaced libsupc++: broad sweep 4483 -> 4535

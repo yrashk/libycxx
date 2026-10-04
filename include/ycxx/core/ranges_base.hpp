@@ -1,5 +1,5 @@
-// libycxx core: the parts of <ranges> that other headers specialise before <ranges> exists in a
-// translation unit: enable_view, view_base and view_interface's declaration.
+// libycxx core: the parts of <ranges> that other headers specialise or use before <ranges> exists in a
+// translation unit: enable_view, view_base, view_interface's declaration and from_range_t.
 #pragma once
 
 #include <ycxx/core/concepts.hpp>
@@ -23,3 +23,11 @@ namespace std::ranges {
 template <class T>
 constexpr bool enable_view = derived_from<T, view_base> || ycxx::detail::derived_from_view_interface<T>;
 } // namespace std::ranges
+
+namespace std {
+// [ranges.syn]: the tag of the containers' range constructors.
+struct from_range_t {
+  explicit from_range_t() = default;
+};
+inline constexpr from_range_t from_range{};
+} // namespace std

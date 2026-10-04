@@ -48,6 +48,17 @@
 #define __cpp_lib_allocate_at_least 202302L
 #define __cpp_lib_allocator_traits_is_always_equal 201411L
 #define __cpp_lib_constexpr_dynamic_alloc 201907L
+#define __cpp_lib_raw_memory_algorithms 202411L
+#define __cpp_lib_make_unique 201304L
+#define __cpp_lib_smart_ptr_for_overwrite 202002L
+#define __cpp_lib_shared_ptr_arrays 201707L
+#define __cpp_lib_shared_ptr_weak_type 201606L
+#define __cpp_lib_enable_shared_from_this 201603L
+#define __cpp_lib_smart_ptr_owner_equality 202306L
+#define __cpp_lib_hardened_shared_ptr_array 202506L
+#define __cpp_lib_constexpr_memory 202506L
+#define __cpp_lib_out_ptr 202311L
+#define __cpp_lib_transparent_operators 201510L
 
 // <array>
 #define __cpp_lib_array_constexpr 201811L
@@ -73,7 +84,7 @@
 // <any>
 #define __cpp_lib_any 201606L
 
-// <string_view>, <string> (char_traits)
+// <string_view>, <string>
 #define __cpp_lib_string_view 202403L
 #define __cpp_lib_constexpr_string_view 201811L
 #define __cpp_lib_freestanding_string_view 202311L
@@ -81,6 +92,10 @@
 #define __cpp_lib_starts_ends_with 201711L
 #define __cpp_lib_string_contains 202011L
 #define __cpp_lib_string_subview 202506L
+#define __cpp_lib_constexpr_string 202511L
+#define __cpp_lib_string_resize_and_overwrite 202110L
+#define __cpp_lib_string_udls 201304L
+#define __cpp_lib_to_string 202306L
 
 // <bitset>
 #define __cpp_lib_bitset 202306L
@@ -182,6 +197,7 @@
 // whose hardened preconditions are checked.
 #if YCXX_HARDENED
 #  define __cpp_lib_hardened_array 202502L
+#  define __cpp_lib_hardened_basic_string 202502L
 #  define __cpp_lib_hardened_basic_string_view 202502L
 #  define __cpp_lib_hardened_bitset 202502L
 #  define __cpp_lib_hardened_expected 202502L

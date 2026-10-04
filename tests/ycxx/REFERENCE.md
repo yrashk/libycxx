@@ -72,6 +72,16 @@ Legend: **G** fails with GCC + libstdc++, **C** with Clang + libstdc++.
 | `iostreams/num_get_hexfloat` | G | C | extracting a double from "0x1a.bp+07p" stops after "0" | [facet.num.get.virtuals] Example 1: with %g, "0x1a.bp+07" is accumulated |
 | `inplace_vector/from_range_mandates` (compile.fail) | G | C | a constant-size range larger than N is accepted | [inplace.vector.cons]/9: Mandates: ranges::size(rg) <= N when it is a constant expression |
 
+| `cmath/lerp` | G | C | `lerp(0, 1, inf)` and `lerp(a, 0, inf)` return NaN | [c.math.lerp]/2.5: "If isfinite(t) \|\| !isnan(t) && b - a != 0, then !isnan(r)" |
+| `cmath/nexttoward_extended` (compile.fail) | G |  | `nexttoward(float32_t, long double)` is accepted (Clang defines no extended types, so the test checks nothing there) | [cmath.syn]/4: nexttoward with an extended floating-point argument is ill-formed |
+| `complex/additional_overloads` | G | C | `pow(complex<float>, int)` yields `complex<float>`; `arg(1.0)` is not constexpr | [cmplx.over]/3: both arguments cast to `complex<common_type_t<T1, T3>>`, T3 = double for integers; [cmplx.over]/1: constexpr |
+| `indirect/allocator` | G | C | the allocator-extended move constructor with unequal allocators leaves the source non-valueless (line 45) | [indirect.ctor]: "Postconditions: other is valueless" |
+| `mdspan/layout_padded_default` | G | C | `layout_left_padded<>`/`layout_right_padded<>` rejected | [mdspan.syn]: `template<size_t PaddingValue = dynamic_extent>` |
+| `scoped_allocator/types` | G | C | no deduction guide | [allocator.adaptor.syn]: `scoped_allocator_adaptor(OuterAlloc, InnerAllocs...) -> ...` |
+| `scoped_allocator/members` |  | C | `==` between adaptors with different outer types is ambiguous (an internal `operator==` and its reversed form) | [scoped.adaptor.operators]/1 |
+| `regex/errors` | G | C | `"*a"` throws `error_paren`, `"a**"` is accepted, `"[[:nonsense:]]"` throws `error_collate` (line 32) | [re.err]: `error_badrepeat` ("not preceded by a valid regular expression"), `error_ctype` ("invalid character class name"); ECMA-262 rejects `a**` |
+| `regex/ecmascript` | G | C | `\cJ` does not match `"\n"` (line 47) | [re.grammar]/1: ECMA-262 ControlEscape `\cX` |
+| `debugging/replace_is_debugger_present` | G | C | a user definition collides with libstdc++exp's ("multiple definition") | [debugging.utility]/5: "This function is replaceable" |
 ## 2. Missing in libstdc++ 16 (newer C++26 additions, constexpr, API revisions)
 
 | Test(s) | G | C | Missing |
@@ -102,6 +112,13 @@ Legend: **G** fails with GCC + libstdc++, **C** with Clang + libstdc++.
 | `random/generate_random`, `random/version_macros` | G | C | `ranges::generate_random`, `__cpp_lib_ranges_generate_random` |
 | `map/lookup`, `unordered_map/lookup`, `flat_map/lookup` | G | C | the C++26 `lookup` members |
 | `version/*` | G | C | macros missing or with older values: `__cpp_lib_bitops` (202607L), `__cpp_lib_constexpr_bitset` (202207L), `__cpp_lib_expected` (202606L), `__cpp_lib_freestanding_optional` (202506L), `__cpp_lib_apply` (202603L), `__cpp_lib_initializer_list`, `__cpp_lib_freestanding_{iterator,tuple,utility,cwchar}`, `__cpp_lib_freestanding_operator_new` ([version.syn]/4), `__cpp_lib_atomic_min_max`, `__cpp_lib_barrier`, ... |
+| `cmath/constexpr_exact`, `cmath/constexpr_special_values`, `cmath/hypot3` | G | C | constexpr `<cmath>` (P0533, P1383): e.g. `remquo`, `abs(long)`; GCC does not fold `exp(-inf)`, `fmax(1, NaN)` |
+| `cmath/nextup_nextdown`, `cmath/fmaximum_fminimum` | G | C | C23 `nextup`/`nextdown`, `fmaximum` family |
+| `complex/values`, `complex/constexpr_transcendentals` | G | C | constexpr `abs`, `arg`, `proj`, `polar` and transcendentals |
+| `valarray/range_access` | G | C | `valarray::iterator`, member `begin`/`end` ([valarray.range]) |
+| `mdspan/copy_fill` | G | C | `copy`/`fill` for mdspan ([mdspan.copy]) |
+| `linalg/*` | G | C | `<linalg>` |
+| `debugging/debugging`, `stacktrace/*`, `text_encoding/text_encoding` | G | C | link only with `-lstdc++exp` (the tests add no flags; with it they pass) |
 
 ## 3. Differences between GCC and Clang with the same libstdc++
 
@@ -120,6 +137,8 @@ Clang rejects code GCC accepts.
 | containers using `std::from_range`, `insert_range`, `append_range` | `from_range` and the range members are unavailable with Clang |
 | `format/dynamic_width_precision` (and `format/fmt_dynamic_width_double`, a compile.fail test that Clang rejects for this reason, not the intended one) | every dynamic width/precision (`{:{}}`, `{:.{}}`) is rejected: libstdc++'s compile-time check calls a function Clang reports as undefined in constant evaluation |
 | `cwchar/freestanding_functions` | `std::wcschr` and friends on `const wchar_t*` return `wchar_t*` (glibc's declarations; libycxx documents the same limitation for unqualified calls) |
+| `complex/arithmetic`, `complex/literals` | libstdc++'s compound operators use `__real__`/`__imag__`, which Clang cannot constant-evaluate ([complex.member.ops]: constexpr) |
+| `cmath/constexpr_raising_call`, `cmath/constexpr_invalid_call` (compile.fail) | fail on the control line too: `log(1.0)`, `sqrt(4.0)` are not constexpr with Clang |
 
 ## 4. C library headers
 

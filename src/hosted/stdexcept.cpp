@@ -1,6 +1,7 @@
 // libycxx hosted runtime: <stdexcept> members and the out-of-line throw hook.
 #include <stdexcept>
 #include <new>
+#include <string>
 #include <ycxx/core/error.hpp>
 
 namespace ycxx::detail {
@@ -63,9 +64,11 @@ shared_message::~shared_message() {
 } // namespace ycxx::detail
 
 namespace std {
+logic_error::logic_error(const string& s) : msg_(s.c_str(), s.size()) {}
 logic_error::logic_error(const char* s) : msg_(s) {}
 logic_error::~logic_error() noexcept = default;
 const char* logic_error::what() const noexcept { return msg_.c_str(); }
+runtime_error::runtime_error(const string& s) : msg_(s.c_str(), s.size()) {}
 runtime_error::runtime_error(const char* s) : msg_(s) {}
 runtime_error::~runtime_error() noexcept = default;
 const char* runtime_error::what() const noexcept { return msg_.c_str(); }
@@ -76,4 +79,11 @@ out_of_range::~out_of_range() noexcept = default;
 range_error::~range_error() noexcept = default;
 overflow_error::~overflow_error() noexcept = default;
 underflow_error::~underflow_error() noexcept = default;
+domain_error::domain_error(const string& s) : logic_error(s) {}
+invalid_argument::invalid_argument(const string& s) : logic_error(s) {}
+length_error::length_error(const string& s) : logic_error(s) {}
+out_of_range::out_of_range(const string& s) : logic_error(s) {}
+range_error::range_error(const string& s) : runtime_error(s) {}
+overflow_error::overflow_error(const string& s) : runtime_error(s) {}
+underflow_error::underflow_error(const string& s) : runtime_error(s) {}
 } // namespace std

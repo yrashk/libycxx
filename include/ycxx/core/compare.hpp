@@ -305,6 +305,13 @@ struct compare_three_way {
       auto pt = static_cast<const volatile void*>(t);
       auto pu = static_cast<const volatile void*>(u);
       if consteval {
+        // Null orders before every other pointer (see total_less in functional_base.hpp).
+        if (pt == pu)
+          return strong_ordering::equal;
+        if (pt == nullptr)
+          return strong_ordering::less;
+        if (pu == nullptr)
+          return strong_ordering::greater;
         return pt <=> pu;
       } else {
         auto a = reinterpret_cast<__UINTPTR_TYPE__>(pt);

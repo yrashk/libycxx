@@ -14,6 +14,9 @@ namespace ycxx::detail {
 // [c.math.abs]/3: an unsigned type that integral promotion does not turn into int.
 template <class T>
 concept abs_unsigned_unpromotable = is_integral_v<T> && is_unsigned_v<T> && !(sizeof(T) < sizeof(int));
+// The 128-bit integer type, where the target has one.
+template <class T>
+concept abs_int128 = is_integral_v<T> && __is_same(T, int128);
 } // namespace ycxx::detail
 
 namespace std {
@@ -33,7 +36,7 @@ constexpr long long abs(long long j) noexcept {
 // Extension: the 128-bit integer type where the target has one (ycxx::detail::int128 is
 // integral there and an incomplete type otherwise).
 template <class T = ycxx::detail::int128>
-  requires(ycxx::detail::is_integral_v<T> && __is_same(T, ycxx::detail::int128))
+  requires ycxx::detail::abs_int128<T>
 constexpr T abs(type_identity_t<T> j) noexcept {
   return j < 0 ? -j : j;
 }

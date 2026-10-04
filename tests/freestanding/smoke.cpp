@@ -2,6 +2,13 @@
 #include <atomic>
 #include <bit>
 #include <cassert>
+#include <cerrno>
+#include <cstdarg>
+#include <cstdlib>
+#include <cstring>
+#include <cwchar>
+#include <stdbit.h>
+#include <system_error>
 #include <charconv>
 #include <compare>
 #include <concepts>
@@ -14,6 +21,19 @@
 #include <utility>
 
 namespace {
+int sum(int n, ...) {
+  std::va_list ap;
+  va_start(ap, n);
+  int s = 0;
+  for (int i = 0; i != n; ++i)
+    s += va_arg(ap, int);
+  va_end(ap);
+  return s;
+}
+int by_value(const void* a, const void* b) {
+  int x = *static_cast<const int*>(a), y = *static_cast<const int*>(b);
+  return (x > y) - (x < y);
+}
 struct Pt {
   int x, y;
   auto operator<=>(const Pt&) const = default;
@@ -56,5 +76,19 @@ extern "C" int ycxx_freestanding_main() {
     ++r;
   r += ai.load() - r;
   assert(r > 0);
+  // The freestanding subsets of the C library headers, without a C library.
+  char s1[16];
+  std::strcpy(s1, "freestanding");
+  r += static_cast<int>(std::strlen(s1)) + (std::strchr(s1, 'n') - s1) + (std::strstr(s1, "stand") != nullptr);
+  r += std::memccpy(s1, "a=b", '=', 3) != nullptr;
+  std::memset_explicit(s1, 0, sizeof s1);
+  r += static_cast<int>(std::wcslen(L"wide")) + std::wcscmp(L"a", L"b");
+  int v[] = {3, 1, 2};
+  std::qsort(v, 3, sizeof(int), by_value);
+  int key = 2;
+  r += std::bsearch(&key, v, 3, sizeof(int), by_value) == v + 1;
+  r += std::abs(-3) + std::div(7, 2).rem + static_cast<int>(std::memalignment(v));
+  r += sum(3, 1, 2, 3) + (ERANGE == static_cast<int>(std::errc::result_out_of_range));
+  r += static_cast<int>(stdc_count_ones(0xf0u) + stdc_bit_ceil_uc(5));
   return r;
 }

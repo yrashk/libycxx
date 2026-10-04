@@ -6,6 +6,10 @@
 #include <ycxx/core/cstddef.hpp>
 #include <time.h>
 
+#ifndef __STDC_VERSION_TIME_H__
+#  define __STDC_VERSION_TIME_H__ 202311L
+#endif
+
 namespace std {
 using ::clock_t;
 using ::time_t;

@@ -143,23 +143,33 @@ template <ycxx::detail::bit_unsigned T>
 
 namespace ycxx::detail {
 // x * 2^s and x * 2^-s rounded toward negative infinity, modulo 2^N, for any shift amount.
+// One return statement each: constant evaluation counts statements, and shl/shr are cheap enough
+// to be called in long constant-evaluated loops.
 template <class T>
 constexpr T shift_left(T x, unsigned long long s) noexcept {
-  using U = std::make_unsigned_t<T>;
-  if (s >= static_cast<unsigned long long>(bit_digits<T>))
-    return T(0);
-  return static_cast<T>(static_cast<U>(static_cast<U>(x) << s));
+  return s >= static_cast<unsigned long long>(bit_digits<T>)
+           ? T(0)
+           : static_cast<T>(static_cast<std::make_unsigned_t<T>>(static_cast<std::make_unsigned_t<T>>(x) << s));
 }
 template <class T>
 constexpr T shift_right(T x, unsigned long long s) noexcept {
-  if (s >= static_cast<unsigned long long>(bit_digits<T>))
-    return (is_signed_v<T> && x < 0) ? T(-1) : T(0);
-  return static_cast<T>(x >> s); // arithmetic shift for signed: rounds toward -infinity
+  // An arithmetic shift for signed T: rounds toward -infinity.
+  return s >= static_cast<unsigned long long>(bit_digits<T>) ? ((is_signed_v<T> && x < 0) ? T(-1) : T(0))
+                                                             : static_cast<T>(x >> s);
 }
+// |s|, computed in unsigned long long (a narrow type would promote to int).
 template <class S>
+  requires(sizeof(S) <= sizeof(unsigned long long))
+constexpr unsigned long long magnitude(S s) noexcept {
+  return s < 0 ? 0ull - static_cast<unsigned long long>(s) : static_cast<unsigned long long>(s);
+}
+// A wider S: a magnitude beyond unsigned long long saturates (it shifts every bit out anyway).
+template <class S>
+  requires(sizeof(S) > sizeof(unsigned long long))
 constexpr unsigned long long magnitude(S s) noexcept {
   using U = std::make_unsigned_t<S>;
-  return s < 0 ? static_cast<unsigned long long>(U(0) - static_cast<U>(s)) : static_cast<unsigned long long>(s);
+  const U m = s < 0 ? static_cast<U>(U(0) - static_cast<U>(s)) : static_cast<U>(s);
+  return m > static_cast<U>(~0ull) ? ~0ull : static_cast<unsigned long long>(m);
 }
 } // namespace ycxx::detail
 
@@ -168,15 +178,13 @@ namespace std {
 // [bit.shift]
 template <ycxx::detail::bit_integer T, ycxx::detail::bit_integer S>
 [[nodiscard]] constexpr T shl(T x, S s) noexcept {
-  if (s < 0)
-    return ycxx::detail::shift_right(x, ycxx::detail::magnitude(s));
-  return ycxx::detail::shift_left(x, ycxx::detail::magnitude(s));
+  return s < 0 ? ycxx::detail::shift_right(x, ycxx::detail::magnitude(s))
+               : ycxx::detail::shift_left(x, ycxx::detail::magnitude(s));
 }
 template <ycxx::detail::bit_integer T, ycxx::detail::bit_integer S>
 [[nodiscard]] constexpr T shr(T x, S s) noexcept {
-  if (s < 0)
-    return ycxx::detail::shift_left(x, ycxx::detail::magnitude(s));
-  return ycxx::detail::shift_right(x, ycxx::detail::magnitude(s));
+  return s < 0 ? ycxx::detail::shift_left(x, ycxx::detail::magnitude(s))
+               : ycxx::detail::shift_right(x, ycxx::detail::magnitude(s));
 }
 
 // [bit.permute]

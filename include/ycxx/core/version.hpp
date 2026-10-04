@@ -334,14 +334,18 @@
 #  define __cpp_lib_rcu 202306L
 #  define __cpp_lib_hazard_pointer 202606L
 #  define __cpp_lib_freestanding_operator_new 202306L
-// The freestanding parts of <cstdlib>/<cstring>/<cwchar> exist only as the hosted C library
-// wrappers.
-#  define __cpp_lib_freestanding_cstring 202311L
-#  define __cpp_lib_freestanding_cwchar 202306L
-#  define __cpp_lib_freestanding_cstdlib 202306L
 #else
 #  define __cpp_lib_freestanding_operator_new 0
 #endif
+// The freestanding parts of <cstdlib>/<cstring>/<cwchar>: the C library's when hosted,
+// ycxx/core/c_stdlib.hpp and c_string.hpp otherwise.
+#define __cpp_lib_freestanding_cstring 202311L
+#define __cpp_lib_freestanding_cwchar 202306L
+#define __cpp_lib_freestanding_cstdlib 202306L
+// <stdbit.h>
+#define __cpp_lib_stdbit_h 202603L
+// <stdckdint.h>
+#define __cpp_lib_stdckdint_h 202603L
 
 // [version.syn]/3: defined only by a hardened implementation (YCXX_HARDENED=1), for the headers
 // whose hardened preconditions are checked.

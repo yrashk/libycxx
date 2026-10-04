@@ -154,7 +154,18 @@ class re_backtracker {
     if (steps_ > limit)
       ::ycxx::detail::re_throw_complexity();
   }
-  // false if (memo point mp, idx) was visited before; marks it.
+  // The memo point mp, refined by whether each enclosing nullable-body loop began its current
+  // iteration at idx (the only state, besides pc and idx, that the rest of the match depends on).
+  int memo_key(int mp, std::ptrdiff_t idx) const {
+    const unsigned mask = P_.memo_mask[static_cast<std::size_t>(mp)];
+    unsigned v = 0;
+    for (std::size_t k = 0; k < P_.memo_loops.size(); ++k)
+      if ((mask >> k) & 1u)
+        if (ls_[static_cast<std::size_t>(P_.memo_loops[k])].start_idx == idx)
+          v |= 1u << k;
+    return mp << P_.memo_loops.size() | static_cast<int>(v);
+  }
+  // false if (memo key mp, idx) was visited before; marks it.
   bool visit(int mp, std::ptrdiff_t idx) {
     const std::size_t w = static_cast<std::size_t>(idx) * memo_wpp_ + static_cast<std::size_t>(mp) / 64;
     if (w >= memo_.size()) {
@@ -289,7 +300,7 @@ class re_backtracker {
       tick(idx);
       if (memo_on_) {
         const int mp = P_.memo_index[static_cast<std::size_t>(pc)];
-        if (mp >= 0 && !visit(mp, idx))
+        if (mp >= 0 && !visit(memo_key(mp, idx), idx))
           goto fail;
       }
       {
@@ -448,7 +459,7 @@ public:
     whole_ = whole;
     longest_ = P_.posix;
     memo_on_ = P_.memo && !longest_;
-    memo_wpp_ = static_cast<std::size_t>(P_.memo_points + 63) / 64;
+    memo_wpp_ = ((static_cast<std::size_t>(P_.memo_points) << P_.memo_loops.size()) + 63) / 64;
     const bool continuous = whole || (flags_ & std::regex_constants::match_continuous) != 0;
     ls_.assign(P_.loops.size(), loop_state{});
     It start = first_;
@@ -811,8 +822,8 @@ class re_posix_sub {
     }
     case re_kind::repeat: {
       const int body = x.kids[0];
-      if (s == t) { // one empty iteration if the body can match it
-        if (!ends(body, s, s).empty()) {
+      if (s == t) { // one empty iteration if the body can match it and no iteration preceded
+        if (!x.tail && !ends(body, s, s).empty()) {
           reset_groups(x);
           span(body, s, s);
         }

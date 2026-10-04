@@ -29,6 +29,7 @@ template <class charT>
 struct re_node {
   re_kind kind = re_kind::empty;
   bool greedy = true;
+  bool tail = false;      // POSIX expansion: a repetition that follows an iteration of its own
   charT ch{};
   int val = 0;            // set index; group or back-reference number
   int min = 0, max = 0;   // repeat; max < 0: unbounded
@@ -121,6 +122,8 @@ struct re_program {
   // memo: the dense index of each pc where a failed (pc, position) pair is remembered, or -1.
   std::vector<int> memo_index;
   int memo_points = 0;
+  std::vector<int> memo_loops;        // the loops whose body is nullable (at most 4)
+  std::vector<unsigned> memo_mask;    // per memo point: bit k if inside an iteration of memo_loops[k]
   // Caches for the code units below 256.
   charT fold[256] = {};
   unsigned char word[32] = {};
@@ -208,9 +211,15 @@ class re_compiler {
   using node = re_node<charT>;
   using set_type = re_set<charT, traits>;
 
-  // Limits on the size of a translated expression (error_space beyond them).
+  // Limits on the size of a translated expression (error_space beyond them): the tree and the
+  // code, and the nesting of groups (the translator and the matchers recurse over the tree).
   static constexpr std::size_t max_nodes = 1u << 20;
+  static constexpr int max_depth = 1000;
   static constexpr int max_count = 0x7fffffff;
+  // POSIX: bounded repetitions are expanded for the NFA only up to this many nodes in all and
+  // this many copies of one atom; beyond, the program backtracks (keeping the longest match).
+  static constexpr std::size_t max_expanded = 1u << 16;
+  static constexpr int max_copies = 256;
 
   const traits& tr_;
   re_program<charT, traits>& P_;
@@ -219,9 +228,14 @@ class re_compiler {
   std::vector<node> nodes_;
   std::vector<char> closed_; // POSIX: closed_[n] once group n is complete (not vector<bool>, which <vector> specializes)
   int max_backref_ = 0;
+  int depth_ = 0;
   enum grammar { ecma, bre, ere, awk_g } g_ = ecma;
 
   [[noreturn]] static void fail(rc_err e) { ::ycxx::detail::throw_regex_error(e); }
+  void enter() {
+    if (++depth_ > max_depth)
+      fail(std::regex_constants::error_space);
+  }
 
   bool at(char c) const { return p_ != end_ && *p_ == static_cast<charT>(c); }
   bool at2(char c, char d) const { return at(c) && p_ + 1 != end_ && p_[1] == static_cast<charT>(d); }
@@ -566,12 +580,14 @@ class re_compiler {
       fail(std::regex_constants::error_badrepeat);
   }
   int ecma_disjunction() {
+    enter();
     std::vector<int> alts;
     alts.push_back(ecma_alternative());
     while (at('|')) {
       ++p_;
       alts.push_back(ecma_alternative());
     }
+    --depth_;
     return list(re_kind::alt, alts);
   }
   int ecma_alternative() {
@@ -745,6 +761,7 @@ class re_compiler {
   }
   // A basic regular expression (basic, grep), up to the end or "\)".
   int bre_expr() {
+    enter();
     std::vector<int> terms;
     if (at('^')) {
       ++p_;
@@ -781,6 +798,7 @@ class re_compiler {
       }
       terms.push_back(atom);
     }
+    --depth_;
     return list(re_kind::concat, terms);
   }
   int bre_atom() {
@@ -824,12 +842,14 @@ class re_compiler {
   }
   // An extended regular expression (extended, egrep, awk).
   int ere_alt() {
+    enter();
     std::vector<int> alts;
     alts.push_back(ere_branch());
     while (at('|')) {
       ++p_;
       alts.push_back(ere_branch());
     }
+    --depth_;
     return list(re_kind::alt, alts);
   }
   int ere_branch() {
@@ -963,6 +983,21 @@ class re_compiler {
     const re_kind k = nodes_[static_cast<std::size_t>(n)].kind;
     return k == re_kind::chr || k == re_kind::any || k == re_kind::set;
   }
+  // The number of nodes expand() makes of n, saturated at max_expanded + 1; also too large when
+  // one atom would be copied more than max_copies times.
+  std::size_t expanded_size(int n) const {
+    const node& x = nodes_[static_cast<std::size_t>(n)];
+    std::size_t s = 1;
+    for (int k : x.kids)
+      s += expanded_size(k);
+    if (x.kind == re_kind::repeat) {
+      const int copies = x.max < 0 ? x.min + 1 : x.max;
+      if (copies > max_copies)
+        return max_expanded + 1;
+      s *= static_cast<std::size_t>(copies < 1 ? 1 : copies) * 2;
+    }
+    return s > max_expanded ? max_expanded + 1 : s;
+  }
   // Copies the subtree n (POSIX expansion of bounded repetitions).
   int clone(int n) {
     node x = nodes_[static_cast<std::size_t>(n)];
@@ -985,11 +1020,13 @@ class re_compiler {
     const int body = x.kids[0];
     if (x.min == 1 && x.max == 1)
       return body;
-    auto opt = [&](int kid, int mx) {
+    // A tail follows another iteration of the same repetition: it makes no empty iteration.
+    auto opt = [&](int kid, int mx, bool tail) {
       node r;
       r.kind = re_kind::repeat;
       r.min = 0;
       r.max = mx;
+      r.tail = tail;
       r.group_lo = x.group_lo;
       r.group_hi = x.group_hi;
       r.kids.push_back(kid);
@@ -999,12 +1036,12 @@ class re_compiler {
     for (int i = 0; i < x.min; ++i)
       seq.push_back(i == 0 ? body : clone(body));
     if (x.max < 0) {
-      seq.push_back(opt(x.min == 0 ? body : clone(body), -1));
-    } else if (x.max > x.min) {
-      int tail = opt(x.min == 0 ? body : clone(body), 1);
+      seq.push_back(opt(x.min == 0 ? body : clone(body), -1, x.min > 0));
+    } else if (x.max > x.min) { // x{0,3} is (x(x(x)?)?)?
+      int tail = opt(x.min == 0 ? body : clone(body), 1, x.min > 0 || x.max - x.min > 1);
       for (int i = x.min + 1; i < x.max; ++i) {
         std::vector<int> pair{clone(body), tail};
-        tail = opt(list(re_kind::concat, pair), 1);
+        tail = opt(list(re_kind::concat, pair), 1, x.min > 0 || i + 1 < x.max);
       }
       seq.push_back(tail);
     }
@@ -1131,8 +1168,19 @@ class re_compiler {
     emit(re_op::loop_tail, li);
     P_.loops[static_cast<std::size_t>(li)].iter_pc = it;
     P_.loops[static_cast<std::size_t>(li)].exit_pc = pc();
-    if (!(nullable(x.kids[0]) == false && (x.max == 1 || (x.max < 0 && x.min <= 1))))
+    // Whether the backtracker may remember failures: what follows a pc must not depend on the
+    // loop's counter, so max is 1 or unbounded, and min at most 1. An iteration that can match
+    // the empty string adds one bit of state, whether it began at the current position (the
+    // empty check), which joins the memo key; only for min == 0, and for at most 4 such loops.
+    const bool counts_ok = x.max == 1 || (x.max < 0 && x.min <= 1);
+    if (!counts_ok)
       P_.memo = false;
+    else if (nullable(x.kids[0])) {
+      if (x.min != 0 || P_.memo_loops.size() == 4)
+        P_.memo = false;
+      else
+        P_.memo_loops.push_back(li);
+    }
   }
 
   void finish() {
@@ -1157,6 +1205,25 @@ class re_compiler {
         if (lp.iter_pc != 0)
           mark(lp.iter_pc);
         mark(lp.exit_pc);
+      }
+      // A lookahead's body succeeds by reaching its look_end without ending the search, so a
+      // (pc, position) pair visited there may have succeeded: no memo inside lookaheads (the
+      // look instruction itself is a memo point: what follows it depends only on the position).
+      for (std::size_t i = 0; i < P.code.size(); ++i)
+        if (P.code[i].op == re_op::look)
+          for (int j = static_cast<int>(i) + 1; j <= P.code[i].a; ++j)
+            P.memo_index[static_cast<std::size_t>(j)] = -1;
+      // For each memo point, the nullable-body loops whose iteration it lies in.
+      P.memo_mask.assign(static_cast<std::size_t>(P.memo_points), 0);
+      for (std::size_t i = 0; i < P.code.size(); ++i) {
+        const int mp = P.memo_index[i];
+        if (mp < 0)
+          continue;
+        for (std::size_t k = 0; k < P.memo_loops.size(); ++k) {
+          const re_loop& lp = P.loops[static_cast<std::size_t>(P.memo_loops[k])];
+          if (static_cast<int>(i) > lp.iter_pc && static_cast<int>(i) < lp.exit_pc)
+            P.memo_mask[static_cast<std::size_t>(mp)] |= 1u << k;
+        }
       }
     }
     if (P.nfa) {
@@ -1240,7 +1307,7 @@ public:
       fail(rc::error_backref);
     if (P.has_backref)
       P.memo = false;
-    P.nfa = P.posix && !P.has_backref;
+    P.nfa = P.posix && !P.has_backref && expanded_size(root) <= max_expanded;
     if (P.nfa) {
       root = expand(root);
       P.node_begin.assign(nodes_.size(), 0);

@@ -21,3 +21,4 @@ utilities/tuple/tuple.tuple/tuple.helper/tuple_size_incomplete\.pass\.cpp | depr
 utilities/tuple/tuple.tuple/tuple.helper/tuple_size_value_sfinae\.pass\.cpp | deprecated | checks tuple_size<volatile pair> (Annex D, [depr.tuple])
 utilities/tuple/tuple.tuple/tuple.helper/tuple_size_v\.pass\.cpp | deprecated | uses tuple_size_v<volatile tuple<...>> (Annex D, [depr.tuple])
 utilities/utility/pairs/pair.astuple/tuple_element\.pass\.cpp | deprecated | uses tuple_element<I, volatile pair> (Annex D, [depr.tuple])
+utilities/variant/variant\.helpers/variant_size\.pass\.cpp | deprecated | tests variant_size<volatile T> (Annex D, [depr.variant]) -- deliberately not implemented: deprecated (Annex D) features are excluded by project rule (DECISIONS.md)

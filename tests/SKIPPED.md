@@ -10,6 +10,8 @@ UNSUPPORTED with the reason.
 | `removed` | Tests a feature removed from the standard (`result_of`, `is_literal_type`, `auto_ptr`, ...). |
 | `divergence` | The test expects behaviour that contradicts the current working draft. Each entry cites the draft section. |
 | `extension` | Tests a libc++ or libstdc++ extension, not standard behaviour. |
+| `implementation-specific` | Asserts something the standard leaves unspecified (object sizes, hash values, behaviour after `#undef` of a reserved macro). |
+| `compiler-internals` | Checks compiler output such as GCC tree dumps (`scan-tree-dump`), not library behaviour. |
 | `pre-c++26` | Requires behaviour of an older standard mode. |
 | `infrastructure` | Needs harness features we do not emulate (shell `RUN:` lines, `.sh.cpp`, generated tests, warning-only `-verify` tests). |
 

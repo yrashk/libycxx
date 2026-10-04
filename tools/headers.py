@@ -3,7 +3,7 @@ include-graph check, the freestanding check and STATUS.md."""
 
 CORE = [
     "array", "bit", "cassert", "functional", "iterator", "tuple", "cfloat", "climits", "compare", "concepts", "coroutine", "cstddef", "cstdint",
-    "initializer_list", "limits", "memory", "new", "optional", "source_location", "type_traits", "utility",
+    "initializer_list", "limits", "memory", "new", "optional", "source_location", "variant", "type_traits", "utility",
     "version",
 ]
 # Hosted: need an OS (through the PAL) or the C library.

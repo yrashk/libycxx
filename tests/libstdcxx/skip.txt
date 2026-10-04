@@ -2,3 +2,7 @@
 # Format:  <path regex> | <category> | <reason>   (see tests/SKIPPED.md)
 # Content rules: "content:<regex>" matches the test source instead of the path.
 content:std::__[a-zA-Z] | extension | uses libstdc++ internal names (std::__*)
+content:scan-tree-dump | compiler-internals | checks GCC tree dumps (-fdump-tree-*), not library behaviour
+20_util/variant/hash_abi\.cc | implementation-specific | asserts libstdc++'s sizeof(std::hash<variant>) layout
+20_util/variant/hash\.cc | implementation-specific | asserts hash<variant<int>> equals hash<int> for the same value; unspecified
+20_util/variant/version\.cc | implementation-specific | #undefs reserved feature macros and expects a re-include to redefine them

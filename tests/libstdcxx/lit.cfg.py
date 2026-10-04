@@ -21,7 +21,11 @@ from ycxxlit.libstdcxx_format import LibstdcxxFormat
 
 # Configuration macros of the libstdc++ build that some tests branch on; both features exist here.
 flags = ['-I' + os.path.join(tests_root, 'util'), '-I' + os.path.join(repo, 'tests', 'libstdcxx', 'shim'),
-         '-O2', '-D_GLIBCXX_USE_CHAR8_T=1', '-D_GLIBCXX_USE_WCHAR_T=1', '-w', '-fdiagnostics-color=never' if compiler == 'gcc' else '-fno-diagnostics-color']
+         '-O2', '-D_GLIBCXX_USE_CHAR8_T=1', '-D_GLIBCXX_USE_WCHAR_T=1',
+         # libstdc++ is configured with the new (C++11) ABI by default, so its testsuite runs with
+         # _GLIBCXX_USE_CXX11_ABI=1; 64 tests branch on it (e.g. ios_base::failure deriving from
+         # system_error), and the new-ABI branch is the one that describes the standard.
+         '-D_GLIBCXX_USE_CXX11_ABI=1', '-w', '-fdiagnostics-color=never' if compiler == 'gcc' else '-fno-diagnostics-color']
 if sanitizer:
     flags += ['-fsanitize=' + ','.join({'asan': 'address', 'ubsan': 'undefined'}[s] for s in sanitizer.split(',')),
               '-fno-sanitize-recover=all', '-g']

@@ -4,7 +4,9 @@ Only the subset of DejaGnu that matters for conformance is interpreted:
   dg-do compile|run|link [{ target SEL }] [{ xfail SEL }]
   dg-options / dg-additional-options      (language-mode flags are normalised to C++26)
   dg-require-effective-target NAME
-  dg-error ... [{ target SEL }]           (any applicable dg-error => compilation must fail)
+  dg-error ... [{ target SEL }]           (any applicable dg-error => compilation must fail;
+                                           one marked { xfail SEL } is a known-missing error)
+  dg-xfail-run-if COMMENT { SEL } [{ INCLUDE-OPTS } [{ EXCLUDE-OPTS }]]
 Message matching (dg-error regexps, dg-warning) is not done: diagnostics text is
 implementation-specific.
 """
@@ -78,6 +80,23 @@ def eval_selector(sel):
         return False
 
 
+# Options of GCC's dg-options that Clang rejects ("unknown argument") and that only steer GCC's
+# optimiser or dumps, so dropping them for Clang keeps the test's meaning.
+GCC_ONLY_DROP = ('-fno-assume-sane-operators-new-delete', '-fvtable-verify=', '-fdump-tree-')
+# Options that enable a language feature Clang 23 does not have: such a test cannot run on Clang.
+GCC_ONLY_FEATURE = {'-fcontracts': 'contracts (P2900)', '-fcontract-evaluation-semantic=': 'contracts (P2900)'}
+
+
+def option_sets_match(groups, flags):
+    """DejaGnu's include/exclude option lists: each group is a string of options that must all
+    be present; the list matches when any group does ('*' matches everything, '' nothing)."""
+    for g in groups:
+        opts = g.split()
+        if g.strip() == '*' or (opts and all(o in flags for o in opts)):
+            return True
+    return False
+
+
 def braced(s):
     """Split the argument text of a directive into top-level tokens / brace groups."""
     out, depth, cur = [], 0, ''
@@ -121,6 +140,7 @@ class LibstdcxxFormat(lit.formats.FileBasedTest):
             return lit.Test.Result(lit.Test.UNSUPPORTED, 'skipped (extension): uses libstdc++ extensions')
 
         action, expect_fail_run, flags, errors = 'run', False, list(self.base_flags), False
+        xfail_run_if = []
         # libstdc++'s hardened mode, requested in the source itself, maps to ours.
         if re.search(r'^\s*#\s*define\s+_GLIBCXX_ASSERTIONS\b', src, re.M):
             flags.append('-DYCXX_HARDENED=1')
@@ -174,6 +194,13 @@ class LibstdcxxFormat(lit.formats.FileBasedTest):
                         continue
                     if o.startswith('-D_GLIBCXX'):
                         continue
+                    if self.compiler == 'clang':
+                        # GCC-only options from dg-options used to reach Clang ("unknown argument").
+                        if o.startswith(GCC_ONLY_DROP):
+                            continue
+                        feat = next((v for k, v in GCC_ONLY_FEATURE.items() if o.startswith(k)), None)
+                        if feat:
+                            return lit.Test.Result(lit.Test.UNSUPPORTED, f'needs {o}: Clang 23 has no {feat}')
                     flags.append(o)
             elif kind == 'require-effective-target':
                 t = args[0] if args else ''
@@ -189,17 +216,49 @@ class LibstdcxxFormat(lit.formats.FileBasedTest):
                     return lit.Test.Result(lit.Test.UNSUPPORTED, f'dg-{kind} not provided')
             elif kind == 'error':
                 tsel = selector_of(args, 'target')
+                xsel = selector_of(args, 'xfail')
+                if tsel is not None and ' xfail ' in f' {tsel} ':
+                    tsel, _, xsel = f' {tsel} '.partition(' xfail ')
+                    tsel, xsel = tsel.strip(), xsel.strip()
+                # { xfail SEL }: DejaGnu expects this error NOT to be issued (a known missing
+                # diagnostic), so it does not make the test a compile-fail test.
+                if xsel is not None and eval_selector(xsel):
+                    continue
                 if tsel is None or eval_selector(tsel):
                     errors = True
+            elif kind == 'xfail-run-if':
+                # dg-xfail-run-if COMMENT { SEL } [{ INCLUDE-OPTS } [{ EXCLUDE-OPTS }]]: the program
+                # is expected to fail at run time (e.g. an assertion that must fire). Previously
+                # ignored, so a test whose program aborted as intended was reported as failing.
+                groups = [a[1:-1].strip() for a in args if a.startswith('{')]
+                incl = re.findall(r'"([^"]*)"', groups[1]) if len(groups) > 1 else ['*']
+                excl = re.findall(r'"([^"]*)"', groups[2]) if len(groups) > 2 else ['']
+                xfail_run_if.append((groups[0] if groups else '*-*-*', incl or ['*'], excl or ['']))
             elif kind == 'add-options':
                 if args and args[0] == 'libatomic':
                     pass  # libycxx's atomics need no libatomic
         if not saw_do:
             action = 'compile'
+        for sel, incl, excl in xfail_run_if:
+            if eval_selector(sel) and option_sets_match(incl, flags) and not option_sets_match(excl, flags):
+                expect_fail_run = True
+        # DejaGnu compiles libstdc++'s tests with -g (the testsuite's default CXXFLAGS are
+        # "-g -O2"); the <stacktrace> tests check source file names and lines, which need it.
+        # Only those tests get it here, to keep the run time down; a later -g0 still wins.
+        if re.search(r'#\s*include\s*<stacktrace>', src):
+            flags.insert(len(self.base_flags), '-g')
 
         exec_dir = os.path.join(test.suite.exec_root, *test.path_in_suite[:-1])
         os.makedirs(exec_dir, exist_ok=True)
         tmp = tempfile.mkdtemp(prefix=os.path.basename(path) + '.', dir=exec_dir)
+        # DejaGnu copies testsuite/data/* into the directory the tests run in, and tests open
+        # those files by their plain names (e.g. "filebuf_members-1.txt"). Copy the data files a
+        # test names (copies, not links: some tests write to them).
+        data_dir = os.path.join(test.suite.source_root, 'data')
+        if os.path.isdir(data_dir):
+            for name in os.listdir(data_dir):
+                if name in src:
+                    shutil.copy(os.path.join(data_dir, name), tmp)
         try:
             return self.run(action, path, flags, errors, expect_fail_run, tmp)
         finally:

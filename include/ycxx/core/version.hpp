@@ -110,7 +110,7 @@
 #define __cpp_lib_is_swappable 201603L
 #define __cpp_lib_is_virtual_base_of 202406L
 #if YCXX_HAS_IS_WITHIN_LIFETIME
-#  define __cpp_lib_is_within_lifetime 202306L
+#  define __cpp_lib_is_within_lifetime 202603L
 #endif
 #define __cpp_lib_logical_traits 201510L
 #define __cpp_lib_reference_from_temporary 202202L
@@ -124,6 +124,31 @@
 #  define __cpp_lib_is_pointer_interconvertible 201907L
 #endif
 
+
+// Features of headers above that had no macro yet.
+#define __cpp_lib_ssize 201902L
+#define __cpp_lib_null_iterators 201304L
+#define __cpp_lib_make_reverse_iterator 201402L
+#define __cpp_lib_move_iterator_concept 202207L
+#define __cpp_lib_constexpr_iterator 201811L
+#define __cpp_lib_freestanding_iterator 202306L
+#define __cpp_lib_make_from_tuple 201606L
+#define __cpp_lib_constexpr_tuple 201811L
+#define __cpp_lib_freestanding_tuple 202306L
+#define __cpp_lib_tuple_element_t 201402L
+#define __cpp_lib_reference_wrapper 202403L
+#define __cpp_lib_common_reference_wrapper 202302L
+#define __cpp_lib_constexpr_typeinfo 202106L
+// [version.syn]/4: 202306L when the default allocation functions are those of a hosted
+// implementation; 0 for libycxx-freestanding.a, whose defaults have no heap.
+#if YCXX_HOSTED
+#  define __cpp_lib_freestanding_operator_new 202306L
+// The freestanding parts of <cstring>/<cwchar> exist only as the hosted C library wrappers.
+#  define __cpp_lib_freestanding_cstring 202311L
+#  define __cpp_lib_freestanding_cwchar 202306L
+#else
+#  define __cpp_lib_freestanding_operator_new 0
+#endif
 
 // [version.syn]/3: defined only by a hardened implementation (YCXX_HARDENED=1), for the headers
 // whose hardened preconditions are checked.

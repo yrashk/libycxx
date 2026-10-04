@@ -34,18 +34,16 @@
 #ifndef BOOL_WIDTH
 #  define BOOL_WIDTH 1
 #  define CHAR_WIDTH __CHAR_BIT__
-#  define SCHAR_WIDTH __SCHAR_WIDTH__
-#  define UCHAR_WIDTH __SCHAR_WIDTH__
+#  define SCHAR_WIDTH __CHAR_BIT__
+#  define UCHAR_WIDTH __CHAR_BIT__
 #  define SHRT_WIDTH __SHRT_WIDTH__
 #  define USHRT_WIDTH __SHRT_WIDTH__
 #  define INT_WIDTH __INT_WIDTH__
 #  define UINT_WIDTH __INT_WIDTH__
 #  define LONG_WIDTH __LONG_WIDTH__
 #  define ULONG_WIDTH __LONG_WIDTH__
-#  define LLONG_WIDTH __LLONG_WIDTH__
-#  define ULLONG_WIDTH __LLONG_WIDTH__
+#  define LLONG_WIDTH YCXX_LLONG_WIDTH
+#  define ULLONG_WIDTH YCXX_LLONG_WIDTH
 #endif
-#if defined(__BITINT_MAXWIDTH__) && !defined(BITINT_MAXWIDTH)
-#  define BITINT_MAXWIDTH __BITINT_MAXWIDTH__
-#endif
+// [climits.syn]/1: unlike C's <limits.h>, <climits> does not define BITINT_MAXWIDTH.
 

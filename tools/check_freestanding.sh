@@ -20,11 +20,22 @@ run() { # compiler-command target-label
   if $cc $flags -c "$repo/tests/freestanding/smoke.cpp" -o "$out/smoke.$label.o" 2> "$out/smoke.$label.log" &&
      $cc $flags -O0 -c "$repo/tests/freestanding/smoke_o0.cpp" -o "$out/smoke_o0.$label.o" 2>> "$out/smoke.$label.log" &&
      $3 -ffreestanding -nostdlib -O2 -c "$repo/tests/freestanding/rt.c" -o "$out/rt.$label.o" &&
-     $4 "$out/smoke.$label.o" "$out/smoke_o0.$label.o" "$out/rt.$label.o" -o "$out/smoke.$label.elf" 2>> "$out/smoke.$label.log"; then
+     build_fsrt "$cc" "$label" 2>> "$out/smoke.$label.log" &&
+     $4 "$out/smoke.$label.o" "$out/smoke_o0.$label.o" "$out/rt.$label.o" "$out/fsrt.$label.a" \
+        -o "$out/smoke.$label.elf" 2>> "$out/smoke.$label.log"; then
     echo "ok   [$label] all core headers + smoke link"
   else
     echo "FAIL [$label] smoke"; sed 's/^/    /' "$out/smoke.$label.log" | head -20; fail=1
   fi
+}
+# libycxx-freestanding.a for one target: the allocation-function defaults and std::nothrow.
+build_fsrt() {
+  rm -rf "$out/fsrt.$2" && mkdir -p "$out/fsrt.$2"
+  for f in "$repo"/src/runtime/new/*.cpp "$repo"/src/freestanding/new/*.cpp; do
+    case "$2" in gcc*) nw=-Wno-sized-deallocation ;; *) nw= ;; esac # one function per file
+    $1 $flags $nw -c "$f" -o "$out/fsrt.$2/$(basename "$f" .cpp).o" || return 1
+  done
+  rm -f "$out/fsrt.$2.a" && llvm-ar-23 rcs "$out/fsrt.$2.a" "$out/fsrt.$2"/*.o
 }
 run "clang++-23 --target=x86_64-unknown-none-elf" clang-x86_64 "clang-23 --target=x86_64-unknown-none-elf" "ld.lld-23 -e _start"
 run "clang++-23 --target=riscv64-unknown-elf -march=rv64gc -mabi=lp64d" clang-riscv64 "clang-23 --target=riscv64-unknown-elf -march=rv64gc -mabi=lp64d" "ld.lld-23 -e _start"

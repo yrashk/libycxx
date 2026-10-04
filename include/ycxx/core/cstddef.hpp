@@ -5,18 +5,19 @@
 #include <ycxx/core/prim_traits.hpp>
 
 // [headers]/5 leaves it unspecified whether these names are also declared at global scope.
-// Every C library's <stddef.h> declares ::size_t and ::ptrdiff_t, and much existing code relies
+// Every C library's <stddef.h> declares ::size_t and ::ptrdiff_t (and C23's ::nullptr_t), and code relies
 // on that, so they are declared there too. A typedef of the same type may be redeclared, so a
 // later <stddef.h> stays valid. max_align_t cannot be shared that way: <stddef.h> defines
 // ::max_align_t as a class, and without including it core cannot name that class, so
 // std::max_align_t is a distinct type with the same size and alignment (STATUS: divergences).
 typedef decltype(sizeof(0)) size_t;
 typedef decltype(static_cast<int*>(nullptr) - static_cast<int*>(nullptr)) ptrdiff_t;
+typedef decltype(nullptr) nullptr_t;
 
 namespace std {
 using ::size_t;
 using ::ptrdiff_t;
-using nullptr_t = decltype(nullptr);
+using ::nullptr_t;
 
 // Same definition as the compilers' own <stddef.h> uses, so std::max_align_t has the
 // alignment the compiler expects (alignof == __BIGGEST_ALIGNMENT__ on x86_64).

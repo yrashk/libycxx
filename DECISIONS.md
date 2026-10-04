@@ -96,8 +96,18 @@ tooling.
   library: an opaque, zero-initialisable struct with the C library's size and alignment (glibc
   and musl: 8 bytes, 4-byte alignment). The hosted `<cwchar>`/`<cuchar>` `static_assert` that
   layout and add `std::` overloads of the conversion functions taking `std::mbstate_t*`, which
-  forward to the C functions. The cost: `std::mbstate_t` and `::mbstate_t` are distinct types, so
-  a `std::mbstate_t` cannot be passed to the global `::mbrtowc` directly.
+  forward to the C functions; the `::mbstate_t*` versions are forwarding templates, so a null
+  state pointer is not ambiguous. The cost: `std::mbstate_t` and `::mbstate_t` are distinct
+  types, so a `std::mbstate_t` cannot be passed to the global `::mbrtowc` directly, and after
+  `using namespace std;` the unqualified name `mbstate_t` is ambiguous once `<wchar.h>` is in.
+- **Freestanding runtime archive.** `libycxx-freestanding.a` holds what a freestanding program
+  may need defined but core headers must not define: the default replaceable allocation
+  functions (no heap: `bad_alloc`/handler, `nullptr` for the nothrow forms) and `std::nothrow`.
+  Every replaceable function lives in its own archive member, in the hosted `libycxx.a` too, so
+  a program can replace any subset ([replacement.functions]); the defaults forward as
+  [new.delete] specifies. (Weak definitions in headers were tried and rejected: they made
+  replacement a redefinition error, and in hosted builds a weak definition keeps the linker from
+  pulling the real `operator new` out of the archive.)
 
 ## 4. Error handling
 

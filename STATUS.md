@@ -77,6 +77,17 @@ Deprecated and removed features are not implemented (`is_pod`, `is_trivial`, `al
   itself. The cost is that a type which only *converts* to `const expected&` is no longer
   accepted on the left.
 
+## Known limitations and draft defects
+- `char_traits<char16_t>::eof()`: [char.traits.require] wants a value distinct from
+  `to_int_type(c)` for every `c`, but `int_type` is `uint_least16_t` (16 bits here), so no such
+  value exists. libycxx returns 0xFFFF (own test `char_traits/eof` fails by design).
+- `any` without RTTI identifies types by the address of a per-type table, so `any_cast` across a
+  shared library built with hidden visibility or `-Bsymbolic` does not recognise the type.
+- Freestanding, without exceptions: the default nothrow allocation forms return null without
+  calling a replaced `operator new` (failure cannot be detected); replace them too.
+- No `<stddef.h>` wrapper: `::max_align_t` comes from the compiler's header and is not
+  `std::max_align_t` (see Deliberate divergences).
+
 ## Open issues / next
 - Phase 2 remaining: function family (function, move_only_function,
   copyable_function, function_ref, bind, mem_fn, not_fn); <exception>

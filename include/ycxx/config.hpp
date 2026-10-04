@@ -44,13 +44,24 @@
 #else
 #  define YCXX_HAS_EXCEPTIONS 0
 #endif
-// Freestanding builds get weak default definitions of the replaceable allocation functions
-// (new.hpp). In hosted builds those definitions must not exist even weakly: a weak definition
-// would keep the linker from pulling the real operator new out of an archive.
 #if __STDC_HOSTED__
 #  define YCXX_HOSTED 1
 #else
 #  define YCXX_HOSTED 0
+#endif
+// FLT_ROUNDS (<cfloat>): the current rounding mode where the compiler can report it, otherwise
+// 1 (to nearest), which is also what GCC's own <float.h> defines.
+#if __has_builtin(__builtin_flt_rounds)
+#  define YCXX_FLT_ROUNDS (__builtin_flt_rounds())
+#else
+#  define YCXX_FLT_ROUNDS 1
+#endif
+// Width of long long, for the <climits> macros (usable in #if): the compilers spell the
+// predefined macro differently.
+#if defined(__LLONG_WIDTH__)
+#  define YCXX_LLONG_WIDTH __LLONG_WIDTH__
+#else
+#  define YCXX_LLONG_WIDTH __LONG_LONG_WIDTH__
 #endif
 // RTTI selects how the exception classes that libsupc++ also defines are declared
 // (exception_base.hpp): a non-template class cannot constrain its destructor.

@@ -5,7 +5,7 @@
 #  define FLT_RADIX __FLT_RADIX__
 #endif
 #ifndef FLT_ROUNDS
-#  define FLT_ROUNDS (__builtin_flt_rounds())
+#  define FLT_ROUNDS YCXX_FLT_ROUNDS
 #endif
 #ifndef FLT_EVAL_METHOD
 #  define FLT_EVAL_METHOD __FLT_EVAL_METHOD__
@@ -57,4 +57,20 @@
 #  define LDBL_HAS_SUBNORM __LDBL_HAS_DENORM__
 #  define LDBL_TRUE_MIN __LDBL_DENORM_MIN__
 #  define LDBL_NORM_MAX __LDBL_NORM_MAX__
+#endif
+
+// C23 additions ([cfloat.syn]).
+#ifndef __STDC_VERSION_FLOAT_H__
+#  define __STDC_VERSION_FLOAT_H__ 202311L
+#endif
+#ifndef INFINITY
+#  define INFINITY (__builtin_inff())
+#endif
+#ifndef NAN
+#  define NAN (__builtin_nanf(""))
+#endif
+#ifndef FLT_SNAN
+#  define FLT_SNAN (__builtin_nansf(""))
+#  define DBL_SNAN (__builtin_nans(""))
+#  define LDBL_SNAN (__builtin_nansl(""))
 #endif

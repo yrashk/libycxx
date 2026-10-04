@@ -858,7 +858,11 @@ struct minmax_fn {
     auto less = ::ycxx::detail::make_comp(comp, proj);
     if constexpr (std::ranges::forward_range<R>) {
       auto p = ::ycxx::detail::minmax_element_impl(first, last, less);
-      return {static_cast<V>(*p.first), static_cast<V>(*p.second)};
+      // Each element is read once: *it may move from it (move_iterator).
+      V lo(*p.first);
+      if (p.first == p.second)
+        return {lo, lo};
+      return {std::move(lo), static_cast<V>(*p.second)};
     } else {
       // Single pass over copies: the leftmost smallest and the rightmost largest.
       V lo(*first);

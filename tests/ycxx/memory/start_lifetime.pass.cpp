@@ -4,6 +4,7 @@
 // the lifetime of the object referenced by r." Note 1: no initialization is performed, no
 // subobject has its lifetime started, and a union member becomes the active member.
 // is_within_lifetime ([meta.const.eval]) is consteval, so it is used under 'if consteval'.
+// XFAIL-COMPILER: gcc  no __builtin_is_within_lifetime, so start_lifetime cannot tell an already-live object in constant evaluation (STATUS.md)
 #include <memory>
 #include <type_traits>
 #include "check.hpp"

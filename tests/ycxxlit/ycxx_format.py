@@ -4,12 +4,16 @@
   *.compile.pass.cpp   must compile (-fsyntax-only)
   *.compile.fail.cpp   must fail to compile, for a reason other than a missing header
 
-Optional directive:  // FLAGS: <extra compiler flags>
+Optional directives:
+  // FLAGS: <extra compiler flags>
+  // XFAIL-COMPILER: gcc|clang  <reason>   known compiler gap (listed in STATUS.md); the test is
+                                          unchanged and reports XFAIL, or XPASS once the gap closes
 """
 import os, re, shutil, subprocess, tempfile
 import lit.formats, lit.Test
 
 FLAGS = re.compile(r'^//\s*FLAGS:(.*)$', re.M)
+XFAIL = re.compile(r'^//\s*XFAIL-COMPILER:\s*(\w+)', re.M)
 MISSING = re.compile(r"fatal error: '?[\w./]+'?:? (file not found|No such file or directory)")
 
 
@@ -23,6 +27,16 @@ class YcxxFormat(lit.formats.FileBasedTest):
         return p.returncode, p.stdout + p.stderr
 
     def execute(self, test, lit_config):
+        result = self.run(test)
+        src = open(test.getSourcePath(), encoding='utf-8').read()
+        if any(m.group(1) == self.compiler for m in XFAIL.finditer(src)):
+            if result.code == lit.Test.PASS:
+                result.code = lit.Test.XPASS
+            elif result.code == lit.Test.FAIL:
+                result.code = lit.Test.XFAIL
+        return result
+
+    def run(self, test):
         path = test.getSourcePath()
         name = os.path.basename(path)
         src = open(path, encoding='utf-8').read()

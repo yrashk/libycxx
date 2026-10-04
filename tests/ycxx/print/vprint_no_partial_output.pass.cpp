@@ -1,11 +1,13 @@
-// [print.fun]/10: vprint_unicode(stream, fmt, args): "Let out denote the character
-// representation of formatting arguments provided by args formatted according to
-// specifications given in fmt", then "writes out to stream unchanged" (/10.2); /11: "Throws:
-// Any exception thrown by the call to vformat". /16-17 likewise for vprint_nonunicode. The text
-// written is the complete formatted result: when formatting fails (a format_error from
-// vformat), no prefix of the output has been written. (Interpretive: the effects write `out`,
-// which does not exist when vformat throws.) [ostream.formatted.print]/4 states the same for
-// ostreams explicitly ("string out = vformat(...)").
+// [print.fun]/8 and /14: vprint_unicode_buffered(stream, fmt, args) and
+// vprint_nonunicode_buffered are "Equivalent to: string out = vformat(fmt, args);
+// vprint_...(stream, "{}", make_format_args(out));", so when vformat throws format_error
+// nothing has been written. The unbuffered FILE* overloads (/10, /16: "While holding the lock on
+// stream, writes the character representation of formatting arguments ...") deliberately allow
+// formatting directly into the stream (P3107R5: "with the direct method, the output
+// written to the stream before the exception occurred is preserved"), so for them only the
+// exception and an output that is a prefix of the intended text are checked.
+// [ostream.formatted.print]/4: vprint_unicode(ostream&, ...) initializes
+// "string out = vformat(os.getloc(), fmt, args);" before writing, so nothing is written there.
 #include <print>
 #include <format>
 #include <cstdio>
@@ -22,12 +24,12 @@ int main() {
   int v = 1;
   int caught = 0;
   try {
-    std::vprint_unicode(f, "ok {} {}", std::make_format_args(v));
+    std::vprint_unicode_buffered(f, "ok {} {}", std::make_format_args(v));
   } catch (const std::format_error&) {
     ++caught;
   }
   try {
-    std::vprint_nonunicode(f, "ok {} {:d}", std::make_format_args(v, "s"));
+    std::vprint_nonunicode_buffered(f, "ok {} {:d}", std::make_format_args(v, "s"));
   } catch (const std::format_error&) {
     ++caught;
   }
@@ -35,12 +37,26 @@ int main() {
   CHECK(caught == 2);
   CHECK(read_file(p).empty());
 
+  // unbuffered: the exception propagates; partial output is permitted
+  f = std::fopen(p.c_str(), "w");
+  CHECK(f != nullptr);
+  caught = 0;
+  try {
+    std::vprint_unicode(f, "ok {} {}", std::make_format_args(v));
+  } catch (const std::format_error&) {
+    ++caught;
+  }
+  std::fclose(f);
+  CHECK(caught == 1);
+  const std::string partial = read_file(p);
+  CHECK(std::string("ok 1 ").starts_with(partial));
+
   std::ostringstream os;
   try {
     std::vprint_unicode(os, "ok {} {}", std::make_format_args(v));
   } catch (const std::format_error&) {
     ++caught;
   }
-  CHECK(caught == 3 && os.str().empty());
+  CHECK(caught == 2 && os.str().empty());
   return 0;
 }

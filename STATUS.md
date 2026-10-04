@@ -177,6 +177,18 @@ clean under ASan (Clang). libc++ std/re 12 -> 163/164 (+5 skipped; the failure n
 `constexpr_char_traits.h`); libstdc++ 28_regex 0 -> 103/104 (+6 skipped; the failure needs
 `bits/move.h`; 61 others need `__gnu_test` helpers); both compilers. Checked against V8 on 63,000
 random ECMAScript patterns (with and without icase): identical results.
+<meta> (reflection; GCC 16 with `-freflection` only, DECISIONS §13): every [meta.syn] entity.
+The metafunctions are GCC's own (declared without definitions); the library defines `info`,
+`meta::exception`, `operators`, `access_context` (unprivileged/unchecked/via), `member_offset`,
+`data_member_options`, `reflection_range`, `define_static_string`/`_array`/`_object`,
+`is_string_literal`, and `is_applicable_type`/`is_nothrow_applicable_type`/`apply_result` (not
+GCC 16 metafunctions; through `substitute`). Also `is_reflection` (and `info` as a fundamental,
+scalar type) and `is_structural` (GCC) in `<type_traits>`. `__cpp_lib_reflection`,
+`__cpp_lib_define_static` and `__cpp_lib_is_structural` are defined only where they work; on Clang
+23 `<meta>` is empty. Own suite meta/: 2/2 (GCC), 2 XFAIL (Clang). libstdc++ 20_util reflection
+traits (is_reflection, is_structural, is_scalar/reflection, variable_templates_for_traits) 2 -> 6/7
+run on GCC (4 more need `testsuite_tr1.h`; the failure uses the deprecated `is_trivial_v`);
+libc++ has no reflection tests.
 
 ## Freestanding
 `tools/check_freestanding.sh`: every core header compiles with `-ffreestanding -nostdlib -nostdinc
@@ -195,6 +207,10 @@ a defect in a test.
   (constraint, probed in-language). Consequence: `std::start_lifetime` cannot detect an
   already-live object in constant evaluation on GCC, so it re-begins its lifetime and loses
   the values (own test `memory/start_lifetime`, XFAIL on GCC).
+- Clang 23.1: no reflection (P2996) and no `__builtin_is_structural`, so `<meta>` is empty and
+  `std::is_structural` is not declared (own tests `meta/*` XFAIL on Clang).
+- GCC 16.2: `is_applicable_type`, `is_nothrow_applicable_type` and `apply_result` are not
+  metafunctions ("unknown metafunction"); the library implements them through `substitute`.
 - Clang 23.1: no `__builtin_is_corresponding_member` or
   `__builtin_is_pointer_interconvertible_with_class`.
 - Clang 23.1: `std::optional<Inner>` declared as a member of the class enclosing `Inner`, where
@@ -289,6 +305,15 @@ Deprecated and removed features are not implemented (`is_pod`, `is_trivial`, `al
   requires-clauses. GCC's own codegen reports an exception escaping a contract predicate with
   `detection_mode::predicate_false` (it passes the unmodified violation object).
 - `<text_encoding>`: comp-name assumes an ASCII-compatible ordinary literal encoding.
+- `<meta>`: needs GCC 16 with `-freflection` (Clang 23 has no reflection). Exceptions the library
+  itself raises (`access_context::via`, the apply traits) carry the library's source location in
+  `where()`, not the caller's. `meta::exception::what()` is inherited from a base class (GCC 16
+  requires member functions of a class holding an `info` to be consteval). With a non-UTF-8
+  ordinary literal encoding, only ASCII messages transcode. Under hosted `-fno-rtti`,
+  `std::exception`'s destructor is out of line (DECISIONS §4), so a `meta::exception` cannot be
+  caught (destroyed) during constant evaluation there. `data_member_options::name-type` is
+  spelled `name_type` and stores the name in the members GCC reads (`_M_is_u8`, `_M_u8s`, `_M_s`)
+  rather than a `variant`.
 - `<contracts>`: Clang 23 has no contracts (`-fcontracts` is unknown); the header only declares.
 - `<regex>`: the backtracking matcher stops with `regex_error(error_stack)` beyond 4M stack frames
   (about 2M iterations of a quantified group, e.g. `(?:a|b)*` over 2M characters) and with

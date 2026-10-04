@@ -177,6 +177,11 @@ template <class T>
 inline constexpr bool is_null_pointer_v = ::ycxx::detail::is_null_pointer_v<T>;
 
 template <class T>
+struct is_reflection : bool_constant<::ycxx::detail::is_reflection_v<T>> {};
+template <class T>
+inline constexpr bool is_reflection_v = ::ycxx::detail::is_reflection_v<T>;
+
+template <class T>
 struct is_integral : bool_constant<::ycxx::detail::is_integral_v<T>> {};
 template <class T>
 inline constexpr bool is_integral_v = ::ycxx::detail::is_integral_v<T>;

@@ -280,6 +280,8 @@ under the same name. Otherwise it gets one alias template in `config.hpp`.
 | `__builtin_is_within_lifetime` | no | yes | `std::is_within_lifetime` usable on Clang only (constraint) |
 | `__builtin_is_corresponding_member` / `..._with_class` | yes | no | usable on GCC only (constraint) |
 | `__builtin_type_order` | yes | no | `std::type_order` via a portable fallback (TBD) |
+| `__builtin_is_structural` | yes | no | `std::is_structural` declared on GCC only (`#if`, type-taking) |
+| reflection (`^^`, metafunctions) | yes (`-freflection`) | no | `<meta>` empty on Clang (§13) |
 
 ## 6. Development process
 
@@ -514,3 +516,50 @@ under the same name. Otherwise it gets one alias template in `config.hpp`.
   because the layout depends on it: translation units built with different register-width flags
   get distinct types (and mangled names) rather than one type with two layouts; only the tags of
   the translation unit's own R are enabled.
+
+## 13. Reflection (`<meta>`)
+
+- **The metafunctions are the compiler's; the header declares them.** How GCC 16 expects them
+  was found by experiment only (declarations of our own, its diagnostics, and the names of
+  builtins and diagnostic strings in the compiler binary; no libstdc++ or GCC source was read).
+  With `-freflection`, a call to a `consteval` function or function template declared in
+  `std::meta` *without a definition* is evaluated by the compiler when it knows the name
+  ("unknown metafunction 'X'" otherwise); it checks the return type ("incorrect 'int' return
+  type, expected 'bool'"), not the parameters. The compiler builds the results with ordinary
+  C++: `std::vector<info>` from a braced list, `string_view`/`u8string_view` from a
+  `const charT*`, `source_location` through `__impl`, `member_offset` and `strong_ordering`, and
+  `access_context::current()` from the class's two non-static data members in declaration
+  order (scope, then designating class). It reads arguments with ordinary expressions too:
+  `ranges::begin`/`end` on a `reflection_range`, `access_context::scope()`/
+  `designating_class()`, `static_cast<bool>(o)` and `*o` on the `optional`s of
+  `data_member_options`, and the members of `data_member_options::name-type` by the names
+  `_M_is_u8`, `_M_u8s` and `_M_s` (a fixed contract, like `source_location::__impl`'s member
+  names; other layouts are rejected as "unexpected 'data_member_options' argument"). The
+  `operators` enumerators are found by name; their values are ours (1-44 in table order). It
+  reports errors by throwing `meta::exception` built with the
+  `(string_view, info, source_location)` constructor (from(): the metafunction; where(): the
+  call). So libycxx's classes and containers work unchanged, and every metafunction in the draft
+  except three is the compiler's.
+- **Defined by the library:** `access_context::unprivileged`/`unchecked`/`via` (only `current` is
+  a metafunction); `define_static_string`/`_array`/`_object` (the draft's equivalent code; the
+  span extent asks `ranges::size` of a never-defined `extern T&` variable template, which P2280
+  lets a constant expression use when the size does not depend on the object);
+  `is_string_literal` (`__builtin_is_string_literal`); and `is_applicable_type`,
+  `is_nothrow_applicable_type`, `apply_result`, which GCC 16 does not know: they evaluate the
+  `<tuple>` traits through `substitute` and `extract`. Their `meta::exception`s go through
+  `raise_with` and carry the library's own source location, not the caller's.
+- **`meta::exception::what()`** is inherited from `ycxx::adl_free::meta_exception_what`. GCC 16
+  still treats a class holding an `info` as a consteval-only type and requires every member
+  function of it to be `consteval` ("function of consteval-only type must be declared
+  'consteval'"), so the constexpr virtual `what()` cannot be declared in `meta::exception`; the
+  base holds the ordinary-encoding message and the override. The transcoding between the
+  ordinary literal encoding and UTF-8 is the identity when that encoding is UTF-8; otherwise only
+  ASCII is treated as representable.
+- **Preprocessor.** `^^` cannot be parsed without reflection, so `meta_reflection.hpp` is under
+  `#if YCXX_HAS_REFLECTION` (from `__cpp_impl_reflection` in `config.hpp`, the one feature-macro
+  test, §1 rule 4); on Clang 23 and without `-freflection`, `<meta>` declares nothing and
+  `__cpp_lib_reflection`/`__cpp_lib_define_static` are undefined. `config.hpp` also defines
+  `ycxx::detail::reflection` (`decltype(^^::)`, else an incomplete type), so `is_reflection`,
+  `is_fundamental` and `is_scalar` need no `#if`. `is_structural` uses the type-taking
+  `__builtin_is_structural` (GCC 16, also without `-freflection`), behind
+  `YCXX_HAS_IS_STRUCTURAL`.

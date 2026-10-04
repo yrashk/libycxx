@@ -700,9 +700,15 @@ Deprecated and removed features are not implemented (`is_pod`, `is_trivial`, `al
   features are kept (DECISIONS §3).
 
 ## Open issues / next
-- Phase 2 is complete. The ABI runtime (src/abi) replaced libsupc++: broad sweep 4483 -> 4535
-  passes with no regressions.
-- Then Phase 3 (containers, algorithms), Phase 4 (ranges, charconv, format, ...).
+- Every header of the C++26 library is provided (Phases 1-4 complete; `<meta>` needs GCC's
+  `-freflection`, `<contracts>` GCC's `-fcontracts`). Own suite (1822 tests): GCC 1811 pass /
+  10 fail / 1 xfail, Clang 1805 / 6 / 11. Every remaining failure is a documented limitation:
+  `char_traits<char16_t>::eof`, the Itanium ABI handler limits (`except/handler_*`), GCC's
+  contract detection mode, non-null constexpr `exception_ptr`, `std::mbstate_t` being core's own
+  type, and no `<stddef.h>` wrapper.
+- Next (Phase 5): full libc++/libstdc++ sweeps with triage (tests/libcxx/TRIAGE.md,
+  tests/libstdcxx/TRIAGE.md), fixing the libycxx bugs they find; then performance and a
+  whole-library review.
 - Constexpr exceptions (P3068): done for `exception`, `bad_alloc`, `bad_array_new_length`,
   `bad_exception`, `bad_cast`, `bad_typeid`, `bad_optional_access`, `bad_variant_access`, and
   `bad_expected_access`. Those the library throws are thrown from headers through `raise_with`,

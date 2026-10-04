@@ -15,9 +15,7 @@ records where libstdc++ and the current draft disagree. The draft is the referen
 a failure below is a libstdc++ gap, a libstdc++ bug, or a compiler issue, never a reason to
 change a test. **After triage no failure was traced to a defect in a test.**
 
-Run of 2026-10-04, 1173 tests: GCC 1017 pass / 155 fail / 1 xfail; Clang 999 pass / 170 fail /
-4 xfail (the 116 `<random>`/`<chrono>` tests added last: 95 / 94 pass). (Most of the difference to earlier runs is the container tests of `deque/` ...
-`hive/`, which mainly wait on C++26 constexpr containers in libstdc++.)
+Run of 2026-10-04, 1264 tests: GCC 1099 pass / 164 fail / 1 xfail; Clang 1080 pass / 180 fail / 4 xfail.
 The same suite against libycxx: see `STATUS.md`.
 
 Legend: **G** fails with GCC + libstdc++, **C** with Clang + libstdc++.
@@ -51,7 +49,7 @@ Legend: **G** fails with GCC + libstdc++, **C** with Clang + libstdc++.
 | `inplace_vector/noexcept` | G | C | `shrink_to_fit` is not `noexcept` | [inplace.vector.overview]: `static constexpr void shrink_to_fit() noexcept;` |
 | `algorithm/stable_partition` | G | C | in constant evaluation `ranges::stable_partition` returns `{i, last - 1}` (correct at run time) | [alg.partitions]/12.2: "{i, last} for the overloads in namespace ranges" |
 | `algorithm/clamp` | G | C | 3 comparisons (and 5 projections for `ranges::clamp`) with libstdc++'s default -O0 assertions, which re-check the precondition | [alg.clamp]/5: "At most two comparisons and three applications of the projection" |
-| `charconv/to_chars_float_plain_style` | G | C | `to_chars(1e5)` gives "1e+05": f/e chosen by the shorter result (the C++17 wording) | [charconv.to.chars]/7: f if \|value\| is in [l, u) (for double [1e-4, 1e16)), otherwise e |
+| `charconv/to_chars_float_plain_style`, `format/float_shortest_plain_style` | G | C | `to_chars(1e5)` and `format("{}", 1e5)` give "1e+05": f/e chosen by the shorter result (the C++17 wording) | [charconv.to.chars]/7: f if \|value\| is in [l, u) (for double [1e-4, 1e16)), otherwise e |
 | `charconv/to_chars_float_general_shortest` | G | C | `to_chars(1234567.0, general)` gives "1.234567e+06", not the shorter "1234567" (interpretive: /2's smallest number of characters with the g specifier) | [charconv.to.chars]/2-3 |
 | `random/distribution_param_set` | G | C | after `d.param(p)`, `student_t`, `fisher_f` and `negative_binomial` keep producing values for the old parameters (`fisher_f`'s `d(g, p)` too) | [rand.req.dist] Table 128, d(g): distributed according to p(z \| {p}) with p = d.param() |
 | `random/negbin_p_one` | G | C | `negative_binomial_distribution(4, 1.0)` aborts in an internal `poisson_distribution(0)` assertion | [rand.dist.bern.negbin]/2: 0 < p <= 1 |
@@ -64,6 +62,11 @@ Legend: **G** fails with GCC + libstdc++, **C** with Clang + libstdc++.
 | `random/piecewise_float_vectors` | G | C | `intervals()`/`densities()` return `vector<double>` for float and long double | [rand.dist.samp.pconst], [rand.dist.samp.plinear]: `vector<result_type>` |
 | `chrono/tai_gps_noexcept` | G | C | `tai_clock`/`gps_clock` `to_utc`/`from_utc` are not noexcept | [time.clock.tai.overview], [time.clock.gps.overview] |
 | `random/uniform_int_char`, `random/uniform_int_const`, `random/lcong_uchar`, `random/ibits_uchar`, `random/seed_seq_generate_narrow`, `random/seed_seq_generate_signed`, `random/seed_seq_iterator_float`, `chrono/duration_rep_const` (compile.fail) | G | C | ill-formed template arguments / Mandates violations accepted (char or const IntType, unsigned char UIntType, narrow or signed seed_seq output, non-integer seed_seq input, `duration<const int>`) | [rand.req.genl]/1, [rand.util.seedseq]/4,7, [time.duration.general]/2 |
+| `ranges/view_interface_size_type` | G | C | `view_interface::size()` returns a signed type | [view.interface.general]: `to-unsigned-like(ranges::end(derived()) - ranges::begin(derived()))` |
+| `ranges/concat_view_iterator_category` | G | C | `concat_view`'s iterator has no `iterator_category` for forward ranges | [range.concat.iterator]/2: declared iff all-forward<Const, Views...> |
+| `ranges/as_input_view_borrowed` | G | C | `as_input_view` is not a borrowed range for a borrowed V | [ranges.syn]: `enable_borrowed_range<as_input_view<V>> = enable_borrowed_range<V>` |
+| `ranges/ranges_to_emplace_hint` | G | C | `ranges::to` calls `insert` where only `emplace_hint` exists | [range.utility.conv.general]/4-5: `c.emplace_hint(c.end(), std::forward<Ref>(ref))` |
+| `format/format_to_n_negative` | G | C | `format_to_n` with n < 0 writes every character | [format.functions]/19: M = clamp(n, 0, N) |
 | `inplace_vector/from_range_mandates` (compile.fail) | G | C | a constant-size range larger than N is accepted | [inplace.vector.cons]/9: Mandates: ranges::size(rg) <= N when it is a constant expression |
 
 ## 2. Missing in libstdc++ 16 (newer C++26 additions, constexpr, API revisions)
@@ -86,6 +89,8 @@ Legend: **G** fails with GCC + libstdc++, **C** with Clang + libstdc++.
 | `deque/*`, `list/*`, `forward_list/*`, `map/*`, `set/*`, `unordered_*/*`, `stack/*`, `queue/*`, `priority_queue/*` (most) | G | C | C++26 constexpr containers and adaptors (the runtime parts of these tests pass) |
 | `inplace_vector/*` (some) | G | C | constexpr `inplace_vector` of non-trivial types |
 | `hive/*` | G | C | `<hive>` |
+| `ranges/view_interface_at` | G | C | `view_interface::at` |
+| `format/runtime_format`, `format/format_constexpr` | G | C | `std::runtime_format`; constexpr `std::format` |
 | `random/generate_canonical`, `random/uniform_real_upper_bound` | G | C | the C++26 `generate_canonical` ([rand.util.canonical]/2-3: attempts until S < x r^d, returns floor(S/x)/r^d); libstdc++ rounds S/R^k and retries on 1, looping forever for a generator that always returns its maximum |
 | `random/generate_random`, `random/version_macros` | G | C | `ranges::generate_random`, `__cpp_lib_ranges_generate_random` |
 | `map/lookup`, `unordered_map/lookup`, `flat_map/lookup` | G | C | the C++26 `lookup` members |
@@ -106,6 +111,7 @@ Clang rejects code GCC accepts.
 | `utility/constant_wrapper_call` | `constant_wrapper::operator()` with a member pointer and constant_wrapper arguments is rejected |
 | `cstddef/stddef_global`, `cstddef/stddef_global_reverse` | `::nullptr_t` missing (Clang's `<stddef.h>` in C++ mode); [support.c.headers.other]/1 |
 | containers using `std::from_range`, `insert_range`, `append_range` | `from_range` and the range members are unavailable with Clang |
+| `format/dynamic_width_precision` (and `format/fmt_dynamic_width_double`, a compile.fail test that Clang rejects for this reason, not the intended one) | every dynamic width/precision (`{:{}}`, `{:.{}}`) is rejected: libstdc++'s compile-time check calls a function Clang reports as undefined in constant evaluation |
 | `cwchar/freestanding_functions` | `std::wcschr` and friends on `const wchar_t*` return `wchar_t*` (glibc's declarations; libycxx documents the same limitation for unqualified calls) |
 
 ## 4. C library headers

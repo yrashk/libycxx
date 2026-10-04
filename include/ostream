@@ -1,7 +1,7 @@
 // -*- C++ -*-  libycxx: <ostream>   [hosted]
 //
-// Not provided yet: the ostream overloads of print, println, vprint_unicode and
-// vprint_nonunicode ([ostream.formatted.print]), which need <format>.
+// The print overloads ([ostream.formatted.print]) need the core of <format>
+// (ycxx/core/format_base.hpp); formatting ranges or tuples with them needs <format>.
 #pragma once
 
 #include <ycxx/config.hpp>
@@ -9,3 +9,4 @@
 #include <ios>
 #include <streambuf>
 #include <ycxx/hosted/ostream.hpp>
+#include <ycxx/hosted/ostream_print.hpp>

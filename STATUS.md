@@ -117,8 +117,7 @@ Deprecated and removed features are not implemented (`is_pod`, `is_trivial`, `al
 
 ## Open issues / next
 - Phase 2 remaining: <exception> propagation (exception_ptr, nested_exception,
-  exception_ptr_cast), <typeindex>; pair's dangling-reference deletion for pair-like sources
-  ([pairs.pair]/17, own test `utility/pair_dangling`).
+  exception_ptr_cast), <typeindex>.
 - Then Phase 3 (containers, algorithms), Phase 4 (ranges, charconv, format, ...).
 - Constexpr exceptions (P3068): done for `exception`, `bad_alloc`, `bad_array_new_length`,
   `bad_exception`, `bad_cast`, `bad_typeid`, `bad_optional_access`, `bad_variant_access`, and

@@ -439,7 +439,10 @@ optional(T) -> optional<T>;
 // =============================================================================================
 } // namespace std
 
-namespace ycxx::detail {
+// Base classes of std types live in ycxx::adl_free, a namespace that declares no functions:
+// a base's namespace is an associated namespace for ADL ([basic.lookup.argdep]/3), so a
+// ycxx::detail base would expose every internal function to lookup on the std type.
+namespace ycxx::adl_free {
 // [optional.optional.ref.general]: optional<T&>::iterator exists only for object types other
 // than arrays of unknown bound.
 template <class T>
@@ -449,11 +452,11 @@ template <class T>
 struct optional_ref_iterator<T> {
   using iterator = T*;
 };
-} // namespace ycxx::detail
+} // namespace ycxx::adl_free
 
 namespace std {
 template <class T>
-class optional<T&> : public ycxx::detail::optional_ref_iterator<T> {
+class optional<T&> : public ycxx::adl_free::optional_ref_iterator<T> {
   static_assert(ycxx::detail::valid_optional_type<T&>,
                 "std::optional<T&>: remove_cvref_t<T> must not be in_place_t or nullopt_t");
   T* val_ = nullptr;

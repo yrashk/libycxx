@@ -66,6 +66,13 @@ tooling.
 - Implementation details live in `ycxx::detail` with `snake_case` names. Detail namespaces
   avoid generic names that ADL could pick up (`swap`, `begin`, `get`); CPOs live in their own
   sub-namespaces (`ycxx::detail::swap_cpo`).
+- **Base classes of std types live in `ycxx::adl_free`**, a namespace that declares no
+  functions, only classes. A base's namespace is an associated namespace for ADL
+  ([basic.lookup.argdep]/3), so a `ycxx::detail` base would expose every internal function to
+  unqualified calls on the std type. Inside the library, internal function calls are qualified
+  (`::ycxx::detail::f(...)`), so a user function with the same name in an argument's namespace is
+  never picked up. Trait structs (`iterator_traits`, `pointer_traits`, `common_reference`) may
+  still derive from `ycxx::detail` helpers, because they are never function arguments.
 - Template parameters and locals use plain names (`T`, `first`), not reserved `_Ugly` names.
   Known deviation: a user macro that collides with such a name, defined before including a
   libycxx header, can break the header.
@@ -88,6 +95,11 @@ tooling.
   - With `-fno-exceptions`, it calls `extern "C" ycxx_error_handler(kind, what)`. The default
     definition is a weak symbol emitted from the header that calls `__builtin_trap()`; a strong
     user definition replaces it at link time with no library rebuild.
+- Exception types that are class templates (`bad_expected_access<E>`) cannot cross the
+  C-linkage runtime boundary. They go through the companion hook
+  `ycxx::detail::raise_with(kind, what, make)`: with exceptions on, it throws `make()` from the
+  header; without exceptions, it calls the same `ycxx_error_handler(kind, what)`, and `make` is
+  never called.
 - The language-support ABI (`__cxa_*`, `std::type_info`, `std::exception` vtables, unwinding)
   comes from the toolchain's ABI runtime (GCC's `libsupc++` plus `libgcc_s`/`libgcc_eh`), which
   is linked for both compilers. Our declarations of `std::exception`, `std::type_info`, etc.

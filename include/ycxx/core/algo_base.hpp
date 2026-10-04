@@ -253,6 +253,37 @@ constexpr void bulk_move(const I& in_first, const I& in_last, const O& out_first
                     static_cast<std::size_t>(src_end - src) * sizeof(std::iter_value_t<O>));
 }
 
+// ---- byte search ------------------------------------------------------------------------------
+// find over a contiguous range of narrow character elements for an integral value is memchr
+// (outside constant evaluation). The comparison `x == value` promotes both sides, and every
+// narrow character type converts injectively to the common type, so it holds exactly when x
+// equals the value converted to the element type, provided that conversion round-trips; a value
+// that does not (out of the element type's range) goes through the ordinary loop.
+template <class E>
+concept narrow_char_elem = std::same_as<E, char> || std::same_as<E, signed char> || std::same_as<E, unsigned char> ||
+                           std::same_as<E, char8_t>;
+template <class I, class S, class T>
+concept memchr_find_args =
+    std::contiguous_iterator<I> && std::sized_sentinel_for<S, I> &&
+    narrow_char_elem<std::remove_cvref_t<std::iter_reference_t<I>>> &&
+    std::is_lvalue_reference_v<std::iter_reference_t<I>> && std::is_integral_v<T> && !std::is_same_v<T, bool>;
+
+// Returns false (and leaves `first` alone) when the value is out of the element type's range.
+template <class I, class S, class T>
+constexpr bool find_byte(I& first, const S& last, const T& value) noexcept {
+  using E = std::remove_cvref_t<std::iter_reference_t<I>>;
+  const E e = static_cast<E>(value);
+  if (static_cast<T>(e) != value)
+    return false;
+  const auto n = last - first;
+  if (n <= 0)
+    return true;
+  const E* p = ::ycxx::detail::raw_address(first);
+  const void* r = __builtin_memchr(static_cast<const void*>(p), static_cast<unsigned char>(e), static_cast<std::size_t>(n));
+  first += r ? static_cast<const E*>(r) - p : n;
+  return true;
+}
+
 // ---- min / max -------------------------------------------------------------------------------
 template <class I, class S, class C>
 constexpr I min_element_impl(I first, S last, C less) {
@@ -653,10 +684,16 @@ constexpr OutputIterator fill_n(OutputIterator first, Size n, const T& value) {
 // [alg.find]
 template <class InputIterator, class T = typename iterator_traits<InputIterator>::value_type>
 [[nodiscard]] constexpr InputIterator find(InputIterator first, InputIterator last, const T& value) {
-  if constexpr (ycxx::detail::bit_algo_args<InputIterator, InputIterator, T>)
+  if constexpr (ycxx::detail::bit_algo_args<InputIterator, InputIterator, T>) {
     return ycxx::detail::bit_algos<InputIterator>::find(first, last, value);
-  else
+  } else {
+    if constexpr (ycxx::detail::memchr_find_args<InputIterator, InputIterator, T>)
+      if !consteval {
+        if (::ycxx::detail::find_byte(first, last, value))
+          return first;
+      }
     return ::ycxx::detail::find_if_impl(first, last, ::ycxx::detail::equals_value_plain<T>{value});
+  }
 }
 template <class InputIterator, class Predicate>
 [[nodiscard]] constexpr InputIterator find_if(InputIterator first, InputIterator last, Predicate pred) {
@@ -1118,10 +1155,16 @@ struct find_fn {
             class T = std::projected_value_t<I, Proj>>
     requires std::indirect_binary_predicate<std::ranges::equal_to, std::projected<I, Proj>, const T*>
   [[nodiscard]] constexpr I operator()(I first, S last, const T& value, Proj proj = {}) const {
-    if constexpr (ycxx::detail::bit_algo_args<I, S, T, Proj>)
+    if constexpr (ycxx::detail::bit_algo_args<I, S, T, Proj>) {
       return ycxx::detail::bit_algos<I>::find(first, last, value);
-    else
+    } else {
+      if constexpr (std::same_as<Proj, std::identity> && ycxx::detail::memchr_find_args<I, S, T>)
+        if !consteval {
+          if (::ycxx::detail::find_byte(first, last, value))
+            return first;
+        }
       return ::ycxx::detail::find_if_impl(std::move(first), last, ::ycxx::detail::equals_value<T, Proj>{value, proj});
+    }
   }
   template <std::ranges::input_range R, class Proj = std::identity,
             class T = std::projected_value_t<iterator_t<R>, Proj>>

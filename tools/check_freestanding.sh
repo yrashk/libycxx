@@ -3,6 +3,10 @@
 #   -ffreestanding -nostdlib -nostdinc -fno-exceptions -fno-rtti
 # and the smoke test must link with no C library for bare-metal targets.
 set -e
+# Compilers: the YCXX_* variables of tools/toolchain/activate.*, else the -16/-23 names.
+gcc=${YCXX_GCC:-gcc-16} gxx=${YCXX_GXX:-g++-16}
+clang=${YCXX_CLANG:-clang-23} clangxx=${YCXX_CLANGXX:-clang++-23}
+lld=${YCXX_LLD:-ld.lld-23} llvm_ar=${YCXX_LLVM_AR:-llvm-ar-23}
 repo=$(cd "$(dirname "$0")/.." && pwd)
 out=$repo/build/freestanding
 mkdir -p "$out"
@@ -35,11 +39,11 @@ build_fsrt() {
     case "$2" in gcc*) nw=-Wno-sized-deallocation ;; *) nw= ;; esac # one function per file
     $1 $flags $nw -c "$f" -o "$out/fsrt.$2/$(basename "$f" .cpp).o" || return 1
   done
-  rm -f "$out/fsrt.$2.a" && llvm-ar-23 rcs "$out/fsrt.$2.a" "$out/fsrt.$2"/*.o
+  rm -f "$out/fsrt.$2.a" && $llvm_ar rcs "$out/fsrt.$2.a" "$out/fsrt.$2"/*.o
 }
-run "clang++-23 --target=x86_64-unknown-none-elf" clang-x86_64 "clang-23 --target=x86_64-unknown-none-elf" "ld.lld-23 -e _start"
-run "clang++-23 --target=riscv64-unknown-elf -march=rv64gc -mabi=lp64d" clang-riscv64 "clang-23 --target=riscv64-unknown-elf -march=rv64gc -mabi=lp64d" "ld.lld-23 -e _start"
+run "$clangxx --target=x86_64-unknown-none-elf" clang-x86_64 "$clang --target=x86_64-unknown-none-elf" "$lld -e _start"
+run "$clangxx --target=riscv64-unknown-elf -march=rv64gc -mabi=lp64d" clang-riscv64 "$clang --target=riscv64-unknown-elf -march=rv64gc -mabi=lp64d" "$lld -e _start"
 # GCC lowers some builtins (e.g. __builtin_popcountll without -mpopcnt) to libgcc helpers, so
 # freestanding programs built with GCC link libgcc, as GCC itself requires.
-run "g++-16" gcc-x86_64 "gcc-16" "ld.lld-23 -e _start $(gcc-16 -print-libgcc-file-name)"
+run "$gxx" gcc-x86_64 "$gcc" "$lld -e _start $($gcc -print-libgcc-file-name)"
 exit $fail

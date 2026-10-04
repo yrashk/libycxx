@@ -1,0 +1,75 @@
+# Load libycxx's toolchains into the current bash or zsh session:
+#
+#   source tools/toolchain/activate.sh [--provision]
+#
+# Reads <toolchains>/toolchains.env written by tools/toolchain/provision (running it in
+# --detect-only mode first if the file is missing; with --provision it may also download and
+# build what is missing). It then exports:
+#   YCXX_ROOT                 the libycxx checkout
+#   YCXX_GCC, YCXX_GXX        GCC 16 drivers; YCXX_GCC_INSTALL_DIR its install directory
+#   YCXX_CLANG, YCXX_CLANGXX  Clang 23 drivers; YCXX_LLD, YCXX_LLVM_AR
+#   PATH                      the toolchain bin directories and $YCXX_ROOT/tools prepended
+# and defines `ycxx-unload`, which restores everything it changed and removes itself.
+# (The fish version is activate.fish.)
+
+if [ -n "${ZSH_VERSION:-}" ]; then
+  _ycxx_here=${${(%):-%x}:A:h}
+else
+  _ycxx_here=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
+fi
+_ycxx_root=$(cd "$_ycxx_here/../.." && pwd)
+_ycxx_conf=${YCXX_TOOLCHAINS:-${XDG_DATA_HOME:-$HOME/.local/share}/ycxx/toolchains}/toolchains.env
+
+if [ "${1:-}" = "--provision" ]; then
+  "$_ycxx_here/provision" || { echo "activate: provisioning failed" >&2; return 1; }
+elif [ ! -f "$_ycxx_conf" ]; then
+  "$_ycxx_here/provision" --detect-only ||
+    echo "activate: some compilers are missing; run 'source $_ycxx_here/activate.sh --provision'" >&2
+fi
+
+if [ -f "$_ycxx_conf" ]; then
+  # A second activation first undoes the first.
+  if typeset -f ycxx-unload >/dev/null 2>&1; then ycxx-unload; fi
+
+  # Remember what we change; ycxx-unload puts it back (set or unset).
+  _ycxx_saved_vars="PATH YCXX_ROOT YCXX_GCC_BIN YCXX_GCC YCXX_GXX YCXX_GCC_INSTALL_DIR YCXX_CLANG_BIN YCXX_CLANG YCXX_CLANGXX YCXX_LLD YCXX_LLVM_AR"
+  for _ycxx_v in $(echo "$_ycxx_saved_vars"); do
+    if eval "[ -n \"\${$_ycxx_v+x}\" ]"; then
+      eval "_YCXX_OLD_$_ycxx_v=\${$_ycxx_v}"
+    else
+      eval "_YCXX_OLD_$_ycxx_v=__ycxx_unset__"
+    fi
+  done
+
+  while IFS='=' read -r _ycxx_k _ycxx_val; do
+    case $_ycxx_k in
+      YCXX_*) export "$_ycxx_k=$_ycxx_val" ;;
+    esac
+  done < "$_ycxx_conf"
+  export YCXX_ROOT="$_ycxx_root"
+  _ycxx_path="$_ycxx_root/tools"
+  [ -n "${YCXX_CLANG_BIN:-}" ] && _ycxx_path="$YCXX_CLANG_BIN:$_ycxx_path"
+  [ -n "${YCXX_GCC_BIN:-}" ] && _ycxx_path="$YCXX_GCC_BIN:$_ycxx_path"
+  export PATH="$_ycxx_path:$PATH"
+
+  ycxx-unload() {
+    local v old
+    for v in $(echo "$_ycxx_saved_vars"); do
+      eval "old=\${_YCXX_OLD_$v}"
+      if [ "$old" = __ycxx_unset__ ]; then
+        unset "$v"
+      else
+        export "$v=$old"
+      fi
+      unset "_YCXX_OLD_$v"
+    done
+    unset _ycxx_saved_vars
+    unset -f ycxx-unload
+    hash -r 2>/dev/null || rehash 2>/dev/null || true
+  }
+
+  hash -r 2>/dev/null || rehash 2>/dev/null || true
+  echo "libycxx toolchains loaded (GCC: ${YCXX_GXX:-none}, Clang: ${YCXX_CLANGXX:-none}); 'ycxx-unload' restores the environment" >&2
+fi
+
+unset _ycxx_here _ycxx_root _ycxx_conf _ycxx_v _ycxx_k _ycxx_val _ycxx_path

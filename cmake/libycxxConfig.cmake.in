@@ -1,0 +1,28 @@
+# libycxx package configuration: find_package(libycxx CONFIG) provides
+#   ycxx::ycxx     link this into every C++ target (headers, libycxx, its ABI runtime)
+#   ycxx::headers  the headers only (-nostdinc++ and C++26 included)
+#   ycxx::core     libycxx.a
+#   ycxx::abi      libycxx-abi.a, the Itanium C++ ABI runtime
+@PACKAGE_INIT@
+
+set(libycxx_BUILT_WITH_COMPILER_ID "@CMAKE_CXX_COMPILER_ID@")
+set(libycxx_BUILT_WITH_COMPILER_VERSION "@CMAKE_CXX_COMPILER_VERSION@")
+
+# The consumer's C++ compiler must itself support libycxx's headers.
+if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND CMAKE_CXX_COMPILER_VERSION VERSION_LESS 16.2)
+  set(_ycxx_bad TRUE)
+elseif(CMAKE_CXX_COMPILER_ID STREQUAL "Clang" AND CMAKE_CXX_COMPILER_VERSION VERSION_LESS 23)
+  set(_ycxx_bad TRUE)
+elseif(CMAKE_CXX_COMPILER_ID AND NOT CMAKE_CXX_COMPILER_ID MATCHES "^(GNU|Clang)$")
+  set(_ycxx_bad TRUE)
+endif()
+if(_ycxx_bad)
+  set(libycxx_FOUND FALSE)
+  set(libycxx_NOT_FOUND_MESSAGE
+      "libycxx needs GCC >= 16.2 or Clang >= 23; this project uses ${CMAKE_CXX_COMPILER_ID} ${CMAKE_CXX_COMPILER_VERSION}")
+  unset(_ycxx_bad)
+  return()
+endif()
+
+include("${CMAKE_CURRENT_LIST_DIR}/libycxxTargets.cmake")
+check_required_components(libycxx)

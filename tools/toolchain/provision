@@ -1,0 +1,197 @@
+#!/bin/sh
+# Provision the compilers libycxx is built and tested with: GCC 16.2 and Clang 23.1 (with lld).
+#
+#   tools/toolchain/provision [--prefix DIR] [--gcc-only | --clang-only] [--detect-only]
+#                             [--jobs N] [--force]
+#
+# For each compiler it uses, in order:
+#   1. an earlier installation under the prefix (default ~/.local/share/ycxx/toolchains,
+#      or $YCXX_TOOLCHAINS);
+#   2. a matching compiler already on PATH (g++-16 / clang++-23, or unsuffixed g++ / clang++
+#      reporting the right version);
+#   3. otherwise it installs one under the prefix: Clang from the LLVM release tarball
+#      (no root needed), GCC built from the release source (C and C++ only; takes a while).
+# --detect-only never downloads or builds; --force reinstalls under the prefix.
+#
+# It writes <prefix>/toolchains.env (KEY=value lines, absolute paths), which
+# tools/toolchain/activate.sh (bash, zsh) and activate.fish load into the shell.
+set -eu
+
+GCC_VERSION=16.2.0
+LLVM_VERSION=23.1.2
+LLVM_MAJOR=23
+
+prefix=${YCXX_TOOLCHAINS:-${XDG_DATA_HOME:-$HOME/.local/share}/ycxx/toolchains}
+want_gcc=1
+want_clang=1
+detect_only=0
+force=0
+jobs=$(getconf _NPROCESSORS_ONLN 2>/dev/null || echo 4)
+
+while [ $# -gt 0 ]; do
+  case $1 in
+    --prefix) prefix=$2; shift ;;
+    --prefix=*) prefix=${1#--prefix=} ;;
+    --gcc-only) want_clang=0 ;;
+    --clang-only) want_gcc=0 ;;
+    --detect-only) detect_only=1 ;;
+    --force) force=1 ;;
+    --jobs) jobs=$2; shift ;;
+    --jobs=*) jobs=${1#--jobs=} ;;
+    -h|--help) sed -n '2,19p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
+    *) echo "provision: unknown option $1" >&2; exit 2 ;;
+  esac
+  shift
+done
+
+mkdir -p "$prefix"
+prefix=$(cd "$prefix" && pwd)
+conf=$prefix/toolchains.env
+
+say() { printf 'provision: %s\n' "$*" >&2; }
+die() { say "error: $*"; exit 1; }
+
+fetch() { # url dest
+  if command -v curl >/dev/null 2>&1; then curl -fL --retry 3 -o "$2" "$1"
+  elif command -v wget >/dev/null 2>&1; then wget -O "$2" "$1"
+  else die "need curl or wget to download $1"; fi
+}
+
+# version_of <compiler> -> major.minor.patch, or empty
+version_of() { "$1" -dumpfullversion 2>/dev/null || "$1" -dumpversion 2>/dev/null || true; }
+
+# ---------------------------------------------------------------------------------------------
+# GCC
+# ---------------------------------------------------------------------------------------------
+gcc_bin=
+find_gcc() {
+  gcc_bin=
+  if [ $force = 0 ] && [ -x "$prefix/gcc-$GCC_VERSION/bin/g++" ]; then
+    gcc_bin=$prefix/gcc-$GCC_VERSION/bin; return 0
+  fi
+  [ $force = 1 ] && return 1
+  for cxx in g++-16 g++; do
+    p=$(command -v "$cxx" 2>/dev/null) || continue
+    case $(version_of "$p") in
+      16.2*|16.[3-9]*) gcc_bin=$(dirname "$p"); gxx_name=$cxx; return 0 ;;
+    esac
+  done
+  return 1
+}
+
+install_gcc() {
+  src=$prefix/src/gcc-$GCC_VERSION
+  dest=$prefix/gcc-$GCC_VERSION
+  mkdir -p "$prefix/src"
+  if [ ! -d "$src" ]; then
+    say "downloading GCC $GCC_VERSION source"
+    fetch "https://ftp.gnu.org/gnu/gcc/gcc-$GCC_VERSION/gcc-$GCC_VERSION.tar.xz" "$prefix/src/gcc.tar.xz"
+    tar -xJf "$prefix/src/gcc.tar.xz" -C "$prefix/src"
+    rm -f "$prefix/src/gcc.tar.xz"
+  fi
+  say "fetching GCC prerequisites (GMP, MPFR, MPC, ISL)"
+  (cd "$src" && ./contrib/download_prerequisites >/dev/null)
+  build=$prefix/src/gcc-build
+  rm -rf "$build"
+  mkdir -p "$build"
+  say "configuring and building GCC $GCC_VERSION with $jobs jobs (this takes a while)"
+  (cd "$build" &&
+   "$src/configure" --prefix="$dest" --enable-languages=c,c++ --disable-multilib \
+     --disable-bootstrap --disable-nls >"$build/configure.log" 2>&1 &&
+   make -j"$jobs" >"$build/make.log" 2>&1 &&
+   make install >"$build/install.log" 2>&1) ||
+    die "GCC build failed; see the logs in $build"
+  rm -rf "$build"
+  gcc_bin=$dest/bin
+  gxx_name=g++
+}
+
+# ---------------------------------------------------------------------------------------------
+# Clang / LLVM
+# ---------------------------------------------------------------------------------------------
+clang_bin=
+clang_suffix=
+find_clang() {
+  clang_bin=
+  if [ $force = 0 ] && [ -x "$prefix/llvm-$LLVM_VERSION/bin/clang++" ]; then
+    clang_bin=$prefix/llvm-$LLVM_VERSION/bin; clang_suffix=; return 0
+  fi
+  [ $force = 1 ] && return 1
+  for suffix in "-$LLVM_MAJOR" ""; do
+    p=$(command -v "clang++$suffix" 2>/dev/null) || continue
+    case $(version_of "$p") in
+      "$LLVM_MAJOR".*)
+        command -v "ld.lld$suffix" >/dev/null 2>&1 || continue
+        clang_bin=$(dirname "$p"); clang_suffix=$suffix; return 0 ;;
+    esac
+  done
+  return 1
+}
+
+install_clang() {
+  case $(uname -s)-$(uname -m) in
+    Linux-x86_64) asset=LLVM-$LLVM_VERSION-Linux-X64 ;;
+    Linux-aarch64) asset=LLVM-$LLVM_VERSION-Linux-ARM64 ;;
+    Darwin-arm64) asset=LLVM-$LLVM_VERSION-macOS-ARM64 ;;
+    *) die "no LLVM release binary for $(uname -s)-$(uname -m); install Clang $LLVM_MAJOR and lld yourself" ;;
+  esac
+  say "downloading $asset"
+  fetch "https://github.com/llvm/llvm-project/releases/download/llvmorg-$LLVM_VERSION/$asset.tar.xz" \
+    "$prefix/$asset.tar.xz"
+  rm -rf "$prefix/llvm-$LLVM_VERSION" "$prefix/$asset"
+  tar -xJf "$prefix/$asset.tar.xz" -C "$prefix"
+  mv "$prefix/$asset" "$prefix/llvm-$LLVM_VERSION"
+  rm -f "$prefix/$asset.tar.xz"
+  clang_bin=$prefix/llvm-$LLVM_VERSION/bin
+  clang_suffix=
+}
+
+# ---------------------------------------------------------------------------------------------
+gxx_name=g++
+if [ $want_gcc = 1 ]; then
+  if find_gcc; then say "GCC: $gcc_bin/$gxx_name ($(version_of "$gcc_bin/$gxx_name"))"
+  elif [ $detect_only = 1 ]; then say "GCC $GCC_VERSION: not found"
+  else install_gcc; say "GCC: installed in $gcc_bin"; fi
+fi
+if [ $want_clang = 1 ]; then
+  if find_clang; then say "Clang: $clang_bin/clang++$clang_suffix ($(version_of "$clang_bin/clang++$clang_suffix"))"
+  elif [ $detect_only = 1 ]; then say "Clang $LLVM_MAJOR: not found"
+  else install_clang; say "Clang: installed in $clang_bin"; fi
+fi
+
+# Keep entries of a toolchain this run did not look at.
+old_gcc= old_clang=
+if [ -f "$conf" ]; then
+  old_gcc=$(grep '^YCXX_G' "$conf" || true)
+  old_clang=$(grep -e '^YCXX_CLANG' -e '^YCXX_LLD' -e '^YCXX_LLVM' "$conf" || true)
+fi
+
+tmp=$conf.tmp
+{
+  echo "# Written by tools/toolchain/provision; loaded by tools/toolchain/activate.{sh,fish}."
+  if [ -n "$gcc_bin" ]; then
+    gcc_name=$(echo "$gxx_name" | sed 's/g++/gcc/')
+    gcc_install_dir=$(dirname "$("$gcc_bin/$gxx_name" -print-libgcc-file-name)")
+    echo "YCXX_GCC_BIN=$gcc_bin"
+    echo "YCXX_GCC=$gcc_bin/$gcc_name"
+    echo "YCXX_GXX=$gcc_bin/$gxx_name"
+    echo "YCXX_GCC_INSTALL_DIR=$gcc_install_dir"
+  elif [ $want_gcc = 0 ] && [ -n "$old_gcc" ]; then
+    echo "$old_gcc"
+  fi
+  if [ -n "$clang_bin" ]; then
+    echo "YCXX_CLANG_BIN=$clang_bin"
+    echo "YCXX_CLANG=$clang_bin/clang$clang_suffix"
+    echo "YCXX_CLANGXX=$clang_bin/clang++$clang_suffix"
+    echo "YCXX_LLD=$clang_bin/ld.lld$clang_suffix"
+    echo "YCXX_LLVM_AR=$clang_bin/llvm-ar$clang_suffix"
+  elif [ $want_clang = 0 ] && [ -n "$old_clang" ]; then
+    echo "$old_clang"
+  fi
+} > "$tmp"
+mv "$tmp" "$conf"
+say "wrote $conf"
+
+[ $want_gcc = 0 ] || [ -n "$gcc_bin" ] || exit 1
+[ $want_clang = 0 ] || [ -n "$clang_bin" ] || exit 1
+exit 0

@@ -23,7 +23,8 @@ wrapper = os.path.join(repo, 'tools', 'ycxx-cxx')
 support = os.path.join(tests_root, 'support')
 
 def compiler_version():
-    exe = {'gcc': 'g++-16', 'clang': 'clang++-23'}[compiler]
+    exe = {'gcc': os.environ.get('YCXX_GXX', 'g++-16'),
+           'clang': os.environ.get('YCXX_CLANGXX', 'clang++-23')}[compiler]
     out = subprocess.run([exe, '-dumpfullversion' if compiler == 'gcc' else '-dumpversion'],
                          capture_output=True, text=True).stdout.strip()
     return out.split('.')

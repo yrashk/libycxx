@@ -108,6 +108,11 @@ private:
   friend constexpr complex<U> operator*(const complex<U>&, const complex<U>&);
   template <class U>
   friend constexpr complex<U> operator/(const complex<U>&, const complex<U>&);
+  // The comparisons read the members directly: constant evaluation counts every call.
+  template <class U>
+  friend constexpr bool operator==(const complex<U>&, const complex<U>&);
+  template <class U>
+  friend constexpr bool operator==(const complex<U>&, const U&);
   template <size_t I, class U>
   friend constexpr U& get(complex<U>&) noexcept;
   template <size_t I, class U>
@@ -141,13 +146,15 @@ template <class T>
 constexpr bool signbit(T x) noexcept {
   return __builtin_signbit(x);
 }
+// The helpers below are single expressions without nested calls: constant evaluation counts
+// every statement and every call, and complex arithmetic on special values calls them often.
 template <class T>
 constexpr T copysign(T x, T y) noexcept {
-  return ycxx::detail::fpm::fp_copysign(x, y);
+  return __builtin_signbit(x) != __builtin_signbit(y) ? -x : x;
 }
 template <class T>
 constexpr T fabs(T x) noexcept {
-  return ycxx::detail::fpm::fp_abs(x);
+  return __builtin_signbit(x) ? -x : x;
 }
 template <class T>
 constexpr T inf() noexcept {
@@ -155,7 +162,7 @@ constexpr T inf() noexcept {
 }
 template <class T>
 constexpr T nan() noexcept {
-  return ycxx::detail::fpm::fp_quiet_nan<T>();
+  return ycxx::detail::fpm::fp_qnan_v<T>[0];
 }
 template <class T>
 inline constexpr T pi = ycxx::detail::math_constant_value<T>(math_constant::pi);
@@ -179,12 +186,49 @@ template <class T>
 constexpr T hypot(T x, T y) noexcept {
   return ycxx::detail::cm::hypot<T>(x, y);
 }
+// During constant evaluation the bitwise scalbln/logb of cmath_impl.hpp cost hundreds of
+// evaluation steps each. For operands of everyday magnitude, exact multiplications by powers of
+// two give the same results for a fraction of that (types whose exponent range exceeds 2^64).
+template <class T>
+inline constexpr bool fast_scale = fp_format<T>.max_exp > 64 && fp_format<T>.min_exp < -64;
 template <class T>
 constexpr T scalbn(T x, long n) noexcept {
+  if consteval {
+    if (n == 0 || x == T(0) || __builtin_isinf(x) || (__builtin_isnan(x) && !__builtin_issignaling(x)))
+      return x;
+    if constexpr (fast_scale<T>) {
+      // |x| in [2^-32, 2^32) and |n| <= 32: x and the result are normal, so the result is exact.
+      const T ax = x < T(0) ? -x : x;
+      if (n >= -32 && n <= 32 && ax >= T(0x1p-32) && ax < T(0x1p32))
+        return n > 0 ? x * T(1ull << n) : x / T(1ull << -n);
+    }
+  }
   return ycxx::detail::cm::scalbln<T>(x, n);
 }
 template <class T>
 constexpr T logb(T x) noexcept {
+  if consteval {
+    if constexpr (fast_scale<T>) {
+      T y = x < T(0) ? -x : x;
+      if (y >= T(0x1p-63) && y < T(0x1p64)) { // the exponent by binary search
+        int e = 0;
+        if (y >= T(1)) {
+          for (int k = 32; k != 0; k /= 2)
+            if (y >= T(1ull << k)) {
+              y /= T(1ull << k);
+              e += k;
+            }
+        } else {
+          for (int k = 32; k != 0; k /= 2)
+            if (y * T(1ull << k) < T(2)) {
+              y *= T(1ull << k);
+              e -= k;
+            }
+        }
+        return T(e);
+      }
+    }
+  }
   return ycxx::detail::cm::logb<T>(x);
 }
 template <ycxx::detail::cm::op F, class T>
@@ -243,33 +287,33 @@ struct cpair {
 // their NaN and infinite results.
 template <bool S, class T>
 constexpr T s_mul(T p, T q) noexcept {
-  if constexpr (S) {
-    if (__builtin_isnan(p) || __builtin_isnan(q)) return ycxx::detail::cx::nan<T>();
-    if ((__builtin_isinf(p) && q == T(0)) || (p == T(0) && __builtin_isinf(q))) return ycxx::detail::cx::nan<T>();
-  }
-  return p * q;
+  return S && (__builtin_isnan(p) || __builtin_isnan(q) || (__builtin_isinf(p) && q == T(0)) ||
+               (p == T(0) && __builtin_isinf(q)))
+             ? ycxx::detail::fpm::fp_qnan_v<T>[0]
+             : p * q;
 }
 template <bool S, class T>
 constexpr T s_add(T p, T q) noexcept {
-  if constexpr (S) {
-    if (__builtin_isnan(p) || __builtin_isnan(q)) return ycxx::detail::cx::nan<T>();
-    if (__builtin_isinf(p) && __builtin_isinf(q) && __builtin_signbit(p) != __builtin_signbit(q))
-      return ycxx::detail::cx::nan<T>();
-  }
-  return p + q;
+  return S && (__builtin_isnan(p) || __builtin_isnan(q) ||
+               (__builtin_isinf(p) && __builtin_isinf(q) && __builtin_signbit(p) != __builtin_signbit(q)))
+             ? ycxx::detail::fpm::fp_qnan_v<T>[0]
+             : p + q;
 }
 template <bool S, class T>
 constexpr T s_sub(T p, T q) noexcept {
-  return ycxx::detail::cx::s_add<S>(p, -q);
+  return S && (__builtin_isnan(p) || __builtin_isnan(q) ||
+               (__builtin_isinf(p) && __builtin_isinf(q) && __builtin_signbit(p) == __builtin_signbit(q)))
+             ? ycxx::detail::fpm::fp_qnan_v<T>[0]
+             : p - q;
 }
 template <bool S, class T>
 constexpr T s_div(T p, T q) noexcept {
-  if constexpr (S) {
-    if (__builtin_isnan(p) || __builtin_isnan(q)) return ycxx::detail::cx::nan<T>();
-    if ((__builtin_isinf(p) && __builtin_isinf(q)) || (p == T(0) && q == T(0))) return ycxx::detail::cx::nan<T>();
-    if (q == T(0)) return ycxx::detail::fpm::fp_infinity<T>(__builtin_signbit(p) != __builtin_signbit(q));
-  }
-  return p / q;
+  return !S ? p / q
+         : __builtin_isnan(p) || __builtin_isnan(q) || (__builtin_isinf(p) && __builtin_isinf(q)) ||
+                 (p == T(0) && q == T(0))
+             ? ycxx::detail::fpm::fp_qnan_v<T>[0]
+         : q == T(0) ? ycxx::detail::fpm::fp_inf_v<T>[__builtin_signbit(p) != __builtin_signbit(q)]
+                     : p / q;
 }
 
 // G.5.1, multiplication: (a + ib)(c + id), recovering infinities from a NaN result.
@@ -327,39 +371,47 @@ template <class T>
 inline constexpr T div_lo = ycxx::detail::fpm::fp_scale(T(1), -(fp_format<T>.max_exp / 4));
 template <class T>
 inline constexpr T div_hi = ycxx::detail::fpm::fp_scale(T(1), fp_format<T>.max_exp / 4);
+// Constant evaluation counts every statement and call, so the special cases below are written
+// with few of them (Annex G's operations on special values come up often in tests).
 template <bool S, class T>
 constexpr cpair<T> div_scaled(T a, T b, T c, T d) noexcept {
-  const T zero = T(0), one = T(1);
+  const T zero = T(0), one = T(1), inf = ycxx::detail::fpm::fp_inf_v<T>[0],
+          ac = __builtin_signbit(c) ? -c : c, ad = __builtin_signbit(d) ? -d : d,
+          m = ac > ad || __builtin_isnan(d) ? ac : ad;
+  // huge: logb(max(|c|, |d|)) is +inf. unscaled: in constant evaluation (S), the scaling is
+  // skipped where it cannot change the result, div's common case with an infinite or NaN
+  // numerator part (the finite parts cannot overflow or become subnormal).
+  const bool huge = __builtin_isinf(m),
+             unscaled = S && m >= div_lo<T> && m <= div_hi<T> &&
+                        !(__builtin_isfinite(a) && (a < zero ? -a : a) > div_hi<T>) &&
+                        !(__builtin_isfinite(b) && (b < zero ? -b : b) > div_hi<T>);
   long ilogbw = 0;
-  const T ac = ycxx::detail::cx::fabs(c), ad = ycxx::detail::cx::fabs(d);
-  const T m = ac > ad || __builtin_isnan(d) ? ac : ad;
-  bool huge = false; // logb(max(|c|, |d|)) is +inf
-  if (m != zero && __builtin_isfinite(m)) {
+  if (m != zero && !huge && !__builtin_isnan(m) && !unscaled) {
     ilogbw = static_cast<long>(ycxx::detail::cx::logb(m));
     c = ycxx::detail::cx::scalbn(c, -ilogbw);
     d = ycxx::detail::cx::scalbn(d, -ilogbw);
-  } else if (__builtin_isinf(m)) {
-    huge = true;
   }
   const T denom = ycxx::detail::cx::s_add<S>(ycxx::detail::cx::s_mul<S>(c, c), ycxx::detail::cx::s_mul<S>(d, d));
-  const T nx = ycxx::detail::cx::s_add<S>(ycxx::detail::cx::s_mul<S>(a, c), ycxx::detail::cx::s_mul<S>(b, d));
-  const T ny = ycxx::detail::cx::s_sub<S>(ycxx::detail::cx::s_mul<S>(b, c), ycxx::detail::cx::s_mul<S>(a, d));
-  T x = ycxx::detail::cx::s_div<S>(nx, denom), y = ycxx::detail::cx::s_div<S>(ny, denom);
+  T x = ycxx::detail::cx::s_div<S>(
+        ycxx::detail::cx::s_add<S>(ycxx::detail::cx::s_mul<S>(a, c), ycxx::detail::cx::s_mul<S>(b, d)), denom),
+    y = ycxx::detail::cx::s_div<S>(
+        ycxx::detail::cx::s_sub<S>(ycxx::detail::cx::s_mul<S>(b, c), ycxx::detail::cx::s_mul<S>(a, d)), denom);
   if (ilogbw != 0) {
     x = ycxx::detail::cx::scalbn(x, -ilogbw);
     y = ycxx::detail::cx::scalbn(y, -ilogbw);
   }
   if (__builtin_isnan(x) && __builtin_isnan(y)) {
     if (denom == zero && (!__builtin_isnan(a) || !__builtin_isnan(b))) {
-      const T i = ycxx::detail::cx::copysign(ycxx::detail::cx::inf<T>(), c);
+      const T i = __builtin_signbit(c) ? -inf : inf;
       x = ycxx::detail::cx::s_mul<S>(i, a);
       y = ycxx::detail::cx::s_mul<S>(i, b);
     } else if ((__builtin_isinf(a) || __builtin_isinf(b)) && __builtin_isfinite(c) && __builtin_isfinite(d)) {
-      a = ycxx::detail::cx::copysign(__builtin_isinf(a) ? one : zero, a);
-      b = ycxx::detail::cx::copysign(__builtin_isinf(b) ? one : zero, b);
-      const T i = ycxx::detail::cx::inf<T>();
-      x = ycxx::detail::cx::s_mul<S>(i, ycxx::detail::cx::s_add<S>(ycxx::detail::cx::s_mul<S>(a, c), ycxx::detail::cx::s_mul<S>(b, d)));
-      y = ycxx::detail::cx::s_mul<S>(i, ycxx::detail::cx::s_sub<S>(ycxx::detail::cx::s_mul<S>(b, c), ycxx::detail::cx::s_mul<S>(a, d)));
+      // a and b become +-1 or +-0 and c, d are finite: the inner operations cannot give a NaN.
+      const T a1 = __builtin_isinf(a) ? one : zero, b1 = __builtin_isinf(b) ? one : zero;
+      a = __builtin_signbit(a) ? -a1 : a1;
+      b = __builtin_signbit(b) ? -b1 : b1;
+      x = ycxx::detail::cx::s_mul<S>(inf, a * c + b * d);
+      y = ycxx::detail::cx::s_mul<S>(inf, b * c - a * d);
     } else if (huge && __builtin_isfinite(a) && __builtin_isfinite(b)) {
       c = ycxx::detail::cx::copysign(__builtin_isinf(c) ? one : zero, c);
       d = ycxx::detail::cx::copysign(__builtin_isinf(d) ? one : zero, d);
@@ -371,15 +423,14 @@ constexpr cpair<T> div_scaled(T a, T b, T c, T d) noexcept {
 }
 template <class T>
 constexpr cpair<T> div(T a, T b, T c, T d) noexcept {
-  {
-    // Common case: no intermediate result can overflow or become subnormal, so the scaling
-    // would be exact and is skipped.
-    const T ca = c < T(0) ? -c : c, da = d < T(0) ? -d : d, aa = a < T(0) ? -a : a, ba = b < T(0) ? -b : b;
-    const T m = ca > da ? ca : da;
-    if (m >= div_lo<T> && m <= div_hi<T> && aa <= div_hi<T> && ba <= div_hi<T>) {
-      const T denom = c * c + d * d;
-      return {(a * c + b * d) / denom, (b * c - a * d) / denom};
-    }
+  // Common case: no intermediate result can overflow or become subnormal, so the scaling would
+  // be exact and is skipped. Every comparison is false for a NaN, so no operand is a NaN here
+  // (constant evaluation rejects an operation that produces one).
+  const T ca = c < T(0) ? -c : c, da = d < T(0) ? -d : d, aa = a < T(0) ? -a : a, ba = b < T(0) ? -b : b;
+  if ((ca >= div_lo<T> || da >= div_lo<T>) && ca <= div_hi<T> && da <= div_hi<T> && aa <= div_hi<T> &&
+      ba <= div_hi<T>) {
+    const T denom = c * c + d * d;
+    return {(a * c + b * d) / denom, (b * c - a * d) / denom};
   }
   if consteval {
     return ycxx::detail::cx::div_scaled<true>(a, b, c, d);
@@ -472,11 +523,11 @@ constexpr complex<T> operator/(const T& lhs, const complex<T>& rhs) {
 }
 template <class T>
 constexpr bool operator==(const complex<T>& lhs, const complex<T>& rhs) {
-  return lhs.real() == rhs.real() && lhs.imag() == rhs.imag();
+  return lhs.re_ == rhs.re_ && lhs.im_ == rhs.im_;
 }
 template <class T>
 constexpr bool operator==(const complex<T>& lhs, const T& rhs) {
-  return lhs.real() == rhs && lhs.imag() == T();
+  return lhs.re_ == rhs && lhs.im_ == T();
 }
 
 // [complex.value.ops]

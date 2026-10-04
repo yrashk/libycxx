@@ -1246,8 +1246,7 @@ struct iterator_traits<common_iterator<I, S>> {
 namespace ycxx::detail::range_access {
 
 namespace rbegin_ns {
-void rbegin(auto&) = delete;
-void rbegin(const auto&) = delete;
+void rbegin() = delete; // hides outer declarations: the call below uses argument-dependent lookup only
 template <class T>
 concept member = requires(T& t) {
   { ::ycxx::detail::decay_copy(t.rbegin()) } -> std::input_or_output_iterator;
@@ -1293,8 +1292,7 @@ inline constexpr ycxx::detail::range_access::rbegin_ns::fn rbegin{};
 
 namespace ycxx::detail::range_access {
 namespace rend_ns {
-void rend(auto&) = delete;
-void rend(const auto&) = delete;
+void rend() = delete; // hides outer declarations: the call below uses argument-dependent lookup only
 template <class T>
 concept member = requires(T& t) {
   { ::ycxx::detail::decay_copy(t.rend()) } -> std::sentinel_for<decltype(std::ranges::rbegin(t))>;

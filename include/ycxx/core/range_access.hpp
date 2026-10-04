@@ -41,8 +41,7 @@ concept complete_array_elem = requires { sizeof(std::remove_all_extents_t<std::r
 
 // ---- begin ----
 namespace begin_ns {
-void begin(auto&) = delete;
-void begin(const auto&) = delete;
+void begin() = delete; // hides outer declarations: the call below uses argument-dependent lookup only
 
 template <class T>
 concept member = requires(T& t) {
@@ -92,8 +91,7 @@ namespace ycxx::detail::range_access {
 
 // ---- end ----
 namespace end_ns {
-void end(auto&) = delete;
-void end(const auto&) = delete;
+void end() = delete; // hides outer declarations: the call below uses argument-dependent lookup only
 
 template <class T>
 concept member = requires(T& t) {
@@ -169,8 +167,7 @@ concept integer_like_ = integer_like<T>;
 
 // ---- size ----
 namespace size_ns {
-void size(auto&) = delete;
-void size(const auto&) = delete;
+void size() = delete; // hides outer declarations: the call below uses argument-dependent lookup only
 
 template <class T>
 concept member = !std::ranges::disable_sized_range<std::remove_cvref_t<T>> && requires(T& t) {
@@ -304,8 +301,7 @@ struct fn {
 
 // ---- reserve_hint (C++26) ----
 namespace reserve_hint_ns {
-void reserve_hint(auto&) = delete;
-void reserve_hint(const auto&) = delete;
+void reserve_hint() = delete; // hides outer declarations: the call below uses argument-dependent lookup only
 template <class T>
 concept member = requires(T& t) {
   { ::ycxx::detail::decay_copy(t.reserve_hint()) } -> integer_like_;

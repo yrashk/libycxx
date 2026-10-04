@@ -75,3 +75,18 @@ public:
 };
 
 } // namespace std
+
+namespace ycxx::detail {
+
+// &typeid(T), or nullptr without RTTI. typeid cannot even be parsed under -fno-rtti (not in a
+// discarded branch, not in an uninstantiated template), so this is the one place that spells
+// it; users gate on cfg::rtti in-language (DECISIONS §1 rule 4).
+#if YCXX_HAS_RTTI
+template <class T>
+inline constexpr const std::type_info* type_id = &typeid(T);
+#else
+template <class T>
+inline constexpr const std::type_info* type_id = nullptr;
+#endif
+
+} // namespace ycxx::detail

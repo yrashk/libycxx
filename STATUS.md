@@ -30,6 +30,10 @@ Conformance oracles (run only, never edited): libc++ tests from `llvmorg-23.1.2`
 
 Whole-suite baseline (clang, before iterators/tuple/array/optional): 976 pass / ~8,000 run.
 
+libstdc++ testsuite: 20_util/{function,move_only_function,copyable_function,function_ref,
+constant_wrapper}: all pass on GCC except tests needing `<string>`/`<iostream>`; Clang also fails
+constant_wrapper/generic.cc (throws during constant evaluation). libc++ utilities/const.wrap.class:
+15/15 on both; func.wrap: all failures need `<algorithm>`/`<string>`.
 libstdc++ testsuite: 20_util/{tuple,pair,uses_allocator}: 107 pass on both compilers.
 20_util/variant: 27/31 on both (rest: missing `<string>`, `<vector>`, `<any>`).
 20_util/any: 22/30 on both (rest: `<vector>`, `<string>`, `<set>`, `unique_ptr`).
@@ -61,6 +65,14 @@ riscv64-unknown-elf (Clang) and x86_64 (GCC). Core headers: see `tools/headers.p
   constraint depends on itself" (libc++ `convert_const_move`); GCC accepts.
 - GCC 16.2: `Pack...[I]` inside a pack expansion over an empty `I` is diagnosed ("cannot index an
   empty pack") although nothing is instantiated; `bind` uses `tuple_element_t` instead.
+- GCC 16.2: `static constexpr decltype(auto) v = (X);` with a class-type template parameter
+  object `X` deduces `const T` instead of `const T&`; constant_wrapper spells the type out.
+- GCC 16.2: a default template argument `decltype(X)` is computed from the substituted
+  expression when `X` is given a dependent expression (`L::value ->* R::value` gives
+  `constant_wrapper<9, const int>`); constant_wrapper's default is `remove_cvref_t<decltype(X)>`.
+- Clang 23.1: the address of an explicit-object member function cannot be a template argument
+  ("must explicitly qualify name of member function"); own test
+  `functional/function_ref_cw_explicit_object` is XFAIL on Clang.
 - GCC 16.2: `PR31384` (conversion function vs converting constructor in direct-init of `tuple`)
   resolves differently from Clang; the libc++ expectation matches Clang.
 
@@ -91,15 +103,22 @@ Deprecated and removed features are not implemented (`is_pod`, `is_trivial`, `al
 - `char_traits<char16_t>::eof()`: [char.traits.require] wants a value distinct from
   `to_int_type(c)` for every `c`, but `int_type` is `uint_least16_t` (16 bits here), so no such
   value exists. libycxx returns 0xFFFF (own test `char_traits/eof` fails by design).
+- `std::function`, `move_only_function` and `copyable_function` (40 bytes: a 24-byte buffer and
+  two pointers) store targets that fit and are nothrow-move-constructible in place, others with a
+  plain new-expression. Built from another owning wrapper with the same return type and
+  argument passing, they adopt its target instead of wrapping it ([func.wrap.general]/2-3); an
+  empty `std::function` so adopted becomes a stateless target that throws `bad_function_call`.
+  Construction is noexcept when nothing can throw (a strengthening, as libstdc++ does).
+  `function::target<T>()` without RTTI uses the same table-address identity as `any`.
 - `any` without RTTI identifies types by the address of a per-type table, so `any_cast` across a
   shared library built with hidden visibility or `-Bsymbolic` does not recognise the type.
 - No `<stddef.h>` wrapper: `::max_align_t` comes from the compiler's header and is not
   `std::max_align_t` (see Deliberate divergences).
 
 ## Open issues / next
-- Phase 2 remaining: function family (function, move_only_function,
-  copyable_function, function_ref, bind, mem_fn, not_fn); <exception>
-  propagation (exception_ptr, nested_exception, exception_ptr_cast).
+- Phase 2 remaining: <exception> propagation (exception_ptr, nested_exception,
+  exception_ptr_cast), <typeindex>; pair's dangling-reference deletion for pair-like sources
+  ([pairs.pair]/17, own test `utility/pair_dangling`).
 - Then Phase 3 (containers, algorithms), Phase 4 (ranges, charconv, format, ...).
 - Constexpr exceptions (P3068): done for `exception`, `bad_alloc`, `bad_array_new_length`,
   `bad_exception`, `bad_cast`, `bad_typeid`, `bad_optional_access`, `bad_variant_access`, and

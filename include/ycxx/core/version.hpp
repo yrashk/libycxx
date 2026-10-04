@@ -140,6 +140,10 @@
 #define __cpp_lib_bind_front 202306L
 #define __cpp_lib_bind_back 202306L
 #define __cpp_lib_not_fn 202306L
+#define __cpp_lib_constant_wrapper 202606L
+#define __cpp_lib_move_only_function 202110L
+#define __cpp_lib_copyable_function 202306L
+#define __cpp_lib_function_ref 202604L
 #define __cpp_lib_common_reference_wrapper 202302L
 #define __cpp_lib_constexpr_typeinfo 202106L
 // [version.syn]/4: 202306L when the default allocation functions are those of a hosted

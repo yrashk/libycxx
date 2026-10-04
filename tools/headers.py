@@ -12,6 +12,7 @@ CORE = [
 CORE += ["algorithm", "numeric", "execution", "ranges"]
 CORE += ["scoped_allocator"]
 CORE += ["vector", "inplace_vector"]
+CORE += ["deque", "list", "forward_list", "stack", "queue"]
 # Hosted: need an OS (through the PAL) or the C library.
 HOSTED = [
     "any", "cctype", "cerrno", "cfenv", "cinttypes", "clocale", "csetjmp", "csignal", "cstdarg", "cstdio",

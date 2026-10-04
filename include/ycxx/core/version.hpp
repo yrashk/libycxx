@@ -176,6 +176,15 @@
 #define __cpp_lib_saturation_arithmetic 202603L
 #define __cpp_lib_shift 202202L
 
+// <deque> <list> <forward_list> <stack> <queue>
+#define __cpp_lib_adaptor_iterator_pair_constructor 202106L
+#define __cpp_lib_constexpr_deque 202502L
+#define __cpp_lib_constexpr_forward_list 202502L
+#define __cpp_lib_constexpr_list 202502L
+#define __cpp_lib_constexpr_queue 202502L
+#define __cpp_lib_constexpr_stack 202502L
+#define __cpp_lib_list_remove_return_type 201806L
+
 // Features of headers above that had no macro yet.
 #define __cpp_lib_ssize 201902L
 #define __cpp_lib_null_iterators 201304L
@@ -215,7 +224,10 @@
 #  define __cpp_lib_hardened_basic_string 202502L
 #  define __cpp_lib_hardened_basic_string_view 202502L
 #  define __cpp_lib_hardened_bitset 202502L
+#  define __cpp_lib_hardened_deque 202502L
 #  define __cpp_lib_hardened_expected 202502L
+#  define __cpp_lib_hardened_forward_list 202502L
+#  define __cpp_lib_hardened_list 202502L
 #  define __cpp_lib_hardened_optional 202502L
 #  define __cpp_lib_hardened_span 202502L
 #  define __cpp_lib_hardened_vector 202502L

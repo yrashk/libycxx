@@ -164,33 +164,46 @@ bool values() {
 template <class X>
 bool pointers() {
   using P = typename X::value_type;
-  using It = evil::Iter<P>;
+  // Iterator pairs are plain P*: an evil::Iter<P> argument would make overload resolution check
+  // the from_range constructor's constraint, whose ranges::begin performs ADL on the iterator
+  // as specified ([range.access.begin]/2.6), completing Holder<Incomplete> regardless of the
+  // library.
   alignas(64) static char storage[128];  // distinct, suitably aligned addresses; never dereferenced
   P p[4] = {nullptr, static_cast<P>(static_cast<void*>(storage)), static_cast<P>(static_cast<void*>(storage + 64)),
             nullptr};
-  X a(It(p), It(p + 4));
+  X a(p, p + 4);
   X b(3);
   X c(2, p[1]);
   X d(std::from_range, p);
   X e{p[2], p[1]};
-  if (!(a == d) || a != d || (a <=> d) != 0 || length(b) != 3) return false;
+  // No operator expressions on the containers: one would perform ADL for the container type
+  // itself ([over.match.oper]/3.2), whose associated entities include Holder<Incomplete>
+  // ([basic.lookup.argdep]/3) -- that would be the test's doing, not the library's (and
+  // inplace_vector's comparisons are hidden friends, found only that way).
+  auto same = [](const X& x, const X& y) {
+    auto i = x.begin(), j = y.begin();
+    for (; i != x.end() && j != y.end(); ++i, ++j)
+      if (*i != *j) return false;
+    return i == x.end() && j == y.end();
+  };
+  if (!same(a, d) || length(b) != 3) return false;
   X g(a);
   X h(std::move(g));
   b = h;
   b = std::move(h);
   b = {p[1]};
-  b.assign(It(p), It(p + 2));
+  b.assign(p, p + 2);
   b.assign(2, p[2]);
   b.assign_range(p);
   b.swap(c);
   std::swap(b, c);
   insert_one(b, 1, p[2]);
   if constexpr (is_forward_list<X>) {
-    b.insert_after(b.cbefore_begin(), It(p), It(p + 4));
+    b.insert_after(b.cbefore_begin(), p, p + 4);
     b.insert_range_after(b.cbefore_begin(), p);
     b.erase_after(b.cbefore_begin());
   } else {
-    b.insert(b.cbegin(), It(p), It(p + 4));
+    b.insert(b.cbegin(), p, p + 4);
     b.insert_range(b.cbegin(), p);
     b.erase(b.cbegin());
   }

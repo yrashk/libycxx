@@ -135,6 +135,10 @@ Legend: **G** fails with GCC + libstdc++, **C** with Clang + libstdc++.
 | `debugging/debugging`, `stacktrace/*`, `text_encoding/text_encoding` | G | C | link only with `-lstdc++exp` (the tests add no flags; with it they pass) |
 | `execution/ranges_algorithms`, `execution/ranges_constraints` | G | C | the parallel range algorithms (P3179) |
 | `ranges/reserve_hint` | G | C | `ranges::reserve_hint`, `approximately_sized_range`, the views' `reserve_hint` members (P2846) |
+| `system_error/format` | G | C | `formatter<error_code>` ([syserr.fmt]) |
+| `cmath/constexpr_correctly_rounded` | G |  | constexpr `remquo` (Clang: `sqrt` is not constexpr either, §3) |
+| `complex/constexpr_all_float_types` | G | C | constexpr `abs` and the other complex functions (P1383) |
+| `priority_queue/custom_compare`, `stdexcept/constexpr_library_throws_cxx26_containers` | G | C | constexpr container adaptors and `deque` |
 
 ## 3. Differences between GCC and Clang with the same libstdc++
 

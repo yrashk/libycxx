@@ -27,7 +27,12 @@ variable templates. The preprocessor is used only where the language cannot do t
 4. **`#if` outside `config.hpp` only when the code cannot be parsed or declared otherwise.**
    Examples: a declaration that needs a builtin only one compiler has
    (`std::is_within_lifetime` needs `__builtin_is_within_lifetime`), a `throw` expression under
-   `-fno-exceptions`, or a standard macro whose value must be usable inside `#if`. Such an `#if`
+   `-fno-exceptions`, or a standard macro whose value must be usable inside `#if`. Also
+   `YCXX_HAS_RTTI`. A `typeid` expression is rejected under `-fno-rtti` even in an
+   uninstantiated template or a discarded `if constexpr` branch (verified, GCC 16.2 and Clang
+   23.1), so `any::type()` must not be parsed there. And a non-template class cannot choose
+   between an inline constexpr and an out-of-line destructor (`exception_base.hpp`) with
+   `if constexpr` or `requires`. Everywhere else the derived constant `cfg::rtti` is used. Such an `#if`
    tests a `YCXX_HAS_*` switch, never a compiler name. Prefer restructuring (an out-of-line
    function, a dependent expression) over adding an `#if`.
    **Probing builtins without the preprocessor.** A function-style builtin is detected with a

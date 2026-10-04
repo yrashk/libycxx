@@ -51,6 +51,9 @@ Legend: **G** fails with GCC + libstdc++, **C** with Clang + libstdc++.
 | `unordered_map/transparent` | G | C | `operator[]`, `try_emplace` and `insert_or_assign` with an existing heterogeneous key construct a key | [unord.map.elem], [unord.map.modifiers]: no effect when the key exists |
 | `flat_set/transparent` | G | C | heterogeneous `insert(x)` of an existing key constructs a `value_type` | [flat.set.modifiers]/3: "If the set already contains an element equivalent to x, *this and x are unchanged" |
 | `flat_set/deduction` | G | C | `flat_set(first, last)` does not deduce | [flat.set.defn]: `flat_set(InputIterator, InputIterator, Compare = Compare())` guide |
+| `containers/transparent_key_range` | G | C | `flat_map`/`flat_set` heterogeneous `count(ke)` returns 1 when `ke` is equivalent to three elements (line 38; `map`, `set` and the flat multi-containers give 3) | [associative.reqmts.general]/151: "The number of elements with key r such that !c(r, ke) && !c(ke, r)"; [flat.map.overview]/2, [flat.set.overview]/2: the flat containers meet the associative-container requirements |
+| `containers/merge_throwing_compare` | G | C | `set::merge` calls `std::terminate` when the comparator throws (the unordered containers propagate the exception) | [associative.reqmts.general]/116: "Throws: Nothing unless the comparison object throws" |
+| `expected/const_value_type` | G | C | `expected<const int, E>` is copy- and move-assignable and assignable from `int` | [expected.object.assign]/4: copy assignment "is defined as deleted unless: is_copy_assignable_v<T> is true ..."; /6.2, /11.4 (is_move_assignable_v<T>, is_assignable_v<T&, U>) |
 | `priority_queue/deduction` | G | C | no `priority_queue(InputIterator, InputIterator, Allocator)` guide | [priority.queue] synopsis |
 | `inplace_vector/noexcept` | G | C | `shrink_to_fit` is not `noexcept` | [inplace.vector.overview]: `static constexpr void shrink_to_fit() noexcept;` |
 | `algorithm/stable_partition` | G | C | in constant evaluation `ranges::stable_partition` returns `{i, last - 1}` (correct at run time) | [alg.partitions]/12.2: "{i, last} for the overloads in namespace ranges" |
@@ -150,7 +153,7 @@ Legend: **G** fails with GCC + libstdc++, **C** with Clang + libstdc++.
 | `memory/uses_allocator_construction` | G | C | the pair-like overload of `uses_allocator_construction_args` |
 | `functional/function_deduction_forms` | G | C | `function` deduction from `volatile` call operators ([func.wrap.func.con]/16: "cv &opt") |
 | `exception/exception_ptr_cast*`, `exception/make_exception_ptr*`, `exception/exception_signatures` | G | C | `exception_ptr_cast` returns `const E*` (an earlier revision); the draft returns `optional<const E&>` |
-| `memory/shared_ptr_constexpr`, `memory/pointer_traits_pointer_to`, `string/to_string_constexpr` | G | C | constexpr `shared_ptr`/`make_shared`, `pointer_traits::pointer_to`, `to_string` |
+| `memory/shared_ptr_constexpr`, `memory/shared_ptr_constexpr_more`, `memory/pointer_traits_pointer_to`, `string/to_string_constexpr` | G | C | constexpr `shared_ptr`/`make_shared`/`allocate_shared`/`enable_shared_from_this`, `pointer_traits::pointer_to`, `to_string` |
 | `memory/start_lifetime` | (xfail) | C | `start_lifetime` |
 | `deque/*`, `list/*`, `forward_list/*`, `map/*`, `set/*`, `unordered_*/*`, `stack/*`, `queue/*`, `priority_queue/*` (most) | G | C | C++26 constexpr containers and adaptors (the runtime parts of these tests pass) |
 | `inplace_vector/*` (some) | G | C | constexpr `inplace_vector` of non-trivial types |

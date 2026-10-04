@@ -55,6 +55,13 @@ struct is_aggregate : bool_constant<__is_aggregate(T)> {};
 template <class T>
 inline constexpr bool is_aggregate_v = __is_aggregate(T);
 
+#if YCXX_HAS_IS_STRUCTURAL
+template <class T>
+struct is_structural : bool_constant<__builtin_is_structural(T)> {};
+template <class T>
+inline constexpr bool is_structural_v = __builtin_is_structural(T);
+#endif
+
 // is_trivial / is_trivial_v are deprecated in C++26 (P3247) and intentionally not provided.
 
 template <class T>

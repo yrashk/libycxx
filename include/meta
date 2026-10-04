@@ -1,0 +1,8 @@
+// -*- C++ -*-  libycxx: <meta>   [core; empty without compiler reflection support]
+#pragma once
+
+#include <ycxx/config.hpp>
+#include <ycxx/core/version.hpp>
+#include <compare>
+#include <initializer_list>
+#include <ycxx/core/meta_reflection.hpp>

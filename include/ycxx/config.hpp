@@ -98,6 +98,19 @@
 #else
 #  define YCXX_HAS_CONTRACTS 0
 #endif
+// Reflection (P2996, GCC 16 with -freflection): <meta> cannot even be parsed without it
+// (`^^`), so its declarations are under this switch, as is __cpp_lib_reflection.
+#if defined(__cpp_impl_reflection)
+#  define YCXX_HAS_REFLECTION 1
+#else
+#  define YCXX_HAS_REFLECTION 0
+#endif
+// std::is_structural: a type-taking builtin (GCC 16; not Clang 23).
+#if __has_builtin(__builtin_is_structural)
+#  define YCXX_HAS_IS_STRUCTURAL 1
+#else
+#  define YCXX_HAS_IS_STRUCTURAL 0
+#endif
 #if __has_builtin(__builtin_type_order)
 #  define YCXX_HAS_BUILTIN_TYPE_ORDER 1
 #else
@@ -195,6 +208,7 @@ inline constexpr bool exceptions = YCXX_HAS_EXCEPTIONS;
 inline constexpr bool rtti = YCXX_HAS_RTTI;
 inline constexpr bool hosted = YCXX_HOSTED;
 inline constexpr bool hardened = YCXX_HARDENED;
+inline constexpr bool reflection = YCXX_HAS_REFLECTION;
 #if defined(__SIZEOF_INT128__)
 inline constexpr bool has_int128 = true;
 #else
@@ -282,6 +296,15 @@ template <>
 inline constexpr fp_format_info fp_format<double>{__DBL_MANT_DIG__, __DBL_MIN_EXP__, __DBL_MAX_EXP__};
 template <>
 inline constexpr fp_format_info fp_format<long double>{__LDBL_MANT_DIG__, __LDBL_MIN_EXP__, __LDBL_MAX_EXP__};
+
+// std::meta::info, the reflection type ([basic.fundamental]); without reflection support a
+// distinct incomplete type, so is_reflection is false for every type.
+#if defined(__cpp_impl_reflection)
+using reflection = decltype(^^::);
+#else
+struct reflection_unavailable;
+using reflection = reflection_unavailable;
+#endif
 
 // Extended floating-point types ([basic.extended.fp]). Unavailable ones alias a distinct
 // incomplete type, so generic code (type lists, overload sets) stays well-formed.

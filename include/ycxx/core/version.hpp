@@ -151,6 +151,9 @@
 #define __cpp_lib_is_nothrow_convertible 201806L
 #define __cpp_lib_is_null_pointer 201309L
 #define __cpp_lib_is_scoped_enum 202011L
+#if YCXX_HAS_IS_STRUCTURAL
+#  define __cpp_lib_is_structural 202603L
+#endif
 #define __cpp_lib_is_swappable 201603L
 #define __cpp_lib_is_virtual_base_of 202406L
 #if YCXX_HAS_IS_WITHIN_LIFETIME
@@ -202,6 +205,11 @@
 // <contracts>: the language feature is the compiler's (GCC 16; not Clang 23)
 #if YCXX_HAS_CONTRACTS
 #  define __cpp_lib_contracts 202502L
+#endif
+// <meta>: reflection is the compiler's (GCC 16 with -freflection; not Clang 23)
+#if YCXX_HAS_REFLECTION
+#  define __cpp_lib_reflection 202603L
+#  define __cpp_lib_define_static 202506L
 #endif
 #define __cpp_lib_ranges_cache_latest 202411L
 #define __cpp_lib_ranges_cartesian_product 202207L

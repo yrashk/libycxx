@@ -17,6 +17,8 @@ class LibcxxFormat(lit.formats.FileBasedTest):
         name = os.path.basename(path)
         if name.endswith('.sh.cpp') or '.gen.' in name:
             return lit.Test.Result(lit.Test.UNSUPPORTED, 'shell/generated tests are not supported')
+        if test.config.unsupported:  # set by a lit.local.cfg (e.g. experimental/ without c++experimental)
+            return lit.Test.Result(lit.Test.UNSUPPORTED, 'unsupported by lit.local.cfg')
         rel = '/'.join(test.path_in_suite)
         why = match_skip(self.skips, rel, open(path, encoding='utf-8', errors='replace').read())
         if why:

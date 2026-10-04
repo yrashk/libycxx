@@ -140,6 +140,33 @@ enum class rtti_kind : unsigned char {
 
 rtti_kind kind_of(const std::type_info& t) noexcept;
 
+// std::type_info::operator== with the name comparison written out: the runtime compares types on
+// every step of a dynamic_cast or handler search, mostly types that differ within their first
+// few characters, where a call to strcmp costs more than the comparison itself.
+struct type_info_name : std::type_info {
+  static constexpr const char* std::type_info::* name = &type_info_name::name_;
+};
+inline bool same_type(const std::type_info& a, const std::type_info& b) noexcept {
+  if (&a == &b)
+    return true;
+  const char* x = a.*type_info_name::name;
+  const char* y = b.*type_info_name::name;
+  // A name starting with '*' belongs to one type_info object only (see operator==).
+  if (*x == '*' || *y == '*')
+    return false;
+  if (x == y)
+    return true;
+  // Most names differ within a few characters; a long common prefix (a nested or
+  // anonymous-namespace name, which Clang does not mark with '*') goes to the C library's strcmp.
+  for (int i = 0; i < 8; ++i, ++x, ++y) {
+    if (*x != *y)
+      return false;
+    if (*x == '\0')
+      return true;
+  }
+  return __builtin_strcmp(x, y) == 0;
+}
+
 inline bool is_class(rtti_kind k) noexcept {
   return k == rtti_kind::class_plain || k == rtti_kind::class_si || k == rtti_kind::class_vmi;
 }
@@ -168,7 +195,7 @@ inline bool same_subobject(const subobject& a, const subobject& b) noexcept {
     return false;
   if (a.anchor == nullptr || b.anchor == nullptr)
     return a.anchor == b.anchor;
-  return *a.anchor == *b.anchor;
+  return same_type(*a.anchor, *b.anchor);
 }
 
 // Calls visit(s) for s and then, depth first, for every base-class subobject along every

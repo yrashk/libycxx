@@ -2,55 +2,95 @@
 #include "rtti.hpp"
 
 using namespace __cxxabiv1;
-using ycxx::abi::base_search;
-using ycxx::abi::subobject;
+using ycxx::abi::rtti_kind;
 
 namespace {
 
-// [expr.dynamic.cast]/9.1: among the dst objects within the most derived object, those that
-// contain the source subobject (type src at address sub) as a base, counting distinct ones.
-// The cast succeeds when there is exactly one and the source is a public base of it.
-base_search containing_objects(const subobject& mdo, const __class_type_info& src, const char* sub,
-                               const __class_type_info& dst) {
-  base_search r;
-  auto visit_candidate = [&](const subobject& c) {
-    if (!(*c.type == dst))
-      return false;
-    // Search c's own bases, with path accessibility measured from c.
-    bool contains = false;
-    bool via_public = false;
-    auto visit_source = [&](const subobject& s) {
-      if (s.addr == sub && *s.type == src) {
-        contains = true;
-        via_public = via_public || s.is_public;
-        return via_public; // a public path settles it
+// One depth-first walk over the most derived object's base-class subobjects gathers everything
+// [expr.dynamic.cast]/9 needs:
+//   - the downcast (9.1): the distinct dst subobjects that contain the source subobject (type
+//     src at address sub), and whether one of them reaches it along a public path;
+//   - the cross cast (9.2): whether the source is a public base of the most derived object, and
+//     the distinct dst subobjects, with whether one of them is reachable publicly.
+// A class is never its own base, so a path holds at most one dst and at most one source: below
+// a dst (or the source) the walk stops comparing against that type. When the class has no
+// repeated base class at all (its __vmi_class_type_info __flags are clear; both compilers set
+// them for a repetition anywhere in the hierarchy), every subobject lies on exactly one path,
+// and the walk stops once it has seen the source and a dst.
+struct cast_walk {
+  const __class_type_info* src;
+  const char* sub;
+  const __class_type_info* dst;
+  bool unique_bases;
+
+  bool src_seen = false;
+  bool src_public = false;  // the source is a public base of the most derived object
+  const char* down = nullptr;
+  int down_count = 0;       // distinct dst subobjects containing the source (saturating at 2)
+  bool down_public = false; // ... one of which reaches it along a public path
+  const char* across = nullptr;
+  int across_count = 0;     // distinct dst subobjects (saturating at 2)
+  bool across_public = false;
+
+  // The subobject of type t at addr. pub: the path from the most derived object is public;
+  // in_dst: the dst subobject on this path, or null; dst_pub: the path from in_dst is public;
+  // below_src: the source is on this path. Returns true to end the walk.
+  bool visit(const __class_type_info* t, const char* addr, bool pub, const char* in_dst, bool dst_pub,
+             bool below_src) {
+    if (in_dst == nullptr && ycxx::abi::same_type(*t, *dst)) {
+      if (across_count == 0) {
+        across = addr;
+        across_count = 1;
+        across_public = pub;
+      } else if (across == addr) {
+        across_public = across_public || pub;
+      } else {
+        across_count = 2;
+      }
+      in_dst = addr;
+      dst_pub = true;
+    } else if (!below_src && addr == sub && ycxx::abi::same_type(*t, *src)) {
+      src_seen = true;
+      src_public = src_public || pub;
+      below_src = true;
+      if (in_dst != nullptr) {
+        if (down_count == 0) {
+          down = in_dst;
+          down_count = 1;
+          down_public = dst_pub;
+        } else if (down == in_dst) {
+          down_public = down_public || dst_pub;
+        } else {
+          down_count = 2;
+        }
+      }
+    }
+    if (unique_bases && src_seen && across_count != 0)
+      return true;
+    switch (ycxx::abi::kind_of(*t)) {
+    case rtti_kind::class_si:
+      // §2.9.4: a single public non-virtual base at offset zero.
+      return visit(static_cast<const __si_class_type_info*>(t)->__base_type, addr, pub, in_dst, dst_pub, below_src);
+    case rtti_kind::class_vmi: {
+      auto* vmi = static_cast<const __vmi_class_type_info*>(t);
+      for (unsigned i = 0; i < vmi->__base_count; ++i) {
+        const __base_class_type_info& b = vmi->bases()[i];
+        // As in walk_bases (rtti.hpp): a virtual base's offset is stored in this subobject's
+        // vtable, at b.offset() from its virtual pointer.
+        const char* child = addr + b.offset();
+        if (b.is_virtual())
+          child = addr + *reinterpret_cast<const std::ptrdiff_t*>(*reinterpret_cast<const char* const*>(addr) +
+                                                                  b.offset());
+        const bool p = b.is_public();
+        if (visit(b.__base_type, child, pub && p, in_dst, dst_pub && p, below_src))
+          return true;
       }
       return false;
-    };
-    ycxx::abi::walk_bases(subobject{c.type, c.addr, c.anchor, c.offset, true}, visit_source);
-    if (!contains)
-      return false;
-    if (r.count == 0) {
-      r.count = 1;
-      r.first = c;
-      r.is_public = via_public;
-    } else if (r.first.addr == c.addr) {
-      r.is_public = r.is_public || via_public;
-    } else {
-      r.count = 2;
-      return true;
     }
-    return false;
-  };
-  ycxx::abi::walk_bases(mdo, visit_candidate);
-  return r;
-}
-
-// Whether the source subobject is a public base class subobject of the most derived object.
-bool is_public_base(const subobject& mdo, const __class_type_info& src, const char* sub) {
-  auto visit = [&](const subobject& s) { return s.is_public && s.addr == sub && *s.type == src; };
-  return ycxx::abi::walk_bases(mdo, visit);
-}
+    default: return false;
+    }
+  }
+};
 
 } // namespace
 
@@ -79,20 +119,33 @@ extern "C" void* __dynamic_cast(const void* sub, const __class_type_info* src, c
   // Fast path, the common downcast to the most derived type: the hint says the src subobject
   // at that offset is the only src base of dst and is public, and a class has no subobject of
   // its own type, so the most derived object is the one dst object containing it.
-  if (src2dst_offset >= 0 && mdo + src2dst_offset == source && *mdo_type == *dst)
+  if (src2dst_offset >= 0 && mdo + src2dst_offset == source && ycxx::abi::same_type(*mdo_type, *dst))
     return const_cast<char*>(mdo);
 
-  subobject root{mdo_type, mdo, nullptr, 0, true};
-  base_search down = containing_objects(root, *src, source, *dst);
-  if (down.count == 1 && down.is_public)
-    return const_cast<char*>(down.first.addr);
+  // Single inheritance from the top (the usual case): those classes are all at the most derived
+  // object's address and public bases of it, and the source is one of them or below them. If
+  // dst is among them, the cast succeeds there (a downcast when it contains the source, else a
+  // cross cast to an unambiguous public base); if the chain ends without it, dst is no base.
+  const __class_type_info* t = mdo_type;
+  rtti_kind k = ycxx::abi::kind_of(*t);
+  while (k != rtti_kind::class_vmi) {
+    if (ycxx::abi::same_type(*t, *dst))
+      return const_cast<char*>(mdo);
+    if (k != rtti_kind::class_si)
+      return nullptr;
+    t = static_cast<const __si_class_type_info*>(t)->__base_type;
+    k = ycxx::abi::kind_of(*t);
+  }
 
+  // The classes above t occur once each (none can be a base of t), so t's flags tell whether
+  // any base class repeats.
+  cast_walk w{src, source, dst, static_cast<const __vmi_class_type_info*>(t)->__flags == 0};
+  w.visit(mdo_type, mdo, true, nullptr, true, false);
+  if (w.down_count == 1 && w.down_public)
+    return const_cast<char*>(w.down);
   // [expr.dynamic.cast]/9.2, the cross cast: the source must be a public base of the most
   // derived object, and dst an unambiguous public base of it.
-  if (!is_public_base(root, *src, source))
-    return nullptr;
-  base_search across = ycxx::abi::find_bases(root, *dst);
-  if (across.count == 1 && across.is_public)
-    return const_cast<char*>(across.first.addr);
+  if (w.src_public && w.across_count == 1 && w.across_public)
+    return const_cast<char*>(w.across);
   return nullptr;
 }

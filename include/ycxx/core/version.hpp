@@ -48,6 +48,10 @@
 #define __cpp_lib_allocator_traits_is_always_equal 201411L
 #define __cpp_lib_constexpr_dynamic_alloc 201907L
 
+// <array>
+#define __cpp_lib_array_constexpr 201811L
+#define __cpp_lib_to_array 201907L
+
 // <bit>
 #define __cpp_lib_bit_cast 201806L
 #define __cpp_lib_bitops 202607L

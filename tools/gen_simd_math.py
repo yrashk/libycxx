@@ -9,6 +9,7 @@ binary functions get (V, V), (D, V), (V, D); ternary ones every mix of V and D b
 import itertools
 import os
 
+LIMIT = 120
 OUT = os.path.join(os.path.dirname(__file__), "..", "include", "ycxx", "core", "simd_math.hpp")
 
 D = "ycxx::detail::deduced_vec_t<V>"
@@ -65,11 +66,22 @@ w = out.append
 def fn(name, ret, params, args, constexpr, noexcept=False, lam=None):
     """One function template over V: params are (type, name) pairs, args the D-converted arguments."""
     w("template <ycxx::detail::math_floating_point V>")
-    sig = ", ".join(f"const {t}& {n}" for t, n in params)
-    w(f"{'constexpr ' if constexpr else ''}{ret} {name}({sig}){' noexcept' if noexcept else ''} {{")
+    head = f"{'constexpr ' if constexpr else ''}{ret}"
+    ps = [f"const {t}& {n}" for t, n in params]
+    tail = f"){' noexcept' if noexcept else ''} {{"
+    line = f"{head} {name}({', '.join(ps)}{tail}"
+    if len(line) <= LIMIT:
+        w(line)
+    else:  # one parameter per line
+        w(f"{head}")
+        w(f"{name}({ps[0]},")
+        for p in ps[1:-1]:
+            w(f"    {p},")
+        w(f"    {ps[-1]}{tail}" if len(ps) > 1 else "")
     w(f"  using D = {D};")
     lam = lam or f"[](const auto&... a) {{ return std::{name}(a...); }}"
-    w(f"  return ycxx::detail::simd_map<{ret.replace(D, 'D')}>({lam}, {', '.join(args)});")
+    w(f"  return ycxx::detail::simd_map<{ret.replace(D, 'D')}>(")
+    w(f"      {lam}, {', '.join(args)});")
     w("}")
 
 
@@ -151,7 +163,9 @@ constexpr ycxx::detail::deduced_vec_t<V> frexp(const V& value, rebind_t<int, ycx
 for mix in mixes(2):
     ps = ", ".join(f"const {'V' if m == 'V' else D}& {NAMES[i]}" for i, m in enumerate(mix))
     w("template <ycxx::detail::math_floating_point V>")
-    w(f"constexpr {D} remquo({ps}, rebind_t<int, {D}>* quo) {{")
+    w(f"constexpr {D}")
+    w(f"remquo({ps},")
+    w(f"       rebind_t<int, {D}>* quo) {{")
     w(f"  using D = {D};")
     w("  D a(x), b(y);")
     w("  ycxx::detail::simd_array<int, D::size()> q;")

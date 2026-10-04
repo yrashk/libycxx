@@ -407,8 +407,8 @@ struct simd_flags_union {
 };
 template <class... Fs, class O, class... Os>
 struct simd_flags_union<std::simd::flags<Fs...>, O, Os...>
-    : simd_flags_union<std::conditional_t<(__is_same(O, Fs) || ...), std::simd::flags<Fs...>, std::simd::flags<Fs..., O>>,
-                       Os...> {};
+    : simd_flags_union<
+          std::conditional_t<(__is_same(O, Fs) || ...), std::simd::flags<Fs...>, std::simd::flags<Fs..., O>>, Os...> {};
 
 // The extent of a contiguous range when ranges::size(r) is a constant expression, else
 // dynamic_extent: what span deduction finds (arrays, std::array, spans of static extent), or a

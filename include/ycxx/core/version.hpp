@@ -89,6 +89,9 @@
 #define __cpp_lib_aligned_accessor 202411L
 #define __cpp_lib_mdspan_copy 202606L
 
+// <linalg>
+#define __cpp_lib_linalg 202511L
+
 // <any>
 #define __cpp_lib_any 201606L
 

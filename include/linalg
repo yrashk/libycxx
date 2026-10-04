@@ -1,0 +1,6 @@
+// -*- C++ -*-  libycxx: <linalg>   [core; the norms and Givens rotations need libm at run time]
+#pragma once
+
+#include <ycxx/config.hpp>
+#include <ycxx/core/version.hpp>
+#include <ycxx/core/linalg.hpp>

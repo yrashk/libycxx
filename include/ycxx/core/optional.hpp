@@ -18,6 +18,9 @@ struct nullopt_t {
     explicit tag() = default;
   };
   constexpr explicit nullopt_t(tag) noexcept {}
+  // [optional.nullopt]/2: models copyable and three_way_comparable<strong_ordering>.
+  friend constexpr bool operator==(nullopt_t, nullopt_t) noexcept = default;
+  friend constexpr strong_ordering operator<=>(nullopt_t, nullopt_t) noexcept = default;
 };
 inline constexpr nullopt_t nullopt{nullopt_t::tag{}};
 
@@ -451,6 +454,8 @@ struct optional_ref_iterator<T> {
 namespace std {
 template <class T>
 class optional<T&> : public ycxx::detail::optional_ref_iterator<T> {
+  static_assert(ycxx::detail::valid_optional_type<T&>,
+                "std::optional<T&>: remove_cvref_t<T> must not be in_place_t or nullopt_t");
   T* val_ = nullptr;
 
   template <class U>

@@ -36,7 +36,7 @@ Legend: **G** fails with GCC + libstdc++, **C** with Clang + libstdc++.
 | `functional/function_ref_constraints`, `functional/function_ref_from_specialization` | G | C | `function_ref<R()> = function_ref<R() noexcept>` selects the deleted `operator=(T)` | [func.wrap.ref.ctor]/21: Constraints: is-convertible-from-specialization<T> is false |
 | `functional/bind_sfinae` | G | C | `bind<R>(f, args)` is invocable when `INVOKE(f, ...)` is not implicitly convertible to `R` | [func.require]/2: INVOKE<R> "implicitly converted to R" |
 | `variant/visit_constraints` | G | C | `visit<R>` with a non-variant argument is not constrained away | [variant.visit]/2 (both forms constrained on as-variant) |
-| `tuple/compare_heterogeneous` | G | C | `tuple<int,int,int> == pair<int,int>` is viable | [tuple.rel]/2: Constraints: sizeof...(TTypes) equals tuple_size_v<UTuple> |
+| `tuple/compare_heterogeneous`, `tuple/tuple_like_interop` | G | C | `tuple<int,int,int> == pair<int,int>` (and `tuple<int> == array<int, 2>`) is viable | [tuple.rel]/2: Constraints: sizeof...(TTypes) equals tuple_size_v<UTuple> |
 | `string/find_noexcept` | G | C | `compare(const basic_string&)` and the string-view-like `find` are not `noexcept` | [basic.string]: `compare(const basic_string&) const noexcept`; find(const T&) noexcept(is_nothrow_convertible_v<...>) |
 | `algorithm/is_permutation_value_type` (compile.fail) | G | C | iterators with different value types are accepted | [alg.is.permutation]/1: Mandates: same value type |
 | `functional/not_fn_mandates` (compile.fail) | G | C | the Mandates of `not_fn` are not diagnosed | [func.not.fn]/2 |
@@ -46,6 +46,7 @@ Legend: **G** fails with GCC + libstdc++, **C** with Clang + libstdc++.
 | `memory/ranges_uninitialized_fill`, `memory/ranges_uninitialized_copy_move` |  | C | in constant evaluation the algorithms assign to objects whose lifetime has not begun (GCC accepts, Clang rejects) | [specialized.algorithms]: construct, not assign |
 | `char_traits/move_copy_assign` |  | C | `char_traits<char>::move(p, p, n)` reads an object outside its lifetime in constant evaluation | [char.traits.require]: move works for overlapping ranges |
 | `containers/allocator_aware` |  | C | `basic_string` move assignment with an unequal, non-propagating allocator is rejected in constant evaluation | [container.alloc.reqmts]/28, all members constexpr |
+| `except/exception_object_overaligned` | G | C | an exception object of an `alignas(32)` or `alignas(64)` class type (thrown, from `make_exception_ptr`, or from `throw_with_nested`) is not aligned to its type's alignment (libsupc++ places it 16-byte aligned; libycxx's runtime gives 64) | [basic.align]/1: alignment requirements "place restrictions on the addresses at which an object of that type may be allocated"; [except.throw]/3: the exception object is an object of that type |
 | `unordered_map/node_handle`, `unordered_set/node_handle` | G | C | a failed `insert(q, nh)` empties `nh` | [unord.req.general]/128: "nh is empty if insertion succeeds, unchanged if insertion fails" |
 | `unordered_map/node_compat` | G | C | `unordered_map<K,T>::node_type` differs from `unordered_multimap<K,T,H2,E2>::node_type` | [container.node.overview] Table 75: compatible nodes have the same node handle type |
 | `unordered_map/transparent` | G | C | `operator[]`, `try_emplace` and `insert_or_assign` with an existing heterogeneous key construct a key | [unord.map.elem], [unord.map.modifiers]: no effect when the key exists |
@@ -158,6 +159,7 @@ Legend: **G** fails with GCC + libstdc++, **C** with Clang + libstdc++.
 | `exception/exception_ptr_cast*`, `exception/make_exception_ptr*`, `exception/exception_signatures` | G | C | `exception_ptr_cast` returns `const E*` (an earlier revision); the draft returns `optional<const E&>` |
 | `memory/shared_ptr_constexpr`, `memory/shared_ptr_constexpr_more`, `memory/pointer_traits_pointer_to`, `string/to_string_constexpr` | G | C | constexpr `shared_ptr`/`make_shared`/`allocate_shared`/`enable_shared_from_this`, `pointer_traits::pointer_to`, `to_string` |
 | `memory/start_lifetime` | (xfail) | C | `start_lifetime` |
+| `type_traits/is_within_lifetime`, `type_traits/is_within_lifetime_u` | (xfail) | C | `is_within_lifetime` (and its C++26 `U` template parameter) |
 | `deque/*`, `list/*`, `forward_list/*`, `map/*`, `set/*`, `unordered_*/*`, `stack/*`, `queue/*`, `priority_queue/*` (most) | G | C | C++26 constexpr containers and adaptors (the runtime parts of these tests pass) |
 | `inplace_vector/*` (some) | G | C | constexpr `inplace_vector` of non-trivial types |
 | `hive/*` | G | C | `<hive>` |

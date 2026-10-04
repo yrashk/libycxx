@@ -7,9 +7,9 @@
 // hardened (DECISIONS §1.7); the checks that loop are skipped otherwise (md_checking()).
 #pragma once
 
+#include <ycxx/core/move.hpp>
 #include <ycxx/core/span.hpp>
 #include <ycxx/core/utility_base.hpp>
-#include <ycxx/core/move.hpp>
 
 namespace std {
 template <class IndexType, size_t... Extents>
@@ -309,9 +309,8 @@ private:
         ycxx::detail::precondition(
             ycxx::detail::md_extent_ok<index_type>(as_const(exts[r]), static_cast<index_type>(as_const(exts[r]))),
             "std::extents: an extent is negative or not representable as index_type");
-      ycxx::detail::precondition(
-          statics_match(n, [&](size_t r) { return static_cast<index_type>(as_const(exts[r])); }),
-          "std::extents: a given extent differs from the static extent");
+      ycxx::detail::precondition(statics_match(n, [&](size_t r) { return static_cast<index_type>(as_const(exts[r])); }),
+                                 "std::extents: a given extent differs from the static extent");
     }
     store(n, [&](size_t r) { return static_cast<index_type>(as_const(exts[r])); });
   }

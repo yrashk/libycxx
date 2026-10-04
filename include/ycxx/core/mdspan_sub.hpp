@@ -8,8 +8,8 @@
 // slice types alone (md_sub_pick).
 #pragma once
 
-#include <ycxx/core/mdspan.hpp>
 #include <ycxx/core/constant_wrapper.hpp>
+#include <ycxx/core/mdspan.hpp>
 #include <ycxx/core/tuple.hpp>
 
 namespace std {
@@ -40,8 +40,7 @@ struct range_slice {
   static_assert(ycxx::detail::is_signed_or_unsigned_integer<FirstType> ||
                     ycxx::detail::integral_constant_like<FirstType>,
                 "range_slice: FirstType must be an integer type or integral-constant-like");
-  static_assert(ycxx::detail::is_signed_or_unsigned_integer<LastType> ||
-                    ycxx::detail::integral_constant_like<LastType>,
+  static_assert(ycxx::detail::is_signed_or_unsigned_integer<LastType> || ycxx::detail::integral_constant_like<LastType>,
                 "range_slice: LastType must be an integer type or integral-constant-like");
   static_assert(ycxx::detail::is_signed_or_unsigned_integer<StrideType> ||
                     ycxx::detail::integral_constant_like<StrideType>,
@@ -96,12 +95,12 @@ struct md_any_arg {
 template <class S>
 concept md_tuple_protocol = requires { std::tuple_size<S>::value; };
 template <class S>
-concept md_two_field_aggregate =
-    std::is_aggregate_v<S> && !std::is_array_v<S> && !md_tuple_protocol<S> &&
-    requires { S{md_any_arg(), md_any_arg()}; } && !requires { S{md_any_arg(), md_any_arg(), md_any_arg()}; };
+concept md_two_field_aggregate = std::is_aggregate_v<S> && !std::is_array_v<S> && !md_tuple_protocol<S> && requires {
+  S{md_any_arg(), md_any_arg()};
+} && !requires { S{md_any_arg(), md_any_arg(), md_any_arg()}; };
 template <class S>
-concept md_two_bindable = std::is_class_v<S> && ((md_tuple_protocol<S> && std::tuple_size_v<S> == 2) ||
-                                                  md_two_field_aggregate<S>);
+concept md_two_bindable =
+    std::is_class_v<S> && ((md_tuple_protocol<S> && std::tuple_size_v<S> == 2) || md_two_field_aggregate<S>);
 
 template <class A, class B>
 struct md_type_pair {
@@ -115,8 +114,10 @@ auto md_binding_types(S&& s) {
 }
 template <class S, class IndexType>
 concept md_pair_slice = md_two_bindable<S> && requires {
-  requires std::is_convertible_v<typename decltype(::ycxx::detail::md_binding_types(std::declval<S>()))::first, IndexType>;
-  requires std::is_convertible_v<typename decltype(::ycxx::detail::md_binding_types(std::declval<S>()))::second, IndexType>;
+  requires std::is_convertible_v<typename decltype(::ycxx::detail::md_binding_types(std::declval<S>()))::first,
+                                 IndexType>;
+  requires std::is_convertible_v<typename decltype(::ycxx::detail::md_binding_types(std::declval<S>()))::second,
+                                 IndexType>;
 };
 
 // "S is a submdspan slice type for IndexType" ([mdspan.sub.overview]/2).
@@ -129,8 +130,8 @@ consteval bool md_slice_type() {
            std::is_convertible_v<typename S::extent_type, IndexType> &&
            std::is_convertible_v<typename S::stride_type, IndexType>;
   else if constexpr (md_is_range_slice<S>)
-    return std::is_convertible_v<decltype(S::first), IndexType> && std::is_convertible_v<decltype(S::last), IndexType> &&
-           std::is_convertible_v<decltype(S::stride), IndexType>;
+    return std::is_convertible_v<decltype(S::first), IndexType> &&
+           std::is_convertible_v<decltype(S::last), IndexType> && std::is_convertible_v<decltype(S::stride), IndexType>;
   else
     return md_pair_slice<S, IndexType>;
 }
@@ -255,9 +256,9 @@ constexpr bool md_valid_slice(const E& e, std::size_t k, const S& s) noexcept {
 template <class IndexType, class S>
 constexpr auto md_canonical_index_of(S s) {
   if constexpr (integral_constant_like<S>) {
-    static_assert(std::in_range<IndexType>(::ycxx::detail::md_as_int(
-                      ::ycxx::detail::md_index_cast<IndexType>(S::value))),
-                  "submdspan: a constant slice index is not representable as index_type");
+    static_assert(
+        std::in_range<IndexType>(::ycxx::detail::md_as_int(::ycxx::detail::md_index_cast<IndexType>(S::value))),
+        "submdspan: a constant slice index is not representable as index_type");
     return std::cw<IndexType(S::value)>;
   } else {
     if constexpr (md_plain_integral<S>)
@@ -281,8 +282,9 @@ template <class IndexType, class OffsetType, class SpanType, class... StrideType
 constexpr auto md_canonical_range_slice(OffsetType offset, SpanType span, StrideTypes... strides) {
   static_assert(sizeof...(StrideTypes) <= 1);
   constexpr bool unit = sizeof...(StrideTypes) == 0 || std::is_same_v<SpanType, std::constant_wrapper<IndexType(0)>>;
-  using StrideType = std::conditional_t<unit, std::constant_wrapper<IndexType(1)>,
-                                        typename md_first_type<std::constant_wrapper<IndexType(1)>, StrideTypes...>::type>;
+  using StrideType =
+      std::conditional_t<unit, std::constant_wrapper<IndexType(1)>,
+                         typename md_first_type<std::constant_wrapper<IndexType(1)>, StrideTypes...>::type>;
   StrideType stride{};
   if constexpr (!md_is_cw<StrideType>) {
     if (span == 0)
@@ -294,7 +296,8 @@ constexpr auto md_canonical_range_slice(OffsetType offset, SpanType span, Stride
     static_assert(StrideType::value > 0, "submdspan: a range_slice stride must be positive");
   }
   if constexpr (md_is_cw<SpanType> && md_is_cw<StrideType>) {
-    constexpr IndexType value = SpanType::value != 0 ? IndexType(1 + (SpanType::value - 1) / StrideType::value) : IndexType(0);
+    constexpr IndexType value =
+        SpanType::value != 0 ? IndexType(1 + (SpanType::value - 1) / StrideType::value) : IndexType(0);
     return std::extent_slice<OffsetType, std::constant_wrapper<value>, StrideType>{offset, std::cw<value>, stride};
   } else {
     IndexType value = span != 0 ? IndexType(1 + (span - 1) / stride) : IndexType(0);
@@ -389,7 +392,7 @@ constexpr auto md_sub_extents(const E& e, const Sl&... slices) {
 // sub_strides and offset of [mdspan.sub.map.common]/6-8.
 template <class SubExtents, class M, class... Sl>
 constexpr std::array<typename SubExtents::index_type, SubExtents::rank()> md_sub_strides(const M& m,
-                                                                                       const Sl&... slices) {
+                                                                                         const Sl&... slices) {
   using I = typename SubExtents::index_type;
   std::array<I, SubExtents::rank()> st{};
   std::size_t k = 0, j = 0;
@@ -516,13 +519,13 @@ constexpr auto md_submdspan_mapping(const M& m, const Sl&... slices) {
     std::size_t offset = ::ycxx::detail::md_sub_offset(m, slices...);
     if constexpr (choice.kind == md_sub_kind::plain) {
       using L = std::conditional_t<Left, std::layout_left, std::layout_right>;
-      return std::submdspan_mapping_result<typename L::template mapping<Sub>>{typename L::template mapping<Sub>(sub_ext),
-                                                                              offset};
+      return std::submdspan_mapping_result<typename L::template mapping<Sub>>{
+          typename L::template mapping<Sub>(sub_ext), offset};
     } else if constexpr (choice.kind == md_sub_kind::padded) {
       constexpr std::size_t u = choice.u;
       if constexpr (Left) {
-        constexpr std::size_t s_static = Padded ? md_static_product<E>(PadStride, 1, u + 1)
-                                                : md_static_product<E>(1, 0, u + 1);
+        constexpr std::size_t s_static =
+            Padded ? md_static_product<E>(PadStride, 1, u + 1) : md_static_product<E>(1, 0, u + 1);
         using R = typename std::layout_left_padded<s_static>::template mapping<Sub>;
         return std::submdspan_mapping_result<R>{R(sub_ext, m.stride(u + 1)), offset};
       } else {
@@ -569,15 +572,15 @@ constexpr auto layout_stride::mapping<Extents>::submdspan_mapping_impl(SliceSpec
 template <size_t PaddingValue>
 template <class Extents>
 template <class... SliceSpecifiers>
-constexpr auto layout_left_padded<PaddingValue>::mapping<Extents>::submdspan_mapping_impl(
-    SliceSpecifiers... slices) const {
+constexpr auto
+layout_left_padded<PaddingValue>::mapping<Extents>::submdspan_mapping_impl(SliceSpecifiers... slices) const {
   return ycxx::detail::md_submdspan_mapping<true, true, static_padding_stride>(*this, slices...);
 }
 template <size_t PaddingValue>
 template <class Extents>
 template <class... SliceSpecifiers>
-constexpr auto layout_right_padded<PaddingValue>::mapping<Extents>::submdspan_mapping_impl(
-    SliceSpecifiers... slices) const {
+constexpr auto
+layout_right_padded<PaddingValue>::mapping<Extents>::submdspan_mapping_impl(SliceSpecifiers... slices) const {
   return ycxx::detail::md_submdspan_mapping<false, true, static_padding_stride>(*this, slices...);
 }
 
@@ -586,8 +589,9 @@ template <class IndexType, size_t... Extents, class... SliceSpecifiers>
   requires(sizeof...(SliceSpecifiers) == sizeof...(Extents))
 constexpr auto canonical_slices(const extents<IndexType, Extents...>& src, SliceSpecifiers... slices) {
   auto t = std::make_tuple(ycxx::detail::md_canonical_slice_of<IndexType>(std::move(slices))...);
-  [&]<size_t... K>(index_sequence<K...>) { ycxx::detail::md_check_slices(src, std::get<K>(t)...); }(
-      index_sequence_for<SliceSpecifiers...>());
+  [&]<size_t... K>(index_sequence<K...>) {
+    ycxx::detail::md_check_slices(src, std::get<K>(t)...);
+  }(index_sequence_for<SliceSpecifiers...>());
   return t;
 }
 
@@ -596,8 +600,9 @@ template <class IndexType, size_t... Extents, class... SliceSpecifiers>
   requires(sizeof...(SliceSpecifiers) == sizeof...(Extents))
 constexpr auto subextents(const extents<IndexType, Extents...>& src, SliceSpecifiers... raw_slices) {
   auto t = std::canonical_slices(src, std::move(raw_slices)...);
-  return [&]<size_t... K>(index_sequence<K...>) { return ycxx::detail::md_sub_extents(src, std::get<K>(t)...); }(
-      index_sequence_for<SliceSpecifiers...>());
+  return [&]<size_t... K>(index_sequence<K...>) {
+    return ycxx::detail::md_sub_extents(src, std::get<K>(t)...);
+  }(index_sequence_for<SliceSpecifiers...>());
 }
 
 } // namespace std
@@ -606,13 +611,13 @@ namespace ycxx::detail::md_adl {
 // sliceable-mapping ([mdspan.sub.map.sliceable]/6): submdspan_mapping found by argument-dependent
 // lookup only (no declaration of that name is visible from here).
 template <class LM, std::size_t... I>
-auto md_sub_map_full(const LM& lm, std::index_sequence<I...>)
-    -> decltype(submdspan_mapping(lm, ((void)I, std::full_extent)...));
+auto md_sub_map_full(const LM& lm,
+                     std::index_sequence<I...>) -> decltype(submdspan_mapping(lm, ((void)I, std::full_extent)...));
 template <class LM>
 concept sliceable_mapping = requires(const LM& lm) {
   md_sub_map_full(lm, std::make_index_sequence<LM::extents_type::rank()>());
-  requires ::ycxx::detail::md_is_mapping_result<
-      decltype(md_sub_map_full(lm, std::make_index_sequence<LM::extents_type::rank()>()))>;
+  requires ::ycxx::detail::md_is_mapping_result<decltype(md_sub_map_full(
+      lm, std::make_index_sequence<LM::extents_type::rank()>()))>;
 };
 // The customization point call of submdspan ([mdspan.sub.sub]/3, Note 1).
 template <class LM, class... Sl>

@@ -2,9 +2,9 @@
 // multidimensional copy and fill algorithms ([mdspan.copy]). submdspan is in mdspan_sub.hpp.
 #pragma once
 
-#include <ycxx/core/mdspan_layout.hpp>
-#include <ycxx/core/execution_policy.hpp>
 #include <ycxx/core/concepts.hpp>
+#include <ycxx/core/execution_policy.hpp>
+#include <ycxx/core/mdspan_layout.hpp>
 
 namespace ycxx::detail {
 
@@ -41,8 +41,8 @@ inline constexpr bool md_is_mdspan = false;
 // The mappings of the standard layouts, which check their indices themselves.
 template <class M>
 concept md_standard_mapping =
-    md_mapping_of<std::layout_left, M> || md_mapping_of<std::layout_right, M> ||
-    md_mapping_of<std::layout_stride, M> || md_left_padded_mapping<M> || md_right_padded_mapping<M>;
+    md_mapping_of<std::layout_left, M> || md_mapping_of<std::layout_right, M> || md_mapping_of<std::layout_stride, M> ||
+    md_left_padded_mapping<M> || md_right_padded_mapping<M>;
 
 } // namespace ycxx::detail
 
@@ -119,8 +119,9 @@ public:
   template <class OtherElementType, class OtherExtents, class OtherLayoutPolicy, class OtherAccessor>
     requires(is_constructible_v<mapping_type, const typename OtherLayoutPolicy::template mapping<OtherExtents>&> &&
              is_constructible_v<accessor_type, const OtherAccessor&>)
-  constexpr explicit(!is_convertible_v<const typename OtherLayoutPolicy::template mapping<OtherExtents>&, mapping_type> ||
-                     !is_convertible_v<const OtherAccessor&, accessor_type>)
+  constexpr explicit(
+      !is_convertible_v<const typename OtherLayoutPolicy::template mapping<OtherExtents>&, mapping_type> ||
+      !is_convertible_v<const OtherAccessor&, accessor_type>)
       mdspan(const mdspan<OtherElementType, OtherExtents, OtherLayoutPolicy, OtherAccessor>& other)
       : acc_(other.accessor()), map_(other.mapping()), ptr_(other.data_handle()) {
     static_assert(is_constructible_v<data_handle_type, const typename OtherAccessor::data_handle_type&>,
@@ -260,8 +261,8 @@ mdspan(Pointer&&) -> mdspan<remove_pointer_t<remove_reference_t<Pointer>>, exten
 
 template <class ElementType, class... Integrals>
   requires((is_convertible_v<Integrals, size_t> && ...) && sizeof...(Integrals) > 0)
-explicit mdspan(ElementType*, Integrals...)
-    -> mdspan<ElementType, extents<size_t, ycxx::detail::maybe_static_ext<Integrals>...>>;
+explicit mdspan(ElementType*,
+                Integrals...) -> mdspan<ElementType, extents<size_t, ycxx::detail::maybe_static_ext<Integrals>...>>;
 
 template <class ElementType, class OtherIndexType, size_t N>
 mdspan(ElementType*, span<OtherIndexType, N>) -> mdspan<ElementType, dextents<size_t, N>>;
@@ -270,17 +271,17 @@ template <class ElementType, class OtherIndexType, size_t N>
 mdspan(ElementType*, const array<OtherIndexType, N>&) -> mdspan<ElementType, dextents<size_t, N>>;
 
 template <class ElementType, class IndexType, size_t... ExtentsPack>
-mdspan(ElementType*, const extents<IndexType, ExtentsPack...>&)
-    -> mdspan<ElementType, extents<IndexType, ExtentsPack...>>;
+mdspan(ElementType*,
+       const extents<IndexType, ExtentsPack...>&) -> mdspan<ElementType, extents<IndexType, ExtentsPack...>>;
 
 template <class ElementType, class MappingType>
 mdspan(ElementType*, const MappingType&)
     -> mdspan<ElementType, typename MappingType::extents_type, typename MappingType::layout_type>;
 
 template <class MappingType, class AccessorType>
-mdspan(typename AccessorType::data_handle_type, const MappingType&, const AccessorType&)
-    -> mdspan<typename AccessorType::element_type, typename MappingType::extents_type,
-              typename MappingType::layout_type, AccessorType>;
+mdspan(typename AccessorType::data_handle_type, const MappingType&,
+       const AccessorType&) -> mdspan<typename AccessorType::element_type, typename MappingType::extents_type,
+                                      typename MappingType::layout_type, AccessorType>;
 
 } // namespace std
 
@@ -296,9 +297,9 @@ constexpr typename M::reference md_elem(const M& m, I... i) {
 }
 
 template <class Src, class Dst>
-concept md_copyable = md_is_mdspan<Src> && md_is_mdspan<Dst> &&
-                      std::is_assignable_v<typename Dst::reference, typename Src::reference> &&
-                      std::is_constructible_v<typename Src::extents_type, typename Dst::extents_type>;
+concept md_copyable =
+    md_is_mdspan<Src> && md_is_mdspan<Dst> && std::is_assignable_v<typename Dst::reference, typename Src::reference> &&
+    std::is_constructible_v<typename Src::extents_type, typename Dst::extents_type>;
 template <class Dst, class T>
 concept md_fillable = md_is_mdspan<Dst> && std::is_assignable_v<typename Dst::reference, const T&>;
 
@@ -311,9 +312,8 @@ template <class Src, class Dst>
   requires ycxx::detail::md_copyable<Src, Dst>
 constexpr void copy(const Src& src, const Dst& dst) {
   ycxx::detail::precondition(src.extents() == dst.extents(), "std::copy(mdspan): the extents differ");
-  ycxx::detail::md_for_each_index(src.extents(), [&](auto... i) {
-    ycxx::detail::md_elem(dst, i...) = ycxx::detail::md_elem(src, i...);
-  });
+  ycxx::detail::md_for_each_index(
+      src.extents(), [&](auto... i) { ycxx::detail::md_elem(dst, i...) = ycxx::detail::md_elem(src, i...); });
 }
 template <class ExecutionPolicy, class Src, class Dst>
   requires(ycxx::detail::execution_policy<ExecutionPolicy> && ycxx::detail::md_copyable<Src, Dst>)

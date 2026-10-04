@@ -303,13 +303,19 @@ consteval auto const_iter_concept() {
     return std::type_identity<std::input_iterator_tag>{};
 }
 
+} // namespace ycxx::detail
+
+// Base classes of std types live in ycxx::adl_free, a namespace that declares no functions:
+// a base's namespace is an associated namespace for ADL ([basic.lookup.argdep]/3), so a
+// ycxx::detail base would expose every internal function to lookup on the std type.
+namespace ycxx::adl_free {
 template <class I>
 struct const_iter_category {};
 template <std::forward_iterator I>
 struct const_iter_category<I> {
   using iterator_category = typename std::iterator_traits<I>::iterator_category;
 };
-} // namespace ycxx::detail
+} // namespace ycxx::adl_free
 
 namespace std {
 
@@ -332,7 +338,7 @@ concept different_from = !std::same_as<std::remove_cvref_t<T>, std::remove_cvref
 namespace std {
 
 template <input_iterator Iter>
-class basic_const_iterator : public ycxx::detail::const_iter_category<Iter> {
+class basic_const_iterator : public ycxx::adl_free::const_iter_category<Iter> {
   template <input_iterator>
   friend class basic_const_iterator;
   Iter current_ = Iter();
@@ -622,6 +628,12 @@ consteval auto move_iter_concept() {
   else
     return std::type_identity<std::input_iterator_tag>{};
 }
+} // namespace ycxx::detail
+
+// Base classes of std types live in ycxx::adl_free, a namespace that declares no functions:
+// a base's namespace is an associated namespace for ADL ([basic.lookup.argdep]/3), so a
+// ycxx::detail base would expose every internal function to lookup on the std type.
+namespace ycxx::adl_free {
 template <class I>
 struct move_iter_category {};
 template <class I>
@@ -632,12 +644,12 @@ struct move_iter_category<I> {
                                            std::random_access_iterator_tag>,
                          std::random_access_iterator_tag, typename std::iterator_traits<I>::iterator_category>;
 };
-} // namespace ycxx::detail
+} // namespace ycxx::adl_free
 
 namespace std {
 
 template <class Iterator>
-class move_iterator : public ycxx::detail::move_iter_category<Iterator> {
+class move_iterator : public ycxx::adl_free::move_iter_category<Iterator> {
   Iterator current_ = Iterator();
 
 public:
@@ -785,7 +797,10 @@ constexpr bool disable_sized_sentinel_for<move_iterator<I1>, move_iterator<I2>> 
 // =============================================================================================
 } // namespace std
 
-namespace ycxx::detail {
+// Base classes of std types live in ycxx::adl_free, a namespace that declares no functions:
+// a base's namespace is an associated namespace for ADL ([basic.lookup.argdep]/3), so a
+// ycxx::detail base would expose every internal function to lookup on the std type.
+namespace ycxx::adl_free {
 template <class I>
 struct counted_value_type {};
 template <std::indirectly_readable I>
@@ -806,14 +821,14 @@ template <class I>
 struct counted_category<I> {
   using iterator_category = typename I::iterator_category;
 };
-} // namespace ycxx::detail
+} // namespace ycxx::adl_free
 
 namespace std {
 
 template <input_or_output_iterator I>
-class counted_iterator : public ycxx::detail::counted_value_type<I>,
-                         public ycxx::detail::counted_concept<I>,
-                         public ycxx::detail::counted_category<I> {
+class counted_iterator : public ycxx::adl_free::counted_value_type<I>,
+                         public ycxx::adl_free::counted_concept<I>,
+                         public ycxx::adl_free::counted_category<I> {
   template <input_or_output_iterator I2>
   friend class counted_iterator;
 

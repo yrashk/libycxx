@@ -29,7 +29,9 @@ Whole-suite baseline (clang, before iterators/tuple/array/optional): 976 pass / 
 libstdc++ testsuite: 20_util/{tuple,pair,uses_allocator}: 107 pass on both compilers.
 20_util/variant: 27/31 on both (rest: missing `<string>`, `<vector>`, `<any>`).
 20_util/expected: clang 18/20, gcc 18/20 (rest: `<string_view>`, `<vector>`). The libstdc++ harness
-compiles with `-O2`, as DejaGnu's default flags do (some tests rely on dead-code elimination).
+compiles with `-O2`, as DejaGnu's default flags do. Some tests rely on dead-code elimination:
+`expected/cons.cc` declares `E(const int&)` without defining it, and links only when the
+unreachable error branch is removed. `dg-options -fno-inline` is passed through.
 
 ## Freestanding
 `tools/check_freestanding.sh`: every core header compiles with `-ffreestanding -nostdlib -nostdinc
@@ -55,6 +57,13 @@ riscv64-unknown-elf (Clang) and x86_64 (GCC). Core headers: see `tools/headers.p
 ## Deliberate omissions
 Deprecated and removed features are not implemented (`is_pod`, `is_trivial`, `aligned_storage`,
 `has_denorm`, `tuple_size<volatile T>`, ...). See `tests/SKIPPED.md`.
+
+## Deliberate divergences
+- `expected<T, E>`: `operator==(const expected&, const T2&)` deduces its left operand (it must be
+  the expected or derived from it). With the draft's literal `const expected&` parameter, a
+  constraint check such as `int == pair<int, expected<int, int>>` found through ADL re-enters
+  itself. The cost is that a type which only *converts* to `const expected&` is no longer
+  accepted on the left.
 
 ## Open issues / next
 - Phase 2 remaining: any, function family (function, move_only_function,

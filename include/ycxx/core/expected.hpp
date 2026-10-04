@@ -144,6 +144,13 @@ inline constexpr bool is_expected = false;
 template <class T, class E>
 inline constexpr bool is_expected<std::expected<T, E>> = true;
 
+// Mandates of the monadic operations, as concepts that are simply false (not ill-formed) for
+// results that are not expected specializations.
+template <class U, class E>
+concept expected_with_error = is_expected<U> && std::is_same_v<typename U::error_type, E>;
+template <class G, class T>
+concept expected_with_value = is_expected<G> && std::is_same_v<typename G::value_type, T>;
+
 // [expected.object.general]/2
 template <class T>
 concept valid_expected_value =
@@ -232,6 +239,15 @@ template <class T, class E, class U, class G, class GF>
 concept expected_void_converts_from = !(std::is_same_v<T, U> && std::is_same_v<E, G>) && std::is_constructible_v<E, GF> &&
                                       expected_unexpected_not_from<E, U, G>;
 
+} // namespace ycxx::detail
+
+// Base classes of std types live in ycxx::adl_free, a namespace that declares no functions:
+// a base's namespace is an associated namespace for ADL ([basic.lookup.argdep]/3), so a
+// ycxx::detail base would expose every internal function to lookup on the std type.
+namespace ycxx::adl_free {
+// A using-directive affects only unqualified lookup inside this namespace, never ADL.
+using namespace ycxx::detail;
+
 // Common machinery of expected<T, E> and expected<void, E>: storage, lifetime, assignment.
 template <class T, class E>
 class expected_base {
@@ -304,14 +320,14 @@ protected:
       if constexpr (is_void)
         std::construct_at(__builtin_addressof(u_.unex), static_cast<EF>(rhs.u_.unex));
       else
-        reinit_expected(u_.unex, u_.val, static_cast<EF>(rhs.u_.unex));
+        ::ycxx::detail::reinit_expected(u_.unex, u_.val, static_cast<EF>(rhs.u_.unex));
     } else if (rhs.has_val_) {
       if constexpr (is_void) {
         std::destroy_at(__builtin_addressof(u_.unex));
         std::construct_at(__builtin_addressof(u_.val));
       } else {
         using VF = std::conditional_t<std::is_lvalue_reference_v<R>, const V&, V&&>;
-        reinit_expected(u_.val, u_.unex, static_cast<VF>(rhs.u_.val));
+        ::ycxx::detail::reinit_expected(u_.val, u_.unex, static_cast<VF>(rhs.u_.val));
       }
     } else {
       u_.unex = static_cast<EF>(rhs.u_.unex);
@@ -326,7 +342,7 @@ protected:
       if constexpr (is_void)
         std::construct_at(__builtin_addressof(u_.unex), static_cast<GF&&>(g));
       else
-        reinit_expected(u_.unex, u_.val, static_cast<GF&&>(g));
+        ::ycxx::detail::reinit_expected(u_.unex, u_.val, static_cast<GF&&>(g));
       has_val_ = false;
     } else {
       u_.unex = static_cast<GF&&>(g);
@@ -373,7 +389,7 @@ public:
   }
 };
 
-} // namespace ycxx::detail
+} // namespace ycxx::adl_free
 
 namespace std {
 
@@ -381,13 +397,13 @@ namespace std {
 // [expected.expected]
 // =============================================================================================
 template <class T, class E>
-class expected : private ycxx::detail::expected_base<T, E> {
+class expected : private ycxx::adl_free::expected_base<T, E> {
   static_assert(ycxx::detail::valid_expected_value<T>,
                 "std::expected: T must be void or a non-array object type other than in_place_t, unexpect_t "
                 "and specializations of unexpected");
   static_assert(ycxx::detail::valid_unexpected_arg<E>, "std::expected: E must be a valid argument for unexpected");
 
-  using base = ycxx::detail::expected_base<T, E>;
+  using base = ycxx::adl_free::expected_base<T, E>;
   using typename base::storage;
   using typename base::V;
   using base::u_;
@@ -774,43 +790,59 @@ private:
   template <class Self, class F>
   static constexpr auto and_then_impl(Self&& s, F&& f) {
     using U = remove_cvref_t<invoke_result_t<F, ycxx::detail::forward_like_t<Self, V>>>;
-    static_assert(ycxx::detail::is_expected<U>, "std::expected::and_then: F must return a specialization of expected");
-    static_assert(is_same_v<typename U::error_type, E>, "std::expected::and_then: F must return the same error_type");
-    if (s.has_val_)
-      return ::ycxx::detail::invoke(static_cast<F&&>(f), std::forward_like<Self>(s.u_.val));
-    return U(unexpect, std::forward_like<Self>(s.u_.unex));
+    static_assert(ycxx::detail::expected_with_error<U, E>,
+                  "std::expected::and_then: F must return a specialization of expected with the same error_type");
+    if constexpr (!ycxx::detail::expected_with_error<U, E>)
+      return; // no follow-on errors after the Mandates failure
+    else {
+      if (s.has_val_)
+        return ::ycxx::detail::invoke(static_cast<F&&>(f), std::forward_like<Self>(s.u_.val));
+      return U(unexpect, std::forward_like<Self>(s.u_.unex));
+    }
   }
   template <class Self, class F>
   static constexpr auto or_else_impl(Self&& s, F&& f) {
     using G = remove_cvref_t<invoke_result_t<F, ycxx::detail::forward_like_t<Self, E>>>;
-    static_assert(ycxx::detail::is_expected<G>, "std::expected::or_else: F must return a specialization of expected");
-    static_assert(is_same_v<typename G::value_type, T>, "std::expected::or_else: F must return the same value_type");
-    if (s.has_val_)
-      return G(in_place, std::forward_like<Self>(s.u_.val));
-    return ::ycxx::detail::invoke(static_cast<F&&>(f), std::forward_like<Self>(s.u_.unex));
+    static_assert(ycxx::detail::expected_with_value<G, T>,
+                  "std::expected::or_else: F must return a specialization of expected with the same value_type");
+    if constexpr (!ycxx::detail::expected_with_value<G, T>)
+      return;
+    else {
+      if (s.has_val_)
+        return G(in_place, std::forward_like<Self>(s.u_.val));
+      return ::ycxx::detail::invoke(static_cast<F&&>(f), std::forward_like<Self>(s.u_.unex));
+    }
   }
   template <class Self, class F>
   static constexpr auto transform_impl(Self&& s, F&& f) {
     using U = remove_cv_t<invoke_result_t<F, ycxx::detail::forward_like_t<Self, V>>>;
     static_assert(ycxx::detail::valid_expected_value<U>, "std::expected::transform: invalid result type");
-    using R = expected<U, E>;
-    if (!s.has_val_)
-      return R(unexpect, std::forward_like<Self>(s.u_.unex));
-    if constexpr (is_void_v<U>) {
-      ::ycxx::detail::invoke(static_cast<F&&>(f), std::forward_like<Self>(s.u_.val));
-      return R();
-    } else {
-      return R(ycxx::detail::expected_invoke_val_tag{}, static_cast<F&&>(f), std::forward_like<Self>(s.u_.val));
+    if constexpr (!ycxx::detail::valid_expected_value<U>)
+      return;
+    else {
+      using R = expected<U, E>;
+      if (!s.has_val_)
+        return R(unexpect, std::forward_like<Self>(s.u_.unex));
+      if constexpr (is_void_v<U>) {
+        ::ycxx::detail::invoke(static_cast<F&&>(f), std::forward_like<Self>(s.u_.val));
+        return R();
+      } else {
+        return R(ycxx::detail::expected_invoke_val_tag{}, static_cast<F&&>(f), std::forward_like<Self>(s.u_.val));
+      }
     }
   }
   template <class Self, class F>
   static constexpr auto transform_error_impl(Self&& s, F&& f) {
     using G = remove_cv_t<invoke_result_t<F, ycxx::detail::forward_like_t<Self, E>>>;
     static_assert(ycxx::detail::valid_unexpected_arg<G>, "std::expected::transform_error: invalid error type");
-    using R = expected<T, G>;
-    if (s.has_val_)
-      return R(in_place, std::forward_like<Self>(s.u_.val));
-    return R(ycxx::detail::expected_invoke_err_tag{}, static_cast<F&&>(f), std::forward_like<Self>(s.u_.unex));
+    if constexpr (!ycxx::detail::valid_unexpected_arg<G>)
+      return;
+    else {
+      using R = expected<T, G>;
+      if (s.has_val_)
+        return R(in_place, std::forward_like<Self>(s.u_.val));
+      return R(ycxx::detail::expected_invoke_err_tag{}, static_cast<F&&>(f), std::forward_like<Self>(s.u_.unex));
+    }
   }
 
   template <class EF>
@@ -868,10 +900,10 @@ private:
 // =============================================================================================
 template <class T, class E>
   requires is_void_v<T>
-class expected<T, E> : private ycxx::detail::expected_base<T, E> {
+class expected<T, E> : private ycxx::adl_free::expected_base<T, E> {
   static_assert(ycxx::detail::valid_unexpected_arg<E>, "std::expected: E must be a valid argument for unexpected");
 
-  using base = ycxx::detail::expected_base<T, E>;
+  using base = ycxx::adl_free::expected_base<T, E>;
   using typename base::storage;
   using base::u_;
   using base::has_val_;
@@ -1135,43 +1167,59 @@ private:
   template <class Self, class F>
   static constexpr auto and_then_impl(Self&& s, F&& f) {
     using U = remove_cvref_t<invoke_result_t<F>>;
-    static_assert(ycxx::detail::is_expected<U>, "std::expected::and_then: F must return a specialization of expected");
-    static_assert(is_same_v<typename U::error_type, E>, "std::expected::and_then: F must return the same error_type");
-    if (s.has_val_)
-      return ::ycxx::detail::invoke(static_cast<F&&>(f));
-    return U(unexpect, std::forward_like<Self>(s.u_.unex));
+    static_assert(ycxx::detail::expected_with_error<U, E>,
+                  "std::expected::and_then: F must return a specialization of expected with the same error_type");
+    if constexpr (!ycxx::detail::expected_with_error<U, E>)
+      return; // no follow-on errors after the Mandates failure
+    else {
+      if (s.has_val_)
+        return ::ycxx::detail::invoke(static_cast<F&&>(f));
+      return U(unexpect, std::forward_like<Self>(s.u_.unex));
+    }
   }
   template <class Self, class F>
   static constexpr auto or_else_impl(Self&& s, F&& f) {
     using G = remove_cvref_t<invoke_result_t<F, ycxx::detail::forward_like_t<Self, E>>>;
-    static_assert(ycxx::detail::is_expected<G>, "std::expected::or_else: F must return a specialization of expected");
-    static_assert(is_same_v<typename G::value_type, T>, "std::expected::or_else: F must return the same value_type");
-    if (s.has_val_)
-      return G();
-    return ::ycxx::detail::invoke(static_cast<F&&>(f), std::forward_like<Self>(s.u_.unex));
+    static_assert(ycxx::detail::expected_with_value<G, T>,
+                  "std::expected::or_else: F must return a specialization of expected with the same value_type");
+    if constexpr (!ycxx::detail::expected_with_value<G, T>)
+      return;
+    else {
+      if (s.has_val_)
+        return G();
+      return ::ycxx::detail::invoke(static_cast<F&&>(f), std::forward_like<Self>(s.u_.unex));
+    }
   }
   template <class Self, class F>
   static constexpr auto transform_impl(Self&& s, F&& f) {
     using U = remove_cv_t<invoke_result_t<F>>;
     static_assert(ycxx::detail::valid_expected_value<U>, "std::expected::transform: invalid result type");
-    using R = expected<U, E>;
-    if (!s.has_val_)
-      return R(unexpect, std::forward_like<Self>(s.u_.unex));
-    if constexpr (is_void_v<U>) {
-      ::ycxx::detail::invoke(static_cast<F&&>(f));
-      return R();
-    } else {
-      return R(ycxx::detail::expected_invoke_val_tag{}, static_cast<F&&>(f));
+    if constexpr (!ycxx::detail::valid_expected_value<U>)
+      return;
+    else {
+      using R = expected<U, E>;
+      if (!s.has_val_)
+        return R(unexpect, std::forward_like<Self>(s.u_.unex));
+      if constexpr (is_void_v<U>) {
+        ::ycxx::detail::invoke(static_cast<F&&>(f));
+        return R();
+      } else {
+        return R(ycxx::detail::expected_invoke_val_tag{}, static_cast<F&&>(f));
+      }
     }
   }
   template <class Self, class F>
   static constexpr auto transform_error_impl(Self&& s, F&& f) {
     using G = remove_cv_t<invoke_result_t<F, ycxx::detail::forward_like_t<Self, E>>>;
     static_assert(ycxx::detail::valid_unexpected_arg<G>, "std::expected::transform_error: invalid error type");
-    using R = expected<T, G>;
-    if (s.has_val_)
-      return R();
-    return R(ycxx::detail::expected_invoke_err_tag{}, static_cast<F&&>(f), std::forward_like<Self>(s.u_.unex));
+    if constexpr (!ycxx::detail::valid_unexpected_arg<G>)
+      return;
+    else {
+      using R = expected<T, G>;
+      if (s.has_val_)
+        return R();
+      return R(ycxx::detail::expected_invoke_err_tag{}, static_cast<F&&>(f), std::forward_like<Self>(s.u_.unex));
+    }
   }
 
   template <class EF>

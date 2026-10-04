@@ -143,7 +143,7 @@ class LibstdcxxFormat(lit.formats.FileBasedTest):
                         if n != STD:
                             return lit.Test.Result(lit.Test.UNSUPPORTED, f'skipped (pre-c++26): needs {o}')
                         continue
-                    if o.startswith('-D_GLIBCXX') or o in ('-fno-inline',):
+                    if o.startswith('-D_GLIBCXX'):
                         continue
                     flags.append(o)
             elif kind == 'require-effective-target':

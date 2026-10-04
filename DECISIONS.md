@@ -491,6 +491,9 @@ under the same name. Otherwise it gets one alias template in `config.hpp`.
   hosted. Days and dates convert with the era-based algorithm (March-based years, 400-year eras).
   The months overloads of the calendar arithmetic are `template <class = void>` functions, so an
   argument convertible to both months and years picks the years overload ([time.cal.ym.members]).
+  Every duration alias counts in `long long`, the calendar ones (`days` to `years`) included, so
+  `sys_days + seconds` is exact for every representable date; calendar arithmetic with counts at
+  the ends of the range wraps instead of overflowing.
 - **Time zone database: the system's compiled zoneinfo**, read by the hosted runtime
   (`src/hosted/tzdb.cpp`, POSIX file calls like `filesystem.cpp`) from `$TZDIR`, else
   `/usr/share/zoneinfo`. Names come from `tzdata.zi` (`Z` and `L` lines; without it, every TZif file

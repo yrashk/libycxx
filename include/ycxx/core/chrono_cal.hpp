@@ -50,9 +50,10 @@ constexpr int days_from_civil(int y, unsigned m, unsigned d) noexcept {
 
 // The proleptic Gregorian date of the day z days after 1970-01-01.
 constexpr civil_date civil_from_days(long long z) noexcept {
-  z += 719468;
-  const long long era = ::ycxx::detail::chrono_floor_div(z, 146097);
-  const long long doe = z - era * 146097;                                     // [0, 146096]
+  // z + 719468 days from 0000-03-01, split into eras without overflow for any z.
+  const long long shifted = ::ycxx::detail::chrono_modulo(z, 146097) + 719468;
+  const long long era = ::ycxx::detail::chrono_floor_div(z, 146097) + ::ycxx::detail::chrono_floor_div(shifted, 146097);
+  const long long doe = ::ycxx::detail::chrono_modulo(shifted, 146097);      // [0, 146096]
   const long long yoe = (doe - doe / 1460 + doe / 36524 - doe / 146096) / 365; // [0, 399]
   const long long doy = doe - (365 * yoe + yoe / 4 - yoe / 100);              // [0, 365]
   const long long mp = (5 * doy + 2) / 153;                                   // [0, 11], March first
@@ -63,7 +64,7 @@ constexpr civil_date civil_from_days(long long z) noexcept {
 
 // 0 for Sunday.
 constexpr unsigned weekday_from_days(long long z) noexcept {
-  return static_cast<unsigned>(::ycxx::detail::chrono_modulo(z + 4, 7));
+  return static_cast<unsigned>(::ycxx::detail::chrono_modulo(::ycxx::detail::chrono_modulo(z, 7) + 4, 7));
 }
 
 constexpr bool is_leap_year(int y) noexcept { return y % 4 == 0 && (y % 100 != 0 || y % 400 == 0); }

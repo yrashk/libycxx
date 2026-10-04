@@ -65,11 +65,17 @@ class sp_block {
 
   // Destroys the owned object (use count reached zero).
   constexpr virtual void dispose() noexcept = 0;
-  // Destroys and deallocates the block (weak count reached zero).
-  constexpr virtual void destroy() noexcept = 0;
 
 protected:
-  constexpr sp_block() noexcept = default;
+  // Destroys and deallocates the block (weak count reached zero). A function pointer rather
+  // than a virtual function: its body rebinds the allocator to the block type, and Clang
+  // instantiates constexpr virtual members while instantiating the class, so an allocator that
+  // requires a complete value_type (libc++'s complete_type_allocator) would see the block
+  // incomplete.
+  using destroy_fn = void (*)(sp_block*) noexcept;
+  destroy_fn destroy_;
+
+  constexpr explicit sp_block(destroy_fn d) noexcept : destroy_(d) {}
   constexpr ~sp_block() = default;
 
 public:
@@ -131,7 +137,7 @@ public:
       n = __atomic_sub_fetch(&weak_, 1, __ATOMIC_ACQ_REL);
     }
     if (n == 0)
-      destroy();
+      destroy_(this);
   }
   constexpr long use_count() const noexcept {
     if consteval {
@@ -180,14 +186,16 @@ class sp_ptr_block final : public sp_block {
   [[no_unique_address]] A a_;
 
   constexpr void dispose() noexcept override { d_(p_); }
-  constexpr void destroy() noexcept override {
-    A a(a_);
-    std::destroy_at(this);
-    ::ycxx::detail::sp_deallocate_block(a, this);
+  static constexpr void destroy_self(sp_block* b) noexcept {
+    sp_ptr_block* self = static_cast<sp_ptr_block*>(b);
+    A a(self->a_);
+    std::destroy_at(self);
+    ::ycxx::detail::sp_deallocate_block(a, self);
   }
 
 public:
-  constexpr sp_ptr_block(P p, D&& d, const A& a) noexcept : p_(p), d_(static_cast<D&&>(d)), a_(a) {}
+  constexpr sp_ptr_block(P p, D&& d, const A& a) noexcept
+      : sp_block(&destroy_self), p_(p), d_(static_cast<D&&>(d)), a_(a) {}
   constexpr ~sp_ptr_block() = default;
 
   constexpr void* deleter(const void* tag) noexcept override {
@@ -260,6 +268,13 @@ constexpr void sp_construct_n(A& a, E* p, std::size_t n, const E* u) {
   for (; i < n; ++i) {
     if constexpr (std::is_array_v<E>) {
       constexpr std::size_t m = std::extent_v<E>;
+      if constexpr (std::is_trivially_default_constructible_v<E> && std::is_trivially_destructible_v<E>) {
+        // Clang's constant evaluator does not let the element constructions below begin the
+        // lifetime of the enclosing array p[i]; begin it first (no observable effect here).
+        if consteval {
+          ::new (static_cast<void*>(__builtin_addressof(p[i]))) E;
+        }
+      }
       if constexpr (How == sp_init::fill)
         ::ycxx::detail::sp_construct_n<ViaAlloc, sp_init::copy>(a, &p[i][0], m, &(*u)[0]);
       else if constexpr (How == sp_init::copy)
@@ -303,14 +318,15 @@ private:
     else
       value.~U();
   }
-  constexpr void destroy() noexcept override {
-    A a(a_);
-    std::destroy_at(this);
-    ::ycxx::detail::sp_deallocate_block(a, this);
+  static constexpr void destroy_self(sp_block* b) noexcept {
+    sp_obj_block* self = static_cast<sp_obj_block*>(b);
+    A a(self->a_);
+    std::destroy_at(self);
+    ::ycxx::detail::sp_deallocate_block(a, self);
   }
 
 public:
-  constexpr explicit sp_obj_block(const A& a) noexcept : a_(a) {}
+  constexpr explicit sp_obj_block(const A& a) noexcept : sp_block(&destroy_self), a_(a) {}
   constexpr ~sp_obj_block() {}
 
   template <sp_init How, class... Args>
@@ -362,20 +378,21 @@ class sp_array_block final : public sp_block {
   }
 
   constexpr void dispose() noexcept override { ::ycxx::detail::sp_destroy_n<ViaAlloc>(a_, elems_, n_); }
-  constexpr void destroy() noexcept override {
-    A a(a_);
+  static constexpr void destroy_self(sp_block* b) noexcept {
+    sp_array_block* self = static_cast<sp_array_block*>(b);
+    A a(self->a_);
     if consteval {
-      E* elems = elems_;
-      std::size_t n = n_;
-      std::destroy_at(this);
+      E* elems = self->elems_;
+      std::size_t n = self->n_;
+      std::destroy_at(self);
       EA ea(a); // the elements' storage is allocated even for n == 0
       std::allocator_traits<EA>::deallocate(
           ea, std::pointer_traits<typename std::allocator_traits<EA>::pointer>::pointer_to(*elems), n);
-      ::ycxx::detail::sp_deallocate_block(a, this);
+      ::ycxx::detail::sp_deallocate_block(a, self);
     } else {
-      std::size_t count = units(n_);
-      unit* raw = reinterpret_cast<unit*>(this);
-      std::destroy_at(this);
+      std::size_t count = units(self->n_);
+      unit* raw = reinterpret_cast<unit*>(self);
+      std::destroy_at(self);
       UA ua(a);
       std::allocator_traits<UA>::deallocate(
           ua, std::pointer_traits<typename std::allocator_traits<UA>::pointer>::pointer_to(*raw), count);
@@ -383,7 +400,7 @@ class sp_array_block final : public sp_block {
   }
 
 public:
-  constexpr sp_array_block(const A& a, E* elems, std::size_t n) noexcept : a_(a), elems_(elems), n_(n) {}
+  constexpr sp_array_block(const A& a, E* elems, std::size_t n) noexcept : sp_block(&destroy_self), a_(a), elems_(elems), n_(n) {}
   constexpr ~sp_array_block() = default;
 
   constexpr E* elements() const noexcept { return elems_; }

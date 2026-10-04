@@ -38,7 +38,6 @@
 #include <ycxx/core/node_handle.hpp>
 #include <ycxx/core/optional.hpp>
 #include <ycxx/core/pair.hpp>
-#include <ycxx/core/seq_support.hpp>
 #include <ycxx/core/sequence_support.hpp>
 #include <ycxx/core/swap.hpp>
 #include <ycxx/core/tuple.hpp>

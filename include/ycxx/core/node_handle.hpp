@@ -17,7 +17,7 @@
 #pragma once
 
 #include <ycxx/core/memory_base.hpp>
-#include <ycxx/core/seq_support.hpp>
+#include <ycxx/core/sequence_support.hpp>
 #include <ycxx/core/swap.hpp>
 
 namespace ycxx::detail {

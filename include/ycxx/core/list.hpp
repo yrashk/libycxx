@@ -10,7 +10,7 @@
 // A node keeps its element in a union member, so the node can exist before and after its
 // element. Multi-element insertions build a detached chain first and splice it in, so an
 // exception leaves the list unchanged. sort is a bottom-up merge sort of the nodes
-// (seq_support.hpp) that allocates nothing. T may be incomplete until a member is used.
+// (sequence_support.hpp) that allocates nothing. T may be incomplete until a member is used.
 #pragma once
 
 #include <initializer_list>
@@ -23,7 +23,7 @@
 #include <ycxx/core/limits.hpp>
 #include <ycxx/core/memory_base.hpp>
 #include <ycxx/core/memory_resource_fwd.hpp>
-#include <ycxx/core/seq_support.hpp>
+#include <ycxx/core/sequence_support.hpp>
 #include <ycxx/core/swap.hpp>
 #include <ycxx/core/utility_base.hpp>
 

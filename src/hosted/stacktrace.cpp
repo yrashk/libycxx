@@ -1099,6 +1099,15 @@ std::mutex cache_mutex;
 object_file cache[cache_size];
 unsigned long long cache_clock = 0;
 
+// Copies a NUL-terminated path into a fixed buffer, truncating it (the buffer ends in NUL).
+template <std::size_t N>
+void copy_path(char (&dst)[N], const char* src) noexcept {
+  std::size_t n = 0;
+  for (; n + 1 < N && src[n] != '\0'; ++n)
+    dst[n] = src[n];
+  dst[n] = '\0';
+}
+
 // The cached, mapped object named path (loading it, evicting the least recently used one); null
 // if it cannot be read. Called with cache_mutex held.
 object_file* object_named(const char* path) {
@@ -1118,7 +1127,7 @@ object_file* object_named(const char* path) {
     victim->map = nullptr;
     return nullptr;
   }
-  std::strncpy(victim->path, path, sizeof victim->path - 1);
+  copy_path(victim->path, path);
   if (!parse_elf(*victim)) {
     // Nothing usable; the mapping stays cached as a negative answer.
     const ycxx_pal_size size = victim->map_size;
@@ -1126,7 +1135,7 @@ object_file* object_named(const char* path) {
     *victim = object_file();
     victim->map = map;
     victim->map_size = size;
-    std::strncpy(victim->path, path, sizeof victim->path - 1);
+    copy_path(victim->path, path);
   }
   victim->last_use = ++cache_clock;
   return victim;

@@ -34,6 +34,7 @@ Conformance oracles (run only, never edited): libc++ tests from `llvmorg-23.1.2`
 | containers/sequences/{deque,list,forwardlist} + container.adaptors/{stack,queue,priority.queue} | 197/371 | 197/371 | yes | was 0; adaptor tests need `<vector>` (338/371 with a local stand-in `<vector>`); rest: `<map>`/`<set>`/`<random>` |
 | containers/unord + container.node | 303/422 | 303/422 | yes | was 0; 417/422 on both with stand-in `<cmath>`/`<map>`/`<set>`; rest below |
 | numerics/{c.math,numbers,complex.number,numarray} + utilities/ratio | 325/348 | 327/348 | yes (run-time `<cmath>` calls need libm) | was 6; rest below (numerics) |
+| atomics + thread (incl. futures, stop tokens, latch/barrier/semaphore) | 449/453 | 449/453 | `<atomic>` yes (runtime archive); the rest hosted | was 16; rest: `<format>` for thread::id (4) |
 
 Whole-suite baseline (clang, before iterators/tuple/array/optional): 976 pass / ~8,000 run.
 
@@ -137,6 +138,11 @@ a defect in a test.
   `functional/function_ref_cw_explicit_object` is XFAIL on Clang.
 - GCC 16.2: `PR31384` (conversion function vs converting constructor in direct-init of `tuple`)
   resolves differently from Clang; the libc++ expectation matches Clang.
+
+- Clang 23.1: copy-list-initialization `f({T()})` with candidates `f(X)` (X(T)) and
+  `f(atomic_ref<T>)` (explicit, deleted `atomic_ref(T&&)`) picks `f(X)`; GCC (and the libstdc++
+  test 29_atomics/atomic_ref/ctor) treat the explicit constructor as a candidate and find the call
+  ambiguous ([over.match.list]).
 
 ## Deliberate omissions
 Deprecated and removed features are not implemented (`is_pod`, `is_trivial`, `aligned_storage`,
@@ -435,6 +441,28 @@ Deprecated and removed features are not implemented (`is_pod`, `is_trivial`, `al
   from `<stdlib.h>` (no `<stdlib.h>` wrapper), the valarray `mask-*_neg` tests (abort only with
   `_GLIBCXX_ASSERTIONS`; libycxx checks only under YCXX_HARDENED), and tests needing
   `<sstream>`/`<iostream>`/`<chrono>`/`<map>`/`<limits>`.
+
+- Concurrency support (`<atomic>`, `<stdatomic.h>`, `<thread>`, `<stop_token>`, `<mutex>`,
+  `<shared_mutex>`, `<condition_variable>`, `<semaphore>`, `<latch>`, `<barrier>`, `<future>`,
+  `<rcu>`, `<hazard_pointer>`; DECISIONS §3): own suite atomic, thread, mutex,
+  condition_variable, future, latch, barrier, semaphore, stop_token, ratio and
+  memory_resource/synchronized_pool_threads 127/128 on both compilers (thread_id needs `<format>`),
+  stable over repeated runs, clean under ASan and under TSan (Clang, with a runtime built with
+  `-fsanitize=thread`: `YCXX_LIBDIR=build/clang-tsan SANITIZER=tsan`; `atomic/fences` is reported
+  because TSan does not model fences). The time arithmetic of `<chrono>` (24 own chrono tests)
+  passes; the other 30 chrono tests need calendars, formatting and the utc/tai/gps clocks. libc++
+  atomics 5 -> 115/115 and thread 11 -> 334/338 (both compilers); libstdc++ 29_atomics 0 -> 82/82
+  (GCC), 81/82 (Clang, compiler gap above) and 30_threads 0 -> 309/315 (both; the rest need
+  `<iostream>`/`<sstream>`/`<format>` or utc_clock). Limitations: `notify_one` can wake more than
+  one waiter when another waiter has registered but not yet blocked (a permitted spurious wakeup;
+  libc++ `condvar/notify_one.pass` assumes none and can fail rarely); atomic wait slots are shared
+  between addresses, so notify wakes every waiter of the slot; no `native_handle` for mutexes and
+  condition variables; `notify_all_at_thread_exit` and the `*_at_thread_exit` results never run
+  for the thread that ends the process; RCU has one domain, and `rcu_barrier` called from inside
+  a scheduled evaluation returns without waiting (waiting would deadlock); retired hazard-pointer
+  and RCU objects still pending at exit are not reclaimed. `atomic<T>` for a non-default-
+  constructible T has a constrained (not mandated) default constructor. The deprecated atomics
+  features are kept (DECISIONS §3).
 
 ## Open issues / next
 - Phase 2 is complete. The ABI runtime (src/abi) replaced libsupc++: broad sweep 4483 -> 4535

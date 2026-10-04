@@ -162,6 +162,45 @@ tooling.
   table is computed once, at the library's compile time, instead of in every user TU. Integer
   conversions stay in the header (they are constexpr).
 
+- **`<atomic>` needs no libatomic.** Types whose size is 1, 2, 4, 8 or (with `__int128`) 16
+  bytes and for which `__atomic_always_lock_free` holds are lock-free: every operation works on
+  the object as an unsigned integer of that size through the `__atomic` builtins, with padding
+  bits cleared before a value is stored or compared (compare-and-exchange compares value
+  representations; a failure caused only by differing stored padding, possible through
+  `atomic_ref`, is retried), so `atomic<long double>` RMW loops terminate. Every other type is
+  lock-based: each operation holds one lock of a striped table of 256 locks in the runtime
+  archive (`src/runtime/atomic`, in both `libycxx.a` and `libycxx-freestanding.a`), selected by the
+  object's address. `atomic<T>` aligns its object to its size whenever the size is one of those
+  representation sizes, so its layout does not depend on `-mcx16`. Waiting and notifying use a
+  second address-keyed table of 256 slots (a waiter registers, re-checks the value and blocks on
+  the slot's version counter through the PAL's `ycxx_pal_wait`; notify bumps the version and
+  wakes only when the slot has waiters, so notify_one wakes the whole slot). The freestanding
+  archive's default PAL wait returns at once (waits become spins); a freestanding program can
+  supply blocking `ycxx_pal_wait`/`ycxx_pal_wake_*`. The deprecated parts of [depr.atomics]
+  (`memory_order::consume`, which `<stdatomic.h>` names, `kill_dependency`, `atomic_init`,
+  `ATOMIC_VAR_INIT`, volatile members for types that are not always lock-free) are kept, marked
+  `[[deprecated]]` where the language allows: an exception to the no-deprecated-features rule,
+  because C compatibility and existing atomic code rely on them.
+- **The thread support library is built on the PAL's address wait, not on pthread objects.**
+  Mutexes are three-state futex locks, condition variables sequence counters, call_once a
+  four-state word; all are constexpr-constructible (where the draft allows) and trivially
+  destructible. Threads, sleeping, the thread-end list (`notify_all_at_thread_exit`, the
+  `*_at_thread_exit` results) and timed waits are PAL hooks (`ycxx_pal_thread_*`,
+  `ycxx_pal_wait_until`, `ycxx_pal_at_thread_end`). A timed wait on system_clock waits on the
+  realtime clock, one on any other clock on the monotonic clock for the remaining time and then
+  re-checks `Clock::now()` (whose exceptions propagate). No `native_handle` is provided for
+  mutexes and condition variables (`thread::native_handle()` is the pthread handle). A thread's
+  entry function lets a foreign exception (the forced unwind of `pthread_exit` or cancellation)
+  pass through instead of calling terminate.
+- **`<rcu>` and `<hazard_pointer>` are hosted, with their state in the runtime.** One RCU domain:
+  readers count themselves in one of two phase counters, `rcu_synchronize` flips the phase and
+  waits for the old counter to drain; retired objects are queued without allocation (through
+  `rcu_obj_base`) and evaluated after a synchronize by `rcu_barrier`, or by an outermost unlock
+  or a retire outside any region once 1000 are queued. Hazard pointers are records of a
+  push-only list; retiring links the object into a retired list through its
+  `hazard_pointer_obj_base`, and the retiring thread reclaims the unprotected ones once the list
+  exceeds twice the number of records plus 64.
+
 ## 4. Error handling
 
 - Every library "throw" goes through one of two hooks in `ycxx/core/error.hpp`. Both take an

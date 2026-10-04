@@ -31,6 +31,10 @@ concept pair_convertible = __is_convertible(A, T1) && __is_convertible(B, T2);
 template <class P, class Pair>
 concept pair_like_not_pair = pair_like<P> && !__is_same(__remove_cvref(P), Pair);
 
+// decltype(get<I>(FWD(p))) for a pair-like P.
+template <std::size_t I, class P>
+using pair_like_get_t = decltype(get<I>(static_cast<P (*)()>(nullptr)()));
+
 } // namespace ycxx::detail
 
 namespace std {
@@ -101,16 +105,19 @@ struct pair {
   constexpr explicit(!ycxx::detail::pair_convertible<T1, T2, const U1&&, const U2&&>)
       pair(const pair<U1, U2>&&) = delete;
 
-  // pair-like
+  // pair-like, with the deleted twin of [pairs.pair]/17.
   template <ycxx::detail::pair_like_not_pair<pair> P>
     requires(!ycxx::detail::is_subrange<remove_cvref_t<P>>) &&
-            requires(P&& p) {
-              requires std::is_constructible_v<T1, decltype(get<0>(static_cast<P&&>(p)))>;
-              requires std::is_constructible_v<T2, decltype(get<1>(static_cast<P&&>(p)))>;
-            }
-  constexpr explicit(!std::is_convertible_v<decltype(get<0>(std::declval<P>())), T1> ||
-                     !std::is_convertible_v<decltype(get<1>(std::declval<P>())), T2>) pair(P&& p)
+            ycxx::detail::pair_constructible<T1, T2, ycxx::detail::pair_like_get_t<0, P>,
+                                             ycxx::detail::pair_like_get_t<1, P>>
+  constexpr explicit(!ycxx::detail::pair_convertible<T1, T2, ycxx::detail::pair_like_get_t<0, P>,
+                                                     ycxx::detail::pair_like_get_t<1, P>>) pair(P&& p)
       : first(get<0>(static_cast<P&&>(p))), second(get<1>(static_cast<P&&>(p))) {}
+  template <ycxx::detail::pair_like_not_pair<pair> P>
+    requires(!ycxx::detail::is_subrange<remove_cvref_t<P>>) &&
+            ycxx::detail::pair_dangles<T1, T2, ycxx::detail::pair_like_get_t<0, P>, ycxx::detail::pair_like_get_t<1, P>>
+  constexpr explicit(!ycxx::detail::pair_convertible<T1, T2, ycxx::detail::pair_like_get_t<0, P>,
+                                                     ycxx::detail::pair_like_get_t<1, P>>) pair(P&&) = delete;
 
   // piecewise
   template <class... Args1, class... Args2>

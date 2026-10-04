@@ -126,6 +126,25 @@
 #endif
 
 
+// <algorithm> <numeric> <execution>
+#define __cpp_lib_algorithm_default_value_type 202603L
+#define __cpp_lib_algorithm_iterator_requirements 202207L
+#define __cpp_lib_clamp 201603L
+#define __cpp_lib_constexpr_algorithms 202306L
+#define __cpp_lib_constexpr_numeric 201911L
+#define __cpp_lib_freestanding_algorithm 202502L
+#define __cpp_lib_freestanding_numeric 202502L
+#define __cpp_lib_gcd_lcm 201606L
+#define __cpp_lib_ranges_contains 202207L
+#define __cpp_lib_ranges_find_last 202207L
+#define __cpp_lib_ranges_fold 202207L
+#define __cpp_lib_ranges_iota 202202L
+#define __cpp_lib_ranges_starts_ends_with 202106L
+#define __cpp_lib_robust_nonmodifying_seq_ops 201304L
+#define __cpp_lib_sample 201603L
+#define __cpp_lib_saturation_arithmetic 202603L
+#define __cpp_lib_shift 202202L
+
 // Features of headers above that had no macro yet.
 #define __cpp_lib_ssize 201902L
 #define __cpp_lib_null_iterators 201304L

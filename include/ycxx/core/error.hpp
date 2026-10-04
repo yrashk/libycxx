@@ -11,6 +11,7 @@
 #pragma once
 
 #include <ycxx/config.hpp>
+#include <ycxx/pal.h>
 
 extern "C" {
 
@@ -43,9 +44,14 @@ enum ycxx_error_kind : int {
   ycxx_error_ambiguous_local_time,
 };
 
-// Weak default: a strong definition anywhere in the program replaces it.
-[[noreturn, gnu::weak, gnu::cold, gnu::noinline]] void ycxx_error_handler(ycxx_error_kind, const char*) noexcept {
-  __builtin_trap();
+// Weak default: a strong definition anywhere in the program replaces it. Hosted builds report
+// the message through the PAL and abort; freestanding builds trap. (The PAL call sits in a
+// discarded `if constexpr` branch when freestanding, so no PAL symbol is referenced.)
+[[noreturn, gnu::weak, gnu::cold, gnu::noinline]] void ycxx_error_handler(ycxx_error_kind, const char* what) noexcept {
+  if constexpr (ycxx::detail::cfg::hosted)
+    ycxx_pal_abort(what);
+  else
+    __builtin_trap();
 }
 
 } // extern "C"

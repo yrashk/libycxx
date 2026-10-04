@@ -4,3 +4,4 @@
 #include <ycxx/config.hpp>
 #include <ycxx/core/version.hpp>
 #include <ycxx/core/compare.hpp>
+#include <ycxx/core/compare_alg.hpp>

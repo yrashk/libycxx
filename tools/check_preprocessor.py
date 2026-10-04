@@ -14,8 +14,10 @@ CONFIG = ROOT / "ycxx/config.hpp"
 # Files whose job is to define macros the standard mandates.
 MANDATED_MACRO_FILES = {
     "ycxx/core/cstdint.hpp", "ycxx/core/climits.hpp", "ycxx/core/cstddef.hpp",
-    "ycxx/core/version.hpp", "ycxx/core/cfloat.hpp", "ycxx/pal.h",
+    "ycxx/core/version.hpp", "cassert", "ycxx/core/cfloat.hpp", "ycxx/pal.h",
 }
+# Headers the standard requires to be re-includable with different effect.
+REINCLUDABLE = {"cassert"}
 COND = re.compile(r"^\s*#\s*(if|ifdef|ifndef|elif|elifdef|elifndef)\b(.*)")
 DEFINE = re.compile(r"^\s*#\s*(define|undef)\s+(\w+)")
 SWITCH = re.compile(r"^\s*!?\s*(YCXX_[A-Z0-9_]+)(\s*(&&|\|\|)\s*!?\s*YCXX_[A-Z0-9_]+)*\s*$")
@@ -26,7 +28,7 @@ for path in sorted(p for p in ROOT.rglob("*") if p.is_file()):
     text = path.read_text()
     if path == CONFIG:
         continue
-    if "#pragma once" not in text and not rel.endswith(".h"):
+    if "#pragma once" not in text and not rel.endswith(".h") and rel not in REINCLUDABLE:
         errors.append(f"{rel}: missing #pragma once")
     mandated = rel in MANDATED_MACRO_FILES
     for n, line in enumerate(text.splitlines(), 1):

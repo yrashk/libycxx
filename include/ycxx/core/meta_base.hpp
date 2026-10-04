@@ -84,21 +84,21 @@ struct remove_cv {
   using type = __remove_cv(T);
 };
 template <class T>
-using remove_cv_t = __remove_cv(T);
+using remove_cv_t = typename remove_cv<T>::type;
 
 template <class T>
 struct remove_reference {
   using type = ::ycxx::detail::remove_ref_t<T>;
 };
 template <class T>
-using remove_reference_t = ::ycxx::detail::remove_ref_t<T>;
+using remove_reference_t = typename remove_reference<T>::type;
 
 template <class T>
 struct remove_cvref {
   using type = __remove_cvref(T);
 };
 template <class T>
-using remove_cvref_t = __remove_cvref(T);
+using remove_cvref_t = typename remove_cvref<T>::type;
 
 template <class T>
 struct add_const {
@@ -124,20 +124,20 @@ struct add_lvalue_reference {
   using type = __add_lvalue_reference(T);
 };
 template <class T>
-using add_lvalue_reference_t = __add_lvalue_reference(T);
+using add_lvalue_reference_t = typename add_lvalue_reference<T>::type;
 template <class T>
 struct add_rvalue_reference {
   using type = __add_rvalue_reference(T);
 };
 template <class T>
-using add_rvalue_reference_t = __add_rvalue_reference(T);
+using add_rvalue_reference_t = typename add_rvalue_reference<T>::type;
 
 template <class T>
 struct decay {
   using type = __decay(T);
 };
 template <class T>
-using decay_t = __decay(T);
+using decay_t = typename decay<T>::type;
 
 template <class T>
 add_rvalue_reference_t<T> declval() noexcept {

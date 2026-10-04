@@ -300,26 +300,26 @@ struct remove_extent {
   using type = __remove_extent(T);
 };
 template <class T>
-using remove_extent_t = __remove_extent(T);
+using remove_extent_t = typename remove_extent<T>::type;
 template <class T>
 struct remove_all_extents {
   using type = __remove_all_extents(T);
 };
 template <class T>
-using remove_all_extents_t = __remove_all_extents(T);
+using remove_all_extents_t = typename remove_all_extents<T>::type;
 
 template <class T>
 struct remove_pointer {
   using type = __remove_pointer(T);
 };
 template <class T>
-using remove_pointer_t = __remove_pointer(T);
+using remove_pointer_t = typename remove_pointer<T>::type;
 template <class T>
 struct add_pointer {
   using type = __add_pointer(T);
 };
 template <class T>
-using add_pointer_t = __add_pointer(T);
+using add_pointer_t = typename add_pointer<T>::type;
 
 // ---------------------------------------------------------------------------------------------
 // [meta.trans.other]

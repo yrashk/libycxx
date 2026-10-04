@@ -6,6 +6,36 @@
 
 #define __cpp_lib_freestanding_feature_test_macros 202306L
 
+// <cstddef> <new> <exception> <initializer_list>
+#define __cpp_lib_byte 201603L
+#define __cpp_lib_launder 201606L
+#define __cpp_lib_hardware_interference_size 201703L
+#define __cpp_lib_destroying_delete 201806L
+#define __cpp_lib_constexpr_new 202406L
+#define __cpp_lib_uncaught_exceptions 201411L
+#define __cpp_lib_initializer_list 202511L
+
+// <compare> <concepts>
+#define __cpp_lib_three_way_comparison 201907L
+#define __cpp_lib_type_order 202506L
+#define __cpp_lib_concepts 202207L
+
+// <utility>
+#define __cpp_lib_as_const 201510L
+#define __cpp_lib_exchange_function 201304L
+#define __cpp_lib_forward_like 202207L
+#define __cpp_lib_integer_comparison_functions 202002L
+#define __cpp_lib_integer_sequence 202511L
+#define __cpp_lib_to_underlying 202102L
+#define __cpp_lib_unreachable 202202L
+#define __cpp_lib_constexpr_utility 201811L
+#define __cpp_lib_tuples_by_type 201304L
+#define __cpp_lib_observable_checkpoint 202506L
+#define __cpp_lib_freestanding_utility 202306L
+#define __cpp_lib_constrained_equality 202411L
+#define __cpp_lib_invoke 201411L
+#define __cpp_lib_invoke_r 202106L
+
 // <type_traits>
 #define __cpp_lib_bool_constant 201505L
 #define __cpp_lib_bounded_array_traits 201902L

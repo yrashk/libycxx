@@ -1,0 +1,22 @@
+#!/bin/sh
+# Run a conformance suite against libycxx.
+#   tools/run-conformance libcxx|libstdcxx gcc|clang [subdirs...] [-- extra lit args]
+# Environment: LIBCXX_TESTS (default /opt/src/llvm-project/libcxx/test),
+#              LIBSTDCXX_TESTS (default /opt/src/libstdcxx-testsuite), SANITIZER (asan,ubsan)
+set -e
+repo=$(cd "$(dirname "$0")/.." && pwd)
+suite=$1; compiler=$2; shift 2
+case $suite in
+  libcxx)    tests=${LIBCXX_TESTS:-/opt/src/llvm-project/libcxx/test} ;;
+  libstdcxx) tests=${LIBSTDCXX_TESTS:-/opt/src/libstdcxx-testsuite} ;;
+  *) echo "unknown suite $suite" >&2; exit 2 ;;
+esac
+dir=$repo/build/suite-$suite
+mkdir -p "$dir"
+ln -sfn "$repo/tests/$suite/lit.cfg.py" "$dir/lit.cfg.py"
+filter=""
+while [ $# -gt 0 ] && [ "$1" != "--" ]; do filter="${filter:+$filter|}$1"; shift; done
+[ "$1" = "--" ] && shift
+# lit test names are "<suite> :: <path relative to the test root>"; filter on the path.
+exec lit "$dir" ${filter:+--filter ":: ($filter)"} --param repo="$repo" --param compiler="$compiler" --param tests="$tests" \
+  ${SANITIZER:+--param sanitizer=$SANITIZER} "$@"

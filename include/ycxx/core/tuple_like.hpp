@@ -14,15 +14,23 @@ template <class T>
   requires requires { tuple_size<T>::value; }
 struct tuple_size<const T> : integral_constant<size_t, tuple_size<T>::value> {};
 // [depr.tuple]: the volatile and const volatile forms (Annex D). This header is reached from
-// <tuple>, <array>, <ranges> and <utility>, as /4 requires.
+// <tuple>, <array>, <ranges> and <utility>, as /4 requires. GCC 16 ignores [[deprecated]] on a
+// partial specialization, so the member (value, type) carries it too: a direct use then warns on
+// both compilers.
 template <class T>
   requires requires { tuple_size<T>::value; }
 struct [[deprecated("tuple_size<volatile T> is deprecated ([depr.tuple])")]] tuple_size<volatile T>
-    : integral_constant<size_t, tuple_size<T>::value> {};
+    : integral_constant<size_t, tuple_size<T>::value> {
+  [[deprecated("tuple_size<volatile T> is deprecated ([depr.tuple])")]]
+  static constexpr size_t value = tuple_size<T>::value;
+};
 template <class T>
   requires requires { tuple_size<T>::value; }
 struct [[deprecated("tuple_size<const volatile T> is deprecated ([depr.tuple])")]] tuple_size<const volatile T>
-    : integral_constant<size_t, tuple_size<T>::value> {};
+    : integral_constant<size_t, tuple_size<T>::value> {
+  [[deprecated("tuple_size<const volatile T> is deprecated ([depr.tuple])")]]
+  static constexpr size_t value = tuple_size<T>::value;
+};
 
 template <class T>
 constexpr size_t tuple_size_v = tuple_size<T>::value;
@@ -36,11 +44,13 @@ struct tuple_element<I, const T> {
 };
 template <size_t I, class T>
 struct [[deprecated("tuple_element<I, volatile T> is deprecated ([depr.tuple])")]] tuple_element<I, volatile T> {
-  using type = volatile typename tuple_element<I, T>::type;
+  using type [[deprecated("tuple_element<I, volatile T> is deprecated ([depr.tuple])")]] =
+      volatile typename tuple_element<I, T>::type;
 };
 template <size_t I, class T>
 struct [[deprecated("tuple_element<I, const volatile T> is deprecated ([depr.tuple])")]] tuple_element<I, const volatile T> {
-  using type = const volatile typename tuple_element<I, T>::type;
+  using type [[deprecated("tuple_element<I, const volatile T> is deprecated ([depr.tuple])")]] =
+      const volatile typename tuple_element<I, T>::type;
 };
 
 template <size_t I, class T>

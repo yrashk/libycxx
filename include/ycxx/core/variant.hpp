@@ -45,13 +45,19 @@ template <class T>
 struct variant_size;
 template <class T>
 struct variant_size<const T> : variant_size<T> {};
-// [depr.variant] (Annex D)
+// [depr.variant] (Annex D); the members repeat the attribute for GCC (see tuple_like.hpp).
 template <class T>
 struct [[deprecated("variant_size<volatile T> is deprecated ([depr.variant])")]] variant_size<volatile T>
-    : integral_constant<size_t, variant_size<T>::value> {};
+    : integral_constant<size_t, variant_size<T>::value> {
+  [[deprecated("variant_size<volatile T> is deprecated ([depr.variant])")]]
+  static constexpr size_t value = variant_size<T>::value;
+};
 template <class T>
 struct [[deprecated("variant_size<const volatile T> is deprecated ([depr.variant])")]] variant_size<const volatile T>
-    : integral_constant<size_t, variant_size<T>::value> {};
+    : integral_constant<size_t, variant_size<T>::value> {
+  [[deprecated("variant_size<const volatile T> is deprecated ([depr.variant])")]]
+  static constexpr size_t value = variant_size<T>::value;
+};
 template <class T>
 constexpr size_t variant_size_v = variant_size<T>::value;
 template <class... Types>
@@ -65,12 +71,14 @@ struct variant_alternative<I, const T> {
 };
 template <size_t I, class T>
 struct [[deprecated("variant_alternative<I, volatile T> is deprecated ([depr.variant])")]] variant_alternative<I, volatile T> {
-  using type = volatile typename variant_alternative<I, T>::type;
+  using type [[deprecated("variant_alternative<I, volatile T> is deprecated ([depr.variant])")]] =
+      volatile typename variant_alternative<I, T>::type;
 };
 template <size_t I, class T>
 struct [[deprecated("variant_alternative<I, const volatile T> is deprecated ([depr.variant])")]]
     variant_alternative<I, const volatile T> {
-  using type = const volatile typename variant_alternative<I, T>::type;
+  using type [[deprecated("variant_alternative<I, const volatile T> is deprecated ([depr.variant])")]] =
+      const volatile typename variant_alternative<I, T>::type;
 };
 template <size_t I, class T>
 using variant_alternative_t = typename variant_alternative<I, T>::type;

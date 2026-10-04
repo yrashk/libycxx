@@ -111,6 +111,9 @@ class LibstdcxxFormat(lit.formats.FileBasedTest):
             return lit.Test.Result(lit.Test.UNSUPPORTED, 'skipped (extension): uses libstdc++ extensions')
 
         action, expect_fail_run, flags, errors = 'run', False, list(self.base_flags), False
+        # libstdc++'s hardened mode, requested in the source itself, maps to ours.
+        if re.search(r'^\s*#\s*define\s+_GLIBCXX_ASSERTIONS\b', src, re.M):
+            flags.append('-DYCXX_HARDENED=1')
         saw_do = False
         for line in src.splitlines():
             m = DG.search(line)
@@ -122,9 +125,13 @@ class LibstdcxxFormat(lit.formats.FileBasedTest):
                 saw_do = True
                 action = args[0] if args else 'run'
                 tsel = selector_of(args, 'target')
+                xsel = selector_of(args, 'xfail')
+                # DejaGnu also accepts both in one group: { target c++14 xfail *-*-* }.
+                if tsel is not None and ' xfail ' in f' {tsel} ':
+                    tsel, _, xsel = f' {tsel} '.partition(' xfail ')
+                    tsel, xsel = tsel.strip(), xsel.strip()
                 if tsel is not None and not eval_selector(tsel):
                     return lit.Test.Result(lit.Test.UNSUPPORTED, f'dg-do target {tsel!r} not selected')
-                xsel = selector_of(args, 'xfail')
                 if xsel is not None and eval_selector(xsel):
                     expect_fail_run = True
             elif kind in ('options', 'additional-options'):
@@ -132,6 +139,11 @@ class LibstdcxxFormat(lit.formats.FileBasedTest):
                 if not opts:
                     continue
                 tsel = selector_of(args, 'target')
+                xsel = selector_of(args, 'xfail')
+                # DejaGnu also accepts both in one group: { target c++14 xfail *-*-* }.
+                if tsel is not None and ' xfail ' in f' {tsel} ':
+                    tsel, _, xsel = f' {tsel} '.partition(' xfail ')
+                    tsel, xsel = tsel.strip(), xsel.strip()
                 if tsel is not None and not eval_selector(tsel):
                     continue
                 for o in opts[0].split():
@@ -142,6 +154,9 @@ class LibstdcxxFormat(lit.formats.FileBasedTest):
                         n = int(v) if n is None else n
                         if n != STD:
                             return lit.Test.Result(lit.Test.UNSUPPORTED, f'skipped (pre-c++26): needs {o}')
+                        continue
+                    if o == '-D_GLIBCXX_ASSERTIONS':
+                        flags.append('-DYCXX_HARDENED=1')  # libstdc++'s hardened mode -> ours
                         continue
                     if o.startswith('-D_GLIBCXX'):
                         continue

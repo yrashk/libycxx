@@ -68,6 +68,12 @@ void ycxx_pal_wake_all(const ycxx_pal_u32* addr) YCXX_PAL_NOEXCEPT;
    registering object's __dso_handle. Returns 0 on success. */
 int ycxx_pal_thread_atexit(void (*f)(void*), void* obj, void* dso) YCXX_PAL_NOEXCEPT;
 
+/* ---- error messages ----------------------------------------------------------------------- */
+/* Writes the C library's description of error number `ev` (as strerror, but thread-safe) to buf
+   as a null-terminated string, truncated to n bytes. Leaves errno unchanged. Used by
+   std::generic_category() and std::system_category(). */
+int ycxx_pal_error_message(int ev, char* buf, ycxx_pal_size n) YCXX_PAL_NOEXCEPT;
+
 /* Threads, filesystem and time zone hooks are added with phase 5. */
 
 #ifdef __cplusplus

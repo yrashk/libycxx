@@ -130,6 +130,22 @@ tooling.
   the PAL's `ycxx_pal_wait`/`ycxx_pal_wake_all` (no `<mutex>` dependency, no per-thread pools).
   The `<memory_resource>` header is hosted; a freestanding program can name the core types but
   gets a link error if it uses them.
+- **`<system_error>`: the value types are core, the categories hosted.** `error_category`,
+  `error_code`, `error_condition`, `system_error`, the comparisons, `hash` and the
+  `is_error_*_enum` traits are defined in core (`ycxx/core/system_error.hpp`; they need only
+  `<string>`). The hosted runtime (`src/hosted/system_error.cpp`) holds what needs one definition
+  or the OS: `generic_category()`/`system_category()` (constant-initialized objects in a union
+  that never destroys them, so they work in any static initializer or destructor), their
+  messages (the new PAL hook `ycxx_pal_error_message`, `strerror_r` on POSIX, thread-safe and
+  leaving `errno` alone), the destructors of `error_category` and `system_error` (key functions:
+  one vtable and type_info, built with RTTI) and `system_error`'s constructors, which compose
+  `what()` as `what_arg + ": " + message()` (the message alone for an empty or absent
+  `what_arg`). `system_category().default_error_condition(ev)` maps 0 and every `errc` value to
+  the generic category. The converting constructors find `make_error_code`/`make_error_condition`
+  by argument-dependent lookup only ([contents]/3: a zero-argument deleted declaration hides the
+  `std::` ones), so `<future>`/`<ios>` only need to specialize `is_error_code_enum` and declare
+  their overloads. The `<system_error>` header itself stays hosted (it checks `errc` against
+  `<errno.h>`).
 - **Freestanding runtime archive.** `libycxx-freestanding.a` holds what a freestanding program
   may need defined but core headers must not define: the default replaceable allocation
   functions (no heap: `bad_alloc`/handler, `nullptr` for the nothrow forms) and `std::nothrow`.
@@ -154,9 +170,12 @@ tooling.
     core headers (`bad_alloc`, `bad_optional_access`, `bad_variant_access`,
     `bad_expected_access<E>`, ...). With exceptions on, it throws `make()` from the header,
     which also works during constant evaluation (P3068, constexpr exceptions).
-  - `ycxx::detail::raise(kind, what)` is for the `<stdexcept>` classes, whose message storage
-    lives in the hosted runtime. With exceptions on, it calls `ycxx::detail::throw_std`, defined
-    out of line there.
+  - `ycxx::detail::raise(kind, what)` is the run-time path for the `<stdexcept>` classes. With
+    exceptions on, it calls `ycxx::detail::throw_std`, defined out of line in the hosted runtime,
+    which keeps the many call sites small. The helpers (`throw_out_of_range`, ...) are
+    constexpr: during constant evaluation they throw the class from the header instead
+    (`raise_std`, through `raise_with`), so `string::at` and friends throw catchable exceptions
+    there.
   - With `-fno-exceptions`, either hook calls `extern "C" ycxx_error_handler(kind, what)`; `make`
     is never called. The default definition is a weak symbol emitted from the header (PAL abort
     when hosted, `__builtin_trap()` when freestanding). A strong user definition replaces it at
@@ -173,6 +192,23 @@ tooling.
   Exception objects use the vendor class "YCXXC++\0" ("…\1" for the dependent exceptions
   rethrow_exception creates). The exception classes are declared with Itanium layout and inline
   constexpr members (no key function); their vtables and type_info are emitted where needed.
+- **Constexpr `<stdexcept>` (P3068/P3378).** The nine classes keep one pointer to their
+  message. At run time it points into a reference-counted heap block of the hosted runtime
+  (`message_create`/`_retain`/`_release`, out of line as before, so a copy never throws and never
+  allocates). During constant evaluation (`if consteval`) it points to a `new[]` array, and a
+  copy duplicates it: an allocation cannot outlive constant evaluation, so the two forms never
+  meet, and a failed allocation there is not a constant expression, so the copy constructor is
+  still noexcept. The classes are therefore inline and constexpr throughout (no key function,
+  as for `exception`). `ycxx/core/stdexcept.hpp` needs only `exception_base.hpp`, so `error.hpp`
+  includes it; the constructors taking `const string&` are declared there and defined after
+  `basic_string` (`stdexcept_string.hpp`, included at the end of `basic_string.hpp`; any caller
+  holding a string has it). Under -fno-rtti in hosted builds they get the same out-of-line
+  destructors as the runtime's own classes (defined in `src/hosted/stdexcept.cpp`, built with
+  RTTI and `YCXX_EXCEPTION_KEY_FUNCTIONS`), because the runtime throws them; there they are not
+  constexpr-destructible. `system_error` is not constexpr in the draft and keeps its key function.
+  `__cpp_lib_constexpr_exceptions` stays undefined: Clang 23 cannot throw during constant
+  evaluation, and GCC 16 offers no way to make a non-null `exception_ptr`
+  (`current_exception`/`rethrow_exception`) work there for libycxx's `exception_ptr`.
 - **Unsupported: mixing translation units built with different `-fexceptions`/`-fno-exceptions`
   or `-frtti`/`-fno-rtti` settings in one program.** The inline error hooks differ between the
   modes, and the linker keeps one copy. The vtables of header-defined exception classes emitted

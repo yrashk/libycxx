@@ -17,11 +17,11 @@ template <class Key, class Compare = less<Key>, class Allocator = allocator<Key>
 class multiset;
 
 template <class Key, class Compare, class Allocator>
-class set : public ycxx::adl_free::rb_tree<Key, Compare, Allocator, false, false> {
+class set : public ycxx::adl_free::rb_tree<Key, Key, Compare, Allocator, false, false> {
   static_assert(ycxx::detail::allocator_for<Allocator, Key>,
                 "std::set: Allocator::value_type must be Key ([container.alloc.reqmts])");
 
-  using base = ycxx::adl_free::rb_tree<Key, Compare, Allocator, false, false>;
+  using base = ycxx::adl_free::rb_tree<Key, Key, Compare, Allocator, false, false>;
   using alloc_traits = allocator_traits<Allocator>;
   using node_base = typename base::node_base;
   static constexpr bool always_equal = base::always_equal;
@@ -47,8 +47,10 @@ public:
   using insert_return_type = ycxx::adl_free::insert_return_type<iterator, node_type>;
 
   // ---- [set.cons] ----
-  constexpr set() : set(Compare()) {}
-  constexpr explicit set(const Compare& comp, const Allocator& a = Allocator()) : base(comp, a) {}
+  constexpr set() noexcept(base::nothrow_default) : set(Compare()) {}
+  constexpr explicit set(const Compare& comp, const Allocator& a = Allocator()) noexcept(
+      is_nothrow_copy_constructible_v<Compare>)
+      : base(comp, a) {}
   template <class InputIterator>
     requires ycxx::detail::qualifies_as_input_iterator<InputIterator>
   constexpr set(InputIterator first, InputIterator last, const Compare& comp = Compare(),
@@ -64,8 +66,10 @@ public:
   constexpr set(set&& x) noexcept(is_nothrow_copy_constructible_v<Compare>) : base(static_cast<base&&>(x)) {}
   constexpr explicit set(const Allocator& a) : base(Compare(), a) {}
   constexpr set(const set& x, const type_identity_t<Allocator>& a) : base(x, a) {}
-  constexpr set(set&& x, const type_identity_t<Allocator>& a) : base(static_cast<base&&>(x), a) {}
-  constexpr set(initializer_list<value_type> il, const Compare& comp = Compare(), const Allocator& a = Allocator())
+  constexpr set(set&& x, const type_identity_t<Allocator>& a) noexcept(base::nothrow_move_alloc)
+      : base(static_cast<base&&>(x), a) {}
+  constexpr set(initializer_list<value_type> il, const type_identity_t<Compare>& comp = Compare(),
+                const type_identity_t<Allocator>& a = Allocator())
       : base(comp, a) {
     this->insert_elems(il.begin(), il.end());
   }
@@ -75,7 +79,7 @@ public:
       : set(static_cast<InputIterator&&>(first), static_cast<InputIterator&&>(last), Compare(), a) {}
   template <ycxx::detail::from_range_tag Tag, ycxx::detail::container_compatible_range<value_type> R>
   constexpr set(Tag, R&& rg, const Allocator& a) : set(from_range, static_cast<R&&>(rg), Compare(), a) {}
-  constexpr set(initializer_list<value_type> il, const Allocator& a) : set(il, Compare(), a) {}
+  constexpr set(initializer_list<value_type> il, const type_identity_t<Allocator>& a) : set(il, Compare(), a) {}
   constexpr ~set() = default;
 
   constexpr set& operator=(const set& x) {
@@ -139,7 +143,7 @@ public:
     return iterator(this->insert_handle_unique(h ? h : this->header(), nh).first);
   }
 
-  constexpr void swap(set& x) noexcept(always_equal && is_nothrow_swappable_v<Compare>) { this->swap_tree(x); }
+  constexpr void swap(set& x) noexcept(is_nothrow_swappable_v<Compare>) { this->swap_tree(x); }
 
   template <class C2>
   constexpr void merge(set<Key, C2, Allocator>& source) {
@@ -163,11 +167,11 @@ public:
 };
 
 template <class Key, class Compare, class Allocator>
-class multiset : public ycxx::adl_free::rb_tree<Key, Compare, Allocator, false, true> {
+class multiset : public ycxx::adl_free::rb_tree<Key, Key, Compare, Allocator, false, true> {
   static_assert(ycxx::detail::allocator_for<Allocator, Key>,
                 "std::multiset: Allocator::value_type must be Key ([container.alloc.reqmts])");
 
-  using base = ycxx::adl_free::rb_tree<Key, Compare, Allocator, false, true>;
+  using base = ycxx::adl_free::rb_tree<Key, Key, Compare, Allocator, false, true>;
   using alloc_traits = allocator_traits<Allocator>;
   using node_base = typename base::node_base;
   static constexpr bool always_equal = base::always_equal;
@@ -192,8 +196,10 @@ public:
   using typename base::size_type;
 
   // ---- [multiset.cons] ----
-  constexpr multiset() : multiset(Compare()) {}
-  constexpr explicit multiset(const Compare& comp, const Allocator& a = Allocator()) : base(comp, a) {}
+  constexpr multiset() noexcept(base::nothrow_default) : multiset(Compare()) {}
+  constexpr explicit multiset(const Compare& comp, const Allocator& a = Allocator()) noexcept(
+      is_nothrow_copy_constructible_v<Compare>)
+      : base(comp, a) {}
   template <class InputIterator>
     requires ycxx::detail::qualifies_as_input_iterator<InputIterator>
   constexpr multiset(InputIterator first, InputIterator last, const Compare& comp = Compare(),
@@ -211,9 +217,10 @@ public:
   constexpr multiset(multiset&& x) noexcept(is_nothrow_copy_constructible_v<Compare>) : base(static_cast<base&&>(x)) {}
   constexpr explicit multiset(const Allocator& a) : base(Compare(), a) {}
   constexpr multiset(const multiset& x, const type_identity_t<Allocator>& a) : base(x, a) {}
-  constexpr multiset(multiset&& x, const type_identity_t<Allocator>& a) : base(static_cast<base&&>(x), a) {}
-  constexpr multiset(initializer_list<value_type> il, const Compare& comp = Compare(),
-                     const Allocator& a = Allocator())
+  constexpr multiset(multiset&& x, const type_identity_t<Allocator>& a) noexcept(base::nothrow_move_alloc)
+      : base(static_cast<base&&>(x), a) {}
+  constexpr multiset(initializer_list<value_type> il, const type_identity_t<Compare>& comp = Compare(),
+                     const type_identity_t<Allocator>& a = Allocator())
       : base(comp, a) {
     this->insert_elems(il.begin(), il.end());
   }
@@ -223,7 +230,8 @@ public:
       : multiset(static_cast<InputIterator&&>(first), static_cast<InputIterator&&>(last), Compare(), a) {}
   template <ycxx::detail::from_range_tag Tag, ycxx::detail::container_compatible_range<value_type> R>
   constexpr multiset(Tag, R&& rg, const Allocator& a) : multiset(from_range, static_cast<R&&>(rg), Compare(), a) {}
-  constexpr multiset(initializer_list<value_type> il, const Allocator& a) : multiset(il, Compare(), a) {}
+  constexpr multiset(initializer_list<value_type> il, const type_identity_t<Allocator>& a)
+      : multiset(il, Compare(), a) {}
   constexpr ~multiset() = default;
 
   constexpr multiset& operator=(const multiset& x) {
@@ -271,7 +279,7 @@ public:
     return iterator(this->insert_handle_multi(h ? h : this->header(), nh));
   }
 
-  constexpr void swap(multiset& x) noexcept(always_equal && is_nothrow_swappable_v<Compare>) { this->swap_tree(x); }
+  constexpr void swap(multiset& x) noexcept(is_nothrow_swappable_v<Compare>) { this->swap_tree(x); }
 
   template <class C2>
   constexpr void merge(multiset<Key, C2, Allocator>& source) {
@@ -304,7 +312,8 @@ set(InputIterator, InputIterator, Compare = Compare(), Allocator = Allocator())
 template <ranges::input_range R, class Compare = less<ranges::range_value_t<R>>,
           class Allocator = allocator<ranges::range_value_t<R>>>
   requires ycxx::detail::deducible_compare<Compare> && ycxx::detail::qualifies_as_allocator<Allocator>
-set(from_range_t, R&&, Compare = Compare(), Allocator = Allocator()) -> set<ranges::range_value_t<R>, Compare, Allocator>;
+set(from_range_t, R&&, Compare = Compare(), Allocator = Allocator())
+    -> set<ranges::range_value_t<R>, Compare, Allocator>;
 template <class Key, class Compare = less<Key>, class Allocator = allocator<Key>>
   requires ycxx::detail::deducible_compare<Compare> && ycxx::detail::qualifies_as_allocator<Allocator>
 set(initializer_list<Key>, Compare = Compare(), Allocator = Allocator()) -> set<Key, Compare, Allocator>;

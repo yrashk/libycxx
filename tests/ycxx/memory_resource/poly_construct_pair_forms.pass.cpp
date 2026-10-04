@@ -51,11 +51,6 @@ struct Trailing {  // trailing-allocator convention
 
 using P = std::pair<Leading, Trailing>;
 
-struct ToPair {  // not pair-like, converts to P
-  int a, b;
-  operator P() const { return P(Leading(a), Trailing(b)); }
-};
-
 template <class T, class... Args>
 T* make(PA a, Args&&... args) {
   T* p = a.allocate_object<T>();

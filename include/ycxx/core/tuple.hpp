@@ -6,6 +6,7 @@
 #pragma once
 
 #include <ycxx/core/pair.hpp>
+#include <ycxx/core/ignore.hpp>
 #include <ycxx/core/memory_base.hpp>
 #include <ycxx/core/integer_sequence.hpp>
 
@@ -205,7 +206,6 @@ class tuple {
   friend constexpr const tuple_element_t<I, tuple<T...>>& get(const tuple<T...>&) noexcept;
 
   using self = tuple<Types...>;
-  static constexpr size_t N = sizeof...(Types);
 
   // Unpacks a tuple-like source into the storage.
   template <class U, size_t... I>
@@ -236,7 +236,7 @@ public:
       : s_() {}
 
   constexpr explicit(!(is_convertible_v<const Types&, Types> && ...)) tuple(const Types&... args)
-    requires(N >= 1) && (is_copy_constructible_v<Types> && ...)
+    requires(sizeof...(Types) >= 1) && (is_copy_constructible_v<Types> && ...)
       : s_(in_place, args...) {}
 
   template <class... UTypes>
@@ -328,7 +328,7 @@ public:
   constexpr explicit((!ycxx::detail::implicit_default<Types> || ...)) tuple(allocator_arg_t, const Alloc& a)
       : s_(ycxx::detail::alloc_tag_t{}, a, in_place) {}
   template <class Alloc>
-    requires(N >= 1) && (is_copy_constructible_v<Types> && ...)
+    requires(sizeof...(Types) >= 1) && (is_copy_constructible_v<Types> && ...)
   constexpr explicit(!(is_convertible_v<const Types&, Types> && ...))
       tuple(allocator_arg_t, const Alloc& a, const Types&... args)
       : s_(ycxx::detail::alloc_tag_t{}, a, args...) {}
@@ -454,38 +454,38 @@ public:
     return *this;
   }
   template <class... UTypes>
-    requires(sizeof...(UTypes) == N) && (is_assignable_v<Types&, const UTypes&> && ...)
+    requires(sizeof...(UTypes) == sizeof...(Types)) && (is_assignable_v<Types&, const UTypes&> && ...)
   constexpr tuple& operator=(const tuple<UTypes...>& u) {
     assign_from(u, index_sequence_for<Types...>{});
     return *this;
   }
   template <class... UTypes>
-    requires(sizeof...(UTypes) == N) && (is_assignable_v<const Types&, const UTypes&> && ...)
+    requires(sizeof...(UTypes) == sizeof...(Types)) && (is_assignable_v<const Types&, const UTypes&> && ...)
   constexpr const tuple& operator=(const tuple<UTypes...>& u) const {
     assign_from(u, index_sequence_for<Types...>{});
     return *this;
   }
   template <class... UTypes>
-    requires(sizeof...(UTypes) == N) && (is_assignable_v<Types&, UTypes> && ...)
+    requires(sizeof...(UTypes) == sizeof...(Types)) && (is_assignable_v<Types&, UTypes> && ...)
   constexpr tuple& operator=(tuple<UTypes...>&& u) {
     assign_from(static_cast<tuple<UTypes...>&&>(u), index_sequence_for<Types...>{});
     return *this;
   }
   template <class... UTypes>
-    requires(sizeof...(UTypes) == N) && (is_assignable_v<const Types&, UTypes> && ...)
+    requires(sizeof...(UTypes) == sizeof...(Types)) && (is_assignable_v<const Types&, UTypes> && ...)
   constexpr const tuple& operator=(tuple<UTypes...>&& u) const {
     assign_from(static_cast<tuple<UTypes...>&&>(u), index_sequence_for<Types...>{});
     return *this;
   }
   template <class U1, class U2>
-    requires(N == 2) && is_assignable_v<Types...[0] &, const U1&> && is_assignable_v<Types...[1] &, const U2&>
+    requires(sizeof...(Types) == 2) && is_assignable_v<Types...[0] &, const U1&> && is_assignable_v<Types...[1] &, const U2&>
   constexpr tuple& operator=(const pair<U1, U2>& u) {
     ycxx::detail::leaf_get<0>(s_) = u.first;
     ycxx::detail::leaf_get<1>(s_) = u.second;
     return *this;
   }
   template <class U1, class U2>
-    requires(N == 2) && is_assignable_v<const Types...[0] &, const U1&> &&
+    requires(sizeof...(Types) == 2) && is_assignable_v<const Types...[0] &, const U1&> &&
             is_assignable_v<const Types...[1] &, const U2&>
   constexpr const tuple& operator=(const pair<U1, U2>& u) const {
     ycxx::detail::leaf_get<0>(s_) = u.first;
@@ -493,14 +493,14 @@ public:
     return *this;
   }
   template <class U1, class U2>
-    requires(N == 2) && is_assignable_v<Types...[0] &, U1> && is_assignable_v<Types...[1] &, U2>
+    requires(sizeof...(Types) == 2) && is_assignable_v<Types...[0] &, U1> && is_assignable_v<Types...[1] &, U2>
   constexpr tuple& operator=(pair<U1, U2>&& u) {
     ycxx::detail::leaf_get<0>(s_) = static_cast<U1&&>(u.first);
     ycxx::detail::leaf_get<1>(s_) = static_cast<U2&&>(u.second);
     return *this;
   }
   template <class U1, class U2>
-    requires(N == 2) && is_assignable_v<const Types...[0] &, U1> && is_assignable_v<const Types...[1] &, U2>
+    requires(sizeof...(Types) == 2) && is_assignable_v<const Types...[0] &, U1> && is_assignable_v<const Types...[1] &, U2>
   constexpr const tuple& operator=(pair<U1, U2>&& u) const {
     ycxx::detail::leaf_get<0>(s_) = static_cast<U1&&>(u.first);
     ycxx::detail::leaf_get<1>(s_) = static_cast<U2&&>(u.second);
@@ -509,7 +509,7 @@ public:
   template <ycxx::detail::tuple_like UTuple>
     requires(!ycxx::detail::is_tuple_specialization<remove_cvref_t<UTuple>>) &&
             (!ycxx::detail::is_pair_v<remove_cvref_t<UTuple>>) && (!ycxx::detail::is_subrange<remove_cvref_t<UTuple>>) &&
-            (tuple_size_v<remove_cvref_t<UTuple>> == N) &&
+            (tuple_size_v<remove_cvref_t<UTuple>> == sizeof...(Types)) &&
             ycxx::detail::elems_assignable<tuple, ycxx::detail::get_types_t<UTuple>>
   constexpr tuple& operator=(UTuple&& u) {
     assign_from(static_cast<UTuple&&>(u), index_sequence_for<Types...>{});
@@ -518,7 +518,7 @@ public:
   template <ycxx::detail::tuple_like UTuple>
     requires(!ycxx::detail::is_tuple_specialization<remove_cvref_t<UTuple>>) &&
             (!ycxx::detail::is_pair_v<remove_cvref_t<UTuple>>) && (!ycxx::detail::is_subrange<remove_cvref_t<UTuple>>) &&
-            (tuple_size_v<remove_cvref_t<UTuple>> == N) &&
+            (tuple_size_v<remove_cvref_t<UTuple>> == sizeof...(Types)) &&
             ycxx::detail::elems_const_assignable<tuple, ycxx::detail::get_types_t<UTuple>>
   constexpr const tuple& operator=(UTuple&& u) const {
     assign_from(static_cast<UTuple&&>(u), index_sequence_for<Types...>{});
@@ -650,18 +650,6 @@ template <class T, class... Types>
 constexpr const T&& get(const tuple<Types...>&& t) noexcept {
   return std::get<ycxx::detail::type_index<T, Types...>()>(static_cast<const tuple<Types...>&&>(t));
 }
-
-// ---- ignore ----
-} // namespace std
-
-namespace ycxx::adl_free { // std::ignore's type; see DECISIONS §2
-struct ignore_type {
-  constexpr const ignore_type& operator=(const auto&) const noexcept { return *this; }
-};
-} // namespace ycxx::adl_free
-
-namespace std {
-inline constexpr ycxx::adl_free::ignore_type ignore;
 
 // ---- [tuple.creation] ----
 template <class... TTypes>

@@ -300,10 +300,28 @@ consteval bool iter_move_noexcept() {
     return noexcept(*std::declval<T>());
 }
 
+// The result type, spelled out rather than deduced: deducing it would instantiate the
+// iterator's operator* (eagerly, on Clang, as it is constexpr) whenever a concept merely checks
+// iter_move, e.g. for a list<T> iterator while T is still incomplete.
+template <class T>
+struct result {
+  using type = decltype(*std::declval<T>());
+};
+template <class T>
+  requires(!adl_iter_move<T>) && std::is_lvalue_reference_v<decltype(*std::declval<T>())>
+struct result<T> {
+  using type = std::remove_reference_t<decltype(*std::declval<T>())>&&;
+};
+template <class T>
+  requires adl_iter_move<T>
+struct result<T> {
+  using type = decltype(iter_move(std::declval<T>()));
+};
+
 struct fn {
   template <class T>
     requires adl_iter_move<T> || requires(T&& t) { *static_cast<T&&>(t); }
-  [[nodiscard]] constexpr decltype(auto) operator()(T&& t) const noexcept(iter_move_noexcept<T>()) {
+  [[nodiscard]] constexpr typename result<T>::type operator()(T&& t) const noexcept(iter_move_noexcept<T>()) {
     if constexpr (adl_iter_move<T>)
       return iter_move(static_cast<T&&>(t));
     else if constexpr (std::is_lvalue_reference_v<decltype(*static_cast<T&&>(t))>)

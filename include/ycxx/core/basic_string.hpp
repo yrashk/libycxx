@@ -1457,3 +1457,6 @@ constexpr wstring to_wstring(long long val) { return ycxx::detail::integer_to_st
 constexpr wstring to_wstring(unsigned long long val) { return ycxx::detail::integer_to_string<wchar_t>(val); }
 
 } // namespace std
+
+// The <stdexcept> constructors taking `const string&`, now that string is complete.
+#include <ycxx/core/stdexcept_string.hpp>

@@ -97,6 +97,9 @@
 #define __cpp_lib_string_udls 201304L
 #define __cpp_lib_to_string 202306L
 
+// <vector> <inplace_vector>
+#define __cpp_lib_constexpr_vector 201907L
+
 // <bitset>
 #define __cpp_lib_bitset 202306L
 #define __cpp_lib_constexpr_bitset 202207L
@@ -203,4 +206,5 @@
 #  define __cpp_lib_hardened_expected 202502L
 #  define __cpp_lib_hardened_optional 202502L
 #  define __cpp_lib_hardened_span 202502L
+#  define __cpp_lib_hardened_vector 202502L
 #endif

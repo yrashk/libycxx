@@ -58,6 +58,7 @@
 #define __cpp_lib_hardened_shared_ptr_array 202506L
 #define __cpp_lib_constexpr_memory 202506L
 #define __cpp_lib_out_ptr 202311L
+#define __cpp_lib_parallel_algorithm 202506L
 #define __cpp_lib_transparent_operators 201510L
 
 // <array>

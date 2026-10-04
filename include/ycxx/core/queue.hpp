@@ -193,6 +193,10 @@ protected:
 
 private:
   constexpr void heapify() { std::make_heap(c.begin(), c.end(), comp); }
+  constexpr void clear_moved_from() {
+    if constexpr (requires { c.clear(); })
+      c.clear();
+  }
 
 public:
   // Constrained (an extension), so that is_default_constructible reflects the members'.
@@ -202,13 +206,14 @@ public:
   constexpr explicit priority_queue(const Compare& x)
     requires is_default_constructible_v<Container>
       : priority_queue(x, Container()) {}
-  // A moved-from priority_queue is left empty: its container's moved-from contents need not
-  // form a heap, and top()/pop() rely on that invariant.
+  // A moved-from priority_queue is left empty when the container has clear() (an extension; the
+  // draft does not require clear() of the container): its container's moved-from contents need
+  // not form a heap, and top()/pop() rely on that invariant.
   constexpr priority_queue(const priority_queue&) = default;
   constexpr priority_queue(priority_queue&& q) noexcept(is_nothrow_move_constructible_v<Container> &&
                                                         is_nothrow_move_constructible_v<Compare>)
       : c(static_cast<Container&&>(q.c)), comp(static_cast<Compare&&>(q.comp)) {
-    q.c.clear();
+    q.clear_moved_from();
   }
   constexpr priority_queue& operator=(const priority_queue&) = default;
   constexpr priority_queue& operator=(priority_queue&& q) noexcept(is_nothrow_move_assignable_v<Container> &&
@@ -216,7 +221,7 @@ public:
     if (this != __builtin_addressof(q)) {
       c = static_cast<Container&&>(q.c);
       comp = static_cast<Compare&&>(q.comp);
-      q.c.clear();
+      q.clear_moved_from();
     }
     return *this;
   }
@@ -272,7 +277,7 @@ public:
     requires uses_allocator_v<Container, Alloc>
   constexpr priority_queue(priority_queue&& q, const Alloc& a)
       : c(static_cast<Container&&>(q.c), a), comp(static_cast<Compare&&>(q.comp)) {
-    q.c.clear();
+    q.clear_moved_from();
   }
   template <class InputIterator, class Alloc>
     requires ycxx::detail::qualifies_as_input_iterator<InputIterator> && uses_allocator_v<Container, Alloc>

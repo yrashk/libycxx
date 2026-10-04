@@ -51,7 +51,9 @@ struct coroutine_handle {
   constexpr coroutine_handle(nullptr_t) noexcept {}
   static coroutine_handle from_promise(Promise& p) {
     coroutine_handle h;
-    h.ptr_ = __builtin_coro_promise(__builtin_addressof(p), alignof(Promise), true);
+    // Promise may be cv-qualified ([coroutine.handle.con]/2); the builtin takes a void*.
+    h.ptr_ = __builtin_coro_promise(const_cast<void*>(static_cast<const volatile void*>(__builtin_addressof(p))),
+                                    alignof(Promise), true);
     return h;
   }
   coroutine_handle& operator=(nullptr_t) noexcept {

@@ -115,6 +115,18 @@ string_view, memory, iterator: 301/305 (GCC, plus 1 XFAIL), 302/305 (Clang); the
 8 -> 805/925 (Clang); most remaining failures need missing headers or libstdc++ extensions
 (`char_traits<unsigned char>`, deprecated manipulator overloads, transitive C headers).
 
+C++26 utilities and diagnostics: `indirect`, `polymorphic` (`<memory>`, constexpr, allocator-aware),
+`<generator>` (`generator`, `pmr::generator`), `<debugging>` (core; runtime archives), `<contracts>`
+(core; GCC's layout, see DECISIONS §8), `<text_encoding>` (the full IANA registry of 2026-10-02,
+`environment()`, `locale::encoding()`), `<stacktrace>` (capture, ELF/DWARF symbolization, own
+demangler). Own suite indirect, polymorphic, debugging, text_encoding, stacktrace, optional:
+38 -> 56/57 on both compilers (stacktrace/format.pass.cpp needs `<format>`), clean under ASan
+(Clang). libstdc++ std/memory/{indirect,polymorphic} 2 -> 8, 24_iterators/range_generators 0 -> 11,
+19_diagnostics/debugging 0 -> 4, 18_support/contracts 0 -> 3 (GCC), 19_diagnostics/stacktrace 0 -> 1
+(GCC; the rest need formatter or -g), std/text_encoding 0 -> 1
+(runnable tests; the others use libstdc++'s allocator helpers or named locales); libc++
+text/text_encoding 0 -> 19/20.
+
 ## Freestanding
 `tools/check_freestanding.sh`: every core header compiles with `-ffreestanding -nostdlib -nostdinc
 -fno-exceptions -fno-rtti`; the smoke test links on x86_64-unknown-none-elf and
@@ -190,6 +202,15 @@ Deprecated and removed features are not implemented (`is_pod`, `is_trivial`, `al
   C library does (`0x0.000000000000001p-16385` is the smallest), so that both forms agree there.
 
 ## Known limitations and draft defects
+- `<stacktrace>`: no `formatter<stacktrace_entry>` / `formatter<basic_stacktrace>` (and no
+  `__cpp_lib_formatters`) until `<format>` lands. Symbolization reads ELF objects only and
+  needs the object file on disk: compressed debug sections, separate debug files
+  (`.gnu_debuglink`, build-id directories) and split DWARF are not read (the queries return ""
+  and 0; the function name then comes from the symbol tables). The demangler shows no
+  requires-clauses. GCC's own codegen reports an exception escaping a contract predicate with
+  `detection_mode::predicate_false` (it passes the unmodified violation object).
+- `<text_encoding>`: comp-name assumes an ASCII-compatible ordinary literal encoding.
+- `<contracts>`: Clang 23 has no contracts (`-fcontracts` is unknown); the header only declares.
 - Iostreams/locale: named locales other than "C", "POSIX", "C.UTF-8" and "" throw
   `runtime_error` (the environment's conventions are not supported); `codecvt<wchar_t, char>`
   is UTF-8 in the classic locale, so `encoding()` is 0 and wide file streams cannot seek by an
@@ -204,7 +225,7 @@ Deprecated and removed features are not implemented (`is_pod`, `is_trivial`, `al
   `<filesystem>` yet). Standard stream objects synchronized with stdio write character by
   character through `putc` (bulk writes through `fwrite`).
 - `<memory>`: no `atomic<shared_ptr<T>>` / `atomic<weak_ptr<T>>`, no execution-policy overloads of the specialized
-  algorithms, no `pointer_tag_pair`, `indirect`, `polymorphic`. shared_ptr reference counts use
+  algorithms, no `pointer_tag_pair`. shared_ptr reference counts use
   the `__atomic` builtins unconditionally (no single-threaded fast path). get_deleter identifies
   the deleter type by a per-type tag address (same shared-library caveat as `any`).
   make_shared of a multi-dimensional array of a non-trivial class type cannot be

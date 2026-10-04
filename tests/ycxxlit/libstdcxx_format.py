@@ -26,7 +26,10 @@ EFFECTIVE = {'hosted', 'cxx11_abi', 'gthreads', 'threads', 'pthread', 'std_alloc
 REQUIRES = {'require-gthreads', 'require-cstdint', 'require-string-conversions', 'require-normal-namespace',
             'require-normal-mode', 'require-effective-target', 'require-atomic-builtins',
             'require-atomic-cmpxchg-word', 'require-thread-fence', 'require-sleep', 'require-gthreads-timed',
-            'require-sched-yield', 'require-time'}
+            'require-sched-yield', 'require-time',
+            # <filesystem> (POSIX): symlinks, space, last_write_time, mkfifo
+            'require-filesystem-ts', 'require-target-fs-symlinks', 'require-target-fs-space',
+            'require-target-fs-lwt', 'require-mkfifo'}
 
 
 def eval_selector(sel):

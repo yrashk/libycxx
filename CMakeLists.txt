@@ -84,6 +84,8 @@ add_library(ycxx STATIC
   src/hosted/locale.cpp
   src/hosted/num.cpp
   src/hosted/time.cpp
+  # file systems
+  src/hosted/filesystem.cpp
   src/pal/posix/pal.c
 )
 set_target_properties(ycxx PROPERTIES EXPORT_NAME core)

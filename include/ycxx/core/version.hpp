@@ -333,3 +333,6 @@
 #define __cpp_lib_spanstream 202106L
 #define __cpp_lib_sstream_from_string_view 202306L
 #define __cpp_lib_syncbuf 201803L
+
+// <filesystem> (__cpp_lib_format_path waits for <format>)
+#define __cpp_lib_filesystem 201703L

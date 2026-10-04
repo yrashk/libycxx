@@ -127,4 +127,15 @@ int main() {
   return 0;
 }
 
-static_assert(all8_shifts());
+// Constant evaluation: every shift-count type and count as above, for a representative set of
+// 8-bit values (all bit positions set and clear, sign boundaries). The exhaustive all8_shifts()
+// runs at run time in main(); evaluating it here needs several million constant-evaluation steps,
+// beyond Clang's default limit.
+constexpr bool sample8_shifts() {
+  for (int x : {0x00, 0x01, 0x02, 0x10, 0x40, 0x55, 0x7f, 0x80, 0x81, 0xaa, 0xc3, 0xfe, 0xff})
+    if (!shifts_8<unsigned char>((unsigned char)x) || !shifts_8<signed char>((signed char)(x - 128)) ||
+        !shifts_8<signed char>((signed char)(unsigned char)x))
+      return false;
+  return true;
+}
+static_assert(sample8_shifts());

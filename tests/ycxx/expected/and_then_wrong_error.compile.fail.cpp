@@ -1,0 +1,9 @@
+// [expected.object.monadic]/3: "Mandates: U is a specialization of expected and
+// is_same_v<typename U::error_type, E> is true."
+#include <expected>
+#include <utility>
+
+void f() {
+  std::expected<int, long> e(1);
+  (void)e.and_then([](int) { return std::expected<int, int>(1); });
+}

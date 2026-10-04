@@ -432,11 +432,14 @@ inline constexpr bool fmt_is_bit_ref<ycxx::adl_free::bit_ref<Word>> = true;
 namespace std {
 
 // [format.range.fmtmap], [format.range.fmtset], [format.range.fmtstr]
+// (format_kind<R> is only asked of cv-unqualified non-reference types: its primary template must
+// not be instantiated.)
 template <ranges::input_range R, class charT>
-  requires(format_kind<R> != range_format::disabled) && formattable<ranges::range_reference_t<R>, charT>
+  requires same_as<R, remove_cvref_t<R>> && (format_kind<R> != range_format::disabled) &&
+           formattable<ranges::range_reference_t<R>, charT>
 struct formatter<R, charT> : ycxx::adl_free::fmt_range_default<format_kind<R>, R, charT> {};
 template <ranges::input_range R>
-  requires(format_kind<R> != range_format::disabled)
+  requires same_as<R, remove_cvref_t<R>> && (format_kind<R> != range_format::disabled)
 inline constexpr bool enable_nonlocking_formatter_optimization<R> = false;
 
 // [format.tuple]

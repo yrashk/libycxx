@@ -72,6 +72,15 @@
 // <any>
 #define __cpp_lib_any 201606L
 
+// <string_view>, <string> (char_traits)
+#define __cpp_lib_string_view 202403L
+#define __cpp_lib_constexpr_string_view 201811L
+#define __cpp_lib_freestanding_string_view 202311L
+#define __cpp_lib_freestanding_char_traits 202306L
+#define __cpp_lib_starts_ends_with 201711L
+#define __cpp_lib_string_contains 202011L
+#define __cpp_lib_string_subview 202506L
+
 // <bit>
 #define __cpp_lib_bit_cast 201806L
 #define __cpp_lib_bitops 202607L

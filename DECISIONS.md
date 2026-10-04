@@ -91,6 +91,14 @@ tooling.
 - `include/ycxx/pal.h`: C-linkage platform hooks (`ycxx_pal_allocate`, `_write`, `_abort`,
   `_clock_now`, ...). `src/pal/posix` implements them on top of libc.
 
+- **`std::mbstate_t` is core's own type.** The draft makes `mbstate_t` freestanding
+  ([cwchar.syn]), and `char_traits::state_type` names it, so core defines it without the C
+  library: an opaque, zero-initialisable struct with the C library's size and alignment (glibc
+  and musl: 8 bytes, 4-byte alignment). The hosted `<cwchar>`/`<cuchar>` `static_assert` that
+  layout and add `std::` overloads of the conversion functions taking `std::mbstate_t*`, which
+  forward to the C functions. The cost: `std::mbstate_t` and `::mbstate_t` are distinct types, so
+  a `std::mbstate_t` cannot be passed to the global `::mbrtowc` directly.
+
 ## 4. Error handling
 
 - Every library "throw" goes through one of two hooks in `ycxx/core/error.hpp`. Both take an

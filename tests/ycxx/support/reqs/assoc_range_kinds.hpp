@@ -25,6 +25,7 @@
 #pragma once
 #include <array>
 #include <cstddef>
+#include <flat_set>  // std::sorted_unique / sorted_equivalent, named for every container kind
 #include <iterator>
 #include <ranges>
 #include <tuple>
@@ -40,11 +41,23 @@ using namespace reqs::assoc;
 using reqs::sequence_range_kinds::HintedRange;
 using reqs::sequence_range_kinds::SizedInputRange;
 
+// sorted_unique / sorted_equivalent live in <flat_map> and <flat_set> ([flat.map.syn],
+// [flat.set.syn]); only the flat containers' tests instantiate sorted_tag, so the other
+// containers' tests do not depend on those headers.
+template <class X>
+constexpr auto sorted_tag();
+}  // namespace reqs::assoc_range_kinds
+#if __has_include(<flat_set>)
+#include <flat_set>
+namespace reqs::assoc_range_kinds {
 template <class X>
 constexpr auto sorted_tag() {
   if constexpr (is_multi<X>) return std::sorted_equivalent;
   else return std::sorted_unique;
 }
+}  // namespace reqs::assoc_range_kinds
+#endif
+namespace reqs::assoc_range_kinds {
 
 // X(from_range, rg) and, for the unordered containers, X(from_range, rg, n) as well.
 template <class X, class R>

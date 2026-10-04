@@ -20,6 +20,8 @@ CORE += ["ratio", "numbers", "cmath", "complex", "valarray"]
 # <atomic>: operations that are not lock-free and the waits use the runtime archive's tables
 # (libycxx.a and the freestanding archive).
 CORE += ["atomic", "stdatomic.h"]
+# <debugging>: defined in the runtime archives (is_debugger_present asks the PAL).
+CORE += ["debugging"]
 # Hosted: need an OS (through the PAL) or the C library.
 HOSTED = [
     "any", "cctype", "cerrno", "cfenv", "cinttypes", "clocale", "csetjmp", "csignal", "cstdarg", "cstdio",

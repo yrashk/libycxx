@@ -15,8 +15,8 @@ records where libstdc++ and the current draft disagree. The draft is the referen
 a failure below is a libstdc++ gap, a libstdc++ bug, or a compiler issue, never a reason to
 change a test. **After triage no failure was traced to a defect in a test.**
 
-Run of 2026-10-04, 1057 tests: GCC 922 pass / 134 fail / 1 xfail; Clang 905 pass / 148 fail /
-4 xfail. (Most of the difference to earlier runs is the container tests of `deque/` ...
+Run of 2026-10-04, 1173 tests: GCC 1017 pass / 155 fail / 1 xfail; Clang 999 pass / 170 fail /
+4 xfail (the 116 `<random>`/`<chrono>` tests added last: 95 / 94 pass). (Most of the difference to earlier runs is the container tests of `deque/` ...
 `hive/`, which mainly wait on C++26 constexpr containers in libstdc++.)
 The same suite against libycxx: see `STATUS.md`.
 
@@ -53,6 +53,17 @@ Legend: **G** fails with GCC + libstdc++, **C** with Clang + libstdc++.
 | `algorithm/clamp` | G | C | 3 comparisons (and 5 projections for `ranges::clamp`) with libstdc++'s default -O0 assertions, which re-check the precondition | [alg.clamp]/5: "At most two comparisons and three applications of the projection" |
 | `charconv/to_chars_float_plain_style` | G | C | `to_chars(1e5)` gives "1e+05": f/e chosen by the shorter result (the C++17 wording) | [charconv.to.chars]/7: f if \|value\| is in [l, u) (for double [1e-4, 1e16)), otherwise e |
 | `charconv/to_chars_float_general_shortest` | G | C | `to_chars(1234567.0, general)` gives "1.234567e+06", not the shorter "1234567" (interpretive: /2's smallest number of characters with the g specifier) | [charconv.to.chars]/2-3 |
+| `random/distribution_param_set` | G | C | after `d.param(p)`, `student_t`, `fisher_f` and `negative_binomial` keep producing values for the old parameters (`fisher_f`'s `d(g, p)` too) | [rand.req.dist] Table 128, d(g): distributed according to p(z \| {p}) with p = d.param() |
+| `random/negbin_p_one` | G | C | `negative_binomial_distribution(4, 1.0)` aborts in an internal `poisson_distribution(0)` assertion | [rand.dist.bern.negbin]/2: 0 < p <= 1 |
+| `random/swc_full_width` | G | C | `subtract_with_carry_engine` with w equal to the width of UIntType computes Y = X(i-s) - X(i-r) - c wrongly when it wraps (diverges at the 24th value after zero seeding) | [rand.eng.sub]/3 |
+| `random/mersenne_corner` |  | C | wrong values with r == w, and s, t, l == w == 64 (optimization-dependent: likely undefined shifts) | [rand.eng.mers]/4 allows r, s, t, l <= w |
+| `random/lcong_seed_seq` | G | C | for m = 2^32 + 15, seeding from a seed sequence requests 4 values instead of k + 3 = 5 | [rand.eng.lcong]/6: k = ceil(log2(m) / 32), q.generate(a+0, a+k+3) |
+| `random/philox_equality` | G | C | engines with equal key and counter compare unequal when the output buffer is exhausted (e.g. after `set_counter`) | [rand.req.eng] Table 127: x == y iff S_x = S_y |
+| `random/piecewise_linear_nw` | G | C | the `(nw, xmin, xmax, fw)` constructor evaluates fw at b_k + delta | [rand.dist.samp.plinear]/12: w_k = fw(b_k) |
+| `random/piecewise_constant_nw_zero` | G | C | with nw == 0 the intervals are {0, 1} instead of {xmin, xmax} | [rand.dist.samp.pconst]/11-12 |
+| `random/piecewise_float_vectors` | G | C | `intervals()`/`densities()` return `vector<double>` for float and long double | [rand.dist.samp.pconst], [rand.dist.samp.plinear]: `vector<result_type>` |
+| `chrono/tai_gps_noexcept` | G | C | `tai_clock`/`gps_clock` `to_utc`/`from_utc` are not noexcept | [time.clock.tai.overview], [time.clock.gps.overview] |
+| `random/uniform_int_char`, `random/uniform_int_const`, `random/lcong_uchar`, `random/ibits_uchar`, `random/seed_seq_generate_narrow`, `random/seed_seq_generate_signed`, `random/seed_seq_iterator_float`, `chrono/duration_rep_const` (compile.fail) | G | C | ill-formed template arguments / Mandates violations accepted (char or const IntType, unsigned char UIntType, narrow or signed seed_seq output, non-integer seed_seq input, `duration<const int>`) | [rand.req.genl]/1, [rand.util.seedseq]/4,7, [time.duration.general]/2 |
 | `inplace_vector/from_range_mandates` (compile.fail) | G | C | a constant-size range larger than N is accepted | [inplace.vector.cons]/9: Mandates: ranges::size(rg) <= N when it is a constant expression |
 
 ## 2. Missing in libstdc++ 16 (newer C++26 additions, constexpr, API revisions)
@@ -75,6 +86,8 @@ Legend: **G** fails with GCC + libstdc++, **C** with Clang + libstdc++.
 | `deque/*`, `list/*`, `forward_list/*`, `map/*`, `set/*`, `unordered_*/*`, `stack/*`, `queue/*`, `priority_queue/*` (most) | G | C | C++26 constexpr containers and adaptors (the runtime parts of these tests pass) |
 | `inplace_vector/*` (some) | G | C | constexpr `inplace_vector` of non-trivial types |
 | `hive/*` | G | C | `<hive>` |
+| `random/generate_canonical`, `random/uniform_real_upper_bound` | G | C | the C++26 `generate_canonical` ([rand.util.canonical]/2-3: attempts until S < x r^d, returns floor(S/x)/r^d); libstdc++ rounds S/R^k and retries on 1, looping forever for a generator that always returns its maximum |
+| `random/generate_random`, `random/version_macros` | G | C | `ranges::generate_random`, `__cpp_lib_ranges_generate_random` |
 | `map/lookup`, `unordered_map/lookup`, `flat_map/lookup` | G | C | the C++26 `lookup` members |
 | `version/*` | G | C | macros missing or with older values: `__cpp_lib_bitops` (202607L), `__cpp_lib_constexpr_bitset` (202207L), `__cpp_lib_expected` (202606L), `__cpp_lib_freestanding_optional` (202506L), `__cpp_lib_apply` (202603L), `__cpp_lib_initializer_list`, `__cpp_lib_freestanding_{iterator,tuple,utility,cwchar}`, `__cpp_lib_freestanding_operator_new` ([version.syn]/4), `__cpp_lib_atomic_min_max`, `__cpp_lib_barrier`, ... |
 

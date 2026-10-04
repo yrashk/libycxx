@@ -341,5 +341,6 @@
 #define __cpp_lib_constexpr_format 202511L
 #define __cpp_lib_print 202406L
 
-// <filesystem> (__cpp_lib_format_path waits for <format>)
+// <filesystem>
+#define __cpp_lib_format_path 202506L
 #define __cpp_lib_filesystem 201703L

@@ -27,11 +27,22 @@ inline constexpr nullopt_t nullopt{nullopt_t::tag{}};
 // [optional.bad.access]
 class bad_optional_access : public exception {
 public:
-  bad_optional_access() noexcept = default;
-  bad_optional_access(const bad_optional_access&) noexcept = default;
-  bad_optional_access& operator=(const bad_optional_access&) noexcept = default;
-  const char* what() const noexcept override { return "bad optional access"; }
+  constexpr bad_optional_access() noexcept {}
+  constexpr bad_optional_access(const bad_optional_access&) noexcept = default;
+  constexpr bad_optional_access& operator=(const bad_optional_access&) noexcept = default;
+  constexpr ~bad_optional_access() override {}
+  constexpr const char* what() const noexcept override { return "bad optional access"; }
 };
+
+} // namespace std
+
+namespace ycxx::detail {
+[[noreturn]] [[gnu::cold]] constexpr void throw_bad_optional_access() {
+  raise_with(ycxx_error_bad_optional_access, "std::bad_optional_access", [] { return std::bad_optional_access(); });
+}
+} // namespace ycxx::detail
+
+namespace std {
 
 template <class T>
 class optional;

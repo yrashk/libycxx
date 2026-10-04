@@ -7,11 +7,11 @@ namespace std {
 
 class bad_exception : public exception {
 public:
-  bad_exception() noexcept {}
-  bad_exception(const bad_exception&) noexcept = default;
-  bad_exception& operator=(const bad_exception&) noexcept = default;
-  ~bad_exception() noexcept override;
-  const char* what() const noexcept override;
+  constexpr bad_exception() noexcept {}
+  constexpr bad_exception(const bad_exception&) noexcept = default;
+  constexpr bad_exception& operator=(const bad_exception&) noexcept = default;
+  constexpr ~bad_exception() override {}
+  constexpr const char* what() const noexcept override { return "std::bad_exception"; }
 };
 
 using terminate_handler = void (*)();

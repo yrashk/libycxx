@@ -69,5 +69,9 @@ Deprecated and removed features are not implemented (`is_pod`, `is_trivial`, `al
 - Phase 2 remaining: any, function family (function, move_only_function,
   copyable_function, function_ref, bind, mem_fn, not_fn), span, string_view, bitset.
 - Then Phase 3 (containers, algorithms), Phase 4 (ranges, charconv, format, ...).
-- Constexpr exceptions (P3068): `std::exception` and the standard exception classes, including
-  `bad_optional_access::what()`, are not yet `constexpr` as the draft requires; to be done library-wide.
+- Constexpr exceptions (P3068): done for `exception`, `bad_alloc`, `bad_array_new_length`,
+  `bad_exception`, `bad_cast`, `bad_typeid`, `bad_optional_access`, `bad_variant_access`, and
+  `bad_expected_access`. All are thrown from headers through `raise_with`, so GCC can throw them
+  during constant evaluation; Clang 23 cannot throw during constant evaluation at all.
+  Still open: the `<stdexcept>` classes (their message storage lives in the hosted runtime), so
+  `__cpp_lib_constexpr_exceptions` is not yet defined.

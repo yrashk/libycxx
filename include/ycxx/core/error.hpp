@@ -11,6 +11,7 @@
 #pragma once
 
 #include <ycxx/config.hpp>
+#include <ycxx/core/exception_base.hpp>
 #include <ycxx/pal.h>
 
 extern "C" {
@@ -105,15 +106,14 @@ template <class Make>
 [[noreturn]] [[gnu::cold]] inline void throw_overflow_error(const char* w) { raise(ycxx_error_overflow_error, w); }
 [[noreturn]] [[gnu::cold]] inline void throw_range_error(const char* w) { raise(ycxx_error_range_error, w); }
 [[noreturn]] [[gnu::cold]] inline void throw_runtime_error(const char* w) { raise(ycxx_error_runtime_error, w); }
-[[noreturn]] [[gnu::cold]] inline void throw_bad_alloc() { raise(ycxx_error_bad_alloc, "std::bad_alloc"); }
-[[noreturn]] [[gnu::cold]] inline void throw_bad_array_new_length() {
-  raise(ycxx_error_bad_array_new_length, "std::bad_array_new_length");
+// Exception classes defined inline in core headers are thrown from the header through
+// raise_with, which also works in constant evaluation (P3068). Only the <stdexcept> classes,
+// whose message storage lives in the hosted runtime, go through raise() and throw_std.
+[[noreturn]] [[gnu::cold]] constexpr void throw_bad_alloc() {
+  raise_with(ycxx_error_bad_alloc, "std::bad_alloc", [] { return std::bad_alloc(); });
 }
-[[noreturn]] [[gnu::cold]] inline void throw_bad_optional_access() {
-  raise(ycxx_error_bad_optional_access, "std::bad_optional_access");
-}
-[[noreturn]] [[gnu::cold]] inline void throw_bad_variant_access() {
-  raise(ycxx_error_bad_variant_access, "std::bad_variant_access");
+[[noreturn]] [[gnu::cold]] constexpr void throw_bad_array_new_length() {
+  raise_with(ycxx_error_bad_array_new_length, "std::bad_array_new_length", [] { return std::bad_array_new_length(); });
 }
 [[noreturn]] [[gnu::cold]] inline void throw_bad_function_call() {
   raise(ycxx_error_bad_function_call, "std::bad_function_call");

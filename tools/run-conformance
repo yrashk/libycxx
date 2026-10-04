@@ -9,6 +9,7 @@ suite=$1; compiler=$2; shift 2
 case $suite in
   libcxx)    tests=${LIBCXX_TESTS:-/opt/src/llvm-project/libcxx/test} ;;
   libstdcxx) tests=${LIBSTDCXX_TESTS:-/opt/src/libstdcxx-testsuite} ;;
+  ycxx)      tests=$repo/tests/ycxx ;;
   *) echo "unknown suite $suite" >&2; exit 2 ;;
 esac
 dir=$repo/build/suite-$suite

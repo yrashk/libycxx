@@ -11,6 +11,11 @@ void implicit_default_init_test(const T&);
 template <class T>
 concept implicitly_default_constructible = requires { implicit_default_init_test<T>({}); };
 
+template <class T>
+inline constexpr bool is_pair_v = false;
+template <class A, class B>
+inline constexpr bool is_pair_v<std::pair<A, B>> = true;
+
 // ranges::subrange is excluded from pair's pair-like constructor ([pairs.pair]/14).
 template <class T>
 inline constexpr bool is_subrange = false;

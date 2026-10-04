@@ -5,3 +5,4 @@
 #include <ycxx/core/version.hpp>
 #include <ycxx/core/type_traits.hpp>
 #include <ycxx/core/functional_base.hpp>
+#include <ycxx/core/hash.hpp>

@@ -72,7 +72,9 @@
 #define __cpp_lib_is_scoped_enum 202011L
 #define __cpp_lib_is_swappable 201603L
 #define __cpp_lib_is_virtual_base_of 202406L
-#define __cpp_lib_is_within_lifetime 202306L
+#if YCXX_HAS_IS_WITHIN_LIFETIME
+#  define __cpp_lib_is_within_lifetime 202306L
+#endif
 #define __cpp_lib_logical_traits 201510L
 #define __cpp_lib_reference_from_temporary 202202L
 #define __cpp_lib_remove_cvref 201711L

@@ -120,5 +120,11 @@ under the same name. Otherwise it gets one alias template in `config.hpp`.
 3. **Fix, then commit again.** Review fixes go in a separate follow-up commit
    ("Review fixes for <commit>: ...") so history records what was wrong. Amend only for trivial
    fixes (typos, formatting), and only if the commit has not been pushed yet.
-4. **Gate before pushing:** `tools/check-all`, plus the affected conformance directories on
+4. **Our own "pure" test suite (`tests/ycxx`).** Tests for new behaviour (C++23/26-era features
+   and anything the two borrowed suites do not cover) are written by an independent author who
+   may read only the working draft and cppreference.com. The author never sees libc++ or
+   libstdc++ tests, or any implementation, libycxx's own included. A failing pure test is
+   treated as a library bug until the draft shows otherwise; tests are never weakened to fit
+   the library. Run with `tools/run-conformance ycxx gcc|clang`.
+5. **Gate before pushing:** `tools/check-all`, plus the affected conformance directories on
    both compilers and both suites.

@@ -17,10 +17,44 @@ HEADERS = {
     "cstdlib": ("stdlib.h", "div_t ldiv_t lldiv_t "
                 "abort atexit at_quick_exit _Exit exit quick_exit getenv system malloc calloc realloc free "
                 "aligned_alloc atof atoi atol atoll strtod strtof strtold strtol strtoll strtoul strtoull "
-                "mblen mbtowc wctomb mbstowcs wcstombs bsearch qsort rand srand div ldiv lldiv",
+                "mblen mbtowc wctomb mbstowcs wcstombs bsearch qsort rand srand",
                 """// abs, labs, llabs ([c.math.abs]): constexpr, shared with <cmath> (ycxx/core/math_abs.hpp).
-inline ldiv_t div(long a, long b) noexcept { return ::ldiv(a, b); }
-inline lldiv_t div(long long a, long long b) noexcept { return ::lldiv(a, b); }"""),
+// div, ldiv, lldiv are constexpr ([cstdlib.syn]), so they are not the C library's. Templates, as
+// abs is: under `using namespace std;` an unqualified call prefers the C library's ::div.
+template <class = void>
+constexpr div_t div(int numer, int denom) noexcept {
+  div_t r{};
+  r.quot = numer / denom;
+  r.rem = numer % denom;
+  return r;
+}
+template <class = void>
+constexpr ldiv_t div(long numer, long denom) noexcept {
+  ldiv_t r{};
+  r.quot = numer / denom;
+  r.rem = numer % denom;
+  return r;
+}
+template <class = void>
+constexpr lldiv_t div(long long numer, long long denom) noexcept {
+  lldiv_t r{};
+  r.quot = numer / denom;
+  r.rem = numer % denom;
+  return r;
+}
+template <class = void>
+constexpr ldiv_t ldiv(long numer, long denom) noexcept {
+  return std::div<>(numer, denom);
+}
+template <class = void>
+constexpr lldiv_t lldiv(long long numer, long long denom) noexcept {
+  return std::div<>(numer, denom);
+}
+// memalignment (C23 7.24.3.1): the largest power of two dividing the address; 0 for a null pointer.
+inline size_t memalignment(const void* p) noexcept {
+  auto v = reinterpret_cast<__UINTPTR_TYPE__>(p);
+  return static_cast<size_t>(v & (~v + 1));
+}"""),
     "cstring": ("string.h", "memcpy memmove strcpy strncpy strcat strncat memcmp strcmp strcoll strncmp strxfrm "
                 "memchr strchr strcspn strpbrk strrchr strspn strstr strtok memset strerror strlen", ""),
     "cstdio": ("stdio.h", "FILE fpos_t remove rename tmpfile tmpnam fclose fflush fopen freopen setbuf setvbuf "

@@ -45,13 +45,6 @@ inline constexpr bool is_optional<std::optional<T>> = true;
 template <class T>
 concept derived_from_optional = requires(const T& t) { []<class U>(const std::optional<U>&) {}(t); };
 
-// converts-from-any-cvref ([optional.ctor]/1)
-template <class T, class W>
-concept converts_from_any_cvref =
-    std::is_constructible_v<T, W&> || std::is_convertible_v<W&, T> || std::is_constructible_v<T, W> ||
-    std::is_convertible_v<W, T> || std::is_constructible_v<T, const W&> || std::is_convertible_v<const W&, T> ||
-    std::is_constructible_v<T, const W> || std::is_convertible_v<const W, T>;
-
 template <class T>
 concept valid_optional_type =
     (std::is_lvalue_reference_v<T> || (std::is_object_v<T> && !std::is_array_v<T>)) &&

@@ -6,3 +6,5 @@ content:scan-tree-dump | compiler-internals | checks GCC tree dumps (-fdump-tree
 20_util/variant/hash_abi\.cc | implementation-specific | asserts libstdc++'s sizeof(std::hash<variant>) layout
 20_util/variant/hash\.cc | implementation-specific | asserts hash<variant<int>> equals hash<int> for the same value; unspecified
 20_util/variant/version\.cc | implementation-specific | #undefs reserved feature macros and expects a re-include to redefine them
+20_util/expected/version\.cc | divergence | requires __cpp_lib_expected == 202211L; the current draft [version.syn] has 202606L
+20_util/expected/synopsis\.cc | divergence | requires __cpp_lib_expected == 202211L; the current draft [version.syn] has 202606L

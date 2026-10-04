@@ -2,7 +2,7 @@
 // priority_queue's default container, vector, is only named here (declared below without its
 // default argument, which vector's definition supplies), so this header does not depend on
 // vector's definition; <queue> includes <vector>. The formatter specializations
-// ([container.adaptors.format]) are not provided yet (no <format>).
+// ([container.adaptors.format]) are defined with <format> (ycxx/core/format_ranges.hpp).
 #pragma once
 
 #include <ycxx/core/algo_base.hpp>

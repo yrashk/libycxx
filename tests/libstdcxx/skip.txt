@@ -46,3 +46,7 @@ std/ranges/indices/1\.cc | implementation-specific | expects views::indices to r
 30_threads/condition_variable/members/103382\.cc | extension | calls pthread_cancel through a declaration <condition_variable> does not provide
 29_atomics/atomic_flag/test/(explicit|implicit)\.cc | extension | constructs atomic_flag from bool ({true}); [atomics.flag] has only the default constructor
 30_threads/this_thread/60421\.cc | extension | calls sched_yield/pthread_kill through declarations <thread> does not provide
+std/format/functions/format\.cc | implementation-specific | #undefs reserved feature macros and expects a re-include to redefine them
+std/format/formatter/concept\.cc | implementation-specific | expects formattable<T, char> false for a formatter accepting only format_context; fmt-iter-for<charT> is unspecified ([format.formattable]/1), and libycxx uses format_context's iterator
+std/format/string\.cc | implementation-specific | expects a width of 65536 to be rejected (libstdc++'s limit); the draft sets no limit below INT_MAX; also matches exception messages
+content:\bvisit_format_arg\b | deprecated | std::visit_format_arg is deprecated in C++26 ([depr.format.arg])

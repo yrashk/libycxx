@@ -4,7 +4,7 @@
 // A character sequence whose output fails (sputn writes fewer characters than asked, or a fill
 // character cannot be written) sets badbit, as num_put's failed() does
 // ([ostream.inserters.arithmetic]/2) and write() does ([ostream.unformatted]/5).
-// The ostream overloads of print / println / vprint_* are not provided yet (no <format>).
+// The ostream overloads of print / println / vprint_* are in ycxx/hosted/ostream_print.hpp.
 #pragma once
 
 #include <ycxx/core/exception.hpp>

@@ -105,3 +105,20 @@ under the same name. Otherwise it gets one alias template in `config.hpp`.
 | `__builtin_is_within_lifetime` | no | yes | `std::is_within_lifetime` usable on Clang only (constraint) |
 | `__builtin_is_corresponding_member` / `..._with_class` | yes | no | usable on GCC only (constraint) |
 | `__builtin_type_order` | yes | no | `std::type_order` via a portable fallback (TBD) |
+
+## 6. Development process
+
+1. **Small commits.** One logical change per commit, with conformance test-count deltas in the
+   message where relevant.
+2. **Review every commit (P0–P2).** After committing, review that commit's diff:
+   - **P0**: wrong behaviour, crashes, UB, build breaks, or a layering or policy violation
+     (core reaching hosted/libc, preprocessor policy).
+   - **P1**: conformance bugs (wrong constraints, `noexcept`, `explicit`, missing overloads),
+     ODR or ABI hazards, missing `constexpr` where the standard requires it.
+   - **P2**: notable quality issues: performance traps, dead code, misleading comments,
+     missing tests.
+3. **Fix, then commit again.** Review fixes go in a separate follow-up commit
+   ("Review fixes for <commit>: ...") so history records what was wrong. Amend only for trivial
+   fixes (typos, formatting), and only if the commit has not been pushed yet.
+4. **Gate before pushing:** `tools/check-all`, plus the affected conformance directories on
+   both compilers and both suites.

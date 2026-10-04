@@ -244,6 +244,15 @@
 // [version.syn]/4: 202306L when the default allocation functions are those of a hosted
 // implementation; 0 for libycxx-freestanding.a, whose defaults have no heap.
 #if YCXX_HOSTED
+// <thread> <stop_token> <mutex> <shared_mutex> <semaphore> <latch> <barrier>
+#  define __cpp_lib_jthread 201911L
+#  define __cpp_lib_thread_attributes 202606L
+#  define __cpp_lib_scoped_lock 201703L
+#  define __cpp_lib_shared_mutex 201505L
+#  define __cpp_lib_shared_timed_mutex 201402L
+#  define __cpp_lib_semaphore 201907L
+#  define __cpp_lib_latch 201907L
+#  define __cpp_lib_barrier 202302L
 #  define __cpp_lib_freestanding_operator_new 202306L
 // The freestanding parts of <cstring>/<cwchar> exist only as the hosted C library wrappers.
 #  define __cpp_lib_freestanding_cstring 202311L

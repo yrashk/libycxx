@@ -68,6 +68,7 @@ add_library(ycxx STATIC
   ${YCXX_CHARCONV_SOURCES}
   ${YCXX_ATOMIC_SOURCES}
   src/hosted/thread.cpp
+  src/hosted/future.cpp
   src/hosted/stdexcept.cpp
   src/hosted/memory_resource.cpp
   src/hosted/string.cpp

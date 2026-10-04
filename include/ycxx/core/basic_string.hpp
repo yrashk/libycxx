@@ -1404,7 +1404,7 @@ constexpr std::basic_string<charT> integer_to_string(T v) {
       u = static_cast<U>(U(0) - u);
     }
   }
-  charT buf[std::numeric_limits<U>::digits10 + 2];
+  [[indeterminate]] charT buf[std::numeric_limits<U>::digits10 + 2];
   charT* const end = buf + sizeof(buf) / sizeof(charT);
   charT* p = end;
   do {

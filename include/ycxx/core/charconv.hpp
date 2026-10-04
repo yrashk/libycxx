@@ -127,7 +127,7 @@ constexpr std::to_chars_result to_chars_integer(char* first, char* last, T value
       magnitude = static_cast<U>(U(0) - magnitude);
     }
   }
-  char buf[sizeof(U) * __CHAR_BIT__ + 1];
+  [[indeterminate]] char buf[sizeof(U) * __CHAR_BIT__ + 1];
   char* end = buf + sizeof buf;
   char* p = ycxx::detail::charconv_write_unsigned(end, magnitude, static_cast<unsigned>(base));
   if (negative)

@@ -1,9 +1,9 @@
-// [re.synopt], [re.regex]: icase matches case-insensitively; nosubs suppresses marked
-// sub-expressions (mark_count() is 0 and only [0] is stored); multiline makes ^ and $ match at
-// line boundaries (ECMAScript); flags() returns the options; basic, extended, awk, grep and
-// egrep select the POSIX grammars (e.g. basic uses \( \) and \{ \}, grep and egrep treat a
-// newline as alternation). The default is ECMAScript. assign() and operator= replace the
-// expression.
+// [re.synopt], [re.regex]: icase matches case-insensitively ([re.grammar]/14.1; ranges:
+// 14.2); nosubs suppresses marked sub-expressions (mark_count() is 0 and only [0] is stored);
+// multiline makes ^ and $ match at line boundaries (ECMAScript); flags() returns the options;
+// basic, extended, awk, grep and egrep select the POSIX grammars (e.g. basic uses \( \) and
+// \{ \}, grep and egrep treat a newline as alternation). The default is ECMAScript. assign()
+// and operator= replace the expression.
 #include <regex>
 #include <string>
 #include "check.hpp"
@@ -13,7 +13,14 @@ namespace rc = std::regex_constants;
 int main() {
   std::regex ic("hello", rc::icase);
   CHECK(std::regex_match("HeLLo", ic) && !std::regex_match("HeLLo", std::regex("hello")));
-  CHECK(std::regex_match("ABC", std::regex("[a-c]+", rc::icase)));
+  // [re.grammar]/14.2: a range c1-c2 is compared case-insensitively only through the collate
+  // algorithm (translate_nocase(c1/c2/c), then transform); without collate the rule is plain
+  // "c1 <= c && c <= c2", so icase alone does not fold range endpoints. With icase | collate,
+  // regex_traits<char>::translate_nocase is ctype::tolower ([re.traits]/5) and the "C" locale's
+  // transform preserves the character order ([locale.collate.virtuals]: transform orders as
+  // do_compare, a lexicographical comparison), so "ABC" is in [a-c].
+  CHECK(std::regex_match("ABC", std::regex("[a-c]+", rc::icase | rc::collate)));
+  CHECK(std::regex_match("abc", std::regex("[A-C]+", rc::icase | rc::collate)));
   CHECK((ic.flags() & rc::icase) == rc::icase);
   CHECK((std::regex("x").flags() & rc::ECMAScript) == rc::ECMAScript);
 

@@ -259,9 +259,34 @@
 #define __cpp_lib_function_ref 202604L
 #define __cpp_lib_common_reference_wrapper 202302L
 #define __cpp_lib_constexpr_typeinfo 202106L
+// <atomic> <stdatomic.h>
+#define __cpp_lib_atomic_flag_test 201907L
+#define __cpp_lib_atomic_float 201711L
+#define __cpp_lib_atomic_is_always_lock_free 201603L
+#define __cpp_lib_atomic_lock_free_type_aliases 201907L
+#define __cpp_lib_atomic_min_max 202506L
+#define __cpp_lib_atomic_reductions 202506L
+#define __cpp_lib_atomic_ref 202603L
+#define __cpp_lib_atomic_value_initialization 201911L
+#define __cpp_lib_atomic_wait 201907L
+#define __cpp_lib_constexpr_atomic 202411L
+#define __cpp_lib_atomic_shared_ptr 201711L
+#define __cpp_lib_stdatomic_h 202011L
 // [version.syn]/4: 202306L when the default allocation functions are those of a hosted
 // implementation; 0 for libycxx-freestanding.a, whose defaults have no heap.
 #if YCXX_HOSTED
+// <thread> <stop_token> <mutex> <shared_mutex> <semaphore> <latch> <barrier>
+#  define __cpp_lib_jthread 201911L
+#  define __cpp_lib_thread_attributes 202606L
+#  define __cpp_lib_scoped_lock 201703L
+#  define __cpp_lib_shared_mutex 201505L
+#  define __cpp_lib_shared_timed_mutex 201402L
+#  define __cpp_lib_semaphore 201907L
+#  define __cpp_lib_latch 201907L
+#  define __cpp_lib_barrier 202302L
+// <rcu> <hazard_pointer>
+#  define __cpp_lib_rcu 202306L
+#  define __cpp_lib_hazard_pointer 202606L
 #  define __cpp_lib_freestanding_operator_new 202306L
 // The freestanding parts of <cstring>/<cwchar> exist only as the hosted C library wrappers.
 #  define __cpp_lib_freestanding_cstring 202311L
@@ -315,3 +340,6 @@
 #define __cpp_lib_format_uchar 202311L
 #define __cpp_lib_constexpr_format 202511L
 #define __cpp_lib_print 202406L
+
+// <filesystem> (__cpp_lib_format_path waits for <format>)
+#define __cpp_lib_filesystem 201703L

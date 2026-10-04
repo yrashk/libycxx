@@ -508,9 +508,10 @@ public:
   constexpr size_type length() const noexcept { return size_; }
   constexpr size_type max_size() const noexcept {
     // One element of every allocation holds the terminator; pointer differences over the string
-    // must be representable.
+    // must be representable, and no object is larger than PTRDIFF_MAX bytes.
     const size_type by_alloc = alloc_traits::max_size(alloc_);
-    const auto diff_max = static_cast<make_unsigned_t<difference_type>>(numeric_limits<difference_type>::max());
+    const auto diff_max = static_cast<make_unsigned_t<difference_type>>(numeric_limits<difference_type>::max()) /
+                          sizeof(charT);
     const size_type by_diff = diff_max < numeric_limits<size_type>::max() ? static_cast<size_type>(diff_max)
                                                                           : numeric_limits<size_type>::max();
     return (by_alloc < by_diff ? by_alloc : by_diff) - 1;

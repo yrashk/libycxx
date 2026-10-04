@@ -516,8 +516,10 @@ public:
   [[nodiscard]] constexpr bool empty() const noexcept { return first_ == last_; }
   constexpr size_type size() const noexcept { return static_cast<size_type>(last_ - first_); }
   constexpr size_type max_size() const noexcept {
+    // No object is larger than PTRDIFF_MAX bytes.
     const size_type by_alloc = alloc_traits::max_size(alloc_);
-    const auto diff_max = static_cast<make_unsigned_t<difference_type>>(numeric_limits<difference_type>::max());
+    const auto diff_max =
+        static_cast<make_unsigned_t<difference_type>>(numeric_limits<difference_type>::max()) / sizeof(T);
     return diff_max < by_alloc ? static_cast<size_type>(diff_max) : by_alloc;
   }
   constexpr size_type capacity() const noexcept { return static_cast<size_type>(cap_ - first_); }

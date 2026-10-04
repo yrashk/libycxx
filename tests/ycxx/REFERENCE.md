@@ -15,7 +15,9 @@ records where libstdc++ and the current draft disagree. The draft is the referen
 a failure below is a libstdc++ gap, a libstdc++ bug, or a compiler issue, never a reason to
 change a test. **After triage no failure was traced to a defect in a test.**
 
-Run of 2026-10-04, 1413 tests: GCC 1238 pass / 174 fail / 1 xfail; Clang 1219 pass / 190 fail / 4 xfail.
+Run of 2026-10-04, 1768 tests: GCC 1527 pass / 240 fail / 1 xfail; Clang 1505 pass / 256 fail / 7 xfail
+(threaded tests rerun serially: under `-j32` on 4 cores `stmt_dcl/static_local_concurrent_once` and
+`stop_token/stop_callback_thread` occasionally exceed their time limits).
 The same suite against libycxx: see `STATUS.md`.
 
 Legend: **G** fails with GCC + libstdc++, **C** with Clang + libstdc++.
@@ -105,6 +107,14 @@ Legend: **G** fails with GCC + libstdc++, **C** with Clang + libstdc++.
 | `unordered_map/fancy_pointer_node_handle`, `unordered_set/fancy_pointer_node_handle` | G | C | `extract`/`insert(nh)`/`merge` do not compile with a class-type allocator pointer | [container.reqmts]/64 Note 2, [container.node.overview] |
 | `atomic/float_long_double_store_rmw`, `atomic/float_infinity` | G | C | read-modify-write on `atomic<long double>` (GCC: after a store) and `atomic_ref<long double>` (Clang: non-zero padding) never returns: the compare-exchange loop compares the 80-bit type's padding | [atomics.types.float]/6-8; [basic.types.general]/4 (padding is not part of the value) |
 | `semaphore/try_acquire_user_clock` | G | C | `try_acquire_until` calls terminate when the clock throws | [thread.sema.cnt]: not noexcept, "Throws: Timeout-related exceptions"; [thread.req.timing]/8 |
+| `regex/custom_traits` | G | C | `basic_regex::imbue` never calls the traits object's `imbue` | [re.regex.locale]/1: "Returns the result of traits_inst.imbue(loc)" |
+| `regex/ecmascript_semantics` | G | C | captures of a quantified group are not reset per iteration (`(z)((a+)?(b+)?(c))*` on "zaacbbbcac" leaves group 4 matched, line 47); `(a*)*` on "b" gives a matched empty group 1; a backreference to a group that did not participate fails instead of matching empty (`(a)?b\1` vs "b"; ECMA-262's `(.*?)a(?!(a+)b\2c)\2(.*)` example finds no match) | [re.grammar]/14: matching as in ECMA-262 (RepeatMatcher step 4 clears the captures; BackreferenceMatcher: an undefined capture matches empty; the results are ECMA-262's own examples) |
+| `regex/bre_leading_star` | G | C | in `basic` (and `grep`), `*` at the start of the expression or of `\(`...`\)` throws `regex_error` ("Mismatched '(' and ')'") instead of matching a literal `*` | [re.synopt] Table 118 (POSIX BRE, XBD 9.3.3: "The asterisk is special except when used ... as the first character of an entire BRE") |
+| `regex/posix_subexpression_longest` | G | C | `(a\|ab)(c\|bcd)(d*)` on "abcd" with `extended`/`awk`/`egrep` gives $1 = "a", $2 = "bcd" (the overall match "abcd" is right) | [re.synopt] Table 118, POSIX XBD 9.1: "each subpattern, from left to right, shall match the longest possible string" |
+| `simd/loadstore` | G |  | at -O0, `partial_store(v, p, n)` / `partial_store(v, first, last)` with n < size() store only element 0 (correct with -O2; line 64) | [simd.loadstore]/19: data(r)[i] = v[i] for every i < ranges::size(r) |
+| `simd/disabled` | G |  | `basic_mask<3, Abi>` (no vectorizable type has size 3) is a hard error (static_assert) instead of a disabled specialization with deleted special members | [simd.mask.overview]/1.1 and /1 (disabled specializations are complete with deleted default constructor, destructor, copy operations) |
+| `simd/mask_to_vec_explicit` | G |  | the explicit conversion of `mask<int, 6>` to `vec<short, 6>`, `vec<unsigned char, 6>` does not compile (an internal `_DataType0` is missing) | [simd.mask.conv]/1-2 |
+| `simd/permute` | G |  | static `permute` of a `basic_mask` does not compile (`_S_static_permute` missing); the vec cases work | [simd.permute.static] (both overloads) |
 ## 2. Missing in libstdc++ 16 (newer C++26 additions, constexpr, API revisions)
 
 | Test(s) | G | C | Missing |
@@ -149,6 +159,9 @@ Legend: **G** fails with GCC + libstdc++, **C** with Clang + libstdc++.
 | `complex/constexpr_all_float_types` | G | C | constexpr `abs` and the other complex functions (P1383) |
 | `priority_queue/custom_compare`, `stdexcept/constexpr_library_throws_cxx26_containers` | G | C | constexpr container adaptors and `deque` |
 
+| `simd/iota`, `simd/range_ctor_mask`, `simd/ctor_constraints`, `simd/reductions_scalar`, `simd/permute_dynamic`, `simd/compress_expand`, `simd/gather_scatter`, `simd/math`, `simd/bit`, `simd/complex` | G | C | parts of `<simd>`: `simd::iota`, the masked range constructor, the scalar `reduce`/`reduce_min`/`reduce_max` overloads, `v[indices]` and dynamic permute of masks, `compress`/`expand`, `unchecked_gather_from`/`partial_scatter_to` etc., the `<cmath>` and `<bit>` overloads, `vec<complex<T>>` (Clang: no `<simd>` at all, §3) |
+| `contracts/synopsis`, `contracts/observe` | G |  | `contract_violation::detection_mode()` (only a private member); also `invoke_default_contract_violation_handler` is `noexcept` (allowed, [res.on.exception.handling]/5) |
+| `linalg/views_solves` | G | C | `<linalg>` |
 ## 3. Differences between GCC and Clang with the same libstdc++
 
 These pass with GCC and fail with Clang; libstdc++ makes the feature depend on the compiler, or
@@ -169,6 +182,8 @@ Clang rejects code GCC accepts.
 | `complex/arithmetic`, `complex/literals` | libstdc++'s compound operators use `__real__`/`__imag__`, which Clang cannot constant-evaluate ([complex.member.ops]: constexpr) |
 | `cmath/constexpr_raising_call`, `cmath/constexpr_invalid_call` (compile.fail) | fail on the control line too: `log(1.0)`, `sqrt(4.0)` are not constexpr with Clang |
 | `algorithm/adl_incomplete_holder` | GCC performs argument-dependent lookup for an unqualified `__builtin_memmove` call inside libstdc++, which instantiates `Holder<Incomplete>` (reproduced without any library; [contents]/3 forbids such lookups) |
+| `simd/*` | `std::simd` is not declared with Clang (libstdc++'s `<simd>` is GCC-only); the `simd/*_mandates` compile.fail tests then pass with Clang for that reason, not the intended one |
+| `contracts/synopsis` | without contract support `<contracts>` declares nothing with Clang; `contracts/observe`, `contracts/enforce_throw` (`-fcontracts`) and `meta/*` (`-freflection`) are XFAIL-COMPILER: clang (Clang 23 has neither contracts nor reflection) |
 
 ## 4. C library headers
 

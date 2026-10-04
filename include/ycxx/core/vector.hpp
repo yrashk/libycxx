@@ -354,11 +354,23 @@ private:
     return begin() + static_cast<difference_type>(off);
   }
   // Inserts at index off < size() with spare capacity, from a value that is not an element.
+  // Element moves by assignment are memmove for trivially copyable elements (outside constant
+  // evaluation): the loops below are what they replace.
+  static constexpr bool memmove_assign = is_trivially_copyable_v<T> && is_trivially_move_assignable_v<T>;
+
   constexpr void shift_in(size_type off, T&& x) {
     T* const p = first_ + off;
     alloc_traits::construct(alloc_, last_, static_cast<T&&>(last_[-1]));
     T* const old_last = last_;
     ++last_;
+    if constexpr (memmove_assign) {
+      if !consteval {
+        __builtin_memmove(static_cast<void*>(p + 1), static_cast<const void*>(p),
+                          static_cast<size_t>(old_last - 1 - p) * sizeof(T));
+        *p = static_cast<T&&>(x);
+        return;
+      }
+    }
     for (T* d = old_last - 1; d != p; --d)
       *d = static_cast<T&&>(d[-1]);
     *p = static_cast<T&&>(x);
@@ -774,10 +786,18 @@ public:
     T* const q = mut(last);
     if (p != q) {
       T* d = p;
-      for (T* s = q; s != last_; ++s) {
-        *d = static_cast<T&&>(*s);
-        ++d;
+      if constexpr (memmove_assign) {
+        if !consteval {
+          const auto n = static_cast<size_t>(last_ - q);
+          __builtin_memmove(static_cast<void*>(p), static_cast<const void*>(q), n * sizeof(T));
+          d = p + n;
+        }
       }
+      if (d == p)
+        for (T* s = q; s != last_; ++s) {
+          *d = static_cast<T&&>(*s);
+          ++d;
+        }
       destroy_range(d, last_);
       last_ = d;
     }

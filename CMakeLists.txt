@@ -69,6 +69,8 @@ add_library(ycxx STATIC
   ${YCXX_ATOMIC_SOURCES}
   src/hosted/thread.cpp
   src/hosted/future.cpp
+  src/hosted/rcu.cpp
+  src/hosted/hazard_pointer.cpp
   src/hosted/stdexcept.cpp
   src/hosted/memory_resource.cpp
   src/hosted/string.cpp

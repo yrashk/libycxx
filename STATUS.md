@@ -455,6 +455,22 @@ Deprecated and removed features are not implemented (`is_pod`, `is_trivial`, `al
   overloads taking a BinaryDivideOp exclude mdspan arguments, otherwise `triangular_matrix_vector_solve(A,
   t, d, b, x)` (and the matrix solves) would be ambiguous with the in-place overload. Neither
   external suite has linalg tests.
+- `<simd>` (core; the `<cmath>` overloads call libm at run time): everything in [simd] of the
+  current draft (P1928 with the C++26 follow-ups: `vec`/`mask`/`basic_vec`/`basic_mask`,
+  `unchecked_`/`partial_` loads, stores, gathers and scatters, flags, static/dynamic/mask
+  permutes, `chunk`/`cat`, `iota`, `vec<complex<T>>`, the `<bit>` and `<cmath>` overloads and their
+  using-declarations in `std`), constexpr where the draft says; `__cpp_lib_simd`, `_bitops`,
+  `_complex`, `_permutations`. Representation in DECISIONS §10 (vector-extension chunks sized by
+  the enabled registers; codegen: `vec<float, 4>` `a * b` is one `mulps`). Own suite simd: 22/24
+  on both compilers, also under ASan (Clang); the two failures are test defects: `iota` multiplies
+  `vec<short, 9>` by the int literal 2, whose broadcast is not value-preserving, so no `operator*`
+  is viable ([simd.ctor]/2.2); `compress_expand` expects `compress(mk, M(0b10101010u), false)[0]`
+  false, but the first selected index is 1 and `mk[1]` is true ([simd.permute.mask]/3-4).
+  libstdc++ std/simd (24 tests) is skipped: its harness uses libstdc++-internal names; libc++ has
+  only the Parallelism TS's `experimental/simd`. Limitations: no implicit conversions to the
+  compiler's vector types (recommended practice only); widths that are not powers of two are
+  element arrays (no padded vectors); the mathematical, bit and complex functions other than
+  `fabs`/`abs` apply the scalar function element by element; `uninit_element` gives `T()`.
 - `<hive>` (core; only the constructors without elements and the limit queries are constexpr,
   as specified): element blocks with a 16-bit jump-counting skipfield and per-block free lists of
   erased runs, so insertion, erasure and iteration are O(1); blocks are numbered for O(1)

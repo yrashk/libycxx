@@ -16,6 +16,8 @@ CORE += ["deque", "list", "forward_list", "stack", "queue"]
 CORE += ["map", "set", "flat_map", "flat_set"]
 CORE += ["unordered_map", "unordered_set", "hive"]
 CORE += ["mdspan", "linalg"]
+# <simd>: the mathematical functions need libm at run time, like <cmath>.
+CORE += ["simd"]
 # Numerics (<cmath>: see DECISIONS §3; the run-time calls of its functions need libm).
 CORE += ["ratio", "numbers", "cmath", "complex", "valarray"]
 # <atomic>: operations that are not lock-free and the waits use the runtime archive's tables

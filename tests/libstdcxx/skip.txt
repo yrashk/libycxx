@@ -35,6 +35,7 @@ std/ranges/conv/version\.cc | implementation-specific | #undefs a reserved featu
 std/ranges/adaptors/detail/copyable_box\.cc | extension | tests libstdc++'s internal std::ranges::__detail::__box
 std/ranges/repeat/1\.cc | extension | uses libstdc++'s internal views::__detail names
 std/ranges/indices/1\.cc | implementation-specific | expects views::indices to reject IOTA-DIFF-T(long long); libycxx uses __int128 there, which is integer-like and indices accepts
+std/simd/ | extension | every test uses libstdc++-internal names: std::simd::_UInt, __vec_builtin, __simd_vec_type (test_setup.h), _Abi_t/_AbiVariant, __deduced_vec_t; they also need the x86 effective target
 29_atomics/atomic/lwg3220\.cc | removed | std::atomic_store for shared_ptr; the atomic_* free functions for shared_ptr were removed in C++26 (P2869)
 29_atomics/atomic_integral/wait_notify\.cc | extension | names ::int8_t etc. after including only <atomic>
 30_threads/recursive_timed_mutex/try_lock_for/2\.cc | extension | names ::int64_t after including only <mutex>/<chrono>

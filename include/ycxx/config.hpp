@@ -229,6 +229,15 @@ inline constexpr char literal_encoding[] = __GNUC_EXECUTION_CHARSET_NAME;
 #else
 inline constexpr char literal_encoding[] = "";
 #endif
+// The widest vector register <simd>'s native ABI uses, in bytes: 64 with AVX-512, 32 with AVX,
+// else 16 (SSE2, NEON, and the generic lowering of other targets).
+#if defined(__AVX512F__)
+inline constexpr int simd_register_bytes = 64;
+#elif defined(__AVX__)
+inline constexpr int simd_register_bytes = 32;
+#else
+inline constexpr int simd_register_bytes = 16;
+#endif
 // FLT_EVAL_METHOD (<cfloat>), which selects float_t and double_t (<cmath>).
 inline constexpr int flt_eval_method = __FLT_EVAL_METHOD__;
 inline constexpr unsigned pointer_bits = __SIZEOF_POINTER__ * __CHAR_BIT__;

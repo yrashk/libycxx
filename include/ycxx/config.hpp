@@ -124,6 +124,19 @@
 #else
 #  define YCXX_HAS_BFLOAT16_T 0
 #endif
+// <atomic>'s ATOMIC_*_LOCK_FREE macros must be usable in #if: the compiler's answers, which match
+// atomic<T>::is_always_lock_free (ycxx/core/atomic_base.hpp asks __atomic_always_lock_free).
+#define YCXX_ATOMIC_BOOL_LOCK_FREE __GCC_ATOMIC_BOOL_LOCK_FREE
+#define YCXX_ATOMIC_CHAR_LOCK_FREE __GCC_ATOMIC_CHAR_LOCK_FREE
+#define YCXX_ATOMIC_CHAR8_T_LOCK_FREE __GCC_ATOMIC_CHAR8_T_LOCK_FREE
+#define YCXX_ATOMIC_CHAR16_T_LOCK_FREE __GCC_ATOMIC_CHAR16_T_LOCK_FREE
+#define YCXX_ATOMIC_CHAR32_T_LOCK_FREE __GCC_ATOMIC_CHAR32_T_LOCK_FREE
+#define YCXX_ATOMIC_WCHAR_T_LOCK_FREE __GCC_ATOMIC_WCHAR_T_LOCK_FREE
+#define YCXX_ATOMIC_SHORT_LOCK_FREE __GCC_ATOMIC_SHORT_LOCK_FREE
+#define YCXX_ATOMIC_INT_LOCK_FREE __GCC_ATOMIC_INT_LOCK_FREE
+#define YCXX_ATOMIC_LONG_LOCK_FREE __GCC_ATOMIC_LONG_LOCK_FREE
+#define YCXX_ATOMIC_LLONG_LOCK_FREE __GCC_ATOMIC_LLONG_LOCK_FREE
+#define YCXX_ATOMIC_POINTER_LOCK_FREE __GCC_ATOMIC_POINTER_LOCK_FREE
 // Clang's predefined int_fast16/32 types disagree with glibc on 64-bit Linux (glibc: long).
 // The <cstdint> limit macros must be usable in #if, so this is a preprocessor switch.
 #if defined(__clang__) && defined(__gnu_linux__) && __SIZEOF_POINTER__ == 8

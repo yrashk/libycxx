@@ -227,6 +227,20 @@
 #define __cpp_lib_function_ref 202604L
 #define __cpp_lib_common_reference_wrapper 202302L
 #define __cpp_lib_constexpr_typeinfo 202106L
+// <ratio> <atomic> <stdatomic.h>
+#define __cpp_lib_ratio 202306L
+#define __cpp_lib_freestanding_ratio 202306L
+#define __cpp_lib_atomic_flag_test 201907L
+#define __cpp_lib_atomic_float 201711L
+#define __cpp_lib_atomic_is_always_lock_free 201603L
+#define __cpp_lib_atomic_lock_free_type_aliases 201907L
+#define __cpp_lib_atomic_min_max 202506L
+#define __cpp_lib_atomic_reductions 202506L
+#define __cpp_lib_atomic_ref 202603L
+#define __cpp_lib_atomic_value_initialization 201911L
+#define __cpp_lib_atomic_wait 201907L
+#define __cpp_lib_constexpr_atomic 202411L
+#define __cpp_lib_stdatomic_h 202011L
 // [version.syn]/4: 202306L when the default allocation functions are those of a hosted
 // implementation; 0 for libycxx-freestanding.a, whose defaults have no heap.
 #if YCXX_HOSTED

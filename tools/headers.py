@@ -13,6 +13,9 @@ CORE += ["algorithm", "numeric", "execution", "ranges"]
 CORE += ["scoped_allocator"]
 CORE += ["vector", "inplace_vector"]
 CORE += ["deque", "list", "forward_list", "stack", "queue"]
+# <atomic>: operations that are not lock-free and the waits use the runtime archive's tables
+# (libycxx.a and the freestanding archive).
+CORE += ["ratio", "atomic", "stdatomic.h"]
 # Hosted: need an OS (through the PAL) or the C library.
 HOSTED = [
     "any", "cctype", "cerrno", "cfenv", "cinttypes", "clocale", "csetjmp", "csignal", "cstdarg", "cstdio",
@@ -22,6 +25,8 @@ HOSTED = [
 # memory_resource.hpp, which <string> includes); the global resources, the pools and
 # monotonic_buffer_resource are defined in the hosted runtime.
 HOSTED += ["memory_resource"]
+# <chrono>: the arithmetic is core (ycxx/core/chrono_base.hpp), the clocks need the OS.
+HOSTED += ["chrono"]
 # Language-support headers whose *declarations* are core but which need the C++ ABI runtime
 # (libycxx-abi) to be used with exceptions/RTTI enabled.
 ABI = ["exception", "stdexcept", "typeinfo", "typeindex"]

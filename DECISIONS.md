@@ -425,3 +425,23 @@ under the same name. Otherwise it gets one alias template in `config.hpp`.
 - **`generator` nests without a stack of handles**: the promises of recursively yielded
   generators link to their parent and the root, and transfers between them are symmetric, so
   recursion depth costs no stack and no allocation besides the frames.
+
+## 10. Data-parallel types (`<simd>`)
+
+- **ABI tags name the width, not the element type.** `deduce-abi-t<T, N>` is
+  `ycxx::adl_free::simd_abi<N, R>` for every vectorizable `T` and `N` in [1, 64]; `native-abi<T>`
+  is `simd_abi<R / sizeof(T), R>` (at least 1), where R is `cfg::simd_register_bytes` (16; 32 with
+  `__AVX__`; 64 with `__AVX512F__`, detected in `config.hpp`). So masks of equal element size and
+  width are one type and `rebind_t`/`resize_t` swap the width only. The element type picks the
+  representation:
+  power-of-two widths of arithmetic types are GCC/Clang vector-extension chunks (`vector_size`;
+  one vector up to R bytes, else an array of R-byte vectors, so no by-value vector wider than the
+  enabled registers crosses a call and no -Wpsabi ABI change arises); other widths and
+  `complex<T>` are element arrays. Every layout has the object representation of `T[N]`, so
+  constant evaluation reaches the elements through `bit_cast` (GCC 16 cannot assign to a vector
+  element in a constant expression). A mask stores integer-from<Bytes> elements (64-bit for
+  16-byte complex elements) that are all ones or zero, in the layout of a vec of that integer, so
+  comparisons, `select` and the mask reductions are chunk operations. R is part of the tag
+  because the layout depends on it: translation units built with different register-width flags
+  get distinct types (and mangled names) rather than one type with two layouts; only the tags of
+  the translation unit's own R are enabled.

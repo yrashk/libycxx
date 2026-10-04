@@ -638,9 +638,16 @@ void recursive_directory_iterator::advance(error_code& ec, path* where) {
   if (pending_) {
     bool through_link = false;
     if (st.descend(through_link)) {
-      int flags = O_RDONLY | O_DIRECTORY | O_CLOEXEC | (through_link ? 0 : O_NOFOLLOW);
-      std::string name = st.entry.path().filename().native();
-      int fd = ::openat(::dirfd(st.stack.back().dir), name.c_str(), flags);
+      // A directory entry that is not a symbolic link is opened relative to its parent's
+      // descriptor without following links, so a directory swapped for a link is never entered.
+      // A symbolic link followed on request is opened by its whole path: /21.2 recurses into
+      // (*this)->path() once is_directory((*this)->status()) holds, so its resolution, and its
+      // limit on symbolic links, is that path's. A loop (d/self -> .) then ends with ELOOP,
+      // which status() reports as an error (file_type::none, [fs.op.status]/6.1.3).
+      int fd = through_link
+                 ? ::open(st.entry.path().c_str(), O_RDONLY | O_DIRECTORY | O_CLOEXEC)
+                 : ::openat(::dirfd(st.stack.back().dir), st.entry.path().filename().c_str(),
+                            O_RDONLY | O_DIRECTORY | O_CLOEXEC | O_NOFOLLOW);
       DIR* d = fd < 0 ? nullptr : open_dir_fd(fd);
       if (d != nullptr) {
         try {
@@ -653,7 +660,7 @@ void recursive_directory_iterator::advance(error_code& ec, path* where) {
         int e = errno;
         // A directory that is gone or was replaced by a non-directory since it was listed is
         // simply not entered; a permission error may be skipped on request.
-        bool skip = e == ENOENT || e == ENOTDIR || e == ELOOP ||
+        bool skip = e == ENOENT || e == ENOTDIR || (e == ELOOP && !through_link) ||
                     (e == EACCES && st.has(directory_options::skip_permission_denied));
         if (!skip) {
           ec = errno_code(e);

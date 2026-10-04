@@ -19,792 +19,1035 @@ namespace std::simd {
 template <ycxx::detail::math_floating_point V>
 constexpr ycxx::detail::deduced_vec_t<V> acos(const V& x) {
   using D = ycxx::detail::deduced_vec_t<V>;
-  return ycxx::detail::simd_map<D>([](const auto&... a) { return std::acos(a...); }, D(x));
+  return ycxx::detail::simd_map<D>(
+      [](const auto&... a) { return std::acos(a...); }, D(x));
 }
 template <ycxx::detail::math_floating_point V>
 constexpr ycxx::detail::deduced_vec_t<V> asin(const V& x) {
   using D = ycxx::detail::deduced_vec_t<V>;
-  return ycxx::detail::simd_map<D>([](const auto&... a) { return std::asin(a...); }, D(x));
+  return ycxx::detail::simd_map<D>(
+      [](const auto&... a) { return std::asin(a...); }, D(x));
 }
 template <ycxx::detail::math_floating_point V>
 constexpr ycxx::detail::deduced_vec_t<V> atan(const V& x) {
   using D = ycxx::detail::deduced_vec_t<V>;
-  return ycxx::detail::simd_map<D>([](const auto&... a) { return std::atan(a...); }, D(x));
+  return ycxx::detail::simd_map<D>(
+      [](const auto&... a) { return std::atan(a...); }, D(x));
 }
 template <ycxx::detail::math_floating_point V>
 constexpr ycxx::detail::deduced_vec_t<V> cos(const V& x) {
   using D = ycxx::detail::deduced_vec_t<V>;
-  return ycxx::detail::simd_map<D>([](const auto&... a) { return std::cos(a...); }, D(x));
+  return ycxx::detail::simd_map<D>(
+      [](const auto&... a) { return std::cos(a...); }, D(x));
 }
 template <ycxx::detail::math_floating_point V>
 constexpr ycxx::detail::deduced_vec_t<V> sin(const V& x) {
   using D = ycxx::detail::deduced_vec_t<V>;
-  return ycxx::detail::simd_map<D>([](const auto&... a) { return std::sin(a...); }, D(x));
+  return ycxx::detail::simd_map<D>(
+      [](const auto&... a) { return std::sin(a...); }, D(x));
 }
 template <ycxx::detail::math_floating_point V>
 constexpr ycxx::detail::deduced_vec_t<V> tan(const V& x) {
   using D = ycxx::detail::deduced_vec_t<V>;
-  return ycxx::detail::simd_map<D>([](const auto&... a) { return std::tan(a...); }, D(x));
+  return ycxx::detail::simd_map<D>(
+      [](const auto&... a) { return std::tan(a...); }, D(x));
 }
 template <ycxx::detail::math_floating_point V>
 constexpr ycxx::detail::deduced_vec_t<V> acosh(const V& x) {
   using D = ycxx::detail::deduced_vec_t<V>;
-  return ycxx::detail::simd_map<D>([](const auto&... a) { return std::acosh(a...); }, D(x));
+  return ycxx::detail::simd_map<D>(
+      [](const auto&... a) { return std::acosh(a...); }, D(x));
 }
 template <ycxx::detail::math_floating_point V>
 constexpr ycxx::detail::deduced_vec_t<V> asinh(const V& x) {
   using D = ycxx::detail::deduced_vec_t<V>;
-  return ycxx::detail::simd_map<D>([](const auto&... a) { return std::asinh(a...); }, D(x));
+  return ycxx::detail::simd_map<D>(
+      [](const auto&... a) { return std::asinh(a...); }, D(x));
 }
 template <ycxx::detail::math_floating_point V>
 constexpr ycxx::detail::deduced_vec_t<V> atanh(const V& x) {
   using D = ycxx::detail::deduced_vec_t<V>;
-  return ycxx::detail::simd_map<D>([](const auto&... a) { return std::atanh(a...); }, D(x));
+  return ycxx::detail::simd_map<D>(
+      [](const auto&... a) { return std::atanh(a...); }, D(x));
 }
 template <ycxx::detail::math_floating_point V>
 constexpr ycxx::detail::deduced_vec_t<V> cosh(const V& x) {
   using D = ycxx::detail::deduced_vec_t<V>;
-  return ycxx::detail::simd_map<D>([](const auto&... a) { return std::cosh(a...); }, D(x));
+  return ycxx::detail::simd_map<D>(
+      [](const auto&... a) { return std::cosh(a...); }, D(x));
 }
 template <ycxx::detail::math_floating_point V>
 constexpr ycxx::detail::deduced_vec_t<V> sinh(const V& x) {
   using D = ycxx::detail::deduced_vec_t<V>;
-  return ycxx::detail::simd_map<D>([](const auto&... a) { return std::sinh(a...); }, D(x));
+  return ycxx::detail::simd_map<D>(
+      [](const auto&... a) { return std::sinh(a...); }, D(x));
 }
 template <ycxx::detail::math_floating_point V>
 constexpr ycxx::detail::deduced_vec_t<V> tanh(const V& x) {
   using D = ycxx::detail::deduced_vec_t<V>;
-  return ycxx::detail::simd_map<D>([](const auto&... a) { return std::tanh(a...); }, D(x));
+  return ycxx::detail::simd_map<D>(
+      [](const auto&... a) { return std::tanh(a...); }, D(x));
 }
 template <ycxx::detail::math_floating_point V>
 constexpr ycxx::detail::deduced_vec_t<V> exp(const V& x) {
   using D = ycxx::detail::deduced_vec_t<V>;
-  return ycxx::detail::simd_map<D>([](const auto&... a) { return std::exp(a...); }, D(x));
+  return ycxx::detail::simd_map<D>(
+      [](const auto&... a) { return std::exp(a...); }, D(x));
 }
 template <ycxx::detail::math_floating_point V>
 constexpr ycxx::detail::deduced_vec_t<V> exp2(const V& x) {
   using D = ycxx::detail::deduced_vec_t<V>;
-  return ycxx::detail::simd_map<D>([](const auto&... a) { return std::exp2(a...); }, D(x));
+  return ycxx::detail::simd_map<D>(
+      [](const auto&... a) { return std::exp2(a...); }, D(x));
 }
 template <ycxx::detail::math_floating_point V>
 constexpr ycxx::detail::deduced_vec_t<V> expm1(const V& x) {
   using D = ycxx::detail::deduced_vec_t<V>;
-  return ycxx::detail::simd_map<D>([](const auto&... a) { return std::expm1(a...); }, D(x));
+  return ycxx::detail::simd_map<D>(
+      [](const auto&... a) { return std::expm1(a...); }, D(x));
 }
 template <ycxx::detail::math_floating_point V>
 constexpr ycxx::detail::deduced_vec_t<V> log(const V& x) {
   using D = ycxx::detail::deduced_vec_t<V>;
-  return ycxx::detail::simd_map<D>([](const auto&... a) { return std::log(a...); }, D(x));
+  return ycxx::detail::simd_map<D>(
+      [](const auto&... a) { return std::log(a...); }, D(x));
 }
 template <ycxx::detail::math_floating_point V>
 constexpr ycxx::detail::deduced_vec_t<V> log10(const V& x) {
   using D = ycxx::detail::deduced_vec_t<V>;
-  return ycxx::detail::simd_map<D>([](const auto&... a) { return std::log10(a...); }, D(x));
+  return ycxx::detail::simd_map<D>(
+      [](const auto&... a) { return std::log10(a...); }, D(x));
 }
 template <ycxx::detail::math_floating_point V>
 constexpr ycxx::detail::deduced_vec_t<V> log1p(const V& x) {
   using D = ycxx::detail::deduced_vec_t<V>;
-  return ycxx::detail::simd_map<D>([](const auto&... a) { return std::log1p(a...); }, D(x));
+  return ycxx::detail::simd_map<D>(
+      [](const auto&... a) { return std::log1p(a...); }, D(x));
 }
 template <ycxx::detail::math_floating_point V>
 constexpr ycxx::detail::deduced_vec_t<V> log2(const V& x) {
   using D = ycxx::detail::deduced_vec_t<V>;
-  return ycxx::detail::simd_map<D>([](const auto&... a) { return std::log2(a...); }, D(x));
+  return ycxx::detail::simd_map<D>(
+      [](const auto&... a) { return std::log2(a...); }, D(x));
 }
 template <ycxx::detail::math_floating_point V>
 constexpr ycxx::detail::deduced_vec_t<V> logb(const V& x) {
   using D = ycxx::detail::deduced_vec_t<V>;
-  return ycxx::detail::simd_map<D>([](const auto&... a) { return std::logb(a...); }, D(x));
+  return ycxx::detail::simd_map<D>(
+      [](const auto&... a) { return std::logb(a...); }, D(x));
 }
 template <ycxx::detail::math_floating_point V>
 constexpr ycxx::detail::deduced_vec_t<V> cbrt(const V& x) {
   using D = ycxx::detail::deduced_vec_t<V>;
-  return ycxx::detail::simd_map<D>([](const auto&... a) { return std::cbrt(a...); }, D(x));
+  return ycxx::detail::simd_map<D>(
+      [](const auto&... a) { return std::cbrt(a...); }, D(x));
 }
 template <ycxx::detail::math_floating_point V>
 constexpr ycxx::detail::deduced_vec_t<V> sqrt(const V& x) {
   using D = ycxx::detail::deduced_vec_t<V>;
-  return ycxx::detail::simd_map<D>([](const auto&... a) { return std::sqrt(a...); }, D(x));
+  return ycxx::detail::simd_map<D>(
+      [](const auto&... a) { return std::sqrt(a...); }, D(x));
 }
 template <ycxx::detail::math_floating_point V>
 constexpr ycxx::detail::deduced_vec_t<V> erf(const V& x) {
   using D = ycxx::detail::deduced_vec_t<V>;
-  return ycxx::detail::simd_map<D>([](const auto&... a) { return std::erf(a...); }, D(x));
+  return ycxx::detail::simd_map<D>(
+      [](const auto&... a) { return std::erf(a...); }, D(x));
 }
 template <ycxx::detail::math_floating_point V>
 constexpr ycxx::detail::deduced_vec_t<V> erfc(const V& x) {
   using D = ycxx::detail::deduced_vec_t<V>;
-  return ycxx::detail::simd_map<D>([](const auto&... a) { return std::erfc(a...); }, D(x));
+  return ycxx::detail::simd_map<D>(
+      [](const auto&... a) { return std::erfc(a...); }, D(x));
 }
 template <ycxx::detail::math_floating_point V>
 constexpr ycxx::detail::deduced_vec_t<V> lgamma(const V& x) {
   using D = ycxx::detail::deduced_vec_t<V>;
-  return ycxx::detail::simd_map<D>([](const auto&... a) { return std::lgamma(a...); }, D(x));
+  return ycxx::detail::simd_map<D>(
+      [](const auto&... a) { return std::lgamma(a...); }, D(x));
 }
 template <ycxx::detail::math_floating_point V>
 constexpr ycxx::detail::deduced_vec_t<V> tgamma(const V& x) {
   using D = ycxx::detail::deduced_vec_t<V>;
-  return ycxx::detail::simd_map<D>([](const auto&... a) { return std::tgamma(a...); }, D(x));
+  return ycxx::detail::simd_map<D>(
+      [](const auto&... a) { return std::tgamma(a...); }, D(x));
 }
 template <ycxx::detail::math_floating_point V>
 constexpr ycxx::detail::deduced_vec_t<V> ceil(const V& x) {
   using D = ycxx::detail::deduced_vec_t<V>;
-  return ycxx::detail::simd_map<D>([](const auto&... a) { return std::ceil(a...); }, D(x));
+  return ycxx::detail::simd_map<D>(
+      [](const auto&... a) { return std::ceil(a...); }, D(x));
 }
 template <ycxx::detail::math_floating_point V>
 constexpr ycxx::detail::deduced_vec_t<V> floor(const V& x) {
   using D = ycxx::detail::deduced_vec_t<V>;
-  return ycxx::detail::simd_map<D>([](const auto&... a) { return std::floor(a...); }, D(x));
+  return ycxx::detail::simd_map<D>(
+      [](const auto&... a) { return std::floor(a...); }, D(x));
 }
 template <ycxx::detail::math_floating_point V>
 constexpr ycxx::detail::deduced_vec_t<V> round(const V& x) {
   using D = ycxx::detail::deduced_vec_t<V>;
-  return ycxx::detail::simd_map<D>([](const auto&... a) { return std::round(a...); }, D(x));
+  return ycxx::detail::simd_map<D>(
+      [](const auto&... a) { return std::round(a...); }, D(x));
 }
 template <ycxx::detail::math_floating_point V>
 constexpr ycxx::detail::deduced_vec_t<V> trunc(const V& x) {
   using D = ycxx::detail::deduced_vec_t<V>;
-  return ycxx::detail::simd_map<D>([](const auto&... a) { return std::trunc(a...); }, D(x));
+  return ycxx::detail::simd_map<D>(
+      [](const auto&... a) { return std::trunc(a...); }, D(x));
 }
 template <ycxx::detail::math_floating_point V>
 ycxx::detail::deduced_vec_t<V> nearbyint(const V& x) {
   using D = ycxx::detail::deduced_vec_t<V>;
-  return ycxx::detail::simd_map<D>([](const auto&... a) { return std::nearbyint(a...); }, D(x));
+  return ycxx::detail::simd_map<D>(
+      [](const auto&... a) { return std::nearbyint(a...); }, D(x));
 }
 template <ycxx::detail::math_floating_point V>
 ycxx::detail::deduced_vec_t<V> rint(const V& x) {
   using D = ycxx::detail::deduced_vec_t<V>;
-  return ycxx::detail::simd_map<D>([](const auto&... a) { return std::rint(a...); }, D(x));
+  return ycxx::detail::simd_map<D>(
+      [](const auto&... a) { return std::rint(a...); }, D(x));
 }
 template <ycxx::detail::math_floating_point V>
 constexpr std::simd::rebind_t<int, ycxx::detail::deduced_vec_t<V>> ilogb(const V& x) {
   using D = ycxx::detail::deduced_vec_t<V>;
-  return ycxx::detail::simd_map<std::simd::rebind_t<int, D>>([](const auto&... a) { return std::ilogb(a...); }, D(x));
+  return ycxx::detail::simd_map<std::simd::rebind_t<int, D>>(
+      [](const auto&... a) { return std::ilogb(a...); }, D(x));
 }
 template <ycxx::detail::math_floating_point V>
 std::simd::rebind_t<long int, ycxx::detail::deduced_vec_t<V>> lrint(const V& x) {
   using D = ycxx::detail::deduced_vec_t<V>;
-  return ycxx::detail::simd_map<std::simd::rebind_t<long int, D>>([](const auto&... a) { return std::lrint(a...); }, D(x));
+  return ycxx::detail::simd_map<std::simd::rebind_t<long int, D>>(
+      [](const auto&... a) { return std::lrint(a...); }, D(x));
 }
 template <ycxx::detail::math_floating_point V>
 std::simd::rebind_t<long long int, ycxx::detail::deduced_vec_t<V>> llrint(const V& x) {
   using D = ycxx::detail::deduced_vec_t<V>;
-  return ycxx::detail::simd_map<std::simd::rebind_t<long long int, D>>([](const auto&... a) { return std::llrint(a...); }, D(x));
+  return ycxx::detail::simd_map<std::simd::rebind_t<long long int, D>>(
+      [](const auto&... a) { return std::llrint(a...); }, D(x));
 }
 template <ycxx::detail::math_floating_point V>
 constexpr std::simd::rebind_t<long int, ycxx::detail::deduced_vec_t<V>> lround(const V& x) {
   using D = ycxx::detail::deduced_vec_t<V>;
-  return ycxx::detail::simd_map<std::simd::rebind_t<long int, D>>([](const auto&... a) { return std::lround(a...); }, D(x));
+  return ycxx::detail::simd_map<std::simd::rebind_t<long int, D>>(
+      [](const auto&... a) { return std::lround(a...); }, D(x));
 }
 template <ycxx::detail::math_floating_point V>
 constexpr std::simd::rebind_t<long long int, ycxx::detail::deduced_vec_t<V>> llround(const V& x) {
   using D = ycxx::detail::deduced_vec_t<V>;
-  return ycxx::detail::simd_map<std::simd::rebind_t<long long int, D>>([](const auto&... a) { return std::llround(a...); }, D(x));
+  return ycxx::detail::simd_map<std::simd::rebind_t<long long int, D>>(
+      [](const auto&... a) { return std::llround(a...); }, D(x));
 }
 template <ycxx::detail::math_floating_point V>
 constexpr std::simd::rebind_t<int, ycxx::detail::deduced_vec_t<V>> fpclassify(const V& x) {
   using D = ycxx::detail::deduced_vec_t<V>;
-  return ycxx::detail::simd_map<std::simd::rebind_t<int, D>>([](const auto&... a) { return std::fpclassify(a...); }, D(x));
+  return ycxx::detail::simd_map<std::simd::rebind_t<int, D>>(
+      [](const auto&... a) { return std::fpclassify(a...); }, D(x));
 }
 template <ycxx::detail::math_floating_point V>
 constexpr typename ycxx::detail::deduced_vec_t<V>::mask_type isfinite(const V& x) {
   using D = ycxx::detail::deduced_vec_t<V>;
-  return ycxx::detail::simd_map<typename D::mask_type>([](const auto&... a) { return std::isfinite(a...); }, D(x));
+  return ycxx::detail::simd_map<typename D::mask_type>(
+      [](const auto&... a) { return std::isfinite(a...); }, D(x));
 }
 template <ycxx::detail::math_floating_point V>
 constexpr typename ycxx::detail::deduced_vec_t<V>::mask_type isinf(const V& x) {
   using D = ycxx::detail::deduced_vec_t<V>;
-  return ycxx::detail::simd_map<typename D::mask_type>([](const auto&... a) { return std::isinf(a...); }, D(x));
+  return ycxx::detail::simd_map<typename D::mask_type>(
+      [](const auto&... a) { return std::isinf(a...); }, D(x));
 }
 template <ycxx::detail::math_floating_point V>
 constexpr typename ycxx::detail::deduced_vec_t<V>::mask_type isnan(const V& x) {
   using D = ycxx::detail::deduced_vec_t<V>;
-  return ycxx::detail::simd_map<typename D::mask_type>([](const auto&... a) { return std::isnan(a...); }, D(x));
+  return ycxx::detail::simd_map<typename D::mask_type>(
+      [](const auto&... a) { return std::isnan(a...); }, D(x));
 }
 template <ycxx::detail::math_floating_point V>
 constexpr typename ycxx::detail::deduced_vec_t<V>::mask_type isnormal(const V& x) {
   using D = ycxx::detail::deduced_vec_t<V>;
-  return ycxx::detail::simd_map<typename D::mask_type>([](const auto&... a) { return std::isnormal(a...); }, D(x));
+  return ycxx::detail::simd_map<typename D::mask_type>(
+      [](const auto&... a) { return std::isnormal(a...); }, D(x));
 }
 template <ycxx::detail::math_floating_point V>
 constexpr typename ycxx::detail::deduced_vec_t<V>::mask_type signbit(const V& x) {
   using D = ycxx::detail::deduced_vec_t<V>;
-  return ycxx::detail::simd_map<typename D::mask_type>([](const auto&... a) { return std::signbit(a...); }, D(x));
+  return ycxx::detail::simd_map<typename D::mask_type>(
+      [](const auto&... a) { return std::signbit(a...); }, D(x));
 }
 template <ycxx::detail::math_floating_point V>
 ycxx::detail::deduced_vec_t<V> comp_ellint_1(const V& x) {
   using D = ycxx::detail::deduced_vec_t<V>;
-  return ycxx::detail::simd_map<D>([](const auto&... a) { return std::comp_ellint_1(a...); }, D(x));
+  return ycxx::detail::simd_map<D>(
+      [](const auto&... a) { return std::comp_ellint_1(a...); }, D(x));
 }
 template <ycxx::detail::math_floating_point V>
 ycxx::detail::deduced_vec_t<V> comp_ellint_2(const V& x) {
   using D = ycxx::detail::deduced_vec_t<V>;
-  return ycxx::detail::simd_map<D>([](const auto&... a) { return std::comp_ellint_2(a...); }, D(x));
+  return ycxx::detail::simd_map<D>(
+      [](const auto&... a) { return std::comp_ellint_2(a...); }, D(x));
 }
 template <ycxx::detail::math_floating_point V>
 ycxx::detail::deduced_vec_t<V> expint(const V& x) {
   using D = ycxx::detail::deduced_vec_t<V>;
-  return ycxx::detail::simd_map<D>([](const auto&... a) { return std::expint(a...); }, D(x));
+  return ycxx::detail::simd_map<D>(
+      [](const auto&... a) { return std::expint(a...); }, D(x));
 }
 template <ycxx::detail::math_floating_point V>
 ycxx::detail::deduced_vec_t<V> riemann_zeta(const V& x) {
   using D = ycxx::detail::deduced_vec_t<V>;
-  return ycxx::detail::simd_map<D>([](const auto&... a) { return std::riemann_zeta(a...); }, D(x));
+  return ycxx::detail::simd_map<D>(
+      [](const auto&... a) { return std::riemann_zeta(a...); }, D(x));
 }
 template <ycxx::detail::math_floating_point V>
 constexpr ycxx::detail::deduced_vec_t<V> atan2(const V& x, const V& y) {
   using D = ycxx::detail::deduced_vec_t<V>;
-  return ycxx::detail::simd_map<D>([](const auto&... a) { return std::atan2(a...); }, D(x), D(y));
+  return ycxx::detail::simd_map<D>(
+      [](const auto&... a) { return std::atan2(a...); }, D(x), D(y));
 }
 template <ycxx::detail::math_floating_point V>
 constexpr ycxx::detail::deduced_vec_t<V> atan2(const ycxx::detail::deduced_vec_t<V>& x, const V& y) {
   using D = ycxx::detail::deduced_vec_t<V>;
-  return ycxx::detail::simd_map<D>([](const auto&... a) { return std::atan2(a...); }, D(x), D(y));
+  return ycxx::detail::simd_map<D>(
+      [](const auto&... a) { return std::atan2(a...); }, D(x), D(y));
 }
 template <ycxx::detail::math_floating_point V>
 constexpr ycxx::detail::deduced_vec_t<V> atan2(const V& x, const ycxx::detail::deduced_vec_t<V>& y) {
   using D = ycxx::detail::deduced_vec_t<V>;
-  return ycxx::detail::simd_map<D>([](const auto&... a) { return std::atan2(a...); }, D(x), D(y));
+  return ycxx::detail::simd_map<D>(
+      [](const auto&... a) { return std::atan2(a...); }, D(x), D(y));
 }
 template <ycxx::detail::math_floating_point V>
 constexpr ycxx::detail::deduced_vec_t<V> hypot(const V& x, const V& y) {
   using D = ycxx::detail::deduced_vec_t<V>;
-  return ycxx::detail::simd_map<D>([](const auto&... a) { return std::hypot(a...); }, D(x), D(y));
+  return ycxx::detail::simd_map<D>(
+      [](const auto&... a) { return std::hypot(a...); }, D(x), D(y));
 }
 template <ycxx::detail::math_floating_point V>
 constexpr ycxx::detail::deduced_vec_t<V> hypot(const ycxx::detail::deduced_vec_t<V>& x, const V& y) {
   using D = ycxx::detail::deduced_vec_t<V>;
-  return ycxx::detail::simd_map<D>([](const auto&... a) { return std::hypot(a...); }, D(x), D(y));
+  return ycxx::detail::simd_map<D>(
+      [](const auto&... a) { return std::hypot(a...); }, D(x), D(y));
 }
 template <ycxx::detail::math_floating_point V>
 constexpr ycxx::detail::deduced_vec_t<V> hypot(const V& x, const ycxx::detail::deduced_vec_t<V>& y) {
   using D = ycxx::detail::deduced_vec_t<V>;
-  return ycxx::detail::simd_map<D>([](const auto&... a) { return std::hypot(a...); }, D(x), D(y));
+  return ycxx::detail::simd_map<D>(
+      [](const auto&... a) { return std::hypot(a...); }, D(x), D(y));
 }
 template <ycxx::detail::math_floating_point V>
 constexpr ycxx::detail::deduced_vec_t<V> pow(const V& x, const V& y) {
   using D = ycxx::detail::deduced_vec_t<V>;
-  return ycxx::detail::simd_map<D>([](const auto&... a) { return std::pow(a...); }, D(x), D(y));
+  return ycxx::detail::simd_map<D>(
+      [](const auto&... a) { return std::pow(a...); }, D(x), D(y));
 }
 template <ycxx::detail::math_floating_point V>
 constexpr ycxx::detail::deduced_vec_t<V> pow(const ycxx::detail::deduced_vec_t<V>& x, const V& y) {
   using D = ycxx::detail::deduced_vec_t<V>;
-  return ycxx::detail::simd_map<D>([](const auto&... a) { return std::pow(a...); }, D(x), D(y));
+  return ycxx::detail::simd_map<D>(
+      [](const auto&... a) { return std::pow(a...); }, D(x), D(y));
 }
 template <ycxx::detail::math_floating_point V>
 constexpr ycxx::detail::deduced_vec_t<V> pow(const V& x, const ycxx::detail::deduced_vec_t<V>& y) {
   using D = ycxx::detail::deduced_vec_t<V>;
-  return ycxx::detail::simd_map<D>([](const auto&... a) { return std::pow(a...); }, D(x), D(y));
+  return ycxx::detail::simd_map<D>(
+      [](const auto&... a) { return std::pow(a...); }, D(x), D(y));
 }
 template <ycxx::detail::math_floating_point V>
 constexpr ycxx::detail::deduced_vec_t<V> fmod(const V& x, const V& y) {
   using D = ycxx::detail::deduced_vec_t<V>;
-  return ycxx::detail::simd_map<D>([](const auto&... a) { return std::fmod(a...); }, D(x), D(y));
+  return ycxx::detail::simd_map<D>(
+      [](const auto&... a) { return std::fmod(a...); }, D(x), D(y));
 }
 template <ycxx::detail::math_floating_point V>
 constexpr ycxx::detail::deduced_vec_t<V> fmod(const ycxx::detail::deduced_vec_t<V>& x, const V& y) {
   using D = ycxx::detail::deduced_vec_t<V>;
-  return ycxx::detail::simd_map<D>([](const auto&... a) { return std::fmod(a...); }, D(x), D(y));
+  return ycxx::detail::simd_map<D>(
+      [](const auto&... a) { return std::fmod(a...); }, D(x), D(y));
 }
 template <ycxx::detail::math_floating_point V>
 constexpr ycxx::detail::deduced_vec_t<V> fmod(const V& x, const ycxx::detail::deduced_vec_t<V>& y) {
   using D = ycxx::detail::deduced_vec_t<V>;
-  return ycxx::detail::simd_map<D>([](const auto&... a) { return std::fmod(a...); }, D(x), D(y));
+  return ycxx::detail::simd_map<D>(
+      [](const auto&... a) { return std::fmod(a...); }, D(x), D(y));
 }
 template <ycxx::detail::math_floating_point V>
 constexpr ycxx::detail::deduced_vec_t<V> remainder(const V& x, const V& y) {
   using D = ycxx::detail::deduced_vec_t<V>;
-  return ycxx::detail::simd_map<D>([](const auto&... a) { return std::remainder(a...); }, D(x), D(y));
+  return ycxx::detail::simd_map<D>(
+      [](const auto&... a) { return std::remainder(a...); }, D(x), D(y));
 }
 template <ycxx::detail::math_floating_point V>
 constexpr ycxx::detail::deduced_vec_t<V> remainder(const ycxx::detail::deduced_vec_t<V>& x, const V& y) {
   using D = ycxx::detail::deduced_vec_t<V>;
-  return ycxx::detail::simd_map<D>([](const auto&... a) { return std::remainder(a...); }, D(x), D(y));
+  return ycxx::detail::simd_map<D>(
+      [](const auto&... a) { return std::remainder(a...); }, D(x), D(y));
 }
 template <ycxx::detail::math_floating_point V>
 constexpr ycxx::detail::deduced_vec_t<V> remainder(const V& x, const ycxx::detail::deduced_vec_t<V>& y) {
   using D = ycxx::detail::deduced_vec_t<V>;
-  return ycxx::detail::simd_map<D>([](const auto&... a) { return std::remainder(a...); }, D(x), D(y));
+  return ycxx::detail::simd_map<D>(
+      [](const auto&... a) { return std::remainder(a...); }, D(x), D(y));
 }
 template <ycxx::detail::math_floating_point V>
 constexpr ycxx::detail::deduced_vec_t<V> copysign(const V& x, const V& y) {
   using D = ycxx::detail::deduced_vec_t<V>;
-  return ycxx::detail::simd_map<D>([](const auto&... a) { return std::copysign(a...); }, D(x), D(y));
+  return ycxx::detail::simd_map<D>(
+      [](const auto&... a) { return std::copysign(a...); }, D(x), D(y));
 }
 template <ycxx::detail::math_floating_point V>
 constexpr ycxx::detail::deduced_vec_t<V> copysign(const ycxx::detail::deduced_vec_t<V>& x, const V& y) {
   using D = ycxx::detail::deduced_vec_t<V>;
-  return ycxx::detail::simd_map<D>([](const auto&... a) { return std::copysign(a...); }, D(x), D(y));
+  return ycxx::detail::simd_map<D>(
+      [](const auto&... a) { return std::copysign(a...); }, D(x), D(y));
 }
 template <ycxx::detail::math_floating_point V>
 constexpr ycxx::detail::deduced_vec_t<V> copysign(const V& x, const ycxx::detail::deduced_vec_t<V>& y) {
   using D = ycxx::detail::deduced_vec_t<V>;
-  return ycxx::detail::simd_map<D>([](const auto&... a) { return std::copysign(a...); }, D(x), D(y));
+  return ycxx::detail::simd_map<D>(
+      [](const auto&... a) { return std::copysign(a...); }, D(x), D(y));
 }
 template <ycxx::detail::math_floating_point V>
 constexpr ycxx::detail::deduced_vec_t<V> nextafter(const V& x, const V& y) {
   using D = ycxx::detail::deduced_vec_t<V>;
-  return ycxx::detail::simd_map<D>([](const auto&... a) { return std::nextafter(a...); }, D(x), D(y));
+  return ycxx::detail::simd_map<D>(
+      [](const auto&... a) { return std::nextafter(a...); }, D(x), D(y));
 }
 template <ycxx::detail::math_floating_point V>
 constexpr ycxx::detail::deduced_vec_t<V> nextafter(const ycxx::detail::deduced_vec_t<V>& x, const V& y) {
   using D = ycxx::detail::deduced_vec_t<V>;
-  return ycxx::detail::simd_map<D>([](const auto&... a) { return std::nextafter(a...); }, D(x), D(y));
+  return ycxx::detail::simd_map<D>(
+      [](const auto&... a) { return std::nextafter(a...); }, D(x), D(y));
 }
 template <ycxx::detail::math_floating_point V>
 constexpr ycxx::detail::deduced_vec_t<V> nextafter(const V& x, const ycxx::detail::deduced_vec_t<V>& y) {
   using D = ycxx::detail::deduced_vec_t<V>;
-  return ycxx::detail::simd_map<D>([](const auto&... a) { return std::nextafter(a...); }, D(x), D(y));
+  return ycxx::detail::simd_map<D>(
+      [](const auto&... a) { return std::nextafter(a...); }, D(x), D(y));
 }
 template <ycxx::detail::math_floating_point V>
 constexpr ycxx::detail::deduced_vec_t<V> fdim(const V& x, const V& y) {
   using D = ycxx::detail::deduced_vec_t<V>;
-  return ycxx::detail::simd_map<D>([](const auto&... a) { return std::fdim(a...); }, D(x), D(y));
+  return ycxx::detail::simd_map<D>(
+      [](const auto&... a) { return std::fdim(a...); }, D(x), D(y));
 }
 template <ycxx::detail::math_floating_point V>
 constexpr ycxx::detail::deduced_vec_t<V> fdim(const ycxx::detail::deduced_vec_t<V>& x, const V& y) {
   using D = ycxx::detail::deduced_vec_t<V>;
-  return ycxx::detail::simd_map<D>([](const auto&... a) { return std::fdim(a...); }, D(x), D(y));
+  return ycxx::detail::simd_map<D>(
+      [](const auto&... a) { return std::fdim(a...); }, D(x), D(y));
 }
 template <ycxx::detail::math_floating_point V>
 constexpr ycxx::detail::deduced_vec_t<V> fdim(const V& x, const ycxx::detail::deduced_vec_t<V>& y) {
   using D = ycxx::detail::deduced_vec_t<V>;
-  return ycxx::detail::simd_map<D>([](const auto&... a) { return std::fdim(a...); }, D(x), D(y));
+  return ycxx::detail::simd_map<D>(
+      [](const auto&... a) { return std::fdim(a...); }, D(x), D(y));
 }
 template <ycxx::detail::math_floating_point V>
 constexpr ycxx::detail::deduced_vec_t<V> fmax(const V& x, const V& y) {
   using D = ycxx::detail::deduced_vec_t<V>;
-  return ycxx::detail::simd_map<D>([](const auto&... a) { return std::fmax(a...); }, D(x), D(y));
+  return ycxx::detail::simd_map<D>(
+      [](const auto&... a) { return std::fmax(a...); }, D(x), D(y));
 }
 template <ycxx::detail::math_floating_point V>
 constexpr ycxx::detail::deduced_vec_t<V> fmax(const ycxx::detail::deduced_vec_t<V>& x, const V& y) {
   using D = ycxx::detail::deduced_vec_t<V>;
-  return ycxx::detail::simd_map<D>([](const auto&... a) { return std::fmax(a...); }, D(x), D(y));
+  return ycxx::detail::simd_map<D>(
+      [](const auto&... a) { return std::fmax(a...); }, D(x), D(y));
 }
 template <ycxx::detail::math_floating_point V>
 constexpr ycxx::detail::deduced_vec_t<V> fmax(const V& x, const ycxx::detail::deduced_vec_t<V>& y) {
   using D = ycxx::detail::deduced_vec_t<V>;
-  return ycxx::detail::simd_map<D>([](const auto&... a) { return std::fmax(a...); }, D(x), D(y));
+  return ycxx::detail::simd_map<D>(
+      [](const auto&... a) { return std::fmax(a...); }, D(x), D(y));
 }
 template <ycxx::detail::math_floating_point V>
 constexpr ycxx::detail::deduced_vec_t<V> fmin(const V& x, const V& y) {
   using D = ycxx::detail::deduced_vec_t<V>;
-  return ycxx::detail::simd_map<D>([](const auto&... a) { return std::fmin(a...); }, D(x), D(y));
+  return ycxx::detail::simd_map<D>(
+      [](const auto&... a) { return std::fmin(a...); }, D(x), D(y));
 }
 template <ycxx::detail::math_floating_point V>
 constexpr ycxx::detail::deduced_vec_t<V> fmin(const ycxx::detail::deduced_vec_t<V>& x, const V& y) {
   using D = ycxx::detail::deduced_vec_t<V>;
-  return ycxx::detail::simd_map<D>([](const auto&... a) { return std::fmin(a...); }, D(x), D(y));
+  return ycxx::detail::simd_map<D>(
+      [](const auto&... a) { return std::fmin(a...); }, D(x), D(y));
 }
 template <ycxx::detail::math_floating_point V>
 constexpr ycxx::detail::deduced_vec_t<V> fmin(const V& x, const ycxx::detail::deduced_vec_t<V>& y) {
   using D = ycxx::detail::deduced_vec_t<V>;
-  return ycxx::detail::simd_map<D>([](const auto&... a) { return std::fmin(a...); }, D(x), D(y));
+  return ycxx::detail::simd_map<D>(
+      [](const auto&... a) { return std::fmin(a...); }, D(x), D(y));
 }
 template <ycxx::detail::math_floating_point V>
 constexpr typename ycxx::detail::deduced_vec_t<V>::mask_type isgreater(const V& x, const V& y) {
   using D = ycxx::detail::deduced_vec_t<V>;
-  return ycxx::detail::simd_map<typename D::mask_type>([](const auto&... a) { return std::isgreater(a...); }, D(x), D(y));
+  return ycxx::detail::simd_map<typename D::mask_type>(
+      [](const auto&... a) { return std::isgreater(a...); }, D(x), D(y));
 }
 template <ycxx::detail::math_floating_point V>
-constexpr typename ycxx::detail::deduced_vec_t<V>::mask_type isgreater(const ycxx::detail::deduced_vec_t<V>& x, const V& y) {
+constexpr typename ycxx::detail::deduced_vec_t<V>::mask_type
+isgreater(const ycxx::detail::deduced_vec_t<V>& x,
+    const V& y) {
   using D = ycxx::detail::deduced_vec_t<V>;
-  return ycxx::detail::simd_map<typename D::mask_type>([](const auto&... a) { return std::isgreater(a...); }, D(x), D(y));
+  return ycxx::detail::simd_map<typename D::mask_type>(
+      [](const auto&... a) { return std::isgreater(a...); }, D(x), D(y));
 }
 template <ycxx::detail::math_floating_point V>
-constexpr typename ycxx::detail::deduced_vec_t<V>::mask_type isgreater(const V& x, const ycxx::detail::deduced_vec_t<V>& y) {
+constexpr typename ycxx::detail::deduced_vec_t<V>::mask_type
+isgreater(const V& x,
+    const ycxx::detail::deduced_vec_t<V>& y) {
   using D = ycxx::detail::deduced_vec_t<V>;
-  return ycxx::detail::simd_map<typename D::mask_type>([](const auto&... a) { return std::isgreater(a...); }, D(x), D(y));
+  return ycxx::detail::simd_map<typename D::mask_type>(
+      [](const auto&... a) { return std::isgreater(a...); }, D(x), D(y));
 }
 template <ycxx::detail::math_floating_point V>
 constexpr typename ycxx::detail::deduced_vec_t<V>::mask_type isgreaterequal(const V& x, const V& y) {
   using D = ycxx::detail::deduced_vec_t<V>;
-  return ycxx::detail::simd_map<typename D::mask_type>([](const auto&... a) { return std::isgreaterequal(a...); }, D(x), D(y));
+  return ycxx::detail::simd_map<typename D::mask_type>(
+      [](const auto&... a) { return std::isgreaterequal(a...); }, D(x), D(y));
 }
 template <ycxx::detail::math_floating_point V>
-constexpr typename ycxx::detail::deduced_vec_t<V>::mask_type isgreaterequal(const ycxx::detail::deduced_vec_t<V>& x, const V& y) {
+constexpr typename ycxx::detail::deduced_vec_t<V>::mask_type
+isgreaterequal(const ycxx::detail::deduced_vec_t<V>& x,
+    const V& y) {
   using D = ycxx::detail::deduced_vec_t<V>;
-  return ycxx::detail::simd_map<typename D::mask_type>([](const auto&... a) { return std::isgreaterequal(a...); }, D(x), D(y));
+  return ycxx::detail::simd_map<typename D::mask_type>(
+      [](const auto&... a) { return std::isgreaterequal(a...); }, D(x), D(y));
 }
 template <ycxx::detail::math_floating_point V>
-constexpr typename ycxx::detail::deduced_vec_t<V>::mask_type isgreaterequal(const V& x, const ycxx::detail::deduced_vec_t<V>& y) {
+constexpr typename ycxx::detail::deduced_vec_t<V>::mask_type
+isgreaterequal(const V& x,
+    const ycxx::detail::deduced_vec_t<V>& y) {
   using D = ycxx::detail::deduced_vec_t<V>;
-  return ycxx::detail::simd_map<typename D::mask_type>([](const auto&... a) { return std::isgreaterequal(a...); }, D(x), D(y));
+  return ycxx::detail::simd_map<typename D::mask_type>(
+      [](const auto&... a) { return std::isgreaterequal(a...); }, D(x), D(y));
 }
 template <ycxx::detail::math_floating_point V>
 constexpr typename ycxx::detail::deduced_vec_t<V>::mask_type isless(const V& x, const V& y) {
   using D = ycxx::detail::deduced_vec_t<V>;
-  return ycxx::detail::simd_map<typename D::mask_type>([](const auto&... a) { return std::isless(a...); }, D(x), D(y));
+  return ycxx::detail::simd_map<typename D::mask_type>(
+      [](const auto&... a) { return std::isless(a...); }, D(x), D(y));
 }
 template <ycxx::detail::math_floating_point V>
-constexpr typename ycxx::detail::deduced_vec_t<V>::mask_type isless(const ycxx::detail::deduced_vec_t<V>& x, const V& y) {
+constexpr typename ycxx::detail::deduced_vec_t<V>::mask_type
+isless(const ycxx::detail::deduced_vec_t<V>& x,
+    const V& y) {
   using D = ycxx::detail::deduced_vec_t<V>;
-  return ycxx::detail::simd_map<typename D::mask_type>([](const auto&... a) { return std::isless(a...); }, D(x), D(y));
+  return ycxx::detail::simd_map<typename D::mask_type>(
+      [](const auto&... a) { return std::isless(a...); }, D(x), D(y));
 }
 template <ycxx::detail::math_floating_point V>
-constexpr typename ycxx::detail::deduced_vec_t<V>::mask_type isless(const V& x, const ycxx::detail::deduced_vec_t<V>& y) {
+constexpr typename ycxx::detail::deduced_vec_t<V>::mask_type
+isless(const V& x,
+    const ycxx::detail::deduced_vec_t<V>& y) {
   using D = ycxx::detail::deduced_vec_t<V>;
-  return ycxx::detail::simd_map<typename D::mask_type>([](const auto&... a) { return std::isless(a...); }, D(x), D(y));
+  return ycxx::detail::simd_map<typename D::mask_type>(
+      [](const auto&... a) { return std::isless(a...); }, D(x), D(y));
 }
 template <ycxx::detail::math_floating_point V>
 constexpr typename ycxx::detail::deduced_vec_t<V>::mask_type islessequal(const V& x, const V& y) {
   using D = ycxx::detail::deduced_vec_t<V>;
-  return ycxx::detail::simd_map<typename D::mask_type>([](const auto&... a) { return std::islessequal(a...); }, D(x), D(y));
+  return ycxx::detail::simd_map<typename D::mask_type>(
+      [](const auto&... a) { return std::islessequal(a...); }, D(x), D(y));
 }
 template <ycxx::detail::math_floating_point V>
-constexpr typename ycxx::detail::deduced_vec_t<V>::mask_type islessequal(const ycxx::detail::deduced_vec_t<V>& x, const V& y) {
+constexpr typename ycxx::detail::deduced_vec_t<V>::mask_type
+islessequal(const ycxx::detail::deduced_vec_t<V>& x,
+    const V& y) {
   using D = ycxx::detail::deduced_vec_t<V>;
-  return ycxx::detail::simd_map<typename D::mask_type>([](const auto&... a) { return std::islessequal(a...); }, D(x), D(y));
+  return ycxx::detail::simd_map<typename D::mask_type>(
+      [](const auto&... a) { return std::islessequal(a...); }, D(x), D(y));
 }
 template <ycxx::detail::math_floating_point V>
-constexpr typename ycxx::detail::deduced_vec_t<V>::mask_type islessequal(const V& x, const ycxx::detail::deduced_vec_t<V>& y) {
+constexpr typename ycxx::detail::deduced_vec_t<V>::mask_type
+islessequal(const V& x,
+    const ycxx::detail::deduced_vec_t<V>& y) {
   using D = ycxx::detail::deduced_vec_t<V>;
-  return ycxx::detail::simd_map<typename D::mask_type>([](const auto&... a) { return std::islessequal(a...); }, D(x), D(y));
+  return ycxx::detail::simd_map<typename D::mask_type>(
+      [](const auto&... a) { return std::islessequal(a...); }, D(x), D(y));
 }
 template <ycxx::detail::math_floating_point V>
 constexpr typename ycxx::detail::deduced_vec_t<V>::mask_type islessgreater(const V& x, const V& y) {
   using D = ycxx::detail::deduced_vec_t<V>;
-  return ycxx::detail::simd_map<typename D::mask_type>([](const auto&... a) { return std::islessgreater(a...); }, D(x), D(y));
+  return ycxx::detail::simd_map<typename D::mask_type>(
+      [](const auto&... a) { return std::islessgreater(a...); }, D(x), D(y));
 }
 template <ycxx::detail::math_floating_point V>
-constexpr typename ycxx::detail::deduced_vec_t<V>::mask_type islessgreater(const ycxx::detail::deduced_vec_t<V>& x, const V& y) {
+constexpr typename ycxx::detail::deduced_vec_t<V>::mask_type
+islessgreater(const ycxx::detail::deduced_vec_t<V>& x,
+    const V& y) {
   using D = ycxx::detail::deduced_vec_t<V>;
-  return ycxx::detail::simd_map<typename D::mask_type>([](const auto&... a) { return std::islessgreater(a...); }, D(x), D(y));
+  return ycxx::detail::simd_map<typename D::mask_type>(
+      [](const auto&... a) { return std::islessgreater(a...); }, D(x), D(y));
 }
 template <ycxx::detail::math_floating_point V>
-constexpr typename ycxx::detail::deduced_vec_t<V>::mask_type islessgreater(const V& x, const ycxx::detail::deduced_vec_t<V>& y) {
+constexpr typename ycxx::detail::deduced_vec_t<V>::mask_type
+islessgreater(const V& x,
+    const ycxx::detail::deduced_vec_t<V>& y) {
   using D = ycxx::detail::deduced_vec_t<V>;
-  return ycxx::detail::simd_map<typename D::mask_type>([](const auto&... a) { return std::islessgreater(a...); }, D(x), D(y));
+  return ycxx::detail::simd_map<typename D::mask_type>(
+      [](const auto&... a) { return std::islessgreater(a...); }, D(x), D(y));
 }
 template <ycxx::detail::math_floating_point V>
 constexpr typename ycxx::detail::deduced_vec_t<V>::mask_type isunordered(const V& x, const V& y) {
   using D = ycxx::detail::deduced_vec_t<V>;
-  return ycxx::detail::simd_map<typename D::mask_type>([](const auto&... a) { return std::isunordered(a...); }, D(x), D(y));
+  return ycxx::detail::simd_map<typename D::mask_type>(
+      [](const auto&... a) { return std::isunordered(a...); }, D(x), D(y));
 }
 template <ycxx::detail::math_floating_point V>
-constexpr typename ycxx::detail::deduced_vec_t<V>::mask_type isunordered(const ycxx::detail::deduced_vec_t<V>& x, const V& y) {
+constexpr typename ycxx::detail::deduced_vec_t<V>::mask_type
+isunordered(const ycxx::detail::deduced_vec_t<V>& x,
+    const V& y) {
   using D = ycxx::detail::deduced_vec_t<V>;
-  return ycxx::detail::simd_map<typename D::mask_type>([](const auto&... a) { return std::isunordered(a...); }, D(x), D(y));
+  return ycxx::detail::simd_map<typename D::mask_type>(
+      [](const auto&... a) { return std::isunordered(a...); }, D(x), D(y));
 }
 template <ycxx::detail::math_floating_point V>
-constexpr typename ycxx::detail::deduced_vec_t<V>::mask_type isunordered(const V& x, const ycxx::detail::deduced_vec_t<V>& y) {
+constexpr typename ycxx::detail::deduced_vec_t<V>::mask_type
+isunordered(const V& x,
+    const ycxx::detail::deduced_vec_t<V>& y) {
   using D = ycxx::detail::deduced_vec_t<V>;
-  return ycxx::detail::simd_map<typename D::mask_type>([](const auto&... a) { return std::isunordered(a...); }, D(x), D(y));
+  return ycxx::detail::simd_map<typename D::mask_type>(
+      [](const auto&... a) { return std::isunordered(a...); }, D(x), D(y));
 }
 template <ycxx::detail::math_floating_point V>
 ycxx::detail::deduced_vec_t<V> beta(const V& x, const V& y) {
   using D = ycxx::detail::deduced_vec_t<V>;
-  return ycxx::detail::simd_map<D>([](const auto&... a) { return std::beta(a...); }, D(x), D(y));
+  return ycxx::detail::simd_map<D>(
+      [](const auto&... a) { return std::beta(a...); }, D(x), D(y));
 }
 template <ycxx::detail::math_floating_point V>
 ycxx::detail::deduced_vec_t<V> beta(const ycxx::detail::deduced_vec_t<V>& x, const V& y) {
   using D = ycxx::detail::deduced_vec_t<V>;
-  return ycxx::detail::simd_map<D>([](const auto&... a) { return std::beta(a...); }, D(x), D(y));
+  return ycxx::detail::simd_map<D>(
+      [](const auto&... a) { return std::beta(a...); }, D(x), D(y));
 }
 template <ycxx::detail::math_floating_point V>
 ycxx::detail::deduced_vec_t<V> beta(const V& x, const ycxx::detail::deduced_vec_t<V>& y) {
   using D = ycxx::detail::deduced_vec_t<V>;
-  return ycxx::detail::simd_map<D>([](const auto&... a) { return std::beta(a...); }, D(x), D(y));
+  return ycxx::detail::simd_map<D>(
+      [](const auto&... a) { return std::beta(a...); }, D(x), D(y));
 }
 template <ycxx::detail::math_floating_point V>
 ycxx::detail::deduced_vec_t<V> comp_ellint_3(const V& x, const V& y) {
   using D = ycxx::detail::deduced_vec_t<V>;
-  return ycxx::detail::simd_map<D>([](const auto&... a) { return std::comp_ellint_3(a...); }, D(x), D(y));
+  return ycxx::detail::simd_map<D>(
+      [](const auto&... a) { return std::comp_ellint_3(a...); }, D(x), D(y));
 }
 template <ycxx::detail::math_floating_point V>
 ycxx::detail::deduced_vec_t<V> comp_ellint_3(const ycxx::detail::deduced_vec_t<V>& x, const V& y) {
   using D = ycxx::detail::deduced_vec_t<V>;
-  return ycxx::detail::simd_map<D>([](const auto&... a) { return std::comp_ellint_3(a...); }, D(x), D(y));
+  return ycxx::detail::simd_map<D>(
+      [](const auto&... a) { return std::comp_ellint_3(a...); }, D(x), D(y));
 }
 template <ycxx::detail::math_floating_point V>
 ycxx::detail::deduced_vec_t<V> comp_ellint_3(const V& x, const ycxx::detail::deduced_vec_t<V>& y) {
   using D = ycxx::detail::deduced_vec_t<V>;
-  return ycxx::detail::simd_map<D>([](const auto&... a) { return std::comp_ellint_3(a...); }, D(x), D(y));
+  return ycxx::detail::simd_map<D>(
+      [](const auto&... a) { return std::comp_ellint_3(a...); }, D(x), D(y));
 }
 template <ycxx::detail::math_floating_point V>
 ycxx::detail::deduced_vec_t<V> cyl_bessel_i(const V& x, const V& y) {
   using D = ycxx::detail::deduced_vec_t<V>;
-  return ycxx::detail::simd_map<D>([](const auto&... a) { return std::cyl_bessel_i(a...); }, D(x), D(y));
+  return ycxx::detail::simd_map<D>(
+      [](const auto&... a) { return std::cyl_bessel_i(a...); }, D(x), D(y));
 }
 template <ycxx::detail::math_floating_point V>
 ycxx::detail::deduced_vec_t<V> cyl_bessel_i(const ycxx::detail::deduced_vec_t<V>& x, const V& y) {
   using D = ycxx::detail::deduced_vec_t<V>;
-  return ycxx::detail::simd_map<D>([](const auto&... a) { return std::cyl_bessel_i(a...); }, D(x), D(y));
+  return ycxx::detail::simd_map<D>(
+      [](const auto&... a) { return std::cyl_bessel_i(a...); }, D(x), D(y));
 }
 template <ycxx::detail::math_floating_point V>
 ycxx::detail::deduced_vec_t<V> cyl_bessel_i(const V& x, const ycxx::detail::deduced_vec_t<V>& y) {
   using D = ycxx::detail::deduced_vec_t<V>;
-  return ycxx::detail::simd_map<D>([](const auto&... a) { return std::cyl_bessel_i(a...); }, D(x), D(y));
+  return ycxx::detail::simd_map<D>(
+      [](const auto&... a) { return std::cyl_bessel_i(a...); }, D(x), D(y));
 }
 template <ycxx::detail::math_floating_point V>
 ycxx::detail::deduced_vec_t<V> cyl_bessel_j(const V& x, const V& y) {
   using D = ycxx::detail::deduced_vec_t<V>;
-  return ycxx::detail::simd_map<D>([](const auto&... a) { return std::cyl_bessel_j(a...); }, D(x), D(y));
+  return ycxx::detail::simd_map<D>(
+      [](const auto&... a) { return std::cyl_bessel_j(a...); }, D(x), D(y));
 }
 template <ycxx::detail::math_floating_point V>
 ycxx::detail::deduced_vec_t<V> cyl_bessel_j(const ycxx::detail::deduced_vec_t<V>& x, const V& y) {
   using D = ycxx::detail::deduced_vec_t<V>;
-  return ycxx::detail::simd_map<D>([](const auto&... a) { return std::cyl_bessel_j(a...); }, D(x), D(y));
+  return ycxx::detail::simd_map<D>(
+      [](const auto&... a) { return std::cyl_bessel_j(a...); }, D(x), D(y));
 }
 template <ycxx::detail::math_floating_point V>
 ycxx::detail::deduced_vec_t<V> cyl_bessel_j(const V& x, const ycxx::detail::deduced_vec_t<V>& y) {
   using D = ycxx::detail::deduced_vec_t<V>;
-  return ycxx::detail::simd_map<D>([](const auto&... a) { return std::cyl_bessel_j(a...); }, D(x), D(y));
+  return ycxx::detail::simd_map<D>(
+      [](const auto&... a) { return std::cyl_bessel_j(a...); }, D(x), D(y));
 }
 template <ycxx::detail::math_floating_point V>
 ycxx::detail::deduced_vec_t<V> cyl_bessel_k(const V& x, const V& y) {
   using D = ycxx::detail::deduced_vec_t<V>;
-  return ycxx::detail::simd_map<D>([](const auto&... a) { return std::cyl_bessel_k(a...); }, D(x), D(y));
+  return ycxx::detail::simd_map<D>(
+      [](const auto&... a) { return std::cyl_bessel_k(a...); }, D(x), D(y));
 }
 template <ycxx::detail::math_floating_point V>
 ycxx::detail::deduced_vec_t<V> cyl_bessel_k(const ycxx::detail::deduced_vec_t<V>& x, const V& y) {
   using D = ycxx::detail::deduced_vec_t<V>;
-  return ycxx::detail::simd_map<D>([](const auto&... a) { return std::cyl_bessel_k(a...); }, D(x), D(y));
+  return ycxx::detail::simd_map<D>(
+      [](const auto&... a) { return std::cyl_bessel_k(a...); }, D(x), D(y));
 }
 template <ycxx::detail::math_floating_point V>
 ycxx::detail::deduced_vec_t<V> cyl_bessel_k(const V& x, const ycxx::detail::deduced_vec_t<V>& y) {
   using D = ycxx::detail::deduced_vec_t<V>;
-  return ycxx::detail::simd_map<D>([](const auto&... a) { return std::cyl_bessel_k(a...); }, D(x), D(y));
+  return ycxx::detail::simd_map<D>(
+      [](const auto&... a) { return std::cyl_bessel_k(a...); }, D(x), D(y));
 }
 template <ycxx::detail::math_floating_point V>
 ycxx::detail::deduced_vec_t<V> cyl_neumann(const V& x, const V& y) {
   using D = ycxx::detail::deduced_vec_t<V>;
-  return ycxx::detail::simd_map<D>([](const auto&... a) { return std::cyl_neumann(a...); }, D(x), D(y));
+  return ycxx::detail::simd_map<D>(
+      [](const auto&... a) { return std::cyl_neumann(a...); }, D(x), D(y));
 }
 template <ycxx::detail::math_floating_point V>
 ycxx::detail::deduced_vec_t<V> cyl_neumann(const ycxx::detail::deduced_vec_t<V>& x, const V& y) {
   using D = ycxx::detail::deduced_vec_t<V>;
-  return ycxx::detail::simd_map<D>([](const auto&... a) { return std::cyl_neumann(a...); }, D(x), D(y));
+  return ycxx::detail::simd_map<D>(
+      [](const auto&... a) { return std::cyl_neumann(a...); }, D(x), D(y));
 }
 template <ycxx::detail::math_floating_point V>
 ycxx::detail::deduced_vec_t<V> cyl_neumann(const V& x, const ycxx::detail::deduced_vec_t<V>& y) {
   using D = ycxx::detail::deduced_vec_t<V>;
-  return ycxx::detail::simd_map<D>([](const auto&... a) { return std::cyl_neumann(a...); }, D(x), D(y));
+  return ycxx::detail::simd_map<D>(
+      [](const auto&... a) { return std::cyl_neumann(a...); }, D(x), D(y));
 }
 template <ycxx::detail::math_floating_point V>
 ycxx::detail::deduced_vec_t<V> ellint_1(const V& x, const V& y) {
   using D = ycxx::detail::deduced_vec_t<V>;
-  return ycxx::detail::simd_map<D>([](const auto&... a) { return std::ellint_1(a...); }, D(x), D(y));
+  return ycxx::detail::simd_map<D>(
+      [](const auto&... a) { return std::ellint_1(a...); }, D(x), D(y));
 }
 template <ycxx::detail::math_floating_point V>
 ycxx::detail::deduced_vec_t<V> ellint_1(const ycxx::detail::deduced_vec_t<V>& x, const V& y) {
   using D = ycxx::detail::deduced_vec_t<V>;
-  return ycxx::detail::simd_map<D>([](const auto&... a) { return std::ellint_1(a...); }, D(x), D(y));
+  return ycxx::detail::simd_map<D>(
+      [](const auto&... a) { return std::ellint_1(a...); }, D(x), D(y));
 }
 template <ycxx::detail::math_floating_point V>
 ycxx::detail::deduced_vec_t<V> ellint_1(const V& x, const ycxx::detail::deduced_vec_t<V>& y) {
   using D = ycxx::detail::deduced_vec_t<V>;
-  return ycxx::detail::simd_map<D>([](const auto&... a) { return std::ellint_1(a...); }, D(x), D(y));
+  return ycxx::detail::simd_map<D>(
+      [](const auto&... a) { return std::ellint_1(a...); }, D(x), D(y));
 }
 template <ycxx::detail::math_floating_point V>
 ycxx::detail::deduced_vec_t<V> ellint_2(const V& x, const V& y) {
   using D = ycxx::detail::deduced_vec_t<V>;
-  return ycxx::detail::simd_map<D>([](const auto&... a) { return std::ellint_2(a...); }, D(x), D(y));
+  return ycxx::detail::simd_map<D>(
+      [](const auto&... a) { return std::ellint_2(a...); }, D(x), D(y));
 }
 template <ycxx::detail::math_floating_point V>
 ycxx::detail::deduced_vec_t<V> ellint_2(const ycxx::detail::deduced_vec_t<V>& x, const V& y) {
   using D = ycxx::detail::deduced_vec_t<V>;
-  return ycxx::detail::simd_map<D>([](const auto&... a) { return std::ellint_2(a...); }, D(x), D(y));
+  return ycxx::detail::simd_map<D>(
+      [](const auto&... a) { return std::ellint_2(a...); }, D(x), D(y));
 }
 template <ycxx::detail::math_floating_point V>
 ycxx::detail::deduced_vec_t<V> ellint_2(const V& x, const ycxx::detail::deduced_vec_t<V>& y) {
   using D = ycxx::detail::deduced_vec_t<V>;
-  return ycxx::detail::simd_map<D>([](const auto&... a) { return std::ellint_2(a...); }, D(x), D(y));
+  return ycxx::detail::simd_map<D>(
+      [](const auto&... a) { return std::ellint_2(a...); }, D(x), D(y));
 }
 template <ycxx::detail::math_floating_point V>
 constexpr ycxx::detail::deduced_vec_t<V> hypot(const V& x, const V& y, const V& z) {
   using D = ycxx::detail::deduced_vec_t<V>;
-  return ycxx::detail::simd_map<D>([](const auto&... a) { return std::hypot(a...); }, D(x), D(y), D(z));
+  return ycxx::detail::simd_map<D>(
+      [](const auto&... a) { return std::hypot(a...); }, D(x), D(y), D(z));
 }
 template <ycxx::detail::math_floating_point V>
 constexpr ycxx::detail::deduced_vec_t<V> hypot(const ycxx::detail::deduced_vec_t<V>& x, const V& y, const V& z) {
   using D = ycxx::detail::deduced_vec_t<V>;
-  return ycxx::detail::simd_map<D>([](const auto&... a) { return std::hypot(a...); }, D(x), D(y), D(z));
+  return ycxx::detail::simd_map<D>(
+      [](const auto&... a) { return std::hypot(a...); }, D(x), D(y), D(z));
 }
 template <ycxx::detail::math_floating_point V>
 constexpr ycxx::detail::deduced_vec_t<V> hypot(const V& x, const ycxx::detail::deduced_vec_t<V>& y, const V& z) {
   using D = ycxx::detail::deduced_vec_t<V>;
-  return ycxx::detail::simd_map<D>([](const auto&... a) { return std::hypot(a...); }, D(x), D(y), D(z));
+  return ycxx::detail::simd_map<D>(
+      [](const auto&... a) { return std::hypot(a...); }, D(x), D(y), D(z));
 }
 template <ycxx::detail::math_floating_point V>
 constexpr ycxx::detail::deduced_vec_t<V> hypot(const V& x, const V& y, const ycxx::detail::deduced_vec_t<V>& z) {
   using D = ycxx::detail::deduced_vec_t<V>;
-  return ycxx::detail::simd_map<D>([](const auto&... a) { return std::hypot(a...); }, D(x), D(y), D(z));
+  return ycxx::detail::simd_map<D>(
+      [](const auto&... a) { return std::hypot(a...); }, D(x), D(y), D(z));
 }
 template <ycxx::detail::math_floating_point V>
-constexpr ycxx::detail::deduced_vec_t<V> hypot(const ycxx::detail::deduced_vec_t<V>& x, const ycxx::detail::deduced_vec_t<V>& y, const V& z) {
+constexpr ycxx::detail::deduced_vec_t<V>
+hypot(const ycxx::detail::deduced_vec_t<V>& x,
+    const ycxx::detail::deduced_vec_t<V>& y,
+    const V& z) {
   using D = ycxx::detail::deduced_vec_t<V>;
-  return ycxx::detail::simd_map<D>([](const auto&... a) { return std::hypot(a...); }, D(x), D(y), D(z));
+  return ycxx::detail::simd_map<D>(
+      [](const auto&... a) { return std::hypot(a...); }, D(x), D(y), D(z));
 }
 template <ycxx::detail::math_floating_point V>
-constexpr ycxx::detail::deduced_vec_t<V> hypot(const ycxx::detail::deduced_vec_t<V>& x, const V& y, const ycxx::detail::deduced_vec_t<V>& z) {
+constexpr ycxx::detail::deduced_vec_t<V>
+hypot(const ycxx::detail::deduced_vec_t<V>& x,
+    const V& y,
+    const ycxx::detail::deduced_vec_t<V>& z) {
   using D = ycxx::detail::deduced_vec_t<V>;
-  return ycxx::detail::simd_map<D>([](const auto&... a) { return std::hypot(a...); }, D(x), D(y), D(z));
+  return ycxx::detail::simd_map<D>(
+      [](const auto&... a) { return std::hypot(a...); }, D(x), D(y), D(z));
 }
 template <ycxx::detail::math_floating_point V>
-constexpr ycxx::detail::deduced_vec_t<V> hypot(const V& x, const ycxx::detail::deduced_vec_t<V>& y, const ycxx::detail::deduced_vec_t<V>& z) {
+constexpr ycxx::detail::deduced_vec_t<V>
+hypot(const V& x,
+    const ycxx::detail::deduced_vec_t<V>& y,
+    const ycxx::detail::deduced_vec_t<V>& z) {
   using D = ycxx::detail::deduced_vec_t<V>;
-  return ycxx::detail::simd_map<D>([](const auto&... a) { return std::hypot(a...); }, D(x), D(y), D(z));
+  return ycxx::detail::simd_map<D>(
+      [](const auto&... a) { return std::hypot(a...); }, D(x), D(y), D(z));
 }
 template <ycxx::detail::math_floating_point V>
 constexpr ycxx::detail::deduced_vec_t<V> fma(const V& x, const V& y, const V& z) {
   using D = ycxx::detail::deduced_vec_t<V>;
-  return ycxx::detail::simd_map<D>([](const auto&... a) { return std::fma(a...); }, D(x), D(y), D(z));
+  return ycxx::detail::simd_map<D>(
+      [](const auto&... a) { return std::fma(a...); }, D(x), D(y), D(z));
 }
 template <ycxx::detail::math_floating_point V>
 constexpr ycxx::detail::deduced_vec_t<V> fma(const ycxx::detail::deduced_vec_t<V>& x, const V& y, const V& z) {
   using D = ycxx::detail::deduced_vec_t<V>;
-  return ycxx::detail::simd_map<D>([](const auto&... a) { return std::fma(a...); }, D(x), D(y), D(z));
+  return ycxx::detail::simd_map<D>(
+      [](const auto&... a) { return std::fma(a...); }, D(x), D(y), D(z));
 }
 template <ycxx::detail::math_floating_point V>
 constexpr ycxx::detail::deduced_vec_t<V> fma(const V& x, const ycxx::detail::deduced_vec_t<V>& y, const V& z) {
   using D = ycxx::detail::deduced_vec_t<V>;
-  return ycxx::detail::simd_map<D>([](const auto&... a) { return std::fma(a...); }, D(x), D(y), D(z));
+  return ycxx::detail::simd_map<D>(
+      [](const auto&... a) { return std::fma(a...); }, D(x), D(y), D(z));
 }
 template <ycxx::detail::math_floating_point V>
 constexpr ycxx::detail::deduced_vec_t<V> fma(const V& x, const V& y, const ycxx::detail::deduced_vec_t<V>& z) {
   using D = ycxx::detail::deduced_vec_t<V>;
-  return ycxx::detail::simd_map<D>([](const auto&... a) { return std::fma(a...); }, D(x), D(y), D(z));
+  return ycxx::detail::simd_map<D>(
+      [](const auto&... a) { return std::fma(a...); }, D(x), D(y), D(z));
 }
 template <ycxx::detail::math_floating_point V>
-constexpr ycxx::detail::deduced_vec_t<V> fma(const ycxx::detail::deduced_vec_t<V>& x, const ycxx::detail::deduced_vec_t<V>& y, const V& z) {
+constexpr ycxx::detail::deduced_vec_t<V>
+fma(const ycxx::detail::deduced_vec_t<V>& x,
+    const ycxx::detail::deduced_vec_t<V>& y,
+    const V& z) {
   using D = ycxx::detail::deduced_vec_t<V>;
-  return ycxx::detail::simd_map<D>([](const auto&... a) { return std::fma(a...); }, D(x), D(y), D(z));
+  return ycxx::detail::simd_map<D>(
+      [](const auto&... a) { return std::fma(a...); }, D(x), D(y), D(z));
 }
 template <ycxx::detail::math_floating_point V>
-constexpr ycxx::detail::deduced_vec_t<V> fma(const ycxx::detail::deduced_vec_t<V>& x, const V& y, const ycxx::detail::deduced_vec_t<V>& z) {
+constexpr ycxx::detail::deduced_vec_t<V>
+fma(const ycxx::detail::deduced_vec_t<V>& x,
+    const V& y,
+    const ycxx::detail::deduced_vec_t<V>& z) {
   using D = ycxx::detail::deduced_vec_t<V>;
-  return ycxx::detail::simd_map<D>([](const auto&... a) { return std::fma(a...); }, D(x), D(y), D(z));
+  return ycxx::detail::simd_map<D>(
+      [](const auto&... a) { return std::fma(a...); }, D(x), D(y), D(z));
 }
 template <ycxx::detail::math_floating_point V>
-constexpr ycxx::detail::deduced_vec_t<V> fma(const V& x, const ycxx::detail::deduced_vec_t<V>& y, const ycxx::detail::deduced_vec_t<V>& z) {
+constexpr ycxx::detail::deduced_vec_t<V>
+fma(const V& x,
+    const ycxx::detail::deduced_vec_t<V>& y,
+    const ycxx::detail::deduced_vec_t<V>& z) {
   using D = ycxx::detail::deduced_vec_t<V>;
-  return ycxx::detail::simd_map<D>([](const auto&... a) { return std::fma(a...); }, D(x), D(y), D(z));
+  return ycxx::detail::simd_map<D>(
+      [](const auto&... a) { return std::fma(a...); }, D(x), D(y), D(z));
 }
 template <ycxx::detail::math_floating_point V>
 constexpr ycxx::detail::deduced_vec_t<V> lerp(const V& x, const V& y, const V& z) noexcept {
   using D = ycxx::detail::deduced_vec_t<V>;
-  return ycxx::detail::simd_map<D>([](const auto&... a) { return std::lerp(a...); }, D(x), D(y), D(z));
+  return ycxx::detail::simd_map<D>(
+      [](const auto&... a) { return std::lerp(a...); }, D(x), D(y), D(z));
 }
 template <ycxx::detail::math_floating_point V>
 constexpr ycxx::detail::deduced_vec_t<V> lerp(const ycxx::detail::deduced_vec_t<V>& x, const V& y, const V& z) {
   using D = ycxx::detail::deduced_vec_t<V>;
-  return ycxx::detail::simd_map<D>([](const auto&... a) { return std::lerp(a...); }, D(x), D(y), D(z));
+  return ycxx::detail::simd_map<D>(
+      [](const auto&... a) { return std::lerp(a...); }, D(x), D(y), D(z));
 }
 template <ycxx::detail::math_floating_point V>
 constexpr ycxx::detail::deduced_vec_t<V> lerp(const V& x, const ycxx::detail::deduced_vec_t<V>& y, const V& z) {
   using D = ycxx::detail::deduced_vec_t<V>;
-  return ycxx::detail::simd_map<D>([](const auto&... a) { return std::lerp(a...); }, D(x), D(y), D(z));
+  return ycxx::detail::simd_map<D>(
+      [](const auto&... a) { return std::lerp(a...); }, D(x), D(y), D(z));
 }
 template <ycxx::detail::math_floating_point V>
 constexpr ycxx::detail::deduced_vec_t<V> lerp(const V& x, const V& y, const ycxx::detail::deduced_vec_t<V>& z) {
   using D = ycxx::detail::deduced_vec_t<V>;
-  return ycxx::detail::simd_map<D>([](const auto&... a) { return std::lerp(a...); }, D(x), D(y), D(z));
+  return ycxx::detail::simd_map<D>(
+      [](const auto&... a) { return std::lerp(a...); }, D(x), D(y), D(z));
 }
 template <ycxx::detail::math_floating_point V>
-constexpr ycxx::detail::deduced_vec_t<V> lerp(const ycxx::detail::deduced_vec_t<V>& x, const ycxx::detail::deduced_vec_t<V>& y, const V& z) {
+constexpr ycxx::detail::deduced_vec_t<V>
+lerp(const ycxx::detail::deduced_vec_t<V>& x,
+    const ycxx::detail::deduced_vec_t<V>& y,
+    const V& z) {
   using D = ycxx::detail::deduced_vec_t<V>;
-  return ycxx::detail::simd_map<D>([](const auto&... a) { return std::lerp(a...); }, D(x), D(y), D(z));
+  return ycxx::detail::simd_map<D>(
+      [](const auto&... a) { return std::lerp(a...); }, D(x), D(y), D(z));
 }
 template <ycxx::detail::math_floating_point V>
-constexpr ycxx::detail::deduced_vec_t<V> lerp(const ycxx::detail::deduced_vec_t<V>& x, const V& y, const ycxx::detail::deduced_vec_t<V>& z) {
+constexpr ycxx::detail::deduced_vec_t<V>
+lerp(const ycxx::detail::deduced_vec_t<V>& x,
+    const V& y,
+    const ycxx::detail::deduced_vec_t<V>& z) {
   using D = ycxx::detail::deduced_vec_t<V>;
-  return ycxx::detail::simd_map<D>([](const auto&... a) { return std::lerp(a...); }, D(x), D(y), D(z));
+  return ycxx::detail::simd_map<D>(
+      [](const auto&... a) { return std::lerp(a...); }, D(x), D(y), D(z));
 }
 template <ycxx::detail::math_floating_point V>
-constexpr ycxx::detail::deduced_vec_t<V> lerp(const V& x, const ycxx::detail::deduced_vec_t<V>& y, const ycxx::detail::deduced_vec_t<V>& z) {
+constexpr ycxx::detail::deduced_vec_t<V>
+lerp(const V& x,
+    const ycxx::detail::deduced_vec_t<V>& y,
+    const ycxx::detail::deduced_vec_t<V>& z) {
   using D = ycxx::detail::deduced_vec_t<V>;
-  return ycxx::detail::simd_map<D>([](const auto&... a) { return std::lerp(a...); }, D(x), D(y), D(z));
+  return ycxx::detail::simd_map<D>(
+      [](const auto&... a) { return std::lerp(a...); }, D(x), D(y), D(z));
 }
 template <ycxx::detail::math_floating_point V>
 ycxx::detail::deduced_vec_t<V> ellint_3(const V& x, const V& y, const V& z) {
   using D = ycxx::detail::deduced_vec_t<V>;
-  return ycxx::detail::simd_map<D>([](const auto&... a) { return std::ellint_3(a...); }, D(x), D(y), D(z));
+  return ycxx::detail::simd_map<D>(
+      [](const auto&... a) { return std::ellint_3(a...); }, D(x), D(y), D(z));
 }
 template <ycxx::detail::math_floating_point V>
 ycxx::detail::deduced_vec_t<V> ellint_3(const ycxx::detail::deduced_vec_t<V>& x, const V& y, const V& z) {
   using D = ycxx::detail::deduced_vec_t<V>;
-  return ycxx::detail::simd_map<D>([](const auto&... a) { return std::ellint_3(a...); }, D(x), D(y), D(z));
+  return ycxx::detail::simd_map<D>(
+      [](const auto&... a) { return std::ellint_3(a...); }, D(x), D(y), D(z));
 }
 template <ycxx::detail::math_floating_point V>
 ycxx::detail::deduced_vec_t<V> ellint_3(const V& x, const ycxx::detail::deduced_vec_t<V>& y, const V& z) {
   using D = ycxx::detail::deduced_vec_t<V>;
-  return ycxx::detail::simd_map<D>([](const auto&... a) { return std::ellint_3(a...); }, D(x), D(y), D(z));
+  return ycxx::detail::simd_map<D>(
+      [](const auto&... a) { return std::ellint_3(a...); }, D(x), D(y), D(z));
 }
 template <ycxx::detail::math_floating_point V>
 ycxx::detail::deduced_vec_t<V> ellint_3(const V& x, const V& y, const ycxx::detail::deduced_vec_t<V>& z) {
   using D = ycxx::detail::deduced_vec_t<V>;
-  return ycxx::detail::simd_map<D>([](const auto&... a) { return std::ellint_3(a...); }, D(x), D(y), D(z));
+  return ycxx::detail::simd_map<D>(
+      [](const auto&... a) { return std::ellint_3(a...); }, D(x), D(y), D(z));
 }
 template <ycxx::detail::math_floating_point V>
-ycxx::detail::deduced_vec_t<V> ellint_3(const ycxx::detail::deduced_vec_t<V>& x, const ycxx::detail::deduced_vec_t<V>& y, const V& z) {
+ycxx::detail::deduced_vec_t<V>
+ellint_3(const ycxx::detail::deduced_vec_t<V>& x,
+    const ycxx::detail::deduced_vec_t<V>& y,
+    const V& z) {
   using D = ycxx::detail::deduced_vec_t<V>;
-  return ycxx::detail::simd_map<D>([](const auto&... a) { return std::ellint_3(a...); }, D(x), D(y), D(z));
+  return ycxx::detail::simd_map<D>(
+      [](const auto&... a) { return std::ellint_3(a...); }, D(x), D(y), D(z));
 }
 template <ycxx::detail::math_floating_point V>
-ycxx::detail::deduced_vec_t<V> ellint_3(const ycxx::detail::deduced_vec_t<V>& x, const V& y, const ycxx::detail::deduced_vec_t<V>& z) {
+ycxx::detail::deduced_vec_t<V>
+ellint_3(const ycxx::detail::deduced_vec_t<V>& x,
+    const V& y,
+    const ycxx::detail::deduced_vec_t<V>& z) {
   using D = ycxx::detail::deduced_vec_t<V>;
-  return ycxx::detail::simd_map<D>([](const auto&... a) { return std::ellint_3(a...); }, D(x), D(y), D(z));
+  return ycxx::detail::simd_map<D>(
+      [](const auto&... a) { return std::ellint_3(a...); }, D(x), D(y), D(z));
 }
 template <ycxx::detail::math_floating_point V>
-ycxx::detail::deduced_vec_t<V> ellint_3(const V& x, const ycxx::detail::deduced_vec_t<V>& y, const ycxx::detail::deduced_vec_t<V>& z) {
+ycxx::detail::deduced_vec_t<V>
+ellint_3(const V& x,
+    const ycxx::detail::deduced_vec_t<V>& y,
+    const ycxx::detail::deduced_vec_t<V>& z) {
   using D = ycxx::detail::deduced_vec_t<V>;
-  return ycxx::detail::simd_map<D>([](const auto&... a) { return std::ellint_3(a...); }, D(x), D(y), D(z));
+  return ycxx::detail::simd_map<D>(
+      [](const auto&... a) { return std::ellint_3(a...); }, D(x), D(y), D(z));
 }
 template <ycxx::detail::math_floating_point V>
-ycxx::detail::deduced_vec_t<V> assoc_laguerre(const std::simd::rebind_t<unsigned, ycxx::detail::deduced_vec_t<V>>& n, const std::simd::rebind_t<unsigned, ycxx::detail::deduced_vec_t<V>>& m, const V& x) {
+ycxx::detail::deduced_vec_t<V>
+assoc_laguerre(const std::simd::rebind_t<unsigned, ycxx::detail::deduced_vec_t<V>>& n,
+    const std::simd::rebind_t<unsigned, ycxx::detail::deduced_vec_t<V>>& m,
+    const V& x) {
   using D = ycxx::detail::deduced_vec_t<V>;
-  return ycxx::detail::simd_map<D>([](const auto&... a) { return std::assoc_laguerre(a...); }, n, m, D(x));
+  return ycxx::detail::simd_map<D>(
+      [](const auto&... a) { return std::assoc_laguerre(a...); }, n, m, D(x));
 }
 template <ycxx::detail::math_floating_point V>
-ycxx::detail::deduced_vec_t<V> assoc_legendre(const std::simd::rebind_t<unsigned, ycxx::detail::deduced_vec_t<V>>& n, const std::simd::rebind_t<unsigned, ycxx::detail::deduced_vec_t<V>>& m, const V& x) {
+ycxx::detail::deduced_vec_t<V>
+assoc_legendre(const std::simd::rebind_t<unsigned, ycxx::detail::deduced_vec_t<V>>& n,
+    const std::simd::rebind_t<unsigned, ycxx::detail::deduced_vec_t<V>>& m,
+    const V& x) {
   using D = ycxx::detail::deduced_vec_t<V>;
-  return ycxx::detail::simd_map<D>([](const auto&... a) { return std::assoc_legendre(a...); }, n, m, D(x));
+  return ycxx::detail::simd_map<D>(
+      [](const auto&... a) { return std::assoc_legendre(a...); }, n, m, D(x));
 }
 template <ycxx::detail::math_floating_point V>
-ycxx::detail::deduced_vec_t<V> sph_legendre(const std::simd::rebind_t<unsigned, ycxx::detail::deduced_vec_t<V>>& n, const std::simd::rebind_t<unsigned, ycxx::detail::deduced_vec_t<V>>& m, const V& x) {
+ycxx::detail::deduced_vec_t<V>
+sph_legendre(const std::simd::rebind_t<unsigned, ycxx::detail::deduced_vec_t<V>>& n,
+    const std::simd::rebind_t<unsigned, ycxx::detail::deduced_vec_t<V>>& m,
+    const V& x) {
   using D = ycxx::detail::deduced_vec_t<V>;
-  return ycxx::detail::simd_map<D>([](const auto&... a) { return std::sph_legendre(a...); }, n, m, D(x));
+  return ycxx::detail::simd_map<D>(
+      [](const auto&... a) { return std::sph_legendre(a...); }, n, m, D(x));
 }
 template <ycxx::detail::math_floating_point V>
-ycxx::detail::deduced_vec_t<V> hermite(const std::simd::rebind_t<unsigned, ycxx::detail::deduced_vec_t<V>>& n, const V& x) {
+ycxx::detail::deduced_vec_t<V>
+hermite(const std::simd::rebind_t<unsigned, ycxx::detail::deduced_vec_t<V>>& n,
+    const V& x) {
   using D = ycxx::detail::deduced_vec_t<V>;
-  return ycxx::detail::simd_map<D>([](const auto&... a) { return std::hermite(a...); }, n, D(x));
+  return ycxx::detail::simd_map<D>(
+      [](const auto&... a) { return std::hermite(a...); }, n, D(x));
 }
 template <ycxx::detail::math_floating_point V>
-ycxx::detail::deduced_vec_t<V> laguerre(const std::simd::rebind_t<unsigned, ycxx::detail::deduced_vec_t<V>>& n, const V& x) {
+ycxx::detail::deduced_vec_t<V>
+laguerre(const std::simd::rebind_t<unsigned, ycxx::detail::deduced_vec_t<V>>& n,
+    const V& x) {
   using D = ycxx::detail::deduced_vec_t<V>;
-  return ycxx::detail::simd_map<D>([](const auto&... a) { return std::laguerre(a...); }, n, D(x));
+  return ycxx::detail::simd_map<D>(
+      [](const auto&... a) { return std::laguerre(a...); }, n, D(x));
 }
 template <ycxx::detail::math_floating_point V>
-ycxx::detail::deduced_vec_t<V> legendre(const std::simd::rebind_t<unsigned, ycxx::detail::deduced_vec_t<V>>& n, const V& x) {
+ycxx::detail::deduced_vec_t<V>
+legendre(const std::simd::rebind_t<unsigned, ycxx::detail::deduced_vec_t<V>>& n,
+    const V& x) {
   using D = ycxx::detail::deduced_vec_t<V>;
-  return ycxx::detail::simd_map<D>([](const auto&... a) { return std::legendre(a...); }, n, D(x));
+  return ycxx::detail::simd_map<D>(
+      [](const auto&... a) { return std::legendre(a...); }, n, D(x));
 }
 template <ycxx::detail::math_floating_point V>
-ycxx::detail::deduced_vec_t<V> sph_bessel(const std::simd::rebind_t<unsigned, ycxx::detail::deduced_vec_t<V>>& n, const V& x) {
+ycxx::detail::deduced_vec_t<V>
+sph_bessel(const std::simd::rebind_t<unsigned, ycxx::detail::deduced_vec_t<V>>& n,
+    const V& x) {
   using D = ycxx::detail::deduced_vec_t<V>;
-  return ycxx::detail::simd_map<D>([](const auto&... a) { return std::sph_bessel(a...); }, n, D(x));
+  return ycxx::detail::simd_map<D>(
+      [](const auto&... a) { return std::sph_bessel(a...); }, n, D(x));
 }
 template <ycxx::detail::math_floating_point V>
-ycxx::detail::deduced_vec_t<V> sph_neumann(const std::simd::rebind_t<unsigned, ycxx::detail::deduced_vec_t<V>>& n, const V& x) {
+ycxx::detail::deduced_vec_t<V>
+sph_neumann(const std::simd::rebind_t<unsigned, ycxx::detail::deduced_vec_t<V>>& n,
+    const V& x) {
   using D = ycxx::detail::deduced_vec_t<V>;
-  return ycxx::detail::simd_map<D>([](const auto&... a) { return std::sph_neumann(a...); }, n, D(x));
+  return ycxx::detail::simd_map<D>(
+      [](const auto&... a) { return std::sph_neumann(a...); }, n, D(x));
 }
 template <ycxx::detail::math_floating_point V>
-constexpr ycxx::detail::deduced_vec_t<V> ldexp(const V& x, const std::simd::rebind_t<int, ycxx::detail::deduced_vec_t<V>>& n) {
+constexpr ycxx::detail::deduced_vec_t<V>
+ldexp(const V& x,
+    const std::simd::rebind_t<int, ycxx::detail::deduced_vec_t<V>>& n) {
   using D = ycxx::detail::deduced_vec_t<V>;
-  return ycxx::detail::simd_map<D>([](const auto&... a) { return std::ldexp(a...); }, D(x), n);
+  return ycxx::detail::simd_map<D>(
+      [](const auto&... a) { return std::ldexp(a...); }, D(x), n);
 }
 template <ycxx::detail::math_floating_point V>
-constexpr ycxx::detail::deduced_vec_t<V> scalbn(const V& x, const std::simd::rebind_t<int, ycxx::detail::deduced_vec_t<V>>& n) {
+constexpr ycxx::detail::deduced_vec_t<V>
+scalbn(const V& x,
+    const std::simd::rebind_t<int, ycxx::detail::deduced_vec_t<V>>& n) {
   using D = ycxx::detail::deduced_vec_t<V>;
-  return ycxx::detail::simd_map<D>([](const auto&... a) { return std::scalbn(a...); }, D(x), n);
+  return ycxx::detail::simd_map<D>(
+      [](const auto&... a) { return std::scalbn(a...); }, D(x), n);
 }
 template <ycxx::detail::math_floating_point V>
-constexpr ycxx::detail::deduced_vec_t<V> scalbln(const V& x, const std::simd::rebind_t<long int, ycxx::detail::deduced_vec_t<V>>& n) {
+constexpr ycxx::detail::deduced_vec_t<V>
+scalbln(const V& x,
+    const std::simd::rebind_t<long int, ycxx::detail::deduced_vec_t<V>>& n) {
   using D = ycxx::detail::deduced_vec_t<V>;
-  return ycxx::detail::simd_map<D>([](const auto&... a) { return std::scalbln(a...); }, D(x), n);
+  return ycxx::detail::simd_map<D>(
+      [](const auto&... a) { return std::scalbln(a...); }, D(x), n);
 }
 
 template <ycxx::detail::math_floating_point V>
@@ -833,7 +1076,9 @@ constexpr ycxx::detail::deduced_vec_t<V> frexp(const V& value, rebind_t<int, ycx
 }
 
 template <ycxx::detail::math_floating_point V>
-constexpr ycxx::detail::deduced_vec_t<V> remquo(const V& x, const V& y, rebind_t<int, ycxx::detail::deduced_vec_t<V>>* quo) {
+constexpr ycxx::detail::deduced_vec_t<V>
+remquo(const V& x, const V& y,
+       rebind_t<int, ycxx::detail::deduced_vec_t<V>>* quo) {
   using D = ycxx::detail::deduced_vec_t<V>;
   D a(x), b(y);
   ycxx::detail::simd_array<int, D::size()> q;
@@ -842,7 +1087,9 @@ constexpr ycxx::detail::deduced_vec_t<V> remquo(const V& x, const V& y, rebind_t
   return r;
 }
 template <ycxx::detail::math_floating_point V>
-constexpr ycxx::detail::deduced_vec_t<V> remquo(const ycxx::detail::deduced_vec_t<V>& x, const V& y, rebind_t<int, ycxx::detail::deduced_vec_t<V>>* quo) {
+constexpr ycxx::detail::deduced_vec_t<V>
+remquo(const ycxx::detail::deduced_vec_t<V>& x, const V& y,
+       rebind_t<int, ycxx::detail::deduced_vec_t<V>>* quo) {
   using D = ycxx::detail::deduced_vec_t<V>;
   D a(x), b(y);
   ycxx::detail::simd_array<int, D::size()> q;
@@ -851,7 +1098,9 @@ constexpr ycxx::detail::deduced_vec_t<V> remquo(const ycxx::detail::deduced_vec_
   return r;
 }
 template <ycxx::detail::math_floating_point V>
-constexpr ycxx::detail::deduced_vec_t<V> remquo(const V& x, const ycxx::detail::deduced_vec_t<V>& y, rebind_t<int, ycxx::detail::deduced_vec_t<V>>* quo) {
+constexpr ycxx::detail::deduced_vec_t<V>
+remquo(const V& x, const ycxx::detail::deduced_vec_t<V>& y,
+       rebind_t<int, ycxx::detail::deduced_vec_t<V>>* quo) {
   using D = ycxx::detail::deduced_vec_t<V>;
   D a(x), b(y);
   ycxx::detail::simd_array<int, D::size()> q;

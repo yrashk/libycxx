@@ -44,7 +44,8 @@ struct rebind<T, basic_vec<U, ycxx::adl_free::simd_abi<N>>> {
   using type = basic_vec<T, ycxx::adl_free::simd_abi<N>>;
 };
 template <class T, size_t Bytes, int N>
-  requires(ycxx::detail::simd_vectorizable<T> && ycxx::detail::simd_mask_size_v<Bytes, ycxx::adl_free::simd_abi<N>> != 0)
+  requires(ycxx::detail::simd_vectorizable<T> &&
+           ycxx::detail::simd_mask_size_v<Bytes, ycxx::adl_free::simd_abi<N>> != 0)
 struct rebind<T, basic_mask<Bytes, ycxx::adl_free::simd_abi<N>>> {
   using type = basic_mask<sizeof(T), ycxx::adl_free::simd_abi<N>>;
 };
@@ -119,7 +120,8 @@ concept simd_broadcast_from =
 template <class From, class T>
 concept simd_generated_value =
     std::convertible_to<From, T> &&
-    (!is_arithmetic_v<std::remove_cvref_t<From>> || ycxx::detail::simd_value_preserving<std::remove_cvref_t<From>, T>());
+    (!is_arithmetic_v<std::remove_cvref_t<From>> ||
+     ycxx::detail::simd_value_preserving<std::remove_cvref_t<From>, T>());
 template <class G, class T, int I>
 concept simd_generator_element = requires(G& g) {
   { g(std::integral_constant<simd_size_t, I>()) } -> simd_generated_value<T>;
@@ -143,6 +145,8 @@ template <class G, int N>
 concept simd_mask_generator = ycxx::detail::simd_is_mask_generator<G>(std::make_integer_sequence<int, N>());
 
 // [simd.ctor]/12: the range constructor's constraints.
+template <class R>
+inline constexpr simd_size_t simd_static_width = static_cast<simd_size_t>(simd_static_size<R>);
 template <class R, class T, int N>
 concept simd_range_init = std::ranges::contiguous_range<R> && std::ranges::sized_range<R> &&
                           simd_static_size<R> == static_cast<std::size_t>(N) &&
@@ -483,7 +487,8 @@ public:
   friend constexpr basic_mask simd_select_impl(const basic_mask& k, const basic_mask& a, const basic_mask& b) noexcept {
     return make(ycxx::detail::simd_blend(k.data_, a.data_, b.data_));
   }
-  friend constexpr basic_mask simd_select_impl(const basic_mask& k, same_as<bool> auto a, same_as<bool> auto b) noexcept {
+  friend constexpr basic_mask simd_select_impl(const basic_mask& k, same_as<bool> auto a,
+                                               same_as<bool> auto b) noexcept {
     return make(ycxx::detail::simd_blend(k.data_, storage::broadcast(a ? element(-1) : element(0)),
                                          storage::broadcast(b ? element(-1) : element(0))));
   }
@@ -821,10 +826,9 @@ public:
 template <class R, class... Ts>
   requires(ranges::contiguous_range<R> && ranges::sized_range<R> &&
            ycxx::detail::simd_static_size<R> != dynamic_extent)
-basic_vec(R&& r, Ts...)
-    -> basic_vec<ranges::range_value_t<R>,
-                 ycxx::detail::simd_deduce_abi_t<ranges::range_value_t<R>,
-                                                 static_cast<ycxx::detail::simd_size_t>(ycxx::detail::simd_static_size<R>)>>;
+basic_vec(R&& r, Ts...) -> basic_vec<ranges::range_value_t<R>,
+                                     ycxx::detail::simd_deduce_abi_t<ranges::range_value_t<R>,
+                                                                     ycxx::detail::simd_static_width<R>>>;
 template <size_t Bytes, class Abi>
   requires(ycxx::detail::simd_mask_size_v<Bytes, Abi> != 0 && Bytes <= 8)
 basic_vec(basic_mask<Bytes, Abi>) -> basic_vec<ycxx::detail::simd_integer_from<Bytes>, Abi>;
@@ -1127,7 +1131,8 @@ constexpr typename V::value_type simd_reduce_minmax(const V& x) noexcept {
           std::simd::max(parts[0], parts[1]));
   } else {
     auto parts = std::simd::chunk<n - 1>(x);
-    auto r = ycxx::detail::simd_reduce_minmax<std::remove_cvref_t<decltype(std::get<0>(parts))>, Min>(std::get<0>(parts));
+    using H = std::remove_cvref_t<decltype(std::get<0>(parts))>;
+    auto r = ycxx::detail::simd_reduce_minmax<H, Min>(std::get<0>(parts));
     auto last = std::get<1>(parts)[0];
     if constexpr (Min)
       return last < r ? last : r;
@@ -1637,6 +1642,11 @@ namespace ycxx::detail {
 template <class R, class V>
 concept simd_gather_range = simd_vectorizable<std::ranges::range_value_t<R>> &&
                             simd_explicitly_convertible_to<std::ranges::range_value_t<R>, typename V::value_type>;
+// [simd.permute.memory]/6 for the default or given V.
+template <class V, class R, class I>
+using simd_gather_t = simd_gather_vec_t<V, std::ranges::range_value_t<R>, I>;
+template <class V, class R, class I>
+concept simd_gather_source = std::ranges::sized_range<R> && simd_gather_range<R, simd_gather_t<V, R, I>>;
 
 template <class V, class I, class... Flags, class U>
 constexpr V simd_gather(U* p, std::size_t n, const typename I::mask_type* k, const I& indices) {
@@ -1676,32 +1686,31 @@ namespace std::simd {
 
 // [simd.permute.memory]
 template <class V = void, ranges::contiguous_range R, ycxx::detail::simd_integral I, class... Flags>
-  requires(ranges::sized_range<R> && ycxx::detail::simd_gather_range<R, ycxx::detail::simd_gather_vec_t<V, ranges::range_value_t<R>, I>>)
-constexpr ycxx::detail::simd_gather_vec_t<V, ranges::range_value_t<R>, I> partial_gather_from(R&& in, const I& indices,
-                                                                                              flags<Flags...> = {}) {
-  using VV = ycxx::detail::simd_gather_vec_t<V, ranges::range_value_t<R>, I>;
+  requires ycxx::detail::simd_gather_source<V, R, I>
+constexpr ycxx::detail::simd_gather_t<V, R, I> partial_gather_from(R&& in, const I& indices, flags<Flags...> = {}) {
+  using VV = ycxx::detail::simd_gather_t<V, R, I>;
   static_assert(ycxx::detail::simd_check_load<VV, ranges::range_value_t<R>, Flags...>());
   return ycxx::detail::simd_gather<VV, I, Flags...>(ranges::data(in), ranges::size(in), nullptr, indices);
 }
 template <class V = void, ranges::contiguous_range R, ycxx::detail::simd_integral I, class... Flags>
-  requires(ranges::sized_range<R> && ycxx::detail::simd_gather_range<R, ycxx::detail::simd_gather_vec_t<V, ranges::range_value_t<R>, I>>)
-constexpr ycxx::detail::simd_gather_vec_t<V, ranges::range_value_t<R>, I>
+  requires ycxx::detail::simd_gather_source<V, R, I>
+constexpr ycxx::detail::simd_gather_t<V, R, I>
 partial_gather_from(R&& in, const typename I::mask_type& mask, const I& indices, flags<Flags...> = {}) {
-  using VV = ycxx::detail::simd_gather_vec_t<V, ranges::range_value_t<R>, I>;
+  using VV = ycxx::detail::simd_gather_t<V, R, I>;
   static_assert(ycxx::detail::simd_check_load<VV, ranges::range_value_t<R>, Flags...>());
   return ycxx::detail::simd_gather<VV, I, Flags...>(ranges::data(in), ranges::size(in), __builtin_addressof(mask),
                                                     indices);
 }
 template <class V = void, ranges::contiguous_range R, ycxx::detail::simd_integral I, class... Flags>
-  requires(ranges::sized_range<R> && ycxx::detail::simd_gather_range<R, ycxx::detail::simd_gather_vec_t<V, ranges::range_value_t<R>, I>>)
-constexpr ycxx::detail::simd_gather_vec_t<V, ranges::range_value_t<R>, I> unchecked_gather_from(R&& in, const I& indices,
-                                                                                                flags<Flags...> f = {}) {
+  requires ycxx::detail::simd_gather_source<V, R, I>
+constexpr ycxx::detail::simd_gather_t<V, R, I> unchecked_gather_from(R&& in, const I& indices,
+                                                                    flags<Flags...> f = {}) {
   ycxx::detail::simd_check_indices(indices, typename I::mask_type(true), ranges::size(in));
   return std::simd::partial_gather_from<V>(in, indices, f);
 }
 template <class V = void, ranges::contiguous_range R, ycxx::detail::simd_integral I, class... Flags>
-  requires(ranges::sized_range<R> && ycxx::detail::simd_gather_range<R, ycxx::detail::simd_gather_vec_t<V, ranges::range_value_t<R>, I>>)
-constexpr ycxx::detail::simd_gather_vec_t<V, ranges::range_value_t<R>, I>
+  requires ycxx::detail::simd_gather_source<V, R, I>
+constexpr ycxx::detail::simd_gather_t<V, R, I>
 unchecked_gather_from(R&& in, const typename I::mask_type& mask, const I& indices, flags<Flags...> f = {}) {
   ycxx::detail::simd_check_indices(indices, mask, ranges::size(in));
   return std::simd::partial_gather_from<V>(in, mask, indices, f);

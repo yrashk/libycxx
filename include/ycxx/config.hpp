@@ -97,6 +97,33 @@
 #else
 #  define YCXX_HAS_BUILTIN_TYPE_ORDER 0
 #endif
+// <stdfloat> declares each std::floatN_t alias only where the type exists ([stdfloat.syn]): an
+// alias cannot be declared conditionally without the preprocessor.
+#if defined(__STDCPP_FLOAT16_T__)
+#  define YCXX_HAS_FLOAT16_T 1
+#else
+#  define YCXX_HAS_FLOAT16_T 0
+#endif
+#if defined(__STDCPP_FLOAT32_T__)
+#  define YCXX_HAS_FLOAT32_T 1
+#else
+#  define YCXX_HAS_FLOAT32_T 0
+#endif
+#if defined(__STDCPP_FLOAT64_T__)
+#  define YCXX_HAS_FLOAT64_T 1
+#else
+#  define YCXX_HAS_FLOAT64_T 0
+#endif
+#if defined(__STDCPP_FLOAT128_T__)
+#  define YCXX_HAS_FLOAT128_T 1
+#else
+#  define YCXX_HAS_FLOAT128_T 0
+#endif
+#if defined(__STDCPP_BFLOAT16_T__)
+#  define YCXX_HAS_BFLOAT16_T 1
+#else
+#  define YCXX_HAS_BFLOAT16_T 0
+#endif
 // Clang's predefined int_fast16/32 types disagree with glibc on 64-bit Linux (glibc: long).
 // The <cstdint> limit macros must be usable in #if, so this is a preprocessor switch.
 #if defined(__clang__) && defined(__gnu_linux__) && __SIZEOF_POINTER__ == 8

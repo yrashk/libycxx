@@ -1,6 +1,7 @@
 // Freestanding smoke test: exercises core headers with no OS, no libc, no exceptions, no RTTI.
 #include <bit>
 #include <cassert>
+#include <charconv>
 #include <compare>
 #include <concepts>
 #include <cstddef>
@@ -30,6 +31,16 @@ extern "C" int ycxx_freestanding_main() {
   int* ip = std::construct_at(reinterpret_cast<int*>(buf), 5);
   r += *ip;
   std::destroy_at(ip);
+  // <charconv>: integers in the header, floating point from the runtime archive.
+  char text[32];
+  auto tc = std::to_chars(text, text + sizeof text, 0.1 * r);
+  double back = 0;
+  if (std::from_chars(text, tc.ptr, back) && back == 0.1 * r)
+    ++r;
+  int i = 0;
+  tc = std::to_chars(text, text + sizeof text, r, 7);
+  if (std::from_chars(text, tc.ptr, i, 7) && i == r)
+    ++r;
   assert(r > 0);
   return r;
 }

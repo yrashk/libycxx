@@ -251,6 +251,46 @@ int ycxx_pal_thread_atexit(void (*f)(void*), void* obj, void* dso) {
 }
 #endif
 
+/* The thread-end list: a pthread key whose destructor runs the calling thread's entries. POSIX
+   key destructors run after the C++ thread_local destructors (glibc: __call_tls_dtors comes
+   first; macOS: the TLV destructors run from the first key destructor round). */
+struct pal_end_entry {
+  void (*f)(void*);
+  void* arg;
+  struct pal_end_entry* next;
+};
+static pthread_key_t pal_end_key;
+static pthread_once_t pal_end_once = PTHREAD_ONCE_INIT;
+static int pal_end_key_ok;
+
+static void pal_run_end_list(void* p) {
+  struct pal_end_entry* e = (struct pal_end_entry*)p;
+  while (e) {
+    struct pal_end_entry* next = e->next;
+    e->f(e->arg);
+    free(e);
+    e = next;
+  }
+}
+
+static void pal_make_end_key(void) { pal_end_key_ok = pthread_key_create(&pal_end_key, pal_run_end_list) == 0; }
+
+int ycxx_pal_at_thread_end(void (*f)(void*), void* arg) {
+  pthread_once(&pal_end_once, pal_make_end_key);
+  if (!pal_end_key_ok)
+    return EAGAIN;
+  struct pal_end_entry* e = (struct pal_end_entry*)malloc(sizeof *e);
+  if (!e)
+    return ENOMEM;
+  e->f = f;
+  e->arg = arg;
+  e->next = (struct pal_end_entry*)pthread_getspecific(pal_end_key);
+  int r = pthread_setspecific(pal_end_key, e);
+  if (r != 0)
+    free(e);
+  return r;
+}
+
 int ycxx_pal_error_message(int ev, char* buf, ycxx_pal_size n) {
   if (n == 0)
     return EINVAL;

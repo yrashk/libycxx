@@ -96,6 +96,10 @@ void ycxx_pal_sleep_until(int clock, ycxx_pal_i64 sec, ycxx_pal_i64 nsec) YCXX_P
 /* Registers f(obj) to run when the calling thread exits (thread_local destructors); dso is the
    registering object's __dso_handle. Returns 0 on success. */
 int ycxx_pal_thread_atexit(void (*f)(void*), void* obj, void* dso) YCXX_PAL_NOEXCEPT;
+/* Registers f(arg) to run when the calling thread ends, after its thread_local objects are
+   destroyed (std::notify_all_at_thread_exit, promise::set_value_at_thread_exit). Not run for the
+   thread that ends the process. Returns 0 on success. */
+int ycxx_pal_at_thread_end(void (*f)(void*), void* arg) YCXX_PAL_NOEXCEPT;
 
 /* ---- error messages ----------------------------------------------------------------------- */
 /* Writes the C library's description of error number `ev` (as strerror, but thread-safe) to buf

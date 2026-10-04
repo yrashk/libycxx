@@ -27,6 +27,7 @@ Conformance oracles (run only, never edited): libc++ tests from `llvmorg-23.1.2`
 | strings/string.view + char.traits | 36/170 | 36/170 | yes | 127 need `<string>` |
 | utilities/template.bitset | 16/46 | 16/46 | yes | rest: `<vector>`, `<algorithm>`, `<sstream>`, `<string>` |
 | iterators + range.access + concepts + function.objects | 185/515 | 185/515 | yes | most failures need `<ranges>`, `bind`, `function`, containers |
+| strings/basic.string + string.conversions + hash/literals/erasure | 137/252 | 137/252 | yes (sto*/fp to_string: hosted runtime) | was 0; 109 need `<vector>`/`<deque>` (via asan_testing.h), `<algorithm>`, `<sstream>`, `<ranges>`, `<cmath>`; rest below |
 
 Whole-suite baseline (clang, before iterators/tuple/array/optional): 976 pass / ~8,000 run.
 
@@ -40,6 +41,10 @@ libstdc++ testsuite: 20_util/{tuple,pair,uses_allocator}: 107 pass on both compi
 20_util/variant: 27/31 on both (rest: missing `<string>`, `<vector>`, `<any>`).
 20_util/any: 22/30 on both (rest: `<vector>`, `<string>`, `<set>`, `unique_ptr`).
 21_strings/basic_string_view + char_traits: 98/130 on both (rest: `<string>`, `<sstream>`, `<iosfwd>`).
+21_strings/basic_string (+ basic_string_view): 97 -> 266/307 on both compilers (33 need missing
+headers, mostly `<sstream>`; the rest are listed under Known limitations). Own suite string/:
+55/60 on both (rest: `<algorithm>`, `<ranges>`, `<list>`, and `pmr::string` needs
+`polymorphic_allocator`); also clean under ASan on Clang (GCC 16 here has no ASan runtime).
 20_util/bitset + 23_containers/bitset: 22/38 on both (rest: `<string>`, `<sstream>`).
 23_containers/span: 30/35 on both (rest: `<vector>`, `<deque>`).
 20_util/expected: clang 18/20, gcc 18/20 (rest: `<string_view>`, `<vector>`). The libstdc++ harness
@@ -142,6 +147,25 @@ Deprecated and removed features are not implemented (`is_pod`, `is_trivial`, `al
   shared library built with hidden visibility or `-Bsymbolic` does not recognise the type.
 - No `<stddef.h>` wrapper: `::max_align_t` comes from the compiler's header and is not
   `std::max_align_t` (see Deliberate divergences).
+
+- `<string>`: the libc++ tests using `constexpr_char_traits.h`/`nasty_string.h` (`EOF`),
+  `deallocate_size` (`::uint32_t`) and libstdc++'s `errno.cc` expect `<string>` to pull in C
+  headers, which core `<string>` does not (DECISIONS §3). With those headers and `<vector>`/
+  `<deque>`/`<algorithm>` stubbed, libc++ strings passes 225/252 on Clang; the remaining
+  failures are missing headers, `reserve()` without argument (removed in C++26), and
+  `to_string(double)` tests that expect the pre-C++26 `"%f"` output (libycxx implements
+  `format("{}", v)`, P2587).
+- `<string>` deviations by design: the string-view-like constraint also excludes classes derived
+  from `basic_string` (so a derived rvalue is moved, not copied through a `string_view`);
+  `resize_and_overwrite` passes `p` and `m` as prvalues and leaves the string unchanged if the
+  (precondition-violating) operation throws; the libstdc++ tests checking
+  `__cpp_lib_constexpr_string == 201907` see 202511 (constexpr integral `to_string`).
+- `pmr::basic_string` and friends are declared, but `polymorphic_allocator` is only
+  forward-declared (`ycxx/core/memory_resource_fwd.hpp`) until `<memory_resource>` exists, so
+  the pmr strings cannot be instantiated yet.
+- Floating-point `to_string` is implemented in the hosted runtime with `snprintf("%.*Le")` and
+  `strto*` round-trip checks (no `<charconv>` dependency); switching it to `to_chars` once that
+  exists would be faster.
 
 ## Open issues / next
 - Phase 2 is complete. The ABI runtime (src/abi) replaced libsupc++: broad sweep 4483 -> 4535

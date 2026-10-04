@@ -9,7 +9,8 @@
 
 namespace reqs::container_types {
 
-template <class X, class T>
+// AllocAware = false for containers that are not allocator-aware (inplace_vector).
+template <class X, class T, bool AllocAware = true>
 constexpr bool container_types() {
   using It = typename X::iterator;
   using CIt = typename X::const_iterator;
@@ -43,7 +44,7 @@ constexpr bool container_types() {
 
   static_assert(std::is_same_v<typename X::reverse_iterator, std::reverse_iterator<It>>);
   static_assert(std::is_same_v<typename X::const_reverse_iterator, std::reverse_iterator<CIt>>);
-  static_assert(std::is_same_v<typename X::allocator_type::value_type, T>);
+  if constexpr (AllocAware) static_assert(std::is_same_v<typename X::allocator_type::value_type, T>);
   return true;
 }
 

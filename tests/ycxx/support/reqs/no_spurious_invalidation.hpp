@@ -29,7 +29,7 @@ constexpr bool test() {
   if constexpr (std::contiguous_iterator<typename X::iterator>) {
     (void)a.capacity(); (void)a.data(); (void)std::data(a); (void)std::ranges::data(a);
   }
-  (void)a.get_allocator();
+  if constexpr (requires { typename X::allocator_type; }) (void)a.get_allocator();
   (void)(a == other); (void)(a != other); (void)(other == a);
   (void)std::size(a); (void)std::ssize(a); (void)std::empty(a);
   (void)std::begin(a); (void)std::end(a); (void)std::rbegin(a);

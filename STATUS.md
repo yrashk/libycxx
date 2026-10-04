@@ -134,9 +134,12 @@ filesystem/path_format + thread/thread_id 0 -> 94/98 (both compilers); the four 
 test defects (see Known limitations). libc++ utilities/format 0 -> 68 pass, 11 fail (GCC) /
 74 pass, 2 fail (Clang) of 113 with 34 skipped (`test_format_context.h` needs a libc++-internal
 hook; divergences listed in tests/libcxx/skip.txt); print.fun + ostream.formatted.print 0 -> 6/6
-run (both; 4 skipped: they call `std::fwide` without `<cwchar>`). libstdc++ std/format + 27_io/print
-0 -> 24/33 run (GCC; the rest need libstdc++ internals, `<span>`/`<cstdio>` transitively,
-`-fno-char8_t`, or are skipped as implementation-specific).
+run (both; 4 skipped: they call `std::fwide` without `<cwchar>`). libc++ input.output +
+localization 668 -> 726/850 (GCC). libstdc++ std/format + 27_io/print 0 -> 24/29 run (GCC), 23/29
+(Clang: `-fexec-charset=ISO8859-1` unsupported); the rest need libstdc++ internals, `<span>`/
+`<cstdio>` transitively or `-fno-char8_t`; 4 are skipped as implementation-specific or deprecated.
+Header cost (GCC, `-fsyntax-only`): `<format>` 0.27 s, `<ostream>` 0.18 -> 0.26 s (its print
+overloads need the core of `<format>`).
 
 ## Freestanding
 `tools/check_freestanding.sh`: every core header compiles with `-ffreestanding -nostdlib -nostdinc

@@ -351,6 +351,12 @@
 #define __cpp_lib_constexpr_complex 202306L
 #define __cpp_lib_valarray 202511L
 
+// <simd>
+#define __cpp_lib_simd 202606L
+#define __cpp_lib_simd_bitops 202607L
+#define __cpp_lib_simd_complex 202502L
+#define __cpp_lib_simd_permutations 202506L
+
 // <ios> <istream> <ostream> <sstream> <spanstream> <fstream> <syncstream> <iomanip> <locale>
 #define __cpp_lib_char8_t 201907L
 #define __cpp_lib_ios_noreplace 202207L

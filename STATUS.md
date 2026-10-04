@@ -136,6 +136,19 @@ demangler). Own suite indirect, polymorphic, debugging, text_encoding, stacktrac
 (GCC; the rest need formatter or -g), std/text_encoding 0 -> 1
 (runnable tests; the others use libstdc++'s allocator helpers or named locales); libc++
 text/text_encoding 0 -> 19/20.
+<random> (core; `random_device` in the hosted runtime; DECISIONS §10): seed_seq, all engines and
+adaptors (incl. C++26 philox_engine with set_counter), the predefined engines (all 10000th-value
+requirements verified), random_device (getrandom, /dev/urandom, /dev/random through the PAL),
+generate_canonical with the C++26 (P0952) algorithm, ranges::generate_random (P1068) with bulk
+member detection, and all 20 distributions with exact stream round-trips. Own suite random +
+algorithm/shuffle_sample: 0 -> 70/70 on both compilers, clean under ASan (Clang). libc++
+numerics/rand 5 -> 452/455 on both (rest: generate_canonical expects the pre-C++26 algorithm;
+`__int128` as UIntType/IntType). libstdc++ 26_numerics/random 0 -> 204/243 on both (24 use
+`uint_fast32_t` etc. unqualified without `<stdint.h>` and pass with the names injected; 10
+`cons/parms.cc` expect finite min()/max() where libc++ expects +-infinity, which libycxx returns;
+the rest below). libc++ algorithms + numerics/numeric.ops 319 -> 341 (Clang); libstdc++ 25_algorithms +
+26_numerics 430 -> 645 (Clang). Every distribution passes chi-square (discrete) or
+Kolmogorov-Smirnov plus moment checks at 400k-4M samples (scratch harness, not in the repo).
 
 ## Freestanding
 `tools/check_freestanding.sh`: every core header compiles with `-ffreestanding -nostdlib -nostdinc
@@ -303,6 +316,13 @@ Deprecated and removed features are not implemented (`is_pod`, `is_trivial`, `al
 - The default terminate handler prints the thrown type's mangled name (no demangler yet).
 - `any` without RTTI identifies types by the address of a per-type table, so `any_cast` across a
   shared library built with hidden visibility or `-Bsymbolic` does not recognise the type.
+- `<random>`: the implementation-defined subsets of [rand.req.genl] are empty except that
+  `generate_canonical` accepts the extended floating-point types and `__float128`; no `__int128`
+  IntType/UIntType (libc++ int128 tests). `default_random_engine` is `mt19937` (libstdc++'s
+  default_random_engine.cc expects minstd_rand0). `generate_canonical` follows the C++26 wording
+  exactly, so libstdc++'s gencanon.cc / 64351.cc (which reject a rounded 1.0 and count extra
+  calls) and libc++'s pre-P0952 generate_canonical test fail. seed_seq::generate rejects signed
+  value types per its Mandates (libstdc++ seed_seq/97311.cc accepts them).
 - No `<stddef.h>` wrapper: `::max_align_t` comes from the compiler's header and is not
   `std::max_align_t` (see Deliberate divergences).
 

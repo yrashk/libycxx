@@ -25,6 +25,8 @@ CORE += ["atomic", "stdatomic.h"]
 CORE += ["debugging"]
 # <contracts>: the default contract-violation handler is in the runtime archives.
 CORE += ["contracts"]
+# <random>: random_device is declared in core and defined in the hosted runtime.
+CORE += ["random"]
 # Hosted: need an OS (through the PAL) or the C library.
 HOSTED = [
     "any", "cctype", "cerrno", "cfenv", "cinttypes", "clocale", "csetjmp", "csignal", "cstdarg", "cstdio",

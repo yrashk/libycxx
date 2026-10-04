@@ -17,6 +17,8 @@ CORE += ["map", "set", "flat_map", "flat_set"]
 CORE += ["unordered_map", "unordered_set", "hive"]
 # Numerics (<cmath>: see DECISIONS §3; the run-time calls of its functions need libm).
 CORE += ["ratio", "numbers", "cmath", "complex", "valarray"]
+# <random>: random_device is declared in core and defined in the hosted runtime.
+CORE += ["random"]
 # Hosted: need an OS (through the PAL) or the C library.
 HOSTED = [
     "any", "cctype", "cerrno", "cfenv", "cinttypes", "clocale", "csetjmp", "csignal", "cstdarg", "cstdio",

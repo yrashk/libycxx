@@ -70,6 +70,7 @@ add_library(ycxx STATIC
   src/hosted/cmath_check.cpp
   src/hosted/syncstream.cpp
   src/hosted/system_error.cpp
+  src/hosted/random.cpp
   # iostreams and localization
   src/hosted/fstream.cpp
   src/hosted/ios.cpp

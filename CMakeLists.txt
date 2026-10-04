@@ -85,6 +85,8 @@ add_library(ycxx STATIC
   src/hosted/syncstream.cpp
   src/hosted/system_error.cpp
   src/hosted/text_encoding.cpp
+  src/hosted/stacktrace.cpp
+  src/hosted/demangle.cpp
   # iostreams and localization
   src/hosted/fstream.cpp
   src/hosted/ios.cpp

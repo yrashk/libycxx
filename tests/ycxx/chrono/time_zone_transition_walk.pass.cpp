@@ -5,16 +5,13 @@
 // [time.zone.members]/3: get_info(st) returns the sys_info i with st in [i.begin, i.end).
 // So for i = get_info(t): i.begin <= t < i.end, get_info(i.begin) and get_info(i.end - 1s)
 // describe the same period, and get_info(i.end).begin == i.end (the walk has no gaps or
-// overlaps). Iterating "the transitions" this way only visits transitions if every boundary
-// is one: the period starting at i.end has a different offset, save or abbrev (otherwise the
-// walk would report a transition where nothing changes; e.g. Africa/Casablanca keeps +01
-// from 2087-05-11 02:00 UTC on, after its last listed change). [time.zone.info.sys]/4:
+// overlaps). (Whether a boundary may separate two periods with equal offset, save and abbrev
+// is not checked: [begin, end) need not be maximal.) [time.zone.info.sys]/4:
 // offset = local_time - sys_time, so to_local(t) == t + offset ([time.zone.members]/9);
 // [time.zone.info.local]/2: a local time within a period whose neighbours do not overlap it
 // maps back (to_sys(to_local(t)) == t whenever get_info(local) is unique).
 // [time.zone.db.tzdb]: zones is sorted by name.
 #include <chrono>
-#include <cstdio>
 #include <string>
 #include "check.hpp"
 
@@ -38,14 +35,10 @@ int main() {
       CHECK(i.begin == prev.end);
       CHECK(i.begin < i.end);
       CHECK(i.offset > -24h && i.offset < 24h);
-      const bool changes = i.offset != prev.offset || i.save != prev.save || i.abbrev != prev.abbrev;
-      if (!changes)
-        dprintf(2, "%s: boundary without a change at %lld\n", std::string(z.name()).c_str(),
-                static_cast<long long>(i.begin.time_since_epoch().count()));
-      CHECK(changes);
       // The same period seen from inside.
       const sys_info last = z.get_info(i.end - 1s);
-      CHECK(i.end == to || i.end > to || (last.begin == i.begin && last.end == i.end));
+      CHECK(last.begin == i.begin && last.end == i.end && last.offset == i.offset && last.abbrev == i.abbrev);
+      CHECK(z.get_info(i.begin).end == i.end);
       // A time in the middle of the period maps back and forth.
       const sys_seconds mid = i.begin + (i.end < to ? (i.end - i.begin) / 2 : 1h);
       const local_seconds lt = z.to_local(mid);

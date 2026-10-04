@@ -71,6 +71,12 @@ Legend: **G** fails with GCC + libstdc++, **C** with Clang + libstdc++.
 | `syncstream/null_wrapped` | G | C | `osyncstream(nullptr).emit()` does not set badbit although `syncbuf::emit()` returns false | [syncstream.osyncstream.members]/1 |
 | `iostreams/num_get_hexfloat` | G | C | extracting a double from "0x1a.bp+07p" stops after "0" | [facet.num.get.virtuals] Example 1: with %g, "0x1a.bp+07" is accumulated |
 | `inplace_vector/from_range_mandates` (compile.fail) | G | C | a constant-size range larger than N is accepted | [inplace.vector.cons]/9: Mandates: ranges::size(rg) <= N when it is a constant expression |
+| `iostreams/sentry_noncopyable` (compile) | G | C | `istream::sentry` (and the wide sentries) are copy-constructible and copy-assignable; `ostream::sentry` copy-constructible | [istream.sentry], [ostream.sentry]: `sentry(const sentry&) = delete; sentry& operator=(const sentry&) = delete;` |
+| `iostreams/istream_get_streambuf_exception` | G | C | `get(sb)` rethrows an exception thrown by `sb` when badbit is in `exceptions()` (and sets badbit) | [istream.unformatted]/13.4: "an exception occurs (in which case, the exception is caught but not rethrown)" |
+| `iostreams/extract_streambuf_unformatted` | G | C | `is >> &sb` skips leading white space and leaves `gcount()` 0 | [istream.extractors]/14: "Behaves as an unformatted input function" (sentry with noskipws true, gcount counts) |
+| `fstream/filebuf_open_noreplace` | G | C | `open(binary\|out\|trunc\|noreplace)` fails (the other noreplace rows work) | [filebuf.members] Table 146: binary out trunc noreplace -> "wbx" |
+| `iomanip/get_money_failure_unchanged` | G | C | a failed `money_get::get` stores 0 into the `long double`, and at end of input sets only failbit | [locale.money.get.virtuals]/1: "sets err to ... (err \| str.failbit \| str.eofbit) if no more characters are available, and does not change units or digits" |
+| `print/vprint_no_partial_output` | G | C | `vprint_unicode(FILE*, ...)` / `vprint_nonunicode` write the output preceding a format error before throwing `format_error` (interpretive) | [print.fun]/10-11, /16-17: the effects write `out`, the complete formatted result; "Throws: Any exception thrown by the call to vformat" |
 
 | `cmath/lerp` | G | C | `lerp(0, 1, inf)` and `lerp(a, 0, inf)` return NaN | [c.math.lerp]/2.5: "If isfinite(t) \|\| !isnan(t) && b - a != 0, then !isnan(r)" |
 | `cmath/nexttoward_extended` (compile.fail) | G |  | `nexttoward(float32_t, long double)` is accepted (Clang defines no extended types, so the test checks nothing there) | [cmath.syn]/4: nexttoward with an extended floating-point argument is ill-formed |
@@ -135,6 +141,10 @@ Legend: **G** fails with GCC + libstdc++, **C** with Clang + libstdc++.
 | `debugging/debugging`, `stacktrace/*`, `text_encoding/text_encoding` | G | C | link only with `-lstdc++exp` (the tests add no flags; with it they pass) |
 | `execution/ranges_algorithms`, `execution/ranges_constraints` | G | C | the parallel range algorithms (P3179) |
 | `ranges/reserve_hint` | G | C | `ranges::reserve_hint`, `approximately_sized_range`, the views' `reserve_hint` members (P2846) |
+| `system_error/format` | G | C | `formatter<error_code>` ([syserr.fmt]) |
+| `cmath/constexpr_correctly_rounded` | G |  | constexpr `remquo` (Clang: `sqrt` is not constexpr either, §3) |
+| `complex/constexpr_all_float_types` | G | C | constexpr `abs` and the other complex functions (P1383) |
+| `priority_queue/custom_compare`, `stdexcept/constexpr_library_throws_cxx26_containers` | G | C | constexpr container adaptors and `deque` |
 
 ## 3. Differences between GCC and Clang with the same libstdc++
 
@@ -151,7 +161,7 @@ Clang rejects code GCC accepts.
 | `utility/constant_wrapper_call` | `constant_wrapper::operator()` with a member pointer and constant_wrapper arguments is rejected |
 | `cstddef/stddef_global`, `cstddef/stddef_global_reverse` | `::nullptr_t` missing (Clang's `<stddef.h>` in C++ mode); [support.c.headers.other]/1 |
 | containers using `std::from_range`, `insert_range`, `append_range` | `from_range` and the range members are unavailable with Clang |
-| `format/dynamic_width_precision` (and `format/fmt_dynamic_width_double`, a compile.fail test that Clang rejects for this reason, not the intended one) | every dynamic width/precision (`{:{}}`, `{:.{}}`) is rejected: libstdc++'s compile-time check calls a function Clang reports as undefined in constant evaluation |
+| `format/dynamic_width_precision`, `format/parse_context` (and `format/fmt_dynamic_width_double`, `format/fmt_check_dynamic_spec_type`, `format/fmt_check_dynamic_spec_range`, compile.fail tests that Clang rejects for this reason, not the intended one) | every dynamic width/precision (`{:{}}`, `{:.{}}`) and every `check_dynamic_spec*` call in a user formatter's `parse` is rejected: libstdc++'s compile-time check calls a function Clang reports as undefined in constant evaluation |
 | `cwchar/freestanding_functions` | `std::wcschr` and friends on `const wchar_t*` return `wchar_t*` (glibc's declarations; libycxx documents the same limitation for unqualified calls) |
 | `complex/arithmetic`, `complex/literals` | libstdc++'s compound operators use `__real__`/`__imag__`, which Clang cannot constant-evaluate ([complex.member.ops]: constexpr) |
 | `cmath/constexpr_raising_call`, `cmath/constexpr_invalid_call` (compile.fail) | fail on the control line too: `log(1.0)`, `sqrt(4.0)` are not constexpr with Clang |

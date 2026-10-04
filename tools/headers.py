@@ -14,6 +14,7 @@ CORE += ["scoped_allocator"]
 CORE += ["vector", "inplace_vector"]
 CORE += ["deque", "list", "forward_list", "stack", "queue"]
 CORE += ["map", "set", "flat_map", "flat_set"]
+CORE += ["unordered_map", "unordered_set", "hive"]
 # Hosted: need an OS (through the PAL) or the C library.
 HOSTED = [
     "any", "cctype", "cerrno", "cfenv", "cinttypes", "clocale", "csetjmp", "csignal", "cstdarg", "cstdio",

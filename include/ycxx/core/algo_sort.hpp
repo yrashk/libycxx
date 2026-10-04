@@ -1648,35 +1648,35 @@ struct permutation_fn {
 } // namespace ycxx::detail::ranges_algo
 
 namespace std::ranges {
-inline constexpr ycxx::detail::ranges_algo::sort_fn sort{};
-inline constexpr ycxx::detail::ranges_algo::stable_sort_fn stable_sort{};
-inline constexpr ycxx::detail::ranges_algo::partial_sort_fn partial_sort{};
-inline constexpr ycxx::detail::ranges_algo::partial_sort_copy_fn partial_sort_copy{};
-inline constexpr ycxx::detail::ranges_algo::is_sorted_fn is_sorted{};
-inline constexpr ycxx::detail::ranges_algo::is_sorted_until_fn is_sorted_until{};
-inline constexpr ycxx::detail::ranges_algo::nth_element_fn nth_element{};
+inline constexpr ycxx::adl_free::ranges_par_algo<ycxx::detail::ranges_algo::sort_fn, ycxx::detail::par::kind::sort> sort{};
+inline constexpr ycxx::adl_free::ranges_par_algo<ycxx::detail::ranges_algo::stable_sort_fn, ycxx::detail::par::kind::stable_sort> stable_sort{};
+inline constexpr ycxx::adl_free::ranges_par_algo<ycxx::detail::ranges_algo::partial_sort_fn, ycxx::detail::par::kind::partial_sort> partial_sort{};
+inline constexpr ycxx::adl_free::ranges_par_algo<ycxx::detail::ranges_algo::partial_sort_copy_fn, ycxx::detail::par::kind::partial_sort_copy> partial_sort_copy{};
+inline constexpr ycxx::adl_free::ranges_par_algo<ycxx::detail::ranges_algo::is_sorted_fn, ycxx::detail::par::kind::is_sorted> is_sorted{};
+inline constexpr ycxx::adl_free::ranges_par_algo<ycxx::detail::ranges_algo::is_sorted_until_fn, ycxx::detail::par::kind::is_sorted_until> is_sorted_until{};
+inline constexpr ycxx::adl_free::ranges_par_algo<ycxx::detail::ranges_algo::nth_element_fn, ycxx::detail::par::kind::nth_element> nth_element{};
 inline constexpr ycxx::detail::ranges_algo::lower_bound_fn lower_bound{};
 inline constexpr ycxx::detail::ranges_algo::upper_bound_fn upper_bound{};
 inline constexpr ycxx::detail::ranges_algo::equal_range_fn equal_range{};
 inline constexpr ycxx::detail::ranges_algo::binary_search_fn binary_search{};
-inline constexpr ycxx::detail::ranges_algo::is_partitioned_fn is_partitioned{};
-inline constexpr ycxx::detail::ranges_algo::partition_fn partition{};
-inline constexpr ycxx::detail::ranges_algo::stable_partition_fn stable_partition{};
-inline constexpr ycxx::detail::ranges_algo::partition_copy_fn partition_copy{};
+inline constexpr ycxx::adl_free::ranges_par_algo<ycxx::detail::ranges_algo::is_partitioned_fn, ycxx::detail::par::kind::is_partitioned> is_partitioned{};
+inline constexpr ycxx::adl_free::ranges_par_algo<ycxx::detail::ranges_algo::partition_fn, ycxx::detail::par::kind::partition> partition{};
+inline constexpr ycxx::adl_free::ranges_par_algo<ycxx::detail::ranges_algo::stable_partition_fn, ycxx::detail::par::kind::stable_partition> stable_partition{};
+inline constexpr ycxx::adl_free::ranges_par_algo<ycxx::detail::ranges_algo::partition_copy_fn, ycxx::detail::par::kind::partition_copy> partition_copy{};
 inline constexpr ycxx::detail::ranges_algo::partition_point_fn partition_point{};
-inline constexpr ycxx::detail::ranges_algo::merge_fn merge{};
-inline constexpr ycxx::detail::ranges_algo::inplace_merge_fn inplace_merge{};
-inline constexpr ycxx::detail::ranges_algo::includes_fn includes{};
-inline constexpr ycxx::detail::ranges_algo::set_union_fn set_union{};
-inline constexpr ycxx::detail::ranges_algo::set_intersection_fn set_intersection{};
-inline constexpr ycxx::detail::ranges_algo::set_difference_fn set_difference{};
-inline constexpr ycxx::detail::ranges_algo::set_symmetric_difference_fn set_symmetric_difference{};
+inline constexpr ycxx::adl_free::ranges_par_algo<ycxx::detail::ranges_algo::merge_fn, ycxx::detail::par::kind::merge> merge{};
+inline constexpr ycxx::adl_free::ranges_par_algo<ycxx::detail::ranges_algo::inplace_merge_fn, ycxx::detail::par::kind::inplace_merge> inplace_merge{};
+inline constexpr ycxx::adl_free::ranges_par_algo<ycxx::detail::ranges_algo::includes_fn, ycxx::detail::par::kind::includes> includes{};
+inline constexpr ycxx::adl_free::ranges_par_algo<ycxx::detail::ranges_algo::set_union_fn, ycxx::detail::par::kind::set_union> set_union{};
+inline constexpr ycxx::adl_free::ranges_par_algo<ycxx::detail::ranges_algo::set_intersection_fn, ycxx::detail::par::kind::set_intersection> set_intersection{};
+inline constexpr ycxx::adl_free::ranges_par_algo<ycxx::detail::ranges_algo::set_difference_fn, ycxx::detail::par::kind::set_difference> set_difference{};
+inline constexpr ycxx::adl_free::ranges_par_algo<ycxx::detail::ranges_algo::set_symmetric_difference_fn, ycxx::detail::par::kind::set_symmetric_difference> set_symmetric_difference{};
 inline constexpr ycxx::detail::ranges_algo::heap_op_fn<0> push_heap{};
 inline constexpr ycxx::detail::ranges_algo::heap_op_fn<1> pop_heap{};
 inline constexpr ycxx::detail::ranges_algo::heap_op_fn<2> make_heap{};
 inline constexpr ycxx::detail::ranges_algo::heap_op_fn<3> sort_heap{};
-inline constexpr ycxx::detail::ranges_algo::is_heap_fn is_heap{};
-inline constexpr ycxx::detail::ranges_algo::is_heap_until_fn is_heap_until{};
+inline constexpr ycxx::adl_free::ranges_par_algo<ycxx::detail::ranges_algo::is_heap_fn, ycxx::detail::par::kind::is_heap> is_heap{};
+inline constexpr ycxx::adl_free::ranges_par_algo<ycxx::detail::ranges_algo::is_heap_until_fn, ycxx::detail::par::kind::is_heap_until> is_heap_until{};
 inline constexpr ycxx::detail::ranges_algo::permutation_fn<true> next_permutation{};
 inline constexpr ycxx::detail::ranges_algo::permutation_fn<false> prev_permutation{};
 } // namespace std::ranges

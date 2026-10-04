@@ -31,3 +31,7 @@ content:scan-tree-dump | compiler-internals | checks GCC tree dumps (-fdump-tree
 20_util/unique_ptr/specialized_algorithms/swap_cxx17\.cc | extension | expects unique_ptr<T, D> with a non-swappable D not to be swappable through the generic std::swap; [unique.ptr.special]/1 only constrains unique_ptr's own swap overload
 20_util/unique_ptr/101236\.cc | extension | unique_ptr<Incomplete[]>::operator[]; [unique.ptr.runtime.general]/3 requires a complete T (the test says so)
 20_util/shared_ptr/modifiers/reset_sfinae\.cc | divergence | expects shared_ptr<const void>::reset(void*) to be valid; [util.smartptr.shared.const]/3 requires `delete p` to be well-formed, which [expr.delete]/2 rules out for void*
+std/ranges/conv/version\.cc | implementation-specific | #undefs a reserved feature macro and expects a re-include of <version> to redefine it
+std/ranges/adaptors/detail/copyable_box\.cc | extension | tests libstdc++'s internal std::ranges::__detail::__box
+std/ranges/repeat/1\.cc | extension | uses libstdc++'s internal views::__detail names
+std/ranges/indices/1\.cc | implementation-specific | expects views::indices to reject IOTA-DIFF-T(long long); libycxx uses __int128 there, which is integer-like and indices accepts

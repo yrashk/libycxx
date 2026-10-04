@@ -883,25 +883,25 @@ struct shuffle_fn {
 } // namespace ycxx::detail::ranges_algo
 
 namespace std::ranges {
-inline constexpr ycxx::detail::ranges_algo::transform_fn transform{};
-inline constexpr ycxx::detail::ranges_algo::replace_fn replace{};
-inline constexpr ycxx::detail::ranges_algo::replace_if_fn replace_if{};
-inline constexpr ycxx::detail::ranges_algo::replace_copy_fn replace_copy{};
-inline constexpr ycxx::detail::ranges_algo::replace_copy_if_fn replace_copy_if{};
+inline constexpr ycxx::adl_free::ranges_par_algo<ycxx::detail::ranges_algo::transform_fn, ycxx::detail::par::kind::transform> transform{};
+inline constexpr ycxx::adl_free::ranges_par_algo<ycxx::detail::ranges_algo::replace_fn, ycxx::detail::par::kind::replace> replace{};
+inline constexpr ycxx::adl_free::ranges_par_algo<ycxx::detail::ranges_algo::replace_if_fn, ycxx::detail::par::kind::replace_if> replace_if{};
+inline constexpr ycxx::adl_free::ranges_par_algo<ycxx::detail::ranges_algo::replace_copy_fn, ycxx::detail::par::kind::replace_copy> replace_copy{};
+inline constexpr ycxx::adl_free::ranges_par_algo<ycxx::detail::ranges_algo::replace_copy_if_fn, ycxx::detail::par::kind::replace_copy_if> replace_copy_if{};
 inline constexpr ycxx::detail::ranges_algo::generate_fn generate{};
 inline constexpr ycxx::detail::ranges_algo::generate_n_fn generate_n{};
-inline constexpr ycxx::detail::ranges_algo::remove_fn remove{};
-inline constexpr ycxx::detail::ranges_algo::remove_if_fn remove_if{};
-inline constexpr ycxx::detail::ranges_algo::remove_copy_fn remove_copy{};
-inline constexpr ycxx::detail::ranges_algo::remove_copy_if_fn remove_copy_if{};
-inline constexpr ycxx::detail::ranges_algo::unique_fn unique{};
-inline constexpr ycxx::detail::ranges_algo::unique_copy_fn unique_copy{};
-inline constexpr ycxx::detail::ranges_algo::reverse_fn reverse{};
-inline constexpr ycxx::detail::ranges_algo::reverse_copy_fn reverse_copy{};
-inline constexpr ycxx::detail::ranges_algo::rotate_fn rotate{};
-inline constexpr ycxx::detail::ranges_algo::rotate_copy_fn rotate_copy{};
-inline constexpr ycxx::detail::ranges_algo::shift_left_fn shift_left{};
-inline constexpr ycxx::detail::ranges_algo::shift_right_fn shift_right{};
+inline constexpr ycxx::adl_free::ranges_par_algo<ycxx::detail::ranges_algo::remove_fn, ycxx::detail::par::kind::remove> remove{};
+inline constexpr ycxx::adl_free::ranges_par_algo<ycxx::detail::ranges_algo::remove_if_fn, ycxx::detail::par::kind::remove_if> remove_if{};
+inline constexpr ycxx::adl_free::ranges_par_algo<ycxx::detail::ranges_algo::remove_copy_fn, ycxx::detail::par::kind::remove_copy> remove_copy{};
+inline constexpr ycxx::adl_free::ranges_par_algo<ycxx::detail::ranges_algo::remove_copy_if_fn, ycxx::detail::par::kind::remove_copy_if> remove_copy_if{};
+inline constexpr ycxx::adl_free::ranges_par_algo<ycxx::detail::ranges_algo::unique_fn, ycxx::detail::par::kind::unique> unique{};
+inline constexpr ycxx::adl_free::ranges_par_algo<ycxx::detail::ranges_algo::unique_copy_fn, ycxx::detail::par::kind::unique_copy> unique_copy{};
+inline constexpr ycxx::adl_free::ranges_par_algo<ycxx::detail::ranges_algo::reverse_fn, ycxx::detail::par::kind::reverse> reverse{};
+inline constexpr ycxx::adl_free::ranges_par_algo<ycxx::detail::ranges_algo::reverse_copy_fn, ycxx::detail::par::kind::reverse_copy> reverse_copy{};
+inline constexpr ycxx::adl_free::ranges_par_algo<ycxx::detail::ranges_algo::rotate_fn, ycxx::detail::par::kind::rotate> rotate{};
+inline constexpr ycxx::adl_free::ranges_par_algo<ycxx::detail::ranges_algo::rotate_copy_fn, ycxx::detail::par::kind::rotate_copy> rotate_copy{};
+inline constexpr ycxx::adl_free::ranges_par_algo<ycxx::detail::ranges_algo::shift_left_fn, ycxx::detail::par::kind::shift_left> shift_left{};
+inline constexpr ycxx::adl_free::ranges_par_algo<ycxx::detail::ranges_algo::shift_right_fn, ycxx::detail::par::kind::shift_right> shift_right{};
 inline constexpr ycxx::detail::ranges_algo::sample_fn sample{};
 inline constexpr ycxx::detail::ranges_algo::shuffle_fn shuffle{};
 } // namespace std::ranges

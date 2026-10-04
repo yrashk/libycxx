@@ -1274,9 +1274,9 @@ struct fn {
     requires maybe_borrowed<T> && (member<T> || adl<T> || reversible<T>)
   [[nodiscard]] constexpr auto operator()(T&& t) const noexcept(nothrow<T>()) {
     if constexpr (member<T>)
-      return ::ycxx::detail::decay_copy(t.rbegin());
+      return t.rbegin();
     else if constexpr (adl<T>)
-      return ::ycxx::detail::decay_copy(rbegin(t));
+      return rbegin(t);
     else
       return std::make_reverse_iterator(std::ranges::end(t));
   }
@@ -1315,9 +1315,9 @@ struct fn {
     requires maybe_borrowed<T> && (member<T> || adl<T> || rbegin_ns::reversible<T>)
   [[nodiscard]] constexpr auto operator()(T&& t) const noexcept(nothrow<T>()) {
     if constexpr (member<T>)
-      return ::ycxx::detail::decay_copy(t.rend());
+      return t.rend();
     else if constexpr (adl<T>)
-      return ::ycxx::detail::decay_copy(rend(t));
+      return rend(t);
     else
       return std::make_reverse_iterator(std::ranges::begin(t));
   }

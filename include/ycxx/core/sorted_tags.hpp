@@ -1,6 +1,5 @@
 // libycxx core: sorted_unique_t and sorted_equivalent_t ([flat.map.syn], [flat.set.syn]),
-// shared by <flat_map> and <flat_set>. <map> and <set> include it too, so code written for
-// both kinds of associative containers finds the tags with either header.
+// shared by <flat_map> and <flat_set>.
 #pragma once
 
 namespace std {

@@ -17,6 +17,13 @@ concept qualifies_as_allocator = requires(A& a) {
   a.allocate(std::size_t{});
 };
 
+// allocator_traits<A>::size_type, a substitution failure when A does not qualify as an
+// allocator: an implicit deduction guide from a constructor such as
+// vector(size_type, const T&, const Allocator&) then drops out instead of instantiating X<T, A> ([container.reqmts]/69, [container.requirements.general]).
+template <class A>
+  requires qualifies_as_allocator<A>
+using alloc_size_t = typename std::allocator_traits<A>::size_type;
+
 // [container.reqmts]: integral types never qualify as input iterators; libycxx also requires
 // an iterator_category derived from input_iterator_tag.
 template <class I>

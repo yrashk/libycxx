@@ -17,14 +17,10 @@ HEADERS = {
     "cstdlib": ("stdlib.h", "div_t ldiv_t lldiv_t "
                 "abort atexit at_quick_exit _Exit exit quick_exit getenv system malloc calloc realloc free "
                 "aligned_alloc atof atoi atol atoll strtod strtof strtold strtol strtoll strtoul strtoull "
-                "mblen mbtowc wctomb mbstowcs wcstombs bsearch qsort rand srand abs labs llabs div ldiv lldiv",
-                """inline long abs(long x) noexcept { return x < 0 ? -x : x; }
-inline long long abs(long long x) noexcept { return x < 0 ? -x : x; }
+                "mblen mbtowc wctomb mbstowcs wcstombs bsearch qsort rand srand div ldiv lldiv",
+                """// abs, labs, llabs ([c.math.abs]): constexpr, shared with <cmath> (ycxx/core/math_abs.hpp).
 inline ldiv_t div(long a, long b) noexcept { return ::ldiv(a, b); }
-inline lldiv_t div(long long a, long long b) noexcept { return ::lldiv(a, b); }
-inline float abs(float x) noexcept { return __builtin_fabsf(x); }
-inline double abs(double x) noexcept { return __builtin_fabs(x); }
-inline long double abs(long double x) noexcept { return __builtin_fabsl(x); }"""),
+inline lldiv_t div(long long a, long long b) noexcept { return ::lldiv(a, b); }"""),
     "cstring": ("string.h", "memcpy memmove strcpy strncpy strcat strncat memcmp strcmp strcoll strncmp strxfrm "
                 "memchr strchr strcspn strpbrk strrchr strspn strstr strtok memset strerror strlen", ""),
     "cstdio": ("stdio.h", "FILE fpos_t remove rename tmpfile tmpnam fclose fflush fopen freopen setbuf setvbuf "
@@ -128,7 +124,7 @@ inline size_t c32rtomb(char* s, char32_t c32, mbstate_t* ps) noexcept {
 # core's cstdint.hpp).
 MACROS = {"cwchar": ["#ifndef __STDC_VERSION_WCHAR_H__", "#  define __STDC_VERSION_WCHAR_H__ 202311L", "#endif", ""],
           "cuchar": ["#ifndef __STDC_VERSION_UCHAR_H__", "#  define __STDC_VERSION_UCHAR_H__ 202311L", "#endif", ""]}
-EXTRA_INCLUDES = {"cinttypes": ["<cstdint>"], "cwchar": ["<ycxx/core/char_traits.hpp>", "<ycxx/core/cstdint.hpp>"],
+EXTRA_INCLUDES = {"cstdlib": ["<ycxx/core/math_abs.hpp>"], "cinttypes": ["<cstdint>"], "cwchar": ["<ycxx/core/char_traits.hpp>", "<ycxx/core/cstdint.hpp>"],
                   "cuchar": ["<ycxx/core/char_traits.hpp>"], "cwctype": ["<ycxx/core/char_traits.hpp>"]}
 
 root = pathlib.Path(__file__).resolve().parent.parent / "include"

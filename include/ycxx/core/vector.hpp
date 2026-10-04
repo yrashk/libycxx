@@ -411,7 +411,12 @@ public:
     else
       init_counted(std::move_iterator<T*>(x.first_), std::move_iterator<T*>(x.last_), x.size());
   }
-  constexpr vector(initializer_list<T> il, const Allocator& a = Allocator()) : vector(with_alloc{}, a) {
+  // Two overloads instead of a default argument, not delegating (init_counted leaves *this
+  // owning nothing if it throws): GCC 16 crashes (ICE in cxx_eval_indirect_ref) on nested braced
+  // initializers (vector<vector<vector<int>>>{{{1}}}) when the allocator is copied from the
+  // default argument. Equivalent: the default argument is a value-initialized Allocator.
+  constexpr vector(initializer_list<T> il) : alloc_() { init_counted(il.begin(), il.end(), il.size()); }
+  constexpr vector(initializer_list<T> il, const Allocator& a) : alloc_(a) {
     init_counted(il.begin(), il.end(), il.size());
   }
 

@@ -1,0 +1,6 @@
+// -*- C++ -*-  libycxx: <debugging>   [core; definitions in the runtime archives]
+#pragma once
+
+#include <ycxx/config.hpp>
+#include <ycxx/core/version.hpp>
+#include <ycxx/core/debugging.hpp>

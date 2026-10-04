@@ -63,10 +63,13 @@ endif()
 file(GLOB YCXX_CHARCONV_SOURCES CONFIGURE_DEPENDS src/runtime/charconv/*.cpp)
 # The lock and wait tables of <atomic> (also in the freestanding runtime archive).
 file(GLOB YCXX_ATOMIC_SOURCES CONFIGURE_DEPENDS src/runtime/atomic/*.cpp)
+# <debugging> (also in the freestanding runtime archive); is_debugger_present is replaceable.
+file(GLOB YCXX_DEBUGGING_SOURCES CONFIGURE_DEPENDS src/runtime/debugging/*.cpp)
 add_library(ycxx STATIC
   ${YCXX_NEW_SOURCES}
   ${YCXX_CHARCONV_SOURCES}
   ${YCXX_ATOMIC_SOURCES}
+  ${YCXX_DEBUGGING_SOURCES}
   src/hosted/thread.cpp
   src/hosted/future.cpp
   src/hosted/rcu.cpp
@@ -85,6 +88,7 @@ add_library(ycxx STATIC
   src/hosted/num.cpp
   src/hosted/time.cpp
   src/pal/posix/pal.c
+  src/pal/posix/pal_debug.c
 )
 set_target_properties(ycxx PROPERTIES EXPORT_NAME core)
 target_link_libraries(ycxx PRIVATE ycxx_headers)

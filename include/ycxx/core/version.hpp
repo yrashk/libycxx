@@ -182,6 +182,8 @@
 #define __cpp_lib_ranges_as_rvalue 202207L
 // <generator>
 #define __cpp_lib_generator 202207L
+// <debugging>
+#define __cpp_lib_debugging 202403L
 #define __cpp_lib_ranges_cache_latest 202411L
 #define __cpp_lib_ranges_cartesian_product 202207L
 #define __cpp_lib_ranges_chunk 202202L

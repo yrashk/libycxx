@@ -107,6 +107,11 @@ int ycxx_pal_at_thread_end(void (*f)(void*), void* arg) YCXX_PAL_NOEXCEPT;
    std::generic_category() and std::system_category(). */
 int ycxx_pal_error_message(int ev, char* buf, ycxx_pal_size n) YCXX_PAL_NOEXCEPT;
 
+/* ---- debugging ---------------------------------------------------------------------------- */
+/* Nonzero if the process is being traced, presumably by a debugger (std::is_debugger_present).
+   An immediate query: the answer is not cached. */
+int ycxx_pal_debugger_present(void) YCXX_PAL_NOEXCEPT;
+
 /* Filesystem and time zone hooks are added with phase 5. */
 
 #ifdef __cplusplus

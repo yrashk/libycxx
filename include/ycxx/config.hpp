@@ -200,6 +200,20 @@ inline constexpr bool integer_division_traps = true;
 #else
 inline constexpr bool integer_division_traps = false;
 #endif
+// The processor family, for the few run-time functions that need an instruction of their own
+// (std::breakpoint).
+enum class cpu_family { x86, aarch64, arm, riscv, other };
+#if defined(__x86_64__) || defined(__i386__)
+inline constexpr cpu_family cpu = cpu_family::x86;
+#elif defined(__aarch64__)
+inline constexpr cpu_family cpu = cpu_family::aarch64;
+#elif defined(__arm__)
+inline constexpr cpu_family cpu = cpu_family::arm;
+#elif defined(__riscv)
+inline constexpr cpu_family cpu = cpu_family::riscv;
+#else
+inline constexpr cpu_family cpu = cpu_family::other;
+#endif
 // FLT_EVAL_METHOD (<cfloat>), which selects float_t and double_t (<cmath>).
 inline constexpr int flt_eval_method = __FLT_EVAL_METHOD__;
 inline constexpr unsigned pointer_bits = __SIZEOF_POINTER__ * __CHAR_BIT__;

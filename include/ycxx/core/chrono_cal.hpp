@@ -975,7 +975,10 @@ private:
   chrono::seconds s_;
   precision ss_;
 
-  static constexpr Duration abs_of(Duration d) noexcept { return d < Duration::zero() ? -d : d; }
+  // abs(d) ([time.hms.members]/2) in precision's rep, which is at least long long: negating the
+  // most negative count of a narrower rep in Duration's own rep would overflow.
+  using wide = chrono::duration<typename precision::rep, typename Duration::period>;
+  static constexpr wide abs_of(Duration d) noexcept { return d < Duration::zero() ? -wide(d) : wide(d); }
 
 public:
   constexpr hh_mm_ss() noexcept : hh_mm_ss(Duration::zero()) {}

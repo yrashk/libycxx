@@ -196,7 +196,8 @@
 #define __cpp_lib_debugging 202403L
 // <text_encoding>
 #define __cpp_lib_text_encoding 202306L
-// <stacktrace> (formatter<stacktrace_entry> waits for <format>: no __cpp_lib_formatters)
+// <stacktrace>, <thread> formatters
+#define __cpp_lib_formatters 202302L
 #define __cpp_lib_stacktrace 202011L
 #define __cpp_lib_hardened_basic_stacktrace 202506L
 // <contracts>: the language feature is the compiler's (GCC 16; not Clang 23)

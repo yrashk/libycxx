@@ -38,6 +38,9 @@ features = {
     # Atomics of any size work without libatomic (lock-based in libycxx's runtime).
     'has-1024-bit-atomics',
     'stdlib=libycxx', 'can-create-symlinks', 'has-fblocks-off',
+    # libycxx is not hardened by default (YCXX_HARDENED); libc++'s assertion tests need a hardened
+    # libc++ and its own messages.
+    'libcpp-hardening-mode=none',
 }
 if compiler == 'clang':
     features |= {'verify-support', 'clang-diagnostics', 'has-fconstexpr-steps'}

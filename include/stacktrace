@@ -5,3 +5,4 @@
 #include <ycxx/core/version.hpp>
 #include <compare>
 #include <ycxx/hosted/stacktrace.hpp>
+#include <ycxx/hosted/stacktrace_format.hpp>

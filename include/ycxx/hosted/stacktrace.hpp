@@ -11,8 +11,8 @@
 // every frame up to the one of current()'s caller: the result does not depend on how the
 // library's own frames were inlined or tail-called.
 //
-// formatter<stacktrace_entry> and formatter<basic_stacktrace<A>> ([stacktrace.format]) are not
-// provided here yet: they belong with <format>.
+// formatter<stacktrace_entry> and formatter<basic_stacktrace<A>> ([stacktrace.format]) are in
+// stacktrace_format.hpp.
 #pragma once
 
 #include <ycxx/core/basic_string.hpp>

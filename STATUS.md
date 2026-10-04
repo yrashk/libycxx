@@ -104,7 +104,7 @@ need missing containers, `<initializer_list>` from `<memory_resource>`, libstdc+
 `bits/move.h`, or are noted below.
 
 Iostreams and localization (Phase 4, hosted; DECISIONS §7): `<iosfwd>`, `<ios>`, `<streambuf>`,
-`<istream>`, `<ostream>` (no `print`/`println` overloads yet), `<iostream>`, `<sstream>`,
+`<istream>`, `<ostream>`, `<iostream>`, `<sstream>`,
 `<spanstream>`, `<fstream>`, `<syncstream>`, `<iomanip>`, `<locale>` (all standard facets for char
 and wchar_t, the char8_t and deprecated char UTF-16/UTF-32 codecvts, the `_byname` facets for
 "C"/"POSIX"/"C.UTF-8"/""), the stream iterators, and the stream operators of `<string>`,
@@ -116,14 +116,27 @@ string_view, memory, iterator: 301/305 (GCC, plus 1 XFAIL), 302/305 (Clang); the
 8 -> 805/925 (Clang); most remaining failures need missing headers or libstdc++ extensions
 (`char_traits<unsigned char>`, deprecated manipulator overloads, transitive C headers).
 
-File systems (hosted, POSIX; DECISIONS §8): `<filesystem>` in full except `formatter<path>`
-(waits for `<format>`). Own suite filesystem/ 16/17 on both compilers (path_format needs
-`<format>`), fstream/ 5/5; clean under ASan and UBSan (Clang). libc++ input.output/filesystems
+File systems (hosted, POSIX; DECISIONS §8): `<filesystem>` in full (`formatter<path>` in
+`ycxx/hosted/filesystem_format.hpp`). Own suite filesystem/ 17/17 on both compilers, fstream/ 5/5; clean under ASan and UBSan (Clang). libc++ input.output/filesystems
 5 -> 67/149 (both compilers); with the concurrent `<chrono>` overlaid locally 117/149, the other
 32: 29 permission tests that cannot fail as root (all but 2 pass when run as `nobody`), toctou
 (`<thread>`), and two below. libstdc++ 27_io/filesystem 0 -> 28/35 run (both; 90 more are skipped
 by the harness because they use `__gnu_test` helpers, whose `testsuite_fs.h` needs `<random>`);
 5 of the 7 failures need `<random>`.
+
+Formatting (DECISIONS §9): `<format>` and `<print>` in full (C++26 draft: constexpr formatting,
+compile-time checked format strings, `dynamic_format`/`runtime_format`, range/tuple/adaptor/
+`vector<bool>::reference` formatters, escaped strings with Unicode 18.0 tables, locale overloads),
+the `<ostream>` print overloads, and the formatters of `error_code`, `filesystem::path` and
+`thread::id` (plus `thread::id`'s `operator<<`). Own suite format/ + print/ + system_error/format +
+filesystem/path_format + thread/thread_id 0 -> 94/98 (both compilers); the four failures are
+`print_every_kind` and `nonlocking_formatter_optimization` (need the chrono formatters) and two
+test defects (see Known limitations). libc++ utilities/format 0 -> 68 pass, 11 fail (GCC) /
+74 pass, 2 fail (Clang) of 113 with 34 skipped (`test_format_context.h` needs a libc++-internal
+hook; divergences listed in tests/libcxx/skip.txt); print.fun + ostream.formatted.print 0 -> 6/6
+run (both; 4 skipped: they call `std::fwide` without `<cwchar>`). libstdc++ std/format + 27_io/print
+0 -> 24/33 run (GCC; the rest need libstdc++ internals, `<span>`/`<cstdio>` transitively,
+`-fno-char8_t`, or are skipped as implementation-specific).
 
 ## Freestanding
 `tools/check_freestanding.sh`: every core header compiles with `-ffreestanding -nostdlib -nostdinc
@@ -200,8 +213,20 @@ Deprecated and removed features are not implemented (`is_pod`, `is_trivial`, `al
   C library does (`0x0.000000000000001p-16385` is the smallest), so that both forms agree there.
 
 ## Known limitations and draft defects
-- `<filesystem>`: no `formatter<path>`/`__cpp_lib_format_path` (no `<format>`);
-  `ycxx/hosted/file_clock.hpp` holds a minimal `duration`/`time_point`/`file_clock` until
+- `<format>`: own tests `format/float_shortest_plain_style` (1e-4f) and `format/extended_float`
+  (16777217.0f, float16 65504, bfloat16 256) expect fixed notation for values outside
+  [charconv.to.chars]/7's [l, u): float(1e-4) is below 10^-4, and u is 1e7 (float), 1000
+  (float16), 100 (bfloat16); libycxx follows the draft (as its own charconv tests do). The int
+  `c` presentation accepts sign, # and 0 ([format.string.std]/5, /7, /8 make them valid for
+  arithmetic types other than charT; libc++ rejects them) and ignores them. `fmt-iter-for<charT>`
+  is format_context's iterator, so a formatter accepting only `format_context&` is formattable.
+  Dynamic widths and precisions above INT_MAX are format errors (like written ones). The
+  deprecated `visit_format_arg` is not provided. Non-UTF-8 ordinary literal encodings are
+  detected but untested. print writes the whole formatted output with one `fwrite` after
+  formatting it (no partial output on a format error); no terminal needs a native Unicode API
+  on POSIX. The stack/queue/priority_queue and vector<bool>::reference formatters are defined
+  in `<format>` (against declarations of the adaptors), so naming them needs `<format>`.
+- `<filesystem>`: `ycxx/hosted/file_clock.hpp` holds a minimal `duration`/`time_point`/`file_clock` until
   `<chrono>` is merged (then it becomes an include of `chrono_clocks.hpp`). The native encoding
   is assumed UTF-8 whatever the C locale; ill-formed UTF-8 converts to U+FFFD rather than
   throwing (libstdc++ u8path test02 expects an exception; unspecified by the draft). No
@@ -267,8 +292,7 @@ Deprecated and removed features are not implemented (`is_pod`, `is_trivial`, `al
   `except/handler_function_pointer` and `except/handler_array_decay` fail on GCC.
 - Programs link the shared unwinder (`-shared-libgcc`): glibc's pthread_exit/pthread_cancel
   unwind through libgcc_s.so, and a second, static unwinder copy would abort.
-- `<system_error>`: no
-  `formatter<error_code>` (no `<format>` yet). `errc` has no `no_message_available`,
+- `<system_error>`: `errc` has no `no_message_available`,
   `no_stream_resources`, `not_a_stream`, `stream_timeout` (removed from the draft; libstdc++'s
   `errc_std_c++0x.cc` still expects them). Messages are the C library's `strerror_r` text for
   both categories.
@@ -301,7 +325,7 @@ Deprecated and removed features are not implemented (`is_pod`, `is_trivial`, `al
   [string.conversions]): shortest round trip, fixed notation only in [1e-4, 10^U)
   ([charconv.to.chars]/7). Defined out of line in the hosted runtime.
 
-- `<vector>`: no `formatter<vector<bool>::reference>` (no `<format>`); `pmr::vector` names the
+- `<vector>`: `pmr::vector` names the
   forward-declared `polymorphic_allocator` until `<memory_resource>` exists. No AddressSanitizer
   container annotations (libc++'s asan tests check them: 16 libc++ tests fail under ASan for that
   reason only). Not provided: the pre-C++26 `static vector<bool>::swap(reference, reference)` and
@@ -330,7 +354,7 @@ Deprecated and removed features are not implemented (`is_pod`, `is_trivial`, `al
   `__cpp_lib_map_lookup`, `__cpp_lib_map_try_emplace`) are defined now that every container
   provides the feature.
 - `<deque>`, `<list>`, `<forward_list>`, `<stack>`, `<queue>` (core, constexpr): everything in the
-  draft except the adaptors' formatter specializations (no `<format>`). Own suite: deque 14/17,
+  draft (the adaptors' formatters are defined with `<format>`, DECISIONS §9). Own suite: deque 14/17,
   list 16/19, forward_list 10/12, stack/queue/priority_queue 4/4 each, on both compilers (adaptors
   measured with a local stand-in `<vector>`); clean under ASan. Remaining: `range_kinds` need
   `views::iota`/`counted`, `pmr_alias` needs `<memory_resource>`, and `adl_robustness` cannot
@@ -493,7 +517,7 @@ Deprecated and removed features are not implemented (`is_pod`, `is_trivial`, `al
   `<shared_mutex>`, `<condition_variable>`, `<semaphore>`, `<latch>`, `<barrier>`, `<future>`,
   `<rcu>`, `<hazard_pointer>`; DECISIONS §3): own suite atomic, thread, mutex,
   condition_variable, future, latch, barrier, semaphore, stop_token, ratio and
-  memory_resource/synchronized_pool_threads 127/128 on both compilers (thread_id needs `<format>`),
+  memory_resource/synchronized_pool_threads 128/128 on both compilers,
   stable over repeated runs, clean under ASan and under TSan (Clang, with a runtime built with
   `-fsanitize=thread`: `YCXX_LIBDIR=build/clang-tsan SANITIZER=tsan`; `atomic/fences` is reported
   because TSan does not model fences). The time arithmetic of `<chrono>` (24 own chrono tests)
@@ -526,4 +550,4 @@ Deprecated and removed features are not implemented (`is_pod`, `is_trivial`, `al
   `throw_out_of_range`/`throw_length_error`/... throw them during constant evaluation, so on GCC
   `std::string("ab").at(5)` can be caught in a constant expression. `__cpp_lib_constexpr_exceptions`
   is still undefined: Clang 23 cannot throw during constant evaluation, a non-null
-  `exception_ptr` is not available there on GCC, and `format_error` does not exist yet.
+  `exception_ptr` is not available there on GCC. (`format_error` is constexpr.)

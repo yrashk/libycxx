@@ -8,7 +8,7 @@
 //
 // reference and the iterators are shared by all vector<bool> specializations with the same
 // difference type (ycxx::adl_free::bit_ref / bit_iter). The formatter for reference
-// ([vector.bool.fmt]) is not provided: libycxx has no <format> yet.
+// ([vector.bool.fmt]) is defined with <format> (ycxx/core/format_ranges.hpp).
 #pragma once
 
 #include <ycxx/core/hash.hpp>

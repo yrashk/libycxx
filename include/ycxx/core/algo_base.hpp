@@ -430,6 +430,24 @@ constexpr O move_backward_dispatch(I first, I last, O result) {
 // ---- find / mismatch / equal / lexicographical compare --------------------------------------
 template <class I, class S, class P>
 constexpr I find_if_impl(I first, S last, P pred) {
+  if constexpr (std::random_access_iterator<I> && std::sized_sentinel_for<S, I>) {
+    // Four tests per loop-count check (the counted loop also lets the compiler drop the
+    // iterator comparisons).
+    for (auto n = last - first; n >= 4; n -= 4) {
+      if (pred(*first))
+        return first;
+      ++first;
+      if (pred(*first))
+        return first;
+      ++first;
+      if (pred(*first))
+        return first;
+      ++first;
+      if (pred(*first))
+        return first;
+      ++first;
+    }
+  }
   for (; first != last; ++first)
     if (pred(*first))
       break;

@@ -21,9 +21,22 @@ namespace std {
 
 class bad_variant_access : public exception {
 public:
-  bad_variant_access() noexcept = default;
-  const char* what() const noexcept override { return "bad variant access"; }
+  constexpr bad_variant_access() noexcept {}
+  constexpr bad_variant_access(const bad_variant_access&) noexcept = default;
+  constexpr bad_variant_access& operator=(const bad_variant_access&) noexcept = default;
+  constexpr ~bad_variant_access() override {}
+  constexpr const char* what() const noexcept override { return "bad variant access"; }
 };
+
+} // namespace std
+
+namespace ycxx::detail {
+[[noreturn]] [[gnu::cold]] constexpr void throw_bad_variant_access() {
+  raise_with(ycxx_error_bad_variant_access, "std::bad_variant_access", [] { return std::bad_variant_access(); });
+}
+} // namespace ycxx::detail
+
+namespace std {
 
 template <class... Types>
 class variant;

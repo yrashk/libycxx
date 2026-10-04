@@ -50,20 +50,20 @@ private:
 
 class bad_cast : public exception {
 public:
-  bad_cast() noexcept {}
-  bad_cast(const bad_cast&) noexcept = default;
-  bad_cast& operator=(const bad_cast&) noexcept = default;
-  ~bad_cast() noexcept override;
-  const char* what() const noexcept override;
+  constexpr bad_cast() noexcept {}
+  constexpr bad_cast(const bad_cast&) noexcept = default;
+  constexpr bad_cast& operator=(const bad_cast&) noexcept = default;
+  constexpr ~bad_cast() override {}
+  constexpr const char* what() const noexcept override { return "std::bad_cast"; }
 };
 
 class bad_typeid : public exception {
 public:
-  bad_typeid() noexcept {}
-  bad_typeid(const bad_typeid&) noexcept = default;
-  bad_typeid& operator=(const bad_typeid&) noexcept = default;
-  ~bad_typeid() noexcept override;
-  const char* what() const noexcept override;
+  constexpr bad_typeid() noexcept {}
+  constexpr bad_typeid(const bad_typeid&) noexcept = default;
+  constexpr bad_typeid& operator=(const bad_typeid&) noexcept = default;
+  constexpr ~bad_typeid() override {}
+  constexpr const char* what() const noexcept override { return "std::bad_typeid"; }
 };
 
 } // namespace std

@@ -189,6 +189,28 @@ inline constexpr fp_format_info fp_format<gnu_float128>{113, -16381, 16384};
 using gnu_float128 = fp_unavailable<-128>;
 #endif
 
+// Bit-precise integers (_BitInt(N); a Clang extension in C++). bitint_info<T>::width is 0 for
+// every other type, so library code tests `bitint_info<T>::width != 0` with no #if.
+template <class T>
+struct bitint_info {
+  static constexpr int width = 0;
+  static constexpr bool is_signed = false;
+};
+#if defined(__BITINT_MAXWIDTH__) && defined(__clang__)
+template <unsigned N>
+struct bitint_info<unsigned _BitInt(N)> {
+  static constexpr int width = N;
+  static constexpr bool is_signed = false;
+};
+template <unsigned N>
+struct bitint_info<signed _BitInt(N)> {
+  static constexpr int width = N;
+  static constexpr bool is_signed = true;
+};
+#endif
+template <class T>
+inline constexpr int bitint_width = bitint_info<__remove_cv(T)>::width;
+
 // remove_reference: the builtin is spelled differently.
 #if defined(__clang__)
 template <class T>

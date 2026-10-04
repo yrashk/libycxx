@@ -1,27 +1,16 @@
 """lit test format for libc++'s conformance tests (libcxx/test/std), run against libycxx."""
 import os, re, shutil, subprocess, tempfile
 import lit.formats, lit.Test, lit.TestRunner
+from ycxxlit.skips import load_skips, match_skip
 
 COND_FLAGS = re.compile(r'//\s*ADDITIONAL_COMPILE_FLAGS(?:\(([^)]*)\))?:(.*)')
 FILE_DEPS = re.compile(r'//\s*FILE_DEPENDENCIES:(.*)')
 
 
-def load_skips(path):
-    skips = []
-    if os.path.exists(path):
-        for line in open(path):
-            line = line.strip()
-            if not line or line.startswith('#'):
-                continue
-            pat, cat, why = [x.strip() for x in line.split('|', 2)]
-            skips.append((re.compile(pat), f'skipped ({cat}): {why}'))
-    return skips
-
-
 class LibcxxFormat(lit.formats.FileBasedTest):
     def __init__(self, wrapper, compiler, base_flags, features, skip_file):
         self.wrapper, self.compiler, self.base_flags, self.features = wrapper, compiler, base_flags, set(features)
-        self.skips = load_skips(skip_file)
+        self.skips = load_skips(os.path.join(os.path.dirname(os.path.dirname(skip_file)), 'common', 'skip.txt'), skip_file)
 
     def execute(self, test, lit_config):
         path = test.getSourcePath()
@@ -29,9 +18,9 @@ class LibcxxFormat(lit.formats.FileBasedTest):
         if name.endswith('.sh.cpp') or '.gen.' in name:
             return lit.Test.Result(lit.Test.UNSUPPORTED, 'shell/generated tests are not supported')
         rel = '/'.join(test.path_in_suite)
-        for pat, why in self.skips:
-            if pat.fullmatch(rel):
-                return lit.Test.Result(lit.Test.UNSUPPORTED, why)
+        why = match_skip(self.skips, rel, open(path, encoding='utf-8', errors='replace').read())
+        if why:
+            return lit.Test.Result(lit.Test.UNSUPPORTED, why)
         script = lit.TestRunner.parseIntegratedTestScript(test, require_script=False)
         if isinstance(script, lit.Test.Result):
             return script
@@ -81,6 +70,10 @@ class LibcxxFormat(lit.formats.FileBasedTest):
         if name.endswith('.verify.cpp'):
             if 'expected-error' not in src:
                 return lit.Test.Result(lit.Test.UNSUPPORTED, 'warning-only verify test')
+            # Only expectations that survive preprocessing (e.g. not inside a disabled #if) count.
+            rc, pre = self.compile(['-E', '-C', '-P', path] + flags, tmp)
+            if rc == 0 and 'expected-error' not in pre:
+                return lit.Test.Result(lit.Test.UNSUPPORTED, 'no active expected-error in this configuration')
             rc, out = self.compile(['-fsyntax-only', path] + flags, tmp)
             return lit.Test.Result(lit.Test.PASS if rc != 0 else lit.Test.FAIL,
                                    out or 'expected a compile error')

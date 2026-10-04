@@ -21,11 +21,11 @@ enum float_round_style {
 
 namespace ycxx::detail {
 
-// floor(e * log10(2)) for |e| < 10^6 (log10(2) is irrational, so no product is an integer).
+// floor(e * log10(2)) for |e| < 2^31 (log10(2) is irrational, so no product is an integer).
 consteval int floor_log10_pow2(int e) {
-  constexpr long long num = 301029995663981LL; // log10(2) * 10^15
-  constexpr long long den = 1000000000000000LL;
-  long long p = static_cast<long long>(e) * num;
+  constexpr int128 num = 301029995663981195LL; // log10(2) * 10^18
+  constexpr int128 den = 1000000000000000000LL;
+  int128 p = static_cast<int128>(e) * num;
   return static_cast<int>(p >= 0 ? p / den : -((-p + den - 1) / den));
 }
 
@@ -67,29 +67,31 @@ struct limits_base {
 template <class T>
 struct int_limits : limits_base {
   static constexpr bool is_specialized = true;
-  static constexpr bool is_signed = is_signed_v<T>;
-  static constexpr int digits = static_cast<int>(sizeof(T) * __CHAR_BIT__) - (is_signed ? 1 : 0);
+  static constexpr bool is_signed = bitint_width<T> != 0 ? bitint_info<T>::is_signed : is_signed_v<T>;
+  static constexpr int width = bitint_width<T> != 0 ? bitint_width<T> : static_cast<int>(sizeof(T) * __CHAR_BIT__);
+  static constexpr int digits = width - (is_signed ? 1 : 0);
   static constexpr int digits10 = floor_log10_pow2(digits);
   static constexpr bool is_integer = true;
   static constexpr bool is_exact = true;
   static constexpr int radix = 2;
   static constexpr bool is_bounded = true;
   static constexpr bool is_modulo = !is_signed;
-  static constexpr bool traps = cfg::integer_division_traps && sizeof(T) >= sizeof(int);
+  // Only types not subject to integral promotion can trap on division (char types never do).
+  static constexpr bool traps = cfg::integer_division_traps && bitint_width<T> == 0 &&
+                                is_signed_or_unsigned_integer<T> && sizeof(T) >= sizeof(int);
 
-  static constexpr T(min)() noexcept {
-    if constexpr (is_signed)
-      return T(T(1) << digits);
-    else
-      return T(0);
-  }
-  static constexpr T(max)() noexcept {
-    if constexpr (is_signed)
-      return T(~(min)());
-    else
-      return T(~T(0));
-  }
-  static constexpr T lowest() noexcept { return (min)(); }
+  // 2^digits - 1, built without overflow for any width (including _BitInt(N)).
+  static constexpr T max_value = [] {
+    T r = 0;
+    for (int i = 0; i < digits; ++i)
+      r = static_cast<T>(r * 2 + 1);
+    return r;
+  }();
+  static constexpr T min_value = is_signed ? static_cast<T>(-max_value - 1) : T(0);
+
+  static constexpr T(min)() noexcept { return min_value; }
+  static constexpr T(max)() noexcept { return max_value; }
+  static constexpr T lowest() noexcept { return min_value; }
   static constexpr T epsilon() noexcept { return T(0); }
   static constexpr T round_error() noexcept { return T(0); }
   static constexpr T infinity() noexcept { return T(0); }
@@ -188,7 +190,7 @@ template <class T>
 consteval auto select_limits() {
   if constexpr (__is_same(T, bool))
     return bool_limits{};
-  else if constexpr (is_integral_v<T>)
+  else if constexpr (is_integral_v<T> || bitint_width<T> != 0)
     return int_limits<T>{};
   else if constexpr (is_floating_v<T> || __is_same(T, gnu_float128))
     return fp_limits<T>{};

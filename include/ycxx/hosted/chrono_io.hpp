@@ -6,9 +6,10 @@
 // chrono-specs over them into a local buffer, which is then padded as a whole. Without the L
 // option the "C" locale's names and decimal point are built in; with it, the locale-dependent
 // conversions (%a %A %b %B %c %p %r %x %X and the E/O-modified ones) go through the formatting
-// locale's time_put facet (a call into the hosted runtime, src/hosted/chrono.cpp) and %S takes
-// the locale's decimal point. Without chrono-specs a value is formatted as its stream inserter
-// would write it ([time.format]/7). The stream inserters write the same text with the stream's
+// locale's time_put facet (a call into the hosted runtime, src/hosted/chrono.cpp) unless that is
+// the classic locale's facet, and %S and the counts of durations take the locale's numpunct.
+// Without chrono-specs a value is formatted as its stream inserter would write it
+// ([time.format]/7). The stream inserters write the same text with the stream's
 // locale, so they need no <sstream>.
 #pragma once
 
@@ -106,43 +107,190 @@ constexpr void chrono_set_ymd(chrono_fields<charT>& f, const std::chrono::year_m
     f.yday = ::ycxx::detail::days_from_civil(f.year, f.month, f.day) - ::ycxx::detail::days_from_civil(f.year, 1, 1);
 }
 
-// The time of day (or duration) d.
-template <class charT, class Dur>
-constexpr void chrono_set_time(chrono_fields<charT>& f, const Dur& d) {
-  const std::chrono::hh_mm_ss<Dur> h(d);
-  using prec = typename std::chrono::hh_mm_ss<Dur>::precision;
-  f.negative = h.is_negative();
-  f.hours = static_cast<unsigned long long>(h.hours().count());
-  f.minutes = static_cast<unsigned>(h.minutes().count());
-  f.seconds = static_cast<unsigned>(h.seconds().count());
-  f.width = std::chrono::hh_mm_ss<Dur>::fractional_width;
-  if constexpr (std::chrono::treat_as_floating_point_v<typename prec::rep>)
-    f.subseconds = static_cast<unsigned long long>(
-        std::chrono::duration_cast<std::chrono::duration<long long, typename prec::period>>(h.subseconds()).count());
-  else
-    f.subseconds = static_cast<unsigned long long>(h.subseconds().count());
+// ---- splitting a count into units ------------------------------------------------------------
+// Without hh_mm_ss and duration_cast, whose ratio arithmetic overflows for fine periods (atto
+// to hours) and whose negation overflows for the most negative count: the magnitude of the
+// count is split by the period's num and den with 128-bit intermediate products.
+
+// floor(a * b / c) (its low 64 bits) and a * b mod c, for c > 0.
+struct chrono_qr {
+  unsigned long long q, r;
+};
+template <class U = uint128>
+constexpr chrono_qr chrono_muldiv(unsigned long long a, unsigned long long b, unsigned long long c) noexcept {
+  if constexpr (cfg::has_int128) {
+    const U p = static_cast<U>(a) * b;
+    return {static_cast<unsigned long long>(p / c), static_cast<unsigned long long>(p % c)};
+  } else {
+    // The 128-bit product, then restoring division one bit at a time.
+    const unsigned long long a0 = a & 0xffffffffu, a1 = a >> 32, b0 = b & 0xffffffffu, b1 = b >> 32;
+    const unsigned long long p00 = a0 * b0, p01 = a0 * b1, p10 = a1 * b0, p11 = a1 * b1;
+    const unsigned long long mid = (p00 >> 32) + (p01 & 0xffffffffu) + (p10 & 0xffffffffu);
+    const unsigned long long hi = p11 + (p01 >> 32) + (p10 >> 32) + (mid >> 32), lo = (mid << 32) | (p00 & 0xffffffffu);
+    unsigned long long q = 0, r = 0;
+    for (int i = 127; i >= 0; --i) {
+      const bool carry = (r >> 63) != 0;
+      r = (r << 1) | (((i >= 64 ? hi >> (i - 64) : lo >> i)) & 1u);
+      q <<= 1;
+      if (carry || r >= c) {
+        r -= c;
+        q |= 1;
+      }
+    }
+    return {q, r};
+  }
 }
 
-// A time point's date and time of day.
-template <class charT, class Duration>
-constexpr void chrono_set_point(chrono_fields<charT>& f, const Duration& since_epoch) {
-  if constexpr (std::chrono::treat_as_floating_point_v<typename Duration::rep>) {
-    const std::chrono::days dp = std::chrono::floor<std::chrono::days>(since_epoch);
-    ::ycxx::detail::chrono_set_days(f, dp.count());
-    ::ycxx::detail::chrono_set_time(f, since_epoch - dp);
+// m ticks of num/den s as `whole` units of `unit` s (low 64 bits), `secs` (< unit) whole seconds
+// and `rem` (< den) ticks of 1/den s.
+template <class T>
+struct chrono_parts {
+  unsigned long long whole, secs;
+  T rem;
+};
+constexpr chrono_parts<unsigned long long> chrono_split(unsigned long long m, unsigned long long num,
+                                                        unsigned long long den, unsigned long long unit) noexcept {
+  // m * num / den = (m / den) * num + (m % den) * num / den
+  const chrono_qr a = ::ycxx::detail::chrono_muldiv(m / den, num, unit);
+  const chrono_qr b = ::ycxx::detail::chrono_muldiv(m % den, num, den); // b.q < num
+  const unsigned long long t = a.r + b.q;
+  return {a.q + t / unit, t % unit, b.r};
+}
+
+// Floating-point counts: the same steps in long double (exact for integral values).
+constexpr long double chrono_floor(long double x) noexcept { // x >= 0
+  return x < 9.2e18L ? static_cast<long double>(static_cast<unsigned long long>(x)) : x;
+}
+constexpr unsigned long long chrono_to_ull(long double x) noexcept { // x >= 0
+  return x < 18446744073709551615.0L ? static_cast<unsigned long long>(x) : ~0ull;
+}
+constexpr chrono_parts<long double> chrono_split(long double m, unsigned long long num, unsigned long long den,
+                                                 unsigned long long unit) noexcept {
+  const long double n = static_cast<long double>(num), d = static_cast<long double>(den),
+                    u = static_cast<long double>(unit);
+  auto mod = [](long double x, long double y, long double q) { // x - q * y, in [0, y)
+    const long double r = x - q * y;
+    return r < 0 ? 0 : r >= y ? y - 1 : r;
+  };
+  const long double q = ::ycxx::detail::chrono_floor(m / d), r = mod(m, d, q);
+  const long double a = q * n, aq = ::ycxx::detail::chrono_floor(a / u), ar = mod(a, u, aq);
+  const long double rn = r * n, bq = ::ycxx::detail::chrono_floor(rn / d), br = mod(rn, d, bq);
+  const long double t = ar + bq, tq = ::ycxx::detail::chrono_floor(t / u);
+  return {::ycxx::detail::chrono_to_ull(aq + tq), ::ycxx::detail::chrono_to_ull(mod(t, u, tq)), br};
+}
+
+// rem ticks of 1/den s as `width` fractional digits (truncated).
+constexpr unsigned long long chrono_frac(unsigned long long rem, unsigned long long den, unsigned width) noexcept {
+  unsigned long long p = 1;
+  for (unsigned i = 0; i != width; ++i)
+    p *= 10;
+  return ::ycxx::detail::chrono_muldiv(rem, p, den).q;
+}
+constexpr unsigned long long chrono_frac(long double rem, unsigned long long den, unsigned width) noexcept {
+  long double p = 1;
+  for (unsigned i = 0; i != width; ++i)
+    p *= 10;
+  return ::ycxx::detail::chrono_to_ull(::ycxx::detail::chrono_floor(rem * p / static_cast<long double>(den)));
+}
+
+// The counts split without hh_mm_ss: the standard integer types up to 64 bits and the floating-
+// point types. Others (wider integers, class types emulating arithmetic) go through hh_mm_ss.
+template <class Rep>
+inline constexpr bool chrono_plain_rep =
+    (std::is_integral_v<Rep> && sizeof(Rep) <= sizeof(long long)) || std::is_floating_point_v<Rep>;
+
+// |c| as unsigned long long or long double (a NaN as 0).
+template <class Rep>
+constexpr auto chrono_magnitude(Rep c) noexcept {
+  if constexpr (std::is_floating_point_v<Rep>) {
+    const long double x = static_cast<long double>(c);
+    return x < 0 ? -x : x > 0 ? x : 0.0L;
+  } else if constexpr (std::is_signed_v<Rep>) {
+    const long long v = static_cast<long long>(c);
+    return v < 0 ? 0ull - static_cast<unsigned long long>(v) : static_cast<unsigned long long>(v);
+  } else {
+    return static_cast<unsigned long long>(c);
+  }
+}
+
+// The time of day (or duration) d: hours (not reduced modulo 24), minutes, seconds and the
+// fractional digits of hh_mm_ss<Dur>::fractional_width ([time.hms.members]).
+template <class charT, class Rep, class Period>
+constexpr void chrono_set_time(chrono_fields<charT>& f, const std::chrono::duration<Rep, Period>& d) {
+  using Dur = std::chrono::duration<Rep, Period>;
+  if constexpr (chrono_plain_rep<Rep>) {
+    using P = typename Period::type;
+    constexpr unsigned width = ::ycxx::detail::hms_fractional_width(P::den);
+    f.negative = d.count() < Rep(0);
+    const auto parts = ::ycxx::detail::chrono_split(::ycxx::detail::chrono_magnitude(d.count()),
+                                                    static_cast<unsigned long long>(P::num),
+                                                    static_cast<unsigned long long>(P::den), 3600);
+    f.hours = parts.whole;
+    f.minutes = static_cast<unsigned>(parts.secs / 60);
+    f.seconds = static_cast<unsigned>(parts.secs % 60);
+    f.width = width;
+    f.subseconds = ::ycxx::detail::chrono_frac(parts.rem, static_cast<unsigned long long>(P::den), width);
+  } else {
+    const std::chrono::hh_mm_ss<Dur> h(d);
+    using prec = typename std::chrono::hh_mm_ss<Dur>::precision;
+    f.negative = h.is_negative();
+    f.hours = static_cast<unsigned long long>(h.hours().count());
+    f.minutes = static_cast<unsigned>(h.minutes().count());
+    f.seconds = static_cast<unsigned>(h.seconds().count());
+    f.width = std::chrono::hh_mm_ss<Dur>::fractional_width;
+    if constexpr (std::chrono::treat_as_floating_point_v<typename prec::rep>)
+      f.subseconds = static_cast<unsigned long long>(
+          std::chrono::duration_cast<std::chrono::duration<long long, typename prec::period>>(h.subseconds()).count());
+    else
+      f.subseconds = static_cast<unsigned long long>(h.subseconds().count());
+  }
+}
+
+// A time point's date and time of day, from its time since the epoch plus `days` days.
+template <class charT, class Rep, class Period>
+constexpr void chrono_set_point(chrono_fields<charT>& f, const std::chrono::duration<Rep, Period>& since_epoch,
+                                long long days = 0) {
+  using Duration = std::chrono::duration<Rep, Period>;
+  if constexpr (chrono_plain_rep<Rep>) {
+    // The magnitude in whole days, seconds and ticks; a negative one is floored.
+    using P = typename Period::type;
+    constexpr unsigned long long den = static_cast<unsigned long long>(P::den);
+    constexpr unsigned width = ::ycxx::detail::hms_fractional_width(P::den);
+    auto parts = ::ycxx::detail::chrono_split(::ycxx::detail::chrono_magnitude(since_epoch.count()),
+                                              static_cast<unsigned long long>(P::num), den, 86400);
+    long long day = static_cast<long long>(parts.whole);
+    if (since_epoch.count() < Rep(0)) {
+      day = -day;
+      if (parts.secs != 0 || parts.rem != 0) {
+        --day;
+        if (parts.rem != 0) {
+          parts.rem = static_cast<decltype(parts.rem)>(den) - parts.rem;
+          parts.secs = 86399 - parts.secs;
+        } else {
+          parts.secs = 86400 - parts.secs;
+        }
+      }
+    }
+    ::ycxx::detail::chrono_set_days(f, static_cast<long long>(::ycxx::detail::wrap_add(day, days)));
+    f.hours = parts.secs / 3600;
+    f.minutes = static_cast<unsigned>(parts.secs / 60 % 60);
+    f.seconds = static_cast<unsigned>(parts.secs % 60);
+    f.width = width;
+    f.subseconds = ::ycxx::detail::chrono_frac(parts.rem, den, width);
   } else {
     // Day and time of day by a floored division of the count, which cannot overflow even for
     // time_point::min() (floor<days> would compare in the finer type).
     using cd = std::common_type_t<Duration, std::chrono::days>;
     const cd c(since_epoch);
     const auto ticks = cd(std::chrono::days(1)).count();
-    long long q = static_cast<long long>(c.count() / ticks);
+    auto q = c.count() / ticks;
     auto r = c.count() % ticks;
     if (r < 0) {
       --q;
       r += ticks;
     }
-    ::ycxx::detail::chrono_set_days(f, q);
+    const long long day = static_cast<long long>(::ycxx::detail::wrap_add(static_cast<long long>(q), days));
+    ::ycxx::detail::chrono_set_days(f, day);
     ::ycxx::detail::chrono_set_time(f, cd(r));
   }
 }
@@ -266,6 +414,10 @@ struct chrono_c_tm {
 // Appends what loc's time_put<charT> writes for %<mod><spec> of t.
 void chrono_put_localized(std::string& out, const std::locale& loc, const chrono_c_tm& t, char spec, char mod);
 void chrono_put_localized(std::wstring& out, const std::locale& loc, const chrono_c_tm& t, char spec, char mod);
+// Whether loc's time_put<charT> is the classic locale's facet (every supported named locale,
+// "C", "POSIX", "C.UTF-8", shares it), whose conventions are the "C" locale's.
+bool chrono_classic_time_put(const std::locale& loc, char);
+bool chrono_classic_time_put(const std::locale& loc, wchar_t);
 
 inline constexpr const char* chrono_weekday_names[7] = {"Sunday",   "Monday", "Tuesday", "Wednesday",
                                                         "Thursday", "Friday", "Saturday"};
@@ -275,10 +427,21 @@ inline constexpr const char* chrono_month_names[12] = {"January", "February", "M
 
 // ---- writing ----------------------------------------------------------------------------------
 
+// [time.format]/2: the formatting locale is the "C" locale without the L option. With it, the
+// locale's numpunct gives %S its decimal point and the counts of the default duration format
+// their digit grouping, and its time_put writes the locale-dependent conversions (names, %c %x
+// %X %r %p and the E/O forms), unless it is the classic facet: the "C" locale's conventions are
+// then built in (as without L). That keeps "{:L...}" with the "C" locale identical to "{:...}"
+// also where a C tm cannot carry the value (hours of a duration beyond 23, years before 1 or
+// after 9999, whose %Y the chrono formatter pads to four digits while strftime does not).
 template <class charT>
 struct chrono_out {
   fmt_dynbuf<charT>& b;
   const std::locale* loc; // the formatting locale when the L option is given, else null ("C")
+  bool own_time = false;  // loc has a time_put of its own (not the classic one)
+
+  chrono_out(fmt_dynbuf<charT>& buf, const std::locale* l)
+      : b(buf), loc(l), own_time(l != nullptr && !::ycxx::detail::chrono_classic_time_put(*l, charT())) {}
 
   void ch(char c) { b.push_back(static_cast<charT>(c)); }
   void ascii(const char* s, std::size_t n) {
@@ -308,10 +471,47 @@ struct chrono_out {
       return charT('.');
     return std::use_facet<std::numpunct<charT>>(*loc).decimal_point();
   }
+  // [p, e): a count as num_put writes it with loc ([facet.num.put.virtuals] stage 2: digit
+  // groups of the integer part separated by thousands_sep, the locale's decimal point), or as
+  // is without L.
+  void count(const char* p, const char* e) {
+    if (loc == nullptr)
+      return ascii(p, static_cast<std::size_t>(e - p));
+    const std::numpunct<charT>& np = std::use_facet<std::numpunct<charT>>(*loc);
+    const std::string g = np.grouping();
+    const charT sep = np.thousands_sep();
+    if (p != e && *p == '-')
+      ch(*p++);
+    const char* d = p;
+    while (d != e && *d >= '0' && *d <= '9')
+      ++d;
+    // sep_before[i]: a separator precedes integer digit i
+    bool sep_before[128] = {};
+    const std::size_t n = static_cast<std::size_t>(d - p);
+    for (std::size_t t = 0, done = 0; n <= 128;) {
+      const std::size_t sz = ::ycxx::detail::fmt_group_size(g, t++);
+      if (sz == 0 || done + sz >= n)
+        break;
+      done += sz;
+      sep_before[n - done] = true;
+    }
+    for (std::size_t i = 0; i != n; ++i) {
+      if (sep_before[i])
+        b.push_back(sep);
+      ch(p[i]);
+    }
+    for (; d != e; ++d)
+      *d == '.' ? b.push_back(np.decimal_point()) : ch(*d);
+  }
   void localized(const chrono_fields<charT>& f, char spec, char mod) {
+    // The hour count of a duration where a tm can hold it (as %H writes it without L), reduced
+    // modulo 24 for the 12-hour forms and AM/PM.
+    const bool twelve = spec == 'I' || spec == 'p' || spec == 'r';
+    const unsigned long long h =
+        twelve || f.hours > static_cast<unsigned long long>(__INT_MAX__) ? f.hours % 24 : f.hours;
     const chrono_c_tm t{static_cast<int>(f.seconds),
                         static_cast<int>(f.minutes),
-                        static_cast<int>(f.hours % 24),
+                        static_cast<int>(h),
                         static_cast<int>(f.day),
                         static_cast<int>(f.month) - 1,
                         f.year - 1900,
@@ -359,7 +559,7 @@ constexpr chrono_fields<charT> chrono_whole_seconds(chrono_fields<charT> f) noex
 // One conversion specifier.
 template <class charT>
 void chrono_write_one(chrono_out<charT>& o, const chrono_fields<charT>& f, char spec, char mod) {
-  const bool L = o.loc != nullptr;
+  const bool L = o.own_time;
   auto weekday_name = [&](bool full) {
     if (!f.weekday_ok || f.weekday > 6)
       ::ycxx::detail::chrono_missing("std::format: the value does not contain a valid weekday");
@@ -635,8 +835,7 @@ void chrono_default(chrono_out<charT>& o, const std::chrono::duration<Rep, Perio
     r = std::to_chars(buf, buf + sizeof buf, static_cast<long long>(c));
   else
     r = std::to_chars(buf, buf + sizeof buf, static_cast<unsigned long long>(c));
-  for (const char* q = buf; q != r.ptr; ++q)
-    *q == '.' ? o.b.push_back(o.decimal_point()) : o.ch(*q);
+  o.count(buf, r.ptr);
   const chrono_suffix_text<charT> s = ::ycxx::detail::chrono_suffix<Period, charT>();
   o.b.append(s.text, s.len);
 }
@@ -835,7 +1034,7 @@ template <class charT, class Duration>
 constexpr chrono_fields<charT> chrono_fields_of(const std::chrono::tai_time<Duration>& t) {
   // [time.format]/12: the sys_time 1958-01-01 is the TAI epoch (4383 days before 1970).
   chrono_fields<charT> f;
-  ::ycxx::detail::chrono_set_point(f, t.time_since_epoch() - std::chrono::days(4383));
+  ::ycxx::detail::chrono_set_point(f, t.time_since_epoch(), -4383);
   f.has_abbrev = f.has_offset = true;
   f.abbrev = "TAI";
   return f;
@@ -844,7 +1043,7 @@ template <class charT, class Duration>
 constexpr chrono_fields<charT> chrono_fields_of(const std::chrono::gps_time<Duration>& t) {
   // [time.format]/13: the GPS epoch is 1980-01-06, 3657 days after 1970-01-01.
   chrono_fields<charT> f;
-  ::ycxx::detail::chrono_set_point(f, t.time_since_epoch() + std::chrono::days(3657));
+  ::ycxx::detail::chrono_set_point(f, t.time_since_epoch(), 3657);
   f.has_abbrev = f.has_offset = true;
   f.abbrev = "GPS";
   return f;
@@ -1001,9 +1200,10 @@ struct chrono_traits<std::chrono::duration<Rep, Period>> {
 template <class Duration>
 struct chrono_traits<std::chrono::sys_time<Duration>> {
   static constexpr unsigned info = ci_full_date | ci_time | ci_zone | ci_offset;
-  // os << sys_days is os << year_month_day{dp}.
+  // os << sys_days is os << year_month_day{dp}. (Duration{1} < days{1}, compared as ratios: in
+  // the common type a day of a fine period such as femto overflows.)
   static constexpr const char* dflt = std::chrono::treat_as_floating_point_v<typename Duration::rep> ||
-                                              Duration(1) < std::chrono::days(1)
+                                              std::ratio_less_v<typename Duration::period, std::ratio<86400>>
                                           ? "%F %T"
                                           : "%F";
 };

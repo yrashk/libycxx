@@ -492,6 +492,13 @@ under the same name. Otherwise it gets one alias template in `config.hpp`.
   the 18.0 form of GB9c); `tools/gen_unicode_tables.py` turns the UCD files into two run tables
   (about 3,500 entries). char is UTF-8 when the ordinary literal encoding is (checked in a
   constant expression), wchar_t UTF-32.
+- **Widths and precisions** have no upper bound ([format.string.std]/10): a number in the format
+  string or a dynamic value beyond `size_t` saturates. A string's precision only limits the
+  prefix; a floating-point conversion is computed with at most 32768 digits of precision (more
+  than any exact value needs) and the remaining zeros are counted, not stored. Padding to a counting
+  destination past its limit (`formatted_size`, the tail of `format_to_n`) is counted without being
+  written, so a huge width there is O(1); `format` itself throws `bad_alloc` when the result cannot
+  be held.
 - **Floating point** uses `<charconv>` (`to_chars` of the value's own type, extended types
   included); `#` with `g`/`G` reproduces `%#g`; the precision of type none is a to_chars general
   conversion whose zeros are removed even with `#`.
@@ -581,7 +588,8 @@ under the same name. Otherwise it gets one alias template in `config.hpp`.
   `tzdata.zi`'s `# version` line. A `time_zone` holds its name and an opaque pointer; its TZif file
   (versions 1-4, the 64-bit block when present) is read on the first query under a `once_flag`, and
   times after the last transition come from the file's POSIX TZ footer (`Mm.w.d`, `Jn`, `n`, times
-  beyond 24 h and negative). Consecutive transitions to the same offset, save and abbreviation are
+  beyond 24 h and negative; a rule whose DST lasts until the next year's begins, such as
+  Africa/Casablanca's, is one DST period without end). Consecutive transitions to the same offset, save and abbreviation are
   merged, so a `sys_info` spans the whole period its values hold; before the first transition
   `begin` is `sys_seconds::min()`, without a later one `end` is `sys_seconds::max()`. TZif records
   only an is-DST flag, so `save` is the offset minus the nearest standard-time offset (60 min when
@@ -605,8 +613,18 @@ under the same name. Otherwise it gets one alias template in `config.hpp`.
   value-dependent one (`%a` of an invalid weekday, `%b` of an invalid month, `%Z` of a
   `local_time_format` without abbreviation) by `format`. Without `L` the "C" locale's names are
   built in; with it the locale-dependent conversions (`%a %A %b %B %c %p %r %x %X` and the E/O
-  forms) go through the formatting locale's `time_put` (runtime: `src/hosted/chrono.cpp`) and
-  `%S` takes its decimal point. `%c`, `%r` and `%X` show whole seconds, `%S` and `%T` the fraction.
+  forms) go through the formatting locale's `time_put` (runtime: `src/hosted/chrono.cpp`), `%S`
+  takes its decimal point and a duration's count without chrono-specs its digit grouping
+  (`numpunct`, as `os << d` would). When that `time_put` is the classic locale's facet (which every
+  supported named locale shares), its conventions are the "C" locale's and the built-in forms are
+  used, so `{:L...}` with the "C" locale equals `{:...}` ([time.format]/2) even where a C `tm`
+  cannot carry the value (a duration's hours beyond 23; years outside 1-9999, which `%Y` pads to
+  four digits and `strftime` does not). A `time_put` of the locale's own gets a `tm` with the
+  hour count of a duration where an int holds it (reduced modulo 24 for `%I %p %r`). The fields are
+  computed from the count's magnitude with 128-bit products of the period's num and den, not with
+  `hh_mm_ss`/`duration_cast` (whose ratio arithmetic overflows for periods such as atto, and whose
+  negation overflows for the most negative count), for integer reps up to 64 bits and floating-point
+  reps (in `long double`); other reps go through `hh_mm_ss`. `%c`, `%r` and `%X` show whole seconds, `%S` and `%T` the fraction.
   Without chrono-specs a value is written as its stream inserter would; a floating-point duration
   then uses `%g` with precision 6 (or the format precision). The micro suffix is "µs" (U+00B5) when
   the literal encoding is Unicode. The stream inserters write the same text (no `<sstream>`

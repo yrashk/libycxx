@@ -300,14 +300,20 @@ Deprecated and removed features are not implemented (`is_pod`, `is_trivial`, `al
   `c` presentation accepts sign, # and 0 ([format.string.std]/5, /7, /8 make them valid for
   arithmetic types other than charT; libc++ rejects them) and ignores them. `fmt-iter-for<charT>`
   is format_context's iterator, so a formatter accepting only `format_context&` is formattable.
-  Dynamic widths and precisions above INT_MAX are format errors (like written ones). The
+  Widths and precisions have no upper bound (written or dynamic; beyond size_t they saturate):
+  `formatted_size`/`format_to_n` count huge padding and floating-point zeros without writing
+  them, `format` throws `bad_alloc` when the result cannot be held. The
   deprecated `visit_format_arg` is not provided. Non-UTF-8 ordinary literal encodings are
   detected but untested. print writes the whole formatted output with one `fwrite` after
   formatting it (no partial output on a format error); no terminal needs a native Unicode API
   on POSIX. The stack/queue/priority_queue and vector<bool>::reference formatters are defined
   in `<format>` (against declarations of the adaptors), so naming them needs `<format>`.
 - `<chrono>`: names, `%c %x %X %r` and `%p` in parsing are the "C" locale's (the stream's
-  `time_get` is not consulted); `%OS` without L keeps the fraction like `%S` (libc++'s reading;
+  `time_get` is not consulted); with L, a locale whose `time_put` is not the classic facet writes
+  `%c %x %X` etc. from a C `tm` (so its `%Y` there is `strftime`'s, unpadded, and the hours of a
+  duration are passed as is up to INT_MAX), while the classic facet's conventions are built in
+  (`{:L%c}` equals `{:%c}` for the "C" locale); the duration count of `{:L}` is grouped from the
+  locale's `numpunct` (a replaced `num_put` is not called); `%OS` without L keeps the fraction like `%S` (libc++'s reading;
   libstdc++'s tests expect whole seconds); `hh_mm_ss` of a period whose denominator needs more
   than 18 decimal digits has `fractional_width` 6 per [time.hms.members]/1 (libstdc++ gives 18 for
   ratio<1, 2^62>); `duration` inserters print character reps as the stream does (LWG 4118 is not

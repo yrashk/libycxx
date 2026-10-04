@@ -37,3 +37,11 @@ void ycxx::detail::chrono_put_localized(std::wstring& out, const std::locale& lo
                                         char mod) {
   put_localized(out, loc, t, spec, mod);
 }
+
+bool ycxx::detail::chrono_classic_time_put(const std::locale& loc, char) {
+  return &std::use_facet<std::time_put<char>>(loc) == &std::use_facet<std::time_put<char>>(std::locale::classic());
+}
+bool ycxx::detail::chrono_classic_time_put(const std::locale& loc, wchar_t) {
+  return &std::use_facet<std::time_put<wchar_t>>(loc) ==
+         &std::use_facet<std::time_put<wchar_t>>(std::locale::classic());
+}

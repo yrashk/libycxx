@@ -69,6 +69,9 @@
 // <span>
 #define __cpp_lib_span 202311L
 
+// <any>
+#define __cpp_lib_any 201606L
+
 // <bit>
 #define __cpp_lib_bit_cast 201806L
 #define __cpp_lib_bitops 202607L

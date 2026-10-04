@@ -8,7 +8,7 @@ CORE = [
 ]
 # Hosted: need an OS (through the PAL) or the C library.
 HOSTED = [
-    "cctype", "cerrno", "cfenv", "cinttypes", "clocale", "csetjmp", "csignal", "cstdarg", "cstdio",
+    "any", "cctype", "cerrno", "cfenv", "cinttypes", "clocale", "csetjmp", "csignal", "cstdarg", "cstdio",
     "cstdlib", "cstring", "ctime", "cuchar", "cwchar", "cwctype",
 ]
 # Language-support headers whose *declarations* are core but which need the C++ ABI runtime

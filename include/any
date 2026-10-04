@@ -1,0 +1,6 @@
+// -*- C++ -*-  libycxx: <any>        [hosted]
+#pragma once
+
+#include <ycxx/config.hpp>
+#include <ycxx/core/version.hpp>
+#include <ycxx/hosted/any.hpp>

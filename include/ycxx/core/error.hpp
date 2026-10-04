@@ -109,18 +109,14 @@ template <class Make>
 [[noreturn]] [[gnu::cold]] inline void throw_runtime_error(const char* w) { raise(ycxx_error_runtime_error, w); }
 // Exception classes defined inline in core headers are thrown from the header through
 // raise_with, which also works in constant evaluation (P3068). Only the <stdexcept> classes,
-// whose message storage lives in the hosted runtime, go through raise() and throw_std.
+// whose message storage lives in the hosted runtime, go through raise() and throw_std. The
+// throw_bad_* helpers for other header-defined classes live next to those classes.
 [[noreturn]] [[gnu::cold]] constexpr void throw_bad_alloc() {
   raise_with(ycxx_error_bad_alloc, "std::bad_alloc", [] { return std::bad_alloc(); });
 }
 [[noreturn]] [[gnu::cold]] constexpr void throw_bad_array_new_length() {
   raise_with(ycxx_error_bad_array_new_length, "std::bad_array_new_length", [] { return std::bad_array_new_length(); });
 }
-[[noreturn]] [[gnu::cold]] inline void throw_bad_function_call() {
-  raise(ycxx_error_bad_function_call, "std::bad_function_call");
-}
-[[noreturn]] [[gnu::cold]] inline void throw_bad_any_cast() { raise(ycxx_error_bad_any_cast, "std::bad_any_cast"); }
-[[noreturn]] [[gnu::cold]] inline void throw_bad_weak_ptr() { raise(ycxx_error_bad_weak_ptr, "std::bad_weak_ptr"); }
 
 } // namespace ycxx::detail
 

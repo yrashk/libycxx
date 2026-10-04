@@ -5,6 +5,7 @@
 #include <ycxx/core/compare.hpp>
 #include <ycxx/core/tuple_like.hpp>
 #include <ycxx/core/error.hpp>
+#include <ycxx/core/hash.hpp>
 
 namespace std {
 
@@ -106,22 +107,6 @@ template <class T>
 // Prevents the compiler from moving observable behaviour across this point ([utility.undefined]).
 inline void observable_checkpoint() noexcept { asm volatile("" ::: "memory"); }
 
-// [intseq]
-template <class T, T... I>
-struct integer_sequence {
-  static_assert(ycxx::detail::is_integral_v<T>, "integer_sequence requires an integer type");
-  using value_type = T;
-  static constexpr size_t size() noexcept { return sizeof...(I); }
-};
-template <size_t... I>
-using index_sequence = integer_sequence<size_t, I...>;
-template <class T, T N>
-using make_integer_sequence = ycxx::detail::make_integer_seq<integer_sequence, T, N>;
-template <size_t N>
-using make_index_sequence = make_integer_sequence<size_t, N>;
-template <class... T>
-using index_sequence_for = make_index_sequence<sizeof...(T)>;
-
 // [intseq.binding]
 template <class T, T... Values>
 struct tuple_size<integer_sequence<T, Values...>> : integral_constant<size_t, sizeof...(Values)> {};
@@ -168,9 +153,6 @@ constexpr in_place_index_t<I> in_place_index{};
 struct monostate {};
 constexpr bool operator==(monostate, monostate) noexcept { return true; }
 constexpr strong_ordering operator<=>(monostate, monostate) noexcept { return strong_ordering::equal; }
-
-template <class T>
-struct hash;
 
 } // namespace std
 

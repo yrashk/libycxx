@@ -1,8 +1,7 @@
-// -*- C++ -*-  libycxx: <memory>   [core]
+// -*- C++ -*-  libycxx: <tuple>   [core]
 #pragma once
 
 #include <ycxx/config.hpp>
 #include <ycxx/core/version.hpp>
 #include <compare>
-#include <ycxx/core/memory_base.hpp>
 #include <ycxx/core/tuple.hpp>

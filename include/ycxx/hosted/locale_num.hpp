@@ -397,7 +397,6 @@ private:
     unsigned long long mag = 0;
     bool neg = false;
     const ycxx::detail::num_parse r = ycxx::detail::num_get_integer(field.data(), field.size(), base, &mag, &neg);
-    using U = make_unsigned_t<T>;
     if (r == ycxx::detail::num_parse::not_converted) {
       v = 0;
       err |= ios_base::failbit;
@@ -411,15 +410,18 @@ private:
         err |= ios_base::failbit;
         return in;
       }
+      using U = make_unsigned_t<T>;
       v = neg ? static_cast<T>(0 - static_cast<U>(mag)) : static_cast<T>(mag);
     } else {
-      // strtoull's rule: a negative field is the negated magnitude, in val's type
-      if (r == ycxx::detail::num_parse::overflow || mag > numeric_limits<T>::max()) {
+      // strtoull's rule: a negative field is the negated magnitude in unsigned long long
+      // ("-1" is ULLONG_MAX); a result that val cannot represent stores its maximum
+      const unsigned long long value = neg ? 0 - mag : mag;
+      if (r == ycxx::detail::num_parse::overflow || value > numeric_limits<T>::max()) {
         v = numeric_limits<T>::max();
         err |= ios_base::failbit;
         return in;
       }
-      v = neg ? static_cast<T>(0 - static_cast<U>(mag)) : static_cast<T>(mag);
+      v = static_cast<T>(value);
     }
     if (!grouping_ok)
       err |= ios_base::failbit;

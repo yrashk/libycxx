@@ -281,6 +281,10 @@ Deprecated and removed features are not implemented (`is_pod`, `is_trivial`, `al
 - The plain `to_chars` follows P3505 ([charconv.to.chars]/7: f for 10^-4 <= |v| < 10^U);
   libc++'s and libstdc++'s tests still encode the C++17 shortest-of-f-and-e rule, and
   libstdc++'s `to_chars/version.cc` expects `__cpp_lib_to_chars` 202306L, not 202606L.
+- `num_get` into an unsigned type converts a negative field as strtoull does
+  ([facet.num.get.virtuals] Stage 3): "-1" is ULLONG_MAX, so `unsigned int`/`unsigned short`
+  get their maximum and failbit, a 64-bit type ULLONG_MAX without failbit. libc++'s tests negate
+  in val's type (UINT_MAX without failbit); libstdc++ reads "-4294967295" as 1.
 - Floating-point `from_chars` leaves the value unmodified on `result_out_of_range` (overflow, or a
   nonzero value that rounds to zero), as the draft says; MSVC stores +-inf or +-0.
 - `<regex>` ECMAScript follows ECMA-262 where libc++'s tests expect otherwise: `\a` is an
@@ -372,7 +376,12 @@ Deprecated and removed features are not implemented (`is_pod`, `is_trivial`, `al
   have no default constructor (libstdc++ extension); no `wstring_convert`/`wbuffer_convert`
   (removed in C++26), no `<codecvt>`; `fstream`'s path overloads are constrained templates.
   Standard stream objects synchronized with stdio write character by
-  character through `putc` (bulk writes through `fwrite`).
+  character through `putc` (bulk writes through `fwrite`). The UTF-16 codecvts' `out` takes a
+  high surrogate into the state (so out(from, from + 1) succeeds, as [locale.codecvt.virtuals]/4
+  requires of a filebuf facet); `unshift` reports `error` while one is pending. libstdc++'s
+  `codecvt_unicode.h` expects `partial` with from_next before it instead; `money_get` with
+  frac_digits() > 0 accepts a value without a decimal point as the digits that appear ("1056"),
+  but a decimal point must be followed by exactly frac_digits() digits.
 - `<memory>`: no `atomic<shared_ptr<T>>` / `atomic<weak_ptr<T>>`, no execution-policy overloads of the specialized
   algorithms, no `pointer_tag_pair`. shared_ptr reference counts use
   the `__atomic` builtins unconditionally (no single-threaded fast path). get_deleter identifies

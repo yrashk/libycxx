@@ -795,12 +795,12 @@ private:
           }
           ++s;
         }
-        if (digits.empty()) {
+        // [locale.moneypunct.general]/3: a decimal point must be followed by exactly
+        // frac_digits() digits; without one, the digits are stored as they appear
+        if (digits.empty() || (point_seen && frac_got != frac)) {
           failed = true;
           break;
         }
-        for (; frac_got < frac; ++frac_got)
-          digits.push_back('0');
         break;
       }
       }

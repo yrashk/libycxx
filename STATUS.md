@@ -30,6 +30,8 @@ Conformance oracles (run only, never edited): libc++ tests from `llvmorg-23.1.2`
 | algorithms + numerics/numeric.ops | 236/370 | 237/370 | yes | was 2; rest: `<vector>`/`<deque>`/`<random>` (107), is_permutation Mandates (12), `<atomic>`/`<map>`/`<list>`..., views |
 | strings/basic.string + string.conversions + hash/literals/erasure | 137/252 | 137/252 | yes (sto*/fp to_string: hosted runtime) | was 0; 109 need `<vector>`/`<deque>` (via asan_testing.h), `<algorithm>`, `<sstream>`, `<ranges>`, `<cmath>`; rest below |
 | utilities/charconv | 7/12 | 7/12 | yes (fp: runtime archive) | rest need `<algorithm>`, `<cmath>`, `<string>` |
+| containers/sequences/vector + vector.bool | 99/155 | 100/155 | yes | was 0; 134/155 (Clang), 136 (GCC) with `<deque>` declared (asan_testing.h); rest below |
+| containers/sequences/{deque,list,forwardlist} + container.adaptors/{stack,queue,priority.queue} | 197/371 | 197/371 | yes | was 0; adaptor tests need `<vector>` (338/371 with a local stand-in `<vector>`); rest: `<map>`/`<set>`/`<random>` |
 
 Whole-suite baseline (clang, before iterators/tuple/array/optional): 976 pass / ~8,000 run.
 
@@ -63,6 +65,13 @@ headers, mostly `<sstream>`; the rest are listed under Known limitations). Own s
 compiles with `-O2`, as DejaGnu's default flags do. Some tests rely on dead-code elimination:
 `expected/cons.cc` declares `E(const int&)` without defining it, and links only when the
 unreachable error branch is removed. `dg-options -fno-inline` is passed through.
+<vector>, <inplace_vector> (Phase 3, core): vector, vector<bool>, pmr::vector, inplace_vector, all
+constexpr. Own suite vector/ + inplace_vector/ + containers/: 67/79 on both compilers (rest: `<list>`,
+views, `<memory_resource>`, and the two adl_robustness test defects below); with stand-ins for the
+missing views and `<list>` every remaining vector test passes. libstdc++ 23_containers/vector +
+inplace_vector: 0 -> 107/136 (GCC), 104/136 (Clang); the rest need missing headers
+(`<memory_resource>`, `<iostream>`, `<regex>`, testsuite_iterators.h's libstdc++ internals),
+`<algorithm>` through `<vector>`, or libstdc++ extensions (below). Clean under ASan on Clang.
 <memory> (Phase 3): specialized algorithms (std and ranges, constexpr), unique_ptr, shared_ptr /
 weak_ptr / enable_shared_from_this / make_shared family (constexpr), owner_less / owner_hash /
 owner_equal, out_ptr / inout_ptr. Own suite memory: Clang 81/83, GCC 80/83 plus 1 XFAIL;
@@ -70,6 +79,14 @@ make_shared.pass and make_unique.pass need `<string>`. libc++ utilities/memory
 67 -> 141 and utilities/smartptr 15 -> 51 (GCC) / 52 (Clang); libstdc++ 20_util smart pointer
 and specialized-algorithm directories 37 -> 189 (GCC), 36 -> 190 (Clang). The remaining failures
 need `<string>`, `<vector>`, `<algorithm>`, `<ranges>`, `<sstream>`, `<atomic>` or are noted below.
+
+<system_error> and constexpr <stdexcept>: error_category, error_code, error_condition,
+system_error, generic/system categories (strerror_r through the PAL), hash, comparisons.
+libc++ diagnostics/{syserr,std.exceptions} 11 -> 68/69 on both compilers (rest: `<ostream>`);
+libstdc++ 19_diagnostics/{error_*,logic_error,runtime_error,system_error,headers,stdexcept.cc}
+17 -> 38/45 on GCC, 36/45 on Clang (rest: `<locale>`/`<future>` (5), removed STREAMS errc
+values, `__cpp_lib_constexpr_exceptions`, and on Clang the two constexpr tests that throw during
+constant evaluation).
 
 <memory_resource> and <scoped_allocator>: memory_resource, polymorphic_allocator (core; `<string>`
 includes it, so `pmr::string` works with `<string>` alone), new_delete/null resources, the atomic
@@ -195,9 +212,11 @@ Deprecated and removed features are not implemented (`is_pod`, `is_trivial`, `al
   `except/handler_function_pointer` and `except/handler_array_decay` fail on GCC.
 - Programs link the shared unwinder (`-shared-libgcc`): glibc's pthread_exit/pthread_cancel
   unwind through libgcc_s.so, and a second, static unwinder copy would abort.
-- `<system_error>` has only `errc` (core; Linux errno values, checked against `<errno.h>` by the
-  hosted header) and the `is_error_*_enum` traits; `error_category`, `error_code` and
-  `system_error` need `<string>`.
+- `<system_error>`: no `operator<<` for `error_code` (no `<ostream>` yet) and no
+  `formatter<error_code>` (no `<format>` yet). `errc` has no `no_message_available`,
+  `no_stream_resources`, `not_a_stream`, `stream_timeout` (removed from the draft; libstdc++'s
+  `errc_std_c++0x.cc` still expects them). Messages are the C library's `strerror_r` text for
+  both categories.
 - Floating-point `<charconv>` for `long double`/`float128_t` works on stack-allocated big integers
   (no heap, so it stays freestanding): parsing needs about 21 KB of stack (two 38,500-bit numbers
   and an 11,566-digit buffer, exact for any input length), `%g` with a large precision about 20 KB.
@@ -227,6 +246,54 @@ Deprecated and removed features are not implemented (`is_pod`, `is_trivial`, `al
   [string.conversions]): shortest round trip, fixed notation only in [1e-4, 10^U)
   ([charconv.to.chars]/7). Defined out of line in the hosted runtime.
 
+- `<vector>`: no `formatter<vector<bool>::reference>` (no `<format>`); `pmr::vector` names the
+  forward-declared `polymorphic_allocator` until `<memory_resource>` exists. No AddressSanitizer
+  container annotations (libc++'s asan tests check them: 16 libc++ tests fail under ASan for that
+  reason only). Not provided: the pre-C++26 `static vector<bool>::swap(reference, reference)` and
+  libstdc++'s `vector<bool>::insert(pos)` / mismatched-allocator extensions. vector<bool> shifts on
+  insert/erase bit by bit. shrink_to_fit swallows an allocation failure (a non-binding request).
+  Strengthened noexcept: `vector(vector&&, const Allocator&)` when the allocator is always equal;
+  inplace_vector's copy operations when T's are. libc++ `vector.modifiers/emplace` and
+  `vector.bool/find` exceed Clang's default constexpr step limit (pass with 2x).
+- `<inplace_vector>`: Clang 23 cannot begin the lifetime of one element of a union array member
+  in constant evaluation (P3074; GCC 16 can, probed in-language). On Clang a trivially destructible,
+  default-constructible T is value-initialized as a whole array first, a non-trivially-destructible
+  T lives in std::allocator storage during constant evaluation (so a constant-initialized
+  inplace_vector of such a T cannot hold elements), and other T cannot be used in constant
+  evaluation. A second union member (a pointer) is added for the second case, which can raise
+  sizeof/alignof on Clang only.
+- Own-suite test defects (reported, not changed): `vector/adl_robustness` and
+  `inplace_vector/adl_robustness` `pointers()` part: every operator expression on
+  `evil::Iter<Holder<Incomplete>*>` or `vector<Holder<Incomplete>*>` (including the test's own
+  `a == d`, `++it`) performs ADL that instantiates `Holder<Incomplete>`, which no library can avoid
+  (libstdc++ fails it too). `inplace_vector/adl_robustness` also calls `reserve(200)` on an
+  `inplace_vector<T, 128>`, which must throw bad_alloc ([inplace.vector.capacity]/9). Both pass
+  with those parts removed.
+- The shared feature-test macros `__cpp_lib_containers_ranges`, `__cpp_lib_erase_if`,
+  `__cpp_lib_nonmember_container_access`, `__cpp_lib_incomplete_container_elements` and
+  `__cpp_lib_allocator_traits_is_always_equal` are left to the containers' integration (they
+  cover headers that do not exist yet).
+- `<deque>`, `<list>`, `<forward_list>`, `<stack>`, `<queue>` (core, constexpr): everything in the
+  draft except the adaptors' formatter specializations (no `<format>`). Own suite: deque 14/17,
+  list 16/19, forward_list 10/12, stack/queue/priority_queue 4/4 each, on both compilers (adaptors
+  measured with a local stand-in `<vector>`); clean under ASan. Remaining: `range_kinds` need
+  `views::iota`/`counted`, `pmr_alias` needs `<memory_resource>`, and `adl_robustness` cannot
+  compile with any library: its `evil::Iter<Holder<Incomplete>*>` makes every operator call on the
+  iterator instantiate `Holder<Incomplete>` through ADL (reduced case, both compilers).
+  libstdc++ 23_containers/{deque,list,forward_list,stack,queue,priority_queue}: 0 -> 154/199 (GCC),
+  152/199 (Clang); 175/173 with a stand-in `<vector>`; the rest need `<vector>`,
+  `<memory_resource>`, `<scoped_allocator>`, iostreams, `__cpp_lib_erase_if` (defined once every
+  container has erase_if), or test libstdc++ extensions (mismatched allocator value_type,
+  assigning non-assignable elements, trivially copyable iterators, a non-constexpr `swap` overload).
+- deque: blocks of about 1 KiB (a power of two, at least 16 elements) and a map of block pointers;
+  emptied blocks are freed eagerly, an empty deque keeps one block until `shrink_to_fit`. A middle
+  `insert`/`emplace` of one element or of n copies builds the value in allocator storage first
+  (it may alias an element). list: at run time the sentinel is a member; during constant
+  evaluation it is allocated with `std::allocator` (GCC 16 mis-evaluates pointers from heap nodes
+  into an object returned with NRVO). Extensions: the adaptors' default constructors are
+  constrained, a moved-from priority_queue is empty, `X(X&&, const A&)` is noexcept for
+  always-equal allocators. `<queue>` includes `<vector>`, so it (and the include-graph and
+  freestanding checks for it) needs `<vector>` to exist.
 - `<algorithm>`/`<numeric>`/`<execution>` (core): every std:: and ranges:: algorithm of the
   draft, constexpr where specified. The std:: ExecutionPolicy overloads run sequentially and
   are noexcept (an escaping exception calls terminate). Not provided: the ranges::
@@ -261,5 +328,9 @@ Deprecated and removed features are not implemented (`is_pod`, `is_trivial`, `al
   so GCC can throw them during constant evaluation; Clang 23 cannot throw during constant
   evaluation at all. Under -fno-rtti the six classes libsupc++ defines keep an out-of-line
   destructor, so they are not constexpr-destructible there (DECISIONS §4).
-  Still open: the `<stdexcept>` classes (their message storage lives in the hosted runtime), so
-  `__cpp_lib_constexpr_exceptions` is not yet defined.
+  The nine `<stdexcept>` classes are constexpr too (DECISIONS §4; under hosted -fno-rtti they
+  also keep out-of-line destructors), and the library's
+  `throw_out_of_range`/`throw_length_error`/... throw them during constant evaluation, so on GCC
+  `std::string("ab").at(5)` can be caught in a constant expression. `__cpp_lib_constexpr_exceptions`
+  is still undefined: Clang 23 cannot throw during constant evaluation, a non-null
+  `exception_ptr` is not available there on GCC, and `format_error` does not exist yet.

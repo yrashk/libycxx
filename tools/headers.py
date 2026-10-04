@@ -11,6 +11,8 @@ CORE = [
 ]
 CORE += ["algorithm", "numeric", "execution", "ranges"]
 CORE += ["scoped_allocator"]
+CORE += ["vector", "inplace_vector"]
+CORE += ["deque", "list", "forward_list", "stack", "queue"]
 # Numerics (<cmath>: see DECISIONS §3; the run-time calls of its functions need libm).
 CORE += ["ratio", "numbers"]
 # Hosted: need an OS (through the PAL) or the C library.

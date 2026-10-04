@@ -223,9 +223,9 @@ Deprecated and removed features are not implemented (`is_pod`, `is_trivial`, `al
   `resize_and_overwrite` passes `p` and `m` as prvalues and leaves the string unchanged if the
   (precondition-violating) operation throws; the libstdc++ tests checking
   `__cpp_lib_constexpr_string == 201907` see 202511 (constexpr integral `to_string`).
-- Floating-point `to_string` is implemented in the hosted runtime with `snprintf("%.*Le")` and
-  `strto*` round-trip checks (no `<charconv>` dependency); switching it to `to_chars` once that
-  exists would be faster.
+- Floating-point `to_string`/`to_wstring` are the plain `to_chars` output (`format("{}", v)`,
+  [string.conversions]): shortest round trip, fixed notation only in [1e-4, 10^U)
+  ([charconv.to.chars]/7). Defined out of line in the hosted runtime.
 
 - `<algorithm>`/`<numeric>`/`<execution>` (core): every std:: and ranges:: algorithm of the
   draft, constexpr where specified. The std:: ExecutionPolicy overloads run sequentially and

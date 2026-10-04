@@ -89,6 +89,45 @@ u192 product(u64 w, u128 t, int& shift) {
   return p;
 }
 
+// Whether the whole interval eisel_lemire computes rounds like its lower end, so that the upper
+// end need not be rounded. The value lies strictly between lo and (hi + 1), where lo = (w * t) <<
+// shift (round_192 exponent z) and hi - lo = D << shift for the D below. round_to keeps the top p
+// bits of lo.hi, s bits above the 64 of lo.lo; the result can differ only if the interval
+// contains a halfway point (a carry into the kept bits rounds to the same value), which is
+// checked conservatively in units of 2^64. Anything uncertain answers false: a subnormal result,
+// an upper end normalised differently, an overflowing bound.
+template <kind K>
+bool interval_rounds_alike(const u192& lo, long long z, u64 w, u128 t, int shift, bool exact, bool truncated) {
+  constexpr format f = fmt_of<K>;
+  const int len = ycxx::detail::fpconv::bit_length(lo.hi);
+  const long long lsb = len - 1 + z + 64 - (f.p - 1);
+  if (lsb < f.qmin())
+    return false;
+  const int s = len - f.p;
+  if (s < 1)
+    return false;
+  u128 d; // hi - lo before the shift (exact && !truncated never gets here)
+  if (!truncated) {
+    d = w - 1;
+  } else {
+    if (__builtin_clzll(w + 1) != shift) // w has at most 19 digits: w + 1 does not wrap
+      return false;
+    if (exact)
+      d = t - 1;
+    else if (__builtin_add_overflow(t, static_cast<u128>(w), &d))
+      return false;
+  }
+  const u128 d_hi = (shift == 0 ? d >> 64 : d >> (64 - shift)) + 2; // covers lo.lo, the low bits and the + 1
+  const u128 rem = lo.hi & ycxx::detail::fpconv::low_mask(s);
+  const u128 half = u128(1) << (s - 1);
+  u128 end;
+  if (__builtin_add_overflow(rem, d_hi, &end))
+    return false;
+  // Below the halfway point: the whole interval must stay below it. At or above it (lo itself
+  // rounds up, the value being above lo): below the next halfway point.
+  return rem >= half ? end <= (u128(1) << s) + half : end <= half;
+}
+
 // Eisel-Lemire: w * 10^q, or (truncated) a value strictly between w * 10^q and (w + 1) * 10^q.
 // Returns false when the result cannot be decided this way.
 template <kind K>
@@ -107,6 +146,10 @@ bool eisel_lemire(u64 w, int q, bool truncated, rounded& out) {
   }
   // The value is above lo (t truncated, or digits dropped).
   rounded a = ycxx::detail::fpconv::round_192<K>(lo, base - shift, true);
+  if (a.status == round_status::ok && ycxx::detail::fpconv::interval_rounds_alike<K>(lo, base - shift, w, t, shift, exact, truncated)) {
+    out = a;
+    return true;
+  }
   // An upper end: below x * t_exact with x = w + 1 (truncated) or x = w, and x * t_exact is
   // below x * t + x when t is truncated.
   const u64 x = truncated ? w + 1 : w;
@@ -200,8 +243,8 @@ std::from_chars_result finish(const char* end, const rounded& r, bool negative, 
 }
 
 template <kind K>
-std::from_chars_result parse_decimal(const char* first, const char* p, const char* last, bool negative, int fmt,
-                                     fp_raw& out) {
+std::from_chars_result parse_decimal_digits(const char* first, const char* p, const char* last, bool negative,
+                                            int fmt, fp_raw& out) {
   constexpr int max_digits = limits_of<K>.max_digits;
   char d[max_digits + 1];
   int n = 0;            // digits stored
@@ -281,6 +324,108 @@ std::from_chars_result parse_decimal(const char* first, const char* p, const cha
   }
   rounded r = ycxx::detail::fpconv::decimal_exact<K>(d, n, e10);
   return ycxx::detail::fpconv::finish<K>(p, r, negative, out);
+}
+
+// If the 8 characters at p are all decimal digits, stores their value in v. The characters are
+// loaded as one little-endian word (the first one least significant) and converted in three
+// multiply steps: digit pairs, then groups of four, then all eight.
+bool eight_digits(const char* p, u64& v) {
+  u64 x = 0;
+  for (int i = 0; i < 8; ++i) // one load on little-endian targets
+    x |= static_cast<u64>(static_cast<unsigned char>(p[i])) << (8 * i);
+  // Every byte in 0x30..0x39: its high nibble is 3, and still 3 after adding 6.
+  if (((x & 0xF0F0F0F0F0F0F0F0ull) | (((x + 0x0606060606060606ull) & 0xF0F0F0F0F0F0F0F0ull) >> 4)) !=
+      0x3333333333333333ull)
+    return false;
+  x -= 0x3030303030303030ull;
+  x = x * 10 + (x >> 8); // byte 2k: the pair (digit 2k, digit 2k + 1)
+  x = (((x & 0x000000FF000000FFull) * (100 + (1000000ull << 32))) +
+       (((x >> 16) & 0x000000FF000000FFull) * (1 + (10000ull << 32)))) >>
+      32;
+  v = x & 0xFFFFFFFFull;
+  return true;
+}
+
+// The digits of a decimal significand as w * 10^e10, keeping the leading 19 significant digits
+// in w and only whether the others are nonzero.
+struct decimal_scan {
+  const char* p;
+  const char* last;
+  u64 w = 0;
+  int taken = 0;        // significant digits in w
+  long long e10 = 0;
+  bool dropped = false; // a digit after the first 19 significant ones was nonzero
+  bool any = false;     // a digit was seen
+
+  // One run of digits (fraction: after the point, where each digit taken scales by 1/10): the
+  // leading zeros and the first significant digit one at a time, then 8 at a time while they fit
+  // in w, then one at a time again.
+  [[gnu::always_inline]] void run(bool fraction) {
+    for (; p != last && w == 0 && ycxx::detail::fpconv::is_digit(*p); ++p) {
+      any = true;
+      w = static_cast<u64>(*p - '0');
+      taken = w != 0;
+      e10 -= fraction;
+    }
+    u64 eight;
+    while (w != 0 && taken <= 11 && last - p >= 8 && ycxx::detail::fpconv::eight_digits(p, eight)) {
+      w = w * 100000000 + eight;
+      taken += 8;
+      e10 -= fraction ? 8 : 0;
+      p += 8;
+    }
+    for (; p != last && ycxx::detail::fpconv::is_digit(*p); ++p) {
+      any = true;
+      if (taken < 19) {
+        w = w * 10 + static_cast<u64>(*p - '0');
+        ++taken;
+        e10 -= fraction;
+      } else {
+        e10 += !fraction;
+        dropped |= *p != '0';
+      }
+    }
+  }
+};
+
+// The usual case first: the leading 19 significant digits are accumulated directly into w and
+// Eisel-Lemire decides. Anything else (an undecided product, an exponent beyond the table, a
+// malformed exponent) starts over in parse_decimal_digits, which keeps every digit.
+template <kind K>
+std::from_chars_result parse_decimal(const char* first, const char* p, const char* last, bool negative, int fmt,
+                                     fp_raw& out) {
+  const char* const start = p;
+  decimal_scan d{p, last};
+  d.run(false);
+  if (d.p != last && *d.p == '.') {
+    ++d.p;
+    d.run(true);
+  }
+  p = d.p;
+  const u64 w = d.w;
+  long long e10 = d.e10;
+  const bool dropped = d.dropped;
+  const bool any = d.any;
+  if (!any || w == 0)
+    return ycxx::detail::fpconv::parse_decimal_digits<K>(first, start, last, negative, fmt, out);
+  const auto cf = static_cast<std::chars_format>(fmt);
+  const bool sci = (cf & std::chars_format::scientific) == std::chars_format::scientific;
+  const bool fix = (cf & std::chars_format::fixed) == std::chars_format::fixed;
+  if (sci && p != last && (*p == 'e' || *p == 'E')) {
+    long long x = 0;
+    const char* q = ycxx::detail::fpconv::parse_exponent(p + 1, last, x);
+    if (q == nullptr)
+      return ycxx::detail::fpconv::parse_decimal_digits<K>(first, start, last, negative, fmt, out);
+    p = q;
+    e10 += x;
+  } else if (sci && !fix) {
+    return {first, std::errc::invalid_argument};
+  }
+  rounded r;
+  if (e10 >= pow10_min && e10 <= pow10_max &&
+      ycxx::detail::fpconv::eisel_lemire<K>(w, static_cast<int>(e10), dropped, r))
+    return ycxx::detail::fpconv::finish<K>(p, r, negative, out);
+  return ycxx::detail::fpconv::parse_decimal_digits<K>(first, start, last, negative, fmt, out);
 }
 
 template <kind K>

@@ -61,6 +61,11 @@ if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
 endif()
 # Floating-point <charconv> (also in the freestanding runtime archive).
 file(GLOB YCXX_CHARCONV_SOURCES CONFIGURE_DEPENDS src/runtime/charconv/*.cpp)
+# Their work buffers (up to tens of kilobytes) are written before they are read; GCC 16 would
+# zero-fill every automatic variable in C++26 mode (erroneous values) on each call.
+if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+  set_source_files_properties(${YCXX_CHARCONV_SOURCES} PROPERTIES COMPILE_OPTIONS -ftrivial-auto-var-init=uninitialized)
+endif()
 # The lock and wait tables of <atomic> (also in the freestanding runtime archive).
 file(GLOB YCXX_ATOMIC_SOURCES CONFIGURE_DEPENDS src/runtime/atomic/*.cpp)
 # <debugging> (also in the freestanding runtime archive); is_debugger_present is replaceable.

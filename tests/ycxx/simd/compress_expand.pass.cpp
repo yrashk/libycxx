@@ -35,8 +35,11 @@ constexpr bool test() {
   CHECK(eq(e, {1, -5, -5, 2, -5, -5, 3, -5}));
   auto e0 = simd::expand(V(9), sel);
   CHECK(eq(e0, {9, 0, 0, 9, 0, 0, 9, 0}));
+  // [simd.mask.ctor]/8: basic_mask(unsigned) sets element i from bit i, so 0b10101010 selects
+  // indices 1, 3, 5, 7; mk is true at 0-2, so the result is mk[1], mk[3], mk[5], mk[7] = true,
+  // false, false, false, then the fill value.
   auto mc = simd::compress(mk, M(0b10101010u), false);
-  CHECK(!mc[0] && !mc[1] && mc[3] == false);
+  CHECK(mc[0] && !mc[1] && !mc[2] && !mc[3] && !mc[4] && !mc[7]);
 
   return true;
 }

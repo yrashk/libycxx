@@ -6,6 +6,10 @@
 #include <ycxx/core/cstddef.hpp>
 #include <stdio.h>
 
+#ifndef __STDC_VERSION_STDIO_H__
+#  define __STDC_VERSION_STDIO_H__ 202311L
+#endif
+
 namespace std {
 using ::FILE;
 using ::fpos_t;

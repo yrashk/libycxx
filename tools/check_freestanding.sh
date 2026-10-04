@@ -1,5 +1,5 @@
 #!/bin/sh
-# Freestanding check: every core header must compile in a TU built with
+# Freestanding check: every core header (and every header [compliance] requires) must compile in a TU built with
 #   -ffreestanding -nostdlib -nostdinc -fno-exceptions -fno-rtti
 # and the smoke test must link with no C library for bare-metal targets.
 set -e
@@ -10,7 +10,12 @@ lld=${YCXX_LLD:-ld.lld-23} llvm_ar=${YCXX_LLVM_AR:-llvm-ar-23}
 repo=$(cd "$(dirname "$0")/.." && pwd)
 out=$repo/build/freestanding
 mkdir -p "$out"
-cores=$(python3 -c "import sys; sys.path.insert(0,'$repo/tools'); from headers import CORE; print(' '.join(CORE))")
+# Every core header, every header with a freestanding subset, and every header of [compliance]'s
+# Table 27 (some of which, such as <exception> and <typeinfo>, need the ABI runtime only when used
+# with exceptions or RTTI).
+cores=$(python3 -c "import sys; sys.path.insert(0,'$repo/tools')
+from headers import CORE, FREESTANDING_SUBSET, FREESTANDING_REQUIRED
+print(' '.join(dict.fromkeys(CORE + FREESTANDING_SUBSET + FREESTANDING_REQUIRED)))")
 flags="-std=c++26 -ffreestanding -nostdinc -nostdinc++ -isystem $repo/include -fno-exceptions -fno-rtti -O2 -Wall -Wextra -Werror"
 fail=0
 run() { # compiler-command target-label
@@ -27,7 +32,7 @@ run() { # compiler-command target-label
      build_fsrt "$cc" "$label" 2>> "$out/smoke.$label.log" &&
      $4 "$out/smoke.$label.o" "$out/smoke_o0.$label.o" "$out/rt.$label.o" "$out/fsrt.$label.a" \
         -o "$out/smoke.$label.elf" 2>> "$out/smoke.$label.log"; then
-    echo "ok   [$label] all core headers + smoke link"
+    echo "ok   [$label] all core and freestanding headers + smoke link"
   else
     echo "FAIL [$label] smoke"; sed 's/^/    /' "$out/smoke.$label.log" | head -20; fail=1
   fi

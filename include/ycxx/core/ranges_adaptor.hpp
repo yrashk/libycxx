@@ -63,15 +63,17 @@ struct pipe_closure : std::ranges::range_adaptor_closure<pipe_closure<C, D>> {
   constexpr pipe_closure(wrapper_init_t, CC&& cc, DD&& dd) : c(static_cast<CC&&>(cc)), d(static_cast<DD&&>(dd)) {}
 
   template <class Self, class R>
-    requires std::invocable<ycxx::detail::forward_like_t<Self, C>, R> &&
+    requires wrapper_castable<Self, pipe_closure> && std::invocable<ycxx::detail::forward_like_t<Self, C>, R> &&
              std::invocable<ycxx::detail::forward_like_t<Self, D>,
                             std::invoke_result_t<ycxx::detail::forward_like_t<Self, C>, R>>
   constexpr decltype(auto) operator()(this Self&& self, R&& r) noexcept(
       std::is_nothrow_invocable_v<ycxx::detail::forward_like_t<Self, C>, R> &&
       std::is_nothrow_invocable_v<ycxx::detail::forward_like_t<Self, D>,
                                   std::invoke_result_t<ycxx::detail::forward_like_t<Self, C>, R>>) {
-    return ::ycxx::detail::invoke(std::forward_like<Self>(self.d),
-                                  ::ycxx::detail::invoke(std::forward_like<Self>(self.c), static_cast<R&&>(r)));
+    // Through the wrapper type: Self may be a class derived from it, even privately.
+    auto&& w = (ycxx::detail::copy_cvref<Self&&, pipe_closure>)self;
+    return ::ycxx::detail::invoke(std::forward_like<Self>(w.d),
+                                  ::ycxx::detail::invoke(std::forward_like<Self>(w.c), static_cast<R&&>(r)));
   }
 };
 
@@ -320,8 +322,56 @@ public:
   }
 };
 
-// A non-propagating-cache member that is present only when Present is true.
+// The type of an absent member ("present only if").
 struct empty_cache {};
+
+// The position cached by the begin() of filter_view, drop_view, drop_while_view and
+// reverse_view: an iterator into R, or for a random-access range its offset from the start (no
+// iterator plus engaged flag is stored). Like non-propagating-cache, it is emptied rather than
+// copied or moved.
+template <class R>
+class position_cache {
+  non_propagating_cache<std::ranges::iterator_t<R>> it_;
+
+public:
+  constexpr bool has_value() const noexcept { return it_.has_value(); }
+  constexpr std::ranges::iterator_t<R> get(R&) const { return *it_; }
+  constexpr void set(R&, const std::ranges::iterator_t<R>& it) { it_.emplace(it); }
+};
+template <std::ranges::random_access_range R>
+class position_cache<R> {
+  std::ranges::range_difference_t<R> offset_ = -1;
+
+public:
+  constexpr position_cache() noexcept = default;
+  constexpr position_cache(const position_cache&) noexcept {}
+  constexpr position_cache(position_cache&& other) noexcept { other.offset_ = -1; }
+  constexpr position_cache& operator=(const position_cache& other) noexcept {
+    if (__builtin_addressof(other) != this)
+      offset_ = -1;
+    return *this;
+  }
+  constexpr position_cache& operator=(position_cache&& other) noexcept {
+    offset_ = -1;
+    other.offset_ = -1;
+    return *this;
+  }
+  constexpr bool has_value() const noexcept { return offset_ >= 0; }
+  constexpr std::ranges::iterator_t<R> get(R& r) const { return std::ranges::begin(r) + offset_; }
+  constexpr void set(R& r, const std::ranges::iterator_t<R>& it) { offset_ = it - std::ranges::begin(r); }
+};
+template <bool Present, class R>
+struct position_cache_select {
+  using type = empty_cache;
+};
+template <class R>
+struct position_cache_select<true, R> {
+  using type = position_cache<R>;
+};
+template <bool Present, class R>
+using position_cache_if = typename position_cache_select<Present, R>::type;
+
+// A non-propagating-cache member that is present only when Present is true.
 template <bool Present, class T>
 struct cache_select {
   using type = empty_cache;

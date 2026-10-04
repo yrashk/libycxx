@@ -1,0 +1,6 @@
+// -*- C++ -*-  libycxx: <shared_mutex>   [hosted]
+#pragma once
+
+#include <ycxx/config.hpp>
+#include <ycxx/core/version.hpp>
+#include <ycxx/hosted/shared_mutex.hpp>

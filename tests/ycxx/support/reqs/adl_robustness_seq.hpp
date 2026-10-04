@@ -1,6 +1,6 @@
 // Generic check, instantiated per sequence container: the container works with element
 // types whose associated namespaces contain poisoned function templates
-// (support/adl_poison.hpp) and with pointers to an instantiation that must not be completed.
+// (support/adl_poison.hpp).
 // [contents]/3: "Whenever an unqualified name other than swap, make_error_code,
 // make_error_condition, from_stream, or submdspan_mapping is used in the specification of a
 // declaration D in [library] ... its meaning is established as-if by performing unqualified
@@ -9,8 +9,10 @@
 // ([container.alloc.reqmts]/2, [utility.arg.requirements]) and the iterator requirements
 // ([iterator.requirements]) do not include a unary & or a comma operator, so evil::Val
 // (both deleted) and evil::Iter (both deleted) must be usable.
-// Holder<Incomplete>* elements: performing ADL for a call with such an argument requires
-// completing Holder<Incomplete>, which is ill-formed ([basic.lookup.argdep]/3, [temp.inst]).
+// (Elements of type Holder<Incomplete>*, as in algorithm/adl_incomplete_holder, are not used:
+// any operator expression on the container's iterators in the test itself, e.g. it != end(),
+// performs ADL over the iterator type, whose associated entities include Holder<Incomplete>
+// for any iterator design, including a plain pointer -- [basic.lookup.argdep]/3.)
 #pragma once
 #include <compare>
 #include <cstddef>
@@ -114,7 +116,7 @@ bool values() {
     a.pop_front();
   }
   if constexpr (requires { a.reserve(1); }) {
-    a.reserve(200);
+    a.reserve(100);  // <= inplace_vector capacity used by the tests
     a.shrink_to_fit();
   }
   if constexpr (requires { a[0]; }) {
@@ -158,88 +160,6 @@ bool values() {
   }
   a.clear();
   return a.begin() == a.end();
-}
-
-// value_type is evil::Holder<evil::Incomplete>*.
-template <class X>
-bool pointers() {
-  using P = typename X::value_type;
-  // Iterator pairs are plain P*: an evil::Iter<P> argument would make overload resolution check
-  // the from_range constructor's constraint, whose ranges::begin performs ADL on the iterator
-  // as specified ([range.access.begin]/2.6), completing Holder<Incomplete> regardless of the
-  // library.
-  alignas(64) static char storage[128];  // distinct, suitably aligned addresses; never dereferenced
-  P p[4] = {nullptr, static_cast<P>(static_cast<void*>(storage)), static_cast<P>(static_cast<void*>(storage + 64)),
-            nullptr};
-  X a(p, p + 4);
-  X b(3);
-  X c(2, p[1]);
-  X d(std::from_range, p);
-  X e{p[2], p[1]};
-  // No operator expressions on the containers: one would perform ADL for the container type
-  // itself ([over.match.oper]/3.2), whose associated entities include Holder<Incomplete>
-  // ([basic.lookup.argdep]/3) -- that would be the test's doing, not the library's (and
-  // inplace_vector's comparisons are hidden friends, found only that way).
-  auto same = [](const X& x, const X& y) {
-    auto i = x.begin(), j = y.begin();
-    for (; i != x.end() && j != y.end(); ++i, ++j)
-      if (*i != *j) return false;
-    return i == x.end() && j == y.end();
-  };
-  if (!same(a, d) || length(b) != 3) return false;
-  X g(a);
-  X h(std::move(g));
-  b = h;
-  b = std::move(h);
-  b = {p[1]};
-  b.assign(p, p + 2);
-  b.assign(2, p[2]);
-  b.assign_range(p);
-  b.swap(c);
-  std::swap(b, c);
-  insert_one(b, 1, p[2]);
-  if constexpr (is_forward_list<X>) {
-    b.insert_after(b.cbefore_begin(), p, p + 4);
-    b.insert_range_after(b.cbefore_begin(), p);
-    b.erase_after(b.cbefore_begin());
-  } else {
-    b.insert(b.cbegin(), p, p + 4);
-    b.insert_range(b.cbegin(), p);
-    b.erase(b.cbegin());
-  }
-  if constexpr (requires { b.push_back(p[0]); }) {
-    b.push_back(p[1]);
-    b.append_range(p);
-    b.pop_back();
-  }
-  if constexpr (requires { b.push_front(p[0]); }) {
-    b.push_front(p[1]);
-    b.prepend_range(p);
-    b.pop_front();
-  }
-  if constexpr (requires { b.reserve(1); }) {
-    b.reserve(100);
-    b.shrink_to_fit();
-  }
-  b.resize(30);
-  b.resize(35, p[2]);
-  P const null = nullptr;
-  std::erase(b, null);
-  std::erase_if(b, [&](P q) { return q == p[2]; });
-  for (P q : b)
-    if (q != p[1]) return false;
-  if constexpr (requires { b.sort(); }) {
-    X s(std::from_range, p);
-    s.sort(std::less<P>());
-    s.unique();
-    s.remove(null);
-    X t{p[1]};
-    s.merge(t, std::less<P>());
-    s.reverse();
-    if (length(s) != 3) return false;
-  }
-  b.clear();
-  return b.begin() == b.end();
 }
 
 }  // namespace reqs::adl_robustness_seq

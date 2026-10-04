@@ -80,6 +80,14 @@ make_shared.pass and make_unique.pass need `<string>`. libc++ utilities/memory
 and specialized-algorithm directories 37 -> 189 (GCC), 36 -> 190 (Clang). The remaining failures
 need `<string>`, `<vector>`, `<algorithm>`, `<ranges>`, `<sstream>`, `<atomic>` or are noted below.
 
+<system_error> and constexpr <stdexcept>: error_category, error_code, error_condition,
+system_error, generic/system categories (strerror_r through the PAL), hash, comparisons.
+libc++ diagnostics/{syserr,std.exceptions} 11 -> 68/69 on both compilers (rest: `<ostream>`);
+libstdc++ 19_diagnostics/{error_*,logic_error,runtime_error,system_error,headers,stdexcept.cc}
+17 -> 38/45 on GCC, 36/45 on Clang (rest: `<locale>`/`<future>` (5), removed STREAMS errc
+values, `__cpp_lib_constexpr_exceptions`, and on Clang the two constexpr tests that throw during
+constant evaluation).
+
 <memory_resource> and <scoped_allocator>: memory_resource, polymorphic_allocator (core; `<string>`
 includes it, so `pmr::string` works with `<string>` alone), new_delete/null resources, the atomic
 default resource, pool_options, synchronized/unsynchronized_pool_resource and
@@ -204,9 +212,11 @@ Deprecated and removed features are not implemented (`is_pod`, `is_trivial`, `al
   `except/handler_function_pointer` and `except/handler_array_decay` fail on GCC.
 - Programs link the shared unwinder (`-shared-libgcc`): glibc's pthread_exit/pthread_cancel
   unwind through libgcc_s.so, and a second, static unwinder copy would abort.
-- `<system_error>` has only `errc` (core; Linux errno values, checked against `<errno.h>` by the
-  hosted header) and the `is_error_*_enum` traits; `error_category`, `error_code` and
-  `system_error` need `<string>`.
+- `<system_error>`: no `operator<<` for `error_code` (no `<ostream>` yet) and no
+  `formatter<error_code>` (no `<format>` yet). `errc` has no `no_message_available`,
+  `no_stream_resources`, `not_a_stream`, `stream_timeout` (removed from the draft; libstdc++'s
+  `errc_std_c++0x.cc` still expects them). Messages are the C library's `strerror_r` text for
+  both categories.
 - Floating-point `<charconv>` for `long double`/`float128_t` works on stack-allocated big integers
   (no heap, so it stays freestanding): parsing needs about 21 KB of stack (two 38,500-bit numbers
   and an 11,566-digit buffer, exact for any input length), `%g` with a large precision about 20 KB.
@@ -318,5 +328,9 @@ Deprecated and removed features are not implemented (`is_pod`, `is_trivial`, `al
   so GCC can throw them during constant evaluation; Clang 23 cannot throw during constant
   evaluation at all. Under -fno-rtti the six classes libsupc++ defines keep an out-of-line
   destructor, so they are not constexpr-destructible there (DECISIONS §4).
-  Still open: the `<stdexcept>` classes (their message storage lives in the hosted runtime), so
-  `__cpp_lib_constexpr_exceptions` is not yet defined.
+  The nine `<stdexcept>` classes are constexpr too (DECISIONS §4; under hosted -fno-rtti they
+  also keep out-of-line destructors), and the library's
+  `throw_out_of_range`/`throw_length_error`/... throw them during constant evaluation, so on GCC
+  `std::string("ab").at(5)` can be caught in a constant expression. `__cpp_lib_constexpr_exceptions`
+  is still undefined: Clang 23 cannot throw during constant evaluation, a non-null
+  `exception_ptr` is not available there on GCC, and `format_error` does not exist yet.

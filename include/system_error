@@ -1,29 +1,16 @@
 // -*- C++ -*-  libycxx: <system_error>   [hosted]
 //
-// Partial: errc (core, freestanding) and the is_error_code_enum / is_error_condition_enum traits.
-// error_category, error_code, error_condition and system_error are not provided yet (their
-// message() members need <string>).
+// The classes are core (ycxx/core/system_error.hpp); generic_category(), system_category(), the
+// category messages and system_error's members are defined in the hosted runtime. Not provided:
+// operator<< for error_code (no <ostream> yet) and formatter<error_code> (no <format> yet).
 #pragma once
 
 #include <ycxx/config.hpp>
 #include <ycxx/core/version.hpp>
 #include <compare>
 #include <ycxx/core/errc.hpp>
-#include <ycxx/core/type_traits.hpp>
+#include <ycxx/core/system_error.hpp>
 #include <errno.h>
-
-namespace std {
-template <class T>
-struct is_error_code_enum : false_type {};
-template <class T>
-struct is_error_condition_enum : false_type {};
-template <>
-struct is_error_condition_enum<errc> : true_type {};
-template <class T>
-constexpr bool is_error_code_enum_v = is_error_code_enum<T>::value;
-template <class T>
-constexpr bool is_error_condition_enum_v = is_error_condition_enum<T>::value;
-} // namespace std
 
 namespace ycxx::detail {
 // [system.error.syn]/1: each errc enumerator equals the <cerrno> macro of the same meaning.

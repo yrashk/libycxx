@@ -18,6 +18,24 @@ namespace ycxx::adl_free {
 // be one through basic_streambuf's tag, so no RTTI is needed.
 template <class charT, class traits>
 class syncbuf_base;
+
+// A stream buffer that appends everything written to a string (complex's inserter).
+template <class charT, class traits>
+class string_outbuf final : public std::basic_streambuf<charT, traits> {
+public:
+  std::basic_string<charT, traits> str;
+
+protected:
+  typename traits::int_type overflow(typename traits::int_type c) override {
+    if (!traits::eq_int_type(c, traits::eof()))
+      str.push_back(traits::to_char_type(c));
+    return traits::not_eof(c);
+  }
+  std::streamsize xsputn(const charT* s, std::streamsize n) override {
+    str.append(s, static_cast<std::size_t>(n));
+    return n;
+  }
+};
 } // namespace ycxx::adl_free
 
 namespace ycxx::detail {
@@ -519,6 +537,21 @@ template <class charT, class traits, size_t N>
 basic_ostream<charT, traits>& operator<<(basic_ostream<charT, traits>& os, const bitset<N>& x) {
   const ctype<charT>& ct = use_facet<ctype<charT>>(os.getloc());
   return os << x.template to_string<charT, traits, allocator<charT>>(ct.widen('0'), ct.widen('1'));
+}
+
+// [complex.ops]: formatted into a string first, with o's flags, precision and locale (as the
+// draft's basic_ostringstream would), so that o's width applies to the whole number.
+template <class T>
+class complex;
+template <class T, class charT, class traits>
+basic_ostream<charT, traits>& operator<<(basic_ostream<charT, traits>& o, const complex<T>& x) {
+  ycxx::adl_free::string_outbuf<charT, traits> buf;
+  basic_ostream<charT, traits> s(__builtin_addressof(buf));
+  s.flags(o.flags());
+  s.imbue(o.getloc());
+  s.precision(o.precision());
+  s << s.widen('(') << x.real() << s.widen(',') << x.imag() << s.widen(')');
+  return o << buf.str;
 }
 
 } // namespace std

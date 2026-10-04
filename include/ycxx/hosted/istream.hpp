@@ -788,4 +788,33 @@ basic_istream<charT, traits>& operator>>(basic_istream<charT, traits>& is, bitse
   return is;
 }
 
+// [complex.ops]: a series of simpler extractions: u, (u) or (u,v). x changes only when a whole
+// number was read.
+template <class T>
+class complex;
+template <class T, class charT, class traits>
+basic_istream<charT, traits>& operator>>(basic_istream<charT, traits>& is, complex<T>& x) {
+  T re{}, im{};
+  charT ch{};
+  if (!(is >> ch))
+    return is;
+  if (!traits::eq(ch, is.widen('('))) {
+    is.putback(ch);
+    if (is >> re)
+      x = complex<T>(re, im);
+    return is;
+  }
+  if (!(is >> re >> ch))
+    return is;
+  if (traits::eq(ch, is.widen(','))) {
+    if (!(is >> im >> ch))
+      return is;
+  }
+  if (traits::eq(ch, is.widen(')')))
+    x = complex<T>(re, im);
+  else
+    is.setstate(ios_base::failbit);
+  return is;
+}
+
 } // namespace std

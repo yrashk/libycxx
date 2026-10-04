@@ -975,4 +975,16 @@ constexpr complex<float> operator""if(unsigned long long d) { return complex<flo
 } // namespace complex_literals
 } // namespace literals
 
+// [complex.ops]: the stream operators, declared against declarations of the stream templates
+// (ycxx/core/iosfwd.hpp has the same ones) and defined with the streams (ycxx/hosted/istream.hpp,
+// ycxx/hosted/ostream.hpp), so <complex> includes no stream header.
+template <class charT, class traits>
+class basic_istream;
+template <class charT, class traits>
+class basic_ostream;
+template <class T, class charT, class traits>
+basic_istream<charT, traits>& operator>>(basic_istream<charT, traits>& is, complex<T>& x);
+template <class T, class charT, class traits>
+basic_ostream<charT, traits>& operator<<(basic_ostream<charT, traits>& o, const complex<T>& x);
+
 } // namespace std

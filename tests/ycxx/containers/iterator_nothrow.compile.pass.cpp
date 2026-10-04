@@ -8,21 +8,9 @@
 #include <string>
 #include <type_traits>
 
-template <class It>
-constexpr bool nothrow_copy() {
-  static_assert(std::is_nothrow_copy_constructible_v<It>);
-  static_assert(std::is_nothrow_copy_assignable_v<It>);
-  static_assert(std::is_nothrow_move_constructible_v<It>);
-  static_assert(std::is_nothrow_move_assignable_v<It>);
-  static_assert(std::is_default_constructible_v<It>);
-  return true;
-}
+#include "reqs/iterator_nothrow.hpp"
 
-template <class X>
-constexpr bool check() {
-  return nothrow_copy<typename X::iterator>() && nothrow_copy<typename X::const_iterator>() &&
-         nothrow_copy<typename X::reverse_iterator>() && nothrow_copy<typename X::const_reverse_iterator>();
-}
+using namespace reqs::iterator_nothrow;
 
 static_assert(check<std::vector<int>>());
 static_assert(check<std::vector<std::string>>());

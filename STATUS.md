@@ -59,6 +59,8 @@ riscv64-unknown-elf (Clang) and x86_64 (GCC). Core headers: see `tools/headers.p
   `empty_in_place_t_does_not_clobber`). Investigation time-boxed; trigger not yet isolated.
 - Clang 23.1: `tuple<X>` where `X` is constructible from `const tuple<X>&&` gives "satisfaction of
   constraint depends on itself" (libc++ `convert_const_move`); GCC accepts.
+- GCC 16.2: `Pack...[I]` inside a pack expansion over an empty `I` is diagnosed ("cannot index an
+  empty pack") although nothing is instantiated; `bind` uses `tuple_element_t` instead.
 - GCC 16.2: `PR31384` (conversion function vs converting constructor in direct-init of `tuple`)
   resolves differently from Clang; the libc++ expectation matches Clang.
 

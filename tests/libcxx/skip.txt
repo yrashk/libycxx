@@ -22,3 +22,4 @@ utilities/tuple/tuple.tuple/tuple.helper/tuple_size_value_sfinae\.pass\.cpp | de
 utilities/tuple/tuple.tuple/tuple.helper/tuple_size_v\.pass\.cpp | deprecated | uses tuple_size_v<volatile tuple<...>> (Annex D, [depr.tuple])
 utilities/utility/pairs/pair.astuple/tuple_element\.pass\.cpp | deprecated | uses tuple_element<I, volatile pair> (Annex D, [depr.tuple])
 utilities/variant/variant\.helpers/variant_size\.pass\.cpp | deprecated | tests variant_size<volatile T> (Annex D, [depr.variant]) -- deliberately not implemented: deprecated (Annex D) features are excluded by project rule (DECISIONS.md)
+utilities/function\.objects/func\.bind\.partial/bind_front\.nttp\.pass\.cpp | extension | also asserts libc++'s extension of calling a volatile call wrapper ([func.require]/4: cv shall be neither volatile nor const volatile)

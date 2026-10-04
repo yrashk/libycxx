@@ -137,6 +137,9 @@
 #define __cpp_lib_freestanding_tuple 202306L
 #define __cpp_lib_tuple_element_t 201402L
 #define __cpp_lib_reference_wrapper 202403L
+#define __cpp_lib_bind_front 202306L
+#define __cpp_lib_bind_back 202306L
+#define __cpp_lib_not_fn 202306L
 #define __cpp_lib_common_reference_wrapper 202302L
 #define __cpp_lib_constexpr_typeinfo 202106L
 // [version.syn]/4: 202306L when the default allocation functions are those of a hosted

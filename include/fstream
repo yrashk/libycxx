@@ -1,0 +1,12 @@
+// -*- C++ -*-  libycxx: <fstream>   [hosted]
+//
+// The members taking a filesystem::path are constrained templates (no <filesystem> include);
+// filesystem::path::value_type is char here, so the wide-path overloads are not declared
+// ([fstream.syn]/3).
+#pragma once
+
+#include <ycxx/config.hpp>
+#include <ycxx/core/version.hpp>
+#include <istream>
+#include <ostream>
+#include <ycxx/hosted/fstream.hpp>

@@ -144,8 +144,8 @@ protected:
       return traits::eof();
     if (this->gptr() < this->egptr())
       return traits::to_int_type(*this->gptr());
-    if (io_ == io::writing && !finish_output_mode())
-      return traits::eof();
+    if (io_ == io::writing && (!finish_output_mode() || !ycxx::detail::file_flush(file_)))
+      return traits::eof(); // (C stdio wants a flush between writing and reading)
     return fill_get_area() ? traits::to_int_type(*this->gptr()) : traits::eof();
   }
   int_type uflow() override {
@@ -578,6 +578,231 @@ private:
 
 template <class charT, class traits>
 void swap(basic_filebuf<charT, traits>& x, basic_filebuf<charT, traits>& y) {
+  x.swap(y);
+}
+
+// [ifstream]
+template <class charT, class traits>
+class basic_ifstream : public basic_istream<charT, traits> {
+  using stream_base = basic_istream<charT, traits>;
+
+public:
+  using char_type = charT;
+  using int_type = typename traits::int_type;
+  using pos_type = typename traits::pos_type;
+  using off_type = typename traits::off_type;
+  using traits_type = traits;
+  using native_handle_type = typename basic_filebuf<charT, traits>::native_handle_type;
+
+  // [ifstream.cons]
+  basic_ifstream() : stream_base(__builtin_addressof(sb_)) {}
+  explicit basic_ifstream(const char* s, ios_base::openmode mode = ios_base::in) : stream_base(__builtin_addressof(sb_)) {
+    if (sb_.open(s, mode | ios_base::in) == nullptr)
+      this->setstate(ios_base::failbit);
+  }
+  explicit basic_ifstream(const string& s, ios_base::openmode mode = ios_base::in) : basic_ifstream(s.c_str(), mode) {}
+  // the constructor and open taking filesystem::path: templates, so that <filesystem> need not
+  // be included ([ifstream.cons]: is_same_v<T, filesystem::path>)
+  template <class T>
+    requires is_same_v<T, filesystem::path>
+  explicit basic_ifstream(const T& s, ios_base::openmode mode = ios_base::in) : basic_ifstream(s.c_str(), mode) {}
+  basic_ifstream(const basic_ifstream&) = delete;
+  basic_ifstream(basic_ifstream&& rhs)
+      : stream_base(static_cast<stream_base&&>(rhs)), sb_(static_cast<basic_filebuf<charT, traits>&&>(rhs.sb_)) {
+    stream_base::set_rdbuf(__builtin_addressof(sb_));
+  }
+  basic_ifstream& operator=(const basic_ifstream&) = delete;
+  basic_ifstream& operator=(basic_ifstream&& rhs) {
+    stream_base::operator=(static_cast<stream_base&&>(rhs));
+    sb_ = static_cast<basic_filebuf<charT, traits>&&>(rhs.sb_);
+    return *this;
+  }
+
+  // [ifstream.swap]
+  void swap(basic_ifstream& rhs) {
+    stream_base::swap(rhs);
+    sb_.swap(rhs.sb_);
+  }
+
+  // [ifstream.members]
+  basic_filebuf<charT, traits>* rdbuf() const {
+    return const_cast<basic_filebuf<charT, traits>*>(__builtin_addressof(sb_));
+  }
+  native_handle_type native_handle() const noexcept { return rdbuf()->native_handle(); }
+  bool is_open() const { return rdbuf()->is_open(); }
+  void open(const char* s, ios_base::openmode mode = ios_base::in) {
+    if (rdbuf()->open(s, mode | ios_base::in) != nullptr)
+      this->clear();
+    else
+      this->setstate(ios_base::failbit);
+  }
+  void open(const string& s, ios_base::openmode mode = ios_base::in) { open(s.c_str(), mode); }
+  template <class T>
+    requires is_same_v<T, filesystem::path>
+  void open(const T& s, ios_base::openmode mode = ios_base::in) {
+    open(s.c_str(), mode);
+  }
+  void close() {
+    if (rdbuf()->close() == nullptr)
+      this->setstate(ios_base::failbit);
+  }
+
+private:
+  basic_filebuf<charT, traits> sb_;
+};
+
+template <class charT, class traits>
+void swap(basic_ifstream<charT, traits>& x, basic_ifstream<charT, traits>& y) {
+  x.swap(y);
+}
+
+// [ofstream]
+template <class charT, class traits>
+class basic_ofstream : public basic_ostream<charT, traits> {
+  using stream_base = basic_ostream<charT, traits>;
+
+public:
+  using char_type = charT;
+  using int_type = typename traits::int_type;
+  using pos_type = typename traits::pos_type;
+  using off_type = typename traits::off_type;
+  using traits_type = traits;
+  using native_handle_type = typename basic_filebuf<charT, traits>::native_handle_type;
+
+  // [ofstream.cons]
+  basic_ofstream() : stream_base(__builtin_addressof(sb_)) {}
+  explicit basic_ofstream(const char* s, ios_base::openmode mode = ios_base::out) : stream_base(__builtin_addressof(sb_)) {
+    if (sb_.open(s, mode | ios_base::out) == nullptr)
+      this->setstate(ios_base::failbit);
+  }
+  explicit basic_ofstream(const string& s, ios_base::openmode mode = ios_base::out) : basic_ofstream(s.c_str(), mode) {}
+  // the constructor and open taking filesystem::path: templates, so that <filesystem> need not
+  // be included ([ofstream.cons]: is_same_v<T, filesystem::path>)
+  template <class T>
+    requires is_same_v<T, filesystem::path>
+  explicit basic_ofstream(const T& s, ios_base::openmode mode = ios_base::out) : basic_ofstream(s.c_str(), mode) {}
+  basic_ofstream(const basic_ofstream&) = delete;
+  basic_ofstream(basic_ofstream&& rhs)
+      : stream_base(static_cast<stream_base&&>(rhs)), sb_(static_cast<basic_filebuf<charT, traits>&&>(rhs.sb_)) {
+    stream_base::set_rdbuf(__builtin_addressof(sb_));
+  }
+  basic_ofstream& operator=(const basic_ofstream&) = delete;
+  basic_ofstream& operator=(basic_ofstream&& rhs) {
+    stream_base::operator=(static_cast<stream_base&&>(rhs));
+    sb_ = static_cast<basic_filebuf<charT, traits>&&>(rhs.sb_);
+    return *this;
+  }
+
+  // [ofstream.swap]
+  void swap(basic_ofstream& rhs) {
+    stream_base::swap(rhs);
+    sb_.swap(rhs.sb_);
+  }
+
+  // [ofstream.members]
+  basic_filebuf<charT, traits>* rdbuf() const {
+    return const_cast<basic_filebuf<charT, traits>*>(__builtin_addressof(sb_));
+  }
+  native_handle_type native_handle() const noexcept { return rdbuf()->native_handle(); }
+  bool is_open() const { return rdbuf()->is_open(); }
+  void open(const char* s, ios_base::openmode mode = ios_base::out) {
+    if (rdbuf()->open(s, mode | ios_base::out) != nullptr)
+      this->clear();
+    else
+      this->setstate(ios_base::failbit);
+  }
+  void open(const string& s, ios_base::openmode mode = ios_base::out) { open(s.c_str(), mode); }
+  template <class T>
+    requires is_same_v<T, filesystem::path>
+  void open(const T& s, ios_base::openmode mode = ios_base::out) {
+    open(s.c_str(), mode);
+  }
+  void close() {
+    if (rdbuf()->close() == nullptr)
+      this->setstate(ios_base::failbit);
+  }
+
+private:
+  basic_filebuf<charT, traits> sb_;
+};
+
+template <class charT, class traits>
+void swap(basic_ofstream<charT, traits>& x, basic_ofstream<charT, traits>& y) {
+  x.swap(y);
+}
+
+// [fstream]
+template <class charT, class traits>
+class basic_fstream : public basic_iostream<charT, traits> {
+  using stream_base = basic_iostream<charT, traits>;
+
+public:
+  using char_type = charT;
+  using int_type = typename traits::int_type;
+  using pos_type = typename traits::pos_type;
+  using off_type = typename traits::off_type;
+  using traits_type = traits;
+  using native_handle_type = typename basic_filebuf<charT, traits>::native_handle_type;
+
+  // [fstream.cons]
+  basic_fstream() : stream_base(__builtin_addressof(sb_)) {}
+  explicit basic_fstream(const char* s, ios_base::openmode mode = ios_base::in | ios_base::out) : stream_base(__builtin_addressof(sb_)) {
+    if (sb_.open(s, mode) == nullptr)
+      this->setstate(ios_base::failbit);
+  }
+  explicit basic_fstream(const string& s, ios_base::openmode mode = ios_base::in | ios_base::out) : basic_fstream(s.c_str(), mode) {}
+  // the constructor and open taking filesystem::path: templates, so that <filesystem> need not
+  // be included ([fstream.cons]: is_same_v<T, filesystem::path>)
+  template <class T>
+    requires is_same_v<T, filesystem::path>
+  explicit basic_fstream(const T& s, ios_base::openmode mode = ios_base::in | ios_base::out) : basic_fstream(s.c_str(), mode) {}
+  basic_fstream(const basic_fstream&) = delete;
+  basic_fstream(basic_fstream&& rhs)
+      : stream_base(static_cast<stream_base&&>(rhs)), sb_(static_cast<basic_filebuf<charT, traits>&&>(rhs.sb_)) {
+    stream_base::set_rdbuf(__builtin_addressof(sb_));
+  }
+  basic_fstream& operator=(const basic_fstream&) = delete;
+  basic_fstream& operator=(basic_fstream&& rhs) {
+    stream_base::operator=(static_cast<stream_base&&>(rhs));
+    sb_ = static_cast<basic_filebuf<charT, traits>&&>(rhs.sb_);
+    return *this;
+  }
+
+  // [fstream.swap]
+  void swap(basic_fstream& rhs) {
+    stream_base::swap(rhs);
+    sb_.swap(rhs.sb_);
+  }
+
+  // [fstream.members]
+  basic_filebuf<charT, traits>* rdbuf() const {
+    return const_cast<basic_filebuf<charT, traits>*>(__builtin_addressof(sb_));
+  }
+  native_handle_type native_handle() const noexcept { return rdbuf()->native_handle(); }
+  bool is_open() const { return rdbuf()->is_open(); }
+  void open(const char* s, ios_base::openmode mode = ios_base::in | ios_base::out) {
+    if (rdbuf()->open(s, mode) != nullptr)
+      this->clear();
+    else
+      this->setstate(ios_base::failbit);
+  }
+  void open(const string& s, ios_base::openmode mode = ios_base::in | ios_base::out) { open(s.c_str(), mode); }
+  template <class T>
+    requires is_same_v<T, filesystem::path>
+  void open(const T& s, ios_base::openmode mode = ios_base::in | ios_base::out) {
+    open(s.c_str(), mode);
+  }
+  void close() {
+    if (rdbuf()->close() == nullptr)
+      this->setstate(ios_base::failbit);
+  }
+
+private:
+  basic_filebuf<charT, traits> sb_;
+};
+
+template <class charT, class traits>
+void swap(basic_fstream<charT, traits>& x, basic_fstream<charT, traits>& y) {
   x.swap(y);
 }
 

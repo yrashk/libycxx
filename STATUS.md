@@ -65,6 +65,10 @@ Deprecated and removed features are not implemented (`is_pod`, `is_trivial`, `al
 `has_denorm`, `tuple_size<volatile T>`, ...). See `tests/SKIPPED.md`.
 
 ## Deliberate divergences
+- `std::max_align_t` and `::max_align_t` (from `<stddef.h>`) are distinct types with identical
+  size and alignment. [support.c.headers.other]/1 would make them the same, but core cannot
+  include a C header to name the C library's class. The same applies to `std::mbstate_t`
+  (DECISIONS §3).
 - `expected<T, E>`: `operator==(const expected&, const T2&)` deduces its left operand (it must be
   the expected or derived from it). With the draft's literal `const expected&` parameter, a
   constraint check such as `int == pair<int, expected<int, int>>` found through ADL re-enters

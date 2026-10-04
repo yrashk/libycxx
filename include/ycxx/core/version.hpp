@@ -120,3 +120,13 @@
 #  define __cpp_lib_is_pointer_interconvertible 201907L
 #endif
 
+
+// [version.syn]/3: defined only by a hardened implementation (YCXX_HARDENED=1), for the headers
+// whose hardened preconditions are checked.
+#if YCXX_HARDENED
+#  define __cpp_lib_hardened_array 202502L
+#  define __cpp_lib_hardened_basic_string_view 202502L
+#  define __cpp_lib_hardened_expected 202502L
+#  define __cpp_lib_hardened_optional 202502L
+#  define __cpp_lib_hardened_span 202502L
+#endif

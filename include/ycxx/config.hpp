@@ -44,12 +44,29 @@
 #else
 #  define YCXX_HAS_EXCEPTIONS 0
 #endif
+// Freestanding builds get weak default definitions of the replaceable allocation functions
+// (new.hpp). In hosted builds those definitions must not exist even weakly: a weak definition
+// would keep the linker from pulling the real operator new out of an archive.
+#if __STDC_HOSTED__
+#  define YCXX_HOSTED 1
+#else
+#  define YCXX_HOSTED 0
+#endif
 // RTTI selects how the exception classes that libsupc++ also defines are declared
 // (exception_base.hpp): a non-template class cannot constrain its destructor.
 #if defined(__cpp_rtti) || defined(__GXX_RTTI)
 #  define YCXX_HAS_RTTI 1
 #else
 #  define YCXX_HAS_RTTI 0
+#endif
+// The exception classes libsupc++ also defines get out-of-line destructors (their key function)
+// only in hosted builds without RTTI: that is where a vtable with no type_info could otherwise
+// win the link against libsupc++'s (exception_base.hpp). Freestanding builds link no libsupc++,
+// so they keep the inline constexpr destructors, which need no runtime.
+#if !YCXX_HAS_RTTI && YCXX_HOSTED
+#  define YCXX_EXCEPTION_DTOR_OUT_OF_LINE 1
+#else
+#  define YCXX_EXCEPTION_DTOR_OUT_OF_LINE 0
 #endif
 #if __has_builtin(__builtin_is_within_lifetime)
 #  define YCXX_HAS_IS_WITHIN_LIFETIME 1
@@ -87,7 +104,7 @@ inline constexpr bool gcc = !clang;
 
 inline constexpr bool exceptions = YCXX_HAS_EXCEPTIONS;
 inline constexpr bool rtti = YCXX_HAS_RTTI;
-inline constexpr bool hosted = __STDC_HOSTED__;
+inline constexpr bool hosted = YCXX_HOSTED;
 inline constexpr bool hardened = YCXX_HARDENED;
 #if defined(__SIZEOF_INT128__)
 inline constexpr bool has_int128 = true;

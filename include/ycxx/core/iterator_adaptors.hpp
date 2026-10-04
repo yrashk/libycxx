@@ -1355,58 +1355,58 @@ constexpr auto as_const_pointer(const T* p) noexcept {
 namespace cbegin_ns {
 struct fn {
   template <class T>
-    requires maybe_borrowed<T> && requires(T& t) { std::ranges::begin(possibly_const_range(t)); }
+    requires maybe_borrowed<T> && requires(T& t) { std::ranges::begin(::ycxx::detail::range_access::possibly_const_range(t)); }
   [[nodiscard]] constexpr auto operator()(T&& t) const
-      noexcept(noexcept(std::const_iterator<decltype(std::ranges::begin(possibly_const_range(t)))>(
-          std::ranges::begin(possibly_const_range(t))))) {
-    return std::const_iterator<decltype(std::ranges::begin(possibly_const_range(t)))>(
-        std::ranges::begin(possibly_const_range(t)));
+      noexcept(noexcept(std::const_iterator<decltype(std::ranges::begin(::ycxx::detail::range_access::possibly_const_range(t)))>(
+          std::ranges::begin(::ycxx::detail::range_access::possibly_const_range(t))))) {
+    return std::const_iterator<decltype(std::ranges::begin(::ycxx::detail::range_access::possibly_const_range(t)))>(
+        std::ranges::begin(::ycxx::detail::range_access::possibly_const_range(t)));
   }
 };
 } // namespace cbegin_ns
 namespace cend_ns {
 struct fn {
   template <class T>
-    requires maybe_borrowed<T> && requires(T& t) { std::ranges::end(possibly_const_range(t)); }
+    requires maybe_borrowed<T> && requires(T& t) { std::ranges::end(::ycxx::detail::range_access::possibly_const_range(t)); }
   [[nodiscard]] constexpr auto operator()(T&& t) const
-      noexcept(noexcept(std::const_sentinel<decltype(std::ranges::end(possibly_const_range(t)))>(
-          std::ranges::end(possibly_const_range(t))))) {
-    return std::const_sentinel<decltype(std::ranges::end(possibly_const_range(t)))>(
-        std::ranges::end(possibly_const_range(t)));
+      noexcept(noexcept(std::const_sentinel<decltype(std::ranges::end(::ycxx::detail::range_access::possibly_const_range(t)))>(
+          std::ranges::end(::ycxx::detail::range_access::possibly_const_range(t))))) {
+    return std::const_sentinel<decltype(std::ranges::end(::ycxx::detail::range_access::possibly_const_range(t)))>(
+        std::ranges::end(::ycxx::detail::range_access::possibly_const_range(t)));
   }
 };
 } // namespace cend_ns
 namespace crbegin_ns {
 struct fn {
   template <class T>
-    requires maybe_borrowed<T> && requires(T& t) { std::ranges::rbegin(possibly_const_range(t)); }
+    requires maybe_borrowed<T> && requires(T& t) { std::ranges::rbegin(::ycxx::detail::range_access::possibly_const_range(t)); }
   [[nodiscard]] constexpr auto operator()(T&& t) const
-      noexcept(noexcept(std::const_iterator<decltype(std::ranges::rbegin(possibly_const_range(t)))>(
-          std::ranges::rbegin(possibly_const_range(t))))) {
-    return std::const_iterator<decltype(std::ranges::rbegin(possibly_const_range(t)))>(
-        std::ranges::rbegin(possibly_const_range(t)));
+      noexcept(noexcept(std::const_iterator<decltype(std::ranges::rbegin(::ycxx::detail::range_access::possibly_const_range(t)))>(
+          std::ranges::rbegin(::ycxx::detail::range_access::possibly_const_range(t))))) {
+    return std::const_iterator<decltype(std::ranges::rbegin(::ycxx::detail::range_access::possibly_const_range(t)))>(
+        std::ranges::rbegin(::ycxx::detail::range_access::possibly_const_range(t)));
   }
 };
 } // namespace crbegin_ns
 namespace crend_ns {
 struct fn {
   template <class T>
-    requires maybe_borrowed<T> && requires(T& t) { std::ranges::rend(possibly_const_range(t)); }
+    requires maybe_borrowed<T> && requires(T& t) { std::ranges::rend(::ycxx::detail::range_access::possibly_const_range(t)); }
   [[nodiscard]] constexpr auto operator()(T&& t) const
-      noexcept(noexcept(std::const_sentinel<decltype(std::ranges::rend(possibly_const_range(t)))>(
-          std::ranges::rend(possibly_const_range(t))))) {
-    return std::const_sentinel<decltype(std::ranges::rend(possibly_const_range(t)))>(
-        std::ranges::rend(possibly_const_range(t)));
+      noexcept(noexcept(std::const_sentinel<decltype(std::ranges::rend(::ycxx::detail::range_access::possibly_const_range(t)))>(
+          std::ranges::rend(::ycxx::detail::range_access::possibly_const_range(t))))) {
+    return std::const_sentinel<decltype(std::ranges::rend(::ycxx::detail::range_access::possibly_const_range(t)))>(
+        std::ranges::rend(::ycxx::detail::range_access::possibly_const_range(t)));
   }
 };
 } // namespace crend_ns
 namespace cdata_ns {
 struct fn {
   template <class T>
-    requires maybe_borrowed<T> && requires(T& t) { std::ranges::data(possibly_const_range(t)); }
+    requires maybe_borrowed<T> && requires(T& t) { std::ranges::data(::ycxx::detail::range_access::possibly_const_range(t)); }
   [[nodiscard]] constexpr auto operator()(T&& t) const
-      noexcept(noexcept(std::ranges::data(possibly_const_range(t)))) {
-    return as_const_pointer(std::ranges::data(possibly_const_range(t)));
+      noexcept(noexcept(std::ranges::data(::ycxx::detail::range_access::possibly_const_range(t)))) {
+    return ::ycxx::detail::range_access::as_const_pointer(std::ranges::data(::ycxx::detail::range_access::possibly_const_range(t)));
   }
 };
 } // namespace cdata_ns

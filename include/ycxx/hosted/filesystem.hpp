@@ -456,7 +456,12 @@ public:
   basic_string<EcharT, traits, Allocator> string(const Allocator& a = Allocator()) const {
     return ycxx::detail::fs_convert_out<EcharT, traits, Allocator>(s_, a);
   }
-  std::string string() const { return s_; } // [depr.fs.path.obs]
+  // [depr.fs.path.obs] (Annex D)
+  [[deprecated("path::string() is deprecated ([depr.fs.path.obs]); use native_encoded_string() or "
+               "display_string()")]]
+  std::string string() const {
+    return s_;
+  }
   std::string display_string() const { return s_; }
   std::string native_encoded_string() const { return s_; }
   std::wstring wstring() const { return string<wchar_t>(); }
@@ -470,7 +475,12 @@ public:
   basic_string<EcharT, traits, Allocator> generic_string(const Allocator& a = Allocator()) const {
     return ycxx::detail::fs_convert_out<EcharT, traits, Allocator>(s_, a, true);
   }
-  std::string generic_string() const { return generic_string<char>(); } // [depr.fs.path.obs]
+  // [depr.fs.path.obs] (Annex D)
+  [[deprecated("path::generic_string() is deprecated ([depr.fs.path.obs]); use "
+               "generic_native_encoded_string() or generic_display_string()")]]
+  std::string generic_string() const {
+    return generic_string<char>();
+  }
   std::string generic_display_string() const { return generic_string<char>(); }
   std::string generic_native_encoded_string() const { return generic_string<char>(); }
   std::wstring generic_wstring() const { return generic_string<wchar_t>(); }
@@ -580,6 +590,7 @@ size_t hash_value(const path& p) noexcept;
 // [depr.fs.path.factory]: the native encoding is UTF-8 already.
 template <class Source>
   requires ycxx::detail::fs_source<Source>
+[[deprecated("u8path is deprecated ([depr.fs.path.factory]); construct a path from a u8string")]]
 path u8path(const Source& source) {
   static_assert(is_same_v<ycxx::detail::fs_source_char_t<Source>, char> ||
                     is_same_v<ycxx::detail::fs_source_char_t<Source>, char8_t>,
@@ -588,6 +599,7 @@ path u8path(const Source& source) {
 }
 template <class InputIterator>
   requires ycxx::detail::fs_char_iterator<InputIterator>
+[[deprecated("u8path is deprecated ([depr.fs.path.factory]); construct a path from a u8string")]]
 path u8path(InputIterator first, InputIterator last) {
   using C = remove_cv_t<typename iterator_traits<InputIterator>::value_type>;
   static_assert(is_same_v<C, char> || is_same_v<C, char8_t>,

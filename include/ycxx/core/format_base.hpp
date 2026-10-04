@@ -503,6 +503,13 @@ public:
   }
 };
 
+// [depr.format.arg] (Annex D)
+template <class Visitor, class Context>
+[[deprecated("visit_format_arg is deprecated ([depr.format.arg]); use basic_format_arg::visit")]]
+decltype(auto) visit_format_arg(Visitor&& vis, basic_format_arg<Context> arg) {
+  return static_cast<basic_format_arg<Context>&&>(arg).visit(static_cast<Visitor&&>(vis));
+}
+
 // [format.args]
 template <class Context>
 class basic_format_args {

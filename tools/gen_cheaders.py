@@ -191,6 +191,13 @@ MACROS = {"cwchar": version_macro("WCHAR") + [
           "cuchar": version_macro("UCHAR"), "cstring": version_macro("STRING"),
           "cstdio": version_macro("STDIO"), "ctime": version_macro("TIME"),
           "cinttypes": version_macro("INTTYPES"), "csetjmp": version_macro("SETJMP")}
+# Global-scope redeclarations, emitted before namespace std.
+GLOBAL = {"ctime": [
+    "// [depr.ctime] (Annex D; also deprecated in C23): the C library's declarations, redeclared",
+    "// [[deprecated]] (decltype keeps their exact type, noexcept included); std:: names them below.",
+    '[[deprecated("asctime is deprecated ([depr.ctime]); use strftime or std::format")]] decltype(::asctime) asctime;',
+    '[[deprecated("ctime is deprecated ([depr.ctime]); use strftime or std::format")]] decltype(::ctime) ctime;',
+    ""]}
 EXTRA_INCLUDES = {"cstdlib": ["<ycxx/core/math_abs.hpp>"], "cinttypes": ["<cstdint>"], "cwchar": ["<ycxx/core/char_traits.hpp>", "<ycxx/core/cstdint.hpp>"],
                   "cuchar": ["<ycxx/core/char_traits.hpp>"], "cwctype": ["<ycxx/core/char_traits.hpp>"]}
 
@@ -207,6 +214,7 @@ for name, (cheader, names, extra) in HEADERS.items():
     else:
         lines += [f"#include <{cheader}>", ""]
     lines += MACROS.get(name, [])
+    lines += GLOBAL.get(name, [])
     if names or extra:
         if fs:
             lines.append("#if YCXX_HOSTED")

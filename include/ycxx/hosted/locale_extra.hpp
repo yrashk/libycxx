@@ -27,6 +27,43 @@ inline constexpr const char* c_month_names[24] = {
 
 constexpr char ascii_lower(char c) noexcept { return c >= 'A' && c <= 'Z' ? char(c - 'A' + 'a') : c; }
 
+// Sets tm_mon and tm_mday from tm_year and tm_yday.
+constexpr void date_from_yday(std::tm& t) noexcept {
+  const long long y = t.tm_year + 1900LL;
+  const bool leap = (y % 4 == 0 && y % 100 != 0) || y % 400 == 0;
+  if (t.tm_yday < 0 || t.tm_yday > (leap ? 365 : 364))
+    return;
+  constexpr int days[12] = {31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
+  int d = t.tm_yday, m = 0;
+  for (; m < 11; ++m) {
+    const int len = days[m] + (m == 1 && leap ? 1 : 0);
+    if (d < len)
+      break;
+    d -= len;
+  }
+  t.tm_mon = m;
+  t.tm_mday = d + 1;
+}
+
+// Sets tm_wday (if wday) and tm_yday (if yday) from tm_year, tm_mon and tm_mday (proleptic
+// Gregorian calendar); does nothing for a month or day out of range.
+constexpr void complete_date(std::tm& t, bool wday, bool yday) noexcept {
+  if (t.tm_mon < 0 || t.tm_mon > 11 || t.tm_mday < 1 || t.tm_mday > 31)
+    return;
+  const long long y = t.tm_year + 1900LL;
+  const bool leap = (y % 4 == 0 && y % 100 != 0) || y % 400 == 0;
+  constexpr int before[12] = {0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334};
+  const int yd = before[t.tm_mon] + t.tm_mday - 1 + (leap && t.tm_mon > 1 ? 1 : 0);
+  if (yday)
+    t.tm_yday = yd;
+  if (wday) {
+    // the weekday of January 1 of y (Gauss), then forward
+    const long long p = y - 1;
+    const long long jan1 = (1 + 5 * (((p % 4) + 4) % 4) + 4 * (((p % 100) + 100) % 100) + 6 * (((p % 400) + 400) % 400)) % 7;
+    t.tm_wday = static_cast<int>((jan1 + yd) % 7);
+  }
+}
+
 } // namespace ycxx::detail
 
 namespace std {
@@ -70,6 +107,12 @@ public:
                 const char_type* fmtend) const {
     const ctype<charT>& ct = use_facet<ctype<charT>>(f.getloc());
     err = ios_base::goodbit;
+    // %C and %y together give the year (strptime): the last value of each is kept
+    int century = -1, year_in_century = -1;
+    // as strptime does, a complete date also gives the weekday and the day of the year
+    bool have_year = false, have_mon = false, have_mday = false, have_wday = false, have_yday = false;
+    int week = 0;
+    char week_kind = 0; // 'U' (weeks from the first Sunday) or 'W' (from the first Monday)
     while (fmt != fmtend && err == ios_base::goodbit) {
       if (s == end) {
         err = ios_base::eofbit | ios_base::failbit;
@@ -91,7 +134,28 @@ public:
           }
           spec = ct.narrow(*p, 0);
         }
-        s = do_get(s, end, f, err, t, spec, mod);
+        if (spec == 'U' || spec == 'W') {
+          // read here (as do_get would) to keep the week number for the date below
+          s = read_ranged(s, end, f, err, 2, 0, 53, week);
+          week_kind = spec;
+        } else {
+          s = do_get(s, end, f, err, t, spec, mod);
+        }
+        if (!(err & ios_base::failbit)) {
+          if (spec == 'C')
+            century = (t->tm_year + 1900) / 100;
+          else if (spec == 'y')
+            year_in_century = (t->tm_year + 1900) % 100;
+          for (const char* q = "CyYcDxF"; *q; ++q)
+            have_year = have_year || spec == *q;
+          for (const char* q = "mbBhcDxF"; *q; ++q)
+            have_mon = have_mon || spec == *q;
+          for (const char* q = "decDxF"; *q; ++q)
+            have_mday = have_mday || spec == *q;
+          for (const char* q = "aAuwc"; *q; ++q)
+            have_wday = have_wday || spec == *q;
+          have_yday = have_yday || spec == 'j';
+        }
         if (err == ios_base::goodbit)
           fmt = p + 1;
       } else if (ct.is(ctype_base::space, *fmt)) {
@@ -105,6 +169,25 @@ public:
       } else {
         err = ios_base::failbit;
       }
+    }
+    if (!(err & ios_base::failbit)) {
+      if (century >= 0 && year_in_century >= 0)
+        t->tm_year = century * 100 + year_in_century - 1900;
+      if (have_year && week_kind != 0 && have_wday && !have_yday && !(have_mon && have_mday)) {
+        // the day of the year from the week number and the weekday
+        tm jan1{};
+        jan1.tm_year = t->tm_year;
+        jan1.tm_mday = 1;
+        ::ycxx::detail::complete_date(jan1, true, false);
+        const int j = jan1.tm_wday;
+        t->tm_yday = week_kind == 'U' ? (7 - j) % 7 + (week - 1) * 7 + t->tm_wday
+                                      : (8 - j) % 7 + (week - 1) * 7 + (t->tm_wday + 6) % 7;
+        have_yday = true;
+      }
+      if (have_year && have_yday && !(have_mon && have_mday))
+        ::ycxx::detail::date_from_yday(*t);
+      if (have_year && ((have_mon && have_mday) || have_yday))
+        ::ycxx::detail::complete_date(*t, !have_wday, !have_yday);
     }
     return s;
   }
@@ -268,9 +351,10 @@ protected:
     case '%':
       if (s == end)
         err |= ios_base::eofbit | ios_base::failbit;
-      else if (use_facet<ctype<charT>>(f.getloc()).narrow(*s, 0) == '%')
-        ++s;
-      else
+      else if (use_facet<ctype<charT>>(f.getloc()).narrow(*s, 0) == '%') {
+        if (++s == end)
+          err |= ios_base::eofbit;
+      } else
         err |= ios_base::failbit;
       break;
     default:
@@ -317,13 +401,14 @@ private:
       err |= ios_base::eofbit;
     return s;
   }
-  // Up to max_digits decimal digits (at least one).
+  // Up to max_digits decimal digits (at least one); with hi >= 0, a digit that would take the
+  // value above hi is an error and is not read ("32" for a day of the month stops at "2").
   static iter_type read_number(iter_type s, iter_type end, ios_base& f, ios_base::iostate& err, int max_digits, int& v,
-                               int* ndigits = nullptr) {
+                               int* ndigits = nullptr, int hi = -1) {
     const ctype<charT>& ct = use_facet<ctype<charT>>(f.getloc());
     int n = 0;
     v = 0;
-    for (; n < max_digits; ++n, ++s) {
+    for (; n < max_digits; ++n, static_cast<void>(++s)) {
       if (s == end) {
         err |= ios_base::eofbit;
         break;
@@ -331,6 +416,10 @@ private:
       const char c = ct.narrow(*s, 0);
       if (c < '0' || c > '9')
         break;
+      if (hi >= 0 && n != 0 && v * 10 + (c - '0') > hi) {
+        err |= ios_base::failbit;
+        break;
+      }
       v = v * 10 + (c - '0');
     }
     if (n == 0)
@@ -344,7 +433,7 @@ private:
   static iter_type read_ranged(iter_type s, iter_type end, ios_base& f, ios_base::iostate& err, int max_digits,
                                int lo, int hi, int& out) {
     int v;
-    s = read_number(s, end, f, err, max_digits, v);
+    s = read_number(s, end, f, err, max_digits, v, nullptr, hi);
     if (!(err & ios_base::failbit)) {
       if (v < lo || v > hi)
         err |= ios_base::failbit;
@@ -385,19 +474,17 @@ private:
       }
       const char c = ycxx::detail::ascii_lower(ct.narrow(*s, 0));
       bool any = false;
-      for (int k = 0; k < n; ++k) {
+      for (int k = 0; k < n; ++k)
+        any = any || (alive[k] && names[k][i] != '\0' && ycxx::detail::ascii_lower(names[k][i]) == c);
+      if (!any)
+        break; // nothing extends: the names alive so far that end here are the candidates
+      for (int k = 0; k < n; ++k)
         alive[k] = alive[k] && names[k][i] != '\0' && ycxx::detail::ascii_lower(names[k][i]) == c;
-        any = any || alive[k];
-      }
-      if (!any) {
-        // nothing extends: keep the names that ended here
-        for (int k = 0; k < n; ++k)
-          alive[k] = names[k][i] == '\0';
-        break;
-      }
       ++s;
       ++i;
     }
+    if (s == end)
+      err |= ios_base::eofbit;
     which = -1;
     for (int k = 0; k < n; ++k)
       if (alive[k] && names[k][i] == '\0' && i != 0) {
@@ -476,7 +563,7 @@ protected:
       text = big.get();
     }
     const ctype<charT>& ct = use_facet<ctype<charT>>(str.getloc());
-    for (size_t i = 0; i < n; ++i, ++s)
+    for (size_t i = 0; i < n; ++i, static_cast<void>(++s))
       *s = ct.widen(text[i]);
     return s;
   }
@@ -659,7 +746,7 @@ private:
         if (!needed && !showbase)
           break;
         size_t k = 0;
-        for (; k < sym.size(); ++k, ++s) {
+        for (; k < sym.size(); ++k, static_cast<void>(++s)) {
           if (at_end() || !(*s == sym[k]))
             break;
         }
@@ -720,7 +807,7 @@ private:
     }
     // the rest of a multi-character sign
     if (!failed && sign != nullptr && sign->size() > 1) {
-      for (size_t k = 1; k < sign->size(); ++k, ++s) {
+      for (size_t k = 1; k < sign->size(); ++k, static_cast<void>(++s)) {
         if (at_end() || !(*s == (*sign)[k])) {
           failed = true;
           break;
@@ -752,6 +839,8 @@ private:
       field.push_back('-');
     field.append(digits, lead);
     ok = true;
+    if (at_end())
+      err |= ios_base::eofbit;
     return s;
   }
 };
@@ -887,11 +976,11 @@ private:
       where = pad_at;
     else if (adjust == ios_base::left)
       where = len;
-    for (size_t i = 0; i < where; ++i, ++s)
+    for (size_t i = 0; i < where; ++i, static_cast<void>(++s))
       *s = out[i];
-    for (; fill_count != 0; --fill_count, ++s)
+    for (; fill_count != 0; --fill_count, static_cast<void>(++s))
       *s = fill;
-    for (size_t i = where; i < len; ++i, ++s)
+    for (size_t i = where; i < len; ++i, static_cast<void>(++s))
       *s = out[i];
     return s;
   }

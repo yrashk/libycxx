@@ -100,7 +100,8 @@ size_t format_float(char* buf, size_t cap, F v, std::ios_base::fmtflags flags, s
     body = "0x" + chars(a, std::chars_format::hex, -1);
     if (showpoint)
       ensure_point(body);
-    *pad += 2;
+    if (*pad == 0) // [tab:facet.num.put.fill]: after a sign if there is one, else after 0x
+      *pad = 2;
   } else {
     const int p = precision < 0 ? 6 : precision == 0 ? 1 : static_cast<int>(precision);
     if (!showpoint) {

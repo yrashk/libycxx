@@ -95,8 +95,9 @@ target_compile_options(ycxx_abi PRIVATE -std=c++26 ${_ycxx_warnings} -fexception
 set_source_files_properties(src/abi/exception_classes.cpp src/hosted/stdexcept.cpp
                             PROPERTIES COMPILE_DEFINITIONS YCXX_EXCEPTION_KEY_FUNCTIONS)
 # The standard stream objects are initialized with a priority reserved for the implementation,
-# ahead of every program's static objects (src/hosted/iostream.cpp).
-set_source_files_properties(src/hosted/iostream.cpp PROPERTIES COMPILE_OPTIONS
+# ahead of every program's static objects (src/hosted/iostream.cpp); so is the classic locale
+# (src/hosted/locale.cpp).
+set_source_files_properties(src/hosted/iostream.cpp src/hosted/locale.cpp PROPERTIES COMPILE_OPTIONS
   $<IF:$<CXX_COMPILER_ID:GNU>,-Wno-prio-ctor-dtor,-Wno-init-priority-reserved>)
 
 # The two archives refer to each other (the runtime uses the platform layer and operator

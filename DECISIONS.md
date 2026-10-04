@@ -264,3 +264,47 @@ under the same name. Otherwise it gets one alias template in `config.hpp`.
      reports XPASS once the compiler catches up.
 5. **Gate before pushing:** `tools/check-all`, plus the affected conformance directories on
    both compilers and both suites.
+
+## 7. Iostreams and localization (hosted)
+
+- **Layering.** Every stream and locale header is hosted (`ycxx/hosted/*.hpp`), with the
+  non-template code in the hosted runtime (`src/hosted/{ios,iostream,locale,num,time,fstream,
+  syncstream}.cpp`). Core headers that the draft makes declare stream operators for their types
+  (`<string>`, `<string_view>`, `<bitset>`, `<memory>`, `<system_error>`, `<complex>`) declare or
+  define them against declarations of the stream templates (`ycxx/core/iosfwd.hpp`, or a local
+  declaration in `<complex>`) and get the definitions from `<istream>`/`<ostream>`, so they include
+  no stream header. `ycxx/hosted/iosfwd.hpp` is the single declaration carrying the default
+  template arguments.
+- **locale** is a pointer to a reference-counted, immutable implementation object (facet array
+  indexed by `locale::id`, name). `locale::id` gets its index on first use, so facets work during
+  static initialization; the classic locale is built on first use and never destroyed. Named
+  locales: `"C"`, `"POSIX"`, `"C.UTF-8"` and `""` (the environment, which must name one of
+  those, else the classic locale); any other name, and the `_byname` facets with such a name,
+  throw `runtime_error`. The environment's own conventions (other languages, money, dates) are
+  not supported: no C-library locale is consulted.
+- **Classic-locale choices** where the draft leaves them implementation-defined:
+  `codecvt<wchar_t, char, mbstate_t>` converts UTF-32 to and from UTF-8 (so `encoding()` is 0
+  and `max_length()` 4), `ctype<charT>` for character types other than `char` classifies ASCII
+  only, `widen`/`narrow` map 0-255 one to one, `time_get`/`time_put` use the "C" conventions,
+  `messages` has no catalogs. The deprecated `codecvt<char16_t/char32_t, char, mbstate_t>` are
+  provided (Annex D) without `[[deprecated]]`.
+- **num_get / num_put** convert with `<charconv>` (stage 3 of num_get, stage 1 of num_put), not
+  with the C library: the results are correctly rounded and independent of the C locale.
+- **The standard stream objects** are raw storage in the runtime, constructed by a runtime
+  `ios_base::Init` object with `init_priority(100)` (before any program static object, after the
+  runtime's own), never destroyed; that object's destructor flushes them. Their buffers work on
+  the C streams through C stdio (unbuffered while synchronized), so `sync_with_stdio(true)` needs
+  no extra coordination.
+- **filebuf** works on a C stdio `FILE` with stdio buffering off (the filebuf buffers); the
+  open-mode table maps to `fopen` modes including `"x"` for `noreplace`; `native_handle_type` is
+  the POSIX file descriptor. `<fstream>` also includes `<cstdio>`.
+- **syncbuf** keeps its output in a `basic_string` with its allocator; `emit()` takes a lock that
+  belongs to the wrapped buffer alone (a slot table keyed by address, on the PAL's wait/wake), so
+  no `<mutex>` dependency and no false sharing of locks between buffers.
+- **Bitmask types** `fmtflags`, `iostate`, `openmode` are unscoped enumerations nested in
+  `ios_base` with hidden-friend operators (an integer literal such as `0` does not convert to
+  them, as with libstdc++).
+- **Small conformance-preserving additions:** `fpos` has `operator==(const fpos&, streamoff)`, so
+  `pos == 0` is not ambiguous; `istream::ignore(streamsize, char_type)` is a constrained template
+  (exactly `char_type` is deduced), so `ignore(n, -1L)` is not ambiguous; the rvalue stream
+  operators exclude `ios_base` itself ("derived from" in the core-language sense).

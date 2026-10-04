@@ -164,7 +164,10 @@ class LibstdcxxFormat(lit.formats.FileBasedTest):
                     return lit.Test.Result(lit.Test.UNSUPPORTED, f'effective target {t} not provided')
             elif kind.startswith('require-'):
                 if kind not in ('require-gthreads', 'require-cstdint', 'require-string-conversions',
-                                'require-normal-namespace', 'require-normal-mode', 'require-effective-target'):
+                                'require-normal-namespace', 'require-normal-mode', 'require-effective-target',
+                                # <filesystem> (POSIX): symlinks, space, last_write_time, mkfifo
+                                'require-filesystem-ts', 'require-target-fs-symlinks',
+                                'require-target-fs-space', 'require-target-fs-lwt', 'require-mkfifo'):
                     return lit.Test.Result(lit.Test.UNSUPPORTED, f'dg-{kind} not provided')
             elif kind == 'error':
                 tsel = selector_of(args, 'target')

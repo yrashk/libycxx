@@ -9,6 +9,7 @@ CORE = [
     # defined in the hosted runtime (libycxx.a), like the <stdexcept> members.
     "string",
 ]
+CORE += ["algorithm", "numeric", "execution", "ranges"]
 # Hosted: need an OS (through the PAL) or the C library.
 HOSTED = [
     "any", "cctype", "cerrno", "cfenv", "cinttypes", "clocale", "csetjmp", "csignal", "cstdarg", "cstdio",

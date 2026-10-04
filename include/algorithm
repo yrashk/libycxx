@@ -1,0 +1,11 @@
+// -*- C++ -*-  libycxx: <algorithm>   [core]
+#pragma once
+
+#include <ycxx/config.hpp>
+#include <ycxx/core/version.hpp>
+#include <initializer_list>
+#include <ycxx/core/algo_base.hpp>
+#include <ycxx/core/algo_nonmod.hpp>
+#include <ycxx/core/algo_mutate.hpp>
+#include <ycxx/core/algo_sort.hpp>
+#include <ycxx/core/algo_parallel.hpp>

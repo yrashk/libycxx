@@ -172,14 +172,22 @@ class LibstdcxxFormat(lit.formats.FileBasedTest):
         finally:
             shutil.rmtree(tmp, ignore_errors=True)
 
+    MISSING = re.compile(r"fatal error: '?[\w./]+'?:? (file not found|No such file or directory)")
+
+    def expect_error(self, args, cwd):
+        """Compile expecting failure. A missing header is not the failure the test wants."""
+        rc, out = self.compile(args, cwd)
+        if rc != 0 and self.MISSING.search(out):
+            return lit.Test.Result(lit.Test.FAIL, 'expected a compile error, but a header is missing\n' + out)
+        return lit.Test.Result(lit.Test.PASS if rc != 0 else lit.Test.FAIL, out or 'expected a compile error')
+
     def compile(self, args, cwd):
         p = subprocess.run([self.wrapper, self.compiler] + args, cwd=cwd, capture_output=True, text=True, timeout=300)
         return p.returncode, p.stdout + p.stderr
 
     def run(self, action, path, flags, errors, expect_fail_run, tmp):
         if errors:
-            rc, out = self.compile(['-fsyntax-only', path] + flags, tmp)
-            return lit.Test.Result(lit.Test.PASS if rc != 0 else lit.Test.FAIL, out or 'expected a compile error')
+            return self.expect_error(['-fsyntax-only', path] + flags, tmp)
         if action in ('compile', 'preprocess', 'assemble'):
             rc, out = self.compile(['-fsyntax-only', path] + flags, tmp)
             return lit.Test.Result(lit.Test.PASS if rc == 0 else lit.Test.FAIL, out)

@@ -1,0 +1,10 @@
+// -*- C++ -*-  libycxx: <iterator>   [core]
+#pragma once
+
+#include <ycxx/config.hpp>
+#include <ycxx/core/version.hpp>
+#include <compare>
+#include <concepts>
+#include <ycxx/core/iterator_core.hpp>
+#include <ycxx/core/iterator_ops.hpp>
+#include <ycxx/core/iterator_adaptors.hpp>

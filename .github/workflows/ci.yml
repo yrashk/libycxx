@@ -1,0 +1,46 @@
+name: ci
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-24.04
+    container: gcc:16          # official image: latest GCC 16 release
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Clang 23, lld, ninja, cmake, lit
+        run: |
+          apt-get update -qq
+          apt-get install -y -qq wget gnupg lsb-release ninja-build cmake python3-pip
+          wget -qO- https://apt.llvm.org/llvm-snapshot.gpg.key > /etc/apt/trusted.gpg.d/apt.llvm.org.asc
+          echo "deb http://apt.llvm.org/$(lsb_release -cs)/ llvm-toolchain-$(lsb_release -cs)-23 main" > /etc/apt/sources.list.d/llvm.list
+          apt-get update -qq
+          apt-get install -y -qq clang-23 lld-23
+          pip3 install --break-system-packages lit
+          ln -sf "$(command -v g++)" /usr/local/bin/g++-16
+          ln -sf "$(command -v gcc)" /usr/local/bin/gcc-16
+          mkdir -p /opt/gcc-16/lib64 /opt/gcc-16/lib/gcc/x86_64-pc-linux-gnu
+          ln -sf "$(g++ -print-file-name=libsupc++.a)" /opt/gcc-16/lib64/libsupc++.a
+          ln -sfn "$(dirname "$(g++ -print-libgcc-file-name)")" /opt/gcc-16/lib/gcc/x86_64-pc-linux-gnu/16.2.0
+
+      - name: Policy, builds, freestanding
+        run: tools/check-all
+
+      - name: Fetch conformance suites (run only)
+        run: |
+          git clone -q --depth 1 --branch llvmorg-23.1.2 --filter=blob:none --sparse \
+            https://github.com/llvm/llvm-project.git /opt/src/llvm-project
+          git -C /opt/src/llvm-project sparse-checkout set libcxx/test/std libcxx/test/support
+          wget -qO- https://ftp.gnu.org/gnu/gcc/gcc-16.2.0/gcc-16.2.0.tar.xz | \
+            tar xJ -C /opt/src gcc-16.2.0/libstdc++-v3/testsuite
+          mv /opt/src/gcc-16.2.0/libstdc++-v3/testsuite /opt/src/libstdcxx-testsuite
+
+      - name: Conformance (both suites, both compilers; implemented areas)
+        run: |
+          for c in gcc clang; do
+            tools/run-conformance libcxx $c utilities/meta numerics/bit language.support/cmp -- -q || true
+            tools/run-conformance libstdcxx $c 20_util/pair 18_support/numeric_limits -- -q || true
+          done

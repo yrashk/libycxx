@@ -1,0 +1,16 @@
+#!/bin/sh
+# Fast local gate: policy checks, both library builds, freestanding check.
+set -e
+repo=$(cd "$(dirname "$0")/.." && pwd)
+cd "$repo"
+python3 tools/check_preprocessor.py
+python3 tools/check_includes.py
+for c in gcc clang; do
+  if [ ! -f build/$c/build.ninja ]; then
+    if [ $c = gcc ]; then CC=gcc-16 CXX=g++-16; else CC=clang-23 CXX=clang++-23; fi
+    cmake -S . -B build/$c -G Ninja -DCMAKE_C_COMPILER=$CC -DCMAKE_CXX_COMPILER=$CXX -DCMAKE_BUILD_TYPE=RelWithDebInfo >/dev/null
+  fi
+  ninja -C build/$c >/dev/null
+done
+echo "library builds: ok"
+tools/check_freestanding.sh

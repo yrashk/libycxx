@@ -308,3 +308,8 @@
 #define __cpp_lib_spanstream 202106L
 #define __cpp_lib_sstream_from_string_view 202306L
 #define __cpp_lib_syncbuf 201803L
+
+// <random>
+#define __cpp_lib_freestanding_random 202502L
+#define __cpp_lib_philox_engine 202406L
+#define __cpp_lib_ranges_generate_random 202403L

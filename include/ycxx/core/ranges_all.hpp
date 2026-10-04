@@ -5,10 +5,13 @@
 #include <ycxx/core/ranges_adaptor.hpp>
 
 namespace ycxx::detail {
+// FUN of [range.ref.view]: non-template functions, so binding through two equally good
+// conversion functions is ambiguous (function-template partial ordering would prefer R&).
 template <class R>
-void ref_view_fun(R&) noexcept;
-template <class R>
-void ref_view_fun(R&&) = delete;
+struct ref_view_fun {
+  static void fun(R&) noexcept;
+  static void fun(R&&) = delete;
+};
 } // namespace ycxx::detail
 
 namespace std::ranges {
@@ -20,7 +23,7 @@ class ref_view : public view_interface<ref_view<R>> {
 
 public:
   template <ycxx::detail::different_from<ref_view> T>
-    requires convertible_to<T, R&> && requires { ycxx::detail::ref_view_fun<R>(declval<T>()); }
+    requires convertible_to<T, R&> && requires { ycxx::detail::ref_view_fun<R>::fun(declval<T>()); }
   constexpr ref_view(T&& t) : r_(__builtin_addressof(static_cast<R&>(static_cast<T&&>(t)))) {}
 
   constexpr R& base() const { return *r_; }

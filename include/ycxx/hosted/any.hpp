@@ -130,13 +130,20 @@ class any {
   }
   template <class T>
   bool holds() const noexcept {
-    if (t_ == &ycxx::detail::any_impl::table_for<T>)
-      return true;
+    // Only copy-constructible types are ever stored ([any.class.general]/4); for any other T,
+    // naming table_for<T> would instantiate its copy operation ([any.nonmembers]/9-10 only
+    // Mandate !is_void_v<T>).
+    if constexpr (!is_copy_constructible_v<T>) {
+      return false;
+    } else {
+      if (t_ == &ycxx::detail::any_impl::table_for<T>)
+        return true;
 #if YCXX_HAS_RTTI
-    return t_ && t_->type() == typeid(T);
+      return t_ && t_->type() == typeid(T);
 #else
-    return false;
+      return false;
 #endif
+    }
   }
 
 public:

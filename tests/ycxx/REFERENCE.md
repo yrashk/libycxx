@@ -15,7 +15,7 @@ records where libstdc++ and the current draft disagree. The draft is the referen
 a failure below is a libstdc++ gap, a libstdc++ bug, or a compiler issue, never a reason to
 change a test. **After triage no failure was traced to a defect in a test.**
 
-Run of 2026-10-04, 1264 tests: GCC 1099 pass / 164 fail / 1 xfail; Clang 1080 pass / 180 fail / 4 xfail.
+Run of 2026-10-04, 1413 tests: GCC 1238 pass / 174 fail / 1 xfail; Clang 1219 pass / 190 fail / 4 xfail.
 The same suite against libycxx: see `STATUS.md`.
 
 Legend: **G** fails with GCC + libstdc++, **C** with Clang + libstdc++.
@@ -67,6 +67,9 @@ Legend: **G** fails with GCC + libstdc++, **C** with Clang + libstdc++.
 | `ranges/as_input_view_borrowed` | G | C | `as_input_view` is not a borrowed range for a borrowed V | [ranges.syn]: `enable_borrowed_range<as_input_view<V>> = enable_borrowed_range<V>` |
 | `ranges/ranges_to_emplace_hint` | G | C | `ranges::to` calls `insert` where only `emplace_hint` exists | [range.utility.conv.general]/4-5: `c.emplace_hint(c.end(), std::forward<Ref>(ref))` |
 | `format/format_to_n_negative` | G | C | `format_to_n` with n < 0 writes every character | [format.functions]/19: M = clamp(n, 0, N) |
+| `sstream/stringbuf_view_no_mode` | G | C | `stringbuf("abc", openmode()).view()` returns "abc" | [stringbuf.members]/12.3: neither in nor out set: "Otherwise, sv() is returned" |
+| `syncstream/null_wrapped` | G | C | `osyncstream(nullptr).emit()` does not set badbit although `syncbuf::emit()` returns false | [syncstream.osyncstream.members]/1 |
+| `iostreams/num_get_hexfloat` | G | C | extracting a double from "0x1a.bp+07p" stops after "0" | [facet.num.get.virtuals] Example 1: with %g, "0x1a.bp+07" is accumulated |
 | `inplace_vector/from_range_mandates` (compile.fail) | G | C | a constant-size range larger than N is accepted | [inplace.vector.cons]/9: Mandates: ranges::size(rg) <= N when it is a constant expression |
 
 ## 2. Missing in libstdc++ 16 (newer C++26 additions, constexpr, API revisions)
@@ -89,6 +92,10 @@ Legend: **G** fails with GCC + libstdc++, **C** with Clang + libstdc++.
 | `deque/*`, `list/*`, `forward_list/*`, `map/*`, `set/*`, `unordered_*/*`, `stack/*`, `queue/*`, `priority_queue/*` (most) | G | C | C++26 constexpr containers and adaptors (the runtime parts of these tests pass) |
 | `inplace_vector/*` (some) | G | C | constexpr `inplace_vector` of non-trivial types |
 | `hive/*` | G | C | `<hive>` |
+| `atomic/store_key`, `atomic/float_fetch_minmax`, `atomic/constexpr` | G | C | atomic `store_add` ... `store_min`; `fetch_fmaximum` family; constexpr atomics |
+| `stop_token/concepts`, `stop_token/inplace_stop` | G | C | `stoppable_token`/`unstoppable_token`/`never_stop_token`, `stop_callback_for_t`; `inplace_stop_source`/`_token`/`_callback` |
+| `thread/thread_attributes` | G | C | `thread::name_hint`, `thread::stack_size_hint` |
+| `future/packaged_task_allocator` | G | C | `packaged_task(allocator_arg_t, const Allocator&, F&&)` |
 | `ranges/view_interface_at` | G | C | `view_interface::at` |
 | `format/runtime_format`, `format/format_constexpr` | G | C | `std::runtime_format`; constexpr `std::format` |
 | `random/generate_canonical`, `random/uniform_real_upper_bound` | G | C | the C++26 `generate_canonical` ([rand.util.canonical]/2-3: attempts until S < x r^d, returns floor(S/x)/r^d); libstdc++ rounds S/R^k and retries on 1, looping forever for a generator that always returns its maximum |

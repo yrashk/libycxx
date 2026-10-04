@@ -40,6 +40,12 @@ using node_list = std::vector<const node*>;
 
 void print_list(string& o, const node_list& l);
 
+// Substitutions and template parameters share nodes, so a crafted name can describe an output
+// exponentially longer than itself, or (through a template parameter that refers to its own
+// arguments) an endless one: printing stops at this size and demangle() then fails.
+constexpr std::size_t max_output = 1 << 16;
+bool over(const string& o) { return o.size() > max_output; }
+
 struct text_node final : node {
   string text;
   explicit text_node(string t, kind kk = kind::name) : node(kk), text(static_cast<string&&>(t)) {}
@@ -68,6 +74,8 @@ struct nested_node final : node {
   const node* name;
   nested_node(const node* q, const node* n) : node(kind::name), qual(q), name(n) {}
   void left(string& o) const override {
+    if (over(o))
+      return;
     qual->print(o);
     o += "::";
     name->print(o);
@@ -79,6 +87,8 @@ struct template_node final : node {
   node_list args;
   template_node(const node* n, node_list a) : node(kind::name), name(n), args(static_cast<node_list&&>(a)) {}
   void left(string& o) const override {
+    if (over(o))
+      return;
     name->print(o);
     if (!o.empty() && o.back() == '<')
       o += ' ';
@@ -274,7 +284,30 @@ struct param_node final : node {
     return nullptr;
   }
   void unbound(string& o) const { o += idx == 0 ? string("auto") : "auto:" + std::to_string(idx + 1); }
+  // A reference printed inside its own argument (T_ within the arguments it names) would never
+  // end; it is printed as unbound instead.
+  struct active_guard {
+    const param_node* self;
+    bool cycle;
+    explicit active_guard(const param_node* p) : self(p), cycle(false) {
+      for (const param_node* a : active())
+        cycle = cycle || a == p;
+      if (!cycle)
+        active().push_back(p);
+    }
+    ~active_guard() {
+      if (!cycle)
+        active().pop_back();
+    }
+  };
+  static std::vector<const param_node*>& active() {
+    thread_local std::vector<const param_node*> v;
+    return v;
+  }
   void left(string& o) const override {
+    const active_guard g(this);
+    if (g.cycle || over(o))
+      return unbound(o);
     if (const node* c = current())
       c->left(o);
     else if (target() == nullptr)
@@ -283,14 +316,23 @@ struct param_node final : node {
       target()->left(o);
   }
   void right(string& o) const override {
+    const active_guard g(this);
+    if (g.cycle || over(o))
+      return;
     if (const node* c = current())
       c->right(o);
   }
   bool has_right() const override {
+    const active_guard g(this);
+    if (g.cycle)
+      return false;
     const node* c = current();
     return c && c->has_right();
   }
   void print(string& o) const override {
+    const active_guard g(this);
+    if (g.cycle || over(o))
+      return unbound(o);
     if (const node* c = current())
       c->print(o);
     else if (target() == nullptr)
@@ -302,7 +344,10 @@ struct param_node final : node {
 
 // The node a param_node stands for (in the current expansion iteration); else n itself.
 const node* resolve(const node* n) {
-  while (auto p = dynamic_cast<const param_node*>(n)) {
+  for (int hops = 0; hops < 16; ++hops) { // a parameter can name another (or, crafted, itself)
+    auto p = dynamic_cast<const param_node*>(n);
+    if (p == nullptr)
+      break;
     const node* c = p->current();
     if (c == nullptr)
       break;
@@ -339,6 +384,8 @@ struct pack_expansion_node final : node {
 void print_list(string& o, const node_list& l) {
   bool first = true;
   for (const node* n : l) {
+    if (over(o))
+      return;
     const string::size_type before = o.size();
     if (!first)
       o += ", ";
@@ -1613,7 +1660,7 @@ bool ycxx::detail::demangle(const char* mangled, std::string& out) {
     return false;
   parser ps(mangled, mangled + std::strlen(mangled));
   std::string s;
-  if (!ps.parse(s))
+  if (!ps.parse(s) || over(s))
     return false;
   out = static_cast<std::string&&>(s);
   return true;

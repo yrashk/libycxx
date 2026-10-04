@@ -1660,8 +1660,7 @@ constexpr void simd_scatter(const V& v, U* p, std::size_t n, const typename I::m
 }
 template <class I>
 constexpr void simd_check_indices(const I& indices, const typename I::mask_type& k, std::size_t n) {
-  if consteval {
-  } else {
+  if !consteval {
     if constexpr (!cfg::hardened)
       return;
   }

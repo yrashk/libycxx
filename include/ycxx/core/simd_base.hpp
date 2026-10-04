@@ -2,10 +2,11 @@
 // vectorizable types, the ABI tags, element storage, the type traits, the load/store flags and
 // simd-iterator. The classes are in simd.hpp.
 //
-// ABI tags. deduce-abi-t<T, N> is ycxx::adl_free::simd_abi<N> for every vectorizable T and
-// every N in [1, 64]; native-abi<T> is simd_abi<register bytes / sizeof(T)> (at least 1). The tag
-// names the width only, so masks of equal element size and width are one type, rebind_t and
-// resize_t only swap one template argument, and the element type picks the representation:
+// ABI tags. deduce-abi-t<T, N> is ycxx::adl_free::simd_abi<N, R> for every vectorizable T and
+// every N in [1, 64], R being the widest vector register (cfg::simd_register_bytes);
+// native-abi<T> is simd_abi<R / sizeof(T), R> (at least 1). The tag does not name the element
+// type, so masks of equal element size and width are one type, rebind_t and resize_t only swap
+// the width, and the element type picks the representation:
 //  - an arithmetic element type and a power-of-two width N >= 2: GCC/Clang vector-extension
 //    chunks (vector_size), one vector of N elements while N * sizeof(T) fits the widest vector
 //    register (cfg::simd_register_bytes), else an array of register-sized vectors. Operators map
@@ -30,8 +31,10 @@
 #include <ycxx/core/type_traits.hpp>
 
 namespace ycxx::adl_free {
-// The ABI tags (see above).
-template <int N>
+// The ABI tags (see above). R, the register width the layout is built for, is part of the type,
+// so translation units built for different widths do not share a type with two layouts; only the
+// tags of this translation unit's width are enabled.
+template <int N, int R = ycxx::detail::cfg::simd_register_bytes>
 struct simd_abi {};
 // deduce-abi-t<T, N> when T is not vectorizable or N is out of range: no basic_vec is enabled.
 struct simd_abi_none {};
@@ -408,12 +411,20 @@ struct simd_flags_union<std::simd::flags<Fs...>, O, Os...>
                        Os...> {};
 
 // The extent of a contiguous range when ranges::size(r) is a constant expression, else
-// dynamic_extent (what span deduction finds: arrays, std::array, spans of static extent).
+// dynamic_extent: what span deduction finds (arrays, std::array, spans of static extent), or a
+// static constexpr size() member.
 template <class R>
-inline constexpr std::size_t simd_static_size = std::dynamic_extent;
+consteval std::size_t simd_find_static_size() {
+  if constexpr (requires { decltype(std::span(std::declval<R&>()))::extent; }) {
+    if constexpr (decltype(std::span(std::declval<R&>()))::extent != std::dynamic_extent)
+      return decltype(std::span(std::declval<R&>()))::extent;
+  }
+  if constexpr (requires { typename std::integral_constant<std::size_t, std::remove_cvref_t<R>::size()>; })
+    return std::remove_cvref_t<R>::size();
+  return std::dynamic_extent;
+}
 template <class R>
-  requires requires { decltype(std::span(std::declval<R&>()))::extent; }
-inline constexpr std::size_t simd_static_size<R> = decltype(std::span(std::declval<R&>()))::extent;
+inline constexpr std::size_t simd_static_size = ycxx::detail::simd_find_static_size<R>();
 
 // Gives the non-member functions access to the representation of basic_vec and basic_mask.
 struct simd_access {

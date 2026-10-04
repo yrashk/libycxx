@@ -132,6 +132,7 @@
 #define __cpp_lib_clamp 201603L
 #define __cpp_lib_constexpr_algorithms 202306L
 #define __cpp_lib_constexpr_numeric 201911L
+#define __cpp_lib_execution 201902L
 #define __cpp_lib_freestanding_algorithm 202502L
 #define __cpp_lib_freestanding_numeric 202502L
 #define __cpp_lib_gcd_lcm 201606L

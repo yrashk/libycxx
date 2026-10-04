@@ -33,9 +33,16 @@ CORE += ["random"]
 CORE += ["meta"]
 # Hosted: need an OS (through the PAL) or the C library.
 HOSTED = [
-    "any", "cctype", "cerrno", "cfenv", "cinttypes", "clocale", "csetjmp", "csignal", "cstdarg", "cstdio",
-    "cstdlib", "cstring", "ctime", "cuchar", "cwchar", "cwctype", "system_error",
+    "any", "cctype", "cfenv", "cinttypes", "clocale", "csetjmp", "csignal", "cstdio",
+    "ctime", "cuchar", "cwctype",
 ]
+# <cstdarg>: compiler builtins only. <stdbit.h>: on <bit>. <stdckdint.h>: overflow builtins.
+CORE += ["cstdarg", "stdbit.h", "stdckdint.h"]
+# Hosted headers with a freestanding subset ([compliance]): with YCXX_HOSTED 0 (-ffreestanding)
+# they include core headers instead of the C library's (the freestanding parts of <cstdlib>,
+# <cstring>, <cwchar>: ycxx/core/c_stdlib.hpp, c_string.hpp; <cerrno>'s macros; <system_error>'s
+# errc and classes, whose categories are in the hosted runtime).
+FREESTANDING_SUBSET = ["cstdlib", "cstring", "cwchar", "cerrno", "system_error"]
 # <memory_resource>: memory_resource and polymorphic_allocator are core (ycxx/core/
 # memory_resource.hpp, which <string> includes); the global resources, the pools and
 # monotonic_buffer_resource are defined in the hosted runtime.
@@ -68,3 +75,14 @@ ABI += ["generator"]
 HOSTED += ["text_encoding"]
 # <stacktrace>: capture and symbolization are in the hosted runtime (unwinder, PAL).
 HOSTED += ["stacktrace"]
+
+# [compliance] Table 27: the headers a freestanding implementation provides at least. The
+# freestanding check compiles each of them (with CORE and FREESTANDING_SUBSET).
+FREESTANDING_REQUIRED = [
+    "cstddef", "cstdlib", "cfloat", "climits", "limits", "version", "cstdint", "new", "typeinfo",
+    "source_location", "exception", "contracts", "initializer_list", "compare", "coroutine", "cstdarg",
+    "concepts", "cerrno", "system_error", "debugging", "memory", "type_traits", "ratio", "utility", "tuple",
+    "optional", "variant", "expected", "functional", "bit", "stdbit.h", "array", "inplace_vector", "span",
+    "mdspan", "iterator", "ranges", "algorithm", "numeric", "execution", "string_view", "string", "cstring",
+    "cwchar", "charconv", "random", "cmath", "atomic",
+]

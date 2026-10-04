@@ -1,4 +1,4 @@
-// -*- C++ -*-  libycxx: <system_error>   [hosted]
+// -*- C++ -*-  libycxx: <system_error>   [hosted; freestanding subset without the C library]
 //
 // The classes are core (ycxx/core/system_error.hpp); generic_category(), system_category(), the
 // category messages and system_error's members are defined in the hosted runtime.
@@ -11,7 +11,11 @@
 #include <ycxx/core/errc.hpp>
 #include <ycxx/core/system_error.hpp>
 #include <ycxx/core/format_syserr.hpp>
-#include <errno.h>
+// Freestanding, only errc is required ([system.error.syn]); the categories are defined in the
+// hosted runtime, so a freestanding program that uses them gets a link error (like <string>'s
+// C-library parts, DECISIONS §3).
+#if YCXX_HOSTED
+#  include <errno.h>
 
 namespace ycxx::detail {
 // [system.error.syn]/1: each errc enumerator equals the <cerrno> macro of the same meaning.
@@ -104,3 +108,4 @@ consteval bool errc_matches_errno() {
 }
 static_assert(ycxx::detail::errc_matches_errno(), "libycxx: std::errc does not match this C library's errno values");
 } // namespace ycxx::detail
+#endif

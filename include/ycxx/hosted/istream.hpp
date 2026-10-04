@@ -161,7 +161,7 @@ basic_istream<charT, traits>& basic_istream<charT, traits>::get_number(V& v) {
   if (sentry ok{*this}) {
     ycxx::detail::guarded_io(*this, [&] {
       using It = istreambuf_iterator<charT, traits>;
-      use_facet<num_get<charT, It>>(this->getloc()).get(It(*this), It(), *this, err, v);
+      use_facet<num_get<charT, It>>(ycxx::detail::ios_access::locale_of(*this)).get(It(*this), It(), *this, err, v);
     });
   }
   if (err)
@@ -178,7 +178,7 @@ basic_istream<charT, traits>& basic_istream<charT, traits>::get_narrowed(V& v) {
     ycxx::detail::guarded_io(*this, [&] {
       using It = istreambuf_iterator<charT, traits>;
       long lval = 0;
-      use_facet<num_get<charT, It>>(this->getloc()).get(It(*this), It(), *this, err, lval);
+      use_facet<num_get<charT, It>>(ycxx::detail::ios_access::locale_of(*this)).get(It(*this), It(), *this, err, lval);
       if (lval < numeric_limits<V>::min()) {
         err |= ios_base::failbit;
         v = numeric_limits<V>::min();
@@ -207,7 +207,7 @@ basic_istream<charT, traits>& basic_istream<charT, traits>::operator>>(F& val) {
     ycxx::detail::guarded_io(*this, [&] {
       using It = istreambuf_iterator<charT, traits>;
       FP fval = 0;
-      use_facet<num_get<charT, It>>(this->getloc()).get(It(*this), It(), *this, err, fval);
+      use_facet<num_get<charT, It>>(ycxx::detail::ios_access::locale_of(*this)).get(It(*this), It(), *this, err, fval);
       if (fval < -static_cast<FP>(numeric_limits<F>::max())) {
         err |= ios_base::failbit;
         val = -numeric_limits<F>::max();

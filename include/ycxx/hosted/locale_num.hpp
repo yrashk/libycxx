@@ -75,11 +75,19 @@ private:
 template <class charT, class OutIt>
 OutIt num_put_output(OutIt out, std::ios_base& str, charT fill, const char* s, std::size_t n, std::size_t pad,
                      std::size_t gbeg, std::size_t gend) {
-  const std::locale loc = str.getloc();
+  const std::locale& loc = ycxx::detail::ios_access::locale_of(str);
   const std::ctype<charT>& ct = std::use_facet<std::ctype<charT>>(loc);
   const std::numpunct<charT>& np = std::use_facet<std::numpunct<charT>>(loc);
-  const std::string grouping = gend > gbeg ? np.grouping() : std::string();
-  small_buffer<charT, 96> wide(2 * n + 1);
+  // The classic char facets: ctype widens every character to itself, numpunct has '.' and no
+  // grouping; their values need no virtual calls.
+  bool identity_widen = false, classic_punct = false;
+  if constexpr (std::is_same_v<charT, char>) {
+    const std::locale& c = std::locale::classic();
+    identity_widen = &ct == &std::use_facet<std::ctype<char>>(c);
+    classic_punct = &np == &std::use_facet<std::numpunct<char>>(c);
+  }
+  const std::string grouping = gend > gbeg && !classic_punct ? np.grouping() : std::string();
+  [[indeterminate]] small_buffer<charT, 96> wide(2 * n + 1);
   charT* w = wide.get();
   std::size_t len = 0;
   // the group boundaries, counted from the right end of the digit run
@@ -88,13 +96,18 @@ OutIt num_put_output(OutIt out, std::ios_base& str, charT fill, const char* s, s
   if (!grouping.empty() && static_cast<signed char>(grouping[0]) > 0 && grouping[0] != std::numeric_limits<char>::max())
     group = true;
   const charT sep = group ? np.thousands_sep() : charT();
-  const charT point = np.decimal_point();
-  // mark[k] (k digits from the right): a separator goes before that digit
-  small_buffer<bool, 96> marks(digits + 1);
-  bool* mark = marks.get();
-  for (std::size_t k = 0; k <= digits; ++k)
-    mark[k] = false;
-  if (group) {
+  const charT point = classic_punct ? static_cast<charT>('.') : np.decimal_point();
+  if (!group) {
+    // No separators: the characters one to one, with the decimal point.
+    for (std::size_t i = 0; i < n; ++i)
+      w[i] = s[i] == '.' ? point : identity_widen ? static_cast<charT>(s[i]) : ct.widen(s[i]);
+    len = n;
+  } else {
+    // mark[k] (k digits from the right): a separator goes before that digit
+    [[indeterminate]] small_buffer<bool, 96> marks(digits + 1);
+    bool* mark = marks.get();
+    for (std::size_t k = 0; k <= digits; ++k)
+      mark[k] = false;
     std::size_t at = 0;
     for (std::size_t i = 0;; ++i) {
       const char g = grouping[i < grouping.size() ? i : grouping.size() - 1];
@@ -105,15 +118,15 @@ OutIt num_put_output(OutIt out, std::ios_base& str, charT fill, const char* s, s
         break;
       mark[at] = true;
     }
-  }
-  for (std::size_t i = 0; i < n; ++i) {
-    if (s[i] == '.') {
-      w[len++] = point;
-      continue;
+    for (std::size_t i = 0; i < n; ++i) {
+      if (s[i] == '.') {
+        w[len++] = point;
+        continue;
+      }
+      if (i > gbeg && i < gend && mark[gend - i])
+        w[len++] = sep;
+      w[len++] = ct.widen(s[i]);
     }
-    if (i > gbeg && i < gend && mark[gend - i])
-      w[len++] = sep;
-    w[len++] = ct.widen(s[i]);
   }
   // (pad is at most gbeg, so the separators never move it)
   const std::streamsize width = str.width();
@@ -133,6 +146,30 @@ OutIt num_put_output(OutIt out, std::ios_base& str, charT fill, const char* s, s
     *out = w[i];
   return out;
 }
+
+// The field num_get accumulates in stage 2: in place up to 64 characters (any integer field
+// and most floating-point ones), then in a string.
+class num_field {
+  char buf_[64];
+  std::size_t n_ = 0;
+  std::string heap_; // used once the field outgrows buf_
+
+public:
+  num_field() = default;
+  num_field(const num_field&) = delete;
+  void push_back(char c) {
+    if (n_ < sizeof buf_) {
+      buf_[n_++] = c;
+    } else {
+      if (n_ == sizeof buf_)
+        heap_.assign(buf_, n_);
+      heap_.push_back(c);
+      ++n_;
+    }
+  }
+  const char* data() const noexcept { return n_ <= sizeof buf_ ? buf_ : heap_.data(); }
+  std::size_t size() const noexcept { return n_; }
+};
 
 } // namespace ycxx::detail
 
@@ -234,7 +271,7 @@ protected:
     return get_floating(in, end, str, err, v);
   }
   virtual iter_type do_get(iter_type in, iter_type end, ios_base& str, ios_base::iostate& err, void*& v) const {
-    string field;
+    [[indeterminate]] ycxx::detail::num_field field;
     bool grouping_ok = true;
     in = accumulate(in, end, str, err, 'p', field, grouping_ok);
     unsigned long long mag = 0;
@@ -259,15 +296,42 @@ private:
   // conversion (as scanf's would). Records the separator positions for the grouping check and
   // sets eofbit in err if stopped by in == end.
   static iter_type accumulate(iter_type in, iter_type end, ios_base& str, ios_base::iostate& err, char spec,
-                              string& field, bool& grouping_ok) {
+                              ycxx::detail::num_field& field, bool& grouping_ok) {
     static constexpr char src[] = "0123456789abcdefpxABCDEFPX+-";
-    const locale loc = str.getloc();
+    const locale& loc = ycxx::detail::ios_access::locale_of(str);
     const numpunct<charT>& np = use_facet<numpunct<charT>>(loc);
-    charT atoms[sizeof(src)];
-    use_facet<ctype<charT>>(loc).widen(src, src + sizeof(src), atoms);
-    const charT point_char = np.decimal_point();
-    const charT sep = np.thousands_sep();
-    const string grouping = np.grouping();
+    const ctype<charT>& ctf = use_facet<ctype<charT>>(loc);
+    // char atoms that widen to themselves: looked up in a table instead of searching the atom
+    // list for every character.
+    static constexpr auto atom_of = [] {
+      struct table {
+        char c[256] = {};
+        constexpr char operator[](unsigned char x) const { return c[x]; }
+      } t;
+      for (const char* p = src; *p != '\0'; ++p)
+        t.c[static_cast<unsigned char>(*p)] = *p;
+      return t;
+    }();
+    // The classic char facets (widening to the same character, '.', no grouping) need no
+    // virtual calls.
+    bool classic = false;
+    if constexpr (is_same_v<charT, char>) {
+      const locale& c = locale::classic();
+      classic = &np == &use_facet<numpunct<char>>(c) && &ctf == &use_facet<ctype<char>>(c);
+    }
+    [[indeterminate]] charT atoms[sizeof(src)];
+    charT point_char = static_cast<charT>('.');
+    charT sep = static_cast<charT>(',');
+    string grouping;
+    bool identity_atoms = classic;
+    if (!classic) {
+      ctf.widen(src, src + sizeof(src), atoms);
+      point_char = np.decimal_point();
+      sep = np.thousands_sep();
+      grouping = np.grouping();
+      if constexpr (is_same_v<charT, char>)
+        identity_atoms = char_traits<char>::compare(atoms, src, sizeof(src) - 1) == 0;
+    }
     const bool grouped = !grouping.empty();
 
     const bool is_float = spec == 'g';
@@ -278,7 +342,7 @@ private:
     bool any_digit = false; // a mantissa digit (after the 0x prefix, if any)
     bool point = false;
     int exp_state = 0; // 0: none; 1: after e/p; 2: after the exponent's sign; 3: exponent digits
-    unsigned groups[64];
+    [[indeterminate]] unsigned groups[64];
     size_t ngroups = 0;
     unsigned run = 0; // integer digits since the last separator
     bool seen_sep = false;
@@ -302,10 +366,27 @@ private:
         seen_sep = true;
         continue; // remembered, otherwise ignored
       }
-      size_t k = 0;
-      while (k != sizeof(src) - 1 && !(atoms[k] == ct))
-        ++k;
-      char c = src[k];
+      // The common case, a decimal or hexadecimal digit 0-9 of the mantissa, with the effects
+      // of the general path below.
+      if (identity_atoms && exp_state == 0 && (radix == 10 || radix == 16) && ct >= '0' && ct <= '9' &&
+          !(ct == point_char)) {
+        zero_only = !any_digit && !point && ct == '0';
+        any_digit = true;
+        if (!point)
+          ++run;
+        at_start = false;
+        field.push_back(static_cast<char>(ct));
+        continue;
+      }
+      char c;
+      if (identity_atoms) {
+        c = atom_of[static_cast<unsigned char>(ct)];
+      } else {
+        size_t k = 0;
+        while (k != sizeof(src) - 1 && !(atoms[k] == ct))
+          ++k;
+        c = src[k];
+      }
       if (ct == point_char)
         c = '.';
       if (c == '\0')
@@ -391,7 +472,7 @@ private:
       spec = is_signed_v<T> ? 'd' : 'u';
       base = 10;
     }
-    string field;
+    [[indeterminate]] ycxx::detail::num_field field;
     bool grouping_ok = true;
     in = accumulate(in, end, str, err, spec, field, grouping_ok);
     unsigned long long mag = 0;
@@ -430,7 +511,7 @@ private:
 
   template <class T>
   static iter_type get_floating(iter_type in, iter_type end, ios_base& str, ios_base::iostate& err, T& v) {
-    string field;
+    [[indeterminate]] ycxx::detail::num_field field;
     bool grouping_ok = true;
     in = accumulate(in, end, str, err, 'g', field, grouping_ok);
     T result{};
@@ -550,7 +631,7 @@ protected:
     return put_floating(out, str, fill, v);
   }
   virtual iter_type do_put(iter_type out, ios_base& str, char_type fill, const void* v) const {
-    char buf[72];
+    [[indeterminate]] char buf[72];
     size_t pad = 0;
     const size_t n = ycxx::detail::num_put_pointer(buf, v, &pad);
     return ycxx::detail::num_put_output(out, str, fill, buf, n, pad, 0, 0);
@@ -559,7 +640,7 @@ protected:
 private:
   template <class T>
   static iter_type put_integer(iter_type out, ios_base& str, char_type fill, T v) {
-    char buf[72];
+    [[indeterminate]] char buf[72];
     size_t pad = 0;
     bool neg = false;
     unsigned long long mag;
@@ -581,7 +662,7 @@ private:
 
   template <class T>
   static iter_type put_floating(iter_type out, ios_base& str, char_type fill, T v) {
-    char local[128];
+    [[indeterminate]] char local[128];
     size_t pad = 0;
     size_t n = ycxx::detail::num_put_float(local, sizeof local, v, str.flags(), str.precision(), &pad);
     if (n <= sizeof local)

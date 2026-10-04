@@ -194,8 +194,12 @@ public:
       std::size_t k = cap_ - size_;
       if (k > n)
         k = n;
-      for (std::size_t i = 0; i != k; ++i)
-        data_[size_ + i] = p[i];
+      if consteval {
+        for (std::size_t i = 0; i != k; ++i)
+          data_[size_ + i] = p[i];
+      } else {
+        __builtin_memcpy(static_cast<void*>(data_ + size_), static_cast<const void*>(p), k * sizeof(charT));
+      }
       size_ += k;
       p += k;
       n -= k;
@@ -1208,9 +1212,17 @@ constexpr Out fmt_write_number(Out out, const fmt_spec<charT>& s, std::size_t wi
 template <class charT, class U, class Context>
 constexpr typename Context::iterator fmt_write_integer(Context& ctx, U magnitude, bool negative,
                                                        const fmt_spec<charT>& s) {
-  const std::size_t width = ::ycxx::detail::fmt_width(s, ctx);
   [[indeterminate]] char buf[sizeof(U) * 8 + 1];
   char* const end = buf + sizeof(buf);
+  if (s.width_kind == fmt_dyn::none && s.width == 0 && !s.localized && (s.type == 0 || s.type == 'd') &&
+      s.sign == fmt_sign::none) {
+    // The common "{}": the digits and a '-', nothing to pad or group.
+    char* first = ::ycxx::detail::charconv_write_unsigned(end, magnitude, 10);
+    if (negative)
+      *--first = '-';
+    return ::ycxx::detail::fmt_put_ascii<charT>(ctx.out(), first, static_cast<std::size_t>(end - first));
+  }
+  const std::size_t width = ::ycxx::detail::fmt_width(s, ctx);
   unsigned base = 10;
   fmt_number n;
   switch (s.type) {

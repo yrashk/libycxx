@@ -1,0 +1,7 @@
+// -*- C++ -*-  libycxx: <streambuf>   [hosted]
+#pragma once
+
+#include <ycxx/config.hpp>
+#include <ycxx/core/version.hpp>
+#include <ios>
+#include <ycxx/hosted/streambuf.hpp>

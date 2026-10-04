@@ -1,0 +1,8 @@
+// -*- C++ -*-  libycxx: <iomanip>   [hosted]
+#pragma once
+
+#include <ycxx/config.hpp>
+#include <ycxx/core/version.hpp>
+#include <istream>
+#include <ostream>
+#include <ycxx/hosted/iomanip.hpp>

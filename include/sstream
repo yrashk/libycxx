@@ -1,0 +1,9 @@
+// -*- C++ -*-  libycxx: <sstream>   [hosted]
+#pragma once
+
+#include <ycxx/config.hpp>
+#include <ycxx/core/version.hpp>
+#include <istream>
+#include <ostream>
+#include <string>
+#include <ycxx/hosted/sstream.hpp>

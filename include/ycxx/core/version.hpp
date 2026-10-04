@@ -299,3 +299,12 @@
 #define __cpp_lib_complex_udls 201309L
 #define __cpp_lib_constexpr_complex 202306L
 #define __cpp_lib_valarray 202511L
+
+// <ios> <istream> <ostream> <sstream> <spanstream> <fstream> <syncstream> <iomanip> <locale>
+#define __cpp_lib_char8_t 201907L
+#define __cpp_lib_ios_noreplace 202207L
+#define __cpp_lib_fstream_native_handle 202306L
+#define __cpp_lib_quoted_string_io 201304L
+#define __cpp_lib_spanstream 202106L
+#define __cpp_lib_sstream_from_string_view 202306L
+#define __cpp_lib_syncbuf 201803L

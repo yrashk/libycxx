@@ -1,0 +1,9 @@
+// -*- C++ -*-  libycxx: <ios>   [hosted]
+#pragma once
+
+#include <ycxx/config.hpp>
+#include <ycxx/core/version.hpp>
+#include <iosfwd>
+#include <ycxx/hosted/ios.hpp>
+// basic_ios::imbue and the other members that call the stream buffer need it complete
+#include <ycxx/hosted/streambuf.hpp>

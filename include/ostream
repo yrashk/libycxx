@@ -1,0 +1,11 @@
+// -*- C++ -*-  libycxx: <ostream>   [hosted]
+//
+// Not provided yet: the ostream overloads of print, println, vprint_unicode and
+// vprint_nonunicode ([ostream.formatted.print]), which need <format>.
+#pragma once
+
+#include <ycxx/config.hpp>
+#include <ycxx/core/version.hpp>
+#include <ios>
+#include <streambuf>
+#include <ycxx/hosted/ostream.hpp>

@@ -19,6 +19,7 @@
 #include <ycxx/core/cstdint.hpp>
 #include <ycxx/core/errc.hpp>
 #include <ycxx/core/hash.hpp>
+#include <ycxx/core/iosfwd.hpp>
 #include <ycxx/core/stdexcept.hpp>
 #include <ycxx/core/type_traits.hpp>
 
@@ -156,6 +157,13 @@ inline error_condition make_error_condition(errc e) noexcept {
 }
 
 inline error_condition error_code::default_error_condition() const noexcept { return cat_->default_error_condition(val_); }
+
+// [syserr.code.nonmembers]: written against the declaration of basic_ostream; usable once
+// <ostream> is included.
+template <class charT, class traits>
+basic_ostream<charT, traits>& operator<<(basic_ostream<charT, traits>& os, const error_code& ec) {
+  return os << ec.category().name() << ':' << ec.value();
+}
 
 // [syserr.compare]
 inline bool operator==(const error_code& lhs, const error_code& rhs) noexcept {

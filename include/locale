@@ -1,0 +1,13 @@
+// -*- C++ -*-  libycxx: <locale>   [hosted]
+//
+// Named locales: "C", "POSIX", "C.UTF-8" and "" (see ycxx/hosted/locale_base.hpp); other names
+// throw runtime_error. Not provided: locale::encoding() (no <text_encoding>), and the deprecated
+// codecvt<char16_t, char, mbstate_t> / codecvt<char32_t, char, mbstate_t> (Annex D);
+// wstring_convert and wbuffer_convert were removed in C++26.
+#pragma once
+
+#include <ycxx/config.hpp>
+#include <ycxx/core/version.hpp>
+#include <ycxx/hosted/locale_base.hpp>
+#include <ycxx/hosted/locale_num.hpp>
+#include <ycxx/hosted/locale_extra.hpp>

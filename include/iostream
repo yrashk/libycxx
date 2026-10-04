@@ -1,0 +1,26 @@
+// -*- C++ -*-  libycxx: <iostream>   [hosted]
+//
+// The eight standard objects are defined in the hosted runtime (src/hosted/iostream.cpp). They
+// are constructed by an ios_base::Init object of the runtime that is initialized before any
+// object with ordinary static initialization (GCC/Clang init_priority), so they are usable from
+// every static initializer and destructor of the program ([iostream.objects.overview]/2-3);
+// they are never destroyed, and that Init object flushes the output objects at exit.
+#pragma once
+
+#include <ycxx/config.hpp>
+#include <ycxx/core/version.hpp>
+#include <ios>
+#include <streambuf>
+#include <istream>
+#include <ostream>
+
+namespace std {
+extern istream cin;
+extern ostream cout;
+extern ostream cerr;
+extern ostream clog;
+extern wistream wcin;
+extern wostream wcout;
+extern wostream wcerr;
+extern wostream wclog;
+} // namespace std

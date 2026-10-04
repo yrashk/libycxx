@@ -2,7 +2,7 @@
 //
 // The classes are core (ycxx/core/system_error.hpp); generic_category(), system_category(), the
 // category messages and system_error's members are defined in the hosted runtime. Not provided:
-// operator<< for error_code (no <ostream> yet) and formatter<error_code> (no <format> yet).
+// formatter<error_code> (no <format> yet).
 #pragma once
 
 #include <ycxx/config.hpp>

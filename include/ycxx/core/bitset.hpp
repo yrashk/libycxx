@@ -312,6 +312,13 @@ constexpr bitset<N> operator^(const bitset<N>& lhs, const bitset<N>& rhs) noexce
   return bitset<N>(lhs) ^= rhs;
 }
 
+// [bitset.operators]: the stream operators, declared here and defined with the streams
+// (ycxx/hosted/istream.hpp, ycxx/hosted/ostream.hpp).
+template <class charT, class traits, size_t N>
+basic_istream<charT, traits>& operator>>(basic_istream<charT, traits>& is, bitset<N>& x);
+template <class charT, class traits, size_t N>
+basic_ostream<charT, traits>& operator<<(basic_ostream<charT, traits>& os, const bitset<N>& x);
+
 // ---- [bitset.hash] ----
 template <size_t N>
 struct hash<bitset<N>> {

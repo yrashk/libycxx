@@ -15,7 +15,9 @@ records where libstdc++ and the current draft disagree. The draft is the referen
 a failure below is a libstdc++ gap, a libstdc++ bug, or a compiler issue, never a reason to
 change a test. **After triage no failure was traced to a defect in a test.**
 
-Run of 2026-10-04, 1413 tests: GCC 1238 pass / 174 fail / 1 xfail; Clang 1219 pass / 190 fail / 4 xfail.
+Run of 2026-10-04, 1768 tests: GCC 1527 pass / 240 fail / 1 xfail; Clang 1505 pass / 256 fail / 7 xfail
+(threaded tests rerun serially: under `-j32` on 4 cores `stmt_dcl/static_local_concurrent_once` and
+`stop_token/stop_callback_thread` occasionally exceed their time limits).
 The same suite against libycxx: see `STATUS.md`.
 
 Legend: **G** fails with GCC + libstdc++, **C** with Clang + libstdc++.

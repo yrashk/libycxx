@@ -27,6 +27,9 @@ HOSTED = [
 HOSTED += ["memory_resource"]
 # <chrono>: the arithmetic is core (ycxx/core/chrono_base.hpp), the clocks need the OS.
 HOSTED += ["chrono"]
+# The thread support library: threads, mutexes and condition variables need the OS (PAL).
+HOSTED += ["thread", "stop_token", "mutex", "shared_mutex", "condition_variable", "semaphore", "latch", "barrier",
+           "future"]
 # Language-support headers whose *declarations* are core but which need the C++ ABI runtime
 # (libycxx-abi) to be used with exceptions/RTTI enabled.
 ABI = ["exception", "stdexcept", "typeinfo", "typeindex"]

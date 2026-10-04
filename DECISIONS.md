@@ -308,3 +308,53 @@ under the same name. Otherwise it gets one alias template in `config.hpp`.
   `pos == 0` is not ambiguous; `istream::ignore(streamsize, char_type)` is a constrained template
   (exactly `char_type` is deduced), so `ignore(n, -1L)` is not ambiguous; the rvalue stream
   operators exclude `ios_base` itself ("derived from" in the core-language sense).
+
+## 8. File systems (hosted, POSIX)
+
+- **Layering.** `<filesystem>` is hosted: the classes are in `ycxx/hosted/filesystem.hpp`, every
+  operation that touches the file system (the `error_code&` forms, directory iteration,
+  `directory_entry::refresh` and its observers, `filesystem_error`'s constructors and key
+  function) is in `src/hosted/filesystem.cpp`. That file calls POSIX directly, not through the
+  PAL: the operations are specified "as if by" POSIX functions (stat, lstat, mkdir, link,
+  symlink, rename, truncate, statvfs, fchmodat, utimensat, readdir), so PAL hooks would restate
+  POSIX one function at a time; a non-POSIX port replaces the file, as `fstream.cpp` is replaced
+  for a target without stdio. Linux and Darwin differences are absorbed without the
+  preprocessor (`st_mtim`/`st_mtimespec` through a `requires` probe on `struct stat`).
+- **Throwing forms are inline.** Each calls the `error_code` form and throws through
+  `raise_with(ycxx_error_filesystem_error, ...)`, so `-fno-exceptions` programs reach
+  `ycxx_error_handler`, and the runtime never throws on behalf of a TU built without exceptions.
+  Errors are `error_code(errno, generic_category())`. Members that take no path argument
+  (`directory_iterator::operator++`, `recursive_directory_iterator::pop`) throw without paths
+  ([fs.err.report]/2.1) and name the directory in the message.
+- **path.** `value_type` is `char`; the native ordinary encoding is taken to be UTF-8 (no C
+  locale is consulted) and `wchar_t` is UTF-32. Conversions of `char8_t`/`char16_t`/`char32_t`/
+  `wchar_t` sources and results are direct Unicode transcoding (U+FFFD for ill-formed input,
+  appended in place, so assigning to a path with enough capacity does not allocate); the
+  constructors taking a locale go through its `codecvt<wchar_t, char, mbstate_t>`. There are no
+  root-names (a leading `//` is a root-directory). The native format is the generic one; the
+  generic observers write each directory-separator as one slash. Lexical operations work on
+  element offsets in the pathname (`path::iterator` stores one and the element it designates).
+  `hash_value` hashes the elements, so equal paths with different separator runs hash equal.
+  `string()`/`generic_string()` and `u8path` are provided as the draft's Annex D still has them
+  (D.23), without `[[deprecated]]` (as for the Annex D codecvt facets).
+- **file_time_type** is `chrono::time_point<chrono::file_clock>`, nanoseconds in a `long long`
+  since the Unix epoch (range 1677-2262); a time stamp outside it is `errc::value_too_large`.
+  Until `<chrono>` is merged, `ycxx/hosted/file_clock.hpp` defines the minimal `duration`,
+  `time_point` and `file_clock` with the same names and layout as the concurrent
+  `ycxx/core/chrono_base.hpp`/`ycxx/hosted/chrono_clocks.hpp`; on merge its body becomes an
+  include of `chrono_clocks.hpp`.
+- **directory_entry caching.** `refresh()` caches the results of `lstat` (and `stat` for a
+  symbolic link) including their errors, so the observers return what the operations would.
+  Directory iteration caches only the file type from `d_type` (no `refresh`, [fs.class.directory.
+  iterator]/9); other attributes are queried on demand. `refresh(ec)` reports a missing file in
+  `ec` (as both other implementations do) but the throwing `refresh()` does not throw for it, and
+  the constructor keeps the path for a missing file; for any other error the path is cleared as
+  [fs.dir.entry.cons]/2 says (libc++ and libstdc++ keep it).
+- **Directory walks are descriptor-relative.** `remove_all` opens each directory with
+  `O_NOFOLLOW` and removes entries with `unlinkat`, so a directory swapped for a symbolic link
+  during the walk is unlinked, never followed; passes repeat until a pass finds nothing (some
+  file systems skip entries of a directory modified while it is read). `recursive_directory_
+  iterator` opens subdirectories with `openat` on the parent's descriptor (`O_NOFOLLOW` unless it
+  follows a symbolic link by request). Copies of a directory iterator share the open directory
+  (input iterators); `recursion_pending()` belongs to each copy.
+- `<filesystem>` also includes `<cstdlib>`, as `<fstream>` includes `<cstdio>`.

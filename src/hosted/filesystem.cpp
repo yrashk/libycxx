@@ -1014,7 +1014,7 @@ bool copy_file(const path& from, const path& to, copy_options options, error_cod
     if (err != 0)
       break;
   }
-  if (err == 0 && to_exists && ::fchmod(out, mode) != 0) // the attributes of from
+  if (err == 0 && ::fchmod(out, mode) != 0) // the attributes of from (open's mode is umasked)
     err = errno;
   ::close(in);
   if (::close(out) != 0 && err == 0)

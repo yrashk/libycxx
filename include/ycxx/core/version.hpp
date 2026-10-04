@@ -99,6 +99,8 @@
 
 // <vector> <inplace_vector>
 #define __cpp_lib_constexpr_vector 201907L
+#define __cpp_lib_inplace_vector 202603L
+#define __cpp_lib_constexpr_inplace_vector 202502L
 
 // <bitset>
 #define __cpp_lib_bitset 202306L
@@ -207,4 +209,5 @@
 #  define __cpp_lib_hardened_optional 202502L
 #  define __cpp_lib_hardened_span 202502L
 #  define __cpp_lib_hardened_vector 202502L
+#  define __cpp_lib_hardened_inplace_vector 202502L
 #endif

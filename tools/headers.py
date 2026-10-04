@@ -33,7 +33,7 @@ HOSTED += ["memory_resource"]
 HOSTED += ["chrono"]
 # The thread support library: threads, mutexes and condition variables need the OS (PAL).
 HOSTED += ["thread", "stop_token", "mutex", "shared_mutex", "condition_variable", "semaphore", "latch", "barrier",
-           "future"]
+           "future", "rcu", "hazard_pointer"]
 # <math.h>: the C library's header plus <cmath>'s names in the global namespace.
 HOSTED += ["math.h"]
 # Language-support headers whose *declarations* are core but which need the C++ ABI runtime

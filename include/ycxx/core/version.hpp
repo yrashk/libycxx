@@ -284,6 +284,9 @@
 #  define __cpp_lib_semaphore 201907L
 #  define __cpp_lib_latch 201907L
 #  define __cpp_lib_barrier 202302L
+// <rcu> <hazard_pointer>
+#  define __cpp_lib_rcu 202306L
+#  define __cpp_lib_hazard_pointer 202606L
 #  define __cpp_lib_freestanding_operator_new 202306L
 // The freestanding parts of <cstring>/<cwchar> exist only as the hosted C library wrappers.
 #  define __cpp_lib_freestanding_cstring 202311L

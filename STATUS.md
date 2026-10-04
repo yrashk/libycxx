@@ -270,10 +270,11 @@ Deprecated and removed features are not implemented (`is_pod`, `is_trivial`, `al
   (libstdc++ fails it too). `inplace_vector/adl_robustness` also calls `reserve(200)` on an
   `inplace_vector<T, 128>`, which must throw bad_alloc ([inplace.vector.capacity]/9). Both pass
   with those parts removed.
-- The shared feature-test macros `__cpp_lib_containers_ranges`, `__cpp_lib_erase_if`,
-  `__cpp_lib_nonmember_container_access`, `__cpp_lib_incomplete_container_elements` and
-  `__cpp_lib_allocator_traits_is_always_equal` are left to the containers' integration (they
-  cover headers that do not exist yet).
+- The shared container feature-test macros (`__cpp_lib_containers_ranges`, `__cpp_lib_erase_if`,
+  `__cpp_lib_nonmember_container_access`, `__cpp_lib_incomplete_container_elements`,
+  `__cpp_lib_node_extract`, `__cpp_lib_associative_heterogeneous_erasure`/`_insertion`,
+  `__cpp_lib_map_lookup`, `__cpp_lib_map_try_emplace`) are defined now that every container
+  provides the feature.
 - `<deque>`, `<list>`, `<forward_list>`, `<stack>`, `<queue>` (core, constexpr): everything in the
   draft except the adaptors' formatter specializations (no `<format>`). Own suite: deque 14/17,
   list 16/19, forward_list 10/12, stack/queue/priority_queue 4/4 each, on both compilers (adaptors
@@ -295,6 +296,39 @@ Deprecated and removed features are not implemented (`is_pod`, `is_trivial`, `al
   constrained, a moved-from priority_queue is empty, `X(X&&, const A&)` is noexcept for
   always-equal allocators. `<queue>` includes `<vector>`, so it (and the include-graph and
   freestanding checks for it) needs `<vector>` to exist.
+- `<map>`, `<set>` (core, constexpr): everything in [associative] including the C++26
+  heterogeneous members (P2363), `lookup`, node handles (shared `ycxx/core/node_handle.hpp`),
+  merge across comparators and unique/equivalent containers. One red-black tree
+  (`ycxx/core/rb_tree.hpp`) with a header node (the run-time header is a member; during
+  constant evaluation it is allocated, as for list) and cached leftmost/rightmost nodes; a correct
+  hint costs O(1) comparisons, so construction from sorted input is linear. Unique-key insertion
+  reads the key from the arguments when it is a key_type (or an arithmetic value for an
+  arithmetic key) and allocates nothing for a present key; of several elements equivalent to a
+  heterogeneous key, the first is found. Extensions: noexcept default construction, swap
+  (nothrow-swappable comparator) and allocator-extended move (always-equal allocator); the move
+  constructor copies the comparator. Element-wise moves of maps move the (const) key out of the
+  source node. Own suite map + set: 39/39 on both compilers, clean under ASan. libc++
+  containers/associative + container.node: 0 -> 344/347 (both); the rest: iterator_types expects
+  `iterator::pointer` to be the allocator's pointer, deduct_const encodes the pre-C++23
+  iter-mapped-type (no remove_cvref) and remove_const on initializer_list keys. libstdc++
+  23_containers/{map,multimap,set,multiset}: 0 -> 153/162 (GCC), 149/162 (Clang); the rest:
+  explicit_instantiation/3 and alloc_ptr_ignored (allocator of another value_type,
+  testsuite_allocator.h), `<sstream>`, hetero/insert.cc counting libstdc++'s exact comparisons
+  for hinted insertion, and (Clang) swap/1.cc declaring a non-constexpr `std::swap`
+  specialization.
+- `<flat_map>`, `<flat_set>` (core, constexpr): everything in [flat.map]/[flat.set]. Bulk
+  insertion appends, then stably sorts the new rows through an index permutation and merges them
+  in (`ycxx/core/flat_support.hpp`), linear for sorted input; flat_map moves keys and values
+  through the same permutation. If any member exits via an exception the underlying containers
+  are cleared (invariants restored, [flat.map.overview]/6); a moved-from adaptor is empty.
+  flat_map iterators have proxy references (`pair<const Key&, T&>`), `iterator_category`
+  random_access (as libc++ expects) and an arrow proxy as `pointer`. Extensions: operator[]
+  is constrained on the try_emplace it is equivalent to; the hidden-friend operator<=> is a
+  template so a key without `<` does not make the class ill-formed. Own suite flat_map + flat_set:
+  27/27 on both, clean under ASan. libc++ container.adaptors/flat*: 0 -> 314/314 (Clang),
+  312/314 (GCC: two size tests inserting 1000 elements into a deque exceed GCC's constexpr
+  operation limit). The libstdc++ flat_* tests are skipped by the harness (they use
+  `__gnu_test`).
 - `<unordered_map>`, `<unordered_set>` (core, constexpr): everything in [unord] including the
   C++26 heterogeneous members (P2363), `lookup`, node handles (`ycxx/core/node_handle.hpp`, shared
   with the node-based associative containers) and merge across compatible containers. One hash

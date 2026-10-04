@@ -6,7 +6,10 @@
 // [format.string.std] Table 110: none without precision is to_chars(first, last, value), the
 // shortest representation that round-trips in that type ([charconv.to.chars]/2, with the
 // <charconv> overloads for every floating-point type); e, f, g, a with precision as for
-// double. (Clang defines none of the __STDCPP_*_T__ macros, so it checks only float/double/
+// double. The plain to_chars picks f or e by [charconv.to.chars]/7: f only for |v| in [l, u),
+// u being radix^(digits + 1) rounded down to a power of 10: 1e7 for float (2^25), 1e3 for
+// float16 (2^12), 1e2 for bfloat16 (2^9); e otherwise, still with the fewest digits (/2).
+// (Clang defines none of the __STDCPP_*_T__ macros, so it checks only float/double/
 // long double here.)
 #include <format>
 #include <stdfloat>
@@ -16,11 +19,13 @@
 int main() {
   static_assert(std::formattable<float, char> && std::formattable<long double, wchar_t>);
   CHECK(std::format("{} {} {}", 0.1f, 0.1, 0.1L) == "0.1 0.1 0.1");
-  CHECK(std::format("{}", 16777217.0f) == "16777216");
+  CHECK(std::format("{}", 16777217.0f) == "1.6777216e+07");  // float 16777216 >= u = 1e7
+  CHECK(std::format("{}", 9999999.0f) == "9999999");
 #if defined(__STDCPP_FLOAT16_T__)
   static_assert(std::formattable<std::float16_t, char> && std::formattable<std::float16_t, wchar_t>);
   CHECK(std::format("{}", static_cast<std::float16_t>(0.1)) == "0.1");     // nearest float16: 0.0999755859375
-  CHECK(std::format("{}", static_cast<std::float16_t>(65504)) == "65504");  // largest finite
+  CHECK(std::format("{}", static_cast<std::float16_t>(65504)) == "6.55e+04");  // largest finite, >= 1e3
+  CHECK(std::format("{}", static_cast<std::float16_t>(999)) == "999");
   CHECK(std::format("{:.3e}", static_cast<std::float16_t>(1.5)) == "1.500e+00");
   CHECK(std::format("{:a}", static_cast<std::float16_t>(1.0)) == "1p+0");
   CHECK(std::format("{:+08.2f}", static_cast<std::float16_t>(-2.5)) == "-0002.50");
@@ -29,7 +34,8 @@ int main() {
 #if defined(__STDCPP_BFLOAT16_T__)
   static_assert(std::formattable<std::bfloat16_t, char>);
   CHECK(std::format("{}", static_cast<std::bfloat16_t>(0.1)) == "0.1");
-  CHECK(std::format("{}", static_cast<std::bfloat16_t>(257)) == "256");     // 8 significant bits
+  CHECK(std::format("{}", static_cast<std::bfloat16_t>(257)) == "2.56e+02");  // 256 (8 bits), >= 1e2
+  CHECK(std::format("{}", static_cast<std::bfloat16_t>(99)) == "99");
   CHECK(std::format("{:g}", static_cast<std::bfloat16_t>(3.0)) == "3");
 #endif
 #if defined(__STDCPP_FLOAT32_T__)

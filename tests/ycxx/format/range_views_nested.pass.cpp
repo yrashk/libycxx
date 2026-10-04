@@ -36,7 +36,12 @@ int main() {
   CHECK(std::format("{:::#x}", vv) == "[[0x1, 0x2], [0x3]]");
   CHECK(std::format("{:*>18:->6}", std::vector<std::vector<int>>{{1}, {2}}) == "**[---[1], ---[2]]");
   CHECK(std::format("{:::*^3}", vv) == "[[*1*, *2*], [*3*]]");
-  const std::vector<std::vector<std::vector<char>>> vvv{{{'a', 'b'}}, {}};
+  // Built without a three-level braced initializer, which makes GCC 16 crash with libycxx's
+  // <vector> (an ICE in constant evaluation, covered by vector/nested_init_list); the formatted
+  // value is the same.
+  std::vector<std::vector<std::vector<char>>> vvv_build(2);
+  vvv_build[0].push_back({'a', 'b'});
+  const auto& vvv = vvv_build;
   CHECK(std::format("{}", vvv) == "[[['a', 'b']], []]");
   CHECK(std::format("{:::s}", vvv) == "[[ab], []]");
   CHECK(std::format("{:::?s}", vvv) == "[[\"ab\"], []]");

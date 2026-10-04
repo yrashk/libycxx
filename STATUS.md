@@ -457,8 +457,9 @@ Deprecated and removed features are not implemented (`is_pod`, `is_trivial`, `al
   libstdc++'s `vector<bool>::insert(pos)` / mismatched-allocator extensions. vector<bool> shifts on
   insert/erase bit by bit. shrink_to_fit swallows an allocation failure (a non-binding request).
   Strengthened noexcept: `vector(vector&&, const Allocator&)` when the allocator is always equal;
-  inplace_vector's copy operations when T's are. libc++ `vector.modifiers/emplace` and
-  `vector.bool/find` exceed Clang's default constexpr step limit (pass with 2x).
+  inplace_vector's copy operations when T's are. fill, find and count (std:: and ranges::, a
+  bool value, no projection) work a word at a time on vector<bool>'s iterators
+  (`ycxx/core/bit_iter_algos.hpp`).
 - `<inplace_vector>`: Clang 23 cannot begin the lifetime of one element of a union array member
   in constant evaluation (P3074; GCC 16 can, probed in-language). On Clang a trivially destructible,
   default-constructible T is value-initialized as a whole array first, a non-trivially-destructible
@@ -496,7 +497,7 @@ Deprecated and removed features are not implemented (`is_pod`, `is_trivial`, `al
   (it may alias an element). list: at run time the sentinel is a member; during constant
   evaluation it is allocated with `std::allocator` (GCC 16 mis-evaluates pointers from heap nodes
   into an object returned with NRVO). Extensions: the adaptors' default constructors are
-  constrained, a moved-from priority_queue is empty, `X(X&&, const A&)` is noexcept for
+  constrained, a moved-from priority_queue is empty (when its container has `clear()`), `X(X&&, const A&)` is noexcept for
   always-equal allocators. `<queue>` includes `<vector>`, so it (and the include-graph and
   freestanding checks for it) needs `<vector>` to exist.
 - `<map>`, `<set>` (core, constexpr): everything in [associative] including the C++26
@@ -664,9 +665,9 @@ Deprecated and removed features are not implemented (`is_pod`, `is_trivial`, `al
   library's `<math.h>` (freestanding: `cmath_c_macros.hpp`, checked against glibc at build time);
   libycxx's `<math.h>` adds the global names except the special functions and lerp
   ([support.c.headers.other]/1). Special functions report domain errors as EDOM/FE_INVALID and
-  return NaN. `<complex>` is constexpr throughout, with Annex G special values (the libc++
-  `complex_times_complex`/`complex_divide_complex` constexpr stress tests exceed Clang's step
-  limit); I/O is not provided yet (no streams). valarray evaluates eagerly (no expression templates).
+  return NaN. `<complex>` is constexpr throughout, with Annex G special values (kept cheap
+  in constant evaluation: the libc++ `complex_times_complex`/`complex_divide_complex` stress
+  tests fit Clang's limit); I/O is not provided yet (no streams). valarray evaluates eagerly (no expression templates).
   Remaining external failures: `<ctgmath>`/`<ccomplex>`/`<complex.h>` (not provided), libc++
   `cmath.pass` (expects overloads in the global namespace without `<math.h>`), `abs` of
   `_BitInt` (Clang), `numbers/value.pass` (expects the double value for long double),

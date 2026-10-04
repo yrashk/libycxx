@@ -178,9 +178,11 @@ chrono-format-spec, E/O, L through `time_put`), `local_time_format`, every strea
 format/nonlocking_formatter_optimization (both compilers; clean under ASan and UBSan, Clang).
 libc++ std/time 128 -> 377/386 (GCC), 128 -> 378/386 (Clang); the rest construct `leap_second`
 or `time_zone_link` through libc++'s private test helpers. libstdc++ std/time +
-20_util/{duration,duration_cast,time_point,time_point_cast} 43 -> AFTER2 of 114 (GCC and Clang);
-the rest: `ext/typelist.h` or `std::__format` internals (12), `<chrono>` expected to provide
-`<sstream>`/`<cstdio>` names (3), libstdc++ choices the draft leaves open (below).
+20_util/{duration,duration_cast,time_point,time_point_cast} 43 -> 95/114 (GCC and Clang); the
+other 19: `ext/typelist.h` or `std::__format` internals (7), names expected from `<chrono>`
+without their headers (`<sstream>`, `printf`, `int64_t`: 4), and libstdc++ choices the draft
+leaves open (8: `%OS` without fraction, LWG 4118 character reps, file_clock's epoch, rounding
+when parsing, `fractional_width` of ratio<1, 2^62>, `hh_mm_ss` layout, an error message).
 
 ## Freestanding
 `tools/check_freestanding.sh`: every core header compiles with `-ffreestanding -nostdlib -nostdinc

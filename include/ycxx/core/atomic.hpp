@@ -21,6 +21,32 @@ concept atomic_integral = is_integral_v<V> && !std::is_same_v<V, bool>;
 template <class V>
 concept atomic_floating = is_floating_v<V>;
 
+// [conv.qual]/2: similar types are the same after removing the cv-qualifiers of every level of
+// pointers, pointers to members and arrays, where "array of N" and "array of unknown bound" match.
+template <class T>
+struct qual_stripped {
+  using type = T;
+};
+template <class T>
+struct qual_stripped<T*> {
+  using type = typename qual_stripped<std::remove_cv_t<T>>::type*;
+};
+template <class T, class C>
+struct qual_stripped<T C::*> {
+  using type = typename qual_stripped<std::remove_cv_t<T>>::type C::*;
+};
+template <class T, std::size_t N>
+struct qual_stripped<T[N]> {
+  using type = typename qual_stripped<std::remove_cv_t<T>>::type[];
+};
+template <class T>
+struct qual_stripped<T[]> {
+  using type = typename qual_stripped<std::remove_cv_t<T>>::type[];
+};
+template <class T, class U>
+concept similar_types = std::is_same_v<typename qual_stripped<std::remove_cv_t<T>>::type,
+                                       typename qual_stripped<std::remove_cv_t<U>>::type>;
+
 // x + n / x - n modulo 2^N, for the return values of ++, --, +=, -= ([atomics.types.int]/8).
 template <class V>
 constexpr V atomic_wrap_add(V x, V n) noexcept {
@@ -52,6 +78,7 @@ namespace ycxx::adl_free {
 // The storage and the operations every atomic<T> has.
 template <class T>
 struct atomic_base {
+  static_assert(sizeof(T) != 0, "atomic<T>: zero-sized types (a GNU extension) are not supported");
   alignas(::ycxx::detail::atomic_object_align<T>) T v_;
 
   constexpr atomic_base() noexcept(std::is_nothrow_default_constructible_v<T>) : v_() { clear(); }
@@ -237,7 +264,7 @@ struct atomic_ref : ycxx::adl_free::atomic_ref_base<T> {
   explicit atomic_ref(T&&) = delete;
   constexpr atomic_ref(const atomic_ref&) noexcept = default;
   template <class U>
-    requires is_same_v<remove_cv_t<U>, remove_cv_t<T>> && is_convertible_v<U*, T*>
+    requires ycxx::detail::similar_types<T, U> && is_convertible_v<U*, T*>
   constexpr atomic_ref(const atomic_ref<U>& ref) noexcept
       : ycxx::adl_free::atomic_ref_base<T>(static_cast<T*>(ref.address())) {}
   atomic_ref& operator=(const atomic_ref&) = delete;
@@ -260,7 +287,7 @@ struct atomic_ref<T> : ycxx::adl_free::atomic_ref_base<T> {
   explicit atomic_ref(T&&) = delete;
   constexpr atomic_ref(const atomic_ref&) noexcept = default;
   template <class U>
-    requires is_same_v<remove_cv_t<U>, remove_cv_t<T>> && is_convertible_v<U*, T*>
+    requires ycxx::detail::similar_types<T, U> && is_convertible_v<U*, T*>
   constexpr atomic_ref(const atomic_ref<U>& ref) noexcept
       : ycxx::adl_free::atomic_ref_base<T>(static_cast<T*>(ref.address())) {}
   atomic_ref& operator=(const atomic_ref&) = delete;
@@ -406,7 +433,7 @@ struct atomic_ref<T> : ycxx::adl_free::atomic_ref_base<T> {
   explicit atomic_ref(T&&) = delete;
   constexpr atomic_ref(const atomic_ref&) noexcept = default;
   template <class U>
-    requires is_same_v<remove_cv_t<U>, remove_cv_t<T>> && is_convertible_v<U*, T*>
+    requires ycxx::detail::similar_types<T, U> && is_convertible_v<U*, T*>
   constexpr atomic_ref(const atomic_ref<U>& ref) noexcept
       : ycxx::adl_free::atomic_ref_base<T>(static_cast<T*>(ref.address())) {}
   atomic_ref& operator=(const atomic_ref&) = delete;
@@ -528,7 +555,7 @@ struct atomic_ref<T> : ycxx::adl_free::atomic_ref_base<T> {
   explicit atomic_ref(T&&) = delete;
   constexpr atomic_ref(const atomic_ref&) noexcept = default;
   template <class U>
-    requires is_same_v<remove_cv_t<U>, remove_cv_t<T>> && is_convertible_v<U*, T*>
+    requires ycxx::detail::similar_types<T, U> && is_convertible_v<U*, T*>
   constexpr atomic_ref(const atomic_ref<U>& ref) noexcept
       : ycxx::adl_free::atomic_ref_base<T>(static_cast<T*>(ref.address())) {}
   atomic_ref& operator=(const atomic_ref&) = delete;

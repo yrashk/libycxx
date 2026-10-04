@@ -329,7 +329,9 @@ private:
   duration d_;
 
 public:
-  constexpr time_point() : d_(duration::zero()) {}
+  // noexcept (a permitted strengthening): `noexcept(tai_clock::to_utc(tai_seconds()))` is then
+  // true, as the noexcept conversions of [time.clock.tai] lead one to expect.
+  constexpr time_point() noexcept(is_nothrow_copy_constructible_v<duration>) : d_(duration::zero()) {}
   constexpr explicit time_point(const duration& d) : d_(d) {}
   template <class Duration2>
     requires is_convertible_v<Duration2, duration>

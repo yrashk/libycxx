@@ -1,9 +1,9 @@
 // -*- C++ -*-  libycxx: <chrono>   [hosted]
 //
-// Provided: [time.traits], duration, time_point, the duration literals, system_clock,
-// steady_clock, high_resolution_clock, file_clock, local_t and the time_point aliases, and the
-// duration/time_point hash specializations. Not yet provided: calendars, time zones, utc/tai/gps
-// clocks, clock_cast, hh_mm_ss, formatting and parsing.
+// Everything of [time]: the time arithmetic and the civil calendar are core
+// (ycxx/core/chrono_base.hpp, chrono_cal.hpp); the clocks, the leap-second clocks, clock_cast and
+// the time zone database (read from the system's zoneinfo directory by the hosted runtime), the
+// formatters, stream inserters and parsers are hosted (ycxx/hosted/chrono_*.hpp).
 #pragma once
 
 #include <ycxx/config.hpp>
@@ -12,3 +12,5 @@
 #include <ycxx/core/chrono_base.hpp>
 #include <ycxx/core/chrono_cal.hpp>
 #include <ycxx/hosted/chrono_clocks.hpp>
+#include <ycxx/hosted/chrono_tz.hpp>
+#include <ycxx/hosted/chrono_io.hpp>

@@ -77,3 +77,48 @@ re/re\.regex/re\.regex\.construct/bad_backref\.pass\.cpp | divergence | expects 
 re/re\.alg/re\.alg\.search/ecma\.pass\.cpp | divergence | expects (a*)* on "bc" to report group 1 as an empty match; ECMA-262's RepeatMatcher (15.10.2.5) rejects the empty optional iteration and continues with the captures from before it, so group 1 is unmatched (V8: ["", undefined])
 re/re\.const/re\.matchflag/match_prev_avail\.pass\.cpp | divergence | expects ^ (not multiline) to match at first under match_prev_avail; with --first valid, first is not the beginning of the input (ECMA-262 15.10.2.6), and [re.regiter.incr]/4 relies on this so that ^a over "aaa" yields one match
 re/re\.traits/lookup_classname\.pass\.cpp | implementation-specific | asserts exact char_class_type values; [re.traits]/9 returns an unspecified value (libycxx: [[:lower:]] with icase is the alpha mask, footnote 217)
+# ---- added by the full-suite triage (tests/libcxx/TRIAGE.md) ----
+depr/depr\.str\.strstreams/.*\.cpp | removed | <strstream> was removed in C++26 (P2867)
+content:#include <codecvt> | removed | <codecvt> (codecvt_utf8 etc.) was removed in C++26 (P2871)
+language\.support/support\.runtime/(cstdalign|cstdbool)\..*\.cpp | removed | <cstdalign>/<cstdbool> were removed in C++20
+depr/depr\.c\.headers/ciso646\.compile\.pass\.cpp | removed | <ciso646> was removed in C++20
+numerics/c\.math/ctgmath\.pass\.cpp | removed | <ctgmath> was removed in C++20
+numerics/complex\.number/ccmplx/ccomplex\.pass\.cpp | removed | <ccomplex> was removed in C++20
+utilities/function\.objects/negators/.*\.pass\.cpp | removed | not1/not2/unary_negate/binary_negate were removed in C++20 (P0619)
+language\.support/support\.exception/uncaught/uncaught_exception\.pass\.cpp | removed | std::uncaught_exception was removed in C++20 (P0619)
+iterators/iterator\.primitives/iterator\.basic/iterator\.pass\.cpp | deprecated | std::iterator is deprecated ([depr.iterator])
+utilities/utility/operators/rel_ops\.pass\.cpp | deprecated | std::rel_ops is deprecated ([depr.relops])
+containers/iterator\.rel_ops\.compile\.pass\.cpp | deprecated | std::rel_ops is deprecated ([depr.relops])
+iterators/predef\.iterators/move\.iterators/move\.iter\.ops/move\.iter\.op\.ref/op_arrow\.pass\.cpp | deprecated | move_iterator::operator-> is deprecated ([depr.move.iter.elem])
+containers/sequences/vector\.bool/reference\.swap\.pass\.cpp | removed | static vector<bool>::swap(reference, reference) is no longer in [vector.bool.pspc] (reference has friend swap functions instead)
+strings/basic\.string/string\.capacity/reserve\.pass\.cpp | removed | basic_string::reserve() without argument was removed in C++26 (P2870)
+language\.support/support\.initlist/support\.initlist\.range/begin_end\.pass\.cpp | removed | free begin/end(initializer_list) were removed from [initializer.list.syn] (P3016)
+containers/sequences/array/array\.tuple/tuple_element\.pass\.cpp | deprecated | tests tuple_element<I, volatile array> (Annex D, [depr.tuple])
+utilities/variant/variant\.helpers/variant_alternative\.pass\.cpp | deprecated | tests variant_alternative<I, volatile variant> (Annex D, [depr.variant])
+utilities/utility/ignore/ignore\.include\.compile\.pass\.cpp | divergence | expects std::ignore from <utility>; the draft declares it only in <tuple> ([tuple.syn])
+strings/c\.strings/no_c8rtomb_mbrtoc8\.verify\.cpp | implementation-specific | expects c8rtomb/mbrtoc8 absent unless libc++'s _LIBCPP_HAS_C8RTOMB_MBRTOC8; [cuchar.syn] declares them and libycxx provides them
+input\.output/file\.streams/fstreams/filebuf\.members/close\.pass\.cpp | implementation-specific | calls libc++'s internal basic_filebuf::__open
+input\.output/string\.streams/stringbuf/stringbuf\.members/view\.pass\.cpp | implementation-specific | passes 0 as ios_base::openmode; [bitmask.types] allows an enumeration, which libycxx uses
+utilities/function\.objects/func\.invoke/invoke_r\.temporary\.verify\.cpp | implementation-specific | XFAIL marks a libc++ limitation (no reference_converts_from_temporary); libycxx diagnoses the dangling reference as the test intends (reported as XPASS)
+utilities/smartptr/unique\.ptr/unique\.ptr\.class/unique\.ptr\.asgn/move_convert\.pass\.cpp | divergence | expects converting assignment with non-assignable const-reference deleters; [unique.ptr.single.asgn]/6.3 requires is_assignable_v<D&, E&&>
+ranges/range\.factories/range\.istream\.view/(ctor|iterator/ctor|iterator/deref)\.pass\.cpp | implementation-specific | constructs a view's iterator or sentinel through an exposition-only constructor, which libycxx keeps private
+time/time\.zone/time\.zone\.leap/.*\.pass\.cpp | implementation-specific | test_chrono_leap_second.h constructs leap_second through libc++'s private constructor (#error for other vendors)
+utilities/optional/optional\.specalg/make_optional(_explicit|_explicit_initializer_list)?\.pass\.cpp | divergence | expects make_optional to be SFINAE-friendly; [optional.specalg]/3-6 give no constraints on constructibility
+utilities/function\.objects/func\.bind_front/bind_front\.pass\.cpp | divergence | expects is_bind_frontable false for non-movable arguments; [func.bind.partial]/2 makes it a Mandates (static_assert)
+utilities/tuple/tuple\.tuple/tuple\.assign/(copy|const_pair|move_pair|convert_copy|convert_move)\.pass\.cpp | extension | expects noexcept on tuple copy/converting/pair assignment; [tuple.assign] declares them without noexcept (libc++ strengthening)
+utilities/tuple/tuple\.tuple/tuple\.cnstr/default\.pass\.cpp | extension | expects noexcept on tuple's default constructor; [tuple.cnstr] declares it without noexcept (libc++ strengthening)
+containers/views/mdspan/extents/ctor_from_integral\.pass\.cpp | extension | ASSERT_NOEXCEPT(E(ext[i]...)) relies on array::operator[] being noexcept; [array.overview] does not declare it noexcept
+utilities/utility/mem\.res/mem\.poly\.allocator\.class/mem\.poly\.allocator\.class\.general/equality\.pass\.cpp | extension | expects noexcept(alloc == &resource); the implicit polymorphic_allocator(memory_resource*) conversion is not noexcept in [mem.poly.allocator.class]
+time/time\.zone/(time\.zone\.timezone/time\.zone\.members/name|time\.zone\.link/time\.zone\.link\.members/(name|target))\.pass\.cpp | extension | noexcept(tzdb.zones[0].name()) relies on vector::operator[] being noexcept (libc++ strengthening)
+iterators/predef\.iterators/move\.iterators/move\.iter\.ops/move\.iter\.op\.comp/op_(gt|gte|lte)\.pass\.cpp | divergence | expects move_iterator's >, >=, <= to call the base iterator's operator; [move.iter.op.comp]/5-10 define them through < (Returns: y < x, !(y < x), !(x < y))
+iterators/iterator\.requirements/iterator\.cust/iterator\.cust\.swap/iter_swap\.pass\.cpp | implementation-specific | asserts exact move counts in constant evaluation (depend on copy elision); also tested elsewhere
+algorithms/alg\.sorting/alg\.set\.operations/set\.intersection/set_intersection_complexity\.pass\.cpp | implementation-specific | compares operation counts to libc++'s algorithm; libycxx meets [set.intersection]/5's bound (the testComplexityGuarantees part passes)
+algorithms/alg\.nonmodifying/alg\.fold/ranges\.fold_right_last\.pass\.cpp | implementation-specific | counts moves/copies of the function object; [algorithms.requirements]/10 lets algorithms copy function objects freely
+algorithms/alg\.sorting/alg\.min\.max/requires_forward_iterator\.verify\.cpp | implementation-specific | expects libc++'s diagnostic for a template-argument requirement violation (no diagnostic required)
+containers/sequences/vector/vector\.modifiers/resize_not_move_insertable\.verify\.cpp | implementation-specific | expects libc++'s diagnostic for a Cpp17MoveInsertable precondition violation (no diagnostic required)
+utilities/optional/optional\.hash/hash\.pass\.cpp | divergence | user hash<B> has a non-const operator(), which does not meet Cpp17Hash ([hash.requirements]); libycxx treats hash<optional<B>> as disabled
+utilities/smartptr/unique\.ptr/unique\.ptr\.class/unique\.ptr\.observers/dereference\.single\.pass\.cpp | divergence | deleter's pointer type ThrowDereference is not Cpp17NullablePointer ([unique.ptr.single.general]/1); libycxx's operator* precondition check compares it with nullptr
+utilities/meta/meta\.unary/meta\.unary\.prop/is_swappable\.pass\.cpp | implementation-specific | AmbiguousSwap: whether an unconstrained ADL swap(T&, T&) is ambiguous with std::swap depends on how its Constraints are expressed (a requires-clause makes std::swap more specialized)
+localization/locale\.categories/category\.numeric/locale\.num\.get/facet\.num\.get\.members/get_bool\.pass\.cpp | divergence | expects eofbit after "ab" fully matches falsename "ab"; [facet.num.get.virtuals]/8 sets eofbit only when in == end is found while seeking another character
+utilities/charconv/charconv\.from\.chars/floating_point\.pass\.cpp | divergence | expects +-inf/+-0 stored on result_out_of_range; [charconv.from.chars]/1 leaves value unmodified (STATUS)
+algorithms/alg\.modifying\.operations/alg\.replace/ranges_replace_copy_if\.pass\.cpp | implementation-specific | test defect: line 66 passes the predicate type as Iter, so the test's sentinel_wrapper<Pred> is instantiated (hard error) depending on overload-resolution order

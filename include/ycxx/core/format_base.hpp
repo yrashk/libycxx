@@ -170,7 +170,9 @@ namespace ycxx::adl_free {
 
 // The type-erased output buffer behind fmt_iter: [data_, data_ + size_) holds pending output;
 // make_room_ is called when size_ == cap_ and leaves size_ < cap_ (by flushing the contents to
-// the destination, or by growing the storage).
+// the destination, or by growing the storage). A destination that no longer needs the characters
+// (a counter past its limit) sets discard_; fill then only counts them in discarded_, so a huge
+// width or precision costs no time there.
 template <class charT>
 class fmt_buf {
 public:
@@ -200,6 +202,8 @@ public:
     }
   }
   constexpr void fill(std::size_t n, charT c) {
+    if (discard_)
+      return discard(n);
     while (n != 0) {
       if (size_ == cap_)
         make_room_(*this);
@@ -213,10 +217,17 @@ public:
     }
   }
 
+  // Counts n characters that are not stored (saturating).
+  constexpr void discard(std::size_t n) noexcept {
+    discarded_ = n > static_cast<std::size_t>(-1) - discarded_ ? static_cast<std::size_t>(-1) : discarded_ + n;
+  }
+
   charT* data_;
   std::size_t size_ = 0;
   std::size_t cap_;
   make_room_fn make_room_;
+  bool discard_ = false;
+  std::size_t discarded_ = 0;
 };
 
 // format_context::iterator ([format.context]/4): appends to a fmt_buf.
@@ -686,8 +697,13 @@ constexpr Out fmt_put_ascii(Out out, const char* p, std::size_t n) {
 template <class charT, class Out>
 constexpr Out fmt_put_n(Out out, std::size_t n, const charT* unit, std::size_t len) {
   if constexpr (__is_same(Out, ycxx::adl_free::fmt_iter<charT>)) {
+    ycxx::adl_free::fmt_buf<charT>& b = fmt_access::buffer(out);
     if (len == 1) {
-      fmt_access::buffer(out).fill(n, *unit);
+      b.fill(n, *unit);
+      return out;
+    }
+    if (b.discard_) {
+      b.discard(n > static_cast<std::size_t>(-1) / len ? static_cast<std::size_t>(-1) : n * len);
       return out;
     }
   }
@@ -794,14 +810,19 @@ class fmt_count_sink : public ycxx::adl_free::fmt_buf<charT> {
     }
     self.count_ += self.size_;
     self.size_ = 0;
+    // Past the limit only the count matters.
+    self.discard_ = self.count_ >= self.limit_;
   }
 
 public:
   constexpr fmt_count_sink(Out out, std::size_t limit)
-      : ycxx::adl_free::fmt_buf<charT>(local_, fmt_local_size, &flush), limit_(limit), out_(static_cast<Out&&>(out)) {}
+      : ycxx::adl_free::fmt_buf<charT>(local_, fmt_local_size, &flush), limit_(limit), out_(static_cast<Out&&>(out)) {
+    this->discard_ = limit == 0;
+  }
   constexpr std::size_t finish() {
     flush(*this);
-    return count_;
+    const std::size_t d = this->discarded_;
+    return d > static_cast<std::size_t>(-1) - count_ ? static_cast<std::size_t>(-1) : count_ + d;
   }
   constexpr Out& out() noexcept { return out_; }
 };
@@ -835,14 +856,15 @@ constexpr bool fmt_is_digit(charT c) noexcept {
   return c >= charT('0') && c <= charT('9');
 }
 
-// A nonnegative-integer at p (p != e, *p is a digit); values above INT_MAX are format errors.
+// A nonnegative-integer at p (p != e, *p is a digit). The grammar sets no upper bound; a value
+// beyond size_t saturates (no output can be that wide, and no argument has that index).
 template <class charT>
 constexpr const charT* fmt_parse_number(const charT* p, const charT* e, std::size_t& value) {
+  constexpr std::size_t max = static_cast<std::size_t>(-1);
   std::size_t v = 0;
   for (; p != e && ::ycxx::detail::fmt_is_digit(*p); ++p) {
-    v = v * 10 + static_cast<std::size_t>(*p - charT('0'));
-    if (v > static_cast<std::size_t>(__INT_MAX__))
-      ::ycxx::detail::throw_format_error("std::format: a number in the format string is too large");
+    const std::size_t d = static_cast<std::size_t>(*p - charT('0'));
+    v = v > (max - d) / 10 ? max : v * 10 + d;
   }
   value = v;
   return p;
@@ -1015,8 +1037,10 @@ constexpr const charT* fmt_parse_spec(std::basic_format_parse_context<charT>& pc
   return p;
 }
 
-// The value of a dynamic width or precision ([format.string.std]/10). Like a width or precision
-// written in the format string, it may not exceed INT_MAX.
+// The value of a dynamic width or precision ([format.string.std]/10): used as is, whatever its
+// size (only a negative value is an error); one beyond size_t saturates, like a number written in
+// the format string. A width larger than the output can be is honoured: format then fails to
+// allocate (bad_alloc), while formatted_size and format_to_n only count the padding.
 template <class Context>
 constexpr std::size_t fmt_dynamic_value(const Context& ctx, std::size_t id) {
   return ctx.arg(id).visit([](auto v) -> std::size_t {
@@ -1027,8 +1051,8 @@ constexpr std::size_t fmt_dynamic_value(const Context& ctx, std::size_t id) {
         if (v < 0)
           ::ycxx::detail::throw_format_error("std::format: negative dynamic width or precision");
       }
-      if (static_cast<unsigned long long>(v) > static_cast<unsigned long long>(__INT_MAX__))
-        ::ycxx::detail::throw_format_error("std::format: dynamic width or precision is too large");
+      if (static_cast<unsigned long long>(v) > static_cast<unsigned long long>(static_cast<std::size_t>(-1)))
+        return static_cast<std::size_t>(-1);
       return static_cast<std::size_t>(v);
     } else {
       ::ycxx::detail::throw_format_error("std::format: dynamic width or precision is not an integer");
@@ -1039,13 +1063,14 @@ template <class charT, class Context>
 constexpr std::size_t fmt_width(const fmt_spec<charT>& s, const Context& ctx) {
   return s.width_kind == fmt_dyn::arg ? ::ycxx::detail::fmt_dynamic_value(ctx, s.width) : s.width;
 }
-// -1: no precision.
+// -1: no precision; a precision beyond LLONG_MAX is LLONG_MAX.
 template <class charT, class Context>
 constexpr long long fmt_precision(const fmt_spec<charT>& s, const Context& ctx) {
   if (s.prec_kind == fmt_dyn::none)
     return -1;
-  return static_cast<long long>(s.prec_kind == fmt_dyn::arg ? ::ycxx::detail::fmt_dynamic_value(ctx, s.precision)
-                                                             : s.precision);
+  const std::size_t p =
+      s.prec_kind == fmt_dyn::arg ? ::ycxx::detail::fmt_dynamic_value(ctx, s.precision) : s.precision;
+  return p > static_cast<std::size_t>(__LONG_LONG_MAX__) ? __LONG_LONG_MAX__ : static_cast<long long>(p);
 }
 
 // Writes [p, p + n), of estimated width `est`, padded to `width` ([format.string.std]/4).
@@ -1098,6 +1123,8 @@ struct fmt_number {
   const char* rest = nullptr;
   std::size_t nrest = 0;
   bool zero_ok = true; // false for infinities and NaNs ([format.string.std]/8)
+  // '0's inserted at rest + zeros_at: the digits of a precision beyond fmt_float_prec_cap
+  std::size_t zeros = 0, zeros_at = 0;
 };
 
 template <class charT, class Out>
@@ -1115,7 +1142,7 @@ constexpr Out fmt_write_number(Out out, const fmt_spec<charT>& s, std::size_t wi
       ++groups;
     }
   }
-  const std::size_t total = (n.sign != 0) + n.prefix_len + n.ndigits + (groups - 1) + n.nrest;
+  const std::size_t total = (n.sign != 0) + n.prefix_len + n.ndigits + (groups - 1) + n.nrest + n.zeros;
   std::size_t zeros = 0, before = 0, after = 0;
   if (width > total) {
     if (s.zero && s.align == fmt_align::none && n.zero_ok) {
@@ -1149,13 +1176,21 @@ constexpr Out fmt_write_number(Out out, const fmt_spec<charT>& s, std::size_t wi
       d += sz;
     }
   }
-  if (np != nullptr) {
-    for (std::size_t i = 0; i != n.nrest; ++i)
+  auto put_rest = [&](std::size_t from, std::size_t to) {
+    if (np == nullptr)
+      return ::ycxx::detail::fmt_put_ascii<charT>(static_cast<Out&&>(out), n.rest + from, to - from);
+    for (std::size_t i = from; i != to; ++i)
       out = ::ycxx::detail::fmt_put<charT>(static_cast<Out&&>(out),
                                            n.rest[i] == '.' ? np->decimal_point : static_cast<charT>(n.rest[i]));
-  } else {
-    out = ::ycxx::detail::fmt_put_ascii<charT>(static_cast<Out&&>(out), n.rest, n.nrest);
+    return static_cast<Out&&>(out);
+  };
+  const std::size_t at = n.zeros_at < n.nrest ? n.zeros_at : n.nrest;
+  out = put_rest(0, at);
+  if (n.zeros != 0) {
+    const charT z = charT('0');
+    out = ::ycxx::detail::fmt_put_n<charT>(static_cast<Out&&>(out), n.zeros, &z, 1);
   }
+  out = put_rest(at, n.nrest);
   return ::ycxx::detail::fmt_put_n<charT>(static_cast<Out&&>(out), after, s.fill, s.fill_len);
 }
 
@@ -1350,6 +1385,12 @@ constexpr int fmt_sci_exponent(const char* first, const char* last) noexcept {
   return neg ? -x : x;
 }
 
+// The largest precision a floating-point conversion is computed with: more than the digits of
+// the exact decimal (or hexadecimal) value of any finite value of the supported types (16,494
+// fractional digits for the smallest binary128 subnormal), so every digit beyond it is a 0 (and
+// the e/f choice of g is the same as with the full precision).
+inline constexpr long long fmt_float_prec_cap = 1 << 15;
+
 template <class charT, class T, class Context>
 typename Context::iterator fmt_format_float(Context& ctx, T value, const fmt_spec<charT>& s) {
   const std::size_t width = ::ycxx::detail::fmt_width(s, ctx);
@@ -1362,6 +1403,14 @@ typename Context::iterator fmt_format_float(Context& ctx, T value, const fmt_spe
   case 'f': case 'F': f = std::chars_format::fixed; prec = prec < 0 ? 6 : prec; break;
   case 'g': case 'G': f = std::chars_format::general; prec = prec < 0 ? 6 : prec; break;
   default: shortest = prec < 0; break;
+  }
+  // A precision beyond the cap: computed with the cap, the remaining zeros appended to the
+  // fraction (types a, e, f and #g keep them; g and none would remove them).
+  std::size_t extra_zeros = 0;
+  if (prec > fmt_float_prec_cap) {
+    if (s.type != 0 && ((s.type != 'g' && s.type != 'G') || s.alt))
+      extra_zeros = static_cast<std::size_t>(prec - fmt_float_prec_cap);
+    prec = fmt_float_prec_cap;
   }
   const std::size_t need =
       64 + (prec > 0 ? static_cast<std::size_t>(prec) : 0) + (f == std::chars_format::fixed ? fmt_max_int_digits<T> : 0);
@@ -1425,6 +1474,12 @@ typename Context::iterator fmt_format_float(Context& ctx, T value, const fmt_spe
   n.ndigits = static_cast<std::size_t>(d - b);
   n.rest = d;
   n.nrest = static_cast<std::size_t>(e - d);
+  if (finite && extra_zeros != 0) {
+    n.zeros = extra_zeros;
+    while (n.zeros_at != n.nrest && d[n.zeros_at] != 'e' && d[n.zeros_at] != 'E' && d[n.zeros_at] != 'p' &&
+           d[n.zeros_at] != 'P')
+      ++n.zeros_at;
+  }
   if (s.localized && finite) {
     const fmt_numpunct<charT> np = ::ycxx::detail::fmt_get_numpunct<charT>(ctx);
     return ::ycxx::detail::fmt_write_number<charT>(ctx.out(), s, width, n, &np);

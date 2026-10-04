@@ -140,9 +140,11 @@ unsigned function_qualifiers(const __pbase_type_info* p, rtti_kind kind) {
 //   - noexcept may be dropped only from the function type a single pointer (or pointer to
 //     member) designates: deeper down, the types are not similar ([conv.qual]/2);
 //   - the remaining types U must be the same.
-// Arrays: the type_info of an array type does not describe its element, so the array-of-
-// unknown-bound and element-qualifier rules for pointers to arrays are not applied; such
-// pointers match only exactly.
+// Arrays need no special case: both compilers record the qualifiers of a pointed-to array's
+// elements in __flags, with __pointee the unqualified array type (const int (*)[3] is
+// _ZTIPA3_Ki: __flags 1, __pointee _ZTIA3_i), which is exactly [conv.qual]/1's view. The
+// conversion to an array of unknown bound cannot arise: a handler cannot be a pointer to that
+// incomplete type ([except.handle]/1).
 bool qualification_convertible(const __pbase_type_info* t, const __pbase_type_info* h, rtti_kind kind) {
   bool outer_const = true; // whether the handler is const at every level so far
   bool top = true;

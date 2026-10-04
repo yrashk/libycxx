@@ -11,3 +11,4 @@
 #include <ycxx/core/unique_ptr.hpp>
 #include <ycxx/core/shared_ptr.hpp>
 #include <ycxx/core/out_ptr.hpp>
+#include <ycxx/core/atomic_smart_ptr.hpp>

@@ -65,7 +65,8 @@ public:
   constexpr basic_string_view() noexcept : data_(nullptr), size_(0) {}
   constexpr basic_string_view(const basic_string_view&) noexcept = default;
   constexpr basic_string_view& operator=(const basic_string_view&) noexcept = default;
-  constexpr basic_string_view(const charT* str) : data_(str), size_(traits::length(str)) {}
+  constexpr basic_string_view(const charT* str) noexcept(noexcept(traits::length(str)))
+      : data_(str), size_(traits::length(str)) {}
   basic_string_view(nullptr_t) = delete;
   constexpr basic_string_view(const charT* str, size_type len) : data_(str), size_(len) {}
   template <class It, class End>

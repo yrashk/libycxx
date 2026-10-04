@@ -23,3 +23,12 @@ target_include_directories(ycxx SYSTEM PUBLIC ${YCXX_INCLUDE})
 target_compile_options(ycxx PRIVATE
   $<$<COMPILE_LANGUAGE:CXX>:-std=c++26 -nostdinc++ -Wall -Wextra -Werror>
   $<$<COMPILE_LANGUAGE:C>:-Wall -Wextra -Werror>)
+
+# The Itanium C++ ABI runtime (exception handling, RTTI, guards). Built with RTTI and
+# exceptions; replaces the toolchain's libsupc++.
+file(GLOB YCXX_ABI_SOURCES CONFIGURE_DEPENDS src/abi/*.cpp)
+add_library(ycxx_abi STATIC ${YCXX_ABI_SOURCES})
+set_target_properties(ycxx_abi PROPERTIES OUTPUT_NAME ycxx-abi)
+target_include_directories(ycxx_abi SYSTEM PUBLIC ${YCXX_INCLUDE})
+target_compile_options(ycxx_abi PRIVATE -std=c++26 -nostdinc++ -Wall -Wextra -Werror -fexceptions -frtti)
+set_source_files_properties(src/abi/exception_classes.cpp PROPERTIES COMPILE_DEFINITIONS YCXX_EXCEPTION_KEY_FUNCTIONS)

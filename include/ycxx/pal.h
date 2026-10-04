@@ -56,7 +56,19 @@ int ycxx_pal_clock_now(int clock, ycxx_pal_i64* sec, ycxx_pal_i64* nsec) YCXX_PA
 /* Fill buffer with non-deterministic random bytes (std::random_device). */
 int ycxx_pal_random(void* data, ycxx_pal_size n) YCXX_PAL_NOEXCEPT;
 
-/* Threads, synchronization, filesystem and time zone hooks are added with phase 5. */
+/* ---- waiting on an address ---------------------------------------------------------------- */
+typedef __UINT32_TYPE__ ycxx_pal_u32;
+/* Blocks while *addr == expected (may also return spuriously). */
+void ycxx_pal_wait(const ycxx_pal_u32* addr, ycxx_pal_u32 expected) YCXX_PAL_NOEXCEPT;
+/* Wakes every thread blocked in ycxx_pal_wait on addr. */
+void ycxx_pal_wake_all(const ycxx_pal_u32* addr) YCXX_PAL_NOEXCEPT;
+
+/* ---- thread exit --------------------------------------------------------------------------- */
+/* Registers f(obj) to run when the calling thread exits (thread_local destructors); dso is the
+   registering object's __dso_handle. Returns 0 on success. */
+int ycxx_pal_thread_atexit(void (*f)(void*), void* obj, void* dso) YCXX_PAL_NOEXCEPT;
+
+/* Threads, filesystem and time zone hooks are added with phase 5. */
 
 #ifdef __cplusplus
 }

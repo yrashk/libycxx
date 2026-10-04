@@ -17,7 +17,7 @@ enum class align_val_t : size_t {};
 struct nothrow_t {
   explicit nothrow_t() = default;
 };
-// [new.syn]: declared extern. Defined by libsupc++ (hosted) or libycxx-freestanding.a.
+// [new.syn]: declared extern. Defined by the ABI runtime (hosted) or libycxx-freestanding.a.
 extern const nothrow_t nothrow;
 
 using new_handler = void (*)();

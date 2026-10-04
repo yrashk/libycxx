@@ -107,6 +107,18 @@ template <int N>
 constexpr void wide_set_bit(wide<N>& x, int i) noexcept {
   x.w[i / 64] |= u64(1) << (i % 64);
 }
+// Keeps the low `n` bits.
+template <int N>
+constexpr wide<N> wide_low_bits(wide<N> x, int n) noexcept {
+  for (int i = 0; i < N; ++i) {
+    const int lo = 64 * i;
+    if (n <= lo)
+      x.w[i] = 0;
+    else if (n < lo + 64)
+      x.w[i] &= (u64(1) << (n - lo)) - 1;
+  }
+  return x;
+}
 template <int N>
 constexpr int wide_cmp(const wide<N>& a, const wide<N>& b) noexcept {
   for (int i = N - 1; i >= 0; --i)
@@ -290,9 +302,7 @@ constexpr fp_value fp_decode(T x) noexcept {
   fp_value v;
   v.neg = ycxx::detail::fpm::wide_bit(bits, L::bits - 1);
   const int e = static_cast<int>(ycxx::detail::fpm::wide_shr(bits, L::fbits).w[0] & ((u64(1) << L::ebits) - 1));
-  wide<2> frac = bits;
-  for (int i = L::fbits; i < 128; ++i)
-    if (ycxx::detail::fpm::wide_bit(frac, i)) frac.w[i / 64] &= ~(u64(1) << (i % 64));
+  wide<2> frac = ycxx::detail::fpm::wide_low_bits(bits, L::fbits);
   if (e == (1 << L::ebits) - 1) {
     // Infinity or NaN. x87: the explicit bit is set in both; the fraction below it decides.
     const int top = L::explicit_bit ? L::fbits - 2 : L::fbits - 1; // the quiet bit
@@ -331,21 +341,26 @@ constexpr T fp_encode_finite(bool neg, wide<2> q, int lsb_exp) noexcept {
   return ycxx::detail::fpm::fp_from_bits<T>(bits);
 }
 template <class T>
-constexpr T fp_infinity(bool neg) noexcept {
+constexpr T fp_make_special(bool nan, bool neg) noexcept {
   using L = fp_layout<T>;
   wide<2> bits = ycxx::detail::fpm::wide_shl(ycxx::detail::fpm::wide_from<2>((u64(1) << L::ebits) - 1), L::fbits);
+  if (nan) ycxx::detail::fpm::wide_set_bit(bits, L::explicit_bit ? L::fbits - 2 : L::fbits - 1);
   if (L::explicit_bit) ycxx::detail::fpm::wide_set_bit(bits, 63);
   if (neg) ycxx::detail::fpm::wide_set_bit(bits, L::bits - 1);
   return ycxx::detail::fpm::fp_from_bits<T>(bits);
 }
+// Built once per type (cheap during constant evaluation).
+template <class T>
+inline constexpr T fp_inf_v[2] = {ycxx::detail::fpm::fp_make_special<T>(false, false), ycxx::detail::fpm::fp_make_special<T>(false, true)};
+template <class T>
+inline constexpr T fp_qnan_v[2] = {ycxx::detail::fpm::fp_make_special<T>(true, false), ycxx::detail::fpm::fp_make_special<T>(true, true)};
+template <class T>
+constexpr T fp_infinity(bool neg) noexcept {
+  return ycxx::detail::fpm::fp_inf_v<T>[neg];
+}
 template <class T>
 constexpr T fp_quiet_nan(bool neg = false) noexcept {
-  using L = fp_layout<T>;
-  wide<2> bits = ycxx::detail::fpm::wide_shl(ycxx::detail::fpm::wide_from<2>((u64(1) << L::ebits) - 1), L::fbits);
-  ycxx::detail::fpm::wide_set_bit(bits, L::explicit_bit ? L::fbits - 2 : L::fbits - 1);
-  if (L::explicit_bit) ycxx::detail::fpm::wide_set_bit(bits, 63);
-  if (neg) ycxx::detail::fpm::wide_set_bit(bits, L::bits - 1);
-  return ycxx::detail::fpm::fp_from_bits<T>(bits);
+  return ycxx::detail::fpm::fp_qnan_v<T>[neg];
 }
 template <class T>
 constexpr T fp_zero(bool neg) noexcept {

@@ -242,3 +242,5 @@
 #define __cpp_lib_hypot 201603L
 #define __cpp_lib_interpolate 201902L
 #define __cpp_lib_math_special_functions 201603L
+#define __cpp_lib_complex_udls 201309L
+#define __cpp_lib_constexpr_complex 202306L

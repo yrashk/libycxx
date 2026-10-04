@@ -402,16 +402,21 @@ constexpr mpf<N> mp_reduce_pio2(const fp_value& v, int& quadrant) noexcept {
   const int end = lenM + E + F;
   // B = bits start..end of 2/pi as an integer (bit `end` is its least significant bit).
   wide<WL> B;
-  for (int i = start; i <= end; ++i) {
-    const int word = (i - 1) / 64, bit = 63 - (i - 1) % 64;
-    if ((ycxx::detail::fpm::two_over_pi_bits[word] >> bit) & 1) ycxx::detail::fpm::wide_set_bit(B, end - i);
+  for (int i = start; i <= end;) {
+    // Bits i .. i + k - 1 of the table (k <= 64, within one word) go to positions end - i down.
+    const int word = (i - 1) / 64, off = (i - 1) % 64;
+    int k = 64 - off;
+    if (k > end - i + 1) k = end - i + 1;
+    const u64 chunk = (ycxx::detail::fpm::two_over_pi_bits[word] << off) >> (64 - k); // k bits, msb first
+    const int pos = end - (i + k - 1);                                                // lsb position in B
+    B.w[pos / 64] |= chunk << (pos % 64);
+    if (pos % 64 != 0 && pos % 64 + k > 64) B.w[pos / 64 + 1] |= chunk >> (64 - pos % 64);
+    i += k;
   }
   const wide<WL + 2> P = ycxx::detail::fpm::wide_mul(v.sig, B); // x * 2/pi = P * 2^(E - end)
   const int point = end - E;                                    // binary point position in P
   int q = (ycxx::detail::fpm::wide_bit(P, point + 1) ? 2 : 0) + (ycxx::detail::fpm::wide_bit(P, point) ? 1 : 0);
-  wide<WL + 2> frac = P;
-  for (int i = point; i < 64 * (WL + 2); ++i)
-    if (ycxx::detail::fpm::wide_bit(frac, i)) frac.w[i / 64] &= ~(u64(1) << (i % 64));
+  wide<WL + 2> frac = ycxx::detail::fpm::wide_low_bits(P, point);
   bool neg = false;
   if (ycxx::detail::fpm::wide_bit(frac, point - 1)) { // frac >= 1/2: take frac - 1
     wide<WL + 2> one;
@@ -473,9 +478,7 @@ constexpr mpf<N> mp_sinpi(const fp_value& v) noexcept {
     const int s = -e;
     bool rest = false;
     wide<2> ip = ycxx::detail::fpm::wide_shr(v.sig, s, rest);
-    wide<2> low = v.sig;
-    for (int i = s; i < 128; ++i)
-      if (ycxx::detail::fpm::wide_bit(low, i)) low.w[i / 64] &= ~(u64(1) << (i % 64));
+    wide<2> low = ycxx::detail::fpm::wide_low_bits(v.sig, s);
     bool neg = false;
     if (ycxx::detail::fpm::wide_bit(low, s - 1)) { // fraction >= 1/2: round k up
       ycxx::detail::fpm::wide_add_small(ip, 1);

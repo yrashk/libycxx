@@ -29,10 +29,25 @@ template <std::size_t I, class T>
 struct tuple_leaf {
   [[no_unique_address]] T value;
 
-  constexpr tuple_leaf() = default;
+  constexpr tuple_leaf() : value() {}
   template <class... Args>
   constexpr explicit tuple_leaf(std::in_place_t, Args&&... args) : value(static_cast<Args&&>(args)...) {}
+  // Uses-allocator construction ([allocator.uses.construction]) performed directly into the
+  // element: no intermediate prvalue, so non-movable elements work.
   template <class Alloc, class... Args>
+    requires(!std::uses_allocator_v<std::remove_cv_t<T>, Alloc> && !is_pair_v<std::remove_cv_t<T>>)
+  constexpr tuple_leaf(alloc_tag_t, const Alloc&, Args&&... args) : value(static_cast<Args&&>(args)...) {}
+  template <class Alloc, class... Args>
+    requires std::uses_allocator_v<std::remove_cv_t<T>, Alloc> &&
+             std::is_constructible_v<T, std::allocator_arg_t, const Alloc&, Args...>
+  constexpr tuple_leaf(alloc_tag_t, const Alloc& a, Args&&... args)
+      : value(std::allocator_arg, a, static_cast<Args&&>(args)...) {}
+  template <class Alloc, class... Args>
+    requires std::uses_allocator_v<std::remove_cv_t<T>, Alloc> &&
+             (!std::is_constructible_v<T, std::allocator_arg_t, const Alloc&, Args...>)
+  constexpr tuple_leaf(alloc_tag_t, const Alloc& a, Args&&... args) : value(static_cast<Args&&>(args)..., a) {}
+  template <class Alloc, class... Args>
+    requires(!std::uses_allocator_v<std::remove_cv_t<T>, Alloc> && is_pair_v<std::remove_cv_t<T>>)
   constexpr tuple_leaf(alloc_tag_t, const Alloc& a, Args&&... args)
       : value(make_using_alloc<T>(a, static_cast<Args&&>(args)...)) {}
 };
@@ -67,30 +82,50 @@ void implicit_copy_list_init(const T&);
 template <class T>
 concept implicit_default = requires { implicit_copy_list_init<T>({}); };
 
-// ---- constraint helpers (named concepts so deleted twins subsume) -----------------------------
-template <class TT, class UT>
-struct elementwise;
-template <class... Ts, class... Us>
-  requires(sizeof...(Ts) == sizeof...(Us))
-struct elementwise<std::tuple<Ts...>, std::tuple<Us...>> {
-  static constexpr bool constructible = (std::is_constructible_v<Ts, Us> && ...);
-  static constexpr bool convertible = (std::is_convertible_v<Us, Ts> && ...);
-  static constexpr bool dangles = (std::reference_constructs_from_temporary_v<Ts, Us> || ...);
-  static constexpr bool nothrow = (std::is_nothrow_constructible_v<Ts, Us> && ...);
+// ---- constraint helpers ------------------------------------------------------------------
+// Each element-wise property is its own class template, instantiated only when a constraint
+// reaches it. Constructor constraints check cheap conditions first; constraint satisfaction
+// short-circuits, which avoids recursive instantiation (e.g. tuple<X> where X is constructible
+// from anything). A normal overload requires `C && !dangles`, its deleted twin `C && dangles`,
+// so the pair is mutually exclusive and needs no subsumption.
+template <template <class, class> class Pred, class TT, class UT>
+struct all_pairs {
+  static constexpr bool value = false;
 };
-template <class... Ts, class... Us>
-  requires(sizeof...(Ts) != sizeof...(Us))
-struct elementwise<std::tuple<Ts...>, std::tuple<Us...>> {
-  static constexpr bool constructible = false;
-  static constexpr bool convertible = false;
-  static constexpr bool dangles = false;
-  static constexpr bool nothrow = false;
+template <template <class, class> class Pred, class... Ts, class... Us>
+  requires(sizeof...(Ts) == sizeof...(Us))
+struct all_pairs<Pred, std::tuple<Ts...>, std::tuple<Us...>> {
+  static constexpr bool value = (Pred<Ts, Us>::value && ...);
+};
+template <template <class, class> class Pred, class TT, class UT>
+struct any_pair {
+  static constexpr bool value = false;
+};
+template <template <class, class> class Pred, class... Ts, class... Us>
+  requires(sizeof...(Ts) == sizeof...(Us))
+struct any_pair<Pred, std::tuple<Ts...>, std::tuple<Us...>> {
+  static constexpr bool value = (Pred<Ts, Us>::value || ...);
 };
 
+template <class T, class U>
+struct converts_to : std::bool_constant<std::is_convertible_v<U, T>> {};
+template <class T, class U>
+struct assignable_from_ : std::bool_constant<std::is_assignable_v<T&, U>> {};
+template <class T, class U>
+struct const_assignable_from_ : std::bool_constant<std::is_assignable_v<const T&, U>> {};
+
 template <class TT, class UT>
-concept tuple_constructible = elementwise<TT, UT>::constructible;
+concept elems_constructible = all_pairs<std::is_constructible, TT, UT>::value;
 template <class TT, class UT>
-concept tuple_dangles = tuple_constructible<TT, UT> && elementwise<TT, UT>::dangles;
+concept elems_convertible = all_pairs<converts_to, TT, UT>::value;
+template <class TT, class UT>
+concept elems_dangle = any_pair<std::reference_constructs_from_temporary, TT, UT>::value;
+template <class TT, class UT>
+concept elems_nothrow = all_pairs<std::is_nothrow_constructible, TT, UT>::value;
+template <class TT, class UT>
+concept elems_assignable = all_pairs<assignable_from_, TT, UT>::value;
+template <class TT, class UT>
+concept elems_const_assignable = all_pairs<const_assignable_from_, TT, UT>::value;
 
 // Element access types of a tuple-like `U&&` ("decltype(get<I>(FWD(u)))...").
 template <class U, class Seq>
@@ -103,16 +138,42 @@ template <class U>
 using get_types_t =
     typename get_types<U, std::make_index_sequence<std::tuple_size_v<std::remove_cvref_t<U>>>>::type;
 
-// The extra constraint for converting from another tuple when sizeof...(Types) == 1.
-template <class TT, class U>
-inline constexpr bool tuple_single_ok = true;
-template <class T, class U>
-inline constexpr bool tuple_single_ok<std::tuple<T>, U> =
-    !std::is_convertible_v<U, T> && !std::is_constructible_v<T, U> && !__is_same(T, std::remove_cvref_t<U>);
+// [tuple.cnstr]/12 disambiguation for the UTypes&&... constructors.
+template <class TT, class... Us>
+concept tuple_args_ok =
+    sizeof...(Us) == std::tuple_size_v<TT> && sizeof...(Us) >= 1 &&
+    (sizeof...(Us) > 1 || !__is_same(std::remove_cvref_t<Us...[0]>, TT)) &&
+    (sizeof...(Us) == 1 || sizeof...(Us) > 3 || !__is_same(std::remove_cvref_t<Us...[0]>, std::allocator_arg_t) ||
+     __is_same(std::remove_cvref_t<std::tuple_element_t<0, TT>>, std::allocator_arg_t));
 
-template <class TT, class UTuple>
-concept tuple_from_tuple_like = requires { typename get_types_t<UTuple>; } &&
-                                tuple_constructible<TT, get_types_t<UTuple>>;
+// [tuple.cnstr]/21: from a tuple<U> when sizeof...(Types) == 1 (T is Types, U is UTypes).
+template <class T, class U, class Src>
+concept tuple_conv_single_ok1 =
+    !__is_same(T, U) && !std::is_convertible_v<Src, T> && !std::is_constructible_v<T, Src>;
+template <class TT, class Src>
+concept tuple_conv_single_ok =
+    std::tuple_size_v<TT> != 1 ||
+    tuple_conv_single_ok1<std::tuple_element_t<0, TT>, std::tuple_element_t<0, std::remove_cvref_t<Src>>, Src>;
+
+// [tuple.cnstr]/29: from another tuple-like when sizeof...(Types) == 1.
+template <class TT, class Src>
+concept tuple_like_single_ok = std::tuple_size_v<TT> != 1 ||
+                               (!std::is_convertible_v<Src, std::tuple_element_t<0, TT>> &&
+                                !std::is_constructible_v<std::tuple_element_t<0, TT>, Src>);
+
+// Constructible from a cvref tuple specialization `Src` (constraints in standard order).
+template <class TT, class Src>
+concept tuple_from_tuple = is_tuple_specialization<std::remove_cvref_t<Src>> &&
+                           std::tuple_size_v<std::remove_cvref_t<Src>> == std::tuple_size_v<TT> &&
+                           tuple_conv_single_ok<TT, Src> && elems_constructible<TT, get_types_t<Src>>;
+// Constructible from any other tuple-like `Src` (pair, array, complex; not subrange).
+template <class TT, class Src>
+concept tuple_from_other = tuple_like<Src> && !is_tuple_specialization<std::remove_cvref_t<Src>> &&
+                           !is_subrange<std::remove_cvref_t<Src>> &&
+                           std::tuple_size_v<std::remove_cvref_t<Src>> == std::tuple_size_v<TT> &&
+                           tuple_like_single_ok<TT, Src> && elems_constructible<TT, get_types_t<Src>>;
+template <class TT, class Src>
+concept tuple_from = tuple_from_tuple<TT, Src> || tuple_from_other<TT, Src>;
 
 } // namespace ycxx::detail
 
@@ -131,8 +192,6 @@ class tuple {
   friend constexpr const tuple_element_t<I, tuple<T...>>& get(const tuple<T...>&) noexcept;
 
   using self = tuple<Types...>;
-  template <class... U>
-  using with = ycxx::detail::elementwise<self, tuple<U...>>;
   static constexpr size_t N = sizeof...(Types);
 
   // Unpacks a tuple-like source into the storage.
@@ -144,27 +203,17 @@ class tuple {
       : s_(ycxx::detail::alloc_tag_t{}, a, get<I>(static_cast<U&&>(u))...) {}
   template <class U>
   using seq_of = make_index_sequence<tuple_size_v<remove_cvref_t<U>>>;
-
-  // The constructor constraints for converting from a source whose element accessors have
-  // types `Gets` (a tuple<...> of reference types).
-  template <class Src, class Gets>
-  static constexpr bool from_ok = ycxx::detail::tuple_constructible<self, Gets> &&
-                                  ycxx::detail::tuple_single_ok<self, Src>;
-  template <class Gets>
-  static constexpr bool from_explicit = !ycxx::detail::elementwise<self, Gets>::convertible;
-  template <class Gets>
-  static constexpr bool from_dangles = ycxx::detail::elementwise<self, Gets>::dangles;
-
   template <class Src>
   using gets = ycxx::detail::get_types_t<Src>;
 
   template <class Tup, size_t... I>
   constexpr void assign_from(Tup&& u, index_sequence<I...>) {
-    ((ycxx::detail::leaf_get<I>(s_) = get<I>(static_cast<Tup&&>(u))), ...);
+    ((void)(ycxx::detail::leaf_get<I>(s_) = get<I>(static_cast<Tup&&>(u))), ...);
   }
+  // Assigns through const T& (the const-qualified assignment operators).
   template <class Tup, size_t... I>
   constexpr void assign_from(Tup&& u, index_sequence<I...>) const {
-    ((ycxx::detail::leaf_get<I>(const_cast<storage&>(s_)) = get<I>(static_cast<Tup&&>(u))), ...);
+    ((void)(ycxx::detail::leaf_get<I>(s_) = get<I>(static_cast<Tup&&>(u))), ...);
   }
 
 public:
@@ -178,85 +227,87 @@ public:
       : s_(in_place, args...) {}
 
   template <class... UTypes>
-    requires(N >= 1 && sizeof...(UTypes) == N) &&
-            (N > 1 || !is_same_v<remove_cvref_t<UTypes...[0]>, tuple>) &&
-            (N == 1 || N > 3 || !is_same_v<remove_cvref_t<UTypes...[0]>, allocator_arg_t> ||
-             is_same_v<remove_cvref_t<Types...[0]>, allocator_arg_t>) &&
-            ycxx::detail::tuple_constructible<tuple<Types...>, tuple<UTypes&&...>>
-  constexpr explicit(!with<UTypes&&...>::convertible) tuple(UTypes&&... u)
+    requires ycxx::detail::tuple_args_ok<tuple, UTypes...> &&
+             ycxx::detail::elems_constructible<tuple, tuple<UTypes&&...>> &&
+             (!ycxx::detail::elems_dangle<tuple, tuple<UTypes&&...>>)
+  constexpr explicit(!ycxx::detail::elems_convertible<tuple, tuple<UTypes&&...>>) tuple(UTypes&&... u) noexcept(
+      ycxx::detail::elems_nothrow<tuple, tuple<UTypes&&...>>)
       : s_(in_place, static_cast<UTypes&&>(u)...) {}
   template <class... UTypes>
-    requires(N >= 1 && sizeof...(UTypes) == N) &&
-            (N > 1 || !is_same_v<remove_cvref_t<UTypes...[0]>, tuple>) &&
-            (N == 1 || N > 3 || !is_same_v<remove_cvref_t<UTypes...[0]>, allocator_arg_t> ||
-             is_same_v<remove_cvref_t<Types...[0]>, allocator_arg_t>) &&
-            ycxx::detail::tuple_dangles<tuple<Types...>, tuple<UTypes&&...>>
-  constexpr explicit(!with<UTypes&&...>::convertible) tuple(UTypes&&...) = delete;
+    requires ycxx::detail::tuple_args_ok<tuple, UTypes...> &&
+             ycxx::detail::elems_constructible<tuple, tuple<UTypes&&...>> &&
+             ycxx::detail::elems_dangle<tuple, tuple<UTypes&&...>>
+  constexpr explicit(!ycxx::detail::elems_convertible<tuple, tuple<UTypes&&...>>) tuple(UTypes&&...) = delete;
 
   tuple(const tuple&) = default;
   tuple(tuple&&) = default;
 
-  // From tuple<UTypes...> in all four value categories.
+  // Converting constructors from tuple<UTypes...> and pair<U1, U2> in all four value categories
+  // (separate overloads, as specified, so an rvalue can fall back to the const& form), and from
+  // other tuple-like types. Generated pattern: each has a deleted twin for dangling references.
   template <class... UTypes>
-    requires(sizeof...(UTypes) == N) && from_ok<tuple<UTypes...>&, gets<tuple<UTypes...>&>>
-  constexpr explicit(from_explicit<gets<tuple<UTypes...>&>>) tuple(tuple<UTypes...>& u)
-      : tuple(static_cast<ycxx::detail::alloc_tag_t*>(nullptr), u, seq_of<tuple<UTypes...>>{}) {
-    static_assert(!from_dangles<gets<tuple<UTypes...>&>>, "tuple: would bind a reference to a temporary");
-  }
+    requires ycxx::detail::tuple_from_tuple<tuple, tuple<UTypes...>&> && (!ycxx::detail::elems_dangle<tuple, ycxx::detail::get_types_t<tuple<UTypes...>&>>)
+  constexpr explicit(!ycxx::detail::elems_convertible<tuple, ycxx::detail::get_types_t<tuple<UTypes...>&>>) tuple(tuple<UTypes...>& u)
+      : tuple(static_cast<ycxx::detail::alloc_tag_t*>(nullptr), static_cast<tuple<UTypes...>&>(u), seq_of<tuple<UTypes...>&>{}) {}
   template <class... UTypes>
-    requires(sizeof...(UTypes) == N) && from_ok<const tuple<UTypes...>&, gets<const tuple<UTypes...>&>>
-  constexpr explicit(from_explicit<gets<const tuple<UTypes...>&>>) tuple(const tuple<UTypes...>& u)
-      : tuple(static_cast<ycxx::detail::alloc_tag_t*>(nullptr), u, seq_of<tuple<UTypes...>>{}) {
-    static_assert(!from_dangles<gets<const tuple<UTypes...>&>>, "tuple: would bind a reference to a temporary");
-  }
+    requires ycxx::detail::tuple_from_tuple<tuple, tuple<UTypes...>&> && ycxx::detail::elems_dangle<tuple, ycxx::detail::get_types_t<tuple<UTypes...>&>>
+  constexpr explicit(!ycxx::detail::elems_convertible<tuple, ycxx::detail::get_types_t<tuple<UTypes...>&>>) tuple(tuple<UTypes...>&) = delete;
   template <class... UTypes>
-    requires(sizeof...(UTypes) == N) && from_ok<tuple<UTypes...>, gets<tuple<UTypes...>&&>>
-  constexpr explicit(from_explicit<gets<tuple<UTypes...>&&>>) tuple(tuple<UTypes...>&& u)
-      : tuple(static_cast<ycxx::detail::alloc_tag_t*>(nullptr), static_cast<tuple<UTypes...>&&>(u),
-              seq_of<tuple<UTypes...>>{}) {
-    static_assert(!from_dangles<gets<tuple<UTypes...>&&>>, "tuple: would bind a reference to a temporary");
-  }
+    requires ycxx::detail::tuple_from_tuple<tuple, const tuple<UTypes...>&> && (!ycxx::detail::elems_dangle<tuple, ycxx::detail::get_types_t<const tuple<UTypes...>&>>)
+  constexpr explicit(!ycxx::detail::elems_convertible<tuple, ycxx::detail::get_types_t<const tuple<UTypes...>&>>) tuple(const tuple<UTypes...>& u)
+      : tuple(static_cast<ycxx::detail::alloc_tag_t*>(nullptr), static_cast<const tuple<UTypes...>&>(u), seq_of<const tuple<UTypes...>&>{}) {}
   template <class... UTypes>
-    requires(sizeof...(UTypes) == N) && from_ok<const tuple<UTypes...>, gets<const tuple<UTypes...>&&>>
-  constexpr explicit(from_explicit<gets<const tuple<UTypes...>&&>>) tuple(const tuple<UTypes...>&& u)
-      : tuple(static_cast<ycxx::detail::alloc_tag_t*>(nullptr), static_cast<const tuple<UTypes...>&&>(u),
-              seq_of<tuple<UTypes...>>{}) {
-    static_assert(!from_dangles<gets<const tuple<UTypes...>&&>>, "tuple: would bind a reference to a temporary");
-  }
-
-  // From pair<U1, U2> in all four value categories.
+    requires ycxx::detail::tuple_from_tuple<tuple, const tuple<UTypes...>&> && ycxx::detail::elems_dangle<tuple, ycxx::detail::get_types_t<const tuple<UTypes...>&>>
+  constexpr explicit(!ycxx::detail::elems_convertible<tuple, ycxx::detail::get_types_t<const tuple<UTypes...>&>>) tuple(const tuple<UTypes...>&) = delete;
+  template <class... UTypes>
+    requires ycxx::detail::tuple_from_tuple<tuple, tuple<UTypes...>&&> && (!ycxx::detail::elems_dangle<tuple, ycxx::detail::get_types_t<tuple<UTypes...>&&>>)
+  constexpr explicit(!ycxx::detail::elems_convertible<tuple, ycxx::detail::get_types_t<tuple<UTypes...>&&>>) tuple(tuple<UTypes...>&& u)
+      : tuple(static_cast<ycxx::detail::alloc_tag_t*>(nullptr), static_cast<tuple<UTypes...>&&>(u), seq_of<tuple<UTypes...>&&>{}) {}
+  template <class... UTypes>
+    requires ycxx::detail::tuple_from_tuple<tuple, tuple<UTypes...>&&> && ycxx::detail::elems_dangle<tuple, ycxx::detail::get_types_t<tuple<UTypes...>&&>>
+  constexpr explicit(!ycxx::detail::elems_convertible<tuple, ycxx::detail::get_types_t<tuple<UTypes...>&&>>) tuple(tuple<UTypes...>&&) = delete;
+  template <class... UTypes>
+    requires ycxx::detail::tuple_from_tuple<tuple, const tuple<UTypes...>&&> && (!ycxx::detail::elems_dangle<tuple, ycxx::detail::get_types_t<const tuple<UTypes...>&&>>)
+  constexpr explicit(!ycxx::detail::elems_convertible<tuple, ycxx::detail::get_types_t<const tuple<UTypes...>&&>>) tuple(const tuple<UTypes...>&& u)
+      : tuple(static_cast<ycxx::detail::alloc_tag_t*>(nullptr), static_cast<const tuple<UTypes...>&&>(u), seq_of<const tuple<UTypes...>&&>{}) {}
+  template <class... UTypes>
+    requires ycxx::detail::tuple_from_tuple<tuple, const tuple<UTypes...>&&> && ycxx::detail::elems_dangle<tuple, ycxx::detail::get_types_t<const tuple<UTypes...>&&>>
+  constexpr explicit(!ycxx::detail::elems_convertible<tuple, ycxx::detail::get_types_t<const tuple<UTypes...>&&>>) tuple(const tuple<UTypes...>&&) = delete;
   template <class U1, class U2>
-    requires(N == 2) && ycxx::detail::tuple_constructible<tuple<Types...>, tuple<U1&, U2&>>
-  constexpr explicit(!with<U1&, U2&>::convertible) tuple(pair<U1, U2>& u) : s_(in_place, u.first, u.second) {
-    static_assert(!with<U1&, U2&>::dangles, "tuple: would bind a reference to a temporary");
-  }
+    requires ycxx::detail::tuple_from_other<tuple, pair<U1, U2>&> && (!ycxx::detail::elems_dangle<tuple, ycxx::detail::get_types_t<pair<U1, U2>&>>)
+  constexpr explicit(!ycxx::detail::elems_convertible<tuple, ycxx::detail::get_types_t<pair<U1, U2>&>>) tuple(pair<U1, U2>& u)
+      : tuple(static_cast<ycxx::detail::alloc_tag_t*>(nullptr), static_cast<pair<U1, U2>&>(u), seq_of<pair<U1, U2>&>{}) {}
   template <class U1, class U2>
-    requires(N == 2) && ycxx::detail::tuple_constructible<tuple<Types...>, tuple<const U1&, const U2&>>
-  constexpr explicit(!with<const U1&, const U2&>::convertible) tuple(const pair<U1, U2>& u)
-      : s_(in_place, u.first, u.second) {
-    static_assert(!with<const U1&, const U2&>::dangles, "tuple: would bind a reference to a temporary");
-  }
+    requires ycxx::detail::tuple_from_other<tuple, pair<U1, U2>&> && ycxx::detail::elems_dangle<tuple, ycxx::detail::get_types_t<pair<U1, U2>&>>
+  constexpr explicit(!ycxx::detail::elems_convertible<tuple, ycxx::detail::get_types_t<pair<U1, U2>&>>) tuple(pair<U1, U2>&) = delete;
   template <class U1, class U2>
-    requires(N == 2) && ycxx::detail::tuple_constructible<tuple<Types...>, tuple<U1&&, U2&&>>
-  constexpr explicit(!with<U1&&, U2&&>::convertible) tuple(pair<U1, U2>&& u)
-      : s_(in_place, static_cast<U1&&>(u.first), static_cast<U2&&>(u.second)) {
-    static_assert(!with<U1&&, U2&&>::dangles, "tuple: would bind a reference to a temporary");
-  }
+    requires ycxx::detail::tuple_from_other<tuple, const pair<U1, U2>&> && (!ycxx::detail::elems_dangle<tuple, ycxx::detail::get_types_t<const pair<U1, U2>&>>)
+  constexpr explicit(!ycxx::detail::elems_convertible<tuple, ycxx::detail::get_types_t<const pair<U1, U2>&>>) tuple(const pair<U1, U2>& u)
+      : tuple(static_cast<ycxx::detail::alloc_tag_t*>(nullptr), static_cast<const pair<U1, U2>&>(u), seq_of<const pair<U1, U2>&>{}) {}
   template <class U1, class U2>
-    requires(N == 2) && ycxx::detail::tuple_constructible<tuple<Types...>, tuple<const U1&&, const U2&&>>
-  constexpr explicit(!with<const U1&&, const U2&&>::convertible) tuple(const pair<U1, U2>&& u)
-      : s_(in_place, static_cast<const U1&&>(u.first), static_cast<const U2&&>(u.second)) {
-    static_assert(!with<const U1&&, const U2&&>::dangles, "tuple: would bind a reference to a temporary");
-  }
-
-  // From any other tuple-like (array, complex, ...; not subrange).
-  template <ycxx::detail::tuple_like UTuple>
-    requires ycxx::detail::different_from_<UTuple, tuple> && (!ycxx::detail::is_subrange<remove_cvref_t<UTuple>>) &&
-             (!ycxx::detail::is_tuple_specialization<remove_cvref_t<UTuple>>) &&
-             (!ycxx::detail::is_pair_v<remove_cvref_t<UTuple>>) &&
-             (tuple_size_v<remove_cvref_t<UTuple>> == N) && from_ok<UTuple, gets<UTuple&&>>
-  constexpr explicit(from_explicit<gets<UTuple&&>>) tuple(UTuple&& u)
-      : tuple(static_cast<ycxx::detail::alloc_tag_t*>(nullptr), static_cast<UTuple&&>(u), seq_of<UTuple>{}) {}
+    requires ycxx::detail::tuple_from_other<tuple, const pair<U1, U2>&> && ycxx::detail::elems_dangle<tuple, ycxx::detail::get_types_t<const pair<U1, U2>&>>
+  constexpr explicit(!ycxx::detail::elems_convertible<tuple, ycxx::detail::get_types_t<const pair<U1, U2>&>>) tuple(const pair<U1, U2>&) = delete;
+  template <class U1, class U2>
+    requires ycxx::detail::tuple_from_other<tuple, pair<U1, U2>&&> && (!ycxx::detail::elems_dangle<tuple, ycxx::detail::get_types_t<pair<U1, U2>&&>>)
+  constexpr explicit(!ycxx::detail::elems_convertible<tuple, ycxx::detail::get_types_t<pair<U1, U2>&&>>) tuple(pair<U1, U2>&& u)
+      : tuple(static_cast<ycxx::detail::alloc_tag_t*>(nullptr), static_cast<pair<U1, U2>&&>(u), seq_of<pair<U1, U2>&&>{}) {}
+  template <class U1, class U2>
+    requires ycxx::detail::tuple_from_other<tuple, pair<U1, U2>&&> && ycxx::detail::elems_dangle<tuple, ycxx::detail::get_types_t<pair<U1, U2>&&>>
+  constexpr explicit(!ycxx::detail::elems_convertible<tuple, ycxx::detail::get_types_t<pair<U1, U2>&&>>) tuple(pair<U1, U2>&&) = delete;
+  template <class U1, class U2>
+    requires ycxx::detail::tuple_from_other<tuple, const pair<U1, U2>&&> && (!ycxx::detail::elems_dangle<tuple, ycxx::detail::get_types_t<const pair<U1, U2>&&>>)
+  constexpr explicit(!ycxx::detail::elems_convertible<tuple, ycxx::detail::get_types_t<const pair<U1, U2>&&>>) tuple(const pair<U1, U2>&& u)
+      : tuple(static_cast<ycxx::detail::alloc_tag_t*>(nullptr), static_cast<const pair<U1, U2>&&>(u), seq_of<const pair<U1, U2>&&>{}) {}
+  template <class U1, class U2>
+    requires ycxx::detail::tuple_from_other<tuple, const pair<U1, U2>&&> && ycxx::detail::elems_dangle<tuple, ycxx::detail::get_types_t<const pair<U1, U2>&&>>
+  constexpr explicit(!ycxx::detail::elems_convertible<tuple, ycxx::detail::get_types_t<const pair<U1, U2>&&>>) tuple(const pair<U1, U2>&&) = delete;
+  template <class Src>
+    requires ycxx::detail::tuple_from_other<tuple, Src> && (!ycxx::detail::is_pair_v<remove_cvref_t<Src>>) && (!ycxx::detail::elems_dangle<tuple, ycxx::detail::get_types_t<Src>>)
+  constexpr explicit(!ycxx::detail::elems_convertible<tuple, ycxx::detail::get_types_t<Src>>) tuple(Src&& u)
+      : tuple(static_cast<ycxx::detail::alloc_tag_t*>(nullptr), static_cast<Src&&>(u), seq_of<Src>{}) {}
+  template <class Src>
+    requires ycxx::detail::tuple_from_other<tuple, Src> && (!ycxx::detail::is_pair_v<remove_cvref_t<Src>>) && ycxx::detail::elems_dangle<tuple, ycxx::detail::get_types_t<Src>>
+  constexpr explicit(!ycxx::detail::elems_convertible<tuple, ycxx::detail::get_types_t<Src>>) tuple(Src&&) = delete;
 
   // ---- allocator-extended constructors ----
   template <class Alloc>
@@ -269,65 +320,90 @@ public:
       tuple(allocator_arg_t, const Alloc& a, const Types&... args)
       : s_(ycxx::detail::alloc_tag_t{}, a, args...) {}
   template <class Alloc, class... UTypes>
-    requires(N >= 1 && sizeof...(UTypes) == N) && ycxx::detail::tuple_constructible<tuple<Types...>, tuple<UTypes&&...>>
-  constexpr explicit(!with<UTypes&&...>::convertible) tuple(allocator_arg_t, const Alloc& a, UTypes&&... u)
-      : s_(ycxx::detail::alloc_tag_t{}, a, static_cast<UTypes&&>(u)...) {
-    static_assert(!with<UTypes&&...>::dangles, "tuple: would bind a reference to a temporary");
-  }
+    requires ycxx::detail::tuple_args_ok<tuple, UTypes...> &&
+             ycxx::detail::elems_constructible<tuple, tuple<UTypes&&...>> &&
+             (!ycxx::detail::elems_dangle<tuple, tuple<UTypes&&...>>)
+  constexpr explicit(!ycxx::detail::elems_convertible<tuple, tuple<UTypes&&...>>)
+      tuple(allocator_arg_t, const Alloc& a, UTypes&&... u)
+      : s_(ycxx::detail::alloc_tag_t{}, a, static_cast<UTypes&&>(u)...) {}
+  template <class Alloc, class... UTypes>
+    requires ycxx::detail::tuple_args_ok<tuple, UTypes...> &&
+             ycxx::detail::elems_constructible<tuple, tuple<UTypes&&...>> &&
+             ycxx::detail::elems_dangle<tuple, tuple<UTypes&&...>>
+  constexpr explicit(!ycxx::detail::elems_convertible<tuple, tuple<UTypes&&...>>)
+      tuple(allocator_arg_t, const Alloc& a, UTypes&&...) = delete;
   template <class Alloc>
+    requires(is_copy_constructible_v<Types> && ...)
   constexpr tuple(allocator_arg_t, const Alloc& a, const tuple& u)
       : tuple(static_cast<ycxx::detail::alloc_tag_t*>(nullptr), a, u, index_sequence_for<Types...>{}) {}
   template <class Alloc>
+    requires(is_move_constructible_v<Types> && ...)
   constexpr tuple(allocator_arg_t, const Alloc& a, tuple&& u)
       : tuple(static_cast<ycxx::detail::alloc_tag_t*>(nullptr), a, static_cast<tuple&&>(u),
               index_sequence_for<Types...>{}) {}
   template <class Alloc, class... UTypes>
-    requires(sizeof...(UTypes) == N) && from_ok<tuple<UTypes...>&, gets<tuple<UTypes...>&>>
-  constexpr explicit(from_explicit<gets<tuple<UTypes...>&>>)
-      tuple(allocator_arg_t, const Alloc& a, tuple<UTypes...>& u)
-      : tuple(static_cast<ycxx::detail::alloc_tag_t*>(nullptr), a, u, seq_of<tuple<UTypes...>>{}) {}
+    requires ycxx::detail::tuple_from_tuple<tuple, tuple<UTypes...>&> && (!ycxx::detail::elems_dangle<tuple, ycxx::detail::get_types_t<tuple<UTypes...>&>>)
+  constexpr explicit(!ycxx::detail::elems_convertible<tuple, ycxx::detail::get_types_t<tuple<UTypes...>&>>) tuple(allocator_arg_t, const Alloc& a, tuple<UTypes...>& u)
+      : tuple(static_cast<ycxx::detail::alloc_tag_t*>(nullptr), a, static_cast<tuple<UTypes...>&>(u), seq_of<tuple<UTypes...>&>{}) {}
   template <class Alloc, class... UTypes>
-    requires(sizeof...(UTypes) == N) && from_ok<const tuple<UTypes...>&, gets<const tuple<UTypes...>&>>
-  constexpr explicit(from_explicit<gets<const tuple<UTypes...>&>>)
-      tuple(allocator_arg_t, const Alloc& a, const tuple<UTypes...>& u)
-      : tuple(static_cast<ycxx::detail::alloc_tag_t*>(nullptr), a, u, seq_of<tuple<UTypes...>>{}) {}
+    requires ycxx::detail::tuple_from_tuple<tuple, tuple<UTypes...>&> && ycxx::detail::elems_dangle<tuple, ycxx::detail::get_types_t<tuple<UTypes...>&>>
+  constexpr explicit(!ycxx::detail::elems_convertible<tuple, ycxx::detail::get_types_t<tuple<UTypes...>&>>) tuple(allocator_arg_t, const Alloc& a, tuple<UTypes...>&) = delete;
   template <class Alloc, class... UTypes>
-    requires(sizeof...(UTypes) == N) && from_ok<tuple<UTypes...>, gets<tuple<UTypes...>&&>>
-  constexpr explicit(from_explicit<gets<tuple<UTypes...>&&>>)
-      tuple(allocator_arg_t, const Alloc& a, tuple<UTypes...>&& u)
-      : tuple(static_cast<ycxx::detail::alloc_tag_t*>(nullptr), a, static_cast<tuple<UTypes...>&&>(u),
-              seq_of<tuple<UTypes...>>{}) {}
+    requires ycxx::detail::tuple_from_tuple<tuple, const tuple<UTypes...>&> && (!ycxx::detail::elems_dangle<tuple, ycxx::detail::get_types_t<const tuple<UTypes...>&>>)
+  constexpr explicit(!ycxx::detail::elems_convertible<tuple, ycxx::detail::get_types_t<const tuple<UTypes...>&>>) tuple(allocator_arg_t, const Alloc& a, const tuple<UTypes...>& u)
+      : tuple(static_cast<ycxx::detail::alloc_tag_t*>(nullptr), a, static_cast<const tuple<UTypes...>&>(u), seq_of<const tuple<UTypes...>&>{}) {}
   template <class Alloc, class... UTypes>
-    requires(sizeof...(UTypes) == N) && from_ok<const tuple<UTypes...>, gets<const tuple<UTypes...>&&>>
-  constexpr explicit(from_explicit<gets<const tuple<UTypes...>&&>>)
-      tuple(allocator_arg_t, const Alloc& a, const tuple<UTypes...>&& u)
-      : tuple(static_cast<ycxx::detail::alloc_tag_t*>(nullptr), a, static_cast<const tuple<UTypes...>&&>(u),
-              seq_of<tuple<UTypes...>>{}) {}
+    requires ycxx::detail::tuple_from_tuple<tuple, const tuple<UTypes...>&> && ycxx::detail::elems_dangle<tuple, ycxx::detail::get_types_t<const tuple<UTypes...>&>>
+  constexpr explicit(!ycxx::detail::elems_convertible<tuple, ycxx::detail::get_types_t<const tuple<UTypes...>&>>) tuple(allocator_arg_t, const Alloc& a, const tuple<UTypes...>&) = delete;
+  template <class Alloc, class... UTypes>
+    requires ycxx::detail::tuple_from_tuple<tuple, tuple<UTypes...>&&> && (!ycxx::detail::elems_dangle<tuple, ycxx::detail::get_types_t<tuple<UTypes...>&&>>)
+  constexpr explicit(!ycxx::detail::elems_convertible<tuple, ycxx::detail::get_types_t<tuple<UTypes...>&&>>) tuple(allocator_arg_t, const Alloc& a, tuple<UTypes...>&& u)
+      : tuple(static_cast<ycxx::detail::alloc_tag_t*>(nullptr), a, static_cast<tuple<UTypes...>&&>(u), seq_of<tuple<UTypes...>&&>{}) {}
+  template <class Alloc, class... UTypes>
+    requires ycxx::detail::tuple_from_tuple<tuple, tuple<UTypes...>&&> && ycxx::detail::elems_dangle<tuple, ycxx::detail::get_types_t<tuple<UTypes...>&&>>
+  constexpr explicit(!ycxx::detail::elems_convertible<tuple, ycxx::detail::get_types_t<tuple<UTypes...>&&>>) tuple(allocator_arg_t, const Alloc& a, tuple<UTypes...>&&) = delete;
+  template <class Alloc, class... UTypes>
+    requires ycxx::detail::tuple_from_tuple<tuple, const tuple<UTypes...>&&> && (!ycxx::detail::elems_dangle<tuple, ycxx::detail::get_types_t<const tuple<UTypes...>&&>>)
+  constexpr explicit(!ycxx::detail::elems_convertible<tuple, ycxx::detail::get_types_t<const tuple<UTypes...>&&>>) tuple(allocator_arg_t, const Alloc& a, const tuple<UTypes...>&& u)
+      : tuple(static_cast<ycxx::detail::alloc_tag_t*>(nullptr), a, static_cast<const tuple<UTypes...>&&>(u), seq_of<const tuple<UTypes...>&&>{}) {}
+  template <class Alloc, class... UTypes>
+    requires ycxx::detail::tuple_from_tuple<tuple, const tuple<UTypes...>&&> && ycxx::detail::elems_dangle<tuple, ycxx::detail::get_types_t<const tuple<UTypes...>&&>>
+  constexpr explicit(!ycxx::detail::elems_convertible<tuple, ycxx::detail::get_types_t<const tuple<UTypes...>&&>>) tuple(allocator_arg_t, const Alloc& a, const tuple<UTypes...>&&) = delete;
   template <class Alloc, class U1, class U2>
-    requires(N == 2) && ycxx::detail::tuple_constructible<tuple<Types...>, tuple<U1&, U2&>>
-  constexpr explicit(!with<U1&, U2&>::convertible) tuple(allocator_arg_t, const Alloc& a, pair<U1, U2>& u)
-      : s_(ycxx::detail::alloc_tag_t{}, a, u.first, u.second) {}
+    requires ycxx::detail::tuple_from_other<tuple, pair<U1, U2>&> && (!ycxx::detail::elems_dangle<tuple, ycxx::detail::get_types_t<pair<U1, U2>&>>)
+  constexpr explicit(!ycxx::detail::elems_convertible<tuple, ycxx::detail::get_types_t<pair<U1, U2>&>>) tuple(allocator_arg_t, const Alloc& a, pair<U1, U2>& u)
+      : tuple(static_cast<ycxx::detail::alloc_tag_t*>(nullptr), a, static_cast<pair<U1, U2>&>(u), seq_of<pair<U1, U2>&>{}) {}
   template <class Alloc, class U1, class U2>
-    requires(N == 2) && ycxx::detail::tuple_constructible<tuple<Types...>, tuple<const U1&, const U2&>>
-  constexpr explicit(!with<const U1&, const U2&>::convertible)
-      tuple(allocator_arg_t, const Alloc& a, const pair<U1, U2>& u)
-      : s_(ycxx::detail::alloc_tag_t{}, a, u.first, u.second) {}
+    requires ycxx::detail::tuple_from_other<tuple, pair<U1, U2>&> && ycxx::detail::elems_dangle<tuple, ycxx::detail::get_types_t<pair<U1, U2>&>>
+  constexpr explicit(!ycxx::detail::elems_convertible<tuple, ycxx::detail::get_types_t<pair<U1, U2>&>>) tuple(allocator_arg_t, const Alloc& a, pair<U1, U2>&) = delete;
   template <class Alloc, class U1, class U2>
-    requires(N == 2) && ycxx::detail::tuple_constructible<tuple<Types...>, tuple<U1&&, U2&&>>
-  constexpr explicit(!with<U1&&, U2&&>::convertible) tuple(allocator_arg_t, const Alloc& a, pair<U1, U2>&& u)
-      : s_(ycxx::detail::alloc_tag_t{}, a, static_cast<U1&&>(u.first), static_cast<U2&&>(u.second)) {}
+    requires ycxx::detail::tuple_from_other<tuple, const pair<U1, U2>&> && (!ycxx::detail::elems_dangle<tuple, ycxx::detail::get_types_t<const pair<U1, U2>&>>)
+  constexpr explicit(!ycxx::detail::elems_convertible<tuple, ycxx::detail::get_types_t<const pair<U1, U2>&>>) tuple(allocator_arg_t, const Alloc& a, const pair<U1, U2>& u)
+      : tuple(static_cast<ycxx::detail::alloc_tag_t*>(nullptr), a, static_cast<const pair<U1, U2>&>(u), seq_of<const pair<U1, U2>&>{}) {}
   template <class Alloc, class U1, class U2>
-    requires(N == 2) && ycxx::detail::tuple_constructible<tuple<Types...>, tuple<const U1&&, const U2&&>>
-  constexpr explicit(!with<const U1&&, const U2&&>::convertible)
-      tuple(allocator_arg_t, const Alloc& a, const pair<U1, U2>&& u)
-      : s_(ycxx::detail::alloc_tag_t{}, a, static_cast<const U1&&>(u.first), static_cast<const U2&&>(u.second)) {}
-  template <class Alloc, ycxx::detail::tuple_like UTuple>
-    requires ycxx::detail::different_from_<UTuple, tuple> && (!ycxx::detail::is_subrange<remove_cvref_t<UTuple>>) &&
-             (!ycxx::detail::is_tuple_specialization<remove_cvref_t<UTuple>>) &&
-             (!ycxx::detail::is_pair_v<remove_cvref_t<UTuple>>) &&
-             (tuple_size_v<remove_cvref_t<UTuple>> == N) && from_ok<UTuple, gets<UTuple&&>>
-  constexpr explicit(from_explicit<gets<UTuple&&>>) tuple(allocator_arg_t, const Alloc& a, UTuple&& u)
-      : tuple(static_cast<ycxx::detail::alloc_tag_t*>(nullptr), a, static_cast<UTuple&&>(u), seq_of<UTuple>{}) {}
+    requires ycxx::detail::tuple_from_other<tuple, const pair<U1, U2>&> && ycxx::detail::elems_dangle<tuple, ycxx::detail::get_types_t<const pair<U1, U2>&>>
+  constexpr explicit(!ycxx::detail::elems_convertible<tuple, ycxx::detail::get_types_t<const pair<U1, U2>&>>) tuple(allocator_arg_t, const Alloc& a, const pair<U1, U2>&) = delete;
+  template <class Alloc, class U1, class U2>
+    requires ycxx::detail::tuple_from_other<tuple, pair<U1, U2>&&> && (!ycxx::detail::elems_dangle<tuple, ycxx::detail::get_types_t<pair<U1, U2>&&>>)
+  constexpr explicit(!ycxx::detail::elems_convertible<tuple, ycxx::detail::get_types_t<pair<U1, U2>&&>>) tuple(allocator_arg_t, const Alloc& a, pair<U1, U2>&& u)
+      : tuple(static_cast<ycxx::detail::alloc_tag_t*>(nullptr), a, static_cast<pair<U1, U2>&&>(u), seq_of<pair<U1, U2>&&>{}) {}
+  template <class Alloc, class U1, class U2>
+    requires ycxx::detail::tuple_from_other<tuple, pair<U1, U2>&&> && ycxx::detail::elems_dangle<tuple, ycxx::detail::get_types_t<pair<U1, U2>&&>>
+  constexpr explicit(!ycxx::detail::elems_convertible<tuple, ycxx::detail::get_types_t<pair<U1, U2>&&>>) tuple(allocator_arg_t, const Alloc& a, pair<U1, U2>&&) = delete;
+  template <class Alloc, class U1, class U2>
+    requires ycxx::detail::tuple_from_other<tuple, const pair<U1, U2>&&> && (!ycxx::detail::elems_dangle<tuple, ycxx::detail::get_types_t<const pair<U1, U2>&&>>)
+  constexpr explicit(!ycxx::detail::elems_convertible<tuple, ycxx::detail::get_types_t<const pair<U1, U2>&&>>) tuple(allocator_arg_t, const Alloc& a, const pair<U1, U2>&& u)
+      : tuple(static_cast<ycxx::detail::alloc_tag_t*>(nullptr), a, static_cast<const pair<U1, U2>&&>(u), seq_of<const pair<U1, U2>&&>{}) {}
+  template <class Alloc, class U1, class U2>
+    requires ycxx::detail::tuple_from_other<tuple, const pair<U1, U2>&&> && ycxx::detail::elems_dangle<tuple, ycxx::detail::get_types_t<const pair<U1, U2>&&>>
+  constexpr explicit(!ycxx::detail::elems_convertible<tuple, ycxx::detail::get_types_t<const pair<U1, U2>&&>>) tuple(allocator_arg_t, const Alloc& a, const pair<U1, U2>&&) = delete;
+  template <class Alloc, class Src>
+    requires ycxx::detail::tuple_from_other<tuple, Src> && (!ycxx::detail::is_pair_v<remove_cvref_t<Src>>) && (!ycxx::detail::elems_dangle<tuple, ycxx::detail::get_types_t<Src>>)
+  constexpr explicit(!ycxx::detail::elems_convertible<tuple, ycxx::detail::get_types_t<Src>>) tuple(allocator_arg_t, const Alloc& a, Src&& u)
+      : tuple(static_cast<ycxx::detail::alloc_tag_t*>(nullptr), a, static_cast<Src&&>(u), seq_of<Src>{}) {}
+  template <class Alloc, class Src>
+    requires ycxx::detail::tuple_from_other<tuple, Src> && (!ycxx::detail::is_pair_v<remove_cvref_t<Src>>) && ycxx::detail::elems_dangle<tuple, ycxx::detail::get_types_t<Src>>
+  constexpr explicit(!ycxx::detail::elems_convertible<tuple, ycxx::detail::get_types_t<Src>>) tuple(allocator_arg_t, const Alloc& a, Src&&) = delete;
 
   // ---- [tuple.assign] ----
   // When every element is a trivially assignable object, the defaulted operators keep tuple
@@ -399,8 +475,8 @@ public:
     requires(N == 2) && is_assignable_v<const Types...[0] &, const U1&> &&
             is_assignable_v<const Types...[1] &, const U2&>
   constexpr const tuple& operator=(const pair<U1, U2>& u) const {
-    ycxx::detail::leaf_get<0>(const_cast<storage&>(s_)) = u.first;
-    ycxx::detail::leaf_get<1>(const_cast<storage&>(s_)) = u.second;
+    ycxx::detail::leaf_get<0>(s_) = u.first;
+    ycxx::detail::leaf_get<1>(s_) = u.second;
     return *this;
   }
   template <class U1, class U2>
@@ -413,24 +489,24 @@ public:
   template <class U1, class U2>
     requires(N == 2) && is_assignable_v<const Types...[0] &, U1> && is_assignable_v<const Types...[1] &, U2>
   constexpr const tuple& operator=(pair<U1, U2>&& u) const {
-    ycxx::detail::leaf_get<0>(const_cast<storage&>(s_)) = static_cast<U1&&>(u.first);
-    ycxx::detail::leaf_get<1>(const_cast<storage&>(s_)) = static_cast<U2&&>(u.second);
+    ycxx::detail::leaf_get<0>(s_) = static_cast<U1&&>(u.first);
+    ycxx::detail::leaf_get<1>(s_) = static_cast<U2&&>(u.second);
     return *this;
   }
   template <ycxx::detail::tuple_like UTuple>
-    requires ycxx::detail::different_from_<UTuple, tuple> && (!ycxx::detail::is_tuple_specialization<remove_cvref_t<UTuple>>) &&
-             (!ycxx::detail::is_pair_v<remove_cvref_t<UTuple>>) && (tuple_size_v<remove_cvref_t<UTuple>> == N) &&
-             requires(tuple& t, UTuple&& u) { t.assign_from(static_cast<UTuple&&>(u), index_sequence_for<Types...>{}); }
+    requires(!ycxx::detail::is_tuple_specialization<remove_cvref_t<UTuple>>) &&
+            (!ycxx::detail::is_pair_v<remove_cvref_t<UTuple>>) && (!ycxx::detail::is_subrange<remove_cvref_t<UTuple>>) &&
+            (tuple_size_v<remove_cvref_t<UTuple>> == N) &&
+            ycxx::detail::elems_assignable<tuple, ycxx::detail::get_types_t<UTuple>>
   constexpr tuple& operator=(UTuple&& u) {
     assign_from(static_cast<UTuple&&>(u), index_sequence_for<Types...>{});
     return *this;
   }
   template <ycxx::detail::tuple_like UTuple>
-    requires ycxx::detail::different_from_<UTuple, tuple> && (!ycxx::detail::is_tuple_specialization<remove_cvref_t<UTuple>>) &&
-             (!ycxx::detail::is_pair_v<remove_cvref_t<UTuple>>) && (tuple_size_v<remove_cvref_t<UTuple>> == N) &&
-             requires(const tuple& t, UTuple&& u) {
-               t.assign_from(static_cast<UTuple&&>(u), index_sequence_for<Types...>{});
-             }
+    requires(!ycxx::detail::is_tuple_specialization<remove_cvref_t<UTuple>>) &&
+            (!ycxx::detail::is_pair_v<remove_cvref_t<UTuple>>) && (!ycxx::detail::is_subrange<remove_cvref_t<UTuple>>) &&
+            (tuple_size_v<remove_cvref_t<UTuple>> == N) &&
+            ycxx::detail::elems_const_assignable<tuple, ycxx::detail::get_types_t<UTuple>>
   constexpr const tuple& operator=(UTuple&& u) const {
     assign_from(static_cast<UTuple&&>(u), index_sequence_for<Types...>{});
     return *this;
@@ -439,12 +515,12 @@ public:
   // ---- [tuple.swap] ----
   constexpr void swap(tuple& rhs) noexcept((is_nothrow_swappable_v<Types> && ...)) {
     [&]<size_t... I>(index_sequence<I...>) {
-      (ycxx::detail::swap_adl::do_swap(ycxx::detail::leaf_get<I>(s_), ycxx::detail::leaf_get<I>(rhs.s_)), ...);
+      ((void)ycxx::detail::swap_adl::do_swap(ycxx::detail::leaf_get<I>(s_), ycxx::detail::leaf_get<I>(rhs.s_)), ...);
     }(index_sequence_for<Types...>{});
   }
   constexpr void swap(const tuple& rhs) const noexcept((is_nothrow_swappable_v<const Types> && ...)) {
     [&]<size_t... I>(index_sequence<I...>) {
-      (ycxx::detail::swap_adl::do_swap(ycxx::detail::leaf_get<I>(s_), ycxx::detail::leaf_get<I>(rhs.s_)), ...);
+      ((void)ycxx::detail::swap_adl::do_swap(ycxx::detail::leaf_get<I>(s_), ycxx::detail::leaf_get<I>(rhs.s_)), ...);
     }(index_sequence_for<Types...>{});
   }
 };
@@ -462,7 +538,8 @@ public:
              (!ycxx::detail::is_subrange<remove_cvref_t<UTuple>>)
   constexpr tuple(UTuple&&) noexcept {}
   template <class Alloc, ycxx::detail::tuple_like UTuple>
-    requires ycxx::detail::different_from_<UTuple, tuple> && (tuple_size_v<remove_cvref_t<UTuple>> == 0)
+    requires ycxx::detail::different_from_<UTuple, tuple> && (tuple_size_v<remove_cvref_t<UTuple>> == 0) &&
+             (!ycxx::detail::is_subrange<remove_cvref_t<UTuple>>)
   constexpr tuple(allocator_arg_t, const Alloc&, UTuple&&) noexcept {}
   tuple(const tuple&) = default;
   tuple& operator=(const tuple&) = default;
@@ -638,12 +715,24 @@ constexpr apply_result_t<F, Tuple> apply(F&& f, Tuple&& t) noexcept(is_nothrow_a
   }(ycxx::detail::tuple_indices<Tuple>{});
 }
 
+} // namespace std
+
+namespace ycxx::detail {
+template <class T, class Tuple>
+consteval bool make_from_tuple_dangles() {
+  if constexpr (std::tuple_size_v<std::remove_reference_t<Tuple>> == 1)
+    return std::reference_constructs_from_temporary_v<T, decltype(get<0>(std::declval<Tuple>()))>;
+  else
+    return false;
+}
+} // namespace ycxx::detail
+
+namespace std {
 template <class T, ycxx::detail::tuple_like Tuple>
 constexpr T make_from_tuple(Tuple&& t) {
+  static_assert(!ycxx::detail::make_from_tuple_dangles<T, Tuple>(),
+                "std::make_from_tuple: would bind a reference to a temporary");
   return [&]<size_t... I>(index_sequence<I...>) -> T {
-    if constexpr (sizeof...(I) == 1)
-      static_assert(!reference_constructs_from_temporary_v<T, decltype(get<0>(declval<Tuple>()))>,
-                    "std::make_from_tuple: would bind a reference to a temporary");
     static_assert(is_constructible_v<T, decltype(get<I>(declval<Tuple>()))...>,
                   "std::make_from_tuple: T is not constructible from the tuple's elements");
     return T(get<I>(static_cast<Tuple&&>(t))...);
@@ -860,27 +949,31 @@ namespace ycxx::detail {
 // overload ([allocator.uses.construction]/17).
 template <class T, class Alloc, class U>
 class pair_converter {
+  using pair_type = std::remove_cv_t<T>;
   const Alloc& alloc_;
   U& u_;
 
+  constexpr auto do_construct(const pair_type& p) const { return std::make_obj_using_allocator<pair_type>(alloc_, p); }
+  constexpr auto do_construct(pair_type&& p) const {
+    return std::make_obj_using_allocator<pair_type>(alloc_, static_cast<pair_type&&>(p));
+  }
+
 public:
   constexpr pair_converter(const Alloc& a, U& u) noexcept : alloc_(a), u_(u) {}
-  constexpr operator std::remove_cv_t<T>() const {
-    return std::make_obj_using_allocator<std::remove_cv_t<T>>(alloc_, static_cast<U&&>(u_));
-  }
+  constexpr operator pair_type() const { return do_construct(static_cast<U&&>(u_)); }
 };
-template <class P>
-void deduce_as_pair(const P&) = delete;
+// FUN(u) from [allocator.uses.construction]/19: well-formed for pair and classes derived from it.
 template <class A, class B>
-void deduce_as_pair(const std::pair<A, B>&);
+void pair_fun(const std::pair<A, B>&);
 template <class U>
-concept is_pair_or_derived = requires(const U& u) { deduce_as_pair(u); };
+concept pair_fun_callable = requires(U&& u) { pair_fun(static_cast<U&&>(u)); };
 } // namespace ycxx::detail
 
 namespace std {
 template <class T, class Alloc, class U>
-  requires ycxx::detail::is_pair_v<remove_cv_t<T>> && (!ycxx::detail::pair_like<U>) &&
-           (!ycxx::detail::is_pair_or_derived<remove_cvref_t<U>>)
+  requires ycxx::detail::is_pair_v<remove_cv_t<T>> &&
+           (ycxx::detail::is_subrange<remove_cvref_t<U>> ||
+            (!ycxx::detail::pair_like<U> && !ycxx::detail::pair_fun_callable<U>))
 constexpr auto uses_allocator_construction_args(const Alloc& alloc, U&& u) noexcept {
   return std::make_tuple(ycxx::detail::pair_converter<T, Alloc, U>(alloc, u));
 }

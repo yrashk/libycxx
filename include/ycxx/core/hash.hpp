@@ -12,7 +12,8 @@ namespace ycxx::detail {
 
 // Byte-sequence hash. Construction: 64x64->128-bit multiply folded to 64 bits ("mum"), the
 // mixing primitive popularised by wyhash/rapidhash (public-domain designs); this is libycxx's
-// own arrangement of it, processing 16 bytes per step. Constant-evaluable.
+// own arrangement of it, processing 16 bytes per step (two multiplies). Constant-evaluable.
+// Note: the seed is fixed, so this is not a defence against deliberate hash flooding.
 inline constexpr std::uint64_t hash_seed = 0x9e3779b97f4a7c15ull;
 inline constexpr std::uint64_t hash_k1 = 0xa0761d6478bd642full;
 inline constexpr std::uint64_t hash_k2 = 0xe7037ed1a0b428dbull;
@@ -38,6 +39,13 @@ constexpr std::uint64_t load_le(const CharT* p, int nbytes) noexcept {
   return v;
 }
 
+// One 16-byte step. Each half is multiplied separately with the running state folded in, so no
+// single chosen 8-byte word can zero the state: cancelling both products requires both words
+// to equal a value determined by the state (one input, not 2^64).
+constexpr std::uint64_t hash_step(std::uint64_t h, std::uint64_t a, std::uint64_t b) noexcept {
+  return mum(a ^ hash_k1 ^ h, hash_k2) ^ mum(b ^ hash_k2 ^ h, hash_k1);
+}
+
 template <class CharT>
 constexpr std::uint64_t hash_chars(const CharT* p, std::size_t n) noexcept {
   const std::size_t bytes = n * sizeof(CharT);
@@ -47,7 +55,7 @@ constexpr std::uint64_t hash_chars(const CharT* p, std::size_t n) noexcept {
   for (; i + 2 * per8 <= n; i += 2 * per8) {
     std::uint64_t a = load_le(p + i, 8);
     std::uint64_t b = load_le(p + i + per8, 8);
-    h = mum(a ^ hash_k1 ^ h, b ^ hash_k2);
+    h = hash_step(h, a, b);
   }
   std::size_t rest = n - i;
   if (rest) {
@@ -58,7 +66,7 @@ constexpr std::uint64_t hash_chars(const CharT* p, std::size_t n) noexcept {
     } else {
       a = load_le(p + i, static_cast<int>(rest * sizeof(CharT)));
     }
-    h = mum(a ^ hash_k1 ^ h, b ^ hash_k2 ^ rest);
+    h = hash_step(h ^ rest, a, b);
   }
   return mum(h ^ hash_k1, h ^ hash_k2);
 }

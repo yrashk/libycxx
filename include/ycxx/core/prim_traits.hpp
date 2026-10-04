@@ -39,11 +39,15 @@ template <class T>
 inline constexpr bool is_null_pointer_v = __is_same(__remove_cv(T), decltype(nullptr));
 
 template <class T>
-inline constexpr bool is_fundamental_v = is_arithmetic_v<T> || is_void_v<T> || is_null_pointer_v<T>;
+inline constexpr bool is_reflection_v = __is_same(__remove_cv(T), reflection);
+
+template <class T>
+inline constexpr bool is_fundamental_v =
+    is_arithmetic_v<T> || is_void_v<T> || is_null_pointer_v<T> || is_reflection_v<T>;
 
 template <class T>
 inline constexpr bool is_scalar_v = is_arithmetic_v<T> || __is_enum(T) || __is_pointer(T) || __is_member_pointer(T) ||
-                                    is_null_pointer_v<T>;
+                                    is_null_pointer_v<T> || is_reflection_v<T>;
 
 template <class T>
 consteval bool signed_impl() {

@@ -1,0 +1,12 @@
+// -*- C++ -*-  libycxx: <cassert>   [core]
+//
+// Deliberately NOT #pragma once: [assertions.assert] requires re-evaluating NDEBUG at each
+// inclusion. The macro is mandated; the failure path is an ordinary function.
+#include <ycxx/core/assert.hpp>
+
+#undef assert
+#ifdef NDEBUG
+#  define assert(...) ((void)0)
+#else
+#  define assert(...) (static_cast<bool>(__VA_ARGS__) ? void(0) : ::ycxx::detail::assert_failed(#__VA_ARGS__))
+#endif

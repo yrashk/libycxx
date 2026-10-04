@@ -77,19 +77,19 @@ struct int_limits : limits_base {
   static constexpr bool is_modulo = !is_signed;
   static constexpr bool traps = cfg::integer_division_traps && sizeof(T) >= sizeof(int);
 
-  static constexpr T min() noexcept {
+  static constexpr T(min)() noexcept {
     if constexpr (is_signed)
       return T(T(1) << digits);
     else
       return T(0);
   }
-  static constexpr T max() noexcept {
+  static constexpr T(max)() noexcept {
     if constexpr (is_signed)
-      return T(~min());
+      return T(~(min)());
     else
       return T(~T(0));
   }
-  static constexpr T lowest() noexcept { return min(); }
+  static constexpr T lowest() noexcept { return (min)(); }
   static constexpr T epsilon() noexcept { return T(0); }
   static constexpr T round_error() noexcept { return T(0); }
   static constexpr T infinity() noexcept { return T(0); }
@@ -105,8 +105,8 @@ struct bool_limits : limits_base {
   static constexpr bool is_exact = true;
   static constexpr int radix = 2;
   static constexpr bool is_bounded = true;
-  static constexpr bool min() noexcept { return false; }
-  static constexpr bool max() noexcept { return true; }
+  static constexpr bool(min)() noexcept { return false; }
+  static constexpr bool(max)() noexcept { return true; }
   static constexpr bool lowest() noexcept { return false; }
   static constexpr bool epsilon() noexcept { return false; }
   static constexpr bool round_error() noexcept { return false; }
@@ -157,12 +157,12 @@ struct fp_limits : limits_base {
   static constexpr bool is_bounded = true;
   static constexpr std::float_round_style round_style = std::round_to_nearest;
 
-  static constexpr T min() noexcept { return pow2<T>(fmt.min_exp - 1); }
-  static constexpr T max() noexcept {
+  static constexpr T(min)() noexcept { return pow2<T>(fmt.min_exp - 1); }
+  static constexpr T(max)() noexcept {
     // (2 - 2^(1-digits)) * 2^(max_exp-1), computed without overflow.
     return (T(2) - pow2<T>(1 - fmt.digits)) * pow2<T>(fmt.max_exp - 1);
   }
-  static constexpr T lowest() noexcept { return -max(); }
+  static constexpr T lowest() noexcept { return -(max)(); }
   static constexpr T epsilon() noexcept { return pow2<T>(1 - fmt.digits); }
   static constexpr T round_error() noexcept { return T(0.5); }
   static constexpr T infinity() noexcept { return static_cast<T>(__builtin_huge_valf()); }
@@ -173,8 +173,8 @@ struct fp_limits : limits_base {
 
 template <class T>
 struct generic_limits : limits_base {
-  static constexpr T min() noexcept { return T(); }
-  static constexpr T max() noexcept { return T(); }
+  static constexpr T(min)() noexcept { return T(); }
+  static constexpr T(max)() noexcept { return T(); }
   static constexpr T lowest() noexcept { return T(); }
   static constexpr T epsilon() noexcept { return T(); }
   static constexpr T round_error() noexcept { return T(); }
@@ -190,7 +190,7 @@ consteval auto select_limits() {
     return bool_limits{};
   else if constexpr (is_integral_v<T>)
     return int_limits<T>{};
-  else if constexpr (is_floating_v<T>)
+  else if constexpr (is_floating_v<T> || __is_same(T, gnu_float128))
     return fp_limits<T>{};
   else
     return generic_limits<T>{};

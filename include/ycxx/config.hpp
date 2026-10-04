@@ -180,6 +180,15 @@ inline constexpr fp_format_info fp_format<bfloat16>{__BFLT16_MANT_DIG__, __BFLT1
 using bfloat16 = fp_unavailable<-16>;
 #endif
 
+// GNU __float128 (distinct from _Float128 in C++): numeric_limits supports it as an extension.
+#if defined(__SIZEOF_FLOAT128__)
+using gnu_float128 = __float128;
+template <>
+inline constexpr fp_format_info fp_format<gnu_float128>{113, -16381, 16384};
+#else
+using gnu_float128 = fp_unavailable<-128>;
+#endif
+
 // remove_reference: the builtin is spelled differently.
 #if defined(__clang__)
 template <class T>

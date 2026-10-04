@@ -1,0 +1,11 @@
+# libc++ conformance tests that libycxx deliberately does not run.
+# Format:  <path regex relative to libcxx/test/std> | <category> | <reason>
+# Every category is explained in tests/SKIPPED.md. Tests are never edited.
+utilities/meta/meta.unary/meta.unary.prop/is_pod\.pass\.cpp | deprecated | std::is_pod is deprecated (C++20)
+utilities/meta/meta.unary/meta.unary.prop/is_literal_type\.pass\.cpp | removed | std::is_literal_type was removed in C++20
+utilities/meta/meta.unary/meta.unary.prop/is_trivial\.pass\.cpp | deprecated | std::is_trivial is deprecated in C++26 (P3247)
+utilities/meta/derived_from_integral_constant\.compile\.pass\.cpp | deprecated | uses std::is_trivial / is_pod (deprecated)
+utilities/meta/meta.trans/meta.trans.other/aligned_storage\.pass\.cpp | deprecated | std::aligned_storage is deprecated (C++23)
+utilities/meta/meta.trans/meta.trans.other/aligned_union\.pass\.cpp | deprecated | std::aligned_union is deprecated (C++23)
+utilities/meta/meta.trans/meta.trans.other/result_of.*\.pass\.cpp | removed | std::result_of was removed in C++20
+utilities/meta/meta.rel/is_invocable_r(_v)?\.compile\.pass\.cpp | divergence | expects is_invocable_r<const int&, int()> true; the draft ([func.require]/2, P2255) makes INVOKE<R> ill-formed when a reference binds to a temporary

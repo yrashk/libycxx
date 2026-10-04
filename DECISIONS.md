@@ -44,7 +44,9 @@ variable templates. The preprocessor is used only where the language cannot do t
    appear only in the definitions of `std::` traits, `ycxx::detail` variable templates, and
    concepts. Function signatures (return types, `requires`, `noexcept`, `explicit`) use the
    `_v` traits or concepts. GCC rejects builtins in mangled signatures, and named concepts are
-   needed anyway for constraint subsumption.
+   needed anyway for constraint subsumption. For the same reason the public `_t` aliases go
+   through their class templates (`remove_cv_t<T> = typename remove_cv<T>::type`), because user
+   code puts them in signatures.
 6. **`#pragma once`** instead of include guards.
 7. **Preconditions are a function, not a macro.** `ycxx::detail::precondition(cond, msg)` is
    `constexpr`. It always diagnoses a violation during constant evaluation, and checks at run

@@ -656,7 +656,7 @@ class lazy_split_view : public view_interface<lazy_split_view<V, Pattern>> {
     bool trailing_empty_ = false;
 
     // The notional member "current" ([range.lazy.split.outer]/1).
-    constexpr iterator_t<Base>& current() const {
+    constexpr iterator_t<Base>& current() const noexcept {
       if constexpr (forward_range<V>)
         return const_cast<iterator_t<Base>&>(current_);
       else
@@ -679,7 +679,6 @@ class lazy_split_view : public view_interface<lazy_split_view<V, Pattern>> {
       constexpr explicit value_type(outer_iterator i) : i_(std::move(i)) {}
 
     public:
-      value_type() = default;
       constexpr inner_iterator<Const> begin() const { return inner_iterator<Const>{i_}; }
       constexpr default_sentinel_t end() const noexcept { return default_sentinel; }
     };

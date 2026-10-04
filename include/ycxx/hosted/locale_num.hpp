@@ -125,11 +125,11 @@ OutIt num_put_output(OutIt out, std::ios_base& str, charT fill, const char* s, s
     at = len;
   else if (adjust == std::ios_base::internal)
     at = pad;
-  for (std::size_t i = 0; i < at; ++i, ++out)
+  for (std::size_t i = 0; i < at; ++i, static_cast<void>(++out))
     *out = w[i];
-  for (; fill_count != 0; --fill_count, ++out)
+  for (; fill_count != 0; --fill_count, static_cast<void>(++out))
     *out = fill;
-  for (std::size_t i = at; i < len; ++i, ++out)
+  for (std::size_t i = at; i < len; ++i, static_cast<void>(++out))
     *out = w[i];
   return out;
 }
@@ -519,13 +519,13 @@ protected:
     size_t fill_count = width > 0 && static_cast<size_t>(width) > s.size() ? static_cast<size_t>(width) - s.size() : 0;
     const bool left = (str.flags() & ios_base::adjustfield) == ios_base::left;
     if (!left)
-      for (; fill_count != 0; --fill_count, ++out)
+      for (; fill_count != 0; --fill_count, static_cast<void>(++out))
         *out = fill;
     for (charT c : s) {
       *out = c;
       ++out;
     }
-    for (; fill_count != 0; --fill_count, ++out)
+    for (; fill_count != 0; --fill_count, static_cast<void>(++out))
       *out = fill;
     return out;
   }

@@ -11,7 +11,8 @@
 // initialization.
 //
 // The classic locale holds every facet of [locale.category] Table 91 for char and wchar_t, plus
-// codecvt<char16_t, char8_t> and codecvt<char32_t, char8_t>; it is built on first use and never
+// codecvt<char16_t, char8_t> and codecvt<char32_t, char8_t> (and the deprecated char versions); it
+// is built on first use and never
 // destroyed. Named locales: "C", "POSIX" (named "C") and "C.UTF-8" / "C.utf8" have the classic
 // semantics; "" names the environment's locale (LC_ALL, LC_<category>, LANG), which is one of
 // those or, for any other name, the classic locale named "C" (the environment's own conventions
@@ -656,6 +657,90 @@ protected:
   virtual int do_encoding() const noexcept;
   virtual bool do_always_noconv() const noexcept;
   virtual int do_length(mbstate_t&, const char8_t* from, const char8_t* end, size_t max) const;
+  virtual int do_max_length() const noexcept;
+};
+
+// [depr.locale.category]: the deprecated UTF-16 / UTF-32 <-> UTF-8 conversions with char as the
+// UTF-8 code unit (not marked [[deprecated]]).
+template <>
+class codecvt<char16_t, char, mbstate_t> : public locale::facet, public codecvt_base {
+public:
+  using intern_type = char16_t;
+  using extern_type = char;
+  using state_type = mbstate_t;
+
+  explicit codecvt(size_t refs = 0) : locale::facet(refs) {}
+  result out(mbstate_t& state, const char16_t* from, const char16_t* from_end, const char16_t*& from_next,
+             char* to, char* to_end, char*& to_next) const {
+    return do_out(state, from, from_end, from_next, to, to_end, to_next);
+  }
+  result unshift(mbstate_t& state, char* to, char* to_end, char*& to_next) const {
+    return do_unshift(state, to, to_end, to_next);
+  }
+  result in(mbstate_t& state, const char* from, const char* from_end, const char*& from_next, char16_t* to,
+            char16_t* to_end, char16_t*& to_next) const {
+    return do_in(state, from, from_end, from_next, to, to_end, to_next);
+  }
+  int encoding() const noexcept { return do_encoding(); }
+  bool always_noconv() const noexcept { return do_always_noconv(); }
+  int length(mbstate_t& state, const char* from, const char* end, size_t max) const {
+    return do_length(state, from, end, max);
+  }
+  int max_length() const noexcept { return do_max_length(); }
+
+  static locale::id id;
+
+protected:
+  ~codecvt() override;
+  virtual result do_out(mbstate_t& state, const char16_t* from, const char16_t* from_end, const char16_t*& from_next,
+                        char* to, char* to_end, char*& to_next) const;
+  virtual result do_in(mbstate_t& state, const char* from, const char* from_end, const char*& from_next,
+                       char16_t* to, char16_t* to_end, char16_t*& to_next) const;
+  virtual result do_unshift(mbstate_t& state, char* to, char* to_end, char*& to_next) const;
+  virtual int do_encoding() const noexcept;
+  virtual bool do_always_noconv() const noexcept;
+  virtual int do_length(mbstate_t&, const char* from, const char* end, size_t max) const;
+  virtual int do_max_length() const noexcept;
+};
+
+template <>
+class codecvt<char32_t, char, mbstate_t> : public locale::facet, public codecvt_base {
+public:
+  using intern_type = char32_t;
+  using extern_type = char;
+  using state_type = mbstate_t;
+
+  explicit codecvt(size_t refs = 0) : locale::facet(refs) {}
+  result out(mbstate_t& state, const char32_t* from, const char32_t* from_end, const char32_t*& from_next,
+             char* to, char* to_end, char*& to_next) const {
+    return do_out(state, from, from_end, from_next, to, to_end, to_next);
+  }
+  result unshift(mbstate_t& state, char* to, char* to_end, char*& to_next) const {
+    return do_unshift(state, to, to_end, to_next);
+  }
+  result in(mbstate_t& state, const char* from, const char* from_end, const char*& from_next, char32_t* to,
+            char32_t* to_end, char32_t*& to_next) const {
+    return do_in(state, from, from_end, from_next, to, to_end, to_next);
+  }
+  int encoding() const noexcept { return do_encoding(); }
+  bool always_noconv() const noexcept { return do_always_noconv(); }
+  int length(mbstate_t& state, const char* from, const char* end, size_t max) const {
+    return do_length(state, from, end, max);
+  }
+  int max_length() const noexcept { return do_max_length(); }
+
+  static locale::id id;
+
+protected:
+  ~codecvt() override;
+  virtual result do_out(mbstate_t& state, const char32_t* from, const char32_t* from_end, const char32_t*& from_next,
+                        char* to, char* to_end, char*& to_next) const;
+  virtual result do_in(mbstate_t& state, const char* from, const char* from_end, const char*& from_next,
+                       char32_t* to, char32_t* to_end, char32_t*& to_next) const;
+  virtual result do_unshift(mbstate_t& state, char* to, char* to_end, char*& to_next) const;
+  virtual int do_encoding() const noexcept;
+  virtual bool do_always_noconv() const noexcept;
+  virtual int do_length(mbstate_t&, const char* from, const char* end, size_t max) const;
   virtual int do_max_length() const noexcept;
 };
 

@@ -42,11 +42,20 @@ using ycxx::detail::locale_impl;
 
 std::size_t next_facet_index = 0; // atomic; ids are 1, 2, ...
 
+// Zero-filled arrays from ::operator new (not new[]: the program's array allocation functions
+// see no calls from the locale machinery).
+template <class T>
+T* new_zeroed(std::size_t n) {
+  void* p = ::operator new(n * sizeof(T));
+  std::memset(p, 0, n * sizeof(T));
+  return static_cast<T*>(p);
+}
+
 char* copy_name(const char* s) {
   if (s == nullptr)
     return nullptr;
   const std::size_t n = std::strlen(s) + 1;
-  char* p = new char[n];
+  char* p = new_zeroed<char>(n);
   std::memcpy(p, s, n);
   return p;
 }
@@ -55,16 +64,16 @@ locale_impl* new_impl(std::size_t nfacets, const char* name) {
   locale_impl* p = new locale_impl{1, nullptr, 0, nullptr};
   if constexpr (ycxx::detail::cfg::exceptions) {
     try {
-      p->facets = new const std::locale::facet*[nfacets]();
+      p->facets = new_zeroed<const std::locale::facet*>(nfacets);
       p->nfacets = nfacets;
       p->name = copy_name(name);
     } catch (...) {
-      delete[] p->facets;
+      ::operator delete(p->facets);
       delete p;
       throw;
     }
   } else {
-    p->facets = new const std::locale::facet*[nfacets]();
+    p->facets = new_zeroed<const std::locale::facet*>(nfacets);
     p->nfacets = nfacets;
     p->name = copy_name(name);
   }
@@ -78,8 +87,8 @@ void release(locale_impl* p) noexcept {
   for (std::size_t i = 0; i < p->nfacets; ++i)
     if (p->facets[i] != nullptr)
       locale_access::release(p->facets[i]);
-  delete[] p->facets;
-  delete[] p->name;
+  ::operator delete(p->facets);
+  ::operator delete(p->name);
   delete p;
 }
 
@@ -125,8 +134,9 @@ const category_ids& ids_of(int c) {
       {{&std::collate<char>::id, &std::collate<wchar_t>::id}, 2},
       {{&std::ctype<char>::id, &std::ctype<wchar_t>::id, &std::codecvt<char, char, std::mbstate_t>::id,
         &std::codecvt<wchar_t, char, std::mbstate_t>::id, &std::codecvt<char16_t, char8_t, std::mbstate_t>::id,
-        &std::codecvt<char32_t, char8_t, std::mbstate_t>::id},
-       6},
+        &std::codecvt<char32_t, char8_t, std::mbstate_t>::id, &std::codecvt<char16_t, char, std::mbstate_t>::id,
+        &std::codecvt<char32_t, char, std::mbstate_t>::id},
+       8},
       {{&std::moneypunct<char, false>::id, &std::moneypunct<char, true>::id, &std::moneypunct<wchar_t, false>::id,
         &std::moneypunct<wchar_t, true>::id, &std::money_get<char>::id, &std::money_get<wchar_t>::id,
         &std::money_put<char>::id, &std::money_put<wchar_t>::id},
@@ -267,6 +277,8 @@ locale_impl* make_classic() {
       new std::codecvt<wchar_t, char, std::mbstate_t>(1),
       new std::codecvt<char16_t, char8_t, std::mbstate_t>(1),
       new std::codecvt<char32_t, char8_t, std::mbstate_t>(1),
+      new std::codecvt<char16_t, char, std::mbstate_t>(1),
+      new std::codecvt<char32_t, char, std::mbstate_t>(1),
       new std::moneypunct<char, false>(1),
       new std::moneypunct<char, true>(1),
       new std::moneypunct<wchar_t, false>(1),
@@ -297,6 +309,8 @@ locale_impl* make_classic() {
       &std::codecvt<wchar_t, char, std::mbstate_t>::id,
       &std::codecvt<char16_t, char8_t, std::mbstate_t>::id,
       &std::codecvt<char32_t, char8_t, std::mbstate_t>::id,
+      &std::codecvt<char16_t, char, std::mbstate_t>::id,
+      &std::codecvt<char32_t, char, std::mbstate_t>::id,
       &std::moneypunct<char, false>::id,
       &std::moneypunct<char, true>::id,
       &std::moneypunct<wchar_t, false>::id,
@@ -338,6 +352,14 @@ const std::locale& classic_locale() {
   (void)built;
   return c.object;
 }
+
+// The classic locale is built before any object of the program with ordinary static
+// initialization (it is also built on first use, should a runtime initializer need it sooner),
+// so the program never sees its allocations as its own.
+struct build_classic {
+  build_classic() { classic_locale(); }
+};
+[[gnu::init_priority(100)]] build_classic classic_at_startup;
 
 // The global locale ([locale.statics]): one for the program, under a lock.
 ycxx::detail::pal_lock global_lock;
@@ -653,6 +675,99 @@ result utf32_in(const E* from, const E* from_end, const E*& from_next, I* to, I*
   return std::codecvt_base::ok;
 }
 
+// UTF-16 to UTF-8 (E = char or char8_t). A supplementary character is split across calls through
+// the state ([locale.codecvt.virtuals]/4): a high surrogate is consumed alone and kept.
+template <class E>
+result utf16_out(std::mbstate_t& state, const char16_t* from, const char16_t* from_end, const char16_t*& from_next,
+                 E* to, E* to_end, E*& to_next) {
+  char32_t high = load_state(state);
+  for (; from != from_end; ++from) {
+    const char16_t u = *from;
+    char32_t cp;
+    if (high != 0) {
+      if (u < 0xDC00 || u > 0xDFFF) {
+        from_next = from;
+        to_next = to;
+        return std::codecvt_base::error;
+      }
+      cp = 0x10000 + ((high - 0xD800) << 10) + (u - 0xDC00);
+    } else if (u >= 0xD800 && u <= 0xDBFF) {
+      high = u;
+      store_state(state, high);
+      continue;
+    } else if (u >= 0xDC00 && u <= 0xDFFF) {
+      from_next = from;
+      to_next = to;
+      return std::codecvt_base::error;
+    } else {
+      cp = u;
+    }
+    unsigned char buf[4];
+    const int n = encode_utf8(cp, buf);
+    if (to_end - to < n) {
+      // the pending high surrogate (if any) stays in the state; u is not consumed
+      from_next = from;
+      to_next = to;
+      return std::codecvt_base::partial;
+    }
+    for (int i = 0; i < n; ++i)
+      *to++ = static_cast<E>(buf[i]);
+    high = 0;
+    store_state(state, 0);
+  }
+  from_next = from;
+  to_next = to;
+  return std::codecvt_base::ok;
+}
+
+// UTF-8 to UTF-16: with room for one unit only, the high surrogate is written and the low one
+// kept in the state; the UTF-8 sequence is consumed when the low one is written.
+template <class E>
+result utf16_in(std::mbstate_t& state, const E* from, const E* from_end, const E*& from_next, char16_t* to,
+                char16_t* to_end, char16_t*& to_next) {
+  while (from != from_end) {
+    if (to == to_end) {
+      from_next = from;
+      to_next = to;
+      return std::codecvt_base::partial;
+    }
+    char32_t cp;
+    const int n =
+        decode_utf8(reinterpret_cast<const unsigned char*>(from), reinterpret_cast<const unsigned char*>(from_end), cp);
+    if (n <= 0) {
+      from_next = from;
+      to_next = to;
+      return n == 0 ? std::codecvt_base::partial : std::codecvt_base::error;
+    }
+    if (cp < 0x10000) {
+      *to++ = static_cast<char16_t>(cp);
+      from += n;
+      continue;
+    }
+    const char16_t hi = static_cast<char16_t>(0xD800 + ((cp - 0x10000) >> 10));
+    const char16_t lo = static_cast<char16_t>(0xDC00 + ((cp - 0x10000) & 0x3FF));
+    if (load_state(state) != 0) {
+      // the high surrogate was written by the previous call
+      *to++ = lo;
+      store_state(state, 0);
+      from += n;
+      continue;
+    }
+    *to++ = hi;
+    if (to == to_end) {
+      store_state(state, lo);
+      from_next = from;
+      to_next = to;
+      return std::codecvt_base::ok;
+    }
+    *to++ = lo;
+    from += n;
+  }
+  from_next = from;
+  to_next = to;
+  return std::codecvt_base::ok;
+}
+
 template <class E>
 int utf8_length(const E* from, const E* end, std::size_t max, int units_per_cp_max) {
   const E* p = from;
@@ -756,100 +871,20 @@ int codecvt<char32_t, char8_t, mbstate_t>::do_length(mbstate_t&, const char8_t* 
 }
 int codecvt<char32_t, char8_t, mbstate_t>::do_max_length() const noexcept { return 4; }
 
-// codecvt<char16_t, char8_t, mbstate_t>: UTF-16 <-> UTF-8. A supplementary character is split
-// across calls through the state ([locale.codecvt.virtuals]/4): do_out consumes a high
-// surrogate alone and keeps it; do_in with room for one unit writes the high surrogate and
-// keeps the low one, consuming the UTF-8 sequence when the low one is written.
+// codecvt<char16_t, char8_t, mbstate_t>: UTF-16 <-> UTF-8 (utf16_out / utf16_in).
 locale::id codecvt<char16_t, char8_t, mbstate_t>::id;
 codecvt<char16_t, char8_t, mbstate_t>::~codecvt() {}
 codecvt_base::result codecvt<char16_t, char8_t, mbstate_t>::do_out(mbstate_t& state, const char16_t* from,
                                                                    const char16_t* from_end, const char16_t*& from_next,
                                                                    char8_t* to, char8_t* to_end,
                                                                    char8_t*& to_next) const {
-  char32_t high = load_state(state);
-  for (; from != from_end; ++from) {
-    const char16_t u = *from;
-    char32_t cp;
-    if (high != 0) {
-      if (u < 0xDC00 || u > 0xDFFF) {
-        from_next = from;
-        to_next = to;
-        return error;
-      }
-      cp = 0x10000 + ((high - 0xD800) << 10) + (u - 0xDC00);
-    } else if (u >= 0xD800 && u <= 0xDBFF) {
-      high = u;
-      store_state(state, high);
-      continue;
-    } else if (u >= 0xDC00 && u <= 0xDFFF) {
-      from_next = from;
-      to_next = to;
-      return error;
-    } else {
-      cp = u;
-    }
-    unsigned char buf[4];
-    const int n = encode_utf8(cp, buf);
-    if (to_end - to < n) {
-      // the pending high surrogate (if any) stays in the state; u is not consumed
-      from_next = from;
-      to_next = to;
-      return partial;
-    }
-    for (int i = 0; i < n; ++i)
-      *to++ = static_cast<char8_t>(buf[i]);
-    high = 0;
-    store_state(state, 0);
-  }
-  from_next = from;
-  to_next = to;
-  return ok;
+  return utf16_out(state, from, from_end, from_next, to, to_end, to_next);
 }
 codecvt_base::result codecvt<char16_t, char8_t, mbstate_t>::do_in(mbstate_t& state, const char8_t* from,
                                                                   const char8_t* from_end, const char8_t*& from_next,
                                                                   char16_t* to, char16_t* to_end,
                                                                   char16_t*& to_next) const {
-  while (from != from_end) {
-    if (to == to_end) {
-      from_next = from;
-      to_next = to;
-      return partial;
-    }
-    char32_t cp;
-    const int n =
-        decode_utf8(reinterpret_cast<const unsigned char*>(from), reinterpret_cast<const unsigned char*>(from_end), cp);
-    if (n <= 0) {
-      from_next = from;
-      to_next = to;
-      return n == 0 ? partial : error;
-    }
-    if (cp < 0x10000) {
-      *to++ = static_cast<char16_t>(cp);
-      from += n;
-      continue;
-    }
-    const char16_t hi = static_cast<char16_t>(0xD800 + ((cp - 0x10000) >> 10));
-    const char16_t lo = static_cast<char16_t>(0xDC00 + ((cp - 0x10000) & 0x3FF));
-    if (load_state(state) != 0) {
-      // the high surrogate was written by the previous call
-      *to++ = lo;
-      store_state(state, 0);
-      from += n;
-      continue;
-    }
-    *to++ = hi;
-    if (to == to_end) {
-      store_state(state, lo);
-      from_next = from;
-      to_next = to;
-      return ok;
-    }
-    *to++ = lo;
-    from += n;
-  }
-  from_next = from;
-  to_next = to;
-  return ok;
+  return utf16_in(state, from, from_end, from_next, to, to_end, to_next);
 }
 codecvt_base::result codecvt<char16_t, char8_t, mbstate_t>::do_unshift(mbstate_t&, char8_t* to, char8_t*,
                                                                        char8_t*& to_next) const {
@@ -863,6 +898,64 @@ int codecvt<char16_t, char8_t, mbstate_t>::do_length(mbstate_t&, const char8_t* 
   return utf8_length(from, end, max, 2);
 }
 int codecvt<char16_t, char8_t, mbstate_t>::do_max_length() const noexcept { return 4; }
+
+// [depr.locale.category]: the deprecated codecvt<char16_t, char, mbstate_t> and
+// codecvt<char32_t, char, mbstate_t>, the same conversions with char as the UTF-8 code unit.
+// codecvt<char32_t, char, mbstate_t>: UTF-32 <-> UTF-8.
+locale::id codecvt<char32_t, char, mbstate_t>::id;
+codecvt<char32_t, char, mbstate_t>::~codecvt() {}
+codecvt_base::result codecvt<char32_t, char, mbstate_t>::do_out(mbstate_t&, const char32_t* from,
+                                                                   const char32_t* from_end, const char32_t*& from_next,
+                                                                   char* to, char* to_end,
+                                                                   char*& to_next) const {
+  return utf32_out(from, from_end, from_next, to, to_end, to_next);
+}
+codecvt_base::result codecvt<char32_t, char, mbstate_t>::do_in(mbstate_t&, const char* from,
+                                                                  const char* from_end, const char*& from_next,
+                                                                  char32_t* to, char32_t* to_end,
+                                                                  char32_t*& to_next) const {
+  return utf32_in(from, from_end, from_next, to, to_end, to_next);
+}
+codecvt_base::result codecvt<char32_t, char, mbstate_t>::do_unshift(mbstate_t&, char* to, char*,
+                                                                       char*& to_next) const {
+  to_next = to;
+  return noconv;
+}
+int codecvt<char32_t, char, mbstate_t>::do_encoding() const noexcept { return 0; }
+bool codecvt<char32_t, char, mbstate_t>::do_always_noconv() const noexcept { return false; }
+int codecvt<char32_t, char, mbstate_t>::do_length(mbstate_t&, const char* from, const char* end,
+                                                     size_t max) const {
+  return utf8_length(from, end, max, 1);
+}
+int codecvt<char32_t, char, mbstate_t>::do_max_length() const noexcept { return 4; }
+
+// codecvt<char16_t, char, mbstate_t>: UTF-16 <-> UTF-8 (utf16_out / utf16_in).
+locale::id codecvt<char16_t, char, mbstate_t>::id;
+codecvt<char16_t, char, mbstate_t>::~codecvt() {}
+codecvt_base::result codecvt<char16_t, char, mbstate_t>::do_out(mbstate_t& state, const char16_t* from,
+                                                                   const char16_t* from_end, const char16_t*& from_next,
+                                                                   char* to, char* to_end,
+                                                                   char*& to_next) const {
+  return utf16_out(state, from, from_end, from_next, to, to_end, to_next);
+}
+codecvt_base::result codecvt<char16_t, char, mbstate_t>::do_in(mbstate_t& state, const char* from,
+                                                                  const char* from_end, const char*& from_next,
+                                                                  char16_t* to, char16_t* to_end,
+                                                                  char16_t*& to_next) const {
+  return utf16_in(state, from, from_end, from_next, to, to_end, to_next);
+}
+codecvt_base::result codecvt<char16_t, char, mbstate_t>::do_unshift(mbstate_t&, char* to, char*,
+                                                                       char*& to_next) const {
+  to_next = to;
+  return noconv;
+}
+int codecvt<char16_t, char, mbstate_t>::do_encoding() const noexcept { return 0; }
+bool codecvt<char16_t, char, mbstate_t>::do_always_noconv() const noexcept { return false; }
+int codecvt<char16_t, char, mbstate_t>::do_length(mbstate_t&, const char* from, const char* end,
+                                                     size_t max) const {
+  return utf8_length(from, end, max, 2);
+}
+int codecvt<char16_t, char, mbstate_t>::do_max_length() const noexcept { return 4; }
 
 } // namespace std
 

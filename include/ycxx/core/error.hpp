@@ -1,8 +1,9 @@
-// libycxx core: the single error hook through which every library "throw" goes.
+// libycxx core: the error hooks through which every library "throw" goes (DECISIONS §4).
 //
-// With exceptions enabled, ycxx::detail::raise(...) throws the standard exception type through
-// the out-of-line ycxx::detail::throw_std defined in the hosted runtime, so core headers never
-// depend on <exception> or <stdexcept>.
+// With exceptions enabled, raise_with(kind, what, make) throws make() from the header (exception
+// classes defined inline in core headers; also works in constant evaluation), and
+// raise(kind, what) throws a <stdexcept> class through the out-of-line ycxx::detail::throw_std in
+// the hosted runtime, so core headers never depend on <stdexcept>.
 //
 // With -fno-exceptions the user-replaceable C function `ycxx_error_handler` is called. Its
 // default (weak) definition calls __builtin_trap(). Provide a strong definition to override:

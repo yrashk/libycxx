@@ -69,11 +69,14 @@ Deprecated and removed features are not implemented (`is_pod`, `is_trivial`, `al
 
 ## Open issues / next
 - Phase 2 remaining: any, function family (function, move_only_function,
-  copyable_function, function_ref, bind, mem_fn, not_fn), span, string_view, bitset.
+  copyable_function, function_ref, bind, mem_fn, not_fn), string_view, bitset; <exception>
+  propagation (exception_ptr, nested_exception, exception_ptr_cast).
 - Then Phase 3 (containers, algorithms), Phase 4 (ranges, charconv, format, ...).
 - Constexpr exceptions (P3068): done for `exception`, `bad_alloc`, `bad_array_new_length`,
   `bad_exception`, `bad_cast`, `bad_typeid`, `bad_optional_access`, `bad_variant_access`, and
-  `bad_expected_access`. All are thrown from headers through `raise_with`, so GCC can throw them
-  during constant evaluation; Clang 23 cannot throw during constant evaluation at all.
+  `bad_expected_access`. Those the library throws are thrown from headers through `raise_with`,
+  so GCC can throw them during constant evaluation; Clang 23 cannot throw during constant
+  evaluation at all. Under -fno-rtti the six classes libsupc++ defines keep an out-of-line
+  destructor, so they are not constexpr-destructible there (DECISIONS §4).
   Still open: the `<stdexcept>` classes (their message storage lives in the hosted runtime), so
   `__cpp_lib_constexpr_exceptions` is not yet defined.

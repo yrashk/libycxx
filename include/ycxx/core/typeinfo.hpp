@@ -53,7 +53,11 @@ public:
   constexpr bad_cast() noexcept {}
   constexpr bad_cast(const bad_cast&) noexcept = default;
   constexpr bad_cast& operator=(const bad_cast&) noexcept = default;
+#if YCXX_HAS_RTTI
   constexpr ~bad_cast() override {}
+#else
+  ~bad_cast() override; // see the header comment of exception_base.hpp
+#endif
   constexpr const char* what() const noexcept override { return "std::bad_cast"; }
 };
 
@@ -62,7 +66,11 @@ public:
   constexpr bad_typeid() noexcept {}
   constexpr bad_typeid(const bad_typeid&) noexcept = default;
   constexpr bad_typeid& operator=(const bad_typeid&) noexcept = default;
+#if YCXX_HAS_RTTI
   constexpr ~bad_typeid() override {}
+#else
+  ~bad_typeid() override; // see the header comment of exception_base.hpp
+#endif
   constexpr const char* what() const noexcept override { return "std::bad_typeid"; }
 };
 

@@ -478,29 +478,47 @@ concept contiguous_iterator =
 
 } // namespace std
 
-namespace ycxx::detail {
-// projected<I, Proj> is a namespace-scope class template so that indirect-value-t can see
+namespace ycxx::adl_free {
+// projected-impl ([projected]): projected<I, Proj> is the nested class `type`. A nested class
+// is not a template specialization, so ADL on it neither instantiates I or Proj nor sees
+// ycxx::detail. It records I and Proj (reserved member names) so that indirect-value-t can see
 // through it ([indirectcallable.traits], P2609).
 template <class I, class Proj>
-struct projected_type {
-  using value_type = std::remove_cvref_t<std::invoke_result_t<Proj&, std::iter_reference_t<I>>>;
-  std::invoke_result_t<Proj&, std::iter_reference_t<I>> operator*() const; // not defined
+struct projected_impl {
+  struct type {
+    using value_type = std::remove_cvref_t<std::invoke_result_t<Proj&, std::iter_reference_t<I>>>;
+    using __projected_iter = I;
+    using __projected_proj = Proj;
+    std::invoke_result_t<Proj&, std::iter_reference_t<I>> operator*() const; // not defined
+  };
 };
 template <class I, class Proj>
   requires std::weakly_incrementable<I>
-struct projected_type<I, Proj> {
-  using value_type = std::remove_cvref_t<std::invoke_result_t<Proj&, std::iter_reference_t<I>>>;
-  using difference_type = std::iter_difference_t<I>;
-  std::invoke_result_t<Proj&, std::iter_reference_t<I>> operator*() const; // not defined
+struct projected_impl<I, Proj> {
+  struct type {
+    using value_type = std::remove_cvref_t<std::invoke_result_t<Proj&, std::iter_reference_t<I>>>;
+    using difference_type = std::iter_difference_t<I>;
+    using __projected_iter = I;
+    using __projected_proj = Proj;
+    std::invoke_result_t<Proj&, std::iter_reference_t<I>> operator*() const; // not defined
+  };
 };
+} // namespace ycxx::adl_free
+
+namespace ycxx::detail {
+template <class T>
+concept is_projected = requires {
+  typename T::__projected_iter;
+  typename T::__projected_proj;
+} && std::is_same_v<T, typename adl_free::projected_impl<typename T::__projected_iter, typename T::__projected_proj>::type>;
 
 template <class T>
 struct indirect_value {
   using type = std::iter_value_t<T>&;
 };
-template <class I, class Proj>
-struct indirect_value<projected_type<I, Proj>> {
-  using type = std::invoke_result_t<Proj&, typename indirect_value<I>::type>;
+template <is_projected P>
+struct indirect_value<P> {
+  using type = std::invoke_result_t<typename P::__projected_proj&, typename indirect_value<typename P::__projected_iter>::type>;
 };
 template <class T>
 using indirect_value_t = typename indirect_value<T>::type;
@@ -555,7 +573,7 @@ using indirect_result_t = invoke_result_t<F, iter_reference_t<Is>...>;
 
 // [projected]
 template <indirectly_readable I, indirectly_regular_unary_invocable<I> Proj>
-using projected = ycxx::detail::projected_type<I, Proj>;
+using projected = typename ycxx::adl_free::projected_impl<I, Proj>::type;
 
 template <indirectly_readable I, indirectly_regular_unary_invocable<I> Proj>
 using projected_value_t = remove_cvref_t<invoke_result_t<Proj&, iter_value_t<I>&>>;

@@ -660,7 +660,9 @@ public:
   using pointer = Iterator;
   using reference = iter_rvalue_reference_t<Iterator>;
 
-  constexpr move_iterator() = default;
+  constexpr move_iterator()
+    requires default_initializable<Iterator>
+  = default;
   constexpr explicit move_iterator(Iterator i) : current_(static_cast<Iterator&&>(i)) {}
   template <class U>
     requires(!is_same_v<U, Iterator> && convertible_to<const U&, Iterator>)
@@ -1248,11 +1250,11 @@ void rbegin(auto&) = delete;
 void rbegin(const auto&) = delete;
 template <class T>
 concept member = requires(T& t) {
-  { decay_copy(t.rbegin()) } -> std::input_or_output_iterator;
+  { ::ycxx::detail::decay_copy(t.rbegin()) } -> std::input_or_output_iterator;
 };
 template <class T>
 concept adl = class_or_enum<T> && requires(T& t) {
-  { decay_copy(rbegin(t)) } -> std::input_or_output_iterator;
+  { ::ycxx::detail::decay_copy(rbegin(t)) } -> std::input_or_output_iterator;
 };
 template <class T>
 concept reversible = requires(T& t) {
@@ -1263,9 +1265,9 @@ struct fn {
   template <class T>
   static consteval bool nothrow() {
     if constexpr (member<T>)
-      return noexcept(decay_copy(std::declval<T&>().rbegin()));
+      return noexcept(::ycxx::detail::decay_copy(std::declval<T&>().rbegin()));
     else if constexpr (adl<T>)
-      return noexcept(decay_copy(rbegin(std::declval<T&>())));
+      return noexcept(::ycxx::detail::decay_copy(rbegin(std::declval<T&>())));
     else
       return noexcept(std::make_reverse_iterator(std::ranges::end(std::declval<T&>())));
   }
@@ -1273,9 +1275,9 @@ struct fn {
     requires maybe_borrowed<T> && (member<T> || adl<T> || reversible<T>)
   [[nodiscard]] constexpr auto operator()(T&& t) const noexcept(nothrow<T>()) {
     if constexpr (member<T>)
-      return decay_copy(t.rbegin());
+      return ::ycxx::detail::decay_copy(t.rbegin());
     else if constexpr (adl<T>)
-      return decay_copy(rbegin(t));
+      return ::ycxx::detail::decay_copy(rbegin(t));
     else
       return std::make_reverse_iterator(std::ranges::end(t));
   }
@@ -1295,19 +1297,19 @@ void rend(auto&) = delete;
 void rend(const auto&) = delete;
 template <class T>
 concept member = requires(T& t) {
-  { decay_copy(t.rend()) } -> std::sentinel_for<decltype(std::ranges::rbegin(t))>;
+  { ::ycxx::detail::decay_copy(t.rend()) } -> std::sentinel_for<decltype(std::ranges::rbegin(t))>;
 };
 template <class T>
 concept adl = class_or_enum<T> && requires(T& t) {
-  { decay_copy(rend(t)) } -> std::sentinel_for<decltype(std::ranges::rbegin(t))>;
+  { ::ycxx::detail::decay_copy(rend(t)) } -> std::sentinel_for<decltype(std::ranges::rbegin(t))>;
 };
 struct fn {
   template <class T>
   static consteval bool nothrow() {
     if constexpr (member<T>)
-      return noexcept(decay_copy(std::declval<T&>().rend()));
+      return noexcept(::ycxx::detail::decay_copy(std::declval<T&>().rend()));
     else if constexpr (adl<T>)
-      return noexcept(decay_copy(rend(std::declval<T&>())));
+      return noexcept(::ycxx::detail::decay_copy(rend(std::declval<T&>())));
     else
       return noexcept(std::make_reverse_iterator(std::ranges::begin(std::declval<T&>())));
   }
@@ -1315,9 +1317,9 @@ struct fn {
     requires maybe_borrowed<T> && (member<T> || adl<T> || rbegin_ns::reversible<T>)
   [[nodiscard]] constexpr auto operator()(T&& t) const noexcept(nothrow<T>()) {
     if constexpr (member<T>)
-      return decay_copy(t.rend());
+      return ::ycxx::detail::decay_copy(t.rend());
     else if constexpr (adl<T>)
-      return decay_copy(rend(t));
+      return ::ycxx::detail::decay_copy(rend(t));
     else
       return std::make_reverse_iterator(std::ranges::begin(t));
   }
@@ -1350,7 +1352,8 @@ constexpr auto as_const_pointer(const T* p) noexcept {
   return p;
 }
 
-struct cbegin_fn {
+namespace cbegin_ns {
+struct fn {
   template <class T>
     requires maybe_borrowed<T> && requires(T& t) { std::ranges::begin(possibly_const_range(t)); }
   [[nodiscard]] constexpr auto operator()(T&& t) const
@@ -1360,7 +1363,9 @@ struct cbegin_fn {
         std::ranges::begin(possibly_const_range(t)));
   }
 };
-struct cend_fn {
+} // namespace cbegin_ns
+namespace cend_ns {
+struct fn {
   template <class T>
     requires maybe_borrowed<T> && requires(T& t) { std::ranges::end(possibly_const_range(t)); }
   [[nodiscard]] constexpr auto operator()(T&& t) const
@@ -1370,7 +1375,9 @@ struct cend_fn {
         std::ranges::end(possibly_const_range(t)));
   }
 };
-struct crbegin_fn {
+} // namespace cend_ns
+namespace crbegin_ns {
+struct fn {
   template <class T>
     requires maybe_borrowed<T> && requires(T& t) { std::ranges::rbegin(possibly_const_range(t)); }
   [[nodiscard]] constexpr auto operator()(T&& t) const
@@ -1380,7 +1387,9 @@ struct crbegin_fn {
         std::ranges::rbegin(possibly_const_range(t)));
   }
 };
-struct crend_fn {
+} // namespace crbegin_ns
+namespace crend_ns {
+struct fn {
   template <class T>
     requires maybe_borrowed<T> && requires(T& t) { std::ranges::rend(possibly_const_range(t)); }
   [[nodiscard]] constexpr auto operator()(T&& t) const
@@ -1390,7 +1399,9 @@ struct crend_fn {
         std::ranges::rend(possibly_const_range(t)));
   }
 };
-struct cdata_fn {
+} // namespace crend_ns
+namespace cdata_ns {
+struct fn {
   template <class T>
     requires maybe_borrowed<T> && requires(T& t) { std::ranges::data(possibly_const_range(t)); }
   [[nodiscard]] constexpr auto operator()(T&& t) const
@@ -1398,16 +1409,17 @@ struct cdata_fn {
     return as_const_pointer(std::ranges::data(possibly_const_range(t)));
   }
 };
+} // namespace cdata_ns
 
 } // namespace ycxx::detail::range_access
 
 namespace std::ranges {
 inline namespace cpo {
-inline constexpr ycxx::detail::range_access::cbegin_fn cbegin{};
-inline constexpr ycxx::detail::range_access::cend_fn cend{};
-inline constexpr ycxx::detail::range_access::crbegin_fn crbegin{};
-inline constexpr ycxx::detail::range_access::crend_fn crend{};
-inline constexpr ycxx::detail::range_access::cdata_fn cdata{};
+inline constexpr ycxx::detail::range_access::cbegin_ns::fn cbegin{};
+inline constexpr ycxx::detail::range_access::cend_ns::fn cend{};
+inline constexpr ycxx::detail::range_access::crbegin_ns::fn crbegin{};
+inline constexpr ycxx::detail::range_access::crend_ns::fn crend{};
+inline constexpr ycxx::detail::range_access::cdata_ns::fn cdata{};
 } // namespace cpo
 
 template <range R>

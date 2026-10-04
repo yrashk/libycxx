@@ -48,8 +48,8 @@ compiles with `-O2`, as DejaGnu's default flags do. Some tests rely on dead-code
 unreachable error branch is removed. `dg-options -fno-inline` is passed through.
 <memory> (Phase 3): specialized algorithms (std and ranges, constexpr), unique_ptr, shared_ptr /
 weak_ptr / enable_shared_from_this / make_shared family (constexpr), owner_less / owner_hash /
-owner_equal, out_ptr / inout_ptr. Own suite memory: 81/83 on both compilers (Clang), 80/83 + 1
-XFAIL (GCC); make_shared.pass and make_unique.pass need `<string>`. libc++ utilities/memory
+owner_equal, out_ptr / inout_ptr. Own suite memory: Clang 81/83, GCC 80/83 plus 1 XFAIL;
+make_shared.pass and make_unique.pass need `<string>`. libc++ utilities/memory
 67 -> 141 and utilities/smartptr 15 -> 51 (GCC) / 52 (Clang); libstdc++ 20_util smart pointer
 and specialized-algorithm directories 37 -> 189 (GCC), 36 -> 190 (Clang). The remaining failures
 need `<string>`, `<vector>`, `<algorithm>`, `<ranges>`, `<sstream>`, `<atomic>` or are noted below.

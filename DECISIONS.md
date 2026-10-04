@@ -397,3 +397,37 @@ under the same name. Otherwise it gets one alias template in `config.hpp`.
   follows a symbolic link by request). Copies of a directory iterator share the open directory
   (input iterators); `recursion_pending()` belongs to each copy.
 - `<filesystem>` also includes `<cstdlib>`, as `<fstream>` includes `<cstdio>`.
+
+## 9. Formatting (`<format>`, `<print>`)
+
+- **Layering.** The engine and every formatter are core headers (`ycxx/core/format_base.hpp`,
+  `format_ranges.hpp`, `format_syserr.hpp`, `format_unicode*.hpp`): they need only `<string>`,
+  `<charconv>` and the ranges core, and compile freestanding. `<format>` and `<print>` are hosted.
+  The locale-dependent parts (`basic_format_context::locale()`, the numpunct values of the L
+  option, the overloads taking a locale) are templates in `ycxx/hosted/format_locale.hpp`,
+  explicitly instantiated in the hosted runtime (`src/hosted/format.cpp`) for `format_context`
+  and `wformat_context`, so headers that need only the core (`<ostream>` for its print
+  overloads, `<thread>` and `<filesystem>` for their formatters, `<system_error>` for
+  `formatter<error_code>`) do not include `<locale>`. The print functions are out of line
+  (`src/hosted/print.cpp`).
+- **One context type per character type.** Every context the library creates writes through
+  `ycxx::adl_free::fmt_iter<charT>`, an output iterator over a type-erased buffer (`fmt_buf`: an
+  array, a size, and a function pointer that flushes it to the destination or grows it). The
+  destinations are a growing local-then-heap buffer (`format`, nested width computations), an
+  output iterator (`format_to`; a `charT*` is written in place), and a counter with a limit
+  (`formatted_size`, `format_to_n`). Formatting a number allocates nothing; `format` allocates
+  only the result string. A nested `format_to(ctx.out(), ...)` appends to the same buffer.
+- **Compile-time checking.** `basic_format_string`'s consteval constructor runs the scanner that
+  `vformat` uses and calls `formatter<remove_cvref_t<Argᵢ>, charT>::parse` for each field; the
+  parse context then carries the argument count and kinds, so `next_arg_id`, `check_arg_id` and
+  `check_dynamic_spec` reject a bad index or kind there (by calling a non-constexpr function
+  named after the problem). Format errors throw `format_error` through `raise_with` (catchable
+  in constant evaluation on GCC); on Clang, which cannot throw there, a non-constexpr call that
+  takes the message is made first so the diagnostic shows it.
+- **Unicode.** Width and escaping follow Unicode 18.0 (UAX #29 extended grapheme clusters with
+  the 18.0 form of GB9c); `tools/gen_unicode_tables.py` turns the UCD files into two run tables
+  (about 3,500 entries). char is UTF-8 when the ordinary literal encoding is (checked in a
+  constant expression), wchar_t UTF-32.
+- **Floating point** uses `<charconv>` (`to_chars` of the value's own type, extended types
+  included); `#` with `g`/`G` reproduces `%#g`; the precision of type none is a to_chars general
+  conversion whose zeros are removed even with `#`.

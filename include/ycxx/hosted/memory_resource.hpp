@@ -1,0 +1,177 @@
+// libycxx hosted: the pool resources ([mem.res.pool]) and monotonic_buffer_resource
+// ([mem.res.monotonic.buffer]). Their members are defined out of line in the hosted runtime
+// (src/hosted/memory_resource.cpp); synchronized_pool_resource locks through the PAL's
+// address wait/wake.
+//
+// Pools (ycxx::detail::pool_core): one pool per power-of-two block size from 8 bytes up to
+// options().largest_required_pool_block (rounded up to a power of two). A request is served by
+// the pool of the smallest block that holds max(bytes, alignment); each block is aligned to its
+// size, since every chunk is allocated from upstream with that alignment. A pool hands out
+// blocks from its free list first, then from the unused tail of its newest chunk; when both are
+// empty it allocates a chunk with twice as many blocks as the previous one (bounded by
+// max_blocks_per_chunk and by a per-chunk byte limit). Larger requests go directly upstream and
+// are kept on a doubly-linked list, so release() can return them too.
+//
+// monotonic_buffer_resource: bump allocation from the current buffer; a new buffer from
+// upstream is max(bytes, next_buffer_size) and next_buffer_size then doubles. Buffers from
+// upstream are chained through a footer at their end.
+#pragma once
+
+#include <ycxx/core/cstddef.hpp>
+#include <ycxx/core/cstdint.hpp>
+#include <ycxx/core/memory_resource.hpp>
+
+namespace std::pmr {
+
+// [mem.res.pool.options]
+struct pool_options {
+  size_t max_blocks_per_chunk = 0;
+  size_t largest_required_pool_block = 0;
+};
+
+} // namespace std::pmr
+
+namespace ycxx::detail {
+
+struct pool_free_block;
+struct pool_chunk_footer;
+struct pool_big_footer;
+
+// One pool: the blocks of one size.
+struct pool_bin {
+  pool_free_block* free = nullptr; // deallocated blocks
+  char* cur = nullptr;             // unused tail of the newest chunk: [cur, end)
+  char* end = nullptr;
+  pool_chunk_footer* chunks = nullptr;
+  std::size_t next_blocks = 0; // blocks in the next chunk (0: not yet chosen)
+};
+
+// The state and algorithms shared by both pool resources.
+class pool_core {
+public:
+  // Block sizes 8, 16, ..., 2^(min_shift + max_bins - 1).
+  static constexpr unsigned min_shift = 3;
+  static constexpr unsigned max_bins = 14; // up to 64 KiB
+  static constexpr std::size_t largest_block_limit = std::size_t(1) << (min_shift + max_bins - 1);
+  static constexpr std::size_t max_blocks_limit = std::size_t(1) << 16;
+
+  pool_core(const std::pmr::pool_options& opts, std::pmr::memory_resource* upstream) noexcept;
+  pool_core(const pool_core&) = delete;
+  pool_core& operator=(const pool_core&) = delete;
+  ~pool_core() { release(); }
+
+  void* allocate(std::size_t bytes, std::size_t alignment);
+  void deallocate(void* p, std::size_t bytes, std::size_t alignment) noexcept;
+  void release() noexcept;
+  std::pmr::memory_resource* upstream() const noexcept { return upstream_; }
+  std::pmr::pool_options options() const noexcept { return opts_; }
+
+private:
+  void* refill(pool_bin& bin, std::size_t block);
+
+  std::pmr::memory_resource* upstream_;
+  std::pmr::pool_options opts_;
+  unsigned bins_; // pools in use: block sizes up to opts_.largest_required_pool_block
+  pool_bin bin_[max_bins];
+  pool_big_footer* big_ = nullptr; // allocations made directly upstream
+};
+
+// A lock for synchronized_pool_resource: 0 unlocked, 1 locked, 2 locked with waiters.
+struct pal_lock {
+  std::uint32_t state = 0;
+  void lock() noexcept;
+  void unlock() noexcept;
+};
+
+} // namespace ycxx::detail
+
+namespace std::pmr {
+
+// [mem.res.pool.overview]
+class synchronized_pool_resource : public memory_resource {
+public:
+  synchronized_pool_resource(const pool_options& opts, memory_resource* upstream);
+  synchronized_pool_resource() : synchronized_pool_resource(pool_options(), get_default_resource()) {}
+  explicit synchronized_pool_resource(memory_resource* upstream)
+      : synchronized_pool_resource(pool_options(), upstream) {}
+  explicit synchronized_pool_resource(const pool_options& opts)
+      : synchronized_pool_resource(opts, get_default_resource()) {}
+  synchronized_pool_resource(const synchronized_pool_resource&) = delete;
+  virtual ~synchronized_pool_resource();
+  synchronized_pool_resource& operator=(const synchronized_pool_resource&) = delete;
+
+  void release();
+  memory_resource* upstream_resource() const;
+  pool_options options() const;
+
+protected:
+  void* do_allocate(size_t bytes, size_t alignment) override;
+  void do_deallocate(void* p, size_t bytes, size_t alignment) override;
+  bool do_is_equal(const memory_resource& other) const noexcept override;
+
+private:
+  ycxx::detail::pool_core core_;
+  mutable ycxx::detail::pal_lock lock_;
+};
+
+class unsynchronized_pool_resource : public memory_resource {
+public:
+  unsynchronized_pool_resource(const pool_options& opts, memory_resource* upstream);
+  unsynchronized_pool_resource() : unsynchronized_pool_resource(pool_options(), get_default_resource()) {}
+  explicit unsynchronized_pool_resource(memory_resource* upstream)
+      : unsynchronized_pool_resource(pool_options(), upstream) {}
+  explicit unsynchronized_pool_resource(const pool_options& opts)
+      : unsynchronized_pool_resource(opts, get_default_resource()) {}
+  unsynchronized_pool_resource(const unsynchronized_pool_resource&) = delete;
+  virtual ~unsynchronized_pool_resource();
+  unsynchronized_pool_resource& operator=(const unsynchronized_pool_resource&) = delete;
+
+  void release();
+  memory_resource* upstream_resource() const;
+  pool_options options() const;
+
+protected:
+  void* do_allocate(size_t bytes, size_t alignment) override;
+  void do_deallocate(void* p, size_t bytes, size_t alignment) override;
+  bool do_is_equal(const memory_resource& other) const noexcept override;
+
+private:
+  ycxx::detail::pool_core core_;
+};
+
+// [mem.res.monotonic.buffer]
+class monotonic_buffer_resource : public memory_resource {
+public:
+  explicit monotonic_buffer_resource(memory_resource* upstream);
+  monotonic_buffer_resource(size_t initial_size, memory_resource* upstream);
+  monotonic_buffer_resource(void* buffer, size_t buffer_size, memory_resource* upstream);
+  monotonic_buffer_resource() : monotonic_buffer_resource(get_default_resource()) {}
+  explicit monotonic_buffer_resource(size_t initial_size)
+      : monotonic_buffer_resource(initial_size, get_default_resource()) {}
+  monotonic_buffer_resource(void* buffer, size_t buffer_size)
+      : monotonic_buffer_resource(buffer, buffer_size, get_default_resource()) {}
+  monotonic_buffer_resource(const monotonic_buffer_resource&) = delete;
+  virtual ~monotonic_buffer_resource();
+  monotonic_buffer_resource& operator=(const monotonic_buffer_resource&) = delete;
+
+  void release();
+  memory_resource* upstream_resource() const;
+
+protected:
+  void* do_allocate(size_t bytes, size_t alignment) override;
+  void do_deallocate(void* p, size_t bytes, size_t alignment) override;
+  bool do_is_equal(const memory_resource& other) const noexcept override;
+
+private:
+  memory_resource* upstream_rsrc;
+  char* cur_ = nullptr; // unused part of the current buffer: [cur_, end_)
+  char* end_ = nullptr;
+  size_t next_buffer_size;
+  ycxx::detail::pool_chunk_footer* buffers_ = nullptr; // buffers obtained from upstream
+  // Initial values, restored by release().
+  void* initial_buffer_;
+  size_t initial_buffer_size_;
+  size_t initial_next_size_;
+};
+
+} // namespace std::pmr

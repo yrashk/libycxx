@@ -16,6 +16,7 @@
 #include <ycxx/core/iterator_adaptors.hpp>
 #include <ycxx/core/ranges_subrange.hpp>
 #include <ycxx/core/algo_results.hpp>
+#include <ycxx/core/algo_ranges_parallel.hpp>
 #include <ycxx/core/pair.hpp>
 #include <ycxx/core/swap.hpp>
 #include <initializer_list>
@@ -1205,26 +1206,26 @@ struct lexicographical_compare_fn {
 } // namespace ycxx::detail::ranges_algo
 
 namespace std::ranges {
-inline constexpr ycxx::detail::ranges_algo::min_fn min{};
-inline constexpr ycxx::detail::ranges_algo::max_fn max{};
-inline constexpr ycxx::detail::ranges_algo::minmax_fn minmax{};
+inline constexpr ycxx::adl_free::ranges_par_algo<ycxx::detail::ranges_algo::min_fn, ycxx::detail::par::kind::min> min{};
+inline constexpr ycxx::adl_free::ranges_par_algo<ycxx::detail::ranges_algo::max_fn, ycxx::detail::par::kind::max> max{};
+inline constexpr ycxx::adl_free::ranges_par_algo<ycxx::detail::ranges_algo::minmax_fn, ycxx::detail::par::kind::minmax> minmax{};
 inline constexpr ycxx::detail::ranges_algo::clamp_fn clamp{};
-inline constexpr ycxx::detail::ranges_algo::min_element_fn min_element{};
-inline constexpr ycxx::detail::ranges_algo::max_element_fn max_element{};
-inline constexpr ycxx::detail::ranges_algo::minmax_element_fn minmax_element{};
-inline constexpr ycxx::detail::ranges_algo::swap_ranges_fn swap_ranges{};
-inline constexpr ycxx::detail::ranges_algo::copy_fn copy{};
-inline constexpr ycxx::detail::ranges_algo::copy_n_fn copy_n{};
-inline constexpr ycxx::detail::ranges_algo::copy_if_fn copy_if{};
+inline constexpr ycxx::adl_free::ranges_par_algo<ycxx::detail::ranges_algo::min_element_fn, ycxx::detail::par::kind::min_element> min_element{};
+inline constexpr ycxx::adl_free::ranges_par_algo<ycxx::detail::ranges_algo::max_element_fn, ycxx::detail::par::kind::max_element> max_element{};
+inline constexpr ycxx::adl_free::ranges_par_algo<ycxx::detail::ranges_algo::minmax_element_fn, ycxx::detail::par::kind::minmax_element> minmax_element{};
+inline constexpr ycxx::adl_free::ranges_par_algo<ycxx::detail::ranges_algo::swap_ranges_fn, ycxx::detail::par::kind::swap_ranges> swap_ranges{};
+inline constexpr ycxx::adl_free::ranges_par_algo<ycxx::detail::ranges_algo::copy_fn, ycxx::detail::par::kind::copy> copy{};
+inline constexpr ycxx::adl_free::ranges_par_algo<ycxx::detail::ranges_algo::copy_n_fn, ycxx::detail::par::kind::copy_n> copy_n{};
+inline constexpr ycxx::adl_free::ranges_par_algo<ycxx::detail::ranges_algo::copy_if_fn, ycxx::detail::par::kind::copy_if> copy_if{};
 inline constexpr ycxx::detail::ranges_algo::copy_backward_fn copy_backward{};
-inline constexpr ycxx::detail::ranges_algo::move_fn move{};
+inline constexpr ycxx::adl_free::ranges_par_algo<ycxx::detail::ranges_algo::move_fn, ycxx::detail::par::kind::move> move{};
 inline constexpr ycxx::detail::ranges_algo::move_backward_fn move_backward{};
-inline constexpr ycxx::detail::ranges_algo::fill_fn fill{};
-inline constexpr ycxx::detail::ranges_algo::fill_n_fn fill_n{};
-inline constexpr ycxx::detail::ranges_algo::find_fn find{};
-inline constexpr ycxx::detail::ranges_algo::find_if_fn find_if{};
-inline constexpr ycxx::detail::ranges_algo::find_if_not_fn find_if_not{};
-inline constexpr ycxx::detail::ranges_algo::mismatch_fn mismatch{};
-inline constexpr ycxx::detail::ranges_algo::equal_fn equal{};
-inline constexpr ycxx::detail::ranges_algo::lexicographical_compare_fn lexicographical_compare{};
+inline constexpr ycxx::adl_free::ranges_par_algo<ycxx::detail::ranges_algo::fill_fn, ycxx::detail::par::kind::fill> fill{};
+inline constexpr ycxx::adl_free::ranges_par_algo<ycxx::detail::ranges_algo::fill_n_fn, ycxx::detail::par::kind::fill_n> fill_n{};
+inline constexpr ycxx::adl_free::ranges_par_algo<ycxx::detail::ranges_algo::find_fn, ycxx::detail::par::kind::find> find{};
+inline constexpr ycxx::adl_free::ranges_par_algo<ycxx::detail::ranges_algo::find_if_fn, ycxx::detail::par::kind::find_if> find_if{};
+inline constexpr ycxx::adl_free::ranges_par_algo<ycxx::detail::ranges_algo::find_if_not_fn, ycxx::detail::par::kind::find_if_not> find_if_not{};
+inline constexpr ycxx::adl_free::ranges_par_algo<ycxx::detail::ranges_algo::mismatch_fn, ycxx::detail::par::kind::mismatch> mismatch{};
+inline constexpr ycxx::adl_free::ranges_par_algo<ycxx::detail::ranges_algo::equal_fn, ycxx::detail::par::kind::equal> equal{};
+inline constexpr ycxx::adl_free::ranges_par_algo<ycxx::detail::ranges_algo::lexicographical_compare_fn, ycxx::detail::par::kind::lexicographical_compare> lexicographical_compare{};
 } // namespace std::ranges

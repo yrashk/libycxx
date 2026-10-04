@@ -142,7 +142,8 @@ public:
   constexpr reference operator[](OtherIndexTypes... indices) const {
     if constexpr (ycxx::detail::md_standard_mapping<mapping_type>) {
       // The standard mappings check the same precondition themselves.
-      return acc_.access(ptr_, static_cast<size_t>(map_(std::move(indices)...)));
+      return acc_.access(ptr_,
+                         static_cast<size_t>(map_(ycxx::detail::md_index_cast<index_type>(std::move(indices))...)));
     } else {
       bool ok = true;
       [[maybe_unused]] size_t r = 0;

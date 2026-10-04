@@ -29,6 +29,8 @@ CORE += ["debugging"]
 CORE += ["contracts"]
 # <random>: random_device is declared in core and defined in the hosted runtime.
 CORE += ["random"]
+# <meta>: reflection needs the compiler's support (GCC 16 -freflection); empty without it.
+CORE += ["meta"]
 # Hosted: need an OS (through the PAL) or the C library.
 HOSTED = [
     "any", "cctype", "cerrno", "cfenv", "cinttypes", "clocale", "csetjmp", "csignal", "cstdarg", "cstdio",

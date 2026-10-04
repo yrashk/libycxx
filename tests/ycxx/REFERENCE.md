@@ -15,8 +15,9 @@ records where libstdc++ and the current draft disagree. The draft is the referen
 a failure below is a libstdc++ gap, a libstdc++ bug, or a compiler issue, never a reason to
 change a test. **After triage no failure was traced to a defect in a test.**
 
-Run of 2026-10-04 (905 tests on GCC, 917 on Clang, the latter including tests added while the
-runs were in progress): GCC 830 pass / 74 fail / 1 xfail; Clang 819 pass / 94 fail / 4 xfail.
+Run of 2026-10-04, 1003 tests: GCC 872 pass / 130 fail / 1 xfail; Clang 855 pass / 144 fail /
+4 xfail. (Most of the difference to earlier runs is the container tests of `deque/` ...
+`hive/`, which mainly wait on C++26 constexpr containers in libstdc++.)
 The same suite against libycxx: see `STATUS.md`.
 
 Legend: **G** fails with GCC + libstdc++, **C** with Clang + libstdc++.
@@ -41,6 +42,14 @@ Legend: **G** fails with GCC + libstdc++, **C** with Clang + libstdc++.
 | `memory/ranges_uninitialized_fill`, `memory/ranges_uninitialized_copy_move` |  | C | in constant evaluation the algorithms assign to objects whose lifetime has not begun (GCC accepts, Clang rejects) | [specialized.algorithms]: construct, not assign |
 | `char_traits/move_copy_assign` |  | C | `char_traits<char>::move(p, p, n)` reads an object outside its lifetime in constant evaluation | [char.traits.require]: move works for overlapping ranges |
 | `containers/allocator_aware` |  | C | `basic_string` move assignment with an unequal, non-propagating allocator is rejected in constant evaluation | [container.alloc.reqmts]/28, all members constexpr |
+| `unordered_map/node_handle`, `unordered_set/node_handle` | G | C | a failed `insert(q, nh)` empties `nh` | [unord.req.general]/128: "nh is empty if insertion succeeds, unchanged if insertion fails" |
+| `unordered_map/node_compat` | G | C | `unordered_map<K,T>::node_type` differs from `unordered_multimap<K,T,H2,E2>::node_type` | [container.node.overview] Table 75: compatible nodes have the same node handle type |
+| `unordered_map/transparent` | G | C | `operator[]`, `try_emplace` and `insert_or_assign` with an existing heterogeneous key construct a key | [unord.map.elem], [unord.map.modifiers]: no effect when the key exists |
+| `flat_set/transparent` | G | C | heterogeneous `insert(x)` of an existing key constructs a `value_type` | [flat.set.modifiers]/3: "If the set already contains an element equivalent to x, *this and x are unchanged" |
+| `flat_set/deduction` | G | C | `flat_set(first, last)` does not deduce | [flat.set.defn]: `flat_set(InputIterator, InputIterator, Compare = Compare())` guide |
+| `priority_queue/deduction` | G | C | no `priority_queue(InputIterator, InputIterator, Allocator)` guide | [priority.queue] synopsis |
+| `inplace_vector/noexcept` | G | C | `shrink_to_fit` is not `noexcept` | [inplace.vector.overview]: `static constexpr void shrink_to_fit() noexcept;` |
+| `inplace_vector/from_range_mandates` (compile.fail) | G | C | a constant-size range larger than N is accepted | [inplace.vector.cons]/9: Mandates: ranges::size(rg) <= N when it is a constant expression |
 
 ## 2. Missing in libstdc++ 16 (newer C++26 additions, constexpr, API revisions)
 
@@ -59,7 +68,10 @@ Legend: **G** fails with GCC + libstdc++, **C** with Clang + libstdc++.
 | `exception/exception_ptr_cast*`, `exception/make_exception_ptr*`, `exception/exception_signatures` | G | C | `exception_ptr_cast` returns `const E*` (an earlier revision); the draft returns `optional<const E&>` |
 | `memory/shared_ptr_constexpr`, `memory/pointer_traits_pointer_to`, `string/to_string_constexpr` | G | C | constexpr `shared_ptr`/`make_shared`, `pointer_traits::pointer_to`, `to_string` |
 | `memory/start_lifetime` | (xfail) | C | `start_lifetime` |
-| `deque/*`, `list/*` (tests in progress) | G | C | constexpr `deque` and `list` |
+| `deque/*`, `list/*`, `forward_list/*`, `map/*`, `set/*`, `unordered_*/*`, `stack/*`, `queue/*`, `priority_queue/*` (most) | G | C | C++26 constexpr containers and adaptors (the runtime parts of these tests pass) |
+| `inplace_vector/*` (some) | G | C | constexpr `inplace_vector` of non-trivial types |
+| `hive/*` | G | C | `<hive>` |
+| `map/lookup`, `unordered_map/lookup`, `flat_map/lookup` | G | C | the C++26 `lookup` members |
 | `version/*` | G | C | macros missing or with older values: `__cpp_lib_bitops` (202607L), `__cpp_lib_constexpr_bitset` (202207L), `__cpp_lib_expected` (202606L), `__cpp_lib_freestanding_optional` (202506L), `__cpp_lib_apply` (202603L), `__cpp_lib_initializer_list`, `__cpp_lib_freestanding_{iterator,tuple,utility,cwchar}`, `__cpp_lib_freestanding_operator_new` ([version.syn]/4), `__cpp_lib_atomic_min_max`, `__cpp_lib_barrier`, ... |
 
 ## 3. Differences between GCC and Clang with the same libstdc++
@@ -76,6 +88,7 @@ Clang rejects code GCC accepts.
 | `version/header_type_traits` | `is_layout_compatible` (needs builtins Clang lacks) |
 | `utility/constant_wrapper_call` | `constant_wrapper::operator()` with a member pointer and constant_wrapper arguments is rejected |
 | `cstddef/stddef_global`, `cstddef/stddef_global_reverse` | `::nullptr_t` missing (Clang's `<stddef.h>` in C++ mode); [support.c.headers.other]/1 |
+| containers using `std::from_range`, `insert_range`, `append_range` | `from_range` and the range members are unavailable with Clang |
 | `cwchar/freestanding_functions` | `std::wcschr` and friends on `const wchar_t*` return `wchar_t*` (glibc's declarations; libycxx documents the same limitation for unqualified calls) |
 
 ## 4. C library headers

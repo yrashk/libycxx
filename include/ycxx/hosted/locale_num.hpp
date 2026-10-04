@@ -157,7 +157,7 @@ class num_field {
 public:
   num_field() = default;
   num_field(const num_field&) = delete;
-  void push_back(char c) {
+  [[gnu::always_inline]] void push_back(char c) {
     if (n_ < sizeof buf_) {
       buf_[n_++] = c;
     } else {
@@ -333,6 +333,23 @@ private:
         identity_atoms = char_traits<char>::compare(atoms, src, sizeof(src) - 1) == 0;
     }
     const bool grouped = !grouping.empty();
+
+    // %d / %u with plain char atoms and no grouping (the classic case): an optional sign, then
+    // decimal digits, exactly what the general loop below accepts there.
+    if (identity_atoms && !grouped && (spec == 'd' || spec == 'u') && !(point_char >= '0' && point_char <= '9')) {
+      for (bool at_first = true;; static_cast<void>(++in), at_first = false) {
+        if (in == end) {
+          err |= ios_base::eofbit;
+          break;
+        }
+        const charT ct = *in;
+        if ((ct >= '0' && ct <= '9') || (at_first && (ct == '+' || ct == '-')))
+          field.push_back(static_cast<char>(ct));
+        else
+          break;
+      }
+      return in;
+    }
 
     const bool is_float = spec == 'g';
     const bool may_prefix = spec == 'X' || spec == 'p' || spec == 'i' || spec == 'g';

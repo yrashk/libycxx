@@ -23,3 +23,9 @@ utilities/tuple/tuple.tuple/tuple.helper/tuple_size_v\.pass\.cpp | deprecated | 
 utilities/utility/pairs/pair.astuple/tuple_element\.pass\.cpp | deprecated | uses tuple_element<I, volatile pair> (Annex D, [depr.tuple])
 utilities/variant/variant\.helpers/variant_size\.pass\.cpp | deprecated | tests variant_size<volatile T> (Annex D, [depr.variant]) -- deliberately not implemented: deprecated (Annex D) features are excluded by project rule (DECISIONS.md)
 utilities/function\.objects/func\.bind\.partial/bind_front\.nttp\.pass\.cpp | extension | also asserts libc++'s extension of calling a volatile call wrapper ([func.require]/4: cv shall be neither volatile nor const volatile)
+utilities/smartptr/unique\.ptr/unique\.ptr\.class/unique\.ptr\.asgn/move\.pass\.cpp | divergence | expects unique_ptr<T, const NCDeleter&> to be move-assignable; [unique.ptr.single.asgn]/1 constrains on is_move_assignable_v<D>, false for a non-assignable const deleter reference
+utilities/smartptr/unique\.ptr/unique\.ptr\.class/unique\.ptr\.asgn/move_convert\.(single|runtime)\.pass\.cpp | divergence | expects converting assignment with non-assignable converting deleters; [unique.ptr.single.asgn]/6.3 and [unique.ptr.runtime.asgn]/2.5 require is_assignable_v<D&, E&&>
+utilities/memory/util\.smartptr/util\.smartptr\.shared/util\.smartptr\.shared\.obs/unique\.pass\.cpp | removed | shared_ptr::unique() was removed in C++20
+utilities/memory/util\.smartptr/util\.smartptr\.shared\.atomic/.*\.pass\.cpp | removed | the atomic_* free functions for shared_ptr were removed in C++26 (P2869)
+utilities/memory/temporary\.buffer/.*\.pass\.cpp | removed | get_temporary_buffer was removed in C++20
+utilities/memory/storage\.iterator/.*\.cpp | removed | raw_storage_iterator was removed in C++20

@@ -51,6 +51,13 @@ headers, mostly `<sstream>`; the rest are listed under Known limitations). Own s
 compiles with `-O2`, as DejaGnu's default flags do. Some tests rely on dead-code elimination:
 `expected/cons.cc` declares `E(const int&)` without defining it, and links only when the
 unreachable error branch is removed. `dg-options -fno-inline` is passed through.
+<memory> (Phase 3): specialized algorithms (std and ranges, constexpr), unique_ptr, shared_ptr /
+weak_ptr / enable_shared_from_this / make_shared family (constexpr), owner_less / owner_hash /
+owner_equal, out_ptr / inout_ptr. Own suite memory: Clang 81/83, GCC 80/83 plus 1 XFAIL;
+make_shared.pass and make_unique.pass need `<string>`. libc++ utilities/memory
+67 -> 141 and utilities/smartptr 15 -> 51 (GCC) / 52 (Clang); libstdc++ 20_util smart pointer
+and specialized-algorithm directories 37 -> 189 (GCC), 36 -> 190 (Clang). The remaining failures
+need `<string>`, `<vector>`, `<algorithm>`, `<ranges>`, `<sstream>`, `<atomic>` or are noted below.
 
 ## Freestanding
 `tools/check_freestanding.sh`: every core header compiles with `-ffreestanding -nostdlib -nostdinc
@@ -106,6 +113,18 @@ Deprecated and removed features are not implemented (`is_pod`, `is_trivial`, `al
   accepted on the left.
 
 ## Known limitations and draft defects
+- `<memory>`: no `atomic<shared_ptr<T>>` / `atomic<weak_ptr<T>>`, no `operator<<` for
+  unique_ptr/shared_ptr (no `<ostream>`), no execution-policy overloads of the specialized
+  algorithms, no `pointer_tag_pair`, `indirect`, `polymorphic`. shared_ptr reference counts use
+  the `__atomic` builtins unconditionally (no single-threaded fast path). get_deleter identifies
+  the deleter type by a per-type tag address (same shared-library caveat as `any`).
+  make_shared of a multi-dimensional array of a non-trivial class type cannot be
+  constant-evaluated on Clang (Clang will not let element construction begin the enclosing
+  array's lifetime).
+- GCC 16.2: `new T[3]` of a class with a non-trivial destructor and a 256-byte
+  `std::array` member (default member initializer) reads back wrong values in a generic lambda
+  (libc++ unique.ptr.observers/op_subscript.runtime; fails with libstdc++ too). libstdc++
+  destroy/121024.cc fails on GCC (PR c++/102284, marked dg-xfail-if, which the harness ignores).
 - `FLT_ROUNDS` is the constant 1 with GCC (no `__builtin_flt_rounds`), as in GCC's own
   `<float.h>`; it does not follow `fesetround`. Clang reports the current mode.
 - `<cwchar>` with Clang on glibc: glibc declares `::wcschr` etc. only with the C signature, so an

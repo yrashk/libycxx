@@ -53,11 +53,19 @@ public:
     if (!wait_for_state(gate1_, [this] { return (state_ & write_entered) == 0; }, abs))
       return false;
     state_ |= write_entered;
-    if (!wait_for_state(gate2_, [this] { return (state_ & max_readers) == 0; }, abs)) {
-      state_ &= ~write_entered;
-      gate1_.notify_all();
+    // Gate 2 gives the write bit back when the deadline passes or Clock::now() throws.
+    struct give_back {
+      shared_futex_mutex* self;
+      ~give_back() {
+        if (self) {
+          self->state_ &= ~write_entered;
+          self->gate1_.notify_all();
+        }
+      }
+    } g{this};
+    if (!wait_for_state(gate2_, [this] { return (state_ & max_readers) == 0; }, abs))
       return false;
-    }
+    g.self = nullptr;
     return true;
   }
   bool try_lock() noexcept {

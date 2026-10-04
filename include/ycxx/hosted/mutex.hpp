@@ -113,7 +113,7 @@ class recursive_mutex {
   ycxx::detail::recursive_futex_mutex m_;
 
 public:
-  constexpr recursive_mutex() noexcept = default;
+  recursive_mutex() noexcept = default;
   ~recursive_mutex() = default;
   recursive_mutex(const recursive_mutex&) = delete;
   recursive_mutex& operator=(const recursive_mutex&) = delete;
@@ -128,7 +128,7 @@ class timed_mutex {
   ycxx::detail::futex_mutex m_;
 
 public:
-  constexpr timed_mutex() noexcept = default;
+  timed_mutex() noexcept = default;
   ~timed_mutex() = default;
   timed_mutex(const timed_mutex&) = delete;
   timed_mutex& operator=(const timed_mutex&) = delete;
@@ -151,7 +151,7 @@ class recursive_timed_mutex {
   ycxx::detail::recursive_futex_mutex m_;
 
 public:
-  constexpr recursive_timed_mutex() noexcept = default;
+  recursive_timed_mutex() noexcept = default;
   ~recursive_timed_mutex() = default;
   recursive_timed_mutex(const recursive_timed_mutex&) = delete;
   recursive_timed_mutex& operator=(const recursive_timed_mutex&) = delete;

@@ -291,8 +291,8 @@ private:
   using last_type =
       conditional_t<same_as<W, Bound>, iterator, conditional_t<same_as<Bound, unreachable_sentinel_t>, Bound, sentinel>>;
 
-  W value_ = W();
-  Bound bound_ = Bound();
+  [[no_unique_address]] W value_ = W();
+  [[no_unique_address]] Bound bound_ = Bound();
 
 public:
   iota_view()
@@ -390,7 +390,7 @@ class repeat_view : public view_interface<repeat_view<T, Bound>> {
   friend struct ycxx::detail::repeat_access;
 
   [[no_unique_address]] ycxx::detail::movable_box<T> value_;
-  Bound bound_ = Bound();
+  [[no_unique_address]] Bound bound_ = Bound();
 
   class iterator {
     friend repeat_view;

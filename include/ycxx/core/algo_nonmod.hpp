@@ -888,26 +888,26 @@ struct fold_right_last_fn {
 } // namespace ycxx::detail::ranges_algo
 
 namespace std::ranges {
-inline constexpr ycxx::detail::ranges_algo::all_of_fn all_of{};
-inline constexpr ycxx::detail::ranges_algo::any_of_fn any_of{};
-inline constexpr ycxx::detail::ranges_algo::none_of_fn none_of{};
-inline constexpr ycxx::detail::ranges_algo::contains_fn contains{};
-inline constexpr ycxx::detail::ranges_algo::contains_subrange_fn contains_subrange{};
-inline constexpr ycxx::detail::ranges_algo::for_each_fn for_each{};
-inline constexpr ycxx::detail::ranges_algo::for_each_n_fn for_each_n{};
-inline constexpr ycxx::detail::ranges_algo::find_last_fn find_last{};
-inline constexpr ycxx::detail::ranges_algo::find_last_if_fn find_last_if{};
-inline constexpr ycxx::detail::ranges_algo::find_last_if_not_fn find_last_if_not{};
-inline constexpr ycxx::detail::ranges_algo::find_end_fn find_end{};
-inline constexpr ycxx::detail::ranges_algo::find_first_of_fn find_first_of{};
-inline constexpr ycxx::detail::ranges_algo::adjacent_find_fn adjacent_find{};
-inline constexpr ycxx::detail::ranges_algo::count_fn count{};
-inline constexpr ycxx::detail::ranges_algo::count_if_fn count_if{};
+inline constexpr ycxx::adl_free::ranges_par_algo<ycxx::detail::ranges_algo::all_of_fn, ycxx::detail::par::kind::all_of> all_of{};
+inline constexpr ycxx::adl_free::ranges_par_algo<ycxx::detail::ranges_algo::any_of_fn, ycxx::detail::par::kind::any_of> any_of{};
+inline constexpr ycxx::adl_free::ranges_par_algo<ycxx::detail::ranges_algo::none_of_fn, ycxx::detail::par::kind::none_of> none_of{};
+inline constexpr ycxx::adl_free::ranges_par_algo<ycxx::detail::ranges_algo::contains_fn, ycxx::detail::par::kind::contains> contains{};
+inline constexpr ycxx::adl_free::ranges_par_algo<ycxx::detail::ranges_algo::contains_subrange_fn, ycxx::detail::par::kind::contains_subrange> contains_subrange{};
+inline constexpr ycxx::adl_free::ranges_par_algo<ycxx::detail::ranges_algo::for_each_fn, ycxx::detail::par::kind::for_each> for_each{};
+inline constexpr ycxx::adl_free::ranges_par_algo<ycxx::detail::ranges_algo::for_each_n_fn, ycxx::detail::par::kind::for_each_n> for_each_n{};
+inline constexpr ycxx::adl_free::ranges_par_algo<ycxx::detail::ranges_algo::find_last_fn, ycxx::detail::par::kind::find_last> find_last{};
+inline constexpr ycxx::adl_free::ranges_par_algo<ycxx::detail::ranges_algo::find_last_if_fn, ycxx::detail::par::kind::find_last_if> find_last_if{};
+inline constexpr ycxx::adl_free::ranges_par_algo<ycxx::detail::ranges_algo::find_last_if_not_fn, ycxx::detail::par::kind::find_last_if_not> find_last_if_not{};
+inline constexpr ycxx::adl_free::ranges_par_algo<ycxx::detail::ranges_algo::find_end_fn, ycxx::detail::par::kind::find_end> find_end{};
+inline constexpr ycxx::adl_free::ranges_par_algo<ycxx::detail::ranges_algo::find_first_of_fn, ycxx::detail::par::kind::find_first_of> find_first_of{};
+inline constexpr ycxx::adl_free::ranges_par_algo<ycxx::detail::ranges_algo::adjacent_find_fn, ycxx::detail::par::kind::adjacent_find> adjacent_find{};
+inline constexpr ycxx::adl_free::ranges_par_algo<ycxx::detail::ranges_algo::count_fn, ycxx::detail::par::kind::count> count{};
+inline constexpr ycxx::adl_free::ranges_par_algo<ycxx::detail::ranges_algo::count_if_fn, ycxx::detail::par::kind::count_if> count_if{};
 inline constexpr ycxx::detail::ranges_algo::is_permutation_fn is_permutation{};
-inline constexpr ycxx::detail::ranges_algo::search_fn search{};
-inline constexpr ycxx::detail::ranges_algo::search_n_fn search_n{};
-inline constexpr ycxx::detail::ranges_algo::starts_with_fn starts_with{};
-inline constexpr ycxx::detail::ranges_algo::ends_with_fn ends_with{};
+inline constexpr ycxx::adl_free::ranges_par_algo<ycxx::detail::ranges_algo::search_fn, ycxx::detail::par::kind::search> search{};
+inline constexpr ycxx::adl_free::ranges_par_algo<ycxx::detail::ranges_algo::search_n_fn, ycxx::detail::par::kind::search_n> search_n{};
+inline constexpr ycxx::adl_free::ranges_par_algo<ycxx::detail::ranges_algo::starts_with_fn, ycxx::detail::par::kind::starts_with> starts_with{};
+inline constexpr ycxx::adl_free::ranges_par_algo<ycxx::detail::ranges_algo::ends_with_fn, ycxx::detail::par::kind::ends_with> ends_with{};
 inline constexpr ycxx::detail::ranges_algo::fold_left_fn fold_left{};
 inline constexpr ycxx::detail::ranges_algo::fold_left_first_fn fold_left_first{};
 inline constexpr ycxx::detail::ranges_algo::fold_right_fn fold_right{};

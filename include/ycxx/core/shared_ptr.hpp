@@ -15,7 +15,8 @@
 // needs no RTTI and works in constant evaluation (the same caveat as std::any applies across
 // shared libraries built with hidden visibility).
 //
-// Not provided: atomic<shared_ptr<T>> / atomic<weak_ptr<T>>, operator<< (no <ostream>).
+// atomic<shared_ptr<T>> / atomic<weak_ptr<T>> are in atomic_smart_ptr.hpp. Not provided: operator<<
+// (no <ostream>).
 #pragma once
 
 #include <ycxx/core/memory_base.hpp>
@@ -748,6 +749,11 @@ struct sp_access {
   static constexpr sp_block* ctrl(const std::shared_ptr<T>& p) noexcept {
     return p.ctrl_;
   }
+  // The stored pointer of a weak_ptr (atomic<weak_ptr<T>> compares it, [util.smartptr.atomic.weak]).
+  template <class T>
+  static constexpr auto* stored(const std::weak_ptr<T>& w) noexcept {
+    return w.ptr_;
+  }
   template <class T>
   static constexpr void enable_shared_from_this(std::shared_ptr<T>& r) noexcept {
     r.enable_shared_from_this_with(r.ptr_);
@@ -769,6 +775,7 @@ private:
   friend class shared_ptr;
   template <class>
   friend class weak_ptr;
+  friend struct ycxx::detail::sp_access;
 
   element_type* ptr_ = nullptr;
   ycxx::detail::sp_block* ctrl_ = nullptr;

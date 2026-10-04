@@ -240,6 +240,7 @@
 #define __cpp_lib_atomic_value_initialization 201911L
 #define __cpp_lib_atomic_wait 201907L
 #define __cpp_lib_constexpr_atomic 202411L
+#define __cpp_lib_atomic_shared_ptr 201711L
 #define __cpp_lib_stdatomic_h 202011L
 // [version.syn]/4: 202306L when the default allocation functions are those of a hosted
 // implementation; 0 for libycxx-freestanding.a, whose defaults have no heap.

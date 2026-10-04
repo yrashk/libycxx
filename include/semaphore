@@ -1,0 +1,6 @@
+// -*- C++ -*-  libycxx: <semaphore>   [hosted]
+#pragma once
+
+#include <ycxx/config.hpp>
+#include <ycxx/core/version.hpp>
+#include <ycxx/hosted/semaphore.hpp>

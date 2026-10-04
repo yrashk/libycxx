@@ -2,6 +2,8 @@
 // model three_way_comparable<strong_ordering>: i < j iff i comes before j in iteration
 // order, also across element blocks and after erasures. [container.rev.reqmts]: rbegin /
 // rend visit the elements in reverse order. [hive.operations]/1: i + n is next(i, n).
+// (Interpretive: /7 names the ordering but not its meaning; the test takes the strong order
+// to be the iteration order, as P0447 describes it.)
 #include <hive>
 #include <compare>
 #include <cstddef>

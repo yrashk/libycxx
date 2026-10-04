@@ -61,17 +61,16 @@ constexpr std::size_t count_key(const X& c, int k) {
 }
 
 // The elements with equivalent keys are adjacent in the iteration order ([unord.req.general]/6).
+// Every one of the `distinct` keys of c starts at least one run of equal keys in the
+// iteration order, so the groups are adjacent iff there are exactly `distinct` runs. One
+// pass, cheap enough to call after every insertion in a constant expression.
 template <class X>
-constexpr bool groups_adjacent(const X& c) {
-  for (auto i = c.begin(); i != c.end(); ++i) {
-    auto j = std::next(i);
-    if (j == c.end()) break;
-    if (!(key_of<X>(*i) == key_of<X>(*j))) {
-      for (auto k = std::next(j); k != c.end(); ++k)
-        if (key_of<X>(*k) == key_of<X>(*i)) return false;  // the group of *i resumes later
-    }
-  }
-  return true;
+constexpr bool groups_adjacent(const X& c, std::size_t distinct) {
+  std::size_t runs = 0;
+  auto prev = c.cbegin();
+  for (auto i = c.cbegin(); i != c.cend(); prev = i, ++i)
+    if (i == c.cbegin() || !(key_of<X>(*prev) == key_of<X>(*i))) ++runs;
+  return runs == distinct;
 }
 
 // [unord.req.general]/7-23, /241: member types; forward iterators, constant for the sets;
@@ -221,10 +220,10 @@ constexpr bool insert_emplace() {
   X big;
   for (int i = 0; i < 60; ++i) {
     big.insert(kv<X>(i % 30));
-    if (!groups_adjacent(big)) return false;
+    if (!groups_adjacent(big, i < 30 ? i + 1 : 30)) return false;  // keys 0 .. min(i, 29)
   }
   if (big.size() != (is_multi<X> ? 60u : 30u)) return false;
-  return groups_adjacent(a);
+  return groups_adjacent(a, 6);  // keys 0, 1, 2, 5, 7, 9
 }
 
 // [unord.req.general]/172-191: find, count, contains, equal_range on X and const X.

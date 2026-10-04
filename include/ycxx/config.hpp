@@ -137,6 +137,36 @@
 #define YCXX_ATOMIC_LONG_LOCK_FREE __GCC_ATOMIC_LONG_LOCK_FREE
 #define YCXX_ATOMIC_LLONG_LOCK_FREE __GCC_ATOMIC_LLONG_LOCK_FREE
 #define YCXX_ATOMIC_POINTER_LOCK_FREE __GCC_ATOMIC_POINTER_LOCK_FREE
+// <cmath> macros that depend on the target and the options; they must be usable in #if.
+// FP_FAST_FMA* are defined where fma is as fast as a multiply and an add.
+#if defined(__FP_FAST_FMA)
+#  define YCXX_FP_FAST_FMA 1
+#else
+#  define YCXX_FP_FAST_FMA 0
+#endif
+#if defined(__FP_FAST_FMAF)
+#  define YCXX_FP_FAST_FMAF 1
+#else
+#  define YCXX_FP_FAST_FMAF 0
+#endif
+#if defined(__FP_FAST_FMAL)
+#  define YCXX_FP_FAST_FMAL 1
+#else
+#  define YCXX_FP_FAST_FMAL 0
+#endif
+// math_errhandling: the C library sets errno unless the program is built with -fno-math-errno.
+#if defined(__NO_MATH_ERRNO__)
+#  define YCXX_MATH_ERRNO 0
+#else
+#  define YCXX_MATH_ERRNO 1
+#endif
+// FP_ILOGBNAN: what the C library's ilogb returns for a NaN (glibc: INT_MIN on x86, INT_MAX
+// elsewhere). src/hosted/cmath_check.cpp verifies it against <math.h>.
+#if defined(__x86_64__) || defined(__i386__)
+#  define YCXX_FP_ILOGBNAN (-2147483647 - 1)
+#else
+#  define YCXX_FP_ILOGBNAN 2147483647
+#endif
 // Clang's predefined int_fast16/32 types disagree with glibc on 64-bit Linux (glibc: long).
 // The <cstdint> limit macros must be usable in #if, so this is a preprocessor switch.
 #if defined(__clang__) && defined(__gnu_linux__) && __SIZEOF_POINTER__ == 8
@@ -170,6 +200,8 @@ inline constexpr bool integer_division_traps = true;
 #else
 inline constexpr bool integer_division_traps = false;
 #endif
+// FLT_EVAL_METHOD (<cfloat>), which selects float_t and double_t (<cmath>).
+inline constexpr int flt_eval_method = __FLT_EVAL_METHOD__;
 inline constexpr unsigned pointer_bits = __SIZEOF_POINTER__ * __CHAR_BIT__;
 inline constexpr unsigned long biggest_alignment = __BIGGEST_ALIGNMENT__;
 inline constexpr unsigned long default_new_alignment = __STDCPP_DEFAULT_NEW_ALIGNMENT__;

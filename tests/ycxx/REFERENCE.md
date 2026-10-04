@@ -102,6 +102,8 @@ Legend: **G** fails with GCC + libstdc++, **C** with Clang + libstdc++.
 | `flat_set/exception_invariants` | G | C | `erase(first, last)` with a throwing move leaves the set unsorted (vector storage) | [flat.set.overview]/6 |
 | `flat_map/range_kinds_move_only` | G | C | `insert_range`/`from_range` with a move-only mapped type do not compile (`ranges::inplace_merge`'s buffer copies `tuple<K, M>` from `tuple<K&, M&>`) | [flat.map.modifiers]/11 needs only moves |
 | `unordered_map/fancy_pointer_node_handle`, `unordered_set/fancy_pointer_node_handle` | G | C | `extract`/`insert(nh)`/`merge` do not compile with a class-type allocator pointer | [container.reqmts]/64 Note 2, [container.node.overview] |
+| `atomic/float_long_double_store_rmw`, `atomic/float_infinity` | G | C | read-modify-write on `atomic<long double>` (GCC: after a store) and `atomic_ref<long double>` (Clang: non-zero padding) never returns: the compare-exchange loop compares the 80-bit type's padding | [atomics.types.float]/6-8; [basic.types.general]/4 (padding is not part of the value) |
+| `semaphore/try_acquire_user_clock` | G | C | `try_acquire_until` calls terminate when the clock throws | [thread.sema.cnt]: not noexcept, "Throws: Timeout-related exceptions"; [thread.req.timing]/8 |
 ## 2. Missing in libstdc++ 16 (newer C++26 additions, constexpr, API revisions)
 
 | Test(s) | G | C | Missing |
@@ -123,7 +125,7 @@ Legend: **G** fails with GCC + libstdc++, **C** with Clang + libstdc++.
 | `inplace_vector/*` (some) | G | C | constexpr `inplace_vector` of non-trivial types |
 | `hive/*` | G | C | `<hive>` |
 | `atomic/store_key`, `atomic/float_fetch_minmax`, `atomic/constexpr` | G | C | atomic `store_add` ... `store_min`; `fetch_fmaximum` family; constexpr atomics |
-| `stop_token/concepts`, `stop_token/inplace_stop` | G | C | `stoppable_token`/`unstoppable_token`/`never_stop_token`, `stop_callback_for_t`; `inplace_stop_source`/`_token`/`_callback` |
+| `stop_token/concepts`, `stop_token/inplace_stop`, `stop_token/inplace_callback_deregistration` | G | C | `stoppable_token`/`unstoppable_token`/`never_stop_token`, `stop_callback_for_t`; `inplace_stop_source`/`_token`/`_callback` |
 | `thread/thread_attributes` | G | C | `thread::name_hint`, `thread::stack_size_hint` |
 | `future/packaged_task_allocator` | G | C | `packaged_task(allocator_arg_t, const Allocator&, F&&)` |
 | `ranges/view_interface_at` | G | C | `view_interface::at` |

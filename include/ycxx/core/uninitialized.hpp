@@ -6,7 +6,8 @@
 // If constructing an element throws, the elements already constructed are destroyed before
 // the exception propagates ([specialized.algorithms.general]/2). A guard object does this from
 // its destructor, so the same code serves -fno-exceptions builds.
-// The execution-policy overloads are not provided (no <execution>).
+// The ranges:: ExecutionPolicy overloads (P3179) forward to the sequential ones and are noexcept,
+// as in algo_ranges_parallel.hpp; the std:: ones are in uninitialized_parallel.hpp.
 #pragma once
 
 #include <ycxx/core/memory_base.hpp>
@@ -14,6 +15,7 @@
 #include <ycxx/core/iterator_adaptors.hpp>
 #include <ycxx/core/ranges_subrange.hpp>
 #include <ycxx/core/algo_results.hpp>
+#include <ycxx/core/execution_policy.hpp>
 
 namespace ycxx::detail {
 
@@ -30,6 +32,17 @@ template <class I>
 concept nothrow_forward_iterator = nothrow_input_iterator<I> && std::forward_iterator<I> && nothrow_sentinel_for<I, I>;
 template <class R>
 concept nothrow_forward_range = nothrow_input_range<R> && nothrow_forward_iterator<std::ranges::iterator_t<R>>;
+template <class S, class I>
+concept nothrow_sized_sentinel_for = nothrow_sentinel_for<S, I> && std::sized_sentinel_for<S, I>;
+template <class I>
+concept nothrow_random_access_iterator = nothrow_forward_iterator<I> && std::random_access_iterator<I> &&
+                                         nothrow_sized_sentinel_for<I, I>;
+template <class R>
+concept nothrow_sized_random_access_range = nothrow_forward_range<R> &&
+                                            nothrow_random_access_iterator<std::ranges::iterator_t<R>> &&
+                                            std::ranges::sized_range<R>;
+template <class R>
+concept sized_random_access_range = std::ranges::random_access_range<R> && std::ranges::sized_range<R>;
 
 // voidify ([specialized.algorithms.general]/4).
 template <class T>
@@ -220,6 +233,16 @@ struct default_construct {
   static constexpr borrowed_iterator_t<R> operator()(R&& r) {
     return operator()(std::ranges::begin(r), std::ranges::end(r));
   }
+  template <execution_policy Ep, nothrow_random_access_iterator I, nothrow_sized_sentinel_for<I> S>
+    requires std::default_initializable<iter_value_t<I>>
+  static I operator()(Ep&&, I first, S last) noexcept {
+    return operator()(static_cast<I&&>(first), static_cast<S&&>(last));
+  }
+  template <execution_policy Ep, nothrow_sized_random_access_range R>
+    requires std::default_initializable<range_value_t<R>>
+  static borrowed_iterator_t<R> operator()(Ep&&, R&& r) noexcept {
+    return operator()(static_cast<R&&>(r));
+  }
 };
 struct default_construct_n {
   template <nothrow_forward_iterator I>
@@ -231,6 +254,11 @@ struct default_construct_n {
       ::new (::ycxx::detail::voidify(*cur)) elem_t<I>;
     g.release();
     return cur;
+  }
+  template <execution_policy Ep, nothrow_random_access_iterator I>
+    requires std::default_initializable<iter_value_t<I>>
+  static I operator()(Ep&&, I first, iter_difference_t<I> n) noexcept {
+    return operator()(static_cast<I&&>(first), n);
   }
 };
 
@@ -250,6 +278,16 @@ struct value_construct {
   static constexpr borrowed_iterator_t<R> operator()(R&& r) {
     return operator()(std::ranges::begin(r), std::ranges::end(r));
   }
+  template <execution_policy Ep, nothrow_random_access_iterator I, nothrow_sized_sentinel_for<I> S>
+    requires std::default_initializable<iter_value_t<I>>
+  static I operator()(Ep&&, I first, S last) noexcept {
+    return operator()(static_cast<I&&>(first), static_cast<S&&>(last));
+  }
+  template <execution_policy Ep, nothrow_sized_random_access_range R>
+    requires std::default_initializable<range_value_t<R>>
+  static borrowed_iterator_t<R> operator()(Ep&&, R&& r) noexcept {
+    return operator()(static_cast<R&&>(r));
+  }
 };
 struct value_construct_n {
   template <nothrow_forward_iterator I>
@@ -261,6 +299,11 @@ struct value_construct_n {
       ::new (::ycxx::detail::voidify(*cur)) elem_t<I>();
     g.release();
     return cur;
+  }
+  template <execution_policy Ep, nothrow_random_access_iterator I>
+    requires std::default_initializable<iter_value_t<I>>
+  static I operator()(Ep&&, I first, iter_difference_t<I> n) noexcept {
+    return operator()(static_cast<I&&>(first), n);
   }
 };
 
@@ -283,6 +326,19 @@ struct copy {
                         std::ranges::end(out_range));
     return {static_cast<decltype(r.in)&&>(r.in), r.out};
   }
+  template <execution_policy Ep, std::random_access_iterator I, std::sized_sentinel_for<I> S1,
+            nothrow_random_access_iterator O, nothrow_sized_sentinel_for<O> S2>
+    requires std::constructible_from<iter_value_t<O>, std::iter_reference_t<I>>
+  static std::ranges::uninitialized_copy_result<I, O> operator()(Ep&&, I ifirst, S1 ilast, O ofirst, S2 olast) noexcept {
+    return operator()(static_cast<I&&>(ifirst), static_cast<S1&&>(ilast), static_cast<O&&>(ofirst),
+                      static_cast<S2&&>(olast));
+  }
+  template <execution_policy Ep, sized_random_access_range IR, nothrow_sized_random_access_range OR>
+    requires std::constructible_from<range_value_t<OR>, std::ranges::range_reference_t<IR>>
+  static std::ranges::uninitialized_copy_result<borrowed_iterator_t<IR>, borrowed_iterator_t<OR>>
+  operator()(Ep&&, IR&& in_range, OR&& out_range) noexcept {
+    return operator()(static_cast<IR&&>(in_range), static_cast<OR&&>(out_range));
+  }
 };
 struct copy_n {
   template <std::input_iterator I, nothrow_forward_iterator O, nothrow_sentinel_for<O> S>
@@ -295,6 +351,13 @@ struct copy_n {
       ::new (::ycxx::detail::voidify(*cur)) elem_t<O>(*ifirst);
     g.release();
     return {static_cast<I&&>(ifirst), cur};
+  }
+  template <execution_policy Ep, std::random_access_iterator I, nothrow_random_access_iterator O,
+            nothrow_sized_sentinel_for<O> S>
+    requires std::constructible_from<iter_value_t<O>, std::iter_reference_t<I>>
+  static std::ranges::uninitialized_copy_n_result<I, O> operator()(Ep&&, I ifirst, iter_difference_t<I> n, O ofirst,
+                                                                   S olast) noexcept {
+    return operator()(static_cast<I&&>(ifirst), n, static_cast<O&&>(ofirst), static_cast<S&&>(olast));
   }
 };
 
@@ -317,6 +380,19 @@ struct move {
                         std::ranges::end(out_range));
     return {static_cast<decltype(r.in)&&>(r.in), r.out};
   }
+  template <execution_policy Ep, std::random_access_iterator I, std::sized_sentinel_for<I> S1,
+            nothrow_random_access_iterator O, nothrow_sized_sentinel_for<O> S2>
+    requires std::constructible_from<iter_value_t<O>, std::iter_rvalue_reference_t<I>>
+  static std::ranges::uninitialized_move_result<I, O> operator()(Ep&&, I ifirst, S1 ilast, O ofirst, S2 olast) noexcept {
+    return operator()(static_cast<I&&>(ifirst), static_cast<S1&&>(ilast), static_cast<O&&>(ofirst),
+                      static_cast<S2&&>(olast));
+  }
+  template <execution_policy Ep, sized_random_access_range IR, nothrow_sized_random_access_range OR>
+    requires std::constructible_from<range_value_t<OR>, std::ranges::range_rvalue_reference_t<IR>>
+  static std::ranges::uninitialized_move_result<borrowed_iterator_t<IR>, borrowed_iterator_t<OR>>
+  operator()(Ep&&, IR&& in_range, OR&& out_range) noexcept {
+    return operator()(static_cast<IR&&>(in_range), static_cast<OR&&>(out_range));
+  }
 };
 struct move_n {
   template <std::input_iterator I, nothrow_forward_iterator O, nothrow_sentinel_for<O> S>
@@ -329,6 +405,13 @@ struct move_n {
       ::new (::ycxx::detail::voidify(*cur)) elem_t<O>(std::ranges::iter_move(ifirst));
     g.release();
     return {static_cast<I&&>(ifirst), cur};
+  }
+  template <execution_policy Ep, std::random_access_iterator I, nothrow_random_access_iterator O,
+            nothrow_sized_sentinel_for<O> S>
+    requires std::constructible_from<iter_value_t<O>, std::iter_rvalue_reference_t<I>>
+  static std::ranges::uninitialized_move_n_result<I, O> operator()(Ep&&, I ifirst, iter_difference_t<I> n, O ofirst,
+                                                                   S olast) noexcept {
+    return operator()(static_cast<I&&>(ifirst), n, static_cast<O&&>(ofirst), static_cast<S&&>(olast));
   }
 };
 
@@ -348,6 +431,17 @@ struct fill {
   static constexpr borrowed_iterator_t<R> operator()(R&& r, const T& x) {
     return operator()(std::ranges::begin(r), std::ranges::end(r), x);
   }
+  template <execution_policy Ep, nothrow_random_access_iterator I, nothrow_sized_sentinel_for<I> S,
+            class T = iter_value_t<I>>
+    requires std::constructible_from<iter_value_t<I>, const T&>
+  static I operator()(Ep&&, I first, S last, const T& x) noexcept {
+    return operator()(static_cast<I&&>(first), static_cast<S&&>(last), x);
+  }
+  template <execution_policy Ep, nothrow_sized_random_access_range R, class T = range_value_t<R>>
+    requires std::constructible_from<range_value_t<R>, const T&>
+  static borrowed_iterator_t<R> operator()(Ep&&, R&& r, const T& x) noexcept {
+    return operator()(static_cast<R&&>(r), x);
+  }
 };
 struct fill_n {
   template <nothrow_forward_iterator I, class T = iter_value_t<I>>
@@ -359,6 +453,11 @@ struct fill_n {
       ::new (::ycxx::detail::voidify(*cur)) elem_t<I>(x);
     g.release();
     return cur;
+  }
+  template <execution_policy Ep, nothrow_random_access_iterator I, class T = iter_value_t<I>>
+    requires std::constructible_from<iter_value_t<I>, const T&>
+  static I operator()(Ep&&, I first, iter_difference_t<I> n, const T& x) noexcept {
+    return operator()(static_cast<I&&>(first), n, x);
   }
 };
 
@@ -376,6 +475,16 @@ struct destroy {
   static constexpr borrowed_iterator_t<R> operator()(R&& r) noexcept {
     return operator()(std::ranges::begin(r), std::ranges::end(r));
   }
+  template <execution_policy Ep, nothrow_random_access_iterator I, nothrow_sized_sentinel_for<I> S>
+    requires std::destructible<iter_value_t<I>>
+  static I operator()(Ep&&, I first, S last) noexcept {
+    return operator()(static_cast<I&&>(first), static_cast<S&&>(last));
+  }
+  template <execution_policy Ep, nothrow_sized_random_access_range R>
+    requires std::destructible<range_value_t<R>>
+  static borrowed_iterator_t<R> operator()(Ep&&, R&& r) noexcept {
+    return operator()(static_cast<R&&>(r));
+  }
 };
 struct destroy_n {
   template <nothrow_input_iterator I>
@@ -384,6 +493,11 @@ struct destroy_n {
     for (; n > 0; (void)++first, --n)
       std::destroy_at(__builtin_addressof(*first));
     return first;
+  }
+  template <execution_policy Ep, nothrow_random_access_iterator I>
+    requires std::destructible<iter_value_t<I>>
+  static I operator()(Ep&&, I first, iter_difference_t<I> n) noexcept {
+    return operator()(static_cast<I&&>(first), n);
   }
 };
 

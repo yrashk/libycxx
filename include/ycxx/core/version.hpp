@@ -58,6 +58,7 @@
 #define __cpp_lib_hardened_shared_ptr_array 202506L
 #define __cpp_lib_constexpr_memory 202506L
 #define __cpp_lib_out_ptr 202311L
+#define __cpp_lib_parallel_algorithm 202506L
 #define __cpp_lib_transparent_operators 201510L
 
 // <array>
@@ -206,6 +207,37 @@
 #define __cpp_lib_constexpr_stack 202502L
 #define __cpp_lib_list_remove_return_type 201806L
 
+// <map> <set>
+#define __cpp_lib_constexpr_map 202502L
+#define __cpp_lib_constexpr_set 202502L
+#define __cpp_lib_generic_associative_lookup 201304L
+
+// <flat_map> <flat_set>
+#define __cpp_lib_constexpr_flat_map 202502L
+#define __cpp_lib_constexpr_flat_set 202502L
+#define __cpp_lib_flat_map 202511L
+#define __cpp_lib_flat_set 202511L
+
+// Shared by several container headers, all of which now provide the feature.
+#define __cpp_lib_associative_heterogeneous_erasure 202110L
+#define __cpp_lib_associative_heterogeneous_insertion 202306L
+#define __cpp_lib_containers_ranges 202202L
+#define __cpp_lib_erase_if 202002L
+#define __cpp_lib_incomplete_container_elements 201505L
+#define __cpp_lib_map_lookup 202606L
+#define __cpp_lib_map_try_emplace 201411L
+#define __cpp_lib_node_extract 201606L
+#define __cpp_lib_nonmember_container_access 201411L
+
+// <unordered_map> <unordered_set>
+#define __cpp_lib_constexpr_unordered_map 202502L
+#define __cpp_lib_constexpr_unordered_set 202502L
+#define __cpp_lib_generic_unordered_lookup 201811L
+#define __cpp_lib_unordered_map_try_emplace 201411L
+
+// <hive>
+#define __cpp_lib_hive 202502L
+
 // Features of headers above that had no macro yet.
 #define __cpp_lib_ssize 201902L
 #define __cpp_lib_null_iterators 201304L
@@ -227,9 +259,7 @@
 #define __cpp_lib_function_ref 202604L
 #define __cpp_lib_common_reference_wrapper 202302L
 #define __cpp_lib_constexpr_typeinfo 202106L
-// <ratio> <atomic> <stdatomic.h>
-#define __cpp_lib_ratio 202306L
-#define __cpp_lib_freestanding_ratio 202306L
+// <atomic> <stdatomic.h>
 #define __cpp_lib_atomic_flag_test 201907L
 #define __cpp_lib_atomic_float 201711L
 #define __cpp_lib_atomic_is_always_lock_free 201603L
@@ -277,4 +307,17 @@
 #  define __cpp_lib_hardened_span 202502L
 #  define __cpp_lib_hardened_vector 202502L
 #  define __cpp_lib_hardened_inplace_vector 202502L
+#  define __cpp_lib_hardened_valarray 202502L
 #endif
+
+// <ratio> <numbers> <cmath> <complex> <valarray>
+#define __cpp_lib_ratio 202306L
+#define __cpp_lib_freestanding_ratio 202306L
+#define __cpp_lib_math_constants 201907L
+#define __cpp_lib_constexpr_cmath 202306L
+#define __cpp_lib_hypot 201603L
+#define __cpp_lib_interpolate 201902L
+#define __cpp_lib_math_special_functions 201603L
+#define __cpp_lib_complex_udls 201309L
+#define __cpp_lib_constexpr_complex 202306L
+#define __cpp_lib_valarray 202511L

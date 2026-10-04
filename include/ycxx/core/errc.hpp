@@ -83,5 +83,10 @@ enum class errc {
   too_many_symbolic_link_levels = 40,
   value_too_large = 75,
   wrong_protocol_type = 91,
+  // [depr.cerrno] (Annex D)
+  no_message_available [[deprecated("errc::no_message_available (ENODATA) is deprecated ([depr.cerrno])")]] = 61,
+  no_stream_resources [[deprecated("errc::no_stream_resources (ENOSR) is deprecated ([depr.cerrno])")]] = 63,
+  not_a_stream [[deprecated("errc::not_a_stream (ENOSTR) is deprecated ([depr.cerrno])")]] = 60,
+  stream_timeout [[deprecated("errc::stream_timeout (ETIME) is deprecated ([depr.cerrno])")]] = 62,
 };
 } // namespace std

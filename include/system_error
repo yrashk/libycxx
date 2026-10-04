@@ -107,5 +107,9 @@ consteval bool errc_matches_errno() {
   return true;
 }
 static_assert(ycxx::detail::errc_matches_errno(), "libycxx: std::errc does not match this C library's errno values");
+// The deprecated enumerators of [depr.cerrno] are not named here (that would warn); their values
+// in ycxx/core/errc.hpp are these numbers.
+static_assert(ENODATA == 61 && ENOSR == 63 && ENOSTR == 60 && ETIME == 62,
+              "libycxx: the [depr.cerrno] errc values do not match this C library's errno values");
 } // namespace ycxx::detail
 #endif

@@ -588,10 +588,12 @@ basic_istream<charT, traits>& operator>>(basic_istream<charT, traits>& in, charT
   return in;
 }
 template <class traits, size_t N>
+[[deprecated("signed char / unsigned char stream extraction is deprecated ([depr.istream.extractors]); use char")]]
 basic_istream<char, traits>& operator>>(basic_istream<char, traits>& in, unsigned char (&s)[N]) {
   return in >> reinterpret_cast<char(&)[N]>(s);
 }
 template <class traits, size_t N>
+[[deprecated("signed char / unsigned char stream extraction is deprecated ([depr.istream.extractors]); use char")]]
 basic_istream<char, traits>& operator>>(basic_istream<char, traits>& in, signed char (&s)[N]) {
   return in >> reinterpret_cast<char(&)[N]>(s);
 }
@@ -613,10 +615,12 @@ basic_istream<charT, traits>& operator>>(basic_istream<charT, traits>& in, charT
   return in;
 }
 template <class traits>
+[[deprecated("signed char / unsigned char stream extraction is deprecated ([depr.istream.extractors]); use char")]]
 basic_istream<char, traits>& operator>>(basic_istream<char, traits>& in, unsigned char& c) {
   return in >> reinterpret_cast<char&>(c);
 }
 template <class traits>
+[[deprecated("signed char / unsigned char stream extraction is deprecated ([depr.istream.extractors]); use char")]]
 basic_istream<char, traits>& operator>>(basic_istream<char, traits>& in, signed char& c) {
   return in >> reinterpret_cast<char&>(c);
 }

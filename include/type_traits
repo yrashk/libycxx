@@ -3,5 +3,6 @@
 
 #include <ycxx/config.hpp>
 #include <ycxx/core/type_traits.hpp>
+#include <ycxx/core/type_traits_depr.hpp>
 #include <ycxx/core/version.hpp>
 

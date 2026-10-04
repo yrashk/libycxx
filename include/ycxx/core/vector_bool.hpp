@@ -765,6 +765,14 @@ public:
     x.size_ = s;
     x.cap_ = c;
   }
+  // [depr.vector.bool.swap] (Annex D)
+  [[deprecated("vector<bool>::swap(reference, reference) is deprecated ([depr.vector.bool.swap]); use "
+               "swap(x, y)")]]
+  static constexpr void swap(reference x, reference y) noexcept {
+    const bool b = x;
+    x = static_cast<bool>(y);
+    y = b;
+  }
   constexpr void flip() noexcept {
     for (size_type i = 0, e = words_for(size_); i != e; ++i)
       words_[i] = ~words_[i];

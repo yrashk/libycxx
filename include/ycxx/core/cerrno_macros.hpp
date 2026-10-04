@@ -45,6 +45,7 @@
 #define ENETUNREACH 101
 #define ENFILE 23
 #define ENOBUFS 105
+#define ENODATA 61 // [depr.cerrno]
 #define ENODEV 19
 #define ENOENT 2
 #define ENOEXEC 8
@@ -54,6 +55,8 @@
 #define ENOMSG 42
 #define ENOPROTOOPT 92
 #define ENOSPC 28
+#define ENOSR 63 // [depr.cerrno]
+#define ENOSTR 60 // [depr.cerrno]
 #define ENOSYS 38
 #define ENOTCONN 107
 #define ENOTDIR 20
@@ -75,6 +78,7 @@
 #define EROFS 30
 #define ESPIPE 29
 #define ESRCH 3
+#define ETIME 62 // [depr.cerrno]
 #define ETIMEDOUT 110
 #define ETXTBSY 26
 #define EWOULDBLOCK 11

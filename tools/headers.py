@@ -11,6 +11,8 @@ CORE = [
 ]
 CORE += ["algorithm", "numeric", "execution", "ranges"]
 CORE += ["scoped_allocator"]
+# Numerics (<cmath>: see DECISIONS §3; the run-time calls of its functions need libm).
+CORE += ["ratio"]
 # Hosted: need an OS (through the PAL) or the C library.
 HOSTED = [
     "any", "cctype", "cerrno", "cfenv", "cinttypes", "clocale", "csetjmp", "csignal", "cstdarg", "cstdio",

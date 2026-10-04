@@ -1,0 +1,7 @@
+// -*- C++ -*-  libycxx: <generator>   [core; exceptions need the ABI runtime]
+#pragma once
+
+#include <ycxx/config.hpp>
+#include <ycxx/core/version.hpp>
+#include <ranges>
+#include <ycxx/core/generator.hpp>

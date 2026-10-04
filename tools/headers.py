@@ -42,3 +42,6 @@ HOSTED += ["iosfwd", "ios", "streambuf", "istream", "ostream", "iostream", "sstr
 # Language-support headers whose *declarations* are core but which need the C++ ABI runtime
 # (libycxx-abi) to be used with exceptions/RTTI enabled.
 ABI = ["exception", "stdexcept", "typeinfo", "typeindex"]
+# <generator>: core code, but a generator's promise stores and rethrows exceptions
+# (current_exception/rethrow_exception) through the ABI runtime.
+ABI += ["generator"]

@@ -336,6 +336,15 @@ private:
     }
     return begin() + static_cast<difference_type>(off);
   }
+  // insert_counted at the end: nothing moves, so T need not be move-assignable (append_range).
+  template <class It, class Sent>
+  constexpr void append_counted(It first, Sent last, size_type n) {
+    if (n <= spare())
+      last_ = construct_from(last_, static_cast<It&&>(first), static_cast<Sent&&>(last), n);
+    else
+      realloc_insert(size(), n, grow_to(n),
+                     [&](T* d) { construct_from(d, static_cast<It&&>(first), static_cast<Sent&&>(last), n); });
+  }
   template <class It, class Sent>
   constexpr iterator insert_input(size_type off, It first, Sent last) {
     const size_type old_size = size();
@@ -644,7 +653,7 @@ public:
   constexpr void append_range(R&& rg) {
     if constexpr (counted_range<R>) {
       const auto n = ranges::distance(rg);
-      insert_counted(size(), ranges::begin(rg), ranges::end(rg), static_cast<size_type>(n));
+      append_counted(ranges::begin(rg), ranges::end(rg), static_cast<size_type>(n));
     } else {
       if constexpr (ranges::approximately_sized_range<R>) {
         const auto h = static_cast<size_type>(ranges::reserve_hint(rg));

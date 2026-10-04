@@ -50,9 +50,13 @@ struct pair {
   pair(const pair&) = default;
   pair(pair&&) = default;
 
-  constexpr explicit(!ycxx::detail::implicitly_default_constructible<T1> ||
-                     !ycxx::detail::implicitly_default_constructible<T2>) pair()
-    requires(std::is_constructible_v<T1> && std::is_constructible_v<T2>)
+  // A template, so that the explicit-specifier is evaluated only when the constructor is used:
+  // pair<int, T> may be instantiated while T is still incomplete ([vector.overview]/4 allows
+  // struct T { vector<pair<int, T>> v; }).
+  template <class U1 = T1, class U2 = T2>
+    requires(std::is_constructible_v<U1> && std::is_constructible_v<U2>)
+  constexpr explicit(!ycxx::detail::implicitly_default_constructible<U1> ||
+                     !ycxx::detail::implicitly_default_constructible<U2>) pair()
       : first(), second() {}
 
   constexpr explicit(!std::is_convertible_v<const T1&, T1> || !std::is_convertible_v<const T2&, T2>)

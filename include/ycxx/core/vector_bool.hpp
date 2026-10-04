@@ -11,6 +11,7 @@
 // ([vector.bool.fmt]) is defined with <format> (ycxx/core/format_ranges.hpp).
 #pragma once
 
+#include <ycxx/core/bit_iter_algos.hpp>
 #include <ycxx/core/hash.hpp>
 #include <ycxx/core/vector.hpp>
 
@@ -76,6 +77,8 @@ class bit_iter {
   friend class std::vector;
   template <class W, class D, bool C>
   friend class bit_iter;
+  template <class I>
+  friend struct ycxx::detail::bit_algos;
 
   using wptr = std::conditional_t<Const, const Word*, Word*>;
   static constexpr std::ptrdiff_t bits = std::numeric_limits<Word>::digits;
@@ -163,6 +166,56 @@ public:
 };
 
 } // namespace ycxx::adl_free
+
+namespace ycxx::detail {
+// fill, find and count over vector<bool>'s bits a word at a time (bit_iter_algos.hpp). Each
+// visits the words from first's to last's, the bits [lo, hi) of each; last's word is read only
+// when it has bits in the range (it may be one past the storage).
+template <class Word, class Diff, bool Const>
+struct bit_algos<ycxx::adl_free::bit_iter<Word, Diff, Const>> {
+  using iter = ycxx::adl_free::bit_iter<Word, Diff, Const>;
+  static constexpr bool enabled = true;
+  static constexpr unsigned bits = std::numeric_limits<Word>::digits;
+  static constexpr Word all = static_cast<Word>(~Word(0));
+
+  // The bits [lo, hi) of a word, lo < hi <= bits.
+  static constexpr Word mask(unsigned lo, unsigned hi) noexcept {
+    return static_cast<Word>((hi == bits ? all : static_cast<Word>(Word(1) << hi) - Word(1)) & static_cast<Word>(all << lo));
+  }
+
+  static constexpr void fill(iter first, iter last, bool value) noexcept
+    requires(!Const)
+  {
+    for (Word* w = first.w_;; ++w) {
+      const unsigned lo = w == first.w_ ? first.b_ : 0, hi = w == last.w_ ? last.b_ : bits;
+      if (lo < hi)
+        *w = value ? static_cast<Word>(*w | mask(lo, hi)) : static_cast<Word>(*w & static_cast<Word>(~mask(lo, hi)));
+      if (w == last.w_)
+        return;
+    }
+  }
+  static constexpr iter find(iter first, iter last, bool value) noexcept {
+    for (auto w = first.w_;; ++w) {
+      const unsigned lo = w == first.w_ ? first.b_ : 0, hi = w == last.w_ ? last.b_ : bits;
+      const Word m = lo < hi ? static_cast<Word>((value ? *w : static_cast<Word>(~*w)) & mask(lo, hi)) : Word(0);
+      if (m != 0)
+        return iter(w, static_cast<unsigned>(__builtin_ctzg(m)));
+      if (w == last.w_)
+        return last;
+    }
+  }
+  static constexpr Diff count(iter first, iter last, bool value) noexcept {
+    Diff n = 0;
+    for (auto w = first.w_;; ++w) {
+      const unsigned lo = w == first.w_ ? first.b_ : 0, hi = w == last.w_ ? last.b_ : bits;
+      if (lo < hi)
+        n += static_cast<Diff>(__builtin_popcountg(static_cast<Word>((value ? *w : static_cast<Word>(~*w)) & mask(lo, hi))));
+      if (w == last.w_)
+        return n;
+    }
+  }
+};
+} // namespace ycxx::detail
 
 namespace std {
 

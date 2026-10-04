@@ -30,7 +30,7 @@
 // Orders between objects of different translation units are unspecified
 // ([basic.start.dynamic]/7); only orders within this TU, and relative to main, are checked for
 // them.
-// FLAGS: ../../../../tests/ycxx/support/linkage/static_destruction_tu2.cpp ../../../../tests/ycxx/support/linkage/static_destruction_tu3.cpp
+// FILES: ../support/linkage/static_destruction_tu2.cpp ../support/linkage/static_destruction_tu3.cpp
 //   (relative to the per-test temporary directory build/lit-*/linkage/<name>.XXXX: the harness
 //   has no directive for additional translation units)
 #include <iostream>

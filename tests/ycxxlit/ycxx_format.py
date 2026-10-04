@@ -6,6 +6,8 @@
 
 Optional directives:
   // FLAGS: <extra compiler flags>
+  // FILES: <extra translation units, paths relative to the test file>  (*.pass.cpp only: compiled
+                                          and linked into the test program)
   // XFAIL-COMPILER: gcc|clang  <reason>   known compiler gap (listed in STATUS.md); the test is
                                           unchanged and reports XFAIL, or XPASS once the gap closes
 """
@@ -13,6 +15,7 @@ import os, re, shutil, subprocess, tempfile
 import lit.formats, lit.Test
 
 FLAGS = re.compile(r'^//\s*FLAGS:(.*)$', re.M)
+FILES = re.compile(r'^//\s*FILES:(.*)$', re.M)
 XFAIL = re.compile(r'^//\s*XFAIL-COMPILER:\s*(\w+)', re.M)
 MISSING = re.compile(r"fatal error: '?[\w./]+'?:? (file not found|No such file or directory)")
 
@@ -57,7 +60,9 @@ class YcxxFormat(lit.formats.FileBasedTest):
                 return lit.Test.Result(lit.Test.PASS if rc != 0 else lit.Test.FAIL, out or 'expected a compile error')
             if name.endswith('.pass.cpp'):
                 exe = os.path.join(tmp, 't.exe')
-                rc, out = self.compile([path, '-o', exe] + flags, tmp)
+                extra = [os.path.normpath(os.path.join(os.path.dirname(path), f))
+                         for m in FILES.finditer(src) for f in m.group(1).split()]
+                rc, out = self.compile([path] + extra + ['-o', exe] + flags, tmp)
                 if rc != 0:
                     return lit.Test.Result(lit.Test.FAIL, 'COMPILE FAILED\n' + out)
                 try:

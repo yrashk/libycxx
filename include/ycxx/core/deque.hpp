@@ -430,11 +430,17 @@ private:
       rb.release();
     }
   }
+  // The iterator is advanced before constructing the next element, not after constructing the
+  // previous one: an exception from ++first then leaves no constructed-but-uncounted element
+  // ([deque.modifiers]/3: no effects; [res.on.exception.handling]).
   template <class It>
   constexpr void append_counted(It first, size_type n) {
+    bool started = false;
     append_n(n, [&](T* p) {
+      if (started)
+        ++first;
+      started = true;
       alloc_traits::construct(alloc_, p, *first);
-      ++first;
     });
   }
   // Prepends [first, last) in order; strong.
@@ -474,8 +480,9 @@ private:
       trim_front();
     }};
     for (; built < n; ++built) {
+      if (built != 0)
+        ++first; // before constructing, as in append_counted
       alloc_traits::construct(alloc_, ptr_at(base + built), *first);
-      ++first;
     }
     rb.release();
     start_ = base;

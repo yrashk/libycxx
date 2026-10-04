@@ -22,7 +22,8 @@
 //     same storage whichever TU asks.
 //   [thread.thread.this], [basic.stc.thread]: an inline thread_local variable is one object per
 //     thread in all TUs.
-// FLAGS: -pthread ../../../../tests/ycxx/support/linkage/odr_tu2.cpp
+// FLAGS: -pthread
+// FILES: ../support/linkage/odr_tu2.cpp
 //   (relative to the per-test temporary directory build/lit-*/linkage/<name>.XXXX)
 #include <cstring>
 #include <iostream>

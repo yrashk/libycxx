@@ -45,7 +45,8 @@ build_fsrt() {
   for f in "$repo"/src/runtime/new/*.cpp "$repo"/src/freestanding/new/*.cpp "$repo"/src/runtime/charconv/*.cpp \
            "$repo"/src/runtime/atomic/*.cpp "$repo"/src/runtime/debugging/*.cpp \
            "$repo"/src/runtime/contracts/*.cpp "$repo"/src/freestanding/contracts/*.cpp "$repo"/src/freestanding/pal/*.cpp; do
-    case "$2" in gcc*) nw=-Wno-sized-deallocation ;; *) nw= ;; esac # one function per file
+    # One function per file; GCC: no zero fill of the charconv work buffers (CMakeLists.txt).
+    case "$2" in gcc*) nw="-Wno-sized-deallocation -ftrivial-auto-var-init=uninitialized" ;; *) nw= ;; esac
     $1 $flags $nw -c "$f" -o "$out/fsrt.$2/$(basename "$f" .cpp).o" || return 1
   done
   rm -f "$out/fsrt.$2.a" && $llvm_ar rcs "$out/fsrt.$2.a" "$out/fsrt.$2"/*.o

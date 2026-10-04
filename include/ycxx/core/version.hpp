@@ -185,6 +185,11 @@
 #define __cpp_lib_constexpr_stack 202502L
 #define __cpp_lib_list_remove_return_type 201806L
 
+// <map> <set>
+#define __cpp_lib_constexpr_map 202502L
+#define __cpp_lib_constexpr_set 202502L
+#define __cpp_lib_generic_associative_lookup 201304L
+
 // Features of headers above that had no macro yet.
 #define __cpp_lib_ssize 201902L
 #define __cpp_lib_null_iterators 201304L

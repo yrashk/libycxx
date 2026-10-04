@@ -14,3 +14,4 @@
 #include <ycxx/hosted/chrono_clocks.hpp>
 #include <ycxx/hosted/chrono_tz.hpp>
 #include <ycxx/hosted/chrono_io.hpp>
+#include <ycxx/hosted/chrono_parse.hpp>

@@ -110,7 +110,8 @@ tooling.
 - **`<string>` is core; its C-library parts live in the hosted runtime.** `basic_string` needs
   only an allocator, so it is defined in core (`ycxx/core/basic_string.hpp`), constexpr, with
   the integral `to_string`/`to_wstring`. The functions that need the C library (`sto*` through
-  `strto*`/`wcsto*`, the floating-point `to_string`/`to_wstring`) are declared there and defined
+  `strto*`/`wcsto*`; the floating-point `to_string`/`to_wstring`, which use `<charconv>`'s
+  out-of-line code) are declared there and defined
   out of line in `src/hosted/string.cpp` (libycxx.a), as the `<stdexcept>` members are; a
   freestanding program that calls them gets a link error. So `<string>` includes no C header
   (unlike the C wrappers, it does not provide `errno`, `EOF`, `::uint32_t`, ...).

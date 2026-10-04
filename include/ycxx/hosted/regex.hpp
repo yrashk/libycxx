@@ -396,12 +396,12 @@ public:
   basic_string<char_type, ST, SA> format(const basic_string<char_type, ST, SA>& fmt,
                                          regex_constants::match_flag_type flags = regex_constants::format_default) const {
     basic_string<char_type, ST, SA> result;
-    format(back_inserter(result), fmt, flags);
+    format(std::back_inserter(result), fmt, flags);
     return result;
   }
   string_type format(const char_type* fmt, regex_constants::match_flag_type flags = regex_constants::format_default) const {
     string_type result;
-    format(back_inserter(result), fmt, fmt + char_traits<char_type>::length(fmt), flags);
+    format(std::back_inserter(result), fmt, fmt + char_traits<char_type>::length(fmt), flags);
     return result;
   }
 
@@ -623,13 +623,20 @@ public:
            match_[0] == right.match_[0];
   }
   bool operator==(default_sentinel_t) const noexcept { return pregex_ == nullptr; }
-  const value_type& operator*() const { return match_; }
-  const value_type* operator->() const { return __builtin_addressof(match_); }
+  const value_type& operator*() const {
+    ::ycxx::detail::precondition(pregex_ != nullptr, "regex_iterator: dereferencing the end-of-sequence iterator");
+    return match_;
+  }
+  const value_type* operator->() const {
+    ::ycxx::detail::precondition(pregex_ != nullptr, "regex_iterator: dereferencing the end-of-sequence iterator");
+    return __builtin_addressof(match_);
+  }
 
   // [re.regiter.incr]
   regex_iterator& operator++() {
     namespace rc = regex_constants;
     using access = ::ycxx::detail::regex_access;
+    ::ycxx::detail::precondition(pregex_ != nullptr, "regex_iterator: incrementing the end-of-sequence iterator");
     BidirectionalIterator start = match_[0].second;
     const BidirectionalIterator prev_end = start;
     if (match_[0].first == match_[0].second) {
@@ -743,11 +750,18 @@ public:
   bool operator==(default_sentinel_t) const noexcept { return result_ == nullptr; }
 
   // [re.tokiter.deref]
-  const value_type& operator*() const { return *result_; }
-  const value_type* operator->() const { return result_; }
+  const value_type& operator*() const {
+    ::ycxx::detail::precondition(result_ != nullptr, "regex_token_iterator: dereferencing the end-of-sequence iterator");
+    return *result_;
+  }
+  const value_type* operator->() const {
+    ::ycxx::detail::precondition(result_ != nullptr, "regex_token_iterator: dereferencing the end-of-sequence iterator");
+    return result_;
+  }
 
   // [re.tokiter.incr]
   regex_token_iterator& operator++() {
+    ::ycxx::detail::precondition(result_ != nullptr, "regex_token_iterator: incrementing the end-of-sequence iterator");
     const position_iterator prev = position_;
     if (is_suffix()) {
       result_ = nullptr;
@@ -887,7 +901,7 @@ basic_string<charT, ST, SA> regex_replace(const basic_string<charT, ST, SA>& s, 
                                           const basic_string<charT, FST, FSA>& fmt,
                                           regex_constants::match_flag_type flags = regex_constants::match_default) {
   basic_string<charT, ST, SA> result;
-  std::regex_replace(back_inserter(result), s.begin(), s.end(), e, fmt, flags);
+  std::regex_replace(std::back_inserter(result), s.begin(), s.end(), e, fmt, flags);
   return result;
 }
 template <class traits, class charT, class ST, class SA>
@@ -895,7 +909,7 @@ basic_string<charT, ST, SA> regex_replace(const basic_string<charT, ST, SA>& s, 
                                           const charT* fmt,
                                           regex_constants::match_flag_type flags = regex_constants::match_default) {
   basic_string<charT, ST, SA> result;
-  std::regex_replace(back_inserter(result), s.begin(), s.end(), e, fmt, flags);
+  std::regex_replace(std::back_inserter(result), s.begin(), s.end(), e, fmt, flags);
   return result;
 }
 template <class traits, class charT, class ST, class SA>
@@ -903,14 +917,14 @@ basic_string<charT> regex_replace(const charT* s, const basic_regex<charT, trait
                                   const basic_string<charT, ST, SA>& fmt,
                                   regex_constants::match_flag_type flags = regex_constants::match_default) {
   basic_string<charT> result;
-  std::regex_replace(back_inserter(result), s, s + char_traits<charT>::length(s), e, fmt, flags);
+  std::regex_replace(std::back_inserter(result), s, s + char_traits<charT>::length(s), e, fmt, flags);
   return result;
 }
 template <class traits, class charT>
 basic_string<charT> regex_replace(const charT* s, const basic_regex<charT, traits>& e, const charT* fmt,
                                   regex_constants::match_flag_type flags = regex_constants::match_default) {
   basic_string<charT> result;
-  std::regex_replace(back_inserter(result), s, s + char_traits<charT>::length(s), e, fmt, flags);
+  std::regex_replace(std::back_inserter(result), s, s + char_traits<charT>::length(s), e, fmt, flags);
   return result;
 }
 

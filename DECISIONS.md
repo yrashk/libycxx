@@ -201,6 +201,18 @@ tooling.
   `hazard_pointer_obj_base`, and the retiring thread reclaims the unprotected ones once the list
   exceeds twice the number of records plus 64.
 
+- **`<regex>` is hosted; one syntax tree, two matchers.** regex_traits needs `<locale>`, so the
+  header is hosted; the name tables (class names, POSIX collating symbols) and regex_error's
+  members are in the runtime (`src/hosted/regex.cpp`), everything else is templates
+  (`ycxx/hosted/regex_{base,compile,engine}.hpp`, `regex.hpp`). All six grammars parse into one
+  tree. ECMAScript (and POSIX with back-references) runs on a backtracking matcher with an
+  explicit stack, never native recursion over the input; it remembers failed (pc, position)
+  pairs when the program allows it, and otherwise has a step budget (error_complexity) and a
+  frame budget (error_stack). The POSIX grammars otherwise compile to a Thompson NFA: an NFA
+  simulation finds the leftmost-longest match, and the subexpressions are assigned afterwards by
+  the POSIX rule from the tree (each subpattern, left to right, the longest that still lets the
+  match complete), so leftmost-longest needs no exhaustive search.
+
 ## 4. Error handling
 
 - Every library "throw" goes through one of two hooks in `ycxx/core/error.hpp`. Both take an

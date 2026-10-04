@@ -146,13 +146,6 @@ struct regex_traits {
   using char_class_type = unsigned;
 
   regex_traits() { cache(); }
-  regex_traits(const regex_traits& o) : loc_(o.loc_), ct_(o.ct_), col_(o.col_) {}
-  regex_traits& operator=(const regex_traits& o) {
-    loc_ = o.loc_;
-    ct_ = o.ct_;
-    col_ = o.col_;
-    return *this;
-  }
 
   static size_t length(const char_type* p) { return char_traits<charT>::length(p); }
   charT translate(charT c) const { return c; }

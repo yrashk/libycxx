@@ -238,6 +238,11 @@ class hash_table {
   friend class hash_table;
   friend struct ::ycxx::detail::hash_table_access;
 
+  // Diagnosed preconditions: Hash meets Cpp17Hash ([unord.req.general]/3) and Pred
+  // Cpp17CopyConstructible (/20).
+  static_assert(std::is_copy_constructible_v<Hash>, "unordered container: Hash must be copy constructible");
+  static_assert(std::is_copy_constructible_v<Pred>, "unordered container: Pred must be copy constructible");
+
 protected:
   using info = ::ycxx::detail::alloc_info<Alloc>;
   static constexpr bool is_map = !std::is_same_v<Key, Value>;

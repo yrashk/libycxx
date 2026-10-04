@@ -811,20 +811,18 @@ public:
     else
       ycxx::detail::precondition(info::always_equal || alloc_ == x.alloc_,
                                  "std::hive::swap: unequal allocators that do not propagate");
-    group* t;
-    t = first_, first_ = x.first_, x.first_ = t;
-    t = last_, last_ = x.last_, x.last_ = t;
-    t = free_groups_, free_groups_ = x.free_groups_, x.free_groups_ = t;
-    t = reserved_, reserved_ = x.reserved_, x.reserved_ = t;
-    size_type n = size_;
-    size_ = x.size_;
-    x.size_ = n;
-    n = capacity_;
-    capacity_ = x.capacity_;
-    x.capacity_ = n;
-    const hive_limits l = limits_;
-    limits_ = x.limits_;
-    x.limits_ = l;
+    auto exchange = [](auto& a, auto& b) noexcept {
+      auto t = a;
+      a = b;
+      b = t;
+    };
+    exchange(first_, x.first_);
+    exchange(last_, x.last_);
+    exchange(free_groups_, x.free_groups_);
+    exchange(reserved_, x.reserved_);
+    exchange(size_, x.size_);
+    exchange(capacity_, x.capacity_);
+    exchange(limits_, x.limits_);
   }
   void clear() noexcept { clear_impl(); }
 

@@ -29,6 +29,7 @@ Conformance oracles (run only, never edited): libc++ tests from `llvmorg-23.1.2`
 | iterators + range.access + concepts + function.objects | 185/515 | 185/515 | yes | most failures need `<ranges>`, `bind`, `function`, containers |
 | algorithms + numerics/numeric.ops | 236/370 | 237/370 | yes | was 2; rest: `<vector>`/`<deque>`/`<random>` (107), is_permutation Mandates (12), `<atomic>`/`<map>`/`<list>`..., views |
 | strings/basic.string + string.conversions + hash/literals/erasure | 137/252 | 137/252 | yes (sto*/fp to_string: hosted runtime) | was 0; 109 need `<vector>`/`<deque>` (via asan_testing.h), `<algorithm>`, `<sstream>`, `<ranges>`, `<cmath>`; rest below |
+| containers/sequences/vector + vector.bool | 99/155 | 100/155 | yes | was 0; 134/155 (Clang), 136 (GCC) with `<deque>` declared (asan_testing.h); rest below |
 
 Whole-suite baseline (clang, before iterators/tuple/array/optional): 976 pass / ~8,000 run.
 
@@ -54,6 +55,13 @@ headers, mostly `<sstream>`; the rest are listed under Known limitations). Own s
 compiles with `-O2`, as DejaGnu's default flags do. Some tests rely on dead-code elimination:
 `expected/cons.cc` declares `E(const int&)` without defining it, and links only when the
 unreachable error branch is removed. `dg-options -fno-inline` is passed through.
+<vector>, <inplace_vector> (Phase 3, core): vector, vector<bool>, pmr::vector, inplace_vector, all
+constexpr. Own suite vector/ + inplace_vector/ + containers/: 67/79 on both compilers (rest: `<list>`,
+views, `<memory_resource>`, and the two adl_robustness test defects below); with stand-ins for the
+missing views and `<list>` every remaining vector test passes. libstdc++ 23_containers/vector +
+inplace_vector: 0 -> 107/136 (GCC), 104/136 (Clang); the rest need missing headers
+(`<memory_resource>`, `<iostream>`, `<regex>`, testsuite_iterators.h's libstdc++ internals),
+`<algorithm>` through `<vector>`, or libstdc++ extensions (below). Clean under ASan on Clang.
 <memory> (Phase 3): specialized algorithms (std and ranges, constexpr), unique_ptr, shared_ptr /
 weak_ptr / enable_shared_from_this / make_shared family (constexpr), owner_less / owner_hash /
 owner_equal, out_ptr / inout_ptr. Own suite memory: Clang 81/83, GCC 80/83 plus 1 XFAIL;
@@ -189,6 +197,33 @@ Deprecated and removed features are not implemented (`is_pod`, `is_trivial`, `al
   `strto*` round-trip checks (no `<charconv>` dependency); switching it to `to_chars` once that
   exists would be faster.
 
+- `<vector>`: no `formatter<vector<bool>::reference>` (no `<format>`); `pmr::vector` names the
+  forward-declared `polymorphic_allocator` until `<memory_resource>` exists. No AddressSanitizer
+  container annotations (libc++'s asan tests check them: 16 libc++ tests fail under ASan for that
+  reason only). Not provided: the pre-C++26 `static vector<bool>::swap(reference, reference)` and
+  libstdc++'s `vector<bool>::insert(pos)` / mismatched-allocator extensions. vector<bool> shifts on
+  insert/erase bit by bit. shrink_to_fit swallows an allocation failure (a non-binding request).
+  Strengthened noexcept: `vector(vector&&, const Allocator&)` when the allocator is always equal;
+  inplace_vector's copy operations when T's are. libc++ `vector.modifiers/emplace` and
+  `vector.bool/find` exceed Clang's default constexpr step limit (pass with 2x).
+- `<inplace_vector>`: Clang 23 cannot begin the lifetime of one element of a union array member
+  in constant evaluation (P3074; GCC 16 can, probed in-language). On Clang a trivially destructible,
+  default-constructible T is value-initialized as a whole array first, a non-trivially-destructible
+  T lives in std::allocator storage during constant evaluation (so a constant-initialized
+  inplace_vector of such a T cannot hold elements), and other T cannot be used in constant
+  evaluation. A second union member (a pointer) is added for the second case, which can raise
+  sizeof/alignof on Clang only.
+- Own-suite test defects (reported, not changed): `vector/adl_robustness` and
+  `inplace_vector/adl_robustness` `pointers()` part: every operator expression on
+  `evil::Iter<Holder<Incomplete>*>` or `vector<Holder<Incomplete>*>` (including the test's own
+  `a == d`, `++it`) performs ADL that instantiates `Holder<Incomplete>`, which no library can avoid
+  (libstdc++ fails it too). `inplace_vector/adl_robustness` also calls `reserve(200)` on an
+  `inplace_vector<T, 128>`, which must throw bad_alloc ([inplace.vector.capacity]/9). Both pass
+  with those parts removed.
+- The shared feature-test macros `__cpp_lib_containers_ranges`, `__cpp_lib_erase_if`,
+  `__cpp_lib_nonmember_container_access`, `__cpp_lib_incomplete_container_elements` and
+  `__cpp_lib_allocator_traits_is_always_equal` are left to the containers' integration (they
+  cover headers that do not exist yet).
 - `<algorithm>`/`<numeric>`/`<execution>` (core): every std:: and ranges:: algorithm of the
   draft, constexpr where specified. The std:: ExecutionPolicy overloads run sequentially and
   are noexcept (an escaping exception calls terminate). Not provided: the ranges::

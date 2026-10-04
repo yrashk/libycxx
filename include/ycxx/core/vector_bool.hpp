@@ -366,6 +366,18 @@ private:
     (void)last;
     size_ = n;
   }
+  // Replaces the contents with x's bits, a word at a time.
+  constexpr void copy_words(const vector& x) {
+    const size_type need = words_for(x.size_);
+    if (need > cap_) {
+      const block b = allocate_words(need);
+      free_storage();
+      adopt(b);
+    }
+    for (size_type i = 0; i != need; ++i)
+      words_[i] = x.words_[i];
+    size_ = x.size_;
+  }
   template <class It, class Sent>
   constexpr void assign_input(It first, Sent last) {
     vector tmp(get_allocator());
@@ -423,17 +435,15 @@ public:
   }
   constexpr vector(const vector& x)
       : vector(with_alloc{}, alloc_traits::select_on_container_copy_construction(x.get_allocator())) {
-    assign_counted(x.cbegin(), x.cend(), x.size_);
+    copy_words(x);
   }
   constexpr vector(vector&& x) noexcept : alloc_(static_cast<word_alloc&&>(x.alloc_)) { take(x); }
-  constexpr vector(const vector& x, const type_identity_t<Allocator>& a) : vector(with_alloc{}, a) {
-    assign_counted(x.cbegin(), x.cend(), x.size_);
-  }
+  constexpr vector(const vector& x, const type_identity_t<Allocator>& a) : vector(with_alloc{}, a) { copy_words(x); }
   constexpr vector(vector&& x, const type_identity_t<Allocator>& a) noexcept(always_equal) : vector(with_alloc{}, a) {
     if (always_equal || alloc_ == x.alloc_)
       take(x);
     else
-      assign_counted(x.cbegin(), x.cend(), x.size_);
+      copy_words(x);
   }
   constexpr vector(initializer_list<bool> il, const Allocator& a = Allocator()) : vector(with_alloc{}, a) {
     assign_counted(il.begin(), il.end(), il.size());
@@ -450,7 +460,7 @@ public:
       }
       alloc_ = x.alloc_;
     }
-    assign_counted(x.cbegin(), x.cend(), x.size_);
+    copy_words(x);
     return *this;
   }
   constexpr vector& operator=(vector&& x) noexcept(pocma || always_equal) {
@@ -466,7 +476,7 @@ public:
         free_storage();
         take(x);
       } else {
-        assign_counted(x.cbegin(), x.cend(), x.size_);
+        copy_words(x);
       }
     }
     return *this;

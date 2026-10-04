@@ -52,6 +52,11 @@
 #define __cpp_lib_array_constexpr 201811L
 #define __cpp_lib_to_array 201907L
 
+// <optional>
+#define __cpp_lib_optional 202506L
+#define __cpp_lib_optional_range_support 202406L
+#define __cpp_lib_freestanding_optional 202506L
+
 // <bit>
 #define __cpp_lib_bit_cast 201806L
 #define __cpp_lib_bitops 202607L

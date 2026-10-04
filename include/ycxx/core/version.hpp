@@ -86,6 +86,9 @@
 #define __cpp_lib_bitset 202306L
 #define __cpp_lib_constexpr_bitset 202207L
 
+// errc
+#define __cpp_lib_freestanding_errc 202306L
+
 // <bit>
 #define __cpp_lib_bit_cast 201806L
 #define __cpp_lib_bitops 202607L

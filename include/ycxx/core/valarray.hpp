@@ -521,15 +521,10 @@ public:
     const long long sz = static_cast<long long>(size_);
     long long k = n % sz;
     if (k < 0) k += sz;
-    valarray r;
-    r.build(size_, [this, k, sz](T* p, size_t cnt) {
-      const size_t first = static_cast<size_t>(k);
-      T* q = std::uninitialized_copy_n(data_ + first, size_ - first, p);
-      (void)sz;
-      (void)cnt;
-      std::uninitialized_copy_n(data_, first, q);
+    const size_t first = static_cast<size_t>(k);
+    return generate(size_, [this, first](size_t i) -> const T& {
+      return data_[i < size_ - first ? first + i : i - (size_ - first)];
     });
-    return r;
   }
   valarray apply(T func(T)) const {
     return map([func](const T& x) -> T { return func(x); });

@@ -33,6 +33,7 @@ Conformance oracles (run only, never edited): libc++ tests from `llvmorg-23.1.2`
 | containers/sequences/vector + vector.bool | 99/155 | 100/155 | yes | was 0; 134/155 (Clang), 136 (GCC) with `<deque>` declared (asan_testing.h); rest below |
 | containers/sequences/{deque,list,forwardlist} + container.adaptors/{stack,queue,priority.queue} | 197/371 | 197/371 | yes | was 0; adaptor tests need `<vector>` (338/371 with a local stand-in `<vector>`); rest: `<map>`/`<set>`/`<random>` |
 | containers/unord + container.node | 303/422 | 303/422 | yes | was 0; 417/422 on both with stand-in `<cmath>`/`<map>`/`<set>`; rest below |
+| containers/views/mdspan | 65/85 | 66/85 | yes | was 0; rest: unqualified `int64_t` (16), `array::operator[]` not noexcept (1), rank-0 `layout_stride` -> `layout_left`/`layout_right` with a narrowing index type expected implicit (2; the draft makes it explicit), Clang: `_BitInt` index types (1) |
 | numerics/{c.math,numbers,complex.number,numarray} + utilities/ratio | 325/348 | 327/348 | yes (run-time `<cmath>` calls need libm) | was 6; rest below (numerics) |
 | input.output + localization (iostreams, `<locale>`) | 583/855 | 590/855 | no (hosted) | was 39; 213 of the failures need `<filesystem>`, `<codecvt>` (removed), `<format>`/`<print>`, `<mutex>`/`<chrono>` or `EOF` from `constexpr_char_traits.h`; rest under Known limitations |
 | atomics + thread (incl. futures, stop tokens, latch/barrier/semaphore) | 449/453 | 449/453 | `<atomic>` yes (runtime archive); the rest hosted | was 16; rest: `<format>` for thread::id (4) |
@@ -389,6 +390,30 @@ Deprecated and removed features are not implemented (`is_pod`, `is_trivial`, `al
   deduction guides already name. A non-copy-constructible Hash or Pred is diagnosed.
   Not defined yet (shared with `<map>`/`<set>`): `__cpp_lib_node_extract`,
   `__cpp_lib_associative_heterogeneous_erasure`/`_insertion`, `__cpp_lib_map_lookup`.
+- `<mdspan>` (core, constexpr throughout; [views.multidim] of the current draft, including the
+  C++26 names `extent_slice`, `range_slice`, `canonical_slices`, `subextents`, `dims`, the padded
+  layouts, `aligned_accessor`, `at` and the mdspan `copy`/`fill`). Own suite mdspan + linalg:
+  18/18 on both compilers, clean under ASan (Clang). libstdc++ 23_containers/mdspan: 0 -> 33/41 (GCC),
+  25/41 (Clang), 5 unsupported; the rest: unqualified `uint8_t`/`uint16_t` (2), submdspan_mapping.cc
+  slices an extent of 11 with `extent_slice{2, cw<7>, cw<2>}` (a precondition violation, diagnosed in
+  constant evaluation), and on Clang test code GCC accepts (`Layout::mapping<E>` without `template`,
+  a constexpr variable template without initializer) and constexpr step limits. Choices: pair-like
+  slices are tuple-protocol types and aggregates of exactly two fields; the positivity checks of
+  layout_stride strides and of a padding value are skipped for an empty index space (submdspan of
+  an empty mdspan produces zero strides and paddings, [mdspan.sub.map.common]/6, a draft defect);
+  the static padding stride is not stored; the standard mappings' `operator()` checks the index once
+  for `mdspan::operator[]`. Strengthenings: `layout_left::mapping(const layout_stride::mapping&)` is
+  noexcept (as layout_right's), `mdspan()` and the `is_[always_]*` members are noexcept when the
+  mapping's are. No `_BitInt` index types.
+- `<linalg>` (core; the norms and Givens rotations call libm at run time): everything in [linalg].
+  Plain loops (no blocking, no vendor BLAS); not constexpr (the draft does not make it so); the
+  ExecutionPolicy overloads run sequentially, are noexcept, and accept any cv/ref execution policy
+  type. The 2-norms use a scaled sum of squares (no spurious overflow/underflow; NaN and infinity
+  propagate). Draft questions: complex `setup_givens_rotation` returns r with the phase of a (LAPACK
+  xLARTG); "r is the Euclidean norm" cannot hold with a real c unless a is real and nonnegative. The
+  overloads taking a BinaryDivideOp exclude mdspan arguments, otherwise `triangular_matrix_vector_solve(A,
+  t, d, b, x)` (and the matrix solves) would be ambiguous with the in-place overload. Neither
+  external suite has linalg tests.
 - `<hive>` (core; only the constructors without elements and the limit queries are constexpr,
   as specified): element blocks with a 16-bit jump-counting skipfield and per-block free lists of
   erased runs, so insertion, erasure and iteration are O(1); blocks are numbered for O(1)

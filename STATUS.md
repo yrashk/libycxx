@@ -31,6 +31,7 @@ Conformance oracles (run only, never edited): libc++ tests from `llvmorg-23.1.2`
 | strings/basic.string + string.conversions + hash/literals/erasure | 137/252 | 137/252 | yes (sto*/fp to_string: hosted runtime) | was 0; 109 need `<vector>`/`<deque>` (via asan_testing.h), `<algorithm>`, `<sstream>`, `<ranges>`, `<cmath>`; rest below |
 | utilities/charconv | 7/12 | 7/12 | yes (fp: runtime archive) | rest need `<algorithm>`, `<cmath>`, `<string>` |
 | containers/sequences/vector + vector.bool | 99/155 | 100/155 | yes | was 0; 134/155 (Clang), 136 (GCC) with `<deque>` declared (asan_testing.h); rest below |
+| containers/sequences/{deque,list,forwardlist} + container.adaptors/{stack,queue,priority.queue} | 197/371 | 197/371 | yes | was 0; adaptor tests need `<vector>` (338/371 with a local stand-in `<vector>`); rest: `<map>`/`<set>`/`<random>` |
 
 Whole-suite baseline (clang, before iterators/tuple/array/optional): 976 pass / ~8,000 run.
 
@@ -262,6 +263,27 @@ Deprecated and removed features are not implemented (`is_pod`, `is_trivial`, `al
   `__cpp_lib_nonmember_container_access`, `__cpp_lib_incomplete_container_elements` and
   `__cpp_lib_allocator_traits_is_always_equal` are left to the containers' integration (they
   cover headers that do not exist yet).
+- `<deque>`, `<list>`, `<forward_list>`, `<stack>`, `<queue>` (core, constexpr): everything in the
+  draft except the adaptors' formatter specializations (no `<format>`). Own suite: deque 14/17,
+  list 16/19, forward_list 10/12, stack/queue/priority_queue 4/4 each, on both compilers (adaptors
+  measured with a local stand-in `<vector>`); clean under ASan. Remaining: `range_kinds` need
+  `views::iota`/`counted`, `pmr_alias` needs `<memory_resource>`, and `adl_robustness` cannot
+  compile with any library: its `evil::Iter<Holder<Incomplete>*>` makes every operator call on the
+  iterator instantiate `Holder<Incomplete>` through ADL (reduced case, both compilers).
+  libstdc++ 23_containers/{deque,list,forward_list,stack,queue,priority_queue}: 0 -> 154/199 (GCC),
+  152/199 (Clang); 175/173 with a stand-in `<vector>`; the rest need `<vector>`,
+  `<memory_resource>`, `<scoped_allocator>`, iostreams, `__cpp_lib_erase_if` (defined once every
+  container has erase_if), or test libstdc++ extensions (mismatched allocator value_type,
+  assigning non-assignable elements, trivially copyable iterators, a non-constexpr `swap` overload).
+- deque: blocks of about 1 KiB (a power of two, at least 16 elements) and a map of block pointers;
+  emptied blocks are freed eagerly, an empty deque keeps one block until `shrink_to_fit`. A middle
+  `insert`/`emplace` of one element or of n copies builds the value in allocator storage first
+  (it may alias an element). list: at run time the sentinel is a member; during constant
+  evaluation it is allocated with `std::allocator` (GCC 16 mis-evaluates pointers from heap nodes
+  into an object returned with NRVO). Extensions: the adaptors' default constructors are
+  constrained, a moved-from priority_queue is empty, `X(X&&, const A&)` is noexcept for
+  always-equal allocators. `<queue>` includes `<vector>`, so it (and the include-graph and
+  freestanding checks for it) needs `<vector>` to exist.
 - `<algorithm>`/`<numeric>`/`<execution>` (core): every std:: and ranges:: algorithm of the
   draft, constexpr where specified. The std:: ExecutionPolicy overloads run sequentially and
   are noexcept (an escaping exception calls terminate). Not provided: the ranges::

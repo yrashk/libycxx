@@ -9,6 +9,7 @@
 #pragma once
 
 #include <ycxx/core/format_base.hpp>
+#include <ycxx/core/format_kind.hpp>
 #include <ycxx/core/pair.hpp>
 #include <ycxx/core/ranges_all.hpp>
 #include <ycxx/core/tuple.hpp>
@@ -28,15 +29,6 @@ class bit_ref;
 } // namespace ycxx::adl_free
 
 namespace ycxx::detail {
-template <class T>
-inline constexpr bool fmt_is_pair_or_2tuple = false;
-template <class T, class U>
-inline constexpr bool fmt_is_pair_or_2tuple<std::pair<T, U>> = true;
-template <class T, class U>
-inline constexpr bool fmt_is_pair_or_2tuple<std::tuple<T, U>> = true;
-
-template <class R>
-inline constexpr bool fmt_dependent_false = false;
 template <class F>
 constexpr void fmt_set_debug(F& f) {
   if constexpr (requires { f.set_debug_format(); })
@@ -45,40 +37,6 @@ constexpr void fmt_set_debug(F& f) {
 } // namespace ycxx::detail
 
 namespace std {
-
-// [format.range.fmtkind]
-enum class range_format { disabled, map, set, sequence, string, debug_string };
-
-} // namespace std
-
-namespace ycxx::detail {
-template <class R>
-consteval std::range_format fmt_kind_primary() {
-  static_assert(fmt_dependent_false<R>, "std::format_kind: the primary template is instantiated ([format.range.fmtkind]/1)");
-  return std::range_format::disabled;
-}
-template <class R>
-consteval std::range_format fmt_default_kind() {
-  using U = std::remove_cvref_t<std::ranges::range_reference_t<R>>;
-  if constexpr (__is_same(U, R))
-    return std::range_format::disabled;
-  else if constexpr (requires { typename R::key_type; }) {
-    if constexpr (requires { typename R::mapped_type; } && fmt_is_pair_or_2tuple<U>)
-      return std::range_format::map;
-    else
-      return std::range_format::set;
-  } else
-    return std::range_format::sequence;
-}
-} // namespace ycxx::detail
-
-namespace std {
-
-template <class R>
-inline constexpr range_format format_kind = ycxx::detail::fmt_kind_primary<R>();
-template <ranges::input_range R>
-  requires same_as<R, remove_cvref_t<R>>
-inline constexpr range_format format_kind<R> = ycxx::detail::fmt_default_kind<R>();
 
 // [format.range.formatter]
 template <class T, class charT = char>

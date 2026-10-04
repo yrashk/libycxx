@@ -397,3 +397,31 @@ under the same name. Otherwise it gets one alias template in `config.hpp`.
   follows a symbolic link by request). Copies of a directory iterator share the open directory
   (input iterators); `recursion_pending()` belongs to each copy.
 - `<filesystem>` also includes `<cstdlib>`, as `<fstream>` includes `<cstdio>`.
+## 9. Diagnostics and other C++26 utilities
+
+- **Replaceable runtime hooks in their own archive members.** `std::is_debugger_present`
+  (`src/runtime/debugging`) and GCC's contract-violation handler `::handle_contract_violation`
+  (`src/runtime/contracts`) are each alone in an archive member of both `libycxx.a` and the
+  freestanding archive, like the allocation functions (§3), so a program's definition replaces
+  the default. The defaults ask the PAL (`ycxx_pal_debugger_present`: TracerPid on Linux) or
+  report through it (stderr); the freestanding defaults answer false / report nothing.
+- **`contract_violation` has GCC's layout.** GCC 16 builds the violation object itself and passes
+  it as `const std::contracts::contract_violation&`; its layout (four 16-bit fields with the
+  enumerator values, comment, source-location data pointer, extension pointer) was read from
+  GCC's generated code. Clang 23 has no contracts: the header is declarative there and
+  `__cpp_lib_contracts` is defined only where `__cpp_contracts` is.
+- **Stack traces are symbolized by the runtime itself**, without libbacktrace or addr2line: the
+  toolchain unwinder (`_Unwind_Backtrace`) captures return addresses; new PAL hooks name the
+  loaded object containing an address (`dl_iterate_phdr`), map its file and ask `dladdr`; the
+  runtime reads ELF symbol tables and DWARF 2-5 (`.debug_line`, and `.debug_info` for inlined
+  functions) and demangles with its own Itanium demangler (`src/hosted/demangle.cpp`).
+  `basic_stacktrace::current` is `noinline` and passes its return address, so the trace starts
+  at its caller however the library's frames were inlined.
+- **`<text_encoding>`'s registry is generated** (`tools/gen_text_encoding.py`) from a copy of the
+  IANA registry kept in `tools/data`; names are matched through their comp-name canonical form by
+  binary search, so the class is usable in constant expressions. `locale::encoding()` of "C" is
+  US-ASCII (the POSIX portable character set), although the classic `codecvt<wchar_t, char>`
+  converts UTF-8 (§7).
+- **`generator` nests without a stack of handles**: the promises of recursively yielded
+  generators link to their parent and the root, and transfers between them are symmetric, so
+  recursion depth costs no stack and no allocation besides the frames.

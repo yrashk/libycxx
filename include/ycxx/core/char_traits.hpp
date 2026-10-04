@@ -67,7 +67,7 @@ struct char_traits_base {
     }
     return 0;
   }
-  static constexpr std::size_t length(const char_type* s) {
+  static constexpr std::size_t length(const char_type* s) noexcept {
     // strlen/memchr are libc functions: only hosted builds may call them (freestanding builds
     // provide just memcpy/memmove/memset/memcmp).
     if constexpr (sizeof(char_type) == 1 && ycxx::detail::cfg::hosted) {

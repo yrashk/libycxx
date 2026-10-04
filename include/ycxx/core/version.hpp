@@ -58,6 +58,8 @@
 #define __cpp_lib_hardened_shared_ptr_array 202506L
 #define __cpp_lib_constexpr_memory 202506L
 #define __cpp_lib_out_ptr 202311L
+#define __cpp_lib_indirect 202502L
+#define __cpp_lib_polymorphic 202502L
 #define __cpp_lib_parallel_algorithm 202506L
 #define __cpp_lib_transparent_operators 201510L
 
@@ -178,6 +180,19 @@
 #define __cpp_lib_ranges_as_const 202311L
 #define __cpp_lib_ranges_as_input 202502L
 #define __cpp_lib_ranges_as_rvalue 202207L
+// <generator>
+#define __cpp_lib_generator 202207L
+// <debugging>
+#define __cpp_lib_debugging 202403L
+// <text_encoding>
+#define __cpp_lib_text_encoding 202306L
+// <stacktrace> (formatter<stacktrace_entry> waits for <format>: no __cpp_lib_formatters)
+#define __cpp_lib_stacktrace 202011L
+#define __cpp_lib_hardened_basic_stacktrace 202506L
+// <contracts>: the language feature is the compiler's (GCC 16; not Clang 23)
+#if YCXX_HAS_CONTRACTS
+#  define __cpp_lib_contracts 202502L
+#endif
 #define __cpp_lib_ranges_cache_latest 202411L
 #define __cpp_lib_ranges_cartesian_product 202207L
 #define __cpp_lib_ranges_chunk 202202L

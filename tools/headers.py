@@ -20,6 +20,10 @@ CORE += ["ratio", "numbers", "cmath", "complex", "valarray"]
 # <atomic>: operations that are not lock-free and the waits use the runtime archive's tables
 # (libycxx.a and the freestanding archive).
 CORE += ["atomic", "stdatomic.h"]
+# <debugging>: defined in the runtime archives (is_debugger_present asks the PAL).
+CORE += ["debugging"]
+# <contracts>: the default contract-violation handler is in the runtime archives.
+CORE += ["contracts"]
 # Hosted: need an OS (through the PAL) or the C library.
 HOSTED = [
     "any", "cctype", "cerrno", "cfenv", "cinttypes", "clocale", "csetjmp", "csignal", "cstdarg", "cstdio",
@@ -44,3 +48,11 @@ HOSTED += ["filesystem"]
 # Language-support headers whose *declarations* are core but which need the C++ ABI runtime
 # (libycxx-abi) to be used with exceptions/RTTI enabled.
 ABI = ["exception", "stdexcept", "typeinfo", "typeindex"]
+# <generator>: core code, but a generator's promise stores and rethrows exceptions
+# (current_exception/rethrow_exception) through the ABI runtime.
+ABI += ["generator"]
+# <text_encoding>: the class is constexpr core code (ycxx/core/text_encoding.hpp); environment()
+# and locale::encoding() are in the hosted runtime.
+HOSTED += ["text_encoding"]
+# <stacktrace>: capture and symbolization are in the hosted runtime (unwinder, PAL).
+HOSTED += ["stacktrace"]

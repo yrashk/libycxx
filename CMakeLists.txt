@@ -63,10 +63,17 @@ endif()
 file(GLOB YCXX_CHARCONV_SOURCES CONFIGURE_DEPENDS src/runtime/charconv/*.cpp)
 # The lock and wait tables of <atomic> (also in the freestanding runtime archive).
 file(GLOB YCXX_ATOMIC_SOURCES CONFIGURE_DEPENDS src/runtime/atomic/*.cpp)
+# <debugging> (also in the freestanding runtime archive); is_debugger_present is replaceable.
+file(GLOB YCXX_DEBUGGING_SOURCES CONFIGURE_DEPENDS src/runtime/debugging/*.cpp)
+# <contracts>: the replaceable default ::handle_contract_violation (also freestanding).
+file(GLOB YCXX_CONTRACTS_SOURCES CONFIGURE_DEPENDS src/runtime/contracts/*.cpp)
 add_library(ycxx STATIC
   ${YCXX_NEW_SOURCES}
   ${YCXX_CHARCONV_SOURCES}
   ${YCXX_ATOMIC_SOURCES}
+  ${YCXX_DEBUGGING_SOURCES}
+  ${YCXX_CONTRACTS_SOURCES}
+  src/hosted/contracts.cpp
   src/hosted/thread.cpp
   src/hosted/future.cpp
   src/hosted/rcu.cpp
@@ -77,6 +84,9 @@ add_library(ycxx STATIC
   src/hosted/cmath_check.cpp
   src/hosted/syncstream.cpp
   src/hosted/system_error.cpp
+  src/hosted/text_encoding.cpp
+  src/hosted/stacktrace.cpp
+  src/hosted/demangle.cpp
   # iostreams and localization
   src/hosted/fstream.cpp
   src/hosted/ios.cpp
@@ -87,6 +97,8 @@ add_library(ycxx STATIC
   # file systems
   src/hosted/filesystem.cpp
   src/pal/posix/pal.c
+  src/pal/posix/pal_debug.c
+  src/pal/posix/pal_encoding.c
 )
 set_target_properties(ycxx PROPERTIES EXPORT_NAME core)
 target_link_libraries(ycxx PRIVATE ycxx_headers)

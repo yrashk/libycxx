@@ -159,7 +159,7 @@ class LibstdcxxFormat(lit.formats.FileBasedTest):
                 while re.search(r'\[[^\[\]]*\]', text):
                     text = re.sub(r'\[[^\[\]]*\]', '', text)
                 for o in text.split():
-                    if o == '-latomic':
+                    if o in ('-latomic', '-lstdc++exp'):  # libstdc++'s own extra libraries
                         continue
                     sm = re.fullmatch(r'-std=(?:gnu|c)\+\+(\w+)', o)
                     if sm:
@@ -179,6 +179,11 @@ class LibstdcxxFormat(lit.formats.FileBasedTest):
                 t = args[0] if args else ''
                 if not eval_selector(t):
                     return lit.Test.Result(lit.Test.UNSUPPORTED, f'effective target {t} not provided')
+            elif kind == 'require-cpp-feature-test':
+                # The feature-test macro must be defined by <version> (as libstdc++'s harness checks).
+                macro = (args[0] if args else rest).strip().strip('"').strip()
+                if not self.has_macro(macro, flags):
+                    return lit.Test.Result(lit.Test.UNSUPPORTED, f'{macro} not defined')
             elif kind.startswith('require-'):
                 if kind not in REQUIRES:
                     return lit.Test.Result(lit.Test.UNSUPPORTED, f'dg-{kind} not provided')
@@ -208,6 +213,13 @@ class LibstdcxxFormat(lit.formats.FileBasedTest):
         if rc != 0 and self.MISSING.search(out):
             return lit.Test.Result(lit.Test.FAIL, 'expected a compile error, but a header is missing\n' + out)
         return lit.Test.Result(lit.Test.PASS if rc != 0 else lit.Test.FAIL, out or 'expected a compile error')
+
+    def has_macro(self, macro, flags):
+        with tempfile.TemporaryDirectory() as d:
+            src = os.path.join(d, 'ftm.cc')
+            with open(src, 'w') as f:
+                f.write(f'#include <version>\n#ifndef {macro}\n#error missing\n#endif\n')
+            return self.compile(['-fsyntax-only', src] + flags, d)[0] == 0
 
     def compile(self, args, cwd):
         p = subprocess.run([self.wrapper, self.compiler] + args, cwd=cwd, capture_output=True, text=True, timeout=300)

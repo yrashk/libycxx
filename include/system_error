@@ -1,8 +1,8 @@
 // -*- C++ -*-  libycxx: <system_error>   [hosted]
 //
 // The classes are core (ycxx/core/system_error.hpp); generic_category(), system_category(), the
-// category messages and system_error's members are defined in the hosted runtime. Not provided:
-// formatter<error_code> (no <format> yet).
+// category messages and system_error's members are defined in the hosted runtime.
+// formatter<error_code> ([syserr.fmt]) is in ycxx/core/format_syserr.hpp.
 #pragma once
 
 #include <ycxx/config.hpp>
@@ -10,6 +10,7 @@
 #include <compare>
 #include <ycxx/core/errc.hpp>
 #include <ycxx/core/system_error.hpp>
+#include <ycxx/core/format_syserr.hpp>
 #include <errno.h>
 
 namespace ycxx::detail {

@@ -58,3 +58,5 @@ ranges/range\.adaptors/range\.lazy\.split/range\.lazy\.split\.outer\.value/ctor\
 ranges/range\.adaptors/range\.join/range\.join\.iterator/arrow\.pass\.cpp | divergence | expects operator-> for an inner iterator whose operator-> is not const; has-arrow ([range.utility.helpers]) requires a const one
 ranges/range\.adaptors/range\.lazy\.split/begin\.pass\.cpp | divergence | expects const begin() with a pattern that is not a forward range when const; [range.lazy.split.view] requires forward_range<const Pattern>
 ranges/range\.utility/range\.utility\.conv/to\.pass\.cpp | divergence | expects ranges::to to append with c.emplace(c.end(), x); container-append ([range.utility.conv.general]/5) uses emplace_back, push_back, emplace_hint and insert
+content:#include "test_format_context.h" | implementation-specific | creates a basic_format_context through libc++'s internal std::__format_context_create (test_format_context.h has no hook for other vendors; [format.context] gives the class no public constructor)
+content:\bvisit_format_arg\b | deprecated | std::visit_format_arg is deprecated in C++26 ([depr.format.arg])

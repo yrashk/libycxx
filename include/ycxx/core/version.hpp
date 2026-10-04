@@ -308,3 +308,10 @@
 #define __cpp_lib_spanstream 202106L
 #define __cpp_lib_sstream_from_string_view 202306L
 #define __cpp_lib_syncbuf 201803L
+
+// <format> <print>
+#define __cpp_lib_format 202603L
+#define __cpp_lib_format_ranges 202207L
+#define __cpp_lib_format_uchar 202311L
+#define __cpp_lib_constexpr_format 202511L
+#define __cpp_lib_print 202406L

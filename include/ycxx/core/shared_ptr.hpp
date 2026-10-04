@@ -4,8 +4,8 @@
 //
 // Every owning shared_ptr points to a control block (ycxx::detail::sp_block) holding the use
 // count and the weak count (the number of weak_ptrs, plus one while the use count is nonzero).
-// The counts are updated with the compiler's __atomic builtins at run time and with plain
-// arithmetic during constant evaluation, where there is one thread. Three block kinds exist:
+// The counts are updated with the compiler's __atomic builtins at run time (plain arithmetic while
+// the process is single-threaded) and with plain arithmetic during constant evaluation. Three block kinds exist:
 //   - sp_ptr_block: an adopted pointer, its deleter and an allocator (the constructors);
 //   - sp_obj_block: the object itself, in a union member (make_shared for non-arrays);
 //   - sp_array_block: an array; at run time the elements follow the block in the same
@@ -24,6 +24,7 @@
 #include <ycxx/core/hash.hpp>
 #include <ycxx/core/error.hpp>
 #include <ycxx/core/exception_base.hpp>
+#include <ycxx/core/single_threaded.hpp>
 
 namespace std {
 
@@ -88,11 +89,18 @@ public:
     return nullptr;
   }
 
+  // At run time the counts are atomic unless the process is single-threaded
+  // (single_threaded.hpp). Increments are relaxed: a new reference is always made from an
+  // existing one. A decrement releases, and the one that reaches zero acquires, so everything
+  // the other owners did happens before the destruction.
   constexpr void add_shared() noexcept {
     if consteval {
       ++shared_;
     } else {
-      __atomic_fetch_add(&shared_, 1, __ATOMIC_RELAXED);
+      if (::ycxx::detail::single_threaded())
+        ++shared_;
+      else
+        __atomic_fetch_add(&shared_, 1, __ATOMIC_RELAXED);
     }
   }
   // Takes a new shared reference unless the use count is already zero (weak_ptr::lock).
@@ -103,6 +111,12 @@ public:
       ++shared_;
       return true;
     } else {
+      if (::ycxx::detail::single_threaded()) {
+        if (shared_ == 0)
+          return false;
+        ++shared_;
+        return true;
+      }
       long n = __atomic_load_n(&shared_, __ATOMIC_RELAXED);
       while (n != 0)
         if (__atomic_compare_exchange_n(&shared_, &n, n + 1, true, __ATOMIC_ACQ_REL, __ATOMIC_RELAXED))
@@ -115,7 +129,13 @@ public:
     if consteval {
       n = --shared_;
     } else {
-      n = __atomic_sub_fetch(&shared_, 1, __ATOMIC_ACQ_REL);
+      if (::ycxx::detail::single_threaded()) {
+        n = --shared_;
+      } else {
+        n = __atomic_sub_fetch(&shared_, 1, __ATOMIC_RELEASE);
+        if (n == 0)
+          __atomic_thread_fence(__ATOMIC_ACQUIRE);
+      }
     }
     if (n == 0) {
       dispose();
@@ -126,17 +146,27 @@ public:
     if consteval {
       ++weak_;
     } else {
-      __atomic_fetch_add(&weak_, 1, __ATOMIC_RELAXED);
+      if (::ycxx::detail::single_threaded())
+        ++weak_;
+      else
+        __atomic_fetch_add(&weak_, 1, __ATOMIC_RELAXED);
     }
   }
   constexpr void release_weak() noexcept {
-    long n;
+    bool last;
     if consteval {
-      n = --weak_;
+      last = --weak_ == 0;
     } else {
-      n = __atomic_sub_fetch(&weak_, 1, __ATOMIC_ACQ_REL);
+      if (::ycxx::detail::single_threaded()) {
+        last = --weak_ == 0;
+      } else {
+        // A count of one is the caller's own reference, and no other can appear: the use count
+        // is zero (else it would hold one more), so neither a shared_ptr nor another weak_ptr
+        // exists to make one. The usual case (no weak_ptr at all) then needs no atomic RMW.
+        last = __atomic_load_n(&weak_, __ATOMIC_ACQUIRE) == 1 || __atomic_sub_fetch(&weak_, 1, __ATOMIC_ACQ_REL) == 0;
+      }
     }
-    if (n == 0)
+    if (last)
       destroy_(this);
   }
   constexpr long use_count() const noexcept {

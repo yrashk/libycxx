@@ -154,6 +154,29 @@ int main() {
   });
   go("getline-free: S(n, c)", A, [](S&) { S t(500, 'z'); });
 
+  // [string.op.plus]/2, /4, /7: the overloads taking an rvalue string are specified as
+  // lhs.append(rhs) / rhs.insert(0, lhs) / rhs.insert(rhs.begin(), lhs) on that string, so by
+  // [string.require]/2 the rvalue string is unchanged when they throw. (/3: with two rvalues
+  // both are left valid but unspecified: not checked.)
+  for (int which = 0; which < 6; ++which)
+    for (int variant = 0; variant < 2; ++variant)
+      sweep("operator+ with an rvalue string: that string unchanged on an exception", allocation, [&] {
+        S x = make(variant);
+        snap before = snap::of(x);
+        bool threw = attempt([&] {
+          switch (which) {
+          case 0: { S r = std::move(x) + other; break; }
+          case 1: { S r = std::move(x) + piece; break; }
+          case 2: { S r = other + std::move(x); break; }
+          case 3: { S r = piece + std::move(x); break; }
+          case 4: { S r = 'c' + std::move(x); break; }
+          case 5: { S r = std::move(x) + std::string_view(piece); break; }
+          }
+        });
+        if (threw) EXH_EXPECT(snap::of(x) == before, "[string.op.plus]: the rvalue operand changed although operator+ threw");
+        return threw;
+      });
+
   // shrink_to_fit after a reserve: a non-binding request ([string.capacity]); an allocation
   // failure may be handled by not shrinking, but the contents never change.
   for (int variant = 0; variant < 2; ++variant)

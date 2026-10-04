@@ -40,7 +40,7 @@ struct DequePolicy {
     bool t_op = k == copy_ctor || k == move_ctor || k == copy_assign || k == move_assign;
     switch (o) {
     case Op::single:
-      if (p != Pos::mid) return G::strong;
+      if (p != Pos::mid && p != Pos::late) return G::strong; // at either end
       return t_op ? G::basic : G::strong;
     case Op::multi:
       return t_op ? G::basic : G::strong;

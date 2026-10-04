@@ -58,6 +58,7 @@ Legend: **G** fails with GCC + libstdc++, **C** with Clang + libstdc++.
 | `priority_queue/deduction` | G | C | no `priority_queue(InputIterator, InputIterator, Allocator)` guide | [priority.queue] synopsis |
 | `inplace_vector/noexcept` | G | C | `shrink_to_fit` is not `noexcept` | [inplace.vector.overview]: `static constexpr void shrink_to_fit() noexcept;` |
 | `algorithm/stable_partition` | G | C | in constant evaluation `ranges::stable_partition` returns `{i, last - 1}` (correct at run time) | [alg.partitions]/12.2: "{i, last} for the overloads in namespace ranges" |
+| `memory_resource/pool_stress` | G | C | `unsynchronized_pool_resource(pool_options{0, 1000})` (and `synchronized_pool_resource`) returns an 8-aligned block for `allocate(769, 32)`, although blocks of other sizes with that alignment are 32-aligned (line 62) | [mem.res.pool.mem]/5: "The size and alignment of the allocated memory shall meet the requirements for a class derived from memory_resource", i.e. [mem.res.private]/2: aligned to the specified alignment |
 | `algorithm/clamp` | G | C | 3 comparisons (and 5 projections for `ranges::clamp`) with libstdc++'s default -O0 assertions, which re-check the precondition | [alg.clamp]/5: "At most two comparisons and three applications of the projection" |
 | `charconv/to_chars_float_plain_style`, `format/float_shortest_plain_style` | G | C | `to_chars(1e5)` and `format("{}", 1e5)` give "1e+05", `format("{}", 16777216.0f)` gives "16777216": f/e chosen by the shorter result (the C++17 wording) | [charconv.to.chars]/7: f if \|value\| is in [l, u) (for double [1e-4, 1e16), for float [the float above 1e-4, 1e7): float(1e-4) < 10^-4 is "1e-04"), otherwise e |
 | `charconv/to_chars_float_general_shortest` | G | C | `to_chars(1234567.0, general)` gives "1.234567e+06", not the shorter "1234567" (interpretive: /2's smallest number of characters with the g specifier) | [charconv.to.chars]/2-3 |
@@ -154,7 +155,7 @@ Legend: **G** fails with GCC + libstdc++, **C** with Clang + libstdc++.
 | `iterator/range_access_via_optional` | G | C | the [iterator.range] functions via `<optional>` ([iterator.range]/1.10) |
 | `optional/nullopt_compare` | G | C | `nullopt_t` comparisons |
 | `type_traits/is_applicable` | G | C | `is_applicable` |
-| `memory/uses_allocator_construction` | G | C | the pair-like overload of `uses_allocator_construction_args` |
+| `memory/uses_allocator_construction`, `memory_resource/poly_construct_pair_like`, `scoped_allocator/construct_pair_like` | G | C | the pair-like overload of `uses_allocator_construction_args` ([allocator.uses.construction]/17-18) and the overload for a type that converts to the pair or is a `ranges::subrange` (/19-22), so `polymorphic_allocator::construct` and `scoped_allocator_adaptor::construct` of a pair from a `tuple`, an `array`, a `subrange` or a pair-convertible object do not compile |
 | `functional/function_deduction_forms` | G | C | `function` deduction from `volatile` call operators ([func.wrap.func.con]/16: "cv &opt") |
 | `exception/exception_ptr_cast*`, `exception/make_exception_ptr*`, `exception/exception_signatures` | G | C | `exception_ptr_cast` returns `const E*` (an earlier revision); the draft returns `optional<const E&>` |
 | `memory/shared_ptr_constexpr`, `memory/shared_ptr_constexpr_more`, `memory/pointer_traits_pointer_to`, `string/to_string_constexpr` | G | C | constexpr `shared_ptr`/`make_shared`/`allocate_shared`/`enable_shared_from_this`, `pointer_traits::pointer_to`, `to_string` |
@@ -215,6 +216,7 @@ Clang rejects code GCC accepts.
 | `algorithm/adl_incomplete_holder` | GCC performs argument-dependent lookup for an unqualified `__builtin_memmove` call inside libstdc++, which instantiates `Holder<Incomplete>` (reproduced without any library; [contents]/3 forbids such lookups) |
 | `simd/*` | `std::simd` is not declared with Clang (libstdc++'s `<simd>` is GCC-only); the `simd/*_mandates` compile.fail tests then pass with Clang for that reason, not the intended one |
 | `contracts/synopsis` | without contract support `<contracts>` declares nothing with Clang; `contracts/observe`, `contracts/enforce_throw` (`-fcontracts`) and `meta/*` (`-freflection`) are XFAIL-COMPILER: clang (Clang 23 has neither contracts nor reflection) |
+| `scoped_allocator/equality_rebound` | `a == b` for `scoped_allocator_adaptor`s whose outer allocator types differ (e.g. `scoped_allocator_adaptor<allocator<int>>` and `scoped_allocator_adaptor<allocator<long>>`) is rejected: Clang reports the `==` of libstdc++'s internal inner-allocator holder types as ambiguous (a candidate and its reversed form); GCC accepts. [scoped.adaptor.operators]/1 declares `operator==(const scoped_allocator_adaptor<OuterA1, InnerAllocs...>&, const scoped_allocator_adaptor<OuterA2, InnerAllocs...>&)` |
 
 ## 4. C library headers
 

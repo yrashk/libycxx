@@ -92,7 +92,6 @@ int main() {
       std::pmr::unsynchronized_pool_resource u(o, &up);
       std::pmr::pool_options got = u.options();
       CHECK(got.max_blocks_per_chunk > 0 && got.largest_required_pool_block > 0);
-      CHECK(got.largest_required_pool_block >= (o.largest_required_pool_block == 1 ? 1 : 0));
       void* ps[64];
       for (int i = 0; i < 64; ++i) {
         ps[i] = u.allocate(static_cast<std::size_t>(1) << (i % 12), 8);

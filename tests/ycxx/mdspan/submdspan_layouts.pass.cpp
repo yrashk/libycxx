@@ -7,8 +7,8 @@
 //    product of the static extents [0, u + 1) or dynamic_extent (1.4); otherwise layout_stride.
 //  - layout_right: the mirror image, giving layout_right_padded with stride(rank - u - 2).
 //  - layout_left_padded<P> source: one unit-stride leading slice of a rank-1 result gives
-//    layout_left (1.3); the padded case keeps layout_left_padded with S_static = P times the
-//    static extents [1, u + 1) (1.4.5).
+//    layout_left (1.3); the padded case keeps layout_left_padded with S_static =
+//    static-padding-stride times the static extents [1, u + 1), or dynamic_extent (1.4.4-5).
 // [mdspan.sub.sub]: the result's accessor is AccessorPolicy::offset_policy(src.accessor()), so an
 // aligned_accessor source gives default_accessor; elements are src's elements at the slice
 // lower bounds plus the result's indices.
@@ -74,8 +74,13 @@ int main() {
     static_assert(std::is_same_v<decltype(c)::layout_type, std::layout_left>);
     CHECK((c[4] == p[4, 1]) && c[4] == 12);
     auto b = std::submdspan(p, std::pair{1, 4}, std::pair{0, 2});
-    static_assert(std::is_same_v<decltype(b)::layout_type, std::layout_left_padded<8>>);
+    // extent(0) is dynamic, so static-padding-stride is dynamic_extent (1.4.4)
+    static_assert(std::is_same_v<decltype(b)::layout_type, std::layout_left_padded<std::dynamic_extent>>);
     CHECK(b.stride(1) == 8 && (b[2, 1] == p[3, 1]) && b[2, 1] == 11);
+    std::mdspan<int, std::extents<int, 5, 3>, P> ps(data);  // static-padding-stride 8
+    auto bs = std::submdspan(ps, std::pair{1, 4}, std::pair{0, 2});
+    static_assert(std::is_same_v<decltype(bs)::layout_type, std::layout_left_padded<8>>);
+    CHECK(bs.stride(1) == 8 && bs[2, 1] == 11);
   }
   {  // accessor: aligned_accessor's offset_policy
     alignas(64) static int buf[16] = {};

@@ -1,0 +1,18 @@
+// -*- C++ -*-  libycxx: <format>   [hosted]
+//
+// The formatting machinery and the formatters are core (ycxx/core/format_base.hpp,
+// format_ranges.hpp, format_syserr.hpp); the locale-specific parts are hosted
+// (ycxx/hosted/format_locale.hpp). formatter<thread::id> and formatter<filesystem::path> are
+// provided by <thread> and <filesystem>; the chrono formatters by <chrono>. Not provided:
+// the deprecated visit_format_arg ([depr.format.arg]). <format> is hosted, and it also makes
+// <cstring>'s functions available (code that formats C strings commonly expects strlen).
+#pragma once
+
+#include <ycxx/config.hpp>
+#include <ycxx/core/version.hpp>
+#include <compare>
+#include <cstring>
+#include <ycxx/core/format_base.hpp>
+#include <ycxx/core/format_ranges.hpp>
+#include <ycxx/core/format_syserr.hpp>
+#include <ycxx/hosted/format_locale.hpp>

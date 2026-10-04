@@ -22,12 +22,14 @@ Conformance oracles (run only, never edited): libc++ tests from `llvmorg-23.1.2`
 | utilities/optional | 74/87 | 75/87 | yes | rest: `<string>`/`<vector>`/`<ranges>`, `unique_ptr` |
 | utilities/variant | 18/50 | 18/50 | yes | all 32 failures are missing `<string>` (libc++ `type_id.h`/tests) |
 | utilities/expected | 75/87 | 75/87 | yes | rest: `unique_ptr`, `<algorithm>` |
+| containers/views/views.span | 10/41 | 10/41 | yes | rest: `<string>` (23), `<ranges>`, `<algorithm>`, `<any>` |
 | iterators + range.access + concepts + function.objects | 185/515 | 185/515 | yes | most failures need `<ranges>`, `bind`, `function`, containers |
 
 Whole-suite baseline (clang, before iterators/tuple/array/optional): 976 pass / ~8,000 run.
 
 libstdc++ testsuite: 20_util/{tuple,pair,uses_allocator}: 107 pass on both compilers.
 20_util/variant: 27/31 on both (rest: missing `<string>`, `<vector>`, `<any>`).
+23_containers/span: 30/35 on both (rest: `<vector>`, `<deque>`).
 20_util/expected: clang 18/20, gcc 18/20 (rest: `<string_view>`, `<vector>`). The libstdc++ harness
 compiles with `-O2`, as DejaGnu's default flags do. Some tests rely on dead-code elimination:
 `expected/cons.cc` declares `E(const int&)` without defining it, and links only when the

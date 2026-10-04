@@ -66,6 +66,9 @@
 #define __cpp_lib_expected 202606L
 #define __cpp_lib_freestanding_expected 202311L
 
+// <span>
+#define __cpp_lib_span 202311L
+
 // <bit>
 #define __cpp_lib_bit_cast 201806L
 #define __cpp_lib_bitops 202607L

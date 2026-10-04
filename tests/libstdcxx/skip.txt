@@ -8,3 +8,4 @@ content:scan-tree-dump | compiler-internals | checks GCC tree dumps (-fdump-tree
 20_util/variant/version\.cc | implementation-specific | #undefs reserved feature macros and expects a re-include to redefine them
 20_util/expected/version\.cc | divergence | requires __cpp_lib_expected == 202211L; the current draft [version.syn] has 202606L
 20_util/expected/synopsis\.cc | divergence | requires __cpp_lib_expected == 202211L; the current draft [version.syn] has 202606L
+23_containers/span/version\.cc | implementation-specific | #undefs reserved feature macros and expects a re-include to redefine them

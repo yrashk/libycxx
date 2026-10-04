@@ -1,0 +1,17 @@
+// [pairs.pair]/13, /17: the pair(const pair<U1, U2>&&) constructor "is defined as deleted if
+// reference_constructs_from_temporary_v<first_type, decltype(get<0>(FWD(p)))> ... is true."
+// get<0> of a const pair<long, int>&& is const long&&.
+// Checked in an unevaluated operand, so only the overload set matters (the mem-initializer
+// rule in [class.base.init] for a temporary bound to a reference member never comes into play).
+#include <utility>
+#include <array>
+#include <tuple>
+
+struct S {
+  S(int);
+};
+std::pair<long, int> src;
+std::tuple<long, int> tsrc;
+std::array<long, 2> asrc;
+
+static_assert(sizeof(std::pair<const int&, int>(static_cast<const std::pair<long, int>&&>(src))) > 0);

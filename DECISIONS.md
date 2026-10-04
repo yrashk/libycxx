@@ -144,8 +144,9 @@ tooling.
   the generic category. The converting constructors find `make_error_code`/`make_error_condition`
   by argument-dependent lookup only ([contents]/3: a zero-argument deleted declaration hides the
   `std::` ones), so `<future>`/`<ios>` only need to specialize `is_error_code_enum` and declare
-  their overloads. The `<system_error>` header itself stays hosted (it checks `errc` against
-  `<errno.h>`).
+  their overloads. The `<system_error>` header itself is hosted (it checks `errc` against
+  `<errno.h>`); freestanding it skips that check and provides `errc` (its freestanding part) and
+  the classes, whose categories then fail to link (see the C library headers below).
 - **Freestanding runtime archive.** `libycxx-freestanding.a` holds what a freestanding program
   may need defined but core headers must not define: the default replaceable allocation
   functions (no heap: `bad_alloc`/handler, `nullptr` for the nothrow forms) and `std::nothrow`.
@@ -154,6 +155,25 @@ tooling.
   [new.delete] specifies. (Weak definitions in headers were tried and rejected: they made
   replacement a redefinition error, and in hosted builds a weak definition keeps the linker from
   pulling the real `operator new` out of the archive.)
+- **The C library headers with freestanding parts compile without the C library.** `<cstdlib>`,
+  `<cstring>`, `<cwchar>`, `<cerrno>` and `<system_error>` stay hosted wrappers
+  (`tools/gen_cheaders.py`), but with `YCXX_HOSTED` 0 (`-ffreestanding`) they include core headers
+  instead of the C library's (`#if YCXX_HOSTED`, which `tools/check_includes.py` understands):
+  `ycxx/core/c_stdlib.hpp` (div_t & co., EXIT_*, bsearch, a heapsort qsort, and the start and
+  termination functions as forwarders to the environment's `abort`/`exit`/... through
+  declarations with assembler names, so a C header the program may still include declares
+  distinct entities), `ycxx/core/c_string.hpp` (the freestanding string and wide-string functions,
+  written out; memcpy/memmove/memset/memcmp through the builtins, which both compilers already
+  require of a freestanding environment), `ycxx/core/cerrno_macros.hpp` (the E* values of
+  `errc`), and `<system_error>` skips only its errno cross-check. Each function is a
+  `template <class = void>`, so a same-named C function declared by the program wins ties under
+  `using namespace std;`. What both modes share (constexpr div, memalignment, memset_explicit)
+  is outside the conditional. `<cstdarg>` is core in both modes: va_start takes one argument
+  ([cstdarg.syn]), which Clang 23 supports only through `__builtin_va_start(V, 0)` with its
+  -Wvarargs check silenced (`YCXX_HAS_C23_VA_START` picks GCC's C23 builtin). `<stdbit.h>` and
+  `<stdckdint.h>` are core headers of templates and inline functions in the global namespace; the
+  C library's versions (type-generic macros) are not included. `tools/check_freestanding.sh`
+  compiles every header of [compliance]'s Table 27 as well as the core ones.
 - **Floating-point `<charconv>` is out of line, in both archives** (`src/runtime/charconv`).
   The draft makes it freestanding-deleted, but nothing in it needs the OS: it works on
   stack-allocated big integers, so libycxx provides it freestanding too. The header passes the
@@ -260,6 +280,13 @@ tooling.
   `__cpp_lib_constexpr_exceptions` stays undefined: Clang 23 cannot throw during constant
   evaluation, and GCC 16 offers no way to make a non-null `exception_ptr`
   (`current_exception`/`rethrow_exception`) work there for libycxx's `exception_ptr`.
+- **`make_exception_ptr` without exceptions** creates the primary exception object directly
+  through the runtime (`ycxx::abi::exception_object_create`: the header `__cxa_throw` would
+  fill in, one reference owned by the exception_ptr) and copy-constructs `e` into it, so
+  [propagation]/12 holds in `-fno-exceptions` code: `exception_ptr_cast` observes the copy and code
+  built with exceptions can rethrow it. It needs `typeid(E)` (the object's type must be
+  recorded for handler matching), so under `-fno-exceptions -fno-rtti` it still returns a null
+  exception_ptr (nothing in such a program could match the object anyway).
 - **Unsupported: mixing translation units built with different `-fexceptions`/`-fno-exceptions`
   or `-frtti`/`-fno-rtti` settings in one program.** The inline error hooks differ between the
   modes, and the linker keeps one copy. The vtables of header-defined exception classes emitted
@@ -406,8 +433,11 @@ under the same name. Otherwise it gets one alias template in `config.hpp`.
   `O_NOFOLLOW` and removes entries with `unlinkat`, so a directory swapped for a symbolic link
   during the walk is unlinked, never followed; passes repeat until a pass finds nothing (some
   file systems skip entries of a directory modified while it is read). `recursive_directory_
-  iterator` opens subdirectories with `openat` on the parent's descriptor (`O_NOFOLLOW` unless it
-  follows a symbolic link by request). Copies of a directory iterator share the open directory
+  iterator` opens subdirectories with `openat` on the parent's descriptor and `O_NOFOLLOW`; a
+  symbolic link it follows by request is opened by its whole path, since [fs.rec.dir.itr.members]
+  /21.2 recurses into `(*this)->path()`: the system's limit on symbolic links per resolution then
+  ends a loop (`d/self -> .`) with ELOOP, reported as an error as `status()` would report it
+  ([fs.op.status]/6.1.3: file_type::none). Copies of a directory iterator share the open directory
   (input iterators); `recursion_pending()` belongs to each copy.
 - `<filesystem>` also includes `<cstdlib>`, as `<fstream>` includes `<cstdio>`.
 ## 9. Diagnostics and other C++26 utilities

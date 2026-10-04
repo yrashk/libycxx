@@ -86,7 +86,10 @@
 #define __cpp_lib_bitset 202306L
 #define __cpp_lib_constexpr_bitset 202207L
 
-// errc
+// <charconv>, errc
+#define __cpp_lib_to_chars 202606L
+#define __cpp_lib_constexpr_charconv 202207L
+#define __cpp_lib_freestanding_charconv 202306L
 #define __cpp_lib_freestanding_errc 202306L
 
 // <bit>

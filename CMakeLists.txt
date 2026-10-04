@@ -59,8 +59,11 @@ file(GLOB YCXX_NEW_SOURCES CONFIGURE_DEPENDS src/runtime/new/*.cpp src/hosted/ne
 if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
   set_source_files_properties(${YCXX_NEW_SOURCES} PROPERTIES COMPILE_OPTIONS -Wno-sized-deallocation)
 endif()
+# Floating-point <charconv> (also in the freestanding runtime archive).
+file(GLOB YCXX_CHARCONV_SOURCES CONFIGURE_DEPENDS src/runtime/charconv/*.cpp)
 add_library(ycxx STATIC
   ${YCXX_NEW_SOURCES}
+  ${YCXX_CHARCONV_SOURCES}
   src/hosted/stdexcept.cpp
   src/pal/posix/pal.c
 )

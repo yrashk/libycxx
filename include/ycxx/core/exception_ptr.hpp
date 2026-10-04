@@ -12,6 +12,7 @@
 #pragma once
 
 #include <ycxx/core/exception.hpp>
+#include <ycxx/core/new.hpp>
 #include <ycxx/core/optional.hpp>
 #include <ycxx/core/type_traits.hpp>
 #include <ycxx/core/typeinfo.hpp>
@@ -26,6 +27,11 @@ void* current_exception_object() noexcept;
 [[noreturn]] void rethrow_exception_object(void* object);
 // The object a handler of type `const T&` (T given by its type_info) would bind to, or null.
 const void* exception_object_as(void* object, const std::type_info& handler) noexcept;
+// Storage for a primary exception object of `size` bytes whose type is `type` and which
+// `destroy` destroys (null: trivially destructible), with one reference, owned by the caller
+// (an exception_ptr). The caller constructs the object before the reference is released. Never
+// returns null (an allocation that cannot be served terminates, [ABI-EH] 2.4.2).
+void* exception_object_create(std::size_t size, const std::type_info* type, void (*destroy)(void*)) noexcept;
 } // namespace ycxx::abi
 
 namespace std {
@@ -44,6 +50,8 @@ class exception_ptr {
   friend constexpr void rethrow_exception(exception_ptr);
   template <class E>
   friend constexpr optional<const E&> exception_ptr_cast(const exception_ptr&) noexcept;
+  template <class E>
+  friend constexpr exception_ptr make_exception_ptr(E) noexcept;
 
 public:
   constexpr exception_ptr() noexcept = default;
@@ -99,8 +107,20 @@ constexpr exception_ptr make_exception_ptr(E e) noexcept {
     } catch (...) {
       return current_exception();
     }
+  } else if constexpr (::ycxx::detail::cfg::rtti) {
+    // Without exceptions there is no throw to copy e, so the runtime's object is made directly:
+    // the same primary exception a `throw e` would create, which exception_ptr_cast observes
+    // and rethrow_exception throws (in code built with exceptions). E's copy constructor cannot
+    // throw here.
+    void (*destroy)(void*) = nullptr;
+    if constexpr (!is_trivially_destructible_v<E>)
+      destroy = [](void* p) noexcept { static_cast<E*>(p)->~E(); };
+    void* obj = ::ycxx::abi::exception_object_create(sizeof(E), ::ycxx::detail::type_id<E>, destroy);
+    ::new (obj) E(e);
+    return exception_ptr(exception_ptr::adopt_t{}, obj);
   } else {
-    // Without exceptions nothing can be thrown, so there is nothing to refer to.
+    // Without exceptions and without RTTI the exception object's type cannot be recorded (its
+    // type_info cannot be named), and nothing in such a program could match it: null.
     return exception_ptr();
   }
 }

@@ -67,6 +67,7 @@ add_library(ycxx STATIC
   src/hosted/stdexcept.cpp
   src/hosted/memory_resource.cpp
   src/hosted/string.cpp
+  src/hosted/system_error.cpp
   src/pal/posix/pal.c
 )
 set_target_properties(ycxx PROPERTIES EXPORT_NAME core)
@@ -82,7 +83,8 @@ add_library(ycxx_abi STATIC ${YCXX_ABI_SOURCES})
 set_target_properties(ycxx_abi PROPERTIES OUTPUT_NAME ycxx-abi EXPORT_NAME abi)
 target_link_libraries(ycxx_abi PRIVATE ycxx_headers)
 target_compile_options(ycxx_abi PRIVATE -std=c++26 ${_ycxx_warnings} -fexceptions -frtti)
-set_source_files_properties(src/abi/exception_classes.cpp PROPERTIES COMPILE_DEFINITIONS YCXX_EXCEPTION_KEY_FUNCTIONS)
+set_source_files_properties(src/abi/exception_classes.cpp src/hosted/stdexcept.cpp
+                            PROPERTIES COMPILE_DEFINITIONS YCXX_EXCEPTION_KEY_FUNCTIONS)
 
 # The two archives refer to each other (the runtime uses the platform layer and operator
 # delete; the library throws through the runtime): a cyclic static dependency, which CMake

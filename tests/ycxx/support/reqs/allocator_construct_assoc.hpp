@@ -21,6 +21,9 @@
 #include <initializer_list>
 #include <iterator>
 #include <utility>
+// The sequence harness names std::erase (qualified, so it must be declared where the template
+// is defined); the associative containers declare only erase_if, so bring in a declaration.
+#include <vector>
 #include "reqs/allocator_construct_seq.hpp"
 #include "check.hpp"  // dprintf
 

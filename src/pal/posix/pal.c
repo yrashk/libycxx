@@ -125,3 +125,27 @@ int ycxx_pal_thread_atexit(void (*f)(void*), void* obj, void* dso) {
   return -1;
 }
 #endif
+
+int ycxx_pal_error_message(int ev, char* buf, ycxx_pal_size n) {
+  if (n == 0)
+    return EINVAL;
+  const int saved = errno; /* [syserr.general]/2: errno stays unchanged */
+#if defined(__GLIBC__)
+  /* _GNU_SOURCE selects glibc's strerror_r, which returns the message, possibly in a static
+     string other than buf. */
+  const char* s = strerror_r(ev, buf, n);
+  if (s != buf) {
+    size_t len = strlen(s);
+    if (len >= n)
+      len = n - 1;
+    memcpy(buf, s, len);
+    buf[len] = '\0';
+  }
+#else
+  /* The POSIX strerror_r (musl provides it even with _GNU_SOURCE; so does macOS). */
+  if (strerror_r(ev, buf, n) != 0)
+    snprintf(buf, n, "Unknown error %d", ev);
+#endif
+  errno = saved;
+  return 0;
+}

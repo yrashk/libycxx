@@ -3,7 +3,8 @@
 // With exceptions enabled, raise_with(kind, what, make) throws make() from the header (exception
 // classes defined inline in core headers; also works in constant evaluation), and
 // raise(kind, what) throws a <stdexcept> class through the out-of-line ycxx::detail::throw_std in
-// the hosted runtime, so core headers never depend on <stdexcept>.
+// the hosted runtime. The throw_length_error, throw_out_of_range, ... helpers use raise() at run
+// time and throw the <stdexcept> class from the header during constant evaluation (raise_std).
 //
 // With -fno-exceptions the user-replaceable C function `ycxx_error_handler` is called. Its
 // default (weak) definition calls __builtin_trap(). Provide a strong definition to override:
@@ -13,6 +14,7 @@
 
 #include <ycxx/config.hpp>
 #include <ycxx/core/exception_base.hpp>
+#include <ycxx/core/stdexcept.hpp>
 #include <ycxx/pal.h>
 
 extern "C" {
@@ -64,10 +66,10 @@ namespace ycxx::detail {
   ::ycxx_error_handler(ycxx_error_assertion, msg);
 }
 
-// Defined in the hosted runtime (built with exceptions); throws the corresponding std:: exception.
+// Defined in the hosted runtime (built with exceptions); throws the <stdexcept> class of `kind`.
 [[noreturn]] void throw_std(ycxx_error_kind kind, const char* what);
 
-// The one hook. `kind` selects the standard exception type.
+// The run-time hook for the <stdexcept> classes. `kind` selects the standard exception type.
 [[noreturn]] [[gnu::cold]] inline void raise(ycxx_error_kind kind, const char* what) {
   if constexpr (cfg::exceptions)
     throw_std(kind, what);
@@ -101,16 +103,38 @@ template <class Make>
   }
 }
 
-[[noreturn]] [[gnu::cold]] inline void throw_length_error(const char* w) { raise(ycxx_error_length_error, w); }
-[[noreturn]] [[gnu::cold]] inline void throw_out_of_range(const char* w) { raise(ycxx_error_out_of_range, w); }
-[[noreturn]] [[gnu::cold]] inline void throw_invalid_argument(const char* w) { raise(ycxx_error_invalid_argument, w); }
-[[noreturn]] [[gnu::cold]] inline void throw_overflow_error(const char* w) { raise(ycxx_error_overflow_error, w); }
-[[noreturn]] [[gnu::cold]] inline void throw_range_error(const char* w) { raise(ycxx_error_range_error, w); }
-[[noreturn]] [[gnu::cold]] inline void throw_runtime_error(const char* w) { raise(ycxx_error_runtime_error, w); }
-// Exception classes defined inline in core headers are thrown from the header through
-// raise_with, which also works in constant evaluation (P3068). Only the <stdexcept> classes,
-// whose message storage lives in the hosted runtime, go through raise() and throw_std. The
-// throw_bad_* helpers for other header-defined classes live next to those classes.
+// The <stdexcept> classes are thrown from the header during constant evaluation (their
+// constructors are constexpr there), and at run time through raise(), whose out-of-line
+// throw_std keeps the many call sites small.
+template <class E>
+[[noreturn]] [[gnu::cold]] constexpr void raise_std(ycxx_error_kind kind, const char* what) {
+  if consteval {
+    ::ycxx::detail::raise_with(kind, what, [what] { return E(what); });
+  } else {
+    ::ycxx::detail::raise(kind, what);
+  }
+}
+[[noreturn]] [[gnu::cold]] constexpr void throw_length_error(const char* w) {
+  ::ycxx::detail::raise_std<std::length_error>(ycxx_error_length_error, w);
+}
+[[noreturn]] [[gnu::cold]] constexpr void throw_out_of_range(const char* w) {
+  ::ycxx::detail::raise_std<std::out_of_range>(ycxx_error_out_of_range, w);
+}
+[[noreturn]] [[gnu::cold]] constexpr void throw_invalid_argument(const char* w) {
+  ::ycxx::detail::raise_std<std::invalid_argument>(ycxx_error_invalid_argument, w);
+}
+[[noreturn]] [[gnu::cold]] constexpr void throw_overflow_error(const char* w) {
+  ::ycxx::detail::raise_std<std::overflow_error>(ycxx_error_overflow_error, w);
+}
+[[noreturn]] [[gnu::cold]] constexpr void throw_range_error(const char* w) {
+  ::ycxx::detail::raise_std<std::range_error>(ycxx_error_range_error, w);
+}
+[[noreturn]] [[gnu::cold]] constexpr void throw_runtime_error(const char* w) {
+  ::ycxx::detail::raise_std<std::runtime_error>(ycxx_error_runtime_error, w);
+}
+// Other exception classes defined inline in core headers are thrown from the header through
+// raise_with, which also works in constant evaluation (P3068). The throw_bad_* helpers for
+// them live next to those classes.
 [[noreturn]] [[gnu::cold]] constexpr void throw_bad_alloc() {
   ::ycxx::detail::raise_with(ycxx_error_bad_alloc, "std::bad_alloc", [] { return std::bad_alloc(); });
 }

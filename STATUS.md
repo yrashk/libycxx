@@ -32,6 +32,7 @@ Conformance oracles (run only, never edited): libc++ tests from `llvmorg-23.1.2`
 | utilities/charconv | 7/12 | 7/12 | yes (fp: runtime archive) | rest need `<algorithm>`, `<cmath>`, `<string>` |
 | containers/sequences/vector + vector.bool | 99/155 | 100/155 | yes | was 0; 134/155 (Clang), 136 (GCC) with `<deque>` declared (asan_testing.h); rest below |
 | containers/sequences/{deque,list,forwardlist} + container.adaptors/{stack,queue,priority.queue} | 197/371 | 197/371 | yes | was 0; adaptor tests need `<vector>` (338/371 with a local stand-in `<vector>`); rest: `<map>`/`<set>`/`<random>` |
+| containers/unord + container.node | 303/422 | 303/422 | yes | was 0; 417/422 on both with stand-in `<cmath>`/`<map>`/`<set>`; rest below |
 
 Whole-suite baseline (clang, before iterators/tuple/array/optional): 976 pass / ~8,000 run.
 
@@ -79,6 +80,14 @@ make_shared.pass and make_unique.pass need `<string>`. libc++ utilities/memory
 67 -> 141 and utilities/smartptr 15 -> 51 (GCC) / 52 (Clang); libstdc++ 20_util smart pointer
 and specialized-algorithm directories 37 -> 189 (GCC), 36 -> 190 (Clang). The remaining failures
 need `<string>`, `<vector>`, `<algorithm>`, `<ranges>`, `<sstream>`, `<atomic>` or are noted below.
+
+<system_error> and constexpr <stdexcept>: error_category, error_code, error_condition,
+system_error, generic/system categories (strerror_r through the PAL), hash, comparisons.
+libc++ diagnostics/{syserr,std.exceptions} 11 -> 68/69 on both compilers (rest: `<ostream>`);
+libstdc++ 19_diagnostics/{error_*,logic_error,runtime_error,system_error,headers,stdexcept.cc}
+17 -> 38/45 on GCC, 36/45 on Clang (rest: `<locale>`/`<future>` (5), removed STREAMS errc
+values, `__cpp_lib_constexpr_exceptions`, and on Clang the two constexpr tests that throw during
+constant evaluation).
 
 <memory_resource> and <scoped_allocator>: memory_resource, polymorphic_allocator (core; `<string>`
 includes it, so `pmr::string` works with `<string>` alone), new_delete/null resources, the atomic
@@ -204,9 +213,11 @@ Deprecated and removed features are not implemented (`is_pod`, `is_trivial`, `al
   `except/handler_function_pointer` and `except/handler_array_decay` fail on GCC.
 - Programs link the shared unwinder (`-shared-libgcc`): glibc's pthread_exit/pthread_cancel
   unwind through libgcc_s.so, and a second, static unwinder copy would abort.
-- `<system_error>` has only `errc` (core; Linux errno values, checked against `<errno.h>` by the
-  hosted header) and the `is_error_*_enum` traits; `error_category`, `error_code` and
-  `system_error` need `<string>`.
+- `<system_error>`: no `operator<<` for `error_code` (no `<ostream>` yet) and no
+  `formatter<error_code>` (no `<format>` yet). `errc` has no `no_message_available`,
+  `no_stream_resources`, `not_a_stream`, `stream_timeout` (removed from the draft; libstdc++'s
+  `errc_std_c++0x.cc` still expects them). Messages are the C library's `strerror_r` text for
+  both categories.
 - Floating-point `<charconv>` for `long double`/`float128_t` works on stack-allocated big integers
   (no heap, so it stays freestanding): parsing needs about 21 KB of stack (two 38,500-bit numbers
   and an 11,566-digit buffer, exact for any input length), `%g` with a large precision about 20 KB.
@@ -284,17 +295,73 @@ Deprecated and removed features are not implemented (`is_pod`, `is_trivial`, `al
   constrained, a moved-from priority_queue is empty, `X(X&&, const A&)` is noexcept for
   always-equal allocators. `<queue>` includes `<vector>`, so it (and the include-graph and
   freestanding checks for it) needs `<vector>` to exist.
+- `<unordered_map>`, `<unordered_set>` (core, constexpr): everything in [unord] including the
+  C++26 heterogeneous members (P2363), `lookup`, node handles (`ycxx/core/node_handle.hpp`, shared
+  with the node-based associative containers) and merge across compatible containers. One hash
+  table (`ycxx/core/hash_table.hpp`): separate chaining over a singly linked node list with
+  cached hashes, power-of-two bucket counts with Fibonacci hashing, the before-begin node in the
+  bucket array (no heap pointer into the container object). New equivalent elements go to the
+  end of their group, or right after an equivalent hint; other hints are ignored. Own suite
+  unordered_map + unordered_set: 20/31 on both compilers, 31/31 with stand-ins for the missing
+  views, `std::erase` (the sequence harness) and `sorted_unique` (flat_map); clean under
+  ASan/UBSan. On Clang `unordered_set/unord_reqs` exceeds Clang's default constexpr step limit (passes
+  with `-fconstexpr-steps=2000000`; the test's own O(n^3) adjacency checks dominate).
+  libstdc++ 23_containers/unordered_*: 0 -> 187/199 (GCC and Clang); the rest: 4
+  explicit_instantiation/3 tests use an allocator of another value_type (Mandates violation),
+  `__cpp_lib_erase_if` (left to the containers' integration), `<set>`, libstdc++'s
+  `__is_fast_hash`, and 3 operations/1.cc cases expecting a heterogeneous key that matches
+  several elements of a unique-key container ([unord.req.general]/10.20 excludes it) or
+  libstdc++'s order of equivalent elements. libc++: 4 deduct tests expect `remove_const` on the
+  Key deduced by the initializer_list guides (the draft deduces `const Key`), and
+  iterator_difference_type expects `iterator::pointer` to be the allocator's pointer (it is
+  `T*`). Extensions: the default constructor is constrained and noexcept when the hash,
+  predicate and allocator are nothrow default constructible (it allocates nothing); the move
+  constructors copy the hash and predicate (the moved-from container stays usable) and are
+  noexcept when those copies are, with an allocator also when it always compares equal; the
+  (first, last, alloc), (from_range, rg, alloc) and (il, alloc) constructors (LWG 2713) that the
+  deduction guides already name. A non-copy-constructible Hash or Pred is diagnosed.
+  Not defined yet (shared with `<map>`/`<set>`): `__cpp_lib_node_extract`,
+  `__cpp_lib_associative_heterogeneous_erasure`/`_insertion`, `__cpp_lib_map_lookup`.
+- `<hive>` (core; only the constructors without elements and the limit queries are constexpr,
+  as specified): element blocks with a 16-bit jump-counting skipfield and per-block free lists of
+  erased runs, so insertion, erasure and iteration are O(1); blocks are numbered for O(1)
+  iterator ordering. Hard limits [2, 65535]; default limits [8, min(8192, max(64, 1 MiB / slot))];
+  limits outside the hard limits (erroneous) are diagnosed when hardened and clamped. A slot is
+  at least 4 bytes (it holds a free run's links when empty). Emptied blocks stay as reserved
+  blocks until `trim_capacity()`/`shrink_to_fit()`; `shrink_to_fit` only frees reserved blocks.
+  `reshape` reallocates every element (in order) when an active block is outside the new limits.
+  `sort` allocates two N-element arrays (pointers and a permutation). Own suite hive: 8/9 on both
+  compilers (move_only needs views; 9/9 with a stand-in); clean under ASan/UBSan, as is a
+  randomized model check. Neither external suite has hive tests.
 - `<algorithm>`/`<numeric>`/`<execution>` (core): every std:: and ranges:: algorithm of the
   draft, constexpr where specified. The std:: ExecutionPolicy overloads run sequentially and
-  are noexcept (an escaping exception calls terminate). Not provided: the ranges::
-  ExecutionPolicy overloads (P3179, so `__cpp_lib_parallel_algorithm` is undefined), the
+  are noexcept (an escaping exception calls terminate); so are the ranges:: ExecutionPolicy
+  overloads (P3179, `algo_ranges_parallel.hpp`: each algorithm object's type adds them to the
+  sequential niebloid), including the ranges:: uninitialized_*/destroy ones of `<memory>`;
+  `__cpp_lib_parallel_algorithm` is 202506L. Not provided: the
   senders/receivers part of `<execution>`, `boyer_moore(_horspool)_searcher` (need hashing
   containers), `__cpp_lib_interpolate` (needs `std::lerp` in `<cmath>`).
 - stable_sort / stable_partition / inplace_merge take their buffer from `operator new(nothrow)`
   (std::allocator during constant evaluation) and fall back to O(N log^2 N) / O(N log N)
   rotation algorithms when it fails; sort and nth_element are introsort/introselect.
-- `<ranges>` is partial: concepts, range access, `view_interface`, `subrange`, `dangling`,
-  `views::all` (callable, not yet pipeable). No other factories or adaptors.
+- `<ranges>` (core): every factory, adaptor and range utility of the draft, constexpr, in
+  `ranges_adaptor.hpp` (closures, movable-box, caches), `ranges_factories.hpp`,
+  `ranges_adaptors.hpp`, `ranges_zip.hpp`, `ranges_join.hpp`, `ranges_chunk.hpp` and
+  `ranges_to.hpp`. libc++ std/ranges: 534/561 (Clang), 532/561 (GCC), was 21/46; the rest
+  need missing headers (`<map>`, `<sstream>`, `<regex>`, `<istream>`) or are range-access CPO
+  tests that predate possibly-const-range ([range.access.cbegin]); tests of exposition-only
+  constructors and draft divergences are skipped. libstdc++ std/ranges: 39/49 on both, was 14
+  (the rest missing headers). Notes:
+  - `basic_istream_view` needs only the stream's interface: `basic_istream` is declared in
+    core without default arguments and must be complete where the view is used.
+  - Choices where the draft leaves room: IOTA-DIFF-T of the 64-bit types (and of `__int128`)
+    is `__int128`; `cartesian_product_view` uses `__int128` as its difference type when it
+    has two or more ranges; filter, drop, drop_while and reverse cache a random-access
+    position as an offset. `iota_view::size()` is unsigned also for types narrower than `int`
+    (the specified expression would promote to `int`), and never negates a minimum value.
+  - The ranges:: parallel set_difference returns the loop's position in the second range when
+    the output is complete; [set.difference]/4.3.1 counts "skipped" elements, which differs
+    when elements of the second range lie between later elements of the first.
 - `std::is_permutation` enforces its Mandates (same value type); libc++'s sort/heap tests call
   it with `MoveOnly*` and `int*` and fail to compile for that reason (12 tests).
 - shuffle/sample assume the generator's results fit in 64 bits.
@@ -318,5 +385,9 @@ Deprecated and removed features are not implemented (`is_pod`, `is_trivial`, `al
   so GCC can throw them during constant evaluation; Clang 23 cannot throw during constant
   evaluation at all. Under -fno-rtti the six classes libsupc++ defines keep an out-of-line
   destructor, so they are not constexpr-destructible there (DECISIONS §4).
-  Still open: the `<stdexcept>` classes (their message storage lives in the hosted runtime), so
-  `__cpp_lib_constexpr_exceptions` is not yet defined.
+  The nine `<stdexcept>` classes are constexpr too (DECISIONS §4; under hosted -fno-rtti they
+  also keep out-of-line destructors), and the library's
+  `throw_out_of_range`/`throw_length_error`/... throw them during constant evaluation, so on GCC
+  `std::string("ab").at(5)` can be caught in a constant expression. `__cpp_lib_constexpr_exceptions`
+  is still undefined: Clang 23 cannot throw during constant evaluation, a non-null
+  `exception_ptr` is not available there on GCC, and `format_error` does not exist yet.

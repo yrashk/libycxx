@@ -1,0 +1,10 @@
+// -*- C++ -*-  libycxx: <hive>      [core]
+#pragma once
+
+#include <ycxx/config.hpp>
+#include <ycxx/core/version.hpp>
+#include <compare>
+#include <initializer_list>
+#include <ycxx/core/hive.hpp>
+// The pmr:: alias must be usable with <hive> alone: complete polymorphic_allocator.
+#include <ycxx/core/memory_resource.hpp>

@@ -58,6 +58,7 @@
 #define __cpp_lib_hardened_shared_ptr_array 202506L
 #define __cpp_lib_constexpr_memory 202506L
 #define __cpp_lib_out_ptr 202311L
+#define __cpp_lib_parallel_algorithm 202506L
 #define __cpp_lib_transparent_operators 201510L
 
 // <array>
@@ -171,6 +172,27 @@
 #define __cpp_lib_ranges_fold 202207L
 #define __cpp_lib_ranges_iota 202202L
 #define __cpp_lib_ranges_starts_ends_with 202106L
+// <ranges>
+#define __cpp_lib_ranges 202406L
+#define __cpp_lib_freestanding_ranges 202306L
+#define __cpp_lib_ranges_as_const 202311L
+#define __cpp_lib_ranges_as_input 202502L
+#define __cpp_lib_ranges_as_rvalue 202207L
+#define __cpp_lib_ranges_cache_latest 202411L
+#define __cpp_lib_ranges_cartesian_product 202207L
+#define __cpp_lib_ranges_chunk 202202L
+#define __cpp_lib_ranges_chunk_by 202202L
+#define __cpp_lib_ranges_concat 202403L
+#define __cpp_lib_ranges_enumerate 202302L
+#define __cpp_lib_ranges_filter 202603L
+#define __cpp_lib_ranges_indices 202506L
+#define __cpp_lib_ranges_join_with 202202L
+#define __cpp_lib_ranges_repeat 202207L
+#define __cpp_lib_ranges_reserve_hint 202502L
+#define __cpp_lib_ranges_slide 202202L
+#define __cpp_lib_ranges_stride 202207L
+#define __cpp_lib_ranges_to_container 202202L
+#define __cpp_lib_ranges_zip 202110L
 #define __cpp_lib_robust_nonmodifying_seq_ops 201304L
 #define __cpp_lib_sample 201603L
 #define __cpp_lib_saturation_arithmetic 202603L
@@ -195,6 +217,26 @@
 #define __cpp_lib_constexpr_flat_set 202502L
 #define __cpp_lib_flat_map 202511L
 #define __cpp_lib_flat_set 202511L
+
+// Shared by several container headers, all of which now provide the feature.
+#define __cpp_lib_associative_heterogeneous_erasure 202110L
+#define __cpp_lib_associative_heterogeneous_insertion 202306L
+#define __cpp_lib_containers_ranges 202202L
+#define __cpp_lib_erase_if 202002L
+#define __cpp_lib_incomplete_container_elements 201505L
+#define __cpp_lib_map_lookup 202606L
+#define __cpp_lib_map_try_emplace 201411L
+#define __cpp_lib_node_extract 201606L
+#define __cpp_lib_nonmember_container_access 201411L
+
+// <unordered_map> <unordered_set>
+#define __cpp_lib_constexpr_unordered_map 202502L
+#define __cpp_lib_constexpr_unordered_set 202502L
+#define __cpp_lib_generic_unordered_lookup 201811L
+#define __cpp_lib_unordered_map_try_emplace 201411L
+
+// <hive>
+#define __cpp_lib_hive 202502L
 
 // Features of headers above that had no macro yet.
 #define __cpp_lib_ssize 201902L

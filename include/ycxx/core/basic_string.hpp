@@ -379,7 +379,7 @@ public:
   }
   template <class T>
     requires is_convertible_v<const T&, basic_string_view<charT, traits>>
-  constexpr basic_string(const T& t, size_type pos, size_type n, const Allocator& a = Allocator())
+  constexpr basic_string(const T& t, ycxx::detail::alloc_size_t<Allocator> pos, ycxx::detail::alloc_size_t<Allocator> n, const Allocator& a = Allocator())
       : ptr_(nullptr), size_(0), alloc_(a) {
     const sv_type sv = sv_type(t).substr(pos, n);
     init_copy(sv.data(), sv.size());
@@ -390,7 +390,7 @@ public:
     const sv_type sv = t;
     init_copy(sv.data(), sv.size());
   }
-  constexpr basic_string(const charT* s, size_type n, const Allocator& a = Allocator())
+  constexpr basic_string(const charT* s, ycxx::detail::alloc_size_t<Allocator> n, const Allocator& a = Allocator())
       : ptr_(nullptr), size_(0), alloc_(a) {
     ycxx::detail::precondition(s != nullptr || n == 0, "std::basic_string: null pointer with nonzero length");
     init_copy(s, n);
@@ -402,7 +402,7 @@ public:
     init_copy(s, traits::length(s));
   }
   basic_string(nullptr_t) = delete;
-  constexpr basic_string(size_type n, charT c, const Allocator& a = Allocator())
+  constexpr basic_string(ycxx::detail::alloc_size_t<Allocator> n, charT c, const Allocator& a = Allocator())
     requires ycxx::detail::qualifies_as_allocator<Allocator>
       : ptr_(nullptr), size_(0), alloc_(a) {
     init_fill(n, c);
@@ -1457,3 +1457,6 @@ constexpr wstring to_wstring(long long val) { return ycxx::detail::integer_to_st
 constexpr wstring to_wstring(unsigned long long val) { return ycxx::detail::integer_to_string<wchar_t>(val); }
 
 } // namespace std
+
+// The <stdexcept> constructors taking `const string&`, now that string is complete.
+#include <ycxx/core/stdexcept_string.hpp>

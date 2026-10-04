@@ -28,13 +28,6 @@
 
 namespace ycxx::detail {
 
-// allocator_traits<A>::size_type, a substitution failure when A does not qualify as an
-// allocator: the implicit deduction guide of vector(size_type, const T&, const Allocator&)
-// then drops out instead of instantiating vector<T, A> ([container.reqmts]/69, [container.requirements.general]).
-template <class A>
-  requires qualifies_as_allocator<A>
-using alloc_size_t = typename std::allocator_traits<A>::size_type;
-
 } // namespace ycxx::detail
 
 namespace std {

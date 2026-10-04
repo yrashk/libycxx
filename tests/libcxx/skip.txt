@@ -29,3 +29,10 @@ utilities/memory/util\.smartptr/util\.smartptr\.shared/util\.smartptr\.shared\.o
 utilities/memory/util\.smartptr/util\.smartptr\.shared\.atomic/.*\.pass\.cpp | removed | the atomic_* free functions for shared_ptr were removed in C++26 (P2869)
 utilities/memory/temporary\.buffer/.*\.pass\.cpp | removed | get_temporary_buffer was removed in C++20
 utilities/memory/storage\.iterator/.*\.cpp | removed | raw_storage_iterator was removed in C++20
+ranges/range\.adaptors/range\.(elements|filter|join|lazy\.split|split|take|take\.while)/.*(ctor\.(base|parent|parent_iter|parent_base|outer_iterator|iter|other|convert|value)|iterator/(base|deref|arrow)|sentinel/base)\.pass\.cpp | implementation-specific | constructs view iterators/sentinels through their exposition-only constructors, which libycxx keeps private
+ranges/range\.factories/range\.iota\.view/(iterator|sentinel)/ctor\.value\.pass\.cpp | implementation-specific | constructs iota_view::iterator/sentinel through their exposition-only constructors, which libycxx keeps private
+ranges/range\.adaptors/range\.take/range\.take\.sentinel/ctor\.pass\.cpp | implementation-specific | constructs take_view::sentinel through its exposition-only constructor, which libycxx keeps private
+ranges/range\.adaptors/range\.lazy\.split/range\.lazy\.split\.outer\.value/ctor\.default\.pass\.cpp | implementation-specific | default-constructs outer-iterator::value_type, which [range.lazy.split.outer.value] does not declare
+ranges/range\.adaptors/range\.join/range\.join\.iterator/arrow\.pass\.cpp | divergence | expects operator-> for an inner iterator whose operator-> is not const; has-arrow ([range.utility.helpers]) requires a const one
+ranges/range\.adaptors/range\.lazy\.split/begin\.pass\.cpp | divergence | expects const begin() with a pattern that is not a forward range when const; [range.lazy.split.view] requires forward_range<const Pattern>
+ranges/range\.utility/range\.utility\.conv/to\.pass\.cpp | divergence | expects ranges::to to append with c.emplace(c.end(), x); container-append ([range.utility.conv.general]/5) uses emplace_back, push_back, emplace_hint and insert

@@ -8,8 +8,14 @@ set(CMAKE_C_STANDARD 23)
 
 set(YCXX_INCLUDE ${CMAKE_CURRENT_SOURCE_DIR}/include)
 
+# One replaceable allocation function per source file (see src/runtime/new).
+file(GLOB YCXX_NEW_SOURCES CONFIGURE_DEPENDS src/runtime/new/*.cpp src/hosted/new/*.cpp)
+# Defining one deallocation function per file is the point; GCC warns about each unpaired one.
+if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+  set_source_files_properties(${YCXX_NEW_SOURCES} PROPERTIES COMPILE_OPTIONS -Wno-sized-deallocation)
+endif()
 add_library(ycxx STATIC
-  src/hosted/new.cpp
+  ${YCXX_NEW_SOURCES}
   src/hosted/stdexcept.cpp
   src/pal/posix/pal.c
 )

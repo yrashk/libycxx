@@ -17,10 +17,8 @@ enum class align_val_t : size_t {};
 struct nothrow_t {
   explicit nothrow_t() = default;
 };
-// [new.syn] declares it extern. Hosted builds get the definition from the ABI runtime (libsupc++).
-// The weak definition here serves freestanding builds, which link no runtime; libsupc++'s strong
-// definition wins when present. (An inline variable clashed with libsupc++ at link time on GCC.)
-[[gnu::weak]] extern const nothrow_t nothrow{};
+// [new.syn]: declared extern. Defined by libsupc++ (hosted) or libycxx-freestanding.a.
+extern const nothrow_t nothrow;
 
 using new_handler = void (*)();
 new_handler get_new_handler() noexcept;
@@ -37,7 +35,9 @@ inline constexpr size_t hardware_constructive_interference_size = 64;
 
 } // namespace std
 
-// Replaceable allocation functions. Definitions: hosted runtime (via the PAL) or the user.
+// Replaceable allocation functions. Defaults: the hosted runtime (via the PAL) or
+// libycxx-freestanding.a (no heap); one function per archive member, so a program may replace
+// any subset (src/runtime/new).
 [[nodiscard]] void* operator new(std::size_t size);
 [[nodiscard]] void* operator new(std::size_t size, std::align_val_t alignment);
 [[nodiscard]] void* operator new(std::size_t size, const std::nothrow_t&) noexcept;
@@ -59,33 +59,6 @@ void operator delete[](void* ptr, std::size_t size, std::align_val_t alignment) 
 void operator delete[](void* ptr, const std::nothrow_t&) noexcept;
 void operator delete[](void* ptr, std::align_val_t alignment, const std::nothrow_t&) noexcept;
 
-#if !YCXX_HOSTED
-// Freestanding defaults ([new.syn] is all freestanding). There is no heap, so allocation fails:
-// bad_alloc (or the error handler without exceptions), or nullptr for the nothrow forms. Every
-// definition is weak, so a program that has a heap replaces them by defining its own, as
-// [replacement.functions] allows. Never compiled in hosted builds; see YCXX_HOSTED.
-[[gnu::weak]] void* operator new(std::size_t) { ycxx::detail::throw_bad_alloc(); }
-[[gnu::weak]] void* operator new(std::size_t, std::align_val_t) { ycxx::detail::throw_bad_alloc(); }
-[[gnu::weak]] void* operator new(std::size_t, const std::nothrow_t&) noexcept { return nullptr; }
-[[gnu::weak]] void* operator new(std::size_t, std::align_val_t, const std::nothrow_t&) noexcept { return nullptr; }
-[[gnu::weak]] void* operator new[](std::size_t) { ycxx::detail::throw_bad_alloc(); }
-[[gnu::weak]] void* operator new[](std::size_t, std::align_val_t) { ycxx::detail::throw_bad_alloc(); }
-[[gnu::weak]] void* operator new[](std::size_t, const std::nothrow_t&) noexcept { return nullptr; }
-[[gnu::weak]] void* operator new[](std::size_t, std::align_val_t, const std::nothrow_t&) noexcept { return nullptr; }
-// Nothing was ever allocated by the defaults, so there is nothing to free.
-[[gnu::weak]] void operator delete(void*) noexcept {}
-[[gnu::weak]] void operator delete(void*, std::size_t) noexcept {}
-[[gnu::weak]] void operator delete(void*, std::align_val_t) noexcept {}
-[[gnu::weak]] void operator delete(void*, std::size_t, std::align_val_t) noexcept {}
-[[gnu::weak]] void operator delete(void*, const std::nothrow_t&) noexcept {}
-[[gnu::weak]] void operator delete(void*, std::align_val_t, const std::nothrow_t&) noexcept {}
-[[gnu::weak]] void operator delete[](void*) noexcept {}
-[[gnu::weak]] void operator delete[](void*, std::size_t) noexcept {}
-[[gnu::weak]] void operator delete[](void*, std::align_val_t) noexcept {}
-[[gnu::weak]] void operator delete[](void*, std::size_t, std::align_val_t) noexcept {}
-[[gnu::weak]] void operator delete[](void*, const std::nothrow_t&) noexcept {}
-[[gnu::weak]] void operator delete[](void*, std::align_val_t, const std::nothrow_t&) noexcept {}
-#endif
 
 // Non-allocating forms (constexpr since C++26).
 [[nodiscard]] constexpr void* operator new(std::size_t, void* ptr) noexcept { return ptr; }

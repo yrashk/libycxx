@@ -93,7 +93,9 @@ public:
   constexpr size_type size() const noexcept { return size_; }
   constexpr size_type length() const noexcept { return size_; }
   constexpr size_type max_size() const noexcept {
-    return (numeric_limits<size_type>::max() - sizeof(size_type) - sizeof(void*)) / sizeof(charT) / 4;
+    // Pointer differences over the viewed range must be representable.
+    constexpr size_type by_ptrdiff = static_cast<size_type>(numeric_limits<ptrdiff_t>::max()) / sizeof(charT);
+    return by_ptrdiff;
   }
   [[nodiscard]] constexpr bool empty() const noexcept { return size_ == 0; }
 
@@ -234,10 +236,7 @@ public:
   constexpr size_type rfind(const charT* s, size_type pos = npos) const { return rfind(basic_string_view(s), pos); }
 
   constexpr size_type find_first_of(basic_string_view s, size_type pos = 0) const noexcept {
-    for (; pos < size_; ++pos)
-      if (traits::find(s.data_, s.size_, data_[pos]))
-        return pos;
-    return npos;
+    return scan_forward(s, pos, true);
   }
   constexpr size_type find_first_of(charT c, size_type pos = 0) const noexcept { return find(c, pos); }
   constexpr size_type find_first_of(const charT* s, size_type pos, size_type n) const {
@@ -248,14 +247,7 @@ public:
   }
 
   constexpr size_type find_last_of(basic_string_view s, size_type pos = npos) const noexcept {
-    if (size_ == 0)
-      return npos;
-    for (size_type i = pos < size_ ? pos : size_ - 1;; --i) {
-      if (traits::find(s.data_, s.size_, data_[i]))
-        return i;
-      if (i == 0)
-        return npos;
-    }
+    return scan_backward(s, pos, true);
   }
   constexpr size_type find_last_of(charT c, size_type pos = npos) const noexcept { return rfind(c, pos); }
   constexpr size_type find_last_of(const charT* s, size_type pos, size_type n) const {
@@ -266,10 +258,7 @@ public:
   }
 
   constexpr size_type find_first_not_of(basic_string_view s, size_type pos = 0) const noexcept {
-    for (; pos < size_; ++pos)
-      if (!traits::find(s.data_, s.size_, data_[pos]))
-        return pos;
-    return npos;
+    return scan_forward(s, pos, false);
   }
   constexpr size_type find_first_not_of(charT c, size_type pos = 0) const noexcept {
     return find_first_not_of(basic_string_view(__builtin_addressof(c), 1), pos);
@@ -282,14 +271,7 @@ public:
   }
 
   constexpr size_type find_last_not_of(basic_string_view s, size_type pos = npos) const noexcept {
-    if (size_ == 0)
-      return npos;
-    for (size_type i = pos < size_ ? pos : size_ - 1;; --i) {
-      if (!traits::find(s.data_, s.size_, data_[i]))
-        return i;
-      if (i == 0)
-        return npos;
-    }
+    return scan_backward(s, pos, false);
   }
   constexpr size_type find_last_not_of(charT c, size_type pos = npos) const noexcept {
     return find_last_not_of(basic_string_view(__builtin_addressof(c), 1), pos);
@@ -302,6 +284,53 @@ public:
   }
 
 private:
+  // Membership test for the find_*_of family. For byte-sized characters with the standard
+  // traits (whose eq is ==), a set of more than a few characters is turned into a 256-bit table,
+  // so the scan is O(size() + s.size()) instead of O(size() * s.size()).
+  struct char_set {
+    const basic_string_view& s;
+    unsigned long long bits[4] = {};
+    bool use_table = false;
+    constexpr explicit char_set(const basic_string_view& set) : s(set) {
+      if constexpr (sizeof(charT) == 1 && is_same_v<traits, char_traits<charT>>) {
+        if (set.size_ > 8) {
+          use_table = true;
+          for (charT c : set) {
+            const unsigned u = static_cast<unsigned char>(c);
+            bits[u / 64] |= 1ull << (u % 64);
+          }
+        }
+      }
+    }
+    constexpr bool contains(charT c) const noexcept {
+      if constexpr (sizeof(charT) == 1) {
+        if (use_table) {
+          const unsigned u = static_cast<unsigned char>(c);
+          return (bits[u / 64] >> (u % 64)) & 1;
+        }
+      }
+      return traits::find(s.data_, s.size_, c) != nullptr;
+    }
+  };
+  constexpr size_type scan_forward(basic_string_view set, size_type pos, bool want) const noexcept {
+    const char_set cs(set);
+    for (; pos < size_; ++pos)
+      if (cs.contains(data_[pos]) == want)
+        return pos;
+    return npos;
+  }
+  constexpr size_type scan_backward(basic_string_view set, size_type pos, bool want) const noexcept {
+    if (size_ == 0)
+      return npos;
+    const char_set cs(set);
+    for (size_type i = pos < size_ ? pos : size_ - 1;; --i) {
+      if (cs.contains(data_[i]) == want)
+        return i;
+      if (i == 0)
+        return npos;
+    }
+  }
+
   constexpr void check_pos(size_type pos, const char* what) const {
     if (pos > size_)
       ycxx::detail::throw_out_of_range(what);

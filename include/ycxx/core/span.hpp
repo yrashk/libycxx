@@ -216,8 +216,8 @@ public:
   constexpr const_reverse_iterator crend() const noexcept { return rend(); }
 
 private:
-  // Every size-taking constructor ends here, so the size expression is evaluated exactly once
-  // ([span.cons]) and the hardened extent check sees that one value.
+  // The (It, End) and range constructors end here, so `last - first` / ranges::size(r) is
+  // evaluated exactly once ([span.cons]) and the hardened extent check sees that one value.
   struct checked {};
   template <class P>
   constexpr span(checked, P* p, size_type n) noexcept : data_(p), size_(n) {

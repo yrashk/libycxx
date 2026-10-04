@@ -28,7 +28,7 @@ int main() {
   CHECK(std::wcscpy(buf, L"abc") == buf && std::wcslen(buf) == 3);
   CHECK(std::wcscat(buf, L"de") == buf && std::wcscmp(buf, L"abcde") == 0);
   CHECK(std::wcsncat(buf, L"fgh", 1) == buf && std::wcscmp(buf, L"abcdef") == 0);
-  CHECK(std::wcsncmp(buf, L"abX", 2) == 0 && std::wcsncmp(buf, L"abX", 3) < 0);
+  CHECK(std::wcsncmp(buf, L"abX", 2) == 0 && std::wcsncmp(buf, L"abX", 3) > 0); // L'c' (0x63) > L'X' (0x58)
   wchar_t n[6];
   CHECK(std::wcsncpy(n, L"xy", 5) == n && n[1] == L'y' && n[2] == 0 && n[4] == 0);  // pads
   CHECK(std::wmemcpy(n, L"pqrst", 5) == n && std::wmemcmp(n, L"pqrst", 5) == 0);

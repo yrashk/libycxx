@@ -14,7 +14,7 @@ CONFIG = ROOT / "ycxx/config.hpp"
 # Files whose job is to define macros the standard mandates.
 MANDATED_MACRO_FILES = {
     "ycxx/core/cstdint.hpp", "ycxx/core/climits.hpp", "ycxx/core/cstddef.hpp",
-    "ycxx/core/version.hpp", "cassert", "ycxx/core/cfloat.hpp", "ycxx/pal.h",
+    "ycxx/core/version.hpp", "cassert", "ycxx/core/cfloat.hpp", "ycxx/pal.h", "cwchar",
 }
 # Headers the standard requires to be re-includable with different effect.
 REINCLUDABLE = {"cassert"}

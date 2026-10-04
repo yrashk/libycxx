@@ -5,7 +5,12 @@
 #include <ycxx/core/version.hpp>
 #include <ycxx/core/cstddef.hpp>
 #include <ycxx/core/char_traits.hpp>
+#include <ycxx/core/cstdint.hpp>
 #include <wchar.h>
+
+#ifndef __STDC_VERSION_WCHAR_H__
+#  define __STDC_VERSION_WCHAR_H__ 202311L
+#endif
 
 namespace std {
 using ::tm;
@@ -49,45 +54,64 @@ using ::wcscoll;
 using ::wcsncmp;
 using ::wcsxfrm;
 using ::wmemcmp;
-using ::wcschr;
 using ::wcscspn;
-using ::wcspbrk;
-using ::wcsrchr;
 using ::wcsspn;
-using ::wcsstr;
 using ::wcstok;
-using ::wmemchr;
 using ::wcslen;
 using ::wmemset;
 using ::wcsftime;
 using ::btowc;
 using ::wctob;
-using ::mbsinit;
-using ::mbrlen;
-using ::mbrtowc;
-using ::wcrtomb;
-using ::mbsrtowcs;
-using ::wcsrtombs;
 
 static_assert(sizeof(mbstate_t) == sizeof(::mbstate_t) && alignof(mbstate_t) == alignof(::mbstate_t),
               "libycxx: std::mbstate_t does not match this C library's ::mbstate_t layout");
 
-// Overloads for std::mbstate_t (core's freestanding type, DECISIONS §3), forwarding to the C
-// library's ::mbstate_t versions brought in above.
+// The conversion functions taking a state. The overloads for std::mbstate_t (core's freestanding
+// type, DECISIONS §3) forward to the C functions; those for the C library's ::mbstate_t are
+// templates, so that a null state pointer (nullptr, 0) prefers the non-template overload instead
+// of being ambiguous.
 inline int mbsinit(const mbstate_t* ps) noexcept { return ::mbsinit(reinterpret_cast<const ::mbstate_t*>(ps)); }
+template <class = void>
+inline int mbsinit(const ::mbstate_t* ps) noexcept { return ::mbsinit(ps); }
 inline size_t mbrlen(const char* s, size_t n, mbstate_t* ps) noexcept {
   return ::mbrlen(s, n, reinterpret_cast<::mbstate_t*>(ps));
 }
+template <class = void>
+inline size_t mbrlen(const char* s, size_t n, ::mbstate_t* ps) noexcept { return ::mbrlen(s, n, ps); }
 inline size_t mbrtowc(wchar_t* pwc, const char* s, size_t n, mbstate_t* ps) noexcept {
   return ::mbrtowc(pwc, s, n, reinterpret_cast<::mbstate_t*>(ps));
 }
+template <class = void>
+inline size_t mbrtowc(wchar_t* pwc, const char* s, size_t n, ::mbstate_t* ps) noexcept { return ::mbrtowc(pwc, s, n, ps); }
 inline size_t wcrtomb(char* s, wchar_t wc, mbstate_t* ps) noexcept {
   return ::wcrtomb(s, wc, reinterpret_cast<::mbstate_t*>(ps));
 }
+template <class = void>
+inline size_t wcrtomb(char* s, wchar_t wc, ::mbstate_t* ps) noexcept { return ::wcrtomb(s, wc, ps); }
 inline size_t mbsrtowcs(wchar_t* dst, const char** src, size_t len, mbstate_t* ps) noexcept {
   return ::mbsrtowcs(dst, src, len, reinterpret_cast<::mbstate_t*>(ps));
+}
+template <class = void>
+inline size_t mbsrtowcs(wchar_t* dst, const char** src, size_t len, ::mbstate_t* ps) noexcept {
+  return ::mbsrtowcs(dst, src, len, ps);
 }
 inline size_t wcsrtombs(char* dst, const wchar_t** src, size_t len, mbstate_t* ps) noexcept {
   return ::wcsrtombs(dst, src, len, reinterpret_cast<::mbstate_t*>(ps));
 }
+template <class = void>
+inline size_t wcsrtombs(char* dst, const wchar_t** src, size_t len, ::mbstate_t* ps) noexcept {
+  return ::wcsrtombs(dst, src, len, ps);
+}
+
+// [library.c]: the const-correct overload pairs.
+inline const wchar_t* wcschr(const wchar_t* s, wchar_t c) noexcept { return ::wcschr(s, c); }
+inline wchar_t* wcschr(wchar_t* s, wchar_t c) noexcept { return ::wcschr(s, c); }
+inline const wchar_t* wcspbrk(const wchar_t* s1, const wchar_t* s2) noexcept { return ::wcspbrk(s1, s2); }
+inline wchar_t* wcspbrk(wchar_t* s1, const wchar_t* s2) noexcept { return ::wcspbrk(s1, s2); }
+inline const wchar_t* wcsrchr(const wchar_t* s, wchar_t c) noexcept { return ::wcsrchr(s, c); }
+inline wchar_t* wcsrchr(wchar_t* s, wchar_t c) noexcept { return ::wcsrchr(s, c); }
+inline const wchar_t* wcsstr(const wchar_t* s1, const wchar_t* s2) noexcept { return ::wcsstr(s1, s2); }
+inline wchar_t* wcsstr(wchar_t* s1, const wchar_t* s2) noexcept { return ::wcsstr(s1, s2); }
+inline const wchar_t* wmemchr(const wchar_t* s, wchar_t c, size_t n) noexcept { return ::wmemchr(s, c, n); }
+inline wchar_t* wmemchr(wchar_t* s, wchar_t c, size_t n) noexcept { return ::wmemchr(s, c, n); }
 } // namespace std

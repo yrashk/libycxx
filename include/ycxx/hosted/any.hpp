@@ -6,6 +6,8 @@
 //
 // Type identity: the table's address identifies the contained type. Two copies of one table
 // can exist across shared libraries, so with RTTI a mismatch falls back to comparing type_info.
+// Without RTTI, any_cast across a shared library built with hidden visibility or -Bsymbolic
+// does not recognise the type (STATUS: known limitations).
 #pragma once
 
 #include <ycxx/core/error.hpp>
@@ -59,6 +61,8 @@ struct ops {
     if constexpr (stored_inline<T>)
       ::new (static_cast<void*>(s.buf)) T(static_cast<Args&&>(args)...);
     else
+      // A plain new-expression: a class-specific operator new/delete is honoured (a type that
+      // deletes its operator new is not meant to live on the heap, so it cannot be stored).
       s.ptr = new T(static_cast<Args&&>(args)...);
   }
   static void destroy(storage& s) noexcept {
@@ -67,7 +71,10 @@ struct ops {
     else
       delete obj(s);
   }
-  static void copy(const storage& src, storage& dst) { create(dst, *obj(const_cast<storage&>(src))); }
+  // [any.cons]/2: copies from any_cast<const T&>(other), so the const T& constructor is chosen.
+  static void copy(const storage& src, storage& dst) {
+    create(dst, *static_cast<const T*>(obj(const_cast<storage&>(src))));
+  }
   static void move(storage& src, storage& dst) noexcept {
     if constexpr (stored_inline<T>) {
       ::new (static_cast<void*>(dst.buf)) T(static_cast<T&&>(*obj(src)));
@@ -180,7 +187,11 @@ public:
   template <class T, class VT = decay_t<T>, enable_if_t<!is_same_v<VT, any>, int> = 0,
             enable_if_t<is_copy_constructible<VT>::value, int> = 0> // see any(T&&)
   any& operator=(T&& rhs) {
-    any(static_cast<T&&>(rhs)).swap(*this);
+    // Not any(rhs): for VT = in_place_type_t<X> that would pick the in_place constructor and
+    // store an X instead of the tag ([any.assign]/10).
+    any tmp;
+    tmp.create<VT>(static_cast<T&&>(rhs));
+    tmp.swap(*this);
     return *this;
   }
 

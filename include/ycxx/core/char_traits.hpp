@@ -68,7 +68,9 @@ struct char_traits_base {
     return 0;
   }
   static constexpr std::size_t length(const char_type* s) {
-    if constexpr (sizeof(char_type) == 1) {
+    // strlen/memchr are libc functions: only hosted builds may call them (freestanding builds
+    // provide just memcpy/memmove/memset/memcmp).
+    if constexpr (sizeof(char_type) == 1 && ycxx::detail::cfg::hosted) {
       if !consteval {
         return __builtin_strlen(reinterpret_cast<const char*>(s));
       }
@@ -79,7 +81,7 @@ struct char_traits_base {
     return n;
   }
   static constexpr const char_type* find(const char_type* s, std::size_t n, const char_type& a) {
-    if constexpr (sizeof(char_type) == 1) {
+    if constexpr (sizeof(char_type) == 1 && ycxx::detail::cfg::hosted) {
       if !consteval {
         return static_cast<const char_type*>(__builtin_memchr(s, static_cast<unsigned char>(a), n));
       }

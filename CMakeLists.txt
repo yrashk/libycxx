@@ -67,6 +67,7 @@ add_library(ycxx STATIC
   src/hosted/stdexcept.cpp
   src/hosted/memory_resource.cpp
   src/hosted/string.cpp
+  src/hosted/system_error.cpp
   src/pal/posix/pal.c
 )
 set_target_properties(ycxx PROPERTIES EXPORT_NAME core)

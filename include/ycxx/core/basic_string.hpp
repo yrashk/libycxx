@@ -1456,6 +1456,24 @@ constexpr wstring to_wstring(unsigned long val) { return ycxx::detail::integer_t
 constexpr wstring to_wstring(long long val) { return ycxx::detail::integer_to_string<wchar_t>(val); }
 constexpr wstring to_wstring(unsigned long long val) { return ycxx::detail::integer_to_string<wchar_t>(val); }
 
+// [string.io]: declared against the iostreams' forward declarations; defined with the streams
+// (ycxx/hosted/istream.hpp, ycxx/hosted/ostream.hpp), so <string> does not include them.
+template <class charT, class traits, class Allocator>
+basic_istream<charT, traits>& operator>>(basic_istream<charT, traits>& is, basic_string<charT, traits, Allocator>& str);
+template <class charT, class traits, class Allocator>
+basic_ostream<charT, traits>& operator<<(basic_ostream<charT, traits>& os,
+                                         const basic_string<charT, traits, Allocator>& str);
+template <class charT, class traits, class Allocator>
+basic_istream<charT, traits>& getline(basic_istream<charT, traits>& is, basic_string<charT, traits, Allocator>& str,
+                                      charT delim);
+template <class charT, class traits, class Allocator>
+basic_istream<charT, traits>& getline(basic_istream<charT, traits>&& is, basic_string<charT, traits, Allocator>& str,
+                                      charT delim);
+template <class charT, class traits, class Allocator>
+basic_istream<charT, traits>& getline(basic_istream<charT, traits>& is, basic_string<charT, traits, Allocator>& str);
+template <class charT, class traits, class Allocator>
+basic_istream<charT, traits>& getline(basic_istream<charT, traits>&& is, basic_string<charT, traits, Allocator>& str);
+
 } // namespace std
 
 // The <stdexcept> constructors taking `const string&`, now that string is complete.

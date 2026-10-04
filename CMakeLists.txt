@@ -68,6 +68,12 @@ add_library(ycxx STATIC
   src/hosted/memory_resource.cpp
   src/hosted/string.cpp
   src/hosted/system_error.cpp
+  # iostreams and localization
+  src/hosted/ios.cpp
+  src/hosted/iostream.cpp
+  src/hosted/locale.cpp
+  src/hosted/num.cpp
+  src/hosted/time.cpp
   src/pal/posix/pal.c
 )
 set_target_properties(ycxx PROPERTIES EXPORT_NAME core)
@@ -85,6 +91,10 @@ target_link_libraries(ycxx_abi PRIVATE ycxx_headers)
 target_compile_options(ycxx_abi PRIVATE -std=c++26 ${_ycxx_warnings} -fexceptions -frtti)
 set_source_files_properties(src/abi/exception_classes.cpp src/hosted/stdexcept.cpp
                             PROPERTIES COMPILE_DEFINITIONS YCXX_EXCEPTION_KEY_FUNCTIONS)
+# The standard stream objects are initialized with a priority reserved for the implementation,
+# ahead of every program's static objects (src/hosted/iostream.cpp).
+set_source_files_properties(src/hosted/iostream.cpp PROPERTIES COMPILE_OPTIONS
+  $<IF:$<CXX_COMPILER_ID:GNU>,-Wno-prio-ctor-dtor,-Wno-init-priority-reserved>)
 
 # The two archives refer to each other (the runtime uses the platform layer and operator
 # delete; the library throws through the runtime): a cyclic static dependency, which CMake

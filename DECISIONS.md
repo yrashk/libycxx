@@ -304,7 +304,7 @@ under the same name. Otherwise it gets one alias template in `config.hpp`.
 - **Bitmask types** `fmtflags`, `iostate`, `openmode` are unscoped enumerations nested in
   `ios_base` with hidden-friend operators (an integer literal such as `0` does not convert to
   them, as with libstdc++).
-- **Small conformance-preserving additions:** `fpos` has `operator==(const fpos&, streamoff)`, so
+- **Small conformance-preserving additions:** `fpos` has `operator==(const fpos&, I)` for integral `I`, so
   `pos == 0` is not ambiguous; `istream::ignore(streamsize, char_type)` is a constrained template
   (exactly `char_type` is deduced), so `ignore(n, -1L)` is not ambiguous; the rvalue stream
   operators exclude `ios_base` itself ("derived from" in the core-language sense).

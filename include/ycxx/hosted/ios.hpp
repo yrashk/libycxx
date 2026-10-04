@@ -33,9 +33,13 @@ public:
   void state(stateT s) { st_ = s; }
 
   friend bool operator==(const fpos& p, const fpos& q) noexcept { return p.off_ == q.off_; }
-  // `p == o` for an integer o: without this overload, the comparison would be ambiguous between
+  // `p == o` for an integer o: without this overload (a template, so that it is an exact match), the comparison would be ambiguous between
   // converting o to fpos and converting p to streamoff.
-  friend bool operator==(const fpos& p, streamoff o) noexcept { return p.off_ == o; }
+  template <class I>
+    requires is_integral_v<I>
+  friend bool operator==(const fpos& p, I o) noexcept {
+    return p.off_ == o;
+  }
   friend streamoff operator-(const fpos& p, const fpos& q) noexcept { return p.off_ - q.off_; }
   fpos& operator+=(streamoff o) noexcept {
     off_ += o;

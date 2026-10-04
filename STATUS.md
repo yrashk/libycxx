@@ -112,14 +112,23 @@ Deprecated and removed features are not implemented (`is_pod`, `is_trivial`, `al
   empty `std::function` so adopted becomes a stateless target that throws `bad_function_call`.
   Construction is noexcept when nothing can throw (a strengthening, as libstdc++ does).
   `function::target<T>()` without RTTI uses the same table-address identity as `any`.
+- `exception_ptr` is constexpr only for null values: neither compiler documents a way to reach
+  the constant-evaluation exception state (own test `exception/exception_ptr_constexpr` fails on
+  GCC; Clang 23 cannot throw during constant evaluation at all).
+- The Itanium ABI records a handler's type without its reference-ness, so `catch (T*&)` also
+  accepts pointer conversions that only `catch (T*)`/`catch (T* const&)` may ([except.handle]/3;
+  own tests `except/handler_pointer_reference*`). libsupc++ behaves the same.
+- GCC 16 omits `__noexcept_mask` in the type_info of pointers to noexcept member functions; the
+  runtime reads the mangled name instead.
+- The default terminate handler prints the thrown type's mangled name (no demangler yet).
 - `any` without RTTI identifies types by the address of a per-type table, so `any_cast` across a
   shared library built with hidden visibility or `-Bsymbolic` does not recognise the type.
 - No `<stddef.h>` wrapper: `::max_align_t` comes from the compiler's header and is not
   `std::max_align_t` (see Deliberate divergences).
 
 ## Open issues / next
-- Phase 2 remaining: <exception> propagation (exception_ptr, nested_exception,
-  exception_ptr_cast).
+- Phase 2 is complete. The ABI runtime (src/abi) replaced libsupc++: broad sweep 4483 -> 4535
+  passes with no regressions.
 - Then Phase 3 (containers, algorithms), Phase 4 (ranges, charconv, format, ...).
 - Constexpr exceptions (P3068): done for `exception`, `bad_alloc`, `bad_array_new_length`,
   `bad_exception`, `bad_cast`, `bad_typeid`, `bad_optional_access`, `bad_variant_access`, and

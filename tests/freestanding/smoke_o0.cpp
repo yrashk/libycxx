@@ -1,5 +1,5 @@
 // Freestanding smoke test, compiled at -O0 so that nothing is inlined or folded away: every
-// symbol these uses need must be defined without libsupc++ or libc.
+// symbol these uses need must be defined without the ABI runtime or libc.
 #include <exception>
 #include <new>
 #include <optional>

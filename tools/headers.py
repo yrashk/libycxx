@@ -12,5 +12,5 @@ HOSTED = [
     "cstdlib", "cstring", "ctime", "cuchar", "cwchar", "cwctype",
 ]
 # Language-support headers whose *declarations* are core but which need the C++ ABI runtime
-# (libsupc++) to be used with exceptions/RTTI enabled.
+# (libycxx-abi) to be used with exceptions/RTTI enabled.
 ABI = ["exception", "stdexcept", "typeinfo", "typeindex"]

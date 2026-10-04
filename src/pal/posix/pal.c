@@ -10,6 +10,10 @@
 #include <string.h>
 #include <time.h>
 #include <unistd.h>
+#if defined(__linux__)
+#  include <linux/futex.h>
+#  include <sys/syscall.h>
+#endif
 #if __has_include(<sys/random.h>)
 #  include <sys/random.h>
 #endif
@@ -81,3 +85,31 @@ int ycxx_pal_random(void* data, ycxx_pal_size n) {
   return 0;
 }
 
+
+void ycxx_pal_wait(const ycxx_pal_u32* addr, ycxx_pal_u32 expected) {
+#if defined(__linux__)
+  syscall(SYS_futex, addr, FUTEX_WAIT_PRIVATE, expected, NULL, NULL, 0);
+#else
+  if (__atomic_load_n(addr, __ATOMIC_ACQUIRE) == expected) {
+    struct timespec ts = {0, 50000};
+    nanosleep(&ts, NULL);
+  }
+#endif
+}
+
+void ycxx_pal_wake_all(const ycxx_pal_u32* addr) {
+#if defined(__linux__)
+  syscall(SYS_futex, addr, FUTEX_WAKE_PRIVATE, 0x7fffffff, NULL, NULL, 0);
+#else
+  (void)addr;
+#endif
+}
+
+/* glibc's registration function for thread_local destructors; other C libraries may lack it. */
+extern int __cxa_thread_atexit_impl(void (*)(void*), void*, void*) __attribute__((weak));
+
+int ycxx_pal_thread_atexit(void (*f)(void*), void* obj, void* dso) {
+  if (__cxa_thread_atexit_impl)
+    return __cxa_thread_atexit_impl(f, obj, dso);
+  return -1;
+}

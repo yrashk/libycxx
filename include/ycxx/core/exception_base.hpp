@@ -3,16 +3,17 @@
 //
 // Constexpr exceptions (P3068) need every member inline and constexpr, so these classes have
 // no key function: their vtables and type_info objects are emitted (COMDAT) by each translation
-// unit that needs them. The toolchain's Itanium ABI runtime (libsupc++), which throws some of
-// them itself (operator new, dynamic_cast), defines the same symbols; the linker keeps one, and
-// all copies agree (Itanium layout, same what() strings).
+// unit that needs them. libycxx's ABI runtime (src/abi), which throws some of them itself
+// (dynamic_cast, typeid, array new), emits the same symbols; the linker keeps one, and all
+// copies agree (Itanium layout, same what() strings).
 //
 // Exception: a translation unit built with -fno-rtti would emit vtables with an empty RTTI slot,
 // and if one of those won the link, dynamic_cast/typeid in RTTI code would crash. So in hosted
-// builds without RTTI (YCXX_EXCEPTION_DTOR_OUT_OF_LINE), the classes libsupc++ defines (exception, bad_alloc, bad_array_new_length, bad_exception,
-// bad_cast, bad_typeid) declare their destructor out of line. It is then the key function, and
-// only libsupc++ emits the vtable. The cost: no constexpr destruction of these classes in -fno-rtti
-// code. Classes libsupc++ does not define (bad_optional_access, ...) have no such fallback, so a
+// builds without RTTI (YCXX_EXCEPTION_DTOR_OUT_OF_LINE), the classes the runtime throws (exception,
+// bad_alloc, bad_array_new_length, bad_exception, bad_cast, bad_typeid) declare their destructor
+// out of line. It is then the key function, and only the runtime (src/abi/exception_classes.cpp,
+// built with RTTI) emits the vtable. The cost: no constexpr destruction of these classes in
+// -fno-rtti code. Other classes (bad_optional_access, ...) have no such fallback, so a
 // program that mixes RTTI and -fno-rtti translation units is unsupported for them (DECISIONS §4).
 #pragma once
 

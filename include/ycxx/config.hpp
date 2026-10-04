@@ -63,18 +63,20 @@
 #else
 #  define YCXX_LLONG_WIDTH __LONG_LONG_WIDTH__
 #endif
-// RTTI selects how the exception classes that libsupc++ also defines are declared
+// RTTI selects how the exception classes that the ABI runtime also defines are declared
 // (exception_base.hpp): a non-template class cannot constrain its destructor.
 #if defined(__cpp_rtti) || defined(__GXX_RTTI)
 #  define YCXX_HAS_RTTI 1
 #else
 #  define YCXX_HAS_RTTI 0
 #endif
-// The exception classes libsupc++ also defines get out-of-line destructors (their key function)
-// only in hosted builds without RTTI: that is where a vtable with no type_info could otherwise
-// win the link against libsupc++'s (exception_base.hpp). Freestanding builds link no libsupc++,
-// so they keep the inline constexpr destructors, which need no runtime.
-#if !YCXX_HAS_RTTI && YCXX_HOSTED
+// The exception classes the ABI runtime throws itself get out-of-line destructors (their key
+// function) only in hosted builds without RTTI: that is where a vtable with no type_info could
+// otherwise win the link against the runtime's (exception_base.hpp). The runtime's own
+// src/abi/exception_classes.cpp defines those destructors, built with RTTI and with
+// YCXX_EXCEPTION_KEY_FUNCTIONS. Freestanding builds have no ABI runtime, so they keep the inline
+// constexpr destructors, which need none.
+#if (!YCXX_HAS_RTTI && YCXX_HOSTED) || defined(YCXX_EXCEPTION_KEY_FUNCTIONS)
 #  define YCXX_EXCEPTION_DTOR_OUT_OF_LINE 1
 #else
 #  define YCXX_EXCEPTION_DTOR_OUT_OF_LINE 0

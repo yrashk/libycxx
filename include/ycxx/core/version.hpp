@@ -13,6 +13,7 @@
 #define __cpp_lib_destroying_delete 201806L
 #define __cpp_lib_constexpr_new 202406L
 #define __cpp_lib_uncaught_exceptions 201411L
+#define __cpp_lib_exception_ptr_cast 202603L
 #define __cpp_lib_initializer_list 202511L
 
 // <compare> <concepts>

@@ -5,7 +5,7 @@
 #include <new>
 #include <ycxx/core/error.hpp>
 
-// [new.syn]: the object std::nothrow (hosted builds get it from libsupc++).
+// [new.syn]: the object std::nothrow (hosted builds get it from the ABI runtime).
 namespace std {
 extern const nothrow_t nothrow;
 const nothrow_t nothrow{};

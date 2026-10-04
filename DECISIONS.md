@@ -131,17 +131,24 @@ tooling.
     is never called. The default definition is a weak symbol emitted from the header (PAL abort
     when hosted, `__builtin_trap()` when freestanding). A strong user definition replaces it at
     link time with no library rebuild.
-- The language-support ABI (`__cxa_*`, `std::type_info`, unwinding) comes from the toolchain's
-  ABI runtime (GCC's `libsupc++` plus `libgcc_s`/`libgcc_eh`), linked for both compilers. The
-  exception classes are declared with Itanium layout and inline constexpr members (no key
-  function). Their vtables and type_info are emitted where needed and merge with libsupc++'s
-  copies; see `exception_base.hpp`. `std::nothrow` is `extern` and defined by libsupc++.
+- **libycxx has its own Itanium C++ ABI runtime** (`src/abi`, `libycxx-abi.a`), written from the
+  published Itanium C++ ABI documents (the base ABI's RTTI layout and dynamic_cast, 2.9; the
+  exception-handling ABI, Levels I-II) and DWARF's pointer encodings; no runtime's source is used.
+  It provides exception allocation, throw/catch/rethrow, the personality routine and LSDA
+  parsing, catch matching, `std::type_info` and the `__cxxabiv1` RTTI classes, `__dynamic_cast`,
+  static-local guards, terminate/new handlers, `std::nothrow`, and the reference counting that
+  `exception_ptr` needs (libsupc++ exposes that only through libstdc++-internal symbols, so it
+  cannot serve `exception_ptr` from the draft alone). Stack unwinding itself (Level I,
+  `_Unwind_*`) still comes from the toolchain's unwinder, `libgcc_s`/`libgcc_eh`.
+  Exception objects use the vendor class "YCXXC++\0" ("…\1" for the dependent exceptions
+  rethrow_exception creates). The exception classes are declared with Itanium layout and inline
+  constexpr members (no key function); their vtables and type_info are emitted where needed.
 - **Unsupported: mixing translation units built with different `-fexceptions`/`-fno-exceptions`
   or `-frtti`/`-fno-rtti` settings in one program.** The inline error hooks differ between the
   modes, and the linker keeps one copy. The vtables of header-defined exception classes emitted
-  without RTTI lack type_info. The one mitigation: without RTTI, the classes libsupc++ also
-  defines declare an out-of-line destructor (their key function), so their vtables always come
-  from libsupc++ (`YCXX_HAS_RTTI`). Whole-program `-fno-rtti` and whole-program
+  without RTTI lack type_info. The one mitigation: without RTTI, the classes the runtime throws
+  itself declare an out-of-line destructor (their key function), so their vtables always come
+  from the runtime, built with RTTI (`src/abi/exception_classes.cpp`, `YCXX_HAS_RTTI`). Whole-program `-fno-rtti` and whole-program
   `-fno-exceptions` are fully supported.
 
 ## 5. Compiler-builtin portability

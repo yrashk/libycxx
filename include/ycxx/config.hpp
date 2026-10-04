@@ -214,6 +214,15 @@ inline constexpr cpu_family cpu = cpu_family::riscv;
 #else
 inline constexpr cpu_family cpu = cpu_family::other;
 #endif
+// The name of the ordinary literal encoding (std::text_encoding::literal()); empty if the
+// compiler does not say.
+#if defined(__clang_literal_encoding__)
+inline constexpr char literal_encoding[] = __clang_literal_encoding__;
+#elif defined(__GNUC_EXECUTION_CHARSET_NAME)
+inline constexpr char literal_encoding[] = __GNUC_EXECUTION_CHARSET_NAME;
+#else
+inline constexpr char literal_encoding[] = "";
+#endif
 // FLT_EVAL_METHOD (<cfloat>), which selects float_t and double_t (<cmath>).
 inline constexpr int flt_eval_method = __FLT_EVAL_METHOD__;
 inline constexpr unsigned pointer_bits = __SIZEOF_POINTER__ * __CHAR_BIT__;

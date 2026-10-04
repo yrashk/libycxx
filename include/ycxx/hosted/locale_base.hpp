@@ -38,6 +38,7 @@ struct locale_access;
 namespace std {
 
 class locale;
+struct text_encoding; // <text_encoding>; <locale> includes it
 template <class Facet>
 const Facet& use_facet(const locale&);
 template <class Facet>
@@ -68,6 +69,7 @@ public:
   template <class Facet>
   locale combine(const locale& other) const;
   string name() const;
+  text_encoding encoding() const; // src/hosted/text_encoding.cpp
   bool operator==(const locale& other) const;
   template <class charT, class traits, class Allocator>
   bool operator()(const basic_string<charT, traits, Allocator>& s1, const basic_string<charT, traits, Allocator>& s2) const;

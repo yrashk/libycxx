@@ -11,3 +11,4 @@
 #include <ycxx/hosted/locale_base.hpp>
 #include <ycxx/hosted/locale_num.hpp>
 #include <ycxx/hosted/locale_extra.hpp>
+#include <ycxx/core/text_encoding.hpp> // locale::encoding()

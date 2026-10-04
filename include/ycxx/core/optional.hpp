@@ -73,7 +73,7 @@ union optional_storage {
   constexpr explicit optional_storage(std::in_place_t, Args&&... args) : val(static_cast<Args&&>(args)...) {}
   template <class F, class... Args>
   constexpr optional_storage(optional_invoke_tag, F&& f, Args&&... args)
-      : val(invoke(static_cast<F&&>(f), static_cast<Args&&>(args)...)) {}
+      : val(::ycxx::detail::invoke(static_cast<F&&>(f), static_cast<Args&&>(args)...)) {}
   optional_storage(const optional_storage&) = default;
   optional_storage(optional_storage&&) = default;
   optional_storage& operator=(const optional_storage&) = default;
@@ -140,6 +140,11 @@ public:
     if (rhs.engaged_)
       construct(rhs.u_.val);
   }
+  // [optional.ctor]/7: "defined as deleted unless"; an explicitly deleted overload (rather than
+  // none with satisfied constraints) keeps optional<T> trivially copyable on Clang.
+  constexpr optional(const optional&)
+    requires(!is_copy_constructible_v<T>)
+  = delete;
   constexpr optional(optional&&)
     requires is_move_constructible_v<T> && is_trivially_move_constructible_v<T>
   = default;
@@ -213,6 +218,9 @@ public:
       assign_from(rhs);
     return *this;
   }
+  constexpr optional& operator=(const optional&)
+    requires(!(is_copy_constructible_v<T> && is_copy_assignable_v<T>))
+  = delete;
   constexpr optional& operator=(optional&&)
     requires is_move_constructible_v<T> && is_move_assignable_v<T> && is_trivially_move_constructible_v<T> &&
              is_trivially_move_assignable_v<T> && is_trivially_destructible_v<T>
@@ -433,8 +441,23 @@ optional(T) -> optional<T>;
 // =============================================================================================
 // optional<T&> ([optional.optional.ref])
 // =============================================================================================
+} // namespace std
+
+namespace ycxx::detail {
+// [optional.optional.ref.general]: optional<T&>::iterator exists only for object types other
+// than arrays of unknown bound.
 template <class T>
-class optional<T&> {
+struct optional_ref_iterator {};
+template <class T>
+  requires std::is_object_v<T> && (!std::is_unbounded_array_v<T>)
+struct optional_ref_iterator<T> {
+  using iterator = T*;
+};
+} // namespace ycxx::detail
+
+namespace std {
+template <class T>
+class optional<T&> : public ycxx::detail::optional_ref_iterator<T> {
   T* val_ = nullptr;
 
   template <class U>
@@ -451,7 +474,6 @@ class optional<T&> {
 
 public:
   using value_type = T;
-  using iterator = T*;
 
   constexpr optional() noexcept = default;
   constexpr optional(nullopt_t) noexcept : optional() {}
@@ -550,7 +572,7 @@ public:
   constexpr auto begin() const noexcept
     requires is_object_v<T> && (!is_unbounded_array_v<T>)
   {
-    return iterator(val_);
+    return static_cast<T*>(val_);
   }
   constexpr auto end() const noexcept
     requires is_object_v<T> && (!is_unbounded_array_v<T>)
@@ -792,7 +814,9 @@ template <class T>
 constexpr void swap(optional<T>& x, optional<T>& y) noexcept(noexcept(x.swap(y))) {
   x.swap(y);
 }
-template <class T>
+// [optional.specalg]/3: not viable when called with an explicit template argument list beginning
+// with a type; such an argument cannot match the leading int&... pack.
+template <int&..., class T>
 constexpr optional<decay_t<T>> make_optional(T&& v) {
   return optional<decay_t<T>>(static_cast<T&&>(v));
 }

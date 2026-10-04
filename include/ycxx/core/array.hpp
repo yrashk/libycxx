@@ -51,6 +51,7 @@ struct array {
       data()[i] = u;
   }
   constexpr void swap(array& a) noexcept(N == 0 || is_nothrow_swappable_v<T>) {
+    // Not redundant: for N == 0, T need not be swappable, and the loop body must not be instantiated.
     if constexpr (N != 0)
       for (size_t i = 0; i < N; ++i)
         ycxx::detail::swap_adl::do_swap(data()[i], a.data()[i]);
@@ -151,14 +152,14 @@ constexpr void swap(array<T, N>& x, array<T, N>& y) noexcept(noexcept(x.swap(y))
 template <class T, size_t N>
 constexpr array<remove_cv_t<T>, N> to_array(T (&a)[N]) {
   static_assert(!is_array_v<T>, "std::to_array: multidimensional arrays are not supported");
-  static_assert(is_constructible_v<T, T&>, "std::to_array: T must be copy constructible");
+  static_assert(is_constructible_v<remove_cv_t<T>, T&>, "std::to_array: T must be copy constructible");
   return [&]<size_t... I>(index_sequence<I...>) { return array<remove_cv_t<T>, N>{{a[I]...}}; }(
       make_index_sequence<N>{});
 }
 template <class T, size_t N>
 constexpr array<remove_cv_t<T>, N> to_array(T (&&a)[N]) {
   static_assert(!is_array_v<T>, "std::to_array: multidimensional arrays are not supported");
-  static_assert(is_move_constructible_v<T>, "std::to_array: T must be move constructible");
+  static_assert(is_constructible_v<remove_cv_t<T>, T>, "std::to_array: T must be move constructible");
   return [&]<size_t... I>(index_sequence<I...>) {
     return array<remove_cv_t<T>, N>{{static_cast<T&&>(a[I])...}};
   }(make_index_sequence<N>{});

@@ -55,3 +55,5 @@ Deprecated and removed features are not implemented (`is_pod`, `is_trivial`, `al
 - Phase 2 remaining: variant, expected, any, function family (function, move_only_function,
   copyable_function, function_ref, bind, mem_fn, not_fn), span, string_view, bitset.
 - Then Phase 3 (containers, algorithms), Phase 4 (ranges, charconv, format, ...).
+- Constexpr exceptions (P3068): `std::exception` and the standard exception classes, including
+  `bad_optional_access::what()`, are not yet `constexpr` as the draft requires; to be done library-wide.

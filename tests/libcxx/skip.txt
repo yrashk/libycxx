@@ -11,11 +11,11 @@ utilities/meta/meta.trans/meta.trans.other/result_of.*\.pass\.cpp | removed | st
 utilities/meta/meta.rel/is_invocable_r(_v)?\.compile\.pass\.cpp | divergence | expects is_invocable_r<const int&, int()> true; the draft ([func.require]/2, P2255) makes INVOKE<R> ill-formed when a reference binds to a temporary
 language.support/cmp/cmp.alg/strong_order_long_double\.verify\.cpp | extension | checks a libc++ limitation (strong_order on long double unimplemented); libycxx implements it
 language.support/cmp/cmp.concept/three_way_comparable_with\.compile\.pass\.cpp | divergence | expects Clang's buggy answer for NonMovableIntComparable on Clang (llvm.org/PR171438); [cmp.concept] gives false, which libycxx returns on both compilers
-utilities/tuple/tuple.tuple/tuple.helper/tuple\.include\.utility\.pass\.cpp | deprecated | tests tuple_size<volatile T> / tuple_size<const volatile T> (Annex D, [depr.tuple])
-utilities/tuple/tuple.tuple/tuple.helper/tuple_size\.pass\.cpp | deprecated | tests tuple_size<volatile T> (Annex D, [depr.tuple])
-utilities/utility/pairs/pair.astuple/tuple_size\.pass\.cpp | deprecated | tests tuple_size<volatile pair> (Annex D, [depr.tuple])
-utilities/tuple/tuple.tuple/tuple.helper/tuple\.include\.array\.pass\.cpp | deprecated | tests tuple_element<I, volatile T> (Annex D, [depr.tuple])
-utilities/tuple/tuple.tuple/tuple.helper/tuple_element\.pass\.cpp | deprecated | tests tuple_element<I, volatile T> (Annex D, [depr.tuple])
+utilities/tuple/tuple.tuple/tuple.helper/tuple\.include\.utility\.pass\.cpp | deprecated | tests tuple_size<volatile T> / tuple_size<const volatile T> (Annex D, [depr.tuple]) -- deliberately not implemented: deprecated (Annex D) features are excluded by project rule (DECISIONS.md)
+utilities/tuple/tuple.tuple/tuple.helper/tuple_size\.pass\.cpp | deprecated | tests tuple_size<volatile T> (Annex D, [depr.tuple]) -- deliberately not implemented: deprecated (Annex D) features are excluded by project rule (DECISIONS.md)
+utilities/utility/pairs/pair.astuple/tuple_size\.pass\.cpp | deprecated | tests tuple_size<volatile pair> (Annex D, [depr.tuple]) -- deliberately not implemented: deprecated (Annex D) features are excluded by project rule (DECISIONS.md)
+utilities/tuple/tuple.tuple/tuple.helper/tuple\.include\.array\.pass\.cpp | deprecated | tests tuple_element<I, volatile T> (Annex D, [depr.tuple]) -- deliberately not implemented: deprecated (Annex D) features are excluded by project rule (DECISIONS.md)
+utilities/tuple/tuple.tuple/tuple.helper/tuple_element\.pass\.cpp | deprecated | tests tuple_element<I, volatile T> (Annex D, [depr.tuple]) -- deliberately not implemented: deprecated (Annex D) features are excluded by project rule (DECISIONS.md)
 containers/sequences/array/array\.swap/swap\.verify\.cpp | divergence | expects array<const T, 0>::swap to be ill-formed; [array.members]/4 and [array.zero] only specify swap_ranges semantics and a non-throwing exception specification
 utilities/tuple/tuple.tuple/tuple.helper/tuple_size_incomplete\.pass\.cpp | deprecated | checks tuple_size<volatile tuple<...>> completeness (Annex D, [depr.tuple])
 utilities/tuple/tuple.tuple/tuple.helper/tuple_size_value_sfinae\.pass\.cpp | deprecated | checks tuple_size<volatile pair> (Annex D, [depr.tuple])

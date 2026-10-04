@@ -51,6 +51,7 @@
 // <array>
 #define __cpp_lib_array_constexpr 201811L
 #define __cpp_lib_to_array 201907L
+#define __cpp_lib_freestanding_array 202311L
 
 // <optional>
 #define __cpp_lib_optional 202506L

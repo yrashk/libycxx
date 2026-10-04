@@ -298,8 +298,8 @@ Deprecated and removed features are not implemented (`is_pod`, `is_trivial`, `al
   draft, constexpr where specified. The std:: ExecutionPolicy overloads run sequentially and
   are noexcept (an escaping exception calls terminate); so are the ranges:: ExecutionPolicy
   overloads (P3179, `algo_ranges_parallel.hpp`: each algorithm object's type adds them to the
-  sequential niebloid). `__cpp_lib_parallel_algorithm` stays undefined until the ranges::
-  uninitialized_* policy overloads of `<memory>` exist. Not provided: the
+  sequential niebloid), including the ranges:: uninitialized_*/destroy ones of `<memory>`;
+  `__cpp_lib_parallel_algorithm` is 202506L. Not provided: the
   senders/receivers part of `<execution>`, `boyer_moore(_horspool)_searcher` (need hashing
   containers), `__cpp_lib_interpolate` (needs `std::lerp` in `<cmath>`).
 - stable_sort / stable_partition / inplace_merge take their buffer from `operator new(nothrow)`

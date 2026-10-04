@@ -333,6 +333,13 @@ template <class T>
 concept not_a_const_iterator = !is_basic_const_iterator<T>;
 template <class T, class U>
 concept different_from = !std::same_as<std::remove_cvref_t<T>, std::remove_cvref_t<U>>;
+// `it < i` alone, a part of totally_ordered_with<Iter, I> tested first by basic_const_iterator's
+// comparisons with another type I. Found by argument-dependent lookup for an adaptor over a
+// basic_const_iterator (reverse_iterator<basic_const_iterator<It>>), those operators would
+// otherwise ask whether I is totally ordered while I's own comparison is being resolved
+// (libstdc++ PR 112490); this test fails first, without asking about I < I.
+template <class Iter, class I>
+concept const_iter_less_with = requires(const Iter& it, const I& i) { it < i; };
 } // namespace ycxx::detail
 
 namespace std {
@@ -462,55 +469,64 @@ public:
 
   template <ycxx::detail::different_from<basic_const_iterator> I>
   constexpr bool operator<(const I& y) const
-    requires random_access_iterator<Iter> && totally_ordered_with<Iter, I>
+    requires random_access_iterator<Iter> && ycxx::detail::const_iter_less_with<Iter, I> &&
+             totally_ordered_with<Iter, I>
   {
     return current_ < y;
   }
   template <ycxx::detail::different_from<basic_const_iterator> I>
   constexpr bool operator>(const I& y) const
-    requires random_access_iterator<Iter> && totally_ordered_with<Iter, I>
+    requires random_access_iterator<Iter> && ycxx::detail::const_iter_less_with<Iter, I> &&
+             totally_ordered_with<Iter, I>
   {
     return current_ > y;
   }
   template <ycxx::detail::different_from<basic_const_iterator> I>
   constexpr bool operator<=(const I& y) const
-    requires random_access_iterator<Iter> && totally_ordered_with<Iter, I>
+    requires random_access_iterator<Iter> && ycxx::detail::const_iter_less_with<Iter, I> &&
+             totally_ordered_with<Iter, I>
   {
     return current_ <= y;
   }
   template <ycxx::detail::different_from<basic_const_iterator> I>
   constexpr bool operator>=(const I& y) const
-    requires random_access_iterator<Iter> && totally_ordered_with<Iter, I>
+    requires random_access_iterator<Iter> && ycxx::detail::const_iter_less_with<Iter, I> &&
+             totally_ordered_with<Iter, I>
   {
     return current_ >= y;
   }
   template <ycxx::detail::different_from<basic_const_iterator> I>
   constexpr auto operator<=>(const I& y) const
-    requires random_access_iterator<Iter> && totally_ordered_with<Iter, I> && three_way_comparable_with<Iter, I>
+    requires random_access_iterator<Iter> && ycxx::detail::const_iter_less_with<Iter, I> &&
+             totally_ordered_with<Iter, I> && three_way_comparable_with<Iter, I>
   {
     return current_ <=> y;
   }
   template <ycxx::detail::not_a_const_iterator I>
   friend constexpr bool operator<(const I& x, const basic_const_iterator& y)
-    requires random_access_iterator<Iter> && totally_ordered_with<Iter, I>
+    requires random_access_iterator<Iter> && ycxx::detail::const_iter_less_with<Iter, I> &&
+             totally_ordered_with<Iter, I>
   {
     return x < y.current_;
   }
   template <ycxx::detail::not_a_const_iterator I>
   friend constexpr bool operator>(const I& x, const basic_const_iterator& y)
-    requires random_access_iterator<Iter> && totally_ordered_with<Iter, I>
+    requires random_access_iterator<Iter> && ycxx::detail::const_iter_less_with<Iter, I> &&
+             totally_ordered_with<Iter, I>
   {
     return x > y.current_;
   }
   template <ycxx::detail::not_a_const_iterator I>
   friend constexpr bool operator<=(const I& x, const basic_const_iterator& y)
-    requires random_access_iterator<Iter> && totally_ordered_with<Iter, I>
+    requires random_access_iterator<Iter> && ycxx::detail::const_iter_less_with<Iter, I> &&
+             totally_ordered_with<Iter, I>
   {
     return x <= y.current_;
   }
   template <ycxx::detail::not_a_const_iterator I>
   friend constexpr bool operator>=(const I& x, const basic_const_iterator& y)
-    requires random_access_iterator<Iter> && totally_ordered_with<Iter, I>
+    requires random_access_iterator<Iter> && ycxx::detail::const_iter_less_with<Iter, I> &&
+             totally_ordered_with<Iter, I>
   {
     return x >= y.current_;
   }

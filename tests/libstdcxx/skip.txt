@@ -1,7 +1,7 @@
 # libstdc++ testsuite tests libycxx deliberately does not run.
 # Format:  <path regex> | <category> | <reason>   (see tests/SKIPPED.md)
 # Content rules: "content:<regex>" matches the test source instead of the path.
-content:std::__[a-zA-Z] | extension | uses libstdc++ internal names (std::__*)
+content:std::(__[a-zA-Z]|_(?!Exit\b)[A-Z]) | extension | uses libstdc++ internal names (std::__*, std::_Upper* other than the standard std::_Exit)
 content:scan-tree-dump | compiler-internals | checks GCC tree dumps (-fdump-tree-*), not library behaviour
 20_util/variant/hash_abi\.cc | implementation-specific | asserts libstdc++'s sizeof(std::hash<variant>) layout
 20_util/variant/hash\.cc | implementation-specific | asserts hash<variant<int>> equals hash<int> for the same value; unspecified
@@ -12,3 +12,5 @@ content:scan-tree-dump | compiler-internals | checks GCC tree dumps (-fdump-tree
 21_strings/basic_string_view/requirements/explicit_instantiation/int\.cc | extension | instantiates libstdc++'s generic char_traits primary template; [char.traits] defines only the five specializations
 21_strings/basic_string_view/requirements/version\.cc | implementation-specific | #undefs reserved feature macros and expects a re-include to redefine them
 21_strings/char_traits/requirements/version\.cc | divergence | requires __cpp_lib_constexpr_char_traits, which the current draft [version.syn] no longer defines
+20_util/bitset/version\.cc | divergence | requires __cpp_lib_constexpr_bitset == 202202L; the current draft [version.syn] has 202207L
+20_util/bitset/cons/constexpr_c\+\+23\.cc | divergence | requires __cpp_lib_constexpr_bitset == 202202L; the current draft [version.syn] has 202207L

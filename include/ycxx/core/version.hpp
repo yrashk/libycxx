@@ -81,6 +81,10 @@
 #define __cpp_lib_string_contains 202011L
 #define __cpp_lib_string_subview 202506L
 
+// <bitset>
+#define __cpp_lib_bitset 202306L
+#define __cpp_lib_constexpr_bitset 202207L
+
 // <bit>
 #define __cpp_lib_bit_cast 201806L
 #define __cpp_lib_bitops 202607L
@@ -126,6 +130,7 @@
 #if YCXX_HARDENED
 #  define __cpp_lib_hardened_array 202502L
 #  define __cpp_lib_hardened_basic_string_view 202502L
+#  define __cpp_lib_hardened_bitset 202502L
 #  define __cpp_lib_hardened_expected 202502L
 #  define __cpp_lib_hardened_optional 202502L
 #  define __cpp_lib_hardened_span 202502L

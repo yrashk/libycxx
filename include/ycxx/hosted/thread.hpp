@@ -28,7 +28,7 @@ namespace ycxx::detail {
 // The hosted runtime (src/hosted/thread.cpp): starts a thread running run(arg) after naming it
 // (name, not necessarily null-terminated, is copied first; null for none). Throws system_error
 // if no thread can be started.
-ycxx_pal_handle thread_start(void (*run)(void*) noexcept, void* arg, std::size_t stack_size, const char* name,
+ycxx_pal_handle thread_start(void (*run)(void*), void* arg, std::size_t stack_size, const char* name,
                              std::size_t name_size);
 
 struct thread_access;
@@ -41,12 +41,28 @@ struct thread_state {
   template <class... U>
   explicit thread_state(U&&... u) : values(static_cast<U&&>(u)...) {}
 
-  static void run(void* p) noexcept {
-    thread_state* s = static_cast<thread_state*>(p);
-    [s]<std::size_t... I>(std::index_sequence<I...>) {
+  // [thread.thread.constr]/6: an exception from the invocation calls terminate. A foreign
+  // exception (the forced unwind of pthread_exit or thread cancellation) passes through, so
+  // that the thread ends as the platform intends; the state is destroyed either way.
+  static void run(void* p) {
+    struct owner {
+      thread_state* s;
+      ~owner() { delete s; }
+    } o{static_cast<thread_state*>(p)};
+    auto body = [s = o.s]<std::size_t... I>(std::index_sequence<I...>) {
       ::ycxx::detail::invoke(static_cast<T&&>(std::get<I>(s->values))...);
-    }(std::index_sequence_for<T...>{});
-    delete s;
+    };
+    if constexpr (cfg::exceptions) {
+      try {
+        body(std::index_sequence_for<T...>{});
+      } catch (...) {
+        if (::ycxx::detail::handling_foreign_exception())
+          throw;
+        std::terminate();
+      }
+    } else {
+      body(std::index_sequence_for<T...>{});
+    }
   }
 };
 

@@ -1,5 +1,6 @@
 // libycxx hosted runtime: the out-of-line parts of the thread support library ([thread]).
 #include <system_error>
+#include <typeinfo>
 #include <ycxx/core/atomic_base.hpp>
 #include <ycxx/hosted/thread_support.hpp>
 #include <ycxx/hosted/condition_variable.hpp>
@@ -10,7 +11,7 @@ namespace {
 
 // What the trampoline of a new thread needs; the name is copied (null-terminated) behind it.
 struct start_record {
-  void (*run)(void*) noexcept;
+  void (*run)(void*);
   void* arg;
   bool named;
   char name[1];
@@ -20,7 +21,7 @@ void* trampoline(void* p) {
   start_record* r = static_cast<start_record*>(p);
   if (r->named)
     ::ycxx_pal_thread_set_name(r->name);
-  void (*run)(void*) noexcept = r->run;
+  void (*run)(void*) = r->run;
   void* arg = r->arg;
   ::operator delete(r);
   run(arg);
@@ -29,13 +30,20 @@ void* trampoline(void* p) {
 
 } // namespace
 
+// The C++ ABI runtime: the type of the exception being handled, null for a foreign one.
+namespace __cxxabiv1 {
+extern "C" std::type_info* __cxa_current_exception_type() noexcept;
+}
+
 namespace ycxx::detail {
+
+bool handling_foreign_exception() noexcept { return __cxxabiv1::__cxa_current_exception_type() == nullptr; }
 
 [[noreturn]] void throw_system_error(int ev, const char* what) {
   throw std::system_error(std::error_code(ev, std::generic_category()), what);
 }
 
-ycxx_pal_handle thread_start(void (*run)(void*) noexcept, void* arg, std::size_t stack_size, const char* name,
+ycxx_pal_handle thread_start(void (*run)(void*), void* arg, std::size_t stack_size, const char* name,
                              std::size_t name_size) {
   start_record* r = static_cast<start_record*>(::operator new(sizeof(start_record) + name_size));
   r->run = run;

@@ -4,9 +4,11 @@
 // the mutex, registers (waiters_) and reads the sequence, unlocks, and blocks while the sequence
 // is unchanged; a notification bumps the sequence and wakes when there are registered waiters
 // (both sides use seq_cst operations, so either the notifier sees the waiter or the waiter's futex
-// wait sees the new sequence). A waiter deregisters only after it holds the mutex again, and the
-// destructor waits for the count to drop to zero: [thread.condition.condvar] allows destroying a
-// condition variable once every waiter is notified, while they are still returning from wait.
+// wait sees the new sequence). A waiter deregisters as soon as its futex wait returns, before it
+// locks the mutex again, and the destructor waits for the count to drop to zero:
+// [thread.condition.condvar] allows destroying a condition variable once every waiter is
+// notified, while they are still returning from wait (possibly while the destroying thread
+// holds the mutex they need).
 //
 // condition_variable_any adds its own futex mutex around the user's lock, and a second count so
 // that its destructor also waits for waiters to finish with that mutex.
@@ -58,8 +60,8 @@ public:
     const ycxx_pal_u32 s = enter();
     m.unlock();
     ::ycxx_pal_wait(&seq_, s);
+    leave(); // the last access to *this
     m.lock();
-    leave();
   }
   // As wait, but returns by the deadline: false if it returned because the deadline passed.
   template <class M>
@@ -67,8 +69,8 @@ public:
     const ycxx_pal_u32 s = enter();
     m.unlock();
     const int r = ::ycxx_pal_wait_until(&seq_, s, d.clock, d.sec, d.nsec);
+    leave(); // the last access to *this
     m.lock();
-    leave();
     return r == 0;
   }
 };

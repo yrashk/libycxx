@@ -108,9 +108,14 @@ inline constexpr bool atomic_lock_free = [] {
     return false;
 }();
 
-// The alignment atomic<V> gives its object and atomic_ref<V> requires.
+// The alignment atomic_ref<V> requires: a lock-free V is accessed as its representation type.
 template <class V>
 inline constexpr std::size_t atomic_align = atomic_lock_free<V> && sizeof(V) > alignof(V) ? sizeof(V) : alignof(V);
+// The alignment of atomic<V>'s object: its size whenever that is a representation size, also
+// when the type is not lock-free with the current options (for instance a 16-byte type without
+// -mcx16), so the layout of atomic<V> does not depend on them.
+template <class V>
+inline constexpr std::size_t atomic_object_align = atomic_has_rep<V> && sizeof(V) > alignof(V) ? sizeof(V) : alignof(V);
 
 template <class V>
 inline constexpr bool atomic_padded = !__has_unique_object_representations(V);

@@ -52,7 +52,7 @@ namespace ycxx::adl_free {
 // The storage and the operations every atomic<T> has.
 template <class T>
 struct atomic_base {
-  alignas(::ycxx::detail::atomic_align<T>) T v_;
+  alignas(::ycxx::detail::atomic_object_align<T>) T v_;
 
   constexpr atomic_base() noexcept(std::is_nothrow_default_constructible_v<T>) : v_() { clear(); }
   constexpr atomic_base(T desired) noexcept : v_(desired) { clear(); }

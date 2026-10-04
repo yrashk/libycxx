@@ -88,7 +88,9 @@ namespace ycxx::detail {
 // ---- shared states ------------------------------------------------------------------------------
 class future_state_base {
 protected:
-  enum class status : unsigned char { empty, stored, ready };
+  // storing: a value is being constructed (without m_ held, so that R's constructor may use
+  // the state's future); stored: the result waits for its thread's exit.
+  enum class status : unsigned char { empty, storing, stored, ready };
 
   std::mutex m_;
   std::condition_variable cv_;
@@ -216,12 +218,27 @@ public:
       value_.~R();
   }
 
+  // The value is constructed with m_ released (its constructor may wait on this state, for a
+  // timeout); the state is claimed first, so a concurrent set_* still fails.
   template <class... A>
   void set_value(bool at_thread_exit, A&&... a) {
     std::unique_lock<std::mutex> lk(m_);
     if (status_ != status::empty)
       ::ycxx::detail::throw_future_error(std::future_errc::promise_already_satisfied);
+    status_ = status::storing;
+    lk.unlock();
+    struct unclaim {
+      future_state* s;
+      ~unclaim() {
+        if (s) {
+          std::lock_guard<std::mutex> g(s->m_);
+          s->status_ = status::empty;
+        }
+      }
+    } u{this};
     ::new (static_cast<void*>(__builtin_addressof(value_))) R(static_cast<A&&>(a)...);
+    u.s = nullptr;
+    lk.lock();
     has_value_ = true;
     publish(lk, at_thread_exit);
   }
@@ -272,6 +289,12 @@ void future_set_from(future_state<R>& s, bool at_thread_exit, F&& f) {
     try {
       store();
     } catch (...) {
+      if (::ycxx::detail::handling_foreign_exception()) {
+        // A forced unwind (pthread_exit, cancellation) ends the thread: the result will never
+        // come ([futures.state]/7), and the unwind goes on.
+        s.set_exception(std::make_exception_ptr(std::future_error(std::future_errc::broken_promise)), at_thread_exit);
+        throw;
+      }
       s.set_exception(std::current_exception(), at_thread_exit);
     }
   } else {
@@ -315,6 +338,17 @@ public:
 // ---- packaged_task states -----------------------------------------------------------------------
 template <class R, class... ArgTypes>
 class task_state : public future_state<R> {
+  bool invoked_ = false; // guarded by m_
+
+protected:
+  // [futures.task.members]/23: a second invocation throws before the task runs again.
+  void begin() {
+    std::lock_guard<std::mutex> g(this->m_);
+    if (invoked_)
+      ::ycxx::detail::throw_future_error(std::future_errc::promise_already_satisfied);
+    invoked_ = true;
+  }
+
 public:
   virtual void run(bool at_thread_exit, ArgTypes&&... args) = 0;
   // A new state (from the same allocator) holding this state's task, moved.
@@ -349,6 +383,7 @@ public:
     return p;
   }
   void run(bool at_thread_exit, ArgTypes&&... args) override {
+    this->begin();
     ::ycxx::detail::future_set_from(*this, at_thread_exit, [&]() -> R {
       return ::ycxx::detail::invoke_r<R>(f_, static_cast<ArgTypes&&>(args)...);
     });

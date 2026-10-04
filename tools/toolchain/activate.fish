@@ -27,7 +27,7 @@ if test -f $_ycxx_conf
     # A second activation first undoes the first.
     functions -q ycxx-unload; and ycxx-unload
 
-    set -g _ycxx_saved_vars PATH YCXX_ROOT YCXX_GCC_BIN YCXX_GCC YCXX_GXX YCXX_GCC_INSTALL_DIR \
+    set -g _ycxx_saved_vars PATH SDKROOT YCXX_SDKROOT YCXX_ROOT YCXX_GCC_BIN YCXX_GCC YCXX_GXX YCXX_GCC_INSTALL_DIR \
         YCXX_CLANG_BIN YCXX_CLANG YCXX_CLANGXX YCXX_LLD YCXX_LLVM_AR
     for v in $_ycxx_saved_vars
         if set -q $v
@@ -42,6 +42,10 @@ if test -f $_ycxx_conf
         set -gx $kv[1] $kv[2]
     end
     set -gx YCXX_ROOT $_ycxx_root
+    # macOS: compilers not from Apple find the SDK through SDKROOT.
+    if test -n "$YCXX_SDKROOT"; and not set -q SDKROOT
+        set -gx SDKROOT $YCXX_SDKROOT
+    end
     set -l prepend $_ycxx_root/tools
     test -n "$YCXX_CLANG_BIN"; and set prepend $YCXX_CLANG_BIN $prepend
     test -n "$YCXX_GCC_BIN"; and set prepend $YCXX_GCC_BIN $prepend

@@ -6,20 +6,31 @@
 here=$(cd "$(dirname "$0")/.." && pwd)
 which=$1; shift
 # Compilers: $YCXX_GXX / $YCXX_CLANGXX (set by tools/toolchain/activate.*), else g++-16 / clang++-23.
-# Clang uses GCC 16's installation for the C runtime startup files and libgcc.
 gxx=${YCXX_GXX:-g++-16}
-gcc_install_dir=${YCXX_GCC_INSTALL_DIR:-$(dirname "$($gxx -print-libgcc-file-name)")}
 case $which in
-  gcc)   cxx=$gxx; extra="" ;;
-  clang) cxx=${YCXX_CLANGXX:-clang++-23}; extra="--gcc-install-dir=$gcc_install_dir" ;;
+  gcc)   cxx=$gxx ;;
+  clang) cxx=${YCXX_CLANGXX:-clang++-23} ;;
   *) echo "usage: ycxx-cxx gcc|clang args..." >&2; exit 2 ;;
 esac
+extra=
+if [ "$(uname -s)" = Darwin ]; then
+  # Apple's linker searches archives repeatedly by itself, and the C runtime comes from the SDK.
+  group_begin= group_end= static_libgcc=
+  [ $which = gcc ] && static_libgcc=-static-libgcc
+else
+  group_begin=-Wl,--start-group group_end=-Wl,--end-group static_libgcc=-static-libgcc
+  # Clang uses GCC 16's installation for the C runtime startup files and libgcc.
+  if [ $which = clang ]; then
+    gcc_install_dir=${YCXX_GCC_INSTALL_DIR:-$(dirname "$($gxx -print-libgcc-file-name)")}
+    extra="--gcc-install-dir=$gcc_install_dir"
+  fi
+fi
 abi="$here/build/$which/libycxx-abi.a"
 link=1
 for a in "$@"; do case $a in -c|-S|-E|-fsyntax-only|-M|-MM) link=0 ;; esac; done
 if [ $link = 1 ]; then
   exec $cxx $extra -std=c++26 -nostdinc++ -isystem "$here/include" "$@" \
-    -nostdlib++ -Wl,--start-group "$here/build/$which/libycxx.a" "$abi" -Wl,--end-group -static-libgcc
+    -nostdlib++ $group_begin "$here/build/$which/libycxx.a" "$abi" $group_end $static_libgcc
 else
   exec $cxx $extra -std=c++26 -nostdinc++ -isystem "$here/include" "$@"
 fi

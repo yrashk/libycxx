@@ -90,6 +90,7 @@ void ycxx_pal_wait(const ycxx_pal_u32* addr, ycxx_pal_u32 expected) {
 #if defined(__linux__)
   syscall(SYS_futex, addr, FUTEX_WAIT_PRIVATE, expected, NULL, NULL, 0);
 #else
+  /* No portable futex (macOS's address wait is private API or macOS 14.4+): poll briefly. */
   if (__atomic_load_n(addr, __ATOMIC_ACQUIRE) == expected) {
     struct timespec ts = {0, 50000};
     nanosleep(&ts, NULL);
@@ -105,6 +106,16 @@ void ycxx_pal_wake_all(const ycxx_pal_u32* addr) {
 #endif
 }
 
+#if defined(__APPLE__)
+/* libSystem's registration function for thread_local destructors. */
+extern void _tlv_atexit(void (*)(void*), void*);
+
+int ycxx_pal_thread_atexit(void (*f)(void*), void* obj, void* dso) {
+  (void)dso;
+  _tlv_atexit(f, obj);
+  return 0;
+}
+#else
 /* glibc's registration function for thread_local destructors; other C libraries may lack it. */
 extern int __cxa_thread_atexit_impl(void (*)(void*), void*, void*) __attribute__((weak));
 
@@ -113,3 +124,4 @@ int ycxx_pal_thread_atexit(void (*f)(void*), void* obj, void* dso) {
     return __cxa_thread_atexit_impl(f, obj, dso);
   return -1;
 }
+#endif

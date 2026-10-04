@@ -5,7 +5,11 @@
 #   3. examples/add_subdirectory: libycxx built as part of the project, build, run;
 #   4. both programs must print "libycxx example: ok" and must not use the toolchain's C++
 #      library (no libstdc++/libc++ in NEEDED, no libstdc++ symbol versions);
-#   5. find_package must reject an unsupported compiler with a clear message.
+#   5. find_package must reject an unsupported compiler with a clear message;
+#   6. cmake/ycxx-toolchain.cmake: picks GCC and Clang by itself (with a scratch toolchain cache,
+#      which it must fill in toolchains.env), and fails with a clear message when the requested
+#      version is unavailable and YCXX_PROVISION is off. With YCXX_TEST_PROVISION=1 it also
+#      downloads Clang into a scratch cache (about 2 GB).
 #
 #   tests/cmake/run.sh [gcc] [clang]        (default: both)
 # Compilers come from the YCXX_* variables (tools/toolchain/activate.*), else g++-16 /
@@ -84,5 +88,49 @@ for c in $compilers; do
   fi
   break
 done
+
+# 6. the toolchain file
+for c in $compilers; do
+  cache=$work/toolchain-cache-$c
+  rm -rf "$cache" "$work/tc-$c"
+  if YCXX_TOOLCHAINS=$cache cmake -S "$repo/examples/add_subdirectory" -B "$work/tc-$c" -G Ninja \
+       -DCMAKE_TOOLCHAIN_FILE="$repo/cmake/ycxx-toolchain.cmake" -DYCXX_COMPILER=$c \
+       -DLIBYCXX_SOURCE_DIR="$repo" >"$work/tc-$c.log" 2>&1 &&
+     cmake --build "$work/tc-$c" >>"$work/tc-$c.log" 2>&1 &&
+     [ "$("$work/tc-$c/demo")" = "libycxx example: ok" ]; then
+    ok $c "toolchain file: compiler found, example built and run"
+  else
+    bad $c "toolchain file (see $work/tc-$c.log)"
+  fi
+  key=YCXX_GXX; [ $c = clang ] && key=YCXX_CLANGXX
+  if grep -q "^$key=/" "$cache/toolchains.env" 2>/dev/null; then ok $c "toolchain file: cache written"
+  else bad $c "toolchain file: $key missing from $cache/toolchains.env"; fi
+done
+rm -rf "$work/tc-missing"
+if YCXX_TOOLCHAINS=$work/toolchain-cache-missing cmake -S "$repo/examples/add_subdirectory" -B "$work/tc-missing" \
+     -G Ninja -DCMAKE_TOOLCHAIN_FILE="$repo/cmake/ycxx-toolchain.cmake" -DYCXX_COMPILER=gcc \
+     -DYCXX_GCC_VERSION=99.1.0 >"$work/tc-missing.log" 2>&1; then
+  bad toolchain "accepted a missing GCC 99.1"
+elif grep -q "Configure with -DYCXX_PROVISION=ON" "$work/tc-missing.log"; then
+  ok toolchain "missing version without YCXX_PROVISION fails clearly"
+else
+  bad toolchain "missing version failed without the expected message (see $work/tc-missing.log)"
+fi
+if [ "${YCXX_TEST_PROVISION:-0}" = 1 ]; then
+  cache=$work/toolchain-cache-download
+  rm -rf "$cache" "$work/tc-download"
+  if YCXX_TOOLCHAINS=$cache cmake -S "$repo/examples/add_subdirectory" -B "$work/tc-download" -G Ninja \
+       -DCMAKE_TOOLCHAIN_FILE="$repo/cmake/ycxx-toolchain.cmake" -DYCXX_COMPILER=clang \
+       -DYCXX_LLVM_VERSION=${YCXX_TEST_LLVM_VERSION:-23.1.2} -DYCXX_PROVISION=ON \
+       -DLIBYCXX_SOURCE_DIR="$repo" >"$work/tc-download.log" 2>&1 &&
+     grep -q "^YCXX_CLANGXX=$cache/llvm-" "$cache/toolchains.env" &&
+     cmake --build "$work/tc-download" >>"$work/tc-download.log" 2>&1 &&
+     [ "$("$work/tc-download/demo")" = "libycxx example: ok" ]; then
+    ok toolchain "YCXX_PROVISION=ON downloaded Clang into the cache and built the example"
+  else
+    bad toolchain "provisioning download (see $work/tc-download.log)"
+  fi
+  rm -rf "$cache"
+fi
 
 exit $fail

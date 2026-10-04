@@ -1,0 +1,7 @@
+// -*- C++ -*-  libycxx: <syncstream>   [hosted]
+#pragma once
+
+#include <ycxx/config.hpp>
+#include <ycxx/core/version.hpp>
+#include <ostream>
+#include <ycxx/hosted/syncstream.hpp>

@@ -35,3 +35,12 @@ std/ranges/conv/version\.cc | implementation-specific | #undefs a reserved featu
 std/ranges/adaptors/detail/copyable_box\.cc | extension | tests libstdc++'s internal std::ranges::__detail::__box
 std/ranges/repeat/1\.cc | extension | uses libstdc++'s internal views::__detail names
 std/ranges/indices/1\.cc | implementation-specific | expects views::indices to reject IOTA-DIFF-T(long long); libycxx uses __int128 there, which is integer-like and indices accepts
+29_atomics/atomic/lwg3220\.cc | removed | std::atomic_store for shared_ptr; the atomic_* free functions for shared_ptr were removed in C++26 (P2869)
+29_atomics/atomic_integral/wait_notify\.cc | extension | names ::int8_t etc. after including only <atomic>
+30_threads/recursive_timed_mutex/try_lock_for/2\.cc | extension | names ::int64_t after including only <mutex>/<chrono>
+30_threads/barrier/(1|2)\.cc | divergence | requires __cpp_lib_barrier == 201907L; the current draft [version.syn] has 202302L
+30_threads/jthread/100612\.cc | extension | expects jthread(&X::f, &x) to pass the stop_token after the object; [thread.jthread.cons]/5 mandates invoke(f, get_stop_token(), args...) or invoke(f, args...)
+30_threads/promise/uses_allocator\.cc | removed | uses_allocator<promise<R>, Alloc> is not in the current draft ([futures.promise])
+30_threads/async/except\.cc | implementation-specific | expects async(launch::async | launch::deferred) to fall back to deferred when the decay-copy of the function throws system_error; [futures.async]/4 evaluates the decay-copies in the calling thread, so their exception propagates
+30_threads/(mutex|recursive_mutex|condition_variable)/(native_handle/1|requirements/typedefs)\.cc | implementation-specific | expects native_handle_type/native_handle(); their presence is implementation-defined ([thread.req.native])
+30_threads/condition_variable/members/103382\.cc | extension | calls pthread_cancel through a declaration <condition_variable> does not provide

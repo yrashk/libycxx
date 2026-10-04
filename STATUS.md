@@ -108,7 +108,7 @@ need missing containers, `<initializer_list>` from `<memory_resource>`, libstdc+
 Iostreams and localization (Phase 4, hosted; DECISIONS §7): `<iosfwd>`, `<ios>`, `<streambuf>`,
 `<istream>`, `<ostream>`, `<iostream>`, `<sstream>`,
 `<spanstream>`, `<fstream>`, `<syncstream>`, `<iomanip>`, `<locale>` (all standard facets for char
-and wchar_t, the char8_t and deprecated char UTF-16/UTF-32 codecvts, the `_byname` facets for
+and wchar_t, the deprecated (Annex D) UTF-16/UTF-32 codecvts, the `_byname` facets for
 "C"/"POSIX"/"C.UTF-8"/""), the stream iterators, and the stream operators of `<string>`,
 `<string_view>`, `<bitset>`, `<memory>`, `<system_error>` and `<complex>`. Own suite ios, iostreams,
 sstream, fstream, spanstream, syncstream, iomanip, locale, complex, system_error, bitset, string,
@@ -163,7 +163,8 @@ hook; divergences listed in tests/libcxx/skip.txt); print.fun + ostream.formatte
 run (both; 4 skipped: they call `std::fwide` without `<cwchar>`). libc++ input.output +
 localization 668 -> 726/850 (GCC). libstdc++ std/format + 27_io/print 0 -> 24/29 run (GCC), 23/29
 (Clang: `-fexec-charset=ISO8859-1` unsupported); the rest need libstdc++ internals, `<span>`/
-`<cstdio>` transitively or `-fno-char8_t`; 4 are skipped as implementation-specific or deprecated.
+`<cstdio>` transitively or `-fno-char8_t`; some are skipped as implementation-specific (the
+`visit_format_arg` tests run since Annex D is provided).
 Header cost (GCC, `-fsyntax-only`): `<format>` 0.27 s, `<ostream>` 0.18 -> 0.26 s (its print
 overloads need the core of `<format>`).
 <regex> (hosted): regex_traits<char>/<wchar_t> (on the locale's ctype and collate facets),
@@ -187,7 +188,7 @@ scalar type) and `is_structural` (GCC) in `<type_traits>`. `__cpp_lib_reflection
 `__cpp_lib_define_static` and `__cpp_lib_is_structural` are defined only where they work; on Clang
 23 `<meta>` is empty. Own suite meta/: 2/2 (GCC), 2 XFAIL (Clang). libstdc++ 20_util reflection
 traits (is_reflection, is_structural, is_scalar/reflection, variable_templates_for_traits) 2 -> 6/7
-run on GCC (4 more need `testsuite_tr1.h`; the failure uses the deprecated `is_trivial_v`);
+run on GCC (4 more need `testsuite_tr1.h`; the failure uses the removed `is_literal_type_v`, now skipped);
 libc++ has no reflection tests.
 
 Time (DECISIONS §14): `<chrono>` in full: the calendar (all types, `/` operators, arithmetic,
@@ -266,8 +267,48 @@ a defect in a test.
   ambiguous ([over.match.list]).
 
 ## Deliberate omissions
-Deprecated and removed features are not implemented (`is_pod`, `is_trivial`, `aligned_storage`,
-`has_denorm`, `tuple_size<volatile T>`, ...). See `tests/SKIPPED.md`.
+Removed features are not implemented (`auto_ptr`, `result_of`, `is_literal_type`,
+`random_shuffle`, `<strstream>`, `<codecvt>`/`wstring_convert`, the `shared_ptr` atomic free
+functions, ...; `removed` in `tests/SKIPPED.md`).
+
+## Annex D (deprecated features)
+Every deprecated library feature the current draft still specifies (Annex D, [depr]) is provided,
+and every Annex D entity carries `[[deprecated("...")]]` with a short hint where the language
+allows the attribute (DECISIONS §6); own tests `depr/` check each one (`-Werror=deprecated-
+declarations`) and that the non-deprecated neighbours stay silent:
+[depr.numeric.limits.has.denorm] `float_denorm_style` and its enumerators, `has_denorm`,
+`has_denorm_loss`; [depr.cerrno] the `errc` enumerators `no_message_available`,
+`no_stream_resources`, `not_a_stream`, `stream_timeout`; [depr.meta.types] `is_trivial(_v)`,
+`is_pod(_v)`, `aligned_storage(_t)`, `aligned_union(_t)` (`type_traits_depr.hpp`); [depr.relops]
+`std::rel_ops`; [depr.tuple] and [depr.variant] `tuple_size`/`tuple_element`/`variant_size`/
+`variant_alternative` of `volatile` and `const volatile` T; [depr.vector.bool.swap] static
+`vector<bool>::swap(reference, reference)`; [depr.iterator] `std::iterator`; [depr.move.iter.elem]
+`move_iterator::operator->`; [depr.locale.category] `codecvt` and `codecvt_byname` for
+char16_t/char32_t with char/char8_t; [depr.format.arg] `visit_format_arg`; [depr.ctime]
+`asctime`/`ctime` (`<ctime>` redeclares the C library's functions with the attribute, so
+`::asctime` after `<ctime>` warns too, as in C23); [depr.fs.path.factory] `u8path`,
+[depr.fs.path.obs] `path::string()`/`generic_string()`; [depr.atomics] `memory_order::consume`,
+`memory_order_consume`, `kill_dependency`, `atomic_init`, and the volatile members of `atomic<T>`
+for a T that is not always lock-free (each is a separate, deprecated overload constrained on
+`!is_always_lock_free`; the lock-free ones are not deprecated; the volatile `store_key` members are
+constrained on `is_always_lock_free` as [atomics.types.int] requires). The volatile non-member
+functions ([atomics.nonmembers]: they call the member) are split the same way, so
+`atomic_load(volatile atomic<Big>*)` warns too; [depr.istream.extractors]/
+[depr.ostream.inserters] the `signed char`/`unsigned char` stream operators.
+Not marked, because the attribute cannot apply to a macro: `FLT_HAS_SUBNORM`, `DBL_HAS_SUBNORM`,
+`LDBL_HAS_SUBNORM`, `DECIMAL_DIG` ([depr.c.macros], `<cfloat>`), `INFINITY`/`NAN` from `<cmath>`,
+`__bool_true_false_are_defined` (the compiler's `<stdbool.h>`), `ENODATA`/`ENOSR`/`ENOSTR`/
+`ETIME` ([depr.cerrno], `<cerrno>`) and `ATOMIC_VAR_INIT` ([depr.atomics.types.operations]).
+Compiler gap: GCC 16.2 ignores `[[deprecated]]` on a class template partial specialization (Clang
+23.1 honours it). The `volatile` forms of `tuple_size`/`tuple_element`/`variant_size`/
+`variant_alternative` therefore also mark their `value`/`type` member: on GCC a direct
+`tuple_size<volatile T>::value` warns, but `tuple_size_v<volatile T>`/`tuple_element_t<I,
+volatile T>` (which name the member inside the library's system header) do not.
+libc++'s `*.deprecated.verify.cpp` tests check only warnings and are reported unsupported by the
+harness (`infrastructure`). Formerly skipped as `deprecated`, now run: libc++ 21 of 22 pass (both
+compilers; `visit_format_arg.pass.cpp` needs `EOF` from `constexpr_char_traits.h`); libstdc++ 0 ->
+28 pass (both); the rest are reclassified (`removed`, `pre-c++26`, `extension`,
+`implementation-specific`) in the skip lists.
 
 ## Deliberate divergences
 - `std::max_align_t` and `::max_align_t` (from `<stddef.h>`) are distinct types with identical
@@ -339,7 +380,7 @@ Deprecated and removed features are not implemented (`is_pod`, `is_trivial`, `al
   Widths and precisions have no upper bound (written or dynamic; beyond size_t they saturate):
   `formatted_size`/`format_to_n` count huge padding and floating-point zeros without writing
   them, `format` throws `bad_alloc` when the result cannot be held. The
-  deprecated `visit_format_arg` is not provided. Non-UTF-8 ordinary literal encodings are
+  deprecated `visit_format_arg` is provided ([[deprecated]]). Non-UTF-8 ordinary literal encodings are
   detected but untested. print writes the whole formatted output with one `fwrite` after
   formatting it (no partial output on a format error); no terminal needs a native Unicode API
   on POSIX. The stack/queue/priority_queue and vector<bool>::reference formatters are defined
@@ -745,7 +786,7 @@ Deprecated and removed features are not implemented (`is_pod`, `is_trivial`, `al
   a scheduled evaluation returns without waiting (waiting would deadlock); retired hazard-pointer
   and RCU objects still pending at exit are not reclaimed. `atomic<T>` for a non-default-
   constructible T has a constrained (not mandated) default constructor. The deprecated atomics
-  features are kept (DECISIONS §3).
+  features are provided, declared [[deprecated]] (Annex D).
 
 ## Open issues / next
 - Every header of the C++26 library is provided (Phases 1-4 complete; `<meta>` needs GCC's

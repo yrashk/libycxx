@@ -198,9 +198,10 @@ tooling.
   archive's default PAL wait returns at once (waits become spins); a freestanding program can
   supply blocking `ycxx_pal_wait`/`ycxx_pal_wake_*`. The deprecated parts of [depr.atomics]
   (`memory_order::consume`, which `<stdatomic.h>` names, `kill_dependency`, `atomic_init`,
-  `ATOMIC_VAR_INIT`, volatile members for types that are not always lock-free) are kept, marked
-  `[[deprecated]]` where the language allows: an exception to the no-deprecated-features rule,
-  because C compatibility and existing atomic code rely on them.
+  `ATOMIC_VAR_INIT`, volatile members for types that are not always lock-free) are provided,
+  marked `[[deprecated]]` where the language allows (§6, Annex D). A volatile member is two
+  overloads: one constrained on `is_always_lock_free`, and a `[[deprecated]]` one on its negation;
+  the volatile non-member functions are split the same way.
 - **The thread support library is built on the PAL's address wait, not on pthread objects.**
   Mutexes are three-state futex locks, condition variables sequence counters, call_once a
   four-state word; all are constexpr-constructible (where the draft allows) and trivially
@@ -342,7 +343,16 @@ under the same name. Otherwise it gets one alias template in `config.hpp`.
    - A failure caused by a missing compiler builtin is marked `// XFAIL-COMPILER: gcc|clang
      <reason>` and listed under compiler gaps in `STATUS.md`. The test body stays unchanged and
      reports XPASS once the compiler catches up.
-5. **Gate before pushing:** `tools/check-all`, plus the affected conformance directories on
+5. **Annex D (deprecated features) is implemented.** Every deprecated library feature the current
+   draft still specifies is provided exactly as [depr] specifies it; removed features (no longer
+   in the draft) are not. Each Annex D entity carries `[[deprecated("<hint>")]]` wherever the
+   language allows the attribute (classes, functions, variables, alias templates, enumerators,
+   explicit and partial specializations; since GCC ignores the attribute on a partial
+   specialization, its `value`/`type` member repeats it); macros cannot carry it (STATUS: Annex D).
+   The library never uses a deprecated entity itself: its own sources build with `-Werror`, and
+   only `src/hosted/locale.cpp`, which must install the Annex D codecvt facets in the classic
+   locale, disables `-Wdeprecated-declarations`.
+6. **Gate before pushing:** `tools/check-all`, plus the affected conformance directories on
    both compilers and both suites.
 
 ## 7. Iostreams and localization (hosted)
@@ -366,8 +376,9 @@ under the same name. Otherwise it gets one alias template in `config.hpp`.
   `codecvt<wchar_t, char, mbstate_t>` converts UTF-32 to and from UTF-8 (so `encoding()` is 0
   and `max_length()` 4), `ctype<charT>` for character types other than `char` classifies ASCII
   only, `widen`/`narrow` map 0-255 one to one, `time_get`/`time_put` use the "C" conventions,
-  `messages` has no catalogs. The deprecated `codecvt<char16_t/char32_t, char, mbstate_t>` are
-  provided (Annex D) without `[[deprecated]]`.
+  `messages` has no catalogs. The Annex D `codecvt<char16_t/char32_t, char/char8_t, mbstate_t>`
+  (and their `codecvt_byname`) are `[[deprecated]]`; the classic locale still holds them, so
+  `src/hosted/locale.cpp` alone is built with `-Wno-deprecated-declarations`.
 - **num_get / num_put** convert with `<charconv>` (stage 3 of num_get, stage 1 of num_put), not
   with the C library: the results are correctly rounded and independent of the C locale.
 - **The standard stream objects** are raw storage in the runtime, constructed by a runtime
@@ -416,7 +427,7 @@ under the same name. Otherwise it gets one alias template in `config.hpp`.
   element offsets in the pathname (`path::iterator` stores one and the element it designates).
   `hash_value` hashes the elements, so equal paths with different separator runs hash equal.
   `string()`/`generic_string()` and `u8path` are provided as the draft's Annex D still has them
-  (D.23), without `[[deprecated]]` (as for the Annex D codecvt facets).
+  (D.23), declared `[[deprecated]]` (§6, Annex D).
 - **file_time_type** is `chrono::time_point<chrono::file_clock>`, nanoseconds in a `long long`
   since the Unix epoch (range 1677-2262); a time stamp outside it is `errc::value_too_large`.
   `ycxx/hosted/file_clock.hpp` (what `<filesystem>` includes) is `ycxx/hosted/chrono_clocks.hpp`;

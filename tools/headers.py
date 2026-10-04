@@ -14,7 +14,7 @@ CORE += ["scoped_allocator"]
 CORE += ["vector", "inplace_vector"]
 CORE += ["deque", "list", "forward_list", "stack", "queue"]
 # Numerics (<cmath>: see DECISIONS §3; the run-time calls of its functions need libm).
-CORE += ["ratio", "numbers"]
+CORE += ["ratio", "numbers", "cmath"]
 # Hosted: need an OS (through the PAL) or the C library.
 HOSTED = [
     "any", "cctype", "cerrno", "cfenv", "cinttypes", "clocale", "csetjmp", "csignal", "cstdarg", "cstdio",
@@ -24,6 +24,8 @@ HOSTED = [
 # memory_resource.hpp, which <string> includes); the global resources, the pools and
 # monotonic_buffer_resource are defined in the hosted runtime.
 HOSTED += ["memory_resource"]
+# <math.h>: the C library's header plus <cmath>'s names in the global namespace.
+HOSTED += ["math.h"]
 # Language-support headers whose *declarations* are core but which need the C++ ABI runtime
 # (libycxx-abi) to be used with exceptions/RTTI enabled.
 ABI = ["exception", "stdexcept", "typeinfo", "typeindex"]

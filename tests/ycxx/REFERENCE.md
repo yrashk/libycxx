@@ -82,6 +82,12 @@ Legend: **G** fails with GCC + libstdc++, **C** with Clang + libstdc++.
 | `regex/errors` | G | C | `"*a"` throws `error_paren`, `"a**"` is accepted, `"[[:nonsense:]]"` throws `error_collate` (line 32) | [re.err]: `error_badrepeat` ("not preceded by a valid regular expression"), `error_ctype` ("invalid character class name"); ECMA-262 rejects `a**` |
 | `regex/ecmascript` | G | C | `\cJ` does not match `"\n"` (line 47) | [re.grammar]/1: ECMA-262 ControlEscape `\cX` |
 | `debugging/replace_is_debugger_present` | G | C | a user definition collides with libstdc++exp's ("multiple definition") | [debugging.utility]/5: "This function is replaceable" |
+| `algorithm/no_extra_memory` | G | C | with no memory available, `ranges::stable_partition` returns `{i, last - k}` instead of `{i, last}` (the partition itself is right) | [alg.partitions]/12.2: "{i, last} for the overloads in namespace ranges" |
+| `execution/numeric_algorithms` | G |  | in-place `exclusive_scan(unseq/par_unseq, c, c+N, c, 0)` yields all zeros | [exclusive.scan]/8: "result may be equal to first" |
+| `memory/make_shared_array_throw`, `memory/make_shared_for_overwrite_order` | G | C | array elements are destroyed in construction order (after a throw, and at end of lifetime for `_for_overwrite`) | [util.smartptr.shared.create]/7.10: "destroyed in the reverse order of their original construction" |
+| `memory/allocate_shared_cv` | G | C | `allocate_shared<const T>` rebinds the allocator to `const T` and does not compile | [util.smartptr.shared.create]/7.5, /7.12: `remove_cv_t<U>*`; [allocator.requirements.general]: cv-unqualified value_type |
+| `string/fancy_pointer_allocator` | G | C | `basic_string` with a class-type allocator pointer does not compile | [string.require]/3, [allocator.requirements.general] |
+| `iterator/istreambuf_iterator` | G | C | an iterator built from `it++`'s proxy dereferences to the cached old character, not `sgetc()` (the proxy is exposition-only, so this is interpretive) | [istreambuf.iterator.cons]/5, [istreambuf.iterator.ops]/1 |
 ## 2. Missing in libstdc++ 16 (newer C++26 additions, constexpr, API revisions)
 
 | Test(s) | G | C | Missing |
@@ -119,6 +125,7 @@ Legend: **G** fails with GCC + libstdc++, **C** with Clang + libstdc++.
 | `mdspan/copy_fill` | G | C | `copy`/`fill` for mdspan ([mdspan.copy]) |
 | `linalg/*` | G | C | `<linalg>` |
 | `debugging/debugging`, `stacktrace/*`, `text_encoding/text_encoding` | G | C | link only with `-lstdc++exp` (the tests add no flags; with it they pass) |
+| `execution/ranges_algorithms`, `execution/ranges_constraints` | G | C | the parallel range algorithms (P3179) |
 
 ## 3. Differences between GCC and Clang with the same libstdc++
 
@@ -139,6 +146,7 @@ Clang rejects code GCC accepts.
 | `cwchar/freestanding_functions` | `std::wcschr` and friends on `const wchar_t*` return `wchar_t*` (glibc's declarations; libycxx documents the same limitation for unqualified calls) |
 | `complex/arithmetic`, `complex/literals` | libstdc++'s compound operators use `__real__`/`__imag__`, which Clang cannot constant-evaluate ([complex.member.ops]: constexpr) |
 | `cmath/constexpr_raising_call`, `cmath/constexpr_invalid_call` (compile.fail) | fail on the control line too: `log(1.0)`, `sqrt(4.0)` are not constexpr with Clang |
+| `algorithm/adl_incomplete_holder` | GCC performs argument-dependent lookup for an unqualified `__builtin_memmove` call inside libstdc++, which instantiates `Holder<Incomplete>` (reproduced without any library; [contents]/3 forbids such lookups) |
 
 ## 4. C library headers
 

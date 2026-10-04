@@ -19,7 +19,6 @@
 // The expected contents are computed on a separate plain character array.
 #include <string>
 #include <cstring>
-#include <ranges>
 #include <string_view>
 #include "check.hpp"
 

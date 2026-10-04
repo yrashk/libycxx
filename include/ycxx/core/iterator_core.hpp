@@ -46,8 +46,16 @@ struct iterator_traits;
 } // namespace std
 
 namespace ycxx::detail {
+// Detects that iterator_traits<I> names the primary template. The marker is private, so it is
+// not part of the public interface, and it is not reachable through a user specialization that
+// derives from another iterator_traits (private members are not accessible via the derived class).
+struct iterator_traits_access {
+  template <class I>
+  using marker = typename std::iterator_traits<I>::primary_marker;
+};
 template <class I>
-concept is_primary_iterator_traits = requires { typename std::iterator_traits<I>::ycxx_primary_template; };
+concept is_primary_iterator_traits = requires { typename iterator_traits_access::marker<I>; } &&
+                                     __is_same(iterator_traits_access::marker<I>, std::iterator_traits<I>);
 
 template <class T>
 using with_reference = T&;
@@ -255,7 +263,9 @@ namespace std {
 
 template <class I>
 struct iterator_traits : ycxx::detail::iterator_traits_impl<I> {
-  using ycxx_primary_template = iterator_traits; // marks the primary template ([iterator.traits]/4)
+private:
+  friend struct ycxx::detail::iterator_traits_access;
+  using primary_marker = iterator_traits; // marks the primary template ([iterator.traits]/4)
 };
 
 template <class T>
@@ -466,43 +476,77 @@ concept contiguous_iterator =
       { std::to_address(i) } -> same_as<add_pointer_t<iter_reference_t<I>>>;
     };
 
+} // namespace std
+
+namespace ycxx::detail {
+// projected<I, Proj> is a namespace-scope class template so that indirect-value-t can see
+// through it ([indirectcallable.traits], P2609).
+template <class I, class Proj>
+struct projected_type {
+  using value_type = std::remove_cvref_t<std::invoke_result_t<Proj&, std::iter_reference_t<I>>>;
+  std::invoke_result_t<Proj&, std::iter_reference_t<I>> operator*() const; // not defined
+};
+template <class I, class Proj>
+  requires std::weakly_incrementable<I>
+struct projected_type<I, Proj> {
+  using value_type = std::remove_cvref_t<std::invoke_result_t<Proj&, std::iter_reference_t<I>>>;
+  using difference_type = std::iter_difference_t<I>;
+  std::invoke_result_t<Proj&, std::iter_reference_t<I>> operator*() const; // not defined
+};
+
+template <class T>
+struct indirect_value {
+  using type = std::iter_value_t<T>&;
+};
+template <class I, class Proj>
+struct indirect_value<projected_type<I, Proj>> {
+  using type = std::invoke_result_t<Proj&, typename indirect_value<I>::type>;
+};
+template <class T>
+using indirect_value_t = typename indirect_value<T>::type;
+} // namespace ycxx::detail
+
+namespace std {
+
 // [indirectcallable.indirectinvocable]
 template <class F, class I>
 concept indirectly_unary_invocable =
-    indirectly_readable<I> && copy_constructible<F> && invocable<F&, iter_value_t<I>&> &&
+    indirectly_readable<I> && copy_constructible<F> && invocable<F&, ycxx::detail::indirect_value_t<I>> &&
     invocable<F&, iter_reference_t<I>> &&
-    common_reference_with<invoke_result_t<F&, iter_value_t<I>&>, invoke_result_t<F&, iter_reference_t<I>>>;
+    common_reference_with<invoke_result_t<F&, ycxx::detail::indirect_value_t<I>>, invoke_result_t<F&, iter_reference_t<I>>>;
 
 template <class F, class I>
 concept indirectly_regular_unary_invocable =
-    indirectly_readable<I> && copy_constructible<F> && regular_invocable<F&, iter_value_t<I>&> &&
+    indirectly_readable<I> && copy_constructible<F> && regular_invocable<F&, ycxx::detail::indirect_value_t<I>> &&
     regular_invocable<F&, iter_reference_t<I>> &&
-    common_reference_with<invoke_result_t<F&, iter_value_t<I>&>, invoke_result_t<F&, iter_reference_t<I>>>;
+    common_reference_with<invoke_result_t<F&, ycxx::detail::indirect_value_t<I>>, invoke_result_t<F&, iter_reference_t<I>>>;
 
 template <class F, class I>
 concept indirect_unary_predicate = indirectly_readable<I> && copy_constructible<F> &&
-                                   predicate<F&, iter_value_t<I>&> && predicate<F&, iter_reference_t<I>>;
+                                   predicate<F&, ycxx::detail::indirect_value_t<I>> && predicate<F&, iter_reference_t<I>>;
 
 template <class F, class I1, class I2>
 concept indirect_binary_predicate =
     indirectly_readable<I1> && indirectly_readable<I2> && copy_constructible<F> &&
-    predicate<F&, iter_value_t<I1>&, iter_value_t<I2>&> && predicate<F&, iter_value_t<I1>&, iter_reference_t<I2>> &&
-    predicate<F&, iter_reference_t<I1>, iter_value_t<I2>&> && predicate<F&, iter_reference_t<I1>, iter_reference_t<I2>>;
+    predicate<F&, ycxx::detail::indirect_value_t<I1>, ycxx::detail::indirect_value_t<I2>> &&
+    predicate<F&, ycxx::detail::indirect_value_t<I1>, iter_reference_t<I2>> &&
+    predicate<F&, iter_reference_t<I1>, ycxx::detail::indirect_value_t<I2>> &&
+    predicate<F&, iter_reference_t<I1>, iter_reference_t<I2>>;
 
 template <class F, class I1, class I2 = I1>
 concept indirect_equivalence_relation =
     indirectly_readable<I1> && indirectly_readable<I2> && copy_constructible<F> &&
-    equivalence_relation<F&, iter_value_t<I1>&, iter_value_t<I2>&> &&
-    equivalence_relation<F&, iter_value_t<I1>&, iter_reference_t<I2>> &&
-    equivalence_relation<F&, iter_reference_t<I1>, iter_value_t<I2>&> &&
+    equivalence_relation<F&, ycxx::detail::indirect_value_t<I1>, ycxx::detail::indirect_value_t<I2>> &&
+    equivalence_relation<F&, ycxx::detail::indirect_value_t<I1>, iter_reference_t<I2>> &&
+    equivalence_relation<F&, iter_reference_t<I1>, ycxx::detail::indirect_value_t<I2>> &&
     equivalence_relation<F&, iter_reference_t<I1>, iter_reference_t<I2>>;
 
 template <class F, class I1, class I2 = I1>
 concept indirect_strict_weak_order =
     indirectly_readable<I1> && indirectly_readable<I2> && copy_constructible<F> &&
-    strict_weak_order<F&, iter_value_t<I1>&, iter_value_t<I2>&> &&
-    strict_weak_order<F&, iter_value_t<I1>&, iter_reference_t<I2>> &&
-    strict_weak_order<F&, iter_reference_t<I1>, iter_value_t<I2>&> &&
+    strict_weak_order<F&, ycxx::detail::indirect_value_t<I1>, ycxx::detail::indirect_value_t<I2>> &&
+    strict_weak_order<F&, ycxx::detail::indirect_value_t<I1>, iter_reference_t<I2>> &&
+    strict_weak_order<F&, iter_reference_t<I1>, ycxx::detail::indirect_value_t<I2>> &&
     strict_weak_order<F&, iter_reference_t<I1>, iter_reference_t<I2>>;
 
 template <class F, class... Is>
@@ -510,31 +554,8 @@ template <class F, class... Is>
 using indirect_result_t = invoke_result_t<F, iter_reference_t<Is>...>;
 
 // [projected]
-} // namespace std
-
-namespace ycxx::detail {
-template <class I, class Proj>
-struct projected_impl {
-  struct type {
-    using value_type = std::remove_cvref_t<std::indirect_result_t<Proj&, I>>;
-    std::indirect_result_t<Proj&, I> operator*() const; // not defined
-  };
-};
-template <class I, class Proj>
-  requires std::weakly_incrementable<I>
-struct projected_impl<I, Proj> {
-  struct type {
-    using value_type = std::remove_cvref_t<std::indirect_result_t<Proj&, I>>;
-    using difference_type = std::iter_difference_t<I>;
-    std::indirect_result_t<Proj&, I> operator*() const; // not defined
-  };
-};
-} // namespace ycxx::detail
-
-namespace std {
-
 template <indirectly_readable I, indirectly_regular_unary_invocable<I> Proj>
-using projected = typename ycxx::detail::projected_impl<I, Proj>::type;
+using projected = ycxx::detail::projected_type<I, Proj>;
 
 template <indirectly_readable I, indirectly_regular_unary_invocable<I> Proj>
 using projected_value_t = remove_cvref_t<invoke_result_t<Proj&, iter_value_t<I>&>>;
@@ -578,20 +599,31 @@ constexpr std::iter_value_t<X> iter_exchange_move(X&& x, Y&& y) noexcept(
   return old;
 }
 
+template <class T, class U>
+consteval bool iter_swap_noexcept() {
+  if constexpr (adl_iter_swap<T, U>)
+    return noexcept((void)iter_swap(std::declval<T>(), std::declval<U>()));
+  else if constexpr (std::indirectly_readable<T> && std::indirectly_readable<U> &&
+                     std::swappable_with<std::iter_reference_t<T>, std::iter_reference_t<U>>)
+    return noexcept(std::ranges::swap(*std::declval<T>(), *std::declval<U>()));
+  else
+    return noexcept((void)(*std::declval<T>() = iter_exchange_move(std::declval<U>(), std::declval<T>())));
+}
+
 struct fn {
   template <class T, class U>
     requires adl_iter_swap<T, U> ||
              (std::indirectly_readable<T> && std::indirectly_readable<U> &&
               std::swappable_with<std::iter_reference_t<T>, std::iter_reference_t<U>>) ||
              (std::indirectly_movable_storable<T, U> && std::indirectly_movable_storable<U, T>)
-  constexpr void operator()(T&& t, U&& u) const {
+  constexpr void operator()(T&& t, U&& u) const noexcept(iter_swap_noexcept<T, U>()) {
     if constexpr (adl_iter_swap<T, U>)
       (void)iter_swap(static_cast<T&&>(t), static_cast<U&&>(u));
     else if constexpr (std::indirectly_readable<T> && std::indirectly_readable<U> &&
                        std::swappable_with<std::iter_reference_t<T>, std::iter_reference_t<U>>)
       std::ranges::swap(*t, *u);
     else
-      (void)(*t = iter_exchange_move(u, t));
+      (void)(*t = iter_swap_cpo::iter_exchange_move(u, t));
   }
 };
 

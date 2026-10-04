@@ -95,9 +95,11 @@ struct advance_fn {
   template <std::input_or_output_iterator I, std::sentinel_for<I> S>
   constexpr std::iter_difference_t<I> operator()(I& i, std::iter_difference_t<I> n, S bound) const {
     if constexpr (std::sized_sentinel_for<S, I>) {
-      // [range.iter.op.advance]: if |n| >= |bound - i| go to bound, else advance by n.
+      // [range.iter.op.advance]/6.1: if |n| >= |bound - i| go to bound, else advance by n. With
+      // opposite signs |n| >= |d| is n + d >= 0 (n >= 0) or n + d <= 0, which cannot overflow.
       const auto d = bound - i;
-      if (n >= 0 ? n >= d : n <= d) {
+      const bool reach = (n >= 0) == (d >= 0) ? (n >= 0 ? n >= d : n <= d) : (n >= 0 ? n + d >= 0 : n + d <= 0);
+      if (reach) {
         (*this)(i, bound);
         return n - d;
       }

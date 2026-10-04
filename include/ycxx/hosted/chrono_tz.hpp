@@ -54,6 +54,9 @@ namespace ycxx::detail {
 struct tz_ctor_tag {
   explicit tz_ctor_tag() = default;
 };
+// leap_second's constructor tag; implicitly constructible, so `leap_second({}, date, value)`
+// works (the draft leaves the constructors unspecified).
+struct leap_second_tag {};
 // A zone's data, loaded on first use (src/hosted/tzdb.cpp).
 struct tz_data;
 struct tz_data_deleter {
@@ -98,7 +101,7 @@ class leap_second {
   seconds value_;
 
 public:
-  constexpr leap_second(ycxx::detail::tz_ctor_tag, sys_seconds date, seconds value) noexcept
+  constexpr leap_second(ycxx::detail::leap_second_tag, sys_seconds date, seconds value) noexcept
       : date_(date), value_(value) {}
   leap_second(const leap_second&) = default;
   leap_second& operator=(const leap_second&) = default;
@@ -549,9 +552,10 @@ struct clock_time_conversion<system_clock, SourceClock> {
   template <class Duration>
   auto operator()(const time_point<SourceClock, Duration>& t) const
       -> decltype(ycxx::detail::dependent_type<SourceClock, Duration>::type::to_sys(t)) {
-    static_assert(ycxx::detail::is_time_point_of<decltype(ycxx::detail::dependent_type<SourceClock, Duration>::type::to_sys(t)),
-                                                 system_clock>,
-                  "clock_time_conversion: SourceClock::to_sys must return a sys_time");
+    static_assert(
+        ycxx::detail::is_time_point_of<decltype(ycxx::detail::dependent_type<SourceClock, Duration>::type::to_sys(t)),
+                                       system_clock>,
+        "clock_time_conversion: SourceClock::to_sys must return a sys_time");
     return ycxx::detail::dependent_type<SourceClock, Duration>::type::to_sys(t);
   }
 };
@@ -560,9 +564,10 @@ struct clock_time_conversion<DestClock, system_clock> {
   template <class Duration>
   auto operator()(const sys_time<Duration>& t) const
       -> decltype(ycxx::detail::dependent_type<DestClock, Duration>::type::from_sys(t)) {
-    static_assert(ycxx::detail::is_time_point_of<decltype(ycxx::detail::dependent_type<DestClock, Duration>::type::from_sys(t)),
-                                                 DestClock>,
-                  "clock_time_conversion: DestClock::from_sys must return a time_point of DestClock");
+    static_assert(
+        ycxx::detail::is_time_point_of<decltype(ycxx::detail::dependent_type<DestClock, Duration>::type::from_sys(t)),
+                                       DestClock>,
+        "clock_time_conversion: DestClock::from_sys must return a time_point of DestClock");
     return ycxx::detail::dependent_type<DestClock, Duration>::type::from_sys(t);
   }
 };
@@ -573,9 +578,10 @@ struct clock_time_conversion<utc_clock, SourceClock> {
   template <class Duration>
   auto operator()(const time_point<SourceClock, Duration>& t) const
       -> decltype(ycxx::detail::dependent_type<SourceClock, Duration>::type::to_utc(t)) {
-    static_assert(ycxx::detail::is_time_point_of<decltype(ycxx::detail::dependent_type<SourceClock, Duration>::type::to_utc(t)),
-                                                 utc_clock>,
-                  "clock_time_conversion: SourceClock::to_utc must return a utc_time");
+    static_assert(
+        ycxx::detail::is_time_point_of<decltype(ycxx::detail::dependent_type<SourceClock, Duration>::type::to_utc(t)),
+                                       utc_clock>,
+        "clock_time_conversion: SourceClock::to_utc must return a utc_time");
     return ycxx::detail::dependent_type<SourceClock, Duration>::type::to_utc(t);
   }
 };
@@ -584,9 +590,10 @@ struct clock_time_conversion<DestClock, utc_clock> {
   template <class Duration>
   auto operator()(const utc_time<Duration>& t) const
       -> decltype(ycxx::detail::dependent_type<DestClock, Duration>::type::from_utc(t)) {
-    static_assert(ycxx::detail::is_time_point_of<decltype(ycxx::detail::dependent_type<DestClock, Duration>::type::from_utc(t)),
-                                                 DestClock>,
-                  "clock_time_conversion: DestClock::from_utc must return a time_point of DestClock");
+    static_assert(
+        ycxx::detail::is_time_point_of<decltype(ycxx::detail::dependent_type<DestClock, Duration>::type::from_utc(t)),
+                                       DestClock>,
+        "clock_time_conversion: DestClock::from_utc must return a time_point of DestClock");
     return ycxx::detail::dependent_type<DestClock, Duration>::type::from_utc(t);
   }
 };
@@ -687,8 +694,8 @@ concept zt_local_choose_ok = requires(TimeZonePtr& z) {
   } -> std::convertible_to<std::chrono::sys_time<SysDuration>>;
 };
 template <class T>
-using zt_representation =
-    std::conditional_t<std::is_convertible_v<T, std::string_view>, const std::chrono::time_zone*, std::remove_cvref_t<T>>;
+using zt_representation = std::conditional_t<std::is_convertible_v<T, std::string_view>, const std::chrono::time_zone*,
+                                             std::remove_cvref_t<T>>;
 } // namespace ycxx::detail
 
 namespace std::chrono {

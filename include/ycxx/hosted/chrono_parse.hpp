@@ -103,10 +103,24 @@ private:
       const char c = narrow(peek());
       if (c < '0' || c > '9')
         break;
+      if (v > 99'999'999'999'999'999LL) // 18 digits: no field needs more
+        return false;
       v = v * 10 + (c - '0');
       bump();
     }
     return k > 0;
+  }
+  // A number of exactly n digits.
+  bool exact(int n, long long& v) {
+    v = 0;
+    for (int k = 0; k < n; ++k) {
+      const char c = narrow(peek());
+      if (c < '0' || c > '9')
+        return false;
+      v = v * 10 + (c - '0');
+      bump();
+    }
+    return true;
   }
   // [+|-] and a number of at most n digits.
   bool signed_number(int n, long long& v) {
@@ -189,18 +203,18 @@ private:
       bump();
     }
     long long h = 0, mins = 0;
-    if (!modified) {
-      if (!number(2, h))
+    if (!modified) { // [+|-]hh[mm]
+      if (!exact(2, h))
         return false;
       const char c2 = narrow(peek());
-      if (c2 >= '0' && c2 <= '9' && !number(2, mins))
+      if (c2 >= '0' && c2 <= '9' && !exact(2, mins))
         return false;
-    } else {
+    } else { // [+|-]h[h][:mm]
       if (!number(2, h))
         return false;
       if (narrow(peek()) == ':') {
         bump();
-        if (!number(2, mins))
+        if (!exact(2, mins))
           return false;
       }
     }
@@ -435,7 +449,8 @@ constexpr bool chrono_date_of(const chrono_parsed& r, long long& days) noexcept 
     long long g = r.G;
     if (!r.any(P::has_G))
       g = r.any(P::has_C) ? r.C * 100 + r.g : (r.g >= 69 ? 1900 + r.g : 2000 + r.g);
-    if (g < -32767 || g > 32767 || r.V < 1 || r.V > static_cast<long long>(::ycxx::detail::chrono_iso_weeks(static_cast<int>(g))))
+    if (g < -32767 || g > 32767 || r.V < 1 ||
+        r.V > static_cast<long long>(::ycxx::detail::chrono_iso_weeks(static_cast<int>(g))))
       return false;
     const long long jan4 = ::ycxx::detail::days_from_civil(static_cast<int>(g), 1, 4);
     const long long monday1 = jan4 - static_cast<long long>((::ycxx::detail::weekday_from_days(jan4) + 6) % 7);
@@ -482,7 +497,9 @@ constexpr bool chrono_date_of(const chrono_parsed& r, long long& days) noexcept 
 }
 
 // The time of day (or the duration) in units of 10^-digits seconds.
-constexpr bool chrono_time_of(const chrono_parsed& r, unsigned digits, bool duration, long long& units) noexcept {
+// A seconds field of 60 is accepted only with `leap_ok` (local_time, and utc_time's leap seconds).
+constexpr bool chrono_time_of(const chrono_parsed& r, unsigned digits, bool duration, long long& units,
+                              bool leap_ok = false) noexcept {
   using P = chrono_parsed;
   long long h = 0;
   if (r.any(P::has_I)) {
@@ -498,14 +515,16 @@ constexpr bool chrono_time_of(const chrono_parsed& r, unsigned digits, bool dura
     if (r.any(P::has_p) && h <= 12) // %H with %p: a 12-hour value
       h = h % 12 + (r.pm ? 12 : 0);
   }
-  if (r.M > 59 || r.S > 60)
+  if (r.M > 59 || r.S > (leap_ok ? 60 : 59))
     return false;
   long long scale = 1;
   for (unsigned i = 0; i < digits; ++i)
     scale *= 10;
-  long long d = r.any(P::has_j) && duration ? r.j : 0;
-  units = (((d * 24 + h) * 60 + r.M) * 60 + r.S) * scale + static_cast<long long>(r.sub);
-  return true;
+  const long long d = r.any(P::has_j) && duration ? r.j : 0;
+  long long secs = 0;
+  return !__builtin_mul_overflow(d, 86400, &secs) && !__builtin_add_overflow(secs, (h * 60 + r.M) * 60 + r.S, &secs) &&
+         !__builtin_mul_overflow(secs, scale, &units) &&
+         !__builtin_add_overflow(units, static_cast<long long>(r.sub), &units);
 }
 
 template <class Duration>
@@ -547,15 +566,15 @@ std::basic_istream<charT, traits>& chrono_from_stream(std::basic_istream<charT, 
 
 // A time point's local date and time as Duration units since the epoch.
 template <class Duration>
-constexpr bool chrono_point_of(const chrono_parsed& r, Duration& out) {
+constexpr bool chrono_point_of(const chrono_parsed& r, Duration& out, bool leap_ok = false) {
   long long dd = 0, units = 0;
   if (!::ycxx::detail::chrono_date_of(r, dd))
     return false;
-  if (!::ycxx::detail::chrono_time_of(r, chrono_parse_digits<Duration>, false, units))
+  if (!::ycxx::detail::chrono_time_of(r, chrono_parse_digits<Duration>, false, units, leap_ok))
     return false;
   using unit = chrono_parse_unit<Duration>;
   const auto total = std::chrono::duration_cast<unit>(std::chrono::days(static_cast<int>(dd))) + unit(units);
-  out = std::chrono::duration_cast<Duration>(total);
+  out = std::chrono::floor<Duration>(total);
   return true;
 }
 
@@ -608,7 +627,7 @@ basic_istream<charT, traits>& from_stream(basic_istream<charT, traits>& is, cons
       is, fmt, abbrev, offset, ycxx::detail::ci_full_date | ycxx::detail::ci_time,
       ycxx::detail::chrono_parse_digits<Duration>, [&](const ycxx::detail::chrono_parsed& r) {
         Duration d{};
-        if (!ycxx::detail::chrono_point_of(r, d))
+        if (!ycxx::detail::chrono_point_of(r, d, true)) // 23:59:60 is accepted as a local time
           return false;
         tp = local_time<Duration>(d);
         return true;
@@ -632,8 +651,11 @@ basic_istream<charT, traits>& from_stream(basic_istream<charT, traits>& is, cons
           return false;
         const sys_time<Duration> st(d - duration_cast<Duration>(minutes(r.offset)));
         auto u = utc_clock::from_sys(st);
-        if (leap)
+        if (leap) {
           u += seconds(1);
+          if (!get_leap_second_info(u).is_leap_second) // 60 seconds only during a leap second
+            return false;
+        }
         tp = time_point_cast<Duration>(u);
         return true;
       });
@@ -769,7 +791,8 @@ basic_istream<charT, traits>& from_stream(basic_istream<charT, traits>& is, cons
                                             if (!ycxx::detail::chrono_year_of(r, y) ||
                                                 !r.any(ycxx::detail::chrono_parsed::has_m) || r.m < 1 || r.m > 12)
                                               return false;
-                                            ym = year_month(year(static_cast<int>(y)), month(static_cast<unsigned>(r.m)));
+                                            ym = year_month(year(static_cast<int>(y)),
+                                                            month(static_cast<unsigned>(r.m)));
                                             return true;
                                           });
 }

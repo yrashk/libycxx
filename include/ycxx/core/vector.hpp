@@ -28,23 +28,6 @@
 
 namespace ycxx::detail {
 
-// One element constructed through an allocator outside the container's storage: the copy of
-// an argument that may refer to an element which is about to be moved.
-template <class T, class A>
-struct alloc_temp {
-  A& a;
-  union {
-    T v;
-  };
-  template <class... Args>
-  constexpr explicit alloc_temp(A& al, Args&&... args) : a(al) {
-    std::allocator_traits<A>::construct(a, __builtin_addressof(v), static_cast<Args&&>(args)...);
-  }
-  alloc_temp(const alloc_temp&) = delete;
-  alloc_temp& operator=(const alloc_temp&) = delete;
-  constexpr ~alloc_temp() { std::allocator_traits<A>::destroy(a, __builtin_addressof(v)); }
-};
-
 // allocator_traits<A>::size_type, a substitution failure when A does not qualify as an
 // allocator: the implicit deduction guide of vector(size_type, const T&, const Allocator&)
 // then drops out instead of instantiating vector<T, A> ([container.reqmts]/69, [container.requirements.general]).

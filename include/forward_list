@@ -6,3 +6,5 @@
 #include <compare>
 #include <initializer_list>
 #include <ycxx/core/forward_list.hpp>
+// The pmr:: aliases must be usable with <forward_list> alone: complete polymorphic_allocator.
+#include <ycxx/core/memory_resource.hpp>

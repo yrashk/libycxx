@@ -28,6 +28,7 @@
 #include <ycxx/core/memory_base.hpp>
 #include <ycxx/core/memory_resource_fwd.hpp>
 #include <ycxx/core/seq_support.hpp>
+#include <ycxx/core/sequence_support.hpp>
 #include <ycxx/core/swap.hpp>
 #include <ycxx/core/utility_base.hpp>
 
@@ -482,6 +483,12 @@ private:
     size_ += n;
   }
 
+  // Rotates [f, l) so that *m comes first. Its temporaries are elements too: built and
+  // destroyed through the allocator ([container.alloc.reqmts]/2).
+  constexpr void rotate_(iterator f, iterator m, iterator l) {
+    ycxx::detail::rotate_elements<ycxx::detail::alloc_temp<T, Allocator>>(f, m, l, alloc_);
+  }
+
   // Inserts [first, last) at index k: at the closer end, then rotated into place.
   template <class It, class Sent>
   constexpr iterator insert_elems(size_type k, It first, Sent last) {
@@ -489,12 +496,12 @@ private:
     if (k >= s0 - k) {
       append_elems(static_cast<It&&>(first), static_cast<Sent&&>(last));
       if (k != s0)
-        std::rotate(begin() + static_cast<difference_type>(k), begin() + static_cast<difference_type>(s0), end());
+        rotate_(begin() + static_cast<difference_type>(k), begin() + static_cast<difference_type>(s0), end());
     } else {
       prepend_elems(static_cast<It&&>(first), static_cast<Sent&&>(last));
       const auto n = static_cast<difference_type>(size_ - s0);
       if (k != 0)
-        std::rotate(begin(), begin() + n, begin() + n + static_cast<difference_type>(k));
+        rotate_(begin(), begin() + n, begin() + n + static_cast<difference_type>(k));
     }
     return begin() + static_cast<difference_type>(k);
   }
@@ -862,11 +869,11 @@ public:
       if (k >= s0 - k) {
         append_counted(ranges::begin(rg), n);
         if (k != s0)
-          std::rotate(begin() + static_cast<difference_type>(k), begin() + static_cast<difference_type>(s0), end());
+          rotate_(begin() + static_cast<difference_type>(k), begin() + static_cast<difference_type>(s0), end());
       } else {
         prepend_counted(ranges::begin(rg), n);
         if (k != 0)
-          std::rotate(begin(), begin() + static_cast<difference_type>(n), begin() + static_cast<difference_type>(n + k));
+          rotate_(begin(), begin() + static_cast<difference_type>(n), begin() + static_cast<difference_type>(n + k));
       }
       return begin() + static_cast<difference_type>(k);
     } else {

@@ -5,6 +5,7 @@
 
 #include <ycxx/core/concepts.hpp>
 #include <ycxx/core/container_base.hpp>
+#include <ycxx/core/memory_base.hpp>
 
 namespace ycxx::detail {
 
@@ -58,6 +59,23 @@ constexpr auto plain_address(const It& it) noexcept {
     return it.base();
 }
 
+// One element constructed through an allocator outside the container's storage: the copy of
+// an argument that may refer to an element which is about to be moved.
+template <class T, class A>
+struct alloc_temp {
+  A& a;
+  union {
+    T v;
+  };
+  template <class... Args>
+  constexpr explicit alloc_temp(A& al, Args&&... args) : a(al) {
+    std::allocator_traits<A>::construct(a, __builtin_addressof(v), static_cast<Args&&>(args)...);
+  }
+  alloc_temp(const alloc_temp&) = delete;
+  alloc_temp& operator=(const alloc_temp&) = delete;
+  constexpr ~alloc_temp() { std::allocator_traits<A>::destroy(a, __builtin_addressof(v)); }
+};
+
 // A temporary element for rotate_elements in containers without an allocator.
 template <class T>
 struct plain_temp {
@@ -67,8 +85,10 @@ struct plain_temp {
 
 // Rotates [f, l) left so that *m becomes the first element, with move assignments and one
 // temporary per cycle (Temp(ctx..., T&&), holding the element in .v). No unqualified calls.
-template <class Temp, class T, class... Ctx>
-constexpr void rotate_elements(T* f, T* m, T* l, Ctx&... ctx) {
+// It is a pointer or a random-access iterator into the container's own elements.
+template <class Temp, class It, class... Ctx>
+constexpr void rotate_elements(It f, It m, It l, Ctx&... ctx) {
+  using T = std::remove_reference_t<decltype(*f)>;
   const std::ptrdiff_t n = l - f;
   const std::ptrdiff_t k = m - f;
   if (k == 0 || k == n)

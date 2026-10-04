@@ -11,7 +11,7 @@
 // const_pointer ([map.overview], [set.overview], [unord.map.overview], ...).
 // Exercised: construction forms, copy / move / assignment / swap, insertion and erasure of
 // enough elements to rebalance / rehash, bidirectional iteration, lookups, node handles and
-// merge, erase_if, the bucket interface, clear. Everything is constexpr ([map.overview] etc.:
+// merge (node_handles), erase_if, the bucket interface, clear. The functions are constexpr ([map.overview] etc.:
 // every member is constexpr, and FancyAlloc is usable in constant evaluation).
 #pragma once
 #include <iterator>
@@ -64,9 +64,10 @@ constexpr bool test() {
   b = std::move(d);
   b = {elem<X>(5)};
   b.swap(e);
+  if (!contents(e, {5}) || !contents(b, {1, 2})) return false;
   using std::swap;
   swap(b, e);
-  if (!contents(e, {5}) || !contents(b, {1, 2})) return false;
+  if (!contents(b, {5}) || !contents(e, {1, 2})) return false;
 
   // erase every other element, by key, by iterator and by range
   for (int k = 0; k < 64; k += 4) a.erase(K(k));
@@ -85,19 +86,6 @@ constexpr bool test() {
   a.insert(a.begin(), elem<X>(200));
   a.emplace_hint(a.end(), elem<X>(201));
   if (!a.contains(K(200)) || !a.contains(K(201))) return false;
-
-  // node handles and merge
-  auto nh = a.extract(K(11));
-  if (nh.empty()) return false;
-  X f;
-  f.insert(std::move(nh));
-  f.insert(f.end(), a.extract(a.find(K(13))));
-  if (!contents(f, {11, 13})) return false;
-  X g;
-  put(g, 13);
-  put(g, 300);
-  a.merge(g);
-  if (!a.contains(K(300)) || g.size() != (multi ? 0u : 0u) + (a.contains(K(13)) && !multi ? 0u : 0u)) return false;
 
   std::erase_if(a, [](const V& v) { return value_of(key_of<X>(v)) >= 200; });
   if (a.contains(K(200)) || a.contains(K(300))) return false;
@@ -120,6 +108,29 @@ constexpr bool test() {
   }
   a.clear();
   return a.empty() && a.begin() == a.end();
+}
+
+// Node handles and merge with the fancy pointer: extract(k), extract(q), insert(nh),
+// insert(p, nh), merge ([associative.reqmts.general]/84-117, [unord.req.general],
+// [container.node]: the handle's ptr_ is allocator_traits<...>::rebind_traits<node>::pointer).
+template <class X>
+constexpr bool node_handles() {
+  using K = typename X::key_type;
+  X a;
+  for (int k : {200, 11, 13, 3}) put(a, k);
+  auto nh = a.extract(K(11));
+  if (nh.empty()) return false;
+  X f;
+  f.insert(std::move(nh));
+  f.insert(f.end(), a.extract(a.find(K(13))));
+  if (!contents(f, {11, 13})) return false;
+  X g;
+  put(g, 13);
+  put(g, 300);
+  a.merge(g);
+  if (!a.contains(K(300)) || !a.contains(K(13)) || !g.empty()) return false;  // 13 was extracted from a
+
+  return a.size() == 4 && f.size() == 2;
 }
 
 }  // namespace reqs::fancy_alloc_assoc

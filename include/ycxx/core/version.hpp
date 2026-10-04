@@ -360,7 +360,15 @@
 #define __cpp_lib_sstream_from_string_view 202306L
 #define __cpp_lib_syncbuf 201803L
 
-// <filesystem> (__cpp_lib_format_path waits for <format>)
+// <format> <print>
+#define __cpp_lib_format 202603L
+#define __cpp_lib_format_ranges 202207L
+#define __cpp_lib_format_uchar 202311L
+#define __cpp_lib_constexpr_format 202511L
+#define __cpp_lib_print 202406L
+
+// <filesystem>
+#define __cpp_lib_format_path 202506L
 #define __cpp_lib_filesystem 201703L
 // <random>
 #define __cpp_lib_freestanding_random 202502L

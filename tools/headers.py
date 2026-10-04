@@ -46,6 +46,9 @@ HOSTED += ["math.h"]
 # Iostreams and localization (Phase 4): the non-template parts are in the hosted runtime.
 HOSTED += ["iosfwd", "ios", "streambuf", "istream", "ostream", "iostream", "sstream", "spanstream", "fstream",
            "syncstream", "iomanip", "locale"]
+# Formatting: the machinery and the formatters are core headers (ycxx/core/format_*.hpp), the
+# locale-dependent parts and the print functions are in the hosted runtime.
+HOSTED += ["format", "print"]
 # <filesystem> (POSIX): the operations are in the hosted runtime.
 HOSTED += ["filesystem"]
 # Language-support headers whose *declarations* are core but which need the C++ ABI runtime

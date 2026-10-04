@@ -1,8 +1,8 @@
 // -*- C++ -*-  libycxx: <filesystem>   [hosted]
 //
 // POSIX (Linux, macOS). The classes are in ycxx/hosted/filesystem.hpp; the operations and
-// directory iteration are in the hosted runtime (src/hosted/filesystem.cpp). Not provided yet:
-// formatter<filesystem::path> (no <format>). <cstdlib> is included as well (getenv, abort), as
+// directory iteration are in the hosted runtime (src/hosted/filesystem.cpp);
+// formatter<filesystem::path> is in ycxx/hosted/filesystem_format.hpp. <cstdlib> is included as well (getenv, abort), as
 // programs working with files commonly expect, like <fstream>'s <cstdio>.
 #pragma once
 
@@ -11,3 +11,4 @@
 #include <compare>
 #include <cstdlib>
 #include <ycxx/hosted/filesystem.hpp>
+#include <ycxx/hosted/filesystem_format.hpp>

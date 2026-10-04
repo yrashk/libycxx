@@ -5,7 +5,7 @@
 // constructing thread and hands that to the runtime (ycxx::detail::thread_start), which starts
 // the PAL thread through a trampoline that applies the name hint and then runs the state.
 //
-// Not provided: operator<< and formatter for thread::id (no <ostream>/<format> yet).
+// operator<< and formatter<thread::id> are in ycxx/hosted/thread_format.hpp.
 #pragma once
 
 #include <ycxx/config.hpp>
@@ -206,6 +206,7 @@ consteval bool thread_attributes_distinct() {
 
 struct thread_access {
   static constexpr std::thread::id make_id(ycxx_pal_handle h) noexcept { return std::thread::id(h); }
+  static constexpr ycxx_pal_handle handle_of(std::thread::id i) noexcept { return i.handle_; }
 
   struct attributes {
     std::size_t stack = 0;

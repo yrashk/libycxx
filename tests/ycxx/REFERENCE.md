@@ -103,6 +103,9 @@ Legend: **G** fails with GCC + libstdc++, **C** with Clang + libstdc++.
 | `algorithm/no_extra_memory_bidi_proxy` | G | C | as `algorithm/no_extra_memory`, with bidirectional iterators: without memory `ranges::stable_partition(list)` returns a wrong end (line 90) | [alg.partitions]/12.2: {i, last} |
 | `algorithm/search_family_oracle` | G | C | `find_end` (std and ranges) makes more than (last2 - first2) * (last1 - first1 - (last2 - first2) + 1) comparisons, e.g. 3 for "00" in "00" (vector, list, forward_list; libycxx: list and forward_list) | [alg.find.end]/3 |
 | `iostreams/num_get_unsigned_negative` | G | C | "-1" into an unsigned int stores UINT_MAX without failbit, "-4294967295" stores 1 (the field is negated in the 32-bit type); libycxx does the same | [facet.num.get.virtuals] Stage 3: for an unsigned type, "the most positive representable value, if the field ... represents a value that cannot be represented in val" (neither -1 nor strtoull's 2^64 - 1 fits), and failbit |
+| `random/stream_bad_input` | G | C | `is >> e` with bad input (empty, a non-number, too few numbers) changes the engine (every engine: `minstd_rand` is set from the failed extraction, `mt19937` partly overwritten), and `fisher_f_distribution`; the round trip `os << d`, `is >> d` of a `piecewise_constant_distribution` does not give an equal distribution | [rand.req.eng] Table 127 and [rand.req.dist] Table 128: "If bad input is encountered, ensures that v's state is unchanged by the operation and calls is.setstate(ios_base::failbit)"; Table 128: is >> d restores the parameters written by os << d |
+| `regex/adversarial` | G | C | with `match_not_bow`, `\b` does not match at the end of "ab" either (no match at all; line 57) | [re.matchflag] Table 119: match_not_bow: "\b shall not match the sub-sequence [first, first)" (only) |
+| `filesystem/create_directories_deep` | G | C | `create_directories` of a path with 1024 or more elements (about 2070 characters) fails with "File name too long" (1000 elements work) | [fs.op.create.directories]/1: "Calls create_directory for each element of p that does not exist" (no limit; PATH_MAX is 4096) |
 
 | `cmath/lerp` | G | C | `lerp(0, 1, inf)` and `lerp(a, 0, inf)` return NaN | [c.math.lerp]/2.5: "If isfinite(t) \|\| !isnan(t) && b - a != 0, then !isnan(r)" |
 | `cmath/nexttoward_extended` (compile.fail) | G |  | `nexttoward(float32_t, long double)` is accepted (Clang defines no extended types, so the test checks nothing there) | [cmath.syn]/4: nexttoward with an extended floating-point argument is ill-formed |
@@ -142,7 +145,7 @@ Legend: **G** fails with GCC + libstdc++, **C** with Clang + libstdc++.
 
 | Test(s) | G | C | Missing |
 |---|---|---|---|
-| `bit/permute`, `bit/constraints`, `bit/shl_shr`, `bit/signatures_all_types` | G | C | `bit_reverse`, `bit_repeat`, `bit_compress`, `bit_expand`, `shl`, `shr` |
+| `bit/permute`, `bit/constraints`, `bit/shl_shr`, `bit/signatures_all_types`, `bit/oracle_cxx26`, `bit/shift_narrow_signed_amount` | G | C | `bit_reverse`, `bit_repeat`, `bit_compress`, `bit_expand`, `shl`, `shr` |
 | `bitset/reference` | G | C | `bitset::reference::operator=(bool) const` |
 | `expected/observers`, `expected/void_ctor_assign`, `expected/void_observers_monadic` | G | C | `expected::has_error()` |
 | `initializer_list/data_empty`, `initializer_list/list_init` | G | C | `initializer_list::data()`, `empty()` |
@@ -185,6 +188,9 @@ Legend: **G** fails with GCC + libstdc++, **C** with Clang + libstdc++.
 | `simd/iota`, `simd/range_ctor_mask`, `simd/ctor_constraints`, `simd/reductions_scalar`, `simd/permute_dynamic`, `simd/compress_expand`, `simd/gather_scatter`, `simd/math`, `simd/bit`, `simd/complex` | G | C | parts of `<simd>`: `simd::iota`, the masked range constructor, the scalar `reduce`/`reduce_min`/`reduce_max` overloads, `v[indices]` and dynamic permute of masks, `compress`/`expand`, `unchecked_gather_from`/`partial_scatter_to` etc., the `<cmath>` and `<bit>` overloads, `vec<complex<T>>` (Clang: no `<simd>` at all, §3) |
 | `contracts/synopsis`, `contracts/observe` | G |  | `contract_violation::detection_mode()` (only a private member); also `invoke_default_contract_violation_handler` is `noexcept` (allowed, [res.on.exception.handling]/5) |
 | `linalg/views_solves` | G | C | `<linalg>` |
+| `cmath/annex_f_all`, `cmath/annex_f_extended` (GCC only: Clang has no extended types), `complex/edge_values_constexpr` | G | C | constexpr `<cmath>`/`<complex>` (the run-time values all agree with Annex F / the draft) |
+| `cstdlib/constexpr_abs_div` | G | C | constexpr `div`/`ldiv`/`lldiv` (P0533R9); with Clang also `abs(long)`, `labs` |
+| `modes/freestanding_items`, `modes/freestanding_items_numeric` | G | C | with `-ffreestanding`: `std::abs`, `div`, `lldiv`, `qsort`, `bsearch` are missing from `<cstdlib>`; `<charconv>`, `<cmath>`, `<execution>`, `<inplace_vector>`, `<random>`, `<string>`, `<system_error>` are "not available in freestanding mode" ([compliance] Table 27 lists them; their freestanding items: [charconv.syn], [cmath.syn], [execution.syn], [inplace.vector.syn], [rand.synopsis], [string.syn], [system.error.syn]) |
 ## 3. Differences between GCC and Clang with the same libstdc++
 
 These pass with GCC and fail with Clang; libstdc++ makes the feature depend on the compiler, or
@@ -214,6 +220,8 @@ Clang rejects code GCC accepts.
 |---|---|---|---|
 | `cfloat/macros`, `cstdint/macros`, `cwchar/macros` | G | C | `__STDC_VERSION_FLOAT_H__`/`_STDINT_H__`/`_WCHAR_H__`, `WCHAR_WIDTH`, and `INFINITY`/`NAN` in `<cfloat>` (C23 additions the C++26 headers include) are not provided by the C library/compiler headers libstdc++ wraps |
 | `iomanip/time_specifiers_roundtrip` | G | C | glibc's strftime gives "9" for %C of the year 905 (line 139; all other specifiers and round trips pass) | ISO C 7.29.3.5: %C is "the year divided by 100 and truncated to an integer, as a decimal number (00-99)" |
+| `cstdlib/c23_functions`, `cstring/c23_functions` | G | C | the C23 functions of [cstdlib.syn]/[cstring.syn] are not in `std` (`memalignment`, `free_sized`, `free_aligned_sized`, `strfromd/f/l`, `memccpy`, `strdup`, `strndup`, `memset_explicit`; glibc 2.39 has `strfrom*`, `memccpy`, `strdup`, `strndup` but no using-declarations bring them into `std`, the others are not in glibc 2.39) |
+| `cstring/stdc_version_macros` | G | C | `__STDC_VERSION_INTTYPES_H__`, `_STDIO_H__`, `_TIME_H__`, `_STRING_H__`, `_UCHAR_H__` ([cinttypes.syn], [cstdio.syn], [ctime.syn], [cstring.syn], [cuchar.syn]) are not defined (as `cfloat/macros` etc.) |
 
 ## 5. Compiler and ABI limits (same with libycxx's runtime)
 
@@ -222,3 +230,9 @@ Clang rejects code GCC accepts.
 | `except/handler_pointer_reference`, `except/handler_pointer_reference_exact` | G | C | the Itanium ABI records `catch (T*&)` like `catch (T*)` (STATUS: known limitations) |
 | `except/handler_array_decay`, `except/handler_function_pointer` | G |  | GCC records `catch (int(&)[3])` / `catch (int(&)())` as pointer handlers |
 | `except/handler_member_pointer` | G |  | libsupc++ ignores the member function's cv/ref-qualifiers that GCC records only in the type name (libycxx's runtime handles this) |
+
+## 6. Configuration modes outside the draft
+
+| Test | G | C | Cause |
+|---|---|---|---|
+| `modes/no_rtti` | G | C | with `-fno-rtti`, `get_deleter<D>(p)` returns nullptr even when p's deleter has type D (libycxx finds it); the draft has no mode without RTTI, so this is not a conformance failure |

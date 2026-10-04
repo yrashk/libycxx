@@ -174,7 +174,7 @@ extern "C" int main() {
   int* np = new (std::nothrow) int(6);
   CHECK(np != nullptr && *np == 6);
   delete np;
-  auto up = std::make_unique<int>(7);
+  std::unique_ptr<int> up(new int(7));  // (make_unique is not a freestanding item)
   CHECK(*up == 7);
   std::unique_ptr<int[]> ua(new int[3]{1, 2, 3});
   CHECK(ua[2] == 3);

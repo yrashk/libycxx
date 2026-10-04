@@ -23,6 +23,7 @@
 
 #include <initializer_list>
 #include <ycxx/core/algo_base.hpp>
+#include <ycxx/core/assoc_support.hpp>
 #include <ycxx/core/compare.hpp>
 #include <ycxx/core/container_base.hpp>
 #include <ycxx/core/error.hpp>
@@ -33,8 +34,8 @@
 #include <ycxx/core/node_handle.hpp>
 #include <ycxx/core/pair.hpp>
 #include <ycxx/core/seq_support.hpp>
-#include <ycxx/core/sorted_tags.hpp>
 #include <ycxx/core/sequence_support.hpp>
+#include <ycxx/core/sorted_tags.hpp>
 #include <ycxx/core/swap.hpp>
 #include <ycxx/core/utility_base.hpp>
 
@@ -297,14 +298,6 @@ constexpr void rb_erase(rb_base* z, rb_base* header, rb_base*& first) noexcept {
   if (x)
     x->red = false;
 }
-
-template <class Compare>
-concept transparent_compare = requires { typename Compare::is_transparent; };
-
-// [associative.reqmts.general]/180: the heterogeneous erase and extract.
-template <class Compare, class K, class It, class CIt>
-concept transparent_non_iter =
-    transparent_compare<Compare> && !std::is_convertible_v<K&&, It> && !std::is_convertible_v<K&&, CIt>;
 
 // The key of the element a set (IsMap false) or map would build from args, when it can be read
 // from the arguments without constructing an element: a single key argument (set), a key first
@@ -1175,24 +1168,3 @@ public:
 };
 
 } // namespace ycxx::adl_free
-
-namespace ycxx::detail {
-
-// [associative.general]/2 and the deduction-guide constraints ([associative.reqmts.general]/181).
-template <class I>
-using iter_key_type = std::remove_cvref_t<std::tuple_element_t<0, iter_value_type<I>>>;
-template <class I>
-using iter_mapped_type = std::remove_cvref_t<std::tuple_element_t<1, iter_value_type<I>>>;
-template <class I>
-using iter_to_alloc_type = std::pair<const iter_key_type<I>, iter_mapped_type<I>>;
-template <class R>
-using range_key_type = std::remove_cvref_t<std::tuple_element_t<0, std::ranges::range_value_t<R>>>;
-template <class R>
-using range_mapped_type = std::remove_cvref_t<std::tuple_element_t<1, std::ranges::range_value_t<R>>>;
-template <class R>
-using range_to_alloc_type = std::pair<const range_key_type<R>, range_mapped_type<R>>;
-
-template <class C>
-concept deducible_compare = !qualifies_as_allocator<C>;
-
-} // namespace ycxx::detail

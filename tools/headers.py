@@ -10,6 +10,7 @@ CORE = [
     "string",
 ]
 CORE += ["algorithm", "numeric", "execution", "ranges"]
+CORE += ["deque", "list", "forward_list", "stack", "queue"]
 # Hosted: need an OS (through the PAL) or the C library.
 HOSTED = [
     "any", "cctype", "cerrno", "cfenv", "cinttypes", "clocale", "csetjmp", "csignal", "cstdarg", "cstdio",

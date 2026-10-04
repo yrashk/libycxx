@@ -214,3 +214,7 @@
 #  define __cpp_lib_hardened_optional 202502L
 #  define __cpp_lib_hardened_span 202502L
 #endif
+
+// <ratio> <numbers> <cmath> <complex> <valarray>
+#define __cpp_lib_ratio 202306L
+#define __cpp_lib_freestanding_ratio 202306L

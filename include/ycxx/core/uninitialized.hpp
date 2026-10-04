@@ -71,7 +71,7 @@ template <class NoThrowForwardIterator>
 constexpr void uninitialized_default_construct(NoThrowForwardIterator first, NoThrowForwardIterator last) {
   using T = typename iterator_traits<NoThrowForwardIterator>::value_type;
   NoThrowForwardIterator cur = first;
-  ycxx::detail::uninit_guard g{first, &cur};
+  ycxx::detail::uninit_guard g{first, __builtin_addressof(cur)};
   for (; cur != last; ++cur)
     ::new (::ycxx::detail::voidify(*cur)) T;
   g.release();
@@ -80,7 +80,7 @@ template <class NoThrowForwardIterator, class Size>
 constexpr NoThrowForwardIterator uninitialized_default_construct_n(NoThrowForwardIterator first, Size n) {
   using T = typename iterator_traits<NoThrowForwardIterator>::value_type;
   NoThrowForwardIterator cur = first;
-  ycxx::detail::uninit_guard g{first, &cur};
+  ycxx::detail::uninit_guard g{first, __builtin_addressof(cur)};
   for (; n > 0; (void)++cur, --n)
     ::new (::ycxx::detail::voidify(*cur)) T;
   g.release();
@@ -92,7 +92,7 @@ template <class NoThrowForwardIterator>
 constexpr void uninitialized_value_construct(NoThrowForwardIterator first, NoThrowForwardIterator last) {
   using T = typename iterator_traits<NoThrowForwardIterator>::value_type;
   NoThrowForwardIterator cur = first;
-  ycxx::detail::uninit_guard g{first, &cur};
+  ycxx::detail::uninit_guard g{first, __builtin_addressof(cur)};
   for (; cur != last; ++cur)
     ::new (::ycxx::detail::voidify(*cur)) T();
   g.release();
@@ -101,7 +101,7 @@ template <class NoThrowForwardIterator, class Size>
 constexpr NoThrowForwardIterator uninitialized_value_construct_n(NoThrowForwardIterator first, Size n) {
   using T = typename iterator_traits<NoThrowForwardIterator>::value_type;
   NoThrowForwardIterator cur = first;
-  ycxx::detail::uninit_guard g{first, &cur};
+  ycxx::detail::uninit_guard g{first, __builtin_addressof(cur)};
   for (; n > 0; (void)++cur, --n)
     ::new (::ycxx::detail::voidify(*cur)) T();
   g.release();
@@ -114,7 +114,7 @@ constexpr NoThrowForwardIterator uninitialized_copy(InputIterator first, InputIt
                                                     NoThrowForwardIterator result) {
   using T = typename iterator_traits<NoThrowForwardIterator>::value_type;
   NoThrowForwardIterator cur = result;
-  ycxx::detail::uninit_guard g{result, &cur};
+  ycxx::detail::uninit_guard g{result, __builtin_addressof(cur)};
   for (; first != last; ++cur, (void)++first)
     ::new (::ycxx::detail::voidify(*cur)) T(*first);
   g.release();
@@ -124,7 +124,7 @@ template <class InputIterator, class Size, class NoThrowForwardIterator>
 constexpr NoThrowForwardIterator uninitialized_copy_n(InputIterator first, Size n, NoThrowForwardIterator result) {
   using T = typename iterator_traits<NoThrowForwardIterator>::value_type;
   NoThrowForwardIterator cur = result;
-  ycxx::detail::uninit_guard g{result, &cur};
+  ycxx::detail::uninit_guard g{result, __builtin_addressof(cur)};
   for (; n > 0; ++cur, (void)++first, --n)
     ::new (::ycxx::detail::voidify(*cur)) T(*first);
   g.release();
@@ -137,7 +137,7 @@ constexpr NoThrowForwardIterator uninitialized_move(InputIterator first, InputIt
                                                     NoThrowForwardIterator result) {
   using T = typename iterator_traits<NoThrowForwardIterator>::value_type;
   NoThrowForwardIterator cur = result;
-  ycxx::detail::uninit_guard g{result, &cur};
+  ycxx::detail::uninit_guard g{result, __builtin_addressof(cur)};
   for (; first != last; (void)++cur, ++first)
     ::new (::ycxx::detail::voidify(*cur)) T(::ycxx::detail::deref_move(first));
   g.release();
@@ -148,7 +148,7 @@ constexpr pair<InputIterator, NoThrowForwardIterator> uninitialized_move_n(Input
                                                                            NoThrowForwardIterator result) {
   using T = typename iterator_traits<NoThrowForwardIterator>::value_type;
   NoThrowForwardIterator cur = result;
-  ycxx::detail::uninit_guard g{result, &cur};
+  ycxx::detail::uninit_guard g{result, __builtin_addressof(cur)};
   for (; n > 0; ++cur, (void)++first, --n)
     ::new (::ycxx::detail::voidify(*cur)) T(::ycxx::detail::deref_move(first));
   g.release();
@@ -160,7 +160,7 @@ template <class NoThrowForwardIterator, class T = typename iterator_traits<NoThr
 constexpr void uninitialized_fill(NoThrowForwardIterator first, NoThrowForwardIterator last, const T& x) {
   using V = typename iterator_traits<NoThrowForwardIterator>::value_type;
   NoThrowForwardIterator cur = first;
-  ycxx::detail::uninit_guard g{first, &cur};
+  ycxx::detail::uninit_guard g{first, __builtin_addressof(cur)};
   for (; cur != last; ++cur)
     ::new (::ycxx::detail::voidify(*cur)) V(x);
   g.release();
@@ -170,7 +170,7 @@ template <class NoThrowForwardIterator, class Size,
 constexpr NoThrowForwardIterator uninitialized_fill_n(NoThrowForwardIterator first, Size n, const T& x) {
   using V = typename iterator_traits<NoThrowForwardIterator>::value_type;
   NoThrowForwardIterator cur = first;
-  ycxx::detail::uninit_guard g{first, &cur};
+  ycxx::detail::uninit_guard g{first, __builtin_addressof(cur)};
   for (; n--; ++cur)
     ::new (::ycxx::detail::voidify(*cur)) V(x);
   g.release();
@@ -209,7 +209,7 @@ struct default_construct {
     requires std::default_initializable<iter_value_t<I>>
   static constexpr I operator()(I first, S last) {
     I cur = first;
-    uninit_guard g{first, &cur};
+    uninit_guard g{first, __builtin_addressof(cur)};
     for (; cur != last; ++cur)
       ::new (::ycxx::detail::voidify(*cur)) elem_t<I>;
     g.release();
@@ -226,7 +226,7 @@ struct default_construct_n {
     requires std::default_initializable<iter_value_t<I>>
   static constexpr I operator()(I first, iter_difference_t<I> n) {
     I cur = first;
-    uninit_guard g{first, &cur};
+    uninit_guard g{first, __builtin_addressof(cur)};
     for (; n > 0; (void)++cur, --n)
       ::new (::ycxx::detail::voidify(*cur)) elem_t<I>;
     g.release();
@@ -239,7 +239,7 @@ struct value_construct {
     requires std::default_initializable<iter_value_t<I>>
   static constexpr I operator()(I first, S last) {
     I cur = first;
-    uninit_guard g{first, &cur};
+    uninit_guard g{first, __builtin_addressof(cur)};
     for (; cur != last; ++cur)
       ::new (::ycxx::detail::voidify(*cur)) elem_t<I>();
     g.release();
@@ -256,7 +256,7 @@ struct value_construct_n {
     requires std::default_initializable<iter_value_t<I>>
   static constexpr I operator()(I first, iter_difference_t<I> n) {
     I cur = first;
-    uninit_guard g{first, &cur};
+    uninit_guard g{first, __builtin_addressof(cur)};
     for (; n > 0; (void)++cur, --n)
       ::new (::ycxx::detail::voidify(*cur)) elem_t<I>();
     g.release();
@@ -269,7 +269,7 @@ struct copy {
     requires std::constructible_from<iter_value_t<O>, std::iter_reference_t<I>>
   static constexpr std::ranges::uninitialized_copy_result<I, O> operator()(I ifirst, S1 ilast, O ofirst, S2 olast) {
     O cur = ofirst;
-    uninit_guard g{ofirst, &cur};
+    uninit_guard g{ofirst, __builtin_addressof(cur)};
     for (; ifirst != ilast && cur != olast; ++cur, (void)++ifirst)
       ::new (::ycxx::detail::voidify(*cur)) elem_t<O>(*ifirst);
     g.release();
@@ -290,7 +290,7 @@ struct copy_n {
   static constexpr std::ranges::uninitialized_copy_n_result<I, O> operator()(I ifirst, iter_difference_t<I> n,
                                                                              O ofirst, S olast) {
     O cur = ofirst;
-    uninit_guard g{ofirst, &cur};
+    uninit_guard g{ofirst, __builtin_addressof(cur)};
     for (; n > 0 && cur != olast; ++cur, (void)++ifirst, --n)
       ::new (::ycxx::detail::voidify(*cur)) elem_t<O>(*ifirst);
     g.release();
@@ -303,7 +303,7 @@ struct move {
     requires std::constructible_from<iter_value_t<O>, std::iter_rvalue_reference_t<I>>
   static constexpr std::ranges::uninitialized_move_result<I, O> operator()(I ifirst, S1 ilast, O ofirst, S2 olast) {
     O cur = ofirst;
-    uninit_guard g{ofirst, &cur};
+    uninit_guard g{ofirst, __builtin_addressof(cur)};
     for (; ifirst != ilast && cur != olast; ++cur, (void)++ifirst)
       ::new (::ycxx::detail::voidify(*cur)) elem_t<O>(std::ranges::iter_move(ifirst));
     g.release();
@@ -324,7 +324,7 @@ struct move_n {
   static constexpr std::ranges::uninitialized_move_n_result<I, O> operator()(I ifirst, iter_difference_t<I> n,
                                                                              O ofirst, S olast) {
     O cur = ofirst;
-    uninit_guard g{ofirst, &cur};
+    uninit_guard g{ofirst, __builtin_addressof(cur)};
     for (; n > 0 && cur != olast; ++cur, (void)++ifirst, --n)
       ::new (::ycxx::detail::voidify(*cur)) elem_t<O>(std::ranges::iter_move(ifirst));
     g.release();
@@ -337,7 +337,7 @@ struct fill {
     requires std::constructible_from<iter_value_t<I>, const T&>
   static constexpr I operator()(I first, S last, const T& x) {
     I cur = first;
-    uninit_guard g{first, &cur};
+    uninit_guard g{first, __builtin_addressof(cur)};
     for (; cur != last; ++cur)
       ::new (::ycxx::detail::voidify(*cur)) elem_t<I>(x);
     g.release();
@@ -354,7 +354,7 @@ struct fill_n {
     requires std::constructible_from<iter_value_t<I>, const T&>
   static constexpr I operator()(I first, iter_difference_t<I> n, const T& x) {
     I cur = first;
-    uninit_guard g{first, &cur};
+    uninit_guard g{first, __builtin_addressof(cur)};
     for (; n > 0; (void)++cur, --n)
       ::new (::ycxx::detail::voidify(*cur)) elem_t<I>(x);
     g.release();

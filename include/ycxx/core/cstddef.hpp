@@ -4,9 +4,16 @@
 #include <ycxx/config.hpp>
 #include <ycxx/core/prim_traits.hpp>
 
+// [headers]/7 leaves it unspecified whether these names are also declared at global scope.
+// Every C library's <stddef.h> declares ::size_t and ::ptrdiff_t, and much existing code relies
+// on that, so they are declared there too. A typedef of the same type may be redeclared, so a
+// later <stddef.h> stays valid. (max_align_t is a class, so only std::max_align_t is ours.)
+typedef decltype(sizeof(0)) size_t;
+typedef decltype(static_cast<int*>(nullptr) - static_cast<int*>(nullptr)) ptrdiff_t;
+
 namespace std {
-using size_t = decltype(sizeof(0));
-using ptrdiff_t = decltype(static_cast<int*>(nullptr) - static_cast<int*>(nullptr));
+using ::size_t;
+using ::ptrdiff_t;
 using nullptr_t = decltype(nullptr);
 
 // Same definition as the compilers' own <stddef.h> uses, so std::max_align_t has the

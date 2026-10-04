@@ -118,7 +118,7 @@ void format(out& o, const std::tm* t, char spec, char mod) {
     long long y;
     int w;
     iso_week(t, y, w);
-    o.number(((y % 100) + 100) % 100, 2);
+    o.number((y < 0 ? -y : y) % 100, 2);
     return;
   }
   case 'G': {
@@ -185,7 +185,7 @@ void format(out& o, const std::tm* t, char spec, char mod) {
     o.number((t->tm_yday + 7 - (t->tm_wday + 6) % 7) / 7, 2);
     return;
   case 'y':
-    o.number(((year % 100) + 100) % 100, 2);
+    o.number((year < 0 ? -year : year) % 100, 2);
     return;
   case 'Y':
     o.number(year, 1);

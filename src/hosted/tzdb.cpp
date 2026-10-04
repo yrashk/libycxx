@@ -465,6 +465,16 @@ info ycxx::detail::tz_data::rule_info(int64_t t) const {
     return {min_time, max_time, rule.std_off, 0, abbrevs[std_abbrev]};
   const int64_t save = (rule.dst_off - rule.std_off) / 60;
   const int64_t y = ycxx::detail::civil_from_days(ycxx::detail::chrono_floor_div(t, 86400)).y;
+  // DST all year round: each year's DST lasts until the next year's begins (Africa/Casablanca's
+  // "<+00>0<+01>,0/0,J365/25"); one period without end, not one per year.
+  bool permanent = true;
+  for (int64_t yy = y - 1; yy <= y; ++yy) {
+    const int64_t s0 = rule_local_time(rule.start, yy) - rule.std_off;
+    const int64_t e0 = rule_local_time(rule.end, yy) - rule.dst_off;
+    permanent = permanent && s0 < e0 && e0 >= rule_local_time(rule.start, yy + 1) - rule.std_off;
+  }
+  if (permanent)
+    return {min_time, max_time, rule.dst_off, save, abbrevs[dst_abbrev]};
   struct edge {
     int64_t at;
     bool dst;

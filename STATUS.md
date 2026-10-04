@@ -308,10 +308,11 @@ Deprecated and removed features are not implemented (`is_pod`, `is_trivial`, `al
 - `<ranges>` (core): every factory, adaptor and range utility of the draft, constexpr, in
   `ranges_adaptor.hpp` (closures, movable-box, caches), `ranges_factories.hpp`,
   `ranges_adaptors.hpp`, `ranges_zip.hpp`, `ranges_join.hpp`, `ranges_chunk.hpp` and
-  `ranges_to.hpp`. libc++ std/ranges: 533/590 (Clang) before skips, the rest missing headers
-  (`<map>`, `<sstream>`, `<regex>`, `<istream>`), range-access CPO tests that predate
-  possibly-const-range, and tests of exposition-only constructors (skipped); libstdc++
-  std/ranges: 37/53 (the rest missing headers or libstdc++ internals). Notes:
+  `ranges_to.hpp`. libc++ std/ranges: 534/561 (Clang), 532/561 (GCC), was 21/46; the rest
+  need missing headers (`<map>`, `<sstream>`, `<regex>`, `<istream>`) or are range-access CPO
+  tests that predate possibly-const-range ([range.access.cbegin]); tests of exposition-only
+  constructors and draft divergences are skipped. libstdc++ std/ranges: 39/49 on both, was 14
+  (the rest missing headers). Notes:
   - `basic_istream_view` needs only the stream's interface: `basic_istream` is declared in
     core without default arguments and must be complete where the view is used.
   - Choices where the draft leaves room: IOTA-DIFF-T of the 64-bit types (and of `__int128`)

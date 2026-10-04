@@ -82,6 +82,13 @@
 // <span>
 #define __cpp_lib_span 202311L
 
+// <mdspan>
+#define __cpp_lib_mdspan 202406L
+#define __cpp_lib_freestanding_mdspan 202311L
+#define __cpp_lib_submdspan 202603L
+#define __cpp_lib_aligned_accessor 202411L
+#define __cpp_lib_mdspan_copy 202606L
+
 // <any>
 #define __cpp_lib_any 201606L
 
@@ -308,6 +315,7 @@
 #  define __cpp_lib_hardened_list 202502L
 #  define __cpp_lib_hardened_optional 202502L
 #  define __cpp_lib_hardened_span 202502L
+#  define __cpp_lib_hardened_mdspan 202502L
 #  define __cpp_lib_hardened_vector 202502L
 #  define __cpp_lib_hardened_inplace_vector 202502L
 #  define __cpp_lib_hardened_valarray 202502L

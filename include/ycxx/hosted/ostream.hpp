@@ -511,7 +511,9 @@ basic_ostream<charT, traits>& flush_emit(basic_ostream<charT, traits>& os) {
 
 // [ostream.rvalue]
 template <class Ostream, class T>
-  requires derived_from<Ostream, ios_base> && requires(Ostream& os, const T& x) { os << x; }
+  // "publicly and unambiguously derived from ios_base": ios_base itself is not
+  requires derived_from<Ostream, ios_base> && (!is_same_v<remove_cv_t<Ostream>, ios_base>) &&
+           requires(Ostream& os, const T& x) { os << x; }
 Ostream&& operator<<(Ostream&& os, const T& x) {
   os << x;
   return static_cast<Ostream&&>(os);

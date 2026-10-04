@@ -66,9 +66,11 @@ public:
   basic_istream& getline(char_type* s, streamsize n) { return getline(s, n, this->widen('\n')); }
   basic_istream& getline(char_type* s, streamsize n, char_type delim);
   basic_istream& ignore(streamsize n = 1, int_type delim = traits::eof());
-  basic_istream& ignore(streamsize n, char_type delim)
-    requires is_same_v<char_type, char>
-  {
+  // A template (exactly char_type is deduced), so that ignore(n, -1L) still picks the int_type
+  // overload instead of being ambiguous.
+  template <class C>
+    requires is_same_v<C, char_type> && is_same_v<char_type, char>
+  basic_istream& ignore(streamsize n, C delim) {
     return ignore(n, traits::to_int_type(delim));
   }
   int_type peek();
@@ -644,7 +646,8 @@ basic_istream<charT, traits>& ws(basic_istream<charT, traits>& is) {
 
 // [istream.rvalue]
 template <class Istream, class T>
-  requires derived_from<Istream, ios_base> && requires(Istream& is, T&& x) { is >> static_cast<T&&>(x); }
+  requires derived_from<Istream, ios_base> && (!is_same_v<remove_cv_t<Istream>, ios_base>) &&
+           requires(Istream& is, T&& x) { is >> static_cast<T&&>(x); }
 Istream&& operator>>(Istream&& is, T&& x) {
   is >> static_cast<T&&>(x);
   return static_cast<Istream&&>(is);

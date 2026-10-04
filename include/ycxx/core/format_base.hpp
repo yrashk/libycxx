@@ -918,9 +918,12 @@ constexpr const charT* fmt_parse_fill_align(const charT* p, const charT* e, fmt_
   if (static_cast<std::size_t>(e - p) > d.len && ::ycxx::detail::fmt_is_align(static_cast<char32_t>(p[d.len]))) {
     if (!d.ok || *p == charT('{'))
       ::ycxx::detail::throw_format_error("std::format: invalid fill character");
-    for (unsigned i = 0; i != d.len; ++i)
+    // A decoded scalar value is at most 4 code units; the bound also tells GCC -O3 that the
+    // copy stays inside fill (-Wstringop-overflow).
+    const unsigned n = d.len < 4 ? d.len : 4;
+    for (unsigned i = 0; i != n; ++i)
       s.fill[i] = p[i];
-    s.fill_len = static_cast<unsigned char>(d.len);
+    s.fill_len = static_cast<unsigned char>(n);
     s.align = ::ycxx::detail::fmt_align_of(static_cast<char32_t>(p[d.len]));
     return p + d.len + 1;
   }

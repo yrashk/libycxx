@@ -4,6 +4,9 @@
 #include <ycxx/pal.h>
 
 #include <errno.h>
+#include <limits.h>
+#include <pthread.h>
+#include <sched.h>
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -13,6 +16,9 @@
 #if defined(__linux__)
 #  include <linux/futex.h>
 #  include <sys/syscall.h>
+#endif
+#if defined(__APPLE__)
+#  include <sys/sysctl.h>
 #endif
 #if __has_include(<sys/random.h>)
 #  include <sys/random.h>
@@ -103,6 +109,125 @@ void ycxx_pal_wake_all(const ycxx_pal_u32* addr) {
   syscall(SYS_futex, addr, FUTEX_WAKE_PRIVATE, 0x7fffffff, NULL, NULL, 0);
 #else
   (void)addr;
+#endif
+}
+
+void ycxx_pal_wake_one(const ycxx_pal_u32* addr) {
+#if defined(__linux__)
+  syscall(SYS_futex, addr, FUTEX_WAKE_PRIVATE, 1, NULL, NULL, 0);
+#else
+  (void)addr;
+#endif
+}
+
+static clockid_t pal_clockid(int clock) { return clock == ycxx_pal_clock_monotonic ? CLOCK_MONOTONIC : CLOCK_REALTIME; }
+
+/* Whether the absolute time sec:nsec of `clock` has passed. */
+__attribute__((unused)) static int pal_passed(int clock, ycxx_pal_i64 sec, ycxx_pal_i64 nsec) {
+  struct timespec now;
+  clock_gettime(pal_clockid(clock), &now);
+  return now.tv_sec > sec || (now.tv_sec == sec && now.tv_nsec >= nsec);
+}
+
+int ycxx_pal_wait_until(const ycxx_pal_u32* addr, ycxx_pal_u32 expected, int clock, ycxx_pal_i64 sec,
+                        ycxx_pal_i64 nsec) {
+  if (sec < 0)
+    return ETIMEDOUT;
+#if defined(__linux__)
+  /* FUTEX_WAIT_BITSET takes an absolute time, on CLOCK_MONOTONIC unless FUTEX_CLOCK_REALTIME. */
+  struct timespec ts = {(time_t)sec, (long)nsec};
+  int op = FUTEX_WAIT_BITSET_PRIVATE | (clock == ycxx_pal_clock_realtime ? FUTEX_CLOCK_REALTIME : 0);
+  long r = syscall(SYS_futex, addr, op, expected, &ts, NULL, FUTEX_BITSET_MATCH_ANY);
+  if (r != 0 && errno == ETIMEDOUT)
+    return ETIMEDOUT;
+  return 0;
+#else
+  if (pal_passed(clock, sec, nsec))
+    return ETIMEDOUT;
+  ycxx_pal_wait(addr, expected);
+  return 0;
+#endif
+}
+
+/* ---- threads ---- */
+int ycxx_pal_thread_create(ycxx_pal_handle* thread, void* (*start)(void*), void* arg, ycxx_pal_size stack_size) {
+  pthread_attr_t attr;
+  int r = pthread_attr_init(&attr);
+  if (r != 0)
+    return r;
+  if (stack_size != 0) {
+    /* A size the system cannot use is a hint to ignore, not an error. */
+    if (stack_size < (ycxx_pal_size)PTHREAD_STACK_MIN)
+      stack_size = (ycxx_pal_size)PTHREAD_STACK_MIN;
+    (void)pthread_attr_setstacksize(&attr, stack_size);
+  }
+  pthread_t t;
+  r = pthread_create(&t, &attr, start, arg);
+  pthread_attr_destroy(&attr);
+  if (r == 0)
+    *thread = (ycxx_pal_handle)t;
+  return r;
+}
+
+int ycxx_pal_thread_join(ycxx_pal_handle thread) { return pthread_join((pthread_t)thread, NULL); }
+
+int ycxx_pal_thread_detach(ycxx_pal_handle thread) { return pthread_detach((pthread_t)thread); }
+
+ycxx_pal_handle ycxx_pal_thread_self(void) { return (ycxx_pal_handle)pthread_self(); }
+
+void ycxx_pal_thread_set_name(const char* name) {
+#if defined(__APPLE__)
+  pthread_setname_np(name);
+#elif defined(__linux__)
+  /* Linux limits names to 15 bytes plus the terminator. */
+  char buf[16];
+  size_t n = strlen(name);
+  if (n > 15)
+    n = 15;
+  memcpy(buf, name, n);
+  buf[n] = '\0';
+  pthread_setname_np(pthread_self(), buf);
+#else
+  (void)name;
+#endif
+}
+
+void ycxx_pal_thread_yield(void) { sched_yield(); }
+
+unsigned ycxx_pal_hardware_concurrency(void) {
+#if defined(__linux__)
+  cpu_set_t set;
+  if (sched_getaffinity(0, sizeof set, &set) == 0) {
+    int n = CPU_COUNT(&set);
+    if (n > 0)
+      return (unsigned)n;
+  }
+#endif
+  long n = sysconf(_SC_NPROCESSORS_ONLN);
+  return n > 0 ? (unsigned)n : 0;
+}
+
+void ycxx_pal_sleep_until(int clock, ycxx_pal_i64 sec, ycxx_pal_i64 nsec) {
+  if (sec < 0)
+    return;
+#if defined(__linux__)
+  struct timespec ts = {(time_t)sec, (long)nsec};
+  while (clock_nanosleep(pal_clockid(clock), TIMER_ABSTIME, &ts, NULL) == EINTR) {
+  }
+#else
+  while (!pal_passed(clock, sec, nsec)) {
+    struct timespec now, rel;
+    clock_gettime(pal_clockid(clock), &now);
+    rel.tv_sec = (time_t)(sec - now.tv_sec);
+    rel.tv_nsec = (long)(nsec - now.tv_nsec);
+    if (rel.tv_nsec < 0) {
+      rel.tv_nsec += 1000000000;
+      --rel.tv_sec;
+    }
+    if (rel.tv_sec < 0)
+      return;
+    nanosleep(&rel, NULL);
+  }
 #endif
 }
 

@@ -10,6 +10,11 @@
 #  define __STDC_VERSION_TIME_H__ 202311L
 #endif
 
+// [depr.ctime] (Annex D; also deprecated in C23): the C library's declarations, redeclared
+// [[deprecated]] (decltype keeps their exact type, noexcept included); std:: names them below.
+[[deprecated("asctime is deprecated ([depr.ctime]); use strftime or std::format")]] decltype(::asctime) asctime;
+[[deprecated("ctime is deprecated ([depr.ctime]); use strftime or std::format")]] decltype(::ctime) ctime;
+
 namespace std {
 using ::clock_t;
 using ::time_t;

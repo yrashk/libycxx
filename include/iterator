@@ -9,3 +9,4 @@
 #include <ycxx/core/iterator_ops.hpp>
 #include <ycxx/core/iterator_adaptors.hpp>
 #include <ycxx/core/stream_iterators.hpp>
+#include <ycxx/core/iterator_depr.hpp>

@@ -694,6 +694,10 @@ public:
   constexpr Iterator base() && { return static_cast<Iterator&&>(current_); }
 
   constexpr reference operator*() const { return ranges::iter_move(current_); }
+  [[deprecated("move_iterator::operator-> is deprecated ([depr.move.iter.elem])")]]
+  constexpr pointer operator->() const {
+    return current_;
+  }
 
   constexpr move_iterator& operator++() {
     ++current_;

@@ -57,18 +57,34 @@ inline constexpr size_t variant_npos = static_cast<size_t>(-1);
 
 namespace ycxx::detail {
 
-// ---- constant-time index dispatch -------------------------------------------------------------
-// Calls f(integral_constant<size_t, i>{}) for a run-time i < N through a table of function
-// pointers (also usable in constant evaluation).
+// ---- index dispatch ---------------------------------------------------------------------------
+// Calls f(integral_constant<size_t, i>{}) for a run-time i < N. Small N uses a compare chain,
+// which both compilers inline (GCC keeps the indirect call through a table); larger N uses a
+// table of function pointers. Both work in constant evaluation.
+inline constexpr std::size_t dispatch_chain_max = 12;
+
+template <std::size_t I, std::size_t N, class R, class F>
+constexpr R dispatch_chain(std::size_t i, F&& f) {
+  if constexpr (I + 1 == N)
+    return static_cast<F&&>(f)(std::integral_constant<std::size_t, I>{});
+  else if (i == I)
+    return static_cast<F&&>(f)(std::integral_constant<std::size_t, I>{});
+  else
+    return ::ycxx::detail::dispatch_chain<I + 1, N, R>(i, static_cast<F&&>(f));
+}
+
 template <std::size_t N, class F>
 constexpr decltype(auto) dispatch_index(std::size_t i, F&& f) {
   using R = decltype(static_cast<F&&>(f)(std::integral_constant<std::size_t, 0>{}));
-  return [&]<std::size_t... I>(std::index_sequence<I...>) -> R {
+  if constexpr (N <= dispatch_chain_max)
+    return ::ycxx::detail::dispatch_chain<0, N, R>(i, static_cast<F&&>(f));
+  else
+    return [&]<std::size_t... I>(std::index_sequence<I...>) -> R {
     static constexpr R (*table[])(F&&) = {+[](F&& g) -> R {
       return static_cast<F&&>(g)(std::integral_constant<std::size_t, I>{});
     }...};
-    return table[i](static_cast<F&&>(f));
-  }(std::make_index_sequence<N>{});
+      return table[i](static_cast<F&&>(f));
+    }(std::make_index_sequence<N>{});
 }
 
 // ---- storage ------------------------------------------------------------------------------------
@@ -123,8 +139,8 @@ constexpr auto&& var_raw_get(U&& u) noexcept {
     return ::ycxx::detail::var_raw_get<I - 1>(static_cast<U&&>(u).tail);
 }
 
-template <std::size_t N>
 // Indices 0..N-1 plus one value for valueless, so N alternatives fit in a type with N+1 values.
+template <std::size_t N>
 using var_index_t = std::conditional_t<(N < 256), unsigned char, std::conditional_t<(N < 65536), unsigned short, unsigned>>;
 
 // ---- converting-constructor alternative selection ([variant.ctor]/14) -----------------------
@@ -193,8 +209,6 @@ class variant {
   storage u_;
   index_type index_;
 
-  template <class... U>
-  friend class variant;
   friend ycxx::detail::variant_access;
 
   static constexpr bool trivial_copy = (is_trivially_copy_constructible_v<Types> && ...);
@@ -219,8 +233,19 @@ class variant {
   }
   template <size_t I, class... Args>
   constexpr void construct(Args&&... args) {
-    // Precondition: no alternative is active (destroyed or valueless).
+    // Precondition: no alternative is active (destroyed or valueless). construct_at replaces the
+    // whole union; if the alternative's constructor throws, the guard re-creates a (valueless)
+    // union so ~variant never runs ~var_union on an object whose lifetime has ended.
+    struct restore_union {
+      storage* u;
+      bool armed = true;
+      constexpr ~restore_union() {
+        if (armed)
+          std::construct_at(u, ycxx::detail::valueless_tag{});
+      }
+    } guard{__builtin_addressof(u_)};
     std::construct_at(__builtin_addressof(u_), in_place_index<I>, static_cast<Args&&>(args)...);
+    guard.armed = false;
     index_ = static_cast<index_type>(I);
   }
   template <class V>
@@ -236,8 +261,8 @@ class variant {
     using Ti = Types...[I];
     if constexpr (!is_nothrow_constructible_v<Ti, Args...> && is_trivially_copyable_v<Ti> && is_move_constructible_v<Ti>) {
       // Quality of implementation: build the new value first, so a throwing constructor leaves
-      // the old alternative in place instead of making the variant valueless. The extra copy
-      // is unobservable for trivially copyable types.
+      // the old alternative in place instead of making the variant valueless. The extra
+      // trivial move is permitted (the stored object is not the one the constructor built).
       Ti tmp(static_cast<Args&&>(args)...);
       destroy();
       construct<I>(static_cast<Ti&&>(tmp));
@@ -326,7 +351,12 @@ public:
         if constexpr (is_nothrow_copy_constructible_v<Tj> || !is_nothrow_move_constructible_v<Tj>)
           this->emplace<j>(::ycxx::detail::var_raw_get<j>(rhs.u_));
         else
-          this->operator=(variant(rhs));
+        {
+          // [variant.assign]/2.5 says operator=(variant(rhs)); doing the move directly avoids
+          // recursing into this function when variant's move assignment is constrained out.
+          variant tmp(rhs);
+          this->emplace<j>(static_cast<Tj&&>(::ycxx::detail::var_raw_get<j>(tmp.u_)));
+        }
       });
     }
     return *this;
@@ -595,8 +625,10 @@ namespace std {
 
 template <class Visitor, class... Variants>
   requires(requires { typename ycxx::detail::as_variant_t<Variants>; } && ...)
-constexpr ycxx::detail::visit_result_t<Visitor, ycxx::detail::as_variant_t<Variants>...> visit(Visitor&& vis,
-                                                                                               Variants&&... vars) {
+constexpr decltype(auto) visit(Visitor&& vis, Variants&&... vars) {
+  // The result type is computed in the body, not the signature: [variant.visit]/5 makes a
+  // visitor that is not callable with every alternative a Mandates violation (a hard error),
+  // not a reason to drop out of overload resolution.
   using R = ycxx::detail::visit_result_t<Visitor, ycxx::detail::as_variant_t<Variants>...>;
   return ycxx::detail::visit_entry<true, R>(static_cast<Visitor&&>(vis),
                                             ycxx::detail::as_variant(static_cast<Variants&&>(vars))...);

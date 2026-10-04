@@ -1,0 +1,6 @@
+// [propagation]/13: exception_ptr_cast: "Mandates: E is a cv-unqualified complete object
+// type."
+#include <exception>
+
+struct Incomplete;
+void f(const std::exception_ptr& p) { (void)std::exception_ptr_cast<Incomplete>(p); }

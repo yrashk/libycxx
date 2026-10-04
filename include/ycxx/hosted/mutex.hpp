@@ -341,17 +341,24 @@ void swap(unique_lock<Mutex>& x, unique_lock<Mutex>& y) noexcept {
 namespace ycxx::detail {
 
 // The lockables of lock/try_lock behind type-erased thunks, so they can be indexed at run time.
-template <std::size_t N>
+// lock() is used only by std::lock (`Lock`): std::try_lock needs only try_lock and unlock
+// (Cpp17Lockable without the blocking lock is not required there).
+template <std::size_t N, bool Lock>
 struct lockable_set {
   void* obj[N];
   void (*lock_fn[N])(void*);
   bool (*try_lock_fn[N])(void*);
   void (*unlock_fn[N])(void*);
 
+  template <class L>
+  static void lock_one(void* p) {
+    if constexpr (Lock)
+      static_cast<L*>(p)->lock();
+  }
+
   template <class... L>
   explicit lockable_set(L&... l) noexcept
-      : obj{static_cast<void*>(__builtin_addressof(l))...},
-        lock_fn{[](void* p) { static_cast<L*>(p)->lock(); }...},
+      : obj{static_cast<void*>(__builtin_addressof(l))...}, lock_fn{&lock_one<L>...},
         try_lock_fn{[](void* p) -> bool { return static_cast<L*>(p)->try_lock(); }...},
         unlock_fn{[](void* p) { static_cast<L*>(p)->unlock(); }...} {}
 
@@ -374,8 +381,8 @@ struct lockable_set {
 template <class... L>
 int try_lock_all(L&... l) {
   constexpr std::size_t n = sizeof...(L);
-  lockable_set<n> set(l...);
-  typename lockable_set<n>::release_guard g{&set, 0, 0};
+  lockable_set<n, false> set(l...);
+  typename lockable_set<n, false>::release_guard g{&set, 0, 0};
   for (std::size_t i = 0; i < n; ++i) {
     if (!set.try_lock_fn[i](set.obj[i]))
       return static_cast<int>(i);
@@ -390,11 +397,11 @@ int try_lock_all(L&... l) {
 template <class... L>
 void lock_all(L&... l) {
   constexpr std::size_t n = sizeof...(L);
-  lockable_set<n> set(l...);
+  lockable_set<n, true> set(l...);
   std::size_t first = 0;
   for (;;) {
     set.lock_fn[first](set.obj[first]);
-    typename lockable_set<n>::release_guard g{&set, first, 1};
+    typename lockable_set<n, true>::release_guard g{&set, first, 1};
     std::size_t busy = n;
     for (std::size_t k = 1; k < n; ++k) {
       const std::size_t j = (first + k) % n;

@@ -302,7 +302,7 @@ void future_set_from(future_state<R>& s, bool at_thread_exit, F&& f) {
   }
 }
 
-// A state whose storage came from an allocator (promise and packaged_task with allocator_arg).
+// A state whose storage came from an allocator (promise with allocator_arg).
 template <class Base, class Alloc>
 class future_state_alloc final : public Base {
   using self_alloc = typename std::allocator_traits<Alloc>::template rebind_alloc<future_state_alloc>;
@@ -313,25 +313,29 @@ public:
   template <class... A>
   explicit future_state_alloc(const self_alloc& a, A&&... args) : Base(static_cast<A&&>(args)...), alloc_(a) {}
 
+  // The allocator's pointer may be a fancy pointer: the state is built at its address.
   static future_state_alloc* create(const Alloc& a) {
     self_alloc sa(a);
-    future_state_alloc* p = traits::allocate(sa, 1);
+    typename traits::pointer fp = traits::allocate(sa, 1);
     struct guard {
       self_alloc& a;
-      future_state_alloc* p;
+      typename traits::pointer& p;
+      bool armed = true;
       ~guard() {
-        if (p)
+        if (armed)
           traits::deallocate(a, p, 1);
       }
-    } g{sa, p};
+    } g{sa, fp};
+    future_state_alloc* p = std::to_address(fp);
     ::new (static_cast<void*>(p)) future_state_alloc(sa);
-    g.p = nullptr;
+    g.armed = false;
     return p;
   }
   void destroy() noexcept override {
     self_alloc a(static_cast<self_alloc&&>(alloc_));
+    typename traits::pointer fp = std::pointer_traits<typename traits::pointer>::pointer_to(*this);
     this->~future_state_alloc();
-    traits::deallocate(a, this, 1);
+    traits::deallocate(a, fp, 1);
   }
 };
 
@@ -355,6 +359,8 @@ public:
   virtual task_state* reset_clone() = 0;
 };
 
+// The task's state, in storage from the packaged_task's allocator (rebound; its pointer may be a
+// fancy pointer), which reset() reuses ([futures.task.members]/28).
 template <class F, class Alloc, class R, class... ArgTypes>
 class task_state_impl final : public task_state<R, ArgTypes...> {
   using self_alloc = typename std::allocator_traits<Alloc>::template rebind_alloc<task_state_impl>;
@@ -367,19 +373,21 @@ public:
   task_state_impl(const self_alloc& a, G&& g) : f_(static_cast<G&&>(g)), alloc_(a) {}
 
   template <class G>
-  static task_state_impl* create(const Alloc& a, G&& g) {
+  static task_state_impl* create(const self_alloc& a, G&& g) {
     self_alloc sa(a);
-    task_state_impl* p = traits::allocate(sa, 1);
+    typename traits::pointer fp = traits::allocate(sa, 1);
     struct guard {
       self_alloc& a;
-      task_state_impl* p;
+      typename traits::pointer& p;
+      bool armed = true;
       ~guard() {
-        if (p)
+        if (armed)
           traits::deallocate(a, p, 1);
       }
-    } gd{sa, p};
+    } gd{sa, fp};
+    task_state_impl* p = std::to_address(fp);
     ::new (static_cast<void*>(p)) task_state_impl(sa, static_cast<G&&>(g));
-    gd.p = nullptr;
+    gd.armed = false;
     return p;
   }
   void run(bool at_thread_exit, ArgTypes&&... args) override {
@@ -388,11 +396,12 @@ public:
       return ::ycxx::detail::invoke_r<R>(f_, static_cast<ArgTypes&&>(args)...);
     });
   }
-  task_state<R, ArgTypes...>* reset_clone() override { return create(Alloc(alloc_), static_cast<F&&>(f_)); }
+  task_state<R, ArgTypes...>* reset_clone() override { return create(alloc_, static_cast<F&&>(f_)); }
   void destroy() noexcept override {
     self_alloc a(static_cast<self_alloc&&>(alloc_));
+    typename traits::pointer fp = std::pointer_traits<typename traits::pointer>::pointer_to(*this);
     this->~task_state_impl();
-    traits::deallocate(a, this, 1);
+    traits::deallocate(a, fp, 1);
   }
 };
 
@@ -806,7 +815,10 @@ public:
   template <class F, class Allocator>
     requires(!is_same_v<remove_cvref_t<F>, packaged_task>)
   explicit packaged_task(allocator_arg_t, const Allocator& a, F&& f)
-      : state_(ycxx::detail::task_state_impl<decay_t<F>, Allocator, R, ArgTypes...>::create(a, static_cast<F&&>(f))) {
+      : state_(ycxx::detail::task_state_impl<decay_t<F>, Allocator, R, ArgTypes...>::create(
+            typename allocator_traits<Allocator>::template rebind_alloc<
+                ycxx::detail::task_state_impl<decay_t<F>, Allocator, R, ArgTypes...>>(a),
+            static_cast<F&&>(f))) {
     static_assert(is_invocable_r_v<R, decay_t<F>&, ArgTypes...>,
                   "packaged_task: the task is not invocable with ArgTypes returning R");
   }

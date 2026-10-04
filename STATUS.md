@@ -255,6 +255,11 @@ a defect in a test.
 - GCC 16.2: `PR31384` (conversion function vs converting constructor in direct-init of `tuple`)
   resolves differently from Clang; the libc++ expectation matches Clang.
 
+- GCC 16.2 and Clang 23.1: neither implements [expr.new]/20.2 (retrying the allocation
+  function lookup with an added `align_val_t` argument for an over-aligned type); own test
+  `new/class_aligned_lookup_added_alignment` is XFAIL on both.
+- GCC 16.2: a `&&`/`const&&`-qualified member coroutine gets `S&` as the object parameter type
+  for `coroutine_traits`; own test `coroutine/traits_object_parameter_rvalue` is XFAIL on GCC.
 - Clang 23.1: copy-list-initialization `f({T()})` with candidates `f(X)` (X(T)) and
   `f(atomic_ref<T>)` (explicit, deleted `atomic_ref(T&&)`) picks `f(X)`; GCC (and the libstdc++
   test 29_atomics/atomic_ref/ctor) treat the explicit constructor as a candidate and find the call

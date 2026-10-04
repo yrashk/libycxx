@@ -158,6 +158,25 @@ void release(exception_header* h) noexcept {
   }
 }
 
+// release() for the end of a handler ([except.throw]/4.1): the exception object's destructor may
+// exit via an exception, which then propagates from the end of the handler (/9 and
+// [except.terminate]/1 call terminate only during unwinding); the header is freed either way.
+void release_at_handler_exit(exception_header* h) {
+  if (is_dependent(h)) {
+    exception_header* p = header_of_object(h->primary_object);
+    free_header(h);
+    h = p;
+  }
+  if (__atomic_sub_fetch(&h->reference_count, 1, __ATOMIC_ACQ_REL) == 0) {
+    struct free_on_exit {
+      exception_header* h;
+      ~free_on_exit() { free_header(h); }
+    } guard{h};
+    if (h->exception_destructor)
+      h->exception_destructor(h + 1);
+  }
+}
+
 [[noreturn]] void terminate_for(_Unwind_Exception* ue) noexcept {
   __cxa_begin_catch(ue);
   std::terminate();
@@ -258,7 +277,7 @@ void __cxa_end_catch() {
       g->caught_exceptions = h->next_exception;
   } else if (--h->handler_count == 0) {
     g->caught_exceptions = h->next_exception;
-    release(h);
+    release_at_handler_exit(h);
   }
 }
 

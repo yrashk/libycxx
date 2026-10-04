@@ -534,10 +534,20 @@ using common_reference_t = typename common_reference<T...>::type;
 // [meta.const.eval]
 // ---------------------------------------------------------------------------------------------
 // Available where the compiler provides the builtin (Clang 23); a constraint failure otherwise.
-template <class T>
+// For U other than void, the cast to U must also be a constant subexpression (a downcast to a
+// type the object is not): __builtin_constant_p of an expression using the cast answers that
+// during constant evaluation.
+template <class U = void, class T>
   requires ycxx::detail::builtin::has_is_within_lifetime<T>
 consteval bool is_within_lifetime(const T* p) noexcept {
-  return __builtin_is_within_lifetime(p);
+  static_assert(requires { static_cast<const volatile U*>(p); },
+                "std::is_within_lifetime: static_cast<const volatile U*>(p) must be well-formed");
+  if (!__builtin_is_within_lifetime(p))
+    return false;
+  if constexpr (is_void_v<U>)
+    return true;
+  else
+    return __builtin_constant_p(static_cast<const volatile U*>(p) == p);
 }
 
 } // namespace std

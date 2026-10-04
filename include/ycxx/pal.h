@@ -112,6 +112,20 @@ int ycxx_pal_error_message(int ev, char* buf, ycxx_pal_size n) YCXX_PAL_NOEXCEPT
    An immediate query: the answer is not cached. */
 int ycxx_pal_debugger_present(void) YCXX_PAL_NOEXCEPT;
 
+/* ---- stack traces ------------------------------------------------------------------------- */
+/* The loaded object (the executable or a shared library) containing the address pc: its file
+   name, written to path as a null-terminated string truncated to n bytes (a name the object
+   file can be opened by), and its load bias (run-time address minus link-time address).
+   Returns 0 if found. */
+int ycxx_pal_object_of(ycxx_pal_handle pc, char* path, ycxx_pal_size n, ycxx_pal_handle* bias) YCXX_PAL_NOEXCEPT;
+/* The dynamic symbol containing pc (the name the dynamic linker knows, possibly mangled) and its
+   start address. Returns 0 if found; *name stays valid while the object is loaded. */
+int ycxx_pal_dynamic_symbol(ycxx_pal_handle pc, const char** name, ycxx_pal_handle* start) YCXX_PAL_NOEXCEPT;
+/* Maps the file at path read-only into memory. Returns 0 on success. */
+int ycxx_pal_map_file(const char* path, const void** data, ycxx_pal_size* size) YCXX_PAL_NOEXCEPT;
+/* Unmaps a file mapped by ycxx_pal_map_file. */
+void ycxx_pal_unmap_file(const void* data, ycxx_pal_size size) YCXX_PAL_NOEXCEPT;
+
 /* ---- character encoding ------------------------------------------------------------------- */
 /* Writes the name of the environment's character encoding (POSIX: the codeset of the locale "")
    to buf as a null-terminated string, truncated to n bytes (std::text_encoding::environment). */

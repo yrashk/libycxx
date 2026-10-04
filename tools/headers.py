@@ -52,3 +52,5 @@ ABI += ["generator"]
 # <text_encoding>: the class is constexpr core code (ycxx/core/text_encoding.hpp); environment()
 # and locale::encoding() are in the hosted runtime.
 HOSTED += ["text_encoding"]
+# <stacktrace>: capture and symbolization are in the hosted runtime (unwinder, PAL).
+HOSTED += ["stacktrace"]

@@ -1,0 +1,7 @@
+// -*- C++ -*-  libycxx: <stacktrace>   [hosted]
+#pragma once
+
+#include <ycxx/config.hpp>
+#include <ycxx/core/version.hpp>
+#include <compare>
+#include <ycxx/hosted/stacktrace.hpp>

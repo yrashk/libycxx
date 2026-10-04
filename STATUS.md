@@ -166,6 +166,22 @@ localization 668 -> 726/850 (GCC). libstdc++ std/format + 27_io/print 0 -> 24/29
 Header cost (GCC, `-fsyntax-only`): `<format>` 0.27 s, `<ostream>` 0.18 -> 0.26 s (its print
 overloads need the core of `<format>`).
 
+Time (DECISIONS §12): `<chrono>` in full: the calendar (all types, `/` operators, arithmetic,
+constants, literals), `hh_mm_ss`, the 12/24-hour functions (core, constexpr), utc/tai/gps clocks
+with leap seconds, `clock_cast` (all five routes), the time zone database on the system's
+zoneinfo (TZif v1-v4 with POSIX footer, lazily per zone; tzdata.zi names and links; leap seconds
+from leapseconds / leap-seconds.list / built-in IERS table), `time_zone`, `zoned_time`,
+`tzdb_list`/`reload_tzdb`, the exceptions with the draft's messages, every formatter (full
+chrono-format-spec, E/O, L through `time_put`), `local_time_format`, every stream inserter, and
+`parse`/`from_stream` for every parsable type with every flag. `__cpp_lib_chrono` 202306L,
+`__cpp_lib_chrono_udls` 201304L. Own suite chrono/ 26 -> 66/66, plus print/print_every_kind and
+format/nonlocking_formatter_optimization (both compilers; clean under ASan and UBSan, Clang).
+libc++ std/time 128 -> 377/386 (GCC), 128 -> 378/386 (Clang); the rest construct `leap_second`
+or `time_zone_link` through libc++'s private test helpers. libstdc++ std/time +
+20_util/{duration,duration_cast,time_point,time_point_cast} 43 -> AFTER2 of 114 (GCC and Clang);
+the rest: `ext/typelist.h` or `std::__format` internals (12), `<chrono>` expected to provide
+`<sstream>`/`<cstdio>` names (3), libstdc++ choices the draft leaves open (below).
+
 ## Freestanding
 `tools/check_freestanding.sh`: every core header compiles with `-ffreestanding -nostdlib -nostdinc
 -fno-exceptions -fno-rtti`; the smoke test links on x86_64-unknown-none-elf and
@@ -254,8 +270,17 @@ Deprecated and removed features are not implemented (`is_pod`, `is_trivial`, `al
   formatting it (no partial output on a format error); no terminal needs a native Unicode API
   on POSIX. The stack/queue/priority_queue and vector<bool>::reference formatters are defined
   in `<format>` (against declarations of the adaptors), so naming them needs `<format>`.
-- `<filesystem>`: `ycxx/hosted/file_clock.hpp` holds a minimal `duration`/`time_point`/`file_clock` until
-  `<chrono>` is merged (then it becomes an include of `chrono_clocks.hpp`). The native encoding
+- `<chrono>`: names, `%c %x %X %r` and `%p` in parsing are the "C" locale's (the stream's
+  `time_get` is not consulted); `%OS` without L keeps the fraction like `%S` (libc++'s reading;
+  libstdc++'s tests expect whole seconds); `hh_mm_ss` of a period whose denominator needs more
+  than 18 decimal digits has `fractional_width` 6 per [time.hms.members]/1 (libstdc++ gives 18 for
+  ratio<1, 2^62>); `duration` inserters print character reps as the stream does (LWG 4118 is not
+  in the draft); parsing into a coarser time point floors (libstdc++ rounds decaseconds); time
+  points format with `enable_nonlocking_formatter_optimization` true for every Rep. `sys_info`'s
+  `save` is derived (TZif has only an is-DST flag), `begin`/`end` of the first/last period are
+  `sys_seconds::min()`/`max()`. Zone data comes from the zoneinfo directory only (no IANA source
+  parsing, no download for `remote_version`/`reload_tzdb`).
+- `<filesystem>`: `ycxx/hosted/file_clock.hpp` includes `<chrono>`'s clocks. The native encoding
   is assumed UTF-8 whatever the C locale; ill-formed UTF-8 converts to U+FFFD rather than
   throwing (libstdc++ u8path test02 expects an exception; unspecified by the draft). No
   root-names (`//host` is not special). `file_time_type` spans 1677-2262; setting
@@ -588,8 +613,7 @@ Deprecated and removed features are not implemented (`is_pod`, `is_trivial`, `al
   memory_resource/synchronized_pool_threads 128/128 on both compilers,
   stable over repeated runs, clean under ASan and under TSan (Clang, with a runtime built with
   `-fsanitize=thread`: `YCXX_LIBDIR=build/clang-tsan SANITIZER=tsan`; `atomic/fences` is reported
-  because TSan does not model fences). The time arithmetic of `<chrono>` (24 own chrono tests)
-  passes; the other 30 chrono tests need calendars, formatting and the utc/tai/gps clocks. libc++
+  because TSan does not model fences). `<chrono>` is complete (see Time below). libc++
   atomics 5 -> 115/115 and thread 11 -> 334/338 (both compilers); libstdc++ 29_atomics 0 -> 82/82
   (GCC), 81/82 (Clang, compiler gap above) and 30_threads 0 -> 309/315 (both; the rest need
   `<iostream>`/`<sstream>`/`<format>` or utc_clock). Limitations: `notify_one` can wake more than

@@ -10,4 +10,5 @@
 #include <ycxx/core/version.hpp>
 #include <compare>
 #include <ycxx/core/chrono_base.hpp>
+#include <ycxx/core/chrono_cal.hpp>
 #include <ycxx/hosted/chrono_clocks.hpp>

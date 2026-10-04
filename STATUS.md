@@ -27,9 +27,18 @@ Conformance oracles (run only, never edited): libc++ tests from `llvmorg-23.1.2`
 | strings/string.view + char.traits | 36/170 | 36/170 | yes | 127 need `<string>` |
 | utilities/template.bitset | 16/46 | 16/46 | yes | rest: `<vector>`, `<algorithm>`, `<sstream>`, `<string>` |
 | iterators + range.access + concepts + function.objects | 185/515 | 185/515 | yes | most failures need `<ranges>`, `bind`, `function`, containers |
+| utilities/charconv | 7/12 | 7/12 | yes (fp: runtime archive) | rest need `<algorithm>`, `<cmath>`, `<string>` |
 
 Whole-suite baseline (clang, before iterators/tuple/array/optional): 976 pass / ~8,000 run.
 
+<charconv>: own suite 15/20 on both compilers (the other 5 need `<string>`/`<cmath>`; all 20 pass
+with stand-ins for those); libstdc++ 20_util/{to,from}_chars 15/31 (rest: `<string>`, `<cmath>`,
+`<numbers>`, `<iostream>`, and the pre-P3505 expectations below). The MSVC-derived data of libc++'s
+charconv.msvc (17,414 cases) all pass through a scratch harness except 18 shortest cases that
+encode the C++17 plain-overload rule and MSVC's reading of general (see divergences) and 18 NaN
+spellings that are MSVC's own (`-nan(ind)`). Verified against glibc: every float32 bit pattern (shortest form round-trips, is shortest and closest),
+every float16/bfloat16 value, and randomised double, x87 long double and float128 values
+(shortest, precision forms, decimal/hex parsing, halfway strings).
 <typeindex>: libc++ utilities/type.index 8/9 (rest: `<string>`), libstdc++ 20_util/typeindex 5/5,
 both compilers.
 libstdc++ testsuite: 20_util/{function,move_only_function,copyable_function,function_ref,
@@ -100,6 +109,22 @@ Deprecated and removed features are not implemented (`is_pod`, `is_trivial`, `al
   itself. The cost is that a type which only *converts* to `const expected&` is no longer
   accepted on the left.
 
+- `to_chars(fixed)` without precision prints an integer value whose spacing is 2 or more exactly
+  (e.g. `1e300` as its 301 exact digits). Where the rounding interval reaches below 10^(L-1)
+  (L the value's digit count), L-1 nines would also round-trip and be one character shorter,
+  which [charconv.to.chars]/2 read literally prefers; MSVC prints the exact value too, and
+  libc++'s MSVC-derived tests expect it.
+- `to_chars(general)` without precision is the shortest %g output over all precisions P (the
+  draft's "smallest number of characters"; own test `to_chars_float_general_shortest`). MSVC,
+  and libc++'s MSVC-derived tests, decide the style with P = 6 (`1234000` vs `1.234e+06`).
+- The plain `to_chars` follows P3505 ([charconv.to.chars]/7: f for 10^-4 <= |v| < 10^U);
+  libc++'s and libstdc++'s tests still encode the C++17 shortest-of-f-and-e rule, and
+  libstdc++'s `to_chars/version.cc` expects `__cpp_lib_to_chars` 202306L, not 202606L.
+- Floating-point `from_chars` leaves the value unmodified on `result_out_of_range` (overflow, or a
+  nonzero value that rounds to zero), as the draft says; MSVC stores +-inf or +-0.
+- x87 `long double` `%a`: normal values print with a leading 1 (`1.8p+0`), subnormal ones as the
+  C library does (`0x0.000000000000001p-16385` is the smallest), so that both forms agree there.
+
 ## Known limitations and draft defects
 - `FLT_ROUNDS` is the constant 1 with GCC (no `__builtin_flt_rounds`), as in GCC's own
   `<float.h>`; it does not follow `fesetround`. Clang reports the current mode.
@@ -133,6 +158,12 @@ Deprecated and removed features are not implemented (`is_pod`, `is_trivial`, `al
   `except/handler_function_pointer` and `except/handler_array_decay` fail on GCC.
 - Programs link the shared unwinder (`-shared-libgcc`): glibc's pthread_exit/pthread_cancel
   unwind through libgcc_s.so, and a second, static unwinder copy would abort.
+- `<system_error>` has only `errc` (core; Linux errno values, checked against `<errno.h>` by the
+  hosted header) and the `is_error_*_enum` traits; `error_category`, `error_code` and
+  `system_error` need `<string>`.
+- Floating-point `<charconv>` for `long double`/`float128_t` works on stack-allocated big integers
+  (no heap, so it stays freestanding): parsing needs about 21 KB of stack (two 38,500-bit numbers
+  and an 11,566-digit buffer, exact for any input length), `%g` with a large precision about 20 KB.
 - Not yet provided: `<cxxabi.h>` (`abi::__cxa_demangle`, `__cxa_vec_*`,
   `abi::__forced_unwind`). Catch matching against deep virtual-diamond hierarchies enumerates
   every inheritance path (exponential), and `dynamic_cast` other than to the most derived type

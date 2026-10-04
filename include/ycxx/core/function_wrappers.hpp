@@ -489,7 +489,9 @@ protected:
 public:
   using result_type = R;
 
-  fn_base() noexcept = default;
+  // User-provided, as the wrappers' default constructors are in the draft, so `const function<F>
+  // f;` is valid ([dcl.init.general]/8: s_ has no default member initializer).
+  fn_base() noexcept {}
   fn_base(std::nullptr_t) noexcept {}
   fn_base(fn_base&& o) noexcept { take(o); }
   fn_base(const fn_base& o)

@@ -38,7 +38,7 @@ features = {
     'stdlib=libycxx', 'can-create-symlinks', 'has-fblocks-off',
 }
 if compiler == 'clang':
-    features |= {'verify-support', 'clang-diagnostics'}
+    features |= {'verify-support', 'clang-diagnostics', 'has-fconstexpr-steps'}
 else:
     features |= {'gcc-style-warnings'}
 if sanitizer:

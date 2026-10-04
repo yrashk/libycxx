@@ -397,7 +397,6 @@ private:
     unsigned long long mag = 0;
     bool neg = false;
     const ycxx::detail::num_parse r = ycxx::detail::num_get_integer(field.data(), field.size(), base, &mag, &neg);
-    using U = make_unsigned_t<T>;
     if (r == ycxx::detail::num_parse::not_converted) {
       v = 0;
       err |= ios_base::failbit;
@@ -411,6 +410,7 @@ private:
         err |= ios_base::failbit;
         return in;
       }
+      using U = make_unsigned_t<T>;
       v = neg ? static_cast<T>(0 - static_cast<U>(mag)) : static_cast<T>(mag);
     } else {
       // strtoull's rule: a negative field is the negated magnitude in unsigned long long

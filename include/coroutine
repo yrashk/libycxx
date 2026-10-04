@@ -1,0 +1,6 @@
+// -*- C++ -*-  libycxx: <coroutine>   [core]
+#pragma once
+
+#include <ycxx/config.hpp>
+#include <ycxx/core/version.hpp>
+#include <ycxx/core/coroutine.hpp>

@@ -36,6 +36,18 @@
 #define __cpp_lib_invoke 201411L
 #define __cpp_lib_invoke_r 202106L
 
+// <source_location> <coroutine> <memory>
+#define __cpp_lib_source_location 201907L
+#define __cpp_lib_coroutine 201902L
+#define __cpp_lib_addressof_constexpr 201603L
+#define __cpp_lib_to_address 201711L
+#define __cpp_lib_assume_aligned 201811L
+#define __cpp_lib_is_sufficiently_aligned 202411L
+#define __cpp_lib_start_lifetime_as 202207L
+#define __cpp_lib_allocate_at_least 202302L
+#define __cpp_lib_allocator_traits_is_always_equal 201411L
+#define __cpp_lib_constexpr_dynamic_alloc 201907L
+
 // <bit>
 #define __cpp_lib_bit_cast 201806L
 #define __cpp_lib_bitops 202607L

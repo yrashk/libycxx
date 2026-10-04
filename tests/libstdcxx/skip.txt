@@ -16,3 +16,9 @@ content:scan-tree-dump | compiler-internals | checks GCC tree dumps (-fdump-tree
 20_util/bitset/cons/constexpr_c\+\+23\.cc | divergence | requires __cpp_lib_constexpr_bitset == 202202L; the current draft [version.syn] has 202207L
 20_util/bind/(refqual|83427)\.cc | removed | std::bind's result_type member (removed in C++20)
 20_util/bind/socket\.cc | extension | expects std::bind to drop out for a non-callable first argument so that a POSIX ::bind is chosen; [func.bind.bind] has only Mandates
+20_util/function_ref/cons\.cc | divergence | requires __cpp_lib_function_ref == 202603L; the current draft [version.syn] has 202604L
+20_util/function_ref/conv\.cc | divergence | expects a function_ref built from a convertible function_ref specialization to wrap it (an extra argument copy); [func.wrap.ref.ctor]/8 copies its bound-entity and thunk-ptr
+20_util/(move_only|copyable)_function/conv\.cc | implementation-specific | test06 expects a std::function target to be double-wrapped (an extra argument copy); libycxx adopts it ([func.wrap.general]/2-3 allow the aliasing and recommend avoiding double wrapping)
+20_util/(move_only_function|copyable_function|function_ref)/incomplete_neg\.cc | extension | expects a diagnostic for incomplete parameter types; [func.wrap] does not require one
+20_util/function_ref/dangling\.cc | extension | expects a constexpr function_ref to a by-value stateless callable not to refer to it; [func.wrap.ref.ctor]/8 binds addressof(f), which dangles
+20_util/constant_wrapper/instantiate\.cc | extension | uses std::same_as with only <utility> included; [utility.syn] does not provide <concepts>

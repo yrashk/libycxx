@@ -135,7 +135,7 @@ consteval bool is_invocable_r_impl() {
   else if constexpr (::ycxx::detail::is_void_v<R>)
     return true;
   else
-    return requires { implicitly_convert_to<R>(::ycxx::detail::invoke(std::declval<F>(), std::declval<Args>()...)); } &&
+    return requires { ::ycxx::detail::implicitly_convert_to<R>(::ycxx::detail::invoke(std::declval<F>(), std::declval<Args>()...)); } &&
            !__reference_converts_from_temporary(R, invoke_result_t<F, Args...>);
 }
 
@@ -147,7 +147,7 @@ consteval bool is_nothrow_invocable_r_impl() {
     return true;
   else
     return requires {
-      { implicitly_convert_to<R>(::ycxx::detail::invoke(std::declval<F>(), std::declval<Args>()...)) } noexcept;
+      { ::ycxx::detail::implicitly_convert_to<R>(::ycxx::detail::invoke(std::declval<F>(), std::declval<Args>()...)) } noexcept;
     } && !__reference_converts_from_temporary(R, invoke_result_t<F, Args...>);
 }
 

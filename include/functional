@@ -6,4 +6,6 @@
 #include <ycxx/core/type_traits.hpp>
 #include <ycxx/core/functional_base.hpp>
 #include <ycxx/core/bind.hpp>
+#include <ycxx/core/constant_wrapper.hpp>
+#include <ycxx/core/function_wrappers.hpp>
 #include <ycxx/core/hash.hpp>

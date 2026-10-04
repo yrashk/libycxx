@@ -32,7 +32,9 @@ variable templates. The preprocessor is used only where the language cannot do t
    uninstantiated template or a discarded `if constexpr` branch (verified, GCC 16.2 and Clang
    23.1), so `any::type()` must not be parsed there. And a non-template class cannot choose
    between an inline constexpr and an out-of-line destructor (`exception_base.hpp`) with
-   `if constexpr` or `requires`. Everywhere else the derived constant `cfg::rtti` is used. Such an `#if`
+   `if constexpr` or `requires`. Everywhere else the derived constant `cfg::rtti` is used: `typeid` is spelled once, in
+   `ycxx::detail::type_id<T>` (`typeinfo.hpp`, nullptr without RTTI), and members of class
+   templates that need it are gated with `requires cfg::rtti` (`function::target_type`). Such an `#if`
    tests a `YCXX_HAS_*` switch, never a compiler name. Prefer restructuring (an out-of-line
    function, a dependent expression) over adding an `#if`.
    **Probing builtins without the preprocessor.** A function-style builtin is detected with a
@@ -100,6 +102,11 @@ tooling.
   state pointer is not ambiguous. The cost: `std::mbstate_t` and `::mbstate_t` are distinct
   types, so a `std::mbstate_t` cannot be passed to the global `::mbrtowc` directly, and after
   `using namespace std;` the unqualified name `mbstate_t` is ambiguous once `<wchar.h>` is in.
+- **The owning function wrappers are core.** Only `function_ref` is freestanding in the draft,
+  but `function`, `move_only_function` and `copyable_function` need nothing hosted: small targets
+  live in place, and larger ones use the replaceable `operator new`, which a freestanding program
+  may define (the default reports `bad_alloc`). Keeping them in core avoids a preprocessor-
+  selected include in `<functional>`.
 - **Freestanding runtime archive.** `libycxx-freestanding.a` holds what a freestanding program
   may need defined but core headers must not define: the default replaceable allocation
   functions (no heap: `bad_alloc`/handler, `nullptr` for the nothrow forms) and `std::nothrow`.

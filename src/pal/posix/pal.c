@@ -4,6 +4,7 @@
 #include <ycxx/pal.h>
 
 #include <errno.h>
+#include <fcntl.h>
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -83,6 +84,63 @@ int ycxx_pal_random(void* data, ycxx_pal_size n) {
     n -= (ycxx_pal_size)(r);
   }
   return 0;
+}
+
+/* Random sources: handle 0 is the system generator, any other handle is a file descriptor + 1. */
+int ycxx_pal_random_open(const char* token, ycxx_pal_size len, ycxx_pal_handle* h) {
+  static const char* const files[] = {"/dev/urandom", "/dev/random"};
+  if ((len == 7 && memcmp(token, "default", 7) == 0) || (len == 9 && memcmp(token, "getrandom", 9) == 0)) {
+    *h = 0;
+    return 0;
+  }
+  for (size_t i = 0; i < sizeof files / sizeof files[0]; ++i) {
+    if (len == strlen(files[i]) && memcmp(token, files[i], len) == 0) {
+      int fd;
+      do
+        fd = open(files[i], O_RDONLY | O_CLOEXEC);
+      while (fd < 0 && errno == EINTR);
+      if (fd < 0)
+        return errno;
+      *h = (ycxx_pal_handle)fd + 1;
+      return 0;
+    }
+  }
+  return EINVAL;
+}
+
+static int read_all(int fd, unsigned char* p, ycxx_pal_size n) {
+  while (n) {
+    ssize_t r = read(fd, p, n);
+    if (r < 0) {
+      if (errno == EINTR)
+        continue;
+      return errno;
+    }
+    if (r == 0)
+      return EIO;
+    p += r;
+    n -= (ycxx_pal_size)r;
+  }
+  return 0;
+}
+
+int ycxx_pal_random_read(ycxx_pal_handle h, void* data, ycxx_pal_size n) {
+  if (h != 0)
+    return read_all((int)(h - 1), (unsigned char*)data, n);
+  int e = ycxx_pal_random(data, n);
+  if (e == ENOSYS) { /* no getrandom/getentropy: fall back to the device */
+    int fd = open("/dev/urandom", O_RDONLY | O_CLOEXEC);
+    if (fd < 0)
+      return errno;
+    e = read_all(fd, (unsigned char*)data, n);
+    close(fd);
+  }
+  return e;
+}
+
+void ycxx_pal_random_close(ycxx_pal_handle h) {
+  if (h != 0)
+    close((int)(h - 1));
 }
 
 

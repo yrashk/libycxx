@@ -55,6 +55,14 @@ int ycxx_pal_clock_now(int clock, ycxx_pal_i64* sec, ycxx_pal_i64* nsec) YCXX_PA
 /* ---- randomness ---------------------------------------------------------------------------- */
 /* Fill buffer with non-deterministic random bytes (std::random_device). */
 int ycxx_pal_random(void* data, ycxx_pal_size n) YCXX_PAL_NOEXCEPT;
+/* A random source chosen by name (std::random_device's token, `len` bytes, not null-terminated).
+ * POSIX: "default" and "getrandom" (the system generator: getrandom/getentropy), "/dev/urandom",
+ * "/dev/random". Stores a handle in *h; returns EINVAL for an unknown token. */
+int ycxx_pal_random_open(const char* token, ycxx_pal_size len, ycxx_pal_handle* h) YCXX_PAL_NOEXCEPT;
+/* Fills data with n bytes from the source. */
+int ycxx_pal_random_read(ycxx_pal_handle h, void* data, ycxx_pal_size n) YCXX_PAL_NOEXCEPT;
+/* Releases the source. */
+void ycxx_pal_random_close(ycxx_pal_handle h) YCXX_PAL_NOEXCEPT;
 
 /* ---- waiting on an address ---------------------------------------------------------------- */
 typedef __UINT32_TYPE__ ycxx_pal_u32;

@@ -2,6 +2,7 @@
 // the helpers compilers call to throw (bad_cast, bad_typeid, bad_array_new_length),
 // thread_local destructor registration, the new handler, and std::nothrow.
 #include <cstdint>
+#include <exception>
 #include <new>
 #include <typeinfo>
 #include <ycxx/pal.h>
@@ -19,6 +20,26 @@ guard_view view(std::int64_t* g) noexcept {
   return {reinterpret_cast<unsigned char*>(g), reinterpret_cast<ycxx_pal_u32*>(g) + 1};
 }
 enum : ycxx_pal_u32 { idle = 0, busy = 1, busy_waiters = 2 };
+
+// The guards this thread is initializing, innermost last. Re-entering one of them is recursive
+// initialization, undefined by [stmt.dcl]/3; it would otherwise wait for itself forever, so it
+// terminates. (Nesting deeper than the stack is not tracked.)
+constexpr int max_nesting = 32;
+constinit thread_local std::int64_t* initializing[max_nesting];
+constinit thread_local int nesting;
+
+bool initializing_here(std::int64_t* g) noexcept {
+  for (int i = 0; i < nesting && i < max_nesting; ++i)
+    if (initializing[i] == g)
+      return true;
+  return false;
+}
+void push_initializing(std::int64_t* g) noexcept {
+  if (nesting < max_nesting)
+    initializing[nesting] = g;
+  ++nesting;
+}
+void pop_initializing() noexcept { --nesting; }
 
 void end_guard(ycxx_pal_u32* state) noexcept {
   if (__atomic_exchange_n(state, idle, __ATOMIC_ACQ_REL) == busy_waiters)
@@ -48,8 +69,11 @@ int __cxa_guard_acquire(std::int64_t* g) {
         end_guard(v.state);
         return 0;
       }
+      push_initializing(g);
       return 1;
     }
+    if (initializing_here(g))
+      std::terminate();
     if (s == busy && !__atomic_compare_exchange_n(v.state, &s, busy_waiters, false, __ATOMIC_ACQUIRE,
                                                    __ATOMIC_ACQUIRE))
       continue;
@@ -59,11 +83,15 @@ int __cxa_guard_acquire(std::int64_t* g) {
 
 void __cxa_guard_release(std::int64_t* g) noexcept {
   const guard_view v = view(g);
+  pop_initializing();
   __atomic_store_n(v.done, 1, __ATOMIC_RELEASE);
   end_guard(v.state);
 }
 
-void __cxa_guard_abort(std::int64_t* g) noexcept { end_guard(view(g).state); }
+void __cxa_guard_abort(std::int64_t* g) noexcept {
+  pop_initializing();
+  end_guard(view(g).state);
+}
 
 [[noreturn]] void __cxa_pure_virtual() { fatal("pure virtual function called"); }
 [[noreturn]] void __cxa_deleted_virtual() { fatal("deleted virtual function called"); }

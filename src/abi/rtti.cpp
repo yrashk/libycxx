@@ -105,9 +105,9 @@ bool is_pointer_like(rtti_kind k) noexcept { return k == rtti_kind::pointer || k
 // The function "qualifiers" of a pointer or pointer to member. GCC 16.2 leaves __noexcept_mask
 // clear for pointers to noexcept member functions (_ZTIM1SDoFvvE has __flags 0 and __pointee
 // _ZTIFvvE; Clang 23.1 sets the bit), so for those they are read from the mangled name as well:
-// M <class type> <member type> (§5.1.5.8), where <class type> is spelled exactly as the
+// M <class type> <member type> (§5.1.5.7), where <class type> is spelled exactly as the
 // context class's own name (it is the first component, so no substitution can abbreviate it)
-// and the member function type is [<CV-qualifiers>] [Dx] [Do] F ... E.
+// and the member function type is [<CV-qualifiers>] [Do] [Dx] F ... E (§5.1.5.3).
 unsigned function_qualifiers(const __pbase_type_info* p, rtti_kind kind) {
   unsigned f = p->__flags & function_qualifier_mask;
   if (kind != rtti_kind::member_pointer || kind_of(*p->__pointee) != rtti_kind::function)
@@ -120,12 +120,12 @@ unsigned function_qualifiers(const __pbase_type_info* p, rtti_kind kind) {
   const char* s = name + 1 + n;
   while (*s == 'r' || *s == 'V' || *s == 'K')
     ++s;
-  if (s[0] == 'D' && s[1] == 'x') {
-    f |= __pbase_type_info::__transaction_safe_mask;
+  if (s[0] == 'D' && s[1] == 'o') {
+    f |= __pbase_type_info::__noexcept_mask;
     s += 2;
   }
-  if (s[0] == 'D' && s[1] == 'o')
-    f |= __pbase_type_info::__noexcept_mask;
+  if (s[0] == 'D' && s[1] == 'x')
+    f |= __pbase_type_info::__transaction_safe_mask;
   return f;
 }
 

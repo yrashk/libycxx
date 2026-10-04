@@ -1,0 +1,14 @@
+// -*- C++ -*-  libycxx: <random>   [core]
+// Freestanding in part ([rand.synopsis]): random_device is declared here but defined in the hosted
+// runtime, and the inserters and extractors need <istream>/<ostream> where they are used.
+#pragma once
+
+#include <ycxx/config.hpp>
+#include <ycxx/core/version.hpp>
+#include <initializer_list>
+#include <ycxx/core/random_base.hpp>
+#include <ycxx/core/random_engines.hpp>
+#include <ycxx/core/random_device.hpp>
+#include <ycxx/core/random_generate.hpp>
+#include <ycxx/core/random_dists.hpp>
+#include <ycxx/core/random_sampling.hpp>

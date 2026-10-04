@@ -362,3 +362,7 @@
 
 // <filesystem> (__cpp_lib_format_path waits for <format>)
 #define __cpp_lib_filesystem 201703L
+// <random>
+#define __cpp_lib_freestanding_random 202502L
+#define __cpp_lib_philox_engine 202406L
+#define __cpp_lib_ranges_generate_random 202403L

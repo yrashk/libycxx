@@ -425,3 +425,26 @@ under the same name. Otherwise it gets one alias template in `config.hpp`.
 - **`generator` nests without a stack of handles**: the promises of recursively yielded
   generators link to their parent and the root, and transfers between them are symmetric, so
   recursion depth costs no stack and no allocation besides the frames.
+## 10. `<random>`
+
+- **Layering.** `<random>` is a core header (the draft makes most of it freestanding). Its stream
+  operators are hidden-friend templates whose every use of the stream is dependent, so they are
+  defined in core against `ycxx/core/iosfwd.hpp` (as in §7) and need `<istream>`/`<ostream>` only
+  where they are used. `random_device` is declared in core and defined in the hosted runtime
+  (`src/hosted/random.cpp`), like the C-library parts of `<string>`: it reads the PAL's random
+  sources (`ycxx_pal_random_open/_read/_close`; tokens `"default"`/`"getrandom"` for the system
+  generator, `"/dev/urandom"`, `"/dev/random"`), buffering 64 bytes per object.
+- **Engines** follow the draft's state sequence X literally (ring buffers for the lagged engines,
+  compared and printed in logical order), with all arithmetic in `unsigned long long` reduced
+  modulo 2^w or m, so narrow `UIntType`s never meet integral promotion. `discard` is O(log z) for
+  `linear_congruential_engine` (affine-map squaring) and O(1) for `philox_engine` (counter
+  arithmetic). `default_random_engine` is `mt19937`.
+- **generate_canonical** is the C++26 algorithm exactly: a power-of-two range takes the top d
+  bits of k draws; any other range uses compile-time R^k and x with 192-bit integers (64-bit when
+  R^k fits). It also accepts the extended floating-point types; the distributions accept the
+  three standard floating-point types and the standard integer types only (the
+  implementation-defined subsets of [rand.req.genl] are otherwise empty).
+- **Distributions** are unbiased (uniform integers by Lemire's method, or rejection), and every
+  inserter writes all internal state (normal's cached variate) with max_digits10 digits, so an
+  extracted distribution continues the same sequence. The sampling distributions derive their
+  cumulative tables from the stored parameters alone for the same reason.

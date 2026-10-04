@@ -201,8 +201,8 @@ class subrange : public view_interface<subrange<I, S, K>> {
   static constexpr bool StoreSize = K == subrange_kind::sized && !sized_sentinel_for<S, I>;
   using size_type = make_unsigned_t<iter_difference_t<I>>;
 
-  I begin_ = I();
-  S end_ = S();
+  [[no_unique_address]] I begin_ = I();
+  [[no_unique_address]] S end_ = S();
   [[no_unique_address]] ycxx::detail::subrange_size<size_type, StoreSize> size_{};
 
 public:

@@ -296,15 +296,33 @@ Deprecated and removed features are not implemented (`is_pod`, `is_trivial`, `al
   freestanding checks for it) needs `<vector>` to exist.
 - `<algorithm>`/`<numeric>`/`<execution>` (core): every std:: and ranges:: algorithm of the
   draft, constexpr where specified. The std:: ExecutionPolicy overloads run sequentially and
-  are noexcept (an escaping exception calls terminate). Not provided: the ranges::
-  ExecutionPolicy overloads (P3179, so `__cpp_lib_parallel_algorithm` is undefined), the
+  are noexcept (an escaping exception calls terminate); so are the ranges:: ExecutionPolicy
+  overloads (P3179, `algo_ranges_parallel.hpp`: each algorithm object's type adds them to the
+  sequential niebloid). `__cpp_lib_parallel_algorithm` stays undefined until the ranges::
+  uninitialized_* policy overloads of `<memory>` exist. Not provided: the
   senders/receivers part of `<execution>`, `boyer_moore(_horspool)_searcher` (need hashing
   containers), `__cpp_lib_interpolate` (needs `std::lerp` in `<cmath>`).
 - stable_sort / stable_partition / inplace_merge take their buffer from `operator new(nothrow)`
   (std::allocator during constant evaluation) and fall back to O(N log^2 N) / O(N log N)
   rotation algorithms when it fails; sort and nth_element are introsort/introselect.
-- `<ranges>` is partial: concepts, range access, `view_interface`, `subrange`, `dangling`,
-  `views::all` (callable, not yet pipeable). No other factories or adaptors.
+- `<ranges>` (core): every factory, adaptor and range utility of the draft, constexpr, in
+  `ranges_adaptor.hpp` (closures, movable-box, caches), `ranges_factories.hpp`,
+  `ranges_adaptors.hpp`, `ranges_zip.hpp`, `ranges_join.hpp`, `ranges_chunk.hpp` and
+  `ranges_to.hpp`. libc++ std/ranges: 534/561 (Clang), 532/561 (GCC), was 21/46; the rest
+  need missing headers (`<map>`, `<sstream>`, `<regex>`, `<istream>`) or are range-access CPO
+  tests that predate possibly-const-range ([range.access.cbegin]); tests of exposition-only
+  constructors and draft divergences are skipped. libstdc++ std/ranges: 39/49 on both, was 14
+  (the rest missing headers). Notes:
+  - `basic_istream_view` needs only the stream's interface: `basic_istream` is declared in
+    core without default arguments and must be complete where the view is used.
+  - Choices where the draft leaves room: IOTA-DIFF-T of the 64-bit types (and of `__int128`)
+    is `__int128`; `cartesian_product_view` uses `__int128` as its difference type when it
+    has two or more ranges; filter, drop, drop_while and reverse cache a random-access
+    position as an offset. `iota_view::size()` is unsigned also for types narrower than `int`
+    (the specified expression would promote to `int`), and never negates a minimum value.
+  - The ranges:: parallel set_difference returns the loop's position in the second range when
+    the output is complete; [set.difference]/4.3.1 counts "skipped" elements, which differs
+    when elements of the second range lie between later elements of the first.
 - `std::is_permutation` enforces its Mandates (same value type); libc++'s sort/heap tests call
   it with `MoveOnly*` and `int*` and fail to compile for that reason (12 tests).
 - shuffle/sample assume the generator's results fit in 64 bits.

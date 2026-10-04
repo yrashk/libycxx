@@ -15,8 +15,16 @@ class view_interface;
 } // namespace std::ranges
 
 namespace ycxx::detail {
+// is-derived-from-view-interface: a class (possibly cv-qualified) with exactly one public base
+// view_interface<U>; deduction from a pointer fails for an ambiguous or inaccessible base.
 template <class T>
-concept derived_from_view_interface = requires(const T& t) { []<class U>(const std::ranges::view_interface<U>&) {}(t); };
+inline constexpr bool is_view_interface = false;
+template <class D>
+inline constexpr bool is_view_interface<std::ranges::view_interface<D>> = true;
+template <class T>
+concept derived_from_view_interface =
+    std::is_class_v<T> && !is_view_interface<std::remove_cv_t<T>> &&
+    requires(T* p) { []<class U>(const volatile std::ranges::view_interface<U>*) {}(p); };
 } // namespace ycxx::detail
 
 namespace std::ranges {

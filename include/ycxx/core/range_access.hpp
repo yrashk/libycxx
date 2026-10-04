@@ -69,9 +69,9 @@ struct fn {
       static_assert(complete_array_elem<T>, "ranges::begin: array of incomplete type");
       return t + 0;
     } else if constexpr (member<T>) {
-      return ::ycxx::detail::decay_copy(t.begin());
+      return t.begin(); // decay-copy: the auto return type decays, and a prvalue is not moved
     } else {
-      return ::ycxx::detail::decay_copy(begin(t));
+      return begin(t);
     }
   }
 };
@@ -121,9 +121,9 @@ struct fn {
       static_assert(complete_array_elem<T>, "ranges::end: array of incomplete type");
       return t + std::extent_v<std::remove_reference_t<T>>;
     } else if constexpr (member<T>) {
-      return ::ycxx::detail::decay_copy(t.end());
+      return t.end();
     } else {
-      return ::ycxx::detail::decay_copy(end(t));
+      return end(t);
     }
   }
 };
@@ -201,9 +201,9 @@ struct fn {
     if constexpr (std::is_bounded_array_v<std::remove_reference_t<T>>)
       return ::ycxx::detail::decay_copy(std::extent_v<std::remove_reference_t<T>>);
     else if constexpr (member<T>)
-      return ::ycxx::detail::decay_copy(t.size());
+      return t.size();
     else if constexpr (adl<T>)
-      return ::ycxx::detail::decay_copy(size(t));
+      return size(t);
     else
       return ::ycxx::detail::to_unsigned_like(std::ranges::end(t) - std::ranges::begin(t));
   }
@@ -292,7 +292,7 @@ struct fn {
     requires maybe_borrowed<T> && (member<T> || via_begin<T>)
   [[nodiscard]] constexpr auto operator()(T&& t) const noexcept(nothrow<T>()) {
     if constexpr (member<T>)
-      return ::ycxx::detail::decay_copy(t.data());
+      return t.data();
     else
       return std::to_address(std::ranges::begin(t));
   }
@@ -326,9 +326,9 @@ struct fn {
     if constexpr (requires { std::ranges::size(t); })
       return std::ranges::size(t);
     else if constexpr (member<T>)
-      return ::ycxx::detail::decay_copy(t.reserve_hint());
+      return t.reserve_hint();
     else
-      return ::ycxx::detail::decay_copy(reserve_hint(t));
+      return reserve_hint(t);
   }
 };
 } // namespace reserve_hint_ns

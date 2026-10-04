@@ -82,6 +82,11 @@ constexpr void move_into_buffer(I first, I last, buffer_objects<T>& objs) {
   }
 }
 
+// The iterator arithmetic below uses difference_type operands only: an iterator need not
+// accept an int ([iterator.requirements.general]; libc++'s robust_re_difference_type).
+template <class I>
+inline constexpr std::iter_difference_t<I> diff_one = 1;
+
 constexpr int floor_log2(unsigned long long n) noexcept {
   int r = 0;
   while (n > 1) {
@@ -96,9 +101,9 @@ template <class Ops, class I, class C>
 constexpr void insertion_sort(I first, I last, C less) {
   if (first == last)
     return;
-  for (I i = first + 1; i != last; ++i) {
+  for (I i = first + ::ycxx::detail::diff_one<I>; i != last; ++i) {
     I j = i;
-    if (!less(*i, *(j - 1)))
+    if (!less(*i, *(j - ::ycxx::detail::diff_one<I>)))
       continue;
     std::iter_value_t<I> tmp(Ops::iter_move(i));
     do {
@@ -106,7 +111,7 @@ constexpr void insertion_sort(I first, I last, C less) {
       --k;
       *j = Ops::iter_move(k);
       j = k;
-    } while (j != first && less(tmp, *(j - 1)));
+    } while (j != first && less(tmp, *(j - ::ycxx::detail::diff_one<I>)));
     *j = std::move(tmp);
   }
 }
@@ -117,19 +122,19 @@ template <class Ops, class I, class C>
 constexpr void binary_insertion_sort(I first, I last, C less) {
   if (first == last)
     return;
-  for (I i = first + 1; i != last; ++i) {
-    if (!less(*i, *(i - 1)))
+  for (I i = first + ::ycxx::detail::diff_one<I>; i != last; ++i) {
+    if (!less(*i, *(i - ::ycxx::detail::diff_one<I>)))
       continue;
     // upper bound of *i in [first, i - 1)
     I lo = first;
-    auto n = (i - 1) - first;
+    auto n = (i - ::ycxx::detail::diff_one<I>) - first;
     while (n > 0) {
       auto half = n / 2;
       I mid = lo + half;
       if (less(*i, *mid)) {
         n = half;
       } else {
-        lo = mid + 1;
+        lo = mid + ::ycxx::detail::diff_one<I>;
         n -= half + 1;
       }
     }
@@ -167,7 +172,7 @@ constexpr void heap_sift_hole(I first, std::iter_difference_t<I> len, std::iter_
     if (child >= len)
       break;
     I c = first + child;
-    if (child + 1 < len && less(*c, *(c + 1))) {
+    if (child + 1 < len && less(*c, *(c + ::ycxx::detail::diff_one<I>))) {
       ++child;
       ++c;
     }
@@ -183,7 +188,7 @@ constexpr void push_heap_impl(I first, I last, C less) {
   auto n = last - first;
   if (n < 2)
     return;
-  I back = last - 1;
+  I back = last - ::ycxx::detail::diff_one<I>;
   std::iter_value_t<I> v(Ops::iter_move(back));
   ::ycxx::detail::heap_push_hole<Ops>(first, n - 1, v, less);
 }
@@ -192,7 +197,7 @@ constexpr void pop_heap_impl(I first, I last, C less) {
   auto n = last - first;
   if (n < 2)
     return;
-  I back = last - 1;
+  I back = last - ::ycxx::detail::diff_one<I>;
   std::iter_value_t<I> v(Ops::iter_move(back));
   *back = Ops::iter_move(first);
   ::ycxx::detail::heap_sift_hole<Ops>(first, n - 1, 0, v, less);
@@ -241,22 +246,25 @@ constexpr void sort3(I a, I b, I c, C less) {
 // the pivot, with first < cut < last. Needs last - first >= 4.
 template <class Ops, class I, class C>
 constexpr I partition_pivot(I first, I last, C less) {
-  auto n = last - first;
+  using D = std::iter_difference_t<I>;
+  D n = last - first;
   I mid = first + n / 2;
+  I f1 = first + D(1); // the first and last elements of [first + 1, last)
+  I l1 = last - D(1);
   if (n > 128) { // ninther
-    auto s = n / 8;
-    ::ycxx::detail::sort3<Ops>(first + 1, first + 1 + s, first + 1 + 2 * s, less);
+    D s = n / 8;
+    ::ycxx::detail::sort3<Ops>(f1, f1 + s, f1 + 2 * s, less);
     ::ycxx::detail::sort3<Ops>(mid - s, mid, mid + s, less);
-    ::ycxx::detail::sort3<Ops>(last - 1 - 2 * s, last - 1 - s, last - 1, less);
-    ::ycxx::detail::sort3<Ops>(first + 1 + s, mid, last - 1 - s, less);
+    ::ycxx::detail::sort3<Ops>(l1 - 2 * s, l1 - s, l1, less);
+    ::ycxx::detail::sort3<Ops>(f1 + s, mid, l1 - s, less);
   } else {
-    ::ycxx::detail::sort3<Ops>(first + 1, mid, last - 1, less);
+    ::ycxx::detail::sort3<Ops>(f1, mid, l1, less);
   }
   // Now an element not greater than the pivot lies left of mid and one not less right of it;
   // they bound both scans below.
   Ops::iter_swap(first, mid);
-  I lo = first + 1;
-  I hi = last - 1;
+  I lo = f1;
+  I hi = l1;
   for (;;) {
     while (less(*lo, *first))
       ++lo;
@@ -278,9 +286,10 @@ constexpr void heap_sort(I first, I last, C less) {
 
 inline constexpr int insertion_sort_threshold = 16;
 
+// depth: partitioning rounds left before switching to heapsort, shared by the whole recursion
+// (2 floor(log2 N) at the top), so the worst case stays O(N log N).
 template <class Ops, class I, class C>
-constexpr void sort_impl(I first, I last, C less) {
-  int depth = 2 * ::ycxx::detail::floor_log2(static_cast<unsigned long long>(last - first));
+constexpr void introsort_loop(I first, I last, int depth, C less) {
   while (last - first > insertion_sort_threshold) {
     if (depth-- == 0) {
       ::ycxx::detail::heap_sort<Ops>(first, last, less);
@@ -289,14 +298,19 @@ constexpr void sort_impl(I first, I last, C less) {
     I cut = ::ycxx::detail::partition_pivot<Ops>(first, last, less);
     // Recurse into the smaller part, iterate on the larger: O(log N) stack.
     if (cut - first < last - cut) {
-      ::ycxx::detail::sort_impl<Ops>(first, cut, less);
+      ::ycxx::detail::introsort_loop<Ops>(first, cut, depth, less);
       first = cut;
     } else {
-      ::ycxx::detail::sort_impl<Ops>(cut, last, less);
+      ::ycxx::detail::introsort_loop<Ops>(cut, last, depth, less);
       last = cut;
     }
   }
   ::ycxx::detail::insertion_sort<Ops>(first, last, less);
+}
+template <class Ops, class I, class C>
+constexpr void sort_impl(I first, I last, C less) {
+  int depth = 2 * ::ycxx::detail::floor_log2(static_cast<unsigned long long>(last - first));
+  ::ycxx::detail::introsort_loop<Ops>(first, last, depth, less);
 }
 
 // Sorts [first, last) so that [first, middle) holds the smallest elements in order.
@@ -322,7 +336,7 @@ constexpr void nth_element_impl(I first, I nth, I last, C less) {
   int depth = 2 * ::ycxx::detail::floor_log2(static_cast<unsigned long long>(last - first));
   while (last - first > 3) {
     if (depth-- == 0) {
-      ::ycxx::detail::partial_sort_impl<Ops>(first, nth + 1, last, less);
+      ::ycxx::detail::partial_sort_impl<Ops>(first, nth + ::ycxx::detail::diff_one<I>, last, less);
       return;
     }
     I cut = ::ycxx::detail::partition_pivot<Ops>(first, last, less);
@@ -594,7 +608,7 @@ constexpr void stable_sort_adaptive(I first, I last, std::iter_difference_t<I> l
   I mid = first + half;
   ::ycxx::detail::stable_sort_adaptive<Ops>(first, mid, half, less, buf, cap);
   ::ycxx::detail::stable_sort_adaptive<Ops>(mid, last, len - half, less, buf, cap);
-  if (!less(*mid, *(mid - 1)))
+  if (!less(*mid, *(mid - ::ycxx::detail::diff_one<I>)))
     return; // already in order
   ::ycxx::detail::merge_adaptive<Ops>(first, mid, last, half, len - half, less, buf, cap);
 }
@@ -837,7 +851,7 @@ template <class ForwardIterator, class T = typename iterator_traits<ForwardItera
 [[nodiscard]] constexpr ForwardIterator upper_bound(ForwardIterator first, ForwardIterator last, const T& value,
                                                     Compare comp) {
   return ::ycxx::detail::partition_point_n(first, ::ycxx::detail::range_length(first, last),
-                                                   [&](auto&& e) -> bool { return !comp(value, e); });
+                                                   [&](auto&& e) -> bool { return !static_cast<bool>(comp(value, e)); });
 }
 template <class ForwardIterator, class T = typename iterator_traits<ForwardIterator>::value_type>
 [[nodiscard]] constexpr ForwardIterator upper_bound(ForwardIterator first, ForwardIterator last, const T& value) {
@@ -857,7 +871,7 @@ template <class ForwardIterator, class T = typename iterator_traits<ForwardItera
 template <class ForwardIterator, class T = typename iterator_traits<ForwardIterator>::value_type, class Compare>
 [[nodiscard]] constexpr bool binary_search(ForwardIterator first, ForwardIterator last, const T& value, Compare comp) {
   first = std::lower_bound(first, last, value, comp);
-  return first != last && !comp(value, *first);
+  return first != last && !static_cast<bool>(comp(value, *first));
 }
 template <class ForwardIterator, class T = typename iterator_traits<ForwardIterator>::value_type>
 [[nodiscard]] constexpr bool binary_search(ForwardIterator first, ForwardIterator last, const T& value) {
@@ -1295,7 +1309,7 @@ struct binary_search_fn {
   [[nodiscard]] constexpr bool operator()(I first, S last, const T& value, Comp comp = {}, Proj proj = {}) const {
     auto n = std::ranges::distance(first, last);
     I i = ::ycxx::detail::partition_point_n(std::move(first), n, proj_less_value<Comp, Proj, T>{comp, proj, value});
-    return i != last && !::ycxx::detail::invoke(comp, value, ::ycxx::detail::invoke(proj, *i));
+    return i != last && !static_cast<bool>(::ycxx::detail::invoke(comp, value, ::ycxx::detail::invoke(proj, *i)));
   }
   template <std::ranges::forward_range R, class Proj = std::identity,
             class T = std::projected_value_t<iterator_t<R>, Proj>,

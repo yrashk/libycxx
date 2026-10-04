@@ -229,13 +229,16 @@ namespace ycxx::detail {
 template <class T>
 concept gcd_integer = std::is_integral_v<T> && !std::is_same_v<std::remove_cv_t<T>, bool>;
 
-// |v| as the unsigned type U (v converted to the common type first).
-template <class U, class C>
-constexpr U unsigned_abs(C v) noexcept {
-  if constexpr (std::is_signed_v<C>)
-    return v < 0 ? static_cast<U>(U(0) - static_cast<U>(v)) : static_cast<U>(v);
-  else
+// |v| as the unsigned type U, computed in v's own type: |v| is representable in the common
+// type even when v is negative and the common type unsigned.
+template <class U, class T>
+constexpr U unsigned_abs(T v) noexcept {
+  if constexpr (std::is_signed_v<T>) {
+    using UT = std::make_unsigned_t<T>;
+    return static_cast<U>(v < 0 ? static_cast<UT>(UT(0) - static_cast<UT>(v)) : static_cast<UT>(v));
+  } else {
     return static_cast<U>(v);
+  }
 }
 template <class U>
 constexpr U gcd_unsigned(U a, U b) noexcept {
@@ -247,6 +250,10 @@ constexpr U gcd_unsigned(U a, U b) noexcept {
   return a;
 }
 
+// [numeric.sat]: "a signed or unsigned integer type" (cv-qualified types are not).
+template <class T>
+concept sat_integer = cmp_integer<T> && std::same_as<T, std::remove_cv_t<T>>;
+
 template <class T>
 concept midpoint_arithmetic = std::is_arithmetic_v<T> && !std::is_same_v<std::remove_cv_t<T>, bool>;
 
@@ -255,27 +262,36 @@ concept midpoint_arithmetic = std::is_arithmetic_v<T> && !std::is_same_v<std::re
 namespace std {
 
 // [numeric.ops.gcd], [numeric.ops.lcm]
+// Both are noexcept (a strengthening): a violated precondition is undefined, not an exception.
 template <class M, class N>
-constexpr common_type_t<M, N> gcd(M m, N n) {
+constexpr common_type_t<M, N> gcd(M m, N n) noexcept {
   static_assert(ycxx::detail::gcd_integer<M> && ycxx::detail::gcd_integer<N>,
                 "std::gcd: M and N must be integer types other than bool");
   using C = common_type_t<M, N>;
   using U = make_unsigned_t<C>;
-  U a = ycxx::detail::unsigned_abs<U>(static_cast<C>(m));
-  U b = ycxx::detail::unsigned_abs<U>(static_cast<C>(n));
+  U a = ycxx::detail::unsigned_abs<U>(m);
+  U b = ycxx::detail::unsigned_abs<U>(n);
+  ycxx::detail::precondition(a <= U(ycxx::detail::int_max<C>()) && b <= U(ycxx::detail::int_max<C>()),
+                             "std::gcd: |m| or |n| is not representable in the common type");
   return static_cast<C>(::ycxx::detail::gcd_unsigned(a, b));
 }
 template <class M, class N>
-constexpr common_type_t<M, N> lcm(M m, N n) {
+constexpr common_type_t<M, N> lcm(M m, N n) noexcept {
   static_assert(ycxx::detail::gcd_integer<M> && ycxx::detail::gcd_integer<N>,
                 "std::lcm: M and N must be integer types other than bool");
   using C = common_type_t<M, N>;
   using U = make_unsigned_t<C>;
-  U a = ycxx::detail::unsigned_abs<U>(static_cast<C>(m));
-  U b = ycxx::detail::unsigned_abs<U>(static_cast<C>(n));
+  U a = ycxx::detail::unsigned_abs<U>(m);
+  U b = ycxx::detail::unsigned_abs<U>(n);
+  ycxx::detail::precondition(a <= U(ycxx::detail::int_max<C>()) && b <= U(ycxx::detail::int_max<C>()),
+                             "std::lcm: |m| or |n| is not representable in the common type");
   if (a == 0 || b == 0)
     return 0;
-  return static_cast<C>(static_cast<U>(a / ::ycxx::detail::gcd_unsigned(a, b)) * b);
+  U r;
+  bool overflow = __builtin_mul_overflow(static_cast<U>(a / ::ycxx::detail::gcd_unsigned(a, b)), b, &r);
+  ycxx::detail::precondition(!overflow && r <= U(ycxx::detail::int_max<C>()),
+                             "std::lcm: the result is not representable in the common type");
+  return static_cast<C>(r);
 }
 
 // [numeric.ops.midpoint]
@@ -306,13 +322,13 @@ constexpr T midpoint(T a, T b) noexcept {
 }
 template <class T>
   requires is_object_v<T>
-constexpr T* midpoint(T* a, T* b) {
+constexpr T* midpoint(T* a, T* b) noexcept {
   static_assert(sizeof(T) != 0, "std::midpoint: T must be a complete type");
   return a + (b - a) / 2;
 }
 
 // [numeric.sat.func]
-template <ycxx::detail::cmp_integer T>
+template <ycxx::detail::sat_integer T>
 constexpr T saturating_add(T x, T y) noexcept {
   T r;
   if (!__builtin_add_overflow(x, y, &r))
@@ -323,7 +339,7 @@ constexpr T saturating_add(T x, T y) noexcept {
   else
     return ycxx::detail::int_max<T>();
 }
-template <ycxx::detail::cmp_integer T>
+template <ycxx::detail::sat_integer T>
 constexpr T saturating_sub(T x, T y) noexcept {
   T r;
   if (!__builtin_sub_overflow(x, y, &r))
@@ -333,7 +349,7 @@ constexpr T saturating_sub(T x, T y) noexcept {
   else
     return T(0);
 }
-template <ycxx::detail::cmp_integer T>
+template <ycxx::detail::sat_integer T>
 constexpr T saturating_mul(T x, T y) noexcept {
   T r;
   if (!__builtin_mul_overflow(x, y, &r))
@@ -343,7 +359,7 @@ constexpr T saturating_mul(T x, T y) noexcept {
   else
     return ycxx::detail::int_max<T>();
 }
-template <ycxx::detail::cmp_integer T>
+template <ycxx::detail::sat_integer T>
 constexpr T saturating_div(T x, T y) noexcept {
   ycxx::detail::precondition(y != 0, "std::saturating_div: division by zero");
   if constexpr (is_signed_v<T>) {
@@ -354,7 +370,7 @@ constexpr T saturating_div(T x, T y) noexcept {
 }
 
 // [numeric.sat.cast]
-template <ycxx::detail::cmp_integer R, ycxx::detail::cmp_integer T>
+template <ycxx::detail::sat_integer R, ycxx::detail::sat_integer T>
 constexpr R saturating_cast(T x) noexcept {
   if (std::cmp_less(x, ycxx::detail::int_min<R>()))
     return ycxx::detail::int_min<R>();

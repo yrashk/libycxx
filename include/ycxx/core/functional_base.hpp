@@ -21,20 +21,22 @@ constexpr __UINTPTR_TYPE__ ptr_value(const T& p) noexcept {
 template <class T, class U>
 concept builtin_ptr_less = requires(T&& t, U&& u) { static_cast<T&&>(t) < static_cast<U&&>(u); } &&
                            std::is_convertible_v<T, const volatile void*> && std::is_convertible_v<U, const volatile void*> &&
-                           !requires(T&& t, U&& u) { operator<(static_cast<T&&>(t), static_cast<U&&>(u)); } &&
-                           !requires(T&& t, U&& u) { static_cast<T&&>(t).operator<(static_cast<U&&>(u)); };
+                           (no_class_operand<T, U> ||
+                            (!requires(T&& t, U&& u) { operator<(static_cast<T&&>(t), static_cast<U&&>(u)); } &&
+                             !requires(T&& t, U&& u) { static_cast<T&&>(t).operator<(static_cast<U&&>(u)); }));
 template <class T, class U>
 concept builtin_ptr_eq = requires(T&& t, U&& u) { static_cast<T&&>(t) == static_cast<U&&>(u); } &&
                          std::is_convertible_v<T, const volatile void*> && std::is_convertible_v<U, const volatile void*> &&
-                         !requires(T&& t, U&& u) { operator==(static_cast<T&&>(t), static_cast<U&&>(u)); } &&
-                         !requires(T&& t, U&& u) { static_cast<T&&>(t).operator==(static_cast<U&&>(u)); };
+                         (no_class_operand<T, U> ||
+                          (!requires(T&& t, U&& u) { operator==(static_cast<T&&>(t), static_cast<U&&>(u)); } &&
+                           !requires(T&& t, U&& u) { static_cast<T&&>(t).operator==(static_cast<U&&>(u)); }));
 
 template <class T, class U>
 constexpr bool total_less(const T& a, const U& b) {
   if consteval {
     return a < b;
   } else {
-    return ptr_value(a) < ptr_value(b);
+    return ::ycxx::detail::ptr_value(a) < ::ycxx::detail::ptr_value(b);
   }
 }
 } // namespace ycxx::detail

@@ -181,7 +181,6 @@ public:
   class promise_type;
 
 private:
-  using base_promise = ycxx::detail::gen_promise_base<yielded>;
   template <class Y>
   friend struct ycxx::detail::gen_promise_base;
 

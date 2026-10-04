@@ -227,13 +227,14 @@ void swap(basic_stacktrace<Allocator>& a, basic_stacktrace<Allocator>& b) noexce
 // "DESCRIPTION at FILE:LINE", leaving out what is not known (src/hosted/stacktrace.cpp).
 string to_string(const stacktrace_entry& f);
 
-// One line per entry: "NUMBER# " and to_string of the entry.
+// One line per entry: its number, right-aligned in four columns, "# " and to_string of the entry.
 template <class Allocator>
 string to_string(const basic_stacktrace<Allocator>& st) {
   string s;
   for (typename basic_stacktrace<Allocator>::size_type i = 0; i < st.size(); ++i) {
     char num[24];
-    char* p = num + sizeof num;
+    char* const last = num + sizeof num;
+    char* p = last;
     auto n = i;
     do {
       *--p = static_cast<char>('0' + n % 10);
@@ -241,10 +242,11 @@ string to_string(const basic_stacktrace<Allocator>& st) {
     } while (n != 0);
     if (i != 0)
       s += '\n';
-    s.append(4 - (num + sizeof num - p < 4 ? num + sizeof num - p : 4), ' ');
-    s.append(p, num + sizeof num);
+    if (last - p < 4)
+      s.append(static_cast<size_t>(4 - (last - p)), ' ');
+    s.append(p, last);
     s += "# ";
-    s += to_string(st[i]);
+    s += std::to_string(st[i]);
   }
   return s;
 }
@@ -253,7 +255,7 @@ string to_string(const basic_stacktrace<Allocator>& st) {
 ostream& operator<<(ostream& os, const stacktrace_entry& f);
 template <class Allocator>
 ostream& operator<<(ostream& os, const basic_stacktrace<Allocator>& st) {
-  return os << to_string(st);
+  return os << std::to_string(st);
 }
 
 // ---- [stacktrace.basic.hash] ----

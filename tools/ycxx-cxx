@@ -32,7 +32,7 @@ link=1
 for a in "$@"; do case $a in -c|-S|-E|-fsyntax-only|-M|-MM) link=0 ;; esac; done
 if [ $link = 1 ]; then
   exec $cxx $extra -std=c++26 -nostdinc++ -isystem "$here/include" "$@" \
-    -nostdlib++ $group_begin "$here/build/$which/libycxx.a" "$abi" $group_end $static_libgcc
+    -nostdlib++ $group_begin "$here/build/$which/libycxx.a" "$abi" $group_end -lm $static_libgcc
 else
   exec $cxx $extra -std=c++26 -nostdinc++ -isystem "$here/include" "$@"
 fi

@@ -59,8 +59,10 @@ namespace std {
 // [thread.barrier.class]
 template <class CompletionFunction = ycxx::detail::barrier_no_completion>
 class barrier {
-  static_assert(is_nothrow_invocable_v<CompletionFunction&>,
-                "barrier: CompletionFunction must be nothrow invocable as an lvalue");
+  // [thread.barrier.class]/5 requires is_nothrow_invocable_v<CompletionFunction&> but does not
+  // mandate it; a completion function that is not noexcept is accepted, and one that throws
+  // ends the program (the completion step runs in a noexcept function; LWG 3898).
+  static_assert(is_invocable_v<CompletionFunction&>, "barrier: CompletionFunction must be invocable as an lvalue");
 
   mutable ycxx::detail::futex_mutex m_;
   ptrdiff_t expected_;  // the expected count of each phase, less the drops

@@ -277,12 +277,19 @@ class stop_callback : ycxx::adl_free::stop_callback_node {
   static void run(ycxx::detail::stop_callback_node* n) noexcept {
     static_cast<CallbackFn&&>(static_cast<stop_callback*>(n)->callback_fn_)();
   }
-  void attach(ycxx::detail::shared_stop_state* s) noexcept {
-    if (!s)
+  // Registers with st's stop state when a stop is still possible ([stoptoken.concepts]/3.2.1).
+  // From an rvalue token (`from` is st), a registration takes over st's reference to the state,
+  // which leaves st without one; otherwise st is unchanged.
+  void attach(const stop_token& st, stop_token* from) noexcept {
+    ycxx::detail::shared_stop_state* s = st.state_;
+    if (!s || (!s->state.stop_requested() && __atomic_load_n(&s->sources, __ATOMIC_ACQUIRE) == 0))
       return;
     this->invoke = &run;
     if (s->state.add(this)) {
-      ycxx::detail::shared_stop_state::retain(s);
+      if (from)
+        from->state_ = nullptr;
+      else
+        ycxx::detail::shared_stop_state::retain(s);
       state_ = s;
     } else {
       static_cast<CallbackFn&&>(callback_fn_)(); // a stop was already requested
@@ -296,13 +303,13 @@ public:
     requires constructible_from<CallbackFn, Initializer>
   explicit stop_callback(const stop_token& st, Initializer&& init) noexcept(is_nothrow_constructible_v<CallbackFn, Initializer>)
       : callback_fn_(static_cast<Initializer&&>(init)) {
-    attach(st.state_);
+    attach(st, nullptr);
   }
   template <class Initializer>
     requires constructible_from<CallbackFn, Initializer>
   explicit stop_callback(stop_token&& st, Initializer&& init) noexcept(is_nothrow_constructible_v<CallbackFn, Initializer>)
       : callback_fn_(static_cast<Initializer&&>(init)) {
-    attach(st.state_);
+    attach(st, __builtin_addressof(st));
   }
   ~stop_callback() {
     if (state_) {

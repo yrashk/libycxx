@@ -25,6 +25,10 @@ namespace ycxx::detail {
 bool atomic_wait_block_until(const volatile void* addr, std::uint32_t ticket, int clock, long long sec,
                              long long nsec) noexcept;
 
+// Inside a handler: whether the exception being handled is not a C++ exception, such as the
+// forced unwind of thread cancellation or pthread_exit, which a catch (...) must rethrow.
+bool handling_foreign_exception() noexcept;
+
 [[noreturn]] [[gnu::cold]] inline void raise_system_error(std::errc e, const char* what) {
   if constexpr (cfg::exceptions)
     ::ycxx::detail::throw_system_error(static_cast<int>(e), what);

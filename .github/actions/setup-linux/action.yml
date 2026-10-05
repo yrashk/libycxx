@@ -2,7 +2,12 @@ name: setup-linux
 description: >
   Inside the gcc:16 container: Clang 23 and lld from apt.llvm.org, ninja, cmake, uv (lit runs
   through uvx), what tools/fetch-suites and the own suite need (git, curl, xz, tzdata), and GCC 16
-  where the scripts look for it; then tools/toolchain/provision --detect-only.
+  where the scripts look for it; then tools/toolchain/provision --detect-only. With locales: 'true',
+  also the named locales the external suites require (tools/ci/gen-locales).
+inputs:
+  locales:
+    description: generate the named locales the libc++ and libstdc++ suites require
+    default: 'false'
 runs:
   using: composite
   steps:
@@ -21,3 +26,8 @@ runs:
         ln -sfn "$(dirname "$(g++ -print-libgcc-file-name)")" /opt/gcc-16/lib/gcc/x86_64-pc-linux-gnu/16.2.0
     - shell: bash
       run: tools/toolchain/provision --detect-only
+    - if: inputs.locales == 'true'
+      shell: bash
+      run: |
+        apt-get install -y -qq locales >/dev/null
+        tools/ci/gen-locales

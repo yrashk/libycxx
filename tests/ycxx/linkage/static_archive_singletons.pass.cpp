@@ -21,6 +21,7 @@
 // ARCHIVE: ../support/linkage/archive_a.cpp ../support/linkage/archive_b.cpp
 #include "../support/linkage/archive_shared.hpp"
 #include <chrono>
+#include <cstdlib>
 #include <sstream>
 #include "check.hpp"
 

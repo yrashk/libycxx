@@ -1,6 +1,7 @@
 // [std.modules]/4 (note), /5: headers included after `import std;` redeclare the entities the
 // module made reachable; the program sees one entity for each, with both definitions merged.
 // MODULES: std
+// XFAIL: gcc GCC 16 does not merge a textual definition that follows an import of the same entity (gcc.info, C++ Modules: "Textual merging of reachable GM entities ... the reverse is not implemented ... A redefinition error is emitted"); reproduced without libycxx
 import std;
 #include <algorithm>
 #include <iostream>

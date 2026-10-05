@@ -2,6 +2,7 @@
 // attachments. Headers included before `import std;` declare the entities the module re-exports;
 // both views are usable together, and the macros of the included headers stay defined.
 // MODULES: std
+// XFAIL: gcc GCC 16 bug: importing a module whose global module fragment has more of the headers than the importer #included before the import fails to read the CMI ("failed to read compiled module cluster N: Bad file data"); reduced: a module with <vector> and <string> in its global module fragment, imported after #include <vector>
 #include <cstdio>
 #include <map>
 #include <string>

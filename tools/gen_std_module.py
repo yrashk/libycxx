@@ -14,8 +14,10 @@ export lists are read from the headers by the compilers, never written by hand:
    AST (-ast-dump, text). Every declaration directly in namespace std and in its standard nested
    namespaces is exported: classes, enumerations (and the enumerators of unscoped ones),
    functions and operators, variables, typedefs and aliases, concepts, templates, and the
-   using-declarations of the C wrappers (`using ::printf;`). Inline namespaces other than the
-   standard literals namespaces (`std::ranges::cpo`, ...) are flattened into their parent; a
+   using-declarations of the C wrappers (`using ::printf;`). Inline namespaces are redeclared
+   inline, the implementation's too (std::ranges::cpo, which holds the customization point
+   objects: their using-declarations cannot be placed in std::ranges itself, where the views'
+   iterators declare hidden friends of the same names); a
    using-directive (std::chrono's of chrono_literals) is replaced by using-declarations of the
    nominated namespace's names; a namespace alias (std::views) is redeclared. Not exported:
    names reserved to the implementation (`_X`, `__x`), explicit and partial specializations,
@@ -441,13 +443,16 @@ def collect(root, namespaces):
                 for name, conds in nominated.names.items():
                     add(path, name, conds)
         for name, child in ns.children.items():
-            if RESERVED.match(name):
-                continue
-            if name in STD_NAMESPACES:
+            # An inline namespace of the implementation (std::ranges::cpo) is redeclared too, rather
+            # than its members being exported from the parent: a using-declaration of the CPO
+            # std::ranges::iter_move directly in std::ranges would conflict with the hidden friends
+            # iter_move that the views' iterators declare there (GCC 16 rejects an instantiation in
+            # the importer: "redeclared as different kind of entity").
+            if name in STD_NAMESPACES or child.inline:
                 exports.setdefault(f"{path}::{name}" if path else name, {})
                 visit(child, f"{path}::{name}" if path else name)
-            elif child.inline:
-                visit(child, path)  # an implementation's inline namespace: its members are the parent's
+            elif RESERVED.match(name):
+                continue
             else:
                 errors.append(f"std::{path + '::' if path else ''}{name}: a namespace in std that is neither "
                               "standard (STD_NAMESPACES) nor inline")

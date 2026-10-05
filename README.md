@@ -191,6 +191,10 @@ for one of three reasons, each handled where it is decided:
   Reported XFAIL with the reason; a pass is XPASS, which fails the run, so the mark goes
   when the cause does.
 
+A libc++ test that cannot apply in one configuration only, such as a permission-error test when
+the run is as root (CI's Linux containers), is listed in `tests/libcxx/unsupported.txt` with the
+lit feature naming that configuration (`root`), and reported UNSUPPORTED only there.
+
 CI (`.github/workflows/ci.yml`), on every push, runs `tools/test policy build freestanding cmake
 ycxx` on Linux (the `gcc:16` container, Clang 23 from apt.llvm.org) and macOS (Apple Silicon,
 Homebrew's GCC 16, the provisioned Clang 23), plus a sample of the external suites on Linux.

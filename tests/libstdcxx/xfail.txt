@@ -8,3 +8,4 @@
 20_util/(is_reflection/value|is_scalar/reflection)\.cc | clang | Clang 23 has no reflection (P2996, ^^T)
 20_util/is_structural/value\.cc | clang | Clang 23 has no __builtin_is_structural, which std::is_structural needs
 std/format/fill_nonunicode\.cc | clang | the test is built with -fexec-charset=ISO8859-1, which Clang 23 rejects ("invalid value 'ISO8859-1'"; Clang supports only UTF-8 execution character sets)
+20_util/specialized_algorithms/destroy/121024\.cc | gcc | GCC 16's is_within_lifetime still reports true after destroy ends a trivially destructible object's lifetime in constant evaluation (GCC PR c++/102284; the test itself marks it dg-xfail-if); [basic.life]/1, [meta.const.eval]; Clang passes

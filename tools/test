@@ -246,5 +246,6 @@ for stage in $stages; do
 done
 
 summary
-grep -q '^FAIL|' "$results" && exit 1
+# The exit status: 1 when any step failed (a suite step fails when any of its tests does).
+if grep -q "^FAIL$us" "$results"; then exit 1; fi
 exit 0

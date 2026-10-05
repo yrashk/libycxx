@@ -72,8 +72,6 @@ void release(exception_header* h) noexcept;
 // Adds a reference to the primary exception of h.
 exception_header* retain_primary(exception_header* h) noexcept;
 
-// Throws an exception whose header is filled in (type, destructor, exception class).
-[[noreturn]] void raise(exception_header* h); // not noexcept: the exception propagates through it
 // rethrow_exception: throws a dependent exception referring to a primary exception's object.
 [[noreturn]] void rethrow_primary(void* primary_object);
 

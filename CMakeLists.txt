@@ -61,6 +61,11 @@ if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
 endif()
 # Floating-point <charconv> (also in the freestanding runtime archive).
 file(GLOB YCXX_CHARCONV_SOURCES CONFIGURE_DEPENDS src/runtime/charconv/*.cpp)
+# Their work buffers (up to tens of kilobytes) are written before they are read; GCC 16 would
+# zero-fill every automatic variable in C++26 mode (erroneous values) on each call.
+if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+  set_source_files_properties(${YCXX_CHARCONV_SOURCES} PROPERTIES COMPILE_OPTIONS -ftrivial-auto-var-init=uninitialized)
+endif()
 # The lock and wait tables of <atomic> (also in the freestanding runtime archive).
 file(GLOB YCXX_ATOMIC_SOURCES CONFIGURE_DEPENDS src/runtime/atomic/*.cpp)
 # <debugging> (also in the freestanding runtime archive); is_debugger_present is replaceable.
@@ -119,7 +124,11 @@ file(GLOB YCXX_ABI_SOURCES CONFIGURE_DEPENDS src/abi/*.cpp)
 add_library(ycxx_abi STATIC ${YCXX_ABI_SOURCES})
 set_target_properties(ycxx_abi PROPERTIES OUTPUT_NAME ycxx-abi EXPORT_NAME abi)
 target_link_libraries(ycxx_abi PRIVATE ycxx_headers)
-target_compile_options(ycxx_abi PRIVATE -std=c++26 ${_ycxx_warnings} -fexceptions -frtti)
+target_compile_options(ycxx_abi PRIVATE -std=c++26 ${_ycxx_warnings} -fexceptions -frtti
+  # The hierarchy walks keep fixed tables of visited virtual bases on the stack, written before
+  # they are read; GCC 16 would zero-fill them on every dynamic_cast and handler search (C++26
+  # erroneous values).
+  $<$<CXX_COMPILER_ID:GNU>:-ftrivial-auto-var-init=uninitialized>)
 set_source_files_properties(src/abi/exception_classes.cpp src/hosted/stdexcept.cpp
                             PROPERTIES COMPILE_DEFINITIONS YCXX_EXCEPTION_KEY_FUNCTIONS)
 # The standard stream objects are initialized with a priority reserved for the implementation,

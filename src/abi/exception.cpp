@@ -182,8 +182,10 @@ void release_at_handler_exit(exception_header* h) {
   std::terminate();
 }
 
-// Throws an exception whose header is already filled in apart from the unwind fields.
-[[noreturn]] void raise(exception_header* h) {
+// Throws an exception whose header is already filled in apart from the unwind fields. Inlined
+// into its callers: each frame between the throw and the handler is unwound twice (search and
+// cleanup phases), so a helper frame of its own would make every throw slower.
+[[noreturn]] [[gnu::always_inline]] inline void raise(exception_header* h) {
   h->unexpected_handler = nullptr;
   h->terminate_handler = std::get_terminate();
   h->unwind_header.exception_cleanup = cleanup_native;

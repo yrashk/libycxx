@@ -196,7 +196,7 @@ basic_ostream<charT, traits>& basic_ostream<charT, traits>::put_number(V v) {
   if (sentry ok{*this}) {
     ycxx::detail::guarded_io(*this, [&] {
       using It = ostreambuf_iterator<charT, traits>;
-      if (use_facet<num_put<charT, It>>(this->getloc()).put(It(*this), *this, this->fill(), v).failed())
+      if (use_facet<num_put<charT, It>>(ycxx::detail::ios_access::locale_of(*this)).put(It(*this), *this, this->fill(), v).failed())
         err |= ios_base::badbit;
     });
   }
@@ -541,7 +541,7 @@ template <size_t N>
 class bitset;
 template <class charT, class traits, size_t N>
 basic_ostream<charT, traits>& operator<<(basic_ostream<charT, traits>& os, const bitset<N>& x) {
-  const ctype<charT>& ct = use_facet<ctype<charT>>(os.getloc());
+  const ctype<charT>& ct = use_facet<ctype<charT>>(ycxx::detail::ios_access::locale_of(os));
   return os << x.template to_string<charT, traits, allocator<charT>>(ct.widen('0'), ct.widen('1'));
 }
 

@@ -21,10 +21,20 @@
 #if defined(__APPLE__)
 #  include <sys/sysctl.h>
 #endif
+#if __has_include(<sys/single_threaded.h>)
+#  include <sys/single_threaded.h>
+#endif
 #if __has_include(<sys/random.h>)
 #  include <sys/random.h>
 #endif
 
+
+#if __has_include(<sys/single_threaded.h>)
+const char* const ycxx_pal_single_threaded = &__libc_single_threaded;
+#else
+static const char ycxx_pal_never_single_threaded = 0;
+const char* const ycxx_pal_single_threaded = &ycxx_pal_never_single_threaded;
+#endif
 
 void* ycxx_pal_allocate(ycxx_pal_size size, ycxx_pal_size align) {
   if (align <= alignof(max_align_t))

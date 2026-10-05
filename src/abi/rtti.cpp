@@ -63,7 +63,7 @@ rtti_kind kind_of(const std::type_info& t) noexcept {
 base_search find_bases(const subobject& root, const __class_type_info& target) {
   base_search r;
   auto visit = [&](const subobject& s) {
-    if (!(*s.type == target))
+    if (!same_type(*s.type, target))
       return false;
     if (r.count == 0) {
       r.count = 1;
@@ -268,7 +268,7 @@ bool pointer_matches(const __pointer_type_info* h, const __pointer_type_info* t,
 // conversions also apply to `catch (T*&)`, which [except.handle]/3.3 excludes.
 bool catch_matches(const std::type_info* handler, const std::type_info* thrown, void** obj) noexcept {
   rtti_kind tk = kind_of(*thrown);
-  if (*handler == *thrown) {
+  if (same_type(*handler, *thrown)) {
     if (tk == rtti_kind::pointer)
       *obj = *static_cast<void* const*>(*obj);
     return true;

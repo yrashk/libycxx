@@ -194,8 +194,12 @@ public:
       std::size_t k = cap_ - size_;
       if (k > n)
         k = n;
-      for (std::size_t i = 0; i != k; ++i)
-        data_[size_ + i] = p[i];
+      if consteval {
+        for (std::size_t i = 0; i != k; ++i)
+          data_[size_ + i] = p[i];
+      } else {
+        __builtin_memcpy(static_cast<void*>(data_ + size_), static_cast<const void*>(p), k * sizeof(charT));
+      }
       size_ += k;
       p += k;
       n -= k;
@@ -1208,9 +1212,17 @@ constexpr Out fmt_write_number(Out out, const fmt_spec<charT>& s, std::size_t wi
 template <class charT, class U, class Context>
 constexpr typename Context::iterator fmt_write_integer(Context& ctx, U magnitude, bool negative,
                                                        const fmt_spec<charT>& s) {
-  const std::size_t width = ::ycxx::detail::fmt_width(s, ctx);
-  char buf[sizeof(U) * 8 + 1];
+  [[indeterminate]] char buf[sizeof(U) * 8 + 1];
   char* const end = buf + sizeof(buf);
+  if (s.width_kind == fmt_dyn::none && s.width == 0 && !s.localized && (s.type == 0 || s.type == 'd') &&
+      s.sign == fmt_sign::none) {
+    // The common "{}": the digits and a '-', nothing to pad or group.
+    char* first = ::ycxx::detail::charconv_write_unsigned(end, magnitude, 10);
+    if (negative)
+      *--first = '-';
+    return ::ycxx::detail::fmt_put_ascii<charT>(ctx.out(), first, static_cast<std::size_t>(end - first));
+  }
+  const std::size_t width = ::ycxx::detail::fmt_width(s, ctx);
   unsigned base = 10;
   fmt_number n;
   switch (s.type) {
@@ -1300,7 +1312,7 @@ constexpr typename Context::iterator fmt_write_string(Context& ctx, const charT*
   const std::size_t width = ::ycxx::detail::fmt_width(s, ctx);
   const long long prec = ::ycxx::detail::fmt_precision(s, ctx);
   if (s.type == '?') {
-    fmt_dynbuf<charT> esc;
+    [[indeterminate]] fmt_dynbuf<charT> esc;
     ::ycxx::detail::fmt_escape_to(esc, p, n, is_char);
     const uni::width_result r = ::ycxx::detail::uni::width_prefix(
         esc.data(), esc.size(), prec < 0 ? static_cast<std::size_t>(-1) : static_cast<std::size_t>(prec));
@@ -1424,7 +1436,7 @@ typename Context::iterator fmt_format_float(Context& ctx, T value, const fmt_spe
   }
   const std::size_t need =
       64 + (prec > 0 ? static_cast<std::size_t>(prec) : 0) + (f == std::chars_format::fixed ? fmt_max_int_digits<T> : 0);
-  char local[256];
+  [[indeterminate]] char local[256];
   fmt_heap_chars heap;
   char* const buf = need <= sizeof(local) ? local : heap.get(need);
   char* const bufend = buf + need - 1; // one spare character for the '.' of the alternate form
@@ -1640,7 +1652,7 @@ constexpr Out fmt_vformat_to(Out out, std::basic_string_view<charT> fmt, fmt_arg
     ::ycxx::detail::fmt_vformat(sink, fmt, args, loc);
     return sink.finish();
   } else {
-    fmt_iter_sink<charT, Out> sink(static_cast<Out&&>(out));
+    [[indeterminate]] fmt_iter_sink<charT, Out> sink(static_cast<Out&&>(out));
     ::ycxx::detail::fmt_vformat(sink, fmt, args, loc);
     return sink.finish();
   }
@@ -1648,7 +1660,7 @@ constexpr Out fmt_vformat_to(Out out, std::basic_string_view<charT> fmt, fmt_arg
 template <class charT>
 constexpr std::basic_string<charT> fmt_vformat_string(std::basic_string_view<charT> fmt, fmt_args<charT> args,
                                                       const std::locale* loc) {
-  fmt_dynbuf<charT> buf;
+  [[indeterminate]] fmt_dynbuf<charT> buf;
   ::ycxx::detail::fmt_vformat(buf, fmt, args, loc);
   return std::basic_string<charT>(buf.data(), buf.size());
 }
@@ -1659,7 +1671,7 @@ constexpr std::format_to_n_result<Out> fmt_vformat_to_n(Out out, std::iter_diffe
 template <class charT>
 constexpr std::size_t fmt_vformatted_size(std::basic_string_view<charT> fmt, fmt_args<charT> args,
                                           const std::locale* loc) {
-  fmt_count_sink<charT, decltype(nullptr)> sink(nullptr, 0);
+  [[indeterminate]] fmt_count_sink<charT, decltype(nullptr)> sink(nullptr, 0);
   ::ycxx::detail::fmt_vformat(sink, fmt, args, loc);
   return sink.finish();
 }
@@ -1761,7 +1773,7 @@ constexpr std::format_to_n_result<Out> ycxx::detail::fmt_vformat_to_n(Out out, s
                                                                       std::basic_string_view<charT> fmt,
                                                                       fmt_args<charT> args, const std::locale* loc) {
   const std::size_t limit = n < 0 ? 0 : static_cast<std::size_t>(n);
-  fmt_count_sink<charT, Out> sink(static_cast<Out&&>(out), limit);
+  [[indeterminate]] fmt_count_sink<charT, Out> sink(static_cast<Out&&>(out), limit);
   ::ycxx::detail::fmt_vformat(sink, fmt, args, loc);
   const std::size_t total = sink.finish();
   return {static_cast<Out&&>(sink.out()), static_cast<std::iter_difference_t<Out>>(total)};

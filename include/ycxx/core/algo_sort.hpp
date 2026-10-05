@@ -192,6 +192,35 @@ constexpr void heap_sift_hole(I first, std::iter_difference_t<I> len, std::iter_
   }
   *(first + hole) = std::move(value);
 }
+// pop_heap's sift (Floyd): the hole first goes down to a leaf along the larger children (one
+// comparison per level), then `value`, which comes from the back of the heap and so usually
+// belongs near the bottom, moves up from there.
+template <class Ops, class I, class C>
+constexpr void heap_sift_leaf(I first, std::iter_difference_t<I> len, std::iter_difference_t<I> hole,
+                              std::iter_value_t<I>& value, C less) {
+  const auto top = hole;
+  // While both children exist; the choice is arithmetic, not a branch (it is unpredictable).
+  for (auto child = 2 * hole + 2; child < len; child = 2 * hole + 2) {
+    child -= static_cast<bool>(less(*(first + child), *(first + (child - 1))));
+    I c = first + child;
+    *(first + hole) = Ops::iter_move(c);
+    hole = child;
+  }
+  if (2 * hole + 2 == len) { // a last, lone left child
+    I c = first + (len - 1);
+    *(first + hole) = Ops::iter_move(c);
+    hole = len - 1;
+  }
+  while (hole > top) {
+    const auto parent = (hole - 1) / 2;
+    I p = first + parent;
+    if (!less(*p, value))
+      break;
+    *(first + hole) = Ops::iter_move(p);
+    hole = parent;
+  }
+  *(first + hole) = std::move(value);
+}
 template <class Ops, class I, class C>
 constexpr void push_heap_impl(I first, I last, C less) {
   auto n = last - first;
@@ -209,7 +238,7 @@ constexpr void pop_heap_impl(I first, I last, C less) {
   I back = last - ::ycxx::detail::diff_one<I>;
   std::iter_value_t<I> v(Ops::iter_move(back));
   *back = Ops::iter_move(first);
-  ::ycxx::detail::heap_sift_hole<Ops>(first, n - 1, 0, v, less);
+  ::ycxx::detail::heap_sift_leaf<Ops>(first, n - 1, 0, v, less);
 }
 template <class Ops, class I, class C>
 constexpr void make_heap_impl(I first, I last, C less) {

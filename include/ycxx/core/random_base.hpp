@@ -282,7 +282,18 @@ RealType generate_canonical(URBG& g) {
       if (pos + b > 64)
         hi |= pos >= 64 ? ycxx::detail::rand_shl(v, pos - 64) : ycxx::detail::rand_shr(v, 64 - pos);
     }
-    return ycxx::detail::rand_scale_down<RealType>(hi, lo, d);
+    if constexpr (d <= 64) {
+      // lo < 2^d with d <= digits converts exactly, and scaling by 2^-d is exact.
+      constexpr RealType scale = [] {
+        RealType s = 1;
+        for (size_t i = 0; i < d; ++i)
+          s /= 2;
+        return s;
+      }();
+      return static_cast<RealType>(lo) * scale;
+    } else {
+      return ycxx::detail::rand_scale_down<RealType>(hi, lo, d);
+    }
   } else {
     // General R: R^k and x = floor(R^k / 2^d) are compile-time constants; attempts are made until
     // S < x * 2^d, then the result is floor(S / x) / 2^d.

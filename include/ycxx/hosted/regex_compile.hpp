@@ -1254,14 +1254,58 @@ class re_compiler {
       P.word_class = tr_.lookup_classname(wn, wn + 1, false);
     }
     if constexpr (re_cacheable<charT>) {
+      auto set_bit = [](unsigned char* bits, unsigned u) { bits[u >> 3] |= static_cast<unsigned char>(1u << (u & 7)); };
+      // The code units below 256 a class matches, computed once per distinct class.
+      struct class_entry {
+        class_type f;
+        unsigned char b[32];
+      };
+      std::vector<class_entry> class_bits;
+      auto bits_of = [&](class_type f) -> const unsigned char* {
+        for (auto& e : class_bits)
+          if (e.f == f)
+            return e.b;
+        class_entry& e = class_bits.emplace_back(class_entry{f, {}});
+        for (unsigned u = 0; u < 256; ++u)
+          if (tr_.isctype(static_cast<charT>(u), f))
+            set_bit(e.b, u);
+        return e.b;
+      };
       for (unsigned u = 0; u < 256; ++u) {
         const charT c = static_cast<charT>(u);
         P.fold[u] = P.icase ? tr_.translate_nocase(c) : P.collate ? tr_.translate(c) : c;
-        if (tr_.isctype(c, P.word_class))
-          P.word[u >> 3] |= static_cast<unsigned char>(1u << (u & 7));
-        for (auto& s : P.sets)
-          if (P.set_slow(tr_, s, c))
-            s.cache[u >> 3] |= static_cast<unsigned char>(1u << (u & 7));
+      }
+      const unsigned char* word = bits_of(P.word_class);
+      for (unsigned i = 0; i < 32; ++i)
+        P.word[i] = word[i];
+      for (auto& s : P.sets) {
+        if (P.icase || P.collate || !s.coll_lo.empty() || !s.equivs.empty()) {
+          for (unsigned u = 0; u < 256; ++u)
+            if (P.set_slow(tr_, s, static_cast<charT>(u)))
+              set_bit(s.cache, u);
+          continue;
+        }
+        // What set_slow decides for c below 256 when nothing is translated, folded or collated:
+        // the listed characters, the ranges by code, the classes, the negated classes.
+        for (charT ch : s.chars)
+          if (re_ord(ch) < 256u)
+            set_bit(s.cache, unsigned(re_ord(ch)));
+        for (const auto& r : s.ranges)
+          for (unsigned long long u = re_ord(r.lo); u <= re_ord(r.hi) && u < 256u; ++u)
+            set_bit(s.cache, unsigned(u));
+        if (s.classes != class_type{}) {
+          const unsigned char* b = bits_of(s.classes);
+          for (unsigned i = 0; i < 32; ++i)
+            s.cache[i] |= b[i];
+        }
+        for (const class_type f : s.neg_classes) {
+          const unsigned char* b = bits_of(f);
+          for (unsigned i = 0; i < 32; ++i)
+            s.cache[i] |= static_cast<unsigned char>(~b[i]);
+        }
+        if (s.negate)
+          for (unsigned i = 0; i < 32; ++i)
+            s.cache[i] = static_cast<unsigned char>(~s.cache[i]);
       }
     }
   }

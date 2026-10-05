@@ -34,11 +34,9 @@ void set_digits(digits& out, u64 v, int exp10) {
     ++exp10;
   }
   char tmp[24];
-  int n = 0;
-  for (; v != 0; v /= 10)
-    tmp[n++] = static_cast<char>('0' + v % 10);
-  for (int i = 0; i < n; ++i)
-    out.d[i] = tmp[n - 1 - i];
+  const char* p = ycxx::detail::charconv_write_unsigned(tmp + sizeof tmp, v, 10); // two digits per step
+  const int n = static_cast<int>(tmp + sizeof tmp - p);
+  __builtin_memcpy(out.d, p, static_cast<std::size_t>(n));
   out.n = n;
   out.x = exp10 + n - 1;
 }
@@ -239,11 +237,11 @@ std::to_chars_result layout_fixed(char* first, char* last, bool negative, const 
     for (int i = n; i <= x; ++i)
       *p++ = '0';
   } else if (x >= 0) {
-    for (int i = 0; i <= x; ++i)
-      *p++ = d[i];
+    __builtin_memcpy(p, d, static_cast<std::size_t>(x + 1));
+    p += x + 1;
     *p++ = '.';
-    for (int i = x + 1; i < n; ++i)
-      *p++ = d[i];
+    __builtin_memcpy(p, d + x + 1, static_cast<std::size_t>(n - x - 1));
+    p += n - x - 1;
   } else {
     *p++ = '0';
     *p++ = '.';

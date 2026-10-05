@@ -154,10 +154,6 @@ size_t num_put_integer(char* buf, unsigned long long v, bool neg, bool is_signed
     }
     *pad = len;
   } else {
-    do {
-      digits[n++] = static_cast<char>('0' + v % 10);
-      v /= 10;
-    } while (v != 0);
     if (is_signed) {
       if (neg)
         buf[len++] = '-';
@@ -165,6 +161,7 @@ size_t num_put_integer(char* buf, unsigned long long v, bool neg, bool is_signed
         buf[len++] = '+';
     }
     *pad = len;
+    return static_cast<size_t>(std::to_chars(buf + len, buf + 72, v).ptr - buf);
   }
   while (n != 0)
     buf[len++] = digits[--n];
@@ -209,10 +206,12 @@ num_parse num_get_integer(const char* s, size_t n, int base, unsigned long long*
     const int d = c >= '0' && c <= '9' ? c - '0' : c >= 'a' && c <= 'f' ? c - 'a' + 10 : c >= 'A' && c <= 'F' ? c - 'A' + 10 : 99;
     if (d >= base)
       return num_parse::not_converted;
-    if (v > (~0ull - static_cast<unsigned>(d)) / static_cast<unsigned>(base))
+    unsigned long long next;
+    if (__builtin_mul_overflow(v, static_cast<unsigned>(base), &next) ||
+        __builtin_add_overflow(next, static_cast<unsigned>(d), &next))
       overflow = true;
     else
-      v = v * static_cast<unsigned>(base) + static_cast<unsigned>(d);
+      v = next;
   }
   *magnitude = v;
   return overflow ? num_parse::overflow : num_parse::ok;

@@ -140,6 +140,33 @@ enum class rtti_kind : unsigned char {
 
 rtti_kind kind_of(const std::type_info& t) noexcept;
 
+// std::type_info::operator== with the name comparison written out: the runtime compares types on
+// every step of a dynamic_cast or handler search, mostly types that differ within their first
+// few characters, where a call to strcmp costs more than the comparison itself.
+struct type_info_name : std::type_info {
+  static constexpr const char* std::type_info::* name = &type_info_name::name_;
+};
+inline bool same_type(const std::type_info& a, const std::type_info& b) noexcept {
+  if (&a == &b)
+    return true;
+  const char* x = a.*type_info_name::name;
+  const char* y = b.*type_info_name::name;
+  // A name starting with '*' belongs to one type_info object only (see operator==).
+  if (*x == '*' || *y == '*')
+    return false;
+  if (x == y)
+    return true;
+  // Most names differ within a few characters; a long common prefix (a nested or
+  // anonymous-namespace name, which Clang does not mark with '*') goes to the C library's strcmp.
+  for (int i = 0; i < 8; ++i, ++x, ++y) {
+    if (*x != *y)
+      return false;
+    if (*x == '\0')
+      return true;
+  }
+  return __builtin_strcmp(x, y) == 0;
+}
+
 inline bool is_class(rtti_kind k) noexcept {
   return k == rtti_kind::class_plain || k == rtti_kind::class_si || k == rtti_kind::class_vmi;
 }
@@ -168,21 +195,52 @@ inline bool same_subobject(const subobject& a, const subobject& b) noexcept {
     return false;
   if (a.anchor == nullptr || b.anchor == nullptr)
     return a.anchor == b.anchor;
-  return *a.anchor == *b.anchor;
+  return same_type(*a.anchor, *b.anchor);
 }
 
+// The virtual-base subobjects a walk has already entered, with whether along a public path. A
+// virtual base reached again along another path holds the same subobjects, so its subtree needs
+// another walk only if the new path is public and the earlier ones were not: without this, a
+// hierarchy of stacked diamonds would be walked along every one of its exponentially many paths.
+// Past its capacity the walk simply enters again.
+struct vbase_memo {
+  static constexpr int capacity = 64;
+  const void* key[capacity];
+  bool is_public[capacity];
+  int n = 0;
+
+  // Whether the subtree must be walked; records the visit.
+  bool enter(const void* k, bool pub) noexcept {
+    for (int i = 0; i < n; ++i)
+      if (key[i] == k) {
+        if (is_public[i] || !pub)
+          return false;
+        is_public[i] = true;
+        return true;
+      }
+    if (n < capacity) {
+      key[n] = k;
+      is_public[n] = pub;
+      ++n;
+    }
+    return true;
+  }
+};
+
 // Calls visit(s) for s and then, depth first, for every base-class subobject along every
-// inheritance path (a subobject reachable along several paths is visited once per path). Stops
-// as soon as visit returns true; returns whether it did.
+// inheritance path, except that a virtual base already entered along a path at least as public
+// is not entered again (vbase_memo). Stops as soon as visit returns true; returns whether it
+// did. The visitors only gather distinct subobjects and whether each is publicly reachable, which
+// the skipped paths cannot change.
 template <class Visit>
-bool walk_bases(const subobject& s, Visit& visit) {
+bool walk_bases(const subobject& s, Visit& visit, vbase_memo& memo) {
   if (visit(s))
     return true;
   switch (kind_of(*s.type)) {
   case rtti_kind::class_si: {
     // §2.9.4: a single public non-virtual base at offset zero.
     auto* si = static_cast<const __cxxabiv1::__si_class_type_info*>(s.type);
-    return walk_bases(subobject{si->__base_type, s.addr, s.anchor, s.offset, s.is_public}, visit);
+    return walk_bases(subobject{si->__base_type, s.addr, s.anchor, s.offset, s.is_public}, visit, memo);
   }
   case rtti_kind::class_vmi: {
     auto* vmi = static_cast<const __cxxabiv1::__vmi_class_type_info*>(s.type);
@@ -201,16 +259,26 @@ bool walk_bases(const subobject& s, Visit& visit) {
           const char* vptr = *reinterpret_cast<const char* const*>(s.addr);
           child.addr = s.addr + *reinterpret_cast<const std::ptrdiff_t*>(vptr + b.offset());
         }
+        // The subobject's identity: its address, or without an object its type (every virtual
+        // base of one type is one subobject).
+        const void* k = child.addr != nullptr ? static_cast<const void*>(child.addr) : b.__base_type;
+        if (!memo.enter(k, child.is_public))
+          continue;
       } else if (s.addr != nullptr) {
         child.addr = s.addr + b.offset();
       }
-      if (walk_bases(child, visit))
+      if (walk_bases(child, visit, memo))
         return true;
     }
     return false;
   }
   default: return false;
   }
+}
+template <class Visit>
+bool walk_bases(const subobject& s, Visit& visit) {
+  vbase_memo memo;
+  return walk_bases(s, visit, memo);
 }
 
 // The subobjects of type `target` within the subobject `root` (root itself included).

@@ -21,6 +21,10 @@ else
   # -shared-libgcc: one unwinder per process (glibc's pthread_exit/pthread_cancel unwind
   # through libgcc_s.so; a static libgcc_eh copy in the program would make them abort).
   group_begin=-Wl,--start-group group_end=-Wl,--end-group static_libgcc=-shared-libgcc
+  # Run against GCC 16's libgcc_s (the one linked against), not an older system copy: as
+  # tools/ref-cxx does for the reference runs (a newer unwinder is also faster).
+  gcc_s=$($gxx -print-file-name=libgcc_s.so.1)
+  [ "$gcc_s" != libgcc_s.so.1 ] && static_libgcc="$static_libgcc -Wl,-rpath,$(dirname "$gcc_s")"
   # Clang uses GCC 16's installation for the C runtime startup files and libgcc.
   if [ $which = clang ]; then
     gcc_install_dir=${YCXX_GCC_INSTALL_DIR:-$(dirname "$($gxx -print-libgcc-file-name)")}

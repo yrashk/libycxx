@@ -38,25 +38,25 @@ const std::type_info& lib_typeid(int which) {
 
 const std::type_info& lib_dynamic_typeid(const VBase* p) { return typeid(*p); }
 
-VBase* lib_make(int which) {
+VBase* lib_make(int which, void* s) {
   switch (which) {
-    case 0: return new VBase;
-    case 1: return new VLeft;
-    case 2: return new VRight;
-    case 3: return static_cast<VLeft*>(new VBottom);
-    case 4: return new VTemplate<long>;
-    default: return new Keyed;
+    case 0: return ::new (s) VBase;
+    case 1: return ::new (s) VLeft;
+    case 2: return ::new (s) VRight;
+    case 3: return static_cast<VLeft*>(::new (s) VBottom);
+    case 4: return ::new (s) VTemplate<long>;
+    default: return ::new (s) Keyed;
   }
 }
 
-std::exception* lib_make_std(int which) {
+std::exception* lib_make_std(int which, void* s) {
   switch (which) {
-    case 0: return new std::runtime_error("runtime");
-    case 1: return new std::out_of_range("range");
-    case 2: return new std::system_error(std::make_error_code(std::errc::invalid_argument));
-    case 3: return new std::filesystem::filesystem_error("fs", std::make_error_code(std::errc::io_error));
-    case 4: return new std::bad_alloc;
-    default: return new Nested;
+    case 0: return ::new (s) std::runtime_error("runtime");
+    case 1: return ::new (s) std::out_of_range("range");
+    case 2: return ::new (s) std::system_error(std::make_error_code(std::errc::invalid_argument));
+    case 3: return ::new (s) std::filesystem::filesystem_error("fs", std::make_error_code(std::errc::io_error));
+    case 4: return ::new (s) std::bad_alloc;
+    default: return ::new (s) Nested;
   }
 }
 

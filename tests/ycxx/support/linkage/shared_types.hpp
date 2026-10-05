@@ -1,6 +1,7 @@
 // Interface between linkage/shared_library_type_identity.pass.cpp and the shared library built
 // from shared_types_lib.cpp.
 #pragma once
+#include <cstddef>
 #include <exception>
 #include <thread>
 #include <typeindex>
@@ -42,12 +43,14 @@ __attribute__((visibility("default"))) const std::type_info& lib_typeid(int whic
 // typeid of the dynamic type of *p, evaluated in the shared library.
 __attribute__((visibility("default"))) const std::type_info& lib_dynamic_typeid(const VBase* p);
 // An object of a VBase-derived class made in the shared library: 0 VBase, 1 VLeft, 2 VRight,
-// 3 VBottom, 4 VTemplate<long>, 5 Keyed. The caller deletes it.
-__attribute__((visibility("default"))) VBase* lib_make(int which);
+// 3 VBottom, 4 VTemplate<long>, 5 Keyed, constructed in storage (made by placement new, so no
+// allocation function of either image is involved; the caller destroys it, p->~VBase()).
+constexpr std::size_t storage_size = 512;
+__attribute__((visibility("default"))) VBase* lib_make(int which, void* storage);
 // A standard exception made in the shared library: 0 runtime_error, 1 out_of_range,
 // 2 system_error, 3 filesystem::filesystem_error, 4 bad_alloc, 5 nested_exception holder.
-// The caller deletes it.
-__attribute__((visibility("default"))) std::exception* lib_make_std(int which);
+// Constructed in storage like lib_make; the caller destroys it (e->~exception()).
+__attribute__((visibility("default"))) std::exception* lib_make_std(int which, void* storage);
 // dynamic_cast<To*>(p) != nullptr in the shared library for To: 0 runtime_error,
 // 1 logic_error, 2 out_of_range, 3 system_error, 4 bad_alloc, 5 nested_exception.
 __attribute__((visibility("default"))) bool lib_std_cast(const std::exception* p, int to);

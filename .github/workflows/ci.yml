@@ -63,11 +63,10 @@ jobs:
           if-no-files-found: ignore
 
   # macOS on Apple Silicon: Homebrew's GCC 16 and LLVM's Clang 23 release (provisioned and
-  # cached). Not required yet: the macOS port is in progress (STATUS.md), so this job reports
-  # without failing the workflow.
+  # cached). The macOS port is in progress (STATUS.md): until it lands this job fails, and its
+  # composite report (artifact test-reports-macos) shows where.
   macos:
     runs-on: macos-15
-    continue-on-error: true
     steps:
       - uses: actions/checkout@v4
 

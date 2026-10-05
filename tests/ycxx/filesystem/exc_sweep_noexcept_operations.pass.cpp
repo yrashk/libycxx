@@ -22,6 +22,8 @@
 #include <system_error>
 #include "exc_new.hpp"
 #include "fs_tmpdir.hpp"
+#include <sys/stat.h>
+#include <unistd.h>
 
 using namespace exh;
 namespace fs = std::filesystem;

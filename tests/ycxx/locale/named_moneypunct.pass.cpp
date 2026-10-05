@@ -3,7 +3,9 @@
 // members for moneypunct<charT, true>). The patterns ([locale.moneypunct.general]/3) are derived
 // from cs_precedes, sep_by_space and sign_posn: each of symbol, sign and value once, none never
 // first, space neither first nor last; the symbol precedes the value iff cs_precedes; a space
-// field exactly when sep_by_space is not 0. money_put / money_get round-trip through them
+// field exactly when sep_by_space is not 0, except that an international symbol ending with its
+// separator (C23 7.11.2.1: "USD ") before the value is separated by it alone (DECISIONS §7).
+// money_put / money_get round-trip through them
 // ([locale.money.put.virtuals], [locale.money.get.virtuals]).
 #include <limits.h>
 #include <locale.h>
@@ -44,7 +46,9 @@ static int index_of(M::pattern p, char part) {
   return -1;
 }
 
-static void check_pattern(M::pattern p, char cs, char sep, char posn) {
+static void check_pattern(M::pattern p, char cs, char sep, char posn, bool own_sep) {
+  if (own_sep && cs == 1 && sep == 1)
+    sep = 0;
   CHECK(index_of(p, M::symbol) >= 0 && index_of(p, M::sign) >= 0 && index_of(p, M::value) >= 0);
   const int sp = index_of(p, M::space), no = index_of(p, M::none);
   CHECK((sp >= 0) != (no >= 0));
@@ -73,8 +77,9 @@ static void check(const char* name) {
   CHECK(mp.negative_sign() == c.negative || (c.posn[Intl][1] == 0 && mp.negative_sign() == "()"));
   const int frac = Intl ? c.intl_frac : c.frac;
   CHECK(mp.frac_digits() == (frac == CHAR_MAX ? 0 : frac));
-  check_pattern(mp.pos_format(), c.cs[Intl][0], c.sep[Intl][0], c.posn[Intl][0]);
-  check_pattern(mp.neg_format(), c.cs[Intl][1], c.sep[Intl][1], c.posn[Intl][1]);
+  const bool own_sep = Intl && c.intl_symbol.size() == 4 && c.intl_symbol[3] == ' ';
+  check_pattern(mp.pos_format(), c.cs[Intl][0], c.sep[Intl][0], c.posn[Intl][0], own_sep);
+  check_pattern(mp.neg_format(), c.cs[Intl][1], c.sep[Intl][1], c.posn[Intl][1], own_sep);
   const auto& wmp = std::use_facet<std::moneypunct<wchar_t, Intl>>(l);
   CHECK(wmp.frac_digits() == mp.frac_digits());
   CHECK(wmp.pos_format().field[0] == mp.pos_format().field[0]);

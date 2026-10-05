@@ -341,8 +341,13 @@ void load_money(const char* name, bool intl, ycxx::detail::money_data<charT>& d)
   const char pcs = intl ? l.int_p_cs_precedes : l.p_cs_precedes, psep = intl ? l.int_p_sep_by_space : l.p_sep_by_space,
              ppos = intl ? l.int_p_sign_posn : l.p_sign_posn, ncs = intl ? l.int_n_cs_precedes : l.n_cs_precedes,
              nsep = intl ? l.int_n_sep_by_space : l.n_sep_by_space, npos = intl ? l.int_n_sign_posn : l.n_sign_posn;
-  d.pos = money_pattern(pcs, psep, ppos, d.pos);
-  d.neg = money_pattern(ncs, nsep, npos, d.neg);
+  // C's int_curr_symbol ends with the character that separates it from the value (C23
+  // 7.11.2.1): when it precedes the value, that character is the separation sep_by_space 1 asks
+  // for, and a space field as well would double it ("USD  1.00")
+  const bool own_sep = intl && l.int_curr_symbol.size() == 4 && l.int_curr_symbol[3] == ' ';
+  auto sep = [&](char cs, char sp) { return own_sep && cs == 1 && sp == 1 ? char(0) : sp; };
+  d.pos = money_pattern(pcs, sep(pcs, psep), ppos, d.pos);
+  d.neg = money_pattern(ncs, sep(ncs, nsep), npos, d.neg);
   if (ppos == 0)
     d.positive = convert(loc, "()", charT());
   if (npos == 0)

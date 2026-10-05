@@ -536,7 +536,8 @@ constexpr auto md_submdspan_mapping(const M& m, const Sl&... slices) {
       }
     } else {
       using R = std::layout_stride::mapping<Sub>;
-      return std::submdspan_mapping_result<R>{R(sub_ext, ::ycxx::detail::md_sub_strides<Sub>(m, slices...)), offset};
+      return std::submdspan_mapping_result<R>{
+          R(md_sub_strides_t{}, sub_ext, ::ycxx::detail::md_sub_strides<Sub>(m, slices...)), offset};
     }
   }
 }
@@ -565,7 +566,8 @@ constexpr auto layout_stride::mapping<Extents>::submdspan_mapping_impl(SliceSpec
   } else {
     auto sub_ext = ycxx::detail::md_sub_extents(extents(), slices...);
     using R = layout_stride::mapping<decltype(sub_ext)>;
-    return submdspan_mapping_result<R>{R(sub_ext, ycxx::detail::md_sub_strides<decltype(sub_ext)>(*this, slices...)),
+    return submdspan_mapping_result<R>{R(ycxx::detail::md_sub_strides_t{}, sub_ext,
+                                         ycxx::detail::md_sub_strides<decltype(sub_ext)>(*this, slices...)),
                                        ycxx::detail::md_sub_offset(*this, slices...)};
   }
 }

@@ -282,6 +282,7 @@ Clang rejects code GCC accepts.
 | `except/handler_array_decay`, `except/handler_function_pointer` | G |  | GCC records `catch (int(&)[3])` / `catch (int(&)())` as pointer handlers |
 | `except/handler_member_pointer` | G |  | libsupc++ ignores the member function's cv/ref-qualifiers that GCC records only in the type name (libycxx's runtime handles this) |
 | `except/handler_internal_linkage_types` (XFAIL) |  | C | Clang emits the type_info name of a class with internal linkage without the `*` prefix that makes the Itanium runtime compare by address, so same-named unnamed-namespace classes of two translation units match each other's handlers (libsupc++ and libycxx alike) |
+| `iostreams/standard_input_concurrent_wide_putback` (batch 41, only with `SANITIZER=tsan`) |  | C | TSan reports a race between glibc's `_IO_wdefault_pbackfail` (wcin.putback) and `__wuflow` (wcin.get) in another thread: both run under glibc's internal FILE lock, which TSan does not intercept (a false positive; the test passes without TSan, and `iostreams/standard_input_concurrent` is clean under TSan) |
 
 ## 6. Configuration modes outside the draft
 

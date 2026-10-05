@@ -5,8 +5,9 @@
 // libstdc++'s concept-check classes. This is a harness-side equivalent written from the
 // Cpp17 iterator requirements ([iterator.cpp17]): each concept is a bool constant, and
 // __function_requires static_asserts it, so a container iterator that does not meet the
-// requirements fails to compile, as with the original checks. A mutable iterator additionally has
-// reference == value_type& and accepts *r = *r ([iterator.requirements.general]/5).
+// requirements fails to compile, as with the original checks. Like those, they check the
+// operations, not that reference is value_type& (vector<bool>'s proxy iterators are checked too);
+// a mutable iterator accepts *r = *r ([iterator.requirements.general]/5).
 #pragma once
 #include <concepts>
 #include <iterator>
@@ -38,8 +39,6 @@ template <class X>
 concept cpp17_forward =
     cpp17_input<X> && std::is_default_constructible_v<X> &&
     std::derived_from<typename traits<X>::iterator_category, std::forward_iterator_tag> &&
-    std::is_reference_v<typename traits<X>::reference> &&
-    std::same_as<std::remove_cvref_t<typename traits<X>::reference>, typename traits<X>::value_type> &&
     requires(X r) {
       { r++ } -> std::convertible_to<const X&>;
       { *r++ } -> std::same_as<typename traits<X>::reference>;
@@ -77,8 +76,7 @@ concept cpp17_random_access =
 
 // A mutable iterator ([iterator.requirements.general]/5).
 template <class X>
-concept cpp17_mutable = std::same_as<typename traits<X>::reference, typename traits<X>::value_type&> &&
-                        requires(X r) { *r = *r; };
+concept cpp17_mutable = requires(X r) { *r = *r; };
 } // namespace __harness_concepts
 
 template <class Concept>

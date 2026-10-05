@@ -1,4 +1,4 @@
-// Whole-program tests: run this same executable again (/proc/self/exe) in a child process with
+// Whole-program tests: run this same executable again (self_exe()) in a child process with
 // argv[1] = mode and the environment variable YCXX_CHILD_MODE = mode, capturing its standard
 // output and standard error separately. This lets a test check what a program writes after main
 // returns (static destructors, atexit functions, stream flushing at exit), which the program
@@ -14,11 +14,25 @@
 #include <sys/wait.h>
 #include <unistd.h>
 #include <string>
+#if __has_include(<mach-o/dyld.h>)
+#  include <mach-o/dyld.h>
+#endif
 
 struct ChildResult {
   int status = -1;  // exit status if exited normally, else -1 (killed by a signal: 1000 + signal)
   std::string out, err;
 };
+
+// The path of this executable, to run it again: /proc/self/exe on Linux; Darwin has no /proc and
+// reports the path through _NSGetExecutablePath.
+inline std::string self_exe() {
+#if __has_include(<mach-o/dyld.h>)
+  char buf[4096];
+  uint32_t n = sizeof buf;
+  if (_NSGetExecutablePath(buf, &n) == 0) return buf;
+#endif
+  return "/proc/self/exe";
+}
 
 // The mode this process runs in: nullptr in the parent.
 inline const char* child_mode() { return getenv("YCXX_CHILD_MODE"); }
@@ -28,6 +42,7 @@ inline bool child_mode_is(const char* m) {
 }
 
 inline ChildResult run_self(const char* mode) {
+  std::string self = self_exe();
   int o[2], e[2];
   if (pipe(o) != 0 || pipe(e) != 0) abort();
   pid_t pid = fork();
@@ -37,12 +52,11 @@ inline ChildResult run_self(const char* mode) {
     dup2(e[1], 2);
     close(o[0]); close(o[1]); close(e[0]); close(e[1]);
     setenv("YCXX_CHILD_MODE", mode, 1);
-    char self[] = "/proc/self/exe";
     char m[256];
     strncpy(m, mode, sizeof m - 1);
     m[sizeof m - 1] = 0;
-    char* argv[] = {self, m, nullptr};
-    execv(self, argv);
+    char* argv[] = {self.data(), m, nullptr};
+    execv(self.c_str(), argv);
     _exit(127);
   }
   close(o[1]);

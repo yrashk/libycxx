@@ -149,8 +149,8 @@ struct type_info_name : std::type_info {
 inline bool same_type(const std::type_info& a, const std::type_info& b) noexcept {
   if (&a == &b)
     return true;
-  const char* x = a.*type_info_name::name;
-  const char* y = b.*type_info_name::name;
+  const char* x = ycxx::detail::rtti_name(a.*type_info_name::name);
+  const char* y = ycxx::detail::rtti_name(b.*type_info_name::name);
   // A name starting with '*' belongs to one type_info object only (see operator==).
   if (*x == '*' || *y == '*')
     return false;

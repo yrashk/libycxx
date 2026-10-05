@@ -356,11 +356,18 @@ const std::locale& classic_locale() {
 
 // The classic locale is built before any object of the program with ordinary static
 // initialization (it is also built on first use, should a runtime initializer need it sooner),
-// so the program never sees its allocations as its own.
+// so the program never sees its allocations as its own. Mach-O has no initialization priorities
+// (YCXX_HAS_INIT_PRIORITY): there it is built before main, by the first ios_base::Init (every
+// translation unit including <iostream> has one) or by this object in link order, or on first
+// use by an earlier static initializer of the program.
 struct build_classic {
   build_classic() { classic_locale(); }
 };
+#if YCXX_HAS_INIT_PRIORITY
 [[gnu::init_priority(100)]] build_classic classic_at_startup;
+#else
+build_classic classic_at_startup;
+#endif
 
 // The global locale ([locale.statics]): one for the program, under a lock.
 ycxx::detail::pal_lock global_lock;

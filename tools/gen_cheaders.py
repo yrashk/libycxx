@@ -328,6 +328,7 @@ H_WRAPPERS = {
                  [("YCXX_HOSTED", ["free_sized", "free_aligned_sized"]),
                   ("YCXX_HOSTED && !YCXX_C_HAS_STRFROM", ["strfromd", "strfromf", "strfroml"])]),
     "inttypes.h": ("cinttypes", ["imaxabs", "imaxdiv"], []),
+    "string.h": ("cstring", ["memset_explicit"], []),
 }
 
 root = pathlib.Path(__file__).resolve().parent.parent / "include"

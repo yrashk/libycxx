@@ -124,7 +124,7 @@ tooling.
   definition is in the hosted runtime (`src/hosted/memory_resource.cpp`, libycxx.a): the
   destructor of `memory_resource` (its key function, so its vtable and type_info are emitted
   there, with RTTI), `new_delete_resource`/`null_memory_resource` (constant-initialized
-  objects; their destructors run at exit and do nothing), the default-resource pointer
+  objects that are never destroyed, so they stay usable during termination), the default-resource pointer
   (`__atomic` load/exchange), and all members of the pool resources and
   `monotonic_buffer_resource` (declared in `ycxx/hosted/memory_resource.hpp`).
   `synchronized_pool_resource` is the unsynchronized pool behind a three-state lock built on

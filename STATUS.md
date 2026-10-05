@@ -459,10 +459,6 @@ compilers; `visit_format_arg.pass.cpp` needs `EOF` from `constexpr_char_traits.h
 `implementation-specific`) in the skip lists.
 
 ## Deliberate divergences
-- `std::max_align_t` and `::max_align_t` (from `<stddef.h>`) are distinct types with identical
-  size and alignment. [support.c.headers.other]/1 would make them the same, but core cannot
-  include a C header to name the C library's class. The same applies to `std::mbstate_t`
-  (DECISIONS §3).
 - `expected<T, E>`: `operator==(const expected&, const T2&)` deduces its left operand (it must be
   the expected or derived from it). With the draft's literal `const expected&` parameter, a
   constraint check such as `int == pair<int, expected<int, int>>` found through ADL re-enters
@@ -706,8 +702,6 @@ compilers; `visit_format_arg.pass.cpp` needs `EOF` from `constexpr_char_traits.h
   exactly, so libstdc++'s gencanon.cc / 64351.cc (which reject a rounded 1.0 and count extra
   calls) and libc++'s pre-P0952 generate_canonical test fail. seed_seq::generate rejects signed
   value types per its Mandates (libstdc++ seed_seq/97311.cc accepts them).
-- No `<stddef.h>` wrapper: `::max_align_t` comes from the compiler's header and is not
-  `std::max_align_t` (see Deliberate divergences).
 
 - `<string>`: the libc++ tests using `constexpr_char_traits.h`/`nasty_string.h` (`EOF`),
   `deallocate_size` (`::uint32_t`) and libstdc++'s `errno.cc` expect `<string>` to pull in C

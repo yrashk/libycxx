@@ -17,6 +17,13 @@ static void check_char(const char* name) {
   in_c_locale(name, [&] {
     for (int i = 0; i < 256; ++i) {
       const char c = static_cast<char>(i);
+      // a byte that is not a character by itself (UTF-8 lead and continuation bytes) has no
+      // class and no case (glibc agrees; Darwin's is* read it as the code point of its value)
+      if (btowc(i) == WEOF) {
+        CHECK(ct.table()[i] == 0);
+        CHECK(ct.toupper(c) == c && ct.tolower(c) == c);
+        continue;
+      }
       CHECK(ct.is(B::alpha, c) == (isalpha(i) != 0));
       CHECK(ct.is(B::upper, c) == (isupper(i) != 0));
       CHECK(ct.is(B::lower, c) == (islower(i) != 0));

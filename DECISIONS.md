@@ -580,7 +580,10 @@ under the same name. Otherwise it gets one alias template in `config.hpp`.
     object; Darwin's `localeconv_l` is found by a `requires` probe). The global C locale and other
     threads' locales are never changed, except by `locale::global` ([locale.statics]/2:
     `setlocale` per category for a named locale).
-  - *Values the draft leaves to the implementation:* a numpunct/moneypunct separator that is
+  - *Values the draft leaves to the implementation:* ctype<char> gives a byte that is not a
+    character by itself (`btowc` is `WEOF`: a multibyte encoding's lead and continuation bytes)
+    no class and no case mapping (glibc's `is*_l` agree; Darwin's read such a byte as the code
+    point of its value); a numpunct/moneypunct separator that is
     not one char in the locale's encoding (fr_FR.UTF-8's U+202F) is `' '` for the narrow facet
     when it is a space character, else the classic value; the wide facet has the character; an
     empty `thousands_sep` gives `','` and no grouping. moneypunct's patterns follow POSIX's

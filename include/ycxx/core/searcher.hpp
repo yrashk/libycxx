@@ -110,7 +110,7 @@ public:
           slot.value = value;
           return;
         }
-        if (slot.hash == h && pred(pat[k], pat[slot.key])) {
+        if (slot.hash == h && static_cast<bool>(pred(pat[k], pat[slot.key]))) {
           slot.value = value;
           return;
         }
@@ -137,7 +137,7 @@ public:
         if (slot.key < 0) return none;
         if (slot.hash == h) {
           if (budget-- == 0) return unknown;
-          if (pred(x, pat[slot.key])) return slot.value;
+          if (static_cast<bool>(pred(x, pat[slot.key]))) return slot.value;
         }
       }
     }
@@ -198,7 +198,7 @@ public:
       } else {
         if (i < g) g = i;
         f = i;
-        while (g >= 0 && pred_(p[g], p[g + m - 1 - f])) --g;
+        while (g >= 0 && static_cast<bool>(pred_(p[g], p[g + m - 1 - f]))) --g;
         suffix[i] = f - g;
       }
     }
@@ -226,7 +226,7 @@ public:
     const RandomAccessIterator1& p = pat_first_;
     for (D i = 0; n - i >= static_cast<D>(m);) {
       ptrdiff_t j = m - 1;
-      while (j >= 0 && pred_(first[i + static_cast<D>(j)], p[j])) --j;
+      while (j >= 0 && static_cast<bool>(pred_(first[i + static_cast<D>(j)], p[j]))) --j;
       if (j < 0) {
         RandomAccessIterator2 r = first + i;
         return {r, r + static_cast<D>(m)};
@@ -284,9 +284,9 @@ public:
     for (D i = 0; n - i >= static_cast<D>(m);) {
       const D end = i + static_cast<D>(m - 1);
       ptrdiff_t shift;
-      if (pred_(first[end], p[m - 1])) {
+      if (static_cast<bool>(pred_(first[end], p[m - 1]))) {
         ptrdiff_t j = m - 2;
-        while (j >= 0 && pred_(first[i + static_cast<D>(j)], p[j])) --j;
+        while (j >= 0 && static_cast<bool>(pred_(first[i + static_cast<D>(j)], p[j]))) --j;
         if (j < 0) {
           RandomAccessIterator2 r = first + i;
           return {r, r + static_cast<D>(m)};

@@ -69,6 +69,7 @@ int main() {
   lib_allocate_and_free(); // 7 allocations, each freed, all inside the shared library
   std::printf("replacement calls from the shared library: new %ld, delete %ld, nothrow new %ld\n", news - n0,
               deletes - d0, nothrow_news - t0);
+  std::fflush(stdout); // a failing CHECK aborts
   CHECK(news - n0 == 7);
   CHECK(deletes - d0 == 7);
   CHECK(nothrow_news - t0 == 1); // new (nothrow) int ([new.delete.array]: new[] nothrow calls new[](size))

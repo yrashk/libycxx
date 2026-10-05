@@ -5,6 +5,7 @@
 // push_back(const T&). Checked with spare capacity (elements shift in place) and without
 // (reallocation), with the argument before, at and after the insertion point, directly and
 // indirectly (a constructor argument that is a member of an element).
+// COUNTERPART: libcxx:containers/sequences/vector/vector.modifiers/emplace.pass.cpp
 #include <vector>
 #include <string>
 #include <utility>

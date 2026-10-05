@@ -21,9 +21,9 @@ Conformance oracles (run only, never edited): libc++ tests from `llvmorg-23.1.2`
 Every libc++ and libstdc++ failure is categorised in `tests/libcxx/TRIAGE.md` and
 `tests/libstdcxx/TRIAGE.md` (sections "Re-run of 2026-10-05"). With the skip entries added in that
 round: libc++ 210 / 214 failures, libstdc++ 139 / 173. Open libycxx bugs (A) from them: `<bitset>`
-does not include `<iosfwd>` ([bitset.syn]), and `<vector>` does not declare
-`formatter<vector<bool>::reference>` ([vector.syn]); plus the documented template-parameter name
-`C` (DECISIONS §2, six libstdc++ tests). Most other failures are tests that rely on transitive
+does not include `<iosfwd>` ([bitset.syn]); plus the documented template-parameter name
+`C` (DECISIONS §2, six libstdc++ tests). (`<vector>` now declares
+`formatter<vector<bool>::reference>`, [vector.syn]; DECISIONS §11 "Formatters per header".) Most other failures are tests that rely on transitive
 includes (F: 121 libc++, 79 libstdc++), libc++/libstdc++ specifics and pre-C++26 values (C), and
 running as root (27 filesystem tests).
 
@@ -184,6 +184,14 @@ localization 668 -> 726/850 (GCC). libstdc++ std/format + 27_io/print 0 -> 24/29
 `visit_format_arg` tests run since Annex D is provided).
 Header cost (GCC, `-fsyntax-only`): `<format>` 0.27 s, `<ostream>` 0.18 -> 0.26 s (its print
 overloads need the core of `<format>`).
+Formatters per header (DECISIONS §11): `<vector>`, `<stack>` and `<queue>` declare their formatters
+and those of [format.formatter.spec]/2 (light `format_decl.hpp`); `<stacktrace>` sets
+`enable_nonlocking_formatter_optimization` for its two formatters. Cost (preprocessed bytes,
+median `-fsyntax-only`, GCC / Clang): `<vector>` 398 -> 410 KB, 108 -> 110 / 129 -> 130 ms;
+`<stack>` 534 -> 548 KB, 134 -> 139 / 168 -> 171 ms; `<queue>` 742 -> 757 KB, 187 -> 193 /
+234 -> 239 ms; `<format>` unchanged. Own tests format/formatter_header_* (9) and
+formatter_include_* (3) pass on both compilers; libc++ utilities/format + containers 1824 -> 1825
+(vector.bool.fmt/types.compile).
 <regex> (hosted): regex_traits<char>/<wchar_t> (on the locale's ctype and collate facets),
 basic_regex with all six grammars, sub_match, match_results (allocator-aware, pmr aliases),
 regex_match/regex_search/regex_replace with every match_flag_type, regex_iterator and
@@ -406,8 +414,13 @@ compilers; `visit_format_arg.pass.cpp` needs `EOF` from `constexpr_char_traits.h
   deprecated `visit_format_arg` is provided ([[deprecated]]). Non-UTF-8 ordinary literal encodings are
   detected but untested. print writes the whole formatted output with one `fwrite` after
   formatting it (no partial output on a format error); no terminal needs a native Unicode API
-  on POSIX. The stack/queue/priority_queue and vector<bool>::reference formatters are defined
-  in `<format>` (against declarations of the adaptors), so naming them needs `<format>`.
+  on POSIX. `<vector>`, `<stack>`, `<queue>` (and the other headers declaring a formatter) provide
+  the formatters of [format.formatter.spec]/2 and their own as class layouts (DECISIONS §11);
+  `formattable` is false until `<format>` defines the contexts, so with `<stack>`/`<queue>` alone
+  the adaptor formatters are disabled even for a program-defined formattable container (they also
+  need the range formatter of `<format>`), and a program that checks `formattable` before including
+  `<format>` and again after it is ill-formed, no diagnostic required ([temp.constr.atomic]/3:
+  GCC reports the changed satisfaction value, Clang keeps the first answer).
 - `<chrono>`: names, `%c %x %X %r` and `%p` in parsing are the "C" locale's (the stream's
   `time_get` is not consulted); with L, a locale whose `time_put` is not the classic facet writes
   `%c %x %X` etc. from a C `tm` (so its `%Y` there is `strftime`'s, unpadded, and the hours of a

@@ -32,3 +32,10 @@ input\.output/filesystems/fs\.op\.funcs/fs\.op\.remove_all/remove_all\.pass\.cpp
 input\.output/filesystems/fs\.op\.funcs/fs\.op\.status/status\.pass\.cpp | root | expects a permission error from an inaccessible path, which root never gets
 input\.output/filesystems/fs\.op\.funcs/fs\.op\.symlink_status/symlink_status\.pass\.cpp | root | expects a permission error from an inaccessible path, which root never gets
 input\.output/filesystems/fs\.op\.funcs/fs\.op\.temp_dir_path/temp_directory_path\.pass\.cpp | root | expects a permission error from an inaccessible path, which root never gets
+#
+# clang: the test also exercises a libc++ extension under Clang only (TEST_HAS_BITINT), so it
+# does not apply there (skip category: extension); with GCC it runs and passes.
+numerics/c\.math/abs\.pass\.cpp | clang | (extension) expects std::abs overloads for every signed _BitInt(N) ("a libc++ extension", says the test); [c.math.abs] declares abs for int, long, long long and the floating-point types only, and _BitInt is not an extended integer type of the draft ([basic.fundamental])
+utilities/utility/utility\.intcmp/intcmp\.bitint\.pass\.cpp | clang | (extension) expects cmp_equal etc. to accept _BitInt(N); [utility.intcmp]/1 Mandates "Each of T and U is a signed or unsigned integer type ([basic.fundamental])", whose set does not include _BitInt
+numerics/numeric\.ops/numeric\.ops\.sat/saturating\.bitint\.pass\.cpp | clang | (extension) expects add_sat etc. to accept _BitInt(N); [numeric.sat.func] Constraints: "T is a signed or unsigned integer type", whose set ([basic.fundamental]) does not include _BitInt
+containers/views/mdspan/extents/bitint\.pass\.cpp | clang | (extension) uses _BitInt(N) as extents' index type; [mdspan.extents.overview] Mandates IndexType be a signed or unsigned integer type, whose set ([basic.fundamental]) does not include _BitInt

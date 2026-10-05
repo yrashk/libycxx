@@ -1016,6 +1016,19 @@ levels: 29.7 s -> 0.01 s; libstdc++ 8.6 s). Remaining above 1.5x: deque push at 
   `char_traits<char16_t>::eof`, the Itanium ABI handler limits (`except/handler_*`), GCC's
   contract detection mode, non-null constexpr `exception_ptr`, `std::mbstate_t` being core's own
   type and no `<stddef.h>` wrapper (`bit/oracle_cxx26` no longer fails on Clang).
+- **Pending decision: C names through core headers.** Should libycxx make `EOF`/`WEOF` visible
+  from `<string>` (libc++'s `constexpr_char_traits.h` and `nasty_string.h` use `EOF` after
+  including only `<string>`, `<cassert>`, `<cstddef>`; [string.syn] includes no C header, and core
+  `<string>` includes none, DECISIONS §3), and should `<cstdint>` also declare the global
+  `::int64_t`... names ([headers]/5 leaves it unspecified)? Not decided yet. Until then the libc++
+  tests that rely on them (the 84 includers of those two support headers, char.traits'
+  `eof.pass` for char and wchar_t, 16 mdspan layout tests, `deallocate_size`) are skipped as
+  `divergence`, citing this item (tests/libcxx/skip.txt).
+- libc++ suite, still failing, being libycxx gaps (tests/libcxx/TRIAGE.md, "Policy round"): no
+  `import std;`/`import std.compat;` (modules/std, std.compat; Clang), no senders/receivers
+  (`__cpp_lib_senders`: support.limits execution.version, version.version), no C++ `<wchar.h>`
+  and `<stddef.h>` wrappers (Clang: depr.c.headers/wchar_h, stddef_h, strings/c.strings
+  cwchar_include_order1/2).
 - Next (Phase 5): full libc++/libstdc++ sweeps with triage (tests/libcxx/TRIAGE.md,
   tests/libstdcxx/TRIAGE.md), fixing the libycxx bugs they find; then a whole-library review
   (performance pass done, see Performance).

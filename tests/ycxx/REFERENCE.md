@@ -229,6 +229,7 @@ Legend: **G** fails with GCC + libstdc++, **C** with Clang + libstdc++.
 | `cstdlib/constexpr_abs_div` | G | C | constexpr `div`/`ldiv`/`lldiv` (P0533R9); with Clang also `abs(long)`, `labs` |
 | `integration/matrix_linalg_complex` | G | C | `<linalg>` (an integration test: mdspan + linalg + complex) |
 | `containers/range_insert_iterator_throws_hive_inplace` | G | C | `<hive>` |
+| `execution/senders_basic` (batch 41) | G | C | the senders/receivers part of `<execution>` ([exec]: `just`, `then`, `let_value`, `when_all`, `run_loop`, `this_thread::sync_wait`, ...) |
 | `modes/freestanding_items`, `modes/freestanding_items_numeric` | G | C | with `-ffreestanding`: `std::abs`, `div`, `lldiv`, `qsort`, `bsearch` are missing from `<cstdlib>`; `<charconv>`, `<cmath>`, `<execution>`, `<inplace_vector>`, `<random>`, `<string>`, `<system_error>` are "not available in freestanding mode" ([compliance] Table 27 lists them; their freestanding items: [charconv.syn], [cmath.syn], [execution.syn], [inplace.vector.syn], [rand.synopsis], [string.syn], [system.error.syn]) |
 ## 3. Differences between GCC and Clang with the same libstdc++
 
@@ -267,6 +268,11 @@ Clang rejects code GCC accepts.
 | `cassert/assert_variadic_ndebug` | G | C | glibc's `assert` takes one macro argument, so `assert(f<int, int>())` does not compile | [cassert.syn], [assertions.assert]: `#define assert(...)` |
 | `csetjmp/setjmp_longjmp` | G | C | `__STDC_VERSION_SETJMP_H__` is not defined (as `cfloat/macros`) | [csetjmp.syn] |
 | `cstdarg/va_start_forms` |  | C | Clang's `<stdarg.h>` (used by libstdc++'s `<cstdarg>`) rejects `va_start(ap)` with one argument in C++ ("too few arguments provided to function-like macro invocation"); GCC accepts it | [cstdarg.syn]: `#define va_start(V, ...)`, /1.2 the second and later arguments are discarded |
+| `cstdlib/stdlib_h_global_names` (batch 41) | G | C | libstdc++'s `<stdlib.h>` declares the C++ overloads globally, but `::abs(long)`, `::div`, `::ldiv`, `::lldiv` (and with Clang also `::labs`, `::llabs`) are not constant expressions, and `::bsearch` has no `const void*` overload (a const `base` gives `void*`, lines 95-96) | [support.c.headers.other]/1 with [cstdlib.syn] (constexpr abs/div, the const bsearch pair of [alg.c.library]) |
+| `cstdlib/stdlib_h_c23_global_names`, `cstring/string_h_c23_global_names` (batch 41) | G | C | `::memalignment`, `::free_sized`, `::free_aligned_sized` (not in glibc 2.39) and `::memset_explicit` are not declared by `<stdlib.h>`/`<string.h>` (as `cstdlib/c23_functions`, `cstring/c23_functions` for `std::`) | [support.c.headers.other]/1, [cstdlib.syn], [cstring.syn] |
+| `cinttypes/inttypes_h_global_names` (batch 41) | G | C | `::imaxabs`/`::imaxdiv` from `<inttypes.h>` are glibc's non-constexpr functions | [support.c.headers.other]/1, [cinttypes.syn]: constexpr |
+| `cwchar/wchar_h_global_names` (batch 41) |  | C | `::wcschr`, `::wcspbrk`, `::wcsrchr`, `::wcsstr`, `::wmemchr` on `const wchar_t*` return `wchar_t*` with Clang (glibc's C declarations; as `cwchar/freestanding_functions`) | [support.c.headers.other]/1, [cwchar.syn], [library.c] |
+| `cstdio/c23_conversions` (batch 41) | G | C | `__STDC_VERSION_STDIO_H__` is not defined (as `cstring/stdc_version_macros`); with it defined on the command line, the rest passes (glibc 2.39's `%b`, `%wN`, `%wfN`, scanf `%b` and `_PRINTF_NAN_LEN_MAX`) | [cstdio.syn] |
 
 ## 5. Compiler and ABI limits (same with libycxx's runtime)
 

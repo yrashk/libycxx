@@ -3,6 +3,7 @@
 // Death test (support/violation.hpp): run only in hardened mode.
 // REQUIRES: hardened
 // EXPECT-TERMINATE: about to violate
+// COUNTERPART: libstdcxx:21_strings/basic_string_view/element_access/(char|wchar_t)/2.cc
 #include <string_view>
 #include "violation.hpp"
 

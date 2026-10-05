@@ -513,10 +513,3 @@ Tests skipped (or UNSUPPORTED) as tied to the other library's internals, extensi
 | `utilities/utility/utility.unreachable/assert.unreachable.pass.cpp` | calling unreachable() is undefined ([utility.undefined]/1), not a hardened precondition |
 
 <!-- counterparts:end -->
-
-### Hardened preconditions awaiting the hardened-test mechanism
-
-`containers/sequences/array/assert.(back|front|indexing).pass.cpp` violate hardened
-preconditions of `array` (front / back / `operator[]`, [sequence.reqmts]). Their counterparts
-are hardened-precondition tests (`tools/test --hardened`, `// REQUIRES-HARDENED`,
-`// EXPECT-TERMINATE`), not written yet; until then the trace shows "no libycxx counterpart".

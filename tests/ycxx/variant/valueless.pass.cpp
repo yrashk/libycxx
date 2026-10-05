@@ -5,8 +5,8 @@
 // [variant.visit]/7 visit throws bad_variant_access; [variant.relops] valueless ordering;
 // [variant.assign]/2.2 assigning a valueless variant makes *this valueless;
 // [variant.swap]/3.1, [variant.ctor]/7,11 copying/moving a valueless variant.
-// COUNTERPART: libstdcxx:20_util/variant/(87431|exception_safety).cc
 // REQUIRES: exceptions
+// COUNTERPART: libstdcxx:20_util/variant/(87431|exception_safety).cc
 #include <variant>
 #include <type_traits>
 #include "check.hpp"

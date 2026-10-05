@@ -171,3 +171,4 @@ std/format/functions/114519\.cc | extension | compiles with -fno-char8_t (char8_
 21_strings/basic_string/capacity/char/resize_and_overwrite\.cc | implementation-specific | test04 throws from the resize_and_overwrite operation and checks the string afterwards: [string.capacity]/9.1 "Preconditions: OP does not throw an exception or modify p or m"; the behaviour is undefined
 # --- Tests without dg-do, which now run as DejaGnu runs them (TRIAGE.md, "Tests without dg-do").
 21_strings/basic_string/cons/(char|wchar_t)/3\.cc | implementation-specific | constructs a string from a null pointer and expects an exception ("Not defined, but libstdc++ throws", says the test): undefined, [string.cons] requires [s, s + traits::length(s)) to be a valid range
+.*_xin\.cc | infrastructure | interactive test (reads a person's input from stdin); libstdc++'s DejaGnu driver does not run *_xin tests either (testsuite libstdc++-dg/conformance.exp)

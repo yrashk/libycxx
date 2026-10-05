@@ -14,9 +14,10 @@
 // the Annex D codecvt<char16_t/char32_t, char8_t> and codecvt<char16_t/char32_t, char>
 // ([depr.locale.category], declared [[deprecated]]); it is built on first use and never
 // destroyed. Named locales: "C", "POSIX" (named "C") and "C.UTF-8" / "C.utf8" have the classic
-// semantics; "" names the environment's locale (LC_ALL, LC_<category>, LANG), which is one of
-// those or, for any other name, the classic locale named "C" (the environment's own conventions
-// are not supported). Other names throw runtime_error, as do the _byname facets.
+// semantics; every other name the C library has is valid, and its categories hold the _byname
+// facets, built on the C library's locale of that name (src/hosted/locale_named.cpp; DECISIONS
+// §7); "" names the environment's locale (LC_ALL, LC_<category>, LANG; "C" if the C library has
+// no such locale). Other names throw runtime_error, in the _byname facets too.
 //
 // Classic semantics chosen where the draft leaves them implementation-defined: ctype<charT>
 // for character types other than char classifies the ASCII range only; widen/narrow map the
@@ -253,9 +254,35 @@ std::basic_string<charT> widen_ascii(const char* s) {
   return r;
 }
 
-// Accepts the locale names with classic semantics (see the file comment); throws runtime_error
-// for any other name, null included. Used by the _byname facets. Defined in the hosted runtime.
+// Accepts every valid locale name (see the file comment); throws runtime_error for any other
+// name, null included. Used by the _byname facets of character types other than char and
+// wchar_t, which have the classic semantics. Defined in the hosted runtime.
 void check_locale_name(const char* name, const char* what);
+
+// ---- named locales (src/hosted/locale_named.cpp) ------------------------------------------------
+// One category of a C library locale: a locale_t for one name, shared by every facet built from
+// that name and category, reference-counted, immutable once opened (it also holds what the
+// facets read from it, computed when it is opened).
+struct named_locale;
+struct named_tag {};
+// The C library's locale `name` for category cat (one std::locale::category bit). name may be ""
+// (the environment's, [locale.cons]/4) or a composite name (its part for cat). Returns null for
+// the names with the classic semantics ("C", "POSIX", "C.UTF-8"); throws runtime_error, naming
+// `what`, for a null name or one the C library does not have.
+named_locale* named_open(const char* name, int cat, const char* what);
+void named_release(named_locale* h) noexcept;
+
+// ctype<char>: the 256 classifications and case mappings (null for the classic semantics).
+const std::ctype_base::mask* named_ctype_table(const named_locale* h) noexcept;
+const unsigned char* named_toupper_table(const named_locale* h) noexcept;
+const unsigned char* named_tolower_table(const named_locale* h) noexcept;
+
+// numpunct: the decimal point, the thousands separator and the grouping of LC_NUMERIC. A
+// separator that is not one char in the locale's encoding is replaced (narrow facets: ' ' for a
+// space character, else the classic value); no separator (an empty string) gives the classic
+// value and no grouping.
+void named_numpunct(const char* name, char& point, char& sep, std::string& grouping);
+void named_numpunct(const char* name, wchar_t& point, wchar_t& sep, std::string& grouping);
 
 }} // namespace ycxx::detail
 
@@ -408,7 +435,8 @@ private:
   bool del_;
 };
 
-// [locale.ctype.byname]
+// [locale.ctype.byname]: for char and wchar_t, the C library's LC_CTYPE of the name; for other
+// character types, the classic semantics (the name is checked).
 template <class charT>
 class ctype_byname : public ctype<charT> {
 public:
@@ -421,16 +449,69 @@ public:
 protected:
   ~ctype_byname() override {}
 };
+// The table of is*_l and the case mappings of toupper_l/tolower_l, computed when the locale is
+// opened.
 template <>
 class ctype_byname<char> : public ctype<char> {
 public:
-  explicit ctype_byname(const char* name, size_t refs = 0) : ctype<char>(nullptr, false, refs) {
-    ::ycxx::detail::check_locale_name(name, "std::ctype_byname");
-  }
+  explicit ctype_byname(const char* name, size_t refs = 0)
+      : ctype_byname(ycxx::detail::named_tag(), ::ycxx::detail::named_open(name, locale::ctype, "std::ctype_byname"),
+                     refs) {}
   explicit ctype_byname(const string& name, size_t refs = 0) : ctype_byname(name.c_str(), refs) {}
 
 protected:
-  ~ctype_byname() override {}
+  ~ctype_byname() override { ::ycxx::detail::named_release(named_); }
+  char do_toupper(char c) const override {
+    return upper_ != nullptr ? static_cast<char>(upper_[static_cast<unsigned char>(c)])
+                             : ::ycxx::detail::ascii_toupper(c);
+  }
+  const char* do_toupper(char* low, const char* high) const override {
+    for (; low != high; ++low)
+      *low = do_toupper(*low);
+    return high;
+  }
+  char do_tolower(char c) const override {
+    return lower_ != nullptr ? static_cast<char>(lower_[static_cast<unsigned char>(c)])
+                             : ::ycxx::detail::ascii_tolower(c);
+  }
+  const char* do_tolower(char* low, const char* high) const override {
+    for (; low != high; ++low)
+      *low = do_tolower(*low);
+    return high;
+  }
+
+private:
+  ctype_byname(ycxx::detail::named_tag, ycxx::detail::named_locale* h, size_t refs) noexcept
+      : ctype<char>(::ycxx::detail::named_ctype_table(h), false, refs), named_(h),
+        upper_(::ycxx::detail::named_toupper_table(h)), lower_(::ycxx::detail::named_tolower_table(h)) {}
+  ycxx::detail::named_locale* named_;
+  const unsigned char* upper_;
+  const unsigned char* lower_;
+};
+// Classification and case mapping by iswctype_l and towupper_l/towlower_l, widen/narrow by
+// btowc/wctob in the locale (src/hosted/locale_named.cpp).
+template <>
+class ctype_byname<wchar_t> : public ctype<wchar_t> {
+public:
+  explicit ctype_byname(const char* name, size_t refs = 0)
+      : ctype<wchar_t>(refs), named_(::ycxx::detail::named_open(name, locale::ctype, "std::ctype_byname")) {}
+  explicit ctype_byname(const string& name, size_t refs = 0) : ctype_byname(name.c_str(), refs) {}
+
+protected:
+  ~ctype_byname() override;
+  bool do_is(mask m, wchar_t c) const override;
+  const wchar_t* do_is(const wchar_t* low, const wchar_t* high, mask* vec) const override;
+  wchar_t do_toupper(wchar_t c) const override;
+  const wchar_t* do_toupper(wchar_t* low, const wchar_t* high) const override;
+  wchar_t do_tolower(wchar_t c) const override;
+  const wchar_t* do_tolower(wchar_t* low, const wchar_t* high) const override;
+  wchar_t do_widen(char c) const override;
+  const char* do_widen(const char* low, const char* high, wchar_t* dest) const override;
+  char do_narrow(wchar_t c, char dfault) const override;
+  const wchar_t* do_narrow(const wchar_t* low, const wchar_t* high, char dfault, char* dest) const override;
+
+private:
+  ycxx::detail::named_locale* named_;
 };
 
 // [locale.codecvt]
@@ -765,6 +846,30 @@ public:
 protected:
   ~codecvt_byname() override {}
 };
+// The C library's multibyte conversion of the name's LC_CTYPE (mbrtowc/wcrtomb in the locale; src/
+// hosted/locale_named.cpp); the classic UTF-8 conversion for the names with classic semantics.
+template <>
+class codecvt_byname<wchar_t, char, mbstate_t> : public codecvt<wchar_t, char, mbstate_t> {
+public:
+  explicit codecvt_byname(const char* name, size_t refs = 0)
+      : codecvt(refs), named_(::ycxx::detail::named_open(name, locale::ctype, "std::codecvt_byname")) {}
+  explicit codecvt_byname(const string& name, size_t refs = 0) : codecvt_byname(name.c_str(), refs) {}
+
+protected:
+  ~codecvt_byname() override;
+  result do_out(mbstate_t& state, const wchar_t* from, const wchar_t* from_end, const wchar_t*& from_next, char* to,
+                char* to_end, char*& to_next) const override;
+  result do_in(mbstate_t& state, const char* from, const char* from_end, const char*& from_next, wchar_t* to,
+               wchar_t* to_end, wchar_t*& to_next) const override;
+  result do_unshift(mbstate_t& state, char* to, char* to_end, char*& to_next) const override;
+  int do_encoding() const noexcept override;
+  bool do_always_noconv() const noexcept override;
+  int do_length(mbstate_t& state, const char* from, const char* end, size_t max) const override;
+  int do_max_length() const noexcept override;
+
+private:
+  ycxx::detail::named_locale* named_;
+};
 // [depr.locale.category]/2: the Annex D codecvt_byname facets.
 template <>
 class [[deprecated("codecvt_byname<char16_t, char, mbstate_t> is deprecated ([depr.locale.category])")]]
@@ -849,13 +954,27 @@ class numpunct_byname : public numpunct<charT> {
 public:
   using char_type = charT;
   using string_type = basic_string<charT>;
+  // char and wchar_t: LC_NUMERIC's radix character, separator and grouping (read once, here);
+  // truename()/falsename() stay "true"/"false" (the C library has no such names). Other
+  // character types: the classic values.
   explicit numpunct_byname(const char* name, size_t refs = 0) : numpunct<charT>(refs) {
-    ::ycxx::detail::check_locale_name(name, "std::numpunct_byname");
+    if constexpr (is_same_v<charT, char> || is_same_v<charT, wchar_t>)
+      ::ycxx::detail::named_numpunct(name, point_, sep_, grouping_);
+    else
+      ::ycxx::detail::check_locale_name(name, "std::numpunct_byname");
   }
   explicit numpunct_byname(const string& name, size_t refs = 0) : numpunct_byname(name.c_str(), refs) {}
 
 protected:
   ~numpunct_byname() override {}
+  charT do_decimal_point() const override { return point_; }
+  charT do_thousands_sep() const override { return sep_; }
+  string do_grouping() const override { return grouping_; }
+
+private:
+  charT point_ = charT('.');
+  charT sep_ = charT(',');
+  string grouping_;
 };
 
 // ---- [locale.collate] -------------------------------------------------------------------------
@@ -914,6 +1033,42 @@ public:
 
 protected:
   ~collate_byname() override {}
+};
+// LC_COLLATE of the name: strcoll_l/strxfrm_l (wcscoll_l/wcsxfrm_l), each run of characters
+// between embedded null characters in turn; hash() hashes transform() (src/hosted/locale_named.cpp).
+template <>
+class collate_byname<char> : public collate<char> {
+public:
+  using string_type = string;
+  explicit collate_byname(const char* name, size_t refs = 0)
+      : collate(refs), named_(::ycxx::detail::named_open(name, locale::collate, "std::collate_byname")) {}
+  explicit collate_byname(const string& name, size_t refs = 0) : collate_byname(name.c_str(), refs) {}
+
+protected:
+  ~collate_byname() override;
+  int do_compare(const char* low1, const char* high1, const char* low2, const char* high2) const override;
+  string_type do_transform(const char* low, const char* high) const override;
+  long do_hash(const char* low, const char* high) const override;
+
+private:
+  ycxx::detail::named_locale* named_;
+};
+template <>
+class collate_byname<wchar_t> : public collate<wchar_t> {
+public:
+  using string_type = wstring;
+  explicit collate_byname(const char* name, size_t refs = 0)
+      : collate(refs), named_(::ycxx::detail::named_open(name, locale::collate, "std::collate_byname")) {}
+  explicit collate_byname(const string& name, size_t refs = 0) : collate_byname(name.c_str(), refs) {}
+
+protected:
+  ~collate_byname() override;
+  int do_compare(const wchar_t* low1, const wchar_t* high1, const wchar_t* low2, const wchar_t* high2) const override;
+  string_type do_transform(const wchar_t* low, const wchar_t* high) const override;
+  long do_hash(const wchar_t* low, const wchar_t* high) const override;
+
+private:
+  ycxx::detail::named_locale* named_;
 };
 
 template <class charT, class traits, class Allocator>

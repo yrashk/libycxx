@@ -14,7 +14,9 @@ if [ $# -eq 0 ]; then
     es_ES.ISO8859-15 es_MX es_MX.ISO8859-1 fr_CA.ISO8859-1 fr_FR fr_FR.ISO8859-1 \
     fr_FR.ISO8859-15 fr_FR.UTF-8 is_IS.ISO8859-1 is_IS.UTF-8 it_IT it_IT.ISO8859-15 ja_JP.eucJP \
     ja_JP.UTF-8 my_MM.UTF-8 pt_PT.ISO8859-15 ru_RU.ISO8859-5 ru_RU.UTF-8 se_NO.UTF-8 ta_IN.UTF-8 \
-    zh_CN.UTF-8 zh_TW.UTF-8
+    zh_CN.UTF-8 zh_TW.UTF-8 \
+    de_DE.ISO8859-15@euro en_US.ISO8859-15@euro es_ES.ISO8859-15@euro fr_FR.ISO8859-15@euro \
+    it_IT.ISO8859-15@euro pt_PT.ISO8859-15@euro
 fi
 made=0 failed=0
 for name in "$@"; do
@@ -22,6 +24,12 @@ for name in "$@"; do
   case $name in
     *.*) cs=${name#*.} ;;
     *) cs=ISO-8859-1 ;;
+  esac
+  # x.ISO8859-15@euro (libstdc++'s ISO_8859(15, x) on glibc): the source x@euro where glibc has it
+  case $cs in
+    *@euro)
+      cs=${cs%@euro}
+      [ -f "/usr/share/i18n/locales/${base}@euro" ] && base="${base}@euro" ;;
   esac
   case $cs in
     ISO8859-*) cs="ISO-8859-${cs#ISO8859-}" ;;

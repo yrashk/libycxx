@@ -44,6 +44,10 @@ Optional directives:
                                           hardened (lit param hardened=1: -DYCXX_HARDENED=1),
                                           exceptions and rtti (unless the run's cxxflags have
                                           -fno-exceptions / -fno-rtti)
+  A *.pass.cpp program that exits with status 77 after printing a line "UNSUPPORTED: <reason>"
+                                          is reported UNSUPPORTED with that reason: for what only
+                                          the running program can find out, such as a named locale
+                                          the C library lacks (support/named_locale.hpp)
   // EXPECT-TERMINATE[: <regex>]   (*.pass.cpp only) the program must end abnormally, killed by
                                           SIGABRT, SIGTRAP or SIGILL (what abort() and
                                           __builtin_trap() raise: a hardened precondition's
@@ -65,6 +69,8 @@ EXPECT_ERROR = re.compile(r'^//\s*EXPECT-ERROR(?:-(GCC|CLANG))?:\s*(.*?)\s*$', r
 REQUIRES = re.compile(r'^//\s*REQUIRES:(.*)$', re.M)
 EXPECT_TERMINATE = re.compile(r'^//\s*EXPECT-TERMINATE(?::\s*(.*?))?\s*$', re.M)
 TERMINATING_SIGNALS = {signal.SIGABRT, signal.SIGTRAP, signal.SIGILL}
+RUNTIME_UNSUPPORTED_STATUS = 77
+RUNTIME_UNSUPPORTED = re.compile(r'^UNSUPPORTED:\s*(.*)$', re.M)
 
 
 def signal_name(n):
@@ -207,6 +213,10 @@ class YcxxFormat(lit.formats.FileBasedTest):
                 rc, ran = transcript.run('run', [exe], tmp, 60, '; must terminate' if terminate else '')
                 if terminate:
                     return self.check_terminated(rc, terminate.group(1), out + ran, ran)
+                if rc == RUNTIME_UNSUPPORTED_STATUS:
+                    why = RUNTIME_UNSUPPORTED.search(ran)
+                    if why:
+                        return lit.Test.Result(lit.Test.UNSUPPORTED, why.group(1).strip() + '\n' + out + ran)
                 return lit.Test.Result(lit.Test.PASS if rc == 0 else lit.Test.FAIL, out + ran)
             return lit.Test.Result(lit.Test.UNSUPPORTED, 'not a test file')
         finally:

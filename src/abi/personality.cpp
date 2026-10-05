@@ -94,10 +94,33 @@ std::size_t encoded_size(unsigned char enc) noexcept {
 }
 
 struct bases {
-  std::uintptr_t text = 0;
-  std::uintptr_t data = 0;
+  _Unwind_Context* ctx = nullptr;
   std::uintptr_t func = 0;
 };
+
+// The bases of DW_EH_PE_textrel and DW_EH_PE_datarel, asked of the unwinder only when an encoding
+// needs them. Darwin's unwinder has none (Apple's <unwind.h> marks _Unwind_GetTextRelBase and
+// _Unwind_GetDataRelBase unavailable, and its libunwind aborts in them), and neither compiler
+// emits those encodings there (nor on the ELF targets libycxx supports). Templates, so that the
+// call is dependent and is not even looked at where the branch is discarded.
+template <class Context>
+std::uintptr_t text_rel_base(Context* ctx) noexcept {
+  if constexpr (!ycxx::detail::cfg::darwin) {
+    return _Unwind_GetTextRelBase(ctx);
+  } else {
+    (void)ctx;
+    std::terminate();
+  }
+}
+template <class Context>
+std::uintptr_t data_rel_base(Context* ctx) noexcept {
+  if constexpr (!ycxx::detail::cfg::darwin) {
+    return _Unwind_GetDataRelBase(ctx);
+  } else {
+    (void)ctx;
+    std::terminate();
+  }
+}
 
 std::uintptr_t read_encoded(const unsigned char*& p, unsigned char enc, const bases& b) noexcept {
   if (enc == pe_omit)
@@ -143,10 +166,10 @@ std::uintptr_t read_encoded(const unsigned char*& p, unsigned char enc, const ba
       v += reinterpret_cast<std::uintptr_t>(start);
       break;
     case pe_textrel:
-      v += b.text;
+      v += ycxx::abi::text_rel_base(b.ctx);
       break;
     case pe_datarel:
-      v += b.data;
+      v += ycxx::abi::data_rel_base(b.ctx);
       break;
     case pe_funcrel:
       v += b.func;
@@ -216,13 +239,12 @@ struct scan_result {
 
 scan_result scan(_Unwind_Action actions, bool native, _Unwind_Exception* ue, _Unwind_Context* ctx) noexcept {
   scan_result r;
-  const unsigned char* lsda = static_cast<const unsigned char*>(_Unwind_GetLanguageSpecificData(ctx));
+  const unsigned char* lsda = ycxx::abi::lsda_of(ctx);
   if (!lsda)
     return r;
   bases b;
+  b.ctx = ctx;
   b.func = _Unwind_GetRegionStart(ctx);
-  b.text = _Unwind_GetTextRelBase(ctx);
-  b.data = _Unwind_GetDataRelBase(ctx);
   int before = 0;
   std::uintptr_t ip = _Unwind_GetIPInfo(ctx, &before);
   if (!before)
@@ -341,7 +363,7 @@ extern "C" _Unwind_Reason_Code __gxx_personality_v0(int version, _Unwind_Action 
         exception_header* h = header_of_unwind(ue);
         h->handler_switch_value = static_cast<int>(r.switch_value);
         h->action_record = r.action_record;
-        h->lsda = static_cast<const unsigned char*>(_Unwind_GetLanguageSpecificData(ctx));
+        h->lsda = ycxx::abi::lsda_of(ctx);
         h->catch_temp = reinterpret_cast<void*>(r.landing_pad);
         h->adjusted_ptr = r.adjusted;
       }

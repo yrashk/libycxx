@@ -186,10 +186,17 @@ void array_init(Ti (&&)[1]);
 template <class Ti, class T>
 concept no_narrowing_into = requires(T&& t) { array_init<Ti>({static_cast<T&&>(t)}); };
 
+// The array declaration is tested for a non-class Ti only. A class (or union) element is
+// copy-initialized from t with no narrowing check (narrowing is between arithmetic types), so the
+// declaration is valid exactly when t converts implicitly to Ti, or by brace elision into an
+// aggregate Ti to which t does not convert, when FUN(Ti) is not viable: FUN's overload resolution
+// decides both. Testing it would also make Clang instantiate the constexpr constructor of Ti that
+// the conversion names (a braced-init-list's elements are potentially constant evaluated), whose
+// body need not be valid for T.
 template <std::size_t I, class Ti>
 struct var_fun {
   template <class T>
-    requires no_narrowing_into<Ti, T>
+    requires(std::is_class_v<Ti> || std::is_union_v<Ti> || no_narrowing_into<Ti, T>)
   static std::integral_constant<std::size_t, I> fun(Ti);
 };
 template <class Seq, class... Ts>
@@ -200,6 +207,25 @@ struct var_funs<std::index_sequence<I...>, Ts...> : var_fun<I, Ts>... {
 };
 template <class T, class... Ts>
 using var_selected = decltype(var_funs<std::index_sequence_for<Ts...>, Ts...>::template fun<T>(std::declval<T>()));
+template <class T, class Void, class... Ts>
+struct var_select_impl {};
+template <class T, class... Ts>
+struct var_select_impl<T, std::void_t<var_selected<T, Ts...>>, Ts...> {
+  using type = var_selected<T, Ts...>;
+};
+template <class T, class... Ts>
+struct var_select : var_select_impl<T, void, Ts...> {};
+
+// [variant.ctor]/15.2, then /15.4 (is_constructible_v<Tj, T>), as a class that the converting
+// constructor names in a default template argument. Tj's constructor from T can need that
+// constructor again (Tj constructible from anything, T convertible to the variant:
+// llvm.org/PR151328). The nested use then names this class while it is being instantiated, a
+// substitution failure that drops the nested candidate; in a requires-clause the constraint's
+// satisfaction would depend on itself, which is ill-formed.
+template <class V, class Tj, class T, bool = std::is_same_v<std::remove_cvref_t<T>, V>>
+struct var_accepts : std::bool_constant<false> {};
+template <class V, class Tj, class T>
+struct var_accepts<V, Tj, T, false> : std::is_constructible<Tj, T> {};
 
 template <class T, class... Ts>
 consteval std::size_t count_of() {
@@ -342,9 +368,9 @@ public:
     construct_from(static_cast<variant&&>(w));
   }
 
-  template <class T, class J = ycxx::detail::var_selected<T, Types...>>
-    requires(!is_same_v<remove_cvref_t<T>, variant>) && (!ycxx::detail::is_in_place_tag<remove_cvref_t<T>>) &&
-            is_constructible_v<Types...[J::value], T>
+  template <class T, class J = typename ycxx::detail::var_select<T, Types...>::type,
+            class = enable_if_t<ycxx::detail::var_accepts<variant, Types...[J::value], T>::value>>
+    requires(!ycxx::detail::is_in_place_tag<remove_cvref_t<T>>)
   constexpr variant(T&& t) noexcept(is_nothrow_constructible_v<Types...[J::value], T>)
       : u_(in_place_index<J::value>, static_cast<T&&>(t)), index_(J::value) {}
 

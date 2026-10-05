@@ -7,6 +7,10 @@
 // wctype of an unknown name is 0; 7.32.3.2 wctrans("tolower"/"toupper"), towctrans; WEOF is
 // in no class and maps to itself. Under "C.UTF-8" the descriptors agree with the named
 // functions for characters beyond ASCII too, and iswdigit holds only for '0'-'9' (7.32.2.1.5).
+// Beyond the "C" locale those are properties of the C library's locale data: where std:: names
+// the C library's own functions (libycxx's <cwctype> declares them with using-declarations), a
+// disagreement there is the C library's and is reported as a note (Darwin's libSystem disagrees
+// for some characters beyond ASCII); a std:: function of libycxx's own must agree.
 #include <cwctype>
 #include <cctype>
 #include <clocale>
@@ -49,12 +53,31 @@ int main() {
   }
   CHECK(std::towupper(WEOF) == WEOF && std::towlower(WEOF) == WEOF);
   if (std::setlocale(LC_ALL, "C.UTF-8") || std::setlocale(LC_ALL, "C.utf8")) {
+    int (*c_wide[])(std::wint_t) = {::iswalnum, ::iswalpha, ::iswblank, ::iswcntrl, ::iswdigit, ::iswgraph,
+                                    ::iswlower, ::iswprint, ::iswpunct, ::iswspace, ::iswupper, ::iswxdigit};
+    const auto same = [](auto* f, auto* g) { return f == g; };
+    bool c_library = same(std::iswctype, ::iswctype) && same(std::wctype, ::wctype) &&
+                     same(std::towctrans, ::towctrans) && same(std::wctrans, ::wctrans) &&
+                     same(std::towupper, ::towupper) && same(std::towlower, ::towlower);
+    for (int k = 0; k < 12; ++k) c_library = c_library && same(wide[k], c_wide[k]);
+    int c_defects = 0;
+    const auto expect = [&](bool ok, std::wint_t wc, const char* what) {
+      if (ok) return;
+      if (!c_library) {
+        dprintf(2, "U+%04X: %s\n", static_cast<unsigned>(wc), what);
+        CHECK(ok);
+      }
+      if (c_defects++ < 8) dprintf(2, "note: the C library: U+%04X: %s\n", static_cast<unsigned>(wc), what);
+    };
     // the descriptors and the named functions agree for every character
     for (std::wint_t wc = 0; wc < 0x3100; ++wc) {
-      for (int k = 0; k < 12; ++k) CHECK(b(std::iswctype(wc, std::wctype(names[k]))) == b(wide[k](wc)));
-      CHECK(std::towctrans(wc, std::wctrans("toupper")) == std::towupper(wc));
-      CHECK(std::towctrans(wc, std::wctrans("tolower")) == std::towlower(wc));
-      CHECK(!std::iswdigit(wc) || (wc >= L'0' && wc <= L'9'));  // 7.32.2.1.5: decimal digits only
+      for (int k = 0; k < 12; ++k)
+        expect(b(std::iswctype(wc, std::wctype(names[k]))) == b(wide[k](wc)), wc, names[k]);
+      expect(std::towctrans(wc, std::wctrans("toupper")) == std::towupper(wc), wc, "toupper");
+      expect(std::towctrans(wc, std::wctrans("tolower")) == std::towlower(wc), wc, "tolower");
+      expect(!std::iswdigit(wc) || (wc >= L'0' && wc <= L'9'), wc, "iswdigit beyond '0'-'9'");  // 7.32.2.1.5
     }
+    if (c_defects > 0)
+      dprintf(2, "note: %d disagreements of the C library's own functions (not libycxx's)\n", c_defects);
   }
 }

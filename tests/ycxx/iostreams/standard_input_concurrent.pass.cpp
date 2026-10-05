@@ -111,12 +111,9 @@ static int child_mixed() {
       for (int r = 0;; ++r) {
         switch ((k + r) % 7) {
           case 0: {
-            // 0 when the conversion fails ([facet.num.get.virtuals]); left unchanged when the
-            // sentry fails ([istream.formatted.reqmts]/1), which happens when another reader
-            // reached end of file after this one's peek().
-            long long x = 0;
+            long long x = 0;  // unchanged when the sentry fails (another thread reached eof)
             std::cin >> x;
-            if (x < 0) bad = true;
+            if (x < 0) bad = true;  // 0 also when nothing was extracted
             break;
           }
           case 1:

@@ -231,7 +231,8 @@ enum : int { fe_inexact = 1, fe_underflow = 2, fe_overflow = 4, fe_divbyzero = 8
 
 // Not constexpr on purpose (see the file comment).
 [[gnu::noinline, gnu::cold]] inline void fp_raise(int flags) noexcept {
-  volatile double big = 0x1p1000, small = 0x1p-1000, zero = 0.0, one = 1.0;
+  volatile double big = 0x1p1000, small = 0x1p-1000, zero = 0.0, one = 1.0, third = 3.0;
+  if (flags & fe_inexact) third = one / third;
   if (flags & fe_overflow) big = big * big;
   if (flags & fe_underflow) small = small * small;
   if (flags & fe_divbyzero) one = one / zero;
@@ -240,6 +241,7 @@ enum : int { fe_inexact = 1, fe_underflow = 2, fe_overflow = 4, fe_divbyzero = 8
   (void)small;
   (void)one;
   (void)zero;
+  (void)third;
 }
 constexpr void fp_report(int flags) noexcept {
   if ((flags & ~fe_inexact) != 0) ycxx::detail::fpm::fp_raise(flags);

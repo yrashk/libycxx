@@ -446,11 +446,8 @@ using unique_copy_result = in_out_result<I, O>;
 template <class I, class O>
 using reverse_copy_result = in_out_result<I, O>;
 template <class I, class O>
-using reverse_copy_truncated_result = in_in_out_result<I, I, O>;
-template <class I, class O>
 using rotate_copy_result = in_out_result<I, O>;
-template <class I, class O>
-using rotate_copy_truncated_result = in_in_out_result<I, I, O>;
+// reverse_copy_truncated_result, rotate_copy_truncated_result: algo_ranges_parallel.hpp.
 } // namespace std::ranges
 
 namespace ycxx::detail::ranges_algo {

@@ -120,7 +120,6 @@ constexpr void rotate_elements(It f, It m, It l, Ctx&... ctx) {
 
 // ---- node-based containers and adaptors ----
 
-
 // [sequences.general] iter-value-type
 template <class I>
 using iter_value_type = typename std::iterator_traits<I>::value_type;

@@ -7,6 +7,8 @@
 //   i < ranges::size(r) (/19); unchecked_store is partial_store (/14);
 // - flag_convert permits non-value-preserving conversions; flag_aligned / flag_overaligned<N>
 //   only add alignment preconditions (alignment_v<V, U>).
+// COUNTERPART: libcxx:experimental/simd/simd.class/.*
+// COUNTERPART: libcxx:experimental/simd/simd.traits/(memory_alignment|simd_size).*
 #include <simd>
 #include <array>
 #include <cstddef>

@@ -466,6 +466,13 @@ Tests skipped (or UNSUPPORTED) as tied to the other library's internals, extensi
 
 | tests | why there is no standard counterpart |
 |---|---|
+| `experimental/iterator/.*` | ostream_joiner (Library Fundamentals TS v2) is not in the draft |
+| `experimental/memory/.*` | observer_ptr (Library Fundamentals TS v2) is not in the draft |
+| `experimental/utilities/propagate_const/.*` | propagate_const (Library Fundamentals TS v2) is not in the draft |
+| `experimental/utilities/meta/.*` | the detection idiom (is_detected, nonesuch; Library Fundamentals TS v2) is not in the draft |
+| `experimental/utilities/utility/.*` | erased_type (Library Fundamentals TS) is not in the draft |
+| `experimental/simd/simd.reference/.*` | the Parallelism TS v2 simd reference proxy; the draft's basic_vec::operator[] returns a value ([simd.subscr]) |
+| `experimental/simd/simd.traits/is_(abi_tag\|simd\|simd_flag_type\|simd_mask).pass.cpp` | the Parallelism TS v2 traits is_abi_tag, is_simd, is_simd_mask, is_simd_flag_type are not in the draft's [simd] |
 | `algorithms/alg.sorting/alg.min.max/requires_forward_iterator.verify.cpp` | min_element etc. with an input iterator violates a template-parameter requirement ([algorithms.requirements]/4): undefined, no diagnostic required; the test checks libc++'s diagnostic text |
 | `containers/sequences/vector/vector.modifiers/resize_not_move_insertable.verify.cpp` | a Cpp17MoveInsertable precondition violation is undefined behaviour ([res.on.required]); the test checks libc++'s static_assert text |
 | `numerics/rand/rand.dist/rand.dist.uni/rand.dist.uni.int/int128.pass.cpp` | __int128 is not in the IntType / UIntType sets of [rand.req.genl]/1.5-1.6 (an implementation may add extended types) |
@@ -487,5 +494,14 @@ Tests skipped (or UNSUPPORTED) as tied to the other library's internals, extensi
 | `language.support/support.initlist/support.initlist.range/.*` | the free begin / end for initializer_list were removed from [initializer.list.syn] (P3016; the <iterator> ones apply) |
 | `strings/basic.string/string.capacity/reserve.pass.cpp` | basic_string::reserve() without an argument was removed in C++26 (P2870) |
 | `thread/futures/futures.promise/uses_allocator.pass.cpp` | uses_allocator<promise<R>, Alloc> is no longer in [futures.promise] (P2875) |
+| `containers/.*/empty(.nodiscard)?.verify.cpp` | [[nodiscard]] on empty(): the draft marks no library function [[nodiscard]] (P2422R1 removed them); a warning is only recommended practice ([dcl.attr.nodiscard]/4) |
+| `(input.output/filesystems/class.path/path.member/path.decompose\|iterators/iterator.container\|re/re.results/re.results.size\|strings/basic.string/string.capacity\|strings/string.view/string.view.capacity)/empty.*.verify.cpp` | [[nodiscard]] on empty(): the draft marks no library function [[nodiscard]] (P2422R1); warnings are QoI |
+| `.*nodiscard.*.verify.cpp` | [[nodiscard]]: the draft marks no library function [[nodiscard]] (P2422R1); warnings are QoI ([dcl.attr.nodiscard]/4) |
+| `language.support/support.dynamic/new.delete/new.delete.placement/new(_array)?_ptr.verify.cpp` | [[nodiscard]] on placement operator new: not in [new.syn] (P2422R1); warnings are QoI |
+| `utilities/allocator.adaptor/allocator.adaptor.members/allocate_size(_hint)?.verify.cpp` | [[nodiscard]] on scoped_allocator_adaptor::allocate: not in [allocator.adaptor.syn] (P2422R1); warnings are QoI |
+| `depr/depr.cpp.headers/c(complex\|iso646\|stdalign\|stdbool\|tgmath).verify.cpp` | <ccomplex>, <ciso646>, <cstdalign>, <cstdbool> and <ctgmath> were removed in C++20 (P0619) |
+| `depr/depr.lib.binders/.*` | bind1st, bind2nd, binder1st and binder2nd were removed in C++17 (N4190) |
+| `utilities/memory/util.smartptr/util.smartptr.shared/util.smartptr.shared.obs/unique.deprecated_in_cxx17.verify.cpp` | shared_ptr::unique() was removed in C++20 (P0521) |
+| `utilities/tuple/tuple.tuple/tuple.cnstr/default.lazy.verify.cpp` | whether a nested class's default member initializer makes it default-constructible inside the incomplete enclosing class is a core-language question (CWG 1397, 2335): GCC and Clang reject it with libstdc++ as well |
 
 <!-- counterparts:end -->

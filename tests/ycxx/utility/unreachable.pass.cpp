@@ -6,6 +6,7 @@
 // "noreturn function does return" warning (-Werror), nor does a non-void one "control reaches
 // end of non-void function".
 // FLAGS: -Werror
+// COUNTERPART: libcxx:utilities/utility/utility.unreachable/unreachable.verify.cpp
 #include <utility>
 #include <type_traits>
 #include "check.hpp"

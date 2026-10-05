@@ -62,9 +62,17 @@ int main() {
   CHECK(chr::locate_zone("Etc/UTC") != nullptr);
   for (const chr::time_zone& z : db.zones) CHECK(chr::locate_zone(z.name()) == &z);
 
-  sw("first current_zone", [] { (void)chr::current_zone(); });
+  // A current_zone() that returns under the failure returns the local zone, not a fallback.
+  const chr::time_zone* seen[4000] = {};
+  int nseen = 0;
+  sw("first current_zone", [&] {
+    const chr::time_zone* z = chr::current_zone();
+    if (nseen < 4000) seen[nseen++] = z;
+  });
   disarm();
-  CHECK(chr::current_zone() != nullptr);
+  const chr::time_zone* local = chr::current_zone();
+  CHECK(local != nullptr);
+  for (int i = 0; i < nseen; ++i) CHECK(seen[i] == local);
   CHECK(other_exceptions == 0);
   return finish();
 }

@@ -10,7 +10,7 @@
 //   [syserr.errcat.objects]/1-4 generic_category(), system_category() noexcept: "All calls to
 //     this function shall return references to the same object"; name() is "generic" /
 //     "system"; system_category().default_error_condition(0) is error_condition(0,
-//     generic_category()); [iostreams.base]/? iostream_category() noexcept, name "iostream";
+//     generic_category()); [error.reporting]/3 iostream_category() noexcept, name "iostream";
 //     [futures.errors] future_category() noexcept, name "future"; [syserr.errcode.constructors]
 //     error_code() noexcept: value 0, category system_category(); make_error_code(errc)
 //     noexcept; [syserr.compare] operator== noexcept;
@@ -21,9 +21,10 @@
 //   [propagation]/9 current_exception() noexcept: in a handler, an exception_ptr to the handled
 //     exception (or a copy), or "If the function needs to allocate memory and the attempt
 //     fails, ... an instance of bad_alloc"; null outside handlers; [uncaught.exceptions]
-//     uncaught_exceptions() noexcept; [get.terminate] get_terminate() noexcept (the default
-//     handler, non-null: [terminate.handler]/?); all of them the first time in a new thread;
-//   [rand.device]/? entropy() noexcept: a value in [0, numeric_limits<result_type>::digits];
+//     uncaught_exceptions() noexcept; [get.terminate] get_terminate() noexcept (its value
+//     is not checked: "This can be a null pointer value"); all of them the first time in a new thread;
+//   [rand.device]/5 entropy() noexcept: 0.0, or an estimate "in the range min() to
+//     log2(max()+1)" (at most numeric_limits<result_type>::digits);
 //   [time.clock.system.members], [time.clock.steady], [time.clock.file.overview]/1 ("noexcept(
 //     file_clock::now()) is true"), [time.clock.hires] now() noexcept;
 //   [debugging.utility]/2-3 is_debugger_present(), breakpoint_if_debugging() noexcept;
@@ -172,7 +173,8 @@ static int scenario_exception_state(long k) {
     int ok = 0;
     ok += std::uncaught_exceptions() == 0;
     ok += std::current_exception() == nullptr;
-    ok += std::get_terminate() != nullptr;
+    (void)std::get_terminate();
+    ++ok;
     ok += std::this_thread::get_id() != std::thread::id();
     std::exception_ptr p;
     try {

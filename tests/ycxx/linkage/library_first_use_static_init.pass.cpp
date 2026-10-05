@@ -6,7 +6,7 @@
 // unspecified, so the library must be usable either way). The constructor checks its results
 // itself (support/linkage/static_init_use_tu.cpp); main then checks that what it set up is
 // what the rest of the program sees:
-//   [basic.start.dynamic]/? : the static object is initialized before main uses it (it is
+//   [basic.start.dynamic]: the static object is initialized before main uses it (it is
 //     odr-used by main through static_init_report);
 //   [locale.statics]/1, /3: locale::global, called in that constructor, "Causes future calls
 //     to the constructor locale() to return a copy of the argument", and "No library function

@@ -5,7 +5,7 @@
 //     the error goes to ec; [fs.dir.itr.members]/2-3, [fs.rec.dir.itr.members]: an iterator
 //     for a path that is not a directory reports an error (and is the end iterator,
 //     [fs.class.directory.iterator.general]/3); [fs.op.copy] recursive copy into a
-//     destination that cannot be created; [fs.op.is.empty]; [filebuf.members]/? open returns a
+//     destination that cannot be created; [fs.op.is.empty]; [filebuf.members]/6 open returns a
 //     null pointer when the file cannot be opened; [ifstream.cons].
 // Nothing in the draft lets a failed operation keep a resource it acquired; each case runs a
 // hundred times and the process's open descriptors are counted before and after.

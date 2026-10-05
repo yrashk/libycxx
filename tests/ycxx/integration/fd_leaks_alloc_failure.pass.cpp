@@ -4,7 +4,7 @@
 // operation makes no allocation that fails. An operation that fails by an exception, or by
 // reporting an error, keeps no file descriptor open ([res.on.exception.handling]/1: a failure
 // is reported by the exception; the objects involved are destroyed and release what they own:
-// [filebuf.cons]/? ~basic_filebuf calls close(), [fs.class.directory.iterator] and
+// [filebuf.cons]/5 ~basic_filebuf calls close(), [fs.class.directory.iterator] and
 // [fs.class.rec.dir.itr] iterators own their directory stream).
 // Each run is a fresh child process: it makes the operation with the failure armed, then once
 // more with no failure, and counts its open descriptors; a run with no failure armed (made the

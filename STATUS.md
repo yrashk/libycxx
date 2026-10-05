@@ -27,6 +27,14 @@ does not include `<iosfwd>` ([bitset.syn]); plus the documented template-paramet
 includes (F: 121 libc++, 79 libstdc++), libc++/libstdc++ specifics and pre-C++26 values (C), and
 running as root (27 filesystem tests).
 
+Counterparts of skipped tests: an external test skipped as implementation-specific, extension,
+divergence or removed, or UNSUPPORTED for a library mode (libc++ hardening, warning-only verify,
+experimental/; libstdc++ debug mode), ends its result with `covered by libycxx: tests/ycxx/...`
+(own tests carry `// COUNTERPART:`, tests/ycxxlit/counterparts.py) or `no libycxx counterpart[:
+reason]` (reasons: section "Skipped tests without a counterpart" of each TRIAGE.md); the suite
+reports count both per category. All such libc++ tests are linked or triaged; of libstdc++'s
+2633 extension skips, 2409 (testsuite-helper skips in std directories) are not triaged yet.
+
 ## Per-header conformance (libc++ tests; pass / run, excluding documented skips)
 | Area (libc++ test dir) | Clang | GCC | Freestanding | Notes |
 |---|---|---|---|---|
@@ -234,6 +242,29 @@ without their headers (`<sstream>`, `printf`, `int64_t`: 4), and libstdc++ choic
 leaves open (8: `%OS` without fraction, LWG 4118 character reps, file_clock's epoch, rounding
 when parsing, `fractional_width` of ratio<1, 2^62>, `hh_mm_ss` layout, an error message).
 
+## Own-suite configurations (runs of 2026-10-05, 2381 tests)
+`tools/test --hardened` / `--cxxflags=... --config-name=...` (README, Own tests); the nightly
+`full.yml` runs them, and any failure fails the job.
+
+| Configuration | GCC 16.2 | Clang 23.1 |
+|---|---|---|
+| default (the 53 `precondition/` tests UNSUPPORTED) | 2310 pass / 13 fail / 5 xfail | 2302 pass / 10 fail / 16 xfail / 53 unsupported |
+| hardened (`-DYCXX_HARDENED=1`) | 2363 pass / 13 fail / 5 xfail | 2355 pass / 10 fail / 16 xfail |
+| noexcept (`-fno-exceptions`; 430 tests `REQUIRES: exceptions`) | 1888 pass / 5 fail / 5 xfail / 483 unsupported | 1886 pass / 6 fail / 6 xfail / 483 unsupported |
+
+The default GCC run counted 2328 tests (it started before `precondition/` existed). Default
+failures were the then-listed known ones, plus `integration/fd_leaks_alloc_failure` (a 60 s timeout under
+machine load; passes alone). Hardened: all 53 death tests pass on both compilers; the one failure
+not in the default run is `mdspan/submdspan_exhaustive_oracle` (fixed since:
+submdspan results skip that check; see Known limitations): the hardened check of
+`layout_stride::mapping(extents, strides)` fires inside `submdspan` on a `layout_stride` source,
+because [mdspan.sub.map.common]/6 gives strides that need not satisfy the constructor's
+precondition [mdspan.layout.stride.cons]/4.3 (extents {4, 4}, strides {2, 9}, slices
+`extent_slice{0, 2, 3}, full_extent` give extents {2, 4} and strides {6, 9}: unique, but no
+permutation meets 4.3); a draft question, or the library should build that result without the
+check. noexcept: only the default run's failures (those of `except/`, `exception/`, `contracts/`
+and `execution/` are UNSUPPORTED there).
+
 ## Freestanding
 `tools/check_freestanding.sh`: every core header, every header with a freestanding subset and
 every header of [compliance]'s Table 27 compiles with `-ffreestanding -nostdlib -nostdinc
@@ -243,6 +274,9 @@ x86_64-unknown-none-elf and riscv64-unknown-elf (Clang) and x86_64 (GCC). Header
 `tools/headers.py` (CORE, FREESTANDING_SUBSET, FREESTANDING_REQUIRED). The C headers' freestanding
 subsets (DECISIONS §3) need from the environment only memcpy/memmove/memset/memcmp (as the
 compilers do) and, when called, abort/atexit/at_quick_exit/exit/_Exit/quick_exit.
+CMake builds the freestanding runtime archive for the compiler's target with
+`-DYCXX_FREESTANDING_RUNTIME=ON` and installs it as `ycxx::freestanding`; `tests/cmake/run.sh`
+links the smoke program with the installed archive.
 
 ## macOS (Darwin)
 Target: Apple Silicon (arm64) first, x86_64 kept in mind, with Homebrew GCC 16.2 and Clang 23.1
@@ -357,6 +391,10 @@ a defect in a test.
 - Clang 23.1: the address of an explicit-object member function cannot be a template argument
   ("must explicitly qualify name of member function"); own test
   `functional/function_ref_cw_explicit_object` is XFAIL on Clang.
+- GCC 16.2: `requires (void* p) { delete p; }` is satisfied (deleting `void*` is only a
+  warning), so `shared_ptr<void>` is constructible from `void*` alone although
+  [util.smartptr.shared.const]/3 requires `delete p` to be well-formed; own test
+  `memory/shared_ptr_void_pointer` is XFAIL on GCC.
 - GCC 16.2: `PR31384` (conversion function vs converting constructor in direct-init of `tuple`)
   resolves differently from Clang; the libc++ expectation matches Clang.
 
@@ -463,6 +501,12 @@ compilers; `visit_format_arg.pass.cpp` needs `EOF` from `constexpr_char_traits.h
   C library does (`0x0.000000000000001p-16385` is the smallest), so that both forms agree there.
 
 ## Known limitations and draft defects
+- `submdspan` of a `layout_stride` (or non-unit-stride) mapping: [mdspan.sub.map.common]/6 builds
+  a `layout_stride::mapping` whose strides need not meet [mdspan.layout.stride.cons]/4.3, although
+  the layout is unique: that condition is sufficient, not necessary, despite its Note (extents
+  {2, 4} with strides {6, 9}, the slice `extent_slice{0, 2, 3}, full_extent` of {4, 4} with
+  {2, 9}, is unique and fails it). libycxx constructs submdspan results without that check (the
+  other preconditions are still checked in hardened builds); a draft defect to report.
 - Hidden visibility (DECISIONS §2): a program or shared library exports none of libycxx's
   symbols. **GCC warns** (`-Wattributes`: "'S' declared with greater visibility than the type of
   its field" / "than its base") for every program class outside libycxx's namespaces with a

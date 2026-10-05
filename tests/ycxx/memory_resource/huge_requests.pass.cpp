@@ -11,6 +11,7 @@
 // largest_required_pool_block of SIZE_MAX are replaced by implementation limits, after which
 // the pool works normally. [mem.res.monotonic.buffer.ctor]/2: an initial_size near SIZE_MAX is
 // a valid request size for the first upstream call.
+// REQUIRES: exceptions
 #include <memory_resource>
 #include <cstddef>
 #include <cstdint>

@@ -6,6 +6,7 @@
 // constant evaluation. [except.handle]/3: a handler of type cv T or const T& matches a public
 // base class of the thrown type.
 // XFAIL-COMPILER: clang  no constexpr exception support (P3068) in clang yet
+// REQUIRES: exceptions
 #include <stdexcept>
 #include <exception>
 #include <string>

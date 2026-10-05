@@ -8,6 +8,7 @@
 // ([locale.statics]/1, /3), as are the time zone database, the working directory and the
 // environment's text encoding.
 // ARCHIVE: ../support/linkage/static_init_use_tu.cpp
+// REQUIRES: exceptions
 #include "../support/linkage/static_init_use.hpp"
 #include <chrono>
 #include <cstdio>

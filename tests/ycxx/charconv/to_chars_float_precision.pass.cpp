@@ -1,6 +1,7 @@
 // [charconv.to.chars]/13: to_chars(first, last, value, fmt, precision): "value is converted
 // to a string in the style of printf in the "C" locale with the given precision", i.e. %.Nf,
 // %.Ne, %.Ng and %.Na (without "0x"), correctly rounded.
+// COUNTERPART: libcxx:utilities/charconv/charconv.msvc/test.pass.cpp
 #include <charconv>
 #include <string_view>
 #include <system_error>

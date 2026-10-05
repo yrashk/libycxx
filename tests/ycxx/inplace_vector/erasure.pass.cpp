@@ -3,6 +3,7 @@
 // [inplace.vector.modifiers]/19-21: erase calls the destructor once per erased element and
 // the assignment operator exactly once per element after the erased ones; [inplace.vector.data]:
 // data() == addressof(front()) for a non-empty inplace_vector.
+// COUNTERPART: libstdcxx:23_containers/inplace_vector/debug/erase.cc
 #include <inplace_vector>
 #include <cstddef>
 #include <memory>

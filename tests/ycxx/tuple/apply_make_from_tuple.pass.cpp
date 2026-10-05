@@ -1,6 +1,7 @@
 // [tuple.apply]/1: apply(f, t) is INVOKE(std::forward<F>(f), get<I>(std::forward<Tuple>(t))...)
 // with return type apply_result_t<F, Tuple> and noexcept(is_nothrow_applicable_v<F, Tuple>).
 // [tuple.apply]/2-3: make_from_tuple<T>(t) is T(get<I>(std::forward<Tuple>(t))...).
+// COUNTERPART: libstdcxx:20_util/tuple/dr3528.cc
 #include <tuple>
 #include <type_traits>
 #include <utility>

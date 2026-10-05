@@ -3,6 +3,7 @@
 // allocator type ([unord.req.general], [container.node.overview] Table 75). A source with
 // another allocator type is ill-formed (with another hash it is fine:
 // unordered_map/node_handle.pass.cpp, support/reqs/unordered.hpp merge).
+// REQUIRES: exceptions
 #include <unordered_map>
 #include <functional>
 #include <utility>

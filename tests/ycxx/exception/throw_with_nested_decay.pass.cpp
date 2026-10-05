@@ -4,6 +4,7 @@
 // std::forward<T>(t)." So: arrays and functions decay (a handler for the decayed pointer type
 // catches them), unions and enumerations are not classes (thrown as-is), and a derived object
 // passed through a base-class reference is sliced to U.
+// REQUIRES: exceptions
 #include <exception>
 #include "check.hpp"
 

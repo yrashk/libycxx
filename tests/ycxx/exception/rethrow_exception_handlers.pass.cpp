@@ -4,6 +4,7 @@
 // [uncaught.exceptions]: during the stack unwinding it starts, uncaught_exceptions() is 1.
 // [propagation]/9: the referenced object stays valid as long as an exception_ptr refers to it;
 // once the last exception_ptr and the last handler are gone, it is destroyed.
+// REQUIRES: exceptions
 #include <exception>
 #include <stdexcept>
 #include <utility>

@@ -2,6 +2,7 @@
 // returns the stored pointer, get_deleter() a reference to the stored deleter (const
 // overload for const unique_ptr), explicit operator bool is get() != nullptr.
 // [unique.ptr.runtime.observers]: operator[](i) returns get()[i] as T&.
+// COUNTERPART: libcxx:utilities/smartptr/unique.ptr/unique.ptr.class/unique.ptr.observers/dereference.single.pass.cpp
 #include <memory>
 #include "check.hpp"
 

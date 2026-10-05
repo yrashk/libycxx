@@ -9,6 +9,7 @@
 // library's own functions only.
 // FLAGS: -fPIC
 // SHARED: ../support/linkage/static_init_use_tu.cpp
+// REQUIRES: exceptions
 #include "../support/linkage/static_init_use.hpp"
 #include <chrono>
 #include <cstdio>

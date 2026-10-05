@@ -14,6 +14,7 @@
 // The same then for the first call of current_zone() (if it initializes anything lazily).
 // Loading the database allocates some 20000 times: its first access fails at every 37th
 // allocation (a prime, so that the failures fall on all kinds of allocation), not every one.
+// REQUIRES: exceptions
 #include <algorithm>
 #include <chrono>
 #include <exception>

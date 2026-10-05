@@ -15,6 +15,7 @@
 //    of F (V is virtual, so never ambiguous).
 // (Orders where the first path is private and a later one public, and all-private
 // combinations, are left out: the latter is ill-formed, the former is rejected by Clang.)
+// REQUIRES: exceptions
 #include <type_traits>
 #include <typeinfo>
 #include "check.hpp"

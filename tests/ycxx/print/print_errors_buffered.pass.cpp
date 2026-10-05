@@ -6,6 +6,7 @@
 // the output is written "unchanged", including invalid UTF-8 code units.
 // [format.formatter.locking]: enable_nonlocking_formatter_optimization is true for the
 // standard arithmetic, character and string formatters, false by default for user types.
+// REQUIRES: exceptions
 #include <print>
 #include <format>
 #include <cstdio>

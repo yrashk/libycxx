@@ -1,6 +1,7 @@
 // [range.take.while]: take_while_view produces [begin(r), find_if_not(r, pred)); it is never
 // common (its sentinel tests the predicate, [range.take.while.sentinel]/3) nor sized; const
 // iteration requires the predicate to be invocable as const; pred() returns the predicate.
+// COUNTERPART: libcxx:ranges/range.adaptors/range.take.while/sentinel/.*
 #include <concepts>
 #include <iterator>
 #include <ranges>

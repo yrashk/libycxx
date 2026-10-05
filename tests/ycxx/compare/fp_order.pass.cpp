@@ -4,6 +4,7 @@
 // "all negative NaNs < -inf < negative normals < negative subnormals < both zeros <
 // positive subnormals < positive normals < +inf < all positive NaNs".
 // [cmp.alg]/3.3: partial_order uses compare_three_way (built-in <=>).
+// COUNTERPART: libcxx:language.support/cmp/cmp.alg/strong_order_long_double.verify.cpp
 #include <bit>
 #include <compare>
 #include <cstdint>

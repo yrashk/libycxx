@@ -3,6 +3,7 @@ import os, re, shutil, tempfile
 import lit.formats, lit.Test, lit.TestRunner
 from ycxxlit import locales, transcript
 from ycxxlit.skips import load_skips, match_skip, load_xfails, apply_xfail
+from ycxxlit import counterparts
 
 COND_FLAGS = re.compile(r'//\s*ADDITIONAL_COMPILE_FLAGS(?:\(([^)]*)\))?:(.*)')
 FILE_DEPS = re.compile(r'//\s*FILE_DEPENDENCIES:(.*)')
@@ -13,9 +14,12 @@ class LibcxxFormat(lit.formats.FileBasedTest):
         self.wrapper, self.compiler, self.base_flags, self.features = wrapper, compiler, base_flags, set(features)
         self.skips = load_skips(os.path.join(os.path.dirname(os.path.dirname(skip_file)), 'common', 'skip.txt'), skip_file)
         self.xfails = load_xfails(os.path.join(os.path.dirname(skip_file), 'xfail.txt'))
+        self.counterparts = counterparts.Index(os.path.join(os.path.dirname(os.path.dirname(skip_file)), 'ycxx'))
 
     def execute(self, test, lit_config):
-        return apply_xfail(self.execute_test(test, lit_config), self.xfails, '/'.join(test.path_in_suite), self.compiler)
+        rel = '/'.join(test.path_in_suite)
+        result = apply_xfail(self.execute_test(test, lit_config), self.xfails, rel, self.compiler)
+        return counterparts.annotate(result, self.counterparts, 'libcxx', rel)
 
     def execute_test(self, test, lit_config):
         path = test.getSourcePath()

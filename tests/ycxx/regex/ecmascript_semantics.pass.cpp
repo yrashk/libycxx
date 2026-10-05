@@ -11,6 +11,7 @@
 // [re.grammar]/14.1.1: with icase, characters (also those matched by a backreference) compare
 // equal after translate_nocase.
 // [re.synopt] multiline: ^ and $ also match after/before a LineTerminator.
+// COUNTERPART: libcxx:re/re.alg/re.alg.search/ecma.pass.cpp
 #include <regex>
 #include <string>
 #include "check.hpp"

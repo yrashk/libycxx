@@ -501,7 +501,7 @@ private:
   }
 
   template <class Strides>
-  constexpr void check_strides(const extents_type& e, const Strides& s) const noexcept {
+  constexpr void check_strides(const extents_type& e, const Strides& s, bool check_unique = true) const noexcept {
     if (!ycxx::detail::md_checking())
       return;
     index_type n = 0;
@@ -518,6 +518,8 @@ private:
         for (size_t r = 0; r < rank_; ++r)
           positive = positive && s[r] > 0;
         ycxx::detail::precondition(positive, "layout_stride::mapping: strides must be positive");
+        if (!check_unique)
+          return;
         auto p = sorted(e, s);
         bool unique = true;
         for (size_t i = 1; i < rank_; ++i) {
@@ -554,6 +556,15 @@ public:
     for (size_t d = 0; d < rank_; ++d)
       strides_[d] = static_cast<index_type>(as_const(s[d]));
     check_strides(e, strides_);
+  }
+  // submdspan's result ([mdspan.sub.map.common]/6): the strides of a slice of a unique layout,
+  // which is unique, but need not meet [mdspan.layout.stride.cons]/4.3 (that condition is
+  // sufficient, not necessary, despite its Note: extents {2, 4} with strides {6, 9}, a slice of
+  // {4, 4} with {2, 9}). The other preconditions are checked.
+  constexpr mapping(ycxx::detail::md_sub_strides_t, const extents_type& e,
+                    const array<index_type, rank_>& s) noexcept
+      : extents_(e), strides_(s) {
+    check_strides(e, strides_, false);
   }
   template <class StridedLayoutMapping>
     requires(ycxx::detail::md_layout_mapping_alike<StridedLayoutMapping> &&

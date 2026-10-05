@@ -4,6 +4,7 @@
 // strings (/11); width, fill and alignment apply to the whole range; format_kind gives map
 // and set kinds for associative containers ([format.range.fmtkind]/2), formatted with {}
 // and k: v; views are formattable; set_separator/set_brackets of range_formatter.
+// COUNTERPART: libcxx:utilities/format/format.range/.*
 #include <array>
 #include <format>
 #include <map>

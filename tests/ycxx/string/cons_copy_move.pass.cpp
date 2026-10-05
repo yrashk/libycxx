@@ -5,6 +5,7 @@
 // from alloc; the second form throws nothing if alloc == str.get_allocator().
 // [container.reqmts]/64: copy construction obtains the allocator from
 // select_on_container_copy_construction; move construction moves the allocator.
+// REQUIRES: exceptions
 #include <string>
 #include <type_traits>
 #include <utility>

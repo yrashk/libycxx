@@ -9,6 +9,7 @@
 // construction and assignment, and checks the invariants (and that no element leaked,
 // [res.on.exception.handling]/3) after every failure. Also with deque as the underlying
 // containers ([flat.map.overview]/7).
+// REQUIRES: exceptions
 #include <flat_map>
 #include <deque>
 #include <vector>

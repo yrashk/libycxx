@@ -4,6 +4,8 @@
 // independent of size means no per-element operations: the elements are neither copied nor
 // moved, so they stay at the same addresses and are now owned by u. [container.reqmts]/50:
 // t.swap(s) is constant for the same containers.
+// COUNTERPART: libstdcxx:23_containers/[a-z_]+/debug/60499.cc
+// COUNTERPART: libstdcxx:23_containers/forward_list/debug/60499.cc
 #include <vector>
 #include <memory>
 #include <utility>

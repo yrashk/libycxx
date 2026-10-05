@@ -6,6 +6,7 @@
 // [format.functions]: format(const locale& loc, fmt, args...) uses loc; the overloads without a
 // locale use std::locale() ([format.context]/7: "std::locale() otherwise").
 // [format.string.std] width: the separators count toward the field width.
+// COUNTERPART: libcxx:utilities/format/format.formatter/format.context/format.context/.*
 #include <format>
 #include <locale>
 #include <string>

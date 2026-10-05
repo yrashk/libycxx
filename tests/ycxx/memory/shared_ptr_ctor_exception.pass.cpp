@@ -6,6 +6,7 @@
 // effect. [util.smartptr.shared.create]: make_shared propagates exceptions from T's
 // constructor without leaking. Allocation failure is injected by replacing ::operator new
 // ([replacement.functions]) and through a throwing allocator.
+// REQUIRES: exceptions
 #include <cstdlib>
 #include <memory>
 #include <new>

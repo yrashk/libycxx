@@ -3,6 +3,7 @@
 // for void); several threads may call get on their own copies. [futures.unique.future]/13-14:
 // share() returns shared_future<R>(std::move(*this)) and leaves valid() == false.
 // FLAGS: -pthread
+// REQUIRES: exceptions
 #include <future>
 #include <thread>
 #include <vector>

@@ -1,6 +1,7 @@
 // [priqueue.overview] deduction guides: (Compare, Container), iterator ranges with optional
 // Compare and Container (vector of the value type by default), from_range with optional
 // Compare, and the allocator forms (vector rebound to the allocator, or the given container).
+// REQUIRES: exceptions
 #include <queue>
 #include <deque>
 #include <functional>

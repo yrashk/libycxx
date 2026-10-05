@@ -1,6 +1,7 @@
 // [except.throw]/9 [Note 7]: "If a destructor directly invoked by stack unwinding exits via an
 // exception, std::terminate is invoked." [except.terminate]/1.4. The destructor here is
 // noexcept(false), so termination is due to unwinding, not to the exception specification.
+// REQUIRES: exceptions
 #include <cstdlib>
 #include <exception>
 #include "check.hpp"

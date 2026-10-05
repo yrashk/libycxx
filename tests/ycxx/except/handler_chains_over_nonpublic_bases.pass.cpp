@@ -8,6 +8,7 @@
 // chains sit on top of classes with private, protected, virtual and multiple bases; the caught
 // reference/pointer must denote the T subobject of the exception object. Every exception
 // type meets the same handlers in several orders so that remembered results cannot leak.
+// REQUIRES: exceptions
 #include <type_traits>
 #include <typeinfo>
 #include "check.hpp"

@@ -1,6 +1,7 @@
 // [optional.hash]: hash<optional<T>> enabled iff hash<remove_const_t<T>> is enabled; when
 // engaged, the hash equals hash<remove_const_t<T>>()(*o). [unord.hash]/4: disabled
 // specializations are not default/copy/move constructible or assignable.
+// COUNTERPART: libcxx:utilities/optional/optional.hash/hash.pass.cpp
 #include <optional>
 #include <functional>
 #include <type_traits>

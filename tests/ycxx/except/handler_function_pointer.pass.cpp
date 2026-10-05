@@ -3,6 +3,8 @@
 // 'pointer to T'." /3.3.2: a pointer handler matches via "a function pointer conversion"
 // ([conv.fctptr]: pointer to noexcept function to pointer to function). [Note 1]: "A handler
 // of reference to array or function type is never a match for any exception object."
+// REQUIRES: exceptions
+// XFAIL: gcc  GCC 16 records catch (int(&)()) as a handler for int(*)(); the runtime cannot tell ([except.handle] Note 1; STATUS)
 #include "check.hpp"
 
 int f1() { return 1; }

@@ -13,6 +13,8 @@
 // FLAGS: -latomic
 // FILES: ../support/linkage/explicit_inst_tu2.cpp
 //   (relative to the per-test temporary directory build/lit-*/linkage/<name>.XXXX)
+// COUNTERPART: libstdcxx:20_util/pair/requirements/explicit_instantiation/1.cc
+// COUNTERPART: libstdcxx:20_util/tuple/(53648|requirements/explicit_instantiation).cc
 #include "linkage/explicit_inst.hpp"
 #include "check.hpp"
 

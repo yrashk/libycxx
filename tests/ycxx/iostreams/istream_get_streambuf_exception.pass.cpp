@@ -3,6 +3,7 @@
 // function inserts no characters, ios_base::failbit is set in the input function's local error
 // state before setstate is called." The exception comes from the output buffer sb, and the
 // paragraph says it is not rethrown, even when badbit is set in exceptions().
+// REQUIRES: exceptions
 #include <istream>
 #include <sstream>
 #include <streambuf>

@@ -33,6 +33,7 @@
 //     an existing destination or a missing source is an error reported through ec.
 // A failed call is then repeated with no allocation failure, and must give the exact result.
 // Each run's operator new blocks are balanced (no leak).
+// REQUIRES: exceptions
 #include <chrono>
 #include <filesystem>
 #include <string>

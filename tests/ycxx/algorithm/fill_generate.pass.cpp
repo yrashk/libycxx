@@ -4,6 +4,7 @@
 // generate_n assign the result of successive gen() calls (in order); generate_n returns
 // first + max(0, n); ranges::generate(_n) likewise, with gen invoked via invoke. C++26:
 // fill's T defaults to the value type, so braced values work.
+// COUNTERPART: libstdcxx:25_algorithms/fill_n/2.cc
 #include <algorithm>
 #include <ranges>
 #include "check.hpp"

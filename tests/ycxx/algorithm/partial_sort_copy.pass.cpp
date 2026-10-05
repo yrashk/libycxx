@@ -3,6 +3,7 @@
 // result_first + N)"; returns result_first + N (std), {last, result_first + N} (ranges,
 // ranges::partial_sort_copy_result). The source only needs input iterators; the ranges
 // form takes separate projections proj1 (source) and proj2 (result).
+// COUNTERPART: libcxx:algorithms/alg.sorting/alg.sort/partial.sort.copy/partial_sort_copy(_comp)?.pass.cpp
 #include <algorithm>
 #include <functional>
 #include <ranges>

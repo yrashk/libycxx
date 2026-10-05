@@ -19,6 +19,7 @@
 // %y 69-99 -> 1969-1999, 00-68 -> 2000-2068; %I with %p; %S accepts [00,60]; %j sets tm_yday;
 // numbers outside the field's range do not match.
 // [ext.manip]/8-10: get_time / put_time call time_get::get / time_put::put.
+// COUNTERPART: libcxx:localization/locale.categories/category.time/locale.time.get/locale.time.get.members/get_time(_wide)?.pass.cpp
 #include <iomanip>
 #include <locale>
 #include <sstream>

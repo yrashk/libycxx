@@ -12,6 +12,7 @@
 // allocator-extended copy constructor uses the given one ([container.alloc.reqmts]/13-14).
 // [mem.res.syn], [vector.syn], [deque.syn], [list.syn], [forward.list.syn], [string.syn]:
 // the pmr aliases use polymorphic_allocator.
+// REQUIRES: exceptions
 #include <memory_resource>
 #include <deque>
 #include <forward_list>

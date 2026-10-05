@@ -15,6 +15,7 @@
 // a power of 10), e otherwise. Checked with strtod (round trip), printf "%.*e" (that D-1
 // significant digits do not round trip, and that the D digits are the correctly rounded ones),
 // and a spelling oracle.
+// COUNTERPART: libcxx:utilities/format/format.functions/(format|format.locale|vformat|vformat.locale).pass.cpp
 #include <format>
 #include <string>
 #include <cstdio>

@@ -3,6 +3,7 @@
 // front, back, data), all usable in constant expressions; deduction guide.
 // [array.members]: size() == N; data() == addressof(front()); fill; swap.
 // [sequence.reqmts]: at(n) throws out_of_range when n >= size().
+// REQUIRES: exceptions
 #include <array>
 #include <cstddef>
 #include <iterator>

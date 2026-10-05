@@ -6,6 +6,7 @@
 // propagate_on_container_* trait is true; a = rv gives a the value rv had even when the
 // allocators differ and do not propagate. Every combination of the traits, with a stateful
 // allocator, also in constant expressions.
+// REQUIRES: exceptions
 #include <forward_list>
 #include <type_traits>
 #include <utility>

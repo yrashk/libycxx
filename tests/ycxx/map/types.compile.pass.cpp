@@ -4,6 +4,7 @@
 // handle with key_type / mapped_type / allocator_type), insert_return_type for map only,
 // bidirectional iterators, reverse iterators, allocator_type, size/difference types.
 // [container.reqmts]/66.4: iterator copy and move do not throw.
+// COUNTERPART: libcxx:containers/associative/iterator_types.pass.cpp
 #include <map>
 #include <functional>
 #include <type_traits>

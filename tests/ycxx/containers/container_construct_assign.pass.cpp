@@ -7,6 +7,8 @@
 // allocation is ill-formed, using an element type that owns heap memory).
 // [utility.arg.requirements] Cpp17CopyAssignable: after t = v "the value of v is unchanged",
 // so copy self-assignment keeps the value.
+// COUNTERPART: libstdcxx:23_containers/[a-z_]+/debug/60499.cc
+// COUNTERPART: libstdcxx:23_containers/forward_list/debug/60499.cc
 #include <vector>
 #include <string>
 #include <type_traits>

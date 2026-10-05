@@ -4,6 +4,7 @@
 // any arithmetic, enumeration, or pointer type". current_exception() returns null when no
 // exception is handled; make_exception_ptr(e) refers to a copy of e; rethrow_exception throws
 // the referenced exception (or a copy).
+// REQUIRES: exceptions
 #include <exception>
 #include <cstddef>
 #include <stdexcept>

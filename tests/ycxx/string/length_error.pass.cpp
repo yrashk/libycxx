@@ -2,6 +2,7 @@
 // operation throws an exception object of type length_error." [string.insert]/10,14 and
 // [string.replace]/8,12 restate it; [string.capacity]/15 for reserve. /2: a throwing
 // member has no other effect on the string.
+// REQUIRES: exceptions
 #include <string>
 #include <stdexcept>
 #include "check.hpp"

@@ -3,6 +3,7 @@
 // constant bidirectional iterators, node_type is a node handle with value_type and
 // allocator_type (no key_type / mapped_type), insert_return_type exists for set only;
 // iterator copy and move do not throw ([container.reqmts]/66.4).
+// COUNTERPART: libcxx:containers/associative/iterator_types.pass.cpp
 #include <set>
 #include <functional>
 #include <type_traits>

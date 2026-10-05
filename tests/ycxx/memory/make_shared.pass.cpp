@@ -5,6 +5,7 @@
 // make_shared<U[N]>() value-initialize the elements; (N, u) / (u) initialize every element
 // from u; elements are destroyed in the reverse order of their construction.
 // make_shared_for_overwrite default-initializes.
+// REQUIRES: exceptions
 #include <memory>
 #include <string>
 #include <type_traits>

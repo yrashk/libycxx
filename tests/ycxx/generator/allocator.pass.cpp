@@ -7,6 +7,7 @@
 // rebound to an unspecified type U, and deallocated with an allocator equal to it.
 // The overload taking (const This&, allocator_arg_t, const Alloc&, ...) serves member functions.
 // [generator.syn]: pmr::generator uses polymorphic_allocator<>.
+// REQUIRES: exceptions
 #include <generator>
 #include <cstddef>
 #include <memory>

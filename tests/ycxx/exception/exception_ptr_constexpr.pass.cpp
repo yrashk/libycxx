@@ -2,6 +2,8 @@
 // [exception.syn]: rethrow_exception, make_exception_ptr and exception_ptr_cast are
 // constexpr, so they are usable during constant evaluation (P3068).
 // XFAIL-COMPILER: clang  no constexpr exception support (P3068) in clang yet
+// REQUIRES: exceptions
+// XFAIL: gcc  GCC 16 documents no way to reach the constant-evaluation exception state, so make_exception_ptr/current_exception are constexpr only for null values (STATUS)
 #include <exception>
 #include <optional>
 #include "check.hpp"

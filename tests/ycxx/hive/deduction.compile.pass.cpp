@@ -1,5 +1,6 @@
 // [hive.overview] deduction guides: from iterator ranges and from_range, each with an
 // optional hive_limits and Allocator.
+// REQUIRES: exceptions
 #include <hive>
 #include <memory>
 #include <ranges>

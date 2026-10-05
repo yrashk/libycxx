@@ -1,5 +1,6 @@
 // [rand.dist.uni.real]: produces x with a <= x < b, p(x | a, b) = 1 / (b - a); min() == a,
 // max() == b; a() and b() return the constructor arguments; d(g, p) uses p.
+// COUNTERPART: libstdcxx:26_numerics/random/uniform_real_distribution/operators/(64351|gencanon).cc
 #include <random>
 #include <cfloat>
 #include <limits>

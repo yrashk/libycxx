@@ -9,6 +9,7 @@
 //     thrown, then size() >= n and elements in the range begin() + [0, n) are not modified"
 //     (n: the size before the call).
 // Each source throws on its n-th operation, for every n until the operation completes.
+// REQUIRES: exceptions
 #include <cstddef>
 #include <hive>
 #include <inplace_vector>

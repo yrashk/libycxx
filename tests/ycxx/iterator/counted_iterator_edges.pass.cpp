@@ -10,6 +10,7 @@
 // so the result type is decltype(current++) and a throwing increment leaves count()
 // unchanged. [range.iter.op.advance]/4.2: ranges::next(ci, default_sentinel) uses the sized
 // sentinel to jump straight to count 0; [range.iter.op.distance]/3: distance is the count.
+// REQUIRES: exceptions
 #include <iterator>
 #include <compare>
 #include <cstddef>

@@ -20,6 +20,7 @@
 // release every thread, the completion function runs once per phase, the semaphore hands over
 // exactly as many units as released, the counter protected by the mutexes is exact.
 // FLAGS: -pthread
+// REQUIRES: exceptions
 #include <atomic>
 #include <barrier>
 #include <chrono>

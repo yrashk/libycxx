@@ -6,6 +6,7 @@
 // scalar simd-size-type; [simd.cassign]; [simd.comparison]: comparisons return mask_type.
 // [simd.alg]: min, max, minmax, clamp, select (bool and mask).
 // All members are constexpr.
+// COUNTERPART: libcxx:experimental/simd/simd.class/.*
 #include <simd>
 #include <array>
 #include <iterator>

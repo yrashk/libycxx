@@ -2,6 +2,7 @@
 // 378691210s, from_utc(t) adds 378691210s. [time.clock.gps.members]: gps_clock::to_utc(t) adds
 // 315964809s, from_utc(t) subtracts it. The result duration is common_type_t<Duration, seconds>.
 // The rep of tai_clock and gps_clock is a signed arithmetic type.
+// COUNTERPART: libstdcxx:std/time/clock/gps/io.cc
 #include <chrono>
 #include <type_traits>
 #include "check.hpp"

@@ -3,6 +3,7 @@
 // is randomly distributed according to the associated p(z | {p}) or P(z_i | {p}) function."
 // So after d.param(p) a default-constructed distribution produces values distributed by p; here
 // checked through the sample mean (fixed seed, tolerances of several standard errors).
+// COUNTERPART: libstdcxx:26_numerics/random/[a-z_]+_distribution/cons/parms.cc
 #include <random>
 #include "check.hpp"
 #include "random_support.hpp"

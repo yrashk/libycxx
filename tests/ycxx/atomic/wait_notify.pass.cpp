@@ -5,6 +5,7 @@
 // waiters. [atomics.wait]. Also the non-member atomic_wait / atomic_notify_*.
 // FLAGS: -latomic -pthread
 // (-latomic: the toolchain's out-of-line atomics for types that are not lock-free; Clang does not link it implicitly)
+// COUNTERPART: libstdcxx:29_atomics/atomic_integral/wait_notify.cc
 #include <atomic>
 #include <thread>
 #include <vector>

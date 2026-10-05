@@ -9,6 +9,7 @@
 // a handler (only (1.4): destruction during stack unwinding). So when the exception object's
 // destructor (noexcept(false)) exits via an exception as the handler completes, that exception
 // propagates from the end of the handler like any other.
+// REQUIRES: exceptions
 #include <exception>
 #include "check.hpp"
 

@@ -4,6 +4,7 @@
 // allocator is replaced by copy/move assignment only with POCCA/POCMA; move assignment is
 // noexcept iff POCMA or is_always_equal. All allocation goes through the allocator
 // (allocator_traits rebinding to the owned object's type, [polymorphic.general]/3).
+// REQUIRES: exceptions
 #include <memory>
 #include <type_traits>
 #include <utility>

@@ -5,6 +5,7 @@
 // partition, binary search, is_sorted and min_element need forward_iterator; merge, set
 // operations, includes, lexicographical_compare and partition_copy accept input_iterator.
 // A comparator that is not a strict weak order over the projected values is rejected.
+// COUNTERPART: libcxx:algorithms/alg.sorting/alg.sort/sort/sort_constexpr(_comp)?.pass.cpp
 #include <algorithm>
 #include <functional>
 #include <ranges>

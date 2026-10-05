@@ -14,6 +14,7 @@
 // 1:00 UTC on the last Sundays of March / October; Asia/Kolkata IST +5:30 without DST since
 // 1945; Australia/Lord_Howe +10:30 standard and a 30-minute DST (+11, abbreviated "+11")
 // from 2:00 local on the first Sundays of October / April since 2008.
+// REQUIRES: exceptions
 #include <chrono>
 #include <sstream>
 #include <stdexcept>

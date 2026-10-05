@@ -12,6 +12,8 @@
 // is implementation-defined (GCC: replaceable); this test replaces it.
 // [support.contract.invoke]: invoke_default_contract_violation_handler invokes the default
 // handler, which (Recommended practice, [basic.contract.handler]/2) returns normally.
+// REQUIRES: exceptions
+// XFAIL: gcc  GCC 16 reports a contract predicate that throws with detection_mode::predicate_false, not evaluation_exception ([support.contract.violation]; STATUS)
 #include <contracts>
 #include <exception>
 #include "check.hpp"

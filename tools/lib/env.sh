@@ -58,3 +58,25 @@ ycxx_suite_dirs() {
   elif [ -d /opt/src/libstdcxx-testsuite ]; then ycxx_libstdcxx_tests=/opt/src/libstdcxx-testsuite
   else ycxx_libstdcxx_tests=$ycxx__cache/libstdcxx-testsuite; fi
 }
+
+# ycxx_run_config: the configuration of a suite run, from SANITIZER, YCXX_HARDENED=1 and
+# YCXX_CXXFLAGS / YCXX_CONFIG_NAME (the last three: own suite only). Sets ycxx_config_name (the
+# name of the extra flags: $YCXX_CONFIG_NAME, else made from the flags, "-fno-exceptions -O2" ->
+# "fno-exceptions-O2") and ycxx_run_suffix, what run names, logs and baseline files carry after
+# the compiler: [-<sanitizers>][-hardened][-<config name>]. Returns 1, with a message, on a name
+# that cannot be part of a file name.
+ycxx_run_config() {
+  ycxx_config_name=${YCXX_CONFIG_NAME:-}
+  if [ -z "${ycxx_config_name}" ] && [ -n "${YCXX_CXXFLAGS:-}" ]; then
+    ycxx_config_name=$(printf '%s' "$YCXX_CXXFLAGS" | tr -c 'A-Za-z0-9=._' '-' | tr -s '-' | sed 's/^-//; s/-$//')
+  fi
+  case ${ycxx_config_name} in
+    *[!A-Za-z0-9=._-]*|-*)
+      echo "error: configuration name '${ycxx_config_name}': use letters, digits, '.', '_', '=' and '-'" >&2
+      return 1 ;;
+  esac
+  ycxx_run_suffix=${SANITIZER:+-$(echo "$SANITIZER" | tr , -)}
+  [ "${YCXX_HARDENED:-0}" = 1 ] && ycxx_run_suffix=${ycxx_run_suffix}-hardened
+  ycxx_run_suffix=${ycxx_run_suffix}${ycxx_config_name:+-${ycxx_config_name}}
+  return 0
+}

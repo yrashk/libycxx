@@ -18,6 +18,7 @@
 // FLAGS: -fPIC
 // UNSUPPORTED-SANITIZER: asan  each image has its own allocation functions (STATUS): strings the library allocates are freed by the program, through malloc/free here but ASan's operator delete there
 // SHARED: ../support/linkage/shared_exceptions_lib.cpp
+// REQUIRES: exceptions
 #include <any>
 #include <exception>
 #include <locale>

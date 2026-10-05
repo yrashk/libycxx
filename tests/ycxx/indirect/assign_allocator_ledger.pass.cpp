@@ -19,6 +19,7 @@
 // type U of other's owned object; /4: no effects on *this if an exception is thrown; a
 // valueless other leaves *this valueless (nothing is constructed, the previous object is
 // destroyed).
+// REQUIRES: exceptions
 #include <cstddef>
 #include <map>
 #include <memory>

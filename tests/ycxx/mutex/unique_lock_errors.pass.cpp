@@ -2,6 +2,7 @@
 // system_error with "operation_not_permitted — if pm is nullptr" and
 // "resource_deadlock_would_occur — if on entry owns is true"; unlock(): "operation_not_permitted
 // — if on entry owns is false". [thread.lock.shared.locking]: the same for shared_lock.
+// REQUIRES: exceptions
 #include <mutex>
 #include <shared_mutex>
 #include <chrono>

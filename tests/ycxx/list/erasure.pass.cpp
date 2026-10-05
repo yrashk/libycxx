@@ -2,6 +2,7 @@
 //   return erase_if(c, [&](const auto& elem) -> bool { return elem == value; });
 // and erase_if(c, pred) to return c.remove_if(pred); both return list::size_type, U defaults
 // to T (so a braced initializer works), and the survivors keep their order and addresses.
+// COUNTERPART: libstdcxx:23_containers/list/debug/erase.cc
 #include <list>
 #include <iterator>
 #include <memory>

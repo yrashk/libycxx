@@ -7,6 +7,7 @@
 // the "C" locale is "%m/%d/%y" (ISO C 7.29.3.5), i.e. mdy (or no_order, footnote 207). /2-3: do_get_time reads the
 // members used for "%H:%M:%S". /9-10: do_get_year reads a year (four digits are unambiguous).
 // The names of the "C" locale (ISO C 7.29.3.5): "Sunday".."Saturday" / "Jan".."Dec" etc.
+// COUNTERPART: libcxx:localization/locale.categories/category.time/locale.time.get/locale.time.get.members/get_time(_wide)?.pass.cpp
 #include <locale>
 #include <sstream>
 #include <iterator>

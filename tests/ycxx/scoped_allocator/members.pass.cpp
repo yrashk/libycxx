@@ -4,6 +4,7 @@
 // outer_allocator() is the OuterAlloc base; allocate/deallocate/max_size forward to the outer
 // allocator; select_on_container_copy_construction applies to each allocator; == compares
 // outer and (if any) inner allocators.
+// REQUIRES: exceptions
 #include <scoped_allocator>
 #include <memory>
 #include <type_traits>

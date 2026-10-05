@@ -8,6 +8,7 @@
 // decltype(INVOKE(f, t1, t2, ..., tN))> is true, INVOKE<R>(f, t1, t2, ..., tN) is ill-formed."
 // The implicit conversion of a prvalue of type R to R is copy-initialization from a prvalue,
 // which needs no copy or move constructor ([dcl.init.general]/17.6.1).
+// COUNTERPART: libcxx:utilities/meta/meta.rel/is_invocable_r(_v)?.compile.pass.cpp
 #include <type_traits>
 #include <functional>
 #include <memory>

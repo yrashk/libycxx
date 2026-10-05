@@ -3,6 +3,7 @@
 // pmr container uses select_on_container_copy_construction (the default resource), while
 // the allocator-extended copy constructor uses the given resource; polymorphic_allocator does
 // not propagate on assignment or swap, so assignment keeps each container's resource.
+// REQUIRES: exceptions
 #include <memory_resource>
 #include <deque>
 #include <list>

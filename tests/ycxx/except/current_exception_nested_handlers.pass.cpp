@@ -4,6 +4,7 @@
 // currently handled exception." So inside a nested handler it is the inner exception, and
 // after that handler exits it is the outer one again; after both exit, there is none.
 // [except.nested]/3: nested_exception() captures current_exception() at construction.
+// REQUIRES: exceptions
 #include <exception>
 #include "check.hpp"
 

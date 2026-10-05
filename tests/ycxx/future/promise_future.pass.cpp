@@ -4,6 +4,7 @@
 // exception, and leaves valid() == false; a default future has valid() == false; move leaves
 // the source invalid. Values cross threads (/9: setting synchronizes with detecting ready).
 // FLAGS: -pthread
+// REQUIRES: exceptions
 #include <future>
 #include <thread>
 #include <memory>

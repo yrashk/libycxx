@@ -224,11 +224,31 @@ inline void* memset_explicit(void* s, int c, size_t n) noexcept {
 def version_macro(header):
     m = f"__STDC_VERSION_{header}_H__"
     return [f"#ifndef {m}", f"#  define {m} 202311L", "#endif", ""]
+# C23's binary conversions PRIbN and SCNbN ([cinttypes.syn]/2: defined whenever the typedef is) for
+# a C library whose <inttypes.h> predates them: Darwin's. Its types, from its <stdint.h>: int64_t
+# is long long, the least and fast types are the exact-width ones, intmax_t and intptr_t are long
+# (checked by the static_asserts). PRIBN stay undefined: they are defined only if fprintf
+# supports the B conversion, which that C library's does not document.
+def inttypes_binary():
+    mods = {"8": "hh", "16": "h", "32": "", "64": "ll"}
+    lines = ["#if YCXX_TARGET_DARWIN && !defined(PRIb8)", "namespace ycxx::detail {",
+             "static_assert(is_any_of<std::uint8_t, unsigned char> && is_any_of<std::uint16_t, unsigned short> &&",
+             "              is_any_of<std::uint32_t, unsigned> && is_any_of<std::uint64_t, unsigned long long> &&",
+             "              is_any_of<std::uintptr_t, unsigned long>);"]
+    lines += [f"static_assert(is_any_of<std::uint_least{n}_t, std::uint{n}_t> && is_any_of<std::uint_fast{n}_t, std::uint{n}_t>);"
+              for n in mods]
+    lines += ["} // namespace ycxx::detail"]
+    for n, m in mods.items():
+        for kind in ("", "LEAST", "FAST"):
+            lines += [f'#  define PRIb{kind}{n} "{m}b"', f'#  define SCNb{kind}{n} "{m}b"']
+    lines += ['#  define PRIbMAX "jb"', '#  define SCNbMAX "jb"', '#  define PRIbPTR "lb"', '#  define SCNbPTR "lb"',
+              "#endif", ""]
+    return lines
 MACROS = {"cwchar": version_macro("WCHAR") + [
               "#if !YCXX_HOSTED", "#  define WEOF (static_cast<__WINT_TYPE__>(-1))", "#endif", ""],
           "cuchar": version_macro("UCHAR"), "cstring": version_macro("STRING"),
           "cstdio": version_macro("STDIO"), "ctime": version_macro("TIME"),
-          "cinttypes": version_macro("INTTYPES"), "csetjmp": version_macro("SETJMP")}
+          "cinttypes": version_macro("INTTYPES") + inttypes_binary(), "csetjmp": version_macro("SETJMP")}
 # Global-scope redeclarations, emitted before namespace std.
 GLOBAL = {"cstdlib": [
     "#if YCXX_HOSTED",
@@ -256,7 +276,7 @@ GLOBAL = {"cstdlib": [
     '[[deprecated("asctime is deprecated ([depr.ctime]); use strftime or std::format")]] decltype(::asctime) asctime;',
     '[[deprecated("ctime is deprecated ([depr.ctime]); use strftime or std::format")]] decltype(::ctime) ctime;',
     ""]}
-EXTRA_INCLUDES = {"cstdlib": ["<ycxx/core/math_abs.hpp>"], "cinttypes": ["<cstdint>"], "cwchar": ["<ycxx/core/char_traits.hpp>", "<ycxx/core/cstdint.hpp>"],
+EXTRA_INCLUDES = {"cstdlib": ["<ycxx/core/math_abs.hpp>"], "cinttypes": ["<cstdint>", "<ycxx/core/prim_traits.hpp>"], "cwchar": ["<ycxx/core/char_traits.hpp>", "<ycxx/core/cstdint.hpp>"],
                   "cuchar": ["<ycxx/core/char_traits.hpp>"], "cwctype": ["<ycxx/core/char_traits.hpp>"]}
 
 root = pathlib.Path(__file__).resolve().parent.parent / "include"

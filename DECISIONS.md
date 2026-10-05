@@ -221,8 +221,9 @@ tooling.
   the volatile non-member functions are split the same way.
 - **The thread support library is built on the PAL's address wait, not on pthread objects.**
   Mutexes are three-state futex locks, condition variables sequence counters, call_once a
-  four-state word; all are constexpr-constructible (where the draft allows) and trivially
-  destructible. Threads, sleeping, the thread-end list (`notify_all_at_thread_exit`, the
+  four-state word; all are constexpr-constructible (where the draft allows); the mutexes are
+  trivially destructible, and a condition variable's destructor only waits for notified waiters
+  to stop touching it ([thread.condition.condvar]/5 allows destroying it while they return). Threads, sleeping, the thread-end list (`notify_all_at_thread_exit`, the
   `*_at_thread_exit` results) and timed waits are PAL hooks (`ycxx_pal_thread_*`,
   `ycxx_pal_wait_until`, `ycxx_pal_at_thread_end`). A timed wait on system_clock waits on the
   realtime clock, one on any other clock on the monotonic clock for the remaining time and then

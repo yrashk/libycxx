@@ -1,0 +1,9 @@
+# libstdc++ testsuite tests expected to fail because of a compiler gap (not a libycxx bug); they
+# still run, and report XPASS once the compiler catches up (then remove the line).
+# Format:  <path regex relative to the testsuite> | <gcc|clang|any> | <reason>
+# Kept in step with the compiler gaps of TRIAGE.md.
+20_util/(alignment_of|is_const|is_volatile|rank|is_copy_assignable|is_copy_constructible|is_move_assignable|is_move_constructible|is_nothrow_copy_assignable|is_nothrow_copy_constructible|is_nothrow_move_assignable|is_nothrow_move_constructible|is_trivially_copy_assignable|is_trivially_copy_constructible|is_trivially_copyable|is_trivially_move_assignable|is_trivially_move_constructible)/value\.cc | clang | Clang 23 rejects testsuite_tr1.h's test_property<Trait, T>: a one-parameter class template for a template<typename, typename...> class parameter, used as Property<T, Types...> with an empty pack ("too many template arguments"); valid since P0522 ([temp.arg.template]/3), GCC accepts (repro without the library: TRIAGE.md)
+20_util/is_assignable/value\.cc | clang | Clang 23's __is_assignable(U&, void() const) is true for a union with a template operator=(T&&); declval of an abominable function type is ill-formed, so is_assignable is false ([meta.unary.prop]); GCC agrees
+20_util/is_constructible/value-2\.cc | clang | Clang 23's __is_constructible(D&&, B&&) is false for an aggregate D derived from B; C++20 parenthesized aggregate initialization makes it true ([dcl.init.general]/16.6.2.2); GCC agrees
+20_util/(is_reflection/value|is_scalar/reflection)\.cc | clang | Clang 23 has no reflection (P2996, ^^T)
+20_util/is_structural/value\.cc | clang | Clang 23 has no __builtin_is_structural, which std::is_structural needs

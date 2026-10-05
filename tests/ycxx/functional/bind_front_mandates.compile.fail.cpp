@@ -2,6 +2,7 @@
 // is_move_constructible_v<FD> && (is_constructible_v<BoundArgs, Args> && ...) &&
 // (is_move_constructible_v<BoundArgs> && ...) is true." A bound argument that is not move
 // constructible violates the Mandates.
+// EXPECT-ERROR: static assertion failed.*std::bind_front: the target and bound arguments must be constructible and move constructible
 #include <functional>
 
 struct Pinned {

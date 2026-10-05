@@ -18,6 +18,15 @@ Optional directives:
                                           allocation functions) or adds (its exported symbols)
   // XFAIL-COMPILER: gcc|clang  <reason>   known compiler gap (listed in STATUS.md); the test is
                                           unchanged and reports XFAIL, or XPASS once the gap closes
+  // EXPECT-ERROR: <Python regex>   (*.compile.fail.cpp only; repeatable) the compiler's output
+                                          (its diagnostics, not the command line) must match
+                                          every such regex (re.search, multi-line), or the test
+                                          fails and names the regexes that did not match: the
+                                          test fails to compile for the reason it is about
+  // EXPECT-ERROR-GCC: <regex>, // EXPECT-ERROR-CLANG: <regex>   the same, for one compiler only
+                                          (its wording differs: "static assertion failed" /
+                                          "static_assert failed", "use of deleted function" /
+                                          "call to deleted ...")
 """
 import os, re, shutil, tempfile
 import lit.formats, lit.Test
@@ -29,6 +38,7 @@ ARCHIVE = re.compile(r'^//\s*ARCHIVE:(.*)$', re.M)
 SHARED = re.compile(r'^//\s*SHARED:(.*)$', re.M)
 XFAIL = re.compile(r'^//\s*XFAIL-COMPILER:\s*(\w+)', re.M)
 UNSUPPORTED_SAN = re.compile(r'^//\s*UNSUPPORTED-SANITIZER:\s*([\w,]+)(.*)$', re.M)
+EXPECT_ERROR = re.compile(r'^//\s*EXPECT-ERROR(?:-(GCC|CLANG))?:\s*(.*?)\s*$', re.M)
 MISSING = re.compile(r"fatal error: '?[\w./]+'?:? (file not found|No such file or directory)")
 
 
@@ -54,6 +64,26 @@ class YcxxFormat(lit.formats.FileBasedTest):
                 result.code = lit.Test.XFAIL
         return result
 
+    def check_expected_errors(self, src, out):
+        """A failed compile passes when its diagnostics match every EXPECT-ERROR regex that applies
+        to this compiler. Matched against what the compiler printed: the transcript's first two
+        lines (the command and its exit status) are left out, since the command names the test."""
+        expected = [m.group(2) for m in EXPECT_ERROR.finditer(src)
+                    if m.group(1) in (None, self.compiler.upper())]
+        diagnostics = out.split('\n', 2)[2] if out.count('\n') >= 2 else ''
+        missed = []
+        for rx in expected:
+            try:
+                if not re.search(rx, diagnostics, re.M):
+                    missed.append(rx)
+            except re.error as e:
+                return lit.Test.Result(lit.Test.FAIL, f'EXPECT-ERROR: invalid regex {rx!r}: {e}\n' + out)
+        if missed:
+            return lit.Test.Result(lit.Test.FAIL, 'failed to compile, but not with the expected diagnostics; '
+                                   'no match for:\n' + ''.join(f'  EXPECT-ERROR: {rx}\n' for rx in missed) + out)
+        note = ''.join(f'[matched EXPECT-ERROR: {rx}]\n' for rx in expected)
+        return lit.Test.Result(lit.Test.PASS, note + out)
+
     def run(self, test):
         path = test.getSourcePath()
         name = os.path.basename(path)
@@ -63,6 +93,8 @@ class YcxxFormat(lit.formats.FileBasedTest):
             flags += m.group(1).split()
         exec_dir = os.path.join(test.suite.exec_root, *test.path_in_suite[:-1])
         os.makedirs(exec_dir, exist_ok=True)
+        if EXPECT_ERROR.search(src) and not name.endswith('.compile.fail.cpp'):
+            return lit.Test.Result(lit.Test.FAIL, 'EXPECT-ERROR applies only to *.compile.fail.cpp tests')
         tmp = tempfile.mkdtemp(prefix=name + '.', dir=exec_dir)
         try:
             if name.endswith('.compile.pass.cpp'):
@@ -72,7 +104,9 @@ class YcxxFormat(lit.formats.FileBasedTest):
                 rc, out = self.compile(['-fsyntax-only', path] + flags, tmp, '; must fail')
                 if rc != 0 and MISSING.search(out):
                     return lit.Test.Result(lit.Test.FAIL, 'failed only because a header is missing\n' + out)
-                return lit.Test.Result(lit.Test.PASS if rc not in (0, None) else lit.Test.FAIL, out or 'expected a compile error')
+                if rc in (0, None):
+                    return lit.Test.Result(lit.Test.FAIL, out or 'expected a compile error')
+                return self.check_expected_errors(src, out)
             if name.endswith('.pass.cpp'):
                 exe = os.path.join(tmp, 't.exe')
                 def listed(rx):

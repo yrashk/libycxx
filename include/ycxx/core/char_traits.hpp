@@ -14,7 +14,8 @@
 namespace std {
 
 struct mbstate_t {
-  alignas(4) unsigned char __state[8]; // glibc and musl: 8 bytes, 4-byte alignment
+  // glibc and musl: 8 bytes, 4-byte alignment; Darwin: 128 bytes, 8-byte alignment.
+  alignas(ycxx::detail::cfg::mbstate_align) unsigned char __state[ycxx::detail::cfg::mbstate_size];
 };
 using wint_t = __WINT_TYPE__;
 

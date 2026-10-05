@@ -96,7 +96,8 @@ tooling.
 - **`std::mbstate_t` is core's own type.** The draft makes `mbstate_t` freestanding
   ([cwchar.syn]), and `char_traits::state_type` names it, so core defines it without the C
   library: an opaque, zero-initialisable struct with the C library's size and alignment (glibc
-  and musl: 8 bytes, 4-byte alignment). The hosted `<cwchar>`/`<cuchar>` `static_assert` that
+  and musl: 8 bytes, 4-byte alignment; Darwin: 128 bytes, 8-byte alignment; `cfg::mbstate_size`/
+  `_align` in `config.hpp`). The hosted `<cwchar>`/`<cuchar>` `static_assert` that
   layout and add `std::` overloads of the conversion functions taking `std::mbstate_t*`, which
   forward to the C functions; the `::mbstate_t*` versions are forwarding templates, so a null
   state pointer is not ambiguous. The cost: `std::mbstate_t` and `::mbstate_t` are distinct

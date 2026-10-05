@@ -121,7 +121,8 @@ tooling.
     definitions. That includes a program's replacement `operator new`: it is linked instead of
     the archive member holding the hidden default ([replacement.functions]), and is exported as
     the program's other functions are. libycxx's defaults are hidden on every target (as
-    Chromium's `-fvisibility-global-new-delete=force-hidden`): on Darwin they are not patched
+    Clang's `-fvisibility-global-new-delete=force-hidden`, added for libFuzzer's private libc++ and
+    Fuchsia, https://reviews.llvm.org/D53787): on Darwin they are not patched
     into the shared cache, so system code keeps libc++abi's allocation functions; on ELF a
     shared library built with libstdc++ keeps its own. Both use `malloc`/`free`, so memory
     passed between the two still pairs.

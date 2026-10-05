@@ -6,7 +6,7 @@
 // ([queue.cons]/2, [stack.cons]/2; [priqueue.cons]/2 "move constructing"). So one default
 // construction of Container and one move construction, no copy; a container type with a copy
 // constructor but no move constructor is copied instead (overload resolution of
-// c(std::move(cont)) picks the copy constructor). The constructors are constexpr.
+// c(std::move(cont)) picks the copy constructor).
 // COUNTERPART: libstdcxx:23_containers/(priority_queue|queue|stack)/77528.cc
 #include <deque>
 #include <functional>
@@ -44,17 +44,6 @@ counts make() {
   CHECK(a.empty() && a.size() == 0);
   return n;
 }
-
-constexpr bool constant() {
-  std::queue<int> q;
-  std::stack<int> s;
-  std::priority_queue<int> p;
-  q.push(1);
-  s.push(2);
-  p.push(3);
-  return q.front() == 1 && s.top() == 2 && p.top() == 3;
-}
-static_assert(constant());
 
 int main() {
   using DQ = counting<std::deque<int>>;

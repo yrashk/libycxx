@@ -262,7 +262,8 @@ Ported:
   `mbstate_t` (128 bytes, aligned to 8). The hosted checks against the C headers remain.
 - C23 functions libSystem lacks, provided by the hosted runtime: `strfromd/f/l`
   (`src/hosted/strfrom.cpp`, on snprintf), `mbrtoc8`/`c8rtomb`, and the four char16_t/char32_t
-  conversions where the SDK has no `<uchar.h>` (`src/hosted/uchar.cpp`, on mbrtowc/wcrtomb).
+  conversions where the SDK has no `<uchar.h>` (`src/hosted/uchar.cpp`, on mbrtowc/wcrtomb),
+  `timespec_getres` (`src/hosted/ctime.cpp`, TIME_UTC only, on clock_getres).
 - Static initialization: Mach-O has no init priorities, so `<iostream>` defines an
   `ios_base::Init` per translation unit there (DECISIONS §7); checked on Linux by building with
   `-U__ELF__`.
@@ -447,7 +448,8 @@ compilers; `visit_format_arg.pass.cpp` needs `EOF` from `constexpr_char_traits.h
 - C library wrappers: `std::free_sized`/`free_aligned_sized` call `free` (glibc 2.39 has neither);
   `memset_explicit` is memset plus a compiler barrier; `strfrom*`, `memccpy`, `strdup`, `strndup`
   are the C library's (on Darwin, which lacks them, `strfrom*` and `mbrtoc8`/`c8rtomb` are
-  libycxx's own; see "macOS (Darwin)"). Freestanding (`-ffreestanding`), `<cstdlib>`/`<cstring>`/`<cwchar>` are
+  libycxx's own, and so is `timespec_getres`; see "macOS (Darwin)"). `<ctime>` has C23's `timegm`,
+  `gmtime_r`, `localtime_r` and `timespec_getres` from the C library. Freestanding (`-ffreestanding`), `<cstdlib>`/`<cstring>`/`<cwchar>` are
   libycxx's own code; their `bsearch` has C's single signature (not the draft's const/non-const
   pair), and the termination functions forward to the environment's.
 - `make_exception_ptr` under `-fno-exceptions -fno-rtti` returns a null exception_ptr (the

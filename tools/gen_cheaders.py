@@ -94,8 +94,8 @@ template <class = void>
 inline wchar_t* wmemchr(wchar_t* s, wchar_t c, size_t n) noexcept { return const_cast<wchar_t*>(::wmemchr(s, c, n)); }"""),
     "cerrno": ("errno.h", "", ""),
     "csignal": ("signal.h", "sig_atomic_t signal raise", ""),
-    "ctime": ("time.h", "clock_t time_t tm timespec clock difftime mktime time timespec_get asctime ctime "
-              "gmtime localtime strftime", ""),
+    "ctime": ("time.h", "clock_t time_t tm timespec clock difftime mktime timegm time timespec_get asctime ctime "
+              "gmtime gmtime_r localtime localtime_r strftime", ""),
     "clocale": ("locale.h", "lconv setlocale localeconv", ""),
     "cinttypes": ("inttypes.h", "imaxdiv_t strtoimax strtoumax wcstoimax wcstoumax", """// imaxabs, imaxdiv are constexpr ([cinttypes.syn]), so they are not the C library's (as <cstdlib>'s
 // div). Templates: under `using namespace std;` an unqualified call prefers the C library's.
@@ -137,6 +137,14 @@ inline int strfroml(char* s, size_t n, const char* format, long double fp) noexc
   return ycxx::detail::strfrom(s, n, format, fp);
 }""")],
 }
+CONDITIONAL["ctime"] = [("YCXX_C_HAS_TIMESPEC_GETRES", "timespec_getres", "",
+    """// timespec_getres (C23 7.29.2.7), which this C library lacks: libycxx's own (src/hosted/ctime.cpp).
+// A template, as strfromd is: should the C library gain it, its ::timespec_getres wins unqualified
+// calls under `using namespace std;`.
+template <class = void>
+inline int timespec_getres(timespec* ts, int base) noexcept {
+  return ycxx::detail::c_timespec_getres(ts, base);
+}""")]
 # <cuchar>'s six functions: name, parameters before the state, the arguments they pass on.
 UCHAR_FUNCS = [("mbrtoc8", "char8_t* pc8, const char* s, size_t n", "pc8, s, n"),
                ("c8rtomb", "char* s, char8_t c8", "s, c8"),
@@ -268,6 +276,12 @@ GLOBAL = {"cstdlib": [
     "// [[deprecated]] (decltype keeps their exact type, noexcept included); std:: names them below.",
     '[[deprecated("asctime is deprecated ([depr.ctime]); use strftime or std::format")]] decltype(::asctime) asctime;',
     '[[deprecated("ctime is deprecated ([depr.ctime]); use strftime or std::format")]] decltype(::ctime) ctime;',
+    "",
+    "// timespec_getres (C23 7.29.2.7) for C libraries without it, in the hosted runtime",
+    "// (src/hosted/ctime.cpp): the resolution of TIME_UTC, from clock_getres(CLOCK_REALTIME).",
+    "namespace ycxx::detail {",
+    "int c_timespec_getres(::timespec* ts, int base) noexcept;",
+    "} // namespace ycxx::detail",
     ""]}
 EXTRA_INCLUDES = {"cstdlib": ["<ycxx/core/math_abs.hpp>"], "cinttypes": ["<cstdint>"], "cwchar": ["<ycxx/core/char_traits.hpp>", "<ycxx/core/cstdint.hpp>"],
                   "cuchar": ["<ycxx/core/char_traits.hpp>"], "cwctype": ["<ycxx/core/char_traits.hpp>"]}

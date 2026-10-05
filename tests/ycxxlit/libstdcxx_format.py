@@ -15,7 +15,7 @@ implementation-specific.
 import os, re, shutil, tempfile
 import lit.formats, lit.Test
 from ycxxlit import transcript
-from ycxxlit.skips import load_skips, match_skip, load_xfails, apply_xfail
+from ycxxlit.skips import load_skips, match_skip, load_unsupported, match_unsupported, load_xfails, apply_xfail
 from ycxxlit import counterparts
 from ycxxlit import locales
 
@@ -192,6 +192,9 @@ class LibstdcxxFormat(lit.formats.FileBasedTest):
         self.support_lib = support_lib  # libtestc++.a (build_support_lib), linked into every program
         self.skips = load_skips(os.path.join(os.path.dirname(os.path.dirname(skip_file)), 'common', 'skip.txt'), skip_file)
         self.xfails = load_xfails(os.path.join(os.path.dirname(skip_file), 'xfail.txt'))
+        # Tests that do not apply with one compiler only (tests/libstdcxx/unsupported.txt; the
+        # features are the compiler's name, as for libc++'s list).
+        self.unsupported = load_unsupported(os.path.join(os.path.dirname(skip_file), 'unsupported.txt'))
         self.counterparts = counterparts.Index(os.path.join(os.path.dirname(os.path.dirname(skip_file)), 'ycxx'))
 
     def execute(self, test, lit_config):
@@ -209,6 +212,9 @@ class LibstdcxxFormat(lit.formats.FileBasedTest):
         why = extension_use(src)
         if why:
             return lit.Test.Result(lit.Test.UNSUPPORTED, f'skipped (extension): {why}')
+        why = match_unsupported(self.unsupported, rel, {self.compiler})
+        if why:
+            return lit.Test.Result(lit.Test.UNSUPPORTED, why)
 
         action, expect_fail_run, flags, errors = 'run', False, list(self.base_flags), False
         xfail_run_if = []

@@ -87,6 +87,25 @@ jobs:
           . tools/toolchain/activate.sh
           tools/test -j3 policy build freestanding cmake ycxx
 
+      # Which library each C++ ABI symbol of a test program binds to (libycxx's static runtime or
+      # libSystem's libc++abi), and how the program behaves: diagnostics for the macOS port.
+      - name: ABI symbol binding diagnostics
+        if: always()
+        run: |
+          . tools/toolchain/activate.sh
+          mkdir -p build/diag
+          for c in clang gcc; do
+            echo "=== $c"
+            tools/ycxx-cxx $c tests/ycxx/exception/exception_ptr.pass.cpp -o build/diag/ep-$c -Wl,-map,build/diag/ep-$c.map || continue
+            ( cd build/diag && ./ep-$c; echo "exit $?" )
+            echo "--- imports (symbol <- dylib)"
+            xcrun dyld_info -imports build/diag/ep-$c 2>&1 | grep -Ei 'cxa|personality|terminate|unexpected|Unwind|typeinfo|_ZTI|_ZTV|_ZNSt' | head -60
+            echo "--- defined in the executable"
+            nm -m build/diag/ep-$c | grep -Ei ' (___cxa|___gxx_personality|__ZSt9terminate|__ZSt17current_exception|__ZNSt15__exception_ptr)' | head -40
+            echo "--- linked libraries"
+            otool -L build/diag/ep-$c
+          done 2>&1 | tee build/diag/abi-binding.txt
+
       - name: Test reports (composite run report, suite reports)
         if: always()
         uses: actions/upload-artifact@v4
@@ -99,4 +118,6 @@ jobs:
             build/test-logs/*.log
             build/cmake-test/*.log
             build/cmake-test/*/log.txt
+            build/diag/*.txt
+            build/diag/*.map
           if-no-files-found: ignore

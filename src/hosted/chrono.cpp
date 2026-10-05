@@ -66,6 +66,16 @@ bool to_utf8(std::string& out, const std::locale& loc, const std::string& text) 
   }
 }
 
+// tm_zone (const char* in glibc, char* in Darwin's libc) and tm_gmtoff, where the C library's tm
+// has them (a dependent requires-expression: false rather than ill-formed elsewhere).
+template <class TM>
+void set_zone(TM& tm, const ycxx::detail::chrono_c_tm& t) {
+  if constexpr (requires { tm.tm_zone; tm.tm_gmtoff; }) {
+    tm.tm_zone = const_cast<decltype(tm.tm_zone)>(t.zone);
+    tm.tm_gmtoff = static_cast<decltype(tm.tm_gmtoff)>(t.offset);
+  }
+}
+
 template <class charT>
 void put_localized(std::basic_string<charT>& out, const std::locale& loc, const ycxx::detail::chrono_c_tm& t,
                    char spec, char mod) {
@@ -82,10 +92,7 @@ void put_localized(std::basic_string<charT>& out, const std::locale& loc, const 
   // process's time zone (tzname) for a value that has no zone or another one. tm_isdst < 0
   // writes no %z; tm_zone and tm_gmtoff are BSD members both C libraries have.
   tm.tm_isdst = t.has_offset ? 0 : -1;
-  if constexpr (requires { tm.tm_zone; tm.tm_gmtoff; }) {
-    tm.tm_zone = const_cast<decltype(tm.tm_zone)>(t.zone);
-    tm.tm_gmtoff = static_cast<decltype(tm.tm_gmtoff)>(t.offset);
-  }
+  set_zone(tm, t);
   std::basic_ostringstream<charT> os;
   os.imbue(loc);
   const std::time_put<charT>& tp = std::use_facet<std::time_put<charT>>(loc);

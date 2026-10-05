@@ -15,7 +15,7 @@ reference = stdlib == 'libstdcxx'
 config.name = (f'libstdcxx-ref-{compiler}' if reference else f'libycxx-own-{compiler}')
 config.test_source_root = os.path.join(repo, 'tests', 'ycxx')
 config.test_exec_root = os.path.join(repo, 'build', ('lit-ref-libstdcxx-' if reference else 'lit-ycxx-') + compiler +
-                                     (f'-{sanitizer}' if sanitizer else ''))
+                                     (f'-{sanitizer.replace(",", "-")}' if sanitizer else ''))
 config.suffixes = ['.cpp']
 config.excludes = ['support']
 
@@ -32,4 +32,5 @@ if sanitizer:
         # that its atomics are seen.
         flags += ['-Wl,--allow-multiple-definition']
 wrapper = 'ref-cxx' if reference else 'ycxx-cxx'
-config.test_format = YcxxFormat(os.path.join(repo, 'tools', wrapper), compiler, flags)
+config.test_format = YcxxFormat(os.path.join(repo, 'tools', wrapper), compiler, flags,
+                                sanitizer.split(',') if sanitizer else ())

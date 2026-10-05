@@ -21,7 +21,8 @@
 
 struct Twice {  // trivially copyable, same size as int, but not a copy of the int
   int v;
-  Twice(int x) : v(2 * x + 1) {}
+  // Wrapping arithmetic: the inputs include INT_MAX (a conversion to int is modular).
+  Twice(int x) : v(static_cast<int>(2u * static_cast<unsigned>(x) + 1u)) {}
   friend bool operator==(Twice, Twice) = default;
 };
 static_assert(sizeof(Twice) == sizeof(int));

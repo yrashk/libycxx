@@ -16,6 +16,7 @@
 //     the program's own generic_category(): the category objects are a property of each copy of
 //     the library, so only the error value and the condition are checked).
 // FLAGS: -fPIC
+// UNSUPPORTED-SANITIZER: asan  each image has its own allocation functions (STATUS): strings the library allocates are freed by the program, through malloc/free here but ASan's operator delete there
 // SHARED: ../support/linkage/shared_exceptions_lib.cpp
 #include <any>
 #include <exception>

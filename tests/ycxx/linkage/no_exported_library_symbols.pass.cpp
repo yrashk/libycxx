@@ -9,6 +9,7 @@
 // which -rdynamic fills with every default-visibility symbol; Mach-O: `nm -gU`) and fails on any
 // mangled name that is not the test's own (namespace `own`) and on the ABI runtime's names.
 // FLAGS: -rdynamic -pthread
+// UNSUPPORTED-SANITIZER: asan,ubsan,tsan  the sanitizer runtimes export symbols (and allocation functions) of their own
 #include <any>
 #include <cstdio>
 #include <cstdlib>

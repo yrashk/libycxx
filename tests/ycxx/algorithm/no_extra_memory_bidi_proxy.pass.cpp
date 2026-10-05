@@ -12,6 +12,7 @@
 // reference; the temporary storage would hold tuple values) -- "Remarks: Stable".
 // Memory is refused by replacing the global allocation functions ([new.delete.single]) to throw
 // bad_alloc while armed; the containers are built before arming. Many duplicate keys.
+// UNSUPPORTED-SANITIZER: asan  ASan replaces the global allocation functions: its operator new neither calls the new_handler nor throws for impossible sizes, and its other forms do not forward to a program's replacement ([new.delete])
 #include <algorithm>
 #include <cstdlib>
 #include <functional>

@@ -70,7 +70,6 @@
 23_containers/vector/bool/modifiers/insert/104559.cc
 23_containers/vector/modifiers/2.cc
 23_containers/vector/modifiers/erase/1.cc
-23_containers/vector/modifiers/insert_vs_emplace.cc
 24_iterators/common_iterator/1.cc
 24_iterators/operations/prev_neg.cc
 25_algorithms/copy/streambuf_iterators/wchar_t/2.cc
@@ -125,7 +124,6 @@
 27_io/filesystem/path/factory/u8path.cc
 27_io/objects/wchar_t/13582-1_xin.cc
 27_io/rvalue_streams-2.cc
-30_threads/async/async.cc
 30_threads/thread/id/output.cc
 std/format/formatter/ext_float.cc
 std/format/functions/114519.cc

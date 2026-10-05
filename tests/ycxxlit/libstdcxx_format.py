@@ -10,8 +10,9 @@ Only the subset of DejaGnu that matters for conformance is interpreted:
 Message matching (dg-error regexps, dg-warning) is not done: diagnostics text is
 implementation-specific.
 """
-import os, re, shutil, subprocess, tempfile
+import os, re, shutil, tempfile
 import lit.formats, lit.Test
+from ycxxlit import transcript
 from ycxxlit.skips import load_skips, match_skip
 
 STD = 26
@@ -268,10 +269,10 @@ class LibstdcxxFormat(lit.formats.FileBasedTest):
 
     def expect_error(self, args, cwd):
         """Compile expecting failure. A missing header is not the failure the test wants."""
-        rc, out = self.compile(args, cwd)
+        rc, out = self.compile(args, cwd, '; must fail')
         if rc != 0 and self.MISSING.search(out):
             return lit.Test.Result(lit.Test.FAIL, 'expected a compile error, but a header is missing\n' + out)
-        return lit.Test.Result(lit.Test.PASS if rc != 0 else lit.Test.FAIL, out or 'expected a compile error')
+        return lit.Test.Result(lit.Test.PASS if rc not in (0, None) else lit.Test.FAIL, out or 'expected a compile error')
 
     def has_macro(self, macro, flags):
         with tempfile.TemporaryDirectory() as d:
@@ -280,9 +281,8 @@ class LibstdcxxFormat(lit.formats.FileBasedTest):
                 f.write(f'#include <version>\n#ifndef {macro}\n#error missing\n#endif\n')
             return self.compile(['-fsyntax-only', src] + flags, d)[0] == 0
 
-    def compile(self, args, cwd):
-        p = subprocess.run([self.wrapper, self.compiler] + args, cwd=cwd, capture_output=True, text=True, timeout=300)
-        return p.returncode, p.stdout + p.stderr
+    def compile(self, args, cwd, expect=''):
+        return transcript.run('compile', [self.wrapper, self.compiler] + args, cwd, 300, expect)
 
     def run(self, action, path, flags, errors, expect_fail_run, tmp):
         if errors:
@@ -296,9 +296,6 @@ class LibstdcxxFormat(lit.formats.FileBasedTest):
             return lit.Test.Result(lit.Test.FAIL, 'COMPILE FAILED\n' + out)
         if action == 'link':
             return lit.Test.Result(lit.Test.PASS, out)
-        try:
-            p = subprocess.run([exe], cwd=tmp, capture_output=True, text=True, timeout=120)
-        except subprocess.TimeoutExpired:
-            return lit.Test.Result(lit.Test.FAIL, 'TIMEOUT')
-        ok = (p.returncode == 0) != expect_fail_run
-        return lit.Test.Result(lit.Test.PASS if ok else lit.Test.FAIL, f'exit {p.returncode}\n' + p.stdout + p.stderr)
+        rc, ran = transcript.run('run', [exe], tmp, 120, '; must fail' if expect_fail_run else '')
+        ok = rc is not None and (rc == 0) != expect_fail_run
+        return lit.Test.Result(lit.Test.PASS if ok else lit.Test.FAIL, out + ran)

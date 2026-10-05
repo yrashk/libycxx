@@ -1,6 +1,7 @@
 """lit test format for libc++'s conformance tests (libcxx/test/std), run against libycxx."""
-import os, re, shutil, subprocess, tempfile
+import os, re, shutil, tempfile
 import lit.formats, lit.Test, lit.TestRunner
+from ycxxlit import transcript
 from ycxxlit.skips import load_skips, match_skip
 
 COND_FLAGS = re.compile(r'//\s*ADDITIONAL_COMPILE_FLAGS(?:\(([^)]*)\))?:(.*)')
@@ -64,14 +65,13 @@ class LibcxxFormat(lit.formats.FileBasedTest):
 
     def expect_error(self, args, cwd):
         """Compile expecting failure. A missing header is not the failure the test wants."""
-        rc, out = self.compile(args, cwd)
+        rc, out = self.compile(args, cwd, '; must fail')
         if rc != 0 and self.MISSING.search(out):
             return lit.Test.Result(lit.Test.FAIL, 'expected a compile error, but a header is missing\n' + out)
-        return lit.Test.Result(lit.Test.PASS if rc != 0 else lit.Test.FAIL, out or 'expected a compile error')
+        return lit.Test.Result(lit.Test.PASS if rc not in (0, None) else lit.Test.FAIL, out or 'expected a compile error')
 
-    def compile(self, args, cwd):
-        p = subprocess.run([self.wrapper, self.compiler] + args, cwd=cwd, capture_output=True, text=True, timeout=300)
-        return p.returncode, p.stdout + p.stderr
+    def compile(self, args, cwd, expect=''):
+        return transcript.run('compile', [self.wrapper, self.compiler] + args, cwd, 300, expect)
 
     def run(self, name, path, src, flags, tmp):
         exe = os.path.join(tmp, 't.exe')
@@ -90,18 +90,14 @@ class LibcxxFormat(lit.formats.FileBasedTest):
             return self.expect_error(['-fsyntax-only', path] + flags, tmp)
         if name.endswith('.link.pass.cpp') or name.endswith('.link.fail.cpp'):
             rc, out = self.compile([path, '-o', exe] + flags, tmp)
-            ok = (rc == 0) == name.endswith('.link.pass.cpp')
+            ok = rc is not None and (rc == 0) == name.endswith('.link.pass.cpp')
             return lit.Test.Result(lit.Test.PASS if ok else lit.Test.FAIL, out)
         if name.endswith('.pass.cpp'):
             rc, out = self.compile([path, '-o', exe] + flags, tmp)
             if rc != 0:
                 return lit.Test.Result(lit.Test.FAIL, 'COMPILE FAILED\n' + out)
-            try:
-                p = subprocess.run([exe], cwd=tmp, capture_output=True, text=True, timeout=120)
-            except subprocess.TimeoutExpired:
-                return lit.Test.Result(lit.Test.FAIL, 'TIMEOUT')
-            return lit.Test.Result(lit.Test.PASS if p.returncode == 0 else lit.Test.FAIL,
-                                   f'exit {p.returncode}\n' + p.stdout + p.stderr)
+            rc, ran = transcript.run('run', [exe], tmp, 120)
+            return lit.Test.Result(lit.Test.PASS if rc == 0 else lit.Test.FAIL, out + ran)
         return lit.Test.Result(lit.Test.UNSUPPORTED, 'unknown test kind')
 
 

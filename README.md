@@ -66,9 +66,13 @@ Without CMake, `tools/ycxx-cxx gcc|clang <args>` compiles and links against the 
 ## Tests
 
 One driver runs everything. It prints each command before running it, then live progress
-(elapsed time and the latest output line for builds; tests done, pass/fail counts, ETA and the
-current test for suites). Failures are shown as they happen, with the commands that ran and
-their output. A summary closes the run. Colour is on for terminals and GitHub Actions; set
+(elapsed time and the latest output line for builds; pass/fail counts and ETA for suites).
+Every test is listed as it finishes, passing ones too, with the steps it ran and what they
+returned (`compile exit 0 0.21s · run exit 0 0.00s`; for a test that must not compile, the
+compiler's first error). Failures show their whole transcript: the exact commands, their exit
+statuses and their output. A summary closes the run. Each suite run also writes
+`build/test-logs/<suite>-<compiler>.html`, a report of every test with its transcript and how
+the run was made (commit, compiler version, command), and a `.tsv` with one line per test. Colour is on for terminals and GitHub Actions; set
 `NO_COLOR=1` or `YCXX_COLOR=never` to turn it off. Full logs are in `build/test-logs/`. Works
 on Linux and macOS. lit runs through [uv](https://docs.astral.sh/uv/)'s `uvx`, pinned to the
 LLVM release of the libc++ tests, so nothing needs installing besides uv (`YCXX_LIT=lit` uses a
@@ -78,7 +82,7 @@ lit already installed).
 tools/test                            # policy checks, library builds, freestanding, own suite (both compilers)
 tools/test all                        # also the CMake package test and the libc++/libstdc++ suites
 tools/test -c clang -f format ycxx    # one compiler, one directory of the own suite
-tools/test --help                     # stages and options (-j, -s asan, --fail-fast, -v)
+tools/test --help                     # stages and options (-j, -s asan, --fail-fast, -v, -q)
 tools/check-all                       # the fast gate: tools/test --fail-fast policy build freestanding
 ```
 
@@ -92,6 +96,7 @@ tools/run-conformance libcxx gcc <dirs>     # libc++'s tests (run only)
 tools/run-conformance libstdcxx gcc <dirs>  # libstdc++'s testsuite (run only)
 ```
 
-`tools/run-conformance` options go to lit after `--`. `YCXX_VERBOSE=1` lists every test,
-`YCXX_FAIL_DETAILS=N` shows the output of the first N failures (default 10), and `YCXX_RAW=1`
-prints lit's own output.
+`tools/run-conformance` options go to lit after `--`. `YCXX_QUIET=1` (`tools/test -q`) lists
+only the tests that did not pass, `YCXX_VERBOSE=1` (`-v`) prints every test's transcript,
+`YCXX_FAIL_DETAILS=N` shows the transcripts of the first N failures (default 10), and
+`YCXX_RAW=1` prints lit's own output. CI keeps the reports as the `test-reports` artifact.

@@ -49,3 +49,14 @@ jobs:
             tools/run-conformance libcxx $c utilities/meta numerics/bit language.support/cmp || true
             tools/run-conformance libstdcxx $c 20_util/pair 18_support/numeric_limits || true
           done
+
+      - name: Test reports (every test with its commands, exit statuses and output)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-reports
+          path: |
+            build/test-logs/*.html
+            build/test-logs/*.tsv
+            build/test-logs/*.log
+          if-no-files-found: ignore

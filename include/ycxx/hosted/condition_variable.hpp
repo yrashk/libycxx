@@ -138,15 +138,21 @@ inline void notify_all_at_thread_exit(condition_variable& cond, unique_lock<mute
   struct record {
     condition_variable* cond;
     mutex* m;
+    // [thread.condition.nonmember]/2: "cond.notify_all(); lk.unlock();" -- notified while the
+    // lock is held, so a waiter that gets the lock may destroy cond at once.
     static void run(void* p) {
       record r = *static_cast<record*>(p);
       delete static_cast<record*>(p);
-      r.m->unlock();
       r.cond->notify_all();
+      r.m->unlock();
     }
   };
-  record* r = new record{__builtin_addressof(cond), lk.mutex()};
-  ycxx::detail::at_thread_exit(&record::run, r);
+  struct owner {
+    record* r;
+    ~owner() { delete r; }
+  } o{new record{__builtin_addressof(cond), lk.mutex()}};
+  ycxx::detail::at_thread_exit(&record::run, o.r);
+  o.r = nullptr;
   (void)lk.release();
 }
 

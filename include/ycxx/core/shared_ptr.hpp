@@ -91,8 +91,8 @@ public:
 
   // At run time the counts are atomic unless the process is single-threaded
   // (single_threaded.hpp). Increments are relaxed: a new reference is always made from an
-  // existing one. A decrement releases, and the one that reaches zero acquires, so everything
-  // the other owners did happens before the destruction.
+  // existing one. A decrement releases and acquires (ref_release, single_threaded.hpp), so
+  // everything the other owners did happens before the destruction.
   constexpr void add_shared() noexcept {
     if consteval {
       ++shared_;
@@ -132,9 +132,7 @@ public:
       if (::ycxx::detail::single_threaded()) {
         n = --shared_;
       } else {
-        n = __atomic_sub_fetch(&shared_, 1, __ATOMIC_RELEASE);
-        if (n == 0)
-          __atomic_thread_fence(__ATOMIC_ACQUIRE);
+        n = __atomic_sub_fetch(&shared_, 1, __ATOMIC_ACQ_REL);
       }
     }
     if (n == 0) {

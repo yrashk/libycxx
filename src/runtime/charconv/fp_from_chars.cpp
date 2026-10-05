@@ -309,9 +309,9 @@ std::from_chars_result parse_decimal_digits(const char* first, const char* p, co
     int take = n < 19 ? n : 19;
     for (int i = 0; i < take; ++i)
       w = w * 10 + static_cast<u64>(d[i] - '0');
-    bool truncated = sticky;
-    for (int i = take; i < n && !truncated; ++i)
-      truncated = d[i] != '0';
+    // Whether a nonzero digit lies beyond the 19 taken: a dropped one (sticky), or else any kept
+    // digit past them, since the trailing zeros were removed above, so d[n - 1] is nonzero.
+    const bool truncated = sticky || n > take;
     long long q = e10 + (n - take);
     rounded r;
     if (q >= pow10_min && q <= pow10_max &&

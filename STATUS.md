@@ -274,6 +274,14 @@ Ported:
   to `_tlv_atexit`.
 - PAL: `nl_langinfo_l` from `<xlocale.h>`; address waits on `__ulock_wait`/`__ulock_wake` (they
   were a 50 µs poll); malloc's 16-byte alignment; `is_debugger_present` from sysctl's P_TRACED.
+- `std::float128_t` `<cmath>` (GCC): Darwin's libm has no `*f128` functions
+  (`cfg::c_math_float128`), so libycxx's soft implementations, which constant evaluation uses,
+  compute it at run time too; `rint`/`nearbyint`/`lrint` read the rounding direction through
+  `fegetround` (`src/hosted/cmath.cpp`). Checked on Linux by forcing that path (Annex F values,
+  the four rounding directions and the inexact flag). libgcc has the binary128 arithmetic.
+- `<cinttypes>`: C23's `PRIbN`/`SCNbN` (and LEAST, FAST, MAX, PTR), which Darwin's
+  `<inttypes.h>` lacks, with that C library's length modifiers (checked against the types);
+  `PRIBN` stay undefined ([cinttypes.syn]/2: only if fprintf supports `%B`).
 - GCC -O3 arm64's maybe-uninitialized report in `fp_from_chars.cpp` removed at its source.
 - Tests and tools: the whole-program tests re-execute themselves through `_NSGetExecutablePath`;
   `tools/ycxx-cxx` drops `-latomic` where the toolchain has no libatomic (libycxx needs none).
@@ -287,6 +295,10 @@ dyld coalesces weak definitions across images and lets the executable's `operato
 replace libc++'s weak ones, so system libraries may allocate through libycxx's (same malloc).
 
 Unverified or known gaps on macOS:
+- Darwin's C library predates C23 in places libycxx forwards to it: whether its printf/scanf
+  have `%b` and its `strto*` the `0b` prefix is probed by `cinttypes/functions_macros` (a note
+  when missing); its `iswctype` with `wctype("...")` may disagree with the `isw*` functions
+  beyond ASCII under "C.UTF-8" (`cwctype/classification` notes the C library's disagreements).
 - `<stacktrace>`: frames are captured (libSystem's `_Unwind_Backtrace`), but only `dladdr`
   names them (exported symbols only) and there are no file names or lines: the runtime reads ELF
   and DWARF, not Mach-O or dSYM bundles (`ycxx_pal_object_of` reports ENOSYS).
@@ -297,8 +309,6 @@ Unverified or known gaps on macOS:
   `$TMPDIR` lie behind symbolic links (`/private`), `statvfs` block counts are 32-bit; the zoneinfo
   tree has no `tzdata.zi`, so every TZif file counts as a zone and only symbolic links as links
   (should the tree use hard links or copies, `tzdb::links` is empty and `chrono/tzdb` fails).
-- GCC on aarch64 Darwin: whether its libgcc provides the binary128 soft-float routines that
-  `_Float128` `<charconv>` needs (`__STDCPP_FLOAT128_T__`) is unverified.
 - GCC on Darwin uses emulated TLS: `thread_local` destructors registered through `_tlv_atexit`
   rely on libSystem running them before emutls frees the thread's storage (key destructor order).
 - Linking: CMake repeats the cyclic archive pair `libycxx.a`/`libycxx-abi.a`; Xcode 15's linker

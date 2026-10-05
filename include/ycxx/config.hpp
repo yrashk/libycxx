@@ -267,6 +267,11 @@ inline constexpr bool darwin = YCXX_TARGET_DARWIN;
 // glibc and musl 8 bytes aligned to 4; Darwin a union of char[128] and long long.
 inline constexpr unsigned long mbstate_size = darwin ? 128 : 8;
 inline constexpr unsigned long mbstate_align = darwin ? 8 : 4;
+// Whether the C library's libm has the binary128 functions of ISO/IEC 9899:2024 Annex H
+// (acosf128, ..., which <cmath> calls through __builtin_*f128 for std::float128_t when no
+// standard type has its format): glibc does (2.26 and later); Darwin's libm does not, so there
+// libycxx's own implementations compute float128_t at run time too (ycxx/core/cmath_impl.hpp).
+inline constexpr bool c_math_float128 = !darwin;
 // Whether init_priority orders static initialization across object files (YCXX_HAS_INIT_PRIORITY).
 inline constexpr bool init_priority = YCXX_HAS_INIT_PRIORITY;
 // Clang's Apple arm64 C++ ABI marks a type_info whose object may be duplicated across linked

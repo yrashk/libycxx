@@ -15,6 +15,12 @@
 [[deprecated("asctime is deprecated ([depr.ctime]); use strftime or std::format")]] decltype(::asctime) asctime;
 [[deprecated("ctime is deprecated ([depr.ctime]); use strftime or std::format")]] decltype(::ctime) ctime;
 
+// timespec_getres (C23 7.29.2.7) for C libraries without it, in the hosted runtime
+// (src/hosted/ctime.cpp): the resolution of TIME_UTC, from clock_getres(CLOCK_REALTIME).
+namespace ycxx::detail {
+int c_timespec_getres(::timespec* ts, int base) noexcept;
+} // namespace ycxx::detail
+
 namespace std {
 using ::clock_t;
 using ::time_t;
@@ -23,11 +29,25 @@ using ::timespec;
 using ::clock;
 using ::difftime;
 using ::mktime;
+using ::timegm;
 using ::time;
 using ::timespec_get;
 using ::asctime;
 using ::ctime;
 using ::gmtime;
+using ::gmtime_r;
 using ::localtime;
+using ::localtime_r;
 using ::strftime;
+#if YCXX_C_HAS_TIMESPEC_GETRES
+using ::timespec_getres;
+#else
+// timespec_getres (C23 7.29.2.7), which this C library lacks: libycxx's own (src/hosted/ctime.cpp).
+// A template, as strfromd is: should the C library gain it, its ::timespec_getres wins unqualified
+// calls under `using namespace std;`.
+template <class = void>
+inline int timespec_getres(timespec* ts, int base) noexcept {
+  return ycxx::detail::c_timespec_getres(ts, base);
+}
+#endif
 } // namespace std

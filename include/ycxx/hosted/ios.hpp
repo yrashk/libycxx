@@ -228,6 +228,22 @@ private:
   // setstate(badbit) for a failed iword/pword (may throw failure).
   void storage_failed();
 
+  // The stream state is read and written with relaxed atomic operations, and bits are added
+  // with an atomic OR only when they change it: input functions on a synchronized standard
+  // stream object may be called concurrently ([iostream.objects.overview]/7), and each of them
+  // reads the state (the sentry's good()) and sets bits at end of file. A relaxed load or store
+  // is an ordinary load or store on the supported targets; the read-modify-write happens only on
+  // a transition (DECISIONS §7).
+  iostate load_state() const noexcept { return __atomic_load_n(&state_, __ATOMIC_RELAXED); }
+  void store_state(iostate s) noexcept { __atomic_store_n(&state_, s, __ATOMIC_RELAXED); }
+  // Adds the bits of s; returns the new state.
+  iostate add_state(iostate s) noexcept {
+    const iostate old = load_state();
+    if ((old | s) == old)
+      return old;
+    return __atomic_or_fetch(&state_, s, __ATOMIC_RELAXED);
+  }
+
   fmtflags flags_ = fmtflags(skipws | dec);
   iostate state_ = goodbit;
   iostate except_ = goodbit;
@@ -262,8 +278,8 @@ namespace ycxx::detail {
 
 struct ios_access {
   // Sets badbit without throwing failure (the exception rule of the I/O functions).
-  static void set_badbit_quietly(std::ios_base& s) noexcept { s.state_ |= std::ios_base::badbit; }
-  static void set_failbit_quietly(std::ios_base& s) noexcept { s.state_ |= std::ios_base::failbit; }
+  static void set_badbit_quietly(std::ios_base& s) noexcept { s.add_state(std::ios_base::badbit); }
+  static void set_failbit_quietly(std::ios_base& s) noexcept { s.add_state(std::ios_base::failbit); }
   // The stream's locale itself (getloc() returns a copy, which costs two reference-count updates).
   static const std::locale& locale_of(const std::ios_base& s) noexcept { return s.loc_; }
 };
@@ -322,19 +338,25 @@ public:
   // [iostate.flags]
   explicit operator bool() const { return !fail(); }
   bool operator!() const { return fail(); }
-  iostate rdstate() const { return state_; }
+  iostate rdstate() const { return load_state(); }
   void clear(iostate state = goodbit) {
     if (sb_ == nullptr)
       state |= badbit;
-    state_ = state;
-    if (state_ & except_)
+    store_state(state);
+    if (state & except_)
       ::ycxx::detail::raise_ios_failure("std::basic_ios::clear: the stream state matches exceptions()");
   }
-  void setstate(iostate state) { clear(rdstate() | state); }
-  bool good() const { return state_ == goodbit; }
-  bool eof() const { return (state_ & eofbit) != 0; }
-  bool fail() const { return (state_ & (failbit | badbit)) != 0; }
-  bool bad() const { return (state_ & badbit) != 0; }
+  // clear(rdstate() | state), as one atomic OR that is skipped when no bit is new (see load_state).
+  void setstate(iostate state) {
+    if (sb_ == nullptr)
+      state |= badbit;
+    if (add_state(state) & except_)
+      ::ycxx::detail::raise_ios_failure("std::basic_ios::clear: the stream state matches exceptions()");
+  }
+  bool good() const { return load_state() == goodbit; }
+  bool eof() const { return (load_state() & eofbit) != 0; }
+  bool fail() const { return (load_state() & (failbit | badbit)) != 0; }
+  bool bad() const { return (load_state() & badbit) != 0; }
   iostate exceptions() const { return except_; }
   void exceptions(iostate except) {
     except_ = except;

@@ -5,7 +5,7 @@
 #include <ycxx/core/version.hpp>
 #include <ycxx/core/cstddef.hpp>
 #if YCXX_HOSTED
-#  include <string.h>
+#  include_next <string.h>
 #else
 #  include <ycxx/core/c_string.hpp>
 #endif

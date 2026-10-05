@@ -130,7 +130,7 @@ and wchar_t, the deprecated (Annex D) UTF-16/UTF-32 codecvts, the `_byname` face
 `<string_view>`, `<bitset>`, `<memory>`, `<system_error>` and `<complex>`. Own suite ios, iostreams,
 sstream, fstream, spanstream, syncstream, iomanip, locale, complex, system_error, bitset, string,
 string_view, memory, iterator: 301/305 (GCC, plus 1 XFAIL), 302/305 (Clang); the three failures need
-`<filesystem>`, `<thread>`, `<format>`. Clean under ASan (Clang). libc++ input.output + localization
+`<filesystem>`, `<thread>`, `<format>`. Clean under ASan (Clang); iostreams/ and ios/ clean under TSan, including concurrent input on the synchronized standard objects (DECISIONS §7). libc++ input.output + localization
 39 -> 590/855 (GCC), 39 -> 583/855 (Clang); libstdc++ 27_io + 22_locale 8 -> 806/925 (GCC),
 8 -> 805/925 (Clang); most remaining failures need missing headers or libstdc++ extensions
 (`char_traits<unsigned char>`, deprecated manipulator overloads, transitive C headers).
@@ -262,7 +262,8 @@ Ported:
   `mbstate_t` (128 bytes, aligned to 8). The hosted checks against the C headers remain.
 - C23 functions libSystem lacks, provided by the hosted runtime: `strfromd/f/l`
   (`src/hosted/strfrom.cpp`, on snprintf), `mbrtoc8`/`c8rtomb`, and the four char16_t/char32_t
-  conversions where the SDK has no `<uchar.h>` (`src/hosted/uchar.cpp`, on mbrtowc/wcrtomb).
+  conversions where the SDK has no `<uchar.h>` (`src/hosted/uchar.cpp`, on mbrtowc/wcrtomb),
+  `timespec_getres` (`src/hosted/ctime.cpp`, TIME_UTC only, on clock_getres).
 - Static initialization: Mach-O has no init priorities, so `<iostream>` defines an
   `ios_base::Init` per translation unit there (DECISIONS §7); checked on Linux by building with
   `-U__ELF__`.
@@ -457,9 +458,14 @@ compilers; `visit_format_arg.pass.cpp` needs `EOF` from `constexpr_char_traits.h
 - C library wrappers: `std::free_sized`/`free_aligned_sized` call `free` (glibc 2.39 has neither);
   `memset_explicit` is memset plus a compiler barrier; `strfrom*`, `memccpy`, `strdup`, `strndup`
   are the C library's (on Darwin, which lacks them, `strfrom*` and `mbrtoc8`/`c8rtomb` are
-  libycxx's own; see "macOS (Darwin)"). Freestanding (`-ffreestanding`), `<cstdlib>`/`<cstring>`/`<cwchar>` are
-  libycxx's own code; their `bsearch` has C's single signature (not the draft's const/non-const
-  pair), and the termination functions forward to the environment's.
+  libycxx's own, and so is `timespec_getres`; see "macOS (Darwin)"). `<ctime>` has C23's `timegm`,
+  `gmtime_r`, `localtime_r` and `timespec_getres` from the C library. `abs`, `labs`, `llabs`,
+  `div`, `ldiv`, `lldiv`, `bsearch` (the const/non-const pair), `imaxabs` and `imaxdiv` are
+  libycxx's own in both namespaces: `<cstdlib>`/`<cinttypes>` hide the C library's declarations
+  (DECISIONS §3). `<stdlib.h>`, `<inttypes.h>`, `<string.h>`, `<complex.h>` and `<tgmath.h>` are
+  libycxx's (the global names of [support.c.headers.other]; `<complex.h>`/`<tgmath.h>` are
+  `<complex>`/`<cmath>` in C++). Freestanding (`-ffreestanding`), `<cstdlib>`/`<cstring>`/`<cwchar>`
+  are libycxx's own code, and the termination functions forward to the environment's.
 - `make_exception_ptr` under `-fno-exceptions -fno-rtti` returns a null exception_ptr (the
   object's type_info cannot be named; DECISIONS §4). With RTTI it works without exceptions.
 - `recursive_directory_iterator` with `follow_directory_symlink` opens a followed symbolic link by
@@ -870,14 +876,13 @@ compilers; `visit_format_arg.pass.cpp` needs `EOF` from `constexpr_char_traits.h
   return NaN. `<complex>` is constexpr throughout, with Annex G special values (kept cheap
   in constant evaluation: the libc++ `complex_times_complex`/`complex_divide_complex` stress
   tests fit Clang's limit); I/O is not provided yet (no streams). valarray evaluates eagerly (no expression templates).
-  Remaining external failures: `<ctgmath>`/`<ccomplex>`/`<complex.h>` (not provided), libc++
+  Remaining external failures: `<ctgmath>`/`<ccomplex>` (removed from the draft), libc++
   `cmath.pass` (expects overloads in the global namespace without `<math.h>`), `abs` of
   `_BitInt` (Clang), `numbers/value.pass` (expects the double value for long double),
   `polar(-0.0, θ)` (libc++ expects NaN; -0 is not negative, so libycxx computes it), the
   mask_array tests (call `std::count` without `<algorithm>`), libstdc++ `special_functions/*/compile_2`
   (global names `<math.h>` must not declare), `fabs(complex)` (extension), `complex/synopsis`
-  (explicit specialisation declarations), `abs(__float128)` returning `__float128`, `::abs(long)`
-  from `<stdlib.h>` (no `<stdlib.h>` wrapper), the valarray `mask-*_neg` tests (abort only with
+  (explicit specialisation declarations), `abs(__float128)` returning `__float128`, the valarray `mask-*_neg` tests (abort only with
   `_GLIBCXX_ASSERTIONS`; libycxx checks only under YCXX_HARDENED), and tests needing
   `<sstream>`/`<iostream>`/`<chrono>`/`<map>`/`<limits>`.
 

@@ -17,7 +17,7 @@ HEADERS = {
     "cstdlib": ("stdlib.h", "div_t ldiv_t lldiv_t "
                 "abort atexit at_quick_exit _Exit exit quick_exit getenv system malloc calloc realloc free "
                 "aligned_alloc atof atoi atol atoll strtod strtof strtold strtol strtoll "
-                "strtoul strtoull mblen mbtowc wctomb mbstowcs wcstombs bsearch qsort rand srand",
+                "strtoul strtoull mblen mbtowc wctomb mbstowcs wcstombs qsort rand srand",
                 """// free_sized, free_aligned_sized (C23 7.24.3.4-5): free with the allocation's size (and
 // alignment), which this C library does not take. Templates, as <cmath>'s functions are: a later C
 // library's ::free_sized then wins unqualified calls under `using namespace std;`.
@@ -94,10 +94,23 @@ template <class = void>
 inline wchar_t* wmemchr(wchar_t* s, wchar_t c, size_t n) noexcept { return const_cast<wchar_t*>(::wmemchr(s, c, n)); }"""),
     "cerrno": ("errno.h", "", ""),
     "csignal": ("signal.h", "sig_atomic_t signal raise", ""),
-    "ctime": ("time.h", "clock_t time_t tm timespec clock difftime mktime time timespec_get asctime ctime "
-              "gmtime localtime strftime", ""),
+    "ctime": ("time.h", "clock_t time_t tm timespec clock difftime mktime timegm time timespec_get asctime ctime "
+              "gmtime gmtime_r localtime localtime_r strftime", ""),
     "clocale": ("locale.h", "lconv setlocale localeconv", ""),
-    "cinttypes": ("inttypes.h", "imaxdiv_t imaxabs imaxdiv strtoimax strtoumax wcstoimax wcstoumax", ""),
+    "cinttypes": ("inttypes.h", "imaxdiv_t strtoimax strtoumax wcstoimax wcstoumax", """// imaxabs, imaxdiv are constexpr ([cinttypes.syn]), so they are not the C library's (as <cstdlib>'s
+// div). Templates: under `using namespace std;` an unqualified call prefers the C library's.
+// (The optional abs/div overloads for intmax_t exist only when it is an extended integer type.)
+template <class = void>
+constexpr intmax_t imaxabs(intmax_t j) noexcept {
+  return j < 0 ? -j : j;
+}
+template <class = void>
+constexpr imaxdiv_t imaxdiv(intmax_t numer, intmax_t denom) noexcept {
+  imaxdiv_t r{};
+  r.quot = numer / denom;
+  r.rem = numer % denom;
+  return r;
+}"""),
     "csetjmp": ("setjmp.h", "jmp_buf longjmp", ""),
     "cfenv": ("fenv.h", "fenv_t fexcept_t feclearexcept fegetexceptflag feraiseexcept fesetexceptflag "
               "fetestexcept fegetround fesetround fegetenv feholdexcept fesetenv feupdateenv", ""),
@@ -124,6 +137,14 @@ inline int strfroml(char* s, size_t n, const char* format, long double fp) noexc
   return ycxx::detail::strfrom(s, n, format, fp);
 }""")],
 }
+CONDITIONAL["ctime"] = [("YCXX_C_HAS_TIMESPEC_GETRES", "timespec_getres", "",
+    """// timespec_getres (C23 7.29.2.7), which this C library lacks: libycxx's own (src/hosted/ctime.cpp).
+// A template, as strfromd is: should the C library gain it, its ::timespec_getres wins unqualified
+// calls under `using namespace std;`.
+template <class = void>
+inline int timespec_getres(timespec* ts, int base) noexcept {
+  return ycxx::detail::c_timespec_getres(ts, base);
+}""")]
 # <cuchar>'s six functions: name, parameters before the state, the arguments they pass on.
 UCHAR_FUNCS = [("mbrtoc8", "char8_t* pc8, const char* s, size_t n", "pc8, s, n"),
                ("c8rtomb", "char* s, char8_t c8", "s, c8"),
@@ -205,6 +226,9 @@ constexpr lldiv_t lldiv(long long numer, long long denom) noexcept {
   return std::div<>(numer, denom);
 }
 // memalignment (C23 7.24.3.1): the largest power of two dividing the address; 0 for a null pointer.
+// A template, so that a C library's ::memalignment wins ties instead of conflicting in the global
+// namespace (<stdlib.h>).
+template <class = void>
 inline size_t memalignment(const void* p) noexcept {
   auto v = reinterpret_cast<__UINTPTR_TYPE__>(p);
   return static_cast<size_t>(v & (~v + 1));
@@ -275,11 +299,66 @@ GLOBAL = {"cstdlib": [
     "// [[deprecated]] (decltype keeps their exact type, noexcept included); std:: names them below.",
     '[[deprecated("asctime is deprecated ([depr.ctime]); use strftime or std::format")]] decltype(::asctime) asctime;',
     '[[deprecated("ctime is deprecated ([depr.ctime]); use strftime or std::format")]] decltype(::ctime) ctime;',
+    "",
+    "// timespec_getres (C23 7.29.2.7) for C libraries without it, in the hosted runtime",
+    "// (src/hosted/ctime.cpp): the resolution of TIME_UTC, from clock_getres(CLOCK_REALTIME).",
+    "namespace ycxx::detail {",
+    "int c_timespec_getres(::timespec* ts, int base) noexcept;",
+    "} // namespace ycxx::detail",
     ""]}
-EXTRA_INCLUDES = {"cstdlib": ["<ycxx/core/math_abs.hpp>"], "cinttypes": ["<cstdint>", "<ycxx/core/prim_traits.hpp>"], "cwchar": ["<ycxx/core/char_traits.hpp>", "<ycxx/core/cstdint.hpp>"],
+EXTRA_INCLUDES = {"cstdlib": ["<ycxx/core/math_abs.hpp>", "<ycxx/core/c_bsearch.hpp>"], "cinttypes": ["<cstdint>", "<ycxx/core/prim_traits.hpp>"], "cwchar": ["<ycxx/core/char_traits.hpp>", "<ycxx/core/cstdint.hpp>"],
                   "cuchar": ["<ycxx/core/char_traits.hpp>"], "cwctype": ["<ycxx/core/char_traits.hpp>"]}
 
+# The C library's declarations that would defeat the draft's C++ declarations of the same names
+# in the global namespace ([support.c.headers.other]/1: <stdlib.h> and <inttypes.h> place
+# <cstdlib>'s and <cinttypes>'s names there): a non-template C function `int abs(int)` or
+# `div_t div(int, int)` is an exact match that wins over libycxx's constexpr templates, cannot be
+# redeclared constexpr, and bsearch's single C signature conflicts with the const-correct pair.
+# So they are renamed while the C library's header is read, and never used.
+C_RENAMED = {"cstdlib": ["abs", "labs", "llabs", "div", "ldiv", "lldiv", "bsearch"],
+             "cinttypes": ["imaxabs", "imaxdiv"]}
+C_RENAMED_COMMENT = [
+    "// The C library's declarations of the functions libycxx defines itself (constexpr, or the",
+    "// const-correct bsearch pair) are renamed while its header is read, so that <stdlib.h>/<inttypes.h>",
+    "// can place libycxx's in the global namespace ([support.c.headers.other]/1; DECISIONS §3)."]
+# The C headers libycxx wraps (include/<name>.h, generated below): in C++ the wrapper includes the
+# <c...> header and adds to the global namespace the names that header declares itself.
+H_WRAPPERS = {
+    "stdlib.h": ("cstdlib", ["abs", "labs", "llabs", "div", "ldiv", "lldiv", "bsearch", "memalignment"],
+                 [("YCXX_HOSTED", ["free_sized", "free_aligned_sized"]),
+                  ("YCXX_HOSTED && !YCXX_C_HAS_STRFROM", ["strfromd", "strfromf", "strfroml"])]),
+    "inttypes.h": ("cinttypes", ["imaxabs", "imaxdiv"], []),
+    "string.h": ("cstring", ["memset_explicit"], []),
+}
+
 root = pathlib.Path(__file__).resolve().parent.parent / "include"
+for hname, (cxx, names, cond) in H_WRAPPERS.items():
+    lines = [f"// -*- C++ -*-  libycxx: <{hname}> ([support.c.headers.other])   [also usable from C]  (generated by tools/gen_cheaders.py)",
+             "//",
+             f"// The C library's <{hname}>; in C++ <{cxx}>, which reads the C library's header itself",
+             f"// (#include_next), and the names <{cxx}> declares itself (not as the C library's), placed in",
+             "// the global namespace ([support.c.headers.other]/1). extern \"C++\": a C header may include this",
+             "// one inside an extern \"C\" block.",
+             "#pragma once", "", "#ifdef __cplusplus", f"extern \"C++\" {{", f"#  include <{cxx}>", "}"]
+    lines += [f"using std::{n};" for n in names]
+    for switch, cnames in cond:
+        lines += [f"#  if {switch}"] + [f"using std::{n};" for n in cnames] + ["#  endif"]
+    lines += ["#else", f"#  include_next <{hname}>", "#endif", ""]
+    (root / hname).write_text("\n".join(lines))
+
+# <complex.h> and <tgmath.h> "behave as if" they simply include <complex>, and <cmath> and
+# <complex> ([complex.h.syn], [tgmath.h.syn]). In C++ the C library's must not be read: its
+# `complex` and `I` macros and type-generic macros would break C++ code.
+H_CXX_ONLY = {"complex.h": ("complex.h.syn", ["complex"]), "tgmath.h": ("tgmath.h.syn", ["cmath", "complex"])}
+for hname, (stable, cxx) in H_CXX_ONLY.items():
+    lines = [f"// -*- C++ -*-  libycxx: <{hname}> ([{stable}])   [also usable from C]  (generated by tools/gen_cheaders.py)",
+             "//",
+             f"// In C++ the header includes {' and '.join(f'<{h}>' for h in cxx)} and nothing else; in C, the C library's <{hname}>.",
+             "#pragma once", "", "#ifdef __cplusplus", "extern \"C++\" {"]
+    lines += [f"#  include <{h}>" for h in cxx]
+    lines += ["}", "#else", f"#  include_next <{hname}>", "#endif", ""]
+    (root / hname).write_text("\n".join(lines))
+
 for name, (cheader, names, extra) in HEADERS.items():
     fs = FREESTANDING.get(name)
     kind = "hosted; freestanding subset without the C library" if fs else "hosted"
@@ -287,14 +366,24 @@ for name, (cheader, names, extra) in HEADERS.items():
              "#pragma once", "", "#include <ycxx/config.hpp>", "#include <ycxx/core/version.hpp>",
              "#include <ycxx/core/cstddef.hpp>"]
     lines += [f"#include {h}" for h in EXTRA_INCLUDES.get(name, [])]
+    # A header with a .h wrapper of libycxx's own reads the C library's past it (#include_next),
+    # with the declarations libycxx replaces renamed (see C_RENAMED).
+    if cheader in H_WRAPPERS:
+        renamed = C_RENAMED.get(name, [])
+        inc = [f"#  include_next <{cheader}>"]
+        if renamed:
+            inc = C_RENAMED_COMMENT + [f"#  define {n} ycxx_c_{n}" for n in renamed] + inc + [
+                f"#  undef {n}" for n in renamed]
+    else:
+        inc = [f"#  include <{cheader}>"]
     if fs:
-        lines += ["#if YCXX_HOSTED", f"#  include <{cheader}>", "#else", f"#  include {fs}", "#endif", ""]
+        lines += ["#if YCXX_HOSTED"] + inc + ["#else", f"#  include {fs}", "#endif", ""]
     else:
         opt = OPTIONAL_CHEADER.get(name)
         if opt:
-            lines += [f"#if {opt[0]}", f"#  include <{cheader}>", "#else", f"#  include <{opt[1]}>", "#endif", ""]
+            lines += [f"#if {opt[0]}"] + inc + ["#else", f"#  include <{opt[1]}>", "#endif", ""]
         else:
-            lines += [f"#include <{cheader}>", ""]
+            lines += [i.replace("#  ", "#", 1) for i in inc] + [""]
     lines += MACROS.get(name, [])
     lines += GLOBAL.get(name, [])
     if names or extra:
@@ -315,5 +404,13 @@ for name, (cheader, names, extra) in HEADERS.items():
             lines.append("#endif")
     if name in COMMON:
         lines += ["", "namespace std {", COMMON[name], "} // namespace std"]
+    if name in C_RENAMED:
+        # The C library's names stay usable in the global namespace, now as libycxx's functions.
+        lines += ["", "// The renamed C functions' names in the global namespace, now naming libycxx's own."]
+        if fs:
+            lines.append("#if YCXX_HOSTED")
+        lines += [f"using std::{n};" for n in C_RENAMED[name]]
+        if fs:
+            lines.append("#endif")
     (root / name).write_text("\n".join(lines) + "\n")
-print("generated", len(HEADERS), "headers")
+print("generated", len(HEADERS), "headers and", len(H_WRAPPERS) + len(H_CXX_ONLY), ".h headers")

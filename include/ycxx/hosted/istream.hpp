@@ -56,7 +56,7 @@ public:
   basic_istream& operator>>(basic_streambuf<char_type, traits>* sb);
 
   // [istream.unformatted]
-  streamsize gcount() const { return gcount_; }
+  streamsize gcount() const { return __atomic_load_n(&gcount_, __ATOMIC_RELAXED); }
   int_type get();
   basic_istream& get(char_type& c);
   basic_istream& get(char_type* s, streamsize n) { return get(s, n, this->widen('\n')); }
@@ -106,9 +106,14 @@ private:
   basic_istream& get_number(V& v);
   template <class V>
   basic_istream& get_narrowed(V& v);
+  // gcount_ is read and written with relaxed atomic operations (ordinary loads and stores on the
+  // supported targets): every unformatted input function stores it, and those functions may run
+  // concurrently on a synchronized standard stream object ([iostream.objects.overview]/7;
+  // DECISIONS §7).
+  void set_gcount(streamsize n) noexcept { __atomic_store_n(&gcount_, n, __ATOMIC_RELAXED); }
   // the end of an unformatted input function: the count, then setstate
   void finish(ios_base::iostate err, streamsize count) {
-    gcount_ = count;
+    set_gcount(count);
     if (err)
       this->setstate(err);
   }
@@ -230,7 +235,7 @@ basic_istream<charT, traits>& basic_istream<charT, traits>::operator>>(basic_str
   ios_base::iostate err = ios_base::goodbit;
   streamsize n = 0;
   if (sb == nullptr) {
-    gcount_ = 0;
+    set_gcount(0);
     this->setstate(ios_base::failbit);
     return *this;
   }

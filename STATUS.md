@@ -324,8 +324,10 @@ dyld coalesces exported weak definitions across images, a non-weak one winning: 
 libycxx's header-emitted definitions (`std::current_exception`, and with GCC the exception
 classes' type_info and members) to libc++'s, and patched libycxx's `operator delete` into the
 shared cache. Fixed by hidden visibility (DECISIONS §2): nothing of libycxx is exported, so no
-weak-definition binds remain except, with GCC, the fundamental type_info objects (benign: same
-objects in libc++abi). Expected in CI: `exception`, `except`, `rtti`, `future` pass on both
+weak-definition binds remain. GCC's fundamental type_info objects are hidden too (the list comes
+from a configure-time probe of the compiler): on aarch64-apple-darwin GCC 16.2 emits 300 such
+symbols, 150 of which (the SVE, `__bf16`, `__mfp8`, decimal and `_FloatN` forms) Apple's libc++abi
+does not export, so tolerating them as "libc++abi's objects" was wrong. Expected in CI: `exception`, `except`, `rtti`, `future` pass on both
 compilers apart from the documented `except/handler_pointer_reference{,_exact}` (both) and
 `handler_array_decay`, `handler_function_pointer` (GCC) handler limitation;
 `linkage/no_exported_library_symbols` passes;

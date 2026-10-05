@@ -65,16 +65,20 @@ links_toolchain_cxx() {
 # own code defines only extern "C" functions) exports: every mangled C++ name, and the ABI
 # runtime's and the platform layer's C names. ELF: the dynamic symbol table. Darwin: the exported
 # symbols, and the weak-definition binds dyld would coalesce with another image's (dyld_info).
+# The replaceable global allocation functions (_Znw*, _Zna*, _ZdlPv*, _ZdaPv*) are not counted:
+# they keep default visibility, so that one replacement serves every image (DECISIONS §2).
 library_exports() {
   if [ "$(uname -s)" = Darwin ]; then
     { nm -gU "$1" | awk '{ print $NF }'
       if command -v dyld_info >/dev/null; then
         dyld_info -fixups "$1" | grep 'weak-def-coalesce' | awk '{ print $NF }' | sed 's|.*/||'
       fi; } | sed 's/^_//' |
-      grep -E '^(_Z|__cxa_|__gxx_personality|__dynamic_cast|ycxx_pal_)' || :
+      grep -E '^(_Z|__cxa_|__gxx_personality|__dynamic_cast|ycxx_pal_)' |
+      grep -vE '^_Z(nw|na|dlPv|daPv)' || :
   else
     nm -D --defined-only "$1" | awk '{ print $NF }' |
-      grep -E '^(_Z|__cxa_|__gxx_personality|__dynamic_cast|ycxx_pal_)' || :
+      grep -E '^(_Z|__cxa_|__gxx_personality|__dynamic_cast|ycxx_pal_)' |
+      grep -vE '^_Z(nw|na|dlPv|daPv)' || :
   fi
 }
 

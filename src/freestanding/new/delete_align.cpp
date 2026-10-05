@@ -4,8 +4,5 @@
 // heap-less default is what is linked, and otherwise forward (try_or_null.hpp).
 #include <new>
 #include <ycxx/core/error.hpp>
-#include "../../runtime/new/hidden.hpp"
 
-asm((ycxx::detail::hide_allocation_function("_ZdlPvSt11align_val_t")));
-
-void operator delete(void*, std::align_val_t) noexcept {}
+[[gnu::weak]] void operator delete(void*, std::align_val_t) noexcept {}

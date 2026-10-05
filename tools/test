@@ -14,8 +14,8 @@
 #                 (each suite lists every test with the steps it ran and their exit statuses,
 #                 and writes build/test-logs/<suite>-<cc>.html, a report of every test with the
 #                 commands it ran and their output, and .tsv, one line per test)
-#   libcxx        libc++'s test suite, run only ($LIBCXX_TESTS)
-#   libstdcxx     libstdc++'s test suite, run only ($LIBSTDCXX_TESTS)
+#   libcxx        libc++'s test suite, run only ($LIBCXX_TESTS; tools/fetch-suites gets it)
+#   libstdcxx     libstdc++'s test suite, run only ($LIBSTDCXX_TESTS; tools/fetch-suites gets it)
 #
 # Options:
 #   -c, --compiler gcc|clang   only this compiler (repeatable; default both)
@@ -25,6 +25,8 @@
 #   -x, --fail-fast            stop at the first failing step
 #   -v, --verbose              stream every command's output; print every test's transcript
 #   -q, --quiet                suites: list only the tests that did not pass
+#   --no-fetch                 do not download a missing external suite (YCXX_NO_FETCH=1);
+#                              by default tools/fetch-suites fetches it into the cache first
 #   -h, --help
 #
 # At the end: build/test-logs/run.html, the composite report of the run (every stage and suite,
@@ -55,6 +57,7 @@ while [ $# -gt 0 ]; do
     -x|--fail-fast) fail_fast=1 ;;
     -v|--verbose) YCXX_VERBOSE=1; export YCXX_VERBOSE ;;
     -q|--quiet) YCXX_QUIET=1; export YCXX_QUIET ;;
+    --no-fetch) YCXX_NO_FETCH=1 ;;
     -h|--help) usage; exit 0 ;;
     all) stages="policy build freestanding cmake ycxx libcxx libstdcxx" ;;
     policy|build|freestanding|cmake|ycxx|libcxx|libstdcxx) stages="$stages $1" ;;
@@ -69,6 +72,7 @@ for c in $compilers; do
 done
 
 ycxx_env_load
+ycxx_suite_dirs
 SANITIZER=$sanitizer
 export SANITIZER
 logs=$repo/build/test-logs
@@ -230,13 +234,23 @@ for stage in $stages; do
           record skip "$label" "(no build/$c/libycxx.a)"; continue
         fi
         case $stage in
-          libcxx) dir=${LIBCXX_TESTS:-/opt/src/llvm-project/libcxx/test} ;;
-          libstdcxx) dir=${LIBSTDCXX_TESTS:-/opt/src/libstdcxx-testsuite} ;;
+          libcxx) dir=$ycxx_libcxx_tests ;;
+          libstdcxx) dir=$ycxx_libstdcxx_tests ;;
           *) dir=tests/ycxx ;;
         esac
+        # A missing external suite is fetched on demand into the cache (once; later runs use
+        # it), unless LIBCXX_TESTS / LIBSTDCXX_TESTS names a directory of the user's.
+        case $stage in libcxx) chosen=${LIBCXX_TESTS:-} ;; libstdcxx) chosen=${LIBSTDCXX_TESTS:-} ;; *) chosen= ;; esac
+        if [ ! -d "$dir" ] && [ "$stage" != ycxx ] && [ -z "$chosen" ] && [ "${YCXX_NO_FETCH:-0}" != 1 ]; then
+          ui_section "Fetch the $stage tests (not found at $dir)"
+          step "fetch the $stage tests (tools/fetch-suites --$stage-only)" fetch-$stage \
+            tools/fetch-suites --$stage-only || :
+          ycxx_suite_dirs
+          case $stage in libcxx) dir=$ycxx_libcxx_tests ;; libstdcxx) dir=$ycxx_libstdcxx_tests ;; esac
+        fi
         if [ ! -d "$dir" ]; then
-          ui_section "$label"; ui_skip "$label" "($dir not found; see README.md)"
-          record skip "$label" "($dir not found)"; continue
+          ui_section "$label"; ui_skip "$label" "($dir not found: run tools/fetch-suites)"
+          record skip "$label" "($dir not found: run tools/fetch-suites)"; continue
         fi
         run=$stage-$c${sanitizer:+-$(echo "$sanitizer" | tr , -)}
         direct "$label" "" "$logs/$run.html" tools/run-conformance $stage $c $filters -- ${jobs:+-j$jobs} || :

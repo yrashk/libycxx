@@ -10,8 +10,8 @@
 # made (commit, compiler version, command), with copy buttons that put Markdown on the
 # clipboard; .md, the whole report as Markdown (also embedded in the .html); .tsv, one line per
 # test; .json, lit's results.
-# Environment: LIBCXX_TESTS (default /opt/src/llvm-project/libcxx/test),
-#              LIBSTDCXX_TESTS (default /opt/src/libstdcxx-testsuite), SANITIZER (asan,ubsan),
+# Environment: LIBCXX_TESTS, LIBSTDCXX_TESTS (default: /opt/src, else the cache that
+#              tools/fetch-suites fills; tools/lib/env.sh), SANITIZER (asan,ubsan),
 #              YCXX_STDLIB=libstdcxx (ycxx suite only: build against libstdc++ instead, the
 #              reference runs documented in tests/ycxx/REFERENCE.md),
 #              YCXX_LIT / YCXX_LIT_VERSION (how lit runs: tools/lib/env.sh; by default through uvx),
@@ -28,15 +28,16 @@ if [ $# -lt 2 ]; then
   exit 2
 fi
 suite=$1; compiler=$2; shift 2
+ycxx_suite_dirs
 case $suite in
-  libcxx)    tests=${LIBCXX_TESTS:-/opt/src/llvm-project/libcxx/test} ;;
-  libstdcxx) tests=${LIBSTDCXX_TESTS:-/opt/src/libstdcxx-testsuite} ;;
+  libcxx)    tests=$ycxx_libcxx_tests ;;
+  libstdcxx) tests=$ycxx_libstdcxx_tests ;;
   ycxx)      tests=$repo/tests/ycxx ;;
   *) echo "unknown suite $suite" >&2; exit 2 ;;
 esac
 case $compiler in gcc|clang) ;; *) echo "unknown compiler $compiler" >&2; exit 2 ;; esac
 if [ ! -d "$tests" ]; then
-  ui_fail "$suite tests not found" "($tests; see README.md, Tests)"
+  ui_fail "$suite tests not found" "($tests; tools/fetch-suites downloads them)"
   exit 2
 fi
 ycxx_env_load

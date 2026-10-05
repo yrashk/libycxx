@@ -44,6 +44,13 @@ Optional directives:
                                           hardened (lit param hardened=1: -DYCXX_HARDENED=1),
                                           exceptions and rtti (unless the run's cxxflags have
                                           -fno-exceptions / -fno-rtti)
+  // MODULES: std [std.compat]      the test imports the standard library modules ([std.modules]):
+                                          they are built for this compiler and the test's flags
+                                          (tests/ycxxlit/stdmodules.py, tools/ycxx-modules; cached)
+                                          and the test is compiled with --std-modules. UNSUPPORTED,
+                                          with the compiler's reason, when the compiler cannot build
+                                          a module interface unit with these flags; a failure to
+                                          build std or std.compat is a FAIL
   // EXPECT-TERMINATE[: <regex>]   (*.pass.cpp only) the program must end abnormally, killed by
                                           SIGABRT, SIGTRAP or SIGILL (what abort() and
                                           __builtin_trap() raise: a hardened precondition's
@@ -53,7 +60,7 @@ Optional directives:
 import os, re, shutil, signal, tempfile
 import lit.formats, lit.Test
 from lit.BooleanExpression import BooleanExpression
-from ycxxlit import transcript
+from ycxxlit import stdmodules, transcript
 
 FLAGS = re.compile(r'^//\s*FLAGS:(.*)$', re.M)
 FILES = re.compile(r'^//\s*FILES:(.*)$', re.M)
@@ -63,6 +70,7 @@ XFAIL = re.compile(r'^//\s*XFAIL(?:-COMPILER)?:\s*(gcc|clang|any)\b(.*)$', re.M)
 UNSUPPORTED_SAN = re.compile(r'^//\s*UNSUPPORTED-SANITIZER:\s*([\w,]+)(.*)$', re.M)
 EXPECT_ERROR = re.compile(r'^//\s*EXPECT-ERROR(?:-(GCC|CLANG))?:\s*(.*?)\s*$', re.M)
 REQUIRES = re.compile(r'^//\s*REQUIRES:(.*)$', re.M)
+MODULES = re.compile(r'^//\s*MODULES:(.*)$', re.M)
 EXPECT_TERMINATE = re.compile(r'^//\s*EXPECT-TERMINATE(?::\s*(.*?))?\s*$', re.M)
 TERMINATING_SIGNALS = {signal.SIGABRT, signal.SIGTRAP, signal.SIGILL}
 
@@ -78,6 +86,7 @@ MISSING = re.compile(r"fatal error: '?[\w./]+'?:? (file not found|No such file o
 class YcxxFormat(lit.formats.FileBasedTest):
     def __init__(self, wrapper, compiler, base_flags, sanitizers=(), features=()):
         self.wrapper, self.compiler, self.base_flags = wrapper, compiler, base_flags
+        self.repo = os.path.dirname(os.path.dirname(os.path.abspath(wrapper)))
         self.sanitizers = set(sanitizers)
         self.features = set(features)
 
@@ -159,6 +168,21 @@ class YcxxFormat(lit.formats.FileBasedTest):
         terminate = EXPECT_TERMINATE.search(src)
         if terminate and (not name.endswith('.pass.cpp') or name.endswith('.compile.pass.cpp')):
             return lit.Test.Result(lit.Test.FAIL, 'EXPECT-TERMINATE applies only to *.pass.cpp tests')
+        modules = [n for m in MODULES.finditer(src) for n in m.group(1).split()]
+        if modules:
+            bad = [n for n in modules if n not in ('std', 'std.compat')]
+            if bad:
+                return lit.Test.Result(lit.Test.FAIL, f'MODULES: unknown module(s) {" ".join(bad)} (std, std.compat)')
+            if os.path.basename(self.wrapper) != 'ycxx-cxx':
+                return lit.Test.Result(lit.Test.UNSUPPORTED, 'MODULES: libycxx\'s modules, not built for the '
+                                       f'reference library ({os.path.basename(self.wrapper)})')
+            status, mdir, out = stdmodules.ensure(self.repo, self.compiler, flags, test.suite.exec_root)
+            if status == 'unsupported':
+                return lit.Test.Result(lit.Test.UNSUPPORTED, out)
+            if status == 'fail':
+                return lit.Test.Result(lit.Test.FAIL, 'building the standard library modules failed\n' + out)
+            # Every compile of the test (FILES, ARCHIVE, SHARED too) may import them.
+            flags = ['--std-modules=' + mdir] + flags
         tmp = tempfile.mkdtemp(prefix=name + '.', dir=exec_dir)
         try:
             if name.endswith('.compile.pass.cpp'):

@@ -231,13 +231,21 @@ public:
   constexpr null_memory_resource_t() noexcept = default;
 };
 
-// Constant-initialized, so usable from other translation units' dynamic initializers. Their
-// destructors do nothing, so use during static destruction is fine as well.
-constinit new_delete_resource_t new_delete_instance;
-constinit null_memory_resource_t null_instance;
+// Constant-initialized, so usable from other translation units' dynamic initializers, and never
+// destroyed (the union's destructor does not destroy its member), so usable during static
+// destruction and from atexit functions too ([basic.start.term]/7): destroying them would reset
+// their vtable pointers to memory_resource's, whose functions are pure virtual.
+template <class T>
+union immortal {
+  T object;
+  constexpr immortal() noexcept : object() {}
+  ~immortal() {}
+};
+constinit immortal<new_delete_resource_t> new_delete_storage;
+constinit immortal<null_memory_resource_t> null_storage;
 // The default resource pointer: accessed only with __atomic builtins ([mem.res.global]/6:
 // set_default_resource synchronizes with later set/get calls).
-constinit std::pmr::memory_resource* default_resource = &new_delete_instance;
+constinit std::pmr::memory_resource* default_resource = &new_delete_storage.object;
 
 } // namespace
 
@@ -245,12 +253,12 @@ namespace std::pmr {
 
 memory_resource::~memory_resource() = default;
 
-memory_resource* new_delete_resource() noexcept { return &new_delete_instance; }
-memory_resource* null_memory_resource() noexcept { return &null_instance; }
+memory_resource* new_delete_resource() noexcept { return &new_delete_storage.object; }
+memory_resource* null_memory_resource() noexcept { return &null_storage.object; }
 
 memory_resource* set_default_resource(memory_resource* r) noexcept {
   if (r == nullptr)
-    r = &new_delete_instance;
+    r = &new_delete_storage.object;
   return __atomic_exchange_n(&default_resource, r, __ATOMIC_ACQ_REL);
 }
 memory_resource* get_default_resource() noexcept { return __atomic_load_n(&default_resource, __ATOMIC_ACQUIRE); }

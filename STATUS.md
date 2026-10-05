@@ -443,6 +443,11 @@ compilers; `visit_format_arg.pass.cpp` needs `EOF` from `constexpr_char_traits.h
   `match_prev_avail`, `^` matches at `first` only in multiline mode after a line terminator (the
   previous character exists, so `first` is not the beginning of the input), which keeps
   regex_iterator from matching `^a` at every position. Details in `tests/libcxx/skip.txt`.
+- `num_put::do_put(bool)` with `boolalpha` pads the name to `width()` (and resets the width) as
+  the other conversions do; [facet.num.put.virtuals]/6 read literally inserts the name unpadded.
+  libc++ and libstdc++ pad, and their tests expect it. Likewise a character-sequence inserter
+  whose output fails sets `badbit` (as `write()` and the arithmetic inserters do), where
+  [ostream.formatted.reqmts]/1 says `failbit`; `fail()` is true either way.
 - x87 `long double` `%a`: normal values print with a leading 1 (`1.8p+0`), subnormal ones as the
   C library does (`0x0.000000000000001p-16385` is the smallest), so that both forms agree there.
 
@@ -546,6 +551,8 @@ compilers; `visit_format_arg.pass.cpp` needs `EOF` from `constexpr_char_traits.h
   bounded repetitions expand beyond 256 copies or 65536 nodes, backtrack exhaustively (longest
   match; subexpressions in first-found order rather than by the POSIX rule). A combination of
   several grammar flags throws `regex_error(error_complexity)` (error_type has no code for it).
+  Groups nested more than 1000 deep throw `regex_error(error_space)` (the translator and the
+  matchers recurse over the tree).
   Multi-character collating elements (`[[.ch.]]`) are not supported (no locale defines them).
   regex_traits::transform_primary returns the full sort key (the provided collate facets have no
   secondary weights) for collate and collate_byname facets alike; [re.traits]/7 would return an
@@ -568,9 +575,10 @@ compilers; `visit_format_arg.pass.cpp` needs `EOF` from `constexpr_char_traits.h
   `codecvt_unicode.h` expects `partial` with from_next before it instead; `money_get` with
   frac_digits() > 0 accepts a value without a decimal point as the digits that appear ("1056"),
   but a decimal point must be followed by exactly frac_digits() digits.
-- `<memory>`: no `atomic<shared_ptr<T>>` / `atomic<weak_ptr<T>>`, no execution-policy overloads of the specialized
-  algorithms, no `pointer_tag_pair`. shared_ptr reference counts use
-  the `__atomic` builtins unconditionally (no single-threaded fast path). get_deleter identifies
+- `<memory>`: no `pointer_tag_pair`. `atomic<shared_ptr<T>>` / `atomic<weak_ptr<T>>` are
+  lock-based (the striped lock table of `<atomic>`); the execution-policy overloads of the
+  specialized algorithms run sequentially. shared_ptr reference counts are plain while the
+  process has one thread (DECISIONS §15), atomic otherwise. get_deleter identifies
   the deleter type by a per-type tag address (same shared-library caveat as `any`).
   make_shared of a multi-dimensional array of a non-trivial class type cannot be
   constant-evaluated on Clang (Clang will not let element construction begin the enclosing

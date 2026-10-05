@@ -191,7 +191,7 @@ tooling.
   definition is in the hosted runtime (`src/hosted/memory_resource.cpp`, libycxx.a): the
   destructor of `memory_resource` (its key function, so its vtable and type_info are emitted
   there, with RTTI), `new_delete_resource`/`null_memory_resource` (constant-initialized
-  objects; their destructors run at exit and do nothing), the default-resource pointer
+  objects that are never destroyed, so they stay usable during termination), the default-resource pointer
   (`__atomic` load/exchange), and all members of the pool resources and
   `monotonic_buffer_resource` (declared in `ycxx/hosted/memory_resource.hpp`).
   `synchronized_pool_resource` is the unsynchronized pool behind a three-state lock built on
@@ -288,8 +288,9 @@ tooling.
   the volatile non-member functions are split the same way.
 - **The thread support library is built on the PAL's address wait, not on pthread objects.**
   Mutexes are three-state futex locks, condition variables sequence counters, call_once a
-  four-state word; all are constexpr-constructible (where the draft allows) and trivially
-  destructible. Threads, sleeping, the thread-end list (`notify_all_at_thread_exit`, the
+  four-state word; all are constexpr-constructible (where the draft allows); the mutexes are
+  trivially destructible, and a condition variable's destructor only waits for notified waiters
+  to stop touching it ([thread.condition.condvar]/5 allows destroying it while they return). Threads, sleeping, the thread-end list (`notify_all_at_thread_exit`, the
   `*_at_thread_exit` results) and timed waits are PAL hooks (`ycxx_pal_thread_*`,
   `ycxx_pal_wait_until`, `ycxx_pal_at_thread_end`). A timed wait on system_clock waits on the
   realtime clock, one on any other clock on the monotonic clock for the remaining time and then
@@ -845,8 +846,9 @@ under the same name. Otherwise it gets one alias template in `config.hpp`.
   This is sound because the flag is cleared before a second thread starts and thread creation
   synchronizes with the new thread; a thread created behind the C library's back (a raw `clone`)
   would break it, as it breaks the C library itself. Otherwise counts are incremented relaxed
-  and decremented with release, the decrement that reaches zero adding an acquire fence; a
-  `shared_ptr`'s last owner drops the weak count without an RMW when it reads 1 (nobody can make
+  and decremented with acq_rel (not release plus an acquire fence on reaching zero: the same
+  instruction on x86, and ThreadSanitizer, which ignores fences, would report every last
+  release as a race); a `shared_ptr`'s last owner drops the weak count without an RMW when it reads 1 (nobody can make
   a new reference then).
 - **C++26 erroneous values and stack buffers.** In C++26 mode GCC 16 zero-fills every automatic
   variable without an initializer. Buffers the library always writes before reading are marked

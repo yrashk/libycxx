@@ -99,23 +99,40 @@ protected:
   bool retrieved_ = false;
   std::exception_ptr exc_;
 
-  // m_ is held through lk: the result is stored; make it ready now or at thread exit.
-  void publish(std::unique_lock<std::mutex>& lk, bool at_thread_exit) {
-    if (at_thread_exit) {
-      status_ = status::stored;
-      retain();
-      lk.unlock();
-      ::ycxx::detail::at_thread_exit(
-          [](void* p) {
-            future_state_base* s = static_cast<future_state_base*>(p);
-            {
-              std::lock_guard<std::mutex> g(s->m_);
+  // m_ is held: registers the thread-exit action of an "at thread exit" result before the
+  // result is stored, so that a failure to register changes nothing. The action holds a
+  // reference and makes a stored result ready; it does nothing if no result was stored after
+  // all (constructing the value threw).
+  void schedule_ready_at_thread_exit() {
+    retain();
+    struct undo {
+      future_state_base* s;
+      ~undo() {
+        if (s) // never the last reference: the caller holds one
+          __atomic_fetch_sub(&s->refs_, 1, __ATOMIC_RELAXED);
+      }
+    } u{this};
+    ::ycxx::detail::at_thread_exit(
+        [](void* p) {
+          future_state_base* s = static_cast<future_state_base*>(p);
+          {
+            std::lock_guard<std::mutex> g(s->m_);
+            if (s->status_ == status::stored) {
               s->status_ = status::ready;
               s->cv_.notify_all();
             }
-            s->release();
-          },
-          this);
+          }
+          s->release();
+        },
+        this);
+    u.s = nullptr;
+  }
+
+  // m_ is held: the result is stored; make it ready now, or leave it to the action that
+  // schedule_ready_at_thread_exit registered.
+  void publish(bool at_thread_exit) noexcept {
+    if (at_thread_exit) {
+      status_ = status::stored;
       return;
     }
     status_ = status::ready;
@@ -158,8 +175,10 @@ public:
     std::unique_lock<std::mutex> lk(m_);
     if (status_ != status::empty)
       ::ycxx::detail::throw_future_error(std::future_errc::promise_already_satisfied);
+    if (at_thread_exit)
+      schedule_ready_at_thread_exit();
     exc_ = static_cast<std::exception_ptr&&>(p);
-    publish(lk, at_thread_exit);
+    publish(at_thread_exit);
   }
   // [futures.state]/7: a provider gives up its state.
   void abandon() noexcept {
@@ -167,7 +186,7 @@ public:
       std::unique_lock<std::mutex> lk(m_);
       if (status_ == status::empty) {
         exc_ = std::make_exception_ptr(std::future_error(std::future_errc::broken_promise));
-        publish(lk, false);
+        publish(false);
       }
     }
     release();
@@ -225,6 +244,8 @@ public:
     std::unique_lock<std::mutex> lk(m_);
     if (status_ != status::empty)
       ::ycxx::detail::throw_future_error(std::future_errc::promise_already_satisfied);
+    if (at_thread_exit)
+      schedule_ready_at_thread_exit();
     status_ = status::storing;
     lk.unlock();
     struct unclaim {
@@ -240,7 +261,7 @@ public:
     u.s = nullptr;
     lk.lock();
     has_value_ = true;
-    publish(lk, at_thread_exit);
+    publish(at_thread_exit);
   }
   R& value() noexcept { return value_; }
 };
@@ -254,8 +275,10 @@ public:
     std::unique_lock<std::mutex> lk(m_);
     if (status_ != status::empty)
       ::ycxx::detail::throw_future_error(std::future_errc::promise_already_satisfied);
+    if (at_thread_exit)
+      schedule_ready_at_thread_exit();
     value_ = __builtin_addressof(r);
-    publish(lk, at_thread_exit);
+    publish(at_thread_exit);
   }
   R& value() noexcept { return *value_; }
 };
@@ -267,7 +290,9 @@ public:
     std::unique_lock<std::mutex> lk(m_);
     if (status_ != status::empty)
       ::ycxx::detail::throw_future_error(std::future_errc::promise_already_satisfied);
-    publish(lk, at_thread_exit);
+    if (at_thread_exit)
+      schedule_ready_at_thread_exit();
+    publish(at_thread_exit);
   }
   void value() noexcept {}
 };

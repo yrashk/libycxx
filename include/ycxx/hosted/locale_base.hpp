@@ -33,6 +33,9 @@
 namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 struct locale_impl; // src/hosted/locale.cpp
 struct locale_access;
+// Selects locale's private constructor from a locale_impl*: without it, a null pointer constant
+// would also convert to that constructor's parameter and make locale(nullptr) ambiguous.
+struct locale_impl_tag {};
 }} // namespace ycxx::detail
 
 namespace [[gnu::visibility("hidden")]] std {
@@ -84,7 +87,7 @@ private:
   template <class Facet>
   friend bool has_facet(const locale&) noexcept;
 
-  explicit locale(ycxx::detail::locale_impl* impl) noexcept : impl_(impl) {}
+  locale(ycxx::detail::locale_impl_tag, ycxx::detail::locale_impl* impl) noexcept : impl_(impl) {}
   // A copy of other with f installed under index i (null f: a copy of other).
   locale(const locale& other, const facet* f, const id& i);
   // The facet under index i, or null.

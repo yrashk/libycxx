@@ -13,8 +13,11 @@ namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 [[gnu::always_inline]] inline bool single_threaded() noexcept { return *::ycxx_pal_single_threaded != 0; }
 
 // A reference count: a new reference is made from an existing one (relaxed increment); the
-// decrement releases, and the one that reaches zero acquires. ref_release returns whether the
-// count reached zero.
+// decrement releases and acquires, so the one that reaches zero sees everything the other owners
+// did. (An acq_rel decrement costs the same as a release one on x86 and little elsewhere, and
+// unlike a release decrement followed by an acquire fence it is understood by ThreadSanitizer,
+// which does not model fences and would report the destruction as a race.) ref_release returns
+// whether the count reached zero.
 template <class T>
 [[gnu::always_inline]] inline void ref_add(T& count) noexcept {
   if (::ycxx::detail::single_threaded())
@@ -26,10 +29,7 @@ template <class T>
 [[gnu::always_inline]] inline bool ref_release(T& count) noexcept {
   if (::ycxx::detail::single_threaded())
     return --count == 0;
-  if (__atomic_sub_fetch(&count, 1, __ATOMIC_RELEASE) != 0)
-    return false;
-  __atomic_thread_fence(__ATOMIC_ACQUIRE);
-  return true;
+  return __atomic_sub_fetch(&count, 1, __ATOMIC_ACQ_REL) == 0;
 }
 
 }} // namespace ycxx::detail

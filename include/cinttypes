@@ -6,9 +6,9 @@
 #include <ycxx/core/cstddef.hpp>
 #include <cstdint>
 #include <ycxx/core/prim_traits.hpp>
-// The C library's declarations of the functions libycxx defines itself (constexpr, or the
-// const-correct bsearch pair) are renamed while its header is read, so that <stdlib.h>/<inttypes.h>
-// can place libycxx's in the global namespace ([support.c.headers.other]/1; DECISIONS §3).
+// The C library's declarations of the functions libycxx declares itself (constexpr, noexcept, or
+// the const-correct pairs) are renamed while its header is read, so that libycxx's can take the
+// names in the global namespace ([support.c.headers.other]/1; DECISIONS §3).
 #define imaxabs ycxx_c_imaxabs
 #define imaxdiv ycxx_c_imaxdiv
 #include_next <inttypes.h>

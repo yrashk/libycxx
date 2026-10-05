@@ -55,8 +55,8 @@ abi="$libdir/libycxx-abi.a"
 link=1
 for a in "$@"; do case $a in -c|-S|-E|-fsyntax-only|-M|-MM) link=0 ;; esac; done
 if [ $link = 1 ]; then
-  exec $cxx $extra -std=c++26 -nostdinc++ -isystem "$here/include" "$@" \
+  exec $cxx $extra -std=c++26 -nostdinc++ -isystem "$here/include" -isystem "$libdir/generated/include" "$@" \
     -nostdlib++ $group_begin "$libdir/libycxx.a" "$abi" $group_end -lm $static_libgcc
 else
-  exec $cxx $extra -std=c++26 -nostdinc++ -isystem "$here/include" "$@"
+  exec $cxx $extra -std=c++26 -nostdinc++ -isystem "$here/include" -isystem "$libdir/generated/include" "$@"
 fi

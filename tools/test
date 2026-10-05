@@ -110,12 +110,12 @@ cc_of() { if [ "$1" = gcc ]; then echo "${YCXX_GCC:-gcc-16}"; else echo "${YCXX_
 summary() {
   ui_title "Summary"
   nok=0 nfail=0 nskip=0
-  while IFS='|' read -r st label secs; do
-    d=$(ui_duration "$secs")
+  # The third field is a duration in seconds, or for a skipped step the reason.
+  while IFS='|' read -r st label extra; do
     case $st in
-      ok) ui_ok "$label" "($d)"; nok=$((nok + 1)) ;;
-      skip) ui_skip "$label" "$secs"; nskip=$((nskip + 1)) ;;
-      *) ui_fail "$label" "($d)"; nfail=$((nfail + 1)) ;;
+      ok) ui_ok "$label" "($(ui_duration "$extra"))"; nok=$((nok + 1)) ;;
+      skip) ui_skip "$label" "$extra"; nskip=$((nskip + 1)) ;;
+      *) ui_fail "$label" "($(ui_duration "$extra"))"; nfail=$((nfail + 1)) ;;
     esac
   done <"$results"
   total=$(ui_duration $(($(date +%s) - t_start)))

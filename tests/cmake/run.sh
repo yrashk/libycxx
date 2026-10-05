@@ -28,6 +28,19 @@ bad() { ui_fail "[$1] $2"; fail=1; }
 # x CMD...: show the command, run it with its output appended to $log.
 x() { ui_cmd "$@"; "$@" >>"$log" 2>&1; }
 
+# run_demo EXE LOG: runs an example program, recording in LOG the command, its output (stderr
+# too: a crash or "terminating" message), its exit status and the libraries it links; true when
+# it exits 0 printing just "libycxx example: ok".
+run_demo() {
+  printf '$ %s\n' "$1" >>"$2"
+  d_st=0
+  d_out=$("$1" 2>&1) || d_st=$?
+  printf '%s\n[exit %s]\n' "$d_out" "$d_st" >>"$2"
+  if [ "$(uname -s)" = Darwin ]; then otool -L "$1" >>"$2" 2>&1 || :
+  else readelf -d "$1" 2>/dev/null | grep NEEDED >>"$2" || :; fi
+  [ "$d_st" = 0 ] && [ "$d_out" = "libycxx example: ok" ]
+}
+
 # links_toolchain_cxx EXE: true if EXE depends on libstdc++ or libc++.
 links_toolchain_cxx() {
   if [ "$(uname -s)" = Darwin ]; then
@@ -71,9 +84,8 @@ for c in $compilers; do
     if x cmake -S "$repo/examples/$ex" -B "$b" $gen -DCMAKE_PREFIX_PATH="$d/prefix" \
          -DLIBYCXX_SOURCE_DIR="$repo" &&
        x cmake --build "$b"; then
-      out=$("$b/demo" 2>&1) || true
-      if [ "$out" = "libycxx example: ok" ]; then ok $c "$ex: build and run"
-      else bad $c "$ex: unexpected output: $out"; fi
+      if run_demo "$b/demo" "$log"; then ok $c "$ex: build and run"
+      else bad $c "$ex: the program failed (see $log)"; fi
       # 4. no toolchain C++ library
       if links_toolchain_cxx "$b/demo"; then
         bad $c "$ex: links the toolchain's C++ library"
@@ -113,8 +125,8 @@ for c in $compilers; do
   if YCXX_TOOLCHAINS=$cache cmake -S "$repo/examples/add_subdirectory" -B "$work/tc-$c" -G Ninja \
        -DCMAKE_TOOLCHAIN_FILE="$repo/cmake/ycxx-toolchain.cmake" -DYCXX_COMPILER=$c \
        -DLIBYCXX_SOURCE_DIR="$repo" >"$work/tc-$c.log" 2>&1 &&
-     cmake --build "$work/tc-$c" >>"$work/tc-$c.log" 2>&1 &&
-     [ "$("$work/tc-$c/demo")" = "libycxx example: ok" ]; then
+     cmake --build "$work/tc-$c" --verbose >>"$work/tc-$c.log" 2>&1 &&
+     run_demo "$work/tc-$c/demo" "$work/tc-$c.log"; then
     ok $c "toolchain file: compiler found, example built and run"
   else
     bad $c "toolchain file (see $work/tc-$c.log)"
@@ -142,8 +154,8 @@ if [ "${YCXX_TEST_PROVISION:-0}" = 1 ]; then
        -DYCXX_USE_SYSTEM_COMPILERS=OFF \
        -DLIBYCXX_SOURCE_DIR="$repo" >"$work/tc-download.log" 2>&1 &&
      grep -q "^YCXX_CLANGXX=$cache/llvm-" "$cache/toolchains.env" &&
-     cmake --build "$work/tc-download" >>"$work/tc-download.log" 2>&1 &&
-     [ "$("$work/tc-download/demo")" = "libycxx example: ok" ]; then
+     cmake --build "$work/tc-download" --verbose >>"$work/tc-download.log" 2>&1 &&
+     run_demo "$work/tc-download/demo" "$work/tc-download.log"; then
     ok toolchain "YCXX_PROVISION=ON downloaded Clang into the cache and built the example"
   else
     bad toolchain "provisioning download (see $work/tc-download.log)"

@@ -1,12 +1,14 @@
 # libycxx test scripts: turns lit's output (run with -a: every test's output) into a live,
 # traceable display. POSIX awk (gawk, mawk, BSD awk). Variables (-v):
-#   logfile=FILE   every input line is copied here unchanged
 #   tty=1          also keep a status line (counts, elapsed time, ETA) redrawn under the results
 #   quiet=1        list only the tests that did not pass (plus progress every 10% without a tty)
 #   verbose=1      print every test's whole transcript, passing ones included
 #   details=N      print the transcript of the first N failures (default 10; the log has all)
 #   red green yellow cyan bold dim reset   escape sequences ("" for no colour)
 #   s_ok s_fail s_skip                     result symbols
+#
+# Portable to BSD awk (macOS): a conditional or comparison in a print/printf argument list must be
+# parenthesized there. lit's raw output is saved before this filter (tools/run-conformance).
 #
 # lit prints "<CODE>: <suite> :: <test> (<n> of <total>)" per test, then (with -a) its output,
 # for a failure under a "**** TEST '<name>' FAILED ****" header, closed by a line of 20 stars.
@@ -108,8 +110,6 @@ BEGIN {
   npass = nfail = nskip = 0
 }
 
-{ print > logfile }
-
 # A result.
 /^[A-Z]+: .* \([0-9]+ of [0-9]+\)$/ {
   end_test()
@@ -138,7 +138,7 @@ pending { test_line($0); next }
     inlist = 1; printf "\n  %s%s%s\n", red bold, line, reset; next
   }
   if (line ~ /^[A-Za-z ]+ Tests \([0-9]+\):$/) { inlist = 2; printf "\n  %s%s%s\n", bold, line, reset; next }
-  if (inlist && line ~ /^  /) { printf "  %s%s%s\n", inlist == 1 ? red : dim, line, reset; next }
+  if (inlist && line ~ /^  /) { printf "  %s%s%s\n", (inlist == 1 ? red : dim), line, reset; next }
   inlist = 0
   if (line == "") next
   if (line ~ /^Total Discovered Tests:/) { printf "\n  %s%s%s\n", bold, line, reset; next }

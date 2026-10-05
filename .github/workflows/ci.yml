@@ -82,10 +82,10 @@ jobs:
       - name: Toolchains (tools/toolchain/provision)
         run: tools/toolchain/provision
 
-      - name: Policy, builds, freestanding, own suite (tools/test)
+      - name: Policy, builds, freestanding, CMake package, own suite (tools/test)
         run: |
           . tools/toolchain/activate.sh
-          tools/test -j3 policy build freestanding ycxx
+          tools/test -j3 policy build freestanding cmake ycxx
 
       - name: Test reports (composite run report, suite reports)
         if: always()
@@ -97,4 +97,6 @@ jobs:
             build/test-logs/*.md
             build/test-logs/*.tsv
             build/test-logs/*.log
+            build/cmake-test/*.log
+            build/cmake-test/*/log.txt
           if-no-files-found: ignore

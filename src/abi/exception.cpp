@@ -81,7 +81,7 @@ void cleanup_native(_Unwind_Reason_Code reason, _Unwind_Exception* ue) {
     std::terminate();
   // Caught (and finished) by another runtime's handler: no longer uncaught.
   if (reason == _URC_FOREIGN_EXCEPTION_CAUGHT)
-    --globals()->uncaught_exceptions;
+    --header_of_unwind(ue)->counted_in->uncaught_exceptions;
   release(header_of_unwind(ue));
 }
 
@@ -189,7 +189,8 @@ void release_at_handler_exit(exception_header* h) {
   h->unexpected_handler = nullptr;
   h->terminate_handler = std::get_terminate();
   h->unwind_header.exception_cleanup = cleanup_native;
-  ++globals()->uncaught_exceptions;
+  h->counted_in = globals();
+  ++h->counted_in->uncaught_exceptions;
   _Unwind_RaiseException(&h->unwind_header);
   // No handler: [except.handle]/9.
   terminate_for(&h->unwind_header);
@@ -280,7 +281,7 @@ void* __cxa_begin_catch(void* ue) noexcept {
     h->next_exception = g->caught_exceptions;
     g->caught_exceptions = h;
   }
-  --g->uncaught_exceptions;
+  --h->counted_in->uncaught_exceptions; // the throwing image's count (eh.hpp)
   return h->adjusted_ptr;
 }
 
@@ -316,6 +317,7 @@ void __cxa_end_catch() {
     if (h->handler_count < 0)
       rethrow_primary(object_of(h));
     h->handler_count = -h->handler_count;
+    h->counted_in = g;
     ++g->uncaught_exceptions;
   } else {
     // Ending the foreign handler must not delete it: it is in flight again.

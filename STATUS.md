@@ -593,8 +593,14 @@ compilers; `visit_format_arg.pass.cpp` needs `EOF` from `constexpr_char_traits.h
   needs the object file on disk: compressed debug sections, separate debug files
   (`.gnu_debuglink`, build-id directories) and split DWARF are not read (the queries return ""
   and 0; the function name then comes from the symbol tables). The demangler shows no
-  requires-clauses. GCC's own codegen reports an exception escaping a contract predicate with
-  `detection_mode::predicate_false` (it passes the unmodified violation object).
+  requires-clauses.
+- `<contracts>` (GCC): an exception escaping a contract predicate is reported with
+  `detection_mode::predicate_false`, where [basic.contract.eval]/7.2 and Table 46 call for
+  `evaluation_exception` (own test `contracts/observe`, XFAIL). GCC emits one constant violation
+  object per assertion (mode 1, `.data`) and passes the same object from the normal path and from
+  the implicit handler of the exception path. The library cannot recover the mode:
+  `current_exception()` is non-null in the handler in both cases when the assertion is evaluated
+  inside an active handler, and nothing marks the start of the predicate's evaluation.
 - `<text_encoding>`: comp-name assumes an ASCII-compatible ordinary literal encoding.
 - `<meta>`: needs GCC 16 with `-freflection` (Clang 23 has no reflection). Exceptions the library
   itself raises (`access_context::via`, the apply traits) carry the library's source location in

@@ -336,9 +336,12 @@ private:
     t.append_elements(static_cast<It&&>(first), static_cast<Sent&&>(last));
     return t;
   }
+  // Contiguous charT storage that traits::copy can read: not volatile charT (its range_value_t is
+  // charT too), whose elements are read one by one.
   template <class R>
   static constexpr bool char_contiguous_range =
-      ranges::contiguous_range<R> && ranges::sized_range<R> && is_same_v<ranges::range_value_t<R>, charT>;
+      ranges::contiguous_range<R> && ranges::sized_range<R> && is_same_v<ranges::range_value_t<R>, charT> &&
+      !is_volatile_v<remove_reference_t<ranges::range_reference_t<R>>>;
 
 public:
   // ---- [string.cons] ----

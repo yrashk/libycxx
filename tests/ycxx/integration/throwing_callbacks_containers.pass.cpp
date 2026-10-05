@@ -16,6 +16,7 @@
 // keeps working afterwards, and every element object is destroyed exactly once (a live count
 // returns to zero; destroying an object twice or using a destroyed one is caught by a magic
 // field).
+// REQUIRES: exceptions
 #include <algorithm>
 #include <iterator>
 #include <map>

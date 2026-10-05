@@ -2,6 +2,7 @@
 // new_p is replaced; an existing empty directory new_p is replaced on POSIX; renaming to itself
 // does nothing. Errors (missing source) are reported per [fs.err.report] (the ec overload is
 // noexcept and sets ec; the throwing overload passes both paths to filesystem_error).
+// REQUIRES: exceptions
 #include <filesystem>
 #include <system_error>
 #include "check.hpp"

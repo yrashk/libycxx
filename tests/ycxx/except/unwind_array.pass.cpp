@@ -2,6 +2,7 @@
 // direct-initialization of an array", the elements whose initialization completed are
 // destroyed, in reverse order, when a later element's constructor throws. Also applies to
 // new[] (with the storage released, [expr.new]/28 / [except.ctor] Note 4).
+// REQUIRES: exceptions
 #include <cstddef>
 #include <new>
 #include "check.hpp"

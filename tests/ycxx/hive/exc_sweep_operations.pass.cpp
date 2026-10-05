@@ -16,6 +16,7 @@
 //   /3-5: reserve throws what the allocator throws; the elements are unchanged.
 // After every run each element object is destroyed exactly once and every allocator block
 // (exh::alloc) and operator new block freed.
+// REQUIRES: exceptions
 #include <algorithm>
 #include <hive>
 #include "exc_new.hpp"

@@ -7,6 +7,7 @@
 // active is called the currently handled exception." So destructors run by stack unwinding
 // (before any handler of the new exception is active) observe the previously handled
 // exception, or null when there is none; a function-try-block handler is an ordinary handler.
+// REQUIRES: exceptions
 #include <exception>
 #include <stdexcept>
 #include "check.hpp"

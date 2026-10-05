@@ -3,6 +3,7 @@
 // static_cast<T>(*any_cast<U>(&operand)). For the third overload,
 // static_cast<T>(std::move(*any_cast<U>(&operand)))." "Throws: bad_any_cast if
 // operand.type() != typeid(remove_reference_t<T>)."
+// REQUIRES: exceptions
 #include <any>
 #include <typeinfo>
 #include <type_traits>

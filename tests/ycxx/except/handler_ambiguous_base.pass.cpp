@@ -1,6 +1,7 @@
 // [except.handle]/3.2: a handler of type cv T or cv T& matches E if "T is an unambiguous
 // public base class of E". A base that appears twice as a non-virtual base is ambiguous, so
 // the handler must not match; an intermediate base that makes the path unique does match.
+// REQUIRES: exceptions
 #include "check.hpp"
 
 struct Base {

@@ -5,6 +5,7 @@
 // where it can be caught, and the parent can continue.
 // [dcl.fct.def.coroutine]/14: if unhandled_exception() exits via an exception the coroutine is
 // considered suspended at its final suspend point, so the iterator then equals default_sentinel.
+// REQUIRES: exceptions
 #include <generator>
 #include <ranges>
 #include <stdexcept>

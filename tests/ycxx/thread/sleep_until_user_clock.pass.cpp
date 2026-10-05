@@ -4,6 +4,7 @@
 // is no earlier than abs_time; /8: an exception thrown by the clock propagates. A time point in
 // the past returns at once. sleep_for with a user duration type (rep long long, period milli).
 // FLAGS: -pthread
+// REQUIRES: exceptions
 #include <thread>
 #include <chrono>
 #include "check.hpp"

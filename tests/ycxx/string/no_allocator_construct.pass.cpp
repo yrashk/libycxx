@@ -3,6 +3,7 @@
 // basic_string the insertion terms are defined as if A were allocator<T>. Storage is
 // still obtained from the allocator ([string.require]/3), and everything allocated is
 // returned.
+// REQUIRES: exceptions
 #include <string>
 #include "test_allocators.hpp"
 #include "check.hpp"

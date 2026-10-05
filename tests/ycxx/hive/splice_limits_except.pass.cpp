@@ -9,6 +9,7 @@
 // block_capacity_limits(); [hive.overview]/5.4: limits are usable only when
 // is_within_hard_limits(limits) (otherwise erroneous), so the limits are chosen from
 // block_capacity_hard_limits().
+// REQUIRES: exceptions
 #include <hive>
 #include <cstddef>
 #include <iterator>

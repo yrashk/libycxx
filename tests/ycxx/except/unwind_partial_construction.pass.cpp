@@ -4,6 +4,7 @@
 // has completed. ... The subobjects are destroyed in the reverse order of the completion of
 // their construction." The object's own destructor does not run. [Note 2]: this includes
 // virtual base class subobjects for a complete object.
+// REQUIRES: exceptions
 #include "check.hpp"
 
 static int log_[32];

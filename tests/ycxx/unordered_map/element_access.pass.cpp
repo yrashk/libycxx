@@ -4,6 +4,7 @@
 // exists; insert_or_assign assigns to the existing mapped value or inserts; insert(P&&) is
 // emplace(std::forward<P>(x)). References returned stay valid across rehashing
 // ([unord.req.general]/9).
+// REQUIRES: exceptions
 #include <unordered_map>
 #include <memory>
 #include <stdexcept>

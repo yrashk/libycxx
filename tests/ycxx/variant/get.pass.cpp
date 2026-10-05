@@ -1,6 +1,7 @@
 // [variant.get]: holds_alternative (noexcept), get<I>/get<T> for all four value categories
 // with exact return types, bad_variant_access on wrong alternative, get_if<I>/get_if<T>
 // (noexcept, nullptr for null pointer or wrong index).
+// REQUIRES: exceptions
 #include <variant>
 #include <type_traits>
 #include <utility>

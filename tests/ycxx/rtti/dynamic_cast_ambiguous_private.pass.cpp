@@ -11,6 +11,7 @@
 //   D* dp = dynamic_cast<D*>(ap);     // fails: yields null; f has two D subobjects
 //   E* ep1 = dynamic_cast<E*>(ap);    // succeeds
 // (Compilers warn that the direct bases B of E and D of F are inaccessible due to ambiguity.)
+// REQUIRES: exceptions
 #include <typeinfo>
 #include "check.hpp"
 

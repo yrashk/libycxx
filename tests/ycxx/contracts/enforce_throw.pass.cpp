@@ -5,6 +5,7 @@
 // semantic). /17: a handler that exits via an exception from a function contract assertion
 // behaves as if the function body exited via that exception; Note 13: from an assertion-statement
 // the exception propagates from that statement. Throwing avoids contract termination (Note 11).
+// REQUIRES: exceptions
 #include <contracts>
 #include "check.hpp"
 

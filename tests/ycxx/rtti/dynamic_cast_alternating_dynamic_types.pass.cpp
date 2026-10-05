@@ -6,6 +6,7 @@
 // static source and target types) are applied over and over to objects of many dynamic types
 // in many orders, so a runtime that remembers earlier results must key them on the dynamic
 // type and on which subobject v points to.
+// REQUIRES: exceptions
 #include <typeinfo>
 #include "check.hpp"
 

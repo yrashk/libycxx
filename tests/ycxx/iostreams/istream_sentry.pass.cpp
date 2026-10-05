@@ -8,6 +8,7 @@
 // imbued locale. /5: the sentry converts to is.good() after preparation; /7 operator bool.
 // [istream.formatted.reqmts]/1, [istream.unformatted]/1: formatted input skips white space,
 // unformatted input does not.
+// REQUIRES: exceptions
 #include <istream>
 #include <ostream>
 #include <sstream>

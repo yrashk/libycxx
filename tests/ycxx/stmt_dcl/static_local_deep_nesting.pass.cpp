@@ -13,6 +13,7 @@
 // once more and all complete, in nesting order; afterwards nothing runs again; threads that
 // enter an outer declaration while the chain is being initialized wait and then see the value.
 // FLAGS: -pthread
+// REQUIRES: exceptions
 #include <atomic>
 #include <stdexcept>
 #include <thread>

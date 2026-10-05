@@ -14,6 +14,7 @@
 //     thrown by T or an iterator, so there are no effects.
 //   /14 (try_push_back, try_emplace_back): "If an exception is thrown, there are no effects on
 //     *this"; /10-11: when full, no effects and nullopt.
+// REQUIRES: exceptions
 #include <inplace_vector>
 #include <new>
 #include "exc_sequence.hpp"

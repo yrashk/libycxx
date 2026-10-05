@@ -2,6 +2,7 @@
 // object pointer to cv void*, [conv.ptr]/2) and/or "a qualification conversion". The
 // qualification of the pointee must not be dropped: const int* does not convert to void*.
 // Function pointers and pointers to members do not convert to void*.
+// REQUIRES: exceptions
 #include "check.hpp"
 
 struct S {

@@ -3,6 +3,7 @@
 // already stored: promise_already_satisfied; no shared state: no_state. [futures.state]/7 and
 // [futures.promise]/7: a promise destroyed without a result abandons its state, which stores a
 // future_error with broken_promise.
+// REQUIRES: exceptions
 #include <future>
 #include <utility>
 #include "check.hpp"

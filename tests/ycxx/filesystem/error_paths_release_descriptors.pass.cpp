@@ -9,6 +9,7 @@
 //     null pointer when the file cannot be opened; [ifstream.cons].
 // Nothing in the draft lets a failed operation keep a resource it acquired; each case runs a
 // hundred times and the process's open descriptors are counted before and after.
+// REQUIRES: exceptions
 #include <filesystem>
 #include <fstream>
 #include <string>

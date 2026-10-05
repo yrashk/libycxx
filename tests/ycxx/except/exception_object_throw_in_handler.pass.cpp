@@ -4,6 +4,7 @@
 // (for the new exception) is entered. [except.handle]/10: inside a nested handler the
 // currently handled exception is the most recently activated one still active; after the
 // nested handler exits, `throw;` rethrows the outer one again.
+// REQUIRES: exceptions
 #include "check.hpp"
 
 static int live_a = 0, live_b = 0;

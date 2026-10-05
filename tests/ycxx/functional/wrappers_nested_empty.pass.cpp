@@ -9,6 +9,7 @@
 // becomes a target of a move_only_function / copyable_function (calling it throws
 // bad_function_call, [func.wrap.func.inv]/2), and an empty copyable_function becomes a target
 // of a std::function (which then is not empty).
+// REQUIRES: exceptions
 #include <functional>
 #include "check.hpp"
 

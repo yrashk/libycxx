@@ -7,6 +7,7 @@
 // stacktraces. /10: copying may throw (or, as a strengthening, yield an empty stacktrace).
 // An allocator that fails only after some successful allocations exercises a failure in the
 // middle of building frames_.
+// REQUIRES: exceptions
 #include <cstddef>
 #include <memory>
 #include <new>

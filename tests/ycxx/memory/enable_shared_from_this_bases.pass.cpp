@@ -15,6 +15,7 @@
 // - "p->weak-this.expired()": while a first owner is alive, a second, unrelated owner does
 //   not take over weak-this; once the first owner has expired, the next owner does.
 // make_shared ([util.smartptr.shared.create]) and the unique_ptr conversion enable it too.
+// REQUIRES: exceptions
 #include <memory>
 #include "check.hpp"
 

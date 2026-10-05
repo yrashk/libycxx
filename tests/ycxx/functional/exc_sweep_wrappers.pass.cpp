@@ -13,6 +13,7 @@
 //     construction throws.
 // Two callables: a small one holding one exh::T (not nothrow-movable: no small-buffer storage
 // is permitted for function, [func.wrap.func.con]/note) and a large one.
+// REQUIRES: exceptions
 #include <functional>
 #include "exc_new.hpp"
 

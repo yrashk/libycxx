@@ -1,6 +1,7 @@
 // [except.handle]/3.2: a handler of type cv T or cv T& matches E if "T is an unambiguous
 // public base class of E". A private or protected base is not public, so such a handler must
 // not match even where the base is accessible from the throwing context.
+// REQUIRES: exceptions
 #include "check.hpp"
 
 struct Base {

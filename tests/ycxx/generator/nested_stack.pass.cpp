@@ -17,6 +17,7 @@
 // generator object destroys the whole stack" -- destroying the root while the active stack
 // is several levels deep destroys every frame (each local destroyed exactly once) and returns
 // every frame's memory to its allocator.
+// REQUIRES: exceptions
 #include <generator>
 #include <cstddef>
 #include <memory>

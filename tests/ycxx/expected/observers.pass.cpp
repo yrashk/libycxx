@@ -2,6 +2,7 @@
 // (explicit), has_value, has_error (C++26), value() (throws bad_expected_access<E> carrying a
 // copy of / the moved error), error() (value categories, noexcept), value_or, error_or
 // (default template arguments allow braced initializers).
+// REQUIRES: exceptions
 #include <expected>
 #include <type_traits>
 #include <utility>

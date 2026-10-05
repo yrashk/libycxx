@@ -12,6 +12,7 @@
 // locale or called directly, gives the results of the named locale's facet. Facet destructors
 // are protected, so the facets are owned by locales (refs = 0).
 // COUNTERPART: libcxx:localization/locale.categories/category.ctype/locale.codecvt.byname/ctor_char(16|32)_t(_char8_t)?.pass.cpp
+// REQUIRES: exceptions
 #include <cstring>
 #include <ctime>
 #include <iterator>

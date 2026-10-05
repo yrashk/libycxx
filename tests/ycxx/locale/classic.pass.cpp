@@ -4,6 +4,7 @@
 // has_facet/use_facet find the required facets in every locale; combine<Facet>(other) takes
 // that facet from other; locale(other, f) replaces the facet; a locale is a callable comparing
 // strings with collate<charT>.
+// REQUIRES: exceptions
 #include <locale>
 #include <string>
 #include <type_traits>

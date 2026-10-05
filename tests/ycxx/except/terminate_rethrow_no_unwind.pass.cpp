@@ -2,6 +2,7 @@
 // function std::terminate is invoked." For `throw;` with no current exception
 // ([except.terminate]/1.8), destructors of live automatic objects must not run before the
 // terminate handler is called.
+// REQUIRES: exceptions
 #include <cstdlib>
 #include <exception>
 #include "check.hpp"

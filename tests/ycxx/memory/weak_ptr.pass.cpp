@@ -4,6 +4,7 @@
 // copy/move/convert. [util.smartptr.shared.const]/29-31: explicit shared_ptr(const
 // weak_ptr<Y>&) throws bad_weak_ptr if r.expired(). [util.smartptr.weakptr]: bad_weak_ptr
 // derives from exception and what() returns an implementation-defined NTBS.
+// REQUIRES: exceptions
 #include <memory>
 #include <exception>
 #include <type_traits>

@@ -9,6 +9,7 @@
 // conversion state (fpos keeps the state, [fpos.members]), so re-reading from it gives the same
 // characters. [istream.unformatted] tellg / seekg; [ostream.seeks].
 // COUNTERPART: libcxx:input.output/file.streams/fstreams/(filebuf.virtuals/xsputn|ifstream.members/buffered_reads|ofstream.members/buffered_writes).pass.cpp
+// REQUIRES: exceptions
 #include <fstream>
 #include <locale>
 #include <string>

@@ -11,6 +11,7 @@
 //   alternative leaves valueless_by_exception() false.
 // [variant.mod]/7: emplace on a valueless variant constructs without destroying anything.
 // COUNTERPART: libstdcxx:20_util/variant/(87431|exception_safety).cc
+// REQUIRES: exceptions
 #include <variant>
 #include <string>
 #include <type_traits>

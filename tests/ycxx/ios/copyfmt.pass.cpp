@@ -2,6 +2,7 @@
 // precision, fill, locale and the iword/pword arrays, not rdbuf or rdstate; registered
 // callbacks are called with erase_event before and copyfmt_event after the copy; the exception
 // mask is copied last ("then, calls exceptions(rhs.exceptions())").
+// REQUIRES: exceptions
 #include <ios>
 #include <sstream>
 #include <vector>

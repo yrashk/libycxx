@@ -2,6 +2,7 @@
 // function calls the function std::terminate. Otherwise, it throws the stored exception
 // captured by *this." A nested_exception constructed while no exception is handled stores a
 // null exception_ptr (/3).
+// REQUIRES: exceptions
 #include <exception>
 #include <cstdlib>
 #include "check.hpp"

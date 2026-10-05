@@ -12,6 +12,7 @@
 // hh_mm_ss is not a duration: %j ("If the type being formatted is a specialization of
 // duration, the decimal number of days ... Otherwise, the day of the year") needs a date it
 // does not hold, so /3 requires format_error.
+// REQUIRES: exceptions
 #include <chrono>
 #include <format>
 #include <string>

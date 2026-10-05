@@ -10,6 +10,7 @@
 //   [classification]/1: isspace(c, loc) is use_facet<ctype<charT>>(loc).is(ctype_base::space, c).
 //   [istream.sentry]/2-5: skipping whitespace classifies with the stream locale's ctype facet:
 //     with ',' classified as space and ' ' not, "1,2" reads as two numbers.
+// REQUIRES: exceptions
 #include <istream>
 #include <locale>
 #include <sstream>

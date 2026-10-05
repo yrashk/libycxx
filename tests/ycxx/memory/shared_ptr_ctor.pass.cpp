@@ -4,6 +4,7 @@
 // with deleter d — d(nullptr) is called for the nullptr form; copy shares ownership
 // (use_count + 1); move transfers it, leaving r empty with r.get() == nullptr; the
 // converting forms require Y* compatible with T*.
+// REQUIRES: exceptions
 #include <memory>
 #include <cstddef>
 #include <type_traits>

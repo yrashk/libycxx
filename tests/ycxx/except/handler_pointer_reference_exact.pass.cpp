@@ -2,6 +2,7 @@
 // (ignoring the top-level cv-qualifiers)"; for a pointer exception object such a handler
 // binds to the exception object itself ([except.handle]/15.2, Note 5: "any changes to the
 // referenced object are changes to the exception object"), visible after `throw;`.
+// REQUIRES: exceptions
 #include "check.hpp"
 
 int main() {

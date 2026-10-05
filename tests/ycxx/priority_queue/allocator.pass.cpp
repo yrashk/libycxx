@@ -3,6 +3,7 @@
 // given; they take part only if uses_allocator_v<container_type, Alloc> is true.
 // [priqueue.overview]: uses_allocator<priority_queue<...>, Alloc> derives from
 // uses_allocator<Container, Alloc>.
+// REQUIRES: exceptions
 #include <queue>
 #include <algorithm>
 #include <functional>

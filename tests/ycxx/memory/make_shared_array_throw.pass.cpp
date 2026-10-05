@@ -3,6 +3,7 @@
 // construction." /7.12: for allocate_shared through allocator_traits<A2>::destroy. /3: "If an exception is thrown, the functions have no
 // effect" (the memory obtained is released); /6: the exception thrown from the initialization
 // of the object propagates. /7.9: elements are initialized in ascending address order.
+// REQUIRES: exceptions
 #include <memory>
 #include <cstddef>
 #include <new>

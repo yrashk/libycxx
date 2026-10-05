@@ -2,6 +2,7 @@
 // operator bool (explicit), has_value, value() (throws bad_optional_access),
 // value_or (default template argument U = remove_cv_t<T>, so value_or({...}) works;
 // && overload moves). [optional.bad.access].
+// REQUIRES: exceptions
 #include <optional>
 #include <exception>
 #include <type_traits>

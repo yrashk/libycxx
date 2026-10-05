@@ -1,6 +1,7 @@
 // [view.interface.members]/5-6: at(n) "Returns: (*this)[n]. Throws: out_of_range if n < 0
 // is true or n >= ranges::distance(derived()) is true." It requires a sized random-access
 // range.
+// REQUIRES: exceptions
 #include <ranges>
 #include <stdexcept>
 #include <type_traits>

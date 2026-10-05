@@ -2,6 +2,7 @@
 // std::forward<ArgTypes>(args)...);" -- arguments are forwarded according to the signature,
 // the result is converted to R (or discarded for void), and member pointers are invoked
 // through INVOKE ([func.require]).
+// REQUIRES: exceptions
 #include <functional>
 #include <type_traits>
 #include <utility>

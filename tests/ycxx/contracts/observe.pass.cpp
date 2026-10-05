@@ -12,6 +12,7 @@
 // is implementation-defined (GCC: replaceable); this test replaces it.
 // [support.contract.invoke]: invoke_default_contract_violation_handler invokes the default
 // handler, which (Recommended practice, [basic.contract.handler]/2) returns normally.
+// REQUIRES: exceptions
 #include <contracts>
 #include <exception>
 #include "check.hpp"

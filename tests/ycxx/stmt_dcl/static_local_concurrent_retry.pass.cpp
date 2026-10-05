@@ -3,6 +3,7 @@
 // will be tried again the next time control enters the declaration". One thread's failed
 // attempt must therefore let a waiting thread run the initializer itself.
 // FLAGS: -pthread
+// REQUIRES: exceptions
 #include <pthread.h>
 #include <sched.h>
 #include "check.hpp"

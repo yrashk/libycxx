@@ -3,6 +3,7 @@
 // queue(InputIterator, InputIterator, Allocator) and queue(from_range, R, Allocator) (deque
 // with that allocator). [container.adaptors.general]/6: guides do not participate when an
 // allocator-like type is deduced for Container or a non-allocator for Allocator.
+// REQUIRES: exceptions
 #include <queue>
 #include <deque>
 #include <list>

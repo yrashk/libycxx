@@ -6,6 +6,7 @@
 // a leading "0" (octal); for base 16 an "0x" prefix is permitted; when the prefix is not
 // followed by a hex digit only the "0" is converted. idx receives the index of the first
 // unconverted character ([string.conversions]/1).
+// REQUIRES: exceptions
 #include <string>
 #include <climits>
 #include <stdexcept>

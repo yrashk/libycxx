@@ -2,6 +2,7 @@
 // constructor from E, error() for all value categories (noexcept), what() noexcept.
 // [expected.bad.void]: bad_expected_access<void> derives from exception; its special members
 // are protected.
+// REQUIRES: exceptions
 #include <expected>
 #include <exception>
 #include <type_traits>

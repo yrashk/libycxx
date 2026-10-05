@@ -7,6 +7,7 @@
 // pointers, arguments forwarded). [thread.once.onceflag]: constexpr once_flag() noexcept,
 // not copyable.
 // FLAGS: -pthread
+// REQUIRES: exceptions
 #include <mutex>
 #include <thread>
 #include <atomic>

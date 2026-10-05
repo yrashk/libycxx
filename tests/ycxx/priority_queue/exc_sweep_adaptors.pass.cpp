@@ -10,6 +10,7 @@
 //     basic one when comp throws, but every element object stays accounted for (the element
 //     count of c equals the live objects it owns) and nothing leaks.
 //   Constructors from ranges (make_heap) and push_range: basic guarantee.
+// REQUIRES: exceptions
 #include <deque>
 #include <queue>
 #include <stack>

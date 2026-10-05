@@ -14,6 +14,7 @@
 // [meta.reflection.substitute]: can_substitute, substitute.
 // [meta.reflection.exception]: an invalid query throws std::meta::exception (catchable during
 //   constant evaluation).
+// REQUIRES: exceptions
 #include <meta>
 #include <array>
 #include <climits>

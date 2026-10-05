@@ -4,6 +4,7 @@
 // constructors, allocator-extended copy/move (type_identity_t<Allocator>), initializer_list.
 // [sequence.reqmts]/9,12: each iterator in the range is dereferenced exactly once.
 // [sequence.reqmts]/69.1: integral arguments do not select the iterator-pair constructor.
+// REQUIRES: exceptions
 #include <vector>
 #include <list>
 #include <ranges>

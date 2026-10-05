@@ -3,6 +3,7 @@
 // is [s.data() + pos, s.data() + rlen). Throws out_of_range if pos > s.size().
 // /9-10: template<class T> basic_string(const T& t, size_type pos, size_type n, a) behaves
 // as basic_string(sv.substr(pos, n), a), constrained only on convertibility to string_view.
+// REQUIRES: exceptions
 #include <string>
 #include <string_view>
 #include <stdexcept>

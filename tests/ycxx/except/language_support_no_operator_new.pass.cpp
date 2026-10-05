@@ -18,6 +18,7 @@
 // purpose (their first exception, first static initialization and first thread_local).
 // Large and over-aligned exception objects are included (no small fixed pool can hold them).
 // FLAGS: -pthread
+// REQUIRES: exceptions
 #include <cstddef>
 #include <cstdlib>
 #include <new>

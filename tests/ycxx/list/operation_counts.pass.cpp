@@ -5,6 +5,7 @@
 // exception is thrown, there are no effects." /5: erasing a single element calls the
 // destructor of T once, and erasing a range calls it exactly the size of the range times.
 // No assignment operator of T is ever needed.
+// REQUIRES: exceptions
 #include <list>
 #include <cstddef>
 #include <iterator>

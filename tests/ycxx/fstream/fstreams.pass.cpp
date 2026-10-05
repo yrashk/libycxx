@@ -10,6 +10,7 @@
 // the streams and the buffers.
 // COUNTERPART: libcxx:input.output/file.streams/fstreams/filebuf.assign/(member_swap|move_assign|nonmember_swap).pass.cpp
 // COUNTERPART: libcxx:input.output/file.streams/fstreams/filebuf.cons/move.pass.cpp
+// REQUIRES: exceptions
 #include <fstream>
 #include <filesystem>
 #include <string>

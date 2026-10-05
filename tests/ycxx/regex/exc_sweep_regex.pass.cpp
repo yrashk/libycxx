@@ -7,6 +7,7 @@
 //     assign(first, last) and assign(il) are specified as calls of it, /3-/9, /13-14.)
 //   [res.on.exception.handling]/1, [re.results]: no further guarantee for the algorithms and
 //     iterators: every operator new block and every allocator block is freed exactly once.
+// REQUIRES: exceptions
 #include <regex>
 #include <string>
 #include "exc_new.hpp"

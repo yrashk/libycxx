@@ -8,6 +8,7 @@
 //     to_string() may throw bad_alloc (or handle an allocation failure by giving less
 //     information); nothing leaks.
 // After every run every operator new block is freed (see the note on the last sweep).
+// REQUIRES: exceptions
 #include <stacktrace>
 #include <string>
 #include "exc_new.hpp"

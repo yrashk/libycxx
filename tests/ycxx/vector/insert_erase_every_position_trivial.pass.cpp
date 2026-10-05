@@ -15,7 +15,8 @@
 // Element types: int, unsigned char, double, a padded aggregate, a 40-byte aggregate, a type
 // with trivial copy construction but a user-provided assignment operator, and a type with
 // trivial copy operations but a user-provided destructor (neither of the last two is
-// trivially copyable: their assignments/destructions are observable and counted). Types with a
+// trivially copyable: their assignments/destructions are observable and counted), and a type
+// with a const member whose user-provided assignment copies only the value (counted). Types with a
 // const or reference member (trivially copyable, not assignable) can only grow at the end:
 // push_back/emplace_back/reserve/shrink_to_fit/copies, checked separately.
 #include <vector>
@@ -69,6 +70,19 @@ struct DtorCounted {  // trivial copy operations, user-provided destructor
 };
 static_assert(std::is_trivially_copy_assignable_v<DtorCounted>);
 static_assert(!std::is_trivially_copyable_v<DtorCounted>);
+struct ConstIdCounted {  // a const member, trivial copy construction, assignment of the value only
+  const int id;
+  int v;
+  ConstIdCounted(int x) : id(x), v(x) {}
+  ConstIdCounted(const ConstIdCounted&) = default;
+  ConstIdCounted& operator=(const ConstIdCounted& o) {
+    ++assigns;
+    v = o.v;
+    return *this;
+  }
+  int key() const { return v; }
+};
+static_assert(std::is_trivially_copy_constructible_v<ConstIdCounted>);
 
 template <class T>
 int key(const T& t) {
@@ -210,7 +224,7 @@ void erases() {
         const T* data = v.data();
         long a0 = assigns, d0 = dtors;
         auto it = v.erase(v.begin() + f, v.begin() + l);
-        if constexpr (std::is_same_v<T, AssignCounted>) if (f < l) CHECK(assigns - a0 == n - l);
+        if constexpr (std::is_same_v<T, AssignCounted> || std::is_same_v<T, ConstIdCounted>) if (f < l) CHECK(assigns - a0 == n - l);
         if constexpr (std::is_same_v<T, DtorCounted>) CHECK(dtors - d0 == l - f);
         CHECK(it == v.begin() + f);
         CHECK(v.data() == data);  // erase never reallocates (/4: only invalidates at/after)
@@ -221,7 +235,7 @@ void erases() {
           auto w = build<T>(n, true);
           long a1 = assigns, d1 = dtors;
           auto it2 = w.erase(w.cbegin() + f);
-          if constexpr (std::is_same_v<T, AssignCounted>) CHECK(assigns - a1 == n - f - 1);
+          if constexpr (std::is_same_v<T, AssignCounted> || std::is_same_v<T, ConstIdCounted>) CHECK(assigns - a1 == n - f - 1);
           if constexpr (std::is_same_v<T, DtorCounted>) CHECK(dtors - d1 == 1);
           CHECK(it2 == w.begin() + f);
           expect(w, model, model_n);
@@ -306,5 +320,6 @@ int main() {
   all<Big>();
   all<AssignCounted>();
   all<DtorCounted>();
+  all<ConstIdCounted>();
   non_assignable();
 }

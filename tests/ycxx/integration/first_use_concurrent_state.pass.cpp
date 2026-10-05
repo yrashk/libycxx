@@ -139,6 +139,26 @@ static void stacktrace_queries() {
   CHECK(e.description() == desc[0] && e.source_file() == file[0] && e.source_line() == line[0]);
 }
 
+// The first captures and symbolizations of the process, in every thread at once: each thread's
+// trace of the same call path has the same entries ([stacktrace.basic.cons]/1: current()
+// returns the stacktrace of the current evaluation, or an empty one if it cannot), and the
+// same entry describes alike in every thread ([stacktrace.entry.query]).
+[[gnu::noinline]] static std::stacktrace capture_here(int) { return std::stacktrace::current(); }
+
+static void stacktrace_capture() {
+  std::stacktrace traces[N];
+  std::string first_desc[N];
+  together([&](int i) {
+    traces[i] = capture_here(i);
+    if (!traces[i].empty()) first_desc[i] = traces[i][0].description();
+  });
+  for (int i = 0; i < N; ++i) {
+    if (traces[i].empty() || traces[0].empty()) continue;  // (no trace available in that thread)
+    CHECK(traces[i][0] == traces[0][0]);
+    CHECK(first_desc[i] == first_desc[0]);
+  }
+}
+
 static void classic_locale() {
   bool ok[N] = {};
   together([&](int i) {
@@ -167,6 +187,7 @@ int main() {
   in_child(categories, "error categories");
   in_child(resources, "memory resources");
   in_child(stacktrace_queries, "stacktrace queries");
+  in_child(stacktrace_capture, "stacktrace captures");
   in_child(classic_locale, "classic locale");
   return 0;
 }

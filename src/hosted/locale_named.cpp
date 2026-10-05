@@ -419,8 +419,10 @@ bool load_time(const char* name, ycxx::detail::time_data<charT>& d) {
   return true;
 }
 
-// strftime_l / wcsftime_l of one conversion; the length of the result (grown until it fits:
-// both return 0 both for an empty result and for one that does not fit).
+// strftime_l / wcsftime_l of one conversion; the length of the result (once more in 1024 if it
+// does not fit in cap:
+// both return 0 both for an empty result and for one that does not fit; one conversion of a C
+// library locale is far shorter than 1024 characters, so 0 there means empty).
 template <class charT>
 std::size_t put_time(locale_t loc, charT* buf, std::size_t cap, const std::tm* t, char format, char modifier) {
   charT fmt[4] = {charT('%')};
@@ -440,16 +442,13 @@ std::size_t put_time(locale_t loc, charT* buf, std::size_t cap, const std::tm* t
     if (n != 0)
       return n;
   }
-  for (std::size_t size = cap > 256 ? cap * 2 : 512; size <= 65536; size *= 2) {
-    std::basic_string<charT> big(size, charT());
-    const std::size_t n = call(big.data(), size);
-    if (n != 0 || size >= 65536) {
-      for (std::size_t i = 0; i < n && i < cap; ++i)
-        buf[i] = big[i];
-      return n;
-    }
-  }
-  return 0;
+  if (cap >= 1024)
+    return 0;
+  charT big[1024];
+  const std::size_t n = call(big, 1024);
+  for (std::size_t i = 0; i < n && i < cap; ++i)
+    buf[i] = big[i];
+  return n;
 }
 
 // ---- collate ------------------------------------------------------------------------------------

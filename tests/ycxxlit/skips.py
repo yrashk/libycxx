@@ -5,13 +5,15 @@ regexes may use "|" alternation). A regex prefixed with `content:` is matched
 against the test source (re.search); otherwise against the test path (re.fullmatch).
 tests/common/skip.txt applies to every suite; tests/<suite>/skip.txt to one suite.
 
-Expected failures (tests/<suite>/xfail.txt) are known compiler gaps: the test still runs, and
+Expected failures (tests/<suite>/xfail.txt) have a cause outside the test and the library (a
+compiler gap or bug, a draft defect): the test still runs, and
 reports XFAIL when it fails, XPASS (which fails the run) once it passes. A line is
 `<path regex> | <gcc|clang|any> | <reason>`.
 
-Tests that cannot work in one environment (tests/<suite>/unsupported.txt) are reported
-UNSUPPORTED only while a lit feature names that environment, e.g. `root` when the tests run as
-root, so they still run everywhere else. A line is `<path regex> | <feature> | <reason>`.
+Tests that do not apply in one configuration only (tests/<suite>/unsupported.txt) are reported
+UNSUPPORTED only while a lit feature names it: `root` when the tests run as root (permission
+errors cannot happen), a compiler for a test that exercises an extension with that compiler only.
+They still run everywhere else. A line is `<path regex> | <feature> | <reason>`.
 """
 import os, re
 

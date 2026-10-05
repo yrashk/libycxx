@@ -1034,10 +1034,16 @@ bool copy_file(const path& from, const path& to, copy_options options, error_cod
 }
 
 void copy_symlink(const path& existing_symlink, const path& new_symlink, error_code& ec) noexcept {
-  path target = read_symlink(existing_symlink, ec);
-  if (ec)
-    return;
-  create_symlink(target, new_symlink, ec); // POSIX makes no difference for directory links
+  // The link's target is read into a path, which allocates: this overload is noexcept, so an
+  // allocation failure is reported through ec ([fs.err.report]/3).
+  try {
+    path target = read_symlink(existing_symlink, ec);
+    if (ec)
+      return;
+    create_symlink(target, new_symlink, ec); // POSIX makes no difference for directory links
+  } catch (const std::bad_alloc&) {
+    ec = errno_code(ENOMEM);
+  }
 }
 
 // [fs.op.create.directories]

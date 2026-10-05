@@ -8,6 +8,7 @@
 // Output to cout / cerr and stdio interleave in order while synchronized
 // ([iostream.objects.overview]/6). Checked by redirecting the standard file descriptors to a
 // temporary file.
+// COUNTERPART: libstdcxx:27_io/objects/(char|wchar_t)/2523-1_xin.cc
 #include <iostream>
 #include <cstdio>
 #include <string>

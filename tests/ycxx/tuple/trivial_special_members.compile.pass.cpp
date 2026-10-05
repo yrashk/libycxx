@@ -3,6 +3,7 @@
 // triviality is specified: whether tuple<>'s copy and move assignments are trivial is left to
 // the implementation, so it is not checked here.)
 // COUNTERPART: libstdcxx:20_util/tuple/requirements/empty_trivial.cc
+// COUNTERPART: libstdcxx:20_util/tuple/requirements/dr801.cc
 #include <string>
 #include <tuple>
 #include <type_traits>

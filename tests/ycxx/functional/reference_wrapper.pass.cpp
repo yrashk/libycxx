@@ -4,6 +4,7 @@
 // expression FUN(declval<U>()) is well-formed and is_same_v<remove_cvref_t<U>,
 // reference_wrapper> is false", FUN(T&) noexcept / FUN(T&&) = delete; noexcept(FUN(...)).
 // [refwrap.assign], [refwrap.access], [refwrap.invoke].
+// COUNTERPART: libstdcxx:20_util/reference_wrapper/invoke-2.cc
 #include <functional>
 #include <type_traits>
 #include <utility>

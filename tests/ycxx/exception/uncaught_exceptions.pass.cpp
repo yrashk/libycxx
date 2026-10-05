@@ -1,6 +1,8 @@
 // [uncaught.exceptions]: int uncaught_exceptions() noexcept; "Returns: The number of uncaught
 // exceptions." An exception is uncaught from the throw until a handler is activated (e.g.
 // while destructors run during stack unwinding).
+// COUNTERPART: libstdcxx:18_support/exception_ptr/62258.cc
+// COUNTERPART: libstdcxx:18_support/uncaught_exception/14026.cc
 #include <exception>
 #include <type_traits>
 #include "check.hpp"

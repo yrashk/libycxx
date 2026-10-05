@@ -11,6 +11,7 @@
 // types; [basic.fundamental]/11: char8_t, char16_t, char32_t, wchar_t, bool are integral.
 // [dcl.fct]/6: "void() const &" (an abominable function type) is a function type.
 // COUNTERPART: libcxx:utilities/meta/derived_from_integral_constant.compile.pass.cpp
+// COUNTERPART: libstdcxx:20_util/variable_templates_for_traits.cc
 #include <type_traits>
 #include <cstddef>
 #include <stdfloat>

@@ -87,7 +87,7 @@ static void check(const char* name) {
     std::istringstream is(os.str());
     is.imbue(l);
     long double back = 42;
-    is >> std::showbase >> std::get_money(back, Intl);
+    is >> std::noskipws >> std::showbase >> std::get_money(back, Intl); // the text may begin with the space field
     CHECK(!is.fail() && back == v);
     std::wostringstream wos;
     wos.imbue(l);
@@ -95,7 +95,7 @@ static void check(const char* name) {
     std::wistringstream wis(wos.str());
     wis.imbue(l);
     back = 42;
-    wis >> std::get_money(back, Intl);
+    wis >> std::noskipws >> std::get_money(back, Intl);
     CHECK(!wis.fail() && back == v);
   }
 }

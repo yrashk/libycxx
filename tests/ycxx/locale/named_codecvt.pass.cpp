@@ -61,7 +61,8 @@ int main() {
   round_trip(latin9, L"déjà € œ");
 
   // ISO-8859-15: the euro sign is the byte A4, and a character outside it is an error
-  const CV& l9 = std::use_facet<CV>(std::locale(latin9));
+  const std::locale loc9(latin9);
+  const CV& l9 = std::use_facet<CV>(loc9);
   {
     const wchar_t in[] = L"a€b中c";
     char out[8];
@@ -71,7 +72,8 @@ int main() {
     CHECK(l9.out(st, in, in + 5, fn, out, out + 8, tn) == std::codecvt_base::error);
     CHECK(fn == in + 3 && tn == out + 3 && out[1] == '\xa4');
   }
-  const CV& u8 = std::use_facet<CV>(std::locale(utf8));
+  const std::locale locu8(utf8);
+  const CV& u8 = std::use_facet<CV>(locu8);
   {
     // no room for a three-byte character: partial, nothing of it written
     const wchar_t in[] = L"a€";

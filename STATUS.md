@@ -489,6 +489,12 @@ compilers; `visit_format_arg.pass.cpp` needs `EOF` from `constexpr_char_traits.h
   C library does (`0x0.000000000000001p-16385` is the smallest), so that both forms agree there.
 
 ## Known limitations and draft defects
+- `submdspan` of a `layout_stride` (or non-unit-stride) mapping: [mdspan.sub.map.common]/6 builds
+  a `layout_stride::mapping` whose strides need not meet [mdspan.layout.stride.cons]/4.3, although
+  the layout is unique: that condition is sufficient, not necessary, despite its Note (extents
+  {2, 4} with strides {6, 9}, the slice `extent_slice{0, 2, 3}, full_extent` of {4, 4} with
+  {2, 9}, is unique and fails it). libycxx constructs submdspan results without that check (the
+  other preconditions are still checked in hardened builds); a draft defect to report.
 - Hidden visibility (DECISIONS §2): a program or shared library exports none of libycxx's
   symbols. **GCC warns** (`-Wattributes`: "'S' declared with greater visibility than the type of
   its field" / "than its base") for every program class outside libycxx's namespaces with a

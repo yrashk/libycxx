@@ -10,6 +10,7 @@
 // == != < <= > >= returning masks.
 // [simd.mask.cond]/[simd.alg]/10: select(mask, mask, mask), select(mask, bool, bool) give masks;
 // select(mask, T, T) with sizeof(T) == Bytes gives vec<T, size()>.
+// COUNTERPART: libcxx:experimental/simd/simd.mask.class/.*
 #include <simd>
 #include <bitset>
 #include <cstdint>

@@ -19,7 +19,8 @@
 
 namespace ycxx::detail {
 // [system.error.syn]/1: each errc enumerator equals the <cerrno> macro of the same meaning.
-// Core spells the values out (it cannot include <errno.h>); check them against this C library.
+// Core spells the values out for each C library family (it cannot include <errno.h>); check
+// them against this C library.
 consteval bool errc_matches_errno() {
   using std::errc;
   const struct {
@@ -108,8 +109,8 @@ consteval bool errc_matches_errno() {
 }
 static_assert(ycxx::detail::errc_matches_errno(), "libycxx: std::errc does not match this C library's errno values");
 // The deprecated enumerators of [depr.cerrno] are not named here (that would warn); their values
-// in ycxx/core/errc.hpp are these numbers.
-static_assert(ENODATA == 61 && ENOSR == 63 && ENOSTR == 60 && ETIME == 62,
+// in ycxx/core/errc.hpp are these constants.
+static_assert(ENODATA == errno_enodata && ENOSR == errno_enosr && ENOSTR == errno_enostr && ETIME == errno_etime,
               "libycxx: the [depr.cerrno] errc values do not match this C library's errno values");
 } // namespace ycxx::detail
 #endif

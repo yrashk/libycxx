@@ -13,6 +13,10 @@
 #if defined(__linux__) || defined(__FreeBSD__)
 #  include <link.h>
 #endif
+#if defined(__APPLE__)
+#  include <sys/sysctl.h>
+#  include <sys/types.h>
+#endif
 
 int ycxx_pal_debugger_present(void) {
 #if defined(__linux__)
@@ -45,6 +49,16 @@ int ycxx_pal_debugger_present(void) {
   while (*p == ' ' || *p == '\t')
     ++p;
   return *p >= '1' && *p <= '9';
+#elif defined(__APPLE__)
+  // The P_TRACED flag of this process's kinfo_proc (Apple's Technical Q&A QA1361).
+  int mib[4] = {CTL_KERN, KERN_PROC, KERN_PROC_PID, (int)getpid()};
+  struct kinfo_proc info;
+  memset(&info, 0, sizeof info);
+  size_t size = sizeof info;
+  const int saved = errno;
+  const int r = sysctl(mib, 4, &info, &size, NULL, 0);
+  errno = saved;
+  return r == 0 && (info.kp_proc.p_flag & P_TRACED) != 0;
 #else
   return 0;
 #endif

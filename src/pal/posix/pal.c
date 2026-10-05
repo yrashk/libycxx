@@ -9,6 +9,7 @@
 #include <sched.h>
 #include <fcntl.h>
 #include <stddef.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -36,8 +37,17 @@ static const char ycxx_pal_never_single_threaded = 0;
 const char* const ycxx_pal_single_threaded = &ycxx_pal_never_single_threaded;
 #endif
 
+/* The alignment malloc guarantees: that of max_align_t, and 16 bytes on Darwin, whose malloc
+   aligns every block to 16 although max_align_t (long double) is 8 on arm64; without this,
+   every operator new there (__STDCPP_DEFAULT_NEW_ALIGNMENT__ 16) would take posix_memalign. */
+#if defined(__APPLE__)
+enum { pal_malloc_align = 16 };
+#else
+enum { pal_malloc_align = alignof(max_align_t) };
+#endif
+
 void* ycxx_pal_allocate(ycxx_pal_size size, ycxx_pal_size align) {
-  if (align <= alignof(max_align_t))
+  if (align <= pal_malloc_align)
     return malloc(size);
   void* p = NULL;
   if (align < sizeof(void*))
@@ -159,12 +169,24 @@ void ycxx_pal_random_close(ycxx_pal_handle h) {
     close((int)(h - 1));
 }
 
+#if defined(__APPLE__)
+/* Darwin's address wait: the kernel's ulock interface, on which libSystem's os_unfair_lock and
+   Apple's own libc++ (std::atomic<T>::wait) are built, present since macOS 10.12. The SDK does
+   not declare it (its public wrapper, os_sync_wait_on_address, needs macOS 14.4), so it is
+   declared here. A 32-bit compare-and-wait, private to the process; the timeout is in
+   microseconds, 0 meaning none. With ULF_NO_ERRNO a failure is returned as -errno. */
+extern int __ulock_wait(uint32_t operation, void* addr, uint64_t value, uint32_t timeout_us);
+extern int __ulock_wake(uint32_t operation, void* addr, uint64_t wake_value);
+enum { pal_ul_compare_and_wait = 1, pal_ulf_wake_all = 0x100, pal_ulf_no_errno = 0x01000000 };
+#endif
 
 void ycxx_pal_wait(const ycxx_pal_u32* addr, ycxx_pal_u32 expected) {
 #if defined(__linux__)
   syscall(SYS_futex, addr, FUTEX_WAIT_PRIVATE, expected, NULL, NULL, 0);
+#elif defined(__APPLE__)
+  __ulock_wait(pal_ul_compare_and_wait | pal_ulf_no_errno, (void*)addr, expected, 0);
 #else
-  /* No portable futex (macOS's address wait is private API or macOS 14.4+): poll briefly. */
+  /* No address wait known for this system: poll briefly. */
   if (__atomic_load_n(addr, __ATOMIC_ACQUIRE) == expected) {
     struct timespec ts = {0, 50000};
     nanosleep(&ts, NULL);
@@ -175,6 +197,8 @@ void ycxx_pal_wait(const ycxx_pal_u32* addr, ycxx_pal_u32 expected) {
 void ycxx_pal_wake_all(const ycxx_pal_u32* addr) {
 #if defined(__linux__)
   syscall(SYS_futex, addr, FUTEX_WAKE_PRIVATE, 0x7fffffff, NULL, NULL, 0);
+#elif defined(__APPLE__)
+  __ulock_wake(pal_ul_compare_and_wait | pal_ulf_wake_all | pal_ulf_no_errno, (void*)addr, 0);
 #else
   (void)addr;
 #endif
@@ -183,6 +207,8 @@ void ycxx_pal_wake_all(const ycxx_pal_u32* addr) {
 void ycxx_pal_wake_one(const ycxx_pal_u32* addr) {
 #if defined(__linux__)
   syscall(SYS_futex, addr, FUTEX_WAKE_PRIVATE, 1, NULL, NULL, 0);
+#elif defined(__APPLE__)
+  __ulock_wake(pal_ul_compare_and_wait | pal_ulf_no_errno, (void*)addr, 0);
 #else
   (void)addr;
 #endif
@@ -209,6 +235,20 @@ int ycxx_pal_wait_until(const ycxx_pal_u32* addr, ycxx_pal_u32 expected, int clo
   if (r != 0 && errno == ETIMEDOUT)
     return ETIMEDOUT;
   return 0;
+#elif defined(__APPLE__)
+  /* ulock takes a relative timeout: the time left on `clock`, in microseconds rounded up, at
+     most UINT32_MAX - 1 (0 would mean none); a wait cut short by that limit is not a timeout. */
+  struct timespec now;
+  clock_gettime(pal_clockid(clock), &now);
+  if (now.tv_sec > sec || (now.tv_sec == sec && now.tv_nsec >= nsec))
+    return ETIMEDOUT;
+  const ycxx_pal_i64 left_ns = (sec - (ycxx_pal_i64)now.tv_sec) * 1000000000 + (nsec - (ycxx_pal_i64)now.tv_nsec);
+  const ycxx_pal_i64 left_us = left_ns / 1000 + (left_ns % 1000 != 0);
+  const uint32_t timeout = left_us >= (ycxx_pal_i64)UINT32_MAX ? UINT32_MAX - 1 : (uint32_t)left_us;
+  const int r = __ulock_wait(pal_ul_compare_and_wait | pal_ulf_no_errno, (void*)addr, expected, timeout);
+  if (r == -ETIMEDOUT && pal_passed(clock, sec, nsec))
+    return ETIMEDOUT;
+  return 0;
 #else
   if (pal_passed(clock, sec, nsec))
     return ETIMEDOUT;
@@ -224,9 +264,15 @@ int ycxx_pal_thread_create(ycxx_pal_handle* thread, void* (*start)(void*), void*
   if (r != 0)
     return r;
   if (stack_size != 0) {
-    /* A size the system cannot use is a hint to ignore, not an error. */
-    if (stack_size < (ycxx_pal_size)PTHREAD_STACK_MIN)
-      stack_size = (ycxx_pal_size)PTHREAD_STACK_MIN;
+    /* A size the system cannot use is a hint to adjust or ignore, not an error. At least the
+       minimum, asked of sysconf (PTHREAD_STACK_MIN is not a constant in newer glibc, and which
+       header defines it differs between C libraries), in whole pages (Darwin's
+       pthread_attr_setstacksize rejects anything else). */
+    const long min = sysconf(_SC_THREAD_STACK_MIN), page = sysconf(_SC_PAGESIZE);
+    if (min > 0 && stack_size < (ycxx_pal_size)min)
+      stack_size = (ycxx_pal_size)min;
+    if (page > 0 && stack_size % (ycxx_pal_size)page != 0 && stack_size <= (ycxx_pal_size)-1 - (ycxx_pal_size)page)
+      stack_size += (ycxx_pal_size)page - stack_size % (ycxx_pal_size)page;
     (void)pthread_attr_setstacksize(&attr, stack_size);
   }
   pthread_t t;

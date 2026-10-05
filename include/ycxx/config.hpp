@@ -163,6 +163,50 @@
 #define YCXX_ATOMIC_LONG_LOCK_FREE __GCC_ATOMIC_LONG_LOCK_FREE
 #define YCXX_ATOMIC_LLONG_LOCK_FREE __GCC_ATOMIC_LLONG_LOCK_FREE
 #define YCXX_ATOMIC_POINTER_LOCK_FREE __GCC_ATOMIC_POINTER_LOCK_FREE
+// The target's C library family: Darwin (Apple's libSystem, BSD heritage) or the Linux C
+// libraries (glibc, musl), which are also the default for bare-metal targets. Core spells out
+// some of the C library's values without its headers: the errno numbers (std::errc and the
+// freestanding <cerrno>), the FP_* classification macros, mbstate_t's layout. Those macros must
+// be usable in #if, so the freestanding headers that define them test this switch; everything
+// else uses cfg::darwin. Each value is checked against the C library's headers when libycxx is
+// built or a hosted header is used (<system_error>, <cwchar>, src/hosted/cmath_check.cpp).
+#if defined(__APPLE__)
+#  define YCXX_TARGET_DARWIN 1
+#else
+#  define YCXX_TARGET_DARWIN 0
+#endif
+// C23's strfromd/strfromf/strfroml (<cstdlib>): glibc has them (2.25 and later), Darwin's
+// libSystem does not. Where the C library lacks them, <cstdlib> declares libycxx's own (the
+// hosted runtime, src/hosted/strfrom.cpp) instead of `using ::strfromd;`, which would not parse.
+#if defined(__APPLE__)
+#  define YCXX_C_HAS_STRFROM 0
+#else
+#  define YCXX_C_HAS_STRFROM 1
+#endif
+// <cuchar>: whether the C library has <uchar.h> (older macOS SDKs do not), and in it C23's
+// mbrtoc8/c8rtomb (glibc 2.36 and later; not Darwin's libSystem, whose <uchar.h>, where present,
+// has the char16_t and char32_t functions only). Where they are missing, <cuchar> declares
+// libycxx's own (src/hosted/uchar.cpp).
+#if __has_include(<uchar.h>)
+#  define YCXX_C_HAS_UCHAR_H 1
+#else
+#  define YCXX_C_HAS_UCHAR_H 0
+#endif
+#if YCXX_C_HAS_UCHAR_H && !defined(__APPLE__)
+#  define YCXX_C_HAS_MBRTOC8 1
+#else
+#  define YCXX_C_HAS_MBRTOC8 0
+#endif
+// Initialization priorities (init_priority) order static initializers across object files only
+// in ELF (.init_array.NNNNN sections, sorted by the linker). Mach-O has one __mod_init_func list
+// in link order (Clang orders priorities within one object file; GCC rejects the attribute), so
+// there the runtime cannot run before the program's objects, and <iostream> defines an
+// ios_base::Init object in each translation unit instead (DECISIONS §7).
+#if defined(__ELF__)
+#  define YCXX_HAS_INIT_PRIORITY 1
+#else
+#  define YCXX_HAS_INIT_PRIORITY 0
+#endif
 // <cmath> macros that depend on the target and the options; they must be usable in #if.
 // FP_FAST_FMA* are defined where fma is as fast as a multiply and an add.
 #if defined(__FP_FAST_FMA)
@@ -180,15 +224,20 @@
 #else
 #  define YCXX_FP_FAST_FMAL 0
 #endif
-// math_errhandling: the C library sets errno unless the program is built with -fno-math-errno.
-#if defined(__NO_MATH_ERRNO__)
+// math_errhandling: glibc and musl set errno unless the program is built with -fno-math-errno.
+// Darwin's libm never sets errno: it reports errors through the floating-point exception flags
+// only (its <math.h> defines math_errhandling as a run-time call, __math_errhandling(), which is
+// not a constant expression; Clang defaults to -fno-math-errno there). So on Darwin libycxx's
+// value is MATH_ERREXCEPT whatever the options: -fmath-errno cannot make that libm set errno.
+#if defined(__NO_MATH_ERRNO__) || defined(__APPLE__)
 #  define YCXX_MATH_ERRNO 0
 #else
 #  define YCXX_MATH_ERRNO 1
 #endif
 // FP_ILOGBNAN: what the C library's ilogb returns for a NaN (glibc: INT_MIN on x86, INT_MAX
-// elsewhere). src/hosted/cmath_check.cpp verifies it against <math.h>.
-#if defined(__x86_64__) || defined(__i386__)
+// elsewhere; Darwin: INT_MIN on every architecture). src/hosted/cmath_check.cpp verifies it
+// against <math.h>.
+#if defined(__x86_64__) || defined(__i386__) || defined(__APPLE__)
 #  define YCXX_FP_ILOGBNAN (-2147483647 - 1)
 #else
 #  define YCXX_FP_ILOGBNAN 2147483647
@@ -210,6 +259,25 @@ inline constexpr bool clang = true;
 inline constexpr bool clang = false;
 #endif
 inline constexpr bool gcc = !clang;
+
+// The target's C library family (see YCXX_TARGET_DARWIN): Darwin's libSystem, or else the Linux
+// C libraries' conventions.
+inline constexpr bool darwin = YCXX_TARGET_DARWIN;
+// mbstate_t's layout in the C library ([cwchar.syn]; core defines std::mbstate_t without it):
+// glibc and musl 8 bytes aligned to 4; Darwin a union of char[128] and long long.
+inline constexpr unsigned long mbstate_size = darwin ? 128 : 8;
+inline constexpr unsigned long mbstate_align = darwin ? 8 : 4;
+// Whether init_priority orders static initialization across object files (YCXX_HAS_INIT_PRIORITY).
+inline constexpr bool init_priority = YCXX_HAS_INIT_PRIORITY;
+// Clang's Apple arm64 C++ ABI marks a type_info whose object may be duplicated across linked
+// images (vague linkage, default visibility) by setting bit 63 of its name pointer; such type_infos
+// compare by name. The bit is cleared before the name is read (std::type_info, the ABI runtime).
+// Clearing it is harmless where it is never set (GCC), so this holds for every Apple arm64 target.
+#if defined(__APPLE__) && defined(__aarch64__)
+inline constexpr bool rtti_non_unique_bit = true;
+#else
+inline constexpr bool rtti_non_unique_bit = false;
+#endif
 
 inline constexpr bool exceptions = YCXX_HAS_EXCEPTIONS;
 inline constexpr bool rtti = YCXX_HAS_RTTI;

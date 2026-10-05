@@ -7,6 +7,11 @@
 #include <langinfo.h>
 #include <locale.h>
 #include <string.h>
+#if defined(__APPLE__)
+/* Darwin declares the *_l functions (nl_langinfo_l) in <xlocale.h>, which declares those of
+   <langinfo.h> only when included after it. */
+#  include <xlocale.h>
+#endif
 
 int ycxx_pal_environment_encoding(char* buf, ycxx_pal_size n) {
   if (n == 0)

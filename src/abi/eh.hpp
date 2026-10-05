@@ -59,6 +59,14 @@ inline bool is_dependent(const exception_header* h) noexcept {
 // The thrown object of a native exception.
 inline void* object_of(exception_header* h) noexcept { return is_dependent(h) ? h->primary_object : h + 1; }
 
+// The language-specific data area of a frame. _Unwind_GetLanguageSpecificData returns void* in
+// GCC's and LLVM's <unwind.h> and uintptr_t in Apple's: overloads accept either.
+inline const unsigned char* lsda_bytes(void* p) noexcept { return static_cast<const unsigned char*>(p); }
+inline const unsigned char* lsda_bytes(std::uintptr_t v) noexcept { return reinterpret_cast<const unsigned char*>(v); }
+inline const unsigned char* lsda_of(_Unwind_Context* ctx) noexcept {
+  return ycxx::abi::lsda_bytes(_Unwind_GetLanguageSpecificData(ctx));
+}
+
 // [ABI-EH] 2.2.2.
 struct eh_globals {
   exception_header* caught_exceptions;

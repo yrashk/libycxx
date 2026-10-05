@@ -242,28 +242,21 @@ without their headers (`<sstream>`, `printf`, `int64_t`: 4), and libstdc++ choic
 leaves open (8: `%OS` without fraction, LWG 4118 character reps, file_clock's epoch, rounding
 when parsing, `fractional_width` of ratio<1, 2^62>, `hh_mm_ss` layout, an error message).
 
-## Own-suite configurations (runs of 2026-10-05, 2381 tests)
+## Own-suite configurations (runs of 2026-10-05, 2438 tests)
 `tools/test --hardened` / `--cxxflags=... --config-name=...` (README, Own tests); the nightly
 `full.yml` runs them, and any failure fails the job.
 
 | Configuration | GCC 16.2 | Clang 23.1 |
 |---|---|---|
-| default (the 53 `precondition/` tests UNSUPPORTED) | 2310 pass / 13 fail / 5 xfail | 2302 pass / 10 fail / 16 xfail / 53 unsupported |
-| hardened (`-DYCXX_HARDENED=1`) | 2363 pass / 13 fail / 5 xfail | 2355 pass / 10 fail / 16 xfail |
-| noexcept (`-fno-exceptions`; 430 tests `REQUIRES: exceptions`) | 1888 pass / 5 fail / 5 xfail / 483 unsupported | 1886 pass / 6 fail / 6 xfail / 483 unsupported |
+| default (the `precondition/` death tests UNSUPPORTED) | 2371 pass / 0 fail / 13 xfail / 54 unsupported | 2364 pass / 0 fail / 20 xfail / 54 unsupported |
+| hardened (`-DYCXX_HARDENED=1`) | 2425 pass / 0 fail / 13 xfail | 2418 pass / 0 fail / 20 xfail |
+| noexcept (`-fno-exceptions`; tests `REQUIRES: exceptions` UNSUPPORTED) | 1941 pass / 0 fail / 7 xfail / 490 unsupported | 1941 pass / 0 fail / 7 xfail / 490 unsupported |
 
-The default GCC run counted 2328 tests (it started before `precondition/` existed). Default
-failures were the then-listed known ones, plus `integration/fd_leaks_alloc_failure` (a 60 s timeout under
-machine load; passes alone). Hardened: all 53 death tests pass on both compilers; the one failure
-not in the default run is `mdspan/submdspan_exhaustive_oracle` (fixed since:
-submdspan results skip that check; see Known limitations): the hardened check of
-`layout_stride::mapping(extents, strides)` fires inside `submdspan` on a `layout_stride` source,
-because [mdspan.sub.map.common]/6 gives strides that need not satisfy the constructor's
-precondition [mdspan.layout.stride.cons]/4.3 (extents {4, 4}, strides {2, 9}, slices
-`extent_slice{0, 2, 3}, full_extent` give extents {2, 4} and strides {6, 9}: unique, but no
-permutation meets 4.3); a draft question, or the library should build that result without the
-check. noexcept: only the default run's failures (those of `except/`, `exception/`, `contracts/`
-and `execution/` are UNSUPPORTED there).
+Every expected failure carries its reason in the test (`// XFAIL:` for causes outside the library
+and the test, `// XFAIL-COMPILER:` for a missing compiler feature): the draft defect
+`char_traits/eof`, the Itanium ABI and GCC handler-recording limits (`except/handler_*`), GCC's
+contract detection mode (`contracts/observe`), the unimplemented senders of `<execution>`, and on
+Clang the features it lacks (constant-evaluation throws, contracts, reflection, builtins).
 
 ## Freestanding
 `tools/check_freestanding.sh`: every core header, every header with a freestanding subset and
@@ -1009,10 +1002,8 @@ levels: 29.7 s -> 0.01 s; libstdc++ 8.6 s). Remaining above 1.5x: deque push at 
 
 ## Open issues / next
 - Every header of the C++26 library is provided (Phases 1-4 complete; `<meta>` needs GCC's
-  `-freflection`, `<contracts>` GCC's `-fcontracts`). Own suite (2146 tests, at `65e7235`, after batch 36): GCC 2131 pass / 10 fail / 5 xfail, Clang 2124 / 6 / 16. Every remaining failure is a documented limitation:
-  `char_traits<char16_t>::eof`, the Itanium ABI handler limits (`except/handler_*`), GCC's
-  contract detection mode, non-null constexpr `exception_ptr`, `std::mbstate_t` being core's own
-  type and no `<stddef.h>` wrapper (`bit/oracle_cxx26` no longer fails on Clang).
+  `-freflection`, `<contracts>` GCC's `-fcontracts`). Own suite: no failures on either compiler (configurations above); the expected
+  failures carry their reasons in the tests.
 - Next (Phase 5): full libc++/libstdc++ sweeps with triage (tests/libcxx/TRIAGE.md,
   tests/libstdcxx/TRIAGE.md), fixing the libycxx bugs they find; then a whole-library review
   (performance pass done, see Performance).

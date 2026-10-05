@@ -5,7 +5,9 @@
 // "carrier" type with T's format: float32_t and float64_t use float and double, float128_t the
 // *f128 functions, float16_t and bfloat16_t compute in double and round once more. The C23
 // additions (nextup, fmaximum, ...) and the format-dependent operations of the 16-bit types
-// (nextafter, fma) use the soft implementations, which are exact.
+// (nextafter, fma) use the soft implementations, which are exact. Where the C library has no
+// *f128 functions (cfg::c_math_float128), float128_t uses the soft implementations at run time
+// as well (libm_carrier).
 // Constant evaluation: exact and correctly rounded operations (sqrt, fma, fmod, ...) use the
 // soft implementations in T itself (cmath_exact.hpp); the transcendental functions use the
 // builtin where the compiler folds it (GCC, through MPFR) and the soft multiprecision code
@@ -39,6 +41,16 @@ template <class T>
 using carrier_t = typename decltype(ycxx::detail::cm::carrier_of<T>())::type;
 template <class T>
 inline constexpr bool exact_carrier = fp_same_values<T, carrier_t<T>>;
+// Whether the C library computes T's carrier at run time: always for float, double and long
+// double; binary128 only where libm has the *f128 functions. Otherwise the carrier is T itself
+// and run time uses the same soft implementations as constant evaluation.
+template <class T>
+inline constexpr bool libm_carrier = fp_std_index<carrier_t<T>> >= 0 || cfg::c_math_float128;
+
+// The rounding direction of the current floating-point environment (fegetround), for rint,
+// nearbyint and lrint of a type without libm_carrier. Defined in the hosted runtime
+// (src/hosted/cmath.cpp).
+ycxx::detail::fpm::fp_rint_mode current_rounding() noexcept;
 
 // A carrier value converted to T: exact for an exact carrier; otherwise rounded, with the
 // exceptions of that rounding reported during constant evaluation.
@@ -163,10 +175,11 @@ constexpr T transcendental(T x, T y = T()) noexcept {
       if (__builtin_isfinite(x) && __builtin_isfinite(y))
         return ycxx::detail::cm::narrow<T>(ycxx::detail::cm::builtin<F, C>(static_cast<C>(x), static_cast<C>(y)));
     }
-    return ycxx::detail::cm::narrow<T>(ycxx::detail::cm::soft<F, C>(static_cast<C>(x), static_cast<C>(y)));
   } else {
-    return ycxx::detail::cm::narrow<T>(ycxx::detail::cm::builtin<F, C>(static_cast<C>(x), static_cast<C>(y)));
+    if constexpr (ycxx::detail::cm::libm_carrier<T>)
+      return ycxx::detail::cm::narrow<T>(ycxx::detail::cm::builtin<F, C>(static_cast<C>(x), static_cast<C>(y)));
   }
+  return ycxx::detail::cm::narrow<T>(ycxx::detail::cm::soft<F, C>(static_cast<C>(x), static_cast<C>(y)));
 }
 
 // ---- exact and correctly rounded functions -----------------------------------------------------------
@@ -182,35 +195,38 @@ constexpr T copysign(T x, T y) noexcept {
 template <class T>
 constexpr T sqrt(T x) noexcept {
   using C = carrier_t<T>;
-  if consteval {
-    return ycxx::detail::fpm::fp_sqrt(x);
-  } else {
-    return static_cast<T>(ycxx::detail::fpm::bi::sqrt<C>(static_cast<C>(x))); // double rounding innocuous
+  if !consteval {
+    if constexpr (ycxx::detail::cm::libm_carrier<T>) {
+      return static_cast<T>(ycxx::detail::fpm::bi::sqrt<C>(static_cast<C>(x))); // double rounding innocuous
+    }
   }
+  return ycxx::detail::fpm::fp_sqrt(x);
 }
 template <class T>
 constexpr T cbrt(T x) noexcept {
   using C = carrier_t<T>;
-  if consteval {
-    return ycxx::detail::fpm::fp_cbrt(x);
-  } else {
-    // glibc's cbrt is not exact even for perfect cubes (cbrt(-27.0) != -3): use a wider type
-    // when there is one (x87 long double), which also makes the result correctly rounded
-    // except in rare double-rounding cases.
-    if constexpr (fp_format<long double>.digits >= fp_format<C>.digits + 11)
-      return static_cast<T>(ycxx::detail::fpm::bi::cbrt<long double>(static_cast<long double>(x)));
-    else
-      return static_cast<T>(ycxx::detail::fpm::bi::cbrt<C>(static_cast<C>(x)));
+  if !consteval {
+    if constexpr (ycxx::detail::cm::libm_carrier<T>) {
+      // glibc's cbrt is not exact even for perfect cubes (cbrt(-27.0) != -3): use a wider type
+      // when there is one (x87 long double), which also makes the result correctly rounded
+      // except in rare double-rounding cases.
+      if constexpr (fp_format<long double>.digits >= fp_format<C>.digits + 11)
+        return static_cast<T>(ycxx::detail::fpm::bi::cbrt<long double>(static_cast<long double>(x)));
+      else
+        return static_cast<T>(ycxx::detail::fpm::bi::cbrt<C>(static_cast<C>(x)));
+    }
   }
+  return ycxx::detail::fpm::fp_cbrt(x);
 }
 template <class T>
 constexpr T hypot(T x, T y) noexcept {
   using C = carrier_t<T>;
-  if consteval {
-    return ycxx::detail::fpm::fp_hypot(x, y);
-  } else {
-    return static_cast<T>(ycxx::detail::fpm::bi::hypot<C>(static_cast<C>(x), static_cast<C>(y)));
+  if !consteval {
+    if constexpr (ycxx::detail::cm::libm_carrier<T>) {
+      return static_cast<T>(ycxx::detail::fpm::bi::hypot<C>(static_cast<C>(x), static_cast<C>(y)));
+    }
   }
+  return ycxx::detail::fpm::fp_hypot(x, y);
 }
 // [c.math.hypot3]: no C counterpart. At run time float and double compute in a wider type
 // where one has the range for the squares; otherwise (and always during constant evaluation)
@@ -237,108 +253,118 @@ template <rint_op F, class T>
 constexpr T round_integral(T x) noexcept {
   using C = carrier_t<T>;
   namespace fpm = ycxx::detail::fpm;
-  if consteval {
-    return fpm::fp_rint(x, F == rint_op::ceil ? fpm::fp_rint_mode::ceil : F == rint_op::floor ? fpm::fp_rint_mode::floor
-                                             : F == rint_op::trunc ? fpm::fp_rint_mode::trunc : fpm::fp_rint_mode::half_away);
-  } else {
-    const C c = static_cast<C>(x);
-    if constexpr (F == rint_op::ceil) return static_cast<T>(fpm::bi::ceil<C>(c));
-    else if constexpr (F == rint_op::floor) return static_cast<T>(fpm::bi::floor<C>(c));
-    else if constexpr (F == rint_op::trunc) return static_cast<T>(fpm::bi::trunc<C>(c));
-    else return static_cast<T>(fpm::bi::round<C>(c));
+  if !consteval {
+    if constexpr (ycxx::detail::cm::libm_carrier<T>) {
+      const C c = static_cast<C>(x);
+      if constexpr (F == rint_op::ceil) return static_cast<T>(fpm::bi::ceil<C>(c));
+      else if constexpr (F == rint_op::floor) return static_cast<T>(fpm::bi::floor<C>(c));
+      else if constexpr (F == rint_op::trunc) return static_cast<T>(fpm::bi::trunc<C>(c));
+      else return static_cast<T>(fpm::bi::round<C>(c));
+    }
   }
+  return fpm::fp_rint(x, F == rint_op::ceil ? fpm::fp_rint_mode::ceil : F == rint_op::floor ? fpm::fp_rint_mode::floor
+                                           : F == rint_op::trunc ? fpm::fp_rint_mode::trunc : fpm::fp_rint_mode::half_away);
 }
 template <class I, class T>
 constexpr I lround(T x) noexcept {
   using C = carrier_t<T>;
-  if consteval {
-    return ycxx::detail::fpm::fp_to_integer<I>(x, ycxx::detail::fpm::fp_rint_mode::half_away);
-  } else {
-    if constexpr (sizeof(I) == sizeof(long) && __is_same(I, long))
-      return ycxx::detail::fpm::bi::lround<C>(static_cast<C>(x));
-    else
-      return ycxx::detail::fpm::bi::llround<C>(static_cast<C>(x));
+  if !consteval {
+    if constexpr (ycxx::detail::cm::libm_carrier<T>) {
+      if constexpr (sizeof(I) == sizeof(long) && __is_same(I, long))
+        return ycxx::detail::fpm::bi::lround<C>(static_cast<C>(x));
+      else
+        return ycxx::detail::fpm::bi::llround<C>(static_cast<C>(x));
+    }
   }
+  return ycxx::detail::fpm::fp_to_integer<I>(x, ycxx::detail::fpm::fp_rint_mode::half_away);
 }
 template <class T>
 constexpr T fmod(T x, T y) noexcept {
   using C = carrier_t<T>;
-  if consteval {
-    return ycxx::detail::fpm::fp_fmod(x, y);
-  } else {
-    return static_cast<T>(ycxx::detail::fpm::bi::fmod<C>(static_cast<C>(x), static_cast<C>(y)));
+  if !consteval {
+    if constexpr (ycxx::detail::cm::libm_carrier<T>) {
+      return static_cast<T>(ycxx::detail::fpm::bi::fmod<C>(static_cast<C>(x), static_cast<C>(y)));
+    }
   }
+  return ycxx::detail::fpm::fp_fmod(x, y);
 }
 template <class T>
 constexpr T remainder(T x, T y) noexcept {
   using C = carrier_t<T>;
-  if consteval {
-    return ycxx::detail::fpm::fp_remainder(x, y);
-  } else {
-    return static_cast<T>(ycxx::detail::fpm::bi::remainder<C>(static_cast<C>(x), static_cast<C>(y)));
+  if !consteval {
+    if constexpr (ycxx::detail::cm::libm_carrier<T>) {
+      return static_cast<T>(ycxx::detail::fpm::bi::remainder<C>(static_cast<C>(x), static_cast<C>(y)));
+    }
   }
+  return ycxx::detail::fpm::fp_remainder(x, y);
 }
 template <class T>
 constexpr T remquo(T x, T y, int* q) noexcept {
   using C = carrier_t<T>;
-  if consteval {
-    return ycxx::detail::fpm::fp_remquo(x, y, q);
-  } else {
-    return static_cast<T>(ycxx::detail::fpm::bi::remquo<C>(static_cast<C>(x), static_cast<C>(y), q));
+  if !consteval {
+    if constexpr (ycxx::detail::cm::libm_carrier<T>) {
+      return static_cast<T>(ycxx::detail::fpm::bi::remquo<C>(static_cast<C>(x), static_cast<C>(y), q));
+    }
   }
+  return ycxx::detail::fpm::fp_remquo(x, y, q);
 }
 template <class T>
 constexpr T frexp(T x, int* e) noexcept {
   using C = carrier_t<T>;
-  if consteval {
-    return ycxx::detail::fpm::fp_frexp(x, e);
-  } else {
-    return static_cast<T>(ycxx::detail::fpm::bi::frexp<C>(static_cast<C>(x), e));
+  if !consteval {
+    if constexpr (ycxx::detail::cm::libm_carrier<T>) {
+      return static_cast<T>(ycxx::detail::fpm::bi::frexp<C>(static_cast<C>(x), e));
+    }
   }
+  return ycxx::detail::fpm::fp_frexp(x, e);
 }
 template <class T>
 constexpr T scalbln(T x, long n) noexcept {
   using C = carrier_t<T>;
-  if consteval {
-    return ycxx::detail::fpm::fp_scale(x, n);
-  } else {
-    return ycxx::detail::cm::narrow<T>(ycxx::detail::fpm::bi::scalbln<C>(static_cast<C>(x), n));
+  if !consteval {
+    if constexpr (ycxx::detail::cm::libm_carrier<T>) {
+      return ycxx::detail::cm::narrow<T>(ycxx::detail::fpm::bi::scalbln<C>(static_cast<C>(x), n));
+    }
   }
+  return ycxx::detail::fpm::fp_scale(x, n);
 }
 template <class T>
 constexpr T modf(T x, T* ip) noexcept {
   using C = carrier_t<T>;
-  if consteval {
-    return ycxx::detail::fpm::fp_modf(x, ip);
-  } else {
-    C ci{};
-    const C r = ycxx::detail::fpm::bi::modf<C>(static_cast<C>(x), __builtin_addressof(ci));
-    *ip = static_cast<T>(ci);
-    return static_cast<T>(r);
+  if !consteval {
+    if constexpr (ycxx::detail::cm::libm_carrier<T>) {
+      C ci{};
+      const C r = ycxx::detail::fpm::bi::modf<C>(static_cast<C>(x), __builtin_addressof(ci));
+      *ip = static_cast<T>(ci);
+      return static_cast<T>(r);
+    }
   }
+  return ycxx::detail::fpm::fp_modf(x, ip);
 }
 template <class T>
 constexpr int ilogb(T x, int ilogb0, int ilogbnan) noexcept {
   using C = carrier_t<T>;
-  if consteval {
-    return ycxx::detail::fpm::fp_ilogb(x, ilogb0, ilogbnan);
-  } else {
-    return ycxx::detail::fpm::bi::ilogb<C>(static_cast<C>(x));
+  if !consteval {
+    if constexpr (ycxx::detail::cm::libm_carrier<T>) {
+      return ycxx::detail::fpm::bi::ilogb<C>(static_cast<C>(x));
+    }
   }
+  return ycxx::detail::fpm::fp_ilogb(x, ilogb0, ilogbnan);
 }
 template <class T>
 constexpr T logb(T x) noexcept {
   using C = carrier_t<T>;
-  if consteval {
-    return ycxx::detail::fpm::fp_logb(x);
-  } else {
-    return static_cast<T>(ycxx::detail::fpm::bi::logb<C>(static_cast<C>(x)));
+  if !consteval {
+    if constexpr (ycxx::detail::cm::libm_carrier<T>) {
+      return static_cast<T>(ycxx::detail::fpm::bi::logb<C>(static_cast<C>(x)));
+    }
   }
+  return ycxx::detail::fpm::fp_logb(x);
 }
 template <class T>
 constexpr T nextafter(T x, T y) noexcept {
   using C = carrier_t<T>;
-  if constexpr (exact_carrier<T>) {
+  if constexpr (exact_carrier<T> && libm_carrier<T>) {
     if !consteval {
       return static_cast<T>(ycxx::detail::fpm::bi::nextafter<C>(static_cast<C>(x), static_cast<C>(y)));
     }
@@ -367,7 +393,7 @@ constexpr T fmin(T x, T y) noexcept {
 template <class T>
 constexpr T fma(T x, T y, T z) noexcept {
   using C = carrier_t<T>;
-  if constexpr (exact_carrier<T>) {
+  if constexpr (exact_carrier<T> && libm_carrier<T>) {
     if !consteval {
       return static_cast<T>(ycxx::detail::fpm::bi::fma<C>(static_cast<C>(x), static_cast<C>(y), static_cast<C>(z)));
     }
@@ -375,21 +401,34 @@ constexpr T fma(T x, T y, T z) noexcept {
   return ycxx::detail::fpm::fp_fma(x, y, z);
 }
 
-// Not constexpr in the draft (they depend on the rounding mode).
+// Not constexpr in the draft (they depend on the rounding mode). Without libm_carrier: the soft
+// rounding in the current direction; rint and lrint raise "inexact" when the value changes
+// (ISO/IEC 9899:2024 F.10.6.4-5), nearbyint does not.
 template <class T>
 T rint(T x) noexcept {
   using C = carrier_t<T>;
-  return static_cast<T>(ycxx::detail::fpm::bi::rint<C>(static_cast<C>(x)));
+  if constexpr (ycxx::detail::cm::libm_carrier<T>) {
+    return static_cast<T>(ycxx::detail::fpm::bi::rint<C>(static_cast<C>(x)));
+  } else {
+    const T r = ycxx::detail::fpm::fp_rint(x, ycxx::detail::cm::current_rounding());
+    if (r != x && !ycxx::detail::fpm::fp_isnan(x)) ycxx::detail::fpm::fp_raise(ycxx::detail::fpm::fe_inexact);
+    return r;
+  }
 }
 template <class T>
 T nearbyint(T x) noexcept {
   using C = carrier_t<T>;
-  return static_cast<T>(ycxx::detail::fpm::bi::nearbyint<C>(static_cast<C>(x)));
+  if constexpr (ycxx::detail::cm::libm_carrier<T>)
+    return static_cast<T>(ycxx::detail::fpm::bi::nearbyint<C>(static_cast<C>(x)));
+  else
+    return ycxx::detail::fpm::fp_rint(x, ycxx::detail::cm::current_rounding());
 }
 template <class I, class T>
 I lrint(T x) noexcept {
   using C = carrier_t<T>;
-  if constexpr (__is_same(I, long))
+  if constexpr (!ycxx::detail::cm::libm_carrier<T>)
+    return ycxx::detail::fpm::fp_to_integer<I>(ycxx::detail::cm::rint<T>(x), ycxx::detail::fpm::fp_rint_mode::trunc);
+  else if constexpr (__is_same(I, long))
     return ycxx::detail::fpm::bi::lrint<C>(static_cast<C>(x));
   else
     return ycxx::detail::fpm::bi::llrint<C>(static_cast<C>(x));

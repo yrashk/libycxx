@@ -5,6 +5,7 @@
 // value is "set to the parsed value, after rounding according to round_to_nearest", and ec
 // is value-initialized. The subject sequence has no leading white space.
 #include <charconv>
+#include <limits>
 #include <string_view>
 #include <system_error>
 #include "check.hpp"
@@ -44,7 +45,13 @@ int main() {
   check_ok<float>("0.1", 0.1f, 3);
   check_ok<float>("3.4028235e38", 3.4028235e38f, 12);
   check_ok<long double>("0.1", 0.1L, 3);
-  check_ok<long double>("-1e-4000", -1e-4000L, 8);
+  // A magnitude beyond double's range is parsed in long double itself where long double has the
+  // range (x87, binary128: numeric_limits). Where long double is double (Apple arm64), 1e-4000
+  // is below its smallest subnormal (not a value the test can expect), so a small double instead.
+  if constexpr (std::numeric_limits<long double>::min_exponent10 < -4000)
+    check_ok<long double>("-1e-4000", -1e-4000L, 8);
+  else
+    check_ok<long double>("-1e-300", -1e-300L, 7);
   // negative zero
   {
     double v = 1;

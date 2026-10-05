@@ -1,7 +1,7 @@
 """lit test format for the libstdc++ testsuite (DejaGnu-style directives), run against libycxx.
 
 Only the subset of DejaGnu that matters for conformance is interpreted:
-  dg-do compile|run|link [{ target SEL }] [{ xfail SEL }]
+  dg-do compile|run|link [{ target SEL }] [{ xfail SEL }]   (default without dg-do: run)
   dg-options / dg-additional-options      (language-mode flags are normalised to C++26)
   dg-require-effective-target NAME
   dg-require-namedlocale NAME             (the C library has it and libycxx accepts it:
@@ -215,7 +215,6 @@ class LibstdcxxFormat(lit.formats.FileBasedTest):
         # libstdc++'s hardened mode, requested in the source itself, maps to ours.
         if re.search(r'^\s*#\s*define\s+_GLIBCXX_ASSERTIONS\b', src, re.M):
             flags.append('-DYCXX_HARDENED=1')
-        saw_do = False
         for line in src.splitlines():
             m = DG.search(line)
             if not m:
@@ -223,7 +222,6 @@ class LibstdcxxFormat(lit.formats.FileBasedTest):
             kind, rest = m.group(1), m.group(2)
             args = braced(rest)
             if kind == 'do':
-                saw_do = True
                 action = args[0] if args else 'run'
                 tsel = selector_of(args, 'target')
                 xsel = selector_of(args, 'xfail')
@@ -313,8 +311,8 @@ class LibstdcxxFormat(lit.formats.FileBasedTest):
             elif kind == 'add-options':
                 if args and args[0] == 'libatomic':
                     pass  # libycxx's atomics need no libatomic
-        if not saw_do:
-            action = 'compile'
+        # Without dg-do the test runs: libstdc++'s DejaGnu setup (testsuite lib/libstdc++.exp: dg-do-what-default run)
+        # makes "run" the default action, as it is here (action starts as 'run').
         for sel, incl, excl in xfail_run_if:
             if eval_selector(sel) and option_sets_match(incl, flags) and not option_sets_match(excl, flags):
                 expect_fail_run = True

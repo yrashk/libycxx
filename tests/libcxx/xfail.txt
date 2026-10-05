@@ -1,0 +1,5 @@
+# libc++ tests expected to fail because of a compiler gap (not a libycxx bug); they still run,
+# and report XPASS once the compiler catches up (then remove the line).
+# Format:  <path regex relative to libcxx/test/std> | <gcc|clang|any> | <reason>
+# Kept in step with the D (compiler) category of TRIAGE.md.
+utilities/meta/meta\.const\.eval/is_within_lifetime\.compile\.pass\.cpp | gcc | GCC 16 has no __builtin_is_within_lifetime, which std::is_within_lifetime needs (TRIAGE.md, D)

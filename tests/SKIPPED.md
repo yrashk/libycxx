@@ -17,3 +17,10 @@ UNSUPPORTED with the reason.
 Automatically unsupported: tests whose `REQUIRES:` features we do not provide (locales such as
 `locale.fr_FR.UTF-8`, `libcpp-*` configuration features, availability markers), tests with `RUN:`
 lines, and `.verify.cpp` tests without `expected-error` (they check only warnings).
+
+## Expected failures (xfail.txt)
+
+A test that fails only because of a compiler gap (TRIAGE category D) is listed in
+`tests/<suite>/xfail.txt` with the compiler it applies to. It still runs: it reports XFAIL while
+it fails, and XPASS, which fails the run, once the compiler catches up and the line should go.
+CI fails on any other failure.

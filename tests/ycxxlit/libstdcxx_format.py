@@ -13,7 +13,7 @@ implementation-specific.
 import os, re, shutil, tempfile
 import lit.formats, lit.Test
 from ycxxlit import transcript
-from ycxxlit.skips import load_skips, match_skip
+from ycxxlit.skips import load_skips, match_skip, load_xfails, apply_xfail
 
 STD = 26
 DG = re.compile(r'\{\s*dg-([a-z-]+)\s*(.*)\}\s*$')
@@ -129,8 +129,12 @@ class LibstdcxxFormat(lit.formats.FileBasedTest):
     def __init__(self, wrapper, compiler, base_flags, skip_file):
         self.wrapper, self.compiler, self.base_flags = wrapper, compiler, base_flags
         self.skips = load_skips(os.path.join(os.path.dirname(os.path.dirname(skip_file)), 'common', 'skip.txt'), skip_file)
+        self.xfails = load_xfails(os.path.join(os.path.dirname(skip_file), 'xfail.txt'))
 
     def execute(self, test, lit_config):
+        return apply_xfail(self.execute_test(test, lit_config), self.xfails, '/'.join(test.path_in_suite), self.compiler)
+
+    def execute_test(self, test, lit_config):
         path = test.getSourcePath()
         rel = '/'.join(test.path_in_suite)
         src = open(path, encoding='utf-8', errors='replace').read()

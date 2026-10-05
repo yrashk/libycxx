@@ -58,8 +58,9 @@ struct thread_locale {
   locale_t old_;
 };
 
-// std::mbstate_t as the C library's (the same layout, DECISIONS §3).
-::mbstate_t* c_state(std::mbstate_t& s) noexcept { return reinterpret_cast<::mbstate_t*>(&s); }
+// Hosted std::mbstate_t is the C library's ::mbstate_t (DECISIONS §3), so a facet's state goes to
+// mbrtowc/wcrtomb as it is.
+static_assert(std::is_same_v<std::mbstate_t, ::mbstate_t>);
 
 constexpr std::size_t mb_error = static_cast<std::size_t>(-1);
 constexpr std::size_t mb_incomplete = static_cast<std::size_t>(-2);
@@ -801,7 +802,7 @@ codecvt_base::result codecvt_byname<wchar_t, char, mbstate_t>::do_out(mbstate_t&
   if (named_ == nullptr)
     return codecvt::do_out(state, from, from_end, from_next, to, to_end, to_next);
   thread_locale in(named_->loc);
-  ::mbstate_t* st = c_state(state);
+  mbstate_t* st = &state;
   result r = ok;
   for (; from != from_end; ++from) {
     char buf[MB_LEN_MAX];
@@ -831,7 +832,7 @@ codecvt_base::result codecvt_byname<wchar_t, char, mbstate_t>::do_in(mbstate_t& 
   if (named_ == nullptr)
     return codecvt::do_in(state, from, from_end, from_next, to, to_end, to_next);
   thread_locale in(named_->loc);
-  ::mbstate_t* st = c_state(state);
+  mbstate_t* st = &state;
   result r = ok;
   while (from != from_end) {
     if (to == to_end) {
@@ -866,7 +867,7 @@ codecvt_base::result codecvt_byname<wchar_t, char, mbstate_t>::do_unshift(mbstat
     return codecvt::do_unshift(state, to, to_end, to_next);
   to_next = to;
   thread_locale in(named_->loc);
-  ::mbstate_t* st = c_state(state);
+  mbstate_t* st = &state;
   char buf[MB_LEN_MAX];
   ::mbstate_t tmp = *st;
   std::size_t n = ::wcrtomb(buf, L'\0', &tmp); // the shift sequence, then the null character
@@ -896,7 +897,7 @@ int codecvt_byname<wchar_t, char, mbstate_t>::do_length(mbstate_t& state, const 
   if (named_ == nullptr)
     return codecvt::do_length(state, from, end, max);
   thread_locale in(named_->loc);
-  ::mbstate_t* st = c_state(state);
+  mbstate_t* st = &state;
   const char* p = from;
   for (; p != end && max != 0; --max) {
     ::mbstate_t tmp = *st;

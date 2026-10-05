@@ -8,7 +8,13 @@
 // timespec_getres(ts, base): returns base and the resolution (positive) for a supported base;
 // 7.29.3.4 gmtime_r and 7.29.3.5 localtime_r: as gmtime/localtime, into the caller's buffer,
 // returning it.
+// The process runs in UTC (POSIX TZ "UTC0", set before any conversion): ISO C's struct tm has no
+// UTC offset, so what %z writes for a gmtime result is the platform's choice (glibc: the tm's own
+// tm_gmtoff, +0000; Darwin: the local zone's offset), as the C standard leaves it ("the offset from
+// UTC ... or by no characters if no time zone is determinable", 7.29.3.5); in UTC both agree.
 #include <ctime>
+#include <stdlib.h> // setenv (POSIX)
+#include <time.h>   // tzset (POSIX)
 #include <cstring>
 #include <string>
 #include <type_traits>
@@ -31,6 +37,8 @@ static std::string ftime(const char* f, const std::tm& t) {
 }
 
 int main() {
+  ::setenv("TZ", "UTC0", 1);
+  ::tzset();
   std::tm t{};
   t.tm_year = 2026 - 1900;
   t.tm_mon = 0;

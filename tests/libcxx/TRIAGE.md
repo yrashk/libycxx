@@ -135,8 +135,9 @@ char_traits, string-stream, syncstream and format.arg test passes on both compil
   libc++ 23 expects older values, or names no longer in the draft
   (`__cpp_lib_span_at`, merged into `__cpp_lib_span`; `__cpp_lib_generate_random`;
   `__cpp_lib_default_template_type_for_algorithm_values`) (C). Undefined because the feature is
-  not implemented (B, must stay undefined): `__cpp_lib_senders`, `__cpp_lib_modules`,
-  `__cpp_lib_boyer_moore_searcher`; on Clang also the D builtins of type_traits.version.
+  not implemented (B, must stay undefined): `__cpp_lib_senders`, `__cpp_lib_modules`; on Clang
+  also the D builtins of type_traits.version. (`__cpp_lib_boyer_moore_searcher` was in this list
+  until the searchers were merged the same day; it is now defined, 201603L.)
 - **(D)** tuple.cnstr/PR31384 (GCC) and convert_const_move (Clang): compiler bugs listed in STATUS.
 
 ## (A) libycxx bugs

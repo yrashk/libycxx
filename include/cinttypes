@@ -6,7 +6,14 @@
 #include <ycxx/core/cstddef.hpp>
 #include <cstdint>
 #include <ycxx/core/prim_traits.hpp>
-#include <inttypes.h>
+// The C library's declarations of the functions libycxx defines itself (constexpr, or the
+// const-correct bsearch pair) are renamed while its header is read, so that <stdlib.h>/<inttypes.h>
+// can place libycxx's in the global namespace ([support.c.headers.other]/1; DECISIONS §3).
+#define imaxabs ycxx_c_imaxabs
+#define imaxdiv ycxx_c_imaxdiv
+#include_next <inttypes.h>
+#undef imaxabs
+#undef imaxdiv
 
 #ifndef __STDC_VERSION_INTTYPES_H__
 #  define __STDC_VERSION_INTTYPES_H__ 202311L
@@ -74,3 +81,7 @@ constexpr imaxdiv_t imaxdiv(intmax_t numer, intmax_t denom) noexcept {
   return r;
 }
 } // namespace std
+
+// The renamed C functions' names in the global namespace, now naming libycxx's own.
+using std::imaxabs;
+using std::imaxdiv;

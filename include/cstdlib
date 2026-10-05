@@ -5,8 +5,26 @@
 #include <ycxx/core/version.hpp>
 #include <ycxx/core/cstddef.hpp>
 #include <ycxx/core/math_abs.hpp>
+#include <ycxx/core/c_bsearch.hpp>
 #if YCXX_HOSTED
-#  include <stdlib.h>
+// The C library's declarations of the functions libycxx defines itself (constexpr, or the
+// const-correct bsearch pair) are renamed while its header is read, so that <stdlib.h>/<inttypes.h>
+// can place libycxx's in the global namespace ([support.c.headers.other]/1; DECISIONS §3).
+#  define abs ycxx_c_abs
+#  define labs ycxx_c_labs
+#  define llabs ycxx_c_llabs
+#  define div ycxx_c_div
+#  define ldiv ycxx_c_ldiv
+#  define lldiv ycxx_c_lldiv
+#  define bsearch ycxx_c_bsearch
+#  include_next <stdlib.h>
+#  undef abs
+#  undef labs
+#  undef llabs
+#  undef div
+#  undef ldiv
+#  undef lldiv
+#  undef bsearch
 #else
 #  include <ycxx/core/c_stdlib.hpp>
 #endif
@@ -54,7 +72,6 @@ using ::mbtowc;
 using ::wctomb;
 using ::mbstowcs;
 using ::wcstombs;
-using ::bsearch;
 using ::qsort;
 using ::rand;
 using ::srand;
@@ -129,8 +146,22 @@ constexpr lldiv_t lldiv(long long numer, long long denom) noexcept {
   return std::div<>(numer, denom);
 }
 // memalignment (C23 7.24.3.1): the largest power of two dividing the address; 0 for a null pointer.
+// A template, so that a C library's ::memalignment wins ties instead of conflicting in the global
+// namespace (<stdlib.h>).
+template <class = void>
 inline size_t memalignment(const void* p) noexcept {
   auto v = reinterpret_cast<__UINTPTR_TYPE__>(p);
   return static_cast<size_t>(v & (~v + 1));
 }
 } // namespace std
+
+// The renamed C functions' names in the global namespace, now naming libycxx's own.
+#if YCXX_HOSTED
+using std::abs;
+using std::labs;
+using std::llabs;
+using std::div;
+using std::ldiv;
+using std::lldiv;
+using std::bsearch;
+#endif

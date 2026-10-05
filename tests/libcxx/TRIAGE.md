@@ -79,6 +79,66 @@ of the first run; the few that were not in it were read and classified.
 - **(E)**: the 27 root-only filesystem tests remain (run as root), plus the timeouts above.
 - B, C and F otherwise unchanged.
 
+## Re-triage of 2026-10-05: strings, string_view, char_traits, string streams, syncstream, format.arguments, tuple, span, `<version>`
+
+Run with `tools/run-conformance libcxx gcc|clang 'strings|input.output/string.streams|
+input.output/syncstream|utilities/format/format.arguments|utilities/tuple/tuple.tuple|
+containers/views/views.span|language.support/support.limits' -- -j4` (library at `6f13096`):
+GCC 699 pass / 121 fail, Clang 696 / 124 (22 unsupported each). The GCC failures are exactly
+this area's lines of `baseline/linux-gcc.txt`; Clang fails the same tests plus four known ones
+(type_traits.version: D; cwchar_include_order1/2: B, no `<wchar.h>` wrapper;
+tuple.cnstr/convert_const_move: D) and passes PR31384 (a GCC-only D). No test of the area is a
+libycxx bug, so no library code and no baseline line changed.
+
+To make sure the transitive-include failures hide no library bug, the area was run again with
+the compiler forced to include `<cstdio>`, `<cwchar>` and `<cstdint>` first (a wrapper given as
+`YCXX_GXX`/`YCXX_CLANGXX`; not a harness change): then **every** string.view, basic_string,
+char_traits, string-stream, syncstream and format.arg test passes on both compilers, except
+`deallocate_size` and `make_from_tuple` (global `::uint32_t`, see below). With `-include stdint.h`
+`deallocate_size` passes on both; `make_from_tuple` then fails only on the C entry below.
+
+- **(F) `EOF`/`WEOF` without `<cstdio>`/`<cwchar>`** (85 tests: string.view 43, basic_string 9,
+  string streams 16, syncstream 11, format.arg visit/visit.return_type/visit_format_arg 3,
+  char.traits eof 2, the hash tests): `test/support/constexpr_char_traits.h` and `nasty_string.h`
+  use `EOF` after including only `<string>`, `<cassert>`, `<cstddef>`; the eof tests compare with
+  `EOF`/`WEOF` after `<string>` and `<cassert>`. [char.traits.specializations.char]: "eof()
+  Returns: EOF." names the macro of `<cstdio>`, but [string.syn] includes only `<compare>` and
+  `<initializer_list>`, and [res.on.headers]/1 only permits more: "A C++ header may include
+  other C++ headers." libycxx's `<string>` is core and includes no C header (DECISIONS §3), so
+  these stay failing by design.
+- **(F) global `::uint32_t`/`::uint64_t`** (strings/basic.string/string.capacity/deallocate_size,
+  tuple.apply/make_from_tuple): the tests include no `<cstdint>`/`<stdint.h>` and use the global
+  names. Even `<cstdint>` would not guarantee them: [headers]/5 "It is unspecified whether these
+  names ... are first declared within the global namespace scope and are then injected into
+  namespace std".
+- **(C) tuple.apply/make_from_tuple.pass, LWG 3528 part** (lines 248-261): `decltype(std::
+  make_from_tuple<int*>(std::tuple<A*>&))` is expected to be a substitution failure. The draft
+  ([tuple.apply]/3) puts `requires is_constructible_v<T, decltype(get<I>(declval<Tuple>()))...>`
+  only on the exposition-only `make-from-tuple-impl`, called from the body ("Effects: ...
+  Equivalent to: return make-from-tuple-impl<T>(...)"); `make_from_tuple` itself has no
+  Constraints element (only "Mandates: If tuple_size_v<remove_reference_t<Tuple>> is 1, then
+  reference_constructs_from_temporary_v<...> is false"), and its return type `T` needs no body
+  instantiation, so the expression is well-formed in an unevaluated operand. libycxx diagnoses the
+  call when it is instantiated; the SFINAE-friendly signature is a libc++ extension.
+- **(C) views.span**: span.cons/copy.pass (`span<Incomplete>`; [span.overview]/4 "ElementType
+  is required to be a complete object type that is not an abstract class type"), span.cons/
+  span.pass and types.pass (`span<volatile std::string>::const_iterator` needs
+  `input_iterator<volatile string*>`; COMMON-REF(`volatile string&&`, `const string&`) does not
+  exist, because `const volatile string&` cannot bind the rvalue, and the fallback
+  `common_reference_t` is `string`, to which `volatile string&&` does not convert, so
+  `indirectly_readable` is false): unchanged, see (C) below.
+- **(C)/(B) support.limits.general** (31 GCC, 32 Clang): every failing macro was compared with
+  `draft.sh version.syn`. Each macro libycxx defines has the draft's value (e.g.
+  `__cpp_lib_span 202311L`, `__cpp_lib_freestanding_algorithm 202502L`,
+  `__cpp_lib_freestanding_cstring 202311L`, `__cpp_lib_freestanding_optional 202506L`,
+  `__cpp_lib_debugging 202403L`, `__cpp_lib_to_chars 202606L`, `__cpp_lib_format 202603L`);
+  libc++ 23 expects older values, or names no longer in the draft
+  (`__cpp_lib_span_at`, merged into `__cpp_lib_span`; `__cpp_lib_generate_random`;
+  `__cpp_lib_default_template_type_for_algorithm_values`) (C). Undefined because the feature is
+  not implemented (B, must stay undefined): `__cpp_lib_senders`, `__cpp_lib_modules`,
+  `__cpp_lib_boyer_moore_searcher`; on Clang also the D builtins of type_traits.version.
+- **(D)** tuple.cnstr/PR31384 (GCC) and convert_const_move (Clang): compiler bugs listed in STATUS.
+
 ## (A) libycxx bugs
 
 The draft text was checked for every entry. In the libycxx location column, `I/` is

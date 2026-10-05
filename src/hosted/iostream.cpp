@@ -22,9 +22,9 @@
 // uflow, pbackfail) and the wide buffers' conversion to bytes hold a lock of the buffer's own, a
 // futex mutex: one atomic operation each way while uncontended, plain loads and stores in a
 // single-threaded process. It guards what the buffer remembers between calls (the character
-// last extracted, for sungetc; the wide buffers' pending character and conversion states), and
-// makes a peek, a getc and ungetc pair, atomic with respect to the other readers of the object,
-// so they never see the stream's characters out of order. (The C stream's own lock would do the
+// last extracted, for sungetc; the wide buffers' conversion states), and makes a peek (read,
+// then give back to the C stream) atomic with respect to the other readers of the object, so
+// they never see the stream's characters out of order. (The C stream's own lock would do the
 // same, but flockfile is not visible to ThreadSanitizer, nor are the C library's internal locks:
 // a pushed-back character's storage allocated by one thread and freed by another is reported
 // unless a lock it understands orders them.) The narrow output side needs no lock: putc and
@@ -184,15 +184,19 @@ protected:
       return -1;
     return std::fflush(f_) == 0 ? 0 : -1;
   }
+  // Like the narrow buffer, this one holds no characters: a peeked character's bytes go back to
+  // the C stream (ungetc), and so does a put-back character, converted to bytes. C stdio and the
+  // other readers of the object then see every character exactly once and in order. A character
+  // of more than one byte needs more than the one byte of push-back that ISO C guarantees; glibc
+  // and Darwin's libc provide it.
   int_type underflow() override {
     guard g(lock_);
-    return peek();
+    return read(false);
   }
   int_type uflow() override {
     guard g(lock_);
-    const int_type c = peek();
+    const int_type c = read(true);
     if (!traits_type::eq_int_type(c, traits_type::eof())) {
-      has_peek_ = false;
       last_ = traits_type::to_char_type(c);
       has_last_ = true;
     }
@@ -200,31 +204,31 @@ protected:
   }
   int_type pbackfail(int_type c) override {
     guard g(lock_);
-    if (has_peek_)
-      return traits_type::eof(); // one character of putback
     if (traits_type::eq_int_type(c, traits_type::eof())) {
       if (!has_last_)
         return traits_type::eof();
       c = traits_type::to_int_type(last_);
     }
     has_last_ = false;
-    peek_ = traits_type::to_char_type(c);
-    has_peek_ = true;
+    const wchar_t w = traits_type::to_char_type(c);
+    char bytes[16];
+    std::size_t n = 1;
+    bytes[0] = static_cast<char>(w);
+    std::mbstate_t st{};
+    const wchar_t* from_next;
+    char* to = bytes;
+    const std::codecvt_base::result r = cvt_->out(st, &w, &w + 1, from_next, bytes, bytes + sizeof bytes, to);
+    if (r == std::codecvt_base::error || r == std::codecvt_base::partial)
+      return traits_type::eof();
+    if (r == std::codecvt_base::ok)
+      n = static_cast<std::size_t>(to - bytes);
+    while (n != 0)
+      if (std::ungetc(static_cast<unsigned char>(bytes[--n]), f_) == EOF)
+        return traits_type::eof();
     return c;
   }
 
 private:
-  // The next character, kept in peek_ (lock_ is held).
-  int_type peek() {
-    if (!has_peek_) {
-      const int_type c = read();
-      if (traits_type::eq_int_type(c, traits_type::eof()))
-        return c;
-      peek_ = traits_type::to_char_type(c);
-      has_peek_ = true;
-    }
-    return traits_type::to_int_type(peek_);
-  }
   // Converts and writes s[0..n) as bytes.
   bool write(const wchar_t* s, std::size_t n) {
     guard g(lock_); // for state_; the bytes of one call also stay together
@@ -252,8 +256,9 @@ private:
     }
     return true;
   }
-  // Reads bytes until they convert to one wide character (lock_ is held).
-  int_type read() {
+  // Reads bytes until they convert to one wide character (lock_ is held). Unless consume is set,
+  // they all go back to the C stream and the conversion state is left as it was.
+  int_type read(bool consume) {
     char bytes[8];
     int n = 0;
     while (n < static_cast<int>(sizeof bytes)) {
@@ -266,14 +271,18 @@ private:
       wchar_t* to_next;
       std::mbstate_t st = in_state_;
       const std::codecvt_base::result r = cvt_->in(st, bytes, bytes + n, from_next, &w, &w + 1, to_next);
-      if (r == std::codecvt_base::noconv)
+      if (r == std::codecvt_base::noconv) {
+        if (!consume)
+          std::ungetc(static_cast<unsigned char>(bytes[0]), f_);
         return traits_type::to_int_type(static_cast<wchar_t>(static_cast<unsigned char>(bytes[0])));
+      }
       if (r == std::codecvt_base::error)
         return traits_type::eof();
       if (to_next != &w) {
-        in_state_ = st;
-        // give back bytes beyond the character, if any
-        for (const char* p = bytes + n; p != from_next;)
+        if (consume)
+          in_state_ = st;
+        // give back the bytes beyond the character, and the character's own unless consumed
+        for (const char* p = bytes + n, *stop = consume ? from_next : bytes; p != stop;)
           std::ungetc(static_cast<unsigned char>(*--p), f_);
         return traits_type::to_int_type(w);
       }
@@ -292,8 +301,6 @@ private:
   ycxx::detail::futex_mutex lock_; // guards the members below
   std::mbstate_t state_{};
   std::mbstate_t in_state_{};
-  wchar_t peek_ = 0;
-  bool has_peek_ = false;
   wchar_t last_ = 0;
   bool has_last_ = false;
   wchar_t buf_[256];

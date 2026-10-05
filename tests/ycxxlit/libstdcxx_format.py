@@ -127,12 +127,15 @@ def braced(s):
 # (util/testsuite_*.h, on the include path with the harness shims of tests/libstdcxx/shim) is not
 # one: its helpers are test code, and those that still need an extension are listed in skip.txt.
 EXT_HEADER = re.compile(r'#\s*include\s*<(ext|bits|tr1|tr2|backward|debug|parallel|profile)/')
+DEBUG_HELPER = re.compile(r'#\s*include\s*<debug/(unordered_)?checks\.h>')
 EXT_NAMESPACE = re.compile(r'\b__gnu_(cxx|debug|pbds|parallel|profile)\b')
 
 
 def extension_use(src):
     """Why a test is about a libstdc++ extension (an extension or internal header, or an
     extension namespace), or None."""
+    if DEBUG_HELPER.search(src):
+        return 'includes the testsuite\'s debug-mode checks (debug/checks.h, debug/unordered_checks.h: _GLIBCXX_DEBUG and <debug/...> containers)'
     m = EXT_HEADER.search(src)
     if m:
         return f'includes <{m.group(1)}/...>, a libstdc++ extension or internal header'

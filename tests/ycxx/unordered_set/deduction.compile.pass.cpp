@@ -1,6 +1,7 @@
 // [unord.set.overview], [unord.multiset.overview] deduction guides: iterator range,
 // from_range and initializer_list, with optional bucket count, Hash, Pred and Allocator,
 // and the (n, Allocator) / (n, Hash, Allocator) forms.
+// REQUIRES: exceptions
 #include <unordered_set>
 #include <functional>
 #include <ranges>

@@ -5,6 +5,7 @@
 // replacement. [string.cons]/30: move assignment "move assigns as a sequence container"; its
 // noexcept is POCMA || is_always_equal. [container.alloc.reqmts]/28: after a = rv, a has
 // the value rv had (also when allocators differ and do not propagate).
+// REQUIRES: exceptions
 #include <string>
 #include <type_traits>
 #include <utility>

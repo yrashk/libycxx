@@ -4,6 +4,7 @@
 // value, and the state becomes ready only when the thread exits (after its thread_local objects
 // are destroyed); then exactly that value is retrieved.
 // FLAGS: -pthread
+// REQUIRES: exceptions
 #include <future>
 #include <thread>
 #include "check.hpp"

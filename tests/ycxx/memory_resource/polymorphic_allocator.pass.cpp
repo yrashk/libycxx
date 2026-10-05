@@ -5,6 +5,7 @@
 // allocate_object<T>(n), new_object<T>(args...) (construct with uses-allocator construction),
 // delete_object, deallocate_*; select_on_container_copy_construction() returns a default
 // polymorphic_allocator (the resource is not propagated); operator== compares the resources.
+// REQUIRES: exceptions
 #include <memory_resource>
 #include <cstddef>
 #include <memory>

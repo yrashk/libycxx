@@ -2,6 +2,7 @@
 // stof, stod, stold call wcstol / wcstoul / wcstoll / wcstoull / wcstof / wcstod / wcstold,
 // store the first unconverted index in *idx, throw invalid_argument when nothing converts
 // and out_of_range when the value is out of range.
+// REQUIRES: exceptions
 #include <string>
 #include <climits>
 #include <cstddef>

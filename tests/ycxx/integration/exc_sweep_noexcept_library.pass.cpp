@@ -22,6 +22,7 @@
 //     [locale.cons] locale(const locale&) noexcept.
 //   [mem.res.private] do_deallocate "Throws: Nothing" for every resource of [mem.res.global],
 //     [mem.res.pool.mem] and [mem.res.monotonic.buffer.mem].
+// REQUIRES: exceptions
 #include <any>
 #include <exception>
 #include <filesystem>

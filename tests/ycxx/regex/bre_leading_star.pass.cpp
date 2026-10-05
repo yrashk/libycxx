@@ -2,6 +2,7 @@
 // asterisk is special except when used: in a bracket expression; as the first character of an
 // entire BRE (after an initial '^', if any); as the first character of a subexpression (after
 // an initial '^', if any)". There it stands for itself.
+// REQUIRES: exceptions
 #include <regex>
 #include <string>
 #include "check.hpp"

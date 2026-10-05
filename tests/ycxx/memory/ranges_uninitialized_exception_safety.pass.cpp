@@ -5,6 +5,7 @@
 // uninitialized_value_construct(_n), uninitialized_copy(_n), uninitialized_move(_n) and
 // uninitialized_fill(_n), in both their iterator-sentinel and range overloads. Throwing on
 // the first element constructs nothing; the exception propagates unchanged.
+// REQUIRES: exceptions
 #include <memory>
 #include <span>
 #include "check.hpp"

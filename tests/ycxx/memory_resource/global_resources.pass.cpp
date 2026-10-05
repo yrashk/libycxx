@@ -4,6 +4,7 @@
 // initially new_delete_resource(); set_default_resource(r) sets it (nullptr restores
 // new_delete_resource()) and returns the previous value; get_default_resource() returns it.
 // All four are noexcept.
+// REQUIRES: exceptions
 #include <memory_resource>
 #include <new>
 #include "check.hpp"

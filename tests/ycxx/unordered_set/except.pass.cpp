@@ -7,6 +7,7 @@
 // erase(k), erase(q), extract and swap throw nothing when Hash and Pred do not, even with
 // every allocation and element construction failing; inserting a range keeps the basic
 // guarantee ([res.on.exception.handling]/3).
+// REQUIRES: exceptions
 #include <unordered_set>
 #include "test_allocators.hpp"
 #include "reqs/assoc_except.hpp"

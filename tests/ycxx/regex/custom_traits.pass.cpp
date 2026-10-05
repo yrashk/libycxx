@@ -10,6 +10,7 @@
 //  - /13: integral values (e.g. in {n,m} and \xhh) are obtained with traits_inst.value.
 // [re.regex.locale]: imbue() calls traits_inst.imbue and getloc() returns traits_inst.getloc();
 // after imbue the basic_regex object does not match any character sequence.
+// REQUIRES: exceptions
 #include <locale>
 #include <regex>
 #include <string>

@@ -7,6 +7,7 @@
 // swap; erase_if is stable and applies the predicate exactly size() times
 // ([flat.map.erasure]). flat_multimap keeps all equivalent elements, newly inserted ones
 // after the existing ones ([flat.multimap.overview]/4, [associative.reqmts.general]/4).
+// REQUIRES: exceptions
 #include <flat_map>
 #include <memory>
 #include <stdexcept>

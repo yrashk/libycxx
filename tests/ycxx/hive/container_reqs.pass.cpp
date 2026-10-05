@@ -6,6 +6,7 @@
 // replace the contents; the allocator-extended forms use the given allocator; swap and
 // propagate_on_container_* behave as for any allocator-aware container
 // ([container.reqmts]/64, [container.alloc.reqmts]).
+// REQUIRES: exceptions
 #include <hive>
 #include <algorithm>
 #include <cstddef>

@@ -4,6 +4,7 @@
 //   forward_list(from_range_t, R&&, Allocator = Allocator())
 //     -> forward_list<ranges::range_value_t<R>, Allocator>;
 // plus the implicit guides from the constructors (initializer_list, (n, value), copy).
+// REQUIRES: exceptions
 #include <forward_list>
 #include <memory>
 #include <ranges>

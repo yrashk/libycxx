@@ -16,6 +16,7 @@
 //     join()"; [iostream.objects.overview]/3; [mem.res.global]; [locale.statics];
 //     [syserr.errcat.objects]; [time.zone.db.access].
 // FLAGS: -pthread
+// REQUIRES: exceptions
 #include <atomic>
 #include <cerrno>
 #include <charconv>

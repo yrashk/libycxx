@@ -7,6 +7,7 @@
 // base subobject of the most derived object, C an unambiguous public base of it), else null /
 // bad_cast. Handlers: T an unambiguous public base of E (3.2), i.e. is_convertible_v<E*, T*>.
 // FLAGS: -pthread
+// REQUIRES: exceptions
 #include <atomic>
 #include <thread>
 #include <type_traits>

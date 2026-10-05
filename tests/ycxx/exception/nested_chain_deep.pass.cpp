@@ -8,6 +8,7 @@
 // dynamic_cast<const nested_exception*>(addressof(e)). Each level also rethrows with `throw;`
 // and through an exception_ptr ([propagation]/7-/10) before wrapping, and the chain is walked
 // twice in two different ways.
+// REQUIRES: exceptions
 #include <exception>
 #include <stdexcept>
 #include <string>

@@ -3,6 +3,7 @@
 // cast fails, even when dst sits in a public single-inheritance chain at the most derived
 // object's address. Also with a protected base and a
 // private base beside another.
+// REQUIRES: exceptions
 #include <cassert>
 #include <typeinfo>
 

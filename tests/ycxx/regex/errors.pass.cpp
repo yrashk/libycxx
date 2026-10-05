@@ -5,6 +5,7 @@
 // repeat not preceded by a valid expression), error_escape (invalid or trailing escape),
 // error_backref (invalid back reference), error_range (invalid character range), error_ctype
 // (invalid class name, [re.grammar]/11).
+// REQUIRES: exceptions
 #include <regex>
 #include <stdexcept>
 #include <string>

@@ -4,6 +4,7 @@
 // effects." Checked for push_back / push_front / emplace_back / emplace_front and
 // insert(begin()/end(), x) with a throwing copy or converting constructor, and for a large
 // insertion in the middle whose allocation throws (an exception not thrown by T).
+// REQUIRES: exceptions
 #include <deque>
 #include <new>
 #include <cstddef>

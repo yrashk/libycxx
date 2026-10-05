@@ -9,6 +9,7 @@
 // [coro.generator.promise]/16: the generator body's exception is rethrown to the consumer; the
 // generator's frame (and its local objects) is destroyed with the generator.
 // Control: C(from_range, r) directly, with the same sources.
+// REQUIRES: exceptions
 #include <deque>
 #include <generator>
 #include <list>

@@ -4,6 +4,7 @@
 // not throw and does not invalidate references. Allocators are exchanged only if
 // propagate_on_container_swap. [vector.syn]: non-member swap is
 // noexcept(noexcept(x.swap(y))).
+// REQUIRES: exceptions
 #include <vector>
 #include <type_traits>
 #include <utility>

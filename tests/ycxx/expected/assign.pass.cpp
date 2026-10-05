@@ -3,6 +3,7 @@
 //   nothrow-constructible from args -> destroy old, construct new directly;
 //   else nothrow-move-constructible -> construct temporary, destroy old, move in;
 //   else -> move old into a backup, construct new, restore backup on exception.
+// REQUIRES: exceptions
 #include <expected>
 #include <type_traits>
 #include <utility>

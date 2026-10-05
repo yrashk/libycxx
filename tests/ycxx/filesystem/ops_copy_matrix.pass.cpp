@@ -14,6 +14,7 @@
 //      copied: Example 1); 4.10/4.11: otherwise nothing (e.g. directories_only alone)
 // Each error case is checked through both signatures: the ec form sets ec, the other throws
 // filesystem_error ([fs.err.report]).
+// REQUIRES: exceptions
 #include <filesystem>
 #include <string>
 #include <system_error>

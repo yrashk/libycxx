@@ -4,6 +4,7 @@
 // evaluation (P3068, P3378). inplace_vector::reserve(n) throws bad_alloc if n > capacity()
 // ([inplace.vector.capacity]) - not a <stdexcept> class, checked here for completeness.
 // XFAIL-COMPILER: clang  no constexpr exception support (P3068) in clang yet
+// REQUIRES: exceptions
 #include <stdexcept>
 #include <deque>
 #include <inplace_vector>

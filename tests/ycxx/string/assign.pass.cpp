@@ -5,6 +5,7 @@
 // assign(n, c), assign(first, last), assign_range(rg); all return *this.
 // [string.assign]/3,12 use substr, which throws out_of_range if pos > size()
 // ([string.view.ops]).
+// REQUIRES: exceptions
 #include <string>
 #include <string_view>
 #include <stdexcept>

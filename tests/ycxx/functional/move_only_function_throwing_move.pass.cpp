@@ -7,6 +7,7 @@
 // optimization can only be applied to a type T for which is_nothrow_move_constructible_v<T> is
 // true." So a target whose move constructor throws, or that cannot be moved at all, is never
 // moved: moving, move-assigning and swapping the wrappers keep the very same target objects.
+// REQUIRES: exceptions
 #include <functional>
 #include <cstdlib>
 #include <exception>

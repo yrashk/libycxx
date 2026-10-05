@@ -6,6 +6,7 @@
 // ([container.reqmts]/15-16, /50, /65 via support/reqs/move_swap_stability.hpp); the
 // allocator-aware constructors and propagation ([container.alloc.reqmts]); clear() and
 // noexcept members per the synopsis.
+// REQUIRES: exceptions
 #include <map>
 #include <iterator>
 #include <memory>

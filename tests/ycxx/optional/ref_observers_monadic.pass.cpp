@@ -4,6 +4,7 @@
 // not matter); transform yields optional<remove_cv_t<invoke_result_t<F, T&>>> (references
 // preserved); or_else returns optional<T&>.
 // [optional.ref.iterators]: iterator models contiguous_iterator, reference T&.
+// REQUIRES: exceptions
 #include <optional>
 #include <iterator>
 #include <type_traits>

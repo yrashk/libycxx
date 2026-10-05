@@ -3,6 +3,7 @@
 // iterator to the element following p (or end()); throws nothing. /8-11: erase(first,
 // last) returns an iterator to the element last pointed to; throws nothing. /12-14:
 // pop_back() is erase(end() - 1). [string.capacity]/19: clear() is erase(begin(), end()).
+// REQUIRES: exceptions
 #include <string>
 #include <stdexcept>
 #include <utility>

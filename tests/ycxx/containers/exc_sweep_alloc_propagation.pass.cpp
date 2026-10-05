@@ -14,6 +14,7 @@
 //     unspecified: [res.on.exception.handling]/1, basic guarantee).
 //   Containers: vector, vector<bool>, deque, list, forward_list, hive, set, multimap,
 //   unordered_set, unordered_multimap, basic_string.
+// REQUIRES: exceptions
 #include <deque>
 #include <forward_list>
 #if __has_include(<hive>) // (libstdc++ 16 has no <hive>: the reference run covers the others)

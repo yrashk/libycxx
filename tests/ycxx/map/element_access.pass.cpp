@@ -3,6 +3,7 @@
 // absent, otherwise return the existing one); at(x) returns the mapped value or throws
 // out_of_range (const and non-const). The returned references stay valid as the map grows
 // ([associative.reqmts.general]/175). multimap has none of these members.
+// REQUIRES: exceptions
 #include <map>
 #include <stdexcept>
 #include <type_traits>

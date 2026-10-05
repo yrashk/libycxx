@@ -3,6 +3,7 @@
 // charT zero = charT('0'), charT one = charT('1')); "Throws: out_of_range if
 // pos > str.size() or invalid_argument if any of the rlen characters in str beginning at
 // position pos is other than zero or one."
+// REQUIRES: exceptions
 #include <bitset>
 #include <stdexcept>
 #include <string_view>

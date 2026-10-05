@@ -3,6 +3,7 @@
 // get_allocator, the allocator-extended constructors, and propagation on copy assignment,
 // move assignment and swap according to propagate_on_container_*, for every combination of
 // the three traits, with a stateful allocator.
+// REQUIRES: exceptions
 #include <list>
 #include <iterator>
 #include <memory>

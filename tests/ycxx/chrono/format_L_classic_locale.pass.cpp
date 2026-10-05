@@ -10,6 +10,7 @@
 // negative and five-digit years (%c %x %Ex include the year), hh_mm_ss and durations of 24
 // hours or more (%X %EX %r include the hour), negative durations ([time.format]/4), and
 // subsecond precision (%S's decimal point is "localized according to the locale").
+// REQUIRES: exceptions
 #include <chrono>
 #include <format>
 #include <locale>

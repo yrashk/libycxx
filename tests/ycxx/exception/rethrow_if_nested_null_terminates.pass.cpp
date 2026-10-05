@@ -2,6 +2,7 @@
 // nested_exception base, "performs: if (auto p = dynamic_cast<const
 // nested_exception*>(addressof(e))) p->rethrow_nested();" and /4 rethrow_nested() "If
 // nested_ptr() returns a null pointer, the function calls the function std::terminate."
+// REQUIRES: exceptions
 #include <exception>
 #include <cstdlib>
 #include <stdexcept>

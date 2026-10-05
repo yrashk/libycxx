@@ -12,6 +12,7 @@
 // Active executions for one flag never overlap (checked with a plain "inside" flag per
 // once_flag, guarded only by the total order).
 // FLAGS: -pthread
+// REQUIRES: exceptions
 #include <atomic>
 #include <mutex>
 #include <thread>

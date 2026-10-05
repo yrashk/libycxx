@@ -4,6 +4,7 @@
 // current thread have been destroyed." set_exception_at_thread_exit likewise.
 // [futures.task.members]/25: make_ready_at_thread_exit for packaged_task.
 // FLAGS: -pthread
+// REQUIRES: exceptions
 #include <future>
 #include <thread>
 #include <atomic>

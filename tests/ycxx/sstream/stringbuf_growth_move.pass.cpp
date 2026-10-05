@@ -10,6 +10,7 @@
 // [stringbuf.assign]: move assignment likewise; swap exchanges the states.
 // [stringbuf.cons]/4-5: basic_stringbuf(which, a) is empty and uses a (get_allocator(),
 // [stringbuf.members]).
+// REQUIRES: exceptions
 #include <sstream>
 #include <string>
 #include <utility>

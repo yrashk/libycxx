@@ -10,6 +10,7 @@
 // catching by reference refers to the exception object itself.
 // [except.nested]/8: throw_with_nested throws an object of a type derived from both U and
 // nested_exception, which therefore has at least U's alignment.
+// REQUIRES: exceptions
 #include <exception>
 #include <cstddef>
 #include <cstdint>

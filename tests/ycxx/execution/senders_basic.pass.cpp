@@ -18,6 +18,7 @@
 //   [exec.run.loop]: run() processes the work scheduled on get_scheduler() on the calling
 //     thread until finish() has been called and the queue is empty.
 // FLAGS: -pthread
+// REQUIRES: exceptions
 #include <exception>
 #include <execution>
 #include <optional>

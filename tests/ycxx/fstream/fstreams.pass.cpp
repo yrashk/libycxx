@@ -8,6 +8,7 @@
 // result. [ofstream.members], [fstream.members] likewise. [ifstream.cons]/6: the move
 // constructor installs the contained filebuf with set_rdbuf; [ifstream.swap]: swap exchanges
 // the streams and the buffers.
+// REQUIRES: exceptions
 #include <fstream>
 #include <filesystem>
 #include <string>

@@ -3,6 +3,7 @@
 // invoked." The copy-initialization of a handler's parameter happens before the handler is
 // active (/6, [except.handle]/9), so a copy constructor that throws there terminates. A copy
 // from a base subobject cannot be elided ([class.copy.elision]/1.4 needs the same type).
+// REQUIRES: exceptions
 #include <cstdlib>
 #include <exception>
 #include "check.hpp"

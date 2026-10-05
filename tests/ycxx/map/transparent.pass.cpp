@@ -6,6 +6,7 @@
 // const_iterator. [map.access], [map.modifiers]: the transparent operator[](K&&), at(const
 // K&), try_emplace(K&&, args...) and insert_or_assign(K&&, M&&) construct a key from the
 // argument only when an element is actually inserted.
+// REQUIRES: exceptions
 #include <map>
 #include <functional>
 #include <stdexcept>

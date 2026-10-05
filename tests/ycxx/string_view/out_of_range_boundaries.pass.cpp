@@ -4,6 +4,7 @@
 // [string.view.access]: at(pos) "Throws: out_of_range if pos >= size()."
 // The boundary: pos == size() is valid (an empty result), size() + 1 and npos throw; for every
 // character type. out_of_range derives from logic_error ([out.of.range]).
+// REQUIRES: exceptions
 #include <string_view>
 #include <stdexcept>
 #include <type_traits>

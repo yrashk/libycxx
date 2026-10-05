@@ -2,6 +2,7 @@
 // strtoull on str.c_str() with the given base; when idx != nullptr store the index of the
 // first unconverted character; throw invalid_argument when no conversion can be performed
 // and out_of_range on ERANGE or when the value does not fit the return type.
+// REQUIRES: exceptions
 #include <string>
 #include <climits>
 #include <cstddef>

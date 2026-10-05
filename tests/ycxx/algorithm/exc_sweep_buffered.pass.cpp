@@ -12,6 +12,7 @@
 //   [specialized.algorithms.general]/2: "if an exception is thrown in the following algorithms,
 //     objects constructed by a placement new-expression are destroyed in an unspecified order
 //     before allowing the exception to propagate": nothing remains in the destination.
+// REQUIRES: exceptions
 #include <algorithm>
 #include <memory>
 #include <new>

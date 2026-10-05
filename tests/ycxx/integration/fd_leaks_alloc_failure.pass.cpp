@@ -11,6 +11,7 @@
 // same way) gives the expected count (descriptors an operation keeps open on purpose, such as
 // a cache, appear in both).
 // FLAGS: -pthread
+// REQUIRES: exceptions
 #include <chrono>
 #include <cstdlib>
 #include <filesystem>

@@ -12,6 +12,7 @@
 // resumes; generator<T&&> with co_yield std::move(x) hands out x itself (a consumer that moves
 // from it empties x), with co_yield x a copy; generator<T> behaves like generator<T&&>;
 // generator<string_view, string> (non-reference Ref) yields const string_view&.
+// REQUIRES: exceptions
 #include <generator>
 #include <ranges>
 #include <stdexcept>

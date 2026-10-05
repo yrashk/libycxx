@@ -17,6 +17,7 @@
 //     last_write_time file_time_type::min(), equivalent false, create_directory false,
 //     remove false, space with every member static_cast<uintmax_t>(-1) ([fs.op.space]/?).
 // Each run's operator new blocks are balanced (no leak).
+// REQUIRES: exceptions
 #include <filesystem>
 #include <string>
 #include <system_error>

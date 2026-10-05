@@ -8,6 +8,7 @@
 // [time.format] Table 133 in the "C" locale ([time.format]/2: without L the "C" locale is
 // used): %a %A %b %B %C %d %D %e %F %g %G %j %m %u %U %V %w %W %y %Y; [time.format]/3: a
 // specifier for missing information (%d for a year_month) throws format_error.
+// REQUIRES: exceptions
 #include <chrono>
 #include <format>
 #include <sstream>

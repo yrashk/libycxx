@@ -4,6 +4,7 @@
 // *abbrev_ and %z the offset *offset-sec, and either throws format_error when its pointer is
 // null. /5: the zone information appears only when requested. (Checked at run time through
 // vformat, [format.err.report]/1.)
+// REQUIRES: exceptions
 #include <chrono>
 #include <format>
 #include <string>

@@ -3,6 +3,7 @@
 // (pointer types, construct/destroy, max_size, propagation traits, rebind). vector and
 // basic_string ([container.alloc.reqmts]) work with such an allocator, including in
 // constant expressions when its members are constexpr.
+// REQUIRES: exceptions
 #include <vector>
 #include <string>
 #include "test_allocators.hpp"

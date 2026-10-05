@@ -3,6 +3,7 @@
 // std::forward<ArgTypes>(args)...);" and the thunk is invoke_r<R>(..., call-args...) -- so
 // by-value parameters are moved into the target, reference parameters keep their category, the
 // result is converted to R (discarded for void), and exceptions from the target propagate.
+// REQUIRES: exceptions
 #include <functional>
 #include <type_traits>
 #include <utility>

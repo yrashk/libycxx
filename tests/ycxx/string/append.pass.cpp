@@ -5,6 +5,7 @@
 // (push_back returns void). The pos forms go through substr and so throw out_of_range when
 // pos > size().
 // REQUIRES: exceptions
+// COUNTERPART: libcxx:strings/basic.string/string.modifiers/string_append/initializer_list.pass.cpp
 #include <string>
 #include <string_view>
 #include <stdexcept>

@@ -9,6 +9,7 @@
 // make_wformat_args. /14: handle::format(parse_ctx, format_ctx) calls the formatter's parse and
 // format.
 // COUNTERPART: libcxx:utilities/format/format.formatter/format.formatter.spec/formatter.handle.pass.cpp
+// COUNTERPART: libcxx:utilities/format/format.arguments/format.arg/visit(.return_type|_format_arg)?.pass.cpp
 #include <format>
 #include <string>
 #include <string_view>

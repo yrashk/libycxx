@@ -11,6 +11,7 @@
 // default_sentinel is equal(end-of-stream). An iterator becomes end-of-stream when sgetc()
 // returns eof.
 // COUNTERPART: libstdcxx:24_iterators/istreambuf_iterator/requirements/typedefs.cc
+// COUNTERPART: libcxx:iterators/stream.iterators/istreambuf.iterator/types.pass.cpp
 #include <iterator>
 #include <algorithm>
 #include <sstream>

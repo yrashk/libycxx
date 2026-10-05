@@ -7,6 +7,7 @@
 // X::to_int_type(c)) is false for all values c." Checked exhaustively for the 8- and
 // 16-bit character types and over the Unicode code space for char32_t.
 // XFAIL: any  draft defect: char_traits<char16_t>::int_type is uint_least16_t (16 bits), so no eof() value differs from every code unit as [char.traits.require] asks (STATUS, Deliberate divergences)
+// COUNTERPART: libcxx:strings/char.traits/char.traits.specializations/char.traits.specializations.(char|wchar_t)/eof.pass.cpp
 #include <string_view>
 #include <cstdio>
 #include <cwchar>

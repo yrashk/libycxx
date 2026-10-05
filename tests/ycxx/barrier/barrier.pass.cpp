@@ -5,6 +5,7 @@
 // the returns from all calls that were unblocked by the completion step." /23: arrive_and_wait()
 // is wait(arrive()).
 // FLAGS: -pthread
+// COUNTERPART: libstdcxx:30_threads/barrier/(1|2).cc
 #include <barrier>
 #include <thread>
 #include <atomic>

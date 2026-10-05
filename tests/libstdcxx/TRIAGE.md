@@ -411,6 +411,7 @@ Tests skipped (or UNSUPPORTED) as tied to the other library's internals, extensi
 
 | tests | why there is no standard counterpart |
 |---|---|
+| `20_util/allocator/void.cc` | an explicit instantiation of allocator<void> names no program-defined type, which [namespace.std]/5 does not allow a program to do |
 | `20_util/any/layout.cc` | the size and alignment of std::any are unspecified (libstdc++'s layout) |
 | `20_util/(optional\|unique_ptr/hash\|variant)/(hash_)?abi.cc` | the size of a hash specialization (and of classes deriving from several) is libstdc++'s ABI, not specified |
 | `20_util/optional/hash_abi.cc` | the size of hash<optional<T>> is libstdc++'s ABI, not specified |

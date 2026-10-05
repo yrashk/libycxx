@@ -357,6 +357,10 @@ a defect in a test.
 - Clang 23.1: the address of an explicit-object member function cannot be a template argument
   ("must explicitly qualify name of member function"); own test
   `functional/function_ref_cw_explicit_object` is XFAIL on Clang.
+- GCC 16.2: `requires (void* p) { delete p; }` is satisfied (deleting `void*` is only a
+  warning), so `shared_ptr<void>` is constructible from `void*` alone although
+  [util.smartptr.shared.const]/3 requires `delete p` to be well-formed; own test
+  `memory/shared_ptr_void_pointer` is XFAIL on GCC.
 - GCC 16.2: `PR31384` (conversion function vs converting constructor in direct-init of `tuple`)
   resolves differently from Clang; the libc++ expectation matches Clang.
 

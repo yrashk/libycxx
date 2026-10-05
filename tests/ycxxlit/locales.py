@@ -15,6 +15,9 @@ import functools, os, re, subprocess, sys
 # The locales libc++'s tests require as lit features (`locale.<name>`).
 LIBCXX_LOCALES = ['en_US.UTF-8', 'fr_FR.UTF-8', 'ja_JP.UTF-8', 'ru_RU.UTF-8', 'zh_CN.UTF-8',
                   'fr_CA.ISO8859-1', 'cs_CZ.ISO8859-2']
+# Names libc++'s tests use without requiring a feature for them: the suite provides
+# `missing-locale.<name>` when one is unusable, and tests/libcxx/unsupported.txt names the tests.
+LIBCXX_UNDECLARED_LOCALES = ['en_US']
 
 _PROBE = 'import locale, sys\ntry:\n    locale.setlocale(locale.LC_ALL, sys.argv[1])\nexcept locale.Error:\n    sys.exit(1)\n'
 

@@ -39,3 +39,7 @@ numerics/c\.math/abs\.pass\.cpp | clang | (extension) expects std::abs overloads
 utilities/utility/utility\.intcmp/intcmp\.bitint\.pass\.cpp | clang | (extension) expects cmp_equal etc. to accept _BitInt(N); [utility.intcmp]/1 Mandates "Each of T and U is a signed or unsigned integer type ([basic.fundamental])", whose set does not include _BitInt
 numerics/numeric\.ops/numeric\.ops\.sat/saturating\.bitint\.pass\.cpp | clang | (extension) expects add_sat etc. to accept _BitInt(N); [numeric.sat.func] Constraints: "T is a signed or unsigned integer type", whose set ([basic.fundamental]) does not include _BitInt
 containers/views/mdspan/extents/bitint\.pass\.cpp | clang | (extension) uses _BitInt(N) as extents' index type; [mdspan.extents.overview] Mandates IndexType be a signed or unsigned integer type, whose set ([basic.fundamental]) does not include _BitInt
+# missing-locale.<name> (tests/ycxxlit/locales.py): the test constructs a facet or locale with a
+# name it does not declare as a locale.<name> requirement, and the C library lacks that locale
+# (tools/ci/gen-locales generates it; macOS has it).
+localization/locale\.categories/category\.ctype/locale\.codecvt\.byname/ctor_char(16|32)_t(_char8_t)?\.pass\.cpp | missing-locale.en_US | constructs codecvt_byname with "en_US", which this machine's C library lacks

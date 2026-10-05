@@ -34,8 +34,20 @@ inline void free_aligned_sized(void* ptr, size_t, size_t) noexcept {
   ::free(ptr);
 }"""),
     "cstring": ("string.h", "memcpy memccpy memmove strcpy strncpy strdup strndup strcat strncat memcmp strcmp "
-                "strcoll strncmp strxfrm memchr strchr strcspn strpbrk strrchr strspn strstr strtok memset strerror "
-                "strlen", ""),
+                "strcoll strncmp strxfrm strcspn strspn strtok memset strerror strlen",
+                """// [cstring.syn]: the const-correct pairs of memchr, strchr, strpbrk, strrchr and strstr
+// ([library.c]/2). The C library's declarations are renamed while its header is read (C_RENAMED),
+// so these are the only ones on every C library; the compilers' builtins call the C functions.
+inline const void* memchr(const void* s, int c, size_t n) noexcept { return __builtin_memchr(s, c, n); }
+inline void* memchr(void* s, int c, size_t n) noexcept { return __builtin_memchr(s, c, n); }
+inline const char* strchr(const char* s, int c) noexcept { return __builtin_strchr(s, c); }
+inline char* strchr(char* s, int c) noexcept { return __builtin_strchr(s, c); }
+inline const char* strpbrk(const char* s1, const char* s2) noexcept { return __builtin_strpbrk(s1, s2); }
+inline char* strpbrk(char* s1, const char* s2) noexcept { return __builtin_strpbrk(s1, s2); }
+inline const char* strrchr(const char* s, int c) noexcept { return __builtin_strrchr(s, c); }
+inline char* strrchr(char* s, int c) noexcept { return __builtin_strrchr(s, c); }
+inline const char* strstr(const char* s1, const char* s2) noexcept { return __builtin_strstr(s1, s2); }
+inline char* strstr(char* s1, const char* s2) noexcept { return __builtin_strstr(s1, s2); }"""),
     "cstdio": ("stdio.h", "FILE fpos_t remove rename tmpfile tmpnam fclose fflush fopen freopen setbuf setvbuf "
                "fprintf fscanf printf scanf snprintf sprintf sscanf vfprintf vfscanf vprintf vscanf vsnprintf "
                "vsprintf vsscanf fgetc fgets fputc fputs getc getchar putc putchar puts ungetc fread fwrite "
@@ -235,11 +247,20 @@ def inttypes_binary():
 MACROS = {"cwchar": version_macro("WCHAR") + [
               "#if !YCXX_HOSTED", "#  define WEOF (static_cast<__WINT_TYPE__>(-1))", "#endif", ""],
           "cuchar": version_macro("UCHAR"), "cstring": version_macro("STRING"),
-          "cstdio": version_macro("STDIO"), "ctime": version_macro("TIME"),
+          "cstdio": version_macro("STDIO") + [
+              "// _PRINTF_NAN_LEN_MAX (C23 7.23.1), for a C library that does not define it: the longest NaN",
+              "// output of its printf, measured when libycxx is configured (cmake/ycxx-c-library.cmake).",
+              "#if !defined(_PRINTF_NAN_LEN_MAX) && defined(YCXX_C_PRINTF_NAN_LEN_MAX)",
+              "#  define _PRINTF_NAN_LEN_MAX YCXX_C_PRINTF_NAN_LEN_MAX", "#endif", ""], "ctime": version_macro("TIME"),
           "cinttypes": version_macro("INTTYPES") + inttypes_binary(), "csetjmp": version_macro("SETJMP")}
 # Global-scope redeclarations, emitted before namespace std.
 GLOBAL = {"cstdlib": [
     "#if YCXX_HOSTED",
+    "// atexit, at_quick_exit: noexcept ([support.start.term]), whether or not the C library's",
+    "// declarations say so; theirs are renamed while its header is read (C_RENAMED). One declaration",
+    "// serves both handler linkages (the compilers do not distinguish them in function types).",
+    "extern \"C\" int atexit(void (*func)(void)) noexcept;",
+    "extern \"C\" int at_quick_exit(void (*func)(void)) noexcept;",
     "// strfromd/strfromf/strfroml (C23 7.24.1.3) for C libraries without them, in the hosted runtime",
     "// (src/hosted/strfrom.cpp): snprintf with the format checked and rebuilt.",
     "namespace ycxx::detail {",
@@ -261,8 +282,11 @@ GLOBAL = {"cstdlib": [
     "ctime": [
     "// [depr.ctime] (Annex D; also deprecated in C23): the C library's declarations, redeclared",
     "// [[deprecated]] (decltype keeps their exact type, noexcept included); std:: names them below.",
+    "// extern \"C\": <time.h> includes this header inside extern \"C++\".",
+    'extern "C" {',
     '[[deprecated("asctime is deprecated ([depr.ctime]); use strftime or std::format")]] decltype(::asctime) asctime;',
     '[[deprecated("ctime is deprecated ([depr.ctime]); use strftime or std::format")]] decltype(::ctime) ctime;',
+    '}',
     "",
     "// timespec_getres (C23 7.29.2.7) for C libraries without it, in the hosted runtime",
     "// (src/hosted/ctime.cpp): the resolution of TIME_UTC, from clock_getres(CLOCK_REALTIME).",
@@ -279,8 +303,9 @@ EXTRA_INCLUDES = {"cstdlib": ["<ycxx/core/math_abs.hpp>", "<ycxx/core/c_bsearch.
 # `div_t div(int, int)` is an exact match that wins over libycxx's constexpr templates, cannot be
 # redeclared constexpr, and bsearch's single C signature conflicts with the const-correct pair.
 # So they are renamed while the C library's header is read, and never used.
-C_RENAMED = {"cstdlib": ["abs", "labs", "llabs", "div", "ldiv", "lldiv", "bsearch"],
+C_RENAMED = {"cstdlib": ["abs", "labs", "llabs", "div", "ldiv", "lldiv", "bsearch", "atexit", "at_quick_exit"],
              "cinttypes": ["imaxabs", "imaxdiv"],
+             "cstring": ["memchr", "strchr", "strpbrk", "strrchr", "strstr"],
              "cwchar": ["wcschr", "wcspbrk", "wcsrchr", "wcsstr", "wmemchr"]}
 # The C library's <wchar.h> is read by core's char_traits.hpp too (hosted, std::mbstate_t is its
 # ::mbstate_t), and must be read with the renames whoever reads it first, so the reading lives
@@ -291,9 +316,9 @@ C_WCHAR_FUNCS = [("wcschr", "const wchar_t* s, wchar_t c"), ("wcspbrk", "const w
                  ("wcsrchr", "const wchar_t* s, wchar_t c"), ("wcsstr", "const wchar_t* s1, const wchar_t* s2"),
                  ("wmemchr", "const wchar_t* s, wchar_t c, __SIZE_TYPE__ n")]
 C_RENAMED_COMMENT = [
-    "// The C library's declarations of the functions libycxx defines itself (constexpr, or the",
-    "// const-correct bsearch pair) are renamed while its header is read, so that <stdlib.h>/<inttypes.h>",
-    "// can place libycxx's in the global namespace ([support.c.headers.other]/1; DECISIONS §3)."]
+    "// The C library's declarations of the functions libycxx declares itself (constexpr, noexcept, or",
+    "// the const-correct pairs) are renamed while its header is read, so that libycxx's can take the",
+    "// names in the global namespace ([support.c.headers.other]/1; DECISIONS §3)."]
 # The C headers libycxx wraps (include/<name>.h, generated below): in C++ the wrapper includes the
 # <c...> header and adds to the global namespace the names that header declares itself.
 H_WRAPPERS = {
@@ -303,6 +328,9 @@ H_WRAPPERS = {
     "inttypes.h": ("cinttypes", ["imaxabs", "imaxdiv"], []),
     "string.h": ("cstring", ["memset_explicit"], []),
     "wchar.h": ("cwchar", [], [("YCXX_HOSTED", C_RENAMED["cwchar"])]),
+    "time.h": ("ctime", [], [("YCXX_HOSTED && !YCXX_C_HAS_TIMESPEC_GETRES", ["timespec_getres"])]),
+    "uchar.h": ("cuchar", [], [("!YCXX_C_HAS_UCHAR_H", ["mbrtoc16", "c16rtomb", "mbrtoc32", "c32rtomb"]),
+                               ("!YCXX_C_HAS_MBRTOC8", ["mbrtoc8", "c8rtomb"])]),
 }
 
 root = pathlib.Path(__file__).resolve().parent.parent / "include"

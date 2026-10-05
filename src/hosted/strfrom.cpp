@@ -1,5 +1,5 @@
 // libycxx hosted runtime: strfromd, strfromf and strfroml (C23 7.24.1.3) for C libraries that
-// lack them (YCXX_C_HAS_STRFROM 0 in config.hpp: Darwin). <cstdlib> then declares std::strfromd
+// lack them (YCXX_C_HAS_STRFROM 0: cmake/ycxx-c-library.cmake found none). <cstdlib> then declares std::strfromd
 // and friends as calls of these; elsewhere they are unused, but built everywhere so that every
 // platform compiles them.
 //

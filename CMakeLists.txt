@@ -57,6 +57,13 @@ target_compile_options(ycxx_headers INTERFACE $<$<COMPILE_LANGUAGE:CXX>:-nostdin
 target_compile_options(ycxx_headers INTERFACE
   $<$<AND:$<COMPILE_LANGUAGE:CXX>,$<CXX_COMPILER_ID:GNU>>:-Wno-attributes>)
 
+# What the C library provides (cmake/ycxx-c-library.cmake): <ycxx/generated/c_library.hpp> in the build
+# tree, read by ycxx/config.hpp; installed with the headers.
+include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/ycxx-c-library.cmake)
+set(YCXX_GENERATED_INCLUDE ${CMAKE_CURRENT_BINARY_DIR}/generated/include)
+ycxx_c_library_probe(${YCXX_GENERATED_INCLUDE}/ycxx/generated/c_library.hpp)
+target_include_directories(ycxx_headers SYSTEM INTERFACE $<BUILD_INTERFACE:${YCXX_GENERATED_INCLUDE}>)
+
 set(_ycxx_warnings -Wall -Wextra $<$<BOOL:${YCXX_WERROR}>:-Werror>)
 
 # ---- ycxx::core (libycxx.a): the library's out-of-line parts and the platform layer ----
@@ -316,7 +323,7 @@ add_library(ycxx::ycxx ALIAS ycxx_ycxx)
 if(YCXX_INSTALL)
   include(CMakePackageConfigHelpers)
   set(YCXX_CMAKE_DIR ${CMAKE_INSTALL_LIBDIR}/cmake/libycxx)
-  install(DIRECTORY include/ DESTINATION ${YCXX_INSTALL_INCLUDEDIR})
+  install(DIRECTORY include/ ${YCXX_GENERATED_INCLUDE}/ DESTINATION ${YCXX_INSTALL_INCLUDEDIR})
   set(_ycxx_installed ycxx_headers ycxx ycxx_abi ycxx_ycxx)
   if(YCXX_FREESTANDING_RUNTIME)
     list(APPEND _ycxx_installed ycxx_freestanding)

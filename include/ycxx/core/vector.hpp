@@ -273,8 +273,21 @@ private:
         }
       }
     } g{*this, size()};
-    for (; first != last; ++first)
+    for (; first != last; ++first) {
+      if (last_ == cap_) {
+        // Growing frees the storage the rest of the range may refer to: append_range, unlike
+        // insert_range, has no precondition that rg does not overlap *this ([sequence.reqmts]).
+        // Collect the rest first, then move it in.
+        vector rest(alloc_);
+        for (; first != last; ++first)
+          rest.emplace_back(*first);
+        reserve(grow_to(rest.size()));
+        for (T& x : rest)
+          emplace_back(static_cast<T&&>(x));
+        break;
+      }
       emplace_back(*first);
+    }
     g.n = size_type(-1);
   }
 

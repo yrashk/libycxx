@@ -26,7 +26,7 @@
 #include <ycxx/core/exception_base.hpp>
 #include <ycxx/core/single_threaded.hpp>
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 
 // [util.smartptr.weak.bad]
 class bad_weak_ptr : public exception {
@@ -47,7 +47,7 @@ class enable_shared_from_this;
 
 } // namespace std
 
-namespace ycxx::detail {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 
 [[noreturn]] [[gnu::cold]] constexpr void throw_bad_weak_ptr() {
   ::ycxx::detail::raise_with(ycxx_error_bad_weak_ptr, "std::bad_weak_ptr", [] { return std::bad_weak_ptr(); });
@@ -505,9 +505,9 @@ constexpr const std::enable_shared_from_this<X>* sp_esft_base(const std::enable_
 // The library's access to shared_ptr's representation (defined after shared_ptr).
 struct sp_access;
 
-} // namespace ycxx::detail
+}} // namespace ycxx::detail
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 
 // [util.smartptr.shared]
 template <class T>
@@ -761,7 +761,7 @@ shared_ptr(unique_ptr<T, D>) -> shared_ptr<T>;
 
 } // namespace std
 
-namespace ycxx::detail {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 
 struct sp_access {
   // A shared_ptr taking over one already-counted reference to ctrl.
@@ -787,9 +787,9 @@ struct sp_access {
   }
 };
 
-} // namespace ycxx::detail
+}} // namespace ycxx::detail
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 
 // [util.smartptr.weak]
 template <class T>
@@ -956,7 +956,7 @@ public:
 
 } // namespace std
 
-namespace ycxx::detail {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 
 // [util.smartptr.shared.create]: the object form. A is the allocator the caller passed
 // (std::allocator for make_shared); ViaAlloc selects allocator construct/destroy.
@@ -987,9 +987,9 @@ constexpr std::shared_ptr<T> sp_make_array(const A& a, std::size_t n, const std:
   return sp_access::adopt<T>(b->elements(), b);
 }
 
-} // namespace ycxx::detail
+}} // namespace ycxx::detail
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 
 // [util.smartptr.shared.create]
 template <class T, class... Args>

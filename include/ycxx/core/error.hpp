@@ -60,7 +60,7 @@ enum ycxx_error_kind : int {
 
 } // extern "C"
 
-namespace ycxx::detail {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 
 [[noreturn]] [[gnu::cold]] inline void assertion_failed(const char* msg) noexcept {
   ::ycxx_error_handler(ycxx_error_assertion, msg);
@@ -142,5 +142,5 @@ template <class E>
   ::ycxx::detail::raise_with(ycxx_error_bad_array_new_length, "std::bad_array_new_length", [] { return std::bad_array_new_length(); });
 }
 
-} // namespace ycxx::detail
+}} // namespace ycxx::detail
 

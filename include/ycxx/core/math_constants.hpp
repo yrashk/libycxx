@@ -5,7 +5,7 @@
 
 #include <ycxx/config.hpp>
 
-namespace ycxx::detail {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 
 // value = 0.m[0]m[1]m[2] (binary, top bit set) * 2^(exp + 1), truncated to 192 bits. The
 // constants are irrational, so the truncated tail is never zero (rounding needs no sticky bit).
@@ -67,4 +67,4 @@ consteval T math_constant_value(math_constant c) {
   return v;
 }
 
-} // namespace ycxx::detail
+}} // namespace ycxx::detail

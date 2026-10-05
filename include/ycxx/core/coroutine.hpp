@@ -4,7 +4,7 @@
 #include <ycxx/core/cstddef.hpp>
 #include <ycxx/core/compare.hpp>
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 
 // [coroutine.traits]
 template <class R, class... Args>
@@ -115,7 +115,7 @@ using noop_coroutine_handle = coroutine_handle<noop_coroutine_promise>;
 
 } // namespace std
 
-namespace ycxx::detail {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 // A coroutine frame whose resume/destroy entries do nothing, laid out like the frames both
 // compilers create: {resume fn, destroy fn, promise}.
 struct noop_frame {
@@ -126,9 +126,9 @@ struct noop_frame {
   static void nop(void*) noexcept {}
 };
 inline noop_frame noop_frame_instance{&noop_frame::nop, &noop_frame::nop, {}};
-} // namespace ycxx::detail
+}} // namespace ycxx::detail
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 inline noop_coroutine_handle noop_coroutine() noexcept {
   return noop_coroutine_handle(&ycxx::detail::noop_frame_instance);
 }

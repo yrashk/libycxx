@@ -30,15 +30,15 @@
 #include <ycxx/core/stream_iterators.hpp>
 #include <ycxx/core/typeinfo.hpp>
 
-namespace ycxx::detail {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 struct locale_impl; // src/hosted/locale.cpp
 struct locale_access;
 // Selects locale's private constructor from a locale_impl*: without it, a null pointer constant
 // would also convert to that constructor's parameter and make locale(nullptr) ambiguous.
 struct locale_impl_tag {};
-} // namespace ycxx::detail
+}} // namespace ycxx::detail
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 
 class locale;
 struct text_encoding; // <text_encoding>; <locale> includes it
@@ -195,7 +195,7 @@ public:
 
 } // namespace std
 
-namespace ycxx::detail {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 
 // The "C" classification of the 128 ASCII characters.
 consteval auto make_ascii_masks() {
@@ -257,9 +257,9 @@ std::basic_string<charT> widen_ascii(const char* s) {
 // for any other name, null included. Used by the _byname facets. Defined in the hosted runtime.
 void check_locale_name(const char* name, const char* what);
 
-} // namespace ycxx::detail
+}} // namespace ycxx::detail
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 
 // [locale.ctype]
 template <class charT>

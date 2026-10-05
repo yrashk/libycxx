@@ -2,6 +2,9 @@
 #include <new>
 #include <ycxx/core/error.hpp>
 #include <ycxx/pal.h>
+#include "../../runtime/new/hidden.hpp"
+
+asm((ycxx::detail::hide_allocation_function("_Znw#St11align_val_t")));
 
 void* operator new(std::size_t n, std::align_val_t a) {
   if (n == 0)

@@ -15,7 +15,7 @@
 #include <ycxx/core/memory_base.hpp>
 #include <ycxx/core/string_view.hpp>
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 
 template <class charT, class traits, class Allocator>
 class basic_string;

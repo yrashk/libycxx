@@ -3,7 +3,7 @@
 
 #include <ycxx/hosted/ios.hpp>
 
-namespace ycxx::detail {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 // basic_syncbuf's base marks itself in its basic_streambuf part, so the emit_on_flush family of
 // manipulators can recognize one without RTTI.
 struct streambuf_tag_access {
@@ -16,9 +16,9 @@ struct streambuf_tag_access {
     sb.is_syncbuf_ = true;
   }
 };
-} // namespace ycxx::detail
+}} // namespace ycxx::detail
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 
 template <class charT, class traits>
 class basic_streambuf {

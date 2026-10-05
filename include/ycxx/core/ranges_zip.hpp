@@ -7,7 +7,7 @@
 #include <ycxx/core/tuple.hpp>
 #include <ycxx/core/array.hpp>
 
-namespace ycxx::detail {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 
 // ---- [range.adaptor.helpers] -----------------------------------------------------------------
 template <class F, class Tuple>
@@ -88,9 +88,9 @@ concept has_tuple_element = tuple_like<T> && N < std::tuple_size_v<T> && require
 template <class T, std::size_t N>
 concept returnable_element = std::is_reference_v<T> || std::move_constructible<std::tuple_element_t<N, T>>;
 
-} // namespace ycxx::detail
+}} // namespace ycxx::detail
 
-namespace std::ranges {
+namespace [[gnu::visibility("hidden")]] std { namespace ranges {
 
 // =============================================================================================
 // [range.elements]
@@ -572,16 +572,16 @@ enumerate_view(R&&) -> enumerate_view<views::all_t<R>>;
 template <class View>
 constexpr bool enable_borrowed_range<enumerate_view<View>> = enable_borrowed_range<View>;
 
-} // namespace std::ranges
+}} // namespace std::ranges
 
-namespace ycxx::detail {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 template <class... Rs>
 concept zip_is_common = (sizeof...(Rs) == 1 && (std::ranges::common_range<Rs> && ...)) ||
                         (!(std::ranges::bidirectional_range<Rs> && ...) && (std::ranges::common_range<Rs> && ...)) ||
                         ((std::ranges::random_access_range<Rs> && ...) && (std::ranges::sized_range<Rs> && ...));
-} // namespace ycxx::detail
+}} // namespace ycxx::detail
 
-namespace std::ranges {
+namespace [[gnu::visibility("hidden")]] std { namespace ranges {
 
 // =============================================================================================
 // [range.zip]
@@ -1593,12 +1593,12 @@ public:
   }
 };
 
-} // namespace std::ranges
+}} // namespace std::ranges
 
 // =============================================================================================
 // [range.cartesian]
 // =============================================================================================
-namespace ycxx::detail {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 
 template <bool Const, class First, class... Vs>
 concept cartesian_product_is_random_access =
@@ -1646,9 +1646,9 @@ consteval auto cartesian_difference() {
     return std::type_identity<std::common_type_t<std::ptrdiff_t, Ds...>>{};
 }
 
-} // namespace ycxx::detail
+}} // namespace ycxx::detail
 
-namespace std::ranges {
+namespace [[gnu::visibility("hidden")]] std { namespace ranges {
 
 template <input_range First, forward_range... Vs>
   requires(view<First> && ... && view<Vs>)
@@ -1934,12 +1934,12 @@ public:
 template <class... Vs>
 cartesian_product_view(Vs&&...) -> cartesian_product_view<views::all_t<Vs>...>;
 
-} // namespace std::ranges
+}} // namespace std::ranges
 
 // =============================================================================================
 // The adaptor objects
 // =============================================================================================
-namespace ycxx::detail::view_fn {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail::view_fn {
 
 template <std::size_t N>
 struct elements_fn : std::ranges::range_adaptor_closure<elements_fn<N>> {
@@ -2030,9 +2030,9 @@ struct cartesian_product_fn {
   }
 };
 
-} // namespace ycxx::detail::view_fn
+}} // namespace ycxx::detail::view_fn
 
-namespace std::ranges::views {
+namespace [[gnu::visibility("hidden")]] std { namespace ranges::views {
 template <size_t N>
 constexpr ycxx::detail::view_fn::elements_fn<N> elements{};
 inline constexpr auto keys = elements<0>;
@@ -2047,4 +2047,4 @@ template <size_t N>
 constexpr ycxx::detail::view_fn::adjacent_transform_fn<N> adjacent_transform{};
 inline constexpr auto pairwise_transform = adjacent_transform<2>;
 inline constexpr ycxx::detail::view_fn::cartesian_product_fn cartesian_product{};
-} // namespace std::ranges::views
+}} // namespace std::ranges::views

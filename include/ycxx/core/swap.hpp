@@ -4,7 +4,7 @@
 #include <ycxx/core/meta_base.hpp>
 #include <ycxx/core/move.hpp>
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 
 template <class T>
   requires(is_constructible_v<T, T &&> && is_assignable_v<T&, T &&>)
@@ -16,19 +16,19 @@ constexpr void swap(T& a, T& b) noexcept(is_nothrow_constructible_v<T, T &&> && 
 
 } // namespace std
 
-namespace ycxx::detail {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 // Defined below, once both swap overloads are visible (needed for multidimensional arrays).
 template <class T>
 struct swappable_elem;
-} // namespace ycxx::detail
+}} // namespace ycxx::detail
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 template <class T, size_t N>
   requires ycxx::detail::swappable_elem<T>::value
 constexpr void swap(T (&a)[N], T (&b)[N]) noexcept(ycxx::detail::swappable_elem<T>::nothrow);
 } // namespace std
 
-namespace ycxx::detail::swap_adl {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail::swap_adl {
 using std::swap;
 
 template <class T, class U>
@@ -48,17 +48,17 @@ template <class T, class U>
 constexpr void do_swap(T&& t, U&& u) noexcept(noexcept(swap(static_cast<T&&>(t), static_cast<U&&>(u)))) {
   swap(static_cast<T&&>(t), static_cast<U&&>(u));
 }
-} // namespace ycxx::detail::swap_adl
+}} // namespace ycxx::detail::swap_adl
 
-namespace ycxx::detail {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 template <class T>
 struct swappable_elem {
   static constexpr bool value = swap_adl::swappable_with_<T&, T&>;
   static constexpr bool nothrow = swap_adl::nothrow_swappable_with_<T&, T&>;
 };
-} // namespace ycxx::detail
+}} // namespace ycxx::detail
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 
 template <class T, class U>
 struct is_swappable_with : bool_constant<ycxx::detail::swap_adl::swappable_with_<T, U>> {};

@@ -10,7 +10,7 @@
 #include <ycxx/core/cstdint.hpp>
 #include <ycxx/core/meta_base.hpp>
 
-namespace ycxx::detail {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 
 consteval std::intmax_t ratio_abs(std::intmax_t x) { return x < 0 ? -x : x; }
 consteval std::intmax_t ratio_gcd(std::intmax_t a, std::intmax_t b) {
@@ -93,9 +93,9 @@ struct ratio_check {
                 "[ratio.general]/2: R1 and R2 must be specializations of std::ratio");
 };
 
-} // namespace ycxx::detail
+}} // namespace ycxx::detail
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 
 template <intmax_t N, intmax_t D = 1>
 class ratio {
@@ -112,7 +112,7 @@ public:
 
 } // namespace std
 
-namespace ycxx::detail {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 
 template <std::intmax_t N, std::intmax_t D>
 inline constexpr bool is_ratio<std::ratio<N, D>> = true;
@@ -149,9 +149,9 @@ consteval int ratio_compare_of() {
   return ycxx::detail::ratio_compare(R1::num, R1::den, R2::num, R2::den);
 }
 
-} // namespace ycxx::detail
+}} // namespace ycxx::detail
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 
 // [ratio.arithmetic]
 template <class R1, class R2>

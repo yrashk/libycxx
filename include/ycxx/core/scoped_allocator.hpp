@@ -10,12 +10,12 @@
 #include <ycxx/core/memory_base.hpp>
 #include <ycxx/core/tuple.hpp>
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 template <class OuterAlloc, class... InnerAllocs>
 class scoped_allocator_adaptor;
 } // namespace std
 
-namespace ycxx::detail {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 
 struct no_inner_allocator {};
 
@@ -39,9 +39,9 @@ constexpr auto& scoped_outermost(A& a) noexcept {
 
 struct scoped_select_tag {};
 
-} // namespace ycxx::detail
+}} // namespace ycxx::detail
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 
 template <class OuterAlloc, class... InnerAllocs>
 class scoped_allocator_adaptor : public OuterAlloc {

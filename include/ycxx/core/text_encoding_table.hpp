@@ -4,7 +4,7 @@
 
 #include <ycxx/core/cstdint.hpp>
 
-namespace ycxx::detail {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 
 struct te_name {
   std::int_least32_t mib;
@@ -1135,4 +1135,4 @@ inline constexpr te_key te_keys[857] = {
     {"yu", 87},
 };
 
-} // namespace ycxx::detail
+}} // namespace ycxx::detail

@@ -13,6 +13,9 @@ case $which in
   *) echo "usage: ycxx-cxx gcc|clang args..." >&2; exit 2 ;;
 esac
 extra=
+# Hidden visibility (DECISIONS §2): GCC's -Wattributes warning about program classes with a member
+# or base of a library class type says nothing about the program (STATUS, known limitations).
+[ $which = gcc ] && extra=-Wno-attributes
 if [ "$(uname -s)" = Darwin ]; then
   # Apple's linker searches archives repeatedly by itself, and the C runtime comes from the SDK.
   # Unwinding is libSystem's unwinder for both compilers (GCC's Darwin specs link -lemutls_w and

@@ -7,7 +7,7 @@
 #include <ycxx/core/range_access.hpp>
 #include <ycxx/core/ranges_base.hpp>
 
-namespace ycxx::detail {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 
 // [container.reqmts]: a type qualifies as an allocator if A::value_type is a type and
 // declval<A&>().allocate(size_t{}) is well-formed.
@@ -36,9 +36,9 @@ template <class R, class T>
 concept container_compatible_range =
     std::ranges::input_range<R> && std::convertible_to<std::ranges::range_reference_t<R>, T>;
 
-} // namespace ycxx::detail
+}} // namespace ycxx::detail
 
-namespace ycxx::adl_free {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace adl_free {
 
 // The iterator of a contiguous container: a wrapped T* (T possibly const). Owner makes the
 // iterators of different containers distinct types; Diff is the container's difference_type.
@@ -103,4 +103,4 @@ public:
   }
 };
 
-} // namespace ycxx::adl_free
+}} // namespace ycxx::adl_free

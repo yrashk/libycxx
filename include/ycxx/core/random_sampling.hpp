@@ -14,7 +14,7 @@
 #include <ycxx/core/random_base.hpp>
 #include <ycxx/core/vector.hpp>
 
-namespace ycxx::detail {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 
 // The cumulative sums of `mass`, normalized so that the last entry with a positive mass, and every
 // entry after it, is exactly 1 (so that a uniform value in [0, 1) never selects a trailing
@@ -60,9 +60,9 @@ inline void rand_check_weights(const std::vector<double>& w, const char* msg) {
 template <class It>
 concept rand_input_iter = requires { typename std::iterator_traits<It>::value_type; };
 
-} // namespace ycxx::detail
+}} // namespace ycxx::detail
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 
 // ---- [rand.dist.samp.discrete] --------------------------------------------------------------------
 template <class IntType = int>

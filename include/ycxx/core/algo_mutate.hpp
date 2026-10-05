@@ -6,7 +6,7 @@
 #include <ycxx/core/algo_base.hpp>
 #include <ycxx/core/urbg.hpp>
 
-namespace ycxx::detail {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 
 template <class Ops, class I, class S, class P>
 constexpr I remove_if_impl(I first, S last, P pred) {
@@ -223,12 +223,12 @@ unsigned long long uniform_upto(G& g, unsigned long long n) {
   }
 }
 
-} // namespace ycxx::detail
+}} // namespace ycxx::detail
 
 // =============================================================================================
 // std:: forms
 // =============================================================================================
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 
 // [alg.transform]
 template <class InputIterator, class OutputIterator, class UnaryOperation>
@@ -428,7 +428,7 @@ constexpr ForwardIterator shift_right(ForwardIterator first, ForwardIterator las
 // =============================================================================================
 // std::ranges:: forms
 // =============================================================================================
-namespace std::ranges {
+namespace [[gnu::visibility("hidden")]] std { namespace ranges {
 template <class I, class O>
 using unary_transform_result = in_out_result<I, O>;
 template <class I1, class I2, class O>
@@ -448,9 +448,9 @@ using reverse_copy_result = in_out_result<I, O>;
 template <class I, class O>
 using rotate_copy_result = in_out_result<I, O>;
 // reverse_copy_truncated_result, rotate_copy_truncated_result: algo_ranges_parallel.hpp.
-} // namespace std::ranges
+}} // namespace std::ranges
 
-namespace ycxx::detail::ranges_algo {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail::ranges_algo {
 
 using std::ranges::borrowed_iterator_t;
 using std::ranges::borrowed_subrange_t;
@@ -879,9 +879,9 @@ struct shuffle_fn {
   }
 };
 
-} // namespace ycxx::detail::ranges_algo
+}} // namespace ycxx::detail::ranges_algo
 
-namespace std::ranges {
+namespace [[gnu::visibility("hidden")]] std { namespace ranges {
 inline constexpr ycxx::adl_free::ranges_par_algo<ycxx::detail::ranges_algo::transform_fn, ycxx::detail::par::kind::transform> transform{};
 inline constexpr ycxx::adl_free::ranges_par_algo<ycxx::detail::ranges_algo::replace_fn, ycxx::detail::par::kind::replace> replace{};
 inline constexpr ycxx::adl_free::ranges_par_algo<ycxx::detail::ranges_algo::replace_if_fn, ycxx::detail::par::kind::replace_if> replace_if{};
@@ -903,4 +903,4 @@ inline constexpr ycxx::adl_free::ranges_par_algo<ycxx::detail::ranges_algo::shif
 inline constexpr ycxx::adl_free::ranges_par_algo<ycxx::detail::ranges_algo::shift_right_fn, ycxx::detail::par::kind::shift_right> shift_right{};
 inline constexpr ycxx::detail::ranges_algo::sample_fn sample{};
 inline constexpr ycxx::detail::ranges_algo::shuffle_fn shuffle{};
-} // namespace std::ranges
+}} // namespace std::ranges

@@ -20,7 +20,7 @@
 
 #include <ycxx/hosted/regex_compile.hpp>
 
-namespace ycxx::detail {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 
 template <class It>
 struct re_cap {
@@ -908,4 +908,4 @@ bool re_execute(const re_program<charT, traits>& P, const traits& tr, It first, 
   return true;
 }
 
-} // namespace ycxx::detail
+}} // namespace ycxx::detail

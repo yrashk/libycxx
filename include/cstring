@@ -15,7 +15,7 @@
 #endif
 
 #if YCXX_HOSTED
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 using ::memcpy;
 using ::memccpy;
 using ::memmove;
@@ -44,7 +44,7 @@ using ::strlen;
 } // namespace std
 #endif
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 // memset_explicit (C23 7.26.6.2): memset whose stores are kept even when the object is never read
 // again: the empty asm statement claims to read all memory through s. A template, as <cmath>'s
 // functions are, so a C library's ::memset_explicit wins unqualified calls.

@@ -14,11 +14,11 @@
 #include <ycxx/hosted/iosfwd.hpp>
 #include <ycxx/hosted/locale_base.hpp>
 
-namespace ycxx::detail {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 struct ios_access;
-} // namespace ycxx::detail
+}} // namespace ycxx::detail
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 
 using streamsize = ptrdiff_t;
 
@@ -274,7 +274,7 @@ public:
 
 } // namespace std
 
-namespace ycxx::detail {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 
 struct ios_access {
   // Sets badbit without throwing failure (the exception rule of the I/O functions).
@@ -321,9 +321,9 @@ void guarded_io(Ios& s, F&& body) {
   ::ycxx::detail::guarded_io(s, static_cast<F&&>(body), never);
 }
 
-} // namespace ycxx::detail
+}} // namespace ycxx::detail
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 
 // [ios]
 template <class charT, class traits>

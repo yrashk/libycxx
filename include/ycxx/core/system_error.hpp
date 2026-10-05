@@ -23,7 +23,7 @@
 #include <ycxx/core/stdexcept.hpp>
 #include <ycxx/core/type_traits.hpp>
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 
 class error_category;
 class error_code;
@@ -46,7 +46,7 @@ constexpr bool is_error_condition_enum_v = is_error_condition_enum<T>::value;
 
 } // namespace std
 
-namespace ycxx::detail::syserr_adl {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail::syserr_adl {
 // [contents]/3: make_error_code and make_error_condition are found by argument-dependent lookup
 // only. These zero-argument declarations hide every outer declaration from ordinary lookup and
 // are never viable themselves.
@@ -61,9 +61,9 @@ template <class E>
 constexpr auto condition_of(E e) -> decltype(make_error_condition(e)) {
   return make_error_condition(e);
 }
-} // namespace ycxx::detail::syserr_adl
+}} // namespace ycxx::detail::syserr_adl
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 
 class error_category {
 public:

@@ -15,7 +15,7 @@
 #include <ycxx/core/memory_resource_fwd.hpp>
 #include <ycxx/core/tuple.hpp>
 
-namespace std::pmr {
+namespace [[gnu::visibility("hidden")]] std { namespace pmr {
 
 // [mem.res.class]
 class memory_resource {
@@ -48,9 +48,9 @@ memory_resource* null_memory_resource() noexcept;
 memory_resource* set_default_resource(memory_resource* r) noexcept;
 memory_resource* get_default_resource() noexcept;
 
-} // namespace std::pmr
+}} // namespace std::pmr
 
-namespace ycxx::detail {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 // Deallocates a polymorphic_allocator::new_object allocation unless dismissed (the
 // constructor did not throw).
 template <class Alloc, class T>
@@ -62,9 +62,9 @@ struct new_object_guard {
       alloc.deallocate_object(p);
   }
 };
-} // namespace ycxx::detail
+}} // namespace ycxx::detail
 
-namespace std::pmr {
+namespace [[gnu::visibility("hidden")]] std { namespace pmr {
 
 // [mem.poly.allocator.class]. The default template argument is in memory_resource_fwd.hpp.
 template <class Tp>
@@ -152,4 +152,4 @@ bool operator==(const polymorphic_allocator<T1>& a, const polymorphic_allocator<
   return *a.resource() == *b.resource();
 }
 
-} // namespace std::pmr
+}} // namespace std::pmr

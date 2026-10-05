@@ -14,7 +14,7 @@ typedef decltype(sizeof(0)) size_t;
 typedef decltype(static_cast<int*>(nullptr) - static_cast<int*>(nullptr)) ptrdiff_t;
 typedef decltype(nullptr) nullptr_t;
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 using ::size_t;
 using ::ptrdiff_t;
 using ::nullptr_t;

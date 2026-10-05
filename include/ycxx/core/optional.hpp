@@ -12,7 +12,7 @@
 #include <ycxx/core/format_kind.hpp>
 #include <initializer_list>
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 
 // [optional.nullopt]: not default constructible, not an aggregate initialisable from {}.
 struct nullopt_t {
@@ -38,20 +38,20 @@ public:
 
 } // namespace std
 
-namespace ycxx::detail {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 [[noreturn]] [[gnu::cold]] constexpr void throw_bad_optional_access() {
   ::ycxx::detail::raise_with(ycxx_error_bad_optional_access, "std::bad_optional_access", [] { return std::bad_optional_access(); });
 }
-} // namespace ycxx::detail
+}} // namespace ycxx::detail
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 
 template <class T>
 class optional;
 
 } // namespace std
 
-namespace ycxx::detail {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 
 template <class T>
 inline constexpr bool is_optional = false;
@@ -119,9 +119,9 @@ union optional_storage {
 };
 
 
-} // namespace ycxx::detail
+}} // namespace ycxx::detail
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 
 template <class T>
 class optional {
@@ -490,7 +490,7 @@ optional(T) -> optional<T>;
 // Base classes of std types live in ycxx::adl_free, a namespace that declares no functions:
 // a base's namespace is an associated namespace for ADL ([basic.lookup.argdep]/3), so a
 // ycxx::detail base would expose every internal function to lookup on the std type.
-namespace ycxx::adl_free {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace adl_free {
 // [optional.optional.ref.general]: optional<T&>::iterator exists only for object types other
 // than arrays of unknown bound.
 template <class T>
@@ -500,9 +500,9 @@ template <class T>
 struct optional_ref_iterator<T> {
   using iterator = T*;
 };
-} // namespace ycxx::adl_free
+}} // namespace ycxx::adl_free
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 template <class T>
 class optional<T&> : public ycxx::adl_free::optional_ref_iterator<T> {
   static_assert(ycxx::detail::valid_optional_type<T&>,

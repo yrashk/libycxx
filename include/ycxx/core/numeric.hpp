@@ -8,7 +8,7 @@
 #include <ycxx/core/limits.hpp>
 #include <ycxx/core/utility_base.hpp>
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 
 // [accumulate]
 template <class InputIterator, class T>
@@ -202,7 +202,7 @@ using iota_result = out_value_result<O, T>;
 
 } // namespace std
 
-namespace ycxx::detail::ranges_algo {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail::ranges_algo {
 struct iota_fn {
   template <std::input_or_output_iterator O, std::sentinel_for<O> S, std::weakly_incrementable T>
     requires std::indirectly_writable<O, const T&>
@@ -218,13 +218,13 @@ struct iota_fn {
     return (*this)(std::ranges::begin(r), std::ranges::end(r), std::move(value));
   }
 };
-} // namespace ycxx::detail::ranges_algo
+}} // namespace ycxx::detail::ranges_algo
 
-namespace std::ranges {
+namespace [[gnu::visibility("hidden")]] std { namespace ranges {
 inline constexpr ycxx::detail::ranges_algo::iota_fn iota{};
-} // namespace std::ranges
+}} // namespace std::ranges
 
-namespace ycxx::detail {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 
 template <class T>
 concept gcd_integer = std::is_integral_v<T> && !std::is_same_v<std::remove_cv_t<T>, bool>;
@@ -257,9 +257,9 @@ concept sat_integer = cmp_integer<T> && std::same_as<T, std::remove_cv_t<T>>;
 template <class T>
 concept midpoint_arithmetic = std::is_arithmetic_v<T> && !std::is_same_v<std::remove_cv_t<T>, bool>;
 
-} // namespace ycxx::detail
+}} // namespace ycxx::detail
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 
 // [numeric.ops.gcd], [numeric.ops.lcm]
 // Both are noexcept (a strengthening): a violated precondition is undefined, not an exception.

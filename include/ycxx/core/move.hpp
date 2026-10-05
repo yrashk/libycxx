@@ -3,7 +3,7 @@
 
 #include <ycxx/core/meta_base.hpp>
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 
 template <class T>
 [[nodiscard]] [[gnu::always_inline]] constexpr T&& forward(remove_reference_t<T>& t) noexcept {
@@ -22,7 +22,7 @@ template <class T>
 
 } // namespace std
 
-namespace ycxx::detail {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 // [forward]/6: V = OVERRIDE_REF(T&&, COPY_CONST(remove_reference_t<T>, remove_reference_t<U>)).
 template <class T, class U>
 using forward_like_base = std::conditional_t<std::is_const_v<std::remove_reference_t<T>>,
@@ -30,9 +30,9 @@ using forward_like_base = std::conditional_t<std::is_const_v<std::remove_referen
 template <class T, class U>
 using forward_like_t =
     std::conditional_t<is_lref_v<T&&>, forward_like_base<T, U>&, forward_like_base<T, U>&&>;
-} // namespace ycxx::detail
+}} // namespace ycxx::detail
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 
 template <class T, class U>
 [[nodiscard]] [[gnu::always_inline]] constexpr auto forward_like(U&& x) noexcept

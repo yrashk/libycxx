@@ -49,4 +49,10 @@ struct formatter<basic_stacktrace<Allocator>> {
   }
 };
 
+// [format.formatter.spec]/3 (not specified otherwise).
+template <>
+inline constexpr bool enable_nonlocking_formatter_optimization<stacktrace_entry> = true;
+template <class Allocator>
+inline constexpr bool enable_nonlocking_formatter_optimization<basic_stacktrace<Allocator>> = true;
+
 } // namespace std

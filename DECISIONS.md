@@ -549,6 +549,23 @@ under the same name. Otherwise it gets one alias template in `config.hpp`.
 - **Floating point** uses `<charconv>` (`to_chars` of the value's own type, extended types
   included); `#` with `g`/`G` reproduces `%#g`; the precision of type none is a to_chars general
   conversion whose zeros are removed even with `#`.
+- **Formatters per header.** Every header that declares a formatter specialization (`<vector>`,
+  `<stack>`, `<queue>`, `<thread>`, `<stacktrace>`, `<chrono>`, `<filesystem>`, `<system_error>`,
+  `<format>`) provides the character, string, arithmetic and pointer formatters
+  ([format.formatter.spec]/2). Nothing can call `parse` or `format` without the contexts of
+  `<format>`, so those formatters' class layouts live in a light header,
+  `ycxx/core/format_decl.hpp` (with the primary template, the /4 disabled specializations,
+  `enable_nonlocking_formatter_optimization` and `formattable`): their state is a `fmt_spec`, and
+  their members call `ycxx::detail` functions declared there and defined in `format_base.hpp`,
+  instantiated where a formatting function is used, so the include order does not matter.
+  `<vector>` adds `formatter<vector<bool>::reference>` (`format_vector_bool.hpp`), `<stack>` and
+  `<queue>` the adaptor formatters (`format_adaptors.hpp`, against declarations of the adaptors
+  and `ranges::ref_view`); `<vector>` grows by 3% (12 KB preprocessed), not by the 59% of
+  `format_base.hpp`. `basic_format_context` is complete only with `<format>`, so before it
+  `formattable` is false, and the adaptor formatters (constrained on `formattable<Container,
+  charT>`, holding the range formatter of `<format>`) are enabled only once `<format>` is in.
+  Enabling them with `<stack>` alone would need the context classes (+43 KB) and the range
+  formatter's layout with `ref_view`'s definition (+88 KB) in `<stack>` and `<queue>`.
 
 ## 12. Data-parallel types (`<simd>`)
 

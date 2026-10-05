@@ -6,3 +6,5 @@
 #include <compare>
 #include <initializer_list>
 #include <ycxx/core/stack.hpp>
+// [stack.syn]: formatter<stack> and those of [format.formatter.spec]/2.
+#include <ycxx/core/format_adaptors.hpp>

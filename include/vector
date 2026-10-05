@@ -7,5 +7,7 @@
 #include <initializer_list>
 #include <ycxx/core/vector.hpp>
 #include <ycxx/core/vector_bool.hpp>
+// [vector.syn]: formatter<vector<bool>::reference> and those of [format.formatter.spec]/2.
+#include <ycxx/core/format_vector_bool.hpp>
 // The pmr:: aliases must be usable with <vector> alone: complete polymorphic_allocator.
 #include <ycxx/core/memory_resource.hpp>

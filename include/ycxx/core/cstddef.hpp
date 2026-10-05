@@ -1,15 +1,18 @@
-// libycxx core: fundamental types from <cstddef>, defined without any C header.
+// libycxx core: fundamental types from <cstddef>, defined without the C library's headers.
 #pragma once
 
 #include <ycxx/config.hpp>
 #include <ycxx/core/prim_traits.hpp>
 
-// [headers]/5 leaves it unspecified whether these names are also declared at global scope.
-// Every C library's <stddef.h> declares ::size_t and ::ptrdiff_t (and C23's ::nullptr_t), and code relies
-// on that, so they are declared there too. A typedef of the same type may be redeclared, so a
-// later <stddef.h> stays valid. max_align_t cannot be shared that way: <stddef.h> defines
-// ::max_align_t as a class, and without including it core cannot name that class, so
-// std::max_align_t is a distinct type with the same size and alignment (STATUS: divergences).
+// The compiler's own <stddef.h> (not the C library's: GCC and Clang provide it, for freestanding
+// environments too) defines ::max_align_t, and [support.c.headers.other]/1 makes it the same type
+// as std::max_align_t, so core reads it, past libycxx's own <stddef.h> (which includes this
+// header). Its other names (::size_t, ::ptrdiff_t, NULL, offsetof) are what core declares below
+// anyway: [headers]/5 leaves it unspecified whether these names are also declared at global
+// scope, code relies on that, and <stddef.h> needs them there. A typedef of the same type may be
+// redeclared, so the order in which the headers are read does not matter.
+#include_next <stddef.h>
+
 typedef decltype(sizeof(0)) size_t;
 typedef decltype(static_cast<int*>(nullptr) - static_cast<int*>(nullptr)) ptrdiff_t;
 typedef decltype(nullptr) nullptr_t;
@@ -18,14 +21,7 @@ namespace [[gnu::visibility("hidden")]] std {
 using ::size_t;
 using ::ptrdiff_t;
 using ::nullptr_t;
-
-// Same definition as the compilers' own <stddef.h> uses, so std::max_align_t has the
-// alignment the compiler expects (alignof == __BIGGEST_ALIGNMENT__ on x86_64).
-struct alignas(__BIGGEST_ALIGNMENT__ > alignof(long double) ? __BIGGEST_ALIGNMENT__ : alignof(long double))
-    max_align_t {
-  long long ll;
-  long double ld;
-};
+using ::max_align_t;
 
 enum class byte : unsigned char {};
 

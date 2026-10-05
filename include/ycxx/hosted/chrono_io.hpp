@@ -66,6 +66,7 @@ struct chrono_fields {
   unsigned month = 0, day = 0, weekday = 0;
   int yday = 0; // 0 for January 1st
   bool weekday_ok = false;
+  bool date_ok = false; // year, month, day, weekday and yday form a valid date
   bool negative = false;
   unsigned long long hours = 0;
   unsigned minutes = 0, seconds = 0;
@@ -89,7 +90,7 @@ constexpr void chrono_set_days(chrono_fields<charT>& f, long long z) noexcept {
   f.month = c.m;
   f.day = c.d;
   f.weekday = ::ycxx::detail::weekday_from_days(z);
-  f.weekday_ok = true;
+  f.weekday_ok = f.date_ok = true;
   f.yday = static_cast<int>(::ycxx::detail::wrap_sub(z, ::ycxx::detail::days_from_civil(c.y, 1, 1)));
 }
 
@@ -576,6 +577,13 @@ void chrono_write_one(chrono_out<charT>& o, const chrono_fields<charT>& f, char 
     const char* n = chrono_month_names[f.month - 1];
     full ? o.ascii(n) : o.ascii(n, 3);
   };
+  // The day of the year and the week numbers need a date ([time.format]/3: "If the formatted
+  // object does not contain the information the conversion specifier refers to, an exception
+  // of type format_error is thrown"); a !ok() year_month_day and the like name no day.
+  auto valid_date = [&] {
+    if (!f.date_ok)
+      ::ycxx::detail::chrono_missing("std::format: the value does not contain a valid date");
+  };
   auto secs = [&](bool fraction) {
     if (L && mod == 'O')
       o.localized(f, 'S', 'O');
@@ -587,8 +595,13 @@ void chrono_write_one(chrono_out<charT>& o, const chrono_fields<charT>& f, char 
     }
   };
   // The E and O forms of the locale; in the "C" locale they are the plain forms.
-  if (L && mod != 0 && spec != 'z' && spec != 'S')
+  if (L && mod != 0 && spec != 'z' && spec != 'S') {
+    if (spec == 'U' || spec == 'V' || spec == 'W')
+      valid_date();
+    else if ((spec == 'u' || spec == 'w') && (!f.weekday_ok || f.weekday > 6))
+      ::ycxx::detail::chrono_missing("std::format: the value does not contain a valid weekday");
     return o.localized(f, spec, mod);
+  }
   switch (spec) {
   case 'a': return weekday_name(false);
   case 'A': return weekday_name(true);
@@ -610,6 +623,7 @@ void chrono_write_one(chrono_out<charT>& o, const chrono_fields<charT>& f, char 
   case 'F': return ::ycxx::detail::chrono_write_specs(o, "%Y-%m-%d", nullptr, f, false);
   case 'g':
   case 'G': {
+    valid_date();
     int y;
     unsigned w;
     ::ycxx::detail::chrono_iso_week(f, y, w);
@@ -625,6 +639,7 @@ void chrono_write_one(chrono_out<charT>& o, const chrono_fields<charT>& f, char 
   case 'j':
     if (f.is_duration)
       return o.num(f.hours / 24, 1);
+    valid_date();
     return o.num(static_cast<unsigned long long>(f.yday + 1), 3);
   case 'm': return o.num(f.month, 2);
   case 'M': return o.num(f.minutes, 2);
@@ -656,9 +671,14 @@ void chrono_write_one(chrono_out<charT>& o, const chrono_fields<charT>& f, char 
     if (!f.weekday_ok || f.weekday > 6)
       ::ycxx::detail::chrono_missing("std::format: the value does not contain a valid weekday");
     return o.num(f.weekday, 1);
-  case 'U': return o.num(static_cast<unsigned>((f.yday + 7 - static_cast<int>(f.weekday)) / 7), 2);
-  case 'W': return o.num(static_cast<unsigned>((f.yday + 7 - static_cast<int>((f.weekday + 6) % 7)) / 7), 2);
+  case 'U':
+    valid_date();
+    return o.num(static_cast<unsigned>((f.yday + 7 - static_cast<int>(f.weekday)) / 7), 2);
+  case 'W':
+    valid_date();
+    return o.num(static_cast<unsigned>((f.yday + 7 - static_cast<int>((f.weekday + 6) % 7)) / 7), 2);
   case 'V': {
+    valid_date();
     int y;
     unsigned w;
     ::ycxx::detail::chrono_iso_week(f, y, w);

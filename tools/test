@@ -28,15 +28,11 @@
 #                              tests/ycxx/precondition (YCXX_HARDENED=1)
 #   --cxxflags FLAGS           own suite: append FLAGS to every test's compile flags, e.g.
 #                              "-fno-exceptions" or -O2 (YCXX_CXXFLAGS)
-#   --config-name NAME         the short name of those flags in log, report and baseline names
+#   --config-name NAME         the short name of those flags in log and report names
 #                              (default: made from the flags; YCXX_CONFIG_NAME)
 #   -x, --fail-fast            stop at the first failing step
 #   -v, --verbose              stream every command's output; print every test's transcript
 #   -q, --quiet                suites: list only the tests that did not pass
-#   --baseline                 suite stages: fail only on tests that did not pass and are not in
-#                              tests/<suite>/baseline/<os>-<compiler>[-<sanitizer>][-hardened]
-#                              [-<config name>].txt (the known failures; with no such file every
-#                              failure counts). YCXX_BASELINE=1
 #   --no-fetch                 do not download a missing external suite (YCXX_NO_FETCH=1);
 #                              by default tools/fetch-suites fetches it into the cache first
 #   -h, --help
@@ -74,7 +70,6 @@ while [ $# -gt 0 ]; do
     -x|--fail-fast) fail_fast=1 ;;
     -v|--verbose) YCXX_VERBOSE=1; export YCXX_VERBOSE ;;
     -q|--quiet) YCXX_QUIET=1; export YCXX_QUIET ;;
-    --baseline) YCXX_BASELINE=1; export YCXX_BASELINE ;;
     --no-fetch) YCXX_NO_FETCH=1 ;;
     -h|--help) usage; exit 0 ;;
     all) stages="policy build freestanding cmake ycxx libcxx libstdcxx" ;;

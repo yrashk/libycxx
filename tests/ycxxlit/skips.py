@@ -10,7 +10,7 @@ compiler gap or bug, a draft defect): the test still runs, and
 reports XFAIL when it fails, XPASS (which fails the run) once it passes. A line is
 `<path regex> | <gcc|clang|any> | <reason>`.
 
-Tests that do not apply in one configuration only (tests/<suite>/unsupported.txt) are reported
+Tests that do not apply in one configuration only (tests/libcxx/unsupported.txt) are reported
 UNSUPPORTED only while a lit feature names it: `root` when the tests run as root (permission
 errors cannot happen), a compiler for a test that exercises an extension with that compiler only.
 They still run everywhere else. A line is `<path regex> | <feature> | <reason>`.

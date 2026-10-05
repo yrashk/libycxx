@@ -226,7 +226,7 @@ Legend: **G** fails with GCC + libstdc++, **C** with Clang + libstdc++.
 | `simd/iota`, `simd/range_ctor_mask`, `simd/ctor_constraints`, `simd/reductions_scalar`, `simd/permute_dynamic`, `simd/compress_expand`, `simd/gather_scatter`, `simd/math`, `simd/bit`, `simd/complex` | G | C | parts of `<simd>`: `simd::iota`, the masked range constructor, the scalar `reduce`/`reduce_min`/`reduce_max` overloads, `v[indices]` and dynamic permute of masks, `compress`/`expand`, `unchecked_gather_from`/`partial_scatter_to` etc., the `<cmath>` and `<bit>` overloads, `vec<complex<T>>` (Clang: no `<simd>` at all, §3) |
 | `contracts/synopsis`, `contracts/observe` | G |  | `contract_violation::detection_mode()` (only a private member); also `invoke_default_contract_violation_handler` is `noexcept` (allowed, [res.on.exception.handling]/5) |
 | `linalg/views_solves` | G | C | `<linalg>` |
-| `rcu/rcu_domain_retire`, `hazard_pointer/protect_retire` | G | C | `<rcu>`, `<hazard_pointer>` ([saferecl.rcu], [saferecl.hp]) |
+| `rcu/rcu_domain_retire`, `hazard_pointer/protect_retire`, `rcu/noexcept_alloc_failure` (batch 43) | G | C | `<rcu>`, `<hazard_pointer>` ([saferecl.rcu], [saferecl.hp]) |
 | `cmath/annex_f_all`, `cmath/annex_f_extended` (GCC only: Clang has no extended types), `complex/edge_values_constexpr` | G | C | constexpr `<cmath>`/`<complex>` (the run-time values all agree with Annex F / the draft) |
 | `cstdlib/constexpr_abs_div` | G | C | constexpr `div`/`ldiv`/`lldiv` (P0533R9); with Clang also `abs(long)`, `labs` |
 | `integration/matrix_linalg_complex` | G | C | `<linalg>` (an integration test: mdspan + linalg + complex) |

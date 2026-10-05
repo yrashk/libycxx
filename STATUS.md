@@ -552,8 +552,7 @@ compilers; `visit_format_arg.pass.cpp` needs `EOF` from `constexpr_char_traits.h
   `codecvt_unicode.h` expects `partial` with from_next before it instead; `money_get` with
   frac_digits() > 0 accepts a value without a decimal point as the digits that appear ("1056"),
   but a decimal point must be followed by exactly frac_digits() digits.
-- `<memory>`: no `atomic<shared_ptr<T>>` / `atomic<weak_ptr<T>>`, no execution-policy overloads of the specialized
-  algorithms, no `pointer_tag_pair`. shared_ptr reference counts use
+- `<memory>`: no `atomic<shared_ptr<T>>` / `atomic<weak_ptr<T>>`, no `pointer_tag_pair`. shared_ptr reference counts use
   the `__atomic` builtins unconditionally (no single-threaded fast path). get_deleter identifies
   the deleter type by a per-type tag address (same shared-library caveat as `any`).
   make_shared of a multi-dimensional array of a non-trivial class type cannot be

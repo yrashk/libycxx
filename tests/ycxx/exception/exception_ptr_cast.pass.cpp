@@ -3,6 +3,7 @@
 // reference to the exception object referred to by p, if p is not null and a handler of type
 // const E& would be a match for that exception object. Otherwise, nullopt."
 // [exception.syn]: "template<class E> void exception_ptr_cast(const exception_ptr&&) = delete;"
+// COUNTERPART: libstdcxx:18_support/exception_ptr/exception_ptr_cast.cc
 #include <exception>
 #include <optional>
 #include <stdexcept>

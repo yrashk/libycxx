@@ -7,6 +7,7 @@
 // callable object: rebinding it afterwards is observed through the outer function_ref.
 // Also: constructing from a move_only_function / copyable_function / function lvalue refers to
 // that wrapper object, so reassigning the wrapper is observed too.
+// COUNTERPART: libstdcxx:20_util/function_ref/conv.cc
 #include <functional>
 #include <type_traits>
 #include "check.hpp"

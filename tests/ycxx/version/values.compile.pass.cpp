@@ -3,6 +3,10 @@
 // the implementation defines it. [version.syn]/4: __cpp_lib_freestanding_operator_new is
 // 202306L or 0. [version.syn]/7: a non-hardened implementation should not define the
 // __cpp_lib_hardened_ macros (not checked: recommended practice only).
+// COUNTERPART: libstdcxx:20_util/function_ref/cons.cc
+// COUNTERPART: libstdcxx:21_strings/basic_string/cons/(char|wchar_t)/constexpr.cc
+// COUNTERPART: libstdcxx:21_strings/char_traits/requirements/version.cc
+// COUNTERPART: libstdcxx:25_algorithms/pstl/feature_test-4.cc libstdcxx:30_threads/barrier/(1|2).cc
 #include <version>
 
 #if defined(__cpp_lib_adaptor_iterator_pair_constructor) && __cpp_lib_adaptor_iterator_pair_constructor != 202106L

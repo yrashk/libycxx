@@ -210,7 +210,7 @@ Legend: **G** fails with GCC + libstdc++, **C** with Clang + libstdc++.
 | `thread/thread_attributes` | G | C | `thread::name_hint`, `thread::stack_size_hint` |
 | `future/packaged_task_allocator` | G | C | `packaged_task(allocator_arg_t, const Allocator&, F&&)` |
 | `ranges/view_interface_at` | G | C | `view_interface::at` |
-| `format/runtime_format`, `format/format_constexpr`, `format/integer_spec_oracle` | G | C | `std::runtime_format`; constexpr `std::format` (`integer_spec_oracle` uses `runtime_format` for `formatted_size`/`format_to_n`; with those calls removed all 258,000 results agree with its oracle) |
+| `format/runtime_format`, `format/format_constexpr`, `format/integer_spec_oracle`, `format/many_arguments` (batch 44) | G | C | `std::runtime_format`; constexpr `std::format` (`integer_spec_oracle` uses `runtime_format` for `formatted_size`/`format_to_n`; with those calls removed all 258,000 results agree with its oracle) |
 | `random/generate_canonical`, `random/uniform_real_upper_bound` | G | C | the C++26 `generate_canonical` ([rand.util.canonical]/2-3: attempts until S < x r^d, returns floor(S/x)/r^d); libstdc++ rounds S/R^k and retries on 1, looping forever for a generator that always returns its maximum |
 | `random/generate_random`, `random/version_macros` | G | C | `ranges::generate_random`, `__cpp_lib_ranges_generate_random` |
 | `map/lookup`, `unordered_map/lookup`, `flat_map/lookup` | G | C | the C++26 `lookup` members |

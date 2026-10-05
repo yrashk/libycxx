@@ -848,8 +848,14 @@ compilers; `visit_format_arg.pass.cpp` needs `EOF` from `constexpr_char_traits.h
   overloads (P3179, `algo_ranges_parallel.hpp`: each algorithm object's type adds them to the
   sequential niebloid), including the ranges:: uninitialized_*/destroy ones of `<memory>`;
   `__cpp_lib_parallel_algorithm` is 202506L. Not provided: the
-  senders/receivers part of `<execution>`, `boyer_moore(_horspool)_searcher` (need hashing
-  containers).
+  senders/receivers part of `<execution>`.
+- `boyer_moore_searcher`/`boyer_moore_horspool_searcher` (`ycxx/core/searcher.hpp`): bad-character
+  table (a 256-entry array for byte-sized integers compared with `equal_to`, otherwise a hash table of
+  the pattern's equivalence classes that calls pred only on equal hash values), plus the good-suffix
+  table for Boyer-Moore; the tables are heap arrays, deep-copied with the searcher. Every alignment
+  makes at most m predicate calls, lookups included, so [func.search.bm]/8 holds for any hash. A
+  match ending at `last` is found ([func.search.bm]/7.1 says `[first, last - m)`, which excludes it:
+  a draft defect).
 - stable_sort / stable_partition / inplace_merge take their buffer from `operator new(nothrow)`
   (std::allocator during constant evaluation) and fall back to O(N log^2 N) / O(N log N)
   rotation algorithms when it fails; sort and nth_element are introsort/introselect.

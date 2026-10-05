@@ -185,16 +185,6 @@ strings/string.view/string.view.template/starts_with.string_view.pass.cpp
 utilities/format/format.arguments/format.arg/visit.pass.cpp
 utilities/format/format.arguments/format.arg/visit.return_type.pass.cpp
 utilities/format/format.arguments/format.arg/visit_format_arg.pass.cpp
-utilities/function.objects/func.search/func.search.bm/default.pass.cpp
-utilities/function.objects/func.search/func.search.bm/hash.pass.cpp
-utilities/function.objects/func.search/func.search.bm/hash.pred.pass.cpp
-utilities/function.objects/func.search/func.search.bm/implicit_ctad.pass.cpp
-utilities/function.objects/func.search/func.search.bm/pred.pass.cpp
-utilities/function.objects/func.search/func.search.bmh/default.pass.cpp
-utilities/function.objects/func.search/func.search.bmh/hash.pass.cpp
-utilities/function.objects/func.search/func.search.bmh/hash.pred.pass.cpp
-utilities/function.objects/func.search/func.search.bmh/implicit_ctad.pass.cpp
-utilities/function.objects/func.search/func.search.bmh/pred.pass.cpp
 utilities/smartptr/unique.ptr/unique.ptr.class/unique.ptr.observers/op_subscript.runtime.pass.cpp
 utilities/tuple/tuple.tuple/tuple.apply/make_from_tuple.pass.cpp
 utilities/tuple/tuple.tuple/tuple.cnstr/PR31384.pass.cpp

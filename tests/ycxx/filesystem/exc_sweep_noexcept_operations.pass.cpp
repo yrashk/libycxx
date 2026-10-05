@@ -174,6 +174,34 @@ int main() {
     EXH_EXPECT(ec || fs::path(now) == fs::canonical(dir), "current_path(p, ec)");
     if (chdir(cwd) != 0) abort();
   });
+  // directory_entry's noexcept observers and refresh ([fs.dir.entry.mods], [fs.dir.entry.obs]),
+  // on an entry made directly and on one obtained from a directory_iterator.
+  fs::directory_entry made(link);
+  fs::directory_entry iterated;
+  for (const fs::directory_entry& e : fs::directory_iterator(dir))
+    if (e.path().filename() == file.filename()) iterated = e;
+  for (fs::directory_entry* de : {&made, &iterated}) {
+    sw("directory_entry", [&](std::error_code& ec, bool check) {
+      if (!check) {
+        bool ok = true;
+        de->refresh(ec);
+        ok = ok && !ec;
+        ok = de->exists(ec) && !ec && ok;
+        ok = de->is_regular_file(ec) && !ec && ok;
+        ures = de->file_size(ec);
+        ok = !ec && ok;
+        ok = de->hard_link_count(ec) >= 1 && !ec && ok;
+        ok = de->last_write_time(ec) != fs::file_time_type::min() && !ec && ok;
+        ok = de->status(ec).type() == fs::file_type::regular && !ec && ok;
+        const fs::file_type lt = de == &made ? fs::file_type::symlink : fs::file_type::regular;
+        ok = de->symlink_status(ec).type() == lt && !ec && ok;
+        bres = ok && *de == *de && (*de <=> *de) == 0;
+        return;
+      }
+      // Everything succeeded, unless an allocation failed and some call reported it through ec.
+      EXH_EXPECT((bres && ures == 5) || st.fired, "directory_entry observers");
+    });
+  }
   // Last: it terminates if the allocation failure escapes.
   sw("copy_symlink", [&](std::error_code& ec, bool check) {
     if (!check) return fs::copy_symlink(link, link_copy, ec);

@@ -78,6 +78,14 @@ void put_localized(std::basic_string<charT>& out, const std::locale& loc, const 
   tm.tm_year = t.year;
   tm.tm_wday = t.wday;
   tm.tm_yday = t.yday;
+  // The zone of the formatted object, else none: strftime's %Z and %z would otherwise show the
+  // process's time zone (tzname) for a value that has no zone or another one. tm_isdst < 0
+  // writes no %z; tm_zone and tm_gmtoff are BSD members both C libraries have.
+  tm.tm_isdst = t.has_offset ? 0 : -1;
+  if constexpr (requires { tm.tm_zone; tm.tm_gmtoff; }) {
+    tm.tm_zone = const_cast<decltype(tm.tm_zone)>(t.zone);
+    tm.tm_gmtoff = static_cast<decltype(tm.tm_gmtoff)>(t.offset);
+  }
   std::basic_ostringstream<charT> os;
   os.imbue(loc);
   const std::time_put<charT>& tp = std::use_facet<std::time_put<charT>>(loc);

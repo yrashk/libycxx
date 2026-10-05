@@ -14,6 +14,8 @@
 // code points above U+10FFFF, bytes F5-FF and stray continuation bytes are ill-formed; UTF-16
 // pairs a high surrogate with a following low surrogate; UTF-32 values that are surrogates or
 // above 0x10FFFF are ill-formed.
+// COUNTERPART: libcxx:localization/codecvt_unicode.pass.cpp
+// COUNTERPART: libcxx:localization/locale.categories/category.ctype/locale.codecvt/locale.codecvt.members/utf_sanity_check.pass.cpp
 #include <locale>
 #include <cwchar>
 #include <iterator>

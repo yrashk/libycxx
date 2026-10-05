@@ -3,12 +3,12 @@
 // boyer_moore_horspool_searcher (bad-character rule on the last aligned element) keep their
 // tables in heap arrays owned by the searcher (deep-copied with it).
 //
-// Bad-character table. For a byte-sized integral value type compared with equal_to it is a
-// 256-entry array indexed by the value (hf and pred are then never called). Otherwise it is an
-// open-addressing hash table with one entry per equivalence class of pattern elements; an entry
-// keeps the full hash value and the index of a representative pattern element, and a lookup
-// calls pred only for an entry with the same hash value ([func.search.bm]/2: pred(A, B) implies
-// hf(A) == hf(B)).
+// Bad-character table. For a byte-sized integral value type or std::byte compared with
+// equal_to it is a 256-entry array indexed by the value (hf and pred are then never called).
+// Otherwise it is an open-addressing hash table with one entry per equivalence class of pattern
+// elements; an entry keeps the full hash value and the index of a representative pattern
+// element, and a lookup calls pred only for an entry with the same hash value
+// ([func.search.bm]/2: pred(A, B) implies hf(A) == hf(B)).
 //
 // Complexity ([func.search.bm]/8: at most (last - first) * (pat_last_ - pat_first_) applications
 // of pred). The lookups count too, so every alignment of the m-element pattern is held to at most
@@ -24,12 +24,14 @@
 #pragma once
 
 #include <ycxx/core/algo_nonmod.hpp>
+#include <ycxx/core/cstddef.hpp>
 #include <ycxx/core/hash.hpp>
 #include <ycxx/core/iterator_core.hpp>
 
 namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 
-// A heap array owned by its holder, copied deeply.
+// A heap array owned by its holder, copied deeply. It has no move operations: a moved-from
+// searcher must still search, so moving one copies its tables.
 template <class T>
 class searcher_array {
   T* p_ = nullptr;
@@ -41,22 +43,18 @@ public:
   searcher_array(const searcher_array& o) : searcher_array(o.n_) {
     for (std::size_t k = 0; k != n_; ++k) p_[k] = o.p_[k];
   }
-  searcher_array(searcher_array&& o) noexcept : p_(o.p_), n_(o.n_) {
-    o.p_ = nullptr;
-    o.n_ = 0;
-  }
-  searcher_array& operator=(searcher_array o) noexcept {
+  searcher_array& operator=(const searcher_array& o) {
+    searcher_array copy(o);
     T* p = p_;
-    p_ = o.p_;
-    o.p_ = p;
+    p_ = copy.p_;
+    copy.p_ = p;
     std::size_t n = n_;
-    n_ = o.n_;
-    o.n_ = n;
+    n_ = copy.n_;
+    copy.n_ = n;
     return *this;
   }
   ~searcher_array() { delete[] p_; }
 
-  T* data() const noexcept { return p_; }
   std::size_t size() const noexcept { return n_; }
   T& operator[](std::size_t k) const noexcept { return p_[k]; }
 };
@@ -69,7 +67,7 @@ struct searcher_slot {
 
 template <class V, class Hash, class Pred>
 inline constexpr bool searcher_byte_table =
-    std::is_integral_v<V> && sizeof(V) == 1 &&
+    (std::is_integral_v<V> || std::is_same_v<V, std::byte>) && sizeof(V) == 1 &&
     (std::is_same_v<Pred, std::equal_to<>> || std::is_same_v<Pred, std::equal_to<V>>);
 
 // The bad-character table: maps the class of a value to a ptrdiff_t, `none` when absent.
@@ -83,19 +81,20 @@ class searcher_table {
 public:
   enum : std::ptrdiff_t { none = -1, unknown = -2 };
 
-  searcher_table() = default;
-
-  explicit searcher_table(std::size_t count) {
-    if constexpr (bytes) {
-      slots_ = searcher_array<std::ptrdiff_t>(256);
-      for (std::size_t k = 0; k != 256; ++k) slots_[k] = none;
-    } else {
-      std::size_t cap = 4;
-      while (cap < 2 * count) cap *= 2;
-      slots_ = searcher_array<searcher_slot>(cap);
-    }
+  // A table for up to `count` classes (none: an empty table, in which every lookup fails).
+  explicit searcher_table(std::size_t count) : slots_(count == 0 ? 0 : bytes ? 256 : capacity(count)) {
+    if constexpr (bytes)
+      for (std::size_t k = 0; k != slots_.size(); ++k) slots_[k] = none;
   }
 
+private:
+  static constexpr std::size_t capacity(std::size_t count) noexcept {
+    std::size_t cap = 4; // a power of two, at least twice count: a probe always ends
+    while (cap < 2 * count) cap *= 2;
+    return cap;
+  }
+
+public:
   // Sets the value of the class of pat[k] (inserting the class).
   void set(const RAI1& pat, std::ptrdiff_t k, std::ptrdiff_t value, const Hash& hf, const Pred& pred) {
     if constexpr (bytes) {
@@ -123,6 +122,7 @@ public:
   // would be needed to tell.
   template <class T>
   std::ptrdiff_t find(const T& x, const RAI1& pat, const Hash& hf, const Pred& pred, std::ptrdiff_t budget) const {
+    if (slots_.size() == 0) return none;
     if constexpr (bytes) {
       (void)pat;
       (void)hf;
@@ -175,17 +175,17 @@ class boyer_moore_searcher {
   RandomAccessIterator1 pat_last_;
   Hash hash_;
   BinaryPredicate pred_;
-  table_type last_;                                    // class -> index of its last occurrence
+  table_type last_;                                       // class -> index of its last occurrence
   ::ycxx::detail::searcher_array<ptrdiff_t> good_suffix_; // mismatch index -> shift
 
 public:
   boyer_moore_searcher(RandomAccessIterator1 pat_first, RandomAccessIterator1 pat_last, Hash hf = Hash(),
                        BinaryPredicate pred = BinaryPredicate())
-      : pat_first_(pat_first), pat_last_(pat_last), hash_(hf), pred_(pred) {
+      : pat_first_(pat_first), pat_last_(pat_last), hash_(hf), pred_(pred),
+        last_(static_cast<size_t>(pat_last - pat_first)), good_suffix_(static_cast<size_t>(pat_last - pat_first)) {
     const ptrdiff_t m = static_cast<ptrdiff_t>(pat_last_ - pat_first_);
     if (m == 0) return;
     const RandomAccessIterator1& p = pat_first_;
-    last_ = table_type(static_cast<size_t>(m));
     for (ptrdiff_t k = 0; k != m; ++k) last_.set(p, k, k, hash_, pred_);
 
     // suffix[i]: the length of the longest common suffix of p[0, i] and p.
@@ -202,7 +202,6 @@ public:
         suffix[i] = f - g;
       }
     }
-    good_suffix_ = ::ycxx::detail::searcher_array<ptrdiff_t>(static_cast<size_t>(m));
     for (ptrdiff_t i = 0; i != m; ++i) good_suffix_[i] = m;
     ptrdiff_t j = 0;
     for (ptrdiff_t i = m - 1; i >= 0; --i) {
@@ -255,17 +254,17 @@ class boyer_moore_horspool_searcher {
   RandomAccessIterator1 pat_last_;
   Hash hash_;
   BinaryPredicate pred_;
-  table_type shift_;      // class -> distance of its last occurrence in p[0, m-1) from p[m-1]
+  table_type shift_;         // class -> distance of its last occurrence in p[0, m-1) from p[m-1]
   ptrdiff_t last_shift_ = 0; // the shift for the class of p[m-1]
 
 public:
   boyer_moore_horspool_searcher(RandomAccessIterator1 pat_first, RandomAccessIterator1 pat_last, Hash hf = Hash(),
                                 BinaryPredicate pred = BinaryPredicate())
-      : pat_first_(pat_first), pat_last_(pat_last), hash_(hf), pred_(pred) {
+      : pat_first_(pat_first), pat_last_(pat_last), hash_(hf), pred_(pred),
+        shift_(pat_last == pat_first ? 0 : static_cast<size_t>(pat_last - pat_first) - 1) {
     const ptrdiff_t m = static_cast<ptrdiff_t>(pat_last_ - pat_first_);
     if (m == 0) return;
     const RandomAccessIterator1& p = pat_first_;
-    shift_ = table_type(static_cast<size_t>(m - 1));
     for (ptrdiff_t k = 0; k != m - 1; ++k) shift_.set(p, k, m - 1 - k, hash_, pred_);
     const ptrdiff_t s = shift_.find(p[m - 1], p, hash_, pred_, m);
     last_shift_ = s == table_type::none ? m : s;

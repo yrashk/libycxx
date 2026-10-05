@@ -18,7 +18,6 @@
 20_util/duration/cons/dr3050.cc
 20_util/duration/io.cc
 20_util/function_objects/83607.cc
-20_util/function_objects/searchers.cc
 20_util/headers/utility/synopsis.cc
 20_util/invoke_result/incomplete_args_neg.cc
 20_util/invoke_result/incomplete_neg.cc

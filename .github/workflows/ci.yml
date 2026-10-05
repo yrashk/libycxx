@@ -41,10 +41,14 @@ jobs:
 
       - name: Conformance (both suites, both compilers; implemented areas)
         run: |
+          # Every run happens; the step fails if any failed. Known compiler gaps are expected
+          # failures (tests/<suite>/xfail.txt), never hidden.
+          rc=0
           for c in gcc clang; do
-            tools/run-conformance libcxx $c utilities/meta numerics/bit language.support/cmp || true
-            tools/run-conformance libstdcxx $c 20_util/pair 18_support/numeric_limits || true
+            tools/run-conformance libcxx $c utilities/meta numerics/bit language.support/cmp || rc=1
+            tools/run-conformance libstdcxx $c 20_util/pair 18_support/numeric_limits || rc=1
           done
+          exit $rc
 
       - name: Test reports (every test with its commands, exit statuses and output)
         if: always()

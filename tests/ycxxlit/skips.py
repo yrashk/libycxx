@@ -4,6 +4,10 @@ A line is  `<regex> | <category> | <reason>` (fields separated by " | ", with sp
 regexes may use "|" alternation). A regex prefixed with `content:` is matched
 against the test source (re.search); otherwise against the test path (re.fullmatch).
 tests/common/skip.txt applies to every suite; tests/<suite>/skip.txt to one suite.
+
+Expected failures (tests/<suite>/xfail.txt) are known compiler gaps: the test still runs, and
+reports XFAIL when it fails, XPASS (which fails the run) once it passes. A line is
+`<path regex> | <gcc|clang|any> | <reason>`.
 """
 import os, re
 
@@ -28,3 +32,30 @@ def match_skip(skips, rel, src):
         if pat.search(src) if on_content else pat.fullmatch(rel):
             return why
     return None
+
+
+def load_xfails(path):
+    xfails = []
+    if os.path.exists(path):
+        for line in open(path):
+            line = line.strip()
+            if not line or line.startswith('#'):
+                continue
+            pat, compiler, why = [x.strip() for x in line.split(' | ', 2)]
+            xfails.append((re.compile(pat), compiler, why))
+    return xfails
+
+
+def apply_xfail(result, xfails, rel, compiler):
+    """FAIL -> XFAIL and PASS -> XPASS for a test expected to fail with this compiler."""
+    import lit.Test
+    for pat, who, why in xfails:
+        if who in (compiler, 'any') and pat.fullmatch(rel):
+            if result.code == lit.Test.FAIL:
+                result.code = lit.Test.XFAIL
+                result.output = f'expected failure ({who}): {why}\n' + (result.output or '')
+            elif result.code == lit.Test.PASS:
+                result.code = lit.Test.XPASS
+                result.output = f'listed as an expected failure ({who}: {why}) but passed: remove it from xfail.txt\n' + (result.output or '')
+            break
+    return result

@@ -243,9 +243,8 @@ leaves open (8: `%OS` without fraction, LWG 4118 character reps, file_clock's ep
 when parsing, `fractional_width` of ratio<1, 2^62>, `hh_mm_ss` layout, an error message).
 
 ## Own-suite configurations (runs of 2026-10-05, 2381 tests)
-`tools/test --hardened` / `--cxxflags=... --config-name=...` (README, Own tests). No baselines are
-recorded for these configurations yet (nightly `full.yml` jobs: every failure counts until the first
-run's `<run>.baseline.txt` is copied to `tests/ycxx/baseline/linux-<cc>-<configuration>.txt`).
+`tools/test --hardened` / `--cxxflags=... --config-name=...` (README, Own tests); the nightly
+`full.yml` runs them, and any failure fails the job.
 
 | Configuration | GCC 16.2 | Clang 23.1 |
 |---|---|---|
@@ -254,15 +253,16 @@ run's `<run>.baseline.txt` is copied to `tests/ycxx/baseline/linux-<cc>-<configu
 | noexcept (`-fno-exceptions`; 430 tests `REQUIRES: exceptions`) | 1888 pass / 5 fail / 5 xfail / 483 unsupported | 1886 pass / 6 fail / 6 xfail / 483 unsupported |
 
 The default GCC run counted 2328 tests (it started before `precondition/` existed). Default
-failures are the baseline's, plus `integration/fd_leaks_alloc_failure` (a 60 s timeout under
+failures were the then-listed known ones, plus `integration/fd_leaks_alloc_failure` (a 60 s timeout under
 machine load; passes alone). Hardened: all 53 death tests pass on both compilers; the one failure
-not in the default baseline is `mdspan/submdspan_exhaustive_oracle`: the hardened check of
+not in the default run is `mdspan/submdspan_exhaustive_oracle` (fixed since:
+submdspan results skip that check; see Known limitations): the hardened check of
 `layout_stride::mapping(extents, strides)` fires inside `submdspan` on a `layout_stride` source,
 because [mdspan.sub.map.common]/6 gives strides that need not satisfy the constructor's
 precondition [mdspan.layout.stride.cons]/4.3 (extents {4, 4}, strides {2, 9}, slices
 `extent_slice{0, 2, 3}, full_extent` give extents {2, 4} and strides {6, 9}: unique, but no
 permutation meets 4.3); a draft question, or the library should build that result without the
-check. noexcept: only default-baseline failures (those of `except/`, `exception/`, `contracts/`
+check. noexcept: only the default run's failures (those of `except/`, `exception/`, `contracts/`
 and `execution/` are UNSUPPORTED there).
 
 ## Freestanding

@@ -21,8 +21,9 @@
 
 struct Twice {
   int v;
-  Twice(int x) : v(2 * x + 1) {}
-  Twice(float x) : v(static_cast<int>(x) * 3) {}
+  // Wrapping arithmetic: the inputs include INT_MAX (a conversion to int is modular).
+  Twice(int x) : v(static_cast<int>(2u * static_cast<unsigned>(x) + 1u)) {}
+  Twice(float x) : v(static_cast<int>(static_cast<unsigned>(static_cast<int>(x)) * 3u)) {}
   friend bool operator==(Twice, Twice) = default;
 };
 

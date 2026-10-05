@@ -1,10 +1,13 @@
 // -*- C++ -*-  libycxx: <iostream>   [hosted]
 //
-// The eight standard objects are defined in the hosted runtime (src/hosted/iostream.cpp). They
-// are constructed by an ios_base::Init object of the runtime that is initialized before any
-// object with ordinary static initialization (GCC/Clang init_priority), so they are usable from
-// every static initializer and destructor of the program ([iostream.objects.overview]/2-3);
-// they are never destroyed, and that Init object flushes the output objects at exit.
+// The eight standard objects are defined in the hosted runtime (src/hosted/iostream.cpp). On ELF
+// targets they are constructed by an ios_base::Init object of the runtime that is initialized
+// before any object with ordinary static initialization (GCC/Clang init_priority), so they are
+// usable from every static initializer and destructor of the program ([iostream.objects.overview]
+// /2-3). Mach-O has no initialization priorities across object files, so there each translation
+// unit that includes this header defines an ios_base::Init object ([iostream.objects.overview]/5),
+// initialized before the static objects defined after the #include. They are never destroyed;
+// the last Init object to be destroyed flushes the output objects at exit (DECISIONS §7).
 #pragma once
 
 #include <ycxx/config.hpp>
@@ -24,3 +27,12 @@ extern wostream wcout;
 extern wostream wcerr;
 extern wostream wclog;
 } // namespace std
+
+namespace ycxx::detail {
+// [iostream.objects.overview]/5: this translation unit's ios_base::Init object, where the
+// runtime's own cannot be ordered first (cfg::init_priority false: Mach-O); an empty object
+// otherwise. Internal linkage: one per translation unit.
+struct no_ios_init {};
+using tu_ios_init = std::conditional_t<cfg::init_priority, no_ios_init, std::ios_base::Init>;
+[[maybe_unused]] static tu_ios_init ios_init_object;
+} // namespace ycxx::detail

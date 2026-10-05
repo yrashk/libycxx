@@ -3,10 +3,12 @@
 //
 // The objects are defined here as raw storage under their own names (this file does not include
 // <iostream>, whose declarations give them their stream types; variable names do not encode
-// types in the Itanium ABI), and constructed in place by the first ios_base::Init. The runtime
-// owns one Init object initialized with init_priority before any ordinary static object, so the
-// streams exist before any user static initializer runs, and that object's destructor runs after
-// every ordinary static destructor and flushes the output streams. They are never destroyed.
+// types in the Itanium ABI), and constructed in place by the first ios_base::Init. On ELF the
+// runtime owns one Init object initialized with init_priority before any ordinary static object,
+// so the streams exist before any user static initializer runs, and that object's destructor runs
+// after every ordinary static destructor and flushes the output streams. Mach-O has no such
+// priorities: there <iostream> defines an Init object in every translation unit that includes it
+// (YCXX_HAS_INIT_PRIORITY, config.hpp; DECISIONS §7). They are never destroyed.
 //
 // Their stream buffers work on the C streams stdin, stdout and stderr through C stdio. While
 // synchronized with stdio (the default) they keep no buffer of their own: every character goes
@@ -345,7 +347,15 @@ bool ios_base::sync_with_stdio(bool sync) {
 } // namespace std
 
 namespace {
+#if YCXX_HAS_INIT_PRIORITY
 // Initialized before every object with ordinary static initialization (priorities 101 and up
 // belong to programs); destroyed after them.
 [[gnu::init_priority(100)]] std::ios_base::Init runtime_init;
+#else
+// Mach-O orders static initialization only by link order, where the runtime comes after the
+// program's objects: there each translation unit that includes <iostream> has an Init object of
+// its own (cfg::init_priority, <iostream>), and this one only makes sure the objects exist
+// before main.
+std::ios_base::Init runtime_init;
+#endif
 } // namespace

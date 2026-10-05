@@ -447,9 +447,12 @@ under the same name. Otherwise it gets one alias template in `config.hpp`.
   - *The standard objects' buffers* hold a futex mutex of their own (`ycxx::detail::futex_mutex`)
     on their input side (underflow, uflow, pbackfail) and, for the wide buffers, around the
     conversion to bytes. It guards what a buffer keeps between calls (the last extracted
-    character for sungetc; the wide buffers' pending character and conversion states) and makes
-    the narrow peek (getc, then ungetc) atomic with respect to the object's other readers, so
-    they never see its characters out of order. Uncontended it costs one atomic exchange each
+    character for sungetc; the wide buffers' conversion states) and makes a peek (read, then
+    give the bytes back with ungetc) atomic with respect to the object's other readers, so they
+    never see its characters out of order. Neither buffer holds characters itself: the wide one
+    also returns a peeked or put-back character's bytes to the C stream (more than ISO C's one
+    byte of push-back for a multibyte character; glibc and Darwin's libc allow it), so C stdio
+    and every reader see each character once, in order. Uncontended it costs one atomic exchange each
     way, on top of the C stream's own lock; in a single-threaded process (`single_threaded()`)
     plain loads and stores. Output through the narrow buffers takes no extra lock (putc and
     fwrite lock the C stream). Ordinary stream buffers are untouched: their get and put areas

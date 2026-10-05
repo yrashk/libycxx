@@ -86,6 +86,7 @@ add_library(ycxx STATIC
   src/hosted/stdexcept.cpp
   src/hosted/memory_resource.cpp
   src/hosted/string.cpp
+  src/hosted/ctime.cpp
   src/hosted/strfrom.cpp
   src/hosted/uchar.cpp
   src/hosted/cmath.cpp

@@ -232,7 +232,7 @@ void ios_base::swap_base(ios_base& rhs) noexcept {
 }
 
 void ios_base::storage_failed() {
-  state_ |= badbit;
+  add_state(badbit);
   if (except_ & badbit)
     ::ycxx::detail::raise_ios_failure("std::ios_base::iword/pword: cannot allocate the storage");
 }

@@ -197,6 +197,14 @@
 #else
 #  define YCXX_C_HAS_MBRTOC8 0
 #endif
+// <ctime>: C23's timespec_getres (glibc 2.36 and later; not Darwin's libSystem). Where it is
+// missing, <ctime> declares libycxx's own (src/hosted/ctime.cpp). timegm, gmtime_r and
+// localtime_r are in both C libraries.
+#if defined(__APPLE__)
+#  define YCXX_C_HAS_TIMESPEC_GETRES 0
+#else
+#  define YCXX_C_HAS_TIMESPEC_GETRES 1
+#endif
 // Initialization priorities (init_priority) order static initializers across object files only
 // in ELF (.init_array.NNNNN sections, sorted by the linker). Mach-O has one __mod_init_func list
 // in link order (Clang orders priorities within one object file; GCC rejects the attribute), so

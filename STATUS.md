@@ -474,6 +474,10 @@ compilers; `visit_format_arg.pass.cpp` needs `EOF` from `constexpr_char_traits.h
   one does not count the other's exception while it unwinds through its frames, and each has its
   own `generic_category()`/`system_category()` objects, so an `error_code` made in one compares
   unequal to an `errc` or category of the other (`value()` and `category().name()` agree).
+  The same holds for the other library singletons (`locate_zone` results, the default memory
+  resources), and a program's replacement `operator new`/`delete` replaces the program's own:
+  allocations made inside a shared library that links libycxx use that library's copy (both reach
+  `malloc`/`free`, so objects may still be deleted in the other image).
 - C library wrappers: `std::free_sized`/`free_aligned_sized` call `free` (glibc 2.39 has neither);
   `memset_explicit` is memset plus a compiler barrier; `strfrom*`, `memccpy`, `strdup`, `strndup`
   are the C library's (on Darwin, which lacks them, `strfrom*` and `mbrtoc8`/`c8rtomb` are

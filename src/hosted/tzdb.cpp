@@ -63,18 +63,28 @@ string zoneinfo_dir() {
   return s;
 }
 
+// An open file, closed however its reader ends (an allocation failure throws).
+struct file {
+  FILE* f;
+  explicit file(const char* path) noexcept : f(::fopen(path, "rb")) {}
+  file(const file&) = delete;
+  file& operator=(const file&) = delete;
+  ~file() {
+    if (f != nullptr)
+      ::fclose(f);
+  }
+};
+
 bool read_file(const string& path, string& out) {
-  FILE* f = ::fopen(path.c_str(), "rb");
-  if (f == nullptr)
+  file in(path.c_str());
+  if (in.f == nullptr)
     return false;
   out.clear();
   char buf[8192];
   size_t n;
-  while ((n = ::fread(buf, 1, sizeof buf, f)) != 0)
+  while ((n = ::fread(buf, 1, sizeof buf, in.f)) != 0)
     out.append(buf, n);
-  const bool ok = ::ferror(f) == 0;
-  ::fclose(f);
-  return ok;
+  return ::ferror(in.f) == 0;
 }
 
 // The lines of `text`, each without its line terminator.
@@ -727,13 +737,12 @@ string read_version(const string& dir) {
     if (!v.empty())
       return v;
   }
-  FILE* f = ::fopen((dir + "/tzdata.zi").c_str(), "rb");
-  if (f != nullptr) {
+  file in((dir + "/tzdata.zi").c_str());
+  if (in.f != nullptr) {
     char line[256];
     string v;
-    if (::fgets(line, sizeof line, f) != nullptr && ::strncmp(line, "# version", 9) == 0)
+    if (::fgets(line, sizeof line, in.f) != nullptr && ::strncmp(line, "# version", 9) == 0)
       v = trim(line + 9);
-    ::fclose(f);
     if (!v.empty())
       return v;
   }
@@ -741,13 +750,9 @@ string read_version(const string& dir) {
 }
 
 bool is_tzif(const string& path) {
-  FILE* f = ::fopen(path.c_str(), "rb");
-  if (f == nullptr)
-    return false;
+  file in(path.c_str());
   char magic[4];
-  const bool r = ::fread(magic, 1, 4, f) == 4 && ::memcmp(magic, "TZif", 4) == 0;
-  ::fclose(f);
-  return r;
+  return in.f != nullptr && ::fread(magic, 1, 4, in.f) == 4 && ::memcmp(magic, "TZif", 4) == 0;
 }
 
 // Without tzdata.zi: every TZif file below dir is a zone, every symbolic link to one a link.

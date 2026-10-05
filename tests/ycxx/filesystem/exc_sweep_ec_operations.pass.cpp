@@ -34,6 +34,7 @@
 //     resources behind; the iterators release their directory when destroyed);
 //   - nothing is left in a degraded state: the same call made again once memory is available
 //     succeeds and returns the right result.
+// REQUIRES: exceptions
 #include <filesystem>
 #include <string>
 #include <system_error>

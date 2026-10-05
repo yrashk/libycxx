@@ -10,6 +10,7 @@
 //     exactly once with the n passed to allocate (checked by the harness after each run).
 // Each operation is run on a short string and on one longer than any small-buffer
 // optimization, with pieces long enough to force reallocation.
+// REQUIRES: exceptions
 #include <string>
 #include "exc_harness.hpp"
 

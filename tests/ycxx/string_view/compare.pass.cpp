@@ -2,6 +2,7 @@
 // traits::compare(data(), str.data(), rlen) then by size per [tab:string.view.compare];
 // compare(pos1, n1, str) is substr(pos1, n1).compare(str); compare(pos1, n1, str, pos2, n2)
 // is substr(pos1, n1).compare(str.substr(pos2, n2)); compare(const charT*) etc.
+// REQUIRES: exceptions
 #include <string_view>
 #include <stdexcept>
 #include <utility>

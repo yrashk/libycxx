@@ -12,6 +12,7 @@
 //   [deque.capacity]/6: shrink_to_fit has no effects if an exception is thrown (other than by
 //     the move constructor of a non-Cpp17CopyInsertable T).
 //   resize ([deque.capacity]/1-4), assignments, erase, constructors: basic guarantee.
+// REQUIRES: exceptions
 #include <deque>
 #include "exc_sequence.hpp"
 

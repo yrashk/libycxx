@@ -10,6 +10,7 @@
 // to throw, or terminate): no copy or copy assignment may throw or allocate a block it leaks,
 // and the copies have equal what() strings. [syserr.syserr.members], [fs.filesystem.error.members]
 // path1()/path2() and [time.zone.exception] are checked on the copies as well.
+// REQUIRES: exceptions
 #include <any>
 #include <chrono>
 #include <cstring>

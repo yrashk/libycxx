@@ -3,6 +3,7 @@
 // (/6); vprint_unicode / vprint_nonunicode(stream, fmt, args) write "the character
 // representation of formatting arguments ... formatted according to specifications given in
 // fmt to stream" (/10.2, /16). Checked by reading a temporary file back.
+// REQUIRES: exceptions
 #include <print>
 #include <format>
 #include <cstdio>

@@ -5,6 +5,7 @@
 // a node handle keeps its element); clear, erase(k), erase(q), extract and swap throw nothing
 // when the comparison object does not, even with every allocation and element construction
 // failing; inserting a range keeps the basic guarantee ([res.on.exception.handling]/3).
+// REQUIRES: exceptions
 #include <map>
 #include "test_allocators.hpp"
 #include "reqs/assoc_except.hpp"

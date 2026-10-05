@@ -2,6 +2,7 @@
 // for a small contained value." [Example 1: "A contained value of type int could be stored in
 // an internal buffer, not in separately-allocated memory."] This is recommended practice
 // (a "should"); a failure here is a quality-of-implementation finding, not non-conformance.
+// REQUIRES: exceptions
 #include <any>
 #include <new>
 #include "check.hpp"

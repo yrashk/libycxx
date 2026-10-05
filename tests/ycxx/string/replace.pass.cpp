@@ -4,6 +4,7 @@
 // characters at pos1 and insert the replacement; throw out_of_range if pos1 > size().
 // Iterator forms: replace(i1, i2, str / t / s, n / s / n, c / j1, j2 / il) and
 // replace_with_range(i1, i2, rg). All return *this.
+// REQUIRES: exceptions
 #include <string>
 #include <string_view>
 #include <stdexcept>

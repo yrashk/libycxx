@@ -10,6 +10,7 @@
 // comparisons by date(). [time.zone.zonedtraits]/2-3: zoned_traits<const time_zone*>.
 // (Uses zones and links of the IANA database that have existed for decades: America/New_York,
 // Europe/London, Asia/Kolkata and the link US/Eastern -> America/New_York.)
+// REQUIRES: exceptions
 #include <chrono>
 #include <algorithm>
 #include <compare>

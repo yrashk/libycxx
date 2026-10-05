@@ -234,6 +234,29 @@ without their headers (`<sstream>`, `printf`, `int64_t`: 4), and libstdc++ choic
 leaves open (8: `%OS` without fraction, LWG 4118 character reps, file_clock's epoch, rounding
 when parsing, `fractional_width` of ratio<1, 2^62>, `hh_mm_ss` layout, an error message).
 
+## Own-suite configurations (runs of 2026-10-05, 2381 tests)
+`tools/test --hardened` / `--cxxflags=... --config-name=...` (README, Own tests). No baselines are
+recorded for these configurations yet (nightly `full.yml` jobs: every failure counts until the first
+run's `<run>.baseline.txt` is copied to `tests/ycxx/baseline/linux-<cc>-<configuration>.txt`).
+
+| Configuration | GCC 16.2 | Clang 23.1 |
+|---|---|---|
+| default (the 53 `precondition/` tests UNSUPPORTED) | 2310 pass / 13 fail / 5 xfail | 2302 pass / 10 fail / 16 xfail / 53 unsupported |
+| hardened (`-DYCXX_HARDENED=1`) | 2363 pass / 13 fail / 5 xfail | 2355 pass / 10 fail / 16 xfail |
+| noexcept (`-fno-exceptions`; 430 tests `REQUIRES: exceptions`) | 1888 pass / 5 fail / 5 xfail / 483 unsupported | 1886 pass / 6 fail / 6 xfail / 483 unsupported |
+
+The default GCC run counted 2328 tests (it started before `precondition/` existed). Default
+failures are the baseline's, plus `integration/fd_leaks_alloc_failure` (a 60 s timeout under
+machine load; passes alone). Hardened: all 53 death tests pass on both compilers; the one failure
+not in the default baseline is `mdspan/submdspan_exhaustive_oracle`: the hardened check of
+`layout_stride::mapping(extents, strides)` fires inside `submdspan` on a `layout_stride` source,
+because [mdspan.sub.map.common]/6 gives strides that need not satisfy the constructor's
+precondition [mdspan.layout.stride.cons]/4.3 (extents {4, 4}, strides {2, 9}, slices
+`extent_slice{0, 2, 3}, full_extent` give extents {2, 4} and strides {6, 9}: unique, but no
+permutation meets 4.3); a draft question, or the library should build that result without the
+check. noexcept: only default-baseline failures (those of `except/`, `exception/`, `contracts/`
+and `execution/` are UNSUPPORTED there).
+
 ## Freestanding
 `tools/check_freestanding.sh`: every core header, every header with a freestanding subset and
 every header of [compliance]'s Table 27 compiles with `-ffreestanding -nostdlib -nostdinc
@@ -243,6 +266,9 @@ x86_64-unknown-none-elf and riscv64-unknown-elf (Clang) and x86_64 (GCC). Header
 `tools/headers.py` (CORE, FREESTANDING_SUBSET, FREESTANDING_REQUIRED). The C headers' freestanding
 subsets (DECISIONS §3) need from the environment only memcpy/memmove/memset/memcmp (as the
 compilers do) and, when called, abort/atexit/at_quick_exit/exit/_Exit/quick_exit.
+CMake builds the freestanding runtime archive for the compiler's target with
+`-DYCXX_FREESTANDING_RUNTIME=ON` and installs it as `ycxx::freestanding`; `tests/cmake/run.sh`
+links the smoke program with the installed archive.
 
 ## macOS (Darwin)
 Target: Apple Silicon (arm64) first, x86_64 kept in mind, with Homebrew GCC 16.2 and Clang 23.1

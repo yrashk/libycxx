@@ -12,6 +12,7 @@
 // evaluation (after two notifications); the exception is caught in that thread and handed to
 // the main thread through a promise ([futures.promise] set_exception).
 // FLAGS: -pthread
+// REQUIRES: exceptions
 #include <chrono>
 #include <condition_variable>
 #include <future>

@@ -17,6 +17,7 @@
 //   (/2) formats first. [ostream.sentry]/4: ~sentry() calls pubsync for unitbuf only if
 //   !uncaught_exceptions(): no sync while the formatter's exception propagates.
 // FLAGS: -pthread
+// REQUIRES: exceptions
 #include <cstdio>
 #include <format>
 #include <ostream>

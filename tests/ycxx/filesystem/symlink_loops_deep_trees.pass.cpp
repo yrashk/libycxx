@@ -17,6 +17,7 @@
 //    then being the end iterator, [fs.class.directory.iterator.general]/3).
 // 3. A chain of 1100 nested directories: recursive_directory_iterator visits each once, and
 //    [fs.op.remove.all]: remove_all removes them all and returns the number removed (1100).
+// REQUIRES: exceptions
 #include <filesystem>
 #include <string>
 #include <system_error>

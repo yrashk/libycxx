@@ -3,6 +3,7 @@
 // [expected.void.monadic]: and_then / transform invoke F with no arguments; or_else and
 // transform_error pass error(); or_else returns G() when engaged.
 // [expected.void.swap]: swap in all state combinations; noexcept.
+// REQUIRES: exceptions
 #include <expected>
 #include <type_traits>
 #include <utility>

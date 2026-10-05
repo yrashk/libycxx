@@ -5,6 +5,7 @@
 // [fs.op.remove]/3: true if a file was removed, false otherwise ("Absence of a file p is not an
 // error"). [fs.op.remove.all]/3: "The number of files removed." (0 for a missing path).
 // [fs.op.exists], [fs.op.is.directory], [fs.op.is.regular.file], [fs.op.is.empty].
+// REQUIRES: exceptions
 #include <filesystem>
 #include <system_error>
 #include "check.hpp"

@@ -10,6 +10,7 @@
 //     the original and erased ones destroyed; /28 merge: "If an exception is thrown other than
 //     by a comparison, there are no effects", "No elements are copied"; /29 sort: "If an
 //     exception is thrown, the order of the elements in *this is unspecified."
+// REQUIRES: exceptions
 #include <forward_list>
 #include "exc_sequence.hpp"
 

@@ -4,6 +4,7 @@
 // end, rbegin, rend, cbegin, cend, crbegin, crend, empty, size, max_size and clear are
 // noexcept. [container.reqmts]: the move constructor exists and an allocator-aware container
 // can be moved; [res.on.exception.handling] lets implementations add noexcept but not drop it.
+// REQUIRES: exceptions
 #include <list>
 #include <type_traits>
 #include <utility>

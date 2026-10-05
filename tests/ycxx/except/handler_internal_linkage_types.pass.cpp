@@ -10,6 +10,7 @@
 // keyed by the type's name.
 // FILES: ../support/linkage/internal_types_tu2.cpp
 // XFAIL-COMPILER: clang  type_info names of internal-linkage classes lack the '*' prefix that asks for address comparison
+// REQUIRES: exceptions
 #include <typeinfo>
 #include "linkage/internal_types_shared.hpp"
 #include "check.hpp"

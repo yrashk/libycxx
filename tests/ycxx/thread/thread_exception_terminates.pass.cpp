@@ -1,6 +1,7 @@
 // [thread.thread.constr]/6: "If the invocation of invoke terminates with an uncaught exception,
 // terminate is invoked ([except.terminate])."
 // FLAGS: -pthread
+// REQUIRES: exceptions
 #include <thread>
 #include <exception>
 #include <cstdlib>

@@ -4,6 +4,7 @@
 // of the two transparent, the argument is converted. erase / extract with an iterator are
 // the position forms. [unord.map.elem] / [unord.map.modifiers]: the heterogeneous
 // operator[], at, try_emplace and insert_or_assign make a key only when inserting.
+// REQUIRES: exceptions
 #include <unordered_map>
 #include <cstddef>
 #include <stdexcept>

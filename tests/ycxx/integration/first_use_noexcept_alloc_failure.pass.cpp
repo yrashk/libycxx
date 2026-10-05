@@ -31,6 +31,7 @@
 //   [thread.thread.static] hardware_concurrency() noexcept; [thread.thread.this]/1 get_id()
 //   noexcept, not equal to thread::id() ([thread.thread.id]/1).
 // FLAGS: -pthread
+// REQUIRES: exceptions
 #include <chrono>
 #include <cstdlib>
 #include <cstring>

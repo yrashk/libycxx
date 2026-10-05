@@ -6,6 +6,7 @@
 // /8: with a user-defined clock, a timeout is no earlier than abs_time, and an exception thrown
 // by the clock propagates when the call has to wait.
 // FLAGS: -pthread
+// REQUIRES: exceptions
 #include <future>
 #include <chrono>
 #include "check.hpp"

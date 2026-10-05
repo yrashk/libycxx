@@ -5,6 +5,7 @@
 // constructor gives an empty stacktrace; size/empty/begin/end/rbegin/at/operator[] observe
 // the frames; at throws out_of_range past the end; == compares element-wise; std::stacktrace
 // is basic_stacktrace<allocator<stacktrace_entry>>; hash, to_string and operator<< exist.
+// REQUIRES: exceptions
 #include <stacktrace>
 #include <algorithm>
 #include <functional>

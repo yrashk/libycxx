@@ -1,6 +1,7 @@
 // [func.not.fn]/2: not_fn(f): "Mandates: is_constructible_v<FD, F> &&
 // is_move_constructible_v<FD> is true." Here FD can be copied from a const lvalue but is not
 // move constructible.
+// EXPECT-ERROR: static assertion failed.*std::not_fn: decay_t<F> must be constructible from F and move constructible
 #include <functional>
 
 struct Pinned {

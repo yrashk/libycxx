@@ -16,6 +16,7 @@
 //     set_value_at_thread_exit: when the registration fails (the call throws), the lock is
 //     not kept and the state is not made ready at thread exit (no hang either way).
 // FLAGS: -pthread
+// REQUIRES: exceptions
 #include <atomic>
 #include <condition_variable>
 #include <future>

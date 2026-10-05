@@ -14,6 +14,7 @@
 //   [string.view.io]: behaves as a formatted output function; <print>
 //   [ostream.formatted.print]/4: behaves as a formatted output function (only an exception from
 //   vformat is exempt); <ostream> [ostream.inserters.arithmetic].
+// REQUIRES: exceptions
 #include <bitset>
 #include <chrono>
 #include <complex>

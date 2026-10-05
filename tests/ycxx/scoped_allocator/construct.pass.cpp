@@ -3,6 +3,7 @@
 // construct; destroy calls the outermost allocator's destroy. So nested containers receive the
 // inner allocators: the second allocator for the elements, the third for their elements, and
 // with fewer allocators than levels the last one repeats ([allocator.adaptor.syn]/1).
+// REQUIRES: exceptions
 #include <scoped_allocator>
 #include <map>
 #include <string>

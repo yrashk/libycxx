@@ -16,6 +16,7 @@
 // state), in the destructor and in the atexit function; the program re-runs itself in a child process and checks its exact
 // output and exit status.
 // FLAGS: -pthread
+// REQUIRES: exceptions
 #include <cerrno>
 #include <charconv>
 #include <chrono>

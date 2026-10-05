@@ -8,6 +8,7 @@
 // pop_back, append_range; and the front operations emplace_front, push_front,
 // prepend_range, pop_front. Also in constant expressions, since every member used is
 // constexpr. operator[] and at are absent.
+// REQUIRES: exceptions
 #include <list>
 #include <cstddef>
 #include "container_values.hpp"

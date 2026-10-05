@@ -5,6 +5,7 @@
 // exits, after the destruction of any objects with automatic storage duration initialized
 // within the handler." So: locals of the handler, then the handler variable, then the
 // exception object.
+// REQUIRES: exceptions
 #include "check.hpp"
 
 static int log_[16];

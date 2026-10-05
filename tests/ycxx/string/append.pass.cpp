@@ -4,6 +4,7 @@
 // append(first, last), append_range(rg), append(il), push_back(c). All forms return *this
 // (push_back returns void). The pos forms go through substr and so throw out_of_range when
 // pos > size().
+// REQUIRES: exceptions
 #include <string>
 #include <string_view>
 #include <stdexcept>

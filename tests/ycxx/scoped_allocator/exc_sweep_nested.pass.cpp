@@ -11,6 +11,7 @@
 //     is deallocated exactly once, with its size, by an allocator equal to the allocating one.
 //   [vector.modifiers]/2, [deque.modifiers]/3, [associative.reqmts.except]/2: single-element
 //     insertions at the end / at either end / into a map have no effects when they throw.
+// REQUIRES: exceptions
 #include <deque>
 #include <list>
 #include <map>

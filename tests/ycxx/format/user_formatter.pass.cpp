@@ -2,6 +2,7 @@
 // a standard specialization; [formatter.requirements]: parse/format with
 // basic_format_parse_context and basic_format_context; nested formatting through format_to on
 // ctx.out().
+// REQUIRES: exceptions
 #include <format>
 #include <string>
 #include "check.hpp"

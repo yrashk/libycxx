@@ -1,6 +1,7 @@
 // [optional.assign]/29-40: emplace destroys any existing value then direct-non-list-initializes;
 // returns a reference to the new value; constraints is_constructible. If the constructor
 // throws, *this does not contain a value and the previous value was destroyed.
+// REQUIRES: exceptions
 #include <optional>
 #include <initializer_list>
 #include <type_traits>

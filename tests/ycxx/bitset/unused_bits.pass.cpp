@@ -5,6 +5,7 @@
 // that are not multiples of common word sizes.
 // [bitset.members]/40: to_ullong "Throws: overflow_error if the integral value x
 // corresponding to the bits in *this cannot be represented as type unsigned long long."
+// REQUIRES: exceptions
 #include <bitset>
 #include <cstddef>
 #include <functional>

@@ -4,6 +4,7 @@
 // search for a handler exits a function with a non-throwing exception specification,
 // std::terminate is invoked. So inside the terminate handler, current_exception() refers to
 // the exception that caused the call ([propagation]/9).
+// REQUIRES: exceptions
 #include <exception>
 #include <cstdlib>
 #include "check.hpp"

@@ -2,6 +2,7 @@
 // "Equivalent to traits::copy(s, data() + pos, rlen)." "Returns: rlen." "Throws:
 // out_of_range if pos > size()." substr(pos, n) and (C++26) subview(pos, n): "Returns:
 // basic_string_view(data() + pos, rlen)." "Throws: out_of_range if pos > size()."
+// REQUIRES: exceptions
 #include <string_view>
 #include <stdexcept>
 #include <type_traits>

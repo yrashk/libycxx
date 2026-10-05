@@ -19,6 +19,7 @@
 // Each thread-storage object holds library types (string, map, unordered_map, shared_ptr); its
 // destructor appends to a log protected by a mutex the waiting thread never holds.
 // FLAGS: -pthread
+// REQUIRES: exceptions
 #include <algorithm>
 #include <condition_variable>
 #include <future>

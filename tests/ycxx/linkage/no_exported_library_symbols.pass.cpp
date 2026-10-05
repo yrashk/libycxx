@@ -10,6 +10,7 @@
 // mangled name that is not the test's own (namespace `own`) and on the ABI runtime's names.
 // FLAGS: -rdynamic -pthread
 // UNSUPPORTED-SANITIZER: asan,ubsan,tsan  the sanitizer runtimes export symbols (and allocation functions) of their own
+// REQUIRES: exceptions
 #include <any>
 #include <cstdio>
 #include <cstdlib>

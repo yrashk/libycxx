@@ -20,6 +20,7 @@
 // The handlers use library facilities (format, string, locale): quick_exit destroys no object of
 // the library either, so they are all still usable.
 // FLAGS: -pthread
+// REQUIRES: exceptions
 #include <cstdlib>
 #include <exception>
 #include <format>

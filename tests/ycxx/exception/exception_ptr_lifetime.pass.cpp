@@ -3,6 +3,7 @@
 // object shall remain valid at least as long as there is an exception_ptr object that refers
 // to it." /3: non-null exception_ptrs compare equal iff they refer to the same exception.
 // /11: rethrow_exception throws the referenced exception object or a copy.
+// REQUIRES: exceptions
 #include <exception>
 #include <stdexcept>
 #include <utility>

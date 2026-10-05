@@ -8,6 +8,7 @@
 // [func.wrap.func.con]/12: no target from a null function pointer, a null member pointer, or an
 // empty function of any signature -- calling any of these throws bad_function_call, whatever
 // R and the argument types are.
+// REQUIRES: exceptions
 #include <functional>
 #include <cstring>
 #include <exception>

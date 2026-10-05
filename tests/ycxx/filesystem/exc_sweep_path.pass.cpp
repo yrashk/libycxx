@@ -5,6 +5,7 @@
 //     these members, so the checks are the basic ones: no operator new block leaks, and a path
 //     that was being modified is still a valid object (its native() string can be copied and
 //     the path can be iterated and compared afterwards).
+// REQUIRES: exceptions
 #include <filesystem>
 #include <string>
 #include "exc_new.hpp"

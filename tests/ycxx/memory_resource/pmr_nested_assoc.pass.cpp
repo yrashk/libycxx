@@ -12,6 +12,7 @@
 // inner containers afterwards (they keep the resource they were given).
 // [flat.map.cons.alloc]: flat_map's allocator-extended constructors pass the allocator to the
 // key and mapped containers, and their elements in turn use it.
+// REQUIRES: exceptions
 #include <memory_resource>
 #include <flat_map>
 #include <map>

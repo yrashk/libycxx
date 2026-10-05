@@ -4,6 +4,7 @@
 //   list(from_range_t, R&&, Allocator = Allocator())
 //     -> list<ranges::range_value_t<R>, Allocator>;
 // plus the implicit guides from the constructors (initializer_list, (n, value), copy).
+// REQUIRES: exceptions
 #include <list>
 #include <memory>
 #include <ranges>

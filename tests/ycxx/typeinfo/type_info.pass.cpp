@@ -2,6 +2,7 @@
 // (C++23), before() and hash_code() noexcept, name() noexcept; it is not copy constructible or
 // copy assignable. [expr.typeid]: top-level cv-qualifiers and references are ignored.
 // [bad.cast], [bad.typeid]: derive from exception.
+// REQUIRES: exceptions
 #include <typeinfo>
 #include <cstddef>
 #include <exception>

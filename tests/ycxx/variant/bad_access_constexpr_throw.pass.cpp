@@ -2,6 +2,7 @@
 // bad_variant_access has a constexpr what(), so throwing and catching it works during
 // constant evaluation (P3068 constexpr exceptions, P3378 constexpr exception types).
 // XFAIL-COMPILER: clang  no constexpr exception support (P3068) in clang yet
+// REQUIRES: exceptions
 #include <variant>
 #include "check.hpp"
 

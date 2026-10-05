@@ -9,6 +9,7 @@
 // select_on_container_copy_construction (here: a copy), the allocator is replaced by copy
 // assignment / move assignment / swap only if the matching propagate_on_container_* is true,
 // and get_allocator() returns the most recent replacement.
+// REQUIRES: exceptions
 #include <vector>
 #include <string>
 #include <type_traits>

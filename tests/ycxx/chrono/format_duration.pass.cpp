@@ -8,6 +8,7 @@
 // floating-point rep; "For all other types, an exception of type format_error is thrown".
 // /6 and /3: a specifier the type has no information for (%Y, %a for a duration) throws
 // format_error. Literal characters are copied; fill, align and width apply to the whole result.
+// REQUIRES: exceptions
 #include <chrono>
 #include <format>
 #include <string>

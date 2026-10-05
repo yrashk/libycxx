@@ -1,6 +1,7 @@
 // [mdspan.mdspan.members]/7-12: at(indices...), at(span) and at(array) return (*this)[I...]
 // and throw out_of_range if I is not a multidimensional index in extents(); negative indices
 // are not in the index space either.
+// REQUIRES: exceptions
 #include <mdspan>
 #include <array>
 #include <span>

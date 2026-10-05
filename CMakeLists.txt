@@ -177,6 +177,45 @@ endif()
 # libgcc_s.so; a second, static copy (libgcc_eh) used by the personality routine would abort.
 target_link_options(ycxx_ycxx INTERFACE $<$<LINK_LANGUAGE:CXX>:-nostdlib++>
                     $<$<AND:$<LINK_LANGUAGE:CXX>,$<PLATFORM_ID:Linux>>:-shared-libgcc>)
+# Linux: Clang takes the C runtime startup files and libgcc (the unwinder libycxx's ABI runtime
+# uses) from a GCC installation, by default the newest one in the system's standard places, which
+# can be older than GCC 16. Clang consumers get --gcc-install-dir=<GCC 16's>, as with
+# tools/ycxx-cxx and cmake/ycxx-toolchain.cmake. YCXX_GCC_INSTALL_DIR names it (empty: let Clang
+# choose); by default: $ENV{YCXX_GCC_INSTALL_DIR} (tools/toolchain/activate.sh sets it), else the
+# --gcc-install-dir already in CMAKE_CXX_FLAGS (the toolchain file's), else the directory of
+# libgcc of the GCC building libycxx, of $ENV{YCXX_GXX}, or of g++-16 on PATH. The installed
+# package records it (libycxxConfig.cmake).
+if(CMAKE_SYSTEM_NAME STREQUAL "Linux" AND NOT DEFINED YCXX_GCC_INSTALL_DIR)
+  set(_ycxx_gcc_dir "$ENV{YCXX_GCC_INSTALL_DIR}")
+  if(NOT _ycxx_gcc_dir AND CMAKE_CXX_FLAGS MATCHES "--gcc-install-dir=([^ ]+)")
+    set(_ycxx_gcc_dir "${CMAKE_MATCH_1}")
+  elseif(NOT _ycxx_gcc_dir)
+    if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+      set(_ycxx_gxx "${CMAKE_CXX_COMPILER}")
+    elseif(DEFINED ENV{YCXX_GXX})
+      set(_ycxx_gxx "$ENV{YCXX_GXX}")
+    else()
+      find_program(_ycxx_gxx NAMES g++-16 NO_CACHE)
+    endif()
+    if(_ycxx_gxx)
+      execute_process(COMMAND "${_ycxx_gxx}" -print-libgcc-file-name OUTPUT_VARIABLE _ycxx_libgcc
+                      OUTPUT_STRIP_TRAILING_WHITESPACE ERROR_QUIET RESULT_VARIABLE _ycxx_rc)
+      if(_ycxx_rc EQUAL 0 AND IS_ABSOLUTE "${_ycxx_libgcc}")
+        get_filename_component(_ycxx_gcc_dir "${_ycxx_libgcc}" DIRECTORY)
+      endif()
+    endif()
+  endif()
+  set(YCXX_GCC_INSTALL_DIR "${_ycxx_gcc_dir}" CACHE PATH
+      "GCC installation whose crt files and libgcc Clang consumers of ycxx::ycxx use (--gcc-install-dir; empty: Clang's choice)")
+endif()
+if(YCXX_GCC_INSTALL_DIR)
+  # The build tree's ycxx::ycxx (add_subdirectory, FetchContent); libycxxConfig.cmake adds the
+  # same to the installed one, where the directory can be overridden by the consumer.
+  target_compile_options(ycxx_ycxx INTERFACE
+    $<BUILD_INTERFACE:$<$<COMPILE_LANG_AND_ID:CXX,Clang>:--gcc-install-dir=${YCXX_GCC_INSTALL_DIR}>>)
+  target_link_options(ycxx_ycxx INTERFACE
+    $<BUILD_INTERFACE:$<$<AND:$<LINK_LANGUAGE:CXX>,$<CXX_COMPILER_ID:Clang>>:--gcc-install-dir=${YCXX_GCC_INSTALL_DIR}>>)
+endif()
 
 add_library(ycxx::headers ALIAS ycxx_headers)
 add_library(ycxx::core ALIAS ycxx)

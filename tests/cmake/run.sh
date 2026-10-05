@@ -14,7 +14,9 @@
 #   6. cmake/ycxx-toolchain.cmake: picks GCC and Clang by itself (with a scratch toolchain cache,
 #      which it must fill in toolchains.env), and fails with a clear message when the requested
 #      version is unavailable and YCXX_PROVISION is off. With YCXX_TEST_PROVISION=1 it also
-#      downloads Clang into a scratch cache (about 2 GB).
+#      downloads Clang into a scratch cache (about 2 GB);
+#   8. Linux, Clang: the example programs link the C runtime startup files and libgcc of GCC 16's
+#      installation ($YCXX_GXX), which the package passes with --gcc-install-dir (link map).
 #
 #   tests/cmake/run.sh [gcc] [clang]        (default: both)
 # Compilers come from the YCXX_* variables (tools/toolchain/activate.*), else g++-16 /
@@ -124,14 +126,28 @@ for c in $compilers; do
     [ -e "$d/prefix/$f" ] || bad $c "installed file missing: $f"
   done
 
-  # 2, 3. the example projects
+  # 2, 3. the example projects (with a link map: which C runtime files and libgcc were linked)
   for ex in find_package add_subdirectory; do
     b=$d/$ex
+    map=
+    [ "$(uname -s)" = Linux ] && map="-DCMAKE_EXE_LINKER_FLAGS=-Wl,-Map,$b/demo.map"
     if x cmake -S "$repo/examples/$ex" -B "$b" $gen -DCMAKE_PREFIX_PATH="$d/prefix" \
-         -DLIBYCXX_SOURCE_DIR="$repo" &&
+         -DLIBYCXX_SOURCE_DIR="$repo" $map &&
        x cmake --build "$b"; then
       if run_demo "$b/demo" "$log"; then ok $c "$ex: build and run"
       else bad $c "$ex: the program failed (see $log)"; fi
+      # 8. Linux, Clang: the package passes --gcc-install-dir, so the startup files and libgcc
+      # are GCC 16's, not those of the GCC installation Clang would pick by itself.
+      if [ $c = clang ] && [ -n "$map" ]; then
+        gcc_dir=$(dirname "$(${YCXX_GXX:-g++-16} -print-libgcc-file-name)")
+        if grep -q "^LOAD $gcc_dir/crtbegin" "$b/demo.map"; then
+          ok $c "$ex: links GCC 16's startup files and libgcc ($gcc_dir)"
+        else
+          printf 'expected %s/crtbegin*.o in %s; loaded:\n' "$gcc_dir" "$b/demo.map" >>"$log"
+          grep '^LOAD .*crtbegin' "$b/demo.map" >>"$log" || :
+          bad $c "$ex: does not link GCC 16's startup files (see $log)"
+        fi
+      fi
       # 4. no toolchain C++ library
       if links_toolchain_cxx "$b/demo"; then
         bad $c "$ex: links the toolchain's C++ library"

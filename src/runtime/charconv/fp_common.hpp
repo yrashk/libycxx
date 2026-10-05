@@ -278,15 +278,17 @@ struct bignum {
     if (n == 0 || bits == 0)
       return;
     int limbs = bits / 32, s = bits % 32;
-    w[n + limbs] = 0;
+    // Each limb is assigned from its source limbs, highest first (a source limb is never at a
+    // higher index than its destination), so no limb is read before it is written.
     if (s == 0) {
+      w[n + limbs] = 0;
       for (int i = n - 1; i >= 0; --i)
         w[i + limbs] = w[i];
     } else {
-      for (int i = n - 1; i >= 0; --i) {
-        w[i + limbs + 1] |= w[i] >> (32 - s);
-        w[i + limbs] = w[i] << s;
-      }
+      w[n + limbs] = w[n - 1] >> (32 - s);
+      for (int i = n - 1; i > 0; --i)
+        w[i + limbs] = (w[i] << s) | (w[i - 1] >> (32 - s));
+      w[limbs] = w[0] << s;
     }
     for (int i = 0; i < limbs; ++i)
       w[i] = 0;

@@ -13,7 +13,7 @@
 #include <langinfo.h>
 #include <locale.h>
 #include <stdio.h>
-#include <stdlib.h>
+#include <unistd.h> // _exit: <stdlib.h> would clash with check.hpp's abort()
 #if __has_include(<xlocale.h>)
 #  include <xlocale.h>
 #endif
@@ -31,7 +31,7 @@ inline const char* require_locale(const char* name) {
   if (!c_has_locale(name)) {
     printf("UNSUPPORTED: named locale %s not installed (tools/ci/gen-locales generates it)\n", name);
     fflush(stdout);
-    exit(77);
+    _exit(77);
   }
   return name;
 }
@@ -43,7 +43,7 @@ auto in_c_locale(const char* name, F f) {
   if (l == (locale_t)0) {
     printf("UNSUPPORTED: named locale %s not installed\n", name);
     fflush(stdout);
-    exit(77);
+    _exit(77);
   }
   locale_t old = uselocale(l);
   struct restore {

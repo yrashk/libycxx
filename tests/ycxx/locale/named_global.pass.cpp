@@ -39,9 +39,10 @@ int main() {
   CHECK(std::locale(de).encoding().mib() == std::text_encoding::id::UTF8);
 
   // messages: no such catalog
-  const auto& m = std::use_facet<std::messages<char>>(std::locale(de));
+  const std::locale named(de);
+  const auto& m = std::use_facet<std::messages<char>>(named);
   const auto c = m.open("ycxx-no-such-catalog-anywhere", std::locale(de));
   CHECK(c < 0);
-  const auto& wm = std::use_facet<std::messages<wchar_t>>(std::locale(de));
+  const auto& wm = std::use_facet<std::messages<wchar_t>>(named);
   CHECK(wm.open("ycxx-no-such-catalog-anywhere", std::locale(de)) < 0);
 }

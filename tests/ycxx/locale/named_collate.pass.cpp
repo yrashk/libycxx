@@ -34,11 +34,15 @@ static void check(const char* name) {
       // wide, through the C library's conversion in the same locale
       const std::wstring wa = in_c_locale(name, [&] {
         wchar_t buf[64];
-        return std::wstring(buf, mbstowcs(buf, a.c_str(), 64));
+        const char* p = a.c_str();
+        mbstate_t st{};
+        return std::wstring(buf, mbsrtowcs(buf, &p, 64, &st));
       });
       const std::wstring wb = in_c_locale(name, [&] {
         wchar_t buf[64];
-        return std::wstring(buf, mbstowcs(buf, b.c_str(), 64));
+        const char* p = b.c_str();
+        mbstate_t st{};
+        return std::wstring(buf, mbsrtowcs(buf, &p, 64, &st));
       });
       const int wwant = in_c_locale(name, [&] { return sign(wcscoll(wa.c_str(), wb.c_str())); });
       CHECK(wco.compare(wa.data(), wa.data() + wa.size(), wb.data(), wb.data() + wb.size()) == wwant);

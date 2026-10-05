@@ -82,7 +82,8 @@ int main() {
   check_wchar(require_locale("fr_FR.ISO8859-15"), sample);
 
   // the facet differs from the classic one where the locale does: e acute in Latin-1
-  const auto& latin1 = std::use_facet<std::ctype<char>>(std::locale("de_DE.ISO8859-1"));
+  const std::locale l1("de_DE.ISO8859-1");
+  const auto& latin1 = std::use_facet<std::ctype<char>>(l1);
   CHECK(latin1.is(B::alpha, '\xe9') && latin1.toupper('\xe9') == '\xc9');
   CHECK(!std::use_facet<std::ctype<char>>(std::locale::classic()).is(B::alpha, '\xe9'));
 }

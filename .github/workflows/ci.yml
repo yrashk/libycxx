@@ -92,6 +92,7 @@ jobs:
       - name: ABI symbol binding diagnostics
         if: always()
         run: |
+          set +e +o pipefail  # a failing test program must not end the diagnostics
           . tools/toolchain/activate.sh
           mkdir -p build/diag
           for c in clang gcc; do
@@ -104,7 +105,12 @@ jobs:
             nm -m build/diag/ep-$c | grep -Ei ' (___cxa|___gxx_personality|__ZSt9terminate|__ZSt17current_exception|__ZNSt15__exception_ptr)' | head -40
             echo "--- linked libraries"
             otool -L build/diag/ep-$c
+            echo "--- link line (tools/ycxx-cxx, dry run)"
+            tools/ycxx-cxx $c -### -Itests/ycxx/support tests/ycxx/exception/exception_ptr.pass.cpp -o /dev/null 2>&1 | tail -2
+            echo "--- where the linker took __cxa_begin_catch, __cxa_throw, the personality routine from"
+            grep -E '___cxa_begin_catch|___cxa_throw$|___gxx_personality_v0|___cxa_get_globals|__ZSt17current_exceptionv' build/diag/ep-$c.map | head -12
           done 2>&1 | tee build/diag/abi-binding.txt
+          exit 0
 
       - name: Test reports (composite run report, suite reports)
         if: always()

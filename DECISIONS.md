@@ -91,7 +91,8 @@ tooling.
   (`::ycxx::detail::f(...)`), so a user function with the same name in an argument's namespace is
   never picked up. Trait structs (`iterator_traits`, `pointer_traits`, `common_reference`) may
   still derive from `ycxx::detail` helpers, because they are never function arguments.
-- **libycxx's symbols have hidden visibility: a program or shared object exports none of them.**
+- **libycxx's symbols have hidden visibility: a program or shared object exports none of them,
+  except the replaceable global allocation functions.**
   Another C++ library in the same process must neither take over libycxx's definitions nor be
   taken over by them. On Darwin, libSystem loads Apple's libc++ and libc++abi into every process,
   and dyld coalesces each exported weak definition with a non-weak one of the same name in any
@@ -123,25 +124,43 @@ tooling.
     program, so the CMake package (`ycxx::headers`) and `tools/ycxx-cxx` pass `-Wno-attributes`
     to GCC; other build systems add it themselves (STATUS, known limitations). What the compilers keep default despite the
     flag is hidden with assembler directives (`asm((constant-expression))`, `.hidden` on ELF,
-    `.private_extern` on Mach-O): the default replaceable allocation functions (both compilers
-    declare them implicitly; a visibility attribute conflicts with that declaration), GCC's
-    seven predeclared `__cxa_*` entry points (GCC ignores an attribute on them with a warning),
+    `.private_extern` on Mach-O): GCC's seven predeclared `__cxa_*` entry points (GCC ignores an attribute on them with a warning),
     and the fundamental type_info objects GCC emits with `__fundamental_type_info`'s key function.
     Which of those exist depends on the target (AArch64 adds `__bf16`, `__mfp8` and the SVE types),
     so their list is not written down: CMake compiles a probe defining that key function with the
     runtime's flags at configure time, lists its `_ZTI`/`_ZTS` symbols with `nm`, and generates
     `abi/fundamental_type_infos.hpp` in the build tree, which `src/abi/rtti.cpp` turns into
     `.hidden`/`.private_extern` directives.
-  - **Default visibility** stays only for what is not libycxx's to hide: the C library
-    functions `ycxx/core/c_stdlib.hpp` declares by assembler name, and a program's own
-    definitions. That includes a program's replacement `operator new`: it is linked instead of
-    the archive member holding the hidden default ([replacement.functions]), and is exported as
-    the program's other functions are. libycxx's defaults are hidden on every target (as
-    Clang's `-fvisibility-global-new-delete=force-hidden`, added for libFuzzer's private libc++ and
-    Fuchsia, https://reviews.llvm.org/D53787): on Darwin they are not patched
-    into the shared cache, so system code keeps libc++abi's allocation functions; on ELF a
-    shared library built with libstdc++ keeps its own. Both use `malloc`/`free`, so memory
-    passed between the two still pairs.
+  - **Default visibility** stays for what is not libycxx's to hide: the C library functions
+    `ycxx/core/c_stdlib.hpp` declares by assembler name, and a program's own definitions; and
+    for the replaceable global allocation functions (`operator new`/`new[]`/`delete`/`delete[]`
+    in every form: sized, aligned, nothrow), as in libstdc++ and libc++. The compilers' implicit
+    declarations give them default visibility under `-fvisibility=hidden`, and libycxx adds no
+    directive. Decided 2026-10-05, reversing hidden defaults: with them every image (the program
+    and each shared library linking libycxx) had its own `operator new`/`delete`, and an object
+    crossing images (a `std::string` built in a shared library and freed in the program) was
+    allocated by one image's `new` and freed by the other's `delete`. That pairs only while both
+    reach malloc/free: it broke when the program replaces `operator delete`, and under
+    AddressSanitizer (alloc-dealloc-mismatch). With default visibility one replacement (the
+    program's, or the sanitizer's) applies to every image ([replacement.functions]/2). The cost
+    is the platform's ordinary rule: on Darwin a program's replacement (or libycxx's default,
+    exported from the program) also serves Apple's libc++ in the process, as it does for any
+    program replacing `operator new`; libycxx's default, like libc++abi's, is malloc/free.
+    Two details make that hold: the defaults are weak definitions (on Mach-O a strong
+    definition in a shared library that links libycxx statically is bound to that library's own
+    copy at static link time, so the program's replacement would not reach it; dyld coalesces
+    weak definitions), and the nothrow forms are declared `[[gnu::visibility("default")]]` in
+    `<new>` (a function otherwise takes the hidden visibility of its parameter type
+    `std::nothrow_t`). Observed on macOS 26 (`linkage/shared_library_replaced_new`): dyld takes
+    each form from the first image in load order that defines it. A program's own definition
+    (replacement or libycxx's default) therefore also overrides libc++abi's in the shared cache,
+    so Apple's libc++ allocates through it; and a form no earlier image defines comes from
+    libc++abi, so a libycxx shared library loaded into a host without libycxx's allocation
+    functions (a C program, an Apple-libc++ application loading a plugin) allocates through
+    libc++abi's `operator new`: its `set_new_handler` is not consulted there, and an allocation
+    failure throws libc++abi's `bad_alloc`, foreign to libycxx's runtime (only `catch (...)`
+    catches it). In the other direction, Apple's libc++ code allocating through libycxx's
+    default receives libycxx's `bad_alloc` on failure, foreign to libc++abi.
   - **The ABI runtime is per image.** `__cxa_*`, `__gxx_personality_v0`, the `__cxxabiv1`
     type_info classes and their vtables, `std::type_info` and the classes the compiler looks
     up (`std::initializer_list`, `std::align_val_t`, `std::bad_alloc`, the comparison

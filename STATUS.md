@@ -519,11 +519,12 @@ compilers; `visit_format_arg.pass.cpp` needs `EOF` from `constexpr_char_traits.h
   {2, 9}, is unique and fails it). libycxx constructs submdspan results without that check (the
   other preconditions are still checked in hardened builds); a draft defect to report.
 - Hidden visibility (DECISIONS §2): a program or shared library exports none of libycxx's
-  symbols except the replaceable global allocation functions, which keep default visibility
-  (weak definitions, so one replacement serves every image; on Darwin the allocation functions
-  are coalesced with libc++abi's by dyld, with the consequences DECISIONS §2 lists: a libycxx
-  shared library in a host without libycxx's allocation functions allocates through libc++abi's
-  `operator new`, whose failure throws a `bad_alloc` foreign to libycxx's runtime). **GCC warns** (`-Wattributes`: "'S' declared with greater visibility than the type of
+  symbols; its images share their default allocation functions through the allocation table
+  `ycxx_allocation_functions` (DECISIONS §2), kept in a program by link options the CMake
+  package and `tools/ycxx-cxx` add (`-u`, and `--export-dynamic-symbol` on ELF); other build
+  systems add them themselves (`<build>/ycxx-link-options` lists them). Without them, a program
+  that references no default allocation function lacks the table, and its replacements do not
+  reach the libycxx shared libraries it loads. **GCC warns** (`-Wattributes`: "'S' declared with greater visibility than the type of
   its field" / "than its base") for every program class outside libycxx's namespaces with a
   member or base of a library class type (`struct S { std::string s; };`, a class derived from
   `std::runtime_error`); GCC has no way to hide a class's members and type_info without hiding

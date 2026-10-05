@@ -111,6 +111,7 @@ int main(int argc, char** argv) {
   if (child_mode()) return child(argv[1]);
   (void)argc;
   ChildResult o = run_self("out");
+  if (o.status != 0) dprintf(2, "child status %d, stderr:\n%s\n", o.status, o.err.c_str());
   CHECK(o.status == 0);
   CHECK(o.err.empty());
   verify(o.out);

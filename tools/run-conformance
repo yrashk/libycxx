@@ -6,7 +6,7 @@
 # failures with their transcript (the commands, exit statuses and output), under a live status
 # line (counts, elapsed time, ETA), then lit's summary. Writes, as build/test-logs/<run>.*
 # (<run> = <suite>-<compiler>[-<sanitizer>][-ref]): .log, lit's complete output, every test's
-# transcript included; .html, a report of every test with its transcript and how the run was
+# transcript included; .console.log, what the terminal showed; .html, a report of every test with its transcript and how the run was
 # made (commit, compiler version, command), with copy buttons that put Markdown on the
 # clipboard; .md, the whole report as Markdown (also embedded in the .html); .tsv, one line per
 # test; .json, lit's results.
@@ -85,24 +85,36 @@ fi
 # exit statuses and durations, and what they printed (tests/ycxxlit/transcript.py). -o: the same
 # as JSON, from which the report is made.
 base=$repo/build/test-logs/$name
-rm -f "$base.json" "$base.data.json"
+rm -f "$base.json" "$base.data.json" "$base.console.log"
 ui_cmd ${ycxx_lit} "$dir" -a -o "$base.json" "$@"
 
 t0=$(date +%s)
 started=$(date -u +%Y-%m-%dT%H:%M:%SZ)
 status=$log.status
+fstatus=$log.filter-status
+# lit's raw output goes to the log before the display filter, so that it is kept even if the filter
+# fails; what the terminal shows (the filter's output and errors) is kept in <run>.console.log.
 {
   set +e
   PYTHONUNBUFFERED=1 ${ycxx_lit} "$dir" -a -o "$base.json" "$@" 2>&1
   echo $? >"$status"
-} | awk -v logfile="$log" -v tty=${ui__tty} -v quiet="${YCXX_QUIET:-0}" \
+} | tee "$log" | {
+  awk -v tty=${ui__tty} -v quiet="${YCXX_QUIET:-0}" \
       -v verbose="${YCXX_VERBOSE:-0}" -v details="${YCXX_FAIL_DETAILS:-10}" \
       -v red="${ui_red}" -v green="${ui_green}" -v yellow="${ui_yellow}" -v cyan="${ui_cyan}" \
       -v bold="${ui_bold}" -v dim="${ui_dim}" -v reset="${ui_reset}" \
       -v s_ok="${ui_sym_ok}" -v s_fail="${ui_sym_fail}" -v s_skip="${ui_sym_skip}" \
-      -f "$repo/tools/lib/lit-progress.awk"
+      -f "$repo/tools/lib/lit-progress.awk" 2>&1
+  echo $? >"$fstatus"
+} | tee "$base.console.log"
 rc=$(cat "$status" 2>/dev/null || echo 1)
-rm -f "$status"
+frc=$(cat "$fstatus" 2>/dev/null || echo 1)
+rm -f "$status" "$fstatus"
+if [ "$frc" != 0 ]; then
+  # The tests may have run, but they were not shown: the harness itself is broken.
+  ui_fail "the progress display (tools/lib/lit-progress.awk) failed" "(exit $frc; lit's output is in $log)"
+  [ "$rc" = 0 ] && rc=1
+fi
 el=$(ui_duration $(($(date +%s) - t0)))
 echo
 if [ "$rc" = 0 ]; then ui_ok "$what: all tests passed" "($el)"

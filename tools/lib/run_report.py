@@ -10,8 +10,9 @@ holds the suite's tests). KEY=VALUE pairs describe the run.
 
 Writes OUT_BASE.html, one self-contained page to share (with a person or an AI assistant):
   - the run (command, commit, platform, compilers) and every stage with its command and time;
-  - every failure: a failed stage with the end of its log (a build error, say), a failed test
-    with its full transcript (commands, exit statuses, output);
+  - every failure: a failed stage with the end of its log (a build error, say) and the end of
+    every log file that output refers to (a sub-check's "(see /path/x.log)"), a failed test with
+    its full transcript (commands, exit statuses, output);
   - every suite (own suite, libc++, libstdc++, per compiler): its run, its counts, why tests
     were unsupported, one passing test's transcript as an example of how its tests run, and
     every test with its result and steps (filter and search);
@@ -53,6 +54,32 @@ def read_tail(path):
         return '', 0
     lines = [l for l in lines if l.strip()]
     return '\n'.join(lines[-LOG_TAIL:]), max(0, len(lines) - LOG_TAIL)
+
+
+REF_LOG = re.compile(r'(/[^\s()\'"`<>]+?\.(?:log|txt))\b')
+REF_TAIL = 200    # lines of each log a failed stage's output refers to
+REF_MAX = 12      # logs embedded per stage
+
+
+def referenced_logs(text, own):
+    """The log files a failed stage's output names (a sub-check's "(see /path/x.log)"), each with
+    its end, so that the report carries them instead of pointing at files on another machine."""
+    out, seen = [], {own}
+    for m in REF_LOG.finditer(text or ''):
+        path = m.group(1)
+        if path in seen or not os.path.isfile(path):
+            continue
+        seen.add(path)
+        try:
+            with open(path, encoding='utf-8', errors='replace') as f:
+                lines = [l for l in ANSI.sub('', f.read()).replace('\r', '\n').splitlines() if l.strip()]
+        except OSError:
+            continue
+        out.append({'path': path, 'tail': '\n'.join(lines[-REF_TAIL:]) or '(empty)',
+                    'cut': max(0, len(lines) - REF_TAIL)})
+        if len(out) == REF_MAX:
+            break
+    return out
 
 
 def load_suite(report):
@@ -103,6 +130,9 @@ def step_md(s, level='###'):
     if s['tail']:
         omitted = f' (the first {s["cut"]} lines omitted)' if s['cut'] else ''
         lines += [f'End of the log{omitted}:', '', fence(s['tail']), '']
+    for f in s.get('files', []):
+        omitted = f' (the first {f["cut"]} lines omitted)' if f['cut'] else ''
+        lines += [f'Log it refers to, {f["path"]}{omitted}:', '', fence(f['tail']), '']
     return lines
 
 
@@ -179,7 +209,7 @@ def main():
             s = {'status': st, 'label': label, 'secs': '' if st == 'skip' else extra,
                  'reason': extra if st == 'skip' else '', 'log': log, 'command': cmd, 'report': report,
                  'report_href': os.path.relpath(report, here) if report else '', 'tail': '', 'cut': 0,
-                 'suite': None}
+                 'files': [], 'suite': None}
             if report:
                 su = load_suite(report)
                 if su is not None:
@@ -188,8 +218,16 @@ def main():
                     s['suite'] = len(suites)
                     suites.append(su)
             # A failed stage's log, unless it is a suite whose failures are listed with their tests.
-            if st == 'FAIL' and log and s['suite'] is None:
+            # A suite that failed without a report, or without a failing test (lit or the harness
+            # broke), shows what its run printed (<run>.console.log, written by run-conformance).
+            if st == 'FAIL' and report and (s['suite'] is None or suites[s['suite']]['bad'] == 0):
+                log = s['log'] = report[:-5] + '.console.log'
+            if st == 'FAIL' and log and (s['suite'] is None or suites[s['suite']]['bad'] == 0):
                 s['tail'], s['cut'] = read_tail(log)
+                if not s['tail']:
+                    s['tail'] = '(nothing was recorded: see the terminal or CI output of this step)'
+            if st == 'FAIL' and s['tail']:
+                s['files'] = referenced_logs(s['tail'], log)
             steps.append(s)
     nfail = sum(s['status'] == 'FAIL' for s in steps)
     nok = sum(s['status'] == 'ok' for s in steps)
@@ -259,6 +297,8 @@ table.meta td { padding: 2px 0; font-family: ui-monospace, SFMono-Regular, Menlo
 .body { border-top: 1px solid var(--line); padding: 8px 12px; font-size: 13px; }
 .body a { color: inherit; }
 .note { color: var(--muted); font-size: 12px; }
+details.ref { margin-top: 8px; }
+details.ref > summary { cursor: pointer; font-size: 12.5px; overflow-wrap: anywhere; }
 pre { margin: 8px 0 0; padding: 10px 12px; background: var(--code-bg); border-radius: 6px; font-size: 12px;
   overflow-x: auto; white-space: pre-wrap; overflow-wrap: anywhere; max-height: 480px; overflow-y: auto; }
 pre .c { color: var(--fg); font-weight: 600; } pre .s { color: var(--muted); }
@@ -324,6 +364,8 @@ function stepMd(s) {
   if (s.log) md += '- log: ' + s.log + '\n';
   if (s.report) md += '- report: ' + s.report + '\n';
   if (s.tail) md += '\nEnd of the log' + (s.cut ? ' (the first ' + s.cut + ' lines omitted)' : '') + ':\n\n' + fence(s.tail) + '\n';
+  for (const f of s.files || [])
+    md += '\nLog it refers to, ' + f.path + (f.cut ? ' (the first ' + f.cut + ' lines omitted)' : '') + ':\n\n' + fence(f.tail) + '\n';
   return md;
 }
 function testMd(su, t) {
@@ -373,6 +415,10 @@ for (const s of data.steps) {
   if (s.status === 'FAIL' && s.log && s.tail) body += '<div class="note">Log: ' + esc(s.log) +
     (s.cut ? ' (the end: the first ' + s.cut + ' lines are omitted here)' : '') + '</div>';
   if (s.tail) body += '<pre>' + esc(s.tail) + '</pre>';
+  for (const f of s.files || [])
+    body += '<details class="ref"><summary>Log it refers to: ' + esc(f.path) +
+      (f.cut ? ' <span class="note">(the end: the first ' + f.cut + ' lines omitted)</span>' : '') +
+      '</summary><pre>' + esc(f.tail) + '</pre></details>';
   if (body) c.appendChild(el('div', 'body', body));
   stages.appendChild(c);
 }

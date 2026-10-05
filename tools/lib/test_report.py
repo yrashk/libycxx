@@ -12,6 +12,7 @@ command, ...; a key starting with '_' is used but not displayed: _root, the test
                  browser, by a person or an AI assistant.
   OUT_BASE.md    the same Markdown.
   OUT_BASE.tsv   one line per test: result, seconds, test, steps, error.
+  OUT_BASE.data.json  the tests and the run, for the composite report of tools/test.
 """
 import html, json, os, re, sys
 
@@ -118,6 +119,11 @@ def main():
     md = markdown(title, meta, counts, tests, data.get('elapsed', 0))
     with open(base + '.md', 'w', encoding='utf-8') as f:
         f.write(md)
+    # For the composite report of a tools/test run (tools/lib/run_report.py).
+    with open(base + '.data.json', 'w', encoding='utf-8') as f:
+        json.dump({'title': title, 'meta': {k: v for k, v in meta.items() if not k.startswith('_')},
+                   'root': meta.get('_root', ''), 'counts': counts, 'elapsed': data.get('elapsed', 0),
+                   'tests': tests}, f)
 
     shown = {k: v for k, v in meta.items() if not k.startswith('_')}
     rows = ''.join(f'<tr><th>{html.escape(k)}</th><td>{html.escape(v)}</td></tr>' for k, v in shown.items())

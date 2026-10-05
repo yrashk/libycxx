@@ -219,7 +219,7 @@ headers) use `C` as a template-parameter name: 20_util/bitset/cons/string_view{,
 ## (B) missing features
 
 - `__cpp_lib_constexpr_exceptions` (18_support/exception/version.cc, 19_diagnostics/headers/stdexcept/version.cc): undefined by design until Clang can throw in constant evaluation (STATUS, Open issues).
-- `boyer_moore_searcher` / `boyer_moore_horspool_searcher`, `__cpp_lib_boyer_moore_searcher` (20_util/function_objects/83607.cc, searchers.cc): documented as not provided.
+- **Done**: `boyer_moore_searcher` / `boyer_moore_horspool_searcher`, `__cpp_lib_boyer_moore_searcher` (20_util/function_objects/searchers.cc passes on both compilers; 83607.cc is (b), see the re-triage below).
 - C++ `<complex.h>` and `<tgmath.h>` ([complex.h.syn], [tgmath.h.syn]: they include `<complex>`/`<cmath>`; glibc's C headers are found instead): 26_numerics/headers/{ccomplex/complex.h.cc, complex.h/std_c++11.cc, complex.h/std_gnu++11.cc, ctgmath/complex.h.cc} (documented as not provided). **Done**: libycxx's `<complex.h>`/`<tgmath.h>` include `<complex>`/`<cmath>` in C++; the complex.h tests pass.
 - C++ `<stdckdint.h>` (26_numerics/stdckdint/1.cc, extended.cc; GCC only -- glibc's C header uses `_Bool`/C macros under g++, the Clang path happens to work) and `__cpp_lib_stdckdint_h`. Likewise no C++ `<stdbit.h>` / `__cpp_lib_stdbit_h` (20_util/stdbit/1.cc fails first on an F issue).
 - Feature-test macro audit ([version.syn] vs. `<version>`; not all have tests): besides the three (A) macros above, undefined are `__cpp_lib_freestanding_{cstdlib,execution,functional,memory}`, all 17 `__cpp_lib_hardened_*`, `__cpp_lib_start_lifetime` (std::start_lifetime exists), `__cpp_lib_stdbit_h`, `__cpp_lib_stdckdint_h`, `__cpp_lib_view_interface` (202606), `__cpp_lib_pointer_tag_pair`, `__cpp_lib_modules`, `__cpp_lib_reflection`/`__cpp_lib_define_static` (GCC), the senders family (`senders`, `task`, `counting_scope`, `parallel_scheduler`), `__cpp_lib_is_within_lifetime` (GCC: no builtin), and on Clang `__cpp_lib_is_pointer_interconvertible`/`__cpp_lib_is_structural`/`__cpp_lib_contracts` (no builtins). The freestanding_* and start_lifetime ones looked like plain omissions. **Outcome:** checked against
@@ -283,6 +283,51 @@ behaviour or the expectation is narrow:
 
 - C library names used unqualified or without their header (48): `mbstate_t` (22_locale/codecvt*, 27_io/basic_filebuf/{seekoff,seekpos,underflow}/wchar_t), `wmemset`/`wcslen`/`wcschr`/`WEOF` (22_locale/codecvt/in/wchar_t, 22_locale/time_put/put/wchar_t/12439_*, 25_algorithms/copy/streambuf_iterators/wchar_t/2.cc, 27_io/basic_stringbuf/setbuf/wchar_t, 27_io/basic_ostream/inserters_other/wchar_t/4.cc), `uint_fast32_t`/`uint_fast64_t`/`uint16_t` with only `<random>` (26_numerics/random/{independent_bits,shuffle_order,subtract_with_carry}_engine, 25 tests), `int8_t` (26_numerics/bit/bit.byteswap/byteswap.cc), `std::time_t` with only `<chrono>` (20_util/system_clock/{1,99832}.cc), `::uintptr_t` (20_util/align/1.cc), `int32_t`/`int64_t`/`uint8_t` (23_containers/span/everything.cc, 20_util/duration/cons/dr3050.cc, 23_containers/mdspan/{layouts/padded,submdspan/canonical_slices}.cc), `errno` (21_strings/basic_string/numeric_conversions/char/errno.cc), `wcscmp`/`wint_t` (21_strings/basic_string_view/operations/compare/wchar_t/1.cc, 21_strings/char_traits/requirements/wchar_t/typedefs.cc), `std::printf`/`std::puts` (std/time/tzdb/1.cc, std/format/formatter/ext_float.cc).
 - Library names without their header: `std::equal`/`std::fill` without `<algorithm>` (9 in 23_containers/vector, vector/bool, array/creation), `std::iota` (25_algorithms/shuffle/1.cc), `std::numeric_limits` (26_numerics/headers/cmath/hypot.cc), `std::same_as` (18_support/comparisons/common/1.cc, 20_util/tuple/comparison_operators/three_way.cc), `std::is_same_v` (20_util/stdbit/1.cc), `std::span` (std/format/pr121765.cc), `std::string` (std/ranges/adaptors/93978.cc), `std::stringbuf` with `<syncstream>` (27_io/basic_ostream/emit/1.cc), `std::[io]stringstream` with `<chrono>`/`<format>` (std/time/clock/{local,tai}/io.cc), braced range-for without `<initializer_list>` (20_util/{,un}synchronized_pool_resource/118681.cc).
+
+## Re-triage: mdspan, filesystem, valarray and searchers (2026-10-05)
+
+Directories: 23_containers/mdspan, 27_io/filesystem, 26_numerics/valarray, 20_util/function_objects
+(`tools/run-conformance libstdcxx gcc|clang <dirs> -- -j4`). Before: GCC 4 failed in the first three
+plus searchers.cc and 83607.cc; Clang 12 plus the same two. After: searchers.cc passes on both
+compilers (removed from the linux baselines); everything else is (b) or (c) below. Each test was
+also rebuilt with its listed causes removed (a prelude declaring `::uint8_t`/`::uint16_t`, the
+one invalid call deleted, and for Clang the test-code fixes and `-fconstexpr-steps=200000000`):
+the rest of every test passes.
+
+- **(b) 23_containers/mdspan/layouts/padded.cc**: (1) unqualified `uint8_t`/`uint16_t` after
+  `<cstdint>`; [headers]/5: "It is unspecified whether these names ... are first declared within
+  the global namespace scope and are then injected into namespace std". (2) `test_to_same` builds
+  `layout_left_padded<dynamic_extent>::mapping(extents<int, 6, 5>{}, 0)` (and the right-padded
+  one); [mdspan.layout.leftpad.cons]/5: "Preconditions: ... (5.2) pad is greater than zero."
+  libycxx diagnoses the violation in the constant evaluation of `static_assert(test_all<...>())`.
+- **(b) 23_containers/mdspan/submdspan/canonical_slices.cc**: (1) unqualified `uint8_t`, as above.
+  (2) `canonical_slices(exts, extent_slice{cw<0>, cw<0>, cw<0>})` (and with a dynamic offset):
+  [mdspan.sub.canonical]/2: "Mandates: ... decltype(canonical-slice<IndexType>(slices...[k])) is a
+  valid submdspan slice type", which requires a canonical slice type, and
+  [mdspan.sub.overview]/4.3.2: "if S::stride_type and S::extent_type are both specializations of
+  constant_wrapper, then S::stride_type::value is greater than zero." libycxx rejects it with a
+  static_assert.
+- **(b) 23_containers/mdspan/submdspan/submdspan_mapping.cc**: slices the extent 11 with
+  `extent_slice{2, cw<7>, cw<2>}`, whose range [2, 2 + 1 + 6 * 2) = [2, 15) exceeds it.
+  [mdspan.sub.map.common]/4: "Preconditions: For each rank index k of extents(), slices...[k] is a
+  valid slice for the kth extent of extents()", and [mdspan.sub.overview]/9.2 requires "the kth
+  interval of e contains the submdspan slice range of s". Diagnosed in constant evaluation.
+- **(b) 20_util/function_objects/83607.cc**: asserts `sizeof` relations between searcher
+  specializations (libstdc++'s layout). [func.search.bm] specifies only exposition-only members.
+- **(b) 27_io/filesystem/path/factory/u8path.cc** (test02): expects `filesystem_error` for
+  ill-formed UTF-8; the test itself says the calls are undefined. [depr.fs.path.factory]/3:
+  "Preconditions: The source and [first, last) sequences are UTF-8 encoded." libycxx converts to
+  U+FFFD (STATUS).
+- **(c) Clang only**: layouts/ctors.cc, layouts/empty.cc, mdspan.cc, and the same three tests
+  above, and submdspan/selections/{left,left_padded,right,right_padded,stride}.cc. Test code
+  Clang 23 rejects: `typename Layout::mapping<E>` without `template` (valid: the terminal name of
+  a typename-specifier is in a type-only context, [temp.res.general]/4.1, so `<` starts a
+  template argument list, [temp.names]/7.3; GCC accepts); the primary variable
+  template `constexpr bool is_same_padded;` without initializer in layout_traits.h (ill-formed by
+  [dcl.constexpr]/6, "shall be initialized"; GCC accepts); a pack index computed by calling a
+  local non-constexpr closure (layout_traits.h:173). The selections tests then also hit Clang's
+  default constexpr step limit (1048576) in `static_assert(test_all_cheap<...>())`; GCC's limit is
+  far higher.
 
 ## Skip entries added
 

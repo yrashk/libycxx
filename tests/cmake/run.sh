@@ -140,7 +140,8 @@ for c in $compilers; do
     bad $c "freestanding runtime: ycxx::freestanding not exported"
   fi
   if [ "$(uname -s)" = Linux ]; then
-    fs="-std=c++26 -ffreestanding -nostdinc -nostdinc++ -isystem $d/prefix/include/libycxx -fno-exceptions -fno-rtti -O2"
+    fs="-std=c++26 -ffreestanding -nostdinc -nostdinc++ -isystem $d/prefix/include/libycxx"
+    fs="$fs -isystem $($cxx -print-file-name=include) -fno-exceptions -fno-rtti -O2" # the compiler's <stddef.h>
     libgcc=; [ $c = gcc ] && libgcc=$($cc -print-libgcc-file-name)
     if x $cxx $fs -c "$repo/tests/freestanding/smoke.cpp" -o "$d/fs-smoke.o" &&
        x $cxx $fs -O0 -c "$repo/tests/freestanding/smoke_o0.cpp" -o "$d/fs-smoke_o0.o" &&

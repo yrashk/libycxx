@@ -12,6 +12,7 @@
 // regex_error ([re.err]: error_collate for an invalid collating element name).
 // Here transform sorts 'x' between 'a' and 'b'; transform_primary makes 'e', 'E' and '3'
 // equivalent; lookup_collatename knows the multi-character name "dash" for '-'.
+// REQUIRES: exceptions
 #include <locale>
 #include <regex>
 #include <string>

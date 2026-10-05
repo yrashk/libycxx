@@ -29,7 +29,26 @@ CSS = r'''
 .copy svg { width: 14px; height: 14px; flex: none; }
 .copy.done { color: var(--good); border-color: var(--good); }
 .copy.icon { padding: 3px 5px; }
+.theme { position: absolute; top: 16px; right: 16px; display: inline-flex; border: 1px solid var(--line);
+  border-radius: 8px; overflow: hidden; background: var(--card); z-index: 2; }
+.theme button { border: 0; background: transparent; color: var(--muted); font: inherit; font-size: 12px;
+  padding: 4px 10px; cursor: pointer; }
+.theme button + button { border-left: 1px solid var(--line); }
+.theme button[aria-pressed="true"] { background: var(--hover); color: var(--fg); font-weight: 600; }
+main { position: relative; padding-top: 52px !important; }
+@media (min-width: 900px) { main { padding-top: 24px !important; } main h1 { padding-right: 220px; } }
 '''
+
+# In <head>, before the page draws: the theme chosen earlier (System when none), so the page never
+# flashes the other one. Each report puts it right after its <style>.
+THEME_HEAD = '''<script>
+(function () {
+  try {
+    var t = localStorage.getItem('ycxx-report-theme');
+    if (t === 'light' || t === 'dark') document.documentElement.setAttribute('data-theme', t);
+  } catch (e) {}
+})();
+</script>'''
 
 ICON = ('<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">'
         '<rect x="5.5" y="5.5" width="8" height="8" rx="1.5"/>'
@@ -77,6 +96,35 @@ function copyButton(label, getText, title) {
   });
   return b;
 }
+// The System / Light / Dark switch (top right). System follows the operating system's setting;
+// the choice is kept per browser when storage is available.
+(function themeSwitch() {
+  const root = document.documentElement;
+  const current = () => root.getAttribute('data-theme') || 'system';
+  const box = document.createElement('div');
+  box.className = 'theme';
+  box.setAttribute('role', 'group');
+  box.setAttribute('aria-label', 'Colour theme');
+  for (const [value, label] of [['system', 'System'], ['light', 'Light'], ['dark', 'Dark']]) {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.textContent = label;
+    b.dataset.theme = value;
+    b.setAttribute('aria-pressed', String(current() === value));
+    b.addEventListener('click', () => {
+      if (value === 'system') root.removeAttribute('data-theme');
+      else root.setAttribute('data-theme', value);
+      try {
+        if (value === 'system') localStorage.removeItem('ycxx-report-theme');
+        else localStorage.setItem('ycxx-report-theme', value);
+      } catch (e) {}
+      box.querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', String(x === b)));
+    });
+    box.appendChild(b);
+  }
+  const main = document.querySelector('main');
+  (main || document.body).prepend(box);
+})();
 // A fenced block that its content cannot close.
 function fence(text) {
   let f = '```';

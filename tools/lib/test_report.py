@@ -135,7 +135,7 @@ def main():
     def embed(value):
         return json.dumps(value, separators=(',', ':')).replace('</', '<\\/')
 
-    page = PAGE.replace('@CSS@', report_common.CSS).replace('@COPYJS@', report_common.JS)
+    page = PAGE.replace('@CSS@', report_common.CSS).replace('@THEMEHEAD@', report_common.THEME_HEAD).replace('@COPYJS@', report_common.JS)
     page = page.replace('@TITLE@', html.escape(title)).replace('@META@', rows).replace('@CHIPS@', chips)
     page = page.replace('@TOTAL@', str(len(tests))).replace('@DATA@', embed(tests))
     page = page.replace('@RUN@', embed({'title': title, 'meta': shown, 'root': meta.get('_root', '')}))
@@ -204,6 +204,7 @@ pre .cmd { color: var(--fg); font-weight: 600; } pre .st { color: var(--muted); 
   .steps { grid-column: 2; grid-row: 2; text-align: left; }
 }
 </style>
+@THEMEHEAD@
 </head>
 <body>
 <main>

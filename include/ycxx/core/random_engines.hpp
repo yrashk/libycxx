@@ -15,7 +15,7 @@
 #include <ycxx/core/random_base.hpp>
 #include <ycxx/core/vector.hpp>
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 
 // ---- [rand.util.seedseq] ------------------------------------------------------------------------
 class seed_seq {

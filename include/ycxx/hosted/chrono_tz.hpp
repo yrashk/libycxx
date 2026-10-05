@@ -26,7 +26,7 @@
 #include <ycxx/core/vector.hpp>
 #include <ycxx/hosted/chrono_clocks.hpp>
 
-namespace std::chrono {
+namespace [[gnu::visibility("hidden")]] std { namespace chrono {
 class utc_clock;
 class tai_clock;
 class gps_clock;
@@ -47,9 +47,9 @@ class time_zone_link;
 class leap_second;
 struct tzdb;
 class tzdb_list;
-} // namespace std::chrono
+}} // namespace std::chrono
 
-namespace ycxx::detail {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 // The tag of the library's own constructors of time_zone, time_zone_link, leap_second, tzdb_list.
 struct tz_ctor_tag {
   explicit tz_ctor_tag() = default;
@@ -91,9 +91,9 @@ const std::chrono::tzdb* tzdb_erase_after(std::chrono::tzdb_list& list, const tz
     return std::runtime_error(what);
   });
 }
-} // namespace ycxx::detail
+}} // namespace ycxx::detail
 
-namespace std::chrono {
+namespace [[gnu::visibility("hidden")]] std { namespace chrono {
 
 // [time.zone.leap]
 class leap_second {
@@ -292,16 +292,16 @@ struct tzdb {
   }
 };
 
-} // namespace std::chrono
+}} // namespace std::chrono
 
-namespace ycxx::detail {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 struct tzdb_node {
   std::chrono::tzdb db;
   tzdb_node* next;
 };
-} // namespace ycxx::detail
+}} // namespace ycxx::detail
 
-namespace std::chrono {
+namespace [[gnu::visibility("hidden")]] std { namespace chrono {
 
 // [time.zone.db.list]: a list the runtime pushes onto (reload_tzdb) and that is never destroyed.
 class tzdb_list {
@@ -529,9 +529,9 @@ struct clock_time_conversion<system_clock, utc_clock> {
   }
 };
 
-} // namespace std::chrono
+}} // namespace std::chrono
 
-namespace ycxx::detail {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 template <class T, class Clock>
 inline constexpr bool is_time_point_of = false;
 // T, as a type that depends on U: names looked up in it are looked up at the member template's
@@ -542,9 +542,9 @@ struct dependent_type {
 };
 template <class Clock, class Duration>
 inline constexpr bool is_time_point_of<std::chrono::time_point<Clock, Duration>, Clock> = true;
-} // namespace ycxx::detail
+}} // namespace ycxx::detail
 
-namespace std::chrono {
+namespace [[gnu::visibility("hidden")]] std { namespace chrono {
 
 // [time.clock.cast.sys]
 template <class SourceClock>
@@ -598,9 +598,9 @@ struct clock_time_conversion<DestClock, utc_clock> {
   }
 };
 
-} // namespace std::chrono
+}} // namespace std::chrono
 
-namespace ycxx::detail {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 // The conversion expressions of [time.clock.cast.fn]/1, (1.1) to (1.5).
 template <class D, class S, class T>
 concept clock_cast_1 = requires(const T& t) { std::chrono::clock_time_conversion<D, S>{}(t); };
@@ -626,9 +626,9 @@ concept clock_cast_5 = requires(const T& t) {
       std::chrono::clock_time_conversion<std::chrono::system_clock, std::chrono::utc_clock>{}(
           std::chrono::clock_time_conversion<std::chrono::utc_clock, S>{}(t)));
 };
-} // namespace ycxx::detail
+}} // namespace ycxx::detail
 
-namespace std::chrono {
+namespace [[gnu::visibility("hidden")]] std { namespace chrono {
 
 // [time.clock.cast.fn]: the expression with the fewest conversion calls; it must be unique.
 template <class DestClock, class SourceClock, class Duration>
@@ -674,9 +674,9 @@ struct zoned_traits<const time_zone*> {
   static const time_zone* locate_zone(string_view name) { return chrono::locate_zone(name); }
 };
 
-} // namespace std::chrono
+}} // namespace std::chrono
 
-namespace ycxx::detail {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 template <class Traits>
 concept zt_has_default = requires { Traits::default_zone(); };
 template <class Traits, class TimeZonePtr>
@@ -696,9 +696,9 @@ concept zt_local_choose_ok = requires(TimeZonePtr& z) {
 template <class T>
 using zt_representation = std::conditional_t<std::is_convertible_v<T, std::string_view>, const std::chrono::time_zone*,
                                              std::remove_cvref_t<T>>;
-} // namespace ycxx::detail
+}} // namespace ycxx::detail
 
-namespace std::chrono {
+namespace [[gnu::visibility("hidden")]] std { namespace chrono {
 
 // [time.zone.zonedtime]
 template <class Duration, class TimeZonePtr = const time_zone*>
@@ -809,9 +809,9 @@ bool operator==(const zoned_time<Duration1, TimeZonePtr>& x, const zoned_time<Du
   return x.get_time_zone() == y.get_time_zone() && x.get_sys_time() == y.get_sys_time();
 }
 
-} // namespace std::chrono
+}} // namespace std::chrono
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 // [time.hash]/4-5
 template <class Duration, class TimeZonePtr>
   requires ycxx::detail::hash_enabled<Duration> && ycxx::detail::hash_enabled<TimeZonePtr>

@@ -11,7 +11,7 @@
 #  define __STDC_VERSION_INTTYPES_H__ 202311L
 #endif
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 using ::imaxdiv_t;
 using ::imaxabs;
 using ::imaxdiv;

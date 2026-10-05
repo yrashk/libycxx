@@ -19,7 +19,7 @@
 
 // Defined by the ABI runtime (src/abi/exception_ptr.cpp). `object` is a primary exception's
 // thrown object.
-namespace ycxx::abi {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace abi {
 void exception_ptr_retain(void* object) noexcept;
 void exception_ptr_release(void* object) noexcept;
 // The currently handled exception's primary object with a new reference, or null.
@@ -32,9 +32,9 @@ const void* exception_object_as(void* object, const std::type_info& handler) noe
 // (an exception_ptr). The caller constructs the object before the reference is released. Never
 // returns null (an allocation that cannot be served terminates, [ABI-EH] 2.4.2).
 void* exception_object_create(std::size_t size, const std::type_info* type, void (*destroy)(void*)) noexcept;
-} // namespace ycxx::abi
+}} // namespace ycxx::abi
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 
 class exception_ptr;
 exception_ptr current_exception() noexcept;
@@ -177,16 +177,16 @@ public:
 
 } // namespace std
 
-namespace ycxx::adl_free {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace adl_free {
 // The exception type throw_with_nested throws for a class U.
 template <class U>
 struct nested_wrapper : U, std::nested_exception {
   template <class T>
   explicit nested_wrapper(T&& t) : U(static_cast<T&&>(t)) {}
 };
-} // namespace ycxx::adl_free
+}} // namespace ycxx::adl_free
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 
 template <class T>
 [[noreturn]] void throw_with_nested(T&& t) {

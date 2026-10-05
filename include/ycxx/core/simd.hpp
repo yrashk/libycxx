@@ -11,12 +11,12 @@
 #include <ycxx/core/simd_base.hpp>
 #include <ycxx/core/tuple.hpp>
 
-namespace ycxx::adl_free {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace adl_free {
 // real-type of a basic_vec whose value_type is not complex ([simd.overview]/3).
 struct simd_not_complex {};
-} // namespace ycxx::adl_free
+}} // namespace ycxx::adl_free
 
-namespace std::simd {
+namespace [[gnu::visibility("hidden")]] std { namespace simd {
 
 template <class T, class Abi = ycxx::detail::simd_native_abi<T>>
 class basic_vec;
@@ -69,9 +69,9 @@ struct resize<N, basic_mask<Bytes, ycxx::adl_free::simd_abi<M>>> {
 template <ycxx::detail::simd_size_t N, class V>
 using resize_t = typename resize<N, V>::type;
 
-} // namespace std::simd
+}} // namespace std::simd
 
-namespace ycxx::detail {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 
 // [simd.expos]
 template <class V>
@@ -285,9 +285,9 @@ constexpr T simd_identity() noexcept {
     return T();
 }
 
-} // namespace ycxx::detail
+}} // namespace ycxx::detail
 
-namespace std::simd {
+namespace [[gnu::visibility("hidden")]] std { namespace simd {
 
 // [simd.overview]/1: a disabled basic_vec.
 template <class T, class Abi>
@@ -907,9 +907,9 @@ cat(const basic_mask<Bytes, Abis>&... xs) noexcept {
   return ycxx::detail::simd_access::make<R>(ycxx::detail::simd_mask_storage<Bytes, R::size()>::from_array(a));
 }
 
-} // namespace std::simd
+}} // namespace std::simd
 
-namespace ycxx::detail {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 template <class T>
 consteval T simd_make_iota() {
   if constexpr (is_arithmetic_v<T>) {
@@ -924,9 +924,9 @@ consteval T simd_make_iota() {
         simd_storage<U, T::size()>::generate([](int i) { return static_cast<U>(i); }));
   }
 }
-} // namespace ycxx::detail
+}} // namespace ycxx::detail
 
-namespace std::simd {
+namespace [[gnu::visibility("hidden")]] std { namespace simd {
 
 template <class T>
 inline constexpr T iota = ycxx::detail::simd_make_iota<T>();
@@ -1056,9 +1056,9 @@ constexpr auto select(const basic_mask<Bytes, Abi>& c, const T& a, const U& b) n
   return simd_select_impl(c, a, b);
 }
 
-} // namespace std::simd
+}} // namespace std::simd
 
-namespace ycxx::detail {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 
 // GENERALIZED_SUM over the elements of x: halves combined with op until one element is left.
 template <class V, class Op>
@@ -1141,9 +1141,9 @@ constexpr typename V::value_type simd_reduce_minmax(const V& x) noexcept {
   }
 }
 
-} // namespace ycxx::detail
+}} // namespace ycxx::detail
 
-namespace std::simd {
+namespace [[gnu::visibility("hidden")]] std { namespace simd {
 
 // [simd.reductions]
 template <class T, class Abi, class BinaryOperation = plus<>>
@@ -1228,9 +1228,9 @@ constexpr T reduce_max(const T& x, same_as<bool> auto mask) noexcept {
   return mask ? x : numeric_limits<T>::lowest();
 }
 
-} // namespace std::simd
+}} // namespace std::simd
 
-namespace ycxx::detail {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 
 // The default V of the loads and gathers.
 template <class V, class U>
@@ -1342,9 +1342,9 @@ concept simd_store_range =
     std::indirectly_writable<std::ranges::iterator_t<R>, std::ranges::range_value_t<R>> &&
     simd_explicitly_convertible_to<T, std::ranges::range_value_t<R>>;
 
-} // namespace ycxx::detail
+}} // namespace ycxx::detail
 
-namespace std::simd {
+namespace [[gnu::visibility("hidden")]] std { namespace simd {
 
 // [simd.loadstore]
 template <class V = void, ranges::contiguous_range R, class... Flags>
@@ -1503,9 +1503,9 @@ constexpr void partial_store(const basic_vec<T, Abi>& v, I first, S last,
 inline constexpr ycxx::detail::simd_size_t zero_element = numeric_limits<ycxx::detail::simd_size_t>::min();
 inline constexpr ycxx::detail::simd_size_t uninit_element = numeric_limits<ycxx::detail::simd_size_t>::min() + 1;
 
-} // namespace std::simd
+}} // namespace std::simd
 
-namespace ycxx::detail {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 
 // The default N of the static permute (any value that is not a width).
 inline constexpr simd_size_t simd_permute_default = std::numeric_limits<simd_size_t>::min();
@@ -1537,9 +1537,9 @@ constexpr typename V::value_type simd_permute_element(const V& v, IdxMap& idxmap
   }
 }
 
-} // namespace ycxx::detail
+}} // namespace ycxx::detail
 
-namespace std::simd {
+namespace [[gnu::visibility("hidden")]] std { namespace simd {
 
 template <ycxx::detail::simd_size_t N = ycxx::detail::simd_permute_default, class V, class IdxMap>
   requires((ycxx::detail::simd_vec_type<V> || ycxx::detail::simd_mask_type<V>) && ycxx::detail::simd_index_map<IdxMap>)
@@ -1572,9 +1572,9 @@ constexpr resize_t<I::size(), V> permute(const V& v, const I& indices) {
   }
 }
 
-} // namespace std::simd
+}} // namespace std::simd
 
-namespace ycxx::detail {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 // Builds a V from values of its elements (bool for a mask).
 template <class V, class F>
 constexpr V simd_build(F&& f) {
@@ -1605,9 +1605,9 @@ constexpr V simd_expand(const V& v, const M& selector, const V& original) {
     a.v[i] = selector[i] ? v[n++] : original[i];
   return ycxx::detail::simd_build<V>([&](int i) { return a.v[i]; });
 }
-} // namespace ycxx::detail
+}} // namespace ycxx::detail
 
-namespace std::simd {
+namespace [[gnu::visibility("hidden")]] std { namespace simd {
 
 // [simd.permute.mask]
 template <ycxx::detail::simd_vec_type V>
@@ -1635,9 +1635,9 @@ constexpr V expand(const V& v, const type_identity_t<V>& selector, const V& orig
   return ycxx::detail::simd_expand(v, selector, original);
 }
 
-} // namespace std::simd
+}} // namespace std::simd
 
-namespace ycxx::detail {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 
 template <class R, class V>
 concept simd_gather_range = simd_vectorizable<std::ranges::range_value_t<R>> &&
@@ -1680,9 +1680,9 @@ constexpr void simd_check_indices(const I& indices, const typename I::mask_type&
                                  "std::simd: unchecked gather/scatter: index out of range");
 }
 
-} // namespace ycxx::detail
+}} // namespace ycxx::detail
 
-namespace std::simd {
+namespace [[gnu::visibility("hidden")]] std { namespace simd {
 
 // [simd.permute.memory]
 template <class V = void, ranges::contiguous_range R, ycxx::detail::simd_integral I, class... Flags>
@@ -1747,16 +1747,16 @@ constexpr void unchecked_scatter_to(const V& v, R&& out, const typename I::mask_
   std::simd::partial_scatter_to(v, out, mask, indices, f);
 }
 
-} // namespace std::simd
+}} // namespace std::simd
 
-namespace ycxx::detail {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 template <class T>
 concept simd_unsigned_element = bit_unsigned<T>;
 template <class T>
 concept simd_integer_element = bit_integer<T>;
-} // namespace ycxx::detail
+}} // namespace ycxx::detail
 
-namespace std::simd {
+namespace [[gnu::visibility("hidden")]] std { namespace simd {
 
 // [simd.bit]: the <bit> functions element-wise.
 template <ycxx::detail::simd_vec_type V>
@@ -1898,9 +1898,9 @@ constexpr V bit_expand(const V& v, typename V::value_type m) noexcept {
   return ycxx::detail::simd_build<V>([&](int i) { return std::bit_expand(v[i], m); });
 }
 
-} // namespace std::simd
+}} // namespace std::simd
 
-namespace ycxx::detail {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 // fabs on vector chunks: clear the sign bits.
 template <class V>
 constexpr V simd_fabs(const V& x) {
@@ -1917,6 +1917,6 @@ constexpr V simd_fabs(const V& x) {
     return ycxx::detail::simd_build<V>([&](int i) { return std::fabs(x[i]); });
   }
 }
-} // namespace ycxx::detail
+}} // namespace ycxx::detail
 
 #include <ycxx/core/simd_math.hpp>

@@ -13,7 +13,7 @@
 #include <ycxx/config.hpp>
 #include <ycxx/core/cmath_fp.hpp>
 
-namespace ycxx::detail::fpm {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail::fpm {
 
 // ---- NaN handling ----------------------------------------------------------------------------
 template <class T>
@@ -675,4 +675,4 @@ constexpr T fp_lerp(T a, T b, T t) noexcept {
   return x < b ? x : b;
 }
 
-} // namespace ycxx::detail::fpm
+}} // namespace ycxx::detail::fpm

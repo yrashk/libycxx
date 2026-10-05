@@ -7,7 +7,7 @@
 
 #include <ycxx/core/type_traits.hpp>
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 
 enum float_round_style {
   round_indeterminate = -1,
@@ -26,7 +26,7 @@ enum [[deprecated("float_denorm_style is deprecated ([depr.numeric.limits.has.de
 
 } // namespace std
 
-namespace ycxx::detail {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 
 // floor(e * log10(2)) for |e| < 2^31 (log10(2) is irrational, so no product is an integer).
 consteval int floor_log10_pow2(int e) {
@@ -214,9 +214,9 @@ consteval auto select_limits() {
     return generic_limits<T>{};
 }
 
-} // namespace ycxx::detail
+}} // namespace ycxx::detail
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 
 template <class T>
 class numeric_limits : public decltype(ycxx::detail::select_limits<T>()) {};

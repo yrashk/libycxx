@@ -6,7 +6,7 @@
 #include <ycxx/core/format_base.hpp>
 #include <ycxx/hosted/filesystem.hpp>
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 
 template <ycxx::detail::fmt_char charT>
 struct formatter<filesystem::path, charT> {

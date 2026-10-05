@@ -8,7 +8,7 @@
 
 #include <ycxx/pal.h>
 
-namespace ycxx::detail {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 
 [[gnu::always_inline]] inline bool single_threaded() noexcept { return *::ycxx_pal_single_threaded != 0; }
 
@@ -32,4 +32,4 @@ template <class T>
   return true;
 }
 
-} // namespace ycxx::detail
+}} // namespace ycxx::detail

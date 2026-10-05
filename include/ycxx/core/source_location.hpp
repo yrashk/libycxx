@@ -3,7 +3,7 @@
 
 #include <ycxx/config.hpp>
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 
 namespace contracts {
 class contract_violation;

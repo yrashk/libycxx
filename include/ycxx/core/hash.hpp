@@ -8,7 +8,7 @@
 #include <ycxx/core/cstdint.hpp>
 #include <ycxx/core/compare.hpp>
 
-namespace ycxx::detail {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 
 // Byte-sequence hash. Construction: 64x64->128-bit multiply folded to 64 bits ("mum"), the
 // mixing primitive popularised by wyhash/rapidhash (public-domain designs); this is libycxx's
@@ -97,9 +97,9 @@ constexpr std::size_t hash_float(T v) noexcept {
   }
 }
 
-} // namespace ycxx::detail
+}} // namespace ycxx::detail
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 
 // The primary template is defined but *disabled* ([unord.hash]/5): not default constructible,
 // not copyable, not a function object.
@@ -150,7 +150,7 @@ struct hash<monostate> {
 
 } // namespace std
 
-namespace ycxx::detail {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 // "Cpp17Hash is enabled for Key": the condition every unordered container / optional / variant
 // hash relies on.
 template <class T>
@@ -158,4 +158,4 @@ concept hash_enabled = std::is_default_constructible_v<std::hash<T>> &&
                        requires(const std::hash<T>& h, const T& v) {
                          { h(v) } -> same_as_<std::size_t>;
                        };
-} // namespace ycxx::detail
+}} // namespace ycxx::detail

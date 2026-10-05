@@ -6,7 +6,7 @@
 #include <ycxx/core/memory_base.hpp>
 #include <ycxx/core/cstddef.hpp>
 
-namespace ycxx::detail {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 
 template <class Container>
 constexpr bool reservable_container =
@@ -87,9 +87,9 @@ consteval auto to_deduce() {
     return std::type_identity<void>{};
 }
 
-} // namespace ycxx::detail
+}} // namespace ycxx::detail
 
-namespace std::ranges {
+namespace [[gnu::visibility("hidden")]] std { namespace ranges {
 
 template <class C, input_range R, class... Args>
   requires(!view<C>)
@@ -136,9 +136,9 @@ constexpr auto to(R&& r, Args&&... args) {
     return ranges::to<T>(static_cast<R&&>(r), static_cast<Args&&>(args)...);
 }
 
-} // namespace std::ranges
+}} // namespace std::ranges
 
-namespace ycxx::detail {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 template <class C>
 struct to_fn {
   template <class R, class... Args>
@@ -155,9 +155,9 @@ struct to_template_fn {
     return std::ranges::to<C>(static_cast<R&&>(r), static_cast<Args&&>(args)...);
   }
 };
-} // namespace ycxx::detail
+}} // namespace ycxx::detail
 
-namespace std::ranges {
+namespace [[gnu::visibility("hidden")]] std { namespace ranges {
 
 template <class C, class... Args>
   requires(!view<C>)
@@ -183,4 +183,4 @@ struct elements_of {
 template <class R, class Allocator = allocator<byte>>
 elements_of(R&&, Allocator = Allocator()) -> elements_of<R&&, Allocator>;
 
-} // namespace std::ranges
+}} // namespace std::ranges

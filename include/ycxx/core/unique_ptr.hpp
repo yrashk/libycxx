@@ -15,7 +15,7 @@
 #include <ycxx/core/new.hpp>
 #include <ycxx/core/error.hpp>
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 
 // [unique.ptr.dltr.dflt]
 template <class T>
@@ -50,7 +50,7 @@ struct default_delete<T[]> {
 
 } // namespace std
 
-namespace ycxx::detail {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 
 // unique_ptr<T, D>::pointer ([unique.ptr.single.general]/4).
 template <class T, class D>
@@ -75,9 +75,9 @@ concept uptr_array_ptr = std::is_same_v<U, Pointer> ||
                          (std::is_same_v<Pointer, Elem*> && std::is_pointer_v<U> &&
                           std::is_convertible_v<std::remove_pointer_t<U> (*)[], Elem (*)[]>);
 
-} // namespace ycxx::detail
+}} // namespace ycxx::detail
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 
 // [unique.ptr.single]
 template <class T, class D = default_delete<T>>

@@ -9,15 +9,15 @@
 #include <ycxx/core/bind.hpp>
 #include <ycxx/core/memory_base.hpp>
 
-namespace std::ranges {
+namespace [[gnu::visibility("hidden")]] std { namespace ranges {
 // [range.adaptor.object]/2: a class derived from range_adaptor_closure<D> (and not a range) is a
 // range adaptor closure object type. The pipe operators below are found through this base.
 template <class D>
   requires is_class_v<D> && same_as<D, remove_cv_t<D>>
 class range_adaptor_closure {};
-} // namespace std::ranges
+}} // namespace std::ranges
 
-namespace ycxx::detail {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 
 template <bool Const, class T>
 using maybe_const = std::conditional_t<Const, const T, T>;
@@ -47,9 +47,9 @@ concept range_adaptor_closure_object =
 template <class I>
 using iter_category_t = typename std::iterator_traits<I>::iterator_category;
 
-} // namespace ycxx::detail
+}} // namespace ycxx::detail
 
-namespace ycxx::adl_free {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace adl_free {
 
 // C | D ([range.adaptor.object]/1): a perfect forwarding call wrapper with call pattern d(c(arg)).
 template <class C, class D>
@@ -83,9 +83,9 @@ struct adaptor_closure : partial_wrapper<false, Adaptor, Bound...>,
   using partial_wrapper<false, Adaptor, Bound...>::partial_wrapper;
 };
 
-} // namespace ycxx::adl_free
+}} // namespace ycxx::adl_free
 
-namespace std::ranges {
+namespace [[gnu::visibility("hidden")]] std { namespace ranges {
 
 // R | C is C(R); C | D composes. Declared in std::ranges, an associated namespace of every
 // closure type through its range_adaptor_closure base.
@@ -105,9 +105,9 @@ constexpr auto operator|(C&& c, D&& d) noexcept(is_nothrow_constructible_v<decay
                                                               static_cast<D&&>(d));
 }
 
-} // namespace std::ranges
+}} // namespace std::ranges
 
-namespace ycxx::detail {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 
 // adaptor(args...): the closure binding args (decayed copies) after the range argument.
 template <class Adaptor, class... Args>
@@ -381,18 +381,18 @@ struct cache_select<true, T> {
 template <bool Present, class T>
 using cache_if = typename cache_select<Present, T>::type;
 
-} // namespace ycxx::detail
+}} // namespace ycxx::detail
 
-namespace ycxx::adl_free {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace adl_free {
 // Bases that give a view's iterator its iterator_category member, or none ("not always present").
 struct no_iterator_category {};
 template <class Tag>
 struct with_iterator_category {
   using iterator_category = Tag;
 };
-} // namespace ycxx::adl_free
+}} // namespace ycxx::adl_free
 
-namespace ycxx::detail {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 
 // Tag is void: no iterator_category member.
 template <class Tag>
@@ -433,4 +433,4 @@ struct view_access {
   }
 };
 
-} // namespace ycxx::detail
+}} // namespace ycxx::detail

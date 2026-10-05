@@ -6,7 +6,7 @@
 #include <ycxx/core/algo_nonmod.hpp>
 #include <ycxx/core/bind.hpp>
 
-namespace ycxx::detail {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 template <class I>
 constexpr I div_ceil(I num, I denom) {
   I r = num / denom;
@@ -22,9 +22,9 @@ concept slide_caches_last =
     !slide_caches_nothing<V> && std::ranges::bidirectional_range<V> && std::ranges::common_range<V>;
 template <class V>
 concept slide_caches_first = !slide_caches_nothing<V> && !slide_caches_last<V>;
-} // namespace ycxx::detail
+}} // namespace ycxx::detail
 
-namespace std::ranges {
+namespace [[gnu::visibility("hidden")]] std { namespace ranges {
 
 // =============================================================================================
 // [range.chunk]
@@ -1065,9 +1065,9 @@ stride_view(R&&, range_difference_t<R>) -> stride_view<views::all_t<R>>;
 template <class V>
 constexpr bool enable_borrowed_range<stride_view<V>> = enable_borrowed_range<V>;
 
-} // namespace std::ranges
+}} // namespace std::ranges
 
-namespace ycxx::detail::view_fn {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail::view_fn {
 // views::X(E, N) is X_view(E, N); views::X(N) binds N.
 template <template <class> class View>
 struct count_fn {
@@ -1099,11 +1099,11 @@ struct chunk_by_fn {
     return ::ycxx::detail::bind_adaptor(*this, static_cast<P&&>(p));
   }
 };
-} // namespace ycxx::detail::view_fn
+}} // namespace ycxx::detail::view_fn
 
-namespace std::ranges::views {
+namespace [[gnu::visibility("hidden")]] std { namespace ranges::views {
 inline constexpr ycxx::detail::view_fn::count_fn<chunk_view> chunk{};
 inline constexpr ycxx::detail::view_fn::count_fn<slide_view> slide{};
 inline constexpr ycxx::detail::view_fn::chunk_by_fn chunk_by{};
 inline constexpr ycxx::detail::view_fn::count_fn<stride_view> stride{};
-} // namespace std::ranges::views
+}} // namespace std::ranges::views

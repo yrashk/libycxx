@@ -19,7 +19,7 @@
 #include <ycxx/core/vector.hpp>
 #include <ycxx/hosted/regex_base.hpp>
 
-namespace ycxx::detail {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 
 enum class re_kind : unsigned char {
   empty, chr, any, set, bol, eol, wordb, nwordb, backref, group, look, nlook, concat, alt, repeat
@@ -1368,4 +1368,4 @@ public:
   }
 };
 
-} // namespace ycxx::detail
+}} // namespace ycxx::detail

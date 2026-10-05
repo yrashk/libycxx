@@ -11,7 +11,7 @@
 #include <ycxx/core/container_base.hpp>
 #include <ycxx/hosted/istream.hpp>
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 
 template <class charT, class traits, class Allocator>
 class basic_stringbuf : public basic_streambuf<charT, traits> {

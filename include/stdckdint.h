@@ -13,7 +13,7 @@
 
 #define __STDC_VERSION_STDCKDINT_H__ 202311L
 
-namespace ycxx::detail {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 template <class T1, class T2, class T3>
 consteval bool ckd_mandates() {
   static_assert(is_signed_or_unsigned_integer<T1> && is_signed_or_unsigned_integer<T2> &&
@@ -21,7 +21,7 @@ consteval bool ckd_mandates() {
                 "<stdckdint.h>: Mandates: each of type1, type2 and type3 is a signed or unsigned integer type");
   return true;
 }
-} // namespace ycxx::detail
+}} // namespace ycxx::detail
 
 template <class type1, class type2, class type3>
 inline bool ckd_add(type1* result, type2 a, type3 b) noexcept {

@@ -31,12 +31,12 @@
 #include <ycxx/core/swap.hpp>
 #include <ycxx/core/utility_base.hpp>
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 template <class T, class Allocator>
 class deque;
 }
 
-namespace ycxx::detail {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 // Elements per block: about 1 KiB, a power of two, at least 16.
 template <class T>
 consteval std::size_t deque_block_len() {
@@ -46,9 +46,9 @@ consteval std::size_t deque_block_len() {
     p *= 2;
   return p;
 }
-} // namespace ycxx::detail
+}} // namespace ycxx::detail
 
-namespace ycxx::adl_free {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace adl_free {
 
 // T is the element type, possibly const.
 template <class T, class Diff>
@@ -141,9 +141,9 @@ public:
   }
 };
 
-} // namespace ycxx::adl_free
+}} // namespace ycxx::adl_free
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 
 template <class T, class Allocator = allocator<T>>
 class deque;

@@ -11,13 +11,13 @@
 #include <ycxx/core/iterator_core.hpp>
 #include <ycxx/core/iterator_ops.hpp>
 
-namespace ycxx::detail {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 // The library's extraction and insertion loops (num_get, money_get, ...) reach the buffer behind
 // a stream-buffer iterator through this class, to work on whole runs of characters.
 struct streambuf_iter_access;
-} // namespace ycxx::detail
+}} // namespace ycxx::detail
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 
 // [istream.iterator]
 template <class T, class charT = char, class traits = char_traits<charT>, class Distance = ptrdiff_t>

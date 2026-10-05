@@ -12,7 +12,7 @@
 #include <ycxx/core/algo_mutate.hpp>
 #include <ycxx/core/new.hpp>
 
-namespace ycxx::detail {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 
 // ---- temporary buffer --------------------------------------------------------------------
 // Uninitialized storage for up to `capacity` objects of type T. At run time it comes from
@@ -787,12 +787,12 @@ constexpr bool prev_permutation_impl(I first, I last, C less) {
   }
 }
 
-} // namespace ycxx::detail
+}} // namespace ycxx::detail
 
 // =============================================================================================
 // std:: forms
 // =============================================================================================
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 
 // [sort], [stable.sort], [partial.sort], [partial.sort.copy], [is.sorted]
 template <class RandomAccessIterator, class Compare>
@@ -1112,7 +1112,7 @@ constexpr bool prev_permutation(BidirectionalIterator first, BidirectionalIterat
 // =============================================================================================
 // std::ranges:: forms
 // =============================================================================================
-namespace std::ranges {
+namespace [[gnu::visibility("hidden")]] std { namespace ranges {
 template <class I1, class I2>
 using partial_sort_copy_result = in_out_result<I1, I2>;
 template <class I, class O1, class O2>
@@ -1131,9 +1131,9 @@ template <class I>
 using next_permutation_result = in_found_result<I>;
 template <class I>
 using prev_permutation_result = in_found_result<I>;
-} // namespace std::ranges
+}} // namespace std::ranges
 
-namespace ycxx::detail::ranges_algo {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail::ranges_algo {
 
 using std::ranges::borrowed_iterator_t;
 using std::ranges::borrowed_subrange_t;
@@ -1674,9 +1674,9 @@ struct permutation_fn {
   }
 };
 
-} // namespace ycxx::detail::ranges_algo
+}} // namespace ycxx::detail::ranges_algo
 
-namespace std::ranges {
+namespace [[gnu::visibility("hidden")]] std { namespace ranges {
 inline constexpr ycxx::adl_free::ranges_par_algo<ycxx::detail::ranges_algo::sort_fn, ycxx::detail::par::kind::sort> sort{};
 inline constexpr ycxx::adl_free::ranges_par_algo<ycxx::detail::ranges_algo::stable_sort_fn, ycxx::detail::par::kind::stable_sort> stable_sort{};
 inline constexpr ycxx::adl_free::ranges_par_algo<ycxx::detail::ranges_algo::partial_sort_fn, ycxx::detail::par::kind::partial_sort> partial_sort{};
@@ -1708,4 +1708,4 @@ inline constexpr ycxx::adl_free::ranges_par_algo<ycxx::detail::ranges_algo::is_h
 inline constexpr ycxx::adl_free::ranges_par_algo<ycxx::detail::ranges_algo::is_heap_until_fn, ycxx::detail::par::kind::is_heap_until> is_heap_until{};
 inline constexpr ycxx::detail::ranges_algo::permutation_fn<true> next_permutation{};
 inline constexpr ycxx::detail::ranges_algo::permutation_fn<false> prev_permutation{};
-} // namespace std::ranges
+}} // namespace std::ranges

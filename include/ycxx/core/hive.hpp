@@ -37,7 +37,7 @@
 #include <ycxx/core/swap.hpp>
 #include <ycxx/core/utility_base.hpp>
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 
 struct hive_limits {
   size_t min;
@@ -50,7 +50,7 @@ class hive;
 
 } // namespace std
 
-namespace ycxx::detail {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 
 using hive_index = std::uint16_t;
 inline constexpr hive_index hive_none = 0xffff; // no slot (a free list's end)
@@ -86,9 +86,9 @@ struct hive_group {
   hive_index free_head; // first free run, or hive_none
 };
 
-} // namespace ycxx::detail
+}} // namespace ycxx::detail
 
-namespace ycxx::adl_free {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace adl_free {
 
 // T is the element type, possibly const.
 template <class T, class Diff>
@@ -167,9 +167,9 @@ public:
   }
 };
 
-} // namespace ycxx::adl_free
+}} // namespace ycxx::adl_free
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 
 template <class T, class Allocator = allocator<T>>
 class hive;

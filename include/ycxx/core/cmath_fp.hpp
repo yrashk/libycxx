@@ -17,7 +17,7 @@
 #include <ycxx/core/bit.hpp>
 #include <ycxx/core/meta_base.hpp>
 
-namespace ycxx::detail::fpm {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail::fpm {
 
 using u64 = unsigned long long;
 
@@ -422,4 +422,4 @@ constexpr fp_value fp_normalize(fp_value v) noexcept {
   return v;
 }
 
-} // namespace ycxx::detail::fpm
+}} // namespace ycxx::detail::fpm

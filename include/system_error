@@ -17,7 +17,7 @@
 #if YCXX_HOSTED
 #  include <errno.h>
 
-namespace ycxx::detail {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 // [system.error.syn]/1: each errc enumerator equals the <cerrno> macro of the same meaning.
 // Core spells the values out for each C library family (it cannot include <errno.h>); check
 // them against this C library.
@@ -112,5 +112,5 @@ static_assert(ycxx::detail::errc_matches_errno(), "libycxx: std::errc does not m
 // in ycxx/core/errc.hpp are these constants.
 static_assert(ENODATA == errno_enodata && ENOSR == errno_enosr && ENOSTR == errno_enostr && ETIME == errno_etime,
               "libycxx: the [depr.cerrno] errc values do not match this C library's errno values");
-} // namespace ycxx::detail
+}} // namespace ycxx::detail
 #endif

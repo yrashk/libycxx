@@ -5,7 +5,7 @@
 #include <ycxx/core/cstddef.hpp>
 #include <ycxx/core/version.hpp>
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 
 // Layout {pointer, size} is what both GCC and Clang construct for braced-init-lists.
 template <class E>

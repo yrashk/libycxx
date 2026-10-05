@@ -6,7 +6,7 @@
 #include <ycxx/core/algo_nonmod.hpp>
 #include <ycxx/core/variant.hpp>
 
-namespace ycxx::detail {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 
 // Calls f(integral_constant<size_t, I>{}) for the I in [0, N) equal to i.
 template <std::size_t N, class F>
@@ -79,9 +79,9 @@ concept tiny_range = std::ranges::sized_range<R> &&
                      requires { typename require_constant<std::remove_reference_t<R>::size()>; } &&
                      (std::remove_reference_t<R>::size() <= 1);
 
-} // namespace ycxx::detail
+}} // namespace ycxx::detail
 
-namespace std::ranges {
+namespace [[gnu::visibility("hidden")]] std { namespace ranges {
 
 // =============================================================================================
 // [range.join]
@@ -1392,12 +1392,12 @@ public:
 template <class... R>
 concat_view(R&&...) -> concat_view<views::all_t<R>...>;
 
-} // namespace std::ranges
+}} // namespace std::ranges
 
 // =============================================================================================
 // The adaptor objects
 // =============================================================================================
-namespace ycxx::detail::view_fn {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail::view_fn {
 
 struct join_fn : std::ranges::range_adaptor_closure<join_fn> {
   template <class E>
@@ -1437,12 +1437,12 @@ struct concat_fn {
   }
 };
 
-} // namespace ycxx::detail::view_fn
+}} // namespace ycxx::detail::view_fn
 
-namespace std::ranges::views {
+namespace [[gnu::visibility("hidden")]] std { namespace ranges::views {
 inline constexpr ycxx::detail::view_fn::join_fn join{};
 inline constexpr ycxx::detail::view_fn::pattern_fn<join_with_view> join_with{};
 inline constexpr ycxx::detail::view_fn::pattern_fn<lazy_split_view> lazy_split{};
 inline constexpr ycxx::detail::view_fn::pattern_fn<split_view> split{};
 inline constexpr ycxx::detail::view_fn::concat_fn concat{};
-} // namespace std::ranges::views
+}} // namespace std::ranges::views

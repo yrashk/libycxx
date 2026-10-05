@@ -5,14 +5,14 @@
 #include <ycxx/core/iterator_core.hpp>
 #include <ycxx/core/memory_base.hpp>
 
-namespace std::ranges {
+namespace [[gnu::visibility("hidden")]] std { namespace ranges {
 template <class T>
 constexpr bool enable_borrowed_range = false;
 template <class T>
 constexpr bool disable_sized_range = false;
-} // namespace std::ranges
+}} // namespace std::ranges
 
-namespace ycxx::detail {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 // Helpers of the range-access CPOs. They live here, not in the CPOs' namespaces, and are always
 // called qualified: a CPO object's namespace is an associated namespace of its type, so it must
 // declare nothing ADL could find, and an unqualified call could reach a user's decay_copy.
@@ -26,9 +26,9 @@ template <class T>
 constexpr auto to_unsigned_like(T t) noexcept {
   return static_cast<std::make_unsigned_t<T>>(t);
 }
-} // namespace ycxx::detail
+}} // namespace ycxx::detail
 
-namespace ycxx::detail::range_access {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail::range_access {
 
 template <class T>
 concept class_or_enum = std::is_class_v<std::remove_cvref_t<T>> || std::is_union_v<std::remove_cvref_t<T>> ||
@@ -80,17 +80,17 @@ struct fn {
 };
 } // namespace begin_ns
 
-} // namespace ycxx::detail::range_access
+}} // namespace ycxx::detail::range_access
 
-namespace std::ranges {
+namespace [[gnu::visibility("hidden")]] std { namespace ranges {
 inline namespace cpo {
 inline constexpr ycxx::detail::range_access::begin_ns::fn begin{};
 }
 template <class T>
 using iterator_t = decltype(ranges::begin(std::declval<T&>()));
-} // namespace std::ranges
+}} // namespace std::ranges
 
-namespace ycxx::detail::range_access {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail::range_access {
 
 // ---- end ----
 namespace end_ns {
@@ -132,9 +132,9 @@ struct fn {
 };
 } // namespace end_ns
 
-} // namespace ycxx::detail::range_access
+}} // namespace ycxx::detail::range_access
 
-namespace std::ranges {
+namespace [[gnu::visibility("hidden")]] std { namespace ranges {
 inline namespace cpo {
 inline constexpr ycxx::detail::range_access::end_ns::fn end{};
 }
@@ -160,9 +160,9 @@ using range_rvalue_reference_t = iter_rvalue_reference_t<iterator_t<R>>;
 template <range R>
 using range_common_reference_t = iter_common_reference_t<iterator_t<R>>;
 
-} // namespace std::ranges
+}} // namespace std::ranges
 
-namespace ycxx::detail::range_access {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail::range_access {
 
 template <class T>
 concept integer_like_ = integer_like<T>;
@@ -214,15 +214,15 @@ struct fn {
 };
 } // namespace size_ns
 
-} // namespace ycxx::detail::range_access
+}} // namespace ycxx::detail::range_access
 
-namespace std::ranges {
+namespace [[gnu::visibility("hidden")]] std { namespace ranges {
 inline namespace cpo {
 inline constexpr ycxx::detail::range_access::size_ns::fn size{};
 }
-} // namespace std::ranges
+}} // namespace std::ranges
 
-namespace ycxx::detail::range_access {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail::range_access {
 
 // ---- ssize ----
 namespace ssize_ns {
@@ -337,9 +337,9 @@ struct fn {
 };
 } // namespace reserve_hint_ns
 
-} // namespace ycxx::detail::range_access
+}} // namespace ycxx::detail::range_access
 
-namespace std::ranges {
+namespace [[gnu::visibility("hidden")]] std { namespace ranges {
 inline namespace cpo {
 inline constexpr ycxx::detail::range_access::ssize_ns::fn ssize{};
 inline constexpr ycxx::detail::range_access::empty_ns::fn empty{};
@@ -371,12 +371,12 @@ concept contiguous_range = random_access_range<T> && contiguous_iterator<iterato
 template <class T>
 concept common_range = range<T> && same_as<iterator_t<T>, sentinel_t<T>>;
 
-} // namespace std::ranges
+}} // namespace std::ranges
 
 // ---------------------------------------------------------------------------------------------
 // [iterator.range] std::begin & co.
 // ---------------------------------------------------------------------------------------------
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 
 template <class C>
 constexpr auto begin(C& c) noexcept(noexcept(c.begin())) -> decltype(c.begin()) {

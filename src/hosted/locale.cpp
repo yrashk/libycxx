@@ -265,39 +265,48 @@ union immortal {
   ~immortal() {}
 };
 
+// The classic locale's facets and tables live in static storage, never freed: no allocation
+// function is called for them, so a program that replaces operator new and counts what is
+// outstanding does not count them.
+template <class F, class... A>
+F* in_static(A... a) {
+  alignas(F) static unsigned char storage[sizeof(F)];
+  return ::new (static_cast<void*>(storage)) F(a...);
+}
+
 locale_impl* make_classic() {
   // refs == 1: the classic facets are never deleted
   const std::locale::facet* facets[] = {
-      new std::collate<char>(1),
-      new std::collate<wchar_t>(1),
-      new std::ctype<char>(nullptr, false, 1),
-      new std::ctype<wchar_t>(1),
-      new std::codecvt<char, char, std::mbstate_t>(1),
-      new std::codecvt<wchar_t, char, std::mbstate_t>(1),
-      new std::codecvt<char16_t, char8_t, std::mbstate_t>(1),
-      new std::codecvt<char32_t, char8_t, std::mbstate_t>(1),
-      new std::codecvt<char16_t, char, std::mbstate_t>(1),
-      new std::codecvt<char32_t, char, std::mbstate_t>(1),
-      new std::moneypunct<char, false>(1),
-      new std::moneypunct<char, true>(1),
-      new std::moneypunct<wchar_t, false>(1),
-      new std::moneypunct<wchar_t, true>(1),
-      new std::money_get<char>(1),
-      new std::money_get<wchar_t>(1),
-      new std::money_put<char>(1),
-      new std::money_put<wchar_t>(1),
-      new std::numpunct<char>(1),
-      new std::numpunct<wchar_t>(1),
-      new std::num_get<char>(1),
-      new std::num_get<wchar_t>(1),
-      new std::num_put<char>(1),
-      new std::num_put<wchar_t>(1),
-      new std::time_get<char>(1),
-      new std::time_get<wchar_t>(1),
-      new std::time_put<char>(1),
-      new std::time_put<wchar_t>(1),
-      new std::messages<char>(1),
-      new std::messages<wchar_t>(1),
+      in_static<std::collate<char>>(1),
+      in_static<std::collate<wchar_t>>(1),
+      in_static<std::ctype<char>>(nullptr, false, 1),
+      in_static<std::ctype<wchar_t>>(1),
+      in_static<std::codecvt<char, char, std::mbstate_t>>(1),
+      in_static<std::codecvt<wchar_t, char, std::mbstate_t>>(1),
+      in_static<std::codecvt<char16_t, char8_t, std::mbstate_t>>(1),
+      in_static<std::codecvt<char32_t, char8_t, std::mbstate_t>>(1),
+      in_static<std::codecvt<char16_t, char, std::mbstate_t>>(1),
+      in_static<std::codecvt<char32_t, char, std::mbstate_t>>(1),
+      in_static<std::moneypunct<char, false>>(1),
+      in_static<std::moneypunct<char, true>>(1),
+      in_static<std::moneypunct<wchar_t, false>>(1),
+      in_static<std::moneypunct<wchar_t, true>>(1),
+      in_static<std::money_get<char>>(1),
+      in_static<std::money_get<wchar_t>>(1),
+      in_static<std::money_put<char>>(1),
+      in_static<std::money_put<wchar_t>>(1),
+      in_static<std::numpunct<char>>(1),
+      in_static<std::numpunct<wchar_t>>(1),
+      in_static<std::num_get<char>>(1),
+      in_static<std::num_get<wchar_t>>(1),
+      in_static<std::num_put<char>>(1),
+      in_static<std::num_put<wchar_t>>(1),
+      in_static<std::time_get<char>>(1),
+      in_static<std::time_get<wchar_t>>(1),
+      in_static<std::time_put<char>>(1),
+      in_static<std::time_put<wchar_t>>(1),
+      in_static<std::messages<char>>(1),
+      in_static<std::messages<wchar_t>>(1),
   };
   const std::locale::id* ids[] = {
       &std::collate<char>::id,
@@ -337,7 +346,12 @@ locale_impl* make_classic() {
     if (k > top)
       top = k;
   }
-  locale_impl* p = new_impl(top + 1, "C");
+  // in static storage too while the ids fit (they do unless a program assigns many before the
+  // classic locale is first used)
+  static const std::locale::facet* table[64];
+  static char name[] = "C";
+  static locale_impl impl{1, table, 64, name};
+  locale_impl* p = top + 1 <= 64 ? &impl : new_impl(top + 1, "C");
   for (std::size_t k = 0; k < sizeof ids / sizeof ids[0]; ++k)
     set_facet(p, locale_access::index(*ids[k]), facets[k]);
   return p;

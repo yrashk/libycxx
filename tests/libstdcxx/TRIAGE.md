@@ -28,6 +28,99 @@ those failures into UNSUPPORTED on each compiler (all category C; no passing tes
 checked by re-running the 302 tests). Expected totals on the next run:
 GCC 4754 pass / **182** fail / 3619 unsupported, Clang 4715 / **221** / 3619.
 
+## Re-run of 2026-10-05 (after the (A) fixes and the harness fixes)
+
+Whole testsuite again on both compilers (`tools/run-conformance libstdcxx gcc|clang -- -j8 -sv`,
+library at `7e6a93f` (no library change after it), harness as fixed below). Every failure was compared with the per-test
+categories of the first run: **no new failure** on either compiler (no test that passed or was
+unsupported before fails now, including after `_GLIBCXX_USE_CXX11_ABI=1`).
+
+| | Tests | Pass | Fail | Unsupported |
+|---|---:|---:|---:|---:|
+| GCC 16.2, first run | 8555 | 4754 | 484 | 3317 |
+| GCC 16.2, re-run | 8555 | 4823 | 141 | 3591 |
+| GCC 16.2, with this round's skip entry | 8555 | 4823 | **139** | 3593 |
+| Clang 23.1, first run | 8555 | 4715 | 523 | 3317 |
+| Clang 23.1, re-run | 8555 | 4786 | 175 | 3594 |
+| Clang 23.1, with this round's skip entry | 8555 | 4786 | **173** | 3596 |
+
+(The expected totals of the first run, 182 / 221 failures, are reached and passed: the 302 C skips,
+the 21 + 3 (A) fixes, 11 (GCC) / 18 (Clang) harness fixes, Clang's optional/constexpr/124910.cc
+workaround, and on GCC the C++ `<stdckdint.h>` and an F test (20_util/stdbit/1.cc) that now passes.)
+
+- **(A)**: all 21 (A) and 3 A-QoI tests pass on both compilers. The only (A)-table test still
+  failing is 20_util/optional/relops/constrained.cc on Clang, a Clang 23 problem (D, see the
+  outcome column). The six A-doc tests (macro `C`) still fail, as documented.
+- **(E) fixed in the harness** (each fix commented in the code), all rerun:
+  - `tests/ycxxlit/libstdcxx_format.py`: the `testsuite/data` files a test names are copied into
+    its run directory (20_util/hash/chi2_q_document_words.cc and the basic_fstream/basic_ifstream
+    native_handle tests pass); `-g` for tests that include `<stacktrace>` (DejaGnu's default flags
+    are `-g -O2`; stacktrace/{entry,output}.cc pass, and current.cc on GCC); GCC-only optimiser
+    options in `dg-options` are dropped for Clang (`-fno-assume-sane-operators-new-delete`,
+    `-fvtable-verify=`, `-fdump-tree-`: 17_intro/freestanding.cc, 18_support/50594.cc,
+    vector/bool/capacity/{110498,114758}.cc pass), and a test that needs `-fcontracts` /
+    `-fcontract-evaluation-semantic=` is UNSUPPORTED on Clang (Clang 23 has no contracts; the 3
+    18_support/contracts tests pass on GCC); `dg-xfail-run-if` is honoured with its
+    include/exclude option lists (bit_ceil_neg.cc passes; the basic_string_view element_access
+    tests with the same directive still pass); a `dg-error` marked `{ xfail SEL }` no longer
+    makes the test a compile-fail test (27_io/fpos/mbstate_t/4_neg.cc passes).
+  - `tests/libstdcxx/lit.cfg.py`: `-D_GLIBCXX_USE_CXX11_ABI=1` (27_io/ios_base/failure/error_code.cc passes).
+  - `tests/libstdcxx/shim/bits/stdexcept_throw.h`: aborts instead of throwing under
+    `-fno-exceptions` (18_support/exception_ptr/64241.cc passes).
+  - Still E: 27_io/objects/wchar_t/13582-1_xin.cc (the `en_US.ISO8859-1` locale is not installed).
+- **Reclassified E -> C (skipped)**: 27_io/basic_filebuf/native_handle/{char,wchar_t}/1.cc. With the
+  data file present the test closes the native handle behind the filebuf and expects `sgetc()` to
+  throw `ios_base::failure`; [filebuf.virtuals] `underflow` reports failure by returning `eof()`,
+  which libycxx does (libstdc++ throws on a read error).
+- `dg-xfail-if` (compile-time xfail) is still not interpreted: 20_util/specialized_algorithms/destroy/121024.cc
+  (GCC PR c++/102284, D) still fails on GCC.
+
+Failures of the re-run per category and top-level directory (with the new skip entry):
+
+**GCC**
+
+| Directory | A | A-QoI | A-doc | B | C | D | E | F | Total |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| 18_support |  |  |  | 1 | 1 |  |  | 1 | 3 |
+| 19_diagnostics |  |  |  | 1 |  |  |  |  | 1 |
+| 20_util |  |  | 2 | 2 | 11 | 1 |  | 7 | 23 |
+| 21_strings |  |  |  |  | 4 |  |  | 3 | 7 |
+| 22_locale |  |  |  |  | 3 |  |  | 11 | 14 |
+| 23_containers |  |  |  |  | 12 |  |  | 12 | 24 |
+| 24_iterators |  |  |  |  | 2 |  |  |  | 2 |
+| 25_algorithms |  |  |  |  | 1 |  |  | 2 | 3 |
+| 26_numerics |  |  |  | 4 | 1 |  |  | 27 | 32 |
+| 27_io |  |  | 4 |  | 6 |  | 1 | 10 | 21 |
+| 30_threads |  |  |  |  | 2 |  |  |  | 2 |
+| std/format |  |  |  |  | 1 |  |  | 2 | 3 |
+| std/ranges |  |  |  |  |  |  |  | 1 | 1 |
+| std/time |  |  |  |  |  |  |  | 3 | 3 |
+| **Total** |  |  | **6** | **8** | **44** | **1** | **1** | **79** | **139** |
+
+**Clang**
+
+| Directory | A | A-QoI | A-doc | B | C | D | E | F | Total |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| 18_support |  |  |  | 1 | 1 | 2 |  | 1 | 5 |
+| 19_diagnostics |  |  |  | 1 |  | 3 |  |  | 4 |
+| 20_util |  |  | 2 | 2 | 11 | 11 |  | 8 | 34 |
+| 21_strings |  |  |  |  | 4 |  |  | 3 | 7 |
+| 22_locale |  |  |  |  | 3 |  |  | 11 | 14 |
+| 23_containers |  |  |  |  | 19 | 8 |  | 12 | 39 |
+| 24_iterators |  |  |  |  | 3 |  |  |  | 3 |
+| 25_algorithms |  |  |  |  | 1 |  |  | 2 | 3 |
+| 26_numerics |  |  |  | 4 | 1 |  |  | 27 | 32 |
+| 27_io |  |  | 4 |  | 7 |  | 1 | 9 | 21 |
+| 29_atomics |  |  |  |  |  | 1 |  |  | 1 |
+| 30_threads |  |  |  |  | 2 |  |  |  | 2 |
+| std/format |  |  |  |  | 1 | 1 |  | 2 | 4 |
+| std/ranges |  |  |  |  |  |  |  | 1 | 1 |
+| std/time |  |  |  |  |  |  |  | 3 | 3 |
+| **Total** |  |  | **6** | **8** | **53** | **26** | **1** | **79** | **173** |
+
+The C, D, F entries are the first run's, unchanged; the sections below describe the first run,
+with outcomes added.
+
 ## (A) libycxx bugs
 
 15 distinct bugs, 21 failing tests (identical on both compilers). Grouped by header.
@@ -182,6 +275,9 @@ behaviour or the expectation is narrow:
 - Configuration macros: `_GLIBCXX_USE_CXX11_ABI` is undefined, so 27_io/ios_base/failure/error_code.cc takes its old-ABI branch (64 tests test this macro; defining it to 1 in `lit.cfg.py` matches libycxx's behaviour).
 - Shim: `shim/bits/stdexcept_throw.h` uses `throw` even under `-fno-exceptions` (18_support/exception_ptr/64241.cc); it should call `__builtin_abort()` when `__cpp_exceptions` is undefined.
 - Locales: 27_io/objects/wchar_t/13582-1_xin.cc needs `en_US.ISO8859-1`.
+
+**Outcome (re-run of 2026-10-05):** all of the above except the locale are fixed in the harness
+(see the re-run section); the basic_filebuf native_handle tests then turned out to be C (skipped).
 
 ## (F) missing includes in the test
 

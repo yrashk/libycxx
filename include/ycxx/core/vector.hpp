@@ -689,6 +689,10 @@ public:
     } else if (first_ + off == last_) {
       alloc_traits::construct(alloc_, last_, static_cast<Args&&>(args)...);
       ++last_;
+    } else if constexpr (sizeof...(Args) == 1 && (is_same_v<Args, T> && ...)) {
+      // A single non-const rvalue of type T: as insert(position, T&&), it is not an element
+      // ([res.on.arguments]/1.3), so it is moved in directly without a temporary.
+      shift_in(off, static_cast<Args&&>(args)...);
     } else {
       // The arguments may refer to elements that are about to move.
       ycxx::detail::alloc_temp<T, Allocator> tmp(alloc_, static_cast<Args&&>(args)...);

@@ -4,11 +4,11 @@
 // and algo_nonmod.hpp use it when the value is a bool and there is no projection.
 #pragma once
 
-namespace ycxx::detail {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 
 template <class I>
 struct bit_algos {
   static constexpr bool enabled = false;
 };
 
-} // namespace ycxx::detail
+}} // namespace ycxx::detail

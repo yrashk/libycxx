@@ -6,7 +6,7 @@
 #include <ycxx/core/cstddef.hpp>
 #include <ycxx/core/prim_traits.hpp>
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 
 template <class T, T v>
 struct integral_constant {
@@ -320,7 +320,7 @@ constexpr bool is_constant_evaluated() noexcept {
 
 } // namespace std
 
-namespace ycxx::detail {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 
 template <class T>
 inline constexpr bool always_false = false;
@@ -380,5 +380,5 @@ template <class T>
 inline constexpr bool is_signed_or_unsigned_integer =
     is_standard_signed_integer<T> || is_standard_unsigned_integer<T>;
 
-} // namespace ycxx::detail
+}} // namespace ycxx::detail
 

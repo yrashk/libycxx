@@ -17,7 +17,7 @@
 #include <ycxx/hosted/thread_support.hpp>
 #include <ycxx/pal.h>
 
-namespace ycxx::detail {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 
 // A futex mutex that can also be owned recursively by one thread.
 class recursive_futex_mutex {
@@ -89,9 +89,9 @@ bool timed_try_lock_until(M& m, const std::chrono::time_point<Clock, Duration>& 
   }
 }
 
-} // namespace ycxx::detail
+}} // namespace ycxx::detail
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 
 // [thread.mutex.class]
 class mutex {
@@ -338,7 +338,7 @@ void swap(unique_lock<Mutex>& x, unique_lock<Mutex>& y) noexcept {
 
 } // namespace std
 
-namespace ycxx::detail {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 
 // The lockables of lock/try_lock behind type-erased thunks, so they can be indexed at run time.
 // lock() is used only by std::lock (`Lock`): std::try_lock needs only try_lock and unlock
@@ -420,9 +420,9 @@ void lock_all(L&... l) {
   }
 }
 
-} // namespace ycxx::detail
+}} // namespace ycxx::detail
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 
 template <class L1, class L2, class... L3>
 int try_lock(L1& l1, L2& l2, L3&... l3) {

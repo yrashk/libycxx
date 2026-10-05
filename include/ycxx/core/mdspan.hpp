@@ -6,7 +6,7 @@
 #include <ycxx/core/execution_policy.hpp>
 #include <ycxx/core/mdspan_layout.hpp>
 
-namespace ycxx::detail {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 
 // Visits every multidimensional index of e in row-major order: f(i0, ..., i_{rank-1}) with
 // index_type arguments.
@@ -44,9 +44,9 @@ concept md_standard_mapping =
     md_mapping_of<std::layout_left, M> || md_mapping_of<std::layout_right, M> || md_mapping_of<std::layout_stride, M> ||
     md_left_padded_mapping<M> || md_right_padded_mapping<M>;
 
-} // namespace ycxx::detail
+}} // namespace ycxx::detail
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 
 template <class ElementType, class Extents, class LayoutPolicy = layout_right,
           class AccessorPolicy = default_accessor<ElementType>>
@@ -286,7 +286,7 @@ mdspan(typename AccessorType::data_handle_type, const MappingType&,
 
 } // namespace std
 
-namespace ycxx::detail {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 
 template <class E, class X, class L, class A>
 inline constexpr bool md_is_mdspan<std::mdspan<E, X, L, A>> = true;
@@ -304,9 +304,9 @@ concept md_copyable =
 template <class Dst, class T>
 concept md_fillable = md_is_mdspan<Dst> && std::is_assignable_v<typename Dst::reference, const T&>;
 
-} // namespace ycxx::detail
+}} // namespace ycxx::detail
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 
 // [mdspan.copy]
 template <class Src, class Dst>

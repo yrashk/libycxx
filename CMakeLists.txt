@@ -49,6 +49,11 @@ set_target_properties(ycxx_headers PROPERTIES EXPORT_NAME headers)
 target_include_directories(ycxx_headers SYSTEM INTERFACE
   $<BUILD_INTERFACE:${YCXX_INCLUDE}> $<INSTALL_INTERFACE:${YCXX_INSTALL_INCLUDEDIR}>)
 target_compile_options(ycxx_headers INTERFACE $<$<COMPILE_LANGUAGE:CXX>:-nostdinc++ ${YCXX_CXX_STANDARD_FLAG}>)
+# Hidden visibility (DECISIONS §2): GCC warns about every program class with a member or base of a
+# library class type ("declared with greater visibility than the type of its field"); the
+# warning says nothing about the program, so users of the package do not get it.
+target_compile_options(ycxx_headers INTERFACE
+  $<$<AND:$<COMPILE_LANGUAGE:CXX>,$<CXX_COMPILER_ID:GNU>>:-Wno-attributes>)
 
 set(_ycxx_warnings -Wall -Wextra $<$<BOOL:${YCXX_WERROR}>:-Werror>)
 
@@ -153,6 +158,11 @@ target_link_libraries(ycxx_abi INTERFACE ycxx)
 set_property(TARGET ycxx ycxx_abi PROPERTY LINK_INTERFACE_MULTIPLICITY 3)
 # Usable in shared objects and position-independent executables.
 set_target_properties(ycxx ycxx_abi PROPERTIES POSITION_INDEPENDENT_CODE ON)
+# Nothing the archives define is exported from the program or shared object that links them
+# (-fvisibility=hidden; the headers declare libycxx's namespaces hidden): another C++ library in
+# the process (Apple's libc++/libc++abi, which libSystem loads into every process; libstdc++)
+# can neither take over libycxx's definitions nor be taken over by them (DECISIONS §2).
+set_target_properties(ycxx ycxx_abi PROPERTIES C_VISIBILITY_PRESET hidden CXX_VISIBILITY_PRESET hidden)
 
 # ---- ycxx::ycxx: what applications link ----
 add_library(ycxx_ycxx INTERFACE)

@@ -6,7 +6,7 @@
 #include <ycxx/core/compare.hpp>
 #include <ycxx/core/utility_base.hpp>
 
-namespace ycxx::detail {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 // Converts any pointer-ish operand to an integer so that pointer comparisons form a strict
 // total order even across unrelated objects ([comparisons.general]/2).
 template <class T>
@@ -76,9 +76,9 @@ constexpr bool total_less(const T& a, const U& b) {
     return ::ycxx::detail::ptr_value(a) < ::ycxx::detail::ptr_value(b);
   }
 }
-} // namespace ycxx::detail
+}} // namespace ycxx::detail
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 
 // ---- arithmetic --------------------------------------------------------------------------------
 template <class T = void>
@@ -435,14 +435,14 @@ struct less_equal {
 // ---- [refwrap] -------------------------------------------------------------------------------
 } // namespace std
 
-namespace ycxx::detail {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 template <class T>
 void refwrap_fun(T&) noexcept;
 template <class T>
 void refwrap_fun(T&&) = delete;
-} // namespace ycxx::detail
+}} // namespace ycxx::detail
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 
 template <class T>
 class reference_wrapper {
@@ -538,7 +538,7 @@ void cref(const T&&) = delete;
 // common_reference with reference_wrapper ([refwrap.common.ref])
 } // namespace std
 
-namespace ycxx::detail {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 template <class T>
 inline constexpr bool is_ref_wrapper_v = false;
 template <class T>
@@ -548,9 +548,9 @@ template <class R, class T, class RQ, class TQ>
 concept ref_wrap_common_reference_exists_with =
     is_ref_wrapper_v<R> && requires { typename std::common_reference_t<typename R::type&, TQ>; } &&
     std::convertible_to<RQ, std::common_reference_t<typename R::type&, TQ>>;
-} // namespace ycxx::detail
+}} // namespace ycxx::detail
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 
 template <class R, class T, template <class> class RQual, template <class> class TQual>
   requires(ycxx::detail::ref_wrap_common_reference_exists_with<R, T, RQual<R>, TQual<T>> &&

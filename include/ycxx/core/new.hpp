@@ -5,7 +5,7 @@
 #include <ycxx/core/exception_base.hpp>
 #include <ycxx/core/error.hpp>
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 
 struct destroying_delete_t {
   explicit destroying_delete_t() = default;
@@ -60,8 +60,9 @@ void operator delete[](void* ptr, const std::nothrow_t&) noexcept;
 void operator delete[](void* ptr, std::align_val_t alignment, const std::nothrow_t&) noexcept;
 
 
-// Non-allocating forms (constexpr since C++26).
-[[nodiscard]] constexpr void* operator new(std::size_t, void* ptr) noexcept { return ptr; }
-[[nodiscard]] constexpr void* operator new[](std::size_t, void* ptr) noexcept { return ptr; }
-constexpr void operator delete(void*, void*) noexcept {}
-constexpr void operator delete[](void*, void*) noexcept {}
+// Non-allocating forms (constexpr since C++26). Not replaceable and defined here, so hidden like
+// the library's namespaces (DECISIONS §2).
+[[nodiscard, gnu::visibility("hidden")]] constexpr void* operator new(std::size_t, void* ptr) noexcept { return ptr; }
+[[nodiscard, gnu::visibility("hidden")]] constexpr void* operator new[](std::size_t, void* ptr) noexcept { return ptr; }
+[[gnu::visibility("hidden")]] constexpr void operator delete(void*, void*) noexcept {}
+[[gnu::visibility("hidden")]] constexpr void operator delete[](void*, void*) noexcept {}

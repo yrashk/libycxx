@@ -9,7 +9,7 @@
 #include <ycxx/core/tuple.hpp>
 #include <ycxx/core/shared_ptr.hpp>
 
-namespace ycxx::detail {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 
 // POINTER_OF(T) and POINTER_OF_OR(T, U) ([memory.syn]/2-3). pointer_of_or<T, void> is void when
 // POINTER_OF(T) is not valid.
@@ -48,9 +48,9 @@ constexpr void out_ptr_store(Smart& s, Pointer& p, Tuple& a, std::index_sequence
     static_assert(always_false<Smart>, "out_ptr/inout_ptr: Smart cannot be reset from the pointer and arguments");
 }
 
-} // namespace ycxx::detail
+}} // namespace ycxx::detail
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 
 // [out.ptr.t]
 template <class Smart, class Pointer, class... Args>

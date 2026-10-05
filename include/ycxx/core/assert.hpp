@@ -3,7 +3,7 @@
 
 #include <ycxx/core/error.hpp>
 
-namespace ycxx::detail {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 
 // Appends `s` to buf[pos..cap), returns the new position.
 constexpr unsigned append_text(char* buf, unsigned pos, unsigned cap, const char* s) noexcept {
@@ -40,4 +40,4 @@ constexpr unsigned append_uint(char* buf, unsigned pos, unsigned cap, unsigned v
   ::ycxx_error_handler(ycxx_error_assertion, msg);
 }
 
-} // namespace ycxx::detail
+}} // namespace ycxx::detail

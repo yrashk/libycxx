@@ -11,7 +11,7 @@
 #include <ycxx/core/cstddef.hpp>
 #include <ycxx/core/cstdint.hpp>
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 
 struct mbstate_t {
   // glibc and musl: 8 bytes, 4-byte alignment; Darwin: 128 bytes, 8-byte alignment.
@@ -35,7 +35,7 @@ struct char_traits; // only the specializations below are defined
 
 // In ycxx::adl_free (DECISIONS §2): char_traits<C> is a template argument of basic_string_view,
 // so this base's namespace is an associated namespace for ADL on every string view.
-namespace ycxx::adl_free {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace adl_free {
 
 // The operations shared by all five specializations. CharT is the character type, IntT its
 // int_type, U the type whose built-in < defines lt() (unsigned char for char).
@@ -131,9 +131,9 @@ struct char_traits_base {
   static constexpr bool eq_int_type(int_type c1, int_type c2) noexcept { return c1 == c2; }
 };
 
-} // namespace ycxx::adl_free
+}} // namespace ycxx::adl_free
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 
 // [char.traits.specializations]. eof() values: EOF (-1) for char; for the others a value that is
 // not a valid code unit / code point (all bits set), and WEOF for wchar_t.

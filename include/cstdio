@@ -10,7 +10,7 @@
 #  define __STDC_VERSION_STDIO_H__ 202311L
 #endif
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 using ::FILE;
 using ::fpos_t;
 using ::remove;

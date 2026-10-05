@@ -22,7 +22,7 @@
 #include <ycxx/hosted/thread_support.hpp>
 #include <ycxx/pal.h>
 
-namespace ycxx::detail {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 
 class futex_condvar {
   ycxx_pal_u32 seq_ = 0;
@@ -79,9 +79,9 @@ public:
 // (as far as the platform allows) its thread_local objects are destroyed.
 void at_thread_exit(void (*f)(void*), void* arg);
 
-} // namespace ycxx::detail
+}} // namespace ycxx::detail
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 
 enum class cv_status { no_timeout, timeout };
 

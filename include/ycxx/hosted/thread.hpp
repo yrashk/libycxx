@@ -23,7 +23,7 @@
 #include <ycxx/hosted/thread_support.hpp>
 #include <ycxx/pal.h>
 
-namespace ycxx::detail {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 
 // The hosted runtime (src/hosted/thread.cpp): starts a thread running run(arg) after naming it
 // (name, not necessarily null-terminated, is copied first; null for none). Throws system_error
@@ -66,9 +66,9 @@ struct thread_state {
   }
 };
 
-} // namespace ycxx::detail
+}} // namespace ycxx::detail
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 
 class jthread;
 
@@ -168,7 +168,7 @@ inline void swap(thread& x, thread& y) noexcept { x.swap(y); }
 
 } // namespace std
 
-namespace ycxx::detail {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 
 template <class T>
 inline constexpr bool is_thread_attribute = false;
@@ -291,9 +291,9 @@ struct thread_access {
   }
 };
 
-} // namespace ycxx::detail
+}} // namespace ycxx::detail
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 
 template <class... Args>
   requires(sizeof...(Args) > 0) && (!is_same_v<remove_cvref_t<tuple_element_t<0, tuple<Args...>>>, thread>)

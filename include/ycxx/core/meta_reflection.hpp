@@ -35,12 +35,12 @@
 #include <ycxx/core/variant.hpp>
 #include <ycxx/core/vector.hpp>
 
-namespace std::meta {
+namespace [[gnu::visibility("hidden")]] std { namespace meta {
 using info = decltype(^^::);
 class exception;
-} // namespace std::meta
+}} // namespace std::meta
 
-namespace ycxx::detail::meta {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail::meta {
 
 // The ordinary literal encoding is UTF-8 ([meta.reflection.exception] transcodes between it and
 // UTF-8). Otherwise only ASCII is taken to be shared by both.
@@ -78,9 +78,9 @@ consteval std::size_t static_array_extent() {
 
 [[noreturn]] consteval void raise(std::string_view what, std::meta::info from, std::source_location where);
 
-} // namespace ycxx::detail::meta
+}} // namespace ycxx::detail::meta
 
-namespace ycxx::adl_free {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace adl_free {
 // meta::exception holds reflections, so (in GCC 16) every member function of it must be
 // consteval; what() is constexpr and virtual, so it lives in this base, which holds no
 // reflection, and meta::exception inherits it as its final overrider.
@@ -96,9 +96,9 @@ public:
   constexpr meta_exception_what& operator=(meta_exception_what&&) = default;
   constexpr const char* what() const noexcept override { return what_->c_str(); }
 };
-} // namespace ycxx::adl_free
+}} // namespace ycxx::adl_free
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 
 // [meta.string.literal]
 consteval bool is_string_literal(const char* p) { return __builtin_is_string_literal(p); }
@@ -584,11 +584,11 @@ consteval const remove_cvref_t<T>* define_static_object(T&& t) {
 
 } // namespace std
 
-namespace ycxx::detail::meta {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail::meta {
 consteval void raise(std::string_view what, std::meta::info from, std::source_location where) {
   ::ycxx::detail::raise_with(ycxx_error_logic_error, "std::meta::exception",
                              [&] { return std::meta::exception(what, from, where); });
 }
-} // namespace ycxx::detail::meta
+}} // namespace ycxx::detail::meta
 
 #endif // YCXX_HAS_REFLECTION

@@ -13,7 +13,7 @@
 
 #include <ycxx/core/cstddef.hpp>
 
-namespace ycxx::detail {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 // The C semantics; compar's exceptions propagate ([alg.c.library]/4).
 template <class = void>
 const void* c_bsearch(const void* key, const void* base, std::size_t nmemb, std::size_t size,
@@ -34,9 +34,9 @@ const void* c_bsearch(const void* key, const void* base, std::size_t nmemb, std:
   }
   return nullptr;
 }
-} // namespace ycxx::detail
+}} // namespace ycxx::detail
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 template <class = void>
 void* bsearch(const void* key, void* base, size_t nmemb, size_t size, int (*compar)(const void*, const void*)) {
   return const_cast<void*>(::ycxx::detail::c_bsearch(key, base, nmemb, size, compar));

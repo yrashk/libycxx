@@ -11,7 +11,7 @@
 #include <ycxx/core/rb_tree.hpp>
 #include <ycxx/core/tuple.hpp>
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 
 template <class Key, class T, class Compare = less<Key>, class Allocator = allocator<pair<const Key, T>>>
 class map;

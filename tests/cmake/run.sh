@@ -4,7 +4,12 @@
 #   2. examples/find_package: find_package(libycxx) from that prefix, build, run;
 #   3. examples/add_subdirectory: libycxx built as part of the project, build, run;
 #   4. both programs must print "libycxx example: ok" and must not use the toolchain's C++
-#      library (no libstdc++/libc++ in NEEDED, no libstdc++ symbol versions);
+#      library (no libstdc++/libc++ in NEEDED, no libstdc++ symbol versions), and must export
+#      none of libycxx's symbols (DECISIONS §2);
+#   7. tests/cmake/visibility: a program and a shared library built with libycxx, each in one
+#      process with a shared library built with the toolchain's C++ library: each library must
+#      handle its own exceptions with its own runtime, and libycxx's must export nothing of it;
+#      and a program built with libycxx must catch a libycxx shared library's exceptions;
 #   5. find_package must reject an unsupported compiler with a clear message;
 #   6. cmake/ycxx-toolchain.cmake: picks GCC and Clang by itself (with a scratch toolchain cache,
 #      which it must fill in toolchains.env), and fails with a clear message when the requested
@@ -51,6 +56,47 @@ links_toolchain_cxx() {
   fi
 }
 
+# library_exports FILE: prints the symbols of libycxx that FILE (a program or shared library whose
+# own code defines only extern "C" functions) exports: every mangled C++ name, and the ABI
+# runtime's and the platform layer's C names. ELF: the dynamic symbol table. Darwin: the exported
+# symbols, and the weak-definition binds dyld would coalesce with another image's (dyld_info);
+# there GCC's fundamental type_info objects keep default visibility, and are tolerated (benign:
+# libc++abi exports the same objects).
+library_exports() {
+  if [ "$(uname -s)" = Darwin ]; then
+    { nm -gU "$1" | awk '{ print $NF }'
+      if command -v dyld_info >/dev/null; then
+        dyld_info -fixups "$1" | grep 'weak-def-coalesce' | awk '{ print $NF }' | sed 's|.*/||'
+      fi; } | sed 's/^_//' |
+      grep -E '^(_Z|__cxa_|__gxx_personality|__dynamic_cast|ycxx_pal_)' |
+      grep -vE '^_ZT[IS](P|PK)?([a-z]|D[A-Za-z][A-Za-z0-9_]*)$' || :
+  else
+    nm -D --defined-only "$1" | awk '{ print $NF }' |
+      grep -E '^(_Z|__cxa_|__gxx_personality|__dynamic_cast|ycxx_pal_)' || :
+  fi
+}
+
+# check_exports COMPILER LABEL FILE: no libycxx symbol exported from FILE (listed in $log otherwise).
+check_exports() {
+  e_list=$(library_exports "$3")
+  if [ -z "$e_list" ]; then
+    ok "$1" "$2: exports none of libycxx's symbols"
+  else
+    printf '%s exports:\n%s\n' "$3" "$e_list" >>"$log"
+    bad "$1" "$2: exports $(printf '%s\n' "$e_list" | wc -l | tr -d ' ') of libycxx's symbols (see $log)"
+  fi
+}
+
+# run_pair EXE LOG EXPECTED: runs a program of tests/cmake/visibility; true when it exits 0 printing
+# EXPECTED.
+run_pair() {
+  printf '$ %s\n' "$1" >>"$2"
+  p_st=0
+  p_out=$("$1" 2>&1) || p_st=$?
+  printf '%s\n[exit %s]\n' "$p_out" "$p_st" >>"$2"
+  [ "$p_st" = 0 ] && [ "$p_out" = "$3" ]
+}
+
 for c in $compilers; do
   case $c in
     gcc) cc=${YCXX_GCC:-gcc-16} cxx=${YCXX_GXX:-g++-16} ;;
@@ -92,10 +138,28 @@ for c in $compilers; do
       else
         ok $c "$ex: no libstdc++/libc++"
       fi
+      check_exports $c "$ex" "$b/demo"
     else
       bad $c "$ex: configure/build (see $log)"
     fi
   done
+
+  # 7. libycxx and the toolchain's C++ library in one process
+  b=$d/visibility
+  if x cmake -S "$repo/tests/cmake/visibility" -B "$b" $gen -DCMAKE_PREFIX_PATH="$d/prefix" &&
+     x cmake --build "$b"; then
+    for p in prog host; do
+      if run_pair "$b/$p" "$log" "mine 3 other 3"; then ok $c "visibility: $p: each library uses its own runtime"
+      else bad $c "visibility: $p: wrong exception handling (see $log)"; fi
+    done
+    if run_pair "$b/catcher" "$log" "caught 15 uncaught 0 0"; then
+      ok $c "visibility: catcher: catches a libycxx shared library's exceptions"
+    else bad $c "visibility: catcher: wrong exception handling across libycxx images (see $log)"; fi
+    check_exports $c "visibility: prog" "$b/prog"
+    for f in "$b"/libmine.*; do check_exports $c "visibility: shared library" "$f"; done
+  else
+    bad $c "visibility: configure/build (see $log)"
+  fi
 done
 
 # 5. an unsupported compiler is rejected by find_package (any installed prefix will do)

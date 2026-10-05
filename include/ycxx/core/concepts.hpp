@@ -4,7 +4,7 @@
 #include <ycxx/core/type_traits.hpp>
 #include <ycxx/core/compare.hpp>
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 
 template <class T, class U>
 concept same_as = ycxx::detail::same_as_<T, U>;
@@ -65,7 +65,7 @@ concept copy_constructible = move_constructible<T> && constructible_from<T, T&> 
 } // namespace std
 
 // ranges::swap customization point object
-namespace ycxx::detail::swap_cpo {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail::swap_cpo {
 
 template <class T>
 void swap(T&, T&) = delete;
@@ -101,15 +101,15 @@ struct fn {
     b = static_cast<T&&>(tmp);
   }
 };
-} // namespace ycxx::detail::swap_cpo
+}} // namespace ycxx::detail::swap_cpo
 
-namespace std::ranges {
+namespace [[gnu::visibility("hidden")]] std { namespace ranges {
 inline namespace cpo {
 inline constexpr ycxx::detail::swap_cpo::fn swap{};
 }
-} // namespace std::ranges
+}} // namespace std::ranges
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 
 template <class T>
 concept swappable = requires(T& a, T& b) { ranges::swap(a, b); };

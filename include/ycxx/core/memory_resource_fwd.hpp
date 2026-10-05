@@ -8,10 +8,10 @@
 
 #include <ycxx/core/cstddef.hpp>
 
-namespace std::pmr {
+namespace [[gnu::visibility("hidden")]] std { namespace pmr {
 
 class memory_resource;
 template <class Tp = byte>
 class polymorphic_allocator;
 
-} // namespace std::pmr
+}} // namespace std::pmr

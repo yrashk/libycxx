@@ -9,7 +9,7 @@
 
 #include <ycxx/hosted/ostream.hpp>
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 
 template <class charT, class traits>
 class basic_istream : virtual public basic_ios<charT, traits> {

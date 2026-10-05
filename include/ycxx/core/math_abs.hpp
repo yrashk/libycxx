@@ -10,16 +10,16 @@
 #include <ycxx/core/cmath_promote.hpp>
 #include <ycxx/core/prim_traits.hpp>
 
-namespace ycxx::detail {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 // [c.math.abs]/3: an unsigned type that integral promotion does not turn into int.
 template <class T>
 concept abs_unsigned_unpromotable = is_integral_v<T> && is_unsigned_v<T> && !(sizeof(T) < sizeof(int));
 // The 128-bit integer type, where the target has one.
 template <class T>
 concept abs_int128 = is_integral_v<T> && __is_same(T, int128);
-} // namespace ycxx::detail
+}} // namespace ycxx::detail
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 
 template <class = void>
 constexpr int abs(int j) noexcept {

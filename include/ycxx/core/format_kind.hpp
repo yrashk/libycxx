@@ -6,7 +6,7 @@
 #include <ycxx/core/range_access.hpp>
 #include <ycxx/core/tuple_like.hpp>
 
-namespace ycxx::detail {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 template <class T>
 inline constexpr bool fmt_is_pair_or_2tuple = false;
 template <class T, class U>
@@ -16,16 +16,16 @@ inline constexpr bool fmt_is_pair_or_2tuple<std::tuple<T, U>> = true;
 
 template <class R>
 inline constexpr bool fmt_dependent_false = false;
-} // namespace ycxx::detail
+}} // namespace ycxx::detail
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 
 // [format.range.fmtkind]
 enum class range_format { disabled, map, set, sequence, string, debug_string };
 
 } // namespace std
 
-namespace ycxx::detail {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 template <class R>
 consteval std::range_format fmt_kind_primary() {
   static_assert(fmt_dependent_false<R>, "std::format_kind: the primary template is instantiated ([format.range.fmtkind]/1)");
@@ -44,9 +44,9 @@ consteval std::range_format fmt_default_kind() {
   } else
     return std::range_format::sequence;
 }
-} // namespace ycxx::detail
+}} // namespace ycxx::detail
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 
 template <class R>
 inline constexpr range_format format_kind = ycxx::detail::fmt_kind_primary<R>();

@@ -6,7 +6,7 @@
 
 #include <ycxx/config.hpp>
 
-namespace ycxx::detail {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 
 template <class T, class... Us>
 inline constexpr bool is_any_of = (__is_same(T, Us) || ...);
@@ -68,6 +68,6 @@ consteval bool unsigned_impl() {
 template <class T>
 inline constexpr bool is_unsigned_v = unsigned_impl<T>();
 
-} // namespace ycxx::detail
+}} // namespace ycxx::detail
 
 

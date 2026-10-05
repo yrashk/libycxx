@@ -81,7 +81,7 @@ void cleanup_native(_Unwind_Reason_Code reason, _Unwind_Exception* ue) {
     std::terminate();
   // Caught (and finished) by another runtime's handler: no longer uncaught.
   if (reason == _URC_FOREIGN_EXCEPTION_CAUGHT)
-    --globals()->uncaught_exceptions;
+    --header_of_unwind(ue)->counted_in->uncaught_exceptions;
   release(header_of_unwind(ue));
 }
 
@@ -189,7 +189,8 @@ void release_at_handler_exit(exception_header* h) {
   h->unexpected_handler = nullptr;
   h->terminate_handler = std::get_terminate();
   h->unwind_header.exception_cleanup = cleanup_native;
-  ++globals()->uncaught_exceptions;
+  h->counted_in = globals();
+  ++h->counted_in->uncaught_exceptions;
   _Unwind_RaiseException(&h->unwind_header);
   // No handler: [except.handle]/9.
   terminate_for(&h->unwind_header);
@@ -210,6 +211,27 @@ void release_at_handler_exit(exception_header* h) {
 } // namespace ycxx::abi
 
 using namespace ycxx::abi;
+
+// The runtime is built with -fvisibility=hidden (DECISIONS §2), but GCC declares the entry points
+// that its exception-handling code calls itself, with default visibility, and keeps that
+// visibility for their definitions (a visibility attribute here is ignored, with a warning). An
+// assembler directive hides them, so that a shared object built with libycxx never exports half of
+// its runtime: with the rest hidden, a process holding another runtime (libstdc++'s) would bind
+// these names to one runtime and the others to the other. Clang already hides them.
+namespace {
+consteval asm_text hide_compiler_declared_entry_points() {
+  asm_text a;
+  for (const char* name : {"__cxa_allocate_exception", "__cxa_free_exception", "__cxa_throw", "__cxa_begin_catch",
+                           "__cxa_end_catch", "__cxa_call_unexpected", "__cxa_call_terminate"}) {
+    // Mach-O symbols carry the C prefix '_'.
+    a.append(ycxx::detail::cfg::darwin ? ".private_extern _" : ".hidden ");
+    a.append(name);
+    a.append("\n");
+  }
+  return a;
+}
+} // namespace
+asm((hide_compiler_declared_entry_points()));
 
 extern "C" {
 
@@ -259,7 +281,7 @@ void* __cxa_begin_catch(void* ue) noexcept {
     h->next_exception = g->caught_exceptions;
     g->caught_exceptions = h;
   }
-  --g->uncaught_exceptions;
+  --h->counted_in->uncaught_exceptions; // the throwing image's count (eh.hpp)
   return h->adjusted_ptr;
 }
 
@@ -295,6 +317,7 @@ void __cxa_end_catch() {
     if (h->handler_count < 0)
       rethrow_primary(object_of(h));
     h->handler_count = -h->handler_count;
+    h->counted_in = g;
     ++g->uncaught_exceptions;
   } else {
     // Ending the foreign handler must not delete it: it is in flight again.

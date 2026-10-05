@@ -3,7 +3,7 @@
 
 #include <ycxx/config.hpp>
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 using int8_t = __INT8_TYPE__;
 using int16_t = __INT16_TYPE__;
 using int32_t = __INT32_TYPE__;

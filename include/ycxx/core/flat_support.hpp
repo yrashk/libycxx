@@ -21,7 +21,7 @@
 #include <ycxx/core/sorted_tags.hpp>
 #include <ycxx/core/swap.hpp>
 
-namespace ycxx::detail {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 
 // The element at index i of a random-access container.
 template <class C>
@@ -214,4 +214,4 @@ using rebound_alloc = typename std::allocator_traits<Allocator>::template rebind
 template <class Alloc, class... Cs>
 concept flat_alloc_for = (std::uses_allocator_v<Cs, Alloc> && ...);
 
-} // namespace ycxx::detail
+}} // namespace ycxx::detail

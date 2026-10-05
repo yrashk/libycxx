@@ -7,14 +7,14 @@
 #include <ycxx/core/iosfwd.hpp>
 #include <ycxx/hosted/thread.hpp>
 
-namespace ycxx::detail {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 // The decimal digits of id's representation, written backwards ending at end.
 inline char* thread_id_chars(char* end, std::thread::id id) noexcept {
   return ::ycxx::detail::charconv_write_unsigned(end, static_cast<unsigned long long>(thread_access::handle_of(id)), 10);
 }
-} // namespace ycxx::detail
+}} // namespace ycxx::detail
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 
 template <class charT, class traits>
 basic_ostream<charT, traits>& operator<<(basic_ostream<charT, traits>& out, thread::id id) {

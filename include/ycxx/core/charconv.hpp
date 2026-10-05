@@ -12,7 +12,7 @@
 #include <ycxx/core/type_traits.hpp>
 #include <ycxx/core/bit.hpp>
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 
 // [charconv.syn]: a bitmask type ([bitmask.types]).
 enum class chars_format { scientific = 1, fixed = 2, hex = 4, general = fixed | scientific };
@@ -49,7 +49,7 @@ struct from_chars_result {
 
 } // namespace std
 
-namespace ycxx::detail {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 
 // ---- integers ([charconv.to.chars]/4-6, [charconv.from.chars]/2-4) ---------------------------
 
@@ -305,9 +305,9 @@ concept charconv_extended_float = is_any_of<T, float16, float32, float64, float1
 template <class T>
 concept charconv_int128 = is_any_of<T, int128, uint128>;
 
-} // namespace ycxx::detail
+}} // namespace ycxx::detail
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 
 // [charconv.to.chars]: integers. One overload per type, as the synopsis specifies.
 constexpr to_chars_result to_chars(char* first, char* last, char value, int base = 10) {

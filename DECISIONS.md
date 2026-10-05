@@ -80,6 +80,77 @@ tooling.
   (`::ycxx::detail::f(...)`), so a user function with the same name in an argument's namespace is
   never picked up. Trait structs (`iterator_traits`, `pointer_traits`, `common_reference`) may
   still derive from `ycxx::detail` helpers, because they are never function arguments.
+- **libycxx's symbols have hidden visibility: a program or shared object exports none of them.**
+  Another C++ library in the same process must neither take over libycxx's definitions nor be
+  taken over by them. On Darwin, libSystem loads Apple's libc++ and libc++abi into every process,
+  and dyld coalesces each exported weak definition with a non-weak one of the same name in any
+  loaded image: `std::current_exception` (inline in a header) became libc++'s, and with GCC the
+  exception classes' type_info, so `catch (const std::exception&)` stopped matching. In the
+  other direction an exported definition of a name libc++abi defines weakly (`operator delete`,
+  the `<stdexcept>` type_info objects) is patched into the shared cache, for every system
+  library. On ELF the same happens when libycxx and libstdc++ or libc++ meet in one process
+  (a shared library built with either, in a program built with the other). One model on every
+  target:
+  - **Headers.** Every file-scope opening of `std` and `ycxx` is
+    `namespace [[gnu::visibility("hidden")]] std {`. The attribute is written on each block:
+    it applies to that block only (both compilers export what a reopening without it declares),
+    and a nested namespace definition cannot carry attributes, so `namespace std::ranges {` is
+    `namespace [[gnu::visibility("hidden")]] std { namespace ranges {` ... `}}`. The attribute
+    reaches everything declared in the block, nested namespaces, classes and their members,
+    templates and their instantiations (explicit ones and those with program types), type_info
+    objects and vtables, inline variables (verified, GCC 16.2 and Clang 23.1).
+    `tools/check_visibility.py` enforces it (`--fix` rewrites new openings). Rejected:
+    `#pragma GCC visibility push(hidden)`/`pop` in each header. It needs no restructuring, but
+    it is preprocessor where an attribute does the job (§1), and it also hides what a header
+    declares at global scope or includes: the C library's functions (a hidden reference cannot
+    bind to a shared libc), the replaceable functions; every header would have to keep its
+    C-library includes outside the region.
+  - **Archives.** `libycxx.a`, `libycxx-abi.a` (and the freestanding runtime archive) are built
+    with `-fvisibility=hidden`. Users need no flag to get hidden symbols, but GCC warns
+    (`-Wattributes`) about each program class with a member or base of a library class type: it
+    gives such a class the lower visibility and says so. The warning says nothing about the
+    program, so the CMake package (`ycxx::headers`) and `tools/ycxx-cxx` pass `-Wno-attributes`
+    to GCC; other build systems add it themselves (STATUS, known limitations). What the compilers keep default despite the
+    flag is hidden with assembler directives (`asm((constant-expression))`, `.hidden` on ELF,
+    `.private_extern` on Mach-O): the default replaceable allocation functions (both compilers
+    declare them implicitly; a visibility attribute conflicts with that declaration), GCC's
+    seven predeclared `__cxa_*` entry points (GCC ignores an attribute on them with a warning),
+    and, on ELF, the fundamental type_info objects GCC emits.
+  - **Default visibility** stays only for what is not libycxx's to hide: the C library
+    functions `ycxx/core/c_stdlib.hpp` declares by assembler name, and a program's own
+    definitions. That includes a program's replacement `operator new`: it is linked instead of
+    the archive member holding the hidden default ([replacement.functions]), and is exported as
+    the program's other functions are. libycxx's defaults are hidden on every target (as
+    Chromium's `-fvisibility-global-new-delete=force-hidden`): on Darwin they are not patched
+    into the shared cache, so system code keeps libc++abi's allocation functions; on ELF a
+    shared library built with libstdc++ keeps its own. Both use `malloc`/`free`, so memory
+    passed between the two still pairs.
+  - **The ABI runtime is per image.** `__cxa_*`, `__gxx_personality_v0`, the `__cxxabiv1`
+    type_info classes and their vtables, `std::type_info` and the classes the compiler looks
+    up (`std::initializer_list`, `std::align_val_t`, `std::bad_alloc`, the comparison
+    categories, `std::coroutine_handle`, `source_location::__impl`, ...) are hidden like the
+    rest: the compilers reference them by name, and the reference binds to the definition in
+    the same image. Exporting them would make a process's other runtime bind half of its names
+    to libycxx's and half to its own (observed with GCC's predeclared entry points: the
+    exception of a libstdc++ shared library aborted). A program and a shared library each
+    linking libycxx therefore have separate runtimes, and exceptions still cross between them:
+    both recognise the exception class, type_info objects are compared by name (§4), the
+    runtime classifies a type_info object (class, pointer, ...) by the name of its ABI class
+    when the address is another image's, and an exception is removed from the uncaught count
+    of the runtime that added it (`exception_header::counted_in`). What is not shared: while
+    an exception of one image unwinds through the other's frames, `uncaught_exceptions()`
+    there does not count it, and `current_exception()`/`throw;` see only the handlers of their
+    own image.
+  - **Cost.** Nothing of libycxx can be exported for plugins to share. GCC warns
+    (`-Wattributes`, "declared with greater visibility than the type of its field/its base")
+    for every class of a program, outside libycxx's namespaces, that has a member or base of a
+    libycxx class type: GCC has no way to hide a class's members, type_info and vtable without
+    hiding the class's type (Clang's `type_visibility` attribute), and hidden class types are
+    what keeps the exception classes from being coalesced on Darwin. Clang does not warn. GCC
+    on Darwin keeps the fundamental type_info objects default (directives for types a target
+    lacks are not portable to Mach-O); benign, as libc++abi exports the same objects.
+  Tested by `tests/ycxx/linkage/no_exported_library_symbols` and `tests/cmake/run.sh` (exports
+  of the example programs; `tests/cmake/visibility`, libycxx and libstdc++ in one process).
 - Template parameters and locals use plain names (`T`, `first`), not reserved `_Ugly` names.
   Known deviation: a user macro that collides with such a name, defined before including a
   libycxx header, can break the header.

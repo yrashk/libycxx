@@ -15,7 +15,7 @@
 #include <ycxx/core/exception_base.hpp>
 #include <initializer_list>
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 
 // ---- [expected.unexpected] ----
 template <class E>
@@ -23,7 +23,7 @@ class unexpected;
 
 } // namespace std
 
-namespace ycxx::detail {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 template <class T>
 inline constexpr bool is_unexpected = false;
 template <class E>
@@ -39,9 +39,9 @@ concept valid_unexpected_arg =
 template <class A, class B>
 concept eq_to_bool = requires(const A& a, const B& b) { requires std::is_convertible_v<decltype(a == b), bool>; };
 constexpr bool implicit_bool(bool b) noexcept { return b; }
-} // namespace ycxx::detail
+}} // namespace ycxx::detail
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 
 template <class E>
 class unexpected {
@@ -137,7 +137,7 @@ class expected;
 
 } // namespace std
 
-namespace ycxx::detail {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 
 template <class T>
 inline constexpr bool is_expected = false;
@@ -239,12 +239,12 @@ template <class T, class E, class U, class G, class GF>
 concept expected_void_converts_from = !(std::is_same_v<T, U> && std::is_same_v<E, G>) && std::is_constructible_v<E, GF> &&
                                       expected_unexpected_not_from<E, U, G>;
 
-} // namespace ycxx::detail
+}} // namespace ycxx::detail
 
 // Base classes of std types live in ycxx::adl_free, a namespace that declares no functions:
 // a base's namespace is an associated namespace for ADL ([basic.lookup.argdep]/3), so a
 // ycxx::detail base would expose every internal function to lookup on the std type.
-namespace ycxx::adl_free {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace adl_free {
 // Common machinery of expected<T, E> and expected<void, E>: storage, lifetime, assignment.
 template <class T, class E>
 class expected_base {
@@ -386,9 +386,9 @@ public:
   }
 };
 
-} // namespace ycxx::adl_free
+}} // namespace ycxx::adl_free
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 
 // =============================================================================================
 // [expected.expected]

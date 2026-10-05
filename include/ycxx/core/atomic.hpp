@@ -14,7 +14,7 @@
 #include <ycxx/core/cstdint.hpp>
 #include <ycxx/core/type_traits.hpp>
 
-namespace ycxx::detail {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 
 template <class V>
 concept atomic_integral = is_integral_v<V> && !std::is_same_v<V, bool>;
@@ -71,9 +71,9 @@ constexpr V atomic_ptr_add(V p, std::ptrdiff_t n) noexcept {
   }
 }
 
-} // namespace ycxx::detail
+}} // namespace ycxx::detail
 
-namespace ycxx::adl_free {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace adl_free {
 
 // The storage and the operations every atomic<T> has.
 template <class T>
@@ -352,9 +352,9 @@ struct atomic_ref_base {
   constexpr ::ycxx::detail::copy_cv<T, void>* address() const noexcept { return ptr_; }
 };
 
-} // namespace ycxx::adl_free
+}} // namespace ycxx::adl_free
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 
 // ---- [atomics.ref.generic] ---------------------------------------------------------------------
 // The constructors every atomic_ref has; `Base` is the specialization's base class.

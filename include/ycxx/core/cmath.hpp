@@ -40,7 +40,7 @@
 #undef islessgreater
 #undef isunordered
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 // FLT_EVAL_METHOD 0: float/double; 1: double/double; 2: long double/long double.
 using float_t = conditional_t<ycxx::detail::cfg::flt_eval_method == 1, double,
                               conditional_t<ycxx::detail::cfg::flt_eval_method == 2, long double, float>>;

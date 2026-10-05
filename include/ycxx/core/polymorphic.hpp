@@ -11,7 +11,7 @@
 
 #include <ycxx/core/indirect.hpp>
 
-namespace ycxx::detail {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 
 template <class T, class A>
 struct poly_block {
@@ -67,9 +67,9 @@ struct poly_block_for final : poly_block<T, A> {
   }
 };
 
-} // namespace ycxx::detail
+}} // namespace ycxx::detail
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 
 template <class T, class Allocator = allocator<T>>
 class polymorphic {

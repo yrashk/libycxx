@@ -22,7 +22,7 @@
 #include <ycxx/core/cmath_tables.hpp>
 #include <ycxx/core/math_constants.hpp>
 
-namespace ycxx::detail::fpm {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail::fpm {
 
 // ---- mpf<N> -------------------------------------------------------------------------------------
 // value = (neg ? -1 : 1) * m * 2^exp, with m normalised (bit 64N - 1 set) or zero.
@@ -1039,4 +1039,4 @@ constexpr T fp_gamma(T x, bool log) noexcept {
   return ycxx::detail::fpm::mp_exp_to<T>(lg, neg);
 }
 
-} // namespace ycxx::detail::fpm
+}} // namespace ycxx::detail::fpm

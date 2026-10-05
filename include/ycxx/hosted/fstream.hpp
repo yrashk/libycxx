@@ -16,11 +16,11 @@
 
 #include <ycxx/hosted/istream.hpp>
 
-namespace std::filesystem {
+namespace [[gnu::visibility("hidden")]] std { namespace filesystem {
 class path;
-} // namespace std::filesystem
+}} // namespace std::filesystem
 
-namespace ycxx::detail {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 // src/hosted/fstream.cpp. A file is an opaque FILE*; offsets are bytes.
 void* file_open(const char* name, std::ios_base::openmode mode) noexcept; // null on failure
 bool file_close(void* f) noexcept;
@@ -30,9 +30,9 @@ bool file_write(void* f, const char* buf, std::size_t n) noexcept;
 long long file_seek(void* f, long long off, int whence) noexcept;
 bool file_flush(void* f) noexcept;
 int file_native(void* f) noexcept;
-} // namespace ycxx::detail
+}} // namespace ycxx::detail
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 
 template <class charT, class traits>
 class basic_filebuf : public basic_streambuf<charT, traits> {

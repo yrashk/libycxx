@@ -12,7 +12,7 @@
 #include <ycxx/core/mdspan.hpp>
 #include <ycxx/core/tuple.hpp>
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 
 // [mdspan.sub.range.slices]
 template <class OffsetType, class ExtentType, class StrideType>
@@ -65,7 +65,7 @@ inline constexpr full_extent_t full_extent{};
 
 } // namespace std
 
-namespace ycxx::detail {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 
 template <class T>
 inline constexpr bool md_is_extent_slice = false;
@@ -541,9 +541,9 @@ constexpr auto md_submdspan_mapping(const M& m, const Sl&... slices) {
   }
 }
 
-} // namespace ycxx::detail
+}} // namespace ycxx::detail
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 
 // [mdspan.sub.map.left] ... [mdspan.sub.map.rightpad]
 template <class Extents>
@@ -607,7 +607,7 @@ constexpr auto subextents(const extents<IndexType, Extents...>& src, SliceSpecif
 
 } // namespace std
 
-namespace ycxx::detail::md_adl {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail::md_adl {
 // sliceable-mapping ([mdspan.sub.map.sliceable]/6): submdspan_mapping found by argument-dependent
 // lookup only (no declaration of that name is visible from here).
 template <class LM, std::size_t... I>
@@ -624,9 +624,9 @@ template <class LM, class... Sl>
 constexpr auto call_submdspan_mapping(const LM& lm, const Sl&... slices) {
   return submdspan_mapping(lm, slices...);
 }
-} // namespace ycxx::detail::md_adl
+}} // namespace ycxx::detail::md_adl
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 
 // [mdspan.sub.sub]
 template <class ElementType, class Extents, class LayoutPolicy, class AccessorPolicy, class... SliceSpecifiers>

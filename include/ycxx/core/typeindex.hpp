@@ -6,7 +6,7 @@
 #include <ycxx/core/hash.hpp>
 #include <ycxx/core/typeinfo.hpp>
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 
 class type_index {
   const type_info* target_;

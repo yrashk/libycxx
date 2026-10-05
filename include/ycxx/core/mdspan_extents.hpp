@@ -11,12 +11,12 @@
 #include <ycxx/core/span.hpp>
 #include <ycxx/core/utility_base.hpp>
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 template <class IndexType, size_t... Extents>
 class extents;
 } // namespace std
 
-namespace ycxx::detail {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 
 // True when a precondition that costs a loop is worth evaluating.
 [[gnu::always_inline]] constexpr bool md_checking() noexcept {
@@ -167,9 +167,9 @@ struct md_dyn_store {
 template <class I>
 struct md_dyn_store<I, 0> {};
 
-} // namespace ycxx::detail
+}} // namespace ycxx::detail
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 
 template <class IndexType, size_t... Extents>
 class extents {
@@ -335,7 +335,7 @@ explicit extents(Integrals...) -> extents<size_t, ycxx::detail::maybe_static_ext
 
 } // namespace std
 
-namespace ycxx::detail {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 
 template <class IndexType, class Seq>
 struct md_dextents;
@@ -344,9 +344,9 @@ struct md_dextents<IndexType, std::index_sequence<I...>> {
   using type = std::extents<IndexType, ((void)I, std::dynamic_extent)...>;
 };
 
-} // namespace ycxx::detail
+}} // namespace ycxx::detail
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 
 // [mdspan.extents.dextents], [mdspan.extents.dims]
 template <class IndexType, size_t Rank>
@@ -356,7 +356,7 @@ using dims = dextents<IndexType, Rank>;
 
 } // namespace std
 
-namespace ycxx::detail {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 
 // fwd-prod-of-extents(i) and rev-prod-of-extents(i) ([mdspan.extents.expo]/5-8).
 template <class E>
@@ -406,4 +406,4 @@ constexpr bool md_is_index(const E& e, I... i) noexcept {
   return ok;
 }
 
-} // namespace ycxx::detail
+}} // namespace ycxx::detail

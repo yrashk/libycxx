@@ -18,7 +18,7 @@
 #include <ycxx/core/error.hpp>
 #include <ycxx/core/text_encoding_table.hpp>
 
-namespace ycxx::detail {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 
 // The comp-name canonical form of s ([text.encoding.members]/19): letters (lower-cased) and
 // digits only, where a run of '0' is dropped unless a numeric prefix (a digit 1-9, possibly
@@ -88,9 +88,9 @@ constexpr const te_name* te_first(std::int_least32_t mib) noexcept {
   return te_names + lo;
 }
 
-} // namespace ycxx::detail
+}} // namespace ycxx::detail
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 
 struct text_encoding {
   static constexpr size_t max_name_length = 63;

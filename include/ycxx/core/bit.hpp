@@ -4,7 +4,7 @@
 #include <ycxx/core/type_traits.hpp>
 #include <ycxx/core/error.hpp>
 
-namespace ycxx::detail {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 // Unsigned integer types, plus unsigned _BitInt(N) where the compiler has it (extension).
 template <class T>
 concept bit_unsigned =
@@ -15,9 +15,9 @@ template <class T>
 inline constexpr int bit_digits = bitint_width<T> != 0 ? bitint_width<T> : static_cast<int>(sizeof(T) * __CHAR_BIT__);
 template <class T>
 constexpr T byteswap_std(T value) noexcept;
-} // namespace ycxx::detail
+}} // namespace ycxx::detail
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 
 enum class endian { little = __ORDER_LITTLE_ENDIAN__, big = __ORDER_BIG_ENDIAN__, native = __BYTE_ORDER__ };
 
@@ -46,7 +46,7 @@ template <class T>
 }
 } // namespace std
 
-namespace ycxx::detail {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 template <class T>
 constexpr T byteswap_std(T value) noexcept {
   using U = std::make_unsigned_t<std::conditional_t<__is_same(__remove_cv(T), bool), unsigned char, T>>;
@@ -65,9 +65,9 @@ constexpr T byteswap_std(T value) noexcept {
     return static_cast<T>((static_cast<ycxx::detail::uint128>(__builtin_bswap64(lo)) << 64) | __builtin_bswap64(hi));
   }
 }
-} // namespace ycxx::detail
+}} // namespace ycxx::detail
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 // [bit.count]
 template <ycxx::detail::bit_unsigned T>
 [[nodiscard]] constexpr int countl_zero(T x) noexcept {
@@ -141,7 +141,7 @@ template <ycxx::detail::bit_unsigned T>
 
 } // namespace std
 
-namespace ycxx::detail {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 // x * 2^s and x * 2^-s rounded toward negative infinity, modulo 2^N, for any shift amount.
 // One return statement each: constant evaluation counts statements, and shl/shr are cheap enough
 // to be called in long constant-evaluated loops.
@@ -171,9 +171,9 @@ constexpr unsigned long long magnitude(S s) noexcept {
   const U m = s < 0 ? static_cast<U>(U(0) - static_cast<U>(s)) : static_cast<U>(s);
   return m > static_cast<U>(~0ull) ? ~0ull : static_cast<unsigned long long>(m);
 }
-} // namespace ycxx::detail
+}} // namespace ycxx::detail
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 
 // [bit.shift]
 template <ycxx::detail::bit_integer T, ycxx::detail::bit_integer S>

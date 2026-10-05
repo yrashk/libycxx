@@ -15,7 +15,7 @@
 #include <ycxx/core/type_traits.hpp>
 #include <ycxx/hosted/thread_support.hpp>
 
-namespace ycxx::adl_free {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace adl_free {
 // A registered callback (the base of stop_callback and inplace_stop_callback). invoke runs it.
 struct stop_callback_node {
   stop_callback_node* next = nullptr;
@@ -24,9 +24,9 @@ struct stop_callback_node {
   bool* removed = nullptr;   // set by request_stop while the callback runs
   unsigned char done = 0;    // the callback has finished running (atomic, waited on)
 };
-} // namespace ycxx::adl_free
+}} // namespace ycxx::adl_free
 
-namespace ycxx::detail {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 using adl_free::stop_callback_node;
 
 class stop_state {
@@ -145,9 +145,9 @@ struct shared_stop_state {
 template <template <class> class>
 struct check_type_alias_exists;
 
-} // namespace ycxx::detail
+}} // namespace ycxx::detail
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 
 class stop_token;
 class stop_source;

@@ -11,7 +11,7 @@
 #include <ycxx/core/atomic.hpp>
 #include <ycxx/core/shared_ptr.hpp>
 
-namespace ycxx::detail {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 
 // Holds the striped lock of an atomic smart pointer (no-op during constant evaluation).
 class sp_atomic_guard {
@@ -34,9 +34,9 @@ public:
   }
 };
 
-} // namespace ycxx::detail
+}} // namespace ycxx::detail
 
-namespace ycxx::adl_free {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace adl_free {
 
 // The base of atomic<shared_ptr<T>> and atomic<weak_ptr<T>>; P is shared_ptr<T> or weak_ptr<T>.
 template <class P>
@@ -125,9 +125,9 @@ public:
   constexpr void notify_all() noexcept { ::ycxx::detail::atomic_notify_all(this); }
 };
 
-} // namespace ycxx::adl_free
+}} // namespace ycxx::adl_free
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 
 // [util.smartptr.atomic.shared]
 template <class T>

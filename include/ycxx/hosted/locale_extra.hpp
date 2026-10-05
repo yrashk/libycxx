@@ -74,6 +74,33 @@ public:
   enum dateorder { no_order, dmy, mdy, ymd, ydm };
 };
 
+} // namespace std
+
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
+
+// LC_TIME of a named locale as time_get_byname reads it (nl_langinfo_l; strings converted to
+// charT through the name's LC_CTYPE).
+template <class charT>
+struct time_data {
+  // weekdays (full Sunday-Saturday, then abbreviated), months (full, then abbreviated), AM, PM
+  std::basic_string<charT> names[14 + 24 + 2];
+  std::basic_string<charT> d_t_fmt, d_fmt, t_fmt, t_fmt_ampm; // %c, %x, %X, %r
+  std::time_base::dateorder order = std::time_base::mdy;      // from the order of %x's fields
+};
+// Fills d for the locale `name`; false (d untouched) for the names with classic semantics.
+bool named_time_data(const char* name, time_data<char>& d);
+bool named_time_data(const char* name, time_data<wchar_t>& d);
+// time_put_byname: strftime_l (wcsftime_l) of "%<modifier><format>" in the locale. Writes at
+// most cap characters; returns the full length.
+std::size_t named_strftime(const named_locale* h, char* buf, std::size_t cap, const std::tm* t, char format,
+                           char modifier);
+std::size_t named_strftime(const named_locale* h, wchar_t* buf, std::size_t cap, const std::tm* t, char format,
+                           char modifier);
+
+}} // namespace ycxx::detail
+
+namespace [[gnu::visibility("hidden")]] std {
+
 template <class charT, class InputIterator>
 class time_get : public locale::facet, public time_base {
 public:
@@ -196,14 +223,17 @@ public:
 
 protected:
   ~time_get() override {}
-  virtual dateorder do_date_order() const { return mdy; }
+  virtual dateorder do_date_order() const { return named_ != nullptr ? named_->order : mdy; }
   virtual iter_type do_get_time(iter_type s, iter_type end, ios_base& f, ios_base::iostate& err, tm* t) const {
     return parse(s, end, f, err, t, "%H:%M:%S");
   }
   virtual iter_type do_get_date(iter_type s, iter_type end, ios_base& f, ios_base::iostate& err, tm* t) const {
     // [locale.time.get.virtuals]/4: what time_put produces for "%d%m%y" (or the order's
     // permutation), which has no separators; /5: other formats may be accepted too, here the
-    // same fields separated by '/' ('?' in the pattern: an optional '/').
+    // same fields separated by '/' ('?' in the pattern: an optional '/'). A named locale's facet
+    // reads its %x format instead (the one its time_put writes for %x).
+    if (named_ != nullptr && !named_->d_fmt.empty())
+      return parse_format(s, end, f, err, t, named_->d_fmt);
     switch (date_order()) {
     case dmy:
       return parse(s, end, f, err, t, "%d?%m?%y");
@@ -217,14 +247,20 @@ protected:
   }
   virtual iter_type do_get_weekday(iter_type s, iter_type end, ios_base& f, ios_base::iostate& err, tm* t) const {
     int v;
-    s = match_name(s, end, f, err, ycxx::detail::c_weekday_names, 14, v);
+    if (named_ != nullptr)
+      s = match_name(s, end, f, err, named_->names, 14, v);
+    else
+      s = match_name(s, end, f, err, ycxx::detail::c_weekday_names, 14, v);
     if (!(err & ios_base::failbit))
       t->tm_wday = v % 7;
     return s;
   }
   virtual iter_type do_get_monthname(iter_type s, iter_type end, ios_base& f, ios_base::iostate& err, tm* t) const {
     int v;
-    s = match_name(s, end, f, err, ycxx::detail::c_month_names, 24, v);
+    if (named_ != nullptr)
+      s = match_name(s, end, f, err, named_->names + 14, 24, v);
+    else
+      s = match_name(s, end, f, err, ycxx::detail::c_month_names, 24, v);
     if (!(err & ios_base::failbit))
       t->tm_mon = v % 12;
     return s;
@@ -257,6 +293,20 @@ protected:
     }
     tm r = *t; // assigned to *t only on success
     int v = 0;
+    // a named locale's %c, %x, %X and %r are its own formats
+    if (named_ != nullptr) {
+      const basic_string<charT>* own = format == 'c'   ? &named_->d_t_fmt
+                                       : format == 'x' ? &named_->d_fmt
+                                       : format == 'X' ? &named_->t_fmt
+                                       : format == 'r' ? &named_->t_fmt_ampm
+                                                       : nullptr;
+      if (own != nullptr && !own->empty()) {
+        s = parse_format(s, end, f, err, &r, *own);
+        if (!(err & ios_base::failbit))
+          *t = r;
+        return s;
+      }
+    }
     switch (format) {
     case 'a':
     case 'A':
@@ -351,6 +401,13 @@ protected:
       if (!(err & ios_base::failbit))
         r.tm_year = v - 1900;
       break;
+    case 'Z': // a time zone name: read, not converted (as strptime)
+      s = skip_space(s, end, f, err);
+      while (s != end && !use_facet<ctype<charT>>(f.getloc()).is(ctype_base::space, *s))
+        ++s;
+      if (s == end)
+        err |= ios_base::eofbit;
+      break;
     case '%':
       if (s == end)
         err |= ios_base::eofbit | ios_base::failbit;
@@ -370,6 +427,19 @@ protected:
   }
 
 private:
+  template <class, class>
+  friend class time_get_byname;
+  // A named locale's names and formats (time_get_byname's; null: the "C" locale's).
+  const ycxx::detail::time_data<charT>* named_ = nullptr;
+
+  // Parses a named locale's format with get() (its conversions with do_get).
+  iter_type parse_format(iter_type s, iter_type end, ios_base& f, ios_base::iostate& err, tm* t,
+                         const basic_string<charT>& fmt) const {
+    ios_base::iostate e = ios_base::goodbit;
+    s = get(s, end, f, e, t, fmt.data(), fmt.data() + fmt.size());
+    err |= e;
+    return s;
+  }
   // Parses the char format fmt (conversions and literal characters) with do_get.
   iter_type parse(iter_type s, iter_type end, ios_base& f, ios_base::iostate& err, tm* t, const char* fmt) const {
     const ctype<charT>& ct = use_facet<ctype<charT>>(f.getloc());
@@ -448,10 +518,17 @@ private:
     }
     return s;
   }
-  static iter_type read_ampm(iter_type s, iter_type end, ios_base& f, ios_base::iostate& err, tm& r) {
+  iter_type read_ampm(iter_type s, iter_type end, ios_base& f, ios_base::iostate& err, tm& r) const {
     static constexpr const char* names[2] = {"AM", "PM"};
     int v;
-    s = match_name(s, end, f, err, names, 2, v);
+    if (named_ != nullptr) {
+      // a locale without AM/PM strings (most 24-hour locales) has nothing to read
+      if (named_->names[38].empty() && named_->names[39].empty())
+        return s;
+      s = match_name(s, end, f, err, named_->names + 38, 2, v);
+    } else {
+      s = match_name(s, end, f, err, names, 2, v);
+    }
     if (!(err & ios_base::failbit)) {
       r.tm_hour %= 12;
       if (v == 1)
@@ -501,6 +578,48 @@ private:
       err |= ios_base::failbit;
     return s;
   }
+  // The same for a named locale's names, compared through the stream's ctype<charT>::tolower;
+  // an empty name never matches.
+  static iter_type match_name(iter_type s, iter_type end, ios_base& f, ios_base::iostate& err,
+                              const basic_string<charT>* names, int n, int& which) {
+    const ctype<charT>& ct = use_facet<ctype<charT>>(f.getloc());
+    bool alive[24];
+    for (int k = 0; k < n; ++k)
+      alive[k] = !names[k].empty();
+    size_t i = 0;
+    for (;;) {
+      bool more = false;
+      for (int k = 0; k < n; ++k)
+        more = more || (alive[k] && i < names[k].size());
+      if (!more)
+        break;
+      if (s == end) {
+        err |= ios_base::eofbit;
+        break;
+      }
+      const charT c = ct.tolower(*s);
+      bool any = false;
+      for (int k = 0; k < n; ++k)
+        any = any || (alive[k] && i < names[k].size() && ct.tolower(names[k][i]) == c);
+      if (!any)
+        break;
+      for (int k = 0; k < n; ++k)
+        alive[k] = alive[k] && i < names[k].size() && ct.tolower(names[k][i]) == c;
+      ++s;
+      ++i;
+    }
+    if (s == end)
+      err |= ios_base::eofbit;
+    which = -1;
+    for (int k = 0; k < n; ++k)
+      if (alive[k] && names[k].size() == i && i != 0) {
+        which = k;
+        break;
+      }
+    if (which < 0)
+      err |= ios_base::failbit;
+    return s;
+  }
 };
 template <class charT, class InputIterator>
 locale::id time_get<charT, InputIterator>::id;
@@ -511,13 +630,23 @@ class time_get_byname : public time_get<charT, InputIterator> {
 public:
   using dateorder = time_base::dateorder;
   using iter_type = InputIterator;
+  // char and wchar_t: LC_TIME's names and formats, read here; other character types (and the
+  // names with classic semantics): the "C" locale's.
   explicit time_get_byname(const char* name, size_t refs = 0) : time_get<charT, InputIterator>(refs) {
-    ::ycxx::detail::check_locale_name(name, "std::time_get_byname");
+    if constexpr (is_same_v<charT, char> || is_same_v<charT, wchar_t>) {
+      if (::ycxx::detail::named_time_data(name, data_))
+        this->named_ = &data_;
+    } else {
+      ::ycxx::detail::check_locale_name(name, "std::time_get_byname");
+    }
   }
   explicit time_get_byname(const string& name, size_t refs = 0) : time_get_byname(name.c_str(), refs) {}
 
 protected:
   ~time_get_byname() override {}
+
+private:
+  ycxx::detail::time_data<charT> data_;
 };
 
 // ---- [locale.time.put] ------------------------------------------------------------------------
@@ -583,13 +712,39 @@ class time_put_byname : public time_put<charT, OutputIterator> {
 public:
   using char_type = charT;
   using iter_type = OutputIterator;
+  // char and wchar_t: strftime_l / wcsftime_l in the name's LC_TIME; other character types (and
+  // the names with classic semantics): the "C" locale's conversions.
   explicit time_put_byname(const char* name, size_t refs = 0) : time_put<charT, OutputIterator>(refs) {
-    ::ycxx::detail::check_locale_name(name, "std::time_put_byname");
+    if constexpr (is_same_v<charT, char> || is_same_v<charT, wchar_t>)
+      named_ = ::ycxx::detail::named_open(name, locale::time, "std::time_put_byname");
+    else
+      ::ycxx::detail::check_locale_name(name, "std::time_put_byname");
   }
   explicit time_put_byname(const string& name, size_t refs = 0) : time_put_byname(name.c_str(), refs) {}
 
 protected:
-  ~time_put_byname() override {}
+  ~time_put_byname() override { ::ycxx::detail::named_release(named_); }
+  iter_type do_put(iter_type s, ios_base& str, char_type fill, const tm* t, char format, char modifier) const override {
+    if constexpr (is_same_v<charT, char> || is_same_v<charT, wchar_t>) {
+      if (named_ != nullptr) {
+        charT local[128];
+        size_t n = ycxx::detail::named_strftime(named_, local, 128, t, format, modifier);
+        ycxx::detail::small_buffer<charT, 1> big(n > 128 ? n : 0);
+        const charT* text = local;
+        if (n > 128) {
+          n = ycxx::detail::named_strftime(named_, big.get(), n, t, format, modifier);
+          text = big.get();
+        }
+        for (size_t i = 0; i < n; ++i, static_cast<void>(++s))
+          *s = text[i];
+        return s;
+      }
+    }
+    return time_put<charT, OutputIterator>::do_put(s, str, fill, t, format, modifier);
+  }
+
+private:
+  ycxx::detail::named_locale* named_ = nullptr;
 };
 
 // ---- [locale.moneypunct] ----------------------------------------------------------------------
@@ -639,19 +794,64 @@ locale::id moneypunct<charT, International>::id;
 template <class charT, bool International>
 const bool moneypunct<charT, International>::intl;
 
-// [locale.moneypunct.byname]
+} // namespace std
+
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
+
+// LC_MONETARY of a named locale as moneypunct_byname reads it; initialized to the values of the
+// base moneypunct.
+template <class charT>
+struct money_data {
+  charT point = std::numeric_limits<charT>::max();
+  charT sep = std::numeric_limits<charT>::max();
+  std::string grouping;
+  std::basic_string<charT> symbol, positive, negative = std::basic_string<charT>(1, charT('-'));
+  int frac_digits = 0;
+  std::money_base::pattern pos{{std::money_base::symbol, std::money_base::sign, std::money_base::none,
+                                std::money_base::value}};
+  std::money_base::pattern neg = pos;
+};
+// Fills d for the locale `name` from localeconv (the int_ members for intl); d is untouched for
+// the names with classic semantics. Separators as for named_numpunct.
+void named_money_data(const char* name, bool intl, money_data<char>& d);
+void named_money_data(const char* name, bool intl, money_data<wchar_t>& d);
+
+}} // namespace ycxx::detail
+
+namespace [[gnu::visibility("hidden")]] std {
+
+// [locale.moneypunct.byname]: for char and wchar_t, the C library's LC_MONETARY of the name, read
+// once, here. The patterns follow POSIX's p_cs_precedes, p_sep_by_space and p_sign_posn (n_ for
+// neg_format(), int_p_/int_n_ for Intl): a separating space is the pattern's space field, and a
+// sign position of 0 (parentheses) gives the sign string "()". Other character types: the base's
+// values.
 template <class charT, bool Intl>
 class moneypunct_byname : public moneypunct<charT, Intl> {
 public:
   using pattern = money_base::pattern;
   using string_type = basic_string<charT>;
   explicit moneypunct_byname(const char* name, size_t refs = 0) : moneypunct<charT, Intl>(refs) {
-    ::ycxx::detail::check_locale_name(name, "std::moneypunct_byname");
+    if constexpr (is_same_v<charT, char> || is_same_v<charT, wchar_t>)
+      ::ycxx::detail::named_money_data(name, Intl, data_);
+    else
+      ::ycxx::detail::check_locale_name(name, "std::moneypunct_byname");
   }
   explicit moneypunct_byname(const string& name, size_t refs = 0) : moneypunct_byname(name.c_str(), refs) {}
 
 protected:
   ~moneypunct_byname() override {}
+  charT do_decimal_point() const override { return data_.point; }
+  charT do_thousands_sep() const override { return data_.sep; }
+  string do_grouping() const override { return data_.grouping; }
+  string_type do_curr_symbol() const override { return data_.symbol; }
+  string_type do_positive_sign() const override { return data_.positive; }
+  string_type do_negative_sign() const override { return data_.negative; }
+  int do_frac_digits() const override { return data_.frac_digits; }
+  pattern do_pos_format() const override { return data_.pos; }
+  pattern do_neg_format() const override { return data_.neg; }
+
+private:
+  ycxx::detail::money_data<charT> data_;
 };
 
 // ---- [locale.money.get] -----------------------------------------------------------------------
@@ -1038,6 +1238,45 @@ public:
 
 protected:
   ~messages_byname() override {}
+};
+// The C library's message catalogs (catopen with NL_CAT_LOCALE in the name's LC_MESSAGES; catgets,
+// whose text is converted through the name's LC_CTYPE for wchar_t); src/hosted/locale_named.cpp.
+// For the names with classic semantics, the base messages (no catalogs).
+template <>
+class messages_byname<char> : public messages<char> {
+public:
+  using catalog = messages_base::catalog;
+  using string_type = string;
+  explicit messages_byname(const char* name, size_t refs = 0)
+      : messages(refs), named_(::ycxx::detail::named_open(name, locale::messages, "std::messages_byname")) {}
+  explicit messages_byname(const string& name, size_t refs = 0) : messages_byname(name.c_str(), refs) {}
+
+protected:
+  ~messages_byname() override;
+  catalog do_open(const string& fn, const locale& loc) const override;
+  string_type do_get(catalog c, int set, int msgid, const string_type& dfault) const override;
+  void do_close(catalog c) const override;
+
+private:
+  ycxx::detail::named_locale* named_;
+};
+template <>
+class messages_byname<wchar_t> : public messages<wchar_t> {
+public:
+  using catalog = messages_base::catalog;
+  using string_type = wstring;
+  explicit messages_byname(const char* name, size_t refs = 0)
+      : messages(refs), named_(::ycxx::detail::named_open(name, locale::messages, "std::messages_byname")) {}
+  explicit messages_byname(const string& name, size_t refs = 0) : messages_byname(name.c_str(), refs) {}
+
+protected:
+  ~messages_byname() override;
+  catalog do_open(const string& fn, const locale& loc) const override;
+  string_type do_get(catalog c, int set, int msgid, const string_type& dfault) const override;
+  void do_close(catalog c) const override;
+
+private:
+  ycxx::detail::named_locale* named_;
 };
 
 } // namespace std

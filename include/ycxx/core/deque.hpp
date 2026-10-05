@@ -462,7 +462,13 @@ private:
         ++n;
       }
       rb.release();
-      std::reverse(begin(), begin() + static_cast<difference_type>(n));
+      // Reversed with move assignments and a temporary built through the allocator (not
+      // std::reverse, whose swaps make the temporaries outside it).
+      for (iterator lo = begin(), hi = begin() + static_cast<difference_type>(n); lo != hi && lo != --hi; ++lo) {
+        ycxx::detail::alloc_temp<T, Allocator> tmp(alloc_, static_cast<T&&>(*lo));
+        *lo = static_cast<T&&>(*hi);
+        *hi = static_cast<T&&>(tmp.v);
+      }
     }
   }
   template <class It>

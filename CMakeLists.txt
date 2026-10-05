@@ -16,6 +16,8 @@ option(YCXX_WERROR "Build libycxx itself with -Werror" ${PROJECT_IS_TOP_LEVEL})
 option(YCXX_INSTALL "Generate libycxx's install and package rules" ${PROJECT_IS_TOP_LEVEL})
 set(YCXX_CXX_STANDARD_FLAG "-std=c++26" CACHE STRING
     "Language-standard flag ycxx::ycxx adds to consumers (empty: none; set your own C++26 flag)")
+option(YCXX_FREESTANDING_RUNTIME
+       "Also build (and install) libycxx-freestanding.a, the runtime of freestanding programs (ycxx::freestanding)" OFF)
 option(YCXX_ALLOW_UNSUPPORTED_COMPILER "Do not stop on compilers other than GCC >= 16.2 / Clang >= 23" OFF)
 
 if(NOT YCXX_ALLOW_UNSUPPORTED_COMPILER)
@@ -217,6 +219,33 @@ if(YCXX_GCC_INSTALL_DIR)
     $<BUILD_INTERFACE:$<$<AND:$<LINK_LANGUAGE:CXX>,$<CXX_COMPILER_ID:Clang>>:--gcc-install-dir=${YCXX_GCC_INSTALL_DIR}>>)
 endif()
 
+# ---- ycxx::freestanding (libycxx-freestanding.a, YCXX_FREESTANDING_RUNTIME): what a freestanding
+# program links instead of ycxx::ycxx (DECISIONS §3): the default replaceable allocation functions
+# (no heap: the plain forms fail through the error handler, the nothrow forms return null; a
+# program with a heap replaces them),
+# std::nothrow, floating-point <charconv>, the <atomic> lock and wait tables, <debugging>, the
+# default contract-violation handler and the platform layer's wait and debugger hooks. Built for
+# the compiler's target with -ffreestanding -nostdinc (no C library headers), without exceptions
+# or RTTI, hidden. Consumers get libycxx's headers and -ffreestanding; the C library functions the
+# compilers may call (memcpy, memmove, memset, memcmp) and the entry point are the program's
+# (tests/freestanding/rt.c). tools/check_freestanding.sh builds the same sources for bare-metal
+# targets.
+if(YCXX_FREESTANDING_RUNTIME)
+  file(GLOB YCXX_FREESTANDING_SOURCES CONFIGURE_DEPENDS
+       src/runtime/new/*.cpp src/freestanding/new/*.cpp src/freestanding/contracts/*.cpp src/freestanding/pal/*.cpp)
+  add_library(ycxx_freestanding STATIC
+    ${YCXX_FREESTANDING_SOURCES} ${YCXX_CHARCONV_SOURCES} ${YCXX_ATOMIC_SOURCES}
+    ${YCXX_DEBUGGING_SOURCES} ${YCXX_CONTRACTS_SOURCES})
+  set_target_properties(ycxx_freestanding PROPERTIES OUTPUT_NAME ycxx-freestanding EXPORT_NAME freestanding
+                        POSITION_INDEPENDENT_CODE ON CXX_VISIBILITY_PRESET hidden)
+  target_link_libraries(ycxx_freestanding PUBLIC ycxx_headers)
+  target_compile_options(ycxx_freestanding PRIVATE -std=c++26 -nostdinc -fno-exceptions -fno-rtti ${_ycxx_warnings}
+    # One allocation function per file; no zero fill of the charconv work buffers (see above).
+    $<$<CXX_COMPILER_ID:GNU>:-Wno-sized-deallocation -ftrivial-auto-var-init=uninitialized>
+    PUBLIC $<$<COMPILE_LANGUAGE:CXX>:-ffreestanding>)
+  add_library(ycxx::freestanding ALIAS ycxx_freestanding)
+endif()
+
 add_library(ycxx::headers ALIAS ycxx_headers)
 add_library(ycxx::core ALIAS ycxx)
 add_library(ycxx::abi ALIAS ycxx_abi)
@@ -227,8 +256,11 @@ if(YCXX_INSTALL)
   include(CMakePackageConfigHelpers)
   set(YCXX_CMAKE_DIR ${CMAKE_INSTALL_LIBDIR}/cmake/libycxx)
   install(DIRECTORY include/ DESTINATION ${YCXX_INSTALL_INCLUDEDIR})
-  install(TARGETS ycxx_headers ycxx ycxx_abi ycxx_ycxx EXPORT libycxxTargets
-          ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR})
+  set(_ycxx_installed ycxx_headers ycxx ycxx_abi ycxx_ycxx)
+  if(YCXX_FREESTANDING_RUNTIME)
+    list(APPEND _ycxx_installed ycxx_freestanding)
+  endif()
+  install(TARGETS ${_ycxx_installed} EXPORT libycxxTargets ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR})
   install(EXPORT libycxxTargets NAMESPACE ycxx:: DESTINATION ${YCXX_CMAKE_DIR})
   configure_package_config_file(cmake/libycxxConfig.cmake.in
     ${CMAKE_CURRENT_BINARY_DIR}/libycxxConfig.cmake INSTALL_DESTINATION ${YCXX_CMAKE_DIR})

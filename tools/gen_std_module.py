@@ -65,8 +65,8 @@ CXX_HEADERS = sorted(h for h in set(CORE + HOSTED + ABI + FREESTANDING_SUBSET)
 COMPAT_HEADERS = [h[1:] + ".h" for h in C_HEADERS] + ["stdbit.h", "stdckdint.h"]
 
 # The namespaces nested in std that the draft names (std::views is an alias of
-# std::ranges::views). Inline namespaces not listed here are implementation details whose
-# members are exported in the enclosing namespace.
+# std::ranges::views). Any other nested namespace of std must be inline (the implementation's
+# std::ranges::cpo); it is redeclared inline in the module.
 STD_NAMESPACES = {
     "chrono", "chrono_literals", "complex_literals", "contracts", "execution", "filesystem", "linalg",
     "literals", "meta", "numbers", "placeholders", "pmr", "ranges", "regex_constants", "rel_ops", "simd",
@@ -551,7 +551,7 @@ def using(path, name):
     return f"using {('std::' + path + '::') if path else 'std::'}{name};"
 
 
-def emit_namespace_block(lines, std_ns, exports, aliases, cond, indent="  "):
+def emit_namespace_block(std_ns, exports, aliases, cond, indent="  "):
     """The `export namespace std { ... }` body of the names whose condition is `cond`."""
     def body(path, depth):
         out = []
@@ -582,7 +582,7 @@ def generate_std(exports, aliases, std_ns):
     lines += hide_initializer("_ZGIW3std")
     conds = sorted({c for names in exports.values() for c in names.values()})
     for cond in conds:
-        block = emit_namespace_block(lines, std_ns, exports, aliases, cond)
+        block = emit_namespace_block(std_ns, exports, aliases, cond)
         if not block:
             continue
         if cond:

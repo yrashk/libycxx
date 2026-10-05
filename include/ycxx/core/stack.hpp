@@ -1,5 +1,5 @@
 // libycxx core: the container adaptor stack ([stack]). The formatter specialization
-// ([container.adaptors.format]) is defined with <format> (ycxx/core/format_ranges.hpp).
+// ([container.adaptors.format]) is in ycxx/core/format_adaptors.hpp, which <stack> includes.
 #pragma once
 
 #include <ycxx/core/algo_base.hpp>

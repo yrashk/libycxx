@@ -537,16 +537,16 @@ locale::locale(const locale& other, const char* std_name, category cats) : impl_
 
 locale::locale(const locale& other, const locale& one, category cats) : impl_(nullptr) {
   string result;
-  const bool named = other.impl_->name != nullptr && (cats == none || one.impl_->name != nullptr);
+  // [locale.cons]: "The resulting locale has a name if and only if the first two arguments have
+  // names" (also when cats is none)
+  const bool named = other.impl_->name != nullptr && one.impl_->name != nullptr;
   if (named) {
     split_name a, b;
     split(other.impl_->name, a);
-    if (cats != none) {
-      split(one.impl_->name, b);
-      for (int c = 0; c < ncategories; ++c)
-        if (cats & category_bits[c])
-          a.part[c] = b.part[c];
-    }
+    split(one.impl_->name, b);
+    for (int c = 0; c < ncategories; ++c)
+      if (cats & category_bits[c])
+        a.part[c] = b.part[c];
     result = join(a);
   }
   locale_impl* p = clone(other.impl_, one.impl_->nfacets, named ? result.c_str() : nullptr);

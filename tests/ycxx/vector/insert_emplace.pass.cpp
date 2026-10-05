@@ -3,6 +3,7 @@
 // iterator to the first new element (or p if nothing was inserted). /22 note: args may
 // refer to an element of the vector. [vector.modifiers]/2: without reallocation, iterators
 // before the insertion point stay valid.
+// COUNTERPART: libstdcxx:23_containers/vector/debug/60587.cc
 #include <vector>
 #include <ranges>
 #include <string>

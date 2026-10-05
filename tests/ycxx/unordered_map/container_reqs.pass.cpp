@@ -5,6 +5,7 @@
 // [container.reqmts]/64) with a stateful allocator; move construction / move assignment /
 // swap keeping the elements in place ([container.reqmts]/15-16, /50, /65); and the noexcept
 // members of the synopsis.
+// COUNTERPART: libstdcxx:23_containers/unordered_map/59548.cc
 #include <unordered_map>
 #include <iterator>
 #include <type_traits>

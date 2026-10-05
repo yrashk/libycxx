@@ -9,6 +9,7 @@
 // "The erase members shall invalidate only iterators and references to the erased elements"
 // ([associative.reqmts.general]/175, [unord.req.general]/242), so the elements kept are the
 // same objects, in the same order.
+// COUNTERPART: libstdcxx:23_containers/(map|multimap|set|multiset|unordered_map|unordered_multimap|unordered_set|unordered_multiset)/debug/erase_if.cc
 #include <cstddef>
 #include <map>
 #include <set>

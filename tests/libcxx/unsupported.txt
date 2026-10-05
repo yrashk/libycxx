@@ -1,0 +1,34 @@
+# libc++ tests that cannot pass in one environment, although they are valid and libycxx passes
+# them elsewhere. Reported UNSUPPORTED, with the reason, only while the lit feature is available;
+# they run normally otherwise. Format:  <path regex relative to libcxx/test/std> | <lit feature> | <reason>
+#
+# root (tests/libcxx/lit.cfg.py: os.geteuid() == 0, as in CI's Linux containers): the test makes a
+# file or directory inaccessible (perms::none, or a directory without search permission) and
+# expects the access error, which root never gets ([fs.err.report]: an error is reported when the
+# operating system reports one). Each passes on both compilers as an unprivileged user (uid 65534).
+input\.output/filesystems/class\.directory_entry/directory_entry\.mods/assign\.pass\.cpp | root | expects a permission error from an inaccessible path, which root never gets
+input\.output/filesystems/class\.directory_entry/directory_entry\.mods/refresh\.pass\.cpp | root | expects a permission error from an inaccessible path, which root never gets
+input\.output/filesystems/class\.directory_entry/directory_entry\.mods/replace_filename\.pass\.cpp | root | expects a permission error from an inaccessible path, which root never gets
+input\.output/filesystems/class\.directory_entry/directory_entry\.obs/file_size\.pass\.cpp | root | expects a permission error from an inaccessible path, which root never gets
+input\.output/filesystems/class\.directory_entry/directory_entry\.obs/file_type_obs\.pass\.cpp | root | expects a permission error from an inaccessible path, which root never gets
+input\.output/filesystems/class\.directory_entry/directory_entry\.obs/hard_link_count\.pass\.cpp | root | expects a permission error from an inaccessible path, which root never gets
+input\.output/filesystems/class\.directory_entry/directory_entry\.obs/last_write_time\.pass\.cpp | root | expects a permission error from an inaccessible path, which root never gets
+input\.output/filesystems/class\.directory_iterator/directory_iterator\.members/ctor\.pass\.cpp | root | expects a permission error from an inaccessible path, which root never gets
+input\.output/filesystems/class\.rec\.dir\.itr/rec\.dir\.itr\.members/ctor\.pass\.cpp | root | expects a permission error from an inaccessible path, which root never gets
+input\.output/filesystems/class\.rec\.dir\.itr/rec\.dir\.itr\.members/increment\.pass\.cpp | root | expects a permission error from an inaccessible path, which root never gets
+input\.output/filesystems/fs\.op\.funcs/fs\.op\.exists/exists\.pass\.cpp | root | expects a permission error from an inaccessible path, which root never gets
+input\.output/filesystems/fs\.op\.funcs/fs\.op\.is_block_file/is_block_file\.pass\.cpp | root | expects a permission error from an inaccessible path, which root never gets
+input\.output/filesystems/fs\.op\.funcs/fs\.op\.is_char_file/is_character_file\.pass\.cpp | root | expects a permission error from an inaccessible path, which root never gets
+input\.output/filesystems/fs\.op\.funcs/fs\.op\.is_directory/is_directory\.pass\.cpp | root | expects a permission error from an inaccessible path, which root never gets
+input\.output/filesystems/fs\.op\.funcs/fs\.op\.is_empty/is_empty\.pass\.cpp | root | expects a permission error from an inaccessible path, which root never gets
+input\.output/filesystems/fs\.op\.funcs/fs\.op\.is_fifo/is_fifo\.pass\.cpp | root | expects a permission error from an inaccessible path, which root never gets
+input\.output/filesystems/fs\.op\.funcs/fs\.op\.is_other/is_other\.pass\.cpp | root | expects a permission error from an inaccessible path, which root never gets
+input\.output/filesystems/fs\.op\.funcs/fs\.op\.is_regular_file/is_regular_file\.pass\.cpp | root | expects a permission error from an inaccessible path, which root never gets
+input\.output/filesystems/fs\.op\.funcs/fs\.op\.is_socket/is_socket\.pass\.cpp | root | expects a permission error from an inaccessible path, which root never gets
+input\.output/filesystems/fs\.op\.funcs/fs\.op\.is_symlink/is_symlink\.pass\.cpp | root | expects a permission error from an inaccessible path, which root never gets
+input\.output/filesystems/fs\.op\.funcs/fs\.op\.remove/remove\.pass\.cpp | root | expects a permission error from an inaccessible path, which root never gets
+input\.output/filesystems/fs\.op\.funcs/fs\.op\.remove_all/bad_perms_parent\.pass\.cpp | root | expects a permission error from an inaccessible path, which root never gets
+input\.output/filesystems/fs\.op\.funcs/fs\.op\.remove_all/remove_all\.pass\.cpp | root | expects a permission error from an inaccessible path, which root never gets
+input\.output/filesystems/fs\.op\.funcs/fs\.op\.status/status\.pass\.cpp | root | expects a permission error from an inaccessible path, which root never gets
+input\.output/filesystems/fs\.op\.funcs/fs\.op\.symlink_status/symlink_status\.pass\.cpp | root | expects a permission error from an inaccessible path, which root never gets
+input\.output/filesystems/fs\.op\.funcs/fs\.op\.temp_dir_path/temp_directory_path\.pass\.cpp | root | expects a permission error from an inaccessible path, which root never gets

@@ -47,6 +47,10 @@ if compiler == 'clang':
 else:
     # GCC's constexpr operation limit; the tests that need a raised one set it under this feature.
     features |= {'gcc-style-warnings', 'has-fconstexpr-ops-limit'}
+# Running as root: permissions such as perms::none do not deny access, so tests that check a
+# permission error cannot fail as they expect (tests/libcxx/unsupported.txt lists them).
+if os.geteuid() == 0:
+    features.add('root')
 if sanitizer:
     for s in sanitizer.split(','):
         features.add({'asan': 'asan', 'ubsan': 'ubsan'}[s])

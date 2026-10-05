@@ -15,6 +15,7 @@
 //   grows with each link.
 // The platform properties come from POSIX calls made by the test itself (mkfifo, socket/bind,
 // statvfs, stat), not assumptions.
+// COUNTERPART: libcxx:input.output/filesystems/fs.op.funcs/fs.op.last_write_time/last_write_time.pass.cpp
 #include <chrono>
 #include <cstdint>
 #include <filesystem>

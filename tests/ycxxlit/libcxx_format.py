@@ -2,7 +2,7 @@
 import os, re, shutil, tempfile
 import lit.formats, lit.Test, lit.TestRunner
 from ycxxlit import transcript
-from ycxxlit.skips import load_skips, match_skip, load_xfails, apply_xfail
+from ycxxlit.skips import load_skips, match_skip, load_unsupported, match_unsupported, load_xfails, apply_xfail
 from ycxxlit import counterparts
 
 COND_FLAGS = re.compile(r'//\s*ADDITIONAL_COMPILE_FLAGS(?:\(([^)]*)\))?:(.*)')
@@ -14,6 +14,7 @@ class LibcxxFormat(lit.formats.FileBasedTest):
         self.wrapper, self.compiler, self.base_flags, self.features = wrapper, compiler, base_flags, set(features)
         self.skips = load_skips(os.path.join(os.path.dirname(os.path.dirname(skip_file)), 'common', 'skip.txt'), skip_file)
         self.xfails = load_xfails(os.path.join(os.path.dirname(skip_file), 'xfail.txt'))
+        self.unsupported = load_unsupported(os.path.join(os.path.dirname(skip_file), 'unsupported.txt'))
         self.counterparts = counterparts.Index(os.path.join(os.path.dirname(os.path.dirname(skip_file)), 'ycxx'))
 
     def execute(self, test, lit_config):
@@ -30,6 +31,9 @@ class LibcxxFormat(lit.formats.FileBasedTest):
             return lit.Test.Result(lit.Test.UNSUPPORTED, 'unsupported by lit.local.cfg')
         rel = '/'.join(test.path_in_suite)
         why = match_skip(self.skips, rel, open(path, encoding='utf-8', errors='replace').read())
+        if why:
+            return lit.Test.Result(lit.Test.UNSUPPORTED, why)
+        why = match_unsupported(self.unsupported, rel, self.features)
         if why:
             return lit.Test.Result(lit.Test.UNSUPPORTED, why)
         script = lit.TestRunner.parseIntegratedTestScript(test, require_script=False)

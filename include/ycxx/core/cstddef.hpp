@@ -6,12 +6,12 @@
 
 // The compiler's own <stddef.h> (not the C library's: GCC and Clang provide it, for freestanding
 // environments too) defines ::max_align_t, and [support.c.headers.other]/1 makes it the same type
-// as std::max_align_t, so core includes it; libycxx has no <stddef.h> of its own. Its other names
-// (::size_t, ::ptrdiff_t, ::nullptr_t, NULL, offsetof) are what core declares below anyway:
-// [headers]/5 leaves it unspecified whether these names are also declared at global scope, and
-// code relies on that. A typedef of the same type may be redeclared, so the order in which this
-// header and <stddef.h> are read does not matter.
-#include <stddef.h>
+// as std::max_align_t, so core reads it, past libycxx's own <stddef.h> (which includes this
+// header). Its other names (::size_t, ::ptrdiff_t, NULL, offsetof) are what core declares below
+// anyway: [headers]/5 leaves it unspecified whether these names are also declared at global
+// scope, code relies on that, and <stddef.h> needs them there. A typedef of the same type may be
+// redeclared, so the order in which the headers are read does not matter.
+#include_next <stddef.h>
 
 typedef decltype(sizeof(0)) size_t;
 typedef decltype(static_cast<int*>(nullptr) - static_cast<int*>(nullptr)) ptrdiff_t;

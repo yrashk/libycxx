@@ -3,9 +3,9 @@
 
 Walks #include directives transitively starting from each core public header. Allowed targets:
 other core public headers, include/ycxx/config.hpp, include/ycxx/core/**, include/ycxx/pal.h.
-<stddef.h>, the compiler's own (for ::max_align_t, DECISIONS §3), is the one compiler header allowed.
-Anything else (hosted public headers, include/ycxx/hosted/**, <stdio.h>, other compiler headers...)
-is an error, reported with the include chain. The headers with a freestanding subset
+Anything else (hosted public headers, include/ycxx/hosted/**, <stdio.h>, compiler headers...)
+is an error, reported with the include chain. #include_next is not followed: core uses it once,
+for the compiler's own <stddef.h> (DECISIONS §3). The headers with a freestanding subset
 (FREESTANDING_SUBSET) are walked too; directives in the YCXX_HOSTED branch of an
 `#if YCXX_HOSTED` / `#if !YCXX_HOSTED` conditional are not followed (they are not reached
 freestanding).
@@ -43,7 +43,7 @@ def freestanding_includes(text):
     return out
 
 def allowed(name):
-    return (name == "stddef.h" or name in CORE or name in ABI or name in FREESTANDING_SUBSET or name == "ycxx/config.hpp"
+    return (name in CORE or name in ABI or name in FREESTANDING_SUBSET or name == "ycxx/config.hpp"
             or name == "ycxx/pal.h" or name.startswith("ycxx/core/"))
 
 errors = []
@@ -57,8 +57,6 @@ for top in CORE + FREESTANDING_SUBSET:
         if not allowed(name):
             errors.append(f"<{top}> reaches <{name}> via " + " -> ".join(chain))
             continue
-        if name == "stddef.h":
-            continue  # the compiler's header, not libycxx's
         path = ROOT / name
         if not path.exists():
             errors.append(f"<{top}>: <{name}> not found (via {' -> '.join(chain)})")

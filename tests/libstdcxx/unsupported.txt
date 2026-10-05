@@ -1,0 +1,10 @@
+# libstdc++ testsuite tests that do not apply with one compiler only: they rely on that compiler's
+# implementation-defined behaviour, predefined macros, attributes or optional types. Reported
+# UNSUPPORTED, with the reason, only with the named compiler; they run normally with the other.
+# Format:  <path regex relative to the testsuite> | <gcc|clang> | <reason>   (tests/ycxxlit/skips.py)
+# A compiler bug or gap goes to xfail.txt instead; a test that applies to neither, to skip.txt.
+18_support/source_location/(1|consteval)\.cc | clang | asserts GCC's source_location::column() values; the column is implementation-defined ([support.srcloc.cons]: "An implementation-defined value denoting some offset from the start of the line")
+19_diagnostics/stacktrace/current\.cc | clang | counts frames of functions marked [[gnu::optimize("O0")]] so that they are not inlined; Clang ignores that GCC attribute and inlines them
+20_util/is_constructible/68430\.cc | clang | expects is_constructible<Foo<int>> to be false although Foo's default argument T = nullptr is invalid for int; GCC treats the failed instantiation as a substitution failure, Clang as a hard error, as default arguments are instantiated outside the immediate context ([temp.inst]/12, [temp.deduct.general]/8)
+20_util/stdbit/1\.cc | clang | uses GCC's predefined macro __LONG_LONG_WIDTH__, which Clang does not define
+20_util/to_chars/float16_c++23\.cc | clang | uses std::float32_t unconditionally; the extended floating-point types are optional ([basic.extended.fp]/1), and Clang 23 has no _Float32 (__STDCPP_FLOAT32_T__ is not defined)

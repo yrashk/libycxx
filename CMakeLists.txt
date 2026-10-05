@@ -110,6 +110,7 @@ add_library(ycxx STATIC
   src/hosted/ios.cpp
   src/hosted/iostream.cpp
   src/hosted/locale.cpp
+  src/hosted/locale_named.cpp
   src/hosted/num.cpp
   src/hosted/time.cpp
   src/hosted/tzdb.cpp

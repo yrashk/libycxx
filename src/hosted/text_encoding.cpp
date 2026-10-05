@@ -5,6 +5,7 @@
 #include <ycxx/pal.h>
 
 #include <cstring>
+#include "locale_named.hpp"
 
 namespace {
 
@@ -33,7 +34,8 @@ std::text_encoding std::text_encoding::environment() {
 }
 
 // The encoding of the locale's LC_CTYPE category: US-ASCII for "C" (the POSIX locale's
-// portable character set), UTF-8 for "C.UTF-8"; unknown for a locale without a name.
+// portable character set), UTF-8 for "C.UTF-8", the C library's CODESET for other names;
+// unknown for a locale without a name.
 std::text_encoding std::locale::encoding() const {
   const string n = name();
   if (n == "*")
@@ -45,6 +47,13 @@ std::text_encoding std::locale::encoding() const {
   }
   if (ctype == "C" || ctype == "POSIX")
     return text_encoding(text_encoding::id::ASCII);
+  // any other name: the C library's codeset for it (a name with the classic semantics,
+  // "C.UTF-8", is named by its suffix)
+  if (ycxx::detail::classic_locale_name(ctype.c_str()) == nullptr) {
+    const string cs = ycxx::detail::named_codeset(ctype.c_str());
+    if (!cs.empty())
+      return from_name(cs.c_str());
+  }
   if (const auto dot = ctype.find('.'); dot != string::npos)
     return from_name(ctype.c_str() + dot + 1);
   return text_encoding();

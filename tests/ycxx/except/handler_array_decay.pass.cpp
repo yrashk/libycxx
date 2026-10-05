@@ -4,6 +4,7 @@
 // of type 'pointer to T'." [Note 1]: "A handler of reference to array ... type is never a
 // match for any exception object."
 // REQUIRES: exceptions
+// XFAIL: gcc  GCC 16 records catch (int(&)[3]) as a handler for int*; the runtime cannot tell ([except.handle] Note 1; STATUS)
 #include "check.hpp"
 
 int main() {

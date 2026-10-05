@@ -32,5 +32,10 @@ if sanitizer:
 wrapper = os.path.join(repo, 'tools', 'ycxx-cxx')
 # The testsuite's support library (DejaGnu's libtestc++.a): the helpers' out-of-line definitions.
 support_lib = build_support_lib(wrapper, compiler, flags, tests_root, repo, config.test_exec_root)
+# dg-require-namedlocale: the names libycxx accepts (tests/ycxxlit/locales.py), asked of the
+# library under test through a program built once per run.
+from ycxxlit import locales
+locale_probe = locales.build_probe(wrapper, compiler, config.test_exec_root)
 config.test_format = LibstdcxxFormat(wrapper, compiler, flags,
-                                     os.path.join(repo, 'tests', 'libstdcxx', 'skip.txt'), support_lib)
+                                     os.path.join(repo, 'tests', 'libstdcxx', 'skip.txt'), locale_probe,
+                                     support_lib)

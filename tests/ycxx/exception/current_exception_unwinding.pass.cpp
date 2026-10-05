@@ -35,7 +35,9 @@ int kind(const std::exception_ptr& p) {
 }
 
 struct Ctor {
-  std::exception_ptr seen;
+  // Static: a handler of a constructor's function-try-block must not refer to non-static
+  // members ([except.handle]/10; the object's members are already destroyed).
+  static inline std::exception_ptr seen;
   int got = 0;
   Ctor() try : got(thrower()) {
   } catch (...) {

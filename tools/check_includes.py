@@ -4,7 +4,8 @@
 Walks #include directives transitively starting from each core public header. Allowed targets:
 other core public headers, include/ycxx/config.hpp, include/ycxx/core/**, include/ycxx/pal.h.
 Anything else (hosted public headers, include/ycxx/hosted/**, <stdio.h>, compiler headers...)
-is an error, reported with the include chain. The headers with a freestanding subset
+is an error, reported with the include chain. #include_next is not followed: core uses it once,
+for the compiler's own <stddef.h> (DECISIONS §3). The headers with a freestanding subset
 (FREESTANDING_SUBSET) are walked too; directives in the YCXX_HOSTED branch of an
 `#if YCXX_HOSTED` / `#if !YCXX_HOSTED` conditional are not followed (they are not reached
 freestanding).

@@ -160,21 +160,37 @@ tooling.
 
 - `include/ycxx/core/**`: no OS, no libc headers, no heap unless an allocator is supplied, and
   no dependency on `<exception>`/`<typeinfo>`. C types and macros (`<cstddef>`, `<cstdint>`,
-  `<climits>`) are defined from compiler-predefined macros only.
+  `<climits>`) are defined from compiler-predefined macros only. The one exception is the
+  compiler's own `<stddef.h>` (GCC and Clang ship it for freestanding environments; it is not the
+  C library's): `std::max_align_t` must be `::max_align_t` ([support.c.headers.other]/1), a class
+  only that header can name, so core reads it (`#include_next`, past libycxx's own `<stddef.h>`,
+  which is `<cstddef>` in C++: Clang's header lacks `::nullptr_t` there; partial `__need_*`
+  requests of C library headers and C go to the compiler's) and declares `using ::max_align_t;`. The
+  freestanding builds keep `-nostdinc` (no C library) and add the compiler's header directory
+  back (`-isystem $(cc -print-file-name=include)`); `tools/check_includes.py` does not
+  follow `#include_next`.
 - `include/ycxx/hosted/**` plus `src/hosted`: anything needing the OS, reached only through the PAL.
 - `include/ycxx/pal.h`: C-linkage platform hooks (`ycxx_pal_allocate`, `_write`, `_abort`,
   `_clock_now`, ...). `src/pal/posix` implements them on top of libc.
 
-- **`std::mbstate_t` is core's own type.** The draft makes `mbstate_t` freestanding
-  ([cwchar.syn]), and `char_traits::state_type` names it, so core defines it without the C
-  library: an opaque, zero-initialisable struct with the C library's size and alignment (glibc
-  and musl: 8 bytes, 4-byte alignment; Darwin: 128 bytes, 8-byte alignment; `cfg::mbstate_size`/
-  `_align` in `config.hpp`). The hosted `<cwchar>`/`<cuchar>` `static_assert` that
-  layout and add `std::` overloads of the conversion functions taking `std::mbstate_t*`, which
-  forward to the C functions; the `::mbstate_t*` versions are forwarding templates, so a null
-  state pointer is not ambiguous. The cost: `std::mbstate_t` and `::mbstate_t` are distinct
-  types, so a `std::mbstate_t` cannot be passed to the global `::mbrtowc` directly, and after
-  `using namespace std;` the unqualified name `mbstate_t` is ambiguous once `<wchar.h>` is in.
+- **`std::mbstate_t` is the C library's `::mbstate_t` when hosted, core's own type freestanding.**
+  [support.c.headers.other]/1 makes `std::mbstate_t` and `<wchar.h>`'s `::mbstate_t` one type,
+  and `char_traits::state_type` (core) names it, so in hosted builds core's `char_traits.hpp`
+  reads the C library's `<wchar.h>` (`ycxx/hosted/c_wchar.hpp`, under `#if YCXX_HOSTED`, which
+  `tools/check_includes.py` does not follow) and declares `using ::mbstate_t;`. So `<string>` and
+  every header with `char_traits` also declare the C library's `<wchar.h>` names in the global
+  namespace when hosted. The draft makes `mbstate_t` freestanding ([cwchar.syn]); without a C
+  library core defines it (`ycxx/core/mbstate.hpp`): an opaque, zero-initialisable struct with the
+  target C library's size and alignment (glibc and musl: 8 bytes, 4-byte alignment; Darwin: 128
+  bytes, 8-byte alignment; `cfg::mbstate_size`/`_align`, which `c_wchar.hpp` checks against
+  `::mbstate_t`), so both configurations agree on the layout of everything holding one. The
+  library's own conversion state fits either form: the `codecvt` facets keep only a pending
+  UTF-16 surrogate (a `char32_t`, 4 bytes) in the object representation, which glibc's and musl's
+  8 bytes hold, no side table needed; the `<cuchar>` fallbacks (Darwin) use the last 16 of
+  Darwin's 128 bytes. Rejected: keeping core's own type in hosted builds with `std::` overloads
+  of the conversion functions (the previous design): `std::mbstate_t` and `::mbstate_t` were
+  distinct, so unqualified `mbstate_t` was ambiguous under `using namespace std;` with
+  `<wchar.h>`, and a `std::mbstate_t` could not be passed to `::mbrtowc`.
 - **The owning function wrappers are core.** Only `function_ref` is freestanding in the draft,
   but `function`, `move_only_function` and `copyable_function` need nothing hosted: small targets
   live in place, and larger ones use the replaceable `operator new`, which a freestanding program
@@ -187,7 +203,8 @@ tooling.
   out-of-line code) are declared there and defined
   out of line in `src/hosted/string.cpp` (libycxx.a), as the `<stdexcept>` members are; a
   freestanding program that calls them gets a link error. So `<string>` includes no C header
-  (unlike the C wrappers, it does not provide `errno`, `EOF`, `::uint32_t`, ...).
+  but the C library's `<wchar.h>` for `mbstate_t` (unlike the C wrappers, it does not provide
+  `errno`, `EOF`, `::uint32_t`, ...).
 - **`<memory_resource>`: the classes are core, their definitions hosted.** `memory_resource`
   and `polymorphic_allocator` are defined in core (`ycxx/core/memory_resource.hpp`), so `<string>`
   (and the other containers, whose `pmr::` aliases name `polymorphic_allocator` through
@@ -248,10 +265,10 @@ tooling.
   C library's versions (type-generic macros) are not included.
 - **The `.h` forms of the C headers with C++ additions are libycxx's own** (generated by
   `tools/gen_cheaders.py`; [support.c.headers.other]/1 places each name of `<cname>` in the
-  global namespace). In C++, `<stdlib.h>`, `<inttypes.h>` and `<string.h>` include `<cstdlib>`,
-  `<cinttypes>`, `<cstring>` and add the names those declare themselves (`using std::abs;`,
+  global namespace). In C++, `<stdlib.h>`, `<inttypes.h>`, `<string.h>` and `<wchar.h>` include
+  `<cstdlib>`, `<cinttypes>`, `<cstring>`, `<cwchar>` and add the names those declare themselves (`using std::abs;`,
   `div`, the const-correct `bsearch` pair, `memalignment`, `free_sized`, `imaxabs`,
-  `memset_explicit`, ...); in C they are the C library's (`#include_next`), as `<math.h>` is.
+  `memset_explicit`, the const-correct `wcschr` pairs, ...); in C they are the C library's (`#include_next`), as `<math.h>` is.
   `<complex.h>` and `<tgmath.h>` include `<complex>` (and `<cmath>`) in C++ and never the C
   library's, whose `complex`/`I` and type-generic macros would break C++ code. The `<cname>`
   headers read the C library's header with `#include_next`. A C function that is an exact match
@@ -264,7 +281,14 @@ tooling.
   unqualified `abs` after `<cstdlib>` keeps working. This is preprocessor use the language cannot
   replace (rule 4 of §1). Should the C library's header have been read before `<cstdlib>`
   (through a path that bypasses libycxx's include directory), its functions stay and win ties
-  against libycxx's templates: the global names are then the C library's, not constexpr. The
+  against libycxx's templates: the global names are then the C library's, not constexpr. `<wchar.h>`
+  works the same way for `wcschr`, `wcspbrk`, `wcsrchr`, `wcsstr` and `wmemchr` (glibc declares
+  the const-correct pairs only for GCC, Darwin never): its declarations are renamed while
+  `ycxx/hosted/c_wchar.hpp` reads it, the one place that does, since core's `char_traits.hpp`
+  reads it too and must not get there first without the renames; libycxx's pairs (templates)
+  call the C functions through declarations with their assembler names
+  (`ycxx::detail::c_wchar`, as `c_stdlib.hpp` does) and are placed in the global namespace by
+  `<cwchar>` and `<wchar.h>`. The
   wrappers wrap `<cname>` in `extern "C++"`, as a C header may include them inside `extern "C"`. `tools/check_freestanding.sh`
   compiles every header of [compliance]'s Table 27 as well as the core ones.
 - **C-library values that core spells out are per C library family.** Core cannot include the
@@ -272,7 +296,7 @@ tooling.
   layout must equal the C library's. `config.hpp` names the family once (`YCXX_TARGET_DARWIN`
   for the macros, which must be literals usable in `#if`; `cfg::darwin` for everything else):
   the Linux values (glibc, musl; also the bare-metal default) or Darwin's (BSD errno numbers,
-  `FP_NAN` 1 .. `FP_SUBNORMAL` 5, a 128-byte `mbstate_t`). `errc` gives each value as
+  `FP_NAN` 1 .. `FP_SUBNORMAL` 5, a 128-byte `mbstate_t` for the freestanding definition). `errc` gives each value as
   `errno_number(Linux, Darwin)`; the freestanding macro lists are checked against `errc`, and
   every value against the C library's headers wherever those are included (`<system_error>`,
   `<cwchar>`, `<cuchar>`, `src/hosted/cmath_check.cpp`). Where the C library lacks a C23 function
@@ -280,9 +304,7 @@ tooling.
   older SDKs), a `YCXX_C_HAS_*` switch replaces the using-declaration with libycxx's own,
   defined in the hosted runtime (`src/hosted/strfrom.cpp`, `src/hosted/uchar.cpp`, built on every
   platform). `strfrom*` are templates (as `free_sized` is), so a C library that gains them wins
-  unqualified calls; the `<cuchar>` forms taking `::mbstate_t*` are plain functions, as the C
-  library's would be (a null state pointer must select them over the `std::mbstate_t*`
-  templates).
+  unqualified calls; the `<cuchar>` fallbacks are plain functions, as the C library's would be.
 - **Floating-point `<charconv>` is out of line, in both archives** (`src/runtime/charconv`).
   The draft makes it freestanding-deleted, but nothing in it needs the OS: it works on
   stack-allocated big integers, so libycxx provides it freestanding too. The header passes the
@@ -412,8 +434,24 @@ tooling.
   RTTI and `YCXX_EXCEPTION_KEY_FUNCTIONS`), because the runtime throws them; there they are not
   constexpr-destructible. `system_error` is not constexpr in the draft and keeps its key function.
   `__cpp_lib_constexpr_exceptions` stays undefined: Clang 23 cannot throw during constant
-  evaluation, and GCC 16 offers no way to make a non-null `exception_ptr`
-  (`current_exception`/`rethrow_exception`) work there for libycxx's `exception_ptr`.
+  evaluation.
+- **`exception_ptr` during constant evaluation (GCC).** GCC 16 keeps a constant evaluation's
+  exceptions itself and has two builtins for them, documented nowhere (not in its manual) but
+  reported by `__has_builtin` (`YCXX_HAS_CONSTEXPR_EXCEPTION_PTR`; the names were found among the
+  compiler binary's strings, as for §13): `__builtin_current_exception()` returns a
+  `std::exception_ptr` whose one data member is set to the handled exception's object (it
+  requires `std::exception_ptr` to be declared), and `__builtin_eh_ptr_adjust_ref(p, n)` adds n
+  to that object's reference count; both are rejected outside constant evaluation (at run time
+  the first gives a null `exception_ptr`). Its evaluator also implements `__cxa_throw` (and the
+  other entry points its throw expressions call), and throwing an object that is already
+  referenced is a rethrow of it. So, in `if consteval` branches: the copy constructor and the
+  destructor adjust the count, current-exception ([exception.syn], used by `make_exception_ptr`'s
+  `try { throw e; } catch (...)`) is the builtin, `rethrow_exception` is
+  `__cxa_throw(p, nullptr, nullptr)`, and `exception_ptr_cast<E>` lets a `catch (const E&)` of
+  such a rethrow decide (the reference stays valid while the `exception_ptr` holds the object).
+  These are GCC's private interface to its own library, verified by experiment only
+  (own test `exception/exception_ptr_constexpr`); should GCC change them, the probe turns the
+  feature off and the test fails rather than the library.
 - **`make_exception_ptr` without exceptions** creates the primary exception object directly
   through the runtime (`ycxx::abi::exception_object_create`: the header `__cxa_throw` would
   fill in, one reference owned by the exception_ptr) and copy-constructs `e` into it, so

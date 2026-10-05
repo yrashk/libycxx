@@ -7,3 +7,4 @@
 20_util/is_constructible/value-2\.cc | clang | Clang 23's __is_constructible(D&&, B&&) is false for an aggregate D derived from B; C++20 parenthesized aggregate initialization makes it true ([dcl.init.general]/16.6.2.2); GCC agrees
 20_util/(is_reflection/value|is_scalar/reflection)\.cc | clang | Clang 23 has no reflection (P2996, ^^T)
 20_util/is_structural/value\.cc | clang | Clang 23 has no __builtin_is_structural, which std::is_structural needs
+std/format/fill_nonunicode\.cc | clang | the test is built with -fexec-charset=ISO8859-1, which Clang 23 rejects ("invalid value 'ISO8859-1'"; Clang supports only UTF-8 execution character sets)

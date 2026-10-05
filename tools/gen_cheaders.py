@@ -17,12 +17,6 @@ def hidden(text):
     return _visibility_fix(text)[0]
 
 
-# std::mbstate_t and std::wint_t come from core (char_traits.hpp); the C library's ::mbstate_t is
-# a different type with the same layout, checked here.
-MBSTATE_CHECK = """static_assert(sizeof(mbstate_t) == sizeof(::mbstate_t) && alignof(mbstate_t) == alignof(::mbstate_t),
-              "libycxx: std::mbstate_t does not match this C library's ::mbstate_t layout");
-"""
-
 HEADERS = {
     "cstdlib": ("stdlib.h", "div_t ldiv_t lldiv_t "
                 "abort atexit at_quick_exit _Exit exit quick_exit getenv system malloc calloc realloc free "
@@ -51,57 +45,32 @@ inline void free_aligned_sized(void* ptr, size_t, size_t) noexcept {
     "cwctype": ("wctype.h", "wctrans_t wctype_t iswalnum iswalpha iswblank iswcntrl iswdigit iswgraph "
                 "iswlower iswprint iswpunct iswspace iswupper iswxdigit iswctype towctrans towlower towupper "
                 "wctrans wctype", ""),
-    "cwchar": ("wchar.h", "tm fwprintf fwscanf swprintf swscanf vfwprintf vfwscanf vswprintf vswscanf vwprintf vwscanf wprintf wscanf fgetwc fgetws fputwc fputws fwide getwc getwchar putwc putwchar ungetwc wcstod wcstof wcstold wcstol wcstoll wcstoul wcstoull wcscpy wcsncpy wmemcpy wmemmove wcscat wcsncat wcscmp wcscoll wcsncmp wcsxfrm wmemcmp wcscspn wcsspn wcstok wcslen wmemset wcsftime btowc wctob mbsinit mbrlen mbrtowc wcrtomb mbsrtowcs wcsrtombs", MBSTATE_CHECK + """
-// Additions, all templates (template <class = void>): a non-template C function then wins every
-// tie, so unqualified calls under `using namespace std;` stay unambiguous (null state pointers
-// too), while qualified std:: calls find these where the C function does not fit.
-// - Overloads for std::mbstate_t (core's freestanding type, DECISIONS §3), forwarding to the C
-//   functions.
+    "cwchar": ("wchar.h", "tm fwprintf fwscanf swprintf swscanf vfwprintf vfwscanf vswprintf vswscanf vwprintf vwscanf wprintf wscanf fgetwc fgetws fputwc fputws fwide getwc getwchar putwc putwchar ungetwc wcstod wcstof wcstold wcstol wcstoll wcstoul wcstoull wcscpy wcsncpy wmemcpy wmemmove wcscat wcsncat wcscmp wcscoll wcsncmp wcsxfrm wmemcmp wcscspn wcsspn wcstok wcslen wmemset wcsftime btowc wctob mbsinit mbrlen mbrtowc wcrtomb mbsrtowcs wcsrtombs", """\
+// [library.c]: the const-correct pairs. The C library's own declarations of these five are
+// renamed while its header is read (ycxx/hosted/c_wchar.hpp: some declare only
+// `wchar_t* f(const wchar_t*, ...)`), and these call its functions through
+// ycxx::detail::c_wchar. Templates, as <cstdlib>'s div: a C function of the same name that a
+// program declares itself wins ties under `using namespace std;`.
 template <class = void>
-inline int mbsinit(const mbstate_t* ps) noexcept { return ::mbsinit(reinterpret_cast<const ::mbstate_t*>(ps)); }
+inline const wchar_t* wcschr(const wchar_t* s, wchar_t c) noexcept { return ::ycxx::detail::c_wchar::wcschr(s, c); }
 template <class = void>
-inline size_t mbrlen(const char* s, size_t n, mbstate_t* ps) noexcept {
-  return ::mbrlen(s, n, reinterpret_cast<::mbstate_t*>(ps));
-}
+inline wchar_t* wcschr(wchar_t* s, wchar_t c) noexcept { return ::ycxx::detail::c_wchar::wcschr(s, c); }
 template <class = void>
-inline size_t mbrtowc(wchar_t* pwc, const char* s, size_t n, mbstate_t* ps) noexcept {
-  return ::mbrtowc(pwc, s, n, reinterpret_cast<::mbstate_t*>(ps));
-}
+inline const wchar_t* wcspbrk(const wchar_t* s1, const wchar_t* s2) noexcept { return ::ycxx::detail::c_wchar::wcspbrk(s1, s2); }
 template <class = void>
-inline size_t wcrtomb(char* s, wchar_t wc, mbstate_t* ps) noexcept {
-  return ::wcrtomb(s, wc, reinterpret_cast<::mbstate_t*>(ps));
-}
+inline wchar_t* wcspbrk(wchar_t* s1, const wchar_t* s2) noexcept { return ::ycxx::detail::c_wchar::wcspbrk(s1, s2); }
 template <class = void>
-inline size_t mbsrtowcs(wchar_t* dst, const char** src, size_t len, mbstate_t* ps) noexcept {
-  return ::mbsrtowcs(dst, src, len, reinterpret_cast<::mbstate_t*>(ps));
-}
+inline const wchar_t* wcsrchr(const wchar_t* s, wchar_t c) noexcept { return ::ycxx::detail::c_wchar::wcsrchr(s, c); }
 template <class = void>
-inline size_t wcsrtombs(char* dst, const wchar_t** src, size_t len, mbstate_t* ps) noexcept {
-  return ::wcsrtombs(dst, src, len, reinterpret_cast<::mbstate_t*>(ps));
-}
-
-// - [library.c]: the const-correct pairs, for C libraries that declare only
-//   `wchar_t* f(const wchar_t*, ...)`.
+inline wchar_t* wcsrchr(wchar_t* s, wchar_t c) noexcept { return ::ycxx::detail::c_wchar::wcsrchr(s, c); }
 template <class = void>
-inline const wchar_t* wcschr(const wchar_t* s, wchar_t c) noexcept { return ::wcschr(s, c); }
+inline const wchar_t* wcsstr(const wchar_t* s1, const wchar_t* s2) noexcept { return ::ycxx::detail::c_wchar::wcsstr(s1, s2); }
 template <class = void>
-inline wchar_t* wcschr(wchar_t* s, wchar_t c) noexcept { return const_cast<wchar_t*>(::wcschr(s, c)); }
+inline wchar_t* wcsstr(wchar_t* s1, const wchar_t* s2) noexcept { return ::ycxx::detail::c_wchar::wcsstr(s1, s2); }
 template <class = void>
-inline const wchar_t* wcspbrk(const wchar_t* s1, const wchar_t* s2) noexcept { return ::wcspbrk(s1, s2); }
+inline const wchar_t* wmemchr(const wchar_t* s, wchar_t c, size_t n) noexcept { return ::ycxx::detail::c_wchar::wmemchr(s, c, n); }
 template <class = void>
-inline wchar_t* wcspbrk(wchar_t* s1, const wchar_t* s2) noexcept { return const_cast<wchar_t*>(::wcspbrk(s1, s2)); }
-template <class = void>
-inline const wchar_t* wcsrchr(const wchar_t* s, wchar_t c) noexcept { return ::wcsrchr(s, c); }
-template <class = void>
-inline wchar_t* wcsrchr(wchar_t* s, wchar_t c) noexcept { return const_cast<wchar_t*>(::wcsrchr(s, c)); }
-template <class = void>
-inline const wchar_t* wcsstr(const wchar_t* s1, const wchar_t* s2) noexcept { return ::wcsstr(s1, s2); }
-template <class = void>
-inline wchar_t* wcsstr(wchar_t* s1, const wchar_t* s2) noexcept { return const_cast<wchar_t*>(::wcsstr(s1, s2)); }
-template <class = void>
-inline const wchar_t* wmemchr(const wchar_t* s, wchar_t c, size_t n) noexcept { return ::wmemchr(s, c, n); }
-template <class = void>
-inline wchar_t* wmemchr(wchar_t* s, wchar_t c, size_t n) noexcept { return const_cast<wchar_t*>(::wmemchr(s, c, n)); }"""),
+inline wchar_t* wmemchr(wchar_t* s, wchar_t c, size_t n) noexcept { return ::ycxx::detail::c_wchar::wmemchr(s, c, n); }"""),
     "cerrno": ("errno.h", "", ""),
     "csignal": ("signal.h", "sig_atomic_t signal raise", ""),
     "ctime": ("time.h", "clock_t time_t tm timespec clock difftime mktime timegm time timespec_get asctime ctime "
@@ -124,7 +93,7 @@ constexpr imaxdiv_t imaxdiv(intmax_t numer, intmax_t denom) noexcept {
     "csetjmp": ("setjmp.h", "jmp_buf longjmp", ""),
     "cfenv": ("fenv.h", "fenv_t fexcept_t feclearexcept fegetexceptflag feraiseexcept fesetexceptflag "
               "fetestexcept fegetround fesetround fegetenv feholdexcept fesetenv feupdateenv", ""),
-    "cuchar": ("uchar.h", "", MBSTATE_CHECK),
+    "cuchar": ("uchar.h", "", ""),
 }
 # Names a C library may lack: brought in with using-declarations under the YCXX_* switch of
 # config.hpp that says the C library declares them (followed by the text given for that case),
@@ -164,39 +133,24 @@ UCHAR_FUNCS = [("mbrtoc8", "char8_t* pc8, const char* s, size_t n", "pc8, s, n")
                ("c32rtomb", "char* s, char32_t c32", "s, c32")]
 
 
-def uchar_present(names):
-    out = ["// Overloads for std::mbstate_t, as templates; see <cwchar>."]
-    for n, params, args in UCHAR_FUNCS:
-        if n in names:
-            out += ["template <class = void>", f"inline size_t {n}({params}, mbstate_t* ps) noexcept {{",
-                    f"  return ::{n}({args}, reinterpret_cast<::mbstate_t*>(ps));", "}"]
-    return "\n".join(out)
-
-
 def uchar_fallback(names, what):
     out = [f"// {what}:",
-           "// libycxx's own, on the C library's mbrtowc/wcrtomb (src/hosted/uchar.cpp). The forms taking",
-           "// ::mbstate_t* are plain functions, as the C library's would be, so a null state pointer",
-           "// selects them; those taking std::mbstate_t* are templates, as above."]
+           "// libycxx's own, on the C library's mbrtowc/wcrtomb (src/hosted/uchar.cpp)."]
     for n, params, args in UCHAR_FUNCS:
         if n in names:
-            out += [f"inline size_t {n}({params}, ::mbstate_t* ps) noexcept {{",
-                    f"  return ycxx::detail::c_{n}({args}, ps, sizeof(::mbstate_t));", "}"]
-    for n, params, args in UCHAR_FUNCS:
-        if n in names:
-            out += ["template <class = void>", f"inline size_t {n}({params}, mbstate_t* ps) noexcept {{",
+            out += [f"inline size_t {n}({params}, mbstate_t* ps) noexcept {{",
                     f"  return ycxx::detail::c_{n}({args}, ps, sizeof(mbstate_t));", "}"]
     return "\n".join(out)
 
 
 UCHAR16_32 = "mbrtoc16 c16rtomb mbrtoc32 c32rtomb"
 CONDITIONAL["cuchar"] = [
-    ("YCXX_C_HAS_UCHAR_H", UCHAR16_32, uchar_present(UCHAR16_32.split()),
+    ("YCXX_C_HAS_UCHAR_H", UCHAR16_32, "",
      uchar_fallback(UCHAR16_32.split(), "mbrtoc16, c16rtomb, mbrtoc32 and c32rtomb (C23 7.30.1), as this C library has no <uchar.h>")),
-    ("YCXX_C_HAS_MBRTOC8", "mbrtoc8 c8rtomb", uchar_present(["mbrtoc8", "c8rtomb"]),
+    ("YCXX_C_HAS_MBRTOC8", "mbrtoc8 c8rtomb", "",
      uchar_fallback(["mbrtoc8", "c8rtomb"], "mbrtoc8 and c8rtomb (C23 7.30.1.3-4), which this C library lacks"))]
 # A C header that may be missing: included under the switch, else the given replacement.
-OPTIONAL_CHEADER = {"cuchar": ("YCXX_C_HAS_UCHAR_H", "wchar.h")}
+OPTIONAL_CHEADER = {"cuchar": ("YCXX_C_HAS_UCHAR_H", "ycxx/hosted/c_wchar.hpp")}
 # Headers with a freestanding subset ([compliance]): without a C library (YCXX_HOSTED 0) they
 # include the core header given here instead of the C library's, and declare none of the names
 # above. COMMON holds what both modes share.
@@ -326,7 +280,16 @@ EXTRA_INCLUDES = {"cstdlib": ["<ycxx/core/math_abs.hpp>", "<ycxx/core/c_bsearch.
 # redeclared constexpr, and bsearch's single C signature conflicts with the const-correct pair.
 # So they are renamed while the C library's header is read, and never used.
 C_RENAMED = {"cstdlib": ["abs", "labs", "llabs", "div", "ldiv", "lldiv", "bsearch"],
-             "cinttypes": ["imaxabs", "imaxdiv"]}
+             "cinttypes": ["imaxabs", "imaxdiv"],
+             "cwchar": ["wcschr", "wcspbrk", "wcsrchr", "wcsstr", "wmemchr"]}
+# The C library's <wchar.h> is read by core's char_traits.hpp too (hosted, std::mbstate_t is its
+# ::mbstate_t), and must be read with the renames whoever reads it first, so the reading lives
+# in a header of its own (generated below) that <cwchar> and <cuchar> include as well.
+C_READER = {"cwchar": "<ycxx/hosted/c_wchar.hpp>"}
+# The C functions behind the renamed <wchar.h> declarations: name, parameters.
+C_WCHAR_FUNCS = [("wcschr", "const wchar_t* s, wchar_t c"), ("wcspbrk", "const wchar_t* s1, const wchar_t* s2"),
+                 ("wcsrchr", "const wchar_t* s, wchar_t c"), ("wcsstr", "const wchar_t* s1, const wchar_t* s2"),
+                 ("wmemchr", "const wchar_t* s, wchar_t c, __SIZE_TYPE__ n")]
 C_RENAMED_COMMENT = [
     "// The C library's declarations of the functions libycxx defines itself (constexpr, or the",
     "// const-correct bsearch pair) are renamed while its header is read, so that <stdlib.h>/<inttypes.h>",
@@ -339,9 +302,39 @@ H_WRAPPERS = {
                   ("YCXX_HOSTED && !YCXX_C_HAS_STRFROM", ["strfromd", "strfromf", "strfroml"])]),
     "inttypes.h": ("cinttypes", ["imaxabs", "imaxdiv"], []),
     "string.h": ("cstring", ["memset_explicit"], []),
+    "wchar.h": ("cwchar", [], [("YCXX_HOSTED", C_RENAMED["cwchar"])]),
 }
 
 root = pathlib.Path(__file__).resolve().parent.parent / "include"
+
+# ycxx/hosted/c_wchar.hpp: the one place that reads the C library's <wchar.h> (see C_READER).
+lines = ["// -*- C++ -*-  libycxx: the C library's <wchar.h>, as libycxx reads it   [hosted]  (generated by tools/gen_cheaders.py)",
+         "//",
+         "// Included by core's char_traits.hpp in hosted builds (std::mbstate_t is the C library's",
+         "// ::mbstate_t, [support.c.headers.other]/1; DECISIONS §3), and by <cwchar> and <cuchar>.",
+         "// #include_next finds the C library's header past libycxx's include directory, where this file",
+         "// was found. Its declarations of the functions <cwchar> declares as const-correct pairs are",
+         "// renamed while it is read ([library.c]; some C libraries declare only",
+         "// `wchar_t* f(const wchar_t*, ...)`), so that <wchar.h> can place libycxx's pairs in the global",
+         "// namespace; whichever libycxx header comes first reads it so. The renamed declarations are never",
+         "// used: ycxx::detail::c_wchar declares the C functions again under their assembler names.",
+         "#pragma once", "", "#include <ycxx/config.hpp>", ""]
+lines += [f"#define {n} ycxx_c_{n}" for n in C_RENAMED["cwchar"]]
+lines += ["#include_next <wchar.h>"] + [f"#undef {n}" for n in C_RENAMED["cwchar"]] + [""]
+lines += ["// Core's freestanding std::mbstate_t (ycxx/core/mbstate.hpp) has this C library's layout.",
+          "static_assert(sizeof(::mbstate_t) == ycxx::detail::cfg::mbstate_size &&",
+          "                  alignof(::mbstate_t) == ycxx::detail::cfg::mbstate_align,",
+          "              \"libycxx: cfg::mbstate_size/_align do not match this C library's ::mbstate_t\");",
+          "",
+          "namespace std {", "using ::mbstate_t;", "} // namespace std", "",
+          "// An assembler name is the object-file symbol verbatim: Mach-O prefixes C symbols with '_'.",
+          "// The functions are the C library's: default visibility (DECISIONS §2).",
+          "namespace [[gnu::visibility(\"default\")]] ycxx { namespace detail::c_wchar {", "#if YCXX_TARGET_DARWIN"]
+lines += [f"wchar_t* {n}({params}) noexcept __asm__(\"_{n}\");" for n, params in C_WCHAR_FUNCS]
+lines += ["#else"]
+lines += [f"wchar_t* {n}({params}) noexcept __asm__(\"{n}\");" for n, params in C_WCHAR_FUNCS]
+lines += ["#endif", "}} // namespace ycxx::detail::c_wchar", ""]
+(root / "ycxx/hosted/c_wchar.hpp").write_text(hidden("\n".join(lines)))
 for hname, (cxx, names, cond) in H_WRAPPERS.items():
     lines = [f"// -*- C++ -*-  libycxx: <{hname}> ([support.c.headers.other])   [also usable from C]  (generated by tools/gen_cheaders.py)",
              "//",
@@ -378,7 +371,9 @@ for name, (cheader, names, extra) in HEADERS.items():
     lines += [f"#include {h}" for h in EXTRA_INCLUDES.get(name, [])]
     # A header with a .h wrapper of libycxx's own reads the C library's past it (#include_next),
     # with the declarations libycxx replaces renamed (see C_RENAMED).
-    if cheader in H_WRAPPERS:
+    if name in C_READER:
+        inc = [f"#  include {C_READER[name]}"]
+    elif cheader in H_WRAPPERS:
         renamed = C_RENAMED.get(name, [])
         inc = [f"#  include_next <{cheader}>"]
         if renamed:
@@ -396,7 +391,7 @@ for name, (cheader, names, extra) in HEADERS.items():
             lines += [i.replace("#  ", "#", 1) for i in inc] + [""]
     lines += MACROS.get(name, [])
     lines += GLOBAL.get(name, [])
-    if names or extra:
+    if names or extra or name in CONDITIONAL:
         if fs:
             lines.append("#if YCXX_HOSTED")
         lines.append("namespace std {")

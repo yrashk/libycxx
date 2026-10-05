@@ -111,9 +111,9 @@ static int child_mixed() {
       for (int r = 0;; ++r) {
         switch ((k + r) % 7) {
           case 0: {
-            long long x = -1;
+            long long x = 0;  // unchanged when the sentry fails (another thread reached eof)
             std::cin >> x;
-            if (x < 0) bad = true;  // 0 when nothing was extracted
+            if (x < 0) bad = true;  // 0 also when nothing was extracted
             break;
           }
           case 1:

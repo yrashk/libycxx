@@ -778,8 +778,9 @@ under the same name. Otherwise it gets one alias template in `config.hpp`.
   This is sound because the flag is cleared before a second thread starts and thread creation
   synchronizes with the new thread; a thread created behind the C library's back (a raw `clone`)
   would break it, as it breaks the C library itself. Otherwise counts are incremented relaxed
-  and decremented with release, the decrement that reaches zero adding an acquire fence; a
-  `shared_ptr`'s last owner drops the weak count without an RMW when it reads 1 (nobody can make
+  and decremented with acq_rel (not release plus an acquire fence on reaching zero: the same
+  instruction on x86, and ThreadSanitizer, which ignores fences, would report every last
+  release as a race); a `shared_ptr`'s last owner drops the weak count without an RMW when it reads 1 (nobody can make
   a new reference then).
 - **C++26 erroneous values and stack buffers.** In C++26 mode GCC 16 zero-fills every automatic
   variable without an initializer. Buffers the library always writes before reading are marked

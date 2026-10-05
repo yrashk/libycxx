@@ -435,6 +435,33 @@ under the same name. Otherwise it gets one alias template in `config.hpp`.
   runtime's own), never destroyed; that object's destructor flushes them. Their buffers work on
   the C streams through C stdio (unbuffered while synchronized), so `sync_with_stdio(true)` needs
   no extra coordination.
+- **Concurrent use of the synchronized standard objects** ([iostream.objects.overview]/7: no
+  data race from concurrent formatted and unformatted input and output) without slowing down
+  other streams or single-threaded programs:
+  - *The stream state and `gcount`* of every stream are read and written with relaxed atomic
+    operations, which compile to the ordinary loads and stores on x86-64 and AArch64 (the
+    compiler can no longer merge or drop them; nothing else changes). `setstate` adds bits with an
+    atomic OR only when one of them is new, so the read-modify-write instruction runs only on a
+    transition to failure or end of file, once per stream in practice; `clear` is a store.
+    `width(n)` stores only a changed value (every inserter ends with `width(0)`).
+  - *The standard objects' buffers* hold a futex mutex of their own (`ycxx::detail::futex_mutex`)
+    on their input side (underflow, uflow, pbackfail) and, for the wide buffers, around the
+    conversion to bytes. It guards what a buffer keeps between calls (the last extracted
+    character for sungetc; the wide buffers' pending character and conversion states) and makes
+    the narrow peek (getc, then ungetc) atomic with respect to the object's other readers, so
+    they never see its characters out of order. Uncontended it costs one atomic exchange each
+    way, on top of the C stream's own lock; in a single-threaded process (`single_threaded()`)
+    plain loads and stores. Output through the narrow buffers takes no extra lock (putc and
+    fwrite lock the C stream). Ordinary stream buffers are untouched: their get and put areas
+    keep the inline fast paths of `basic_streambuf`, and the draft gives them no thread-safety
+    guarantee.
+  - Rejected: the C stream's own lock (`flockfile` with `getc_unlocked`) instead of the futex
+    mutex. It would avoid the second lock, but ThreadSanitizer models neither it nor the C
+    library's internal locks, and reports glibc's push-back storage (allocated by ungetc in one
+    thread, freed by getc in another) as a race unless a lock it understands orders the calls.
+    Also rejected: per-object locks in `basic_istream` (every stream would pay) and a one-
+    character get area in the narrow buffers (C stdio would no longer see a peeked character,
+    breaking [ios.members.static]/3).
 - **Without initialization priorities (Mach-O)** the stream objects are constructed by an
   `ios_base::Init` object that `<iostream>` defines in every translation unit including it,
   exactly the model of [iostream.objects.overview]/5. Mach-O has a single list of initializers

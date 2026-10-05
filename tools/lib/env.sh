@@ -14,19 +14,19 @@
 ycxx_env_load() {
   [ -n "${YCXX_GXX:-}${YCXX_CLANGXX:-}" ] && return 0
   ycxx__conf=${YCXX_TOOLCHAINS:-${XDG_DATA_HOME:-$HOME/.local/share}/ycxx/toolchains}/toolchains.env
-  [ -f "$ycxx__conf" ] || return 0
+  [ -f "${ycxx__conf}" ] || return 0
   while IFS='=' read -r ycxx__k ycxx__v; do
-    case $ycxx__k in
+    case ${ycxx__k} in
       YCXX_[A-Z_]*)
-        if eval "[ -z \"\${$ycxx__k:-}\" ]"; then
-          eval "$ycxx__k=\$ycxx__v"
-          export "$ycxx__k"
+        if eval "[ -z \"\${${ycxx__k}:-}\" ]"; then
+          eval "${ycxx__k}=\${ycxx__v}"
+          export "${ycxx__k}"
         fi ;;
     esac
-  done <"$ycxx__conf"
+  done <"${ycxx__conf}"
   # macOS: the SDK the compilers were provisioned against (as activate.sh does).
   if [ -z "${SDKROOT:-}" ] && [ -n "${YCXX_SDKROOT:-}" ]; then SDKROOT=$YCXX_SDKROOT; export SDKROOT; fi
-  ycxx_env_file=$ycxx__conf
+  ycxx_env_file=${ycxx__conf}
 }
 
 ycxx_lit_cmd() {

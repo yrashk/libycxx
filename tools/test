@@ -5,12 +5,15 @@
 #   tools/test [options] [stage...]
 #
 # Stages (default: policy build freestanding ycxx; "all": every stage):
-#   policy        preprocessor and include-layering policy checks (tools/check_*.py)
+#   policy        preprocessor, include-layering and shell-portability checks (tools/check_*.py)
 #   build         the library for each compiler, RelWithDebInfo (build/<cc>, what the suites
 #                 link) and Release (build/<cc>-release, -O3, as CMake consumers build it)
 #   freestanding  every core header with -ffreestanding -nostdinc, bare-metal smoke link
 #   cmake         CMake package, add_subdirectory and toolchain file (tests/cmake/run.sh)
 #   ycxx          libycxx's own spec-derived suite (tests/ycxx)
+#                 (each suite lists every test with the steps it ran and their exit statuses,
+#                 and writes build/test-logs/<suite>-<cc>.html, a report of every test with the
+#                 commands it ran and their output, and .tsv, one line per test)
 #   libcxx        libc++'s test suite, run only ($LIBCXX_TESTS)
 #   libstdcxx     libstdc++'s test suite, run only ($LIBSTDCXX_TESTS)
 #
@@ -20,7 +23,8 @@
 #   -j, --jobs N               parallel jobs for ninja and lit
 #   -s, --sanitizer LIST       suite stages: build tests with -fsanitize (asan, ubsan, tsan)
 #   -x, --fail-fast            stop at the first failing step
-#   -v, --verbose              stream every command's output; list every test
+#   -v, --verbose              stream every command's output; print every test's transcript
+#   -q, --quiet                suites: list only the tests that did not pass
 #   -h, --help
 #
 # Compilers come from the YCXX_* variables (tools/toolchain/activate.sh), else from the
@@ -44,6 +48,7 @@ while [ $# -gt 0 ]; do
     -s|--sanitizer) sanitizer=$2; shift ;;
     -x|--fail-fast) fail_fast=1 ;;
     -v|--verbose) YCXX_VERBOSE=1; export YCXX_VERBOSE ;;
+    -q|--quiet) YCXX_QUIET=1; export YCXX_QUIET ;;
     -h|--help) usage; exit 0 ;;
     all) stages="policy build freestanding cmake ycxx libcxx libstdcxx" ;;
     policy|build|freestanding|cmake|ycxx|libcxx|libstdcxx) stages="$stages $1" ;;
@@ -64,6 +69,7 @@ logs=$repo/build/test-logs
 mkdir -p "$logs"
 results=$logs/summary.txt
 : >"$results"
+: >"$logs/.run-start"
 t_start=$(date +%s)
 broken= # compilers whose library did not build: their suites are skipped
 
@@ -110,25 +116,32 @@ cc_of() { if [ "$1" = gcc ]; then echo "${YCXX_GCC:-gcc-16}"; else echo "${YCXX_
 summary() {
   ui_title "Summary"
   nok=0 nfail=0 nskip=0
-  while IFS='|' read -r st label secs; do
-    d=$(ui_duration "$secs")
+  # The third field is a duration in seconds, or for a skipped step the reason.
+  while IFS='|' read -r st label extra; do
     case $st in
-      ok) ui_ok "$label" "($d)"; nok=$((nok + 1)) ;;
-      skip) ui_skip "$label" "$secs"; nskip=$((nskip + 1)) ;;
-      *) ui_fail "$label" "($d)"; nfail=$((nfail + 1)) ;;
+      ok) ui_ok "$label" "($(ui_duration "$extra"))"; nok=$((nok + 1)) ;;
+      skip) ui_skip "$label" "$extra"; nskip=$((nskip + 1)) ;;
+      *) ui_fail "$label" "($(ui_duration "$extra"))"; nfail=$((nfail + 1)) ;;
     esac
   done <"$results"
   total=$(ui_duration $(($(date +%s) - t_start)))
   echo
   if [ $nfail = 0 ]; then
-    printf '  %s%s %d step%s passed%s in %s; logs in %s\n' "$ui_green$ui_bold" "$ui_sym_ok" "$nok" \
+    printf '  %s%s %d step%s passed%s in %s; logs in %s\n' "${ui_green}${ui_bold}" "${ui_sym_ok}" "$nok" \
       "$([ $nok = 1 ] || echo s)" \
-      "$ui_reset" "$total" "$logs"
+      "${ui_reset}" "$total" "$logs"
   else
-    printf '  %s%s %d of %d steps failed%s in %s; logs in %s\n' "$ui_red$ui_bold" "$ui_sym_fail" "$nfail" \
-      $((nok + nfail)) "$ui_reset" "$total" "$logs"
+    printf '  %s%s %d of %d steps failed%s in %s; logs in %s\n' "${ui_red}${ui_bold}" "${ui_sym_fail}" "$nfail" \
+      $((nok + nfail)) "${ui_reset}" "$total" "$logs"
   fi
-  [ $nskip = 0 ] || printf '  %s%d skipped%s\n' "$ui_yellow" "$nskip" "$ui_reset"
+  [ $nskip = 0 ] || printf '  %s%d skipped%s\n' "${ui_yellow}" "$nskip" "${ui_reset}"
+  # The reports of the suites run now: every test, how it was run and what it printed.
+  reports=$(find "$logs" -name '*.html' -newer "$logs/.run-start" 2>/dev/null | sort)
+  if [ -n "$reports" ]; then
+    echo
+    printf '  %sTest reports (every test with its commands, exit statuses and output):%s\n' "${ui_bold}" "${ui_reset}"
+    for r in $reports; do ui_info "$r"; done
+  fi
 }
 
 ui_title "libycxx tests: $(echo $stages)"
@@ -138,9 +151,9 @@ for c in $compilers; do
   v=$($(cxx_of $c) --version 2>/dev/null | head -n 1) || v="not found"
   ui_info "$c" "$(cxx_of $c): $v"
 done
-[ -n "${ycxx_env_file:-}" ] && ui_info "toolchains" "$ycxx_env_file"
+[ -n "${ycxx_env_file:-}" ] && ui_info "toolchains" "${ycxx_env_file}"
 case " $stages " in *" ycxx "*|*" libcxx "*|*" libstdcxx "*)
-  if ycxx_lit_cmd 2>/dev/null; then ui_info "lit" "$ycxx_lit"
+  if ycxx_lit_cmd 2>/dev/null; then ui_info "lit" "${ycxx_lit}"
   else ui_warn "lit" "not found: install uv (https://docs.astral.sh/uv/) or set YCXX_LIT"; fi ;;
 esac
 
@@ -150,6 +163,7 @@ for stage in $stages; do
       ui_section "Policy checks"
       step "preprocessor policy" policy-preprocessor python3 tools/check_preprocessor.py || :
       step "include layering" policy-includes python3 tools/check_includes.py || :
+      step "shell portability (bash 3.2, dash)" policy-shell python3 tools/check_shell.py || :
       ;;
     build)
       for c in $compilers; do

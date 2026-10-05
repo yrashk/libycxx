@@ -360,6 +360,11 @@ under the same name. Otherwise it gets one alias template in `config.hpp`.
    and macOS. lit runs through `uvx` with a pinned version, so a checkout needs only uv, not a
    Python environment. `tools/run-conformance` brings `build/<compiler>` up to date before it
    tests, so a run can never test a stale library.
+   A passing test must show evidence, not just a verdict. The lit formats record every command
+   a test runs, with its exit status, duration and output (`tests/ycxxlit/transcript.py`), for
+   passing tests as well as failing ones. The terminal lists every test together with its
+   steps. Each run's HTML report (`build/test-logs/<run>.html`) holds every test's transcript
+   and the run's provenance: commit, compiler version, command and host.
 
 ## 7. Iostreams and localization (hosted)
 

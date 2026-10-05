@@ -201,15 +201,18 @@ protected:
     return parse(s, end, f, err, t, "%H:%M:%S");
   }
   virtual iter_type do_get_date(iter_type s, iter_type end, ios_base& f, ios_base::iostate& err, tm* t) const {
+    // [locale.time.get.virtuals]/4: what time_put produces for "%d%m%y" (or the order's
+    // permutation), which has no separators; /5: other formats may be accepted too, here the
+    // same fields separated by '/' ('?' in the pattern: an optional '/').
     switch (date_order()) {
     case dmy:
-      return parse(s, end, f, err, t, "%d/%m/%y");
+      return parse(s, end, f, err, t, "%d?%m?%y");
     case ymd:
-      return parse(s, end, f, err, t, "%y/%m/%d");
+      return parse(s, end, f, err, t, "%y?%m?%d");
     case ydm:
-      return parse(s, end, f, err, t, "%y/%d/%m");
+      return parse(s, end, f, err, t, "%y?%d?%m");
     default:
-      return parse(s, end, f, err, t, "%m/%d/%y");
+      return parse(s, end, f, err, t, "%m?%d?%y");
     }
   }
   virtual iter_type do_get_weekday(iter_type s, iter_type end, ios_base& f, ios_base::iostate& err, tm* t) const {
@@ -379,6 +382,9 @@ private:
         e |= one;
       } else if (*fmt == ' ') {
         while (s != end && ct.is(ctype_base::space, *s))
+          ++s;
+      } else if (*fmt == '?') { // an optional '/' (do_get_date)
+        if (s != end && ct.narrow(*s, 0) == '/')
           ++s;
       } else if (s == end) {
         e |= ios_base::eofbit | ios_base::failbit;

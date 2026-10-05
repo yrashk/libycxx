@@ -1,22 +1,6 @@
 #!/bin/sh
-# Fast local gate: policy checks, both library builds, freestanding check.
-set -e
-repo=$(cd "$(dirname "$0")/.." && pwd)
-cd "$repo"
-python3 tools/check_preprocessor.py
-python3 tools/check_includes.py
-# build/<cc>: RelWithDebInfo (what the test suites link); build/<cc>-release: Release (-O3), as
-# CMake consumers build it -- GCC's optimizer-dependent warnings (-Werror) differ between the two.
-for c in gcc clang; do
-  if [ $c = gcc ]; then CC=${YCXX_GCC:-gcc-16} CXX=${YCXX_GXX:-g++-16}
-  else CC=${YCXX_CLANG:-clang-23} CXX=${YCXX_CLANGXX:-clang++-23}; fi
-  for t in RelWithDebInfo Release; do
-    d=build/$c; [ $t = Release ] && d=build/$c-release
-    if [ ! -f $d/build.ninja ]; then
-      cmake -S . -B $d -G Ninja -DCMAKE_C_COMPILER=$CC -DCMAKE_CXX_COMPILER=$CXX -DCMAKE_BUILD_TYPE=$t >/dev/null
-    fi
-    ninja -C $d >/dev/null
-  done
-done
-echo "library builds: ok"
-tools/check_freestanding.sh
+# Fast local gate: policy checks, both library builds (RelWithDebInfo, what the test suites link,
+# and Release, -O3, as CMake consumers build it: GCC's optimizer-dependent warnings differ between
+# the two under -Werror), freestanding check. Stops at the first failure.
+# The same as `tools/test --fail-fast policy build freestanding`; options pass through.
+exec "$(dirname "$0")/test" --fail-fast "$@" policy build freestanding

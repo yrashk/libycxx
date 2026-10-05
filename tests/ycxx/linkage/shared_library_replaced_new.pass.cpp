@@ -14,6 +14,7 @@
 // UNSUPPORTED-SANITIZER: asan,tsan  the sanitizer runtime's replacement would compete with the test's own
 // SHARED: ../support/linkage/shared_alloc_lib.cpp
 #include <atomic>
+#include <cstdio>
 #include <cstdlib>
 #include <memory>
 #include <new>
@@ -66,6 +67,8 @@ void operator delete(void* p, std::size_t, std::align_val_t) noexcept { release(
 int main() {
   long n0 = news, d0 = deletes, t0 = nothrow_news;
   lib_allocate_and_free(); // 7 allocations, each freed, all inside the shared library
+  std::printf("replacement calls from the shared library: new %ld, delete %ld, nothrow new %ld\n", news - n0,
+              deletes - d0, nothrow_news - t0);
   CHECK(news - n0 == 7);
   CHECK(deletes - d0 == 7);
   CHECK(nothrow_news - t0 == 1); // new (nothrow) int ([new.delete.array]: new[] nothrow calls new[](size))

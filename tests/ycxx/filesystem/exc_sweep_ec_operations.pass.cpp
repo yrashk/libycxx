@@ -29,7 +29,9 @@
 //         as a directory_iterator unless otherwise specified"): "If an
 //         iterator of type directory_iterator reports an error or is advanced past the last
 //         directory element, that iterator shall become equal to the end iterator value";
-//   - no operator new block is leaked whichever way the call ends;
+//   - no operator new block and no file descriptor (an open directory stream) is leaked
+//     whichever way the call ends ([res.on.exception.handling]: an exception leaves no
+//     resources behind; the iterators release their directory when destroyed);
 //   - nothing is left in a degraded state: the same call made again once memory is available
 //     succeeds and returns the right result.
 #include <filesystem>
@@ -37,6 +39,7 @@
 #include <system_error>
 #include "exc_new.hpp"
 #include "fs_tmpdir.hpp"
+#include <fcntl.h>
 #include <stdlib.h>
 #include <sys/stat.h>
 #include <unistd.h>
@@ -46,17 +49,25 @@ namespace fs = std::filesystem;
 
 static long errors_reported = 0, exceptions_seen = 0;
 
+static int open_fds() {
+  int n = 0;
+  for (int fd = 0; fd < 1024; ++fd) n += fcntl(fd, F_GETFD) != -1;
+  return n;
+}
+
 // reset() restores the files the operation works on; run(ec) makes the call and returns its
 // result; good(r) checks a successful result; bad(r) the documented error result.
 template <class Reset, class Run, class Good, class Bad>
 void sw(const char* name, Reset reset, Run run, Good good, Bad bad) {
   sweep_new(name, [&] {
     reset();
+    const int fds = open_fds();
     std::error_code ec = std::make_error_code(std::errc::io_error);
     decltype(run(ec)) r{};
     const bool threw = attempt([&] { r = run(ec); });
     const bool fired = st.fired;
     disarm();
+    EXH_EXPECT(open_fds() == fds, "a file descriptor leaked");
     if (threw) {
       ++exceptions_seen;
     } else if (ec) {

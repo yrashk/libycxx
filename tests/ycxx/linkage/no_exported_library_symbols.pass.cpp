@@ -96,23 +96,6 @@ void* operator new(std::size_t n) {
 void operator delete(void* p) noexcept { std::free(p); }
 void operator delete(void* p, std::size_t) noexcept { std::free(p); }
 
-// typeinfo or typeinfo name of a fundamental type or of a pointer to one: _ZTI/_ZTS, then P or PK,
-// then a builtin type's code (a lower-case letter, or D and a letter: Di, DF16_, ...).
-namespace own {
-bool fundamental_type_info(const std::string& name) {
-  if (name.rfind("_ZTI", 0) != 0 && name.rfind("_ZTS", 0) != 0)
-    return false;
-  std::string rest = name.substr(4);
-  if (rest.rfind("PK", 0) == 0)
-    rest.erase(0, 2);
-  else if (rest.rfind("P", 0) == 0)
-    rest.erase(0, 1);
-  if (rest.size() == 1)
-    return rest[0] >= 'a' && rest[0] <= 'z';
-  return rest.size() > 1 && rest[0] == 'D' && ((rest[1] >= 'A' && rest[1] <= 'Z') || (rest[1] >= 'a' && rest[1] <= 'z'));
-}
-} // namespace own
-
 int main(int, char** argv) {
   CHECK(own::run() == 7);
   CHECK(own::replaced_new_calls > 0);
@@ -143,12 +126,6 @@ int main(int, char** argv) {
                     name != "_ZdlPvj") ||
                    name.find("__cxa_") != std::string::npos || name.find("__gxx_personality") != std::string::npos ||
                    name.find("ycxx_pal_") != std::string::npos;
-    if (library && os == "Darwin" && own::fundamental_type_info(name)) {
-      // GCC gives these default visibility; they are hidden on ELF only (DECISIONS §2). Benign on
-      // Darwin: libc++abi exports the same objects, with the same layout and names.
-      std::printf("tolerated: %s\n", s.c_str());
-      continue;
-    }
     if (library) {
       std::printf("exported: %s\n", s.c_str());
       ++foreign;

@@ -26,7 +26,7 @@ bool catch_matches(const std::type_info* handler, const std::type_info* thrown, 
 // Assembler text built during constant evaluation, for `asm((...))`: the directives that hide the
 // symbols GCC gives default visibility despite -fvisibility=hidden (DECISIONS §2).
 struct asm_text {
-  char text[16384]{};
+  char text[32768]{};
   std::size_t length = 0;
   constexpr void append(const char* s) noexcept {
     while (*s)

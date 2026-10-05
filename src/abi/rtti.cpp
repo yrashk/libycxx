@@ -34,26 +34,47 @@ __pointer_to_member_type_info::~__pointer_to_member_type_info() {}
 // GCC gives the fundamental type_info objects above default visibility whatever -fvisibility says
 // (Clang hides them). Exported from a program or shared object, they would be the ones another
 // C++ runtime in the process binds its own references to (DECISIONS §2), so they are hidden with
-// assembler directives: `.weak` + `.hidden` for every type GCC may know; the assembler drops the
-// directives for the types this target lacks, since nothing here defines or references them.
-// ELF only: Mach-O's two-level namespace keeps other images from binding to them.
+// assembler directives. ELF: `.weak` + `.hidden` for every type GCC may know; the assembler drops
+// the directives for the types this target lacks, since nothing here defines or references them.
+// Mach-O: `.private_extern`, which for a name nothing defines or references leaves an unused
+// undefined entry (harmless to the linker), so the list there is the target's: on AArch64 GCC
+// names __bf16 `u6__bf16` (not DF16b), has no _Float128x, and adds __mfp8 and the SVE ACLE types
+// (whether or not SVE is enabled). The AArch64 list is what `nm -gU` shows for this object built by
+// GCC 16.2 for aarch64-apple-darwin; linkage/no_exported_library_symbols checks it.
 namespace {
+using ycxx::detail::cfg::cpu_family;
+constexpr bool aarch64 = ycxx::detail::cfg::cpu == cpu_family::aarch64;
+
 consteval ycxx::abi::asm_text hide_fundamental_type_infos() {
   ycxx::abi::asm_text a;
-  if (!ycxx::detail::cfg::gcc || ycxx::detail::cfg::darwin)
+  if (!ycxx::detail::cfg::gcc)
     return a;
-  for (const char* type : {"v", "b", "c", "a", "h", "s", "t", "w", "i", "j", "l", "m", "x", "y", "n", "o", "f", "d",
-                           "e", "g", "Dn", "Ds", "Di", "Du", "Df", "Dd", "De", "Dh", "DF16_", "DF16b", "DF32_",
-                           "DF64_", "DF128_", "DF32x", "DF64x", "DF128x"})
+  auto hide = [&](const char* type) {
     for (const char* kind : {"_ZTI", "_ZTS"})
       for (const char* pointer : {"", "P", "PK"})
-        for (const char* directive : {".weak ", ".hidden "}) {
+        for (const char* directive : {".weak ", ".hidden ", ".private_extern _"}) {
+          if (ycxx::detail::cfg::darwin != (directive[1] == 'p'))
+            continue;
           a.append(directive);
           a.append(kind);
           a.append(pointer);
           a.append(type);
           a.append("\n");
         }
+  };
+  for (const char* type : {"v", "b", "c", "a", "h", "s", "t", "w", "i", "j", "l", "m", "x", "y", "n", "o", "f", "d",
+                           "e", "g", "Dn", "Ds", "Di", "Du", "Df", "Dd", "De", "Dh", "DF16_", "DF32_", "DF64_",
+                           "DF128_", "DF32x", "DF64x"})
+    hide(type);
+  if (!aarch64 || !ycxx::detail::cfg::darwin)
+    for (const char* type : {"DF16b", "DF128x"})
+      hide(type);
+  if (aarch64)
+    for (const char* type : {"u6__bf16", "u6__mfp8", "u10__SVBool_t", "u10__SVInt8_t", "u11__SVInt16_t",
+                             "u11__SVInt32_t", "u11__SVInt64_t", "u11__SVUint8_t", "u12__SVUint16_t",
+                             "u12__SVUint32_t", "u12__SVUint64_t", "u13__SVFloat16_t", "u13__SVFloat32_t",
+                             "u13__SVFloat64_t", "u14__SVBfloat16_t", "u13__SVMfloat8_t"})
+      hide(type);
   return a;
 }
 } // namespace

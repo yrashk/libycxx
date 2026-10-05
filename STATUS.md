@@ -795,7 +795,8 @@ compilers; `visit_format_arg.pass.cpp` needs `EOF` from `constexpr_char_traits.h
   C++26 names `extent_slice`, `range_slice`, `canonical_slices`, `subextents`, `dims`, the padded
   layouts, `aligned_accessor`, `at` and the mdspan `copy`/`fill`). Own suite mdspan + linalg:
   18/18 on both compilers, clean under ASan (Clang). libstdc++ 23_containers/mdspan: 0 -> 33/41 (GCC),
-  25/41 (Clang), 5 unsupported; the rest: unqualified `uint8_t`/`uint16_t` (2), submdspan_mapping.cc
+  25/41 (Clang), 5 unsupported; the rest: unqualified `uint8_t`/`uint16_t` (2; padded.cc also passes a
+  padding of 0, canonical_slices.cc a constant stride of 0: tests/libstdcxx/TRIAGE.md), submdspan_mapping.cc
   slices an extent of 11 with `extent_slice{2, cw<7>, cw<2>}` (a precondition violation, diagnosed in
   constant evaluation), and on Clang test code GCC accepts (`Layout::mapping<E>` without `template`,
   a constexpr variable template without initializer) and constexpr step limits. Choices: pair-like

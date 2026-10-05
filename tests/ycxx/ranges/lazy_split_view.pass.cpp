@@ -2,6 +2,9 @@
 // pattern is a tiny-range (sized with a constant size() <= 1); outer iterator_concept is
 // forward for forward bases, input otherwise; iterator_category (input_iterator_tag) only for
 // forward bases; trailing delimiter gives a trailing empty range.
+// COUNTERPART: libcxx:ranges/range.adaptors/range.lazy.split/range.lazy.split.inner/ctor.outer_iterator.pass.cpp
+// COUNTERPART: libcxx:ranges/range.adaptors/range.lazy.split/range.lazy.split.outer.value/ctor.iter.pass.cpp
+// COUNTERPART: libcxx:ranges/range.adaptors/range.lazy.split/range.lazy.split.outer/ctor.parent(_base)?.pass.cpp
 #include <array>
 #include <iterator>
 #include <ranges>

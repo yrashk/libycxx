@@ -7,6 +7,7 @@
 // input_iterator_tag, difference_type ptrdiff_t, value_type Val; ++ reads the next value into
 // the view (post-increment returns void); * returns a Val& to the view's stored value (the
 // same object each time); it == default_sentinel is !stream.
+// COUNTERPART: libcxx:ranges/range.factories/range.istream.view/.*
 #include <algorithm>
 #include <cstddef>
 #include <iterator>

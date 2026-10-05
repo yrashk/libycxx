@@ -11,6 +11,7 @@
 // is_move_assignable_v<T>, noexcept(is_nothrow_move_constructible_v<T> &&
 // is_nothrow_move_assignable_v<T>); swap(T(&)[N], T(&)[N]) constrained on is_swappable_v<T>,
 // noexcept(is_nothrow_swappable_v<T>).
+// COUNTERPART: libcxx:utilities/meta/meta.unary/meta.unary.prop/is_swappable.pass.cpp
 #include <type_traits>
 #include <utility>
 

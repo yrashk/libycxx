@@ -4,6 +4,7 @@
 // and very unbalanced sizes; the outputs are checked against the multiset definitions of
 // [alg.set.operations.general] (counts: union max, intersection min, difference m - n,
 // symmetric difference |m - n|).
+// COUNTERPART: libcxx:algorithms/alg.sorting/alg.set.operations/set.intersection/set_intersection_complexity.pass.cpp
 #include <algorithm>
 #include "sort_support.hpp"
 #include "check.hpp"

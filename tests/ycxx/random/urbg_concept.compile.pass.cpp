@@ -1,6 +1,7 @@
 // [rand.req.urng]/1: uniform_random_bit_generator<G> = invocable<G&> &&
 // unsigned_integral<invoke_result_t<G&>> && requires { { G::min() } -> same_as<invoke_result_t<G&>>;
 // { G::max() } -> same_as<invoke_result_t<G&>>; requires bool_constant<(G::min() < G::max())>::value; }
+// COUNTERPART: libcxx:numerics/rand/rand.req/rand.req.urng/uniform_random_bit_generator.compile.pass.cpp
 #include <random>
 #include <cstdint>
 

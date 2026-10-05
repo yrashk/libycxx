@@ -1,6 +1,7 @@
 // [format.string.std] Table 111: pointers (void*, const void*, nullptr_t) format as
 // to_chars(reinterpret_cast<uintptr_t>(value), 16) with a 0x prefix (P: uppercase digits
 // and 0X); right aligned by default (Table 104); the 0 option pads after the prefix (/8).
+// COUNTERPART: libcxx:utilities/format/format.formatter/format.formatter.spec/formatter.pointer.pass.cpp
 #include <cstdint>
 #include <cstdio>
 #include <format>

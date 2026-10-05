@@ -1,6 +1,7 @@
 // [range.iota.view], [range.iota.iterator], [range.iota.sentinel]: iota_view's elements,
 // size() (/16, including negative values and unsigned W), iterator arithmetic (/9-/11,
 // /21 for unsigned W), comparisons, the (first, last) constructor (/10), and empty().
+// COUNTERPART: libcxx:ranges/range.factories/range.iota.view/(iterator|sentinel)/ctor.value.pass.cpp
 #include <climits>
 #include <compare>
 #include <cstddef>

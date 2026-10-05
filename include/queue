@@ -7,3 +7,6 @@
 #include <initializer_list>
 #include <vector>
 #include <ycxx/core/queue.hpp>
+// [queue.syn]: formatter<queue>, formatter<priority_queue> and those of
+// [format.formatter.spec]/2.
+#include <ycxx/core/format_adaptors.hpp>

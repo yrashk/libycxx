@@ -38,6 +38,58 @@ Environment note: the machine was shared with other jobs (load average 15 to 25 
 reached the harness's 300 s compile timeout and were reported UNRESOLVED. Compiled by hand,
 both variant tests pass: GCC takes 85 s and 194 s to compile them under that load (E).
 
+## Policy round of 2026-10-05: every former baseline failure classified
+
+Since 49a167c a test reported FAIL fails CI and the baselines are gone. Every test of the old
+`baseline/{linux,darwin}-{gcc,clang}.txt` outside `localization/` and `input.output/` (except
+filesystems, string streams and syncstream, handled here) is now in exactly one state. Run:
+`tools/run-conformance libcxx gcc|clang` over every top-level directory but `localization/`
+and `input.output/` (plus `input.output/{filesystems,string.streams,syncstream}`), `-j4`, as root,
+with the named locales of `tools/ci/gen-locales` installed; failures rerun with the final tree.
+"Before" is the same run with this round's skip, xfail and unsupported entries and fixes taken out.
+
+| 7841 tests | GCC before | GCC after | Clang before | Clang after |
+|---|---|---|---|---|
+| Passed | 7007 | 7009 | 7007 | 7006 |
+| Failed | 259 | 2 | 265 | 8 |
+| Expectedly failed | 3 | 9 | 1 | 6 |
+| Unsupported | 572 | 821 | 568 | 821 |
+
+(Before includes 52 tests that fail only for want of named locales: they are UNSUPPORTED now,
+by the named-locale gating of the merged named-locale work.)
+
+- **(a) fixed**: variant's converting constructor (variant.ctor/T.pass: Clang instantiated a
+  constexpr constructor through FUN's array test; a Tj constructible from anything recursed,
+  llvm.org/PR151328); `thread::id` `operator<<` inserted an integer, so `oct`/`showpos` and the
+  locale's grouping changed it ([thread.thread.id]/9); chrono `%j %U %W %V %G %g` on a date that
+  is not `ok()` ([time.format]/3; the same fix came with the merged named-locale branch).
+- **(a) still failing** (large features): `__cpp_lib_senders` (execution.version,
+  version.version: senders/receivers, [exec]); `import std;`/`import std.compat;` (modules/std,
+  std.compat, Clang; [std.modules]); the C++ `<wchar.h>` and `<stddef.h>` wrappers (Clang:
+  depr.c.headers/wchar_h, stddef_h, strings/c.strings/cwchar_include_order1/2;
+  [support.c.headers.other]/1).
+- **(b) skipped** (skip.txt): 29 version.compile tests on older-draft values (divergence); EOF/WEOF
+  (86) and the global `intN_t` names (17) (divergence, pending decision, STATUS); transitive
+  includes (equality_comparable_with, stream iterator types, mask_array, cmath.pass:
+  implementation-specific); numbers/value and span<Incomplete> copy (divergence);
+  make_from_tuple (extension); vector emplace.pass (an rvalue argument aliasing an element,
+  [res.on.arguments]/1.3; libstdc++ fails it too); directory_entry path.pass and
+  last_write_time.pass (divergence).
+- **(b) unsupported in one configuration** (unsupported.txt): the 26 permission-error filesystem
+  tests under the `root` feature; the 4 `_BitInt` tests under `clang` (extension).
+- **(c) expected failures** (xfail.txt): begin/end.sizezero, op_subscript.runtime, PR31384 (GCC);
+  convert_const_move, empty_in_place_t_does_not_clobber, type_traits.version (Clang);
+  span.pass and types.pass (any: draft defect, span<volatile T> for a class T).
+- **(E)** harness: libc++ test programs run without LANG/LANGUAGE/LC_* (as libc++'s lit runs
+  them; CPython's locale coercion leaked LC_CTYPE=C.UTF-8: text_encoding environment.pass).
+  variant.visit/visit_return_type.pass compiles in 186 s on GCC at load 20 and can reach the 300 s
+  compile timeout on a loaded machine; it passes when the load is lower.
+- **macOS only** (old darwin baselines, not run here): depr.c.headers/string_h.pass and
+  uchar_h.compile (both), wchar_h.compile and strings/c.strings/cwchar_include_order1/2 (GCC),
+  fs.op.copy_file/copy_file_procfs, numeric.limits.members/tinyness_before, c.math/hermite,
+  c.strings/cstring.pass, locale.nm.put put_long_double (both); the func.search tests listed
+  there pass since the searchers were added.
+
 ## Re-run of 2026-10-05 (after the (A) fixes)
 
 Whole suite again (`tools/run-conformance libcxx gcc|clang -- -j8 -sv`, library at `7e6a93f`,

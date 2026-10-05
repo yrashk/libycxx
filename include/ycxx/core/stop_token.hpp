@@ -1,4 +1,6 @@
-// libycxx hosted: stop tokens ([thread.stoptoken]).
+// libycxx core: stop tokens ([thread.stoptoken]). Core so that the senders of <execution> can use
+// them freestanding: the stop state needs only atomics and the PAL's wait, thread identity and
+// yield (the freestanding runtime's defaults: one thread, identity 1, yield does nothing).
 //
 // One stop state implementation (ycxx::detail::stop_state) serves stop_source/stop_token, which
 // share a reference-counted heap copy of it, and inplace_stop_source, which contains one. A stop
@@ -13,7 +15,7 @@
 #include <ycxx/core/concepts.hpp>
 #include <ycxx/core/new.hpp>
 #include <ycxx/core/type_traits.hpp>
-#include <ycxx/hosted/thread_support.hpp>
+#include <ycxx/pal.h>
 
 namespace [[gnu::visibility("hidden")]] ycxx { namespace adl_free {
 // A registered callback (the base of stop_callback and inplace_stop_callback). invoke runs it.
@@ -65,7 +67,7 @@ public:
       return false;
     }
     b |= requested_bit;
-    requester_ = ::ycxx::detail::this_thread_handle();
+    requester_ = ::ycxx_pal_thread_self();
     __atomic_store_n(&bits_, b | locked_bit, __ATOMIC_RELEASE); // publish the request, keep the lock
     while (stop_callback_node* n = head_) {
       head_ = n->next;
@@ -116,7 +118,7 @@ public:
     const ycxx_pal_handle requester = requester_;
     unlock(b);
     // Taken off the list by request_stop: it has run, or runs now.
-    if (requester == ::ycxx::detail::this_thread_handle()) {
+    if (requester == ::ycxx_pal_thread_self()) {
       // On this thread: it finished already, or this is its own invocation destroying it.
       if (__atomic_load_n(&n->done, __ATOMIC_ACQUIRE) == 0 && n->removed)
         *n->removed = true;

@@ -31,6 +31,9 @@ CORE += ["contracts"]
 CORE += ["random"]
 # <meta>: reflection needs the compiler's support (GCC 16 -freflection); empty without it.
 CORE += ["meta"]
+# <stop_token>: atomics and the PAL's wait, thread identity and yield (the freestanding runtime
+# has single-threaded defaults); core so that <execution>'s senders are freestanding-capable.
+CORE += ["stop_token"]
 # Hosted: need an OS (through the PAL) or the C library.
 HOSTED = [
     "any", "cctype", "cfenv", "cinttypes", "clocale", "csetjmp", "csignal", "cstdio",
@@ -52,7 +55,7 @@ HOSTED += ["memory_resource"]
 # <chrono>: the arithmetic is core (ycxx/core/chrono_base.hpp), the clocks need the OS.
 HOSTED += ["chrono"]
 # The thread support library: threads, mutexes and condition variables need the OS (PAL).
-HOSTED += ["thread", "stop_token", "mutex", "shared_mutex", "condition_variable", "semaphore", "latch", "barrier",
+HOSTED += ["thread", "mutex", "shared_mutex", "condition_variable", "semaphore", "latch", "barrier",
            "future", "rcu", "hazard_pointer"]
 # <math.h>: the C library's header plus <cmath>'s names in the global namespace.
 HOSTED += ["math.h"]

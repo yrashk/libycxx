@@ -349,6 +349,14 @@ tooling.
   SDK's headers, but the interface libSystem's `os_unfair_lock` and Apple's own libc++ use since
   macOS 10.12; the public `os_sync_wait_on_address` needs macOS 14.4 and is not usable from GCC,
   which has no `__builtin_available`), with relative timeouts in microseconds.
+- **`<stop_token>` is core.** Its stop state needs only atomics and three PAL hooks: the address
+  wait (through `<atomic>`'s tables), `ycxx_pal_thread_self` (a callback deregistered while
+  `request_stop` runs it: on the requesting thread it is not waited for) and
+  `ycxx_pal_thread_yield` (the list lock's backoff). The freestanding runtime archive defaults to
+  one thread of execution (identity 1, yield does nothing); a freestanding program with threads
+  supplies its own, as for the wait. `stop_source`'s shared state uses the replaceable
+  `operator new`, as the function wrappers do. Core so that `<execution>`'s senders, which use
+  `inplace_stop_source`, are freestanding-capable.
 - **`<rcu>` and `<hazard_pointer>` are hosted, with their state in the runtime.** One RCU domain
   with epochs: a global counter advances with every retire and every `rcu_synchronize`; each
   thread that enters a region owns a reader record (released at thread end) where its outermost

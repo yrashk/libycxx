@@ -1,6 +1,6 @@
-// -*- C++ -*-  libycxx: <stop_token>   [hosted]
+// -*- C++ -*-  libycxx: <stop_token>   [core]
 #pragma once
 
 #include <ycxx/config.hpp>
 #include <ycxx/core/version.hpp>
-#include <ycxx/hosted/stop_token.hpp>
+#include <ycxx/core/stop_token.hpp>

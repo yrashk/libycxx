@@ -26,8 +26,9 @@ rather than against itself. It assumes familiarity with `README.md`, `DECISIONS.
 2. **Ship your own ABI runtime**, or pick one explicitly; never depend by accident on the
    toolchain's runtime (`libsupc++`, `libc++abi`).
 3. **Build static archives with hidden visibility**, so that a program or shared object exports
-   nothing of the library. Hide what the compiler keeps default (the implicit allocation
-   functions, predeclared ABI entry points).
+   nothing of the library. Hide what the compiler keeps default (predeclared ABI entry points),
+   except the replaceable allocation functions: keep those default, so that one replacement (the
+   program's, or a sanitizer's) serves every image and objects can change owner between images.
 4. **Select the library with the generic driver flags**: `-nostdinc++` plus `-isystem <headers>`,
    and `-nostdlib++` plus the archives and their system dependencies. Do not rely on `-stdlib=`.
 5. **Deliver the same flags three ways**, generated from one place where possible: a CMake package
@@ -120,8 +121,10 @@ baseline check, an inline ABI namespace) only once ABI stability is promised.
 libycxx hides everything (DECISIONS §2): every file-scope opening of `std` and `ycxx` is
 `namespace [[gnu::visibility("hidden")]] std {` (enforced by `tools/check_visibility.py`), the
 archives are built with `-fvisibility=hidden`, and what the compilers keep default is hidden with
-assembler directives: the implicitly declared allocation functions, GCC's predeclared `__cxa_*`
-entry points, and on ELF GCC's fundamental type_info objects.
+assembler directives: GCC's predeclared `__cxa_*` entry points, and on ELF GCC's fundamental
+type_info objects. The replaceable allocation functions keep the default visibility the compilers
+give them (decided 2026-10-05, after the sanitizer runs below showed objects allocated in one image
+and freed in another; earlier libycxx hid them too, with the same directives).
 
 Others: libc++ offers `LIBCXX_HERMETIC_STATIC_LIBRARY`, "Do not export any symbols from the static
 libc++ library" [libcxx-vendor]. Clang has `-fvisibility-global-new-delete=` (`force-default`,
@@ -272,7 +275,7 @@ each image that links libycxx has its own runtime, bound inside it, and exports 
 still cross between libycxx images (type_info compared by name, the uncaught count kept by the
 runtime that added the exception), and libycxx and libstdc++ or libc++ coexist with separate
 runtimes. What is not shared is documented: each image has its own `uncaught_exceptions()` count,
-error categories, default memory resources and replacement `operator new`. `tests/cmake/run.sh`
+error categories and default memory resources (but one set of allocation functions, see below). `tests/cmake/run.sh`
 checks it: a program and a shared library built with libycxx, each in one process with a shared
 library built with the toolchain's library ("mine 3 other 3"), a program catching a libycxx shared
 library's exceptions ("caught 15 uncaught 0 0"), and no exported libycxx symbol in any image (all
@@ -286,6 +289,16 @@ and documented: GCC's `-Wattributes` warning, nothing shareable by plugins, and 
 singletons.
 
 ### Replacement allocation functions and sanitizers
+
+The global allocation functions are the one part of the library an image must share with the
+others: a `std::string` built in a shared library and destroyed in the program is allocated by
+one image's `operator new` and freed by the other's `operator delete`. With per-image (hidden)
+defaults that pairs only while both reach `malloc`/`free`; it breaks when the program replaces
+`operator delete`, and AddressSanitizer reports it as `alloc-dealloc-mismatch`. libycxx therefore
+gives its default allocation functions default visibility, as libstdc++ and libc++ do, and as
+Chromium keeps them on ELF so that its allocator sees every image's allocations
+[chromium-libcxx-gn].
+
 
 The library's default `operator new`/`delete` live in their own archive members, so a program's
 replacement is linked instead ([replacement.functions]; DECISIONS §3). A sanitizer runtime is a

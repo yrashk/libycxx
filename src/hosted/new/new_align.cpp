@@ -2,8 +2,14 @@
 #include <new>
 #include <ycxx/core/error.hpp>
 #include <ycxx/pal.h>
+#include "../../runtime/new/hidden.hpp"
+#include "../../runtime/new/allocation_table.hpp"
 
-[[gnu::weak]] void* operator new(std::size_t n, std::align_val_t a) {
+asm((ycxx::detail::hide_allocation_function("_Znw#St11align_val_t")));
+
+void* operator new(std::size_t n, std::align_val_t a) {
+  if (auto f = ycxx_allocation_functions.new_align; f != ycxx::detail::own_allocation_functions.new_align)
+    return f(n, static_cast<std::size_t>(a));
   if (n == 0)
     n = 1;
   for (;;) {

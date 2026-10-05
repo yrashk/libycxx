@@ -242,6 +242,11 @@ endif()
 # libgcc_s.so; a second, static copy (libgcc_eh) used by the personality routine would abort.
 target_link_options(ycxx_ycxx INTERFACE $<$<LINK_LANGUAGE:CXX>:-nostdlib++>
                     $<$<AND:$<LINK_LANGUAGE:CXX>,$<PLATFORM_ID:Linux>>:-shared-libgcc>)
+# The allocation table stays in every program and is visible to the shared libraries it loads
+# (cmake/ycxx-link.cmake; DECISIONS §2).
+include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/ycxx-link.cmake)
+ycxx_link_options(_ycxx_table_link_options)
+target_link_options(ycxx_ycxx INTERFACE ${_ycxx_table_link_options})
 # Linux: Clang takes the C runtime startup files and libgcc (the unwinder libycxx's ABI runtime
 # uses) from a GCC installation, by default the newest one in the system's standard places, which
 # can be older than GCC 16. Clang consumers get --gcc-install-dir=<GCC 16's>, as with

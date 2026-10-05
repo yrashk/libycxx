@@ -6,5 +6,5 @@ extern "C" int mine_check();
 int main() {
   int m = mine_check(), o = other_check();
   std::printf("mine %d other %d\n", m, o);
-  return m == 3 && o == 3 ? 0 : 1;
+  return m == 7 && o == 7 ? 0 : 1;
 }

@@ -3,10 +3,11 @@
 // objects and vtables, inline variables), not those of the archives (the runtime, the ABI
 // runtime). Another C++ library in the process (Apple's libc++/libc++abi, which every Darwin
 // process loads; libstdc++ in a shared object) can then neither take over libycxx's definitions
-// nor be taken over by them. The exception: the replaceable global allocation functions
-// (operator new/new[]/delete/delete[] in every form, Itanium _Znw*, _Zna*, _Zdl*, _Zda*) keep
-// default visibility, so one replacement serves every image in the process.
-//   [replacement.functions]/2: a program's own replacement of operator new is still the one used.
+// nor be taken over by them; that includes libycxx's default allocation functions (the images
+// that link libycxx share them through the allocation table, ycxx_allocation_functions, a name of
+// libycxx's own).
+//   [replacement.functions]/2: a program's own replacement of operator new is still the one used,
+//   and is exported as the program's other functions are (the test's own: _Znwm, _ZdlPv, _ZdlPvm).
 // The test lists the symbols its executable exports (ELF: `nm -D`, the dynamic symbol table,
 // which -rdynamic fills with every default-visibility symbol; Mach-O: `nm -gU`) and fails on any
 // mangled name that is not the test's own (namespace `own`) and on the ABI runtime's names.
@@ -123,9 +124,10 @@ int main(int, char** argv) {
     ++symbols;
     if (name.rfind("__Z", 0) == 0)
       name.erase(0, 1); // Mach-O's C prefix
-    bool allocation = name.rfind("_Znw", 0) == 0 || name.rfind("_Zna", 0) == 0 ||
-                      name.rfind("_ZdlPv", 0) == 0 || name.rfind("_ZdaPv", 0) == 0;
-    bool library = (name.rfind("_Z", 0) == 0 && name.find("3own") == std::string::npos && !allocation) ||
+    // The test's own replacements (size_t is m or j).
+    bool own_replacement = name == "_Znwm" || name == "_Znwj" || name == "_ZdlPv" || name == "_ZdlPvm" ||
+                           name == "_ZdlPvj";
+    bool library = (name.rfind("_Z", 0) == 0 && name.find("3own") == std::string::npos && !own_replacement) ||
                    name.find("__cxa_") != std::string::npos || name.find("__gxx_personality") != std::string::npos ||
                    name.find("ycxx_pal_") != std::string::npos;
     if (library) {

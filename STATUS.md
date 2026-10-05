@@ -333,8 +333,8 @@ shared cache. Fixed by hidden visibility (DECISIONS §2): nothing of libycxx is 
 weak-definition binds remain except, with GCC, the fundamental type_info objects (benign: same
 objects in libc++abi). Expected in CI: `exception`, `except`, `rtti`, `future` pass on both
 compilers apart from the documented `except/handler_pointer_reference{,_exact}` (both) and
-`handler_array_decay`, `handler_function_pointer` (GCC) handler limitation and the GCC
-`exception/exception_ptr_constexpr` compiler gap; `linkage/no_exported_library_symbols` passes;
+`handler_array_decay`, `handler_function_pointer` (GCC) handler limitation;
+`linkage/no_exported_library_symbols` passes;
 `tests/cmake/run.sh` (not in CI) shows no exports and "mine 3 other 3" with Apple's libc++.
 
 Unverified or known gaps on macOS:
@@ -665,9 +665,9 @@ compilers; `visit_format_arg.pass.cpp` needs `EOF` from `constexpr_char_traits.h
   empty `std::function` so adopted becomes a stateless target that throws `bad_function_call`.
   Construction is noexcept when nothing can throw (a strengthening, as libstdc++ does).
   `function::target<T>()` without RTTI uses the same table-address identity as `any`.
-- `exception_ptr` is constexpr only for null values: neither compiler documents a way to reach
-  the constant-evaluation exception state (own test `exception/exception_ptr_constexpr` fails on
-  GCC; Clang 23 cannot throw during constant evaluation at all).
+- Non-null `exception_ptr`s during constant evaluation exist on GCC only, through GCC 16's
+  undocumented builtins `__builtin_current_exception`/`__builtin_eh_ptr_adjust_ref` (found with
+  `__has_builtin`, DECISIONS §4); Clang 23 cannot throw during constant evaluation at all.
 - The Itanium ABI records a handler's type without its reference-ness, so `catch (T*&)` also
   accepts pointer conversions that only `catch (T*)`/`catch (T* const&)` may ([except.handle]/3;
   own tests `except/handler_pointer_reference*`). libsupc++ behaves the same.
@@ -1029,5 +1029,5 @@ levels: 29.7 s -> 0.01 s; libstdc++ 8.6 s). Remaining above 1.5x: deque push at 
   also keep out-of-line destructors), and the library's
   `throw_out_of_range`/`throw_length_error`/... throw them during constant evaluation, so on GCC
   `std::string("ab").at(5)` can be caught in a constant expression. `__cpp_lib_constexpr_exceptions`
-  is still undefined: Clang 23 cannot throw during constant evaluation, a non-null
-  `exception_ptr` is not available there on GCC. (`format_error` is constexpr.)
+  is still undefined: Clang 23 cannot throw during constant evaluation. On GCC `make_exception_ptr`,
+  `rethrow_exception` and `exception_ptr_cast` work there too (DECISIONS §4). (`format_error` is constexpr.)

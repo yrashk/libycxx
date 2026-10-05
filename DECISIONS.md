@@ -434,8 +434,24 @@ tooling.
   RTTI and `YCXX_EXCEPTION_KEY_FUNCTIONS`), because the runtime throws them; there they are not
   constexpr-destructible. `system_error` is not constexpr in the draft and keeps its key function.
   `__cpp_lib_constexpr_exceptions` stays undefined: Clang 23 cannot throw during constant
-  evaluation, and GCC 16 offers no way to make a non-null `exception_ptr`
-  (`current_exception`/`rethrow_exception`) work there for libycxx's `exception_ptr`.
+  evaluation.
+- **`exception_ptr` during constant evaluation (GCC).** GCC 16 keeps a constant evaluation's
+  exceptions itself and has two builtins for them, documented nowhere (not in its manual) but
+  reported by `__has_builtin` (`YCXX_HAS_CONSTEXPR_EXCEPTION_PTR`; the names were found among the
+  compiler binary's strings, as for §13): `__builtin_current_exception()` returns a
+  `std::exception_ptr` whose one data member is set to the handled exception's object (it
+  requires `std::exception_ptr` to be declared), and `__builtin_eh_ptr_adjust_ref(p, n)` adds n
+  to that object's reference count; both are rejected outside constant evaluation (at run time
+  the first gives a null `exception_ptr`). Its evaluator also implements `__cxa_throw` (and the
+  other entry points its throw expressions call), and throwing an object that is already
+  referenced is a rethrow of it. So, in `if consteval` branches: the copy constructor and the
+  destructor adjust the count, current-exception ([exception.syn], used by `make_exception_ptr`'s
+  `try { throw e; } catch (...)`) is the builtin, `rethrow_exception` is
+  `__cxa_throw(p, nullptr, nullptr)`, and `exception_ptr_cast<E>` lets a `catch (const E&)` of
+  such a rethrow decide (the reference stays valid while the `exception_ptr` holds the object).
+  These are GCC's private interface to its own library, verified by experiment only
+  (own test `exception/exception_ptr_constexpr`); should GCC change them, the probe turns the
+  feature off and the test fails rather than the library.
 - **`make_exception_ptr` without exceptions** creates the primary exception object directly
   through the runtime (`ycxx::abi::exception_object_create`: the header `__cxa_throw` would
   fill in, one reference owned by the exception_ptr) and copy-constructs `e` into it, so

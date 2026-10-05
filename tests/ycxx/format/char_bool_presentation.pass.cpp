@@ -2,6 +2,7 @@
 // aligned); b, B, d, o, x, X format the value converted to the unsigned version of the
 // underlying type; bool formats as true/false (left aligned) or, with an integer type, as
 // static_cast<unsigned char>(value) (right aligned).
+// COUNTERPART: libcxx:utilities/format/format.formatter/format.formatter.spec/formatter.(bool|char|char.fsigned-char|char.funsigned-char).pass.cpp
 #include <format>
 #include <string>
 #include "check.hpp"

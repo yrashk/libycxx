@@ -3,6 +3,7 @@
 // "explicit atomic_ref(T&&) = delete;", copy assignment deleted, the copy constructor noexcept;
 // required_alignment >= alignof(T) and, with is_always_lock_free, the same for similar types
 // ([atomics.ref.ops]/1,3). The constructor from T& is explicit.
+// COUNTERPART: libcxx:atomics/atomics.ref/member_types.compile.pass.cpp
 #include <atomic>
 #include <cstddef>
 #include <type_traits>

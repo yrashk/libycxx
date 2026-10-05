@@ -5,6 +5,8 @@
 // location last - 1 and makes [first, last - 1) into a heap"; make_heap constructs a heap;
 // sort_heap sorts a heap; is_heap_until returns "The last iterator i in [first, last] for
 // which the range [first, i) is a heap"; ranges forms return last.
+// COUNTERPART: libcxx:algorithms/alg.sorting/alg.heap.operations/(make.heap/make_heap|sort.heap/sort_heap)(_comp)?.pass.cpp
+// COUNTERPART: libcxx:algorithms/robust_against_proxy_iterators_lifetime_bugs.pass.cpp
 #include <algorithm>
 #include <functional>
 #include <ranges>

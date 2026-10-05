@@ -5,6 +5,7 @@
 // iterator to the first inserted element, or p if nothing was inserted; insert(p, il) is
 // insert(p, il.begin(), il.end()). Exercised at the beginning, middle and end, and with
 // enough elements to force reallocation.
+// COUNTERPART: libstdcxx:23_containers/vector/debug/60587.cc
 #include <vector>
 #include <string>
 #include <initializer_list>

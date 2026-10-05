@@ -7,6 +7,7 @@
 // length, or 0 for a code unit that does not complete a character (a high surrogate, or a
 // non-final UTF-8 code unit). Under the "C.UTF-8" locale the multibyte encoding is UTF-8;
 // under "C", plain ASCII converts to itself.
+// COUNTERPART: libcxx:strings/c.strings/no_c8rtomb_mbrtoc8.verify.cpp
 #include <cuchar>
 #include <clocale>
 #include <cstring>

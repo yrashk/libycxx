@@ -3,6 +3,7 @@
 // basic_format_parse_context and basic_format_context; nested formatting through format_to on
 // ctx.out().
 // REQUIRES: exceptions
+// COUNTERPART: libcxx:utilities/format/format.formatter/format.formatter.spec/formatter.handle.pass.cpp
 #include <format>
 #include <string>
 #include "check.hpp"

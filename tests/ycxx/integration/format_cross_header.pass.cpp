@@ -16,6 +16,7 @@
 //     (for priority_queue that is the heap order, here checked against the container itself).
 //   [format.range.fmtkind]/[optional.syn]: format_kind<optional<T>> is range_format::disabled,
 //     so optional<int> is not formattable (although it is a range).
+// COUNTERPART: libcxx:utilities/format/format.formattable/concept.formattable.compile.pass.cpp
 #include <chrono>
 #include <filesystem>
 #include <format>

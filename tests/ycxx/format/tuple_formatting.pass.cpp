@@ -1,6 +1,7 @@
 // [format.tuple]: pair and tuple format as (e1, e2, ...) with elements in debug format (/7);
 // n removes the brackets; m (only for two elements) gives "k: v"; width, fill and alignment
 // apply to the whole tuple; set_separator/set_brackets.
+// COUNTERPART: libcxx:utilities/format/format.tuple/format.pass.cpp
 #include <format>
 #include <string>
 #include <tuple>

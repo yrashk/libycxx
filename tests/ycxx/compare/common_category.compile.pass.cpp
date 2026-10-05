@@ -5,6 +5,7 @@
 // [cmp.result]: compare_three_way_result<T, U> has member type decltype(declval<const
 // remove_reference_t<T>&>() <=> declval<const remove_reference_t<U>&>()) if well-formed,
 // otherwise no member.
+// COUNTERPART: libcxx:language.support/cmp/cmp.concept/three_way_comparable_with.compile.pass.cpp
 #include <compare>
 #include <type_traits>
 

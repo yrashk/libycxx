@@ -3,6 +3,7 @@
 // precision::rep is floating); the fields are non-negative; to_duration() is
 // +-(h + m + s + ss) and equals duration_cast<precision>(d) (or d for floating precision);
 // explicit operator precision; the default constructor represents zero.
+// COUNTERPART: libstdcxx:std/time/hh_mm_ss/(1|io).cc
 #include <chrono>
 #include <ratio>
 #include <type_traits>

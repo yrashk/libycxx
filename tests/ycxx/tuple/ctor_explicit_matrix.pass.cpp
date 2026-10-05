@@ -14,6 +14,8 @@
 //   either get<i>(FWD(p)) is not convertible.
 // A type whose implicit conversion depends on the value category (OnlyLv: implicit from int&,
 // explicit from const int&) tells the four overloads apart.
+// COUNTERPART: libcxx:utilities/tuple/tuple.tuple/tuple.cnstr/default.pass.cpp
+// COUNTERPART: libstdcxx:20_util/tuple/requirements/dr801.cc
 #include <tuple>
 #include <utility>
 #include <array>

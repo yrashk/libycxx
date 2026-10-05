@@ -1,6 +1,7 @@
 // [rand.dist]: the default parameters of each distribution (default constructors and default
 // arguments), the same defaults for param_type ([rand.req.dist]/9), and that the accessors return
 // the values the object was constructed with.
+// COUNTERPART: libstdcxx:26_numerics/random/[a-z_]+_distribution/cons/parms.cc
 #include <random>
 #include <vector>
 #include <limits>

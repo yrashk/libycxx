@@ -5,6 +5,7 @@
 // with a member pointer; reference results.
 // FLAGS: -pthread
 // REQUIRES: exceptions
+// COUNTERPART: libstdcxx:30_threads/async/except.cc
 #include <future>
 #include <thread>
 #include <stdexcept>

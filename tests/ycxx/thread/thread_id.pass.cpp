@@ -4,6 +4,7 @@
 // for distinct ids; /11-13 formatter<thread::id> (fill-and-align, width; default alignment
 // '>'); /14 hash<thread::id> is enabled. [thread.thread.this]: this_thread::get_id().
 // FLAGS: -pthread
+// COUNTERPART: libcxx:thread/thread.threads/thread.thread.class/thread.thread.id/format.pass.cpp
 #include <thread>
 #include <compare>
 #include <format>

@@ -2,6 +2,11 @@
 // is true." -- calling it is undefined, so it may only appear on paths that are never taken.
 // /2 Example 1: int f(int x) { switch (x) { case 0: case 1: return x; default:
 // std::unreachable(); } }  int a = f(1); // OK, a has value 1
+// [[noreturn]] is part of the declaration: a [[noreturn]] function ending in a call of it gets no
+// "noreturn function does return" warning (-Werror), nor does a non-void one "control reaches
+// end of non-void function".
+// FLAGS: -Werror
+// COUNTERPART: libcxx:utilities/utility/utility.unreachable/unreachable.verify.cpp
 #include <utility>
 #include <type_traits>
 #include "check.hpp"

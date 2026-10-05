@@ -3,6 +3,7 @@
 // call-args...). [func.wrap.ref.inv]/1: operator() "Equivalent to: return
 // thunk-ptr(bound-entity, std::forward<ArgTypes>(args)...);". [func.wrap.ref.class]/2: every
 // specialization is trivially copyable and models copyable.
+// COUNTERPART: libstdcxx:20_util/function_ref/cons.cc
 #include <functional>
 #include <concepts>
 #include <type_traits>

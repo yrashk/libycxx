@@ -8,6 +8,7 @@
 // refers to the original object. /14: in_place_type construction. /28: the destructor destroys
 // the target.
 // REQUIRES: exceptions
+// COUNTERPART: libstdcxx:20_util/move_only_function/conv.cc
 #include <functional>
 #include <utility>
 #include "check.hpp"

@@ -6,6 +6,7 @@
 // in *abbrev. [time.duration.io]/3: from_stream for durations. [time.parse] Table 134: %Y %m %d
 // %F %T %H %M %S (with fractional seconds for finer durations) %z %Z %b %a %j %%; white space
 // in fmt matches zero or more white space characters.
+// COUNTERPART: libstdcxx:std/time/clock/(file|gps|system|utc)/io.cc
 #include <chrono>
 #include <sstream>
 #include <string>

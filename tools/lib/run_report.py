@@ -102,9 +102,10 @@ def load_suite(report):
             reasons[r] = reasons.get(r, 0) + 1
     # Only failures keep their transcript here; the suite's own report has every one.
     slim = [{'name': t['name'], 'code': t['code'], 'secs': t['secs'], 'steps': t['steps'], 'error': t['error'],
+             'link': t.get('link', ''),
              'output': t['output'] if t['code'] not in GOOD and t['code'] not in SKIP else ''} for t in tests]
     return {'title': d['title'], 'meta': d['meta'], 'root': d.get('root', ''), 'counts': d['counts'],
-            'elapsed': d.get('elapsed', 0), 'tests': slim, 'bad': len(bad),
+            'elapsed': d.get('elapsed', 0), 'tests': slim, 'bad': len(bad), 'coverage': d.get('coverage', {}),
             'example': {'name': example['name'], 'output': example['output']} if example else None,
             'reasons': sorted(reasons.items(), key=lambda kv: -kv[1])}
 
@@ -172,6 +173,14 @@ def markdown(title, verdict, meta, steps, suites):
             md.append(f'- results: {", ".join(f"{c} {n}" for c, n in su["counts"].items())} '
                       f'(of {len(su["tests"])}, lit time {su["elapsed"]:.1f}s)')
             md.append(f'- full report (every transcript): {su["report"]}')
+            cov = su['coverage']
+            if cov:
+                n, k = sum(v[0] for v in cov.values()), sum(v[1] for v in cov.values())
+                md += [f'- counterparts: {n} tests skipped as tied to the other library\'s internals, extensions '
+                       f'or modes; {k} covered by a libycxx test, {n - k} without a libycxx counterpart:', '',
+                       '  | category | skipped | covered | uncovered |', '  |---|---:|---:|---:|']
+                md += [f'  | {c} | {v[0]} | {v[1]} | {v[0] - v[1]} |' for c, v in cov.items()]
+                md.append('')
             if su['reasons']:
                 md.append('- why tests were unsupported (count: first reason line):')
                 md += [f'  - {n}: {r}' for r, n in su['reasons'][:15]]
@@ -192,6 +201,8 @@ def markdown(title, verdict, meta, steps, suites):
                 line += ' — ' + '; '.join(t['steps'])
             if t['error']:
                 line += ' → ' + t['error']
+            if t.get('link'):
+                line += ' ⇒ ' + t['link']
             md.append(line)
         md.append('')
     return '\n'.join(md) + '\n'
@@ -454,6 +465,13 @@ data.suites.forEach((su, i) => {
     body.appendChild(el('div', 'note', 'How a test runs in this suite (a passing one, ' + esc(su.example.name) + '):'));
     body.appendChild(el('pre', '', transcript(su.example.output)));
   }
+  const cov = Object.entries(su.coverage || {});
+  if (cov.length) {
+    const n = cov.reduce((a, [, v]) => a + v[0], 0), k = cov.reduce((a, [, v]) => a + v[1], 0);
+    body.appendChild(el('div', 'note', 'Counterparts: ' + n + ' tests skipped as tied to the other library, ' + k +
+      ' covered by a libycxx test, ' + (n - k) + ' without (filter: "covered by" or "no libycxx"). Per category (skipped / covered / uncovered):'));
+    body.appendChild(el('pre', '', esc(cov.map(([c, v]) => c + ': ' + v[0] + ' / ' + v[1] + ' / ' + (v[0] - v[1])).join('\n'))));
+  }
   if (su.reasons.length) {
     body.appendChild(el('div', 'note', 'Why tests were unsupported (count: reason):'));
     body.appendChild(el('pre', '', esc(su.reasons.slice(0, 30).map(([r, n]) => n + ': ' + r).join('\n') +
@@ -486,7 +504,8 @@ data.suites.forEach((su, i) => {
   function row(t) {
     const r = el('details', 't');
     r.innerHTML = '<summary><span class="st ' + kind(t.code) + '">' + t.code + '</span><span class="name">' + esc(t.name) +
-      (t.error ? '<br><span class="err">→ ' + esc(t.error) + '</span>' : '') + '</span><span class="steps">' +
+      (t.error ? '<br><span class="err">→ ' + esc(t.error) + '</span>' : '') +
+      (t.link ? '<br><span class="err">⇒ ' + esc(t.link) + '</span>' : '') + '</span><span class="steps">' +
       esc(t.steps.join(' · ') || t.secs.toFixed(2) + 's') + '</span><span></span></summary>';
     if (t.output) r.querySelector('summary > span:last-child').appendChild(copyButton('', () => testMd(su, t)));
     r.addEventListener('toggle', () => {
@@ -501,7 +520,7 @@ data.suites.forEach((su, i) => {
   }
   function render(reset) {
     if (reset) {
-      matches = su.tests.filter(t => (!code || t.code === code) && t.name.toLowerCase().includes(query));
+      matches = su.tests.filter(t => (!code || t.code === code) && (t.name.toLowerCase().includes(query) || (t.link || "").toLowerCase().includes(query)));
       limit = 0;
       list.textContent = '';
     }

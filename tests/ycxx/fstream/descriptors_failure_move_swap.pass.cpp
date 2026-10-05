@@ -15,6 +15,8 @@
 //   [filebuf.assign]/1 operator=: "Calls close() then move assigns from rhs"; /3 swap exchanges
 //   the state; [fstream.cons], [fstream.assign] (move and swap of the streams' filebufs).
 // Each case runs many times; the process's open descriptors are counted.
+// COUNTERPART: libcxx:input.output/file.streams/fstreams/filebuf.assign/(member_swap|move_assign|nonmember_swap).pass.cpp
+// COUNTERPART: libcxx:input.output/file.streams/fstreams/filebuf.cons/move.pass.cpp
 #include <cstdlib>
 #include <fstream>
 #include <string>

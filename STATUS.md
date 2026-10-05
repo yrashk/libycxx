@@ -27,6 +27,14 @@ does not include `<iosfwd>` ([bitset.syn]); plus the documented template-paramet
 includes (F: 121 libc++, 79 libstdc++), libc++/libstdc++ specifics and pre-C++26 values (C), and
 running as root (27 filesystem tests).
 
+Counterparts of skipped tests: an external test skipped as implementation-specific, extension,
+divergence or removed, or UNSUPPORTED for a library mode (libc++ hardening, warning-only verify,
+experimental/; libstdc++ debug mode), ends its result with `covered by libycxx: tests/ycxx/...`
+(own tests carry `// COUNTERPART:`, tests/ycxxlit/counterparts.py) or `no libycxx counterpart[:
+reason]` (reasons: section "Skipped tests without a counterpart" of each TRIAGE.md); the suite
+reports count both per category. All such libc++ tests are linked or triaged; of libstdc++'s
+2633 extension skips, 2409 (testsuite-helper skips in std directories) are not triaged yet.
+
 ## Per-header conformance (libc++ tests; pass / run, excluding documented skips)
 | Area (libc++ test dir) | Clang | GCC | Freestanding | Notes |
 |---|---|---|---|---|
@@ -383,6 +391,10 @@ a defect in a test.
 - Clang 23.1: the address of an explicit-object member function cannot be a template argument
   ("must explicitly qualify name of member function"); own test
   `functional/function_ref_cw_explicit_object` is XFAIL on Clang.
+- GCC 16.2: `requires (void* p) { delete p; }` is satisfied (deleting `void*` is only a
+  warning), so `shared_ptr<void>` is constructible from `void*` alone although
+  [util.smartptr.shared.const]/3 requires `delete p` to be well-formed; own test
+  `memory/shared_ptr_void_pointer` is XFAIL on GCC.
 - GCC 16.2: `PR31384` (conversion function vs converting constructor in direct-init of `tuple`)
   resolves differently from Clang; the libc++ expectation matches Clang.
 

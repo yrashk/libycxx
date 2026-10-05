@@ -7,6 +7,7 @@
 // 01:08:03.007, 18:15:45.123, 18:15:45). Table 133 %I %p (the "C" locale: AM / PM), %r, %c,
 // %x, %X in the "C" locale, %S with subsecond precision.
 // REQUIRES: exceptions
+// COUNTERPART: libstdcxx:std/time/clock/(file|gps|system|utc)/io.cc
 #include <chrono>
 #include <format>
 #include <sstream>

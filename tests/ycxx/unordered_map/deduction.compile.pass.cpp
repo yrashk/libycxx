@@ -5,6 +5,7 @@
 // integral type would be deduced as Hash ("has a Hash template parameter and an integral
 // type or a type that qualifies as an allocator is deduced for that parameter").
 // REQUIRES: exceptions
+// COUNTERPART: libcxx:containers/unord/unord.(map/unord.map|multimap/unord.multimap).cnstr/deduct(_const)?.pass.cpp
 #include <unordered_map>
 #include <functional>
 #include <ranges>

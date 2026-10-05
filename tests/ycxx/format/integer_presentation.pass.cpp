@@ -2,6 +2,7 @@
 // to_chars), base prefixes with # (0b, 0B, 0 for nonzero octal, 0x, 0X) after the sign,
 // sign options, the 0 option (zero padding after sign and prefix, ignored with an explicit
 // alignment), width, and the default right alignment.
+// COUNTERPART: libcxx:utilities/format/format.formatter/format.formatter.spec/formatter.(signed|unsigned)_integral.pass.cpp
 #include <climits>
 #include <cstdint>
 #include <format>

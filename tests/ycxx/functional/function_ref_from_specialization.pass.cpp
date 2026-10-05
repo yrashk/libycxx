@@ -6,6 +6,7 @@
 // addressof(f) ... Otherwise, initializes bound-entity with the value of f.bound-entity and
 // thunk-ptr with the value of f.thunk-ptr." So the new function_ref refers to what f referred
 // to, not to f itself: rebinding or destroying f afterwards does not affect it.
+// COUNTERPART: libstdcxx:20_util/function_ref/conv.cc
 #include <functional>
 #include <type_traits>
 #include "check.hpp"

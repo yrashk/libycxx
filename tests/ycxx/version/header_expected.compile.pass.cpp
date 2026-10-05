@@ -1,6 +1,7 @@
 // [version.syn]/2: "Each of the macros defined in <version> is also defined after inclusion
 // of any member of the set of library headers indicated in the corresponding comment in
 // this synopsis." These macros name <expected> in their comment. Only <expected> is included.
+// COUNTERPART: libstdcxx:20_util/expected/(synopsis|version).cc
 #include <expected>
 
 #if !defined(__cpp_lib_constrained_equality)

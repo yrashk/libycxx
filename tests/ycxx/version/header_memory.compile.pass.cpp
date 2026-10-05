@@ -1,6 +1,7 @@
 // [version.syn]/2: "Each of the macros defined in <version> is also defined after inclusion
 // of any member of the set of library headers indicated in the corresponding comment in
 // this synopsis." These macros name <memory> in their comment. Only <memory> is included.
+// COUNTERPART: libstdcxx:20_util/smartptr.adapt/version.cc
 #include <memory>
 
 #if !defined(__cpp_lib_addressof_constexpr)

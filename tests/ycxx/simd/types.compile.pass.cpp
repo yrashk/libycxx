@@ -9,6 +9,7 @@
 //   alignment<V, U> has value for a basic_vec V and vectorizable U only;
 // - flag_default/flag_convert/flag_aligned/flag_overaligned<N> are flags specializations and
 //   operator| combines them (consteval).
+// COUNTERPART: libcxx:experimental/simd/simd.traits/(memory_alignment|simd_size).*
 #include <simd>
 #include <cstddef>
 #include <iterator>

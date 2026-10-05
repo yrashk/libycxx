@@ -8,6 +8,8 @@
 // when the file is not open. /7: pbackfail always fails when the file is not open.
 // [filebuf.cons]/3-4: the move constructor transfers the file; the source is no longer open.
 // [filebuf.assign]: move assignment closes the target's file first and transfers; swap.
+// COUNTERPART: libcxx:input.output/file.streams/fstreams/filebuf.members/close.pass.cpp
+// COUNTERPART: libcxx:input.output/file.streams/fstreams/filebuf.virtuals/seekoff.pass.cpp
 #include <fstream>
 #include <string>
 #include <utility>

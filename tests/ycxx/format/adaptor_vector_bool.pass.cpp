@@ -4,6 +4,8 @@
 // range format specification). [vector.bool.fmt]/1-2: vector<bool>::reference is formatted
 // by formatter<bool> (so "{}" gives true / false and the bool specifications apply), and so
 // vector<bool> formats as a range of those. [format.formattable].
+// COUNTERPART: libcxx:containers/container.adaptors/container.adaptors.format/format.pass.cpp
+// COUNTERPART: libcxx:containers/sequences/vector.bool/vector.bool.fmt/format.pass.cpp
 #include <deque>
 #include <format>
 #include <functional>

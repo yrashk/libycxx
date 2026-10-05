@@ -3,6 +3,7 @@
 // const float&>]. /3-4: forward_as_tuple(TTypes&&... t) noexcept returns tuple<TTypes&&...>(
 // std::forward<TTypes>(t)...). /5: tie(TTypes&... t) noexcept returns tuple<TTypes&...>(t...);
 // [Example 2] tie(i, ignore, s) = make_tuple(42, 3.14, "C++"). All constexpr.
+// COUNTERPART: libcxx:utilities/utility/ignore/ignore.include.compile.pass.cpp
 #include <tuple>
 #include <functional>
 #include <type_traits>

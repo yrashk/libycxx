@@ -283,8 +283,16 @@ Apple's C++ runtime in the same process: libycxx's `__cxa_*`, `__gxx_personality
 namespace; the archives precede the implicit `-lSystem`), so system libraries that use Apple's
 libc++abi keep theirs: two runtimes coexist, each with its own exception globals and handlers.
 An exception thrown by Apple's runtime ("CLNGC++\0") is foreign to libycxx's (catch(...) only).
-dyld coalesces weak definitions across images and lets the executable's `operator new`/`delete`
-replace libc++'s weak ones, so system libraries may allocate through libycxx's (same malloc).
+dyld coalesces exported weak definitions across images, a non-weak one winning: that rebound
+libycxx's header-emitted definitions (`std::current_exception`, and with GCC the exception
+classes' type_info and members) to libc++'s, and patched libycxx's `operator delete` into the
+shared cache. Fixed by hidden visibility (DECISIONS §2): nothing of libycxx is exported, so no
+weak-definition binds remain except, with GCC, the fundamental type_info objects (benign: same
+objects in libc++abi). Expected in CI: `exception`, `except`, `rtti`, `future` pass on both
+compilers apart from the documented `except/handler_pointer_reference{,_exact}` (both) and
+`handler_array_decay`, `handler_function_pointer` (GCC) handler limitation and the GCC
+`exception/exception_ptr_constexpr` compiler gap; `linkage/no_exported_library_symbols` passes;
+`tests/cmake/run.sh` (not in CI) shows no exports and "mine 3 other 3" with Apple's libc++.
 
 Unverified or known gaps on macOS:
 - `<stacktrace>`: frames are captured (libSystem's `_Unwind_Backtrace`), but only `dladdr`
@@ -439,6 +447,14 @@ compilers; `visit_format_arg.pass.cpp` needs `EOF` from `constexpr_char_traits.h
   C library does (`0x0.000000000000001p-16385` is the smallest), so that both forms agree there.
 
 ## Known limitations and draft defects
+- Hidden visibility (DECISIONS §2): a program or shared library exports none of libycxx's
+  symbols. **GCC warns** (`-Wattributes`: "'S' declared with greater visibility than the type of
+  its field" / "than its base") for every program class outside libycxx's namespaces with a
+  member or base of a library class type (`struct S { std::string s; };`, a class derived from
+  `std::runtime_error`); GCC has no way to hide a class's members and type_info without hiding
+  its type. Silence it with `-Wno-attributes` (GCC); Clang does not warn. Images that each link
+  libycxx have separate runtimes: exceptions cross between them, but `uncaught_exceptions()` in
+  one does not count the other's exception while it unwinds through its frames.
 - C library wrappers: `std::free_sized`/`free_aligned_sized` call `free` (glibc 2.39 has neither);
   `memset_explicit` is memset plus a compiler barrier; `strfrom*`, `memccpy`, `strdup`, `strndup`
   are the C library's (on Darwin, which lacks them, `strfrom*` and `mbrtoc8`/`c8rtomb` are

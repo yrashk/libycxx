@@ -373,8 +373,8 @@ inline void yield() noexcept { ::ycxx_pal_thread_yield(); }
 template <class Clock, class Duration>
 void sleep_until(const chrono::time_point<Clock, Duration>& abs_time) {
   static_assert(chrono::is_clock_v<Clock>, "sleep_until: Clock must meet the Cpp17Clock requirements");
-  while (Clock::now() < abs_time) {
-    const ycxx::detail::pal_deadline d = ycxx::detail::deadline_at(abs_time);
+  for (auto now = Clock::now(); now < abs_time; now = Clock::now()) {
+    const ycxx::detail::pal_deadline d = ycxx::detail::deadline_at(abs_time, now);
     ::ycxx_pal_sleep_until(d.clock, d.sec, d.nsec);
     if constexpr (is_same_v<Clock, chrono::system_clock> || is_same_v<Clock, chrono::steady_clock>)
       return;

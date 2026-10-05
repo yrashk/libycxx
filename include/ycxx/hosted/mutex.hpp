@@ -82,9 +82,10 @@ bool timed_try_lock_until(M& m, const std::chrono::time_point<Clock, Duration>& 
   for (;;) {
     if (m.try_lock())
       return true;
-    if (!(Clock::now() < abs))
+    const auto now = Clock::now();
+    if (!(now < abs))
       return false;
-    if (m.lock_until(::ycxx::detail::deadline_at(abs)))
+    if (m.lock_until(::ycxx::detail::deadline_at(abs, now)))
       return true;
   }
 }

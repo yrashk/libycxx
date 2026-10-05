@@ -77,9 +77,10 @@ pal_deadline deadline_after(const std::chrono::duration<Rep, Period>& rel) {
 }
 
 // The deadline of abs_time: on the realtime clock for system_clock, on the monotonic clock
-// otherwise (for other clocks, the remaining time measured now; callers re-check Clock::now()).
+// otherwise (for other clocks, the time remaining after `now`, a value of Clock::now() the
+// caller has just read; callers re-check Clock::now()).
 template <class Clock, class Duration>
-pal_deadline deadline_at(const std::chrono::time_point<Clock, Duration>& abs) {
+pal_deadline deadline_at(const std::chrono::time_point<Clock, Duration>& abs, const typename Clock::time_point& now) {
   using namespace std::chrono;
   if constexpr (std::is_same_v<Clock, system_clock> || std::is_same_v<Clock, steady_clock>) {
     constexpr int clock = std::is_same_v<Clock, system_clock> ? ycxx_pal_clock_realtime : ycxx_pal_clock_monotonic;
@@ -93,7 +94,7 @@ pal_deadline deadline_at(const std::chrono::time_point<Clock, Duration>& abs) {
       ns = std::chrono::ceil<nanoseconds>(duration<long double, std::nano>(since)).count();
     return ::ycxx::detail::make_deadline(clock, ns);
   } else {
-    return ::ycxx::detail::deadline_after(abs - Clock::now());
+    return ::ycxx::detail::deadline_after(abs - now);
   }
 }
 
@@ -167,9 +168,10 @@ bool try_until(const std::chrono::time_point<Clock, Duration>& abs, Try try_once
   for (;;) {
     if (try_once())
       return true;
-    if (!(Clock::now() < abs))
+    const auto now = Clock::now();
+    if (!(now < abs))
       return try_once();
-    block(::ycxx::detail::deadline_at(abs));
+    block(::ycxx::detail::deadline_at(abs, now));
   }
 }
 
@@ -180,10 +182,11 @@ bool atomic_wait_until_done_by(const volatile void* addr, Done done, const std::
     if (done())
       return true;
   for (;;) {
-    if (!(Clock::now() < abs))
-      return done();
     // Computed before registering: Clock::now() may throw, and must not leave a registration.
-    const pal_deadline d = ::ycxx::detail::deadline_at(abs);
+    const auto now = Clock::now();
+    if (!(now < abs))
+      return done();
+    const pal_deadline d = ::ycxx::detail::deadline_at(abs, now);
     const std::uint32_t ticket = ::ycxx::detail::atomic_wait_prepare(addr);
     if (done()) {
       ::ycxx::detail::atomic_wait_cancel(addr);

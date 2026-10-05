@@ -37,9 +37,10 @@ class shared_futex_mutex {
         cv.wait(m_);
         continue;
       }
-      if (!(Clock::now() < *abs))
+      const auto now = Clock::now();
+      if (!(now < *abs))
         return done();
-      cv.wait_until(m_, ::ycxx::detail::deadline_at(*abs));
+      cv.wait_until(m_, ::ycxx::detail::deadline_at(*abs, now));
     }
     return true;
   }

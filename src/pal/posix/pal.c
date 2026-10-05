@@ -264,9 +264,15 @@ int ycxx_pal_thread_create(ycxx_pal_handle* thread, void* (*start)(void*), void*
   if (r != 0)
     return r;
   if (stack_size != 0) {
-    /* A size the system cannot use is a hint to ignore, not an error. */
-    if (stack_size < (ycxx_pal_size)PTHREAD_STACK_MIN)
-      stack_size = (ycxx_pal_size)PTHREAD_STACK_MIN;
+    /* A size the system cannot use is a hint to adjust or ignore, not an error. At least the
+       minimum, asked of sysconf (PTHREAD_STACK_MIN is not a constant in newer glibc, and which
+       header defines it differs between C libraries), in whole pages (Darwin's
+       pthread_attr_setstacksize rejects anything else). */
+    const long min = sysconf(_SC_THREAD_STACK_MIN), page = sysconf(_SC_PAGESIZE);
+    if (min > 0 && stack_size < (ycxx_pal_size)min)
+      stack_size = (ycxx_pal_size)min;
+    if (page > 0 && stack_size % (ycxx_pal_size)page != 0 && stack_size <= (ycxx_pal_size)-1 - (ycxx_pal_size)page)
+      stack_size += (ycxx_pal_size)page - stack_size % (ycxx_pal_size)page;
     (void)pthread_attr_setstacksize(&attr, stack_size);
   }
   pthread_t t;

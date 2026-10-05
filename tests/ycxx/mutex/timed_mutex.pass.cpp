@@ -5,6 +5,7 @@
 // the timeout specified by rel_time only if it has obtained ownership of the mutex object."
 // try_lock_until likewise with an absolute timeout. Returns: true if ownership was obtained.
 // FLAGS: -pthread
+// COUNTERPART: libstdcxx:30_threads/recursive_timed_mutex/try_lock_for/2.cc
 #include <mutex>
 #include <shared_mutex>
 #include <thread>

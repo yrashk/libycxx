@@ -10,6 +10,7 @@
 // /14: value(ch, radix) is the digit's value in radix 8, 10 or 16, else -1. /6: transform is
 // the collate facet's.
 // COUNTERPART: libcxx:re/re.traits/lookup_classname.pass.cpp
+// COUNTERPART: libstdcxx:28_regex/traits/wchar_t/lookup_classname.cc
 #include <cstring>
 #include <locale>
 #include <regex>

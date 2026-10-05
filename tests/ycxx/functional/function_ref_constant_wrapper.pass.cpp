@@ -3,6 +3,7 @@
 // binds addressof(obj); calls are invoke_r<R>(f.value, static_cast<cv T&>(obj),
 // call-args...). /17-20: function_ref(constant_wrapper<c, F> f, cv T* obj) binds obj; calls are
 // invoke_r<R>(f.value, obj, call-args...).
+// COUNTERPART: libstdcxx:20_util/constant_wrapper/instantiate.cc
 #include <functional>
 #include <utility>
 #include "check.hpp"

@@ -4,6 +4,7 @@
 // when all levels of ownership have been released may ownership be acquired by another thread."
 // [thread.timedmutex.recursive] likewise for recursive_timed_mutex (also try_lock_for).
 // FLAGS: -pthread
+// COUNTERPART: libstdcxx:30_threads/recursive_timed_mutex/try_lock_for/2.cc
 #include <mutex>
 #include <thread>
 #include <chrono>

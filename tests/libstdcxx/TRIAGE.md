@@ -412,6 +412,101 @@ Tests skipped (or UNSUPPORTED) as tied to the other library's internals, extensi
 | tests | why there is no standard counterpart |
 |---|---|
 | `20_util/allocator/void.cc` | an explicit instantiation of allocator<void> names no program-defined type, which [namespace.std]/5 does not allow a program to do |
+| `20_util/bind/ref_neg.cc` | uses libstdc++ internal names (std::__*, std::_Upper*: reserved identifiers, [lex.name]/3); not triaged for a counterpart |
+| `20_util/bitset/operations/constexpr-2.cc` | uses libstdc++ internal names (std::__*, std::_Upper*: reserved identifiers, [lex.name]/3); not triaged for a counterpart |
+| `20_util/enable_shared_from_this/56383.cc` | uses libstdc++ internal names (std::__*, std::_Upper*: reserved identifiers, [lex.name]/3); not triaged for a counterpart |
+| `20_util/function_objects/bind_back/111327.cc` | uses libstdc++ internal names (std::__*, std::_Upper*: reserved identifiers, [lex.name]/3); not triaged for a counterpart |
+| `20_util/function_objects/bind_front/111327.cc` | uses libstdc++ internal names (std::__*, std::_Upper*: reserved identifiers, [lex.name]/3); not triaged for a counterpart |
+| `20_util/function_objects/invoke/(1\|2\|3\|ref_ext).cc` | uses libstdc++ internal names (std::__*, std::_Upper*: reserved identifiers, [lex.name]/3); not triaged for a counterpart |
+| `20_util/function_objects/not_fn/111327.cc` | uses libstdc++ internal names (std::__*, std::_Upper*: reserved identifiers, [lex.name]/3); not triaged for a counterpart |
+| `20_util/is_complete_or_unbounded/(120717\|memoization\|value).cc` | uses libstdc++ internal names (std::__*, std::_Upper*: reserved identifiers, [lex.name]/3); not triaged for a counterpart |
+| `20_util/is_implicitly_default_constructible/value.cc` | uses libstdc++ internal names (std::__*, std::_Upper*: reserved identifiers, [lex.name]/3); not triaged for a counterpart |
+| `20_util/is_implicitly_default_constructible/requirements/(explicit_instantiation\|typedefs).cc` | uses libstdc++ internal names (std::__*, std::_Upper*: reserved identifiers, [lex.name]/3); not triaged for a counterpart |
+| `20_util/is_invocable/value_ext.cc` | uses libstdc++ internal names (std::__*, std::_Upper*: reserved identifiers, [lex.name]/3); not triaged for a counterpart |
+| `20_util/is_invocable/requirements/typedefs_ext.cc` | uses libstdc++ internal names (std::__*, std::_Upper*: reserved identifiers, [lex.name]/3); not triaged for a counterpart |
+| `20_util/is_nothrow_invocable/value_ext.cc` | uses libstdc++ internal names (std::__*, std::_Upper*: reserved identifiers, [lex.name]/3); not triaged for a counterpart |
+| `20_util/is_nothrow_invocable/requirements/typedefs_ext.cc` | uses libstdc++ internal names (std::__*, std::_Upper*: reserved identifiers, [lex.name]/3); not triaged for a counterpart |
+| `20_util/is_nothrow_swappable/requirements/typedefs_ext.cc` | uses libstdc++ internal names (std::__*, std::_Upper*: reserved identifiers, [lex.name]/3); not triaged for a counterpart |
+| `20_util/is_swappable/requirements/typedefs_ext.cc` | uses libstdc++ internal names (std::__*, std::_Upper*: reserved identifiers, [lex.name]/3); not triaged for a counterpart |
+| `20_util/logical_traits/requirements/short_circuit.cc` | uses libstdc++ internal names (std::__*, std::_Upper*: reserved identifiers, [lex.name]/3); not triaged for a counterpart |
+| `20_util/nonesuch/nonesuch.cc` | uses libstdc++ internal names (std::__*, std::_Upper*: reserved identifiers, [lex.name]/3); not triaged for a counterpart |
+| `20_util/optional/ref/internal_traits.cc` | uses libstdc++ internal names (std::__*, std::_Upper*: reserved identifiers, [lex.name]/3); not triaged for a counterpart |
+| `20_util/reference_wrapper/typedefs-3.cc` | uses libstdc++ internal names (std::__*, std::_Upper*: reserved identifiers, [lex.name]/3); not triaged for a counterpart |
+| `20_util/remove_cvref/value_ext.cc` | uses libstdc++ internal names (std::__*, std::_Upper*: reserved identifiers, [lex.name]/3); not triaged for a counterpart |
+| `20_util/shared_ptr/atomic/2.cc` | uses libstdc++ internal names (std::__*, std::_Upper*: reserved identifiers, [lex.name]/3); not triaged for a counterpart |
+| `20_util/shared_ptr/cons/58659.cc` | uses libstdc++ internal names (std::__*, std::_Upper*: reserved identifiers, [lex.name]/3); not triaged for a counterpart |
+| `20_util/shared_ptr/hash/1.cc` | uses libstdc++ internal names (std::__*, std::_Upper*: reserved identifiers, [lex.name]/3); not triaged for a counterpart |
+| `20_util/shared_ptr/requirements/explicit_instantiation/2.cc` | uses libstdc++ internal names (std::__*, std::_Upper*: reserved identifiers, [lex.name]/3); not triaged for a counterpart |
+| `20_util/shared_ptr/thread/mutex_weaktoshared.cc` | uses libstdc++ internal names (std::__*, std::_Upper*: reserved identifiers, [lex.name]/3); not triaged for a counterpart |
+| `20_util/specialized_algorithms/uninitialized_default/94540.cc` | uses libstdc++ internal names (std::__*, std::_Upper*: reserved identifiers, [lex.name]/3); not triaged for a counterpart |
+| `20_util/specialized_algorithms/uninitialized_default_n/(94540\|sizes).cc` | uses libstdc++ internal names (std::__*, std::_Upper*: reserved identifiers, [lex.name]/3); not triaged for a counterpart |
+| `20_util/specialized_algorithms/uninitialized_value_construct_n/sizes.cc` | uses libstdc++ internal names (std::__*, std::_Upper*: reserved identifiers, [lex.name]/3); not triaged for a counterpart |
+| `20_util/tuple/cv_tuple_size.cc` | uses libstdc++ internal names (std::__*, std::_Upper*: reserved identifiers, [lex.name]/3); not triaged for a counterpart |
+| `20_util/tuple/cons/noexcept_specs.cc` | uses libstdc++ internal names (std::__*, std::_Upper*: reserved identifiers, [lex.name]/3); not triaged for a counterpart |
+| `20_util/weak_ptr/requirements/explicit_instantiation/2.cc` | uses libstdc++ internal names (std::__*, std::_Upper*: reserved identifiers, [lex.name]/3); not triaged for a counterpart |
+| `23_containers/forward_list/capacity/(1\|node_sizes).cc` | uses libstdc++ internal names (std::__*, std::_Upper*: reserved identifiers, [lex.name]/3); not triaged for a counterpart |
+| `23_containers/list/capacity/(29134\|node_sizes).cc` | uses libstdc++ internal names (std::__*, std::_Upper*: reserved identifiers, [lex.name]/3); not triaged for a counterpart |
+| `23_containers/map/capacity/29134.cc` | uses libstdc++ internal names (std::__*, std::_Upper*: reserved identifiers, [lex.name]/3); not triaged for a counterpart |
+| `23_containers/mdspan/layouts/mapping.cc` | uses libstdc++ internal names (std::__*, std::_Upper*: reserved identifiers, [lex.name]/3); not triaged for a counterpart |
+| `23_containers/multimap/capacity/29134.cc` | uses libstdc++ internal names (std::__*, std::_Upper*: reserved identifiers, [lex.name]/3); not triaged for a counterpart |
+| `23_containers/multiset/capacity/29134.cc` | uses libstdc++ internal names (std::__*, std::_Upper*: reserved identifiers, [lex.name]/3); not triaged for a counterpart |
+| `23_containers/set/capacity/29134.cc` | uses libstdc++ internal names (std::__*, std::_Upper*: reserved identifiers, [lex.name]/3); not triaged for a counterpart |
+| `23_containers/unordered_set/instantiation_neg.cc` | uses libstdc++ internal names (std::__*, std::_Upper*: reserved identifiers, [lex.name]/3); not triaged for a counterpart |
+| `23_containers/unordered_set/buckets/swap.cc` | uses libstdc++ internal names (std::__*, std::_Upper*: reserved identifiers, [lex.name]/3); not triaged for a counterpart |
+| `23_containers/unordered_set/hash_policy/(26132\|71181\|load_factor\|power2_rehash\|prime_rehash\|rehash).cc` | uses libstdc++ internal names (std::__*, std::_Upper*: reserved identifiers, [lex.name]/3); not triaged for a counterpart |
+| `23_containers/unordered_set/insert/hash_policy.cc` | uses libstdc++ internal names (std::__*, std::_Upper*: reserved identifiers, [lex.name]/3); not triaged for a counterpart |
+| `23_containers/unordered_set/max_load_factor/robustness.cc` | uses libstdc++ internal names (std::__*, std::_Upper*: reserved identifiers, [lex.name]/3); not triaged for a counterpart |
+| `23_containers/vector/bool/format.cc` | uses libstdc++ internal names (std::__*, std::_Upper*: reserved identifiers, [lex.name]/3); not triaged for a counterpart |
+| `23_containers/vector/bool/capacity/29134.cc` | uses libstdc++ internal names (std::__*, std::_Upper*: reserved identifiers, [lex.name]/3); not triaged for a counterpart |
+| `23_containers/vector/bool/cons/lwg3778.cc` | uses libstdc++ internal names (std::__*, std::_Upper*: reserved identifiers, [lex.name]/3); not triaged for a counterpart |
+| `23_containers/vector/bool/modifiers/insert/31370.cc` | uses libstdc++ internal names (std::__*, std::_Upper*: reserved identifiers, [lex.name]/3); not triaged for a counterpart |
+| `23_containers/vector/debug/multithreaded_swap.cc` | uses libstdc++ internal names (std::__*, std::_Upper*: reserved identifiers, [lex.name]/3); not triaged for a counterpart |
+| `25_algorithms/heap/(moveable\|moveable2).cc` | uses libstdc++ internal names (std::__*, std::_Upper*: reserved identifiers, [lex.name]/3); not triaged for a counterpart |
+| `25_algorithms/rotate/90920.cc` | uses libstdc++ internal names (std::__*, std::_Upper*: reserved identifiers, [lex.name]/3); not triaged for a counterpart |
+| `26_numerics/random/pr60037-neg.cc` | uses libstdc++ internal names (std::__*, std::_Upper*: reserved identifiers, [lex.name]/3); not triaged for a counterpart |
+| `27_io/print/2.cc` | uses libstdc++ internal names (std::__*, std::_Upper*: reserved identifiers, [lex.name]/3); not triaged for a counterpart |
+| `29_atomics/atomic/89624.cc` | uses libstdc++ internal names (std::__*, std::_Upper*: reserved identifiers, [lex.name]/3); not triaged for a counterpart |
+| `29_atomics/atomic/wait_notify/100334.cc` | uses libstdc++ internal names (std::__*, std::_Upper*: reserved identifiers, [lex.name]/3); not triaged for a counterpart |
+| `29_atomics/atomic_flag/test_and_set/explicit-hle.cc` | uses libstdc++ internal names (std::__*, std::_Upper*: reserved identifiers, [lex.name]/3); not triaged for a counterpart |
+| `30_threads/latch/1.cc` | uses libstdc++ internal names (std::__*, std::_Upper*: reserved identifiers, [lex.name]/3); not triaged for a counterpart |
+| `std/format/(debug\|dynamic_format\|fs_path\|tuple).cc` | uses libstdc++ internal names (std::__*, std::_Upper*: reserved identifiers, [lex.name]/3); not triaged for a counterpart |
+| `std/format/ranges/(adaptors\|formatter\|map\|sequence\|string).cc` | uses libstdc++ internal names (std::__*, std::_Upper*: reserved identifiers, [lex.name]/3); not triaged for a counterpart |
+| `std/ranges/p2259.cc` | uses libstdc++ internal names (std::__*, std::_Upper*: reserved identifiers, [lex.name]/3); not triaged for a counterpart |
+| `std/simd/reductions.cc` | uses libstdc++ internal names (std::__*, std::_Upper*: reserved identifiers, [lex.name]/3); not triaged for a counterpart |
+| `std/time/hash.cc` | uses libstdc++ internal names (std::__*, std::_Upper*: reserved identifiers, [lex.name]/3); not triaged for a counterpart |
+| `std/time/format/(pr120114\|pr120481\|precision\|whitespace).cc` | uses libstdc++ internal names (std::__*, std::_Upper*: reserved identifiers, [lex.name]/3); not triaged for a counterpart |
+| `20_util/is_invocable/requirements/explicit_instantiation_ext.cc` | uses libstdc++ internals (std::__is_invocable, std::__detail, ...); not triaged for a counterpart |
+| `20_util/is_nothrow_invocable/requirements/explicit_instantiation_ext.cc` | uses libstdc++ internals (std::__is_invocable, std::__detail, ...); not triaged for a counterpart |
+| `20_util/is_nothrow_swappable/requirements/explicit_instantiation_ext.cc` | uses libstdc++ internals (std::__is_invocable, std::__detail, ...); not triaged for a counterpart |
+| `20_util/is_swappable/requirements/explicit_instantiation_ext.cc` | uses libstdc++ internals (std::__is_invocable, std::__detail, ...); not triaged for a counterpart |
+| `21_strings/basic_string/capacity/char/resize_and_overwrite_ext.cc` | uses libstdc++ internals (std::__is_invocable, std::__detail, ...); not triaged for a counterpart |
+| `23_containers/unordered_map/modifiers/merge.cc` | uses libstdc++ internals (std::__is_invocable, std::__detail, ...); not triaged for a counterpart |
+| `24_iterators/associated_types/iterator\.traits.cc` | uses libstdc++ internals (std::__is_invocable, std::__detail, ...); not triaged for a counterpart |
+| `26_numerics/complex/inserters_extractors/char/1.cc` | uses libstdc++ internals (std::__is_invocable, std::__detail, ...); not triaged for a counterpart |
+| `26_numerics/complex/inserters_extractors/wchar_t/1.cc` | uses libstdc++ internals (std::__is_invocable, std::__detail, ...); not triaged for a counterpart |
+| `27_io/basic_filebuf/close/char/3.cc` | uses libstdc++ internals (std::__is_invocable, std::__detail, ...); not triaged for a counterpart |
+| `std/format/functions/107871.cc` | uses libstdc++ internals (std::__format) |
+| `(17_intro/headers/c\+\+1998/all_attributes\|18_support/(105387\|51333\|cxa_vec)).cc` | needs <cxxabi.h>, libsupc++'s ABI interface, which is not part of the standard library |
+| `(20_util/allocator/89510\|20_util/optional/(assignment/noexcept\|cons/noexcept\|make_optional-2)\|20_util/tuple/make_from_tuple/2\|24_iterators/istream_iterator/cons/sentinel\|24_iterators/reverse_iterator/noexcept).cc` | libstdc++'s conditional noexcept strengthenings; the draft declares these functions without them ([res.on.exception.handling]/5 allows adding noexcept, not requires it) |
+| `20_util/bind/socket.cc` | POSIX ::bind overload resolution against std::bind with using-directives; not a property of std::bind |
+| `20_util/(copyable_function\|function_ref\|move_only_function)/incomplete_neg.cc` | a diagnostic for incomplete parameter types is not required by [func.wrap] |
+| `20_util/function_ref/dangling.cc` | whether a constexpr function_ref to a by-value stateless callable refers to it is unspecified ([func.wrap.ref]) |
+| `20_util/(is_invocable\|is_nothrow_invocable\|is_nothrow_swappable\|is_swappable)/requirements/explicit_instantiation_ext.cc` | tests libstdc++'s internal __is_invocable / __is_nothrow_swappable traits |
+| `20_util/unique_ptr/101236.cc` | unique_ptr<T[]>::operator[] needs a complete T ([unique.ptr.runtime.general]/3); the test uses an incomplete one |
+| `21_strings/(basic_string_view/requirements/explicit_instantiation/int\|char_traits/requirements/(explicit_instantiation/short\|short/1)).cc` | char_traits is specified only for char, char8_t, char16_t, char32_t and wchar_t ([char.traits.specializations]); the test needs libstdc++'s generic primary template |
+| `22_locale/[a-z_]+/requirements/(false/\|true/)?explicit_instantiation.cc` | instantiates the facets for unsigned char / short, which need char_traits for non-character types (only five specializations exist, [char.traits.specializations]) |
+| `27_io/(basic_filebuf/imbue/12206\|basic_ios/fill/char/1\|basic_[a-z]+/requirements/explicit_instantiation).cc` | instantiates streams with char_traits of a non-character type; only five char_traits specializations exist ([char.traits.specializations]) |
+| `23_containers/array/requirements/explicit_instantiation/3.cc` | explicitly instantiates array<__gnu_test::OverloadedAddress, 3> (a testsuite type in a libstdc++ namespace) |
+| `23_containers/span/cons_(1\|2)_assert_neg.cc` | _GLIBCXX_DEBUG checks that [first, first + count) is a valid range, which is a precondition the implementation cannot check (not a hardened precondition) |
+| `26_numerics/valarray/mask-[0-9]+_neg.cc` | expects libstdc++'s _GLIBCXX_ASSERTIONS abort for a mask array the valarray does not cover; [template.mask.array] states a precondition, not a hardened one |
+| `27_io/manipulators/standard/(char\|wchar_t)/(1\|2).cc` | applies output manipulators (setfill) to an istream: a libstdc++ extension ([std.manip] defines them for basic_ostream) |
+| `29_atomics/atomic_flag/test/(explicit\|implicit).cc` | constructs atomic_flag from a bool; [atomics.flag] has only the default constructor |
+| `30_threads/condition_variable/members/103382.cc` | cancels a waiting thread with pthread_cancel (POSIX thread cancellation is outside the standard) |
+| `30_threads/jthread/100612.cc` | expects jthread(&X::f, &x) to pass the stop_token after the object; [thread.jthread.cons]/5 invokes with the token first |
+| `30_threads/this_thread/60421.cc` | interrupts sleep_for with a POSIX signal (pthread_kill); signal delivery is outside the standard |
+| `special_functions/.*` | the mathematical special functions in the global namespace through <math.h>: [support.c.headers.other]/1 excludes the [sf.cmath] functions |
+| `26_numerics/(complex/fabs_neg\|headers/cstdlib/(60401\|abs128)).cc` | fabs(complex), abs(__float128) and ::abs(long) from <stdlib.h> are libstdc++ extensions |
+| `std/ranges/(adaptors/detail/copyable_box\|iota/max_size_type\|repeat/1).cc` | tests libstdc++'s internal ranges::__detail types (__box, __max_size_type, views::__detail) |
 | `20_util/any/layout.cc` | the size and alignment of std::any are unspecified (libstdc++'s layout) |
 | `20_util/(optional\|unique_ptr/hash\|variant)/(hash_)?abi.cc` | the size of a hash specialization (and of classes deriving from several) is libstdc++'s ABI, not specified |
 | `20_util/optional/hash_abi.cc` | the size of hash<optional<T>> is libstdc++'s ABI, not specified |

@@ -4,6 +4,7 @@
 // the allocator-extended copy constructor uses the given resource; polymorphic_allocator does
 // not propagate on assignment or swap, so assignment keeps each container's resource.
 // REQUIRES: exceptions
+// COUNTERPART: libcxx:utilities/utility/mem.res/mem.res.aliases/header_string_synop.pass.cpp
 #include <memory_resource>
 #include <deque>
 #include <list>

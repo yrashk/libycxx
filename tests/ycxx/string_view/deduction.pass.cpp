@@ -1,6 +1,7 @@
 // [string.view.deduct]: basic_string_view(It, End) -> basic_string_view<iter_value_t<It>>;
 // basic_string_view(R&&) -> basic_string_view<ranges::range_value_t<R>>. Also deduction
 // from const charT* via the implicit guide of basic_string_view(const charT*).
+// COUNTERPART: libcxx:strings/string.view/string.view.cons/implicit_deduction_guides.pass.cpp
 #include <string_view>
 #include <array>
 #include <type_traits>

@@ -5,9 +5,15 @@ regexes may use "|" alternation). A regex prefixed with `content:` is matched
 against the test source (re.search); otherwise against the test path (re.fullmatch).
 tests/common/skip.txt applies to every suite; tests/<suite>/skip.txt to one suite.
 
-Expected failures (tests/<suite>/xfail.txt) are known compiler gaps: the test still runs, and
+Expected failures (tests/<suite>/xfail.txt) have a cause outside the test and the library (a
+compiler gap or bug, a draft defect): the test still runs, and
 reports XFAIL when it fails, XPASS (which fails the run) once it passes. A line is
 `<path regex> | <gcc|clang|any> | <reason>`.
+
+Tests that do not apply in one configuration only (tests/libcxx/unsupported.txt) are reported
+UNSUPPORTED only while a lit feature names it: `root` when the tests run as root (permission
+errors cannot happen), a compiler for a test that exercises an extension with that compiler only.
+They still run everywhere else. A line is `<path regex> | <feature> | <reason>`.
 """
 import os, re
 
@@ -30,6 +36,25 @@ def load_skips(*paths):
 def match_skip(skips, rel, src):
     for on_content, pat, why in skips:
         if pat.search(src) if on_content else pat.fullmatch(rel):
+            return why
+    return None
+
+
+def load_unsupported(path):
+    entries = []
+    if os.path.exists(path):
+        for line in open(path):
+            line = line.strip()
+            if not line or line.startswith('#'):
+                continue
+            pat, feature, why = [x.strip() for x in line.split(' | ', 2)]
+            entries.append((re.compile(pat), feature, f'unsupported ({feature}): {why}'))
+    return entries
+
+
+def match_unsupported(entries, rel, features):
+    for pat, feature, why in entries:
+        if feature in features and pat.fullmatch(rel):
             return why
     return None
 

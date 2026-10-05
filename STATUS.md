@@ -1006,6 +1006,13 @@ levels: 29.7 s -> 0.01 s; libstdc++ 8.6 s). Remaining above 1.5x: deque push at 
 - Every header of the C++26 library is provided (Phases 1-4 complete; `<meta>` needs GCC's
   `-freflection`, `<contracts>` GCC's `-fcontracts`). Own suite: no failures on either compiler (configurations above); the expected
   failures carry their reasons in the tests.
+- **Decided (user, 2026-10-05): C names through `<string>` and `<cstdint>`.** Hosted `<string>`
+  (the character traits) provides `EOF` (it includes `<cstdio>`; `WEOF` comes with `<wchar.h>`),
+  and `<cstdint>` also declares the global `::int64_t`... names, as libstdc++, libc++ and MSVC do.
+- libc++ suite, still failing, being libycxx gaps (tests/libcxx/TRIAGE.md, "Policy round"): no
+  `import std;`/`import std.compat;` (modules/std, std.compat; Clang), no senders/receivers
+  (`__cpp_lib_senders`: support.limits execution.version, version.version). (The `<wchar.h>` and
+  `<stddef.h>` wrappers exist since the own-suite fixes.)
 - Next (Phase 5): full libc++/libstdc++ sweeps with triage (tests/libcxx/TRIAGE.md,
   tests/libstdcxx/TRIAGE.md), fixing the libycxx bugs they find; then a whole-library review
   (performance pass done, see Performance).

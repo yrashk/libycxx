@@ -2,11 +2,21 @@
 import os, re, shutil, tempfile
 import lit.formats, lit.Test, lit.TestRunner
 from ycxxlit import locales, transcript
-from ycxxlit.skips import load_skips, match_skip, load_xfails, apply_xfail
+from ycxxlit.skips import load_skips, match_skip, load_unsupported, match_unsupported, load_xfails, apply_xfail
 from ycxxlit import counterparts
 
 COND_FLAGS = re.compile(r'//\s*ADDITIONAL_COMPILE_FLAGS(?:\(([^)]*)\))?:(.*)')
 FILE_DEPS = re.compile(r'//\s*FILE_DEPENDENCIES:(.*)')
+
+
+def run_environment():
+    """The environment a test program runs in: this process's, without the locale variables.
+    libc++'s own lit passes a test only a fixed set of variables (LANG, LANGUAGE and LC_* are not
+    among them), so its tests expect the POSIX locale for "" (e.g. text_encoding::environment() is
+    ASCII). Here the caller's settings would leak through, and so would LC_CTYPE=C.UTF-8, which
+    CPython's locale coercion (PEP 538) adds to lit's own environment when it starts in the C
+    locale."""
+    return {k: v for k, v in os.environ.items() if k not in ('LANG', 'LANGUAGE') and not k.startswith('LC_')}
 
 
 class LibcxxFormat(lit.formats.FileBasedTest):
@@ -14,6 +24,7 @@ class LibcxxFormat(lit.formats.FileBasedTest):
         self.wrapper, self.compiler, self.base_flags, self.features = wrapper, compiler, base_flags, set(features)
         self.skips = load_skips(os.path.join(os.path.dirname(os.path.dirname(skip_file)), 'common', 'skip.txt'), skip_file)
         self.xfails = load_xfails(os.path.join(os.path.dirname(skip_file), 'xfail.txt'))
+        self.unsupported = load_unsupported(os.path.join(os.path.dirname(skip_file), 'unsupported.txt'))
         self.counterparts = counterparts.Index(os.path.join(os.path.dirname(os.path.dirname(skip_file)), 'ycxx'))
 
     def execute(self, test, lit_config):
@@ -30,6 +41,9 @@ class LibcxxFormat(lit.formats.FileBasedTest):
             return lit.Test.Result(lit.Test.UNSUPPORTED, 'unsupported by lit.local.cfg')
         rel = '/'.join(test.path_in_suite)
         why = match_skip(self.skips, rel, open(path, encoding='utf-8', errors='replace').read())
+        if why:
+            return lit.Test.Result(lit.Test.UNSUPPORTED, why)
+        why = match_unsupported(self.unsupported, rel, self.features)
         if why:
             return lit.Test.Result(lit.Test.UNSUPPORTED, why)
         script = lit.TestRunner.parseIntegratedTestScript(test, require_script=False)
@@ -104,7 +118,7 @@ class LibcxxFormat(lit.formats.FileBasedTest):
             rc, out = self.compile([path, '-o', exe] + flags, tmp)
             if rc != 0:
                 return lit.Test.Result(lit.Test.FAIL, 'COMPILE FAILED\n' + out)
-            rc, ran = transcript.run('run', [exe], tmp, 120)
+            rc, ran = transcript.run('run', [exe], tmp, 120, env=run_environment())
             return lit.Test.Result(lit.Test.PASS if rc == 0 else lit.Test.FAIL, out + ran)
         return lit.Test.Result(lit.Test.UNSUPPORTED, 'unknown test kind')
 

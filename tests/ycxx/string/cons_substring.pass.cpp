@@ -4,6 +4,7 @@
 // /9-10: template<class T> basic_string(const T& t, size_type pos, size_type n, a) behaves
 // as basic_string(sv.substr(pos, n), a), constrained only on convertibility to string_view.
 // REQUIRES: exceptions
+// COUNTERPART: libcxx:strings/basic.string/(string.cons|string.ops/string_substr)/substr_rvalue.pass.cpp
 #include <string>
 #include <string_view>
 #include <stdexcept>

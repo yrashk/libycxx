@@ -5,6 +5,7 @@
 // calls sbuf_->sputc(c) if failed() is false, otherwise has no effect; /3-4: *it, ++it, it++
 // return *this; /5: failed() is true iff a prior sputc returned eof. Models
 // output_iterator<It, const charT&>.
+// COUNTERPART: libcxx:iterators/stream.iterators/ostreambuf.iterator/types.pass.cpp
 #include <iterator>
 #include <algorithm>
 #include <sstream>

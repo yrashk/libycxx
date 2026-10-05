@@ -5,6 +5,7 @@
 // it = value is "*out_stream << value; if (delim) *out_stream << delim; return *this;" /2-3:
 // *it, ++it and it++ return *this. The iterator models output_iterator<It, const T&>
 // ([iterator.concept.output]) and works with the algorithms.
+// COUNTERPART: libcxx:iterators/stream.iterators/ostream.iterator/types.pass.cpp
 #include <iterator>
 #include <algorithm>
 #include <cstddef>

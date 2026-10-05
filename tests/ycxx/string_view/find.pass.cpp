@@ -1,6 +1,7 @@
 // [string.view.find]/1-8: find and rfind for basic_string_view, charT, (const charT*, pos, n)
 // and (const charT*, pos). find: lowest xpos with pos <= xpos and xpos + str.size() <= size();
 // rfind: highest xpos with xpos <= pos and xpos + str.size() <= size(); npos otherwise.
+// COUNTERPART: libcxx:strings/string.view/string.view.find/.*.pass.cpp
 #include <string_view>
 #include <utility>
 #include "check.hpp"

@@ -3,6 +3,7 @@
 // equality_comparable_with / totally_ordered_with use comparison-common-type-with, which
 // accepts move-only types (convertible_to<T, const C&>), so e.g. a move-only handle is
 // equality_comparable_with<nullptr_t>.
+// COUNTERPART: libcxx:concepts/concepts.compare/concept.equalitycomparable/equality_comparable_with.compile.pass.cpp
 #include <concepts>
 #include <compare>
 #include <cstddef>

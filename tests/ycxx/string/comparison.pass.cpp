@@ -3,6 +3,7 @@
 // the <=> result type is that of basic_string_view: traits::comparison_category if present,
 // otherwise weak_ordering ([string.view.comparison]). != , <, >, <=, >= are synthesized and
 // work in both argument orders. operator==(basic_string, basic_string) is noexcept.
+// COUNTERPART: libcxx:strings/basic.string/string.nonmembers/string.cmp/comparison.pass.cpp
 #include <string>
 #include <compare>
 #include <string_view>

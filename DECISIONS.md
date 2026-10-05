@@ -354,6 +354,12 @@ under the same name. Otherwise it gets one alias template in `config.hpp`.
    locale, disables `-Wdeprecated-declarations`.
 6. **Gate before pushing:** `tools/check-all`, plus the affected conformance directories on
    both compilers and both suites.
+7. **Test scripts are traceable.** `tools/test` is the single driver. Each stage prints the
+   commands it runs, shows live progress and ends with a summary; the full logs go to
+   `build/test-logs/`. The scripts are POSIX sh and POSIX awk, so they run unchanged on Linux
+   and macOS. lit runs through `uvx` with a pinned version, so a checkout needs only uv, not a
+   Python environment. `tools/run-conformance` brings `build/<compiler>` up to date before it
+   tests, so a run can never test a stale library.
 
 ## 7. Iostreams and localization (hosted)
 

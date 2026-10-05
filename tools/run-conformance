@@ -1,9 +1,10 @@
 #!/bin/sh
 # Run a conformance suite against libycxx.
 #   tools/run-conformance libcxx|libstdcxx|ycxx gcc|clang [subdirs...] [-- extra lit args]
-# Shows a live progress line (tests done, pass/fail counts, elapsed time, ETA, current test), each
-# failure as it happens with the start of its output, and lit's summary; lit's complete output
-# goes to build/test-logs/<suite>-<compiler>[-<sanitizer>][-ref].log.
+# Rebuilds build/<compiler> first (ninja) when it is a CMake build. Shows a live progress line
+# (tests done, pass/fail counts, elapsed time, ETA, current test), each failure as it happens
+# with the start of its output, and lit's summary; lit's complete output goes to
+# build/test-logs/<suite>-<compiler>[-<sanitizer>][-ref].log.
 # Environment: LIBCXX_TESTS (default /opt/src/llvm-project/libcxx/test),
 #              LIBSTDCXX_TESTS (default /opt/src/libstdcxx-testsuite), SANITIZER (asan,ubsan),
 #              YCXX_STDLIB=libstdcxx (ycxx suite only: build against libstdc++ instead, the
@@ -63,6 +64,17 @@ case $compiler in
   clang) ui_info "compiler" "${YCXX_CLANGXX:-clang++-23}" ;;
 esac
 ui_info "log" "$log"
+# The tests link build/<compiler>: bring it up to date first, so that a run never tests a stale
+# library (not for the reference runs, nor with YCXX_LIBDIR naming another build).
+if [ "${YCXX_STDLIB:-}" != libstdcxx ] && [ -z "${YCXX_LIBDIR:-}" ]; then
+  if [ -f "$repo/build/$compiler/build.ninja" ]; then
+    ui_step "library up to date (build/$compiler)" "$repo/build/test-logs/build-$compiler-for-$name.log" \
+      ninja -C "$repo/build/$compiler" || exit 1
+  elif [ ! -f "$repo/build/$compiler/libycxx.a" ]; then
+    ui_fail "build/$compiler is not configured" "(tools/test -c $compiler build)"
+    exit 2
+  fi
+fi
 # -v: lit prints each failure's output (the compile and run commands, then what they printed).
 ui_cmd $ycxx_lit "$dir" -v "$@"
 

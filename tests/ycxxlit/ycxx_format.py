@@ -16,8 +16,12 @@ Optional directives:
   // UNSUPPORTED-SANITIZER: asan|ubsan|tsan[,...]  <reason>   not run under those sanitizers: for
                                           tests of what a sanitizer runtime replaces (asan's global
                                           allocation functions) or adds (its exported symbols)
-  // XFAIL-COMPILER: gcc|clang  <reason>   known compiler gap (listed in STATUS.md); the test is
-                                          unchanged and reports XFAIL, or XPASS once the gap closes
+  // XFAIL: gcc|clang|any  <reason>        an expected failure, for a reason outside the test's
+                                          control that STATUS.md lists: a compiler bug, an ABI
+                                          limit, a draft defect, a feature not implemented yet. The
+                                          test is unchanged and reports XFAIL with the reason, or
+                                          XPASS (a failure of the run) once it passes.
+                                          (XFAIL-COMPILER: gcc|clang is the older spelling.)
   // COUNTERPART: libcxx:<path> libstdcxx:<path> [...]   the external tests, skipped there as
                                           tied to that library's internals, extensions or modes,
                                           whose standard subject this test covers (paths relative
@@ -55,7 +59,7 @@ FLAGS = re.compile(r'^//\s*FLAGS:(.*)$', re.M)
 FILES = re.compile(r'^//\s*FILES:(.*)$', re.M)
 ARCHIVE = re.compile(r'^//\s*ARCHIVE:(.*)$', re.M)
 SHARED = re.compile(r'^//\s*SHARED:(.*)$', re.M)
-XFAIL = re.compile(r'^//\s*XFAIL-COMPILER:\s*(\w+)', re.M)
+XFAIL = re.compile(r'^//\s*XFAIL(?:-COMPILER)?:\s*(gcc|clang|any)\b(.*)$', re.M)
 UNSUPPORTED_SAN = re.compile(r'^//\s*UNSUPPORTED-SANITIZER:\s*([\w,]+)(.*)$', re.M)
 EXPECT_ERROR = re.compile(r'^//\s*EXPECT-ERROR(?:-(GCC|CLANG))?:\s*(.*?)\s*$', re.M)
 REQUIRES = re.compile(r'^//\s*REQUIRES:(.*)$', re.M)
@@ -96,11 +100,15 @@ class YcxxFormat(lit.formats.FileBasedTest):
                 return lit.Test.Result(lit.Test.UNSUPPORTED, f'REQUIRES:{m.group(1)} (features of this run: '
                                        f'{", ".join(sorted(self.features))})')
         result = self.run(test)
-        if any(m.group(1) == self.compiler for m in XFAIL.finditer(src)):
+        xf = [m for m in XFAIL.finditer(src) if m.group(1) in (self.compiler, 'any')]
+        if xf:
+            why = '; '.join(m.group(2).strip() for m in xf)
             if result.code == lit.Test.PASS:
                 result.code = lit.Test.XPASS
+                result.output = (result.output or '') + f'\nexpected to fail ({why}), but passed\n'
             elif result.code == lit.Test.FAIL:
                 result.code = lit.Test.XFAIL
+                result.output = (result.output or '') + f'\nexpected failure: {why}\n'
         return result
 
     def check_expected_errors(self, src, out):

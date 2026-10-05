@@ -14,11 +14,10 @@ jobs:
       - name: Toolchains (Clang 23, lld, ninja, cmake, uv; tools/toolchain/provision --detect-only)
         uses: ./.github/actions/setup-linux
 
-      # The same stages as the macOS job. --baseline: the suites fail on any test that did not
-      # pass and is not in tests/<suite>/baseline/<os>-<compiler>.txt, the known failures
-      # (STATUS.md says why each fails).
+      # The same stages as the macOS job. Any test reported FAIL (or XPASS) fails the job; an
+      # expected failure is marked in the test (// XFAIL: <compiler> <reason>), never listed.
       - name: Policy, builds, freestanding, CMake package, own suite (tools/test)
-        run: tools/test -j4 --baseline policy build freestanding cmake ycxx
+        run: tools/test -j4 policy build freestanding cmake ycxx
 
       - name: Fetch conformance suites (run only; tools/fetch-suites)
         run: tools/fetch-suites
@@ -43,15 +42,14 @@ jobs:
           path: |
             build/test-logs/*.html
             build/test-logs/*.md
-            build/test-logs/*.baseline.txt
             build/cmake-test/*.log
             build/test-logs/*.tsv
             build/test-logs/*.log
           if-no-files-found: ignore
 
   # macOS on Apple Silicon: Homebrew's GCC 16 and LLVM's Clang 23 release (provisioned and
-  # cached). The same stages as the Linux job; failures outside tests/<suite>/baseline/darwin-*.txt
-  # fail it, and its composite report (artifact test-reports-macos) shows them in full.
+  # cached). The same stages as the Linux job; any FAIL fails it, and its composite report
+  # (artifact test-reports-macos) shows the failures in full.
   macos:
     runs-on: macos-15
     steps:
@@ -63,7 +61,7 @@ jobs:
       - name: Policy, builds, freestanding, CMake package, own suite (tools/test)
         run: |
           . tools/toolchain/activate.sh
-          tools/test -j3 --baseline policy build freestanding cmake ycxx
+          tools/test -j3 policy build freestanding cmake ycxx
 
       # Which library each C++ ABI symbol of a test program binds to (libycxx's static runtime or
       # libSystem's libc++abi), and how the program behaves: diagnostics for the macOS port.
@@ -99,7 +97,6 @@ jobs:
             build/test-logs/*.html
             build/test-logs/*.md
             build/test-logs/*.tsv
-            build/test-logs/*.baseline.txt
             build/test-logs/*.log
             build/cmake-test/*.log
             build/cmake-test/*/log.txt

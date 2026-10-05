@@ -266,6 +266,12 @@ a defect in a test.
   test 29_atomics/atomic_ref/ctor) treat the explicit constructor as a candidate and find the call
   ambiguous ([over.match.list]).
 
+- Clang 23.1: the type_info name string of a class with internal linkage is emitted without the
+  leading `*` (GCC emits `*N12_GLOBAL__N_1...`) that tells the Itanium runtime to compare
+  type_info objects by address, so same-named unnamed-namespace classes of different translation
+  units compare equal and match each other's handlers (with libstdc++ too); own test
+  `except/handler_internal_linkage_types` is XFAIL on Clang.
+
 ## Deliberate omissions
 Removed features are not implemented (`auto_ptr`, `result_of`, `is_literal_type`,
 `random_shuffle`, `<strstream>`, `<codecvt>`/`wstring_convert`, the `shared_ptr` atomic free

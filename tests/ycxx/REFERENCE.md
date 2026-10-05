@@ -60,7 +60,7 @@ Legend: **G** fails with GCC + libstdc++, **C** with Clang + libstdc++.
 | `algorithm/stable_partition` | G | C | in constant evaluation `ranges::stable_partition` returns `{i, last - 1}` (correct at run time) | [alg.partitions]/12.2: "{i, last} for the overloads in namespace ranges" |
 | `memory_resource/pool_stress` | G | C | `unsynchronized_pool_resource(pool_options{0, 1000})` (and `synchronized_pool_resource`) returns an 8-aligned block for `allocate(769, 32)`, although blocks of other sizes with that alignment are 32-aligned (line 62) | [mem.res.pool.mem]/5: "The size and alignment of the allocated memory shall meet the requirements for a class derived from memory_resource", i.e. [mem.res.private]/2: aligned to the specified alignment |
 | `algorithm/clamp` | G | C | 3 comparisons (and 5 projections for `ranges::clamp`) with libstdc++'s default -O0 assertions, which re-check the precondition | [alg.clamp]/5: "At most two comparisons and three applications of the projection" |
-| `charconv/to_chars_float_plain_style`, `format/float_shortest_plain_style` | G | C | `to_chars(1e5)` and `format("{}", 1e5)` give "1e+05", `format("{}", 16777216.0f)` gives "16777216": f/e chosen by the shorter result (the C++17 wording) | [charconv.to.chars]/7: f if \|value\| is in [l, u) (for double [1e-4, 1e16), for float [the float above 1e-4, 1e7): float(1e-4) < 10^-4 is "1e-04"), otherwise e |
+| `charconv/to_chars_float_plain_style`, `format/float_shortest_plain_style`, `format/float_printf_oracle` (line 152; every precision form agrees with printf) | G | C | `to_chars(1e5)` and `format("{}", 1e5)` give "1e+05", `format("{}", 16777216.0f)` gives "16777216": f/e chosen by the shorter result (the C++17 wording) | [charconv.to.chars]/7: f if \|value\| is in [l, u) (for double [1e-4, 1e16), for float [the float above 1e-4, 1e7): float(1e-4) < 10^-4 is "1e-04"), otherwise e |
 | `charconv/to_chars_float_general_shortest` | G | C | `to_chars(1234567.0, general)` gives "1.234567e+06", not the shorter "1234567" (interpretive: /2's smallest number of characters with the g specifier) | [charconv.to.chars]/2-3 |
 | `random/distribution_param_set` | G | C | after `d.param(p)`, `student_t`, `fisher_f` and `negative_binomial` keep producing values for the old parameters (`fisher_f`'s `d(g, p)` too) | [rand.req.dist] Table 128, d(g): distributed according to p(z \| {p}) with p = d.param() |
 | `random/negbin_p_one` | G | C | `negative_binomial_distribution(4, 1.0)` aborts in an internal `poisson_distribution(0)` assertion | [rand.dist.bern.negbin]/2: 0 < p <= 1 |
@@ -79,7 +79,8 @@ Legend: **G** fails with GCC + libstdc++, **C** with Clang + libstdc++.
 | `ranges/as_input_view_borrowed` | G | C | `as_input_view` is not a borrowed range for a borrowed V | [ranges.syn]: `enable_borrowed_range<as_input_view<V>> = enable_borrowed_range<V>` |
 | `ranges/ranges_to_emplace_hint` | G | C | `ranges::to` calls `insert` where only `emplace_hint` exists | [range.utility.conv.general]/4-5: `c.emplace_hint(c.end(), std::forward<Ref>(ref))` |
 | `format/extended_float` | G | C | `format("{}", float16_t(0.1))` gives "0.099975586", the shortest representation as a `float` (`to_chars` of the same `float16_t` gives "0.1"; Clang defines no extended types); with both compilers `format("{}", 16777217.0f)` gives "16777216" (and with GCC `float16_t(65504)` "65504", `bfloat16_t(257)` "256"), f where /7 requires e (the f/e choice of the row above) | [format.formatter.spec]/2.4: a formatter for every cv-unqualified floating-point type; [format.string.std] Table 110: none without precision is `to_chars(first, last, value)`; [charconv.to.chars]/7: u is 1e7 for float, 1e3 for float16 (2^12), 1e2 for bfloat16 (2^9) |
-| `format/format_to_n_negative` | G | C | `format_to_n` with n < 0 writes every character | [format.functions]/19: M = clamp(n, 0, N) |
+| `format/format_to_n_negative`, `format/format_to_n_sweep` (only for n < 0) | G | C | `format_to_n` with n < 0 writes every character | [format.functions]/19: M = clamp(n, 0, N) |
+| `containers/self_reference_value_matrix` | G | C | `deque::insert(p, 0, t)` with p not at either end leaves moved-from values in the elements around p (`deque<string>` and a class whose moved-from state differs; e.g. {100, 101, 102} becomes {100, -1, -1} for `insert(begin() + 1, 0, t)`, whether or not t is an element) | [sequence.reqmts]/32-35: a.insert(p, n, t) "Inserts n copies of t before p": nothing for n == 0 |
 | `sstream/stringbuf_view_no_mode` | G | C | `stringbuf("abc", openmode()).view()` returns "abc" | [stringbuf.members]/12.3: neither in nor out set: "Otherwise, sv() is returned" |
 | `syncstream/null_wrapped` | G | C | `osyncstream(nullptr).emit()` does not set badbit although `syncbuf::emit()` returns false | [syncstream.osyncstream.members]/1 |
 | `iostreams/num_get_hexfloat` | G | C | extracting a double from "0x1a.bp+07p" stops after "0" | [facet.num.get.virtuals] Example 1: with %g, "0x1a.bp+07" is accumulated |
@@ -185,7 +186,7 @@ Legend: **G** fails with GCC + libstdc++, **C** with Clang + libstdc++.
 | `thread/thread_attributes` | G | C | `thread::name_hint`, `thread::stack_size_hint` |
 | `future/packaged_task_allocator` | G | C | `packaged_task(allocator_arg_t, const Allocator&, F&&)` |
 | `ranges/view_interface_at` | G | C | `view_interface::at` |
-| `format/runtime_format`, `format/format_constexpr` | G | C | `std::runtime_format`; constexpr `std::format` |
+| `format/runtime_format`, `format/format_constexpr`, `format/integer_spec_oracle` | G | C | `std::runtime_format`; constexpr `std::format` (`integer_spec_oracle` uses `runtime_format` for `formatted_size`/`format_to_n`; with those calls removed all 258,000 results agree with its oracle) |
 | `random/generate_canonical`, `random/uniform_real_upper_bound` | G | C | the C++26 `generate_canonical` ([rand.util.canonical]/2-3: attempts until S < x r^d, returns floor(S/x)/r^d); libstdc++ rounds S/R^k and retries on 1, looping forever for a generator that always returns its maximum |
 | `random/generate_random`, `random/version_macros` | G | C | `ranges::generate_random`, `__cpp_lib_ranges_generate_random` |
 | `map/lookup`, `unordered_map/lookup`, `flat_map/lookup` | G | C | the C++26 `lookup` members |
@@ -207,6 +208,7 @@ Legend: **G** fails with GCC + libstdc++, **C** with Clang + libstdc++.
 | `simd/iota`, `simd/range_ctor_mask`, `simd/ctor_constraints`, `simd/reductions_scalar`, `simd/permute_dynamic`, `simd/compress_expand`, `simd/gather_scatter`, `simd/math`, `simd/bit`, `simd/complex` | G | C | parts of `<simd>`: `simd::iota`, the masked range constructor, the scalar `reduce`/`reduce_min`/`reduce_max` overloads, `v[indices]` and dynamic permute of masks, `compress`/`expand`, `unchecked_gather_from`/`partial_scatter_to` etc., the `<cmath>` and `<bit>` overloads, `vec<complex<T>>` (Clang: no `<simd>` at all, §3) |
 | `contracts/synopsis`, `contracts/observe` | G |  | `contract_violation::detection_mode()` (only a private member); also `invoke_default_contract_violation_handler` is `noexcept` (allowed, [res.on.exception.handling]/5) |
 | `linalg/views_solves` | G | C | `<linalg>` |
+| `rcu/rcu_domain_retire`, `hazard_pointer/protect_retire` | G | C | `<rcu>`, `<hazard_pointer>` ([saferecl.rcu], [saferecl.hp]) |
 | `cmath/annex_f_all`, `cmath/annex_f_extended` (GCC only: Clang has no extended types), `complex/edge_values_constexpr` | G | C | constexpr `<cmath>`/`<complex>` (the run-time values all agree with Annex F / the draft) |
 | `cstdlib/constexpr_abs_div` | G | C | constexpr `div`/`ldiv`/`lldiv` (P0533R9); with Clang also `abs(long)`, `labs` |
 | `integration/matrix_linalg_complex` | G | C | `<linalg>` (an integration test: mdspan + linalg + complex) |
@@ -245,6 +247,9 @@ Clang rejects code GCC accepts.
 | `iomanip/time_specifiers_roundtrip` | G | C | glibc's strftime gives "9" for %C of the year 905 (line 139; all other specifiers and round trips pass) | ISO C 7.29.3.5: %C is "the year divided by 100 and truncated to an integer, as a decimal number (00-99)" |
 | `cstdlib/c23_functions`, `cstring/c23_functions` | G | C | the C23 functions of [cstdlib.syn]/[cstring.syn] are not in `std` (`memalignment`, `free_sized`, `free_aligned_sized`, `strfromd/f/l`, `memccpy`, `strdup`, `strndup`, `memset_explicit`; glibc 2.39 has `strfrom*`, `memccpy`, `strdup`, `strndup` but no using-declarations bring them into `std`, the others are not in glibc 2.39) |
 | `cstring/stdc_version_macros` | G | C | `__STDC_VERSION_INTTYPES_H__`, `_STDIO_H__`, `_TIME_H__`, `_STRING_H__`, `_UCHAR_H__` ([cinttypes.syn], [cstdio.syn], [ctime.syn], [cstring.syn], [cuchar.syn]) are not defined (as `cfloat/macros` etc.) |
+| `stdbit/stdc_bit_functions` | G | C | glibc 2.39's `stdc_bit_ceil` (generic and `_uc`/`_us`/`_ui`/`_ul`/`_ull`) returns 0 for the value 2^(N-1) (128 for `unsigned char`), whose ceiling 2^(N-1) is representable (all other functions and values agree with the test's bit-by-bit oracle) | ISO C 7.18.16: "the smallest integral power of 2 that is not less than value" |
+| `cassert/assert_variadic_ndebug` | G | C | glibc's `assert` takes one macro argument, so `assert(f<int, int>())` does not compile | [cassert.syn], [assertions.assert]: `#define assert(...)` |
+| `csetjmp/setjmp_longjmp` | G | C | `__STDC_VERSION_SETJMP_H__` is not defined (as `cfloat/macros`) | [csetjmp.syn] |
 
 ## 5. Compiler and ABI limits (same with libycxx's runtime)
 
@@ -253,6 +258,7 @@ Clang rejects code GCC accepts.
 | `except/handler_pointer_reference`, `except/handler_pointer_reference_exact` | G | C | the Itanium ABI records `catch (T*&)` like `catch (T*)` (STATUS: known limitations) |
 | `except/handler_array_decay`, `except/handler_function_pointer` | G |  | GCC records `catch (int(&)[3])` / `catch (int(&)())` as pointer handlers |
 | `except/handler_member_pointer` | G |  | libsupc++ ignores the member function's cv/ref-qualifiers that GCC records only in the type name (libycxx's runtime handles this) |
+| `except/handler_internal_linkage_types` (XFAIL) |  | C | Clang emits the type_info name of a class with internal linkage without the `*` prefix that makes the Itanium runtime compare by address, so same-named unnamed-namespace classes of two translation units match each other's handlers (libsupc++ and libycxx alike) |
 
 ## 6. Configuration modes outside the draft
 

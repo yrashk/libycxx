@@ -17,9 +17,12 @@
 //     the library, so only the error value and the condition are checked).
 // FLAGS: -fPIC
 // SHARED: ../support/linkage/shared_exceptions_lib.cpp
+#include <any>
 #include <exception>
+#include <locale>
 #include <new>
 #include <stdexcept>
+#include <sstream>
 #include <string>
 #include <system_error>
 #include "check.hpp"
@@ -138,5 +141,31 @@ int main() {
     CHECK(std::string(e.what()) == "ptr");
   }
   p = nullptr;
+
+  // Library objects crossing the boundary.
+  //   [locale.facet]/6, [locale.global.templates]: the facets of a locale made in the program
+  //   are found by use_facet in the library (one id per facet interface in the program);
+  //   [ostream]: the library writes to the program's stream; [syserr.errcat.objects]/1:
+  //   "All calls to this function shall return references to the same object", so an
+  //   error_code made in the library compares equal to the program's errc condition;
+  //   [any.nonmembers]/5: any_cast of the type the any holds succeeds on either side.
+  struct Comma : std::numpunct<char> {
+    char do_decimal_point() const override { return ','; }
+  };
+  std::locale comma(std::locale::classic(), new Comma);
+  CHECK(lib_format(comma, 2.5) == "2,5|,");
+  CHECK(lib_format(std::locale::classic(), 2.5) == "2.5|.");
+  std::ostringstream os;
+  lib_write(os, "written ");
+  CHECK(os.str() == "written 42");
+  std::error_code ec = lib_error_code();
+  CHECK(ec.category() == std::generic_category());
+  CHECK(ec == std::errc::permission_denied);
+  CHECK(ec.default_error_condition() == std::make_error_condition(std::errc::permission_denied));
+  CHECK(lib_any_int(std::any(17)) == 17);
+  CHECK(lib_any_int(std::any(17L)) == -1);
+  std::any a = lib_make_any();
+  CHECK(a.type() == typeid(std::string));
+  CHECK(std::any_cast<std::string>(&a) != nullptr && *std::any_cast<std::string>(&a) == "from the library");
   return 0;
 }

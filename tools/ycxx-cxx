@@ -15,8 +15,22 @@ esac
 extra=
 if [ "$(uname -s)" = Darwin ]; then
   # Apple's linker searches archives repeatedly by itself, and the C runtime comes from the SDK.
+  # Unwinding is libSystem's unwinder for both compilers (GCC's Darwin specs link -lemutls_w and
+  # libgcc with -static-libgcc, not an unwinder of their own), so there is one per process.
   group_begin= group_end= static_libgcc=
   [ $which = gcc ] && static_libgcc=-static-libgcc
+  # libycxx's <atomic> needs no libatomic (DECISIONS §3), and Apple's SDK has none: drop
+  # -latomic when the compiler cannot find one (Clang; Homebrew's GCC ships its own).
+  case " $* " in
+    *" -latomic "*)
+      if [ "$($cxx -print-file-name=libatomic.dylib)" = libatomic.dylib ] &&
+         [ "$($cxx -print-file-name=libatomic.a)" = libatomic.a ]; then
+        for a in "$@"; do
+          shift
+          [ "$a" = -latomic ] || set -- "$@" "$a"
+        done
+      fi ;;
+  esac
 else
   # -shared-libgcc: one unwinder per process (glibc's pthread_exit/pthread_cancel unwind
   # through libgcc_s.so; a static libgcc_eh copy in the program would make them abort).

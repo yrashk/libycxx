@@ -125,7 +125,7 @@ void format(out& o, const std::tm* t, char spec, char mod) {
     long long y;
     int w;
     iso_week(t, y, w);
-    o.number(y, 4);
+    o.number(y, 1); // as %Y
     return;
   }
   case 'H':

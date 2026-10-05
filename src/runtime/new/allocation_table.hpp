@@ -45,8 +45,11 @@ struct ycxx_allocation_functions_t {
   void (*delete_array_align_nothrow)(void*, std::size_t, std::size_t) noexcept;
 };
 
-// The process's table (allocation_table.cpp; the first image's, see above).
-extern "C" const ycxx_allocation_functions_t ycxx_allocation_functions;
+// The process's table (allocation_table.cpp; the first image's, see above). Declared with default
+// visibility like its definition: the runtime is compiled with -fvisibility=hidden, which would
+// make this declaration hidden, and an ELF linker gives a symbol the most restrictive visibility
+// of all its references, so the table would be bound inside each image and never exported.
+extern "C" [[gnu::visibility("default")]] const ycxx_allocation_functions_t ycxx_allocation_functions;
 
 namespace ycxx::detail {
 // This image's own table, the one its `ycxx_allocation_functions` definition holds; an entry of

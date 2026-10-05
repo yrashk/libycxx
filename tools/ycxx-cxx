@@ -1,8 +1,10 @@
 #!/bin/sh
 # Compile and link against libycxx.
-#   ycxx-cxx gcc|clang [compiler args...]
+#   ycxx-cxx gcc|clang [--std-modules[=DIR]] [compiler args...]
 # Links build/<compiler>/libycxx.a and libycxx's own ABI runtime (build/<compiler>/libycxx-abi.a);
 # stack unwinding comes from the toolchain's libgcc_s.
+# --std-modules[=DIR]: `import std;` and `import std.compat;` use the modules tools/ycxx-modules
+# built in DIR (default build/<compiler>/modules), and a link includes their objects.
 here=$(cd "$(dirname "$0")/.." && pwd)
 which=$1; shift
 # Compilers: $YCXX_GXX / $YCXX_CLANGXX (set by tools/toolchain/activate.*), else g++-16 / clang++-23.
@@ -12,6 +14,25 @@ case $which in
   clang) cxx=${YCXX_CLANGXX:-clang++-23} ;;
   *) echo "usage: ycxx-cxx gcc|clang args..." >&2; exit 2 ;;
 esac
+# --std-modules[=DIR]: the flags tools/ycxx-modules recorded, and its archive when linking.
+modules=
+for a in "$@"; do
+  shift
+  case $a in
+    --std-modules) modules=$here/build/$which/modules ;;
+    --std-modules=*) modules=${a#--std-modules=} ;;
+    *) set -- "$@" "$a" ;;
+  esac
+done
+modules_flags= modules_lib=
+if [ -n "$modules" ]; then
+  if [ ! -f "$modules/flags" ]; then
+    echo "ycxx-cxx: no modules built in $modules (run tools/ycxx-modules $which [-o DIR] [flags])" >&2
+    exit 1
+  fi
+  modules_flags=$(cat "$modules/flags")
+  modules_lib=$modules/libycxx-modules.a
+fi
 extra=
 # Hidden visibility (DECISIONS §2): GCC's -Wattributes warning about program classes with a member
 # or base of a library class type says nothing about the program (STATUS, known limitations).
@@ -53,10 +74,10 @@ fi
 libdir=${YCXX_LIBDIR:-$here/build/$which}
 abi="$libdir/libycxx-abi.a"
 link=1
-for a in "$@"; do case $a in -c|-S|-E|-fsyntax-only|-M|-MM) link=0 ;; esac; done
+for a in "$@"; do case $a in -c|-S|-E|-fsyntax-only|-M|-MM|--precompile) link=0 ;; esac; done
 if [ $link = 1 ]; then
-  exec $cxx $extra -std=c++26 -nostdinc++ -isystem "$here/include" "$@" \
-    -nostdlib++ $group_begin "$libdir/libycxx.a" "$abi" $group_end -lm $static_libgcc
+  exec $cxx $extra -std=c++26 -nostdinc++ -isystem "$here/include" $modules_flags "$@" \
+    -nostdlib++ $modules_lib $group_begin "$libdir/libycxx.a" "$abi" $group_end -lm $static_libgcc
 else
-  exec $cxx $extra -std=c++26 -nostdinc++ -isystem "$here/include" "$@"
+  exec $cxx $extra -std=c++26 -nostdinc++ -isystem "$here/include" $modules_flags "$@"
 fi

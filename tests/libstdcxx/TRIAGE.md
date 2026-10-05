@@ -532,5 +532,25 @@ Tests skipped (or UNSUPPORTED) as tied to the other library's internals, extensi
 | `25_algorithms/random_shuffle/.*` | random_shuffle was removed in C++17 (N4190) |
 | `26_numerics/headers/c(complex\|tgmath)/complex.cc` | <ccomplex> and <ctgmath> were removed in C++20 (P0619) |
 | `30_threads/promise/uses_allocator.cc` | uses_allocator<promise<R>, Alloc> is no longer in [futures.promise] (P2875) |
+| `21_strings/basic_string/debug/(append\|assign\|construct\|insert\|replace)_neg.cc` | a valid iterator range is a precondition, not a hardened one; _GLIBCXX_DEBUG checks it |
+| `23_containers/(deque\|forward_list)/debug/(iterator[0-9]+_neg\|erase_after[0-9]+_neg\|insert_after[0-9]+_neg\|splice_after[0-9]+_neg).cc` | iterator validity and range preconditions of the forward_list / deque members are not hardened preconditions; libstdc++'s safe iterators check them |
+| `23_containers/(deque\|vector\|vector/debug/bool)/(debug/)?shrink_to_fit.cc` | use of an iterator invalidated by shrink_to_fit is undefined; libstdc++'s safe iterators detect it |
+| `23_containers/mdspan/accessors/debug/aligned_(access\|offset)_neg.cc` | the alignment of the pointer / offset is a precondition of aligned_accessor, not a hardened one ([mdspan.accessor.aligned]) |
+| `23_containers/mdspan/layouts/debug/out_of_bounds_neg.cc` | an index inside the extents is a precondition of the layout mappings' operator(), not a hardened one (only mdspan::operator[] has a hardened precondition), and library undefined behaviour need not be diagnosed in constant evaluation |
+| `23_containers/unordered_[a-z]+/debug/(begin[12]\|cbegin\|cend\|end[12]\|bucket_size)_neg.cc` | n < bucket_count() is a precondition of the bucket interface, not a hardened one ([unord.req.general]) |
+| `23_containers/unordered_[a-z]+/debug/max_load_factor_neg.cc` | z > 0 is a precondition of max_load_factor(z), not a hardened one ([unord.req.general]) |
+| `23_containers/unordered_[a-z]+/debug/merge[0-9]_neg.cc` | uses an iterator invalidated by merge (undefined); libstdc++'s safe iterators detect it |
+| `23_containers/unordered_set/debug/89608_neg.cc` | uses an invalidated iterator (undefined); libstdc++'s safe iterators detect it |
+| `23_containers/vector/debug/57779_neg.cc` | insert(p, i, j) with i, j into the vector itself violates a precondition ([sequence.reqmts]), not a hardened one |
+| `23_containers/vector/debug/60587_neg.cc` | inserts a range from another vector at an iterator of the wrong vector (undefined); libstdc++'s safe iterators detect it |
+| `24_iterators/istreambuf_iterator/debug/[12]_neg.cc` | dereferencing or incrementing an end-of-stream istreambuf_iterator is undefined, not a hardened precondition |
+| `25_algorithms/advance/istreambuf_iterators/(char\|wchar_t)/[123]_neg.cc` | advancing an istreambuf_iterator past the end is undefined, not a hardened precondition |
+| `25_algorithms/(copy\|copy_backward\|copy_n\|equal\|fill_n)/debug/.*_neg.cc` | a valid range (or enough room in the output) is a precondition of the algorithm, not a hardened one |
+| `25_algorithms/copy/deque_iterators/(31\|32\|33\|41\|42\|43).cc` | copies an invalid range (first after last) of deque iterators: undefined, not a hardened precondition |
+| `25_algorithms/copy/streambuf_iterators/char/debug/deque_neg.cc` | copies into a deque without room (undefined); not a hardened precondition |
+| `25_algorithms/copy_n/istreambuf_iterator/[12]_neg.cc` | copy_n past the end of the stream: undefined, not a hardened precondition |
+| `25_algorithms/(lower_bound\|upper_bound)/debug/.*` | a range partitioned with respect to the value (and a strict weak ordering) is a precondition of lower_bound / upper_bound, not a hardened one |
+| `25_algorithms/partial_sort_copy/debug/irreflexive_neg.cc` | a strict weak ordering is a precondition ([alg.sorting]), not a hardened one |
+| `25_algorithms/pop_heap/empty2?_neg.cc` | a non-empty heap is a precondition of pop_heap, not a hardened one ([pop.heap]/2) |
 
 <!-- counterparts:end -->

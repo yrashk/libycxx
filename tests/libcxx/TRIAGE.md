@@ -503,5 +503,13 @@ Tests skipped (or UNSUPPORTED) as tied to the other library's internals, extensi
 | `depr/depr.lib.binders/.*` | bind1st, bind2nd, binder1st and binder2nd were removed in C++17 (N4190) |
 | `utilities/memory/util.smartptr/util.smartptr.shared/util.smartptr.shared.obs/unique.deprecated_in_cxx17.verify.cpp` | shared_ptr::unique() was removed in C++20 (P0521) |
 | `utilities/tuple/tuple.tuple/tuple.cnstr/default.lazy.verify.cpp` | whether a nested class's default member initializer makes it default-constructible inside the incomplete enclosing class is a core-language question (CWG 1397, 2335): GCC and Clang reject it with libstdc++ as well |
+| `algorithms/alg.sorting/alg.clamp/assert.ranges_clamp.pass.cpp` | the ordering of lo and hi is a precondition of ranges::clamp, not a hardened one ([alg.clamp]/2): violating it is undefined |
+| `algorithms/alg.sorting/alg.heap.operations/pop.heap/assert.(ranges_)?pop_heap.pass.cpp` | a non-empty heap is a precondition of pop_heap, not a hardened one ([pop.heap]/2) |
+| `input.output/file.streams/fstreams/[a-z]+.members/native_handle.assert.pass.cpp` | is_open() is a precondition of native_handle(), not a hardened one ([filebuf.members]) |
+| `input.output/stream.buffers/streambuf/streambuf.protected/streambuf.(get\|put).area/set[gp].assert.pass.cpp` | valid ranges are preconditions of setg / setp, not hardened ones ([streambuf.get.area], [streambuf.put.area]) |
+| `numerics/numeric.ops/numeric.ops.sat/saturating_div.assert.pass.cpp` | y != 0 is a precondition of saturating_div, not a hardened one ([numeric.sat.div]) |
+| `ranges/range.factories/range.iota.view/assert.ctor.value.bound.pass.cpp` | bound reachable from value is a precondition of iota_view's constructor, not a hardened one ([range.iota.view]) |
+| `utilities/smartptr/unique.ptr/unique.ptr.class/unique.ptr.observers/assert.subscript.pass.cpp` | the index bound is a precondition of unique_ptr<T[]>::operator[], not a hardened one ([unique.ptr.runtime.observers]) |
+| `utilities/utility/utility.unreachable/assert.unreachable.pass.cpp` | calling unreachable() is undefined ([utility.undefined]/1), not a hardened precondition |
 
 <!-- counterparts:end -->

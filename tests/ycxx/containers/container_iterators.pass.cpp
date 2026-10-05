@@ -8,6 +8,7 @@
 // [forward.iterators]/2: value-initialized iterators of the same type compare equal;
 // /3-4: two dereferenceable iterators are equal iff they refer to the same object, and the
 // multi-pass guarantee holds.
+// COUNTERPART: libstdcxx:23_containers/(map/debug/112477|set/debug/114316|unordered_set/debug/114316|vector/debug/114316|vector/debug/n3644|vector/debug/52433).cc
 #include <vector>
 #include <string>
 #include <compare>

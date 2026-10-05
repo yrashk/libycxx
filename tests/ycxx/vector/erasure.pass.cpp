@@ -1,6 +1,7 @@
 // [vector.erasure]: erase(c, value) and erase_if(c, pred) remove the matching elements
 // (stable for the rest) and return the number removed; U defaults to T so a
 // braced-init-list can be passed as the value.
+// COUNTERPART: libstdcxx:23_containers/vector/debug/erase.cc
 #include <vector>
 #include <type_traits>
 #include <utility>

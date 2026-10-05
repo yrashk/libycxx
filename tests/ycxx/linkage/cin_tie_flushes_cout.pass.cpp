@@ -23,6 +23,7 @@
 #include <sys/wait.h>
 #include <unistd.h>
 #include "check.hpp"
+#include "child_process.hpp"  // self_exe()
 
 static int child_main(bool unsync) {
   if (unsync) std::ios_base::sync_with_stdio(false);
@@ -51,6 +52,7 @@ static bool read_until(int fd, std::string& out, const std::string& want) {
 }
 
 static void run(const char* mode) {
+  std::string self = self_exe();
   int in[2], out[2];
   CHECK(pipe(in) == 0 && pipe(out) == 0);
   pid_t pid = fork();
@@ -59,12 +61,11 @@ static void run(const char* mode) {
     dup2(in[0], 0);
     dup2(out[1], 1);
     close(in[0]); close(in[1]); close(out[0]); close(out[1]);
-    char self[] = "/proc/self/exe";
     char m[32];
     strncpy(m, mode, sizeof m - 1);
     m[sizeof m - 1] = 0;
-    char* argv[] = {self, m, nullptr};
-    execv(self, argv);
+    char* argv[] = {self.data(), m, nullptr};
+    execv(self.c_str(), argv);
     _exit(127);
   }
   close(in[0]);

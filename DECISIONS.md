@@ -403,6 +403,23 @@ under the same name. Otherwise it gets one alias template in `config.hpp`.
   runtime's own), never destroyed; that object's destructor flushes them. Their buffers work on
   the C streams through C stdio (unbuffered while synchronized), so `sync_with_stdio(true)` needs
   no extra coordination.
+- **Without initialization priorities (Mach-O)** the stream objects are constructed by an
+  `ios_base::Init` object that `<iostream>` defines in every translation unit including it,
+  exactly the model of [iostream.objects.overview]/5. Mach-O has a single list of initializers
+  (`__mod_init_func`) in link order, which puts libycxx's archive members after the program's
+  objects: GCC rejects `init_priority` there, and Clang honours it only within one object file.
+  The per-TU object is initialized before every static object defined after the `#include` in its
+  TU and destroyed after them, so any static constructor or destructor that can name `std::cout`
+  finds it constructed, and the last `Init` destroyed flushes. `cfg::init_priority`
+  (`YCXX_HAS_INIT_PRIORITY`, from `__ELF__`) selects the mechanism: on ELF the header's object is
+  an empty one with no initializer, so ELF programs pay nothing. The runtime's own `Init` object
+  and the classic locale's eager construction stay, as ordinary initializers, on Mach-O (built
+  before main; the classic locale is also built on first use, so a program static initializer
+  that runs earlier still finds it). Rejected: a constructor-attribute function in an object linked
+  first (every link line, CMake's included, would have to name it), and constructing the objects
+  lazily behind an accessor (`std::cout` must be an object, not a call). Verified on Linux by
+  building with `-U__ELF__`: the static-initialization tests (`linkage/*`, `iostreams/*`, `ios/*`)
+  pass, and fail without the per-TU object.
 - **filebuf** works on a C stdio `FILE` with stdio buffering off (the filebuf buffers); the
   open-mode table maps to `fopen` modes including `"x"` for `noreplace`; `native_handle_type` is
   the POSIX file descriptor. `<fstream>` also includes `<cstdio>`.

@@ -11,6 +11,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <new>
+#include <ycxx/core/single_threaded.hpp>
 #include <ycxx/hosted/memory_resource.hpp> // ycxx::detail::pal_lock
 
 namespace ycxx::detail {
@@ -23,9 +24,9 @@ struct locale_impl {
 };
 
 struct locale_access {
-  static void retain(const std::locale::facet* f) noexcept { __atomic_add_fetch(&f->refs_, 1, __ATOMIC_RELAXED); }
+  static void retain(const std::locale::facet* f) noexcept { ::ycxx::detail::ref_add(f->refs_); }
   static void release(const std::locale::facet* f) noexcept {
-    if (__atomic_sub_fetch(&f->refs_, 1, __ATOMIC_ACQ_REL) == 0)
+    if (::ycxx::detail::ref_release(f->refs_))
       delete f;
   }
   static std::size_t index(const std::locale::id& i) noexcept { return i.index(); }
@@ -80,9 +81,9 @@ locale_impl* new_impl(std::size_t nfacets, const char* name) {
   return p;
 }
 
-void retain(locale_impl* p) noexcept { __atomic_add_fetch(&p->refs, 1, __ATOMIC_RELAXED); }
+void retain(locale_impl* p) noexcept { ::ycxx::detail::ref_add(p->refs); }
 void release(locale_impl* p) noexcept {
-  if (__atomic_sub_fetch(&p->refs, 1, __ATOMIC_ACQ_REL) != 0)
+  if (!::ycxx::detail::ref_release(p->refs))
     return;
   for (std::size_t i = 0; i < p->nfacets; ++i)
     if (p->facets[i] != nullptr)

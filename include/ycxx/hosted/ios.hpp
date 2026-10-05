@@ -260,6 +260,8 @@ struct ios_access {
   // Sets badbit without throwing failure (the exception rule of the I/O functions).
   static void set_badbit_quietly(std::ios_base& s) noexcept { s.state_ |= std::ios_base::badbit; }
   static void set_failbit_quietly(std::ios_base& s) noexcept { s.state_ |= std::ios_base::failbit; }
+  // The stream's locale itself (getloc() returns a copy, which costs two reference-count updates).
+  static const std::locale& locale_of(const std::ios_base& s) noexcept { return s.loc_; }
 };
 
 // Throws ios_base::failure(what) (hosted runtime); without exceptions, the error handler.

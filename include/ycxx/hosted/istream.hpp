@@ -132,7 +132,7 @@ public:
     if (!noskipws && (is.flags() & ios_base::skipws)) {
       ios_base::iostate err = ios_base::goodbit;
       ycxx::detail::guarded_io(is, [&] {
-        const ctype<charT>& ct = use_facet<ctype<charT>>(is.getloc());
+        const ctype<charT>& ct = use_facet<ctype<charT>>(ycxx::detail::ios_access::locale_of(is));
         basic_streambuf<charT, traits>* sb = is.rdbuf();
         for (int_type c = sb->sgetc();; c = sb->snextc()) {
           if (traits::eq_int_type(c, traits::eof())) {
@@ -161,7 +161,7 @@ basic_istream<charT, traits>& basic_istream<charT, traits>::get_number(V& v) {
   if (sentry ok{*this}) {
     ycxx::detail::guarded_io(*this, [&] {
       using It = istreambuf_iterator<charT, traits>;
-      use_facet<num_get<charT, It>>(this->getloc()).get(It(*this), It(), *this, err, v);
+      use_facet<num_get<charT, It>>(ycxx::detail::ios_access::locale_of(*this)).get(It(*this), It(), *this, err, v);
     });
   }
   if (err)
@@ -178,7 +178,7 @@ basic_istream<charT, traits>& basic_istream<charT, traits>::get_narrowed(V& v) {
     ycxx::detail::guarded_io(*this, [&] {
       using It = istreambuf_iterator<charT, traits>;
       long lval = 0;
-      use_facet<num_get<charT, It>>(this->getloc()).get(It(*this), It(), *this, err, lval);
+      use_facet<num_get<charT, It>>(ycxx::detail::ios_access::locale_of(*this)).get(It(*this), It(), *this, err, lval);
       if (lval < numeric_limits<V>::min()) {
         err |= ios_base::failbit;
         v = numeric_limits<V>::min();
@@ -207,7 +207,7 @@ basic_istream<charT, traits>& basic_istream<charT, traits>::operator>>(F& val) {
     ycxx::detail::guarded_io(*this, [&] {
       using It = istreambuf_iterator<charT, traits>;
       FP fval = 0;
-      use_facet<num_get<charT, It>>(this->getloc()).get(It(*this), It(), *this, err, fval);
+      use_facet<num_get<charT, It>>(ycxx::detail::ios_access::locale_of(*this)).get(It(*this), It(), *this, err, fval);
       if (fval < -static_cast<FP>(numeric_limits<F>::max())) {
         err |= ios_base::failbit;
         val = -numeric_limits<F>::max();
@@ -566,7 +566,7 @@ basic_istream<charT, traits>& operator>>(basic_istream<charT, traits>& in, charT
     ycxx::detail::guarded_io(in, [&] {
       const streamsize w = in.width();
       const size_t n = w > 0 && static_cast<size_t>(w) < N ? static_cast<size_t>(w) : N;
-      const ctype<charT>& ct = use_facet<ctype<charT>>(in.getloc());
+      const ctype<charT>& ct = use_facet<ctype<charT>>(ycxx::detail::ios_access::locale_of(in));
       basic_streambuf<charT, traits>* sb = in.rdbuf();
       for (typename traits::int_type c = sb->sgetc(); count + 1 < n; c = sb->snextc()) {
         if (traits::eq_int_type(c, traits::eof())) {
@@ -631,7 +631,7 @@ basic_istream<charT, traits>& ws(basic_istream<charT, traits>& is) {
   ios_base::iostate err = ios_base::goodbit;
   if (typename basic_istream<charT, traits>::sentry ok{is, true}) {
     ycxx::detail::guarded_io(is, [&] {
-      const ctype<charT>& ct = use_facet<ctype<charT>>(is.getloc());
+      const ctype<charT>& ct = use_facet<ctype<charT>>(ycxx::detail::ios_access::locale_of(is));
       basic_streambuf<charT, traits>* sb = is.rdbuf();
       for (typename traits::int_type c = sb->sgetc();; c = sb->snextc()) {
         if (traits::eq_int_type(c, traits::eof())) {
@@ -693,7 +693,7 @@ basic_istream<charT, traits>& operator>>(basic_istream<charT, traits>& is, basic
       const streamsize w = is.width();
       using size_type = typename basic_string<charT, traits, Allocator>::size_type;
       const size_type n = w > 0 ? static_cast<size_type>(w) : str.max_size();
-      const ctype<charT>& ct = use_facet<ctype<charT>>(is.getloc());
+      const ctype<charT>& ct = use_facet<ctype<charT>>(ycxx::detail::ios_access::locale_of(is));
       basic_streambuf<charT, traits>* sb = is.rdbuf();
       size_type count = 0;
       for (typename traits::int_type c = sb->sgetc(); count < n; c = sb->snextc()) {

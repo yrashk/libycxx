@@ -677,3 +677,50 @@ under the same name. Otherwise it gets one alias template in `config.hpp`.
   must agree (a weekday with a date, `%H` with `%I`/`%p`); a date comes from y/m/d, y + `%j`, an ISO
   week date or y + `%U`/`%W` + weekday. A duration parsed with a finer field than it can hold is
   truncated (`duration_cast`). For `utc_time`, a seconds field of 60 names the leap second.
+
+## 15. Performance
+
+- **Benchmarks are manual** (`bench/`, `bench/run`; never in CI). Each program uses only the
+  standard library and is built twice per compiler at `-O2`, against libycxx's Release archives
+  (`build/<cc>-release`) and against libstdc++ (`tools/ref-cxx`); the table shows the ratio
+  libycxx / libstdc++. Results and the machine are recorded in `bench/RESULTS.md`. Wall-clock
+  numbers on a shared machine are noisy: changes are judged with `valgrind --tool=callgrind`
+  instruction counts as well.
+- **Single-threaded fast paths.** The PAL exports `ycxx_pal_single_threaded`, a pointer to a flag
+  that is nonzero only while the process certainly has one thread (POSIX/glibc:
+  `__libc_single_threaded`; freestanding default and other C libraries: a constant zero, i.e.
+  "unknown"). While it is set, reference counts of process-private objects (`shared_ptr`/`weak_ptr`
+  control blocks, `locale` implementations and facets) and uncontended locks (`futex_mutex`, the
+  runtime's `pal_lock`) use plain loads and stores instead of atomic read-modify-write
+  instructions (`ycxx/core/single_threaded.hpp`: `single_threaded()`, `ref_add`, `ref_release`).
+  This is sound because the flag is cleared before a second thread starts and thread creation
+  synchronizes with the new thread; a thread created behind the C library's back (a raw `clone`)
+  would break it, as it breaks the C library itself. Otherwise counts are incremented relaxed
+  and decremented with release, the decrement that reaches zero adding an acquire fence; a
+  `shared_ptr`'s last owner drops the weak count without an RMW when it reads 1 (nobody can make
+  a new reference then).
+- **C++26 erroneous values and stack buffers.** In C++26 mode GCC 16 zero-fills every automatic
+  variable without an initializer. Buffers the library always writes before reading are marked
+  `[[indeterminate]]` in headers (format buffers, number formatting, num_get/num_put fields;
+  Clang 23 ignores the attribute, without a warning in system headers), and the compiled runtime's
+  charconv and ABI sources are built by GCC with `-ftrivial-auto-var-init=uninitialized`
+  (multi-kilobyte bignum buffers; the visited-base tables of the hierarchy walks), since `src/`
+  is not a system include and Clang would warn about the attribute there.
+- **ABI runtime.** `__cxa_throw` has no helper frame of its own between the throw and
+  `_Unwind_RaiseException` (every frame is unwound twice). `__dynamic_cast` decides a
+  single-inheritance chain without a walk and otherwise walks the hierarchy once, gathering the
+  downcast and cross-cast answers together and stopping early when the class has no repeated
+  base (`__vmi_class_type_info::__flags` clear). Hierarchy walks (handler matching,
+  `dynamic_cast`) remember the virtual bases already walked (with the path's publicness, or the
+  walk's whole state), so stacked diamonds cost one walk per virtual base instead of one per
+  path. Type comparisons inline the first eight characters of the name comparison.
+- **Containers and algorithms** keep bulk element moves of trivially copyable types to
+  `memmove` (vector single-element insert and erase too), `find` on narrow character ranges is
+  `memchr`, `find_if` tests four elements per loop check on random-access ranges, and `pop_heap`
+  uses Floyd's sift (hole to a leaf, then up) with a branch-free child choice. `deque`'s iterators
+  compare element addresses only (the only null `cur_` is the past-the-end position after a full
+  last block).
+- **Streams in the classic locale.** num_get/num_put recognise the classic `ctype<char>` and
+  `numpunct<char>` facets by address and then skip the virtual calls (atoms are the characters
+  themselves, '.' and no grouping); fields are accumulated in place. The stream's locale is used
+  in place (`ios_access::locale_of`) rather than through a `getloc()` copy.

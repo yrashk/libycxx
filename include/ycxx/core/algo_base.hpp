@@ -253,6 +253,39 @@ constexpr void bulk_move(const I& in_first, const I& in_last, const O& out_first
                     static_cast<std::size_t>(src_end - src) * sizeof(std::iter_value_t<O>));
 }
 
+// ---- byte search ------------------------------------------------------------------------------
+// find over a contiguous range of narrow character elements for an integral value is memchr
+// (outside constant evaluation). With e the value converted to the element type E: an element x
+// equals the value exactly when x == e and e itself equals the value (both comparisons as the
+// language performs them, after promotion). x and the value agree modulo 2^CHAR_BIT whenever
+// they compare equal, so x == e then; and promotion of E to the common type is injective. So
+// memchr for e when e == value, and no element can match otherwise.
+template <class E>
+concept narrow_char_elem = std::same_as<E, char> || std::same_as<E, signed char> || std::same_as<E, unsigned char> ||
+                           std::same_as<E, char8_t>;
+template <class I, class S, class T>
+concept memchr_find_args =
+    std::contiguous_iterator<I> && std::sized_sentinel_for<S, I> &&
+    narrow_char_elem<std::remove_cvref_t<std::iter_reference_t<I>>> &&
+    std::is_lvalue_reference_v<std::iter_reference_t<I>> && std::is_integral_v<T> && !std::is_same_v<T, bool>;
+
+// Advances first to the first element equal to value, or to last.
+template <class I, class S, class T>
+constexpr void find_byte(I& first, const S& last, const T& value) noexcept {
+  using E = std::remove_cvref_t<std::iter_reference_t<I>>;
+  const auto n = last - first;
+  if (n <= 0)
+    return;
+  const E e = static_cast<E>(value);
+  if (!(e == value)) {
+    first += n;
+    return;
+  }
+  const E* p = ::ycxx::detail::raw_address(first);
+  const void* r = __builtin_memchr(static_cast<const void*>(p), static_cast<unsigned char>(e), static_cast<std::size_t>(n));
+  first += r ? static_cast<const E*>(r) - p : n;
+}
+
 // ---- min / max -------------------------------------------------------------------------------
 template <class I, class S, class C>
 constexpr I min_element_impl(I first, S last, C less) {
@@ -397,6 +430,24 @@ constexpr O move_backward_dispatch(I first, I last, O result) {
 // ---- find / mismatch / equal / lexicographical compare --------------------------------------
 template <class I, class S, class P>
 constexpr I find_if_impl(I first, S last, P pred) {
+  if constexpr (std::random_access_iterator<I> && std::sized_sentinel_for<S, I>) {
+    // Four tests per loop-count check (the counted loop also lets the compiler drop the
+    // iterator comparisons).
+    for (auto n = last - first; n >= 4; n -= 4) {
+      if (pred(*first))
+        return first;
+      ++first;
+      if (pred(*first))
+        return first;
+      ++first;
+      if (pred(*first))
+        return first;
+      ++first;
+      if (pred(*first))
+        return first;
+      ++first;
+    }
+  }
   for (; first != last; ++first)
     if (pred(*first))
       break;
@@ -653,10 +704,16 @@ constexpr OutputIterator fill_n(OutputIterator first, Size n, const T& value) {
 // [alg.find]
 template <class InputIterator, class T = typename iterator_traits<InputIterator>::value_type>
 [[nodiscard]] constexpr InputIterator find(InputIterator first, InputIterator last, const T& value) {
-  if constexpr (ycxx::detail::bit_algo_args<InputIterator, InputIterator, T>)
+  if constexpr (ycxx::detail::bit_algo_args<InputIterator, InputIterator, T>) {
     return ycxx::detail::bit_algos<InputIterator>::find(first, last, value);
-  else
+  } else {
+    if constexpr (ycxx::detail::memchr_find_args<InputIterator, InputIterator, T>)
+      if !consteval {
+        ::ycxx::detail::find_byte(first, last, value);
+        return first;
+      }
     return ::ycxx::detail::find_if_impl(first, last, ::ycxx::detail::equals_value_plain<T>{value});
+  }
 }
 template <class InputIterator, class Predicate>
 [[nodiscard]] constexpr InputIterator find_if(InputIterator first, InputIterator last, Predicate pred) {
@@ -1118,10 +1175,16 @@ struct find_fn {
             class T = std::projected_value_t<I, Proj>>
     requires std::indirect_binary_predicate<std::ranges::equal_to, std::projected<I, Proj>, const T*>
   [[nodiscard]] constexpr I operator()(I first, S last, const T& value, Proj proj = {}) const {
-    if constexpr (ycxx::detail::bit_algo_args<I, S, T, Proj>)
+    if constexpr (ycxx::detail::bit_algo_args<I, S, T, Proj>) {
       return ycxx::detail::bit_algos<I>::find(first, last, value);
-    else
+    } else {
+      if constexpr (std::same_as<Proj, std::identity> && ycxx::detail::memchr_find_args<I, S, T>)
+        if !consteval {
+          ::ycxx::detail::find_byte(first, last, value);
+          return first;
+        }
       return ::ycxx::detail::find_if_impl(std::move(first), last, ::ycxx::detail::equals_value<T, Proj>{value, proj});
+    }
   }
   template <std::ranges::input_range R, class Proj = std::identity,
             class T = std::projected_value_t<iterator_t<R>, Proj>>

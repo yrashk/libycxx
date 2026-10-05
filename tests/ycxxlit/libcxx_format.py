@@ -9,6 +9,16 @@ COND_FLAGS = re.compile(r'//\s*ADDITIONAL_COMPILE_FLAGS(?:\(([^)]*)\))?:(.*)')
 FILE_DEPS = re.compile(r'//\s*FILE_DEPENDENCIES:(.*)')
 
 
+def run_environment():
+    """The environment a test program runs in: this process's, without the locale variables.
+    libc++'s own lit passes a test only a fixed set of variables (LANG, LANGUAGE and LC_* are not
+    among them), so its tests expect the POSIX locale for "" (e.g. text_encoding::environment() is
+    ASCII). Here the caller's settings would leak through, and so would LC_CTYPE=C.UTF-8, which
+    CPython's locale coercion (PEP 538) adds to lit's own environment when it starts in the C
+    locale."""
+    return {k: v for k, v in os.environ.items() if k not in ('LANG', 'LANGUAGE') and not k.startswith('LC_')}
+
+
 class LibcxxFormat(lit.formats.FileBasedTest):
     def __init__(self, wrapper, compiler, base_flags, features, skip_file):
         self.wrapper, self.compiler, self.base_flags, self.features = wrapper, compiler, base_flags, set(features)
@@ -108,7 +118,7 @@ class LibcxxFormat(lit.formats.FileBasedTest):
             rc, out = self.compile([path, '-o', exe] + flags, tmp)
             if rc != 0:
                 return lit.Test.Result(lit.Test.FAIL, 'COMPILE FAILED\n' + out)
-            rc, ran = transcript.run('run', [exe], tmp, 120)
+            rc, ran = transcript.run('run', [exe], tmp, 120, env=run_environment())
             return lit.Test.Result(lit.Test.PASS if rc == 0 else lit.Test.FAIL, out + ran)
         return lit.Test.Result(lit.Test.UNSUPPORTED, 'unknown test kind')
 

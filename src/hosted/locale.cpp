@@ -31,7 +31,7 @@ struct locale_access {
   }
   static std::size_t index(const std::locale::id& i) noexcept { return i.index(); }
   static locale_impl* impl(const std::locale& l) noexcept { return l.impl_; }
-  static std::locale make(locale_impl* p) noexcept { return std::locale(p); }
+  static std::locale make(locale_impl* p) noexcept { return std::locale(locale_impl_tag(), p); }
 };
 
 } // namespace ycxx::detail

@@ -470,5 +470,22 @@ Tests skipped (or UNSUPPORTED) as tied to the other library's internals, extensi
 | `containers/sequences/vector/vector.modifiers/resize_not_move_insertable.verify.cpp` | a Cpp17MoveInsertable precondition violation is undefined behaviour ([res.on.required]); the test checks libc++'s static_assert text |
 | `numerics/rand/rand.dist/rand.dist.uni/rand.dist.uni.int/int128.pass.cpp` | __int128 is not in the IntType / UIntType sets of [rand.req.genl]/1.5-1.6 (an implementation may add extended types) |
 | `ranges/range.adaptors/range.lazy.split/range.lazy.split.outer.value/ctor.default.pass.cpp` | [range.lazy.split.outer.value] declares no default constructor (only the exposition-only one from outer-iterator) |
+| `localization/locale.stdcvt/.*` | <codecvt> (codecvt_utf8, codecvt_utf16, codecvt_utf8_utf16, codecvt_mode) was removed in C++26 (P2871) |
+| `localization/locales/locale.convenience/.*` | wstring_convert and wbuffer_convert were removed in C++26 (P2872) |
+| `depr/depr.str.strstreams/.*` | <strstream> was removed in C++26 (P2867) |
+| `utilities/memory/util.smartptr/(util.smartptr.shared.atomic/.*\|util.smartptr.shared/util.smartptr.shared.obs/unique.pass.cpp)` | the atomic_* free functions for shared_ptr were removed in C++26 (P2869), shared_ptr::unique() in C++20 (P0521) |
+| `utilities/meta/meta.trans/meta.trans.other/result_of.*` | result_of was removed in C++20 (P0619) |
+| `utilities/meta/meta.unary/meta.unary.prop/is_literal_type.*` | is_literal_type was removed in C++20 (P0619) |
+| `utilities/memory/storage.iterator/.*` | raw_storage_iterator was removed in C++20 (P0619) |
+| `utilities/memory/temporary.buffer/.*` | get_temporary_buffer / return_temporary_buffer were removed in C++20 (P0619) |
+| `utilities/function.objects/negators/.*` | not1, not2, unary_negate and binary_negate were removed in C++20 (P0619) |
+| `language.support/support.runtime/cstd(align\|bool).*` | <cstdalign> and <cstdbool> were removed in C++20 (P0619) |
+| `depr/depr.c.headers/ciso646.compile.pass.cpp` | <ciso646> was removed in C++20 (P0619) |
+| `numerics/c.math/ctgmath.pass.cpp` | <ctgmath> was removed in C++20 (P0619) |
+| `numerics/complex.number/ccmplx/.*` | <ccomplex> was removed in C++20 (P0619) |
+| `language.support/support.exception/uncaught/.*` | uncaught_exception() was removed in C++20 (P0619) |
+| `language.support/support.initlist/support.initlist.range/.*` | the free begin / end for initializer_list were removed from [initializer.list.syn] (P3016; the <iterator> ones apply) |
+| `strings/basic.string/string.capacity/reserve.pass.cpp` | basic_string::reserve() without an argument was removed in C++26 (P2870) |
+| `thread/futures/futures.promise/uses_allocator.pass.cpp` | uses_allocator<promise<R>, Alloc> is no longer in [futures.promise] (P2875) |
 
 <!-- counterparts:end -->

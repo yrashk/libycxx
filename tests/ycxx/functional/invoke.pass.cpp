@@ -2,6 +2,7 @@
 // "Returns: INVOKE(std::forward<F>(f), std::forward<Args>(args)...)". noexcept(
 // is_nothrow_invocable_v<F, Args...>), constexpr. [func.require]/1: INVOKE for pointers to
 // member functions/data with an object, a reference_wrapper or a pointer.
+// COUNTERPART: libcxx:utilities/function.objects/func.invoke/invoke(_constexpr)?.pass.cpp
 #include <functional>
 #include <type_traits>
 #include <utility>

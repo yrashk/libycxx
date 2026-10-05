@@ -72,7 +72,8 @@ freestanding programs, as `ycxx::freestanding` (libycxx's headers and `-ffreesta
 instead of `ycxx::ycxx`): the default allocation functions of a heap-less program (replace them
 to have a heap), `std::nothrow`, floating-point `<charconv>`, the `<atomic>` lock and wait tables,
 `<debugging>` and the default contract-violation handler. It is built for the compiler's target
-with `-ffreestanding -nostdinc -fno-exceptions -fno-rtti`; the program provides `memcpy`,
+with `-ffreestanding -nostdinc -fno-exceptions -fno-rtti` (and the compiler's own header
+directory, for `<stddef.h>`); the program provides `memcpy`,
 `memmove`, `memset`, `memcmp` and its entry point (`tests/freestanding/rt.c` is an example).
 `tools/check_freestanding.sh` builds the same archive for bare-metal targets.
 

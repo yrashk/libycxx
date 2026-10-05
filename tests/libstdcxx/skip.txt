@@ -37,8 +37,6 @@ std/ranges/repeat/1\.cc | extension | uses libstdc++'s internal views::__detail 
 std/ranges/indices/1\.cc | implementation-specific | expects views::indices to reject IOTA-DIFF-T(long long); libycxx uses __int128 there, which is integer-like and indices accepts
 std/simd/ | extension | every test uses libstdc++-internal names: std::simd::_UInt, __vec_builtin, __simd_vec_type (test_setup.h), _Abi_t/_AbiVariant, __deduced_vec_t; they also need the x86 effective target
 29_atomics/atomic/lwg3220\.cc | removed | std::atomic_store for shared_ptr; the atomic_* free functions for shared_ptr were removed in C++26 (P2869)
-29_atomics/atomic_integral/wait_notify\.cc | extension | names ::int8_t etc. after including only <atomic>
-30_threads/recursive_timed_mutex/try_lock_for/2\.cc | extension | names ::int64_t after including only <mutex>/<chrono>
 30_threads/barrier/(1|2)\.cc | divergence | requires __cpp_lib_barrier == 201907L; the current draft [version.syn] has 202302L
 30_threads/jthread/100612\.cc | extension | expects jthread(&X::f, &x) to pass the stop_token after the object; [thread.jthread.cons]/5 mandates invoke(f, get_stop_token(), args...) or invoke(f, args...)
 30_threads/promise/uses_allocator\.cc | removed | uses_allocator<promise<R>, Alloc> is not in the current draft ([futures.promise])

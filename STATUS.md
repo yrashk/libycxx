@@ -921,7 +921,10 @@ compilers; `visit_format_arg.pass.cpp` needs `EOF` from `constexpr_char_traits.h
   between addresses, so notify wakes every waiter of the slot; no `native_handle` for mutexes and
   condition variables; `notify_all_at_thread_exit` and the `*_at_thread_exit` results never run
   for the thread that ends the process; RCU has one domain, and `rcu_barrier` called from inside
-  a scheduled evaluation returns without waiting (waiting would deadlock); retired hazard-pointer
+  a scheduled evaluation returns without waiting (waiting would deadlock); `rcu_barrier` inside
+  a region does not wait for objects retired after the region began (they cannot be reclaimed
+  before it ends) and runs the deleters it evaluates inside that region (such a deleter must not
+  call `rcu_synchronize`); retired hazard-pointer
   and RCU objects still pending at exit are not reclaimed. `atomic<T>` for a non-default-
   constructible T has a constrained (not mandated) default constructor. The deprecated atomics
   features are provided, declared [[deprecated]] (Annex D).

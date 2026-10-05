@@ -27,6 +27,9 @@
 //      unlink that happened before the retire (if it did not, it would be coherence-ordered
 //      before the unlink, which happens before F_s, and [atomics.order]/4.2.4 would put F_r
 //      before F_s). So R cannot reach the retired object: it began, in effect, after the retire.
+//      (The draft's wording asks for an order between R's end and the evaluation here too; no
+//      program that unlinks an object before retiring it can tell the difference, which is
+//      the argument every RCU implementation makes.)
 // rcu_synchronize is the same with e = its own fetch_add, which bounds every region that began
 // before it; a region that begins afterwards reads a larger G, so a stream of new regions cannot
 // starve it.

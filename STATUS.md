@@ -627,8 +627,8 @@ compilers; `visit_format_arg.pass.cpp` needs `EOF` from `constexpr_char_traits.h
   empty key for the classic locale's collate facet, making every `[[=x=]]` invalid.
 - Iostreams/locale: named locales other than "C", "POSIX", "C.UTF-8" and "" throw
   `runtime_error` (the environment's conventions are not supported; the external suites report the
-  tests that need one UNSUPPORTED, `tests/ycxxlit/locales.py`: 139 libc++ and 205 libstdc++ tests per compiler); `codecvt<wchar_t, char>`
-  is UTF-8 in the classic locale, so `encoding()` is 0 and wide file streams cannot seek by an
+  tests that need one UNSUPPORTED, `tests/ycxxlit/locales.py`: 139 libc++ and 205 libstdc++ tests
+  per compiler); `codecvt<wchar_t, char>` is UTF-8 in the classic locale, so `encoding()` is 0 and wide file streams cannot seek by an
   offset other than 0 (libc++ filebuf move/swap/seekoff wide cases and wchar_t encoding/max_length
   tests expect a single-byte C locale); long double hexfloat output is normalized (`0x1.…p+N`,
   not glibc's `0x9.…p+N`); `time_get` stops a number at the digit that leaves its range ("24" for

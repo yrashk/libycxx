@@ -6,6 +6,7 @@
 // the fences, all in the global namespace.
 // FLAGS: -latomic
 // (-latomic: the toolchain's out-of-line atomics for types that are not lock-free; Clang does not link it implicitly)
+// COUNTERPART: libcxx:atomics/stdatomic.h.syn/types.compile.pass.cpp
 #include <stdatomic.h>
 #include <atomic>
 #include <cstdint>

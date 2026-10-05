@@ -3,6 +3,7 @@
 // deleted; "The atomic integral specializations are standard-layout structs. They each have a
 // trivial destructor." (likewise atomic<bool>, the floating-point specializations); every
 // operation in the synopses is noexcept; [atomics.syn]: memory_order and the type aliases.
+// COUNTERPART: libcxx:atomics/atomics.types.generic/integral(_typedefs)?.pass.cpp
 #include <atomic>
 #include <cstddef>
 #include <cstdint>

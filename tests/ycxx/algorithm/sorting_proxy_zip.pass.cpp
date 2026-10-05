@@ -2,6 +2,7 @@
 // ranges::iter_move and ranges::iter_swap, so they work on ranges with proxy references
 // such as views::zip ([range.zip]: zip_view's iterator customizes iter_move/iter_swap and
 // its reference is a tuple of references). Sorting a zip of two arrays permutes both.
+// COUNTERPART: libcxx:algorithms/robust_against_proxy_iterators_lifetime_bugs.pass.cpp
 #include <algorithm>
 #include <functional>
 #include <ranges>

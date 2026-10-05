@@ -37,9 +37,11 @@ rather than against itself. It assumes familiarity with `README.md`, `DECISIONS.
 6. **Test against the specification, not the implementation**: an own suite written from the
    working draft, plus other implementations' suites run unmodified, never copied into the
    repository.
-7. **Make known failures explicit and machine-checked**: per-configuration baselines for "not done
-   yet", expected-failure annotations for compiler gaps, skip lists with a category and a reason
-   for tests that do not apply. An unexpected pass must fail the run.
+7. **Every failure fails the run, unless it carries its cause**: fix library bugs; skip a test
+   that does not apply with a category and a reason; mark an expected failure, with its reason,
+   only for a cause outside the test and the library (a compiler bug, an ABI limit, a draft
+   defect, a feature not implemented yet). No anonymous list of known failures. An unexpected
+   pass must fail the run.
 8. **Run the suite in several configurations**: each compiler, each OS, sanitizers, and each
    library mode a user can select (hardening, no exceptions, no RTTI). Check the configurations
    that are not run.
@@ -48,7 +50,7 @@ rather than against itself. It assumes familiarity with `README.md`, `DECISIONS.
 10. **Make every run explainable**: record the commands, exit statuses and output of passing tests
     as well as failing ones, and keep the reports as CI artifacts.
 11. **Split CI**: a fast gate on every push, the whole external suites and the sanitizer runs
-    nightly, each failing only on tests outside its baseline.
+    nightly, each failing on every FAIL and XPASS.
 
 ## 3. Building
 
@@ -390,26 +392,37 @@ their library), and report every construct you do not interpret as UNSUPPORTED w
 that the count of what was not run stays visible. Checked:
 
 ```sh
-tools/test --baseline -c gcc -f numerics/numbers libcxx
-#   4 passed, 1 failed (numerics/numbers/value.pass.cpp, listed in tests/libcxx/baseline/linux-gcc.txt)
-#   "baseline .../linux-gcc.txt: 200 known; this run: 1 did not pass, 0 outside the baseline,
-#    0 of the baseline now pass" -> exit 0
+tools/test -c gcc -f numerics/bit -f numerics/numbers libcxx
+#   20 passed, 1 unsupported, 1 failed (numerics/numbers/value.pass.cpp) -> exit 1
 ```
+
+The failure fails the run: `value.pass` compares `e_v<long double>` with the `double` value in a
+constant expression (STATUS, numerics), and until it is fixed, skipped or marked expected with its
+reason, nothing makes that run pass.
 
 ### Triage and known failures
 
-libycxx separates four kinds of "does not pass", each in its own file with a reason:
+In libycxx a test reported FAIL fails the run and CI; there is no list of known failures. A
+failure has one of three causes, each handled where it is decided, with its reason:
 
-| Kind | Where | Effect |
+| Cause | Where | Effect |
 |---|---|---|
-| Does not apply (removed feature, divergence from the draft, extension, implementation-specific, infrastructure) | `tests/<suite>/skip.txt`, `tests/common/skip.txt`; categories in `tests/SKIPPED.md` | UNSUPPORTED with the reason |
-| Compiler gap | `// XFAIL-COMPILER:` in the own test; `tests/<suite>/xfail.txt` for external suites | XFAIL; XPASS fails the run |
-| Not passing yet, with a known cause | `tests/<suite>/baseline/<os>-<compiler>[-<sanitizer>].txt`, explained in `TRIAGE.md` (categories A-F) and STATUS | with `--baseline`, a failure outside the list fails the run; listed tests that now pass are named |
+| A libycxx bug | fixed; STATUS lists what is open | FAIL until fixed, and CI is red |
+| The test does not apply (removed feature, divergence from the draft, extension, implementation-specific, infrastructure) | `tests/<suite>/skip.txt`, `tests/common/skip.txt`, a line `<test regex> \| <category> \| <reason>`; categories in `tests/SKIPPED.md` | UNSUPPORTED with the reason, and the libycxx test that covers the subject, if any |
+| A cause outside the test and the library (a compiler bug, an ABI limit, a draft defect, a feature not implemented yet) | `// XFAIL: gcc\|clang\|any <reason>` in the own test (`XFAIL-COMPILER` still accepted); `tests/<suite>/xfail.txt`, `<test regex> \| <compiler> \| <reason>`, for external suites | XFAIL with the reason; XPASS fails the run, so the mark goes when the cause does |
 | Reference-run difference | `tests/ycxx/REFERENCE.md` | documentation only |
 
-The baseline is produced, not written: each run writes `build/test-logs/<run>.baseline.txt`, and
-copying it over the baseline file records or updates it (`tools/lib/baseline.py`).
+`TRIAGE.md` (categories A-F) records the classification of a full external run; each classified
+failure must end in one of the rows above, and until it does it fails the run.
 `tools/triage.py` groups failures by missing header or first error message.
+
+Why not a baseline, a generated list of the tests that failed last time (which libycxx had until
+commit `49a167c`): such a list says that a test fails, not why. A regression in a listed test
+stays hidden among the "known failures"; CI is green while tests fail, so the red state that
+should prompt a fix never comes; and the cause lives elsewhere (here `TRIAGE.md`), drifts from the
+list, and is lost when the list is regenerated. With the rule above every non-passing result
+names its cause in the place that decides it, a bug cannot be recorded as expected, and an
+expected failure whose cause is gone shows up as XPASS.
 
 Others: the MSVC STL keeps one hand-maintained `expected_results.txt` per suite, lines
 `<test>[:<configuration>] FAIL|SKIPPED`, grouped by cause (issues reported upstream, slow tests,
@@ -418,25 +431,28 @@ analyzed) [msvc-expected]; an XPASS requires updating it [msvc-readme]. lit has 
 `LIT_XFAIL` for marking tests as expected failures without editing them [lit]. libstdc++ expresses
 expected failures in the test (`xfail` selectors, `dg-xfail-run-if`) [libstdcxx-test].
 
-libycxx does better: its baseline is a list of known failures per OS, compiler and sanitizer,
-generated from a run, which never counts as "pass"; a recorded failure that starts passing is
-reported (not failed), and a missing baseline means every failure counts. The MSVC file does
-better at keeping the cause next to each entry; libycxx keeps causes in `TRIAGE.md`, which can
-drift from the list.
+libycxx's rule is closest to libc++'s and libstdc++'s: the reason sits with the test (in the own
+test, or one line per external test with its reason, since external tests are never edited). The
+MSVC file is a list, but keeps a cause per entry, grouped by cause, which is what an anonymous
+baseline loses; libycxx goes further in two ways: a library bug cannot be listed at all (it is
+fixed, and fails CI until then), and every skip and expected failure states its reason in the
+run's output, not only in the file.
 
-At this commit the baselines are incomplete: `tests/libcxx/baseline` has `darwin-clang.txt` and
-`linux-gcc.txt` only, and `tests/ycxx/baseline` has Linux files only. CI runs
-`--baseline` for libc++ on Linux with Clang (`full.yml`) and for the own suite on macOS
-(`ci.yml`), where with no file every failure counts, including the documented ones
-(STATUS: `except/handler_*` are expected to fail on macOS). Gaps, item 1.
+At this commit CI fails where tests fail: the own suite's expected failures are each marked in the
+test with the STATUS cause (`char_traits/eof`, draft defect; `except/handler_pointer_reference*`,
+Itanium ABI; two `except/handler_*` and `exception/exception_ptr_constexpr` and
+`contracts/observe` on GCC 16; `execution/senders_basic`, not implemented yet), and four tests
+still FAIL as libycxx divergences being fixed (`cstddef/stddef_global{,_reverse}`,
+`cwchar/mbstate_global`, `cwchar/wchar_h_global_names` on Clang). The full external runs fail
+until every failure of `TRIAGE.md` is fixed, skipped or marked (Gaps, item 1).
 
 ### Sanitizers
 
 `tools/test -s asan,ubsan` (or `SANITIZER=asan,ubsan tools/run-conformance ...`) adds
 `-fsanitize=... -fno-sanitize-recover=all -g` to the tests, and `tsan` with a library built with
 `-fsanitize=thread` (`YCXX_LIBDIR=build/clang-tsan`). Lit features `asan`/`ubsan` are set for the
-libc++ suite. Nightly CI runs the own suite with Clang under ASan+UBSan against its own baseline
-(`linux-clang-asan-ubsan.txt`). Checked: `tools/test -c clang -s asan,ubsan -f optional ycxx`,
+libc++ suite. Nightly CI runs the own suite with Clang under ASan+UBSan, where every failure
+fails the job (a test that cannot run under a sanitizer says so in the test). Checked: `tools/test -c clang -s asan,ubsan -f optional ycxx`,
 37 passed.
 
 Others: libc++ has `--param use_sanitizer=` (`Address`, `HWAddress`, `Undefined`, `Memory`,
@@ -474,8 +490,8 @@ compiles every test with `-DYCXX_HARDENED=1` and enables the death tests of
 `EXPECT-TERMINATE`); `cxxflags=` with a configuration name (`tools/test --cxxflags=...
 --config-name=...`, `YCXX_CXXFLAGS`/`YCXX_CONFIG_NAME`) appends flags to every test, and
 `-fno-exceptions`/`-fno-rtti` there remove the `exceptions`/`rtti` features, which the 430 tests
-that throw or catch require. Each configuration has its own exec root, logs, reports and baseline
-(`ycxx-<cc>-hardened`, `ycxx-<cc>-<name>`). Nightly CI runs hardened, `-fno-exceptions` and `-O2`
+that throw or catch require. Each configuration has its own exec root, logs and reports
+(`ycxx-<cc>-hardened`, `ycxx-<cc>-<name>`), and fails on every FAIL like the default run. Nightly CI runs hardened, `-fno-exceptions` and `-O2`
 on both compilers (Gaps, items 3 and 6: done, except `-fno-rtti` and TSan).
 
 ### Reference runs against another library
@@ -510,8 +526,8 @@ per-test results natively.
 
 | When | libycxx | Others |
 |---|---|---|
-| Every push / PR | `ci.yml`: `tools/test --baseline policy build freestanding cmake ycxx` on Linux (gcc:16 container, Clang 23 from apt.llvm.org) and macOS 15 arm64; a sample of both external suites on Linux | libc++: CI configurations defined in `libcxx/utils/ci/Dockerfile` and run by `libcxx/utils/ci/run-buildbot`, reproducible locally with `run-buildbot-container` [libcxx-testing] |
-| Nightly / on demand | `full.yml`: both external suites, both compilers, Linux and macOS (one job per suite and compiler, up to 300-340 minutes), the own suite with ASan+UBSan, and the own suite hardened, with `-fno-exceptions` and with `-O2` (both compilers, Linux), each against its baseline | libc++: continuous fuzzing on OSS-Fuzz (`libcxx/utils/ci/oss-fuzz.sh`) [libcxx-oss-fuzz] |
+| Every push / PR | `ci.yml`: `tools/test policy build freestanding cmake ycxx`, failing on every FAIL and XPASS, on Linux (gcc:16 container, Clang 23 from apt.llvm.org) and macOS 15 arm64; a sample of both external suites on Linux | libc++: CI configurations defined in `libcxx/utils/ci/Dockerfile` and run by `libcxx/utils/ci/run-buildbot`, reproducible locally with `run-buildbot-container` [libcxx-testing] |
+| Nightly / on demand | `full.yml`: both external suites, both compilers, Linux and macOS (one job per suite and compiler, up to 300-340 minutes), the own suite with ASan+UBSan, and the own suite hardened, with `-fno-exceptions` and with `-O2` (both compilers, Linux); no job tolerates a FAIL | libc++: continuous fuzzing on OSS-Fuzz (`libcxx/utils/ci/oss-fuzz.sh`) [libcxx-oss-fuzz] |
 
 lit can split a run into shards (`--num-shards M --run-shard N`, or `LIT_NUM_SHARDS`), "for
 parallel execution on separate machines" [lit]; libycxx's nightly jobs do not shard (Gaps, item 5).
@@ -536,7 +552,7 @@ script compiles each with `-DLIBCPP_OSS_FUZZ` and the fuzzing engine, using
 | Selection | `-nostdinc++ -isystem`, `-nostdlib++`; wrapper; CMake package; toolchain file | `-stdlib=libc++` or the same generic flags [libcxx-user, libcxx-vendor] | default for GCC | `INCLUDE`/`LIB` via `set_environment.bat` [msvc-readme] |
 | Own tests | spec-only author; `.pass`/`.compile.pass`/`.compile.fail`, diagnostic regexes, death tests | rich kinds incl. `.verify.cpp`, `.sh.cpp`, `.gen.cpp` [libcxx-testing] | DejaGnu `dg-*` with message matching [libstdcxx-test] | `tests/std`, `tests/tr1` [msvc-readme] |
 | External suites | libc++'s and libstdc++'s, run only, fetched and pinned | can run against libstdc++ [libcxx-stdlib-libstdcxx-cfg] | not confirmed | libc++'s, from its llvm-project checkout [msvc-readme] |
-| Known failures | per OS/compiler/sanitizer baselines (generated), xfail and skip lists with reasons | `XFAIL`/`UNSUPPORTED` in tests [libcxx-testing] | `xfail` selectors in tests [libstdcxx-test] | `expected_results.txt` by cause, per configuration [msvc-expected] |
+| Known failures | none: FAIL fails CI; skip lists with category and reason, `XFAIL` with reason in own tests, `xfail.txt` with reason for external suites | `XFAIL`/`UNSUPPORTED` in tests [libcxx-testing] | `xfail` selectors in tests [libstdcxx-test] | `expected_results.txt` by cause, per configuration [msvc-expected] |
 | Configurations | 2 compilers x 2 OSes; ASan+UBSan (Clang); hardened, `-fno-exceptions`, `-O2` (Linux, nightly); TSan manual | hardening modes, no-exceptions, no-rtti, sanitizers, std modes, modules [libcxx-caches, libcxx-params] | `-std` list, debug mode, board flags [libstdcxx-test] | matrix files [msvc-matrix] |
 | Reference runs | own suite against libstdc++ | suite against libstdc++ [libcxx-stdlib-libstdcxx-cfg] | not confirmed | not confirmed |
 | Reports | per-test transcripts, HTML/Markdown, provenance | lit output | `.sum`/`.log` [libstdcxx-test] | lit output [msvc-readme] |
@@ -545,27 +561,29 @@ script compiles each with `-DLIBCPP_OSS_FUZZ` and the fuzzing engine, using
 **What libycxx does better.** Hermetic by default (no opt-in, no consumer link flags, tested with a
 second runtime in the process); one generated set of flags behind three delivery paths, with
 compiler provisioning; a clean-room own suite written from the draft alone, validated by reference
-runs; external suites never vendored, pinned and fetched; baselines generated from runs, per OS,
-compiler and sanitizer, with XPASS failing the run; reports that show the evidence for passing
-tests.
+runs; external suites never vendored, pinned and fetched; no list of known failures: every FAIL
+fails CI and every skip or expected failure carries its reason into the output, with XPASS
+failing the run; reports that show the evidence for passing tests.
 
 **What others do better.** Configuration coverage (no-rtti, TSan, MSan as standing configurations;
 hardening has one mode, not libc++'s four); diagnostic matching as a test kind of its own (libycxx
 matches only where a test states a regex); feature-based test constraints beyond `REQUIRES`;
 sharding;
-fuzzing; container annotations for ASan; documented raw flags for consumers; keeping the cause next
-to each expected failure.
+fuzzing; container annotations for ASan; documented raw flags for consumers. libc++'s
+`XFAIL`/`UNSUPPORTED` take boolean feature expressions, where libycxx's take a compiler name.
 
 ## 8. Gaps and proposals
 
 Ranked by value for effort. Items 2, 3, 6 (in part), 8 and 10 are now done, and 4 in part; each
 says what was done.
 
-1. **Complete the baselines CI already depends on.** `full.yml` runs libc++ on Linux with Clang and
-   macOS with GCC, and `ci.yml` the own suite on macOS, all with `--baseline`, but
-   `tests/libcxx/baseline/linux-clang.txt`, `darwin-gcc.txt` and `tests/ycxx/baseline/darwin-*.txt`
-   do not exist, so every failure counts there, documented ones included. Record them from the next
-   runs' `<run>.baseline.txt` artifacts. Cheap; without it those jobs cannot be green.
+1. **Every external failure needs a reason.** The full runs of `full.yml` fail on every FAIL, and
+   the last full libc++ run (`tests/libcxx/TRIAGE.md`) left about 240 failures per compiler,
+   classified but not resolved (libstdc++'s in `tests/libstdcxx/TRIAGE.md`). Work through them: fix the A (library bug) entries; skip the
+   tests that do not apply with their category and reason (`skip.txt`, naming the libycxx test that
+   covers the subject); mark the compiler, ABI, draft-defect and not-yet-implemented ones in
+   `xfail.txt` with their reason. Then a red nightly means a new failure, not an old one. Never
+   restore a list of failures without causes to get there sooner.
 2. **A diagnostic-matching test kind.** Add `// EXPECT-ERROR: <regex>` (one or more) to
    `*.compile.fail.cpp`: the test passes only if every pattern matches an error line, on both
    compilers; optionally map libc++'s `expected-error` and libstdc++'s `dg-error "msg"` to it where
@@ -598,19 +616,18 @@ says what was done.
    them with lit's own boolean-expression parser (a comma means `&&`). Not yet: `UNSUPPORTED:`
    and `XFAIL:` on features, replacing `XFAIL-COMPILER`/`UNSUPPORTED-SANITIZER`.
 5. **Shard the nightly suites.** Split each `full.yml` suite job with lit's
-   `--num-shards`/`--run-shard` [lit] across matrix entries and merge the `.tsv` files before
-   `baseline.py`; record test times (`--time-tests`) to order slow tests first. The jobs now take
+   `--num-shards`/`--run-shard` [lit] across matrix entries and merge the `.tsv` files for the
+   report; record test times (`--time-tests`) to order slow tests first. The jobs now take
    up to 300-340 minutes.
 6. **A configuration parameter and a nightly matrix.** Add a lit parameter (and `tools/test`
    option) for extra compile flags, then run nightly: `-fno-exceptions`, `-fno-rtti`, hardened, `-O0`
-   and `-O2`, and TSan with `build/clang-tsan`, each with its own baseline (the baseline file name
-   already carries a configuration suffix). Models: libc++'s CMake caches [libcxx-caches],
+   and `-O2`, and TSan with `build/clang-tsan`, each failing on every FAIL (a test that cannot run
+   in a configuration says so with `REQUIRES:` or `XFAIL:` and its reason). Models: libc++'s CMake caches [libcxx-caches],
    libstdc++'s board flags [libstdcxx-test], the MSVC STL's matrix files [msvc-matrix].
    **Done, in part:** lit param `cxxflags=` with `config=<name>` (`tools/test --cxxflags=...
    --config-name=...`, `YCXX_CXXFLAGS`/`YCXX_CONFIG_NAME`; the name defaults to one made from the
    flags), and a nightly `linux-configurations` job matrix in `full.yml`: hardened,
-   `-fno-exceptions` and `-O2` on both compilers, each against
-   `tests/ycxx/baseline/linux-<cc>-<configuration>.txt`, recorded from its first run. No `-O0`
+   `-fno-exceptions` and `-O2` on both compilers, each failing on every FAIL. No `-O0`
    job: the default own-suite run is already unoptimized. Not yet: `-fno-rtti` (tests that use
    `typeid`/`dynamic_cast` would need `REQUIRES: rtti`) and TSan.
 7. **Fuzz targets that are also tests.** Write libFuzzer entry points for `<regex>`, format strings,
@@ -637,16 +654,13 @@ says what was done.
 11. **Document the raw flags for other build systems** (Meson, Bazel, plain Make): the table of
     section 4 and the exact link order, as libc++ documents its custom-installation command
     [libcxx-vendor]. Today README points to the wrapper and the package only.
-12. **Keep the cause next to each baseline entry.** Allow `test  # <TRIAGE category>: <reason>` in
-    baseline files (`baseline.py` would strip the comment), as `expected_results.txt` groups entries
-    by cause [msvc-expected], so the list and `TRIAGE.md` cannot drift.
-13. **xUnit output in CI** (`--xunit-xml-output` [lit]) so that GitHub's test summaries show
+12. **xUnit output in CI** (`--xunit-xml-output` [lit]) so that GitHub's test summaries show
     per-test results next to the HTML reports.
-14. **`-stdlib++-isystem` for Clang: not recommended.** Clang drops it under `-nostdinc++` (checked),
+13. **`-stdlib++-isystem` for Clang: not recommended.** Clang drops it under `-nostdinc++` (checked),
     GCC rejects it, and `-nostdinc++ -isystem` already places libycxx's directory first on both
     compilers. It would help only if libycxx had to coexist with a `-stdlib=` choice, which it does
     not.
-15. **Symbol version scripts: not applicable** while libycxx ships no shared library and exports
+14. **Symbol version scripts: not applicable** while libycxx ships no shared library and exports
     nothing; `tests/ycxx/linkage/no_exported_library_symbols` and `tests/cmake/run.sh` already check
     the export set. Revisit with a shared library (`check-abi`-style baseline [libstdcxx-abi]).
 
@@ -663,7 +677,7 @@ Run on 2026-10-05 in a worktree at `6f13096`, Linux x86_64, GCC 16.2.0 (`/opt/gc
 | Own suite, one directory | `tools/test -j4 -f optional ycxx` | 37/37 passed, GCC and Clang |
 | Own suite, sanitizers | `tools/test -j2 -c clang -s asan,ubsan -f optional ycxx` | 37/37 passed |
 | Reference run | `YCXX_STDLIB=libstdcxx tools/run-conformance ycxx gcc optional` | 36 passed, 1 failed (`optional/nullopt_compare`, in REFERENCE.md) |
-| External suite with baseline | `tools/test --baseline -c gcc -f numerics/bit libcxx`; `... -f numerics/numbers libcxx` | 16 passed + 1 unsupported, exit 0; 4 passed + 1 failed (in the baseline), "0 outside the baseline", exit 0 |
+| External suite (later, after the baselines were removed) | `tools/test -c gcc -f numerics/bit -f numerics/numbers build libcxx` | 20 passed, 1 unsupported, 1 failed (`numerics/numbers/value.pass.cpp`: `e_v<long double>` compared with the `double` value in a constant expression, STATUS), exit 1 |
 | Freestanding | `tools/check_freestanding.sh` | 73 headers compile and the smoke program links: clang x86_64, clang riscv64, gcc x86_64 |
 | Driver flags | `-E -v`, `-###` with and without `-nostdinc++`, `-nostdlib++`, `-stdlib++-isystem`, `-stdlib=`, `-fvisibility-global-new-delete=` on `g++-16` and `clang++-23` | as in the table of section 4 |
 | ASan allocation functions | `tools/ycxx-cxx clang -fsanitize=address ... -Wl,-Map,...` | `operator new` from `libclang_rt.asan_cxx-x86_64.a(asan_new_delete.cpp.o)`; GCC: `cannot find -lasan` |
@@ -671,7 +685,7 @@ Run on 2026-10-05 in a worktree at `6f13096`, Linux x86_64, GCC 16.2.0 (`/opt/gc
 | Diagnostic matching (later) | `tools/run-conformance ycxx gcc|clang <the 13 tests with EXPECT-ERROR>`; one with a wrong regex added | 13/13 pass on both compilers; the wrong regex fails with "no match for: EXPECT-ERROR: ..." |
 | Hardened configuration (later) | `tools/test --hardened -c gcc|clang ycxx` (as `YCXX_HARDENED=1 tools/run-conformance ...`) | GCC 2363 pass / 13 fail, Clang 2355 / 10: all 53 `precondition/` death tests pass; one failure beyond the default run's (`mdspan/submdspan_exhaustive_oracle`, STATUS) |
 | Death tests without the checks (later) | `YCXX_HARDENED=1 YCXX_CXXFLAGS=-UYCXX_HARDENED ... clang precondition` | 53/53 fail: 50 exit 0, 3 SIGSEGV |
-| `-fno-exceptions` (later) | `YCXX_CXXFLAGS=-fno-exceptions YCXX_CONFIG_NAME=noexcept tools/run-conformance ycxx gcc|clang` | 483 UNSUPPORTED (430 `REQUIRES: exceptions`, 53 `REQUIRES: hardened`); failures only those of the default baseline (GCC 5, Clang 6) |
+| `-fno-exceptions` (later) | `YCXX_CXXFLAGS=-fno-exceptions YCXX_CONFIG_NAME=noexcept tools/run-conformance ycxx gcc|clang` | 483 UNSUPPORTED (430 `REQUIRES: exceptions`, 53 `REQUIRES: hardened`); failures only those of the default run at the time (GCC 5, Clang 6) |
 | CMake, later | `tests/cmake/run.sh gcc clang` | all checks passed, including GCC 16's `crtbeginS.o` in the Clang examples' link maps (GCC 13's with `-DYCXX_GCC_INSTALL_DIR=`) and the freestanding smoke link with the installed `libycxx-freestanding.a` |
 
 ## 9. Sources

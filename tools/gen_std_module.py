@@ -43,7 +43,7 @@ The output is sorted, so it depends only on the headers (and the compilers that 
 tools/check-all runs `--check` (policy stage) so a header change that adds or removes a name
 fails until the modules are regenerated.
 """
-import argparse, difflib, os, pathlib, re, subprocess, sys, tempfile
+import argparse, difflib, os, pathlib, platform, re, subprocess, sys, tempfile
 
 HERE = pathlib.Path(__file__).resolve().parent
 REPO = HERE.parent
@@ -656,6 +656,11 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     ap.add_argument("--check", action="store_true", help="fail if the committed modules are out of date")
     args = ap.parse_args()
+    if platform.system() != "Linux":
+        # The C library's headers take part (std.compat's global names): the committed lists are
+        # glibc's. Elsewhere they are neither regenerated nor compared.
+        print(f"gen_std_module: skipped on {platform.system()}: the export lists are generated on Linux (glibc)")
+        return 0
     std_text, compat_text = build()
     outputs = {OUT_DIR / "std.cppm": std_text, OUT_DIR / "std.compat.cppm": compat_text,
                INCLUDE / "bits" / "stdc++.h": generate_all_headers()}

@@ -15,6 +15,8 @@
 #define _GLIBCXX_HAVE_SYMLINK 1         // testsuite_fs.h: otherwise NO_SYMLINKS
 #define _GLIBCXX_HAVE_SYS_STATVFS_H 1   // testsuite_fs.h: otherwise NO_SPACE
 #define _GLIBCXX_USE_UTIMENSAT 1        // testsuite_fs.h: otherwise NO_LAST_WRITE_TIME
+#define _GLIBCXX_HAVE_FCNTL_H 1         // tests that call utimensat include <fcntl.h> under these
+#define _GLIBCXX_HAVE_UTIME_H 1
 
 // The language-version macros the helpers put on their declarations. The run is C++26 only, so
 // each is the keyword (libstdc++ spells them so that its headers also compile as C++98..C++23).

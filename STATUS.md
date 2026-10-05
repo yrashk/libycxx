@@ -471,7 +471,9 @@ compilers; `visit_format_arg.pass.cpp` needs `EOF` from `constexpr_char_traits.h
   its type. The CMake package and `tools/ycxx-cxx` pass `-Wno-attributes` to GCC; other build
   systems add it themselves. Clang does not warn. Images that each link
   libycxx have separate runtimes: exceptions cross between them, but `uncaught_exceptions()` in
-  one does not count the other's exception while it unwinds through its frames.
+  one does not count the other's exception while it unwinds through its frames, and each has its
+  own `generic_category()`/`system_category()` objects, so an `error_code` made in one compares
+  unequal to an `errc` or category of the other (`value()` and `category().name()` agree).
 - C library wrappers: `std::free_sized`/`free_aligned_sized` call `free` (glibc 2.39 has neither);
   `memset_explicit` is memset plus a compiler barrier; `strfrom*`, `memccpy`, `strdup`, `strndup`
   are the C library's (on Darwin, which lacks them, `strfrom*` and `mbrtoc8`/`c8rtomb` are

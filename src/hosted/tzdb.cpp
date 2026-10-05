@@ -807,10 +807,12 @@ const chr::time_zone* find_zone(const chr::tzdb& db, string_view name) noexcept 
   return nullptr;
 }
 
-chr::tzdb* load_tzdb() {
-  const string dir = zoneinfo_dir();
-  auto* db = new chr::tzdb;
+// The database, or nullptr when there is none or memory runs out.
+chr::tzdb* load_tzdb() noexcept {
+  chr::tzdb* db = nullptr;
   try {
+    const string dir = zoneinfo_dir();
+    db = new chr::tzdb;
     db->version = read_version(dir);
     vector<string> zones;
     vector<std::pair<string, string>> links;
@@ -925,23 +927,32 @@ const chr::time_zone* ycxx::detail::tzdb_current(const chr::tzdb& db) noexcept {
 }
 
 chr::tzdb_list* ycxx::detail::tzdb_list_instance() noexcept {
-  // Built on first use and never destroyed: zones may be queried from static destructors.
-  static chr::tzdb_list* const list = []() -> chr::tzdb_list* {
+  // Built on first successful use and never destroyed: zones may be queried from static
+  // destructors. A failed load (no database, or no memory) is not kept: the next call tries
+  // again, and get_tzdb_list throws runtime_error meanwhile ([time.zone.db.access]/1).
+  static constinit chr::tzdb_list* list = nullptr; // written under list_mutex()
+  if (chr::tzdb_list* l = __atomic_load_n(&list, __ATOMIC_ACQUIRE))
+    return l;
+  try {
+    std::lock_guard<std::mutex> lock(list_mutex());
+    if (list != nullptr)
+      return list;
     chr::tzdb* db = load_tzdb();
     if (db == nullptr)
       return nullptr;
     auto* l = new (std::nothrow) chr::tzdb_list(tz_ctor_tag{});
-    auto* node = new (std::nothrow) tzdb_node{static_cast<chr::tzdb&&>(*db), nullptr};
+    auto* node = l == nullptr ? nullptr : new (std::nothrow) tzdb_node{static_cast<chr::tzdb&&>(*db), nullptr};
     delete db;
-    if (l == nullptr || node == nullptr) {
+    if (node == nullptr) {
       delete l;
-      delete node;
       return nullptr;
     }
     l->push_front(tz_ctor_tag{}, node);
+    __atomic_store_n(&list, l, __ATOMIC_RELEASE);
     return l;
-  }();
-  return list;
+  } catch (...) { // the mutex (system_error)
+    return nullptr;
+  }
 }
 
 const chr::tzdb* ycxx::detail::tzdb_reload() noexcept {

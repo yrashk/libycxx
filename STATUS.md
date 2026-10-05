@@ -133,8 +133,9 @@ need missing containers, `<initializer_list>` from `<memory_resource>`, libstdc+
 Iostreams and localization (Phase 4, hosted; DECISIONS §7): `<iosfwd>`, `<ios>`, `<streambuf>`,
 `<istream>`, `<ostream>`, `<iostream>`, `<sstream>`,
 `<spanstream>`, `<fstream>`, `<syncstream>`, `<iomanip>`, `<locale>` (all standard facets for char
-and wchar_t, the deprecated (Annex D) UTF-16/UTF-32 codecvts, the `_byname` facets for
-"C"/"POSIX"/"C.UTF-8"/""), the stream iterators, and the stream operators of `<string>`,
+and wchar_t, the deprecated (Annex D) UTF-16/UTF-32 codecvts; named locales on the C library's
+locales, glibc and Darwin's libc: every name `newlocale` accepts, with the `_byname` facets of char
+and wchar_t built on its `locale_t`, `src/hosted/locale_named.cpp`, DECISIONS §7), the stream iterators, and the stream operators of `<string>`,
 `<string_view>`, `<bitset>`, `<memory>`, `<system_error>` and `<complex>`. Own suite ios, iostreams,
 sstream, fstream, spanstream, syncstream, iomanip, locale, complex, system_error, bitset, string,
 string_view, memory, iterator: 301/305 (GCC, plus 1 XFAIL), 302/305 (Clang); the three failures need
@@ -342,6 +343,17 @@ Unverified or known gaps on macOS:
 - `<cuchar>` fallback: assumes Darwin's conversion states use at most the first 16 of
   mbstate_t's 128 bytes; `mbsinit` does not see code units still to be delivered. macOS has no
   "C.UTF-8" locale, so the own test checks the UTF-8 forms only where the C library has one.
+- Named locales (`src/hosted/locale_named.cpp`), written for Darwin but never run there; the macOS
+  session must check: the `_l` functions come from `<xlocale.h>` (`is*_l`, `isw*_l`, `tow*_l`,
+  `strcoll_l`, `strxfrm_l`, `wcscoll_l`, `wcsxfrm_l`, `strftime_l`, `wcsftime_l`,
+  `nl_langinfo_l`) and `localeconv_l` is found by the `requires` probe (no lock then);
+  `mbrtowc`/`wcrtomb`/`btowc`/`MB_CUR_MAX` follow the thread's `uselocale`; `catopen` with
+  `NL_CAT_LOCALE` may read the global LC_MESSAGES rather than the thread's; the ctype<char> table
+  of a UTF-8 locale gives bytes 0x80-0xFF no class (Darwin's `is*_l` would classify them as
+  Latin-1); `strxfrm_l`/`wcsxfrm_l` sizes; `tm_zone`/`tm_gmtoff` reach `strftime_l` for `{:L%c}`
+  ([time.format]); the own tests `locale/named_*` (UNSUPPORTED for a name the machine lacks:
+  macOS has de_DE.UTF-8, fr_FR.ISO8859-15, en_US.UTF-8 but no C.UTF-8) and the chrono L
+  conversions (`to_utf8` assumes wchar_t is Unicode only in ISO-8859-1 locales there).
 - Possible test-environment differences: APFS is case-insensitive by default, `/tmp` and
   `$TMPDIR` lie behind symbolic links (`/private`), `statvfs` block counts are 32-bit; the zoneinfo
   tree has no `tzdata.zi`, so every TZif file counts as a zone and only symbolic links as links
@@ -620,10 +632,17 @@ compilers; `visit_format_arg.pass.cpp` needs `EOF` from `constexpr_char_traits.h
   regex_traits::transform_primary returns the full sort key (the provided collate facets have no
   secondary weights) for collate and collate_byname facets alike; [re.traits]/7 would return an
   empty key for the classic locale's collate facet, making every `[[=x=]]` invalid.
-- Iostreams/locale: named locales other than "C", "POSIX", "C.UTF-8" and "" throw
-  `runtime_error` (the environment's conventions are not supported; the external suites report the
-  tests that need one UNSUPPORTED, `tests/ycxxlit/locales.py`: 139 libc++ and 205 libstdc++ tests
-  per compiler); `codecvt<wchar_t, char>` is UTF-8 in the classic locale, so `encoding()` is 0 and wide file streams cannot seek by an
+- Iostreams/locale: named locales are the C library's (DECISIONS §7): a name the C library
+  lacks throws `runtime_error`, and tests that need one are UNSUPPORTED (`tests/ycxxlit/locales.py`;
+  `tools/ci/gen-locales` generates the suites' names on glibc). Where the draft leaves a choice,
+  libycxx's differs from libc++'s in places its tests check (skip.txt, "Named locales"): money
+  patterns keep the C library's `curr_symbol` and put the separating space in the pattern
+  (libstdc++'s choice); `money_put` without `showbase` then writes that space; a numpunct
+  separator that is not one char (fr_FR.UTF-8's U+202F) is `' '` for char; `time_get` of a named
+  locale reads its `%x`/`%c`/`%X`/`%r` formats strictly (no libc++-style separator leniency);
+  `messages` has no gettext extension (`catopen`/`catgets` catalogs only); `codecvt::encoding()`
+  of a named locale does not detect state-dependent encodings (0); a composite name lists the six
+  standard categories, not glibc's twelve. `codecvt<wchar_t, char>` is UTF-8 in the classic locale, so `encoding()` is 0 and wide file streams cannot seek by an
   offset other than 0 (libc++ filebuf move/swap/seekoff wide cases and wchar_t encoding/max_length
   tests expect a single-byte C locale); long double hexfloat output is normalized (`0x1.…p+N`,
   not glibc's `0x9.…p+N`); `time_get` stops a number at the digit that leaves its range ("24" for

@@ -12,6 +12,7 @@
 // set_rdbuf(addressof(sb)); the source's get_wrapped() is null afterwards; rdbuf() is the
 // address of the stream's own sb; move assignment ([syncstream.osyncstream.overview]) emits
 // the target's pending output first (it move-assigns sb).
+// COUNTERPART: libcxx:input.output/syncstream/syncbuf/.*.pass.cpp
 #include <syncstream>
 #include <cstddef>
 #include <memory>

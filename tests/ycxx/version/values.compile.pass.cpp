@@ -7,6 +7,7 @@
 // COUNTERPART: libstdcxx:21_strings/basic_string/cons/(char|wchar_t)/constexpr.cc
 // COUNTERPART: libstdcxx:21_strings/char_traits/requirements/version.cc
 // COUNTERPART: libstdcxx:25_algorithms/pstl/feature_test-4.cc libstdcxx:30_threads/barrier/(1|2).cc
+// COUNTERPART: libcxx:language.support/support.limits/support.limits.general/[a-z_]+.version.compile.pass.cpp
 #include <version>
 
 #if defined(__cpp_lib_adaptor_iterator_pair_constructor) && __cpp_lib_adaptor_iterator_pair_constructor != 202106L

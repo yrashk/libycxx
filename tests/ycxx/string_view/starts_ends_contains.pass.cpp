@@ -1,6 +1,7 @@
 // [string.view.ops]/20-28: starts_with / ends_with / contains for basic_string_view, charT
 // and const charT*. The string_view and charT overloads are noexcept. contains(x) is
 // "Equivalent to: return find(x) != npos;".
+// COUNTERPART: libcxx:strings/string.view/string.view.template/(starts|ends)_with..*.pass.cpp
 #include <string_view>
 #include <utility>
 #include "check.hpp"

@@ -3,6 +3,7 @@
 // to them. [template.mask.array]: mask_array has the valarray assignment and compound
 // assignment operators (the i-th selected element is combined with element i of the argument),
 // a fill assignment, copy construction and no default constructor.
+// COUNTERPART: libcxx:numerics/numarray/template.mask.array/.*.pass.cpp
 #include <valarray>
 #include <initializer_list>
 #include <type_traits>

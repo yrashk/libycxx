@@ -5,6 +5,7 @@
 // and only if a call was made to sync() since the most recent call to emit()" (and with
 // emit_on_sync, sync() emits); get_wrapped().
 // Example 3: nested osyncstreams on the same wrapped buffer.
+// COUNTERPART: libcxx:input.output/syncstream/osyncstream/.*.pass.cpp
 #include <syncstream>
 #include <sstream>
 #include <ostream>

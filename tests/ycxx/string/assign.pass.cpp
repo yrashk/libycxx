@@ -6,6 +6,7 @@
 // [string.assign]/3,12 use substr, which throws out_of_range if pos > size()
 // ([string.view.ops]).
 // REQUIRES: exceptions
+// COUNTERPART: libcxx:strings/basic.string/string.modifiers/string_assign/string.pass.cpp
 #include <string>
 #include <string_view>
 #include <stdexcept>

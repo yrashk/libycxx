@@ -6,6 +6,7 @@
 // packed. Construction from any strided, unique layout mapping (implicit from left, right,
 // padded and stride mappings with convertible extents); operator== compares extents, strides
 // and offset.
+// COUNTERPART: libcxx:containers/views/mdspan/layout_stride/(ctor.default|ctor.extents_array|ctor.extents_span|index_operator|required_span_size|stride).pass.cpp
 #include <mdspan>
 #include <array>
 #include <span>

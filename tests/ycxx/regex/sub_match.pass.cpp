@@ -3,6 +3,7 @@
 // if !matched), compare() compares str(); == and <=> are provided against sub_match,
 // string_type, const value_type* and value_type. [re.results]: smatch/cmatch/wsmatch/wcmatch
 // are match_results specializations.
+// COUNTERPART: libcxx:re/re.submatch/re.submatch.op/compare.pass.cpp
 #include <regex>
 #include <compare>
 #include <string>

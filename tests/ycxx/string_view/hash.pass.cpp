@@ -1,6 +1,7 @@
 // [string.view.hash]: hash<string_view>, hash<u8string_view>, hash<u16string_view>,
 // hash<u32string_view>, hash<wstring_view> are enabled ([unord.hash]). Equal views hash
 // equal regardless of where the characters live.
+// COUNTERPART: libcxx:strings/string.view/string.view.hash/enabled_hashes.pass.cpp
 #include <string_view>
 #include <cstddef>
 #include <functional>

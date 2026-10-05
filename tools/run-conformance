@@ -85,7 +85,7 @@ fi
 # exit statuses and durations, and what they printed (tests/ycxxlit/transcript.py). -o: the same
 # as JSON, from which the report is made.
 base=$repo/build/test-logs/$name
-rm -f "$base.json"
+rm -f "$base.json" "$base.data.json"
 ui_cmd ${ycxx_lit} "$dir" -a -o "$base.json" "$@"
 
 t0=$(date +%s)

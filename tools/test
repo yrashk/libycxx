@@ -27,6 +27,9 @@
 #   -q, --quiet                suites: list only the tests that did not pass
 #   -h, --help
 #
+# At the end: build/test-logs/run.html, the composite report of the run (every stage and suite,
+# every failure in full, copy buttons, the whole report as Markdown in run.md), to share.
+#
 # Compilers come from the YCXX_* variables (tools/toolchain/activate.sh), else from the
 # toolchains.env written by tools/toolchain/provision, else g++-16 / clang++-23. lit runs through
 # uvx (YCXX_LIT overrides; tools/lib/env.sh). Logs: build/test-logs/.
@@ -157,7 +160,8 @@ summary() {
     printf '  %sTest reports (every test with its commands, exit statuses and output):%s\n' "${ui_bold}" "${ui_reset}"
     for r in $reports; do ui_info "$r"; done
   fi
-  # The run's own report: every step; a failed one with the end of its log or its failing tests.
+  # The composite report of the run: every stage and every suite in one page, every failure in
+  # full (tools/lib/run_report.py).
   commit=$(git -C "$repo" rev-parse --short=12 HEAD 2>/dev/null || echo unknown)
   dirty=$(git -C "$repo" status --porcelain 2>/dev/null | wc -l | tr -d ' ')
   [ "$dirty" = 0 ] || commit="$commit (+$dirty uncommitted changes)"
@@ -166,7 +170,8 @@ summary() {
   if python3 "$repo/tools/lib/run_report.py" "$results" "$logs/run" "command=$invocation" "started=$started" \
        "commit=$commit" "host=$(uname -srm)" "$@" "logs=$logs"; then
     echo
-    printf '  %sRun report%s (copy buttons; the whole report as Markdown in %s):\n' "${ui_bold}" "${ui_reset}" "$logs/run.md"
+    printf '  %sComposite report%s (every stage and suite, every failure in full; share it, or use its\n' "${ui_bold}" "${ui_reset}"
+    printf '  "Copy for an agent" button; as Markdown: %s):\n' "$logs/run.md"
     ui_info "$logs/run.html"
   fi
 }

@@ -365,7 +365,9 @@ under the same name. Otherwise it gets one alias template in `config.hpp`.
    passing tests as well as failing ones. The terminal lists every test together with its
    steps. Each run's HTML report (`build/test-logs/<run>.html`) holds every test's transcript
    and the run's provenance: commit, compiler version, command and host. `tools/test` adds
-   `run.html`, which embeds the end of a failed step's log. Every report can be copied, or
+   `run.html`, one composite page for the whole run. It shows every stage, every failure in
+   full (a stage's log tail, a test's transcript) and every suite with every test. Passing
+   tests' full transcripts stay in the suites' own reports, which keeps the page shareable. Every report can be copied, or
    read without a browser, as self-contained Markdown that a person or an AI assistant can act
    on directly.
 

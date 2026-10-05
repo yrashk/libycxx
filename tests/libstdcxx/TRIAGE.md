@@ -244,7 +244,7 @@ deprecated features: rel_ops, is_pod/is_trivial, aligned_storage/union, std::ite
 special-function, `::abs`, `abs(__float128)`, `fabs(complex)` extensions (24); explicit instantiation with a foreign-value_type allocator (12); facets, streams or char_traits for non-character types (17 + 9);
 istream >> setfill (4); deleted-swap expectations (4); noexcept strengthenings (7); hash ABI size (1); greedy_ops (2);
 explicit instantiation hitting `swap() const` Mandates (3) or of `allocator<void>` (1); make_from_tuple SFINAE (1); `tuple<>` triviality (1);
-variant emplace exception guarantee (1); `_GLIBCXX_DEBUG` span checks (2); queue/stack/priority_queue default ctor copying (3); istreambuf_iterator::pointer (1);
+variant emplace exception guarantee (2); `_GLIBCXX_DEBUG` span checks (2); queue/stack/priority_queue default ctor copying (3); istreambuf_iterator::pointer (1);
 pre-P3505 to_chars data (2); outdated macro values (constexpr_string, parallel_algorithm, exception_ptr_cast: 4); random min()/max(), default engine (11), generate_canonical / seed_seq (3);
 valarray mask asserts (5); std/time choices (7); libstdc++ internals (`std::__*`, `__num_put_type`, `_M_buf_size`, `__resize_and_overwrite`: 11);
 pre-C++26 synopsis redeclarations (7); inplace_vector `#error` self-check (3).

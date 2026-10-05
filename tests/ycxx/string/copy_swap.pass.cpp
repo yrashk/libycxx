@@ -5,6 +5,7 @@
 // elsewhere, [res.on.exception.handling]/5, so only the positive case is checked); constant time. [string.special]:
 // non-member swap is lhs.swap(rhs) with noexcept(noexcept(lhs.swap(rhs))).
 // [container.reqmts]/64-65: with propagate_on_container_swap the allocators are exchanged.
+// REQUIRES: exceptions
 #include <string>
 #include <stdexcept>
 #include <type_traits>

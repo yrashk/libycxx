@@ -2,6 +2,7 @@
 // non-throwing exception specification (here: no potentially-throwing subobject destructors).
 // A throw escaping it exits the function body of a non-throwing function, so
 // [except.handle]/7: std::terminate is invoked, even with a matching handler outside.
+// REQUIRES: exceptions
 #include <cstdlib>
 #include <exception>
 #include "check.hpp"

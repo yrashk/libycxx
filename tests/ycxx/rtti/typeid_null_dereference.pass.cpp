@@ -2,6 +2,7 @@
 // unary-expression whose unary-operator is * and whose operand evaluates to a null pointer
 // value, the typeid expression throws an exception of a type that would match a handler of
 // type std::bad_typeid." [bad.typeid]: bad_typeid derives from exception.
+// REQUIRES: exceptions
 #include <exception>
 #include <typeinfo>
 #include "check.hpp"

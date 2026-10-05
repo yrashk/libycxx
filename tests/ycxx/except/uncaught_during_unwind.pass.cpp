@@ -5,6 +5,7 @@
 // [uncaught.exceptions]: uncaught_exceptions() returns the number of uncaught exceptions.
 // A destructor run by unwinding may itself throw and catch internally: then two exceptions
 // are uncaught at once.
+// REQUIRES: exceptions
 #include <exception>
 #include "check.hpp"
 

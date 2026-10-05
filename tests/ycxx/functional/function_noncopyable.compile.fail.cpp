@@ -1,5 +1,6 @@
 // [func.wrap.func.con]/10: template<class F> function(F&& f): "Mandates:
 // is_copy_constructible_v<FD> is true".
+// EXPECT-ERROR: static assertion failed.*Mandates: VT is copy constructible
 #include <functional>
 
 struct MoveOnly {

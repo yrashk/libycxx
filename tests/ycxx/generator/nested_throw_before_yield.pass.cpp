@@ -7,6 +7,7 @@
 // and go on. If the root itself ends with that exception, it propagates from operator++ (or
 // from begin() when no value was produced yet) and the root is then at its final suspend
 // point (it == end(), [dcl.fct.def.coroutine]/14). Every frame's locals are destroyed.
+// REQUIRES: exceptions
 #include <generator>
 #include <ranges>
 #include <stdexcept>

@@ -2,6 +2,7 @@
 // (and the container / other stack / iterator range / range) and take part in overload
 // resolution only if uses_allocator_v<container_type, Alloc> is true. [stack.syn]:
 // uses_allocator<stack<T, Container>, Alloc> derives from uses_allocator<Container, Alloc>.
+// REQUIRES: exceptions
 #include <stack>
 #include <deque>
 #include <memory>

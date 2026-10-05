@@ -5,6 +5,7 @@
 // "Effects: As if by: f1.swap(f2);". So a target whose move constructor throws (copying is
 // fine, as Cpp17CopyConstructible requires) must never make these operations throw or call
 // std::terminate.
+// REQUIRES: exceptions
 #include <functional>
 #include <cstdlib>
 #include <exception>

@@ -9,6 +9,7 @@
 //  - a virtual base shared by two C subobjects: a cast from it to C fails (two C objects are
 //    derived from it, and C is ambiguous in the most derived object), while casts to the
 //    chain, to C1/C2 and cross casts between the C subobjects succeed.
+// REQUIRES: exceptions
 #include <typeinfo>
 #include "check.hpp"
 

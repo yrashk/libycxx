@@ -6,6 +6,7 @@
 // [ostream.formatted.reqmts]/1, [ostream.unformatted]/1: no output is attempted when the sentry
 // is false; "If an exception is thrown during output, then ios_base::badbit is set in *this's
 // error state. If (exceptions() & badbit) != 0 then the exception is rethrown."
+// REQUIRES: exceptions
 #include <ostream>
 #include <sstream>
 #include <streambuf>

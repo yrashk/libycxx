@@ -20,6 +20,7 @@
 //     as an unformatted output function".
 //   operator>>(istream&, string&) and getline growing the string: an allocation failure is an
 //   exception during input.
+// REQUIRES: exceptions
 #include <iomanip>
 #include <ios>
 #include <istream>

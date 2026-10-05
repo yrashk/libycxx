@@ -15,6 +15,7 @@
 //   [indirect.ctor]/2, [polymorphic.ctor]/2: constructors throw only what allocate/construct
 //     throw; nothing leaks.
 // (indirect and polymorphic are declared in <memory>, [memory.syn].)
+// REQUIRES: exceptions
 #include <memory>
 #include <utility>
 #include "exc_harness.hpp"

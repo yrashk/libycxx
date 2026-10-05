@@ -4,6 +4,7 @@
 // scoped_allocator_adaptor<Inner...>; POCCA/POCMA/POCS are true if true for any allocator;
 // is_always_equal is true if true for all; rebind replaces only the outer allocator; the
 // deduction guide deduces from the constructor arguments.
+// REQUIRES: exceptions
 #include <scoped_allocator>
 #include <memory>
 #include <type_traits>

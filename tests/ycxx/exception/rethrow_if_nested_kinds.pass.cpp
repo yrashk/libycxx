@@ -5,6 +5,7 @@
 // effect; a virtual (shared, hence unambiguous) nested_exception base is used; and when E does
 // not itself name nested_exception as a base, the dynamic_cast is a cross-cast on the dynamic
 // type, which yields null (no effect) if that base is ambiguous or not public there.
+// REQUIRES: exceptions
 #include <exception>
 #include "check.hpp"
 

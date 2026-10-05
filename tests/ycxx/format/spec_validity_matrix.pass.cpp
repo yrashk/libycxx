@@ -17,6 +17,7 @@
 //     long and their unsigned counterparts; not char, wchar_t or bool).
 // char formatted into a wide context uses formatter<char, wchar_t> ([format.formatter.spec]
 // /2.1), a charT formatter for the purposes of Table 108.
+// REQUIRES: exceptions
 #include <format>
 #include <string>
 #include <string_view>

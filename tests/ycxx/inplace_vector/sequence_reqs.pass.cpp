@@ -5,6 +5,7 @@
 // forms; insert / insert_range / emplace; erase / clear; integral arguments selecting the
 // (size_type, const T&) overloads; single-pass dereferencing; front/back, push_back,
 // pop_back, operator[], at, append_range. Also in constant expressions.
+// REQUIRES: exceptions
 #include <inplace_vector>
 #include <cstddef>
 #include "container_values.hpp"

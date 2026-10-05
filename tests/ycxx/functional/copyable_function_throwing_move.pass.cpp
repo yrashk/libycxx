@@ -5,6 +5,7 @@
 // "Exchanges the target objects". /3: the copy constructor copies the target. So a target whose
 // move constructor throws is never moved: moving, move-assigning and swapping keep the same
 // target objects, and only copying invokes the target's copy constructor.
+// REQUIRES: exceptions
 #include <functional>
 #include <cstdlib>
 #include <exception>

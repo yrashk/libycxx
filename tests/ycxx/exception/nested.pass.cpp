@@ -4,6 +4,7 @@
 // from both U and nested_exception", otherwise throws std::forward<T>(t). rethrow_if_nested(e)
 // rethrows the nested exception if e is polymorphic and has an accessible unambiguous
 // nested_exception base, otherwise has no effect.
+// REQUIRES: exceptions
 #include <exception>
 #include <stdexcept>
 #include <type_traits>

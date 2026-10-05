@@ -3,6 +3,7 @@
 // size(); front() is operator[](0), back() is operator[](size() - 1).
 // [string.accessors]: c_str() and data() return to_address(begin()); data() non-const
 // returns charT*.
+// REQUIRES: exceptions
 #include <string>
 #include <memory>
 #include <stdexcept>

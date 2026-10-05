@@ -4,6 +4,7 @@
 // exception alive after the handler exits ([propagation]/9), so a nested_exception can be
 // rethrown later and from copies; the capture is the innermost currently handled exception.
 // Copy assignment is defaulted, so it replaces the stored exception_ptr.
+// REQUIRES: exceptions
 #include <exception>
 #include <stdexcept>
 #include <type_traits>

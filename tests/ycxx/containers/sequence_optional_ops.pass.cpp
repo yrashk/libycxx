@@ -5,6 +5,7 @@
 // *(a.begin() + n) and throws out_of_range if n >= a.size(). Also append_range(rg) (type
 // void, inserts copies of rg before end()), required for vector ([sequence.reqmts]/112) and
 // provided by basic_string ([string.append]; there it returns *this).
+// REQUIRES: exceptions
 #include <vector>
 #include <string>
 #include <stdexcept>

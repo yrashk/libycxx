@@ -5,6 +5,7 @@
 // state entities of g." [func.require]/7: copying a wrapper copies its state entities, so a
 // throwing copy constructor propagates. An exception from the target propagates out of the call
 // (the call is expression-equivalent to the call pattern, [func.require]/5).
+// REQUIRES: exceptions
 #include <functional>
 #include <utility>
 #include "check.hpp"

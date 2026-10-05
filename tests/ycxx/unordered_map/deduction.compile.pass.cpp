@@ -4,6 +4,7 @@
 // (n, Hash, Allocator). [unord.req.general]/246: a guide does not participate when an
 // integral type would be deduced as Hash ("has a Hash template parameter and an integral
 // type or a type that qualifies as an allocator is deduced for that parameter").
+// REQUIRES: exceptions
 #include <unordered_map>
 #include <functional>
 #include <ranges>

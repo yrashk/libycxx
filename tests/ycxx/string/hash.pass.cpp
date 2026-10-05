@@ -2,6 +2,7 @@
 // and hash<S>()(s) == hash<SV>()(SV(s)) for the corresponding string view type.
 // [unord.hash]: enabled specializations are default constructible, callable on const S&,
 // return size_t.
+// REQUIRES: exceptions
 #include <string>
 #include <cstddef>
 #include <functional>

@@ -17,6 +17,7 @@
 //   Otherwise (assignments, erase, constructors): the basic guarantee only.
 // Two element types: every special member may throw (exh::T), and noexcept moves (exh::NT),
 // which take different relocation paths; two capacities: none spare and plenty spare.
+// REQUIRES: exceptions
 #include <vector>
 #include "exc_sequence.hpp"
 

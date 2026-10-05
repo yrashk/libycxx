@@ -7,6 +7,7 @@
 // ++result, (void)++first, --n)"), so that element, and every earlier one, must be destroyed.
 // Checked with an input iterator and a forward iterator, for the std and std::ranges forms
 // ([specialized.algorithms]: the ranges forms have the same effects), at every throw point.
+// REQUIRES: exceptions
 #include <cstddef>
 #include <iterator>
 #include <memory>

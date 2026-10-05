@@ -3,6 +3,7 @@
 // exception object is created." [except.throw]/4: "If a handler exits by rethrowing, control
 // is passed to another handler for the same exception object." The object is destroyed only
 // when the last handler exits other than by rethrowing.
+// REQUIRES: exceptions
 #include "check.hpp"
 
 static int live = 0, copies = 0, dtors = 0;

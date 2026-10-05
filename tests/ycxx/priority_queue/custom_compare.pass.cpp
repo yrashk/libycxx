@@ -7,6 +7,7 @@
 // So a stateful comparator object passed to the constructor (not a default-constructed one) is
 // the one used by every operation, including push_range; function pointers work as Compare;
 // a comparator that is a strict weak order on a key yields the elements in key order.
+// REQUIRES: exceptions
 #include <queue>
 #include <algorithm>
 #include <deque>

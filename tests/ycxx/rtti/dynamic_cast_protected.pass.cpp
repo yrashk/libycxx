@@ -2,6 +2,7 @@
 // public base class subobject of a C object", /9.2 "v points (refers) to a public base class
 // subobject of the most derived object, and the type of the most derived object has a base
 // class, of type C, that is unambiguous and public". Protected derivation fails both.
+// REQUIRES: exceptions
 #include <typeinfo>
 #include "check.hpp"
 

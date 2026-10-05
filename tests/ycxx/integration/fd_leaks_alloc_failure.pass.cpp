@@ -17,6 +17,7 @@
 // after it) are sampled, about 200 per operation spread evenly. (The time zone database makes
 // about 17000 allocations, of which only a handful happen while a file is open.)
 // FLAGS: -pthread
+// REQUIRES: exceptions
 #include <chrono>
 #include <cstdlib>
 #include <filesystem>

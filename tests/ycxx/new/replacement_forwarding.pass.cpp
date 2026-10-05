@@ -13,6 +13,7 @@
 // Only the four basic functions are replaced here ([dcl.fct.def.replace]); every other form
 // must reach them through its default behaviour.
 // UNSUPPORTED-SANITIZER: asan  ASan replaces the global allocation functions: its operator new neither calls the new_handler nor throws for impossible sizes, and its other forms do not forward to a program's replacement ([new.delete])
+// REQUIRES: exceptions
 #include <new>
 #include <cstddef>
 #include <cstdlib>

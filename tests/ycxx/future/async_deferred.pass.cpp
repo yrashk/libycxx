@@ -4,6 +4,7 @@
 // waiting function." Exceptions are stored. [futures.unique.future]/22-23: wait_for / wait_until
 // have no effect and return future_status::deferred while the function is deferred.
 // FLAGS: -pthread
+// REQUIRES: exceptions
 #include <future>
 #include <thread>
 #include <chrono>

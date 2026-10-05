@@ -4,6 +4,7 @@
 // [fs.class.rec.dir.itr]: recursive_directory_iterator visits subdirectories (depth()
 // reflects the nesting; disable_recursion_pending / pop). The comparisons are made order-
 // independent.
+// REQUIRES: exceptions
 #include <filesystem>
 #include <algorithm>
 #include <iterator>

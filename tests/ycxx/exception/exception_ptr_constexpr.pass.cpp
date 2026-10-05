@@ -2,6 +2,7 @@
 // [exception.syn]: rethrow_exception, make_exception_ptr and exception_ptr_cast are
 // constexpr, so they are usable during constant evaluation (P3068).
 // XFAIL-COMPILER: clang  no constexpr exception support (P3068) in clang yet
+// REQUIRES: exceptions
 #include <exception>
 #include <optional>
 #include "check.hpp"

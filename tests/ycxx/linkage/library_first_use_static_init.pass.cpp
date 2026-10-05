@@ -17,6 +17,7 @@
 //     environment() is the same encoding ("not affected by calls to setlocale", which the
 //     constructor's locale::global of an unnamed locale may or may not make).
 // FILES: ../support/linkage/static_init_use_tu.cpp
+// REQUIRES: exceptions
 #include "../support/linkage/static_init_use.hpp"
 #include <chrono>
 #include <cstdio>

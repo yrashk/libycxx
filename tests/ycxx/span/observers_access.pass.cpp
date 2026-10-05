@@ -2,6 +2,7 @@
 // [span.elem]: operator[] returns *(data() + idx); at(idx) (C++26) "Throws: out_of_range if
 // idx >= size() is true."; front(), back(), data() noexcept. All return reference, i.e.
 // element_type&, even on a const span.
+// REQUIRES: exceptions
 #include <span>
 #include <stdexcept>
 #include <type_traits>

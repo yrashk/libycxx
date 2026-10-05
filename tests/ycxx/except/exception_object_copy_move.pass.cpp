@@ -5,6 +5,7 @@
 // outside the innermost try-block "does not move". [Note 2]: "There cannot be a move from the
 // exception object because it is always an lvalue." Catching by reference and rethrowing make
 // no copies.
+// REQUIRES: exceptions
 #include "check.hpp"
 
 static int copies = 0, moves = 0, live = 0;

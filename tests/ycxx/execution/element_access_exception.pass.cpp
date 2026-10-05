@@ -5,6 +5,7 @@
 // [algorithms.parallel.defns]/3.3: user-provided invocable objects are element access
 // functions. Checked in a child process whose terminate handler ([terminate.handler]) exits
 // with a recognizable status. Control: without a policy the exception propagates.
+// REQUIRES: exceptions
 #include <algorithm>
 #include <exception>
 #include <execution>

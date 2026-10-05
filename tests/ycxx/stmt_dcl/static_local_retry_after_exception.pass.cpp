@@ -2,6 +2,7 @@
 // not complete, so it will be tried again the next time control enters the declaration."
 // /4: "An object associated with a block variable with static or thread storage duration
 // will be destroyed if and only if it was constructed."
+// REQUIRES: exceptions
 #include "check.hpp"
 
 static int attempts = 0;

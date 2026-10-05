@@ -1,6 +1,7 @@
 // [except.handle]/7: "If the search for a handler exits the function body of a function with
 // a non-throwing exception specification, the function std::terminate is invoked." This holds
 // even though an outer handler would match. [except.terminate]/1.3.
+// REQUIRES: exceptions
 #include <cstdlib>
 #include <exception>
 #include "check.hpp"

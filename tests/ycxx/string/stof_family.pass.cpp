@@ -2,6 +2,7 @@
 // str.c_str(); idx receives the index of the first unconverted character; invalid_argument
 // when no conversion can be performed; out_of_range when the function sets errno to ERANGE
 // or the value is not representable.
+// REQUIRES: exceptions
 #include <string>
 #include <cstddef>
 #include <stdexcept>

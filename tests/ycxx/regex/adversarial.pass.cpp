@@ -11,6 +11,7 @@
 // 3. Long inputs (10^5 .. 10^6 characters). [re.err]: the library may report error_complexity or
 //    error_stack ("insufficient memory to determine whether the regular expression could match");
 //    either the correct result or one of those regex_error codes is accepted, nothing else.
+// REQUIRES: exceptions
 #include <regex>
 #include <string>
 #include <utility>

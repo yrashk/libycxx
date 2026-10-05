@@ -3,6 +3,7 @@
 // do_deallocate has no effect; release() returns everything to upstream (even blocks not
 // deallocated) and resets to the initial buffer; the destructor calls release();
 // upstream_resource() returns the upstream; do_is_equal is identity. Not copyable.
+// REQUIRES: exceptions
 #include <memory_resource>
 #include <cstddef>
 #include <cstdint>

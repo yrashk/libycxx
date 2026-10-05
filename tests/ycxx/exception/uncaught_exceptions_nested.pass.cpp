@@ -6,6 +6,7 @@
 // exception object again.
 // Destructors run during stack unwinding may themselves throw and catch exceptions, so the count
 // can exceed one: each level of nesting adds one while its exception is being propagated.
+// REQUIRES: exceptions
 #include <exception>
 #include "check.hpp"
 

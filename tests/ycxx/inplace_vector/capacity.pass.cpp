@@ -5,6 +5,7 @@
 // *this if it throws. [inplace.vector.modifiers]/7: push_back / emplace_back have no
 // effects if they throw; /3: insertion that throws other than from T's copy / move
 // operations or an InputIterator operation has no effects.
+// REQUIRES: exceptions
 #include <inplace_vector>
 #include <cstddef>
 #include <new>

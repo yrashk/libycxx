@@ -13,6 +13,7 @@
 //     lookup_classname: the same patterns match the same strings in every thread;
 //   [format.string.std]: the L option with the classic locale gives the non-L result.
 // FLAGS: -pthread
+// REQUIRES: exceptions
 #include <atomic>
 #include <format>
 #include <locale>

@@ -15,6 +15,7 @@
 // Also: [alg.foreach] for_each applies f "starting from first and proceeding to last - 1",
 // so exactly k elements are visited before the throwing (k+1)-th call, through std::function
 // ([func.wrap.func.inv]: invoking the target propagates its exception).
+// REQUIRES: exceptions
 #include <algorithm>
 #include <functional>
 #include <iterator>

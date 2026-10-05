@@ -1,17 +1,21 @@
 #!/bin/sh
 # Run a conformance suite against libycxx.
 #   tools/run-conformance libcxx|libstdcxx|ycxx gcc|clang [subdirs...] [-- extra lit args]
-# Rebuilds build/<compiler> first (ninja) when it is a CMake build. Shows a live progress line
-# (tests done, pass/fail counts, elapsed time, ETA, current test), each failure as it happens
-# with the start of its output, and lit's summary; lit's complete output goes to
-# build/test-logs/<suite>-<compiler>[-<sanitizer>][-ref].log.
+# Rebuilds build/<compiler> first (ninja) when it is a CMake build. Lists every test as it
+# finishes with its result and the steps it ran ("compile exit 0 0.21s · run exit 0 0.00s"),
+# failures with their transcript (the commands, exit statuses and output), under a live status
+# line (counts, elapsed time, ETA), then lit's summary. Writes, as build/test-logs/<run>.*
+# (<run> = <suite>-<compiler>[-<sanitizer>][-ref]): .log, lit's complete output, every test's
+# transcript included; .html, a report of every test with its transcript and how the run was
+# made (commit, compiler version, command); .tsv, one line per test; .json, lit's results.
 # Environment: LIBCXX_TESTS (default /opt/src/llvm-project/libcxx/test),
 #              LIBSTDCXX_TESTS (default /opt/src/libstdcxx-testsuite), SANITIZER (asan,ubsan),
 #              YCXX_STDLIB=libstdcxx (ycxx suite only: build against libstdc++ instead, the
 #              reference runs documented in tests/ycxx/REFERENCE.md),
 #              YCXX_LIT / YCXX_LIT_VERSION (how lit runs: tools/lib/env.sh; by default through uvx),
-#              YCXX_VERBOSE=1 (list every test), YCXX_FAIL_DETAILS=N (show the output of the first
-#              N failures, default 10), YCXX_RAW=1 (lit's own output, unfiltered),
+#              YCXX_QUIET=1 (list only the tests that did not pass), YCXX_VERBOSE=1 (print every
+#              test's whole transcript), YCXX_FAIL_DETAILS=N (show the transcript of the first N
+#              failures, default 10), YCXX_RAW=1 (lit's own output, unfiltered),
 #              YCXX_COLOR=always|never|auto, NO_COLOR.
 set -e
 repo=$(cd "$(dirname "$0")/.." && pwd)
@@ -47,7 +51,7 @@ set -- ${filter:+--filter ":: ($filter)"} --param repo="$repo" --param compiler=
   --param tests="$tests" ${SANITIZER:+--param sanitizer=$SANITIZER} \
   ${YCXX_STDLIB:+--param stdlib=$YCXX_STDLIB} "$@"
 if [ "${YCXX_RAW:-0}" = 1 ]; then
-  exec $ycxx_lit "$dir" "$@"
+  exec ${ycxx_lit} "$dir" "$@"
 fi
 
 name=$suite-$compiler${SANITIZER:+-$(echo "$SANITIZER" | tr , -)}
@@ -75,25 +79,45 @@ if [ "${YCXX_STDLIB:-}" != libstdcxx ] && [ -z "${YCXX_LIBDIR:-}" ]; then
     exit 2
   fi
 fi
-# -v: lit prints each failure's output (the compile and run commands, then what they printed).
-ui_cmd $ycxx_lit "$dir" -v "$@"
+# -a: lit prints every test's output, passing ones included: the commands the test ran, their
+# exit statuses and durations, and what they printed (tests/ycxxlit/transcript.py). -o: the same
+# as JSON, from which the report is made.
+base=$repo/build/test-logs/$name
+rm -f "$base.json"
+ui_cmd ${ycxx_lit} "$dir" -a -o "$base.json" "$@"
 
 t0=$(date +%s)
+started=$(date -u +%Y-%m-%dT%H:%M:%SZ)
 status=$log.status
 {
   set +e
-  PYTHONUNBUFFERED=1 $ycxx_lit "$dir" -v "$@" 2>&1
+  PYTHONUNBUFFERED=1 ${ycxx_lit} "$dir" -a -o "$base.json" "$@" 2>&1
   echo $? >"$status"
-} | awk -v logfile="$log" -v tty=$ui__tty \
-      -v verbose="${YCXX_VERBOSE:-0}" -v details="${YCXX_FAIL_DETAILS:-10}" -v cols="$(ui_cols)" \
-      -v red="$ui_red" -v green="$ui_green" -v yellow="$ui_yellow" -v cyan="$ui_cyan" \
-      -v bold="$ui_bold" -v dim="$ui_dim" -v reset="$ui_reset" \
-      -v s_ok="$ui_sym_ok" -v s_fail="$ui_sym_fail" -v s_skip="$ui_sym_skip" \
+} | awk -v logfile="$log" -v tty=${ui__tty} -v quiet="${YCXX_QUIET:-0}" \
+      -v verbose="${YCXX_VERBOSE:-0}" -v details="${YCXX_FAIL_DETAILS:-10}" \
+      -v red="${ui_red}" -v green="${ui_green}" -v yellow="${ui_yellow}" -v cyan="${ui_cyan}" \
+      -v bold="${ui_bold}" -v dim="${ui_dim}" -v reset="${ui_reset}" \
+      -v s_ok="${ui_sym_ok}" -v s_fail="${ui_sym_fail}" -v s_skip="${ui_sym_skip}" \
       -f "$repo/tools/lib/lit-progress.awk"
 rc=$(cat "$status" 2>/dev/null || echo 1)
 rm -f "$status"
 el=$(ui_duration $(($(date +%s) - t0)))
 echo
 if [ "$rc" = 0 ]; then ui_ok "$what: all tests passed" "($el)"
-else ui_fail "$what: failures" "(lit exit $rc, $el; full output: $log)"; fi
+else ui_fail "$what: failures" "(lit exit $rc, $el)"; fi
+
+# The report: every test with its result, duration and transcript, and how the run was made.
+if [ -f "$base.json" ]; then
+  if [ "${YCXX_STDLIB:-}" = libstdcxx ]; then cxx_used="toolchain's libstdc++"; else cxx_used="libycxx, build/$compiler"; fi
+  case $compiler in gcc) cxx=${YCXX_GXX:-g++-16} ;; *) cxx=${YCXX_CLANGXX:-clang++-23} ;; esac
+  commit=$(git -C "$repo" rev-parse --short=12 HEAD 2>/dev/null || echo unknown)
+  dirty=$(git -C "$repo" status --porcelain 2>/dev/null | wc -l | tr -d ' ')
+  [ "$dirty" = 0 ] || commit="$commit (+$dirty uncommitted changes)"
+  python3 "$repo/tools/lib/test_report.py" "$base.json" "$base" \
+    "suite=$suite" "compiler=$compiler" "compiler version=$($cxx --version 2>/dev/null | head -n 1)" \
+    "library=$cxx_used" "sanitizer=${SANITIZER:-none}" "tests=$tests${filter:+ (filter: $filter)}" \
+    "commit=$commit" "started=$started" "host=$(uname -srm)" \
+    "command=$(ui_quote ${ycxx_lit} "$dir" -a -o "$base.json" "$@")" "log=$log" &&
+    ui_info "report" "$base.html" && ui_info "list" "$base.tsv (result, seconds, test, steps)"
+fi
 exit "$rc"

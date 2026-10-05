@@ -288,10 +288,14 @@ Ported:
   `FP_SUBNORMAL` (1-5), `FP_ILOGBNAN` (INT_MIN), `math_errhandling` (MATH_ERREXCEPT: that libm
   never sets errno; `cmath_check.cpp` compares the C library's only when it is a constant),
   `mbstate_t` (128 bytes, aligned to 8). The hosted checks against the C headers remain.
-- C23 functions libSystem lacks, provided by the hosted runtime: `strfromd/f/l`
-  (`src/hosted/strfrom.cpp`, on snprintf), `mbrtoc8`/`c8rtomb`, and the four char16_t/char32_t
-  conversions where the SDK has no `<uchar.h>` (`src/hosted/uchar.cpp`, on mbrtowc/wcrtomb),
-  `timespec_getres` (`src/hosted/ctime.cpp`, TIME_UTC only, on clock_getres).
+- C23 functions libSystem lacks (found by `cmake/ycxx-c-library.cmake`, not assumed), provided by
+  the hosted runtime: `strfromd/f/l` (`src/hosted/strfrom.cpp`, on snprintf), `mbrtoc8`/`c8rtomb`,
+  and the four char16_t/char32_t conversions (the SDK has no `<uchar.h>`; `src/hosted/uchar.cpp`,
+  on mbrtowc/wcrtomb; libycxx's `<uchar.h>` places them in the global namespace),
+  `timespec_getres` (`src/hosted/ctime.cpp`, TIME_UTC only, on clock_getres; global through
+  libycxx's `<time.h>`). `_PRINTF_NAN_LEN_MAX` is the probe's measurement of libSystem's printf
+  (3: it prints every NaN as `nan`). `atexit`/`at_quick_exit` are redeclared noexcept, and the
+  const-correct `strchr` ... `wmemchr` pairs are libycxx's at global scope too.
 - Static initialization: Mach-O has no init priorities, so `<iostream>` defines an
   `ios_base::Init` per translation unit there (DECISIONS §7); checked on Linux by building with
   `-U__ELF__`.
@@ -334,9 +338,13 @@ compilers apart from the documented `except/handler_pointer_reference{,_exact}` 
 `tests/cmake/run.sh` (not in CI) shows no exports and "mine 3 other 3" with Apple's libc++.
 
 Unverified or known gaps on macOS:
-- Darwin's C library predates C23 in places libycxx forwards to it: whether its printf/scanf
-  have `%b` and its `strto*` the `0b` prefix is probed by `cinttypes/functions_macros` (a note
-  when missing); its `iswctype` with `wctype("...")` may disagree with the `isw*` functions
+- Darwin's C library predates C23 in places libycxx forwards to it: its printf has neither `%b`
+  nor `%B` (macOS 26: `snprintf("%b", 5u)` gives "b"), so own test `cstdio/c23_conversions` fails
+  there (a C library gap: libycxx's `<cstdio>` is the C library's printf) and `PRIBN` stay
+  undefined ([cinttypes.syn]/2); whether its scanf has `%b` and its `strto*` the `0b` prefix is
+  probed by `cinttypes/functions_macros` (a note when missing); its `strftime` `%z` gives the
+  local offset for a `gmtime` result (own test `ctime/c23_functions` passes only with `TZ=UTC`,
+  as in CI); its `iswctype` with `wctype("...")` may disagree with the `isw*` functions
   beyond ASCII under "C.UTF-8" (`cwctype/classification` notes the C library's disagreements).
 - `<stacktrace>`: frames are captured (libSystem's `_Unwind_Backtrace`), but only `dladdr`
   names them (exported symbols only) and there are no file names or lines: the runtime reads ELF
@@ -666,6 +674,10 @@ compilers; `visit_format_arg.pass.cpp` needs `EOF` from `constexpr_char_traits.h
   destroy/121024.cc fails on GCC (PR c++/102284, marked dg-xfail-if, which the harness ignores).
 - `FLT_ROUNDS` is the constant 1 with GCC (no `__builtin_flt_rounds`), as in GCC's own
   `<float.h>`; it does not follow `fesetround`. Clang reports the current mode.
+- The searching functions (`strchr` ... `wmemchr`) are libycxx's const/non-const pairs in both
+  namespaces on every C library: the C library's declarations are renamed while its header is
+  read (DECISIONS §3), so a C header read before libycxx's (bypassing its include directory)
+  leaves the C signature in place.
 - `std::any` allocates large values with a plain new-expression, honouring a class-specific
   `operator new`. A type that deletes it cannot be stored (libstdc++ any/83658 relies on this).
 - Freestanding programs built with GCC link libgcc (helpers such as `__popcountdi2`).

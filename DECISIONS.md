@@ -59,7 +59,18 @@ variable templates. The preprocessor is used only where the language cannot do t
    `constexpr`. It always diagnoses a violation during constant evaluation, and checks at run
    time when `YCXX_HARDENED=1` (via `cfg::hardened`).
 
-8. **Keep looking for replacements.** Every remaining preprocessor use is technical debt. When a
+8. **Facts about the target are discovered, not written down.** What a C library, an assembler
+   or a compiler's code generation provides is never encoded as knowledge about a platform
+   (`#if defined(__APPLE__)` for "has no strfromd", a hand-made list of symbols). A fact the
+   preprocessor can see is tested where it is used: a macro (`#ifndef _PRINTF_NAN_LEN_MAX`,
+   `!defined(PRIb8)`) or a header (`__has_include_next(<uchar.h>)`). Anything else is found
+   when libycxx is configured, by CMake probes compiled against the real toolchain on every
+   target, and handed to the code as generated files: `cmake/ycxx-c-library.cmake` writes the
+   C library's `YCXX_C_HAS_*` switches to `<ycxx/generated/c_library.hpp>` (included by
+   `config.hpp` when found; without it a C23 C library is assumed, so a gap is a compile error
+   naming the function), and the fundamental type_info probe (`CMakeLists.txt`) writes the
+   symbols `src/abi/rtti.cpp` hides (§2). Each probe is documented where it is defined.
+9. **Keep looking for replacements.** Every remaining preprocessor use is technical debt. When a
    new language feature or an in-language probe can replace one, replace it.
 
 Rationale: `if constexpr` branches are type-checked, so both configurations stay compilable.
@@ -271,14 +282,21 @@ tooling.
   global namespace). In C++, `<stdlib.h>`, `<inttypes.h>`, `<string.h>` and `<wchar.h>` include
   `<cstdlib>`, `<cinttypes>`, `<cstring>`, `<cwchar>` and add the names those declare themselves (`using std::abs;`,
   `div`, the const-correct `bsearch` pair, `memalignment`, `free_sized`, `imaxabs`,
-  `memset_explicit`, the const-correct `wcschr` pairs, ...); in C they are the C library's (`#include_next`), as `<math.h>` is.
+  `memset_explicit`, the const-correct `strchr` and `wcschr` pairs, ...); `<time.h>` and `<uchar.h>`
+  likewise wrap `<ctime>` and `<cuchar>`; in C they are the C library's (`#include_next`), as `<math.h>` is.
   `<complex.h>` and `<tgmath.h>` include `<complex>` (and `<cmath>`) in C++ and never the C
   library's, whose `complex`/`I` and type-generic macros would break C++ code. The `<cname>`
   headers read the C library's header with `#include_next`. A C function that is an exact match
   for one of libycxx's (`int abs(int)`, `div_t div(int, int)`, `labs`, `ldiv`, `imaxabs`, ...)
   would win overload resolution against libycxx's constexpr templates, cannot be redeclared
-  constexpr, and C's `bsearch` conflicts with the const pair; so `<cstdlib>` and `<cinttypes>`
-  rename those C declarations while they read the C library's header (`#define abs ycxx_c_abs`,
+  constexpr, and C's `bsearch` conflicts with the const pair. The same holds for the searching
+  functions whose C declaration is `char* strchr(const char*, int)` (`memchr`, `strchr`,
+  `strpbrk`, `strrchr`, `strstr`, and the wide `wcschr`, `wcspbrk`, `wcsrchr`, `wcsstr`,
+  `wmemchr`): [cstring.syn] and [cwchar.syn] replace it with a const/non-const pair, which
+  cannot coexist with it; and for `atexit`/`at_quick_exit`, which [support.start.term] declares
+  noexcept. So `<cstdlib>`, `<cinttypes>`, `<cstring>` and `<cwchar>` rename those C
+  declarations on every C library (glibc's own C++ pairs too, so nothing depends on which C
+  library it is) while they read the C library's header (`#define abs ycxx_c_abs`,
   `#include_next`, `#undef`; the renamed declarations are never used) and then place
   libycxx's functions under the C names in the global namespace, so code that calls `::abs` or an
   unqualified `abs` after `<cstdlib>` keeps working. This is preprocessor use the language cannot
@@ -299,12 +317,16 @@ tooling.
   layout must equal the C library's. `config.hpp` names the family once (`YCXX_TARGET_DARWIN`
   for the macros, which must be literals usable in `#if`; `cfg::darwin` for everything else):
   the Linux values (glibc, musl; also the bare-metal default) or Darwin's (BSD errno numbers,
-  `FP_NAN` 1 .. `FP_SUBNORMAL` 5, a 128-byte `mbstate_t` for the freestanding definition). `errc` gives each value as
+  `FP_NAN` 1 .. `FP_SUBNORMAL` 5, a 128-byte `mbstate_t` for the freestanding definition). (These
+  are freestanding values that core must spell out without the C library's headers, each checked
+  against them; what a hosted wrapper needs to know about the C library is probed instead, §1
+  rule 8.) `errc` gives each value as
   `errno_number(Linux, Darwin)`; the freestanding macro lists are checked against `errc`, and
   every value against the C library's headers wherever those are included (`<system_error>`,
   `<cwchar>`, `<cuchar>`, `src/hosted/cmath_check.cpp`). Where the C library lacks a C23 function
-  of a wrapper (Darwin: `strfromd/f/l`, `mbrtoc8`/`c8rtomb`, and the whole of `<uchar.h>` on
-  older SDKs), a `YCXX_C_HAS_*` switch replaces the using-declaration with libycxx's own,
+  of a wrapper (`strfromd/f/l`, `mbrtoc8`/`c8rtomb`, `timespec_getres`, or the whole of
+  `<uchar.h>`; found by `cmake/ycxx-c-library.cmake`, §1 rule 8), a `YCXX_C_HAS_*` switch replaces
+  the using-declaration with libycxx's own,
   defined in the hosted runtime (`src/hosted/strfrom.cpp`, `src/hosted/uchar.cpp`, built on every
   platform). `strfrom*` are templates (as `free_sized` is), so a C library that gains them wins
   unqualified calls; the `<cuchar>` fallbacks are plain functions, as the C library's would be.

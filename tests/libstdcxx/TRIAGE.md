@@ -554,3 +554,39 @@ Tests skipped (or UNSUPPORTED) as tied to the other library's internals, extensi
 | `25_algorithms/pop_heap/empty2?_neg.cc` | a non-empty heap is a precondition of pop_heap, not a hardened one ([pop.heap]/2) |
 
 <!-- counterparts:end -->
+
+### Extension-skipped tests without a link (2409, std directories)
+
+Of the 2633 tests skipped as `extension`, 224 are linked or listed above. The other 2409 are
+all in the testsuite's standard directories (no `ext/`, `tr1/`, `tr2/`, `backward/` or pb_ds
+test reaches the harness): they are skipped because the test or a testsuite helper it includes
+uses libstdc++ extensions (1308: a helper that includes `bits/`, `ext/` headers; 1063: the
+test names `__gnu_test::` / `__gnu_cxx::` utilities or includes `<ext/...>`; 38: internal
+headers or `_GLIBCXX` macros reached through a sibling). Their subject is usually standard, but
+they have not been triaged test by test, so the trace shows a bare "no libycxx counterpart".
+
+| directory | tests |
+|---|---:|
+| 17_intro | 24 |
+| 18_support | 16 |
+| 19_diagnostics | 21 |
+| 20_util | 220 |
+| 21_strings | 98 |
+| 22_locale | 191 |
+| 23_containers | 748 |
+| 24_iterators | 29 |
+| 25_algorithms | 456 |
+| 26_numerics | 85 |
+| 27_io | 300 |
+| 28_regex | 58 |
+| 29_atomics | 32 |
+| 30_threads | 40 |
+| std | 91 |
+
+### Hardened preconditions awaiting the hardened-test mechanism
+
+`21_strings/basic_string/element_access/(char|wchar_t)/21674.cc` (`operator[]` past `size()`,
+[string.access]/1) and `21_strings/basic_string_view/element_access/(char|wchar_t)/2.cc`
+(`operator[]` of an empty view, [string.view.access]/1) violate hardened preconditions. Their
+counterparts are hardened-precondition tests (`tools/test --hardened`, `// REQUIRES-HARDENED`,
+`// EXPECT-TERMINATE`), not written yet; until then the trace shows "no libycxx counterpart".

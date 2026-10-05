@@ -471,7 +471,7 @@ given its reason.
 
 With named locales on the C library's (DECISIONS §7), `dg-require-namedlocale` holds for every
 name the C library has. Directories `22_locale 27_io 21_strings std/time`, both compilers: 24
-failures each, all classified in skip.txt (block "Named locales"), each checked to pass with the
+failures each: one fixed, 23 classified in skip.txt (block "Named locales"), each checked to pass with the
 non-standard part removed unless said otherwise:
 - 22_locale/locale/global_locale_objects/2.cc, locale/cons/29217.cc: `setlocale`/`LC_ALL` without
   `<clocale>`; 29217 also expects glibc's twelve-category composite name.

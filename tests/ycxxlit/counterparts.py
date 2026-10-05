@@ -13,10 +13,13 @@ whole directory: `libstdcxx:23_containers/vector/debug/.*`. The index is built o
 output ends with one line:
 
     covered by libycxx: tests/ycxx/<path>[, ...]
+    no libycxx counterpart: <why the draft gives it no subject, from TRIAGE.md>
     no libycxx counterpart
 
-Why one has none (no standard subject: internals, ABI layout, an extension API) is in the
-suite's TRIAGE.md, section "Skipped tests without a counterpart".
+Why one has none (no standard subject: internals, ABI layout, an extension API) is recorded in
+the suite's TRIAGE.md, section "Skipped tests without a counterpart" (a table of `pattern` and
+reason between the counterparts:begin / counterparts:end markers; `\|` stands for `|`); a test
+that matches no row there and has no own test has not been triaged yet.
 """
 import os, re
 
@@ -28,6 +31,25 @@ CATEGORIES = ('implementation-specific', 'extension', 'divergence', 'removed')
 MODES = re.compile(r'libcpp-hardening-mode|dg-require-debug-mode|warning-only verify test')
 SKIPPED = re.compile(r'skipped \(([^)]*)\)')
 COVERED, NONE = 'covered by libycxx: ', 'no libycxx counterpart'
+ROW = re.compile(r'^\| `([^`]*)` \| (.*) \|$', re.M)
+BEGIN, END = '<!-- counterparts:begin', '<!-- counterparts:end -->'
+
+
+def load_none(triage):
+    """The TRIAGE.md rows of tests without a counterpart: [(regex, reason)]."""
+    try:
+        text = open(triage, encoding='utf-8').read()
+    except OSError:
+        return []
+    if BEGIN not in text or END not in text:
+        return []
+    out = []
+    for m in ROW.finditer(text[text.index(BEGIN):text.index(END)]):
+        try:
+            out.append((re.compile(m.group(1).replace('\\|', '|')), m.group(2).strip()))
+        except re.error:
+            pass
+    return out
 
 
 class Index:
@@ -36,7 +58,9 @@ class Index:
     def __init__(self, root):
         self.exact = {s: {} for s in SUITES}
         self.patterns = {s: [] for s in SUITES}
-        top = os.path.dirname(os.path.dirname(os.path.abspath(root)))
+        tests = os.path.dirname(os.path.abspath(root))
+        self.none = {s: load_none(os.path.join(tests, s, 'TRIAGE.md')) for s in SUITES}
+        top = os.path.dirname(tests)
         for d, _, files in os.walk(root):
             for name in sorted(files):
                 if not name.endswith('.cpp'):
@@ -63,6 +87,9 @@ class Index:
         own.update(o for p, o in self.patterns.get(suite, ()) if p.fullmatch(rel))
         return sorted(own)
 
+    def why_none(self, suite, rel):
+        return next((why for p, why in self.none.get(suite, ()) if p.fullmatch(rel)), '')
+
 
 def linked(reason, rel):
     """Whether a test UNSUPPORTED for this reason gets the counterpart line."""
@@ -83,5 +110,7 @@ def annotate(result, index, suite, rel):
     if not linked(out.lstrip().split('\n', 1)[0], rel):
         return result
     own = index.lookup(suite, rel)
-    result.output = out.rstrip('\n') + '\n' + (COVERED + ', '.join(own) if own else NONE) + '\n'
+    why = '' if own else index.why_none(suite, rel)
+    line = COVERED + ', '.join(own) if own else NONE + (': ' + why if why else '')
+    result.output = out.rstrip('\n') + '\n' + line + '\n'
     return result

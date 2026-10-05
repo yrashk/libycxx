@@ -12,6 +12,8 @@
 //     get_tzdb().locate_zone(name); [time.zone.db.tzdb] locate_zone finds a zone or a link.
 //   current_zone() after a failure likewise works once memory is available.
 // The same then for the first call of current_zone() (if it initializes anything lazily).
+// Loading the database allocates some 20000 times: its first access fails at every 37th
+// allocation (a prime, so that the failures fall on all kinds of allocation), not every one.
 #include <algorithm>
 #include <chrono>
 #include <exception>
@@ -26,7 +28,7 @@ namespace chr = std::chrono;
 static long other_exceptions = 0;
 
 template <class F>
-void sw(const char* name, F op) {
+void sw(const char* name, F op, options o = {}) {
   // No leak accounting: the successful run creates the database, which stays.
   sweep(name, gnew, [&] {
     bool threw = attempt([&] {
@@ -40,14 +42,14 @@ void sw(const char* name, F op) {
       }
     });
     return threw;
-  });
+  }, o);
 }
 
 int main() {
   sw("first get_tzdb", [] {
     const chr::tzdb& db = chr::get_tzdb();
     (void)db;
-  });
+  }, options{.max_k = 200000, .step = 37});
   disarm();
   const chr::tzdb_list& list = chr::get_tzdb_list();
   CHECK(std::distance(list.begin(), list.end()) == 1);

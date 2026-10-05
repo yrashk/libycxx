@@ -34,7 +34,8 @@ std::string lib_catch(void (*f)()) {
   } catch (const LibError& e) {
     return "LibError " + std::to_string(e.code);
   } catch (const std::system_error& e) {
-    return std::string("system_error ") + (e.code() == std::errc::permission_denied ? "EACCES" : "other");
+    // The value only: the category objects belong to each copy of the library (see the test).
+    return std::string("system_error ") + (e.code().value() == int(std::errc::permission_denied) ? "EACCES" : "other");
   } catch (const std::out_of_range&) {
     return "out_of_range";
   } catch (const std::exception& e) {

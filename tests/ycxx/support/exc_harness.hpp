@@ -497,6 +497,7 @@ struct options {
   bool may_swallow = false; // an injected failure may be handled internally (e.g. a temporary
                             // buffer allocation, [alg.sort]'s "if enough extra memory")
   long max_k = 4000;
+  long step = 1; // inject at k = 1, 1 + step, ...: for operations that allocate many times
 };
 
 // Calls scenario() for k = 1, 2, ... (scenario returns attempt(...)'s result), checking resource
@@ -506,7 +507,7 @@ void sweep(const char* name, Kind kind, F&& scenario, options o = {}) {
   st.scenario = name;
   st.kind = kind;
   ++st.sweeps;
-  for (long k = 1; k <= o.max_k; ++k) {
+  for (long k = 1; k <= o.max_k; k += o.step) {
     st.k = k;
     const long live0 = st.live;
     const int blocks0 = nblocks;

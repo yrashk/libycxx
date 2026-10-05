@@ -1,0 +1,10 @@
+// Test-harness shim (see bits/c++config.h), included by testsuite_container_traits.h, which
+// specializes its traits for libstdc++'s debug-mode string __gnu_debug::basic_string. The template
+// is declared (so the helper parses) but not defined: debug mode is a libstdc++ extension, and
+// tests that include <debug/...> or name __gnu_debug stay skipped (libstdcxx_format.py).
+#pragma once
+
+namespace __gnu_debug {
+template <class CharT, class Traits, class Alloc>
+class basic_string;
+} // namespace __gnu_debug

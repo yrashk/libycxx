@@ -115,8 +115,21 @@ locale_t new_c_locale(const char* name, int c) noexcept {
 
 void fill_ctype(named_locale& h) {
   using B = std::ctype_base;
+  {
+    thread_locale in(h.loc);
+    for (int c = 0; c < 256; ++c)
+      h.widen[c] = static_cast<wchar_t>(::btowc(c));
+    h.mb_max = static_cast<int>(MB_CUR_MAX);
+  }
   for (int c = 0; c < 256; ++c) {
     B::mask m = 0;
+    // a byte that is not a character by itself (a UTF-8 lead or continuation byte) has no class
+    // and no case: Darwin's is*_l and to*_l read such a byte as the code point of its value
+    if (h.widen[c] == static_cast<wchar_t>(WEOF)) {
+      h.table[c] = 0;
+      h.upper[c] = h.lower[c] = static_cast<unsigned char>(c);
+      continue;
+    }
     if (isspace_l(c, h.loc))
       m |= B::space;
     if (isprint_l(c, h.loc))
@@ -140,12 +153,6 @@ void fill_ctype(named_locale& h) {
     h.table[c] = m;
     h.upper[c] = static_cast<unsigned char>(toupper_l(c, h.loc));
     h.lower[c] = static_cast<unsigned char>(tolower_l(c, h.loc));
-  }
-  {
-    thread_locale in(h.loc);
-    for (int c = 0; c < 256; ++c)
-      h.widen[c] = static_cast<wchar_t>(::btowc(c));
-    h.mb_max = static_cast<int>(MB_CUR_MAX);
   }
   h.nnarrow = 0;
   for (int c = 0; c < 256; ++c)

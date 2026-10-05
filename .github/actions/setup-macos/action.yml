@@ -1,0 +1,15 @@
+name: setup-macos
+description: >
+  macOS on Apple Silicon: Homebrew's GCC 16, ninja, cmake, uv, and LLVM's Clang 23 release
+  (tools/toolchain/provision, cached).
+runs:
+  using: composite
+  steps:
+    - shell: bash
+      run: brew install gcc ninja cmake uv
+    - uses: actions/cache@v4
+      with:
+        path: ~/.local/share/ycxx/toolchains
+        key: ycxx-toolchains-${{ runner.os }}-${{ runner.arch }}-llvm-23.1.2
+    - shell: bash
+      run: tools/toolchain/provision

@@ -118,3 +118,21 @@ copies.
 only the tests that did not pass, `YCXX_VERBOSE=1` (`-v`) prints every test's transcript,
 `YCXX_FAIL_DETAILS=N` shows the transcripts of the first N failures (default 10), and
 `YCXX_RAW=1` prints lit's own output. CI keeps the reports as the `test-reports` artifact.
+
+### Known failures and CI
+
+Tests that libycxx does not pass yet are recorded per platform and compiler in
+`tests/<suite>/baseline/<os>-<compiler>[-<sanitizer>].txt` (STATUS.md and the suites' TRIAGE.md
+say why). `tools/test --baseline` (`YCXX_BASELINE=1`) fails a suite only on a test that did not
+pass and is not listed, and names the listed tests that now pass. Without a baseline file every
+failure counts. Each run writes its own list as `build/test-logs/<run>.baseline.txt`; copy it over
+the baseline file to record or update one. A compiler gap that the test cannot avoid is an
+expected failure in the test itself (`// XFAIL-COMPILER:`; `tests/<suite>/xfail.txt` for the
+external suites) instead.
+
+CI (`.github/workflows/ci.yml`), on every push, runs `tools/test --baseline policy build
+freestanding cmake ycxx` on Linux (the `gcc:16` container, Clang 23 from apt.llvm.org) and
+macOS (Apple Silicon, Homebrew's GCC 16, the provisioned Clang 23), plus a sample of the external
+suites on Linux. `.github/workflows/full.yml`, nightly and on demand, runs libc++'s and
+libstdc++'s whole suites on both compilers on both platforms, and the own suite under
+ASan+UBSan, each against its baseline. Every job uploads its reports as an artifact.

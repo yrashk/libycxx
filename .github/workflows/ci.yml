@@ -11,34 +11,19 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install Clang 23, lld, ninja, cmake, uv (lit runs through uvx)
-        run: |
-          apt-get update -qq
-          apt-get install -y -qq wget gnupg lsb-release ninja-build cmake python3-pip
-          wget -qO- https://apt.llvm.org/llvm-snapshot.gpg.key > /etc/apt/trusted.gpg.d/apt.llvm.org.asc
-          echo "deb http://apt.llvm.org/$(lsb_release -cs)/ llvm-toolchain-$(lsb_release -cs)-23 main" > /etc/apt/sources.list.d/llvm.list
-          apt-get update -qq
-          apt-get install -y -qq clang-23 lld-23
-          pip3 install --break-system-packages uv
-          ln -sf "$(command -v g++)" /usr/local/bin/g++-16
-          ln -sf "$(command -v gcc)" /usr/local/bin/gcc-16
-          mkdir -p /opt/gcc-16/lib64 /opt/gcc-16/lib/gcc/x86_64-pc-linux-gnu
-          ln -sfn "$(dirname "$(g++ -print-libgcc-file-name)")" /opt/gcc-16/lib/gcc/x86_64-pc-linux-gnu/16.2.0
+      - name: Toolchains (Clang 23, lld, ninja, cmake, uv; tools/toolchain/provision --detect-only)
+        uses: ./.github/actions/setup-linux
 
-      - name: Toolchain detection (tools/toolchain/provision)
-        run: tools/toolchain/provision --detect-only
-
-      - name: Policy, builds, freestanding
-        run: tools/check-all
-
-      - name: CMake package (install, find_package, add_subdirectory)
-        run: tests/cmake/run.sh
+      # The same stages as the macOS job. --baseline: the suites fail on any test that did not
+      # pass and is not in tests/<suite>/baseline/<os>-<compiler>.txt, the known failures
+      # (STATUS.md says why each fails).
+      - name: Policy, builds, freestanding, CMake package, own suite (tools/test)
+        run: tools/test -j4 --baseline policy build freestanding cmake ycxx
 
       - name: Fetch conformance suites (run only; tools/fetch-suites)
-        run: |
-          apt-get install -y -qq git xz-utils curl >/dev/null
-          tools/fetch-suites
+        run: tools/fetch-suites
 
+      # A quick sample of the external suites; full.yml runs them whole, nightly.
       - name: Conformance (both suites, both compilers; implemented areas)
         run: |
           # Every run happens; the step fails if any failed. Known compiler gaps are expected
@@ -58,34 +43,27 @@ jobs:
           path: |
             build/test-logs/*.html
             build/test-logs/*.md
+            build/test-logs/*.baseline.txt
+            build/cmake-test/*.log
             build/test-logs/*.tsv
             build/test-logs/*.log
           if-no-files-found: ignore
 
   # macOS on Apple Silicon: Homebrew's GCC 16 and LLVM's Clang 23 release (provisioned and
-  # cached). The macOS port is in progress (STATUS.md): until it lands this job fails, and its
-  # composite report (artifact test-reports-macos) shows where.
+  # cached). The same stages as the Linux job; failures outside tests/<suite>/baseline/darwin-*.txt
+  # fail it, and its composite report (artifact test-reports-macos) shows them in full.
   macos:
     runs-on: macos-15
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install GCC, ninja, cmake, uv
-        run: brew install gcc ninja cmake uv
-
-      - name: Cache the provisioned Clang
-        uses: actions/cache@v4
-        with:
-          path: ~/.local/share/ycxx/toolchains
-          key: ycxx-toolchains-${{ runner.os }}-${{ runner.arch }}-llvm-23.1.2
-
-      - name: Toolchains (tools/toolchain/provision)
-        run: tools/toolchain/provision
+      - name: Toolchains (Homebrew GCC 16, ninja, cmake, uv; provisioned Clang 23, cached)
+        uses: ./.github/actions/setup-macos
 
       - name: Policy, builds, freestanding, CMake package, own suite (tools/test)
         run: |
           . tools/toolchain/activate.sh
-          tools/test -j3 policy build freestanding cmake ycxx
+          tools/test -j3 --baseline policy build freestanding cmake ycxx
 
       # Which library each C++ ABI symbol of a test program binds to (libycxx's static runtime or
       # libSystem's libc++abi), and how the program behaves: diagnostics for the macOS port.
@@ -121,6 +99,7 @@ jobs:
             build/test-logs/*.html
             build/test-logs/*.md
             build/test-logs/*.tsv
+            build/test-logs/*.baseline.txt
             build/test-logs/*.log
             build/cmake-test/*.log
             build/cmake-test/*/log.txt

@@ -1,0 +1,23 @@
+name: setup-linux
+description: >
+  Inside the gcc:16 container: Clang 23 and lld from apt.llvm.org, ninja, cmake, uv (lit runs
+  through uvx), what tools/fetch-suites and the own suite need (git, curl, xz, tzdata), and GCC 16
+  where the scripts look for it; then tools/toolchain/provision --detect-only.
+runs:
+  using: composite
+  steps:
+    - shell: bash
+      run: |
+        apt-get update -qq
+        apt-get install -y -qq wget gnupg lsb-release ninja-build cmake python3-pip git xz-utils curl tzdata >/dev/null
+        wget -qO- https://apt.llvm.org/llvm-snapshot.gpg.key > /etc/apt/trusted.gpg.d/apt.llvm.org.asc
+        echo "deb http://apt.llvm.org/$(lsb_release -cs)/ llvm-toolchain-$(lsb_release -cs)-23 main" > /etc/apt/sources.list.d/llvm.list
+        apt-get update -qq
+        apt-get install -y -qq clang-23 lld-23 >/dev/null
+        pip3 install --break-system-packages -q uv
+        ln -sf "$(command -v g++)" /usr/local/bin/g++-16
+        ln -sf "$(command -v gcc)" /usr/local/bin/gcc-16
+        mkdir -p /opt/gcc-16/lib64 /opt/gcc-16/lib/gcc/x86_64-pc-linux-gnu
+        ln -sfn "$(dirname "$(g++ -print-libgcc-file-name)")" /opt/gcc-16/lib/gcc/x86_64-pc-linux-gnu/16.2.0
+    - shell: bash
+      run: tools/toolchain/provision --detect-only

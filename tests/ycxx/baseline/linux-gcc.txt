@@ -1,0 +1,14 @@
+# Own-suite tests known to fail on Linux with gcc; STATUS.md (Known limitations, Open issues) says
+# why each fails. tools/lib/baseline.py; update from build/test-logs/ycxx-gcc.baseline.txt.
+char_traits/eof.pass.cpp
+contracts/observe.pass.cpp
+cstddef/stddef_global.compile.pass.cpp
+cstddef/stddef_global_reverse.compile.pass.cpp
+cwchar/mbstate_global.compile.pass.cpp
+except/handler_array_decay.pass.cpp
+except/handler_function_pointer.pass.cpp
+except/handler_pointer_reference.pass.cpp
+except/handler_pointer_reference_exact.pass.cpp
+exception/exception_ptr_constexpr.pass.cpp
+execution/senders_basic.pass.cpp
+functional/searchers_boyer_moore.pass.cpp

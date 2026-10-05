@@ -466,6 +466,88 @@ tellg, objects/*_xin (stdin), basic_filebuf/seekoff/*/12790-*). Changing the def
 whole suite, so it is left for a round of its own; each of those failures must then be fixed or
 given its reason.
 
+## Testsuite helpers (2026-10-05)
+
+Until this round every test that named `__gnu_test::` or included one of the testsuite's own
+helpers that reach libstdc++-internal headers (testsuite_allocator.h, testsuite_iterators.h,
+testsuite_common_types.h, testsuite_character.h, testsuite_containers.h, testsuite_rvalref.h,
+testsuite_tr1.h, ...) was skipped as `extension` (2,633 tests). `__gnu_test` is the testsuite's
+helper namespace, not a libstdc++ extension, so the harness now runs those tests:
+
+- `tests/ycxxlit/libstdcxx_format.py` skips a test only for a genuine extension: an
+  `<ext|bits|tr1|tr2|backward|debug|parallel|profile/...>` include, the testsuite's debug-mode
+  helpers `debug/checks.h` / `debug/unordered_checks.h`, or the namespaces `__gnu_cxx`,
+  `__gnu_debug`, `__gnu_pbds`, `__gnu_parallel`, `__gnu_profile`.
+- `tests/libstdcxx/shim/` (test-harness code, not libycxx) provides the internal headers the
+  helpers include, each in terms of the standard library and documented in the file:
+
+  | shim | what the helpers get from it |
+  |---|---|
+  | `bits/c++config.h` | the target's configuration macros (long long, C99 math, symlinks, statvfs, utimensat, fcntl.h, utime.h), `_GLIBCXX{,14,17,20,23}_CONSTEXPR`, `_GLIBCXX_NOEXCEPT`/`_USE_NOEXCEPT`, `__throw_exception_again`, `std::__is_constant_evaluated()` (= `if consteval`) |
+  | `bits/move.h`, `bits/stl_iterator_base_types.h`, `bits/functional_hash.h` | `<utility>`, `<iterator>`, `<functional>` |
+  | `bits/max_size_type.h` | `std::ranges::__detail::__max_diff_type`/`__max_size_type` = `__int128` / `unsigned __int128` (libycxx's widest integer-like types; integer-class types are implementation-defined, [iterator.concept.winc]) for `contiguous_iterator_wrapper` |
+  | `bits/stdc++.h` | every C++ library header |
+  | `bits/boost_concept_check.h` | `__gnu_cxx::__function_requires` and the `_[Mutable_]{Forward,Bidirectional,RandomAccess}IteratorConcept` checks of testsuite_containers.h, written from [iterator.cpp17] (static_assert) |
+  | `ext/alloc_traits.h` | `__gnu_cxx::__alloc_traits<A>` = `allocator_traits<A>` plus `rebind<U>::other` (= `rebind_alloc<U>`), all the allocator helpers use |
+  | `ext/type_traits.h` | `__gnu_cxx::__enable_if`, `std::__are_same` (testsuite_tr1.h's `check_ret_type`) |
+  | `ext/typelist.h` | a minimal `__gnu_cxx::typelist` (`node`, `null_type`, `transform`, `append`, `_GLIBCXX_TYPELIST_CHAINn`) so testsuite_common_types.h's namespace-scope lists compile; `apply_generator` etc. are not provided (tests calling them name `__gnu_cxx` and stay skipped) |
+  | `ext/pod_char_traits.h` | `__gnu_cxx::character<V, I, S>` and a `char_traits` for it written from [char.traits.require], and `std::__codecvt_abstract_base` / `std::__ctype_abstract_base` written from [locale.codecvt] / [locale.ctype], so testsuite_character.h compiles (its `pod_int` is used by ~90 algorithm tests); tests that use the character types stay skipped |
+  | `ext/pointer.h`, `ext/vstring.h`, `debug/string`, `ext/{new,malloc,mt,bitmap,pool}_allocator.h` | declarations only (empty/incomplete): the extensions are not provided, only named by uninstantiated helper code |
+
+- `tests/libstdcxx/support/testsuite_hooks.cc` + the testsuite's `util/testsuite_allocator.cc`
+  are built once per run into `build/lit-libstdcxx-<cc>/libtestc++.a` (DejaGnu's libtestc++.a)
+  and linked into every program: the helpers' counters, `check_construct_destroy`,
+  `run_tests_wrapped_locale/_env`, the SysV `semaphore`, `test_tm`. The testsuite's own
+  testsuite_hooks.cc is not used because it includes `<cxxabi.h>` for `verify_demangle`, which only
+  abi/ (excluded) calls.
+
+Helpers or helper features that stay skipped (skip.txt), because they need an extension whose
+behaviour the draft does not define: exception/safety.h (`__gnu_cxx::throw_allocator`), testsuite_rng.h
+(`__gnu_pbds`, tr1), testsuite_regex.h (libstdc++'s internal regex executors), `CustomPointerAlloc`
+(`__gnu_cxx::_Pointer_adapter`), the `pod_char`/`pod_uchar`/`pod_ushort`/`pod_uint` character types
+(libstdc++'s `char_traits<__gnu_cxx::character>`), the C++98 linkage checks of testsuite_containers.h
+(testsuite_shared.cc), and testsuite_allocator.h's `uneq_allocator` / `propagating_allocator` /
+`tracker_allocator` wherever they meet vector, vector<bool> or basic_string: they derive from
+`std::allocator<T>` and override only `allocate`, so the inherited `allocate_at_least`, which
+libycxx's containers use through `allocator_traits` ([allocator.traits.members]), bypasses their
+bookkeeping.
+
+Result (full runs, both compilers, before -> after this round; the tests without `dg-do` were
+still compile-only in both):
+
+| | Pass | Fail | Unsupported |
+|---|---:|---:|---:|
+| GCC 16.2 | 5100 -> 6582 | 211 -> 214 | 3244 -> 1759 |
+| Clang 23.1 | 5063 -> 6523 (+ 22 XFAIL) | 245 -> 248 | 3247 -> 1762 |
+
+Every newly running test that failed was triaged. Fixed in libycxx (draft clause; the test that
+found it): `basic_string` from a range of `volatile charT` (21_strings/basic_string/cons/*/119748.cc);
+`indirect`/`polymorphic` move assignment move-assigns a propagating allocator ([allocator.requirements.general]:
+only Cpp17MoveAssignable is required; std/memory/{indirect,polymorphic}/move.cc, polymorphic/copy.cc);
+`vector`/`vector<bool>::append_range` from a range overlapping the container ([sequence.reqmts]: no
+precondition, unlike insert_range; vector/modifiers/append_range.cc, vector/bool/modifiers/insert/append_range.cc);
+range adaptor closures callable with exactly one argument ([range.adaptor.object]/8; std/ranges/adaptors/{split,lazy_split}.cc);
+`subrange(R&&)` takes the size before `begin` ([range.subrange.ctor], LWG 3286; std/ranges/subrange/lwg3286.cc);
+`ranges::distance` on volatile iterators ([range.iter.op.distance]/3, LWG 4242; 24_iterators/range_operations/distance.cc);
+`reduce` with an operation that takes lvalues only ([reduce]/5; 26_numerics/reduce/2.cc);
+pool and monotonic resources throw only through upstream, monotonic returns distinct pointers for
+zero-size requests ([mem.res.pool.mem], [mem.res.monotonic.buffer.mem]); `map`/`set` empty the source
+after an allocator-extended move with unequal allocators, whose moved-from keys broke its ordering
+([lib.types.movedfrom]; 23_containers/{set,multiset}/allocator/103501.cc, {map,multimap}/allocator/move_cons.cc).
+
+Left failing (both compilers unless noted):
+
+- std/ranges/adaptors/as_const/1.cc test04 (A-QoI, open): `x | views::chunk(3) |
+  views::transform(views::as_const) | views::join` makes the satisfaction of `sized_sentinel_for`
+  depend on itself (iterator_core.hpp:426; libstdc++ PR 115046). Repro: the four lines of test04.
+  [range.as.const], [range.join].
+- 27_io/manipulators/extended/put_time/{char,wchar_t}/2.cc (B): `locale("de_DE.UTF-8")` (named
+  locales; being implemented by another branch).
+- Clang only, xfail.txt (compiler gaps, each reproduced without the library): testsuite_tr1.h's
+  `test_property<Trait, T>` with a one-parameter trait for a `template<typename, typename...> class`
+  parameter (17 20_util/*/value.cc; P0522); `__is_assignable(U&, void() const)` true; `__is_constructible(D&&, B&&)`
+  false for an aggregate D derived from B; no reflection; no `__builtin_is_structural`.
+
 <!-- counterparts:begin (generated) -->
 ## Skipped tests without a counterpart
 
@@ -617,15 +699,16 @@ Tests skipped (or UNSUPPORTED) as tied to the other library's internals, extensi
 
 <!-- counterparts:end -->
 
-### Extension-skipped tests without a link (2409, std directories)
+### Extension-skipped tests without a link
 
-Of the 2633 tests skipped as `extension`, 224 are linked or listed above. The other 2409 are
-all in the testsuite's standard directories (no `ext/`, `tr1/`, `tr2/`, `backward/` or pb_ds
-test reaches the harness): they are skipped because the test or a testsuite helper it includes
-uses libstdc++ extensions (1308: a helper that includes `bits/`, `ext/` headers; 1063: the
-test names `__gnu_test::` / `__gnu_cxx::` utilities or includes `<ext/...>`; 38: internal
-headers or `_GLIBCXX` macros reached through a sibling). Their subject is usually standard, but
-they have not been triaged test by test, so the trace shows a bare "no libycxx counterpart".
+Since the testsuite helpers run (section "Testsuite helpers"), 920 tests remain skipped as
+`extension` (was 2633): genuine extension headers and namespaces (`<debug/...>` and the debug-mode
+helpers 317, `std::__*` internals 88, `__gnu_cxx` 54, `<ext/...>`/`<bits/...>`/`<parallel/...>`/`<tr1/...>` 73),
+the helper features listed in that section (pod character types 52, testsuite_regex.h 43,
+exception/safety.h 39, CustomPointerAlloc 19, testsuite_random.h 4), tests that name a standard entity
+without including its header (30), and the individual entries of skip.txt. They have not been
+triaged for counterparts test by test; the table below is the per-directory count of the earlier
+2409 untriaged extension skips, kept for reference.
 
 | directory | tests |
 |---|---:|

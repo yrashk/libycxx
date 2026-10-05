@@ -35,6 +35,7 @@
 //   - nothing is left in a degraded state: the same call made again once memory is available
 //     succeeds and returns the right result.
 // REQUIRES: exceptions
+// COUNTERPART: libcxx:input.output/filesystems/class.directory_entry/directory_entry.cons/path.pass.cpp
 #include <filesystem>
 #include <string>
 #include <system_error>

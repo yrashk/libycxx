@@ -100,7 +100,6 @@
 23_containers/vector/bool/modifiers/insert/104559.cc
 23_containers/vector/modifiers/2.cc
 23_containers/vector/modifiers/erase/1.cc
-23_containers/vector/modifiers/insert_vs_emplace.cc
 23_containers/vector/modifiers/swap/1.cc
 24_iterators/common_iterator/1.cc
 24_iterators/headers/iterator/range_access.cc
@@ -158,7 +157,6 @@
 27_io/objects/wchar_t/13582-1_xin.cc
 27_io/rvalue_streams-2.cc
 29_atomics/atomic_ref/ctor.cc
-30_threads/async/async.cc
 30_threads/thread/id/output.cc
 std/format/fill_nonunicode.cc
 std/format/formatter/ext_float.cc

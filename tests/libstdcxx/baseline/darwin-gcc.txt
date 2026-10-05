@@ -73,7 +73,6 @@
 23_containers/vector/bool/modifiers/insert/104559.cc
 23_containers/vector/modifiers/2.cc
 23_containers/vector/modifiers/erase/1.cc
-23_containers/vector/modifiers/insert_vs_emplace.cc
 24_iterators/common_iterator/1.cc
 24_iterators/operations/prev_neg.cc
 25_algorithms/copy/streambuf_iterators/wchar_t/2.cc

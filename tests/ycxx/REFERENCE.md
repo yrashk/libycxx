@@ -221,7 +221,7 @@ Legend: **G** fails with GCC + libstdc++, **C** with Clang + libstdc++.
 | `valarray/range_access` | G | C | `valarray::iterator`, member `begin`/`end` ([valarray.range]) |
 | `mdspan/copy_fill` | G | C | `copy`/`fill` for mdspan ([mdspan.copy]) |
 | `linalg/*` | G | C | `<linalg>` |
-| `debugging/debugging`, `stacktrace/*`, `text_encoding/text_encoding`, `text_encoding/environment_ignores_setlocale`, `integration/first_use_concurrent_state`, `linkage/library_first_use_static_init{,_shared,_archive}` (batch 43) | G | C | link only with `-lstdc++exp` (the tests add no flags; with it they pass) |
+| `debugging/debugging`, `stacktrace/*`, `text_encoding/text_encoding`, `text_encoding/environment_ignores_setlocale`, `integration/first_use_concurrent_state`, `linkage/library_first_use_static_init{,_shared,_archive}` (batch 43), `integration/fd_leaks_descriptor_exhaustion` (batch 44) | G | C | link only with `-lstdc++exp` (the tests add no flags; with it they pass) |
 | `execution/ranges_algorithms`, `execution/ranges_constraints` | G | C | the parallel range algorithms (P3179) |
 | `ranges/reserve_hint` | G | C | `ranges::reserve_hint`, `approximately_sized_range`, the views' `reserve_hint` members (P2846) |
 | `system_error/format` | G | C | `formatter<error_code>` ([syserr.fmt]) |

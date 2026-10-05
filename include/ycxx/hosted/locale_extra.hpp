@@ -1,5 +1,6 @@
 // libycxx hosted: the time, monetary and message categories ([category.time],
-// [category.monetary], [category.messages]), in the "C" locale.
+// [category.monetary], [category.messages]), in the "C" locale; the _byname facets of named
+// locales read the C library's (DECISIONS §7).
 //
 // time_put formats as strftime does in the "C" locale, out of line (src/hosted/time.cpp; %z and
 // %Z come from the C library's strftime). time_get parses the strptime conversions of the "C"

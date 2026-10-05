@@ -14,9 +14,10 @@
 // the Annex D codecvt<char16_t/char32_t, char8_t> and codecvt<char16_t/char32_t, char>
 // ([depr.locale.category], declared [[deprecated]]); it is built on first use and never
 // destroyed. Named locales: "C", "POSIX" (named "C") and "C.UTF-8" / "C.utf8" have the classic
-// semantics; "" names the environment's locale (LC_ALL, LC_<category>, LANG), which is one of
-// those or, for any other name, the classic locale named "C" (the environment's own conventions
-// are not supported). Other names throw runtime_error, as do the _byname facets.
+// semantics; every other name the C library has is valid, and its categories hold the _byname
+// facets, built on the C library's locale of that name (src/hosted/locale_named.cpp; DECISIONS
+// §7); "" names the environment's locale (LC_ALL, LC_<category>, LANG; "C" if the C library has
+// no such locale). Other names throw runtime_error, in the _byname facets too.
 //
 // Classic semantics chosen where the draft leaves them implementation-defined: ctype<charT>
 // for character types other than char classifies the ASCII range only; widen/narrow map the

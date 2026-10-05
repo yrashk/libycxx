@@ -7,7 +7,10 @@
 //     locale, std::format with that locale, locale::global and locale()). The outer operation
 //     must still produce its own result: an implementation that keeps the conversion state of
 //     num_put/num_get or of a stream in storage shared between calls, or that holds a lock while
-//     calling the facet, fails or deadlocks.
+//     calling the facet, fails or deadlocks. [reentrancy]/1 makes it implementation-defined
+//     which library functions "may be recursively reentered", so the inner operations use the
+//     other character type (narrow inside a wide operation and the reverse): they are other
+//     functions than the ones active, and no function is reentered.
 //   [locale.operators]/2-3: locale::operator() compares with collate<charT>::compare; /4 the
 //     locale is a comparator for std::sort ([alg.sort]); here do_compare formats with a stream.
 //   [locale.statics]/1-2: locale::global sets the global locale and returns the previous one;
@@ -21,6 +24,7 @@
 #include <locale>
 #include <sstream>
 #include <string>
+#include <type_traits>
 #include <vector>
 #include "check.hpp"
 #include "watchdog.hpp"
@@ -30,8 +34,28 @@ static int depth = 0;
 static int inner_failures = 0;
 static int inner_runs = 0;
 
-// Formats and parses with the same locale from inside the facet.
-static void reenter() {
+// Formats and parses with the same locale from inside the facet, with the other character
+// type: the inner operations are distinct functions (other specializations) from the outer
+// ones, so no library function is recursively reentered ([reentrancy]/1).
+template<class C> static void reenter();
+template<> void reenter<char>() {  // called from numpunct<char>: uses the wide functions
+  ++depth;
+  ++inner_runs;
+  std::wostringstream os;
+  os.imbue(shared_loc);
+  os << 42424242 << L'|' << std::fixed;
+  os.precision(2);
+  os << 1234.5;
+  if (os.str() != L"42.424.242|1.234,50") ++inner_failures;
+  std::wistringstream is(L"9.876 x");
+  is.imbue(shared_loc);
+  int v = 0;
+  is >> v;
+  if (v != 9876 || !is) ++inner_failures;
+  if (std::format(shared_loc, L"{:L}", 31415926) != L"31.415.926") ++inner_failures;
+  --depth;
+}
+template<> void reenter<wchar_t>() {  // called from numpunct<wchar_t>: uses the narrow functions
   ++depth;
   ++inner_runs;
   std::ostringstream os;
@@ -49,22 +73,23 @@ static void reenter() {
   --depth;
 }
 
-struct Punct : std::numpunct<char> {
-  char do_thousands_sep() const override { return ','; }
+// Narrow: ',' groups and '.' decimal point; wide: '.' groups and ',' decimal point.
+template<class C> struct Punct : std::numpunct<C> {
+  C do_thousands_sep() const override { return std::is_same_v<C, char> ? C(',') : C('.'); }
+  C do_decimal_point() const override { return std::is_same_v<C, char> ? C('.') : C(','); }
   std::string do_grouping() const override {
-    if (depth == 0) reenter();
+    if (depth == 0) reenter<C>();
     return "\3";
   }
-  std::string do_truename() const override {
+  std::basic_string<C> do_truename() const override {
     // Switches the global locale twice and reads it.
     std::locale prev = std::locale::global(std::locale::classic());
     const bool classic_now = std::locale() == std::locale::classic();
     std::locale::global(prev);
     if (!classic_now || !(std::locale() == prev)) ++inner_failures;
-    return "yes";
+    return std::is_same_v<C, char> ? std::basic_string<C>(1, C('y')) : std::basic_string<C>(1, C('Y'));
   }
 };
-
 struct Collate : std::collate<char> {
   int do_compare(const char* a1, const char* a2, const char* b1, const char* b2) const override {
     // Orders by numeric value, parsed with a stream (and formats again for good measure).
@@ -99,7 +124,7 @@ std::locale::id DtorUser::id;
 
 int main() {
   watchdog(5);
-  shared_loc = std::locale(std::locale(std::locale::classic(), new Punct), new Collate);
+  shared_loc = std::locale(std::locale(std::locale(std::locale::classic(), new Punct<char>), new Punct<wchar_t>), new Collate);
 
   {
     std::ostringstream os;
@@ -107,7 +132,7 @@ int main() {
     os << 1234567 << ' ' << std::fixed;
     os.precision(1);
     os << 7654321.5 << ' ' << std::boolalpha << true;
-    CHECK(os.str() == "1,234,567 7,654,321.5 yes");
+    CHECK(os.str() == "1,234,567 7,654,321.5 y");
   }
   {
     std::istringstream is("1,234,567 2,000.25");
@@ -121,11 +146,22 @@ int main() {
   }
   CHECK(std::format(shared_loc, "{:L} {:L}", 1000000, 2500000.5) == "1,000,000 2,500,000.5");
   {
-    std::wostringstream ws;  // a wide stream with the classic wide facets alongside
+    std::wostringstream ws;
     ws.imbue(shared_loc);
-    ws << 1234567;
-    CHECK(ws.str() == L"1234567");
+    ws << 1234567 << L' ' << std::fixed;
+    ws.precision(1);
+    ws << 7654321.5 << L' ' << std::boolalpha << true;
+    CHECK(ws.str() == L"1.234.567 7.654.321,5 Y");
+    std::wistringstream is(L"1.234.567 2.000,25");
+    is.imbue(shared_loc);
+    int i = 0;
+    double d = 0;
+    is >> i >> d;
+    CHECK(is);
+    CHECK(i == 1234567);
+    CHECK(d == 2000.25);
   }
+  CHECK(std::format(shared_loc, L"{:L} {:L}", 1000000, 2500000.5) == L"1.000.000 2.500.000,5");
   CHECK(inner_runs > 0);
   CHECK(inner_failures == 0);
 

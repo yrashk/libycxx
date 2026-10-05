@@ -124,8 +124,12 @@ module;
 #include <cuchar>
 #include <cwchar>
 #include <cwctype>
+#include <ycxx/core/hidden_symbol.hpp>
 
 export module std;
+
+// DECISIONS §2: the module initializer is hidden like every other symbol of libycxx.
+asm((::ycxx::detail::hide_symbol("_ZGIW3std")));
 
 export namespace std {
   using std::FILE;

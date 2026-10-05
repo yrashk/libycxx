@@ -1,6 +1,7 @@
 // libycxx core: the macros of <cmath> ([cmath.syn]) for freestanding builds, with the values of
-// the C libraries libycxx supports (glibc, musl). Hosted builds take them from the C library's
-// <math.h> instead (ycxx/core/cmath.hpp); src/hosted/cmath_check.cpp checks that they agree.
+// the C libraries libycxx supports (glibc, musl, Darwin). Hosted builds take them from the C
+// library's <math.h> instead (ycxx/core/cmath.hpp); src/hosted/cmath_check.cpp checks that they
+// agree.
 #pragma once
 
 #include <ycxx/config.hpp>
@@ -10,11 +11,21 @@
 #define HUGE_VALL (__builtin_huge_vall ())
 #define INFINITY (__builtin_inff ())
 #define NAN (__builtin_nanf (""))
-#define FP_NAN 0
-#define FP_INFINITE 1
-#define FP_ZERO 2
-#define FP_SUBNORMAL 3
-#define FP_NORMAL 4
+// The classification values (programs mix <math.h> and <cmath>, so they are the C library's):
+// glibc and musl 0-4, Darwin 1-5 (YCXX_TARGET_DARWIN, config.hpp).
+#if YCXX_TARGET_DARWIN
+#  define FP_NAN 1
+#  define FP_INFINITE 2
+#  define FP_ZERO 3
+#  define FP_NORMAL 4
+#  define FP_SUBNORMAL 5
+#else
+#  define FP_NAN 0
+#  define FP_INFINITE 1
+#  define FP_ZERO 2
+#  define FP_SUBNORMAL 3
+#  define FP_NORMAL 4
+#endif
 #if YCXX_FP_FAST_FMA
 #  define FP_FAST_FMA 1
 #endif

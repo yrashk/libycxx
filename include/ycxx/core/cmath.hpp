@@ -8,9 +8,9 @@
 //
 // Hosted, the macros come from the C library's <math.h> (included with #include_next, so that
 // libycxx's <math.h> wrapper can be included before or after <cmath>); freestanding,
-// cmath_c_macros.hpp defines them with the same values (glibc/musl; src/hosted/cmath_check.cpp
-// verifies that when libycxx is built). The classification macros of <math.h> are removed: in
-// C++ they are the functions below.
+// cmath_c_macros.hpp defines them with the same values (glibc, musl, Darwin;
+// src/hosted/cmath_check.cpp verifies that when libycxx is built). The classification macros of
+// <math.h> are removed: in C++ they are the functions below.
 #pragma once
 
 #include <ycxx/config.hpp>

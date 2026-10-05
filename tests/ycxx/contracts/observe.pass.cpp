@@ -13,7 +13,7 @@
 // [support.contract.invoke]: invoke_default_contract_violation_handler invokes the default
 // handler, which (Recommended practice, [basic.contract.handler]/2) returns normally.
 // REQUIRES: exceptions
-// XFAIL: gcc  GCC 16 reports a contract predicate that throws with detection_mode::predicate_false, not evaluation_exception ([support.contract.violation]; STATUS)
+// XFAIL: gcc  GCC 16 passes detection_mode::predicate_false for a predicate that exits via an exception ([basic.contract.eval]/7.2, Table 46: evaluation_exception): one static violation object per assertion serves both outcomes, and current_exception() cannot tell the implicit handler from an enclosing one (STATUS)
 #include <contracts>
 #include <exception>
 #include "check.hpp"

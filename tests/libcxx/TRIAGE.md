@@ -185,7 +185,7 @@ second cause: `ranges/range.access/end.pass` (C first, then the A `decay_copy` n
 
 | Feature | Draft | Tests |
 |---|---|---|
-| `boyer_moore_searcher`, `boyer_moore_horspool_searcher` (and `__cpp_lib_boyer_moore_searcher`) | [func.search.bm], [func.search.bmh] | func.search/func.search.bm/* (5), func.search.bmh/* (5) |
+| **Done** (see the filesystem/mdspan/valarray/searchers re-triage below): `boyer_moore_searcher`, `boyer_moore_horspool_searcher` (and `__cpp_lib_boyer_moore_searcher`) | [func.search.bm], [func.search.bmh] | func.search/func.search.bm/* (5), func.search.bmh/* (5): pass |
 | C++ wrapper `<wchar.h>` (const-correct `wcschr`/`wcsstr`… as global names). (`<stdlib.h>`, `<complex.h>`, `<tgmath.h>`: **Done**, depr/depr.c.headers/{stdlib_h, complex_h, tgmath_h} pass) | [support.c.headers.other]/1 | Clang: depr/depr.c.headers/wchar_h.compile, strings/c.strings/cwchar_include_order{1,2}.compile.verify |
 | senders/receivers in `<execution>` (`__cpp_lib_senders`, `counting_scope`, `parallel_scheduler`, `task`) | [exec] | support.limits.general/execution.version.compile |
 | standard library modules `import std;` / `import std.compat;` (`__cpp_lib_modules`) | [std.modules] | modules/std.pass, modules/std.compat.pass (Clang) |
@@ -318,12 +318,65 @@ each with its reason.
   `<cstddef>`), plus char.traits `eof.pass` for `EOF` and `WEOF`: 85 tests (string.view 43,
   basic_string 9, string streams 16, syncstream 11, format.arg visit 2, re.submatch,
   mem.res header_string_synop, basic.string.hash).
-- Unqualified `int64_t`/`uint32_t` without `<cstdint>`: 18 (mdspan layout_left/right/stride 16,
-  deallocate_size, make_from_tuple).
+- Unqualified `int64_t`/`uint32_t`: 18 (mdspan layout_left/right/stride 16, deallocate_size,
+  make_from_tuple). The mdspan tests do include `<cstdint>`; they rely on it declaring the global
+  names too, which is unspecified (see the re-triage below).
 - `std::count`/`std::min` without `<algorithm>`: 12 (valarray mask_array 11, ifstream
   offset_range).
 - `std::istream`/`ostream`/`streambuf` from `<iterator>` alone: 4 (stream iterator types.pass).
 - `std::unique_ptr` without `<memory>`: 1 (equality_comparable_with.compile).
+
+## Re-triage: filesystem, mdspan, valarray and searchers (2026-10-05)
+
+Directories: input.output/filesystems, containers/views/mdspan, numerics/numarray,
+utilities/function.objects/func.search (`tools/run-conformance libcxx gcc|clang <dirs> -- -j4`).
+Each remaining failure was also checked past its first failing assertion: the test was rebuilt
+with the one cause removed (run as an unprivileged user, a prelude declaring `::int64_t`, an
+added `#include <algorithm>`, or the offending assertion deleted) and the rest of it passes.
+
+| | GCC 16.2 before | GCC after | Clang 23.1 before | Clang after |
+|---|---|---|---|---|
+| func.search | 10 failed | 0 | 10 | 0 |
+| filesystems (fs.op.funcs 17, class.directory_entry 8, directory iterators 3) | 28 | 28 | 28 | 28 |
+| mdspan | 16 | 16 | 17 | 17 |
+| numarray (template.mask.array) | 11 | 11 | 11 | 11 |
+
+- **(a) fixed**: `boyer_moore_searcher` and `boyer_moore_horspool_searcher` were missing
+  (`ycxx/core/searcher.hpp`, `__cpp_lib_boyer_moore_searcher` 201603L). func.search/* (10) pass on
+  both compilers; so do the own suite's functional/searchers_boyer_moore and libstdc++
+  20_util/function_objects/searchers.cc.
+- **Environment, running as root** (26 of the 28 filesystem tests: directory_entry
+  cons/mods/obs, directory_iterator and recursive_directory_iterator ctor/increment, `exists`,
+  the `is_*` predicates, `status`, `symlink_status`, remove, remove_all, bad_perms_parent,
+  temp_directory_path): `perms::none` does not deny root access. Built by hand and run as uid
+  65534, all 26 pass on both compilers, except the two below.
+- **(b) directory_entry.cons/path.pass** (`path_ctor_cannot_resolve`): with the parent directory
+  unreadable, the test expects `directory_entry(file, ec)` to keep the path and
+  `directory_entry(file)` not to throw. [fs.dir.entry.cons]/2: "Postconditions: path() == p if no
+  error occurs, otherwise path() == filesystem::path()"; /1 calls `refresh()`, and
+  [fs.dir.entry.mods]/5: "If an error occurs, an error is reported ([fs.err.report])". EACCES from
+  stat is an error, so libycxx clears the path and the throwing form throws (STATUS, known
+  limitations). The rest of the test passes as uid 65534.
+- **(b) fs.op.last_write_time/last_write_time.pass** (`test_write_min_time`): it sets
+  `file_time_type::min()` (1677 in libycxx, representable as a `timespec`) and expects
+  `value_too_large` because the file system clamps the time silently. [fs.op.last.write.time]/3:
+  "Sets the time of last data modification of the file resolved to by p to new_time, as if by
+  POSIX futimens", and its Note 1: "A postcondition of last_write_time(p) == new_time is not
+  specified". `futimens` succeeds, so no error is reported. The rest passes as uid 65534.
+- **(b) mdspan layout_left/right/stride ctor.default, ctor.extents(_array, _span),
+  index_operator, required_span_size, stride** (16): the tests include `<cstdint>` and name
+  `int64_t` unqualified. [headers]/5: "the declarations ... are within namespace scope of the
+  namespace std. It is unspecified whether these names ... are first declared within the global
+  namespace scope and are then injected into namespace std"; libycxx's `<cstdint>` declares only
+  `std::int64_t`. With `using std::int64_t;` all 16 pass on both compilers. Clang also has
+  extents/bitint.pass (`_BitInt` index types, D, already listed).
+- **(b) template.mask.array** (11: mask.array.assign/valarray, mask.array.comp.assign/*): they call
+  `std::count` with only `<valarray>` included. [res.on.headers]/1: "A C++ header may include
+  other C++ headers": whether `<valarray>` provides `count` is unspecified. With `<algorithm>`
+  included all 11 pass on both compilers.
+- language.support/support.limits/{filesystem,mdspan}.version stay as listed (C: libc++ expects
+  `__cpp_lib_format_path` 202403 and `__cpp_lib_submdspan` 202306; [version.syn] has 202506 and
+  202603).
 
 ## Changes made in this round (no library code changed)
 

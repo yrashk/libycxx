@@ -297,6 +297,7 @@
 #define __cpp_lib_bind_front 202306L
 #define __cpp_lib_bind_back 202306L
 #define __cpp_lib_constexpr_functional 201907L
+#define __cpp_lib_boyer_moore_searcher 201603L
 #define __cpp_lib_freestanding_functional 202306L
 #define __cpp_lib_not_fn 202306L
 #define __cpp_lib_constant_wrapper 202606L

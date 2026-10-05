@@ -22,10 +22,14 @@ jobs:
       matrix:
         suite: [libcxx, libstdcxx]
         compiler: [gcc, clang]
+    env:
+      YCXX_LONG_TESTS: '1'   # libc++'s long_tests feature
     steps:
       - uses: actions/checkout@v4
-      - name: Toolchains
+      - name: Toolchains, and the named locales the suites require
         uses: ./.github/actions/setup-linux
+        with:
+          locales: 'true'
       - name: ${{ matrix.suite }} suite, ${{ matrix.compiler }} (tools/test; fetches the suite)
         run: tools/test -j4 -q --baseline -c ${{ matrix.compiler }} build ${{ matrix.suite }}
       - name: Test reports
@@ -65,6 +69,8 @@ jobs:
   macos-suites:
     runs-on: macos-15
     timeout-minutes: 340
+    env:
+      YCXX_LONG_TESTS: '1'
     strategy:
       fail-fast: false
       matrix:

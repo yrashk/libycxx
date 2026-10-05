@@ -138,3 +138,7 @@ macOS (Apple Silicon, Homebrew's GCC 16, the provisioned Clang 23), plus a sampl
 suites on Linux. `.github/workflows/full.yml`, nightly and on demand, runs libc++'s and
 libstdc++'s whole suites on both compilers on both platforms, and the own suite under
 ASan+UBSan, each against its baseline. Every job uploads its reports as an artifact.
+Tests that need a named locale (libstdc++'s `dg-require-namedlocale`, libc++'s `locale.<name>`
+features) run when the C library has it (`tests/ycxxlit/locales.py`); `tools/ci/gen-locales`
+generates every locale the suites name (the nightly Linux jobs do), and `YCXX_LONG_TESTS=1` runs
+libc++'s long tests.

@@ -4,6 +4,7 @@ Only the subset of DejaGnu that matters for conformance is interpreted:
   dg-do compile|run|link [{ target SEL }] [{ xfail SEL }]
   dg-options / dg-additional-options      (language-mode flags are normalised to C++26)
   dg-require-effective-target NAME
+  dg-require-namedlocale NAME             (the C library has it: tests/ycxxlit/locales.py)
   dg-error ... [{ target SEL }]           (any applicable dg-error => compilation must fail;
                                            one marked { xfail SEL } is a known-missing error)
   dg-xfail-run-if COMMENT { SEL } [{ INCLUDE-OPTS } [{ EXCLUDE-OPTS }]]
@@ -14,6 +15,7 @@ import os, re, shutil, tempfile
 import lit.formats, lit.Test
 from ycxxlit import transcript
 from ycxxlit.skips import load_skips, match_skip, load_xfails, apply_xfail
+from ycxxlit import locales
 
 STD = 26
 DG = re.compile(r'\{\s*dg-([a-z-]+)\s*(.*)\}\s*$')
@@ -32,7 +34,9 @@ REQUIRES = {'require-gthreads', 'require-cstdint', 'require-string-conversions',
             'require-sched-yield', 'require-time',
             # <filesystem> (POSIX): symlinks, space, last_write_time, mkfifo
             'require-filesystem-ts', 'require-target-fs-symlinks', 'require-target-fs-space',
-            'require-target-fs-lwt', 'require-mkfifo'}
+            'require-target-fs-lwt', 'require-mkfifo',
+            # file streams work (the target has a file system)
+            'require-fileio'}
 
 
 def eval_selector(sel):
@@ -216,6 +220,10 @@ class LibstdcxxFormat(lit.formats.FileBasedTest):
                 macro = (args[0] if args else rest).strip().strip('"').strip()
                 if not self.has_macro(macro, flags):
                     return lit.Test.Result(lit.Test.UNSUPPORTED, f'{macro} not defined')
+            elif kind == 'require-namedlocale':
+                name = (args[0] if args else rest).strip().strip('"').strip()
+                if not locales.available(name):
+                    return lit.Test.Result(lit.Test.UNSUPPORTED, f'named locale {name} not installed')
             elif kind.startswith('require-'):
                 if kind not in REQUIRES:
                     return lit.Test.Result(lit.Test.UNSUPPORTED, f'dg-{kind} not provided')

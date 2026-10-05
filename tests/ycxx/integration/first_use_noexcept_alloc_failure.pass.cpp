@@ -26,7 +26,9 @@
 //   [rand.device]/? entropy() noexcept: a value in [0, numeric_limits<result_type>::digits];
 //   [time.clock.system.members], [time.clock.steady], [time.clock.file.overview]/1 ("noexcept(
 //     file_clock::now()) is true"), [time.clock.hires] now() noexcept;
-//   [debugging.utility] is_debugger_present() noexcept.
+//   [debugging.utility]/2-3 is_debugger_present(), breakpoint_if_debugging() noexcept;
+//   [thread.thread.static] hardware_concurrency() noexcept; [thread.thread.this]/1 get_id()
+//   noexcept, not equal to thread::id() ([thread.thread.id]/1).
 // FLAGS: -pthread
 #include <chrono>
 #include <cstdlib>
@@ -223,11 +225,16 @@ static int scenario_clocks(long k) {
   const auto t2 = std::chrono::steady_clock::now();
   const auto f2 = std::chrono::file_clock::now();
   const bool dbg = std::is_debugger_present();
+  std::breakpoint_if_debugging();  // (no debugger: no effect)
+  const unsigned hc = std::thread::hardware_concurrency();
+  const std::thread::id id = std::this_thread::get_id();
   disarm();
   EXPECT(t2 >= t1);
   EXPECT(s1.time_since_epoch().count() != 0 || f1.time_since_epoch().count() != 0 || h1.time_since_epoch().count() != 0);
   (void)f2;  // (file_clock need not be steady: only the calls themselves are checked)
   (void)dbg;
+  (void)hc;  // ("If this value is not computable or well-defined, an implementation should return 0")
+  EXPECT(id == std::this_thread::get_id() && id != std::thread::id());
   return 0;
 }
 

@@ -4,7 +4,8 @@ Only the subset of DejaGnu that matters for conformance is interpreted:
   dg-do compile|run|link [{ target SEL }] [{ xfail SEL }]
   dg-options / dg-additional-options      (language-mode flags are normalised to C++26)
   dg-require-effective-target NAME
-  dg-require-namedlocale NAME             (the C library has it: tests/ycxxlit/locales.py)
+  dg-require-namedlocale NAME             (the C library has it and libycxx accepts it:
+                                           tests/ycxxlit/locales.py)
   dg-error ... [{ target SEL }]           (any applicable dg-error => compilation must fail;
                                            one marked { xfail SEL } is a known-missing error)
   dg-xfail-run-if COMMENT { SEL } [{ INCLUDE-OPTS } [{ EXCLUDE-OPTS }]]
@@ -130,8 +131,9 @@ def selector_of(args, key):
 
 
 class LibstdcxxFormat(lit.formats.FileBasedTest):
-    def __init__(self, wrapper, compiler, base_flags, skip_file):
+    def __init__(self, wrapper, compiler, base_flags, skip_file, locale_probe=None):
         self.wrapper, self.compiler, self.base_flags = wrapper, compiler, base_flags
+        self.locale_probe = locale_probe  # locales.build_probe
         self.skips = load_skips(os.path.join(os.path.dirname(os.path.dirname(skip_file)), 'common', 'skip.txt'), skip_file)
         self.xfails = load_xfails(os.path.join(os.path.dirname(skip_file), 'xfail.txt'))
 
@@ -222,8 +224,9 @@ class LibstdcxxFormat(lit.formats.FileBasedTest):
                     return lit.Test.Result(lit.Test.UNSUPPORTED, f'{macro} not defined')
             elif kind == 'require-namedlocale':
                 name = (args[0] if args else rest).strip().strip('"').strip()
-                if not locales.available(name):
-                    return lit.Test.Result(lit.Test.UNSUPPORTED, f'named locale {name} not installed')
+                why = locales.usable(name, self.locale_probe)
+                if why:
+                    return lit.Test.Result(lit.Test.UNSUPPORTED, why)
             elif kind.startswith('require-'):
                 if kind not in REQUIRES:
                     return lit.Test.Result(lit.Test.UNSUPPORTED, f'dg-{kind} not provided')

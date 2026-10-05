@@ -438,6 +438,8 @@ private:
                          const basic_string<charT>& fmt) const {
     ios_base::iostate e = ios_base::goodbit;
     s = get(s, end, f, e, t, fmt.data(), fmt.data() + fmt.size());
+    if (s == end) // as parse() reports the end of the input
+      e |= ios_base::eofbit;
     err |= e;
     return s;
   }

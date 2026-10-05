@@ -219,30 +219,35 @@ def parse_clang_dump(text):
     pending_alias = None
     for raw in text.splitlines():
         m = NODE.match(raw)
-        # Every location printed advances the dumper's "last location"; follow them all.
-        locs_text = raw if not m else None
-        if m:
-            prefix, kind, addr, rest = m.groups()
-            depth = len(prefix) // 2
-            rng, loc, remainder = split_head(rest)
-            for lm in LOC.finditer(rng):
-                cur_file, cur_line = update(lm, cur_file, cur_line)
-            for lm in LOC.finditer(loc):
-                cur_file, cur_line = update(lm, cur_file, cur_line)
-            decl_file, decl_line = cur_file, cur_line
-            for lm in LOC.finditer(remainder):
-                cur_file, cur_line = update(lm, cur_file, cur_line)
-        else:
+        # Every location printed advances the dumper's "last location" (a location is printed in
+        # full only when its file or line differs from that one): follow them all, in order.
+        if not m:
             for lm in LOC.finditer(raw):
                 cur_file, cur_line = update(lm, cur_file, cur_line)
             continue
+        prefix, kind, addr, rest = m.groups()
+        depth = len(prefix) // 2
+        # `parent 0x...`: a member of a class defined outside it (`void C::f() {}`), not a
+        # namespace member.
+        out_of_line = rest.startswith("parent ")
+        rng, loc, remainder = split_head(rest)
+        for lm in LOC.finditer(rng):
+            cur_file, cur_line = update(lm, cur_file, cur_line)
+        for lm in LOC.finditer(loc):
+            cur_file, cur_line = update(lm, cur_file, cur_line)
+        decl_file, decl_line = cur_file, cur_line
+        for lm in LOC.finditer(remainder):
+            cur_file, cur_line = update(lm, cur_file, cur_line)
         while stack and stack[-1][0] >= depth:
             stack.pop()
         _, owner, what = stack[-1]
         if pending_alias and kind == "Namespace" and depth == pending_alias[2] + 1:
             alias_ns, alias_name, _ = pending_alias
-            alias_ns.aliases[alias_name] = addr_of(remainder or rest)
+            alias_ns.aliases[alias_name] = addr  # the line is `Namespace 0x<target> 'name'`
             pending_alias = None
+            continue
+        if out_of_line:
+            stack.append((depth, None, "skip"))
             continue
         if kind == "Namespace" and what == "ns":
             continue
@@ -280,7 +285,6 @@ def parse_clang_dump(text):
         if kind == "EnumDecl":
             name = decl_name(kind, remainder)
             scoped = re.match(r"(\w+ )*(class|struct) ", remainder) is not None
-            enums[addr] = ([], scoped, cond, ns)
             enums[addr] = (ns, [], scoped, cond)
             stack.append((depth, addr, "enum"))
             if name and not implicit:
@@ -335,41 +339,64 @@ PROBE = r"""
 #include <meta>
 #include <print>
 #include <string>
-// The headers are included before this file's own text (-include), so they come first.
-consteval std::string walk(std::meta::info ns, std::string prefix) {
-  std::string out;
+// The headers come first (-include). One line per named member: its qualified name, the file of
+// its declaration (empty when it is the previous line's) and the line.
+consteval void walk(std::meta::info ns, const std::string& prefix, std::string& out, std::string_view& file) {
   for (auto m : std::meta::members_of(ns, std::meta::access_context::unchecked())) {
     if (!std::meta::has_identifier(m))
       continue;
-    std::string name(std::meta::identifier_of(m));
+    std::string_view name = std::meta::identifier_of(m);
     auto where = std::meta::source_location_of(m);
-    out += prefix + name + "\t" + where.file_name() + "\t" + std::to_string(where.line()) + "\n";
+    std::string_view f = where.file_name();
+    out.append(prefix).append(name).append("\t").append(f == file ? std::string_view() : f).append("\t");
+    out.append(std::to_string(where.line()));
+    file = f;
+    if (std::meta::is_type(m) && std::meta::is_enum_type(m)) {
+      // An enumeration: its kind, then its enumerators.
+      out.append(std::meta::is_scoped_enum_type(m) ? "\tscoped-enum:" : "\tenum:");
+      for (auto e : std::meta::enumerators_of(m))
+        out.append(" ").append(std::meta::identifier_of(e));
+    }
+    out.append("\n");
     if (std::meta::is_namespace(m) && !std::meta::is_namespace_alias(m))
-      out += walk(m, prefix + name + "::");
+      walk(m, prefix + std::string(name) + "::", out, file);
   }
+}
+consteval std::string members() {
+  std::string out, prefix;
+  std::string_view file;
+  walk(^^std, prefix, out, file);
   return out;
 }
-int main() { std::print("{}", std::define_static_string(walk(^^std, ""))); }
+int main() { std::print("{}", std::define_static_string(members())); }
 """
 
 
 def gcc_probe(headers, workdir):
-    """[(namespace path, name, file, line)] of the named members of std (recursively) as GCC with
-    reflection sees them; None when this GCC cannot run the probe."""
+    """[(namespace path, name, file, line, enum)] of the named members of std (recursively) as GCC
+    with reflection sees them; enum is None or (scoped, [enumerators])."""
     work = pathlib.Path(workdir)
     (work / "all.hpp").write_text(tu(headers))
     (work / "probe.cpp").write_text(PROBE)
     exe = work / "probe"
-    r = subprocess.run([str(HERE / "ycxx-cxx"), "gcc", "-freflection", "-include", str(work / "all.hpp"),
+    # Constant evaluation of the whole walk: lift GCC's operation and loop limits.
+    r = subprocess.run([str(HERE / "ycxx-cxx"), "gcc", "-freflection", "-fconstexpr-ops-limit=2147483647",
+                        "-fconstexpr-loop-limit=2147483647", "-include", str(work / "all.hpp"),
                         str(work / "probe.cpp"), "-o", str(exe)], capture_output=True, text=True)
     if r.returncode != 0:
         sys.exit("gen_std_module: the GCC reflection probe failed to build:\n" + r.stderr[-4000:])
     out = run([str(exe)])
     entries = []
+    file = ""
     for line in out.splitlines():
-        qual, file, ln = line.split("\t")
+        qual, f, ln, *rest = line.split("\t")
+        file = f or file
         path, _, name = qual.rpartition("::")
-        entries.append((path, name, file, int(ln)))
+        enum = None
+        if rest:
+            kind, _, enumerators = rest[0].partition(":")
+            enum = (kind == "scoped-enum", enumerators.split())
+        entries.append((path, name, file, int(ln), enum))
     return entries
 
 
@@ -385,7 +412,7 @@ def collect(root, namespaces):
     exports, aliases, errors = {}, {}, []
 
     def add(path, name, conds):
-        if RESERVED.match(name) or name.startswith("operator") is False and not re.match(r"^\w+$", name):
+        if RESERVED.match(name) or not (name.startswith("operator") or re.match(r"^\w+$", name)):
             return
         cur = exports.setdefault(path, {})
         conds = set(conds) | ({cur[name]} if name in cur else set())
@@ -435,33 +462,42 @@ def inline_path(root_std, path):
 def add_gcc_only(exports, entries, known_namespaces):
     """The names GCC's probe finds in a YCXX_HAS_* region and Clang did not export: declared only
     where that switch is set. A namespace declared in such a region contributes all its names."""
+    # Standard namespaces first declared in such a region (std::meta): their members inherit it.
     ns_cond = {}
-    for path, name, file, line in entries:
+    for path, name, file, line, _ in entries:
         full = f"{path}::{name}" if path else name
         cond = condition_at(file, line)
-        if cond and full in known_namespaces:
-            continue
-        if any(part not in STD_NAMESPACES and not RESERVED.match(part) for part in path.split("::") if path) and \
-                path not in exports and path.split("::")[0] not in ns_cond:
-            pass
-        if cond and name in STD_NAMESPACES and (path == "" or path in exports or path in ns_cond):
+        if (cond and name in STD_NAMESPACES and full not in known_namespaces
+                and (path == "" or path in exports or path in ns_cond)):
             ns_cond[full] = cond
-            continue
-    for path, name, file, line in entries:
-        if RESERVED.match(name):
+
+    def add(path, name, cond):
+        cur = exports.setdefault(path, {})
+        if cur.get(name) != "":
+            cur[name] = cond if name not in cur or cur[name] == cond else ""
+
+    for path, name, file, line, enum in entries:
+        if RESERVED.match(name) or (f"{path}::{name}" if path else name) in ns_cond:
             continue
         cond = condition_at(file, line) or ns_cond.get(path, "")
         if not cond:
-            continue
+            continue  # declared unconditionally: Clang's dump has it
         if path and path not in exports and path not in ns_cond:
-            continue  # an implementation namespace (ycxx's are not in std; inline ones are Clang's to see)
-        cur = exports.setdefault(path, {})
-        if name in cur and cur[name] == "":
-            continue
-        if name in STD_NAMESPACES:
-            continue
-        cur[name] = cond if name not in cur or cur[name] == cond else ""
+            continue  # not a standard namespace
+        add(path, name, cond)
+        # The enumerators of an unscoped enumeration, or of one that a using-enum-declaration in
+        # the same region names (std::meta's `using enum operators;`), are namespace members.
+        if enum and (not enum[0] or using_enum_in(file, name, cond)):
+            for e in enum[1]:
+                add(path, e, cond)
     return ns_cond
+
+
+def using_enum_in(path, name, cond):
+    """Whether `path` has a namespace-scope `using enum name;` under condition cond."""
+    lines = pathlib.Path(path).read_text().splitlines()
+    return any(re.match(rf"^using enum (\w+::)*{re.escape(name)}\s*;", text) and condition_at(path, n) == cond
+               for n, text in enumerate(lines, 1))
 
 
 def compat_names(dump_root, std_names):

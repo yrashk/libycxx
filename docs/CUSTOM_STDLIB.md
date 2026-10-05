@@ -60,7 +60,8 @@ and `src/hosted`, and the platform layer behind `include/ycxx/pal.h` (C-linkage 
 `ycxx_pal_allocate`, `ycxx_pal_wait`; `src/pal/posix`). The public headers have the standard names
 (`include/vector`, ...). `tools/check_includes.py` enforces the layering and
 `tools/check_freestanding.sh` compiles every core and freestanding header with
-`-ffreestanding -nostdlib -nostdinc -fno-exceptions -fno-rtti` and links a smoke program for bare
+`-ffreestanding -nostdlib -nostdinc -fno-exceptions -fno-rtti` (plus the compiler's own header
+directory, for its `<stddef.h>`) and links a smoke program for bare
 metal (x86_64 and riscv64 with Clang, x86_64 with GCC).
 
 Others: libc++ is built from the LLVM monorepo's `runtimes` directory, with libc++abi and

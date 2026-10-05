@@ -5,32 +5,36 @@
 #include <ycxx/core/version.hpp>
 #include <ycxx/core/cstddef.hpp>
 #include <ycxx/core/char_traits.hpp>
-#include <uchar.h>
+#if YCXX_C_HAS_UCHAR_H
+#  include <uchar.h>
+#else
+#  include <wchar.h>
+#endif
 
 #ifndef __STDC_VERSION_UCHAR_H__
 #  define __STDC_VERSION_UCHAR_H__ 202311L
 #endif
 
+// The <cuchar> functions for C libraries without them, in the hosted runtime
+// (src/hosted/uchar.cpp). state_size is the size of the mbstate_t object at ps (null: an
+// internal one): the C library's mbrtowc/wcrtomb state occupies its start, the code units still
+// to deliver or to complete a character its last 16 bytes.
+namespace ycxx::detail {
+__SIZE_TYPE__ c_mbrtoc8(char8_t* pc8, const char* s, __SIZE_TYPE__ n, void* ps, __SIZE_TYPE__ state_size) noexcept;
+__SIZE_TYPE__ c_c8rtomb(char* s, char8_t c8, void* ps, __SIZE_TYPE__ state_size) noexcept;
+__SIZE_TYPE__ c_mbrtoc16(char16_t* pc16, const char* s, __SIZE_TYPE__ n, void* ps, __SIZE_TYPE__ state_size) noexcept;
+__SIZE_TYPE__ c_c16rtomb(char* s, char16_t c16, void* ps, __SIZE_TYPE__ state_size) noexcept;
+__SIZE_TYPE__ c_mbrtoc32(char32_t* pc32, const char* s, __SIZE_TYPE__ n, void* ps, __SIZE_TYPE__ state_size) noexcept;
+__SIZE_TYPE__ c_c32rtomb(char* s, char32_t c32, void* ps, __SIZE_TYPE__ state_size) noexcept;
+} // namespace ycxx::detail
+
 namespace std {
-using ::mbrtoc8;
-using ::c8rtomb;
+#if YCXX_C_HAS_UCHAR_H
 using ::mbrtoc16;
 using ::c16rtomb;
 using ::mbrtoc32;
 using ::c32rtomb;
-
-static_assert(sizeof(mbstate_t) == sizeof(::mbstate_t) && alignof(mbstate_t) == alignof(::mbstate_t),
-              "libycxx: std::mbstate_t does not match this C library's ::mbstate_t layout");
-
 // Overloads for std::mbstate_t, as templates; see <cwchar>.
-template <class = void>
-inline size_t mbrtoc8(char8_t* pc8, const char* s, size_t n, mbstate_t* ps) noexcept {
-  return ::mbrtoc8(pc8, s, n, reinterpret_cast<::mbstate_t*>(ps));
-}
-template <class = void>
-inline size_t c8rtomb(char* s, char8_t c8, mbstate_t* ps) noexcept {
-  return ::c8rtomb(s, c8, reinterpret_cast<::mbstate_t*>(ps));
-}
 template <class = void>
 inline size_t mbrtoc16(char16_t* pc16, const char* s, size_t n, mbstate_t* ps) noexcept {
   return ::mbrtoc16(pc16, s, n, reinterpret_cast<::mbstate_t*>(ps));
@@ -47,4 +51,74 @@ template <class = void>
 inline size_t c32rtomb(char* s, char32_t c32, mbstate_t* ps) noexcept {
   return ::c32rtomb(s, c32, reinterpret_cast<::mbstate_t*>(ps));
 }
+#else
+// mbrtoc16, c16rtomb, mbrtoc32 and c32rtomb (C23 7.30.1), as this C library has no <uchar.h>:
+// libycxx's own, on the C library's mbrtowc/wcrtomb (src/hosted/uchar.cpp). The forms taking
+// ::mbstate_t* are plain functions, as the C library's would be, so a null state pointer
+// selects them; those taking std::mbstate_t* are templates, as above.
+inline size_t mbrtoc16(char16_t* pc16, const char* s, size_t n, ::mbstate_t* ps) noexcept {
+  return ycxx::detail::c_mbrtoc16(pc16, s, n, ps, sizeof(::mbstate_t));
+}
+inline size_t c16rtomb(char* s, char16_t c16, ::mbstate_t* ps) noexcept {
+  return ycxx::detail::c_c16rtomb(s, c16, ps, sizeof(::mbstate_t));
+}
+inline size_t mbrtoc32(char32_t* pc32, const char* s, size_t n, ::mbstate_t* ps) noexcept {
+  return ycxx::detail::c_mbrtoc32(pc32, s, n, ps, sizeof(::mbstate_t));
+}
+inline size_t c32rtomb(char* s, char32_t c32, ::mbstate_t* ps) noexcept {
+  return ycxx::detail::c_c32rtomb(s, c32, ps, sizeof(::mbstate_t));
+}
+template <class = void>
+inline size_t mbrtoc16(char16_t* pc16, const char* s, size_t n, mbstate_t* ps) noexcept {
+  return ycxx::detail::c_mbrtoc16(pc16, s, n, ps, sizeof(mbstate_t));
+}
+template <class = void>
+inline size_t c16rtomb(char* s, char16_t c16, mbstate_t* ps) noexcept {
+  return ycxx::detail::c_c16rtomb(s, c16, ps, sizeof(mbstate_t));
+}
+template <class = void>
+inline size_t mbrtoc32(char32_t* pc32, const char* s, size_t n, mbstate_t* ps) noexcept {
+  return ycxx::detail::c_mbrtoc32(pc32, s, n, ps, sizeof(mbstate_t));
+}
+template <class = void>
+inline size_t c32rtomb(char* s, char32_t c32, mbstate_t* ps) noexcept {
+  return ycxx::detail::c_c32rtomb(s, c32, ps, sizeof(mbstate_t));
+}
+#endif
+#if YCXX_C_HAS_MBRTOC8
+using ::mbrtoc8;
+using ::c8rtomb;
+// Overloads for std::mbstate_t, as templates; see <cwchar>.
+template <class = void>
+inline size_t mbrtoc8(char8_t* pc8, const char* s, size_t n, mbstate_t* ps) noexcept {
+  return ::mbrtoc8(pc8, s, n, reinterpret_cast<::mbstate_t*>(ps));
+}
+template <class = void>
+inline size_t c8rtomb(char* s, char8_t c8, mbstate_t* ps) noexcept {
+  return ::c8rtomb(s, c8, reinterpret_cast<::mbstate_t*>(ps));
+}
+#else
+// mbrtoc8 and c8rtomb (C23 7.30.1.3-4), which this C library lacks:
+// libycxx's own, on the C library's mbrtowc/wcrtomb (src/hosted/uchar.cpp). The forms taking
+// ::mbstate_t* are plain functions, as the C library's would be, so a null state pointer
+// selects them; those taking std::mbstate_t* are templates, as above.
+inline size_t mbrtoc8(char8_t* pc8, const char* s, size_t n, ::mbstate_t* ps) noexcept {
+  return ycxx::detail::c_mbrtoc8(pc8, s, n, ps, sizeof(::mbstate_t));
+}
+inline size_t c8rtomb(char* s, char8_t c8, ::mbstate_t* ps) noexcept {
+  return ycxx::detail::c_c8rtomb(s, c8, ps, sizeof(::mbstate_t));
+}
+template <class = void>
+inline size_t mbrtoc8(char8_t* pc8, const char* s, size_t n, mbstate_t* ps) noexcept {
+  return ycxx::detail::c_mbrtoc8(pc8, s, n, ps, sizeof(mbstate_t));
+}
+template <class = void>
+inline size_t c8rtomb(char* s, char8_t c8, mbstate_t* ps) noexcept {
+  return ycxx::detail::c_c8rtomb(s, c8, ps, sizeof(mbstate_t));
+}
+#endif
+
+static_assert(sizeof(mbstate_t) == sizeof(::mbstate_t) && alignof(mbstate_t) == alignof(::mbstate_t),
+              "libycxx: std::mbstate_t does not match this C library's ::mbstate_t layout");
+
 } // namespace std

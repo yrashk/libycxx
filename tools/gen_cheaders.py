@@ -101,36 +101,12 @@ inline wchar_t* wmemchr(wchar_t* s, wchar_t c, size_t n) noexcept { return const
     "csetjmp": ("setjmp.h", "jmp_buf longjmp", ""),
     "cfenv": ("fenv.h", "fenv_t fexcept_t feclearexcept fegetexceptflag feraiseexcept fesetexceptflag "
               "fetestexcept fegetround fesetround fegetenv feholdexcept fesetenv feupdateenv", ""),
-    "cuchar": ("uchar.h", "mbrtoc8 c8rtomb mbrtoc16 c16rtomb mbrtoc32 c32rtomb", MBSTATE_CHECK + """
-// Overloads for std::mbstate_t, as templates; see <cwchar>.
-template <class = void>
-inline size_t mbrtoc8(char8_t* pc8, const char* s, size_t n, mbstate_t* ps) noexcept {
-  return ::mbrtoc8(pc8, s, n, reinterpret_cast<::mbstate_t*>(ps));
-}
-template <class = void>
-inline size_t c8rtomb(char* s, char8_t c8, mbstate_t* ps) noexcept {
-  return ::c8rtomb(s, c8, reinterpret_cast<::mbstate_t*>(ps));
-}
-template <class = void>
-inline size_t mbrtoc16(char16_t* pc16, const char* s, size_t n, mbstate_t* ps) noexcept {
-  return ::mbrtoc16(pc16, s, n, reinterpret_cast<::mbstate_t*>(ps));
-}
-template <class = void>
-inline size_t c16rtomb(char* s, char16_t c16, mbstate_t* ps) noexcept {
-  return ::c16rtomb(s, c16, reinterpret_cast<::mbstate_t*>(ps));
-}
-template <class = void>
-inline size_t mbrtoc32(char32_t* pc32, const char* s, size_t n, mbstate_t* ps) noexcept {
-  return ::mbrtoc32(pc32, s, n, reinterpret_cast<::mbstate_t*>(ps));
-}
-template <class = void>
-inline size_t c32rtomb(char* s, char32_t c32, mbstate_t* ps) noexcept {
-  return ::c32rtomb(s, c32, reinterpret_cast<::mbstate_t*>(ps));
-}"""),
+    "cuchar": ("uchar.h", "", MBSTATE_CHECK),
 }
 # Names a C library may lack: brought in with using-declarations under the YCXX_* switch of
-# config.hpp that says the C library declares them, and otherwise replaced by libycxx's own.
-CONDITIONAL = {"cstdlib": [("YCXX_C_HAS_STRFROM", "strfromd strfromf strfroml",
+# config.hpp that says the C library declares them (followed by the text given for that case),
+# and otherwise replaced by libycxx's own.
+CONDITIONAL = {"cstdlib": [("YCXX_C_HAS_STRFROM", "strfromd strfromf strfroml", "",
     """// strfromd, strfromf, strfroml (C23 7.24.1.3), which this C library lacks: libycxx's own, on the
 // C library's snprintf (ycxx::detail::strfrom, src/hosted/strfrom.cpp). Templates, as free_sized
 // is: should the C library gain them, its ::strfromd wins unqualified calls under
@@ -146,7 +122,50 @@ inline int strfromf(char* s, size_t n, const char* format, float fp) noexcept {
 template <class = void>
 inline int strfroml(char* s, size_t n, const char* format, long double fp) noexcept {
   return ycxx::detail::strfrom(s, n, format, fp);
-}""")]}
+}""")],
+}
+# <cuchar>'s six functions: name, parameters before the state, the arguments they pass on.
+UCHAR_FUNCS = [("mbrtoc8", "char8_t* pc8, const char* s, size_t n", "pc8, s, n"),
+               ("c8rtomb", "char* s, char8_t c8", "s, c8"),
+               ("mbrtoc16", "char16_t* pc16, const char* s, size_t n", "pc16, s, n"),
+               ("c16rtomb", "char* s, char16_t c16", "s, c16"),
+               ("mbrtoc32", "char32_t* pc32, const char* s, size_t n", "pc32, s, n"),
+               ("c32rtomb", "char* s, char32_t c32", "s, c32")]
+
+
+def uchar_present(names):
+    out = ["// Overloads for std::mbstate_t, as templates; see <cwchar>."]
+    for n, params, args in UCHAR_FUNCS:
+        if n in names:
+            out += ["template <class = void>", f"inline size_t {n}({params}, mbstate_t* ps) noexcept {{",
+                    f"  return ::{n}({args}, reinterpret_cast<::mbstate_t*>(ps));", "}"]
+    return "\n".join(out)
+
+
+def uchar_fallback(names, what):
+    out = [f"// {what}:",
+           "// libycxx's own, on the C library's mbrtowc/wcrtomb (src/hosted/uchar.cpp). The forms taking",
+           "// ::mbstate_t* are plain functions, as the C library's would be, so a null state pointer",
+           "// selects them; those taking std::mbstate_t* are templates, as above."]
+    for n, params, args in UCHAR_FUNCS:
+        if n in names:
+            out += [f"inline size_t {n}({params}, ::mbstate_t* ps) noexcept {{",
+                    f"  return ycxx::detail::c_{n}({args}, ps, sizeof(::mbstate_t));", "}"]
+    for n, params, args in UCHAR_FUNCS:
+        if n in names:
+            out += ["template <class = void>", f"inline size_t {n}({params}, mbstate_t* ps) noexcept {{",
+                    f"  return ycxx::detail::c_{n}({args}, ps, sizeof(mbstate_t));", "}"]
+    return "\n".join(out)
+
+
+UCHAR16_32 = "mbrtoc16 c16rtomb mbrtoc32 c32rtomb"
+CONDITIONAL["cuchar"] = [
+    ("YCXX_C_HAS_UCHAR_H", UCHAR16_32, uchar_present(UCHAR16_32.split()),
+     uchar_fallback(UCHAR16_32.split(), "mbrtoc16, c16rtomb, mbrtoc32 and c32rtomb (C23 7.30.1), as this C library has no <uchar.h>")),
+    ("YCXX_C_HAS_MBRTOC8", "mbrtoc8 c8rtomb", uchar_present(["mbrtoc8", "c8rtomb"]),
+     uchar_fallback(["mbrtoc8", "c8rtomb"], "mbrtoc8 and c8rtomb (C23 7.30.1.3-4), which this C library lacks"))]
+# A C header that may be missing: included under the switch, else the given replacement.
+OPTIONAL_CHEADER = {"cuchar": ("YCXX_C_HAS_UCHAR_H", "wchar.h")}
 # Headers with a freestanding subset ([compliance]): without a C library (YCXX_HOSTED 0) they
 # include the core header given here instead of the C library's, and declare none of the names
 # above. COMMON holds what both modes share.
@@ -221,6 +240,16 @@ GLOBAL = {"cstdlib": [
     "} // namespace ycxx::detail",
     "#endif",
     ""],
+    "cuchar": [
+    "// The <cuchar> functions for C libraries without them, in the hosted runtime",
+    "// (src/hosted/uchar.cpp). state_size is the size of the mbstate_t object at ps (null: an",
+    "// internal one): the C library's mbrtowc/wcrtomb state occupies its start, the code units still",
+    "// to deliver or to complete a character its last 16 bytes.",
+    "namespace ycxx::detail {"] + [
+    f"__SIZE_TYPE__ c_{n}({params.replace('size_t', '__SIZE_TYPE__')}, void* ps, __SIZE_TYPE__ state_size) noexcept;"
+    for n, params, _ in UCHAR_FUNCS] + [
+    "} // namespace ycxx::detail",
+    ""],
     "ctime": [
     "// [depr.ctime] (Annex D; also deprecated in C23): the C library's declarations, redeclared",
     "// [[deprecated]] (decltype keeps their exact type, noexcept included); std:: names them below.",
@@ -241,7 +270,11 @@ for name, (cheader, names, extra) in HEADERS.items():
     if fs:
         lines += ["#if YCXX_HOSTED", f"#  include <{cheader}>", "#else", f"#  include {fs}", "#endif", ""]
     else:
-        lines += [f"#include <{cheader}>", ""]
+        opt = OPTIONAL_CHEADER.get(name)
+        if opt:
+            lines += [f"#if {opt[0]}", f"#  include <{cheader}>", "#else", f"#  include <{opt[1]}>", "#endif", ""]
+        else:
+            lines += [f"#include <{cheader}>", ""]
     lines += MACROS.get(name, [])
     lines += GLOBAL.get(name, [])
     if names or extra:
@@ -249,9 +282,11 @@ for name, (cheader, names, extra) in HEADERS.items():
             lines.append("#if YCXX_HOSTED")
         lines.append("namespace std {")
         lines += [f"using ::{n};" for n in names.split()]
-        for switch, cnames, fallback in CONDITIONAL.get(name, []):
+        for switch, cnames, present, fallback in CONDITIONAL.get(name, []):
             lines.append(f"#if {switch}")
             lines += [f"using ::{n};" for n in cnames.split()]
+            if present:
+                lines.append(present)
             lines += ["#else", fallback, "#endif"]
         if extra:
             lines += ["", extra]

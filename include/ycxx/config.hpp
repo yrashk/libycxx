@@ -183,6 +183,20 @@
 #else
 #  define YCXX_C_HAS_STRFROM 1
 #endif
+// <cuchar>: whether the C library has <uchar.h> (older macOS SDKs do not), and in it C23's
+// mbrtoc8/c8rtomb (glibc 2.36 and later; not Darwin's libSystem, whose <uchar.h>, where present,
+// has the char16_t and char32_t functions only). Where they are missing, <cuchar> declares
+// libycxx's own (src/hosted/uchar.cpp).
+#if __has_include(<uchar.h>)
+#  define YCXX_C_HAS_UCHAR_H 1
+#else
+#  define YCXX_C_HAS_UCHAR_H 0
+#endif
+#if YCXX_C_HAS_UCHAR_H && !defined(__APPLE__)
+#  define YCXX_C_HAS_MBRTOC8 1
+#else
+#  define YCXX_C_HAS_MBRTOC8 0
+#endif
 // Initialization priorities (init_priority) order static initializers across object files only
 // in ELF (.init_array.NNNNN sections, sorted by the linker). Mach-O has one __mod_init_func list
 // in link order (Clang orders priorities within one object file; GCC rejects the attribute), so

@@ -418,5 +418,24 @@ Tests skipped (or UNSUPPORTED) as tied to the other library's internals, extensi
 | `28_regex/basic_regex/84110.cc` | whether a NUL character in a POSIX-grammar pattern is an error: no rule of [re.synopt] or [re.grammar] makes it one |
 | `28_regex/traits/(char\|wchar_t)/transform_primary.cc` | [re.traits]/7 gives an empty key for a facet that is not a collate_byname; libycxx deliberately returns the full key (STATUS.md, regex) and libstdc++ a case-folded one, so no own test asserts either |
 | `30_threads/(mutex\|recursive_mutex\|timed_mutex\|recursive_timed_mutex\|condition_variable)/(native_handle/1\|requirements/typedefs).cc` | native_handle_type and native_handle() are implementation-defined ([thread.req.native]) |
+| `17_intro/headers/c\+\+1998/49745.cc` | includes every C++98 header, <strstream> (removed in C++26, P2867) among them |
+| `18_support/headers/c(iso646\|stdalign\|stdbool)/macros.cc` | <ciso646>, <cstdalign> and <cstdbool> were removed in C++20 (P0619) |
+| `20_util/auto_ptr/.*` | auto_ptr was removed in C++17 (N4190) |
+| `20_util/(shared_ptr/(assign\|cons)/auto_ptr.*\|shared_ptr/creation/dr925\|unique_ptr/cons/auto_ptr.*).cc` | construction / assignment from auto_ptr (removed in C++17, N4190) |
+| `20_util/raw_storage_iterator/.*` | raw_storage_iterator was removed in C++20 (P0619) |
+| `20_util/temporary_buffer.cc` | get_temporary_buffer was removed in C++20 (P0619) |
+| `20_util/result_of/.*` | result_of was removed in C++20 (P0619) |
+| `20_util/is_literal_type/.*` | is_literal_type was removed in C++20 (P0619) |
+| `20_util/bind/(83427\|refqual).cc` | bind's result_type member was removed in C++20 (P0619) |
+| `20_util/function_objects/binders/.*` | bind1st / bind2nd / binder1st / binder2nd were removed in C++17 (N4190) |
+| `20_util/reference_wrapper/(24803\|result_type\|typedefs-2).cc` | reference_wrapper's result_type / argument_type members were removed in C++20 (P0619) |
+| `20_util/shared_ptr/atomic/.*` | the atomic_* free functions for shared_ptr were removed in C++26 (P2869) |
+| `29_atomics/atomic/lwg3220.cc` | the atomic_* free functions for shared_ptr were removed in C++26 (P2869) |
+| `20_util/shared_ptr/observers/unique.cc` | shared_ptr::unique() was removed in C++20 (P0521) |
+| `22_locale/codecvt/codecvt_utf(8\|16\|8_utf16)/.*` | <codecvt> (codecvt_utf8, codecvt_utf16, codecvt_utf8_utf16) was removed in C++26 (P2871) |
+| `22_locale/conversions/.*` | wstring_convert and wbuffer_convert were removed in C++26 (P2872) |
+| `25_algorithms/random_shuffle/.*` | random_shuffle was removed in C++17 (N4190) |
+| `26_numerics/headers/c(complex\|tgmath)/complex.cc` | <ccomplex> and <ctgmath> were removed in C++20 (P0619) |
+| `30_threads/promise/uses_allocator.cc` | uses_allocator<promise<R>, Alloc> is no longer in [futures.promise] (P2875) |
 
 <!-- counterparts:end -->

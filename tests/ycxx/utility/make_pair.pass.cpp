@@ -2,6 +2,7 @@
 // unwrap_ref_decay_t<T2>>(std::forward<T1>(x), std::forward<T2>(y))". [meta.trans.other]:
 // unwrap_ref_decay_t<T> is unwrap_reference_t<decay_t<T>>, i.e. reference_wrapper<X> becomes
 // X&, arrays and functions decay, and cv-qualifiers and references are dropped.
+// COUNTERPART: libstdcxx:20_util/pair/requirements/dr801.cc
 #include <utility>
 #include <functional>
 #include <type_traits>

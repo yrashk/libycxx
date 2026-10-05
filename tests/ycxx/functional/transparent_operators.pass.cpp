@@ -3,6 +3,7 @@
 // operator()(T&& t, U&& u) const -> decltype(std::forward<T>(t) + std::forward<U>(u));" and
 // "using is_transparent = unspecified;". The primary templates take const T& and return T
 // (arithmetic/bitwise) or bool (comparisons/logical). T defaults to void.
+// COUNTERPART: libstdcxx:20_util/function_objects/constexpr.cc
 #include <functional>
 #include <type_traits>
 #include <utility>

@@ -16,6 +16,7 @@
 // above 0x10FFFF are ill-formed.
 // COUNTERPART: libcxx:localization/codecvt_unicode.pass.cpp
 // COUNTERPART: libcxx:localization/locale.categories/category.ctype/locale.codecvt/locale.codecvt.members/utf_sanity_check.pass.cpp
+// COUNTERPART: libstdcxx:22_locale/codecvt/codecvt_unicode(_wchar_t)?.cc
 #include <locale>
 #include <cwchar>
 #include <iterator>

@@ -2,6 +2,7 @@
 #include "shared_exceptions.hpp"
 #include <cerrno>
 #include <new>
+#include <sstream>
 #include <string>
 #include <system_error>
 #include <vector>
@@ -56,3 +57,22 @@ std::exception_ptr lib_make_ptr() { return std::make_exception_ptr(std::domain_e
 void lib_rethrow(std::exception_ptr p) { std::rethrow_exception(p); }
 
 int lib_uncaught() { return std::uncaught_exceptions(); }
+
+std::string lib_format(const std::locale& loc, double v) {
+  std::ostringstream os;
+  os.imbue(loc);
+  os << v;
+  const bool has = std::has_facet<std::numpunct<char>>(loc);
+  return os.str() + "|" + (has ? std::use_facet<std::numpunct<char>>(loc).decimal_point() : '?');
+}
+
+void lib_write(std::ostream& os, const char* text) { os << text << 42; }
+
+std::error_code lib_error_code() { return std::error_code(EACCES, std::generic_category()); }
+
+int lib_any_int(const std::any& a) {
+  const int* p = std::any_cast<int>(&a);
+  return p ? *p : -1;
+}
+
+std::any lib_make_any() { return std::string("from the library"); }

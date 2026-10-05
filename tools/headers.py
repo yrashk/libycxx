@@ -38,6 +38,8 @@ HOSTED = [
 ]
 # <cstdarg>: compiler builtins only. <stdbit.h>: on <bit>. <stdckdint.h>: overflow builtins.
 CORE += ["cstdarg", "stdbit.h", "stdckdint.h"]
+# <stddef.h>: <cstddef> in C++ (core reads the compiler's own <stddef.h> past it).
+CORE += ["stddef.h"]
 # Hosted headers with a freestanding subset ([compliance]): with YCXX_HOSTED 0 (-ffreestanding)
 # they include core headers instead of the C library's (the freestanding parts of <cstdlib>,
 # <cstring>, <cwchar>: ycxx/core/c_stdlib.hpp, c_string.hpp; <cerrno>'s macros; <system_error>'s
@@ -54,9 +56,9 @@ HOSTED += ["thread", "stop_token", "mutex", "shared_mutex", "condition_variable"
            "future", "rcu", "hazard_pointer"]
 # <math.h>: the C library's header plus <cmath>'s names in the global namespace.
 HOSTED += ["math.h"]
-# <stdlib.h>, <inttypes.h>, <string.h>: the C library's plus the names <cstdlib>, <cinttypes>,
-# <cstring> declare themselves; <complex.h>, <tgmath.h>: <complex> (and <cmath>) in C++.
-HOSTED += ["stdlib.h", "inttypes.h", "string.h", "complex.h", "tgmath.h"]
+# <stdlib.h>, <inttypes.h>, <string.h>, <wchar.h>: the C library's plus the names <cstdlib>, <cinttypes>,
+# <cstring>, <cwchar> declare themselves; <complex.h>, <tgmath.h>: <complex> (and <cmath>) in C++.
+HOSTED += ["stdlib.h", "inttypes.h", "string.h", "wchar.h", "complex.h", "tgmath.h"]
 # Iostreams and localization (Phase 4): the non-template parts are in the hosted runtime.
 HOSTED += ["iosfwd", "ios", "streambuf", "istream", "ostream", "iostream", "sstream", "spanstream", "fstream",
            "syncstream", "iomanip", "locale"]

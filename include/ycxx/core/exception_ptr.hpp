@@ -5,10 +5,13 @@
 // rethrow_exception throws a dependent exception that refers to the same object, so no copy is
 // ever made ([propagation]/9, /11 allow either).
 //
-// Constant evaluation: [propagation]/8 makes the members constexpr. Null exception_ptrs work in
-// constant expressions; obtaining a non-null one does not (neither compiler exposes the
-// constant-evaluation exception state through a documented interface), so current_exception,
-// rethrow_exception and make_exception_ptr are not usable there (STATUS: known limitations).
+// Constant evaluation: [propagation]/8 makes the members constexpr, and make_exception_ptr,
+// rethrow_exception and exception_ptr_cast are constexpr. GCC 16 keeps the exceptions of a
+// constant evaluation itself and has builtins for them (YCXX_HAS_CONSTEXPR_EXCEPTION_PTR):
+// __builtin_current_exception() makes an exception_ptr (p_) for the exception being handled, and
+// __builtin_eh_ptr_adjust_ref counts the references; rethrowing is a throw of the same object
+// through __cxa_throw, which GCC's evaluator implements. Elsewhere (Clang 23 cannot throw during
+// constant evaluation) only null exception_ptrs exist there (STATUS: known limitations).
 #pragma once
 
 #include <ycxx/core/exception.hpp>
@@ -34,6 +37,32 @@ const void* exception_object_as(void* object, const std::type_info& handler) noe
 void* exception_object_create(std::size_t size, const std::type_info* type, void (*destroy)(void*)) noexcept;
 }} // namespace ycxx::abi
 
+#if YCXX_HAS_CONSTEXPR_EXCEPTION_PTR
+// What GCC's evaluator implements for its own throw expressions; predeclared by GCC with this
+// type once a throw expression is seen. Called during constant evaluation only.
+extern "C" [[noreturn]] void __cxa_throw(void* thrown, void* tinfo, void (*destroy)(void*));
+#endif
+
+// The constant-evaluation half of exception_ptr (see above). The helpers are called inside
+// `if consteval` only; without the builtins they are never reached with a non-null pointer.
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail::cx_eh {
+constexpr void adjust_ref([[maybe_unused]] void* object, [[maybe_unused]] int n) noexcept {
+#if YCXX_HAS_CONSTEXPR_EXCEPTION_PTR
+  if consteval {
+    __builtin_eh_ptr_adjust_ref(object, n);
+  }
+#endif
+}
+[[noreturn]] constexpr void rethrow([[maybe_unused]] void* object) {
+#if YCXX_HAS_CONSTEXPR_EXCEPTION_PTR
+  if consteval {
+    __cxa_throw(object, nullptr, nullptr);
+  }
+#endif
+  __builtin_unreachable();
+}
+}} // namespace ycxx::detail::cx_eh
+
 namespace [[gnu::visibility("hidden")]] std {
 
 class exception_ptr;
@@ -47,6 +76,8 @@ class exception_ptr {
   constexpr exception_ptr(adopt_t, void* p) noexcept : p_(p) {}
 
   friend exception_ptr current_exception() noexcept;
+  // current-exception ([exception.syn]): current_exception, also during constant evaluation.
+  static constexpr exception_ptr current() noexcept;
   friend constexpr void rethrow_exception(exception_ptr);
   template <class E>
   friend constexpr optional<const E&> exception_ptr_cast(const exception_ptr&) noexcept;
@@ -57,9 +88,12 @@ public:
   constexpr exception_ptr() noexcept = default;
   constexpr exception_ptr(nullptr_t) noexcept {}
   constexpr exception_ptr(const exception_ptr& o) noexcept : p_(o.p_) {
-    if !consteval {
-      if (p_)
+    if (p_) {
+      if consteval {
+        ::ycxx::detail::cx_eh::adjust_ref(p_, 1);
+      } else {
         ::ycxx::abi::exception_ptr_retain(p_);
+      }
     }
   }
   constexpr exception_ptr(exception_ptr&& o) noexcept : p_(o.p_) { o.p_ = nullptr; }
@@ -72,9 +106,12 @@ public:
     return *this;
   }
   constexpr ~exception_ptr() {
-    if !consteval {
-      if (p_)
+    if (p_) {
+      if consteval {
+        ::ycxx::detail::cx_eh::adjust_ref(p_, -1);
+      } else {
         ::ycxx::abi::exception_ptr_release(p_);
+      }
     }
   }
 
@@ -94,9 +131,25 @@ inline exception_ptr current_exception() noexcept {
   return exception_ptr(exception_ptr::adopt_t{}, ::ycxx::abi::current_exception_object());
 }
 
+constexpr exception_ptr exception_ptr::current() noexcept {
+  if consteval {
+#if YCXX_HAS_CONSTEXPR_EXCEPTION_PTR
+    return __builtin_current_exception();
+#else
+    return exception_ptr();
+#endif
+  } else {
+    return current_exception();
+  }
+}
+
 [[noreturn]] constexpr void rethrow_exception(exception_ptr p) {
   ::ycxx::detail::precondition(p.p_ != nullptr, "std::rethrow_exception: null exception_ptr");
-  ::ycxx::abi::rethrow_exception_object(p.p_);
+  if consteval {
+    ::ycxx::detail::cx_eh::rethrow(p.p_);
+  } else {
+    ::ycxx::abi::rethrow_exception_object(p.p_);
+  }
 }
 
 template <class E>
@@ -105,7 +158,7 @@ constexpr exception_ptr make_exception_ptr(E e) noexcept {
     try {
       throw e;
     } catch (...) {
-      return current_exception();
+      return exception_ptr::current();
     }
   } else if constexpr (::ycxx::detail::cfg::rtti) {
     // Without exceptions there is no throw to copy e, so the runtime's object is made directly:
@@ -135,6 +188,19 @@ constexpr optional<const E&> exception_ptr_cast(const exception_ptr& p) noexcept
   static_assert(sizeof(E) > 0, "std::exception_ptr_cast: Mandates: E is complete");
   if (!p.p_)
     return nullopt;
+  if consteval {
+    // A handler decides; the object stays alive while p refers to it, so the reference the
+    // handler binds outlives the handler.
+    if constexpr (::ycxx::detail::cfg::constexpr_exception_ptr) {
+      try {
+        ::ycxx::detail::cx_eh::rethrow(p.p_);
+      } catch (const E& e) {
+        return optional<const E&>(e);
+      } catch (...) {
+      }
+    }
+    return nullopt;
+  }
   if constexpr (::ycxx::detail::cfg::rtti) {
     const void* obj = ::ycxx::abi::exception_object_as(p.p_, *::ycxx::detail::type_id<E>);
     if (!obj)

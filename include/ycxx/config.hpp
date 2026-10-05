@@ -99,6 +99,16 @@
 #else
 #  define YCXX_HAS_MEMBER_INTERCONVERTIBILITY 0
 #endif
+// Non-null exception_ptrs in constant evaluation (P3068), GCC 16: __builtin_current_exception()
+// makes a std::exception_ptr (whose one data member is the object pointer) for the exception being
+// handled, __builtin_eh_ptr_adjust_ref(p, n) adds n to such an object's reference count; both
+// work during constant evaluation only. A no-argument builtin cannot be probed in-language
+// (§1 rule 4), so exception_ptr.hpp spells it under this switch.
+#if __has_builtin(__builtin_current_exception) && __has_builtin(__builtin_eh_ptr_adjust_ref)
+#  define YCXX_HAS_CONSTEXPR_EXCEPTION_PTR 1
+#else
+#  define YCXX_HAS_CONSTEXPR_EXCEPTION_PTR 0
+#endif
 // Contract assertions (P2900): __cpp_lib_contracts is defined only where the compiler has them.
 #if defined(__cpp_contracts)
 #  define YCXX_HAS_CONTRACTS 1
@@ -294,6 +304,8 @@ inline constexpr bool rtti_non_unique_bit = false;
 
 inline constexpr bool exceptions = YCXX_HAS_EXCEPTIONS;
 inline constexpr bool rtti = YCXX_HAS_RTTI;
+// Whether exception_ptr can hold an exception during constant evaluation (YCXX_HAS_CONSTEXPR_EXCEPTION_PTR).
+inline constexpr bool constexpr_exception_ptr = YCXX_HAS_CONSTEXPR_EXCEPTION_PTR && YCXX_HAS_EXCEPTIONS;
 inline constexpr bool hosted = YCXX_HOSTED;
 inline constexpr bool hardened = YCXX_HARDENED;
 inline constexpr bool reflection = YCXX_HAS_REFLECTION;

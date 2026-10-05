@@ -1,6 +1,7 @@
 #!/bin/sh
 # Freestanding check: every core header (and every header [compliance] requires) must compile in a TU built with
 #   -ffreestanding -nostdlib -nostdinc -fno-exceptions -fno-rtti
+# plus the compiler's own header directory (core uses its <stddef.h>, DECISIONS §3; no C library)
 # and the smoke test must link with no C library for bare-metal targets.
 set -e
 repo=$(cd "$(dirname "$0")/.." && pwd)
@@ -19,10 +20,12 @@ mkdir -p "$out"
 cores=$(python3 -c "import sys; sys.path.insert(0,'$repo/tools')
 from headers import CORE, FREESTANDING_SUBSET, FREESTANDING_REQUIRED
 print(' '.join(dict.fromkeys(CORE + FREESTANDING_SUBSET + FREESTANDING_REQUIRED)))")
-flags="-std=c++26 -ffreestanding -nostdinc -nostdinc++ -isystem $repo/include -fno-exceptions -fno-rtti -O2 -Wall -Wextra -Werror"
+base_flags="-std=c++26 -ffreestanding -nostdinc -nostdinc++ -isystem $repo/include -fno-exceptions -fno-rtti -O2 -Wall -Wextra -Werror"
 fail=0
 run() { # compiler-command target-label C-compiler linker [skip-link-reason]
   cc=$1; label=$2   # $3: C compiler for rt.c, $4: linker; $5: when set, no smoke link (why)
+  # -nostdinc drops the compiler's own headers too; core needs its <stddef.h> (::max_align_t).
+  flags="$base_flags -isystem $($cc -print-file-name=include)"
   ui_section "Freestanding: ${label}"
   ui_cmd $cc $flags -c "<each header>"
   nbad=0

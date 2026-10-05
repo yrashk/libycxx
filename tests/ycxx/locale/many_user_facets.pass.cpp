@@ -16,6 +16,7 @@
 // id collided with another's would be reported as present in a locale that does not have it,
 // or would return the other type's facet.
 // FLAGS: -pthread
+// REQUIRES: exceptions
 #include <atomic>
 #include <locale>
 #include <thread>

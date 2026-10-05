@@ -226,7 +226,8 @@ endif()
 # program with a heap replaces them),
 # std::nothrow, floating-point <charconv>, the <atomic> lock and wait tables, <debugging>, the
 # default contract-violation handler and the platform layer's wait and debugger hooks. Built for
-# the compiler's target with -ffreestanding -nostdinc (no C library headers), without exceptions
+# the compiler's target with -ffreestanding -nostdinc (no C library headers; the compiler's own
+# directory is added back for <stddef.h>), without exceptions
 # or RTTI, hidden. Consumers get libycxx's headers and -ffreestanding; the C library functions the
 # compilers may call (memcpy, memmove, memset, memcmp) and the entry point are the program's
 # (tests/freestanding/rt.c). tools/check_freestanding.sh builds the same sources for bare-metal
@@ -240,7 +241,11 @@ if(YCXX_FREESTANDING_RUNTIME)
   set_target_properties(ycxx_freestanding PROPERTIES OUTPUT_NAME ycxx-freestanding EXPORT_NAME freestanding
                         POSITION_INDEPENDENT_CODE ON CXX_VISIBILITY_PRESET hidden)
   target_link_libraries(ycxx_freestanding PUBLIC ycxx_headers)
-  target_compile_options(ycxx_freestanding PRIVATE -std=c++26 -nostdinc -fno-exceptions -fno-rtti ${_ycxx_warnings}
+  # -nostdinc drops the compiler's own headers too; core needs its <stddef.h> (::max_align_t).
+  execute_process(COMMAND ${CMAKE_CXX_COMPILER} -print-file-name=include
+                  OUTPUT_VARIABLE _ycxx_compiler_include OUTPUT_STRIP_TRAILING_WHITESPACE)
+  target_compile_options(ycxx_freestanding PRIVATE -std=c++26 -nostdinc "SHELL:-isystem ${_ycxx_compiler_include}"
+    -fno-exceptions -fno-rtti ${_ycxx_warnings}
     # One allocation function per file; no zero fill of the charconv work buffers (see above).
     $<$<CXX_COMPILER_ID:GNU>:-Wno-sized-deallocation -ftrivial-auto-var-init=uninitialized>
     PUBLIC $<$<COMPILE_LANGUAGE:CXX>:-ffreestanding>)

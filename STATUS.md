@@ -243,28 +243,21 @@ without their headers (`<sstream>`, `printf`, `int64_t`: 4), and libstdc++ choic
 leaves open (8: `%OS` without fraction, LWG 4118 character reps, file_clock's epoch, rounding
 when parsing, `fractional_width` of ratio<1, 2^62>, `hh_mm_ss` layout, an error message).
 
-## Own-suite configurations (runs of 2026-10-05, 2381 tests)
+## Own-suite configurations (runs of 2026-10-05, 2438 tests)
 `tools/test --hardened` / `--cxxflags=... --config-name=...` (README, Own tests); the nightly
 `full.yml` runs them, and any failure fails the job.
 
 | Configuration | GCC 16.2 | Clang 23.1 |
 |---|---|---|
-| default (the 53 `precondition/` tests UNSUPPORTED) | 2310 pass / 13 fail / 5 xfail | 2302 pass / 10 fail / 16 xfail / 53 unsupported |
-| hardened (`-DYCXX_HARDENED=1`) | 2363 pass / 13 fail / 5 xfail | 2355 pass / 10 fail / 16 xfail |
-| noexcept (`-fno-exceptions`; 430 tests `REQUIRES: exceptions`) | 1888 pass / 5 fail / 5 xfail / 483 unsupported | 1886 pass / 6 fail / 6 xfail / 483 unsupported |
+| default (the `precondition/` death tests UNSUPPORTED) | 2371 pass / 0 fail / 13 xfail / 54 unsupported | 2364 pass / 0 fail / 20 xfail / 54 unsupported |
+| hardened (`-DYCXX_HARDENED=1`) | 2425 pass / 0 fail / 13 xfail | 2418 pass / 0 fail / 20 xfail |
+| noexcept (`-fno-exceptions`; tests `REQUIRES: exceptions` UNSUPPORTED) | 1941 pass / 0 fail / 7 xfail / 490 unsupported | 1941 pass / 0 fail / 7 xfail / 490 unsupported |
 
-The default GCC run counted 2328 tests (it started before `precondition/` existed). Default
-failures were the then-listed known ones, plus `integration/fd_leaks_alloc_failure` (a 60 s timeout under
-machine load; passes alone). Hardened: all 53 death tests pass on both compilers; the one failure
-not in the default run is `mdspan/submdspan_exhaustive_oracle` (fixed since:
-submdspan results skip that check; see Known limitations): the hardened check of
-`layout_stride::mapping(extents, strides)` fires inside `submdspan` on a `layout_stride` source,
-because [mdspan.sub.map.common]/6 gives strides that need not satisfy the constructor's
-precondition [mdspan.layout.stride.cons]/4.3 (extents {4, 4}, strides {2, 9}, slices
-`extent_slice{0, 2, 3}, full_extent` give extents {2, 4} and strides {6, 9}: unique, but no
-permutation meets 4.3); a draft question, or the library should build that result without the
-check. noexcept: only the default run's failures (those of `except/`, `exception/`, `contracts/`
-and `execution/` are UNSUPPORTED there).
+Every expected failure carries its reason in the test (`// XFAIL:` for causes outside the library
+and the test, `// XFAIL-COMPILER:` for a missing compiler feature): the draft defect
+`char_traits/eof`, the Itanium ABI and GCC handler-recording limits (`except/handler_*`), GCC's
+contract detection mode (`contracts/observe`), the unimplemented senders of `<execution>`, and on
+Clang the features it lacks (constant-evaluation throws, contracts, reflection, builtins).
 
 ## Freestanding
 `tools/check_freestanding.sh`: every core header, every header with a freestanding subset and
@@ -334,8 +327,8 @@ shared cache. Fixed by hidden visibility (DECISIONS §2): nothing of libycxx is 
 weak-definition binds remain except, with GCC, the fundamental type_info objects (benign: same
 objects in libc++abi). Expected in CI: `exception`, `except`, `rtti`, `future` pass on both
 compilers apart from the documented `except/handler_pointer_reference{,_exact}` (both) and
-`handler_array_decay`, `handler_function_pointer` (GCC) handler limitation and the GCC
-`exception/exception_ptr_constexpr` compiler gap; `linkage/no_exported_library_symbols` passes;
+`handler_array_decay`, `handler_function_pointer` (GCC) handler limitation;
+`linkage/no_exported_library_symbols` passes;
 `tests/cmake/run.sh` (not in CI) shows no exports and "mine 3 other 3" with Apple's libc++.
 
 Unverified or known gaps on macOS:
@@ -460,10 +453,6 @@ compilers; `visit_format_arg.pass.cpp` needs `EOF` from `constexpr_char_traits.h
 `implementation-specific`) in the skip lists.
 
 ## Deliberate divergences
-- `std::max_align_t` and `::max_align_t` (from `<stddef.h>`) are distinct types with identical
-  size and alignment. [support.c.headers.other]/1 would make them the same, but core cannot
-  include a C header to name the C library's class. The same applies to `std::mbstate_t`
-  (DECISIONS §3).
 - `expected<T, E>`: `operator==(const expected&, const T2&)` deduces its left operand (it must be
   the expected or derived from it). With the draft's literal `const expected&` parameter, a
   constraint check such as `int == pair<int, expected<int, int>>` found through ADL re-enters
@@ -598,8 +587,14 @@ compilers; `visit_format_arg.pass.cpp` needs `EOF` from `constexpr_char_traits.h
   needs the object file on disk: compressed debug sections, separate debug files
   (`.gnu_debuglink`, build-id directories) and split DWARF are not read (the queries return ""
   and 0; the function name then comes from the symbol tables). The demangler shows no
-  requires-clauses. GCC's own codegen reports an exception escaping a contract predicate with
-  `detection_mode::predicate_false` (it passes the unmodified violation object).
+  requires-clauses.
+- `<contracts>` (GCC): an exception escaping a contract predicate is reported with
+  `detection_mode::predicate_false`, where [basic.contract.eval]/7.2 and Table 46 call for
+  `evaluation_exception` (own test `contracts/observe`, XFAIL). GCC emits one constant violation
+  object per assertion (mode 1, `.data`) and passes the same object from the normal path and from
+  the implicit handler of the exception path. The library cannot recover the mode:
+  `current_exception()` is non-null in the handler in both cases when the assertion is evaluated
+  inside an active handler, and nothing marks the start of the predicate's evaluation.
 - `<text_encoding>`: comp-name assumes an ASCII-compatible ordinary literal encoding.
 - `<meta>`: needs GCC 16 with `-freflection` (Clang 23 has no reflection). Exceptions the library
   itself raises (`access_context::via`, the apply traits) carry the library's source location in
@@ -658,9 +653,6 @@ compilers; `visit_format_arg.pass.cpp` needs `EOF` from `constexpr_char_traits.h
   destroy/121024.cc fails on GCC (PR c++/102284, marked dg-xfail-if, which the harness ignores).
 - `FLT_ROUNDS` is the constant 1 with GCC (no `__builtin_flt_rounds`), as in GCC's own
   `<float.h>`; it does not follow `fesetround`. Clang reports the current mode.
-- `<cwchar>` with Clang on glibc: glibc declares `::wcschr` etc. only with the C signature, so an
-  unqualified call on a const pointer under `using namespace std;` returns `wchar_t*`. Qualified
-  `std::` calls are const-correct. (A `<wchar.h>` wrapper would be needed.)
 - `std::any` allocates large values with a plain new-expression, honouring a class-specific
   `operator new`. A type that deletes it cannot be stored (libstdc++ any/83658 relies on this).
 - Freestanding programs built with GCC link libgcc (helpers such as `__popcountdi2`).
@@ -674,9 +666,9 @@ compilers; `visit_format_arg.pass.cpp` needs `EOF` from `constexpr_char_traits.h
   empty `std::function` so adopted becomes a stateless target that throws `bad_function_call`.
   Construction is noexcept when nothing can throw (a strengthening, as libstdc++ does).
   `function::target<T>()` without RTTI uses the same table-address identity as `any`.
-- `exception_ptr` is constexpr only for null values: neither compiler documents a way to reach
-  the constant-evaluation exception state (own test `exception/exception_ptr_constexpr` fails on
-  GCC; Clang 23 cannot throw during constant evaluation at all).
+- Non-null `exception_ptr`s during constant evaluation exist on GCC only, through GCC 16's
+  undocumented builtins `__builtin_current_exception`/`__builtin_eh_ptr_adjust_ref` (found with
+  `__has_builtin`, DECISIONS §4); Clang 23 cannot throw during constant evaluation at all.
 - The Itanium ABI records a handler's type without its reference-ness, so `catch (T*&)` also
   accepts pointer conversions that only `catch (T*)`/`catch (T* const&)` may ([except.handle]/3;
   own tests `except/handler_pointer_reference*`). libsupc++ behaves the same.
@@ -708,8 +700,6 @@ compilers; `visit_format_arg.pass.cpp` needs `EOF` from `constexpr_char_traits.h
   exactly, so libstdc++'s gencanon.cc / 64351.cc (which reject a rounded 1.0 and count extra
   calls) and libc++'s pre-P0952 generate_canonical test fail. seed_seq::generate rejects signed
   value types per its Mandates (libstdc++ seed_seq/97311.cc accepts them).
-- No `<stddef.h>` wrapper: `::max_align_t` comes from the compiler's header and is not
-  `std::max_align_t` (see Deliberate divergences).
 
 - `<string>`: the libc++ tests using `constexpr_char_traits.h`/`nasty_string.h` (`EOF`),
   `deallocate_size` (`::uint32_t`) and libstdc++'s `errno.cc` expect `<string>` to pull in C
@@ -1014,10 +1004,8 @@ levels: 29.7 s -> 0.01 s; libstdc++ 8.6 s). Remaining above 1.5x: deque push at 
 
 ## Open issues / next
 - Every header of the C++26 library is provided (Phases 1-4 complete; `<meta>` needs GCC's
-  `-freflection`, `<contracts>` GCC's `-fcontracts`). Own suite (2146 tests, at `65e7235`, after batch 36): GCC 2131 pass / 10 fail / 5 xfail, Clang 2124 / 6 / 16. Every remaining failure is a documented limitation:
-  `char_traits<char16_t>::eof`, the Itanium ABI handler limits (`except/handler_*`), GCC's
-  contract detection mode, non-null constexpr `exception_ptr`, `std::mbstate_t` being core's own
-  type and no `<stddef.h>` wrapper (`bit/oracle_cxx26` no longer fails on Clang).
+  `-freflection`, `<contracts>` GCC's `-fcontracts`). Own suite: no failures on either compiler (configurations above); the expected
+  failures carry their reasons in the tests.
 - Next (Phase 5): full libc++/libstdc++ sweeps with triage (tests/libcxx/TRIAGE.md,
   tests/libstdcxx/TRIAGE.md), fixing the libycxx bugs they find; then a whole-library review
   (performance pass done, see Performance).
@@ -1040,5 +1028,5 @@ levels: 29.7 s -> 0.01 s; libstdc++ 8.6 s). Remaining above 1.5x: deque push at 
   also keep out-of-line destructors), and the library's
   `throw_out_of_range`/`throw_length_error`/... throw them during constant evaluation, so on GCC
   `std::string("ab").at(5)` can be caught in a constant expression. `__cpp_lib_constexpr_exceptions`
-  is still undefined: Clang 23 cannot throw during constant evaluation, a non-null
-  `exception_ptr` is not available there on GCC. (`format_error` is constexpr.)
+  is still undefined: Clang 23 cannot throw during constant evaluation. On GCC `make_exception_ptr`,
+  `rethrow_exception` and `exception_ptr_cast` work there too (DECISIONS §4). (`format_error` is constexpr.)

@@ -5,6 +5,18 @@
 #include <ycxx/core/cstddef.hpp>
 #include <ycxx/core/exception_base.hpp>
 
+namespace ycxx::detail {
+// A type_info's name pointer as the compiler stored it, made readable: Clang's Apple arm64 C++ ABI
+// sets bit 63 for a type_info that may exist in several linked images (cfg::rtti_non_unique_bit;
+// such type_infos must compare by name, which libycxx does for every name not marked '*').
+inline const char* rtti_name(const char* stored) noexcept {
+  if constexpr (cfg::rtti_non_unique_bit)
+    return reinterpret_cast<const char*>(reinterpret_cast<__UINTPTR_TYPE__>(stored) &
+                                         ~(static_cast<__UINTPTR_TYPE__>(1) << 63));
+  return stored;
+}
+} // namespace ycxx::detail
+
 namespace std {
 
 class type_info {
@@ -18,13 +30,15 @@ public:
       // Itanium ABI: a name starting with '*' is unique to its object (compare addresses);
       // otherwise names are compared as strings, since the same type may have several
       // type_info objects across shared objects.
-      return this == &rhs || (name_[0] != '*' && rhs.name_[0] != '*' && __builtin_strcmp(name_, rhs.name_) == 0);
+      const char* a = stored_name();
+      const char* b = rhs.stored_name();
+      return this == &rhs || (a[0] != '*' && b[0] != '*' && __builtin_strcmp(a, b) == 0);
     }
   }
   bool before(const type_info& rhs) const noexcept {
     const char* a = raw_name();
     const char* b = rhs.raw_name();
-    if (name_[0] == '*' || rhs.name_[0] == '*')
+    if (stored_name()[0] == '*' || rhs.stored_name()[0] == '*')
       return a < b;
     return __builtin_strcmp(a, b) < 0;
   }
@@ -33,7 +47,7 @@ public:
     size_t h = static_cast<size_t>(14695981039346656037ULL);
     for (const char* p = raw_name(); *p; ++p)
       h = (h ^ static_cast<unsigned char>(*p)) * static_cast<size_t>(1099511628211ULL);
-    return name_[0] == '*' ? reinterpret_cast<size_t>(this) : h;
+    return stored_name()[0] == '*' ? reinterpret_cast<size_t>(this) : h;
   }
   const char* name() const noexcept { return raw_name(); }
 
@@ -45,7 +59,11 @@ protected:
   explicit type_info(const char* n) noexcept : name_(n) {}
 
 private:
-  const char* raw_name() const noexcept { return name_[0] == '*' ? name_ + 1 : name_; }
+  const char* stored_name() const noexcept { return ycxx::detail::rtti_name(name_); }
+  const char* raw_name() const noexcept {
+    const char* n = stored_name();
+    return n[0] == '*' ? n + 1 : n;
+  }
 };
 
 class bad_cast : public exception {

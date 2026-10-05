@@ -18,13 +18,23 @@
 #define EXIT_SUCCESS 0
 #define EXIT_FAILURE 1
 
+// An assembler name is the object-file symbol verbatim: Mach-O prefixes C symbols with '_'.
 namespace ycxx::detail::c_rt {
+#if YCXX_TARGET_DARWIN
+[[noreturn]] void abort() noexcept __asm__("_abort");
+int atexit(void (*func)()) noexcept __asm__("_atexit");
+int at_quick_exit(void (*func)()) noexcept __asm__("_at_quick_exit");
+[[noreturn]] void exit(int status) __asm__("_exit");
+[[noreturn]] void exit_now(int status) noexcept __asm__("__Exit");
+[[noreturn]] void quick_exit(int status) noexcept __asm__("_quick_exit");
+#else
 [[noreturn]] void abort() noexcept __asm__("abort");
 int atexit(void (*func)()) noexcept __asm__("atexit");
 int at_quick_exit(void (*func)()) noexcept __asm__("at_quick_exit");
 [[noreturn]] void exit(int status) __asm__("exit");
 [[noreturn]] void exit_now(int status) noexcept __asm__("_Exit");
 [[noreturn]] void quick_exit(int status) noexcept __asm__("quick_exit");
+#endif
 } // namespace ycxx::detail::c_rt
 
 namespace std {

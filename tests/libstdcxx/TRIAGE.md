@@ -467,6 +467,28 @@ whole suite, so it is left for a round of its own; each of those failures must t
 given its reason.
 
 <!-- counterparts:begin (generated) -->
+## Named locales (2026-10-05)
+
+With named locales on the C library's (DECISIONS §7), `dg-require-namedlocale` holds for every
+name the C library has. Directories `22_locale 27_io 21_strings std/time`, both compilers: 24
+failures each, all classified in skip.txt (block "Named locales"), each checked to pass with the
+non-standard part removed unless said otherwise:
+- 22_locale/locale/global_locale_objects/2.cc, locale/cons/29217.cc: `setlocale`/`LC_ALL` without
+  `<clocale>`; 29217 also expects glibc's twelve-category composite name.
+- 22_locale/messages/13631.cc, members/char/{1,2,3}.cc, messages_byname/named_equivalence.cc:
+  libstdc++'s three-argument `messages::open` and `LOCALEDIR` (gettext).
+- std/time/{day,month,month_day,weekday,year,year_month}/io.cc: parse fields the type cannot
+  represent ([time.parse]/16, divergence).
+- std/time/{month_day_last,month_weekday,month_weekday_last,weekday_indexed,weekday_last,
+  year_month_day_last,year_month_weekday_last}/io.cc: libstdc++'s format_error messages, `%u`/`%w`
+  of a weekday that is not ok() (libycxx throws, as libc++ requires), unspecified days.
+- std/time/{year_month_day,year_month_weekday}/io.cc: week numbers and days of the year of
+  dates that are not ok() (libycxx throws, [time.format]/3).
+- std/time/format/localized.cc: the base `time_put` writing the stream locale's names.
+- **Fixed**: std/time/format/pr117214.cc (`{:L%c}` of a zoned_time or local_time wrote the
+  process's time zone: the zone is now passed in `tm_zone`/`tm_gmtoff`).
+27_io/objects/wchar_t/13582-1_xin.cc stays skipped; its reason no longer mentions the locale.
+
 ## Skipped tests without a counterpart
 
 Tests skipped (or UNSUPPORTED) as tied to the other library's internals, extensions or modes whose subject the draft does not specify, so libycxx's own suite has no test for it: the trace reports them as "no libycxx counterpart". Patterns are anchored regexes (like skip.txt); the linked ones carry `// COUNTERPART:` in tests/ycxx (tests/ycxxlit/counterparts.py).

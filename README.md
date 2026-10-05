@@ -73,8 +73,12 @@ compiler's first error). Failures show their whole transcript: the exact command
 statuses and their output. A summary closes the run. Each suite run also writes
 `build/test-logs/<suite>-<compiler>.html`, a report of every test with its transcript and how
 the run was made (commit, compiler version, command), and a `.tsv` with one line per test.
-`tools/test` adds `build/test-logs/run.html`: every step with its command, and for a failure
-the end of its log (a build error, say) or the suite's failing tests. The reports have copy
+`tools/test` adds `build/test-logs/run.html`, the composite report of the whole run, made to
+be shared. It covers every stage with its command; every failure in full (a failed stage's log
+tail, such as a build error, and a failed test's transcript); and every suite run: own,
+libc++ and libstdc++, per compiler. For each suite it gives the counts, why tests were
+unsupported, an example of how a test runs, and every test with its steps. Its "Copy for an
+agent" button copies all of that except the list of every test. The reports have copy
 buttons (one failure, all failures, the whole report) that put self-contained Markdown on the
 clipboard, ready to paste to a person or an AI assistant. Each report also embeds the whole of
 itself as Markdown and writes it next to itself as `.md`, so it can be read without a browser. Colour is on for terminals and GitHub Actions; set

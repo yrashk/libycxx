@@ -15,6 +15,7 @@
 // flags from 4 threads; a nested exceptional execution that makes the enclosing one exceptional
 // too; flags that live briefly on the stack.
 // FLAGS: -pthread
+// REQUIRES: exceptions
 #include <atomic>
 #include <memory>
 #include <mutex>

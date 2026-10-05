@@ -18,6 +18,7 @@
 // keeps open on purpose, such as a cache, appear in both). A child killed by a signal or by
 // std::terminate also fails.
 // FLAGS: -pthread
+// REQUIRES: exceptions
 #include <chrono>
 #include <cstdlib>
 #include <filesystem>

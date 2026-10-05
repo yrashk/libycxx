@@ -97,7 +97,20 @@ inline wchar_t* wmemchr(wchar_t* s, wchar_t c, size_t n) noexcept { return const
     "ctime": ("time.h", "clock_t time_t tm timespec clock difftime mktime time timespec_get asctime ctime "
               "gmtime localtime strftime", ""),
     "clocale": ("locale.h", "lconv setlocale localeconv", ""),
-    "cinttypes": ("inttypes.h", "imaxdiv_t imaxabs imaxdiv strtoimax strtoumax wcstoimax wcstoumax", ""),
+    "cinttypes": ("inttypes.h", "imaxdiv_t strtoimax strtoumax wcstoimax wcstoumax", """// imaxabs, imaxdiv are constexpr ([cinttypes.syn]), so they are not the C library's (as <cstdlib>'s
+// div). Templates: under `using namespace std;` an unqualified call prefers the C library's.
+// (The optional abs/div overloads for intmax_t exist only when it is an extended integer type.)
+template <class = void>
+constexpr intmax_t imaxabs(intmax_t j) noexcept {
+  return j < 0 ? -j : j;
+}
+template <class = void>
+constexpr imaxdiv_t imaxdiv(intmax_t numer, intmax_t denom) noexcept {
+  imaxdiv_t r{};
+  r.quot = numer / denom;
+  r.rem = numer % denom;
+  return r;
+}"""),
     "csetjmp": ("setjmp.h", "jmp_buf longjmp", ""),
     "cfenv": ("fenv.h", "fenv_t fexcept_t feclearexcept fegetexceptflag feraiseexcept fesetexceptflag "
               "fetestexcept fegetround fesetround fegetenv feholdexcept fesetenv feupdateenv", ""),

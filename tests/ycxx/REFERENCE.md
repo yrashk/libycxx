@@ -206,7 +206,7 @@ Legend: **G** fails with GCC + libstdc++, **C** with Clang + libstdc++.
 | `ctime/c23_functions` | G | C | `std::timegm`, `std::gmtime_r`, `std::localtime_r`, `std::timespec_getres` ([ctime.syn]; glibc declares them globally) |
 | `format/formatter_headers_across_tus` | G | C | the [format.formatter.spec]/2 specializations from headers other than `<format>`: with only `<stack>`/`<queue>`, `formatter<int>` etc. are incomplete; with only `<vector>`, `formatter<vector<bool>::reference>` cannot be instantiated (`basic_format_parse_context` incomplete); with `<vector>` before `<format>`, `vector<bool>` is not formattable |
 | `atomic/store_key`, `atomic/float_fetch_minmax`, `atomic/constexpr` | G | C | atomic `store_add` ... `store_min`; `fetch_fmaximum` family; constexpr atomics |
-| `stop_token/concepts`, `stop_token/inplace_stop`, `stop_token/inplace_callback_deregistration` | G | C | `stoppable_token`/`unstoppable_token`/`never_stop_token`, `stop_callback_for_t`; `inplace_stop_source`/`_token`/`_callback` |
+| `stop_token/concepts`, `stop_token/inplace_stop`, `stop_token/inplace_callback_deregistration`, `stop_token/many_callbacks` (batch 44; its `stop_source` half passes) | G | C | `stoppable_token`/`unstoppable_token`/`never_stop_token`, `stop_callback_for_t`; `inplace_stop_source`/`_token`/`_callback` |
 | `thread/thread_attributes` | G | C | `thread::name_hint`, `thread::stack_size_hint` |
 | `future/packaged_task_allocator` | G | C | `packaged_task(allocator_arg_t, const Allocator&, F&&)` |
 | `ranges/view_interface_at` | G | C | `view_interface::at` |

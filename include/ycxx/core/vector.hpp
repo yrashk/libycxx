@@ -680,6 +680,18 @@ public:
     alloc_traits::destroy(alloc_, last_);
   }
 
+  // emplace's single argument (a non-const rvalue of type T) is not one of the elements (pointer
+  // comparison through the integer values, which orders unrelated objects too; during constant
+  // evaluation, where that is not available, always false).
+  template <class... Args>
+  constexpr bool emplace_moves_directly(const remove_reference_t<Args>&... args) const noexcept {
+    if consteval {
+      return false;
+    } else {
+      const auto p = reinterpret_cast<__UINTPTR_TYPE__>(__builtin_addressof(args...[0]));
+      return p < reinterpret_cast<__UINTPTR_TYPE__>(first_) || p >= reinterpret_cast<__UINTPTR_TYPE__>(last_);
+    }
+  }
   template <class... Args>
   constexpr iterator emplace(const_iterator position, Args&&... args) {
     const size_type off = static_cast<size_type>(position - cbegin());
@@ -689,11 +701,17 @@ public:
     } else if (first_ + off == last_) {
       alloc_traits::construct(alloc_, last_, static_cast<Args&&>(args)...);
       ++last_;
-    } else if constexpr (sizeof...(Args) == 1 && (is_same_v<Args, T> && ...)) {
-      // A single non-const rvalue of type T: as insert(position, T&&), it is not an element
-      // ([res.on.arguments]/1.3), so it is moved in directly without a temporary.
-      shift_in(off, static_cast<Args&&>(args)...);
     } else {
+      if constexpr (sizeof...(Args) == 1 && (is_same_v<Args, T> && ...)) {
+        // A single non-const rvalue of type T that is not an element: moved in directly, without
+        // a temporary (as insert(position, T&&)). [sequence.reqmts] emplace, Note 1: the
+        // arguments may refer to elements, so an element (moved from with std::move) takes the
+        // temporary below.
+        if (emplace_moves_directly<Args...>(args...)) {
+          shift_in(off, static_cast<Args&&>(args)...);
+          return begin() + static_cast<difference_type>(off);
+        }
+      }
       // The arguments may refer to elements that are about to move.
       ycxx::detail::alloc_temp<T, Allocator> tmp(alloc_, static_cast<Args&&>(args)...);
       shift_in(off, static_cast<T&&>(tmp.v));

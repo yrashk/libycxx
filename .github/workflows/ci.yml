@@ -61,3 +61,41 @@ jobs:
             build/test-logs/*.tsv
             build/test-logs/*.log
           if-no-files-found: ignore
+
+  # macOS on Apple Silicon: Homebrew's GCC 16 and LLVM's Clang 23 release (provisioned and
+  # cached). Not required yet: the macOS port is in progress (STATUS.md), so this job reports
+  # without failing the workflow.
+  macos:
+    runs-on: macos-15
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install GCC, ninja, cmake, uv
+        run: brew install gcc ninja cmake uv
+
+      - name: Cache the provisioned Clang
+        uses: actions/cache@v4
+        with:
+          path: ~/.local/share/ycxx/toolchains
+          key: ycxx-toolchains-${{ runner.os }}-${{ runner.arch }}-llvm-23.1.2
+
+      - name: Toolchains (tools/toolchain/provision)
+        run: tools/toolchain/provision
+
+      - name: Policy, builds, freestanding, own suite (tools/test)
+        run: |
+          . tools/toolchain/activate.sh
+          tools/test -j3 policy build freestanding ycxx
+
+      - name: Test reports (composite run report, suite reports)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-reports-macos
+          path: |
+            build/test-logs/*.html
+            build/test-logs/*.md
+            build/test-logs/*.tsv
+            build/test-logs/*.log
+          if-no-files-found: ignore

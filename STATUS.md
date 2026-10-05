@@ -506,9 +506,8 @@ compilers; `visit_format_arg.pass.cpp` needs `EOF` from `constexpr_char_traits.h
   (no heap, so it stays freestanding): parsing needs about 21 KB of stack (two 38,500-bit numbers
   and an 11,566-digit buffer, exact for any input length), `%g` with a large precision about 20 KB.
 - Not yet provided: `<cxxabi.h>` (`abi::__cxa_demangle`, `__cxa_vec_*`,
-  `abi::__forced_unwind`). Catch matching against deep virtual-diamond hierarchies enumerates
-  every inheritance path (exponential), and `dynamic_cast` other than to the most derived type
-  is about 2x slower than libsupc++'s.
+  `abi::__forced_unwind`). Hierarchy walks (handler matching, `dynamic_cast`) remember up to 64
+  visited virtual bases; a hierarchy with more falls back to walking repeated paths again.
 - The default terminate handler prints the thrown type's mangled name (no demangler yet).
 - `any` without RTTI identifies types by the address of a per-type table, so `any_cast` across a
   shared library built with hidden visibility or `-Bsymbolic` does not recognise the type.
@@ -788,6 +787,32 @@ compilers; `visit_format_arg.pass.cpp` needs `EOF` from `constexpr_char_traits.h
   constructible T has a constrained (not mandated) default constructor. The deprecated atomics
   features are provided, declared [[deprecated]] (Annex D).
 
+## Performance
+`bench/` (manual, not in CI; DECISIONS §15) times the hot paths against libstdc++ on both
+compilers; `bench/RESULTS.md` has the full tables. Before this pass 31 of 104 benchmark rows were
+more than 1.5x slower than libstdc++ on at least one compiler; afterwards (on a noisy shared
+machine) about 10, all listed in RESULTS.md. Largest changes (libycxx/libstdc++, GCC / Clang):
+
+| benchmark | before | after |
+|---|---|---|
+| find byte (memchr) | 28.8 / 17.8 | 1.0 / 1.1 |
+| shared_ptr copy+destroy | 12.8 / 1.9 | 1.0 / 0.1 |
+| mutex lock/unlock | 2.0 / 2.5 | 0.1 / 0.2 |
+| istringstream >> int / >> double | 5.0 / 4.6, 2.1 / 1.9 | 1.0-1.4 / 1.5, 0.5 / 0.8 |
+| ostringstream << int, construct+str | 1.6 / 1.8, 1.9 / 2.0 | 1.1 / 1.0, 0.5 / 1.0 |
+| dynamic_cast cross cast / failure / to intermediate | 5.0 / 4.1, 6.2 / 2.7, 2.9 / 1.6 | 1.5-2.0 / 1.6-1.9, 1.5 / 0.9, 1.1 / 1.0 |
+| from_chars double | 4.1 / 3.5 | 2.2 / 1.9 |
+| vector insert at front | 1.1 / 2.6 | 1.0 / 1.0 |
+| make_heap + sort_heap | 1.6 / 0.5 | 0.9 / 0.4 |
+| throw/catch int | 1.6 / 1.0 | 1.0-1.3 / 0.8 |
+| regex construct | 1.6 / 1.2 | 0.7 / 0.6 |
+| mt19937_64 + normal | 1.5 / 1.2 | 0.7 / 1.0 |
+
+Stacked virtual diamonds no longer make handler matching and `dynamic_cast` exponential (18
+levels: 29.7 s -> 0.01 s; libstdc++ 8.6 s). Remaining above 1.5x: deque push at the ends,
+`from_chars(double)`, `to_chars` fixed with precision, Clang `dynamic_cast` across virtual bases
+(anonymous-namespace type names have no `*` marker), GCC `string + "x" + string`.
+
 ## Open issues / next
 - Every header of the C++26 library is provided (Phases 1-4 complete; `<meta>` needs GCC's
   `-freflection`, `<contracts>` GCC's `-fcontracts`). Own suite (1928 tests, after batch 31): GCC 1917 pass /
@@ -796,8 +821,8 @@ compilers; `visit_format_arg.pass.cpp` needs `EOF` from `constexpr_char_traits.h
   contract detection mode, non-null constexpr `exception_ptr`, `std::mbstate_t` being core's own
   type, no `<stddef.h>` wrapper, and (Clang) `bit/oracle_cxx26`'s constant-evaluation step count.
 - Next (Phase 5): full libc++/libstdc++ sweeps with triage (tests/libcxx/TRIAGE.md,
-  tests/libstdcxx/TRIAGE.md), fixing the libycxx bugs they find; then performance and a
-  whole-library review.
+  tests/libstdcxx/TRIAGE.md), fixing the libycxx bugs they find; then a whole-library review
+  (performance pass done, see Performance).
 - libstdc++ triage (A) fixed (outcomes in tests/libstdcxx/TRIAGE.md): `<compare>` CPO noexcept
   and `compare_three_way`'s constraint (LWG 3530); `less<>` & co. no longer take a rewritten
   `operator<=>` for a built-in pointer comparison; `std::ignore` from `<utility>`; `<bitset>`

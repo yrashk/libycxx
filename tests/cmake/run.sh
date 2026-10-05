@@ -16,12 +16,27 @@
 # clang++-23. Needs cmake and ninja.
 set -eu
 repo=$(cd "$(dirname "$0")/../.." && pwd)
+. "$repo/tools/lib/ui.sh"
+. "$repo/tools/lib/env.sh"
+ycxx_env_load
 work=${YCXX_CMAKE_TEST_DIR:-$repo/build/cmake-test}
 compilers=${*:-gcc clang}
 fail=0
 
-ok() { echo "ok   [$1] $2"; }
-bad() { echo "FAIL [$1] $2"; fail=1; }
+ok() { ui_ok "[$1] $2"; }
+bad() { ui_fail "[$1] $2"; fail=1; }
+# x CMD...: show the command, run it with its output appended to $log.
+x() { ui_cmd "$@"; "$@" >>"$log" 2>&1; }
+
+# links_toolchain_cxx EXE: true if EXE depends on libstdc++ or libc++.
+links_toolchain_cxx() {
+  if [ "$(uname -s)" = Darwin ]; then
+    otool -L "$1" | grep -E 'libstdc\+\+|libc\+\+' >/dev/null
+  else
+    readelf -d "$1" | grep -E 'NEEDED.*(libstdc\+\+|libc\+\+)' >/dev/null ||
+      nm -D "$1" 2>/dev/null | grep -E 'GLIBCXX|CXXABI_1' >/dev/null
+  fi
+}
 
 for c in $compilers; do
   case $c in
@@ -29,16 +44,18 @@ for c in $compilers; do
     clang) cc=${YCXX_CLANG:-clang-23} cxx=${YCXX_CLANGXX:-clang++-23} ;;
     *) echo "unknown compiler $c" >&2; exit 2 ;;
   esac
+  ui_section "CMake package with $c ($cxx)"
   d=$work/$c
   rm -rf "$d"
   mkdir -p "$d"
   log=$d/log.txt
+  ui_info "log" "$log"
   gen="-G Ninja -DCMAKE_C_COMPILER=$cc -DCMAKE_CXX_COMPILER=$cxx -DCMAKE_BUILD_TYPE=Release"
 
   # 1. build and install
-  if cmake -S "$repo" -B "$d/lib" $gen -DCMAKE_INSTALL_PREFIX="$d/prefix" >>"$log" 2>&1 &&
-     cmake --build "$d/lib" >>"$log" 2>&1 &&
-     cmake --install "$d/lib" >>"$log" 2>&1; then
+  if x cmake -S "$repo" -B "$d/lib" $gen -DCMAKE_INSTALL_PREFIX="$d/prefix" &&
+     x cmake --build "$d/lib" &&
+     x cmake --install "$d/lib"; then
     ok $c "build and install"
   else
     bad $c "build and install (see $log)"; continue
@@ -51,15 +68,14 @@ for c in $compilers; do
   # 2, 3. the example projects
   for ex in find_package add_subdirectory; do
     b=$d/$ex
-    if cmake -S "$repo/examples/$ex" -B "$b" $gen -DCMAKE_PREFIX_PATH="$d/prefix" \
-         -DLIBYCXX_SOURCE_DIR="$repo" >>"$log" 2>&1 &&
-       cmake --build "$b" >>"$log" 2>&1; then
+    if x cmake -S "$repo/examples/$ex" -B "$b" $gen -DCMAKE_PREFIX_PATH="$d/prefix" \
+         -DLIBYCXX_SOURCE_DIR="$repo" &&
+       x cmake --build "$b"; then
       out=$("$b/demo" 2>&1) || true
       if [ "$out" = "libycxx example: ok" ]; then ok $c "$ex: build and run"
       else bad $c "$ex: unexpected output: $out"; fi
       # 4. no toolchain C++ library
-      if readelf -d "$b/demo" | grep -E 'NEEDED.*(libstdc\+\+|libc\+\+)' >/dev/null ||
-         nm -D "$b/demo" 2>/dev/null | grep -E 'GLIBCXX|CXXABI_1' >/dev/null; then
+      if links_toolchain_cxx "$b/demo"; then
         bad $c "$ex: links the toolchain's C++ library"
       else
         ok $c "$ex: no libstdc++/libc++"
@@ -90,6 +106,7 @@ for c in $compilers; do
 done
 
 # 6. the toolchain file
+ui_section "Toolchain file (cmake/ycxx-toolchain.cmake)"
 for c in $compilers; do
   cache=$work/toolchain-cache-$c
   rm -rf "$cache" "$work/tc-$c"
@@ -134,4 +151,6 @@ if [ "${YCXX_TEST_PROVISION:-0}" = 1 ]; then
   rm -rf "$cache"
 fi
 
+echo
+if [ $fail = 0 ]; then ui_ok "CMake support: all checks passed"; else ui_fail "CMake support: failures (logs under $work)"; fi
 exit $fail

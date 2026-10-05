@@ -1,0 +1,203 @@
+#!/bin/sh
+# libycxx's test driver: runs the checks and test suites in stages, showing each command, live
+# progress and a summary. Linux and macOS.
+#
+#   tools/test [options] [stage...]
+#
+# Stages (default: policy build freestanding ycxx; "all": every stage):
+#   policy        preprocessor and include-layering policy checks (tools/check_*.py)
+#   build         the library for each compiler, RelWithDebInfo (build/<cc>, what the suites
+#                 link) and Release (build/<cc>-release, -O3, as CMake consumers build it)
+#   freestanding  every core header with -ffreestanding -nostdinc, bare-metal smoke link
+#   cmake         CMake package, add_subdirectory and toolchain file (tests/cmake/run.sh)
+#   ycxx          libycxx's own spec-derived suite (tests/ycxx)
+#   libcxx        libc++'s test suite, run only ($LIBCXX_TESTS)
+#   libstdcxx     libstdc++'s test suite, run only ($LIBSTDCXX_TESTS)
+#
+# Options:
+#   -c, --compiler gcc|clang   only this compiler (repeatable; default both)
+#   -f, --filter DIR           suite stages: only tests under DIR (repeatable)
+#   -j, --jobs N               parallel jobs for ninja and lit
+#   -s, --sanitizer LIST       suite stages: build tests with -fsanitize (asan, ubsan, tsan)
+#   -x, --fail-fast            stop at the first failing step
+#   -v, --verbose              stream every command's output; list every test
+#   -h, --help
+#
+# Compilers come from the YCXX_* variables (tools/toolchain/activate.sh), else from the
+# toolchains.env written by tools/toolchain/provision, else g++-16 / clang++-23. lit runs through
+# uvx (YCXX_LIT overrides; tools/lib/env.sh). Logs: build/test-logs/.
+set -eu
+repo=$(cd "$(dirname "$0")/.." && pwd)
+cd "$repo"
+. "$repo/tools/lib/ui.sh"
+. "$repo/tools/lib/env.sh"
+
+usage() { sed -n '2,/^set -eu/p' "$0" | sed '$d' | sed 's/^# \{0,1\}//'; }
+
+compilers= filters= jobs= sanitizer= fail_fast=0 stages=
+while [ $# -gt 0 ]; do
+  case $1 in
+    -c|--compiler) compilers="$compilers $2"; shift ;;
+    -f|--filter) filters="$filters $2"; shift ;;
+    -j|--jobs) jobs=$2; shift ;;
+    -j*) jobs=${1#-j} ;;
+    -s|--sanitizer) sanitizer=$2; shift ;;
+    -x|--fail-fast) fail_fast=1 ;;
+    -v|--verbose) YCXX_VERBOSE=1; export YCXX_VERBOSE ;;
+    -h|--help) usage; exit 0 ;;
+    all) stages="policy build freestanding cmake ycxx libcxx libstdcxx" ;;
+    policy|build|freestanding|cmake|ycxx|libcxx|libstdcxx) stages="$stages $1" ;;
+    *) echo "tools/test: unknown option or stage '$1' (tools/test --help)" >&2; exit 2 ;;
+  esac
+  shift
+done
+compilers=${compilers:-gcc clang}
+stages=${stages:-policy build freestanding ycxx}
+for c in $compilers; do
+  case $c in gcc|clang) ;; *) echo "tools/test: unknown compiler '$c'" >&2; exit 2 ;; esac
+done
+
+ycxx_env_load
+SANITIZER=$sanitizer
+export SANITIZER
+logs=$repo/build/test-logs
+mkdir -p "$logs"
+results=$logs/summary.txt
+: >"$results"
+t_start=$(date +%s)
+broken= # compilers whose library did not build: their suites are skipped
+
+# record STATUS LABEL SECONDS
+record() { printf '%s|%s|%s\n' "$1" "$2" "$3" >>"$results"; }
+
+# step LABEL LOGNAME CMD...: one recorded step.
+step() {
+  s_label=$1 s_log=$logs/$2.log
+  shift 2
+  s_t0=$(date +%s)
+  if ui_step "$s_label" "$s_log" "$@"; then
+    record ok "$s_label" $(($(date +%s) - s_t0))
+  else
+    record FAIL "$s_label" $(($(date +%s) - s_t0))
+    finish_if_fail_fast
+    return 1
+  fi
+}
+
+# direct LABEL CMD...: one recorded step whose command prints its own progress.
+direct() {
+  d_label=$1
+  shift
+  d_t0=$(date +%s)
+  ui_cmd "$@"
+  if "$@"; then
+    record ok "$d_label" $(($(date +%s) - d_t0))
+  else
+    record FAIL "$d_label" $(($(date +%s) - d_t0))
+    ui_failed=1
+    finish_if_fail_fast
+    return 1
+  fi
+}
+
+finish_if_fail_fast() {
+  if [ $fail_fast = 1 ]; then summary; exit 1; fi
+}
+
+cxx_of() { if [ "$1" = gcc ]; then echo "${YCXX_GXX:-g++-16}"; else echo "${YCXX_CLANGXX:-clang++-23}"; fi; }
+cc_of() { if [ "$1" = gcc ]; then echo "${YCXX_GCC:-gcc-16}"; else echo "${YCXX_CLANG:-clang-23}"; fi; }
+
+summary() {
+  ui_title "Summary"
+  nok=0 nfail=0 nskip=0
+  while IFS='|' read -r st label secs; do
+    d=$(ui_duration "$secs")
+    case $st in
+      ok) ui_ok "$label" "($d)"; nok=$((nok + 1)) ;;
+      skip) ui_skip "$label" "$secs"; nskip=$((nskip + 1)) ;;
+      *) ui_fail "$label" "($d)"; nfail=$((nfail + 1)) ;;
+    esac
+  done <"$results"
+  total=$(ui_duration $(($(date +%s) - t_start)))
+  echo
+  if [ $nfail = 0 ]; then
+    printf '  %s%s %d step%s passed%s in %s; logs in %s\n' "$ui_green$ui_bold" "$ui_sym_ok" "$nok" \
+      "$([ $nok = 1 ] || echo s)" \
+      "$ui_reset" "$total" "$logs"
+  else
+    printf '  %s%s %d of %d steps failed%s in %s; logs in %s\n' "$ui_red$ui_bold" "$ui_sym_fail" "$nfail" \
+      $((nok + nfail)) "$ui_reset" "$total" "$logs"
+  fi
+  [ $nskip = 0 ] || printf '  %s%d skipped%s\n' "$ui_yellow" "$nskip" "$ui_reset"
+}
+
+ui_title "libycxx tests: $(echo $stages)"
+ui_info "repository" "$repo"
+ui_info "platform" "$(uname -s) $(uname -m)"
+for c in $compilers; do
+  v=$($(cxx_of $c) --version 2>/dev/null | head -n 1) || v="not found"
+  ui_info "$c" "$(cxx_of $c): $v"
+done
+[ -n "${ycxx_env_file:-}" ] && ui_info "toolchains" "$ycxx_env_file"
+case " $stages " in *" ycxx "*|*" libcxx "*|*" libstdcxx "*)
+  if ycxx_lit_cmd 2>/dev/null; then ui_info "lit" "$ycxx_lit"
+  else ui_warn "lit" "not found: install uv (https://docs.astral.sh/uv/) or set YCXX_LIT"; fi ;;
+esac
+
+for stage in $stages; do
+  case $stage in
+    policy)
+      ui_section "Policy checks"
+      step "preprocessor policy" policy-preprocessor python3 tools/check_preprocessor.py || :
+      step "include layering" policy-includes python3 tools/check_includes.py || :
+      ;;
+    build)
+      for c in $compilers; do
+        ui_section "Build with $c"
+        for t in RelWithDebInfo Release; do
+          d=build/$c; [ $t = Release ] && d=build/$c-release
+          if [ ! -f $d/build.ninja ]; then
+            step "$c $t: configure ($d)" build-$c-$t-configure cmake -S . -B $d -G Ninja \
+              -DCMAKE_C_COMPILER="$(cc_of $c)" -DCMAKE_CXX_COMPILER="$(cxx_of $c)" -DCMAKE_BUILD_TYPE=$t ||
+              { [ $t = Release ] || broken="$broken $c"; continue; }
+          fi
+          step "$c $t: build ($d)" build-$c-$t ninja -C $d ${jobs:+-j$jobs} ||
+            { [ $t = Release ] || broken="$broken $c"; }
+        done
+      done
+      ;;
+    freestanding)
+      direct "freestanding headers, bare-metal smoke link" tools/check_freestanding.sh || :
+      ;;
+    cmake)
+      direct "CMake package and toolchain file" tests/cmake/run.sh $compilers || :
+      ;;
+    ycxx|libcxx|libstdcxx)
+      for c in $compilers; do
+        label="$stage suite, $c${sanitizer:+, $sanitizer}"
+        case " $broken " in *" $c "*)
+          ui_section "$label"; ui_skip "$label" "(the $c build failed)"
+          record skip "$label" "(the $c build failed)"; continue ;;
+        esac
+        if [ ! -f build/$c/libycxx.a ]; then
+          ui_section "$label"; ui_skip "$label" "(build/$c/libycxx.a missing: run the build stage)"
+          record skip "$label" "(no build/$c/libycxx.a)"; continue
+        fi
+        case $stage in
+          libcxx) dir=${LIBCXX_TESTS:-/opt/src/llvm-project/libcxx/test} ;;
+          libstdcxx) dir=${LIBSTDCXX_TESTS:-/opt/src/libstdcxx-testsuite} ;;
+          *) dir=tests/ycxx ;;
+        esac
+        if [ ! -d "$dir" ]; then
+          ui_section "$label"; ui_skip "$label" "($dir not found; see README.md)"
+          record skip "$label" "($dir not found)"; continue
+        fi
+        direct "$label" tools/run-conformance $stage $c $filters -- ${jobs:+-j$jobs} || :
+      done
+      ;;
+  esac
+done
+
+summary
+grep -q '^FAIL|' "$results" && exit 1
+exit 0

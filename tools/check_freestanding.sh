@@ -3,11 +3,14 @@
 #   -ffreestanding -nostdlib -nostdinc -fno-exceptions -fno-rtti
 # and the smoke test must link with no C library for bare-metal targets.
 set -e
+repo=$(cd "$(dirname "$0")/.." && pwd)
+. "$repo/tools/lib/ui.sh"
+. "$repo/tools/lib/env.sh"
+ycxx_env_load
 # Compilers: the YCXX_* variables of tools/toolchain/activate.*, else the -16/-23 names.
 gcc=${YCXX_GCC:-gcc-16} gxx=${YCXX_GXX:-g++-16}
 clang=${YCXX_CLANG:-clang-23} clangxx=${YCXX_CLANGXX:-clang++-23}
 lld=${YCXX_LLD:-ld.lld-23} llvm_ar=${YCXX_LLVM_AR:-llvm-ar-23}
-repo=$(cd "$(dirname "$0")/.." && pwd)
 out=$repo/build/freestanding
 mkdir -p "$out"
 # Every core header, every header with a freestanding subset, and every header of [compliance]'s
@@ -20,10 +23,12 @@ flags="-std=c++26 -ffreestanding -nostdinc -nostdinc++ -isystem $repo/include -f
 fail=0
 run() { # compiler-command target-label
   cc=$1; label=$2   # $3: C compiler for rt.c, $4: linker
+  ui_section "Freestanding: $label"
+  ui_cmd $cc $flags -c "<each header>"
   for h in $cores; do
     printf '#include <%s>\nint ycxx_header_check_%s;\n' "$h" "$(echo $h | tr -c 'a-z0-9\n' '_')" > "$out/h_$h.cpp"
     if ! $cc $flags -c "$out/h_$h.cpp" -o "$out/h_$h.$label.o" 2> "$out/h_$h.$label.log"; then
-      echo "FAIL [$label] <$h>"; sed 's/^/    /' "$out/h_$h.$label.log" | head -10; fail=1
+      ui_fail "[$label] <$h>"; sed 's/^/    /' "$out/h_$h.$label.log" | head -10; fail=1
     fi
   done
   if $cc $flags -c "$repo/tests/freestanding/smoke.cpp" -o "$out/smoke.$label.o" 2> "$out/smoke.$label.log" &&
@@ -32,9 +37,9 @@ run() { # compiler-command target-label
      build_fsrt "$cc" "$label" 2>> "$out/smoke.$label.log" &&
      $4 "$out/smoke.$label.o" "$out/smoke_o0.$label.o" "$out/rt.$label.o" "$out/fsrt.$label.a" \
         -o "$out/smoke.$label.elf" 2>> "$out/smoke.$label.log"; then
-    echo "ok   [$label] all core and freestanding headers + smoke link"
+    ui_ok "[$label] all $(echo $cores | wc -w | tr -d ' ') core and freestanding headers, smoke link"
   else
-    echo "FAIL [$label] smoke"; sed 's/^/    /' "$out/smoke.$label.log" | head -20; fail=1
+    ui_fail "[$label] smoke"; sed 's/^/    /' "$out/smoke.$label.log" | head -20; fail=1
   fi
 }
 # libycxx-freestanding.a for one target: the allocation-function defaults, std::nothrow and

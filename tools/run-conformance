@@ -1,12 +1,25 @@
 #!/bin/sh
 # Run a conformance suite against libycxx.
-#   tools/run-conformance libcxx|libstdcxx gcc|clang [subdirs...] [-- extra lit args]
+#   tools/run-conformance libcxx|libstdcxx|ycxx gcc|clang [subdirs...] [-- extra lit args]
+# Shows a live progress line (tests done, pass/fail counts, elapsed time, ETA, current test), each
+# failure as it happens with the start of its output, and lit's summary; lit's complete output
+# goes to build/test-logs/<suite>-<compiler>[-<sanitizer>][-ref].log.
 # Environment: LIBCXX_TESTS (default /opt/src/llvm-project/libcxx/test),
 #              LIBSTDCXX_TESTS (default /opt/src/libstdcxx-testsuite), SANITIZER (asan,ubsan),
 #              YCXX_STDLIB=libstdcxx (ycxx suite only: build against libstdc++ instead, the
-#              reference runs documented in tests/ycxx/REFERENCE.md)
+#              reference runs documented in tests/ycxx/REFERENCE.md),
+#              YCXX_LIT / YCXX_LIT_VERSION (how lit runs: tools/lib/env.sh; by default through uvx),
+#              YCXX_VERBOSE=1 (list every test), YCXX_FAIL_DETAILS=N (show the output of the first
+#              N failures, default 10), YCXX_RAW=1 (lit's own output, unfiltered),
+#              YCXX_COLOR=always|never|auto, NO_COLOR.
 set -e
 repo=$(cd "$(dirname "$0")/.." && pwd)
+. "$repo/tools/lib/ui.sh"
+. "$repo/tools/lib/env.sh"
+if [ $# -lt 2 ]; then
+  echo "usage: tools/run-conformance libcxx|libstdcxx|ycxx gcc|clang [subdirs...] [-- lit args]" >&2
+  exit 2
+fi
 suite=$1; compiler=$2; shift 2
 case $suite in
   libcxx)    tests=${LIBCXX_TESTS:-/opt/src/llvm-project/libcxx/test} ;;
@@ -14,12 +27,61 @@ case $suite in
   ycxx)      tests=$repo/tests/ycxx ;;
   *) echo "unknown suite $suite" >&2; exit 2 ;;
 esac
+case $compiler in gcc|clang) ;; *) echo "unknown compiler $compiler" >&2; exit 2 ;; esac
+if [ ! -d "$tests" ]; then
+  ui_fail "$suite tests not found" "($tests; see README.md, Tests)"
+  exit 2
+fi
+ycxx_env_load
+ycxx_lit_cmd
 dir=$repo/build/suite-$suite
 mkdir -p "$dir"
 ln -sfn "$repo/tests/$suite/lit.cfg.py" "$dir/lit.cfg.py"
 filter=""
 while [ $# -gt 0 ] && [ "$1" != "--" ]; do filter="${filter:+$filter|}$1"; shift; done
 [ "$1" = "--" ] && shift
+
 # lit test names are "<suite> :: <path relative to the test root>"; filter on the path.
-exec lit "$dir" ${filter:+--filter ":: ($filter)"} --param repo="$repo" --param compiler="$compiler" --param tests="$tests" \
-  ${SANITIZER:+--param sanitizer=$SANITIZER} ${YCXX_STDLIB:+--param stdlib=$YCXX_STDLIB} "$@"
+set -- ${filter:+--filter ":: ($filter)"} --param repo="$repo" --param compiler="$compiler" \
+  --param tests="$tests" ${SANITIZER:+--param sanitizer=$SANITIZER} \
+  ${YCXX_STDLIB:+--param stdlib=$YCXX_STDLIB} "$@"
+if [ "${YCXX_RAW:-0}" = 1 ]; then
+  exec $ycxx_lit "$dir" "$@"
+fi
+
+name=$suite-$compiler${SANITIZER:+-$(echo "$SANITIZER" | tr , -)}
+[ "${YCXX_STDLIB:-}" = libstdcxx ] && name=$name-ref
+log=$repo/build/test-logs/$name.log
+mkdir -p "$(dirname "$log")"
+what="$suite suite, $compiler"
+[ -n "${SANITIZER:-}" ] && what="$what, -fsanitize=$SANITIZER"
+[ "${YCXX_STDLIB:-}" = libstdcxx ] && what="$what, against libstdc++ (reference run)"
+ui_section "$what${filter:+: $filter}"
+ui_info "tests" "$tests"
+case $compiler in
+  gcc) ui_info "compiler" "${YCXX_GXX:-g++-16}" ;;
+  clang) ui_info "compiler" "${YCXX_CLANGXX:-clang++-23}" ;;
+esac
+ui_info "log" "$log"
+# -v: lit prints each failure's output (the compile and run commands, then what they printed).
+ui_cmd $ycxx_lit "$dir" -v "$@"
+
+t0=$(date +%s)
+status=$log.status
+{
+  set +e
+  PYTHONUNBUFFERED=1 $ycxx_lit "$dir" -v "$@" 2>&1
+  echo $? >"$status"
+} | awk -v logfile="$log" -v tty=$ui__tty \
+      -v verbose="${YCXX_VERBOSE:-0}" -v details="${YCXX_FAIL_DETAILS:-10}" -v cols="$(ui_cols)" \
+      -v red="$ui_red" -v green="$ui_green" -v yellow="$ui_yellow" -v cyan="$ui_cyan" \
+      -v bold="$ui_bold" -v dim="$ui_dim" -v reset="$ui_reset" \
+      -v s_ok="$ui_sym_ok" -v s_fail="$ui_sym_fail" -v s_skip="$ui_sym_skip" \
+      -f "$repo/tools/lib/lit-progress.awk"
+rc=$(cat "$status" 2>/dev/null || echo 1)
+rm -f "$status"
+el=$(ui_duration $(($(date +%s) - t0)))
+echo
+if [ "$rc" = 0 ]; then ui_ok "$what: all tests passed" "($el)"
+else ui_fail "$what: failures" "(lit exit $rc, $el; full output: $log)"; fi
+exit "$rc"

@@ -97,9 +97,9 @@ char_traits, string-stream, syncstream and format.arg test passes on both compil
 `deallocate_size` and `make_from_tuple` (global `::uint32_t`, see below). With `-include stdint.h`
 `deallocate_size` passes on both; `make_from_tuple` then fails only on the C entry below.
 
-- **(F) `EOF`/`WEOF` without `<cstdio>`/`<cwchar>`** (85 tests: string.view 43, basic_string 9,
+- **(F) `EOF`/`WEOF` without `<cstdio>`/`<cwchar>`** (84 tests: string.view 43 and basic_string 9, each with its enabled_hashes test,
   string streams 16, syncstream 11, format.arg visit/visit.return_type/visit_format_arg 3,
-  char.traits eof 2, the hash tests): `test/support/constexpr_char_traits.h` and `nasty_string.h`
+  char.traits eof 2): `test/support/constexpr_char_traits.h` and `nasty_string.h`
   use `EOF` after including only `<string>`, `<cassert>`, `<cstddef>`; the eof tests compare with
   `EOF`/`WEOF` after `<string>` and `<cassert>`. [char.traits.specializations.char]: "eof()
   Returns: EOF." names the macro of `<cstdio>`, but [string.syn] includes only `<compare>` and

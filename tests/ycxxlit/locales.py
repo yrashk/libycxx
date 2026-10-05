@@ -4,11 +4,11 @@ dg-require-namedlocale, libc++'s locale.<name> lit features).
 A name is usable when the C library has it (setlocale, probed in a child process so that the
 probe cannot change the harness's own locale) and libycxx accepts it: `std::locale(name)` does
 not throw in a program built with the compiler under test. [locale.cons]/4 leaves the set of valid
-names to the implementation, and libycxx's is "C", "POSIX", "C.UTF-8" and "" (DECISIONS §7), so a
-test that needs another name is reported UNSUPPORTED with that reason; it runs again as soon as
-libycxx accepts the name. Both answers are cached per name and lit process. CI generates the
-locales the suites name (tools/ci/gen-locales); a machine without them reports the tests
-UNSUPPORTED as well.
+names to the implementation; libycxx's is "C", "POSIX", "C.UTF-8", "" and every name the C
+library's newlocale accepts (DECISIONS §7), so the second check fails only when the library is
+broken or built without that support, and the test is then reported UNSUPPORTED with that reason.
+Both answers are cached per name and lit process. CI generates the locales the suites name
+(tools/ci/gen-locales); a machine without them reports the tests UNSUPPORTED.
 """
 import functools, os, re, subprocess, sys
 
@@ -28,9 +28,8 @@ def available(name):
 
 
 # Why a test needing a locale the C library has cannot run.
-UNSUPPORTED_BY_LIBYCXX = ('libycxx accepts only the locale names "C", "POSIX", "C.UTF-8" and "" '
-                          '([locale.cons]/4: "The set of valid string argument values is "C", "", '
-                          'and any implementation-defined values"; DECISIONS §7)')
+UNSUPPORTED_BY_LIBYCXX = ('the C library has it, but std::locale of the libycxx under test rejects it '
+                          '(DECISIONS §7: every name newlocale accepts is valid)')
 
 _ACCEPTS_SRC = r'''#include <locale>
 int main(int argc, char** argv) {

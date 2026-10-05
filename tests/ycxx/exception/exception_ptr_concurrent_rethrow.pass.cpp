@@ -7,6 +7,7 @@
 // the exception object, so each thread must see the same match results for each type however
 // the threads interleave.
 // FLAGS: -pthread
+// REQUIRES: exceptions
 #include <exception>
 #include <stdexcept>
 #include <string>

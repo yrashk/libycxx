@@ -13,6 +13,7 @@
 // /33: readsome: in_avail() == -1 sets eofbit and extracts nothing; !good() sets failbit.
 // /35, /37: putback / unget first clear eofbit; failure of sputbackc / sungetc sets badbit;
 // gcount() is 0 afterwards (Notes 2-3).
+// REQUIRES: exceptions
 #include <istream>
 #include <sstream>
 #include <streambuf>

@@ -5,6 +5,7 @@
 // shrink_to_fit does not increase capacity(). resize(sz) erases or appends
 // default-inserted elements; resize(sz, c) appends copies of c. [container.reqmts]/52-62:
 // size/max_size/empty. [vector.capacity]/7: without reallocation pointers stay valid.
+// REQUIRES: exceptions
 #include <vector>
 #include <stdexcept>
 #include <type_traits>

@@ -2,6 +2,7 @@
 // negative, or the size overflows) throws an exception of a type that would match a handler
 // of type std::bad_array_new_length. bad_array_new_length derives from bad_alloc.
 // XFAIL-COMPILER: clang  clang lowers an erroneous runtime array bound to operator new(SIZE_MAX) (bad_alloc) instead of throwing bad_array_new_length
+// REQUIRES: exceptions
 #include <new>
 #include "check.hpp"
 

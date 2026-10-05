@@ -2,6 +2,7 @@
 //   return erase_if(c, [&](const auto& elem) -> bool { return elem == value; });
 // and erase_if(c, pred) to return c.remove_if(pred); both return forward_list::size_type, and
 // U defaults to T so a braced initializer can be passed.
+// COUNTERPART: libstdcxx:23_containers/forward_list/debug/erase.cc
 #include <forward_list>
 #include <type_traits>
 #include "check.hpp"

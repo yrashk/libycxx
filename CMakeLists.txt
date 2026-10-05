@@ -16,6 +16,8 @@ option(YCXX_WERROR "Build libycxx itself with -Werror" ${PROJECT_IS_TOP_LEVEL})
 option(YCXX_INSTALL "Generate libycxx's install and package rules" ${PROJECT_IS_TOP_LEVEL})
 set(YCXX_CXX_STANDARD_FLAG "-std=c++26" CACHE STRING
     "Language-standard flag ycxx::ycxx adds to consumers (empty: none; set your own C++26 flag)")
+option(YCXX_FREESTANDING_RUNTIME
+       "Also build (and install) libycxx-freestanding.a, the runtime of freestanding programs (ycxx::freestanding)" OFF)
 option(YCXX_ALLOW_UNSUPPORTED_COMPILER "Do not stop on compilers other than GCC >= 16.2 / Clang >= 23" OFF)
 
 if(NOT YCXX_ALLOW_UNSUPPORTED_COMPILER)
@@ -177,6 +179,72 @@ endif()
 # libgcc_s.so; a second, static copy (libgcc_eh) used by the personality routine would abort.
 target_link_options(ycxx_ycxx INTERFACE $<$<LINK_LANGUAGE:CXX>:-nostdlib++>
                     $<$<AND:$<LINK_LANGUAGE:CXX>,$<PLATFORM_ID:Linux>>:-shared-libgcc>)
+# Linux: Clang takes the C runtime startup files and libgcc (the unwinder libycxx's ABI runtime
+# uses) from a GCC installation, by default the newest one in the system's standard places, which
+# can be older than GCC 16. Clang consumers get --gcc-install-dir=<GCC 16's>, as with
+# tools/ycxx-cxx and cmake/ycxx-toolchain.cmake. YCXX_GCC_INSTALL_DIR names it (empty: let Clang
+# choose); by default: $ENV{YCXX_GCC_INSTALL_DIR} (tools/toolchain/activate.sh sets it), else the
+# --gcc-install-dir already in CMAKE_CXX_FLAGS (the toolchain file's), else the directory of
+# libgcc of the GCC building libycxx, of $ENV{YCXX_GXX}, or of g++-16 on PATH. The installed
+# package records it (libycxxConfig.cmake).
+if(CMAKE_SYSTEM_NAME STREQUAL "Linux" AND NOT DEFINED YCXX_GCC_INSTALL_DIR)
+  set(_ycxx_gcc_dir "$ENV{YCXX_GCC_INSTALL_DIR}")
+  if(NOT _ycxx_gcc_dir AND CMAKE_CXX_FLAGS MATCHES "--gcc-install-dir=([^ ]+)")
+    set(_ycxx_gcc_dir "${CMAKE_MATCH_1}")
+  elseif(NOT _ycxx_gcc_dir)
+    if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+      set(_ycxx_gxx "${CMAKE_CXX_COMPILER}")
+    elseif(DEFINED ENV{YCXX_GXX})
+      set(_ycxx_gxx "$ENV{YCXX_GXX}")
+    else()
+      find_program(_ycxx_gxx NAMES g++-16 NO_CACHE)
+    endif()
+    if(_ycxx_gxx)
+      execute_process(COMMAND "${_ycxx_gxx}" -print-libgcc-file-name OUTPUT_VARIABLE _ycxx_libgcc
+                      OUTPUT_STRIP_TRAILING_WHITESPACE ERROR_QUIET RESULT_VARIABLE _ycxx_rc)
+      if(_ycxx_rc EQUAL 0 AND IS_ABSOLUTE "${_ycxx_libgcc}")
+        get_filename_component(_ycxx_gcc_dir "${_ycxx_libgcc}" DIRECTORY)
+      endif()
+    endif()
+  endif()
+  set(YCXX_GCC_INSTALL_DIR "${_ycxx_gcc_dir}" CACHE PATH
+      "GCC installation whose crt files and libgcc Clang consumers of ycxx::ycxx use (--gcc-install-dir; empty: Clang's choice)")
+endif()
+if(YCXX_GCC_INSTALL_DIR)
+  # The build tree's ycxx::ycxx (add_subdirectory, FetchContent); libycxxConfig.cmake adds the
+  # same to the installed one, where the directory can be overridden by the consumer.
+  target_compile_options(ycxx_ycxx INTERFACE
+    $<BUILD_INTERFACE:$<$<COMPILE_LANG_AND_ID:CXX,Clang>:--gcc-install-dir=${YCXX_GCC_INSTALL_DIR}>>)
+  target_link_options(ycxx_ycxx INTERFACE
+    $<BUILD_INTERFACE:$<$<AND:$<LINK_LANGUAGE:CXX>,$<CXX_COMPILER_ID:Clang>>:--gcc-install-dir=${YCXX_GCC_INSTALL_DIR}>>)
+endif()
+
+# ---- ycxx::freestanding (libycxx-freestanding.a, YCXX_FREESTANDING_RUNTIME): what a freestanding
+# program links instead of ycxx::ycxx (DECISIONS §3): the default replaceable allocation functions
+# (no heap: the plain forms fail through the error handler, the nothrow forms return null; a
+# program with a heap replaces them),
+# std::nothrow, floating-point <charconv>, the <atomic> lock and wait tables, <debugging>, the
+# default contract-violation handler and the platform layer's wait and debugger hooks. Built for
+# the compiler's target with -ffreestanding -nostdinc (no C library headers), without exceptions
+# or RTTI, hidden. Consumers get libycxx's headers and -ffreestanding; the C library functions the
+# compilers may call (memcpy, memmove, memset, memcmp) and the entry point are the program's
+# (tests/freestanding/rt.c). tools/check_freestanding.sh builds the same sources for bare-metal
+# targets.
+if(YCXX_FREESTANDING_RUNTIME)
+  file(GLOB YCXX_FREESTANDING_SOURCES CONFIGURE_DEPENDS
+       src/runtime/new/*.cpp src/freestanding/new/*.cpp src/freestanding/contracts/*.cpp src/freestanding/pal/*.cpp)
+  add_library(ycxx_freestanding STATIC
+    ${YCXX_FREESTANDING_SOURCES} ${YCXX_CHARCONV_SOURCES} ${YCXX_ATOMIC_SOURCES}
+    ${YCXX_DEBUGGING_SOURCES} ${YCXX_CONTRACTS_SOURCES})
+  set_target_properties(ycxx_freestanding PROPERTIES OUTPUT_NAME ycxx-freestanding EXPORT_NAME freestanding
+                        POSITION_INDEPENDENT_CODE ON CXX_VISIBILITY_PRESET hidden)
+  target_link_libraries(ycxx_freestanding PUBLIC ycxx_headers)
+  target_compile_options(ycxx_freestanding PRIVATE -std=c++26 -nostdinc -fno-exceptions -fno-rtti ${_ycxx_warnings}
+    # One allocation function per file; no zero fill of the charconv work buffers (see above).
+    $<$<CXX_COMPILER_ID:GNU>:-Wno-sized-deallocation -ftrivial-auto-var-init=uninitialized>
+    PUBLIC $<$<COMPILE_LANGUAGE:CXX>:-ffreestanding>)
+  add_library(ycxx::freestanding ALIAS ycxx_freestanding)
+endif()
 
 add_library(ycxx::headers ALIAS ycxx_headers)
 add_library(ycxx::core ALIAS ycxx)
@@ -188,8 +256,11 @@ if(YCXX_INSTALL)
   include(CMakePackageConfigHelpers)
   set(YCXX_CMAKE_DIR ${CMAKE_INSTALL_LIBDIR}/cmake/libycxx)
   install(DIRECTORY include/ DESTINATION ${YCXX_INSTALL_INCLUDEDIR})
-  install(TARGETS ycxx_headers ycxx ycxx_abi ycxx_ycxx EXPORT libycxxTargets
-          ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR})
+  set(_ycxx_installed ycxx_headers ycxx ycxx_abi ycxx_ycxx)
+  if(YCXX_FREESTANDING_RUNTIME)
+    list(APPEND _ycxx_installed ycxx_freestanding)
+  endif()
+  install(TARGETS ${_ycxx_installed} EXPORT libycxxTargets ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR})
   install(EXPORT libycxxTargets NAMESPACE ycxx:: DESTINATION ${YCXX_CMAKE_DIR})
   configure_package_config_file(cmake/libycxxConfig.cmake.in
     ${CMAKE_CURRENT_BINARY_DIR}/libycxxConfig.cmake INSTALL_DESTINATION ${YCXX_CMAKE_DIR})

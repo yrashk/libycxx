@@ -5,6 +5,7 @@
 // it constructs a new owned object, other still becomes valueless); copy and move assignment
 // replace the allocator only if POCCA / POCMA; swap swaps allocators only if POCS. The
 // deduction guide indirect(allocator_arg_t, Allocator, Value) rebinds the allocator.
+// REQUIRES: exceptions
 #include <memory>
 #include <type_traits>
 #include <utility>

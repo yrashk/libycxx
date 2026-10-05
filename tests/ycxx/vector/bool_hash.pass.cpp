@@ -1,6 +1,7 @@
 // [vector.bool.pspc]/13: template<class Allocator> struct hash<vector<bool, Allocator>>: "The
 // specialization is enabled ([unord.hash])": default constructible, copyable, callable with
 // a const vector<bool>& returning size_t, equal vectors hash equal.
+// REQUIRES: exceptions
 #include <vector>
 #include <cstddef>
 #include <functional>

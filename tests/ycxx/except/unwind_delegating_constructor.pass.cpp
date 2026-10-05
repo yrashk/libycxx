@@ -3,6 +3,7 @@
 // destruction is sequenced before entering a handler of the function-try-block of a
 // delegating constructor for that object, if any." If the target constructor throws, /3
 // applies instead (subobjects only, no destructor).
+// REQUIRES: exceptions
 #include "check.hpp"
 
 static int dtor_calls = 0, member_dtors = 0;

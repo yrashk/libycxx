@@ -5,6 +5,7 @@
 // In the call pattern f names the template parameter object itself (a const lvalue), so the
 // target is always invoked as a const lvalue, whatever the wrapper's value category; bound
 // arguments are still forwarded per [func.require]/4.
+// COUNTERPART: libcxx:utilities/function.objects/func.bind.partial/bind_front.nttp.pass.cpp
 #include <functional>
 #include <type_traits>
 #include <utility>

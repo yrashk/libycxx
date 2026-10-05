@@ -3,6 +3,7 @@
 // destroyed in the reverse order of the completion of their construction." This spans
 // several stack frames; objects declared after the throw point are not destroyed, nor are
 // objects outside the try block.
+// REQUIRES: exceptions
 #include "check.hpp"
 
 static int log_[32];

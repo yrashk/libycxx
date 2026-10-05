@@ -4,6 +4,7 @@
 // rbegin). Member types per the synopsis and [container.reqmts]/2-9; iterator copy/move do
 // not throw ([container.reqmts]/66.4); before_begin / cbefore_begin ([forward.list.iter])
 // return iterator / const_iterator and are noexcept.
+// REQUIRES: exceptions
 #include <forward_list>
 #include <concepts>
 #include <iterator>

@@ -11,6 +11,7 @@
 // str.eofbit; "abc" yields err = str.failbit, with in ending at the 'c' element. Targets "1" /
 // "0": "1" yields true and goodbit. "For empty targets (""), any input sequence yields err ==
 // str.failbit."
+// COUNTERPART: libcxx:localization/locale.categories/category.numeric/locale.num.get/facet.num.get.members/get_bool.pass.cpp
 #include <locale>
 #include <sstream>
 #include <iterator>

@@ -5,6 +5,7 @@
 // result - N. The ranges forms return in_out_result {last, result + N}; ranges::copy_backward
 // returns {last, result - N}. All are constexpr. Overlap to the left is fine for copy, to the
 // right for copy_backward.
+// COUNTERPART: libstdcxx:25_algorithms/copy/34595.cc
 #include <algorithm>
 #include <iterator>
 #include <ranges>

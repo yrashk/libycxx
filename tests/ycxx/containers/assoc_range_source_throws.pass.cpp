@@ -9,6 +9,7 @@
 //   [flat.map.overview]/6-7, [flat.set.overview]/6-7: "If any member function in [flat.map.defn]
 //   exits via an exception, the invariants are restored" (sorted, unique keys; keys and values
 //   of equal size).
+// REQUIRES: exceptions
 #include <cstddef>
 #include <flat_map>
 #include <flat_set>

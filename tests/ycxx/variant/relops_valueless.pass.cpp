@@ -7,6 +7,7 @@
 // returns strong_ordering::equal for two valueless variants, less if only v is valueless,
 // greater if only w is. The contained values' operators are not called in these cases.
 // [variant.status]: a valueless variant's index() is variant_npos.
+// REQUIRES: exceptions
 #include <variant>
 #include <compare>
 #include "check.hpp"

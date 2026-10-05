@@ -5,6 +5,7 @@
 // size/max_size/empty, swap of contents ([container.reqmts]/65 excludes inplace_vector from
 // the "iterators follow the elements" rule), <=>, rbegin/rend, no spurious invalidation by
 // observers, and the contiguous-container properties. N is large enough for every check.
+// COUNTERPART: libstdcxx:23_containers/inplace_vector/(cons/1|copy|move).cc
 #include <inplace_vector>
 #include <compare>
 #include "container_values.hpp"

@@ -5,6 +5,7 @@
 // ([nullablepointer.requirements], Table 36). /3: "Two non-null values of type exception_ptr
 // are equivalent and compare equal if and only if they refer to the same exception." /4: the
 // default constructor produces the null value.
+// REQUIRES: exceptions
 #include <exception>
 #include <concepts>
 #include <cstddef>

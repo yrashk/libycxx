@@ -6,6 +6,7 @@
 // exactly as it was (same size, same values, in order). Checked after the deque has acquired
 // spare room at both ends (push at both ends, then erasure at both ends), with the throw armed
 // at every possible element operation.
+// REQUIRES: exceptions
 #include <deque>
 #include "check.hpp"
 

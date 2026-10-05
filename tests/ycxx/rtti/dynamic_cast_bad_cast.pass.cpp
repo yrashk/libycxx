@@ -2,6 +2,7 @@
 // would match a handler of type std::bad_cast." This applies to lvalue and rvalue reference
 // targets ([expr.dynamic.cast]/2), and to failed downcasts, cross casts and ambiguous casts.
 // [bad.cast]: bad_cast derives from exception; what() returns an NTBS.
+// REQUIRES: exceptions
 #include <exception>
 #include <typeinfo>
 #include "check.hpp"

@@ -5,7 +5,7 @@
 # finishes with its result and the steps it ran ("compile exit 0 0.21s · run exit 0 0.00s"),
 # failures with their transcript (the commands, exit statuses and output), under a live status
 # line (counts, elapsed time, ETA), then lit's summary. Writes, as build/test-logs/<run>.*
-# (<run> = <suite>-<compiler>[-<sanitizer>][-ref]): .log, lit's complete output, every test's
+# (<run> = <suite>-<compiler>[-<sanitizer>][-hardened][-<config name>][-ref]): .log, lit's complete output, every test's
 # transcript included; .console.log, what the terminal showed; .html, a report of every test with its transcript and how the run was
 # made (commit, compiler version, command), with copy buttons that put Markdown on the
 # clipboard; .md, the whole report as Markdown (also embedded in the .html); .tsv, one line per
@@ -18,8 +18,12 @@
 #              YCXX_QUIET=1 (list only the tests that did not pass), YCXX_VERBOSE=1 (print every
 #              test's whole transcript), YCXX_FAIL_DETAILS=N (show the transcript of the first N
 #              failures, default 10), YCXX_RAW=1 (lit's own output, unfiltered),
-#              YCXX_COLOR=always|never|auto, NO_COLOR, YCXX_BASELINE=1 (fail only on tests outside
-#              tests/<suite>/baseline/<os>-<compiler>[-<sanitizer>].txt; tools/lib/baseline.py).
+#              YCXX_COLOR=always|never|auto, NO_COLOR,
+#              Own suite only: YCXX_HARDENED=1 (compile the tests with -DYCXX_HARDENED=1, the
+#              library's run-time precondition checks; runs the death tests of precondition/),
+#              YCXX_CXXFLAGS="<flags>" (appended to every test's compile flags) with
+#              YCXX_CONFIG_NAME=<short name> (the run's name for them; default: made from the
+#              flags). Each configuration has its own logs.
 set -e
 repo=$(cd "$(dirname "$0")/.." && pwd)
 . "$repo/tools/lib/ui.sh"
@@ -37,6 +41,11 @@ case $suite in
   *) echo "unknown suite $suite" >&2; exit 2 ;;
 esac
 case $compiler in gcc|clang) ;; *) echo "unknown compiler $compiler" >&2; exit 2 ;; esac
+if [ "$suite" != ycxx ] && { [ -n "${YCXX_CXXFLAGS:-}${YCXX_CONFIG_NAME:-}" ] || [ "${YCXX_HARDENED:-0}" = 1 ]; }; then
+  echo "YCXX_HARDENED, YCXX_CXXFLAGS and YCXX_CONFIG_NAME apply to the own suite (ycxx) only" >&2
+  exit 2
+fi
+ycxx_run_config || exit 2
 if [ ! -d "$tests" ]; then
   ui_fail "$suite tests not found" "($tests; tools/fetch-suites downloads them)"
   exit 2
@@ -54,16 +63,22 @@ while [ $# -gt 0 ] && [ "$1" != "--" ]; do filter="${filter:+$filter|}$1"; shift
 set -- ${filter:+--filter ":: ($filter)"} --param repo="$repo" --param compiler="$compiler" \
   --param tests="$tests" ${SANITIZER:+--param sanitizer=$SANITIZER} \
   ${YCXX_STDLIB:+--param stdlib=$YCXX_STDLIB} "$@"
+[ "${YCXX_HARDENED:-0}" = 1 ] && set -- --param hardened=1 "$@"
+if [ -n "${ycxx_config_name}" ]; then
+  set -- --param "cxxflags=${YCXX_CXXFLAGS:-}" --param "config=${ycxx_config_name}" "$@"
+fi
 if [ "${YCXX_RAW:-0}" = 1 ]; then
   exec ${ycxx_lit} "$dir" "$@"
 fi
 
-name=$suite-$compiler${SANITIZER:+-$(echo "$SANITIZER" | tr , -)}
+name=$suite-$compiler${ycxx_run_suffix}
 [ "${YCXX_STDLIB:-}" = libstdcxx ] && name=$name-ref
 log=$repo/build/test-logs/$name.log
 mkdir -p "$(dirname "$log")"
 what="$suite suite, $compiler"
 [ -n "${SANITIZER:-}" ] && what="$what, -fsanitize=$SANITIZER"
+[ "${YCXX_HARDENED:-0}" = 1 ] && what="$what, hardened"
+[ -n "${ycxx_config_name}" ] && what="$what, ${ycxx_config_name} (${YCXX_CXXFLAGS:-no extra flags})"
 [ "${YCXX_STDLIB:-}" = libstdcxx ] && what="$what, against libstdc++ (reference run)"
 ui_section "$what${filter:+: $filter}"
 ui_info "tests" "$tests"
@@ -110,7 +125,6 @@ fstatus=$log.filter-status
   echo $? >"$fstatus"
 } | tee "$base.console.log"
 rc=$(cat "$status" 2>/dev/null || echo 1)
-lit_rc=${rc}
 frc=$(cat "$fstatus" 2>/dev/null || echo 1)
 rm -f "$status" "$fstatus"
 if [ "$frc" != 0 ]; then
@@ -132,26 +146,13 @@ if [ -f "$base.json" ]; then
   [ "$dirty" = 0 ] || commit="$commit (+$dirty uncommitted changes)"
   python3 "$repo/tools/lib/test_report.py" "$base.json" "$base" \
     "suite=$suite" "compiler=$compiler" "compiler version=$($cxx --version 2>/dev/null | head -n 1)" \
-    "library=$cxx_used" "sanitizer=${SANITIZER:-none}" "tests=$tests${filter:+ (filter: $filter)}" \
+    "library=$cxx_used" "sanitizer=${SANITIZER:-none}" \
+    "hardened=$([ "${YCXX_HARDENED:-0}" = 1 ] && echo yes || echo no)" \
+    "configuration=${ycxx_config_name:-default}${YCXX_CXXFLAGS:+ ($YCXX_CXXFLAGS)}" "tests=$tests${filter:+ (filter: $filter)}" \
     "commit=$commit" "started=$started" "host=$(uname -srm)" \
     "command=$(ui_quote ${ycxx_lit} "$dir" -a -o "$base.json" "$@")" "log=$log" "_root=$tests" &&
     ui_info "report" "$base.html (copy buttons; the whole report as Markdown in $base.md)" &&
-    ui_info "list" "$base.tsv (result, seconds, test, steps)"
+    ui_info "list" "$base.tsv (result, seconds, test, steps, error, counterpart)"
 fi
 
-# YCXX_BASELINE=1: the run fails only on tests that did not pass and are not in the recorded
-# baseline, tests/<suite>/baseline/<os>-<compiler>[-<sanitizer>].txt (tools/lib/baseline.py),
-# when lit itself worked (exit 0, or 1 for failing tests).
-if [ "${YCXX_BASELINE:-0}" = 1 ] && [ -f "$base.tsv" ] && { [ "${lit_rc}" = 0 ] || [ "${lit_rc}" = 1 ]; }; then
-  os=$(uname -s | tr '[:upper:]' '[:lower:]')
-  bfile=$repo/tests/$suite/baseline/$os-$compiler${SANITIZER:+-$(echo "$SANITIZER" | tr , -)}.txt
-  ui_cmd python3 "$repo/tools/lib/baseline.py" "$base.tsv" "$bfile" "$base.baseline.txt"
-  if python3 "$repo/tools/lib/baseline.py" "$base.tsv" "$bfile" "$base.baseline.txt"; then
-    [ "$frc" = 0 ] && rc=0
-    ui_ok "$what: no failures outside the baseline"
-  else
-    rc=1
-    ui_fail "$what: failures outside the baseline" "(candidate baseline: $base.baseline.txt)"
-  fi
-fi
 exit "$rc"

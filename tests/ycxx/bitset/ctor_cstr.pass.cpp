@@ -4,6 +4,7 @@
 // : basic_string_view<charT>(str, n), 0, n, zero, one)". [bitset.cons]/3-5: the effective
 // length is min(n, size); "Character position pos + M - 1 corresponds to bit position zero";
 // "If M < N, remaining bit positions are initialized to zero."
+// REQUIRES: exceptions
 #include <bitset>
 #include <stdexcept>
 #include <type_traits>

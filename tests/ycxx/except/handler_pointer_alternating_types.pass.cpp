@@ -6,6 +6,7 @@
 // The same handler list sees thrown pointers of many types in many orders, so that remembered
 // match results must depend on the thrown type; the caught pointer must be adjusted to the
 // base subobject for each dynamic type separately.
+// REQUIRES: exceptions
 #include <cstddef>
 #include "check.hpp"
 

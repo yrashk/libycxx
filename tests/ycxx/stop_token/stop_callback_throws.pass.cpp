@@ -1,5 +1,6 @@
 // [stoptoken.concepts]/12: "If an invocation of a callback exits via an exception then
 // terminate shall be invoked ([except.terminate])."
+// REQUIRES: exceptions
 #include <stop_token>
 #include <exception>
 #include <cstdlib>

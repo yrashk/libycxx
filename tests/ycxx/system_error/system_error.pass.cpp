@@ -7,6 +7,7 @@
 // [exception]/2: copy constructor and copy assignment are noexcept, and a copy has the same
 // what() (strcmp == 0).
 // [syserr.general]/2: [syserr] components do not change errno.
+// REQUIRES: exceptions
 #include <system_error>
 #include <cerrno>
 #include <cstring>

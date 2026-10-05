@@ -10,6 +10,9 @@
 // comparisons by date(). [time.zone.zonedtraits]/2-3: zoned_traits<const time_zone*>.
 // (Uses zones and links of the IANA database that have existed for decades: America/New_York,
 // Europe/London, Asia/Kolkata and the link US/Eastern -> America/New_York.)
+// REQUIRES: exceptions
+// COUNTERPART: libcxx:time/time.zone/time.zone.link/time.zone.link.members/(name|target).pass.cpp
+// COUNTERPART: libcxx:time/time.zone/time.zone.timezone/time.zone.members/name.pass.cpp
 #include <chrono>
 #include <algorithm>
 #include <compare>

@@ -10,6 +10,7 @@
 // end-of-stream, "regardless of what streambuf object they use"; == is equal; == 
 // default_sentinel is equal(end-of-stream). An iterator becomes end-of-stream when sgetc()
 // returns eof.
+// COUNTERPART: libstdcxx:24_iterators/istreambuf_iterator/requirements/typedefs.cc
 #include <iterator>
 #include <algorithm>
 #include <sstream>

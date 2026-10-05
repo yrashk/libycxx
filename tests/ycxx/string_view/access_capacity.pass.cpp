@@ -2,6 +2,7 @@
 // [string.view.access]: operator[] returns data_[pos]; at(pos) "Throws: out_of_range if
 // pos >= size()."; front() is data_[0]; back() is data_[size() - 1]; data().
 // [string.view.modifiers]: remove_prefix, remove_suffix, swap (noexcept).
+// REQUIRES: exceptions
 #include <string_view>
 #include <stdexcept>
 #include <type_traits>

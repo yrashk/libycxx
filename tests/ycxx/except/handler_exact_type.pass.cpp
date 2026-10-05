@@ -3,6 +3,7 @@
 // is determined by removing any top-level cv-qualifiers from the type of the (possibly
 // converted) operand." So a const operand yields a non-const exception object, which a
 // handler of type T& can bind to, and cv-qualified handlers match unqualified objects.
+// REQUIRES: exceptions
 #include "check.hpp"
 
 struct S {

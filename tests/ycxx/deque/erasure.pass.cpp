@@ -4,6 +4,7 @@
 // and erase_if(c, pred) likewise with remove_if; both return deque::size_type. U defaults to
 // T, so a braced initializer can be passed as the value. The relative order of the remaining
 // elements is kept ([alg.remove] is stable).
+// COUNTERPART: libstdcxx:23_containers/deque/debug/erase.cc
 #include <deque>
 #include <cstddef>
 #include <type_traits>

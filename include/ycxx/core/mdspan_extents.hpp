@@ -19,6 +19,11 @@ class extents;
 namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 
 // True when a precondition that costs a loop is worth evaluating.
+// Tags layout_stride::mapping's constructor for submdspan results (mdspan_layout.hpp).
+struct md_sub_strides_t {
+  explicit md_sub_strides_t() = default;
+};
+
 [[gnu::always_inline]] constexpr bool md_checking() noexcept {
   if consteval {
     return true;

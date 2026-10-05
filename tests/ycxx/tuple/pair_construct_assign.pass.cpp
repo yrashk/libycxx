@@ -2,6 +2,7 @@
 // const pair&& (FWD(u) preserves the value category; explicit iff an element is not
 // convertible). [tuple.cnstr]/20-23: the non-const lvalue tuple<UTypes...>& overload.
 // [tuple.assign]/27-38: assignment from const pair& and pair&&.
+// COUNTERPART: libcxx:utilities/tuple/tuple.tuple/tuple.assign/(const_pair|convert_copy|convert_move|copy|move_pair).pass.cpp
 #include <tuple>
 #include <type_traits>
 #include <utility>

@@ -8,6 +8,7 @@
 // the conjunction over the element types; [time.format]/8-/9: chrono::duration<Rep, Period>:
 // that of Rep, and zoned_time only for TimeZonePtr = const time_zone*. A program-defined
 // type keeps the primary template's false.
+// COUNTERPART: libcxx:utilities/format/format.formatter/format.formatter.locking/enable_nonlocking_formatter_optimization.compile.pass.cpp
 #include <format>
 #include <chrono>
 #include <cstddef>

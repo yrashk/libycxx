@@ -4,6 +4,7 @@
 // that round-trips through from_chars; "If there are several such representations, the
 // representation with the smallest difference from the floating-point argument value is
 // chosen" -- so a fixed-format large value prints its exact decimal digits.
+// COUNTERPART: libcxx:utilities/charconv/charconv.msvc/test.pass.cpp
 #include <charconv>
 #include <cfloat>
 #include <string_view>

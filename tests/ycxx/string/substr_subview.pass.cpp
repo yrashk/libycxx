@@ -2,6 +2,7 @@
 // substr(pos, n) && is basic_string(std::move(*this), pos, n); both throw out_of_range when
 // pos > size() ([string.cons]/6). /3: subview(pos, n) returns
 // basic_string_view(*this).subview(pos, n), a view into the string's own characters.
+// REQUIRES: exceptions
 #include <string>
 #include <string_view>
 #include <stdexcept>

@@ -19,6 +19,7 @@
 // skipws is cleared and the input starts with a non-space so that no input happens inside
 // the sentry constructor ([istream.sentry]/2 does not say what an exception there does).
 // Every run also checks that operator new blocks are balanced.
+// REQUIRES: exceptions
 #include <iomanip>
 #include <ios>
 #include <istream>

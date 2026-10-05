@@ -10,6 +10,7 @@
 // long long and unsigned long long are stored as such (not narrowed).
 // (Only precision on strings is used: a large width or a large floating-point precision
 // would need that much output.)
+// REQUIRES: exceptions
 #include <climits>
 #include <format>
 #include <string>

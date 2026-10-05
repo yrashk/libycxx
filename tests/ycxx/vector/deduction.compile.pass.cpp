@@ -5,6 +5,7 @@
 // [sequence.reqmts]/69.3: guides do not participate for non-iterators / non-allocators.
 // The allocator-extended copy/move constructors take type_identity_t<Allocator>, so CTAD
 // deduces from the vector argument.
+// REQUIRES: exceptions
 #include <vector>
 #include <list>
 #include <ranges>

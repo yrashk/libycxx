@@ -9,6 +9,7 @@
 // both larger than UINT_MAX): UINT_MAX is stored and failbit set. ([istream.formatted.
 // arithmetic]/1: operator>>(unsigned int&) and operator>>(unsigned short&) call num_get::get
 // with the value itself.) "-0" is zero.
+// COUNTERPART: libcxx:localization/locale.categories/category.numeric/locale.num.get/facet.num.get.members/(get_unsigned_int|get_unsigned_short|test_neg_one).pass.cpp
 #include <locale>
 #include <sstream>
 #include <iterator>

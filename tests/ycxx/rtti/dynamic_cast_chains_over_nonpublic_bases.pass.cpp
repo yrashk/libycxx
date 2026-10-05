@@ -12,6 +12,7 @@
 // reaching it only through a non-public base. [class.paths]/1: with a virtual base reachable
 // by several paths, the access is that of the path giving most access. Every cast is repeated
 // in several interleavings so that remembered results cannot leak between cases.
+// REQUIRES: exceptions
 #include <typeinfo>
 #include "check.hpp"
 

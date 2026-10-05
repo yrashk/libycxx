@@ -5,6 +5,8 @@
 // along several paths is still a single, unambiguous base. The object referred to by
 // current_exception() can be observed as well, and the reference is to the same object for
 // copies of the exception_ptr ([propagation]/3).
+// REQUIRES: exceptions
+// COUNTERPART: libstdcxx:18_support/exception_ptr/exception_ptr_cast.cc
 #include <exception>
 #include <optional>
 #include <stdexcept>

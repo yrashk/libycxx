@@ -4,6 +4,7 @@
 // sequence does not match), match_continuous (the match must begin at first),
 // match_prev_avail (--first is valid; match_not_bol and match_not_bow are then ignored and
 // the previous character is consulted).
+// COUNTERPART: libcxx:re/re.const/re.matchflag/match_prev_avail.pass.cpp
 #include <regex>
 #include <string>
 #include "check.hpp"

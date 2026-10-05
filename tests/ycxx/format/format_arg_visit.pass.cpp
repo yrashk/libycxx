@@ -8,6 +8,7 @@
 // basic_format_arg when i >= size. [format.arg.store]/3-4: make_format_args /
 // make_wformat_args. /14: handle::format(parse_ctx, format_ctx) calls the formatter's parse and
 // format.
+// COUNTERPART: libcxx:utilities/format/format.formatter/format.formatter.spec/formatter.handle.pass.cpp
 #include <format>
 #include <string>
 #include <string_view>

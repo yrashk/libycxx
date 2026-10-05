@@ -4,6 +4,7 @@
 // both ends to well over any single block, so indices cross internal storage boundaries,
 // and after elements are removed from the front (indices are relative to the current
 // first element).
+// REQUIRES: exceptions
 #include <deque>
 #include <cstddef>
 #include <stdexcept>

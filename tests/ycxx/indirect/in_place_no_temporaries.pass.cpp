@@ -13,6 +13,7 @@
 //     std::forward<Ts>(ts)... using the allocator alloc" (U must be copy constructible).
 //   Moving an indirect or polymorphic transfers ownership ([indirect.ctor]/14, [polymorphic.
 //   ctor]): the owned object is not moved.
+// REQUIRES: exceptions
 #include <initializer_list>
 #include <memory>
 #include <type_traits>

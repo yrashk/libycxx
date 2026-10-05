@@ -8,6 +8,7 @@
 //   basic guarantee: every element object accounted for, every block deallocated.
 // Two initial states: five contiguous elements, and five elements left after erasing others
 // (erased slots to be reused).
+// REQUIRES: exceptions
 #include <hive>
 #include "exc_sequence.hpp"
 

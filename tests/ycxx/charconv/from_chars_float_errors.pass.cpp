@@ -6,6 +6,7 @@
 // unmodified and the member ec of the return value is equal to errc::result_out_of_range"
 // (ptr still points past the matched characters). /6.1: "the sign '+' may only appear in
 // the exponent part".
+// COUNTERPART: libcxx:utilities/charconv/charconv.from.chars/floating_point.pass.cpp
 #include <charconv>
 #include <string>
 #include <string_view>

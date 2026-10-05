@@ -60,6 +60,22 @@ cmake --install build/gcc --prefix /opt/libycxx
 Working examples: `examples/find_package` and `examples/add_subdirectory` (both build
 `examples/demo.cpp`).
 
+With Clang on Linux, `ycxx::ycxx` passes `--gcc-install-dir=<GCC 16's installation>` (for the C
+runtime startup files and libgcc, as `tools/ycxx-cxx` and the toolchain file do); Clang would
+otherwise pick the newest GCC it finds in the system's standard places. The directory is found
+when libycxx is configured (`YCXX_GCC_INSTALL_DIR`, a cache variable: by default
+`$YCXX_GCC_INSTALL_DIR`, the GCC building libycxx, `$YCXX_GXX` or `g++-16`), recorded in the
+installed package, and can be overridden by a consumer's `YCXX_GCC_INSTALL_DIR`.
+
+`-DYCXX_FREESTANDING_RUNTIME=ON` also builds and installs `libycxx-freestanding.a`, the runtime of
+freestanding programs, as `ycxx::freestanding` (libycxx's headers and `-ffreestanding`; link it
+instead of `ycxx::ycxx`): the default allocation functions of a heap-less program (replace them
+to have a heap), `std::nothrow`, floating-point `<charconv>`, the `<atomic>` lock and wait tables,
+`<debugging>` and the default contract-violation handler. It is built for the compiler's target
+with `-ffreestanding -nostdinc -fno-exceptions -fno-rtti`; the program provides `memcpy`,
+`memmove`, `memset`, `memcmp` and its entry point (`tests/freestanding/rt.c` is an example).
+`tools/check_freestanding.sh` builds the same archive for bare-metal targets.
+
 Without CMake, `tools/ycxx-cxx gcc|clang <args>` compiles and links against the libycxx built in
 `build/<compiler>`.
 
@@ -121,23 +137,67 @@ only the tests that did not pass, `YCXX_VERBOSE=1` (`-v`) prints every test's tr
 `YCXX_FAIL_DETAILS=N` shows the transcripts of the first N failures (default 10), and
 `YCXX_RAW=1` prints lit's own output. CI keeps the reports as the `test-reports` artifact.
 
-### Known failures and CI
+### Own tests
 
-Tests that libycxx does not pass yet are recorded per platform and compiler in
-`tests/<suite>/baseline/<os>-<compiler>[-<sanitizer>].txt` (STATUS.md and the suites' TRIAGE.md
-say why). `tools/test --baseline` (`YCXX_BASELINE=1`) fails a suite only on a test that did not
-pass and is not listed, and names the listed tests that now pass. Without a baseline file every
-failure counts. Each run writes its own list as `build/test-logs/<run>.baseline.txt`; copy it over
-the baseline file to record or update one. A compiler gap that the test cannot avoid is an
-expected failure in the test itself (`// XFAIL-COMPILER:`; `tests/<suite>/xfail.txt` for the
-external suites) instead.
+A test in `tests/ycxx` is `*.pass.cpp` (compiled, linked and run; passes on exit status 0),
+`*.compile.pass.cpp` (must compile) or `*.compile.fail.cpp` (must not compile, for a reason other
+than a missing header). Directives in `//` comments adjust a test; `tests/ycxxlit/ycxx_format.py`
+documents them all. A `*.compile.fail.cpp` should say why it must fail: with
+`// EXPECT-ERROR: <regex>` (repeatable; `EXPECT-ERROR-GCC:` / `EXPECT-ERROR-CLANG:` for one
+compiler's wording) it passes only if the compiler's diagnostics match every regex, and its
+transcript names each regex that did not match, so a test cannot pass on an unrelated error:
 
-CI (`.github/workflows/ci.yml`), on every push, runs `tools/test --baseline policy build
-freestanding cmake ycxx` on Linux (the `gcc:16` container, Clang 23 from apt.llvm.org) and
-macOS (Apple Silicon, Homebrew's GCC 16, the provisioned Clang 23), plus a sample of the external
-suites on Linux. `.github/workflows/full.yml`, nightly and on demand, runs libc++'s and
-libstdc++'s whole suites on both compilers on both platforms, and the own suite under
-ASan+UBSan, each against its baseline. Every job uploads its reports as an artifact.
+```cpp
+// EXPECT-ERROR: static assertion failed.*std::expected::value: E must be copy constructible
+// EXPECT-ERROR-GCC: use of deleted function .*basic_string\(nullptr_t\)
+// EXPECT-ERROR-CLANG: call to deleted constructor of 'std::string'
+```
+
+`// REQUIRES: <features>` runs a test only when a boolean expression of lit features holds (else
+it is UNSUPPORTED): `gcc`, `clang`, `linux`, `darwin`, `asan`, `ubsan`, `tsan`, `hardened`,
+`exceptions`, `rtti`. Tests that throw or catch say `// REQUIRES: exceptions`.
+`// EXPECT-TERMINATE[: <regex>]` makes a `*.pass.cpp` a death test: the program must be killed by
+SIGABRT, SIGTRAP or SIGILL. `tests/ycxx/precondition` holds such tests, one per hardened
+precondition ([structure.specifications]/3.5: `vector::operator[]` out of range, `front()` of an
+empty container, `*` of a disengaged `optional`, `span` and `mdspan` indexing,
+`string_view::remove_prefix` beyond the size, ...), which run only in the hardened configuration.
+
+The own suite also runs in other configurations, each with its own logs and reports (the run
+name gets the suffix):
+
+```sh
+tools/test --hardened -c gcc ycxx                     # -DYCXX_HARDENED=1: ycxx-gcc-hardened
+tools/test --cxxflags=-fno-exceptions --config-name=noexcept ycxx   # ycxx-<cc>-noexcept
+YCXX_HARDENED=1 tools/run-conformance ycxx clang precondition       # the same, directly
+YCXX_CXXFLAGS=-O2 YCXX_CONFIG_NAME=O2 tools/run-conformance ycxx gcc
+```
+
+`--cxxflags` (`YCXX_CXXFLAGS`) appends flags to every test's; without `--config-name`
+(`YCXX_CONFIG_NAME`) the name is made from the flags. `-fno-exceptions` and `-fno-rtti` remove the
+`exceptions` and `rtti` features.
+
+### Failures and CI
+
+A test reported FAIL fails the run, and CI: there are no lists of known failures. A test fails
+for one of three reasons, each handled where it is decided:
+
+- a libycxx bug: fixed (STATUS.md lists what is open);
+- a test that does not apply to libycxx (an external test of another library's internals,
+  extensions or older rules): skipped with its category and reason (`tests/<suite>/skip.txt`;
+  reported UNSUPPORTED, with the libycxx test that covers its subject, if any);
+- a cause outside the test and the library (a compiler bug, an ABI limit, a draft defect, a
+  feature not implemented yet): an expected failure with its reason, in the own test
+  (`// XFAIL: gcc|clang|any <reason>`) or the external suite's `tests/<suite>/xfail.txt`.
+  Reported XFAIL with the reason; a pass is XPASS, which fails the run, so the mark goes
+  when the cause does.
+
+CI (`.github/workflows/ci.yml`), on every push, runs `tools/test policy build freestanding cmake
+ycxx` on Linux (the `gcc:16` container, Clang 23 from apt.llvm.org) and macOS (Apple Silicon,
+Homebrew's GCC 16, the provisioned Clang 23), plus a sample of the external suites on Linux.
+`.github/workflows/full.yml`, nightly and on demand, runs libc++'s and libstdc++'s whole suites on
+both compilers on both platforms, the own suite under ASan+UBSan, and the own suite on both
+compilers hardened, with `-fno-exceptions` and with `-O2`. Every job uploads its reports as an
+artifact.
 Tests that need a named locale (libstdc++'s `dg-require-namedlocale`, libc++'s `locale.<name>`
 features) run when the C library has it (`tests/ycxxlit/locales.py`); `tools/ci/gen-locales`
 generates every locale the suites name (the nightly Linux jobs do), and `YCXX_LONG_TESTS=1` runs

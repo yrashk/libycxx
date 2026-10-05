@@ -5,6 +5,7 @@
 // "format-spec is empty", and the stacktrace formats as to_string(s). Any other format-spec
 // is not a format string for the argument, which vformat reports as format_error
 // ([format.err.report]/1). [stacktrace.entry.obs]/1: a default-constructed entry is empty.
+// REQUIRES: exceptions
 #include <stacktrace>
 #include <format>
 #include <algorithm>

@@ -5,6 +5,7 @@
 // constructors and propagate_on_container_* behaviour, and move construction / move
 // assignment / swap keeping the elements in place. Plus copy semantics and noexcept members
 // from the synopsis.
+// REQUIRES: exceptions
 #include <set>
 #include <compare>
 #include <memory>

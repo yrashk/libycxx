@@ -1,6 +1,7 @@
 // [bitset.members]/17,22,29,47: set(pos, val), reset(pos), flip(pos), test(pos) "Throws:
 // out_of_range if pos does not correspond to a valid bit position." [bitset.members]/38,40:
 // to_ulong/to_ullong "Throws: overflow_error if the integral value x ... cannot be represented".
+// REQUIRES: exceptions
 #include <bitset>
 #include <climits>
 #include <stdexcept>

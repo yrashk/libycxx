@@ -1,6 +1,7 @@
 // [format.syn], [format.fmt.string]: runtime_format(s) yields a dynamic-format-string from
 // which basic_format_string is constructible without compile-time checking; errors are then
 // reported at run time by format_error ([format.err.report]).
+// REQUIRES: exceptions
 #include <format>
 #include <string>
 #include <string_view>

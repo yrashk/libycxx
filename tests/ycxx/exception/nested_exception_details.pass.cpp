@@ -4,6 +4,7 @@
 // nested_exception and constructed from std::forward<T>(t)". /9: rethrow_if_nested performs
 // dynamic_cast<const nested_exception*>(addressof(e)) for polymorphic E with an accessible
 // unambiguous nested_exception base, and has no effect otherwise.
+// REQUIRES: exceptions
 #include <exception>
 #include <memory>
 #include <stdexcept>

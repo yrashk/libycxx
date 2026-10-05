@@ -9,6 +9,7 @@
 // /1, /8: allocate(n) and allocate_object<T>(n) throw bad_array_new_length exactly when
 // numeric_limits<size_t>::max() / sizeof(T) < n, without calling the resource; otherwise they
 // call resource->allocate(n * sizeof(T), alignof(T)) (/5: allocate_bytes forwards unchanged).
+// REQUIRES: exceptions
 #include <memory_resource>
 #include <array>
 #include <cstddef>

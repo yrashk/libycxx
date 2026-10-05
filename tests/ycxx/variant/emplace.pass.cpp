@@ -1,6 +1,7 @@
 // [variant.mod]: emplace<T>/emplace<I>, with and without initializer_list.
 // Returns a reference to the new contained value; index() is I afterwards; old value destroyed.
 // emplace<T> Constraints: T occurs exactly once and is constructible.
+// COUNTERPART: libstdcxx:20_util/variant/(87431|exception_safety).cc
 #include <variant>
 #include <initializer_list>
 #include <type_traits>

@@ -3,6 +3,7 @@
 // from_range, initializer_list, copy/move), assign family, element access (at throws
 // out_of_range), push_back / emplace_back / pop_back, insert / emplace / insert_range /
 // erase / append_range, resize(sz, c = false), reserve / capacity, swap, comparison.
+// REQUIRES: exceptions
 #include <vector>
 #include <ranges>
 #include <stdexcept>

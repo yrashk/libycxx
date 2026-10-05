@@ -15,6 +15,7 @@
 // [format.formatter.spec]/2: set_debug_format() of the debug-enabled specializations makes
 // the formatter act as if the parsed type were ?, keeping the other parsed options.
 // fmt-maybe-const / input ranges: [format.range.fmtdef], views::istream is an input range.
+// COUNTERPART: libcxx:utilities/format/format.range/.*
 #include <format>
 #include <ranges>
 #include <sstream>

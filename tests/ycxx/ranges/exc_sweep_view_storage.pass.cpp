@@ -14,6 +14,7 @@
 //     the inner range / element of the current position.
 // After every run every element object is destroyed exactly once and every operator new block
 // is freed; traversal results are checked when nothing throws.
+// REQUIRES: exceptions
 #include <ranges>
 #include <vector>
 #include "exc_new.hpp"

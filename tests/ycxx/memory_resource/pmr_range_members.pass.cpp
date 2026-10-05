@@ -8,6 +8,7 @@
 // element (and map key and mapped value, flat_map keys()/values() and flat_set elements) uses
 // the container's resource, whether the source range holds const char* or pmr::strings
 // using another resource.
+// REQUIRES: exceptions
 #include <memory_resource>
 #include <vector>
 #include <deque>

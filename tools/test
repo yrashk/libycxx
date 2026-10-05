@@ -23,12 +23,16 @@
 #   -f, --filter DIR           suite stages: only tests under DIR (repeatable)
 #   -j, --jobs N               parallel jobs for ninja and lit
 #   -s, --sanitizer LIST       suite stages: build tests with -fsanitize (asan, ubsan, tsan)
+#   --hardened                 own suite: compile the tests with -DYCXX_HARDENED=1 (the library's
+#                              run-time precondition checks) and run the death tests of
+#                              tests/ycxx/precondition (YCXX_HARDENED=1)
+#   --cxxflags FLAGS           own suite: append FLAGS to every test's compile flags, e.g.
+#                              "-fno-exceptions" or -O2 (YCXX_CXXFLAGS)
+#   --config-name NAME         the short name of those flags in log and report names
+#                              (default: made from the flags; YCXX_CONFIG_NAME)
 #   -x, --fail-fast            stop at the first failing step
 #   -v, --verbose              stream every command's output; print every test's transcript
 #   -q, --quiet                suites: list only the tests that did not pass
-#   --baseline                 suite stages: fail only on tests that did not pass and are not in
-#                              tests/<suite>/baseline/<os>-<compiler>[-<sanitizer>].txt (the known
-#                              failures; none recorded: report only). YCXX_BASELINE=1
 #   --no-fetch                 do not download a missing external suite (YCXX_NO_FETCH=1);
 #                              by default tools/fetch-suites fetches it into the cache first
 #   -h, --help
@@ -58,10 +62,14 @@ while [ $# -gt 0 ]; do
     -j|--jobs) jobs=$2; shift ;;
     -j*) jobs=${1#-j} ;;
     -s|--sanitizer) sanitizer=$2; shift ;;
+    --hardened) YCXX_HARDENED=1; export YCXX_HARDENED ;;
+    --cxxflags) YCXX_CXXFLAGS=$2; export YCXX_CXXFLAGS; shift ;;
+    --cxxflags=*) YCXX_CXXFLAGS=${1#--cxxflags=}; export YCXX_CXXFLAGS ;;
+    --config-name) YCXX_CONFIG_NAME=$2; export YCXX_CONFIG_NAME; shift ;;
+    --config-name=*) YCXX_CONFIG_NAME=${1#--config-name=}; export YCXX_CONFIG_NAME ;;
     -x|--fail-fast) fail_fast=1 ;;
     -v|--verbose) YCXX_VERBOSE=1; export YCXX_VERBOSE ;;
     -q|--quiet) YCXX_QUIET=1; export YCXX_QUIET ;;
-    --baseline) YCXX_BASELINE=1; export YCXX_BASELINE ;;
     --no-fetch) YCXX_NO_FETCH=1 ;;
     -h|--help) usage; exit 0 ;;
     all) stages="policy build freestanding cmake ycxx libcxx libstdcxx" ;;
@@ -80,6 +88,13 @@ ycxx_env_load
 ycxx_suite_dirs
 SANITIZER=$sanitizer
 export SANITIZER
+ycxx_run_config || exit 2
+if [ "${YCXX_HARDENED:-0}" = 1 ] || [ -n "${ycxx_config_name}" ]; then
+  case " $stages " in *" libcxx "*|*" libstdcxx "*)
+    echo "tools/test: --hardened, --cxxflags and --config-name apply to the own suite (ycxx) only" >&2
+    exit 2 ;;
+  esac
+fi
 logs=$repo/build/test-logs
 mkdir -p "$logs"
 results=$logs/summary.txt
@@ -231,6 +246,8 @@ for stage in $stages; do
     ycxx|libcxx|libstdcxx)
       for c in $compilers; do
         label="$stage suite, $c${sanitizer:+, $sanitizer}"
+        [ "${YCXX_HARDENED:-0}" = 1 ] && label="$label, hardened"
+        label=$label${ycxx_config_name:+, ${ycxx_config_name}}
         case " $broken " in *" $c "*)
           ui_section "$label"; ui_skip "$label" "(the $c build failed)"
           record skip "$label" "(the $c build failed)"; continue ;;
@@ -258,7 +275,7 @@ for stage in $stages; do
           ui_section "$label"; ui_skip "$label" "($dir not found: run tools/fetch-suites)"
           record skip "$label" "($dir not found: run tools/fetch-suites)"; continue
         fi
-        run=$stage-$c${sanitizer:+-$(echo "$sanitizer" | tr , -)}
+        run=$stage-$c${ycxx_run_suffix}
         direct "$label" "" "$logs/$run.html" tools/run-conformance $stage $c $filters -- ${jobs:+-j$jobs} || :
       done
       ;;

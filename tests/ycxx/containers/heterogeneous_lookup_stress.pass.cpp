@@ -11,6 +11,7 @@
 // only when inserting; [map.access], [unord.map.elem]: operator[](K&&) inserts
 // value_type(std::forward<K>(x), T()) when absent; at(const K&) throws out_of_range when absent.
 // Results are checked against per-key counts.
+// REQUIRES: exceptions
 #include <map>
 #include <set>
 #include <unordered_map>

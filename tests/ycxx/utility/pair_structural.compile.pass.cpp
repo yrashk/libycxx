@@ -5,6 +5,7 @@
 // constructors are constexpr when the element-wise initializations are. Class template
 // argument deduction: "template<class T1, class T2> pair(T1, T2) -> pair<T1, T2>;" (by-value
 // parameters: arrays and functions decay, reference_wrapper is kept as is).
+// COUNTERPART: libstdcxx:20_util/pair/requirements/dr801.cc
 #include <utility>
 #include <functional>
 #include <type_traits>

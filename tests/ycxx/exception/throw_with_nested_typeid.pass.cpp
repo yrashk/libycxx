@@ -5,6 +5,7 @@
 // type U (observable with typeid on a polymorphic U). is_base_of_v is true for private and
 // ambiguous bases too, and for nested_exception itself. In the first case the dynamic type
 // differs from U.
+// REQUIRES: exceptions
 #include <exception>
 #include <typeinfo>
 #include "check.hpp"

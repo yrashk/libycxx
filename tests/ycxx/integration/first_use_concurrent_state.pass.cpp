@@ -23,6 +23,7 @@
 //   [locale.statics]/4-5 classic(): every thread gets a locale equal to locale("C") whose
 //     facets are classic.
 // FLAGS: -pthread
+// REQUIRES: exceptions
 #include <atomic>
 #include <cstring>
 #include <future>

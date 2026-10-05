@@ -3,6 +3,8 @@
 // x = floor(R^k / r^d), an attempt is k invocations of g giving S = sum (g_i - g.min()) * R^i;
 // "Attempts are made until S < x r^d." Returns floor(S/x) / r^d, so 0 <= c < 1. "Complexity:
 // Exactly k invocations of g per attempt."
+// COUNTERPART: libstdcxx:26_numerics/random/seed_seq/97311.cc
+// COUNTERPART: libstdcxx:26_numerics/random/uniform_real_distribution/operators/(64351|gencanon).cc
 #include <random>
 #include <cstdint>
 #include <limits>

@@ -11,6 +11,7 @@
 // bad_alloc in the middle of growth, the exception propagates and the resource stays usable
 // (blocks obtained before keep their contents, later requests succeed once upstream recovers).
 // /9: do_is_equal is identity, also between two pools sharing an upstream.
+// REQUIRES: exceptions
 #include <memory_resource>
 #include <cstddef>
 #include <cstdint>

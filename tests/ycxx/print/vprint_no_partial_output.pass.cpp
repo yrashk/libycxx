@@ -8,6 +8,7 @@
 // exception and an output that is a prefix of the intended text are checked.
 // [ostream.formatted.print]/4: vprint_unicode(ostream&, ...) initializes
 // "string out = vformat(os.getloc(), fmt, args);" before writing, so nothing is written there.
+// REQUIRES: exceptions
 #include <print>
 #include <format>
 #include <cstdio>

@@ -1,6 +1,7 @@
 // [set.overview], [multiset.overview] deduction guides: iterator range (iter-value-type),
 // from_range (range_value_t), initializer_list<Key>, each with optional Compare and
 // Allocator, and the allocator-only forms using less<Key>.
+// REQUIRES: exceptions
 #include <set>
 #include <functional>
 #include <ranges>

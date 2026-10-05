@@ -6,6 +6,7 @@
 //  - ERE (extended): + ? | ( ) { } are special; ^ and $ are anchors anywhere.
 //  - awk: ERE plus the escapes \" \/ \ddd (octal) and \n \t etc.
 //  - grep / egrep: BRE / ERE with newline separating alternatives.
+// REQUIRES: exceptions
 #include <regex>
 #include <string>
 #include "check.hpp"

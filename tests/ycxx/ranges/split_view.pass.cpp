@@ -2,6 +2,7 @@
 // delimiter produces a trailing empty element ([range.split.iterator]/4); an empty pattern
 // splits into single elements (find-next, /5); the iterator is forward with
 // iterator_category input_iterator_tag; split_view is not const-iterable; deduction guides.
+// COUNTERPART: libcxx:ranges/range.adaptors/range.split/(iterator|sentinel)/.*
 #include <array>
 #include <iterator>
 #include <ranges>

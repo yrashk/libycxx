@@ -1,5 +1,6 @@
 // [rand.predef]: the predefined engines are the stated specializations;
 // default_random_engine is an engine of implementation-defined type ([rand.predef]/10).
+// COUNTERPART: libstdcxx:26_numerics/random/default_random_engine.cc
 #include <random>
 #include <cstdint>
 #include <concepts>

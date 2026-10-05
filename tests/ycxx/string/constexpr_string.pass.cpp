@@ -3,6 +3,7 @@
 // created, grown past any small-buffer size, modified and destroyed during constant
 // evaluation (transient allocation). [basic.string.general]/5: iterator and const_iterator
 // meet the constexpr iterator requirements.
+// COUNTERPART: libstdcxx:21_strings/basic_string/cons/(char|wchar_t)/constexpr.cc
 #include <string>
 #include <algorithm>
 #include <string_view>

@@ -3,6 +3,7 @@
 // pointer conversion not involving conversions to pointers to private or protected or
 // ambiguous classes, ... a qualification conversion". /15.2: the handler variable is
 // copy-initialized from the exception object, i.e. the pointer is converted (adjusted).
+// REQUIRES: exceptions
 #include "check.hpp"
 
 struct Base {

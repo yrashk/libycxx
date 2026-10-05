@@ -9,6 +9,7 @@
 // destroyed exactly once (counted by construction/destruction balance), and only after the
 // last exception_ptr is gone.
 // FLAGS: -pthread
+// REQUIRES: exceptions
 #include <atomic>
 #include <exception>
 #include <thread>

@@ -1,5 +1,6 @@
 // [range.iota.overview]/4: "views::indices(E) is expression-equivalent to
 // views::iota(T(0), E)" with T = remove_cvref_t<decltype((E))>.
+// COUNTERPART: libstdcxx:std/ranges/indices/1.cc
 #include <cstddef>
 #include <ranges>
 #include <type_traits>

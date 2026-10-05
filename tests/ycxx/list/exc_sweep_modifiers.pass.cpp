@@ -12,6 +12,7 @@
 //     exactly one of the two lists.
 //   [list.ops]/33: sort: "If an exception is thrown, the order of the elements in *this is
 //     unspecified." The elements themselves stay (sort does not copy, construct or destroy).
+// REQUIRES: exceptions
 #include <list>
 #include "exc_sequence.hpp"
 

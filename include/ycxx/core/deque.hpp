@@ -518,24 +518,6 @@ private:
     return begin() + static_cast<difference_type>(k);
   }
 
-  // A value constructed through the allocator outside the deque (the argument of a middle
-  // insertion may refer to an element).
-  struct temp_value {
-    Allocator& a;
-    T* p;
-    template <class... Args>
-    constexpr explicit temp_value(Allocator& al, Args&&... args) : a(al), p(std::to_address(alloc_traits::allocate(al, 1))) {
-      ycxx::detail::rollback rb{[this] { alloc_traits::deallocate(a, ycxx::detail::to_alloc_pointer<pointer>(p), 1); }};
-      alloc_traits::construct(a, p, static_cast<Args&&>(args)...);
-      rb.release();
-    }
-    temp_value(const temp_value&) = delete;
-    constexpr ~temp_value() {
-      alloc_traits::destroy(a, p);
-      alloc_traits::deallocate(a, ycxx::detail::to_alloc_pointer<pointer>(p), 1);
-    }
-  };
-
   // Inserts n copies of v (not an element of *this) at index k, 0 < k < size_, shifting the
   // shorter side.
   constexpr void insert_fill_middle(size_type k, size_type n, const T& v) {
@@ -821,7 +803,8 @@ public:
       emplace_back(static_cast<Args&&>(args)...);
       return end() - 1;
     }
-    temp_value t(alloc_, static_cast<Args&&>(args)...);
+    // The arguments may refer to elements that are about to move.
+    ycxx::detail::alloc_temp<T, Allocator> t(alloc_, static_cast<Args&&>(args)...);
     const auto dk = static_cast<difference_type>(k);
     if (k < size_ - k) {
       emplace_front(static_cast<T&&>(*elem(0)));
@@ -832,7 +815,7 @@ public:
       const iterator b = begin();
       std::move_backward(b + dk, b + static_cast<difference_type>(size_ - 2), b + static_cast<difference_type>(size_ - 1));
     }
-    *elem(k) = static_cast<T&&>(*t.p);
+    *elem(k) = static_cast<T&&>(t.v);
     return begin() + dk;
   }
   constexpr void push_front(const T& x) { emplace_front(x); }
@@ -875,8 +858,8 @@ public:
         construct_front(x);
       rb.release();
     } else {
-      temp_value t(alloc_, x);
-      insert_fill_middle(k, n, *t.p);
+      ycxx::detail::alloc_temp<T, Allocator> t(alloc_, x); // x may be an element
+      insert_fill_middle(k, n, t.v);
     }
     return begin() + static_cast<difference_type>(k);
   }

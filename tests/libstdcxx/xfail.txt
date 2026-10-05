@@ -1,0 +1,5 @@
+# libstdc++ tests expected to fail because of a compiler gap (not a libycxx bug); they still run,
+# and report XPASS once the compiler catches up (then remove the line).
+# Format:  <path regex relative to the testsuite> | <gcc|clang|any> | <reason>
+# Kept in step with the (c)/D (compiler) category of TRIAGE.md.
+std/format/fill_nonunicode\.cc | clang | the test is built with -fexec-charset=ISO8859-1, which Clang 23 rejects ("invalid value 'ISO8859-1'"; Clang supports only UTF-8 execution character sets)

@@ -8,6 +8,7 @@
 // utc_clock, tai_clock, and gps_clock"; [time.clock.file.overview]/1: signed rep, noexcept
 // now(); [time.format]/14: a file_time formats as the corresponding sys_time (%Z is "UTC").
 // [filesystems]: file_time_type is file_time<...> ([fs.filesystem.syn]).
+// COUNTERPART: libstdcxx:std/time/clock/file/io.cc
 #include <chrono>
 #include <filesystem>
 #include <format>

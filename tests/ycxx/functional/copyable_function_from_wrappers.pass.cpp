@@ -4,6 +4,7 @@
 // std::forward<F>(f)." So an empty std::function becomes a target (calling it throws
 // bad_function_call); a non-empty copyable_function of another signature keeps its state, and
 // copies of the result copy that state. /3: the copy constructor copies the target.
+// COUNTERPART: libstdcxx:20_util/copyable_function/conv.cc
 #include <functional>
 #include <utility>
 #include "check.hpp"

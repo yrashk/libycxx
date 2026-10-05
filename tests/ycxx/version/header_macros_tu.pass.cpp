@@ -10,6 +10,10 @@
 // FILES: ../support/version_tu/format.cpp ../support/version_tu/text_encoding.cpp
 // FILES: ../support/version_tu/inplace_vector.cpp ../support/version_tu/ranges.cpp
 // FILES: ../support/version_tu/version.cpp
+// COUNTERPART: libstdcxx:23_containers/inplace_vector/version.cc
+// COUNTERPART: libstdcxx:25_algorithms/(fill_n|swap_ranges)/requirements/version.cc
+// COUNTERPART: libstdcxx:26_numerics/saturation/version.cc libstdcxx:std/format/functions/format.cc
+// COUNTERPART: libstdcxx:std/ranges/conv/version.cc libstdcxx:std/text_encoding/requirements.cc
 #include <cstdio>
 #include <cstring>
 #include "check.hpp"

@@ -1,6 +1,7 @@
 // [version.syn]/2: "Each of the macros defined in <version> is also defined after inclusion
 // of any member of the set of library headers indicated in the corresponding comment in
 // this synopsis." These macros name <array> in their comment. Only <array> is included.
+// COUNTERPART: libstdcxx:23_containers/array/requirements/version.cc
 #include <array>
 
 #if !defined(__cpp_lib_array_constexpr)

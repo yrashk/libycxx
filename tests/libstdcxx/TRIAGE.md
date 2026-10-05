@@ -403,3 +403,19 @@ unless a later bullet says otherwise):
 
 GCC 16: 20_util/specialized_algorithms/destroy/121024.cc (PR c++/102284; the test is `dg-xfail-if`).
 Clang 23: no `__builtin_is_structural` (20_util/is_structural/requirements/{typedefs,explicit_instantiation}.cc), `__builtin_is_corresponding_member` or `__builtin_is_pointer_interconvertible_with_class` (20_util/is_layout_compatible/is_corresponding_member.cc, 20_util/is_pointer_interconvertible/{value,version,with_class}.cc), reflection (20_util/is_reflection/requirements/typedefs.cc); cannot throw during constant evaluation (19_diagnostics/{logic,runtime}_error/constexpr.cc, 20_util/constant_wrapper/generic.cc); `-fexec-charset=ISO8859-1` unsupported (std/format/fill_nonunicode.cc); no `__LONG_LONG_WIDTH__` predefined macro (20_util/stdbit/1.cc); no `_Float32`, so no `std::float32_t` (20_util/to_chars/float16_c++23.cc); `source_location::column()` values differ from GCC's (18_support/source_location/{1,consteval}.cc; implementation-defined); `[[gnu::optimize("O0")]]` ignored, so frame counts differ (19_diagnostics/stacktrace/current.cc); an invalid default argument is a hard error inside `is_constructible` (20_util/is_constructible/68430.cc); copy-list-initialization overload resolution with `atomic_ref` (29_atomics/atomic_ref/ctor.cc); template `operator==` rewritten despite a corresponding `operator!=` (20_util/optional/relops/constrained.cc, see (D) above).
+
+<!-- counterparts:begin (generated) -->
+## Skipped tests without a counterpart
+
+Tests skipped (or UNSUPPORTED) as tied to the other library's internals, extensions or modes whose subject the draft does not specify, so libycxx's own suite has no test for it: the trace reports them as "no libycxx counterpart". Patterns are anchored regexes (like skip.txt); the linked ones carry `// COUNTERPART:` in tests/ycxx (tests/ycxxlit/counterparts.py).
+
+| tests | why there is no standard counterpart |
+|---|---|
+| `20_util/any/layout.cc` | the size and alignment of std::any are unspecified (libstdc++'s layout) |
+| `20_util/(optional\|unique_ptr/hash\|variant)/(hash_)?abi.cc` | the size of a hash specialization (and of classes deriving from several) is libstdc++'s ABI, not specified |
+| `20_util/optional/hash_abi.cc` | the size of hash<optional<T>> is libstdc++'s ABI, not specified |
+| `28_regex/basic_regex/84110.cc` | whether a NUL character in a POSIX-grammar pattern is an error: no rule of [re.synopt] or [re.grammar] makes it one |
+| `28_regex/traits/(char\|wchar_t)/transform_primary.cc` | [re.traits]/7 gives an empty key for a facet that is not a collate_byname; libycxx deliberately returns the full key (STATUS.md, regex) and libstdc++ a case-folded one, so no own test asserts either |
+| `30_threads/(mutex\|recursive_mutex\|timed_mutex\|recursive_timed_mutex\|condition_variable)/(native_handle/1\|requirements/typedefs).cc` | native_handle_type and native_handle() are implementation-defined ([thread.req.native]) |
+
+<!-- counterparts:end -->

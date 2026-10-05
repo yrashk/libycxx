@@ -13,6 +13,7 @@
 // [time.zone.zonedtraits]/1: zoned_traits customises the default zone and the lookup by name
 // for a program-defined TimeZonePtr.
 // (IANA data: America/New_York EST -5 / EDT -4, Asia/Kolkata IST +5:30; established dates.)
+// COUNTERPART: libstdcxx:std/time/zoned_time/io.cc
 #include <chrono>
 #include <format>
 #include <sstream>

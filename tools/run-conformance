@@ -18,7 +18,8 @@
 #              YCXX_QUIET=1 (list only the tests that did not pass), YCXX_VERBOSE=1 (print every
 #              test's whole transcript), YCXX_FAIL_DETAILS=N (show the transcript of the first N
 #              failures, default 10), YCXX_RAW=1 (lit's own output, unfiltered),
-#              YCXX_COLOR=always|never|auto, NO_COLOR.
+#              YCXX_COLOR=always|never|auto, NO_COLOR, YCXX_BASELINE=1 (fail only on tests outside
+#              tests/<suite>/baseline/<os>-<compiler>[-<sanitizer>].txt; tools/lib/baseline.py).
 set -e
 repo=$(cd "$(dirname "$0")/.." && pwd)
 . "$repo/tools/lib/ui.sh"
@@ -109,6 +110,7 @@ fstatus=$log.filter-status
   echo $? >"$fstatus"
 } | tee "$base.console.log"
 rc=$(cat "$status" 2>/dev/null || echo 1)
+lit_rc=${rc}
 frc=$(cat "$fstatus" 2>/dev/null || echo 1)
 rm -f "$status" "$fstatus"
 if [ "$frc" != 0 ]; then
@@ -135,5 +137,21 @@ if [ -f "$base.json" ]; then
     "command=$(ui_quote ${ycxx_lit} "$dir" -a -o "$base.json" "$@")" "log=$log" "_root=$tests" &&
     ui_info "report" "$base.html (copy buttons; the whole report as Markdown in $base.md)" &&
     ui_info "list" "$base.tsv (result, seconds, test, steps)"
+fi
+
+# YCXX_BASELINE=1: the run fails only on tests that did not pass and are not in the recorded
+# baseline, tests/<suite>/baseline/<os>-<compiler>[-<sanitizer>].txt (tools/lib/baseline.py),
+# when lit itself worked (exit 0, or 1 for failing tests).
+if [ "${YCXX_BASELINE:-0}" = 1 ] && [ -f "$base.tsv" ] && { [ "${lit_rc}" = 0 ] || [ "${lit_rc}" = 1 ]; }; then
+  os=$(uname -s | tr '[:upper:]' '[:lower:]')
+  bfile=$repo/tests/$suite/baseline/$os-$compiler${SANITIZER:+-$(echo "$SANITIZER" | tr , -)}.txt
+  ui_cmd python3 "$repo/tools/lib/baseline.py" "$base.tsv" "$bfile" "$base.baseline.txt"
+  if python3 "$repo/tools/lib/baseline.py" "$base.tsv" "$bfile" "$base.baseline.txt"; then
+    [ "$frc" = 0 ] && rc=0
+    ui_ok "$what: no failures outside the baseline"
+  else
+    rc=1
+    ui_fail "$what: failures outside the baseline" "(candidate baseline: $base.baseline.txt)"
+  fi
 fi
 exit "$rc"

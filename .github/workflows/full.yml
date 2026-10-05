@@ -1,0 +1,91 @@
+name: full
+
+# The long runs, nightly and on demand (Actions > full > Run workflow): libc++'s and libstdc++'s
+# whole suites on both compilers, on Linux and macOS, and the own suite under ASan+UBSan.
+# Each fails only on tests outside its recorded baseline, the known failures in
+# tests/<suite>/baseline/<os>-<compiler>[-<sanitizer>].txt (tools/lib/baseline.py): a regression or
+# a new test. Every job uploads its reports, including <run>.baseline.txt, the run's own list of
+# tests that did not pass: copy it over the baseline file to record or update one.
+
+on:
+  schedule:
+    - cron: '17 3 * * *'
+  workflow_dispatch:
+
+jobs:
+  linux-suites:
+    runs-on: ubuntu-24.04
+    container: gcc:16
+    timeout-minutes: 300
+    strategy:
+      fail-fast: false
+      matrix:
+        suite: [libcxx, libstdcxx]
+        compiler: [gcc, clang]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Toolchains
+        uses: ./.github/actions/setup-linux
+      - name: ${{ matrix.suite }} suite, ${{ matrix.compiler }} (tools/test; fetches the suite)
+        run: tools/test -j4 -q --baseline -c ${{ matrix.compiler }} build ${{ matrix.suite }}
+      - name: Test reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: full-linux-${{ matrix.suite }}-${{ matrix.compiler }}
+          path: |
+            build/test-logs/*.html
+            build/test-logs/*.md
+            build/test-logs/*.tsv
+            build/test-logs/*.baseline.txt
+            build/test-logs/*.log
+
+  linux-sanitizers:
+    runs-on: ubuntu-24.04
+    container: gcc:16
+    timeout-minutes: 180
+    steps:
+      - uses: actions/checkout@v4
+      - name: Toolchains
+        uses: ./.github/actions/setup-linux
+      - name: Own suite, clang, -fsanitize=address,undefined (tools/test)
+        run: tools/test -j4 -q --baseline -c clang -s asan,ubsan build ycxx
+      - name: Test reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: full-linux-ycxx-clang-asan-ubsan
+          path: |
+            build/test-logs/*.html
+            build/test-logs/*.md
+            build/test-logs/*.tsv
+            build/test-logs/*.baseline.txt
+            build/test-logs/*.log
+
+  macos-suites:
+    runs-on: macos-15
+    timeout-minutes: 340
+    strategy:
+      fail-fast: false
+      matrix:
+        suite: [libcxx, libstdcxx]
+        compiler: [gcc, clang]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Toolchains
+        uses: ./.github/actions/setup-macos
+      - name: ${{ matrix.suite }} suite, ${{ matrix.compiler }} (tools/test; fetches the suite)
+        run: |
+          . tools/toolchain/activate.sh
+          tools/test -j3 -q --baseline -c ${{ matrix.compiler }} build ${{ matrix.suite }}
+      - name: Test reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: full-macos-${{ matrix.suite }}-${{ matrix.compiler }}
+          path: |
+            build/test-logs/*.html
+            build/test-logs/*.md
+            build/test-logs/*.tsv
+            build/test-logs/*.baseline.txt
+            build/test-logs/*.log

@@ -353,11 +353,11 @@ private:
                                                                           alloc_);
     return begin() + static_cast<difference_type>(off);
   }
-  // Inserts at index off < size() with spare capacity, from a value that is not an element.
   // Element moves by assignment are memmove for trivially copyable elements (outside constant
-  // evaluation): the loops below are what they replace.
+  // evaluation): the loops they replace stay for constant evaluation and other types.
   static constexpr bool memmove_assign = is_trivially_copyable_v<T> && is_trivially_move_assignable_v<T>;
 
+  // Inserts at index off < size() with spare capacity, from a value that is not an element.
   constexpr void shift_in(size_type off, T&& x) {
     T* const p = first_ + off;
     alloc_traits::construct(alloc_, last_, static_cast<T&&>(last_[-1]));

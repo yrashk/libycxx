@@ -64,27 +64,32 @@ namespace ycxx::abi {
 using namespace __cxxabiv1;
 
 rtti_kind kind_of(const std::type_info& t) noexcept {
-  // The dynamic type of a type_info object is one of the ABI classes; their type_info objects
-  // live in this runtime, so comparing addresses is enough.
+  // The dynamic type of a type_info object is one of the ABI classes. Their type_info objects
+  // are normally this runtime's, so addresses are compared first. Every image linking libycxx
+  // has its own hidden copy of the runtime (DECISIONS §2), so a type_info object emitted in
+  // another such image (an exception thrown there) is an instance of that copy's classes: then
+  // the names are compared.
   const std::type_info* d = &typeid(t);
-  if (d == &typeid(__si_class_type_info))
-    return rtti_kind::class_si;
-  if (d == &typeid(__vmi_class_type_info))
-    return rtti_kind::class_vmi;
-  if (d == &typeid(__class_type_info))
-    return rtti_kind::class_plain;
-  if (d == &typeid(__pointer_type_info))
-    return rtti_kind::pointer;
-  if (d == &typeid(__fundamental_type_info))
-    return rtti_kind::fundamental;
-  if (d == &typeid(__pointer_to_member_type_info))
-    return rtti_kind::member_pointer;
-  if (d == &typeid(__enum_type_info))
-    return rtti_kind::enumeration;
-  if (d == &typeid(__function_type_info))
-    return rtti_kind::function;
-  if (d == &typeid(__array_type_info))
-    return rtti_kind::array;
+  const struct {
+    const std::type_info* type;
+    rtti_kind kind;
+  } kinds[] = {
+      {&typeid(__si_class_type_info), rtti_kind::class_si},
+      {&typeid(__vmi_class_type_info), rtti_kind::class_vmi},
+      {&typeid(__class_type_info), rtti_kind::class_plain},
+      {&typeid(__pointer_type_info), rtti_kind::pointer},
+      {&typeid(__fundamental_type_info), rtti_kind::fundamental},
+      {&typeid(__pointer_to_member_type_info), rtti_kind::member_pointer},
+      {&typeid(__enum_type_info), rtti_kind::enumeration},
+      {&typeid(__function_type_info), rtti_kind::function},
+      {&typeid(__array_type_info), rtti_kind::array},
+  };
+  for (const auto& k : kinds)
+    if (d == k.type)
+      return k.kind;
+  for (const auto& k : kinds)
+    if (*d == *k.type)
+      return k.kind;
   return rtti_kind::unknown;
 }
 

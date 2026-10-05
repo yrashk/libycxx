@@ -25,10 +25,16 @@ inline constexpr std::uint64_t dependent_class = primary_class | 1;  // "YCXXC++
 // machinery (one reference from the throw until the last handler finishes) and each
 // exception_ptr. A dependent exception (thrown by rethrow_exception) has no object of its own:
 // it holds one reference to its primary, and its type/destructor fields are copies.
+struct eh_globals;
 struct exception_header {
   std::size_t reference_count;
   std::size_t allocation_size; // 0: from the emergency pool
   void* primary_object;        // dependent exceptions: the primary's thrown object
+  // The uncaught-exception count this exception was added to by its throw or rethrow, and is
+  // removed from when it is caught. Every image linking libycxx has its own runtime (DECISIONS
+  // §2), and the handler may be in another such image than the throw, whose own count must not
+  // be decremented for it.
+  eh_globals* counted_in;
 
   std::type_info* exception_type;
   void (*exception_destructor)(void*);

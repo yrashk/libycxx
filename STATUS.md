@@ -230,7 +230,8 @@ with leap seconds, `clock_cast` (all five routes), the time zone database on the
 zoneinfo (TZif v1-v4 with POSIX footer, lazily per zone; tzdata.zi names and links; leap seconds
 from leapseconds / leap-seconds.list / built-in IERS table), `time_zone`, `zoned_time`,
 `tzdb_list`/`reload_tzdb`, the exceptions with the draft's messages, every formatter (full
-chrono-format-spec, E/O, L through `time_put`), `local_time_format`, every stream inserter, and
+chrono-format-spec, E/O, L through `time_put`; `%j %U %W %V %G %g` of a calendar value that is
+not a valid date throw `format_error`), `local_time_format`, every stream inserter, and
 `parse`/`from_stream` for every parsable type with every flag. `__cpp_lib_chrono` 202306L,
 `__cpp_lib_chrono_udls` 201304L. Own suite chrono/ 26 -> 66/66, plus print/print_every_kind and
 format/nonlocking_formatter_optimization (both compilers; clean under ASan and UBSan, Clang).
@@ -625,8 +626,9 @@ compilers; `visit_format_arg.pass.cpp` needs `EOF` from `constexpr_char_traits.h
   secondary weights) for collate and collate_byname facets alike; [re.traits]/7 would return an
   empty key for the classic locale's collate facet, making every `[[=x=]]` invalid.
 - Iostreams/locale: named locales other than "C", "POSIX", "C.UTF-8" and "" throw
-  `runtime_error` (the environment's conventions are not supported); `codecvt<wchar_t, char>`
-  is UTF-8 in the classic locale, so `encoding()` is 0 and wide file streams cannot seek by an
+  `runtime_error` (the environment's conventions are not supported; the external suites report the
+  tests that need one UNSUPPORTED, `tests/ycxxlit/locales.py`: 139 libc++ and 205 libstdc++ tests
+  per compiler); `codecvt<wchar_t, char>` is UTF-8 in the classic locale, so `encoding()` is 0 and wide file streams cannot seek by an
   offset other than 0 (libc++ filebuf move/swap/seekoff wide cases and wchar_t encoding/max_length
   tests expect a single-byte C locale); long double hexfloat output is normalized (`0x1.…p+N`,
   not glibc's `0x9.…p+N`); `time_get` stops a number at the digit that leaves its range ("24" for

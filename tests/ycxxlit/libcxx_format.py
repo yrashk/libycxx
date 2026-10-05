@@ -1,7 +1,7 @@
 """lit test format for libc++'s conformance tests (libcxx/test/std), run against libycxx."""
 import os, re, shutil, tempfile
 import lit.formats, lit.Test, lit.TestRunner
-from ycxxlit import transcript
+from ycxxlit import locales, transcript
 from ycxxlit.skips import load_skips, match_skip, load_unsupported, match_unsupported, load_xfails, apply_xfail
 from ycxxlit import counterparts
 
@@ -64,7 +64,7 @@ class LibcxxFormat(lit.formats.FileBasedTest):
         for line in src.splitlines():
             m = COND_FLAGS.search(line)
             if m and (m.group(1) is None or m.group(1).strip() in self.features):
-                flags += [f for f in m.group(2).split() if not f.startswith('-D_LIBCPP')]
+                flags += [locales.substitute_conv(f) for f in m.group(2).split() if not f.startswith('-D_LIBCPP')]
             m = FILE_DEPS.search(line)
             if m:
                 deps += [d for d in re.split(r"[,\s]+", m.group(1)) if d]  # "a.dat, b.dat"

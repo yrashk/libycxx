@@ -404,6 +404,68 @@ unless a later bullet says otherwise):
 GCC 16: 20_util/specialized_algorithms/destroy/121024.cc (PR c++/102284; the test is `dg-xfail-if`).
 Clang 23: no `__builtin_is_structural` (20_util/is_structural/requirements/{typedefs,explicit_instantiation}.cc), `__builtin_is_corresponding_member` or `__builtin_is_pointer_interconvertible_with_class` (20_util/is_layout_compatible/is_corresponding_member.cc, 20_util/is_pointer_interconvertible/{value,version,with_class}.cc), reflection (20_util/is_reflection/requirements/typedefs.cc); cannot throw during constant evaluation (19_diagnostics/{logic,runtime}_error/constexpr.cc, 20_util/constant_wrapper/generic.cc); `-fexec-charset=ISO8859-1` unsupported (std/format/fill_nonunicode.cc); no `__LONG_LONG_WIDTH__` predefined macro (20_util/stdbit/1.cc); no `_Float32`, so no `std::float32_t` (20_util/to_chars/float16_c++23.cc); `source_location::column()` values differ from GCC's (18_support/source_location/{1,consteval}.cc; implementation-defined); `[[gnu::optimize("O0")]]` ignored, so frame counts differ (19_diagnostics/stacktrace/current.cc); an invalid default argument is a hard error inside `is_constructible` (20_util/is_constructible/68430.cc); copy-list-initialization overload resolution with `atomic_ref` (29_atomics/atomic_ref/ctor.cc); template `operator==` rewritten despite a corresponding `operator!=` (20_util/optional/relops/constrained.cc, see (D) above).
 
+## Re-triage: tests that need a named locale or file I/O (2026-10-05)
+
+`ce0ef1b` made the harness run the tests with `dg-require-namedlocale` (when the C library has the
+locale) and `dg-require-fileio`. Directories `22_locale 27_io 21_strings std/format std/time`,
+`tools/run-conformance libstdcxx gcc|clang <dirs> -- -j4`. Newly failing tests (identical on both
+compilers):
+
+| | GCC 16.2 before | after | Clang 23.1 before | after |
+|---|---|---|---|---|
+| 22_locale | 25 | 0 | 25 | 0 |
+| 27_io | 29 | 0 | 29 | 0 |
+| 21_strings | 2 | 0 | 2 | 0 |
+| std/time | 18 | 0 | 18 | 0 |
+| std/format | 0 | 0 | 0 | 0 |
+
+- **Named locales (37, and 29 more whose compile error hid one).**
+  `std::locale` and the `_byname` facets accept only "C", "POSIX", "C.UTF-8" and "" (DECISIONS §7),
+  which [locale.cons]/4 allows: "The set of valid string argument values is "C", "", and any
+  implementation-defined values"; /3 "Throws: runtime_error if the argument is not valid". Every
+  test naming another locale failed with runtime_error: 22_locale/ctype/is/{char,wchar_t}/2.cc,
+  locale/cons/12658_thread-2.cc, locale/encoding.cc, time_get/get/{char,wchar_t}/2.cc,
+  21_strings/basic_string/numeric_conversions/{char/to_string_float,wchar_t/to_wstring_float}.cc,
+  27_io/basic_streambuf/cons/57394.cc, manipulators/extended/{get,put}_{money,time}/... (10),
+  std/time/{day,month,month_day,month_day_last,month_weekday,month_weekday_last,weekday,
+  weekday_indexed,weekday_last,year,year_month,year_month_day,year_month_day_last,
+  year_month_weekday,year_month_weekday_last}/io.cc and std/time/format/{localized,pr117085,
+  pr117214}.cc. **Harness (`aee577b`):** `dg-require-namedlocale NAME` is satisfied only when the C
+  library has NAME and libycxx accepts it (`tests/ycxxlit/locales.py` runs a probe program built
+  from the library under test); otherwise the test is UNSUPPORTED with the reason "needs the named
+  locale NAME: libycxx accepts only ...". The tests run again as soon as libycxx accepts the
+  name. The compile errors of 22_locale/codecvt/{in,length,out,unshift}/wchar_t (12),
+  locale/cons/29217.cc, locale/global_locale_objects/2.cc, messages (5, `LOCALEDIR`, DejaGnu's
+  catalog directory), 27_io/basic_filebuf/{seekoff,underflow}/wchar_t (5) and objects/wchar_t (4)
+  (C library names without their header, see below) are behind such a requirement too, so these
+  are UNSUPPORTED as well.
+- **(b) fileio tests that use what they do not include** (skip.txt, implementation-specific):
+  27_io/basic_filebuf/overflow/char/{9169,9182-2}.cc and sync/char/9182-1.cc (`mbstate_t`
+  unqualified; 9169 also `copy` without `<algorithm>`), seekoff/{char,wchar_t}/11543.cc
+  (`std::min` without `<algorithm>`), 27_io/basic_ostream/print/{1,2}.cc (`std::ostringstream`
+  without `<sstream>`). [res.on.headers]/1: "A C++ header may include other C++ headers". Each was
+  rebuilt with the include or qualification added and passes (print/1 and 2 run) on both compilers.
+- **(b) libstdc++ members** (skip.txt, extension): 27_io/basic_filebuf/{in_avail,setbuf}/char/1.cc
+  (`_M_buf_size`, `_M_mode`).
+- **The rest of these directories** (48 tests that failed before this round, classified in the
+  sections above as (b)/C): skipped with the reasons given there (skip.txt, the block "The
+  remaining failures of 21_strings, 22_locale, 27_io, std/format and std/time"), and
+  std/format/fill_nonunicode.cc on Clang (c) is in the new `xfail.txt` (Clang 23 rejects
+  `-fexec-charset=ISO8859-1`). With them these five directories have no FAIL on either compiler.
+
+**Not run: tests without `dg-do`.** libstdc++'s DejaGnu default action is `run`
+(`testsuite/lib/libstdc++.exp`: `set dg-do-what-default run`), but `tests/ycxxlit/libstdcxx_format.py`
+only compiles a test that has no `dg-do` line (`if not saw_do: action = 'compile'`, since the
+first harness commit). In these directories that is 474 of 629 tests in 22_locale (263 of them
+need a named locale), 746 of 1153 in 27_io and 117 of 487 in 21_strings. Run as DejaGnu would
+(local experiment, not committed), GCC fails 285 tests of these directories instead of 74: 171
+on a named locale, the rest at run time (e.g. 22_locale/num_get/get/*/{12,15,22131,39168}.cc,
+money_get/get/*/{9,19,22131}.cc, moneypunct/members/*/1.cc, time_get/date_order/*/1.cc,
+27_io/basic_stringbuf/{in_avail,seekoff,seekpos,setbuf,sputc,str}/..., basic_istream/seekg and
+tellg, objects/*_xin (stdin), basic_filebuf/seekoff/*/12790-*). Changing the default affects the
+whole suite, so it is left for a round of its own; each of those failures must then be fixed or
+given its reason.
+
 <!-- counterparts:begin (generated) -->
 ## Skipped tests without a counterpart
 

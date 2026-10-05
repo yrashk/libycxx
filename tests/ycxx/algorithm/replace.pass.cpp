@@ -4,6 +4,7 @@
 // last; ranges::replace_copy(_if) return {last, result + N}. Projections apply to the test
 // only. C++26 (P2248): replace's value parameters default to the projected value type, so
 // braced initializers work.
+// COUNTERPART: libcxx:algorithms/alg.modifying.operations/alg.replace/ranges_replace_copy_if.pass.cpp
 #include <algorithm>
 #include <ranges>
 #include <type_traits>

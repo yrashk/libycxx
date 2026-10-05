@@ -3,6 +3,7 @@
 // is returned by value (get-element, /3) and iterator_category is input_iterator_tag (/2.1),
 // otherwise it is random_access_iterator_tag for random-access C (/2.2) or C; the
 // has-tuple-element constraint; borrowed as its view.
+// COUNTERPART: libcxx:ranges/range.adaptors/range.elements/(iterator|sentinel)/.*
 #include <array>
 #include <iterator>
 #include <ranges>

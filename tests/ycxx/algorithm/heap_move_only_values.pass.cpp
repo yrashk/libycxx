@@ -6,6 +6,7 @@
 // afterwards every element holds one of the original values exactly once -- no moved-from
 // value may remain anywhere -- whatever the number of equal keys. Every size 0..70, several
 // key distributions, std:: and ranges:: forms.
+// COUNTERPART: libcxx:algorithms/alg.sorting/alg.heap.operations/(make.heap/make_heap|sort.heap/sort_heap)(_comp)?.pass.cpp
 #include <algorithm>
 #include <functional>
 #include <memory>

@@ -4,6 +4,7 @@
 // representation of formatting arguments ... formatted according to specifications given in
 // fmt to stream" (/10.2, /16). Checked by reading a temporary file back.
 // REQUIRES: exceptions
+// COUNTERPART: libcxx:input.output/iostream.format/print.fun/(print|println|vprint_nonunicode|vprint_unicode).file.pass.cpp
 #include <print>
 #include <format>
 #include <cstdio>

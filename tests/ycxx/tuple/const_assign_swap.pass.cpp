@@ -2,6 +2,7 @@
 // operator=(...) const") assign through a const tuple whose elements are references
 // (constraints is_assignable_v<const Ti&, ...>). [tuple.swap], [tuple.special]: the const
 // overloads of swap.
+// COUNTERPART: libcxx:utilities/tuple/tuple.tuple/tuple.assign/(const_pair|convert_copy|convert_move|copy|move_pair).pass.cpp
 #include <tuple>
 #include <type_traits>
 #include <utility>

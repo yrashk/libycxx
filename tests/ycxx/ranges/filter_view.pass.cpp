@@ -2,6 +2,7 @@
 // not const-iterable over a forward range), iterator_concept (/2) and iterator_category
 // (/3: bidirectional_iterator_tag if C derives from it, forward_iterator_tag if C derives
 // from that, otherwise C), the begin() cache (/5), operator--, pred() and base().
+// COUNTERPART: libcxx:ranges/range.adaptors/range.filter/(iterator|sentinel)/.*
 #include <concepts>
 #include <iterator>
 #include <ranges>

@@ -3,6 +3,7 @@
 // type, otherwise element_type*. [unique.ptr.runtime.general]: the same for unique_ptr<T[]>
 // (element_type is T, the default deleter is default_delete<T[]>). The copy constructor and
 // copy assignment are deleted; the move operations are noexcept.
+// COUNTERPART: libcxx:utilities/smartptr/unique.ptr/unique.ptr.class/unique.ptr.observers/dereference.single.pass.cpp
 #include <memory>
 #include <cstddef>
 #include <type_traits>

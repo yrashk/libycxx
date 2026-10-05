@@ -14,6 +14,7 @@
 //   decltype(+k).
 // [simd.mask.ctor]: basic_mask(bool) and basic_mask(unsigned_integral) are explicit, the bitset
 //   constructor is implicit, the converting constructor needs equal width and is explicit.
+// COUNTERPART: libcxx:experimental/simd/simd.class/.*
 #include <simd>
 #include <array>
 #include <bitset>

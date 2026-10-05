@@ -5,6 +5,7 @@
 // fold_right_last uses the last element and returns optional<U>; fold_left_with_iter /
 // fold_left_first_with_iter also return the end iterator (in_value_result). T defaults to
 // the range's value type, so braced initial values work.
+// COUNTERPART: libcxx:algorithms/alg.nonmodifying/alg.fold/ranges.fold_right_last.pass.cpp
 #include <algorithm>
 #include <functional>
 #include <optional>

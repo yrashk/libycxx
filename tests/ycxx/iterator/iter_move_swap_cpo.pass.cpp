@@ -4,6 +4,7 @@
 // is (void)iter_swap(E1, E2) via ADL; otherwise ranges::swap(*E1, *E2) when both are
 // indirectly_readable with swappable references; otherwise an exchange through
 // iter-exchange-move. Both are customization point objects (constexpr, SFINAE-friendly).
+// COUNTERPART: libcxx:iterators/iterator.requirements/iterator.cust/iterator.cust.swap/iter_swap.pass.cpp
 #include <iterator>
 #include <cstddef>
 #include <type_traits>

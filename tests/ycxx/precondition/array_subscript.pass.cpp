@@ -3,6 +3,7 @@
 // Death test (support/violation.hpp): run only in hardened mode.
 // REQUIRES: hardened
 // EXPECT-TERMINATE: about to violate
+// COUNTERPART: libcxx:containers/sequences/array/assert.indexing.pass.cpp
 #include <array>
 #include <cstddef>
 #include "violation.hpp"

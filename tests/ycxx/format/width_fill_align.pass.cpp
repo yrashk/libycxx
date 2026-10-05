@@ -3,6 +3,7 @@
 // floor(n/2) fill characters before and ceil(n/2) after, no padding when the field is already
 // wide enough (dynamic width: dynamic_width_precision), and the examples of
 // [format.string.std]/4.
+// COUNTERPART: libstdcxx:std/format/string.cc
 #include <format>
 #include <string>
 #include <string_view>

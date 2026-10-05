@@ -11,7 +11,8 @@ command, ...; a key starting with '_' is used but not displayed: _root, the test
                  Markdown (<script type="text/markdown" id="report-md">), readable without a
                  browser, by a person or an AI assistant.
   OUT_BASE.md    the same Markdown.
-  OUT_BASE.tsv   one line per test: result, seconds, test, steps, error.
+  OUT_BASE.tsv   one line per test: result, seconds, test, steps, error, counterpart (the
+                 own test covering a skipped external test's subject: tests/ycxxlit/counterparts.py).
   OUT_BASE.data.json  the tests and the run, for the composite report of tools/test.
 """
 import html, json, os, re, sys
@@ -47,6 +48,56 @@ def steps_of(output):
     return out
 
 
+COVERED, NONE = 'covered by libycxx: ', 'no libycxx counterpart'
+
+
+def link_of(output):
+    """The counterpart line of a skipped external test (tests/ycxxlit/counterparts.py), or ''."""
+    for line in reversed((output or '').splitlines()):
+        if line.startswith(COVERED) or line.startswith(NONE):
+            return line
+    return ''
+
+
+def link_category(reason):
+    """Why a linked test was skipped, as a short category for the reports' tables."""
+    m = re.match(r'skipped \(([^)]*)\)', reason)
+    if m:
+        return m.group(1)
+    for key, cat in (('libcpp-hardening-mode', 'hardening mode'), ('dg-require-debug-mode', 'debug mode'),
+                     ('warning-only verify', 'warning-only verify'),
+                     ('lit.local.cfg', 'experimental (lit.local.cfg)')):
+        if key in reason:
+            return cat
+    return 'other'
+
+
+def coverage(tests):
+    """Skipped tests with a counterpart line: {category: [linked, covered]}, sorted by category."""
+    cats = {}
+    for t in tests:
+        if t.get('link'):
+            c = cats.setdefault(link_category(t['steps'][0] if t['steps'] else ''), [0, 0])
+            c[0] += 1
+            c[1] += t['link'].startswith(COVERED)
+    return dict(sorted(cats.items()))
+
+
+def coverage_md(cov, level='##'):
+    """The counterpart summary and the table of uncovered skipped tests per category."""
+    if not cov:
+        return []
+    n = sum(v[0] for v in cov.values())
+    k = sum(v[1] for v in cov.values())
+    out = [f'{level} Counterparts of skipped tests', '',
+           f'{n} tests skipped as tied to the other library\'s internals, extensions or modes: '
+           f'{k} covered by a libycxx test, {n - k} without a libycxx counterpart '
+           '(tests/ycxxlit/counterparts.py; why: the suite\'s TRIAGE.md).', '',
+           '| category | skipped | covered | uncovered |', '|---|---:|---:|---:|']
+    out += [f'| {c} | {v[0]} | {v[1]} | {v[0] - v[1]} |' for c, v in cov.items()]
+    return out + ['']
+
+
 def fence(text):
     f = '```'
     while f in text:
@@ -54,7 +105,7 @@ def fence(text):
     return f'{f}\n{text.rstrip()}\n{f}'
 
 
-def markdown(title, meta, counts, tests, elapsed):
+def markdown(title, meta, counts, tests, elapsed, cov=None):
     """The whole report as Markdown: the run, the counts, every failure with its transcript, and
     every test with its steps."""
     shown = {k: v for k, v in meta.items() if not k.startswith('_')}
@@ -65,6 +116,7 @@ def markdown(title, meta, counts, tests, elapsed):
     out += [f'- lit time: {elapsed:.1f}s', '']
     out.append('Results: ' + ', '.join(f'{c} {n}' for c, n in counts.items()) + f' (of {len(tests)})')
     out.append('')
+    out += coverage_md(cov or {})
     if bad:
         out += [f'## Failures ({len(bad)})', '']
         for t in bad:
@@ -77,13 +129,15 @@ def markdown(title, meta, counts, tests, elapsed):
         out += ['No failures.', '']
     out += [f'## All tests ({len(tests)})', '',
             'Each line: result, test, the steps it ran (exit status and time), the compiler error '
-            'of a test that must not compile.', '']
+            'of a test that must not compile, the libycxx counterpart of a skipped test (⇒).', '']
     for t in tests:
         line = f'- {t["code"]} {t["name"]}'
         if t['steps']:
             line += ' — ' + '; '.join(t['steps'])
         if t['error']:
             line += ' → ' + t['error']
+        if t.get('link'):
+            line += ' ⇒ ' + t['link']
         out.append(line)
     return '\n'.join(out) + '\n'
 
@@ -101,7 +155,8 @@ def main():
         if not steps and out.strip():  # e.g. why a test is unsupported
             steps = [out.strip().splitlines()[0][:120]]
         tests.append({'name': name, 'code': t['code'], 'secs': round(t.get('elapsed') or 0.0, 3),
-                      'steps': steps, 'error': first_error(out), 'output': out})
+                      'steps': steps, 'error': first_error(out), 'output': out,
+                      'link': link_of(out) if t['code'] in SKIP else ''})
     # Failures first, then by name.
     tests.sort(key=lambda t: (t['code'] in GOOD or t['code'] in SKIP, t['name']))
     order = ['PASS', 'XFAIL', 'FAIL', 'XPASS', 'UNRESOLVED', 'TIMEOUT', 'UNSUPPORTED']
@@ -111,23 +166,30 @@ def main():
     counts = dict(sorted(counts.items(), key=lambda kv: order.index(kv[0]) if kv[0] in order else len(order)))
 
     with open(base + '.tsv', 'w', encoding='utf-8') as f:
-        f.write('result\tseconds\ttest\tsteps\terror\n')
+        f.write('result\tseconds\ttest\tsteps\terror\tcounterpart\n')
         for t in tests:
-            f.write(f"{t['code']}\t{t['secs']:.3f}\t{t['name']}\t{'; '.join(t['steps'])}\t{t['error']}\n")
+            f.write(f"{t['code']}\t{t['secs']:.3f}\t{t['name']}\t{'; '.join(t['steps'])}\t{t['error']}\t{t['link']}\n")
 
     title = f"libycxx {meta.get('suite', '')} suite, {meta.get('compiler', '')}"
-    md = markdown(title, meta, counts, tests, data.get('elapsed', 0))
+    cov = coverage(tests)
+    md = markdown(title, meta, counts, tests, data.get('elapsed', 0), cov)
     with open(base + '.md', 'w', encoding='utf-8') as f:
         f.write(md)
     # For the composite report of a tools/test run (tools/lib/run_report.py).
     with open(base + '.data.json', 'w', encoding='utf-8') as f:
         json.dump({'title': title, 'meta': {k: v for k, v in meta.items() if not k.startswith('_')},
                    'root': meta.get('_root', ''), 'counts': counts, 'elapsed': data.get('elapsed', 0),
-                   'tests': tests}, f)
+                   'coverage': cov, 'tests': tests}, f)
 
     shown = {k: v for k, v in meta.items() if not k.startswith('_')}
     rows = ''.join(f'<tr><th>{html.escape(k)}</th><td>{html.escape(v)}</td></tr>' for k, v in shown.items())
     rows += f"<tr><th>lit time</th><td>{data.get('elapsed', 0):.1f}s</td></tr>"
+    if cov:
+        n, k = sum(v[0] for v in cov.values()), sum(v[1] for v in cov.values())
+        rows += (f'<tr><th>counterparts</th><td>{n} skipped as tied to the other library: {k} covered by '
+                 f'a libycxx test, {n - k} without; uncovered per category: ' +
+                 ', '.join(f'{html.escape(c)} {v[0] - v[1]} of {v[0]}' for c, v in cov.items()) +
+                 ' (search "no libycxx" or "covered by")</td></tr>')
     chips = ''.join(
         f'<button class="chip {"good" if c in GOOD else "skip" if c in SKIP else "bad"}" data-code="{c}">'
         f'{c} <b>{n}</b></button>' for c, n in counts.items())
@@ -262,6 +324,7 @@ function row(t) {
   const d = document.createElement('details');
   d.innerHTML = '<summary><span class="code ' + kind(t.code) + '">' + t.code + '</span><span class="name">' +
     esc(t.name) + (t.error ? '<br><span class="err">→ ' + esc(t.error) + '</span>' : '') +
+    (t.link ? '<br><span class="err">⇒ ' + esc(t.link) + '</span>' : '') +
     '</span><span class="steps">' + esc(t.steps.join(' · ') || (t.secs.toFixed(2) + 's')) + '</span></summary>';
   d.querySelector('summary').appendChild(copyButton('', () => testMd(t),
     'Copy this test (the run, the steps and the full transcript) as Markdown'));
@@ -280,7 +343,8 @@ function row(t) {
 }
 function render(reset) {
   if (reset) {
-    matches = tests.filter(t => (!code || t.code === code) && t.name.toLowerCase().includes(query));
+    matches = tests.filter(t => (!code || t.code === code) &&
+      (t.name.toLowerCase().includes(query) || (t.link || '').toLowerCase().includes(query)));
     limit = 0;
     list.textContent = '';
   }

@@ -2,6 +2,7 @@
 // mode, "Otherwise, if ios_base::in is set in mode, then sv(eback(), egptr() - eback())",
 // "(12.3) Otherwise, sv() is returned." /6: str() is basic_string(view(), get_allocator()).
 // A stringbuf opened with neither in nor out therefore shows an empty sequence.
+// COUNTERPART: libcxx:input.output/string.streams/stringbuf/stringbuf.members/view.pass.cpp
 #include <sstream>
 #include <string>
 #include "check.hpp"

@@ -4,6 +4,7 @@
 // base 10 digits representable without change; integer types are exact, bounded, radix 2;
 // "Specializations for integer types shall return round_toward_zero"; is_modulo is false for
 // signed integer types and (by definition) true for unsigned types that are not promoted.
+// COUNTERPART: libstdcxx:18_support/numeric_limits/char16_32_t.cc
 #include <limits>
 #include <climits>
 #include <cstdint>

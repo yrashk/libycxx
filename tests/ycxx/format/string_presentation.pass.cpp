@@ -2,6 +2,7 @@
 // basic_string, basic_string_view) are copied for type none or s; precision truncates; an
 // embedded NUL in a string_view is copied; a char array formats its elements up to the
 // terminating null ([format.formatter.spec] formatter<charT[N], charT>).
+// COUNTERPART: libcxx:utilities/format/format.formatter/format.formatter.spec/formatter.(c_string|char_array|string).pass.cpp
 #include <format>
 #include <string>
 #include <string_view>

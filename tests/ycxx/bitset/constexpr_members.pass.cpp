@@ -1,6 +1,7 @@
 // [template.bitset.general] (P2417, C++23): every bitset member that does not need
 // basic_string is constexpr, including test(), to_ulong(), to_ullong(), the reference proxy
 // and the const operator[].
+// COUNTERPART: libstdcxx:20_util/bitset/(cons/constexpr_c\+\+23|version).cc
 #include <bitset>
 #include <cstddef>
 #include "check.hpp"

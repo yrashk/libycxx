@@ -2,6 +2,7 @@
 // specification (even if T's swap may throw); [array.overview]/3 container requirements:
 // empty() is true, size() == 0. T need not be default-constructible.
 // [array.special]/1: non-member swap is constrained on "N == 0 or is_swappable_v<T>".
+// COUNTERPART: libcxx:containers/sequences/array/array.swap/swap.verify.cpp
 #include <array>
 #include <type_traits>
 #include <utility>

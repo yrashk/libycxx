@@ -11,6 +11,7 @@
 // [re.regex.locale]: imbue() calls traits_inst.imbue and getloc() returns traits_inst.getloc();
 // after imbue the basic_regex object does not match any character sequence.
 // REQUIRES: exceptions
+// COUNTERPART: libstdcxx:28_regex/traits/char/user_defined.cc
 #include <locale>
 #include <regex>
 #include <string>

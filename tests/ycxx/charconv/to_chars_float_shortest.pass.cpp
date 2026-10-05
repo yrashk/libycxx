@@ -8,6 +8,8 @@
 // power of 10 representable by T, otherwise e" -- u is 1e16 for double and 1e7 for float.
 // (The values here have the same output whether the style is chosen by that range or by
 // the shorter of f and e; to_chars_float_plain_style tests where the two differ.)
+// COUNTERPART: libcxx:utilities/charconv/charconv.msvc/test.pass.cpp
+// COUNTERPART: libstdcxx:20_util/to_chars/(double|float).cc
 #include <charconv>
 #include <cfloat>
 #include <string_view>

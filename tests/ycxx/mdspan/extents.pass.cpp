@@ -6,6 +6,7 @@
 // index types; the deduction guide gives extents<size_t, maybe-static-ext<Integrals>...>;
 // dextents<I, R> and dims<R, I = size_t> are all-dynamic. Each specialization is regular and
 // trivially copyable.
+// COUNTERPART: libcxx:containers/views/mdspan/extents/ctor_from_integral.pass.cpp
 #include <mdspan>
 #include <array>
 #include <concepts>

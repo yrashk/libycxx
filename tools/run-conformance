@@ -155,7 +155,7 @@ if [ -f "$base.json" ]; then
     "commit=$commit" "started=$started" "host=$(uname -srm)" \
     "command=$(ui_quote ${ycxx_lit} "$dir" -a -o "$base.json" "$@")" "log=$log" "_root=$tests" &&
     ui_info "report" "$base.html (copy buttons; the whole report as Markdown in $base.md)" &&
-    ui_info "list" "$base.tsv (result, seconds, test, steps)"
+    ui_info "list" "$base.tsv (result, seconds, test, steps, error, counterpart)"
 fi
 
 # YCXX_BASELINE=1: the run fails only on tests that did not pass and are not in the recorded

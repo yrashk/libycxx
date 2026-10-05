@@ -90,6 +90,7 @@ lit already installed).
 ```sh
 tools/test                            # policy checks, library builds, freestanding, own suite (both compilers)
 tools/test all                        # also the CMake package test and the libc++/libstdc++ suites
+                                      #   (fetched on first use: tools/fetch-suites)
 tools/test -c clang -f format ycxx    # one compiler, one directory of the own suite
 tools/test --help                     # stages and options (-j, -s asan, --fail-fast, -v, -q)
 tools/check-all                       # the fast gate: tools/test --fail-fast policy build freestanding
@@ -104,6 +105,14 @@ tools/run-conformance ycxx clang      # libycxx's own spec-derived suite (tests/
 tools/run-conformance libcxx gcc <dirs>     # libc++'s tests (run only)
 tools/run-conformance libstdcxx gcc <dirs>  # libstdc++'s testsuite (run only)
 ```
+
+The libc++ and libstdc++ suites are run only, never copied into this repository.
+`tools/fetch-suites` downloads the pinned versions into `~/.local/share/ycxx/suites`
+(`$YCXX_SUITES`). It takes `libcxx/test/std` and `libcxx/test/support` from LLVM 23.1.2 (a
+sparse, shallow clone), and `libstdc++-v3/testsuite` from the GCC 16.2.0 release tarball,
+unpacking nothing else. `tools/test` runs it on demand when a suite stage finds its suite
+missing; `--no-fetch` turns that off. `LIBCXX_TESTS` and `LIBSTDCXX_TESTS` point at other
+copies.
 
 `tools/run-conformance` options go to lit after `--`. `YCXX_QUIET=1` (`tools/test -q`) lists
 only the tests that did not pass, `YCXX_VERBOSE=1` (`-v`) prints every test's transcript,

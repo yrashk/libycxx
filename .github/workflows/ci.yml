@@ -34,14 +34,10 @@ jobs:
       - name: CMake package (install, find_package, add_subdirectory)
         run: tests/cmake/run.sh
 
-      - name: Fetch conformance suites (run only)
+      - name: Fetch conformance suites (run only; tools/fetch-suites)
         run: |
-          git clone -q --depth 1 --branch llvmorg-23.1.2 --filter=blob:none --sparse \
-            https://github.com/llvm/llvm-project.git /opt/src/llvm-project
-          git -C /opt/src/llvm-project sparse-checkout set libcxx/test/std libcxx/test/support
-          wget -qO- https://ftp.gnu.org/gnu/gcc/gcc-16.2.0/gcc-16.2.0.tar.xz | \
-            tar xJ -C /opt/src gcc-16.2.0/libstdc++-v3/testsuite
-          mv /opt/src/gcc-16.2.0/libstdc++-v3/testsuite /opt/src/libstdcxx-testsuite
+          apt-get install -y -qq git xz-utils curl >/dev/null
+          tools/fetch-suites
 
       - name: Conformance (both suites, both compilers; implemented areas)
         run: |
@@ -96,7 +92,7 @@ jobs:
           mkdir -p build/diag
           for c in clang gcc; do
             echo "=== $c"
-            tools/ycxx-cxx $c tests/ycxx/exception/exception_ptr.pass.cpp -o build/diag/ep-$c -Wl,-map,build/diag/ep-$c.map || continue
+            tools/ycxx-cxx $c -Itests/ycxx/support tests/ycxx/exception/exception_ptr.pass.cpp -o build/diag/ep-$c -Wl,-map,build/diag/ep-$c.map || continue
             ( cd build/diag && ./ep-$c; echo "exit $?" )
             echo "--- imports (symbol <- dylib)"
             xcrun dyld_info -imports build/diag/ep-$c 2>&1 | grep -Ei 'cxa|personality|terminate|unexpected|Unwind|typeinfo|_ZTI|_ZTV|_ZNSt' | head -60

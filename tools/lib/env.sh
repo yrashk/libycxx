@@ -43,3 +43,18 @@ ycxx_lit_cmd() {
     return 1
   fi
 }
+
+# ycxx_suite_dirs: where the external suites are. Sets ycxx_libcxx_tests and
+# ycxx_libstdcxx_tests: $LIBCXX_TESTS / $LIBSTDCXX_TESTS when set; else /opt/src (this project's
+# containers and CI); else the cache that tools/fetch-suites fills ($YCXX_SUITES, default
+# ~/.local/share/ycxx/suites).
+ycxx_suites_cache() { echo "${YCXX_SUITES:-${XDG_DATA_HOME:-$HOME/.local/share}/ycxx/suites}"; }
+ycxx_suite_dirs() {
+  ycxx__cache=$(ycxx_suites_cache)
+  if [ -n "${LIBCXX_TESTS:-}" ]; then ycxx_libcxx_tests=$LIBCXX_TESTS
+  elif [ -d /opt/src/llvm-project/libcxx/test ]; then ycxx_libcxx_tests=/opt/src/llvm-project/libcxx/test
+  else ycxx_libcxx_tests=$ycxx__cache/llvm-project/libcxx/test; fi
+  if [ -n "${LIBSTDCXX_TESTS:-}" ]; then ycxx_libstdcxx_tests=$LIBSTDCXX_TESTS
+  elif [ -d /opt/src/libstdcxx-testsuite ]; then ycxx_libstdcxx_tests=/opt/src/libstdcxx-testsuite
+  else ycxx_libstdcxx_tests=$ycxx__cache/libstdcxx-testsuite; fi
+}

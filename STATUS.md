@@ -244,6 +244,66 @@ x86_64-unknown-none-elf and riscv64-unknown-elf (Clang) and x86_64 (GCC). Header
 subsets (DECISIONS §3) need from the environment only memcpy/memmove/memset/memcmp (as the
 compilers do) and, when called, abort/atexit/at_quick_exit/exit/_Exit/quick_exit.
 
+## macOS (Darwin)
+Target: Apple Silicon (arm64) first, x86_64 kept in mind, with Homebrew GCC 16.2 and Clang 23.1
+against Apple's SDK and libSystem (`tools/toolchain/provision`, `activate.sh`, `tools/ycxx-cxx`,
+`cmake/ycxx-toolchain.cmake`). CI: job `macos` (macos-15, arm64), `tools/test -j3 policy build
+freestanding ycxx`. **Nothing below has run on macOS yet**: it was checked on Linux and, for the
+Darwin code paths, with Clang `-target arm64-apple-macos14` / `x86_64-apple-macos13
+-fsyntax-only` against stand-in SDK declarations (`src/abi`, the PAL, `cmath_check.cpp`,
+`<system_error>`, `<cmath>`; every core header and the freestanding runtime compile for both
+Darwin targets). The first CI run is the real test.
+
+Ported:
+- C-library values core spells out, selected once in `config.hpp` (`YCXX_TARGET_DARWIN`,
+  `cfg::darwin`): `errc` and the freestanding `<cerrno>` (BSD numbers, `ENODATA` 96), `FP_NAN` ..
+  `FP_SUBNORMAL` (1-5), `FP_ILOGBNAN` (INT_MIN), `math_errhandling` (MATH_ERREXCEPT: that libm
+  never sets errno; `cmath_check.cpp` compares the C library's only when it is a constant),
+  `mbstate_t` (128 bytes, aligned to 8). The hosted checks against the C headers remain.
+- C23 functions libSystem lacks, provided by the hosted runtime: `strfromd/f/l`
+  (`src/hosted/strfrom.cpp`, on snprintf), `mbrtoc8`/`c8rtomb`, and the four char16_t/char32_t
+  conversions where the SDK has no `<uchar.h>` (`src/hosted/uchar.cpp`, on mbrtowc/wcrtomb).
+- Static initialization: Mach-O has no init priorities, so `<iostream>` defines an
+  `ios_base::Init` per translation unit there (DECISIONS §7); checked on Linux by building with
+  `-U__ELF__`.
+- ABI runtime: Apple's `<unwind.h>` (LSDA as uintptr_t; no text/data-relative bases, which its
+  libunwind aborts in), Clang's Apple arm64 non-unique-RTTI bit (bit 63 of the name pointer),
+  Mach-O assembler names in the freestanding `<cstdlib>`. Guards: Apple arm64 code tests bit 0 of
+  the guard's first byte, which `__cxa_guard_release` sets. `thread_local` destructors: Clang
+  calls `_tlv_atexit` itself; GCC (emulated TLS) calls `__cxa_thread_atexit`, which the PAL maps
+  to `_tlv_atexit`.
+- PAL: `nl_langinfo_l` from `<xlocale.h>`; address waits on `__ulock_wait`/`__ulock_wake` (they
+  were a 50 µs poll); malloc's 16-byte alignment; `is_debugger_present` from sysctl's P_TRACED.
+- GCC -O3 arm64's maybe-uninitialized report in `fp_from_chars.cpp` removed at its source.
+- Tests and tools: the whole-program tests re-execute themselves through `_NSGetExecutablePath`;
+  `tools/ycxx-cxx` drops `-latomic` where the toolchain has no libatomic (libycxx needs none).
+
+Apple's C++ runtime in the same process: libycxx's `__cxa_*`, `__gxx_personality_v0`, RTTI and
+`operator new` come from its static archives and are bound inside the executable (two-level
+namespace; the archives precede the implicit `-lSystem`), so system libraries that use Apple's
+libc++abi keep theirs: two runtimes coexist, each with its own exception globals and handlers.
+An exception thrown by Apple's runtime ("CLNGC++\0") is foreign to libycxx's (catch(...) only).
+dyld coalesces weak definitions across images and lets the executable's `operator new`/`delete`
+replace libc++'s weak ones, so system libraries may allocate through libycxx's (same malloc).
+
+Unverified or known gaps on macOS:
+- `<stacktrace>`: frames are captured (libSystem's `_Unwind_Backtrace`), but only `dladdr`
+  names them (exported symbols only) and there are no file names or lines: the runtime reads ELF
+  and DWARF, not Mach-O or dSYM bundles (`ycxx_pal_object_of` reports ENOSYS).
+- `<cuchar>` fallback: assumes Darwin's conversion states use at most the first 16 of
+  mbstate_t's 128 bytes; `mbsinit` does not see code units still to be delivered. macOS has no
+  "C.UTF-8" locale, so the own test checks the UTF-8 forms only where the C library has one.
+- Possible test-environment differences: APFS is case-insensitive by default, `/tmp` and
+  `$TMPDIR` lie behind symbolic links (`/private`), `statvfs` block counts are 32-bit; the zoneinfo
+  tree has no `tzdata.zi`, so every TZif file counts as a zone and only symbolic links as links
+  (should the tree use hard links or copies, `tzdb::links` is empty and `chrono/tzdb` fails).
+- GCC on aarch64 Darwin: whether its libgcc provides the binary128 soft-float routines that
+  `_Float128` `<charconv>` needs (`__STDCPP_FLOAT128_T__`) is unverified.
+- GCC on Darwin uses emulated TLS: `thread_local` destructors registered through `_tlv_atexit`
+  rely on libSystem running them before emutls frees the thread's storage (key destructor order).
+- Linking: CMake repeats the cyclic archive pair `libycxx.a`/`libycxx-abi.a`; Xcode 15's linker
+  warns about duplicate libraries (harmless).
+
 ## Reference runs against libstdc++
 `YCXX_STDLIB=libstdcxx tools/run-conformance ycxx gcc|clang` runs the own suite against GCC 16's
 libstdc++. `tests/ycxx/REFERENCE.md` lists every failure: libstdc++ bugs (e.g. `variant::swap`
@@ -381,7 +441,8 @@ compilers; `visit_format_arg.pass.cpp` needs `EOF` from `constexpr_char_traits.h
 ## Known limitations and draft defects
 - C library wrappers: `std::free_sized`/`free_aligned_sized` call `free` (glibc 2.39 has neither);
   `memset_explicit` is memset plus a compiler barrier; `strfrom*`, `memccpy`, `strdup`, `strndup`
-  are the C library's. Freestanding (`-ffreestanding`), `<cstdlib>`/`<cstring>`/`<cwchar>` are
+  are the C library's (on Darwin, which lacks them, `strfrom*` and `mbrtoc8`/`c8rtomb` are
+  libycxx's own; see "macOS (Darwin)"). Freestanding (`-ffreestanding`), `<cstdlib>`/`<cstring>`/`<cwchar>` are
   libycxx's own code; their `bsearch` has C's single signature (not the draft's const/non-const
   pair), and the termination functions forward to the environment's.
 - `make_exception_ptr` under `-fno-exceptions -fno-rtti` returns a null exception_ptr (the

@@ -359,6 +359,19 @@ libstdc++ 16 lacks, GCC/Clang differences, C-header gaps and ABI limits. No fail
 a defect in a test.
 
 ## Known compiler gaps and bugs
+- GCC 16.2, modules (`-fmodules`): one translation unit cannot both #include a standard header
+  and `import std;`. Importing after an #include of some of the headers fails to read the module
+  ("failed to read compiled module cluster N: Bad file data"; reduced: a module whose global
+  module fragment has `<vector>` and `<string>`, imported after `#include <vector>`); an #include
+  after the import redefines what the module made reachable ("redefinition of ...": textual
+  merging after an import is not implemented, gcc.info "C++ Modules", reproduced without
+  libycxx). Own tests `modules/include_then_import`, `modules/import_then_include` are XFAIL on
+  GCC; separate translation units mix freely (`modules/mixed_translation_units`). Clang handles
+  both orders.
+- GCC 16.2, modules: a declaration of the C library's that a program redeclares differently
+  before `import std;` (`extern "C" void abort();` without `noexcept`, as
+  `tests/ycxx/support/check.hpp` does) is rejected ("conflicting 'noexcept' specifier for imported
+  declaration"); module tests use `module_check.hpp`.
 - GCC 16.2: no `__builtin_is_within_lifetime`, so `std::is_within_lifetime` is unavailable on GCC
   (constraint, probed in-language). Consequence: `std::start_lifetime` cannot detect an
   already-live object in constant evaluation on GCC, so it re-begins its lifetime and loses
@@ -491,6 +504,15 @@ compilers; `visit_format_arg.pass.cpp` needs `EOF` from `constexpr_char_traits.h
   C library does (`0x0.000000000000001p-16385` is the smallest), so that both forms agree there.
 
 ## Known limitations and draft defects
+- Modules (`import std;`, `import std.compat;`; DECISIONS §16): built per project from
+  `modules/*.cppm` (CMake `ycxx::modules`, `tools/ycxx-modules`), never shipped as BMIs. CMake's
+  `CMAKE_CXX_MODULE_STD` is not supported (needs CMake >= 3.30, and would build the toolchain's
+  library's module; CMake here is 3.28). The export lists are generated on Linux/glibc; on Darwin
+  the modules are untested (std.compat's global C names may differ there). The implementation's
+  inline namespace `std::ranges::cpo` (and `std::cpo`) is visible to importers (the CPOs must be
+  exported from it, DECISIONS §16). GCC: see known compiler gaps (no #include and import of the
+  library in one translation unit). `<bits/stdc++.h>` exists (every header) because GCC's
+  `-fmodules` looks it up for every standard #include.
 - `submdspan` of a `layout_stride` (or non-unit-stride) mapping: [mdspan.sub.map.common]/6 builds
   a `layout_stride::mapping` whose strides need not meet [mdspan.layout.stride.cons]/4.3, although
   the layout is unique: that condition is sufficient, not necessary, despite its Note (extents
@@ -1010,7 +1032,7 @@ levels: 29.7 s -> 0.01 s; libstdc++ 8.6 s). Remaining above 1.5x: deque push at 
   (the character traits) provides `EOF` (it includes `<cstdio>`; `WEOF` comes with `<wchar.h>`),
   and `<cstdint>` also declares the global `::int64_t`... names, as libstdc++, libc++ and MSVC do.
 - libc++ suite, still failing, being libycxx gaps (tests/libcxx/TRIAGE.md, "Policy round"): no
-  `import std;`/`import std.compat;` (modules/std, std.compat; Clang), no senders/receivers
+  senders/receivers
   (`__cpp_lib_senders`: support.limits execution.version, version.version). (The `<wchar.h>` and
   `<stddef.h>` wrappers exist since the own-suite fixes.)
 - Next (Phase 5): full libc++/libstdc++ sweeps with triage (tests/libcxx/TRIAGE.md,

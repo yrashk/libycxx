@@ -5,8 +5,8 @@
 // repeat not preceded by a valid expression), error_escape (invalid or trailing escape),
 // error_backref (invalid back reference), error_range (invalid character range), error_ctype
 // (invalid class name, [re.grammar]/11).
-// COUNTERPART: libcxx:re/re.regex/re.regex.construct/bad_(backref|escape).pass.cpp
 // REQUIRES: exceptions
+// COUNTERPART: libcxx:re/re.regex/re.regex.construct/bad_(backref|escape).pass.cpp
 #include <regex>
 #include <stdexcept>
 #include <string>

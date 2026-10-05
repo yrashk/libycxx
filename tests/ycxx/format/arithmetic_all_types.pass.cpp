@@ -6,8 +6,8 @@
 // not representable in charT throws format_error). Table 109: floating-point defaults to the
 // shortest round-trip representation. Every signed and unsigned standard integer type and every
 // standard floating-point type is formatted at its extremes, with both char and wchar_t.
-// COUNTERPART: libcxx:utilities/format/format.functions/(format|format.locale|vformat|vformat.locale).pass.cpp
 // REQUIRES: exceptions
+// COUNTERPART: libcxx:utilities/format/format.functions/(format|format.locale|vformat|vformat.locale).pass.cpp
 #include <format>
 #include <limits>
 #include <string>

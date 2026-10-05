@@ -582,11 +582,3 @@ they have not been triaged test by test, so the trace shows a bare "no libycxx c
 | 29_atomics | 32 |
 | 30_threads | 40 |
 | std | 91 |
-
-### Hardened preconditions awaiting the hardened-test mechanism
-
-`21_strings/basic_string/element_access/(char|wchar_t)/21674.cc` (`operator[]` past `size()`,
-[string.access]/1) and `21_strings/basic_string_view/element_access/(char|wchar_t)/2.cc`
-(`operator[]` of an empty view, [string.view.access]/1) violate hardened preconditions. Their
-counterparts are hardened-precondition tests (`tools/test --hardened`, `// REQUIRES-HARDENED`,
-`// EXPECT-TERMINATE`), not written yet; until then the trace shows "no libycxx counterpart".

@@ -5,8 +5,8 @@
 // /19-22: a U that is not pair-like and not a pair but converts to the pair (or a
 // ranges::subrange) is passed as a pair-constructor whose conversion uses-allocator constructs
 // the pair from the converted value, so the members still receive the allocator.
-// COUNTERPART: libcxx:utilities/utility/mem.res/mem.poly.allocator.class/mem.poly.allocator.mem/construct_piecewise_pair_evil.pass.cpp
 // REQUIRES: exceptions
+// COUNTERPART: libcxx:utilities/utility/mem.res/mem.poly.allocator.class/mem.poly.allocator.mem/construct_piecewise_pair_evil.pass.cpp
 #include <memory_resource>
 #include <array>
 #include <cstddef>

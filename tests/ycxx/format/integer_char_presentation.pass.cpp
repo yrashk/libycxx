@@ -3,8 +3,8 @@
 // charT." With c, an integer is left-aligned by default (Table 104: < is the default for
 // charT ... unless an integer presentation type is specified; c is not an integer
 // presentation type for an integer).
-// COUNTERPART: libcxx:utilities/format/format.formatter/format.formatter.spec/formatter.char(.fsigned-char|.funsigned-char)?.pass.cpp
 // REQUIRES: exceptions
+// COUNTERPART: libcxx:utilities/format/format.formatter/format.formatter.spec/formatter.char(.fsigned-char|.funsigned-char)?.pass.cpp
 #include <format>
 #include <string>
 #include "check.hpp"

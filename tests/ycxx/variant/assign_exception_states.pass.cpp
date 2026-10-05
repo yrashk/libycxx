@@ -10,8 +10,8 @@
 //   a throwing conversion leaves *this unchanged; /16.1: a throwing assignment to the same
 //   alternative leaves valueless_by_exception() false.
 // [variant.mod]/7: emplace on a valueless variant constructs without destroying anything.
-// COUNTERPART: libstdcxx:20_util/variant/(87431|exception_safety).cc
 // REQUIRES: exceptions
+// COUNTERPART: libstdcxx:20_util/variant/(87431|exception_safety).cc
 #include <variant>
 #include <string>
 #include <type_traits>

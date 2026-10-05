@@ -4,8 +4,8 @@
 // async | deferred. Return type future<invoke_result_t<decay_t<F>, decay_t<Args>...>>; INVOKE
 // with a member pointer; reference results.
 // FLAGS: -pthread
-// COUNTERPART: libstdcxx:30_threads/async/except.cc
 // REQUIRES: exceptions
+// COUNTERPART: libstdcxx:30_threads/async/except.cc
 #include <future>
 #include <thread>
 #include <stdexcept>

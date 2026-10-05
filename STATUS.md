@@ -404,6 +404,17 @@ a defect in a test.
   test 29_atomics/atomic_ref/ctor) treat the explicit constructor as a candidate and find the call
   ambiguous ([over.match.list]).
 
+- Clang 23.1 (also Apple clang 21) on Darwin: an `inline thread_local` variable with dynamic
+  initialization and hidden visibility (from `-fvisibility=hidden` or from its type's visibility,
+  so every such variable of a libycxx class type, DECISIONS §2) gets its TLS init function
+  `_ZTH<name>` as a strong private external symbol: the IR has a `linkonce_odr hidden alias` to the
+  TU's `__tls_init`, which the Mach-O backend emits without the weak bit (with default visibility
+  it is a local symbol; ELF targets emit it weak). Two TUs defining the variable fail to link with
+  "duplicate symbol 'thread-local initialization routine for ...'". GCC 16.2 (weak `_ZTH`) links.
+  Repro without libycxx: `s.h`: `struct S { S(); int v; }; inline thread_local S t;`; `a.cpp`:
+  `#include "s.h"` `S::S() : v(1) {} int* f() { return &t.v; }`; `b.cpp`: `#include "s.h"`
+  `int* f(); int main() { return f() != &t.v; }`; `clang++ -fvisibility=hidden a.cpp b.cpp`.
+  Own test `linkage/odr_inline_entities` is XFAIL on Clang on Darwin (`XFAIL: clang-darwin`).
 - Clang 23.1: the type_info name string of a class with internal linkage is emitted without the
   leading `*` (GCC emits `*N12_GLOBAL__N_1...`) that tells the Itanium runtime to compare
   type_info objects by address, so same-named unnamed-namespace classes of different translation

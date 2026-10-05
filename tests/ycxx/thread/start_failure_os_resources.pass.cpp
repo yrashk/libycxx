@@ -19,6 +19,7 @@
 // from starting, the child reports that and the test checks nothing).
 // UNSUPPORTED-SANITIZER: asan,tsan  the sanitizer runtimes reserve address space of their own and cannot run under a small RLIMIT_AS
 // FLAGS: -pthread
+// REQUIRES: exceptions
 #include <atomic>
 #include <cstdio>
 #include <cstdlib>

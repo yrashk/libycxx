@@ -10,6 +10,7 @@
 //   [format.functions] format, vformat, format_to_n, formatted_size; wide strings likewise.
 // 300 arguments cycling through int, double, string_view, const char*, bool, char, long long,
 // unsigned, a pointer and a user type with its own formatter.
+// REQUIRES: exceptions
 #include <cstddef>
 #include <format>
 #include <string>

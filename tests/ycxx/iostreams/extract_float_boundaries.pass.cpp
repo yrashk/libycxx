@@ -134,6 +134,18 @@ static void run(const char* max_text, const char* beyond, const char* min_text) 
 int main() {
   run<float>("3.40282346638528859811704183484516925440e+38", "3.5e38", "1.17549435082228750796873653722224568e-38");
   run<double>("1.7976931348623157e308", "1.8e308", "2.2250738585072014e-308");
-  run<long double>("1.18973149535723176502e+4932", "1.2e4932", "3.36210314311209350626e-4932");
+  // long double's format is the platform's (numeric_limits): x87 extended, binary128 (Linux
+  // aarch64), or binary64 (Apple arm64, where long double is double).
+  using LD = std::numeric_limits<long double>;
+  static_assert(LD::digits == 64 || LD::digits == 113 || (LD::digits == 53 && LD::max_exponent == 1024),
+                "a long double format this test does not know");
+  if constexpr (LD::digits == 64) {
+    run<long double>("1.18973149535723176502e+4932", "1.2e4932", "3.36210314311209350626e-4932");
+  } else if constexpr (LD::digits == 113) {
+    run<long double>("1.18973149535723176508575932662800702e+4932", "1.2e4932",
+                     "3.36210314311209350626267781732175260e-4932");
+  } else {
+    run<long double>("1.7976931348623157e308", "1.8e308", "2.2250738585072014e-308");
+  }
   return 0;
 }

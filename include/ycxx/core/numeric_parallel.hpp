@@ -110,18 +110,27 @@ ForwardIterator2 transform_inclusive_scan(ExecutionPolicy&&, ForwardIterator1 fi
   return std::transform_inclusive_scan(first, last, result, binary_op, unary_op, std::move(init));
 }
 
-template <class ExecutionPolicy, class ForwardIterator1, class ForwardIterator2>
-  requires ycxx::detail::execution_policy<ExecutionPolicy>
-ForwardIterator2 adjacent_difference(ExecutionPolicy&&, ForwardIterator1 first, ForwardIterator1 last,
-                                     ForwardIterator2 result) noexcept {
-  return std::adjacent_difference(first, last, result);
-}
-
+// [adjacent.difference]/5: unlike the overloads without a policy (an accumulator and a copy of
+// each element, binary_op(val, std::move(acc))), these pass the input elements themselves and
+// make no T.
 template <class ExecutionPolicy, class ForwardIterator1, class ForwardIterator2, class BinaryOperation>
   requires ycxx::detail::execution_policy<ExecutionPolicy>
 ForwardIterator2 adjacent_difference(ExecutionPolicy&&, ForwardIterator1 first, ForwardIterator1 last,
                                      ForwardIterator2 result, BinaryOperation binary_op) noexcept {
-  return std::adjacent_difference(first, last, result, binary_op);
+  if (first == last)
+    return result;
+  *result = *first;
+  ++result;
+  for (ForwardIterator1 prev = first; ++first != last; prev = first, (void)++result)
+    *result = binary_op(*first, *prev);
+  return result;
+}
+
+template <class ExecutionPolicy, class ForwardIterator1, class ForwardIterator2>
+  requires ycxx::detail::execution_policy<ExecutionPolicy>
+ForwardIterator2 adjacent_difference(ExecutionPolicy&& exec, ForwardIterator1 first, ForwardIterator1 last,
+                                     ForwardIterator2 result) noexcept {
+  return std::adjacent_difference(static_cast<ExecutionPolicy&&>(exec), first, last, result, minus<>());
 }
 
 } // namespace std

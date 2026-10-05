@@ -27,9 +27,10 @@ rather than against itself. It assumes familiarity with `README.md`, `DECISIONS.
    toolchain's runtime (`libsupc++`, `libc++abi`).
 3. **Build static archives with hidden visibility**, so that a program or shared object exports
    nothing of the library. Hide what the compiler keeps default (predeclared ABI entry points),
-   except the replaceable allocation functions: keep those default (and weak, for Mach-O), so that
-   one replacement (the program's, or a sanitizer's) serves every image and objects can change
-   owner between images.
+   including the default allocation functions; let the images that link the library share those
+   through a table under a name of the library's own, so that one replacement (the program's, or
+   a sanitizer's) serves every such image and objects can change owner between them, while
+   another C++ runtime in the process keeps its own.
    **Discover target facts, do not write them down**: what the C library declares, which
    type_info objects the compiler emits, and the like are tested by the preprocessor where it can
    see them (`#ifndef`, `__has_include_next`) and otherwise probed against the real toolchain
@@ -136,13 +137,8 @@ objects. Which fundamental type_info objects a compiler emits depends on the tar
 aarch64-apple-darwin emits 300 symbols, with the SVE, `__bf16` and `__mfp8` types; 150 of them are
 not in Apple's libc++abi), so the list is not written down: CMake compiles a probe defining
 `__fundamental_type_info`'s key function at configure time and lists its symbols with `nm`
-(DECISIONS §2). The replaceable allocation functions keep the default visibility the compilers
-give them (decided 2026-10-05, after the sanitizer runs below showed objects allocated in one image
-and freed in another; earlier libycxx hid them too, with the same directives). Two details make
-that work on Mach-O: the defaults are weak definitions (a strong one in a shared library linking
-the archive statically is bound to its own copy at static link time, so the program's replacement
-would never reach it), and the nothrow forms are declared with default visibility in `<new>` (a
-function otherwise takes the hidden visibility of its parameter type `std::nothrow_t`).
+(DECISIONS §2). The default allocation functions are hidden as well, and shared among the images
+that link libycxx through an allocation table (Replacement allocation functions, below).
 
 Others: libc++ offers `LIBCXX_HERMETIC_STATIC_LIBRARY`, "Do not export any symbols from the static
 libc++ library" [libcxx-vendor]. Clang has `-fvisibility-global-new-delete=` (`force-default`,
@@ -154,7 +150,7 @@ platforms deliberately keeps the allocation functions default because "elf visib
 require that linkers use the least visible form when merging" and Chromium's own allocator must
 intercept allocations from other shared libraries [chromium-libcxx-gn]. Checked here: GCC 16.2 does
 not accept `-fvisibility-global-new-delete=` (`unrecognized command-line option`), which is why
-libycxx used assembler directives when it hid them.
+libycxx hides its defaults with assembler directives.
 
 ### Facts about the target
 
@@ -331,7 +327,7 @@ error categories and default memory resources (but one set of allocation functio
 checks it: a program and a shared library built with libycxx, each in one process with a shared
 library built with the toolchain's library ("mine 3 other 3"), a program catching a libycxx shared
 library's exceptions ("caught 15 uncaught 0 0"), and no exported libycxx symbol in any image other
-than the allocation functions (all passed with both compilers, on Linux and on macOS 26).
+than the allocation table (all passed with both compilers, on Linux and on macOS 26).
 
 Compared with the alternatives: an ABI namespace alone keeps names apart but still exports them
 (and their weak definitions coalesce within one library's own copies); `-Bsymbolic` and version
@@ -346,22 +342,30 @@ The global allocation functions are the one part of the library an image must sh
 others: a `std::string` built in a shared library and destroyed in the program is allocated by
 one image's `operator new` and freed by the other's `operator delete`. With per-image (hidden)
 defaults that pairs only while both reach `malloc`/`free`; it breaks when the program replaces
-`operator delete`, and AddressSanitizer reports it as `alloc-dealloc-mismatch`. libycxx therefore
-gives its default allocation functions default visibility, as libstdc++ and libc++ do, and as
-Chromium keeps them on ELF so that its allocator sees every image's allocations
-[chromium-libcxx-gn].
+`operator delete`, and AddressSanitizer reports it as `alloc-dealloc-mismatch`. The usual answer
+is to export the defaults, as libstdc++ and libc++ do, and as Chromium keeps them on ELF so that its
+allocator sees every image's allocations [chromium-libcxx-gn]; libycxx did so briefly.
 
-On Darwin, dyld takes each allocation function from the first image in load order that defines
-it (observed with `DYLD_PRINT_BINDINGS` on macOS 26). Consequences, checked there: a program's
-replacement serves a libycxx shared library's allocations (own test
-`linkage/shared_library_replaced_new`) and also Apple's libc++ in system libraries, the platform's
-ordinary rule for a replaced `operator new`; but a program's own definition is also libycxx's
-default when the program does not replace it, so Apple's libc++ then allocates through the
-library's default, and a libycxx shared library loaded into a host without the library's
-allocation functions (a C program, an application built with Apple's libc++) allocates through
-libc++abi's: its `set_new_handler` is not consulted there, and an allocation failure throws
-libc++abi's `bad_alloc`, foreign to the library's runtime. Per-image hidden defaults avoided both,
-at the cost above; libycxx chose default visibility (DECISIONS §2).
+Exporting the defaults has a cost where another C++ runtime shares the process. On Darwin, dyld
+takes each allocation function from the first image in load order that defines it (observed with
+`DYLD_PRINT_BINDINGS` on macOS 26), coalescing with libc++abi's by name: a libycxx program's default
+then served Apple's libc++, whose allocation failure threw libycxx's `bad_alloc` into code built
+with libc++abi; and a libycxx shared library in a host without libycxx (a C program, a plugin host
+built with Apple's libc++) got libc++abi's `operator new`, with libc++abi's `bad_alloc` (foreign to
+libycxx's runtime) and libycxx's `new_handler` never called. ELF interposition does the same when
+libycxx and libstdc++ meet. libycxx therefore keeps its defaults hidden and lets its own images
+share them through `ycxx_allocation_functions`, a weak, exported table of function pointers under a
+name no other runtime defines: the dynamic linker binds every image to the first image's table
+(the program's, kept there by link options the package adds), whose entries call that image's
+`operator new` and friends, the program's replacements included; each default forwards to the
+process's entry when it is another image's (DECISIONS §2). Checked on macOS 26 with both
+compilers: a program's replacement serves its libycxx shared libraries
+(`linkage/shared_library_replaced_new`), objects cross images under AddressSanitizer
+(`linkage/shared_library_allocation_exchange`), and a libycxx shared library and one built with
+Apple's libc++ each keep their own allocation functions, `new_handler` and `bad_alloc`, in a
+libycxx program and in a program built with Apple's libc++ (`tests/cmake/visibility`, "mine 7
+other 7"; the exported defaults gave "other 3"). A program's own replacement is exported and serves
+the other runtime too, the platform's ordinary rule.
 
 
 The library's default `operator new`/`delete` live in their own archive members, so a program's

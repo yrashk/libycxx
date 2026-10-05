@@ -4,6 +4,7 @@
 // contiguous_iterator ([container.reqmts]/68) and iterator converts to const_iterator
 // ([container.reqmts]/6). [string.syn]: the typedef-names string, u8string, u16string,
 // u32string, wstring; default template arguments char_traits<charT> and allocator<charT>.
+// REQUIRES: exceptions
 #include <string>
 #include <cstddef>
 #include <iterator>

@@ -10,6 +10,7 @@
 // clock propagate. Nobody notifies here, so every wait ends by timeout (or spuriously:
 // no_timeout, after which the loops wait again).
 // FLAGS: -pthread
+// REQUIRES: exceptions
 #include <condition_variable>
 #include <mutex>
 #include <stop_token>

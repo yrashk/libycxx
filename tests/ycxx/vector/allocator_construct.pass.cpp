@@ -3,6 +3,7 @@
 // are destroyed with allocator_traits<A>::destroy. [container.reqmts]/64: all memory is
 // obtained through the allocator; [container.reqmts]/25: the destructor destroys every
 // element and deallocates all memory.
+// REQUIRES: exceptions
 #include <vector>
 #include "test_allocators.hpp"
 #include "check.hpp"

@@ -14,6 +14,7 @@
 // [res.on.exception.handling]/1: an exception of a type derived from the named one is allowed,
 // so each check catches the named type.
 // XFAIL-COMPILER: clang  no constexpr exception support (P3068) in clang yet
+// REQUIRES: exceptions
 #include <stdexcept>
 #include <array>
 #include <bitset>

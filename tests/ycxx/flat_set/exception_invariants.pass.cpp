@@ -7,6 +7,7 @@
 // last) / insert_range / erase / erase_if / copy and move construction and assignment, and
 // checks the invariant (and that no element leaked, [res.on.exception.handling]/3) after
 // every failure. Also with deque as the underlying container.
+// REQUIRES: exceptions
 #include <flat_set>
 #include <deque>
 #include <vector>

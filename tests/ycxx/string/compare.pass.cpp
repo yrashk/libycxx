@@ -3,6 +3,7 @@
 // compare(pos, n1, s), compare(pos, n1, s, n2); each is the basic_string_view comparison of
 // the selected substrings; the substr calls throw out_of_range when a position exceeds the
 // size ([string.view.ops]).
+// REQUIRES: exceptions
 #include <string>
 #include <string_view>
 #include <stdexcept>

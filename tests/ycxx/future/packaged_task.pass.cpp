@@ -6,6 +6,7 @@
 // broken_promise); move leaves the source without a shared state; ~packaged_task abandons.
 // The deduction guide deduces R(A...).
 // COUNTERPART: libstdcxx:30_threads/packaged_task/cons/3.cc
+// REQUIRES: exceptions
 #include <future>
 #include <stdexcept>
 #include <type_traits>

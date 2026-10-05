@@ -6,6 +6,7 @@
 // allocator type is deduced for Compare, or a non-allocator for Allocator, or a non-iterator
 // for InputIterator.
 // COUNTERPART: libcxx:containers/associative/(map/map|multimap/multimap).cons/deduct_const.pass.cpp
+// REQUIRES: exceptions
 #include <map>
 #include <functional>
 #include <ranges>

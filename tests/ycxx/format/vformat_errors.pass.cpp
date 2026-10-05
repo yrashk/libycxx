@@ -3,6 +3,7 @@
 // braces, a missing argument, mixed automatic and manual indexing
 // ([format.string.general]/4), invalid format-specs for the argument type, and the dynamic
 // width/precision rules of [format.string.std]/10 (non-integer argument; negative value).
+// REQUIRES: exceptions
 #include <format>
 #include <string>
 #include <string_view>

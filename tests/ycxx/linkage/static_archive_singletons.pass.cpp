@@ -19,6 +19,7 @@
 //     whole program; [set.terminate]/[get.terminate]: one terminate handler;
 //   [time.zone.db.access]/2: get_tzdb() returns a reference to the front of the one tzdb_list.
 // ARCHIVE: ../support/linkage/archive_a.cpp ../support/linkage/archive_b.cpp
+// REQUIRES: exceptions
 #include "../support/linkage/archive_shared.hpp"
 #include <chrono>
 #include <cstdlib>

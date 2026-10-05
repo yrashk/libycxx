@@ -9,6 +9,7 @@
 //     construction/assignment or by an InputIterator operation (here: allocate) has no
 //     effects; [vector.capacity]/4, /16, /19: reserve and resize have no effects.
 //   Iterator exceptions and assignments: basic guarantee.
+// REQUIRES: exceptions
 #include <vector>
 #include "exc_sequence.hpp"
 

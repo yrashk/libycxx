@@ -13,6 +13,7 @@
 // Checked: the child exits normally; when no badbit was set the output is exactly what was
 // written; in every case the output after clear() appears last; the stream's state is good
 // after the second output.
+// REQUIRES: exceptions
 #include <cstdio>
 #include <cstdlib>
 #include <iostream>

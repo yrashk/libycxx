@@ -3,6 +3,7 @@
 // elements from a forward_list is linear in n and the number of calls to the destructor of
 // type T is exactly equal to n." and "If an exception is thrown by any of these member
 // functions there is no effect on the container."
+// REQUIRES: exceptions
 #include <forward_list>
 #include <cstddef>
 #include <iterator>

@@ -1,6 +1,7 @@
 // [expr.throw]/3: "If no exception is presently being handled, the function std::terminate
 // is invoked." [except.terminate]/1.8. After a handler has exited, its exception is no longer
 // being handled.
+// REQUIRES: exceptions
 #include <cstdlib>
 #include <exception>
 #include "check.hpp"

@@ -6,6 +6,7 @@
 // [func.wrap.copy.ctor]/24: "copyable_function(f).swap(*this);"; /30 likewise for F&&.
 // The constructors' Throws: clauses ("Any exception thrown by the initialization of the target
 // object") let the exception propagate.
+// REQUIRES: exceptions
 #include <functional>
 #include <utility>
 #include "check.hpp"

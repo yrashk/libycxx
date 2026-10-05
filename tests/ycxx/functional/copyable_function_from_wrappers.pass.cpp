@@ -5,6 +5,7 @@
 // bad_function_call); a non-empty copyable_function of another signature keeps its state, and
 // copies of the result copy that state. /3: the copy constructor copies the target.
 // COUNTERPART: libstdcxx:20_util/copyable_function/conv.cc
+// REQUIRES: exceptions
 #include <functional>
 #include <utility>
 #include "check.hpp"

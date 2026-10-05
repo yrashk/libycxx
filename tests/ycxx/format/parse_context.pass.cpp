@@ -9,6 +9,7 @@
 // [format.context] Example 1: a formatter parsing a width argument id.
 // COUNTERPART: libcxx:utilities/format/format.formatter/format.context/format.context/.*
 // COUNTERPART: libcxx:utilities/format/format.formatter/format.parse.ctx/(check_arg_id|ctor|next_arg_id).pass.cpp
+// REQUIRES: exceptions
 #include <format>
 #include <string>
 #include <string_view>

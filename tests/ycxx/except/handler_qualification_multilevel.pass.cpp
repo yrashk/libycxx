@@ -2,6 +2,7 @@
 // T by one or more of ... a qualification conversion" ([conv.qual]). For multi-level pointers,
 // adding const at a level requires const at every outer level: int** converts to
 // const int* const* and int* const*, but not to const int** (and not to void**).
+// REQUIRES: exceptions
 #include "check.hpp"
 
 template <class H, class E>

@@ -12,6 +12,7 @@
 // Europe/London, Asia/Kolkata and the link US/Eastern -> America/New_York.)
 // COUNTERPART: libcxx:time/time.zone/time.zone.link/time.zone.link.members/(name|target).pass.cpp
 // COUNTERPART: libcxx:time/time.zone/time.zone.timezone/time.zone.members/name.pass.cpp
+// REQUIRES: exceptions
 #include <chrono>
 #include <algorithm>
 #include <compare>

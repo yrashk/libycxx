@@ -1,4 +1,5 @@
 // [expected.un.swap]/1: member swap: "Mandates: is_swappable_v<E> is true."
+// EXPECT-ERROR: static assertion failed.*std::unexpected::swap: E must be swappable
 #include <expected>
 
 struct NS {

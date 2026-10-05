@@ -3,6 +3,7 @@
 // const char* type". [except.handle]/2: "A handler of type 'array of T' ... is adjusted to be
 // of type 'pointer to T'." [Note 1]: "A handler of reference to array ... type is never a
 // match for any exception object."
+// REQUIRES: exceptions
 #include "check.hpp"
 
 int main() {

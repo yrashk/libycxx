@@ -3,6 +3,7 @@
 // function is called to free the memory in which the object was being constructed, after
 // which the exception continues to propagate in the context of the new-expression."
 // For placement new, the matching placement deallocation function is called.
+// REQUIRES: exceptions
 #include <cstddef>
 #include <new>
 #include "check.hpp"

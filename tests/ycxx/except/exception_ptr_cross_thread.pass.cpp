@@ -4,6 +4,7 @@
 // [except.throw]/4 (Note 3): "A thrown exception does not propagate to other threads unless
 // caught, stored, and rethrown using appropriate library functions".
 // FLAGS: -pthread
+// REQUIRES: exceptions
 #include <exception>
 #include <stdexcept>
 #include <pthread.h>

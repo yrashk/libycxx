@@ -17,6 +17,7 @@
 // Whether a single-element insertion that throws must also have no effect
 // ([associative.reqmts.except]/2 via [flat.map.overview]/2) is not asserted; /6's note says the
 // container can be emptied.
+// REQUIRES: exceptions
 #include <flat_map>
 #include <flat_set>
 #include <vector>

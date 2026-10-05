@@ -13,6 +13,7 @@
 // Sizes that are not a multiple of the alignment, and sizes so large that rounding them up to
 // the alignment would wrap around, must not yield undersized storage.
 // UNSUPPORTED-SANITIZER: asan  ASan replaces the global allocation functions: its operator new neither calls the new_handler nor throws for impossible sizes, and its other forms do not forward to a program's replacement ([new.delete])
+// REQUIRES: exceptions
 #include <new>
 #include <cstddef>
 #include <cstdint>

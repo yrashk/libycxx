@@ -1,6 +1,7 @@
 // [any.bad.any.cast]: "class bad_any_cast : public bad_cast" with
 // "const char* what() const noexcept override;" returning an implementation-defined ntbs.
 // "Objects of type bad_any_cast are thrown by a failed any_cast." Special members per [exception].
+// REQUIRES: exceptions
 #include <any>
 #include <typeinfo>
 #include <exception>

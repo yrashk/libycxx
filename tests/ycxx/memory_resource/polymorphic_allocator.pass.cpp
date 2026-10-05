@@ -6,6 +6,7 @@
 // delete_object, deallocate_*; select_on_container_copy_construction() returns a default
 // polymorphic_allocator (the resource is not propagated); operator== compares the resources.
 // COUNTERPART: libcxx:utilities/utility/mem.res/mem.poly.allocator.class/mem.poly.allocator.class.general/equality.pass.cpp
+// REQUIRES: exceptions
 #include <memory_resource>
 #include <cstddef>
 #include <memory>

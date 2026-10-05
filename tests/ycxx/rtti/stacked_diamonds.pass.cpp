@@ -9,6 +9,7 @@
 //    on its path finds the one object derived from it (9.1), a cast to the NL/NR not on its path
 //    fails (no such object derived from it, and the type is ambiguous in the most derived
 //    object, 9.2), and handlers for the repeated types do not match (ambiguous).
+// REQUIRES: exceptions
 #include <cstdint>
 #include <initializer_list>
 #include <typeinfo>

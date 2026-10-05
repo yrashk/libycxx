@@ -7,6 +7,7 @@
 // iteration, find() finds every element, and no element appears that was not in one of them
 // before. The comparator/hasher here throws on its n-th call, for every n until merge
 // completes, so each comparison inside merge is a throw point once.
+// REQUIRES: exceptions
 #include <algorithm>
 #include <iterator>
 #include <map>

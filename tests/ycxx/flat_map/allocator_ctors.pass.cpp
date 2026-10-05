@@ -2,6 +2,7 @@
 // with uses-allocator construction, and take part only when both containers use that
 // allocator type. [flat.map.syn]: uses_allocator<flat_map<...>, Alloc> is true iff it is
 // true for both containers.
+// REQUIRES: exceptions
 #include <flat_map>
 #include <functional>
 #include <memory>

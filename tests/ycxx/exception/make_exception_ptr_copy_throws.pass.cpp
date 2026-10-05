@@ -3,6 +3,7 @@
 // In that code, `throw e` copies the parameter e (a function parameter is not eligible for copy
 // elision or implicit move into the exception object, [class.copy.elision]); if that copy
 // throws, the catch(...) catches the copy constructor's exception, so the result refers to it.
+// REQUIRES: exceptions
 #include <exception>
 #include <optional>
 #include "check.hpp"

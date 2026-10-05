@@ -3,6 +3,7 @@
 // noexcept; move assignment noexcept(POCMA || is_always_equal); iterator functions, empty,
 // size, max_size, capacity, data, get_allocator and clear are noexcept; swap is
 // noexcept(POCS || is_always_equal); non-member swap is noexcept(noexcept(x.swap(y))).
+// REQUIRES: exceptions
 #include <vector>
 #include <type_traits>
 #include <utility>

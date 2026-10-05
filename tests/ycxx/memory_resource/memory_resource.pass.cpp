@@ -2,6 +2,7 @@
 // do_allocate, deallocate calls do_deallocate with the same arguments, is_equal calls
 // do_is_equal; operator==(a, b) is &a == &b || a.is_equal(b) (and != is its negation).
 // memory_resource is an abstract class with a virtual destructor, copyable.
+// REQUIRES: exceptions
 #include <memory_resource>
 #include <cstddef>
 #include <type_traits>

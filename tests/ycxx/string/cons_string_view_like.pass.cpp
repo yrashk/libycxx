@@ -2,6 +2,7 @@
 // Allocator()). Constraints: is_convertible_v<const T&, basic_string_view<charT, traits>> is
 // true and is_convertible_v<const T&, const charT*> is false. Effects: as if
 // basic_string_view sv = t; basic_string(sv.data(), sv.size(), a).
+// REQUIRES: exceptions
 #include <string>
 #include <string_view>
 #include <type_traits>

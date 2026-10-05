@@ -7,6 +7,7 @@
 // rebound copy cannot be one for const U. Checked for allocate_shared<const T>,
 // allocate_shared<const T[N]> and allocate_shared<const T[]> with an allocator that only
 // works for cv-unqualified value types (like std::allocator).
+// REQUIRES: exceptions
 #include <memory>
 #include <cstddef>
 #include <new>

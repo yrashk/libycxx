@@ -2,6 +2,7 @@
 // /5: "A ... in a handler's exception-declaration specifies a match for any exception."
 // /6: "If no match is found among the handlers for a try block, the search for a matching
 // handler continues in a dynamically surrounding try block of the same thread."
+// REQUIRES: exceptions
 #include "check.hpp"
 
 struct Base {

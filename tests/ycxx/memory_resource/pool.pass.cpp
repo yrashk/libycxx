@@ -4,6 +4,7 @@
 // the largest pool block directly from upstream, free everything on release() and on
 // destruction (even blocks not deallocated). options() reports the (possibly adjusted, never
 // zero) pool options. do_is_equal is identity. Not copyable.
+// REQUIRES: exceptions
 #include <memory_resource>
 #include <cstddef>
 #include <cstdint>

@@ -12,6 +12,7 @@
 // thread holds the mutex. The holder releases only after the timed call has returned or
 // thrown, so the call cannot obtain ownership.
 // FLAGS: -pthread
+// REQUIRES: exceptions
 #include <mutex>
 #include <shared_mutex>
 #include <thread>

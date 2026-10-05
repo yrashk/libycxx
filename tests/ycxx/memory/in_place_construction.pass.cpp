@@ -18,6 +18,7 @@
 //     (voidify(*location)) T(std::forward<Args>(args)...);" and are constexpr.
 // The probes (support/inplace_probe.hpp) count copies and moves; Pinned can be neither copied
 // nor moved, so every form that compiles with it constructed the object where it lives.
+// REQUIRES: exceptions
 #include <memory>
 #include <tuple>
 #include <type_traits>

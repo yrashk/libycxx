@@ -3,6 +3,7 @@
 // while destructors run during stack unwinding).
 // COUNTERPART: libstdcxx:18_support/exception_ptr/62258.cc
 // COUNTERPART: libstdcxx:18_support/uncaught_exception/14026.cc
+// REQUIRES: exceptions
 #include <exception>
 #include <type_traits>
 #include "check.hpp"

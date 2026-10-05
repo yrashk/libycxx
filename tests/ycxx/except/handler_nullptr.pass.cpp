@@ -2,6 +2,7 @@
 // pointer-to-member type and E is std::nullptr_t." The handler variable is then a null value.
 // [Note 1]: "A throw-expression whose operand is an integer literal with value zero does not
 // match a handler of pointer or pointer-to-member type."
+// REQUIRES: exceptions
 #include <cstddef>
 #include "check.hpp"
 

@@ -3,6 +3,7 @@
 // an lvalue of type T designating the corresponding base class subobject of the exception
 // object". Covers indirect bases, non-polymorphic classes, virtual bases and multiple
 // inheritance (the reference binds to the right subobject).
+// REQUIRES: exceptions
 #include "check.hpp"
 
 struct A {

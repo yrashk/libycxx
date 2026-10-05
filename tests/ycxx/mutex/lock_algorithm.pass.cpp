@@ -6,6 +6,7 @@
 // locks all without deadlock; "If a call to lock() or try_lock() throws an exception, unlock()
 // is called for any argument that had been locked by a call to lock() or try_lock()."
 // FLAGS: -pthread
+// REQUIRES: exceptions
 #include <mutex>
 #include <thread>
 #include "check.hpp"

@@ -4,6 +4,7 @@
 // [fs.op.copy]/4.7, 4.9: copy of a regular file into an existing directory copies to
 // to/from.filename(); copy of a directory with options none copies its top-level files only;
 // with copy_options::recursive the whole tree; directories_only copies no regular files.
+// REQUIRES: exceptions
 #include <filesystem>
 #include <system_error>
 #include "check.hpp"

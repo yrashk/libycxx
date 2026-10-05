@@ -2,6 +2,7 @@
 // and inserts the result as a formatted output function; println(os, fmt, args...) appends
 // '\n'; println(os) is print(os, "\n"). An exception thrown by formatting propagates without
 // setting badbit (/4.2). A failing insertion sets badbit (/4.4).
+// REQUIRES: exceptions
 #include <print>
 #include <format>
 #include <sstream>

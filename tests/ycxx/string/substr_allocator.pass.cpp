@@ -2,6 +2,7 @@
 // substr() && is "return basic_string(std::move(*this), pos, n);". Both use the
 // [string.cons]/4 constructors, whose allocator parameter defaults to Allocator(), so the
 // result has a value-initialized allocator, not a copy of get_allocator().
+// REQUIRES: exceptions
 #include <string>
 #include <utility>
 #include "test_allocators.hpp"

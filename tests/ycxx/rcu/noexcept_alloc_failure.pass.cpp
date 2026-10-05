@@ -22,6 +22,7 @@
 //     [saferecl.hp.general]/5-6: a retired object is reclaimed at most once, and not while a
 //     hazard pointer protects it since before it was retired.
 // FLAGS: -pthread
+// REQUIRES: exceptions
 #include <atomic>
 #include <cstdlib>
 #include <hazard_pointer>

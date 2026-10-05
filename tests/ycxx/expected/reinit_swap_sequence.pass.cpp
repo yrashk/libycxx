@@ -12,6 +12,7 @@
 // happens before has_val = false, so a throwing E construction leaves *this holding a value.
 // [expected.void.swap]: "construct_at(addressof(unex), std::move(rhs.unex)); destroy_at(...);
 // has_val = false; rhs.has_val = true".
+// REQUIRES: exceptions
 #include <expected>
 #include <string>
 #include <utility>

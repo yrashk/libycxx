@@ -4,6 +4,7 @@
 // atexit before an object's construction completes is called after its destruction. The
 // check function, registered first, therefore runs after every constructed block static is
 // destroyed.
+// REQUIRES: exceptions
 #include <cstdlib>
 #include "check.hpp"
 

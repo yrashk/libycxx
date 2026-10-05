@@ -3,6 +3,7 @@
 // *this and throw out_of_range if pos > size(); insert(p, c), insert(p, n, c),
 // insert(p, first, last), insert_range(p, rg), insert(p, il) return an iterator to the first
 // inserted character, or p if nothing was inserted (/17, /20, /24, /27).
+// REQUIRES: exceptions
 #include <string>
 #include <string_view>
 #include <stdexcept>

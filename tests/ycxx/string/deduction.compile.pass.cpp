@@ -7,6 +7,7 @@
 // [sequence.reqmts]/69.3: a guide does not participate if a non-allocator is deduced for
 // Allocator. [string.cons]/16,18: the const charT* and (n, c) constructors are constrained on
 // Allocator qualifying as an allocator (this affects CTAD).
+// REQUIRES: exceptions
 #include <string>
 #include <string_view>
 #include <ranges>

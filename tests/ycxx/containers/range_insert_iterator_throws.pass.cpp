@@ -15,6 +15,7 @@
 // Sources: a single-pass input range, a forward non-sized range (filter_view with a throwing
 // predicate), a random-access sized range with a throwing dereference. Each throws on its n-th
 // operation, for every n until the operation completes.
+// REQUIRES: exceptions
 #include <cstddef>
 #include <deque>
 #include <forward_list>

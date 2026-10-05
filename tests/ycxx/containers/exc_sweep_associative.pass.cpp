@@ -13,6 +13,7 @@
 //   Range insertion, constructors, assignments: basic guarantee.
 // After every exception the container must still be a valid search tree: its traversal is
 // sorted (strictly for unique keys) and find() locates every element.
+// REQUIRES: exceptions
 #include <map>
 #include <set>
 #include <utility>

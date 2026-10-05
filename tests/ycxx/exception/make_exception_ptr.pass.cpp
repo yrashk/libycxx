@@ -2,6 +2,7 @@
 // refers to a copy of e, as if: try { throw e; } catch(...) { return current-exception(); }"
 // -- so the dynamic type is the static type E (slicing), and matching follows the usual handler
 // rules. [propagation]/14 (exception_ptr_cast) observes the referenced object.
+// REQUIRES: exceptions
 #include <exception>
 #include <optional>
 #include <stdexcept>

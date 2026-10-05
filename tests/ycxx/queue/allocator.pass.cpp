@@ -2,6 +2,7 @@
 // (and the container / other queue / iterator range / range) and take part in overload
 // resolution only if uses_allocator_v<container_type, Alloc> is true. [queue.syn]:
 // uses_allocator<queue<T, Container>, Alloc> derives from uses_allocator<Container, Alloc>.
+// REQUIRES: exceptions
 #include <queue>
 #include <deque>
 #include <memory>

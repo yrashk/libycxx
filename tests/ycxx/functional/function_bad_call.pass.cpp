@@ -1,6 +1,7 @@
 // [func.wrap.func.inv]/2: operator() "Throws: bad_function_call if !*this; otherwise, any
 // exception thrown by the target object." [func.wrap.badcall]: class bad_function_call :
 // public exception; what() is noexcept and returns an implementation-defined NTBS.
+// REQUIRES: exceptions
 #include <functional>
 #include <exception>
 #include <type_traits>

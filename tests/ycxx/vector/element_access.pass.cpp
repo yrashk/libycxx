@@ -2,6 +2,7 @@
 // out_of_range if n >= size()), with const_reference results on a const vector.
 // [vector.data]/1: [data(), data() + size()) is a valid range and, for a non-empty vector,
 // data() == addressof(front()).
+// REQUIRES: exceptions
 #include <vector>
 #include <memory>
 #include <stdexcept>

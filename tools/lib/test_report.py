@@ -54,7 +54,7 @@ COVERED, NONE = 'covered by libycxx: ', 'no libycxx counterpart'
 def link_of(output):
     """The counterpart line of a skipped external test (tests/ycxxlit/counterparts.py), or ''."""
     for line in reversed((output or '').splitlines()):
-        if line.startswith(COVERED) or line == NONE:
+        if line.startswith(COVERED) or line.startswith(NONE):
             return line
     return ''
 

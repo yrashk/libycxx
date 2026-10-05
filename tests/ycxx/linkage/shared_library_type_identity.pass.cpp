@@ -76,7 +76,8 @@ int main() {
 
   // Objects of user types made in the shared library.
   for (int w = 0; w <= 5; ++w) {
-    VBase* p = lib_make(w);
+    alignas(64) unsigned char storage[storage_size];
+    VBase* p = lib_make(w, storage);
     CHECK(p->which() == w);
     const std::type_info& dyn = typeid(*p);
     CHECK(dyn == lib_dynamic_typeid(p));
@@ -94,7 +95,7 @@ int main() {
       CHECK(dynamic_cast<void*>(p) == static_cast<void*>(b));
       CHECK(static_cast<VBase*>(dynamic_cast<VRight*>(p)) == static_cast<VBase*>(b));
     }
-    delete p;
+    p->~VBase();
   }
   // Objects made here, cast in the shared library.
   {
@@ -116,7 +117,8 @@ int main() {
   //   0 runtime_error, 1 out_of_range, 2 system_error, 3 filesystem_error, 4 bad_alloc,
   //   5 a class derived from runtime_error and nested_exception.
   for (int w = 0; w <= 5; ++w) {
-    std::exception* e = lib_make_std(w);
+    alignas(64) unsigned char storage[storage_size];
+    std::exception* e = lib_make_std(w, storage);
     CHECK((dynamic_cast<std::runtime_error*>(e) != nullptr) == (w == 0 || w == 2 || w == 3 || w == 5));
     CHECK((dynamic_cast<std::logic_error*>(e) != nullptr) == (w == 1));
     CHECK((dynamic_cast<std::out_of_range*>(e) != nullptr) == (w == 1));
@@ -126,7 +128,7 @@ int main() {
     CHECK((dynamic_cast<std::nested_exception*>(e) != nullptr) == (w == 5));
     CHECK((typeid(*e) == typeid(std::runtime_error)) == (w == 0));
     CHECK((typeid(*e) == typeid(std::out_of_range)) == (w == 1));
-    delete e;
+    e->~exception();
   }
   {
     const std::runtime_error re("r");

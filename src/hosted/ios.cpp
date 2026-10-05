@@ -156,9 +156,14 @@ void ios_base::call_callbacks(event ev) noexcept {
 }
 
 // [basic.ios.members]/16: everything but rdstate, exceptions and rdbuf (and tie and fill, which
-// basic_ios copies). The arrays are copied first, so a failed allocation leaves *this as it was.
+// basic_ios copies). The arrays are copied first, so a failed allocation leaves *this as it was
+// (and frees what the copy had allocated).
 void ios_base::copy_base(const ios_base& rhs) {
-  storage* copy = nullptr;
+  struct owner {
+    storage* p = nullptr;
+    ~owner() { delete p; }
+  } guard;
+  storage*& copy = guard.p;
   if (rhs.store_ != nullptr) {
     copy = new storage;
     const storage& s = *rhs.store_;
@@ -187,6 +192,7 @@ void ios_base::copy_base(const ios_base& rhs) {
   loc_ = rhs.loc_;
   delete store_;
   store_ = copy;
+  copy = nullptr;
 }
 
 void ios_base::move_base(ios_base& rhs) noexcept {

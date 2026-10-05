@@ -5,13 +5,14 @@
 // sharing one control block may be copied, destroyed and locked concurrently; the object is
 // destroyed exactly once, and lock() yields either an empty or a valid owner.
 // FLAGS: -pthread
+#include <atomic>
 #include <memory>
 #include <pthread.h>
 #include <sched.h>
 #include "check.hpp"
 
 struct Payload {
-  static inline volatile int dtors = 0;
+  static inline std::atomic<int> dtors{0};
   int value = 42;
   ~Payload() {
     value = -1;
@@ -21,8 +22,8 @@ struct Payload {
 
 static std::shared_ptr<Payload>* source;
 static std::weak_ptr<Payload>* weak_source;
-static volatile int go = 0;
-static volatile int bad_locks = 0;
+static std::atomic<int> go{0};
+static std::atomic<int> bad_locks{0};
 
 static void* copier(void*) {
   std::shared_ptr<Payload> local = *source;  // copy made before go: source not modified after

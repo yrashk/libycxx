@@ -4,6 +4,7 @@
 // insertion's date and time, value() +1s or -1s. [time.zone.leap.nonmembers]/1-12: == and <=>
 // between two leap_seconds compare date() (strong_ordering); ==, <, >, <=, >= and <=> with a
 // sys_time<Duration> of any duration compare date() with it, all noexcept.
+// COUNTERPART: libcxx:time/time.zone/time.zone.leap/.*
 #include <chrono>
 #include <compare>
 #include <type_traits>

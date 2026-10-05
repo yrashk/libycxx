@@ -458,3 +458,17 @@ from the B items above:
   `__cpp_lib_define_static`.
 - Clang: `__cpp_lib_contracts`, `__cpp_lib_is_pointer_interconvertible` and
   `__cpp_lib_is_structural` (compiler gaps, documented in STATUS).
+
+<!-- counterparts:begin (generated) -->
+## Skipped tests without a counterpart
+
+Tests skipped (or UNSUPPORTED) as tied to the other library's internals, extensions or modes whose subject the draft does not specify, so libycxx's own suite has no test for it: the trace reports them as "no libycxx counterpart". Patterns are anchored regexes (like skip.txt); the linked ones carry `// COUNTERPART:` in tests/ycxx (tests/ycxxlit/counterparts.py).
+
+| tests | why there is no standard counterpart |
+|---|---|
+| `algorithms/alg.sorting/alg.min.max/requires_forward_iterator.verify.cpp` | min_element etc. with an input iterator violates a template-parameter requirement ([algorithms.requirements]/4): undefined, no diagnostic required; the test checks libc++'s diagnostic text |
+| `containers/sequences/vector/vector.modifiers/resize_not_move_insertable.verify.cpp` | a Cpp17MoveInsertable precondition violation is undefined behaviour ([res.on.required]); the test checks libc++'s static_assert text |
+| `numerics/rand/rand.dist/rand.dist.uni/rand.dist.uni.int/int128.pass.cpp` | __int128 is not in the IntType / UIntType sets of [rand.req.genl]/1.5-1.6 (an implementation may add extended types) |
+| `ranges/range.adaptors/range.lazy.split/range.lazy.split.outer.value/ctor.default.pass.cpp` | [range.lazy.split.outer.value] declares no default constructor (only the exposition-only one from outer-iterator) |
+
+<!-- counterparts:end -->

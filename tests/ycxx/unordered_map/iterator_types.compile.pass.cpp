@@ -7,6 +7,7 @@
 // least forward iterators; with the key type as value type (the sets) iterator and
 // const_iterator are both constant iterators. Checked through iterator_traits, for the default
 // allocator and one with other size and difference types.
+// COUNTERPART: libcxx:containers/unord/iterator_difference_type.pass.cpp
 #include <cstddef>
 #include <iterator>
 #include <memory>

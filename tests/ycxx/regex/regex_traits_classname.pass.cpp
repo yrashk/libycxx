@@ -8,6 +8,7 @@
 // of any f that contains "w"; Example 1 (d | upper) and Example 2 (w: 'A' and '_' yes, ' ' no).
 // /3-5: length is char_traits::length, translate(c) is c, translate_nocase(c) is tolower.
 // /14: value(ch, radix) is the digit's value in radix 8, 10 or 16, else -1.
+// COUNTERPART: libcxx:re/re.traits/lookup_classname.pass.cpp
 #include <cstring>
 #include <locale>
 #include <regex>

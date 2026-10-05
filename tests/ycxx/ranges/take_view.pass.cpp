@@ -2,6 +2,7 @@
 // begin()/end(): the underlying iterator for sized random-access ranges (common), a
 // counted_iterator with default_sentinel for other sized ranges, counted_iterator with
 // take_view::sentinel otherwise; size() is min(size, count); borrowed as its view.
+// COUNTERPART: libcxx:ranges/range.adaptors/range.take/range.take.sentinel/ctor.pass.cpp
 #include <concepts>
 #include <cstddef>
 #include <iterator>

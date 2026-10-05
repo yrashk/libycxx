@@ -12,6 +12,7 @@
 // /1: GPS counts from 1980-01-06 00:00:00 UTC and is 19s behind TAI. [time.format]/10-13: %Z is
 // "UTC", "TAI" or "GPS", %z an offset of 0; a leap second formats with 60 seconds; TAI and GPS
 // dates are those of a sys_time with the epoch shifted. [time.clock.cast.fn]: clock_cast.
+// COUNTERPART: libcxx:time/time.zone/time.zone.leap/.*
 #include <chrono>
 #include <array>
 #include <format>

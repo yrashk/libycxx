@@ -11,6 +11,7 @@
 // [func.wrap.ref.ctor]/2: is-invocable-using uses is_invocable_r_v (is_nothrow_invocable_r_v).
 // [variant.visit]/5: visit<R> is "INVOKE<R>(...)", so it is constrained the same way (the
 // expression is only valid if INVOKE<R> is).
+// COUNTERPART: libcxx:utilities/function.objects/func.invoke/invoke_r.temporary.verify.cpp
 #include <functional>
 #include <type_traits>
 #include <variant>

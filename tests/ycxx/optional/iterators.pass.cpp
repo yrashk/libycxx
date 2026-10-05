@@ -1,6 +1,7 @@
 // [optional.iterators]: iterator/const_iterator model contiguous_iterator with value type
 // remove_cv_t<T>, reference T& / const T&; begin() refers to the value or is past-the-end;
 // end() == begin() + has_value(); all noexcept and constexpr.
+// COUNTERPART: libcxx:utilities/optional/optional.iterator/iterator.pass.cpp
 #include <optional>
 #include <iterator>
 #include <type_traits>

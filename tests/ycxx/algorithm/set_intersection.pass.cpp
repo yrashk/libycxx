@@ -4,6 +4,7 @@
 // result_last (std) and {last1, last2, result + N} for the non-parallel ranges overloads
 // (set_intersection_result = in_in_out_result) -- both inputs reported at their ends even
 // when one is not fully examined. "Remarks: Stable".
+// COUNTERPART: libcxx:algorithms/alg.sorting/alg.set.operations/set.intersection/set_intersection_complexity.pass.cpp
 #include <algorithm>
 #include <functional>
 #include <ranges>

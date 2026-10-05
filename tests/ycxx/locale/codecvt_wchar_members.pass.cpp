@@ -9,6 +9,7 @@
 // either needs no termination (noconv) or completes the sequence storing at most what fits
 // (ok); the same for codecvt<char, char>, whose other members are fixed: /11 always_noconv()
 // is true, /14 length is min(max, from_end - from), /15 max_length() is 1.
+// COUNTERPART: libcxx:localization/locale.categories/category.ctype/locale.codecvt/locale.codecvt.members/wchar_t_(encoding|max_length|unshift).pass.cpp
 #include <cwchar>
 #include <locale>
 #include "check.hpp"

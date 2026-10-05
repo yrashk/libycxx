@@ -1,6 +1,7 @@
 // [format.string.std] Table 110: e/E, f/F, g/G default to precision 6; a/A without
 // precision are the shortest hex form; precision with none uses general; # keeps the
 // decimal point and, for g/G, trailing zeros (/7); upper-case types give INF/NAN (/24).
+// COUNTERPART: libcxx:utilities/format/format.formatter/format.formatter.spec/formatter.floating_point.pass.cpp
 #include <format>
 #include <limits>
 #include <string>

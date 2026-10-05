@@ -8,6 +8,7 @@
 // least one digit; A uses X and P and upper-case digits; infinity is "inf"/"INF". Checked by
 // reading the value back with strtold / strtod and by the form of the text, so that the test
 // does not depend on which leading digit the implementation picks.
+// COUNTERPART: libcxx:localization/locale.categories/category.numeric/locale.nm.put/facet.num.put.members/put_long_double.hex.pass.cpp
 #include <cctype>
 #include <cstdlib>
 #include <limits>

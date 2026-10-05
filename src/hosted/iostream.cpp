@@ -16,12 +16,39 @@
 // ([ios.members.static]/3). sync_with_stdio(false) gives the output buffers a buffer of their
 // own. The wide objects convert through the codecvt<wchar_t, char, mbstate_t> of their buffer's
 // locale and write bytes, so they do not set the C streams' orientation.
+//
+// The input and output functions of the synchronized objects may be called from several threads
+// at once ([iostream.objects.overview]/7; DECISIONS §7). Each buffer's input side (underflow,
+// uflow, pbackfail) and the wide buffers' conversion to bytes hold a lock of the buffer's own, a
+// futex mutex: one atomic operation each way while uncontended, plain loads and stores in a
+// single-threaded process. It guards what the buffer remembers between calls (the character
+// last extracted, for sungetc; the wide buffers' pending character and conversion states), and
+// makes a peek, a getc and ungetc pair, atomic with respect to the other readers of the object,
+// so they never see the stream's characters out of order. (The C stream's own lock would do the
+// same, but flockfile is not visible to ThreadSanitizer, nor are the C library's internal locks:
+// a pushed-back character's storage allocated by one thread and freed by another is reported
+// unless a lock it understands orders them.) The narrow output side needs no lock: putc and
+// fwrite lock the C stream. The stream objects' state and gcount are relaxed atomics (<ios>,
+// <istream>).
 #include <istream>
 #include <ostream>
 #include <cstdio>
 #include <new>
+#include <ycxx/hosted/thread_support.hpp>
 
 namespace {
+
+// Holds a buffer's lock for the duration of one of its operations.
+class guard {
+public:
+  explicit guard(ycxx::detail::futex_mutex& m) noexcept : m_(m) { m_.lock(); }
+  ~guard() { m_.unlock(); }
+  guard(const guard&) = delete;
+  guard& operator=(const guard&) = delete;
+
+private:
+  ycxx::detail::futex_mutex& m_;
+};
 
 template <class T>
 union immortal {
@@ -72,6 +99,7 @@ protected:
     return std::fflush(f_) == 0 ? 0 : -1;
   }
   int_type underflow() override {
+    guard g(lock_);
     const int c = std::getc(f_);
     if (c == EOF)
       return traits_type::eof();
@@ -79,6 +107,7 @@ protected:
     return c;
   }
   int_type uflow() override {
+    guard g(lock_);
     const int c = std::getc(f_);
     if (c == EOF)
       return traits_type::eof();
@@ -86,6 +115,7 @@ protected:
     return c;
   }
   int_type pbackfail(int_type c) override {
+    guard g(lock_);
     if (traits_type::eq_int_type(c, traits_type::eof())) {
       if (last_ == EOF)
         return traits_type::eof();
@@ -104,7 +134,8 @@ private:
   }
 
   std::FILE* f_;
-  int last_ = EOF; // the character last extracted, for sungetc
+  ycxx::detail::futex_mutex lock_; // the input side
+  int last_ = EOF; // the character last extracted, for sungetc (guarded by lock_)
   char buf_[1024];
 };
 
@@ -154,17 +185,12 @@ protected:
     return std::fflush(f_) == 0 ? 0 : -1;
   }
   int_type underflow() override {
-    if (!has_peek_) {
-      const int_type c = read();
-      if (traits_type::eq_int_type(c, traits_type::eof()))
-        return c;
-      peek_ = traits_type::to_char_type(c);
-      has_peek_ = true;
-    }
-    return traits_type::to_int_type(peek_);
+    guard g(lock_);
+    return peek();
   }
   int_type uflow() override {
-    const int_type c = underflow();
+    guard g(lock_);
+    const int_type c = peek();
     if (!traits_type::eq_int_type(c, traits_type::eof())) {
       has_peek_ = false;
       last_ = traits_type::to_char_type(c);
@@ -173,6 +199,7 @@ protected:
     return c;
   }
   int_type pbackfail(int_type c) override {
+    guard g(lock_);
     if (has_peek_)
       return traits_type::eof(); // one character of putback
     if (traits_type::eq_int_type(c, traits_type::eof())) {
@@ -187,8 +214,20 @@ protected:
   }
 
 private:
+  // The next character, kept in peek_ (lock_ is held).
+  int_type peek() {
+    if (!has_peek_) {
+      const int_type c = read();
+      if (traits_type::eq_int_type(c, traits_type::eof()))
+        return c;
+      peek_ = traits_type::to_char_type(c);
+      has_peek_ = true;
+    }
+    return traits_type::to_int_type(peek_);
+  }
   // Converts and writes s[0..n) as bytes.
   bool write(const wchar_t* s, std::size_t n) {
+    guard g(lock_); // for state_; the bytes of one call also stay together
     char out[256];
     const wchar_t* from = s;
     const wchar_t* const end = s + n;
@@ -213,7 +252,7 @@ private:
     }
     return true;
   }
-  // Reads bytes until they convert to one wide character.
+  // Reads bytes until they convert to one wide character (lock_ is held).
   int_type read() {
     char bytes[8];
     int n = 0;
@@ -250,6 +289,7 @@ private:
 
   std::FILE* f_;
   const cvt_type* cvt_;
+  ycxx::detail::futex_mutex lock_; // guards the members below
   std::mbstate_t state_{};
   std::mbstate_t in_state_{};
   wchar_t peek_ = 0;

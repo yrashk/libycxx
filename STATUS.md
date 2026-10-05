@@ -130,7 +130,7 @@ and wchar_t, the deprecated (Annex D) UTF-16/UTF-32 codecvts, the `_byname` face
 `<string_view>`, `<bitset>`, `<memory>`, `<system_error>` and `<complex>`. Own suite ios, iostreams,
 sstream, fstream, spanstream, syncstream, iomanip, locale, complex, system_error, bitset, string,
 string_view, memory, iterator: 301/305 (GCC, plus 1 XFAIL), 302/305 (Clang); the three failures need
-`<filesystem>`, `<thread>`, `<format>`. Clean under ASan (Clang). libc++ input.output + localization
+`<filesystem>`, `<thread>`, `<format>`. Clean under ASan (Clang); iostreams/ and ios/ clean under TSan, including concurrent input on the synchronized standard objects (DECISIONS §7). libc++ input.output + localization
 39 -> 590/855 (GCC), 39 -> 583/855 (Clang); libstdc++ 27_io + 22_locale 8 -> 806/925 (GCC),
 8 -> 805/925 (Clang); most remaining failures need missing headers or libstdc++ extensions
 (`char_traits<unsigned char>`, deprecated manipulator overloads, transitive C headers).

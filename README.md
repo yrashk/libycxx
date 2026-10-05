@@ -63,6 +63,8 @@ Working examples: `examples/find_package` and `examples/add_subdirectory` (both 
 Without CMake, `tools/ycxx-cxx gcc|clang <args>` compiles and links against the libycxx built in
 `build/<compiler>`.
 
+`docs/CUSTOM_STDLIB.md`: building, using and testing a custom standard library, compared with libc++, libstdc++ and the MSVC STL.
+
 ## Tests
 
 One driver runs everything. It prints each command before running it, then live progress

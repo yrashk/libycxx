@@ -105,6 +105,7 @@ int main() {
       }
     });
   }
+  while (reads.load() < 4) std::this_thread::yield();  // the readers are running
   int next = 3;
   for (; next < 10000; ++next) {
     pool[next].value = next;

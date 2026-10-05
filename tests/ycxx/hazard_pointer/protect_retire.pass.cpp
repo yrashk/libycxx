@@ -125,6 +125,7 @@ int main() {
       }
     });
   }
+  while (reads.load() < 4) std::this_thread::yield();  // the readers are running
   for (int i = 30001; i < pool_size; ++i) {
     Node* old = current.exchange(&pool[i], std::memory_order_acq_rel);
     old->retire(MarkDead{i});

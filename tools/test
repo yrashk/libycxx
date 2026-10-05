@@ -36,6 +36,9 @@ cd "$repo"
 . "$repo/tools/lib/ui.sh"
 . "$repo/tools/lib/env.sh"
 
+invocation="tools/test $(ui_quote "$@")"
+started=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+
 usage() { sed -n '2,/^set -eu/p' "$0" | sed '$d' | sed 's/^# \{0,1\}//'; }
 
 compilers= filters= jobs= sanitizer= fail_fast=0 stages=
@@ -73,33 +76,45 @@ results=$logs/summary.txt
 t_start=$(date +%s)
 broken= # compilers whose library did not build: their suites are skipped
 
-# record STATUS LABEL SECONDS
-record() { printf '%s|%s|%s\n' "$1" "$2" "$3" >>"$results"; }
+# record STATUS LABEL SECONDS-OR-REASON [LOG] [COMMAND] [REPORT]: one line of $results, fields
+# separated by the ASCII unit separator (an empty field survives `read`, unlike with a tab).
+us=$(printf '\037')
+record() { printf '%s\037%s\037%s\037%s\037%s\037%s\n' "$1" "$2" "$3" "${4:-}" "${5:-}" "${6:-}" >>"$results"; }
 
-# step LABEL LOGNAME CMD...: one recorded step.
+# step LABEL LOGNAME CMD...: one recorded step, its output in build/test-logs/LOGNAME.log.
 step() {
   s_label=$1 s_log=$logs/$2.log
   shift 2
   s_t0=$(date +%s)
   if ui_step "$s_label" "$s_log" "$@"; then
-    record ok "$s_label" $(($(date +%s) - s_t0))
+    record ok "$s_label" $(($(date +%s) - s_t0)) "$s_log" "$(ui_quote "$@")"
   else
-    record FAIL "$s_label" $(($(date +%s) - s_t0))
+    record FAIL "$s_label" $(($(date +%s) - s_t0)) "$s_log" "$(ui_quote "$@")"
     finish_if_fail_fast
     return 1
   fi
 }
 
-# direct LABEL CMD...: one recorded step whose command prints its own progress.
+# direct LABEL LOGNAME REPORT CMD...: one recorded step whose command prints its own progress.
+# With a LOGNAME its output is also kept in build/test-logs/LOGNAME.log (through tee, so the
+# command keeps colour but not a tty); REPORT names the HTML report the command writes.
 direct() {
-  d_label=$1
-  shift
+  d_label=$1 d_log=${2:+$logs/$2.log} d_report=$3
+  shift 3
   d_t0=$(date +%s)
   ui_cmd "$@"
-  if "$@"; then
-    record ok "$d_label" $(($(date +%s) - d_t0))
+  if [ -n "$d_log" ]; then
+    d_sf=$d_log.status
+    { set +e; YCXX_COLOR=$([ -n "${ui_reset}" ] && echo always || echo never) "$@" 2>&1; echo $? >"$d_sf"; } |
+      tee "$d_log"
+    d_st=$(cat "$d_sf" 2>/dev/null || echo 1); rm -f "$d_sf"
   else
-    record FAIL "$d_label" $(($(date +%s) - d_t0))
+    d_st=0; "$@" || d_st=$?
+  fi
+  if [ "$d_st" = 0 ]; then
+    record ok "$d_label" $(($(date +%s) - d_t0)) "$d_log" "$(ui_quote "$@")" "$d_report"
+  else
+    record FAIL "$d_label" $(($(date +%s) - d_t0)) "$d_log" "$(ui_quote "$@")" "$d_report"
     ui_failed=1
     finish_if_fail_fast
     return 1
@@ -117,7 +132,7 @@ summary() {
   ui_title "Summary"
   nok=0 nfail=0 nskip=0
   # The third field is a duration in seconds, or for a skipped step the reason.
-  while IFS='|' read -r st label extra; do
+  while IFS=$us read -r st label extra _; do
     case $st in
       ok) ui_ok "$label" "($(ui_duration "$extra"))"; nok=$((nok + 1)) ;;
       skip) ui_skip "$label" "$extra"; nskip=$((nskip + 1)) ;;
@@ -136,11 +151,23 @@ summary() {
   fi
   [ $nskip = 0 ] || printf '  %s%d skipped%s\n' "${ui_yellow}" "$nskip" "${ui_reset}"
   # The reports of the suites run now: every test, how it was run and what it printed.
-  reports=$(find "$logs" -name '*.html' -newer "$logs/.run-start" 2>/dev/null | sort)
+  reports=$(find "$logs" -name '*.html' -newer "$logs/.run-start" ! -name run.html 2>/dev/null | sort)
   if [ -n "$reports" ]; then
     echo
     printf '  %sTest reports (every test with its commands, exit statuses and output):%s\n' "${ui_bold}" "${ui_reset}"
     for r in $reports; do ui_info "$r"; done
+  fi
+  # The run's own report: every step; a failed one with the end of its log or its failing tests.
+  commit=$(git -C "$repo" rev-parse --short=12 HEAD 2>/dev/null || echo unknown)
+  dirty=$(git -C "$repo" status --porcelain 2>/dev/null | wc -l | tr -d ' ')
+  [ "$dirty" = 0 ] || commit="$commit (+$dirty uncommitted changes)"
+  set --
+  for c in $compilers; do set -- "$@" "$c=$($(cxx_of $c) --version 2>/dev/null | head -n 1)"; done
+  if python3 "$repo/tools/lib/run_report.py" "$results" "$logs/run" "command=$invocation" "started=$started" \
+       "commit=$commit" "host=$(uname -srm)" "$@" "logs=$logs"; then
+    echo
+    printf '  %sRun report%s (copy buttons; the whole report as Markdown in %s):\n' "${ui_bold}" "${ui_reset}" "$logs/run.md"
+    ui_info "$logs/run.html"
   fi
 }
 
@@ -181,10 +208,10 @@ for stage in $stages; do
       done
       ;;
     freestanding)
-      direct "freestanding headers, bare-metal smoke link" tools/check_freestanding.sh || :
+      direct "freestanding headers, bare-metal smoke link" freestanding "" tools/check_freestanding.sh || :
       ;;
     cmake)
-      direct "CMake package and toolchain file" tests/cmake/run.sh $compilers || :
+      direct "CMake package and toolchain file" cmake "" tests/cmake/run.sh $compilers || :
       ;;
     ycxx|libcxx|libstdcxx)
       for c in $compilers; do
@@ -206,7 +233,8 @@ for stage in $stages; do
           ui_section "$label"; ui_skip "$label" "($dir not found; see README.md)"
           record skip "$label" "($dir not found)"; continue
         fi
-        direct "$label" tools/run-conformance $stage $c $filters -- ${jobs:+-j$jobs} || :
+        run=$stage-$c${sanitizer:+-$(echo "$sanitizer" | tr , -)}
+        direct "$label" "" "$logs/$run.html" tools/run-conformance $stage $c $filters -- ${jobs:+-j$jobs} || :
       done
       ;;
   esac

@@ -72,7 +72,12 @@ returned (`compile exit 0 0.21s · run exit 0 0.00s`; for a test that must not c
 compiler's first error). Failures show their whole transcript: the exact commands, their exit
 statuses and their output. A summary closes the run. Each suite run also writes
 `build/test-logs/<suite>-<compiler>.html`, a report of every test with its transcript and how
-the run was made (commit, compiler version, command), and a `.tsv` with one line per test. Colour is on for terminals and GitHub Actions; set
+the run was made (commit, compiler version, command), and a `.tsv` with one line per test.
+`tools/test` adds `build/test-logs/run.html`: every step with its command, and for a failure
+the end of its log (a build error, say) or the suite's failing tests. The reports have copy
+buttons (one failure, all failures, the whole report) that put self-contained Markdown on the
+clipboard, ready to paste to a person or an AI assistant. Each report also embeds the whole of
+itself as Markdown and writes it next to itself as `.md`, so it can be read without a browser. Colour is on for terminals and GitHub Actions; set
 `NO_COLOR=1` or `YCXX_COLOR=never` to turn it off. Full logs are in `build/test-logs/`. Works
 on Linux and macOS. lit runs through [uv](https://docs.astral.sh/uv/)'s `uvx`, pinned to the
 LLVM release of the libc++ tests, so nothing needs installing besides uv (`YCXX_LIT=lit` uses a

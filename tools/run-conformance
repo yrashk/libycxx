@@ -7,7 +7,9 @@
 # line (counts, elapsed time, ETA), then lit's summary. Writes, as build/test-logs/<run>.*
 # (<run> = <suite>-<compiler>[-<sanitizer>][-ref]): .log, lit's complete output, every test's
 # transcript included; .html, a report of every test with its transcript and how the run was
-# made (commit, compiler version, command); .tsv, one line per test; .json, lit's results.
+# made (commit, compiler version, command), with copy buttons that put Markdown on the
+# clipboard; .md, the whole report as Markdown (also embedded in the .html); .tsv, one line per
+# test; .json, lit's results.
 # Environment: LIBCXX_TESTS (default /opt/src/llvm-project/libcxx/test),
 #              LIBSTDCXX_TESTS (default /opt/src/libstdcxx-testsuite), SANITIZER (asan,ubsan),
 #              YCXX_STDLIB=libstdcxx (ycxx suite only: build against libstdc++ instead, the
@@ -117,7 +119,8 @@ if [ -f "$base.json" ]; then
     "suite=$suite" "compiler=$compiler" "compiler version=$($cxx --version 2>/dev/null | head -n 1)" \
     "library=$cxx_used" "sanitizer=${SANITIZER:-none}" "tests=$tests${filter:+ (filter: $filter)}" \
     "commit=$commit" "started=$started" "host=$(uname -srm)" \
-    "command=$(ui_quote ${ycxx_lit} "$dir" -a -o "$base.json" "$@")" "log=$log" &&
-    ui_info "report" "$base.html" && ui_info "list" "$base.tsv (result, seconds, test, steps)"
+    "command=$(ui_quote ${ycxx_lit} "$dir" -a -o "$base.json" "$@")" "log=$log" "_root=$tests" &&
+    ui_info "report" "$base.html (copy buttons; the whole report as Markdown in $base.md)" &&
+    ui_info "list" "$base.tsv (result, seconds, test, steps)"
 fi
 exit "$rc"

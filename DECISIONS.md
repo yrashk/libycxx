@@ -175,6 +175,22 @@ tooling.
   `<stdckdint.h>` are core headers of templates and inline functions in the global namespace; the
   C library's versions (type-generic macros) are not included. `tools/check_freestanding.sh`
   compiles every header of [compliance]'s Table 27 as well as the core ones.
+- **C-library values that core spells out are per C library family.** Core cannot include the
+  C headers, yet `errc`, the freestanding `<cerrno>` and `<cmath>` macros and `mbstate_t`'s
+  layout must equal the C library's. `config.hpp` names the family once (`YCXX_TARGET_DARWIN`
+  for the macros, which must be literals usable in `#if`; `cfg::darwin` for everything else):
+  the Linux values (glibc, musl; also the bare-metal default) or Darwin's (BSD errno numbers,
+  `FP_NAN` 1 .. `FP_SUBNORMAL` 5, a 128-byte `mbstate_t`). `errc` gives each value as
+  `errno_number(Linux, Darwin)`; the freestanding macro lists are checked against `errc`, and
+  every value against the C library's headers wherever those are included (`<system_error>`,
+  `<cwchar>`, `<cuchar>`, `src/hosted/cmath_check.cpp`). Where the C library lacks a C23 function
+  of a wrapper (Darwin: `strfromd/f/l`, `mbrtoc8`/`c8rtomb`, and the whole of `<uchar.h>` on
+  older SDKs), a `YCXX_C_HAS_*` switch replaces the using-declaration with libycxx's own,
+  defined in the hosted runtime (`src/hosted/strfrom.cpp`, `src/hosted/uchar.cpp`, built on every
+  platform). `strfrom*` are templates (as `free_sized` is), so a C library that gains them wins
+  unqualified calls; the `<cuchar>` forms taking `::mbstate_t*` are plain functions, as the C
+  library's would be (a null state pointer must select them over the `std::mbstate_t*`
+  templates).
 - **Floating-point `<charconv>` is out of line, in both archives** (`src/runtime/charconv`).
   The draft makes it freestanding-deleted, but nothing in it needs the OS: it works on
   stack-allocated big integers, so libycxx provides it freestanding too. The header passes the
@@ -213,7 +229,11 @@ tooling.
   re-checks `Clock::now()` (whose exceptions propagate). No `native_handle` is provided for
   mutexes and condition variables (`thread::native_handle()` is the pthread handle). A thread's
   entry function lets a foreign exception (the forced unwind of `pthread_exit` or cancellation)
-  pass through instead of calling terminate.
+  pass through instead of calling terminate. The POSIX PAL's address wait is the futex on Linux
+  and the kernel's ulock compare-and-wait on Darwin (`__ulock_wait`/`__ulock_wake`: not in the
+  SDK's headers, but the interface libSystem's `os_unfair_lock` and Apple's own libc++ use since
+  macOS 10.12; the public `os_sync_wait_on_address` needs macOS 14.4 and is not usable from GCC,
+  which has no `__builtin_available`), with relative timeouts in microseconds.
 - **`<rcu>` and `<hazard_pointer>` are hosted, with their state in the runtime.** One RCU domain:
   readers count themselves in one of two phase counters, `rcu_synchronize` flips the phase and
   waits for the old counter to drain; retired objects are queued without allocation (through
@@ -265,6 +285,17 @@ tooling.
   Exception objects use the vendor class "YCXXC++\0" ("…\1" for the dependent exceptions
   rethrow_exception creates). The exception classes are declared with Itanium layout and inline
   constexpr members (no key function); their vtables and type_info are emitted where needed.
+- **The ABI runtime on Darwin.** Unwinding is libSystem's (LLVM libunwind) for both compilers.
+  Its `<unwind.h>` returns the LSDA as `uintptr_t` (accepted through an overload pair) and has no
+  text- or data-relative bases (asked for only when an encoding needs them, which never happens
+  there). Clang's Apple arm64 ABI marks a `type_info` that may be duplicated across images by
+  setting bit 63 of its name pointer; `std::type_info` and the runtime clear it before reading
+  (`ycxx::detail::rtti_name`) and compare such names as strings, as they compare every name not
+  marked `*`. libSystem's processes may also hold Apple's libc++abi: libycxx's runtime is linked
+  statically into the executable and bound there (two-level namespace), so the two runtimes
+  coexist with separate exception state; Apple's exceptions are foreign to libycxx's (only
+  `catch (...)` catches them) and vice versa. Thread-local destructors go to `_tlv_atexit`
+  (Clang calls it directly; GCC, with emulated TLS, through `__cxa_thread_atexit` and the PAL).
 - **Constexpr `<stdexcept>` (P3068/P3378).** The nine classes keep one pointer to their
   message. At run time it points into a reference-counted heap block of the hosted runtime
   (`message_create`/`_retain`/`_release`, out of line as before, so a copy never throws and never

@@ -2,6 +2,7 @@
 // numeric_limits<size_t>::max() / sizeof(T) < n, or bad_alloc if the storage cannot be
 // obtained." [allocator.globals]: operator== returns true for any two allocators.
 // [default.allocator.general]: converting constructor from allocator<U> is noexcept.
+// UNSUPPORTED-SANITIZER: asan  ASan replaces the global allocation functions: its operator new neither calls the new_handler nor throws for impossible sizes, and its other forms do not forward to a program's replacement ([new.delete])
 #include <memory>
 #include <cstddef>
 #include <limits>

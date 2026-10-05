@@ -9,7 +9,7 @@ sanitizer = lit_config.params.get('sanitizer', '')
 
 config.name = f'libycxx-libstdcxx-{compiler}'
 config.test_source_root = tests_root
-config.test_exec_root = os.path.join(repo, 'build', f'lit-libstdcxx-{compiler}' + (f'-{sanitizer}' if sanitizer else ''))
+config.test_exec_root = os.path.join(repo, 'build', f'lit-libstdcxx-{compiler}' + (f'-{sanitizer.replace(",", "-")}' if sanitizer else ''))
 config.suffixes = ['.cc']
 # Directories that test GNU extensions, TS's, ABI or tooling rather than the standard.
 config.excludes = ['ext', 'tr1', 'tr2', 'backward', 'experimental', 'decimal', 'abi', 'util', 'data',

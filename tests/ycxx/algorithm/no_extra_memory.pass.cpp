@@ -10,6 +10,7 @@
 // replaced to throw bad_alloc while armed (the nothrow forms' default behavior calls them,
 // [new.delete.single]/8), so every attempt to obtain memory fails. (Bounds are checked with
 // log base 2 and generous constants.)
+// UNSUPPORTED-SANITIZER: asan  ASan replaces the global allocation functions: its operator new neither calls the new_handler nor throws for impossible sizes, and its other forms do not forward to a program's replacement ([new.delete])
 #include <algorithm>
 #include <cstdlib>
 #include <functional>

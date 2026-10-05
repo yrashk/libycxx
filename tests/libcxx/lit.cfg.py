@@ -15,7 +15,7 @@ sanitizer = lit_config.params.get('sanitizer', '')
 
 config.name = f'libycxx-libcxx-{compiler}'
 config.test_source_root = os.path.join(tests_root, 'std')
-config.test_exec_root = os.path.join(repo, 'build', f'lit-libcxx-{compiler}' + (f'-{sanitizer}' if sanitizer else ''))
+config.test_exec_root = os.path.join(repo, 'build', f'lit-libcxx-{compiler}' + (f'-{sanitizer.replace(",", "-")}' if sanitizer else ''))
 config.suffixes = ['.cpp']
 config.excludes = ['Inputs', 'gen.py']
 

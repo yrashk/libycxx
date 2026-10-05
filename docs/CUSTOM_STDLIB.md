@@ -76,9 +76,11 @@ confirmed either way.
 libycxx builds two hosted archives with CMake (`libycxx.a`, `libycxx-abi.a`) and a third,
 freestanding runtime archive (allocation functions without a heap, `std::nothrow`, floating-point
 `<charconv>`, the atomic lock tables, replaceable hooks). Every replaceable function is alone in
-an archive member, so a program can replace any subset (DECISIONS §3). The freestanding archive is
-built only by `tools/check_freestanding.sh` (`build_fsrt`), not by CMake: it is neither installed
-nor exported by the package (see [Gaps](#8-gaps-and-proposals), item 8).
+an archive member, so a program can replace any subset (DECISIONS §3). CMake builds the
+freestanding archive for the compiler's target with `-DYCXX_FREESTANDING_RUNTIME=ON` (off by
+default), and installs and exports it as `ycxx::freestanding` (libycxx's headers and
+`-ffreestanding`); `tools/check_freestanding.sh` (`build_fsrt`) builds the same sources for
+bare-metal targets (Gaps, item 8: done).
 
 libstdc++'s freestanding mode is a separate configuration of the whole library
 [libstdcxx-configure]; libc++ has feature switches such as `LIBCXX_ENABLE_FILESYSTEM` and
@@ -212,10 +214,14 @@ or Clang 23 with a message. Checked in the generated `build.ninja` of `examples/
 `tests/cmake/run.sh` builds, installs and uses the package with both compilers (all checks
 passed; see [Validation](#validation-record)).
 
-The package does not pass `--gcc-install-dir` for Clang, while `tools/ycxx-cxx` and the toolchain
-file do. A Clang consumer that uses the package without the toolchain file links the crt files and
-`libgcc` of whatever GCC installation Clang finds (here GCC 13's). It works, but the three
-delivery paths differ (Gaps, item 10).
+On Linux the package passes `--gcc-install-dir=<GCC 16's installation>` to Clang consumers, as
+`tools/ycxx-cxx` and the toolchain file do; without it, Clang links the crt files and `libgcc` of
+whatever GCC installation it finds (here GCC 13's). The directory is the cache variable
+`YCXX_GCC_INSTALL_DIR`, found when libycxx is configured (`$YCXX_GCC_INSTALL_DIR`, a
+`--gcc-install-dir` already in `CMAKE_CXX_FLAGS`, else the libgcc directory of the GCC building
+libycxx, of `$YCXX_GXX` or of `g++-16`), recorded in `libycxxConfig.cmake`, and overridable by the
+consumer's `YCXX_GCC_INSTALL_DIR`. `tests/cmake/run.sh` checks in the link map that both example
+programs load GCC 16's `crtbeginS.o` (Gaps, item 10: done).
 
 ### Toolchain file and provisioning
 
@@ -319,13 +325,17 @@ results, under an "ASAN FAILURES" section [msvc-expected].
 
 ### The own suite, derived from the specification
 
-libycxx's own suite (`tests/ycxx`, 2328 tests as lit counts them at this commit) is written by an author who may
+libycxx's own suite (`tests/ycxx`, 2381 tests as lit counts them at this commit) is written by an author who may
 read only the working draft and cppreference.com, never another implementation's tests or any
 implementation; a failing test is a library bug until the draft shows otherwise, and tests are
 never weakened (DECISIONS §6). The lit format (`tests/ycxxlit/ycxx_format.py`) knows
 `*.pass.cpp` (compile, link, run), `*.compile.pass.cpp` (must compile) and `*.compile.fail.cpp`
 (must not compile, for a reason other than a missing header), with directives `FLAGS`, `FILES`,
-`ARCHIVE`, `SHARED` (multi-image tests), `UNSUPPORTED-SANITIZER` and `XFAIL-COMPILER`. Run it as:
+`ARCHIVE`, `SHARED` (multi-image tests), `UNSUPPORTED-SANITIZER`, `XFAIL-COMPILER`,
+`EXPECT-ERROR[-GCC|-CLANG]: <regex>` (a compile-fail test's diagnostics must match),
+`REQUIRES: <features>` (lit features `gcc`, `clang`, `linux`, `darwin`, `asan`, `ubsan`, `tsan`,
+`hardened`, `exceptions`, `rtti`) and `EXPECT-TERMINATE` (a death test: killed by SIGABRT,
+SIGTRAP or SIGILL). Run it as:
 
 ```sh
 tools/test -c clang -f optional ycxx     # one directory, one compiler
@@ -344,11 +354,12 @@ run|compile|link`, `dg-options`, `dg-additional-options`, `dg-require-effective-
 [libstdcxx-test]. The MSVC STL has its own `tests/std` and `tests/tr1` and runs libc++'s tests
 [msvc-readme].
 
-What libycxx's own suite lacks against these: a diagnostic-matching kind (`.verify.cpp`,
-`dg-error "message"`): a `.compile.fail.cpp` passes on any error that is not a missing header, so a
-test can pass for the wrong reason; and feature-based constraints: its directives name a compiler
-or sanitizer directly, where lit features would let a test say `REQUIRES: hardened` or
-`UNSUPPORTED: darwin, no-exceptions`. Gaps, items 2 and 4.
+What libycxx's own suite lacked against these, now added: diagnostic matching
+(`EXPECT-ERROR`, Gaps item 2; a `.compile.fail.cpp` without it still passes on any error that is
+not a missing header, so only the tests that state their diagnostic, 13 so far, are protected
+against passing for the wrong reason), and feature-based constraints (`REQUIRES:`, Gaps item 4,
+in part: there is no `UNSUPPORTED:`/`XFAIL:` on features yet, and the older `XFAIL-COMPILER` and
+`UNSUPPORTED-SANITIZER` directives remain).
 
 ### External suites: run only, never vendored
 
@@ -456,11 +467,16 @@ instantiation passes between them [libstdcxx-debug]: a mode that changes layout 
 configuration, not a per-test flag.
 
 libycxx has `YCXX_HARDENED=1` (run-time precondition checks through `ycxx::detail::precondition`),
-`-fno-exceptions` and `-fno-rtti` support (DECISIONS §1, §4), but no suite configuration runs
-them: no own test sets `YCXX_HARDENED` (the libstdc++ format adds it only when a libstdc++ test
-asks for `_GLIBCXX_ASSERTIONS`), `-fno-exceptions` appears in two own tests, and there is no lit
-parameter to add flags to a whole run. A precondition check that is never compiled in a test run is
-untested code. Gaps, items 3 and 6.
+`-fno-exceptions` and `-fno-rtti` support (DECISIONS §1, §4). The own suite runs in those
+configurations through lit parameters: `hardened=1` (`tools/test --hardened`, `YCXX_HARDENED=1`)
+compiles every test with `-DYCXX_HARDENED=1` and enables the death tests of
+`tests/ycxx/precondition` (one per hardened precondition, `REQUIRES: hardened` and
+`EXPECT-TERMINATE`); `cxxflags=` with a configuration name (`tools/test --cxxflags=...
+--config-name=...`, `YCXX_CXXFLAGS`/`YCXX_CONFIG_NAME`) appends flags to every test, and
+`-fno-exceptions`/`-fno-rtti` there remove the `exceptions`/`rtti` features, which the 430 tests
+that throw or catch require. Each configuration has its own exec root, logs, reports and baseline
+(`ycxx-<cc>-hardened`, `ycxx-<cc>-<name>`). Nightly CI runs hardened, `-fno-exceptions` and `-O2`
+on both compilers (Gaps, items 3 and 6: done, except `-fno-rtti` and TSan).
 
 ### Reference runs against another library
 
@@ -495,7 +511,7 @@ per-test results natively.
 | When | libycxx | Others |
 |---|---|---|
 | Every push / PR | `ci.yml`: `tools/test --baseline policy build freestanding cmake ycxx` on Linux (gcc:16 container, Clang 23 from apt.llvm.org) and macOS 15 arm64; a sample of both external suites on Linux | libc++: CI configurations defined in `libcxx/utils/ci/Dockerfile` and run by `libcxx/utils/ci/run-buildbot`, reproducible locally with `run-buildbot-container` [libcxx-testing] |
-| Nightly / on demand | `full.yml`: both external suites, both compilers, Linux and macOS (one job per suite and compiler, up to 300-340 minutes), and the own suite with ASan+UBSan, each against its baseline | libc++: continuous fuzzing on OSS-Fuzz (`libcxx/utils/ci/oss-fuzz.sh`) [libcxx-oss-fuzz] |
+| Nightly / on demand | `full.yml`: both external suites, both compilers, Linux and macOS (one job per suite and compiler, up to 300-340 minutes), the own suite with ASan+UBSan, and the own suite hardened, with `-fno-exceptions` and with `-O2` (both compilers, Linux), each against its baseline | libc++: continuous fuzzing on OSS-Fuzz (`libcxx/utils/ci/oss-fuzz.sh`) [libcxx-oss-fuzz] |
 
 lit can split a run into shards (`--num-shards M --run-shard N`, or `LIT_NUM_SHARDS`), "for
 parallel execution on separate machines" [lit]; libycxx's nightly jobs do not shard (Gaps, item 5).
@@ -513,15 +529,15 @@ script compiles each with `-DLIBCPP_OSS_FUZZ` and the fuzzing engine, using
 | Stage | libycxx | libc++ | libstdc++ | MSVC STL |
 |---|---|---|---|---|
 | Build system | CMake; library built with itself | CMake `runtimes` build, CMake caches per configuration [libcxx-vendor, libcxx-caches] | GCC's configure/make, built with GCC [libstdcxx-configure] | CMake presets [msvc-readme] |
-| Freestanding | core layer, one build; separate runtime archive (script-built) | feature switches [libcxx-vendor] | `--disable-hosted-libstdcxx` [libstdcxx-configure] | not confirmed |
+| Freestanding | core layer, one build; separate runtime archive (CMake option, installed) | feature switches [libcxx-vendor] | `--disable-hosted-libstdcxx` [libstdcxx-configure] | not confirmed |
 | ABI runtime | own (Itanium), unwinder from the toolchain | selectable: libc++abi, libcxxrt, libsupc++, ... [libcxx-vendor] | libsupc++ | not confirmed |
 | Artifacts | static archives, PIC | shared and static [libcxx-vendor] | shared, versioned [libstdcxx-abi]; static not confirmed | not confirmed |
 | Symbol policy | everything hidden, per-image runtime | exported ABI with visibility macros, inline ABI namespace; hermetic static option [libcxx-visibility, libcxx-vendor] | version script, `check-abi` baseline [libstdcxx-abi] | not confirmed |
 | Selection | `-nostdinc++ -isystem`, `-nostdlib++`; wrapper; CMake package; toolchain file | `-stdlib=libc++` or the same generic flags [libcxx-user, libcxx-vendor] | default for GCC | `INCLUDE`/`LIB` via `set_environment.bat` [msvc-readme] |
-| Own tests | spec-only author; `.pass`/`.compile.pass`/`.compile.fail` | rich kinds incl. `.verify.cpp`, `.sh.cpp`, `.gen.cpp` [libcxx-testing] | DejaGnu `dg-*` with message matching [libstdcxx-test] | `tests/std`, `tests/tr1` [msvc-readme] |
+| Own tests | spec-only author; `.pass`/`.compile.pass`/`.compile.fail`, diagnostic regexes, death tests | rich kinds incl. `.verify.cpp`, `.sh.cpp`, `.gen.cpp` [libcxx-testing] | DejaGnu `dg-*` with message matching [libstdcxx-test] | `tests/std`, `tests/tr1` [msvc-readme] |
 | External suites | libc++'s and libstdc++'s, run only, fetched and pinned | can run against libstdc++ [libcxx-stdlib-libstdcxx-cfg] | not confirmed | libc++'s, from its llvm-project checkout [msvc-readme] |
 | Known failures | per OS/compiler/sanitizer baselines (generated), xfail and skip lists with reasons | `XFAIL`/`UNSUPPORTED` in tests [libcxx-testing] | `xfail` selectors in tests [libstdcxx-test] | `expected_results.txt` by cause, per configuration [msvc-expected] |
-| Configurations | 2 compilers x 2 OSes; ASan+UBSan (Clang); TSan manual | hardening modes, no-exceptions, no-rtti, sanitizers, std modes, modules [libcxx-caches, libcxx-params] | `-std` list, debug mode, board flags [libstdcxx-test] | matrix files [msvc-matrix] |
+| Configurations | 2 compilers x 2 OSes; ASan+UBSan (Clang); hardened, `-fno-exceptions`, `-O2` (Linux, nightly); TSan manual | hardening modes, no-exceptions, no-rtti, sanitizers, std modes, modules [libcxx-caches, libcxx-params] | `-std` list, debug mode, board flags [libstdcxx-test] | matrix files [msvc-matrix] |
 | Reference runs | own suite against libstdc++ | suite against libstdc++ [libcxx-stdlib-libstdcxx-cfg] | not confirmed | not confirmed |
 | Reports | per-test transcripts, HTML/Markdown, provenance | lit output | `.sum`/`.log` [libstdcxx-test] | lit output [msvc-readme] |
 | Fuzzing | none | OSS-Fuzz [libcxx-oss-fuzz] | not confirmed | not confirmed |
@@ -533,14 +549,17 @@ runs; external suites never vendored, pinned and fetched; baselines generated fr
 compiler and sanitizer, with XPASS failing the run; reports that show the evidence for passing
 tests.
 
-**What others do better.** Configuration coverage (hardening, no-exceptions, no-rtti, TSan, MSan as
-standing configurations); diagnostic-matching tests; feature-based test constraints; sharding;
+**What others do better.** Configuration coverage (no-rtti, TSan, MSan as standing configurations;
+hardening has one mode, not libc++'s four); diagnostic matching as a test kind of its own (libycxx
+matches only where a test states a regex); feature-based test constraints beyond `REQUIRES`;
+sharding;
 fuzzing; container annotations for ASan; documented raw flags for consumers; keeping the cause next
 to each expected failure.
 
 ## 8. Gaps and proposals
 
-Ranked by value for effort. None of these is implemented by this document.
+Ranked by value for effort. Items 2, 3, 6 (in part), 8 and 10 are now done, and 4 in part; each
+says what was done.
 
 1. **Complete the baselines CI already depends on.** `full.yml` runs libc++ on Linux with Clang and
    macOS with GCC, and `ci.yml` the own suite on macOS, all with `--baseline`, but
@@ -553,15 +572,31 @@ Ranked by value for effort. None of these is implemented by this document.
    the message is the standard's (a `static_assert` text the library controls). Today a
    compile-fail test passes on any error but a missing header. libc++'s `.verify.cpp` uses clang
    `-verify` [libcxx-testing], which GCC lacks, hence a regex of one's own.
+   **Done:** `// EXPECT-ERROR: <regex>` (repeatable), `EXPECT-ERROR-GCC:`/`EXPECT-ERROR-CLANG:` for
+   one compiler's wording, matched against the compiler's output (`tests/ycxxlit/ycxx_format.py`);
+   a test that fails without a match names the regexes. 13 tests use it (Mandates
+   `static_assert`s, deleted functions, constraint failures). Not done: mapping the external
+   suites' `expected-error`/`dg-error` messages to it.
 3. **A hardened configuration.** Run the own suite with `-DYCXX_HARDENED=1` nightly, and add death
    tests for precondition violations (a `.pass.cpp` that forks or expects an abnormal exit, under a
    `hardened` feature), as libc++'s `assert.*.pass.cpp` [libcxx-testing]. Today the hardened code
    paths are compiled by no test run.
+   **Done:** `tools/test --hardened` (lit param `hardened=1`, `YCXX_HARDENED=1`), run nightly on
+   both compilers; `tests/ycxx/precondition` has 53 death tests (`REQUIRES: hardened`,
+   `EXPECT-TERMINATE: about to violate`), one per hardened precondition of the sequence
+   containers, `basic_string`, `string_view`, `span`, `optional` (and `optional<T&>`), `expected`,
+   `mdspan`, `bitset`, `valarray`, `view_interface` and `shared_ptr<T[]>`. With the checks compiled
+   out (`--cxxflags=-UYCXX_HARDENED`) all 53 fail, three of them by SIGSEGV, which
+   `EXPECT-TERMINATE` rejects. The first hardened runs of the whole suite found one failure beyond
+   the default run's: a precondition check inside `submdspan` (STATUS, Own-suite configurations).
 4. **Lit features instead of bespoke directives.** Set `available_features` in
    `tests/ycxx/lit.cfg.py` (`gcc`, `clang`, `linux`, `darwin`, `asan`, `ubsan`, `tsan`, `hardened`,
    `no-exceptions`, `no-rtti`) and let tests use lit's `REQUIRES:`/`UNSUPPORTED:`/`XFAIL:` with
    boolean expressions [lit]; keep `XFAIL-COMPILER` as an alias. Item 3 and 6 then need no new
    directive kinds.
+   **In part:** the features are set (`config.available_features`) and `// REQUIRES:` evaluates
+   them with lit's own boolean-expression parser (a comma means `&&`). Not yet: `UNSUPPORTED:`
+   and `XFAIL:` on features, replacing `XFAIL-COMPILER`/`UNSUPPORTED-SANITIZER`.
 5. **Shard the nightly suites.** Split each `full.yml` suite job with lit's
    `--num-shards`/`--run-shard` [lit] across matrix entries and merge the `.tsv` files before
    `baseline.py`; record test times (`--time-tests`) to order slow tests first. The jobs now take
@@ -571,6 +606,13 @@ Ranked by value for effort. None of these is implemented by this document.
    and `-O2`, and TSan with `build/clang-tsan`, each with its own baseline (the baseline file name
    already carries a configuration suffix). Models: libc++'s CMake caches [libcxx-caches],
    libstdc++'s board flags [libstdcxx-test], the MSVC STL's matrix files [msvc-matrix].
+   **Done, in part:** lit param `cxxflags=` with `config=<name>` (`tools/test --cxxflags=...
+   --config-name=...`, `YCXX_CXXFLAGS`/`YCXX_CONFIG_NAME`; the name defaults to one made from the
+   flags), and a nightly `linux-configurations` job matrix in `full.yml`: hardened,
+   `-fno-exceptions` and `-O2` on both compilers, each against
+   `tests/ycxx/baseline/linux-<cc>-<configuration>.txt`, recorded from its first run. No `-O0`
+   job: the default own-suite run is already unoptimized. Not yet: `-fno-rtti` (tests that use
+   `typeid`/`dynamic_cast` would need `REQUIRES: rtti`) and TSan.
 7. **Fuzz targets that are also tests.** Write libFuzzer entry points for `<regex>`, format strings,
    `from_chars`, `<chrono>` parsing, the demangler and TZif parsing as `.pass.cpp` files that replay
    a small corpus in the normal suite and build as fuzzers with `-fsanitize=fuzzer` under a
@@ -579,6 +621,10 @@ Ranked by value for effort. None of these is implemented by this document.
    `CMakeLists.txt` (`ycxx::freestanding`), install and export it, and let
    `tools/check_freestanding.sh` use it. Today only the script builds it, so a freestanding consumer
    has no supported way to get it.
+   **Done:** `-DYCXX_FREESTANDING_RUNTIME=ON` builds, installs and exports it as
+   `ycxx::freestanding`; `tests/cmake/run.sh` links the freestanding smoke program with the
+   installed archive and no C library. The script keeps its own build, since it targets bare-metal
+   triples the CMake build is not configured for.
 9. **ASan container annotations** for `vector`, `deque` and `basic_string` (STATUS, Known
    limitations; 16 libc++ tests fail under ASan only for that reason), honoured by ASan's
    `detect_container_overflow` [asan-flags].
@@ -586,6 +632,8 @@ Ranked by value for effort. None of these is implemented by this document.
     from the build) for Clang consumers of the CMake package, as `tools/ycxx-cxx` and the toolchain
     file do, or document that the package uses Clang's default GCC installation for crt files and
     libgcc.
+    **Done:** recorded in the package from the build (`YCXX_GCC_INSTALL_DIR`; section 4, CMake
+    package), checked by `tests/cmake/run.sh` in the examples' link maps.
 11. **Document the raw flags for other build systems** (Meson, Bazel, plain Make): the table of
     section 4 and the exact link order, as libc++ documents its custom-installation command
     [libcxx-vendor]. Today README points to the wrapper and the package only.
@@ -620,6 +668,11 @@ Run on 2026-10-05 in a worktree at `6f13096`, Linux x86_64, GCC 16.2.0 (`/opt/gc
 | Driver flags | `-E -v`, `-###` with and without `-nostdinc++`, `-nostdlib++`, `-stdlib++-isystem`, `-stdlib=`, `-fvisibility-global-new-delete=` on `g++-16` and `clang++-23` | as in the table of section 4 |
 | ASan allocation functions | `tools/ycxx-cxx clang -fsanitize=address ... -Wl,-Map,...` | `operator new` from `libclang_rt.asan_cxx-x86_64.a(asan_new_delete.cpp.o)`; GCC: `cannot find -lasan` |
 | GCC `-Wattributes` | `g++-16 -nostdinc++ -isystem include -c` on `struct S { std::string s; };` | the warning; Clang: none |
+| Diagnostic matching (later) | `tools/run-conformance ycxx gcc|clang <the 13 tests with EXPECT-ERROR>`; one with a wrong regex added | 13/13 pass on both compilers; the wrong regex fails with "no match for: EXPECT-ERROR: ..." |
+| Hardened configuration (later) | `tools/test --hardened -c gcc|clang ycxx` (as `YCXX_HARDENED=1 tools/run-conformance ...`) | GCC 2363 pass / 13 fail, Clang 2355 / 10: all 53 `precondition/` death tests pass; one failure beyond the default run's (`mdspan/submdspan_exhaustive_oracle`, STATUS) |
+| Death tests without the checks (later) | `YCXX_HARDENED=1 YCXX_CXXFLAGS=-UYCXX_HARDENED ... clang precondition` | 53/53 fail: 50 exit 0, 3 SIGSEGV |
+| `-fno-exceptions` (later) | `YCXX_CXXFLAGS=-fno-exceptions YCXX_CONFIG_NAME=noexcept tools/run-conformance ycxx gcc|clang` | 483 UNSUPPORTED (430 `REQUIRES: exceptions`, 53 `REQUIRES: hardened`); failures only those of the default baseline (GCC 5, Clang 6) |
+| CMake, later | `tests/cmake/run.sh gcc clang` | all checks passed, including GCC 16's `crtbeginS.o` in the Clang examples' link maps (GCC 13's with `-DYCXX_GCC_INSTALL_DIR=`) and the freestanding smoke link with the installed `libycxx-freestanding.a` |
 
 ## 9. Sources
 

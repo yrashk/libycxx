@@ -60,6 +60,22 @@ cmake --install build/gcc --prefix /opt/libycxx
 Working examples: `examples/find_package` and `examples/add_subdirectory` (both build
 `examples/demo.cpp`).
 
+With Clang on Linux, `ycxx::ycxx` passes `--gcc-install-dir=<GCC 16's installation>` (for the C
+runtime startup files and libgcc, as `tools/ycxx-cxx` and the toolchain file do); Clang would
+otherwise pick the newest GCC it finds in the system's standard places. The directory is found
+when libycxx is configured (`YCXX_GCC_INSTALL_DIR`, a cache variable: by default
+`$YCXX_GCC_INSTALL_DIR`, the GCC building libycxx, `$YCXX_GXX` or `g++-16`), recorded in the
+installed package, and can be overridden by a consumer's `YCXX_GCC_INSTALL_DIR`.
+
+`-DYCXX_FREESTANDING_RUNTIME=ON` also builds and installs `libycxx-freestanding.a`, the runtime of
+freestanding programs, as `ycxx::freestanding` (libycxx's headers and `-ffreestanding`; link it
+instead of `ycxx::ycxx`): the default allocation functions of a heap-less program (replace them
+to have a heap), `std::nothrow`, floating-point `<charconv>`, the `<atomic>` lock and wait tables,
+`<debugging>` and the default contract-violation handler. It is built for the compiler's target
+with `-ffreestanding -nostdinc -fno-exceptions -fno-rtti`; the program provides `memcpy`,
+`memmove`, `memset`, `memcmp` and its entry point (`tests/freestanding/rt.c` is an example).
+`tools/check_freestanding.sh` builds the same archive for bare-metal targets.
+
 Without CMake, `tools/ycxx-cxx gcc|clang <args>` compiles and links against the libycxx built in
 `build/<compiler>`.
 
@@ -137,11 +153,34 @@ transcript names each regex that did not match, so a test cannot pass on an unre
 // EXPECT-ERROR-CLANG: call to deleted constructor of 'std::string'
 ```
 
+`// REQUIRES: <features>` runs a test only when a boolean expression of lit features holds (else
+it is UNSUPPORTED): `gcc`, `clang`, `linux`, `darwin`, `asan`, `ubsan`, `tsan`, `hardened`,
+`exceptions`, `rtti`. Tests that throw or catch say `// REQUIRES: exceptions`.
+`// EXPECT-TERMINATE[: <regex>]` makes a `*.pass.cpp` a death test: the program must be killed by
+SIGABRT, SIGTRAP or SIGILL. `tests/ycxx/precondition` holds such tests, one per hardened
+precondition ([structure.specifications]/3.5: `vector::operator[]` out of range, `front()` of an
+empty container, `*` of a disengaged `optional`, `span` and `mdspan` indexing,
+`string_view::remove_prefix` beyond the size, ...), which run only in the hardened configuration.
+
+The own suite also runs in other configurations, each with its own logs, reports and baseline
+(the run name, and the baseline file name, get the suffix):
+
+```sh
+tools/test --hardened -c gcc ycxx                     # -DYCXX_HARDENED=1: ycxx-gcc-hardened
+tools/test --cxxflags=-fno-exceptions --config-name=noexcept ycxx   # ycxx-<cc>-noexcept
+YCXX_HARDENED=1 tools/run-conformance ycxx clang precondition       # the same, directly
+YCXX_CXXFLAGS=-O2 YCXX_CONFIG_NAME=O2 tools/run-conformance ycxx gcc
+```
+
+`--cxxflags` (`YCXX_CXXFLAGS`) appends flags to every test's; without `--config-name`
+(`YCXX_CONFIG_NAME`) the name is made from the flags. `-fno-exceptions` and `-fno-rtti` remove the
+`exceptions` and `rtti` features.
+
 ### Known failures and CI
 
-Tests that libycxx does not pass yet are recorded per platform and compiler in
-`tests/<suite>/baseline/<os>-<compiler>[-<sanitizer>].txt` (STATUS.md and the suites' TRIAGE.md
-say why). `tools/test --baseline` (`YCXX_BASELINE=1`) fails a suite only on a test that did not
+Tests that libycxx does not pass yet are recorded per platform, compiler and configuration in
+`tests/<suite>/baseline/<os>-<compiler>[-<sanitizer>][-hardened][-<config>].txt` (STATUS.md and
+the suites' TRIAGE.md say why). `tools/test --baseline` (`YCXX_BASELINE=1`) fails a suite only on a test that did not
 pass and is not listed, and names the listed tests that now pass. Without a baseline file every
 failure counts. Each run writes its own list as `build/test-logs/<run>.baseline.txt`; copy it over
 the baseline file to record or update one. A compiler gap that the test cannot avoid is an
@@ -152,5 +191,6 @@ CI (`.github/workflows/ci.yml`), on every push, runs `tools/test --baseline poli
 freestanding cmake ycxx` on Linux (the `gcc:16` container, Clang 23 from apt.llvm.org) and
 macOS (Apple Silicon, Homebrew's GCC 16, the provisioned Clang 23), plus a sample of the external
 suites on Linux. `.github/workflows/full.yml`, nightly and on demand, runs libc++'s and
-libstdc++'s whole suites on both compilers on both platforms, and the own suite under
-ASan+UBSan, each against its baseline. Every job uploads its reports as an artifact.
+libstdc++'s whole suites on both compilers on both platforms, the own suite under ASan+UBSan,
+and the own suite on both compilers hardened, with `-fno-exceptions` and with `-O2`, each
+against its baseline. Every job uploads its reports as an artifact.

@@ -29,5 +29,9 @@ flags = ['-I' + os.path.join(tests_root, 'util'), '-I' + os.path.join(repo, 'tes
 if sanitizer:
     flags += ['-fsanitize=' + ','.join({'asan': 'address', 'ubsan': 'undefined'}[s] for s in sanitizer.split(',')),
               '-fno-sanitize-recover=all', '-g']
+# dg-require-namedlocale: the names libycxx accepts (tests/ycxxlit/locales.py), asked of the
+# library under test through a program built once per run.
+from ycxxlit import locales
+locale_probe = locales.build_probe(os.path.join(repo, 'tools', 'ycxx-cxx'), compiler, config.test_exec_root)
 config.test_format = LibstdcxxFormat(os.path.join(repo, 'tools', 'ycxx-cxx'), compiler, flags,
-                                     os.path.join(repo, 'tests', 'libstdcxx', 'skip.txt'))
+                                     os.path.join(repo, 'tests', 'libstdcxx', 'skip.txt'), locale_probe)

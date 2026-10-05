@@ -65,11 +65,33 @@ Without CMake, `tools/ycxx-cxx gcc|clang <args>` compiles and links against the 
 
 ## Tests
 
+One driver runs everything. It prints each command before running it, then live progress
+(elapsed time and the latest output line for builds; tests done, pass/fail counts, ETA and the
+current test for suites). Failures are shown as they happen, with the commands that ran and
+their output. A summary closes the run. Colour is on for terminals and GitHub Actions; set
+`NO_COLOR=1` or `YCXX_COLOR=never` to turn it off. Full logs are in `build/test-logs/`. Works
+on Linux and macOS. lit runs through [uv](https://docs.astral.sh/uv/)'s `uvx`, pinned to the
+LLVM release of the libc++ tests, so nothing needs installing besides uv (`YCXX_LIT=lit` uses a
+lit already installed).
+
 ```sh
-tools/check-all                       # policy checks, both library builds, freestanding check
+tools/test                            # policy checks, library builds, freestanding, own suite (both compilers)
+tools/test all                        # also the CMake package test and the libc++/libstdc++ suites
+tools/test -c clang -f format ycxx    # one compiler, one directory of the own suite
+tools/test --help                     # stages and options (-j, -s asan, --fail-fast, -v)
+tools/check-all                       # the fast gate: tools/test --fail-fast policy build freestanding
+```
+
+The stages can also be run directly:
+
+```sh
 tests/cmake/run.sh                    # CMake package and toolchain file (YCXX_TEST_PROVISION=1:
                                       #   also download Clang through the toolchain file)
 tools/run-conformance ycxx clang      # libycxx's own spec-derived suite (tests/ycxx)
 tools/run-conformance libcxx gcc <dirs>     # libc++'s tests (run only)
 tools/run-conformance libstdcxx gcc <dirs>  # libstdc++'s testsuite (run only)
 ```
+
+`tools/run-conformance` options go to lit after `--`. `YCXX_VERBOSE=1` lists every test,
+`YCXX_FAIL_DETAILS=N` shows the output of the first N failures (default 10), and `YCXX_RAW=1`
+prints lit's own output.

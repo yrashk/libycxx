@@ -4,6 +4,7 @@
 // flowing off the end of the compound-statement of that function." [except.ctor]/3: the
 // subobjects are destroyed before the handler of the constructor's function-try-block is
 // entered. A function-try-block catches exceptions from the ctor-initializer too.
+// REQUIRES: exceptions
 #include "check.hpp"
 
 static int member_dtors = 0, seen_dtors_in_handler = -1;

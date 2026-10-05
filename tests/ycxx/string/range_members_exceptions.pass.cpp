@@ -8,6 +8,7 @@
 // [string.assign] assign_range, assign(first, last); [string.capacity]/7-10
 // resize_and_overwrite; [string.cons] basic_string(from_range, rg) propagates the exception
 // and frees what it allocated ([string.require]/3: storage comes from the allocator).
+// REQUIRES: exceptions
 #include <string>
 #include <cstddef>
 #include <iterator>

@@ -5,6 +5,7 @@
 // size of a regular file; "If exists(p) is false, an error is reported", the ec overload
 // returning static_cast<uintmax_t>(-1). [fs.op.permissions]: replace / add / remove.
 // [fs.op.resize.file]. [fs.class.file.status]: type() / permissions().
+// REQUIRES: exceptions
 #include <filesystem>
 #include <cstdint>
 #include <system_error>

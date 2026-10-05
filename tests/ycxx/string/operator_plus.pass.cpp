@@ -2,6 +2,7 @@
 // const charT*, charT and type_identity_t<basic_string_view<charT, traits>>; the rvalue
 // forms reuse their operand. /14 note: the type_identity_t parameters let a type implicitly
 // convertible to basic_string_view be concatenated with a basic_string.
+// REQUIRES: exceptions
 #include <string>
 #include <string_view>
 #include <type_traits>

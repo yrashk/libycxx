@@ -15,6 +15,7 @@
 //   [ios.base.locales]/1: during imbue, getloc() called from the callback returns the new locale.
 //   [basic.ios.members]/15-16: copyfmt calls the callbacks with erase_event before and with
 //     copyfmt_event after copying; [ios.base.cons]/2: the destructor calls them with erase_event.
+// REQUIRES: exceptions
 #include <ios>
 #include <locale>
 #include <sstream>

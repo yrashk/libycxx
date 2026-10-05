@@ -20,6 +20,7 @@
 // After every exception the container must still be valid: find() locates every element,
 // keys are unique in the unique containers, and size() agrees with the traversal and with the
 // sum of bucket_size(). Contents are compared as multisets.
+// REQUIRES: exceptions
 #include <unordered_map>
 #include <unordered_set>
 #include <utility>

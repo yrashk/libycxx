@@ -7,6 +7,7 @@
 // matching argument type ([format.fmt.string]/3: the string is checked as a constant
 // expression). [format.context]/6-9: arg(id) returns args_.get(id); out() / advance_to.
 // [format.context] Example 1: a formatter parsing a width argument id.
+// REQUIRES: exceptions
 #include <format>
 #include <string>
 #include <string_view>

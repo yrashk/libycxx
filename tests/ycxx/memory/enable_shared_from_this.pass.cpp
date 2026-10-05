@@ -5,6 +5,7 @@
 // unique_ptr conversion. Without such an owner, weak_from_this() is empty and
 // shared_from_this() throws bad_weak_ptr (it constructs shared_ptr from an expired
 // weak_ptr). Copying the object does not copy weak_this.
+// REQUIRES: exceptions
 #include <memory>
 #include <type_traits>
 #include <utility>

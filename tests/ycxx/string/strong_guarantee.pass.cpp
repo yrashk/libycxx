@@ -3,6 +3,7 @@
 // Exercised with an allocator whose allocate() throws bad_alloc ([string.insert]/10.3,
 // [string.replace]/10.3: exceptions thrown by allocator_traits<Allocator>::allocate
 // propagate).
+// REQUIRES: exceptions
 #include <string>
 #include <new>
 #include "test_allocators.hpp"

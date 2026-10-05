@@ -11,6 +11,7 @@
 // [locale.cons]/"C"; "C.UTF-8" when the environment has it), each byname facet, installed in a
 // locale or called directly, gives the results of the named locale's facet. Facet destructors
 // are protected, so the facets are owned by locales (refs = 0).
+// REQUIRES: exceptions
 #include <cstring>
 #include <ctime>
 #include <iterator>

@@ -4,6 +4,7 @@
 // array argument decays to a pointer and a function to a function pointer; non-class types
 // are fine. Handler matching follows [except.handle]/3, e.g. (3.4) a handler of pointer type
 // matches an exception of type std::nullptr_t, and no arithmetic conversions apply.
+// REQUIRES: exceptions
 #include <exception>
 #include <cstddef>
 #include <optional>

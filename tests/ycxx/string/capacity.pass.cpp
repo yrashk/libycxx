@@ -5,6 +5,7 @@
 // /15: reserve throws length_error if res_arg > max_size(). size() <= capacity() always
 // ([basic.string.general]/3). [string.capacity]/18 note: without reallocation, pointers stay
 // valid.
+// REQUIRES: exceptions
 #include <string>
 #include <stdexcept>
 #include <type_traits>

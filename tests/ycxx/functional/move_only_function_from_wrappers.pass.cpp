@@ -7,6 +7,7 @@
 // state (whether or not the implementation avoids double wrapping); a reference_wrapper target
 // refers to the original object. /14: in_place_type construction. /28: the destructor destroys
 // the target.
+// REQUIRES: exceptions
 #include <functional>
 #include <utility>
 #include "check.hpp"

@@ -9,6 +9,7 @@
 // user buffer is used again). /5: the result is aligned ([mem.res.private]/2) even when the
 // user buffer is oddly aligned. /6: "Throws: Nothing unless upstream_rsrc->allocate()
 // throws": a throwing upstream leaves the resource usable.
+// REQUIRES: exceptions
 #include <memory_resource>
 #include <cstddef>
 #include <cstdint>

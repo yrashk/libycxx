@@ -3,6 +3,7 @@
 // conversion" ([conv.fctptr]: also pointer to noexcept member function) or "a qualification
 // conversion" ([conv.qual]). (Whether the base-to-derived pointer-to-member conversion of
 // [conv.mem]/2 counts as a "standard pointer conversion" is not clear, so it is not tested.)
+// REQUIRES: exceptions
 #include "check.hpp"
 
 struct B {

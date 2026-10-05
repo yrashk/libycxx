@@ -12,6 +12,7 @@
 // the first one that does not throws bad_alloc). /1: release() resets next_buffer_size to its
 // initial value, so the next upstream request is again at least initial_size; /7 do_deallocate
 // has no effect, so deallocating does not make room.
+// REQUIRES: exceptions
 #include <memory_resource>
 #include <cstddef>
 #include <cstdint>

@@ -1,6 +1,7 @@
 // [except.nested]/8: the thrown exception is "constructed from std::forward<T>(t)" (wrapped
 // case), "otherwise std::forward<T>(t)" (thrown as-is). So an rvalue argument is never copied
 // (only moved), and an lvalue argument is copied (exactly once: the only copy source is t).
+// REQUIRES: exceptions
 #include <exception>
 #include <utility>
 #include "check.hpp"

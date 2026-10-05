@@ -5,6 +5,7 @@
 // less<Key>. [associative.reqmts.general]/181: a guide does not participate when an
 // allocator type is deduced for Compare, or a non-allocator for Allocator, or a non-iterator
 // for InputIterator.
+// REQUIRES: exceptions
 #include <map>
 #include <functional>
 #include <ranges>

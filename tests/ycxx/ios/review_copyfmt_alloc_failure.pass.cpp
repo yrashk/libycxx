@@ -2,6 +2,7 @@
 // pointers) and the registered callbacks. The k-th allocation it makes fails, for every k: the
 // failure propagates, nothing it allocated is leaked ([res.on.exception.handling]/3), and the
 // destination's own arrays are left as they were.
+// REQUIRES: exceptions
 #include <ios>
 #include <sstream>
 #include "exc_new.hpp"

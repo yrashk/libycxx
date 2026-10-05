@@ -5,6 +5,7 @@
 // difference_type is the iterators' difference type ([container.reqmts]/8-9).
 // [vector.overview]/2: push_front, prepend_range, pop_front and emplace_front are not
 // provided.
+// REQUIRES: exceptions
 #include <vector>
 #include <iterator>
 #include <memory>

@@ -5,6 +5,7 @@
 // rvalue"), a small type whose move constructor may throw must be held out of line: moving
 // or swapping the any must not invoke (and so must not risk throwing from) its move
 // constructor, and the contained object keeps its address.
+// REQUIRES: exceptions
 #include <any>
 #include <utility>
 #include "check.hpp"

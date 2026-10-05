@@ -1,11 +1,13 @@
 name: full
 
 # The long runs, nightly and on demand (Actions > full > Run workflow): libc++'s and libstdc++'s
-# whole suites on both compilers, on Linux and macOS, and the own suite under ASan+UBSan.
+# whole suites on both compilers, on Linux and macOS, the own suite under ASan+UBSan, and the own
+# suite hardened, with -fno-exceptions and with -O2.
 # Each fails only on tests outside its recorded baseline, the known failures in
-# tests/<suite>/baseline/<os>-<compiler>[-<sanitizer>].txt (tools/lib/baseline.py): a regression or
-# a new test. Every job uploads its reports, including <run>.baseline.txt, the run's own list of
-# tests that did not pass: copy it over the baseline file to record or update one.
+# tests/<suite>/baseline/<os>-<compiler>[-<sanitizer>][-hardened][-<config>].txt
+# (tools/lib/baseline.py): a regression or a new test. Every job uploads its reports, including
+# <run>.baseline.txt, the run's own list of tests that did not pass: copy it over the baseline
+# file to record or update one.
 
 on:
   schedule:
@@ -55,6 +57,42 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: full-linux-ycxx-clang-asan-ubsan
+          path: |
+            build/test-logs/*.html
+            build/test-logs/*.md
+            build/test-logs/*.tsv
+            build/test-logs/*.baseline.txt
+            build/test-logs/*.log
+
+  # The own suite in other library and compiler configurations, each against its own baseline,
+  # tests/ycxx/baseline/linux-<compiler>-<configuration>.txt (none recorded yet: every failure
+  # counts until the first run's <run>.baseline.txt is copied there). hardened: the library's
+  # run-time precondition checks, and the death tests of tests/ycxx/precondition; noexcept:
+  # -fno-exceptions (the tests that throw or catch are UNSUPPORTED: REQUIRES: exceptions); O2:
+  # optimized. (The default run, in ci.yml, is unoptimized: no separate -O0 job.)
+  linux-configurations:
+    runs-on: ubuntu-24.04
+    container: gcc:16
+    timeout-minutes: 180
+    strategy:
+      fail-fast: false
+      matrix:
+        compiler: [gcc, clang]
+        config:
+          - { name: hardened, args: --hardened }
+          - { name: noexcept, args: --cxxflags=-fno-exceptions --config-name=noexcept }
+          - { name: O2, args: --cxxflags=-O2 --config-name=O2 }
+    steps:
+      - uses: actions/checkout@v4
+      - name: Toolchains
+        uses: ./.github/actions/setup-linux
+      - name: Own suite, ${{ matrix.compiler }}, ${{ matrix.config.name }} (tools/test)
+        run: tools/test -j4 -q --baseline -c ${{ matrix.compiler }} ${{ matrix.config.args }} build ycxx
+      - name: Test reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: full-linux-ycxx-${{ matrix.compiler }}-${{ matrix.config.name }}
           path: |
             build/test-logs/*.html
             build/test-logs/*.md

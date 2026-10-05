@@ -15,6 +15,7 @@
 //     terminates, and get() rethrows it ([futures.unique.future]: get "throws the stored
 //     exception").
 // FLAGS: -pthread
+// REQUIRES: exceptions
 #include <cstdlib>
 #include <exception>
 #include <future>

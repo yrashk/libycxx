@@ -7,6 +7,7 @@
 // throws while the counter stays zero makes the call throw; a release before the deadline is
 // observed.
 // FLAGS: -pthread
+// REQUIRES: exceptions
 #include <semaphore>
 #include <thread>
 #include <chrono>

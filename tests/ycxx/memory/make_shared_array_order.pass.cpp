@@ -12,6 +12,7 @@
 //   allocate_shared with allocator_traits<A2>::destroy(a2, pu).
 // Multidimensional arrays are initialized element by element of the innermost non-array type
 // (7.2-7.3 by recursion).
+// REQUIRES: exceptions
 #include <memory>
 #include <cstddef>
 #include <new>

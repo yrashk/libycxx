@@ -10,6 +10,7 @@
 // [ostream.inserters]/7-9: operator<<(basic_streambuf* sb): null sb: badbit; reads from sb until
 // end of file or until insertion fails; failbit if nothing is inserted; an exception thrown
 // while getting a character sets failbit and is rethrown only if failbit is in exceptions().
+// REQUIRES: exceptions
 #include <istream>
 #include <ostream>
 #include <sstream>

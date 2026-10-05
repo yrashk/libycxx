@@ -7,6 +7,7 @@
 //     element object constructed has been destroyed exactly once and every operator new block
 //     freed; a valarray that was being assigned to or resized is still a valid object whose
 //     size() elements are all alive.
+// REQUIRES: exceptions
 #include <cstddef>
 #include <valarray>
 #include "exc_new.hpp"

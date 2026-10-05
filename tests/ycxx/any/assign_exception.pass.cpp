@@ -3,6 +3,7 @@
 // [any.modifiers]/8: emplace: "If an exception is thrown during the call to VT's
 // constructor, *this does not contain a value, and any previously contained value has
 // been destroyed."
+// REQUIRES: exceptions
 #include <any>
 #include <initializer_list>
 #include <typeinfo>

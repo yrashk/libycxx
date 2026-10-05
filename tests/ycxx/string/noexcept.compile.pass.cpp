@@ -4,6 +4,7 @@
 // to basic_string_view are noexcept; move assignment and assign(basic_string&&) are
 // noexcept(POCMA || is_always_equal); swap is noexcept(POCS || is_always_equal);
 // [string.special] non-member swap is noexcept(noexcept(lhs.swap(rhs))).
+// REQUIRES: exceptions
 #include <string>
 #include <string_view>
 #include <type_traits>

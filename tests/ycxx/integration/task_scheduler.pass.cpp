@@ -15,6 +15,7 @@
 //   chrono: steady_clock is monotonic ([time.clock.steady]); "{}" of durations
 //     ([time.format]/... operator<< suffixes: [time.duration.io]/1).
 // FLAGS: -pthread
+// REQUIRES: exceptions
 #include <chrono>
 #include <condition_variable>
 #include <exception>

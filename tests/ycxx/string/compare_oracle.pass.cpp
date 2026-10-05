@@ -12,6 +12,7 @@
 // All strings of length <= 3 (substrings for pairs of total length <= 3) over an alphabet
 // with a null character and high characters, plus
 // random long strings with long common prefixes.
+// REQUIRES: exceptions
 #include <string>
 #include <string_view>
 #include <stdexcept>

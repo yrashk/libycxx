@@ -5,6 +5,7 @@
 // /19-22: a U that is not pair-like and not a pair but converts to the pair (or a
 // ranges::subrange) is passed as a pair-constructor whose conversion uses-allocator constructs
 // the pair from the converted value, so the members still receive the allocator.
+// REQUIRES: exceptions
 #include <memory_resource>
 #include <array>
 #include <cstddef>

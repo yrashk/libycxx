@@ -15,6 +15,7 @@
 // One scenario has a second thread (started before the failure is armed, and making no
 // allocation) that changes the value and notifies while the main thread waits.
 // FLAGS: -pthread
+// REQUIRES: exceptions
 #include <atomic>
 #include <memory>
 #include <thread>

@@ -4,6 +4,7 @@
 // non-joinable thread: invalid_argument. [thread.req.exception]: the error_code's condition
 // is the errc value.
 // FLAGS: -pthread
+// REQUIRES: exceptions
 #include <thread>
 #include <system_error>
 #include <atomic>

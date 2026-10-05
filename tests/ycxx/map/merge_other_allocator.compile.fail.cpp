@@ -3,6 +3,7 @@
 // ([associative.reqmts.general]/112-117, [container.node.overview] Table 75: compatible
 // nodes need the same allocator). A source with another allocator type is ill-formed (with
 // another comparator it is fine: map/node_handle.pass.cpp merges map<int, Elem, greater>).
+// REQUIRES: exceptions
 #include <map>
 #include <functional>
 #include <utility>

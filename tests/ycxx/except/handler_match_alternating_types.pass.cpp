@@ -6,6 +6,7 @@
 // remembers earlier match results must key them on the thrown type: a base reached at a
 // different offset, an ambiguous base, a private base and an unrelated type all go through the
 // same handler list.
+// REQUIRES: exceptions
 #include "check.hpp"
 
 struct A {

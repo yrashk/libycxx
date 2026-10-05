@@ -6,6 +6,7 @@
 // [vector.capacity]/4,9,16,19: reserve / shrink_to_fit / resize leave no effects on an
 // exception (other than from a non-copyable T's move constructor).
 // [container.reqmts]/66: push_back / emplace_back have no effects if they throw.
+// REQUIRES: exceptions
 #include <vector>
 #include <new>
 #include <stdexcept>

@@ -2,6 +2,7 @@
 // object (bound by reference) is the dynamic type of the exception object, which
 // [expr.throw]/2 fixes as the static type of the throw operand. A by-value handler variable
 // of base type is a sliced copy ([except.handle]/15) whose dynamic type is the base.
+// REQUIRES: exceptions
 #include <exception>
 #include <stdexcept>
 #include <typeinfo>

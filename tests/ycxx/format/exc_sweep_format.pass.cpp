@@ -6,6 +6,7 @@
 //   [res.on.exception.handling]/1: the exception propagates, every operator new block and
 //   every allocator block is freed, and every argument object is destroyed exactly once (the
 //   arguments are passed by reference: format must not copy them, [format.arg.store]).
+// REQUIRES: exceptions
 #include <format>
 #include <iterator>
 #include <string>

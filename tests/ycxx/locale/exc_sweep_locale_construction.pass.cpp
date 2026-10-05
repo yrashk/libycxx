@@ -12,6 +12,7 @@
 //     checked to be one of the old or the new one, and usable;
 //   [ios.base.locales]/1-2 imbue: "Postconditions: loc == getloc()" when it returns.
 // The named locale "C.UTF-8" is used if the system provides it, else only "C".
+// REQUIRES: exceptions
 #include <locale>
 #include <sstream>
 #include <string>

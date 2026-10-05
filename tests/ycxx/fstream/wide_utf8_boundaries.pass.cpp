@@ -8,6 +8,7 @@
 // operation fails"); seekpos(sp) returns to a position obtained from it, restoring the
 // conversion state (fpos keeps the state, [fpos.members]), so re-reading from it gives the same
 // characters. [istream.unformatted] tellg / seekg; [ostream.seeks].
+// REQUIRES: exceptions
 #include <fstream>
 #include <locale>
 #include <string>

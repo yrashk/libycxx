@@ -6,6 +6,7 @@
 // So private, protected and ambiguous bases do not match; the exception object created by
 // throw_with_nested ([except.nested]/8) is "publicly derived from both U and
 // nested_exception"; copies of an exception_ptr refer to the same object ([propagation]/3).
+// REQUIRES: exceptions
 #include <exception>
 #include <functional>
 #include <optional>

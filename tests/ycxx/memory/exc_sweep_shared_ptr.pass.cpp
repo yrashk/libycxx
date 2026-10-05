@@ -14,6 +14,7 @@
 //     initialized elements are destroyed in the reverse order of their original construction."
 // After every run all objects are destroyed exactly once and every block (operator new and
 // exh::alloc) freed.
+// REQUIRES: exceptions
 #include <memory>
 #include "exc_new.hpp"
 

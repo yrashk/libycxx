@@ -14,6 +14,7 @@
 // streams and locale facets, regex, error messages, to_chars, pmr, random_device, time zones,
 // function, exception_ptr.
 // FLAGS: -pthread
+// REQUIRES: exceptions
 #include <cerrno>
 #include <charconv>
 #include <chrono>

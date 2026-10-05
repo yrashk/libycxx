@@ -7,6 +7,7 @@
 // pop_back, operator[], at (and its out_of_range), append_range; and the front operations
 // emplace_front, push_front, prepend_range, pop_front. Also in constant expressions, since
 // every member is constexpr.
+// REQUIRES: exceptions
 #include <deque>
 #include "container_values.hpp"
 #include "reqs/sequence_construct.hpp"

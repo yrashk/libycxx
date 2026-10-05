@@ -3,6 +3,7 @@
 // state (| badbit if rdbuf() is null); setstate(state) is clear(rdstate() | state);
 // exceptions(except) followed by a state matching it throws ios_base::failure, including from
 // exceptions() itself when the current state already matches.
+// REQUIRES: exceptions
 #include <ios>
 #include <sstream>
 #include <type_traits>

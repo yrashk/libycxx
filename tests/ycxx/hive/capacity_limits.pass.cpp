@@ -7,6 +7,7 @@
 // reshape, or copied from the source by copy / move construction, [hive.cons]) and copy
 // assignment leaves them unchanged; reshape keeps size(); swap exchanges contents,
 // capacity() and limits ([hive.modifiers]/18).
+// REQUIRES: exceptions
 #include <hive>
 #include <algorithm>
 #include <cstddef>

@@ -9,6 +9,7 @@
 // (7.11) they are destroyed via pu->~U() (never the allocator's destroy).
 // /3: the allocate_ form takes its memory from a rebound copy of the allocator, and on an
 // exception has no effect (memory released).
+// REQUIRES: exceptions
 #include <memory>
 #include <cstddef>
 #include <new>

@@ -3,6 +3,7 @@
 // category cats); ... Throws: runtime_error if the second argument is not valid, or is null."
 // A null pointer constant (nullptr, 0) selects the const char* overloads: the class has no other
 // constructor a null pointer converts to without a user-defined conversion.
+// REQUIRES: exceptions
 #include <locale>
 #include <stdexcept>
 #include "check.hpp"

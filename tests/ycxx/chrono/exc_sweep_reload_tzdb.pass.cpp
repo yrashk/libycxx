@@ -14,6 +14,7 @@
 // changed. Either way the list is unchanged afterwards (same front object, same number of
 // databases, a zone pointer obtained before still valid and usable), nothing leaks (no
 // effects), and the same call succeeds once memory is available.
+// REQUIRES: exceptions
 #include <chrono>
 #include <iterator>
 #include <stdexcept>

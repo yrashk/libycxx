@@ -5,6 +5,7 @@
 // after a = t, a == t; after a = rv, a has rv's former value even with unequal,
 // non-propagating allocators (elements are then move assigned or move constructed).
 // [vector.overview]: move assignment is noexcept(POCMA || is_always_equal).
+// REQUIRES: exceptions
 #include <algorithm>
 #include <vector>
 #include <string>

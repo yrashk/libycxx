@@ -14,6 +14,7 @@
 //   every block returned with matching size and alignment, also when copying between
 //   containers with different resources (unequal allocators: element-wise, uses-allocator
 //   construction with the target's resource).
+// REQUIRES: exceptions
 #include <cstdint>
 #include <map>
 #include <memory>

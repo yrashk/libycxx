@@ -4,6 +4,7 @@
 // [vector.modifiers]/3: insert_range / append_range / insert(p, i, j) perform at most one
 // reallocation for a forward or sized range. [vector.capacity]/7: no reallocation during
 // insertions after reserve() until the size would exceed capacity().
+// REQUIRES: exceptions
 #include <vector>
 #include <list>
 #include <ranges>

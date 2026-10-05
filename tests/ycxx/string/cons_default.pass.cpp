@@ -3,6 +3,7 @@
 // [string.cons]/1: Postconditions: size() is equal to 0.
 // [basic.string.general]/3: data() + size() points at a null terminator.
 // [container.alloc.reqmts]/9,11: u.get_allocator() == A() / == m.
+// REQUIRES: exceptions
 #include <string>
 #include <type_traits>
 #include "test_allocators.hpp"

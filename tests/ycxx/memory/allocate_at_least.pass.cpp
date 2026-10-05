@@ -5,6 +5,7 @@
 // a.allocate_at_least(n) if well-formed, otherwise {a.allocate(n), n}.
 // [memory.syn]: allocation_result<Pointer, SizeType = size_t> { Pointer ptr; SizeType count; }
 // with no other members or bases ([allocator.traits.other]).
+// REQUIRES: exceptions
 #include <cstddef>
 #include <cstdint>
 #include <limits>

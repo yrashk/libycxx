@@ -1,6 +1,7 @@
 // [format.fmt.string], [format.syn]: format_string<Args...> and wformat_string<Args...> are
 // basic_format_string<charT, type_identity_t<Args>...>; get() returns the string_view and is
 // noexcept; the consteval constructor requires a type convertible to basic_string_view.
+// REQUIRES: exceptions
 #include <format>
 #include <string_view>
 #include <type_traits>

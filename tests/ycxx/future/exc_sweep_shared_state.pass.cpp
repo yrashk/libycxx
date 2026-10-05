@@ -11,6 +11,7 @@
 //   [futures.task.members], [futures.async]: the decay-copies of the callable and arguments
 //     happen in the calling thread; an exception there leaks nothing and creates no state.
 // After every run every element object is destroyed exactly once and every block freed.
+// REQUIRES: exceptions
 #include <future>
 #include "exc_new.hpp"
 

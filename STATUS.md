@@ -459,9 +459,13 @@ compilers; `visit_format_arg.pass.cpp` needs `EOF` from `constexpr_char_traits.h
   `memset_explicit` is memset plus a compiler barrier; `strfrom*`, `memccpy`, `strdup`, `strndup`
   are the C library's (on Darwin, which lacks them, `strfrom*` and `mbrtoc8`/`c8rtomb` are
   libycxx's own, and so is `timespec_getres`; see "macOS (Darwin)"). `<ctime>` has C23's `timegm`,
-  `gmtime_r`, `localtime_r` and `timespec_getres` from the C library. Freestanding (`-ffreestanding`), `<cstdlib>`/`<cstring>`/`<cwchar>` are
-  libycxx's own code; their `bsearch` has C's single signature (not the draft's const/non-const
-  pair), and the termination functions forward to the environment's.
+  `gmtime_r`, `localtime_r` and `timespec_getres` from the C library. `abs`, `labs`, `llabs`,
+  `div`, `ldiv`, `lldiv`, `bsearch` (the const/non-const pair), `imaxabs` and `imaxdiv` are
+  libycxx's own in both namespaces: `<cstdlib>`/`<cinttypes>` hide the C library's declarations
+  (DECISIONS §3). `<stdlib.h>`, `<inttypes.h>`, `<string.h>`, `<complex.h>` and `<tgmath.h>` are
+  libycxx's (the global names of [support.c.headers.other]; `<complex.h>`/`<tgmath.h>` are
+  `<complex>`/`<cmath>` in C++). Freestanding (`-ffreestanding`), `<cstdlib>`/`<cstring>`/`<cwchar>`
+  are libycxx's own code, and the termination functions forward to the environment's.
 - `make_exception_ptr` under `-fno-exceptions -fno-rtti` returns a null exception_ptr (the
   object's type_info cannot be named; DECISIONS §4). With RTTI it works without exceptions.
 - `recursive_directory_iterator` with `follow_directory_symlink` opens a followed symbolic link by
@@ -872,14 +876,13 @@ compilers; `visit_format_arg.pass.cpp` needs `EOF` from `constexpr_char_traits.h
   return NaN. `<complex>` is constexpr throughout, with Annex G special values (kept cheap
   in constant evaluation: the libc++ `complex_times_complex`/`complex_divide_complex` stress
   tests fit Clang's limit); I/O is not provided yet (no streams). valarray evaluates eagerly (no expression templates).
-  Remaining external failures: `<ctgmath>`/`<ccomplex>`/`<complex.h>` (not provided), libc++
+  Remaining external failures: `<ctgmath>`/`<ccomplex>` (removed from the draft), libc++
   `cmath.pass` (expects overloads in the global namespace without `<math.h>`), `abs` of
   `_BitInt` (Clang), `numbers/value.pass` (expects the double value for long double),
   `polar(-0.0, θ)` (libc++ expects NaN; -0 is not negative, so libycxx computes it), the
   mask_array tests (call `std::count` without `<algorithm>`), libstdc++ `special_functions/*/compile_2`
   (global names `<math.h>` must not declare), `fabs(complex)` (extension), `complex/synopsis`
-  (explicit specialisation declarations), `abs(__float128)` returning `__float128`, `::abs(long)`
-  from `<stdlib.h>` (no `<stdlib.h>` wrapper), the valarray `mask-*_neg` tests (abort only with
+  (explicit specialisation declarations), `abs(__float128)` returning `__float128`, the valarray `mask-*_neg` tests (abort only with
   `_GLIBCXX_ASSERTIONS`; libycxx checks only under YCXX_HARDENED), and tests needing
   `<sstream>`/`<iostream>`/`<chrono>`/`<map>`/`<limits>`.
 

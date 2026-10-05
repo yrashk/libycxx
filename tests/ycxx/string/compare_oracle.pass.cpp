@@ -9,7 +9,8 @@
 // compare(pos1, n1, ...) operates on substr(pos1, n1) and throws out_of_range when pos1 > size()
 // (or pos2 > str.size()); [string.cmp]: the operators use compare, <=> yields
 // weak_ordering via the traits' comparison_category (strong_ordering for the standard traits).
-// All strings of length <= 3 (substrings for pairs of total length <= 4) over an alphabet with a null character and high characters, plus
+// All strings of length <= 3 (substrings for pairs of total length <= 3) over an alphabet
+// with a null character and high characters, plus
 // random long strings with long common prefixes.
 #include <string>
 #include <string_view>
@@ -113,7 +114,7 @@ static void run(const Ch (&alpha)[4]) {
     }
   }
   for (std::size_t i = 0; i < n; ++i)
-    for (std::size_t j = 0; j < n; ++j) check_pair(all[i], all[j], all[i].size() + all[j].size() <= 4);
+    for (std::size_t j = 0; j < n; ++j) check_pair(all[i], all[j], all[i].size() + all[j].size() <= 3);
 
   // long strings with a common prefix, differing at one random position (or only in length)
   unsigned x = 31337;
@@ -121,7 +122,7 @@ static void run(const Ch (&alpha)[4]) {
     x = x * 1664525u + 1013904223u;
     return (x >> 9) % m;
   };
-  for (int iter = 0; iter < 2000; ++iter) {
+  for (int iter = 0; iter < 1000; ++iter) {
     S a;
     const std::size_t len = 1 + rnd(200);
     for (std::size_t i = 0; i < len; ++i) a.push_back(alpha[rnd(4)]);

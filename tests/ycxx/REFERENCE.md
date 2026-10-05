@@ -19,7 +19,7 @@ corrected `print/vprint_no_partial_output` (P3107 allows partial output from the
 bounds of [charconv.to.chars]/7), `regex/syntax_options` ([re.grammar]/14.2), `simd/iota` and
 `simd/compress_expand`.)
 
-Run of 2026-10-04 (batch 27), 1822 tests: GCC 1560 pass / 261 fail / 1 xfail; Clang 1529 pass / 282 fail / 11 xfail
+Run of 2026-10-05 (at `65e7235`, after batch 36), 2146 tests: GCC 1754 pass / 387 fail / 5 xfail; Clang 1718 pass / 412 fail / 16 xfail (one GCC failure, `forward_list/exc_sweep_modifiers`, reached its time limit under load). The sections below itemise the failures of the batch-27 run (1822 tests: GCC 1560 pass / 261 fail / 1 xfail; Clang 1529 / 282 / 11); the failures of tests added since (batches 28-36, among them the depr/ deprecation checks, the container requirement sweeps and the exception-safety sweeps) are not itemised yet. In the batch-27 run
 (threaded tests rerun serially: under `-j32` on 4 cores `stmt_dcl/static_local_concurrent_once` and
 `stop_token/stop_callback_thread` occasionally exceed their time limits).
 The same suite against libycxx: see `STATUS.md`.

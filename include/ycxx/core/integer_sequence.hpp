@@ -3,7 +3,7 @@
 
 #include <ycxx/core/meta_base.hpp>
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 
 // [intseq]
 template <class T, T... I>

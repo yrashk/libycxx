@@ -20,7 +20,7 @@
 #include <ycxx/core/cstddef.hpp>
 #include <ycxx/core/type_traits.hpp>
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 template <class CharT>
 struct char_traits;
 template <class T>
@@ -48,7 +48,7 @@ template <class T>
 inline constexpr bool enable_nonlocking_formatter_optimization = false;
 } // namespace std
 
-namespace ycxx::adl_free {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace adl_free {
 // format_context::iterator (format_base.hpp).
 template <class charT>
 class fmt_iter;
@@ -59,9 +59,9 @@ struct fmt_disabled {
   fmt_disabled(const fmt_disabled&) = delete;
   fmt_disabled& operator=(const fmt_disabled&) = delete;
 };
-} // namespace ycxx::adl_free
+}} // namespace ycxx::adl_free
 
-namespace ycxx::detail {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 
 template <class charT>
 concept fmt_char = __is_same(charT, char) || __is_same(charT, wchar_t);
@@ -122,9 +122,9 @@ constexpr typename Context::iterator fmt_format_pointer(Context& ctx, const void
 template <class charT, class T, class Context>
 typename Context::iterator fmt_format_float(Context& ctx, T value, const fmt_spec<charT>& s);
 
-} // namespace ycxx::detail
+}} // namespace ycxx::detail
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 // [format.formattable]
 template <class T, class charT>
 concept formattable =
@@ -133,7 +133,7 @@ concept formattable =
 
 // ---- the formatter specializations of [format.formatter.spec] -----------------------------------
 
-namespace ycxx::adl_free {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace adl_free {
 
 // The formatters interpreting a std-format-spec.
 template <class charT, ycxx::detail::fmt_cat Cat>
@@ -159,9 +159,9 @@ protected:
   }
 };
 
-} // namespace ycxx::adl_free
+}} // namespace ycxx::adl_free
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 
 // /2.1: characters.
 template <ycxx::detail::fmt_char charT>

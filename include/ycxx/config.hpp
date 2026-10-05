@@ -258,7 +258,7 @@
 #  define YCXX_FAST16_IS_LONG 0
 #endif
 
-namespace ycxx::detail {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 
 namespace cfg {
 #if defined(__clang__)
@@ -483,5 +483,5 @@ template <template <class U, U...> class Seq, class T, T N>
 using make_integer_seq = Seq<T, __integer_pack(N)...>;
 #endif
 
-} // namespace ycxx::detail
+}} // namespace ycxx::detail
 

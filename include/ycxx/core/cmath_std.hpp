@@ -8,7 +8,7 @@
 // for the integer and mixed arguments of [cmath.syn]/3.
 #pragma once
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 
 template <class T = float>
   requires ycxx::detail::fp_is<T, float>

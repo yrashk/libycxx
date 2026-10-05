@@ -24,7 +24,7 @@
 #include <ycxx/core/cmath_tables.hpp>
 #include <ycxx/core/math_constants.hpp>
 
-namespace ycxx::detail::sf {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail::sf {
 
 template <class T>
 consteval auto work_of() {
@@ -901,4 +901,4 @@ T riemann_zeta(T x) noexcept {
   return static_cast<T>(sn < W(0) ? -r : r);
 }
 
-} // namespace ycxx::detail::sf
+}} // namespace ycxx::detail::sf

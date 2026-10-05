@@ -17,11 +17,11 @@
 
 // timespec_getres (C23 7.29.2.7) for C libraries without it, in the hosted runtime
 // (src/hosted/ctime.cpp): the resolution of TIME_UTC, from clock_getres(CLOCK_REALTIME).
-namespace ycxx::detail {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 int c_timespec_getres(::timespec* ts, int base) noexcept;
-} // namespace ycxx::detail
+}} // namespace ycxx::detail
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 using ::clock_t;
 using ::time_t;
 using ::tm;

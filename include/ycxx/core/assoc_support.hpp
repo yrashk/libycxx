@@ -7,7 +7,7 @@
 #include <ycxx/core/pair.hpp>
 #include <ycxx/core/sequence_support.hpp>
 
-namespace ycxx::detail {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 
 template <class Compare>
 concept transparent_compare = requires { typename Compare::is_transparent; };
@@ -36,4 +36,4 @@ using range_to_alloc_type = std::pair<const range_key_type<R>, range_mapped_type
 template <class C>
 concept deducible_compare = !qualifies_as_allocator<C>;
 
-} // namespace ycxx::detail
+}} // namespace ycxx::detail

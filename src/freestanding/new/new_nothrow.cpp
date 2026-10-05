@@ -5,6 +5,9 @@
 #include <new>
 #include <ycxx/core/error.hpp>
 #include "try_or_null.hpp"
+#include "../../runtime/new/hidden.hpp"
+
+asm((ycxx::detail::hide_allocation_function("_Znw#RKSt9nothrow_t")));
 
 void* operator new(std::size_t n, const std::nothrow_t&) noexcept {
   return ycxx::detail::try_or_null(&ycxx_fs_default_new != nullptr, [&] { return ::operator new(n); });

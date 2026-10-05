@@ -17,7 +17,7 @@
 #include <ycxx/core/algo_results.hpp>
 #include <ycxx/core/execution_policy.hpp>
 
-namespace ycxx::detail {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 
 // [special.mem.concepts]
 template <class I>
@@ -75,9 +75,9 @@ struct uninit_guard {
 template <class I>
 uninit_guard(I, I*) -> uninit_guard<I>;
 
-} // namespace ycxx::detail
+}} // namespace ycxx::detail
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 
 // [uninitialized.construct.default]
 template <class NoThrowForwardIterator>
@@ -195,7 +195,7 @@ constexpr NoThrowForwardIterator uninitialized_fill_n(NoThrowForwardIterator fir
 // ---------------------------------------------------------------------------------------------
 // std::ranges forms
 // ---------------------------------------------------------------------------------------------
-namespace std::ranges {
+namespace [[gnu::visibility("hidden")]] std { namespace ranges {
 template <class I, class O>
 using uninitialized_copy_result = in_out_result<I, O>;
 template <class I, class O>
@@ -204,9 +204,9 @@ template <class I, class O>
 using uninitialized_move_result = in_out_result<I, O>;
 template <class I, class O>
 using uninitialized_move_n_result = in_out_result<I, O>;
-} // namespace std::ranges
+}} // namespace std::ranges
 
-namespace ycxx::detail::uninit_fn {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail::uninit_fn {
 
 using std::iter_difference_t;
 using std::iter_value_t;
@@ -501,9 +501,9 @@ struct destroy_n {
   }
 };
 
-} // namespace ycxx::detail::uninit_fn
+}} // namespace ycxx::detail::uninit_fn
 
-namespace std::ranges {
+namespace [[gnu::visibility("hidden")]] std { namespace ranges {
 inline constexpr ycxx::detail::uninit_fn::default_construct uninitialized_default_construct{};
 inline constexpr ycxx::detail::uninit_fn::default_construct_n uninitialized_default_construct_n{};
 inline constexpr ycxx::detail::uninit_fn::value_construct uninitialized_value_construct{};
@@ -516,4 +516,4 @@ inline constexpr ycxx::detail::uninit_fn::fill uninitialized_fill{};
 inline constexpr ycxx::detail::uninit_fn::fill_n uninitialized_fill_n{};
 inline constexpr ycxx::detail::uninit_fn::destroy destroy{};
 inline constexpr ycxx::detail::uninit_fn::destroy_n destroy_n{};
-} // namespace std::ranges
+}} // namespace std::ranges

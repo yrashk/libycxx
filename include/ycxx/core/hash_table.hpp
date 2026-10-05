@@ -43,7 +43,7 @@
 #include <ycxx/core/tuple.hpp>
 #include <ycxx/core/utility_base.hpp>
 
-namespace ycxx::detail {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 
 struct hash_table_access;
 
@@ -104,9 +104,9 @@ concept unord_hash_arg = !std::is_integral_v<H> && !qualifies_as_allocator<H>;
 template <class P>
 concept unord_pred_arg = !qualifies_as_allocator<P>;
 
-} // namespace ycxx::detail
+}} // namespace ycxx::detail
 
-namespace ycxx::adl_free {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace adl_free {
 
 template <class Key, class Value, class Hash, class Pred, class Alloc, bool Multi>
 class hash_table;
@@ -1225,9 +1225,9 @@ protected:
   }
 };
 
-} // namespace ycxx::adl_free
+}} // namespace ycxx::adl_free
 
-namespace ycxx::detail {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 
 // Lets the non-member operator== and erase_if use the table's internals.
 struct hash_table_access {
@@ -1242,4 +1242,4 @@ struct hash_table_access {
   }
 };
 
-} // namespace ycxx::detail
+}} // namespace ycxx::detail

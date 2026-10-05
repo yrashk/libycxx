@@ -7,7 +7,7 @@
 #include <ycxx/core/execution_policy.hpp>
 #include <ycxx/core/uninitialized.hpp>
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 
 template <class ExecutionPolicy, class NoThrowForwardIterator>
   requires ycxx::detail::execution_policy<ExecutionPolicy>

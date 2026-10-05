@@ -6,7 +6,7 @@
 #include <ycxx/core/math_constants.hpp>
 #include <ycxx/core/meta_base.hpp>
 
-namespace ycxx::detail {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 template <class T>
 consteval T numbers_primary() {
   static_assert(ycxx::detail::always_false<T>,
@@ -18,9 +18,9 @@ template <class T>
 consteval T numbers_value(math_constant c) {
   return ycxx::detail::math_constant_value<std::remove_cv_t<T>>(c);
 }
-} // namespace ycxx::detail
+}} // namespace ycxx::detail
 
-namespace std::numbers {
+namespace [[gnu::visibility("hidden")]] std { namespace numbers {
 
 template <class T>
 inline constexpr T e_v = ycxx::detail::numbers_primary<T>();
@@ -90,4 +90,4 @@ inline constexpr double inv_sqrt3 = inv_sqrt3_v<double>;
 inline constexpr double egamma = egamma_v<double>;
 inline constexpr double phi = phi_v<double>;
 
-} // namespace std::numbers
+}} // namespace std::numbers

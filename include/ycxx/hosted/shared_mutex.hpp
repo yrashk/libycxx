@@ -12,7 +12,7 @@
 #include <ycxx/hosted/mutex.hpp>
 #include <ycxx/hosted/thread_support.hpp>
 
-namespace ycxx::detail {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 
 class shared_futex_mutex {
   static constexpr unsigned write_entered = 1u << 31;
@@ -112,9 +112,9 @@ public:
   }
 };
 
-} // namespace ycxx::detail
+}} // namespace ycxx::detail
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 
 // [thread.sharedmutex.class]
 class shared_mutex {

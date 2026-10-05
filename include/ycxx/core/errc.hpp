@@ -11,7 +11,7 @@
 
 #include <ycxx/config.hpp>
 
-namespace ycxx::detail {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 // The errno number of one meaning: Linux's or Darwin's.
 consteval int errno_number(int linux_value, int darwin_value) noexcept {
   return cfg::darwin ? darwin_value : linux_value;
@@ -22,9 +22,9 @@ inline constexpr int errno_enodata = errno_number(61, 96); // ENODATA
 inline constexpr int errno_enosr = errno_number(63, 98); // ENOSR
 inline constexpr int errno_enostr = errno_number(60, 99); // ENOSTR
 inline constexpr int errno_etime = errno_number(62, 101); // ETIME
-} // namespace ycxx::detail
+}} // namespace ycxx::detail
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 // Each value is errno_number(Linux, Darwin); the comment names the <cerrno> macro.
 enum class errc {
   address_family_not_supported = ycxx::detail::errno_number(97, 47), // EAFNOSUPPORT

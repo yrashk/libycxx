@@ -9,14 +9,14 @@
 #include <ycxx/core/pair.hpp>
 #include <ycxx/core/error.hpp>
 
-namespace ycxx::detail {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 template <class T>
 inline constexpr bool is_init_list_v = false;
 template <class T>
 inline constexpr bool is_init_list_v<std::initializer_list<T>> = true;
-} // namespace ycxx::detail
+}} // namespace ycxx::detail
 
-namespace std::ranges {
+namespace [[gnu::visibility("hidden")]] std { namespace ranges {
 
 // [range.view]
 template <class T>
@@ -28,16 +28,16 @@ concept viewable_range =
                  (!view<remove_cvref_t<T>> &&
                   (is_lvalue_reference_v<T> || (movable<remove_reference_t<T>> && !ycxx::detail::is_init_list_v<remove_cvref_t<T>>))));
 
-} // namespace std::ranges
+}} // namespace std::ranges
 
-namespace ycxx::detail {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 template <class R>
 concept simple_view = std::ranges::view<R> && std::ranges::range<const R> &&
                       std::same_as<std::ranges::iterator_t<R>, std::ranges::iterator_t<const R>> &&
                       std::same_as<std::ranges::sentinel_t<R>, std::ranges::sentinel_t<const R>>;
-} // namespace ycxx::detail
+}} // namespace ycxx::detail
 
-namespace std::ranges {
+namespace [[gnu::visibility("hidden")]] std { namespace ranges {
 
 // [view.interface]
 template <class D>
@@ -164,9 +164,9 @@ public:
 // [range.subrange]
 enum class subrange_kind : bool { unsized, sized };
 
-} // namespace std::ranges
+}} // namespace std::ranges
 
-namespace ycxx::detail {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 template <class From, class To>
 concept uses_nonqualification_pointer_conversion =
     std::is_pointer_v<From> && std::is_pointer_v<To> &&
@@ -190,9 +190,9 @@ template <class D>
 struct subrange_size<D, true> {
   D value = 0;
 };
-} // namespace ycxx::detail
+}} // namespace ycxx::detail
 
-namespace std::ranges {
+namespace [[gnu::visibility("hidden")]] std { namespace ranges {
 
 template <input_or_output_iterator I, sentinel_for<I> S = I,
           subrange_kind K = sized_sentinel_for<S, I> ? subrange_kind::sized : subrange_kind::unsized>
@@ -343,9 +343,9 @@ using borrowed_iterator_t = conditional_t<borrowed_range<R>, iterator_t<R>, dang
 template <range R>
 using borrowed_subrange_t = conditional_t<borrowed_range<R>, subrange<iterator_t<R>>, dangling>;
 
-} // namespace std::ranges
+}} // namespace std::ranges
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 using ranges::get;
 
 template <class I, class S, ranges::subrange_kind K>
@@ -368,11 +368,11 @@ struct tuple_element<1, const ranges::subrange<I, S, K>> {
 };
 } // namespace std
 
-namespace ycxx::detail {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 template <class I, class S, std::ranges::subrange_kind K>
 inline constexpr bool is_tuple_like_impl<std::ranges::subrange<I, S, K>> = true;
 // Excluded from pair's and tuple's pair-like/tuple-like constructors and from the pair-like
 // uses_allocator_construction_args overload (pair.hpp).
 template <class I, class S, std::ranges::subrange_kind K>
 inline constexpr bool is_subrange<std::ranges::subrange<I, S, K>> = true;
-} // namespace ycxx::detail
+}} // namespace ycxx::detail

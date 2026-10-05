@@ -9,7 +9,7 @@
 #include <ycxx/core/invoke.hpp>
 #include <ycxx/core/type_traits.hpp>
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 // COMPILER-BUG(gcc): when X is substituted by a dependent expression (as in the cw-operators'
 // return types), GCC 16 computes the default `decltype(X)` from that expression, so
 // `L::value ->* R::value` yields constant_wrapper<9, const int>. An auto non-type parameter never
@@ -18,7 +18,7 @@ template <auto X, class = remove_cvref_t<decltype(X)>>
 struct constant_wrapper;
 } // namespace std
 
-namespace ycxx::detail {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 
 // constexpr-param
 template <class T>
@@ -55,9 +55,9 @@ consteval bool cw_subscript_noexcept() {
     return noexcept(CW::value[std::declval<Args>()...]);
 }
 
-} // namespace ycxx::detail
+}} // namespace ycxx::detail
 
-namespace ycxx::adl_free {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace adl_free {
 
 struct cw_operators {
   // unary operators
@@ -233,9 +233,9 @@ struct cw_operators {
   }
 };
 
-} // namespace ycxx::adl_free
+}} // namespace ycxx::adl_free
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 
 template <auto X, class T>
 struct constant_wrapper : ::ycxx::adl_free::cw_operators {

@@ -34,7 +34,7 @@
 #include <ycxx/core/string_view.hpp>
 #include <ycxx/core/utility_base.hpp>
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 class locale;
 
 // [format.error]
@@ -58,7 +58,7 @@ struct format_to_n_result {
 };
 } // namespace std
 
-namespace ycxx::detail {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 
 // Not constexpr: a call during the compile-time check of a format string makes the string
 // ill-formed; the name (or the argument, which the diagnostic shows) says why.
@@ -149,9 +149,9 @@ consteval bool fmt_unique(const fmt_kind (&k)[N]) {
   return true;
 }
 
-} // namespace ycxx::detail
+}} // namespace ycxx::detail
 
-namespace ycxx::adl_free {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace adl_free {
 
 // The type-erased output buffer behind fmt_iter: [data_, data_ + size_) holds pending output;
 // make_room_ is called when size_ == cap_ and leaves size_ < cap_ (by flushing the contents to
@@ -267,9 +267,9 @@ public:
   constexpr explicit fmt_arg_store(Args&... a) noexcept;
 };
 
-} // namespace ycxx::adl_free
+}} // namespace ycxx::adl_free
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 
 // [format.parse.ctx]
 template <class charT>
@@ -365,7 +365,7 @@ static_assert(__is_same(format_parse_context::iterator, const char*) &&
 
 } // namespace std
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 
 // [format.arg]
 template <class Context>
@@ -536,14 +536,14 @@ using wformat_args = basic_format_args<wformat_context>;
 // [format.formattable]
 } // namespace std
 
-namespace ycxx::detail {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 template <class charT>
 using fmt_context = std::basic_format_context<ycxx::adl_free::fmt_iter<charT>, charT>;
 template <class charT>
 using fmt_args = std::basic_format_args<fmt_context<charT>>;
-} // namespace ycxx::detail
+}} // namespace ycxx::detail
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 template <class Context>
 template <class T>
 constexpr basic_format_arg<Context>::basic_format_arg(T& v) noexcept {
@@ -595,7 +595,7 @@ template <class Context, class... Args>
 constexpr ycxx::adl_free::fmt_arg_store<Context, Args...>::fmt_arg_store(Args&... a) noexcept
     : args_{std::basic_format_arg<Context>(a)...} {}
 
-namespace ycxx::detail {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 
 // Access to the private members of the formatting classes.
 struct fmt_access {
@@ -1618,9 +1618,9 @@ constexpr std::size_t fmt_vformatted_size(std::basic_string_view<charT> fmt, fmt
   return sink.finish();
 }
 
-} // namespace ycxx::detail
+}} // namespace ycxx::detail
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 
 // [format.fmt.string]
 template <class charT, class... Args>

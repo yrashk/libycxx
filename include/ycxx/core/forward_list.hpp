@@ -22,12 +22,12 @@
 #include <ycxx/core/swap.hpp>
 #include <ycxx/core/utility_base.hpp>
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 template <class T, class Allocator>
 class forward_list;
 }
 
-namespace ycxx::detail {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 
 struct fwd_node_base {
   fwd_node_base* next;
@@ -43,9 +43,9 @@ struct fwd_node : fwd_node_base {
   constexpr ~fwd_node() {}
 };
 
-} // namespace ycxx::detail
+}} // namespace ycxx::detail
 
-namespace ycxx::adl_free {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace adl_free {
 
 // T is the element type, possibly const.
 template <class T, class Diff>
@@ -90,9 +90,9 @@ public:
   friend constexpr bool operator==(const fwd_list_iter& a, const fwd_list_iter& b) noexcept { return a.n_ == b.n_; }
 };
 
-} // namespace ycxx::adl_free
+}} // namespace ycxx::adl_free
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 
 template <class T, class Allocator = allocator<T>>
 class forward_list;

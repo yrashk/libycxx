@@ -6,6 +6,16 @@ using-declarations. The data table below is the single source of truth; re-run a
 Types that libycxx already defines in std (size_t, ...) are not re-declared.
 """
 import pathlib
+import sys as _sys
+_sys.path.insert(0, str(__import__("pathlib").Path(__file__).resolve().parent))
+from check_visibility import fix as _visibility_fix
+
+
+def hidden(text):
+    """libycxx's namespaces get hidden visibility (DECISIONS §2), as tools/check_visibility.py
+    requires of every header; the generated ones too."""
+    return _visibility_fix(text)[0]
+
 
 # std::mbstate_t and std::wint_t come from core (char_traits.hpp); the C library's ::mbstate_t is
 # a different type with the same layout, checked here.
@@ -344,7 +354,7 @@ for hname, (cxx, names, cond) in H_WRAPPERS.items():
     for switch, cnames in cond:
         lines += [f"#  if {switch}"] + [f"using std::{n};" for n in cnames] + ["#  endif"]
     lines += ["#else", f"#  include_next <{hname}>", "#endif", ""]
-    (root / hname).write_text("\n".join(lines))
+    (root / hname).write_text(hidden("\n".join(lines)))
 
 # <complex.h> and <tgmath.h> "behave as if" they simply include <complex>, and <cmath> and
 # <complex> ([complex.h.syn], [tgmath.h.syn]). In C++ the C library's must not be read: its
@@ -357,7 +367,7 @@ for hname, (stable, cxx) in H_CXX_ONLY.items():
              "#pragma once", "", "#ifdef __cplusplus", "extern \"C++\" {"]
     lines += [f"#  include <{h}>" for h in cxx]
     lines += ["}", "#else", f"#  include_next <{hname}>", "#endif", ""]
-    (root / hname).write_text("\n".join(lines))
+    (root / hname).write_text(hidden("\n".join(lines)))
 
 for name, (cheader, names, extra) in HEADERS.items():
     fs = FREESTANDING.get(name)
@@ -412,5 +422,5 @@ for name, (cheader, names, extra) in HEADERS.items():
         lines += [f"using std::{n};" for n in C_RENAMED[name]]
         if fs:
             lines.append("#endif")
-    (root / name).write_text("\n".join(lines) + "\n")
+    (root / name).write_text(hidden("\n".join(lines) + "\n"))
 print("generated", len(HEADERS), "headers and", len(H_WRAPPERS) + len(H_CXX_ONLY), ".h headers")

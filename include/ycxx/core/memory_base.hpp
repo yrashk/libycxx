@@ -10,7 +10,7 @@
 // ---------------------------------------------------------------------------------------------
 // [pointer.traits]
 // ---------------------------------------------------------------------------------------------
-namespace ycxx::detail {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 
 // First template argument of a template specialization, and rebinding of it.
 template <class T>
@@ -71,9 +71,9 @@ struct pointer_traits_base<Ptr> {
   }
 };
 
-} // namespace ycxx::detail
+}} // namespace ycxx::detail
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 
 template <class Ptr>
 struct pointer_traits : ycxx::detail::pointer_traits_base<Ptr> {};
@@ -197,13 +197,13 @@ const volatile T* start_lifetime_as_array(const volatile void* p, size_t n) noex
 // [specialized.construct], [specialized.destroy]
 } // namespace std
 
-namespace ycxx::detail {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 template <class T, class... Args>
 concept construct_at_ok =
     !std::is_unbounded_array_v<T> && requires(void* p, Args&&... args) { ::new (p) T(static_cast<Args&&>(args)...); };
-} // namespace ycxx::detail
+}} // namespace ycxx::detail
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 
 template <class T, class... Args>
   requires ycxx::detail::construct_at_ok<T, Args...>
@@ -245,7 +245,7 @@ constexpr ForwardIt destroy_n(ForwardIt first, Size n) {
 
 } // namespace std
 
-namespace ycxx::detail {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 namespace construct_at_ns {
 struct fn {
   template <class T, class... Args>
@@ -265,14 +265,14 @@ struct fn {
   }
 };
 } // namespace destroy_at_ns
-} // namespace ycxx::detail
+}} // namespace ycxx::detail
 
-namespace std::ranges {
+namespace [[gnu::visibility("hidden")]] std { namespace ranges {
 inline constexpr ycxx::detail::construct_at_ns::fn construct_at{};
 inline constexpr ycxx::detail::destroy_at_ns::fn destroy_at{};
-} // namespace std::ranges
+}} // namespace std::ranges
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 
 // [allocator.tag]
 struct allocator_arg_t {
@@ -355,7 +355,7 @@ public:
 // ---------------------------------------------------------------------------------------------
 // [allocator.traits]
 // ---------------------------------------------------------------------------------------------
-namespace ycxx::detail {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 
 template <class A, class Default>
 struct alloc_pointer {
@@ -462,9 +462,9 @@ struct alloc_rebind<A, T> {
   using type = typename A::template rebind<T>::other;
 };
 
-} // namespace ycxx::detail
+}} // namespace ycxx::detail
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 
 template <class Alloc>
 struct allocator_traits {

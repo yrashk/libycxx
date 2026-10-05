@@ -3,7 +3,7 @@
 
 #include <ycxx/core/utility_base.hpp>
 
-namespace ycxx::detail {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 
 template <class T>
 void implicit_default_init_test(const T&);
@@ -35,9 +35,9 @@ concept pair_like_not_pair = pair_like<P> && !__is_same(__remove_cvref(P), Pair)
 template <std::size_t I, class P>
 using pair_like_get_t = decltype(get<I>(static_cast<P (*)()>(nullptr)()));
 
-} // namespace ycxx::detail
+}} // namespace ycxx::detail
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 
 template <class T1, class T2>
 struct pair {

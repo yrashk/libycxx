@@ -30,7 +30,7 @@
 #include <ycxx/core/swap.hpp>
 #include <ycxx/core/utility_base.hpp>
 
-namespace ycxx::detail {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 
 // Probe: can construct_at begin the lifetime of one element of an array that is a union
 // member with no active member, during constant evaluation (P3074)?
@@ -64,9 +64,9 @@ using iv_size_t = std::conditional_t<
     (N <= 0xffu), unsigned char,
     std::conditional_t<(N <= 0xffffu), unsigned short, std::conditional_t<(N <= 0xffffffffu), unsigned, std::size_t>>>;
 
-} // namespace ycxx::detail
+}} // namespace ycxx::detail
 
-namespace ycxx::adl_free {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace adl_free {
 
 template <class T, std::size_t N, bool = (N == 0)>
 struct iv_storage;
@@ -217,9 +217,9 @@ struct iv_storage<T, N, false> {
   }
 };
 
-} // namespace ycxx::adl_free
+}} // namespace ycxx::adl_free
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 
 template <class T, size_t N>
 class inplace_vector : ycxx::adl_free::iv_storage<T, N> {

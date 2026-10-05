@@ -8,7 +8,7 @@
 #include <ycxx/core/format_unicode.hpp>
 #include <ycxx/hosted/stacktrace.hpp>
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 
 template <>
 struct formatter<stacktrace_entry> {

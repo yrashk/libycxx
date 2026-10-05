@@ -21,16 +21,16 @@
 #include <ycxx/core/type_traits.hpp>
 #include <ycxx/core/unique_ptr.hpp>
 
-namespace ycxx::adl_free {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace adl_free {
 // The link of a retired object (the base of every hazard_pointer_obj_base).
 struct hp_retired_node {
   hp_retired_node* hp_next_;
   const void* hp_object_;                          // the T object the hazard pointers name
   void (*hp_reclaim_)(hp_retired_node*) noexcept; // invokes the deleter
 };
-} // namespace ycxx::adl_free
+}} // namespace ycxx::adl_free
 
-namespace ycxx::detail {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 using adl_free::hp_retired_node;
 
 // A hazard pointer: the value its owner publishes, and whether a hazard_pointer owns it.
@@ -59,9 +59,9 @@ concept hazard_protectable = requires { typename T::ycxx_hp_base; } &&
 
 struct hp_access;
 
-} // namespace ycxx::detail
+}} // namespace ycxx::detail
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 
 // [saferecl.hp.base]
 template <class T, class D = default_delete<T>>
@@ -167,14 +167,14 @@ public:
 
 } // namespace std
 
-namespace ycxx::detail {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 struct hp_access {
   static std::hazard_pointer make(hp_record* r) noexcept { return std::hazard_pointer(r); }
   static hp_record*& record(std::hazard_pointer& h) noexcept { return h.rec_; }
 };
-} // namespace ycxx::detail
+}} // namespace ycxx::detail
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 
 // [saferecl.hp.holder.nonmem]
 [[nodiscard]] inline hazard_pointer make_hazard_pointer() {

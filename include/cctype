@@ -6,7 +6,7 @@
 #include <ycxx/core/cstddef.hpp>
 #include <ctype.h>
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 using ::isalnum;
 using ::isalpha;
 using ::isblank;

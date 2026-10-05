@@ -30,7 +30,7 @@
 #include <ycxx/core/span.hpp>
 #include <ycxx/core/type_traits.hpp>
 
-namespace ycxx::adl_free {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace adl_free {
 // The ABI tags (see above). R, the register width the layout is built for, is part of the type,
 // so translation units built for different widths do not share a type with two layouts; only the
 // tags of this translation unit's width are enabled.
@@ -43,9 +43,9 @@ struct simd_convert_flag {};
 struct simd_aligned_flag {};
 template <std::size_t N>
 struct simd_overaligned_flag {};
-} // namespace ycxx::adl_free
+}} // namespace ycxx::adl_free
 
-namespace ycxx::detail {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 template <class F>
 inline constexpr bool simd_is_flag = false;
 template <>
@@ -54,17 +54,17 @@ template <>
 inline constexpr bool simd_is_flag<ycxx::adl_free::simd_aligned_flag> = true;
 template <std::size_t N>
 inline constexpr bool simd_is_flag<ycxx::adl_free::simd_overaligned_flag<N>> = true;
-} // namespace ycxx::detail
+}} // namespace ycxx::detail
 
-namespace std::simd {
+namespace [[gnu::visibility("hidden")]] std { namespace simd {
 template <class... Flags>
   requires(ycxx::detail::simd_is_flag<Flags> && ...)
 struct flags;
 template <size_t Bytes, class Abi>
 class basic_mask;
-} // namespace std::simd
+}} // namespace std::simd
 
-namespace ycxx::detail {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 
 // simd-size-type
 using simd_size_t = int;
@@ -438,9 +438,9 @@ struct simd_access {
   }
 };
 
-} // namespace ycxx::detail
+}} // namespace ycxx::detail
 
-namespace std::simd {
+namespace [[gnu::visibility("hidden")]] std { namespace simd {
 
 // [simd.flags.overview]
 template <class... Flags>
@@ -459,9 +459,9 @@ template <size_t N>
   requires(std::has_single_bit(N))
 inline constexpr flags<ycxx::adl_free::simd_overaligned_flag<N>> flag_overaligned{};
 
-} // namespace std::simd
+}} // namespace std::simd
 
-namespace ycxx::adl_free {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace adl_free {
 
 // [simd.iterator]: simd-iterator<V>, a random-access iterator over the elements of a basic_vec or
 // basic_mask, yielding prvalues.
@@ -534,4 +534,4 @@ public:
   }
 };
 
-} // namespace ycxx::adl_free
+}} // namespace ycxx::adl_free

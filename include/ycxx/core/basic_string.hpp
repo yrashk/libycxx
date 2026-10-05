@@ -27,7 +27,7 @@
 #include <ycxx/core/string_view.hpp>
 #include <ycxx/core/swap.hpp>
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 
 template <class charT, class traits = char_traits<charT>, class Allocator = allocator<charT>>
 class basic_string;
@@ -1149,7 +1149,7 @@ basic_string(basic_string_view<charT, traits>, typename basic_string<charT, trai
 
 } // namespace std
 
-namespace ycxx::detail {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 
 // lhs + rhs as a new string with allocator a ([string.op.plus]: a copy of one operand, then an
 // append or insert), sized once.
@@ -1169,9 +1169,9 @@ constexpr typename S::allocator_type copy_alloc(const S& s) {
   return std::allocator_traits<typename S::allocator_type>::select_on_container_copy_construction(s.get_allocator());
 }
 
-} // namespace ycxx::detail
+}} // namespace ycxx::detail
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 
 // ---- [string.op.plus] ----
 template <class charT, class traits, class Allocator>
@@ -1350,7 +1350,7 @@ using wstring = basic_string<wchar_t>;
 } // namespace std
 
 // ---- [basic.string.hash] ----
-namespace ycxx::adl_free {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace adl_free {
 // hash<S>()(s) == hash<SV>()(SV(s)) for the five standard string types.
 template <class S>
 struct string_hash {
@@ -1359,9 +1359,9 @@ struct string_hash {
         std::basic_string_view<typename S::value_type>(s.data(), s.size()));
   }
 };
-} // namespace ycxx::adl_free
+}} // namespace ycxx::adl_free
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 
 template <class A>
 struct hash<basic_string<char, char_traits<char>, A>>
@@ -1393,7 +1393,7 @@ constexpr wstring operator""s(const wchar_t* str, size_t len) { return wstring(s
 } // namespace std
 
 // ---- [string.conversions] ----
-namespace ycxx::detail {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 
 // format("{}", v) for an integer: decimal digits, a leading '-' for negative values.
 template <class charT, class T>
@@ -1440,9 +1440,9 @@ constexpr std::basic_string<charT> integer_to_string(T v) {
   return std::basic_string<charT>(p, static_cast<std::size_t>(end - p));
 }
 
-} // namespace ycxx::detail
+}} // namespace ycxx::detail
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 
 // Defined in the hosted runtime (src/hosted/string.cpp): they call the C library.
 int stoi(const string& str, size_t* idx = nullptr, int base = 10);

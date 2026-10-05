@@ -21,11 +21,11 @@
 #include <ycxx/hosted/iosfwd.hpp>
 #include <ycxx/hosted/regex_engine.hpp>
 
-namespace ycxx::detail {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 struct regex_access;
-} // namespace ycxx::detail
+}} // namespace ycxx::detail
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 
 // [re.regex]
 template <class charT, class traits = regex_traits<charT>>
@@ -199,13 +199,13 @@ using wssub_match = sub_match<wstring::const_iterator>;
 
 } // namespace std
 
-namespace ycxx::detail {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 // SM-CAT(I) of [re.submatch.op]
 template <class BiIter>
 using regex_sm_cat_t = std::compare_three_way_result_t<std::basic_string<typename std::iterator_traits<BiIter>::value_type>>;
-} // namespace ycxx::detail
+}} // namespace ycxx::detail
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 
 // [re.submatch.op]
 
@@ -469,7 +469,7 @@ using wsmatch = match_results<wstring::const_iterator>;
 
 } // namespace std
 
-namespace ycxx::detail {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 
 struct regex_access {
   // Matches e against [first, last) (whole: regex_match) and fills m; positions count from base.
@@ -511,9 +511,9 @@ struct regex_access {
   }
 };
 
-} // namespace ycxx::detail
+}} // namespace ycxx::detail
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 
 // [re.alg.match]
 template <class BidirectionalIterator, class Allocator, class charT, class traits>
@@ -847,7 +847,7 @@ using wsregex_token_iterator = regex_token_iterator<wstring::const_iterator>;
 
 } // namespace std
 
-namespace ycxx::detail {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 // [re.alg.replace]/1
 template <class OutputIterator, class BidirectionalIterator, class traits, class charT>
 OutputIterator re_replace(OutputIterator out, BidirectionalIterator first, BidirectionalIterator last,
@@ -879,9 +879,9 @@ OutputIterator re_replace(OutputIterator out, BidirectionalIterator first, Bidir
     put(tail.first, tail.second);
   return out;
 }
-} // namespace ycxx::detail
+}} // namespace ycxx::detail
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 
 // [re.alg.replace]
 template <class OutputIterator, class BidirectionalIterator, class traits, class charT, class ST, class SA>

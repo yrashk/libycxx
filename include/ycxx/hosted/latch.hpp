@@ -12,7 +12,7 @@
 #include <ycxx/core/type_traits.hpp>
 #include <ycxx/hosted/thread_support.hpp>
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 
 // [thread.latch.class]
 class latch {
@@ -47,14 +47,14 @@ public:
 
 } // namespace std
 
-namespace ycxx::detail {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 // The default CompletionFunction of barrier: does nothing.
 struct barrier_no_completion {
   void operator()() noexcept {}
 };
-} // namespace ycxx::detail
+}} // namespace ycxx::detail
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 
 // [thread.barrier.class]
 template <class CompletionFunction = ycxx::detail::barrier_no_completion>

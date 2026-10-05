@@ -12,7 +12,7 @@
 #include <ctime>
 #include <ycxx/hosted/locale_num.hpp>
 
-namespace ycxx::detail {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 
 // time_put stage: the characters strftime produces for "%<modifier><format>" in the "C"
 // locale (src/hosted/time.cpp). Writes at most cap characters; returns the full length.
@@ -64,9 +64,9 @@ constexpr void complete_date(std::tm& t, bool wday, bool yday) noexcept {
   }
 }
 
-} // namespace ycxx::detail
+}} // namespace ycxx::detail
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 
 // ---- [locale.time.get] ------------------------------------------------------------------------
 class time_base {

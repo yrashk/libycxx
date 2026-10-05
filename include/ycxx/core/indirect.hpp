@@ -17,12 +17,12 @@
 #include <ycxx/core/utility_base.hpp>
 #include <ycxx/core/error.hpp>
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 template <class T, class Allocator>
 class indirect;
 }
 
-namespace ycxx::detail {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 
 template <class T>
 inline constexpr bool is_indirect = false;
@@ -39,9 +39,9 @@ inline constexpr bool composite_value_ok = std::is_object_v<T> && !std::is_array
 template <class T>
 concept complete_type = requires { sizeof(T); };
 
-} // namespace ycxx::detail
+}} // namespace ycxx::detail
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 
 template <class T, class Allocator = allocator<T>>
 class indirect {

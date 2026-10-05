@@ -5,19 +5,19 @@
 
 #include <ycxx/core/format_decl.hpp>
 
-namespace ycxx::adl_free {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace adl_free {
 template <class Word>
 class bit_ref;
-} // namespace ycxx::adl_free
+}} // namespace ycxx::adl_free
 
-namespace ycxx::detail {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 template <class T>
 inline constexpr bool fmt_is_bit_ref = false;
 template <class Word>
 inline constexpr bool fmt_is_bit_ref<ycxx::adl_free::bit_ref<Word>> = true;
-} // namespace ycxx::detail
+}} // namespace ycxx::detail
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 
 template <class T, class charT>
   requires ycxx::detail::fmt_is_bit_ref<T>

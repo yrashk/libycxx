@@ -11,14 +11,14 @@
 #include <ycxx/core/range_access.hpp>
 #include <ycxx/core/ranges_base.hpp>
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 
 template <class charT, class traits = char_traits<charT>>
 class basic_string_view;
 
 } // namespace std
 
-namespace ycxx::detail {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 // [string.view.cons]/12.5: d.operator ::std::basic_string_view<charT, traits>() is not valid.
 template <class D, class charT, class traits>
 concept has_string_view_conversion =
@@ -34,9 +34,9 @@ template <class traits>
 struct sv_comparison_category<traits> {
   using type = typename traits::comparison_category;
 };
-} // namespace ycxx::detail
+}} // namespace ycxx::detail
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 
 template <class charT, class traits>
 class basic_string_view {

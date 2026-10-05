@@ -20,7 +20,7 @@
 #endif
 
 #if YCXX_TARGET_DARWIN && !defined(PRIb8)
-namespace ycxx::detail {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 static_assert(is_any_of<std::uint8_t, unsigned char> && is_any_of<std::uint16_t, unsigned short> &&
               is_any_of<std::uint32_t, unsigned> && is_any_of<std::uint64_t, unsigned long long> &&
               is_any_of<std::uintptr_t, unsigned long>);
@@ -28,7 +28,7 @@ static_assert(is_any_of<std::uint_least8_t, std::uint8_t> && is_any_of<std::uint
 static_assert(is_any_of<std::uint_least16_t, std::uint16_t> && is_any_of<std::uint_fast16_t, std::uint16_t>);
 static_assert(is_any_of<std::uint_least32_t, std::uint32_t> && is_any_of<std::uint_fast32_t, std::uint32_t>);
 static_assert(is_any_of<std::uint_least64_t, std::uint64_t> && is_any_of<std::uint_fast64_t, std::uint64_t>);
-} // namespace ycxx::detail
+}} // namespace ycxx::detail
 #  define PRIb8 "hhb"
 #  define SCNb8 "hhb"
 #  define PRIbLEAST8 "hhb"
@@ -59,7 +59,7 @@ static_assert(is_any_of<std::uint_least64_t, std::uint64_t> && is_any_of<std::ui
 #  define SCNbPTR "lb"
 #endif
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 using ::imaxdiv_t;
 using ::strtoimax;
 using ::strtoumax;

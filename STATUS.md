@@ -27,6 +27,14 @@ does not include `<iosfwd>` ([bitset.syn]); plus the documented template-paramet
 includes (F: 121 libc++, 79 libstdc++), libc++/libstdc++ specifics and pre-C++26 values (C), and
 running as root (27 filesystem tests).
 
+Counterparts of skipped tests: an external test skipped as implementation-specific, extension,
+divergence or removed, or UNSUPPORTED for a library mode (libc++ hardening, warning-only verify,
+experimental/; libstdc++ debug mode), ends its result with `covered by libycxx: tests/ycxx/...`
+(own tests carry `// COUNTERPART:`, tests/ycxxlit/counterparts.py) or `no libycxx counterpart[:
+reason]` (reasons: section "Skipped tests without a counterpart" of each TRIAGE.md); the suite
+reports count both per category. All such libc++ tests are linked or triaged; of libstdc++'s
+2633 extension skips, 2409 (testsuite-helper skips in std directories) are not triaged yet.
+
 ## Per-header conformance (libc++ tests; pass / run, excluding documented skips)
 | Area (libc++ test dir) | Clang | GCC | Freestanding | Notes |
 |---|---|---|---|---|

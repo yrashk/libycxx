@@ -558,13 +558,17 @@ namespace {
 
 using result = std::codecvt_base::result;
 
-// The pending UTF-16 surrogate kept in an mbstate_t between calls (0: none).
+// The pending UTF-16 surrogate kept in an mbstate_t between calls (0: none), in its first four
+// bytes. std::mbstate_t is the C library's opaque type (glibc and musl: 8 bytes, Darwin: 128);
+// only the object representation is used, so a zero-initialised state holds none. These facets
+// keep nothing else, so no other state (a side table) is needed.
+static_assert(sizeof(std::mbstate_t) >= sizeof(char32_t));
 char32_t load_state(const std::mbstate_t& st) noexcept {
   char32_t v;
-  __builtin_memcpy(&v, st.__state, sizeof v);
+  __builtin_memcpy(&v, &st, sizeof v);
   return v;
 }
-void store_state(std::mbstate_t& st, char32_t v) noexcept { __builtin_memcpy(st.__state, &v, sizeof v); }
+void store_state(std::mbstate_t& st, char32_t v) noexcept { __builtin_memcpy(&st, &v, sizeof v); }
 
 // do_unshift of the UTF-16 facets. A high surrogate taken by utf16_out and still waiting for its
 // low half cannot be terminated: alone it is not a character UTF-8 can encode (Table 94: error,

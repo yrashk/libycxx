@@ -652,9 +652,6 @@ compilers; `visit_format_arg.pass.cpp` needs `EOF` from `constexpr_char_traits.h
   destroy/121024.cc fails on GCC (PR c++/102284, marked dg-xfail-if, which the harness ignores).
 - `FLT_ROUNDS` is the constant 1 with GCC (no `__builtin_flt_rounds`), as in GCC's own
   `<float.h>`; it does not follow `fesetround`. Clang reports the current mode.
-- `<cwchar>` with Clang on glibc: glibc declares `::wcschr` etc. only with the C signature, so an
-  unqualified call on a const pointer under `using namespace std;` returns `wchar_t*`. Qualified
-  `std::` calls are const-correct. (A `<wchar.h>` wrapper would be needed.)
 - `std::any` allocates large values with a plain new-expression, honouring a class-specific
   `operator new`. A type that deletes it cannot be stored (libstdc++ any/83658 relies on this).
 - Freestanding programs built with GCC link libgcc (helpers such as `__popcountdi2`).

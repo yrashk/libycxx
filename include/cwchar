@@ -7,7 +7,7 @@
 #include <ycxx/core/char_traits.hpp>
 #include <ycxx/core/cstdint.hpp>
 #if YCXX_HOSTED
-#  include <wchar.h>
+#  include <ycxx/hosted/c_wchar.hpp>
 #else
 #  include <ycxx/core/c_string.hpp>
 #endif
@@ -78,58 +78,39 @@ using ::wcrtomb;
 using ::mbsrtowcs;
 using ::wcsrtombs;
 
-static_assert(sizeof(mbstate_t) == sizeof(::mbstate_t) && alignof(mbstate_t) == alignof(::mbstate_t),
-              "libycxx: std::mbstate_t does not match this C library's ::mbstate_t layout");
-
-// Additions, all templates (template <class = void>): a non-template C function then wins every
-// tie, so unqualified calls under `using namespace std;` stay unambiguous (null state pointers
-// too), while qualified std:: calls find these where the C function does not fit.
-// - Overloads for std::mbstate_t (core's freestanding type, DECISIONS §3), forwarding to the C
-//   functions.
+// [library.c]: the const-correct pairs. The C library's own declarations of these five are
+// renamed while its header is read (ycxx/hosted/c_wchar.hpp: some declare only
+// `wchar_t* f(const wchar_t*, ...)`), and these call its functions through
+// ycxx::detail::c_wchar. Templates, as <cstdlib>'s div: a C function of the same name that a
+// program declares itself wins ties under `using namespace std;`.
 template <class = void>
-inline int mbsinit(const mbstate_t* ps) noexcept { return ::mbsinit(reinterpret_cast<const ::mbstate_t*>(ps)); }
+inline const wchar_t* wcschr(const wchar_t* s, wchar_t c) noexcept { return ::ycxx::detail::c_wchar::wcschr(s, c); }
 template <class = void>
-inline size_t mbrlen(const char* s, size_t n, mbstate_t* ps) noexcept {
-  return ::mbrlen(s, n, reinterpret_cast<::mbstate_t*>(ps));
-}
+inline wchar_t* wcschr(wchar_t* s, wchar_t c) noexcept { return ::ycxx::detail::c_wchar::wcschr(s, c); }
 template <class = void>
-inline size_t mbrtowc(wchar_t* pwc, const char* s, size_t n, mbstate_t* ps) noexcept {
-  return ::mbrtowc(pwc, s, n, reinterpret_cast<::mbstate_t*>(ps));
-}
+inline const wchar_t* wcspbrk(const wchar_t* s1, const wchar_t* s2) noexcept { return ::ycxx::detail::c_wchar::wcspbrk(s1, s2); }
 template <class = void>
-inline size_t wcrtomb(char* s, wchar_t wc, mbstate_t* ps) noexcept {
-  return ::wcrtomb(s, wc, reinterpret_cast<::mbstate_t*>(ps));
-}
+inline wchar_t* wcspbrk(wchar_t* s1, const wchar_t* s2) noexcept { return ::ycxx::detail::c_wchar::wcspbrk(s1, s2); }
 template <class = void>
-inline size_t mbsrtowcs(wchar_t* dst, const char** src, size_t len, mbstate_t* ps) noexcept {
-  return ::mbsrtowcs(dst, src, len, reinterpret_cast<::mbstate_t*>(ps));
-}
+inline const wchar_t* wcsrchr(const wchar_t* s, wchar_t c) noexcept { return ::ycxx::detail::c_wchar::wcsrchr(s, c); }
 template <class = void>
-inline size_t wcsrtombs(char* dst, const wchar_t** src, size_t len, mbstate_t* ps) noexcept {
-  return ::wcsrtombs(dst, src, len, reinterpret_cast<::mbstate_t*>(ps));
-}
-
-// - [library.c]: the const-correct pairs, for C libraries that declare only
-//   `wchar_t* f(const wchar_t*, ...)`.
+inline wchar_t* wcsrchr(wchar_t* s, wchar_t c) noexcept { return ::ycxx::detail::c_wchar::wcsrchr(s, c); }
 template <class = void>
-inline const wchar_t* wcschr(const wchar_t* s, wchar_t c) noexcept { return ::wcschr(s, c); }
+inline const wchar_t* wcsstr(const wchar_t* s1, const wchar_t* s2) noexcept { return ::ycxx::detail::c_wchar::wcsstr(s1, s2); }
 template <class = void>
-inline wchar_t* wcschr(wchar_t* s, wchar_t c) noexcept { return const_cast<wchar_t*>(::wcschr(s, c)); }
+inline wchar_t* wcsstr(wchar_t* s1, const wchar_t* s2) noexcept { return ::ycxx::detail::c_wchar::wcsstr(s1, s2); }
 template <class = void>
-inline const wchar_t* wcspbrk(const wchar_t* s1, const wchar_t* s2) noexcept { return ::wcspbrk(s1, s2); }
+inline const wchar_t* wmemchr(const wchar_t* s, wchar_t c, size_t n) noexcept { return ::ycxx::detail::c_wchar::wmemchr(s, c, n); }
 template <class = void>
-inline wchar_t* wcspbrk(wchar_t* s1, const wchar_t* s2) noexcept { return const_cast<wchar_t*>(::wcspbrk(s1, s2)); }
-template <class = void>
-inline const wchar_t* wcsrchr(const wchar_t* s, wchar_t c) noexcept { return ::wcsrchr(s, c); }
-template <class = void>
-inline wchar_t* wcsrchr(wchar_t* s, wchar_t c) noexcept { return const_cast<wchar_t*>(::wcsrchr(s, c)); }
-template <class = void>
-inline const wchar_t* wcsstr(const wchar_t* s1, const wchar_t* s2) noexcept { return ::wcsstr(s1, s2); }
-template <class = void>
-inline wchar_t* wcsstr(wchar_t* s1, const wchar_t* s2) noexcept { return const_cast<wchar_t*>(::wcsstr(s1, s2)); }
-template <class = void>
-inline const wchar_t* wmemchr(const wchar_t* s, wchar_t c, size_t n) noexcept { return ::wmemchr(s, c, n); }
-template <class = void>
-inline wchar_t* wmemchr(wchar_t* s, wchar_t c, size_t n) noexcept { return const_cast<wchar_t*>(::wmemchr(s, c, n)); }
+inline wchar_t* wmemchr(wchar_t* s, wchar_t c, size_t n) noexcept { return ::ycxx::detail::c_wchar::wmemchr(s, c, n); }
 } // namespace std
+#endif
+
+// The renamed C functions' names in the global namespace, now naming libycxx's own.
+#if YCXX_HOSTED
+using std::wcschr;
+using std::wcspbrk;
+using std::wcsrchr;
+using std::wcsstr;
+using std::wmemchr;
 #endif

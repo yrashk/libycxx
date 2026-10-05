@@ -20,11 +20,11 @@
 #include <ycxx/core/sequence_support.hpp>
 #include <ycxx/core/swap.hpp>
 
-namespace ycxx::detail {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 struct node_handle_access;
-}
+}}
 
-namespace ycxx::adl_free {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace adl_free {
 
 // The key/mapped types of a map node handle and the value type of a set node handle.
 template <class V, bool Map>
@@ -187,9 +187,9 @@ struct insert_return_type {
   NodeType node;
 };
 
-} // namespace ycxx::adl_free
+}} // namespace ycxx::adl_free
 
-namespace ycxx::detail {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 
 // How the containers make, inspect and empty node handles.
 struct node_handle_access {
@@ -211,4 +211,4 @@ struct node_handle_access {
   }
 };
 
-} // namespace ycxx::detail
+}} // namespace ycxx::detail

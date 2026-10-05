@@ -12,7 +12,7 @@
 #include <ycxx/core/invoke.hpp>
 #include <ycxx/core/tuple.hpp>
 
-namespace ycxx::detail {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 // f is a null (member) pointer: the Mandates of the NTTP forms.
 template <auto f>
 consteval bool is_null_pointer_constant() {
@@ -21,9 +21,9 @@ consteval bool is_null_pointer_constant() {
   else
     return false;
 }
-} // namespace ycxx::detail
+}} // namespace ycxx::detail
 
-namespace ycxx::adl_free {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace adl_free {
 
 // The wrappers' state entities are direct-non-list-initialized ([func.not.fn]/1.3,
 // [func.bind.partial]/1.3, [func.bind.bind]/1.3), so they have a tagged constructor rather than
@@ -130,9 +130,9 @@ struct mem_fn_wrapper {
   }
 };
 
-} // namespace ycxx::adl_free
+}} // namespace ycxx::adl_free
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 
 // ---- [func.not.fn] ----
 // Each factory checks its Mandates first and constructs only when they hold, so a violation
@@ -215,7 +215,7 @@ constexpr int is_placeholder_v = is_placeholder<T>::value;
 
 } // namespace std
 
-namespace ycxx::adl_free {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace adl_free {
 
 template <int J>
 struct placeholder {
@@ -224,9 +224,9 @@ struct placeholder {
   constexpr placeholder& operator=(const placeholder&) noexcept = default;
 };
 
-} // namespace ycxx::adl_free
+}} // namespace ycxx::adl_free
 
-namespace ycxx::detail {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 
 // The J-th argument, forwarded. (A function, not u...[J] in place: GCC evaluates a pack index
 // in a discarded branch, and fails when the pack is empty.)
@@ -250,9 +250,9 @@ constexpr decltype(auto) bind_value(CvTD td, U&&... u) {
     return static_cast<CvTD>(td);
 }
 
-} // namespace ycxx::detail
+}} // namespace ycxx::detail
 
-namespace ycxx::adl_free {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace adl_free {
 
 // The type V_i of a bound argument ([func.bind.bind]/7), for a wrapper of constness `cv` (CvTD
 // is cv TD&) called with arguments U&&...
@@ -365,9 +365,9 @@ struct binder {
   }
 };
 
-} // namespace ycxx::adl_free
+}} // namespace ycxx::adl_free
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 
 template <class R, class FD, class... TD>
 struct is_bind_expression<ycxx::adl_free::binder<R, FD, TD...>> : true_type {};

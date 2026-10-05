@@ -12,7 +12,7 @@
 #include <ycxx/core/algo_mutate.hpp>
 #include <ycxx/core/algo_sort.hpp>
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 
 template <class ExecutionPolicy, class ForwardIterator, class Predicate>
   requires ycxx::detail::execution_policy<ExecutionPolicy>

@@ -4,7 +4,7 @@
 
 #include <ycxx/core/type_traits.hpp>
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 
 template <class T>
 struct is_execution_policy : false_type {};
@@ -34,8 +34,8 @@ struct is_execution_policy<execution::unsequenced_policy> : true_type {};
 
 } // namespace std
 
-namespace ycxx::detail {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 // The constraint of the parallel algorithm overloads ([algorithms.parallel.overloads]).
 template <class E>
 concept execution_policy = std::is_execution_policy_v<std::remove_cvref_t<E>>;
-} // namespace ycxx::detail
+}} // namespace ycxx::detail

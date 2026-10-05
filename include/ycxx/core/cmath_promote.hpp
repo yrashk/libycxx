@@ -8,7 +8,7 @@
 #include <ycxx/core/meta_base.hpp>
 #include <ycxx/core/prim_traits.hpp>
 
-namespace ycxx::detail {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 
 template <class T>
 inline constexpr int fp_std_index = -1;
@@ -104,4 +104,4 @@ concept fp_is = __is_same(T, F) && is_floating_v<F>;
 template <class... As>
 using cmath_promote_t = typename fp_greatest_of<cmath_as_fp<As>...>::type;
 
-} // namespace ycxx::detail
+}} // namespace ycxx::detail

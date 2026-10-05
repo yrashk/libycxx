@@ -12,7 +12,7 @@
 #include <ycxx/hosted/locale_num.hpp>
 #include <ycxx/hosted/streambuf.hpp>
 
-namespace ycxx::adl_free {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace adl_free {
 // The base of basic_syncbuf that the emit_on_flush / noemit_on_flush / flush_emit manipulators
 // see ([ostream.manip]/8 Note 1: the Allocator cannot be deduced). A stream buffer is found to
 // be one through basic_streambuf's tag, so no RTTI is needed.
@@ -36,9 +36,9 @@ protected:
     return n;
   }
 };
-} // namespace ycxx::adl_free
+}} // namespace ycxx::adl_free
 
-namespace ycxx::detail {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 // The extended floating-point types ([basic.extended.fp]) and their conversion rank relative to
 // a standard floating-point type (every value of F is a value of G).
 template <class F>
@@ -63,9 +63,9 @@ bool put_fill(std::basic_streambuf<charT, traits>* sb, charT c, std::streamsize 
   }
   return true;
 }
-} // namespace ycxx::detail
+}} // namespace ycxx::detail
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 
 template <class charT, class traits>
 class basic_ostream : virtual public basic_ios<charT, traits> {
@@ -343,7 +343,7 @@ basic_ostream<charT, traits>& basic_ostream<charT, traits>::seekp(off_type off, 
 
 } // namespace std
 
-namespace ycxx::detail {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 
 // [ostream.formatted.reqmts]/3: inserts s[0..n) padded to width() with fill(), then width(0);
 // the formatted-output protocol around it (sentry, exceptions).
@@ -382,9 +382,9 @@ std::basic_ostream<charT, traits>& ostream_insert_widened(std::basic_ostream<cha
   return ::ycxx::detail::ostream_insert(os, wide.get(), n);
 }
 
-} // namespace ycxx::detail
+}} // namespace ycxx::detail
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 
 // [ostream.inserters.character]
 template <class charT, class traits>
@@ -562,7 +562,7 @@ basic_ostream<charT, traits>& operator<<(basic_ostream<charT, traits>& o, const 
 
 } // namespace std
 
-namespace ycxx::adl_free {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace adl_free {
 
 template <class charT, class traits>
 class syncbuf_base : public std::basic_streambuf<charT, traits> {
@@ -584,4 +584,4 @@ protected:
   bool emit_on_sync_ = false;
 };
 
-} // namespace ycxx::adl_free
+}} // namespace ycxx::adl_free

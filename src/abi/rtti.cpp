@@ -31,32 +31,65 @@ __pointer_to_member_type_info::~__pointer_to_member_type_info() {}
 
 } // namespace __cxxabiv1
 
+// GCC gives the fundamental type_info objects above default visibility whatever -fvisibility says
+// (Clang hides them). Exported from a program or shared object, they would be the ones another
+// C++ runtime in the process binds its own references to (DECISIONS §2), so they are hidden with
+// assembler directives: `.weak` + `.hidden` for every type GCC may know; the assembler drops the
+// directives for the types this target lacks, since nothing here defines or references them.
+// ELF only: Mach-O's two-level namespace keeps other images from binding to them.
+namespace {
+consteval ycxx::abi::asm_text hide_fundamental_type_infos() {
+  ycxx::abi::asm_text a;
+  if (!ycxx::detail::cfg::gcc || ycxx::detail::cfg::darwin)
+    return a;
+  for (const char* type : {"v", "b", "c", "a", "h", "s", "t", "w", "i", "j", "l", "m", "x", "y", "n", "o", "f", "d",
+                           "e", "g", "Dn", "Ds", "Di", "Du", "Df", "Dd", "De", "Dh", "DF16_", "DF16b", "DF32_",
+                           "DF64_", "DF128_", "DF32x", "DF64x", "DF128x"})
+    for (const char* kind : {"_ZTI", "_ZTS"})
+      for (const char* pointer : {"", "P", "PK"})
+        for (const char* directive : {".weak ", ".hidden "}) {
+          a.append(directive);
+          a.append(kind);
+          a.append(pointer);
+          a.append(type);
+          a.append("\n");
+        }
+  return a;
+}
+} // namespace
+asm((hide_fundamental_type_infos()));
+
 namespace ycxx::abi {
 
 using namespace __cxxabiv1;
 
 rtti_kind kind_of(const std::type_info& t) noexcept {
-  // The dynamic type of a type_info object is one of the ABI classes; their type_info objects
-  // live in this runtime, so comparing addresses is enough.
+  // The dynamic type of a type_info object is one of the ABI classes. Their type_info objects
+  // are normally this runtime's, so addresses are compared first. Every image linking libycxx
+  // has its own hidden copy of the runtime (DECISIONS §2), so a type_info object emitted in
+  // another such image (an exception thrown there) is an instance of that copy's classes: then
+  // the names are compared.
   const std::type_info* d = &typeid(t);
-  if (d == &typeid(__si_class_type_info))
-    return rtti_kind::class_si;
-  if (d == &typeid(__vmi_class_type_info))
-    return rtti_kind::class_vmi;
-  if (d == &typeid(__class_type_info))
-    return rtti_kind::class_plain;
-  if (d == &typeid(__pointer_type_info))
-    return rtti_kind::pointer;
-  if (d == &typeid(__fundamental_type_info))
-    return rtti_kind::fundamental;
-  if (d == &typeid(__pointer_to_member_type_info))
-    return rtti_kind::member_pointer;
-  if (d == &typeid(__enum_type_info))
-    return rtti_kind::enumeration;
-  if (d == &typeid(__function_type_info))
-    return rtti_kind::function;
-  if (d == &typeid(__array_type_info))
-    return rtti_kind::array;
+  const struct {
+    const std::type_info* type;
+    rtti_kind kind;
+  } kinds[] = {
+      {&typeid(__si_class_type_info), rtti_kind::class_si},
+      {&typeid(__vmi_class_type_info), rtti_kind::class_vmi},
+      {&typeid(__class_type_info), rtti_kind::class_plain},
+      {&typeid(__pointer_type_info), rtti_kind::pointer},
+      {&typeid(__fundamental_type_info), rtti_kind::fundamental},
+      {&typeid(__pointer_to_member_type_info), rtti_kind::member_pointer},
+      {&typeid(__enum_type_info), rtti_kind::enumeration},
+      {&typeid(__function_type_info), rtti_kind::function},
+      {&typeid(__array_type_info), rtti_kind::array},
+  };
+  for (const auto& k : kinds)
+    if (d == k.type)
+      return k.kind;
+  for (const auto& k : kinds)
+    if (*d == *k.type)
+      return k.kind;
   return rtti_kind::unknown;
 }
 

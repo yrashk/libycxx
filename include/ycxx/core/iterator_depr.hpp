@@ -4,7 +4,7 @@
 
 #include <ycxx/core/cstddef.hpp>
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 
 template <class Category, class T, class Distance = ptrdiff_t, class Pointer = T*, class Reference = T&>
 struct [[deprecated("std::iterator is deprecated ([depr.iterator]); declare the member types directly")]] iterator {

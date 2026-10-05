@@ -10,7 +10,7 @@
 #include <ycxx/core/container_base.hpp>
 #include <ycxx/core/memory_base.hpp>
 
-namespace ycxx::detail {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 
 // The first parameter of the from_range_t constructors is a template parameter checked by
 // this concept first: otherwise overload resolution for an unrelated call (vector(it, it))
@@ -311,4 +311,4 @@ constexpr C range_to(R&& r, Args&&... args) {
   }
 }
 
-} // namespace ycxx::detail
+}} // namespace ycxx::detail

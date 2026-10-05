@@ -28,7 +28,7 @@
 #include <ycxx/hosted/mutex.hpp>
 #include <ycxx/hosted/thread.hpp>
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 
 enum class future_errc { future_already_retrieved = 1, promise_already_satisfied = 2, no_state = 3, broken_promise = 4 };
 
@@ -79,7 +79,7 @@ class packaged_task;
 
 } // namespace std
 
-namespace ycxx::detail {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 
 [[noreturn]] [[gnu::cold]] inline void throw_future_error(std::future_errc e) {
   ::ycxx::detail::raise_with(ycxx_error_future_error, "std::future_error", [e] { return std::future_error(e); });
@@ -518,9 +518,9 @@ struct future_access {
   }
 };
 
-} // namespace ycxx::detail
+}} // namespace ycxx::detail
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 
 // [futures.promise]
 template <class R>

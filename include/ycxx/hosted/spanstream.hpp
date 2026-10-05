@@ -5,7 +5,7 @@
 #include <ycxx/core/span.hpp>
 #include <ycxx/hosted/istream.hpp>
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 
 template <class charT, class traits>
 class basic_spanbuf : public basic_streambuf<charT, traits> {

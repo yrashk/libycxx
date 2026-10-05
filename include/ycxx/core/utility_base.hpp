@@ -7,7 +7,7 @@
 #include <ycxx/core/error.hpp>
 #include <ycxx/core/hash.hpp>
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 
 // [utility.exchange]
 template <class T, class U = T>
@@ -21,12 +21,12 @@ constexpr T exchange(T& obj, U&& new_val) noexcept(std::is_nothrow_constructible
 // [utility.intcmp]
 } // namespace std
 
-namespace ycxx::detail {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 template <class T>
 concept cmp_integer = is_signed_or_unsigned_integer<T>;
-} // namespace ycxx::detail
+}} // namespace ycxx::detail
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 
 template <ycxx::detail::cmp_integer T, ycxx::detail::cmp_integer U>
 constexpr bool cmp_equal(T t, U u) noexcept {
@@ -65,7 +65,7 @@ constexpr bool cmp_greater_equal(T t, U u) noexcept {
 
 } // namespace std
 
-namespace ycxx::detail {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 template <class T>
 consteval T int_min() {
   if constexpr (is_signed_v<T>)
@@ -80,9 +80,9 @@ consteval T int_max() {
   else
     return T(~T(0));
 }
-} // namespace ycxx::detail
+}} // namespace ycxx::detail
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 
 template <class R, class T>
   requires ycxx::detail::cmp_integer<R> && ycxx::detail::cmp_integer<T>
@@ -156,7 +156,7 @@ constexpr strong_ordering operator<=>(monostate, monostate) noexcept { return st
 
 } // namespace std
 
-namespace ycxx::detail {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 
 template <class T>
 inline constexpr bool is_in_place_type = false;
@@ -197,4 +197,4 @@ concept converts_from_any_cvref =
     std::is_convertible_v<W, T> || std::is_constructible_v<T, const W&> || std::is_convertible_v<const W&, T> ||
     std::is_constructible_v<T, const W> || std::is_convertible_v<const W, T>;
 
-} // namespace ycxx::detail
+}} // namespace ycxx::detail

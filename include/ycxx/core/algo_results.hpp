@@ -3,7 +3,7 @@
 
 #include <ycxx/core/concepts.hpp>
 
-namespace std::ranges {
+namespace [[gnu::visibility("hidden")]] std { namespace ranges {
 
 template <class I, class F>
 struct in_fun_result {
@@ -160,4 +160,4 @@ struct out_value_result {
   }
 };
 
-} // namespace std::ranges
+}} // namespace std::ranges

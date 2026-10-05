@@ -24,11 +24,11 @@
 #include <ycxx/core/memory_resource.hpp>
 #include <ycxx/core/vector.hpp>
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 class stacktrace_entry;
 }
 
-namespace ycxx::detail {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 
 // src/hosted/stacktrace.cpp. Writes to buf the addresses of at most n frames of the calling
 // thread's stack, starting with the frame whose return address is ra (the caller of
@@ -41,9 +41,9 @@ enum class stacktrace_query { description, source_file };
 std::string stacktrace_describe(std::uintptr_t pc, stacktrace_query what);
 std::uint_least32_t stacktrace_line(std::uintptr_t pc);
 
-} // namespace ycxx::detail
+}} // namespace ycxx::detail
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 
 // [stacktrace.entry]
 class stacktrace_entry {

@@ -11,7 +11,7 @@
 #include <ycxx/hosted/chrono_clocks.hpp>
 #include <ycxx/hosted/thread_support.hpp>
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 
 template <ptrdiff_t LeastMaxValue = __PTRDIFF_MAX__>
 class counting_semaphore {

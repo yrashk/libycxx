@@ -3,7 +3,7 @@
 // (DerivedCoreProperties.txt 18.0.0, DerivedGeneralCategory.txt 18.0.0, EastAsianWidth.txt 18.0.0, GraphemeBreakProperty.txt 18.0.0); do not edit.
 #pragma once
 
-namespace ycxx::detail::uni {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail::uni {
 
 inline constexpr char ucd_version[] = "18.0.0";
 
@@ -379,4 +379,4 @@ inline constexpr unsigned int escape_runs[2044] = {
     0xe002003, 0xe008001, 0xe010002, 0xe01f001,
 };
 
-} // namespace ycxx::detail::uni
+}} // namespace ycxx::detail::uni

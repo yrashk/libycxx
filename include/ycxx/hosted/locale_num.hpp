@@ -13,7 +13,7 @@
 #include <ycxx/hosted/ios.hpp>
 #include <ycxx/hosted/streambuf.hpp> // the default iterators work on stream buffers
 
-namespace ycxx::detail {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 
 // ---- out of line (src/hosted/num.cpp) ---------------------------------------------------------
 
@@ -171,9 +171,9 @@ public:
   std::size_t size() const noexcept { return n_; }
 };
 
-} // namespace ycxx::detail
+}} // namespace ycxx::detail
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 
 // [locale.num.get]
 template <class charT, class InputIterator>

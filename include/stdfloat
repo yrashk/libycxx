@@ -4,7 +4,7 @@
 #include <ycxx/config.hpp>
 #include <ycxx/core/version.hpp>
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 #if YCXX_HAS_FLOAT16_T
 using float16_t = ycxx::detail::float16;
 #endif

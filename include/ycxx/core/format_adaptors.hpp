@@ -8,7 +8,7 @@
 #include <ycxx/core/format_decl.hpp>
 #include <ycxx/core/range_access.hpp>
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 template <class T, class Container>
 class stack;
 template <class T, class Container>
@@ -22,15 +22,15 @@ class ref_view;
 } // namespace ranges
 } // namespace std
 
-namespace ycxx::detail {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 template <class R, class charT>
 concept fmt_const_formattable_range =
     std::ranges::input_range<const R> && std::formattable<std::ranges::range_reference_t<const R>, charT>;
 template <class R, class charT>
 using fmt_maybe_const = std::conditional_t<fmt_const_formattable_range<R, charT>, const R, R>;
-} // namespace ycxx::detail
+}} // namespace ycxx::detail
 
-namespace ycxx::adl_free {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace adl_free {
 
 template <class charT, class Adaptor, class Container>
 class fmt_adaptor_formatter {
@@ -55,9 +55,9 @@ public:
   }
 };
 
-} // namespace ycxx::adl_free
+}} // namespace ycxx::adl_free
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 
 template <class charT, class T, formattable<charT> Container>
 struct formatter<stack<T, Container>, charT>

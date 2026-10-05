@@ -12,7 +12,7 @@
 
 #include <ycxx/core/char_traits.hpp>
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 
 template <class charT, class traits>
 class basic_ios;

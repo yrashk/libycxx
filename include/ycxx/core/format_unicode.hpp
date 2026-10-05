@@ -12,7 +12,7 @@
 #include <ycxx/core/cstddef.hpp>
 #include <ycxx/core/format_unicode_tables.hpp>
 
-namespace ycxx::detail::uni {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail::uni {
 
 // The encoding form of charT's literals: 8, 16 or 32 (UTF-8/16/32), 0 for anything else.
 consteval int literal_encoding_char() {
@@ -297,4 +297,4 @@ constexpr void escape(const charT* p, std::size_t n, bool is_char, Put&& put) {
   put(&quote, 1);
 }
 
-} // namespace ycxx::detail::uni
+}} // namespace ycxx::detail::uni

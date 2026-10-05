@@ -6,7 +6,7 @@
 #include <ycxx/core/invoke.hpp>
 #include <ycxx/core/swap.hpp>
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 
 // ---------------------------------------------------------------------------------------------
 // [meta.unary.prop]
@@ -226,7 +226,7 @@ constexpr bool is_corresponding_member(M1 S1::* m1, M2 S2::* m2) noexcept {
 // ---------------------------------------------------------------------------------------------
 } // namespace std
 
-namespace ycxx::detail {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 template <class T>
 struct sign_pair; // {signed, unsigned} for each standard integer type
 template <class S, class U>
@@ -276,9 +276,9 @@ struct sign_base<T> {
 
 template <class T>
 concept sign_changeable = (is_integral_v<T> && !__is_same(__remove_cv(T), bool)) || __is_enum(T);
-} // namespace ycxx::detail
+}} // namespace ycxx::detail
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 template <class T>
 struct make_signed {};
 template <class T>
@@ -381,7 +381,7 @@ inline constexpr bool negation_v = !bool(B::value);
 // ---------------------------------------------------------------------------------------------
 // common_type
 // ---------------------------------------------------------------------------------------------
-namespace ycxx::detail {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 
 template <class X, class Y>
 using cond_res = decltype(false ? std::declval<X (&)()>()() : std::declval<Y (&)()>()());
@@ -405,9 +405,9 @@ struct common_type_decayed<D1, D2> {
   using type = cond_decay<D1, D2>;
 };
 
-} // namespace ycxx::detail
+}} // namespace ycxx::detail
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 
 template <class... T>
 struct common_type {};
@@ -434,7 +434,7 @@ struct basic_common_reference {};
 
 } // namespace std
 
-namespace ycxx::detail {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 
 template <class A>
 struct xref {
@@ -511,9 +511,9 @@ struct common_reference2<T1, T2> {
   using type = common_ref_t<T1, T2>;
 };
 
-} // namespace ycxx::detail
+}} // namespace ycxx::detail
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 
 template <class... T>
 struct common_reference {};

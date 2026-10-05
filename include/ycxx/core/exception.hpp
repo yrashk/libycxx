@@ -3,7 +3,7 @@
 
 #include <ycxx/core/exception_base.hpp>
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 
 class bad_exception : public exception {
 public:

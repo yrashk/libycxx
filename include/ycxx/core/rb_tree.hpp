@@ -37,7 +37,7 @@
 #include <ycxx/core/swap.hpp>
 #include <ycxx/core/utility_base.hpp>
 
-namespace ycxx::adl_free {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace adl_free {
 
 struct rb_node_base {
   rb_node_base* parent;
@@ -56,9 +56,9 @@ struct rb_node : rb_node_base {
   constexpr ~rb_node() {}
 };
 
-} // namespace ycxx::adl_free
+}} // namespace ycxx::adl_free
 
-namespace ycxx::detail {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 
 using rb_base = ::ycxx::adl_free::rb_node_base;
 
@@ -338,9 +338,9 @@ constexpr decltype(auto) key_arg(const A& a, const Rest&...) noexcept {
     return ::ycxx::detail::as_key<Key>(a);
 }
 
-} // namespace ycxx::detail
+}} // namespace ycxx::detail
 
-namespace ycxx::adl_free {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace adl_free {
 
 // T is the element type, possibly const.
 template <class T, class Diff>
@@ -1165,4 +1165,4 @@ public:
   }
 };
 
-} // namespace ycxx::adl_free
+}} // namespace ycxx::adl_free

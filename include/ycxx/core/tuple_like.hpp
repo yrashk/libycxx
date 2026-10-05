@@ -5,7 +5,7 @@
 #include <ycxx/core/invoke.hpp>
 #include <ycxx/core/integer_sequence.hpp>
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 
 template <class T>
 struct tuple_size;
@@ -67,7 +67,7 @@ class complex;
 
 } // namespace std
 
-namespace ycxx::detail {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 
 // Makes `get<I>(x)` parse as a template-id inside ycxx::detail so that argument-dependent
 // lookup finds the std::get overloads of every tuple-like type. Never selected.
@@ -94,13 +94,13 @@ concept tuple_like = is_tuple_like_impl<__remove_cvref(T)>;
 template <class T>
 concept pair_like = tuple_like<T> && std::tuple_size_v<__remove_cvref(T)> == 2;
 
-} // namespace ycxx::detail
+}} // namespace ycxx::detail
 
 // ---------------------------------------------------------------------------------------------
 // [meta.rel] is_applicable / is_nothrow_applicable, [meta.trans.other] apply_result
 // ELEMS-OF(Tuple) is get<I>(declval<Tuple>())... (found by ADL).
 // ---------------------------------------------------------------------------------------------
-namespace ycxx::detail {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 template <class Fn, class Tuple, std::size_t... I>
 consteval bool applicable_impl(std::index_sequence<I...>*) {
   return requires { ::ycxx::detail::invoke(std::declval<Fn>(), get<I>(std::declval<Tuple>())...); };
@@ -132,9 +132,9 @@ consteval bool is_nothrow_applicable_v() {
   else
     return false;
 }
-} // namespace ycxx::detail
+}} // namespace ycxx::detail
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 template <class Fn, class Tuple>
 struct is_applicable : bool_constant<ycxx::detail::is_applicable_v<Fn, Tuple>()> {};
 template <class Fn, class Tuple>

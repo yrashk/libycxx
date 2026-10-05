@@ -4,12 +4,12 @@
 #include <ycxx/core/meta_base.hpp>
 #include <ycxx/core/move.hpp>
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 template <class T>
 class reference_wrapper;
 } // namespace std
 
-namespace ycxx::detail {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 
 template <class T>
 inline constexpr bool is_reference_wrapper = false;
@@ -160,9 +160,9 @@ template <class R, class F, class... Args>
     return ::ycxx::detail::invoke(static_cast<decltype(f)&&>(f), static_cast<decltype(args)&&>(args)...);
 }
 
-} // namespace ycxx::detail
+}} // namespace ycxx::detail
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 
 template <class F, class... Args>
 struct invoke_result {};

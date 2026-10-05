@@ -10,7 +10,7 @@
 #include <ycxx/core/char_traits.hpp>
 #include <ycxx/core/iosfwd.hpp>
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 
 template <class T>
 class allocator;

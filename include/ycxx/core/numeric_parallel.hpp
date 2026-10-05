@@ -5,7 +5,7 @@
 #include <ycxx/core/execution_policy.hpp>
 #include <ycxx/core/numeric.hpp>
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 
 template <class ExecutionPolicy, class ForwardIterator>
   requires ycxx::detail::execution_policy<ExecutionPolicy>

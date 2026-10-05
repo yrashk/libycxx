@@ -17,20 +17,20 @@
 #include <ycxx/core/type_traits.hpp>
 #include <ycxx/core/unique_ptr.hpp>
 
-namespace ycxx::adl_free {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace adl_free {
 // A scheduled evaluation (the base of every rcu_obj_base, and of rcu_retire's records).
 struct rcu_node {
   rcu_node* rcu_next_;
   void (*rcu_run_)(rcu_node*) noexcept; // evaluates it
 };
-} // namespace ycxx::adl_free
+}} // namespace ycxx::adl_free
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 class rcu_domain;
 rcu_domain& rcu_default_domain() noexcept;
 } // namespace std
 
-namespace ycxx::detail {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 using adl_free::rcu_node;
 
 // ---- the hosted runtime (src/hosted/rcu.cpp) ---------------------------------------------------
@@ -64,9 +64,9 @@ struct rcu_retired final : rcu_node {
   }
 };
 
-} // namespace ycxx::detail
+}} // namespace ycxx::detail
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 
 // [saferecl.rcu.domain]
 class rcu_domain {

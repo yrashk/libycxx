@@ -3,7 +3,7 @@
 
 #include <ycxx/core/compare.hpp>
 
-namespace ycxx::detail {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 
 // ---- IEEE totalOrder key for floating-point values -------------------------------------------
 // Maps a floating-point value to (sign, magnitude-key) such that comparing keys implements
@@ -309,9 +309,9 @@ consteval int type_compare() {
   }
 }
 
-} // namespace ycxx::detail
+}} // namespace ycxx::detail
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 
 inline namespace cpo {
 inline constexpr ycxx::detail::cmp_cpo::strong_order_fn strong_order{};

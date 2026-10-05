@@ -16,7 +16,7 @@
 #include <ycxx/core/error.hpp>
 #include <ycxx/hosted/locale_base.hpp>
 
-namespace std::regex_constants {
+namespace [[gnu::visibility("hidden")]] std { namespace regex_constants {
 
 // [re.synopt]
 enum syntax_option_type : unsigned {};
@@ -93,9 +93,9 @@ inline constexpr error_type error_badrepeat = error_type(11);
 inline constexpr error_type error_complexity = error_type(12);
 inline constexpr error_type error_stack = error_type(13);
 
-} // namespace std::regex_constants
+}} // namespace std::regex_constants
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 
 // [re.badexp]. The constructor (what() is a fixed message per code) and the destructor (the key
 // function) are in the hosted runtime.
@@ -114,7 +114,7 @@ public:
 
 } // namespace std
 
-namespace ycxx::detail {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 
 // src/hosted/regex.cpp. The names are ASCII, already narrowed; class names lower-cased.
 // The class mask of a name of Table 121 (0 if unknown); icase maps lower and upper to alpha.
@@ -133,9 +133,9 @@ const char* regex_error_message(int code) noexcept;
 // The bit regex_traits adds to alnum for the class "w" (the underscore).
 inline constexpr unsigned regex_word_bit = 1u << 16;
 
-} // namespace ycxx::detail
+}} // namespace ycxx::detail
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 
 // [re.traits]
 template <class charT>

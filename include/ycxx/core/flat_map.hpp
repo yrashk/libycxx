@@ -22,7 +22,7 @@
 #include <ycxx/core/tuple.hpp>
 #include <ycxx/core/vector.hpp>
 
-namespace ycxx::adl_free {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace adl_free {
 
 template <class KC, class MC, bool Const>
 class flat_map_iter {
@@ -525,9 +525,9 @@ private:
   }
 };
 
-} // namespace ycxx::adl_free
+}} // namespace ycxx::adl_free
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 
 template <class Key, class T, class Compare = less<Key>, class KeyContainer = vector<Key>,
           class MappedContainer = vector<T>>

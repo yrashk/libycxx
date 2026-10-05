@@ -11,14 +11,14 @@
 #include <ycxx/core/basic_string.hpp>
 #include <ycxx/hosted/ostream.hpp>
 
-namespace ycxx::detail {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 // src/hosted/syncstream.cpp: locks the lock of the stream buffer at `key` (blocking), and
 // returns the handle that syncbuf_unlock releases.
 void* syncbuf_lock(const void* key) noexcept;
 void syncbuf_unlock(void* handle) noexcept;
-} // namespace ycxx::detail
+}} // namespace ycxx::detail
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 
 // [syncstream.syncbuf]
 template <class charT, class traits, class Allocator>

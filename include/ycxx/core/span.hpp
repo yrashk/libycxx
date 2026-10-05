@@ -13,7 +13,7 @@
 #include <ycxx/core/range_access.hpp>
 #include <ycxx/core/ranges_base.hpp>
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 
 inline constexpr size_t dynamic_extent = numeric_limits<size_t>::max();
 
@@ -22,7 +22,7 @@ class span;
 
 } // namespace std
 
-namespace ycxx::detail {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 
 // constexpr-wrapper-like and integral-constant-like ([expos.only.entity], [span.syn])
 template <class T>
@@ -66,9 +66,9 @@ struct span_extent<std::dynamic_extent> {
   constexpr std::size_t get() const noexcept { return n; }
 };
 
-} // namespace ycxx::detail
+}} // namespace ycxx::detail
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 
 template <class ElementType, size_t Extent>
 class span {

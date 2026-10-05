@@ -51,7 +51,7 @@ run() { # compiler-command target-label C-compiler linker [skip-link-reason]
 }
 # libycxx-freestanding.a for one target: the allocation-function defaults, std::nothrow and
 # floating-point <charconv>, the <atomic> lock and wait tables, <debugging> and the default PAL
-# wait and debugger hooks.
+# wait and debugger hooks. Hidden visibility, as the hosted archives (DECISIONS §2).
 build_fsrt() {
   rm -rf "$out/fsrt.$2" && mkdir -p "$out/fsrt.$2"
   for f in "$repo"/src/runtime/new/*.cpp "$repo"/src/freestanding/new/*.cpp "$repo"/src/runtime/charconv/*.cpp \
@@ -59,7 +59,7 @@ build_fsrt() {
            "$repo"/src/runtime/contracts/*.cpp "$repo"/src/freestanding/contracts/*.cpp "$repo"/src/freestanding/pal/*.cpp; do
     # One function per file; GCC: no zero fill of the charconv work buffers (CMakeLists.txt).
     case "$2" in gcc*) nw="-Wno-sized-deallocation -ftrivial-auto-var-init=uninitialized" ;; *) nw= ;; esac
-    $1 $flags $nw -c "$f" -o "$out/fsrt.$2/$(basename "$f" .cpp).o" || return 1
+    $1 $flags $nw -fvisibility=hidden -c "$f" -o "$out/fsrt.$2/$(basename "$f" .cpp).o" || return 1
   done
   rm -f "$out/fsrt.$2.a" && $llvm_ar rcs "$out/fsrt.$2.a" "$out/fsrt.$2"/*.o
 }

@@ -22,7 +22,7 @@
 #include <ycxx/core/swap.hpp>
 #include <initializer_list>
 
-namespace ycxx::detail {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 
 // ---- iterator strength of the std:: forms --------------------------------------------------
 // [algorithms.requirements]/4 (P2408): an iterator that models the C++20 concept may be used
@@ -520,12 +520,12 @@ constexpr bool lex_compare_impl(I1 first1, S1 last1, I2 first2, S2 last2, C less
 template <class T>
 concept comparison_category = !std::is_void_v<std::common_comparison_category_t<T>>;
 
-} // namespace ycxx::detail
+}} // namespace ycxx::detail
 
 // =============================================================================================
 // std:: forms
 // =============================================================================================
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 
 // [alg.min.max]
 template <class T>
@@ -806,7 +806,7 @@ template <class InputIterator1, class InputIterator2>
 // =============================================================================================
 // std::ranges:: forms
 // =============================================================================================
-namespace std::ranges {
+namespace [[gnu::visibility("hidden")]] std { namespace ranges {
 
 template <class I, class O>
 using copy_result = in_out_result<I, O>;
@@ -829,9 +829,9 @@ using minmax_result = min_max_result<T>;
 template <class I>
 using minmax_element_result = min_max_result<I>;
 
-} // namespace std::ranges
+}} // namespace std::ranges
 
-namespace ycxx::detail::ranges_algo {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail::ranges_algo {
 
 using std::ranges::borrowed_iterator_t;
 using std::ranges::iterator_t;
@@ -1289,9 +1289,9 @@ struct lexicographical_compare_fn {
   }
 };
 
-} // namespace ycxx::detail::ranges_algo
+}} // namespace ycxx::detail::ranges_algo
 
-namespace std::ranges {
+namespace [[gnu::visibility("hidden")]] std { namespace ranges {
 inline constexpr ycxx::adl_free::ranges_par_algo<ycxx::detail::ranges_algo::min_fn, ycxx::detail::par::kind::min> min{};
 inline constexpr ycxx::adl_free::ranges_par_algo<ycxx::detail::ranges_algo::max_fn, ycxx::detail::par::kind::max> max{};
 inline constexpr ycxx::adl_free::ranges_par_algo<ycxx::detail::ranges_algo::minmax_fn, ycxx::detail::par::kind::minmax> minmax{};
@@ -1314,4 +1314,4 @@ inline constexpr ycxx::adl_free::ranges_par_algo<ycxx::detail::ranges_algo::find
 inline constexpr ycxx::adl_free::ranges_par_algo<ycxx::detail::ranges_algo::mismatch_fn, ycxx::detail::par::kind::mismatch> mismatch{};
 inline constexpr ycxx::adl_free::ranges_par_algo<ycxx::detail::ranges_algo::equal_fn, ycxx::detail::par::kind::equal> equal{};
 inline constexpr ycxx::adl_free::ranges_par_algo<ycxx::detail::ranges_algo::lexicographical_compare_fn, ycxx::detail::par::kind::lexicographical_compare> lexicographical_compare{};
-} // namespace std::ranges
+}} // namespace std::ranges

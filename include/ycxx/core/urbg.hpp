@@ -4,7 +4,7 @@
 
 #include <ycxx/core/concepts.hpp>
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 
 template <class G>
 concept uniform_random_bit_generator = invocable<G&> && unsigned_integral<invoke_result_t<G&>> && requires {

@@ -11,7 +11,7 @@
 #include <ycxx/core/functional_base.hpp>
 #include <ycxx/core/linalg_base.hpp>
 
-namespace ycxx::detail {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 
 template <class M>
 constexpr std::size_t la_n(const M& m, std::size_t r) noexcept {
@@ -147,9 +147,9 @@ constexpr auto la_abs_parts(const V& v) {
     return la_adl::abs_if_needed(la_adl::real_if_needed(v)) + la_adl::abs_if_needed(la_adl::imag_if_needed(v));
 }
 
-} // namespace ycxx::detail
+}} // namespace ycxx::detail
 
-namespace std::linalg {
+namespace [[gnu::visibility("hidden")]] std { namespace linalg {
 
 // ---------------------------------------------------------------------------------------------
 // [linalg.algs.blas1.givens]
@@ -508,9 +508,9 @@ auto matrix_inf_norm(ExecutionPolicy&&, InMat A) noexcept {
   return std::linalg::matrix_inf_norm(A);
 }
 
-} // namespace std::linalg
+}} // namespace std::linalg
 
-namespace ycxx::detail {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 
 // ---------------------------------------------------------------------------------------------
 // Kernels shared by the BLAS 2 and 3 algorithms.
@@ -656,9 +656,9 @@ void la_rank_update(const E* e, const C& c, Value value) {
     }
 }
 
-} // namespace ycxx::detail
+}} // namespace ycxx::detail
 
-namespace std::linalg {
+namespace [[gnu::visibility("hidden")]] std { namespace linalg {
 
 // ---------------------------------------------------------------------------------------------
 // [linalg.algs.blas2.gemv]
@@ -962,9 +962,9 @@ void matrix_rank_1_update_c(ExecutionPolicy&& exec, InVec1 x, InVec2 y, InMat E,
   std::linalg::matrix_rank_1_update(std::forward<ExecutionPolicy>(exec), x, std::linalg::conjugated(y), E, A);
 }
 
-} // namespace std::linalg
+}} // namespace std::linalg
 
-namespace ycxx::detail {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 
 // [linalg.algs.blas2.symherrank1]: A = (E +) alpha x x^T (or x x^H), triangle t of A.
 template <la_structure S, class Triangle, class Scalar, class X, class E, class A>
@@ -1005,9 +1005,9 @@ void la_rank2(const X& x, const Y& y, const E* e, const A& a) {
         e, a, [&](std::size_t i, std::size_t j) { return la_v(x, i) * la_v(y, j) + la_v(y, i) * la_v(x, j); });
 }
 
-} // namespace ycxx::detail
+}} // namespace ycxx::detail
 
-namespace std::linalg {
+namespace [[gnu::visibility("hidden")]] std { namespace linalg {
 
 template <ycxx::detail::la_scalar Scalar, ycxx::detail::la_in_vector InVec,
           ycxx::detail::la_possibly_packed_out_matrix OutMat, ycxx::detail::la_triangle Triangle>
@@ -1114,9 +1114,9 @@ void hermitian_matrix_rank_2_update(ExecutionPolicy&&, InVec1 x, InVec2 y, InMat
 // ---------------------------------------------------------------------------------------------
 // [linalg.algs.blas3.gemm]
 // ---------------------------------------------------------------------------------------------
-} // namespace std::linalg
+}} // namespace std::linalg
 
-namespace ycxx::detail {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 
 // C = (E +) A B where a(i, k, b_kj, acc) adds the term A[i, k] * B[k, j] (structured A) and
 // b(i, k, j, acc) is used instead when B is the structured operand.
@@ -1195,9 +1195,9 @@ void la_xxmm(const A& a, const B& b, const E* e, const C& c) {
       });
 }
 
-} // namespace ycxx::detail
+}} // namespace ycxx::detail
 
-namespace std::linalg {
+namespace [[gnu::visibility("hidden")]] std { namespace linalg {
 
 template <ycxx::detail::la_in_matrix InMat1, ycxx::detail::la_in_matrix InMat2, ycxx::detail::la_out_matrix OutMat>
 void matrix_product(InMat1 A, InMat2 B, OutMat C) {
@@ -1433,9 +1433,9 @@ void triangular_matrix_right_product(ExecutionPolicy&&, InMat A, Triangle t, Dia
   std::linalg::triangular_matrix_right_product(A, t, d, C);
 }
 
-} // namespace std::linalg
+}} // namespace std::linalg
 
-namespace ycxx::detail {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 
 // [linalg.algs.blas3.rankk]: C = (E +) alpha A A^T (or A A^H), triangle t of C.
 template <la_structure S, class Triangle, class Scalar, class A, class E, class C>
@@ -1500,9 +1500,9 @@ void la_rank2k(const A& a, const B& b, const E* e, const C& c) {
   });
 }
 
-} // namespace ycxx::detail
+}} // namespace ycxx::detail
 
-namespace std::linalg {
+namespace [[gnu::visibility("hidden")]] std { namespace linalg {
 
 // ---------------------------------------------------------------------------------------------
 // [linalg.algs.blas3.rankk]
@@ -1738,4 +1738,4 @@ void triangular_matrix_matrix_right_solve(ExecutionPolicy&& exec, InMat A, Trian
   std::linalg::triangular_matrix_matrix_right_solve(std::forward<ExecutionPolicy>(exec), A, t, d, B, divides<void>{});
 }
 
-} // namespace std::linalg
+}} // namespace std::linalg

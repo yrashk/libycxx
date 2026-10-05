@@ -5,6 +5,9 @@
 #include <new>
 #include <ycxx/core/error.hpp>
 #include "try_or_null.hpp"
+#include "../../runtime/new/hidden.hpp"
+
+asm((ycxx::detail::hide_allocation_function("_Zna#St11align_val_tRKSt9nothrow_t")));
 
 void* operator new[](std::size_t n, std::align_val_t a, const std::nothrow_t&) noexcept {
   // The array default forwards to the single form, so both must be the defaults for null.

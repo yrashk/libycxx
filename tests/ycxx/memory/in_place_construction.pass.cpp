@@ -58,12 +58,12 @@ struct Leading {
   using allocator_type = TagAlloc<char>;
   int key = 0, cat = 0, alloc_id = -1;
   template <class A>
-  Leading(std::allocator_arg_t, const allocator_type& al, int k, A&& a)
+  Leading(std::allocator_arg_t, const allocator_type& al, int k, A&&)
       : key(k), cat(cat_of<A&&>()), alloc_id(al.id) {
     ++counts.made;
   }
   template <class A>
-  Leading(int k, A&& a) : key(k), cat(cat_of<A&&>()) {  // must not be chosen with an allocator
+  Leading(int k, A&&) : key(k), cat(cat_of<A&&>()) {  // must not be chosen with an allocator
     ++counts.made;
   }
   Leading(const Leading&) = delete;
@@ -72,7 +72,7 @@ struct Trailing {
   using allocator_type = TagAlloc<char>;
   int key = 0, cat = 0, alloc_id = -1;
   template <class A>
-  Trailing(int k, A&& a, const allocator_type& al) : key(k), cat(cat_of<A&&>()), alloc_id(al.id) {
+  Trailing(int k, A&&, const allocator_type& al) : key(k), cat(cat_of<A&&>()), alloc_id(al.id) {
     ++counts.made;
   }
   Trailing(const Trailing&) = delete;
@@ -184,18 +184,19 @@ void uses_allocator_cases() {
     std::destroy_at(r);
   }
   // pair from two values, and from a pair rvalue: the members are constructed from the
-  // forwarded elements, Probe never copied or moved as a whole.
+  // forwarded values or elements ([allocator.uses.construction]/15, /19), Probe never copied
+  // or moved as a whole.
   probe::reset();
   {
-    using P = std::pair<Probe, Leading>;
-    Arg c{1};
+    using P = std::pair<Probe, Probe>;
     alignas(P) unsigned char buf[sizeof(P)];
     P* w = reinterpret_cast<P*>(buf);
     P* r = std::uninitialized_construct_using_allocator(w, al, 3, 4);
-    CHECK(r->first.key == 3 && r->second.key == 4 && r->second.alloc_id == 42);
+    CHECK(r == w && r->first.key == 3 && r->second.key == 4);
     std::destroy_at(r);
-    (void)c;
-    CHECK(counts.made == 2 && counts.extra() == 0);
+    P q = std::make_obj_using_allocator<P>(al, std::pair<int, int>(5, 6));
+    CHECK(q.first.key == 5 && q.second.key == 6);
+    CHECK(counts.made == 4 && counts.extra() == 0);
   }
 }
 

@@ -5,7 +5,7 @@
 #   tools/test [options] [stage...]
 #
 # Stages (default: policy build freestanding ycxx; "all": every stage):
-#   policy        preprocessor and include-layering policy checks (tools/check_*.py)
+#   policy        preprocessor, include-layering and shell-portability checks (tools/check_*.py)
 #   build         the library for each compiler, RelWithDebInfo (build/<cc>, what the suites
 #                 link) and Release (build/<cc>-release, -O3, as CMake consumers build it)
 #   freestanding  every core header with -ffreestanding -nostdinc, bare-metal smoke link
@@ -121,14 +121,14 @@ summary() {
   total=$(ui_duration $(($(date +%s) - t_start)))
   echo
   if [ $nfail = 0 ]; then
-    printf '  %s%s %d step%s passed%s in %s; logs in %s\n' "$ui_green$ui_bold" "$ui_sym_ok" "$nok" \
+    printf '  %s%s %d step%s passed%s in %s; logs in %s\n' "${ui_green}${ui_bold}" "${ui_sym_ok}" "$nok" \
       "$([ $nok = 1 ] || echo s)" \
-      "$ui_reset" "$total" "$logs"
+      "${ui_reset}" "$total" "$logs"
   else
-    printf '  %s%s %d of %d steps failed%s in %s; logs in %s\n' "$ui_red$ui_bold" "$ui_sym_fail" "$nfail" \
-      $((nok + nfail)) "$ui_reset" "$total" "$logs"
+    printf '  %s%s %d of %d steps failed%s in %s; logs in %s\n' "${ui_red}${ui_bold}" "${ui_sym_fail}" "$nfail" \
+      $((nok + nfail)) "${ui_reset}" "$total" "$logs"
   fi
-  [ $nskip = 0 ] || printf '  %s%d skipped%s\n' "$ui_yellow" "$nskip" "$ui_reset"
+  [ $nskip = 0 ] || printf '  %s%d skipped%s\n' "${ui_yellow}" "$nskip" "${ui_reset}"
 }
 
 ui_title "libycxx tests: $(echo $stages)"
@@ -138,9 +138,9 @@ for c in $compilers; do
   v=$($(cxx_of $c) --version 2>/dev/null | head -n 1) || v="not found"
   ui_info "$c" "$(cxx_of $c): $v"
 done
-[ -n "${ycxx_env_file:-}" ] && ui_info "toolchains" "$ycxx_env_file"
+[ -n "${ycxx_env_file:-}" ] && ui_info "toolchains" "${ycxx_env_file}"
 case " $stages " in *" ycxx "*|*" libcxx "*|*" libstdcxx "*)
-  if ycxx_lit_cmd 2>/dev/null; then ui_info "lit" "$ycxx_lit"
+  if ycxx_lit_cmd 2>/dev/null; then ui_info "lit" "${ycxx_lit}"
   else ui_warn "lit" "not found: install uv (https://docs.astral.sh/uv/) or set YCXX_LIT"; fi ;;
 esac
 
@@ -150,6 +150,7 @@ for stage in $stages; do
       ui_section "Policy checks"
       step "preprocessor policy" policy-preprocessor python3 tools/check_preprocessor.py || :
       step "include layering" policy-includes python3 tools/check_includes.py || :
+      step "shell portability (bash 3.2, dash)" policy-shell python3 tools/check_shell.py || :
       ;;
     build)
       for c in $compilers; do

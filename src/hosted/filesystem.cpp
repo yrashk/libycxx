@@ -622,7 +622,12 @@ void recursive_directory_iterator::open(const path& p, directory_options options
     ec = errno_code(e);
     return;
   }
-  st->stack.push_back({d, p});
+  try {
+    st->stack.push_back({d, p}); // copies p: the descriptor is the stack's once it is pushed
+  } catch (...) {
+    ::closedir(d);
+    throw;
+  }
   int r = ycxx::detail::fs_dir_state::read_next(d, st->stack.back().path, st->entry);
   if (r < 0)
     ec = last_error();

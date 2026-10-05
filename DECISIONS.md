@@ -115,7 +115,12 @@ tooling.
     `.private_extern` on Mach-O): the default replaceable allocation functions (both compilers
     declare them implicitly; a visibility attribute conflicts with that declaration), GCC's
     seven predeclared `__cxa_*` entry points (GCC ignores an attribute on them with a warning),
-    and, on ELF, the fundamental type_info objects GCC emits.
+    and the fundamental type_info objects GCC emits with `__fundamental_type_info`'s key function.
+    Which of those exist depends on the target (AArch64 adds `__bf16`, `__mfp8` and the SVE types),
+    so their list is not written down: CMake compiles a probe defining that key function with the
+    runtime's flags at configure time, lists its `_ZTI`/`_ZTS` symbols with `nm`, and generates
+    `abi/fundamental_type_infos.hpp` in the build tree, which `src/abi/rtti.cpp` turns into
+    `.hidden`/`.private_extern` directives.
   - **Default visibility** stays only for what is not libycxx's to hide: the C library
     functions `ycxx/core/c_stdlib.hpp` declares by assembler name, and a program's own
     definitions. That includes a program's replacement `operator new`: it is linked instead of
@@ -147,9 +152,7 @@ tooling.
     for every class of a program, outside libycxx's namespaces, that has a member or base of a
     libycxx class type: GCC has no way to hide a class's members, type_info and vtable without
     hiding the class's type (Clang's `type_visibility` attribute), and hidden class types are
-    what keeps the exception classes from being coalesced on Darwin. Clang does not warn. GCC
-    on Darwin keeps the fundamental type_info objects default (directives for types a target
-    lacks are not portable to Mach-O); benign, as libc++abi exports the same objects.
+    what keeps the exception classes from being coalesced on Darwin. Clang does not warn.
   Tested by `tests/ycxx/linkage/no_exported_library_symbols` and `tests/cmake/run.sh` (exports
   of the example programs; `tests/cmake/visibility`, libycxx and libstdc++ in one process).
 - Template parameters and locals use plain names (`T`, `first`), not reserved `_Ugly` names.

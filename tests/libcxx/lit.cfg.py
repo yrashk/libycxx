@@ -50,12 +50,13 @@ else:
 if sanitizer:
     for s in sanitizer.split(','):
         features.add({'asan': 'asan', 'ubsan': 'ubsan'}[s])
-# Named locales the machine has (tests/ycxxlit/locales.py), and libc++'s long tests on request
+# Named locales the machine has and libycxx accepts (tests/ycxxlit/locales.py), and libc++'s long tests on request
 # (YCXX_LONG_TESTS=1: the nightly runs).
 import sys
 sys.path.insert(0, os.path.join(repo, 'tests'))
 from ycxxlit import locales
-features |= {f'locale.{n}' for n in locales.LIBCXX_LOCALES if locales.available(n)}
+locale_probe = locales.build_probe(wrapper, compiler, config.test_exec_root)
+features |= {f'locale.{n}' for n in locales.LIBCXX_LOCALES if locales.usable(n, locale_probe) is None}
 if os.environ.get('YCXX_LONG_TESTS') == '1':
     features.add('long_tests')
 config.available_features = features

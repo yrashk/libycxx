@@ -10,6 +10,12 @@
 // more with no failure, and counts its open descriptors; a run with no failure armed (made the
 // same way) gives the expected count (descriptors an operation keeps open on purpose, such as
 // a cache, appear in both).
+// Which k are tried: the run with no failure armed records the calls of operator new made while
+// the operation holds a descriptor it opened (one of the lowest descriptors that were free when
+// it started is open). Every such k is tried, with its neighbours, and so is every k up to
+// 200; the other k (no descriptor held: a failure there can leak only if the operation goes on
+// after it) are sampled, about 200 per operation spread evenly. (The time zone database makes
+// about 17000 allocations, of which only a handful happen while a file is open.)
 // FLAGS: -pthread
 #include <chrono>
 #include <cstdlib>
@@ -30,7 +36,17 @@
 
 static long fail_at = 0, calls = 0;
 static bool failed = false;
+constexpr long max_recorded = 1 << 20;
+static unsigned char* holding = nullptr;  // (shared with the parent) per call: a descriptor was held
+static int probe_base = -1;               // the lowest descriptor free when the operation started
 static void* allocate(std::size_t n, std::size_t align, bool nothrow) {
+  if (probe_base >= 0 && calls + 1 < max_recorded) {
+    for (int fd = probe_base; fd < probe_base + 16; ++fd)
+      if (fcntl(fd, F_GETFD) != -1) {
+        holding[calls + 1] = 1;
+        break;
+      }
+  }
   if (++calls == fail_at) {
     failed = true;
     if (nothrow) return nullptr;
@@ -169,9 +185,15 @@ static long* shared_calls;  // (shared with the children) the calls made by the 
 // In a child: the operation with failure k armed (0: none), then again with none. Exit status:
 // bit 7 set when the failure was reached; the low bits the number of open descriptors.
 static int child(void (*f)(), long k) {
+  if (k == 0) {  // record the calls made while a descriptor is held
+    const int d = fcntl(0, F_DUPFD, 0);
+    close(d);
+    probe_base = d;
+  }
   fail_at = k;
   calls = 0;
   attempt(f);
+  probe_base = -1;
   *shared_calls = calls;
   const bool reached = failed;
   fail_at = 0;
@@ -196,16 +218,19 @@ int main() {
   make_tree(base + "/tree");
   shared_calls = static_cast<long*>(mmap(nullptr, sizeof(long), PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANONYMOUS, -1, 0));
   CHECK(shared_calls != MAP_FAILED);
+  holding = static_cast<unsigned char*>(mmap(nullptr, max_recorded, PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANONYMOUS, -1, 0));
+  CHECK(holding != MAP_FAILED);
   int failures = 0;
   int printed = 0;
   for (const Op& op : ops) {
     printed = 0;  // (at most three reports per operation)
+    for (long i = 0; i < max_recorded; ++i) holding[i] = 0;
     const int expected = run_child(op.f, 0) & 127;
     const long total = *shared_calls;  // operator new calls of one unfailing attempt
-    // Every k up to 2000; beyond that (the time zone database makes many allocations) a sample
-    // of about 2000 more, evenly spread.
-    const long step = total <= 4000 ? 1 : (total - 2000) / 2000 + 1;
-    for (long k = 1; k <= total + 1; k += k < 2000 ? 1 : step) {
+    const long step = total <= 400 ? 1 : total / 200;
+    auto held = [&](long k) { return k > 0 && k < max_recorded && holding[k]; };
+    for (long k = 1; k <= total + 1; ++k) {
+      if (!(k <= 200 || k % step == 0 || k == total + 1 || held(k - 1) || held(k) || held(k + 1))) continue;
       const int r = run_child(op.f, k);
       if (r < 0) {  // killed: std::terminate (an allocation failure escaping a noexcept function)
         ++failures;

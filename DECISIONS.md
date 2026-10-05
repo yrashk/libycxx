@@ -163,10 +163,12 @@ tooling.
   `<climits>`) are defined from compiler-predefined macros only. The one exception is the
   compiler's own `<stddef.h>` (GCC and Clang ship it for freestanding environments; it is not the
   C library's): `std::max_align_t` must be `::max_align_t` ([support.c.headers.other]/1), a class
-  only that header can name, so core includes it and declares `using ::max_align_t;`. The
+  only that header can name, so core reads it (`#include_next`, past libycxx's own `<stddef.h>`,
+  which is `<cstddef>` in C++: Clang's header lacks `::nullptr_t` there; partial `__need_*`
+  requests of C library headers and C go to the compiler's) and declares `using ::max_align_t;`. The
   freestanding builds keep `-nostdinc` (no C library) and add the compiler's header directory
-  back (`-isystem $(cc -print-file-name=include)`); `tools/check_includes.py` allows
-  `<stddef.h>` and nothing else of the compiler's.
+  back (`-isystem $(cc -print-file-name=include)`); `tools/check_includes.py` does not
+  follow `#include_next`.
 - `include/ycxx/hosted/**` plus `src/hosted`: anything needing the OS, reached only through the PAL.
 - `include/ycxx/pal.h`: C-linkage platform hooks (`ycxx_pal_allocate`, `_write`, `_abort`,
   `_clock_now`, ...). `src/pal/posix` implements them on top of libc.

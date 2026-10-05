@@ -21,7 +21,7 @@ MANDATED_MACRO_FILES = {
     "ycxx/core/cerrno_macros.hpp", "stdbit.h", "stdckdint.h",
     # C library headers wrapped for C and C++ (#ifdef __cplusplus), and the <c...> headers that
     # rename C declarations while reading the C library's (tools/gen_cheaders.py, DECISIONS §3).
-    "stdlib.h", "inttypes.h", "string.h", "wchar.h", "complex.h", "tgmath.h", "cstdlib",
+    "stdlib.h", "inttypes.h", "string.h", "wchar.h", "stddef.h", "complex.h", "tgmath.h", "cstdlib",
     "ycxx/hosted/c_wchar.hpp",
 }
 # Headers the standard requires to be re-includable with different effect.

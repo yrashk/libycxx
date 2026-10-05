@@ -38,6 +38,8 @@ HOSTED = [
 ]
 # <cstdarg>: compiler builtins only. <stdbit.h>: on <bit>. <stdckdint.h>: overflow builtins.
 CORE += ["cstdarg", "stdbit.h", "stdckdint.h"]
+# <stddef.h>: <cstddef> in C++ (core reads the compiler's own <stddef.h> past it).
+CORE += ["stddef.h"]
 # Hosted headers with a freestanding subset ([compliance]): with YCXX_HOSTED 0 (-ffreestanding)
 # they include core headers instead of the C library's (the freestanding parts of <cstdlib>,
 # <cstring>, <cwchar>: ycxx/core/c_stdlib.hpp, c_string.hpp; <cerrno>'s macros; <system_error>'s

@@ -8,7 +8,7 @@
 //
 // reference and the iterators are shared by all vector<bool> specializations with the same
 // difference type (ycxx::adl_free::bit_ref / bit_iter). The formatter for reference
-// ([vector.bool.fmt]) is defined with <format> (ycxx/core/format_ranges.hpp).
+// ([vector.bool.fmt]) is in ycxx/core/format_vector_bool.hpp, which <vector> includes.
 #pragma once
 
 #include <ycxx/core/bit_iter_algos.hpp>

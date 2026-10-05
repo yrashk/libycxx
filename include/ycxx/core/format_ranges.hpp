@@ -1,32 +1,14 @@
-// libycxx core: formatting of ranges ([format.range]) and tuples ([format.tuple]), and the
-// formatters of the container adaptors ([container.adaptors.format]) and of
-// vector<bool>::reference ([vector.bool.fmt]).
-//
-// The latter two are defined here against declarations of the adaptors and of
-// vector<bool>::reference (ycxx::adl_free::bit_ref), so <stack>, <queue> and <vector> need not
-// include the formatting library: the specializations are usable wherever both the container
-// header and <format> are included.
+// libycxx core: formatting of ranges ([format.range]) and tuples ([format.tuple]). The formatters
+// of the container adaptors and of vector<bool>::reference are declared by their containers'
+// headers (format_adaptors.hpp, format_vector_bool.hpp).
 #pragma once
 
+#include <ycxx/core/format_adaptors.hpp>
 #include <ycxx/core/format_base.hpp>
 #include <ycxx/core/format_kind.hpp>
 #include <ycxx/core/pair.hpp>
 #include <ycxx/core/ranges_all.hpp>
 #include <ycxx/core/tuple.hpp>
-
-namespace std {
-template <class T, class Container>
-class stack;
-template <class T, class Container>
-class queue;
-template <class T, class Container, class Compare>
-class priority_queue;
-} // namespace std
-
-namespace ycxx::adl_free {
-template <class Word>
-class bit_ref;
-} // namespace ycxx::adl_free
 
 namespace ycxx::detail {
 template <class F>
@@ -164,14 +146,6 @@ public:
 };
 
 } // namespace std
-
-namespace ycxx::detail {
-template <class R, class charT>
-concept fmt_const_formattable_range =
-    std::ranges::input_range<const R> && std::formattable<std::ranges::range_reference_t<const R>, charT>;
-template <class R, class charT>
-using fmt_maybe_const = std::conditional_t<fmt_const_formattable_range<R, charT>, const R, R>;
-} // namespace ycxx::detail
 
 namespace ycxx::adl_free {
 
@@ -354,38 +328,7 @@ public:
   }
 };
 
-// [container.adaptors.format]
-template <class charT, class Adaptor, class Container>
-class fmt_adaptor_formatter {
-  using maybe_const_container = ycxx::detail::fmt_maybe_const<Container, charT>;
-  using maybe_const_adaptor = std::conditional_t<std::is_const_v<maybe_const_container>, const Adaptor, Adaptor>;
-  std::formatter<std::ranges::ref_view<maybe_const_container>, charT> underlying_;
-
-  // The protected member c, named through a derived class.
-  struct access : Adaptor {
-    static constexpr maybe_const_container& get(maybe_const_adaptor& a) noexcept { return a.*&access::c; }
-  };
-
-public:
-  template <class ParseContext>
-  constexpr typename ParseContext::iterator parse(ParseContext& ctx) {
-    return underlying_.parse(ctx);
-  }
-  template <class FormatContext>
-  constexpr typename FormatContext::iterator format(maybe_const_adaptor& r, FormatContext& ctx) const {
-    const std::ranges::ref_view<maybe_const_container> v(access::get(r));
-    return underlying_.format(v, ctx);
-  }
-};
-
 } // namespace ycxx::adl_free
-
-namespace ycxx::detail {
-template <class T>
-inline constexpr bool fmt_is_bit_ref = false;
-template <class Word>
-inline constexpr bool fmt_is_bit_ref<ycxx::adl_free::bit_ref<Word>> = true;
-} // namespace ycxx::detail
 
 namespace std {
 
@@ -412,42 +355,5 @@ template <class T1, class T2>
 inline constexpr bool enable_nonlocking_formatter_optimization<pair<T1, T2>> =
     enable_nonlocking_formatter_optimization<remove_cvref_t<T1>> &&
     enable_nonlocking_formatter_optimization<remove_cvref_t<T2>>;
-
-// [container.adaptors.format]
-template <class charT, class T, formattable<charT> Container>
-struct formatter<stack<T, Container>, charT>
-    : ycxx::adl_free::fmt_adaptor_formatter<charT, stack<T, Container>, Container> {};
-template <class charT, class T, formattable<charT> Container>
-struct formatter<queue<T, Container>, charT>
-    : ycxx::adl_free::fmt_adaptor_formatter<charT, queue<T, Container>, Container> {};
-template <class charT, class T, formattable<charT> Container, class Compare>
-struct formatter<priority_queue<T, Container, Compare>, charT>
-    : ycxx::adl_free::fmt_adaptor_formatter<charT, priority_queue<T, Container, Compare>, Container> {};
-template <class T, class Container>
-inline constexpr bool enable_nonlocking_formatter_optimization<stack<T, Container>> = false;
-template <class T, class Container>
-inline constexpr bool enable_nonlocking_formatter_optimization<queue<T, Container>> = false;
-template <class T, class Container, class Compare>
-inline constexpr bool enable_nonlocking_formatter_optimization<priority_queue<T, Container, Compare>> = false;
-
-// [vector.bool.fmt]
-template <class T, class charT>
-  requires ycxx::detail::fmt_is_bit_ref<T>
-struct formatter<T, charT> {
-private:
-  formatter<bool, charT> underlying_;
-
-public:
-  template <class ParseContext>
-  constexpr typename ParseContext::iterator parse(ParseContext& ctx) {
-    return underlying_.parse(ctx);
-  }
-  template <class FormatContext>
-  constexpr typename FormatContext::iterator format(const T& ref, FormatContext& ctx) const {
-    return underlying_.format(ref, ctx);
-  }
-};
-template <class Word>
-inline constexpr bool enable_nonlocking_formatter_optimization<ycxx::adl_free::bit_ref<Word>> = true;
 
 } // namespace std

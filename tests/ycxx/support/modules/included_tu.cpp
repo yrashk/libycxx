@@ -15,4 +15,10 @@ int included_sum(const std::vector<int>& v) {
 std::string included_name() { return "included"; }
 const void* included_cout() { return &std::cout; }
 const std::type_info& included_vector_type() { return typeid(std::vector<int>); }
-[[noreturn]] void included_throw() { throw std::length_error("from the #include side"); }
+[[noreturn]] void included_throw() {
+#if __cpp_exceptions
+  throw std::length_error("from the #include side");
+#else
+  __builtin_trap(); // not called without exceptions
+#endif
+}

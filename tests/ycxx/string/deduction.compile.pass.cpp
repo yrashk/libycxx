@@ -8,6 +8,7 @@
 // Allocator. [string.cons]/16,18: the const charT* and (n, c) constructors are constrained on
 // Allocator qualifying as an allocator (this affects CTAD).
 // REQUIRES: exceptions
+// COUNTERPART: libcxx:strings/basic.string/string.cons/implicit_deduction_guides.pass.cpp
 #include <string>
 #include <string_view>
 #include <ranges>

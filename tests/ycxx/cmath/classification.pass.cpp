@@ -2,6 +2,7 @@
 // macros with the corresponding names defined in the C standard library." [cmath.syn]/2-3:
 // an overload for each cv-unqualified floating-point type, and arguments of integer type are
 // effectively cast to double. fpclassify returns int, the others bool.
+// COUNTERPART: libcxx:numerics/c.math/cmath.pass.cpp
 #include <cmath>
 #include <limits>
 #include <type_traits>

@@ -5,6 +5,7 @@
 // overwrite do not shorten the sequence (/1). str(sa) with another allocator; str(t) from a
 // string_view-convertible t (/18-19). [stringbuf.cons]: the template constructor from a
 // string_view-convertible t (/10-11).
+// COUNTERPART: libcxx:input.output/string.streams/(istringstream|ostringstream|stringstream|stringbuf)/[a-z.]+/(string_view(.mode)?(.alloc)?|str.string_view).pass.cpp
 #include <sstream>
 #include <memory>
 #include <string>

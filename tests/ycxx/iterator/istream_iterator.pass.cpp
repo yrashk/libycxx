@@ -9,6 +9,7 @@
 // the previous value of the iterator; x == y iff in_stream pointers are equal; it ==
 // default_sentinel iff !in_stream. The iterator models input_iterator ([iterator.concept.input])
 // and works with the algorithms.
+// COUNTERPART: libcxx:iterators/stream.iterators/istream.iterator/types.pass.cpp
 #include <iterator>
 #include <algorithm>
 #include <cstddef>

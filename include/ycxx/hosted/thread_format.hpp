@@ -16,9 +16,20 @@ inline char* thread_id_chars(char* end, std::thread::id id) noexcept {
 
 namespace [[gnu::visibility("hidden")]] std {
 
+// [thread.thread.id]/9: "Inserts the text representation for charT of id", the one formatter uses,
+// as a character sequence: the stream's basefield, showpos... and its locale's numpunct do not
+// change it; width, fill and adjustfield pad it as any string ([ostream.formatted.reqmts]/3).
 template <class charT, class traits>
 basic_ostream<charT, traits>& operator<<(basic_ostream<charT, traits>& out, thread::id id) {
-  return out << static_cast<unsigned long long>(ycxx::detail::thread_access::handle_of(id));
+  char buf[24];
+  char* const end = buf + sizeof(buf);
+  const char* const first = ycxx::detail::thread_id_chars(end, id);
+  charT text[sizeof(buf) + 1];
+  const size_t n = static_cast<size_t>(end - first);
+  for (size_t i = 0; i != n; ++i)
+    text[i] = static_cast<charT>(first[i]);
+  text[n] = charT();
+  return out << static_cast<const charT*>(text);
 }
 
 // thread-id-format-spec: fill-and-align(opt) width(opt); the default alignment is right.

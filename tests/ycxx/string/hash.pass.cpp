@@ -3,6 +3,7 @@
 // [unord.hash]: enabled specializations are default constructible, callable on const S&,
 // return size_t.
 // REQUIRES: exceptions
+// COUNTERPART: libcxx:strings/basic.string.hash/enabled_hashes.pass.cpp
 #include <string>
 #include <cstddef>
 #include <functional>

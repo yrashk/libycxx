@@ -3,6 +3,7 @@
 // (It, End) with "Constraints: It satisfies contiguous_iterator. End satisfies
 // sized_sentinel_for<It>. is_same_v<iter_value_t<It>, charT> is true.
 // is_convertible_v<End, size_type> is false."
+// COUNTERPART: libcxx:strings/string.view/string.view.cons/from_literal.pass.cpp
 #include <string_view>
 #include <array>
 #include <cstddef>

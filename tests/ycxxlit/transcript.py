@@ -13,11 +13,13 @@ keeps every test's output in its log and HTML report), and a failing one can be 
 import shlex, subprocess, time
 
 
-def run(step, cmd, cwd, timeout, expect=''):
-    """Runs cmd; returns (exit status, or None on timeout, transcript)."""
+def run(step, cmd, cwd, timeout, expect='', env=None):
+    """Runs cmd (in env, if given; else in this process's environment); returns (exit status, or
+    None on timeout, transcript)."""
     t0 = time.monotonic()
     try:
-        p = subprocess.run(cmd, cwd=cwd, capture_output=True, text=True, errors='replace', timeout=timeout)
+        p = subprocess.run(cmd, cwd=cwd, capture_output=True, text=True, errors='replace', timeout=timeout,
+                           env=env)
     except subprocess.TimeoutExpired:
         return None, f'$ {shlex.join(cmd)}\n[{step}: TIMEOUT after {timeout}s{expect}]\n'
     secs = time.monotonic() - t0

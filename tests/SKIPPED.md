@@ -20,7 +20,17 @@ lines, and `.verify.cpp` tests without `expected-error` (they check only warning
 
 ## Expected failures (xfail.txt)
 
-A test that fails only because of a compiler gap (TRIAGE category D) is listed in
-`tests/<suite>/xfail.txt` with the compiler it applies to. It still runs: it reports XFAIL while
-it fails, and XPASS, which fails the run, once the compiler catches up and the line should go.
-CI fails on any other failure.
+A test that fails only because of a cause outside the test and the library, a compiler gap or
+bug (TRIAGE category D) or a draft defect, is listed in `tests/<suite>/xfail.txt` with the
+compiler it applies to (`any` for a draft defect). It still runs: it reports XFAIL while it
+fails, and XPASS, which fails the run, once the cause is gone and the line should go. CI fails on
+any other failure.
+
+## Unsupported in one configuration (unsupported.txt)
+
+`tests/libcxx/unsupported.txt` (`<path regex> | <lit feature> | <reason>`; the libc++ suite, whose
+lit configuration has features) lists tests that do not apply in one configuration only; they are
+reported UNSUPPORTED while the lit feature is available and run normally otherwise. `root` (the harness runs as root, `os.geteuid() == 0`, as in CI's
+Linux containers): tests that expect a permission error, which root never gets. `clang`: tests
+that also exercise a libc++ extension under Clang only (`_BitInt`); the reason starts with the
+skip category.

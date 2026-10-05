@@ -5,6 +5,7 @@
 // constexpr double variables e, log2e, ... equal the _v<double> specializations.
 // A decimal literal of 50 significant digits is rounded to the nearest value of its type, so
 // it equals the nearest representable value of the constant.
+// COUNTERPART: libcxx:numerics/numbers/value.pass.cpp
 #include <numbers>
 #include <type_traits>
 #include "check.hpp"

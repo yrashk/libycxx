@@ -6,6 +6,7 @@
 // Conversions: from the same layout with constructible extents; between left and right only
 // for rank <= 1; from layout_stride (explicit unless rank 0).
 // COUNTERPART: libcxx:containers/views/mdspan/layout_(left|right)/ctor.layout_stride.pass.cpp
+// COUNTERPART: libcxx:containers/views/mdspan/layout_(left|right)/(ctor.default|ctor.extents|index_operator|required_span_size|stride).pass.cpp
 #include <mdspan>
 #include <array>
 #include <concepts>

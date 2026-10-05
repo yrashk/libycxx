@@ -3,6 +3,7 @@
 // traits::comparison_category if that qualified-id is valid and denotes a type, otherwise R is
 // weak_ordering". Both are noexcept and take type_identity_t<basic_string_view> for one
 // argument, so objects implicitly convertible to the string view compare too (Note 1).
+// COUNTERPART: libcxx:strings/string.view/string.view.comparison/.*.pass.cpp
 #include <string_view>
 #include <compare>
 #include <cstddef>

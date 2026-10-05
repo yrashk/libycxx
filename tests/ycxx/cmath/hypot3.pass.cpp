@@ -2,6 +2,7 @@
 // [cmath.syn]/3: with mixed arithmetic arguments every argument is cast to the floating-point
 // type of greatest rank, integers counting as double. Intermediate overflow must not spoil a
 // representable result: the mathematical value is returned, not an overflowed infinity.
+// COUNTERPART: libcxx:numerics/c.math/cmath.pass.cpp
 #include <cmath>
 #include <initializer_list>
 #include <limits>

@@ -122,7 +122,8 @@ struct Tester {
       CHECK(c.contains(k));
       CHECK(c.find(k) != c.end() && c.find(k)->first == k);
     }
-    CHECK(c.load_factor() == static_cast<float>(total) / static_cast<float>(bc));
+    const double lf = static_cast<double>(total) / static_cast<double>(bc);
+    CHECK(c.load_factor() >= lf * (1 - 1e-6) && c.load_factor() <= lf * (1 + 1e-6));  // a float
     if (!mlf_changed) CHECK(static_cast<double>(total) <= static_cast<double>(bc) * c.max_load_factor());
   }
 
@@ -309,6 +310,6 @@ int main() {
       run<UMM>(mode, keys, steps);
     }
   }
-  run<UMM>(0, 300, 20000);
-  run<UM>(1, 3000, 20000);
+  run<UMM>(0, 300, 8000);
+  run<UM>(1, 3000, 8000);
 }

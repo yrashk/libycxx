@@ -7,7 +7,8 @@
 // upper w xdigit). /11-12: isctype(c, f) is ctype::is(convert(f), c), and '_' is also a member
 // of any f that contains "w"; Example 1 (d | upper) and Example 2 (w: 'A' and '_' yes, ' ' no).
 // /3-5: length is char_traits::length, translate(c) is c, translate_nocase(c) is tolower.
-// /14: value(ch, radix) is the digit's value in radix 8, 10 or 16, else -1.
+// /14: value(ch, radix) is the digit's value in radix 8, 10 or 16, else -1. /6: transform is
+// the collate facet's.
 // COUNTERPART: libcxx:re/re.traits/lookup_classname.pass.cpp
 #include <cstring>
 #include <locale>
@@ -85,6 +86,12 @@ void run(const C* upper_name, const C* bad, const C* Digit) {
   CHECK(t.value(w('7'), 8) == 7 && t.value(w('8'), 8) == -1);
   CHECK(t.value(w('9'), 10) == 9 && t.value(w('a'), 10) == -1);
   CHECK(t.value(w('f'), 16) == 15 && t.value(w('F'), 16) == 15 && t.value(w('g'), 16) == -1);
+
+  // /6: transform is the collate facet's transform (transform_primary: its own test).
+  const std::basic_string<C> ab{w('a'), w('b')}, ac{w('a'), w('c')};
+  const auto& col = std::use_facet<std::collate<C>>(t.getloc());
+  CHECK(t.transform(ab.begin(), ab.end()) == col.transform(ab.data(), ab.data() + ab.size()));
+  CHECK(t.transform(ab.begin(), ab.end()) < t.transform(ac.begin(), ac.end()));
 }
 
 int main() {

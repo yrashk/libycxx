@@ -2,6 +2,7 @@
 // y.base(); operator> is x.base() < y.base(); <= is x.base() >= y.base(); >= is x.base() <=
 // y.base(); each "Constraints: x.base() OP y.base() is well-formed and convertible to bool."
 // operator<=> (constrained on three_way_comparable_with) returns y.base() <=> x.base().
+// COUNTERPART: libstdcxx:24_iterators/reverse_iterator/greedy_ops.cc
 #include <iterator>
 #include <compare>
 #include <cstddef>

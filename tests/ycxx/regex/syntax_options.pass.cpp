@@ -4,6 +4,7 @@
 // basic, extended, awk, grep and egrep select the POSIX grammars (e.g. basic uses \( \) and
 // \{ \}, grep and egrep treat a newline as alternation). The default is ECMAScript. assign()
 // and operator= replace the expression.
+// COUNTERPART: libstdcxx:28_regex/algorithms/regex_match/multiline.cc
 #include <regex>
 #include <string>
 #include "check.hpp"

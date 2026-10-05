@@ -5,6 +5,7 @@
 // compare equal iff their extents do, and they are trivially copyable and regular.
 // Conversions: from the same layout with constructible extents; between left and right only
 // for rank <= 1; from layout_stride (explicit unless rank 0).
+// COUNTERPART: libcxx:containers/views/mdspan/layout_(left|right)/ctor.layout_stride.pass.cpp
 #include <mdspan>
 #include <array>
 #include <concepts>

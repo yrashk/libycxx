@@ -3,6 +3,7 @@
 // nullptr (unless this == addressof(u), when u.get() is unchanged). The converting
 // operator=(unique_ptr<U, E>&&) behaves likewise. operator=(nullptr_t) is reset().
 // /1,/6: constrained on is_move_assignable_v<D> / convertibility and is_assignable_v<D&, E&&>.
+// COUNTERPART: libcxx:utilities/smartptr/unique.ptr/unique.ptr.class/unique.ptr.asgn/move(_convert|_convert.runtime|_convert.single)?.pass.cpp
 #include <memory>
 #include <cstddef>
 #include <type_traits>

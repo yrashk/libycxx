@@ -5,6 +5,7 @@
 // COUNTERPART: libcxx:ranges/range.adaptors/range.lazy.split/range.lazy.split.inner/ctor.outer_iterator.pass.cpp
 // COUNTERPART: libcxx:ranges/range.adaptors/range.lazy.split/range.lazy.split.outer.value/ctor.iter.pass.cpp
 // COUNTERPART: libcxx:ranges/range.adaptors/range.lazy.split/range.lazy.split.outer/ctor.parent(_base)?.pass.cpp
+// COUNTERPART: libcxx:ranges/range.adaptors/range.lazy.split/begin.pass.cpp
 #include <array>
 #include <iterator>
 #include <ranges>

@@ -3,6 +3,7 @@
 // overloads are constexpr and take random-access iterators (class types, not only
 // pointers) with any sentinel_for<I> for ranges::sort. [alg.sorting.general]/5 defines
 // "sorted with respect to comp and proj".
+// COUNTERPART: libcxx:algorithms/alg.sorting/alg.sort/sort/sort_constexpr(_comp)?.pass.cpp
 #include <algorithm>
 #include <functional>
 #include <ranges>

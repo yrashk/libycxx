@@ -4,6 +4,7 @@
 // return last. "Complexity: Approximately (last - first) * log(middle - first)
 // comparisons, and twice as many projections" (checked at run time with a generous
 // constant: 3 N log2 M + 3 N).
+// COUNTERPART: libcxx:algorithms/alg.sorting/alg.sort/partial.sort/partial_sort(_comp)?.pass.cpp
 #include <algorithm>
 #include <functional>
 #include <ranges>

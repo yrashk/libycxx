@@ -2,6 +2,7 @@
 // char/wchar_t, strings, integers, bool, floating-point types and pointers; disabled
 // specializations (wide strings or wchar_t with char, and types without a formatter) are not
 // default constructible, copyable, or movable (/7); formattable reflects this.
+// COUNTERPART: libcxx:utilities/format/format.formattable/concept.formattable.compile.pass.cpp
 #include <cstddef>
 #include <format>
 #include <string>

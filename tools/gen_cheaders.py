@@ -16,7 +16,7 @@ MBSTATE_CHECK = """static_assert(sizeof(mbstate_t) == sizeof(::mbstate_t) && ali
 HEADERS = {
     "cstdlib": ("stdlib.h", "div_t ldiv_t lldiv_t "
                 "abort atexit at_quick_exit _Exit exit quick_exit getenv system malloc calloc realloc free "
-                "aligned_alloc atof atoi atol atoll strtod strfromd strfromf strfroml strtof strtold strtol strtoll "
+                "aligned_alloc atof atoi atol atoll strtod strtof strtold strtol strtoll "
                 "strtoul strtoull mblen mbtowc wctomb mbstowcs wcstombs bsearch qsort rand srand",
                 """// free_sized, free_aligned_sized (C23 7.24.3.4-5): free with the allocation's size (and
 // alignment), which this C library does not take. Templates, as <cmath>'s functions are: a later C
@@ -128,6 +128,25 @@ inline size_t c32rtomb(char* s, char32_t c32, mbstate_t* ps) noexcept {
   return ::c32rtomb(s, c32, reinterpret_cast<::mbstate_t*>(ps));
 }"""),
 }
+# Names a C library may lack: brought in with using-declarations under the YCXX_* switch of
+# config.hpp that says the C library declares them, and otherwise replaced by libycxx's own.
+CONDITIONAL = {"cstdlib": [("YCXX_C_HAS_STRFROM", "strfromd strfromf strfroml",
+    """// strfromd, strfromf, strfroml (C23 7.24.1.3), which this C library lacks: libycxx's own, on the
+// C library's snprintf (ycxx::detail::strfrom, src/hosted/strfrom.cpp). Templates, as free_sized
+// is: should the C library gain them, its ::strfromd wins unqualified calls under
+// `using namespace std;`.
+template <class = void>
+inline int strfromd(char* s, size_t n, const char* format, double fp) noexcept {
+  return ycxx::detail::strfrom(s, n, format, fp);
+}
+template <class = void>
+inline int strfromf(char* s, size_t n, const char* format, float fp) noexcept {
+  return ycxx::detail::strfrom(s, n, format, static_cast<double>(fp));
+}
+template <class = void>
+inline int strfroml(char* s, size_t n, const char* format, long double fp) noexcept {
+  return ycxx::detail::strfrom(s, n, format, fp);
+}""")]}
 # Headers with a freestanding subset ([compliance]): without a C library (YCXX_HOSTED 0) they
 # include the core header given here instead of the C library's, and declare none of the names
 # above. COMMON holds what both modes share.
@@ -192,7 +211,17 @@ MACROS = {"cwchar": version_macro("WCHAR") + [
           "cstdio": version_macro("STDIO"), "ctime": version_macro("TIME"),
           "cinttypes": version_macro("INTTYPES"), "csetjmp": version_macro("SETJMP")}
 # Global-scope redeclarations, emitted before namespace std.
-GLOBAL = {"ctime": [
+GLOBAL = {"cstdlib": [
+    "#if YCXX_HOSTED",
+    "// strfromd/strfromf/strfroml (C23 7.24.1.3) for C libraries without them, in the hosted runtime",
+    "// (src/hosted/strfrom.cpp): snprintf with the format checked and rebuilt.",
+    "namespace ycxx::detail {",
+    "int strfrom(char* s, __SIZE_TYPE__ n, const char* format, double fp) noexcept;",
+    "int strfrom(char* s, __SIZE_TYPE__ n, const char* format, long double fp) noexcept;",
+    "} // namespace ycxx::detail",
+    "#endif",
+    ""],
+    "ctime": [
     "// [depr.ctime] (Annex D; also deprecated in C23): the C library's declarations, redeclared",
     "// [[deprecated]] (decltype keeps their exact type, noexcept included); std:: names them below.",
     '[[deprecated("asctime is deprecated ([depr.ctime]); use strftime or std::format")]] decltype(::asctime) asctime;',
@@ -220,6 +249,10 @@ for name, (cheader, names, extra) in HEADERS.items():
             lines.append("#if YCXX_HOSTED")
         lines.append("namespace std {")
         lines += [f"using ::{n};" for n in names.split()]
+        for switch, cnames, fallback in CONDITIONAL.get(name, []):
+            lines.append(f"#if {switch}")
+            lines += [f"using ::{n};" for n in cnames.split()]
+            lines += ["#else", fallback, "#endif"]
         if extra:
             lines += ["", extra]
         lines.append("} // namespace std")

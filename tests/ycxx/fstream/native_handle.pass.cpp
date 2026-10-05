@@ -3,6 +3,7 @@
 // native handle associated with an open filebuf. [ifstream.members]/2, [ofstream.members],
 // [fstream.members]: the streams' native_handle() is rdbuf()->native_handle(), and the streams
 // have the same native_handle_type. [fstream.syn]: __cpp_lib_fstream_native_handle.
+// COUNTERPART: libstdcxx:27_io/basic_filebuf/native_handle/(char|wchar_t)/1.cc
 #include <fstream>
 #include <concepts>
 #include <type_traits>

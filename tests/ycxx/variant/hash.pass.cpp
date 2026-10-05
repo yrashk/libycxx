@@ -2,6 +2,7 @@
 // is enabled. [unord.hash]/4: a disabled specialization is not default/copy/move
 // constructible or assignable. [unord.hash]/2: <variant> declares hash, so hash of arithmetic
 // types is enabled through it. [unord.hash]/5.2: equal keys hash equal.
+// COUNTERPART: libstdcxx:20_util/variant/hash.cc
 #include <variant>
 #include <functional>
 #include <type_traits>

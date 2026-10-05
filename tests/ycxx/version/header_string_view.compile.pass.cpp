@@ -1,6 +1,7 @@
 // [version.syn]/2: "Each of the macros defined in <version> is also defined after inclusion
 // of any member of the set of library headers indicated in the corresponding comment in
 // this synopsis." These macros name <string_view> in their comment. Only <string_view> is included.
+// COUNTERPART: libstdcxx:21_strings/basic_string_view/requirements/version.cc
 #include <string_view>
 
 #if !defined(__cpp_lib_constexpr_string_view)

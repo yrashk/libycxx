@@ -7,6 +7,7 @@
 // state (whether or not the implementation avoids double wrapping); a reference_wrapper target
 // refers to the original object. /14: in_place_type construction. /28: the destructor destroys
 // the target.
+// COUNTERPART: libstdcxx:20_util/move_only_function/conv.cc
 #include <functional>
 #include <utility>
 #include "check.hpp"

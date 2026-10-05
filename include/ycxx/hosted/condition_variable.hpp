@@ -111,8 +111,9 @@ public:
   cv_status wait_until(unique_lock<mutex>& lock, const chrono::time_point<Clock, Duration>& abs_time) {
     static_assert(chrono::is_clock_v<Clock>, "wait_until: Clock must meet the Cpp17Clock requirements");
     ycxx::detail::precondition(lock.owns_lock(), "condition_variable::wait_until: the lock is not held");
-    if (Clock::now() < abs_time)
-      cv_.wait_until(*lock.mutex(), ycxx::detail::deadline_at(abs_time));
+    // Clock::now() is read once before the wait and once after it.
+    if (const auto now = Clock::now(); now < abs_time)
+      cv_.wait_until(*lock.mutex(), ycxx::detail::deadline_at(abs_time, now));
     return Clock::now() < abs_time ? cv_status::no_timeout : cv_status::timeout;
   }
   template <class Clock, class Duration, class Predicate>
@@ -235,8 +236,8 @@ public:
   template <class Lock, class Clock, class Duration>
   cv_status wait_until(Lock& lock, const chrono::time_point<Clock, Duration>& abs_time) {
     static_assert(chrono::is_clock_v<Clock>, "wait_until: Clock must meet the Cpp17Clock requirements");
-    if (Clock::now() < abs_time) {
-      const ycxx::detail::pal_deadline d = ycxx::detail::deadline_at(abs_time);
+    if (const auto now = Clock::now(); now < abs_time) {
+      const ycxx::detail::pal_deadline d = ycxx::detail::deadline_at(abs_time, now);
       wait_once(lock, &d, [] { return false; });
     }
     return Clock::now() < abs_time ? cv_status::no_timeout : cv_status::timeout;
@@ -281,9 +282,10 @@ public:
     while (!stoken.stop_requested()) {
       if (pred())
         return true;
-      if (!(Clock::now() < abs_time))
+      const auto now = Clock::now();
+      if (!(now < abs_time))
         return pred();
-      const ycxx::detail::pal_deadline d = ycxx::detail::deadline_at(abs_time);
+      const ycxx::detail::pal_deadline d = ycxx::detail::deadline_at(abs_time, now);
       wait_once(lock, &d, [&] { return stoken.stop_requested(); });
     }
     return pred();

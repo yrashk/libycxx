@@ -26,10 +26,6 @@
 #include <ycxx/core/swap.hpp>
 #include <ycxx/core/utility_base.hpp>
 
-namespace ycxx::detail {
-
-} // namespace ycxx::detail
-
 namespace std {
 
 template <class T, class Allocator = allocator<T>>

@@ -151,6 +151,11 @@ target_link_libraries(ycxx_abi INTERFACE ycxx)
 set_property(TARGET ycxx ycxx_abi PROPERTY LINK_INTERFACE_MULTIPLICITY 3)
 # Usable in shared objects and position-independent executables.
 set_target_properties(ycxx ycxx_abi PROPERTIES POSITION_INDEPENDENT_CODE ON)
+# Nothing the archives define is exported from the program or shared object that links them
+# (-fvisibility=hidden; the headers declare libycxx's namespaces hidden): another C++ library in
+# the process (Apple's libc++/libc++abi, which libSystem loads into every process; libstdc++)
+# can neither take over libycxx's definitions nor be taken over by them (DECISIONS §2).
+set_target_properties(ycxx ycxx_abi PROPERTIES C_VISIBILITY_PRESET hidden CXX_VISIBILITY_PRESET hidden)
 
 # ---- ycxx::ycxx: what applications link ----
 add_library(ycxx_ycxx INTERFACE)

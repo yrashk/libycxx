@@ -4,6 +4,9 @@
 // heap-less default is what is linked, and otherwise forward (try_or_null.hpp).
 #include <new>
 #include <ycxx/core/error.hpp>
+#include "../../runtime/new/hidden.hpp"
+
+asm((ycxx::detail::hide_allocation_function("_Znw#")));
 
 void* operator new(std::size_t) { ycxx::detail::throw_bad_alloc(); }
 // Marks that this heap-less default is the operator new linked into the program (see

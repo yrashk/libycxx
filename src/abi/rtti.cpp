@@ -31,6 +31,34 @@ __pointer_to_member_type_info::~__pointer_to_member_type_info() {}
 
 } // namespace __cxxabiv1
 
+// GCC gives the fundamental type_info objects above default visibility whatever -fvisibility says
+// (Clang hides them). Exported from a program or shared object, they would be the ones another
+// C++ runtime in the process binds its own references to (DECISIONS §2), so they are hidden with
+// assembler directives: `.weak` + `.hidden` for every type GCC may know; the assembler drops the
+// directives for the types this target lacks, since nothing here defines or references them.
+// ELF only: Mach-O's two-level namespace keeps other images from binding to them.
+namespace {
+consteval ycxx::abi::asm_text hide_fundamental_type_infos() {
+  ycxx::abi::asm_text a;
+  if (!ycxx::detail::cfg::gcc || ycxx::detail::cfg::darwin)
+    return a;
+  for (const char* type : {"v", "b", "c", "a", "h", "s", "t", "w", "i", "j", "l", "m", "x", "y", "n", "o", "f", "d",
+                           "e", "g", "Dn", "Ds", "Di", "Du", "Df", "Dd", "De", "Dh", "DF16_", "DF16b", "DF32_",
+                           "DF64_", "DF128_", "DF32x", "DF64x", "DF128x"})
+    for (const char* kind : {"_ZTI", "_ZTS"})
+      for (const char* pointer : {"", "P", "PK"})
+        for (const char* directive : {".weak ", ".hidden "}) {
+          a.append(directive);
+          a.append(kind);
+          a.append(pointer);
+          a.append(type);
+          a.append("\n");
+        }
+  return a;
+}
+} // namespace
+asm((hide_fundamental_type_infos()));
+
 namespace ycxx::abi {
 
 using namespace __cxxabiv1;

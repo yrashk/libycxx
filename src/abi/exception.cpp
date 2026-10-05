@@ -211,6 +211,27 @@ void release_at_handler_exit(exception_header* h) {
 
 using namespace ycxx::abi;
 
+// The runtime is built with -fvisibility=hidden (DECISIONS §2), but GCC declares the entry points
+// that its exception-handling code calls itself, with default visibility, and keeps that
+// visibility for their definitions (a visibility attribute here is ignored, with a warning). An
+// assembler directive hides them, so that a shared object built with libycxx never exports half of
+// its runtime: with the rest hidden, a process holding another runtime (libstdc++'s) would bind
+// these names to one runtime and the others to the other. Clang already hides them.
+namespace {
+consteval asm_text hide_compiler_declared_entry_points() {
+  asm_text a;
+  for (const char* name : {"__cxa_allocate_exception", "__cxa_free_exception", "__cxa_throw", "__cxa_begin_catch",
+                           "__cxa_end_catch", "__cxa_call_unexpected", "__cxa_call_terminate"}) {
+    // Mach-O symbols carry the C prefix '_'.
+    a.append(ycxx::detail::cfg::darwin ? ".private_extern _" : ".hidden ");
+    a.append(name);
+    a.append("\n");
+  }
+  return a;
+}
+} // namespace
+asm((hide_compiler_declared_entry_points()));
+
 extern "C" {
 
 eh_globals* __cxa_get_globals() noexcept { return globals(); }

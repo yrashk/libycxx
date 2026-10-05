@@ -6,6 +6,7 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h> // mkdtemp on macOS (where <stdlib.h> declares it only in some modes)
 #include <ftw.h>
 #include <stdio.h>
 #include <string>

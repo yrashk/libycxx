@@ -1,4 +1,5 @@
 // libycxx hosted runtime: the out-of-line parts of the thread support library ([thread]).
+#include <cfenv>
 #include <system_error>
 #include <typeinfo>
 #include <ycxx/core/atomic_base.hpp>
@@ -10,15 +11,20 @@
 namespace {
 
 // What the trampoline of a new thread needs; the name is copied (null-terminated) behind it.
+// [cfenv.syn]: a thread's floating-point environment starts as that of the thread constructing
+// its std::thread or std::jthread object, at that time; some platforms (Linux) start threads
+// so, others (macOS) with the default environment.
 struct start_record {
   void (*run)(void*);
   void* arg;
+  std::fenv_t fenv;
   bool named;
   char name[1];
 };
 
 void* trampoline(void* p) {
   start_record* r = static_cast<start_record*>(p);
+  std::fesetenv(&r->fenv);
   if (r->named)
     ::ycxx_pal_thread_set_name(r->name);
   void (*run)(void*) = r->run;
@@ -48,6 +54,7 @@ ycxx_pal_handle thread_start(void (*run)(void*), void* arg, std::size_t stack_si
   start_record* r = static_cast<start_record*>(::operator new(sizeof(start_record) + name_size));
   r->run = run;
   r->arg = arg;
+  std::fegetenv(&r->fenv);
   r->named = name != nullptr && name_size != 0;
   if (r->named)
     __builtin_memcpy(r->name, name, name_size);

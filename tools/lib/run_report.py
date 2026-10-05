@@ -205,7 +205,7 @@ def main():
         f.write(md)
 
     rows = ''.join(f'<tr><th>{html.escape(k)}</th><td>{html.escape(v)}</td></tr>' for k, v in meta.items())
-    page = PAGE.replace('@CSS@', report_common.CSS).replace('@COPYJS@', report_common.JS)
+    page = PAGE.replace('@CSS@', report_common.CSS).replace('@THEMEHEAD@', report_common.THEME_HEAD).replace('@COPYJS@', report_common.JS)
     page = page.replace('@TITLE@', html.escape(f'{title}: {verdict}')).replace('@META@', rows)
     page = page.replace('@VERDICT@', 'bad' if nfail or nbad else 'good')
     payload = {'title': title, 'verdict': verdict, 'meta': meta, 'steps': steps, 'suites': suites,
@@ -292,6 +292,7 @@ input[type=search] { flex: 1 1 200px; min-width: 0; padding: 5px 10px; border-ra
   .t .steps { grid-column: 2; grid-row: 2; text-align: left; }
 }
 </style>
+@THEMEHEAD@
 </head>
 <body>
 <main>

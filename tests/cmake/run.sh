@@ -9,6 +9,7 @@
 #   7. tests/cmake/visibility: a program and a shared library built with libycxx, each in one
 #      process with a shared library built with the toolchain's C++ library: each library must
 #      handle its own exceptions with its own runtime, and libycxx's must export nothing of it;
+#      and a program built with libycxx must catch a libycxx shared library's exceptions;
 #   5. find_package must reject an unsupported compiler with a clear message;
 #   6. cmake/ycxx-toolchain.cmake: picks GCC and Clang by itself (with a scratch toolchain cache,
 #      which it must fill in toolchains.env), and fails with a clear message when the requested
@@ -86,14 +87,14 @@ check_exports() {
   fi
 }
 
-# run_pair EXE LOG: runs a program of tests/cmake/visibility; true when it exits 0 printing
-# "mine 3 other 3".
+# run_pair EXE LOG EXPECTED: runs a program of tests/cmake/visibility; true when it exits 0 printing
+# EXPECTED.
 run_pair() {
   printf '$ %s\n' "$1" >>"$2"
   p_st=0
   p_out=$("$1" 2>&1) || p_st=$?
   printf '%s\n[exit %s]\n' "$p_out" "$p_st" >>"$2"
-  [ "$p_st" = 0 ] && [ "$p_out" = "mine 3 other 3" ]
+  [ "$p_st" = 0 ] && [ "$p_out" = "$3" ]
 }
 
 for c in $compilers; do
@@ -148,9 +149,12 @@ for c in $compilers; do
   if x cmake -S "$repo/tests/cmake/visibility" -B "$b" $gen -DCMAKE_PREFIX_PATH="$d/prefix" &&
      x cmake --build "$b"; then
     for p in prog host; do
-      if run_pair "$b/$p" "$log"; then ok $c "visibility: $p: each library uses its own runtime"
+      if run_pair "$b/$p" "$log" "mine 3 other 3"; then ok $c "visibility: $p: each library uses its own runtime"
       else bad $c "visibility: $p: wrong exception handling (see $log)"; fi
     done
+    if run_pair "$b/catcher" "$log" "caught 15 uncaught 0 0"; then
+      ok $c "visibility: catcher: catches a libycxx shared library's exceptions"
+    else bad $c "visibility: catcher: wrong exception handling across libycxx images (see $log)"; fi
     check_exports $c "visibility: prog" "$b/prog"
     for f in "$b"/libmine.*; do check_exports $c "visibility: shared library" "$f"; done
   else

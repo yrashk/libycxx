@@ -3,6 +3,8 @@
 #   mine    shared library built with libycxx
 #   prog    program built with libycxx, linked with `other`
 #   host    program built with the toolchain's C++ library, linked with `other` and `mine`
+#   catcher program built with libycxx, catching the exceptions of `thrower`, a shared library
+#           built with libycxx (prints "caught 15 uncaught 0 0")
 # Each of `other` and `mine` throws and catches exceptions and asks std::current_exception; both
 # programs print "mine 3 other 3" when each library uses its own runtime. Before libycxx hid its
 # symbols, the exported definitions of one library bound the other's references on ELF (and
@@ -37,3 +39,10 @@ add_executable(host main.cpp)
 target_compile_features(host PRIVATE cxx_std_20)
 target_link_libraries(host PRIVATE other mine)
 set_target_properties(host PROPERTIES BUILD_RPATH "${_rpath}")
+
+# Two images built with libycxx, each with its own copy of the runtime: exceptions thrown in one
+# are caught in the other.
+add_library(thrower SHARED thrower.cpp)
+target_link_libraries(thrower PRIVATE ycxx::ycxx)
+add_executable(catcher catcher.cpp)
+target_link_libraries(catcher PRIVATE ycxx::ycxx thrower)

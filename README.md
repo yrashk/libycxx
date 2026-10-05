@@ -121,6 +121,22 @@ only the tests that did not pass, `YCXX_VERBOSE=1` (`-v`) prints every test's tr
 `YCXX_FAIL_DETAILS=N` shows the transcripts of the first N failures (default 10), and
 `YCXX_RAW=1` prints lit's own output. CI keeps the reports as the `test-reports` artifact.
 
+### Own tests
+
+A test in `tests/ycxx` is `*.pass.cpp` (compiled, linked and run; passes on exit status 0),
+`*.compile.pass.cpp` (must compile) or `*.compile.fail.cpp` (must not compile, for a reason other
+than a missing header). Directives in `//` comments adjust a test; `tests/ycxxlit/ycxx_format.py`
+documents them all. A `*.compile.fail.cpp` should say why it must fail: with
+`// EXPECT-ERROR: <regex>` (repeatable; `EXPECT-ERROR-GCC:` / `EXPECT-ERROR-CLANG:` for one
+compiler's wording) it passes only if the compiler's diagnostics match every regex, and its
+transcript names each regex that did not match, so a test cannot pass on an unrelated error:
+
+```cpp
+// EXPECT-ERROR: static assertion failed.*std::expected::value: E must be copy constructible
+// EXPECT-ERROR-GCC: use of deleted function .*basic_string\(nullptr_t\)
+// EXPECT-ERROR-CLANG: call to deleted constructor of 'std::string'
+```
+
 ### Known failures and CI
 
 Tests that libycxx does not pass yet are recorded per platform and compiler in

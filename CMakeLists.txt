@@ -281,9 +281,10 @@ if(YCXX_MODULES)
   # its link dependencies (ycxx::headers) there, so the headers' flags are repeated here. The
   # warning flags are libycxx's own build's only. `std` is a module name reserved to the
   # implementation ([module.unit]/1), which libycxx is.
-  target_include_directories(ycxx_modules SYSTEM PRIVATE
-    $<BUILD_INTERFACE:${YCXX_INCLUDE}> $<INSTALL_INTERFACE:${YCXX_INSTALL_INCLUDEDIR}>)
-  target_compile_options(ycxx_modules PRIVATE -nostdinc++ ${YCXX_CXX_STANDARD_FLAG}
+  # -isystem as an option: CMake 3.28 would export include directories without SYSTEM. The
+  # installed package's libycxxConfig.cmake adds the installed directory the same way.
+  target_compile_options(ycxx_modules PRIVATE "$<BUILD_INTERFACE:SHELL:-isystem ${YCXX_INCLUDE}>"
+                         -nostdinc++ ${YCXX_CXX_STANDARD_FLAG}
                          $<$<CXX_COMPILER_ID:GNU>:-Wno-attributes>
                          $<$<CXX_COMPILER_ID:Clang>:-Wno-reserved-module-identifier>
                          $<BUILD_INTERFACE:${_ycxx_warnings}>)

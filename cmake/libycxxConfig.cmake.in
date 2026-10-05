@@ -47,4 +47,15 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux" AND CMAKE_CXX_COMPILER_ID STREQUAL "Clang"
 endif()
 unset(_ycxx_gcc_dir)
 unset(_ycxx_opts)
+
+# ycxx::modules: the importing project compiles the interface units of std and std.compat with
+# the options exported for them, which lack the headers' directory (CMakeLists.txt, YCXX_MODULES).
+if(TARGET ycxx::modules)
+  get_target_property(_ycxx_opts ycxx::modules IMPORTED_CXX_MODULES_COMPILE_OPTIONS)
+  if(NOT "${_ycxx_opts}" MATCHES "-isystem")
+    set_property(TARGET ycxx::modules APPEND PROPERTY IMPORTED_CXX_MODULES_COMPILE_OPTIONS
+                 "SHELL:-isystem ${PACKAGE_PREFIX_DIR}/@YCXX_INSTALL_INCLUDEDIR@")
+  endif()
+  unset(_ycxx_opts)
+endif()
 check_required_components(libycxx)

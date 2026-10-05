@@ -174,9 +174,13 @@ public:
     return old;
   }
   streamsize width() const { return width_; }
+  // Stores only a changed value: every formatted inserter ends with width(0), and concurrent
+  // formatted output on a synchronized standard stream must not race
+  // ([iostream.objects.overview]/7), which plain stores of the same zero would.
   streamsize width(streamsize wide) {
     const streamsize old = width_;
-    width_ = wide;
+    if (old != wide)
+      width_ = wide;
     return old;
   }
 

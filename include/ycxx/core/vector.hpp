@@ -77,12 +77,15 @@ private:
   }
   // Relocation moves unless the move may throw and a copy is possible (move_if_noexcept).
   static consteval bool relocate_by_move() { return is_nothrow_move_constructible_v<T> || !is_copy_constructible_v<T>; }
-  // [first, last) can be memcpy'd into the storage.
+  // [first, last) can be memcpy'd into the storage: besides T being trivially copyable, the
+  // constructor and assignment that *i selects must be trivial (a template taking T& can be
+  // chosen over the trivial copy operations; [sequence.reqmts] constructs from *i).
   template <class It, class Sent>
   static consteval bool bitwise_source() {
     if constexpr (is_same_v<It, Sent> && ycxx::detail::is_plain_contiguous<It>)
       return bitwise() && is_same_v<remove_cvref_t<iter_reference_t<It>>, T> &&
-             is_lvalue_reference_v<iter_reference_t<It>> && !is_volatile_v<remove_reference_t<iter_reference_t<It>>>;
+             is_lvalue_reference_v<iter_reference_t<It>> && !is_volatile_v<remove_reference_t<iter_reference_t<It>>> &&
+             is_trivially_constructible_v<T, iter_reference_t<It>> && is_trivially_assignable_v<T&, iter_reference_t<It>>;
     else
       return false;
   }

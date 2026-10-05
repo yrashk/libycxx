@@ -20,8 +20,9 @@ struct alignas(64) wide {
 };
 
 int main() {
+  int start = allocations; // the library may allocate before main (static initialization)
   void* raw = ::operator new(16);
-  CHECK(allocations == 1);
+  CHECK(allocations == start + 1);
   ::operator delete(raw);
   void* arr = ::operator new[](8, std::nothrow);
   CHECK(arr != nullptr);

@@ -461,12 +461,9 @@ export namespace std {
   using std::comp_ellint_3;
   using std::comp_ellint_3f;
   using std::comp_ellint_3l;
-  using std::compare_partial_order_fallback;
-  using std::compare_strong_order_fallback;
   using std::compare_three_way;
   using std::compare_three_way_result;
   using std::compare_three_way_result_t;
-  using std::compare_weak_order_fallback;
   using std::complex;
   using std::condition_variable;
   using std::condition_variable_any;
@@ -1442,7 +1439,6 @@ export namespace std {
   using std::owner_less;
   using std::packaged_task;
   using std::pair;
-  using std::partial_order;
   using std::partial_ordering;
   using std::partial_sort;
   using std::partial_sort_copy;
@@ -1764,7 +1760,6 @@ export namespace std {
   using std::strncmp;
   using std::strncpy;
   using std::strndup;
-  using std::strong_order;
   using std::strong_ordering;
   using std::strpbrk;
   using std::strrchr;
@@ -2014,7 +2009,6 @@ export namespace std {
   using std::wctrans_t;
   using std::wctype;
   using std::wctype_t;
-  using std::weak_order;
   using std::weak_ordering;
   using std::weak_ptr;
   using std::weakly_incrementable;
@@ -2199,6 +2193,14 @@ export namespace std {
     using std::contracts::detection_mode;
     using std::contracts::evaluation_semantic;
     using std::contracts::invoke_default_contract_violation_handler;
+  }
+  inline namespace cpo {
+    using std::cpo::compare_partial_order_fallback;
+    using std::cpo::compare_strong_order_fallback;
+    using std::cpo::compare_weak_order_fallback;
+    using std::cpo::partial_order;
+    using std::cpo::strong_order;
+    using std::cpo::weak_order;
   }
   namespace execution {
     using std::execution::par;
@@ -2450,7 +2452,6 @@ export namespace std {
     using std::ranges::as_input_view;
     using std::ranges::as_rvalue_view;
     using std::ranges::basic_istream_view;
-    using std::ranges::begin;
     using std::ranges::bidirectional_range;
     using std::ranges::binary_search;
     using std::ranges::binary_transform_result;
@@ -2459,9 +2460,6 @@ export namespace std {
     using std::ranges::borrowed_subrange_t;
     using std::ranges::cache_latest_view;
     using std::ranges::cartesian_product_view;
-    using std::ranges::cbegin;
-    using std::ranges::cdata;
-    using std::ranges::cend;
     using std::ranges::chunk_by_view;
     using std::ranges::chunk_view;
     using std::ranges::clamp;
@@ -2485,10 +2483,7 @@ export namespace std {
     using std::ranges::copy_result;
     using std::ranges::count;
     using std::ranges::count_if;
-    using std::ranges::crbegin;
-    using std::ranges::crend;
     using std::ranges::dangling;
-    using std::ranges::data;
     using std::ranges::destroy;
     using std::ranges::destroy_at;
     using std::ranges::destroy_n;
@@ -2498,11 +2493,9 @@ export namespace std {
     using std::ranges::drop_while_view;
     using std::ranges::elements_of;
     using std::ranges::elements_view;
-    using std::ranges::empty;
     using std::ranges::empty_view;
     using std::ranges::enable_borrowed_range;
     using std::ranges::enable_view;
-    using std::ranges::end;
     using std::ranges::ends_with;
     using std::ranges::enumerate_view;
     using std::ranges::equal;
@@ -2558,8 +2551,6 @@ export namespace std {
     using std::ranges::is_sorted;
     using std::ranges::is_sorted_until;
     using std::ranges::istream_view;
-    using std::ranges::iter_move;
-    using std::ranges::iter_swap;
     using std::ranges::iterator_t;
     using std::ranges::join_view;
     using std::ranges::join_with_view;
@@ -2619,7 +2610,6 @@ export namespace std {
     using std::ranges::range_rvalue_reference_t;
     using std::ranges::range_size_t;
     using std::ranges::range_value_t;
-    using std::ranges::rbegin;
     using std::ranges::ref_view;
     using std::ranges::remove;
     using std::ranges::remove_copy;
@@ -2627,7 +2617,6 @@ export namespace std {
     using std::ranges::remove_copy_if_result;
     using std::ranges::remove_copy_result;
     using std::ranges::remove_if;
-    using std::ranges::rend;
     using std::ranges::repeat_view;
     using std::ranges::replace;
     using std::ranges::replace_copy;
@@ -2635,7 +2624,6 @@ export namespace std {
     using std::ranges::replace_copy_if_result;
     using std::ranges::replace_copy_result;
     using std::ranges::replace_if;
-    using std::ranges::reserve_hint;
     using std::ranges::reverse;
     using std::ranges::reverse_copy;
     using std::ranges::reverse_copy_result;
@@ -2662,20 +2650,17 @@ export namespace std {
     using std::ranges::shift_right;
     using std::ranges::shuffle;
     using std::ranges::single_view;
-    using std::ranges::size;
     using std::ranges::sized_range;
     using std::ranges::slide_view;
     using std::ranges::sort;
     using std::ranges::sort_heap;
     using std::ranges::split_view;
-    using std::ranges::ssize;
     using std::ranges::stable_partition;
     using std::ranges::stable_sort;
     using std::ranges::starts_with;
     using std::ranges::stride_view;
     using std::ranges::subrange;
     using std::ranges::subrange_kind;
-    using std::ranges::swap;
     using std::ranges::swap_ranges;
     using std::ranges::swap_ranges_result;
     using std::ranges::take_view;
@@ -2710,6 +2695,25 @@ export namespace std {
     using std::ranges::wistream_view;
     using std::ranges::zip_transform_view;
     using std::ranges::zip_view;
+    inline namespace cpo {
+      using std::ranges::cpo::begin;
+      using std::ranges::cpo::cbegin;
+      using std::ranges::cpo::cdata;
+      using std::ranges::cpo::cend;
+      using std::ranges::cpo::crbegin;
+      using std::ranges::cpo::crend;
+      using std::ranges::cpo::data;
+      using std::ranges::cpo::empty;
+      using std::ranges::cpo::end;
+      using std::ranges::cpo::iter_move;
+      using std::ranges::cpo::iter_swap;
+      using std::ranges::cpo::rbegin;
+      using std::ranges::cpo::rend;
+      using std::ranges::cpo::reserve_hint;
+      using std::ranges::cpo::size;
+      using std::ranges::cpo::ssize;
+      using std::ranges::cpo::swap;
+    }
     namespace views {
       using std::ranges::views::adjacent;
       using std::ranges::views::adjacent_transform;

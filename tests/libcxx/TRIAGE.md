@@ -38,6 +38,47 @@ Environment note: the machine was shared with other jobs (load average 15 to 25 
 reached the harness's 300 s compile timeout and were reported UNRESOLVED. Compiled by hand,
 both variant tests pass: GCC takes 85 s and 194 s to compile them under that load (E).
 
+## Re-run of 2026-10-05 (after the (A) fixes)
+
+Whole suite again (`tools/run-conformance libcxx gcc|clang -- -j8 -sv`, library at `7e6a93f`,
+harness and skip list of the first round). Every failure was compared with the per-test category
+of the first run; the few that were not in it were read and classified.
+
+| | GCC 16.2 | Clang 23.1 |
+|---|---|---|
+| Discovered | 8543 | 8543 |
+| Passed | 7494 (was 7439) | 7495 (was 7440) |
+| Unsupported | 836 | 832 |
+| Expectedly failed | 2 | 1 |
+| **Failed + unresolved** | **209 + 2 = 211** (was 532 raw, 238 after the first round's skips) | **215 + 0 = 215** (was 536 / 242) |
+| A / B / C / D / E / F | 2 / 14 / 38 / 5 / 31 / 121 | 2 / 20 / 42 / 3 / 27 / 121 |
+| With this round's skip entry (optional.iterator, C) | **210** (C 37) | **214** (C 41) |
+
+- **(A)**: 22 of the first run's (A) tests pass on both compilers (the CPO/union, range-access
+  `auto(x)`, empty/size of unbounded arrays, ranges::advance/prev, common_iterator, stream
+  iterator `==`, shift_left, parallel reduce, append_range, priority_queue, coroutine_handle,
+  any_cast, and the utility/map/unordered_map/type_traits macros; robust_against_proxy... is the
+  C skip). Still failing: vector.bool.fmt/types.compile (formatter not declared by `<vector>`,
+  open), and template.bitset/includes.pass, now for a **new (A)**: `<bitset>` does not include
+  `<iosfwd>` (table above). The four version.compile tests that had (A) macros fail only on C
+  values (and the B `boyer_moore_searcher`, and on Clang the D builtins), and
+  optional.iterator/iterator.pass is C (skipped).
+- **New failures** (not failing in the first run), all read:
+  - utilities/format/format.arguments/format.arg/visit_format_arg.pass.cpp (both): was skipped as
+    deprecated, now run (Annex D work); needs `EOF` from `constexpr_char_traits.h` (F, as STATUS
+    says).
+  - depr/depr.c.headers/stddef_h.compile.pass.cpp (Clang): was skipped as deprecated, now run;
+    `::nullptr_t` after `<stddef.h>` needs the C++ `<stddef.h>` wrapper libycxx does not have (B,
+    same as the own suite's `cstddef/stddef_global`; GCC's own `<stddef.h>` declares it).
+  - atomics/atomics.ref/compare_exchange_{strong,weak}.pass.cpp (GCC): TIMEOUT under load (load
+    average 11-15 on 4 cores; other agents' builds were running). Both pass when rerun (E).
+  - variant.visit/{visit,visit_return_type}.pass.cpp (GCC): UNRESOLVED (compile timeout), the
+    known E; both pass when rerun.
+- **(D)**: GCC 12 -> 5 and Clang 7 -> 3 (the step-limit tests pass, see (D) below). Clang's
+  type_traits.version (is_pointer_interconvertible, is_within_lifetime) moved from A to D.
+- **(E)**: the 27 root-only filesystem tests remain (run as root), plus the timeouts above.
+- B, C and F otherwise unchanged.
+
 ## (A) libycxx bugs
 
 The draft text was checked for every entry. In the libycxx location column, `I/` is
@@ -68,8 +109,9 @@ The draft text was checked for every entry. In the libycxx location column, `I/`
 |---|---|---|---|---|
 | containers/vector.modifiers/append_range.pass | `append_range` of a sized range with a type that is not move-assignable: "use of deleted operator=" | [sequence.reqmts]/110 (append_range): only Cpp17EmplaceConstructible, plus Cpp17MoveInsertable for vector | `I/core/vector.hpp:646` (`insert_counted(size(), …)`) reaches the rotate in `I/core/sequence_support.hpp:114` | When the position is `end()`, construct at the end without rotating **Fixed** (`append_counted`); passes. |
 | containers/priqueue.members/push_range.pass | priority_queue's move constructor/assignment call `c.clear()`. The test's Container has no `clear` | [priqueue.overview]/1: the container needs random-access iterators, `front`, `push_back`, `pop_back` | `I/core/queue.hpp:208-221` (extension: a moved-from queue is left empty) | `if constexpr (requires { q.c.clear(); })`, or drop the extension **Fixed**: the moved-from queue is cleared only when the container has `clear()`; passes. |
-| containers/vector.bool.fmt/types.compile | `std::formatter` is not declared after `#include <vector>` | [vector.syn] declares `template<class T, class charT> requires is-vector-bool-reference<T> struct formatter<T, charT>;` | the partial specialization is defined with `<format>` (documented in STATUS as a choice) | Declare `formatter` (primary) and the partial specialization from `<vector>`; the definition can stay with the format core |
-| utilities/template.bitset/includes.pass | `std::string s;` after only `#include <bitset>`: incomplete type | [bitset.syn] begins `#include <string>` | `include/bitset`, `I/core/bitset.hpp:8` (deliberately does not include `<string>`) | Include `<string>` from `<bitset>` (both are core) |
+| containers/vector.bool.fmt/types.compile | `std::formatter` is not declared after `#include <vector>` | [vector.syn] declares `template<class T, class charT> requires is-vector-bool-reference<T> struct formatter<T, charT>;` | the partial specialization is defined with `<format>` (documented in STATUS as a choice) | Declare `formatter` (primary) and the partial specialization from `<vector>`; the definition can stay with the format core. **Still failing** (re-run of 2026-10-05) |
+| utilities/template.bitset/includes.pass | `std::string s;` after only `#include <bitset>`: incomplete type | [bitset.syn] begins `#include <string>` | `include/bitset`, `I/core/bitset.hpp:8` (deliberately does not include `<string>`) | Include `<string>` from `<bitset>` (both are core) **Fixed** (`<string>`), but the test still fails on the second half of [bitset.syn]: see the next row |
+| utilities/template.bitset/includes.pass (re-run of 2026-10-05, **new, open**) | `std::ios`, `std::istream`, `std::ostream`, `std::iostream` are not declared after only `#include <bitset>` | [bitset.syn] begins `#include <string>` and `#include <iosfwd> // for istream, ostream, see [iosfwd.syn]` (checked with draft.sh bitset.syn) | `include/bitset:7` includes `<string>` only; `<iosfwd>` (`include/iosfwd`, hosted) is never reached | In hosted builds also `#include <iosfwd>` from `<bitset>` (`#if YCXX_HOSTED`, as `<cstdlib>`/`<cstring>` do; `<iosfwd>` is hosted, `<bitset>` core) |
 | utilities/pairs.pair/pair.incomplete.compile (**Clang only**, low priority) | `struct Test { vector<pair<int, Test>> v; }; pair<int, Test> p;`: instantiating `pair<int, Test>` checks `implicitly_default_constructible<Test>`, which instantiates `~vector<pair<int,Test>>` while pair is incomplete | [pairs.pair] `explicit(see below) pair()`; [vector.overview]/4 allows the incomplete element type; libc++ and libstdc++ accept the code | `I/core/pair.hpp:53-54` (explicit-specifier evaluated at class instantiation; the concept at `:12`) | Make the default constructor a constrained template (`template<class U1 = T1, class U2 = T2>`) so the trait is checked only when it is used **Fixed** as suggested; passes on Clang. |
 
 ### `<coroutine>`, `<optional>`, `<any>`
@@ -77,16 +119,16 @@ The draft text was checked for every entry. In the libycxx location column, `I/`
 | Test | Symptom | Draft | libycxx location | Suggested fix |
 |---|---|---|---|---|
 | language.support/coroutine.handle.prom/promise.pass | `coroutine_handle<const P>::from_promise(p)`: "invalid conversion from const void* to void*" | [coroutine.handle.con]/2: `from_promise(Promise&)` for any Promise, const included | `I/core/coroutine.hpp:54` | `__builtin_coro_promise(const_cast<void*>(static_cast<const volatile void*>(addressof(p))), …)` **Fixed** as suggested; passes. |
-| utilities/optional.iterator/iterator.pass | `std::format_kind<optional<T>>` is not declared by `<optional>`, and even with `<format>` it is not `range_format::disabled` | [optional.syn]: `template<class T> constexpr auto format_kind<optional<T>> = range_format::disabled;` | missing (`I/core/optional.hpp`) | Declare `format_kind`/`range_format` in a core header that `<optional>` includes, and add the specialization. Without it, optional (a range since C++26) is range-formattable |
-| utilities/any.cast/any_cast_pointer.pass | `any_cast<NoCopy>(&a)` instantiates NoCopy's copy constructor | [any.nonmembers]/9: Mandates only `!is_void_v<T>` | `I/hosted/any.hpp:132-133` (`holds<T>()` compares with `table_for<T>`, which instantiates `ops<T>::copy`, `:66`, `:76`, `:93`) | Identify the type with a per-type tag that does not instantiate the copy operation |
+| utilities/optional.iterator/iterator.pass | `std::format_kind<optional<T>>` is not declared by `<optional>`, and even with `<format>` it is not `range_format::disabled` | [optional.syn]: `template<class T> constexpr auto format_kind<optional<T>> = range_format::disabled;` | missing (`I/core/optional.hpp`) | Declare `format_kind`/`range_format` in a core header that `<optional>` includes, and add the specialization. Without it, optional (a range since C++26) is range-formattable **Fixed** (libstdc++ triage round). The test still fails only because it reads `decltype(it)::value_type`, i.e. expects a class-type iterator, while `optional::iterator` is implementation-defined ([optional.iterators]/1) and libycxx's is `T*`: C, skipped (the rest of the test, compiled without those four lines, passes on both compilers) |
+| utilities/any.cast/any_cast_pointer.pass | `any_cast<NoCopy>(&a)` instantiates NoCopy's copy constructor | [any.nonmembers]/9: Mandates only `!is_void_v<T>` | `I/hosted/any.hpp:132-133` (`holds<T>()` compares with `table_for<T>`, which instantiates `ops<T>::copy`, `:66`, `:76`, `:93`) | Identify the type with a per-type tag that does not instantiate the copy operation **Fixed** (libstdc++ triage round); passes |
 
 ### `<version>` (feature-test macros for features that are implemented)
 
 | Test | Symptom | Draft | libycxx location | Suggested fix |
 |---|---|---|---|---|
-| support.limits.general/{utility,tuple,map,unordered_map,version}.version.compile | `__cpp_lib_tuple_like` undefined, although P2165 is implemented (pair from array, tuple/pair comparison, map from a range of tuples: checked) | [version.syn] `__cpp_lib_tuple_like 202311L` (utility, tuple, map, unordered_map) | `I/core/version.hpp` | Define it |
-| …/{tuple,version}.version.compile | `__cpp_lib_apply` undefined (`apply` and the `is_applicable` / `apply_result` traits exist) | `__cpp_lib_apply 202603L` (tuple, type_traits, meta) | `I/core/version.hpp` | Define it after checking the 202603 additions |
-| …/{functional,type_traits,version}.version.compile | `__cpp_lib_result_of_sfinae` and `__cpp_lib_constexpr_functional` undefined | `201210L`, `201907L` | `I/core/version.hpp` | Define them (invoke_result is SFINAE-friendly; `std::invoke` is constexpr) |
+| support.limits.general/{utility,tuple,map,unordered_map,version}.version.compile | `__cpp_lib_tuple_like` undefined, although P2165 is implemented (pair from array, tuple/pair comparison, map from a range of tuples: checked) | [version.syn] `__cpp_lib_tuple_like 202311L` (utility, tuple, map, unordered_map) | `I/core/version.hpp` | Define it **Fixed**: utility/map/unordered_map.version pass; tuple/version.version fail only on C values (below) |
+| …/{tuple,version}.version.compile | `__cpp_lib_apply` undefined (`apply` and the `is_applicable` / `apply_result` traits exist) | `__cpp_lib_apply 202603L` (tuple, type_traits, meta) | `I/core/version.hpp` | Define it after checking the 202603 additions **Fixed** (202603L; libc++ 23 expects the old 201603L, a C failure) |
+| …/{functional,type_traits,version}.version.compile | `__cpp_lib_result_of_sfinae` and `__cpp_lib_constexpr_functional` undefined | `201210L`, `201907L` | `I/core/version.hpp` | Define them (invoke_result is SFINAE-friendly; `std::invoke` is constexpr) **Fixed**: type_traits.version passes on GCC (on Clang it fails only on the D macros `is_pointer_interconvertible`/`is_within_lifetime`); functional.version fails only on C values and the B `boyer_moore_searcher` |
 
 The `<version>` audit in the appendix also lists macros that no libc++ test checks.
 

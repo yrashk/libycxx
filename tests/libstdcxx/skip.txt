@@ -100,3 +100,4 @@ special_functions/.*/compile_2\.cc|26_numerics/headers/cstdlib/(60401|abs128)\.c
 18_support/numeric_limits/char16_32_t\.cc | implementation-specific | expects numeric_limits<char32_t>::traps to equal numeric_limits<unsigned int>::traps; libc++'s numeric.limits.members/traps.pass.cpp expects false for every character type, which libycxx gives
 25_algorithms/copy/34595\.cc | extension | derives from std::iterator with only <algorithm> included; [depr.iterator] declares std::iterator in <iterator>
 std/ranges/iota/max_size_type\.cc | extension | tests libstdc++'s internal std::ranges::__detail::__max_size_type / __max_diff_type
+27_io/basic_filebuf/native_handle/(char|wchar_t)/1\.cc | implementation-specific | after closing the native handle behind the filebuf, expects sgetc() to throw ios_base::failure (libstdc++ throws on a read error); [filebuf.virtuals] underflow reports failure by returning traits::eof(), and libycxx does

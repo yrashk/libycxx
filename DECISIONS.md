@@ -121,7 +121,8 @@ tooling.
     definitions. That includes a program's replacement `operator new`: it is linked instead of
     the archive member holding the hidden default ([replacement.functions]), and is exported as
     the program's other functions are. libycxx's defaults are hidden on every target (as
-    Chromium's `-fvisibility-global-new-delete=force-hidden`): on Darwin they are not patched
+    Clang's `-fvisibility-global-new-delete=force-hidden`, added for libFuzzer's private libc++ and
+    Fuchsia, https://reviews.llvm.org/D53787): on Darwin they are not patched
     into the shared cache, so system code keeps libc++abi's allocation functions; on ELF a
     shared library built with libstdc++ keeps its own. Both use `malloc`/`free`, so memory
     passed between the two still pairs.
@@ -326,12 +327,20 @@ tooling.
   SDK's headers, but the interface libSystem's `os_unfair_lock` and Apple's own libc++ use since
   macOS 10.12; the public `os_sync_wait_on_address` needs macOS 14.4 and is not usable from GCC,
   which has no `__builtin_available`), with relative timeouts in microseconds.
-- **`<rcu>` and `<hazard_pointer>` are hosted, with their state in the runtime.** One RCU domain:
-  readers count themselves in one of two phase counters, `rcu_synchronize` flips the phase and
-  waits for the old counter to drain; retired objects are queued without allocation (through
-  `rcu_obj_base`) and evaluated after a synchronize by `rcu_barrier`, or by an outermost unlock
-  or a retire outside any region once 1000 are queued. Hazard pointers are records of a
-  push-only list; retiring links the object into a retired list through its
+- **`<rcu>` and `<hazard_pointer>` are hosted, with their state in the runtime.** One RCU domain
+  with epochs: a global counter advances with every retire and every `rcu_synchronize`; each
+  thread that enters a region owns a reader record (released at thread end) where its outermost
+  lock stores the epoch it read, followed by a fence. A retired object (queued without
+  allocation through `rcu_obj_base`, in epoch order) may be evaluated once every record is clear
+  or holds a later epoch, so only regions that began before the retire hold it back (the proof
+  is in `src/hosted/rcu.cpp`). Evaluations run by `rcu_barrier`, or by an outermost unlock or a
+  retire outside any region once 1000 are queued, one batch at a time; `rcu_barrier` inside a
+  region evaluates what was retired before the region began. Rejected: two phase counters
+  flipped by `rcu_synchronize` (the previous design), which cannot tell a region that began
+  before a retire from one that began after it, so a barrier inside a region waited for itself.
+  The cost is a third word in `rcu_obj_base` (the node's epoch: a barrier inside a region must
+  find exactly the queued prefix retired before the region began). Hazard pointers are records
+  of a push-only list; retiring links the object into a retired list through its
   `hazard_pointer_obj_base`, and the retiring thread reclaims the unprotected ones once the list
   exceeds twice the number of records plus 64.
 

@@ -24,7 +24,9 @@
 //         ([fs.op.copy.file]/5); is_empty: "return false if an error occurred"
 //         ([fs.op.is.empty]/1); remove_all: "returns static_cast<uintmax_t>(-1) if an error
 //         occurs" ([fs.op.remove.all]/3);
-//       [fs.class.directory.iterator.general]/3 (and [fs.class.rec.dir.itr.general]/?): "If an
+//       directory_entry(p, ec): "otherwise path() == filesystem::path()" ([fs.dir.entry.cons]/2);
+//       [fs.class.directory.iterator.general]/3 (and [fs.class.rec.dir.itr.general]/3: "the same
+//         as a directory_iterator unless otherwise specified"): "If an
 //         iterator of type directory_iterator reports an error or is advanced past the last
 //         directory element, that iterator shall become equal to the end iterator value";
 //   - no operator new block is leaked whichever way the call ends;
@@ -334,7 +336,9 @@ int main() {
        if (!ec) r.status_ok = true;
        return r;
      },
-     good_entry(link, fs::file_type::regular), [](const Entry&) { return true; });
+     // [fs.dir.entry.cons]/2: "path() == p if no error occurs, otherwise path() ==
+     // filesystem::path()".
+     good_entry(link, fs::file_type::regular), [](const Entry& r) { return r.e.path().empty(); });
   sw("directory_entry::assign", nothing,
      [&](std::error_code& ec) {
        Entry r;

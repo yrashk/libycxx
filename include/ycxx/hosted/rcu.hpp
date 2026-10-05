@@ -1,16 +1,19 @@
 // libycxx hosted: read-copy update ([saferecl.rcu]).
 //
 // The one rcu_domain (rcu_default_domain()) lives in the hosted runtime
-// (src/hosted/rcu.cpp). Readers count themselves in one of two counters, selected by the
-// domain's phase: the outermost lock of a thread increments the counter of the current phase
-// and re-reads the phase (retrying if it changed meanwhile); nested locks only count the depth.
-// rcu_synchronize flips the phase and waits (through the PAL) for the old phase's counter to
-// drain, so every region that began before it has ended when it returns.
+// (src/hosted/rcu.cpp, which also gives the memory-ordering argument). A global epoch counter
+// advances with every scheduled evaluation and every rcu_synchronize. Each thread that enters a
+// region owns a reader record (released when the thread ends); its outermost lock stores the
+// current epoch there, followed by a fence, and its outermost unlock clears it; nested locks
+// only count the depth.
 //
-// Scheduled evaluations (retire, rcu_retire) are queued in the domain without blocking. They
-// are evaluated, after an rcu_synchronize, by rcu_barrier, and by the outermost unlock or a
-// retire outside any region once the queue has grown past a bound; evaluations run one batch at
-// a time, under the domain's evaluation lock, never inside a region of the evaluating thread.
+// Scheduled evaluations (retire, rcu_retire) are queued in the domain without blocking, each
+// with the epoch it advanced. An evaluation of epoch e may run once every record is clear or
+// holds an epoch above e, i.e. every region that began before it was scheduled has ended.
+// rcu_synchronize advances the epoch and waits likewise. Evaluations run by rcu_barrier, and by
+// the outermost unlock or a retire outside any region once the queue has grown past a bound,
+// one batch at a time under the domain's evaluation lock. rcu_barrier inside a region evaluates
+// what was scheduled before the region began, which the region itself does not hold back.
 #pragma once
 
 #include <ycxx/config.hpp>
@@ -22,6 +25,7 @@ namespace [[gnu::visibility("hidden")]] ycxx { namespace adl_free {
 struct rcu_node {
   rcu_node* rcu_next_;
   void (*rcu_run_)(rcu_node*) noexcept; // evaluates it
+  unsigned long long rcu_epoch_;         // the domain's epoch when it was scheduled
 };
 }} // namespace ycxx::adl_free
 
@@ -56,7 +60,7 @@ struct rcu_retired final : rcu_node {
   T* p;
   [[no_unique_address]] D d;
 
-  rcu_retired(T* q, D&& e) : rcu_node{nullptr, &run}, p(q), d(static_cast<D&&>(e)) {}
+  rcu_retired(T* q, D&& e) : rcu_node{nullptr, &run, 0}, p(q), d(static_cast<D&&>(e)) {}
   static void run(rcu_node* n) noexcept {
     rcu_retired* self = static_cast<rcu_retired*>(n);
     self->d(self->p);

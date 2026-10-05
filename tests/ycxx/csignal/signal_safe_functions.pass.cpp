@@ -37,7 +37,7 @@ struct Moveable {
 };
 
 extern "C" void handler(int sig) {
-  ++hits;
+  hits = hits + 1;
   atomic_hits.fetch_add(1, std::memory_order_relaxed);
   (void)flag.test_and_set();
   std::atomic_signal_fence(std::memory_order_seq_cst);
@@ -67,6 +67,7 @@ int main(int argc, char** argv) {
   (void)argc;
   if (child_mode()) {
     std::string m = argv[1];
+    std::signal(SIGTERM, SIG_DFL);
     if (m == "exit") std::signal(SIGTERM, exit_handler);
     else if (m == "abort") std::signal(SIGTERM, abort_handler);
     else {
@@ -77,6 +78,7 @@ int main(int argc, char** argv) {
     return 7;  // not reached
   }
   plain_before = 1234;
+  std::signal(SIGINT, SIG_DFL);  // the disposition inherited from the parent may be SIG_IGN
   auto prev = std::signal(SIGINT, handler);
   CHECK(prev == SIG_DFL);
   CHECK(std::raise(SIGINT) == 0);

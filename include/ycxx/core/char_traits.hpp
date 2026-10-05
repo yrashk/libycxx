@@ -1,22 +1,22 @@
 // libycxx core: char_traits ([char.traits]) and the freestanding types it names: mbstate_t and
 // wint_t ([cwchar.syn], freestanding), streamoff and the fpos declaration ([iosfwd.syn]).
 //
-// mbstate_t is defined here, without the C library (DECISIONS §3): an opaque, zero-initialisable
-// object with the size and alignment of the C library's ::mbstate_t on the supported targets.
-// The hosted <cwchar>/<cuchar> check the layout and add std:: overloads of the conversion
-// functions that take std::mbstate_t*.
+// mbstate_t (DECISIONS §3): hosted, the C library's ::mbstate_t ([support.c.headers.other]/1),
+// read with its <wchar.h>; freestanding, core's own type with the same layout
+// (ycxx/core/mbstate.hpp).
 #pragma once
 
 #include <ycxx/core/compare.hpp>
 #include <ycxx/core/cstddef.hpp>
 #include <ycxx/core/cstdint.hpp>
+#if YCXX_HOSTED
+#  include <ycxx/hosted/c_wchar.hpp>
+#else
+#  include <ycxx/core/mbstate.hpp>
+#endif
 
 namespace [[gnu::visibility("hidden")]] std {
 
-struct mbstate_t {
-  // glibc and musl: 8 bytes, 4-byte alignment; Darwin: 128 bytes, 8-byte alignment.
-  alignas(ycxx::detail::cfg::mbstate_align) unsigned char __state[ycxx::detail::cfg::mbstate_size];
-};
 using wint_t = __WINT_TYPE__;
 
 using streamoff = long long;

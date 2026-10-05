@@ -54,9 +54,9 @@ HOSTED += ["thread", "stop_token", "mutex", "shared_mutex", "condition_variable"
            "future", "rcu", "hazard_pointer"]
 # <math.h>: the C library's header plus <cmath>'s names in the global namespace.
 HOSTED += ["math.h"]
-# <stdlib.h>, <inttypes.h>, <string.h>: the C library's plus the names <cstdlib>, <cinttypes>,
-# <cstring> declare themselves; <complex.h>, <tgmath.h>: <complex> (and <cmath>) in C++.
-HOSTED += ["stdlib.h", "inttypes.h", "string.h", "complex.h", "tgmath.h"]
+# <stdlib.h>, <inttypes.h>, <string.h>, <wchar.h>: the C library's plus the names <cstdlib>, <cinttypes>,
+# <cstring>, <cwchar> declare themselves; <complex.h>, <tgmath.h>: <complex> (and <cmath>) in C++.
+HOSTED += ["stdlib.h", "inttypes.h", "string.h", "wchar.h", "complex.h", "tgmath.h"]
 # Iostreams and localization (Phase 4): the non-template parts are in the hosted runtime.
 HOSTED += ["iosfwd", "ios", "streambuf", "istream", "ostream", "iostream", "sstream", "spanstream", "fstream",
            "syncstream", "iomanip", "locale"]

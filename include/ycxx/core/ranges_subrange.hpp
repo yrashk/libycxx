@@ -227,11 +227,16 @@ public:
     requires borrowed_range<R> && ycxx::detail::convertible_to_non_slicing<iterator_t<R>, I> &&
              convertible_to<sentinel_t<R>, S>
   constexpr subrange(R&& r)
-    requires(!StoreSize || sized_range<R>)
-      : begin_(ranges::begin(r)), end_(ranges::end(r)) {
-    if constexpr (StoreSize)
-      size_.value = static_cast<size_type>(ranges::size(r));
-  }
+    requires(!StoreSize)
+      : begin_(ranges::begin(r)), end_(ranges::end(r)) {}
+  // [range.subrange.ctor]/6: subrange(r, ranges::size(r)), so the size is taken before
+  // ranges::begin(r) (LWG 3286: size may not be valid after begin on an input range).
+  template <ycxx::detail::different_from<subrange> R>
+    requires borrowed_range<R> && ycxx::detail::convertible_to_non_slicing<iterator_t<R>, I> &&
+             convertible_to<sentinel_t<R>, S>
+  constexpr subrange(R&& r)
+    requires(StoreSize && sized_range<R>)
+      : subrange(r, static_cast<size_type>(ranges::size(r))) {}
 
   template <borrowed_range R>
     requires ycxx::detail::convertible_to_non_slicing<iterator_t<R>, I> && convertible_to<sentinel_t<R>, S>

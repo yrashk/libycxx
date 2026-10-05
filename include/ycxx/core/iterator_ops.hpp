@@ -128,7 +128,12 @@ struct distance_fn {
   }
   template <class I, std::sized_sentinel_for<std::decay_t<I>> S>
   constexpr std::iter_difference_t<std::decay_t<I>> operator()(I&& first, S last) const {
-    return last - static_cast<const std::decay_t<I>&>(first);
+    // [range.iter.op.distance]/3 (LWG 4242): first itself, so a volatile iterator works; an
+    // array decays.
+    if constexpr (!std::is_array_v<std::remove_reference_t<I>>)
+      return last - first;
+    else
+      return last - static_cast<std::decay_t<I>>(first);
   }
   template <std::ranges::range R>
   constexpr std::ranges::range_difference_t<R> operator()(R&& r) const {

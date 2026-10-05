@@ -843,6 +843,9 @@ protected:
         return make_node(static_cast<V&&>(v));
       }
     });
+    // The keys left behind are moved-from and need no longer be ordered: o must still meet
+    // the container's invariants (a valid state, [lib.types.movedfrom]), so it is emptied.
+    o.clear();
   }
 
   // ---- construction and assignment ----

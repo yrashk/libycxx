@@ -80,7 +80,17 @@ struct pipe_closure : std::ranges::range_adaptor_closure<pipe_closure<C, D>> {
 template <class Adaptor, class... Bound>
 struct adaptor_closure : partial_wrapper<false, Adaptor, Bound...>,
                          std::ranges::range_adaptor_closure<adaptor_closure<Adaptor, Bound...>> {
-  using partial_wrapper<false, Adaptor, Bound...>::partial_wrapper;
+  using wrapper = partial_wrapper<false, Adaptor, Bound...>;
+  using wrapper::wrapper;
+
+  // The call pattern adaptor(r, bound_args...) has exactly one call argument: unlike bind_back's
+  // wrapper, the closure is not callable with none or several (hides the wrapper's operator()).
+  template <class Self, class R>
+    requires(!std::is_volatile_v<std::remove_reference_t<Self>>) && wrapper_castable<Self, adaptor_closure> &&
+            wrapper::template callable<Self, R>
+  constexpr decltype(auto) operator()(this Self&& self, R&& r) noexcept(wrapper::template nothrow<Self, R>) {
+    return ((ycxx::detail::copy_cvref<Self&&, wrapper>)self)(static_cast<R&&>(r));
+  }
 };
 
 }} // namespace ycxx::adl_free

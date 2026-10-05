@@ -468,7 +468,7 @@ Of the 137 left, **133 fail only because libycxx rejects the locale name** (`run
 are (b) below. Clang's two extra "before" failures (time.cal.ymd.members/ctor and ctor.sys_days:
 diagnostics at nonsensical places in `charconv.hpp`) did not reproduce and pass in the "after" run.
 
-- **(a) fixed**: `harness` -- the `%{LOCALE_CONV_<LOCALE>_<FIELD>}` substitutions of
+- **(E) fixed in the harness**: the `%{LOCALE_CONV_<LOCALE>_<FIELD>}` substitutions of
   `ADDITIONAL_COMPILE_FLAGS` (fr_FR and ru_RU thousands separators and decimal point; 7 tests:
   money.get/put `*_fr_FR`/`*_ru_RU`, moneypunct.byname and numpunct.byname thousands_sep,
   time.duration.nonmember/ostream) reached the compiler unexpanded. `tests/ycxxlit/locales.py`

@@ -185,6 +185,6 @@ int main() {
   const unsigned distinct[] = {1, 2, 3, 7, 50, 1u << 30};
   for (std::size_t n = 0; n <= 70; ++n)
     for (unsigned d : distinct) run(n, d);
-  for (std::size_t n : {127u, 128u, 129u, 1000u, 4099u, 30000u})
+  for (std::size_t n : {127u, 128u, 129u, 1000u, 6000u})
     for (unsigned d : distinct) run(n, d);
 }

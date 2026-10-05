@@ -61,6 +61,8 @@ sys.path.insert(0, os.path.join(repo, 'tests'))
 from ycxxlit import locales
 locale_probe = locales.build_probe(wrapper, compiler, config.test_exec_root)
 features |= {f'locale.{n}' for n in locales.LIBCXX_LOCALES if locales.usable(n, locale_probe) is None}
+features |= {f'missing-locale.{n}' for n in locales.LIBCXX_UNDECLARED_LOCALES
+             if locales.usable(n, locale_probe) is not None}
 if os.environ.get('YCXX_LONG_TESTS') == '1':
     features.add('long_tests')
 config.available_features = features

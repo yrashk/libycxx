@@ -57,6 +57,7 @@ jobs:
           name: test-reports
           path: |
             build/test-logs/*.html
+            build/test-logs/*.md
             build/test-logs/*.tsv
             build/test-logs/*.log
           if-no-files-found: ignore

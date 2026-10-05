@@ -364,7 +364,10 @@ under the same name. Otherwise it gets one alias template in `config.hpp`.
    a test runs, with its exit status, duration and output (`tests/ycxxlit/transcript.py`), for
    passing tests as well as failing ones. The terminal lists every test together with its
    steps. Each run's HTML report (`build/test-logs/<run>.html`) holds every test's transcript
-   and the run's provenance: commit, compiler version, command and host.
+   and the run's provenance: commit, compiler version, command and host. `tools/test` adds
+   `run.html`, which embeds the end of a failed step's log. Every report can be copied, or
+   read without a browser, as self-contained Markdown that a person or an AI assistant can act
+   on directly.
 
 ## 7. Iostreams and localization (hosted)
 

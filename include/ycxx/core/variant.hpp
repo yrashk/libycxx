@@ -293,13 +293,17 @@ class variant {
       });
   }
 
+  // [variant.mod]/7: the contained value is direct-initialized from the arguments themselves.
+  // A class-type alternative is never built in a temporary first, not even a trivially copyable
+  // one: the move out of the temporary could select another constructor (a template taking
+  // U&&), and the stored object would not be the one the constructor ran on. A throwing
+  // constructor leaves the variant valueless (/11). Only for a scalar alternative, which has no
+  // constructors, is the value computed first (a throwing conversion operator then leaves the old
+  // alternative in place); the copy is unobservable.
   template <size_t I, class... Args>
   constexpr variant_alternative_t<I, variant>& emplace_impl(Args&&... args) {
     using Ti = Types...[I];
-    if constexpr (!is_nothrow_constructible_v<Ti, Args...> && is_trivially_copyable_v<Ti> && is_move_constructible_v<Ti>) {
-      // Quality of implementation: build the new value first, so a throwing constructor leaves
-      // the old alternative in place instead of making the variant valueless. The extra
-      // trivial move is permitted (the stored object is not the one the constructor built).
+    if constexpr (is_scalar_v<Ti> && !is_nothrow_constructible_v<Ti, Args...>) {
       Ti tmp(static_cast<Args&&>(args)...);
       destroy();
       construct<I>(static_cast<Ti&&>(tmp));

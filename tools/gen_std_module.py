@@ -540,6 +540,13 @@ HEADER = """\
 """
 
 
+def hide_initializer(symbol):
+    """The module's initializer is libycxx's too: hidden (DECISIONS §2), as the compilers give it
+    default visibility whatever -fvisibility says."""
+    return ["// DECISIONS §2: the module initializer is hidden like every other symbol of libycxx.",
+            f'asm((::ycxx::detail::hide_symbol("{symbol}")));', ""]
+
+
 def using(path, name):
     return f"using {('std::' + path + '::') if path else 'std::'}{name};"
 
@@ -571,7 +578,8 @@ def emit_namespace_block(lines, std_ns, exports, aliases, cond, indent="  "):
 def generate_std(exports, aliases, std_ns):
     lines = [HEADER.format(module="std"), "module;", ""]
     lines += ["#include <" + h + ">" for h in CXX_HEADERS + C_HEADERS]
-    lines += ["", "export module std;", ""]
+    lines += ["#include <ycxx/core/hidden_symbol.hpp>", "", "export module std;", ""]
+    lines += hide_initializer("_ZGIW3std")
     conds = sorted({c for names in exports.values() for c in names.values()})
     for cond in conds:
         block = emit_namespace_block(lines, std_ns, exports, aliases, cond)
@@ -594,7 +602,8 @@ def generate_std(exports, aliases, std_ns):
 def generate_compat(compat):
     lines = [HEADER.format(module="std.compat"), "module;", ""]
     lines += ["#include <" + h + ">" for h in COMPAT_HEADERS]
-    lines += ["", "export module std.compat;", "", "export import std;", ""]
+    lines += ["#include <ycxx/core/hidden_symbol.hpp>", "", "export module std.compat;", "", "export import std;", ""]
+    lines += hide_initializer("_ZGIW3stdW6compat")
     for cond in sorted(set(compat.values())):
         names = sorted(n for n, c in compat.items() if c == cond)
         if cond:

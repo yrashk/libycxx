@@ -10,6 +10,23 @@ Conformance oracles (run only, never edited): libc++ tests from `llvmorg-23.1.2`
 (`libcxx/test/std`), the libstdc++ testsuite from GCC 16.2.0, and our own spec-only suite
 `tests/ycxx`.
 
+## Conformance summary (full runs of 2026-10-05)
+| Suite | GCC 16.2 | Clang 23.1 |
+|---|---|---|
+| Own suite `tests/ycxx` (2146 tests, `65e7235`) | 2131 pass / 10 fail / 5 xfail | 2124 pass / 6 fail / 16 xfail |
+| libc++ `libcxx/test/std` (8543 tests, `7e6a93f`) | 7494 pass / 211 fail (209 + 2 unresolved: compile timeouts under load) / 836 unsupported (was 7439 / 532 raw) | 7495 pass / 215 fail / 832 unsupported (was 7440 / 536 raw) |
+| libstdc++ testsuite (8555 tests, `7e6a93f`) | 4823 pass / 141 fail / 3591 unsupported (was 4754 / 484) | 4786 pass / 175 fail / 3594 unsupported (was 4715 / 523) |
+| Own suite against libstdc++ (reference, `tests/ycxx/REFERENCE.md`) | 1754 pass / 387 fail / 5 xfail | 1718 pass / 412 fail / 16 xfail |
+
+Every libc++ and libstdc++ failure is categorised in `tests/libcxx/TRIAGE.md` and
+`tests/libstdcxx/TRIAGE.md` (sections "Re-run of 2026-10-05"). With the skip entries added in that
+round: libc++ 210 / 214 failures, libstdc++ 139 / 173. Open libycxx bugs (A) from them: `<bitset>`
+does not include `<iosfwd>` ([bitset.syn]), and `<vector>` does not declare
+`formatter<vector<bool>::reference>` ([vector.syn]); plus the documented template-parameter name
+`C` (DECISIONS §2, six libstdc++ tests). Most other failures are tests that rely on transitive
+includes (F: 121 libc++, 79 libstdc++), libc++/libstdc++ specifics and pre-C++26 values (C), and
+running as root (27 filesystem tests).
+
 ## Per-header conformance (libc++ tests; pass / run, excluding documented skips)
 | Area (libc++ test dir) | Clang | GCC | Freestanding | Notes |
 |---|---|---|---|---|
@@ -821,11 +838,10 @@ levels: 29.7 s -> 0.01 s; libstdc++ 8.6 s). Remaining above 1.5x: deque push at 
 
 ## Open issues / next
 - Every header of the C++26 library is provided (Phases 1-4 complete; `<meta>` needs GCC's
-  `-freflection`, `<contracts>` GCC's `-fcontracts`). Own suite (1928 tests, after batch 31): GCC 1917 pass /
-  10 fail / 1 xfail, Clang 1910 / 7 / 11. Every remaining failure is a documented limitation:
+  `-freflection`, `<contracts>` GCC's `-fcontracts`). Own suite (2146 tests, at `65e7235`, after batch 36): GCC 2131 pass / 10 fail / 5 xfail, Clang 2124 / 6 / 16. Every remaining failure is a documented limitation:
   `char_traits<char16_t>::eof`, the Itanium ABI handler limits (`except/handler_*`), GCC's
   contract detection mode, non-null constexpr `exception_ptr`, `std::mbstate_t` being core's own
-  type, no `<stddef.h>` wrapper, and (Clang) `bit/oracle_cxx26`'s constant-evaluation step count.
+  type and no `<stddef.h>` wrapper (`bit/oracle_cxx26` no longer fails on Clang).
 - Next (Phase 5): full libc++/libstdc++ sweeps with triage (tests/libcxx/TRIAGE.md,
   tests/libstdcxx/TRIAGE.md), fixing the libycxx bugs they find; then a whole-library review
   (performance pass done, see Performance).

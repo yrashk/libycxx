@@ -1,6 +1,7 @@
 #!/bin/sh
 # Tests libycxx's CMake support with the projects in examples/, for GCC and Clang:
-#   1. configure, build and install libycxx into a scratch prefix;
+#   1. configure, build and install libycxx into a scratch prefix, with the freestanding runtime
+#      archive (YCXX_FREESTANDING_RUNTIME; checked in 9.);
 #   2. examples/find_package: find_package(libycxx) from that prefix, build, run;
 #   3. examples/add_subdirectory: libycxx built as part of the project, build, run;
 #   4. both programs must print "libycxx example: ok" and must not use the toolchain's C++
@@ -16,7 +17,9 @@
 #      version is unavailable and YCXX_PROVISION is off. With YCXX_TEST_PROVISION=1 it also
 #      downloads Clang into a scratch cache (about 2 GB);
 #   8. Linux, Clang: the example programs link the C runtime startup files and libgcc of GCC 16's
-#      installation ($YCXX_GXX), which the package passes with --gcc-install-dir (link map).
+#      installation ($YCXX_GXX), which the package passes with --gcc-install-dir (link map);
+#   9. the freestanding runtime archive is installed, exported as ycxx::freestanding, and links
+#      the freestanding smoke program (tests/freestanding) with no C library.
 #
 #   tests/cmake/run.sh [gcc] [clang]        (default: both)
 # Compilers come from the YCXX_* variables (tools/toolchain/activate.*), else g++-16 /
@@ -114,7 +117,7 @@ for c in $compilers; do
   gen="-G Ninja -DCMAKE_C_COMPILER=$cc -DCMAKE_CXX_COMPILER=$cxx -DCMAKE_BUILD_TYPE=Release"
 
   # 1. build and install
-  if x cmake -S "$repo" -B "$d/lib" $gen -DCMAKE_INSTALL_PREFIX="$d/prefix" &&
+  if x cmake -S "$repo" -B "$d/lib" $gen -DCMAKE_INSTALL_PREFIX="$d/prefix" -DYCXX_FREESTANDING_RUNTIME=ON &&
      x cmake --build "$d/lib" &&
      x cmake --install "$d/lib"; then
     ok $c "build and install"
@@ -122,9 +125,33 @@ for c in $compilers; do
     bad $c "build and install (see $log)"; continue
   fi
   for f in lib/libycxx.a lib/libycxx-abi.a include/libycxx/functional include/libycxx/ycxx/config.hpp \
-           lib/cmake/libycxx/libycxxConfig.cmake lib/cmake/libycxx/libycxxConfigVersion.cmake; do
+           lib/cmake/libycxx/libycxxConfig.cmake lib/cmake/libycxx/libycxxConfigVersion.cmake \
+           lib/libycxx-freestanding.a; do
     [ -e "$d/prefix/$f" ] || bad $c "installed file missing: $f"
   done
+
+  # 9. the freestanding runtime archive (YCXX_FREESTANDING_RUNTIME): exported as
+  # ycxx::freestanding, and the freestanding smoke program links with it and no C library
+  # (tests/freestanding; for the host's architecture, as tools/check_freestanding.sh does for
+  # bare-metal targets; linked, not run: its entry point does not return).
+  if grep -q 'ycxx::freestanding' "$d/prefix/lib/cmake/libycxx/libycxxTargets.cmake" 2>/dev/null; then
+    ok $c "freestanding runtime: installed and exported as ycxx::freestanding"
+  else
+    bad $c "freestanding runtime: ycxx::freestanding not exported"
+  fi
+  if [ "$(uname -s)" = Linux ]; then
+    fs="-std=c++26 -ffreestanding -nostdinc -nostdinc++ -isystem $d/prefix/include/libycxx -fno-exceptions -fno-rtti -O2"
+    libgcc=; [ $c = gcc ] && libgcc=$($cc -print-libgcc-file-name)
+    if x $cxx $fs -c "$repo/tests/freestanding/smoke.cpp" -o "$d/fs-smoke.o" &&
+       x $cxx $fs -O0 -c "$repo/tests/freestanding/smoke_o0.cpp" -o "$d/fs-smoke_o0.o" &&
+       x $cc -ffreestanding -nostdlib -O2 -c "$repo/tests/freestanding/rt.c" -o "$d/fs-rt.o" &&
+       x $cc -static -nostdlib -e _start "$d/fs-smoke.o" "$d/fs-smoke_o0.o" "$d/fs-rt.o" \
+         "$d/prefix/lib/libycxx-freestanding.a" $libgcc -o "$d/fs-smoke.elf"; then
+      ok $c "freestanding runtime: the smoke program links with it and no C library"
+    else
+      bad $c "freestanding runtime: smoke link (see $log)"
+    fi
+  fi
 
   # 2, 3. the example projects (with a link map: which C runtime files and libgcc were linked)
   for ex in find_package add_subdirectory; do

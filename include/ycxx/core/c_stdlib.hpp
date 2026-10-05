@@ -8,12 +8,13 @@
 // ycxx::detail whose assembler names are the C names, so that a C library header a freestanding
 // program may still include (with its own exception specifications and C++ overloads) declares
 // different entities and does not conflict. Every function here is a template with a defaulted
-// parameter, like <cmath>'s, so such a C function wins ties under `using namespace std;`. bsearch
-// and qsort are defined here; abs, div and memalignment are shared with the hosted header.
+// parameter, like <cmath>'s, so such a C function wins ties under `using namespace std;`. qsort
+// is defined here; abs, div, bsearch and memalignment are shared with the hosted header.
 #pragma once
 
 #include <ycxx/config.hpp>
 #include <ycxx/core/cstddef.hpp>
+#include <ycxx/core/c_bsearch.hpp>
 
 #define EXIT_SUCCESS 0
 #define EXIT_FAILURE 1
@@ -76,25 +77,6 @@ template <class = void>
   ::ycxx::detail::c_rt::quick_exit(status);
 }
 
-// [alg.c.library]: the C semantics; compar's exceptions propagate (/4 allows it).
-template <class = void>
-void* bsearch(const void* key, const void* base, size_t nmemb, size_t size, int (*compar)(const void*, const void*)) {
-  const auto* b = static_cast<const unsigned char*>(base);
-  while (nmemb != 0) {
-    const size_t mid = nmemb / 2;
-    const unsigned char* p = b + mid * size;
-    const int r = compar(key, p);
-    if (r == 0)
-      return const_cast<unsigned char*>(p);
-    if (r > 0) {
-      b = p + size;
-      nmemb -= mid + 1;
-    } else {
-      nmemb = mid;
-    }
-  }
-  return nullptr;
-}
 // Heapsort: no recursion, no allocation, O(n log n) comparisons.
 template <class = void>
 void qsort(void* base, size_t nmemb, size_t size, int (*compar)(const void*, const void*)) {

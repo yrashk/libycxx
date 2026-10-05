@@ -19,6 +19,9 @@ MANDATED_MACRO_FILES = {
     "ycxx/core/cmath.hpp", "ycxx/core/cmath_c_macros.hpp", "math.h",
     "cstring", "cstdio", "ctime", "cinttypes", "csetjmp", "ycxx/core/cstdarg.hpp", "ycxx/core/c_stdlib.hpp",
     "ycxx/core/cerrno_macros.hpp", "stdbit.h", "stdckdint.h",
+    # C library headers wrapped for C and C++ (#ifdef __cplusplus), and the <c...> headers that
+    # rename C declarations while reading the C library's (tools/gen_cheaders.py, DECISIONS §3).
+    "stdlib.h", "inttypes.h", "cstdlib",
 }
 # Headers the standard requires to be re-includable with different effect.
 REINCLUDABLE = {"cassert"}

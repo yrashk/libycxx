@@ -1,6 +1,7 @@
 // [facet.num.get.virtuals]/6-: bool without boolalpha: read as a long; 0 -> false, 1 -> true,
 // any other value -> true with failbit; with boolalpha: the longest unique match of
 // truename() / falsename() ("true" / "false"); otherwise false with failbit.
+// COUNTERPART: libcxx:localization/locale.categories/category.numeric/locale.num.get/facet.num.get.members/get_bool.pass.cpp
 #include <sstream>
 #include <ios>
 #include "check.hpp"

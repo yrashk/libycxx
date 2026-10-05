@@ -5,6 +5,7 @@
 // end() is an iterator when everything is forward and common; begin() const requires a
 // glvalue inner range.
 // COUNTERPART: libcxx:ranges/range.adaptors/range.join/range.join.sentinel/ctor.parent.pass.cpp
+// COUNTERPART: libcxx:ranges/range.adaptors/range.join/range.join.iterator/arrow.pass.cpp
 #include <array>
 #include <iterator>
 #include <ranges>

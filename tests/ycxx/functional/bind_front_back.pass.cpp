@@ -2,6 +2,7 @@
 // forwarding call wrapper with call pattern invoke(fd, bound_args..., call_args...) /
 // invoke(fd, call_args..., bound_args...); bound arguments are decay-copied.
 // /6-10 (C++26, P2714): template<auto f, class... Args> bind_front(args...) / bind_back.
+// COUNTERPART: libcxx:utilities/function.objects/func.bind_front/bind_front.pass.cpp
 #include <functional>
 #include <type_traits>
 #include <utility>

@@ -1,6 +1,7 @@
 // [optional.specalg]/3-6: make_optional(T&&) returns optional<decay_t<T>> and is constrained to
 // calls that do *not* use an explicit template-argument-list beginning with a type argument;
 // make_optional<T>(args...) is optional<T>(in_place, args...), make_optional<T>(il, args...).
+// COUNTERPART: libcxx:utilities/optional/optional.specalg/make_optional(_explicit|_explicit_initializer_list)?.pass.cpp
 #include <optional>
 #include <initializer_list>
 #include <type_traits>

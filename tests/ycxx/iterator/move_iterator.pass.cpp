@@ -3,6 +3,7 @@
 // ranges::iter_move(current + n); base() const& returns const Iterator& (noexcept) and
 // base() && returns std::move(current); operator++(int) returns void unless Iterator models
 // forward_iterator; arithmetic and n + x; make_move_iterator.
+// COUNTERPART: libcxx:iterators/predef.iterators/move.iterators/move.iter.ops/move.iter.op.comp/op_(gt|gte|lte).pass.cpp
 #include <iterator>
 #include <cstddef>
 #include <type_traits>

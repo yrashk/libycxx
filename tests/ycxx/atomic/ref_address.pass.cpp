@@ -2,6 +2,7 @@
 // ptr." where address-return-type is COPYCV(T, void)*.
 // FLAGS: -latomic
 // (-latomic: the toolchain's out-of-line atomics for types that are not lock-free; Clang does not link it implicitly)
+// COUNTERPART: libcxx:atomics/atomics.ref/address.pass.cpp
 #include <atomic>
 #include <type_traits>
 #include "check.hpp"

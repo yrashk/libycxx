@@ -18,6 +18,13 @@ Optional directives:
                                           allocation functions) or adds (its exported symbols)
   // XFAIL-COMPILER: gcc|clang  <reason>   known compiler gap (listed in STATUS.md); the test is
                                           unchanged and reports XFAIL, or XPASS once the gap closes
+  // COUNTERPART: libcxx:<path> libstdcxx:<path> [...]   the external tests, skipped there as
+                                          tied to that library's internals, extensions or modes,
+                                          whose standard subject this test covers (paths relative
+                                          to libcxx/test/std and to the libstdc++ testsuite;
+                                          anchored regexes, so `libstdcxx:23_containers/x/.*`
+                                          links a directory). Not read by this format: the
+                                          external formats report the link (ycxxlit/counterparts.py)
 """
 import os, re, shutil, tempfile
 import lit.formats, lit.Test

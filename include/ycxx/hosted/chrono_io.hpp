@@ -412,6 +412,11 @@ constexpr void chrono_set_duration(chrono_fields<charT>& f, const std::chrono::d
 
 struct chrono_c_tm {
   int sec, min, hour, mday, mon, year, wday, yday;
+  // the time zone, for a locale's representation that shows it (%c in some locales): the
+  // abbreviation (null: none, so no zone is written) and the offset when known
+  const char* zone;
+  bool has_offset;
+  long long offset; // seconds east of UTC
 };
 // Appends what loc's time_put<charT> writes for %<mod><spec> of t.
 void chrono_put_localized(std::string& out, const std::locale& loc, const chrono_c_tm& t, char spec, char mod);
@@ -511,14 +516,20 @@ struct chrono_out {
     const bool twelve = spec == 'I' || spec == 'p' || spec == 'r';
     const unsigned long long h =
         twelve || f.hours > static_cast<unsigned long long>(__INT_MAX__) ? f.hours % 24 : f.hours;
-    const chrono_c_tm t{static_cast<int>(f.seconds),
+    chrono_c_tm t{static_cast<int>(f.seconds),
                         static_cast<int>(f.minutes),
                         static_cast<int>(h),
                         static_cast<int>(f.day),
                         static_cast<int>(f.month) - 1,
                         f.year - 1900,
                         static_cast<int>(f.weekday),
-                        f.yday};
+                        f.yday,
+                        nullptr,
+                        f.has_offset,
+                        f.offset};
+    const std::string zone(f.has_abbrev ? f.abbrev : std::string_view());
+    if (f.has_abbrev)
+      t.zone = zone.c_str();
     std::basic_string<charT> s;
     ::ycxx::detail::chrono_put_localized(s, *loc, t, spec, mod);
     b.append(s.data(), s.size());

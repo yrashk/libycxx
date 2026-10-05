@@ -7,7 +7,8 @@
 // os << sys_days is os << year_month_day{dp}.
 // [time.format] Table 133 in the "C" locale ([time.format]/2: without L the "C" locale is
 // used): %a %A %b %B %C %d %D %e %F %g %G %j %m %u %U %V %w %W %y %Y; [time.format]/3: a
-// specifier for missing information (%d for a year_month) throws format_error.
+// specifier for missing information (%d for a year_month) throws format_error; %u and %w of a
+// weekday that is not ok() write its encoding.
 // REQUIRES: exceptions
 #include <chrono>
 #include <format>
@@ -95,6 +96,28 @@ int main() {
   try {
     month m(13);
     (void)std::vformat("{:%b}", std::make_format_args(m));  // %b of an invalid month
+  } catch (const std::format_error&) {
+    thrown = true;
+  }
+  CHECK(thrown);
+  // a weekday that is not ok() still has its encoding: %u and %w write it (libc++ and libstdc++
+  // agree), %a needs a valid one; a date that is not ok() has no weekday
+  CHECK(std::format("{:%u %w}", weekday(8)) == "8 8");
+  CHECK(std::format("{:%Ou %Ow}", weekday(255)) == "255 255");
+  CHECK(std::format("{:L%Ou %Ow}", weekday(9)) == "9 9");
+  CHECK(std::format("{:%u %w}", 2024y / May / weekday(9)[1]) == "9 9");
+  thrown = false;
+  try {
+    weekday wd(8);
+    (void)std::vformat("{:%a}", std::make_format_args(wd));
+  } catch (const std::format_error&) {
+    thrown = true;
+  }
+  CHECK(thrown);
+  thrown = false;
+  try {
+    year_month_day ymd = 2023y / February / 30;
+    (void)std::vformat("{:%w}", std::make_format_args(ymd));
   } catch (const std::format_error&) {
     thrown = true;
   }

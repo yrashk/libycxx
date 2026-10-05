@@ -7,7 +7,7 @@
 #include <ycxx/core/error.hpp>
 #include <initializer_list>
 
-namespace ycxx::detail {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 // Storage for array<T, 0>: no elements, but alignof(T) and data() support.
 template <class T>
 struct alignas(T) empty_array_storage {};
@@ -24,9 +24,9 @@ template <class T>
 struct array_storage<T, 0> {
   using type = empty_array_storage<T>;
 };
-} // namespace ycxx::detail
+}} // namespace ycxx::detail
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 
 template <class T, size_t N>
 struct array {

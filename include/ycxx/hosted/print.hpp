@@ -12,12 +12,12 @@
 #include <ycxx/core/format_base.hpp>
 #include <cstdio>
 
-namespace ycxx::detail {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 // Formats into a buffer, appends a newline if `newline`, and writes the result to stream.
 void vprint_file(std::FILE* stream, std::string_view fmt, std::format_args args, bool newline);
-} // namespace ycxx::detail
+}} // namespace ycxx::detail
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 
 void vprint_unicode(FILE* stream, string_view fmt, format_args args);
 void vprint_unicode_buffered(FILE* stream, string_view fmt, format_args args);

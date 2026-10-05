@@ -6,7 +6,7 @@
 #include <ycxx/core/tuple.hpp>
 #include <ycxx/core/char_traits.hpp>
 
-namespace std::ranges {
+namespace [[gnu::visibility("hidden")]] std { namespace ranges {
 
 // [range.empty]
 template <class T>
@@ -59,9 +59,9 @@ public:
 template <class T>
 single_view(T) -> single_view<T>;
 
-} // namespace std::ranges
+}} // namespace std::ranges
 
-namespace ycxx::detail {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 
 // ---- [range.iota.view] -------------------------------------------------------------------------
 // IOTA-DIFF-T(W): a signed type wider than an integral W; int128 serves the 64-bit types (and
@@ -122,9 +122,9 @@ struct iota_category<W> {
   using iterator_category = std::input_iterator_tag;
 };
 
-} // namespace ycxx::detail
+}} // namespace ycxx::detail
 
-namespace std::ranges {
+namespace [[gnu::visibility("hidden")]] std { namespace ranges {
 
 template <weakly_incrementable W, semiregular Bound = unreachable_sentinel_t>
   requires ycxx::detail::weakly_equality_comparable_with<W, Bound> && copyable<W>
@@ -360,9 +360,9 @@ iota_view(W, Bound) -> iota_view<W, Bound>;
 template <class W, class Bound>
 constexpr bool enable_borrowed_range<iota_view<W, Bound>> = true;
 
-} // namespace std::ranges
+}} // namespace std::ranges
 
-namespace ycxx::detail {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 
 // ---- [range.repeat.view] -----------------------------------------------------------------------
 template <class T>
@@ -375,9 +375,9 @@ struct repeat_access;
 template <class W, class B>
 inline constexpr bool is_iota_view<std::ranges::iota_view<W, B>> = true;
 
-} // namespace ycxx::detail
+}} // namespace ycxx::detail
 
-namespace std::ranges {
+namespace [[gnu::visibility("hidden")]] std { namespace ranges {
 
 template <move_constructible T, semiregular Bound = unreachable_sentinel_t>
   requires(is_object_v<T> && same_as<T, remove_cv_t<T>> &&
@@ -505,9 +505,9 @@ public:
 template <class T, class Bound = unreachable_sentinel_t>
 repeat_view(T, Bound = Bound()) -> repeat_view<T, Bound>;
 
-} // namespace std::ranges
+}} // namespace std::ranges
 
-namespace ycxx::detail {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 
 template <class T>
 inline constexpr bool is_repeat_view = false;
@@ -574,29 +574,29 @@ struct repeat_fn {
 };
 
 } // namespace view_fn
-} // namespace ycxx::detail
+}} // namespace ycxx::detail
 
-namespace std::ranges::views {
+namespace [[gnu::visibility("hidden")]] std { namespace ranges::views {
 inline constexpr ycxx::detail::view_fn::single_fn single{};
 inline constexpr ycxx::detail::view_fn::iota_fn iota{};
 inline constexpr ycxx::detail::view_fn::indices_fn indices{};
 inline constexpr ycxx::detail::view_fn::repeat_fn repeat{};
-} // namespace std::ranges::views
+}} // namespace std::ranges::views
 
 // ---- [range.istream] ---------------------------------------------------------------------------
 // The view needs only the stream's interface: basic_istream is declared here (without default
 // arguments, which <istream>/<iosfwd> supply) and must be complete where the view is used.
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 template <class CharT, class Traits>
 class basic_istream;
 } // namespace std
 
-namespace ycxx::detail {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 template <class Val, class CharT, class Traits>
 concept stream_extractable = requires(std::basic_istream<CharT, Traits>& is, Val& t) { is >> t; };
-} // namespace ycxx::detail
+}} // namespace ycxx::detail
 
-namespace std::ranges {
+namespace [[gnu::visibility("hidden")]] std { namespace ranges {
 
 template <movable Val, class CharT, class Traits = char_traits<CharT>>
   requires default_initializable<Val> && ycxx::detail::stream_extractable<Val, CharT, Traits>
@@ -642,9 +642,9 @@ using istream_view = basic_istream_view<Val, char>;
 template <class Val>
 using wistream_view = basic_istream_view<Val, wchar_t>;
 
-} // namespace std::ranges
+}} // namespace std::ranges
 
-namespace ycxx::detail::view_fn {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail::view_fn {
 template <class T>
 struct istream_fn {
   template <class E>
@@ -662,9 +662,9 @@ struct istream_fn {
     return std::ranges::basic_istream_view<T, typename U::char_type, typename U::traits_type>(e);
   }
 };
-} // namespace ycxx::detail::view_fn
+}} // namespace ycxx::detail::view_fn
 
-namespace std::ranges::views {
+namespace [[gnu::visibility("hidden")]] std { namespace ranges::views {
 template <class T>
 constexpr ycxx::detail::view_fn::istream_fn<T> istream{};
-} // namespace std::ranges::views
+}} // namespace std::ranges::views

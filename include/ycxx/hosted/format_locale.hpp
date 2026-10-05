@@ -13,7 +13,7 @@ std::locale std::basic_format_context<Out, charT>::locale() {
   return loc != nullptr ? *loc : std::locale();
 }
 
-namespace ycxx::detail {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 template <class charT, class Context>
 fmt_numpunct<charT> fmt_get_numpunct(Context& ctx) {
   const std::locale loc = ctx.locale();
@@ -33,12 +33,12 @@ extern template fmt_numpunct<char> fmt_get_numpunct<char, fmt_context<char>>(fmt
 extern template fmt_numpunct<wchar_t> fmt_get_numpunct<wchar_t, fmt_context<wchar_t>>(fmt_context<wchar_t>&);
 extern template std::string fmt_get_boolname<char, fmt_context<char>>(fmt_context<char>&, bool);
 extern template std::wstring fmt_get_boolname<wchar_t, fmt_context<wchar_t>>(fmt_context<wchar_t>&, bool);
-} // namespace ycxx::detail
+}} // namespace ycxx::detail
 
 extern template std::locale std::format_context::locale();
 extern template std::locale std::wformat_context::locale();
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 
 template <class... Args>
 string format(const locale& loc, format_string<Args...> fmt, Args&&... args) {

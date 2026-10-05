@@ -4,7 +4,7 @@
 #include <ycxx/core/ranges_subrange.hpp>
 #include <ycxx/core/ranges_adaptor.hpp>
 
-namespace ycxx::detail {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 // FUN of [range.ref.view]: non-template functions, so binding through two equally good
 // conversion functions is ambiguous (function-template partial ordering would prefer R&).
 template <class R>
@@ -12,9 +12,9 @@ struct ref_view_fun {
   static void fun(R&) noexcept;
   static void fun(R&&) = delete;
 };
-} // namespace ycxx::detail
+}} // namespace ycxx::detail
 
-namespace std::ranges {
+namespace [[gnu::visibility("hidden")]] std { namespace ranges {
 
 template <range R>
   requires is_object_v<R>
@@ -129,9 +129,9 @@ public:
 template <class T>
 constexpr bool enable_borrowed_range<owning_view<T>> = enable_borrowed_range<T>;
 
-} // namespace std::ranges
+}} // namespace std::ranges
 
-namespace ycxx::detail::range_all {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail::range_all {
 struct fn : std::ranges::range_adaptor_closure<fn> {
   template <class R>
   static consteval bool nothrow() {
@@ -152,14 +152,14 @@ struct fn : std::ranges::range_adaptor_closure<fn> {
       return std::ranges::owning_view{static_cast<R&&>(r)};
   }
 };
-} // namespace ycxx::detail::range_all
+}} // namespace ycxx::detail::range_all
 
-namespace std::ranges::views {
+namespace [[gnu::visibility("hidden")]] std { namespace ranges::views {
 inline constexpr ycxx::detail::range_all::fn all{};
 template <viewable_range R>
 using all_t = decltype(all(declval<R>()));
-} // namespace std::ranges::views
+}} // namespace std::ranges::views
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 namespace views = ranges::views;
 } // namespace std

@@ -15,7 +15,7 @@
 [[deprecated("asctime is deprecated ([depr.ctime]); use strftime or std::format")]] decltype(::asctime) asctime;
 [[deprecated("ctime is deprecated ([depr.ctime]); use strftime or std::format")]] decltype(::ctime) ctime;
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 using ::clock_t;
 using ::time_t;
 using ::tm;

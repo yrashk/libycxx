@@ -7,7 +7,7 @@
 #include <ycxx/core/basic_string.hpp>
 #include <ycxx/core/stdexcept.hpp>
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 
 constexpr logic_error::logic_error(const string& what_arg) : msg_(what_arg.c_str(), what_arg.size()) {}
 constexpr runtime_error::runtime_error(const string& what_arg) : msg_(what_arg.c_str(), what_arg.size()) {}

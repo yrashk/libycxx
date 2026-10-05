@@ -10,7 +10,7 @@
 #include <ycxx/core/mdspan_extents.hpp>
 #include <ycxx/core/memory_base.hpp>
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 
 struct layout_left {
   template <class Extents>
@@ -37,7 +37,7 @@ struct layout_right_padded {
 
 } // namespace std
 
-namespace ycxx::detail {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 
 // is-mapping-of, is-layout-left-padded-mapping-of, is-layout-right-padded-mapping-of
 // ([mdspan.layout.general]/2).
@@ -187,9 +187,9 @@ constexpr bool md_empty(const E& e) noexcept {
   return false;
 }
 
-} // namespace ycxx::detail
+}} // namespace ycxx::detail
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 
 // ---------------------------------------------------------------------------------------------
 // [mdspan.layout.left]

@@ -7,7 +7,7 @@
 #include <ycxx/core/algo_base.hpp>
 #include <ycxx/core/optional.hpp>
 
-namespace ycxx::detail {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 
 template <class I, class S, class P>
 constexpr std::iter_difference_t<I> count_if_impl(I first, S last, P pred) {
@@ -230,12 +230,12 @@ concept indirectly_binary_left_foldable =
 template <class F, class T, class I>
 concept indirectly_binary_right_foldable = indirectly_binary_left_foldable<flipped<F>, T, I>;
 
-} // namespace ycxx::detail
+}} // namespace ycxx::detail
 
 // =============================================================================================
 // std:: forms
 // =============================================================================================
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 
 // [alg.all.of], [alg.any.of], [alg.none.of]
 template <class InputIterator, class Predicate>
@@ -384,7 +384,7 @@ template <class ForwardIterator, class Size, class T = typename iterator_traits<
 // =============================================================================================
 // std::ranges:: forms
 // =============================================================================================
-namespace std::ranges {
+namespace [[gnu::visibility("hidden")]] std { namespace ranges {
 template <class I, class F>
 using for_each_result = in_fun_result<I, F>;
 template <class I, class F>
@@ -393,9 +393,9 @@ template <class I, class T>
 using fold_left_with_iter_result = in_value_result<I, T>;
 template <class I, class T>
 using fold_left_first_with_iter_result = in_value_result<I, T>;
-} // namespace std::ranges
+}} // namespace std::ranges
 
-namespace ycxx::detail::ranges_algo {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail::ranges_algo {
 
 using std::ranges::borrowed_iterator_t;
 using std::ranges::borrowed_subrange_t;
@@ -502,9 +502,9 @@ struct for_each_n_fn {
   }
 };
 
-} // namespace ycxx::detail::ranges_algo
+}} // namespace ycxx::detail::ranges_algo
 
-namespace ycxx::detail {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 // [alg.find.last]
 template <class I, class S, class P>
 constexpr std::ranges::subrange<I> find_last_impl(I first, S last, P pred) {
@@ -529,9 +529,9 @@ constexpr std::ranges::subrange<I> find_last_impl(I first, S last, P pred) {
     return {std::move(found), std::move(first)};
   }
 }
-} // namespace ycxx::detail
+}} // namespace ycxx::detail
 
-namespace ycxx::detail::ranges_algo {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail::ranges_algo {
 
 struct find_last_fn {
   template <std::forward_iterator I, std::sentinel_for<I> S, class Proj = std::identity,
@@ -795,9 +795,9 @@ struct ends_with_fn {
   }
 };
 
-} // namespace ycxx::detail::ranges_algo
+}} // namespace ycxx::detail::ranges_algo
 
-namespace ycxx::detail {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 // [alg.fold]
 template <class I, class S, class T, class F>
 constexpr auto fold_left_impl(I first, S last, T init, F& f) {
@@ -842,9 +842,9 @@ constexpr auto fold_right_last_impl(I first, S last, F& f) {
                           ::ycxx::detail::fold_right_impl(std::move(first), tail, std::iter_value_t<I>(*tail), f));
 }
 
-} // namespace ycxx::detail
+}} // namespace ycxx::detail
 
-namespace ycxx::detail::ranges_algo {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail::ranges_algo {
 
 struct fold_left_with_iter_fn {
   template <std::input_iterator I, std::sentinel_for<I> S, class T = std::iter_value_t<I>,
@@ -929,9 +929,9 @@ struct fold_right_last_fn {
   }
 };
 
-} // namespace ycxx::detail::ranges_algo
+}} // namespace ycxx::detail::ranges_algo
 
-namespace std::ranges {
+namespace [[gnu::visibility("hidden")]] std { namespace ranges {
 inline constexpr ycxx::adl_free::ranges_par_algo<ycxx::detail::ranges_algo::all_of_fn, ycxx::detail::par::kind::all_of> all_of{};
 inline constexpr ycxx::adl_free::ranges_par_algo<ycxx::detail::ranges_algo::any_of_fn, ycxx::detail::par::kind::any_of> any_of{};
 inline constexpr ycxx::adl_free::ranges_par_algo<ycxx::detail::ranges_algo::none_of_fn, ycxx::detail::par::kind::none_of> none_of{};
@@ -958,4 +958,4 @@ inline constexpr ycxx::detail::ranges_algo::fold_right_fn fold_right{};
 inline constexpr ycxx::detail::ranges_algo::fold_right_last_fn fold_right_last{};
 inline constexpr ycxx::detail::ranges_algo::fold_left_with_iter_fn fold_left_with_iter{};
 inline constexpr ycxx::detail::ranges_algo::fold_left_first_with_iter_fn fold_left_first_with_iter{};
-} // namespace std::ranges
+}} // namespace std::ranges

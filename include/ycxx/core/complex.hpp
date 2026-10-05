@@ -18,7 +18,7 @@
 #include <ycxx/core/math_constants.hpp>
 #include <ycxx/core/tuple_like.hpp>
 
-namespace ycxx::detail {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 
 // [complex.members]/3: complex<T>(const complex<X>&) is implicit iff the floating-point
 // conversion rank of T is at least that of X (subranks do not matter).
@@ -35,9 +35,9 @@ consteval bool complex_rank_ge() {
   }
 }
 
-} // namespace ycxx::detail
+}} // namespace ycxx::detail
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 
 template <class T>
 class complex {
@@ -128,7 +128,7 @@ private:
 
 } // namespace std
 
-namespace ycxx::detail::cx {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail::cx {
 
 template <class T>
 constexpr bool isnan(T x) noexcept {
@@ -439,9 +439,9 @@ constexpr cpair<T> div(T a, T b, T c, T d) noexcept {
   }
 }
 
-} // namespace ycxx::detail::cx
+}} // namespace ycxx::detail::cx
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 
 template <class T>
 template <class X>
@@ -615,7 +615,7 @@ constexpr complex<ycxx::detail::cmath_promote_t<A>> proj(A x) {
 } // namespace std
 
 // ---- transcendental functions ([complex.transcendentals]) ------------------------------------------
-namespace ycxx::detail::cx {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail::cx {
 
 template <class T>
 using C = std::complex<T>;
@@ -857,9 +857,9 @@ constexpr C<T> catanh(T x, T y) noexcept {
   return {ycxx::detail::cx::copysign(re, x), im};
 }
 
-} // namespace ycxx::detail::cx
+}} // namespace ycxx::detail::cx
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 
 template <class T>
 constexpr complex<T> acos(const complex<T>& x) {
@@ -938,7 +938,7 @@ constexpr complex<T> tanh(const complex<T>& x) {
 
 } // namespace std
 
-namespace ycxx::detail::cx {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail::cx {
 // [complex.transcendentals]/20: exp(y * log(x)), literally, so pow(0, 0) (implementation-defined)
 // is exp(0 * log(0)), a NaN.
 template <class T>
@@ -948,9 +948,9 @@ constexpr std::complex<T> cpow(const std::complex<T>& x, const std::complex<T>& 
 // [cmplx.over]/3: complex<common_type_t<T1, T3>>, T3 = double for an integer T2.
 template <class T1, class T2>
 using pow_common_t = std::common_type_t<T1, std::conditional_t<is_integral_v<T2>, double, T2>>;
-} // namespace ycxx::detail::cx
+}} // namespace ycxx::detail::cx
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 
 // [complex.transcendentals]/20 and [cmplx.over]/3 in one set of templates.
 template <class T, class U>

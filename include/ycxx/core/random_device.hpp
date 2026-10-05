@@ -11,7 +11,7 @@
 #include <ycxx/core/limits.hpp>
 #include <ycxx/pal.h>
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 
 class random_device {
 public:

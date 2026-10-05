@@ -5,7 +5,7 @@
 
 #include <ycxx/core/algo_nonmod.hpp>
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 
 template <class ForwardIterator1, class BinaryPredicate = equal_to<>>
 class default_searcher {

@@ -6,7 +6,7 @@
 #include <ycxx/hosted/istream.hpp>
 #include <ycxx/hosted/locale_extra.hpp>
 
-namespace ycxx::detail {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 
 template <class T>
 inline constexpr bool is_basic_string = false;
@@ -199,9 +199,9 @@ struct quoted_inout {
   }
 };
 
-} // namespace ycxx::detail
+}} // namespace ycxx::detail
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 
 // [std.manip]
 inline ycxx::detail::ios_manip<ycxx::detail::resetiosflags_fn> resetiosflags(ios_base::fmtflags mask) {

@@ -5,7 +5,7 @@
 #include <ycxx/core/exception_base.hpp>
 #include <ycxx/core/error.hpp>
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 
 struct destroying_delete_t {
   explicit destroying_delete_t() = default;

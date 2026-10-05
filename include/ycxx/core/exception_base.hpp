@@ -19,7 +19,7 @@
 
 #include <ycxx/config.hpp>
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 
 class exception {
 public:

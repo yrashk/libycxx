@@ -4,7 +4,7 @@
 
 #include <ycxx/core/concepts.hpp>
 
-namespace std::ranges {
+namespace [[gnu::visibility("hidden")]] std { namespace ranges {
 
 struct view_base {};
 
@@ -12,9 +12,9 @@ template <class D>
   requires is_class_v<D> && same_as<D, remove_cv_t<D>>
 class view_interface;
 
-} // namespace std::ranges
+}} // namespace std::ranges
 
-namespace ycxx::detail {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 // is-derived-from-view-interface: a class (possibly cv-qualified) with exactly one public base
 // view_interface<U>; deduction from a pointer fails for an ambiguous or inaccessible base.
 template <class T>
@@ -25,14 +25,14 @@ template <class T>
 concept derived_from_view_interface =
     std::is_class_v<T> && !is_view_interface<std::remove_cv_t<T>> &&
     requires(T* p) { []<class U>(const volatile std::ranges::view_interface<U>*) {}(p); };
-} // namespace ycxx::detail
+}} // namespace ycxx::detail
 
-namespace std::ranges {
+namespace [[gnu::visibility("hidden")]] std { namespace ranges {
 template <class T>
 constexpr bool enable_view = derived_from<T, view_base> || ycxx::detail::derived_from_view_interface<T>;
-} // namespace std::ranges
+}} // namespace std::ranges
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 // [ranges.syn]: the tag of the containers' range constructors.
 struct from_range_t {
   explicit from_range_t() = default;

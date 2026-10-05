@@ -11,16 +11,16 @@
 #include <ycxx/pal.h>
 #include <time.h>
 
-namespace ycxx::detail {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 // The current value of a PAL clock in nanoseconds.
 inline long long pal_clock_ns(int clock) noexcept {
   ycxx_pal_i64 sec = 0, nsec = 0;
   ::ycxx_pal_clock_now(clock, &sec, &nsec);
   return static_cast<long long>(sec) * 1'000'000'000 + static_cast<long long>(nsec);
 }
-} // namespace ycxx::detail
+}} // namespace ycxx::detail
 
-namespace std::chrono {
+namespace [[gnu::visibility("hidden")]] std { namespace chrono {
 
 class system_clock {
 public:
@@ -66,9 +66,9 @@ public:
   static time_point now() noexcept { return steady_clock::now(); }
 };
 
-} // namespace std::chrono
+}} // namespace std::chrono
 
-namespace ycxx::adl_free {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace adl_free {
 class file_clock {
 public:
   using rep = long long;
@@ -90,4 +90,4 @@ public:
     return std::chrono::file_time<Duration>(t.time_since_epoch());
   }
 };
-} // namespace ycxx::adl_free
+}} // namespace ycxx::adl_free

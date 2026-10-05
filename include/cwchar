@@ -21,7 +21,7 @@
 #endif
 
 #if YCXX_HOSTED
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 using ::tm;
 using ::fwprintf;
 using ::fwscanf;

@@ -4,7 +4,7 @@
 #include <ycxx/core/format_base.hpp>
 #include <ycxx/core/system_error.hpp>
 
-namespace ycxx::detail {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 // ec.message() in charT's encoding: UTF-8 with each maximal ill-formed subsequence replaced by
 // U+FFFD for char ([syserr.fmt]/5.1), and UTF-32 (or UTF-16), decoded the same way, for wchar_t.
 template <class charT>
@@ -38,9 +38,9 @@ std::basic_string<charT> fmt_error_message(const std::string& m) {
   }
   return out;
 }
-} // namespace ycxx::detail
+}} // namespace ycxx::detail
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 
 template <ycxx::detail::fmt_char charT>
 struct formatter<error_code, charT> {

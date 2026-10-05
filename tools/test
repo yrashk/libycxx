@@ -5,7 +5,8 @@
 #   tools/test [options] [stage...]
 #
 # Stages (default: policy build freestanding ycxx; "all": every stage):
-#   policy        preprocessor, include-layering and shell-portability checks (tools/check_*.py)
+#   policy        preprocessor, include-layering, namespace-visibility and shell-portability
+#                 checks (tools/check_*.py)
 #   build         the library for each compiler, RelWithDebInfo (build/<cc>, what the suites
 #                 link) and Release (build/<cc>-release, -O3, as CMake consumers build it)
 #   freestanding  every core header with -ffreestanding -nostdinc, bare-metal smoke link
@@ -199,6 +200,7 @@ for stage in $stages; do
       ui_section "Policy checks"
       step "preprocessor policy" policy-preprocessor python3 tools/check_preprocessor.py || :
       step "include layering" policy-includes python3 tools/check_includes.py || :
+      step "hidden visibility of the library namespaces" policy-visibility python3 tools/check_visibility.py || :
       step "shell portability (bash 3.2, dash)" policy-shell python3 tools/check_shell.py || :
       ;;
     build)

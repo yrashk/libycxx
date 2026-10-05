@@ -17,7 +17,7 @@
 #include <ycxx/hosted/chrono_clocks.hpp>
 #include <ycxx/pal.h>
 
-namespace ycxx::detail {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 
 // ---- the hosted runtime (src/hosted/thread.cpp) ------------------------------------------------
 // Throws system_error(error_code(ev, generic_category()), what).
@@ -197,4 +197,4 @@ bool atomic_wait_until_done_by(const volatile void* addr, Done done, const std::
 
 inline ycxx_pal_handle this_thread_handle() noexcept { return ::ycxx_pal_thread_self(); }
 
-} // namespace ycxx::detail
+}} // namespace ycxx::detail

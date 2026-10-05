@@ -16,7 +16,7 @@
 #include <ycxx/core/utility_base.hpp>
 #include <initializer_list>
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 
 class bad_any_cast : public bad_cast {
 public:
@@ -27,7 +27,7 @@ class any;
 
 } // namespace std
 
-namespace ycxx::detail::any_impl {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail::any_impl {
 
 union storage {
   void* ptr;
@@ -101,9 +101,9 @@ inline constexpr bool is_in_place_type_t = false;
 template <class T>
 inline constexpr bool is_in_place_type_t<std::in_place_type_t<T>> = true;
 
-} // namespace ycxx::detail::any_impl
+}} // namespace ycxx::detail::any_impl
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 
 class any {
   ycxx::detail::any_impl::storage s_;
@@ -273,13 +273,13 @@ T* any_cast(any* operand) noexcept {
 
 } // namespace std
 
-namespace ycxx::detail {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 [[noreturn]] [[gnu::cold]] inline void throw_bad_any_cast() {
   ::ycxx::detail::raise_with(ycxx_error_bad_any_cast, "std::bad_any_cast", [] { return std::bad_any_cast(); });
 }
-} // namespace ycxx::detail
+}} // namespace ycxx::detail
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 
 template <class T>
 T any_cast(const any& operand) {

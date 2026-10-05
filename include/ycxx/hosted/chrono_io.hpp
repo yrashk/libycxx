@@ -23,7 +23,7 @@
 #include <ycxx/hosted/chrono_tz.hpp>
 #include <ycxx/hosted/format_locale.hpp>
 
-namespace ycxx::adl_free {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace adl_free {
 // [time.format]: local-time-format-t.
 template <class Duration>
 struct local_time_format_t {
@@ -31,18 +31,18 @@ struct local_time_format_t {
   const std::string* abbrev_;
   const std::chrono::seconds* offset_sec_;
 };
-} // namespace ycxx::adl_free
+}} // namespace ycxx::adl_free
 
-namespace std::chrono {
+namespace [[gnu::visibility("hidden")]] std { namespace chrono {
 template <class Duration>
 ycxx::adl_free::local_time_format_t<Duration> local_time_format(local_time<Duration> time,
                                                                 const string* abbrev = nullptr,
                                                                 const seconds* offset_sec = nullptr) {
   return {time, abbrev, offset_sec};
 }
-} // namespace std::chrono
+}} // namespace std::chrono
 
-namespace ycxx::detail {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 
 // ---- the fields of a value ------------------------------------------------------------------
 
@@ -1372,9 +1372,9 @@ void chrono_append(std::string& s, const T& v) {
   s.append(b.data(), b.size());
 }
 
-} // namespace ycxx::detail
+}} // namespace ycxx::detail
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 
 // [time.format]: the formatters.
 template <class Rep, class Period, ycxx::detail::fmt_char charT>
@@ -1506,7 +1506,7 @@ inline constexpr bool enable_nonlocking_formatter_optimization<chrono::local_inf
 
 } // namespace std
 
-namespace std::chrono {
+namespace [[gnu::visibility("hidden")]] std { namespace chrono {
 
 // [time.duration.io]/1
 template <class charT, class traits, class Rep, class Period>
@@ -1696,4 +1696,4 @@ ambiguous_local_time::ambiguous_local_time(const local_time<Duration>& tp, const
         return s;
       }()) {}
 
-} // namespace std::chrono
+}} // namespace std::chrono

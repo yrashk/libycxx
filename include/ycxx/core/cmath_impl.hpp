@@ -18,7 +18,7 @@
 #include <ycxx/core/cmath_mp.hpp>
 #include <ycxx/core/cmath_promote.hpp>
 
-namespace ycxx::detail::cm {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail::cm {
 
 template <class T>
 consteval auto carrier_of() {
@@ -395,4 +395,4 @@ I lrint(T x) noexcept {
     return ycxx::detail::fpm::bi::llrint<C>(static_cast<C>(x));
 }
 
-} // namespace ycxx::detail::cm
+}} // namespace ycxx::detail::cm

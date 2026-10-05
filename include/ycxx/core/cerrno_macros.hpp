@@ -170,7 +170,7 @@
 #  define EXDEV 18
 #endif
 
-namespace ycxx::detail {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 consteval bool errno_macros_match_errc() {
   using std::errc;
   const struct {
@@ -258,4 +258,4 @@ consteval bool errno_macros_match_errc() {
   return ENODATA == errno_enodata && ENOSR == errno_enosr && ENOSTR == errno_enostr && ETIME == errno_etime;
 }
 static_assert(ycxx::detail::errno_macros_match_errc(), "libycxx: the freestanding <cerrno> macros differ from std::errc");
-} // namespace ycxx::detail
+}} // namespace ycxx::detail

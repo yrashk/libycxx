@@ -19,7 +19,7 @@
 #include <ycxx/hosted/chrono_io.hpp>
 #include <ycxx/hosted/chrono_tz.hpp>
 
-namespace ycxx::detail {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 
 struct chrono_parsed {
   enum : unsigned {
@@ -578,9 +578,9 @@ constexpr bool chrono_point_of(const chrono_parsed& r, Duration& out, bool leap_
   return true;
 }
 
-} // namespace ycxx::detail
+}} // namespace ycxx::detail
 
-namespace std::chrono {
+namespace [[gnu::visibility("hidden")]] std { namespace chrono {
 
 // [time.duration.io]/3
 template <class charT, class traits, class Rep, class Period, class Alloc = allocator<charT>>
@@ -811,9 +811,9 @@ basic_istream<charT, traits>& from_stream(basic_istream<charT, traits>& is, cons
                                           });
 }
 
-} // namespace std::chrono
+}} // namespace std::chrono
 
-namespace ycxx::adl_free {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace adl_free {
 
 // [time.parse]: the manipulator; `Mode` 0: (fmt, tp), 1: + abbrev, 2: + offset, 3: + both.
 template <int Mode, class charT, class traits, class Alloc, class Parsable>
@@ -844,15 +844,15 @@ public:
   }
 };
 
-} // namespace ycxx::adl_free
+}} // namespace ycxx::adl_free
 
-namespace ycxx::detail {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 template <class charT, class traits, class Parsable, class... Extra>
 concept chrono_parsable = requires(std::basic_istream<charT, traits>& is, const charT* fmt, Parsable& tp,
                                    Extra... extra) { from_stream(is, fmt, tp, extra...); };
-} // namespace ycxx::detail
+}} // namespace ycxx::detail
 
-namespace std::chrono {
+namespace [[gnu::visibility("hidden")]] std { namespace chrono {
 
 template <class charT, class Parsable>
   requires ycxx::detail::chrono_parsable<charT, char_traits<charT>, Parsable>
@@ -903,4 +903,4 @@ auto parse(const basic_string<charT, traits, Alloc>& fmt, Parsable& tp, basic_st
       fmt.c_str(), tp, __builtin_addressof(abbrev), __builtin_addressof(offset));
 }
 
-} // namespace std::chrono
+}} // namespace std::chrono

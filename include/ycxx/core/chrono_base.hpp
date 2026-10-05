@@ -18,14 +18,14 @@
 #include <ycxx/core/ratio.hpp>
 #include <ycxx/core/type_traits.hpp>
 
-namespace std::chrono {
+namespace [[gnu::visibility("hidden")]] std { namespace chrono {
 template <class Rep, class Period = ratio<1>>
 class duration;
 template <class Clock, class Duration = typename Clock::duration>
 class time_point;
-} // namespace std::chrono
+}} // namespace std::chrono
 
-namespace ycxx::detail {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 
 template <class T>
 inline constexpr bool is_duration = false;
@@ -49,9 +49,9 @@ inline constexpr std::intmax_t static_gcd = ::ycxx::detail::ratio_gcd(A, B);
 template <class P1, class P2>
 using ratio_gcd_t = std::ratio<static_gcd<P1::num, P2::num>, (P1::den / static_gcd<P1::den, P2::den>) * P2::den>;
 
-} // namespace ycxx::detail
+}} // namespace ycxx::detail
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 
 // [time.traits.specializations]
 template <class Rep1, class Period1, class Rep2, class Period2>
@@ -68,7 +68,7 @@ struct common_type<chrono::time_point<Clock, Duration1>, chrono::time_point<Cloc
 
 } // namespace std
 
-namespace std::chrono {
+namespace [[gnu::visibility("hidden")]] std { namespace chrono {
 
 // [time.traits.is.fp]
 template <class Rep>
@@ -458,20 +458,20 @@ using local_time = time_point<local_t, Duration>;
 using local_seconds = local_time<seconds>;
 using local_days = local_time<days>;
 
-} // namespace std::chrono
+}} // namespace std::chrono
 
-namespace ycxx::adl_free {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace adl_free {
 // [time.clock.file]: the type std::chrono::file_clock denotes (defined with the other clocks).
 class file_clock;
-} // namespace ycxx::adl_free
+}} // namespace ycxx::adl_free
 
-namespace std::chrono {
+namespace [[gnu::visibility("hidden")]] std { namespace chrono {
 using file_clock = ycxx::adl_free::file_clock;
 template <class Duration>
 using file_time = time_point<file_clock, Duration>;
-} // namespace std::chrono
+}} // namespace std::chrono
 
-namespace ycxx::detail {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 // Diagnoses an integer duration literal that overflows its type ([time.duration.literals]/3):
 // not constexpr, so reaching it in the immediate literal operators is ill-formed.
 inline void duration_literal_overflows() noexcept {}
@@ -481,9 +481,9 @@ consteval D duration_literal(unsigned long long v) {
     ::ycxx::detail::duration_literal_overflows();
   return D(static_cast<typename D::rep>(v));
 }
-} // namespace ycxx::detail
+}} // namespace ycxx::detail
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 inline namespace literals {
 inline namespace chrono_literals {
 // [time.duration.literals]

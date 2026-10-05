@@ -7,7 +7,7 @@
 
 #include <ycxx/core/hash_table.hpp>
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 
 template <class Key, class T, class Hash = hash<Key>, class Pred = equal_to<Key>,
           class Allocator = allocator<pair<const Key, T>>>

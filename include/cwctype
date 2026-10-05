@@ -7,7 +7,7 @@
 #include <ycxx/core/char_traits.hpp>
 #include <wctype.h>
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 using ::wctrans_t;
 using ::wctype_t;
 using ::iswalnum;

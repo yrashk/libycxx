@@ -25,7 +25,7 @@
 #include <ycxx/core/typeinfo.hpp>
 #include <ycxx/core/utility_base.hpp>
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 
 // ---- [func.wrap.badcall] ----
 class bad_function_call : public exception {
@@ -48,13 +48,13 @@ class function_ref;
 
 } // namespace std
 
-namespace ycxx::detail {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 [[noreturn]] [[gnu::cold]] inline void throw_bad_function_call() {
   ::ycxx::detail::raise_with(ycxx_error_bad_function_call, "std::bad_function_call", [] { return std::bad_function_call(); });
 }
-} // namespace ycxx::detail
+}} // namespace ycxx::detail
 
-namespace ycxx::detail::fw {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail::fw {
 
 enum class kind : unsigned char { function, move_only, copyable };
 // The cv/ref qualifiers of the call operator. `function` is invoked as FD& from a const call
@@ -346,9 +346,9 @@ inline constexpr bool is_constant_wrapper = false;
 template <auto X, class T>
 inline constexpr bool is_constant_wrapper<std::constant_wrapper<X, T>> = true;
 
-} // namespace ycxx::detail::fw
+}} // namespace ycxx::detail::fw
 
-namespace ycxx::adl_free {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace adl_free {
 
 // The owning wrappers. Self is the derived std:: class.
 template <class Self, ::ycxx::detail::fw::kind K, ::ycxx::detail::fw::quals Q, bool N, class R, class... A>
@@ -786,9 +786,9 @@ public:
   R operator()(A... a) const noexcept(N) { return thunk_(be_, static_cast<A&&>(a)...); }
 };
 
-} // namespace ycxx::adl_free
+}} // namespace ycxx::adl_free
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 
 // ---- [func.wrap.func] ----
 template <class R, class... A>

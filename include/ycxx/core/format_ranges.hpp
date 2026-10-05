@@ -10,15 +10,15 @@
 #include <ycxx/core/ranges_all.hpp>
 #include <ycxx/core/tuple.hpp>
 
-namespace ycxx::detail {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 template <class F>
 constexpr void fmt_set_debug(F& f) {
   if constexpr (requires { f.set_debug_format(); })
     f.set_debug_format();
 }
-} // namespace ycxx::detail
+}} // namespace ycxx::detail
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 
 // [format.range.formatter]
 template <class T, class charT = char>
@@ -147,7 +147,7 @@ public:
 
 } // namespace std
 
-namespace ycxx::adl_free {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace adl_free {
 
 // range-default-formatter ([format.range.fmtdef], [format.range.fmtmap], [format.range.fmtset],
 // [format.range.fmtstr]).
@@ -328,9 +328,9 @@ public:
   }
 };
 
-} // namespace ycxx::adl_free
+}} // namespace ycxx::adl_free
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 
 // [format.range.fmtmap], [format.range.fmtset], [format.range.fmtstr]
 // (format_kind<R> is only asked of cv-unqualified non-reference types: its primary template must

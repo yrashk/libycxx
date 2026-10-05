@@ -267,7 +267,9 @@ template <class I, class S, class T>
 concept memchr_find_args =
     std::contiguous_iterator<I> && std::sized_sentinel_for<S, I> &&
     narrow_char_elem<std::remove_cvref_t<std::iter_reference_t<I>>> &&
-    std::is_lvalue_reference_v<std::iter_reference_t<I>> && std::is_integral_v<T> && !std::is_same_v<T, bool>;
+    std::is_lvalue_reference_v<std::iter_reference_t<I>> &&
+    !std::is_volatile_v<std::remove_reference_t<std::iter_reference_t<I>>> && std::is_integral_v<T> &&
+    !std::is_same_v<T, bool>;
 
 // Advances first to the first element equal to value, or to last.
 template <class I, class S, class T>

@@ -151,19 +151,26 @@ extern "C" void* __dynamic_cast(const void* sub, const __class_type_info* src, c
     return const_cast<char*>(mdo);
 
   // Single inheritance from the top (the usual case): those classes are all at the most derived
-  // object's address and public bases of it, and the source is one of them or below them. If
-  // dst is among them, the cast succeeds there (a downcast when it contains the source, else a
-  // cross cast to an unambiguous public base); if the chain ends without it, dst is no base.
+  // object's address and public bases of it. If both src (at that address) and dst are among
+  // them, the cast succeeds there: a downcast when dst contains src, else dst is a public base of
+  // src. A source below the chain (say, behind a private base of its last class) needs the full
+  // walk. If the chain is the whole hierarchy and dst is not in it, dst is no base.
   const __class_type_info* t = mdo_type;
   rtti_kind k = ycxx::abi::kind_of(*t);
-  while (k != rtti_kind::class_vmi) {
-    if (ycxx::abi::same_type(*t, *dst))
+  bool dst_in_chain = false;
+  bool src_in_chain = false;
+  for (;;) {
+    dst_in_chain = dst_in_chain || ycxx::abi::same_type(*t, *dst);
+    src_in_chain = src_in_chain || (source == mdo && ycxx::abi::same_type(*t, *src));
+    if (dst_in_chain && src_in_chain)
       return const_cast<char*>(mdo);
     if (k != rtti_kind::class_si)
-      return nullptr;
+      break;
     t = static_cast<const __si_class_type_info*>(t)->__base_type;
     k = ycxx::abi::kind_of(*t);
   }
+  if (k != rtti_kind::class_vmi)
+    return nullptr;
 
   // The classes above t occur once each (none can be a base of t), so t's flags tell whether
   // any base class repeats.

@@ -59,7 +59,9 @@ struct Fn {
 };
 
 static std::atomic<bool> release{false};
+static std::atomic<int> started{0};
 static void blocker() {
+  started.fetch_add(1);
   while (!release.load()) std::this_thread::sleep_for(std::chrono::milliseconds(1));
 }
 
@@ -82,6 +84,11 @@ static int attempt(int kind) {
     for (auto& t : blockers) t.join();
     return no_failure;
   }
+  // A thread may still be starting (and releasing what its start allocated) after its
+  // constructor returned: wait until every blocker runs, so that the balance below counts only
+  // the attempt.
+  while (started.load() != static_cast<int>(blockers.size()))
+    std::this_thread::sleep_for(std::chrono::milliseconds(1));
   int result = bad;
   {
     const Fn fn;

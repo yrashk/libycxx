@@ -11,7 +11,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install Clang 23, lld, ninja, cmake, lit
+      - name: Install Clang 23, lld, ninja, cmake, uv (lit runs through uvx)
         run: |
           apt-get update -qq
           apt-get install -y -qq wget gnupg lsb-release ninja-build cmake python3-pip
@@ -19,7 +19,7 @@ jobs:
           echo "deb http://apt.llvm.org/$(lsb_release -cs)/ llvm-toolchain-$(lsb_release -cs)-23 main" > /etc/apt/sources.list.d/llvm.list
           apt-get update -qq
           apt-get install -y -qq clang-23 lld-23
-          pip3 install --break-system-packages lit
+          pip3 install --break-system-packages uv
           ln -sf "$(command -v g++)" /usr/local/bin/g++-16
           ln -sf "$(command -v gcc)" /usr/local/bin/gcc-16
           mkdir -p /opt/gcc-16/lib64 /opt/gcc-16/lib/gcc/x86_64-pc-linux-gnu
@@ -46,6 +46,6 @@ jobs:
       - name: Conformance (both suites, both compilers; implemented areas)
         run: |
           for c in gcc clang; do
-            tools/run-conformance libcxx $c utilities/meta numerics/bit language.support/cmp -- -q || true
-            tools/run-conformance libstdcxx $c 20_util/pair 18_support/numeric_limits -- -q || true
+            tools/run-conformance libcxx $c utilities/meta numerics/bit language.support/cmp || true
+            tools/run-conformance libstdcxx $c 20_util/pair 18_support/numeric_limits || true
           done

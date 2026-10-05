@@ -11,7 +11,7 @@ Optional directives:
   // XFAIL-COMPILER: gcc|clang  <reason>   known compiler gap (listed in STATUS.md); the test is
                                           unchanged and reports XFAIL, or XPASS once the gap closes
 """
-import os, re, shutil, subprocess, tempfile
+import os, re, shlex, shutil, subprocess, tempfile
 import lit.formats, lit.Test
 
 FLAGS = re.compile(r'^//\s*FLAGS:(.*)$', re.M)
@@ -25,9 +25,10 @@ class YcxxFormat(lit.formats.FileBasedTest):
         self.wrapper, self.compiler, self.base_flags = wrapper, compiler, base_flags
 
     def compile(self, args, cwd):
-        p = subprocess.run([self.wrapper, self.compiler] + args, cwd=cwd, capture_output=True, text=True,
-                           timeout=300)
-        return p.returncode, p.stdout + p.stderr
+        cmd = [self.wrapper, self.compiler] + args
+        p = subprocess.run(cmd, cwd=cwd, capture_output=True, text=True, timeout=300)
+        # The command heads the output lit shows for a failure, so that it can be rerun by hand.
+        return p.returncode, '$ ' + shlex.join(cmd) + '\n' + p.stdout + p.stderr
 
     def execute(self, test, lit_config):
         result = self.run(test)
@@ -68,9 +69,9 @@ class YcxxFormat(lit.formats.FileBasedTest):
                 try:
                     p = subprocess.run([exe], cwd=tmp, capture_output=True, text=True, timeout=60)
                 except subprocess.TimeoutExpired:
-                    return lit.Test.Result(lit.Test.FAIL, 'TIMEOUT')
+                    return lit.Test.Result(lit.Test.FAIL, out + f'$ {exe}\nTIMEOUT (60s)')
                 return lit.Test.Result(lit.Test.PASS if p.returncode == 0 else lit.Test.FAIL,
-                                       f'exit {p.returncode}\n' + p.stdout + p.stderr)
+                                       out + f'$ {exe}\nexit {p.returncode}\n' + p.stdout + p.stderr)
             return lit.Test.Result(lit.Test.UNSUPPORTED, 'not a test file')
         finally:
             shutil.rmtree(tmp, ignore_errors=True)

@@ -15,7 +15,7 @@ Conformance oracles (run only, never edited): libc++ tests from `llvmorg-23.1.2`
 |---|---|---|
 | Own suite `tests/ycxx` (2146 tests, `65e7235`) | 2131 pass / 10 fail / 5 xfail | 2124 pass / 6 fail / 16 xfail |
 | libc++ `libcxx/test/std` (8543 tests, `7e6a93f`) | 7494 pass / 211 fail (209 + 2 unresolved: compile timeouts under load) / 836 unsupported (was 7439 / 532 raw) | 7495 pass / 215 fail / 832 unsupported (was 7440 / 536 raw) |
-| libstdc++ testsuite (8555 tests, `7e6a93f`) | 4823 pass / 141 fail / 3591 unsupported (was 4754 / 484) | 4786 pass / 175 fail / 3594 unsupported (was 4715 / 523) |
+| libstdc++ testsuite (8555 tests; 2026-10-06, testsuite helpers and tests without `dg-do` running) | 6206 pass / 13 fail / 1 xfail / 2335 unsupported (was 4823 / 141 on 2026-10-05) | 6161 pass / 13 fail / 37 xfail / 2344 unsupported (projected from the full run with the final lists; was 4786 / 175) |
 | Own suite against libstdc++ (reference, `tests/ycxx/REFERENCE.md`) | 1754 pass / 387 fail / 5 xfail | 1718 pass / 412 fail / 16 xfail |
 
 Every libc++ and libstdc++ failure is categorised in `tests/libcxx/TRIAGE.md` and

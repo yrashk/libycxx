@@ -1165,10 +1165,18 @@ struct common_type<_Dp, execution::indeterminate_domain<_Ds...>> {
 } // namespace std
 
 namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail { namespace __exec {
-// transformed-sndr(dom, tag, s) and transform-recurse ([exec.snd.transform]/3).
+// transformed-sndr(dom, tag, s) and transform-recurse ([exec.snd.transform]/3). Its exception
+// specification is that of the transform_sender it calls: the domain's, else default_domain's.
+template <class _Dom, class _Tag, class _Sndr, class _Env>
+consteval bool __transformed_sndr_nothrow() {
+  if constexpr (requires { std::declval<_Dom&>().transform_sender(_Tag(), std::declval<_Sndr>(), std::declval<const _Env&>()); })
+    return noexcept(std::declval<_Dom&>().transform_sender(_Tag(), std::declval<_Sndr>(), std::declval<const _Env&>()));
+  else
+    return noexcept(std::execution::default_domain().transform_sender(_Tag(), std::declval<_Sndr>(), std::declval<const _Env&>()));
+}
 template <class _Dom, class _Tag, class _Sndr, class _Env>
 constexpr decltype(auto) __transformed_sndr(_Dom __dom, _Tag tag, _Sndr&& s, const _Env& env) noexcept(
-    noexcept(std::execution::default_domain().transform_sender(tag, static_cast<_Sndr&&>(s), env))) {
+    ::__ycxx::__detail::__exec::__transformed_sndr_nothrow<_Dom, _Tag, _Sndr, _Env>()) {
   if constexpr (requires { __dom.transform_sender(tag, static_cast<_Sndr&&>(s), env); })
     return __dom.transform_sender(tag, static_cast<_Sndr&&>(s), env);
   else

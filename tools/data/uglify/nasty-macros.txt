@@ -5,11 +5,10 @@
 # conformance/nasty_macros* tests include every public header after it. tools/uglify.py --check
 # keeps new ones from appearing.
 #
-# Left out: the names that glibc's headers, which the public headers include (with _GNU_SOURCE,
-# which g++ and clang++ define), declare or use themselves, so that no program can define them
-# whatever libycxx does:
-#   F L U args attr bit brk cond constant cs element err ext f fct fd finite fs func ignored j1 l
-#   link msg o params ret sig significand tick truncate unlink x y0 y1
+# Left out: the names that break glibc's headers, which the public headers include (with _GNU_SOURCE,
+# which g++ and clang++ define), when they are macros: glibc declares or uses them itself, so that
+# no program can define them whatever libycxx does (found by defining each):
+#   brk constant cs element err f finite fs j1 l link significand tick truncate unlink y0 y1
 A A1 A2 AA AD Abi Abis Acc Accessor AccessorPolicy AccessorType Adaptor Align Alignment Alloc Alloc2
 Allocator Allocator2 Alt Arg ArgLists ArgTypes Args Args1 Args2 Array As Assoc Attrs B B1 BA BAt
 Base BiIter BidirIt BidirectionalIterator BidirectionalIterator1 BidirectionalIterator2
@@ -21,7 +20,7 @@ Ctx CvTD D D1 D2 DD DR DS DT Data Default Derived DestClock Diag DiagonalStorage
 Distance2 Divide Dom Dom2 Domain Domains Done Ds Dst Dur Duration Duration1 Duration2 E E0 E1 E2 EA
 EF ES EcharT Elem ElementType End EndOrSize Engine Env Env2 Environment Envs Eof Ep Erased Err Error
 ErrorCodeEnum ErrorConditionEnum Errors Es Exact Excluded ExecutionPolicy Expr Extent ExtentType
-Extents ExtentsPack Extra Exts F0 F1 F2 FD FP FR FSA FST Facet Field Finish First FirstSent
+Extents ExtentsPack Extra Exts F F0 F1 F2 FD FP FR FSA FST Facet Field Finish First FirstSent
 FirstType Flags Fn Fns FormatContext Formatter ForwardIt ForwardIterator ForwardIterator1
 ForwardIterator2 From Front Fs Fun Func Function FwdTuple G GF GT Gen Generator Get H H2 Hash How I
 I1 I2 IA II II1 II2 INNERC IR IS IdxMap In In1 In2 InMat InMat1 InMat2 InMat3 InObj InObj1 InObj2
@@ -29,7 +28,7 @@ InOutMat InOutObj InOutObj1 InOutObj2 InOutVec InOutVec1 InOutVec2 InVec InVec1 
 Index1 IndexType Indices Info Initializer InnerAllocs InnerBase InnerConstRng InnerIter InnerRng
 InnerView InputIt InputIterator InputIterator1 InputIterator2 InputIteratorB InputIteratorW IntT
 IntType Integrals International Intl Inv Ios Is IsMap Istream It Iter Iterator Iterator2 J Jthread K
-K2 KArg KC KIt Keep Key KeyContainer Keys Kind L1 L2 L3 LF LHS LM LR LT L_ Lanes LastType Layout
+K2 KArg KC KIt Keep Key KeyContainer Keys Kind L L1 L2 L3 LF LHS LM LR LT L_ Lanes LastType Layout
 LayoutLeftPaddedMapping LayoutMapping LayoutPolicy LayoutRightPaddedMapping LeastMaxValue Left Len
 Less List Lists Lock Ls M M1 M2 MArgs MC MDS1 MDS2 MIt MS Make Map MappedContainer Mapping
 MappingType Min Mode Multi Mutex MutexTypes N N2 NB NH NS N_ Negate NestedAccessor NestedLayout
@@ -50,10 +49,10 @@ SliceSpecifiers Smart Sndr Sndrs Source SourceClock SpanType Src Srcs Sseq State
 StopCheck StorageOrder Store StoreSize StrideType StrideTypes StridedLayoutMapping Strides Sub
 SubExtents SysDuration T T0 T1 T2 T3 TArgs TD TQ TQual TS TT TTuple TTypes Tag Temp Term Text This
 Ti TimeZonePtr TimeZonePtr2 TimeZonePtrOrName Tj Tmpl To ToDuration Token Tp Tr Traits Triangle
-TrivialDtor Try Ts Tup Tuple Tuple1 Tuple2 Tuples Types U1 U2 UA UAbi UBytes UC UF UIntType UQ UQual
-URBG UT UTuple UTypes UnaryOperation UniformRandomBitGenerator Unused Us V V0 V1 V2 VA VDST VF VI VS
-VSRC VT VV VX Val Value ValueType Values Variant Variants ViaAlloc View Views Vis Visitor Void Vs W
-WL What Wide Word X XAt Y YAt YCXX_ATOMIC_BOOL_LOCK_FREE YCXX_ATOMIC_CHAR16_T_LOCK_FREE
+TrivialDtor Try Ts Tup Tuple Tuple1 Tuple2 Tuples Types U U1 U2 UA UAbi UBytes UC UF UIntType UQ
+UQual URBG UT UTuple UTypes UnaryOperation UniformRandomBitGenerator Unused Us V V0 V1 V2 VA VDST VF
+VI VS VSRC VT VV VX Val Value ValueType Values Variant Variants ViaAlloc View Views Vis Visitor Void
+Vs W WL What Wide Word X XAt Y YAt YCXX_ATOMIC_BOOL_LOCK_FREE YCXX_ATOMIC_CHAR16_T_LOCK_FREE
 YCXX_ATOMIC_CHAR32_T_LOCK_FREE YCXX_ATOMIC_CHAR8_T_LOCK_FREE YCXX_ATOMIC_CHAR_LOCK_FREE
 YCXX_ATOMIC_INT_LOCK_FREE YCXX_ATOMIC_LLONG_LOCK_FREE YCXX_ATOMIC_LONG_LOCK_FREE
 YCXX_ATOMIC_POINTER_LOCK_FREE YCXX_ATOMIC_SHORT_LOCK_FREE YCXX_ATOMIC_WCHAR_T_LOCK_FREE
@@ -82,8 +81,8 @@ allocate_words allocator_aware_forward allocator_for alpha0 alpha_ alt alts alwa
 always_false always_inline always_noconv_ always_true amp an and_ and_assign and_then_impl
 annotations any_digit any_impl any_of_fn any_pair append_counted append_elements append_elems
 append_guard append_input append_n append_range_impl append_text append_uint applicable_impl
-apply_dispatch apply_inner apply_nothrow apply_result_impl apply_unique_t aq ar arg_key args_ args_t
-args_variant arguments arm armed arr array_init array_size array_storage arrival arrow as
+apply_dispatch apply_inner apply_nothrow apply_result_impl apply_unique_t aq ar arg_key args args_
+args_t args_variant arguments arm armed arr array_init array_size array_storage arrival arrow as
 as_awaitable_sender as_const_fn as_const_pointer as_const_ref as_except_ptr as_input_fn as_key
 as_lvalue as_mutable as_node as_rvalue_fn as_sentinel as_tuple_of_sig as_variant as_variant_t ascii
 ascii_lower ascii_masks ascii_tolower ascii_toupper asm_text assert_at assert_failed
@@ -98,7 +97,7 @@ atomic_padded atomic_plain_ptr atomic_ptr_add atomic_ref_base atomic_rep atomic_
 atomic_rep_ptr atomic_rmw atomic_same_value atomic_success_order atomic_to_rep atomic_u16 atomic_u32
 atomic_u64 atomic_u8 atomic_unlock atomic_wait_block atomic_wait_block_until atomic_wait_cancel
 atomic_wait_prepare atomic_wait_until_done atomic_wait_until_done_by atomic_wrap_add atomic_wrap_sub
-atoms ator_traits attach attr_sources_t attributes attrs automatic avail avail_ ave
+atoms ator_traits attach attr attr_sources_t attributes attrs automatic avail avail_ ave
 await_result_type await_suspend_result awaitable_receiver awaitable_sender awaitable_sender_t
 awk_escape awk_g ax ay b0 b1 b2 b_ ba backend backend_ backend_for backend_storage_size backend_t
 backref backtrack band barrier_no_completion base_ base_iter base_of base_pos base_result base_t
@@ -107,7 +106,7 @@ begin_impl begin_node begin_ns beit bessel_ik bessel_jy best best_caps_ best_end
 best_value beta_ between bfloat16 bg bi bias bidi_iter bidirectional_common big_ biggest_alignment
 bin bin_ binary128 binary16 binary32 binary64 binary_insertion_sort binary_op binary_op1 binary_op2
 binary_pred binary_search_fn bind_adaptor bind_arg bind_arg_t bind_bulk bind_closure
-bind_movable_value bind_no_r bind_scheduler bind_scope_token bind_value binder bins bins_
+bind_movable_value bind_no_r bind_scheduler bind_scope_token bind_value binder bins bins_ bit
 bit_algo_args bit_algos bit_digits bit_integer bit_iter bit_length bit_ref bit_unsigned bitint_info
 bitint_width bits bits_ bits_of bitwise bitwise_source bl blk_ block_alloc block_for block_guard
 block_limits block_traits blocks body bol bool_limits boolean boolean_testable boolean_testable_impl
@@ -165,14 +164,14 @@ completion_scheduler_via_query completion_signature completion_signatures_error
 completion_signatures_of_t completion_tag complex_rank_ge composite_value_ok compute concat_fn
 concat_indirectly_readable concat_indirectly_readable_impl concat_is_bidirectional
 concat_is_random_access concat_reference_t concat_rvalue_reference_t concat_sized_sentinel
-concat_value_t concatable cond_decay cond_res cond_value_type condition condition_of conj_if_needed
-connect_all connect_all_result connect_all_result_impl connect_awaitable connect_awaitable_sigs
-connect_awaitable_value connect_new_sndr_t connect_via_awaitable connect_via_member
-const_assignable_from_ const_iter_category const_iter_concept const_iter_less_with
-const_sentinel_impl constant_iterator constant_member_complsigs constant_sized constant_target
-constexpr_exception_ptr constexpr_exceptions constexpr_param constexpr_wrapper_like construct_at_ns
-construct_at_ok construct_at_slot construct_back construct_from construct_front construct_n consts
-consumed consuming cont container_append container_appendable container_appender
+concat_value_t concatable cond cond_decay cond_res cond_value_type condition condition_of
+conj_if_needed connect_all connect_all_result connect_all_result_impl connect_awaitable
+connect_awaitable_sigs connect_awaitable_value connect_new_sndr_t connect_via_awaitable
+connect_via_member const_assignable_from_ const_iter_category const_iter_concept
+const_iter_less_with const_sentinel_impl constant_iterator constant_member_complsigs constant_sized
+constant_target constexpr_exception_ptr constexpr_exceptions constexpr_param constexpr_wrapper_like
+construct_at_ns construct_at_ok construct_at_slot construct_back construct_from construct_front
+construct_n consts consumed consuming cont container_append container_appendable container_appender
 container_compatible_range contains_fn contains_subrange_fn context context_like contiguous_iter
 continuation_ continues_on_attrs continues_on_sigs continues_on_variant continuous convert
 convert_ref_init_val convertible_count convertible_from convertible_to_ convertible_to_non_slicing
@@ -181,7 +180,7 @@ copy_backward_dispatch copy_backward_fn copy_base copy_cv copy_cv_impl copy_cvre
 copy_dispatch copy_fail copy_fn copy_from copy_if_fn copy_n_fn copy_ok copy_words core_ coro
 coroutine_ cospi count_ count_fn count_if_fn count_if_impl count_key count_len count_of
 counted_category counted_concept counted_fn counted_ok counted_range counted_value_type counter
-counter_ counts_ok cp cpair cpow cpp17_bidirectional_iterator cpp17_category_from
+counter_ counts_ok cp cpair cpo cpow cpp17_bidirectional_iterator cpp17_category_from
 cpp17_forward_iterator cpp17_input_category cpp17_input_iterator cpp17_input_pointer
 cpp17_input_reference cpp17_iterator cpp17_random_access_iterator cpu cpu_family cr crbegin_ns
 create crend_ns cross crref csigs csigs_contain csigs_of_impl csigs_of_t csinh csqrt cstring ct ct_
@@ -244,10 +243,10 @@ exec_wrap_env exec_wrap_rcvr execute execution_policy existing existing_symlink 
 exp_bits exp_state expanded_size expected_ expected_base expected_converts_from
 expected_invoke_err_tag expected_invoke_val_tag expected_unexpected_not_from expected_union
 expected_value_t expected_void_converts_from expected_void_value expected_with_error
-expected_with_value explicit_bit explicit_from expr ext_ extend_get_area extends extents_ externT
-extra extra_zeros extract_key exts ey ez f1 f_ f_abs f_acos f_alive f_asin f_atan f_atan2 f_cos
-f_cosh f_exp f_log f_log10 f_match f_more f_ok f_pow f_sin f_sinh f_sqrt f_tan f_tanh fac fact
-factor failed_ far fast_scale fbits fc fclosure fct2 fct3 fe_divbyzero fe_inexact fe_invalid
+expected_with_value explicit_bit explicit_from expr ext ext_ extend_get_area extends extents_
+externT extra extra_zeros extract_key exts ey ez f1 f_ f_abs f_acos f_alive f_asin f_atan f_atan2
+f_cos f_cosh f_exp f_log f_log10 f_match f_more f_ok f_pow f_sin f_sinh f_sqrt f_tan f_tanh fac fact
+factor failed_ far fast_scale fbits fc fclosure fct fct2 fct3 fd fe_divbyzero fe_inexact fe_invalid
 fe_overflow fe_underflow ff fi file file_ file_close file_flush file_native file_open file_read
 file_seek file_write filesystem_exists fill_ fill_count fill_fn fill_get_area fill_len fill_n_fn
 fill_set_ fill_value filter_const_iterable filter_copy filter_fn fin final_awaiter find_byte
@@ -300,16 +299,16 @@ from_chars_float from_chars_integer from_days from_end from_next from_opt from_o
 from_range_tag from_source fs_append_range fs_append_source fs_attr_cache fs_bitmask
 fs_char_iterator fs_convert_out fs_dir_state fs_echar fs_error_data fs_native_range fs_native_source
 fs_native_through_locale fs_ntcts_end fs_ntcts_source fs_postfix_entry fs_raise fs_raise_in
-fs_rec_state fs_source fs_source_char fs_source_char_t fs_string_source ft full fun_ function_guide
-function_not_invocable_with_these_arguments futex_condvar futex_mutex future_access future_set_from
-future_spawned_sender future_state future_state_alloc future_state_base fval fw fwd fwd_env
-fwd_env_t fwd_iter fwd_list_iter fwd_node fwd_node_base g g0 g1 g2 g_ g_lo ga gam gam1 gam2 gate1_
-gate2_ gather_signatures gather_tuple gather_variant gb gbeg gbeg_ gcb gcb_control gcb_cr gcb_extend
-gcb_l gcb_lf gcb_lv gcb_lvt gcb_other gcb_prepend gcb_regional_indicator gcb_spacingmark gcb_t gcb_v
-gcb_zwj gcc gcd_integer gcd_unsigned gcount_ gcs gd ge gen gen_allocator_ok gen_dealloc_fn
-gen_erased_deallocate gen_frame gen_frame_unit gen_promise_base gen_repeat gen_round_up gend gend_
-generate_block generate_fn generate_n_fn generate_random_fn generic generic_ generic_limits
-get_attrs get_await_completion_adaptor get_await_completion_adaptor_t get_awaiter
+fs_rec_state fs_source fs_source_char fs_source_char_t fs_string_source ft full fun_ func
+function_guide function_not_invocable_with_these_arguments futex_condvar futex_mutex future_access
+future_set_from future_spawned_sender future_state future_state_alloc future_state_base fval fw fwd
+fwd_env fwd_env_t fwd_iter fwd_list_iter fwd_node fwd_node_base g g0 g1 g2 g_ g_lo ga gam gam1 gam2
+gate1_ gate2_ gather_signatures gather_tuple gather_variant gb gbeg gbeg_ gcb gcb_control gcb_cr
+gcb_extend gcb_l gcb_lf gcb_lv gcb_lvt gcb_other gcb_prepend gcb_regional_indicator gcb_spacingmark
+gcb_t gcb_v gcb_zwj gcc gcd_integer gcd_unsigned gcount_ gcs gd ge gen gen_allocator_ok
+gen_dealloc_fn gen_erased_deallocate gen_frame gen_frame_unit gen_promise_base gen_repeat
+gen_round_up gend gend_ generate_block generate_fn generate_n_fn generate_random_fn generic generic_
+generic_limits get_attrs get_await_completion_adaptor get_await_completion_adaptor_t get_awaiter
 get_awaiter_after_transform get_bool_alpha get_element get_floating get_inner get_integer
 get_money_manip get_narrowed get_number get_poison get_state get_state_result get_time_manip
 get_types get_types_t give_back gmi gmin gminus gnext gnext_ gnu gnu_float128 go go_left golden
@@ -333,7 +332,7 @@ hive_group hive_index hive_iter hive_none hive_run hive_slot hl hm hm_ hms_fract
 holder holds hole hosted hour hp hp_access hp_acquire hp_next_ hp_object_ hp_protectable_via
 hp_reclaim_ hp_record hp_release hp_retire hp_retired_node huge hw hypot3 i1 i2 i_ ia ib ibuf_
 ibuf_size_ identity_atoms identity_element identity_widen idx idx_ idxmap idxs ie ifirst ignore_type
-ii ilast ilist ilogb0 ilogbnan ilogbw im im_ imag_if_needed imags impl impl_ implicit_bool
+ignored ii ilast ilist ilogb0 ilogbnan ilogbw im im_ imag_if_needed imags impl impl_ implicit_bool
 implicit_copy_list_init implicit_default implicit_default_init_test implicitly_convert_to
 implicitly_default_constructible impls impls_for impls_of in_end in_first in_last in_set in_stream_
 in_tlist incb incb_consonant incb_extend incb_linker incb_none includes_fn includes_impl
@@ -445,8 +444,8 @@ mp_const mp_const_bits mp_div mp_div_u64 mp_erf_small mp_erfc_large mp_exp mp_ex
 mp_expm1 mp_expm1_series mp_from mp_from_bits mp_from_double mp_from_int mp_from_u64 mp_from_value
 mp_ilog mp_is_zero mp_ldexp mp_lead mp_lgamma_pos mp_lgamma_stirling mp_limbs mp_log mp_log1p
 mp_make mp_mul mp_mul_u64 mp_neg mp_negligible mp_one mp_recip mp_reduce_pio2 mp_round mp_round_int
-mp_sin_cos_small mp_sinpi mp_sqrt mp_sub mp_to mp_trig mp_two_atanh_series mpf msg_ msgid mtime mu
-mu2 mul mul64 mul_add mul_assign mul_special mulhilo multi_pos_hint multipass_iterator mum mut mv
+mp_sin_cos_small mp_sinpi mp_sqrt mp_sub mp_to mp_trig mp_two_atanh_series mpf msg msg_ msgid mtime
+mu mu2 mul mul64 mul_add mul_assign mul_special mulhilo multi_pos_hint multipass_iterator mum mut mv
 mwd mwdl mx my n0 n1 n2 n_ n_size na na_ name_ name_size name_type names nan_result narrow_char_elem
 nat nb nbits nblocks nbytes nc ncap nd nd_ ndig ndigits ne need needed neg neg_ neg_classes neg_cls
 negated negative nested nested_ nested_accessor_ nested_awaiter nested_mapping_ nested_mapping_type
@@ -468,8 +467,8 @@ nothrow_sentinel_for nothrow_sized_random_access_range nothrow_sized_sentinel_fo
 nothrow_swappable_with_ notify np npos_index npow nq nr nrest nsec nth nth_arg nth_element_fn
 nth_element_impl nu nullable num_args num_args_ num_chunks num_field num_get_float num_get_integer
 num_grouping_ok num_parse num_put_float num_put_integer num_put_output num_put_pointer number
-numbers_primary numbers_value numer nw nwordb nx ny o_ok ob obj obj_thunk object objs obuf odd oe of
-off off_ offset_ offset_sec offset_sec_ offsets ofirst oh ok_ olast old old_cap old_last old_ops
+numbers_primary numbers_value numer nw nwordb nx ny o o_ok ob obj obj_thunk object objs obuf odd oe
+of off off_ offset_ offset_sec offset_sec_ offsets ofirst oh ok_ olast old old_cap old_last old_ops
 old_size old_value oldval on_last_release on_ready_seen on_stop one one_m ones only_args
 only_literal_zero_may_be_compared_with_an_ordering op2 op2_t op_state op_t open_and_joining open_gap
 open_group opening opening_ operand operation_t ops ops_ ops_for ops_variant opt opt_value option
@@ -482,7 +481,7 @@ overaligned overload_set overwrite own own_env own_env_t own_time owned owned_by
 owner owner_ owns_ p0 p00 p01 p1 p10 p11 p2 p_ pa packed_fits pad pad_at padded padded_stride
 padding pair_constructible pair_converter pair_convertible pair_dangles pair_first pair_fun
 pair_fun_callable pair_like pair_like_convertible_from pair_like_get_t pair_like_not_pair pair_type
-pair_with_key pairs pal_clock_ns pal_deadline pal_lock palloc param_t parent parent_ parm
+pair_with_key pairs pal_clock_ns pal_deadline pal_lock palloc param_t params parent parent_ parm
 parse_context parse_ctx parse_fn parsers partial_fallback_fn partial_order_fn partial_order_obj
 partial_sort_copy_fn partial_sort_fn partial_sort_impl partial_wrapper partially_ordered_with
 partition_copy_fn partition_fn partition_impl partition_pivot partition_point_fn partition_point_n
@@ -541,7 +540,7 @@ replace_copy_if_fn replace_fill replace_fn replace_if_fn replace_impl replacemen
 report_sigs_error requested_bit requester requester_ require_constant required_span res res_arg
 reservable_container reserve_back reserve_front reserve_hint_ns reserve_map reserved_ reset_areas
 reset_clone reset_counter reset_groups resetiosflags_fn resolve rest restore restore_union result_
-result_datums_not_decay_copyable result_first result_last result_ptr result_r result_t retain
+result_datums_not_decay_copyable result_first result_last result_ptr result_r result_t ret retain
 rethrow rethrow_exception_object rethrow_if_exception retrieved_ return_group returnable_element rev
 reverse_category reverse_copy_fn reverse_fn reverse_impl reversed_subrange reversible rf rg rho rho_
 rhs ri_odd_ right_len ril ril1 rimu ring rint_op ripl riscv rjl rjl1 rjmu rjpl rk rk1 rkmu rkmup
@@ -566,7 +565,7 @@ set_slow set_symmetric_difference_fn set_symmetric_difference_loop set_syncbuf s
 set_union_loop set_value_of set_value_sig set_value_sig_t setbase_fn setfill_manip setiosflags_fn
 setprecision_fn sets setw_fn sf sh shape shared_ shared_futex_mutex shared_get shared_message
 shared_stop_state shift_ shift_for shift_in shift_left_fn shift_left_impl shift_right_fn
-shift_right_impl shifted shl1 shl_assign shortest shr_assign shrt shuffle_fn si sidx sift_down
+shift_right_impl shifted shl1 shl_assign shortest shr_assign shrt shuffle_fn si sidx sift_down sig
 sig_tag sign_base sign_changeable sign_exponent sign_pair sign_pair_def signal_ signaling
 signed_impl signed_integer_like signed_number signed_type sigs sigs_args sigs_args_t sigs_concat
 sigs_concat_t sigs_count sigs_map sigs_map_t sigs_t sim simd_abi simd_abi_none simd_access
@@ -687,7 +686,7 @@ with_iterator_category with_n with_reference with_spawn_allocator with_token wit
 woken word word_alloc word_bits word_class word_traits wordb words words_ words_for work work_of
 work_t works wphi wptr wr wrap_add wrap_rcvr wrap_sender wrap_sub wrapped_ wrapper_castable
 wrapper_init_bound_t wrapper_init_t write_converted write_elements write_entered write_env_t
-write_out writing written wx wy x2 x86 x87_extended x87_hash_layout x87_layout x_ xbuf_ xbuf_size_
+write_out writing written wx wy x x2 x86 x87_extended x87_hash_layout x87_layout x_ xbuf_ xbuf_size_
 xd xe xend_ xi xi2 xj xmax xmin xnext_ xor_ xor_assign xp xpict_ xpos xr xref xs xtmp y2 y_ y_int
 y_odd ycxx ycxx_agrees ycxx_attrs ycxx_c_abs ycxx_c_at_quick_exit ycxx_c_atexit ycxx_c_bsearch
 ycxx_c_div ycxx_c_imaxabs ycxx_c_imaxdiv ycxx_c_labs ycxx_c_ldiv ycxx_c_llabs ycxx_c_lldiv

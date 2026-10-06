@@ -3495,7 +3495,6 @@ make_node
 make_own_env
 make_pred
 make_product
-make_receiver_for
 make_result
 make_room_
 make_room_fn

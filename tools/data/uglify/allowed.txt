@@ -32,6 +32,7 @@ key mapped                                                                 # nod
 elapsed is_leap_second                                                     # leap_second_info
 leap_seconds links version zones                                           # tzdb
 error_types sender_concept receiver_concept operation_state_concept scheduler_concept  # [exec]
+make_receiver_for                                                          # inlinable_receiver [exec.recv.concepts]/4
 start_scheduler_type stop_source_type stop_token_type                      # execution::task
 bytes bits                                                                 # meta::member_offset
 annotations                                                                # meta::data_member_options

@@ -1504,7 +1504,7 @@ concept receiver = derived_from<typename remove_cvref_t<_Rcvr>::receiver_concept
 
 template <class _Rcvr, class _ChildOp>
 concept inlinable_receiver = receiver<_Rcvr> && requires(_ChildOp* __child) {
-  { remove_cvref_t<_Rcvr>::__make_receiver_for(__child) } noexcept -> same_as<remove_cvref_t<_Rcvr>>;
+  { remove_cvref_t<_Rcvr>::make_receiver_for(__child) } noexcept -> same_as<remove_cvref_t<_Rcvr>>;
 };
 
 }} // namespace std::execution

@@ -279,18 +279,21 @@ compile the tests with the sanitizers and link them with a libycxx built with th
 `build/<cc>-<sanitizers>` (`build/clang-tsan`), which `tools/run-conformance` configures and
 brings up to date itself (CMake option `YCXX_SANITIZE`; DECISIONS §6.8). A sanitizer sees only
 instrumented code: with an uninstrumented library ThreadSanitizer reports every hand-off through
-libycxx's own mutexes, queues and reference counts. A ThreadSanitizer report is a race to fix,
-in the library or the test, or a false positive suppressed in `tests/ycxx/tsan.supp` with its
-reason (the suite passes it in `TSAN_OPTIONS`). GCC needs its sanitizer runtimes (`libasan`,
-`libtsan`), which some GCC builds lack.
+libycxx's own mutexes, queues and reference counts. All three suites run under sanitizers. A
+ThreadSanitizer report is a race to fix, in the library or the test (an external suite's test
+with a race is skipped with its reason), or a false positive suppressed in the suite's
+`tests/<suite>/tsan.supp` with its reason (each program gets it in `TSAN_OPTIONS`, shown in its
+transcript). GCC needs its sanitizer runtimes (`libasan`, `libtsan`), which some GCC builds lack:
+`tools/toolchain/provision --with-sanitizers` builds GCC 16.2 with them.
 
 CI (`.github/workflows/ci.yml`), on every push, runs `tools/test policy build freestanding cmake
 ycxx` on Linux (the `gcc:16` container, Clang 23 from apt.llvm.org) and macOS (Apple Silicon,
 Homebrew's GCC 16, the provisioned Clang 23), plus a sample of the external suites on Linux.
 `.github/workflows/full.yml`, nightly and on demand, runs libc++'s and libstdc++'s whole suites on
-both compilers on both platforms, the own suite under ASan+UBSan and under ThreadSanitizer (Clang,
-libycxx instrumented too), and the own suite on both compilers hardened, with `-fno-exceptions`
-and with `-O2`. Every job uploads its reports as an
+both compilers on both platforms, the own suite under ASan+UBSan (Clang), all three suites under
+ThreadSanitizer on both compilers (libycxx instrumented too; a job of its own on the bare runner,
+with GCC 16.2 built with libsanitizer by `tools/toolchain/provision` and cached), and the own
+suite on both compilers hardened, with `-fno-exceptions` and with `-O2`. Every job uploads its reports as an
 artifact.
 Tests that need a named locale (libstdc++'s `dg-require-namedlocale`, libc++'s `locale.<name>`
 features) run when the C library has it (`tests/ycxxlit/locales.py`); `tools/ci/gen-locales`

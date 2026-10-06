@@ -255,10 +255,10 @@ struct __fp_layout {
   static constexpr bool __explicit_bit = p == 64 && __emax == 16383;    // x87 extended
   static constexpr int __ebits = __ycxx::__detail::__fpm::__ctz64(__y_u64(__emax) + 1) + 1;
   static constexpr int __fbits = __explicit_bit ? p : p - 1;            // fraction field width
-  static constexpr int __bits = 1 + __ebits + __fbits;
+  static constexpr int bits = 1 + __ebits + __fbits;
   static constexpr int __bias = __emax;
   static constexpr int __qmin = __emin - (p - 1); // exponent of the least significant bit of denorm_min
-  static_assert(p > 1 && p <= 113 && __bits <= 128 && __bits <= 8 * int(sizeof(_Tp)), "libycxx: unsupported floating-point format");
+  static_assert(p > 1 && p <= 113 && bits <= 128 && bits <= 8 * int(sizeof(_Tp)), "libycxx: unsupported floating-point format");
 };
 
 template <class _Tp>
@@ -269,7 +269,7 @@ struct __fp_bytes {
 template <class _Tp>
 constexpr __wide<2> __fp_to_bits(_Tp __x) noexcept {
   const __fp_bytes<_Tp> __by = __builtin_bit_cast(__fp_bytes<_Tp>, __x);
-  constexpr int n = (__fp_layout<_Tp>::__bits + 7) / 8;
+  constexpr int n = (__fp_layout<_Tp>::bits + 7) / 8;
   constexpr bool __le = std::endian::native == std::endian::little;
   __wide<2> r;
   for (int i = 0; i < n; ++i) r.__w[i / 8] |= __y_u64(__by.b[__le ? i : int(sizeof(_Tp)) - 1 - i]) << (8 * (i % 8));
@@ -278,7 +278,7 @@ constexpr __wide<2> __fp_to_bits(_Tp __x) noexcept {
 template <class _Tp>
 constexpr _Tp __fp_from_bits(const __wide<2>& __v) noexcept {
   __fp_bytes<_Tp> __by{};
-  constexpr int n = (__fp_layout<_Tp>::__bits + 7) / 8;
+  constexpr int n = (__fp_layout<_Tp>::bits + 7) / 8;
   constexpr bool __le = std::endian::native == std::endian::little;
   for (int i = 0; i < n; ++i)
     __by.b[__le ? i : int(sizeof(_Tp)) - 1 - i] = static_cast<unsigned char>(__v.__w[i / 8] >> (8 * (i % 8)));
@@ -300,11 +300,11 @@ struct __fp_value {
 template <class _Tp>
 constexpr __fp_value __fp_decode(_Tp __x) noexcept {
   using _Lp = __fp_layout<_Tp>;
-  const __wide<2> __bits = __ycxx::__detail::__fpm::__fp_to_bits(__x);
+  const __wide<2> bits = __ycxx::__detail::__fpm::__fp_to_bits(__x);
   __fp_value __v;
-  __v.__neg = __ycxx::__detail::__fpm::__wide_bit(__bits, _Lp::__bits - 1);
-  const int e = static_cast<int>(__ycxx::__detail::__fpm::__wide_shr(__bits, _Lp::__fbits).__w[0] & ((__y_u64(1) << _Lp::__ebits) - 1));
-  __wide<2> __frac = __ycxx::__detail::__fpm::__wide_low_bits(__bits, _Lp::__fbits);
+  __v.__neg = __ycxx::__detail::__fpm::__wide_bit(bits, _Lp::bits - 1);
+  const int e = static_cast<int>(__ycxx::__detail::__fpm::__wide_shr(bits, _Lp::__fbits).__w[0] & ((__y_u64(1) << _Lp::__ebits) - 1));
+  __wide<2> __frac = __ycxx::__detail::__fpm::__wide_low_bits(bits, _Lp::__fbits);
   if (e == (1 << _Lp::__ebits) - 1) {
     // Infinity or NaN. x87: the explicit bit is set in both; the fraction below it decides.
     const int top = _Lp::__explicit_bit ? _Lp::__fbits - 2 : _Lp::__fbits - 1; // the quiet bit
@@ -336,20 +336,20 @@ constexpr _Tp __fp_encode_finite(bool __neg, __wide<2> __q, int __lsb_exp) noexc
     e = __lsb_exp + (_Lp::p - 1) + _Lp::__bias;
     if (!_Lp::__explicit_bit) __q.__w[(_Lp::p - 1) / 64] &= ~(__y_u64(1) << ((_Lp::p - 1) % 64));
   }
-  __wide<2> __bits = __q;
+  __wide<2> bits = __q;
   __wide<2> __ef = __ycxx::__detail::__fpm::__wide_shl(__ycxx::__detail::__fpm::__wide_from<2>(static_cast<__y_u64>(e)), _Lp::__fbits);
-  __ycxx::__detail::__fpm::__wide_add(__bits, __ef);
-  if (__neg) __ycxx::__detail::__fpm::__wide_set_bit(__bits, _Lp::__bits - 1);
-  return __ycxx::__detail::__fpm::__fp_from_bits<_Tp>(__bits);
+  __ycxx::__detail::__fpm::__wide_add(bits, __ef);
+  if (__neg) __ycxx::__detail::__fpm::__wide_set_bit(bits, _Lp::bits - 1);
+  return __ycxx::__detail::__fpm::__fp_from_bits<_Tp>(bits);
 }
 template <class _Tp>
 constexpr _Tp __fp_make_special(bool nan, bool __neg) noexcept {
   using _Lp = __fp_layout<_Tp>;
-  __wide<2> __bits = __ycxx::__detail::__fpm::__wide_shl(__ycxx::__detail::__fpm::__wide_from<2>((__y_u64(1) << _Lp::__ebits) - 1), _Lp::__fbits);
-  if (nan) __ycxx::__detail::__fpm::__wide_set_bit(__bits, _Lp::__explicit_bit ? _Lp::__fbits - 2 : _Lp::__fbits - 1);
-  if (_Lp::__explicit_bit) __ycxx::__detail::__fpm::__wide_set_bit(__bits, 63);
-  if (__neg) __ycxx::__detail::__fpm::__wide_set_bit(__bits, _Lp::__bits - 1);
-  return __ycxx::__detail::__fpm::__fp_from_bits<_Tp>(__bits);
+  __wide<2> bits = __ycxx::__detail::__fpm::__wide_shl(__ycxx::__detail::__fpm::__wide_from<2>((__y_u64(1) << _Lp::__ebits) - 1), _Lp::__fbits);
+  if (nan) __ycxx::__detail::__fpm::__wide_set_bit(bits, _Lp::__explicit_bit ? _Lp::__fbits - 2 : _Lp::__fbits - 1);
+  if (_Lp::__explicit_bit) __ycxx::__detail::__fpm::__wide_set_bit(bits, 63);
+  if (__neg) __ycxx::__detail::__fpm::__wide_set_bit(bits, _Lp::bits - 1);
+  return __ycxx::__detail::__fpm::__fp_from_bits<_Tp>(bits);
 }
 // Built once per type (cheap during constant evaluation).
 template <class _Tp>

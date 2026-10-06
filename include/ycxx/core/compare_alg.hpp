@@ -29,9 +29,9 @@ constexpr __fp_key __fp_total_key(_Tp __x) noexcept {
     using _Up = std::conditional_t<sizeof(_Tp) == 2, unsigned short,
                                  std::conditional_t<sizeof(_Tp) == 4, unsigned int,
                                                     std::conditional_t<sizeof(_Tp) == 8, unsigned long long, __uint128>>>;
-    constexpr int __bits = static_cast<int>(sizeof(_Tp) * __CHAR_BIT__);
+    constexpr int bits = static_cast<int>(sizeof(_Tp) * __CHAR_BIT__);
     _Up __u = __builtin_bit_cast(_Up, __x);
-    _Up sign = _Up(_Up(1) << (__bits - 1));
+    _Up sign = _Up(_Up(1) << (bits - 1));
     return {(__u & sign) != 0, static_cast<__uint128>(__u & _Up(~sign))};
   }
 }

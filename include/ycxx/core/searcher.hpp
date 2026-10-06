@@ -74,16 +74,16 @@ inline constexpr bool __searcher_byte_table =
 template <class _RAI1, class _Hash, class _Pred>
 class __searcher_table {
   using _Vp = typename std::iterator_traits<_RAI1>::value_type;
-  static constexpr bool __bytes = __searcher_byte_table<_Vp, _Hash, _Pred>;
+  static constexpr bool bytes = __searcher_byte_table<_Vp, _Hash, _Pred>;
 
-  __searcher_array<std::conditional_t<__bytes, std::ptrdiff_t, __searcher_slot>> __slots_;
+  __searcher_array<std::conditional_t<bytes, std::ptrdiff_t, __searcher_slot>> __slots_;
 
 public:
   enum : std::ptrdiff_t { none = -1, unknown = -2 };
 
   // A table for up to `count` classes (none: an empty table, in which every lookup fails).
-  explicit __searcher_table(std::size_t count) : __slots_(count == 0 ? 0 : __bytes ? 256 : capacity(count)) {
-    if constexpr (__bytes)
+  explicit __searcher_table(std::size_t count) : __slots_(count == 0 ? 0 : bytes ? 256 : capacity(count)) {
+    if constexpr (bytes)
       for (std::size_t k = 0; k != __slots_.size(); ++k) __slots_[k] = none;
   }
 
@@ -97,7 +97,7 @@ private:
 public:
   // Sets the value of the class of pat[k] (inserting the class).
   void set(const _RAI1& __pat, std::ptrdiff_t k, std::ptrdiff_t value, const _Hash& __hf, const _Pred& pred) {
-    if constexpr (__bytes) {
+    if constexpr (bytes) {
       __slots_[static_cast<unsigned char>(__pat[k])] = value;
     } else {
       const std::size_t h = static_cast<std::size_t>(__hf(__pat[k]));
@@ -123,7 +123,7 @@ public:
   template <class _Tp>
   std::ptrdiff_t find(const _Tp& __x, const _RAI1& __pat, const _Hash& __hf, const _Pred& pred, std::ptrdiff_t __budget) const {
     if (__slots_.size() == 0) return none;
-    if constexpr (__bytes) {
+    if constexpr (bytes) {
       (void)__pat;
       (void)__hf;
       (void)pred;

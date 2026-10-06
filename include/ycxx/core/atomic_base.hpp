@@ -414,13 +414,13 @@ constexpr _Vp __atomic_fetch_ptr(_Tp* p, std::ptrdiff_t n, std::memory_order __o
     // [atomics.types.pointer]/2: the result may be an invalid pointer value; computed on the
     // integer representation, so no arithmetic on an invalid pointer is performed.
     using _Rp = __atomic_rep<_Vp>;
-    const _Rp __bytes = static_cast<_Rp>(n) * static_cast<_Rp>(sizeof(_Ep));
+    const _Rp bytes = static_cast<_Rp>(n) * static_cast<_Rp>(sizeof(_Ep));
     if constexpr (__atomic_lock_free<_Vp>) {
       return ::__ycxx::__detail::__atomic_from_rep<_Vp>(
-          __atomic_fetch_add(::__ycxx::__detail::__atomic_rep_ptr<_Vp>(p), __bytes, __atomic_order(__o)));
+          __atomic_fetch_add(::__ycxx::__detail::__atomic_rep_ptr<_Vp>(p), bytes, __atomic_order(__o)));
     } else {
       return ::__ycxx::__detail::__atomic_rmw<_Vp>(
-          p, [__bytes](_Vp __v) { return reinterpret_cast<_Vp>(reinterpret_cast<__UINTPTR_TYPE__>(__v) + __bytes); }, __o);
+          p, [bytes](_Vp __v) { return reinterpret_cast<_Vp>(reinterpret_cast<__UINTPTR_TYPE__>(__v) + bytes); }, __o);
     }
   }
 }

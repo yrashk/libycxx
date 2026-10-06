@@ -142,9 +142,9 @@ consteval _Tp __make_signaling_nan() {
                                           std::conditional_t<sizeof(_Tp) == 8, unsigned long long, __uint128>>>;
     constexpr int __mant_bits = __f.digits - 1;
     constexpr int __exp_bits = static_cast<int>(sizeof(_Tp) * __CHAR_BIT__) - 1 - __mant_bits;
-    _Up __bits = ((_Up(1) << __exp_bits) - 1) << __mant_bits; // exponent all ones
-    __bits |= _Up(1) << (__mant_bits - 2);                 // non-zero payload, quiet bit (top) clear
-    return __builtin_bit_cast(_Tp, __bits);
+    _Up bits = ((_Up(1) << __exp_bits) - 1) << __mant_bits; // exponent all ones
+    bits |= _Up(1) << (__mant_bits - 2);                 // non-zero payload, quiet bit (top) clear
+    return __builtin_bit_cast(_Tp, bits);
   }
 }
 

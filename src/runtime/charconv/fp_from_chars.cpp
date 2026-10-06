@@ -431,20 +431,20 @@ std::from_chars_result parse_decimal(const char* first, const char* p, const cha
 template <kind _Kp>
 std::from_chars_result parse_hex(const char* first, const char* p, const char* last, bool __negative, __fp_raw& out) {
   __u128 __q = 0;
-  int __bits = 0;          // significant bits in q
+  int bits = 0;          // significant bits in q
   long long __e2 = 0;      // value = q * 2^e2 (before the exponent part)
   bool __sticky = false;
   bool any = false;
   auto take = [&](int __v, bool __fraction) {
     any = true;
-    if (__bits == 0 && __v == 0) {
+    if (bits == 0 && __v == 0) {
       if (__fraction)
         __e2 -= 4;
       return;
     }
-    if (__bits <= 116) {
+    if (bits <= 116) {
       __q = (__q << 4) | static_cast<__u128>(__v);
-      __bits = __ycxx::__detail::__fpconv::__bit_length(__q);
+      bits = __ycxx::__detail::__fpconv::__bit_length(__q);
       if (__fraction)
         __e2 -= 4;
     } else {
@@ -514,22 +514,22 @@ std::from_chars_result from_chars_impl(const char* first, const char* last, __fp
 } // namespace
 }} // namespace __ycxx::__detail::__fpconv
 
-std::from_chars_result __ycxx::__detail::__fp_from_chars(const char* first, const char* last, __fp_kind kind, __fp_raw& __bits,
+std::from_chars_result __ycxx::__detail::__fp_from_chars(const char* first, const char* last, __fp_kind kind, __fp_raw& bits,
                                                    int __fmt) noexcept {
   using enum __ycxx::__detail::__fp_kind;
   switch (kind) {
   case __binary16:
-    return __ycxx::__detail::__fpconv::from_chars_impl<__binary16>(first, last, __bits, __fmt);
+    return __ycxx::__detail::__fpconv::from_chars_impl<__binary16>(first, last, bits, __fmt);
   case __bfloat16:
-    return __ycxx::__detail::__fpconv::from_chars_impl<__bfloat16>(first, last, __bits, __fmt);
+    return __ycxx::__detail::__fpconv::from_chars_impl<__bfloat16>(first, last, bits, __fmt);
   case __binary32:
-    return __ycxx::__detail::__fpconv::from_chars_impl<__binary32>(first, last, __bits, __fmt);
+    return __ycxx::__detail::__fpconv::from_chars_impl<__binary32>(first, last, bits, __fmt);
   case __binary64:
-    return __ycxx::__detail::__fpconv::from_chars_impl<__binary64>(first, last, __bits, __fmt);
+    return __ycxx::__detail::__fpconv::from_chars_impl<__binary64>(first, last, bits, __fmt);
   case __x87_extended:
-    return __ycxx::__detail::__fpconv::from_chars_impl<__x87_extended>(first, last, __bits, __fmt);
+    return __ycxx::__detail::__fpconv::from_chars_impl<__x87_extended>(first, last, bits, __fmt);
   case __binary128:
-    return __ycxx::__detail::__fpconv::from_chars_impl<__binary128>(first, last, __bits, __fmt);
+    return __ycxx::__detail::__fpconv::from_chars_impl<__binary128>(first, last, bits, __fmt);
   }
   __builtin_unreachable();
 }

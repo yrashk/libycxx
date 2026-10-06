@@ -129,7 +129,7 @@ struct __re_program {
   unsigned char __word[32] = {};
   __class_type __word_class{};
 
-  static bool __bit(const unsigned char* __bits, unsigned __u) noexcept { return (__bits[__u >> 3] >> (__u & 7)) & 1; }
+  static bool __bit(const unsigned char* bits, unsigned __u) noexcept { return (bits[__u >> 3] >> (__u & 7)) & 1; }
 
   // The character as compared: [re.grammar]/14.1.
   __charT __tx(const __traits& __tr, __charT c) const {
@@ -1254,7 +1254,7 @@ class __re_compiler {
       _Pp.__word_class = __tr_.lookup_classname(__wn, __wn + 1, false);
     }
     if constexpr (__re_cacheable<__charT>) {
-      auto __set_bit = [](unsigned char* __bits, unsigned __u) { __bits[__u >> 3] |= static_cast<unsigned char>(1u << (__u & 7)); };
+      auto __set_bit = [](unsigned char* bits, unsigned __u) { bits[__u >> 3] |= static_cast<unsigned char>(1u << (__u & 7)); };
       // The code units below 256 a class matches, computed once per distinct class.
       struct __class_entry {
         __class_type __f;

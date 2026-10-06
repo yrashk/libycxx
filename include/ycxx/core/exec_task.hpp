@@ -371,7 +371,7 @@ struct __task_error_args<std::execution::completion_signatures<set_error_t(_Es).
 struct alignas(__cfg::__default_new_alignment) __task_frame_unit {
   std::byte b[__cfg::__default_new_alignment];
 };
-inline constexpr std::size_t __task_units(std::size_t __bytes) noexcept { return (__bytes + sizeof(__task_frame_unit) - 1) / sizeof(__task_frame_unit); }
+inline constexpr std::size_t __task_units(std::size_t bytes) noexcept { return (bytes + sizeof(__task_frame_unit) - 1) / sizeof(__task_frame_unit); }
 
 template <class _Alloc>
 void* __task_frame_allocate(std::size_t size, const _Alloc& __alloc) {

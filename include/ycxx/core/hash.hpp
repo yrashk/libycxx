@@ -48,8 +48,8 @@ constexpr std::uint64_t __hash_step(std::uint64_t h, std::uint64_t a, std::uint6
 
 template <class _CharT>
 constexpr std::uint64_t __hash_chars(const _CharT* p, std::size_t n) noexcept {
-  const std::size_t __bytes = n * sizeof(_CharT);
-  std::uint64_t h = __hash_seed ^ __mum(__bytes ^ __hash_k1, __hash_k2);
+  const std::size_t bytes = n * sizeof(_CharT);
+  std::uint64_t h = __hash_seed ^ __mum(bytes ^ __hash_k1, __hash_k2);
   constexpr std::size_t __per8 = 8 / sizeof(_CharT); // characters per 8 bytes
   std::size_t i = 0;
   for (; i + 2 * __per8 <= n; i += 2 * __per8) {

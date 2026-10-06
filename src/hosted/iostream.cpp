@@ -211,19 +211,19 @@ protected:
     }
     has_last_ = false;
     const wchar_t __w = traits_type::to_char_type(c);
-    char __bytes[16];
+    char bytes[16];
     std::size_t n = 1;
-    __bytes[0] = static_cast<char>(__w);
+    bytes[0] = static_cast<char>(__w);
     std::mbstate_t __st{};
     const wchar_t* __from_next;
-    char* to = __bytes;
-    const std::codecvt_base::result r = __cvt_->out(__st, &__w, &__w + 1, __from_next, __bytes, __bytes + sizeof __bytes, to);
+    char* to = bytes;
+    const std::codecvt_base::result r = __cvt_->out(__st, &__w, &__w + 1, __from_next, bytes, bytes + sizeof bytes, to);
     if (r == std::codecvt_base::error || r == std::codecvt_base::partial)
       return traits_type::eof();
     if (r == std::codecvt_base::ok)
-      n = static_cast<std::size_t>(to - __bytes);
+      n = static_cast<std::size_t>(to - bytes);
     while (n != 0)
-      if (std::ungetc(static_cast<unsigned char>(__bytes[--n]), __f_) == EOF)
+      if (std::ungetc(static_cast<unsigned char>(bytes[--n]), __f_) == EOF)
         return traits_type::eof();
     return c;
   }
@@ -247,10 +247,10 @@ private:
             return false;
         return true;
       }
-      const std::size_t __bytes = static_cast<std::size_t>(to - out);
-      if (__bytes != 0 && std::fwrite(out, 1, __bytes, __f_) != __bytes)
+      const std::size_t bytes = static_cast<std::size_t>(to - out);
+      if (bytes != 0 && std::fwrite(out, 1, bytes, __f_) != bytes)
         return false;
-      if (next == from && __bytes == 0)
+      if (next == from && bytes == 0)
         return false; // no progress
       from = next;
     }
@@ -259,22 +259,22 @@ private:
   // Reads bytes until they convert to one wide character (lock_ is held). Unless consume is set,
   // they all go back to the C stream and the conversion state is left as it was.
   int_type read(bool consume) {
-    char __bytes[8];
+    char bytes[8];
     int n = 0;
-    while (n < static_cast<int>(sizeof __bytes)) {
+    while (n < static_cast<int>(sizeof bytes)) {
       const int b = std::getc(__f_);
       if (b == EOF)
         return traits_type::eof();
-      __bytes[n++] = static_cast<char>(b);
+      bytes[n++] = static_cast<char>(b);
       wchar_t __w;
       const char* __from_next;
       wchar_t* __to_next;
       std::mbstate_t __st = in_state_;
-      const std::codecvt_base::result r = __cvt_->in(__st, __bytes, __bytes + n, __from_next, &__w, &__w + 1, __to_next);
+      const std::codecvt_base::result r = __cvt_->in(__st, bytes, bytes + n, __from_next, &__w, &__w + 1, __to_next);
       if (r == std::codecvt_base::noconv) {
         if (!consume)
-          std::ungetc(static_cast<unsigned char>(__bytes[0]), __f_);
-        return traits_type::to_int_type(static_cast<wchar_t>(static_cast<unsigned char>(__bytes[0])));
+          std::ungetc(static_cast<unsigned char>(bytes[0]), __f_);
+        return traits_type::to_int_type(static_cast<wchar_t>(static_cast<unsigned char>(bytes[0])));
       }
       if (r == std::codecvt_base::error)
         return traits_type::eof();
@@ -282,7 +282,7 @@ private:
         if (consume)
           in_state_ = __st;
         // give back the bytes beyond the character, and the character's own unless consumed
-        for (const char* p = __bytes + n, *__stop = consume ? __from_next : __bytes; p != __stop;)
+        for (const char* p = bytes + n, *__stop = consume ? __from_next : bytes; p != __stop;)
           std::ungetc(static_cast<unsigned char>(*--p), __f_);
         return traits_type::to_int_type(__w);
       }

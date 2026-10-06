@@ -64,11 +64,11 @@ struct __hive_run {
 // needs no construction).
 template <class _Tp>
 struct __hive_slot {
-  alignas(_Tp) alignas(__hive_run) unsigned char __bytes[sizeof(_Tp) > sizeof(__hive_run) ? sizeof(_Tp) : sizeof(__hive_run)];
+  alignas(_Tp) alignas(__hive_run) unsigned char bytes[sizeof(_Tp) > sizeof(__hive_run) ? sizeof(_Tp) : sizeof(__hive_run)];
 };
 template <class _Tp>
 inline _Tp* __hive_elem(__hive_slot<_Tp>* s) noexcept {
-  return std::launder(reinterpret_cast<_Tp*>(s->__bytes));
+  return std::launder(reinterpret_cast<_Tp*>(s->bytes));
 }
 
 template <class _Tp>
@@ -331,11 +331,11 @@ private:
   // ---- free runs of a group ----
   using __run_links = __ycxx::__detail::__hive_run;
   static __run_links* __run_at(__group* __g, size_t i) noexcept {
-    return std::launder(reinterpret_cast<__run_links*>(__g->__slots[i].__bytes));
+    return std::launder(reinterpret_cast<__run_links*>(__g->__slots[i].bytes));
   }
   // Begins the lifetime of the links of a run starting at slot i (no element lives there).
   static void __set_run(__group* __g, size_t i, __run_links r) noexcept {
-    std::construct_at(reinterpret_cast<__run_links*>(__g->__slots[i].__bytes), r);
+    std::construct_at(reinterpret_cast<__run_links*>(__g->__slots[i].bytes), r);
   }
   // The run whose links are r now starts at slot `to`: writes them there and fixes the
   // neighbours' links.
@@ -372,7 +372,7 @@ private:
   // ---- elements ----
   template <class... _Args>
   void __construct_at_slot(__group* __g, size_t i, _Args&&... __args) {
-    __alloc_traits::construct(__alloc_, reinterpret_cast<_Tp*>(__g->__slots[i].__bytes), static_cast<_Args&&>(__args)...);
+    __alloc_traits::construct(__alloc_, reinterpret_cast<_Tp*>(__g->__slots[i].bytes), static_cast<_Args&&>(__args)...);
   }
   template <class... _Args>
   iterator __emplace_impl(_Args&&... __args) {

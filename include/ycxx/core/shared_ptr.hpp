@@ -389,7 +389,7 @@ class __sp_array_block final : public __sp_block {
   // At run time the block and its elements share one allocation of `__units` units of
   // max(alignof(block), alignof(E)) bytes; the elements start at `offset`.
   struct alignas(alignof(_Ep) > alignof(__sp_block) ? alignof(_Ep) : alignof(__sp_block)) __unit {
-    unsigned char __bytes[alignof(_Ep) > alignof(__sp_block) ? alignof(_Ep) : alignof(__sp_block)];
+    unsigned char bytes[alignof(_Ep) > alignof(__sp_block) ? alignof(_Ep) : alignof(__sp_block)];
   };
   using _UA = typename std::allocator_traits<_Ap>::template rebind_alloc<__unit>;
   using _EA = typename std::allocator_traits<_Ap>::template rebind_alloc<_Ep>;

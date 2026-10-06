@@ -328,7 +328,7 @@ struct __ycxx::__detail::__tz_data {
     return static_cast<uint32_t>(abbrevs.size() - 1);
   }
   void load();
-  bool load_tzif(const string& __bytes);
+  bool load_tzif(const string& bytes);
   info rule_info(int64_t t) const;
   info sys_info(int64_t t) const;
 };
@@ -347,9 +347,9 @@ int64_t be64(const unsigned char* p) {
 
 } // namespace
 
-bool __ycxx::__detail::__tz_data::load_tzif(const string& __bytes) {
-  const unsigned char* p = reinterpret_cast<const unsigned char*>(__bytes.data());
-  const unsigned char* const e = p + __bytes.size();
+bool __ycxx::__detail::__tz_data::load_tzif(const string& bytes) {
+  const unsigned char* p = reinterpret_cast<const unsigned char*>(bytes.data());
+  const unsigned char* const e = p + bytes.size();
   struct __header {
     char version;
     uint32_t isutcnt, isstdcnt, leapcnt, timecnt, typecnt, charcnt;
@@ -464,10 +464,10 @@ bool __ycxx::__detail::__tz_data::load_tzif(const string& __bytes) {
 }
 
 void __ycxx::__detail::__tz_data::load() {
-  string __bytes;
-  if (!read_file(zoneinfo_dir() + "/" + name, __bytes))
+  string bytes;
+  if (!read_file(zoneinfo_dir() + "/" + name, bytes))
     return;
-  ok = load_tzif(__bytes);
+  ok = load_tzif(bytes);
 }
 
 info __ycxx::__detail::__tz_data::rule_info(int64_t t) const {

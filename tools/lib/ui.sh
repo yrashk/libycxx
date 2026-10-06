@@ -15,9 +15,20 @@
 #                                  then a result line with the duration; on failure the end of
 #                                  LOG (all of it under GitHub Actions). Returns CMD's status.
 #   ui_duration SECONDS            "1m05s"
+#   ui_catch_interrupt             Ctrl-C (SIGINT) and SIGTERM set ui_interrupted=1 instead of
+#                                  ending the script, which then finishes what it was doing (the
+#                                  interrupted command, its logs and reports) and stops early;
+#                                  ui_step keeps that trap
 # YCXX_VERBOSE=1: ui_step streams CMD's output instead (still saved to LOG).
 
 ui_failed=0
+ui_interrupted=0
+ui__catching=0
+
+ui_catch_interrupt() {
+  ui__catching=1
+  trap 'ui_interrupted=1' INT TERM
+}
 
 ui__colour=0
 case ${YCXX_COLOR:-auto} in
@@ -120,7 +131,8 @@ ui_step() {
   elif [ ${ui__tty} = 1 ]; then
     "$@" >"${ui__log}" 2>&1 &
     ui__pid=$!
-    trap 'kill ${ui__pid} 2>/dev/null; printf "\r\033[K"; ui_fail "${ui__label}" interrupted; exit 130' INT TERM
+    # A background command of a non-interactive shell ignores SIGINT: Ctrl-C stops it here.
+    trap 'ui_interrupted=1; kill ${ui__pid} 2>/dev/null' INT TERM
     ui__w=$(ui_cols)
     set -- ${ui__spin}
     while kill -0 ${ui__pid} 2>/dev/null; do
@@ -136,7 +148,7 @@ ui_step() {
       sleep 0.2
     done
     wait ${ui__pid} || ui__st=$?
-    trap - INT TERM
+    if [ ${ui__catching} = 1 ]; then trap 'ui_interrupted=1' INT TERM; else trap - INT TERM; fi
     printf '\r\033[K'
   else
     "$@" >"${ui__log}" 2>&1 || ui__st=$?
@@ -144,6 +156,10 @@ ui_step() {
   ui__el=$(ui_duration $(($(date +%s) - ui__t0)))
   if [ "${ui__st}" = 0 ]; then
     ui_ok "${ui__label}" "(${ui__el})"
+  elif [ "${ui_interrupted}" = 1 ]; then
+    ui_skip "${ui__label}" "(interrupted after ${ui__el})"
+    # A script that does not catch interrupts stops here, as it would have without ui_step.
+    [ ${ui__catching} = 1 ] || exit 130
   else
     ui_fail "${ui__label}" "(exit ${ui__st}, ${ui__el})"
     [ "${YCXX_VERBOSE:-0}" = 1 ] || ui_show_log "${ui__log}" "${ui__label}: log"

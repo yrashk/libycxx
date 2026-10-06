@@ -77,5 +77,7 @@ if sanitizer:
 import sys
 sys.path.insert(0, os.path.join(repo, 'tests'))
 from ycxxlit.libcxx_format import LibcxxFormat
-config.test_format = LibcxxFormat(wrapper, compiler, base_flags, config.available_features,
-                                  os.path.join(repo, 'tests', 'libcxx', 'skip.txt'))
+# Journaled: every finished test's result is kept even if the run is stopped (Ctrl-C).
+from ycxxlit.journal import Journaled
+config.test_format = Journaled(LibcxxFormat(wrapper, compiler, base_flags, config.available_features,
+                                            os.path.join(repo, 'tests', 'libcxx', 'skip.txt')))

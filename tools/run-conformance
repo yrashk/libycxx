@@ -24,6 +24,9 @@
 #              YCXX_CXXFLAGS="<flags>" (appended to every test's compile flags) with
 #              YCXX_CONFIG_NAME=<short name> (the run's name for them; default: made from the
 #              flags). Each configuration has its own logs.
+# Ctrl-C stops lit gracefully: the tests running finish or are cut short, the rest are not run;
+# the logs and the report keep the results of the tests that ran and say how many did not.
+# Exit status 130.
 set -e
 repo=$(cd "$(dirname "$0")/.." && pwd)
 . "$repo/tools/lib/ui.sh"
@@ -52,6 +55,7 @@ if [ ! -d "$tests" ]; then
 fi
 ycxx_env_load
 ycxx_lit_cmd
+ui_catch_interrupt
 dir=$repo/build/suite-$suite
 mkdir -p "$dir"
 ln -sfn "$repo/tests/$suite/lit.cfg.py" "$dir/lit.cfg.py"
@@ -91,8 +95,11 @@ ui_info "log" "$log"
 # library (not for the reference runs, nor with YCXX_LIBDIR naming another build).
 if [ "${YCXX_STDLIB:-}" != libstdcxx ] && [ -z "${YCXX_LIBDIR:-}" ]; then
   if [ -f "$repo/build/$compiler/build.ninja" ]; then
-    ui_step "library up to date (build/$compiler)" "$repo/build/test-logs/build-$compiler-for-$name.log" \
-      ninja -C "$repo/build/$compiler" || exit 1
+    if ! ui_step "library up to date (build/$compiler)" "$repo/build/test-logs/build-$compiler-for-$name.log" \
+      ninja -C "$repo/build/$compiler"; then
+      [ "${ui_interrupted}" = 0 ] || exit 130
+      exit 1
+    fi
   elif [ ! -f "$repo/build/$compiler/libycxx.a" ]; then
     ui_fail "build/$compiler is not configured" "(tools/test -c $compiler build)"
     exit 2
@@ -102,7 +109,11 @@ fi
 # exit statuses and durations, and what they printed (tests/ycxxlit/transcript.py). -o: the same
 # as JSON, from which the report is made.
 base=$repo/build/test-logs/$name
-rm -f "$base.json" "$base.data.json" "$base.console.log"
+rm -f "$base.json" "$base.data.json" "$base.console.log" "$base.journal"
+# Every finished test's result, as it finishes (tests/ycxxlit/journal.py): what lit's JSON lacks
+# after Ctrl-C.
+YCXX_LIT_JOURNAL=$base.journal
+export YCXX_LIT_JOURNAL
 ui_cmd ${ycxx_lit} "$dir" -a -o "$base.json" "$@"
 
 t0=$(date +%s)
@@ -111,11 +122,16 @@ status=$log.status
 fstatus=$log.filter-status
 # lit's raw output goes to the log before the display filter, so that it is kept even if the filter
 # fails; what the terminal shows (the filter's output and errors) is kept in <run>.console.log.
+# On Ctrl-C only lit stops (it reports the tests that ran and writes its JSON): the shell running
+# it catches the signal (lit, a new program, gets the default action back), and tee and the filter
+# ignore it, so that they keep everything lit prints until it exits.
 {
   set +e
+  trap : INT
   PYTHONUNBUFFERED=1 ${ycxx_lit} "$dir" -a -o "$base.json" "$@" 2>&1
   echo $? >"$status"
-} | tee "$log" | {
+} | (trap '' INT; exec tee "$log") | {
+  trap '' INT
   awk -v tty=${ui__tty} -v quiet="${YCXX_QUIET:-0}" \
       -v verbose="${YCXX_VERBOSE:-0}" -v details="${YCXX_FAIL_DETAILS:-10}" \
       -v red="${ui_red}" -v green="${ui_green}" -v yellow="${ui_yellow}" -v cyan="${ui_cyan}" \
@@ -123,7 +139,7 @@ fstatus=$log.filter-status
       -v s_ok="${ui_sym_ok}" -v s_fail="${ui_sym_fail}" -v s_skip="${ui_sym_skip}" \
       -f "$repo/tools/lib/lit-progress.awk" 2>&1
   echo $? >"$fstatus"
-} | tee "$base.console.log"
+} | (trap '' INT; exec tee "$base.console.log")
 rc=$(cat "$status" 2>/dev/null || echo 1)
 frc=$(cat "$fstatus" 2>/dev/null || echo 1)
 rm -f "$status" "$fstatus"
@@ -134,11 +150,19 @@ if [ "$frc" != 0 ]; then
 fi
 el=$(ui_duration $(($(date +%s) - t0)))
 echo
-if [ "$rc" = 0 ]; then ui_ok "$what: all tests passed" "($el)"
+# After Ctrl-C: how many tests ran (the journal lists those that finished, cut short ones as
+# SKIPPED) of the total lit's banner announced.
+not_run=
+if [ "${ui_interrupted}" = 1 ]; then
+  total=$(sed -n 's/^-- Testing: \([0-9][0-9]*\) tests\{0,1\}.*/\1/p' "$log" | head -n 1)
+  ran=$(grep -vc '"code": "SKIPPED"' "$base.journal" 2>/dev/null) || ran=0
+  not_run=$(( ${total:-$ran} - ran ))
+  ui_warn "$what: interrupted (Ctrl-C)" "($ran of ${total:-?} tests ran, $not_run not run, $el)"
+elif [ "$rc" = 0 ]; then ui_ok "$what: all tests passed" "($el)"
 else ui_fail "$what: failures" "(lit exit $rc, $el)"; fi
 
 # The report: every test with its result, duration and transcript, and how the run was made.
-if [ -f "$base.json" ]; then
+if [ -f "$base.json" ] || [ -f "$base.journal" ]; then
   if [ "${YCXX_STDLIB:-}" = libstdcxx ]; then cxx_used="toolchain's libstdc++"; else cxx_used="libycxx, build/$compiler"; fi
   case $compiler in gcc) cxx=${YCXX_GXX:-g++-16} ;; *) cxx=${YCXX_CLANGXX:-clang++-23} ;; esac
   commit=$(git -C "$repo" rev-parse --short=12 HEAD 2>/dev/null || echo unknown)
@@ -150,9 +174,12 @@ if [ -f "$base.json" ]; then
     "hardened=$([ "${YCXX_HARDENED:-0}" = 1 ] && echo yes || echo no)" \
     "configuration=${ycxx_config_name:-default}${YCXX_CXXFLAGS:+ ($YCXX_CXXFLAGS)}" "tests=$tests${filter:+ (filter: $filter)}" \
     "commit=$commit" "started=$started" "host=$(uname -srm)" \
-    "command=$(ui_quote ${ycxx_lit} "$dir" -a -o "$base.json" "$@")" "log=$log" "_root=$tests" &&
+    "command=$(ui_quote ${ycxx_lit} "$dir" -a -o "$base.json" "$@")" "log=$log" "_root=$tests" "_journal=$base.journal" \
+    ${not_run:+"interrupted=yes (Ctrl-C): $not_run tests not run"} &&
     ui_info "report" "$base.html (copy buttons; the whole report as Markdown in $base.md)" &&
     ui_info "list" "$base.tsv (result, seconds, test, steps, error, counterpart)"
 fi
 
+[ "${ui_interrupted}" = 0 ] || exit 130
+rm -f "$base.journal" # lit's JSON has every test
 exit "$rc"

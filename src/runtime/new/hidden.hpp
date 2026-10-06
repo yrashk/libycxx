@@ -1,6 +1,6 @@
 // libycxx runtime: hiding the default replaceable allocation functions (DECISIONS §2).
 //
-// The archives are built with -fvisibility=hidden, but the compilers declare the replaceable
+// The runtime's definitions are hidden (DECISIONS §2), but the compilers declare the replaceable
 // allocation functions themselves with default visibility, and a visibility attribute on a
 // definition conflicts with that (GCC ignores it with a warning, Clang rejects it). Each file
 // defining a default therefore hides its symbol with an assembler directive. A program's own
@@ -12,7 +12,7 @@
 #include <type_traits>
 #include <ycxx/config.hpp>
 
-namespace ycxx::detail {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 
 struct asm_directive {
   char text[96]{};
@@ -33,4 +33,4 @@ consteval asm_directive hide_allocation_function(const char* mangled) {
   return d;
 }
 
-} // namespace ycxx::detail
+}} // namespace ycxx::detail

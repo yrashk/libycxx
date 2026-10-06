@@ -37,11 +37,11 @@ void* trampoline(void* p) {
 } // namespace
 
 // The C++ ABI runtime: the type of the exception being handled, null for a foreign one.
-namespace __cxxabiv1 {
-extern "C" std::type_info* __cxa_current_exception_type() noexcept;
+namespace [[gnu::visibility("hidden")]] __cxxabiv1 {
+extern "C" [[gnu::visibility("hidden")]] std::type_info* __cxa_current_exception_type() noexcept;
 }
 
-namespace ycxx::detail {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 
 bool handling_foreign_exception() noexcept { return __cxxabiv1::__cxa_current_exception_type() == nullptr; }
 
@@ -83,4 +83,4 @@ bool atomic_wait_block_until(const volatile void* addr, std::uint32_t ticket, in
   return r == 0;
 }
 
-} // namespace ycxx::detail
+}} // namespace ycxx::detail

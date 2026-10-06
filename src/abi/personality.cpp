@@ -18,7 +18,7 @@
 #include "eh.hpp"
 #include "internal.hpp"
 
-namespace ycxx::abi {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace abi {
 namespace {
 
 enum : unsigned char {
@@ -334,11 +334,11 @@ _Unwind_Reason_Code install(_Unwind_Context* ctx, _Unwind_Exception* ue, std::in
 }
 
 } // namespace
-} // namespace ycxx::abi
+}} // namespace ycxx::abi
 
 using namespace ycxx::abi;
 
-extern "C" _Unwind_Reason_Code __gxx_personality_v0(int version, _Unwind_Action actions, std::uint64_t cls,
+extern "C" [[gnu::visibility("hidden")]] _Unwind_Reason_Code __gxx_personality_v0(int version, _Unwind_Action actions, std::uint64_t cls,
                                                     _Unwind_Exception* ue, _Unwind_Context* ctx) {
   if (version != 1 || !ue || !ctx)
     return _URC_FATAL_PHASE1_ERROR;

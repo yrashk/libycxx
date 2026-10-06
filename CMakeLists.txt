@@ -162,7 +162,7 @@ __fundamental_type_info::~__fundamental_type_info() {}
 ]=])
 set(CMAKE_TRY_COMPILE_TARGET_TYPE STATIC_LIBRARY)
 try_compile(_ycxx_probe_ok SOURCES ${_ycxx_probe}/probe.cpp
-  COMPILE_DEFINITIONS -std=c++26 -nostdinc++ -frtti -fvisibility=hidden -fPIC
+  COMPILE_DEFINITIONS -std=c++26 -nostdinc++ -frtti -fPIC
   COPY_FILE ${_ycxx_probe}/probe.a OUTPUT_VARIABLE _ycxx_probe_log)
 unset(CMAKE_TRY_COMPILE_TARGET_TYPE)
 if(NOT _ycxx_probe_ok)
@@ -223,11 +223,11 @@ target_link_libraries(ycxx_abi INTERFACE ycxx)
 set_property(TARGET ycxx ycxx_abi PROPERTY LINK_INTERFACE_MULTIPLICITY 3)
 # Usable in shared objects and position-independent executables.
 set_target_properties(ycxx ycxx_abi PROPERTIES POSITION_INDEPENDENT_CODE ON)
-# Nothing the archives define is exported from the program or shared object that links them
-# (-fvisibility=hidden; the headers declare libycxx's namespaces hidden): another C++ library in
-# the process (Apple's libc++/libc++abi, which libSystem loads into every process; libstdc++)
-# can neither take over libycxx's definitions nor be taken over by them (DECISIONS §2).
-set_target_properties(ycxx ycxx_abi PROPERTIES C_VISIBILITY_PRESET hidden CXX_VISIBILITY_PRESET hidden)
+# Nothing the archives define is exported from the program or shared object that links them,
+# except the allocation table: another C++ library in the process (Apple's libc++/libc++abi, which
+# libSystem loads into every process; libstdc++) can neither take over libycxx's definitions nor
+# be taken over by them (DECISIONS §2). The sources say so themselves, with visibility attributes
+# on their namespaces and declarations, not with -fvisibility=hidden.
 
 # ---- ycxx::ycxx: what applications link ----
 add_library(ycxx_ycxx INTERFACE)
@@ -306,7 +306,7 @@ if(YCXX_FREESTANDING_RUNTIME)
     ${YCXX_FREESTANDING_SOURCES} ${YCXX_CHARCONV_SOURCES} ${YCXX_ATOMIC_SOURCES}
     ${YCXX_DEBUGGING_SOURCES} ${YCXX_CONTRACTS_SOURCES})
   set_target_properties(ycxx_freestanding PROPERTIES OUTPUT_NAME ycxx-freestanding EXPORT_NAME freestanding
-                        POSITION_INDEPENDENT_CODE ON CXX_VISIBILITY_PRESET hidden)
+                        POSITION_INDEPENDENT_CODE ON)
   target_link_libraries(ycxx_freestanding PUBLIC ycxx_headers)
   # -nostdinc drops the compiler's own headers too; core needs its <stddef.h> (::max_align_t).
   execute_process(COMMAND ${CMAKE_CXX_COMPILER} -print-file-name=include

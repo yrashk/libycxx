@@ -129,7 +129,7 @@ struct cast_walk {
 //       dst; -3 src is a public base of dst several times, never virtually. Only the first
 //       form is used, for a fast path; every result is otherwise computed from the RTTI.
 // Returns the dst object, or nullptr when the run-time check fails.
-extern "C" void* __dynamic_cast(const void* sub, const __class_type_info* src, const __class_type_info* dst,
+extern "C" [[gnu::visibility("hidden")]] void* __dynamic_cast(const void* sub, const __class_type_info* src, const __class_type_info* dst,
                                 std::ptrdiff_t src2dst_offset) {
   // §2.9.4: vtable entry -2 is the offset from this virtual pointer to the top of the object,
   // entry -1 the type_info of that object. During construction or destruction the virtual

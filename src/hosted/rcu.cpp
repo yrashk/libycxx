@@ -54,7 +54,7 @@
 #include <ycxx/hosted/thread_support.hpp>
 #include <ycxx/pal.h>
 
-namespace ycxx::detail {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 namespace {
 
 using epoch_t = unsigned long long;
@@ -275,4 +275,4 @@ void rcu_schedule(rcu_node* n) noexcept {
   evaluate_if_due();
 }
 
-} // namespace ycxx::detail
+}} // namespace ycxx::detail

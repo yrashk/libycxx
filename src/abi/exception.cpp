@@ -6,7 +6,7 @@
 #include <new>
 #include <ycxx/pal.h>
 
-namespace ycxx::abi {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace abi {
 namespace {
 
 // ---- Layout ----
@@ -208,11 +208,11 @@ void release_at_handler_exit(exception_header* h) {
   raise(d);
 }
 
-} // namespace ycxx::abi
+}} // namespace ycxx::abi
 
 using namespace ycxx::abi;
 
-// The runtime is built with -fvisibility=hidden (DECISIONS §2), but GCC declares the entry points
+// The runtime's entry points are declared hidden (DECISIONS §2), but GCC declares the entry points
 // that its exception-handling code calls itself, with default visibility, and keeps that
 // visibility for their definitions (a visibility attribute here is ignored, with a warning). An
 // assembler directive hides them, so that a shared object built with libycxx never exports half of
@@ -235,8 +235,8 @@ asm((hide_compiler_declared_entry_points()));
 
 extern "C" {
 
-eh_globals* __cxa_get_globals() noexcept { return globals(); }
-eh_globals* __cxa_get_globals_fast() noexcept { return globals(); }
+[[gnu::visibility("hidden")]] eh_globals* __cxa_get_globals() noexcept { return globals(); }
+[[gnu::visibility("hidden")]] eh_globals* __cxa_get_globals_fast() noexcept { return globals(); }
 
 void* __cxa_allocate_exception(std::size_t thrown_size) noexcept {
   exception_header* h = allocate_header(thrown_size);
@@ -255,7 +255,7 @@ void __cxa_free_exception(void* thrown) noexcept { free_header(header_of_object(
   raise(h);
 }
 
-void* __cxa_get_exception_ptr(void* ue) noexcept {
+[[gnu::visibility("hidden")]] void* __cxa_get_exception_ptr(void* ue) noexcept {
   _Unwind_Exception* u = static_cast<_Unwind_Exception*>(ue);
   if (!is_native(u->exception_class))
     return u + 1;
@@ -305,7 +305,7 @@ void __cxa_end_catch() {
   }
 }
 
-[[noreturn]] void __cxa_rethrow() {
+[[noreturn, gnu::visibility("hidden")]] void __cxa_rethrow() {
   eh_globals* g = globals();
   exception_header* h = g->caught_exceptions;
   if (!h)
@@ -327,7 +327,7 @@ void __cxa_end_catch() {
   terminate_for(&h->unwind_header);
 }
 
-std::type_info* __cxa_current_exception_type() noexcept {
+[[gnu::visibility("hidden")]] std::type_info* __cxa_current_exception_type() noexcept {
   exception_header* h = globals()->caught_exceptions;
   if (!h || !is_native(h->unwind_header.exception_class))
     return nullptr;
@@ -345,7 +345,7 @@ std::type_info* __cxa_current_exception_type() noexcept {
 
 } // extern "C"
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 
 // [set.terminate]/2 leaves open whether null designates the default handler; here it does.
 terminate_handler set_terminate(terminate_handler f) noexcept {

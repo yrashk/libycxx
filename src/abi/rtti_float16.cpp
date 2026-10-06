@@ -21,7 +21,7 @@
 #define YCXX_STRINGIZE(x) YCXX_STRINGIZE_(x)
 #define YCXX_SYMBOL(name) YCXX_STRINGIZE(__USER_LABEL_PREFIX__) name
 
-namespace ycxx::abi {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace abi {
 
 // The start of a vtable whose virtual functions are the complete and deleting destructors.
 struct vtable_image {
@@ -53,4 +53,4 @@ constinit const fundamental_image float16_info{fundamental_vtable.virtuals, "DF1
 constinit const pointer_image float16_pointer_info{pointer_vtable.virtuals, "PDF16_", 0, &float16_info};
 constinit const pointer_image float16_const_pointer_info{pointer_vtable.virtuals, "PKDF16_", 0x1, &float16_info};
 
-} // namespace ycxx::abi
+}} // namespace ycxx::abi

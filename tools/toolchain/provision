@@ -156,7 +156,13 @@ install_gcc() {
     src=$(cd "$gcc_source" && pwd)
   elif [ ! -d "$src" ]; then
     say "downloading GCC $GCC_VERSION source"
-    fetch "https://ftp.gnu.org/gnu/gcc/gcc-$GCC_VERSION/gcc-$GCC_VERSION.tar.xz" "$prefix/src/gcc.tar.xz"
+    # The GNU site, then GCC's own release directory (a mirror of it), should one be unreachable.
+    for url in "https://ftp.gnu.org/gnu/gcc/gcc-$GCC_VERSION/gcc-$GCC_VERSION.tar.xz" \
+               "https://gcc.gnu.org/pub/gcc/releases/gcc-$GCC_VERSION/gcc-$GCC_VERSION.tar.xz"; do
+      fetch "$url" "$prefix/src/gcc.tar.xz" && break
+      rm -f "$prefix/src/gcc.tar.xz"
+    done
+    [ -f "$prefix/src/gcc.tar.xz" ] || die "could not download the GCC $GCC_VERSION source"
     tar -xJf "$prefix/src/gcc.tar.xz" -C "$prefix/src"
     rm -f "$prefix/src/gcc.tar.xz"
   fi

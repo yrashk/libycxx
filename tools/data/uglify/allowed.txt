@@ -72,3 +72,9 @@ re:(FLT|DBL|LDBL)_NORM_MAX                                                 # <cf
 YCXX_HARDENED                                                              # -DYCXX_HARDENED=1
 ycxx_error_handler ycxx_error_kind                                         # -fno-exceptions hook
 re:ycxx_error_[a-z_]+                                                      # ycxx_error_kind's enumerators
+
+[src-platform]
+# The C library's, the unwinder's and the system's names that the runtime's sources (src/) use,
+# and the headers spell as names of their own too: kept in src/ only, renamed in include/.
+exception_class                                                            # _Unwind_Exception (<unwind.h>)
+link unlink truncate                                                       # POSIX <unistd.h>

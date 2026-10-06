@@ -221,6 +221,10 @@ class Names:
                 for m in re.findall(r"\bnamespace\s+(\w+)", p.read_text()):
                     self.modules.add(m)
         allowed = _read_list(DATA / "allowed.txt")
+        # [src-platform]: the C library's and the system's names the runtime's sources use, kept
+        # there only (a header that spells one as a name of its own still gets it renamed).
+        self.src_platform = set(allowed.pop("src-platform", []))
+        self.recorded = set(_read_list(DATA / "renamed.txt").get("default", []))
         self.allowed, self.allowed_re = {}, []
         for section, words in allowed.items():
             for w in words:
@@ -290,13 +294,14 @@ _BACKTICK = re.compile(r"`([^`\n]+)`")
 
 
 class Renamer:
-    def __init__(self, names, protect=()):
+    def __init__(self, names, protect=(), only=None):
         self.names = names
-        self.protect = set(protect)  # names never renamed in this file set (src: the platform's)
+        self.protect = set(protect)  # names never renamed in these files (src: the platform's)
+        self.only = only             # if not None: rename only these names
         self.renamed = {}
 
     def map(self, w):
-        if w in self.protect or self.names.kind(w) is not None:
+        if w in self.protect or (self.only is not None and w not in self.only) or self.names.kind(w) is not None:
             return w
         new = self.names.new_name(w)
         self.renamed[w] = new
@@ -437,26 +442,44 @@ TEXT_FILES = {
 
 
 def rename_tree(names, verbose=True):
-    renamer = Renamer(names)
+    """Renames include/ and src/'s headers completely; then, in the runtime's sources, the names
+    renamed in the headers now or by an earlier run (tools/data/uglify/renamed.txt): a source's
+    other names (its locals, the C library's and the system's) are its own business."""
     changed = 0
-    for p in include_files() + src_files():
-        text = p.read_text()
-        new = renamer.source(text)
-        if new != text:
-            p.write_text(new)
-            changed += 1
+
+    def run(renamer, paths):
+        nonlocal changed
+        for p in paths:
+            text = p.read_text()
+            new = renamer.source(text)
+            if new != text:
+                p.write_text(new)
+                changed += 1
+    headers = Renamer(names)
+    run(headers, include_files())
+    src_headers = Renamer(names, protect=names.src_platform)
+    run(src_headers, [p for p in src_files() if p.suffix in (".hpp", ".h")])
+    renamed = set(headers.renamed) | set(src_headers.renamed) | names.recorded
+    sources = Renamer(names, protect=names.src_platform, only=renamed)
+    run(sources, [p for p in src_files() if p.suffix not in (".hpp", ".h")])
     for rel, pat in TEXT_FILES.items():
         p = REPO / rel
         if not p.exists():
             continue
         text = p.read_text()
-        new = re.sub(pat, lambda m: renamer.renamed.get(m.group(), m.group()), text)
+        new = re.sub(pat, lambda m: sources.map(m.group()) if m.group() in renamed else m.group(), text)
         if new != text:
             p.write_text(new)
             changed += 1
+    new_names = renamed - names.recorded
+    if new_names:
+        (DATA / "renamed.txt").write_text(
+            "# Every identifier tools/uglify.py has renamed (DECISIONS §2); written by the tool. The runtime's\n"
+            "# sources (src/) are renamed by this list, so a merged source that still spells an old name is\n"
+            "# fixed by running the tool again.\n" + "".join(f"{w}\n" for w in sorted(renamed)))
     if verbose:
-        print(f"uglify: {len(renamer.renamed)} identifiers renamed, {changed} files changed")
-    return renamer
+        print(f"uglify: {len(headers.renamed) + len(src_headers.renamed)} identifiers renamed in the headers "
+              f"({len(new_names)} new), {changed} files changed")
 
 
 def uglify_text(text):
@@ -470,9 +493,9 @@ def survey(names, files):
     for p in files:
         text = p.read_text()
         line = 1
-        renamer = None
+        protect = names.src_platform if p.is_relative_to(REPO / "src") else ()
         for k, t in lex(text):
-            if k == "ident" and names.kind(t) is None:
+            if k == "ident" and t not in protect and names.kind(t) is None:
                 c, where = found.get(t, (0, None))
                 found[t] = (c + 1, where or f"{p.relative_to(REPO)}:{line}")
             line += t.count("\n")

@@ -224,7 +224,8 @@ class Names:
         # [src-platform]: the C library's and the system's names the runtime's sources use, kept
         # there only (a header that spells one as a name of its own still gets it renamed).
         self.src_platform = set(allowed.pop("src-platform", []))
-        self.recorded = set(_read_list(DATA / "renamed.txt").get("default", []))
+        rec = DATA / "renamed.txt"
+        self.recorded = set(_read_list(rec).get("default", [])) if rec.exists() else set()
         self.allowed, self.allowed_re = {}, []
         for section, words in allowed.items():
             for w in words:

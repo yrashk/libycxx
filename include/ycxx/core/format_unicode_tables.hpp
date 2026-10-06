@@ -3,19 +3,19 @@
 // (DerivedCoreProperties.txt 18.0.0, DerivedGeneralCategory.txt 18.0.0, EastAsianWidth.txt 18.0.0, GraphemeBreakProperty.txt 18.0.0); do not edit.
 #pragma once
 
-namespace [[gnu::visibility("hidden")]] ycxx { namespace detail::uni {
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail::__uni {
 
-inline constexpr char ucd_version[] = "18.0.0";
+inline constexpr char __ucd_version[] = "18.0.0";
 
 // Grapheme_Cluster_Break values (bits 0-3 of a cluster_runs entry; LV and LVT are computed).
-enum gcb : unsigned char { gcb_other, gcb_cr, gcb_lf, gcb_control, gcb_extend, gcb_zwj, gcb_regional_indicator, gcb_prepend, gcb_spacingmark, gcb_l, gcb_v, gcb_t, gcb_lv, gcb_lvt };
+enum __gcb : unsigned char { __gcb_other, __gcb_cr, __gcb_lf, __gcb_control, __gcb_extend, __gcb_zwj, __gcb_regional_indicator, __gcb_prepend, __gcb_spacingmark, __gcb_l, __gcb_v, __gcb_t, __gcb_lv, __gcb_lvt };
 // Indic_Conjunct_Break values (bits 5-6).
-enum incb : unsigned char { incb_none, incb_linker, incb_consonant, incb_extend };
+enum __incb : unsigned char { __incb_none, __incb_linker, __incb_consonant, __incb_extend };
 
 // Each entry is (first code point of a run << 8) | the run's properties; a run extends to the
 // next entry's first code point.
 // bits 0-3 Grapheme_Cluster_Break, bit 4 Extended_Pictographic, bits 5-6 InCB, bit 7 field width 2
-inline constexpr unsigned int cluster_runs[1514] = {
+inline constexpr unsigned int __cluster_runs[1514] = {
     0x3, 0xa02, 0xb03, 0xd01, 0xe03, 0x2000, 0x7f03, 0xa000, 0xa910, 0xaa00,
     0xad03, 0xae10, 0xaf00, 0x30064, 0x37000, 0x48364, 0x48a00, 0x59164, 0x5be00, 0x5bf64,
     0x5c000, 0x5c164, 0x5c300, 0x5c464, 0x5c600, 0x5c764, 0x5ca00, 0x60007, 0x60600, 0x61064,
@@ -171,7 +171,7 @@ inline constexpr unsigned int cluster_runs[1514] = {
 };
 
 // bit 0 General_Category in Z or C, bit 1 Grapheme_Extend
-inline constexpr unsigned int escape_runs[2044] = {
+inline constexpr unsigned int __escape_runs[2044] = {
     0x1, 0x2100, 0x7f01, 0xa100, 0xad01, 0xae00, 0x30002, 0x37000, 0x37801, 0x37a00,
     0x38001, 0x38400, 0x38b01, 0x38c00, 0x38d01, 0x38e00, 0x3a201, 0x3a300, 0x48302, 0x48a00,
     0x53001, 0x53100, 0x55701, 0x55800, 0x59001, 0x59102, 0x5be00, 0x5bf02, 0x5c000, 0x5c102,
@@ -379,4 +379,4 @@ inline constexpr unsigned int escape_runs[2044] = {
     0xe002003, 0xe008001, 0xe010002, 0xe01f001,
 };
 
-}} // namespace ycxx::detail::uni
+}} // namespace __ycxx::__detail::__uni

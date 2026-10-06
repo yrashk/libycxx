@@ -20,57 +20,57 @@
 #include <ycxx/core/type_traits.hpp>
 #include <ycxx/core/unique_ptr.hpp>
 
-namespace [[gnu::visibility("hidden")]] ycxx { namespace adl_free {
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __adl_free {
 // A scheduled evaluation (the base of every rcu_obj_base, and of rcu_retire's records).
-struct rcu_node {
-  rcu_node* rcu_next_;
-  void (*rcu_run_)(rcu_node*) noexcept; // evaluates it
-  unsigned long long rcu_epoch_;         // the domain's epoch when it was scheduled
+struct __rcu_node {
+  __rcu_node* __rcu_next_;
+  void (*__rcu_run_)(__rcu_node*) noexcept; // evaluates it
+  unsigned long long __rcu_epoch_;         // the domain's epoch when it was scheduled
 };
-}} // namespace ycxx::adl_free
+}} // namespace __ycxx::__adl_free
 
-namespace [[gnu::visibility("hidden")]] std {
+namespace [[__gnu__::__visibility__("hidden")]] std {
 class rcu_domain;
 rcu_domain& rcu_default_domain() noexcept;
 } // namespace std
 
-namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
-using adl_free::rcu_node;
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+using __adl_free::__rcu_node;
 
 // ---- the hosted runtime (src/hosted/rcu.cpp) ---------------------------------------------------
-void rcu_lock() noexcept;
-void rcu_unlock() noexcept;
+void __rcu_lock() noexcept;
+void __rcu_unlock() noexcept;
 void rcu_synchronize() noexcept;
 void rcu_barrier() noexcept;
 // Queues n (its rcu_run_ is set); may evaluate queued evaluations.
-void rcu_schedule(rcu_node* n) noexcept;
+void __rcu_schedule(__rcu_node* n) noexcept;
 
 // [saferecl.rcu.general]/2: exactly one public, non-virtual base rcu_obj_base<T, D>.
-template <class T>
-concept rcu_protectable = requires { typename T::ycxx_rcu_base; } &&
-                          std::is_same_v<typename T::ycxx_rcu_base::ycxx_rcu_object, T> &&
-                          requires(T* p, typename T::ycxx_rcu_base* b) {
-                            static_cast<typename T::ycxx_rcu_base*>(p);
-                            static_cast<T*>(b);
+template <class _Tp>
+concept __rcu_protectable = requires { typename _Tp::__ycxx_rcu_base; } &&
+                          std::is_same_v<typename _Tp::__ycxx_rcu_base::__ycxx_rcu_object, _Tp> &&
+                          requires(_Tp* p, typename _Tp::__ycxx_rcu_base* b) {
+                            static_cast<typename _Tp::__ycxx_rcu_base*>(p);
+                            static_cast<_Tp*>(b);
                           };
 
 // rcu_retire's record: the pointer and the deleter.
-template <class T, class D>
-struct rcu_retired final : rcu_node {
-  T* p;
-  [[no_unique_address]] D d;
+template <class _Tp, class _Dp>
+struct __rcu_retired final : __rcu_node {
+  _Tp* p;
+  [[no_unique_address]] _Dp d;
 
-  rcu_retired(T* q, D&& e) : rcu_node{nullptr, &run, 0}, p(q), d(static_cast<D&&>(e)) {}
-  static void run(rcu_node* n) noexcept {
-    rcu_retired* self = static_cast<rcu_retired*>(n);
-    self->d(self->p);
-    delete self;
+  __rcu_retired(_Tp* __q, _Dp&& e) : __rcu_node{nullptr, &run, 0}, p(__q), d(static_cast<_Dp&&>(e)) {}
+  static void run(__rcu_node* n) noexcept {
+    __rcu_retired* __self = static_cast<__rcu_retired*>(n);
+    __self->d(__self->p);
+    delete __self;
   }
 };
 
-}} // namespace ycxx::detail
+}} // namespace __ycxx::__detail
 
-namespace [[gnu::visibility("hidden")]] std {
+namespace [[__gnu__::__visibility__("hidden")]] std {
 
 // [saferecl.rcu.domain]
 class rcu_domain {
@@ -81,43 +81,43 @@ public:
   rcu_domain(const rcu_domain&) = delete;
   rcu_domain& operator=(const rcu_domain&) = delete;
 
-  void lock() noexcept { ycxx::detail::rcu_lock(); }
+  void lock() noexcept { __ycxx::__detail::__rcu_lock(); }
   bool try_lock() noexcept {
-    ycxx::detail::rcu_lock();
+    __ycxx::__detail::__rcu_lock();
     return true;
   }
-  void unlock() noexcept { ycxx::detail::rcu_unlock(); }
+  void unlock() noexcept { __ycxx::__detail::__rcu_unlock(); }
 };
 
 // The one rcu_domain object; it has no state of its own (the domain's state is the runtime's).
 inline rcu_domain& rcu_default_domain() noexcept {
-  static constinit rcu_domain domain;
-  return domain;
+  static constinit rcu_domain __domain;
+  return __domain;
 }
 
-inline void rcu_synchronize(rcu_domain& = rcu_default_domain()) noexcept { ycxx::detail::rcu_synchronize(); }
-inline void rcu_barrier(rcu_domain& = rcu_default_domain()) noexcept { ycxx::detail::rcu_barrier(); }
+inline void rcu_synchronize(rcu_domain& = rcu_default_domain()) noexcept { __ycxx::__detail::rcu_synchronize(); }
+inline void rcu_barrier(rcu_domain& = rcu_default_domain()) noexcept { __ycxx::__detail::rcu_barrier(); }
 
 // [saferecl.rcu.base]
-template <class T, class D = default_delete<T>>
-class rcu_obj_base : ycxx::adl_free::rcu_node {
-  [[no_unique_address]] D deleter_;
+template <class _Tp, class _Dp = default_delete<_Tp>>
+class rcu_obj_base : __ycxx::__adl_free::__rcu_node {
+  [[no_unique_address]] _Dp __deleter_;
 
-  static void run(ycxx::adl_free::rcu_node* n) noexcept {
-    rcu_obj_base* self = static_cast<rcu_obj_base*>(n);
-    self->deleter_(static_cast<T*>(self));
+  static void run(__ycxx::__adl_free::__rcu_node* n) noexcept {
+    rcu_obj_base* __self = static_cast<rcu_obj_base*>(n);
+    __self->__deleter_(static_cast<_Tp*>(__self));
   }
 
 public:
   // For the rcu-protectable check (ambiguous, so absent, when T has several rcu_obj_base bases).
-  using ycxx_rcu_base = rcu_obj_base;
-  using ycxx_rcu_object = T;
+  using __ycxx_rcu_base = rcu_obj_base;
+  using __ycxx_rcu_object = _Tp;
 
-  void retire(D d = D(), rcu_domain& = rcu_default_domain()) noexcept {
-    static_assert(ycxx::detail::rcu_protectable<T>, "rcu_obj_base::retire: T is not rcu-protectable");
-    deleter_ = static_cast<D&&>(d);
-    this->rcu_run_ = &run;
-    ycxx::detail::rcu_schedule(this);
+  void retire(_Dp d = _Dp(), rcu_domain& = rcu_default_domain()) noexcept {
+    static_assert(__ycxx::__detail::__rcu_protectable<_Tp>, "rcu_obj_base::retire: T is not rcu-protectable");
+    __deleter_ = static_cast<_Dp&&>(d);
+    this->__rcu_run_ = &run;
+    __ycxx::__detail::__rcu_schedule(this);
   }
 
 protected:
@@ -130,11 +130,11 @@ protected:
 };
 
 // [saferecl.rcu.domain.func]
-template <class T, class D = default_delete<T>>
-void rcu_retire(T* p, D d = D(), rcu_domain& = rcu_default_domain()) {
-  static_assert(is_move_constructible_v<D>, "rcu_retire: D must be move constructible");
-  static_assert(is_invocable_v<D&, T*&>, "rcu_retire: d(p) must be well-formed");
-  ycxx::detail::rcu_schedule(new ycxx::detail::rcu_retired<T, D>(p, static_cast<D&&>(d)));
+template <class _Tp, class _Dp = default_delete<_Tp>>
+void rcu_retire(_Tp* p, _Dp d = _Dp(), rcu_domain& = rcu_default_domain()) {
+  static_assert(is_move_constructible_v<_Dp>, "rcu_retire: D must be move constructible");
+  static_assert(is_invocable_v<_Dp&, _Tp*&>, "rcu_retire: d(p) must be well-formed");
+  __ycxx::__detail::__rcu_schedule(new __ycxx::__detail::__rcu_retired<_Tp, _Dp>(p, static_cast<_Dp&&>(d)));
 }
 
 } // namespace std

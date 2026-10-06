@@ -129,7 +129,7 @@ module;
 export module std;
 
 // DECISIONS §2: the module initializer is hidden like every other symbol of libycxx.
-asm((::ycxx::detail::hide_symbol("_ZGIW3std")));
+asm((::__ycxx::__detail::__hide_symbol("_ZGIW3std")));
 
 export namespace std {
   using std::FILE;
@@ -2065,6 +2065,14 @@ export namespace std {
   using std::wstringstream;
   using std::wsyncbuf;
   namespace views = std::ranges::views;
+  inline namespace __cpo {
+    using std::__cpo::compare_partial_order_fallback;
+    using std::__cpo::compare_strong_order_fallback;
+    using std::__cpo::compare_weak_order_fallback;
+    using std::__cpo::partial_order;
+    using std::__cpo::strong_order;
+    using std::__cpo::weak_order;
+  }
   namespace chrono {
     using std::chrono::April;
     using std::chrono::August;
@@ -2204,14 +2212,6 @@ export namespace std {
     using std::contracts::detection_mode;
     using std::contracts::evaluation_semantic;
     using std::contracts::invoke_default_contract_violation_handler;
-  }
-  inline namespace cpo {
-    using std::cpo::compare_partial_order_fallback;
-    using std::cpo::compare_strong_order_fallback;
-    using std::cpo::compare_weak_order_fallback;
-    using std::cpo::partial_order;
-    using std::cpo::strong_order;
-    using std::cpo::weak_order;
   }
   namespace execution {
     using std::execution::affine;
@@ -2841,24 +2841,24 @@ export namespace std {
     using std::ranges::wistream_view;
     using std::ranges::zip_transform_view;
     using std::ranges::zip_view;
-    inline namespace cpo {
-      using std::ranges::cpo::begin;
-      using std::ranges::cpo::cbegin;
-      using std::ranges::cpo::cdata;
-      using std::ranges::cpo::cend;
-      using std::ranges::cpo::crbegin;
-      using std::ranges::cpo::crend;
-      using std::ranges::cpo::data;
-      using std::ranges::cpo::empty;
-      using std::ranges::cpo::end;
-      using std::ranges::cpo::iter_move;
-      using std::ranges::cpo::iter_swap;
-      using std::ranges::cpo::rbegin;
-      using std::ranges::cpo::rend;
-      using std::ranges::cpo::reserve_hint;
-      using std::ranges::cpo::size;
-      using std::ranges::cpo::ssize;
-      using std::ranges::cpo::swap;
+    inline namespace __cpo {
+      using std::ranges::__cpo::begin;
+      using std::ranges::__cpo::cbegin;
+      using std::ranges::__cpo::cdata;
+      using std::ranges::__cpo::cend;
+      using std::ranges::__cpo::crbegin;
+      using std::ranges::__cpo::crend;
+      using std::ranges::__cpo::data;
+      using std::ranges::__cpo::empty;
+      using std::ranges::__cpo::end;
+      using std::ranges::__cpo::iter_move;
+      using std::ranges::__cpo::iter_swap;
+      using std::ranges::__cpo::rbegin;
+      using std::ranges::__cpo::rend;
+      using std::ranges::__cpo::reserve_hint;
+      using std::ranges::__cpo::size;
+      using std::ranges::__cpo::ssize;
+      using std::ranges::__cpo::swap;
     }
     namespace views {
       using std::ranges::views::adjacent;
@@ -3133,44 +3133,44 @@ export namespace std {
   }
 } // namespace std
 
-#if YCXX_HAS_BFLOAT16_T
+#if _YCXX_HAS_BFLOAT16_T
 export namespace std {
   using std::bfloat16_t;
 } // namespace std
 #endif
 
-#if YCXX_HAS_FLOAT128_T
+#if _YCXX_HAS_FLOAT128_T
 export namespace std {
   using std::float128_t;
 } // namespace std
 #endif
 
-#if YCXX_HAS_FLOAT16_T
+#if _YCXX_HAS_FLOAT16_T
 export namespace std {
   using std::float16_t;
 } // namespace std
 #endif
 
-#if YCXX_HAS_FLOAT32_T
+#if _YCXX_HAS_FLOAT32_T
 export namespace std {
   using std::float32_t;
 } // namespace std
 #endif
 
-#if YCXX_HAS_FLOAT64_T
+#if _YCXX_HAS_FLOAT64_T
 export namespace std {
   using std::float64_t;
 } // namespace std
 #endif
 
-#if YCXX_HAS_IS_STRUCTURAL
+#if _YCXX_HAS_IS_STRUCTURAL
 export namespace std {
   using std::is_structural;
   using std::is_structural_v;
 } // namespace std
 #endif
 
-#if YCXX_HAS_REFLECTION
+#if _YCXX_HAS_REFLECTION
 export namespace std {
   using std::define_static_array;
   using std::define_static_object;

@@ -27,427 +27,427 @@
 #include <ycxx/core/swap.hpp>
 #include <ycxx/core/utility_base.hpp>
 
-namespace [[gnu::visibility("hidden")]] std {
-template <class T, class Allocator>
+namespace [[__gnu__::__visibility__("hidden")]] std {
+template <class _Tp, class _Allocator>
 class list;
 }
 
-namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
 
-struct list_node_base {
-  list_node_base* prev;
-  list_node_base* next;
+struct __list_node_base {
+  __list_node_base* prev;
+  __list_node_base* next;
 };
 
-template <class T>
-struct list_node : list_node_base {
+template <class _Tp>
+struct __list_node : __list_node_base {
   union {
-    T value;
+    _Tp value;
   };
-  constexpr list_node() noexcept : list_node_base{nullptr, nullptr} {}
-  list_node(const list_node&) = delete;
-  constexpr ~list_node() {}
+  constexpr __list_node() noexcept : __list_node_base{nullptr, nullptr} {}
+  __list_node(const __list_node&) = delete;
+  constexpr ~__list_node() {}
 };
 
-}} // namespace ycxx::detail
+}} // namespace __ycxx::__detail
 
-namespace [[gnu::visibility("hidden")]] ycxx { namespace adl_free {
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __adl_free {
 
 // T is the element type, possibly const.
-template <class T, class Diff>
-class list_iter {
-  using V = std::remove_const_t<T>;
-  using base = ::ycxx::detail::list_node_base;
-  base* n_ = nullptr;
+template <class _Tp, class _Diff>
+class __list_iter {
+  using _Vp = std::remove_const_t<_Tp>;
+  using base = ::__ycxx::__detail::__list_node_base;
+  base* __n_ = nullptr;
 
   template <class, class>
-  friend class list_iter;
+  friend class __list_iter;
   template <class, class>
   friend class std::list;
 
-  constexpr explicit list_iter(base* n) noexcept : n_(n) {}
+  constexpr explicit __list_iter(base* n) noexcept : __n_(n) {}
 
 public:
   using iterator_concept = std::bidirectional_iterator_tag;
   using iterator_category = std::bidirectional_iterator_tag;
-  using value_type = V;
-  using difference_type = Diff;
-  using pointer = T*;
-  using reference = T&;
+  using value_type = _Vp;
+  using difference_type = _Diff;
+  using pointer = _Tp*;
+  using reference = _Tp&;
 
-  constexpr list_iter() noexcept = default;
-  template <class U>
-    requires std::is_same_v<const U, T> && (!std::is_same_v<U, T>)
-  constexpr list_iter(const list_iter<U, Diff>& o) noexcept : n_(o.n_) {}
+  constexpr __list_iter() noexcept = default;
+  template <class _Up>
+    requires std::is_same_v<const _Up, _Tp> && (!std::is_same_v<_Up, _Tp>)
+  constexpr __list_iter(const __list_iter<_Up, _Diff>& __o) noexcept : __n_(__o.__n_) {}
 
-  constexpr reference operator*() const noexcept { return static_cast<::ycxx::detail::list_node<V>*>(n_)->value; }
+  constexpr reference operator*() const noexcept { return static_cast<::__ycxx::__detail::__list_node<_Vp>*>(__n_)->value; }
   constexpr pointer operator->() const noexcept {
-    return __builtin_addressof(static_cast<::ycxx::detail::list_node<V>*>(n_)->value);
+    return __builtin_addressof(static_cast<::__ycxx::__detail::__list_node<_Vp>*>(__n_)->value);
   }
-  constexpr list_iter& operator++() noexcept {
-    n_ = n_->next;
+  constexpr __list_iter& operator++() noexcept {
+    __n_ = __n_->next;
     return *this;
   }
-  constexpr list_iter operator++(int) noexcept {
-    list_iter t = *this;
-    n_ = n_->next;
+  constexpr __list_iter operator++(int) noexcept {
+    __list_iter t = *this;
+    __n_ = __n_->next;
     return t;
   }
-  constexpr list_iter& operator--() noexcept {
-    n_ = n_->prev;
+  constexpr __list_iter& operator--() noexcept {
+    __n_ = __n_->prev;
     return *this;
   }
-  constexpr list_iter operator--(int) noexcept {
-    list_iter t = *this;
-    n_ = n_->prev;
+  constexpr __list_iter operator--(int) noexcept {
+    __list_iter t = *this;
+    __n_ = __n_->prev;
     return t;
   }
-  friend constexpr bool operator==(const list_iter& a, const list_iter& b) noexcept { return a.n_ == b.n_; }
+  friend constexpr bool operator==(const __list_iter& a, const __list_iter& b) noexcept { return a.__n_ == b.__n_; }
 };
 
-}} // namespace ycxx::adl_free
+}} // namespace __ycxx::__adl_free
 
-namespace [[gnu::visibility("hidden")]] std {
+namespace [[__gnu__::__visibility__("hidden")]] std {
 
-template <class T, class Allocator = allocator<T>>
+template <class _Tp, class _Allocator = allocator<_Tp>>
 class list;
 
-template <class T, class Allocator>
+template <class _Tp, class _Allocator>
 class list {
-  static_assert(ycxx::detail::allocator_for<Allocator, T>,
+  static_assert(__ycxx::__detail::__allocator_for<_Allocator, _Tp>,
                 "std::list: Allocator::value_type must be T ([container.alloc.reqmts])");
 
-  using info = ycxx::detail::alloc_info<Allocator>;
-  using alloc_traits = allocator_traits<Allocator>;
-  using node = ycxx::detail::list_node<T>;
-  using node_base = ycxx::detail::list_node_base;
-  using node_alloc = typename info::template rebind<node>;
-  using node_traits = allocator_traits<node_alloc>;
+  using info = __ycxx::__detail::__alloc_info<_Allocator>;
+  using __alloc_traits = allocator_traits<_Allocator>;
+  using node = __ycxx::__detail::__list_node<_Tp>;
+  using __node_base = __ycxx::__detail::__list_node_base;
+  using __node_alloc = typename info::template rebind<node>;
+  using __node_traits = allocator_traits<__node_alloc>;
 
 public:
   // ---- types ----
-  using value_type = T;
-  using allocator_type = Allocator;
+  using value_type = _Tp;
+  using allocator_type = _Allocator;
   using pointer = typename info::pointer;
   using const_pointer = typename info::const_pointer;
   using reference = value_type&;
   using const_reference = const value_type&;
   using size_type = typename info::size_type;
   using difference_type = typename info::difference_type;
-  using iterator = ycxx::adl_free::list_iter<T, difference_type>;
-  using const_iterator = ycxx::adl_free::list_iter<const T, difference_type>;
+  using iterator = __ycxx::__adl_free::__list_iter<_Tp, difference_type>;
+  using const_iterator = __ycxx::__adl_free::__list_iter<const _Tp, difference_type>;
   using reverse_iterator = std::reverse_iterator<iterator>;
   using const_reverse_iterator = std::reverse_iterator<const_iterator>;
 
 private:
-  static constexpr bool pocca = info::pocca;
-  static constexpr bool pocma = info::pocma;
-  static constexpr bool pocs = info::pocs;
-  static constexpr bool always_equal = info::always_equal;
+  static constexpr bool __pocca = info::__pocca;
+  static constexpr bool __pocma = info::__pocma;
+  static constexpr bool __pocs = info::__pocs;
+  static constexpr bool __always_equal = info::__always_equal;
 
-  node_base head_ = {nullptr, nullptr};
-  node_base* sent_ = nullptr;
-  size_type size_ = 0;
-  [[no_unique_address]] node_alloc na_;
+  __node_base __head_ = {nullptr, nullptr};
+  __node_base* __sent_ = nullptr;
+  size_type __size_ = 0;
+  [[no_unique_address]] __node_alloc __na_;
 
   // ---- nodes ----
-  constexpr node_base* end_node() const noexcept { return sent_; }
-  constexpr node_base* first_node() const noexcept { return sent_ ? sent_->next : nullptr; }
-  constexpr node_base* sentinel() {
-    if (!sent_) {
+  constexpr __node_base* __end_node() const noexcept { return __sent_; }
+  constexpr __node_base* __first_node() const noexcept { return __sent_ ? __sent_->next : nullptr; }
+  constexpr __node_base* sentinel() {
+    if (!__sent_) {
       if consteval {
-        sent_ = allocator<node_base>().allocate(1);
-        std::construct_at(sent_);
+        __sent_ = allocator<__node_base>().allocate(1);
+        std::construct_at(__sent_);
       } else {
-        sent_ = __builtin_addressof(head_);
+        __sent_ = __builtin_addressof(__head_);
       }
-      sent_->prev = sent_->next = sent_;
+      __sent_->prev = __sent_->next = __sent_;
     }
-    return sent_;
+    return __sent_;
   }
   // The node of position p (the sentinel, created if need be, for end()).
-  constexpr node_base* pos_node(const_iterator p) { return p.n_ ? p.n_ : sentinel(); }
-  static constexpr T& value(node_base* n) noexcept { return static_cast<node*>(n)->value; }
+  constexpr __node_base* __pos_node(const_iterator p) { return p.__n_ ? p.__n_ : sentinel(); }
+  static constexpr _Tp& value(__node_base* n) noexcept { return static_cast<node*>(n)->value; }
 
-  template <class... Args>
-  constexpr node* make_node(Args&&... args) {
-    node* n = std::to_address(node_traits::allocate(na_, 1));
+  template <class... _Args>
+  constexpr node* __make_node(_Args&&... __args) {
+    node* n = std::to_address(__node_traits::allocate(__na_, 1));
     std::construct_at(n);
-    ycxx::detail::rollback rb{[&] {
+    __ycxx::__detail::__rollback __rb{[&] {
       std::destroy_at(n);
-      node_traits::deallocate(na_, ycxx::detail::to_alloc_pointer<typename node_traits::pointer>(n), 1);
+      __node_traits::deallocate(__na_, __ycxx::__detail::__to_alloc_pointer<typename __node_traits::pointer>(n), 1);
     }};
-    node_traits::construct(na_, __builtin_addressof(n->value), static_cast<Args&&>(args)...);
-    rb.release();
+    __node_traits::construct(__na_, __builtin_addressof(n->value), static_cast<_Args&&>(__args)...);
+    __rb.release();
     return n;
   }
-  constexpr void free_node(node_base* b) noexcept {
+  constexpr void __free_node(__node_base* b) noexcept {
     node* n = static_cast<node*>(b);
-    node_traits::destroy(na_, __builtin_addressof(n->value));
+    __node_traits::destroy(__na_, __builtin_addressof(n->value));
     std::destroy_at(n);
-    node_traits::deallocate(na_, ycxx::detail::to_alloc_pointer<typename node_traits::pointer>(n), 1);
+    __node_traits::deallocate(__na_, __ycxx::__detail::__to_alloc_pointer<typename __node_traits::pointer>(n), 1);
   }
 
   // The nodes of *this, detached: *this becomes empty.
-  struct ring {
-    node_base* first = nullptr;
-    node_base* last = nullptr;
+  struct __ring {
+    __node_base* first = nullptr;
+    __node_base* last = nullptr;
     size_type n = 0;
   };
-  constexpr ring detach() noexcept {
-    if (size_ == 0)
+  constexpr __ring detach() noexcept {
+    if (__size_ == 0)
       return {};
-    ring r{sent_->next, sent_->prev, size_};
-    sent_->prev = sent_->next = sent_;
-    size_ = 0;
+    __ring r{__sent_->next, __sent_->prev, __size_};
+    __sent_->prev = __sent_->next = __sent_;
+    __size_ = 0;
     return r;
   }
   // Links r into *this, which must be empty.
-  constexpr void attach(ring r) {
+  constexpr void __attach(__ring r) {
     if (r.n == 0)
       return;
-    node_base* s = sentinel();
+    __node_base* s = sentinel();
     r.first->prev = s;
     r.last->next = s;
     s->next = r.first;
     s->prev = r.last;
-    size_ = r.n;
+    __size_ = r.n;
   }
-  static constexpr void link_before(node_base* pos, node_base* n) noexcept {
-    n->prev = pos->prev;
-    n->next = pos;
-    pos->prev->next = n;
-    pos->prev = n;
+  static constexpr void __link_before(__node_base* __pos, __node_base* n) noexcept {
+    n->prev = __pos->prev;
+    n->next = __pos;
+    __pos->prev->next = n;
+    __pos->prev = n;
   }
-  static constexpr void unlink(node_base* n) noexcept {
+  static constexpr void __unlink(__node_base* n) noexcept {
     n->prev->next = n->next;
     n->next->prev = n->prev;
   }
   // Moves the nodes [f, l) before pos; pos is not in [f, l).
-  static constexpr void transfer(node_base* pos, node_base* f, node_base* l) noexcept {
-    if (f == l || pos == l)
+  static constexpr void __transfer(__node_base* __pos, __node_base* __f, __node_base* __l) noexcept {
+    if (__f == __l || __pos == __l)
       return;
-    node_base* last = l->prev;
-    f->prev->next = l;
-    l->prev = f->prev;
-    node_base* p = pos->prev;
-    p->next = f;
-    f->prev = p;
-    last->next = pos;
-    pos->prev = last;
+    __node_base* last = __l->prev;
+    __f->prev->next = __l;
+    __l->prev = __f->prev;
+    __node_base* p = __pos->prev;
+    p->next = __f;
+    __f->prev = p;
+    last->next = __pos;
+    __pos->prev = last;
   }
   // Takes over o's nodes; *this owns none.
-  constexpr void take(list& o) noexcept { attach(o.detach()); }
+  constexpr void take(list& __o) noexcept { __attach(__o.detach()); }
 
   // A detached chain of nodes, linked through prev/next from first to last.
-  struct chain {
-    list* owner;
-    node_base* first = nullptr;
-    node_base* last = nullptr;
+  struct __chain {
+    list* __owner;
+    __node_base* first = nullptr;
+    __node_base* last = nullptr;
     size_type n = 0;
-    constexpr explicit chain(list* o) noexcept : owner(o) {}
-    chain(const chain&) = delete;
-    constexpr ~chain() {
+    constexpr explicit __chain(list* __o) noexcept : __owner(__o) {}
+    __chain(const __chain&) = delete;
+    constexpr ~__chain() {
       while (first) {
-        node_base* nx = first == last ? nullptr : first->next;
-        owner->free_node(first);
-        first = nx;
+        __node_base* __nx = first == last ? nullptr : first->next;
+        __owner->__free_node(first);
+        first = __nx;
       }
     }
-    constexpr void push(node_base* x) noexcept {
+    constexpr void push(__node_base* __x) noexcept {
       if (first) {
-        last->next = x;
-        x->prev = last;
+        last->next = __x;
+        __x->prev = last;
       } else {
-        first = x;
+        first = __x;
       }
-      last = x;
+      last = __x;
       ++n;
     }
   };
   // Links c before pos (null: end()); returns the first linked node (pos if c is empty).
-  constexpr node_base* splice_chain(node_base* pos, chain& c) {
-    node_base* const f = c.first;
-    if (!f)
-      return pos;
-    if (!pos)
-      pos = sentinel();
-    node_base* p = pos->prev;
-    p->next = f;
-    f->prev = p;
-    c.last->next = pos;
-    pos->prev = c.last;
-    size_ += c.n;
+  constexpr __node_base* __splice_chain(__node_base* __pos, __chain& c) {
+    __node_base* const __f = c.first;
+    if (!__f)
+      return __pos;
+    if (!__pos)
+      __pos = sentinel();
+    __node_base* p = __pos->prev;
+    p->next = __f;
+    __f->prev = p;
+    c.last->next = __pos;
+    __pos->prev = c.last;
+    __size_ += c.n;
     c.first = c.last = nullptr;
     c.n = 0;
-    return f;
+    return __f;
   }
 
-  template <class It, class Sent>
-  constexpr node_base* insert_elems(node_base* pos, It first, Sent last) {
-    chain c(this);
+  template <class _It, class _Sent>
+  constexpr __node_base* __insert_elems(__node_base* __pos, _It first, _Sent last) {
+    __chain c(this);
     for (; first != last; ++first)
-      c.push(make_node(*first));
-    return splice_chain(pos, c);
+      c.push(__make_node(*first));
+    return __splice_chain(__pos, c);
   }
-  template <class... Args>
-  constexpr node_base* insert_n(node_base* pos, size_type n, const Args&... args) {
-    chain c(this);
+  template <class... _Args>
+  constexpr __node_base* __insert_n(__node_base* __pos, size_type n, const _Args&... __args) {
+    __chain c(this);
     for (size_type i = 0; i < n; ++i)
-      c.push(make_node(args...));
-    return splice_chain(pos, c);
+      c.push(__make_node(__args...));
+    return __splice_chain(__pos, c);
   }
-  constexpr void check_alloc(const list& x) const noexcept {
-    if constexpr (!always_equal)
-      ycxx::detail::precondition(na_ == x.na_, "std::list: splice or merge between lists with unequal allocators");
+  constexpr void __check_alloc(const list& __x) const noexcept {
+    if constexpr (!__always_equal)
+      __ycxx::__detail::__precondition(__na_ == __x.__na_, "std::list: splice or merge between lists with unequal allocators");
   }
 
   // The node at index i (i <= size_), walking from the closer end.
-  constexpr node_base* node_at(size_type i) const noexcept {
-    node_base* p;
-    if (i <= size_ / 2) {
-      p = first_node();
+  constexpr __node_base* __node_at(size_type i) const noexcept {
+    __node_base* p;
+    if (i <= __size_ / 2) {
+      p = __first_node();
       for (; i > 0; --i)
         p = p->next;
     } else {
-      p = end_node();
-      for (i = size_ - i; i > 0; --i)
+      p = __end_node();
+      for (i = __size_ - i; i > 0; --i)
         p = p->prev;
     }
     return p;
   }
 
   // Destroys the nodes of a null-terminated chain linked through next.
-  struct graveyard {
-    list* owner;
-    node_base* head = nullptr;
-    constexpr ~graveyard() {
-      while (head) {
-        node_base* nx = head->next;
-        owner->free_node(head);
-        head = nx;
+  struct __graveyard {
+    list* __owner;
+    __node_base* __head = nullptr;
+    constexpr ~__graveyard() {
+      while (__head) {
+        __node_base* __nx = __head->next;
+        __owner->__free_node(__head);
+        __head = __nx;
       }
     }
-    constexpr void bury(node_base* n) noexcept {
-      n->next = head;
-      head = n;
+    constexpr void __bury(__node_base* n) noexcept {
+      n->next = __head;
+      __head = n;
     }
   };
 
-  template <class It, class Sent>
-  constexpr void assign_elems(It first, Sent last) {
-    node_base* p = first_node();
-    for (; first != last && p != end_node(); ++first, (void)(p = p->next))
+  template <class _It, class _Sent>
+  constexpr void __assign_elems(_It first, _Sent last) {
+    __node_base* p = __first_node();
+    for (; first != last && p != __end_node(); ++first, (void)(p = p->next))
       value(p) = *first;
     if (first == last)
       erase(const_iterator(p), cend());
     else
-      insert_elems(end_node(), static_cast<It&&>(first), static_cast<Sent&&>(last));
+      __insert_elems(__end_node(), static_cast<_It&&>(first), static_cast<_Sent&&>(last));
   }
 
 public:
   // ---- [list.cons] ----
-  constexpr list() noexcept(is_nothrow_default_constructible_v<Allocator>) : list(Allocator()) {}
-  constexpr explicit list(const Allocator& a) noexcept : na_(a) {}
-  constexpr explicit list(size_type n, const Allocator& a = Allocator()) : list(a) { insert_n(end_node(), n); }
-  constexpr list(size_type n, const T& value, const Allocator& a = Allocator()) : list(a) {
-    insert_n(end_node(), n, value);
+  constexpr list() noexcept(is_nothrow_default_constructible_v<_Allocator>) : list(_Allocator()) {}
+  constexpr explicit list(const _Allocator& a) noexcept : __na_(a) {}
+  constexpr explicit list(size_type n, const _Allocator& a = _Allocator()) : list(a) { __insert_n(__end_node(), n); }
+  constexpr list(size_type n, const _Tp& value, const _Allocator& a = _Allocator()) : list(a) {
+    __insert_n(__end_node(), n, value);
   }
-  template <class InputIterator>
-    requires ycxx::detail::qualifies_as_input_iterator<InputIterator>
-  constexpr list(InputIterator first, InputIterator last, const Allocator& a = Allocator()) : list(a) {
-    insert_elems(end_node(), static_cast<InputIterator&&>(first), static_cast<InputIterator&&>(last));
+  template <class _InputIterator>
+    requires __ycxx::__detail::__qualifies_as_input_iterator<_InputIterator>
+  constexpr list(_InputIterator first, _InputIterator last, const _Allocator& a = _Allocator()) : list(a) {
+    __insert_elems(__end_node(), static_cast<_InputIterator&&>(first), static_cast<_InputIterator&&>(last));
   }
-  template <ycxx::detail::container_compatible_range<T> R>
-  constexpr list(from_range_t, R&& rg, const Allocator& a = Allocator()) : list(a) {
-    insert_elems(end_node(), ranges::begin(rg), ranges::end(rg));
+  template <__ycxx::__detail::__container_compatible_range<_Tp> _Rp>
+  constexpr list(from_range_t, _Rp&& __rg, const _Allocator& a = _Allocator()) : list(a) {
+    __insert_elems(__end_node(), ranges::begin(__rg), ranges::end(__rg));
   }
-  constexpr list(const list& x) : list(alloc_traits::select_on_container_copy_construction(Allocator(x.na_))) {
-    insert_elems(end_node(), x.begin(), x.end());
+  constexpr list(const list& __x) : list(__alloc_traits::select_on_container_copy_construction(_Allocator(__x.__na_))) {
+    __insert_elems(__end_node(), __x.begin(), __x.end());
   }
-  constexpr list(list&& x) noexcept(is_nothrow_move_constructible_v<node_alloc>) : na_(static_cast<node_alloc&&>(x.na_)) { take(x); }
-  constexpr list(const list& x, const type_identity_t<Allocator>& a) : list(a) {
-    insert_elems(end_node(), x.begin(), x.end());
+  constexpr list(list&& __x) noexcept(is_nothrow_move_constructible_v<__node_alloc>) : __na_(static_cast<__node_alloc&&>(__x.__na_)) { take(__x); }
+  constexpr list(const list& __x, const type_identity_t<_Allocator>& a) : list(a) {
+    __insert_elems(__end_node(), __x.begin(), __x.end());
   }
   // noexcept when the allocators always compare equal (an extension: nothing is allocated).
-  constexpr list(list&& x, const type_identity_t<Allocator>& a) noexcept(always_equal) : list(a) {
-    if (always_equal || na_ == x.na_)
-      take(x);
+  constexpr list(list&& __x, const type_identity_t<_Allocator>& a) noexcept(__always_equal) : list(a) {
+    if (__always_equal || __na_ == __x.__na_)
+      take(__x);
     else
-      insert_elems(end_node(), std::make_move_iterator(x.begin()), std::make_move_iterator(x.end()));
+      __insert_elems(__end_node(), std::make_move_iterator(__x.begin()), std::make_move_iterator(__x.end()));
   }
-  constexpr list(initializer_list<T> il, const Allocator& a = Allocator()) : list(a) {
-    insert_elems(end_node(), il.begin(), il.end());
+  constexpr list(initializer_list<_Tp> il, const _Allocator& a = _Allocator()) : list(a) {
+    __insert_elems(__end_node(), il.begin(), il.end());
   }
   constexpr ~list() {
     clear();
-    if (sent_ && sent_ != __builtin_addressof(head_)) {
-      std::destroy_at(sent_);
-      allocator<node_base>().deallocate(sent_, 1);
+    if (__sent_ && __sent_ != __builtin_addressof(__head_)) {
+      std::destroy_at(__sent_);
+      allocator<__node_base>().deallocate(__sent_, 1);
     }
   }
 
-  constexpr list& operator=(const list& x) {
-    if (this == __builtin_addressof(x))
+  constexpr list& operator=(const list& __x) {
+    if (this == __builtin_addressof(__x))
       return *this;
-    if constexpr (pocca) {
-      if (!always_equal && na_ != x.na_)
+    if constexpr (__pocca) {
+      if (!__always_equal && __na_ != __x.__na_)
         clear();
-      na_ = x.na_;
+      __na_ = __x.__na_;
     }
-    assign_elems(x.begin(), x.end());
+    __assign_elems(__x.begin(), __x.end());
     return *this;
   }
-  constexpr list& operator=(list&& x) noexcept(always_equal) {
-    if (this == __builtin_addressof(x))
+  constexpr list& operator=(list&& __x) noexcept(__always_equal) {
+    if (this == __builtin_addressof(__x))
       return *this;
-    if constexpr (pocma || always_equal) {
+    if constexpr (__pocma || __always_equal) {
       clear();
-      if constexpr (pocma)
-        na_ = static_cast<node_alloc&&>(x.na_);
-      take(x);
+      if constexpr (__pocma)
+        __na_ = static_cast<__node_alloc&&>(__x.__na_);
+      take(__x);
     } else {
-      if (na_ == x.na_) {
+      if (__na_ == __x.__na_) {
         clear();
-        take(x);
+        take(__x);
       } else {
-        assign_elems(std::make_move_iterator(x.begin()), std::make_move_iterator(x.end()));
+        __assign_elems(std::make_move_iterator(__x.begin()), std::make_move_iterator(__x.end()));
       }
     }
     return *this;
   }
-  constexpr list& operator=(initializer_list<T> il) {
-    assign_elems(il.begin(), il.end());
+  constexpr list& operator=(initializer_list<_Tp> il) {
+    __assign_elems(il.begin(), il.end());
     return *this;
   }
-  template <class InputIterator>
-    requires ycxx::detail::qualifies_as_input_iterator<InputIterator>
-  constexpr void assign(InputIterator first, InputIterator last) {
-    assign_elems(static_cast<InputIterator&&>(first), static_cast<InputIterator&&>(last));
+  template <class _InputIterator>
+    requires __ycxx::__detail::__qualifies_as_input_iterator<_InputIterator>
+  constexpr void assign(_InputIterator first, _InputIterator last) {
+    __assign_elems(static_cast<_InputIterator&&>(first), static_cast<_InputIterator&&>(last));
   }
-  template <ycxx::detail::container_compatible_range<T> R>
-  constexpr void assign_range(R&& rg) {
-    static_assert(assignable_from<T&, ranges::range_reference_t<R>>,
+  template <__ycxx::__detail::__container_compatible_range<_Tp> _Rp>
+  constexpr void assign_range(_Rp&& __rg) {
+    static_assert(assignable_from<_Tp&, ranges::range_reference_t<_Rp>>,
                   "std::list::assign_range: T must be assignable from the range's reference type");
-    assign_elems(ranges::begin(rg), ranges::end(rg));
+    __assign_elems(ranges::begin(__rg), ranges::end(__rg));
   }
-  constexpr void assign(size_type n, const T& t) {
-    node_base* p = first_node();
-    for (; n > 0 && p != end_node(); --n, p = p->next)
+  constexpr void assign(size_type n, const _Tp& t) {
+    __node_base* p = __first_node();
+    for (; n > 0 && p != __end_node(); --n, p = p->next)
       value(p) = t;
     if (n == 0)
       erase(const_iterator(p), cend());
     else
-      insert_n(end_node(), n, t);
+      __insert_n(__end_node(), n, t);
   }
-  constexpr void assign(initializer_list<T> il) { assign_elems(il.begin(), il.end()); }
-  constexpr allocator_type get_allocator() const noexcept { return allocator_type(na_); }
+  constexpr void assign(initializer_list<_Tp> il) { __assign_elems(il.begin(), il.end()); }
+  constexpr allocator_type get_allocator() const noexcept { return allocator_type(__na_); }
 
   // ---- iterators ----
-  constexpr iterator begin() noexcept { return iterator(first_node()); }
-  constexpr const_iterator begin() const noexcept { return const_iterator(first_node()); }
-  constexpr iterator end() noexcept { return iterator(end_node()); }
-  constexpr const_iterator end() const noexcept { return const_iterator(end_node()); }
+  constexpr iterator begin() noexcept { return iterator(__first_node()); }
+  constexpr const_iterator begin() const noexcept { return const_iterator(__first_node()); }
+  constexpr iterator end() noexcept { return iterator(__end_node()); }
+  constexpr const_iterator end() const noexcept { return const_iterator(__end_node()); }
   constexpr reverse_iterator rbegin() noexcept { return reverse_iterator(end()); }
   constexpr const_reverse_iterator rbegin() const noexcept { return const_reverse_iterator(end()); }
   constexpr reverse_iterator rend() noexcept { return reverse_iterator(begin()); }
@@ -458,274 +458,274 @@ public:
   constexpr const_reverse_iterator crend() const noexcept { return rend(); }
 
   // ---- [list.capacity] ----
-  [[nodiscard]] constexpr bool empty() const noexcept { return size_ == 0; }
-  constexpr size_type size() const noexcept { return size_; }
+  [[nodiscard]] constexpr bool empty() const noexcept { return __size_ == 0; }
+  constexpr size_type size() const noexcept { return __size_; }
   constexpr size_type max_size() const noexcept {
-    const auto a = static_cast<size_type>(node_traits::max_size(na_));
+    const auto a = static_cast<size_type>(__node_traits::max_size(__na_));
     const auto d = static_cast<size_type>(numeric_limits<difference_type>::max());
     return a < d ? a : d;
   }
-  constexpr void resize(size_type sz) {
-    if (sz < size_)
-      erase(const_iterator(node_at(sz)), cend());
+  constexpr void resize(size_type __sz) {
+    if (__sz < __size_)
+      erase(const_iterator(__node_at(__sz)), cend());
     else
-      insert_n(end_node(), sz - size_);
+      __insert_n(__end_node(), __sz - __size_);
   }
-  constexpr void resize(size_type sz, const T& c) {
-    if (sz < size_)
-      erase(const_iterator(node_at(sz)), cend());
+  constexpr void resize(size_type __sz, const _Tp& c) {
+    if (__sz < __size_)
+      erase(const_iterator(__node_at(__sz)), cend());
     else
-      insert_n(end_node(), sz - size_, c);
+      __insert_n(__end_node(), __sz - __size_, c);
   }
 
   // ---- element access ----
   constexpr reference front() {
-    ycxx::detail::precondition(size_ != 0, "std::list::front: empty list");
-    return value(sent_->next);
+    __ycxx::__detail::__precondition(__size_ != 0, "std::list::front: empty list");
+    return value(__sent_->next);
   }
   constexpr const_reference front() const {
-    ycxx::detail::precondition(size_ != 0, "std::list::front: empty list");
-    return value(sent_->next);
+    __ycxx::__detail::__precondition(__size_ != 0, "std::list::front: empty list");
+    return value(__sent_->next);
   }
   constexpr reference back() {
-    ycxx::detail::precondition(size_ != 0, "std::list::back: empty list");
-    return value(sent_->prev);
+    __ycxx::__detail::__precondition(__size_ != 0, "std::list::back: empty list");
+    return value(__sent_->prev);
   }
   constexpr const_reference back() const {
-    ycxx::detail::precondition(size_ != 0, "std::list::back: empty list");
-    return value(sent_->prev);
+    __ycxx::__detail::__precondition(__size_ != 0, "std::list::back: empty list");
+    return value(__sent_->prev);
   }
 
   // ---- [list.modifiers] ----
-  template <class... Args>
-  constexpr reference emplace_front(Args&&... args) {
-    return *emplace(cbegin(), static_cast<Args&&>(args)...);
+  template <class... _Args>
+  constexpr reference emplace_front(_Args&&... __args) {
+    return *emplace(cbegin(), static_cast<_Args&&>(__args)...);
   }
-  template <class... Args>
-  constexpr reference emplace_back(Args&&... args) {
-    return *emplace(cend(), static_cast<Args&&>(args)...);
+  template <class... _Args>
+  constexpr reference emplace_back(_Args&&... __args) {
+    return *emplace(cend(), static_cast<_Args&&>(__args)...);
   }
-  constexpr void push_front(const T& x) { emplace(cbegin(), x); }
-  constexpr void push_front(T&& x) { emplace(cbegin(), static_cast<T&&>(x)); }
-  template <ycxx::detail::container_compatible_range<T> R>
-  constexpr void prepend_range(R&& rg) {
-    insert_elems(first_node(), ranges::begin(rg), ranges::end(rg));
+  constexpr void push_front(const _Tp& __x) { emplace(cbegin(), __x); }
+  constexpr void push_front(_Tp&& __x) { emplace(cbegin(), static_cast<_Tp&&>(__x)); }
+  template <__ycxx::__detail::__container_compatible_range<_Tp> _Rp>
+  constexpr void prepend_range(_Rp&& __rg) {
+    __insert_elems(__first_node(), ranges::begin(__rg), ranges::end(__rg));
   }
   constexpr void pop_front() {
-    ycxx::detail::precondition(size_ != 0, "std::list::pop_front: empty list");
+    __ycxx::__detail::__precondition(__size_ != 0, "std::list::pop_front: empty list");
     erase(cbegin());
   }
-  constexpr void push_back(const T& x) { emplace(cend(), x); }
-  constexpr void push_back(T&& x) { emplace(cend(), static_cast<T&&>(x)); }
-  template <ycxx::detail::container_compatible_range<T> R>
-  constexpr void append_range(R&& rg) {
-    insert_elems(end_node(), ranges::begin(rg), ranges::end(rg));
+  constexpr void push_back(const _Tp& __x) { emplace(cend(), __x); }
+  constexpr void push_back(_Tp&& __x) { emplace(cend(), static_cast<_Tp&&>(__x)); }
+  template <__ycxx::__detail::__container_compatible_range<_Tp> _Rp>
+  constexpr void append_range(_Rp&& __rg) {
+    __insert_elems(__end_node(), ranges::begin(__rg), ranges::end(__rg));
   }
   constexpr void pop_back() {
-    ycxx::detail::precondition(size_ != 0, "std::list::pop_back: empty list");
-    erase(const_iterator(sent_->prev));
+    __ycxx::__detail::__precondition(__size_ != 0, "std::list::pop_back: empty list");
+    erase(const_iterator(__sent_->prev));
   }
-  template <class... Args>
-  constexpr iterator emplace(const_iterator position, Args&&... args) {
-    if (size_ == max_size())
-      ycxx::detail::throw_length_error("std::list: size would exceed max_size()");
-    node_base* const pos = pos_node(position);
-    node* n = make_node(static_cast<Args&&>(args)...);
-    link_before(pos, n);
-    ++size_;
+  template <class... _Args>
+  constexpr iterator emplace(const_iterator position, _Args&&... __args) {
+    if (__size_ == max_size())
+      __ycxx::__detail::__throw_length_error("std::list: size would exceed max_size()");
+    __node_base* const __pos = __pos_node(position);
+    node* n = __make_node(static_cast<_Args&&>(__args)...);
+    __link_before(__pos, n);
+    ++__size_;
     return iterator(n);
   }
-  constexpr iterator insert(const_iterator position, const T& x) { return emplace(position, x); }
-  constexpr iterator insert(const_iterator position, T&& x) { return emplace(position, static_cast<T&&>(x)); }
-  constexpr iterator insert(const_iterator position, size_type n, const T& x) {
-    return iterator(insert_n(position.n_, n, x));
+  constexpr iterator insert(const_iterator position, const _Tp& __x) { return emplace(position, __x); }
+  constexpr iterator insert(const_iterator position, _Tp&& __x) { return emplace(position, static_cast<_Tp&&>(__x)); }
+  constexpr iterator insert(const_iterator position, size_type n, const _Tp& __x) {
+    return iterator(__insert_n(position.__n_, n, __x));
   }
-  template <class InputIterator>
-    requires ycxx::detail::qualifies_as_input_iterator<InputIterator>
-  constexpr iterator insert(const_iterator position, InputIterator first, InputIterator last) {
+  template <class _InputIterator>
+    requires __ycxx::__detail::__qualifies_as_input_iterator<_InputIterator>
+  constexpr iterator insert(const_iterator position, _InputIterator first, _InputIterator last) {
     return iterator(
-        insert_elems(position.n_, static_cast<InputIterator&&>(first), static_cast<InputIterator&&>(last)));
+        __insert_elems(position.__n_, static_cast<_InputIterator&&>(first), static_cast<_InputIterator&&>(last)));
   }
-  template <ycxx::detail::container_compatible_range<T> R>
-  constexpr iterator insert_range(const_iterator position, R&& rg) {
-    return iterator(insert_elems(position.n_, ranges::begin(rg), ranges::end(rg)));
+  template <__ycxx::__detail::__container_compatible_range<_Tp> _Rp>
+  constexpr iterator insert_range(const_iterator position, _Rp&& __rg) {
+    return iterator(__insert_elems(position.__n_, ranges::begin(__rg), ranges::end(__rg)));
   }
-  constexpr iterator insert(const_iterator position, initializer_list<T> il) {
-    return iterator(insert_elems(position.n_, il.begin(), il.end()));
+  constexpr iterator insert(const_iterator position, initializer_list<_Tp> il) {
+    return iterator(__insert_elems(position.__n_, il.begin(), il.end()));
   }
   constexpr iterator erase(const_iterator position) {
-    node_base* n = position.n_;
-    node_base* nx = n->next;
-    unlink(n);
-    --size_;
-    free_node(n);
-    return iterator(nx);
+    __node_base* n = position.__n_;
+    __node_base* __nx = n->next;
+    __unlink(n);
+    --__size_;
+    __free_node(n);
+    return iterator(__nx);
   }
   constexpr iterator erase(const_iterator first, const_iterator last) {
-    node_base* p = first.n_;
-    while (p != last.n_) {
-      node_base* nx = p->next;
-      unlink(p);
-      --size_;
-      free_node(p);
-      p = nx;
+    __node_base* p = first.__n_;
+    while (p != last.__n_) {
+      __node_base* __nx = p->next;
+      __unlink(p);
+      --__size_;
+      __free_node(p);
+      p = __nx;
     }
-    return iterator(last.n_);
+    return iterator(last.__n_);
   }
-  constexpr void swap(list& x) noexcept(always_equal) {
-    if (this == __builtin_addressof(x))
+  constexpr void swap(list& __x) noexcept(__always_equal) {
+    if (this == __builtin_addressof(__x))
       return;
-    if constexpr (pocs)
-      ::ycxx::detail::swap_adl::do_swap(na_, x.na_);
+    if constexpr (__pocs)
+      ::__ycxx::__detail::__swap_adl::__do_swap(__na_, __x.__na_);
     else
-      ycxx::detail::precondition(always_equal || na_ == x.na_,
+      __ycxx::__detail::__precondition(__always_equal || __na_ == __x.__na_,
                                  "std::list::swap: unequal allocators that do not propagate");
-    const ring a = detach(), b = x.detach();
-    attach(b);
-    x.attach(a);
+    const __ring a = detach(), b = __x.detach();
+    __attach(b);
+    __x.__attach(a);
   }
   constexpr void clear() noexcept {
-    if (!sent_)
+    if (!__sent_)
       return;
-    node_base* p = sent_->next;
-    while (p != sent_) {
-      node_base* nx = p->next;
-      free_node(p);
-      p = nx;
+    __node_base* p = __sent_->next;
+    while (p != __sent_) {
+      __node_base* __nx = p->next;
+      __free_node(p);
+      p = __nx;
     }
-    sent_->prev = sent_->next = sent_;
-    size_ = 0;
+    __sent_->prev = __sent_->next = __sent_;
+    __size_ = 0;
   }
 
   // ---- [list.ops] ----
-  constexpr void splice(const_iterator position, list& x) {
-    ycxx::detail::precondition(this != __builtin_addressof(x), "std::list::splice: x is *this");
-    check_alloc(x);
-    if (x.size_ == 0)
+  constexpr void splice(const_iterator position, list& __x) {
+    __ycxx::__detail::__precondition(this != __builtin_addressof(__x), "std::list::splice: x is *this");
+    __check_alloc(__x);
+    if (__x.__size_ == 0)
       return;
-    transfer(pos_node(position), x.sent_->next, x.sent_);
-    size_ += x.size_;
-    x.size_ = 0;
+    __transfer(__pos_node(position), __x.__sent_->next, __x.__sent_);
+    __size_ += __x.__size_;
+    __x.__size_ = 0;
   }
-  constexpr void splice(const_iterator position, list&& x) { splice(position, x); }
-  constexpr void splice(const_iterator position, list& x, const_iterator i) {
-    check_alloc(x);
-    node_base* n = i.n_;
-    node_base* const pos = pos_node(position);
-    if (pos == n || pos == n->next)
+  constexpr void splice(const_iterator position, list&& __x) { splice(position, __x); }
+  constexpr void splice(const_iterator position, list& __x, const_iterator i) {
+    __check_alloc(__x);
+    __node_base* n = i.__n_;
+    __node_base* const __pos = __pos_node(position);
+    if (__pos == n || __pos == n->next)
       return;
-    transfer(pos, n, n->next);
-    if (this != __builtin_addressof(x)) {
-      --x.size_;
-      ++size_;
+    __transfer(__pos, n, n->next);
+    if (this != __builtin_addressof(__x)) {
+      --__x.__size_;
+      ++__size_;
     }
   }
-  constexpr void splice(const_iterator position, list&& x, const_iterator i) { splice(position, x, i); }
-  constexpr void splice(const_iterator position, list& x, const_iterator first, const_iterator last) {
-    check_alloc(x);
+  constexpr void splice(const_iterator position, list&& __x, const_iterator i) { splice(position, __x, i); }
+  constexpr void splice(const_iterator position, list& __x, const_iterator first, const_iterator last) {
+    __check_alloc(__x);
     if (first == last)
       return;
-    if (this != __builtin_addressof(x)) {
+    if (this != __builtin_addressof(__x)) {
       size_type n = 0;
-      for (node_base* p = first.n_; p != last.n_; p = p->next)
+      for (__node_base* p = first.__n_; p != last.__n_; p = p->next)
         ++n;
-      x.size_ -= n;
-      size_ += n;
+      __x.__size_ -= n;
+      __size_ += n;
     }
-    transfer(pos_node(position), first.n_, last.n_);
+    __transfer(__pos_node(position), first.__n_, last.__n_);
   }
-  constexpr void splice(const_iterator position, list&& x, const_iterator first, const_iterator last) {
-    splice(position, x, first, last);
+  constexpr void splice(const_iterator position, list&& __x, const_iterator first, const_iterator last) {
+    splice(position, __x, first, last);
   }
 
-  constexpr size_type remove(const T& value) {
-    return remove_if([&value](const T& e) -> bool { return e == value; });
+  constexpr size_type remove(const _Tp& value) {
+    return remove_if([&value](const _Tp& e) -> bool { return e == value; });
   }
-  template <class Predicate>
-  constexpr size_type remove_if(Predicate pred) {
+  template <class _Predicate>
+  constexpr size_type remove_if(_Predicate pred) {
     // Unlinked nodes are destroyed at the end: value may refer to one of them.
-    graveyard g{this};
+    __graveyard __g{this};
     size_type count = 0;
-    if (size_ == 0)
+    if (__size_ == 0)
       return 0;
-    for (node_base* p = sent_->next; p != sent_;) {
-      node_base* nx = p->next;
+    for (__node_base* p = __sent_->next; p != __sent_;) {
+      __node_base* __nx = p->next;
       if (pred(list::value(p))) {
-        unlink(p);
-        --size_;
-        g.bury(p);
+        __unlink(p);
+        --__size_;
+        __g.__bury(p);
         ++count;
       }
-      p = nx;
+      p = __nx;
     }
     return count;
   }
   constexpr size_type unique() { return unique(equal_to<>()); }
-  template <class BinaryPredicate>
-  constexpr size_type unique(BinaryPredicate binary_pred) {
-    graveyard g{this};
+  template <class _BinaryPredicate>
+  constexpr size_type unique(_BinaryPredicate __binary_pred) {
+    __graveyard __g{this};
     size_type count = 0;
-    if (size_ < 2)
+    if (__size_ < 2)
       return 0;
-    node_base* prev = sent_->next; // the element before p in the original sequence
-    for (node_base* p = prev->next; p != end_node();) {
-      node_base* nx = p->next;
-      if (binary_pred(value(p), value(prev))) {
+    __node_base* prev = __sent_->next; // the element before p in the original sequence
+    for (__node_base* p = prev->next; p != __end_node();) {
+      __node_base* __nx = p->next;
+      if (__binary_pred(value(p), value(prev))) {
         // Erased nodes stay alive until the end: the next comparison still reads this one.
-        unlink(p);
-        --size_;
-        g.bury(p);
+        __unlink(p);
+        --__size_;
+        __g.__bury(p);
         ++count;
       }
       prev = p;
-      p = nx;
+      p = __nx;
     }
     return count;
   }
-  constexpr void merge(list& x) { merge(x, less<>()); }
-  constexpr void merge(list&& x) { merge(x, less<>()); }
-  template <class Compare>
-  constexpr void merge(list& x, Compare comp) {
-    if (this == __builtin_addressof(x) || x.size_ == 0)
+  constexpr void merge(list& __x) { merge(__x, less<>()); }
+  constexpr void merge(list&& __x) { merge(__x, less<>()); }
+  template <class _Compare>
+  constexpr void merge(list& __x, _Compare comp) {
+    if (this == __builtin_addressof(__x) || __x.__size_ == 0)
       return;
-    check_alloc(x);
-    node_base* const e = sentinel();
-    node_base* p = e->next;
-    node_base* q = x.sent_->next;
-    node_base* const xe = x.sent_;
-    while (p != e && q != xe) {
-      if (comp(value(q), value(p))) {
-        node_base* nq = q->next;
-        unlink(q);
-        --x.size_;
-        link_before(p, q);
-        ++size_;
-        q = nq;
+    __check_alloc(__x);
+    __node_base* const e = sentinel();
+    __node_base* p = e->next;
+    __node_base* __q = __x.__sent_->next;
+    __node_base* const __xe = __x.__sent_;
+    while (p != e && __q != __xe) {
+      if (comp(value(__q), value(p))) {
+        __node_base* __nq = __q->next;
+        __unlink(__q);
+        --__x.__size_;
+        __link_before(p, __q);
+        ++__size_;
+        __q = __nq;
       } else {
         p = p->next;
       }
     }
-    if (q != xe) {
-      transfer(e, q, xe);
-      size_ += x.size_;
-      x.size_ = 0;
+    if (__q != __xe) {
+      __transfer(e, __q, __xe);
+      __size_ += __x.__size_;
+      __x.__size_ = 0;
     }
   }
-  template <class Compare>
-  constexpr void merge(list&& x, Compare comp) {
-    merge(x, comp);
+  template <class _Compare>
+  constexpr void merge(list&& __x, _Compare comp) {
+    merge(__x, comp);
   }
   constexpr void sort() { sort(less<>()); }
-  template <class Compare>
-  constexpr void sort(Compare comp) {
-    if (size_ < 2)
+  template <class _Compare>
+  constexpr void sort(_Compare comp) {
+    if (__size_ < 2)
       return;
-    node_base* const h = sent_;
-    node_base* first = h->next;
+    __node_base* const h = __sent_;
+    __node_base* first = h->next;
     h->prev->next = nullptr;
-    auto val = [](node_base* n) -> T& { return list::value(n); };
-    auto finish = [h](node_base* c) {
-      node_base* prev = h;
+    auto __val = [](__node_base* n) -> _Tp& { return list::value(n); };
+    auto finish = [h](__node_base* c) {
+      __node_base* prev = h;
       for (; c; c = c->next) {
         c->prev = prev;
         prev->next = c;
@@ -734,60 +734,60 @@ public:
       prev->next = h;
       h->prev = prev;
     };
-    ycxx::detail::sort_chain(first, val, comp, finish);
+    __ycxx::__detail::__sort_chain(first, __val, comp, finish);
   }
   constexpr void reverse() noexcept {
-    if (!sent_)
+    if (!__sent_)
       return;
-    node_base* p = sent_;
+    __node_base* p = __sent_;
     do {
-      node_base* nx = p->next;
+      __node_base* __nx = p->next;
       p->next = p->prev;
-      p->prev = nx;
-      p = nx;
-    } while (p != end_node());
+      p->prev = __nx;
+      p = __nx;
+    } while (p != __end_node());
   }
 };
 
 // ---- deduction guides ----
-template <class InputIterator, class Allocator = allocator<ycxx::detail::iter_value_type<InputIterator>>>
-  requires ycxx::detail::qualifies_as_input_iterator<InputIterator> && ycxx::detail::qualifies_as_allocator<Allocator>
-list(InputIterator, InputIterator, Allocator = Allocator())
-    -> list<ycxx::detail::iter_value_type<InputIterator>, Allocator>;
-template <ranges::input_range R, class Allocator = allocator<ranges::range_value_t<R>>>
-  requires ycxx::detail::qualifies_as_allocator<Allocator>
-list(from_range_t, R&&, Allocator = Allocator()) -> list<ranges::range_value_t<R>, Allocator>;
+template <class _InputIterator, class _Allocator = allocator<__ycxx::__detail::__iter_value_type<_InputIterator>>>
+  requires __ycxx::__detail::__qualifies_as_input_iterator<_InputIterator> && __ycxx::__detail::__qualifies_as_allocator<_Allocator>
+list(_InputIterator, _InputIterator, _Allocator = _Allocator())
+    -> list<__ycxx::__detail::__iter_value_type<_InputIterator>, _Allocator>;
+template <ranges::input_range _Rp, class _Allocator = allocator<ranges::range_value_t<_Rp>>>
+  requires __ycxx::__detail::__qualifies_as_allocator<_Allocator>
+list(from_range_t, _Rp&&, _Allocator = _Allocator()) -> list<ranges::range_value_t<_Rp>, _Allocator>;
 
 // ---- comparisons ----
-template <class T, class Allocator>
-constexpr bool operator==(const list<T, Allocator>& x, const list<T, Allocator>& y) {
-  return x.size() == y.size() && std::equal(x.begin(), x.end(), y.begin());
+template <class _Tp, class _Allocator>
+constexpr bool operator==(const list<_Tp, _Allocator>& __x, const list<_Tp, _Allocator>& y) {
+  return __x.size() == y.size() && std::equal(__x.begin(), __x.end(), y.begin());
 }
-template <class T, class Allocator>
-constexpr ycxx::detail::synth_three_way_result<T> operator<=>(const list<T, Allocator>& x,
-                                                              const list<T, Allocator>& y) {
-  return std::lexicographical_compare_three_way(x.begin(), x.end(), y.begin(), y.end(),
-                                                ycxx::detail::synth_three_way);
+template <class _Tp, class _Allocator>
+constexpr __ycxx::__detail::__synth_three_way_result<_Tp> operator<=>(const list<_Tp, _Allocator>& __x,
+                                                              const list<_Tp, _Allocator>& y) {
+  return std::lexicographical_compare_three_way(__x.begin(), __x.end(), y.begin(), y.end(),
+                                                __ycxx::__detail::__synth_three_way);
 }
 
-template <class T, class Allocator>
-constexpr void swap(list<T, Allocator>& x, list<T, Allocator>& y) noexcept(noexcept(x.swap(y))) {
-  x.swap(y);
+template <class _Tp, class _Allocator>
+constexpr void swap(list<_Tp, _Allocator>& __x, list<_Tp, _Allocator>& y) noexcept(noexcept(__x.swap(y))) {
+  __x.swap(y);
 }
 
 // ---- [list.erasure] ----
-template <class T, class Allocator, class Predicate>
-constexpr typename list<T, Allocator>::size_type erase_if(list<T, Allocator>& c, Predicate pred) {
+template <class _Tp, class _Allocator, class _Predicate>
+constexpr typename list<_Tp, _Allocator>::size_type erase_if(list<_Tp, _Allocator>& c, _Predicate pred) {
   return c.remove_if(pred);
 }
-template <class T, class Allocator, class U = T>
-constexpr typename list<T, Allocator>::size_type erase(list<T, Allocator>& c, const U& value) {
-  return c.remove_if([&value](const auto& elem) -> bool { return elem == value; });
+template <class _Tp, class _Allocator, class _Up = _Tp>
+constexpr typename list<_Tp, _Allocator>::size_type erase(list<_Tp, _Allocator>& c, const _Up& value) {
+  return c.remove_if([&value](const auto& __elem) -> bool { return __elem == value; });
 }
 
 namespace pmr {
-template <class T>
-using list = std::list<T, polymorphic_allocator<T>>;
+template <class _Tp>
+using list = std::list<_Tp, polymorphic_allocator<_Tp>>;
 } // namespace pmr
 
 } // namespace std

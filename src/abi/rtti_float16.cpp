@@ -17,11 +17,11 @@
 // An asm label is the object-file symbol verbatim, so it must include the platform's C symbol
 // prefix ("_" on Mach-O, none on ELF). A label must be a string literal, so the prefix can only
 // come from the predefined macro, stringized: the one macro in this file.
-#define YCXX_STRINGIZE_(x) #x
-#define YCXX_STRINGIZE(x) YCXX_STRINGIZE_(x)
+#define YCXX_STRINGIZE_(__x) #__x
+#define YCXX_STRINGIZE(__x) YCXX_STRINGIZE_(__x)
 #define YCXX_SYMBOL(name) YCXX_STRINGIZE(__USER_LABEL_PREFIX__) name
 
-namespace [[gnu::visibility("hidden")]] ycxx { namespace abi {
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __abi {
 
 // The start of a vtable whose virtual functions are the complete and deleting destructors.
 struct vtable_image {
@@ -31,15 +31,15 @@ struct vtable_image {
 };
 
 struct fundamental_image {
-  const void* const* vptr;
+  const void* const* __vptr;
   const char* name;
 };
 
 struct pointer_image {
-  const void* const* vptr;
+  const void* const* __vptr;
   const char* name;
   unsigned int flags;
-  const fundamental_image* pointee;
+  const fundamental_image* __pointee;
 };
 
 extern const vtable_image fundamental_vtable asm(YCXX_SYMBOL("_ZTVN10__cxxabiv123__fundamental_type_infoE"));
@@ -53,4 +53,4 @@ constinit const fundamental_image float16_info{fundamental_vtable.virtuals, "DF1
 constinit const pointer_image float16_pointer_info{pointer_vtable.virtuals, "PDF16_", 0, &float16_info};
 constinit const pointer_image float16_const_pointer_info{pointer_vtable.virtuals, "PKDF16_", 0x1, &float16_info};
 
-}} // namespace ycxx::abi
+}} // namespace __ycxx::__abi

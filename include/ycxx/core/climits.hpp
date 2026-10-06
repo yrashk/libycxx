@@ -42,8 +42,8 @@
 #  define UINT_WIDTH __INT_WIDTH__
 #  define LONG_WIDTH __LONG_WIDTH__
 #  define ULONG_WIDTH __LONG_WIDTH__
-#  define LLONG_WIDTH YCXX_LLONG_WIDTH
-#  define ULLONG_WIDTH YCXX_LLONG_WIDTH
+#  define LLONG_WIDTH _YCXX_LLONG_WIDTH
+#  define ULLONG_WIDTH _YCXX_LLONG_WIDTH
 #endif
 // [climits.syn]/1: unlike C's <limits.h>, <climits> does not define BITINT_MAXWIDTH.
 

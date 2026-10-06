@@ -4,7 +4,7 @@
 // runtime). Another C++ library in the process (Apple's libc++/libc++abi, which every Darwin
 // process loads; libstdc++ in a shared object) can then neither take over libycxx's definitions
 // nor be taken over by them; that includes libycxx's default allocation functions (the images
-// that link libycxx share them through the allocation table, ycxx_allocation_functions, a name of
+// that link libycxx share them through the allocation table, __ycxx_allocation_functions, a name of
 // libycxx's own).
 //   [replacement.functions]/2: a program's own replacement of operator new is still the one used,
 //   and is exported as the program's other functions are (the test's own: _Znwm, _ZdlPv, _ZdlPvm).
@@ -129,7 +129,7 @@ int main(int, char** argv) {
                            name == "_ZdlPvj";
     bool library = (name.rfind("_Z", 0) == 0 && name.find("3own") == std::string::npos && !own_replacement) ||
                    name.find("__cxa_") != std::string::npos || name.find("__gxx_personality") != std::string::npos ||
-                   name.find("ycxx_pal_") != std::string::npos;
+                   name.find("__ycxx_pal_") != std::string::npos;
     if (library) {
       std::printf("exported: %s\n", s.c_str());
       ++foreign;

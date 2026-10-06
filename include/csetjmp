@@ -10,7 +10,7 @@
 #  define __STDC_VERSION_SETJMP_H__ 202311L
 #endif
 
-namespace [[gnu::visibility("hidden")]] std {
+namespace [[__gnu__::__visibility__("hidden")]] std {
 using ::jmp_buf;
 using ::longjmp;
 } // namespace std

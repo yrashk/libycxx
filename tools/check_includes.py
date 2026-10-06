@@ -6,8 +6,8 @@ other core public headers, include/ycxx/config.hpp, include/ycxx/core/**, includ
 Anything else (hosted public headers, include/ycxx/hosted/**, <stdio.h>, compiler headers...)
 is an error, reported with the include chain. #include_next is not followed: core uses it once,
 for the compiler's own <stddef.h> (DECISIONS §3). The headers with a freestanding subset
-(FREESTANDING_SUBSET) are walked too; directives in the YCXX_HOSTED branch of an
-`#if YCXX_HOSTED` / `#if !YCXX_HOSTED` conditional are not followed (they are not reached
+(FREESTANDING_SUBSET) are walked too; directives in the _YCXX_HOSTED branch of an
+`#if _YCXX_HOSTED` / `#if !_YCXX_HOSTED` conditional are not followed (they are not reached
 freestanding).
 """
 import pathlib, re, sys
@@ -19,7 +19,7 @@ INC = re.compile(r'^\s*#\s*include\s*[<"]([^>"]+)[>"]')
 COND = re.compile(r'^\s*#\s*(if|ifdef|ifndef|elif|else|endif)\b\s*(.*)')
 
 def freestanding_includes(text):
-    """The #include targets of text that a freestanding (YCXX_HOSTED 0) build reaches."""
+    """The #include targets of text that a freestanding (_YCXX_HOSTED 0) build reaches."""
     stack = []  # per open conditional: whether its current branch is hosted-only
     out = []
     for line in text.splitlines():
@@ -27,7 +27,7 @@ def freestanding_includes(text):
         if m:
             kw, arg = m.group(1), m.group(2).split("//")[0].strip()
             if kw in ("if", "ifdef", "ifndef"):
-                stack.append(True if arg == "YCXX_HOSTED" else False if arg == "!YCXX_HOSTED" else None)
+                stack.append(True if arg == "_YCXX_HOSTED" else False if arg == "!_YCXX_HOSTED" else None)
             elif kw == "else" and stack and stack[-1] is not None:
                 stack[-1] = not stack[-1]
             elif kw == "elif" and stack:
@@ -42,7 +42,7 @@ def freestanding_includes(text):
             out.append(m.group(1))
     return out
 
-# Configuration the build generates (only YCXX_* switches; cmake/ycxx-c-library.cmake), included by
+# Configuration the build generates (only _YCXX_* switches; cmake/ycxx-c-library.cmake), included by
 # config.hpp when it exists.
 GENERATED_CONFIG = "ycxx/generated/c_library.hpp"
 

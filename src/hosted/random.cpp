@@ -3,7 +3,7 @@
 #include <system_error>
 #include <ycxx/pal.h>
 
-namespace [[gnu::visibility("hidden")]] std {
+namespace [[__gnu__::__visibility__("hidden")]] std {
 
 namespace {
 [[noreturn]] void random_device_error(int e, const char* what) {
@@ -12,24 +12,24 @@ namespace {
 } // namespace
 
 random_device::random_device() {
-  if (int e = ::ycxx_pal_random_open("default", 7, &handle_))
+  if (int e = ::__ycxx_pal_random_open("default", 7, &__handle_))
     random_device_error(e, "std::random_device: cannot open the system random source");
 }
 
 random_device::random_device(const string& token) {
-  if (int e = ::ycxx_pal_random_open(token.data(), token.size(), &handle_))
+  if (int e = ::__ycxx_pal_random_open(token.data(), token.size(), &__handle_))
     random_device_error(e, "std::random_device: unsupported or unavailable token");
 }
 
-random_device::~random_device() { ::ycxx_pal_random_close(handle_); }
+random_device::~random_device() { ::__ycxx_pal_random_close(__handle_); }
 
 random_device::result_type random_device::operator()() {
-  if (avail_ == 0) {
-    if (int e = ::ycxx_pal_random_read(handle_, buffer_, sizeof buffer_))
+  if (__avail_ == 0) {
+    if (int e = ::__ycxx_pal_random_read(__handle_, __buffer_, sizeof __buffer_))
       random_device_error(e, "std::random_device: cannot read the random source");
-    avail_ = buffer_size;
+    __avail_ = __buffer_size;
   }
-  return buffer_[--avail_];
+  return __buffer_[--__avail_];
 }
 
 // Every source is the operating system's cryptographic generator: full entropy per bit.

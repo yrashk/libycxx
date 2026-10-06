@@ -6,7 +6,7 @@
 #include <ycxx/core/cstddef.hpp>
 #include <signal.h>
 
-namespace [[gnu::visibility("hidden")]] std {
+namespace [[__gnu__::__visibility__("hidden")]] std {
 using ::sig_atomic_t;
 using ::signal;
 using ::raise;

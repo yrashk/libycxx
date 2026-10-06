@@ -6,12 +6,12 @@
 
 namespace {
 
-// [filebuf.members] Table 146: the fopen mode for `mode & ~ate`, or null if the combination is
+// [filebuf.members] Table 146: the fopen mode for `__mode & ~ate`, or null if the combination is
 // not in the table.
-const char* stdio_mode(std::ios_base::openmode mode) noexcept {
+const char* stdio_mode(std::ios_base::openmode __mode) noexcept {
   using std::ios_base;
-  const bool binary = (mode & ios_base::binary) != 0;
-  switch (mode & ~(ios_base::ate | ios_base::binary)) {
+  const bool binary = (__mode & ios_base::binary) != 0;
+  switch (__mode & ~(ios_base::ate | ios_base::binary)) {
   case ios_base::out:
   case ios_base::out | ios_base::trunc:
     return binary ? "wb" : "w";
@@ -37,50 +37,50 @@ const char* stdio_mode(std::ios_base::openmode mode) noexcept {
   }
 }
 
-std::FILE* file(void* f) noexcept { return static_cast<std::FILE*>(f); }
+std::FILE* __file(void* __f) noexcept { return static_cast<std::FILE*>(__f); }
 
 } // namespace
 
-namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
 
-void* file_open(const char* name, std::ios_base::openmode mode) noexcept {
-  const char* m = stdio_mode(mode);
+void* __file_open(const char* name, std::ios_base::openmode __mode) noexcept {
+  const char* m = stdio_mode(__mode);
   if (m == nullptr)
     return nullptr;
-  std::FILE* f = std::fopen(name, m);
-  if (f == nullptr)
+  std::FILE* __f = std::fopen(name, m);
+  if (__f == nullptr)
     return nullptr;
-  std::setvbuf(f, nullptr, _IONBF, 0);
+  std::setvbuf(__f, nullptr, _IONBF, 0);
   // [filebuf.members]/4-5: ate positions the file at its end; a failure closes it again.
-  if ((mode & std::ios_base::ate) && std::fseek(f, 0, SEEK_END) != 0) {
-    std::fclose(f);
+  if ((__mode & std::ios_base::ate) && std::fseek(__f, 0, SEEK_END) != 0) {
+    std::fclose(__f);
     return nullptr;
   }
-  return f;
+  return __f;
 }
 
-bool file_close(void* f) noexcept { return std::fclose(file(f)) == 0; }
+bool __file_close(void* __f) noexcept { return std::fclose(__file(__f)) == 0; }
 
 // The end-of-file indicator is cleared first, so that a file (or a terminal) that has grown can
 // be read further.
-std::size_t file_read(void* f, char* buf, std::size_t n) noexcept {
-  std::clearerr(file(f));
-  return std::fread(buf, 1, n, file(f));
+std::size_t __file_read(void* __f, char* __buf, std::size_t n) noexcept {
+  std::clearerr(__file(__f));
+  return std::fread(__buf, 1, n, __file(__f));
 }
 
-bool file_write(void* f, const char* buf, std::size_t n) noexcept {
-  return n == 0 || std::fwrite(buf, 1, n, file(f)) == n;
+bool __file_write(void* __f, const char* __buf, std::size_t n) noexcept {
+  return n == 0 || std::fwrite(__buf, 1, n, __file(__f)) == n;
 }
 
-long long file_seek(void* f, long long off, int whence) noexcept {
-  const int w = whence == 0 ? SEEK_SET : whence == 1 ? SEEK_CUR : SEEK_END;
-  if (::fseeko(file(f), static_cast<off_t>(off), w) != 0)
+long long __file_seek(void* __f, long long __off, int __whence) noexcept {
+  const int __w = __whence == 0 ? SEEK_SET : __whence == 1 ? SEEK_CUR : SEEK_END;
+  if (::fseeko(__file(__f), static_cast<off_t>(__off), __w) != 0)
     return -1;
-  return static_cast<long long>(::ftello(file(f)));
+  return static_cast<long long>(::ftello(__file(__f)));
 }
 
-bool file_flush(void* f) noexcept { return std::fflush(file(f)) == 0; }
+bool __file_flush(void* __f) noexcept { return std::fflush(__file(__f)) == 0; }
 
-int file_native(void* f) noexcept { return ::fileno(file(f)); }
+int __file_native(void* __f) noexcept { return ::fileno(__file(__f)); }
 
-}} // namespace ycxx::detail
+}} // namespace __ycxx::__detail

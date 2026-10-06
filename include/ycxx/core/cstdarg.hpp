@@ -14,7 +14,7 @@
 
 // Also in the global namespace, as the C header (which other headers may include) declares it.
 typedef __builtin_va_list va_list;
-namespace [[gnu::visibility("hidden")]] std {
+namespace [[__gnu__::__visibility__("hidden")]] std {
 using ::va_list;
 } // namespace std
 
@@ -22,13 +22,13 @@ using ::va_list;
 #undef va_arg
 #undef va_copy
 #undef va_end
-#if YCXX_HAS_C23_VA_START
-#  define va_start(V, ...) __builtin_c23_va_start(V)
+#if _YCXX_HAS_C23_VA_START
+#  define va_start(_Vp, ...) __builtin_c23_va_start(_Vp)
 #else
-#  define va_start(V, ...)                                                                                     \
-    _Pragma("clang diagnostic push") _Pragma("clang diagnostic ignored \"-Wvarargs\"") __builtin_va_start(V, 0) \
+#  define va_start(_Vp, ...)                                                                                     \
+    _Pragma("clang diagnostic push") _Pragma("clang diagnostic ignored \"-Wvarargs\"") __builtin_va_start(_Vp, 0) \
         _Pragma("clang diagnostic pop")
 #endif
-#define va_arg(V, P) __builtin_va_arg(V, P)
-#define va_copy(VDST, VSRC) __builtin_va_copy(VDST, VSRC)
-#define va_end(V) __builtin_va_end(V)
+#define va_arg(_Vp, _Pp) __builtin_va_arg(_Vp, _Pp)
+#define va_copy(_VDST, _VSRC) __builtin_va_copy(_VDST, _VSRC)
+#define va_end(_Vp) __builtin_va_end(_Vp)

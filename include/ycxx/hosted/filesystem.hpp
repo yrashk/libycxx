@@ -11,7 +11,7 @@
 // Everything that touches the file system is in the hosted runtime (src/hosted/filesystem.cpp):
 // the operations with an error_code& argument, directory iteration and directory_entry's
 // refresh and observers. The forms that report errors by throwing are inline here: each calls
-// the error_code form and throws filesystem_error through ycxx::detail::raise_with, so under
+// the error_code form and throws filesystem_error through __ycxx::__detail::__raise_with, so under
 // -fno-exceptions they reach ycxx_error_handler instead. The lexical members of path that do
 // not depend on a template argument are out of line as well.
 //
@@ -35,36 +35,36 @@
 #include <ycxx/hosted/file_clock.hpp>
 #include <ycxx/hosted/iomanip.hpp>
 
-namespace [[gnu::visibility("hidden")]] std { namespace filesystem {
+namespace [[__gnu__::__visibility__("hidden")]] std { namespace filesystem {
 class path;
 class directory_entry;
 }} // namespace std::filesystem
 
-namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
 
 // [fs.req]/1: the encoded character types.
-template <class C>
-concept fs_echar = std::is_same_v<C, char> || std::is_same_v<C, wchar_t> || std::is_same_v<C, char8_t> ||
-                   std::is_same_v<C, char16_t> || std::is_same_v<C, char32_t>;
+template <class _Cp>
+concept __fs_echar = std::is_same_v<_Cp, char> || std::is_same_v<_Cp, wchar_t> || std::is_same_v<_Cp, char8_t> ||
+                   std::is_same_v<_Cp, char16_t> || std::is_same_v<_Cp, char32_t>;
 
 // ---- Unicode transcoding ([fs.path.type.cvt]) ----
 // The encoding family of a code unit type: 1 UTF-8 (char is the native ordinary encoding, taken
 // to be UTF-8), 2 UTF-16, 4 UTF-32.
-template <class C>
-inline constexpr int utf_width = std::is_same_v<C, char16_t> ? 2 : (std::is_same_v<C, char32_t> || sizeof(C) == 4) ? 4 : sizeof(C) == 2 ? 2 : 1;
+template <class _Cp>
+inline constexpr int __utf_width = std::is_same_v<_Cp, char16_t> ? 2 : (std::is_same_v<_Cp, char32_t> || sizeof(_Cp) == 4) ? 4 : sizeof(_Cp) == 2 ? 2 : 1;
 
 // Decodes one code point of code unit type C from [p, e) (p != e; e may be a sentinel) and
 // advances p past it. An ill-formed or truncated sequence yields U+FFFD and consumes its maximal
 // subpart (at least one code unit). A code unit is read once and only before p moves past it,
 // so this works on single-pass input iterators.
-template <class C, class I, class E>
-constexpr char32_t utf_decode(I& p, const E& e) {
-  constexpr int w = utf_width<C>;
-  if constexpr (w == 4) {
+template <class _Cp, class _Ip, class _Ep>
+constexpr char32_t __utf_decode(_Ip& p, const _Ep& e) {
+  constexpr int __w = __utf_width<_Cp>;
+  if constexpr (__w == 4) {
     char32_t c = static_cast<char32_t>(*p);
     ++p;
     return (c > 0x10FFFF || (c >= 0xD800 && c <= 0xDFFF)) ? char32_t(0xFFFD) : c;
-  } else if constexpr (w == 2) {
+  } else if constexpr (__w == 2) {
     char32_t c = static_cast<char16_t>(*p);
     ++p;
     if (c < 0xD800 || c > 0xDFFF)
@@ -83,25 +83,25 @@ constexpr char32_t utf_decode(I& p, const E& e) {
     if (c < 0x80)
       return c;
     int n;
-    char32_t cp;
-    unsigned lo = 0x80, hi = 0xBF; // the valid range of the second byte
+    char32_t __cp;
+    unsigned __lo = 0x80, __hi = 0xBF; // the valid range of the second byte
     if (c >= 0xC2 && c <= 0xDF) {
       n = 1;
-      cp = c & 0x1F;
+      __cp = c & 0x1F;
     } else if (c >= 0xE0 && c <= 0xEF) {
       n = 2;
-      cp = c & 0x0F;
+      __cp = c & 0x0F;
       if (c == 0xE0)
-        lo = 0xA0;
+        __lo = 0xA0;
       else if (c == 0xED)
-        hi = 0x9F;
+        __hi = 0x9F;
     } else if (c >= 0xF0 && c <= 0xF4) {
       n = 3;
-      cp = c & 0x07;
+      __cp = c & 0x07;
       if (c == 0xF0)
-        lo = 0x90;
+        __lo = 0x90;
       else if (c == 0xF4)
-        hi = 0x8F;
+        __hi = 0x8F;
     } else {
       return 0xFFFD;
     }
@@ -109,52 +109,52 @@ constexpr char32_t utf_decode(I& p, const E& e) {
       if (p == e)
         return 0xFFFD;
       unsigned b = static_cast<unsigned char>(*p);
-      if (i == 0 ? (b < lo || b > hi) : (b & 0xC0) != 0x80)
+      if (i == 0 ? (b < __lo || b > __hi) : (b & 0xC0) != 0x80)
         return 0xFFFD;
-      cp = (cp << 6) | (b & 0x3F);
+      __cp = (__cp << 6) | (b & 0x3F);
       ++p;
     }
-    return cp;
+    return __cp;
   }
 }
 
 // Appends the encoding of code point c in the code units of out's character type.
-template <class S>
-constexpr void utf_encode(S& out, char32_t c) {
-  using C = typename S::value_type;
-  constexpr int w = utf_width<C>;
-  if constexpr (w == 4) {
-    out.push_back(static_cast<C>(c));
-  } else if constexpr (w == 2) {
+template <class _Sp>
+constexpr void __utf_encode(_Sp& out, char32_t c) {
+  using _Cp = typename _Sp::value_type;
+  constexpr int __w = __utf_width<_Cp>;
+  if constexpr (__w == 4) {
+    out.push_back(static_cast<_Cp>(c));
+  } else if constexpr (__w == 2) {
     if (c < 0x10000) {
-      out.push_back(static_cast<C>(c));
+      out.push_back(static_cast<_Cp>(c));
     } else {
       c -= 0x10000;
-      out.push_back(static_cast<C>(0xD800 + (c >> 10)));
-      out.push_back(static_cast<C>(0xDC00 + (c & 0x3FF)));
+      out.push_back(static_cast<_Cp>(0xD800 + (c >> 10)));
+      out.push_back(static_cast<_Cp>(0xDC00 + (c & 0x3FF)));
     }
   } else if (c < 0x80) {
-    out.push_back(static_cast<C>(c));
+    out.push_back(static_cast<_Cp>(c));
   } else if (c < 0x800) {
-    out.push_back(static_cast<C>(0xC0 | (c >> 6)));
-    out.push_back(static_cast<C>(0x80 | (c & 0x3F)));
+    out.push_back(static_cast<_Cp>(0xC0 | (c >> 6)));
+    out.push_back(static_cast<_Cp>(0x80 | (c & 0x3F)));
   } else if (c < 0x10000) {
-    out.push_back(static_cast<C>(0xE0 | (c >> 12)));
-    out.push_back(static_cast<C>(0x80 | ((c >> 6) & 0x3F)));
-    out.push_back(static_cast<C>(0x80 | (c & 0x3F)));
+    out.push_back(static_cast<_Cp>(0xE0 | (c >> 12)));
+    out.push_back(static_cast<_Cp>(0x80 | ((c >> 6) & 0x3F)));
+    out.push_back(static_cast<_Cp>(0x80 | (c & 0x3F)));
   } else {
-    out.push_back(static_cast<C>(0xF0 | (c >> 18)));
-    out.push_back(static_cast<C>(0x80 | ((c >> 12) & 0x3F)));
-    out.push_back(static_cast<C>(0x80 | ((c >> 6) & 0x3F)));
-    out.push_back(static_cast<C>(0x80 | (c & 0x3F)));
+    out.push_back(static_cast<_Cp>(0xF0 | (c >> 18)));
+    out.push_back(static_cast<_Cp>(0x80 | ((c >> 12) & 0x3F)));
+    out.push_back(static_cast<_Cp>(0x80 | ((c >> 6) & 0x3F)));
+    out.push_back(static_cast<_Cp>(0x80 | (c & 0x3F)));
   }
 }
 
 // The end of a null-terminated sequence ([fs.path.req]/1.3-1.4): the first iterator whose
 // element equals the value type's value-initialized value.
-struct fs_ntcts_end {
-  template <class I>
-  friend constexpr bool operator==(const I& i, fs_ntcts_end) {
+struct __fs_ntcts_end {
+  template <class _Ip>
+  friend constexpr bool operator==(const _Ip& i, __fs_ntcts_end) {
     return *i == std::remove_cvref_t<decltype(*i)>();
   }
 };
@@ -162,133 +162,133 @@ struct fs_ntcts_end {
 // Appends [p, e) of code unit type C to out, converted to out's encoding. Code units of the
 // same encoding are copied unchanged ([fs.path.type.cvt]/3: an argument already in the value
 // type is not modified). Nothing is allocated beyond out's growth.
-template <class C, class S, class I, class E>
-constexpr void utf_append(S& out, I p, E e) {
-  using O = typename S::value_type;
-  if constexpr (utf_width<O> == utf_width<C>) {
+template <class _Cp, class _Sp, class _Ip, class _Ep>
+constexpr void __utf_append(_Sp& out, _Ip p, _Ep e) {
+  using _Op = typename _Sp::value_type;
+  if constexpr (__utf_width<_Op> == __utf_width<_Cp>) {
     for (; !(p == e); ++p)
-      out.push_back(static_cast<O>(*p));
+      out.push_back(static_cast<_Op>(*p));
   } else {
     while (!(p == e))
-      ::ycxx::detail::utf_encode(out, ::ycxx::detail::utf_decode<C>(p, e));
+      ::__ycxx::__detail::__utf_encode(out, ::__ycxx::__detail::__utf_decode<_Cp>(p, e));
   }
 }
 
 // ---- [fs.path.req]: Source arguments ----
-template <class T>
-struct fs_string_source {
+template <class _Tp>
+struct __fs_string_source {
   static constexpr bool value = false;
 };
-template <class C, class Tr, class A>
-struct fs_string_source<std::basic_string<C, Tr, A>> {
-  static constexpr bool value = fs_echar<C>;
+template <class _Cp, class _Tr, class _Ap>
+struct __fs_string_source<std::basic_string<_Cp, _Tr, _Ap>> {
+  static constexpr bool value = __fs_echar<_Cp>;
 };
-template <class C, class Tr>
-struct fs_string_source<std::basic_string_view<C, Tr>> {
-  static constexpr bool value = fs_echar<C>;
+template <class _Cp, class _Tr>
+struct __fs_string_source<std::basic_string_view<_Cp, _Tr>> {
+  static constexpr bool value = __fs_echar<_Cp>;
 };
 
-template <class S>
-concept fs_ntcts_source = requires { typename std::iterator_traits<std::decay_t<S>>::value_type; } &&
-                          fs_echar<std::remove_cv_t<typename std::iterator_traits<std::decay_t<S>>::value_type>>;
+template <class _Sp>
+concept __fs_ntcts_source = requires { typename std::iterator_traits<std::decay_t<_Sp>>::value_type; } &&
+                          __fs_echar<std::remove_cv_t<typename std::iterator_traits<std::decay_t<_Sp>>::value_type>>;
 
 // [fs.path.req]/2: a Source is a basic_string, a basic_string_view, or an iterator (a character
 // array after decay) over a null-terminated sequence of an encoded character type; never path.
-template <class S>
-concept fs_source = !std::is_same_v<std::remove_cvref_t<S>, std::filesystem::path> &&
-                    (fs_string_source<std::remove_cvref_t<S>>::value || fs_ntcts_source<S>);
+template <class _Sp>
+concept __fs_source = !std::is_same_v<std::remove_cvref_t<_Sp>, std::filesystem::path> &&
+                    (__fs_string_source<std::remove_cvref_t<_Sp>>::value || __fs_ntcts_source<_Sp>);
 
 // [fs.req]/3: an InputIterator whose value type is an encoded character type.
-template <class I>
-concept fs_char_iterator = requires { typename std::iterator_traits<I>::value_type; } &&
-                           fs_echar<std::remove_cv_t<typename std::iterator_traits<I>::value_type>>;
+template <class _Ip>
+concept __fs_char_iterator = requires { typename std::iterator_traits<_Ip>::value_type; } &&
+                           __fs_echar<std::remove_cv_t<typename std::iterator_traits<_Ip>::value_type>>;
 
-template <class S, bool = fs_string_source<std::remove_cvref_t<S>>::value>
-struct fs_source_char {
-  using type = std::remove_cv_t<typename std::iterator_traits<std::decay_t<S>>::value_type>;
+template <class _Sp, bool = __fs_string_source<std::remove_cvref_t<_Sp>>::value>
+struct __fs_source_char {
+  using type = std::remove_cv_t<typename std::iterator_traits<std::decay_t<_Sp>>::value_type>;
 };
-template <class S>
-struct fs_source_char<S, true> {
-  using type = typename std::remove_cvref_t<S>::value_type;
+template <class _Sp>
+struct __fs_source_char<_Sp, true> {
+  using type = typename std::remove_cvref_t<_Sp>::value_type;
 };
-template <class S>
-using fs_source_char_t = typename fs_source_char<S>::type;
+template <class _Sp>
+using __fs_source_char_t = typename __fs_source_char<_Sp>::type;
 
 // Appends the native (char, UTF-8) form of [first, last) to out.
-template <class I>
-void fs_append_range(std::string& out, I first, I last) {
-  using C = std::remove_cv_t<typename std::iterator_traits<I>::value_type>;
-  if constexpr (std::is_same_v<C, char> && std::is_pointer_v<I>)
+template <class _Ip>
+void __fs_append_range(std::string& out, _Ip first, _Ip last) {
+  using _Cp = std::remove_cv_t<typename std::iterator_traits<_Ip>::value_type>;
+  if constexpr (std::is_same_v<_Cp, char> && std::is_pointer_v<_Ip>)
     out.append(first, static_cast<std::size_t>(last - first));
   else
-    ::ycxx::detail::utf_append<C>(out, static_cast<I&&>(first), static_cast<I&&>(last));
+    ::__ycxx::__detail::__utf_append<_Cp>(out, static_cast<_Ip&&>(first), static_cast<_Ip&&>(last));
 }
 
 // Appends the native form of the effective range of a Source ([fs.path.req]/1) to out.
-template <class S>
-void fs_append_source(std::string& out, const S& s) {
-  using C = fs_source_char_t<S>;
-  if constexpr (fs_string_source<S>::value) {
-    if constexpr (std::is_same_v<C, char>)
+template <class _Sp>
+void __fs_append_source(std::string& out, const _Sp& s) {
+  using _Cp = __fs_source_char_t<_Sp>;
+  if constexpr (__fs_string_source<_Sp>::value) {
+    if constexpr (std::is_same_v<_Cp, char>)
       out.append(s.data(), s.size());
     else
-      ::ycxx::detail::utf_append<C>(out, s.data(), s.data() + s.size());
+      ::__ycxx::__detail::__utf_append<_Cp>(out, s.data(), s.data() + s.size());
   } else {
-    auto it = s; // a character array decays to a pointer
-    if constexpr (std::is_same_v<C, char> && std::is_pointer_v<decltype(it)>)
-      out.append(it);
+    auto __it = s; // a character array decays to a pointer
+    if constexpr (std::is_same_v<_Cp, char> && std::is_pointer_v<decltype(__it)>)
+      out.append(__it);
     else
-      ::ycxx::detail::utf_append<C>(out, static_cast<decltype(it)&&>(it), fs_ntcts_end());
+      ::__ycxx::__detail::__utf_append<_Cp>(out, static_cast<decltype(__it)&&>(__it), __fs_ntcts_end());
   }
 }
 
-template <class S>
-std::string fs_native_source(const S& s) {
+template <class _Sp>
+std::string __fs_native_source(const _Sp& s) {
   std::string out;
-  ::ycxx::detail::fs_append_source(out, s);
+  ::__ycxx::__detail::__fs_append_source(out, s);
   return out;
 }
-template <class I>
-std::string fs_native_range(I first, I last) {
+template <class _Ip>
+std::string __fs_native_range(_Ip first, _Ip last) {
   std::string out;
-  ::ycxx::detail::fs_append_range(out, static_cast<I&&>(first), static_cast<I&&>(last));
+  ::__ycxx::__detail::__fs_append_range(out, static_cast<_Ip&&>(first), static_cast<_Ip&&>(last));
   return out;
 }
 
 // [fs.path.construct]/6: chars converted to wide characters by the locale's
 // codecvt<wchar_t, char, mbstate_t>, then to the native encoding.
-std::string fs_native_through_locale(const char* first, const char* last, const std::locale& loc);
+std::string __fs_native_through_locale(const char* first, const char* last, const std::locale& __loc);
 
 // The native pathname converted to basic_string<EcharT, traits, Allocator>, allocated by a.
-// With `generic`, in the generic format ([fs.path.generic.obs]/1): each directory-separator (a
+// With `__y_generic`, in the generic format ([fs.path.generic.obs]/1): each directory-separator (a
 // run of slashes) is a single slash.
-template <class EcharT, class traits, class Allocator>
-std::basic_string<EcharT, traits, Allocator> fs_convert_out(const std::string& s, const Allocator& a,
-                                                            bool generic = false) {
-  std::basic_string<EcharT, traits, Allocator> out(a);
+template <class _EcharT, class __traits, class _Allocator>
+std::basic_string<_EcharT, __traits, _Allocator> __fs_convert_out(const std::string& s, const _Allocator& a,
+                                                            bool __y_generic = false) {
+  std::basic_string<_EcharT, __traits, _Allocator> out(a);
   const char* p = s.data();
   const char* const e = p + s.size();
-  if constexpr (utf_width<EcharT> == 1)
+  if constexpr (__utf_width<_EcharT> == 1)
     out.reserve(s.size());
   while (p != e) {
-    const char* q = p;
-    while (q != e && *q != '/')
-      ++q;
-    ::ycxx::detail::utf_append<char>(out, p, q);
-    if (q == e)
+    const char* __q = p;
+    while (__q != e && *__q != '/')
+      ++__q;
+    ::__ycxx::__detail::__utf_append<char>(out, p, __q);
+    if (__q == e)
       break;
-    out.push_back(static_cast<EcharT>('/'));
-    p = q + 1;
-    if (generic)
+    out.push_back(static_cast<_EcharT>('/'));
+    p = __q + 1;
+    if (__y_generic)
       while (p != e && *p == '/')
         ++p;
   }
   return out;
 }
 
-}} // namespace ycxx::detail
+}} // namespace __ycxx::__detail
 
-namespace [[gnu::visibility("hidden")]] std { namespace filesystem {
+namespace [[__gnu__::__visibility__("hidden")]] std { namespace filesystem {
 
 // [fs.class.path]
 class path {
@@ -307,32 +307,32 @@ public:
   path() noexcept {}
   path(const path& p) = default;
   path(path&& p) noexcept = default;
-  path(string_type&& source, format = auto_format) : s_(static_cast<string_type&&>(source)) {}
-  template <class Source>
-    requires ycxx::detail::fs_source<Source>
-  path(const Source& source, format = auto_format) {
-    ycxx::detail::fs_append_source(s_, source);
+  path(string_type&& __source, format = auto_format) : __s_(static_cast<string_type&&>(__source)) {}
+  template <class _Source>
+    requires __ycxx::__detail::__fs_source<_Source>
+  path(const _Source& __source, format = auto_format) {
+    __ycxx::__detail::__fs_append_source(__s_, __source);
   }
-  template <class InputIterator>
-    requires ycxx::detail::fs_char_iterator<InputIterator>
-  path(InputIterator first, InputIterator last, format = auto_format) {
-    ycxx::detail::fs_append_range(s_, first, last);
+  template <class _InputIterator>
+    requires __ycxx::__detail::__fs_char_iterator<_InputIterator>
+  path(_InputIterator first, _InputIterator last, format = auto_format) {
+    __ycxx::__detail::__fs_append_range(__s_, first, last);
   }
-  template <class Source>
-    requires ycxx::detail::fs_source<Source>
-  path(const Source& source, const locale& loc, format = auto_format) {
-    static_assert(is_same_v<ycxx::detail::fs_source_char_t<Source>, char>,
+  template <class _Source>
+    requires __ycxx::__detail::__fs_source<_Source>
+  path(const _Source& __source, const locale& __loc, format = auto_format) {
+    static_assert(is_same_v<__ycxx::__detail::__fs_source_char_t<_Source>, char>,
                   "[fs.path.construct]/5: the value type of Source must be char");
-    string_type tmp = ycxx::detail::fs_native_source(source);
-    s_ = ycxx::detail::fs_native_through_locale(tmp.data(), tmp.data() + tmp.size(), loc);
+    string_type __tmp = __ycxx::__detail::__fs_native_source(__source);
+    __s_ = __ycxx::__detail::__fs_native_through_locale(__tmp.data(), __tmp.data() + __tmp.size(), __loc);
   }
-  template <class InputIterator>
-    requires ycxx::detail::fs_char_iterator<InputIterator>
-  path(InputIterator first, InputIterator last, const locale& loc, format = auto_format) {
-    static_assert(is_same_v<remove_cv_t<typename iterator_traits<InputIterator>::value_type>, char>,
+  template <class _InputIterator>
+    requires __ycxx::__detail::__fs_char_iterator<_InputIterator>
+  path(_InputIterator first, _InputIterator last, const locale& __loc, format = auto_format) {
+    static_assert(is_same_v<remove_cv_t<typename iterator_traits<_InputIterator>::value_type>, char>,
                   "[fs.path.construct]/5: the value type of InputIterator must be char");
-    string_type tmp = ycxx::detail::fs_native_range(first, last);
-    s_ = ycxx::detail::fs_native_through_locale(tmp.data(), tmp.data() + tmp.size(), loc);
+    string_type __tmp = __ycxx::__detail::__fs_native_range(first, last);
+    __s_ = __ycxx::__detail::__fs_native_through_locale(__tmp.data(), __tmp.data() + __tmp.size(), __loc);
   }
   ~path() = default;
 
@@ -340,140 +340,140 @@ public:
   path& operator=(const path& p) = default;
   path& operator=(path&& p) noexcept {
     if (this != __builtin_addressof(p))
-      s_ = static_cast<string_type&&>(p.s_);
+      __s_ = static_cast<string_type&&>(p.__s_);
     return *this;
   }
-  path& operator=(string_type&& source) { return assign(static_cast<string_type&&>(source)); }
-  path& assign(string_type&& source) {
-    s_ = static_cast<string_type&&>(source);
+  path& operator=(string_type&& __source) { return assign(static_cast<string_type&&>(__source)); }
+  path& assign(string_type&& __source) {
+    __s_ = static_cast<string_type&&>(__source);
     return *this;
   }
-  template <class Source>
-    requires ycxx::detail::fs_source<Source>
-  path& operator=(const Source& source) {
-    return assign(source);
+  template <class _Source>
+    requires __ycxx::__detail::__fs_source<_Source>
+  path& operator=(const _Source& __source) {
+    return assign(__source);
   }
-  template <class Source>
-    requires ycxx::detail::fs_source<Source>
-  path& assign(const Source& source) {
-    s_.clear(); // keeps the capacity: no allocation when the pathname fits
-    ycxx::detail::fs_append_source(s_, source);
+  template <class _Source>
+    requires __ycxx::__detail::__fs_source<_Source>
+  path& assign(const _Source& __source) {
+    __s_.clear(); // keeps the capacity: no allocation when the pathname fits
+    __ycxx::__detail::__fs_append_source(__s_, __source);
     return *this;
   }
-  template <class InputIterator>
-    requires ycxx::detail::fs_char_iterator<InputIterator>
-  path& assign(InputIterator first, InputIterator last) {
-    s_.clear();
-    ycxx::detail::fs_append_range(s_, first, last);
+  template <class _InputIterator>
+    requires __ycxx::__detail::__fs_char_iterator<_InputIterator>
+  path& assign(_InputIterator first, _InputIterator last) {
+    __s_.clear();
+    __ycxx::__detail::__fs_append_range(__s_, first, last);
     return *this;
   }
 
   // [fs.path.append]
   path& operator/=(const path& p);
-  template <class Source>
-    requires ycxx::detail::fs_source<Source>
-  path& operator/=(const Source& source) {
-    return operator/=(path(source));
+  template <class _Source>
+    requires __ycxx::__detail::__fs_source<_Source>
+  path& operator/=(const _Source& __source) {
+    return operator/=(path(__source));
   }
-  template <class Source>
-    requires ycxx::detail::fs_source<Source>
-  path& append(const Source& source) {
-    return operator/=(path(source));
+  template <class _Source>
+    requires __ycxx::__detail::__fs_source<_Source>
+  path& append(const _Source& __source) {
+    return operator/=(path(__source));
   }
-  template <class InputIterator>
-    requires ycxx::detail::fs_char_iterator<InputIterator>
-  path& append(InputIterator first, InputIterator last) {
+  template <class _InputIterator>
+    requires __ycxx::__detail::__fs_char_iterator<_InputIterator>
+  path& append(_InputIterator first, _InputIterator last) {
     return operator/=(path(first, last));
   }
 
   // [fs.path.concat]
-  path& operator+=(const path& x) {
-    s_.append(x.s_);
+  path& operator+=(const path& __x) {
+    __s_.append(__x.__s_);
     return *this;
   }
-  path& operator+=(const string_type& x) {
-    s_.append(x);
+  path& operator+=(const string_type& __x) {
+    __s_.append(__x);
     return *this;
   }
-  path& operator+=(basic_string_view<value_type> x) {
-    s_.append(x);
+  path& operator+=(basic_string_view<value_type> __x) {
+    __s_.append(__x);
     return *this;
   }
-  path& operator+=(const value_type* x) {
-    s_.append(x);
+  path& operator+=(const value_type* __x) {
+    __s_.append(__x);
     return *this;
   }
-  path& operator+=(value_type x) {
-    s_.push_back(x);
+  path& operator+=(value_type __x) {
+    __s_.push_back(__x);
     return *this;
   }
-  template <class Source>
-    requires ycxx::detail::fs_source<Source>
-  path& operator+=(const Source& x) {
-    return concat(x);
+  template <class _Source>
+    requires __ycxx::__detail::__fs_source<_Source>
+  path& operator+=(const _Source& __x) {
+    return concat(__x);
   }
-  template <class EcharT>
-    requires ycxx::detail::fs_echar<EcharT>
-  path& operator+=(EcharT x) {
-    return *this += basic_string_view<EcharT>(__builtin_addressof(x), 1);
+  template <class _EcharT>
+    requires __ycxx::__detail::__fs_echar<_EcharT>
+  path& operator+=(_EcharT __x) {
+    return *this += basic_string_view<_EcharT>(__builtin_addressof(__x), 1);
   }
-  template <class Source>
-    requires ycxx::detail::fs_source<Source>
-  path& concat(const Source& x) {
-    ycxx::detail::fs_append_source(s_, x);
+  template <class _Source>
+    requires __ycxx::__detail::__fs_source<_Source>
+  path& concat(const _Source& __x) {
+    __ycxx::__detail::__fs_append_source(__s_, __x);
     return *this;
   }
-  template <class InputIterator>
-    requires ycxx::detail::fs_char_iterator<InputIterator>
-  path& concat(InputIterator first, InputIterator last) {
-    ycxx::detail::fs_append_range(s_, first, last);
+  template <class _InputIterator>
+    requires __ycxx::__detail::__fs_char_iterator<_InputIterator>
+  path& concat(_InputIterator first, _InputIterator last) {
+    __ycxx::__detail::__fs_append_range(__s_, first, last);
     return *this;
   }
 
   // [fs.path.modifiers]
-  void clear() noexcept { s_.clear(); }
+  void clear() noexcept { __s_.clear(); }
   path& make_preferred() { return *this; } // '/' is the only separator
   path& remove_filename();
-  path& replace_filename(const path& replacement);
-  path& replace_extension(const path& replacement = path());
-  void swap(path& rhs) noexcept { s_.swap(rhs.s_); }
+  path& replace_filename(const path& __replacement);
+  path& replace_extension(const path& __replacement = path());
+  void swap(path& __rhs) noexcept { __s_.swap(__rhs.__s_); }
 
   // [fs.path.nonmember]
-  friend bool operator==(const path& lhs, const path& rhs) noexcept { return lhs.compare(rhs) == 0; }
-  friend strong_ordering operator<=>(const path& lhs, const path& rhs) noexcept { return lhs.compare(rhs) <=> 0; }
-  friend path operator/(const path& lhs, const path& rhs) {
-    path r(lhs);
-    r /= rhs;
+  friend bool operator==(const path& __lhs, const path& __rhs) noexcept { return __lhs.compare(__rhs) == 0; }
+  friend strong_ordering operator<=>(const path& __lhs, const path& __rhs) noexcept { return __lhs.compare(__rhs) <=> 0; }
+  friend path operator/(const path& __lhs, const path& __rhs) {
+    path r(__lhs);
+    r /= __rhs;
     return r;
   }
 
   // [fs.path.native.obs]
-  const string_type& native() const noexcept { return s_; }
-  const value_type* c_str() const noexcept { return s_.c_str(); }
-  operator string_type() const { return s_; }
-  template <class EcharT, class traits = char_traits<EcharT>, class Allocator = allocator<EcharT>>
-    requires ycxx::detail::fs_echar<EcharT>
-  basic_string<EcharT, traits, Allocator> string(const Allocator& a = Allocator()) const {
-    return ycxx::detail::fs_convert_out<EcharT, traits, Allocator>(s_, a);
+  const string_type& native() const noexcept { return __s_; }
+  const value_type* c_str() const noexcept { return __s_.c_str(); }
+  operator string_type() const { return __s_; }
+  template <class _EcharT, class __traits = char_traits<_EcharT>, class _Allocator = allocator<_EcharT>>
+    requires __ycxx::__detail::__fs_echar<_EcharT>
+  basic_string<_EcharT, __traits, _Allocator> string(const _Allocator& a = _Allocator()) const {
+    return __ycxx::__detail::__fs_convert_out<_EcharT, __traits, _Allocator>(__s_, a);
   }
   // [depr.fs.path.obs] (Annex D)
   [[deprecated("path::string() is deprecated ([depr.fs.path.obs]); use native_encoded_string() or "
                "display_string()")]]
   std::string string() const {
-    return s_;
+    return __s_;
   }
-  std::string display_string() const { return s_; }
-  std::string native_encoded_string() const { return s_; }
+  std::string display_string() const { return __s_; }
+  std::string native_encoded_string() const { return __s_; }
   std::wstring wstring() const { return string<wchar_t>(); }
   std::u8string u8string() const { return string<char8_t>(); }
   std::u16string u16string() const { return string<char16_t>(); }
   std::u32string u32string() const { return string<char32_t>(); }
 
   // [fs.path.generic.obs]: the native format with each run of slashes written as one.
-  template <class EcharT, class traits = char_traits<EcharT>, class Allocator = allocator<EcharT>>
-    requires ycxx::detail::fs_echar<EcharT>
-  basic_string<EcharT, traits, Allocator> generic_string(const Allocator& a = Allocator()) const {
-    return ycxx::detail::fs_convert_out<EcharT, traits, Allocator>(s_, a, true);
+  template <class _EcharT, class __traits = char_traits<_EcharT>, class _Allocator = allocator<_EcharT>>
+    requires __ycxx::__detail::__fs_echar<_EcharT>
+  basic_string<_EcharT, __traits, _Allocator> generic_string(const _Allocator& a = _Allocator()) const {
+    return __ycxx::__detail::__fs_convert_out<_EcharT, __traits, _Allocator>(__s_, a, true);
   }
   // [depr.fs.path.obs] (Annex D)
   [[deprecated("path::generic_string() is deprecated ([depr.fs.path.obs]); use "
@@ -505,9 +505,9 @@ public:
   path extension() const;
 
   // [fs.path.query]
-  [[nodiscard]] bool empty() const noexcept { return s_.empty(); }
+  [[nodiscard]] bool empty() const noexcept { return __s_.empty(); }
   bool has_root_name() const { return false; }
-  bool has_root_directory() const { return !s_.empty() && s_[0] == '/'; }
+  bool has_root_directory() const { return !__s_.empty() && __s_[0] == '/'; }
   bool has_root_path() const { return has_root_directory(); }
   bool has_relative_path() const;
   bool has_parent_path() const;
@@ -527,21 +527,21 @@ public:
   iterator end() const;
 
   // [fs.path.io]
-  template <class charT, class traits>
-  friend basic_ostream<charT, traits>& operator<<(basic_ostream<charT, traits>& os, const path& p) {
-    os << std::quoted(p.string<charT, traits>());
-    return os;
+  template <class __charT, class __traits>
+  friend basic_ostream<__charT, __traits>& operator<<(basic_ostream<__charT, __traits>& __os, const path& p) {
+    __os << std::quoted(p.string<__charT, __traits>());
+    return __os;
   }
-  template <class charT, class traits>
-  friend basic_istream<charT, traits>& operator>>(basic_istream<charT, traits>& is, path& p) {
-    basic_string<charT, traits> tmp;
-    is >> std::quoted(tmp);
-    p = tmp;
+  template <class __charT, class __traits>
+  friend basic_istream<__charT, __traits>& operator>>(basic_istream<__charT, __traits>& is, path& p) {
+    basic_string<__charT, __traits> __tmp;
+    is >> std::quoted(__tmp);
+    p = __tmp;
     return is;
   }
 
 private:
-  string_type s_;
+  string_type __s_;
 };
 
 // [fs.path.itr]: a bidirectional iterator over the elements; the element it designates is held
@@ -558,8 +558,8 @@ public:
   using reference = const path&;
 
   iterator() = default;
-  reference operator*() const { return elem_; }
-  pointer operator->() const { return __builtin_addressof(elem_); }
+  reference operator*() const { return __elem_; }
+  pointer operator->() const { return __builtin_addressof(__elem_); }
   iterator& operator++();
   iterator operator++(int) {
     iterator t(*this);
@@ -572,72 +572,72 @@ public:
     --*this;
     return t;
   }
-  friend bool operator==(const iterator& a, const iterator& b) noexcept { return a.p_ == b.p_ && a.pos_ == b.pos_; }
+  friend bool operator==(const iterator& a, const iterator& b) noexcept { return a.__p_ == b.__p_ && a.__pos_ == b.__pos_; }
 
 private:
   friend class path;
   void load();
 
-  const path* p_ = nullptr;
-  size_t pos_ = 0;
-  path elem_;
+  const path* __p_ = nullptr;
+  size_t __pos_ = 0;
+  path __elem_;
 };
 
 // [fs.path.nonmember]
-inline void swap(path& lhs, path& rhs) noexcept { lhs.swap(rhs); }
+inline void swap(path& __lhs, path& __rhs) noexcept { __lhs.swap(__rhs); }
 size_t hash_value(const path& p) noexcept;
 
 // [depr.fs.path.factory]: the native encoding is UTF-8 already.
-template <class Source>
-  requires ycxx::detail::fs_source<Source>
+template <class _Source>
+  requires __ycxx::__detail::__fs_source<_Source>
 [[deprecated("u8path is deprecated ([depr.fs.path.factory]); construct a path from a u8string")]]
-path u8path(const Source& source) {
-  static_assert(is_same_v<ycxx::detail::fs_source_char_t<Source>, char> ||
-                    is_same_v<ycxx::detail::fs_source_char_t<Source>, char8_t>,
+path u8path(const _Source& __source) {
+  static_assert(is_same_v<__ycxx::__detail::__fs_source_char_t<_Source>, char> ||
+                    is_same_v<__ycxx::__detail::__fs_source_char_t<_Source>, char8_t>,
                 "[depr.fs.path.factory]/2: the value type of Source must be char or char8_t");
-  return path(source);
+  return path(__source);
 }
-template <class InputIterator>
-  requires ycxx::detail::fs_char_iterator<InputIterator>
+template <class _InputIterator>
+  requires __ycxx::__detail::__fs_char_iterator<_InputIterator>
 [[deprecated("u8path is deprecated ([depr.fs.path.factory]); construct a path from a u8string")]]
-path u8path(InputIterator first, InputIterator last) {
-  using C = remove_cv_t<typename iterator_traits<InputIterator>::value_type>;
-  static_assert(is_same_v<C, char> || is_same_v<C, char8_t>,
+path u8path(_InputIterator first, _InputIterator last) {
+  using _Cp = remove_cv_t<typename iterator_traits<_InputIterator>::value_type>;
+  static_assert(is_same_v<_Cp, char> || is_same_v<_Cp, char8_t>,
                 "[depr.fs.path.factory]/2: the value type of InputIterator must be char or char8_t");
   return path(first, last);
 }
 
 }} // namespace std::filesystem
 
-namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
 // The shared state of a filesystem_error: copies of an exception share it, so copying never
 // allocates.
-struct fs_error_data {
-  std::filesystem::path p1, p2;
+struct __fs_error_data {
+  std::filesystem::path __p1, __p2;
   std::string what;
 };
-}} // namespace ycxx::detail
+}} // namespace __ycxx::__detail
 
-namespace [[gnu::visibility("hidden")]] std { namespace filesystem {
+namespace [[__gnu__::__visibility__("hidden")]] std { namespace filesystem {
 
 // [fs.class.filesystem.error]. The constructors and the destructor (the key function) are in the
 // hosted runtime. what() is "filesystem error: " followed by system_error::what() and the
 // non-empty paths in brackets.
 class filesystem_error : public system_error {
 public:
-  filesystem_error(const string& what_arg, error_code ec);
-  filesystem_error(const string& what_arg, const path& p1, error_code ec);
-  filesystem_error(const string& what_arg, const path& p1, const path& p2, error_code ec);
+  filesystem_error(const string& __what_arg, error_code ec);
+  filesystem_error(const string& __what_arg, const path& __p1, error_code ec);
+  filesystem_error(const string& __what_arg, const path& __p1, const path& __p2, error_code ec);
   filesystem_error(const filesystem_error&) noexcept = default;
   filesystem_error& operator=(const filesystem_error&) noexcept = default;
   ~filesystem_error() override;
 
-  const path& path1() const noexcept { return data_->p1; }
-  const path& path2() const noexcept { return data_->p2; }
-  const char* what() const noexcept override { return data_->what.c_str(); }
+  const path& path1() const noexcept { return __data_->__p1; }
+  const path& path2() const noexcept { return __data_->__p2; }
+  const char* what() const noexcept override { return __data_->what.c_str(); }
 
 private:
-  shared_ptr<const ycxx::detail::fs_error_data> data_;
+  shared_ptr<const __ycxx::__detail::__fs_error_data> __data_;
 };
 
 // [fs.enum.file.type]
@@ -708,68 +708,68 @@ enum class directory_options : unsigned char {
 
 }} // namespace std::filesystem
 
-namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
-template <class E>
-concept fs_bitmask = std::is_same_v<E, std::filesystem::copy_options> || std::is_same_v<E, std::filesystem::perms> ||
-                     std::is_same_v<E, std::filesystem::perm_options> ||
-                     std::is_same_v<E, std::filesystem::directory_options>;
-}} // namespace ycxx::detail
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+template <class _Ep>
+concept __fs_bitmask = std::is_same_v<_Ep, std::filesystem::copy_options> || std::is_same_v<_Ep, std::filesystem::perms> ||
+                     std::is_same_v<_Ep, std::filesystem::perm_options> ||
+                     std::is_same_v<_Ep, std::filesystem::directory_options>;
+}} // namespace __ycxx::__detail
 
-namespace [[gnu::visibility("hidden")]] std { namespace filesystem {
+namespace [[__gnu__::__visibility__("hidden")]] std { namespace filesystem {
 
 // [bitmask.types]: the operators of the four bitmask types.
-template <ycxx::detail::fs_bitmask E>
-constexpr E operator&(E x, E y) noexcept {
-  return static_cast<E>(static_cast<underlying_type_t<E>>(x) & static_cast<underlying_type_t<E>>(y));
+template <__ycxx::__detail::__fs_bitmask _Ep>
+constexpr _Ep operator&(_Ep __x, _Ep y) noexcept {
+  return static_cast<_Ep>(static_cast<underlying_type_t<_Ep>>(__x) & static_cast<underlying_type_t<_Ep>>(y));
 }
-template <ycxx::detail::fs_bitmask E>
-constexpr E operator|(E x, E y) noexcept {
-  return static_cast<E>(static_cast<underlying_type_t<E>>(x) | static_cast<underlying_type_t<E>>(y));
+template <__ycxx::__detail::__fs_bitmask _Ep>
+constexpr _Ep operator|(_Ep __x, _Ep y) noexcept {
+  return static_cast<_Ep>(static_cast<underlying_type_t<_Ep>>(__x) | static_cast<underlying_type_t<_Ep>>(y));
 }
-template <ycxx::detail::fs_bitmask E>
-constexpr E operator^(E x, E y) noexcept {
-  return static_cast<E>(static_cast<underlying_type_t<E>>(x) ^ static_cast<underlying_type_t<E>>(y));
+template <__ycxx::__detail::__fs_bitmask _Ep>
+constexpr _Ep operator^(_Ep __x, _Ep y) noexcept {
+  return static_cast<_Ep>(static_cast<underlying_type_t<_Ep>>(__x) ^ static_cast<underlying_type_t<_Ep>>(y));
 }
-template <ycxx::detail::fs_bitmask E>
-constexpr E operator~(E x) noexcept {
-  return static_cast<E>(static_cast<underlying_type_t<E>>(~static_cast<underlying_type_t<E>>(x)));
+template <__ycxx::__detail::__fs_bitmask _Ep>
+constexpr _Ep operator~(_Ep __x) noexcept {
+  return static_cast<_Ep>(static_cast<underlying_type_t<_Ep>>(~static_cast<underlying_type_t<_Ep>>(__x)));
 }
-template <ycxx::detail::fs_bitmask E>
-constexpr E& operator&=(E& x, E y) noexcept {
-  return x = x & y;
+template <__ycxx::__detail::__fs_bitmask _Ep>
+constexpr _Ep& operator&=(_Ep& __x, _Ep y) noexcept {
+  return __x = __x & y;
 }
-template <ycxx::detail::fs_bitmask E>
-constexpr E& operator|=(E& x, E y) noexcept {
-  return x = x | y;
+template <__ycxx::__detail::__fs_bitmask _Ep>
+constexpr _Ep& operator|=(_Ep& __x, _Ep y) noexcept {
+  return __x = __x | y;
 }
-template <ycxx::detail::fs_bitmask E>
-constexpr E& operator^=(E& x, E y) noexcept {
-  return x = x ^ y;
+template <__ycxx::__detail::__fs_bitmask _Ep>
+constexpr _Ep& operator^=(_Ep& __x, _Ep y) noexcept {
+  return __x = __x ^ y;
 }
 
 // [fs.class.file.status]
 class file_status {
 public:
   file_status() noexcept : file_status(file_type::none) {}
-  explicit file_status(file_type ft, perms prms = perms::unknown) noexcept : type_(ft), perms_(prms) {}
+  explicit file_status(file_type __ft, perms __prms = perms::unknown) noexcept : __type_(__ft), __perms_(__prms) {}
   file_status(const file_status&) noexcept = default;
   file_status(file_status&&) noexcept = default;
   ~file_status() = default;
   file_status& operator=(const file_status&) noexcept = default;
   file_status& operator=(file_status&&) noexcept = default;
 
-  void type(file_type ft) noexcept { type_ = ft; }
-  void permissions(perms prms) noexcept { perms_ = prms; }
-  file_type type() const noexcept { return type_; }
-  perms permissions() const noexcept { return perms_; }
+  void type(file_type __ft) noexcept { __type_ = __ft; }
+  void permissions(perms __prms) noexcept { __perms_ = __prms; }
+  file_type type() const noexcept { return __type_; }
+  perms permissions() const noexcept { return __perms_; }
 
-  friend bool operator==(const file_status& lhs, const file_status& rhs) noexcept {
-    return lhs.type() == rhs.type() && lhs.permissions() == rhs.permissions();
+  friend bool operator==(const file_status& __lhs, const file_status& __rhs) noexcept {
+    return __lhs.type() == __rhs.type() && __lhs.permissions() == __rhs.permissions();
   }
 
 private:
-  file_type type_;
-  perms perms_;
+  file_type __type_;
+  perms __perms_;
 };
 
 struct space_info {
@@ -783,80 +783,80 @@ using file_time_type = chrono::time_point<chrono::file_clock>;
 
 }} // namespace std::filesystem
 
-namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
 
-[[noreturn, gnu::cold]] inline void fs_raise(const char* what, std::error_code ec) {
-  ::ycxx::detail::raise_with(ycxx_error_filesystem_error, what,
+[[noreturn, __gnu__::__cold__]] inline void __fs_raise(const char* what, std::error_code ec) {
+  ::__ycxx::__detail::__raise_with(ycxx_error_filesystem_error, what,
                              [&] { return std::filesystem::filesystem_error(what, ec); });
 }
-[[noreturn, gnu::cold]] inline void fs_raise(const char* what, const std::filesystem::path& p1, std::error_code ec) {
-  ::ycxx::detail::raise_with(ycxx_error_filesystem_error, what,
-                             [&] { return std::filesystem::filesystem_error(what, p1, ec); });
+[[noreturn, __gnu__::__cold__]] inline void __fs_raise(const char* what, const std::filesystem::path& __p1, std::error_code ec) {
+  ::__ycxx::__detail::__raise_with(ycxx_error_filesystem_error, what,
+                             [&] { return std::filesystem::filesystem_error(what, __p1, ec); });
 }
-[[noreturn, gnu::cold]] inline void fs_raise(const char* what, const std::filesystem::path& p1,
-                                             const std::filesystem::path& p2, std::error_code ec) {
-  ::ycxx::detail::raise_with(ycxx_error_filesystem_error, what,
-                             [&] { return std::filesystem::filesystem_error(what, p1, p2, ec); });
+[[noreturn, __gnu__::__cold__]] inline void __fs_raise(const char* what, const std::filesystem::path& __p1,
+                                             const std::filesystem::path& __p2, std::error_code ec) {
+  ::__ycxx::__detail::__raise_with(ycxx_error_filesystem_error, what,
+                             [&] { return std::filesystem::filesystem_error(what, __p1, __p2, ec); });
 }
 // For the iterator members, which take no path argument ([fs.err.report]/2.1): the exception
 // carries no path; the directory being read is named in the message.
-[[noreturn, gnu::cold]] inline void fs_raise_in(const char* what, const std::filesystem::path& dir,
+[[noreturn, __gnu__::__cold__]] inline void __fs_raise_in(const char* what, const std::filesystem::path& __dir,
                                                 std::error_code ec) {
-  ::ycxx::detail::raise_with(ycxx_error_filesystem_error, what, [&] {
-    std::string msg(what);
-    msg += " in \"";
-    msg += dir.native();
-    msg += '"';
-    return std::filesystem::filesystem_error(msg, ec);
+  ::__ycxx::__detail::__raise_with(ycxx_error_filesystem_error, what, [&] {
+    std::string __msg(what);
+    __msg += " in \"";
+    __msg += __dir.native();
+    __msg += '"';
+    return std::filesystem::filesystem_error(__msg, ec);
   });
 }
 
-// The attribute values a directory_entry caches ([fs.class.directory.entry]/2). `level` says
+// The attribute values a directory_entry caches ([fs.class.directory.entry]/2). `__level` says
 // what is stored: 0 nothing; 1 only the file type from the directory listing (sym_type, and
 // type when it is not a symbolic link); 2 the results of lstat (and stat for a symbolic link)
 // with the errors they reported, so that the observers return exactly what the operations would.
-struct fs_attr_cache {
-  unsigned char level = 0;
-  std::filesystem::file_type sym_type = std::filesystem::file_type::none;
+struct __fs_attr_cache {
+  unsigned char __level = 0;
+  std::filesystem::file_type __sym_type = std::filesystem::file_type::none;
   std::filesystem::file_type type = std::filesystem::file_type::none;
-  std::filesystem::perms sym_perms = std::filesystem::perms::unknown;
+  std::filesystem::perms __sym_perms = std::filesystem::perms::unknown;
   std::filesystem::perms perms = std::filesystem::perms::unknown;
-  int sym_err = 0;  // the error of lstat (level 2)
-  int stat_err = 0; // the error of stat (level 2)
+  int __sym_err = 0;  // the error of lstat (level 2)
+  int __stat_err = 0; // the error of stat (level 2)
   std::uintmax_t size = 0;
-  std::uintmax_t nlink = 0;
-  long long mtime = 0; // nanoseconds since the Unix epoch
+  std::uintmax_t __nlink = 0;
+  long long __mtime = 0; // nanoseconds since the Unix epoch
 };
 
-struct fs_dir_state;
-struct fs_rec_state;
-struct fs_postfix_entry;
+struct __fs_dir_state;
+struct __fs_rec_state;
+struct __fs_postfix_entry;
 
-}} // namespace ycxx::detail
+}} // namespace __ycxx::__detail
 
-namespace [[gnu::visibility("hidden")]] std { namespace filesystem {
+namespace [[__gnu__::__visibility__("hidden")]] std { namespace filesystem {
 
 // [fs.op.funcs]: the error_code forms (hosted runtime).
 path absolute(const path& p, error_code& ec);
 path canonical(const path& p, error_code& ec);
 void copy(const path& from, const path& to, copy_options options, error_code& ec);
-bool copy_file(const path& from, const path& to, copy_options option, error_code& ec);
-void copy_symlink(const path& existing_symlink, const path& new_symlink, error_code& ec) noexcept;
+bool copy_file(const path& from, const path& to, copy_options __option, error_code& ec);
+void copy_symlink(const path& __existing_symlink, const path& __new_symlink, error_code& ec) noexcept;
 bool create_directories(const path& p, error_code& ec);
 bool create_directory(const path& p, error_code& ec) noexcept;
-bool create_directory(const path& p, const path& attributes, error_code& ec) noexcept;
-void create_directory_symlink(const path& to, const path& new_symlink, error_code& ec) noexcept;
-void create_hard_link(const path& to, const path& new_hard_link, error_code& ec) noexcept;
-void create_symlink(const path& to, const path& new_symlink, error_code& ec) noexcept;
+bool create_directory(const path& p, const path& __attributes, error_code& ec) noexcept;
+void create_directory_symlink(const path& to, const path& __new_symlink, error_code& ec) noexcept;
+void create_hard_link(const path& to, const path& __new_hard_link, error_code& ec) noexcept;
+void create_symlink(const path& to, const path& __new_symlink, error_code& ec) noexcept;
 path current_path(error_code& ec);
 void current_path(const path& p, error_code& ec) noexcept;
-bool equivalent(const path& p1, const path& p2, error_code& ec) noexcept;
+bool equivalent(const path& __p1, const path& __p2, error_code& ec) noexcept;
 uintmax_t file_size(const path& p, error_code& ec) noexcept;
 uintmax_t hard_link_count(const path& p, error_code& ec) noexcept;
 bool is_empty(const path& p, error_code& ec);
 file_time_type last_write_time(const path& p, error_code& ec) noexcept;
-void last_write_time(const path& p, file_time_type new_time, error_code& ec) noexcept;
-void permissions(const path& p, perms prms, perm_options opts, error_code& ec);
+void last_write_time(const path& p, file_time_type __new_time, error_code& ec) noexcept;
+void permissions(const path& p, perms __prms, perm_options __opts, error_code& ec);
 path read_symlink(const path& p, error_code& ec);
 bool remove(const path& p, error_code& ec) noexcept;
 uintmax_t remove_all(const path& p, error_code& ec);
@@ -874,11 +874,11 @@ public:
   directory_entry() noexcept = default;
   directory_entry(const directory_entry&) = default;
   directory_entry(directory_entry&&) noexcept = default;
-  explicit directory_entry(const filesystem::path& p) : path_(p) { refresh(); }
-  directory_entry(const filesystem::path& p, error_code& ec) : path_(p) {
+  explicit directory_entry(const filesystem::path& p) : __path_(p) { refresh(); }
+  directory_entry(const filesystem::path& p, error_code& ec) : __path_(p) {
     refresh(ec);
-    if (ec && cache_.sym_type != file_type::not_found) // a missing file keeps its path
-      path_.clear();
+    if (ec && __cache_.__sym_type != file_type::not_found) // a missing file keeps its path
+      __path_.clear();
   }
   ~directory_entry() = default;
   directory_entry& operator=(const directory_entry&) = default;
@@ -886,19 +886,19 @@ public:
 
   // [fs.dir.entry.mods]
   void assign(const filesystem::path& p) {
-    path_ = p;
+    __path_ = p;
     refresh();
   }
   void assign(const filesystem::path& p, error_code& ec) {
-    path_ = p;
+    __path_ = p;
     refresh(ec);
   }
   void replace_filename(const filesystem::path& p) {
-    path_.replace_filename(p);
+    __path_.replace_filename(p);
     refresh();
   }
   void replace_filename(const filesystem::path& p, error_code& ec) {
-    path_.replace_filename(p);
+    __path_.replace_filename(p);
     refresh(ec);
   }
   // A file that does not exist is reported in ec, but the throwing form does not throw for it
@@ -906,37 +906,37 @@ public:
   void refresh() {
     error_code ec;
     refresh(ec);
-    if (ec && cache_.sym_type != file_type::not_found)
-      ycxx::detail::fs_raise("std::filesystem::directory_entry::refresh", path_, ec);
+    if (ec && __cache_.__sym_type != file_type::not_found)
+      __ycxx::__detail::__fs_raise("std::filesystem::directory_entry::refresh", __path_, ec);
   }
   void refresh(error_code& ec) noexcept;
 
   // [fs.dir.entry.obs]
-  const filesystem::path& path() const noexcept { return path_; }
-  operator const filesystem::path&() const noexcept { return path_; }
-  bool exists() const { return filesystem_exists(status()); }
+  const filesystem::path& path() const noexcept { return __path_; }
+  operator const filesystem::path&() const noexcept { return __path_; }
+  bool exists() const { return __filesystem_exists(status()); }
   inline bool exists(error_code& ec) const noexcept;
-  bool is_block_file() const { return type_or_throw(false) == file_type::block; }
+  bool is_block_file() const { return __type_or_throw(false) == file_type::block; }
   bool is_block_file(error_code& ec) const noexcept { return type_of(false, ec) == file_type::block; }
-  bool is_character_file() const { return type_or_throw(false) == file_type::character; }
+  bool is_character_file() const { return __type_or_throw(false) == file_type::character; }
   bool is_character_file(error_code& ec) const noexcept { return type_of(false, ec) == file_type::character; }
-  bool is_directory() const { return type_or_throw(false) == file_type::directory; }
+  bool is_directory() const { return __type_or_throw(false) == file_type::directory; }
   bool is_directory(error_code& ec) const noexcept { return type_of(false, ec) == file_type::directory; }
-  bool is_fifo() const { return type_or_throw(false) == file_type::fifo; }
+  bool is_fifo() const { return __type_or_throw(false) == file_type::fifo; }
   bool is_fifo(error_code& ec) const noexcept { return type_of(false, ec) == file_type::fifo; }
   inline bool is_other() const;
   inline bool is_other(error_code& ec) const noexcept;
-  bool is_regular_file() const { return type_or_throw(false) == file_type::regular; }
+  bool is_regular_file() const { return __type_or_throw(false) == file_type::regular; }
   bool is_regular_file(error_code& ec) const noexcept { return type_of(false, ec) == file_type::regular; }
-  bool is_socket() const { return type_or_throw(false) == file_type::socket; }
+  bool is_socket() const { return __type_or_throw(false) == file_type::socket; }
   bool is_socket(error_code& ec) const noexcept { return type_of(false, ec) == file_type::socket; }
-  bool is_symlink() const { return type_or_throw(true) == file_type::symlink; }
+  bool is_symlink() const { return __type_or_throw(true) == file_type::symlink; }
   bool is_symlink(error_code& ec) const noexcept { return type_of(true, ec) == file_type::symlink; }
   uintmax_t file_size() const {
     error_code ec;
     uintmax_t r = file_size(ec);
     if (ec)
-      ycxx::detail::fs_raise("std::filesystem::directory_entry::file_size", path_, ec);
+      __ycxx::__detail::__fs_raise("std::filesystem::directory_entry::file_size", __path_, ec);
     return r;
   }
   uintmax_t file_size(error_code& ec) const noexcept;
@@ -944,7 +944,7 @@ public:
     error_code ec;
     uintmax_t r = hard_link_count(ec);
     if (ec)
-      ycxx::detail::fs_raise("std::filesystem::directory_entry::hard_link_count", path_, ec);
+      __ycxx::__detail::__fs_raise("std::filesystem::directory_entry::hard_link_count", __path_, ec);
     return r;
   }
   uintmax_t hard_link_count(error_code& ec) const noexcept;
@@ -952,7 +952,7 @@ public:
     error_code ec;
     file_time_type r = last_write_time(ec);
     if (ec)
-      ycxx::detail::fs_raise("std::filesystem::directory_entry::last_write_time", path_, ec);
+      __ycxx::__detail::__fs_raise("std::filesystem::directory_entry::last_write_time", __path_, ec);
     return r;
   }
   file_time_type last_write_time(error_code& ec) const noexcept;
@@ -960,7 +960,7 @@ public:
     error_code ec;
     file_status r = status(ec);
     if (r.type() == file_type::none)
-      ycxx::detail::fs_raise("std::filesystem::directory_entry::status", path_, ec);
+      __ycxx::__detail::__fs_raise("std::filesystem::directory_entry::status", __path_, ec);
     return r;
   }
   file_status status(error_code& ec) const noexcept;
@@ -968,39 +968,39 @@ public:
     error_code ec;
     file_status r = symlink_status(ec);
     if (r.type() == file_type::none)
-      ycxx::detail::fs_raise("std::filesystem::directory_entry::symlink_status", path_, ec);
+      __ycxx::__detail::__fs_raise("std::filesystem::directory_entry::symlink_status", __path_, ec);
     return r;
   }
   file_status symlink_status(error_code& ec) const noexcept;
 
-  bool operator==(const directory_entry& rhs) const noexcept { return path_ == rhs.path_; }
-  strong_ordering operator<=>(const directory_entry& rhs) const noexcept { return path_ <=> rhs.path_; }
+  bool operator==(const directory_entry& __rhs) const noexcept { return __path_ == __rhs.__path_; }
+  strong_ordering operator<=>(const directory_entry& __rhs) const noexcept { return __path_ <=> __rhs.__path_; }
 
   // [fs.dir.entry.io]
-  template <class charT, class traits>
-  friend basic_ostream<charT, traits>& operator<<(basic_ostream<charT, traits>& os, const directory_entry& d) {
-    return os << d.path();
+  template <class __charT, class __traits>
+  friend basic_ostream<__charT, __traits>& operator<<(basic_ostream<__charT, __traits>& __os, const directory_entry& d) {
+    return __os << d.path();
   }
 
 private:
-  friend struct ycxx::detail::fs_dir_state;
-  friend struct ycxx::detail::fs_rec_state;
+  friend struct __ycxx::__detail::__fs_dir_state;
+  friend struct __ycxx::__detail::__fs_rec_state;
 
-  static bool filesystem_exists(file_status s) noexcept {
+  static bool __filesystem_exists(file_status s) noexcept {
     return s.type() != file_type::none && s.type() != file_type::not_found;
   }
-  // The type of the file (of the link itself when `link`), from the cache when it holds it.
-  file_type type_of(bool link, error_code& ec) const noexcept;
-  file_type type_or_throw(bool link) const {
+  // The type of the file (of the link itself when `__link`), from the cache when it holds it.
+  file_type type_of(bool __link, error_code& ec) const noexcept;
+  file_type __type_or_throw(bool __link) const {
     error_code ec;
-    file_type t = type_of(link, ec);
+    file_type t = type_of(__link, ec);
     if (t == file_type::none)
-      ycxx::detail::fs_raise("std::filesystem::directory_entry::status", path_, ec);
+      __ycxx::__detail::__fs_raise("std::filesystem::directory_entry::status", __path_, ec);
     return t;
   }
 
-  filesystem::path path_;
-  ycxx::detail::fs_attr_cache cache_;
+  filesystem::path __path_;
+  __ycxx::__detail::__fs_attr_cache __cache_;
 };
 
 // [fs.class.directory.iterator]. Copies share the open directory (an input iterator).
@@ -1018,15 +1018,15 @@ public:
     error_code ec;
     open(p, options, ec);
     if (ec)
-      ycxx::detail::fs_raise("std::filesystem::directory_iterator::directory_iterator", p, ec);
+      __ycxx::__detail::__fs_raise("std::filesystem::directory_iterator::directory_iterator", p, ec);
   }
   directory_iterator(const path& p, error_code& ec) { open(p, directory_options::none, ec); }
   directory_iterator(const path& p, directory_options options, error_code& ec) { open(p, options, ec); }
-  directory_iterator(const directory_iterator& rhs) = default;
-  directory_iterator(directory_iterator&& rhs) noexcept = default;
+  directory_iterator(const directory_iterator& __rhs) = default;
+  directory_iterator(directory_iterator&& __rhs) noexcept = default;
   ~directory_iterator() = default;
-  directory_iterator& operator=(const directory_iterator& rhs) = default;
-  directory_iterator& operator=(directory_iterator&& rhs) noexcept = default;
+  directory_iterator& operator=(const directory_iterator& __rhs) = default;
+  directory_iterator& operator=(directory_iterator&& __rhs) noexcept = default;
 
   const directory_entry& operator*() const;
   const directory_entry* operator->() const { return __builtin_addressof(**this); }
@@ -1035,7 +1035,7 @@ public:
     path where;
     advance(ec, &where);
     if (ec)
-      ycxx::detail::fs_raise_in("std::filesystem::directory_iterator::operator++", where, ec);
+      __ycxx::__detail::__fs_raise_in("std::filesystem::directory_iterator::operator++", where, ec);
     return *this;
   }
   directory_iterator& increment(error_code& ec) {
@@ -1043,18 +1043,18 @@ public:
     return *this;
   }
   // [iterator.cpp17.input]: *r++ is the entry before the increment.
-  ycxx::detail::fs_postfix_entry operator++(int);
+  __ycxx::__detail::__fs_postfix_entry operator++(int);
 
-  bool operator==(default_sentinel_t) const noexcept { return state_ == nullptr; }
+  bool operator==(default_sentinel_t) const noexcept { return __state_ == nullptr; }
   friend bool operator==(const directory_iterator& a, const directory_iterator& b) noexcept {
-    return a.state_.get() == b.state_.get();
+    return a.__state_.get() == b.__state_.get();
   }
 
 private:
   void open(const path& p, directory_options options, error_code& ec);
   void advance(error_code& ec, path* where);
 
-  shared_ptr<ycxx::detail::fs_dir_state> state_;
+  shared_ptr<__ycxx::__detail::__fs_dir_state> __state_;
 };
 
 // [fs.dir.itr.nonmembers]
@@ -1078,12 +1078,12 @@ public:
     error_code ec;
     open(p, options, ec);
     if (ec)
-      ycxx::detail::fs_raise("std::filesystem::recursive_directory_iterator::recursive_directory_iterator", p, ec);
+      __ycxx::__detail::__fs_raise("std::filesystem::recursive_directory_iterator::recursive_directory_iterator", p, ec);
   }
   recursive_directory_iterator(const path& p, directory_options options, error_code& ec) { open(p, options, ec); }
   recursive_directory_iterator(const path& p, error_code& ec) { open(p, directory_options::none, ec); }
-  recursive_directory_iterator(const recursive_directory_iterator& rhs) = default;
-  recursive_directory_iterator(recursive_directory_iterator&& rhs) noexcept = default;
+  recursive_directory_iterator(const recursive_directory_iterator& __rhs) = default;
+  recursive_directory_iterator(recursive_directory_iterator&& __rhs) noexcept = default;
   ~recursive_directory_iterator() = default;
 
   directory_options options() const;
@@ -1092,14 +1092,14 @@ public:
   const directory_entry& operator*() const;
   const directory_entry* operator->() const { return __builtin_addressof(**this); }
 
-  recursive_directory_iterator& operator=(const recursive_directory_iterator& rhs) = default;
-  recursive_directory_iterator& operator=(recursive_directory_iterator&& rhs) noexcept = default;
+  recursive_directory_iterator& operator=(const recursive_directory_iterator& __rhs) = default;
+  recursive_directory_iterator& operator=(recursive_directory_iterator&& __rhs) noexcept = default;
   recursive_directory_iterator& operator++() {
     error_code ec;
     path where;
     advance(ec, &where);
     if (ec)
-      ycxx::detail::fs_raise_in("std::filesystem::recursive_directory_iterator::operator++", where, ec);
+      __ycxx::__detail::__fs_raise_in("std::filesystem::recursive_directory_iterator::operator++", where, ec);
     return *this;
   }
   recursive_directory_iterator& increment(error_code& ec) {
@@ -1107,20 +1107,20 @@ public:
     return *this;
   }
   // [fs.rec.dir.itr.members]/7-8: copies have their own recursion_pending().
-  ycxx::detail::fs_postfix_entry operator++(int);
+  __ycxx::__detail::__fs_postfix_entry operator++(int);
   void pop() {
     error_code ec;
     path where;
     pop(ec, &where);
     if (ec)
-      ycxx::detail::fs_raise_in("std::filesystem::recursive_directory_iterator::pop", where, ec);
+      __ycxx::__detail::__fs_raise_in("std::filesystem::recursive_directory_iterator::pop", where, ec);
   }
   void pop(error_code& ec) { pop(ec, nullptr); }
   void disable_recursion_pending();
 
-  bool operator==(default_sentinel_t) const noexcept { return state_ == nullptr; }
+  bool operator==(default_sentinel_t) const noexcept { return __state_ == nullptr; }
   friend bool operator==(const recursive_directory_iterator& a, const recursive_directory_iterator& b) noexcept {
-    return a.state_.get() == b.state_.get();
+    return a.__state_.get() == b.__state_.get();
   }
 
 private:
@@ -1128,8 +1128,8 @@ private:
   void advance(error_code& ec, path* where);
   void pop(error_code& ec, path* where);
 
-  shared_ptr<ycxx::detail::fs_rec_state> state_;
-  bool pending_ = true; // recursion_pending()
+  shared_ptr<__ycxx::__detail::__fs_rec_state> __state_;
+  bool __pending_ = true; // recursion_pending()
 };
 
 // [fs.rec.dir.itr.nonmembers]
@@ -1141,182 +1141,182 @@ inline path absolute(const path& p) {
   error_code ec;
   path r = absolute(p, ec);
   if (ec)
-    ycxx::detail::fs_raise("std::filesystem::absolute", p, ec);
+    __ycxx::__detail::__fs_raise("std::filesystem::absolute", p, ec);
   return r;
 }
 inline path canonical(const path& p) {
   error_code ec;
   path r = canonical(p, ec);
   if (ec)
-    ycxx::detail::fs_raise("std::filesystem::canonical", p, ec);
+    __ycxx::__detail::__fs_raise("std::filesystem::canonical", p, ec);
   return r;
 }
 inline void copy(const path& from, const path& to, copy_options options) {
   error_code ec;
   copy(from, to, options, ec);
   if (ec)
-    ycxx::detail::fs_raise("std::filesystem::copy", from, to, ec);
+    __ycxx::__detail::__fs_raise("std::filesystem::copy", from, to, ec);
 }
 inline void copy(const path& from, const path& to) { copy(from, to, copy_options::none); }
 inline void copy(const path& from, const path& to, error_code& ec) { copy(from, to, copy_options::none, ec); }
-inline bool copy_file(const path& from, const path& to, copy_options option) {
+inline bool copy_file(const path& from, const path& to, copy_options __option) {
   error_code ec;
-  bool r = copy_file(from, to, option, ec);
+  bool r = copy_file(from, to, __option, ec);
   if (ec)
-    ycxx::detail::fs_raise("std::filesystem::copy_file", from, to, ec);
+    __ycxx::__detail::__fs_raise("std::filesystem::copy_file", from, to, ec);
   return r;
 }
 inline bool copy_file(const path& from, const path& to) { return copy_file(from, to, copy_options::none); }
 inline bool copy_file(const path& from, const path& to, error_code& ec) {
   return copy_file(from, to, copy_options::none, ec);
 }
-inline void copy_symlink(const path& existing_symlink, const path& new_symlink) {
+inline void copy_symlink(const path& __existing_symlink, const path& __new_symlink) {
   error_code ec;
-  copy_symlink(existing_symlink, new_symlink, ec);
+  copy_symlink(__existing_symlink, __new_symlink, ec);
   if (ec)
-    ycxx::detail::fs_raise("std::filesystem::copy_symlink", existing_symlink, new_symlink, ec);
+    __ycxx::__detail::__fs_raise("std::filesystem::copy_symlink", __existing_symlink, __new_symlink, ec);
 }
 inline bool create_directories(const path& p) {
   error_code ec;
   bool r = create_directories(p, ec);
   if (ec)
-    ycxx::detail::fs_raise("std::filesystem::create_directories", p, ec);
+    __ycxx::__detail::__fs_raise("std::filesystem::create_directories", p, ec);
   return r;
 }
 inline bool create_directory(const path& p) {
   error_code ec;
   bool r = create_directory(p, ec);
   if (ec)
-    ycxx::detail::fs_raise("std::filesystem::create_directory", p, ec);
+    __ycxx::__detail::__fs_raise("std::filesystem::create_directory", p, ec);
   return r;
 }
-inline bool create_directory(const path& p, const path& attributes) {
+inline bool create_directory(const path& p, const path& __attributes) {
   error_code ec;
-  bool r = create_directory(p, attributes, ec);
+  bool r = create_directory(p, __attributes, ec);
   if (ec)
-    ycxx::detail::fs_raise("std::filesystem::create_directory", p, attributes, ec);
+    __ycxx::__detail::__fs_raise("std::filesystem::create_directory", p, __attributes, ec);
   return r;
 }
-inline void create_directory_symlink(const path& to, const path& new_symlink) {
+inline void create_directory_symlink(const path& to, const path& __new_symlink) {
   error_code ec;
-  create_directory_symlink(to, new_symlink, ec);
+  create_directory_symlink(to, __new_symlink, ec);
   if (ec)
-    ycxx::detail::fs_raise("std::filesystem::create_directory_symlink", to, new_symlink, ec);
+    __ycxx::__detail::__fs_raise("std::filesystem::create_directory_symlink", to, __new_symlink, ec);
 }
-inline void create_hard_link(const path& to, const path& new_hard_link) {
+inline void create_hard_link(const path& to, const path& __new_hard_link) {
   error_code ec;
-  create_hard_link(to, new_hard_link, ec);
+  create_hard_link(to, __new_hard_link, ec);
   if (ec)
-    ycxx::detail::fs_raise("std::filesystem::create_hard_link", to, new_hard_link, ec);
+    __ycxx::__detail::__fs_raise("std::filesystem::create_hard_link", to, __new_hard_link, ec);
 }
-inline void create_symlink(const path& to, const path& new_symlink) {
+inline void create_symlink(const path& to, const path& __new_symlink) {
   error_code ec;
-  create_symlink(to, new_symlink, ec);
+  create_symlink(to, __new_symlink, ec);
   if (ec)
-    ycxx::detail::fs_raise("std::filesystem::create_symlink", to, new_symlink, ec);
+    __ycxx::__detail::__fs_raise("std::filesystem::create_symlink", to, __new_symlink, ec);
 }
 inline path current_path() {
   error_code ec;
   path r = current_path(ec);
   if (ec)
-    ycxx::detail::fs_raise("std::filesystem::current_path", ec);
+    __ycxx::__detail::__fs_raise("std::filesystem::current_path", ec);
   return r;
 }
 inline void current_path(const path& p) {
   error_code ec;
   current_path(p, ec);
   if (ec)
-    ycxx::detail::fs_raise("std::filesystem::current_path", p, ec);
+    __ycxx::__detail::__fs_raise("std::filesystem::current_path", p, ec);
 }
-inline bool equivalent(const path& p1, const path& p2) {
+inline bool equivalent(const path& __p1, const path& __p2) {
   error_code ec;
-  bool r = equivalent(p1, p2, ec);
+  bool r = equivalent(__p1, __p2, ec);
   if (ec)
-    ycxx::detail::fs_raise("std::filesystem::equivalent", p1, p2, ec);
+    __ycxx::__detail::__fs_raise("std::filesystem::equivalent", __p1, __p2, ec);
   return r;
 }
 inline uintmax_t file_size(const path& p) {
   error_code ec;
   uintmax_t r = file_size(p, ec);
   if (ec)
-    ycxx::detail::fs_raise("std::filesystem::file_size", p, ec);
+    __ycxx::__detail::__fs_raise("std::filesystem::file_size", p, ec);
   return r;
 }
 inline uintmax_t hard_link_count(const path& p) {
   error_code ec;
   uintmax_t r = hard_link_count(p, ec);
   if (ec)
-    ycxx::detail::fs_raise("std::filesystem::hard_link_count", p, ec);
+    __ycxx::__detail::__fs_raise("std::filesystem::hard_link_count", p, ec);
   return r;
 }
 inline bool is_empty(const path& p) {
   error_code ec;
   bool r = is_empty(p, ec);
   if (ec)
-    ycxx::detail::fs_raise("std::filesystem::is_empty", p, ec);
+    __ycxx::__detail::__fs_raise("std::filesystem::is_empty", p, ec);
   return r;
 }
 inline file_time_type last_write_time(const path& p) {
   error_code ec;
   file_time_type r = last_write_time(p, ec);
   if (ec)
-    ycxx::detail::fs_raise("std::filesystem::last_write_time", p, ec);
+    __ycxx::__detail::__fs_raise("std::filesystem::last_write_time", p, ec);
   return r;
 }
-inline void last_write_time(const path& p, file_time_type new_time) {
+inline void last_write_time(const path& p, file_time_type __new_time) {
   error_code ec;
-  last_write_time(p, new_time, ec);
+  last_write_time(p, __new_time, ec);
   if (ec)
-    ycxx::detail::fs_raise("std::filesystem::last_write_time", p, ec);
+    __ycxx::__detail::__fs_raise("std::filesystem::last_write_time", p, ec);
 }
-inline void permissions(const path& p, perms prms, perm_options opts = perm_options::replace) {
+inline void permissions(const path& p, perms __prms, perm_options __opts = perm_options::replace) {
   error_code ec;
-  permissions(p, prms, opts, ec);
+  permissions(p, __prms, __opts, ec);
   if (ec)
-    ycxx::detail::fs_raise("std::filesystem::permissions", p, ec);
+    __ycxx::__detail::__fs_raise("std::filesystem::permissions", p, ec);
 }
-inline void permissions(const path& p, perms prms, error_code& ec) noexcept {
+inline void permissions(const path& p, perms __prms, error_code& ec) noexcept {
   // [fs.op.permissions]/5; the four-argument form allocates nothing that can fail.
-  permissions(p, prms, perm_options::replace, ec);
+  permissions(p, __prms, perm_options::replace, ec);
 }
 inline path read_symlink(const path& p) {
   error_code ec;
   path r = read_symlink(p, ec);
   if (ec)
-    ycxx::detail::fs_raise("std::filesystem::read_symlink", p, ec);
+    __ycxx::__detail::__fs_raise("std::filesystem::read_symlink", p, ec);
   return r;
 }
 inline bool remove(const path& p) {
   error_code ec;
   bool r = remove(p, ec);
   if (ec)
-    ycxx::detail::fs_raise("std::filesystem::remove", p, ec);
+    __ycxx::__detail::__fs_raise("std::filesystem::remove", p, ec);
   return r;
 }
 inline uintmax_t remove_all(const path& p) {
   error_code ec;
   uintmax_t r = remove_all(p, ec);
   if (ec)
-    ycxx::detail::fs_raise("std::filesystem::remove_all", p, ec);
+    __ycxx::__detail::__fs_raise("std::filesystem::remove_all", p, ec);
   return r;
 }
 inline void rename(const path& from, const path& to) {
   error_code ec;
   rename(from, to, ec);
   if (ec)
-    ycxx::detail::fs_raise("std::filesystem::rename", from, to, ec);
+    __ycxx::__detail::__fs_raise("std::filesystem::rename", from, to, ec);
 }
 inline void resize_file(const path& p, uintmax_t size) {
   error_code ec;
   resize_file(p, size, ec);
   if (ec)
-    ycxx::detail::fs_raise("std::filesystem::resize_file", p, ec);
+    __ycxx::__detail::__fs_raise("std::filesystem::resize_file", p, ec);
 }
 inline space_info space(const path& p) {
   error_code ec;
   space_info r = space(p, ec);
   if (ec)
-    ycxx::detail::fs_raise("std::filesystem::space", p, ec);
+    __ycxx::__detail::__fs_raise("std::filesystem::space", p, ec);
   return r;
 }
 // [fs.op.status]/1: only file_type::none is a failure.
@@ -1324,28 +1324,28 @@ inline file_status status(const path& p) {
   error_code ec;
   file_status r = status(p, ec);
   if (r.type() == file_type::none)
-    ycxx::detail::fs_raise("std::filesystem::status", p, ec);
+    __ycxx::__detail::__fs_raise("std::filesystem::status", p, ec);
   return r;
 }
 inline file_status symlink_status(const path& p) {
   error_code ec;
   file_status r = symlink_status(p, ec);
   if (r.type() == file_type::none)
-    ycxx::detail::fs_raise("std::filesystem::symlink_status", p, ec);
+    __ycxx::__detail::__fs_raise("std::filesystem::symlink_status", p, ec);
   return r;
 }
 inline path temp_directory_path() {
   error_code ec;
   path r = temp_directory_path(ec);
   if (ec)
-    ycxx::detail::fs_raise("std::filesystem::temp_directory_path", ec);
+    __ycxx::__detail::__fs_raise("std::filesystem::temp_directory_path", ec);
   return r;
 }
 inline path weakly_canonical(const path& p) {
   error_code ec;
   path r = weakly_canonical(p, ec);
   if (ec)
-    ycxx::detail::fs_raise("std::filesystem::weakly_canonical", p, ec);
+    __ycxx::__detail::__fs_raise("std::filesystem::weakly_canonical", p, ec);
   return r;
 }
 // [fs.op.proximate], [fs.op.relative]
@@ -1431,29 +1431,29 @@ inline bool directory_entry::exists(error_code& ec) const noexcept { return file
 
 }} // namespace std::filesystem
 
-namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
 // What directory_iterator::operator++(int) returns: the entry the iterator designated.
-struct fs_postfix_entry {
-  std::filesystem::directory_entry entry;
-  const std::filesystem::directory_entry& operator*() const noexcept { return entry; }
-  const std::filesystem::directory_entry* operator->() const noexcept { return __builtin_addressof(entry); }
+struct __fs_postfix_entry {
+  std::filesystem::directory_entry __entry;
+  const std::filesystem::directory_entry& operator*() const noexcept { return __entry; }
+  const std::filesystem::directory_entry* operator->() const noexcept { return __builtin_addressof(__entry); }
 };
-}} // namespace ycxx::detail
+}} // namespace __ycxx::__detail
 
-namespace [[gnu::visibility("hidden")]] std { namespace filesystem {
-inline ycxx::detail::fs_postfix_entry directory_iterator::operator++(int) {
-  ycxx::detail::fs_postfix_entry r{**this};
+namespace [[__gnu__::__visibility__("hidden")]] std { namespace filesystem {
+inline __ycxx::__detail::__fs_postfix_entry directory_iterator::operator++(int) {
+  __ycxx::__detail::__fs_postfix_entry r{**this};
   ++*this;
   return r;
 }
-inline ycxx::detail::fs_postfix_entry recursive_directory_iterator::operator++(int) {
-  ycxx::detail::fs_postfix_entry r{**this};
+inline __ycxx::__detail::__fs_postfix_entry recursive_directory_iterator::operator++(int) {
+  __ycxx::__detail::__fs_postfix_entry r{**this};
   ++*this;
   return r;
 }
 }} // namespace std::filesystem
 
-namespace [[gnu::visibility("hidden")]] std {
+namespace [[__gnu__::__visibility__("hidden")]] std {
 
 // [fs.path.hash]
 template <>
@@ -1463,7 +1463,7 @@ struct hash<filesystem::path> {
 
 } // namespace std
 
-namespace [[gnu::visibility("hidden")]] std { namespace ranges {
+namespace [[__gnu__::__visibility__("hidden")]] std { namespace ranges {
 template <>
 inline constexpr bool enable_borrowed_range<filesystem::directory_iterator> = true;
 template <>

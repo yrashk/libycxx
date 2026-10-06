@@ -1,13 +1,13 @@
 // libycxx ABI runtime: key functions for the exception classes that -fno-rtti code declares with
 // an out-of-line destructor (exception_base.hpp, DECISIONS §4). This file is built with RTTI and
-// with YCXX_EXCEPTION_KEY_FUNCTIONS (see CMakeLists.txt), which makes the headers declare those
+// with _YCXX_EXCEPTION_KEY_FUNCTIONS (see CMakeLists.txt), which makes the headers declare those
 // destructors out of line here too; so this translation unit emits their vtables, with type_info,
 // for the whole program.
 #include <exception>
 #include <new>
 #include <typeinfo>
 
-namespace [[gnu::visibility("hidden")]] std {
+namespace [[__gnu__::__visibility__("hidden")]] std {
 
 exception::~exception() {}
 bad_alloc::~bad_alloc() {}

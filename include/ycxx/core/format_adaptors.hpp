@@ -8,71 +8,71 @@
 #include <ycxx/core/format_decl.hpp>
 #include <ycxx/core/range_access.hpp>
 
-namespace [[gnu::visibility("hidden")]] std {
-template <class T, class Container>
+namespace [[__gnu__::__visibility__("hidden")]] std {
+template <class _Tp, class _Container>
 class stack;
-template <class T, class Container>
+template <class _Tp, class _Container>
 class queue;
-template <class T, class Container, class Compare>
+template <class _Tp, class _Container, class _Compare>
 class priority_queue;
 namespace ranges {
-template <range R>
-  requires is_object_v<R>
+template <range _Rp>
+  requires is_object_v<_Rp>
 class ref_view;
 } // namespace ranges
 } // namespace std
 
-namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
-template <class R, class charT>
-concept fmt_const_formattable_range =
-    std::ranges::input_range<const R> && std::formattable<std::ranges::range_reference_t<const R>, charT>;
-template <class R, class charT>
-using fmt_maybe_const = std::conditional_t<fmt_const_formattable_range<R, charT>, const R, R>;
-}} // namespace ycxx::detail
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+template <class _Rp, class __charT>
+concept __fmt_const_formattable_range =
+    std::ranges::input_range<const _Rp> && std::formattable<std::ranges::range_reference_t<const _Rp>, __charT>;
+template <class _Rp, class __charT>
+using __fmt_maybe_const = std::conditional_t<__fmt_const_formattable_range<_Rp, __charT>, const _Rp, _Rp>;
+}} // namespace __ycxx::__detail
 
-namespace [[gnu::visibility("hidden")]] ycxx { namespace adl_free {
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __adl_free {
 
-template <class charT, class Adaptor, class Container>
-class fmt_adaptor_formatter {
-  using maybe_const_container = ycxx::detail::fmt_maybe_const<Container, charT>;
-  using maybe_const_adaptor = std::conditional_t<std::is_const_v<maybe_const_container>, const Adaptor, Adaptor>;
-  std::formatter<std::ranges::ref_view<maybe_const_container>, charT> underlying_;
+template <class __charT, class _Adaptor, class _Container>
+class __fmt_adaptor_formatter {
+  using __maybe_const_container = __ycxx::__detail::__fmt_maybe_const<_Container, __charT>;
+  using __maybe_const_adaptor = std::conditional_t<std::is_const_v<__maybe_const_container>, const _Adaptor, _Adaptor>;
+  std::formatter<std::ranges::ref_view<__maybe_const_container>, __charT> __underlying_;
 
   // The protected member c, named through a derived class.
-  struct access : Adaptor {
-    static constexpr maybe_const_container& get(maybe_const_adaptor& a) noexcept { return a.*&access::c; }
+  struct access : _Adaptor {
+    static constexpr __maybe_const_container& get(__maybe_const_adaptor& a) noexcept { return a.*&access::c; }
   };
 
 public:
-  template <class ParseContext>
-  constexpr typename ParseContext::iterator parse(ParseContext& ctx) {
-    return underlying_.parse(ctx);
+  template <class _ParseContext>
+  constexpr typename _ParseContext::iterator parse(_ParseContext& __ctx) {
+    return __underlying_.parse(__ctx);
   }
-  template <class FormatContext>
-  constexpr typename FormatContext::iterator format(maybe_const_adaptor& r, FormatContext& ctx) const {
-    const std::ranges::ref_view<maybe_const_container> v(access::get(r));
-    return underlying_.format(v, ctx);
+  template <class _FormatContext>
+  constexpr typename _FormatContext::iterator format(__maybe_const_adaptor& r, _FormatContext& __ctx) const {
+    const std::ranges::ref_view<__maybe_const_container> __v(access::get(r));
+    return __underlying_.format(__v, __ctx);
   }
 };
 
-}} // namespace ycxx::adl_free
+}} // namespace __ycxx::__adl_free
 
-namespace [[gnu::visibility("hidden")]] std {
+namespace [[__gnu__::__visibility__("hidden")]] std {
 
-template <class charT, class T, formattable<charT> Container>
-struct formatter<stack<T, Container>, charT>
-    : ycxx::adl_free::fmt_adaptor_formatter<charT, stack<T, Container>, Container> {};
-template <class charT, class T, formattable<charT> Container>
-struct formatter<queue<T, Container>, charT>
-    : ycxx::adl_free::fmt_adaptor_formatter<charT, queue<T, Container>, Container> {};
-template <class charT, class T, formattable<charT> Container, class Compare>
-struct formatter<priority_queue<T, Container, Compare>, charT>
-    : ycxx::adl_free::fmt_adaptor_formatter<charT, priority_queue<T, Container, Compare>, Container> {};
-template <class T, class Container>
-inline constexpr bool enable_nonlocking_formatter_optimization<stack<T, Container>> = false;
-template <class T, class Container>
-inline constexpr bool enable_nonlocking_formatter_optimization<queue<T, Container>> = false;
-template <class T, class Container, class Compare>
-inline constexpr bool enable_nonlocking_formatter_optimization<priority_queue<T, Container, Compare>> = false;
+template <class __charT, class _Tp, formattable<__charT> _Container>
+struct formatter<stack<_Tp, _Container>, __charT>
+    : __ycxx::__adl_free::__fmt_adaptor_formatter<__charT, stack<_Tp, _Container>, _Container> {};
+template <class __charT, class _Tp, formattable<__charT> _Container>
+struct formatter<queue<_Tp, _Container>, __charT>
+    : __ycxx::__adl_free::__fmt_adaptor_formatter<__charT, queue<_Tp, _Container>, _Container> {};
+template <class __charT, class _Tp, formattable<__charT> _Container, class _Compare>
+struct formatter<priority_queue<_Tp, _Container, _Compare>, __charT>
+    : __ycxx::__adl_free::__fmt_adaptor_formatter<__charT, priority_queue<_Tp, _Container, _Compare>, _Container> {};
+template <class _Tp, class _Container>
+inline constexpr bool enable_nonlocking_formatter_optimization<stack<_Tp, _Container>> = false;
+template <class _Tp, class _Container>
+inline constexpr bool enable_nonlocking_formatter_optimization<queue<_Tp, _Container>> = false;
+template <class _Tp, class _Container, class _Compare>
+inline constexpr bool enable_nonlocking_formatter_optimization<priority_queue<_Tp, _Container, _Compare>> = false;
 
 } // namespace std

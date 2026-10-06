@@ -3,7 +3,7 @@
 //
 // libycxx's default allocation functions are hidden (hidden.hpp), so they are never bound to, nor
 // bind to, another C++ runtime's (Apple's libc++abi, libstdc++). The images that link libycxx
-// still share one set: each holds `ycxx_allocation_functions`, a weak, exported table under a name
+// still share one set: each holds `__ycxx_allocation_functions`, a weak, exported table under a name
 // no other runtime defines, and the dynamic linker makes every image use the first image's table
 // (the program's, when it links libycxx). Its entries call that image's `::operator new` ...
 // `::operator delete[]` (thunks, below): the program's replacements where it has them, else its
@@ -22,37 +22,40 @@
 
 // News take (size, alignment); the alignment of the forms without one is ignored. Deletes take
 // (pointer, size, alignment); the size or alignment of the forms without them is ignored.
-struct ycxx_allocation_functions_t {
-  void* (*new_)(std::size_t, std::size_t);
-  void* (*new_align)(std::size_t, std::size_t);
-  void* (*new_nothrow)(std::size_t, std::size_t) noexcept;
-  void* (*new_align_nothrow)(std::size_t, std::size_t) noexcept;
-  void* (*new_array)(std::size_t, std::size_t);
-  void* (*new_array_align)(std::size_t, std::size_t);
-  void* (*new_array_nothrow)(std::size_t, std::size_t) noexcept;
-  void* (*new_array_align_nothrow)(std::size_t, std::size_t) noexcept;
-  void (*delete_)(void*, std::size_t, std::size_t) noexcept;
-  void (*delete_sized)(void*, std::size_t, std::size_t) noexcept;
-  void (*delete_align)(void*, std::size_t, std::size_t) noexcept;
-  void (*delete_sized_align)(void*, std::size_t, std::size_t) noexcept;
-  void (*delete_nothrow)(void*, std::size_t, std::size_t) noexcept;
-  void (*delete_align_nothrow)(void*, std::size_t, std::size_t) noexcept;
-  void (*delete_array)(void*, std::size_t, std::size_t) noexcept;
-  void (*delete_array_sized)(void*, std::size_t, std::size_t) noexcept;
-  void (*delete_array_align)(void*, std::size_t, std::size_t) noexcept;
-  void (*delete_array_sized_align)(void*, std::size_t, std::size_t) noexcept;
-  void (*delete_array_nothrow)(void*, std::size_t, std::size_t) noexcept;
-  void (*delete_array_align_nothrow)(void*, std::size_t, std::size_t) noexcept;
+struct __ycxx_allocation_functions_t {
+  void* (*__new_)(std::size_t, std::size_t);
+  void* (*__new_align)(std::size_t, std::size_t);
+  void* (*__new_nothrow)(std::size_t, std::size_t) noexcept;
+  void* (*__new_align_nothrow)(std::size_t, std::size_t) noexcept;
+  void* (*__new_array)(std::size_t, std::size_t);
+  void* (*__new_array_align)(std::size_t, std::size_t);
+  void* (*__new_array_nothrow)(std::size_t, std::size_t) noexcept;
+  void* (*__new_array_align_nothrow)(std::size_t, std::size_t) noexcept;
+  void (*__delete_)(void*, std::size_t, std::size_t) noexcept;
+  void (*__delete_sized)(void*, std::size_t, std::size_t) noexcept;
+  void (*__delete_align)(void*, std::size_t, std::size_t) noexcept;
+  void (*__delete_sized_align)(void*, std::size_t, std::size_t) noexcept;
+  void (*__delete_nothrow)(void*, std::size_t, std::size_t) noexcept;
+  void (*__delete_align_nothrow)(void*, std::size_t, std::size_t) noexcept;
+  void (*__delete_array)(void*, std::size_t, std::size_t) noexcept;
+  void (*__delete_array_sized)(void*, std::size_t, std::size_t) noexcept;
+  void (*__delete_array_align)(void*, std::size_t, std::size_t) noexcept;
+  void (*__delete_array_sized_align)(void*, std::size_t, std::size_t) noexcept;
+  void (*__delete_array_nothrow)(void*, std::size_t, std::size_t) noexcept;
+  void (*__delete_array_align_nothrow)(void*, std::size_t, std::size_t) noexcept;
 };
 
 // The process's table (allocation_table.cpp; the first image's, see above). Declared with default
 // visibility like its definition, explicitly: an ELF linker gives a symbol the most restrictive
 // visibility of all its references, so one hidden declaration would keep the table inside each
 // image.
-extern "C" [[gnu::visibility("default")]] const ycxx_allocation_functions_t ycxx_allocation_functions;
+extern "C" [[__gnu__::__visibility__("default")]] const __ycxx_allocation_functions_t __ycxx_allocation_functions;
+// What the link options name as undefined to pull the table's member into a program
+// (allocation_table.cpp, cmake/ycxx-link.cmake).
+extern "C" [[__gnu__::__visibility__("hidden")]] const char __ycxx_allocation_table_anchor;
 
-namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
-// This image's own table, the one its `ycxx_allocation_functions` definition holds; an entry of
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+// This image's own table, the one its `__ycxx_allocation_functions` definition holds; an entry of
 // the process's table equal to this image's entry means this image provides that function.
-extern const ycxx_allocation_functions_t own_allocation_functions;
-}} // namespace ycxx::detail
+extern const __ycxx_allocation_functions_t __own_allocation_functions;
+}} // namespace __ycxx::__detail

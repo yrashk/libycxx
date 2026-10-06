@@ -3,10 +3,10 @@
 #include "hidden.hpp"
 #include "allocation_table.hpp"
 
-asm((ycxx::detail::hide_allocation_function("_ZdlPvRKSt9nothrow_t")));
+asm((__ycxx::__detail::__hide_allocation_function("_ZdlPvRKSt9nothrow_t")));
 
 void operator delete(void* p, const std::nothrow_t&) noexcept {
-  if (auto f = ycxx_allocation_functions.delete_nothrow; f != ycxx::detail::own_allocation_functions.delete_nothrow)
-    return f(p, 0, 0);
+  if (auto __f = __ycxx_allocation_functions.__delete_nothrow; __f != __ycxx::__detail::__own_allocation_functions.__delete_nothrow)
+    return __f(p, 0, 0);
   ::operator delete(p);
 }

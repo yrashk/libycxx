@@ -7,100 +7,100 @@
 #include <ycxx/core/error.hpp>
 #include <ycxx/core/hash.hpp>
 
-namespace [[gnu::visibility("hidden")]] std {
+namespace [[__gnu__::__visibility__("hidden")]] std {
 
 // [utility.exchange]
-template <class T, class U = T>
-constexpr T exchange(T& obj, U&& new_val) noexcept(std::is_nothrow_constructible_v<T, T&&> &&
-                                                    std::is_nothrow_assignable_v<T&, U &&>) {
-  T old = static_cast<T&&>(obj);
-  obj = static_cast<U&&>(new_val);
-  return old;
+template <class _Tp, class _Up = _Tp>
+constexpr _Tp exchange(_Tp& __obj, _Up&& __new_val) noexcept(std::is_nothrow_constructible_v<_Tp, _Tp&&> &&
+                                                    std::is_nothrow_assignable_v<_Tp&, _Up &&>) {
+  _Tp __old = static_cast<_Tp&&>(__obj);
+  __obj = static_cast<_Up&&>(__new_val);
+  return __old;
 }
 
 // [utility.intcmp]
 } // namespace std
 
-namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
-template <class T>
-concept cmp_integer = is_signed_or_unsigned_integer<T>;
-}} // namespace ycxx::detail
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+template <class _Tp>
+concept __cmp_integer = __is_signed_or_unsigned_integer<_Tp>;
+}} // namespace __ycxx::__detail
 
-namespace [[gnu::visibility("hidden")]] std {
+namespace [[__gnu__::__visibility__("hidden")]] std {
 
-template <ycxx::detail::cmp_integer T, ycxx::detail::cmp_integer U>
-constexpr bool cmp_equal(T t, U u) noexcept {
-  if constexpr (ycxx::detail::is_signed_v<T> == ycxx::detail::is_signed_v<U>)
-    return t == u;
-  else if constexpr (ycxx::detail::is_signed_v<T>)
-    return t >= 0 && make_unsigned_t<T>(t) == u;
+template <__ycxx::__detail::__cmp_integer _Tp, __ycxx::__detail::__cmp_integer _Up>
+constexpr bool cmp_equal(_Tp t, _Up __u) noexcept {
+  if constexpr (__ycxx::__detail::is_signed_v<_Tp> == __ycxx::__detail::is_signed_v<_Up>)
+    return t == __u;
+  else if constexpr (__ycxx::__detail::is_signed_v<_Tp>)
+    return t >= 0 && make_unsigned_t<_Tp>(t) == __u;
   else
-    return u >= 0 && t == make_unsigned_t<U>(u);
+    return __u >= 0 && t == make_unsigned_t<_Up>(__u);
 }
-template <ycxx::detail::cmp_integer T, ycxx::detail::cmp_integer U>
-constexpr bool cmp_not_equal(T t, U u) noexcept {
-  return !cmp_equal(t, u);
+template <__ycxx::__detail::__cmp_integer _Tp, __ycxx::__detail::__cmp_integer _Up>
+constexpr bool cmp_not_equal(_Tp t, _Up __u) noexcept {
+  return !cmp_equal(t, __u);
 }
-template <ycxx::detail::cmp_integer T, ycxx::detail::cmp_integer U>
-constexpr bool cmp_less(T t, U u) noexcept {
-  if constexpr (ycxx::detail::is_signed_v<T> == ycxx::detail::is_signed_v<U>)
-    return t < u;
-  else if constexpr (ycxx::detail::is_signed_v<T>)
-    return t < 0 || make_unsigned_t<T>(t) < u;
+template <__ycxx::__detail::__cmp_integer _Tp, __ycxx::__detail::__cmp_integer _Up>
+constexpr bool cmp_less(_Tp t, _Up __u) noexcept {
+  if constexpr (__ycxx::__detail::is_signed_v<_Tp> == __ycxx::__detail::is_signed_v<_Up>)
+    return t < __u;
+  else if constexpr (__ycxx::__detail::is_signed_v<_Tp>)
+    return t < 0 || make_unsigned_t<_Tp>(t) < __u;
   else
-    return u >= 0 && t < make_unsigned_t<U>(u);
+    return __u >= 0 && t < make_unsigned_t<_Up>(__u);
 }
-template <ycxx::detail::cmp_integer T, ycxx::detail::cmp_integer U>
-constexpr bool cmp_greater(T t, U u) noexcept {
-  return cmp_less(u, t);
+template <__ycxx::__detail::__cmp_integer _Tp, __ycxx::__detail::__cmp_integer _Up>
+constexpr bool cmp_greater(_Tp t, _Up __u) noexcept {
+  return cmp_less(__u, t);
 }
-template <ycxx::detail::cmp_integer T, ycxx::detail::cmp_integer U>
-constexpr bool cmp_less_equal(T t, U u) noexcept {
-  return !cmp_less(u, t);
+template <__ycxx::__detail::__cmp_integer _Tp, __ycxx::__detail::__cmp_integer _Up>
+constexpr bool cmp_less_equal(_Tp t, _Up __u) noexcept {
+  return !cmp_less(__u, t);
 }
-template <ycxx::detail::cmp_integer T, ycxx::detail::cmp_integer U>
-constexpr bool cmp_greater_equal(T t, U u) noexcept {
-  return !cmp_less(t, u);
+template <__ycxx::__detail::__cmp_integer _Tp, __ycxx::__detail::__cmp_integer _Up>
+constexpr bool cmp_greater_equal(_Tp t, _Up __u) noexcept {
+  return !cmp_less(t, __u);
 }
 
 } // namespace std
 
-namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
-template <class T>
-consteval T int_min() {
-  if constexpr (is_signed_v<T>)
-    return T(T(1) << (sizeof(T) * __CHAR_BIT__ - 1));
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+template <class _Tp>
+consteval _Tp __int_min() {
+  if constexpr (is_signed_v<_Tp>)
+    return _Tp(_Tp(1) << (sizeof(_Tp) * __CHAR_BIT__ - 1));
   else
-    return T(0);
+    return _Tp(0);
 }
-template <class T>
-consteval T int_max() {
-  if constexpr (is_signed_v<T>)
-    return T(~int_min<T>());
+template <class _Tp>
+consteval _Tp __int_max() {
+  if constexpr (is_signed_v<_Tp>)
+    return _Tp(~__int_min<_Tp>());
   else
-    return T(~T(0));
+    return _Tp(~_Tp(0));
 }
-}} // namespace ycxx::detail
+}} // namespace __ycxx::__detail
 
-namespace [[gnu::visibility("hidden")]] std {
+namespace [[__gnu__::__visibility__("hidden")]] std {
 
-template <class R, class T>
-  requires ycxx::detail::cmp_integer<R> && ycxx::detail::cmp_integer<T>
-constexpr bool in_range(T t) noexcept {
-  return cmp_greater_equal(t, ycxx::detail::int_min<R>()) && cmp_less_equal(t, ycxx::detail::int_max<R>());
+template <class _Rp, class _Tp>
+  requires __ycxx::__detail::__cmp_integer<_Rp> && __ycxx::__detail::__cmp_integer<_Tp>
+constexpr bool in_range(_Tp t) noexcept {
+  return cmp_greater_equal(t, __ycxx::__detail::__int_min<_Rp>()) && cmp_less_equal(t, __ycxx::__detail::__int_max<_Rp>());
 }
 
 // [utility.underlying]
-template <class T>
-  requires is_enum_v<T>
-[[nodiscard]] constexpr underlying_type_t<T> to_underlying(T value) noexcept {
-  return static_cast<underlying_type_t<T>>(value);
+template <class _Tp>
+  requires is_enum_v<_Tp>
+[[nodiscard]] constexpr underlying_type_t<_Tp> to_underlying(_Tp value) noexcept {
+  return static_cast<underlying_type_t<_Tp>>(value);
 }
 
 // [utility.undefined]
-[[noreturn]] [[gnu::always_inline]] inline void unreachable() {
-  if constexpr (ycxx::detail::cfg::hardened)
-    ycxx::detail::assertion_failed("std::unreachable() reached");
+[[noreturn]] [[__gnu__::__always_inline__]] inline void unreachable() {
+  if constexpr (__ycxx::__detail::__cfg::__hardened)
+    __ycxx::__detail::__assertion_failed("std::unreachable() reached");
   __builtin_unreachable();
 }
 
@@ -108,22 +108,22 @@ template <class T>
 inline void observable_checkpoint() noexcept { asm volatile("" ::: "memory"); }
 
 // [intseq.binding]
-template <class T, T... Values>
-struct tuple_size<integer_sequence<T, Values...>> : integral_constant<size_t, sizeof...(Values)> {};
-template <size_t I, class T, T... Values>
-struct tuple_element<I, integer_sequence<T, Values...>> {
-  static_assert(I < sizeof...(Values), "index out of range");
-  using type = T;
+template <class _Tp, _Tp... _Values>
+struct tuple_size<integer_sequence<_Tp, _Values...>> : integral_constant<size_t, sizeof...(_Values)> {};
+template <size_t _Ip, class _Tp, _Tp... _Values>
+struct tuple_element<_Ip, integer_sequence<_Tp, _Values...>> {
+  static_assert(_Ip < sizeof...(_Values), "index out of range");
+  using type = _Tp;
 };
-template <size_t I, class T, T... Values>
-struct tuple_element<I, const integer_sequence<T, Values...>> {
-  static_assert(I < sizeof...(Values), "index out of range");
-  using type = T;
+template <size_t _Ip, class _Tp, _Tp... _Values>
+struct tuple_element<_Ip, const integer_sequence<_Tp, _Values...>> {
+  static_assert(_Ip < sizeof...(_Values), "index out of range");
+  using type = _Tp;
 };
-template <size_t I, class T, T... Values>
-constexpr T get(integer_sequence<T, Values...>) noexcept {
-  static_assert(I < sizeof...(Values), "index out of range");
-  return Values...[I];
+template <size_t _Ip, class _Tp, _Tp... _Values>
+constexpr _Tp get(integer_sequence<_Tp, _Values...>) noexcept {
+  static_assert(_Ip < sizeof...(_Values), "index out of range");
+  return _Values...[_Ip];
 }
 
 // [pair.piecewise], in-place tags
@@ -136,18 +136,18 @@ struct in_place_t {
   explicit in_place_t() = default;
 };
 inline constexpr in_place_t in_place{};
-template <class T>
+template <class _Tp>
 struct in_place_type_t {
   explicit in_place_type_t() = default;
 };
-template <class T>
-constexpr in_place_type_t<T> in_place_type{};
-template <size_t I>
+template <class _Tp>
+constexpr in_place_type_t<_Tp> in_place_type{};
+template <size_t _Ip>
 struct in_place_index_t {
   explicit in_place_index_t() = default;
 };
-template <size_t I>
-constexpr in_place_index_t<I> in_place_index{};
+template <size_t _Ip>
+constexpr in_place_index_t<_Ip> in_place_index{};
 
 // [variant.monostate]
 struct monostate {};
@@ -156,45 +156,45 @@ constexpr strong_ordering operator<=>(monostate, monostate) noexcept { return st
 
 } // namespace std
 
-namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
 
-template <class T>
-inline constexpr bool is_in_place_type = false;
-template <class T>
-inline constexpr bool is_in_place_type<std::in_place_type_t<T>> = true;
-template <class T>
-inline constexpr bool is_in_place_index = false;
-template <std::size_t I>
-inline constexpr bool is_in_place_index<std::in_place_index_t<I>> = true;
+template <class _Tp>
+inline constexpr bool __is_in_place_type = false;
+template <class _Tp>
+inline constexpr bool __is_in_place_type<std::in_place_type_t<_Tp>> = true;
+template <class _Tp>
+inline constexpr bool __is_in_place_index = false;
+template <std::size_t _Ip>
+inline constexpr bool __is_in_place_index<std::in_place_index_t<_Ip>> = true;
 
 // synth-three-way ([expos.only.entity])
-struct synth_three_way_fn {
-  template <class T, class U>
-    requires requires(const T& t, const U& u) {
-      { t < u } -> boolean_testable;
-      { u < t } -> boolean_testable;
+struct __synth_three_way_fn {
+  template <class _Tp, class _Up>
+    requires requires(const _Tp& t, const _Up& __u) {
+      { t < __u } -> __boolean_testable;
+      { __u < t } -> __boolean_testable;
     }
-  static constexpr auto operator()(const T& t, const U& u) {
-    if constexpr (std::three_way_comparable_with<T, U>) {
-      return t <=> u;
+  static constexpr auto operator()(const _Tp& t, const _Up& __u) {
+    if constexpr (std::three_way_comparable_with<_Tp, _Up>) {
+      return t <=> __u;
     } else {
-      if (t < u)
+      if (t < __u)
         return std::weak_ordering::less;
-      if (u < t)
+      if (__u < t)
         return std::weak_ordering::greater;
       return std::weak_ordering::equivalent;
     }
   }
 };
-inline constexpr synth_three_way_fn synth_three_way{};
-template <class T, class U = T>
-using synth_three_way_result = decltype(synth_three_way(std::declval<T&>(), std::declval<U&>()));
+inline constexpr __synth_three_way_fn __synth_three_way{};
+template <class _Tp, class _Up = _Tp>
+using __synth_three_way_result = decltype(__synth_three_way(std::declval<_Tp&>(), std::declval<_Up&>()));
 
 // converts-from-any-cvref ([optional.ctor]/1), shared with <expected>
-template <class T, class W>
-concept converts_from_any_cvref =
-    std::is_constructible_v<T, W&> || std::is_convertible_v<W&, T> || std::is_constructible_v<T, W> ||
-    std::is_convertible_v<W, T> || std::is_constructible_v<T, const W&> || std::is_convertible_v<const W&, T> ||
-    std::is_constructible_v<T, const W> || std::is_convertible_v<const W, T>;
+template <class _Tp, class _Wp>
+concept __converts_from_any_cvref =
+    std::is_constructible_v<_Tp, _Wp&> || std::is_convertible_v<_Wp&, _Tp> || std::is_constructible_v<_Tp, _Wp> ||
+    std::is_convertible_v<_Wp, _Tp> || std::is_constructible_v<_Tp, const _Wp&> || std::is_convertible_v<const _Wp&, _Tp> ||
+    std::is_constructible_v<_Tp, const _Wp> || std::is_convertible_v<const _Wp, _Tp>;
 
-}} // namespace ycxx::detail
+}} // namespace __ycxx::__detail

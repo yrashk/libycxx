@@ -12,49 +12,49 @@
 #include <ycxx/core/mdspan.hpp>
 #include <ycxx/core/tuple.hpp>
 
-namespace [[gnu::visibility("hidden")]] std {
+namespace [[__gnu__::__visibility__("hidden")]] std {
 
 // [mdspan.sub.range.slices]
-template <class OffsetType, class ExtentType, class StrideType>
+template <class _OffsetType, class _ExtentType, class _StrideType>
 struct extent_slice {
-  static_assert(ycxx::detail::is_signed_or_unsigned_integer<OffsetType> ||
-                    ycxx::detail::integral_constant_like<OffsetType>,
+  static_assert(__ycxx::__detail::__is_signed_or_unsigned_integer<_OffsetType> ||
+                    __ycxx::__detail::__integral_constant_like<_OffsetType>,
                 "extent_slice: OffsetType must be an integer type or integral-constant-like");
-  static_assert(ycxx::detail::is_signed_or_unsigned_integer<ExtentType> ||
-                    ycxx::detail::integral_constant_like<ExtentType>,
+  static_assert(__ycxx::__detail::__is_signed_or_unsigned_integer<_ExtentType> ||
+                    __ycxx::__detail::__integral_constant_like<_ExtentType>,
                 "extent_slice: ExtentType must be an integer type or integral-constant-like");
-  static_assert(ycxx::detail::is_signed_or_unsigned_integer<StrideType> ||
-                    ycxx::detail::integral_constant_like<StrideType>,
+  static_assert(__ycxx::__detail::__is_signed_or_unsigned_integer<_StrideType> ||
+                    __ycxx::__detail::__integral_constant_like<_StrideType>,
                 "extent_slice: StrideType must be an integer type or integral-constant-like");
 
-  using offset_type = OffsetType;
-  using extent_type = ExtentType;
-  using stride_type = StrideType;
-  [[no_unique_address]] OffsetType offset{};
-  [[no_unique_address]] ExtentType extent{};
-  [[no_unique_address]] StrideType stride{};
+  using offset_type = _OffsetType;
+  using extent_type = _ExtentType;
+  using stride_type = _StrideType;
+  [[no_unique_address]] _OffsetType offset{};
+  [[no_unique_address]] _ExtentType extent{};
+  [[no_unique_address]] _StrideType stride{};
 };
 
-template <class FirstType, class LastType, class StrideType = constant_wrapper<1zu>>
+template <class _FirstType, class _LastType, class _StrideType = constant_wrapper<1zu>>
 struct range_slice {
-  static_assert(ycxx::detail::is_signed_or_unsigned_integer<FirstType> ||
-                    ycxx::detail::integral_constant_like<FirstType>,
+  static_assert(__ycxx::__detail::__is_signed_or_unsigned_integer<_FirstType> ||
+                    __ycxx::__detail::__integral_constant_like<_FirstType>,
                 "range_slice: FirstType must be an integer type or integral-constant-like");
-  static_assert(ycxx::detail::is_signed_or_unsigned_integer<LastType> || ycxx::detail::integral_constant_like<LastType>,
+  static_assert(__ycxx::__detail::__is_signed_or_unsigned_integer<_LastType> || __ycxx::__detail::__integral_constant_like<_LastType>,
                 "range_slice: LastType must be an integer type or integral-constant-like");
-  static_assert(ycxx::detail::is_signed_or_unsigned_integer<StrideType> ||
-                    ycxx::detail::integral_constant_like<StrideType>,
+  static_assert(__ycxx::__detail::__is_signed_or_unsigned_integer<_StrideType> ||
+                    __ycxx::__detail::__integral_constant_like<_StrideType>,
                 "range_slice: StrideType must be an integer type or integral-constant-like");
 
-  [[no_unique_address]] FirstType first{};
-  [[no_unique_address]] LastType last{};
-  [[no_unique_address]] StrideType stride{};
+  [[no_unique_address]] _FirstType first{};
+  [[no_unique_address]] _LastType last{};
+  [[no_unique_address]] _StrideType stride{};
 };
 
 // [mdspan.sub.map.result]
-template <class LayoutMapping>
+template <class _LayoutMapping>
 struct submdspan_mapping_result {
-  [[no_unique_address]] LayoutMapping mapping = LayoutMapping();
+  [[no_unique_address]] _LayoutMapping mapping = _LayoutMapping();
   size_t offset{};
 };
 
@@ -65,120 +65,120 @@ inline constexpr full_extent_t full_extent{};
 
 } // namespace std
 
-namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
 
-template <class T>
-inline constexpr bool md_is_extent_slice = false;
-template <class O, class E, class S>
-inline constexpr bool md_is_extent_slice<std::extent_slice<O, E, S>> = true;
-template <class T>
-inline constexpr bool md_is_range_slice = false;
-template <class F, class L, class S>
-inline constexpr bool md_is_range_slice<std::range_slice<F, L, S>> = true;
-template <class T>
-inline constexpr bool md_is_cw = false;
-template <auto X, class V>
-inline constexpr bool md_is_cw<std::constant_wrapper<X, V>> = true;
-template <class T>
-inline constexpr bool md_is_mapping_result = false;
-template <class M>
-inline constexpr bool md_is_mapping_result<std::submdspan_mapping_result<M>> = true;
+template <class _Tp>
+inline constexpr bool __md_is_extent_slice = false;
+template <class _Op, class _Ep, class _Sp>
+inline constexpr bool __md_is_extent_slice<std::extent_slice<_Op, _Ep, _Sp>> = true;
+template <class _Tp>
+inline constexpr bool __md_is_range_slice = false;
+template <class _Fp, class _Lp, class _Sp>
+inline constexpr bool __md_is_range_slice<std::range_slice<_Fp, _Lp, _Sp>> = true;
+template <class _Tp>
+inline constexpr bool __md_is_cw = false;
+template <auto _Xp, class _Vp>
+inline constexpr bool __md_is_cw<std::constant_wrapper<_Xp, _Vp>> = true;
+template <class _Tp>
+inline constexpr bool __md_is_mapping_result = false;
+template <class _Mp>
+inline constexpr bool __md_is_mapping_result<std::submdspan_mapping_result<_Mp>> = true;
 
 // ---------------------------------------------------------------------------------------------
 // Slices of two elements ([mdspan.sub.overview]/2.5): `auto [a, b] = std::move(s);` is valid.
 // Detected for the tuple protocol and for aggregates initializable from exactly two values.
 // ---------------------------------------------------------------------------------------------
-struct md_any_arg {
-  template <class T>
-  operator T() const;
+struct __md_any_arg {
+  template <class _Tp>
+  operator _Tp() const;
 };
-template <class S>
-concept md_tuple_protocol = requires { std::tuple_size<S>::value; };
-template <class S>
-concept md_two_field_aggregate = std::is_aggregate_v<S> && !std::is_array_v<S> && !md_tuple_protocol<S> && requires {
-  S{md_any_arg(), md_any_arg()};
-} && !requires { S{md_any_arg(), md_any_arg(), md_any_arg()}; };
-template <class S>
-concept md_two_bindable =
-    std::is_class_v<S> && ((md_tuple_protocol<S> && std::tuple_size_v<S> == 2) || md_two_field_aggregate<S>);
+template <class _Sp>
+concept __md_tuple_protocol = requires { std::tuple_size<_Sp>::value; };
+template <class _Sp>
+concept __md_two_field_aggregate = std::is_aggregate_v<_Sp> && !std::is_array_v<_Sp> && !__md_tuple_protocol<_Sp> && requires {
+  _Sp{__md_any_arg(), __md_any_arg()};
+} && !requires { _Sp{__md_any_arg(), __md_any_arg(), __md_any_arg()}; };
+template <class _Sp>
+concept __md_two_bindable =
+    std::is_class_v<_Sp> && ((__md_tuple_protocol<_Sp> && std::tuple_size_v<_Sp> == 2) || __md_two_field_aggregate<_Sp>);
 
-template <class A, class B>
-struct md_type_pair {
-  using first = A;
-  using second = B;
+template <class _Ap, class _Bp>
+struct __md_type_pair {
+  using first = _Ap;
+  using second = _Bp;
 };
-template <class S>
-auto md_binding_types(S&& s) {
-  auto [a, b] = static_cast<S&&>(s);
-  return md_type_pair<decltype(std::move(a)), decltype(std::move(b))>();
+template <class _Sp>
+auto __md_binding_types(_Sp&& s) {
+  auto [a, b] = static_cast<_Sp&&>(s);
+  return __md_type_pair<decltype(std::move(a)), decltype(std::move(b))>();
 }
-template <class S, class IndexType>
-concept md_pair_slice = md_two_bindable<S> && requires {
-  requires std::is_convertible_v<typename decltype(::ycxx::detail::md_binding_types(std::declval<S>()))::first,
-                                 IndexType>;
-  requires std::is_convertible_v<typename decltype(::ycxx::detail::md_binding_types(std::declval<S>()))::second,
-                                 IndexType>;
+template <class _Sp, class _IndexType>
+concept __md_pair_slice = __md_two_bindable<_Sp> && requires {
+  requires std::is_convertible_v<typename decltype(::__ycxx::__detail::__md_binding_types(std::declval<_Sp>()))::first,
+                                 _IndexType>;
+  requires std::is_convertible_v<typename decltype(::__ycxx::__detail::__md_binding_types(std::declval<_Sp>()))::second,
+                                 _IndexType>;
 };
 
 // "S is a submdspan slice type for IndexType" ([mdspan.sub.overview]/2).
-template <class S, class IndexType>
-consteval bool md_slice_type() {
-  if constexpr (std::is_convertible_v<S, std::full_extent_t> || std::is_convertible_v<S, IndexType>)
+template <class _Sp, class _IndexType>
+consteval bool __md_slice_type() {
+  if constexpr (std::is_convertible_v<_Sp, std::full_extent_t> || std::is_convertible_v<_Sp, _IndexType>)
     return true;
-  else if constexpr (md_is_extent_slice<S>)
-    return std::is_convertible_v<typename S::offset_type, IndexType> &&
-           std::is_convertible_v<typename S::extent_type, IndexType> &&
-           std::is_convertible_v<typename S::stride_type, IndexType>;
-  else if constexpr (md_is_range_slice<S>)
-    return std::is_convertible_v<decltype(S::first), IndexType> &&
-           std::is_convertible_v<decltype(S::last), IndexType> && std::is_convertible_v<decltype(S::stride), IndexType>;
+  else if constexpr (__md_is_extent_slice<_Sp>)
+    return std::is_convertible_v<typename _Sp::offset_type, _IndexType> &&
+           std::is_convertible_v<typename _Sp::extent_type, _IndexType> &&
+           std::is_convertible_v<typename _Sp::stride_type, _IndexType>;
+  else if constexpr (__md_is_range_slice<_Sp>)
+    return std::is_convertible_v<decltype(_Sp::first), _IndexType> &&
+           std::is_convertible_v<decltype(_Sp::last), _IndexType> && std::is_convertible_v<decltype(_Sp::stride), _IndexType>;
   else
-    return md_pair_slice<S, IndexType>;
+    return __md_pair_slice<_Sp, _IndexType>;
 }
 
 // A canonical submdspan index type for IndexType ([mdspan.sub.overview]/3).
-template <class S, class IndexType>
-consteval bool md_canonical_index() {
-  if constexpr (std::is_same_v<S, IndexType>)
+template <class _Sp, class _IndexType>
+consteval bool __md_canonical_index() {
+  if constexpr (std::is_same_v<_Sp, _IndexType>)
     return true;
-  else if constexpr (md_is_cw<S>)
-    return std::is_same_v<std::remove_cvref_t<decltype(S::value)>, IndexType> && S::value >= 0;
+  else if constexpr (__md_is_cw<_Sp>)
+    return std::is_same_v<std::remove_cvref_t<decltype(_Sp::value)>, _IndexType> && _Sp::value >= 0;
   else
     return false;
 }
 // A canonical submdspan slice type for IndexType ([mdspan.sub.overview]/4).
-template <class S, class IndexType>
-consteval bool md_canonical_slice() {
-  if constexpr (std::is_same_v<S, std::full_extent_t>) {
+template <class _Sp, class _IndexType>
+consteval bool __md_canonical_slice() {
+  if constexpr (std::is_same_v<_Sp, std::full_extent_t>) {
     return true;
-  } else if constexpr (md_is_extent_slice<S>) {
-    if constexpr (md_canonical_index<typename S::offset_type, IndexType>() &&
-                  md_canonical_index<typename S::extent_type, IndexType>() &&
-                  md_canonical_index<typename S::stride_type, IndexType>()) {
-      if constexpr (md_is_cw<typename S::stride_type> && md_is_cw<typename S::extent_type>)
-        return S::stride_type::value > 0;
+  } else if constexpr (__md_is_extent_slice<_Sp>) {
+    if constexpr (__md_canonical_index<typename _Sp::offset_type, _IndexType>() &&
+                  __md_canonical_index<typename _Sp::extent_type, _IndexType>() &&
+                  __md_canonical_index<typename _Sp::stride_type, _IndexType>()) {
+      if constexpr (__md_is_cw<typename _Sp::stride_type> && __md_is_cw<typename _Sp::extent_type>)
+        return _Sp::stride_type::value > 0;
       else
         return true;
     } else {
       return false;
     }
   } else {
-    return md_canonical_index<S, IndexType>();
+    return __md_canonical_index<_Sp, _IndexType>();
   }
 }
 
-template <class S>
-inline constexpr bool md_is_full = std::is_same_v<S, std::full_extent_t>;
+template <class _Sp>
+inline constexpr bool __md_is_full = std::is_same_v<_Sp, std::full_extent_t>;
 // Collapsing and unit-stride slice types ([mdspan.sub.overview]/5-6).
-template <class S>
-inline constexpr bool md_collapsing = !md_is_full<S> && !md_is_extent_slice<S>;
-template <class S>
-consteval bool md_unit_stride() {
-  if constexpr (md_is_full<S>)
+template <class _Sp>
+inline constexpr bool __md_collapsing = !__md_is_full<_Sp> && !__md_is_extent_slice<_Sp>;
+template <class _Sp>
+consteval bool __md_unit_stride() {
+  if constexpr (__md_is_full<_Sp>)
     return true;
-  else if constexpr (md_is_extent_slice<S>) {
-    if constexpr (md_is_cw<typename S::stride_type>)
-      return S::stride_type::value == 1;
+  else if constexpr (__md_is_extent_slice<_Sp>) {
+    if constexpr (__md_is_cw<typename _Sp::stride_type>)
+      return _Sp::stride_type::value == 1;
     else
       return false;
   } else
@@ -186,33 +186,33 @@ consteval bool md_unit_stride() {
 }
 
 // The value of a constant_wrapper type, or d.
-template <class T>
-consteval std::size_t md_cw_value_or(std::size_t d) {
-  if constexpr (md_is_cw<T>)
-    return static_cast<std::size_t>(T::value);
+template <class _Tp>
+consteval std::size_t __md_cw_value_or(std::size_t d) {
+  if constexpr (__md_is_cw<_Tp>)
+    return static_cast<std::size_t>(_Tp::value);
   else
     return d;
 }
 
 // "S is a valid submdspan slice type for the kth extent of E" ([mdspan.sub.overview]/8).
-template <class E, std::size_t K, class S>
-consteval bool md_valid_slice_type() {
-  using I = typename E::index_type;
-  if constexpr (!md_canonical_slice<S, I>()) {
+template <class _Ep, std::size_t _Kp, class _Sp>
+consteval bool __md_valid_slice_type() {
+  using _Ip = typename _Ep::index_type;
+  if constexpr (!__md_canonical_slice<_Sp, _Ip>()) {
     return false;
   } else {
-    constexpr std::size_t x = E::static_extent(K);
-    if constexpr (x == std::dynamic_extent) {
+    constexpr std::size_t __x = _Ep::static_extent(_Kp);
+    if constexpr (__x == std::dynamic_extent) {
       return true;
-    } else if constexpr (md_is_extent_slice<S>) {
-      constexpr std::size_t o = md_cw_value_or<typename S::offset_type>(0);
-      constexpr std::size_t e = md_cw_value_or<typename S::extent_type>(0);
-      constexpr std::size_t t = md_cw_value_or<typename S::stride_type>(1);
-      if (o > x || e > x || (e > 1 && t == 0))
+    } else if constexpr (__md_is_extent_slice<_Sp>) {
+      constexpr std::size_t __o = __md_cw_value_or<typename _Sp::offset_type>(0);
+      constexpr std::size_t e = __md_cw_value_or<typename _Sp::extent_type>(0);
+      constexpr std::size_t t = __md_cw_value_or<typename _Sp::stride_type>(1);
+      if (__o > __x || e > __x || (e > 1 && t == 0))
         return false;
-      return e == 0 || o + 1 + (e - 1) * t <= x;
-    } else if constexpr (md_is_cw<S>) {
-      return static_cast<std::size_t>(S::value) < x;
+      return e == 0 || __o + 1 + (e - 1) * t <= __x;
+    } else if constexpr (__md_is_cw<_Sp>) {
+      return static_cast<std::size_t>(_Sp::value) < __x;
     } else {
       return true;
     }
@@ -220,430 +220,430 @@ consteval bool md_valid_slice_type() {
 }
 
 // The lower bound of the submdspan slice range of a canonical slice ([mdspan.sub.overview]/7).
-template <class I, class S>
-constexpr I md_slice_lower(const S& s) noexcept {
-  if constexpr (md_is_full<S>)
+template <class _Ip, class _Sp>
+constexpr _Ip __md_slice_lower(const _Sp& s) noexcept {
+  if constexpr (__md_is_full<_Sp>)
     return 0;
-  else if constexpr (md_is_extent_slice<S>)
-    return static_cast<I>(s.offset);
+  else if constexpr (__md_is_extent_slice<_Sp>)
+    return static_cast<_Ip>(s.offset);
   else
-    return static_cast<I>(s);
+    return static_cast<_Ip>(s);
 }
 
 // "s is a valid submdspan slice for the kth extent of e" ([mdspan.sub.overview]/9), for a slice
 // of a valid slice type.
-template <class E, class S>
-constexpr bool md_valid_slice(const E& e, std::size_t k, const S& s) noexcept {
-  using I = typename E::index_type;
-  I n = e.extent(k);
-  if constexpr (md_is_full<S>) {
+template <class _Ep, class _Sp>
+constexpr bool __md_valid_slice(const _Ep& e, std::size_t k, const _Sp& s) noexcept {
+  using _Ip = typename _Ep::index_type;
+  _Ip n = e.extent(k);
+  if constexpr (__md_is_full<_Sp>) {
     return true;
-  } else if constexpr (md_is_extent_slice<S>) {
-    I o = static_cast<I>(s.offset), x = static_cast<I>(s.extent), t = static_cast<I>(s.stride);
-    if (x < 0 || (x >= 2 && t <= 0) || o < 0 || o > n)
+  } else if constexpr (__md_is_extent_slice<_Sp>) {
+    _Ip __o = static_cast<_Ip>(s.offset), __x = static_cast<_Ip>(s.extent), t = static_cast<_Ip>(s.stride);
+    if (__x < 0 || (__x >= 2 && t <= 0) || __o < 0 || __o > n)
       return false;
-    if (x == 0)
+    if (__x == 0)
       return true;
-    I u = 0;
-    return ::ycxx::detail::md_mul(static_cast<I>(x - 1), t, u) && ::ycxx::detail::md_add(u, o, u) && u < n;
+    _Ip __u = 0;
+    return ::__ycxx::__detail::__md_mul(static_cast<_Ip>(__x - 1), t, __u) && ::__ycxx::__detail::__md_add(__u, __o, __u) && __u < n;
   } else {
-    I i = static_cast<I>(s);
+    _Ip i = static_cast<_Ip>(s);
     return i >= 0 && i < n;
   }
 }
 
 // canonical-index ([mdspan.sub.helpers]/4-6).
-template <class IndexType, class S>
-constexpr auto md_canonical_index_of(S s) {
-  if constexpr (integral_constant_like<S>) {
+template <class _IndexType, class _Sp>
+constexpr auto __md_canonical_index_of(_Sp s) {
+  if constexpr (__integral_constant_like<_Sp>) {
     static_assert(
-        std::in_range<IndexType>(::ycxx::detail::md_as_int(::ycxx::detail::md_index_cast<IndexType>(S::value))),
+        std::in_range<_IndexType>(::__ycxx::__detail::__md_as_int(::__ycxx::__detail::__md_index_cast<_IndexType>(_Sp::value))),
         "submdspan: a constant slice index is not representable as index_type");
-    return std::cw<IndexType(S::value)>;
+    return std::cw<_IndexType(_Sp::value)>;
   } else {
-    if constexpr (md_plain_integral<S>)
-      ::ycxx::detail::precondition(std::in_range<IndexType>(::ycxx::detail::md_as_int(s)),
+    if constexpr (__md_plain_integral<_Sp>)
+      ::__ycxx::__detail::__precondition(std::in_range<_IndexType>(::__ycxx::__detail::__md_as_int(s)),
                                    "submdspan: a slice index is not representable as index_type");
-    return IndexType(std::move(s));
+    return _IndexType(std::move(s));
   }
 }
 
-template <class D, class... T>
-struct md_first_type {
-  using type = D;
+template <class _Dp, class... _Tp>
+struct __md_first_type {
+  using type = _Dp;
 };
-template <class D, class T, class... R>
-struct md_first_type<D, T, R...> {
-  using type = T;
+template <class _Dp, class _Tp, class... _Rp>
+struct __md_first_type<_Dp, _Tp, _Rp...> {
+  using type = _Tp;
 };
 
 // canonical-range-slice ([mdspan.sub.helpers]/7-10).
-template <class IndexType, class OffsetType, class SpanType, class... StrideTypes>
-constexpr auto md_canonical_range_slice(OffsetType offset, SpanType span, StrideTypes... strides) {
-  static_assert(sizeof...(StrideTypes) <= 1);
-  constexpr bool unit = sizeof...(StrideTypes) == 0 || std::is_same_v<SpanType, std::constant_wrapper<IndexType(0)>>;
-  using StrideType =
-      std::conditional_t<unit, std::constant_wrapper<IndexType(1)>,
-                         typename md_first_type<std::constant_wrapper<IndexType(1)>, StrideTypes...>::type>;
-  StrideType stride{};
-  if constexpr (!md_is_cw<StrideType>) {
+template <class _IndexType, class _OffsetType, class _SpanType, class... _StrideTypes>
+constexpr auto __md_canonical_range_slice(_OffsetType offset, _SpanType span, _StrideTypes... strides) {
+  static_assert(sizeof...(_StrideTypes) <= 1);
+  constexpr bool __unit = sizeof...(_StrideTypes) == 0 || std::is_same_v<_SpanType, std::constant_wrapper<_IndexType(0)>>;
+  using _StrideType =
+      std::conditional_t<__unit, std::constant_wrapper<_IndexType(1)>,
+                         typename __md_first_type<std::constant_wrapper<_IndexType(1)>, _StrideTypes...>::type>;
+  _StrideType stride{};
+  if constexpr (!__md_is_cw<_StrideType>) {
     if (span == 0)
-      stride = IndexType(1);
+      stride = _IndexType(1);
     else
       stride = (strides, ...);
-    ::ycxx::detail::precondition(stride > 0, "submdspan: a range_slice stride must be positive");
+    ::__ycxx::__detail::__precondition(stride > 0, "submdspan: a range_slice stride must be positive");
   } else {
-    static_assert(StrideType::value > 0, "submdspan: a range_slice stride must be positive");
+    static_assert(_StrideType::value > 0, "submdspan: a range_slice stride must be positive");
   }
-  if constexpr (md_is_cw<SpanType> && md_is_cw<StrideType>) {
-    constexpr IndexType value =
-        SpanType::value != 0 ? IndexType(1 + (SpanType::value - 1) / StrideType::value) : IndexType(0);
-    return std::extent_slice<OffsetType, std::constant_wrapper<value>, StrideType>{offset, std::cw<value>, stride};
+  if constexpr (__md_is_cw<_SpanType> && __md_is_cw<_StrideType>) {
+    constexpr _IndexType value =
+        _SpanType::value != 0 ? _IndexType(1 + (_SpanType::value - 1) / _StrideType::value) : _IndexType(0);
+    return std::extent_slice<_OffsetType, std::constant_wrapper<value>, _StrideType>{offset, std::cw<value>, stride};
   } else {
-    IndexType value = span != 0 ? IndexType(1 + (span - 1) / stride) : IndexType(0);
-    return std::extent_slice<OffsetType, IndexType, StrideType>{offset, value, stride};
+    _IndexType value = span != 0 ? _IndexType(1 + (span - 1) / stride) : _IndexType(0);
+    return std::extent_slice<_OffsetType, _IndexType, _StrideType>{offset, value, stride};
   }
 }
 
 // canonical-slice ([mdspan.sub.helpers]/11-12).
-template <class IndexType, class S>
-constexpr auto md_canonical_slice_of(S s) {
-  static_assert(md_slice_type<S, IndexType>(), "submdspan: not a submdspan slice type for index_type");
-  if constexpr (std::is_convertible_v<S, std::full_extent_t>) {
+template <class _IndexType, class _Sp>
+constexpr auto __md_canonical_slice_of(_Sp s) {
+  static_assert(__md_slice_type<_Sp, _IndexType>(), "submdspan: not a submdspan slice type for index_type");
+  if constexpr (std::is_convertible_v<_Sp, std::full_extent_t>) {
     return static_cast<std::full_extent_t>(std::move(s));
-  } else if constexpr (std::is_convertible_v<S, IndexType>) {
-    return ::ycxx::detail::md_canonical_index_of<IndexType>(std::move(s));
-  } else if constexpr (md_is_extent_slice<S>) {
-    auto o = ::ycxx::detail::md_canonical_index_of<IndexType>(std::move(s.offset));
-    auto e = ::ycxx::detail::md_canonical_index_of<IndexType>(std::move(s.extent));
-    auto t = ::ycxx::detail::md_canonical_index_of<IndexType>(std::move(s.stride));
-    return std::extent_slice<decltype(o), decltype(e), decltype(t)>{o, e, t};
-  } else if constexpr (md_is_range_slice<S>) {
-    auto c_first = ::ycxx::detail::md_canonical_index_of<IndexType>(std::move(s.first));
-    auto c_last = ::ycxx::detail::md_canonical_index_of<IndexType>(std::move(s.last));
-    return ::ycxx::detail::md_canonical_range_slice<IndexType>(
-        c_first, ::ycxx::detail::md_canonical_index_of<IndexType>(c_last - c_first),
-        ::ycxx::detail::md_canonical_index_of<IndexType>(std::move(s.stride)));
+  } else if constexpr (std::is_convertible_v<_Sp, _IndexType>) {
+    return ::__ycxx::__detail::__md_canonical_index_of<_IndexType>(std::move(s));
+  } else if constexpr (__md_is_extent_slice<_Sp>) {
+    auto __o = ::__ycxx::__detail::__md_canonical_index_of<_IndexType>(std::move(s.offset));
+    auto e = ::__ycxx::__detail::__md_canonical_index_of<_IndexType>(std::move(s.extent));
+    auto t = ::__ycxx::__detail::__md_canonical_index_of<_IndexType>(std::move(s.stride));
+    return std::extent_slice<decltype(__o), decltype(e), decltype(t)>{__o, e, t};
+  } else if constexpr (__md_is_range_slice<_Sp>) {
+    auto __c_first = ::__ycxx::__detail::__md_canonical_index_of<_IndexType>(std::move(s.first));
+    auto __c_last = ::__ycxx::__detail::__md_canonical_index_of<_IndexType>(std::move(s.last));
+    return ::__ycxx::__detail::__md_canonical_range_slice<_IndexType>(
+        __c_first, ::__ycxx::__detail::__md_canonical_index_of<_IndexType>(__c_last - __c_first),
+        ::__ycxx::__detail::__md_canonical_index_of<_IndexType>(std::move(s.stride)));
   } else {
-    auto [s_first, s_last] = std::move(s);
-    auto c_first = ::ycxx::detail::md_canonical_index_of<IndexType>(std::move(s_first));
-    auto c_last = ::ycxx::detail::md_canonical_index_of<IndexType>(std::move(s_last));
-    return ::ycxx::detail::md_canonical_range_slice<IndexType>(
-        c_first, ::ycxx::detail::md_canonical_index_of<IndexType>(c_last - c_first));
+    auto [__s_first, __s_last] = std::move(s);
+    auto __c_first = ::__ycxx::__detail::__md_canonical_index_of<_IndexType>(std::move(__s_first));
+    auto __c_last = ::__ycxx::__detail::__md_canonical_index_of<_IndexType>(std::move(__s_last));
+    return ::__ycxx::__detail::__md_canonical_range_slice<_IndexType>(
+        __c_first, ::__ycxx::__detail::__md_canonical_index_of<_IndexType>(__c_last - __c_first));
   }
 }
 
 // Mandates and preconditions shared by canonical_slices and the submdspan_mapping
 // customizations, for canonical slices.
-template <class E, class... Sl>
-constexpr void md_check_slices(const E& e, const Sl&... slices) {
-  [&]<std::size_t... K>(std::index_sequence<K...>) {
-    static_assert((md_valid_slice_type<E, K, Sl>() && ...),
+template <class _Ep, class... _Sl>
+constexpr void __md_check_slices(const _Ep& e, const _Sl&... __slices) {
+  [&]<std::size_t... _Kp>(std::index_sequence<_Kp...>) {
+    static_assert((__md_valid_slice_type<_Ep, _Kp, _Sl>() && ...),
                   "submdspan: a slice is not a valid submdspan slice type for its extent");
-    if (::ycxx::detail::md_checking())
-      ::ycxx::detail::precondition((::ycxx::detail::md_valid_slice(e, K, slices) && ...),
+    if (::__ycxx::__detail::__md_checking())
+      ::__ycxx::__detail::__precondition((::__ycxx::__detail::__md_valid_slice(e, _Kp, __slices) && ...),
                                    "submdspan: a slice is not a valid submdspan slice for its extent");
-  }(std::index_sequence_for<Sl...>());
+  }(std::index_sequence_for<_Sl...>());
 }
 
 // The rank of the result and the static extents of subextents ([mdspan.sub.extents]/5).
-template <class... Sl>
-inline constexpr std::size_t md_sub_rank = ((md_collapsing<Sl> ? 0 : 1) + ... + 0);
-template <class S>
-consteval std::size_t md_sub_static(std::size_t x) {
-  if constexpr (md_is_full<S>)
-    return x;
-  else if constexpr (md_is_extent_slice<S>)
-    return md_cw_value_or<typename S::extent_type>(std::dynamic_extent);
+template <class... _Sl>
+inline constexpr std::size_t __md_sub_rank = ((__md_collapsing<_Sl> ? 0 : 1) + ... + 0);
+template <class _Sp>
+consteval std::size_t __md_sub_static(std::size_t __x) {
+  if constexpr (__md_is_full<_Sp>)
+    return __x;
+  else if constexpr (__md_is_extent_slice<_Sp>)
+    return __md_cw_value_or<typename _Sp::extent_type>(std::dynamic_extent);
   else
     return std::dynamic_extent;
 }
-template <class E, class... Sl>
-consteval std::array<std::size_t, md_sub_rank<Sl...> + 1> md_sub_statics() {
-  std::array<std::size_t, md_sub_rank<Sl...> + 1> r{};
-  std::size_t k = 0, j = 0;
-  ((md_collapsing<Sl> ? void() : void(r[j++] = md_sub_static<Sl>(E::static_extent(k))), ++k), ...);
+template <class _Ep, class... _Sl>
+consteval std::array<std::size_t, __md_sub_rank<_Sl...> + 1> __md_sub_statics() {
+  std::array<std::size_t, __md_sub_rank<_Sl...> + 1> r{};
+  std::size_t k = 0, __j = 0;
+  ((__md_collapsing<_Sl> ? void() : void(r[__j++] = __md_sub_static<_Sl>(_Ep::static_extent(k))), ++k), ...);
   return r;
 }
-template <class E, class... Sl>
-inline constexpr auto md_sub_statics_v = md_sub_statics<E, Sl...>();
+template <class _Ep, class... _Sl>
+inline constexpr auto __md_sub_statics_v = __md_sub_statics<_Ep, _Sl...>();
 
 // subextents of canonical slices ([mdspan.sub.extents]/5-6).
-template <class E, class... Sl>
-constexpr auto md_sub_extents(const E& e, const Sl&... slices) {
-  using I = typename E::index_type;
-  constexpr std::size_t n = md_sub_rank<Sl...>;
-  std::array<I, n + 1> vals{};
-  std::size_t k = 0, j = 0;
+template <class _Ep, class... _Sl>
+constexpr auto __md_sub_extents(const _Ep& e, const _Sl&... __slices) {
+  using _Ip = typename _Ep::index_type;
+  constexpr std::size_t n = __md_sub_rank<_Sl...>;
+  std::array<_Ip, n + 1> __vals{};
+  std::size_t k = 0, __j = 0;
   (
       [&] {
-        if constexpr (md_is_full<Sl>)
-          vals[j++] = e.extent(k);
-        else if constexpr (md_is_extent_slice<Sl>)
-          vals[j++] = static_cast<I>(slices.extent);
+        if constexpr (__md_is_full<_Sl>)
+          __vals[__j++] = e.extent(k);
+        else if constexpr (__md_is_extent_slice<_Sl>)
+          __vals[__j++] = static_cast<_Ip>(__slices.extent);
         ++k;
       }(),
       ...);
-  return [&]<std::size_t... J>(std::index_sequence<J...>) {
-    return std::extents<I, md_sub_statics_v<E, Sl...>[J]...>(vals[J]...);
+  return [&]<std::size_t... _Jp>(std::index_sequence<_Jp...>) {
+    return std::extents<_Ip, __md_sub_statics_v<_Ep, _Sl...>[_Jp]...>(__vals[_Jp]...);
   }(std::make_index_sequence<n>());
 }
 
 // sub_strides and offset of [mdspan.sub.map.common]/6-8.
-template <class SubExtents, class M, class... Sl>
-constexpr std::array<typename SubExtents::index_type, SubExtents::rank()> md_sub_strides(const M& m,
-                                                                                         const Sl&... slices) {
-  using I = typename SubExtents::index_type;
-  std::array<I, SubExtents::rank()> st{};
-  std::size_t k = 0, j = 0;
+template <class _SubExtents, class _Mp, class... _Sl>
+constexpr std::array<typename _SubExtents::index_type, _SubExtents::rank()> __md_sub_strides(const _Mp& m,
+                                                                                         const _Sl&... __slices) {
+  using _Ip = typename _SubExtents::index_type;
+  std::array<_Ip, _SubExtents::rank()> __st{};
+  std::size_t k = 0, __j = 0;
   (
       [&] {
-        if constexpr (!md_collapsing<Sl>) {
-          I s = static_cast<I>(m.stride(k));
-          if constexpr (md_is_extent_slice<Sl>)
-            if (static_cast<I>(slices.extent) > 1)
-              s = static_cast<I>(s * static_cast<I>(slices.stride));
-          st[j++] = s;
+        if constexpr (!__md_collapsing<_Sl>) {
+          _Ip s = static_cast<_Ip>(m.stride(k));
+          if constexpr (__md_is_extent_slice<_Sl>)
+            if (static_cast<_Ip>(__slices.extent) > 1)
+              s = static_cast<_Ip>(s * static_cast<_Ip>(__slices.stride));
+          __st[__j++] = s;
         }
         ++k;
       }(),
       ...);
-  return st;
+  return __st;
 }
-template <class M, class... Sl>
-constexpr std::size_t md_sub_offset(const M& m, const Sl&... slices) {
-  using I = typename M::index_type;
-  std::array<I, sizeof...(Sl)> ls{::ycxx::detail::md_slice_lower<I>(slices)...};
-  for (std::size_t k = 0; k < sizeof...(Sl); ++k)
-    if (ls[k] == m.extents().extent(k))
+template <class _Mp, class... _Sl>
+constexpr std::size_t __md_sub_offset(const _Mp& m, const _Sl&... __slices) {
+  using _Ip = typename _Mp::index_type;
+  std::array<_Ip, sizeof...(_Sl)> __ls{::__ycxx::__detail::__md_slice_lower<_Ip>(__slices)...};
+  for (std::size_t k = 0; k < sizeof...(_Sl); ++k)
+    if (__ls[k] == m.extents().extent(k))
       return static_cast<std::size_t>(m.required_span_size());
-  return [&]<std::size_t... K>(std::index_sequence<K...>) {
-    return static_cast<std::size_t>(m(ls[K]...));
-  }(std::index_sequence_for<Sl...>());
+  return [&]<std::size_t... _Kp>(std::index_sequence<_Kp...>) {
+    return static_cast<std::size_t>(m(__ls[_Kp]...));
+  }(std::index_sequence_for<_Sl...>());
 }
 
 // Which mapping a submdspan_mapping customization returns ([mdspan.sub.map.left] through
 // [mdspan.sub.map.rightpad]): the source mapping itself, the plain layout, the padded layout
 // (with u as defined there) or layout_stride.
-enum class md_sub_kind { same, plain, padded, stride };
-struct md_sub_choice {
-  md_sub_kind kind;
-  std::size_t u;
+enum class __md_sub_kind { __same, __plain, __padded, stride };
+struct __md_sub_choice {
+  __md_sub_kind kind;
+  std::size_t __u;
 };
-template <bool Left, bool Padded, class... Sl>
-consteval md_sub_choice md_sub_pick() {
-  constexpr std::size_t rank = sizeof...(Sl), sr = md_sub_rank<Sl...>;
-  const bool full[] = {md_is_full<Sl>..., false};
-  const bool unit[] = {md_unit_stride<Sl>()..., false};
+template <bool _Left, bool _Padded, class... _Sl>
+consteval __md_sub_choice __md_sub_pick() {
+  constexpr std::size_t rank = sizeof...(_Sl), __sr = __md_sub_rank<_Sl...>;
+  const bool __full[] = {__md_is_full<_Sl>..., false};
+  const bool __unit[] = {__md_unit_stride<_Sl>()..., false};
   if (rank == 0)
-    return {md_sub_kind::same, 0};
-  if (sr == 0 || (Padded && rank == 1))
-    return {md_sub_kind::plain, 0};
-  if constexpr (Left) {
-    if constexpr (Padded) {
-      if (sr == 1 && unit[0])
-        return {md_sub_kind::plain, 0};
+    return {__md_sub_kind::__same, 0};
+  if (__sr == 0 || (_Padded && rank == 1))
+    return {__md_sub_kind::__plain, 0};
+  if constexpr (_Left) {
+    if constexpr (_Padded) {
+      if (__sr == 1 && __unit[0])
+        return {__md_sub_kind::__plain, 0};
     } else {
-      bool c = unit[sr - 1];
-      for (std::size_t k = 0; k + 1 < sr; ++k)
-        c = c && full[k];
+      bool c = __unit[__sr - 1];
+      for (std::size_t k = 0; k + 1 < __sr; ++k)
+        c = c && __full[k];
       if (c)
-        return {md_sub_kind::plain, 0};
+        return {__md_sub_kind::__plain, 0};
     }
     // u + 1: the smallest p > 0 for which the slice is unit-stride.
     std::size_t p = 1;
-    while (p < rank && !unit[p])
+    while (p < rank && !__unit[p])
       ++p;
     if (p == rank)
-      return {md_sub_kind::stride, 0};
-    std::size_t u = p - 1;
-    bool c = unit[0] && u + sr - 1 < rank && unit[u + sr - 1];
-    for (std::size_t k = u + 1; k + 1 < u + sr; ++k)
-      c = c && full[k];
-    return {c ? md_sub_kind::padded : md_sub_kind::stride, u};
+      return {__md_sub_kind::stride, 0};
+    std::size_t __u = p - 1;
+    bool c = __unit[0] && __u + __sr - 1 < rank && __unit[__u + __sr - 1];
+    for (std::size_t k = __u + 1; k + 1 < __u + __sr; ++k)
+      c = c && __full[k];
+    return {c ? __md_sub_kind::__padded : __md_sub_kind::stride, __u};
   } else {
-    if constexpr (Padded) {
-      if (sr == 1 && unit[rank - 1])
-        return {md_sub_kind::plain, 0};
+    if constexpr (_Padded) {
+      if (__sr == 1 && __unit[rank - 1])
+        return {__md_sub_kind::__plain, 0};
     } else {
-      bool c = unit[rank - sr];
-      for (std::size_t k = rank - sr + 1; k < rank; ++k)
-        c = c && full[k];
+      bool c = __unit[rank - __sr];
+      for (std::size_t k = rank - __sr + 1; k < rank; ++k)
+        c = c && __full[k];
       if (c)
-        return {md_sub_kind::plain, 0};
+        return {__md_sub_kind::__plain, 0};
     }
     // rank - u - 2: the largest p < rank - 1 for which the slice is unit-stride.
     std::size_t p = rank - 1;
-    while (p > 0 && !unit[p - 1])
+    while (p > 0 && !__unit[p - 1])
       --p;
     if (p == 0)
-      return {md_sub_kind::stride, 0};
-    std::size_t u = rank - p - 1; // p - 1 == rank - u - 2
-    if (rank < sr + u)
-      return {md_sub_kind::stride, u};
-    bool c = unit[rank - 1] && unit[rank - sr - u];
-    for (std::size_t k = rank - sr - u + 1; k + u + 1 < rank; ++k)
-      c = c && full[k];
-    return {c ? md_sub_kind::padded : md_sub_kind::stride, u};
+      return {__md_sub_kind::stride, 0};
+    std::size_t __u = rank - p - 1; // p - 1 == rank - u - 2
+    if (rank < __sr + __u)
+      return {__md_sub_kind::stride, __u};
+    bool c = __unit[rank - 1] && __unit[rank - __sr - __u];
+    for (std::size_t k = rank - __sr - __u + 1; k + __u + 1 < rank; ++k)
+      c = c && __full[k];
+    return {c ? __md_sub_kind::__padded : __md_sub_kind::stride, __u};
   }
 }
 
 // S_static of [mdspan.sub.map.left]/1.4 and its relatives: the product of the static extents
-// with rank indices in [first, last) times `factor`, or dynamic_extent.
-template <class E>
-consteval std::size_t md_static_product(std::size_t factor, std::size_t first, std::size_t last) {
-  if (factor == std::dynamic_extent)
+// with rank indices in [first, last) times `__factor`, or dynamic_extent.
+template <class _Ep>
+consteval std::size_t __md_static_product(std::size_t __factor, std::size_t first, std::size_t last) {
+  if (__factor == std::dynamic_extent)
     return std::dynamic_extent;
-  std::size_t p = factor;
+  std::size_t p = __factor;
   for (std::size_t k = first; k < last; ++k) {
-    if (E::static_extent(k) == std::dynamic_extent)
+    if (_Ep::static_extent(k) == std::dynamic_extent)
       return std::dynamic_extent;
-    p *= E::static_extent(k);
+    p *= _Ep::static_extent(k);
   }
   return p;
 }
 
 // The common body of the submdspan_mapping customizations. PadStride is the source's
 // static-padding-stride (unused for layout_left and layout_right).
-template <bool Left, bool Padded, std::size_t PadStride, class M, class... Sl>
-constexpr auto md_submdspan_mapping(const M& m, const Sl&... slices) {
-  using E = typename M::extents_type;
-  constexpr std::size_t rank = E::rank();
-  ::ycxx::detail::md_check_slices(m.extents(), slices...);
-  constexpr md_sub_choice choice = md_sub_pick<Left, Padded, Sl...>();
-  if constexpr (choice.kind == md_sub_kind::same) {
-    return std::submdspan_mapping_result<M>{m, 0};
+template <bool _Left, bool _Padded, std::size_t _PadStride, class _Mp, class... _Sl>
+constexpr auto __md_submdspan_mapping(const _Mp& m, const _Sl&... __slices) {
+  using _Ep = typename _Mp::extents_type;
+  constexpr std::size_t rank = _Ep::rank();
+  ::__ycxx::__detail::__md_check_slices(m.extents(), __slices...);
+  constexpr __md_sub_choice __choice = __md_sub_pick<_Left, _Padded, _Sl...>();
+  if constexpr (__choice.kind == __md_sub_kind::__same) {
+    return std::submdspan_mapping_result<_Mp>{m, 0};
   } else {
-    auto sub_ext = ::ycxx::detail::md_sub_extents(m.extents(), slices...);
-    using Sub = decltype(sub_ext);
-    std::size_t offset = ::ycxx::detail::md_sub_offset(m, slices...);
-    if constexpr (choice.kind == md_sub_kind::plain) {
-      using L = std::conditional_t<Left, std::layout_left, std::layout_right>;
-      return std::submdspan_mapping_result<typename L::template mapping<Sub>>{
-          typename L::template mapping<Sub>(sub_ext), offset};
-    } else if constexpr (choice.kind == md_sub_kind::padded) {
-      constexpr std::size_t u = choice.u;
-      if constexpr (Left) {
-        constexpr std::size_t s_static =
-            Padded ? md_static_product<E>(PadStride, 1, u + 1) : md_static_product<E>(1, 0, u + 1);
-        using R = typename std::layout_left_padded<s_static>::template mapping<Sub>;
-        return std::submdspan_mapping_result<R>{R(sub_ext, m.stride(u + 1)), offset};
+    auto __sub_ext = ::__ycxx::__detail::__md_sub_extents(m.extents(), __slices...);
+    using _Sub = decltype(__sub_ext);
+    std::size_t offset = ::__ycxx::__detail::__md_sub_offset(m, __slices...);
+    if constexpr (__choice.kind == __md_sub_kind::__plain) {
+      using _Lp = std::conditional_t<_Left, std::layout_left, std::layout_right>;
+      return std::submdspan_mapping_result<typename _Lp::template mapping<_Sub>>{
+          typename _Lp::template mapping<_Sub>(__sub_ext), offset};
+    } else if constexpr (__choice.kind == __md_sub_kind::__padded) {
+      constexpr std::size_t __u = __choice.__u;
+      if constexpr (_Left) {
+        constexpr std::size_t __s_static =
+            _Padded ? __md_static_product<_Ep>(_PadStride, 1, __u + 1) : __md_static_product<_Ep>(1, 0, __u + 1);
+        using _Rp = typename std::layout_left_padded<__s_static>::template mapping<_Sub>;
+        return std::submdspan_mapping_result<_Rp>{_Rp(__sub_ext, m.stride(__u + 1)), offset};
       } else {
-        constexpr std::size_t s_static = Padded ? md_static_product<E>(PadStride, rank - u - 1, rank - 1)
-                                                : md_static_product<E>(1, rank - u - 1, rank);
-        using R = typename std::layout_right_padded<s_static>::template mapping<Sub>;
-        return std::submdspan_mapping_result<R>{R(sub_ext, m.stride(rank - u - 2)), offset};
+        constexpr std::size_t __s_static = _Padded ? __md_static_product<_Ep>(_PadStride, rank - __u - 1, rank - 1)
+                                                : __md_static_product<_Ep>(1, rank - __u - 1, rank);
+        using _Rp = typename std::layout_right_padded<__s_static>::template mapping<_Sub>;
+        return std::submdspan_mapping_result<_Rp>{_Rp(__sub_ext, m.stride(rank - __u - 2)), offset};
       }
     } else {
-      using R = std::layout_stride::mapping<Sub>;
-      return std::submdspan_mapping_result<R>{
-          R(md_sub_strides_t{}, sub_ext, ::ycxx::detail::md_sub_strides<Sub>(m, slices...)), offset};
+      using _Rp = std::layout_stride::mapping<_Sub>;
+      return std::submdspan_mapping_result<_Rp>{
+          _Rp(__md_sub_strides_t{}, __sub_ext, ::__ycxx::__detail::__md_sub_strides<_Sub>(m, __slices...)), offset};
     }
   }
 }
 
-}} // namespace ycxx::detail
+}} // namespace __ycxx::__detail
 
-namespace [[gnu::visibility("hidden")]] std {
+namespace [[__gnu__::__visibility__("hidden")]] std {
 
 // [mdspan.sub.map.left] ... [mdspan.sub.map.rightpad]
-template <class Extents>
-template <class... SliceSpecifiers>
-constexpr auto layout_left::mapping<Extents>::submdspan_mapping_impl(SliceSpecifiers... slices) const {
-  return ycxx::detail::md_submdspan_mapping<true, false, 0>(*this, slices...);
+template <class _Extents>
+template <class... _SliceSpecifiers>
+constexpr auto layout_left::mapping<_Extents>::__submdspan_mapping_impl(_SliceSpecifiers... __slices) const {
+  return __ycxx::__detail::__md_submdspan_mapping<true, false, 0>(*this, __slices...);
 }
-template <class Extents>
-template <class... SliceSpecifiers>
-constexpr auto layout_right::mapping<Extents>::submdspan_mapping_impl(SliceSpecifiers... slices) const {
-  return ycxx::detail::md_submdspan_mapping<false, false, 0>(*this, slices...);
+template <class _Extents>
+template <class... _SliceSpecifiers>
+constexpr auto layout_right::mapping<_Extents>::__submdspan_mapping_impl(_SliceSpecifiers... __slices) const {
+  return __ycxx::__detail::__md_submdspan_mapping<false, false, 0>(*this, __slices...);
 }
-template <class Extents>
-template <class... SliceSpecifiers>
-constexpr auto layout_stride::mapping<Extents>::submdspan_mapping_impl(SliceSpecifiers... slices) const {
-  ycxx::detail::md_check_slices(extents(), slices...);
-  if constexpr (rank_ == 0) {
+template <class _Extents>
+template <class... _SliceSpecifiers>
+constexpr auto layout_stride::mapping<_Extents>::__submdspan_mapping_impl(_SliceSpecifiers... __slices) const {
+  __ycxx::__detail::__md_check_slices(extents(), __slices...);
+  if constexpr (__rank_ == 0) {
     return submdspan_mapping_result<mapping>{*this, 0};
   } else {
-    auto sub_ext = ycxx::detail::md_sub_extents(extents(), slices...);
-    using R = layout_stride::mapping<decltype(sub_ext)>;
-    return submdspan_mapping_result<R>{R(ycxx::detail::md_sub_strides_t{}, sub_ext,
-                                         ycxx::detail::md_sub_strides<decltype(sub_ext)>(*this, slices...)),
-                                       ycxx::detail::md_sub_offset(*this, slices...)};
+    auto __sub_ext = __ycxx::__detail::__md_sub_extents(extents(), __slices...);
+    using _Rp = layout_stride::mapping<decltype(__sub_ext)>;
+    return submdspan_mapping_result<_Rp>{_Rp(__ycxx::__detail::__md_sub_strides_t{}, __sub_ext,
+                                         __ycxx::__detail::__md_sub_strides<decltype(__sub_ext)>(*this, __slices...)),
+                                       __ycxx::__detail::__md_sub_offset(*this, __slices...)};
   }
 }
-template <size_t PaddingValue>
-template <class Extents>
-template <class... SliceSpecifiers>
+template <size_t _PaddingValue>
+template <class _Extents>
+template <class... _SliceSpecifiers>
 constexpr auto
-layout_left_padded<PaddingValue>::mapping<Extents>::submdspan_mapping_impl(SliceSpecifiers... slices) const {
-  return ycxx::detail::md_submdspan_mapping<true, true, static_padding_stride>(*this, slices...);
+layout_left_padded<_PaddingValue>::mapping<_Extents>::__submdspan_mapping_impl(_SliceSpecifiers... __slices) const {
+  return __ycxx::__detail::__md_submdspan_mapping<true, true, __static_padding_stride>(*this, __slices...);
 }
-template <size_t PaddingValue>
-template <class Extents>
-template <class... SliceSpecifiers>
+template <size_t _PaddingValue>
+template <class _Extents>
+template <class... _SliceSpecifiers>
 constexpr auto
-layout_right_padded<PaddingValue>::mapping<Extents>::submdspan_mapping_impl(SliceSpecifiers... slices) const {
-  return ycxx::detail::md_submdspan_mapping<false, true, static_padding_stride>(*this, slices...);
+layout_right_padded<_PaddingValue>::mapping<_Extents>::__submdspan_mapping_impl(_SliceSpecifiers... __slices) const {
+  return __ycxx::__detail::__md_submdspan_mapping<false, true, __static_padding_stride>(*this, __slices...);
 }
 
 // [mdspan.sub.canonical]
-template <class IndexType, size_t... Extents, class... SliceSpecifiers>
-  requires(sizeof...(SliceSpecifiers) == sizeof...(Extents))
-constexpr auto canonical_slices(const extents<IndexType, Extents...>& src, SliceSpecifiers... slices) {
-  auto t = std::make_tuple(ycxx::detail::md_canonical_slice_of<IndexType>(std::move(slices))...);
-  [&]<size_t... K>(index_sequence<K...>) {
-    ycxx::detail::md_check_slices(src, std::get<K>(t)...);
-  }(index_sequence_for<SliceSpecifiers...>());
+template <class _IndexType, size_t... _Extents, class... _SliceSpecifiers>
+  requires(sizeof...(_SliceSpecifiers) == sizeof...(_Extents))
+constexpr auto canonical_slices(const extents<_IndexType, _Extents...>& __src, _SliceSpecifiers... __slices) {
+  auto t = std::make_tuple(__ycxx::__detail::__md_canonical_slice_of<_IndexType>(std::move(__slices))...);
+  [&]<size_t... _Kp>(index_sequence<_Kp...>) {
+    __ycxx::__detail::__md_check_slices(__src, std::get<_Kp>(t)...);
+  }(index_sequence_for<_SliceSpecifiers...>());
   return t;
 }
 
 // [mdspan.sub.extents]
-template <class IndexType, size_t... Extents, class... SliceSpecifiers>
-  requires(sizeof...(SliceSpecifiers) == sizeof...(Extents))
-constexpr auto subextents(const extents<IndexType, Extents...>& src, SliceSpecifiers... raw_slices) {
-  auto t = std::canonical_slices(src, std::move(raw_slices)...);
-  return [&]<size_t... K>(index_sequence<K...>) {
-    return ycxx::detail::md_sub_extents(src, std::get<K>(t)...);
-  }(index_sequence_for<SliceSpecifiers...>());
+template <class _IndexType, size_t... _Extents, class... _SliceSpecifiers>
+  requires(sizeof...(_SliceSpecifiers) == sizeof...(_Extents))
+constexpr auto subextents(const extents<_IndexType, _Extents...>& __src, _SliceSpecifiers... __raw_slices) {
+  auto t = std::canonical_slices(__src, std::move(__raw_slices)...);
+  return [&]<size_t... _Kp>(index_sequence<_Kp...>) {
+    return __ycxx::__detail::__md_sub_extents(__src, std::get<_Kp>(t)...);
+  }(index_sequence_for<_SliceSpecifiers...>());
 }
 
 } // namespace std
 
-namespace [[gnu::visibility("hidden")]] ycxx { namespace detail::md_adl {
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail::__md_adl {
 // sliceable-mapping ([mdspan.sub.map.sliceable]/6): submdspan_mapping found by argument-dependent
 // lookup only (no declaration of that name is visible from here).
-template <class LM, std::size_t... I>
-auto md_sub_map_full(const LM& lm,
-                     std::index_sequence<I...>) -> decltype(submdspan_mapping(lm, ((void)I, std::full_extent)...));
-template <class LM>
-concept sliceable_mapping = requires(const LM& lm) {
-  md_sub_map_full(lm, std::make_index_sequence<LM::extents_type::rank()>());
-  requires ::ycxx::detail::md_is_mapping_result<decltype(md_sub_map_full(
-      lm, std::make_index_sequence<LM::extents_type::rank()>()))>;
+template <class _LM, std::size_t... _Ip>
+auto __md_sub_map_full(const _LM& __lm,
+                     std::index_sequence<_Ip...>) -> decltype(submdspan_mapping(__lm, ((void)_Ip, std::full_extent)...));
+template <class _LM>
+concept __sliceable_mapping = requires(const _LM& __lm) {
+  __md_sub_map_full(__lm, std::make_index_sequence<_LM::extents_type::rank()>());
+  requires ::__ycxx::__detail::__md_is_mapping_result<decltype(__md_sub_map_full(
+      __lm, std::make_index_sequence<_LM::extents_type::rank()>()))>;
 };
 // The customization point call of submdspan ([mdspan.sub.sub]/3, Note 1).
-template <class LM, class... Sl>
-constexpr auto call_submdspan_mapping(const LM& lm, const Sl&... slices) {
-  return submdspan_mapping(lm, slices...);
+template <class _LM, class... _Sl>
+constexpr auto __call_submdspan_mapping(const _LM& __lm, const _Sl&... __slices) {
+  return submdspan_mapping(__lm, __slices...);
 }
-}} // namespace ycxx::detail::md_adl
+}} // namespace __ycxx::__detail::__md_adl
 
-namespace [[gnu::visibility("hidden")]] std {
+namespace [[__gnu__::__visibility__("hidden")]] std {
 
 // [mdspan.sub.sub]
-template <class ElementType, class Extents, class LayoutPolicy, class AccessorPolicy, class... SliceSpecifiers>
-  requires(sizeof...(SliceSpecifiers) == Extents::rank() &&
-           ycxx::detail::md_adl::sliceable_mapping<typename LayoutPolicy::template mapping<Extents>>)
-constexpr auto submdspan(const mdspan<ElementType, Extents, LayoutPolicy, AccessorPolicy>& src,
-                         SliceSpecifiers... raw_slices) {
-  auto t = std::canonical_slices(src.extents(), std::move(raw_slices)...);
-  return [&]<size_t... K>(index_sequence<K...>) {
-    auto sub_map_result = ycxx::detail::md_adl::call_submdspan_mapping(src.mapping(), std::get<K>(t)...);
-    using A = typename AccessorPolicy::offset_policy;
-    using R = decltype(sub_map_result.mapping);
-    return mdspan<typename A::element_type, typename R::extents_type, typename R::layout_type, A>(
-        src.accessor().offset(src.data_handle(), sub_map_result.offset), sub_map_result.mapping, A(src.accessor()));
-  }(index_sequence_for<SliceSpecifiers...>());
+template <class _ElementType, class _Extents, class _LayoutPolicy, class _AccessorPolicy, class... _SliceSpecifiers>
+  requires(sizeof...(_SliceSpecifiers) == _Extents::rank() &&
+           __ycxx::__detail::__md_adl::__sliceable_mapping<typename _LayoutPolicy::template mapping<_Extents>>)
+constexpr auto submdspan(const mdspan<_ElementType, _Extents, _LayoutPolicy, _AccessorPolicy>& __src,
+                         _SliceSpecifiers... __raw_slices) {
+  auto t = std::canonical_slices(__src.extents(), std::move(__raw_slices)...);
+  return [&]<size_t... _Kp>(index_sequence<_Kp...>) {
+    auto __sub_map_result = __ycxx::__detail::__md_adl::__call_submdspan_mapping(__src.mapping(), std::get<_Kp>(t)...);
+    using _Ap = typename _AccessorPolicy::offset_policy;
+    using _Rp = decltype(__sub_map_result.mapping);
+    return mdspan<typename _Ap::element_type, typename _Rp::extents_type, typename _Rp::layout_type, _Ap>(
+        __src.accessor().offset(__src.data_handle(), __sub_map_result.offset), __sub_map_result.mapping, _Ap(__src.accessor()));
+  }(index_sequence_for<_SliceSpecifiers...>());
 }
 
 } // namespace std

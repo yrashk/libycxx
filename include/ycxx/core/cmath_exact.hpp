@@ -13,666 +13,666 @@
 #include <ycxx/config.hpp>
 #include <ycxx/core/cmath_fp.hpp>
 
-namespace [[gnu::visibility("hidden")]] ycxx { namespace detail::fpm {
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail::__fpm {
 
 // ---- NaN handling ----------------------------------------------------------------------------
-template <class T>
-constexpr bool fp_isnan(T x) noexcept {
-  return __builtin_isnan(x);
+template <class _Tp>
+constexpr bool __fp_isnan(_Tp __x) noexcept {
+  return __builtin_isnan(__x);
 }
-template <class T>
-constexpr bool fp_signbit(T x) noexcept {
-  return __builtin_signbit(x);
+template <class _Tp>
+constexpr bool __fp_signbit(_Tp __x) noexcept {
+  return __builtin_signbit(__x);
 }
-template <class T>
-constexpr bool fp_issignaling(T x) noexcept {
-  return __builtin_issignaling(x);
+template <class _Tp>
+constexpr bool __fp_issignaling(_Tp __x) noexcept {
+  return __builtin_issignaling(__x);
 }
 // A NaN operand: a signaling NaN raises "invalid" and becomes quiet.
-template <class T>
-constexpr T fp_nan_operand(T x) noexcept {
-  if (ycxx::detail::fpm::fp_issignaling(x)) {
-    ycxx::detail::fpm::fp_report(fe_invalid);
-    return ycxx::detail::fpm::fp_quiet_nan<T>(ycxx::detail::fpm::fp_signbit(x));
+template <class _Tp>
+constexpr _Tp __fp_nan_operand(_Tp __x) noexcept {
+  if (__ycxx::__detail::__fpm::__fp_issignaling(__x)) {
+    __ycxx::__detail::__fpm::__fp_report(__fe_invalid);
+    return __ycxx::__detail::__fpm::__fp_quiet_nan<_Tp>(__ycxx::__detail::__fpm::__fp_signbit(__x));
   }
-  return x;
+  return __x;
 }
-template <class T>
-constexpr T fp_nan_operands(T x, T y) noexcept {
-  if (ycxx::detail::fpm::fp_issignaling(x) || ycxx::detail::fpm::fp_issignaling(y))
-    ycxx::detail::fpm::fp_report(fe_invalid);
-  return ycxx::detail::fpm::fp_isnan(x) ? (ycxx::detail::fpm::fp_issignaling(x) ? ycxx::detail::fpm::fp_quiet_nan<T>() : x)
-                                        : (ycxx::detail::fpm::fp_issignaling(y) ? ycxx::detail::fpm::fp_quiet_nan<T>() : y);
+template <class _Tp>
+constexpr _Tp __fp_nan_operands(_Tp __x, _Tp y) noexcept {
+  if (__ycxx::__detail::__fpm::__fp_issignaling(__x) || __ycxx::__detail::__fpm::__fp_issignaling(y))
+    __ycxx::__detail::__fpm::__fp_report(__fe_invalid);
+  return __ycxx::__detail::__fpm::__fp_isnan(__x) ? (__ycxx::__detail::__fpm::__fp_issignaling(__x) ? __ycxx::__detail::__fpm::__fp_quiet_nan<_Tp>() : __x)
+                                        : (__ycxx::__detail::__fpm::__fp_issignaling(y) ? __ycxx::__detail::__fpm::__fp_quiet_nan<_Tp>() : y);
 }
-template <class T>
-constexpr T fp_invalid() noexcept { // a new NaN with "invalid"
-  ycxx::detail::fpm::fp_report(fe_invalid);
-  return ycxx::detail::fpm::fp_quiet_nan<T>();
+template <class _Tp>
+constexpr _Tp __fp_invalid() noexcept { // a new NaN with "invalid"
+  __ycxx::__detail::__fpm::__fp_report(__fe_invalid);
+  return __ycxx::__detail::__fpm::__fp_quiet_nan<_Tp>();
 }
-template <class T>
-constexpr T fp_finish(fp_result<T> r) noexcept {
-  ycxx::detail::fpm::fp_report(r.flags);
+template <class _Tp>
+constexpr _Tp __fp_finish(__fp_result<_Tp> r) noexcept {
+  __ycxx::__detail::__fpm::__fp_report(r.flags);
   return r.value;
 }
 
-template <class T>
-constexpr T fp_abs(T x) noexcept {
-  return ycxx::detail::fpm::fp_signbit(x) ? -x : x;
+template <class _Tp>
+constexpr _Tp __fp_abs(_Tp __x) noexcept {
+  return __ycxx::__detail::__fpm::__fp_signbit(__x) ? -__x : __x;
 }
-template <class T>
-constexpr T fp_copysign(T x, T y) noexcept {
-  return ycxx::detail::fpm::fp_signbit(x) != ycxx::detail::fpm::fp_signbit(y) ? -x : x;
+template <class _Tp>
+constexpr _Tp __fp_copysign(_Tp __x, _Tp y) noexcept {
+  return __ycxx::__detail::__fpm::__fp_signbit(__x) != __ycxx::__detail::__fpm::__fp_signbit(y) ? -__x : __x;
 }
 
 // ---- rounding to integers ---------------------------------------------------------------------
-enum class fp_rint_mode : unsigned char { trunc, floor, ceil, half_away, half_even };
+enum class __fp_rint_mode : unsigned char { trunc, floor, ceil, __half_away, __half_even };
 
-// The integer part of a finite decoded value, rounded by `mode`. `inexact` tells whether a
+// The integer part of a finite decoded value, rounded by `__mode`. `__inexact` tells whether a
 // fraction was dropped.
-template <class T>
-constexpr wide<2> fp_integer_part(const fp_value& v, fp_rint_mode mode, bool& inexact) noexcept {
-  if (v.exp >= 0) {
-    inexact = false;
-    return ycxx::detail::fpm::wide_shl(v.sig, v.exp > 127 ? 128 : v.exp); // callers check the range
+template <class _Tp>
+constexpr __wide<2> __fp_integer_part(const __fp_value& __v, __fp_rint_mode __mode, bool& __inexact) noexcept {
+  if (__v.exp >= 0) {
+    __inexact = false;
+    return __ycxx::__detail::__fpm::__wide_shl(__v.__sig, __v.exp > 127 ? 128 : __v.exp); // callers check the range
   }
-  const int s = -v.exp;
-  const bool half = ycxx::detail::fpm::wide_bit(v.sig, s - 1);
-  bool rest = false;
-  wide<2> ip = ycxx::detail::fpm::wide_shr(ycxx::detail::fpm::wide_shr(v.sig, s - 1, rest), 1);
-  inexact = half || rest;
-  bool up = false;
-  switch (mode) {
-  case fp_rint_mode::trunc:
+  const int s = -__v.exp;
+  const bool __half = __ycxx::__detail::__fpm::__wide_bit(__v.__sig, s - 1);
+  bool __rest = false;
+  __wide<2> __ip = __ycxx::__detail::__fpm::__wide_shr(__ycxx::__detail::__fpm::__wide_shr(__v.__sig, s - 1, __rest), 1);
+  __inexact = __half || __rest;
+  bool __up = false;
+  switch (__mode) {
+  case __fp_rint_mode::trunc:
     break;
-  case fp_rint_mode::floor:
-    up = v.neg && inexact;
+  case __fp_rint_mode::floor:
+    __up = __v.__neg && __inexact;
     break;
-  case fp_rint_mode::ceil:
-    up = !v.neg && inexact;
+  case __fp_rint_mode::ceil:
+    __up = !__v.__neg && __inexact;
     break;
-  case fp_rint_mode::half_away:
-    up = half;
+  case __fp_rint_mode::__half_away:
+    __up = __half;
     break;
-  case fp_rint_mode::half_even:
-    up = half && (rest || (ip.w[0] & 1));
+  case __fp_rint_mode::__half_even:
+    __up = __half && (__rest || (__ip.__w[0] & 1));
     break;
   }
-  if (up) ycxx::detail::fpm::wide_add_small(ip, 1);
-  return ip;
+  if (__up) __ycxx::__detail::__fpm::__wide_add_small(__ip, 1);
+  return __ip;
 }
 
-template <class T>
-constexpr T fp_rint(T x, fp_rint_mode mode) noexcept {
-  const fp_value v = ycxx::detail::fpm::fp_decode(x);
-  if (v.kind == fp_kind::nan) return ycxx::detail::fpm::fp_nan_operand(x);
-  if (v.kind != fp_kind::finite || v.exp >= 0) return x;
-  bool inexact = false;
-  const wide<2> ip = ycxx::detail::fpm::fp_integer_part<T>(v, mode, inexact);
-  return ycxx::detail::fpm::fp_round<T>(v.neg, ip, 0).value; // exact; zero keeps the sign
+template <class _Tp>
+constexpr _Tp __fp_rint(_Tp __x, __fp_rint_mode __mode) noexcept {
+  const __fp_value __v = __ycxx::__detail::__fpm::__fp_decode(__x);
+  if (__v.kind == __fp_kind::nan) return __ycxx::__detail::__fpm::__fp_nan_operand(__x);
+  if (__v.kind != __fp_kind::__finite || __v.exp >= 0) return __x;
+  bool __inexact = false;
+  const __wide<2> __ip = __ycxx::__detail::__fpm::__fp_integer_part<_Tp>(__v, __mode, __inexact);
+  return __ycxx::__detail::__fpm::__fp_round<_Tp>(__v.__neg, __ip, 0).value; // exact; zero keeps the sign
 }
 
 // lround/llround (I = long or long long), and the exactly-rounded integer for lrint at
 // constant evaluation (not used: lrint is not constexpr).
-template <class I, class T>
-constexpr I fp_to_integer(T x, fp_rint_mode mode) noexcept {
-  const fp_value v = ycxx::detail::fpm::fp_decode(x);
-  if (v.kind == fp_kind::zero) return 0;
-  if (v.kind != fp_kind::finite) {
-    ycxx::detail::fpm::fp_report(fe_invalid);
-    return static_cast<I>(-__LONG_LONG_MAX__ - 1);
+template <class _Ip, class _Tp>
+constexpr _Ip __fp_to_integer(_Tp __x, __fp_rint_mode __mode) noexcept {
+  const __fp_value __v = __ycxx::__detail::__fpm::__fp_decode(__x);
+  if (__v.kind == __fp_kind::zero) return 0;
+  if (__v.kind != __fp_kind::__finite) {
+    __ycxx::__detail::__fpm::__fp_report(__fe_invalid);
+    return static_cast<_Ip>(-__LONG_LONG_MAX__ - 1);
   }
-  constexpr int bits = 8 * int(sizeof(I)) - 1;
-  bool inexact = false;
-  if (v.exp + ycxx::detail::fpm::wide_bitlen(v.sig) > bits + 1) { // |x| >= 2^(bits + 1)
-    ycxx::detail::fpm::fp_report(fe_invalid);
-    return static_cast<I>(-__LONG_LONG_MAX__ - 1);
+  constexpr int __bits = 8 * int(sizeof(_Ip)) - 1;
+  bool __inexact = false;
+  if (__v.exp + __ycxx::__detail::__fpm::__wide_bitlen(__v.__sig) > __bits + 1) { // |x| >= 2^(bits + 1)
+    __ycxx::__detail::__fpm::__fp_report(__fe_invalid);
+    return static_cast<_Ip>(-__LONG_LONG_MAX__ - 1);
   }
-  const wide<2> ip = ycxx::detail::fpm::fp_integer_part<T>(v, mode, inexact);
-  const u64 limit = (u64(1) << bits) - (v.neg ? 0 : 1); // magnitude limit
-  if (ip.w[1] != 0 || ip.w[0] > limit) {
-    ycxx::detail::fpm::fp_report(fe_invalid);
-    return static_cast<I>(-__LONG_LONG_MAX__ - 1);
+  const __wide<2> __ip = __ycxx::__detail::__fpm::__fp_integer_part<_Tp>(__v, __mode, __inexact);
+  const __y_u64 __limit = (__y_u64(1) << __bits) - (__v.__neg ? 0 : 1); // magnitude limit
+  if (__ip.__w[1] != 0 || __ip.__w[0] > __limit) {
+    __ycxx::__detail::__fpm::__fp_report(__fe_invalid);
+    return static_cast<_Ip>(-__LONG_LONG_MAX__ - 1);
   }
-  return v.neg ? static_cast<I>(-static_cast<I>(ip.w[0] - 1) - 1) : static_cast<I>(ip.w[0]);
+  return __v.__neg ? static_cast<_Ip>(-static_cast<_Ip>(__ip.__w[0] - 1) - 1) : static_cast<_Ip>(__ip.__w[0]);
 }
 
-template <class T>
-constexpr T fp_modf(T x, T* iptr) noexcept {
-  if (ycxx::detail::fpm::fp_isnan(x)) {
-    x = ycxx::detail::fpm::fp_nan_operand(x);
-    *iptr = x;
-    return x;
+template <class _Tp>
+constexpr _Tp __fp_modf(_Tp __x, _Tp* __iptr) noexcept {
+  if (__ycxx::__detail::__fpm::__fp_isnan(__x)) {
+    __x = __ycxx::__detail::__fpm::__fp_nan_operand(__x);
+    *__iptr = __x;
+    return __x;
   }
-  if (__builtin_isinf(x)) {
-    *iptr = x;
-    return ycxx::detail::fpm::fp_zero<T>(ycxx::detail::fpm::fp_signbit(x));
+  if (__builtin_isinf(__x)) {
+    *__iptr = __x;
+    return __ycxx::__detail::__fpm::__fp_zero<_Tp>(__ycxx::__detail::__fpm::__fp_signbit(__x));
   }
-  const T ip = ycxx::detail::fpm::fp_rint(x, fp_rint_mode::trunc);
-  *iptr = ip;
-  return ycxx::detail::fpm::fp_copysign(T(x - ip), x); // exact
+  const _Tp __ip = __ycxx::__detail::__fpm::__fp_rint(__x, __fp_rint_mode::trunc);
+  *__iptr = __ip;
+  return __ycxx::__detail::__fpm::__fp_copysign(_Tp(__x - __ip), __x); // exact
 }
 
 // ---- exponent manipulation ---------------------------------------------------------------------
-template <class T>
-constexpr T fp_frexp(T x, int* e) noexcept {
-  const fp_value v = ycxx::detail::fpm::fp_decode(x);
+template <class _Tp>
+constexpr _Tp __fp_frexp(_Tp __x, int* e) noexcept {
+  const __fp_value __v = __ycxx::__detail::__fpm::__fp_decode(__x);
   *e = 0;
-  if (v.kind == fp_kind::nan) return ycxx::detail::fpm::fp_nan_operand(x);
-  if (v.kind != fp_kind::finite) return x;
-  const int len = ycxx::detail::fpm::wide_bitlen(v.sig);
-  *e = v.exp + len;
-  return ycxx::detail::fpm::fp_round<T>(v.neg, v.sig, -len).value;
+  if (__v.kind == __fp_kind::nan) return __ycxx::__detail::__fpm::__fp_nan_operand(__x);
+  if (__v.kind != __fp_kind::__finite) return __x;
+  const int __len = __ycxx::__detail::__fpm::__wide_bitlen(__v.__sig);
+  *e = __v.exp + __len;
+  return __ycxx::__detail::__fpm::__fp_round<_Tp>(__v.__neg, __v.__sig, -__len).value;
 }
 
-template <class T>
-constexpr T fp_scale(T x, long n) noexcept {
-  const fp_value v = ycxx::detail::fpm::fp_decode(x);
-  if (v.kind == fp_kind::nan) return ycxx::detail::fpm::fp_nan_operand(x);
-  if (v.kind != fp_kind::finite) return x;
-  constexpr long lim = 1L << 20; // far beyond every format's exponent range
-  if (n > lim) n = lim;
-  if (n < -lim) n = -lim;
-  using L = fp_layout<T>;
-  const long e = long(v.exp) + n;
-  if (v.exp > L::qmin && e > L::qmin && e <= L::emax - (L::p - 1)) // normal in, normal out: exact
-    return ycxx::detail::fpm::fp_encode_finite<T>(v.neg, v.sig, static_cast<int>(e));
-  return ycxx::detail::fpm::fp_finish(ycxx::detail::fpm::fp_round<T>(v.neg, v.sig, static_cast<int>(e)));
+template <class _Tp>
+constexpr _Tp __fp_scale(_Tp __x, long n) noexcept {
+  const __fp_value __v = __ycxx::__detail::__fpm::__fp_decode(__x);
+  if (__v.kind == __fp_kind::nan) return __ycxx::__detail::__fpm::__fp_nan_operand(__x);
+  if (__v.kind != __fp_kind::__finite) return __x;
+  constexpr long __lim = 1L << 20; // far beyond every format's exponent range
+  if (n > __lim) n = __lim;
+  if (n < -__lim) n = -__lim;
+  using _Lp = __fp_layout<_Tp>;
+  const long e = long(__v.exp) + n;
+  if (__v.exp > _Lp::__qmin && e > _Lp::__qmin && e <= _Lp::__emax - (_Lp::p - 1)) // normal in, normal out: exact
+    return __ycxx::__detail::__fpm::__fp_encode_finite<_Tp>(__v.__neg, __v.__sig, static_cast<int>(e));
+  return __ycxx::__detail::__fpm::__fp_finish(__ycxx::__detail::__fpm::__fp_round<_Tp>(__v.__neg, __v.__sig, static_cast<int>(e)));
 }
 
 // ilogb: the exponent; FP_ILOGB0 / INT_MAX / FP_ILOGBNAN (with "invalid", F.10.3.5) otherwise.
-template <class T>
-constexpr int fp_ilogb(T x, int ilogb0, int ilogbnan) noexcept {
-  const fp_value v = ycxx::detail::fpm::fp_decode(x);
-  if (v.kind != fp_kind::finite) {
-    ycxx::detail::fpm::fp_report(fe_invalid);
-    return v.kind == fp_kind::zero ? ilogb0 : v.kind == fp_kind::inf ? __INT_MAX__ : ilogbnan;
+template <class _Tp>
+constexpr int __fp_ilogb(_Tp __x, int __ilogb0, int __ilogbnan) noexcept {
+  const __fp_value __v = __ycxx::__detail::__fpm::__fp_decode(__x);
+  if (__v.kind != __fp_kind::__finite) {
+    __ycxx::__detail::__fpm::__fp_report(__fe_invalid);
+    return __v.kind == __fp_kind::zero ? __ilogb0 : __v.kind == __fp_kind::__inf ? __INT_MAX__ : __ilogbnan;
   }
-  return v.exp + ycxx::detail::fpm::wide_bitlen(v.sig) - 1;
+  return __v.exp + __ycxx::__detail::__fpm::__wide_bitlen(__v.__sig) - 1;
 }
-template <class T>
-constexpr T fp_logb(T x) noexcept {
-  const fp_value v = ycxx::detail::fpm::fp_decode(x);
-  switch (v.kind) {
-  case fp_kind::nan:
-    return ycxx::detail::fpm::fp_nan_operand(x);
-  case fp_kind::inf:
-    return ycxx::detail::fpm::fp_infinity<T>(false);
-  case fp_kind::zero:
-    ycxx::detail::fpm::fp_report(fe_divbyzero);
-    return ycxx::detail::fpm::fp_infinity<T>(true);
+template <class _Tp>
+constexpr _Tp __fp_logb(_Tp __x) noexcept {
+  const __fp_value __v = __ycxx::__detail::__fpm::__fp_decode(__x);
+  switch (__v.kind) {
+  case __fp_kind::nan:
+    return __ycxx::__detail::__fpm::__fp_nan_operand(__x);
+  case __fp_kind::__inf:
+    return __ycxx::__detail::__fpm::__fp_infinity<_Tp>(false);
+  case __fp_kind::zero:
+    __ycxx::__detail::__fpm::__fp_report(__fe_divbyzero);
+    return __ycxx::__detail::__fpm::__fp_infinity<_Tp>(true);
   default:
-    return T(v.exp + ycxx::detail::fpm::wide_bitlen(v.sig) - 1);
+    return _Tp(__v.exp + __ycxx::__detail::__fpm::__wide_bitlen(__v.__sig) - 1);
   }
 }
 
 // ---- neighbours ---------------------------------------------------------------------------------
 // The next representable value from finite or infinite x towards +inf (up) or -inf.
-template <class T>
-constexpr T fp_step(T x, bool up) noexcept {
-  using L = fp_layout<T>;
-  const fp_value v = ycxx::detail::fpm::fp_decode(x);
-  if (v.kind == fp_kind::inf) {
-    if (v.neg == up) { // towards zero: the largest finite value
-      wide<2> m = ycxx::detail::fpm::wide_from<2>(1);
-      m = ycxx::detail::fpm::wide_shl(m, L::p);
-      wide<2> one = ycxx::detail::fpm::wide_from<2>(1);
-      ycxx::detail::fpm::wide_sub(m, one);
-      return ycxx::detail::fpm::fp_round<T>(v.neg, m, L::emax - (L::p - 1)).value;
+template <class _Tp>
+constexpr _Tp __fp_step(_Tp __x, bool __up) noexcept {
+  using _Lp = __fp_layout<_Tp>;
+  const __fp_value __v = __ycxx::__detail::__fpm::__fp_decode(__x);
+  if (__v.kind == __fp_kind::__inf) {
+    if (__v.__neg == __up) { // towards zero: the largest finite value
+      __wide<2> m = __ycxx::__detail::__fpm::__wide_from<2>(1);
+      m = __ycxx::__detail::__fpm::__wide_shl(m, _Lp::p);
+      __wide<2> __one = __ycxx::__detail::__fpm::__wide_from<2>(1);
+      __ycxx::__detail::__fpm::__wide_sub(m, __one);
+      return __ycxx::__detail::__fpm::__fp_round<_Tp>(__v.__neg, m, _Lp::__emax - (_Lp::p - 1)).value;
     }
-    return x;
+    return __x;
   }
-  if (v.kind == fp_kind::zero) return ycxx::detail::fpm::fp_round<T>(!up, ycxx::detail::fpm::wide_from<2>(1), L::qmin).value;
-  wide<2> m = v.sig;
-  int e = v.exp;
-  if (up != v.neg) { // magnitude grows
-    ycxx::detail::fpm::wide_add_small(m, 1);
-  } else if (e > L::qmin && ycxx::detail::fpm::wide_bitlen(m) == L::p && ycxx::detail::fpm::wide_ctz(m) == L::p - 1) {
+  if (__v.kind == __fp_kind::zero) return __ycxx::__detail::__fpm::__fp_round<_Tp>(!__up, __ycxx::__detail::__fpm::__wide_from<2>(1), _Lp::__qmin).value;
+  __wide<2> m = __v.__sig;
+  int e = __v.exp;
+  if (__up != __v.__neg) { // magnitude grows
+    __ycxx::__detail::__fpm::__wide_add_small(m, 1);
+  } else if (e > _Lp::__qmin && __ycxx::__detail::__fpm::__wide_bitlen(m) == _Lp::p && __ycxx::__detail::__fpm::__wide_ctz(m) == _Lp::p - 1) {
     // A power of two above the subnormal range: the next smaller magnitude has a finer ulp.
-    m = ycxx::detail::fpm::wide_shl(m, 1);
-    wide<2> one = ycxx::detail::fpm::wide_from<2>(1);
-    ycxx::detail::fpm::wide_sub(m, one);
+    m = __ycxx::__detail::__fpm::__wide_shl(m, 1);
+    __wide<2> __one = __ycxx::__detail::__fpm::__wide_from<2>(1);
+    __ycxx::__detail::__fpm::__wide_sub(m, __one);
     --e;
   } else {
-    wide<2> one = ycxx::detail::fpm::wide_from<2>(1);
-    ycxx::detail::fpm::wide_sub(m, one);
+    __wide<2> __one = __ycxx::__detail::__fpm::__wide_from<2>(1);
+    __ycxx::__detail::__fpm::__wide_sub(m, __one);
   }
-  return ycxx::detail::fpm::fp_round<T>(v.neg, m, e).value; // exact, or the overflow to infinity
+  return __ycxx::__detail::__fpm::__fp_round<_Tp>(__v.__neg, m, e).value; // exact, or the overflow to infinity
 }
 
-template <class T>
-constexpr T fp_nextup(T x) noexcept {
-  if (ycxx::detail::fpm::fp_isnan(x)) return ycxx::detail::fpm::fp_nan_operand(x);
-  return ycxx::detail::fpm::fp_step(x, true);
+template <class _Tp>
+constexpr _Tp __fp_nextup(_Tp __x) noexcept {
+  if (__ycxx::__detail::__fpm::__fp_isnan(__x)) return __ycxx::__detail::__fpm::__fp_nan_operand(__x);
+  return __ycxx::__detail::__fpm::__fp_step(__x, true);
 }
-template <class T>
-constexpr T fp_nextdown(T x) noexcept {
-  if (ycxx::detail::fpm::fp_isnan(x)) return ycxx::detail::fpm::fp_nan_operand(x);
-  return ycxx::detail::fpm::fp_step(x, false);
+template <class _Tp>
+constexpr _Tp __fp_nextdown(_Tp __x) noexcept {
+  if (__ycxx::__detail::__fpm::__fp_isnan(__x)) return __ycxx::__detail::__fpm::__fp_nan_operand(__x);
+  return __ycxx::__detail::__fpm::__fp_step(__x, false);
 }
-// nextafter / nexttoward: `dir` is the sign of (y - x) (0: equal), y already compared in the
+// nextafter / nexttoward: `__dir` is the sign of (y - x) (0: equal), y already compared in the
 // right type. F.10.8.3: overflow for a finite x with an infinite result, underflow for a
 // subnormal or zero result.
-template <class T>
-constexpr T fp_next_toward(T x, int dir) noexcept {
-  const T r = ycxx::detail::fpm::fp_step(x, dir > 0);
-  if (__builtin_isinf(r) && !__builtin_isinf(x))
-    ycxx::detail::fpm::fp_report(fe_overflow | fe_inexact);
+template <class _Tp>
+constexpr _Tp __fp_next_toward(_Tp __x, int __dir) noexcept {
+  const _Tp r = __ycxx::__detail::__fpm::__fp_step(__x, __dir > 0);
+  if (__builtin_isinf(r) && !__builtin_isinf(__x))
+    __ycxx::__detail::__fpm::__fp_report(__fe_overflow | __fe_inexact);
   else if (!__builtin_isnormal(r))
-    ycxx::detail::fpm::fp_report(fe_underflow | fe_inexact);
+    __ycxx::__detail::__fpm::__fp_report(__fe_underflow | __fe_inexact);
   return r;
 }
-template <class T>
-constexpr T fp_nextafter(T x, T y) noexcept {
-  if (ycxx::detail::fpm::fp_isnan(x) || ycxx::detail::fpm::fp_isnan(y)) return ycxx::detail::fpm::fp_nan_operands(x, y);
-  if (x == y) return y;
-  return ycxx::detail::fpm::fp_next_toward(x, y > x ? 1 : -1);
+template <class _Tp>
+constexpr _Tp __fp_nextafter(_Tp __x, _Tp y) noexcept {
+  if (__ycxx::__detail::__fpm::__fp_isnan(__x) || __ycxx::__detail::__fpm::__fp_isnan(y)) return __ycxx::__detail::__fpm::__fp_nan_operands(__x, y);
+  if (__x == y) return y;
+  return __ycxx::__detail::__fpm::__fp_next_toward(__x, y > __x ? 1 : -1);
 }
-template <class T>
-constexpr T fp_nexttoward(T x, long double y) noexcept {
-  if (ycxx::detail::fpm::fp_isnan(x)) return ycxx::detail::fpm::fp_nan_operand(x);
-  if (ycxx::detail::fpm::fp_isnan(y)) {
-    if (ycxx::detail::fpm::fp_issignaling(y)) ycxx::detail::fpm::fp_report(fe_invalid);
-    return ycxx::detail::fpm::fp_quiet_nan<T>();
+template <class _Tp>
+constexpr _Tp __fp_nexttoward(_Tp __x, long double y) noexcept {
+  if (__ycxx::__detail::__fpm::__fp_isnan(__x)) return __ycxx::__detail::__fpm::__fp_nan_operand(__x);
+  if (__ycxx::__detail::__fpm::__fp_isnan(y)) {
+    if (__ycxx::__detail::__fpm::__fp_issignaling(y)) __ycxx::__detail::__fpm::__fp_report(__fe_invalid);
+    return __ycxx::__detail::__fpm::__fp_quiet_nan<_Tp>();
   }
-  const long double lx = static_cast<long double>(x); // exact: T is a standard type
-  if (lx == y) return static_cast<T>(y);
-  return ycxx::detail::fpm::fp_next_toward(x, y > lx ? 1 : -1);
+  const long double __lx = static_cast<long double>(__x); // exact: T is a standard type
+  if (__lx == y) return static_cast<_Tp>(y);
+  return __ycxx::__detail::__fpm::__fp_next_toward(__x, y > __lx ? 1 : -1);
 }
 
 // ---- min / max -------------------------------------------------------------------------------
 // num: C's fmax/fmin and fmaximum_num/fminimum_num (a NaN operand is ignored); otherwise
 // fmaximum/fminimum (NaN wins). All order -0 below +0 (allowed for fmax/fmin).
-template <class T>
-constexpr T fp_minmax(T x, T y, bool max, bool num) noexcept {
-  const bool nx = ycxx::detail::fpm::fp_isnan(x), ny = ycxx::detail::fpm::fp_isnan(y);
-  if (nx || ny) {
-    if (ycxx::detail::fpm::fp_issignaling(x) || ycxx::detail::fpm::fp_issignaling(y))
-      ycxx::detail::fpm::fp_report(fe_invalid);
-    if (num && !(nx && ny)) return nx ? y : x;
-    return ycxx::detail::fpm::fp_quiet_nan<T>(); // the payload is not preserved
+template <class _Tp>
+constexpr _Tp __fp_minmax(_Tp __x, _Tp y, bool max, bool num) noexcept {
+  const bool __nx = __ycxx::__detail::__fpm::__fp_isnan(__x), __ny = __ycxx::__detail::__fpm::__fp_isnan(y);
+  if (__nx || __ny) {
+    if (__ycxx::__detail::__fpm::__fp_issignaling(__x) || __ycxx::__detail::__fpm::__fp_issignaling(y))
+      __ycxx::__detail::__fpm::__fp_report(__fe_invalid);
+    if (num && !(__nx && __ny)) return __nx ? y : __x;
+    return __ycxx::__detail::__fpm::__fp_quiet_nan<_Tp>(); // the payload is not preserved
   }
-  if (x == y) { // equal values, or zeros of either sign
-    const bool sx = ycxx::detail::fpm::fp_signbit(x);
-    return (sx == max) ? y : x;
+  if (__x == y) { // equal values, or zeros of either sign
+    const bool __sx = __ycxx::__detail::__fpm::__fp_signbit(__x);
+    return (__sx == max) ? y : __x;
   }
-  return (x < y) == max ? y : x;
+  return (__x < y) == max ? y : __x;
 }
 
-template <class T>
-constexpr T fp_fdim(T x, T y) noexcept {
-  if (ycxx::detail::fpm::fp_isnan(x) || ycxx::detail::fpm::fp_isnan(y)) return ycxx::detail::fpm::fp_nan_operands(x, y);
-  if (!(x > y)) return T(0);
-  const T r = x - y;
-  if (__builtin_isinf(r) && !__builtin_isinf(x) && !__builtin_isinf(y)) ycxx::detail::fpm::fp_report(fe_overflow | fe_inexact);
+template <class _Tp>
+constexpr _Tp __fp_fdim(_Tp __x, _Tp y) noexcept {
+  if (__ycxx::__detail::__fpm::__fp_isnan(__x) || __ycxx::__detail::__fpm::__fp_isnan(y)) return __ycxx::__detail::__fpm::__fp_nan_operands(__x, y);
+  if (!(__x > y)) return _Tp(0);
+  const _Tp r = __x - y;
+  if (__builtin_isinf(r) && !__builtin_isinf(__x) && !__builtin_isinf(y)) __ycxx::__detail::__fpm::__fp_report(__fe_overflow | __fe_inexact);
   return r;
 }
 
 // ---- fmod, remainder, remquo ------------------------------------------------------------------
 // |x| mod |y| for finite nonzero x, y, with the low three bits of the quotient.
-struct fp_mod_result {
-  wide<2> rem; // remainder * 2^exp
+struct __fp_mod_result {
+  __wide<2> rem; // remainder * 2^exp
   int exp;
-  unsigned quo; // the low bits of the integral quotient
+  unsigned __quo; // the low bits of the integral quotient
 };
-template <class T>
-constexpr fp_mod_result fp_mod(const fp_value& x, const fp_value& y) noexcept {
+template <class _Tp>
+constexpr __fp_mod_result __fp_mod(const __fp_value& __x, const __fp_value& y) noexcept {
   // |x| = mx * 2^ex, |y| = my * 2^ey. With d = ex - ey >= 0: rem = (mx * 2^d) mod my, at 2^ey.
   // With d < 0: scale my up instead (exact; |x| >= |y| was checked by the caller or not).
-  wide<2> mx = x.sig, my = y.sig;
+  __wide<2> __mx = __x.__sig, __my = y.__sig;
   int e = y.exp;
-  int d = x.exp - y.exp;
+  int d = __x.exp - y.exp;
   if (d < 0) {
     // Bring both to the exponent of x: my * 2^-d at 2^ex.
-    const int len = ycxx::detail::fpm::wide_bitlen(my);
-    if (len - d > 127) return {mx, x.exp, 0}; // |y| is far larger than |x|
-    my = ycxx::detail::fpm::wide_shl(my, -d);
-    e = x.exp;
+    const int __len = __ycxx::__detail::__fpm::__wide_bitlen(__my);
+    if (__len - d > 127) return {__mx, __x.exp, 0}; // |y| is far larger than |x|
+    __my = __ycxx::__detail::__fpm::__wide_shl(__my, -d);
+    e = __x.exp;
     d = 0;
   }
-  unsigned quo = 0;
+  unsigned __quo = 0;
   // r = mx mod my, then repeatedly r = (r * 2^k) mod my.
-  wide<2> r = mx;
+  __wide<2> r = __mx;
   {
     // Initial reduction: mx < 2^128, so do it bitwise from the top.
-    unsigned q = 0;
-    if (ycxx::detail::fpm::wide_cmp(r, my) >= 0) {
-      const int shift = ycxx::detail::fpm::wide_bitlen(r) - ycxx::detail::fpm::wide_bitlen(my);
+    unsigned __q = 0;
+    if (__ycxx::__detail::__fpm::__wide_cmp(r, __my) >= 0) {
+      const int shift = __ycxx::__detail::__fpm::__wide_bitlen(r) - __ycxx::__detail::__fpm::__wide_bitlen(__my);
       for (int s = shift; s >= 0; --s) {
-        const wide<2> t = ycxx::detail::fpm::wide_shl(my, s);
-        q <<= 1;
-        if (ycxx::detail::fpm::wide_cmp(r, t) >= 0) {
-          ycxx::detail::fpm::wide_sub(r, t);
-          q |= 1;
+        const __wide<2> t = __ycxx::__detail::__fpm::__wide_shl(__my, s);
+        __q <<= 1;
+        if (__ycxx::__detail::__fpm::__wide_cmp(r, t) >= 0) {
+          __ycxx::__detail::__fpm::__wide_sub(r, t);
+          __q |= 1;
         }
       }
     }
-    quo = q;
+    __quo = __q;
   }
-  if (my.w[1] == 0) {
+  if (__my.__w[1] == 0) {
     // 64-bit modulus: 63 bits at a time with a 128 / 64 division.
-    const u64 m = my.w[0];
-    u64 rr = r.w[0];
+    const __y_u64 m = __my.__w[0];
+    __y_u64 __rr = r.__w[0];
     while (d > 0) {
       const int k = d > 63 ? 63 : d;
-      const u64 hi = rr >> (64 - k), lo = rr << k;
-      u64 rem = 0;
-      const u64 q = ycxx::detail::fpm::div128(hi, lo, m, rem);
-      quo = k >= 3 ? static_cast<unsigned>(q & 7) : static_cast<unsigned>(((quo << k) | q) & 7);
-      rr = rem;
+      const __y_u64 __hi = __rr >> (64 - k), __lo = __rr << k;
+      __y_u64 rem = 0;
+      const __y_u64 __q = __ycxx::__detail::__fpm::__div128(__hi, __lo, m, rem);
+      __quo = k >= 3 ? static_cast<unsigned>(__q & 7) : static_cast<unsigned>(((__quo << k) | __q) & 7);
+      __rr = rem;
       d -= k;
     }
-    r = ycxx::detail::fpm::wide_from<2>(rr);
+    r = __ycxx::__detail::__fpm::__wide_from<2>(__rr);
   } else {
     while (d > 0) { // one bit at a time
-      const bool top = ycxx::detail::fpm::wide_bit(r, 127);
-      r = ycxx::detail::fpm::wide_shl(r, 1);
-      quo <<= 1;
-      if (top || ycxx::detail::fpm::wide_cmp(r, my) >= 0) {
-        ycxx::detail::fpm::wide_sub(r, my);
-        quo |= 1;
+      const bool top = __ycxx::__detail::__fpm::__wide_bit(r, 127);
+      r = __ycxx::__detail::__fpm::__wide_shl(r, 1);
+      __quo <<= 1;
+      if (top || __ycxx::__detail::__fpm::__wide_cmp(r, __my) >= 0) {
+        __ycxx::__detail::__fpm::__wide_sub(r, __my);
+        __quo |= 1;
       }
       --d;
     }
   }
-  return {r, e, quo & 7};
+  return {r, e, __quo & 7};
 }
 
-template <class T>
-constexpr T fp_fmod(T x, T y) noexcept {
-  if (ycxx::detail::fpm::fp_isnan(x) || ycxx::detail::fpm::fp_isnan(y)) return ycxx::detail::fpm::fp_nan_operands(x, y);
-  const fp_value vx = ycxx::detail::fpm::fp_decode(x), vy = ycxx::detail::fpm::fp_decode(y);
-  if (vx.kind == fp_kind::inf || vy.kind == fp_kind::zero) return ycxx::detail::fpm::fp_invalid<T>();
-  if (vx.kind == fp_kind::zero || vy.kind == fp_kind::inf) return x;
-  if (ycxx::detail::fpm::fp_abs(x) < ycxx::detail::fpm::fp_abs(y)) return x;
-  const fp_mod_result r = ycxx::detail::fpm::fp_mod<T>(vx, vy);
-  return ycxx::detail::fpm::fp_round<T>(vx.neg, r.rem, r.exp).value; // exact
+template <class _Tp>
+constexpr _Tp __fp_fmod(_Tp __x, _Tp y) noexcept {
+  if (__ycxx::__detail::__fpm::__fp_isnan(__x) || __ycxx::__detail::__fpm::__fp_isnan(y)) return __ycxx::__detail::__fpm::__fp_nan_operands(__x, y);
+  const __fp_value __vx = __ycxx::__detail::__fpm::__fp_decode(__x), __vy = __ycxx::__detail::__fpm::__fp_decode(y);
+  if (__vx.kind == __fp_kind::__inf || __vy.kind == __fp_kind::zero) return __ycxx::__detail::__fpm::__fp_invalid<_Tp>();
+  if (__vx.kind == __fp_kind::zero || __vy.kind == __fp_kind::__inf) return __x;
+  if (__ycxx::__detail::__fpm::__fp_abs(__x) < __ycxx::__detail::__fpm::__fp_abs(y)) return __x;
+  const __fp_mod_result r = __ycxx::__detail::__fpm::__fp_mod<_Tp>(__vx, __vy);
+  return __ycxx::__detail::__fpm::__fp_round<_Tp>(__vx.__neg, r.rem, r.exp).value; // exact
 }
 
-template <class T>
-constexpr T fp_remquo(T x, T y, int* quo) noexcept {
-  *quo = 0;
-  if (ycxx::detail::fpm::fp_isnan(x) || ycxx::detail::fpm::fp_isnan(y)) return ycxx::detail::fpm::fp_nan_operands(x, y);
-  const fp_value vx = ycxx::detail::fpm::fp_decode(x), vy = ycxx::detail::fpm::fp_decode(y);
-  if (vx.kind == fp_kind::inf || vy.kind == fp_kind::zero) return ycxx::detail::fpm::fp_invalid<T>();
-  if (vx.kind == fp_kind::zero || vy.kind == fp_kind::inf) return x;
-  fp_mod_result r{vx.sig, vx.exp, 0};
-  const bool small = ycxx::detail::fpm::fp_abs(x) < ycxx::detail::fpm::fp_abs(y);
-  if (!small) r = ycxx::detail::fpm::fp_mod<T>(vx, vy);
+template <class _Tp>
+constexpr _Tp __fp_remquo(_Tp __x, _Tp y, int* __quo) noexcept {
+  *__quo = 0;
+  if (__ycxx::__detail::__fpm::__fp_isnan(__x) || __ycxx::__detail::__fpm::__fp_isnan(y)) return __ycxx::__detail::__fpm::__fp_nan_operands(__x, y);
+  const __fp_value __vx = __ycxx::__detail::__fpm::__fp_decode(__x), __vy = __ycxx::__detail::__fpm::__fp_decode(y);
+  if (__vx.kind == __fp_kind::__inf || __vy.kind == __fp_kind::zero) return __ycxx::__detail::__fpm::__fp_invalid<_Tp>();
+  if (__vx.kind == __fp_kind::zero || __vy.kind == __fp_kind::__inf) return __x;
+  __fp_mod_result r{__vx.__sig, __vx.exp, 0};
+  const bool __small = __ycxx::__detail::__fpm::__fp_abs(__x) < __ycxx::__detail::__fpm::__fp_abs(y);
+  if (!__small) r = __ycxx::__detail::__fpm::__fp_mod<_Tp>(__vx, __vy);
   // Round the quotient to nearest (ties to even): compare 2 * rem with |y|, at a common scale.
   // rem is at 2^r.exp and |y| = sig * 2^vy.exp with r.exp <= vy.exp (or rem = |x| < |y|).
-  wide<4> two_rem = ycxx::detail::fpm::wide_resize<4>(r.rem);
-  wide<4> ym = ycxx::detail::fpm::wide_resize<4>(vy.sig);
-  int er = r.exp + 1, ey = vy.exp; // 2 * rem = rem * 2^(exp + 1)
-  if (er > ey)
-    two_rem = ycxx::detail::fpm::wide_shl(two_rem, er - ey);
-  else if (ey - er < 200)
-    ym = ycxx::detail::fpm::wide_shl(ym, ey - er);
+  __wide<4> __two_rem = __ycxx::__detail::__fpm::__wide_resize<4>(r.rem);
+  __wide<4> __ym = __ycxx::__detail::__fpm::__wide_resize<4>(__vy.__sig);
+  int __er = r.exp + 1, __ey = __vy.exp; // 2 * rem = rem * 2^(exp + 1)
+  if (__er > __ey)
+    __two_rem = __ycxx::__detail::__fpm::__wide_shl(__two_rem, __er - __ey);
+  else if (__ey - __er < 200)
+    __ym = __ycxx::__detail::__fpm::__wide_shl(__ym, __ey - __er);
   else
-    ym = ycxx::detail::fpm::wide_shl(ycxx::detail::fpm::wide_from<4>(1), 255); // |y| >> 2 rem
-  const int c = ycxx::detail::fpm::wide_cmp(two_rem, ym);
-  unsigned q = r.quo;
-  T rem = ycxx::detail::fpm::fp_round<T>(false, r.rem, r.exp).value; // exact, >= 0
-  if (c > 0 || (c == 0 && (q & 1))) {
-    rem = rem - ycxx::detail::fpm::fp_abs(y); // exact (Sterbenz-like: |y|/2 <= rem < |y|)
-    ++q;
+    __ym = __ycxx::__detail::__fpm::__wide_shl(__ycxx::__detail::__fpm::__wide_from<4>(1), 255); // |y| >> 2 rem
+  const int c = __ycxx::__detail::__fpm::__wide_cmp(__two_rem, __ym);
+  unsigned __q = r.__quo;
+  _Tp rem = __ycxx::__detail::__fpm::__fp_round<_Tp>(false, r.rem, r.exp).value; // exact, >= 0
+  if (c > 0 || (c == 0 && (__q & 1))) {
+    rem = rem - __ycxx::__detail::__fpm::__fp_abs(y); // exact (Sterbenz-like: |y|/2 <= rem < |y|)
+    ++__q;
   }
-  if (vx.neg) rem = -rem;
-  const int sq = static_cast<int>(q & 7);
-  *quo = vx.neg != vy.neg ? -sq : sq;
-  return rem == 0 ? ycxx::detail::fpm::fp_zero<T>(vx.neg) : rem;
+  if (__vx.__neg) rem = -rem;
+  const int __sq = static_cast<int>(__q & 7);
+  *__quo = __vx.__neg != __vy.__neg ? -__sq : __sq;
+  return rem == 0 ? __ycxx::__detail::__fpm::__fp_zero<_Tp>(__vx.__neg) : rem;
 }
-template <class T>
-constexpr T fp_remainder(T x, T y) noexcept {
-  int q = 0;
-  return ycxx::detail::fpm::fp_remquo(x, y, &q);
+template <class _Tp>
+constexpr _Tp __fp_remainder(_Tp __x, _Tp y) noexcept {
+  int __q = 0;
+  return __ycxx::__detail::__fpm::__fp_remquo(__x, y, &__q);
 }
 
 // ---- integer roots ----------------------------------------------------------------------------
-// floor(sqrt(n)); `exact` tells whether n is a perfect square.
-template <int N>
-constexpr wide<N> wide_isqrt(wide<N> n, bool& exact) noexcept {
-  wide<N> res;
-  int top = ycxx::detail::fpm::wide_bitlen(n);
+// floor(sqrt(n)); `__exact` tells whether n is a perfect square.
+template <int _Np>
+constexpr __wide<_Np> __wide_isqrt(__wide<_Np> n, bool& __exact) noexcept {
+  __wide<_Np> __res;
+  int top = __ycxx::__detail::__fpm::__wide_bitlen(n);
   if (top == 0) {
-    exact = true;
-    return res;
+    __exact = true;
+    return __res;
   }
   int b = (top - 1) & ~1; // highest even bit position <= top bit
   for (; b >= 0; b -= 2) {
-    wide<N> t = res;
-    wide<N> bit;
-    ycxx::detail::fpm::wide_set_bit(bit, b);
-    ycxx::detail::fpm::wide_add(t, bit); // res + bit
-    res = ycxx::detail::fpm::wide_shr(res, 1);
-    if (ycxx::detail::fpm::wide_cmp(n, t) >= 0) {
-      ycxx::detail::fpm::wide_sub(n, t);
-      ycxx::detail::fpm::wide_add(res, bit);
+    __wide<_Np> t = __res;
+    __wide<_Np> __bit;
+    __ycxx::__detail::__fpm::__wide_set_bit(__bit, b);
+    __ycxx::__detail::__fpm::__wide_add(t, __bit); // res + bit
+    __res = __ycxx::__detail::__fpm::__wide_shr(__res, 1);
+    if (__ycxx::__detail::__fpm::__wide_cmp(n, t) >= 0) {
+      __ycxx::__detail::__fpm::__wide_sub(n, t);
+      __ycxx::__detail::__fpm::__wide_add(__res, __bit);
     }
   }
-  exact = ycxx::detail::fpm::wide_is_zero(n);
-  return res;
+  __exact = __ycxx::__detail::__fpm::__wide_is_zero(n);
+  return __res;
 }
 
-// Rounds sqrt(S * 2^e + tail) for an exact integer S (tail nonzero iff `sticky`, below 2^e).
-template <class T, int N>
-constexpr fp_result<T> fp_sqrt_round(wide<N> s, int e, bool sticky) noexcept {
-  using L = fp_layout<T>;
+// Rounds sqrt(S * 2^e + tail) for an exact integer S (tail nonzero iff `__sticky`, below 2^e).
+template <class _Tp, int _Np>
+constexpr __fp_result<_Tp> __fp_sqrt_round(__wide<_Np> s, int e, bool __sticky) noexcept {
+  using _Lp = __fp_layout<_Tp>;
   // Make e even, then give S at least 2 (p + 2) bits (or drop extra low bits into sticky).
   if (e & 1) {
-    s = ycxx::detail::fpm::wide_shl(s, 1);
+    s = __ycxx::__detail::__fpm::__wide_shl(s, 1);
     --e;
   }
-  const int want = 2 * (L::p + 2);
-  int len = ycxx::detail::fpm::wide_bitlen(s);
-  if (len < want) {
-    const int k = (want - len + 1) / 2;
-    s = ycxx::detail::fpm::wide_shl(s, 2 * k);
+  const int __want = 2 * (_Lp::p + 2);
+  int __len = __ycxx::__detail::__fpm::__wide_bitlen(s);
+  if (__len < __want) {
+    const int k = (__want - __len + 1) / 2;
+    s = __ycxx::__detail::__fpm::__wide_shl(s, 2 * k);
     e -= 2 * k;
-  } else if (len > want + 1) {
-    const int k = (len - want) / 2;
-    s = ycxx::detail::fpm::wide_shr(s, 2 * k, sticky);
+  } else if (__len > __want + 1) {
+    const int k = (__len - __want) / 2;
+    s = __ycxx::__detail::__fpm::__wide_shr(s, 2 * k, __sticky);
     e += 2 * k;
   }
-  bool exact = true;
-  const wide<N> r = ycxx::detail::fpm::wide_isqrt(s, exact);
-  return ycxx::detail::fpm::fp_round<T>(false, r, e / 2, sticky || !exact);
+  bool __exact = true;
+  const __wide<_Np> r = __ycxx::__detail::__fpm::__wide_isqrt(s, __exact);
+  return __ycxx::__detail::__fpm::__fp_round<_Tp>(false, r, e / 2, __sticky || !__exact);
 }
 
-template <class T>
-constexpr T fp_sqrt(T x) noexcept {
-  const fp_value v = ycxx::detail::fpm::fp_decode(x);
-  if (v.kind == fp_kind::nan) return ycxx::detail::fpm::fp_nan_operand(x);
-  if (v.kind == fp_kind::zero) return x;
-  if (v.neg) return ycxx::detail::fpm::fp_invalid<T>();
-  if (v.kind == fp_kind::inf) return x;
-  return ycxx::detail::fpm::fp_finish(ycxx::detail::fpm::fp_sqrt_round<T>(ycxx::detail::fpm::wide_resize<4>(v.sig), v.exp, false));
+template <class _Tp>
+constexpr _Tp __fp_sqrt(_Tp __x) noexcept {
+  const __fp_value __v = __ycxx::__detail::__fpm::__fp_decode(__x);
+  if (__v.kind == __fp_kind::nan) return __ycxx::__detail::__fpm::__fp_nan_operand(__x);
+  if (__v.kind == __fp_kind::zero) return __x;
+  if (__v.__neg) return __ycxx::__detail::__fpm::__fp_invalid<_Tp>();
+  if (__v.kind == __fp_kind::__inf) return __x;
+  return __ycxx::__detail::__fpm::__fp_finish(__ycxx::__detail::__fpm::__fp_sqrt_round<_Tp>(__ycxx::__detail::__fpm::__wide_resize<4>(__v.__sig), __v.exp, false));
 }
 
-template <class T>
-constexpr T fp_cbrt(T x) noexcept {
-  using L = fp_layout<T>;
-  const fp_value v = ycxx::detail::fpm::fp_decode(x);
-  if (v.kind == fp_kind::nan) return ycxx::detail::fpm::fp_nan_operand(x);
-  if (v.kind != fp_kind::finite) return x;
+template <class _Tp>
+constexpr _Tp __fp_cbrt(_Tp __x) noexcept {
+  using _Lp = __fp_layout<_Tp>;
+  const __fp_value __v = __ycxx::__detail::__fpm::__fp_decode(__x);
+  if (__v.kind == __fp_kind::nan) return __ycxx::__detail::__fpm::__fp_nan_operand(__x);
+  if (__v.kind != __fp_kind::__finite) return __x;
   // n = sig * 2^(3k) with at least 3 (p + 2) bits, exponent a multiple of 3.
-  wide<6> n = ycxx::detail::fpm::wide_resize<6>(v.sig);
-  int e = v.exp;
-  int len = ycxx::detail::fpm::wide_bitlen(n);
-  int sh = 3 * (L::p + 2) - len;
-  if (sh < 0) sh = 0;
-  sh += ((e - sh) % 3 + 3) % 3; // make e - sh a multiple of 3
-  n = ycxx::detail::fpm::wide_shl(n, sh);
-  e -= sh;
-  len = ycxx::detail::fpm::wide_bitlen(n);
+  __wide<6> n = __ycxx::__detail::__fpm::__wide_resize<6>(__v.__sig);
+  int e = __v.exp;
+  int __len = __ycxx::__detail::__fpm::__wide_bitlen(n);
+  int __y_sh = 3 * (_Lp::p + 2) - __len;
+  if (__y_sh < 0) __y_sh = 0;
+  __y_sh += ((e - __y_sh) % 3 + 3) % 3; // make e - sh a multiple of 3
+  n = __ycxx::__detail::__fpm::__wide_shl(n, __y_sh);
+  e -= __y_sh;
+  __len = __ycxx::__detail::__fpm::__wide_bitlen(n);
   // Digit by digit: r, r^2, r^3 kept exactly; compare r^3 with the top 3i bits of n.
-  wide<6> r, r2, r3;
-  const int digits = (len + 2) / 3;
+  __wide<6> r, __r2, __r3;
+  const int digits = (__len + 2) / 3;
   for (int i = digits - 1; i >= 0; --i) {
     // Candidate (2r + 1): (2r+1)^3 = 8 r^3 + 12 r^2 + 6 r + 1, (2r+1)^2 = 4 r^2 + 4 r + 1.
-    wide<6> c3 = ycxx::detail::fpm::wide_shl(r3, 3);
-    wide<6> t = r2;
-    ycxx::detail::fpm::wide_mul_small(t, 12);
-    ycxx::detail::fpm::wide_add(c3, t);
+    __wide<6> __c3 = __ycxx::__detail::__fpm::__wide_shl(__r3, 3);
+    __wide<6> t = __r2;
+    __ycxx::__detail::__fpm::__wide_mul_small(t, 12);
+    __ycxx::__detail::__fpm::__wide_add(__c3, t);
     t = r;
-    ycxx::detail::fpm::wide_mul_small(t, 6);
-    ycxx::detail::fpm::wide_add(c3, t);
-    ycxx::detail::fpm::wide_add_small(c3, 1);
-    const wide<6> top = ycxx::detail::fpm::wide_shr(n, 3 * i);
-    wide<6> two_r = ycxx::detail::fpm::wide_shl(r, 1);
-    if (ycxx::detail::fpm::wide_cmp(c3, top) <= 0) {
-      wide<6> c2 = ycxx::detail::fpm::wide_shl(r2, 2);
-      wide<6> fr = ycxx::detail::fpm::wide_shl(r, 2);
-      ycxx::detail::fpm::wide_add(c2, fr);
-      ycxx::detail::fpm::wide_add_small(c2, 1);
-      r = two_r;
-      ycxx::detail::fpm::wide_add_small(r, 1);
-      r2 = c2;
-      r3 = c3;
+    __ycxx::__detail::__fpm::__wide_mul_small(t, 6);
+    __ycxx::__detail::__fpm::__wide_add(__c3, t);
+    __ycxx::__detail::__fpm::__wide_add_small(__c3, 1);
+    const __wide<6> top = __ycxx::__detail::__fpm::__wide_shr(n, 3 * i);
+    __wide<6> __two_r = __ycxx::__detail::__fpm::__wide_shl(r, 1);
+    if (__ycxx::__detail::__fpm::__wide_cmp(__c3, top) <= 0) {
+      __wide<6> __c2 = __ycxx::__detail::__fpm::__wide_shl(__r2, 2);
+      __wide<6> __fr = __ycxx::__detail::__fpm::__wide_shl(r, 2);
+      __ycxx::__detail::__fpm::__wide_add(__c2, __fr);
+      __ycxx::__detail::__fpm::__wide_add_small(__c2, 1);
+      r = __two_r;
+      __ycxx::__detail::__fpm::__wide_add_small(r, 1);
+      __r2 = __c2;
+      __r3 = __c3;
     } else {
-      r = two_r;
-      r2 = ycxx::detail::fpm::wide_shl(r2, 2);
-      r3 = ycxx::detail::fpm::wide_shl(r3, 3);
+      r = __two_r;
+      __r2 = __ycxx::__detail::__fpm::__wide_shl(__r2, 2);
+      __r3 = __ycxx::__detail::__fpm::__wide_shl(__r3, 3);
     }
   }
-  const bool exact = ycxx::detail::fpm::wide_cmp(r3, n) == 0;
-  return ycxx::detail::fpm::fp_round<T>(v.neg, r, e / 3, !exact).value; // never over/underflows
+  const bool __exact = __ycxx::__detail::__fpm::__wide_cmp(__r3, n) == 0;
+  return __ycxx::__detail::__fpm::__fp_round<_Tp>(__v.__neg, r, e / 3, !__exact).value; // never over/underflows
 }
 
 // ---- hypot ---------------------------------------------------------------------------------------
 // sqrt(sum of squares) of finite values, correctly rounded.
-template <class T, int K>
-constexpr T fp_hypot_finite(const T (&in)[K]) noexcept {
-  using L = fp_layout<T>;
-  fp_value v[K];
+template <class _Tp, int _Kp>
+constexpr _Tp __fp_hypot_finite(const _Tp (&in)[_Kp]) noexcept {
+  using _Lp = __fp_layout<_Tp>;
+  __fp_value __v[_Kp];
   int big = -1;
-  long top_big = 0;
-  for (int i = 0; i < K; ++i) {
-    v[i] = ycxx::detail::fpm::fp_decode(in[i]);
-    if (v[i].kind != fp_kind::finite) continue;
-    const long top = long(v[i].exp) + ycxx::detail::fpm::wide_bitlen(v[i].sig);
-    if (big < 0 || top > top_big) {
+  long __top_big = 0;
+  for (int i = 0; i < _Kp; ++i) {
+    __v[i] = __ycxx::__detail::__fpm::__fp_decode(in[i]);
+    if (__v[i].kind != __fp_kind::__finite) continue;
+    const long top = long(__v[i].exp) + __ycxx::__detail::__fpm::__wide_bitlen(__v[i].__sig);
+    if (big < 0 || top > __top_big) {
       big = i;
-      top_big = top;
+      __top_big = top;
     }
   }
-  if (big < 0) return T(0);
+  if (big < 0) return _Tp(0);
   // Terms more than p + 3 binades below the largest only make the result inexact.
-  bool sticky = false;
-  int lsb = v[big].exp;
-  for (int i = 0; i < K; ++i) {
-    if (v[i].kind != fp_kind::finite || i == big) continue;
-    const long top = long(v[i].exp) + ycxx::detail::fpm::wide_bitlen(v[i].sig);
-    if (top_big - top > L::p + 3) {
-      v[i].kind = fp_kind::zero;
-      sticky = true;
-    } else if (v[i].exp < lsb) {
-      lsb = v[i].exp;
+  bool __sticky = false;
+  int __lsb = __v[big].exp;
+  for (int i = 0; i < _Kp; ++i) {
+    if (__v[i].kind != __fp_kind::__finite || i == big) continue;
+    const long top = long(__v[i].exp) + __ycxx::__detail::__fpm::__wide_bitlen(__v[i].__sig);
+    if (__top_big - top > _Lp::p + 3) {
+      __v[i].kind = __fp_kind::zero;
+      __sticky = true;
+    } else if (__v[i].exp < __lsb) {
+      __lsb = __v[i].exp;
     }
   }
-  wide<8> sum;
-  for (int i = 0; i < K; ++i) {
-    if (v[i].kind != fp_kind::finite) continue;
-    const wide<4> m = ycxx::detail::fpm::wide_shl(ycxx::detail::fpm::wide_resize<4>(v[i].sig), v[i].exp - lsb);
-    ycxx::detail::fpm::wide_add(sum, ycxx::detail::fpm::wide_mul(m, m));
+  __wide<8> sum;
+  for (int i = 0; i < _Kp; ++i) {
+    if (__v[i].kind != __fp_kind::__finite) continue;
+    const __wide<4> m = __ycxx::__detail::__fpm::__wide_shl(__ycxx::__detail::__fpm::__wide_resize<4>(__v[i].__sig), __v[i].exp - __lsb);
+    __ycxx::__detail::__fpm::__wide_add(sum, __ycxx::__detail::__fpm::__wide_mul(m, m));
   }
-  return ycxx::detail::fpm::fp_finish(ycxx::detail::fpm::fp_sqrt_round<T>(sum, 2 * lsb, sticky));
+  return __ycxx::__detail::__fpm::__fp_finish(__ycxx::__detail::__fpm::__fp_sqrt_round<_Tp>(sum, 2 * __lsb, __sticky));
 }
 
-template <class T>
-constexpr T fp_hypot(T x, T y) noexcept {
+template <class _Tp>
+constexpr _Tp __fp_hypot(_Tp __x, _Tp y) noexcept {
   // F.10.4.3: hypot(+-inf, y) is +inf even for a NaN y.
-  if (__builtin_isinf(x) || __builtin_isinf(y)) {
-    if (ycxx::detail::fpm::fp_issignaling(x) || ycxx::detail::fpm::fp_issignaling(y)) ycxx::detail::fpm::fp_report(fe_invalid);
-    return ycxx::detail::fpm::fp_infinity<T>(false);
+  if (__builtin_isinf(__x) || __builtin_isinf(y)) {
+    if (__ycxx::__detail::__fpm::__fp_issignaling(__x) || __ycxx::__detail::__fpm::__fp_issignaling(y)) __ycxx::__detail::__fpm::__fp_report(__fe_invalid);
+    return __ycxx::__detail::__fpm::__fp_infinity<_Tp>(false);
   }
-  if (ycxx::detail::fpm::fp_isnan(x) || ycxx::detail::fpm::fp_isnan(y)) return ycxx::detail::fpm::fp_nan_operands(x, y);
-  const T in[2] = {x, y};
-  return ycxx::detail::fpm::fp_hypot_finite(in);
+  if (__ycxx::__detail::__fpm::__fp_isnan(__x) || __ycxx::__detail::__fpm::__fp_isnan(y)) return __ycxx::__detail::__fpm::__fp_nan_operands(__x, y);
+  const _Tp in[2] = {__x, y};
+  return __ycxx::__detail::__fpm::__fp_hypot_finite(in);
 }
-template <class T>
-constexpr T fp_hypot3(T x, T y, T z) noexcept {
-  if (__builtin_isinf(x) || __builtin_isinf(y) || __builtin_isinf(z)) {
-    if (ycxx::detail::fpm::fp_issignaling(x) || ycxx::detail::fpm::fp_issignaling(y) || ycxx::detail::fpm::fp_issignaling(z))
-      ycxx::detail::fpm::fp_report(fe_invalid);
-    return ycxx::detail::fpm::fp_infinity<T>(false);
+template <class _Tp>
+constexpr _Tp __fp_hypot3(_Tp __x, _Tp y, _Tp __z) noexcept {
+  if (__builtin_isinf(__x) || __builtin_isinf(y) || __builtin_isinf(__z)) {
+    if (__ycxx::__detail::__fpm::__fp_issignaling(__x) || __ycxx::__detail::__fpm::__fp_issignaling(y) || __ycxx::__detail::__fpm::__fp_issignaling(__z))
+      __ycxx::__detail::__fpm::__fp_report(__fe_invalid);
+    return __ycxx::__detail::__fpm::__fp_infinity<_Tp>(false);
   }
-  if (ycxx::detail::fpm::fp_isnan(x) || ycxx::detail::fpm::fp_isnan(y)) return ycxx::detail::fpm::fp_nan_operands(x, y);
-  if (ycxx::detail::fpm::fp_isnan(z)) return ycxx::detail::fpm::fp_nan_operand(z);
-  const T in[3] = {x, y, z};
-  return ycxx::detail::fpm::fp_hypot_finite(in);
+  if (__ycxx::__detail::__fpm::__fp_isnan(__x) || __ycxx::__detail::__fpm::__fp_isnan(y)) return __ycxx::__detail::__fpm::__fp_nan_operands(__x, y);
+  if (__ycxx::__detail::__fpm::__fp_isnan(__z)) return __ycxx::__detail::__fpm::__fp_nan_operand(__z);
+  const _Tp in[3] = {__x, y, __z};
+  return __ycxx::__detail::__fpm::__fp_hypot_finite(in);
 }
 
 // ---- fma -----------------------------------------------------------------------------------------
-template <class T>
-constexpr T fp_fma(T x, T y, T z) noexcept {
-  using L = fp_layout<T>;
-  if (ycxx::detail::fpm::fp_isnan(x) || ycxx::detail::fpm::fp_isnan(y) || ycxx::detail::fpm::fp_isnan(z)) {
-    if (ycxx::detail::fpm::fp_issignaling(x) || ycxx::detail::fpm::fp_issignaling(y) || ycxx::detail::fpm::fp_issignaling(z))
-      ycxx::detail::fpm::fp_report(fe_invalid);
+template <class _Tp>
+constexpr _Tp __fp_fma(_Tp __x, _Tp y, _Tp __z) noexcept {
+  using _Lp = __fp_layout<_Tp>;
+  if (__ycxx::__detail::__fpm::__fp_isnan(__x) || __ycxx::__detail::__fpm::__fp_isnan(y) || __ycxx::__detail::__fpm::__fp_isnan(__z)) {
+    if (__ycxx::__detail::__fpm::__fp_issignaling(__x) || __ycxx::__detail::__fpm::__fp_issignaling(y) || __ycxx::__detail::__fpm::__fp_issignaling(__z))
+      __ycxx::__detail::__fpm::__fp_report(__fe_invalid);
     // F.10.10.1: fma(inf, 0, NaN) may raise invalid; libycxx does not.
-    return ycxx::detail::fpm::fp_isnan(x) ? ycxx::detail::fpm::fp_nan_operand(x)
-         : ycxx::detail::fpm::fp_isnan(y) ? ycxx::detail::fpm::fp_nan_operand(y)
-                                          : ycxx::detail::fpm::fp_nan_operand(z);
+    return __ycxx::__detail::__fpm::__fp_isnan(__x) ? __ycxx::__detail::__fpm::__fp_nan_operand(__x)
+         : __ycxx::__detail::__fpm::__fp_isnan(y) ? __ycxx::__detail::__fpm::__fp_nan_operand(y)
+                                          : __ycxx::__detail::__fpm::__fp_nan_operand(__z);
   }
-  const fp_value vx = ycxx::detail::fpm::fp_decode(x), vy = ycxx::detail::fpm::fp_decode(y), vz = ycxx::detail::fpm::fp_decode(z);
-  const bool pneg = vx.neg != vy.neg;
-  if (vx.kind == fp_kind::inf || vy.kind == fp_kind::inf) {
-    if (vx.kind == fp_kind::zero || vy.kind == fp_kind::zero) return ycxx::detail::fpm::fp_invalid<T>();
-    if (vz.kind == fp_kind::inf && vz.neg != pneg) return ycxx::detail::fpm::fp_invalid<T>();
-    return ycxx::detail::fpm::fp_infinity<T>(pneg);
+  const __fp_value __vx = __ycxx::__detail::__fpm::__fp_decode(__x), __vy = __ycxx::__detail::__fpm::__fp_decode(y), __vz = __ycxx::__detail::__fpm::__fp_decode(__z);
+  const bool __pneg = __vx.__neg != __vy.__neg;
+  if (__vx.kind == __fp_kind::__inf || __vy.kind == __fp_kind::__inf) {
+    if (__vx.kind == __fp_kind::zero || __vy.kind == __fp_kind::zero) return __ycxx::__detail::__fpm::__fp_invalid<_Tp>();
+    if (__vz.kind == __fp_kind::__inf && __vz.__neg != __pneg) return __ycxx::__detail::__fpm::__fp_invalid<_Tp>();
+    return __ycxx::__detail::__fpm::__fp_infinity<_Tp>(__pneg);
   }
-  if (vz.kind == fp_kind::inf) return z;
-  if (vx.kind == fp_kind::zero || vy.kind == fp_kind::zero) {
-    if (vz.kind == fp_kind::zero) return ycxx::detail::fpm::fp_zero<T>(pneg && vz.neg);
-    return z;
+  if (__vz.kind == __fp_kind::__inf) return __z;
+  if (__vx.kind == __fp_kind::zero || __vy.kind == __fp_kind::zero) {
+    if (__vz.kind == __fp_kind::zero) return __ycxx::__detail::__fpm::__fp_zero<_Tp>(__pneg && __vz.__neg);
+    return __z;
   }
   // Exact product P = mx * my * 2^(ex + ey).
-  wide<4> p = ycxx::detail::fpm::wide_mul(vx.sig, vy.sig);
-  int ep = vx.exp + vy.exp;
-  if (vz.kind == fp_kind::zero) return ycxx::detail::fpm::fp_finish(ycxx::detail::fpm::fp_round<T>(pneg, p, ep));
-  wide<4> zm = ycxx::detail::fpm::wide_resize<4>(vz.sig);
-  int ez = vz.exp;
-  const long tp = long(ep) + ycxx::detail::fpm::wide_bitlen(p), tz = long(ez) + ycxx::detail::fpm::wide_bitlen(zm);
+  __wide<4> p = __ycxx::__detail::__fpm::__wide_mul(__vx.__sig, __vy.__sig);
+  int __ep = __vx.exp + __vy.exp;
+  if (__vz.kind == __fp_kind::zero) return __ycxx::__detail::__fpm::__fp_finish(__ycxx::__detail::__fpm::__fp_round<_Tp>(__pneg, p, __ep));
+  __wide<4> __zm = __ycxx::__detail::__fpm::__wide_resize<4>(__vz.__sig);
+  int __ez = __vz.exp;
+  const long __tp = long(__ep) + __ycxx::__detail::__fpm::__wide_bitlen(p), __tz = long(__ez) + __ycxx::__detail::__fpm::__wide_bitlen(__zm);
   // An operand far below the other only decides the direction of an inexact rounding: replace
   // it by a single bit well below the rounding position (same rounded result and flags).
-  constexpr int far = 2 * L::p + 8;
-  if (tz - tp > far) {
-    p = ycxx::detail::fpm::wide_from<4>(1);
-    ep = static_cast<int>(tz - far);
-  } else if (tp - tz > far) {
-    zm = ycxx::detail::fpm::wide_from<4>(1);
-    ez = static_cast<int>(tp - far);
+  constexpr int __far = 2 * _Lp::p + 8;
+  if (__tz - __tp > __far) {
+    p = __ycxx::__detail::__fpm::__wide_from<4>(1);
+    __ep = static_cast<int>(__tz - __far);
+  } else if (__tp - __tz > __far) {
+    __zm = __ycxx::__detail::__fpm::__wide_from<4>(1);
+    __ez = static_cast<int>(__tp - __far);
   }
-  const int base = ep < ez ? ep : ez;
-  wide<8> a = ycxx::detail::fpm::wide_shl(ycxx::detail::fpm::wide_resize<8>(p), ep - base);
-  wide<8> b = ycxx::detail::fpm::wide_shl(ycxx::detail::fpm::wide_resize<8>(zm), ez - base);
-  bool neg = pneg;
-  if (pneg == vz.neg) {
-    ycxx::detail::fpm::wide_add(a, b);
-  } else if (ycxx::detail::fpm::wide_cmp(a, b) >= 0) {
-    ycxx::detail::fpm::wide_sub(a, b);
+  const int base = __ep < __ez ? __ep : __ez;
+  __wide<8> a = __ycxx::__detail::__fpm::__wide_shl(__ycxx::__detail::__fpm::__wide_resize<8>(p), __ep - base);
+  __wide<8> b = __ycxx::__detail::__fpm::__wide_shl(__ycxx::__detail::__fpm::__wide_resize<8>(__zm), __ez - base);
+  bool __neg = __pneg;
+  if (__pneg == __vz.__neg) {
+    __ycxx::__detail::__fpm::__wide_add(a, b);
+  } else if (__ycxx::__detail::__fpm::__wide_cmp(a, b) >= 0) {
+    __ycxx::__detail::__fpm::__wide_sub(a, b);
   } else {
-    ycxx::detail::fpm::wide_sub(b, a);
+    __ycxx::__detail::__fpm::__wide_sub(b, a);
     a = b;
-    neg = vz.neg;
+    __neg = __vz.__neg;
   }
-  if (ycxx::detail::fpm::wide_is_zero(a)) return T(0); // exact cancellation: +0
-  return ycxx::detail::fpm::fp_finish(ycxx::detail::fpm::fp_round<T>(neg, a, base));
+  if (__ycxx::__detail::__fpm::__wide_is_zero(a)) return _Tp(0); // exact cancellation: +0
+  return __ycxx::__detail::__fpm::__fp_finish(__ycxx::__detail::__fpm::__fp_round<_Tp>(__neg, a, base));
 }
 
 // ---- lerp (P0811) ---------------------------------------------------------------------------------
-template <class T>
-constexpr T fp_lerp(T a, T b, T t) noexcept {
-  if ((a <= T(0) && b >= T(0)) || (a >= T(0) && b <= T(0))) {
+template <class _Tp>
+constexpr _Tp __fp_lerp(_Tp a, _Tp b, _Tp t) noexcept {
+  if ((a <= _Tp(0) && b >= _Tp(0)) || (a >= _Tp(0) && b <= _Tp(0))) {
     // Exact at t == 0 and t == 1; an infinite t would meet 0 * inf here.
     if (__builtin_isinf(t)) return a + t * (b - a);
-    return t * b + (T(1) - t) * a;
+    return t * b + (_Tp(1) - t) * a;
   }
-  if (t == T(1)) return b;
-  const T x = a + t * (b - a);
+  if (t == _Tp(1)) return b;
+  const _Tp __x = a + t * (b - a);
   // Monotonic and exact at t == 1: clamp to b on the far side of it.
-  if ((t > T(1)) == (b > a)) return b < x ? x : b;
-  return x < b ? x : b;
+  if ((t > _Tp(1)) == (b > a)) return b < __x ? __x : b;
+  return __x < b ? __x : b;
 }
 
-}} // namespace ycxx::detail::fpm
+}} // namespace __ycxx::__detail::__fpm

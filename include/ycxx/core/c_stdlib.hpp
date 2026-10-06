@@ -5,7 +5,7 @@
 // library's. The start and termination functions ([support.start.term]) call the environment's
 // functions of the same name (as memcpy and friends must be provided for the compilers);
 // libycxx-freestanding.a does not define them. They are reached through declarations in
-// ycxx::detail whose assembler names are the C names, so that a C library header a freestanding
+// __ycxx::__detail whose assembler names are the C names, so that a C library header a freestanding
 // program may still include (with its own exception specifications and C++ overloads) declares
 // different entities and does not conflict. Every function here is a template with a defaulted
 // parameter, like <cmath>'s, so such a C function wins ties under `using namespace std;`. qsort
@@ -22,25 +22,25 @@
 // An assembler name is the object-file symbol verbatim: Mach-O prefixes C symbols with '_'.
 // The functions are the environment's: default visibility, since a hidden reference could not
 // bind to a shared C library (DECISIONS §2).
-namespace [[gnu::visibility("default")]] ycxx { namespace detail::c_rt {
-#if YCXX_TARGET_DARWIN
+namespace [[__gnu__::__visibility__("default")]] __ycxx { namespace __detail::__c_rt {
+#if _YCXX_TARGET_DARWIN
 [[noreturn]] void abort() noexcept __asm__("_abort");
-int atexit(void (*func)()) noexcept __asm__("_atexit");
-int at_quick_exit(void (*func)()) noexcept __asm__("_at_quick_exit");
+int atexit(void (*__func)()) noexcept __asm__("_atexit");
+int at_quick_exit(void (*__func)()) noexcept __asm__("_at_quick_exit");
 [[noreturn]] void exit(int status) __asm__("_exit");
-[[noreturn]] void exit_now(int status) noexcept __asm__("__Exit");
+[[noreturn]] void __exit_now(int status) noexcept __asm__("__Exit");
 [[noreturn]] void quick_exit(int status) noexcept __asm__("_quick_exit");
 #else
 [[noreturn]] void abort() noexcept __asm__("abort");
-int atexit(void (*func)()) noexcept __asm__("atexit");
-int at_quick_exit(void (*func)()) noexcept __asm__("at_quick_exit");
+int atexit(void (*__func)()) noexcept __asm__("atexit");
+int at_quick_exit(void (*__func)()) noexcept __asm__("at_quick_exit");
 [[noreturn]] void exit(int status) __asm__("exit");
-[[noreturn]] void exit_now(int status) noexcept __asm__("_Exit");
+[[noreturn]] void __exit_now(int status) noexcept __asm__("_Exit");
 [[noreturn]] void quick_exit(int status) noexcept __asm__("quick_exit");
 #endif
-}} // namespace ycxx::detail::c_rt
+}} // namespace __ycxx::__detail::__c_rt
 
-namespace [[gnu::visibility("hidden")]] std {
+namespace [[__gnu__::__visibility__("hidden")]] std {
 struct div_t {
   int quot;
   int rem;
@@ -56,63 +56,63 @@ struct lldiv_t {
 
 template <class = void>
 [[noreturn]] inline void abort() noexcept {
-  ::ycxx::detail::c_rt::abort();
+  ::__ycxx::__detail::__c_rt::abort();
 }
 template <class = void>
-inline int atexit(void (*func)()) noexcept {
-  return ::ycxx::detail::c_rt::atexit(func);
+inline int atexit(void (*__func)()) noexcept {
+  return ::__ycxx::__detail::__c_rt::atexit(__func);
 }
 template <class = void>
-inline int at_quick_exit(void (*func)()) noexcept {
-  return ::ycxx::detail::c_rt::at_quick_exit(func);
+inline int at_quick_exit(void (*__func)()) noexcept {
+  return ::__ycxx::__detail::__c_rt::at_quick_exit(__func);
 }
 template <class = void>
 [[noreturn]] inline void exit(int status) {
-  ::ycxx::detail::c_rt::exit(status);
+  ::__ycxx::__detail::__c_rt::exit(status);
 }
 template <class = void>
 [[noreturn]] inline void _Exit(int status) noexcept {
-  ::ycxx::detail::c_rt::exit_now(status);
+  ::__ycxx::__detail::__c_rt::__exit_now(status);
 }
 template <class = void>
 [[noreturn]] inline void quick_exit(int status) noexcept {
-  ::ycxx::detail::c_rt::quick_exit(status);
+  ::__ycxx::__detail::__c_rt::quick_exit(status);
 }
 
 // Heapsort: no recursion, no allocation, O(n log n) comparisons.
 template <class = void>
-void qsort(void* base, size_t nmemb, size_t size, int (*compar)(const void*, const void*)) {
+void qsort(void* base, size_t __nmemb, size_t size, int (*__compar)(const void*, const void*)) {
   auto* b = static_cast<unsigned char*>(base);
   auto at = [&](size_t i) { return b + i * size; };
-  auto swap = [&](size_t i, size_t j) {
-    unsigned char* x = at(i);
-    unsigned char* y = at(j);
+  auto swap = [&](size_t i, size_t __j) {
+    unsigned char* __x = at(i);
+    unsigned char* y = at(__j);
     for (size_t k = 0; k != size; ++k) {
-      const unsigned char t = x[k];
-      x[k] = y[k];
+      const unsigned char t = __x[k];
+      __x[k] = y[k];
       y[k] = t;
     }
   };
-  auto sift_down = [&](size_t root, size_t end) {
+  auto __sift_down = [&](size_t __root, size_t end) {
     for (;;) {
-      size_t child = 2 * root + 1;
-      if (child >= end)
+      size_t __child = 2 * __root + 1;
+      if (__child >= end)
         return;
-      if (child + 1 < end && compar(at(child), at(child + 1)) < 0)
-        ++child;
-      if (compar(at(root), at(child)) >= 0)
+      if (__child + 1 < end && __compar(at(__child), at(__child + 1)) < 0)
+        ++__child;
+      if (__compar(at(__root), at(__child)) >= 0)
         return;
-      swap(root, child);
-      root = child;
+      swap(__root, __child);
+      __root = __child;
     }
   };
-  if (nmemb < 2 || size == 0)
+  if (__nmemb < 2 || size == 0)
     return;
-  for (size_t i = nmemb / 2; i-- != 0;)
-    sift_down(i, nmemb);
-  for (size_t end = nmemb - 1; end != 0; --end) {
+  for (size_t i = __nmemb / 2; i-- != 0;)
+    __sift_down(i, __nmemb);
+  for (size_t end = __nmemb - 1; end != 0; --end) {
     swap(0, end);
-    sift_down(0, end);
+    __sift_down(0, end);
   }
 }
 } // namespace std

@@ -3,7 +3,7 @@
 // [alg.fill], [alg.find], [alg.mismatch], [alg.equal], [alg.lex.comparison], [alg.three.way]),
 // in both the std:: and the std::ranges:: forms, plus the shared machinery of all algorithms.
 //
-// Every algorithm is written once, as a ycxx::detail template, and serves both forms:
+// Every algorithm is written once, as a __ycxx::__detail template, and serves both forms:
 // - Ops selects how elements are moved and swapped. classic_ops uses std::move(*i) and
 //   std::iter_swap (swap(*a, *b) with std::swap visible), as [algorithms] specifies for the
 //   std:: forms; ranges_ops uses ranges::iter_move and ranges::iter_swap.
@@ -22,28 +22,28 @@
 #include <ycxx/core/swap.hpp>
 #include <initializer_list>
 
-namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
 
 // ---- iterator strength of the std:: forms --------------------------------------------------
 // [algorithms.requirements]/4 (P2408): an iterator that models the C++20 concept may be used
 // where the Cpp17 requirement is stated, so dispatch accepts either.
-template <class I, class Tag>
-concept cpp17_category_from = requires { typename std::iterator_traits<I>::iterator_category; } &&
-                              std::derived_from<typename std::iterator_traits<I>::iterator_category, Tag>;
-template <class I>
-concept ra_iter = std::random_access_iterator<I> || cpp17_category_from<I, std::random_access_iterator_tag>;
-template <class I>
-concept bidi_iter = std::bidirectional_iterator<I> || cpp17_category_from<I, std::bidirectional_iterator_tag>;
-template <class I>
-concept fwd_iter = std::forward_iterator<I> || cpp17_category_from<I, std::forward_iterator_tag>;
+template <class _Ip, class _Tag>
+concept __cpp17_category_from = requires { typename std::iterator_traits<_Ip>::iterator_category; } &&
+                              std::derived_from<typename std::iterator_traits<_Ip>::iterator_category, _Tag>;
+template <class _Ip>
+concept __ra_iter = std::random_access_iterator<_Ip> || __cpp17_category_from<_Ip, std::random_access_iterator_tag>;
+template <class _Ip>
+concept __bidi_iter = std::bidirectional_iterator<_Ip> || __cpp17_category_from<_Ip, std::bidirectional_iterator_tag>;
+template <class _Ip>
+concept __fwd_iter = std::forward_iterator<_Ip> || __cpp17_category_from<_Ip, std::forward_iterator_tag>;
 
 // last - first when that is O(1), otherwise counted.
-template <class I, class S>
-constexpr std::iter_difference_t<I> range_length(I first, S last) {
-  if constexpr (std::sized_sentinel_for<S, I> || (std::same_as<I, S> && ra_iter<I>)) {
-    return static_cast<std::iter_difference_t<I>>(last - first);
+template <class _Ip, class _Sp>
+constexpr std::iter_difference_t<_Ip> __range_length(_Ip first, _Sp last) {
+  if constexpr (std::sized_sentinel_for<_Sp, _Ip> || (std::same_as<_Ip, _Sp> && __ra_iter<_Ip>)) {
+    return static_cast<std::iter_difference_t<_Ip>>(last - first);
   } else {
-    std::iter_difference_t<I> n = 0;
+    std::iter_difference_t<_Ip> n = 0;
     for (; first != last; ++first)
       ++n;
     return n;
@@ -51,56 +51,56 @@ constexpr std::iter_difference_t<I> range_length(I first, S last) {
 }
 
 // The iterator at the sentinel: first itself when the sentinel is an iterator.
-template <class I, class S>
-constexpr I iter_at(I first, S last) {
-  if constexpr (std::same_as<I, S>)
+template <class _Ip, class _Sp>
+constexpr _Ip __iter_at(_Ip first, _Sp last) {
+  if constexpr (std::same_as<_Ip, _Sp>)
     return last;
   else
-    return std::ranges::next(static_cast<I&&>(first), last);
+    return std::ranges::next(static_cast<_Ip&&>(first), last);
 }
 
 // it + n for the std:: forms (Cpp17 random access or C++20 concept), else stepwise.
-template <class I>
-constexpr void iter_advance(I& it, std::iter_difference_t<I> n) {
-  if constexpr (ra_iter<I>) {
-    it += n;
-  } else if constexpr (bidi_iter<I>) {
+template <class _Ip>
+constexpr void __iter_advance(_Ip& __it, std::iter_difference_t<_Ip> n) {
+  if constexpr (__ra_iter<_Ip>) {
+    __it += n;
+  } else if constexpr (__bidi_iter<_Ip>) {
     for (; n > 0; --n)
-      ++it;
+      ++__it;
     for (; n < 0; ++n)
-      --it;
+      --__it;
   } else {
     for (; n > 0; --n)
-      ++it;
+      ++__it;
   }
 }
-template <class I>
-constexpr I iter_next(I it, std::iter_difference_t<I> n) {
-  ::ycxx::detail::iter_advance(it, n);
-  return it;
+template <class _Ip>
+constexpr _Ip __iter_next(_Ip __it, std::iter_difference_t<_Ip> n) {
+  ::__ycxx::__detail::__iter_advance(__it, n);
+  return __it;
 }
 
 // ---- element moves and swaps ---------------------------------------------------------------
-struct classic_ops {
-  template <class I>
-  static constexpr decltype(auto) iter_move(I& it) {
-    if constexpr (std::is_lvalue_reference_v<decltype(*it)>)
-      return static_cast<std::remove_reference_t<decltype(*it)>&&>(*it);
+struct __classic_ops {
+  template <class _Ip>
+  static constexpr decltype(auto) iter_move(_Ip& __it) {
+    if constexpr (std::is_lvalue_reference_v<decltype(*__it)>)
+      return static_cast<std::remove_reference_t<decltype(*__it)>&&>(*__it);
     else
-      return *it;
+      return *__it;
   }
-  template <class I1, class I2>
-  static constexpr void iter_swap(I1& a, I2& b) {
-    ::ycxx::detail::swap_adl::do_swap(*a, *b);
+  template <class _I1, class _I2>
+  static constexpr void iter_swap(_I1& a, _I2& b) {
+    ::__ycxx::__detail::__swap_adl::__do_swap(*a, *b);
   }
 };
-struct ranges_ops {
-  template <class I>
-  static constexpr decltype(auto) iter_move(I& it) {
-    return std::ranges::iter_move(it);
+struct __ranges_ops {
+  template <class _Ip>
+  static constexpr decltype(auto) iter_move(_Ip& __it) {
+    return std::ranges::iter_move(__it);
   }
-  template <class I1, class I2>
-  static constexpr void iter_swap(I1& a, I2& b) {
+  template <class _I1, class _I2>
+  static constexpr void iter_swap(_I1& a, _I2& b) {
     std::ranges::iter_swap(a, b);
   }
 };
@@ -108,113 +108,113 @@ struct ranges_ops {
 // ---- predicate wrappers ---------------------------------------------------------------------
 // A std:: predicate or comparator, called directly. rev(b, a) calls it with the operands of
 // the second range first (merge and the set operations).
-template <class F>
-struct pred_ref {
-  F& f;
-  template <class... A>
-  constexpr bool operator()(A&&... a) const {
-    return static_cast<bool>(f(static_cast<A&&>(a)...));
+template <class _Fp>
+struct __pred_ref {
+  _Fp& __f;
+  template <class... _Ap>
+  constexpr bool operator()(_Ap&&... a) const {
+    return static_cast<bool>(__f(static_cast<_Ap&&>(a)...));
   }
-  template <class A, class B>
-  constexpr bool rev(A&& a, B&& b) const {
-    return static_cast<bool>(f(static_cast<A&&>(a), static_cast<B&&>(b)));
+  template <class _Ap, class _Bp>
+  constexpr bool __rev(_Ap&& a, _Bp&& b) const {
+    return static_cast<bool>(__f(static_cast<_Ap&&>(a), static_cast<_Bp&&>(b)));
   }
 };
-template <class F>
-constexpr pred_ref<F> ref_pred(F& f) noexcept {
-  return {f};
+template <class _Fp>
+constexpr __pred_ref<_Fp> __ref_pred(_Fp& __f) noexcept {
+  return {__f};
 }
 
 // invoke(pred, invoke(proj, x)).
-template <class Pred, class Proj>
-struct proj_pred {
-  Pred& pred;
-  Proj& proj;
-  template <class A>
-  constexpr bool operator()(A&& a) const {
-    return static_cast<bool>(::ycxx::detail::invoke(pred, ::ycxx::detail::invoke(proj, static_cast<A&&>(a))));
+template <class _Pred, class _Proj>
+struct __proj_pred {
+  _Pred& pred;
+  _Proj& proj;
+  template <class _Ap>
+  constexpr bool operator()(_Ap&& a) const {
+    return static_cast<bool>(::__ycxx::__detail::invoke(pred, ::__ycxx::__detail::invoke(proj, static_cast<_Ap&&>(a))));
   }
 };
-template <class Pred, class Proj>
-constexpr proj_pred<Pred, Proj> make_pred(Pred& pred, Proj& proj) noexcept {
+template <class _Pred, class _Proj>
+constexpr __proj_pred<_Pred, _Proj> __make_pred(_Pred& pred, _Proj& proj) noexcept {
   return {pred, proj};
 }
 
 // invoke(comp, invoke(proj, a), invoke(proj, b)): one range, one projection.
-template <class Comp, class Proj>
-struct proj_comp {
-  Comp& comp;
-  Proj& proj;
-  template <class A, class B>
-  constexpr bool operator()(A&& a, B&& b) const {
-    return static_cast<bool>(::ycxx::detail::invoke(comp, ::ycxx::detail::invoke(proj, static_cast<A&&>(a)),
-                                                    ::ycxx::detail::invoke(proj, static_cast<B&&>(b))));
+template <class _Comp, class _Proj>
+struct __proj_comp {
+  _Comp& comp;
+  _Proj& proj;
+  template <class _Ap, class _Bp>
+  constexpr bool operator()(_Ap&& a, _Bp&& b) const {
+    return static_cast<bool>(::__ycxx::__detail::invoke(comp, ::__ycxx::__detail::invoke(proj, static_cast<_Ap&&>(a)),
+                                                    ::__ycxx::__detail::invoke(proj, static_cast<_Bp&&>(b))));
   }
-  template <class A, class B>
-  constexpr bool rev(A&& a, B&& b) const {
-    return (*this)(static_cast<A&&>(a), static_cast<B&&>(b));
+  template <class _Ap, class _Bp>
+  constexpr bool __rev(_Ap&& a, _Bp&& b) const {
+    return (*this)(static_cast<_Ap&&>(a), static_cast<_Bp&&>(b));
   }
 };
-template <class Comp, class Proj>
-constexpr proj_comp<Comp, Proj> make_comp(Comp& comp, Proj& proj) noexcept {
+template <class _Comp, class _Proj>
+constexpr __proj_comp<_Comp, _Proj> __make_comp(_Comp& comp, _Proj& proj) noexcept {
   return {comp, proj};
 }
 
 // Two ranges: (*this)(x1, x2) projects x1 with proj1 and x2 with proj2; rev(x2, x1) calls
 // comp(proj2(x2), proj1(x1)).
-template <class Comp, class P1, class P2>
-struct proj_comp2 {
-  Comp& comp;
-  P1& p1;
-  P2& p2;
-  template <class A, class B>
-  constexpr bool operator()(A&& a, B&& b) const {
-    return static_cast<bool>(::ycxx::detail::invoke(comp, ::ycxx::detail::invoke(p1, static_cast<A&&>(a)),
-                                                    ::ycxx::detail::invoke(p2, static_cast<B&&>(b))));
+template <class _Comp, class _P1, class _P2>
+struct __proj_comp2 {
+  _Comp& comp;
+  _P1& __p1;
+  _P2& __p2;
+  template <class _Ap, class _Bp>
+  constexpr bool operator()(_Ap&& a, _Bp&& b) const {
+    return static_cast<bool>(::__ycxx::__detail::invoke(comp, ::__ycxx::__detail::invoke(__p1, static_cast<_Ap&&>(a)),
+                                                    ::__ycxx::__detail::invoke(__p2, static_cast<_Bp&&>(b))));
   }
-  template <class B, class A>
-  constexpr bool rev(B&& b, A&& a) const {
-    return static_cast<bool>(::ycxx::detail::invoke(comp, ::ycxx::detail::invoke(p2, static_cast<B&&>(b)),
-                                                    ::ycxx::detail::invoke(p1, static_cast<A&&>(a))));
+  template <class _Bp, class _Ap>
+  constexpr bool __rev(_Bp&& b, _Ap&& a) const {
+    return static_cast<bool>(::__ycxx::__detail::invoke(comp, ::__ycxx::__detail::invoke(__p2, static_cast<_Bp&&>(b)),
+                                                    ::__ycxx::__detail::invoke(__p1, static_cast<_Ap&&>(a))));
   }
 };
-template <class Comp, class P1, class P2>
-constexpr proj_comp2<Comp, P1, P2> make_comp2(Comp& comp, P1& p1, P2& p2) noexcept {
-  return {comp, p1, p2};
+template <class _Comp, class _P1, class _P2>
+constexpr __proj_comp2<_Comp, _P1, _P2> __make_comp2(_Comp& comp, _P1& __p1, _P2& __p2) noexcept {
+  return {comp, __p1, __p2};
 }
 
 // fill, find and count work a word at a time on vector<bool>'s iterators (bit_iter_algos.hpp),
 // for a bool value without a projection.
-template <class I, class S, class T, class Proj = std::identity>
-concept bit_algo_args = bit_algos<I>::enabled && std::same_as<I, S> && std::same_as<T, bool> &&
-                        std::same_as<Proj, std::identity>;
+template <class _Ip, class _Sp, class _Tp, class _Proj = std::identity>
+concept __bit_algo_args = __bit_algos<_Ip>::__enabled && std::same_as<_Ip, _Sp> && std::same_as<_Tp, bool> &&
+                        std::same_as<_Proj, std::identity>;
 
 // invoke(proj, x) == value, for find / count / remove / replace with a value.
-template <class T, class Proj>
-struct equals_value {
-  const T& value;
-  Proj& proj;
-  template <class A>
-  constexpr bool operator()(A&& a) const {
-    return static_cast<bool>(::ycxx::detail::invoke(proj, static_cast<A&&>(a)) == value);
+template <class _Tp, class _Proj>
+struct __equals_value {
+  const _Tp& value;
+  _Proj& proj;
+  template <class _Ap>
+  constexpr bool operator()(_Ap&& a) const {
+    return static_cast<bool>(::__ycxx::__detail::invoke(proj, static_cast<_Ap&&>(a)) == value);
   }
 };
 // *i == value for the std:: forms.
-template <class T>
-struct equals_value_plain {
-  const T& value;
-  template <class A>
-  constexpr bool operator()(A&& a) const {
-    return static_cast<bool>(static_cast<A&&>(a) == value);
+template <class _Tp>
+struct __equals_value_plain {
+  const _Tp& value;
+  template <class _Ap>
+  constexpr bool operator()(_Ap&& a) const {
+    return static_cast<bool>(static_cast<_Ap&&>(a) == value);
   }
 };
 // !pred(x)
-template <class P>
-struct negated {
-  P p;
-  template <class A>
-  constexpr bool operator()(A&& a) const {
-    return !p(static_cast<A&&>(a));
+template <class _Pp>
+struct __negated {
+  _Pp p;
+  template <class _Ap>
+  constexpr bool operator()(_Ap&& a) const {
+    return !p(static_cast<_Ap&&>(a));
   }
 };
 
@@ -222,35 +222,35 @@ struct negated {
 // memmove is used only outside constant evaluation, for more than one element (a single
 // element may be a potentially-overlapping subobject whose tail padding holds other data),
 // when the element assignment it replaces is trivial. Ref is the source expression's type.
-template <class I, class O, class Ref>
-concept memmovable_pair =
-    std::contiguous_iterator<I> && std::contiguous_iterator<O> &&
-    (std::same_as<std::remove_reference_t<std::iter_reference_t<I>>, std::iter_value_t<O>> ||
-     std::same_as<std::remove_reference_t<std::iter_reference_t<I>>, const std::iter_value_t<O>>) &&
-    std::same_as<std::iter_reference_t<O>, std::iter_value_t<O>&> && std::is_trivially_copyable_v<std::iter_value_t<O>> &&
-    std::is_trivially_assignable_v<std::iter_value_t<O>&, Ref>;
+template <class _Ip, class _Op, class _Ref>
+concept __memmovable_pair =
+    std::contiguous_iterator<_Ip> && std::contiguous_iterator<_Op> &&
+    (std::same_as<std::remove_reference_t<std::iter_reference_t<_Ip>>, std::iter_value_t<_Op>> ||
+     std::same_as<std::remove_reference_t<std::iter_reference_t<_Ip>>, const std::iter_value_t<_Op>>) &&
+    std::same_as<std::iter_reference_t<_Op>, std::iter_value_t<_Op>&> && std::is_trivially_copyable_v<std::iter_value_t<_Op>> &&
+    std::is_trivially_assignable_v<std::iter_value_t<_Op>&, _Ref>;
 
-template <class I>
-constexpr auto raw_address(const I& it) noexcept {
-  if constexpr (std::is_pointer_v<I>)
-    return it;
+template <class _Ip>
+constexpr auto __raw_address(const _Ip& __it) noexcept {
+  if constexpr (std::is_pointer_v<_Ip>)
+    return __it;
   else
-    return std::to_address(it);
+    return std::to_address(__it);
 }
 // Copies [in_first, in_last) to [out_first, out_last) through pointers. As P3349 requires of
 // such lowering, the ends are reached by advancing the iterators (in_first + n, ...) and all
 // four go through to_address, so a checked contiguous iterator still sees them.
-template <class I, class O>
-constexpr void bulk_move(const I& in_first, const I& in_last, const O& out_first, const O& out_last) noexcept {
-  auto src = ::ycxx::detail::raw_address(in_first);
-  auto src_end = ::ycxx::detail::raw_address(in_last);
-  auto dst = ::ycxx::detail::raw_address(out_first);
-  (void)::ycxx::detail::raw_address(out_last);
+template <class _Ip, class _Op>
+constexpr void __bulk_move(const _Ip& __in_first, const _Ip& __in_last, const _Op& __out_first, const _Op& __out_last) noexcept {
+  auto __src = ::__ycxx::__detail::__raw_address(__in_first);
+  auto __src_end = ::__ycxx::__detail::__raw_address(__in_last);
+  auto __dst = ::__ycxx::__detail::__raw_address(__out_first);
+  (void)::__ycxx::__detail::__raw_address(__out_last);
   // void* arguments: the builtin is found by unqualified lookup, so typed pointers would make
   // ADL complete their pointee classes.
-  __builtin_memmove(const_cast<void*>(static_cast<const volatile void*>(dst)),
-                    const_cast<const void*>(static_cast<const volatile void*>(src)),
-                    static_cast<std::size_t>(src_end - src) * sizeof(std::iter_value_t<O>));
+  __builtin_memmove(const_cast<void*>(static_cast<const volatile void*>(__dst)),
+                    const_cast<const void*>(static_cast<const volatile void*>(__src)),
+                    static_cast<std::size_t>(__src_end - __src) * sizeof(std::iter_value_t<_Op>));
 }
 
 // ---- byte search ------------------------------------------------------------------------------
@@ -260,150 +260,150 @@ constexpr void bulk_move(const I& in_first, const I& in_last, const O& out_first
 // language performs them, after promotion). x and the value agree modulo 2^CHAR_BIT whenever
 // they compare equal, so x == e then; and promotion of E to the common type is injective. So
 // memchr for e when e == value, and no element can match otherwise.
-template <class E>
-concept narrow_char_elem = std::same_as<E, char> || std::same_as<E, signed char> || std::same_as<E, unsigned char> ||
-                           std::same_as<E, char8_t>;
-template <class I, class S, class T>
-concept memchr_find_args =
-    std::contiguous_iterator<I> && std::sized_sentinel_for<S, I> &&
-    narrow_char_elem<std::remove_cvref_t<std::iter_reference_t<I>>> &&
-    std::is_lvalue_reference_v<std::iter_reference_t<I>> &&
-    !std::is_volatile_v<std::remove_reference_t<std::iter_reference_t<I>>> && std::is_integral_v<T> &&
-    !std::is_same_v<T, bool>;
+template <class _Ep>
+concept __narrow_char_elem = std::same_as<_Ep, char> || std::same_as<_Ep, signed char> || std::same_as<_Ep, unsigned char> ||
+                           std::same_as<_Ep, char8_t>;
+template <class _Ip, class _Sp, class _Tp>
+concept __memchr_find_args =
+    std::contiguous_iterator<_Ip> && std::sized_sentinel_for<_Sp, _Ip> &&
+    __narrow_char_elem<std::remove_cvref_t<std::iter_reference_t<_Ip>>> &&
+    std::is_lvalue_reference_v<std::iter_reference_t<_Ip>> &&
+    !std::is_volatile_v<std::remove_reference_t<std::iter_reference_t<_Ip>>> && std::is_integral_v<_Tp> &&
+    !std::is_same_v<_Tp, bool>;
 
 // Advances first to the first element equal to value, or to last.
-template <class I, class S, class T>
-constexpr void find_byte(I& first, const S& last, const T& value) noexcept {
-  using E = std::remove_cvref_t<std::iter_reference_t<I>>;
+template <class _Ip, class _Sp, class _Tp>
+constexpr void __find_byte(_Ip& first, const _Sp& last, const _Tp& value) noexcept {
+  using _Ep = std::remove_cvref_t<std::iter_reference_t<_Ip>>;
   const auto n = last - first;
   if (n <= 0)
     return;
-  const E e = static_cast<E>(value);
+  const _Ep e = static_cast<_Ep>(value);
   if (!(e == value)) {
     first += n;
     return;
   }
-  const E* p = ::ycxx::detail::raw_address(first);
+  const _Ep* p = ::__ycxx::__detail::__raw_address(first);
   const void* r = __builtin_memchr(static_cast<const void*>(p), static_cast<unsigned char>(e), static_cast<std::size_t>(n));
-  first += r ? static_cast<const E*>(r) - p : n;
+  first += r ? static_cast<const _Ep*>(r) - p : n;
 }
 
 // ---- min / max -------------------------------------------------------------------------------
-template <class I, class S, class C>
-constexpr I min_element_impl(I first, S last, C less) {
+template <class _Ip, class _Sp, class _Cp>
+constexpr _Ip __min_element_impl(_Ip first, _Sp last, _Cp less) {
   if (first == last)
     return first;
-  I best = first;
+  _Ip __best = first;
   while (++first != last)
-    if (less(*first, *best))
-      best = first;
-  return best;
+    if (less(*first, *__best))
+      __best = first;
+  return __best;
 }
-template <class I, class S, class C>
-constexpr I max_element_impl(I first, S last, C less) {
+template <class _Ip, class _Sp, class _Cp>
+constexpr _Ip __max_element_impl(_Ip first, _Sp last, _Cp less) {
   if (first == last)
     return first;
-  I best = first;
+  _Ip __best = first;
   while (++first != last)
-    if (less(*best, *first))
-      best = first;
-  return best;
+    if (less(*__best, *first))
+      __best = first;
+  return __best;
 }
 // The leftmost smallest and the rightmost largest, in at most 3/2 (N - 1) comparisons:
 // elements are taken in pairs, ordered against each other, then the smaller of the pair is
 // compared with the minimum and the larger with the maximum.
-template <class I, class S, class C>
-constexpr std::pair<I, I> minmax_element_impl(I first, S last, C less) {
-  I lo = first, hi = first;
+template <class _Ip, class _Sp, class _Cp>
+constexpr std::pair<_Ip, _Ip> __minmax_element_impl(_Ip first, _Sp last, _Cp less) {
+  _Ip __lo = first, __hi = first;
   if (first == last || ++first == last)
-    return {lo, hi};
-  if (less(*first, *lo))
-    lo = first;
+    return {__lo, __hi};
+  if (less(*first, *__lo))
+    __lo = first;
   else
-    hi = first;
+    __hi = first;
   while (++first != last) {
-    I a = first;
+    _Ip a = first;
     if (++first == last) {
-      if (less(*a, *lo))
-        lo = a;
-      else if (!less(*a, *hi))
-        hi = a;
+      if (less(*a, *__lo))
+        __lo = a;
+      else if (!less(*a, *__hi))
+        __hi = a;
       break;
     }
     if (less(*first, *a)) { // first < a: first is the smaller, a the larger
-      if (less(*first, *lo))
-        lo = first;
-      if (!less(*a, *hi))
-        hi = a;
+      if (less(*first, *__lo))
+        __lo = first;
+      if (!less(*a, *__hi))
+        __hi = a;
     } else {
-      if (less(*a, *lo))
-        lo = a;
-      if (!less(*first, *hi))
-        hi = first;
+      if (less(*a, *__lo))
+        __lo = a;
+      if (!less(*first, *__hi))
+        __hi = first;
     }
   }
-  return {lo, hi};
+  return {__lo, __hi};
 }
 
 // ---- copy / move -----------------------------------------------------------------------------
 // A count argument of the std:: forms ("Size is convertible to an integral type").
 // Taken by non-const reference: a class type may convert only through a non-const function.
-template <class Size>
-constexpr auto integral_count(Size& n) {
-  if constexpr (std::is_integral_v<Size> && !std::is_same_v<std::remove_cv_t<Size>, bool>)
+template <class _Size>
+constexpr auto __integral_count(_Size& n) {
+  if constexpr (std::is_integral_v<_Size> && !std::is_same_v<std::remove_cv_t<_Size>, bool>)
     return n;
   else
     return static_cast<long long>(n);
 }
 
-template <class I, class S, class O>
-constexpr std::pair<I, O> copy_dispatch(I first, S last, O result) {
-  if constexpr (memmovable_pair<I, O, std::iter_reference_t<I>> && std::sized_sentinel_for<S, I>) {
+template <class _Ip, class _Sp, class _Op>
+constexpr std::pair<_Ip, _Op> __copy_dispatch(_Ip first, _Sp last, _Op result) {
+  if constexpr (__memmovable_pair<_Ip, _Op, std::iter_reference_t<_Ip>> && std::sized_sentinel_for<_Sp, _Ip>) {
     if !consteval {
       auto n = last - first;
       if (n > 1) {
-        I in_last = first + n;
-        O out_last = result + n;
-        ::ycxx::detail::bulk_move(first, in_last, result, out_last);
-        return {static_cast<I&&>(in_last), static_cast<O&&>(out_last)};
+        _Ip __in_last = first + n;
+        _Op __out_last = result + n;
+        ::__ycxx::__detail::__bulk_move(first, __in_last, result, __out_last);
+        return {static_cast<_Ip&&>(__in_last), static_cast<_Op&&>(__out_last)};
       }
     }
   }
   for (; first != last; (void)++first, (void)++result)
     *result = *first;
-  return {static_cast<I&&>(first), static_cast<O&&>(result)};
+  return {static_cast<_Ip&&>(first), static_cast<_Op&&>(result)};
 }
 
 // Moves elements; with Ops = ranges_ops through ranges::iter_move (customizable), so the bulk
 // path is taken only for pointers there.
-template <class Ops, class I, class S, class O>
-constexpr std::pair<I, O> move_dispatch(I first, S last, O result) {
-  if constexpr (memmovable_pair<I, O, std::iter_rvalue_reference_t<I>> && std::sized_sentinel_for<S, I> &&
-                (std::same_as<Ops, classic_ops> || (std::is_pointer_v<I> && std::is_pointer_v<O>))) {
+template <class _Ops, class _Ip, class _Sp, class _Op>
+constexpr std::pair<_Ip, _Op> __move_dispatch(_Ip first, _Sp last, _Op result) {
+  if constexpr (__memmovable_pair<_Ip, _Op, std::iter_rvalue_reference_t<_Ip>> && std::sized_sentinel_for<_Sp, _Ip> &&
+                (std::same_as<_Ops, __classic_ops> || (std::is_pointer_v<_Ip> && std::is_pointer_v<_Op>))) {
     if !consteval {
       auto n = last - first;
       if (n > 1) {
-        I in_last = first + n;
-        O out_last = result + n;
-        ::ycxx::detail::bulk_move(first, in_last, result, out_last);
-        return {static_cast<I&&>(in_last), static_cast<O&&>(out_last)};
+        _Ip __in_last = first + n;
+        _Op __out_last = result + n;
+        ::__ycxx::__detail::__bulk_move(first, __in_last, result, __out_last);
+        return {static_cast<_Ip&&>(__in_last), static_cast<_Op&&>(__out_last)};
       }
     }
   }
   for (; first != last; (void)++first, (void)++result)
-    *result = Ops::iter_move(first);
-  return {static_cast<I&&>(first), static_cast<O&&>(result)};
+    *result = _Ops::iter_move(first);
+  return {static_cast<_Ip&&>(first), static_cast<_Op&&>(result)};
 }
 
-template <class I, class O>
-constexpr O copy_backward_dispatch(I first, I last, O result) {
-  if constexpr (memmovable_pair<I, O, std::iter_reference_t<I>>) {
+template <class _Ip, class _Op>
+constexpr _Op __copy_backward_dispatch(_Ip first, _Ip last, _Op result) {
+  if constexpr (__memmovable_pair<_Ip, _Op, std::iter_reference_t<_Ip>>) {
     if !consteval {
       auto n = last - first;
       if (n > 1) {
-        O out_first = result - n;
-        ::ycxx::detail::bulk_move(first, first + n, out_first, result);
-        return out_first;
+        _Op __out_first = result - n;
+        ::__ycxx::__detail::__bulk_move(first, first + n, __out_first, result);
+        return __out_first;
       }
     }
   }
@@ -411,28 +411,28 @@ constexpr O copy_backward_dispatch(I first, I last, O result) {
     *--result = *--last;
   return result;
 }
-template <class Ops, class I, class O>
-constexpr O move_backward_dispatch(I first, I last, O result) {
-  if constexpr (memmovable_pair<I, O, std::iter_rvalue_reference_t<I>> &&
-                (std::same_as<Ops, classic_ops> || (std::is_pointer_v<I> && std::is_pointer_v<O>))) {
+template <class _Ops, class _Ip, class _Op>
+constexpr _Op __move_backward_dispatch(_Ip first, _Ip last, _Op result) {
+  if constexpr (__memmovable_pair<_Ip, _Op, std::iter_rvalue_reference_t<_Ip>> &&
+                (std::same_as<_Ops, __classic_ops> || (std::is_pointer_v<_Ip> && std::is_pointer_v<_Op>))) {
     if !consteval {
       auto n = last - first;
       if (n > 1) {
-        O out_first = result - n;
-        ::ycxx::detail::bulk_move(first, first + n, out_first, result);
-        return out_first;
+        _Op __out_first = result - n;
+        ::__ycxx::__detail::__bulk_move(first, first + n, __out_first, result);
+        return __out_first;
       }
     }
   }
   while (first != last)
-    *--result = Ops::iter_move(--last);
+    *--result = _Ops::iter_move(--last);
   return result;
 }
 
 // ---- find / mismatch / equal / lexicographical compare --------------------------------------
-template <class I, class S, class P>
-constexpr I find_if_impl(I first, S last, P pred) {
-  if constexpr (std::random_access_iterator<I> && std::sized_sentinel_for<S, I>) {
+template <class _Ip, class _Sp, class _Pp>
+constexpr _Ip __find_if_impl(_Ip first, _Sp last, _Pp pred) {
+  if constexpr (std::random_access_iterator<_Ip> && std::sized_sentinel_for<_Sp, _Ip>) {
     // Four tests per loop-count check (the counted loop also lets the compiler drop the
     // iterator comparisons).
     for (auto n = last - first; n >= 4; n -= 4) {
@@ -456,11 +456,11 @@ constexpr I find_if_impl(I first, S last, P pred) {
   return first;
 }
 
-template <class I, class S, class P>
-constexpr I adjacent_find_impl(I first, S last, P pred) {
+template <class _Ip, class _Sp, class _Pp>
+constexpr _Ip __adjacent_find_impl(_Ip first, _Sp last, _Pp pred) {
   if (first == last)
     return first;
-  I next = first;
+  _Ip next = first;
   while (++next != last) {
     if (pred(*first, *next))
       return first;
@@ -469,181 +469,181 @@ constexpr I adjacent_find_impl(I first, S last, P pred) {
   return next;
 }
 
-template <class I1, class S1, class I2, class S2, class P>
-constexpr std::pair<I1, I2> mismatch_impl(I1 first1, S1 last1, I2 first2, S2 last2, P eq) {
-  while (first1 != last1 && first2 != last2 && eq(*first1, *first2)) {
-    ++first1;
-    ++first2;
+template <class _I1, class _S1, class _I2, class _S2, class _Pp>
+constexpr std::pair<_I1, _I2> __mismatch_impl(_I1 __first1, _S1 __last1, _I2 __first2, _S2 __last2, _Pp eq) {
+  while (__first1 != __last1 && __first2 != __last2 && eq(*__first1, *__first2)) {
+    ++__first1;
+    ++__first2;
   }
-  return {static_cast<I1&&>(first1), static_cast<I2&&>(first2)};
+  return {static_cast<_I1&&>(__first1), static_cast<_I2&&>(__first2)};
 }
 // The three-iterator form: the second range is as long as the first.
-template <class I1, class S1, class I2, class P>
-constexpr std::pair<I1, I2> mismatch3_impl(I1 first1, S1 last1, I2 first2, P eq) {
-  while (first1 != last1 && eq(*first1, *first2)) {
-    ++first1;
-    ++first2;
+template <class _I1, class _S1, class _I2, class _Pp>
+constexpr std::pair<_I1, _I2> __mismatch3_impl(_I1 __first1, _S1 __last1, _I2 __first2, _Pp eq) {
+  while (__first1 != __last1 && eq(*__first1, *__first2)) {
+    ++__first1;
+    ++__first2;
   }
-  return {static_cast<I1&&>(first1), static_cast<I2&&>(first2)};
+  return {static_cast<_I1&&>(__first1), static_cast<_I2&&>(__first2)};
 }
 
-template <class I1, class S1, class I2, class S2, class P>
-constexpr bool equal_impl(I1 first1, S1 last1, I2 first2, S2 last2, P eq) {
+template <class _I1, class _S1, class _I2, class _S2, class _Pp>
+constexpr bool __equal_impl(_I1 __first1, _S1 __last1, _I2 __first2, _S2 __last2, _Pp eq) {
   // [alg.equal]/5: no comparisons when the lengths are known to differ.
-  if constexpr ((std::sized_sentinel_for<S1, I1> || (std::same_as<I1, S1> && ra_iter<I1>)) &&
-                (std::sized_sentinel_for<S2, I2> || (std::same_as<I2, S2> && ra_iter<I2>))) {
-    if (last1 - first1 != last2 - first2)
+  if constexpr ((std::sized_sentinel_for<_S1, _I1> || (std::same_as<_I1, _S1> && __ra_iter<_I1>)) &&
+                (std::sized_sentinel_for<_S2, _I2> || (std::same_as<_I2, _S2> && __ra_iter<_I2>))) {
+    if (__last1 - __first1 != __last2 - __first2)
       return false;
-    for (; first1 != last1; (void)++first1, (void)++first2)
-      if (!eq(*first1, *first2))
+    for (; __first1 != __last1; (void)++__first1, (void)++__first2)
+      if (!eq(*__first1, *__first2))
         return false;
     return true;
   } else {
-    for (; first1 != last1 && first2 != last2; (void)++first1, (void)++first2)
-      if (!eq(*first1, *first2))
+    for (; __first1 != __last1 && __first2 != __last2; (void)++__first1, (void)++__first2)
+      if (!eq(*__first1, *__first2))
         return false;
-    return first1 == last1 && first2 == last2;
+    return __first1 == __last1 && __first2 == __last2;
   }
 }
 
-template <class I1, class S1, class I2, class S2, class C>
-constexpr bool lex_compare_impl(I1 first1, S1 last1, I2 first2, S2 last2, C less) {
-  for (; first2 != last2; (void)++first1, (void)++first2) {
-    if (first1 == last1 || less(*first1, *first2))
+template <class _I1, class _S1, class _I2, class _S2, class _Cp>
+constexpr bool __lex_compare_impl(_I1 __first1, _S1 __last1, _I2 __first2, _S2 __last2, _Cp less) {
+  for (; __first2 != __last2; (void)++__first1, (void)++__first2) {
+    if (__first1 == __last1 || less(*__first1, *__first2))
       return true;
-    if (less.rev(*first2, *first1))
+    if (less.__rev(*__first2, *__first1))
       return false;
   }
   return false;
 }
 
-template <class T>
-concept comparison_category = !std::is_void_v<std::common_comparison_category_t<T>>;
+template <class _Tp>
+concept comparison_category = !std::is_void_v<std::common_comparison_category_t<_Tp>>;
 
-}} // namespace ycxx::detail
+}} // namespace __ycxx::__detail
 
 // =============================================================================================
 // std:: forms
 // =============================================================================================
-namespace [[gnu::visibility("hidden")]] std {
+namespace [[__gnu__::__visibility__("hidden")]] std {
 
 // [alg.min.max]
-template <class T>
-[[nodiscard]] constexpr const T& min(const T& a, const T& b) {
+template <class _Tp>
+[[nodiscard]] constexpr const _Tp& min(const _Tp& a, const _Tp& b) {
   return b < a ? b : a;
 }
-template <class T, class Compare>
-[[nodiscard]] constexpr const T& min(const T& a, const T& b, Compare comp) {
+template <class _Tp, class _Compare>
+[[nodiscard]] constexpr const _Tp& min(const _Tp& a, const _Tp& b, _Compare comp) {
   return comp(b, a) ? b : a;
 }
-template <class T>
-[[nodiscard]] constexpr const T& max(const T& a, const T& b) {
+template <class _Tp>
+[[nodiscard]] constexpr const _Tp& max(const _Tp& a, const _Tp& b) {
   return a < b ? b : a;
 }
-template <class T, class Compare>
-[[nodiscard]] constexpr const T& max(const T& a, const T& b, Compare comp) {
+template <class _Tp, class _Compare>
+[[nodiscard]] constexpr const _Tp& max(const _Tp& a, const _Tp& b, _Compare comp) {
   return comp(a, b) ? b : a;
 }
-template <class T, class Compare>
-[[nodiscard]] constexpr T min(initializer_list<T> r, Compare comp) {
-  ycxx::detail::precondition(r.size() != 0, "std::min: empty initializer_list");
-  return *::ycxx::detail::min_element_impl(r.begin(), r.end(), ::ycxx::detail::ref_pred(comp));
+template <class _Tp, class _Compare>
+[[nodiscard]] constexpr _Tp min(initializer_list<_Tp> r, _Compare comp) {
+  __ycxx::__detail::__precondition(r.size() != 0, "std::min: empty initializer_list");
+  return *::__ycxx::__detail::__min_element_impl(r.begin(), r.end(), ::__ycxx::__detail::__ref_pred(comp));
 }
-template <class T>
-[[nodiscard]] constexpr T min(initializer_list<T> r) {
+template <class _Tp>
+[[nodiscard]] constexpr _Tp min(initializer_list<_Tp> r) {
   return std::min(r, less<>{});
 }
-template <class T, class Compare>
-[[nodiscard]] constexpr T max(initializer_list<T> r, Compare comp) {
-  ycxx::detail::precondition(r.size() != 0, "std::max: empty initializer_list");
-  return *::ycxx::detail::max_element_impl(r.begin(), r.end(), ::ycxx::detail::ref_pred(comp));
+template <class _Tp, class _Compare>
+[[nodiscard]] constexpr _Tp max(initializer_list<_Tp> r, _Compare comp) {
+  __ycxx::__detail::__precondition(r.size() != 0, "std::max: empty initializer_list");
+  return *::__ycxx::__detail::__max_element_impl(r.begin(), r.end(), ::__ycxx::__detail::__ref_pred(comp));
 }
-template <class T>
-[[nodiscard]] constexpr T max(initializer_list<T> r) {
+template <class _Tp>
+[[nodiscard]] constexpr _Tp max(initializer_list<_Tp> r) {
   return std::max(r, less<>{});
 }
-template <class T>
-[[nodiscard]] constexpr pair<const T&, const T&> minmax(const T& a, const T& b) {
+template <class _Tp>
+[[nodiscard]] constexpr pair<const _Tp&, const _Tp&> minmax(const _Tp& a, const _Tp& b) {
   if (b < a)
-    return pair<const T&, const T&>(b, a);
-  return pair<const T&, const T&>(a, b);
+    return pair<const _Tp&, const _Tp&>(b, a);
+  return pair<const _Tp&, const _Tp&>(a, b);
 }
-template <class T, class Compare>
-[[nodiscard]] constexpr pair<const T&, const T&> minmax(const T& a, const T& b, Compare comp) {
+template <class _Tp, class _Compare>
+[[nodiscard]] constexpr pair<const _Tp&, const _Tp&> minmax(const _Tp& a, const _Tp& b, _Compare comp) {
   if (comp(b, a))
-    return pair<const T&, const T&>(b, a);
-  return pair<const T&, const T&>(a, b);
+    return pair<const _Tp&, const _Tp&>(b, a);
+  return pair<const _Tp&, const _Tp&>(a, b);
 }
-template <class T, class Compare>
-[[nodiscard]] constexpr pair<T, T> minmax(initializer_list<T> r, Compare comp) {
-  ycxx::detail::precondition(r.size() != 0, "std::minmax: empty initializer_list");
-  auto p = ::ycxx::detail::minmax_element_impl(r.begin(), r.end(), ::ycxx::detail::ref_pred(comp));
-  return pair<T, T>(*p.first, *p.second);
+template <class _Tp, class _Compare>
+[[nodiscard]] constexpr pair<_Tp, _Tp> minmax(initializer_list<_Tp> r, _Compare comp) {
+  __ycxx::__detail::__precondition(r.size() != 0, "std::minmax: empty initializer_list");
+  auto p = ::__ycxx::__detail::__minmax_element_impl(r.begin(), r.end(), ::__ycxx::__detail::__ref_pred(comp));
+  return pair<_Tp, _Tp>(*p.first, *p.second);
 }
-template <class T>
-[[nodiscard]] constexpr pair<T, T> minmax(initializer_list<T> r) {
+template <class _Tp>
+[[nodiscard]] constexpr pair<_Tp, _Tp> minmax(initializer_list<_Tp> r) {
   return std::minmax(r, less<>{});
 }
 
-template <class T, class Compare>
-[[nodiscard]] constexpr const T& clamp(const T& v, const T& lo, const T& hi, Compare comp) {
-  return comp(v, lo) ? lo : comp(hi, v) ? hi : v;
+template <class _Tp, class _Compare>
+[[nodiscard]] constexpr const _Tp& clamp(const _Tp& __v, const _Tp& __lo, const _Tp& __hi, _Compare comp) {
+  return comp(__v, __lo) ? __lo : comp(__hi, __v) ? __hi : __v;
 }
-template <class T>
-[[nodiscard]] constexpr const T& clamp(const T& v, const T& lo, const T& hi) {
-  return std::clamp(v, lo, hi, less<>{});
+template <class _Tp>
+[[nodiscard]] constexpr const _Tp& clamp(const _Tp& __v, const _Tp& __lo, const _Tp& __hi) {
+  return std::clamp(__v, __lo, __hi, less<>{});
 }
 
-template <class ForwardIterator, class Compare>
-[[nodiscard]] constexpr ForwardIterator min_element(ForwardIterator first, ForwardIterator last, Compare comp) {
-  return ::ycxx::detail::min_element_impl(first, last, ::ycxx::detail::ref_pred(comp));
+template <class _ForwardIterator, class _Compare>
+[[nodiscard]] constexpr _ForwardIterator min_element(_ForwardIterator first, _ForwardIterator last, _Compare comp) {
+  return ::__ycxx::__detail::__min_element_impl(first, last, ::__ycxx::__detail::__ref_pred(comp));
 }
-template <class ForwardIterator>
-[[nodiscard]] constexpr ForwardIterator min_element(ForwardIterator first, ForwardIterator last) {
+template <class _ForwardIterator>
+[[nodiscard]] constexpr _ForwardIterator min_element(_ForwardIterator first, _ForwardIterator last) {
   return std::min_element(first, last, less<>{});
 }
-template <class ForwardIterator, class Compare>
-[[nodiscard]] constexpr ForwardIterator max_element(ForwardIterator first, ForwardIterator last, Compare comp) {
-  return ::ycxx::detail::max_element_impl(first, last, ::ycxx::detail::ref_pred(comp));
+template <class _ForwardIterator, class _Compare>
+[[nodiscard]] constexpr _ForwardIterator max_element(_ForwardIterator first, _ForwardIterator last, _Compare comp) {
+  return ::__ycxx::__detail::__max_element_impl(first, last, ::__ycxx::__detail::__ref_pred(comp));
 }
-template <class ForwardIterator>
-[[nodiscard]] constexpr ForwardIterator max_element(ForwardIterator first, ForwardIterator last) {
+template <class _ForwardIterator>
+[[nodiscard]] constexpr _ForwardIterator max_element(_ForwardIterator first, _ForwardIterator last) {
   return std::max_element(first, last, less<>{});
 }
-template <class ForwardIterator, class Compare>
-[[nodiscard]] constexpr pair<ForwardIterator, ForwardIterator> minmax_element(ForwardIterator first, ForwardIterator last,
-                                                                              Compare comp) {
-  return ::ycxx::detail::minmax_element_impl(first, last, ::ycxx::detail::ref_pred(comp));
+template <class _ForwardIterator, class _Compare>
+[[nodiscard]] constexpr pair<_ForwardIterator, _ForwardIterator> minmax_element(_ForwardIterator first, _ForwardIterator last,
+                                                                              _Compare comp) {
+  return ::__ycxx::__detail::__minmax_element_impl(first, last, ::__ycxx::__detail::__ref_pred(comp));
 }
-template <class ForwardIterator>
-[[nodiscard]] constexpr pair<ForwardIterator, ForwardIterator> minmax_element(ForwardIterator first, ForwardIterator last) {
+template <class _ForwardIterator>
+[[nodiscard]] constexpr pair<_ForwardIterator, _ForwardIterator> minmax_element(_ForwardIterator first, _ForwardIterator last) {
   return std::minmax_element(first, last, less<>{});
 }
 
 // [alg.swap]
-template <class ForwardIterator1, class ForwardIterator2>
-constexpr void iter_swap(ForwardIterator1 a, ForwardIterator2 b) {
-  ::ycxx::detail::swap_adl::do_swap(*a, *b);
+template <class _ForwardIterator1, class _ForwardIterator2>
+constexpr void iter_swap(_ForwardIterator1 a, _ForwardIterator2 b) {
+  ::__ycxx::__detail::__swap_adl::__do_swap(*a, *b);
 }
-template <class ForwardIterator1, class ForwardIterator2>
-constexpr ForwardIterator2 swap_ranges(ForwardIterator1 first1, ForwardIterator1 last1, ForwardIterator2 first2) {
-  for (; first1 != last1; (void)++first1, (void)++first2)
-    ::ycxx::detail::swap_adl::do_swap(*first1, *first2);
-  return first2;
+template <class _ForwardIterator1, class _ForwardIterator2>
+constexpr _ForwardIterator2 swap_ranges(_ForwardIterator1 __first1, _ForwardIterator1 __last1, _ForwardIterator2 __first2) {
+  for (; __first1 != __last1; (void)++__first1, (void)++__first2)
+    ::__ycxx::__detail::__swap_adl::__do_swap(*__first1, *__first2);
+  return __first2;
 }
 
 // [alg.copy]
-template <class InputIterator, class OutputIterator>
-constexpr OutputIterator copy(InputIterator first, InputIterator last, OutputIterator result) {
-  return ::ycxx::detail::copy_dispatch(first, last, result).second;
+template <class _InputIterator, class _OutputIterator>
+constexpr _OutputIterator copy(_InputIterator first, _InputIterator last, _OutputIterator result) {
+  return ::__ycxx::__detail::__copy_dispatch(first, last, result).second;
 }
-template <class InputIterator, class Size, class OutputIterator>
-constexpr OutputIterator copy_n(InputIterator first, Size n, OutputIterator result) {
-  auto count = ::ycxx::detail::integral_count(n);
+template <class _InputIterator, class _Size, class _OutputIterator>
+constexpr _OutputIterator copy_n(_InputIterator first, _Size n, _OutputIterator result) {
+  auto count = ::__ycxx::__detail::__integral_count(n);
   if (count <= 0)
     return result;
-  if constexpr (::ycxx::detail::ra_iter<InputIterator>) {
-    return ::ycxx::detail::copy_dispatch(first, first + static_cast<std::iter_difference_t<InputIterator>>(count),
+  if constexpr (::__ycxx::__detail::__ra_iter<_InputIterator>) {
+    return ::__ycxx::__detail::__copy_dispatch(first, first + static_cast<std::iter_difference_t<_InputIterator>>(count),
                                          result)
         .second;
   } else {
@@ -658,8 +658,8 @@ constexpr OutputIterator copy_n(InputIterator first, Size n, OutputIterator resu
     return result;
   }
 }
-template <class InputIterator, class OutputIterator, class Predicate>
-constexpr OutputIterator copy_if(InputIterator first, InputIterator last, OutputIterator result, Predicate pred) {
+template <class _InputIterator, class _OutputIterator, class _Predicate>
+constexpr _OutputIterator copy_if(_InputIterator first, _InputIterator last, _OutputIterator result, _Predicate pred) {
   for (; first != last; ++first)
     if (pred(*first)) {
       *result = *first;
@@ -667,36 +667,36 @@ constexpr OutputIterator copy_if(InputIterator first, InputIterator last, Output
     }
   return result;
 }
-template <class BidirectionalIterator1, class BidirectionalIterator2>
-constexpr BidirectionalIterator2 copy_backward(BidirectionalIterator1 first, BidirectionalIterator1 last,
-                                               BidirectionalIterator2 result) {
-  return ::ycxx::detail::copy_backward_dispatch(first, last, result);
+template <class _BidirectionalIterator1, class _BidirectionalIterator2>
+constexpr _BidirectionalIterator2 copy_backward(_BidirectionalIterator1 first, _BidirectionalIterator1 last,
+                                               _BidirectionalIterator2 result) {
+  return ::__ycxx::__detail::__copy_backward_dispatch(first, last, result);
 }
 
 // [alg.move]
-template <class InputIterator, class OutputIterator>
-constexpr OutputIterator move(InputIterator first, InputIterator last, OutputIterator result) {
-  return ::ycxx::detail::move_dispatch<ycxx::detail::classic_ops>(first, last, result).second;
+template <class _InputIterator, class _OutputIterator>
+constexpr _OutputIterator move(_InputIterator first, _InputIterator last, _OutputIterator result) {
+  return ::__ycxx::__detail::__move_dispatch<__ycxx::__detail::__classic_ops>(first, last, result).second;
 }
-template <class BidirectionalIterator1, class BidirectionalIterator2>
-constexpr BidirectionalIterator2 move_backward(BidirectionalIterator1 first, BidirectionalIterator1 last,
-                                               BidirectionalIterator2 result) {
-  return ::ycxx::detail::move_backward_dispatch<ycxx::detail::classic_ops>(first, last, result);
+template <class _BidirectionalIterator1, class _BidirectionalIterator2>
+constexpr _BidirectionalIterator2 move_backward(_BidirectionalIterator1 first, _BidirectionalIterator1 last,
+                                               _BidirectionalIterator2 result) {
+  return ::__ycxx::__detail::__move_backward_dispatch<__ycxx::__detail::__classic_ops>(first, last, result);
 }
 
 // [alg.fill]
-template <class ForwardIterator, class T = typename iterator_traits<ForwardIterator>::value_type>
-constexpr void fill(ForwardIterator first, ForwardIterator last, const T& value) {
-  if constexpr (ycxx::detail::bit_algo_args<ForwardIterator, ForwardIterator, T>) {
-    ycxx::detail::bit_algos<ForwardIterator>::fill(first, last, value);
+template <class _ForwardIterator, class _Tp = typename iterator_traits<_ForwardIterator>::value_type>
+constexpr void fill(_ForwardIterator first, _ForwardIterator last, const _Tp& value) {
+  if constexpr (__ycxx::__detail::__bit_algo_args<_ForwardIterator, _ForwardIterator, _Tp>) {
+    __ycxx::__detail::__bit_algos<_ForwardIterator>::fill(first, last, value);
   } else {
     for (; first != last; ++first)
       *first = value;
   }
 }
-template <class OutputIterator, class Size, class T = typename iterator_traits<OutputIterator>::value_type>
-constexpr OutputIterator fill_n(OutputIterator first, Size n, const T& value) {
-  for (auto count = ::ycxx::detail::integral_count(n); count > 0; --count) {
+template <class _OutputIterator, class _Size, class _Tp = typename iterator_traits<_OutputIterator>::value_type>
+constexpr _OutputIterator fill_n(_OutputIterator first, _Size n, const _Tp& value) {
+  for (auto count = ::__ycxx::__detail::__integral_count(n); count > 0; --count) {
     *first = value;
     ++first;
   }
@@ -704,101 +704,101 @@ constexpr OutputIterator fill_n(OutputIterator first, Size n, const T& value) {
 }
 
 // [alg.find]
-template <class InputIterator, class T = typename iterator_traits<InputIterator>::value_type>
-[[nodiscard]] constexpr InputIterator find(InputIterator first, InputIterator last, const T& value) {
-  if constexpr (ycxx::detail::bit_algo_args<InputIterator, InputIterator, T>) {
-    return ycxx::detail::bit_algos<InputIterator>::find(first, last, value);
+template <class _InputIterator, class _Tp = typename iterator_traits<_InputIterator>::value_type>
+[[nodiscard]] constexpr _InputIterator find(_InputIterator first, _InputIterator last, const _Tp& value) {
+  if constexpr (__ycxx::__detail::__bit_algo_args<_InputIterator, _InputIterator, _Tp>) {
+    return __ycxx::__detail::__bit_algos<_InputIterator>::find(first, last, value);
   } else {
-    if constexpr (ycxx::detail::memchr_find_args<InputIterator, InputIterator, T>)
+    if constexpr (__ycxx::__detail::__memchr_find_args<_InputIterator, _InputIterator, _Tp>)
       if !consteval {
-        ::ycxx::detail::find_byte(first, last, value);
+        ::__ycxx::__detail::__find_byte(first, last, value);
         return first;
       }
-    return ::ycxx::detail::find_if_impl(first, last, ::ycxx::detail::equals_value_plain<T>{value});
+    return ::__ycxx::__detail::__find_if_impl(first, last, ::__ycxx::__detail::__equals_value_plain<_Tp>{value});
   }
 }
-template <class InputIterator, class Predicate>
-[[nodiscard]] constexpr InputIterator find_if(InputIterator first, InputIterator last, Predicate pred) {
-  return ::ycxx::detail::find_if_impl(first, last, ::ycxx::detail::ref_pred(pred));
+template <class _InputIterator, class _Predicate>
+[[nodiscard]] constexpr _InputIterator find_if(_InputIterator first, _InputIterator last, _Predicate pred) {
+  return ::__ycxx::__detail::__find_if_impl(first, last, ::__ycxx::__detail::__ref_pred(pred));
 }
-template <class InputIterator, class Predicate>
-[[nodiscard]] constexpr InputIterator find_if_not(InputIterator first, InputIterator last, Predicate pred) {
-  return ::ycxx::detail::find_if_impl(first, last, ::ycxx::detail::negated{::ycxx::detail::ref_pred(pred)});
+template <class _InputIterator, class _Predicate>
+[[nodiscard]] constexpr _InputIterator find_if_not(_InputIterator first, _InputIterator last, _Predicate pred) {
+  return ::__ycxx::__detail::__find_if_impl(first, last, ::__ycxx::__detail::__negated{::__ycxx::__detail::__ref_pred(pred)});
 }
 
 // [alg.mismatch]
-template <class InputIterator1, class InputIterator2, class BinaryPredicate>
-[[nodiscard]] constexpr pair<InputIterator1, InputIterator2> mismatch(InputIterator1 first1, InputIterator1 last1,
-                                                                      InputIterator2 first2, BinaryPredicate pred) {
-  return ::ycxx::detail::mismatch3_impl(first1, last1, first2, ::ycxx::detail::ref_pred(pred));
+template <class _InputIterator1, class _InputIterator2, class _BinaryPredicate>
+[[nodiscard]] constexpr pair<_InputIterator1, _InputIterator2> mismatch(_InputIterator1 __first1, _InputIterator1 __last1,
+                                                                      _InputIterator2 __first2, _BinaryPredicate pred) {
+  return ::__ycxx::__detail::__mismatch3_impl(__first1, __last1, __first2, ::__ycxx::__detail::__ref_pred(pred));
 }
-template <class InputIterator1, class InputIterator2>
-[[nodiscard]] constexpr pair<InputIterator1, InputIterator2> mismatch(InputIterator1 first1, InputIterator1 last1,
-                                                                      InputIterator2 first2) {
-  return std::mismatch(first1, last1, first2, equal_to<>{});
+template <class _InputIterator1, class _InputIterator2>
+[[nodiscard]] constexpr pair<_InputIterator1, _InputIterator2> mismatch(_InputIterator1 __first1, _InputIterator1 __last1,
+                                                                      _InputIterator2 __first2) {
+  return std::mismatch(__first1, __last1, __first2, equal_to<>{});
 }
-template <class InputIterator1, class InputIterator2, class BinaryPredicate>
-[[nodiscard]] constexpr pair<InputIterator1, InputIterator2> mismatch(InputIterator1 first1, InputIterator1 last1,
-                                                                      InputIterator2 first2, InputIterator2 last2,
-                                                                      BinaryPredicate pred) {
-  return ::ycxx::detail::mismatch_impl(first1, last1, first2, last2, ::ycxx::detail::ref_pred(pred));
+template <class _InputIterator1, class _InputIterator2, class _BinaryPredicate>
+[[nodiscard]] constexpr pair<_InputIterator1, _InputIterator2> mismatch(_InputIterator1 __first1, _InputIterator1 __last1,
+                                                                      _InputIterator2 __first2, _InputIterator2 __last2,
+                                                                      _BinaryPredicate pred) {
+  return ::__ycxx::__detail::__mismatch_impl(__first1, __last1, __first2, __last2, ::__ycxx::__detail::__ref_pred(pred));
 }
-template <class InputIterator1, class InputIterator2>
-[[nodiscard]] constexpr pair<InputIterator1, InputIterator2> mismatch(InputIterator1 first1, InputIterator1 last1,
-                                                                      InputIterator2 first2, InputIterator2 last2) {
-  return std::mismatch(first1, last1, first2, last2, equal_to<>{});
+template <class _InputIterator1, class _InputIterator2>
+[[nodiscard]] constexpr pair<_InputIterator1, _InputIterator2> mismatch(_InputIterator1 __first1, _InputIterator1 __last1,
+                                                                      _InputIterator2 __first2, _InputIterator2 __last2) {
+  return std::mismatch(__first1, __last1, __first2, __last2, equal_to<>{});
 }
 
 // [alg.equal]
-template <class InputIterator1, class InputIterator2, class BinaryPredicate>
-[[nodiscard]] constexpr bool equal(InputIterator1 first1, InputIterator1 last1, InputIterator2 first2,
-                                   BinaryPredicate pred) {
-  return ::ycxx::detail::mismatch3_impl(first1, last1, first2, ::ycxx::detail::ref_pred(pred)).first == last1;
+template <class _InputIterator1, class _InputIterator2, class _BinaryPredicate>
+[[nodiscard]] constexpr bool equal(_InputIterator1 __first1, _InputIterator1 __last1, _InputIterator2 __first2,
+                                   _BinaryPredicate pred) {
+  return ::__ycxx::__detail::__mismatch3_impl(__first1, __last1, __first2, ::__ycxx::__detail::__ref_pred(pred)).first == __last1;
 }
-template <class InputIterator1, class InputIterator2>
-[[nodiscard]] constexpr bool equal(InputIterator1 first1, InputIterator1 last1, InputIterator2 first2) {
-  return std::equal(first1, last1, first2, equal_to<>{});
+template <class _InputIterator1, class _InputIterator2>
+[[nodiscard]] constexpr bool equal(_InputIterator1 __first1, _InputIterator1 __last1, _InputIterator2 __first2) {
+  return std::equal(__first1, __last1, __first2, equal_to<>{});
 }
-template <class InputIterator1, class InputIterator2, class BinaryPredicate>
-[[nodiscard]] constexpr bool equal(InputIterator1 first1, InputIterator1 last1, InputIterator2 first2,
-                                   InputIterator2 last2, BinaryPredicate pred) {
-  return ::ycxx::detail::equal_impl(first1, last1, first2, last2, ::ycxx::detail::ref_pred(pred));
+template <class _InputIterator1, class _InputIterator2, class _BinaryPredicate>
+[[nodiscard]] constexpr bool equal(_InputIterator1 __first1, _InputIterator1 __last1, _InputIterator2 __first2,
+                                   _InputIterator2 __last2, _BinaryPredicate pred) {
+  return ::__ycxx::__detail::__equal_impl(__first1, __last1, __first2, __last2, ::__ycxx::__detail::__ref_pred(pred));
 }
-template <class InputIterator1, class InputIterator2>
-[[nodiscard]] constexpr bool equal(InputIterator1 first1, InputIterator1 last1, InputIterator2 first2,
-                                   InputIterator2 last2) {
-  return std::equal(first1, last1, first2, last2, equal_to<>{});
+template <class _InputIterator1, class _InputIterator2>
+[[nodiscard]] constexpr bool equal(_InputIterator1 __first1, _InputIterator1 __last1, _InputIterator2 __first2,
+                                   _InputIterator2 __last2) {
+  return std::equal(__first1, __last1, __first2, __last2, equal_to<>{});
 }
 
 // [alg.lex.comparison]
-template <class InputIterator1, class InputIterator2, class Compare>
-[[nodiscard]] constexpr bool lexicographical_compare(InputIterator1 first1, InputIterator1 last1,
-                                                     InputIterator2 first2, InputIterator2 last2, Compare comp) {
-  return ::ycxx::detail::lex_compare_impl(first1, last1, first2, last2, ::ycxx::detail::ref_pred(comp));
+template <class _InputIterator1, class _InputIterator2, class _Compare>
+[[nodiscard]] constexpr bool lexicographical_compare(_InputIterator1 __first1, _InputIterator1 __last1,
+                                                     _InputIterator2 __first2, _InputIterator2 __last2, _Compare comp) {
+  return ::__ycxx::__detail::__lex_compare_impl(__first1, __last1, __first2, __last2, ::__ycxx::__detail::__ref_pred(comp));
 }
-template <class InputIterator1, class InputIterator2>
-[[nodiscard]] constexpr bool lexicographical_compare(InputIterator1 first1, InputIterator1 last1,
-                                                     InputIterator2 first2, InputIterator2 last2) {
-  return std::lexicographical_compare(first1, last1, first2, last2, less<>{});
+template <class _InputIterator1, class _InputIterator2>
+[[nodiscard]] constexpr bool lexicographical_compare(_InputIterator1 __first1, _InputIterator1 __last1,
+                                                     _InputIterator2 __first2, _InputIterator2 __last2) {
+  return std::lexicographical_compare(__first1, __last1, __first2, __last2, less<>{});
 }
 
 // [alg.three.way]
-template <class InputIterator1, class InputIterator2, class Cmp>
-[[nodiscard]] constexpr auto lexicographical_compare_three_way(InputIterator1 b1, InputIterator1 e1,
-                                                               InputIterator2 b2, InputIterator2 e2, Cmp comp)
-    -> decltype(comp(*b1, *b2)) {
-  using R = decltype(comp(*b1, *b2));
-  static_assert(ycxx::detail::comparison_category<R>,
+template <class _InputIterator1, class _InputIterator2, class _Cmp>
+[[nodiscard]] constexpr auto lexicographical_compare_three_way(_InputIterator1 __b1, _InputIterator1 __e1,
+                                                               _InputIterator2 __b2, _InputIterator2 __e2, _Cmp comp)
+    -> decltype(comp(*__b1, *__b2)) {
+  using _Rp = decltype(comp(*__b1, *__b2));
+  static_assert(__ycxx::__detail::comparison_category<_Rp>,
                 "std::lexicographical_compare_three_way: comp must return a comparison category type");
-  for (; b1 != e1 && b2 != e2; (void)++b1, (void)++b2)
-    if (auto c = comp(*b1, *b2); c != 0)
+  for (; __b1 != __e1 && __b2 != __e2; (void)++__b1, (void)++__b2)
+    if (auto c = comp(*__b1, *__b2); c != 0)
       return c;
-  return b1 != e1 ? R(strong_ordering::greater) : b2 != e2 ? R(strong_ordering::less) : R(strong_ordering::equal);
+  return __b1 != __e1 ? _Rp(strong_ordering::greater) : __b2 != __e2 ? _Rp(strong_ordering::less) : _Rp(strong_ordering::equal);
 }
-template <class InputIterator1, class InputIterator2>
-[[nodiscard]] constexpr auto lexicographical_compare_three_way(InputIterator1 b1, InputIterator1 e1,
-                                                               InputIterator2 b2, InputIterator2 e2) {
-  return std::lexicographical_compare_three_way(b1, e1, b2, e2, compare_three_way());
+template <class _InputIterator1, class _InputIterator2>
+[[nodiscard]] constexpr auto lexicographical_compare_three_way(_InputIterator1 __b1, _InputIterator1 __e1,
+                                                               _InputIterator2 __b2, _InputIterator2 __e2) {
+  return std::lexicographical_compare_three_way(__b1, __e1, __b2, __e2, compare_three_way());
 }
 
 } // namespace std
@@ -806,268 +806,268 @@ template <class InputIterator1, class InputIterator2>
 // =============================================================================================
 // std::ranges:: forms
 // =============================================================================================
-namespace [[gnu::visibility("hidden")]] std { namespace ranges {
+namespace [[__gnu__::__visibility__("hidden")]] std { namespace ranges {
 
-template <class I, class O>
-using copy_result = in_out_result<I, O>;
-template <class I, class O>
-using copy_n_result = in_out_result<I, O>;
-template <class I, class O>
-using copy_if_result = in_out_result<I, O>;
-template <class I1, class I2>
-using copy_backward_result = in_out_result<I1, I2>;
-template <class I, class O>
-using move_result = in_out_result<I, O>;
-template <class I1, class I2>
-using move_backward_result = in_out_result<I1, I2>;
-template <class I1, class I2>
-using swap_ranges_result = in_in_result<I1, I2>;
-template <class I1, class I2>
-using mismatch_result = in_in_result<I1, I2>;
-template <class T>
-using minmax_result = min_max_result<T>;
-template <class I>
-using minmax_element_result = min_max_result<I>;
+template <class _Ip, class _Op>
+using copy_result = in_out_result<_Ip, _Op>;
+template <class _Ip, class _Op>
+using copy_n_result = in_out_result<_Ip, _Op>;
+template <class _Ip, class _Op>
+using copy_if_result = in_out_result<_Ip, _Op>;
+template <class _I1, class _I2>
+using copy_backward_result = in_out_result<_I1, _I2>;
+template <class _Ip, class _Op>
+using move_result = in_out_result<_Ip, _Op>;
+template <class _I1, class _I2>
+using move_backward_result = in_out_result<_I1, _I2>;
+template <class _I1, class _I2>
+using swap_ranges_result = in_in_result<_I1, _I2>;
+template <class _I1, class _I2>
+using mismatch_result = in_in_result<_I1, _I2>;
+template <class _Tp>
+using minmax_result = min_max_result<_Tp>;
+template <class _Ip>
+using minmax_element_result = min_max_result<_Ip>;
 
 }} // namespace std::ranges
 
-namespace [[gnu::visibility("hidden")]] ycxx { namespace detail::ranges_algo {
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail::__ranges_algo {
 
 using std::ranges::borrowed_iterator_t;
 using std::ranges::iterator_t;
 
 // [alg.min.max]
-struct min_fn {
-  template <class T, class Proj = std::identity,
-            std::indirect_strict_weak_order<std::projected<const T*, Proj>> Comp = std::ranges::less>
-  [[nodiscard]] constexpr const T& operator()(const T& a, const T& b, Comp comp = {}, Proj proj = {}) const {
-    return ::ycxx::detail::invoke(comp, ::ycxx::detail::invoke(proj, b), ::ycxx::detail::invoke(proj, a)) ? b : a;
+struct __min_fn {
+  template <class _Tp, class _Proj = std::identity,
+            std::indirect_strict_weak_order<std::projected<const _Tp*, _Proj>> _Comp = std::ranges::less>
+  [[nodiscard]] constexpr const _Tp& operator()(const _Tp& a, const _Tp& b, _Comp comp = {}, _Proj proj = {}) const {
+    return ::__ycxx::__detail::invoke(comp, ::__ycxx::__detail::invoke(proj, b), ::__ycxx::__detail::invoke(proj, a)) ? b : a;
   }
-  template <std::copyable T, class Proj = std::identity,
-            std::indirect_strict_weak_order<std::projected<const T*, Proj>> Comp = std::ranges::less>
-  [[nodiscard]] constexpr T operator()(std::initializer_list<T> r, Comp comp = {}, Proj proj = {}) const {
-    ::ycxx::detail::precondition(r.size() != 0, "ranges::min: empty range");
-    return *::ycxx::detail::min_element_impl(r.begin(), r.end(), ::ycxx::detail::make_comp(comp, proj));
+  template <std::copyable _Tp, class _Proj = std::identity,
+            std::indirect_strict_weak_order<std::projected<const _Tp*, _Proj>> _Comp = std::ranges::less>
+  [[nodiscard]] constexpr _Tp operator()(std::initializer_list<_Tp> r, _Comp comp = {}, _Proj proj = {}) const {
+    ::__ycxx::__detail::__precondition(r.size() != 0, "ranges::min: empty range");
+    return *::__ycxx::__detail::__min_element_impl(r.begin(), r.end(), ::__ycxx::__detail::__make_comp(comp, proj));
   }
-  template <std::ranges::input_range R, class Proj = std::identity,
-            std::indirect_strict_weak_order<std::projected<iterator_t<R>, Proj>> Comp = std::ranges::less>
-    requires std::indirectly_copyable_storable<iterator_t<R>, std::ranges::range_value_t<R>*>
-  [[nodiscard]] constexpr std::ranges::range_value_t<R> operator()(R&& r, Comp comp = {}, Proj proj = {}) const {
+  template <std::ranges::input_range _Rp, class _Proj = std::identity,
+            std::indirect_strict_weak_order<std::projected<iterator_t<_Rp>, _Proj>> _Comp = std::ranges::less>
+    requires std::indirectly_copyable_storable<iterator_t<_Rp>, std::ranges::range_value_t<_Rp>*>
+  [[nodiscard]] constexpr std::ranges::range_value_t<_Rp> operator()(_Rp&& r, _Comp comp = {}, _Proj proj = {}) const {
     auto first = std::ranges::begin(r);
     auto last = std::ranges::end(r);
-    ::ycxx::detail::precondition(first != last, "ranges::min: empty range");
-    auto less = ::ycxx::detail::make_comp(comp, proj);
-    if constexpr (std::ranges::forward_range<R>) {
-      return static_cast<std::ranges::range_value_t<R>>(*::ycxx::detail::min_element_impl(first, last, less));
+    ::__ycxx::__detail::__precondition(first != last, "ranges::min: empty range");
+    auto less = ::__ycxx::__detail::__make_comp(comp, proj);
+    if constexpr (std::ranges::forward_range<_Rp>) {
+      return static_cast<std::ranges::range_value_t<_Rp>>(*::__ycxx::__detail::__min_element_impl(first, last, less));
     } else {
-      std::ranges::range_value_t<R> best(*first);
+      std::ranges::range_value_t<_Rp> __best(*first);
       while (++first != last) {
-        decltype(auto) x = *first;
-        if (less(x, best))
-          best = static_cast<decltype(x)&&>(x);
+        decltype(auto) __x = *first;
+        if (less(__x, __best))
+          __best = static_cast<decltype(__x)&&>(__x);
       }
-      return best;
+      return __best;
     }
   }
 };
-struct max_fn {
-  template <class T, class Proj = std::identity,
-            std::indirect_strict_weak_order<std::projected<const T*, Proj>> Comp = std::ranges::less>
-  [[nodiscard]] constexpr const T& operator()(const T& a, const T& b, Comp comp = {}, Proj proj = {}) const {
-    return ::ycxx::detail::invoke(comp, ::ycxx::detail::invoke(proj, a), ::ycxx::detail::invoke(proj, b)) ? b : a;
+struct __max_fn {
+  template <class _Tp, class _Proj = std::identity,
+            std::indirect_strict_weak_order<std::projected<const _Tp*, _Proj>> _Comp = std::ranges::less>
+  [[nodiscard]] constexpr const _Tp& operator()(const _Tp& a, const _Tp& b, _Comp comp = {}, _Proj proj = {}) const {
+    return ::__ycxx::__detail::invoke(comp, ::__ycxx::__detail::invoke(proj, a), ::__ycxx::__detail::invoke(proj, b)) ? b : a;
   }
-  template <std::copyable T, class Proj = std::identity,
-            std::indirect_strict_weak_order<std::projected<const T*, Proj>> Comp = std::ranges::less>
-  [[nodiscard]] constexpr T operator()(std::initializer_list<T> r, Comp comp = {}, Proj proj = {}) const {
-    ::ycxx::detail::precondition(r.size() != 0, "ranges::max: empty range");
-    return *::ycxx::detail::max_element_impl(r.begin(), r.end(), ::ycxx::detail::make_comp(comp, proj));
+  template <std::copyable _Tp, class _Proj = std::identity,
+            std::indirect_strict_weak_order<std::projected<const _Tp*, _Proj>> _Comp = std::ranges::less>
+  [[nodiscard]] constexpr _Tp operator()(std::initializer_list<_Tp> r, _Comp comp = {}, _Proj proj = {}) const {
+    ::__ycxx::__detail::__precondition(r.size() != 0, "ranges::max: empty range");
+    return *::__ycxx::__detail::__max_element_impl(r.begin(), r.end(), ::__ycxx::__detail::__make_comp(comp, proj));
   }
-  template <std::ranges::input_range R, class Proj = std::identity,
-            std::indirect_strict_weak_order<std::projected<iterator_t<R>, Proj>> Comp = std::ranges::less>
-    requires std::indirectly_copyable_storable<iterator_t<R>, std::ranges::range_value_t<R>*>
-  [[nodiscard]] constexpr std::ranges::range_value_t<R> operator()(R&& r, Comp comp = {}, Proj proj = {}) const {
+  template <std::ranges::input_range _Rp, class _Proj = std::identity,
+            std::indirect_strict_weak_order<std::projected<iterator_t<_Rp>, _Proj>> _Comp = std::ranges::less>
+    requires std::indirectly_copyable_storable<iterator_t<_Rp>, std::ranges::range_value_t<_Rp>*>
+  [[nodiscard]] constexpr std::ranges::range_value_t<_Rp> operator()(_Rp&& r, _Comp comp = {}, _Proj proj = {}) const {
     auto first = std::ranges::begin(r);
     auto last = std::ranges::end(r);
-    ::ycxx::detail::precondition(first != last, "ranges::max: empty range");
-    auto less = ::ycxx::detail::make_comp(comp, proj);
-    if constexpr (std::ranges::forward_range<R>) {
-      return static_cast<std::ranges::range_value_t<R>>(*::ycxx::detail::max_element_impl(first, last, less));
+    ::__ycxx::__detail::__precondition(first != last, "ranges::max: empty range");
+    auto less = ::__ycxx::__detail::__make_comp(comp, proj);
+    if constexpr (std::ranges::forward_range<_Rp>) {
+      return static_cast<std::ranges::range_value_t<_Rp>>(*::__ycxx::__detail::__max_element_impl(first, last, less));
     } else {
-      std::ranges::range_value_t<R> best(*first);
+      std::ranges::range_value_t<_Rp> __best(*first);
       while (++first != last) {
-        decltype(auto) x = *first;
-        if (less(best, x))
-          best = static_cast<decltype(x)&&>(x);
+        decltype(auto) __x = *first;
+        if (less(__best, __x))
+          __best = static_cast<decltype(__x)&&>(__x);
       }
-      return best;
+      return __best;
     }
   }
 };
-struct minmax_fn {
-  template <class T, class Proj = std::identity,
-            std::indirect_strict_weak_order<std::projected<const T*, Proj>> Comp = std::ranges::less>
-  [[nodiscard]] constexpr std::ranges::minmax_result<const T&> operator()(const T& a, const T& b, Comp comp = {},
-                                                                         Proj proj = {}) const {
-    if (::ycxx::detail::invoke(comp, ::ycxx::detail::invoke(proj, b), ::ycxx::detail::invoke(proj, a)))
+struct __minmax_fn {
+  template <class _Tp, class _Proj = std::identity,
+            std::indirect_strict_weak_order<std::projected<const _Tp*, _Proj>> _Comp = std::ranges::less>
+  [[nodiscard]] constexpr std::ranges::minmax_result<const _Tp&> operator()(const _Tp& a, const _Tp& b, _Comp comp = {},
+                                                                         _Proj proj = {}) const {
+    if (::__ycxx::__detail::invoke(comp, ::__ycxx::__detail::invoke(proj, b), ::__ycxx::__detail::invoke(proj, a)))
       return {b, a};
     return {a, b};
   }
-  template <std::copyable T, class Proj = std::identity,
-            std::indirect_strict_weak_order<std::projected<const T*, Proj>> Comp = std::ranges::less>
-  [[nodiscard]] constexpr std::ranges::minmax_result<T> operator()(std::initializer_list<T> r, Comp comp = {},
-                                                                  Proj proj = {}) const {
-    ::ycxx::detail::precondition(r.size() != 0, "ranges::minmax: empty range");
-    auto p = ::ycxx::detail::minmax_element_impl(r.begin(), r.end(), ::ycxx::detail::make_comp(comp, proj));
+  template <std::copyable _Tp, class _Proj = std::identity,
+            std::indirect_strict_weak_order<std::projected<const _Tp*, _Proj>> _Comp = std::ranges::less>
+  [[nodiscard]] constexpr std::ranges::minmax_result<_Tp> operator()(std::initializer_list<_Tp> r, _Comp comp = {},
+                                                                  _Proj proj = {}) const {
+    ::__ycxx::__detail::__precondition(r.size() != 0, "ranges::minmax: empty range");
+    auto p = ::__ycxx::__detail::__minmax_element_impl(r.begin(), r.end(), ::__ycxx::__detail::__make_comp(comp, proj));
     return {*p.first, *p.second};
   }
-  template <std::ranges::input_range R, class Proj = std::identity,
-            std::indirect_strict_weak_order<std::projected<iterator_t<R>, Proj>> Comp = std::ranges::less>
-    requires std::indirectly_copyable_storable<iterator_t<R>, std::ranges::range_value_t<R>*>
-  [[nodiscard]] constexpr std::ranges::minmax_result<std::ranges::range_value_t<R>> operator()(R&& r, Comp comp = {},
-                                                                                              Proj proj = {}) const {
-    using V = std::ranges::range_value_t<R>;
+  template <std::ranges::input_range _Rp, class _Proj = std::identity,
+            std::indirect_strict_weak_order<std::projected<iterator_t<_Rp>, _Proj>> _Comp = std::ranges::less>
+    requires std::indirectly_copyable_storable<iterator_t<_Rp>, std::ranges::range_value_t<_Rp>*>
+  [[nodiscard]] constexpr std::ranges::minmax_result<std::ranges::range_value_t<_Rp>> operator()(_Rp&& r, _Comp comp = {},
+                                                                                              _Proj proj = {}) const {
+    using _Vp = std::ranges::range_value_t<_Rp>;
     auto first = std::ranges::begin(r);
     auto last = std::ranges::end(r);
-    ::ycxx::detail::precondition(first != last, "ranges::minmax: empty range");
-    auto less = ::ycxx::detail::make_comp(comp, proj);
-    if constexpr (std::ranges::forward_range<R>) {
-      auto p = ::ycxx::detail::minmax_element_impl(first, last, less);
+    ::__ycxx::__detail::__precondition(first != last, "ranges::minmax: empty range");
+    auto less = ::__ycxx::__detail::__make_comp(comp, proj);
+    if constexpr (std::ranges::forward_range<_Rp>) {
+      auto p = ::__ycxx::__detail::__minmax_element_impl(first, last, less);
       // Each element is read once: *it may move from it (move_iterator).
-      V lo(*p.first);
+      _Vp __lo(*p.first);
       if (p.first == p.second)
-        return {lo, lo};
-      return {std::move(lo), static_cast<V>(*p.second)};
+        return {__lo, __lo};
+      return {std::move(__lo), static_cast<_Vp>(*p.second)};
     } else {
       // Single pass over copies: the leftmost smallest and the rightmost largest.
-      V lo(*first);
-      V hi(lo);
+      _Vp __lo(*first);
+      _Vp __hi(__lo);
       while (++first != last) {
-        V a(*first);
+        _Vp a(*first);
         if (++first == last) {
-          if (less(a, lo))
-            lo = std::move(a);
-          else if (!less(a, hi))
-            hi = std::move(a);
+          if (less(a, __lo))
+            __lo = std::move(a);
+          else if (!less(a, __hi))
+            __hi = std::move(a);
           break;
         }
-        V b(*first);
+        _Vp b(*first);
         if (less(b, a)) {
-          if (less(b, lo))
-            lo = std::move(b);
-          if (!less(a, hi))
-            hi = std::move(a);
+          if (less(b, __lo))
+            __lo = std::move(b);
+          if (!less(a, __hi))
+            __hi = std::move(a);
         } else {
-          if (less(a, lo))
-            lo = std::move(a);
-          if (!less(b, hi))
-            hi = std::move(b);
+          if (less(a, __lo))
+            __lo = std::move(a);
+          if (!less(b, __hi))
+            __hi = std::move(b);
         }
       }
-      return {std::move(lo), std::move(hi)};
+      return {std::move(__lo), std::move(__hi)};
     }
   }
 };
-struct clamp_fn {
-  template <class T, class Proj = std::identity,
-            std::indirect_strict_weak_order<std::projected<const T*, Proj>> Comp = std::ranges::less>
-  [[nodiscard]] constexpr const T& operator()(const T& v, const T& lo, const T& hi, Comp comp = {}, Proj proj = {}) const {
+struct __clamp_fn {
+  template <class _Tp, class _Proj = std::identity,
+            std::indirect_strict_weak_order<std::projected<const _Tp*, _Proj>> _Comp = std::ranges::less>
+  [[nodiscard]] constexpr const _Tp& operator()(const _Tp& __v, const _Tp& __lo, const _Tp& __hi, _Comp comp = {}, _Proj proj = {}) const {
     // proj(v) is computed once ("at most three applications of the projection") and passed
     // on with its value category; a prvalue result is passed as an lvalue, so that a
     // comparator taking its parameters by value cannot move from it twice.
-    using PV = decltype(::ycxx::detail::invoke(proj, v));
-    using Arg = std::conditional_t<std::is_reference_v<PV>, PV, PV&>;
-    auto&& pv = ::ycxx::detail::invoke(proj, v);
-    if (::ycxx::detail::invoke(comp, static_cast<Arg>(pv), ::ycxx::detail::invoke(proj, lo)))
-      return lo;
-    if (::ycxx::detail::invoke(comp, ::ycxx::detail::invoke(proj, hi), static_cast<Arg>(pv)))
-      return hi;
-    return v;
+    using _PV = decltype(::__ycxx::__detail::invoke(proj, __v));
+    using _Arg = std::conditional_t<std::is_reference_v<_PV>, _PV, _PV&>;
+    auto&& __pv = ::__ycxx::__detail::invoke(proj, __v);
+    if (::__ycxx::__detail::invoke(comp, static_cast<_Arg>(__pv), ::__ycxx::__detail::invoke(proj, __lo)))
+      return __lo;
+    if (::__ycxx::__detail::invoke(comp, ::__ycxx::__detail::invoke(proj, __hi), static_cast<_Arg>(__pv)))
+      return __hi;
+    return __v;
   }
 };
 
-struct min_element_fn {
-  template <std::forward_iterator I, std::sentinel_for<I> S, class Proj = std::identity,
-            std::indirect_strict_weak_order<std::projected<I, Proj>> Comp = std::ranges::less>
-  [[nodiscard]] constexpr I operator()(I first, S last, Comp comp = {}, Proj proj = {}) const {
-    return ::ycxx::detail::min_element_impl(std::move(first), last, ::ycxx::detail::make_comp(comp, proj));
+struct __min_element_fn {
+  template <std::forward_iterator _Ip, std::sentinel_for<_Ip> _Sp, class _Proj = std::identity,
+            std::indirect_strict_weak_order<std::projected<_Ip, _Proj>> _Comp = std::ranges::less>
+  [[nodiscard]] constexpr _Ip operator()(_Ip first, _Sp last, _Comp comp = {}, _Proj proj = {}) const {
+    return ::__ycxx::__detail::__min_element_impl(std::move(first), last, ::__ycxx::__detail::__make_comp(comp, proj));
   }
-  template <std::ranges::forward_range R, class Proj = std::identity,
-            std::indirect_strict_weak_order<std::projected<iterator_t<R>, Proj>> Comp = std::ranges::less>
-  [[nodiscard]] constexpr borrowed_iterator_t<R> operator()(R&& r, Comp comp = {}, Proj proj = {}) const {
-    return ::ycxx::detail::min_element_impl(std::ranges::begin(r), std::ranges::end(r),
-                                            ::ycxx::detail::make_comp(comp, proj));
-  }
-};
-struct max_element_fn {
-  template <std::forward_iterator I, std::sentinel_for<I> S, class Proj = std::identity,
-            std::indirect_strict_weak_order<std::projected<I, Proj>> Comp = std::ranges::less>
-  [[nodiscard]] constexpr I operator()(I first, S last, Comp comp = {}, Proj proj = {}) const {
-    return ::ycxx::detail::max_element_impl(std::move(first), last, ::ycxx::detail::make_comp(comp, proj));
-  }
-  template <std::ranges::forward_range R, class Proj = std::identity,
-            std::indirect_strict_weak_order<std::projected<iterator_t<R>, Proj>> Comp = std::ranges::less>
-  [[nodiscard]] constexpr borrowed_iterator_t<R> operator()(R&& r, Comp comp = {}, Proj proj = {}) const {
-    return ::ycxx::detail::max_element_impl(std::ranges::begin(r), std::ranges::end(r),
-                                            ::ycxx::detail::make_comp(comp, proj));
+  template <std::ranges::forward_range _Rp, class _Proj = std::identity,
+            std::indirect_strict_weak_order<std::projected<iterator_t<_Rp>, _Proj>> _Comp = std::ranges::less>
+  [[nodiscard]] constexpr borrowed_iterator_t<_Rp> operator()(_Rp&& r, _Comp comp = {}, _Proj proj = {}) const {
+    return ::__ycxx::__detail::__min_element_impl(std::ranges::begin(r), std::ranges::end(r),
+                                            ::__ycxx::__detail::__make_comp(comp, proj));
   }
 };
-struct minmax_element_fn {
-  template <std::forward_iterator I, std::sentinel_for<I> S, class Proj = std::identity,
-            std::indirect_strict_weak_order<std::projected<I, Proj>> Comp = std::ranges::less>
-  [[nodiscard]] constexpr std::ranges::minmax_element_result<I> operator()(I first, S last, Comp comp = {},
-                                                                          Proj proj = {}) const {
-    auto p = ::ycxx::detail::minmax_element_impl(std::move(first), last, ::ycxx::detail::make_comp(comp, proj));
+struct __max_element_fn {
+  template <std::forward_iterator _Ip, std::sentinel_for<_Ip> _Sp, class _Proj = std::identity,
+            std::indirect_strict_weak_order<std::projected<_Ip, _Proj>> _Comp = std::ranges::less>
+  [[nodiscard]] constexpr _Ip operator()(_Ip first, _Sp last, _Comp comp = {}, _Proj proj = {}) const {
+    return ::__ycxx::__detail::__max_element_impl(std::move(first), last, ::__ycxx::__detail::__make_comp(comp, proj));
+  }
+  template <std::ranges::forward_range _Rp, class _Proj = std::identity,
+            std::indirect_strict_weak_order<std::projected<iterator_t<_Rp>, _Proj>> _Comp = std::ranges::less>
+  [[nodiscard]] constexpr borrowed_iterator_t<_Rp> operator()(_Rp&& r, _Comp comp = {}, _Proj proj = {}) const {
+    return ::__ycxx::__detail::__max_element_impl(std::ranges::begin(r), std::ranges::end(r),
+                                            ::__ycxx::__detail::__make_comp(comp, proj));
+  }
+};
+struct __minmax_element_fn {
+  template <std::forward_iterator _Ip, std::sentinel_for<_Ip> _Sp, class _Proj = std::identity,
+            std::indirect_strict_weak_order<std::projected<_Ip, _Proj>> _Comp = std::ranges::less>
+  [[nodiscard]] constexpr std::ranges::minmax_element_result<_Ip> operator()(_Ip first, _Sp last, _Comp comp = {},
+                                                                          _Proj proj = {}) const {
+    auto p = ::__ycxx::__detail::__minmax_element_impl(std::move(first), last, ::__ycxx::__detail::__make_comp(comp, proj));
     return {std::move(p.first), std::move(p.second)};
   }
-  template <std::ranges::forward_range R, class Proj = std::identity,
-            std::indirect_strict_weak_order<std::projected<iterator_t<R>, Proj>> Comp = std::ranges::less>
-  [[nodiscard]] constexpr std::ranges::minmax_element_result<borrowed_iterator_t<R>> operator()(R&& r, Comp comp = {},
-                                                                                               Proj proj = {}) const {
-    auto p = ::ycxx::detail::minmax_element_impl(std::ranges::begin(r), std::ranges::end(r),
-                                                 ::ycxx::detail::make_comp(comp, proj));
+  template <std::ranges::forward_range _Rp, class _Proj = std::identity,
+            std::indirect_strict_weak_order<std::projected<iterator_t<_Rp>, _Proj>> _Comp = std::ranges::less>
+  [[nodiscard]] constexpr std::ranges::minmax_element_result<borrowed_iterator_t<_Rp>> operator()(_Rp&& r, _Comp comp = {},
+                                                                                               _Proj proj = {}) const {
+    auto p = ::__ycxx::__detail::__minmax_element_impl(std::ranges::begin(r), std::ranges::end(r),
+                                                 ::__ycxx::__detail::__make_comp(comp, proj));
     return {std::move(p.first), std::move(p.second)};
   }
 };
 
 // [alg.swap]
-struct swap_ranges_fn {
-  template <std::input_iterator I1, std::sentinel_for<I1> S1, std::input_iterator I2, std::sentinel_for<I2> S2>
-    requires std::indirectly_swappable<I1, I2>
-  constexpr std::ranges::swap_ranges_result<I1, I2> operator()(I1 first1, S1 last1, I2 first2, S2 last2) const {
-    for (; first1 != last1 && first2 != last2; (void)++first1, (void)++first2)
-      std::ranges::iter_swap(first1, first2);
-    return {std::move(first1), std::move(first2)};
+struct __swap_ranges_fn {
+  template <std::input_iterator _I1, std::sentinel_for<_I1> _S1, std::input_iterator _I2, std::sentinel_for<_I2> _S2>
+    requires std::indirectly_swappable<_I1, _I2>
+  constexpr std::ranges::swap_ranges_result<_I1, _I2> operator()(_I1 __first1, _S1 __last1, _I2 __first2, _S2 __last2) const {
+    for (; __first1 != __last1 && __first2 != __last2; (void)++__first1, (void)++__first2)
+      std::ranges::iter_swap(__first1, __first2);
+    return {std::move(__first1), std::move(__first2)};
   }
-  template <std::ranges::input_range R1, std::ranges::input_range R2>
-    requires std::indirectly_swappable<iterator_t<R1>, iterator_t<R2>>
-  constexpr std::ranges::swap_ranges_result<borrowed_iterator_t<R1>, borrowed_iterator_t<R2>> operator()(R1&& r1,
-                                                                                                        R2&& r2) const {
-    return (*this)(std::ranges::begin(r1), std::ranges::end(r1), std::ranges::begin(r2), std::ranges::end(r2));
+  template <std::ranges::input_range _R1, std::ranges::input_range _R2>
+    requires std::indirectly_swappable<iterator_t<_R1>, iterator_t<_R2>>
+  constexpr std::ranges::swap_ranges_result<borrowed_iterator_t<_R1>, borrowed_iterator_t<_R2>> operator()(_R1&& __r1,
+                                                                                                        _R2&& __r2) const {
+    return (*this)(std::ranges::begin(__r1), std::ranges::end(__r1), std::ranges::begin(__r2), std::ranges::end(__r2));
   }
 };
 
 // [alg.copy]
-struct copy_fn {
-  template <std::input_iterator I, std::sentinel_for<I> S, std::weakly_incrementable O>
-    requires std::indirectly_copyable<I, O>
-  constexpr std::ranges::copy_result<I, O> operator()(I first, S last, O result) const {
-    auto r = ::ycxx::detail::copy_dispatch(std::move(first), std::move(last), std::move(result));
+struct __copy_fn {
+  template <std::input_iterator _Ip, std::sentinel_for<_Ip> _Sp, std::weakly_incrementable _Op>
+    requires std::indirectly_copyable<_Ip, _Op>
+  constexpr std::ranges::copy_result<_Ip, _Op> operator()(_Ip first, _Sp last, _Op result) const {
+    auto r = ::__ycxx::__detail::__copy_dispatch(std::move(first), std::move(last), std::move(result));
     return {std::move(r.first), std::move(r.second)};
   }
-  template <std::ranges::input_range R, std::weakly_incrementable O>
-    requires std::indirectly_copyable<iterator_t<R>, O>
-  constexpr std::ranges::copy_result<borrowed_iterator_t<R>, O> operator()(R&& r, O result) const {
+  template <std::ranges::input_range _Rp, std::weakly_incrementable _Op>
+    requires std::indirectly_copyable<iterator_t<_Rp>, _Op>
+  constexpr std::ranges::copy_result<borrowed_iterator_t<_Rp>, _Op> operator()(_Rp&& r, _Op result) const {
     return (*this)(std::ranges::begin(r), std::ranges::end(r), std::move(result));
   }
 };
-struct copy_n_fn {
-  template <std::input_iterator I, std::weakly_incrementable O>
-    requires std::indirectly_copyable<I, O>
-  constexpr std::ranges::copy_n_result<I, O> operator()(I first, std::iter_difference_t<I> n, O result) const {
-    if constexpr (std::random_access_iterator<I>) {
+struct __copy_n_fn {
+  template <std::input_iterator _Ip, std::weakly_incrementable _Op>
+    requires std::indirectly_copyable<_Ip, _Op>
+  constexpr std::ranges::copy_n_result<_Ip, _Op> operator()(_Ip first, std::iter_difference_t<_Ip> n, _Op result) const {
+    if constexpr (std::random_access_iterator<_Ip>) {
       if (n <= 0)
         return {std::move(first), std::move(result)};
-      auto r = ::ycxx::detail::copy_dispatch(first, first + n, std::move(result));
+      auto r = ::__ycxx::__detail::__copy_dispatch(first, first + n, std::move(result));
       return {std::move(r.first), std::move(r.second)};
     } else {
       for (; n > 0; (void)++first, (void)++result, --n)
@@ -1076,12 +1076,12 @@ struct copy_n_fn {
     }
   }
 };
-struct copy_if_fn {
-  template <std::input_iterator I, std::sentinel_for<I> S, std::weakly_incrementable O, class Proj = std::identity,
-            std::indirect_unary_predicate<std::projected<I, Proj>> Pred>
-    requires std::indirectly_copyable<I, O>
-  constexpr std::ranges::copy_if_result<I, O> operator()(I first, S last, O result, Pred pred, Proj proj = {}) const {
-    auto p = ::ycxx::detail::make_pred(pred, proj);
+struct __copy_if_fn {
+  template <std::input_iterator _Ip, std::sentinel_for<_Ip> _Sp, std::weakly_incrementable _Op, class _Proj = std::identity,
+            std::indirect_unary_predicate<std::projected<_Ip, _Proj>> _Pred>
+    requires std::indirectly_copyable<_Ip, _Op>
+  constexpr std::ranges::copy_if_result<_Ip, _Op> operator()(_Ip first, _Sp last, _Op result, _Pred pred, _Proj proj = {}) const {
+    auto p = ::__ycxx::__detail::__make_pred(pred, proj);
     for (; first != last; ++first)
       if (p(*first)) {
         *result = *first;
@@ -1089,63 +1089,63 @@ struct copy_if_fn {
       }
     return {std::move(first), std::move(result)};
   }
-  template <std::ranges::input_range R, std::weakly_incrementable O, class Proj = std::identity,
-            std::indirect_unary_predicate<std::projected<iterator_t<R>, Proj>> Pred>
-    requires std::indirectly_copyable<iterator_t<R>, O>
-  constexpr std::ranges::copy_if_result<borrowed_iterator_t<R>, O> operator()(R&& r, O result, Pred pred,
-                                                                             Proj proj = {}) const {
+  template <std::ranges::input_range _Rp, std::weakly_incrementable _Op, class _Proj = std::identity,
+            std::indirect_unary_predicate<std::projected<iterator_t<_Rp>, _Proj>> _Pred>
+    requires std::indirectly_copyable<iterator_t<_Rp>, _Op>
+  constexpr std::ranges::copy_if_result<borrowed_iterator_t<_Rp>, _Op> operator()(_Rp&& r, _Op result, _Pred pred,
+                                                                             _Proj proj = {}) const {
     return (*this)(std::ranges::begin(r), std::ranges::end(r), std::move(result), std::move(pred), std::move(proj));
   }
 };
-struct copy_backward_fn {
-  template <std::bidirectional_iterator I1, std::sentinel_for<I1> S1, std::bidirectional_iterator I2>
-    requires std::indirectly_copyable<I1, I2>
-  constexpr std::ranges::copy_backward_result<I1, I2> operator()(I1 first, S1 last, I2 result) const {
-    I1 end = ::ycxx::detail::iter_at(first, std::move(last));
-    return {end, ::ycxx::detail::copy_backward_dispatch(std::move(first), end, std::move(result))};
+struct __copy_backward_fn {
+  template <std::bidirectional_iterator _I1, std::sentinel_for<_I1> _S1, std::bidirectional_iterator _I2>
+    requires std::indirectly_copyable<_I1, _I2>
+  constexpr std::ranges::copy_backward_result<_I1, _I2> operator()(_I1 first, _S1 last, _I2 result) const {
+    _I1 end = ::__ycxx::__detail::__iter_at(first, std::move(last));
+    return {end, ::__ycxx::__detail::__copy_backward_dispatch(std::move(first), end, std::move(result))};
   }
-  template <std::ranges::bidirectional_range R, std::bidirectional_iterator I>
-    requires std::indirectly_copyable<iterator_t<R>, I>
-  constexpr std::ranges::copy_backward_result<borrowed_iterator_t<R>, I> operator()(R&& r, I result) const {
+  template <std::ranges::bidirectional_range _Rp, std::bidirectional_iterator _Ip>
+    requires std::indirectly_copyable<iterator_t<_Rp>, _Ip>
+  constexpr std::ranges::copy_backward_result<borrowed_iterator_t<_Rp>, _Ip> operator()(_Rp&& r, _Ip result) const {
     return (*this)(std::ranges::begin(r), std::ranges::end(r), std::move(result));
   }
 };
 
 // [alg.move]
-struct move_fn {
-  template <std::input_iterator I, std::sentinel_for<I> S, std::weakly_incrementable O>
-    requires std::indirectly_movable<I, O>
-  constexpr std::ranges::move_result<I, O> operator()(I first, S last, O result) const {
-    auto r = ::ycxx::detail::move_dispatch<ranges_ops>(std::move(first), std::move(last), std::move(result));
+struct __move_fn {
+  template <std::input_iterator _Ip, std::sentinel_for<_Ip> _Sp, std::weakly_incrementable _Op>
+    requires std::indirectly_movable<_Ip, _Op>
+  constexpr std::ranges::move_result<_Ip, _Op> operator()(_Ip first, _Sp last, _Op result) const {
+    auto r = ::__ycxx::__detail::__move_dispatch<__ranges_ops>(std::move(first), std::move(last), std::move(result));
     return {std::move(r.first), std::move(r.second)};
   }
-  template <std::ranges::input_range R, std::weakly_incrementable O>
-    requires std::indirectly_movable<iterator_t<R>, O>
-  constexpr std::ranges::move_result<borrowed_iterator_t<R>, O> operator()(R&& r, O result) const {
+  template <std::ranges::input_range _Rp, std::weakly_incrementable _Op>
+    requires std::indirectly_movable<iterator_t<_Rp>, _Op>
+  constexpr std::ranges::move_result<borrowed_iterator_t<_Rp>, _Op> operator()(_Rp&& r, _Op result) const {
     return (*this)(std::ranges::begin(r), std::ranges::end(r), std::move(result));
   }
 };
-struct move_backward_fn {
-  template <std::bidirectional_iterator I1, std::sentinel_for<I1> S1, std::bidirectional_iterator I2>
-    requires std::indirectly_movable<I1, I2>
-  constexpr std::ranges::move_backward_result<I1, I2> operator()(I1 first, S1 last, I2 result) const {
-    I1 end = ::ycxx::detail::iter_at(first, std::move(last));
-    return {end, ::ycxx::detail::move_backward_dispatch<ranges_ops>(std::move(first), end, std::move(result))};
+struct __move_backward_fn {
+  template <std::bidirectional_iterator _I1, std::sentinel_for<_I1> _S1, std::bidirectional_iterator _I2>
+    requires std::indirectly_movable<_I1, _I2>
+  constexpr std::ranges::move_backward_result<_I1, _I2> operator()(_I1 first, _S1 last, _I2 result) const {
+    _I1 end = ::__ycxx::__detail::__iter_at(first, std::move(last));
+    return {end, ::__ycxx::__detail::__move_backward_dispatch<__ranges_ops>(std::move(first), end, std::move(result))};
   }
-  template <std::ranges::bidirectional_range R, std::bidirectional_iterator I>
-    requires std::indirectly_movable<iterator_t<R>, I>
-  constexpr std::ranges::move_backward_result<borrowed_iterator_t<R>, I> operator()(R&& r, I result) const {
+  template <std::ranges::bidirectional_range _Rp, std::bidirectional_iterator _Ip>
+    requires std::indirectly_movable<iterator_t<_Rp>, _Ip>
+  constexpr std::ranges::move_backward_result<borrowed_iterator_t<_Rp>, _Ip> operator()(_Rp&& r, _Ip result) const {
     return (*this)(std::ranges::begin(r), std::ranges::end(r), std::move(result));
   }
 };
 
 // [alg.fill]
-struct fill_fn {
-  template <class O, std::sentinel_for<O> S, class T = std::iter_value_t<O>>
-    requires std::output_iterator<O, const T&>
-  constexpr O operator()(O first, S last, const T& value) const {
-    if constexpr (ycxx::detail::bit_algo_args<O, S, T>) {
-      ycxx::detail::bit_algos<O>::fill(first, last, value);
+struct __fill_fn {
+  template <class _Op, std::sentinel_for<_Op> _Sp, class _Tp = std::iter_value_t<_Op>>
+    requires std::output_iterator<_Op, const _Tp&>
+  constexpr _Op operator()(_Op first, _Sp last, const _Tp& value) const {
+    if constexpr (__ycxx::__detail::__bit_algo_args<_Op, _Sp, _Tp>) {
+      __ycxx::__detail::__bit_algos<_Op>::fill(first, last, value);
       return last;
     } else {
       for (; first != last; ++first)
@@ -1153,16 +1153,16 @@ struct fill_fn {
       return first;
     }
   }
-  template <class R, class T = std::ranges::range_value_t<R>>
-    requires std::ranges::output_range<R, const T&>
-  constexpr borrowed_iterator_t<R> operator()(R&& r, const T& value) const {
+  template <class _Rp, class _Tp = std::ranges::range_value_t<_Rp>>
+    requires std::ranges::output_range<_Rp, const _Tp&>
+  constexpr borrowed_iterator_t<_Rp> operator()(_Rp&& r, const _Tp& value) const {
     return (*this)(std::ranges::begin(r), std::ranges::end(r), value);
   }
 };
-struct fill_n_fn {
-  template <class O, class T = std::iter_value_t<O>>
-    requires std::output_iterator<O, const T&>
-  constexpr O operator()(O first, std::iter_difference_t<O> n, const T& value) const {
+struct __fill_n_fn {
+  template <class _Op, class _Tp = std::iter_value_t<_Op>>
+    requires std::output_iterator<_Op, const _Tp&>
+  constexpr _Op operator()(_Op first, std::iter_difference_t<_Op> n, const _Tp& value) const {
     for (; n > 0; --n) {
       *first = value;
       ++first;
@@ -1172,146 +1172,146 @@ struct fill_n_fn {
 };
 
 // [alg.find]
-struct find_fn {
-  template <std::input_iterator I, std::sentinel_for<I> S, class Proj = std::identity,
-            class T = std::projected_value_t<I, Proj>>
-    requires std::indirect_binary_predicate<std::ranges::equal_to, std::projected<I, Proj>, const T*>
-  [[nodiscard]] constexpr I operator()(I first, S last, const T& value, Proj proj = {}) const {
-    if constexpr (ycxx::detail::bit_algo_args<I, S, T, Proj>) {
-      return ycxx::detail::bit_algos<I>::find(first, last, value);
+struct __find_fn {
+  template <std::input_iterator _Ip, std::sentinel_for<_Ip> _Sp, class _Proj = std::identity,
+            class _Tp = std::projected_value_t<_Ip, _Proj>>
+    requires std::indirect_binary_predicate<std::ranges::equal_to, std::projected<_Ip, _Proj>, const _Tp*>
+  [[nodiscard]] constexpr _Ip operator()(_Ip first, _Sp last, const _Tp& value, _Proj proj = {}) const {
+    if constexpr (__ycxx::__detail::__bit_algo_args<_Ip, _Sp, _Tp, _Proj>) {
+      return __ycxx::__detail::__bit_algos<_Ip>::find(first, last, value);
     } else {
-      if constexpr (std::same_as<Proj, std::identity> && ycxx::detail::memchr_find_args<I, S, T>)
+      if constexpr (std::same_as<_Proj, std::identity> && __ycxx::__detail::__memchr_find_args<_Ip, _Sp, _Tp>)
         if !consteval {
-          ::ycxx::detail::find_byte(first, last, value);
+          ::__ycxx::__detail::__find_byte(first, last, value);
           return first;
         }
-      return ::ycxx::detail::find_if_impl(std::move(first), last, ::ycxx::detail::equals_value<T, Proj>{value, proj});
+      return ::__ycxx::__detail::__find_if_impl(std::move(first), last, ::__ycxx::__detail::__equals_value<_Tp, _Proj>{value, proj});
     }
   }
-  template <std::ranges::input_range R, class Proj = std::identity,
-            class T = std::projected_value_t<iterator_t<R>, Proj>>
-    requires std::indirect_binary_predicate<std::ranges::equal_to, std::projected<iterator_t<R>, Proj>, const T*>
-  [[nodiscard]] constexpr borrowed_iterator_t<R> operator()(R&& r, const T& value, Proj proj = {}) const {
+  template <std::ranges::input_range _Rp, class _Proj = std::identity,
+            class _Tp = std::projected_value_t<iterator_t<_Rp>, _Proj>>
+    requires std::indirect_binary_predicate<std::ranges::equal_to, std::projected<iterator_t<_Rp>, _Proj>, const _Tp*>
+  [[nodiscard]] constexpr borrowed_iterator_t<_Rp> operator()(_Rp&& r, const _Tp& value, _Proj proj = {}) const {
     return (*this)(std::ranges::begin(r), std::ranges::end(r), value, std::move(proj));
   }
 };
-struct find_if_fn {
-  template <std::input_iterator I, std::sentinel_for<I> S, class Proj = std::identity,
-            std::indirect_unary_predicate<std::projected<I, Proj>> Pred>
-  [[nodiscard]] constexpr I operator()(I first, S last, Pred pred, Proj proj = {}) const {
-    return ::ycxx::detail::find_if_impl(std::move(first), last, ::ycxx::detail::make_pred(pred, proj));
+struct __find_if_fn {
+  template <std::input_iterator _Ip, std::sentinel_for<_Ip> _Sp, class _Proj = std::identity,
+            std::indirect_unary_predicate<std::projected<_Ip, _Proj>> _Pred>
+  [[nodiscard]] constexpr _Ip operator()(_Ip first, _Sp last, _Pred pred, _Proj proj = {}) const {
+    return ::__ycxx::__detail::__find_if_impl(std::move(first), last, ::__ycxx::__detail::__make_pred(pred, proj));
   }
-  template <std::ranges::input_range R, class Proj = std::identity,
-            std::indirect_unary_predicate<std::projected<iterator_t<R>, Proj>> Pred>
-  [[nodiscard]] constexpr borrowed_iterator_t<R> operator()(R&& r, Pred pred, Proj proj = {}) const {
-    return ::ycxx::detail::find_if_impl(std::ranges::begin(r), std::ranges::end(r), ::ycxx::detail::make_pred(pred, proj));
+  template <std::ranges::input_range _Rp, class _Proj = std::identity,
+            std::indirect_unary_predicate<std::projected<iterator_t<_Rp>, _Proj>> _Pred>
+  [[nodiscard]] constexpr borrowed_iterator_t<_Rp> operator()(_Rp&& r, _Pred pred, _Proj proj = {}) const {
+    return ::__ycxx::__detail::__find_if_impl(std::ranges::begin(r), std::ranges::end(r), ::__ycxx::__detail::__make_pred(pred, proj));
   }
 };
-struct find_if_not_fn {
-  template <std::input_iterator I, std::sentinel_for<I> S, class Proj = std::identity,
-            std::indirect_unary_predicate<std::projected<I, Proj>> Pred>
-  [[nodiscard]] constexpr I operator()(I first, S last, Pred pred, Proj proj = {}) const {
-    return ::ycxx::detail::find_if_impl(std::move(first), last,
-                                        ::ycxx::detail::negated{::ycxx::detail::make_pred(pred, proj)});
+struct __find_if_not_fn {
+  template <std::input_iterator _Ip, std::sentinel_for<_Ip> _Sp, class _Proj = std::identity,
+            std::indirect_unary_predicate<std::projected<_Ip, _Proj>> _Pred>
+  [[nodiscard]] constexpr _Ip operator()(_Ip first, _Sp last, _Pred pred, _Proj proj = {}) const {
+    return ::__ycxx::__detail::__find_if_impl(std::move(first), last,
+                                        ::__ycxx::__detail::__negated{::__ycxx::__detail::__make_pred(pred, proj)});
   }
-  template <std::ranges::input_range R, class Proj = std::identity,
-            std::indirect_unary_predicate<std::projected<iterator_t<R>, Proj>> Pred>
-  [[nodiscard]] constexpr borrowed_iterator_t<R> operator()(R&& r, Pred pred, Proj proj = {}) const {
-    return ::ycxx::detail::find_if_impl(std::ranges::begin(r), std::ranges::end(r),
-                                        ::ycxx::detail::negated{::ycxx::detail::make_pred(pred, proj)});
+  template <std::ranges::input_range _Rp, class _Proj = std::identity,
+            std::indirect_unary_predicate<std::projected<iterator_t<_Rp>, _Proj>> _Pred>
+  [[nodiscard]] constexpr borrowed_iterator_t<_Rp> operator()(_Rp&& r, _Pred pred, _Proj proj = {}) const {
+    return ::__ycxx::__detail::__find_if_impl(std::ranges::begin(r), std::ranges::end(r),
+                                        ::__ycxx::__detail::__negated{::__ycxx::__detail::__make_pred(pred, proj)});
   }
 };
 
 // [alg.mismatch]
-struct mismatch_fn {
-  template <std::input_iterator I1, std::sentinel_for<I1> S1, std::input_iterator I2, std::sentinel_for<I2> S2,
-            class Pred = std::ranges::equal_to, class Proj1 = std::identity, class Proj2 = std::identity>
-    requires std::indirectly_comparable<I1, I2, Pred, Proj1, Proj2>
-  [[nodiscard]] constexpr std::ranges::mismatch_result<I1, I2> operator()(I1 first1, S1 last1, I2 first2, S2 last2,
-                                                                         Pred pred = {}, Proj1 proj1 = {},
-                                                                         Proj2 proj2 = {}) const {
-    auto r = ::ycxx::detail::mismatch_impl(std::move(first1), last1, std::move(first2), last2,
-                                           ::ycxx::detail::make_comp2(pred, proj1, proj2));
+struct __mismatch_fn {
+  template <std::input_iterator _I1, std::sentinel_for<_I1> _S1, std::input_iterator _I2, std::sentinel_for<_I2> _S2,
+            class _Pred = std::ranges::equal_to, class _Proj1 = std::identity, class _Proj2 = std::identity>
+    requires std::indirectly_comparable<_I1, _I2, _Pred, _Proj1, _Proj2>
+  [[nodiscard]] constexpr std::ranges::mismatch_result<_I1, _I2> operator()(_I1 __first1, _S1 __last1, _I2 __first2, _S2 __last2,
+                                                                         _Pred pred = {}, _Proj1 __proj1 = {},
+                                                                         _Proj2 __proj2 = {}) const {
+    auto r = ::__ycxx::__detail::__mismatch_impl(std::move(__first1), __last1, std::move(__first2), __last2,
+                                           ::__ycxx::__detail::__make_comp2(pred, __proj1, __proj2));
     return {std::move(r.first), std::move(r.second)};
   }
-  template <std::ranges::input_range R1, std::ranges::input_range R2, class Pred = std::ranges::equal_to,
-            class Proj1 = std::identity, class Proj2 = std::identity>
-    requires std::indirectly_comparable<iterator_t<R1>, iterator_t<R2>, Pred, Proj1, Proj2>
-  [[nodiscard]] constexpr std::ranges::mismatch_result<borrowed_iterator_t<R1>, borrowed_iterator_t<R2>>
-  operator()(R1&& r1, R2&& r2, Pred pred = {}, Proj1 proj1 = {}, Proj2 proj2 = {}) const {
-    auto r = ::ycxx::detail::mismatch_impl(std::ranges::begin(r1), std::ranges::end(r1), std::ranges::begin(r2),
-                                           std::ranges::end(r2), ::ycxx::detail::make_comp2(pred, proj1, proj2));
+  template <std::ranges::input_range _R1, std::ranges::input_range _R2, class _Pred = std::ranges::equal_to,
+            class _Proj1 = std::identity, class _Proj2 = std::identity>
+    requires std::indirectly_comparable<iterator_t<_R1>, iterator_t<_R2>, _Pred, _Proj1, _Proj2>
+  [[nodiscard]] constexpr std::ranges::mismatch_result<borrowed_iterator_t<_R1>, borrowed_iterator_t<_R2>>
+  operator()(_R1&& __r1, _R2&& __r2, _Pred pred = {}, _Proj1 __proj1 = {}, _Proj2 __proj2 = {}) const {
+    auto r = ::__ycxx::__detail::__mismatch_impl(std::ranges::begin(__r1), std::ranges::end(__r1), std::ranges::begin(__r2),
+                                           std::ranges::end(__r2), ::__ycxx::__detail::__make_comp2(pred, __proj1, __proj2));
     return {std::move(r.first), std::move(r.second)};
   }
 };
 
 // [alg.equal]
-struct equal_fn {
-  template <std::input_iterator I1, std::sentinel_for<I1> S1, std::input_iterator I2, std::sentinel_for<I2> S2,
-            class Pred = std::ranges::equal_to, class Proj1 = std::identity, class Proj2 = std::identity>
-    requires std::indirectly_comparable<I1, I2, Pred, Proj1, Proj2>
-  [[nodiscard]] constexpr bool operator()(I1 first1, S1 last1, I2 first2, S2 last2, Pred pred = {}, Proj1 proj1 = {},
-                                          Proj2 proj2 = {}) const {
-    return ::ycxx::detail::equal_impl(std::move(first1), last1, std::move(first2), last2,
-                                      ::ycxx::detail::make_comp2(pred, proj1, proj2));
+struct __equal_fn {
+  template <std::input_iterator _I1, std::sentinel_for<_I1> _S1, std::input_iterator _I2, std::sentinel_for<_I2> _S2,
+            class _Pred = std::ranges::equal_to, class _Proj1 = std::identity, class _Proj2 = std::identity>
+    requires std::indirectly_comparable<_I1, _I2, _Pred, _Proj1, _Proj2>
+  [[nodiscard]] constexpr bool operator()(_I1 __first1, _S1 __last1, _I2 __first2, _S2 __last2, _Pred pred = {}, _Proj1 __proj1 = {},
+                                          _Proj2 __proj2 = {}) const {
+    return ::__ycxx::__detail::__equal_impl(std::move(__first1), __last1, std::move(__first2), __last2,
+                                      ::__ycxx::__detail::__make_comp2(pred, __proj1, __proj2));
   }
-  template <std::ranges::input_range R1, std::ranges::input_range R2, class Pred = std::ranges::equal_to,
-            class Proj1 = std::identity, class Proj2 = std::identity>
-    requires std::indirectly_comparable<iterator_t<R1>, iterator_t<R2>, Pred, Proj1, Proj2>
-  [[nodiscard]] constexpr bool operator()(R1&& r1, R2&& r2, Pred pred = {}, Proj1 proj1 = {}, Proj2 proj2 = {}) const {
-    if constexpr (std::ranges::sized_range<R1> && std::ranges::sized_range<R2>) {
-      if (std::ranges::distance(r1) != std::ranges::distance(r2))
+  template <std::ranges::input_range _R1, std::ranges::input_range _R2, class _Pred = std::ranges::equal_to,
+            class _Proj1 = std::identity, class _Proj2 = std::identity>
+    requires std::indirectly_comparable<iterator_t<_R1>, iterator_t<_R2>, _Pred, _Proj1, _Proj2>
+  [[nodiscard]] constexpr bool operator()(_R1&& __r1, _R2&& __r2, _Pred pred = {}, _Proj1 __proj1 = {}, _Proj2 __proj2 = {}) const {
+    if constexpr (std::ranges::sized_range<_R1> && std::ranges::sized_range<_R2>) {
+      if (std::ranges::distance(__r1) != std::ranges::distance(__r2))
         return false;
     }
-    return ::ycxx::detail::equal_impl(std::ranges::begin(r1), std::ranges::end(r1), std::ranges::begin(r2),
-                                      std::ranges::end(r2), ::ycxx::detail::make_comp2(pred, proj1, proj2));
+    return ::__ycxx::__detail::__equal_impl(std::ranges::begin(__r1), std::ranges::end(__r1), std::ranges::begin(__r2),
+                                      std::ranges::end(__r2), ::__ycxx::__detail::__make_comp2(pred, __proj1, __proj2));
   }
 };
 
 // [alg.lex.comparison]
-struct lexicographical_compare_fn {
-  template <std::input_iterator I1, std::sentinel_for<I1> S1, std::input_iterator I2, std::sentinel_for<I2> S2,
-            class Proj1 = std::identity, class Proj2 = std::identity,
-            std::indirect_strict_weak_order<std::projected<I1, Proj1>, std::projected<I2, Proj2>> Comp =
+struct __lexicographical_compare_fn {
+  template <std::input_iterator _I1, std::sentinel_for<_I1> _S1, std::input_iterator _I2, std::sentinel_for<_I2> _S2,
+            class _Proj1 = std::identity, class _Proj2 = std::identity,
+            std::indirect_strict_weak_order<std::projected<_I1, _Proj1>, std::projected<_I2, _Proj2>> _Comp =
                 std::ranges::less>
-  [[nodiscard]] constexpr bool operator()(I1 first1, S1 last1, I2 first2, S2 last2, Comp comp = {}, Proj1 proj1 = {},
-                                          Proj2 proj2 = {}) const {
-    return ::ycxx::detail::lex_compare_impl(std::move(first1), last1, std::move(first2), last2,
-                                            ::ycxx::detail::make_comp2(comp, proj1, proj2));
+  [[nodiscard]] constexpr bool operator()(_I1 __first1, _S1 __last1, _I2 __first2, _S2 __last2, _Comp comp = {}, _Proj1 __proj1 = {},
+                                          _Proj2 __proj2 = {}) const {
+    return ::__ycxx::__detail::__lex_compare_impl(std::move(__first1), __last1, std::move(__first2), __last2,
+                                            ::__ycxx::__detail::__make_comp2(comp, __proj1, __proj2));
   }
-  template <std::ranges::input_range R1, std::ranges::input_range R2, class Proj1 = std::identity,
-            class Proj2 = std::identity,
-            std::indirect_strict_weak_order<std::projected<iterator_t<R1>, Proj1>, std::projected<iterator_t<R2>, Proj2>>
-                Comp = std::ranges::less>
-  [[nodiscard]] constexpr bool operator()(R1&& r1, R2&& r2, Comp comp = {}, Proj1 proj1 = {}, Proj2 proj2 = {}) const {
-    return ::ycxx::detail::lex_compare_impl(std::ranges::begin(r1), std::ranges::end(r1), std::ranges::begin(r2),
-                                            std::ranges::end(r2), ::ycxx::detail::make_comp2(comp, proj1, proj2));
+  template <std::ranges::input_range _R1, std::ranges::input_range _R2, class _Proj1 = std::identity,
+            class _Proj2 = std::identity,
+            std::indirect_strict_weak_order<std::projected<iterator_t<_R1>, _Proj1>, std::projected<iterator_t<_R2>, _Proj2>>
+                _Comp = std::ranges::less>
+  [[nodiscard]] constexpr bool operator()(_R1&& __r1, _R2&& __r2, _Comp comp = {}, _Proj1 __proj1 = {}, _Proj2 __proj2 = {}) const {
+    return ::__ycxx::__detail::__lex_compare_impl(std::ranges::begin(__r1), std::ranges::end(__r1), std::ranges::begin(__r2),
+                                            std::ranges::end(__r2), ::__ycxx::__detail::__make_comp2(comp, __proj1, __proj2));
   }
 };
 
-}} // namespace ycxx::detail::ranges_algo
+}} // namespace __ycxx::__detail::__ranges_algo
 
-namespace [[gnu::visibility("hidden")]] std { namespace ranges {
-inline constexpr ycxx::adl_free::ranges_par_algo<ycxx::detail::ranges_algo::min_fn, ycxx::detail::par::kind::min> min{};
-inline constexpr ycxx::adl_free::ranges_par_algo<ycxx::detail::ranges_algo::max_fn, ycxx::detail::par::kind::max> max{};
-inline constexpr ycxx::adl_free::ranges_par_algo<ycxx::detail::ranges_algo::minmax_fn, ycxx::detail::par::kind::minmax> minmax{};
-inline constexpr ycxx::detail::ranges_algo::clamp_fn clamp{};
-inline constexpr ycxx::adl_free::ranges_par_algo<ycxx::detail::ranges_algo::min_element_fn, ycxx::detail::par::kind::min_element> min_element{};
-inline constexpr ycxx::adl_free::ranges_par_algo<ycxx::detail::ranges_algo::max_element_fn, ycxx::detail::par::kind::max_element> max_element{};
-inline constexpr ycxx::adl_free::ranges_par_algo<ycxx::detail::ranges_algo::minmax_element_fn, ycxx::detail::par::kind::minmax_element> minmax_element{};
-inline constexpr ycxx::adl_free::ranges_par_algo<ycxx::detail::ranges_algo::swap_ranges_fn, ycxx::detail::par::kind::swap_ranges> swap_ranges{};
-inline constexpr ycxx::adl_free::ranges_par_algo<ycxx::detail::ranges_algo::copy_fn, ycxx::detail::par::kind::copy> copy{};
-inline constexpr ycxx::adl_free::ranges_par_algo<ycxx::detail::ranges_algo::copy_n_fn, ycxx::detail::par::kind::copy_n> copy_n{};
-inline constexpr ycxx::adl_free::ranges_par_algo<ycxx::detail::ranges_algo::copy_if_fn, ycxx::detail::par::kind::copy_if> copy_if{};
-inline constexpr ycxx::detail::ranges_algo::copy_backward_fn copy_backward{};
-inline constexpr ycxx::adl_free::ranges_par_algo<ycxx::detail::ranges_algo::move_fn, ycxx::detail::par::kind::move> move{};
-inline constexpr ycxx::detail::ranges_algo::move_backward_fn move_backward{};
-inline constexpr ycxx::adl_free::ranges_par_algo<ycxx::detail::ranges_algo::fill_fn, ycxx::detail::par::kind::fill> fill{};
-inline constexpr ycxx::adl_free::ranges_par_algo<ycxx::detail::ranges_algo::fill_n_fn, ycxx::detail::par::kind::fill_n> fill_n{};
-inline constexpr ycxx::adl_free::ranges_par_algo<ycxx::detail::ranges_algo::find_fn, ycxx::detail::par::kind::find> find{};
-inline constexpr ycxx::adl_free::ranges_par_algo<ycxx::detail::ranges_algo::find_if_fn, ycxx::detail::par::kind::find_if> find_if{};
-inline constexpr ycxx::adl_free::ranges_par_algo<ycxx::detail::ranges_algo::find_if_not_fn, ycxx::detail::par::kind::find_if_not> find_if_not{};
-inline constexpr ycxx::adl_free::ranges_par_algo<ycxx::detail::ranges_algo::mismatch_fn, ycxx::detail::par::kind::mismatch> mismatch{};
-inline constexpr ycxx::adl_free::ranges_par_algo<ycxx::detail::ranges_algo::equal_fn, ycxx::detail::par::kind::equal> equal{};
-inline constexpr ycxx::adl_free::ranges_par_algo<ycxx::detail::ranges_algo::lexicographical_compare_fn, ycxx::detail::par::kind::lexicographical_compare> lexicographical_compare{};
+namespace [[__gnu__::__visibility__("hidden")]] std { namespace ranges {
+inline constexpr __ycxx::__adl_free::__ranges_par_algo<__ycxx::__detail::__ranges_algo::__min_fn, __ycxx::__detail::par::kind::min> min{};
+inline constexpr __ycxx::__adl_free::__ranges_par_algo<__ycxx::__detail::__ranges_algo::__max_fn, __ycxx::__detail::par::kind::max> max{};
+inline constexpr __ycxx::__adl_free::__ranges_par_algo<__ycxx::__detail::__ranges_algo::__minmax_fn, __ycxx::__detail::par::kind::minmax> minmax{};
+inline constexpr __ycxx::__detail::__ranges_algo::__clamp_fn clamp{};
+inline constexpr __ycxx::__adl_free::__ranges_par_algo<__ycxx::__detail::__ranges_algo::__min_element_fn, __ycxx::__detail::par::kind::min_element> min_element{};
+inline constexpr __ycxx::__adl_free::__ranges_par_algo<__ycxx::__detail::__ranges_algo::__max_element_fn, __ycxx::__detail::par::kind::max_element> max_element{};
+inline constexpr __ycxx::__adl_free::__ranges_par_algo<__ycxx::__detail::__ranges_algo::__minmax_element_fn, __ycxx::__detail::par::kind::minmax_element> minmax_element{};
+inline constexpr __ycxx::__adl_free::__ranges_par_algo<__ycxx::__detail::__ranges_algo::__swap_ranges_fn, __ycxx::__detail::par::kind::swap_ranges> swap_ranges{};
+inline constexpr __ycxx::__adl_free::__ranges_par_algo<__ycxx::__detail::__ranges_algo::__copy_fn, __ycxx::__detail::par::kind::copy> copy{};
+inline constexpr __ycxx::__adl_free::__ranges_par_algo<__ycxx::__detail::__ranges_algo::__copy_n_fn, __ycxx::__detail::par::kind::copy_n> copy_n{};
+inline constexpr __ycxx::__adl_free::__ranges_par_algo<__ycxx::__detail::__ranges_algo::__copy_if_fn, __ycxx::__detail::par::kind::copy_if> copy_if{};
+inline constexpr __ycxx::__detail::__ranges_algo::__copy_backward_fn copy_backward{};
+inline constexpr __ycxx::__adl_free::__ranges_par_algo<__ycxx::__detail::__ranges_algo::__move_fn, __ycxx::__detail::par::kind::move> move{};
+inline constexpr __ycxx::__detail::__ranges_algo::__move_backward_fn move_backward{};
+inline constexpr __ycxx::__adl_free::__ranges_par_algo<__ycxx::__detail::__ranges_algo::__fill_fn, __ycxx::__detail::par::kind::fill> fill{};
+inline constexpr __ycxx::__adl_free::__ranges_par_algo<__ycxx::__detail::__ranges_algo::__fill_n_fn, __ycxx::__detail::par::kind::fill_n> fill_n{};
+inline constexpr __ycxx::__adl_free::__ranges_par_algo<__ycxx::__detail::__ranges_algo::__find_fn, __ycxx::__detail::par::kind::find> find{};
+inline constexpr __ycxx::__adl_free::__ranges_par_algo<__ycxx::__detail::__ranges_algo::__find_if_fn, __ycxx::__detail::par::kind::find_if> find_if{};
+inline constexpr __ycxx::__adl_free::__ranges_par_algo<__ycxx::__detail::__ranges_algo::__find_if_not_fn, __ycxx::__detail::par::kind::find_if_not> find_if_not{};
+inline constexpr __ycxx::__adl_free::__ranges_par_algo<__ycxx::__detail::__ranges_algo::__mismatch_fn, __ycxx::__detail::par::kind::mismatch> mismatch{};
+inline constexpr __ycxx::__adl_free::__ranges_par_algo<__ycxx::__detail::__ranges_algo::__equal_fn, __ycxx::__detail::par::kind::equal> equal{};
+inline constexpr __ycxx::__adl_free::__ranges_par_algo<__ycxx::__detail::__ranges_algo::__lexicographical_compare_fn, __ycxx::__detail::par::kind::lexicographical_compare> lexicographical_compare{};
 }} // namespace std::ranges

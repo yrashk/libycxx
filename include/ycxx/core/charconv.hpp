@@ -12,26 +12,26 @@
 #include <ycxx/core/type_traits.hpp>
 #include <ycxx/core/bit.hpp>
 
-namespace [[gnu::visibility("hidden")]] std {
+namespace [[__gnu__::__visibility__("hidden")]] std {
 
 // [charconv.syn]: a bitmask type ([bitmask.types]).
 enum class chars_format { scientific = 1, fixed = 2, hex = 4, general = fixed | scientific };
 
-constexpr chars_format operator&(chars_format x, chars_format y) noexcept {
-  return static_cast<chars_format>(static_cast<int>(x) & static_cast<int>(y));
+constexpr chars_format operator&(chars_format __x, chars_format y) noexcept {
+  return static_cast<chars_format>(static_cast<int>(__x) & static_cast<int>(y));
 }
-constexpr chars_format operator|(chars_format x, chars_format y) noexcept {
-  return static_cast<chars_format>(static_cast<int>(x) | static_cast<int>(y));
+constexpr chars_format operator|(chars_format __x, chars_format y) noexcept {
+  return static_cast<chars_format>(static_cast<int>(__x) | static_cast<int>(y));
 }
-constexpr chars_format operator^(chars_format x, chars_format y) noexcept {
-  return static_cast<chars_format>(static_cast<int>(x) ^ static_cast<int>(y));
+constexpr chars_format operator^(chars_format __x, chars_format y) noexcept {
+  return static_cast<chars_format>(static_cast<int>(__x) ^ static_cast<int>(y));
 }
-constexpr chars_format operator~(chars_format x) noexcept {
-  return static_cast<chars_format>(~static_cast<int>(x));
+constexpr chars_format operator~(chars_format __x) noexcept {
+  return static_cast<chars_format>(~static_cast<int>(__x));
 }
-constexpr chars_format& operator&=(chars_format& x, chars_format y) noexcept { return x = x & y; }
-constexpr chars_format& operator|=(chars_format& x, chars_format y) noexcept { return x = x | y; }
-constexpr chars_format& operator^=(chars_format& x, chars_format y) noexcept { return x = x ^ y; }
+constexpr chars_format& operator&=(chars_format& __x, chars_format y) noexcept { return __x = __x & y; }
+constexpr chars_format& operator|=(chars_format& __x, chars_format y) noexcept { return __x = __x | y; }
+constexpr chars_format& operator^=(chars_format& __x, chars_format y) noexcept { return __x = __x ^ y; }
 
 struct to_chars_result {
   char* ptr;
@@ -49,51 +49,51 @@ struct from_chars_result {
 
 } // namespace std
 
-namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
 
 // ---- integers ([charconv.to.chars]/4-6, [charconv.from.chars]/2-4) ---------------------------
 
-struct charconv_digit_pairs {
+struct __charconv_digit_pairs {
   char c[200];
 };
-consteval charconv_digit_pairs make_charconv_digit_pairs() {
-  charconv_digit_pairs t{};
+consteval __charconv_digit_pairs __make_charconv_digit_pairs() {
+  __charconv_digit_pairs t{};
   for (int i = 0; i < 100; ++i) {
     t.c[2 * i] = static_cast<char>('0' + i / 10);
     t.c[2 * i + 1] = static_cast<char>('0' + i % 10);
   }
   return t;
 }
-inline constexpr charconv_digit_pairs charconv_pairs = ycxx::detail::make_charconv_digit_pairs();
-inline constexpr char charconv_digits[] = "0123456789abcdefghijklmnopqrstuvwxyz";
+inline constexpr __charconv_digit_pairs __charconv_pairs = __ycxx::__detail::__make_charconv_digit_pairs();
+inline constexpr char __charconv_digits[] = "0123456789abcdefghijklmnopqrstuvwxyz";
 
 // Writes the digits of `value` right-aligned ending at `end`; returns the first digit.
-template <class U>
-constexpr char* charconv_write_unsigned(char* end, U value, unsigned base) noexcept {
+template <class _Up>
+constexpr char* __charconv_write_unsigned(char* end, _Up value, unsigned base) noexcept {
   char* p = end;
   if (base == 10) {
-    if constexpr (sizeof(U) > sizeof(unsigned long long)) {
+    if constexpr (sizeof(_Up) > sizeof(unsigned long long)) {
       // Peel 19-digit chunks so that the loop below runs on 64-bit words.
-      while (value > static_cast<U>(~0ull)) {
+      while (value > static_cast<_Up>(~0ull)) {
         constexpr unsigned long long chunk = 10'000'000'000'000'000'000ull;
-        unsigned long long low = static_cast<unsigned long long>(value % chunk);
+        unsigned long long __low = static_cast<unsigned long long>(value % chunk);
         value /= chunk;
-        for (int i = 0; i < 19; ++i, low /= 10)
-          *--p = static_cast<char>('0' + low % 10);
+        for (int i = 0; i < 19; ++i, __low /= 10)
+          *--p = static_cast<char>('0' + __low % 10);
       }
-      return ycxx::detail::charconv_write_unsigned(p, static_cast<unsigned long long>(value), 10);
+      return __ycxx::__detail::__charconv_write_unsigned(p, static_cast<unsigned long long>(value), 10);
     } else {
       while (value >= 100) {
         unsigned r = static_cast<unsigned>(value % 100);
-        value = static_cast<U>(value / 100);
+        value = static_cast<_Up>(value / 100);
         p -= 2;
-        p[0] = ycxx::detail::charconv_pairs.c[2 * r];
-        p[1] = ycxx::detail::charconv_pairs.c[2 * r + 1];
+        p[0] = __ycxx::__detail::__charconv_pairs.c[2 * r];
+        p[1] = __ycxx::__detail::__charconv_pairs.c[2 * r + 1];
       }
       if (value >= 10) {
         p -= 2;
-        p[0] = ycxx::detail::charconv_pairs.c[2 * value];
-        p[1] = ycxx::detail::charconv_pairs.c[2 * value + 1];
+        p[0] = __ycxx::__detail::__charconv_pairs.c[2 * value];
+        p[1] = __ycxx::__detail::__charconv_pairs.c[2 * value + 1];
       } else {
         *--p = static_cast<char>('0' + value);
       }
@@ -103,34 +103,34 @@ constexpr char* charconv_write_unsigned(char* end, U value, unsigned base) noexc
   if ((base & (base - 1)) == 0) {
     int shift = __builtin_ctz(base);
     do {
-      *--p = ycxx::detail::charconv_digits[static_cast<unsigned>(value & (base - 1))];
-      value = static_cast<U>(value >> shift);
+      *--p = __ycxx::__detail::__charconv_digits[static_cast<unsigned>(value & (base - 1))];
+      value = static_cast<_Up>(value >> shift);
     } while (value != 0);
     return p;
   }
   do {
-    *--p = ycxx::detail::charconv_digits[static_cast<unsigned>(value % base)];
-    value = static_cast<U>(value / base);
+    *--p = __ycxx::__detail::__charconv_digits[static_cast<unsigned>(value % base)];
+    value = static_cast<_Up>(value / base);
   } while (value != 0);
   return p;
 }
 
-template <class T>
-constexpr std::to_chars_result to_chars_integer(char* first, char* last, T value, int base) noexcept {
-  ycxx::detail::precondition(2 <= base && base <= 36, "std::to_chars: base must be in [2, 36]");
-  using U = std::make_unsigned_t<T>;
-  U magnitude = static_cast<U>(value);
-  bool negative = false;
-  if constexpr (is_signed_v<T>) {
+template <class _Tp>
+constexpr std::to_chars_result __to_chars_integer(char* first, char* last, _Tp value, int base) noexcept {
+  __ycxx::__detail::__precondition(2 <= base && base <= 36, "std::to_chars: base must be in [2, 36]");
+  using _Up = std::make_unsigned_t<_Tp>;
+  _Up __magnitude = static_cast<_Up>(value);
+  bool __negative = false;
+  if constexpr (is_signed_v<_Tp>) {
     if (value < 0) {
-      negative = true;
-      magnitude = static_cast<U>(U(0) - magnitude);
+      __negative = true;
+      __magnitude = static_cast<_Up>(_Up(0) - __magnitude);
     }
   }
-  [[indeterminate]] char buf[sizeof(U) * __CHAR_BIT__ + 1];
-  char* end = buf + sizeof buf;
-  char* p = ycxx::detail::charconv_write_unsigned(end, magnitude, static_cast<unsigned>(base));
-  if (negative)
+  [[indeterminate]] char __buf[sizeof(_Up) * __CHAR_BIT__ + 1];
+  char* end = __buf + sizeof __buf;
+  char* p = __ycxx::__detail::__charconv_write_unsigned(end, __magnitude, static_cast<unsigned>(base));
+  if (__negative)
     *--p = '-';
   if (last - first < end - p)
     return {last, std::errc::value_too_large};
@@ -139,7 +139,7 @@ constexpr std::to_chars_result to_chars_integer(char* first, char* last, T value
   return {first, std::errc{}};
 }
 
-constexpr unsigned charconv_digit_value(char c) noexcept {
+constexpr unsigned __charconv_digit_value(char c) noexcept {
   if (c >= '0' && c <= '9')
     return static_cast<unsigned>(c - '0');
   if (c >= 'a' && c <= 'z')
@@ -149,39 +149,39 @@ constexpr unsigned charconv_digit_value(char c) noexcept {
   return 99;
 }
 
-template <class T>
-constexpr std::from_chars_result from_chars_integer(const char* first, const char* last, T& value, int base) noexcept {
-  ycxx::detail::precondition(2 <= base && base <= 36, "std::from_chars: base must be in [2, 36]");
-  using U = std::make_unsigned_t<T>;
+template <class _Tp>
+constexpr std::from_chars_result __from_chars_integer(const char* first, const char* last, _Tp& value, int base) noexcept {
+  __ycxx::__detail::__precondition(2 <= base && base <= 36, "std::from_chars: base must be in [2, 36]");
+  using _Up = std::make_unsigned_t<_Tp>;
   const char* p = first;
-  bool negative = false;
-  if constexpr (is_signed_v<T>) {
+  bool __negative = false;
+  if constexpr (is_signed_v<_Tp>) {
     if (p != last && *p == '-') {
-      negative = true;
+      __negative = true;
       ++p;
     }
   }
   const char* digits = p;
-  U acc = 0;
+  _Up __acc = 0;
   bool overflow = false;
   for (; p != last; ++p) {
-    unsigned d = ycxx::detail::charconv_digit_value(*p);
+    unsigned d = __ycxx::__detail::__charconv_digit_value(*p);
     if (d >= static_cast<unsigned>(base))
       break;
     if (!overflow)
-      overflow = __builtin_mul_overflow(acc, static_cast<unsigned>(base), &acc) || __builtin_add_overflow(acc, d, &acc);
+      overflow = __builtin_mul_overflow(__acc, static_cast<unsigned>(base), &__acc) || __builtin_add_overflow(__acc, d, &__acc);
   }
   if (p == digits)
     return {first, std::errc::invalid_argument};
-  if constexpr (is_signed_v<T>) {
-    U limit = static_cast<U>(static_cast<U>(~U(0)) >> 1); // the largest T
-    if (overflow || acc > limit + (negative ? 1 : 0))
+  if constexpr (is_signed_v<_Tp>) {
+    _Up __limit = static_cast<_Up>(static_cast<_Up>(~_Up(0)) >> 1); // the largest T
+    if (overflow || __acc > __limit + (__negative ? 1 : 0))
       return {p, std::errc::result_out_of_range};
-    value = negative ? static_cast<T>(U(0) - acc) : static_cast<T>(acc);
+    value = __negative ? static_cast<_Tp>(_Up(0) - __acc) : static_cast<_Tp>(__acc);
   } else {
     if (overflow)
       return {p, std::errc::result_out_of_range};
-    value = acc;
+    value = __acc;
   }
   return {p, std::errc{}};
 }
@@ -189,266 +189,266 @@ constexpr std::from_chars_result from_chars_integer(const char* first, const cha
 // ---- floating point --------------------------------------------------------------------------
 
 // The binary interchange formats libycxx converts. Each floating-point type maps to one.
-enum class fp_kind : unsigned char { binary16, bfloat16, binary32, binary64, x87_extended, binary128 };
+enum class __fp_kind : unsigned char { __binary16, __bfloat16, __binary32, __binary64, __x87_extended, __binary128 };
 
-template <class T>
-consteval fp_kind fp_kind_of() {
-  constexpr int digits = fp_format<T>.digits;
+template <class _Tp>
+consteval __fp_kind __fp_kind_of() {
+  constexpr int digits = __fp_format<_Tp>.digits;
   static_assert(digits == 11 || digits == 8 || digits == 24 || digits == 53 || digits == 64 || digits == 113,
                 "libycxx <charconv>: unsupported floating-point format");
   if constexpr (digits == 11)
-    return fp_kind::binary16;
+    return __fp_kind::__binary16;
   else if constexpr (digits == 8)
-    return fp_kind::bfloat16;
+    return __fp_kind::__bfloat16;
   else if constexpr (digits == 24)
-    return fp_kind::binary32;
+    return __fp_kind::__binary32;
   else if constexpr (digits == 53)
-    return fp_kind::binary64;
+    return __fp_kind::__binary64;
   else if constexpr (digits == 64)
-    return fp_kind::x87_extended;
+    return __fp_kind::__x87_extended;
   else
-    return fp_kind::binary128;
+    return __fp_kind::__binary128;
 }
 
 // The value's object representation as a little-endian 128-bit integer (lo, hi). Only the bytes
 // of the format are read: x87 long double has 6 padding bytes, which stay out of the result.
-struct fp_raw {
-  unsigned long long lo = 0;
-  unsigned long long hi = 0;
+struct __fp_raw {
+  unsigned long long __lo = 0;
+  unsigned long long __hi = 0;
 };
-template <class T>
-inline constexpr int fp_value_bytes = fp_kind_of<T>() == fp_kind::x87_extended ? 10 : static_cast<int>(sizeof(T));
+template <class _Tp>
+inline constexpr int __fp_value_bytes = __fp_kind_of<_Tp>() == __fp_kind::__x87_extended ? 10 : static_cast<int>(sizeof(_Tp));
 
-template <class T>
-fp_raw fp_to_raw(T value) noexcept {
-  struct bytes {
-    unsigned char b[sizeof(T)];
+template <class _Tp>
+__fp_raw __fp_to_raw(_Tp value) noexcept {
+  struct __bytes {
+    unsigned char b[sizeof(_Tp)];
   };
-  bytes in = __builtin_bit_cast(bytes, value);
-  fp_raw r;
-  for (int i = 0; i < fp_value_bytes<T>; ++i) {
-    int pos = std::endian::native == std::endian::little ? i : fp_value_bytes<T> - 1 - i;
-    unsigned long long byte = in.b[pos];
+  __bytes in = __builtin_bit_cast(__bytes, value);
+  __fp_raw r;
+  for (int i = 0; i < __fp_value_bytes<_Tp>; ++i) {
+    int __pos = std::endian::native == std::endian::little ? i : __fp_value_bytes<_Tp> - 1 - i;
+    unsigned long long byte = in.b[__pos];
     if (i < 8)
-      r.lo |= byte << (8 * i);
+      r.__lo |= byte << (8 * i);
     else
-      r.hi |= byte << (8 * (i - 8));
+      r.__hi |= byte << (8 * (i - 8));
   }
   return r;
 }
-template <class T>
-T fp_from_raw(fp_raw r) noexcept {
-  struct bytes {
-    unsigned char b[sizeof(T)];
+template <class _Tp>
+_Tp __fp_from_raw(__fp_raw r) noexcept {
+  struct __bytes {
+    unsigned char b[sizeof(_Tp)];
   };
-  bytes out{};
-  for (int i = 0; i < fp_value_bytes<T>; ++i) {
-    int pos = std::endian::native == std::endian::little ? i : fp_value_bytes<T> - 1 - i;
-    out.b[pos] = static_cast<unsigned char>(i < 8 ? r.lo >> (8 * i) : r.hi >> (8 * (i - 8)));
+  __bytes out{};
+  for (int i = 0; i < __fp_value_bytes<_Tp>; ++i) {
+    int __pos = std::endian::native == std::endian::little ? i : __fp_value_bytes<_Tp> - 1 - i;
+    out.b[__pos] = static_cast<unsigned char>(i < 8 ? r.__lo >> (8 * i) : r.__hi >> (8 * (i - 8)));
   }
-  return __builtin_bit_cast(T, out);
+  return __builtin_bit_cast(_Tp, out);
 }
 
-// Out-of-line conversions (src/runtime/charconv). `fmt` is a chars_format value, or 0 for the
+// Out-of-line conversions (src/runtime/charconv). `__fmt` is a chars_format value, or 0 for the
 // overload without one; `precision` is the requested precision, or -1 for the shortest form.
-std::to_chars_result fp_to_chars(char* first, char* last, fp_kind kind, fp_raw bits, int fmt, int precision) noexcept;
-// Stores the result in `bits` only when the conversion succeeds.
-std::from_chars_result fp_from_chars(const char* first, const char* last, fp_kind kind, fp_raw& bits, int fmt) noexcept;
+std::to_chars_result __fp_to_chars(char* first, char* last, __fp_kind kind, __fp_raw __bits, int __fmt, int precision) noexcept;
+// Stores the result in `__bits` only when the conversion succeeds.
+std::from_chars_result __fp_from_chars(const char* first, const char* last, __fp_kind kind, __fp_raw& __bits, int __fmt) noexcept;
 
-constexpr bool charconv_valid_format(std::chars_format fmt) noexcept {
-  return fmt == std::chars_format::scientific || fmt == std::chars_format::fixed || fmt == std::chars_format::hex ||
-         fmt == std::chars_format::general;
+constexpr bool __charconv_valid_format(std::chars_format __fmt) noexcept {
+  return __fmt == std::chars_format::scientific || __fmt == std::chars_format::fixed || __fmt == std::chars_format::hex ||
+         __fmt == std::chars_format::general;
 }
 
-template <class T>
-std::to_chars_result to_chars_float(char* first, char* last, T value) noexcept {
-  return ycxx::detail::fp_to_chars(first, last, ycxx::detail::fp_kind_of<T>(), ycxx::detail::fp_to_raw(value), 0, -1);
+template <class _Tp>
+std::to_chars_result __to_chars_float(char* first, char* last, _Tp value) noexcept {
+  return __ycxx::__detail::__fp_to_chars(first, last, __ycxx::__detail::__fp_kind_of<_Tp>(), __ycxx::__detail::__fp_to_raw(value), 0, -1);
 }
-template <class T>
-std::to_chars_result to_chars_float(char* first, char* last, T value, std::chars_format fmt) noexcept {
-  ycxx::detail::precondition(ycxx::detail::charconv_valid_format(fmt), "std::to_chars: invalid chars_format");
-  return ycxx::detail::fp_to_chars(first, last, ycxx::detail::fp_kind_of<T>(), ycxx::detail::fp_to_raw(value),
-                                   static_cast<int>(fmt), -1);
+template <class _Tp>
+std::to_chars_result __to_chars_float(char* first, char* last, _Tp value, std::chars_format __fmt) noexcept {
+  __ycxx::__detail::__precondition(__ycxx::__detail::__charconv_valid_format(__fmt), "std::to_chars: invalid chars_format");
+  return __ycxx::__detail::__fp_to_chars(first, last, __ycxx::__detail::__fp_kind_of<_Tp>(), __ycxx::__detail::__fp_to_raw(value),
+                                   static_cast<int>(__fmt), -1);
 }
-template <class T>
-std::to_chars_result to_chars_float(char* first, char* last, T value, std::chars_format fmt, int precision) noexcept {
-  ycxx::detail::precondition(ycxx::detail::charconv_valid_format(fmt), "std::to_chars: invalid chars_format");
+template <class _Tp>
+std::to_chars_result __to_chars_float(char* first, char* last, _Tp value, std::chars_format __fmt, int precision) noexcept {
+  __ycxx::__detail::__precondition(__ycxx::__detail::__charconv_valid_format(__fmt), "std::to_chars: invalid chars_format");
   // A negative precision is taken as if it were omitted (C 7.23.6.1): 6 for e, f and g; for a,
   // the exact (shortest) hexadecimal representation.
   if (precision < 0)
-    precision = fmt == std::chars_format::hex ? -1 : 6;
-  return ycxx::detail::fp_to_chars(first, last, ycxx::detail::fp_kind_of<T>(), ycxx::detail::fp_to_raw(value),
-                                   static_cast<int>(fmt), precision);
+    precision = __fmt == std::chars_format::hex ? -1 : 6;
+  return __ycxx::__detail::__fp_to_chars(first, last, __ycxx::__detail::__fp_kind_of<_Tp>(), __ycxx::__detail::__fp_to_raw(value),
+                                   static_cast<int>(__fmt), precision);
 }
-template <class T>
-std::from_chars_result from_chars_float(const char* first, const char* last, T& value, std::chars_format fmt) noexcept {
-  ycxx::detail::precondition(ycxx::detail::charconv_valid_format(fmt), "std::from_chars: invalid chars_format");
-  fp_raw bits;
+template <class _Tp>
+std::from_chars_result __from_chars_float(const char* first, const char* last, _Tp& value, std::chars_format __fmt) noexcept {
+  __ycxx::__detail::__precondition(__ycxx::__detail::__charconv_valid_format(__fmt), "std::from_chars: invalid chars_format");
+  __fp_raw __bits;
   std::from_chars_result r =
-      ycxx::detail::fp_from_chars(first, last, ycxx::detail::fp_kind_of<T>(), bits, static_cast<int>(fmt));
+      __ycxx::__detail::__fp_from_chars(first, last, __ycxx::__detail::__fp_kind_of<_Tp>(), __bits, static_cast<int>(__fmt));
   if (r.ec == std::errc{})
-    value = ycxx::detail::fp_from_raw<T>(bits);
+    value = __ycxx::__detail::__fp_from_raw<_Tp>(__bits);
   return r;
 }
 
 // The shortest round-trip form, exactly as std::to_chars(first, last, value) writes it (plain
 // overload, [charconv.to.chars]/7), under an internal name for std::to_string and <format>: any
 // floating-point type, without overload resolution against the integer overloads.
-template <class T>
-  requires is_floating_v<T>
-std::to_chars_result to_chars_shortest(char* first, char* last, T value) noexcept {
-  return ycxx::detail::to_chars_float(first, last, value);
+template <class _Tp>
+  requires __is_floating_v<_Tp>
+std::to_chars_result __to_chars_shortest(char* first, char* last, _Tp value) noexcept {
+  return __ycxx::__detail::__to_chars_float(first, last, value);
 }
 
-template <class T>
-concept charconv_extended_float = is_any_of<T, float16, float32, float64, float128, bfloat16>;
-template <class T>
-concept charconv_int128 = is_any_of<T, int128, uint128>;
+template <class _Tp>
+concept __charconv_extended_float = __is_any_of<_Tp, __float16, __float32, __float64, __y_float128, __bfloat16>;
+template <class _Tp>
+concept __charconv_int128 = __is_any_of<_Tp, __y_int128, __uint128>;
 
-}} // namespace ycxx::detail
+}} // namespace __ycxx::__detail
 
-namespace [[gnu::visibility("hidden")]] std {
+namespace [[__gnu__::__visibility__("hidden")]] std {
 
 // [charconv.to.chars]: integers. One overload per type, as the synopsis specifies.
 constexpr to_chars_result to_chars(char* first, char* last, char value, int base = 10) {
-  return ycxx::detail::to_chars_integer(first, last, value, base);
+  return __ycxx::__detail::__to_chars_integer(first, last, value, base);
 }
 constexpr to_chars_result to_chars(char* first, char* last, signed char value, int base = 10) {
-  return ycxx::detail::to_chars_integer(first, last, value, base);
+  return __ycxx::__detail::__to_chars_integer(first, last, value, base);
 }
 constexpr to_chars_result to_chars(char* first, char* last, unsigned char value, int base = 10) {
-  return ycxx::detail::to_chars_integer(first, last, value, base);
+  return __ycxx::__detail::__to_chars_integer(first, last, value, base);
 }
 constexpr to_chars_result to_chars(char* first, char* last, short value, int base = 10) {
-  return ycxx::detail::to_chars_integer(first, last, value, base);
+  return __ycxx::__detail::__to_chars_integer(first, last, value, base);
 }
 constexpr to_chars_result to_chars(char* first, char* last, unsigned short value, int base = 10) {
-  return ycxx::detail::to_chars_integer(first, last, value, base);
+  return __ycxx::__detail::__to_chars_integer(first, last, value, base);
 }
 constexpr to_chars_result to_chars(char* first, char* last, int value, int base = 10) {
-  return ycxx::detail::to_chars_integer(first, last, value, base);
+  return __ycxx::__detail::__to_chars_integer(first, last, value, base);
 }
 constexpr to_chars_result to_chars(char* first, char* last, unsigned int value, int base = 10) {
-  return ycxx::detail::to_chars_integer(first, last, value, base);
+  return __ycxx::__detail::__to_chars_integer(first, last, value, base);
 }
 constexpr to_chars_result to_chars(char* first, char* last, long value, int base = 10) {
-  return ycxx::detail::to_chars_integer(first, last, value, base);
+  return __ycxx::__detail::__to_chars_integer(first, last, value, base);
 }
 constexpr to_chars_result to_chars(char* first, char* last, unsigned long value, int base = 10) {
-  return ycxx::detail::to_chars_integer(first, last, value, base);
+  return __ycxx::__detail::__to_chars_integer(first, last, value, base);
 }
 constexpr to_chars_result to_chars(char* first, char* last, long long value, int base = 10) {
-  return ycxx::detail::to_chars_integer(first, last, value, base);
+  return __ycxx::__detail::__to_chars_integer(first, last, value, base);
 }
 constexpr to_chars_result to_chars(char* first, char* last, unsigned long long value, int base = 10) {
-  return ycxx::detail::to_chars_integer(first, last, value, base);
+  return __ycxx::__detail::__to_chars_integer(first, last, value, base);
 }
 // __int128 (extension; an integer type where the compiler has it). A template, so that the
 // declaration stays well-formed where the type does not exist.
-template <ycxx::detail::charconv_int128 T>
-constexpr to_chars_result to_chars(char* first, char* last, T value, int base = 10) {
-  return ycxx::detail::to_chars_integer(first, last, value, base);
+template <__ycxx::__detail::__charconv_int128 _Tp>
+constexpr to_chars_result to_chars(char* first, char* last, _Tp value, int base = 10) {
+  return __ycxx::__detail::__to_chars_integer(first, last, value, base);
 }
 to_chars_result to_chars(char* first, char* last, bool value, int base = 10) = delete;
 
 // [charconv.to.chars]: floating point.
 inline to_chars_result to_chars(char* first, char* last, float value) noexcept {
-  return ycxx::detail::to_chars_float(first, last, value);
+  return __ycxx::__detail::__to_chars_float(first, last, value);
 }
 inline to_chars_result to_chars(char* first, char* last, double value) noexcept {
-  return ycxx::detail::to_chars_float(first, last, value);
+  return __ycxx::__detail::__to_chars_float(first, last, value);
 }
 inline to_chars_result to_chars(char* first, char* last, long double value) noexcept {
-  return ycxx::detail::to_chars_float(first, last, value);
+  return __ycxx::__detail::__to_chars_float(first, last, value);
 }
-template <ycxx::detail::charconv_extended_float T>
-to_chars_result to_chars(char* first, char* last, T value) noexcept {
-  return ycxx::detail::to_chars_float(first, last, value);
+template <__ycxx::__detail::__charconv_extended_float _Tp>
+to_chars_result to_chars(char* first, char* last, _Tp value) noexcept {
+  return __ycxx::__detail::__to_chars_float(first, last, value);
 }
-inline to_chars_result to_chars(char* first, char* last, float value, chars_format fmt) noexcept {
-  return ycxx::detail::to_chars_float(first, last, value, fmt);
+inline to_chars_result to_chars(char* first, char* last, float value, chars_format __fmt) noexcept {
+  return __ycxx::__detail::__to_chars_float(first, last, value, __fmt);
 }
-inline to_chars_result to_chars(char* first, char* last, double value, chars_format fmt) noexcept {
-  return ycxx::detail::to_chars_float(first, last, value, fmt);
+inline to_chars_result to_chars(char* first, char* last, double value, chars_format __fmt) noexcept {
+  return __ycxx::__detail::__to_chars_float(first, last, value, __fmt);
 }
-inline to_chars_result to_chars(char* first, char* last, long double value, chars_format fmt) noexcept {
-  return ycxx::detail::to_chars_float(first, last, value, fmt);
+inline to_chars_result to_chars(char* first, char* last, long double value, chars_format __fmt) noexcept {
+  return __ycxx::__detail::__to_chars_float(first, last, value, __fmt);
 }
-template <ycxx::detail::charconv_extended_float T>
-to_chars_result to_chars(char* first, char* last, T value, chars_format fmt) noexcept {
-  return ycxx::detail::to_chars_float(first, last, value, fmt);
+template <__ycxx::__detail::__charconv_extended_float _Tp>
+to_chars_result to_chars(char* first, char* last, _Tp value, chars_format __fmt) noexcept {
+  return __ycxx::__detail::__to_chars_float(first, last, value, __fmt);
 }
-inline to_chars_result to_chars(char* first, char* last, float value, chars_format fmt, int precision) noexcept {
-  return ycxx::detail::to_chars_float(first, last, value, fmt, precision);
+inline to_chars_result to_chars(char* first, char* last, float value, chars_format __fmt, int precision) noexcept {
+  return __ycxx::__detail::__to_chars_float(first, last, value, __fmt, precision);
 }
-inline to_chars_result to_chars(char* first, char* last, double value, chars_format fmt, int precision) noexcept {
-  return ycxx::detail::to_chars_float(first, last, value, fmt, precision);
+inline to_chars_result to_chars(char* first, char* last, double value, chars_format __fmt, int precision) noexcept {
+  return __ycxx::__detail::__to_chars_float(first, last, value, __fmt, precision);
 }
-inline to_chars_result to_chars(char* first, char* last, long double value, chars_format fmt, int precision) noexcept {
-  return ycxx::detail::to_chars_float(first, last, value, fmt, precision);
+inline to_chars_result to_chars(char* first, char* last, long double value, chars_format __fmt, int precision) noexcept {
+  return __ycxx::__detail::__to_chars_float(first, last, value, __fmt, precision);
 }
-template <ycxx::detail::charconv_extended_float T>
-to_chars_result to_chars(char* first, char* last, T value, chars_format fmt, int precision) noexcept {
-  return ycxx::detail::to_chars_float(first, last, value, fmt, precision);
+template <__ycxx::__detail::__charconv_extended_float _Tp>
+to_chars_result to_chars(char* first, char* last, _Tp value, chars_format __fmt, int precision) noexcept {
+  return __ycxx::__detail::__to_chars_float(first, last, value, __fmt, precision);
 }
 
 // [charconv.from.chars]: integers.
 constexpr from_chars_result from_chars(const char* first, const char* last, char& value, int base = 10) {
-  return ycxx::detail::from_chars_integer(first, last, value, base);
+  return __ycxx::__detail::__from_chars_integer(first, last, value, base);
 }
 constexpr from_chars_result from_chars(const char* first, const char* last, signed char& value, int base = 10) {
-  return ycxx::detail::from_chars_integer(first, last, value, base);
+  return __ycxx::__detail::__from_chars_integer(first, last, value, base);
 }
 constexpr from_chars_result from_chars(const char* first, const char* last, unsigned char& value, int base = 10) {
-  return ycxx::detail::from_chars_integer(first, last, value, base);
+  return __ycxx::__detail::__from_chars_integer(first, last, value, base);
 }
 constexpr from_chars_result from_chars(const char* first, const char* last, short& value, int base = 10) {
-  return ycxx::detail::from_chars_integer(first, last, value, base);
+  return __ycxx::__detail::__from_chars_integer(first, last, value, base);
 }
 constexpr from_chars_result from_chars(const char* first, const char* last, unsigned short& value, int base = 10) {
-  return ycxx::detail::from_chars_integer(first, last, value, base);
+  return __ycxx::__detail::__from_chars_integer(first, last, value, base);
 }
 constexpr from_chars_result from_chars(const char* first, const char* last, int& value, int base = 10) {
-  return ycxx::detail::from_chars_integer(first, last, value, base);
+  return __ycxx::__detail::__from_chars_integer(first, last, value, base);
 }
 constexpr from_chars_result from_chars(const char* first, const char* last, unsigned int& value, int base = 10) {
-  return ycxx::detail::from_chars_integer(first, last, value, base);
+  return __ycxx::__detail::__from_chars_integer(first, last, value, base);
 }
 constexpr from_chars_result from_chars(const char* first, const char* last, long& value, int base = 10) {
-  return ycxx::detail::from_chars_integer(first, last, value, base);
+  return __ycxx::__detail::__from_chars_integer(first, last, value, base);
 }
 constexpr from_chars_result from_chars(const char* first, const char* last, unsigned long& value, int base = 10) {
-  return ycxx::detail::from_chars_integer(first, last, value, base);
+  return __ycxx::__detail::__from_chars_integer(first, last, value, base);
 }
 constexpr from_chars_result from_chars(const char* first, const char* last, long long& value, int base = 10) {
-  return ycxx::detail::from_chars_integer(first, last, value, base);
+  return __ycxx::__detail::__from_chars_integer(first, last, value, base);
 }
 constexpr from_chars_result from_chars(const char* first, const char* last, unsigned long long& value,
                                        int base = 10) {
-  return ycxx::detail::from_chars_integer(first, last, value, base);
+  return __ycxx::__detail::__from_chars_integer(first, last, value, base);
 }
-template <ycxx::detail::charconv_int128 T>
-constexpr from_chars_result from_chars(const char* first, const char* last, T& value, int base = 10) {
-  return ycxx::detail::from_chars_integer(first, last, value, base);
+template <__ycxx::__detail::__charconv_int128 _Tp>
+constexpr from_chars_result from_chars(const char* first, const char* last, _Tp& value, int base = 10) {
+  return __ycxx::__detail::__from_chars_integer(first, last, value, base);
 }
 
 // [charconv.from.chars]: floating point.
 inline from_chars_result from_chars(const char* first, const char* last, float& value,
-                                    chars_format fmt = chars_format::general) noexcept {
-  return ycxx::detail::from_chars_float(first, last, value, fmt);
+                                    chars_format __fmt = chars_format::general) noexcept {
+  return __ycxx::__detail::__from_chars_float(first, last, value, __fmt);
 }
 inline from_chars_result from_chars(const char* first, const char* last, double& value,
-                                    chars_format fmt = chars_format::general) noexcept {
-  return ycxx::detail::from_chars_float(first, last, value, fmt);
+                                    chars_format __fmt = chars_format::general) noexcept {
+  return __ycxx::__detail::__from_chars_float(first, last, value, __fmt);
 }
 inline from_chars_result from_chars(const char* first, const char* last, long double& value,
-                                    chars_format fmt = chars_format::general) noexcept {
-  return ycxx::detail::from_chars_float(first, last, value, fmt);
+                                    chars_format __fmt = chars_format::general) noexcept {
+  return __ycxx::__detail::__from_chars_float(first, last, value, __fmt);
 }
-template <ycxx::detail::charconv_extended_float T>
-from_chars_result from_chars(const char* first, const char* last, T& value,
-                             chars_format fmt = chars_format::general) noexcept {
-  return ycxx::detail::from_chars_float(first, last, value, fmt);
+template <__ycxx::__detail::__charconv_extended_float _Tp>
+from_chars_result from_chars(const char* first, const char* last, _Tp& value,
+                             chars_format __fmt = chars_format::general) noexcept {
+  return __ycxx::__detail::__from_chars_float(first, last, value, __fmt);
 }
 
 } // namespace std

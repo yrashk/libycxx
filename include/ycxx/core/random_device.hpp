@@ -11,7 +11,7 @@
 #include <ycxx/core/limits.hpp>
 #include <ycxx/pal.h>
 
-namespace [[gnu::visibility("hidden")]] std {
+namespace [[__gnu__::__visibility__("hidden")]] std {
 
 class random_device {
 public:
@@ -32,10 +32,10 @@ public:
   void operator=(const random_device&) = delete;
 
 private:
-  static constexpr unsigned buffer_size = 16;
-  ycxx_pal_handle handle_;
-  unsigned avail_ = 0; // values left in buffer_, consumed from the end
-  result_type buffer_[buffer_size];
+  static constexpr unsigned __buffer_size = 16;
+  __ycxx_pal_handle __handle_;
+  unsigned __avail_ = 0; // values left in buffer_, consumed from the end
+  result_type __buffer_[__buffer_size];
 };
 
 } // namespace std

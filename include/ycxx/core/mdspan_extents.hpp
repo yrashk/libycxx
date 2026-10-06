@@ -11,404 +11,404 @@
 #include <ycxx/core/span.hpp>
 #include <ycxx/core/utility_base.hpp>
 
-namespace [[gnu::visibility("hidden")]] std {
-template <class IndexType, size_t... Extents>
+namespace [[__gnu__::__visibility__("hidden")]] std {
+template <class _IndexType, size_t... _Extents>
 class extents;
 } // namespace std
 
-namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
 
 // True when a precondition that costs a loop is worth evaluating.
 // Tags layout_stride::mapping's constructor for submdspan results (mdspan_layout.hpp).
-struct md_sub_strides_t {
-  explicit md_sub_strides_t() = default;
+struct __md_sub_strides_t {
+  explicit __md_sub_strides_t() = default;
 };
 
-[[gnu::always_inline]] constexpr bool md_checking() noexcept {
+[[__gnu__::__always_inline__]] constexpr bool __md_checking() noexcept {
   if consteval {
     return true;
   } else {
-    return cfg::hardened;
+    return __cfg::__hardened;
   }
 }
 
 // [mdspan.extents.overview]/1: "a signed or unsigned integer type".
-template <class T>
-concept md_index_type = is_signed_or_unsigned_integer<T> && std::is_same_v<T, std::remove_cv_t<T>>;
+template <class _Tp>
+concept __md_index_type = __is_signed_or_unsigned_integer<_Tp> && std::is_same_v<_Tp, std::remove_cv_t<_Tp>>;
 
 // An integral value as a signed or unsigned integer type (the character types map to the
 // integer type of the same signedness and width), so that std::cmp_* accept it.
-template <class T>
-constexpr auto md_as_int(T v) noexcept {
-  if constexpr (is_signed_or_unsigned_integer<T>)
-    return v;
-  else if constexpr (std::is_same_v<std::remove_cv_t<T>, bool>)
-    return static_cast<unsigned char>(v);
-  else if constexpr (std::is_signed_v<T>)
-    return static_cast<std::make_signed_t<T>>(v);
+template <class _Tp>
+constexpr auto __md_as_int(_Tp __v) noexcept {
+  if constexpr (__is_signed_or_unsigned_integer<_Tp>)
+    return __v;
+  else if constexpr (std::is_same_v<std::remove_cv_t<_Tp>, bool>)
+    return static_cast<unsigned char>(__v);
+  else if constexpr (std::is_signed_v<_Tp>)
+    return static_cast<std::make_signed_t<_Tp>>(__v);
   else
-    return static_cast<std::make_unsigned_t<T>>(v);
+    return static_cast<std::make_unsigned_t<_Tp>>(__v);
 }
 
-template <class T>
-concept md_plain_integral = std::is_integral_v<std::remove_cvref_t<T>> && !std::is_same_v<std::remove_cvref_t<T>, bool>;
+template <class _Tp>
+concept __md_plain_integral = std::is_integral_v<std::remove_cvref_t<_Tp>> && !std::is_same_v<std::remove_cvref_t<_Tp>, bool>;
 
 // index-cast ([mdspan.extents.expo]/9).
-template <class IndexType, class O>
-constexpr auto md_index_cast(O&& i) noexcept {
-  if constexpr (md_plain_integral<O>)
+template <class _IndexType, class _Op>
+constexpr auto __md_index_cast(_Op&& i) noexcept {
+  if constexpr (__md_plain_integral<_Op>)
     return i;
   else
-    return static_cast<IndexType>(static_cast<O&&>(i));
+    return static_cast<_IndexType>(static_cast<_Op&&>(i));
 }
 
 // 0 <= i < n for an integral i of any type and a nonnegative n.
-template <class I, class N>
-constexpr bool md_in_interval(I i, N n) noexcept {
-  auto v = ::ycxx::detail::md_as_int(i);
-  return std::cmp_greater_equal(v, 0) && std::cmp_less(v, ::ycxx::detail::md_as_int(n));
+template <class _Ip, class _Np>
+constexpr bool __md_in_interval(_Ip i, _Np n) noexcept {
+  auto __v = ::__ycxx::__detail::__md_as_int(i);
+  return std::cmp_greater_equal(__v, 0) && std::cmp_less(__v, ::__ycxx::__detail::__md_as_int(n));
 }
 
 // "v is representable as a nonnegative value of type IndexType" for an integral v.
-template <class IndexType, class T>
-constexpr bool md_nonneg_representable(T v) noexcept {
-  auto x = ::ycxx::detail::md_as_int(v);
-  return std::cmp_greater_equal(x, 0) && std::in_range<IndexType>(x);
+template <class _IndexType, class _Tp>
+constexpr bool __md_nonneg_representable(_Tp __v) noexcept {
+  auto __x = ::__ycxx::__detail::__md_as_int(__v);
+  return std::cmp_greater_equal(__x, 0) && std::in_range<_IndexType>(__x);
 }
 
 // Converts one index argument to IndexType and folds "it lies in [0, n)" into ok. An integral
 // argument is checked before the conversion (index-cast), any other after it.
-template <class IndexType, class O>
-constexpr IndexType md_cast_index(O&& v, IndexType n, bool& ok) noexcept {
-  if constexpr (md_plain_integral<O>) {
-    ok = ok && ::ycxx::detail::md_in_interval(v, n);
-    return static_cast<IndexType>(v);
+template <class _IndexType, class _Op>
+constexpr _IndexType __md_cast_index(_Op&& __v, _IndexType n, bool& ok) noexcept {
+  if constexpr (__md_plain_integral<_Op>) {
+    ok = ok && ::__ycxx::__detail::__md_in_interval(__v, n);
+    return static_cast<_IndexType>(__v);
   } else {
-    IndexType x = static_cast<IndexType>(static_cast<O&&>(v));
-    ok = ok && ::ycxx::detail::md_in_interval(x, n);
-    return x;
+    _IndexType __x = static_cast<_IndexType>(static_cast<_Op&&>(__v));
+    ok = ok && ::__ycxx::__detail::__md_in_interval(__x, n);
+    return __x;
   }
 }
 
 // a * b and a + b, reporting overflow of T (the operands are nonnegative).
-template <class T>
-constexpr bool md_mul(T a, T b, T& r) noexcept {
+template <class _Tp>
+constexpr bool __md_mul(_Tp a, _Tp b, _Tp& r) noexcept {
   return !__builtin_mul_overflow(a, b, &r);
 }
-template <class T>
-constexpr bool md_add(T a, T b, T& r) noexcept {
+template <class _Tp>
+constexpr bool __md_add(_Tp a, _Tp b, _Tp& r) noexcept {
   return !__builtin_add_overflow(a, b, &r);
 }
 
 // LEAST-MULTIPLE-AT-LEAST(x, y) ([mdspan.layout.general]/2.4) in T; false on overflow.
-template <class T>
-constexpr bool md_least_multiple(T x, T y, T& r) noexcept {
-  if (x == 0) {
+template <class _Tp>
+constexpr bool __md_least_multiple(_Tp __x, _Tp y, _Tp& r) noexcept {
+  if (__x == 0) {
     r = y;
     return true;
   }
-  T q = y / x + (y % x != 0 ? 1 : 0);
-  return ::ycxx::detail::md_mul(q, x, r);
+  _Tp __q = y / __x + (y % __x != 0 ? 1 : 0);
+  return ::__ycxx::__detail::__md_mul(__q, __x, r);
 }
 
 // Precondition on one extent given to an extents constructor: an integral value is
 // representable as a nonnegative index_type; any other is nonnegative after conversion.
-template <class IndexType, class O>
-constexpr bool md_extent_ok(const O& v, IndexType converted) noexcept {
-  if constexpr (md_plain_integral<O>)
-    return ::ycxx::detail::md_nonneg_representable<IndexType>(v);
+template <class _IndexType, class _Op>
+constexpr bool __md_extent_ok(const _Op& __v, _IndexType converted) noexcept {
+  if constexpr (__md_plain_integral<_Op>)
+    return ::__ycxx::__detail::__md_nonneg_representable<_IndexType>(__v);
   else
     return std::cmp_greater_equal(converted, 0);
 }
 
 // The static extents of extents<I, E...>, dynamic-index(i) for i in [0, rank()] and
 // dynamic-index-inv(i) for i in [0, rank_dynamic()).
-template <std::size_t Rank, std::size_t RankDynamic>
-struct md_ext_index_tables {
-  std::size_t index[Rank + 1];
-  std::size_t inv[RankDynamic + 1];
+template <std::size_t _Rank, std::size_t _RankDynamic>
+struct __md_ext_index_tables {
+  std::size_t index[_Rank + 1];
+  std::size_t __inv[_RankDynamic + 1];
 };
-template <std::size_t RankDynamic, std::size_t... E>
-consteval md_ext_index_tables<sizeof...(E), RankDynamic> md_make_ext_tables() {
-  md_ext_index_tables<sizeof...(E), RankDynamic> t{};
-  const std::size_t statics[] = {E..., 0};
+template <std::size_t _RankDynamic, std::size_t... _Ep>
+consteval __md_ext_index_tables<sizeof...(_Ep), _RankDynamic> __md_make_ext_tables() {
+  __md_ext_index_tables<sizeof...(_Ep), _RankDynamic> t{};
+  const std::size_t __statics[] = {_Ep..., 0};
   std::size_t n = 0;
-  for (std::size_t r = 0; r < sizeof...(E); ++r) {
+  for (std::size_t r = 0; r < sizeof...(_Ep); ++r) {
     t.index[r] = n;
-    if (statics[r] == std::dynamic_extent)
-      t.inv[n++] = r;
+    if (__statics[r] == std::dynamic_extent)
+      t.__inv[n++] = r;
   }
-  t.index[sizeof...(E)] = n;
+  t.index[sizeof...(_Ep)] = n;
   return t;
 }
-template <std::size_t... E>
-struct md_ext_tables {
-  static constexpr std::size_t rank_dynamic = ((E == std::dynamic_extent ? 1 : 0) + ... + 0);
-  static constexpr std::size_t statics[sizeof...(E) + 1] = {E..., 0};
-  static constexpr md_ext_index_tables<sizeof...(E), rank_dynamic> tables =
-      ::ycxx::detail::md_make_ext_tables<rank_dynamic, E...>();
+template <std::size_t... _Ep>
+struct __md_ext_tables {
+  static constexpr std::size_t rank_dynamic = ((_Ep == std::dynamic_extent ? 1 : 0) + ... + 0);
+  static constexpr std::size_t __statics[sizeof...(_Ep) + 1] = {_Ep..., 0};
+  static constexpr __md_ext_index_tables<sizeof...(_Ep), rank_dynamic> __tables =
+      ::__ycxx::__detail::__md_make_ext_tables<rank_dynamic, _Ep...>();
 };
 
 // The second Mandate of [mdspan.extents.overview]/1 (vacuous when the first fails, so that only
 // one diagnostic is issued).
-template <class IndexType, std::size_t... E>
-consteval bool md_static_extents_fit() {
-  if constexpr (md_index_type<IndexType>)
-    return ((E == std::dynamic_extent || std::in_range<IndexType>(E)) && ...);
+template <class _IndexType, std::size_t... _Ep>
+consteval bool __md_static_extents_fit() {
+  if constexpr (__md_index_type<_IndexType>)
+    return ((_Ep == std::dynamic_extent || std::in_range<_IndexType>(_Ep)) && ...);
   else
     return true;
 }
 
-template <class T>
-inline constexpr bool md_is_extents = false;
-template <class IndexType, std::size_t... E>
-inline constexpr bool md_is_extents<std::extents<IndexType, E...>> = true;
+template <class _Tp>
+inline constexpr bool __md_is_extents = false;
+template <class _IndexType, std::size_t... _Ep>
+inline constexpr bool __md_is_extents<std::extents<_IndexType, _Ep...>> = true;
 
 // The dynamic extents: an array of index_type, nothing when every extent is static.
-template <class I, std::size_t N>
-struct md_dyn_store {
-  I v[N];
+template <class _Ip, std::size_t _Np>
+struct __md_dyn_store {
+  _Ip __v[_Np];
 };
-template <class I>
-struct md_dyn_store<I, 0> {};
+template <class _Ip>
+struct __md_dyn_store<_Ip, 0> {};
 
-}} // namespace ycxx::detail
+}} // namespace __ycxx::__detail
 
-namespace [[gnu::visibility("hidden")]] std {
+namespace [[__gnu__::__visibility__("hidden")]] std {
 
-template <class IndexType, size_t... Extents>
+template <class _IndexType, size_t... _Extents>
 class extents {
-  static_assert(ycxx::detail::md_index_type<IndexType>,
+  static_assert(__ycxx::__detail::__md_index_type<_IndexType>,
                 "std::extents: IndexType must be a signed or unsigned integer type");
-  static_assert(ycxx::detail::md_static_extents_fit<IndexType, Extents...>(),
+  static_assert(__ycxx::__detail::__md_static_extents_fit<_IndexType, _Extents...>(),
                 "std::extents: every static extent must be representable as a value of IndexType");
 
 public:
-  using index_type = IndexType;
+  using index_type = _IndexType;
   // (unsigned for a rejected IndexType, so that the Mandate above is the only diagnostic)
-  using size_type = make_unsigned_t<conditional_t<ycxx::detail::md_index_type<IndexType>, IndexType, unsigned>>;
+  using size_type = make_unsigned_t<conditional_t<__ycxx::__detail::__md_index_type<_IndexType>, _IndexType, unsigned>>;
   using rank_type = size_t;
 
 private:
-  using tables_t = ycxx::detail::md_ext_tables<Extents...>;
-  static constexpr const size_t* static_exts_ = tables_t::statics;
-  static constexpr rank_type rank_dyn_ = tables_t::rank_dynamic;
+  using __tables_t = __ycxx::__detail::__md_ext_tables<_Extents...>;
+  static constexpr const size_t* __static_exts_ = __tables_t::__statics;
+  static constexpr rank_type __rank_dyn_ = __tables_t::rank_dynamic;
 
-  static constexpr rank_type dynamic_index(rank_type i) noexcept { return tables_t::tables.index[i]; }
-  static constexpr rank_type dynamic_index_inv(rank_type i) noexcept { return tables_t::tables.inv[i]; }
+  static constexpr rank_type __dynamic_index(rank_type i) noexcept { return __tables_t::__tables.index[i]; }
+  static constexpr rank_type __dynamic_index_inv(rank_type i) noexcept { return __tables_t::__tables.__inv[i]; }
 
   // Constraints and explicitness of the converting constructor ([mdspan.extents.cons]/1, /4).
-  template <size_t... Other>
-  static consteval bool compatible() {
-    if constexpr (sizeof...(Other) != sizeof...(Extents))
+  template <size_t... _Other>
+  static consteval bool __compatible() {
+    if constexpr (sizeof...(_Other) != sizeof...(_Extents))
       return false;
     else
-      return ((Other == dynamic_extent || Extents == dynamic_extent || Other == Extents) && ...);
+      return ((_Other == dynamic_extent || _Extents == dynamic_extent || _Other == _Extents) && ...);
   }
-  template <class OtherIndexType, size_t... Other>
-  static consteval bool explicit_from() {
-    if constexpr (sizeof...(Other) != sizeof...(Extents))
+  template <class _OtherIndexType, size_t... _Other>
+  static consteval bool __explicit_from() {
+    if constexpr (sizeof...(_Other) != sizeof...(_Extents))
       return false;
     else
-      return (((Extents != dynamic_extent) && (Other == dynamic_extent)) || ...) ||
-             cmp_less(numeric_limits<index_type>::max(), numeric_limits<OtherIndexType>::max());
+      return (((_Extents != dynamic_extent) && (_Other == dynamic_extent)) || ...) ||
+             cmp_less(numeric_limits<index_type>::max(), numeric_limits<_OtherIndexType>::max());
   }
 
   // Stores the dynamic extents from n values; get(r) yields the value for rank index r of the
   // full list (n == rank()) or for the r-th dynamic extent (n == rank_dynamic()).
-  template <class Get>
-  constexpr void store(size_t n, Get get) noexcept {
-    if constexpr (rank_dyn_ != 0) {
-      for (size_t d = 0; d < rank_dyn_; ++d)
-        dyn_.v[d] = get(n == rank_dyn_ ? d : dynamic_index_inv(d));
+  template <class _Get>
+  constexpr void store(size_t n, _Get get) noexcept {
+    if constexpr (__rank_dyn_ != 0) {
+      for (size_t d = 0; d < __rank_dyn_; ++d)
+        __dyn_.__v[d] = get(n == __rank_dyn_ ? d : __dynamic_index_inv(d));
     }
   }
   // Precondition: the given value for each static extent equals it.
-  template <class Get>
-  static constexpr bool statics_match(size_t n, Get get) noexcept {
-    if (n == rank_dyn_)
+  template <class _Get>
+  static constexpr bool __statics_match(size_t n, _Get get) noexcept {
+    if (n == __rank_dyn_)
       return true;
-    for (size_t r = 0; r < sizeof...(Extents); ++r)
-      if (static_exts_[r] != dynamic_extent && !cmp_equal(get(r), static_exts_[r]))
+    for (size_t r = 0; r < sizeof...(_Extents); ++r)
+      if (__static_exts_[r] != dynamic_extent && !cmp_equal(get(r), __static_exts_[r]))
         return false;
     return true;
   }
 
 public:
   // [mdspan.extents.obs]
-  static constexpr rank_type rank() noexcept { return sizeof...(Extents); }
-  static constexpr rank_type rank_dynamic() noexcept { return rank_dyn_; }
+  static constexpr rank_type rank() noexcept { return sizeof...(_Extents); }
+  static constexpr rank_type rank_dynamic() noexcept { return __rank_dyn_; }
   static constexpr size_t static_extent(rank_type i) noexcept {
-    ycxx::detail::precondition(i < rank(), "std::extents::static_extent: index out of range");
-    return static_exts_[i];
+    __ycxx::__detail::__precondition(i < rank(), "std::extents::static_extent: index out of range");
+    return __static_exts_[i];
   }
   constexpr index_type extent(rank_type i) const noexcept {
-    ycxx::detail::precondition(i < rank(), "std::extents::extent: index out of range");
-    if constexpr (rank_dyn_ == 0) {
-      return static_cast<index_type>(static_exts_[i]);
+    __ycxx::__detail::__precondition(i < rank(), "std::extents::extent: index out of range");
+    if constexpr (__rank_dyn_ == 0) {
+      return static_cast<index_type>(__static_exts_[i]);
     } else {
-      if (static_exts_[i] == dynamic_extent)
-        return dyn_.v[dynamic_index(i)];
-      return static_cast<index_type>(static_exts_[i]);
+      if (__static_exts_[i] == dynamic_extent)
+        return __dyn_.__v[__dynamic_index(i)];
+      return static_cast<index_type>(__static_exts_[i]);
     }
   }
 
   // [mdspan.extents.cons]
   constexpr extents() noexcept = default;
 
-  template <class OtherIndexType, size_t... OtherExtents>
-    requires(compatible<OtherExtents...>())
-  constexpr explicit(explicit_from<OtherIndexType, OtherExtents...>())
-      extents(const extents<OtherIndexType, OtherExtents...>& other) noexcept {
-    if (ycxx::detail::md_checking()) {
+  template <class _OtherIndexType, size_t... _OtherExtents>
+    requires(__compatible<_OtherExtents...>())
+  constexpr explicit(__explicit_from<_OtherIndexType, _OtherExtents...>())
+      extents(const extents<_OtherIndexType, _OtherExtents...>& other) noexcept {
+    if (__ycxx::__detail::__md_checking()) {
       for (size_t r = 0; r < rank(); ++r) {
-        ycxx::detail::precondition(static_exts_[r] == dynamic_extent || cmp_equal(other.extent(r), static_exts_[r]),
+        __ycxx::__detail::__precondition(__static_exts_[r] == dynamic_extent || cmp_equal(other.extent(r), __static_exts_[r]),
                                    "std::extents: a static extent differs from the source extent");
-        ycxx::detail::precondition(in_range<index_type>(other.extent(r)),
+        __ycxx::__detail::__precondition(in_range<index_type>(other.extent(r)),
                                    "std::extents: source extent not representable as index_type");
       }
     }
     store(rank(), [&](size_t r) { return static_cast<index_type>(other.extent(r)); });
   }
 
-  template <class... OtherIndexTypes>
-    requires((is_convertible_v<OtherIndexTypes, index_type> && ...) &&
-             (is_nothrow_constructible_v<index_type, OtherIndexTypes> && ...) &&
-             (sizeof...(OtherIndexTypes) == rank_dyn_ || sizeof...(OtherIndexTypes) == rank()))
-  constexpr explicit extents(OtherIndexTypes... exts) noexcept {
-    constexpr size_t n = sizeof...(OtherIndexTypes);
-    array<index_type, n> arr{static_cast<index_type>(std::move(exts))...};
-    if (ycxx::detail::md_checking()) {
+  template <class... _OtherIndexTypes>
+    requires((is_convertible_v<_OtherIndexTypes, index_type> && ...) &&
+             (is_nothrow_constructible_v<index_type, _OtherIndexTypes> && ...) &&
+             (sizeof...(_OtherIndexTypes) == __rank_dyn_ || sizeof...(_OtherIndexTypes) == rank()))
+  constexpr explicit extents(_OtherIndexTypes... __exts) noexcept {
+    constexpr size_t n = sizeof...(_OtherIndexTypes);
+    array<index_type, n> __arr{static_cast<index_type>(std::move(__exts))...};
+    if (__ycxx::__detail::__md_checking()) {
       if constexpr (n != 0) {
         size_t r = 0;
         bool ok = true;
-        ((ok = ok && ycxx::detail::md_extent_ok<index_type>(exts, arr[r]), ++r), ...);
-        ycxx::detail::precondition(ok, "std::extents: an extent is negative or not representable as index_type");
+        ((ok = ok && __ycxx::__detail::__md_extent_ok<index_type>(__exts, __arr[r]), ++r), ...);
+        __ycxx::__detail::__precondition(ok, "std::extents: an extent is negative or not representable as index_type");
       }
-      ycxx::detail::precondition(statics_match(n, [&](size_t r) { return arr[r]; }),
+      __ycxx::__detail::__precondition(__statics_match(n, [&](size_t r) { return __arr[r]; }),
                                  "std::extents: a given extent differs from the static extent");
     }
-    store(n, [&](size_t r) { return arr[r]; });
+    store(n, [&](size_t r) { return __arr[r]; });
   }
 
-  template <class OtherIndexType, size_t N>
-    requires(is_convertible_v<const OtherIndexType&, index_type> &&
-             is_nothrow_constructible_v<index_type, const OtherIndexType&> && (N == rank_dyn_ || N == rank()))
-  constexpr explicit(N != rank_dyn_) extents(span<OtherIndexType, N> exts) noexcept {
-    init_from_array<N>(exts);
+  template <class _OtherIndexType, size_t _Np>
+    requires(is_convertible_v<const _OtherIndexType&, index_type> &&
+             is_nothrow_constructible_v<index_type, const _OtherIndexType&> && (_Np == __rank_dyn_ || _Np == rank()))
+  constexpr explicit(_Np != __rank_dyn_) extents(span<_OtherIndexType, _Np> __exts) noexcept {
+    __init_from_array<_Np>(__exts);
   }
-  template <class OtherIndexType, size_t N>
-    requires(is_convertible_v<const OtherIndexType&, index_type> &&
-             is_nothrow_constructible_v<index_type, const OtherIndexType&> && (N == rank_dyn_ || N == rank()))
-  constexpr explicit(N != rank_dyn_) extents(const array<OtherIndexType, N>& exts) noexcept {
-    init_from_array<N>(exts);
+  template <class _OtherIndexType, size_t _Np>
+    requires(is_convertible_v<const _OtherIndexType&, index_type> &&
+             is_nothrow_constructible_v<index_type, const _OtherIndexType&> && (_Np == __rank_dyn_ || _Np == rank()))
+  constexpr explicit(_Np != __rank_dyn_) extents(const array<_OtherIndexType, _Np>& __exts) noexcept {
+    __init_from_array<_Np>(__exts);
   }
 
   // [mdspan.extents.cmp]
-  template <class OtherIndexType, size_t... OtherExtents>
-  friend constexpr bool operator==(const extents& lhs, const extents<OtherIndexType, OtherExtents...>& rhs) noexcept {
-    if constexpr (sizeof...(OtherExtents) != sizeof...(Extents)) {
+  template <class _OtherIndexType, size_t... _OtherExtents>
+  friend constexpr bool operator==(const extents& __lhs, const extents<_OtherIndexType, _OtherExtents...>& __rhs) noexcept {
+    if constexpr (sizeof...(_OtherExtents) != sizeof...(_Extents)) {
       return false;
     } else {
       for (size_t r = 0; r < rank(); ++r)
-        if (!cmp_equal(lhs.extent(r), rhs.extent(r)))
+        if (!cmp_equal(__lhs.extent(r), __rhs.extent(r)))
           return false;
       return true;
     }
   }
 
 private:
-  template <size_t n, class Exts>
-  constexpr void init_from_array(const Exts& exts) noexcept {
-    if (ycxx::detail::md_checking()) {
+  template <size_t n, class _Exts>
+  constexpr void __init_from_array(const _Exts& __exts) noexcept {
+    if (__ycxx::__detail::__md_checking()) {
       for (size_t r = 0; r < n; ++r)
-        ycxx::detail::precondition(
-            ycxx::detail::md_extent_ok<index_type>(as_const(exts[r]), static_cast<index_type>(as_const(exts[r]))),
+        __ycxx::__detail::__precondition(
+            __ycxx::__detail::__md_extent_ok<index_type>(as_const(__exts[r]), static_cast<index_type>(as_const(__exts[r]))),
             "std::extents: an extent is negative or not representable as index_type");
-      ycxx::detail::precondition(statics_match(n, [&](size_t r) { return static_cast<index_type>(as_const(exts[r])); }),
+      __ycxx::__detail::__precondition(__statics_match(n, [&](size_t r) { return static_cast<index_type>(as_const(__exts[r])); }),
                                  "std::extents: a given extent differs from the static extent");
     }
-    store(n, [&](size_t r) { return static_cast<index_type>(as_const(exts[r])); });
+    store(n, [&](size_t r) { return static_cast<index_type>(as_const(__exts[r])); });
   }
 
-  [[no_unique_address]] ycxx::detail::md_dyn_store<index_type, rank_dyn_> dyn_{};
+  [[no_unique_address]] __ycxx::__detail::__md_dyn_store<index_type, __rank_dyn_> __dyn_{};
 };
 
-template <class... Integrals>
-  requires(is_convertible_v<Integrals, size_t> && ...)
-explicit extents(Integrals...) -> extents<size_t, ycxx::detail::maybe_static_ext<Integrals>...>;
+template <class... _Integrals>
+  requires(is_convertible_v<_Integrals, size_t> && ...)
+explicit extents(_Integrals...) -> extents<size_t, __ycxx::__detail::__maybe_static_ext<_Integrals>...>;
 
 } // namespace std
 
-namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
 
-template <class IndexType, class Seq>
-struct md_dextents;
-template <class IndexType, std::size_t... I>
-struct md_dextents<IndexType, std::index_sequence<I...>> {
-  using type = std::extents<IndexType, ((void)I, std::dynamic_extent)...>;
+template <class _IndexType, class _Seq>
+struct __md_dextents;
+template <class _IndexType, std::size_t... _Ip>
+struct __md_dextents<_IndexType, std::index_sequence<_Ip...>> {
+  using type = std::extents<_IndexType, ((void)_Ip, std::dynamic_extent)...>;
 };
 
-}} // namespace ycxx::detail
+}} // namespace __ycxx::__detail
 
-namespace [[gnu::visibility("hidden")]] std {
+namespace [[__gnu__::__visibility__("hidden")]] std {
 
 // [mdspan.extents.dextents], [mdspan.extents.dims]
-template <class IndexType, size_t Rank>
-using dextents = typename ycxx::detail::md_dextents<IndexType, make_index_sequence<Rank>>::type;
-template <size_t Rank, class IndexType = size_t>
-using dims = dextents<IndexType, Rank>;
+template <class _IndexType, size_t _Rank>
+using dextents = typename __ycxx::__detail::__md_dextents<_IndexType, make_index_sequence<_Rank>>::type;
+template <size_t _Rank, class _IndexType = size_t>
+using dims = dextents<_IndexType, _Rank>;
 
 } // namespace std
 
-namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
 
 // fwd-prod-of-extents(i) and rev-prod-of-extents(i) ([mdspan.extents.expo]/5-8).
-template <class E>
-constexpr std::size_t md_fwd_prod(const E& e, std::size_t i) noexcept {
+template <class _Ep>
+constexpr std::size_t __md_fwd_prod(const _Ep& e, std::size_t i) noexcept {
   std::size_t p = 1;
   for (std::size_t k = 0; k < i; ++k)
     p *= static_cast<std::size_t>(e.extent(k));
   return p;
 }
-template <class E>
-constexpr std::size_t md_rev_prod(const E& e, std::size_t i) noexcept {
+template <class _Ep>
+constexpr std::size_t __md_rev_prod(const _Ep& e, std::size_t i) noexcept {
   std::size_t p = 1;
-  for (std::size_t k = i + 1; k < E::rank(); ++k)
+  for (std::size_t k = i + 1; k < _Ep::rank(); ++k)
     p *= static_cast<std::size_t>(e.extent(k));
   return p;
 }
 
 // "The size of the multidimensional index space e is representable as a value of type T."
-template <class T, class E>
-constexpr bool md_size_fits(const E& e) noexcept {
-  for (std::size_t r = 0; r < E::rank(); ++r)
+template <class _Tp, class _Ep>
+constexpr bool __md_size_fits(const _Ep& e) noexcept {
+  for (std::size_t r = 0; r < _Ep::rank(); ++r)
     if (e.extent(r) == 0)
       return true;
-  T p = 1;
-  for (std::size_t r = 0; r < E::rank(); ++r) {
-    if (!std::in_range<T>(e.extent(r)) || !::ycxx::detail::md_mul(p, static_cast<T>(e.extent(r)), p))
+  _Tp p = 1;
+  for (std::size_t r = 0; r < _Ep::rank(); ++r) {
+    if (!std::in_range<_Tp>(e.extent(r)) || !::__ycxx::__detail::__md_mul(p, static_cast<_Tp>(e.extent(r)), p))
       return false;
   }
   return true;
 }
 
 // The Mandates of the standard layouts: a fully static index space has a representable size.
-template <class E>
-consteval bool md_static_size_fits() {
-  if constexpr (E::rank_dynamic() != 0)
+template <class _Ep>
+consteval bool __md_static_size_fits() {
+  if constexpr (_Ep::rank_dynamic() != 0)
     return true;
   else
-    return ::ycxx::detail::md_size_fits<typename E::index_type>(E());
+    return ::__ycxx::__detail::__md_size_fits<typename _Ep::index_type>(_Ep());
 }
 
 // "I... is a multidimensional index in e" for integral (index-cast) values.
-template <class E, class... I>
-constexpr bool md_is_index(const E& e, I... i) noexcept {
+template <class _Ep, class... _Ip>
+constexpr bool __md_is_index(const _Ep& e, _Ip... i) noexcept {
   std::size_t r = 0;
   bool ok = true;
-  ((ok = ok && ::ycxx::detail::md_in_interval(i, e.extent(r)), ++r), ...);
+  ((ok = ok && ::__ycxx::__detail::__md_in_interval(i, e.extent(r)), ++r), ...);
   return ok;
 }
 
-}} // namespace ycxx::detail
+}} // namespace __ycxx::__detail

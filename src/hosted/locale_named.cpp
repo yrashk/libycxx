@@ -42,7 +42,6 @@ constexpr int c_masks[__ycxx::__detail::__locale_ncategories] = {LC_COLLATE_MASK
                                                            LC_NUMERIC_MASK, LC_TIME_MASK, LC_MESSAGES_MASK};
 
 __ycxx::__detail::__pal_lock cache_lock; // the list of open locales and their counts
-__ycxx::__detail::__pal_lock lconv_lock; // localeconv's static object
 
 struct lock_guard {
   explicit lock_guard(__ycxx::__detail::__pal_lock& __l) noexcept : l_(__l) { l_.lock(); }
@@ -221,6 +220,9 @@ void read_lconv(_Lp __loc, lconv_copy& __o) {
   if constexpr (has_localeconv_l<_Lp>) {
     copy_lconv(*localeconv_l(__loc), __o);
   } else {
+    // localeconv's static object (only where there is no localeconv_l: an unused lock is an error
+    // under -Werror with Clang on Darwin).
+    static constinit __ycxx::__detail::__pal_lock lconv_lock;
     lock_guard __g(lconv_lock);
     thread_locale in(__loc);
     copy_lconv(*::localeconv(), __o);

@@ -96,10 +96,15 @@ struct __exec_proxy_stop<_Token> {
   std::inplace_stop_token token(const _Token&) const noexcept { return std::inplace_stop_token(); }
 };
 
-// A proxy for the receiver *rcvr with base Base ([exec.par.scheduler]/5). A completion its sender
-// does not declare (Errors false: no error completion; an unstoppable token: no stopped
-// completion, the backend never seeing a stop request) is not reachable and terminates.
-template <class _Base, class _Rcvr, bool _Errors = true>
+// A proxy for the receiver *rcvr with base Base ([exec.par.scheduler]/5). Fallible: the proxy of
+// a parallel_scheduler operation, whose senders declare set_error(exception_ptr) and
+// set_stopped() whatever the environment: a backend may cancel work it was never asked to stop
+// ([exec.parschedrepl.psb]/2.1.3), and the proxy's set_stopped is set_stopped(rcvr) (/5.3).
+// Otherwise, the proxy of task_scheduler's schedule sender, whose completions are set_value()
+// alone with an unstoppable token ([exec.task.scheduler]/13.4): its backend (an infallible
+// scheduler's, /2) completes with no error and is never stopped then, and the unreachable
+// completions terminate.
+template <class _Base, class _Rcvr, bool _Fallible = true>
 struct __exec_receiver_proxy_for : _Base {
   using __token_t = std::stop_token_of_t<std::execution::env_of_t<_Rcvr>>;
   _Rcvr* __rcvr;
@@ -114,14 +119,14 @@ struct __exec_receiver_proxy_for : _Base {
   }
   void set_error(std::exception_ptr e) noexcept override {
     __stop.detach();
-    if constexpr (_Errors)
+    if constexpr (_Fallible)
       std::execution::set_error(static_cast<_Rcvr&&>(*__rcvr), static_cast<std::exception_ptr&&>(e));
     else
       std::terminate();
   }
   void set_stopped() noexcept override {
     __stop.detach();
-    if constexpr (std::unstoppable_token<__token_t>)
+    if constexpr (!_Fallible && std::unstoppable_token<__token_t>)
       std::terminate();
     else
       std::execution::set_stopped(static_cast<_Rcvr&&>(*__rcvr));
@@ -137,13 +142,13 @@ protected:
   }
 };
 
-// The operation state of the parallel scheduler's schedule sender (Errors) and of
-// task_scheduler's (which has no error completion).
-template <class _Rcvr, bool _Errors = true>
+// The operation state of the parallel scheduler's schedule sender (Fallible) and of
+// task_scheduler's.
+template <class _Rcvr, bool _Fallible = true>
 struct __exec_par_sched_op {
   using operation_state_concept = std::execution::operation_state_tag;
   using __backend_t = std::execution::parallel_scheduler_replacement::parallel_scheduler_backend;
-  using __proxy_t = __exec_receiver_proxy_for<std::execution::parallel_scheduler_replacement::receiver_proxy, _Rcvr, _Errors>;
+  using __proxy_t = __exec_receiver_proxy_for<std::execution::parallel_scheduler_replacement::receiver_proxy, _Rcvr, _Fallible>;
 
   _Rcvr __rcvr;
   std::shared_ptr<__backend_t> __backend;

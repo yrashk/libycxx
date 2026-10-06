@@ -1,0 +1,59 @@
+name: setup-linux-tsan
+description: >
+  ThreadSanitizer's toolchains, on the bare ubuntu-24.04 runner (not the gcc:16 container, whose
+  GCC may lack libsanitizer and whose kernel settings cannot be changed): vm.mmap_rnd_bits at most
+  28 (ThreadSanitizer's shadow memory layout needs it), Clang 23 with its sanitizer runtimes
+  (libclang-rt-23-dev) and lld from apt.llvm.org, GCC 16.2 with its sanitizer runtimes built by
+  tools/toolchain/provision --with-sanitizers (cached; the build takes about an hour), ninja,
+  uv (lit runs through uvx), and with locales: 'true' the named locales the external suites
+  require (tools/ci/gen-locales).
+inputs:
+  locales:
+    description: generate the named locales the libc++ and libstdc++ suites require
+    default: 'false'
+  save-gcc:
+    description: save the built GCC to the cache when it was not restored from it (the job that builds it)
+    default: 'false'
+outputs:
+  gcc-cache-hit:
+    description: whether GCC came from the cache
+    value: ${{ steps.gcc-cache.outputs.cache-hit }}
+runs:
+  using: composite
+  steps:
+    # ThreadSanitizer maps its shadow memory at fixed addresses, which the 32 bits of mmap
+    # randomization of recent kernels (the runners' 6.x) can collide with ("FATAL:
+    # ThreadSanitizer: unexpected memory mapping"); 28 bits is the long-standing default.
+    - shell: bash
+      run: |
+        bits=$(sysctl -n vm.mmap_rnd_bits)
+        echo "vm.mmap_rnd_bits=$bits"
+        if [ "$bits" -gt 28 ]; then sudo sysctl -w vm.mmap_rnd_bits=28; fi
+    - shell: bash
+      run: |
+        sudo apt-get update -qq
+        sudo apt-get install -y -qq wget gnupg lsb-release ninja-build cmake git xz-utils curl tzdata locales pipx >/dev/null
+        wget -qO- https://apt.llvm.org/llvm-snapshot.gpg.key | sudo tee /etc/apt/trusted.gpg.d/apt.llvm.org.asc >/dev/null
+        echo "deb http://apt.llvm.org/$(lsb_release -cs)/ llvm-toolchain-$(lsb_release -cs)-23 main" |
+          sudo tee /etc/apt/sources.list.d/llvm.list >/dev/null
+        sudo apt-get update -qq
+        sudo apt-get install -y -qq clang-23 lld-23 libclang-rt-23-dev >/dev/null
+        pipx install uv
+        echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+    # GCC 16.2, built with libsanitizer under the provision prefix. The key names the version and
+    # the provision script, so that a change to how GCC is built rebuilds it.
+    - id: gcc-cache
+      uses: actions/cache/restore@v4
+      with:
+        path: ~/.local/share/ycxx/toolchains/gcc-16.2.0
+        key: ycxx-gcc-16.2.0-sanitizers-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('tools/toolchain/provision') }}
+    - shell: bash
+      run: tools/toolchain/provision --with-sanitizers --jobs 4
+    - if: inputs.save-gcc == 'true' && steps.gcc-cache.outputs.cache-hit != 'true'
+      uses: actions/cache/save@v4
+      with:
+        path: ~/.local/share/ycxx/toolchains/gcc-16.2.0
+        key: ${{ steps.gcc-cache.outputs.cache-primary-key }}
+    - if: inputs.locales == 'true'
+      shell: bash
+      run: sudo tools/ci/gen-locales

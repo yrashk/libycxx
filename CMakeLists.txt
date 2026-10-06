@@ -312,6 +312,33 @@ set_source_files_properties(src/hosted/iostream.cpp src/hosted/locale.cpp PROPER
 # declared [[deprecated]].
 set_property(SOURCE src/hosted/locale.cpp APPEND PROPERTY COMPILE_OPTIONS -Wno-deprecated-declarations)
 
+# ---- Sanitizer builds (YCXX_SANITIZE): libycxx itself instrumented ----
+# A comma-separated list of the compilers' -fsanitize= names: address, undefined, thread (e.g.
+# "address,undefined"). The archives are compiled with it, so that the sanitizer sees what the
+# library does: ThreadSanitizer the library's own atomics and the synchronization built on them
+# (futex mutexes, the thread pool's queue, reference counts), which it cannot see in uninstrumented
+# code; AddressSanitizer and UBSan the library's memory accesses and operations. Programs linking
+# such a build must be linked with the same -fsanitize= (ycxx::ycxx adds it to their link).
+# tools/run-conformance builds one per compiler and sanitizer set when SANITIZER is set
+# (build/<cc>-<sanitizers>); the default build is unchanged. DECISIONS §6.8.
+# What the sanitizer runtimes supply instead of libycxx is linked from them: the global allocation
+# functions (each in its own archive member, never pulled in when the runtime defines them) and,
+# with ThreadSanitizer, the static-local guards (src/abi/guard.cpp).
+set(YCXX_SANITIZE "" CACHE STRING
+    "Instrument libycxx with -fsanitize=<list> (address, undefined, thread; comma-separated); empty: not instrumented")
+if(YCXX_SANITIZE)
+  string(REPLACE "," ";" _ycxx_sanitizers "${YCXX_SANITIZE}")
+  foreach(_s IN LISTS _ycxx_sanitizers)
+    if(NOT _s MATCHES "^(address|undefined|thread)$")
+      message(FATAL_ERROR "libycxx: YCXX_SANITIZE: unknown sanitizer '${_s}' (address, undefined, thread)")
+    endif()
+  endforeach()
+  set(_ycxx_sanitize_flags -fsanitize=${YCXX_SANITIZE} -fno-sanitize-recover=all -fno-omit-frame-pointer)
+  target_compile_options(ycxx PRIVATE ${_ycxx_sanitize_flags})
+  target_compile_options(ycxx_abi PRIVATE ${_ycxx_sanitize_flags})
+  message(STATUS "libycxx: instrumented with -fsanitize=${YCXX_SANITIZE}")
+endif()
+
 # The two archives refer to each other (the runtime uses the platform layer and operator
 # delete; the library throws through the runtime): a cyclic static dependency, which CMake
 # links by repeating the pair.
@@ -339,6 +366,16 @@ endif()
 # libgcc_s.so; a second, static copy (libgcc_eh) used by the personality routine would abort.
 target_link_options(ycxx_ycxx INTERFACE $<$<LINK_LANGUAGE:CXX>:-nostdlib++>
                     $<$<AND:$<LINK_LANGUAGE:CXX>,$<PLATFORM_ID:Linux>>:-shared-libgcc>)
+# An instrumented libycxx needs its sanitizers' runtimes in the program.
+if(YCXX_SANITIZE)
+  target_link_options(ycxx_ycxx INTERFACE -fsanitize=${YCXX_SANITIZE})
+  # Clang links ThreadSanitizer's C++ part whole: strong global allocation functions that would
+  # bypass libycxx's (and clash with a program's replacement); malloc stays intercepted
+  # (tools/ycxx-cxx does the same).
+  if(YCXX_SANITIZE MATCHES "thread")
+    target_link_options(ycxx_ycxx INTERFACE $<$<CXX_COMPILER_ID:Clang>:-fno-sanitize-link-c++-runtime>)
+  endif()
+endif()
 # The allocation table stays in every program and is visible to the shared libraries it loads
 # (cmake/ycxx-link.cmake; DECISIONS §2).
 include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/ycxx-link.cmake)

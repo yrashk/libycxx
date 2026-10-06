@@ -12,6 +12,9 @@ repo = lit_config.params['repo']
 compiler = lit_config.params.get('compiler', 'clang')
 tests_root = lit_config.params.get('tests', '/opt/src/llvm-project/libcxx/test')
 sanitizer = lit_config.params.get('sanitizer', '')
+# The libycxx build to link (tools/ycxx-cxx --libdir); a sanitizer run's is instrumented with the
+# same sanitizers (tools/run-conformance; DECISIONS §6.8).
+libdir = lit_config.params.get('libdir', '')
 
 config.name = f'libycxx-libcxx-{compiler}'
 config.test_source_root = os.path.join(tests_root, 'std')
@@ -53,7 +56,7 @@ if os.geteuid() == 0:
     features.add('root')
 if sanitizer:
     for s in sanitizer.split(','):
-        features.add({'asan': 'asan', 'ubsan': 'ubsan'}[s])
+        features.add({'asan': 'asan', 'ubsan': 'ubsan', 'tsan': 'tsan'}[s])
 # Named locales the machine has and libycxx accepts (tests/ycxxlit/locales.py), and libc++'s long tests on request
 # (YCXX_LONG_TESTS=1: the nightly runs).
 import sys
@@ -71,10 +74,10 @@ base_flags = ['-I' + support, '-D_LIBCPP_DISABLE_DEPRECATION_WARNINGS', '-fno-di
               '-Wno-deprecated-declarations', '-Wno-unused-command-line-argument'] if compiler == 'clang' else \
              ['-I' + support, '-fdiagnostics-color=never', '-Wno-deprecated-declarations']
 if sanitizer:
-    base_flags += ['-fsanitize=' + ('address' if 'asan' in sanitizer else '') +
-                   (',' if 'asan' in sanitizer and 'ubsan' in sanitizer else '') +
-                   ('undefined' if 'ubsan' in sanitizer else ''), '-fno-sanitize-recover=all', '-g']
-    base_flags = [f for f in base_flags if f != '-fsanitize=']
+    base_flags += ['-fsanitize=' + ','.join({'asan': 'address', 'ubsan': 'undefined', 'tsan': 'thread'}[s]
+                                            for s in sanitizer.split(',')), '-fno-sanitize-recover=all', '-g']
+if libdir:
+    base_flags = ['--libdir=' + libdir] + base_flags
 
 import sys
 sys.path.insert(0, os.path.join(repo, 'tests'))

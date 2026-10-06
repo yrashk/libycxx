@@ -742,10 +742,33 @@ under the same name. Otherwise it gets one alias template in `config.hpp`.
      are an archive member of their own (`src/abi/guard.cpp`), so the sanitizer's, which it
      understands, are used. ASan's weak `__cxa_throw` and `__cxa_rethrow_primary_exception`
      interceptors give way to libycxx's (strong, in the program); its `_Unwind_RaiseException`
-     interceptor sits in front of `libgcc_s`'s and unpoisons the stack on every throw. GCC's
-     driver puts the shared `libtsan.so` first on the link line, so with GCC its allocation
-     functions serve the program as ASan's do (the tests of libycxx's own then fail: STATUS,
-     own-suite configurations); the nightly TSan job is Clang's.
+     interceptor sits in front of `libgcc_s`'s and unpoisons the stack on every throw.
+   - GCC's ThreadSanitizer runtime is a shared library, `libtsan.so`, with the global
+     allocation functions in it, and GCC's driver links it ahead of every input
+     (`libtsan_preinit.o -ltsan` before the objects, `g++ -###`; no option moves it, and
+     `-static-libtsan` links the runtime whole, its allocation functions included). A definition
+     in a shared library satisfies an undefined reference as well as an archive member would, so
+     the members holding libycxx's allocation functions were never linked and the runtime's served
+     the program: 7 own tests of libycxx's own behaviour failed (`new/aligned_nothrow`,
+     `aligned_edge_sizes`, `class_aligned_lookup`, `new_handler_loop`, `replacement_forwarding`,
+     `memory/allocator_allocate_overflow`, `linkage/shared_library_replaced_new`). Naming the
+     functions with `-u` does not help, for the same reason (checked with GNU ld and lld). But a
+     definition in the program wins over a shared library's for every reference the program
+     links, provided its archive member is linked, and a weak one as well (ELF: only a regular
+     object's definition is preferred to a shared one; checked with both linkers). So each
+     default allocation function's file also defines a hidden anchor,
+     `__ycxx_allocation_anchor_<file name>`, which no other library defines, the defaults are weak
+     definitions, and a ThreadSanitizer build's link options (`cmake/ycxx-link.cmake`, in
+     `ycxx::ycxx` and `<build>/ycxx-link-options` for `tools/ycxx-cxx`) name all 20 anchors as
+     undefined, as they name the allocation table's: libycxx's defaults are linked into every
+     program and serve it, ahead of `libtsan.so`'s, and a program's own replacement, a strong
+     definition, still wins over the weak default ([replacement.functions]). CMake checks at
+     configure time that every allocation function file defines its anchor. Clang's TSan programs
+     get the same options; there `-fno-sanitize-link-c++-runtime` is still needed, since
+     `libclang_rt.tsan_cxx` is linked whole as regular objects, whose strong definitions would win
+     over the weak defaults. Verified with GCC 16.2's own `libtsan.so` (built with libsanitizer by
+     `tools/toolchain/provision --with-sanitizers`): the 7 tests pass, and the whole own suite
+     under GCC's ThreadSanitizer (STATUS, own-suite configurations).
    - GCC's `-Wtsan` (on by default, an error under `-Werror`) is turned off for a ThreadSanitizer
      build: the library's seq_cst fences order a store before a later load (atomic
      wait/notify, hazard pointers, rcu); no data relies on them for happens-before.

@@ -261,12 +261,14 @@ Sanitizer runs link libycxx built with the same sanitizers (`build/<cc>-<sanitiz
 With the uninstrumented library the TSan run of `execution/` failed 6 tests with 307 reports,
 every one a hand-off through `src/hosted/parallel_scheduler.cpp`'s queue (futex mutex) or the
 exception reference counts (`src/abi/exception.cpp`), which ThreadSanitizer could not see; with
-the instrumented library they are gone. GCC: GCC 16.2 here has no sanitizer runtimes; with GCC
-13's `libtsan.so.2` (`--cxxflags=-B<dir>`, not a supported setup) the whole suite gives no
-ThreadSanitizer report, and 8 failures, all from the shared `libtsan.so` (linked first by GCC's
-driver) supplying the global allocation functions in place of libycxx's: the tests of libycxx's
-own `operator new` (new_handler loop, bad_alloc for impossible sizes, forwarding to a
-replacement), as under ASan. So the nightly TSan job is Clang's.
+the instrumented library they are gone. GCC 16.2 with its own `libtsan.so` (built with
+libsanitizer by `tools/toolchain/provision --with-sanitizers`), `-s tsan`, `build/gcc-tsan`, whole
+own suite (2026-10-06): 2722 pass / 0 fail / 15 xfail / 57 unsupported. GCC's driver links the
+shared `libtsan.so`, which defines the global allocation functions, ahead of every input;
+libycxx's defaults are weak and a ThreadSanitizer build names their anchors as undefined, so
+they serve the program (DECISIONS §6.8), and the tests of libycxx's own `operator new`
+(new_handler loop, bad_alloc for impossible sizes, forwarding to a replacement) pass. The
+nightly TSan job runs both compilers.
 
 | Configuration | GCC 16.2 | Clang 23.1 |
 |---|---|---|

@@ -101,13 +101,14 @@ void LeafDeleter::operator()(Leaf* p) const noexcept {
     errors.fetch_add(1);
     return;
   }
+  std::atomic<long>* c = counter;
   const int fan = p->fan;
-  delete p;
+  delete p;  // destroys this deleter, which p holds: nothing of it is used after this
   if (fan == -1)
     for (long k = 0; k < Wide; ++k) retire_leaf(2);
   else
     for (int k = 0; k < fan; ++k) retire_leaf(0);
-  counter->fetch_add(1);
+  c->fetch_add(1);
 }
 
 // 3. default_delete<T>: T's destructor retires the next node (made by it): a chain of 1,000,000.

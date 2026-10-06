@@ -1135,6 +1135,14 @@ Wording problems found while writing the spec-derived tests (tests/ycxx), not ye
   `transform_sender(set_value_t, BulkSndr&&, const Env&) noexcept(see below)`, but /14-15
   specify `transform_sender(BulkSndr&&, const Env&)` without the tag (the parallel scheduler's
   domain, [exec.par.scheduler], has the tag in both places).
+- [exec.snd.transform]/3: transform-recurse uses `transformed-sender(dom, tag, s)`, a name
+  defined nowhere (the paragraph defines `transformed-sndr`).
+- [exec.affine]/7 says that get_completion_signatures of `affine(sndr)` exits with an exception
+  when the receiver's environment has no (infallible) start scheduler, but for a child with an
+  `affine()` member /5 makes `affine.transform_sender(sndr, ev)` that member's result whatever
+  `ev` holds, and get_completion_signatures transforms the sender first
+  ([exec.getcomplsigs]), so `affine(just(1))` has `just(1)`'s signatures in `env<>`. libycxx
+  follows /5 there (own test `execution/affine_member_and_signatures`).
 
 ## Performance
 `bench/` (manual, not in CI; DECISIONS §15) times the hot paths against libstdc++ on both

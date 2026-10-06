@@ -6,7 +6,8 @@
 #
 # Stages (default: policy build freestanding ycxx; "all": every stage):
 #   policy        preprocessor, include-layering, namespace-visibility and shell-portability
-#                 checks (tools/check_*.py), and the std modules' export lists (tools/gen_std_module.py --check)
+#                 checks (tools/check_*.py), the headers' reserved names (tools/uglify.py --check)
+#                 and the std modules' export lists (tools/gen_std_module.py --check)
 #   build         the library for each compiler, RelWithDebInfo (build/<cc>, what the suites
 #                 link) and Release (build/<cc>-release, -O3, as CMake consumers build it)
 #   freestanding  every core header with -ffreestanding -nostdinc, bare-metal smoke link
@@ -221,6 +222,8 @@ for stage in $stages; do
       step "include layering" policy-includes python3 tools/check_includes.py || :
       step "hidden visibility of the library namespaces" policy-visibility python3 tools/check_visibility.py || :
       step "shell portability (bash 3.2, dash)" policy-shell python3 tools/check_shell.py || :
+      # [macro.names]: the headers spell no name a program may #define (DECISIONS §2).
+      step "reserved names only in the headers" policy-names python3 tools/uglify.py --check || :
       # The export lists of the modules std and std.compat are read from the headers by both
       # compilers (Clang's AST, GCC's reflection): stale when a header adds or removes a name.
       step "std modules up to date with the headers" policy-std-modules python3 tools/gen_std_module.py --check || :

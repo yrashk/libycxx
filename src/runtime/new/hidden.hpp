@@ -8,7 +8,7 @@
 // directive ([replacement.functions]).
 //
 // The defaults are also weak, and each file defines a hidden anchor,
-// `__ycxx_allocation_anchor_<file name>`, for the sanitizer runtimes that define the allocation
+// `__ycxx_allocation_anchor_<__file name>`, for the sanitizer runtimes that define the allocation
 // functions themselves in a shared library linked ahead of the program's archives (GCC's
 // libtsan.so; DECISIONS §6.8). A definition in a shared library satisfies an undefined reference
 // to the function, so the archive member holding libycxx's would never be linked, and the

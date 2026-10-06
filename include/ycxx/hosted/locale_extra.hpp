@@ -247,30 +247,37 @@ protected:
     }
   }
   virtual iter_type do_get_weekday(iter_type s, iter_type end, ios_base& f, ios_base::iostate& err, tm* t) const {
+    // e: this call's state (err may hold failbit already on entry; it is only or-ed into)
     int v;
+    ios_base::iostate e = ios_base::goodbit;
     if (named_ != nullptr)
-      s = match_name(s, end, f, err, named_->names, 14, v);
+      s = match_name(s, end, f, e, named_->names, 14, v);
     else
-      s = match_name(s, end, f, err, ycxx::detail::c_weekday_names, 14, v);
-    if (!(err & ios_base::failbit))
+      s = match_name(s, end, f, e, ycxx::detail::c_weekday_names, 14, v);
+    if (!(e & ios_base::failbit))
       t->tm_wday = v % 7;
+    err |= e;
     return s;
   }
   virtual iter_type do_get_monthname(iter_type s, iter_type end, ios_base& f, ios_base::iostate& err, tm* t) const {
     int v;
+    ios_base::iostate e = ios_base::goodbit;
     if (named_ != nullptr)
-      s = match_name(s, end, f, err, named_->names + 14, 24, v);
+      s = match_name(s, end, f, e, named_->names + 14, 24, v);
     else
-      s = match_name(s, end, f, err, ycxx::detail::c_month_names, 24, v);
-    if (!(err & ios_base::failbit))
+      s = match_name(s, end, f, e, ycxx::detail::c_month_names, 24, v);
+    if (!(e & ios_base::failbit))
       t->tm_mon = v % 12;
+    err |= e;
     return s;
   }
   virtual iter_type do_get_year(iter_type s, iter_type end, ios_base& f, ios_base::iostate& err, tm* t) const {
     int y, digits;
-    s = read_number(s, end, f, err, 4, y, &digits);
-    if (!(err & ios_base::failbit))
+    ios_base::iostate e = ios_base::goodbit;
+    s = read_number(s, end, f, e, 4, y, &digits);
+    if (!(e & ios_base::failbit))
       t->tm_year = (digits <= 2 ? (y < 69 ? y + 2000 : y + 1900) : y) - 1900;
+    err |= e;
     return s;
   }
   // [locale.time.get.virtuals]/11-15: one strptime conversion.
@@ -947,9 +954,15 @@ private:
           ++s;
         break;
       case money_base::symbol: {
-        // without showbase the symbol is optional, consumed only if more of the format follows
-        const bool needed = showbase || (i < 3 && !(i == 2 && pat.field[3] == money_base::none)) ||
-                            (sign != nullptr && sign->size() > 1);
+        // without showbase the symbol is optional, consumed only if other characters are needed
+        // to complete the format: a later value, a later space that is not last, a later sign
+        // when neither sign string is empty, or the rest of a sign already begun
+        bool needed = showbase || (sign != nullptr && sign->size() > 1);
+        for (int j = i + 1; j < 4; ++j) {
+          const auto f = static_cast<money_base::part>(pat.field[j]);
+          needed = needed || f == money_base::value || (f == money_base::space && j < 3) ||
+                   (f == money_base::sign && !pos.empty() && !neg.empty());
+        }
         if (sym.empty())
           break;
         if (!needed && !showbase)

@@ -568,10 +568,10 @@ import std.compat;
 #include <vector>
 #include <string>
 
+// (No names of the program's own: most short ones are macros here.)
 int main() {
-  std::vector<std::string> v{"a", "b"};
-  std::println("{}", v);
-  return std::ranges::count(v, "a") == 1 ? 0 : 1;
+  std::println("{}", std::vector<std::string>{"a", "b"});
+  return std::ranges::count(std::vector<std::string>{"a", "b"}, "a") == 1 ? 0 : 1;
 }
 """
     for h in headers:

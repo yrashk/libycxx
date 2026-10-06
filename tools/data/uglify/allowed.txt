@@ -27,6 +27,8 @@ container container_type iter current                                      # ins
 delete_object                                                              # polymorphic_allocator
 deleter_type weak_type                                                     # unique_ptr, shared_ptr
 den num                                                                    # ratio
+period                                                                     # duration, clocks
+key mapped                                                                 # node handles
 elapsed is_leap_second                                                     # leap_second_info
 leap_seconds links version zones                                           # tzdb
 error_types sender_concept receiver_concept operation_state_concept scheduler_concept  # [exec]

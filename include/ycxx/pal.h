@@ -15,6 +15,14 @@
  * Conventions:
  *   - Functions returning int return 0 on success and a positive errno-style code on failure.
  *   - No function throws. All are callable from C.
+ *   - In C++ every function is declared noexcept, except those that are, or may call, a POSIX
+ *     cancellation point (read, write, open, close, pthread_join, clock_nanosleep, ...; the
+ *     file layer's, whatever its provider calls): thread cancellation unwinds the thread from
+ *     inside them (a forced unwind, a foreign exception to C++), and the callers' cleanups
+ *     must run. Given a noexcept declaration the compilers drop those cleanups around the
+ *     call (an object's destructor is then skipped), and a frame that has other landing pads,
+ *     such as every function under -fsanitize=thread, has no call-site entry for the call, so
+ *     the unwind calls std::terminate (the Itanium C++ ABI's rule for a call that cannot throw).
  *   - Opaque handles are pointer-sized integers (ycxx_pal_handle).
  *   - Every function has hidden visibility (the attribute on each declaration, which a definition
  *     inherits): an image that links libycxx binds to its own PAL and exports none of it.
@@ -55,9 +63,9 @@ enum { ycxx_pal_stdin = 0, ycxx_pal_stdout = 1, ycxx_pal_stderr = 2 };
    layer alone handles ycxx_pal_stderr (the diagnostic stream: terminate's report, contract
    violations; it may discard the bytes and report them written); 'console' adds
    ycxx_pal_stdout (std::print without a C library). */
-[[__gnu__::__visibility__("hidden")]] int ycxx_pal_write(ycxx_pal_handle __fd, const void* data, ycxx_pal_size n, ycxx_pal_size* __written) YCXX_PAL_NOEXCEPT;
+[[__gnu__::__visibility__("hidden")]] int ycxx_pal_write(ycxx_pal_handle __fd, const void* data, ycxx_pal_size n, ycxx_pal_size* __written);
 /* Read up to n bytes from stream `__fd`. *got == 0 with return 0 means end of file. */
-[[__gnu__::__visibility__("hidden")]] int ycxx_pal_read(ycxx_pal_handle __fd, void* data, ycxx_pal_size n, ycxx_pal_size* __got) YCXX_PAL_NOEXCEPT;
+[[__gnu__::__visibility__("hidden")]] int ycxx_pal_read(ycxx_pal_handle __fd, void* data, ycxx_pal_size n, ycxx_pal_size* __got);
 /* Whether `__fd` refers to a terminal (used by std::print for unicode/vprint_unicode). */
 [[__gnu__::__visibility__("hidden")]] int ycxx_pal_is_terminal(ycxx_pal_handle __fd) YCXX_PAL_NOEXCEPT;
 
@@ -72,11 +80,11 @@ enum { ycxx_pal_clock_realtime = 0, ycxx_pal_clock_monotonic = 1 };
 /* A random source chosen by name (std::random_device's token, `__len` bytes, not null-terminated).
  * POSIX: "default" and "getrandom" (the system generator: getrandom/getentropy), "/dev/urandom",
  * "/dev/random". Stores a handle in *h; returns EINVAL for an unknown token. */
-[[__gnu__::__visibility__("hidden")]] int ycxx_pal_random_open(const char* token, ycxx_pal_size __len, ycxx_pal_handle* h) YCXX_PAL_NOEXCEPT;
+[[__gnu__::__visibility__("hidden")]] int ycxx_pal_random_open(const char* token, ycxx_pal_size __len, ycxx_pal_handle* h);
 /* Fills data with n bytes from the source. */
-[[__gnu__::__visibility__("hidden")]] int ycxx_pal_random_read(ycxx_pal_handle h, void* data, ycxx_pal_size n) YCXX_PAL_NOEXCEPT;
+[[__gnu__::__visibility__("hidden")]] int ycxx_pal_random_read(ycxx_pal_handle h, void* data, ycxx_pal_size n);
 /* Releases the source. */
-[[__gnu__::__visibility__("hidden")]] void ycxx_pal_random_close(ycxx_pal_handle h) YCXX_PAL_NOEXCEPT;
+[[__gnu__::__visibility__("hidden")]] void ycxx_pal_random_close(ycxx_pal_handle h);
 
 /* ---- waiting on an address (layer 'threads'; the fallback without it: wait returns at once,
         the wakes do nothing) ------------------------------------------------------------- */
@@ -102,7 +110,7 @@ typedef __UINT32_TYPE__ ycxx_pal_u32;
 [[__gnu__::__visibility__("hidden")]] int ycxx_pal_thread_create(ycxx_pal_handle* thread, void* (*start)(void*), void* arg,
                            ycxx_pal_size __stack_size) YCXX_PAL_NOEXCEPT;
 /* Waits for the thread to end and releases its handle. */
-[[__gnu__::__visibility__("hidden")]] int ycxx_pal_thread_join(ycxx_pal_handle thread) YCXX_PAL_NOEXCEPT;
+[[__gnu__::__visibility__("hidden")]] int ycxx_pal_thread_join(ycxx_pal_handle thread);
 /* Releases the handle; the thread's resources are freed when it ends. */
 [[__gnu__::__visibility__("hidden")]] int ycxx_pal_thread_detach(ycxx_pal_handle thread) YCXX_PAL_NOEXCEPT;
 /* The calling thread's handle. */
@@ -114,7 +122,7 @@ typedef __UINT32_TYPE__ ycxx_pal_u32;
 /* The number of hardware threads available, or 0 if unknown. */
 [[__gnu__::__visibility__("hidden")]] unsigned ycxx_pal_hardware_concurrency(void) YCXX_PAL_NOEXCEPT;
 /* Blocks the calling thread until the absolute time sec:nsec of `clock` has passed. */
-[[__gnu__::__visibility__("hidden")]] void ycxx_pal_sleep_until(int clock, ycxx_pal_i64 __sec, ycxx_pal_i64 __nsec) YCXX_PAL_NOEXCEPT;
+[[__gnu__::__visibility__("hidden")]] void ycxx_pal_sleep_until(int clock, ycxx_pal_i64 __sec, ycxx_pal_i64 __nsec);
 
 /* Points to a flag that is nonzero only while the process certainly has a single thread: it is
    cleared before a second thread starts, and set again (if ever) only once the process is back to
@@ -155,7 +163,7 @@ typedef __UINT32_TYPE__ ycxx_pal_u32;
    start address. Returns 0 if found; *name stays valid while the object is loaded. */
 [[__gnu__::__visibility__("hidden")]] int ycxx_pal_dynamic_symbol(ycxx_pal_handle __pc, const char** name, ycxx_pal_handle* start) YCXX_PAL_NOEXCEPT;
 /* Maps the file at path read-only into memory. Returns 0 on success. */
-[[__gnu__::__visibility__("hidden")]] int ycxx_pal_map_file(const char* path, const void** data, ycxx_pal_size* size) YCXX_PAL_NOEXCEPT;
+[[__gnu__::__visibility__("hidden")]] int ycxx_pal_map_file(const char* path, const void** data, ycxx_pal_size* size);
 /* Unmaps a file mapped by ycxx_pal_map_file. */
 [[__gnu__::__visibility__("hidden")]] void ycxx_pal_unmap_file(const void* data, ycxx_pal_size size) YCXX_PAL_NOEXCEPT;
 
@@ -180,19 +188,19 @@ enum {
 /* Opens the file `name` with a combination of the flags above ([filebuf.members]'s table of
    modes, as fopen's "r", "w", "a", "r+", "w+", "a+" and "x"); stores a nonzero handle in *h. The
    position starts at 0. */
-[[__gnu__::__visibility__("hidden")]] int ycxx_pal_file_open(const char* name, int flags, ycxx_pal_handle* h) YCXX_PAL_NOEXCEPT;
+[[__gnu__::__visibility__("hidden")]] int ycxx_pal_file_open(const char* name, int flags, ycxx_pal_handle* h);
 /* Closes the file; the handle is released even on failure. */
-[[__gnu__::__visibility__("hidden")]] int ycxx_pal_file_close(ycxx_pal_handle h) YCXX_PAL_NOEXCEPT;
+[[__gnu__::__visibility__("hidden")]] int ycxx_pal_file_close(ycxx_pal_handle h);
 /* Reads up to n bytes at the position, which advances; *got == 0 with return 0 means end of
    file. */
-[[__gnu__::__visibility__("hidden")]] int ycxx_pal_file_read(ycxx_pal_handle h, void* data, ycxx_pal_size n, ycxx_pal_size* __got) YCXX_PAL_NOEXCEPT;
+[[__gnu__::__visibility__("hidden")]] int ycxx_pal_file_read(ycxx_pal_handle h, void* data, ycxx_pal_size n, ycxx_pal_size* __got);
 /* Writes up to n bytes at the position (at the end with ycxx_pal_file_append), which advances. */
-[[__gnu__::__visibility__("hidden")]] int ycxx_pal_file_write(ycxx_pal_handle h, const void* data, ycxx_pal_size n, ycxx_pal_size* __written) YCXX_PAL_NOEXCEPT;
+[[__gnu__::__visibility__("hidden")]] int ycxx_pal_file_write(ycxx_pal_handle h, const void* data, ycxx_pal_size n, ycxx_pal_size* __written);
 /* Sets the position to off from the start (whence 0), the position (1) or the end (2) and stores
    the new position, from the start, in *pos. */
-[[__gnu__::__visibility__("hidden")]] int ycxx_pal_file_seek(ycxx_pal_handle h, ycxx_pal_i64 __off, int __whence, ycxx_pal_i64* __pos) YCXX_PAL_NOEXCEPT;
+[[__gnu__::__visibility__("hidden")]] int ycxx_pal_file_seek(ycxx_pal_handle h, ycxx_pal_i64 __off, int __whence, ycxx_pal_i64* __pos);
 /* Makes what was written durable as far as the provider's storage needs (may do nothing). */
-[[__gnu__::__visibility__("hidden")]] int ycxx_pal_file_flush(ycxx_pal_handle h) YCXX_PAL_NOEXCEPT;
+[[__gnu__::__visibility__("hidden")]] int ycxx_pal_file_flush(ycxx_pal_handle h);
 
 /* <filesystem> and the time zone database call POSIX directly (src/hosted/filesystem.cpp,
    tzdb.cpp; DECISIONS §8): they are built with YCXX_PAL=posix only. */

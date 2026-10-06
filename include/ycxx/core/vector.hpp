@@ -261,7 +261,7 @@ private:
   }
   // Appends the elements of a single-pass sequence; on an exception the appended elements are
   // removed again.
-  template <class It, class Sent>
+  template <bool MayOverlap = false, class It, class Sent>
   constexpr void append_input(It first, Sent last) {
     struct rollback {
       vector& v;
@@ -273,8 +273,21 @@ private:
         }
       }
     } g{*this, size()};
-    for (; first != last; ++first)
+    for (; first != last; ++first) {
+      if (MayOverlap && last_ == cap_) {
+        // Growing frees the storage the rest of the range may refer to: append_range, unlike
+        // insert_range, has no precondition that rg does not overlap *this ([sequence.reqmts]).
+        // Collect the rest first, then move it in.
+        vector rest(alloc_);
+        for (; first != last; ++first)
+          rest.emplace_back(*first);
+        reserve(grow_to(rest.size()));
+        for (T& x : rest)
+          emplace_back(static_cast<T&&>(x));
+        break;
+      }
       emplace_back(*first);
+    }
     g.n = size_type(-1);
   }
 
@@ -671,7 +684,7 @@ public:
         if (h > spare())
           reserve(size() + (h < max_size() - size() ? h : max_size() - size()));
       }
-      append_input(ranges::begin(rg), ranges::end(rg));
+      append_input<true>(ranges::begin(rg), ranges::end(rg));
     }
   }
   constexpr void pop_back() {

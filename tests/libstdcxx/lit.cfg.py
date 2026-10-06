@@ -17,7 +17,7 @@ config.excludes = ['ext', 'tr1', 'tr2', 'backward', 'experimental', 'decimal', '
                    'libstdc++-xmethods', 'performance']
 
 sys.path.insert(0, os.path.join(repo, 'tests'))
-from ycxxlit.libstdcxx_format import LibstdcxxFormat
+from ycxxlit.libstdcxx_format import LibstdcxxFormat, build_support_lib
 
 # Configuration macros of the libstdc++ build that some tests branch on; both features exist here.
 flags = ['-I' + os.path.join(tests_root, 'util'), '-I' + os.path.join(repo, 'tests', 'libstdcxx', 'shim'),
@@ -29,9 +29,13 @@ flags = ['-I' + os.path.join(tests_root, 'util'), '-I' + os.path.join(repo, 'tes
 if sanitizer:
     flags += ['-fsanitize=' + ','.join({'asan': 'address', 'ubsan': 'undefined'}[s] for s in sanitizer.split(',')),
               '-fno-sanitize-recover=all', '-g']
+wrapper = os.path.join(repo, 'tools', 'ycxx-cxx')
+# The testsuite's support library (DejaGnu's libtestc++.a): the helpers' out-of-line definitions.
+support_lib = build_support_lib(wrapper, compiler, flags, tests_root, repo, config.test_exec_root)
 # dg-require-namedlocale: the names libycxx accepts (tests/ycxxlit/locales.py), asked of the
 # library under test through a program built once per run.
 from ycxxlit import locales
-locale_probe = locales.build_probe(os.path.join(repo, 'tools', 'ycxx-cxx'), compiler, config.test_exec_root)
-config.test_format = LibstdcxxFormat(os.path.join(repo, 'tools', 'ycxx-cxx'), compiler, flags,
-                                     os.path.join(repo, 'tests', 'libstdcxx', 'skip.txt'), locale_probe)
+locale_probe = locales.build_probe(wrapper, compiler, config.test_exec_root)
+config.test_format = LibstdcxxFormat(wrapper, compiler, flags,
+                                     os.path.join(repo, 'tests', 'libstdcxx', 'skip.txt'), locale_probe,
+                                     support_lib)

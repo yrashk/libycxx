@@ -692,6 +692,27 @@ public:
   }
   template <ycxx::detail::container_compatible_range<bool> R>
   constexpr void append_range(R&& rg) {
+    // Unlike insert_range, append_range has no precondition that rg does not overlap *this
+    // ([sequence.reqmts]): when the storage grows, the new bits are read before the old storage
+    // is freed. (An input range is collected first by insert_input.)
+    if constexpr (counted_range<R>) {
+      const auto d = ranges::distance(rg);
+      const size_type n = static_cast<size_type>(d);
+      if (n > capacity() - size_) {
+        block_guard g{alloc_, allocate_words(words_for(grow_to(n)))};
+        for (size_type i = 0, e = words_for(size_); i != e; ++i)
+          g.b.p[i] = words_[i];
+        auto it = ranges::begin(rg);
+        for (size_type i = size_; i != size_ + n; ++i) {
+          set(g.b.p, i, static_cast<bool>(*it));
+          ++it;
+        }
+        free_storage();
+        adopt(g.release());
+        size_ += n;
+        return;
+      }
+    }
     insert_range(cend(), static_cast<R&&>(rg));
   }
   constexpr void pop_back() {

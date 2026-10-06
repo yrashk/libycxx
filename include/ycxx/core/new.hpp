@@ -42,26 +42,33 @@ inline constexpr size_t hardware_constructive_interference_size = 64;
 // its other functions are: the compilers' implicit declarations give the forms they predeclare
 // default visibility, and the nothrow forms say so explicitly, since a function otherwise takes
 // the (hidden) visibility of its parameter type std::nothrow_t.
-[[nodiscard]] void* operator new(std::size_t size);
-[[nodiscard]] void* operator new(std::size_t size, std::align_val_t alignment);
-[[gnu::visibility("default")]] [[nodiscard]] void* operator new(std::size_t size, const std::nothrow_t&) noexcept;
-[[gnu::visibility("default")]] [[nodiscard]] void* operator new(std::size_t size, std::align_val_t alignment, const std::nothrow_t&) noexcept;
-void operator delete(void* ptr) noexcept;
-void operator delete(void* ptr, std::size_t size) noexcept;
-void operator delete(void* ptr, std::align_val_t alignment) noexcept;
-void operator delete(void* ptr, std::size_t size, std::align_val_t alignment) noexcept;
-[[gnu::visibility("default")]] void operator delete(void* ptr, const std::nothrow_t&) noexcept;
-[[gnu::visibility("default")]] void operator delete(void* ptr, std::align_val_t alignment, const std::nothrow_t&) noexcept;
-[[nodiscard]] void* operator new[](std::size_t size);
-[[nodiscard]] void* operator new[](std::size_t size, std::align_val_t alignment);
-[[gnu::visibility("default")]] [[nodiscard]] void* operator new[](std::size_t size, const std::nothrow_t&) noexcept;
-[[gnu::visibility("default")]] [[nodiscard]] void* operator new[](std::size_t size, std::align_val_t alignment, const std::nothrow_t&) noexcept;
-void operator delete[](void* ptr) noexcept;
-void operator delete[](void* ptr, std::size_t size) noexcept;
-void operator delete[](void* ptr, std::align_val_t alignment) noexcept;
-void operator delete[](void* ptr, std::size_t size, std::align_val_t alignment) noexcept;
-[[gnu::visibility("default")]] void operator delete[](void* ptr, const std::nothrow_t&) noexcept;
-[[gnu::visibility("default")]] void operator delete[](void* ptr, std::align_val_t alignment, const std::nothrow_t&) noexcept;
+// Externally visible for GCC: under -fwhole-program it would otherwise localize a program's
+// replacement, and the library's default functions (e.g. the sized delete, which calls the
+// unsized one) would not reach it (GCC bugzilla 50594); Clang does not know the attribute, hence
+// the -Wattributes push.
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wattributes"
+[[nodiscard, gnu::externally_visible]] void* operator new(std::size_t size);
+[[nodiscard, gnu::externally_visible]] void* operator new(std::size_t size, std::align_val_t alignment);
+[[gnu::visibility("default")]] [[nodiscard, gnu::externally_visible]] void* operator new(std::size_t size, const std::nothrow_t&) noexcept;
+[[gnu::visibility("default")]] [[nodiscard, gnu::externally_visible]] void* operator new(std::size_t size, std::align_val_t alignment, const std::nothrow_t&) noexcept;
+[[gnu::externally_visible]] void operator delete(void* ptr) noexcept;
+[[gnu::externally_visible]] void operator delete(void* ptr, std::size_t size) noexcept;
+[[gnu::externally_visible]] void operator delete(void* ptr, std::align_val_t alignment) noexcept;
+[[gnu::externally_visible]] void operator delete(void* ptr, std::size_t size, std::align_val_t alignment) noexcept;
+[[gnu::visibility("default")]] [[gnu::externally_visible]] void operator delete(void* ptr, const std::nothrow_t&) noexcept;
+[[gnu::visibility("default")]] [[gnu::externally_visible]] void operator delete(void* ptr, std::align_val_t alignment, const std::nothrow_t&) noexcept;
+[[nodiscard, gnu::externally_visible]] void* operator new[](std::size_t size);
+[[nodiscard, gnu::externally_visible]] void* operator new[](std::size_t size, std::align_val_t alignment);
+[[gnu::visibility("default")]] [[nodiscard, gnu::externally_visible]] void* operator new[](std::size_t size, const std::nothrow_t&) noexcept;
+[[gnu::visibility("default")]] [[nodiscard, gnu::externally_visible]] void* operator new[](std::size_t size, std::align_val_t alignment, const std::nothrow_t&) noexcept;
+[[gnu::externally_visible]] void operator delete[](void* ptr) noexcept;
+[[gnu::externally_visible]] void operator delete[](void* ptr, std::size_t size) noexcept;
+[[gnu::externally_visible]] void operator delete[](void* ptr, std::align_val_t alignment) noexcept;
+[[gnu::externally_visible]] void operator delete[](void* ptr, std::size_t size, std::align_val_t alignment) noexcept;
+[[gnu::visibility("default")]] [[gnu::externally_visible]] void operator delete[](void* ptr, const std::nothrow_t&) noexcept;
+[[gnu::visibility("default")]] [[gnu::externally_visible]] void operator delete[](void* ptr, std::align_val_t alignment, const std::nothrow_t&) noexcept;
+#pragma GCC diagnostic pop
 
 
 // Non-allocating forms (constexpr since C++26). Not replaceable and defined here, so hidden like

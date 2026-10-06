@@ -550,10 +550,16 @@ public:
   constexpr difference_type operator-(const S& y) const {
     return current_ - y;
   }
-  template <ycxx::detail::not_a_const_iterator S>
-    requires sized_sentinel_for<S, Iter>
-  friend constexpr difference_type operator-(const S& x, const basic_const_iterator& y) {
-    return x - y.current_;
+  // The right operand is deduced (a basic_const_iterator or a class derived from it) instead of
+  // converted to basic_const_iterator: an S whose associated classes include this one (such as
+  // optional<basic_const_iterator<Iter>>, which join_view stores) would otherwise make
+  // sized_sentinel_for<S, Iter> ask for s - i, which considers this friend with the same S again
+  // (Iter converts to basic_const_iterator): a constraint that depends on itself (libstdc++
+  // PR 115046). Only through ADL with an operand that converts but is not derived does it differ.
+  template <ycxx::detail::not_a_const_iterator S, class Self>
+    requires derived_from<Self, basic_const_iterator> && sized_sentinel_for<S, Iter>
+  friend constexpr difference_type operator-(const S& x, const Self& y) {
+    return x - static_cast<const basic_const_iterator&>(y).current_;
   }
 
   friend constexpr rvalue_reference iter_move(const basic_const_iterator& i) noexcept(

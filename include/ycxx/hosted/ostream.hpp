@@ -304,40 +304,27 @@ basic_ostream<charT, traits>& basic_ostream<charT, traits>::flush() {
 
 template <class charT, class traits>
 typename basic_ostream<charT, traits>::pos_type basic_ostream<charT, traits>::tellp() {
-  pos_type r = pos_type(off_type(-1));
+  // [ostream.seeks]: the seek members are not unformatted output functions, so an exception
+  // from the stream buffer propagates without setting badbit (unlike seekg/tellg, [istream.unformatted]).
   sentry ok{*this};
-  if (!this->fail())
-    ycxx::detail::guarded_io(*this, [&] { r = this->rdbuf()->pubseekoff(0, ios_base::cur, ios_base::out); });
-  return r;
+  if (this->fail())
+    return pos_type(off_type(-1));
+  return this->rdbuf()->pubseekoff(0, ios_base::cur, ios_base::out);
 }
 
 template <class charT, class traits>
 basic_ostream<charT, traits>& basic_ostream<charT, traits>::seekp(pos_type pos) {
-  ios_base::iostate err = ios_base::goodbit;
   sentry ok{*this};
-  if (!this->fail()) {
-    ycxx::detail::guarded_io(*this, [&] {
-      if (this->rdbuf()->pubseekpos(pos, ios_base::out) == pos_type(off_type(-1)))
-        err |= ios_base::failbit;
-    });
-  }
-  if (err)
-    this->setstate(err);
+  if (!this->fail() && this->rdbuf()->pubseekpos(pos, ios_base::out) == pos_type(off_type(-1)))
+    this->setstate(ios_base::failbit);
   return *this;
 }
 
 template <class charT, class traits>
 basic_ostream<charT, traits>& basic_ostream<charT, traits>::seekp(off_type off, ios_base::seekdir dir) {
-  ios_base::iostate err = ios_base::goodbit;
   sentry ok{*this};
-  if (!this->fail()) {
-    ycxx::detail::guarded_io(*this, [&] {
-      if (this->rdbuf()->pubseekoff(off, dir, ios_base::out) == pos_type(off_type(-1)))
-        err |= ios_base::failbit;
-    });
-  }
-  if (err)
-    this->setstate(err);
+  if (!this->fail() && this->rdbuf()->pubseekoff(off, dir, ios_base::out) == pos_type(off_type(-1)))
+    this->setstate(ios_base::failbit);
   return *this;
 }
 

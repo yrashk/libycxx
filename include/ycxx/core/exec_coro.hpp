@@ -91,6 +91,16 @@ template <class _Expr, class _Promise>
 using __awaitable_sender_t = decltype(::__ycxx::__detail::__exec::__adapt_for_await_completion(
     std::execution::transform_sender(std::declval<_Expr>(), std::execution::get_env(std::declval<_Promise&>()))));
 
+// [exec.as.awaitable]/7.2: the transformed sender's member as_awaitable(p); checked only for a
+// sender (a concept, so that transform_sender is not instantiated for another expression).
+template <class _Expr, class _Promise>
+concept __as_awaitable_transformed_member =
+    __as_awaitable_sender<_Expr, _Promise> && requires(_Expr&& __e, _Promise& p) {
+      ::__ycxx::__detail::__exec::__adapt_for_await_completion(
+          std::execution::transform_sender(static_cast<_Expr&&>(__e), std::execution::get_env(p)))
+          .as_awaitable(p);
+    };
+
 // awaitable-sender<Sndr, Promise> ([exec.as.awaitable]/1)
 template <class _Sndr, class _Promise>
 concept __awaitable_sender =
@@ -99,6 +109,12 @@ concept __awaitable_sender =
     requires(_Promise& p) {
       { p.unhandled_stopped() } -> std::convertible_to<std::coroutine_handle<>>;
     };
+
+// [exec.as.awaitable]/7.4: a sender whose adapted, transformed form is an awaitable-sender (a
+// concept: the transformation is only formed for a sender).
+template <class _Expr, class _Promise>
+concept __as_awaitable_via_sender_awaitable =
+    __as_awaitable_sender<_Expr, _Promise> && __awaitable_sender<__awaitable_sender_t<_Expr, _Promise>, _Promise>;
 }}} // namespace __ycxx::__detail::__exec
 
 namespace [[__gnu__::__visibility__("hidden")]] std { namespace execution {
@@ -112,12 +128,11 @@ struct as_awaitable_t {
       static_assert(__is_awaitable<decltype(static_cast<_Expr&&>(__expr).as_awaitable(p)), _Promise>,
                     "as_awaitable: the as_awaitable member must return an awaitable");
       return static_cast<_Expr&&>(__expr).as_awaitable(p);
-    } else if constexpr (__as_awaitable_sender<_Expr, _Promise> &&
-                         requires { __adapt_for_await_completion(transform_sender(static_cast<_Expr&&>(__expr), get_env(p))).as_awaitable(p); }) {
+    } else if constexpr (__as_awaitable_transformed_member<_Expr, _Promise>) {
       return __adapt_for_await_completion(transform_sender(static_cast<_Expr&&>(__expr), get_env(p))).as_awaitable(p);
     } else if constexpr (__is_awaiter<decltype(__get_awaiter(declval<_Expr>(), declval<__none_such_promise&>())), _Promise>) {
       return static_cast<_Expr&&>(__expr);
-    } else if constexpr (__as_awaitable_sender<_Expr, _Promise> && __awaitable_sender<__awaitable_sender_t<_Expr, _Promise>, _Promise>) {
+    } else if constexpr (__as_awaitable_via_sender_awaitable<_Expr, _Promise>) {
       using _Sp = __awaitable_sender_t<_Expr, _Promise>;
       return __ycxx::__adl_free::__exec_sender_awaitable<_Sp, _Promise>(__adapt_for_await_completion(transform_sender(static_cast<_Expr&&>(__expr), get_env(p))),
                                                                 p);

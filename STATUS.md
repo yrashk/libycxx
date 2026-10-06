@@ -1111,6 +1111,19 @@ compilers; `visit_format_arg.pass.cpp` needs `EOF` from `constexpr_char_traits.h
   constructible T has a constrained (not mandated) default constructor. The deprecated atomics
   features are provided, declared [[deprecated]] (Annex D).
 
+## Draft issues noticed
+Wording problems found while writing the spec-derived tests (tests/ycxx), not yet reported:
+- [set.symmetric.difference]/4.2: the returned `{last1, last2, result + N}` applies "if N is
+  equal to M+K", but K is defined nowhere in the paragraph (M is; the count of the second
+  range's copied elements is meant).
+- [linalg.algs.reqs]/1.1: the overloads taking an `ExecutionPolicy&&` require
+  `is_execution_policy<ExecutionPolicy>::value`, but the deduced forwarding-reference parameter
+  makes `ExecutionPolicy` an lvalue reference type for an lvalue policy, for which the trait is
+  false (the parallel algorithms of [algorithms.parallel.overloads] remove the cvref first).
+- [alg.rotate]/15.2 (the parallel `ranges::rotate_copy` with an output sentinel): the result
+  `{last, first + (N + (middle - first)) % M, result + N}` divides by M = `last - first`, which
+  is 0 for an empty input range (N = 0 = `last - middle`, so 15.2 is the case that applies).
+
 ## Performance
 `bench/` (manual, not in CI; DECISIONS §15) times the hot paths against libstdc++ on both
 compilers; `bench/RESULTS.md` has the full tables. Before this pass 31 of 104 benchmark rows were

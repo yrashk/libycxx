@@ -57,6 +57,12 @@ if os.geteuid() == 0:
 if sanitizer:
     for s in sanitizer.split(','):
         features.add({'asan': 'asan', 'ubsan': 'ubsan', 'tsan': 'tsan'}[s])
+    # Under AddressSanitizer or ThreadSanitizer the suite's count_new.h replaces no allocation
+    # function (TEST_HAS_SANITIZERS, from __has_feature: DISABLE_NEW_COUNT), so the tests that count
+    # allocations or make them fail say UNSUPPORTED: sanitizer-new-delete; libc++'s own
+    # configuration sets this feature for those sanitizers.
+    if {'asan', 'tsan'} & set(sanitizer.split(',')):
+        features.add('sanitizer-new-delete')
 # Named locales the machine has and libycxx accepts (tests/ycxxlit/locales.py), and libc++'s long tests on request
 # (YCXX_LONG_TESTS=1: the nightly runs).
 import sys

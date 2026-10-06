@@ -42,14 +42,15 @@ def freestanding_includes(text):
             out.append(m.group(1))
     return out
 
-# Configuration the build generates (only YCXX_* switches; cmake/ycxx-c-library.cmake), included by
-# config.hpp when it exists.
-GENERATED_CONFIG = "ycxx/generated/c_library.hpp"
+# Configuration the build generates (only YCXX_* switches: cmake/ycxx-c-library.cmake, and the hosted
+# layers of a YCXX_PAL=none build, cmake/ycxx-hosted-layers.cmake), included by config.hpp when it
+# exists.
+GENERATED_CONFIG = {"ycxx/generated/c_library.hpp", "ycxx/generated/hosted_layers.hpp"}
 
 def allowed(name):
     return (name in CORE or name in ABI or name in FREESTANDING_SUBSET or name == "ycxx/config.hpp"
             or name == "ycxx/pal.h" or name.startswith("ycxx/core/")
-            or name == GENERATED_CONFIG)
+            or name in GENERATED_CONFIG)
 
 errors = []
 for top in CORE + FREESTANDING_SUBSET:
@@ -62,7 +63,7 @@ for top in CORE + FREESTANDING_SUBSET:
         if not allowed(name):
             errors.append(f"<{top}> reaches <{name}> via " + " -> ".join(chain))
             continue
-        if name == GENERATED_CONFIG:  # in the build tree, not here; a leaf of #defines
+        if name in GENERATED_CONFIG:  # in the build tree, not here; a leaf of #defines
             continue
         path = ROOT / name
         if not path.exists():

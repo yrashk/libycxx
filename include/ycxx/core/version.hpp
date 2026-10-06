@@ -350,6 +350,10 @@
 // <rcu> <hazard_pointer>
 #  define __cpp_lib_rcu 202306L
 #  define __cpp_lib_hazard_pointer 202606L
+#endif
+// (Hosted, or freestanding with the 'memory' hosted layer: the default allocation functions are
+// then the hosted library's, over the integrator's heap; DECISIONS §18.)
+#if YCXX_LAYER_MEMORY
 #  define __cpp_lib_freestanding_operator_new 202306L
 #else
 #  define __cpp_lib_freestanding_operator_new 0

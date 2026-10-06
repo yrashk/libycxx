@@ -433,16 +433,18 @@ def checked_files():
 
 
 # Files in other languages that spell libycxx's symbols, macros or C++ code: their `ycxx_x` and
-# `YCXX_X` words that the map renames are renamed, and so is the C++ in CMake's bracket arguments
-# (the probes, the generated headers).
+# `YCXX_X` words that the map renames are renamed, and so are the `ycxx::` names in the C++ of
+# CMake's bracket arguments (the probes, the generated headers).
 TEXT_FILES = ["CMakeLists.txt", "cmake/ycxx-c-library.cmake", "cmake/ycxx-link.cmake", "tools/ycxx-cxx"]
 _WORDS = re.compile(r"\b(?:ycxx|YCXX)_\w+\b")
+_QUALIFIED_CODE = re.compile(r"(?<![\w/.-])(::)?ycxx(::[A-Za-z_]\w*)+")
 _CMAKE_BRACKET = re.compile(r"\[(=*)\[(.*?)\]\1\]", re.S)
 
 
 def rename_text(text, renamer, cmake):
-    if cmake:
-        text = _CMAKE_BRACKET.sub(lambda m: f"[{m.group(1)}[{renamer.source(m.group(2))}]{m.group(1)}]", text)
+    if cmake:  # in the C++ of the probes and the generated headers, the `ycxx::` names
+        text = _CMAKE_BRACKET.sub(lambda m: f"[{m.group(1)}[" + _QUALIFIED_CODE.sub(
+            lambda q: renamer.code(q.group()), m.group(2)) + f"]{m.group(1)}]", text)
     return _WORDS.sub(lambda m: renamer.map(m.group()), text)
 
 

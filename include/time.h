@@ -10,7 +10,7 @@
 extern "C++" {
 #  include <ctime>
 }
-#  if YCXX_HOSTED && !YCXX_C_HAS_TIMESPEC_GETRES
+#  if _YCXX_HOSTED && !_YCXX_C_HAS_TIMESPEC_GETRES
 using std::timespec_getres;
 #  endif
 #else

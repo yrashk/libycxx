@@ -3,7 +3,7 @@
 
 #include <ycxx/config.hpp>
 
-namespace [[gnu::visibility("hidden")]] std {
+namespace [[__gnu__::__visibility__("hidden")]] std {
 using int8_t = __INT8_TYPE__;
 using int16_t = __INT16_TYPE__;
 using int32_t = __INT32_TYPE__;
@@ -23,7 +23,7 @@ using uint_least32_t = __UINT_LEAST32_TYPE__;
 using uint_least64_t = __UINT_LEAST64_TYPE__;
 
 using int_fast8_t = __INT_FAST8_TYPE__;
-#if YCXX_FAST16_IS_LONG
+#if _YCXX_FAST16_IS_LONG
 using int_fast16_t = long;
 using int_fast32_t = long;
 #else
@@ -32,7 +32,7 @@ using int_fast32_t = __INT_FAST32_TYPE__;
 #endif
 using int_fast64_t = __INT_FAST64_TYPE__;
 using uint_fast8_t = __UINT_FAST8_TYPE__;
-#if YCXX_FAST16_IS_LONG
+#if _YCXX_FAST16_IS_LONG
 using uint_fast16_t = unsigned long;
 using uint_fast32_t = unsigned long;
 #else
@@ -117,7 +117,7 @@ typedef ::std::uintptr_t uintptr_t;
 #  define INT_FAST64_MIN (-__INT_FAST64_MAX__ - 1)
 #  define INT_FAST64_MAX __INT_FAST64_MAX__
 #  define UINT_FAST64_MAX __UINT_FAST64_MAX__
-#  if YCXX_FAST16_IS_LONG
+#  if _YCXX_FAST16_IS_LONG
 #    define INT_FAST16_MIN (-__INT64_MAX__ - 1)
 #    define INT_FAST16_MAX __INT64_MAX__
 #    define UINT_FAST16_MAX __UINT64_MAX__
@@ -192,7 +192,7 @@ typedef ::std::uintptr_t uintptr_t;
 #  define INT_FAST64_WIDTH __INT_FAST64_WIDTH__
 #  define UINT_FAST8_WIDTH __INT_FAST8_WIDTH__
 #  define UINT_FAST64_WIDTH __INT_FAST64_WIDTH__
-#  if YCXX_FAST16_IS_LONG
+#  if _YCXX_FAST16_IS_LONG
 #    define INT_FAST16_WIDTH __LONG_WIDTH__
 #    define INT_FAST32_WIDTH __LONG_WIDTH__
 #    define UINT_FAST16_WIDTH __LONG_WIDTH__

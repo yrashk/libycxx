@@ -23,16 +23,16 @@
 #include <ycxx/core/functional_base.hpp>
 #include <ycxx/core/invoke.hpp>
 
-namespace [[gnu::visibility("hidden")]] std { namespace ranges {
-template <class I, class O>
-using reverse_copy_truncated_result = in_in_out_result<I, I, O>;
-template <class I, class O>
-using rotate_copy_truncated_result = in_in_out_result<I, I, O>;
-template <class I1, class I2, class O>
-using set_difference_truncated_result = in_in_out_result<I1, I2, O>;
+namespace [[__gnu__::__visibility__("hidden")]] std { namespace ranges {
+template <class _Ip, class _Op>
+using reverse_copy_truncated_result = in_in_out_result<_Ip, _Ip, _Op>;
+template <class _Ip, class _Op>
+using rotate_copy_truncated_result = in_in_out_result<_Ip, _Ip, _Op>;
+template <class _I1, class _I2, class _Op>
+using set_difference_truncated_result = in_in_out_result<_I1, _I2, _Op>;
 }} // namespace std::ranges
 
-namespace [[gnu::visibility("hidden")]] ycxx { namespace detail::par {
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail::par {
 
 enum class kind {
   // forwarding to the overload without the policy
@@ -66,1656 +66,1656 @@ enum class kind {
   set_symmetric_difference,
 };
 
-template <class R>
-concept sized_random_access_range = std::ranges::random_access_range<R> && std::ranges::sized_range<R>;
+template <class _Rp>
+concept __sized_random_access_range = std::ranges::random_access_range<_Rp> && std::ranges::sized_range<_Rp>;
 
 // The iterator form's result in the range form: a borrowed iterator, or dangling.
-template <class R, class I>
-constexpr std::ranges::borrowed_iterator_t<R> borrowed(I&& i) {
-  return std::ranges::borrowed_iterator_t<R>(static_cast<I&&>(i));
+template <class _Rp, class _Ip>
+constexpr std::ranges::borrowed_iterator_t<_Rp> __borrowed(_Ip&& i) {
+  return std::ranges::borrowed_iterator_t<_Rp>(static_cast<_Ip&&>(i));
 }
 
-template <class T>
-constexpr T min_of(T a, T b) {
+template <class _Tp>
+constexpr _Tp __min_of(_Tp a, _Tp b) {
   return b < a ? b : a;
 }
 
-template <class I, class S>
-constexpr I end_iter(const I& first, const S& last) {
+template <class _Ip, class _Sp>
+constexpr _Ip __end_iter(const _Ip& first, const _Sp& last) {
   return first + (last - first);
 }
 
 // The output loop of the filtering copies (copy_if, remove_copy(_if), unique_copy): copies each
 // element for which keep(i) holds while the output has room, and stops at the first such element
 // that does not fit ([alg.copy]/23, [alg.remove]/13, [alg.unique]/11).
-template <class I, class S, class O, class OS, class Keep>
-constexpr std::ranges::in_out_result<I, O> filter_copy(I first, S last, O result, OS result_last, Keep keep) {
+template <class _Ip, class _Sp, class _Op, class _OS, class _Keep>
+constexpr std::ranges::in_out_result<_Ip, _Op> __filter_copy(_Ip first, _Sp last, _Op result, _OS __result_last, _Keep __keep) {
   for (; first != last; ++first) {
-    if (keep(first)) {
-      if (result == result_last)
+    if (__keep(first)) {
+      if (result == __result_last)
         break;
       *result = *first;
       ++result;
     }
   }
   if (first == last)
-    return {end_iter(first, last), std::move(result)};
+    return {__end_iter(first, last), std::move(result)};
   return {std::move(first), std::move(result)};
 }
 
-template <class I1, class S1, class I2, class S2, class O, class OS, class C, class P1, class P2>
-constexpr std::ranges::in_in_out_result<I1, I2, O> merge_bounded(I1 first1, S1 last1, I2 first2, S2 last2, O result,
-                                                                  OS result_last, C& comp, P1& proj1, P2& proj2) {
-  while (first1 != last1 && first2 != last2 && result != result_last) {
-    if (::ycxx::detail::invoke(comp, ::ycxx::detail::invoke(proj2, *first2), ::ycxx::detail::invoke(proj1, *first1))) {
-      *result = *first2;
-      ++first2;
+template <class _I1, class _S1, class _I2, class _S2, class _Op, class _OS, class _Cp, class _P1, class _P2>
+constexpr std::ranges::in_in_out_result<_I1, _I2, _Op> __merge_bounded(_I1 __first1, _S1 __last1, _I2 __first2, _S2 __last2, _Op result,
+                                                                  _OS __result_last, _Cp& comp, _P1& __proj1, _P2& __proj2) {
+  while (__first1 != __last1 && __first2 != __last2 && result != __result_last) {
+    if (::__ycxx::__detail::invoke(comp, ::__ycxx::__detail::invoke(__proj2, *__first2), ::__ycxx::__detail::invoke(__proj1, *__first1))) {
+      *result = *__first2;
+      ++__first2;
     } else {
-      *result = *first1;
-      ++first1;
+      *result = *__first1;
+      ++__first1;
     }
     ++result;
   }
-  for (; first1 != last1 && result != result_last; ++first1, (void)++result)
-    *result = *first1;
-  for (; first2 != last2 && result != result_last; ++first2, (void)++result)
-    *result = *first2;
-  return {std::move(first1), std::move(first2), std::move(result)};
+  for (; __first1 != __last1 && result != __result_last; ++__first1, (void)++result)
+    *result = *__first1;
+  for (; __first2 != __last2 && result != __result_last; ++__first2, (void)++result)
+    *result = *__first2;
+  return {std::move(__first1), std::move(__first2), std::move(result)};
 }
 
 // The set operations stop at the first element of the result that does not fit; the input
 // positions then count the copied and skipped elements ([alg.set.operations]).
-template <kind K, class I1, class S1, class I2, class S2, class O, class OS, class C, class P1, class P2>
-constexpr std::ranges::in_in_out_result<I1, I2, O> set_op_bounded(I1 first1, S1 last1, I2 first2, S2 last2, O result,
-                                                                   OS result_last, C& comp, P1& proj1, P2& proj2) {
-  constexpr bool keep1 = K != kind::set_intersection; // elements only in the first range
-  constexpr bool keep2 = K == kind::set_union || K == kind::set_symmetric_difference;
-  constexpr bool keep_both = K == kind::set_union || K == kind::set_intersection;
+template <kind _Kp, class _I1, class _S1, class _I2, class _S2, class _Op, class _OS, class _Cp, class _P1, class _P2>
+constexpr std::ranges::in_in_out_result<_I1, _I2, _Op> __set_op_bounded(_I1 __first1, _S1 __last1, _I2 __first2, _S2 __last2, _Op result,
+                                                                   _OS __result_last, _Cp& comp, _P1& __proj1, _P2& __proj2) {
+  constexpr bool __keep1 = _Kp != kind::set_intersection; // elements only in the first range
+  constexpr bool __keep2 = _Kp == kind::set_union || _Kp == kind::set_symmetric_difference;
+  constexpr bool __keep_both = _Kp == kind::set_union || _Kp == kind::set_intersection;
   // set_intersection with a complete output: the elements after the last one copied are not
   // skipped ([set.intersection]/3), so the result points just past it.
-  I1 after_copy1 = first1;
-  I2 after_copy2 = first2;
-  while (first1 != last1 && first2 != last2) {
-    if (::ycxx::detail::invoke(comp, ::ycxx::detail::invoke(proj1, *first1), ::ycxx::detail::invoke(proj2, *first2))) {
-      if constexpr (keep1) {
-        if (result == result_last)
-          return {std::move(first1), std::move(first2), std::move(result)};
-        *result = *first1;
+  _I1 __after_copy1 = __first1;
+  _I2 __after_copy2 = __first2;
+  while (__first1 != __last1 && __first2 != __last2) {
+    if (::__ycxx::__detail::invoke(comp, ::__ycxx::__detail::invoke(__proj1, *__first1), ::__ycxx::__detail::invoke(__proj2, *__first2))) {
+      if constexpr (__keep1) {
+        if (result == __result_last)
+          return {std::move(__first1), std::move(__first2), std::move(result)};
+        *result = *__first1;
         ++result;
       }
-      ++first1;
-    } else if (::ycxx::detail::invoke(comp, ::ycxx::detail::invoke(proj2, *first2),
-                                      ::ycxx::detail::invoke(proj1, *first1))) {
-      if constexpr (keep2) {
-        if (result == result_last)
-          return {std::move(first1), std::move(first2), std::move(result)};
-        *result = *first2;
+      ++__first1;
+    } else if (::__ycxx::__detail::invoke(comp, ::__ycxx::__detail::invoke(__proj2, *__first2),
+                                      ::__ycxx::__detail::invoke(__proj1, *__first1))) {
+      if constexpr (__keep2) {
+        if (result == __result_last)
+          return {std::move(__first1), std::move(__first2), std::move(result)};
+        *result = *__first2;
         ++result;
       }
-      ++first2;
+      ++__first2;
     } else {
-      if constexpr (keep_both) {
-        if (result == result_last)
-          return {std::move(first1), std::move(first2), std::move(result)};
-        *result = *first1;
+      if constexpr (__keep_both) {
+        if (result == __result_last)
+          return {std::move(__first1), std::move(__first2), std::move(result)};
+        *result = *__first1;
         ++result;
       }
-      ++first1;
-      ++first2;
-      if constexpr (K == kind::set_intersection) {
-        after_copy1 = first1;
-        after_copy2 = first2;
+      ++__first1;
+      ++__first2;
+      if constexpr (_Kp == kind::set_intersection) {
+        __after_copy1 = __first1;
+        __after_copy2 = __first2;
       }
     }
   }
-  if constexpr (keep1) {
-    for (; first1 != last1; ++first1, (void)++result) {
-      if (result == result_last)
-        return {std::move(first1), std::move(first2), std::move(result)};
-      *result = *first1;
+  if constexpr (__keep1) {
+    for (; __first1 != __last1; ++__first1, (void)++result) {
+      if (result == __result_last)
+        return {std::move(__first1), std::move(__first2), std::move(result)};
+      *result = *__first1;
     }
   }
-  if constexpr (keep2) {
-    for (; first2 != last2; ++first2, (void)++result) {
-      if (result == result_last)
-        return {std::move(first1), std::move(first2), std::move(result)};
-      *result = *first2;
+  if constexpr (__keep2) {
+    for (; __first2 != __last2; ++__first2, (void)++result) {
+      if (result == __result_last)
+        return {std::move(__first1), std::move(__first2), std::move(result)};
+      *result = *__first2;
     }
   }
-  if constexpr (K == kind::set_intersection || K == kind::set_difference) {
+  if constexpr (_Kp == kind::set_intersection || _Kp == kind::set_difference) {
     // The output is complete ([set.intersection]/4.3, [set.difference]/4.3.1).
-    if constexpr (K == kind::set_intersection)
-      return {std::move(after_copy1), std::move(after_copy2), std::move(result)};
+    if constexpr (_Kp == kind::set_intersection)
+      return {std::move(__after_copy1), std::move(__after_copy2), std::move(result)};
     else
-      return {end_iter(first1, last1), std::move(first2), std::move(result)};
+      return {__end_iter(__first1, __last1), std::move(__first2), std::move(result)};
   } else {
-    return {end_iter(first1, last1), end_iter(first2, last2), std::move(result)};
+    return {__end_iter(__first1, __last1), __end_iter(__first2, __last2), std::move(result)};
   }
 }
 
-}} // namespace ycxx::detail::par
+}} // namespace __ycxx::__detail::par
 
-namespace [[gnu::visibility("hidden")]] ycxx { namespace adl_free {
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __adl_free {
 
 // The type of a ranges:: algorithm object with parallel overloads: specialized for each kind.
-template <class Fn, ycxx::detail::par::kind K>
-struct ranges_par_algo;
+template <class _Fn, __ycxx::__detail::par::kind _Kp>
+struct __ranges_par_algo;
 
-}} // namespace ycxx::adl_free
+}} // namespace __ycxx::__adl_free
 
-namespace [[gnu::visibility("hidden")]] ycxx { namespace adl_free {
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __adl_free {
 
-using ycxx::detail::par::sized_random_access_range;
-namespace par = ycxx::detail::par;
+using __ycxx::__detail::par::__sized_random_access_range;
+namespace par = __ycxx::__detail::par;
 
 // ---- the forwarding overloads, as declared in [algorithm.syn] ----
 
 // all_of
-template <class Fn>
-struct ranges_par_algo<Fn, par::kind::all_of> : Fn {
-  using Fn::operator();
-  template <class Ep, std::random_access_iterator I, std::sized_sentinel_for<I> S, class Proj = std::identity,
-            std::indirect_unary_predicate<std::projected<I, Proj>> Pred>
-    requires ycxx::detail::execution_policy<Ep>
-  decltype(auto) operator()(Ep&&, I first, S last, Pred pred, Proj proj = {}) const noexcept {
-    return static_cast<const Fn&>(*this)(std::move(first), std::move(last), std::move(pred), std::move(proj));
+template <class _Fn>
+struct __ranges_par_algo<_Fn, par::kind::all_of> : _Fn {
+  using _Fn::operator();
+  template <class _Ep_, std::random_access_iterator _Ip, std::sized_sentinel_for<_Ip> _Sp, class _Proj = std::identity,
+            std::indirect_unary_predicate<std::projected<_Ip, _Proj>> _Pred>
+    requires __ycxx::__detail::__execution_policy<_Ep_>
+  decltype(auto) operator()(_Ep_&&, _Ip first, _Sp last, _Pred pred, _Proj proj = {}) const noexcept {
+    return static_cast<const _Fn&>(*this)(std::move(first), std::move(last), std::move(pred), std::move(proj));
   }
-  template <class Ep, ycxx::detail::par::sized_random_access_range R, class Proj = std::identity,
-            std::indirect_unary_predicate<std::projected<std::ranges::iterator_t<R>, Proj>> Pred>
-    requires ycxx::detail::execution_policy<Ep>
-  decltype(auto) operator()(Ep&&, R&& r, Pred pred, Proj proj = {}) const noexcept {
-    return static_cast<const Fn&>(*this)(static_cast<R&&>(r), std::move(pred), std::move(proj));
+  template <class _Ep_, __ycxx::__detail::par::__sized_random_access_range _Rp, class _Proj = std::identity,
+            std::indirect_unary_predicate<std::projected<std::ranges::iterator_t<_Rp>, _Proj>> _Pred>
+    requires __ycxx::__detail::__execution_policy<_Ep_>
+  decltype(auto) operator()(_Ep_&&, _Rp&& r, _Pred pred, _Proj proj = {}) const noexcept {
+    return static_cast<const _Fn&>(*this)(static_cast<_Rp&&>(r), std::move(pred), std::move(proj));
   }
 };
 
 // any_of
-template <class Fn>
-struct ranges_par_algo<Fn, par::kind::any_of> : Fn {
-  using Fn::operator();
-  template <class Ep, std::random_access_iterator I, std::sized_sentinel_for<I> S, class Proj = std::identity,
-            std::indirect_unary_predicate<std::projected<I, Proj>> Pred>
-    requires ycxx::detail::execution_policy<Ep>
-  decltype(auto) operator()(Ep&&, I first, S last, Pred pred, Proj proj = {}) const noexcept {
-    return static_cast<const Fn&>(*this)(std::move(first), std::move(last), std::move(pred), std::move(proj));
+template <class _Fn>
+struct __ranges_par_algo<_Fn, par::kind::any_of> : _Fn {
+  using _Fn::operator();
+  template <class _Ep_, std::random_access_iterator _Ip, std::sized_sentinel_for<_Ip> _Sp, class _Proj = std::identity,
+            std::indirect_unary_predicate<std::projected<_Ip, _Proj>> _Pred>
+    requires __ycxx::__detail::__execution_policy<_Ep_>
+  decltype(auto) operator()(_Ep_&&, _Ip first, _Sp last, _Pred pred, _Proj proj = {}) const noexcept {
+    return static_cast<const _Fn&>(*this)(std::move(first), std::move(last), std::move(pred), std::move(proj));
   }
-  template <class Ep, ycxx::detail::par::sized_random_access_range R, class Proj = std::identity,
-            std::indirect_unary_predicate<std::projected<std::ranges::iterator_t<R>, Proj>> Pred>
-    requires ycxx::detail::execution_policy<Ep>
-  decltype(auto) operator()(Ep&&, R&& r, Pred pred, Proj proj = {}) const noexcept {
-    return static_cast<const Fn&>(*this)(static_cast<R&&>(r), std::move(pred), std::move(proj));
+  template <class _Ep_, __ycxx::__detail::par::__sized_random_access_range _Rp, class _Proj = std::identity,
+            std::indirect_unary_predicate<std::projected<std::ranges::iterator_t<_Rp>, _Proj>> _Pred>
+    requires __ycxx::__detail::__execution_policy<_Ep_>
+  decltype(auto) operator()(_Ep_&&, _Rp&& r, _Pred pred, _Proj proj = {}) const noexcept {
+    return static_cast<const _Fn&>(*this)(static_cast<_Rp&&>(r), std::move(pred), std::move(proj));
   }
 };
 
 // none_of
-template <class Fn>
-struct ranges_par_algo<Fn, par::kind::none_of> : Fn {
-  using Fn::operator();
-  template <class Ep, std::random_access_iterator I, std::sized_sentinel_for<I> S, class Proj = std::identity,
-            std::indirect_unary_predicate<std::projected<I, Proj>> Pred>
-    requires ycxx::detail::execution_policy<Ep>
-  decltype(auto) operator()(Ep&&, I first, S last, Pred pred, Proj proj = {}) const noexcept {
-    return static_cast<const Fn&>(*this)(std::move(first), std::move(last), std::move(pred), std::move(proj));
+template <class _Fn>
+struct __ranges_par_algo<_Fn, par::kind::none_of> : _Fn {
+  using _Fn::operator();
+  template <class _Ep_, std::random_access_iterator _Ip, std::sized_sentinel_for<_Ip> _Sp, class _Proj = std::identity,
+            std::indirect_unary_predicate<std::projected<_Ip, _Proj>> _Pred>
+    requires __ycxx::__detail::__execution_policy<_Ep_>
+  decltype(auto) operator()(_Ep_&&, _Ip first, _Sp last, _Pred pred, _Proj proj = {}) const noexcept {
+    return static_cast<const _Fn&>(*this)(std::move(first), std::move(last), std::move(pred), std::move(proj));
   }
-  template <class Ep, ycxx::detail::par::sized_random_access_range R, class Proj = std::identity,
-            std::indirect_unary_predicate<std::projected<std::ranges::iterator_t<R>, Proj>> Pred>
-    requires ycxx::detail::execution_policy<Ep>
-  decltype(auto) operator()(Ep&&, R&& r, Pred pred, Proj proj = {}) const noexcept {
-    return static_cast<const Fn&>(*this)(static_cast<R&&>(r), std::move(pred), std::move(proj));
+  template <class _Ep_, __ycxx::__detail::par::__sized_random_access_range _Rp, class _Proj = std::identity,
+            std::indirect_unary_predicate<std::projected<std::ranges::iterator_t<_Rp>, _Proj>> _Pred>
+    requires __ycxx::__detail::__execution_policy<_Ep_>
+  decltype(auto) operator()(_Ep_&&, _Rp&& r, _Pred pred, _Proj proj = {}) const noexcept {
+    return static_cast<const _Fn&>(*this)(static_cast<_Rp&&>(r), std::move(pred), std::move(proj));
   }
 };
 
 // contains
-template <class Fn>
-struct ranges_par_algo<Fn, par::kind::contains> : Fn {
-  using Fn::operator();
-  template <class Ep, std::random_access_iterator I, std::sized_sentinel_for<I> S, class Proj = std::identity,
-            class T = std::projected_value_t<I, Proj>>
-    requires ycxx::detail::execution_policy<Ep> &&
-             std::indirect_binary_predicate<std::ranges::equal_to, std::projected<I, Proj>, const T*>
-  decltype(auto) operator()(Ep&&, I first, S last, const T& value, Proj proj = {}) const noexcept {
-    return static_cast<const Fn&>(*this)(std::move(first), std::move(last), value, std::move(proj));
+template <class _Fn>
+struct __ranges_par_algo<_Fn, par::kind::contains> : _Fn {
+  using _Fn::operator();
+  template <class _Ep_, std::random_access_iterator _Ip, std::sized_sentinel_for<_Ip> _Sp, class _Proj = std::identity,
+            class _Tp = std::projected_value_t<_Ip, _Proj>>
+    requires __ycxx::__detail::__execution_policy<_Ep_> &&
+             std::indirect_binary_predicate<std::ranges::equal_to, std::projected<_Ip, _Proj>, const _Tp*>
+  decltype(auto) operator()(_Ep_&&, _Ip first, _Sp last, const _Tp& value, _Proj proj = {}) const noexcept {
+    return static_cast<const _Fn&>(*this)(std::move(first), std::move(last), value, std::move(proj));
   }
-  template <class Ep, ycxx::detail::par::sized_random_access_range R, class Proj = std::identity,
-            class T = std::projected_value_t<std::ranges::iterator_t<R>, Proj>>
-    requires ycxx::detail::execution_policy<Ep> &&
-             std::indirect_binary_predicate<std::ranges::equal_to, std::projected<std::ranges::iterator_t<R>, Proj>, const T*>
-  decltype(auto) operator()(Ep&&, R&& r, const T& value, Proj proj = {}) const noexcept {
-    return static_cast<const Fn&>(*this)(static_cast<R&&>(r), value, std::move(proj));
+  template <class _Ep_, __ycxx::__detail::par::__sized_random_access_range _Rp, class _Proj = std::identity,
+            class _Tp = std::projected_value_t<std::ranges::iterator_t<_Rp>, _Proj>>
+    requires __ycxx::__detail::__execution_policy<_Ep_> &&
+             std::indirect_binary_predicate<std::ranges::equal_to, std::projected<std::ranges::iterator_t<_Rp>, _Proj>, const _Tp*>
+  decltype(auto) operator()(_Ep_&&, _Rp&& r, const _Tp& value, _Proj proj = {}) const noexcept {
+    return static_cast<const _Fn&>(*this)(static_cast<_Rp&&>(r), value, std::move(proj));
   }
 };
 
 // contains_subrange
-template <class Fn>
-struct ranges_par_algo<Fn, par::kind::contains_subrange> : Fn {
-  using Fn::operator();
-  template <class Ep, std::random_access_iterator I1, std::sized_sentinel_for<I1> S1, std::random_access_iterator I2,
-            std::sized_sentinel_for<I2> S2, class Pred = std::ranges::equal_to, class Proj1 = std::identity,
-            class Proj2 = std::identity>
-    requires ycxx::detail::execution_policy<Ep> && std::indirectly_comparable<I1, I2, Pred, Proj1, Proj2>
-  decltype(auto) operator()(Ep&&, I1 first1, S1 last1, I2 first2, S2 last2, Pred pred = {}, Proj1 proj1 = {},
-                            Proj2 proj2 = {}) const noexcept {
-    return static_cast<const Fn&>(*this)(std::move(first1), std::move(last1), std::move(first2), std::move(last2),
-                                         std::move(pred), std::move(proj1), std::move(proj2));
+template <class _Fn>
+struct __ranges_par_algo<_Fn, par::kind::contains_subrange> : _Fn {
+  using _Fn::operator();
+  template <class _Ep_, std::random_access_iterator _I1, std::sized_sentinel_for<_I1> _S1, std::random_access_iterator _I2,
+            std::sized_sentinel_for<_I2> _S2, class _Pred = std::ranges::equal_to, class _Proj1 = std::identity,
+            class _Proj2 = std::identity>
+    requires __ycxx::__detail::__execution_policy<_Ep_> && std::indirectly_comparable<_I1, _I2, _Pred, _Proj1, _Proj2>
+  decltype(auto) operator()(_Ep_&&, _I1 __first1, _S1 __last1, _I2 __first2, _S2 __last2, _Pred pred = {}, _Proj1 __proj1 = {},
+                            _Proj2 __proj2 = {}) const noexcept {
+    return static_cast<const _Fn&>(*this)(std::move(__first1), std::move(__last1), std::move(__first2), std::move(__last2),
+                                         std::move(pred), std::move(__proj1), std::move(__proj2));
   }
-  template <class Ep, ycxx::detail::par::sized_random_access_range R1, ycxx::detail::par::sized_random_access_range R2,
-            class Pred = std::ranges::equal_to, class Proj1 = std::identity, class Proj2 = std::identity>
-    requires ycxx::detail::execution_policy<Ep> &&
-             std::indirectly_comparable<std::ranges::iterator_t<R1>, std::ranges::iterator_t<R2>, Pred, Proj1, Proj2>
-  decltype(auto) operator()(Ep&&, R1&& r1, R2&& r2, Pred pred = {}, Proj1 proj1 = {}, Proj2 proj2 = {}) const noexcept {
-    return static_cast<const Fn&>(*this)(static_cast<R1&&>(r1), static_cast<R2&&>(r2), std::move(pred),
-                                         std::move(proj1), std::move(proj2));
+  template <class _Ep_, __ycxx::__detail::par::__sized_random_access_range _R1, __ycxx::__detail::par::__sized_random_access_range _R2,
+            class _Pred = std::ranges::equal_to, class _Proj1 = std::identity, class _Proj2 = std::identity>
+    requires __ycxx::__detail::__execution_policy<_Ep_> &&
+             std::indirectly_comparable<std::ranges::iterator_t<_R1>, std::ranges::iterator_t<_R2>, _Pred, _Proj1, _Proj2>
+  decltype(auto) operator()(_Ep_&&, _R1&& __r1, _R2&& __r2, _Pred pred = {}, _Proj1 __proj1 = {}, _Proj2 __proj2 = {}) const noexcept {
+    return static_cast<const _Fn&>(*this)(static_cast<_R1&&>(__r1), static_cast<_R2&&>(__r2), std::move(pred),
+                                         std::move(__proj1), std::move(__proj2));
   }
 };
 
 // find
-template <class Fn>
-struct ranges_par_algo<Fn, par::kind::find> : Fn {
-  using Fn::operator();
-  template <class Ep, std::random_access_iterator I, std::sized_sentinel_for<I> S, class Proj = std::identity,
-            class T = std::projected_value_t<I, Proj>>
-    requires ycxx::detail::execution_policy<Ep> &&
-             std::indirect_binary_predicate<std::ranges::equal_to, std::projected<I, Proj>, const T*>
-  decltype(auto) operator()(Ep&&, I first, S last, const T& value, Proj proj = {}) const noexcept {
-    return static_cast<const Fn&>(*this)(std::move(first), std::move(last), value, std::move(proj));
+template <class _Fn>
+struct __ranges_par_algo<_Fn, par::kind::find> : _Fn {
+  using _Fn::operator();
+  template <class _Ep_, std::random_access_iterator _Ip, std::sized_sentinel_for<_Ip> _Sp, class _Proj = std::identity,
+            class _Tp = std::projected_value_t<_Ip, _Proj>>
+    requires __ycxx::__detail::__execution_policy<_Ep_> &&
+             std::indirect_binary_predicate<std::ranges::equal_to, std::projected<_Ip, _Proj>, const _Tp*>
+  decltype(auto) operator()(_Ep_&&, _Ip first, _Sp last, const _Tp& value, _Proj proj = {}) const noexcept {
+    return static_cast<const _Fn&>(*this)(std::move(first), std::move(last), value, std::move(proj));
   }
-  template <class Ep, ycxx::detail::par::sized_random_access_range R, class Proj = std::identity,
-            class T = std::projected_value_t<std::ranges::iterator_t<R>, Proj>>
-    requires ycxx::detail::execution_policy<Ep> &&
-             std::indirect_binary_predicate<std::ranges::equal_to, std::projected<std::ranges::iterator_t<R>, Proj>, const T*>
-  decltype(auto) operator()(Ep&&, R&& r, const T& value, Proj proj = {}) const noexcept {
-    return static_cast<const Fn&>(*this)(static_cast<R&&>(r), value, std::move(proj));
+  template <class _Ep_, __ycxx::__detail::par::__sized_random_access_range _Rp, class _Proj = std::identity,
+            class _Tp = std::projected_value_t<std::ranges::iterator_t<_Rp>, _Proj>>
+    requires __ycxx::__detail::__execution_policy<_Ep_> &&
+             std::indirect_binary_predicate<std::ranges::equal_to, std::projected<std::ranges::iterator_t<_Rp>, _Proj>, const _Tp*>
+  decltype(auto) operator()(_Ep_&&, _Rp&& r, const _Tp& value, _Proj proj = {}) const noexcept {
+    return static_cast<const _Fn&>(*this)(static_cast<_Rp&&>(r), value, std::move(proj));
   }
 };
 
 // find_if
-template <class Fn>
-struct ranges_par_algo<Fn, par::kind::find_if> : Fn {
-  using Fn::operator();
-  template <class Ep, std::random_access_iterator I, std::sized_sentinel_for<I> S, class Proj = std::identity,
-            std::indirect_unary_predicate<std::projected<I, Proj>> Pred>
-    requires ycxx::detail::execution_policy<Ep>
-  decltype(auto) operator()(Ep&&, I first, S last, Pred pred, Proj proj = {}) const noexcept {
-    return static_cast<const Fn&>(*this)(std::move(first), std::move(last), std::move(pred), std::move(proj));
+template <class _Fn>
+struct __ranges_par_algo<_Fn, par::kind::find_if> : _Fn {
+  using _Fn::operator();
+  template <class _Ep_, std::random_access_iterator _Ip, std::sized_sentinel_for<_Ip> _Sp, class _Proj = std::identity,
+            std::indirect_unary_predicate<std::projected<_Ip, _Proj>> _Pred>
+    requires __ycxx::__detail::__execution_policy<_Ep_>
+  decltype(auto) operator()(_Ep_&&, _Ip first, _Sp last, _Pred pred, _Proj proj = {}) const noexcept {
+    return static_cast<const _Fn&>(*this)(std::move(first), std::move(last), std::move(pred), std::move(proj));
   }
-  template <class Ep, ycxx::detail::par::sized_random_access_range R, class Proj = std::identity,
-            std::indirect_unary_predicate<std::projected<std::ranges::iterator_t<R>, Proj>> Pred>
-    requires ycxx::detail::execution_policy<Ep>
-  decltype(auto) operator()(Ep&&, R&& r, Pred pred, Proj proj = {}) const noexcept {
-    return static_cast<const Fn&>(*this)(static_cast<R&&>(r), std::move(pred), std::move(proj));
+  template <class _Ep_, __ycxx::__detail::par::__sized_random_access_range _Rp, class _Proj = std::identity,
+            std::indirect_unary_predicate<std::projected<std::ranges::iterator_t<_Rp>, _Proj>> _Pred>
+    requires __ycxx::__detail::__execution_policy<_Ep_>
+  decltype(auto) operator()(_Ep_&&, _Rp&& r, _Pred pred, _Proj proj = {}) const noexcept {
+    return static_cast<const _Fn&>(*this)(static_cast<_Rp&&>(r), std::move(pred), std::move(proj));
   }
 };
 
 // find_if_not
-template <class Fn>
-struct ranges_par_algo<Fn, par::kind::find_if_not> : Fn {
-  using Fn::operator();
-  template <class Ep, std::random_access_iterator I, std::sized_sentinel_for<I> S, class Proj = std::identity,
-            std::indirect_unary_predicate<std::projected<I, Proj>> Pred>
-    requires ycxx::detail::execution_policy<Ep>
-  decltype(auto) operator()(Ep&&, I first, S last, Pred pred, Proj proj = {}) const noexcept {
-    return static_cast<const Fn&>(*this)(std::move(first), std::move(last), std::move(pred), std::move(proj));
+template <class _Fn>
+struct __ranges_par_algo<_Fn, par::kind::find_if_not> : _Fn {
+  using _Fn::operator();
+  template <class _Ep_, std::random_access_iterator _Ip, std::sized_sentinel_for<_Ip> _Sp, class _Proj = std::identity,
+            std::indirect_unary_predicate<std::projected<_Ip, _Proj>> _Pred>
+    requires __ycxx::__detail::__execution_policy<_Ep_>
+  decltype(auto) operator()(_Ep_&&, _Ip first, _Sp last, _Pred pred, _Proj proj = {}) const noexcept {
+    return static_cast<const _Fn&>(*this)(std::move(first), std::move(last), std::move(pred), std::move(proj));
   }
-  template <class Ep, ycxx::detail::par::sized_random_access_range R, class Proj = std::identity,
-            std::indirect_unary_predicate<std::projected<std::ranges::iterator_t<R>, Proj>> Pred>
-    requires ycxx::detail::execution_policy<Ep>
-  decltype(auto) operator()(Ep&&, R&& r, Pred pred, Proj proj = {}) const noexcept {
-    return static_cast<const Fn&>(*this)(static_cast<R&&>(r), std::move(pred), std::move(proj));
+  template <class _Ep_, __ycxx::__detail::par::__sized_random_access_range _Rp, class _Proj = std::identity,
+            std::indirect_unary_predicate<std::projected<std::ranges::iterator_t<_Rp>, _Proj>> _Pred>
+    requires __ycxx::__detail::__execution_policy<_Ep_>
+  decltype(auto) operator()(_Ep_&&, _Rp&& r, _Pred pred, _Proj proj = {}) const noexcept {
+    return static_cast<const _Fn&>(*this)(static_cast<_Rp&&>(r), std::move(pred), std::move(proj));
   }
 };
 
 // find_last
-template <class Fn>
-struct ranges_par_algo<Fn, par::kind::find_last> : Fn {
-  using Fn::operator();
-  template <class Ep, std::random_access_iterator I, std::sized_sentinel_for<I> S, class Proj = std::identity,
-            class T = std::projected_value_t<I, Proj>>
-    requires ycxx::detail::execution_policy<Ep> &&
-             std::indirect_binary_predicate<std::ranges::equal_to, std::projected<I, Proj>, const T*>
-  decltype(auto) operator()(Ep&&, I first, S last, const T& value, Proj proj = {}) const noexcept {
-    return static_cast<const Fn&>(*this)(std::move(first), std::move(last), value, std::move(proj));
+template <class _Fn>
+struct __ranges_par_algo<_Fn, par::kind::find_last> : _Fn {
+  using _Fn::operator();
+  template <class _Ep_, std::random_access_iterator _Ip, std::sized_sentinel_for<_Ip> _Sp, class _Proj = std::identity,
+            class _Tp = std::projected_value_t<_Ip, _Proj>>
+    requires __ycxx::__detail::__execution_policy<_Ep_> &&
+             std::indirect_binary_predicate<std::ranges::equal_to, std::projected<_Ip, _Proj>, const _Tp*>
+  decltype(auto) operator()(_Ep_&&, _Ip first, _Sp last, const _Tp& value, _Proj proj = {}) const noexcept {
+    return static_cast<const _Fn&>(*this)(std::move(first), std::move(last), value, std::move(proj));
   }
-  template <class Ep, ycxx::detail::par::sized_random_access_range R, class Proj = std::identity,
-            class T = std::projected_value_t<std::ranges::iterator_t<R>, Proj>>
-    requires ycxx::detail::execution_policy<Ep> &&
-             std::indirect_binary_predicate<std::ranges::equal_to, std::projected<std::ranges::iterator_t<R>, Proj>, const T*>
-  decltype(auto) operator()(Ep&&, R&& r, const T& value, Proj proj = {}) const noexcept {
-    return static_cast<const Fn&>(*this)(static_cast<R&&>(r), value, std::move(proj));
+  template <class _Ep_, __ycxx::__detail::par::__sized_random_access_range _Rp, class _Proj = std::identity,
+            class _Tp = std::projected_value_t<std::ranges::iterator_t<_Rp>, _Proj>>
+    requires __ycxx::__detail::__execution_policy<_Ep_> &&
+             std::indirect_binary_predicate<std::ranges::equal_to, std::projected<std::ranges::iterator_t<_Rp>, _Proj>, const _Tp*>
+  decltype(auto) operator()(_Ep_&&, _Rp&& r, const _Tp& value, _Proj proj = {}) const noexcept {
+    return static_cast<const _Fn&>(*this)(static_cast<_Rp&&>(r), value, std::move(proj));
   }
 };
 
 // find_last_if
-template <class Fn>
-struct ranges_par_algo<Fn, par::kind::find_last_if> : Fn {
-  using Fn::operator();
-  template <class Ep, std::random_access_iterator I, std::sized_sentinel_for<I> S, class Proj = std::identity,
-            std::indirect_unary_predicate<std::projected<I, Proj>> Pred>
-    requires ycxx::detail::execution_policy<Ep>
-  decltype(auto) operator()(Ep&&, I first, S last, Pred pred, Proj proj = {}) const noexcept {
-    return static_cast<const Fn&>(*this)(std::move(first), std::move(last), std::move(pred), std::move(proj));
+template <class _Fn>
+struct __ranges_par_algo<_Fn, par::kind::find_last_if> : _Fn {
+  using _Fn::operator();
+  template <class _Ep_, std::random_access_iterator _Ip, std::sized_sentinel_for<_Ip> _Sp, class _Proj = std::identity,
+            std::indirect_unary_predicate<std::projected<_Ip, _Proj>> _Pred>
+    requires __ycxx::__detail::__execution_policy<_Ep_>
+  decltype(auto) operator()(_Ep_&&, _Ip first, _Sp last, _Pred pred, _Proj proj = {}) const noexcept {
+    return static_cast<const _Fn&>(*this)(std::move(first), std::move(last), std::move(pred), std::move(proj));
   }
-  template <class Ep, ycxx::detail::par::sized_random_access_range R, class Proj = std::identity,
-            std::indirect_unary_predicate<std::projected<std::ranges::iterator_t<R>, Proj>> Pred>
-    requires ycxx::detail::execution_policy<Ep>
-  decltype(auto) operator()(Ep&&, R&& r, Pred pred, Proj proj = {}) const noexcept {
-    return static_cast<const Fn&>(*this)(static_cast<R&&>(r), std::move(pred), std::move(proj));
+  template <class _Ep_, __ycxx::__detail::par::__sized_random_access_range _Rp, class _Proj = std::identity,
+            std::indirect_unary_predicate<std::projected<std::ranges::iterator_t<_Rp>, _Proj>> _Pred>
+    requires __ycxx::__detail::__execution_policy<_Ep_>
+  decltype(auto) operator()(_Ep_&&, _Rp&& r, _Pred pred, _Proj proj = {}) const noexcept {
+    return static_cast<const _Fn&>(*this)(static_cast<_Rp&&>(r), std::move(pred), std::move(proj));
   }
 };
 
 // find_last_if_not
-template <class Fn>
-struct ranges_par_algo<Fn, par::kind::find_last_if_not> : Fn {
-  using Fn::operator();
-  template <class Ep, std::random_access_iterator I, std::sized_sentinel_for<I> S, class Proj = std::identity,
-            std::indirect_unary_predicate<std::projected<I, Proj>> Pred>
-    requires ycxx::detail::execution_policy<Ep>
-  decltype(auto) operator()(Ep&&, I first, S last, Pred pred, Proj proj = {}) const noexcept {
-    return static_cast<const Fn&>(*this)(std::move(first), std::move(last), std::move(pred), std::move(proj));
+template <class _Fn>
+struct __ranges_par_algo<_Fn, par::kind::find_last_if_not> : _Fn {
+  using _Fn::operator();
+  template <class _Ep_, std::random_access_iterator _Ip, std::sized_sentinel_for<_Ip> _Sp, class _Proj = std::identity,
+            std::indirect_unary_predicate<std::projected<_Ip, _Proj>> _Pred>
+    requires __ycxx::__detail::__execution_policy<_Ep_>
+  decltype(auto) operator()(_Ep_&&, _Ip first, _Sp last, _Pred pred, _Proj proj = {}) const noexcept {
+    return static_cast<const _Fn&>(*this)(std::move(first), std::move(last), std::move(pred), std::move(proj));
   }
-  template <class Ep, ycxx::detail::par::sized_random_access_range R, class Proj = std::identity,
-            std::indirect_unary_predicate<std::projected<std::ranges::iterator_t<R>, Proj>> Pred>
-    requires ycxx::detail::execution_policy<Ep>
-  decltype(auto) operator()(Ep&&, R&& r, Pred pred, Proj proj = {}) const noexcept {
-    return static_cast<const Fn&>(*this)(static_cast<R&&>(r), std::move(pred), std::move(proj));
+  template <class _Ep_, __ycxx::__detail::par::__sized_random_access_range _Rp, class _Proj = std::identity,
+            std::indirect_unary_predicate<std::projected<std::ranges::iterator_t<_Rp>, _Proj>> _Pred>
+    requires __ycxx::__detail::__execution_policy<_Ep_>
+  decltype(auto) operator()(_Ep_&&, _Rp&& r, _Pred pred, _Proj proj = {}) const noexcept {
+    return static_cast<const _Fn&>(*this)(static_cast<_Rp&&>(r), std::move(pred), std::move(proj));
   }
 };
 
 // find_end
-template <class Fn>
-struct ranges_par_algo<Fn, par::kind::find_end> : Fn {
-  using Fn::operator();
-  template <class Ep, std::random_access_iterator I1, std::sized_sentinel_for<I1> S1, std::random_access_iterator I2,
-            std::sized_sentinel_for<I2> S2, class Pred = std::ranges::equal_to, class Proj1 = std::identity,
-            class Proj2 = std::identity>
-    requires ycxx::detail::execution_policy<Ep> && std::indirectly_comparable<I1, I2, Pred, Proj1, Proj2>
-  decltype(auto) operator()(Ep&&, I1 first1, S1 last1, I2 first2, S2 last2, Pred pred = {}, Proj1 proj1 = {},
-                            Proj2 proj2 = {}) const noexcept {
-    return static_cast<const Fn&>(*this)(std::move(first1), std::move(last1), std::move(first2), std::move(last2),
-                                         std::move(pred), std::move(proj1), std::move(proj2));
+template <class _Fn>
+struct __ranges_par_algo<_Fn, par::kind::find_end> : _Fn {
+  using _Fn::operator();
+  template <class _Ep_, std::random_access_iterator _I1, std::sized_sentinel_for<_I1> _S1, std::random_access_iterator _I2,
+            std::sized_sentinel_for<_I2> _S2, class _Pred = std::ranges::equal_to, class _Proj1 = std::identity,
+            class _Proj2 = std::identity>
+    requires __ycxx::__detail::__execution_policy<_Ep_> && std::indirectly_comparable<_I1, _I2, _Pred, _Proj1, _Proj2>
+  decltype(auto) operator()(_Ep_&&, _I1 __first1, _S1 __last1, _I2 __first2, _S2 __last2, _Pred pred = {}, _Proj1 __proj1 = {},
+                            _Proj2 __proj2 = {}) const noexcept {
+    return static_cast<const _Fn&>(*this)(std::move(__first1), std::move(__last1), std::move(__first2), std::move(__last2),
+                                         std::move(pred), std::move(__proj1), std::move(__proj2));
   }
-  template <class Ep, ycxx::detail::par::sized_random_access_range R1, ycxx::detail::par::sized_random_access_range R2,
-            class Pred = std::ranges::equal_to, class Proj1 = std::identity, class Proj2 = std::identity>
-    requires ycxx::detail::execution_policy<Ep> &&
-             std::indirectly_comparable<std::ranges::iterator_t<R1>, std::ranges::iterator_t<R2>, Pred, Proj1, Proj2>
-  decltype(auto) operator()(Ep&&, R1&& r1, R2&& r2, Pred pred = {}, Proj1 proj1 = {}, Proj2 proj2 = {}) const noexcept {
-    return static_cast<const Fn&>(*this)(static_cast<R1&&>(r1), static_cast<R2&&>(r2), std::move(pred),
-                                         std::move(proj1), std::move(proj2));
+  template <class _Ep_, __ycxx::__detail::par::__sized_random_access_range _R1, __ycxx::__detail::par::__sized_random_access_range _R2,
+            class _Pred = std::ranges::equal_to, class _Proj1 = std::identity, class _Proj2 = std::identity>
+    requires __ycxx::__detail::__execution_policy<_Ep_> &&
+             std::indirectly_comparable<std::ranges::iterator_t<_R1>, std::ranges::iterator_t<_R2>, _Pred, _Proj1, _Proj2>
+  decltype(auto) operator()(_Ep_&&, _R1&& __r1, _R2&& __r2, _Pred pred = {}, _Proj1 __proj1 = {}, _Proj2 __proj2 = {}) const noexcept {
+    return static_cast<const _Fn&>(*this)(static_cast<_R1&&>(__r1), static_cast<_R2&&>(__r2), std::move(pred),
+                                         std::move(__proj1), std::move(__proj2));
   }
 };
 
 // find_first_of
-template <class Fn>
-struct ranges_par_algo<Fn, par::kind::find_first_of> : Fn {
-  using Fn::operator();
-  template <class Ep, std::random_access_iterator I1, std::sized_sentinel_for<I1> S1, std::random_access_iterator I2,
-            std::sized_sentinel_for<I2> S2, class Pred = std::ranges::equal_to, class Proj1 = std::identity,
-            class Proj2 = std::identity>
-    requires ycxx::detail::execution_policy<Ep> && std::indirectly_comparable<I1, I2, Pred, Proj1, Proj2>
-  decltype(auto) operator()(Ep&&, I1 first1, S1 last1, I2 first2, S2 last2, Pred pred = {}, Proj1 proj1 = {},
-                            Proj2 proj2 = {}) const noexcept {
-    return static_cast<const Fn&>(*this)(std::move(first1), std::move(last1), std::move(first2), std::move(last2),
-                                         std::move(pred), std::move(proj1), std::move(proj2));
+template <class _Fn>
+struct __ranges_par_algo<_Fn, par::kind::find_first_of> : _Fn {
+  using _Fn::operator();
+  template <class _Ep_, std::random_access_iterator _I1, std::sized_sentinel_for<_I1> _S1, std::random_access_iterator _I2,
+            std::sized_sentinel_for<_I2> _S2, class _Pred = std::ranges::equal_to, class _Proj1 = std::identity,
+            class _Proj2 = std::identity>
+    requires __ycxx::__detail::__execution_policy<_Ep_> && std::indirectly_comparable<_I1, _I2, _Pred, _Proj1, _Proj2>
+  decltype(auto) operator()(_Ep_&&, _I1 __first1, _S1 __last1, _I2 __first2, _S2 __last2, _Pred pred = {}, _Proj1 __proj1 = {},
+                            _Proj2 __proj2 = {}) const noexcept {
+    return static_cast<const _Fn&>(*this)(std::move(__first1), std::move(__last1), std::move(__first2), std::move(__last2),
+                                         std::move(pred), std::move(__proj1), std::move(__proj2));
   }
-  template <class Ep, ycxx::detail::par::sized_random_access_range R1, ycxx::detail::par::sized_random_access_range R2,
-            class Pred = std::ranges::equal_to, class Proj1 = std::identity, class Proj2 = std::identity>
-    requires ycxx::detail::execution_policy<Ep> &&
-             std::indirectly_comparable<std::ranges::iterator_t<R1>, std::ranges::iterator_t<R2>, Pred, Proj1, Proj2>
-  decltype(auto) operator()(Ep&&, R1&& r1, R2&& r2, Pred pred = {}, Proj1 proj1 = {}, Proj2 proj2 = {}) const noexcept {
-    return static_cast<const Fn&>(*this)(static_cast<R1&&>(r1), static_cast<R2&&>(r2), std::move(pred),
-                                         std::move(proj1), std::move(proj2));
+  template <class _Ep_, __ycxx::__detail::par::__sized_random_access_range _R1, __ycxx::__detail::par::__sized_random_access_range _R2,
+            class _Pred = std::ranges::equal_to, class _Proj1 = std::identity, class _Proj2 = std::identity>
+    requires __ycxx::__detail::__execution_policy<_Ep_> &&
+             std::indirectly_comparable<std::ranges::iterator_t<_R1>, std::ranges::iterator_t<_R2>, _Pred, _Proj1, _Proj2>
+  decltype(auto) operator()(_Ep_&&, _R1&& __r1, _R2&& __r2, _Pred pred = {}, _Proj1 __proj1 = {}, _Proj2 __proj2 = {}) const noexcept {
+    return static_cast<const _Fn&>(*this)(static_cast<_R1&&>(__r1), static_cast<_R2&&>(__r2), std::move(pred),
+                                         std::move(__proj1), std::move(__proj2));
   }
 };
 
 // adjacent_find
-template <class Fn>
-struct ranges_par_algo<Fn, par::kind::adjacent_find> : Fn {
-  using Fn::operator();
-  template <class Ep, std::random_access_iterator I, std::sized_sentinel_for<I> S, class Proj = std::identity,
-            std::indirect_binary_predicate<std::projected<I, Proj>, std::projected<I, Proj>> Pred = std::ranges::equal_to>
-    requires ycxx::detail::execution_policy<Ep>
-  decltype(auto) operator()(Ep&&, I first, S last, Pred pred = {}, Proj proj = {}) const noexcept {
-    return static_cast<const Fn&>(*this)(std::move(first), std::move(last), std::move(pred), std::move(proj));
+template <class _Fn>
+struct __ranges_par_algo<_Fn, par::kind::adjacent_find> : _Fn {
+  using _Fn::operator();
+  template <class _Ep_, std::random_access_iterator _Ip, std::sized_sentinel_for<_Ip> _Sp, class _Proj = std::identity,
+            std::indirect_binary_predicate<std::projected<_Ip, _Proj>, std::projected<_Ip, _Proj>> _Pred = std::ranges::equal_to>
+    requires __ycxx::__detail::__execution_policy<_Ep_>
+  decltype(auto) operator()(_Ep_&&, _Ip first, _Sp last, _Pred pred = {}, _Proj proj = {}) const noexcept {
+    return static_cast<const _Fn&>(*this)(std::move(first), std::move(last), std::move(pred), std::move(proj));
   }
-  template <class Ep, ycxx::detail::par::sized_random_access_range R, class Proj = std::identity,
-            std::indirect_binary_predicate<std::projected<std::ranges::iterator_t<R>, Proj>, std::projected<std::ranges::iterator_t<R>, Proj>> Pred = std::ranges::equal_to>
-    requires ycxx::detail::execution_policy<Ep>
-  decltype(auto) operator()(Ep&&, R&& r, Pred pred = {}, Proj proj = {}) const noexcept {
-    return static_cast<const Fn&>(*this)(static_cast<R&&>(r), std::move(pred), std::move(proj));
+  template <class _Ep_, __ycxx::__detail::par::__sized_random_access_range _Rp, class _Proj = std::identity,
+            std::indirect_binary_predicate<std::projected<std::ranges::iterator_t<_Rp>, _Proj>, std::projected<std::ranges::iterator_t<_Rp>, _Proj>> _Pred = std::ranges::equal_to>
+    requires __ycxx::__detail::__execution_policy<_Ep_>
+  decltype(auto) operator()(_Ep_&&, _Rp&& r, _Pred pred = {}, _Proj proj = {}) const noexcept {
+    return static_cast<const _Fn&>(*this)(static_cast<_Rp&&>(r), std::move(pred), std::move(proj));
   }
 };
 
 // count
-template <class Fn>
-struct ranges_par_algo<Fn, par::kind::count> : Fn {
-  using Fn::operator();
-  template <class Ep, std::random_access_iterator I, std::sized_sentinel_for<I> S, class Proj = std::identity,
-            class T = std::projected_value_t<I, Proj>>
-    requires ycxx::detail::execution_policy<Ep> &&
-             std::indirect_binary_predicate<std::ranges::equal_to, std::projected<I, Proj>, const T*>
-  decltype(auto) operator()(Ep&&, I first, S last, const T& value, Proj proj = {}) const noexcept {
-    return static_cast<const Fn&>(*this)(std::move(first), std::move(last), value, std::move(proj));
+template <class _Fn>
+struct __ranges_par_algo<_Fn, par::kind::count> : _Fn {
+  using _Fn::operator();
+  template <class _Ep_, std::random_access_iterator _Ip, std::sized_sentinel_for<_Ip> _Sp, class _Proj = std::identity,
+            class _Tp = std::projected_value_t<_Ip, _Proj>>
+    requires __ycxx::__detail::__execution_policy<_Ep_> &&
+             std::indirect_binary_predicate<std::ranges::equal_to, std::projected<_Ip, _Proj>, const _Tp*>
+  decltype(auto) operator()(_Ep_&&, _Ip first, _Sp last, const _Tp& value, _Proj proj = {}) const noexcept {
+    return static_cast<const _Fn&>(*this)(std::move(first), std::move(last), value, std::move(proj));
   }
-  template <class Ep, ycxx::detail::par::sized_random_access_range R, class Proj = std::identity,
-            class T = std::projected_value_t<std::ranges::iterator_t<R>, Proj>>
-    requires ycxx::detail::execution_policy<Ep> &&
-             std::indirect_binary_predicate<std::ranges::equal_to, std::projected<std::ranges::iterator_t<R>, Proj>, const T*>
-  decltype(auto) operator()(Ep&&, R&& r, const T& value, Proj proj = {}) const noexcept {
-    return static_cast<const Fn&>(*this)(static_cast<R&&>(r), value, std::move(proj));
+  template <class _Ep_, __ycxx::__detail::par::__sized_random_access_range _Rp, class _Proj = std::identity,
+            class _Tp = std::projected_value_t<std::ranges::iterator_t<_Rp>, _Proj>>
+    requires __ycxx::__detail::__execution_policy<_Ep_> &&
+             std::indirect_binary_predicate<std::ranges::equal_to, std::projected<std::ranges::iterator_t<_Rp>, _Proj>, const _Tp*>
+  decltype(auto) operator()(_Ep_&&, _Rp&& r, const _Tp& value, _Proj proj = {}) const noexcept {
+    return static_cast<const _Fn&>(*this)(static_cast<_Rp&&>(r), value, std::move(proj));
   }
 };
 
 // count_if
-template <class Fn>
-struct ranges_par_algo<Fn, par::kind::count_if> : Fn {
-  using Fn::operator();
-  template <class Ep, std::random_access_iterator I, std::sized_sentinel_for<I> S, class Proj = std::identity,
-            std::indirect_unary_predicate<std::projected<I, Proj>> Pred>
-    requires ycxx::detail::execution_policy<Ep>
-  decltype(auto) operator()(Ep&&, I first, S last, Pred pred, Proj proj = {}) const noexcept {
-    return static_cast<const Fn&>(*this)(std::move(first), std::move(last), std::move(pred), std::move(proj));
+template <class _Fn>
+struct __ranges_par_algo<_Fn, par::kind::count_if> : _Fn {
+  using _Fn::operator();
+  template <class _Ep_, std::random_access_iterator _Ip, std::sized_sentinel_for<_Ip> _Sp, class _Proj = std::identity,
+            std::indirect_unary_predicate<std::projected<_Ip, _Proj>> _Pred>
+    requires __ycxx::__detail::__execution_policy<_Ep_>
+  decltype(auto) operator()(_Ep_&&, _Ip first, _Sp last, _Pred pred, _Proj proj = {}) const noexcept {
+    return static_cast<const _Fn&>(*this)(std::move(first), std::move(last), std::move(pred), std::move(proj));
   }
-  template <class Ep, ycxx::detail::par::sized_random_access_range R, class Proj = std::identity,
-            std::indirect_unary_predicate<std::projected<std::ranges::iterator_t<R>, Proj>> Pred>
-    requires ycxx::detail::execution_policy<Ep>
-  decltype(auto) operator()(Ep&&, R&& r, Pred pred, Proj proj = {}) const noexcept {
-    return static_cast<const Fn&>(*this)(static_cast<R&&>(r), std::move(pred), std::move(proj));
+  template <class _Ep_, __ycxx::__detail::par::__sized_random_access_range _Rp, class _Proj = std::identity,
+            std::indirect_unary_predicate<std::projected<std::ranges::iterator_t<_Rp>, _Proj>> _Pred>
+    requires __ycxx::__detail::__execution_policy<_Ep_>
+  decltype(auto) operator()(_Ep_&&, _Rp&& r, _Pred pred, _Proj proj = {}) const noexcept {
+    return static_cast<const _Fn&>(*this)(static_cast<_Rp&&>(r), std::move(pred), std::move(proj));
   }
 };
 
 // mismatch
-template <class Fn>
-struct ranges_par_algo<Fn, par::kind::mismatch> : Fn {
-  using Fn::operator();
-  template <class Ep, std::random_access_iterator I1, std::sized_sentinel_for<I1> S1, std::random_access_iterator I2,
-            std::sized_sentinel_for<I2> S2, class Pred = std::ranges::equal_to, class Proj1 = std::identity,
-            class Proj2 = std::identity>
-    requires ycxx::detail::execution_policy<Ep> && std::indirectly_comparable<I1, I2, Pred, Proj1, Proj2>
-  decltype(auto) operator()(Ep&&, I1 first1, S1 last1, I2 first2, S2 last2, Pred pred = {}, Proj1 proj1 = {},
-                            Proj2 proj2 = {}) const noexcept {
-    return static_cast<const Fn&>(*this)(std::move(first1), std::move(last1), std::move(first2), std::move(last2),
-                                         std::move(pred), std::move(proj1), std::move(proj2));
+template <class _Fn>
+struct __ranges_par_algo<_Fn, par::kind::mismatch> : _Fn {
+  using _Fn::operator();
+  template <class _Ep_, std::random_access_iterator _I1, std::sized_sentinel_for<_I1> _S1, std::random_access_iterator _I2,
+            std::sized_sentinel_for<_I2> _S2, class _Pred = std::ranges::equal_to, class _Proj1 = std::identity,
+            class _Proj2 = std::identity>
+    requires __ycxx::__detail::__execution_policy<_Ep_> && std::indirectly_comparable<_I1, _I2, _Pred, _Proj1, _Proj2>
+  decltype(auto) operator()(_Ep_&&, _I1 __first1, _S1 __last1, _I2 __first2, _S2 __last2, _Pred pred = {}, _Proj1 __proj1 = {},
+                            _Proj2 __proj2 = {}) const noexcept {
+    return static_cast<const _Fn&>(*this)(std::move(__first1), std::move(__last1), std::move(__first2), std::move(__last2),
+                                         std::move(pred), std::move(__proj1), std::move(__proj2));
   }
-  template <class Ep, ycxx::detail::par::sized_random_access_range R1, ycxx::detail::par::sized_random_access_range R2,
-            class Pred = std::ranges::equal_to, class Proj1 = std::identity, class Proj2 = std::identity>
-    requires ycxx::detail::execution_policy<Ep> &&
-             std::indirectly_comparable<std::ranges::iterator_t<R1>, std::ranges::iterator_t<R2>, Pred, Proj1, Proj2>
-  decltype(auto) operator()(Ep&&, R1&& r1, R2&& r2, Pred pred = {}, Proj1 proj1 = {}, Proj2 proj2 = {}) const noexcept {
-    return static_cast<const Fn&>(*this)(static_cast<R1&&>(r1), static_cast<R2&&>(r2), std::move(pred),
-                                         std::move(proj1), std::move(proj2));
+  template <class _Ep_, __ycxx::__detail::par::__sized_random_access_range _R1, __ycxx::__detail::par::__sized_random_access_range _R2,
+            class _Pred = std::ranges::equal_to, class _Proj1 = std::identity, class _Proj2 = std::identity>
+    requires __ycxx::__detail::__execution_policy<_Ep_> &&
+             std::indirectly_comparable<std::ranges::iterator_t<_R1>, std::ranges::iterator_t<_R2>, _Pred, _Proj1, _Proj2>
+  decltype(auto) operator()(_Ep_&&, _R1&& __r1, _R2&& __r2, _Pred pred = {}, _Proj1 __proj1 = {}, _Proj2 __proj2 = {}) const noexcept {
+    return static_cast<const _Fn&>(*this)(static_cast<_R1&&>(__r1), static_cast<_R2&&>(__r2), std::move(pred),
+                                         std::move(__proj1), std::move(__proj2));
   }
 };
 
 // equal
-template <class Fn>
-struct ranges_par_algo<Fn, par::kind::equal> : Fn {
-  using Fn::operator();
-  template <class Ep, std::random_access_iterator I1, std::sized_sentinel_for<I1> S1, std::random_access_iterator I2,
-            std::sized_sentinel_for<I2> S2, class Pred = std::ranges::equal_to, class Proj1 = std::identity,
-            class Proj2 = std::identity>
-    requires ycxx::detail::execution_policy<Ep> && std::indirectly_comparable<I1, I2, Pred, Proj1, Proj2>
-  decltype(auto) operator()(Ep&&, I1 first1, S1 last1, I2 first2, S2 last2, Pred pred = {}, Proj1 proj1 = {},
-                            Proj2 proj2 = {}) const noexcept {
-    return static_cast<const Fn&>(*this)(std::move(first1), std::move(last1), std::move(first2), std::move(last2),
-                                         std::move(pred), std::move(proj1), std::move(proj2));
+template <class _Fn>
+struct __ranges_par_algo<_Fn, par::kind::equal> : _Fn {
+  using _Fn::operator();
+  template <class _Ep_, std::random_access_iterator _I1, std::sized_sentinel_for<_I1> _S1, std::random_access_iterator _I2,
+            std::sized_sentinel_for<_I2> _S2, class _Pred = std::ranges::equal_to, class _Proj1 = std::identity,
+            class _Proj2 = std::identity>
+    requires __ycxx::__detail::__execution_policy<_Ep_> && std::indirectly_comparable<_I1, _I2, _Pred, _Proj1, _Proj2>
+  decltype(auto) operator()(_Ep_&&, _I1 __first1, _S1 __last1, _I2 __first2, _S2 __last2, _Pred pred = {}, _Proj1 __proj1 = {},
+                            _Proj2 __proj2 = {}) const noexcept {
+    return static_cast<const _Fn&>(*this)(std::move(__first1), std::move(__last1), std::move(__first2), std::move(__last2),
+                                         std::move(pred), std::move(__proj1), std::move(__proj2));
   }
-  template <class Ep, ycxx::detail::par::sized_random_access_range R1, ycxx::detail::par::sized_random_access_range R2,
-            class Pred = std::ranges::equal_to, class Proj1 = std::identity, class Proj2 = std::identity>
-    requires ycxx::detail::execution_policy<Ep> &&
-             std::indirectly_comparable<std::ranges::iterator_t<R1>, std::ranges::iterator_t<R2>, Pred, Proj1, Proj2>
-  decltype(auto) operator()(Ep&&, R1&& r1, R2&& r2, Pred pred = {}, Proj1 proj1 = {}, Proj2 proj2 = {}) const noexcept {
-    return static_cast<const Fn&>(*this)(static_cast<R1&&>(r1), static_cast<R2&&>(r2), std::move(pred),
-                                         std::move(proj1), std::move(proj2));
+  template <class _Ep_, __ycxx::__detail::par::__sized_random_access_range _R1, __ycxx::__detail::par::__sized_random_access_range _R2,
+            class _Pred = std::ranges::equal_to, class _Proj1 = std::identity, class _Proj2 = std::identity>
+    requires __ycxx::__detail::__execution_policy<_Ep_> &&
+             std::indirectly_comparable<std::ranges::iterator_t<_R1>, std::ranges::iterator_t<_R2>, _Pred, _Proj1, _Proj2>
+  decltype(auto) operator()(_Ep_&&, _R1&& __r1, _R2&& __r2, _Pred pred = {}, _Proj1 __proj1 = {}, _Proj2 __proj2 = {}) const noexcept {
+    return static_cast<const _Fn&>(*this)(static_cast<_R1&&>(__r1), static_cast<_R2&&>(__r2), std::move(pred),
+                                         std::move(__proj1), std::move(__proj2));
   }
 };
 
 // search
-template <class Fn>
-struct ranges_par_algo<Fn, par::kind::search> : Fn {
-  using Fn::operator();
-  template <class Ep, std::random_access_iterator I1, std::sized_sentinel_for<I1> S1, std::random_access_iterator I2,
-            std::sized_sentinel_for<I2> S2, class Pred = std::ranges::equal_to, class Proj1 = std::identity,
-            class Proj2 = std::identity>
-    requires ycxx::detail::execution_policy<Ep> && std::indirectly_comparable<I1, I2, Pred, Proj1, Proj2>
-  decltype(auto) operator()(Ep&&, I1 first1, S1 last1, I2 first2, S2 last2, Pred pred = {}, Proj1 proj1 = {},
-                            Proj2 proj2 = {}) const noexcept {
-    return static_cast<const Fn&>(*this)(std::move(first1), std::move(last1), std::move(first2), std::move(last2),
-                                         std::move(pred), std::move(proj1), std::move(proj2));
+template <class _Fn>
+struct __ranges_par_algo<_Fn, par::kind::search> : _Fn {
+  using _Fn::operator();
+  template <class _Ep_, std::random_access_iterator _I1, std::sized_sentinel_for<_I1> _S1, std::random_access_iterator _I2,
+            std::sized_sentinel_for<_I2> _S2, class _Pred = std::ranges::equal_to, class _Proj1 = std::identity,
+            class _Proj2 = std::identity>
+    requires __ycxx::__detail::__execution_policy<_Ep_> && std::indirectly_comparable<_I1, _I2, _Pred, _Proj1, _Proj2>
+  decltype(auto) operator()(_Ep_&&, _I1 __first1, _S1 __last1, _I2 __first2, _S2 __last2, _Pred pred = {}, _Proj1 __proj1 = {},
+                            _Proj2 __proj2 = {}) const noexcept {
+    return static_cast<const _Fn&>(*this)(std::move(__first1), std::move(__last1), std::move(__first2), std::move(__last2),
+                                         std::move(pred), std::move(__proj1), std::move(__proj2));
   }
-  template <class Ep, ycxx::detail::par::sized_random_access_range R1, ycxx::detail::par::sized_random_access_range R2,
-            class Pred = std::ranges::equal_to, class Proj1 = std::identity, class Proj2 = std::identity>
-    requires ycxx::detail::execution_policy<Ep> &&
-             std::indirectly_comparable<std::ranges::iterator_t<R1>, std::ranges::iterator_t<R2>, Pred, Proj1, Proj2>
-  decltype(auto) operator()(Ep&&, R1&& r1, R2&& r2, Pred pred = {}, Proj1 proj1 = {}, Proj2 proj2 = {}) const noexcept {
-    return static_cast<const Fn&>(*this)(static_cast<R1&&>(r1), static_cast<R2&&>(r2), std::move(pred),
-                                         std::move(proj1), std::move(proj2));
+  template <class _Ep_, __ycxx::__detail::par::__sized_random_access_range _R1, __ycxx::__detail::par::__sized_random_access_range _R2,
+            class _Pred = std::ranges::equal_to, class _Proj1 = std::identity, class _Proj2 = std::identity>
+    requires __ycxx::__detail::__execution_policy<_Ep_> &&
+             std::indirectly_comparable<std::ranges::iterator_t<_R1>, std::ranges::iterator_t<_R2>, _Pred, _Proj1, _Proj2>
+  decltype(auto) operator()(_Ep_&&, _R1&& __r1, _R2&& __r2, _Pred pred = {}, _Proj1 __proj1 = {}, _Proj2 __proj2 = {}) const noexcept {
+    return static_cast<const _Fn&>(*this)(static_cast<_R1&&>(__r1), static_cast<_R2&&>(__r2), std::move(pred),
+                                         std::move(__proj1), std::move(__proj2));
   }
 };
 
 // search_n
-template <class Fn>
-struct ranges_par_algo<Fn, par::kind::search_n> : Fn {
-  using Fn::operator();
-  template <class Ep, std::random_access_iterator I, std::sized_sentinel_for<I> S, class Pred = std::ranges::equal_to,
-            class Proj = std::identity, class T = std::projected_value_t<I, Proj>>
-    requires ycxx::detail::execution_policy<Ep> && std::indirectly_comparable<I, const T*, Pred, Proj>
-  decltype(auto) operator()(Ep&&, I first, S last, std::iter_difference_t<I> count, const T& value, Pred pred = {},
-                            Proj proj = {}) const noexcept {
-    return static_cast<const Fn&>(*this)(std::move(first), std::move(last), std::move(count), value, std::move(pred),
+template <class _Fn>
+struct __ranges_par_algo<_Fn, par::kind::search_n> : _Fn {
+  using _Fn::operator();
+  template <class _Ep_, std::random_access_iterator _Ip, std::sized_sentinel_for<_Ip> _Sp, class _Pred = std::ranges::equal_to,
+            class _Proj = std::identity, class _Tp = std::projected_value_t<_Ip, _Proj>>
+    requires __ycxx::__detail::__execution_policy<_Ep_> && std::indirectly_comparable<_Ip, const _Tp*, _Pred, _Proj>
+  decltype(auto) operator()(_Ep_&&, _Ip first, _Sp last, std::iter_difference_t<_Ip> count, const _Tp& value, _Pred pred = {},
+                            _Proj proj = {}) const noexcept {
+    return static_cast<const _Fn&>(*this)(std::move(first), std::move(last), std::move(count), value, std::move(pred),
                                          std::move(proj));
   }
-  template <class Ep, ycxx::detail::par::sized_random_access_range R, class Pred = std::ranges::equal_to,
-            class Proj = std::identity, class T = std::projected_value_t<std::ranges::iterator_t<R>, Proj>>
-    requires ycxx::detail::execution_policy<Ep> &&
-             std::indirectly_comparable<std::ranges::iterator_t<R>, const T*, Pred, Proj>
-  decltype(auto) operator()(Ep&&, R&& r, std::ranges::range_difference_t<R> count, const T& value, Pred pred = {},
-                            Proj proj = {}) const noexcept {
-    return static_cast<const Fn&>(*this)(static_cast<R&&>(r), std::move(count), value, std::move(pred),
+  template <class _Ep_, __ycxx::__detail::par::__sized_random_access_range _Rp, class _Pred = std::ranges::equal_to,
+            class _Proj = std::identity, class _Tp = std::projected_value_t<std::ranges::iterator_t<_Rp>, _Proj>>
+    requires __ycxx::__detail::__execution_policy<_Ep_> &&
+             std::indirectly_comparable<std::ranges::iterator_t<_Rp>, const _Tp*, _Pred, _Proj>
+  decltype(auto) operator()(_Ep_&&, _Rp&& r, std::ranges::range_difference_t<_Rp> count, const _Tp& value, _Pred pred = {},
+                            _Proj proj = {}) const noexcept {
+    return static_cast<const _Fn&>(*this)(static_cast<_Rp&&>(r), std::move(count), value, std::move(pred),
                                          std::move(proj));
   }
 };
 
 // starts_with
-template <class Fn>
-struct ranges_par_algo<Fn, par::kind::starts_with> : Fn {
-  using Fn::operator();
-  template <class Ep, std::random_access_iterator I1, std::sized_sentinel_for<I1> S1, std::random_access_iterator I2,
-            std::sized_sentinel_for<I2> S2, class Pred = std::ranges::equal_to, class Proj1 = std::identity,
-            class Proj2 = std::identity>
-    requires ycxx::detail::execution_policy<Ep> && std::indirectly_comparable<I1, I2, Pred, Proj1, Proj2>
-  decltype(auto) operator()(Ep&&, I1 first1, S1 last1, I2 first2, S2 last2, Pred pred = {}, Proj1 proj1 = {},
-                            Proj2 proj2 = {}) const noexcept {
-    return static_cast<const Fn&>(*this)(std::move(first1), std::move(last1), std::move(first2), std::move(last2),
-                                         std::move(pred), std::move(proj1), std::move(proj2));
+template <class _Fn>
+struct __ranges_par_algo<_Fn, par::kind::starts_with> : _Fn {
+  using _Fn::operator();
+  template <class _Ep_, std::random_access_iterator _I1, std::sized_sentinel_for<_I1> _S1, std::random_access_iterator _I2,
+            std::sized_sentinel_for<_I2> _S2, class _Pred = std::ranges::equal_to, class _Proj1 = std::identity,
+            class _Proj2 = std::identity>
+    requires __ycxx::__detail::__execution_policy<_Ep_> && std::indirectly_comparable<_I1, _I2, _Pred, _Proj1, _Proj2>
+  decltype(auto) operator()(_Ep_&&, _I1 __first1, _S1 __last1, _I2 __first2, _S2 __last2, _Pred pred = {}, _Proj1 __proj1 = {},
+                            _Proj2 __proj2 = {}) const noexcept {
+    return static_cast<const _Fn&>(*this)(std::move(__first1), std::move(__last1), std::move(__first2), std::move(__last2),
+                                         std::move(pred), std::move(__proj1), std::move(__proj2));
   }
-  template <class Ep, ycxx::detail::par::sized_random_access_range R1, ycxx::detail::par::sized_random_access_range R2,
-            class Pred = std::ranges::equal_to, class Proj1 = std::identity, class Proj2 = std::identity>
-    requires ycxx::detail::execution_policy<Ep> &&
-             std::indirectly_comparable<std::ranges::iterator_t<R1>, std::ranges::iterator_t<R2>, Pred, Proj1, Proj2>
-  decltype(auto) operator()(Ep&&, R1&& r1, R2&& r2, Pred pred = {}, Proj1 proj1 = {}, Proj2 proj2 = {}) const noexcept {
-    return static_cast<const Fn&>(*this)(static_cast<R1&&>(r1), static_cast<R2&&>(r2), std::move(pred),
-                                         std::move(proj1), std::move(proj2));
+  template <class _Ep_, __ycxx::__detail::par::__sized_random_access_range _R1, __ycxx::__detail::par::__sized_random_access_range _R2,
+            class _Pred = std::ranges::equal_to, class _Proj1 = std::identity, class _Proj2 = std::identity>
+    requires __ycxx::__detail::__execution_policy<_Ep_> &&
+             std::indirectly_comparable<std::ranges::iterator_t<_R1>, std::ranges::iterator_t<_R2>, _Pred, _Proj1, _Proj2>
+  decltype(auto) operator()(_Ep_&&, _R1&& __r1, _R2&& __r2, _Pred pred = {}, _Proj1 __proj1 = {}, _Proj2 __proj2 = {}) const noexcept {
+    return static_cast<const _Fn&>(*this)(static_cast<_R1&&>(__r1), static_cast<_R2&&>(__r2), std::move(pred),
+                                         std::move(__proj1), std::move(__proj2));
   }
 };
 
 // ends_with
-template <class Fn>
-struct ranges_par_algo<Fn, par::kind::ends_with> : Fn {
-  using Fn::operator();
-  template <class Ep, std::random_access_iterator I1, std::sized_sentinel_for<I1> S1, std::random_access_iterator I2,
-            std::sized_sentinel_for<I2> S2, class Pred = std::ranges::equal_to, class Proj1 = std::identity,
-            class Proj2 = std::identity>
-    requires ycxx::detail::execution_policy<Ep> && std::indirectly_comparable<I1, I2, Pred, Proj1, Proj2>
-  decltype(auto) operator()(Ep&&, I1 first1, S1 last1, I2 first2, S2 last2, Pred pred = {}, Proj1 proj1 = {},
-                            Proj2 proj2 = {}) const noexcept {
-    return static_cast<const Fn&>(*this)(std::move(first1), std::move(last1), std::move(first2), std::move(last2),
-                                         std::move(pred), std::move(proj1), std::move(proj2));
+template <class _Fn>
+struct __ranges_par_algo<_Fn, par::kind::ends_with> : _Fn {
+  using _Fn::operator();
+  template <class _Ep_, std::random_access_iterator _I1, std::sized_sentinel_for<_I1> _S1, std::random_access_iterator _I2,
+            std::sized_sentinel_for<_I2> _S2, class _Pred = std::ranges::equal_to, class _Proj1 = std::identity,
+            class _Proj2 = std::identity>
+    requires __ycxx::__detail::__execution_policy<_Ep_> && std::indirectly_comparable<_I1, _I2, _Pred, _Proj1, _Proj2>
+  decltype(auto) operator()(_Ep_&&, _I1 __first1, _S1 __last1, _I2 __first2, _S2 __last2, _Pred pred = {}, _Proj1 __proj1 = {},
+                            _Proj2 __proj2 = {}) const noexcept {
+    return static_cast<const _Fn&>(*this)(std::move(__first1), std::move(__last1), std::move(__first2), std::move(__last2),
+                                         std::move(pred), std::move(__proj1), std::move(__proj2));
   }
-  template <class Ep, ycxx::detail::par::sized_random_access_range R1, ycxx::detail::par::sized_random_access_range R2,
-            class Pred = std::ranges::equal_to, class Proj1 = std::identity, class Proj2 = std::identity>
-    requires ycxx::detail::execution_policy<Ep> &&
-             std::indirectly_comparable<std::ranges::iterator_t<R1>, std::ranges::iterator_t<R2>, Pred, Proj1, Proj2>
-  decltype(auto) operator()(Ep&&, R1&& r1, R2&& r2, Pred pred = {}, Proj1 proj1 = {}, Proj2 proj2 = {}) const noexcept {
-    return static_cast<const Fn&>(*this)(static_cast<R1&&>(r1), static_cast<R2&&>(r2), std::move(pred),
-                                         std::move(proj1), std::move(proj2));
+  template <class _Ep_, __ycxx::__detail::par::__sized_random_access_range _R1, __ycxx::__detail::par::__sized_random_access_range _R2,
+            class _Pred = std::ranges::equal_to, class _Proj1 = std::identity, class _Proj2 = std::identity>
+    requires __ycxx::__detail::__execution_policy<_Ep_> &&
+             std::indirectly_comparable<std::ranges::iterator_t<_R1>, std::ranges::iterator_t<_R2>, _Pred, _Proj1, _Proj2>
+  decltype(auto) operator()(_Ep_&&, _R1&& __r1, _R2&& __r2, _Pred pred = {}, _Proj1 __proj1 = {}, _Proj2 __proj2 = {}) const noexcept {
+    return static_cast<const _Fn&>(*this)(static_cast<_R1&&>(__r1), static_cast<_R2&&>(__r2), std::move(pred),
+                                         std::move(__proj1), std::move(__proj2));
   }
 };
 
 // swap_ranges
-template <class Fn>
-struct ranges_par_algo<Fn, par::kind::swap_ranges> : Fn {
-  using Fn::operator();
-  template <class Ep, std::random_access_iterator I1, std::sized_sentinel_for<I1> S1, std::random_access_iterator I2,
-            std::sized_sentinel_for<I2> S2>
-    requires ycxx::detail::execution_policy<Ep> && std::indirectly_swappable<I1, I2>
-  decltype(auto) operator()(Ep&&, I1 first1, S1 last1, I2 first2, S2 last2) const noexcept {
-    return static_cast<const Fn&>(*this)(std::move(first1), std::move(last1), std::move(first2), std::move(last2));
+template <class _Fn>
+struct __ranges_par_algo<_Fn, par::kind::swap_ranges> : _Fn {
+  using _Fn::operator();
+  template <class _Ep_, std::random_access_iterator _I1, std::sized_sentinel_for<_I1> _S1, std::random_access_iterator _I2,
+            std::sized_sentinel_for<_I2> _S2>
+    requires __ycxx::__detail::__execution_policy<_Ep_> && std::indirectly_swappable<_I1, _I2>
+  decltype(auto) operator()(_Ep_&&, _I1 __first1, _S1 __last1, _I2 __first2, _S2 __last2) const noexcept {
+    return static_cast<const _Fn&>(*this)(std::move(__first1), std::move(__last1), std::move(__first2), std::move(__last2));
   }
-  template <class Ep, ycxx::detail::par::sized_random_access_range R1, ycxx::detail::par::sized_random_access_range R2>
-    requires ycxx::detail::execution_policy<Ep> &&
-             std::indirectly_swappable<std::ranges::iterator_t<R1>, std::ranges::iterator_t<R2>>
-  decltype(auto) operator()(Ep&&, R1&& r1, R2&& r2) const noexcept {
-    return static_cast<const Fn&>(*this)(static_cast<R1&&>(r1), static_cast<R2&&>(r2));
+  template <class _Ep_, __ycxx::__detail::par::__sized_random_access_range _R1, __ycxx::__detail::par::__sized_random_access_range _R2>
+    requires __ycxx::__detail::__execution_policy<_Ep_> &&
+             std::indirectly_swappable<std::ranges::iterator_t<_R1>, std::ranges::iterator_t<_R2>>
+  decltype(auto) operator()(_Ep_&&, _R1&& __r1, _R2&& __r2) const noexcept {
+    return static_cast<const _Fn&>(*this)(static_cast<_R1&&>(__r1), static_cast<_R2&&>(__r2));
   }
 };
 
 // replace
-template <class Fn>
-struct ranges_par_algo<Fn, par::kind::replace> : Fn {
-  using Fn::operator();
-  template <class Ep, std::random_access_iterator I, std::sized_sentinel_for<I> S, class Proj = std::identity,
-            class T1 = std::projected_value_t<I, Proj>, class T2 = std::iter_value_t<I>>
-    requires ycxx::detail::execution_policy<Ep> && std::indirectly_writable<I, const T2&> &&
-             std::indirect_binary_predicate<std::ranges::equal_to, std::projected<I, Proj>, const T1*>
-  decltype(auto) operator()(Ep&&, I first, S last, const T1& old_value, const T2& new_value,
-                            Proj proj = {}) const noexcept {
-    return static_cast<const Fn&>(*this)(std::move(first), std::move(last), old_value, new_value, std::move(proj));
+template <class _Fn>
+struct __ranges_par_algo<_Fn, par::kind::replace> : _Fn {
+  using _Fn::operator();
+  template <class _Ep_, std::random_access_iterator _Ip, std::sized_sentinel_for<_Ip> _Sp, class _Proj = std::identity,
+            class _T1 = std::projected_value_t<_Ip, _Proj>, class _T2 = std::iter_value_t<_Ip>>
+    requires __ycxx::__detail::__execution_policy<_Ep_> && std::indirectly_writable<_Ip, const _T2&> &&
+             std::indirect_binary_predicate<std::ranges::equal_to, std::projected<_Ip, _Proj>, const _T1*>
+  decltype(auto) operator()(_Ep_&&, _Ip first, _Sp last, const _T1& __old_value, const _T2& __new_value,
+                            _Proj proj = {}) const noexcept {
+    return static_cast<const _Fn&>(*this)(std::move(first), std::move(last), __old_value, __new_value, std::move(proj));
   }
-  template <class Ep, ycxx::detail::par::sized_random_access_range R, class Proj = std::identity,
-            class T1 = std::projected_value_t<std::ranges::iterator_t<R>, Proj>,
-            class T2 = std::ranges::range_value_t<R>>
-    requires ycxx::detail::execution_policy<Ep> && std::indirectly_writable<std::ranges::iterator_t<R>, const T2&> &&
-             std::indirect_binary_predicate<std::ranges::equal_to, std::projected<std::ranges::iterator_t<R>, Proj>, const T1*>
-  decltype(auto) operator()(Ep&&, R&& r, const T1& old_value, const T2& new_value, Proj proj = {}) const noexcept {
-    return static_cast<const Fn&>(*this)(static_cast<R&&>(r), old_value, new_value, std::move(proj));
+  template <class _Ep_, __ycxx::__detail::par::__sized_random_access_range _Rp, class _Proj = std::identity,
+            class _T1 = std::projected_value_t<std::ranges::iterator_t<_Rp>, _Proj>,
+            class _T2 = std::ranges::range_value_t<_Rp>>
+    requires __ycxx::__detail::__execution_policy<_Ep_> && std::indirectly_writable<std::ranges::iterator_t<_Rp>, const _T2&> &&
+             std::indirect_binary_predicate<std::ranges::equal_to, std::projected<std::ranges::iterator_t<_Rp>, _Proj>, const _T1*>
+  decltype(auto) operator()(_Ep_&&, _Rp&& r, const _T1& __old_value, const _T2& __new_value, _Proj proj = {}) const noexcept {
+    return static_cast<const _Fn&>(*this)(static_cast<_Rp&&>(r), __old_value, __new_value, std::move(proj));
   }
 };
 
 // replace_if
-template <class Fn>
-struct ranges_par_algo<Fn, par::kind::replace_if> : Fn {
-  using Fn::operator();
-  template <class Ep, std::random_access_iterator I, std::sized_sentinel_for<I> S, class Proj = std::identity,
-            class T = std::iter_value_t<I>, std::indirect_unary_predicate<std::projected<I, Proj>> Pred>
-    requires ycxx::detail::execution_policy<Ep> && std::indirectly_writable<I, const T&>
-  decltype(auto) operator()(Ep&&, I first, S last, Pred pred, const T& new_value, Proj proj = {}) const noexcept {
-    return static_cast<const Fn&>(*this)(std::move(first), std::move(last), std::move(pred), new_value,
+template <class _Fn>
+struct __ranges_par_algo<_Fn, par::kind::replace_if> : _Fn {
+  using _Fn::operator();
+  template <class _Ep_, std::random_access_iterator _Ip, std::sized_sentinel_for<_Ip> _Sp, class _Proj = std::identity,
+            class _Tp = std::iter_value_t<_Ip>, std::indirect_unary_predicate<std::projected<_Ip, _Proj>> _Pred>
+    requires __ycxx::__detail::__execution_policy<_Ep_> && std::indirectly_writable<_Ip, const _Tp&>
+  decltype(auto) operator()(_Ep_&&, _Ip first, _Sp last, _Pred pred, const _Tp& __new_value, _Proj proj = {}) const noexcept {
+    return static_cast<const _Fn&>(*this)(std::move(first), std::move(last), std::move(pred), __new_value,
                                          std::move(proj));
   }
-  template <class Ep, ycxx::detail::par::sized_random_access_range R, class Proj = std::identity,
-            class T = std::ranges::range_value_t<R>,
-            std::indirect_unary_predicate<std::projected<std::ranges::iterator_t<R>, Proj>> Pred>
-    requires ycxx::detail::execution_policy<Ep> && std::indirectly_writable<std::ranges::iterator_t<R>, const T&>
-  decltype(auto) operator()(Ep&&, R&& r, Pred pred, const T& new_value, Proj proj = {}) const noexcept {
-    return static_cast<const Fn&>(*this)(static_cast<R&&>(r), std::move(pred), new_value, std::move(proj));
+  template <class _Ep_, __ycxx::__detail::par::__sized_random_access_range _Rp, class _Proj = std::identity,
+            class _Tp = std::ranges::range_value_t<_Rp>,
+            std::indirect_unary_predicate<std::projected<std::ranges::iterator_t<_Rp>, _Proj>> _Pred>
+    requires __ycxx::__detail::__execution_policy<_Ep_> && std::indirectly_writable<std::ranges::iterator_t<_Rp>, const _Tp&>
+  decltype(auto) operator()(_Ep_&&, _Rp&& r, _Pred pred, const _Tp& __new_value, _Proj proj = {}) const noexcept {
+    return static_cast<const _Fn&>(*this)(static_cast<_Rp&&>(r), std::move(pred), __new_value, std::move(proj));
   }
 };
 
 // fill
-template <class Fn>
-struct ranges_par_algo<Fn, par::kind::fill> : Fn {
-  using Fn::operator();
-  template <class Ep, std::random_access_iterator O, std::sized_sentinel_for<O> S, class T = std::iter_value_t<O>>
-    requires ycxx::detail::execution_policy<Ep> && std::indirectly_writable<O, const T&>
-  decltype(auto) operator()(Ep&&, O first, S last, const T& value) const noexcept {
-    return static_cast<const Fn&>(*this)(std::move(first), std::move(last), value);
+template <class _Fn>
+struct __ranges_par_algo<_Fn, par::kind::fill> : _Fn {
+  using _Fn::operator();
+  template <class _Ep_, std::random_access_iterator _Op, std::sized_sentinel_for<_Op> _Sp, class _Tp = std::iter_value_t<_Op>>
+    requires __ycxx::__detail::__execution_policy<_Ep_> && std::indirectly_writable<_Op, const _Tp&>
+  decltype(auto) operator()(_Ep_&&, _Op first, _Sp last, const _Tp& value) const noexcept {
+    return static_cast<const _Fn&>(*this)(std::move(first), std::move(last), value);
   }
-  template <class Ep, ycxx::detail::par::sized_random_access_range R, class T = std::ranges::range_value_t<R>>
-    requires ycxx::detail::execution_policy<Ep> && std::indirectly_writable<std::ranges::iterator_t<R>, const T&>
-  decltype(auto) operator()(Ep&&, R&& r, const T& value) const noexcept {
-    return static_cast<const Fn&>(*this)(static_cast<R&&>(r), value);
+  template <class _Ep_, __ycxx::__detail::par::__sized_random_access_range _Rp, class _Tp = std::ranges::range_value_t<_Rp>>
+    requires __ycxx::__detail::__execution_policy<_Ep_> && std::indirectly_writable<std::ranges::iterator_t<_Rp>, const _Tp&>
+  decltype(auto) operator()(_Ep_&&, _Rp&& r, const _Tp& value) const noexcept {
+    return static_cast<const _Fn&>(*this)(static_cast<_Rp&&>(r), value);
   }
 };
 
 // fill_n
-template <class Fn>
-struct ranges_par_algo<Fn, par::kind::fill_n> : Fn {
-  using Fn::operator();
-  template <class Ep, std::random_access_iterator O, class T = std::iter_value_t<O>>
-    requires ycxx::detail::execution_policy<Ep> && std::indirectly_writable<O, const T&>
-  decltype(auto) operator()(Ep&&, O first, std::iter_difference_t<O> n, const T& value) const noexcept {
-    return static_cast<const Fn&>(*this)(std::move(first), std::move(n), value);
+template <class _Fn>
+struct __ranges_par_algo<_Fn, par::kind::fill_n> : _Fn {
+  using _Fn::operator();
+  template <class _Ep_, std::random_access_iterator _Op, class _Tp = std::iter_value_t<_Op>>
+    requires __ycxx::__detail::__execution_policy<_Ep_> && std::indirectly_writable<_Op, const _Tp&>
+  decltype(auto) operator()(_Ep_&&, _Op first, std::iter_difference_t<_Op> n, const _Tp& value) const noexcept {
+    return static_cast<const _Fn&>(*this)(std::move(first), std::move(n), value);
   }
 };
 
 // remove
-template <class Fn>
-struct ranges_par_algo<Fn, par::kind::remove> : Fn {
-  using Fn::operator();
-  template <class Ep, std::random_access_iterator I, std::sized_sentinel_for<I> S, class Proj = std::identity,
-            class T = std::projected_value_t<I, Proj>>
-    requires ycxx::detail::execution_policy<Ep> && std::permutable<I> &&
-             std::indirect_binary_predicate<std::ranges::equal_to, std::projected<I, Proj>, const T*>
-  decltype(auto) operator()(Ep&&, I first, S last, const T& value, Proj proj = {}) const noexcept {
-    return static_cast<const Fn&>(*this)(std::move(first), std::move(last), value, std::move(proj));
+template <class _Fn>
+struct __ranges_par_algo<_Fn, par::kind::remove> : _Fn {
+  using _Fn::operator();
+  template <class _Ep_, std::random_access_iterator _Ip, std::sized_sentinel_for<_Ip> _Sp, class _Proj = std::identity,
+            class _Tp = std::projected_value_t<_Ip, _Proj>>
+    requires __ycxx::__detail::__execution_policy<_Ep_> && std::permutable<_Ip> &&
+             std::indirect_binary_predicate<std::ranges::equal_to, std::projected<_Ip, _Proj>, const _Tp*>
+  decltype(auto) operator()(_Ep_&&, _Ip first, _Sp last, const _Tp& value, _Proj proj = {}) const noexcept {
+    return static_cast<const _Fn&>(*this)(std::move(first), std::move(last), value, std::move(proj));
   }
-  template <class Ep, ycxx::detail::par::sized_random_access_range R, class Proj = std::identity,
-            class T = std::projected_value_t<std::ranges::iterator_t<R>, Proj>>
-    requires ycxx::detail::execution_policy<Ep> && std::permutable<std::ranges::iterator_t<R>> &&
-             std::indirect_binary_predicate<std::ranges::equal_to, std::projected<std::ranges::iterator_t<R>, Proj>, const T*>
-  decltype(auto) operator()(Ep&&, R&& r, const T& value, Proj proj = {}) const noexcept {
-    return static_cast<const Fn&>(*this)(static_cast<R&&>(r), value, std::move(proj));
+  template <class _Ep_, __ycxx::__detail::par::__sized_random_access_range _Rp, class _Proj = std::identity,
+            class _Tp = std::projected_value_t<std::ranges::iterator_t<_Rp>, _Proj>>
+    requires __ycxx::__detail::__execution_policy<_Ep_> && std::permutable<std::ranges::iterator_t<_Rp>> &&
+             std::indirect_binary_predicate<std::ranges::equal_to, std::projected<std::ranges::iterator_t<_Rp>, _Proj>, const _Tp*>
+  decltype(auto) operator()(_Ep_&&, _Rp&& r, const _Tp& value, _Proj proj = {}) const noexcept {
+    return static_cast<const _Fn&>(*this)(static_cast<_Rp&&>(r), value, std::move(proj));
   }
 };
 
 // remove_if
-template <class Fn>
-struct ranges_par_algo<Fn, par::kind::remove_if> : Fn {
-  using Fn::operator();
-  template <class Ep, std::random_access_iterator I, std::sized_sentinel_for<I> S, class Proj = std::identity,
-            std::indirect_unary_predicate<std::projected<I, Proj>> Pred>
-    requires ycxx::detail::execution_policy<Ep> && std::permutable<I>
-  decltype(auto) operator()(Ep&&, I first, S last, Pred pred, Proj proj = {}) const noexcept {
-    return static_cast<const Fn&>(*this)(std::move(first), std::move(last), std::move(pred), std::move(proj));
+template <class _Fn>
+struct __ranges_par_algo<_Fn, par::kind::remove_if> : _Fn {
+  using _Fn::operator();
+  template <class _Ep_, std::random_access_iterator _Ip, std::sized_sentinel_for<_Ip> _Sp, class _Proj = std::identity,
+            std::indirect_unary_predicate<std::projected<_Ip, _Proj>> _Pred>
+    requires __ycxx::__detail::__execution_policy<_Ep_> && std::permutable<_Ip>
+  decltype(auto) operator()(_Ep_&&, _Ip first, _Sp last, _Pred pred, _Proj proj = {}) const noexcept {
+    return static_cast<const _Fn&>(*this)(std::move(first), std::move(last), std::move(pred), std::move(proj));
   }
-  template <class Ep, ycxx::detail::par::sized_random_access_range R, class Proj = std::identity,
-            std::indirect_unary_predicate<std::projected<std::ranges::iterator_t<R>, Proj>> Pred>
-    requires ycxx::detail::execution_policy<Ep> && std::permutable<std::ranges::iterator_t<R>>
-  decltype(auto) operator()(Ep&&, R&& r, Pred pred, Proj proj = {}) const noexcept {
-    return static_cast<const Fn&>(*this)(static_cast<R&&>(r), std::move(pred), std::move(proj));
+  template <class _Ep_, __ycxx::__detail::par::__sized_random_access_range _Rp, class _Proj = std::identity,
+            std::indirect_unary_predicate<std::projected<std::ranges::iterator_t<_Rp>, _Proj>> _Pred>
+    requires __ycxx::__detail::__execution_policy<_Ep_> && std::permutable<std::ranges::iterator_t<_Rp>>
+  decltype(auto) operator()(_Ep_&&, _Rp&& r, _Pred pred, _Proj proj = {}) const noexcept {
+    return static_cast<const _Fn&>(*this)(static_cast<_Rp&&>(r), std::move(pred), std::move(proj));
   }
 };
 
 // unique
-template <class Fn>
-struct ranges_par_algo<Fn, par::kind::unique> : Fn {
-  using Fn::operator();
-  template <class Ep, std::random_access_iterator I, std::sized_sentinel_for<I> S, class Proj = std::identity,
-            std::indirect_equivalence_relation<std::projected<I, Proj>> C = std::ranges::equal_to>
-    requires ycxx::detail::execution_policy<Ep> && std::permutable<I>
-  decltype(auto) operator()(Ep&&, I first, S last, C comp = {}, Proj proj = {}) const noexcept {
-    return static_cast<const Fn&>(*this)(std::move(first), std::move(last), std::move(comp), std::move(proj));
+template <class _Fn>
+struct __ranges_par_algo<_Fn, par::kind::unique> : _Fn {
+  using _Fn::operator();
+  template <class _Ep_, std::random_access_iterator _Ip, std::sized_sentinel_for<_Ip> _Sp, class _Proj = std::identity,
+            std::indirect_equivalence_relation<std::projected<_Ip, _Proj>> _Cp = std::ranges::equal_to>
+    requires __ycxx::__detail::__execution_policy<_Ep_> && std::permutable<_Ip>
+  decltype(auto) operator()(_Ep_&&, _Ip first, _Sp last, _Cp comp = {}, _Proj proj = {}) const noexcept {
+    return static_cast<const _Fn&>(*this)(std::move(first), std::move(last), std::move(comp), std::move(proj));
   }
-  template <class Ep, ycxx::detail::par::sized_random_access_range R, class Proj = std::identity,
-            std::indirect_equivalence_relation<std::projected<std::ranges::iterator_t<R>, Proj>> C = std::ranges::equal_to>
-    requires ycxx::detail::execution_policy<Ep> && std::permutable<std::ranges::iterator_t<R>>
-  decltype(auto) operator()(Ep&&, R&& r, C comp = {}, Proj proj = {}) const noexcept {
-    return static_cast<const Fn&>(*this)(static_cast<R&&>(r), std::move(comp), std::move(proj));
+  template <class _Ep_, __ycxx::__detail::par::__sized_random_access_range _Rp, class _Proj = std::identity,
+            std::indirect_equivalence_relation<std::projected<std::ranges::iterator_t<_Rp>, _Proj>> _Cp = std::ranges::equal_to>
+    requires __ycxx::__detail::__execution_policy<_Ep_> && std::permutable<std::ranges::iterator_t<_Rp>>
+  decltype(auto) operator()(_Ep_&&, _Rp&& r, _Cp comp = {}, _Proj proj = {}) const noexcept {
+    return static_cast<const _Fn&>(*this)(static_cast<_Rp&&>(r), std::move(comp), std::move(proj));
   }
 };
 
 // reverse
-template <class Fn>
-struct ranges_par_algo<Fn, par::kind::reverse> : Fn {
-  using Fn::operator();
-  template <class Ep, std::random_access_iterator I, std::sized_sentinel_for<I> S>
-    requires ycxx::detail::execution_policy<Ep> && std::permutable<I>
-  decltype(auto) operator()(Ep&&, I first, S last) const noexcept {
-    return static_cast<const Fn&>(*this)(std::move(first), std::move(last));
+template <class _Fn>
+struct __ranges_par_algo<_Fn, par::kind::reverse> : _Fn {
+  using _Fn::operator();
+  template <class _Ep_, std::random_access_iterator _Ip, std::sized_sentinel_for<_Ip> _Sp>
+    requires __ycxx::__detail::__execution_policy<_Ep_> && std::permutable<_Ip>
+  decltype(auto) operator()(_Ep_&&, _Ip first, _Sp last) const noexcept {
+    return static_cast<const _Fn&>(*this)(std::move(first), std::move(last));
   }
-  template <class Ep, ycxx::detail::par::sized_random_access_range R>
-    requires ycxx::detail::execution_policy<Ep> && std::permutable<std::ranges::iterator_t<R>>
-  decltype(auto) operator()(Ep&&, R&& r) const noexcept {
-    return static_cast<const Fn&>(*this)(static_cast<R&&>(r));
+  template <class _Ep_, __ycxx::__detail::par::__sized_random_access_range _Rp>
+    requires __ycxx::__detail::__execution_policy<_Ep_> && std::permutable<std::ranges::iterator_t<_Rp>>
+  decltype(auto) operator()(_Ep_&&, _Rp&& r) const noexcept {
+    return static_cast<const _Fn&>(*this)(static_cast<_Rp&&>(r));
   }
 };
 
 // rotate
-template <class Fn>
-struct ranges_par_algo<Fn, par::kind::rotate> : Fn {
-  using Fn::operator();
-  template <class Ep, std::random_access_iterator I, std::sized_sentinel_for<I> S>
-    requires ycxx::detail::execution_policy<Ep> && std::permutable<I>
-  decltype(auto) operator()(Ep&&, I first, I middle, S last) const noexcept {
-    return static_cast<const Fn&>(*this)(std::move(first), std::move(middle), std::move(last));
+template <class _Fn>
+struct __ranges_par_algo<_Fn, par::kind::rotate> : _Fn {
+  using _Fn::operator();
+  template <class _Ep_, std::random_access_iterator _Ip, std::sized_sentinel_for<_Ip> _Sp>
+    requires __ycxx::__detail::__execution_policy<_Ep_> && std::permutable<_Ip>
+  decltype(auto) operator()(_Ep_&&, _Ip first, _Ip __middle, _Sp last) const noexcept {
+    return static_cast<const _Fn&>(*this)(std::move(first), std::move(__middle), std::move(last));
   }
-  template <class Ep, ycxx::detail::par::sized_random_access_range R>
-    requires ycxx::detail::execution_policy<Ep> && std::permutable<std::ranges::iterator_t<R>>
-  decltype(auto) operator()(Ep&&, R&& r, std::ranges::iterator_t<R> middle) const noexcept {
-    return static_cast<const Fn&>(*this)(static_cast<R&&>(r), std::move(middle));
+  template <class _Ep_, __ycxx::__detail::par::__sized_random_access_range _Rp>
+    requires __ycxx::__detail::__execution_policy<_Ep_> && std::permutable<std::ranges::iterator_t<_Rp>>
+  decltype(auto) operator()(_Ep_&&, _Rp&& r, std::ranges::iterator_t<_Rp> __middle) const noexcept {
+    return static_cast<const _Fn&>(*this)(static_cast<_Rp&&>(r), std::move(__middle));
   }
 };
 
 // shift_left
-template <class Fn>
-struct ranges_par_algo<Fn, par::kind::shift_left> : Fn {
-  using Fn::operator();
-  template <class Ep, std::random_access_iterator I, std::sized_sentinel_for<I> S>
-    requires ycxx::detail::execution_policy<Ep> && std::permutable<I>
-  decltype(auto) operator()(Ep&&, I first, S last, std::iter_difference_t<I> n) const noexcept {
-    return static_cast<const Fn&>(*this)(std::move(first), std::move(last), std::move(n));
+template <class _Fn>
+struct __ranges_par_algo<_Fn, par::kind::shift_left> : _Fn {
+  using _Fn::operator();
+  template <class _Ep_, std::random_access_iterator _Ip, std::sized_sentinel_for<_Ip> _Sp>
+    requires __ycxx::__detail::__execution_policy<_Ep_> && std::permutable<_Ip>
+  decltype(auto) operator()(_Ep_&&, _Ip first, _Sp last, std::iter_difference_t<_Ip> n) const noexcept {
+    return static_cast<const _Fn&>(*this)(std::move(first), std::move(last), std::move(n));
   }
-  template <class Ep, ycxx::detail::par::sized_random_access_range R>
-    requires ycxx::detail::execution_policy<Ep> && std::permutable<std::ranges::iterator_t<R>>
-  decltype(auto) operator()(Ep&&, R&& r, std::ranges::range_difference_t<R> n) const noexcept {
-    return static_cast<const Fn&>(*this)(static_cast<R&&>(r), std::move(n));
+  template <class _Ep_, __ycxx::__detail::par::__sized_random_access_range _Rp>
+    requires __ycxx::__detail::__execution_policy<_Ep_> && std::permutable<std::ranges::iterator_t<_Rp>>
+  decltype(auto) operator()(_Ep_&&, _Rp&& r, std::ranges::range_difference_t<_Rp> n) const noexcept {
+    return static_cast<const _Fn&>(*this)(static_cast<_Rp&&>(r), std::move(n));
   }
 };
 
 // shift_right
-template <class Fn>
-struct ranges_par_algo<Fn, par::kind::shift_right> : Fn {
-  using Fn::operator();
-  template <class Ep, std::random_access_iterator I, std::sized_sentinel_for<I> S>
-    requires ycxx::detail::execution_policy<Ep> && std::permutable<I>
-  decltype(auto) operator()(Ep&&, I first, S last, std::iter_difference_t<I> n) const noexcept {
-    return static_cast<const Fn&>(*this)(std::move(first), std::move(last), std::move(n));
+template <class _Fn>
+struct __ranges_par_algo<_Fn, par::kind::shift_right> : _Fn {
+  using _Fn::operator();
+  template <class _Ep_, std::random_access_iterator _Ip, std::sized_sentinel_for<_Ip> _Sp>
+    requires __ycxx::__detail::__execution_policy<_Ep_> && std::permutable<_Ip>
+  decltype(auto) operator()(_Ep_&&, _Ip first, _Sp last, std::iter_difference_t<_Ip> n) const noexcept {
+    return static_cast<const _Fn&>(*this)(std::move(first), std::move(last), std::move(n));
   }
-  template <class Ep, ycxx::detail::par::sized_random_access_range R>
-    requires ycxx::detail::execution_policy<Ep> && std::permutable<std::ranges::iterator_t<R>>
-  decltype(auto) operator()(Ep&&, R&& r, std::ranges::range_difference_t<R> n) const noexcept {
-    return static_cast<const Fn&>(*this)(static_cast<R&&>(r), std::move(n));
+  template <class _Ep_, __ycxx::__detail::par::__sized_random_access_range _Rp>
+    requires __ycxx::__detail::__execution_policy<_Ep_> && std::permutable<std::ranges::iterator_t<_Rp>>
+  decltype(auto) operator()(_Ep_&&, _Rp&& r, std::ranges::range_difference_t<_Rp> n) const noexcept {
+    return static_cast<const _Fn&>(*this)(static_cast<_Rp&&>(r), std::move(n));
   }
 };
 
 // sort
-template <class Fn>
-struct ranges_par_algo<Fn, par::kind::sort> : Fn {
-  using Fn::operator();
-  template <class Ep, std::random_access_iterator I, std::sized_sentinel_for<I> S, class Comp = std::ranges::less,
-            class Proj = std::identity>
-    requires ycxx::detail::execution_policy<Ep> && std::sortable<I, Comp, Proj>
-  decltype(auto) operator()(Ep&&, I first, S last, Comp comp = {}, Proj proj = {}) const noexcept {
-    return static_cast<const Fn&>(*this)(std::move(first), std::move(last), std::move(comp), std::move(proj));
+template <class _Fn>
+struct __ranges_par_algo<_Fn, par::kind::sort> : _Fn {
+  using _Fn::operator();
+  template <class _Ep_, std::random_access_iterator _Ip, std::sized_sentinel_for<_Ip> _Sp, class _Comp = std::ranges::less,
+            class _Proj = std::identity>
+    requires __ycxx::__detail::__execution_policy<_Ep_> && std::sortable<_Ip, _Comp, _Proj>
+  decltype(auto) operator()(_Ep_&&, _Ip first, _Sp last, _Comp comp = {}, _Proj proj = {}) const noexcept {
+    return static_cast<const _Fn&>(*this)(std::move(first), std::move(last), std::move(comp), std::move(proj));
   }
-  template <class Ep, ycxx::detail::par::sized_random_access_range R, class Comp = std::ranges::less,
-            class Proj = std::identity>
-    requires ycxx::detail::execution_policy<Ep> && std::sortable<std::ranges::iterator_t<R>, Comp, Proj>
-  decltype(auto) operator()(Ep&&, R&& r, Comp comp = {}, Proj proj = {}) const noexcept {
-    return static_cast<const Fn&>(*this)(static_cast<R&&>(r), std::move(comp), std::move(proj));
+  template <class _Ep_, __ycxx::__detail::par::__sized_random_access_range _Rp, class _Comp = std::ranges::less,
+            class _Proj = std::identity>
+    requires __ycxx::__detail::__execution_policy<_Ep_> && std::sortable<std::ranges::iterator_t<_Rp>, _Comp, _Proj>
+  decltype(auto) operator()(_Ep_&&, _Rp&& r, _Comp comp = {}, _Proj proj = {}) const noexcept {
+    return static_cast<const _Fn&>(*this)(static_cast<_Rp&&>(r), std::move(comp), std::move(proj));
   }
 };
 
 // stable_sort
-template <class Fn>
-struct ranges_par_algo<Fn, par::kind::stable_sort> : Fn {
-  using Fn::operator();
-  template <class Ep, std::random_access_iterator I, std::sized_sentinel_for<I> S, class Comp = std::ranges::less,
-            class Proj = std::identity>
-    requires ycxx::detail::execution_policy<Ep> && std::sortable<I, Comp, Proj>
-  decltype(auto) operator()(Ep&&, I first, S last, Comp comp = {}, Proj proj = {}) const noexcept {
-    return static_cast<const Fn&>(*this)(std::move(first), std::move(last), std::move(comp), std::move(proj));
+template <class _Fn>
+struct __ranges_par_algo<_Fn, par::kind::stable_sort> : _Fn {
+  using _Fn::operator();
+  template <class _Ep_, std::random_access_iterator _Ip, std::sized_sentinel_for<_Ip> _Sp, class _Comp = std::ranges::less,
+            class _Proj = std::identity>
+    requires __ycxx::__detail::__execution_policy<_Ep_> && std::sortable<_Ip, _Comp, _Proj>
+  decltype(auto) operator()(_Ep_&&, _Ip first, _Sp last, _Comp comp = {}, _Proj proj = {}) const noexcept {
+    return static_cast<const _Fn&>(*this)(std::move(first), std::move(last), std::move(comp), std::move(proj));
   }
-  template <class Ep, ycxx::detail::par::sized_random_access_range R, class Comp = std::ranges::less,
-            class Proj = std::identity>
-    requires ycxx::detail::execution_policy<Ep> && std::sortable<std::ranges::iterator_t<R>, Comp, Proj>
-  decltype(auto) operator()(Ep&&, R&& r, Comp comp = {}, Proj proj = {}) const noexcept {
-    return static_cast<const Fn&>(*this)(static_cast<R&&>(r), std::move(comp), std::move(proj));
+  template <class _Ep_, __ycxx::__detail::par::__sized_random_access_range _Rp, class _Comp = std::ranges::less,
+            class _Proj = std::identity>
+    requires __ycxx::__detail::__execution_policy<_Ep_> && std::sortable<std::ranges::iterator_t<_Rp>, _Comp, _Proj>
+  decltype(auto) operator()(_Ep_&&, _Rp&& r, _Comp comp = {}, _Proj proj = {}) const noexcept {
+    return static_cast<const _Fn&>(*this)(static_cast<_Rp&&>(r), std::move(comp), std::move(proj));
   }
 };
 
 // partial_sort
-template <class Fn>
-struct ranges_par_algo<Fn, par::kind::partial_sort> : Fn {
-  using Fn::operator();
-  template <class Ep, std::random_access_iterator I, std::sized_sentinel_for<I> S, class Comp = std::ranges::less,
-            class Proj = std::identity>
-    requires ycxx::detail::execution_policy<Ep> && std::sortable<I, Comp, Proj>
-  decltype(auto) operator()(Ep&&, I first, I middle, S last, Comp comp = {}, Proj proj = {}) const noexcept {
-    return static_cast<const Fn&>(*this)(std::move(first), std::move(middle), std::move(last), std::move(comp),
+template <class _Fn>
+struct __ranges_par_algo<_Fn, par::kind::partial_sort> : _Fn {
+  using _Fn::operator();
+  template <class _Ep_, std::random_access_iterator _Ip, std::sized_sentinel_for<_Ip> _Sp, class _Comp = std::ranges::less,
+            class _Proj = std::identity>
+    requires __ycxx::__detail::__execution_policy<_Ep_> && std::sortable<_Ip, _Comp, _Proj>
+  decltype(auto) operator()(_Ep_&&, _Ip first, _Ip __middle, _Sp last, _Comp comp = {}, _Proj proj = {}) const noexcept {
+    return static_cast<const _Fn&>(*this)(std::move(first), std::move(__middle), std::move(last), std::move(comp),
                                          std::move(proj));
   }
-  template <class Ep, ycxx::detail::par::sized_random_access_range R, class Comp = std::ranges::less,
-            class Proj = std::identity>
-    requires ycxx::detail::execution_policy<Ep> && std::sortable<std::ranges::iterator_t<R>, Comp, Proj>
-  decltype(auto) operator()(Ep&&, R&& r, std::ranges::iterator_t<R> middle, Comp comp = {},
-                            Proj proj = {}) const noexcept {
-    return static_cast<const Fn&>(*this)(static_cast<R&&>(r), std::move(middle), std::move(comp), std::move(proj));
+  template <class _Ep_, __ycxx::__detail::par::__sized_random_access_range _Rp, class _Comp = std::ranges::less,
+            class _Proj = std::identity>
+    requires __ycxx::__detail::__execution_policy<_Ep_> && std::sortable<std::ranges::iterator_t<_Rp>, _Comp, _Proj>
+  decltype(auto) operator()(_Ep_&&, _Rp&& r, std::ranges::iterator_t<_Rp> __middle, _Comp comp = {},
+                            _Proj proj = {}) const noexcept {
+    return static_cast<const _Fn&>(*this)(static_cast<_Rp&&>(r), std::move(__middle), std::move(comp), std::move(proj));
   }
 };
 
 // partial_sort_copy
-template <class Fn>
-struct ranges_par_algo<Fn, par::kind::partial_sort_copy> : Fn {
-  using Fn::operator();
-  template <class Ep, std::random_access_iterator I1, std::sized_sentinel_for<I1> S1, std::random_access_iterator I2,
-            std::sized_sentinel_for<I2> S2, class Comp = std::ranges::less, class Proj1 = std::identity,
-            class Proj2 = std::identity>
-    requires ycxx::detail::execution_policy<Ep> && std::indirectly_copyable<I1, I2> && std::sortable<I2, Comp, Proj2> &&
-             std::indirect_strict_weak_order<Comp, std::projected<I1, Proj1>, std::projected<I2, Proj2>>
-  decltype(auto) operator()(Ep&&, I1 first, S1 last, I2 result_first, S2 result_last, Comp comp = {}, Proj1 proj1 = {},
-                            Proj2 proj2 = {}) const noexcept {
-    return static_cast<const Fn&>(*this)(std::move(first), std::move(last), std::move(result_first),
-                                         std::move(result_last), std::move(comp), std::move(proj1), std::move(proj2));
+template <class _Fn>
+struct __ranges_par_algo<_Fn, par::kind::partial_sort_copy> : _Fn {
+  using _Fn::operator();
+  template <class _Ep_, std::random_access_iterator _I1, std::sized_sentinel_for<_I1> _S1, std::random_access_iterator _I2,
+            std::sized_sentinel_for<_I2> _S2, class _Comp = std::ranges::less, class _Proj1 = std::identity,
+            class _Proj2 = std::identity>
+    requires __ycxx::__detail::__execution_policy<_Ep_> && std::indirectly_copyable<_I1, _I2> && std::sortable<_I2, _Comp, _Proj2> &&
+             std::indirect_strict_weak_order<_Comp, std::projected<_I1, _Proj1>, std::projected<_I2, _Proj2>>
+  decltype(auto) operator()(_Ep_&&, _I1 first, _S1 last, _I2 __result_first, _S2 __result_last, _Comp comp = {}, _Proj1 __proj1 = {},
+                            _Proj2 __proj2 = {}) const noexcept {
+    return static_cast<const _Fn&>(*this)(std::move(first), std::move(last), std::move(__result_first),
+                                         std::move(__result_last), std::move(comp), std::move(__proj1), std::move(__proj2));
   }
-  template <class Ep, ycxx::detail::par::sized_random_access_range R1, ycxx::detail::par::sized_random_access_range R2,
-            class Comp = std::ranges::less, class Proj1 = std::identity, class Proj2 = std::identity>
-    requires ycxx::detail::execution_policy<Ep> &&
-             std::indirectly_copyable<std::ranges::iterator_t<R1>, std::ranges::iterator_t<R2>> &&
-             std::sortable<std::ranges::iterator_t<R2>, Comp, Proj2> &&
-             std::indirect_strict_weak_order<Comp, std::projected<std::ranges::iterator_t<R1>, Proj1>, std::projected<std::ranges::iterator_t<R2>, Proj2>>
-  decltype(auto) operator()(Ep&&, R1&& r, R2&& result_r, Comp comp = {}, Proj1 proj1 = {},
-                            Proj2 proj2 = {}) const noexcept {
-    return static_cast<const Fn&>(*this)(static_cast<R1&&>(r), static_cast<R2&&>(result_r), std::move(comp),
-                                         std::move(proj1), std::move(proj2));
+  template <class _Ep_, __ycxx::__detail::par::__sized_random_access_range _R1, __ycxx::__detail::par::__sized_random_access_range _R2,
+            class _Comp = std::ranges::less, class _Proj1 = std::identity, class _Proj2 = std::identity>
+    requires __ycxx::__detail::__execution_policy<_Ep_> &&
+             std::indirectly_copyable<std::ranges::iterator_t<_R1>, std::ranges::iterator_t<_R2>> &&
+             std::sortable<std::ranges::iterator_t<_R2>, _Comp, _Proj2> &&
+             std::indirect_strict_weak_order<_Comp, std::projected<std::ranges::iterator_t<_R1>, _Proj1>, std::projected<std::ranges::iterator_t<_R2>, _Proj2>>
+  decltype(auto) operator()(_Ep_&&, _R1&& r, _R2&& __result_r, _Comp comp = {}, _Proj1 __proj1 = {},
+                            _Proj2 __proj2 = {}) const noexcept {
+    return static_cast<const _Fn&>(*this)(static_cast<_R1&&>(r), static_cast<_R2&&>(__result_r), std::move(comp),
+                                         std::move(__proj1), std::move(__proj2));
   }
 };
 
 // is_sorted
-template <class Fn>
-struct ranges_par_algo<Fn, par::kind::is_sorted> : Fn {
-  using Fn::operator();
-  template <class Ep, std::random_access_iterator I, std::sized_sentinel_for<I> S, class Proj = std::identity,
-            std::indirect_strict_weak_order<std::projected<I, Proj>> Comp = std::ranges::less>
-    requires ycxx::detail::execution_policy<Ep>
-  decltype(auto) operator()(Ep&&, I first, S last, Comp comp = {}, Proj proj = {}) const noexcept {
-    return static_cast<const Fn&>(*this)(std::move(first), std::move(last), std::move(comp), std::move(proj));
+template <class _Fn>
+struct __ranges_par_algo<_Fn, par::kind::is_sorted> : _Fn {
+  using _Fn::operator();
+  template <class _Ep_, std::random_access_iterator _Ip, std::sized_sentinel_for<_Ip> _Sp, class _Proj = std::identity,
+            std::indirect_strict_weak_order<std::projected<_Ip, _Proj>> _Comp = std::ranges::less>
+    requires __ycxx::__detail::__execution_policy<_Ep_>
+  decltype(auto) operator()(_Ep_&&, _Ip first, _Sp last, _Comp comp = {}, _Proj proj = {}) const noexcept {
+    return static_cast<const _Fn&>(*this)(std::move(first), std::move(last), std::move(comp), std::move(proj));
   }
-  template <class Ep, ycxx::detail::par::sized_random_access_range R, class Proj = std::identity,
-            std::indirect_strict_weak_order<std::projected<std::ranges::iterator_t<R>, Proj>> Comp = std::ranges::less>
-    requires ycxx::detail::execution_policy<Ep>
-  decltype(auto) operator()(Ep&&, R&& r, Comp comp = {}, Proj proj = {}) const noexcept {
-    return static_cast<const Fn&>(*this)(static_cast<R&&>(r), std::move(comp), std::move(proj));
+  template <class _Ep_, __ycxx::__detail::par::__sized_random_access_range _Rp, class _Proj = std::identity,
+            std::indirect_strict_weak_order<std::projected<std::ranges::iterator_t<_Rp>, _Proj>> _Comp = std::ranges::less>
+    requires __ycxx::__detail::__execution_policy<_Ep_>
+  decltype(auto) operator()(_Ep_&&, _Rp&& r, _Comp comp = {}, _Proj proj = {}) const noexcept {
+    return static_cast<const _Fn&>(*this)(static_cast<_Rp&&>(r), std::move(comp), std::move(proj));
   }
 };
 
 // is_sorted_until
-template <class Fn>
-struct ranges_par_algo<Fn, par::kind::is_sorted_until> : Fn {
-  using Fn::operator();
-  template <class Ep, std::random_access_iterator I, std::sized_sentinel_for<I> S, class Proj = std::identity,
-            std::indirect_strict_weak_order<std::projected<I, Proj>> Comp = std::ranges::less>
-    requires ycxx::detail::execution_policy<Ep>
-  decltype(auto) operator()(Ep&&, I first, S last, Comp comp = {}, Proj proj = {}) const noexcept {
-    return static_cast<const Fn&>(*this)(std::move(first), std::move(last), std::move(comp), std::move(proj));
+template <class _Fn>
+struct __ranges_par_algo<_Fn, par::kind::is_sorted_until> : _Fn {
+  using _Fn::operator();
+  template <class _Ep_, std::random_access_iterator _Ip, std::sized_sentinel_for<_Ip> _Sp, class _Proj = std::identity,
+            std::indirect_strict_weak_order<std::projected<_Ip, _Proj>> _Comp = std::ranges::less>
+    requires __ycxx::__detail::__execution_policy<_Ep_>
+  decltype(auto) operator()(_Ep_&&, _Ip first, _Sp last, _Comp comp = {}, _Proj proj = {}) const noexcept {
+    return static_cast<const _Fn&>(*this)(std::move(first), std::move(last), std::move(comp), std::move(proj));
   }
-  template <class Ep, ycxx::detail::par::sized_random_access_range R, class Proj = std::identity,
-            std::indirect_strict_weak_order<std::projected<std::ranges::iterator_t<R>, Proj>> Comp = std::ranges::less>
-    requires ycxx::detail::execution_policy<Ep>
-  decltype(auto) operator()(Ep&&, R&& r, Comp comp = {}, Proj proj = {}) const noexcept {
-    return static_cast<const Fn&>(*this)(static_cast<R&&>(r), std::move(comp), std::move(proj));
+  template <class _Ep_, __ycxx::__detail::par::__sized_random_access_range _Rp, class _Proj = std::identity,
+            std::indirect_strict_weak_order<std::projected<std::ranges::iterator_t<_Rp>, _Proj>> _Comp = std::ranges::less>
+    requires __ycxx::__detail::__execution_policy<_Ep_>
+  decltype(auto) operator()(_Ep_&&, _Rp&& r, _Comp comp = {}, _Proj proj = {}) const noexcept {
+    return static_cast<const _Fn&>(*this)(static_cast<_Rp&&>(r), std::move(comp), std::move(proj));
   }
 };
 
 // nth_element
-template <class Fn>
-struct ranges_par_algo<Fn, par::kind::nth_element> : Fn {
-  using Fn::operator();
-  template <class Ep, std::random_access_iterator I, std::sized_sentinel_for<I> S, class Comp = std::ranges::less,
-            class Proj = std::identity>
-    requires ycxx::detail::execution_policy<Ep> && std::sortable<I, Comp, Proj>
-  decltype(auto) operator()(Ep&&, I first, I nth, S last, Comp comp = {}, Proj proj = {}) const noexcept {
-    return static_cast<const Fn&>(*this)(std::move(first), std::move(nth), std::move(last), std::move(comp),
+template <class _Fn>
+struct __ranges_par_algo<_Fn, par::kind::nth_element> : _Fn {
+  using _Fn::operator();
+  template <class _Ep_, std::random_access_iterator _Ip, std::sized_sentinel_for<_Ip> _Sp, class _Comp = std::ranges::less,
+            class _Proj = std::identity>
+    requires __ycxx::__detail::__execution_policy<_Ep_> && std::sortable<_Ip, _Comp, _Proj>
+  decltype(auto) operator()(_Ep_&&, _Ip first, _Ip __nth, _Sp last, _Comp comp = {}, _Proj proj = {}) const noexcept {
+    return static_cast<const _Fn&>(*this)(std::move(first), std::move(__nth), std::move(last), std::move(comp),
                                          std::move(proj));
   }
-  template <class Ep, ycxx::detail::par::sized_random_access_range R, class Comp = std::ranges::less,
-            class Proj = std::identity>
-    requires ycxx::detail::execution_policy<Ep> && std::sortable<std::ranges::iterator_t<R>, Comp, Proj>
-  decltype(auto) operator()(Ep&&, R&& r, std::ranges::iterator_t<R> nth, Comp comp = {},
-                            Proj proj = {}) const noexcept {
-    return static_cast<const Fn&>(*this)(static_cast<R&&>(r), std::move(nth), std::move(comp), std::move(proj));
+  template <class _Ep_, __ycxx::__detail::par::__sized_random_access_range _Rp, class _Comp = std::ranges::less,
+            class _Proj = std::identity>
+    requires __ycxx::__detail::__execution_policy<_Ep_> && std::sortable<std::ranges::iterator_t<_Rp>, _Comp, _Proj>
+  decltype(auto) operator()(_Ep_&&, _Rp&& r, std::ranges::iterator_t<_Rp> __nth, _Comp comp = {},
+                            _Proj proj = {}) const noexcept {
+    return static_cast<const _Fn&>(*this)(static_cast<_Rp&&>(r), std::move(__nth), std::move(comp), std::move(proj));
   }
 };
 
 // is_partitioned
-template <class Fn>
-struct ranges_par_algo<Fn, par::kind::is_partitioned> : Fn {
-  using Fn::operator();
-  template <class Ep, std::random_access_iterator I, std::sized_sentinel_for<I> S, class Proj = std::identity,
-            std::indirect_unary_predicate<std::projected<I, Proj>> Pred>
-    requires ycxx::detail::execution_policy<Ep>
-  decltype(auto) operator()(Ep&&, I first, S last, Pred pred, Proj proj = {}) const noexcept {
-    return static_cast<const Fn&>(*this)(std::move(first), std::move(last), std::move(pred), std::move(proj));
+template <class _Fn>
+struct __ranges_par_algo<_Fn, par::kind::is_partitioned> : _Fn {
+  using _Fn::operator();
+  template <class _Ep_, std::random_access_iterator _Ip, std::sized_sentinel_for<_Ip> _Sp, class _Proj = std::identity,
+            std::indirect_unary_predicate<std::projected<_Ip, _Proj>> _Pred>
+    requires __ycxx::__detail::__execution_policy<_Ep_>
+  decltype(auto) operator()(_Ep_&&, _Ip first, _Sp last, _Pred pred, _Proj proj = {}) const noexcept {
+    return static_cast<const _Fn&>(*this)(std::move(first), std::move(last), std::move(pred), std::move(proj));
   }
-  template <class Ep, ycxx::detail::par::sized_random_access_range R, class Proj = std::identity,
-            std::indirect_unary_predicate<std::projected<std::ranges::iterator_t<R>, Proj>> Pred>
-    requires ycxx::detail::execution_policy<Ep>
-  decltype(auto) operator()(Ep&&, R&& r, Pred pred, Proj proj = {}) const noexcept {
-    return static_cast<const Fn&>(*this)(static_cast<R&&>(r), std::move(pred), std::move(proj));
+  template <class _Ep_, __ycxx::__detail::par::__sized_random_access_range _Rp, class _Proj = std::identity,
+            std::indirect_unary_predicate<std::projected<std::ranges::iterator_t<_Rp>, _Proj>> _Pred>
+    requires __ycxx::__detail::__execution_policy<_Ep_>
+  decltype(auto) operator()(_Ep_&&, _Rp&& r, _Pred pred, _Proj proj = {}) const noexcept {
+    return static_cast<const _Fn&>(*this)(static_cast<_Rp&&>(r), std::move(pred), std::move(proj));
   }
 };
 
 // partition
-template <class Fn>
-struct ranges_par_algo<Fn, par::kind::partition> : Fn {
-  using Fn::operator();
-  template <class Ep, std::random_access_iterator I, std::sized_sentinel_for<I> S, class Proj = std::identity,
-            std::indirect_unary_predicate<std::projected<I, Proj>> Pred>
-    requires ycxx::detail::execution_policy<Ep> && std::permutable<I>
-  decltype(auto) operator()(Ep&&, I first, S last, Pred pred, Proj proj = {}) const noexcept {
-    return static_cast<const Fn&>(*this)(std::move(first), std::move(last), std::move(pred), std::move(proj));
+template <class _Fn>
+struct __ranges_par_algo<_Fn, par::kind::partition> : _Fn {
+  using _Fn::operator();
+  template <class _Ep_, std::random_access_iterator _Ip, std::sized_sentinel_for<_Ip> _Sp, class _Proj = std::identity,
+            std::indirect_unary_predicate<std::projected<_Ip, _Proj>> _Pred>
+    requires __ycxx::__detail::__execution_policy<_Ep_> && std::permutable<_Ip>
+  decltype(auto) operator()(_Ep_&&, _Ip first, _Sp last, _Pred pred, _Proj proj = {}) const noexcept {
+    return static_cast<const _Fn&>(*this)(std::move(first), std::move(last), std::move(pred), std::move(proj));
   }
-  template <class Ep, ycxx::detail::par::sized_random_access_range R, class Proj = std::identity,
-            std::indirect_unary_predicate<std::projected<std::ranges::iterator_t<R>, Proj>> Pred>
-    requires ycxx::detail::execution_policy<Ep> && std::permutable<std::ranges::iterator_t<R>>
-  decltype(auto) operator()(Ep&&, R&& r, Pred pred, Proj proj = {}) const noexcept {
-    return static_cast<const Fn&>(*this)(static_cast<R&&>(r), std::move(pred), std::move(proj));
+  template <class _Ep_, __ycxx::__detail::par::__sized_random_access_range _Rp, class _Proj = std::identity,
+            std::indirect_unary_predicate<std::projected<std::ranges::iterator_t<_Rp>, _Proj>> _Pred>
+    requires __ycxx::__detail::__execution_policy<_Ep_> && std::permutable<std::ranges::iterator_t<_Rp>>
+  decltype(auto) operator()(_Ep_&&, _Rp&& r, _Pred pred, _Proj proj = {}) const noexcept {
+    return static_cast<const _Fn&>(*this)(static_cast<_Rp&&>(r), std::move(pred), std::move(proj));
   }
 };
 
 // stable_partition
-template <class Fn>
-struct ranges_par_algo<Fn, par::kind::stable_partition> : Fn {
-  using Fn::operator();
-  template <class Ep, std::random_access_iterator I, std::sized_sentinel_for<I> S, class Proj = std::identity,
-            std::indirect_unary_predicate<std::projected<I, Proj>> Pred>
-    requires ycxx::detail::execution_policy<Ep> && std::permutable<I>
-  decltype(auto) operator()(Ep&&, I first, S last, Pred pred, Proj proj = {}) const noexcept {
-    return static_cast<const Fn&>(*this)(std::move(first), std::move(last), std::move(pred), std::move(proj));
+template <class _Fn>
+struct __ranges_par_algo<_Fn, par::kind::stable_partition> : _Fn {
+  using _Fn::operator();
+  template <class _Ep_, std::random_access_iterator _Ip, std::sized_sentinel_for<_Ip> _Sp, class _Proj = std::identity,
+            std::indirect_unary_predicate<std::projected<_Ip, _Proj>> _Pred>
+    requires __ycxx::__detail::__execution_policy<_Ep_> && std::permutable<_Ip>
+  decltype(auto) operator()(_Ep_&&, _Ip first, _Sp last, _Pred pred, _Proj proj = {}) const noexcept {
+    return static_cast<const _Fn&>(*this)(std::move(first), std::move(last), std::move(pred), std::move(proj));
   }
-  template <class Ep, ycxx::detail::par::sized_random_access_range R, class Proj = std::identity,
-            std::indirect_unary_predicate<std::projected<std::ranges::iterator_t<R>, Proj>> Pred>
-    requires ycxx::detail::execution_policy<Ep> && std::permutable<std::ranges::iterator_t<R>>
-  decltype(auto) operator()(Ep&&, R&& r, Pred pred, Proj proj = {}) const noexcept {
-    return static_cast<const Fn&>(*this)(static_cast<R&&>(r), std::move(pred), std::move(proj));
+  template <class _Ep_, __ycxx::__detail::par::__sized_random_access_range _Rp, class _Proj = std::identity,
+            std::indirect_unary_predicate<std::projected<std::ranges::iterator_t<_Rp>, _Proj>> _Pred>
+    requires __ycxx::__detail::__execution_policy<_Ep_> && std::permutable<std::ranges::iterator_t<_Rp>>
+  decltype(auto) operator()(_Ep_&&, _Rp&& r, _Pred pred, _Proj proj = {}) const noexcept {
+    return static_cast<const _Fn&>(*this)(static_cast<_Rp&&>(r), std::move(pred), std::move(proj));
   }
 };
 
 // inplace_merge
-template <class Fn>
-struct ranges_par_algo<Fn, par::kind::inplace_merge> : Fn {
-  using Fn::operator();
-  template <class Ep, std::random_access_iterator I, std::sized_sentinel_for<I> S, class Comp = std::ranges::less,
-            class Proj = std::identity>
-    requires ycxx::detail::execution_policy<Ep> && std::sortable<I, Comp, Proj>
-  decltype(auto) operator()(Ep&&, I first, I middle, S last, Comp comp = {}, Proj proj = {}) const noexcept {
-    return static_cast<const Fn&>(*this)(std::move(first), std::move(middle), std::move(last), std::move(comp),
+template <class _Fn>
+struct __ranges_par_algo<_Fn, par::kind::inplace_merge> : _Fn {
+  using _Fn::operator();
+  template <class _Ep_, std::random_access_iterator _Ip, std::sized_sentinel_for<_Ip> _Sp, class _Comp = std::ranges::less,
+            class _Proj = std::identity>
+    requires __ycxx::__detail::__execution_policy<_Ep_> && std::sortable<_Ip, _Comp, _Proj>
+  decltype(auto) operator()(_Ep_&&, _Ip first, _Ip __middle, _Sp last, _Comp comp = {}, _Proj proj = {}) const noexcept {
+    return static_cast<const _Fn&>(*this)(std::move(first), std::move(__middle), std::move(last), std::move(comp),
                                          std::move(proj));
   }
-  template <class Ep, ycxx::detail::par::sized_random_access_range R, class Comp = std::ranges::less,
-            class Proj = std::identity>
-    requires ycxx::detail::execution_policy<Ep> && std::sortable<std::ranges::iterator_t<R>, Comp, Proj>
-  decltype(auto) operator()(Ep&&, R&& r, std::ranges::iterator_t<R> middle, Comp comp = {},
-                            Proj proj = {}) const noexcept {
-    return static_cast<const Fn&>(*this)(static_cast<R&&>(r), std::move(middle), std::move(comp), std::move(proj));
+  template <class _Ep_, __ycxx::__detail::par::__sized_random_access_range _Rp, class _Comp = std::ranges::less,
+            class _Proj = std::identity>
+    requires __ycxx::__detail::__execution_policy<_Ep_> && std::sortable<std::ranges::iterator_t<_Rp>, _Comp, _Proj>
+  decltype(auto) operator()(_Ep_&&, _Rp&& r, std::ranges::iterator_t<_Rp> __middle, _Comp comp = {},
+                            _Proj proj = {}) const noexcept {
+    return static_cast<const _Fn&>(*this)(static_cast<_Rp&&>(r), std::move(__middle), std::move(comp), std::move(proj));
   }
 };
 
 // includes
-template <class Fn>
-struct ranges_par_algo<Fn, par::kind::includes> : Fn {
-  using Fn::operator();
-  template <class Ep, std::random_access_iterator I1, std::sized_sentinel_for<I1> S1, std::random_access_iterator I2,
-            std::sized_sentinel_for<I2> S2, class Proj1 = std::identity, class Proj2 = std::identity,
-            std::indirect_strict_weak_order<std::projected<I1, Proj1>, std::projected<I2, Proj2>> Comp = std::ranges::less>
-    requires ycxx::detail::execution_policy<Ep>
-  decltype(auto) operator()(Ep&&, I1 first1, S1 last1, I2 first2, S2 last2, Comp comp = {}, Proj1 proj1 = {},
-                            Proj2 proj2 = {}) const noexcept {
-    return static_cast<const Fn&>(*this)(std::move(first1), std::move(last1), std::move(first2), std::move(last2),
-                                         std::move(comp), std::move(proj1), std::move(proj2));
+template <class _Fn>
+struct __ranges_par_algo<_Fn, par::kind::includes> : _Fn {
+  using _Fn::operator();
+  template <class _Ep_, std::random_access_iterator _I1, std::sized_sentinel_for<_I1> _S1, std::random_access_iterator _I2,
+            std::sized_sentinel_for<_I2> _S2, class _Proj1 = std::identity, class _Proj2 = std::identity,
+            std::indirect_strict_weak_order<std::projected<_I1, _Proj1>, std::projected<_I2, _Proj2>> _Comp = std::ranges::less>
+    requires __ycxx::__detail::__execution_policy<_Ep_>
+  decltype(auto) operator()(_Ep_&&, _I1 __first1, _S1 __last1, _I2 __first2, _S2 __last2, _Comp comp = {}, _Proj1 __proj1 = {},
+                            _Proj2 __proj2 = {}) const noexcept {
+    return static_cast<const _Fn&>(*this)(std::move(__first1), std::move(__last1), std::move(__first2), std::move(__last2),
+                                         std::move(comp), std::move(__proj1), std::move(__proj2));
   }
-  template <class Ep, ycxx::detail::par::sized_random_access_range R1, ycxx::detail::par::sized_random_access_range R2,
-            class Proj1 = std::identity, class Proj2 = std::identity,
-            std::indirect_strict_weak_order<std::projected<std::ranges::iterator_t<R1>, Proj1>, std::projected<std::ranges::iterator_t<R2>, Proj2>> Comp = std::ranges::less>
-    requires ycxx::detail::execution_policy<Ep>
-  decltype(auto) operator()(Ep&&, R1&& r1, R2&& r2, Comp comp = {}, Proj1 proj1 = {}, Proj2 proj2 = {}) const noexcept {
-    return static_cast<const Fn&>(*this)(static_cast<R1&&>(r1), static_cast<R2&&>(r2), std::move(comp),
-                                         std::move(proj1), std::move(proj2));
+  template <class _Ep_, __ycxx::__detail::par::__sized_random_access_range _R1, __ycxx::__detail::par::__sized_random_access_range _R2,
+            class _Proj1 = std::identity, class _Proj2 = std::identity,
+            std::indirect_strict_weak_order<std::projected<std::ranges::iterator_t<_R1>, _Proj1>, std::projected<std::ranges::iterator_t<_R2>, _Proj2>> _Comp = std::ranges::less>
+    requires __ycxx::__detail::__execution_policy<_Ep_>
+  decltype(auto) operator()(_Ep_&&, _R1&& __r1, _R2&& __r2, _Comp comp = {}, _Proj1 __proj1 = {}, _Proj2 __proj2 = {}) const noexcept {
+    return static_cast<const _Fn&>(*this)(static_cast<_R1&&>(__r1), static_cast<_R2&&>(__r2), std::move(comp),
+                                         std::move(__proj1), std::move(__proj2));
   }
 };
 
 // is_heap
-template <class Fn>
-struct ranges_par_algo<Fn, par::kind::is_heap> : Fn {
-  using Fn::operator();
-  template <class Ep, std::random_access_iterator I, std::sized_sentinel_for<I> S, class Proj = std::identity,
-            std::indirect_strict_weak_order<std::projected<I, Proj>> Comp = std::ranges::less>
-    requires ycxx::detail::execution_policy<Ep>
-  decltype(auto) operator()(Ep&&, I first, S last, Comp comp = {}, Proj proj = {}) const noexcept {
-    return static_cast<const Fn&>(*this)(std::move(first), std::move(last), std::move(comp), std::move(proj));
+template <class _Fn>
+struct __ranges_par_algo<_Fn, par::kind::is_heap> : _Fn {
+  using _Fn::operator();
+  template <class _Ep_, std::random_access_iterator _Ip, std::sized_sentinel_for<_Ip> _Sp, class _Proj = std::identity,
+            std::indirect_strict_weak_order<std::projected<_Ip, _Proj>> _Comp = std::ranges::less>
+    requires __ycxx::__detail::__execution_policy<_Ep_>
+  decltype(auto) operator()(_Ep_&&, _Ip first, _Sp last, _Comp comp = {}, _Proj proj = {}) const noexcept {
+    return static_cast<const _Fn&>(*this)(std::move(first), std::move(last), std::move(comp), std::move(proj));
   }
-  template <class Ep, ycxx::detail::par::sized_random_access_range R, class Proj = std::identity,
-            std::indirect_strict_weak_order<std::projected<std::ranges::iterator_t<R>, Proj>> Comp = std::ranges::less>
-    requires ycxx::detail::execution_policy<Ep>
-  decltype(auto) operator()(Ep&&, R&& r, Comp comp = {}, Proj proj = {}) const noexcept {
-    return static_cast<const Fn&>(*this)(static_cast<R&&>(r), std::move(comp), std::move(proj));
+  template <class _Ep_, __ycxx::__detail::par::__sized_random_access_range _Rp, class _Proj = std::identity,
+            std::indirect_strict_weak_order<std::projected<std::ranges::iterator_t<_Rp>, _Proj>> _Comp = std::ranges::less>
+    requires __ycxx::__detail::__execution_policy<_Ep_>
+  decltype(auto) operator()(_Ep_&&, _Rp&& r, _Comp comp = {}, _Proj proj = {}) const noexcept {
+    return static_cast<const _Fn&>(*this)(static_cast<_Rp&&>(r), std::move(comp), std::move(proj));
   }
 };
 
 // is_heap_until
-template <class Fn>
-struct ranges_par_algo<Fn, par::kind::is_heap_until> : Fn {
-  using Fn::operator();
-  template <class Ep, std::random_access_iterator I, std::sized_sentinel_for<I> S, class Proj = std::identity,
-            std::indirect_strict_weak_order<std::projected<I, Proj>> Comp = std::ranges::less>
-    requires ycxx::detail::execution_policy<Ep>
-  decltype(auto) operator()(Ep&&, I first, S last, Comp comp = {}, Proj proj = {}) const noexcept {
-    return static_cast<const Fn&>(*this)(std::move(first), std::move(last), std::move(comp), std::move(proj));
+template <class _Fn>
+struct __ranges_par_algo<_Fn, par::kind::is_heap_until> : _Fn {
+  using _Fn::operator();
+  template <class _Ep_, std::random_access_iterator _Ip, std::sized_sentinel_for<_Ip> _Sp, class _Proj = std::identity,
+            std::indirect_strict_weak_order<std::projected<_Ip, _Proj>> _Comp = std::ranges::less>
+    requires __ycxx::__detail::__execution_policy<_Ep_>
+  decltype(auto) operator()(_Ep_&&, _Ip first, _Sp last, _Comp comp = {}, _Proj proj = {}) const noexcept {
+    return static_cast<const _Fn&>(*this)(std::move(first), std::move(last), std::move(comp), std::move(proj));
   }
-  template <class Ep, ycxx::detail::par::sized_random_access_range R, class Proj = std::identity,
-            std::indirect_strict_weak_order<std::projected<std::ranges::iterator_t<R>, Proj>> Comp = std::ranges::less>
-    requires ycxx::detail::execution_policy<Ep>
-  decltype(auto) operator()(Ep&&, R&& r, Comp comp = {}, Proj proj = {}) const noexcept {
-    return static_cast<const Fn&>(*this)(static_cast<R&&>(r), std::move(comp), std::move(proj));
+  template <class _Ep_, __ycxx::__detail::par::__sized_random_access_range _Rp, class _Proj = std::identity,
+            std::indirect_strict_weak_order<std::projected<std::ranges::iterator_t<_Rp>, _Proj>> _Comp = std::ranges::less>
+    requires __ycxx::__detail::__execution_policy<_Ep_>
+  decltype(auto) operator()(_Ep_&&, _Rp&& r, _Comp comp = {}, _Proj proj = {}) const noexcept {
+    return static_cast<const _Fn&>(*this)(static_cast<_Rp&&>(r), std::move(comp), std::move(proj));
   }
 };
 
 // min
-template <class Fn>
-struct ranges_par_algo<Fn, par::kind::min> : Fn {
-  using Fn::operator();
-  template <class Ep, ycxx::detail::par::sized_random_access_range R, class Proj = std::identity,
-            std::indirect_strict_weak_order<std::projected<std::ranges::iterator_t<R>, Proj>> Comp = std::ranges::less>
-    requires ycxx::detail::execution_policy<Ep> &&
-             std::indirectly_copyable_storable<std::ranges::iterator_t<R>, std::ranges::range_value_t<R>*>
-  decltype(auto) operator()(Ep&&, R&& r, Comp comp = {}, Proj proj = {}) const noexcept {
-    return static_cast<const Fn&>(*this)(static_cast<R&&>(r), std::move(comp), std::move(proj));
+template <class _Fn>
+struct __ranges_par_algo<_Fn, par::kind::min> : _Fn {
+  using _Fn::operator();
+  template <class _Ep_, __ycxx::__detail::par::__sized_random_access_range _Rp, class _Proj = std::identity,
+            std::indirect_strict_weak_order<std::projected<std::ranges::iterator_t<_Rp>, _Proj>> _Comp = std::ranges::less>
+    requires __ycxx::__detail::__execution_policy<_Ep_> &&
+             std::indirectly_copyable_storable<std::ranges::iterator_t<_Rp>, std::ranges::range_value_t<_Rp>*>
+  decltype(auto) operator()(_Ep_&&, _Rp&& r, _Comp comp = {}, _Proj proj = {}) const noexcept {
+    return static_cast<const _Fn&>(*this)(static_cast<_Rp&&>(r), std::move(comp), std::move(proj));
   }
 };
 
 // max
-template <class Fn>
-struct ranges_par_algo<Fn, par::kind::max> : Fn {
-  using Fn::operator();
-  template <class Ep, ycxx::detail::par::sized_random_access_range R, class Proj = std::identity,
-            std::indirect_strict_weak_order<std::projected<std::ranges::iterator_t<R>, Proj>> Comp = std::ranges::less>
-    requires ycxx::detail::execution_policy<Ep> &&
-             std::indirectly_copyable_storable<std::ranges::iterator_t<R>, std::ranges::range_value_t<R>*>
-  decltype(auto) operator()(Ep&&, R&& r, Comp comp = {}, Proj proj = {}) const noexcept {
-    return static_cast<const Fn&>(*this)(static_cast<R&&>(r), std::move(comp), std::move(proj));
+template <class _Fn>
+struct __ranges_par_algo<_Fn, par::kind::max> : _Fn {
+  using _Fn::operator();
+  template <class _Ep_, __ycxx::__detail::par::__sized_random_access_range _Rp, class _Proj = std::identity,
+            std::indirect_strict_weak_order<std::projected<std::ranges::iterator_t<_Rp>, _Proj>> _Comp = std::ranges::less>
+    requires __ycxx::__detail::__execution_policy<_Ep_> &&
+             std::indirectly_copyable_storable<std::ranges::iterator_t<_Rp>, std::ranges::range_value_t<_Rp>*>
+  decltype(auto) operator()(_Ep_&&, _Rp&& r, _Comp comp = {}, _Proj proj = {}) const noexcept {
+    return static_cast<const _Fn&>(*this)(static_cast<_Rp&&>(r), std::move(comp), std::move(proj));
   }
 };
 
 // minmax
-template <class Fn>
-struct ranges_par_algo<Fn, par::kind::minmax> : Fn {
-  using Fn::operator();
-  template <class Ep, ycxx::detail::par::sized_random_access_range R, class Proj = std::identity,
-            std::indirect_strict_weak_order<std::projected<std::ranges::iterator_t<R>, Proj>> Comp = std::ranges::less>
-    requires ycxx::detail::execution_policy<Ep> &&
-             std::indirectly_copyable_storable<std::ranges::iterator_t<R>, std::ranges::range_value_t<R>*>
-  decltype(auto) operator()(Ep&&, R&& r, Comp comp = {}, Proj proj = {}) const noexcept {
-    return static_cast<const Fn&>(*this)(static_cast<R&&>(r), std::move(comp), std::move(proj));
+template <class _Fn>
+struct __ranges_par_algo<_Fn, par::kind::minmax> : _Fn {
+  using _Fn::operator();
+  template <class _Ep_, __ycxx::__detail::par::__sized_random_access_range _Rp, class _Proj = std::identity,
+            std::indirect_strict_weak_order<std::projected<std::ranges::iterator_t<_Rp>, _Proj>> _Comp = std::ranges::less>
+    requires __ycxx::__detail::__execution_policy<_Ep_> &&
+             std::indirectly_copyable_storable<std::ranges::iterator_t<_Rp>, std::ranges::range_value_t<_Rp>*>
+  decltype(auto) operator()(_Ep_&&, _Rp&& r, _Comp comp = {}, _Proj proj = {}) const noexcept {
+    return static_cast<const _Fn&>(*this)(static_cast<_Rp&&>(r), std::move(comp), std::move(proj));
   }
 };
 
 // min_element
-template <class Fn>
-struct ranges_par_algo<Fn, par::kind::min_element> : Fn {
-  using Fn::operator();
-  template <class Ep, std::random_access_iterator I, std::sized_sentinel_for<I> S, class Proj = std::identity,
-            std::indirect_strict_weak_order<std::projected<I, Proj>> Comp = std::ranges::less>
-    requires ycxx::detail::execution_policy<Ep>
-  decltype(auto) operator()(Ep&&, I first, S last, Comp comp = {}, Proj proj = {}) const noexcept {
-    return static_cast<const Fn&>(*this)(std::move(first), std::move(last), std::move(comp), std::move(proj));
+template <class _Fn>
+struct __ranges_par_algo<_Fn, par::kind::min_element> : _Fn {
+  using _Fn::operator();
+  template <class _Ep_, std::random_access_iterator _Ip, std::sized_sentinel_for<_Ip> _Sp, class _Proj = std::identity,
+            std::indirect_strict_weak_order<std::projected<_Ip, _Proj>> _Comp = std::ranges::less>
+    requires __ycxx::__detail::__execution_policy<_Ep_>
+  decltype(auto) operator()(_Ep_&&, _Ip first, _Sp last, _Comp comp = {}, _Proj proj = {}) const noexcept {
+    return static_cast<const _Fn&>(*this)(std::move(first), std::move(last), std::move(comp), std::move(proj));
   }
-  template <class Ep, ycxx::detail::par::sized_random_access_range R, class Proj = std::identity,
-            std::indirect_strict_weak_order<std::projected<std::ranges::iterator_t<R>, Proj>> Comp = std::ranges::less>
-    requires ycxx::detail::execution_policy<Ep>
-  decltype(auto) operator()(Ep&&, R&& r, Comp comp = {}, Proj proj = {}) const noexcept {
-    return static_cast<const Fn&>(*this)(static_cast<R&&>(r), std::move(comp), std::move(proj));
+  template <class _Ep_, __ycxx::__detail::par::__sized_random_access_range _Rp, class _Proj = std::identity,
+            std::indirect_strict_weak_order<std::projected<std::ranges::iterator_t<_Rp>, _Proj>> _Comp = std::ranges::less>
+    requires __ycxx::__detail::__execution_policy<_Ep_>
+  decltype(auto) operator()(_Ep_&&, _Rp&& r, _Comp comp = {}, _Proj proj = {}) const noexcept {
+    return static_cast<const _Fn&>(*this)(static_cast<_Rp&&>(r), std::move(comp), std::move(proj));
   }
 };
 
 // max_element
-template <class Fn>
-struct ranges_par_algo<Fn, par::kind::max_element> : Fn {
-  using Fn::operator();
-  template <class Ep, std::random_access_iterator I, std::sized_sentinel_for<I> S, class Proj = std::identity,
-            std::indirect_strict_weak_order<std::projected<I, Proj>> Comp = std::ranges::less>
-    requires ycxx::detail::execution_policy<Ep>
-  decltype(auto) operator()(Ep&&, I first, S last, Comp comp = {}, Proj proj = {}) const noexcept {
-    return static_cast<const Fn&>(*this)(std::move(first), std::move(last), std::move(comp), std::move(proj));
+template <class _Fn>
+struct __ranges_par_algo<_Fn, par::kind::max_element> : _Fn {
+  using _Fn::operator();
+  template <class _Ep_, std::random_access_iterator _Ip, std::sized_sentinel_for<_Ip> _Sp, class _Proj = std::identity,
+            std::indirect_strict_weak_order<std::projected<_Ip, _Proj>> _Comp = std::ranges::less>
+    requires __ycxx::__detail::__execution_policy<_Ep_>
+  decltype(auto) operator()(_Ep_&&, _Ip first, _Sp last, _Comp comp = {}, _Proj proj = {}) const noexcept {
+    return static_cast<const _Fn&>(*this)(std::move(first), std::move(last), std::move(comp), std::move(proj));
   }
-  template <class Ep, ycxx::detail::par::sized_random_access_range R, class Proj = std::identity,
-            std::indirect_strict_weak_order<std::projected<std::ranges::iterator_t<R>, Proj>> Comp = std::ranges::less>
-    requires ycxx::detail::execution_policy<Ep>
-  decltype(auto) operator()(Ep&&, R&& r, Comp comp = {}, Proj proj = {}) const noexcept {
-    return static_cast<const Fn&>(*this)(static_cast<R&&>(r), std::move(comp), std::move(proj));
+  template <class _Ep_, __ycxx::__detail::par::__sized_random_access_range _Rp, class _Proj = std::identity,
+            std::indirect_strict_weak_order<std::projected<std::ranges::iterator_t<_Rp>, _Proj>> _Comp = std::ranges::less>
+    requires __ycxx::__detail::__execution_policy<_Ep_>
+  decltype(auto) operator()(_Ep_&&, _Rp&& r, _Comp comp = {}, _Proj proj = {}) const noexcept {
+    return static_cast<const _Fn&>(*this)(static_cast<_Rp&&>(r), std::move(comp), std::move(proj));
   }
 };
 
 // minmax_element
-template <class Fn>
-struct ranges_par_algo<Fn, par::kind::minmax_element> : Fn {
-  using Fn::operator();
-  template <class Ep, std::random_access_iterator I, std::sized_sentinel_for<I> S, class Proj = std::identity,
-            std::indirect_strict_weak_order<std::projected<I, Proj>> Comp = std::ranges::less>
-    requires ycxx::detail::execution_policy<Ep>
-  decltype(auto) operator()(Ep&&, I first, S last, Comp comp = {}, Proj proj = {}) const noexcept {
-    return static_cast<const Fn&>(*this)(std::move(first), std::move(last), std::move(comp), std::move(proj));
+template <class _Fn>
+struct __ranges_par_algo<_Fn, par::kind::minmax_element> : _Fn {
+  using _Fn::operator();
+  template <class _Ep_, std::random_access_iterator _Ip, std::sized_sentinel_for<_Ip> _Sp, class _Proj = std::identity,
+            std::indirect_strict_weak_order<std::projected<_Ip, _Proj>> _Comp = std::ranges::less>
+    requires __ycxx::__detail::__execution_policy<_Ep_>
+  decltype(auto) operator()(_Ep_&&, _Ip first, _Sp last, _Comp comp = {}, _Proj proj = {}) const noexcept {
+    return static_cast<const _Fn&>(*this)(std::move(first), std::move(last), std::move(comp), std::move(proj));
   }
-  template <class Ep, ycxx::detail::par::sized_random_access_range R, class Proj = std::identity,
-            std::indirect_strict_weak_order<std::projected<std::ranges::iterator_t<R>, Proj>> Comp = std::ranges::less>
-    requires ycxx::detail::execution_policy<Ep>
-  decltype(auto) operator()(Ep&&, R&& r, Comp comp = {}, Proj proj = {}) const noexcept {
-    return static_cast<const Fn&>(*this)(static_cast<R&&>(r), std::move(comp), std::move(proj));
+  template <class _Ep_, __ycxx::__detail::par::__sized_random_access_range _Rp, class _Proj = std::identity,
+            std::indirect_strict_weak_order<std::projected<std::ranges::iterator_t<_Rp>, _Proj>> _Comp = std::ranges::less>
+    requires __ycxx::__detail::__execution_policy<_Ep_>
+  decltype(auto) operator()(_Ep_&&, _Rp&& r, _Comp comp = {}, _Proj proj = {}) const noexcept {
+    return static_cast<const _Fn&>(*this)(static_cast<_Rp&&>(r), std::move(comp), std::move(proj));
   }
 };
 
 // lexicographical_compare
-template <class Fn>
-struct ranges_par_algo<Fn, par::kind::lexicographical_compare> : Fn {
-  using Fn::operator();
-  template <class Ep, std::random_access_iterator I1, std::sized_sentinel_for<I1> S1, std::random_access_iterator I2,
-            std::sized_sentinel_for<I2> S2, class Proj1 = std::identity, class Proj2 = std::identity,
-            std::indirect_strict_weak_order<std::projected<I1, Proj1>, std::projected<I2, Proj2>> Comp = std::ranges::less>
-    requires ycxx::detail::execution_policy<Ep>
-  decltype(auto) operator()(Ep&&, I1 first1, S1 last1, I2 first2, S2 last2, Comp comp = {}, Proj1 proj1 = {},
-                            Proj2 proj2 = {}) const noexcept {
-    return static_cast<const Fn&>(*this)(std::move(first1), std::move(last1), std::move(first2), std::move(last2),
-                                         std::move(comp), std::move(proj1), std::move(proj2));
+template <class _Fn>
+struct __ranges_par_algo<_Fn, par::kind::lexicographical_compare> : _Fn {
+  using _Fn::operator();
+  template <class _Ep_, std::random_access_iterator _I1, std::sized_sentinel_for<_I1> _S1, std::random_access_iterator _I2,
+            std::sized_sentinel_for<_I2> _S2, class _Proj1 = std::identity, class _Proj2 = std::identity,
+            std::indirect_strict_weak_order<std::projected<_I1, _Proj1>, std::projected<_I2, _Proj2>> _Comp = std::ranges::less>
+    requires __ycxx::__detail::__execution_policy<_Ep_>
+  decltype(auto) operator()(_Ep_&&, _I1 __first1, _S1 __last1, _I2 __first2, _S2 __last2, _Comp comp = {}, _Proj1 __proj1 = {},
+                            _Proj2 __proj2 = {}) const noexcept {
+    return static_cast<const _Fn&>(*this)(std::move(__first1), std::move(__last1), std::move(__first2), std::move(__last2),
+                                         std::move(comp), std::move(__proj1), std::move(__proj2));
   }
-  template <class Ep, ycxx::detail::par::sized_random_access_range R1, ycxx::detail::par::sized_random_access_range R2,
-            class Proj1 = std::identity, class Proj2 = std::identity,
-            std::indirect_strict_weak_order<std::projected<std::ranges::iterator_t<R1>, Proj1>, std::projected<std::ranges::iterator_t<R2>, Proj2>> Comp = std::ranges::less>
-    requires ycxx::detail::execution_policy<Ep>
-  decltype(auto) operator()(Ep&&, R1&& r1, R2&& r2, Comp comp = {}, Proj1 proj1 = {}, Proj2 proj2 = {}) const noexcept {
-    return static_cast<const Fn&>(*this)(static_cast<R1&&>(r1), static_cast<R2&&>(r2), std::move(comp),
-                                         std::move(proj1), std::move(proj2));
+  template <class _Ep_, __ycxx::__detail::par::__sized_random_access_range _R1, __ycxx::__detail::par::__sized_random_access_range _R2,
+            class _Proj1 = std::identity, class _Proj2 = std::identity,
+            std::indirect_strict_weak_order<std::projected<std::ranges::iterator_t<_R1>, _Proj1>, std::projected<std::ranges::iterator_t<_R2>, _Proj2>> _Comp = std::ranges::less>
+    requires __ycxx::__detail::__execution_policy<_Ep_>
+  decltype(auto) operator()(_Ep_&&, _R1&& __r1, _R2&& __r2, _Comp comp = {}, _Proj1 __proj1 = {}, _Proj2 __proj2 = {}) const noexcept {
+    return static_cast<const _Fn&>(*this)(static_cast<_R1&&>(__r1), static_cast<_R2&&>(__r2), std::move(comp),
+                                         std::move(__proj1), std::move(__proj2));
   }
 };
 
 
 // [alg.foreach]: the iterator, not an in_fun_result.
-template <class Fn>
-struct ranges_par_algo<Fn, par::kind::for_each> : Fn {
-  using Fn::operator();
-  template <class Ep, std::random_access_iterator I, std::sized_sentinel_for<I> S, class Proj = std::identity,
-            std::indirectly_unary_invocable<std::projected<I, Proj>> Fun>
-    requires ycxx::detail::execution_policy<Ep>
-  I operator()(Ep&&, I first, S last, Fun f, Proj proj = {}) const noexcept {
-    return static_cast<const Fn&>(*this)(std::move(first), last, std::move(f), std::move(proj)).in;
+template <class _Fn>
+struct __ranges_par_algo<_Fn, par::kind::for_each> : _Fn {
+  using _Fn::operator();
+  template <class _Ep_, std::random_access_iterator _Ip, std::sized_sentinel_for<_Ip> _Sp, class _Proj = std::identity,
+            std::indirectly_unary_invocable<std::projected<_Ip, _Proj>> _Fun>
+    requires __ycxx::__detail::__execution_policy<_Ep_>
+  _Ip operator()(_Ep_&&, _Ip first, _Sp last, _Fun __f, _Proj proj = {}) const noexcept {
+    return static_cast<const _Fn&>(*this)(std::move(first), last, std::move(__f), std::move(proj)).in;
   }
-  template <class Ep, sized_random_access_range R, class Proj = std::identity,
-            std::indirectly_unary_invocable<std::projected<std::ranges::iterator_t<R>, Proj>> Fun>
-    requires ycxx::detail::execution_policy<Ep>
-  std::ranges::borrowed_iterator_t<R> operator()(Ep&&, R&& r, Fun f, Proj proj = {}) const noexcept {
-    return static_cast<const Fn&>(*this)(static_cast<R&&>(r), std::move(f), std::move(proj)).in;
+  template <class _Ep_, __sized_random_access_range _Rp, class _Proj = std::identity,
+            std::indirectly_unary_invocable<std::projected<std::ranges::iterator_t<_Rp>, _Proj>> _Fun>
+    requires __ycxx::__detail::__execution_policy<_Ep_>
+  std::ranges::borrowed_iterator_t<_Rp> operator()(_Ep_&&, _Rp&& r, _Fun __f, _Proj proj = {}) const noexcept {
+    return static_cast<const _Fn&>(*this)(static_cast<_Rp&&>(r), std::move(__f), std::move(proj)).in;
   }
 };
 
-template <class Fn>
-struct ranges_par_algo<Fn, par::kind::for_each_n> : Fn {
-  using Fn::operator();
-  template <class Ep, std::random_access_iterator I, class Proj = std::identity,
-            std::indirectly_unary_invocable<std::projected<I, Proj>> Fun>
-    requires ycxx::detail::execution_policy<Ep>
-  I operator()(Ep&&, I first, std::iter_difference_t<I> n, Fun f, Proj proj = {}) const noexcept {
-    return static_cast<const Fn&>(*this)(std::move(first), n, std::move(f), std::move(proj)).in;
+template <class _Fn>
+struct __ranges_par_algo<_Fn, par::kind::for_each_n> : _Fn {
+  using _Fn::operator();
+  template <class _Ep_, std::random_access_iterator _Ip, class _Proj = std::identity,
+            std::indirectly_unary_invocable<std::projected<_Ip, _Proj>> _Fun>
+    requires __ycxx::__detail::__execution_policy<_Ep_>
+  _Ip operator()(_Ep_&&, _Ip first, std::iter_difference_t<_Ip> n, _Fun __f, _Proj proj = {}) const noexcept {
+    return static_cast<const _Fn&>(*this)(std::move(first), n, std::move(__f), std::move(proj)).in;
   }
 };
 
 // [alg.copy], [alg.move]: N = min(last - first, result_last - result) elements.
-template <class Fn>
-struct ranges_par_algo<Fn, par::kind::copy> : Fn {
-  using Fn::operator();
-  template <class Ep, std::random_access_iterator I, std::sized_sentinel_for<I> S, std::random_access_iterator O,
-            std::sized_sentinel_for<O> OutS>
-    requires ycxx::detail::execution_policy<Ep> && std::indirectly_copyable<I, O>
-  std::ranges::in_out_result<I, O> operator()(Ep&&, I first, S last, O result, OutS result_last) const noexcept {
-    auto n = par::min_of<std::iter_difference_t<I>>(last - first,
-                                                    static_cast<std::iter_difference_t<I>>(result_last - result));
-    return static_cast<const Fn&>(*this)(first, first + n, std::move(result));
+template <class _Fn>
+struct __ranges_par_algo<_Fn, par::kind::copy> : _Fn {
+  using _Fn::operator();
+  template <class _Ep_, std::random_access_iterator _Ip, std::sized_sentinel_for<_Ip> _Sp, std::random_access_iterator _Op,
+            std::sized_sentinel_for<_Op> _OutS>
+    requires __ycxx::__detail::__execution_policy<_Ep_> && std::indirectly_copyable<_Ip, _Op>
+  std::ranges::in_out_result<_Ip, _Op> operator()(_Ep_&&, _Ip first, _Sp last, _Op result, _OutS __result_last) const noexcept {
+    auto n = par::__min_of<std::iter_difference_t<_Ip>>(last - first,
+                                                    static_cast<std::iter_difference_t<_Ip>>(__result_last - result));
+    return static_cast<const _Fn&>(*this)(first, first + n, std::move(result));
   }
-  template <class Ep, sized_random_access_range R, sized_random_access_range OutR>
-    requires ycxx::detail::execution_policy<Ep> &&
-             std::indirectly_copyable<std::ranges::iterator_t<R>, std::ranges::iterator_t<OutR>>
-  std::ranges::in_out_result<std::ranges::borrowed_iterator_t<R>, std::ranges::borrowed_iterator_t<OutR>>
-  operator()(Ep&& exec, R&& r, OutR&& result_r) const noexcept {
-    auto res = (*this)(exec, std::ranges::begin(r), std::ranges::end(r), std::ranges::begin(result_r),
-                       std::ranges::end(result_r));
-    return {par::borrowed<R>(std::move(res.in)), par::borrowed<OutR>(std::move(res.out))};
+  template <class _Ep_, __sized_random_access_range _Rp, __sized_random_access_range _OutR>
+    requires __ycxx::__detail::__execution_policy<_Ep_> &&
+             std::indirectly_copyable<std::ranges::iterator_t<_Rp>, std::ranges::iterator_t<_OutR>>
+  std::ranges::in_out_result<std::ranges::borrowed_iterator_t<_Rp>, std::ranges::borrowed_iterator_t<_OutR>>
+  operator()(_Ep_&& __exec, _Rp&& r, _OutR&& __result_r) const noexcept {
+    auto __res = (*this)(__exec, std::ranges::begin(r), std::ranges::end(r), std::ranges::begin(__result_r),
+                       std::ranges::end(__result_r));
+    return {par::__borrowed<_Rp>(std::move(__res.in)), par::__borrowed<_OutR>(std::move(__res.out))};
   }
 };
 
-template <class Fn>
-struct ranges_par_algo<Fn, par::kind::move> : Fn {
-  using Fn::operator();
-  template <class Ep, std::random_access_iterator I, std::sized_sentinel_for<I> S, std::random_access_iterator O,
-            std::sized_sentinel_for<O> OutS>
-    requires ycxx::detail::execution_policy<Ep> && std::indirectly_movable<I, O>
-  std::ranges::in_out_result<I, O> operator()(Ep&&, I first, S last, O result, OutS result_last) const noexcept {
-    auto n = par::min_of<std::iter_difference_t<I>>(last - first,
-                                                    static_cast<std::iter_difference_t<I>>(result_last - result));
-    return static_cast<const Fn&>(*this)(first, first + n, std::move(result));
+template <class _Fn>
+struct __ranges_par_algo<_Fn, par::kind::move> : _Fn {
+  using _Fn::operator();
+  template <class _Ep_, std::random_access_iterator _Ip, std::sized_sentinel_for<_Ip> _Sp, std::random_access_iterator _Op,
+            std::sized_sentinel_for<_Op> _OutS>
+    requires __ycxx::__detail::__execution_policy<_Ep_> && std::indirectly_movable<_Ip, _Op>
+  std::ranges::in_out_result<_Ip, _Op> operator()(_Ep_&&, _Ip first, _Sp last, _Op result, _OutS __result_last) const noexcept {
+    auto n = par::__min_of<std::iter_difference_t<_Ip>>(last - first,
+                                                    static_cast<std::iter_difference_t<_Ip>>(__result_last - result));
+    return static_cast<const _Fn&>(*this)(first, first + n, std::move(result));
   }
-  template <class Ep, sized_random_access_range R, sized_random_access_range OutR>
-    requires ycxx::detail::execution_policy<Ep> &&
-             std::indirectly_movable<std::ranges::iterator_t<R>, std::ranges::iterator_t<OutR>>
-  std::ranges::in_out_result<std::ranges::borrowed_iterator_t<R>, std::ranges::borrowed_iterator_t<OutR>>
-  operator()(Ep&& exec, R&& r, OutR&& result_r) const noexcept {
-    auto res = (*this)(exec, std::ranges::begin(r), std::ranges::end(r), std::ranges::begin(result_r),
-                       std::ranges::end(result_r));
-    return {par::borrowed<R>(std::move(res.in)), par::borrowed<OutR>(std::move(res.out))};
+  template <class _Ep_, __sized_random_access_range _Rp, __sized_random_access_range _OutR>
+    requires __ycxx::__detail::__execution_policy<_Ep_> &&
+             std::indirectly_movable<std::ranges::iterator_t<_Rp>, std::ranges::iterator_t<_OutR>>
+  std::ranges::in_out_result<std::ranges::borrowed_iterator_t<_Rp>, std::ranges::borrowed_iterator_t<_OutR>>
+  operator()(_Ep_&& __exec, _Rp&& r, _OutR&& __result_r) const noexcept {
+    auto __res = (*this)(__exec, std::ranges::begin(r), std::ranges::end(r), std::ranges::begin(__result_r),
+                       std::ranges::end(__result_r));
+    return {par::__borrowed<_Rp>(std::move(__res.in)), par::__borrowed<_OutR>(std::move(__res.out))};
   }
 };
 
 // [alg.copy]/12-18: N = min(result_last - result, max(0, n)).
-template <class Fn>
-struct ranges_par_algo<Fn, par::kind::copy_n> : Fn {
-  using Fn::operator();
-  template <class Ep, std::random_access_iterator I, std::random_access_iterator O, std::sized_sentinel_for<O> OutS>
-    requires ycxx::detail::execution_policy<Ep> && std::indirectly_copyable<I, O>
-  std::ranges::in_out_result<I, O> operator()(Ep&&, I first, std::iter_difference_t<I> n, O result,
-                                              OutS result_last) const noexcept {
-    std::iter_difference_t<I> m = n < 0 ? 0 : n;
-    auto room = static_cast<std::iter_difference_t<I>>(result_last - result);
-    return static_cast<const Fn&>(*this)(std::move(first), room < m ? room : m, std::move(result));
+template <class _Fn>
+struct __ranges_par_algo<_Fn, par::kind::copy_n> : _Fn {
+  using _Fn::operator();
+  template <class _Ep_, std::random_access_iterator _Ip, std::random_access_iterator _Op, std::sized_sentinel_for<_Op> _OutS>
+    requires __ycxx::__detail::__execution_policy<_Ep_> && std::indirectly_copyable<_Ip, _Op>
+  std::ranges::in_out_result<_Ip, _Op> operator()(_Ep_&&, _Ip first, std::iter_difference_t<_Ip> n, _Op result,
+                                              _OutS __result_last) const noexcept {
+    std::iter_difference_t<_Ip> m = n < 0 ? 0 : n;
+    auto __room = static_cast<std::iter_difference_t<_Ip>>(__result_last - result);
+    return static_cast<const _Fn&>(*this)(std::move(first), __room < m ? __room : m, std::move(result));
   }
 };
 
 // [alg.copy]/19-25.
-template <class Fn>
-struct ranges_par_algo<Fn, par::kind::copy_if> : Fn {
-  using Fn::operator();
-  template <class Ep, std::random_access_iterator I, std::sized_sentinel_for<I> S, std::random_access_iterator O,
-            std::sized_sentinel_for<O> OutS, class Proj = std::identity,
-            std::indirect_unary_predicate<std::projected<I, Proj>> Pred>
-    requires ycxx::detail::execution_policy<Ep> && std::indirectly_copyable<I, O>
-  std::ranges::in_out_result<I, O> operator()(Ep&&, I first, S last, O result, OutS result_last, Pred pred,
-                                               Proj proj = {}) const noexcept {
-    return par::filter_copy(std::move(first), last, std::move(result), result_last, [&](const I& i) {
-      return bool(::ycxx::detail::invoke(pred, ::ycxx::detail::invoke(proj, *i)));
+template <class _Fn>
+struct __ranges_par_algo<_Fn, par::kind::copy_if> : _Fn {
+  using _Fn::operator();
+  template <class _Ep_, std::random_access_iterator _Ip, std::sized_sentinel_for<_Ip> _Sp, std::random_access_iterator _Op,
+            std::sized_sentinel_for<_Op> _OutS, class _Proj = std::identity,
+            std::indirect_unary_predicate<std::projected<_Ip, _Proj>> _Pred>
+    requires __ycxx::__detail::__execution_policy<_Ep_> && std::indirectly_copyable<_Ip, _Op>
+  std::ranges::in_out_result<_Ip, _Op> operator()(_Ep_&&, _Ip first, _Sp last, _Op result, _OutS __result_last, _Pred pred,
+                                               _Proj proj = {}) const noexcept {
+    return par::__filter_copy(std::move(first), last, std::move(result), __result_last, [&](const _Ip& i) {
+      return bool(::__ycxx::__detail::invoke(pred, ::__ycxx::__detail::invoke(proj, *i)));
     });
   }
-  template <class Ep, sized_random_access_range R, sized_random_access_range OutR, class Proj = std::identity,
-            std::indirect_unary_predicate<std::projected<std::ranges::iterator_t<R>, Proj>> Pred>
-    requires ycxx::detail::execution_policy<Ep> &&
-             std::indirectly_copyable<std::ranges::iterator_t<R>, std::ranges::iterator_t<OutR>>
-  std::ranges::in_out_result<std::ranges::borrowed_iterator_t<R>, std::ranges::borrowed_iterator_t<OutR>>
-  operator()(Ep&& exec, R&& r, OutR&& result_r, Pred pred, Proj proj = {}) const noexcept {
-    auto res = (*this)(exec, std::ranges::begin(r), std::ranges::end(r), std::ranges::begin(result_r),
-                       std::ranges::end(result_r), std::move(pred), std::move(proj));
-    return {par::borrowed<R>(std::move(res.in)), par::borrowed<OutR>(std::move(res.out))};
+  template <class _Ep_, __sized_random_access_range _Rp, __sized_random_access_range _OutR, class _Proj = std::identity,
+            std::indirect_unary_predicate<std::projected<std::ranges::iterator_t<_Rp>, _Proj>> _Pred>
+    requires __ycxx::__detail::__execution_policy<_Ep_> &&
+             std::indirectly_copyable<std::ranges::iterator_t<_Rp>, std::ranges::iterator_t<_OutR>>
+  std::ranges::in_out_result<std::ranges::borrowed_iterator_t<_Rp>, std::ranges::borrowed_iterator_t<_OutR>>
+  operator()(_Ep_&& __exec, _Rp&& r, _OutR&& __result_r, _Pred pred, _Proj proj = {}) const noexcept {
+    auto __res = (*this)(__exec, std::ranges::begin(r), std::ranges::end(r), std::ranges::begin(__result_r),
+                       std::ranges::end(__result_r), std::move(pred), std::move(proj));
+    return {par::__borrowed<_Rp>(std::move(__res.in)), par::__borrowed<_OutR>(std::move(__res.out))};
   }
 };
 
 // [alg.remove]/8-15.
-template <class Fn>
-struct ranges_par_algo<Fn, par::kind::remove_copy> : Fn {
-  using Fn::operator();
-  template <class Ep, std::random_access_iterator I, std::sized_sentinel_for<I> S, std::random_access_iterator O,
-            std::sized_sentinel_for<O> OutS, class Proj = std::identity, class T = std::projected_value_t<I, Proj>>
-    requires ycxx::detail::execution_policy<Ep> && std::indirectly_copyable<I, O> &&
-             std::indirect_binary_predicate<std::ranges::equal_to, std::projected<I, Proj>, const T*>
-  std::ranges::in_out_result<I, O> operator()(Ep&&, I first, S last, O result, OutS result_last, const T& value,
-                                                   Proj proj = {}) const noexcept {
-    return par::filter_copy(std::move(first), last, std::move(result), result_last,
-                            [&](const I& i) { return !bool(::ycxx::detail::invoke(proj, *i) == value); });
+template <class _Fn>
+struct __ranges_par_algo<_Fn, par::kind::remove_copy> : _Fn {
+  using _Fn::operator();
+  template <class _Ep_, std::random_access_iterator _Ip, std::sized_sentinel_for<_Ip> _Sp, std::random_access_iterator _Op,
+            std::sized_sentinel_for<_Op> _OutS, class _Proj = std::identity, class _Tp = std::projected_value_t<_Ip, _Proj>>
+    requires __ycxx::__detail::__execution_policy<_Ep_> && std::indirectly_copyable<_Ip, _Op> &&
+             std::indirect_binary_predicate<std::ranges::equal_to, std::projected<_Ip, _Proj>, const _Tp*>
+  std::ranges::in_out_result<_Ip, _Op> operator()(_Ep_&&, _Ip first, _Sp last, _Op result, _OutS __result_last, const _Tp& value,
+                                                   _Proj proj = {}) const noexcept {
+    return par::__filter_copy(std::move(first), last, std::move(result), __result_last,
+                            [&](const _Ip& i) { return !bool(::__ycxx::__detail::invoke(proj, *i) == value); });
   }
-  template <class Ep, sized_random_access_range R, sized_random_access_range OutR, class Proj = std::identity,
-            class T = std::projected_value_t<std::ranges::iterator_t<R>, Proj>>
-    requires ycxx::detail::execution_policy<Ep> &&
-             std::indirectly_copyable<std::ranges::iterator_t<R>, std::ranges::iterator_t<OutR>> &&
-             std::indirect_binary_predicate<std::ranges::equal_to, std::projected<std::ranges::iterator_t<R>, Proj>,
-                                            const T*>
-  std::ranges::in_out_result<std::ranges::borrowed_iterator_t<R>, std::ranges::borrowed_iterator_t<OutR>>
-  operator()(Ep&& exec, R&& r, OutR&& result_r, const T& value, Proj proj = {}) const noexcept {
-    auto res = (*this)(exec, std::ranges::begin(r), std::ranges::end(r), std::ranges::begin(result_r),
-                       std::ranges::end(result_r), value, std::move(proj));
-    return {par::borrowed<R>(std::move(res.in)), par::borrowed<OutR>(std::move(res.out))};
+  template <class _Ep_, __sized_random_access_range _Rp, __sized_random_access_range _OutR, class _Proj = std::identity,
+            class _Tp = std::projected_value_t<std::ranges::iterator_t<_Rp>, _Proj>>
+    requires __ycxx::__detail::__execution_policy<_Ep_> &&
+             std::indirectly_copyable<std::ranges::iterator_t<_Rp>, std::ranges::iterator_t<_OutR>> &&
+             std::indirect_binary_predicate<std::ranges::equal_to, std::projected<std::ranges::iterator_t<_Rp>, _Proj>,
+                                            const _Tp*>
+  std::ranges::in_out_result<std::ranges::borrowed_iterator_t<_Rp>, std::ranges::borrowed_iterator_t<_OutR>>
+  operator()(_Ep_&& __exec, _Rp&& r, _OutR&& __result_r, const _Tp& value, _Proj proj = {}) const noexcept {
+    auto __res = (*this)(__exec, std::ranges::begin(r), std::ranges::end(r), std::ranges::begin(__result_r),
+                       std::ranges::end(__result_r), value, std::move(proj));
+    return {par::__borrowed<_Rp>(std::move(__res.in)), par::__borrowed<_OutR>(std::move(__res.out))};
   }
 };
 
-template <class Fn>
-struct ranges_par_algo<Fn, par::kind::remove_copy_if> : Fn {
-  using Fn::operator();
-  template <class Ep, std::random_access_iterator I, std::sized_sentinel_for<I> S, std::random_access_iterator O,
-            std::sized_sentinel_for<O> OutS, class Proj = std::identity,
-            std::indirect_unary_predicate<std::projected<I, Proj>> Pred>
-    requires ycxx::detail::execution_policy<Ep> && std::indirectly_copyable<I, O>
-  std::ranges::in_out_result<I, O> operator()(Ep&&, I first, S last, O result, OutS result_last, Pred pred,
-                                                      Proj proj = {}) const noexcept {
-    return par::filter_copy(std::move(first), last, std::move(result), result_last, [&](const I& i) {
-      return !bool(::ycxx::detail::invoke(pred, ::ycxx::detail::invoke(proj, *i)));
+template <class _Fn>
+struct __ranges_par_algo<_Fn, par::kind::remove_copy_if> : _Fn {
+  using _Fn::operator();
+  template <class _Ep_, std::random_access_iterator _Ip, std::sized_sentinel_for<_Ip> _Sp, std::random_access_iterator _Op,
+            std::sized_sentinel_for<_Op> _OutS, class _Proj = std::identity,
+            std::indirect_unary_predicate<std::projected<_Ip, _Proj>> _Pred>
+    requires __ycxx::__detail::__execution_policy<_Ep_> && std::indirectly_copyable<_Ip, _Op>
+  std::ranges::in_out_result<_Ip, _Op> operator()(_Ep_&&, _Ip first, _Sp last, _Op result, _OutS __result_last, _Pred pred,
+                                                      _Proj proj = {}) const noexcept {
+    return par::__filter_copy(std::move(first), last, std::move(result), __result_last, [&](const _Ip& i) {
+      return !bool(::__ycxx::__detail::invoke(pred, ::__ycxx::__detail::invoke(proj, *i)));
     });
   }
-  template <class Ep, sized_random_access_range R, sized_random_access_range OutR, class Proj = std::identity,
-            std::indirect_unary_predicate<std::projected<std::ranges::iterator_t<R>, Proj>> Pred>
-    requires ycxx::detail::execution_policy<Ep> &&
-             std::indirectly_copyable<std::ranges::iterator_t<R>, std::ranges::iterator_t<OutR>>
-  std::ranges::in_out_result<std::ranges::borrowed_iterator_t<R>, std::ranges::borrowed_iterator_t<OutR>>
-  operator()(Ep&& exec, R&& r, OutR&& result_r, Pred pred, Proj proj = {}) const noexcept {
-    auto res = (*this)(exec, std::ranges::begin(r), std::ranges::end(r), std::ranges::begin(result_r),
-                       std::ranges::end(result_r), std::move(pred), std::move(proj));
-    return {par::borrowed<R>(std::move(res.in)), par::borrowed<OutR>(std::move(res.out))};
+  template <class _Ep_, __sized_random_access_range _Rp, __sized_random_access_range _OutR, class _Proj = std::identity,
+            std::indirect_unary_predicate<std::projected<std::ranges::iterator_t<_Rp>, _Proj>> _Pred>
+    requires __ycxx::__detail::__execution_policy<_Ep_> &&
+             std::indirectly_copyable<std::ranges::iterator_t<_Rp>, std::ranges::iterator_t<_OutR>>
+  std::ranges::in_out_result<std::ranges::borrowed_iterator_t<_Rp>, std::ranges::borrowed_iterator_t<_OutR>>
+  operator()(_Ep_&& __exec, _Rp&& r, _OutR&& __result_r, _Pred pred, _Proj proj = {}) const noexcept {
+    auto __res = (*this)(__exec, std::ranges::begin(r), std::ranges::end(r), std::ranges::begin(__result_r),
+                       std::ranges::end(__result_r), std::move(pred), std::move(proj));
+    return {par::__borrowed<_Rp>(std::move(__res.in)), par::__borrowed<_OutR>(std::move(__res.out))};
   }
 };
 
 // [alg.unique]/6-12: element i (other than the first) is not copied when it is equivalent to
 // the element before it in the input.
-template <class Fn>
-struct ranges_par_algo<Fn, par::kind::unique_copy> : Fn {
-  using Fn::operator();
-  template <class Ep, std::random_access_iterator I, std::sized_sentinel_for<I> S, std::random_access_iterator O,
-            std::sized_sentinel_for<O> OutS, class Proj = std::identity,
-            std::indirect_equivalence_relation<std::projected<I, Proj>> C = std::ranges::equal_to>
-    requires ycxx::detail::execution_policy<Ep> && std::indirectly_copyable<I, O>
-  std::ranges::in_out_result<I, O> operator()(Ep&&, I first, S last, O result, OutS result_last, C comp = {},
-                                                   Proj proj = {}) const noexcept {
-    const I start = first;
-    return par::filter_copy(std::move(first), last, std::move(result), result_last, [&](const I& i) {
-      return i == start || !bool(::ycxx::detail::invoke(comp, ::ycxx::detail::invoke(proj, *(i - 1)),
-                                                         ::ycxx::detail::invoke(proj, *i)));
+template <class _Fn>
+struct __ranges_par_algo<_Fn, par::kind::unique_copy> : _Fn {
+  using _Fn::operator();
+  template <class _Ep_, std::random_access_iterator _Ip, std::sized_sentinel_for<_Ip> _Sp, std::random_access_iterator _Op,
+            std::sized_sentinel_for<_Op> _OutS, class _Proj = std::identity,
+            std::indirect_equivalence_relation<std::projected<_Ip, _Proj>> _Cp = std::ranges::equal_to>
+    requires __ycxx::__detail::__execution_policy<_Ep_> && std::indirectly_copyable<_Ip, _Op>
+  std::ranges::in_out_result<_Ip, _Op> operator()(_Ep_&&, _Ip first, _Sp last, _Op result, _OutS __result_last, _Cp comp = {},
+                                                   _Proj proj = {}) const noexcept {
+    const _Ip start = first;
+    return par::__filter_copy(std::move(first), last, std::move(result), __result_last, [&](const _Ip& i) {
+      return i == start || !bool(::__ycxx::__detail::invoke(comp, ::__ycxx::__detail::invoke(proj, *(i - 1)),
+                                                         ::__ycxx::__detail::invoke(proj, *i)));
     });
   }
-  template <class Ep, sized_random_access_range R, sized_random_access_range OutR, class Proj = std::identity,
-            std::indirect_equivalence_relation<std::projected<std::ranges::iterator_t<R>, Proj>> C = std::ranges::equal_to>
-    requires ycxx::detail::execution_policy<Ep> &&
-             std::indirectly_copyable<std::ranges::iterator_t<R>, std::ranges::iterator_t<OutR>>
-  std::ranges::in_out_result<std::ranges::borrowed_iterator_t<R>, std::ranges::borrowed_iterator_t<OutR>>
-  operator()(Ep&& exec, R&& r, OutR&& result_r, C comp = {}, Proj proj = {}) const noexcept {
-    auto res = (*this)(exec, std::ranges::begin(r), std::ranges::end(r), std::ranges::begin(result_r),
-                       std::ranges::end(result_r), std::move(comp), std::move(proj));
-    return {par::borrowed<R>(std::move(res.in)), par::borrowed<OutR>(std::move(res.out))};
+  template <class _Ep_, __sized_random_access_range _Rp, __sized_random_access_range _OutR, class _Proj = std::identity,
+            std::indirect_equivalence_relation<std::projected<std::ranges::iterator_t<_Rp>, _Proj>> _Cp = std::ranges::equal_to>
+    requires __ycxx::__detail::__execution_policy<_Ep_> &&
+             std::indirectly_copyable<std::ranges::iterator_t<_Rp>, std::ranges::iterator_t<_OutR>>
+  std::ranges::in_out_result<std::ranges::borrowed_iterator_t<_Rp>, std::ranges::borrowed_iterator_t<_OutR>>
+  operator()(_Ep_&& __exec, _Rp&& r, _OutR&& __result_r, _Cp comp = {}, _Proj proj = {}) const noexcept {
+    auto __res = (*this)(__exec, std::ranges::begin(r), std::ranges::end(r), std::ranges::begin(__result_r),
+                       std::ranges::end(__result_r), std::move(comp), std::move(proj));
+    return {par::__borrowed<_Rp>(std::move(__res.in)), par::__borrowed<_OutR>(std::move(__res.out))};
   }
 };
 
 // [alg.transform]: N = min(M, result_last - result).
-template <class Fn>
-struct ranges_par_algo<Fn, par::kind::transform> : Fn {
-  using Fn::operator();
-  template <class Ep, std::random_access_iterator I, std::sized_sentinel_for<I> S, std::random_access_iterator O,
-            std::sized_sentinel_for<O> OutS, std::copy_constructible F, class Proj = std::identity>
-    requires ycxx::detail::execution_policy<Ep> &&
-             std::indirectly_writable<O, std::indirect_result_t<F&, std::projected<I, Proj>>>
-  std::ranges::in_out_result<I, O> operator()(Ep&&, I first1, S last1, O result, OutS result_last, F op,
-                                                       Proj proj = {}) const noexcept {
-    auto n = par::min_of<std::iter_difference_t<I>>(last1 - first1,
-                                                         static_cast<std::iter_difference_t<I>>(result_last - result));
-    return static_cast<const Fn&>(*this)(first1, first1 + n, std::move(result), std::move(op), std::move(proj));
+template <class _Fn>
+struct __ranges_par_algo<_Fn, par::kind::transform> : _Fn {
+  using _Fn::operator();
+  template <class _Ep_, std::random_access_iterator _Ip, std::sized_sentinel_for<_Ip> _Sp, std::random_access_iterator _Op,
+            std::sized_sentinel_for<_Op> _OutS, std::copy_constructible _Fp, class _Proj = std::identity>
+    requires __ycxx::__detail::__execution_policy<_Ep_> &&
+             std::indirectly_writable<_Op, std::indirect_result_t<_Fp&, std::projected<_Ip, _Proj>>>
+  std::ranges::in_out_result<_Ip, _Op> operator()(_Ep_&&, _Ip __first1, _Sp __last1, _Op result, _OutS __result_last, _Fp op,
+                                                       _Proj proj = {}) const noexcept {
+    auto n = par::__min_of<std::iter_difference_t<_Ip>>(__last1 - __first1,
+                                                         static_cast<std::iter_difference_t<_Ip>>(__result_last - result));
+    return static_cast<const _Fn&>(*this)(__first1, __first1 + n, std::move(result), std::move(op), std::move(proj));
   }
-  template <class Ep, sized_random_access_range R, sized_random_access_range OutR, std::copy_constructible F,
-            class Proj = std::identity>
-    requires ycxx::detail::execution_policy<Ep> &&
-             std::indirectly_writable<std::ranges::iterator_t<OutR>,
-                                      std::indirect_result_t<F&, std::projected<std::ranges::iterator_t<R>, Proj>>>
-  std::ranges::in_out_result<std::ranges::borrowed_iterator_t<R>, std::ranges::borrowed_iterator_t<OutR>>
-  operator()(Ep&& exec, R&& r, OutR&& result_r, F op, Proj proj = {}) const noexcept {
-    auto res = (*this)(exec, std::ranges::begin(r), std::ranges::end(r), std::ranges::begin(result_r),
-                       std::ranges::end(result_r), std::move(op), std::move(proj));
-    return {par::borrowed<R>(std::move(res.in)), par::borrowed<OutR>(std::move(res.out))};
+  template <class _Ep_, __sized_random_access_range _Rp, __sized_random_access_range _OutR, std::copy_constructible _Fp,
+            class _Proj = std::identity>
+    requires __ycxx::__detail::__execution_policy<_Ep_> &&
+             std::indirectly_writable<std::ranges::iterator_t<_OutR>,
+                                      std::indirect_result_t<_Fp&, std::projected<std::ranges::iterator_t<_Rp>, _Proj>>>
+  std::ranges::in_out_result<std::ranges::borrowed_iterator_t<_Rp>, std::ranges::borrowed_iterator_t<_OutR>>
+  operator()(_Ep_&& __exec, _Rp&& r, _OutR&& __result_r, _Fp op, _Proj proj = {}) const noexcept {
+    auto __res = (*this)(__exec, std::ranges::begin(r), std::ranges::end(r), std::ranges::begin(__result_r),
+                       std::ranges::end(__result_r), std::move(op), std::move(proj));
+    return {par::__borrowed<_Rp>(std::move(__res.in)), par::__borrowed<_OutR>(std::move(__res.out))};
   }
-  template <class Ep, std::random_access_iterator I1, std::sized_sentinel_for<I1> S1, std::random_access_iterator I2,
-            std::sized_sentinel_for<I2> S2, std::random_access_iterator O, std::sized_sentinel_for<O> OutS,
-            std::copy_constructible F, class Proj1 = std::identity, class Proj2 = std::identity>
-    requires ycxx::detail::execution_policy<Ep> &&
-             std::indirectly_writable<O,
-             std::indirect_result_t<F&, std::projected<I1, Proj1>, std::projected<I2, Proj2>>>
-  std::ranges::in_in_out_result<I1, I2, O> operator()(Ep&&, I1 first1, S1 last1, I2 first2, S2 last2, O result,
-                                                             OutS result_last, F binary_op, Proj1 proj1 = {},
-                                                             Proj2 proj2 = {}) const noexcept {
-    using D = std::common_type_t<std::iter_difference_t<I1>, std::iter_difference_t<I2>, std::iter_difference_t<O>>;
-    D n = par::min_of<D>(par::min_of<D>(D(last1 - first1), D(last2 - first2)), D(result_last - result));
-    return static_cast<const Fn&>(*this)(first1, first1 + std::iter_difference_t<I1>(n), first2,
-                                         first2 + std::iter_difference_t<I2>(n), std::move(result), std::move(binary_op),
-                                         std::move(proj1), std::move(proj2));
+  template <class _Ep_, std::random_access_iterator _I1, std::sized_sentinel_for<_I1> _S1, std::random_access_iterator _I2,
+            std::sized_sentinel_for<_I2> _S2, std::random_access_iterator _Op, std::sized_sentinel_for<_Op> _OutS,
+            std::copy_constructible _Fp, class _Proj1 = std::identity, class _Proj2 = std::identity>
+    requires __ycxx::__detail::__execution_policy<_Ep_> &&
+             std::indirectly_writable<_Op,
+             std::indirect_result_t<_Fp&, std::projected<_I1, _Proj1>, std::projected<_I2, _Proj2>>>
+  std::ranges::in_in_out_result<_I1, _I2, _Op> operator()(_Ep_&&, _I1 __first1, _S1 __last1, _I2 __first2, _S2 __last2, _Op result,
+                                                             _OutS __result_last, _Fp __binary_op, _Proj1 __proj1 = {},
+                                                             _Proj2 __proj2 = {}) const noexcept {
+    using _Dp = std::common_type_t<std::iter_difference_t<_I1>, std::iter_difference_t<_I2>, std::iter_difference_t<_Op>>;
+    _Dp n = par::__min_of<_Dp>(par::__min_of<_Dp>(_Dp(__last1 - __first1), _Dp(__last2 - __first2)), _Dp(__result_last - result));
+    return static_cast<const _Fn&>(*this)(__first1, __first1 + std::iter_difference_t<_I1>(n), __first2,
+                                         __first2 + std::iter_difference_t<_I2>(n), std::move(result), std::move(__binary_op),
+                                         std::move(__proj1), std::move(__proj2));
   }
-  template <class Ep, sized_random_access_range R1, sized_random_access_range R2, sized_random_access_range OutR,
-            std::copy_constructible F, class Proj1 = std::identity, class Proj2 = std::identity>
-    requires ycxx::detail::execution_policy<Ep> &&
-             std::indirectly_writable<std::ranges::iterator_t<OutR>,
-                                      std::indirect_result_t<F&, std::projected<std::ranges::iterator_t<R1>, Proj1>,
-                                                             std::projected<std::ranges::iterator_t<R2>, Proj2>>>
-  std::ranges::in_in_out_result<std::ranges::borrowed_iterator_t<R1>, std::ranges::borrowed_iterator_t<R2>,
-                                       std::ranges::borrowed_iterator_t<OutR>>
-  operator()(Ep&& exec, R1&& r1, R2&& r2, OutR&& result_r, F binary_op, Proj1 proj1 = {},
-             Proj2 proj2 = {}) const noexcept {
-    auto res = (*this)(exec, std::ranges::begin(r1), std::ranges::end(r1), std::ranges::begin(r2), std::ranges::end(r2),
-                       std::ranges::begin(result_r), std::ranges::end(result_r), std::move(binary_op), std::move(proj1),
-                       std::move(proj2));
-    return {par::borrowed<R1>(std::move(res.in1)), par::borrowed<R2>(std::move(res.in2)),
-            par::borrowed<OutR>(std::move(res.out))};
+  template <class _Ep_, __sized_random_access_range _R1, __sized_random_access_range _R2, __sized_random_access_range _OutR,
+            std::copy_constructible _Fp, class _Proj1 = std::identity, class _Proj2 = std::identity>
+    requires __ycxx::__detail::__execution_policy<_Ep_> &&
+             std::indirectly_writable<std::ranges::iterator_t<_OutR>,
+                                      std::indirect_result_t<_Fp&, std::projected<std::ranges::iterator_t<_R1>, _Proj1>,
+                                                             std::projected<std::ranges::iterator_t<_R2>, _Proj2>>>
+  std::ranges::in_in_out_result<std::ranges::borrowed_iterator_t<_R1>, std::ranges::borrowed_iterator_t<_R2>,
+                                       std::ranges::borrowed_iterator_t<_OutR>>
+  operator()(_Ep_&& __exec, _R1&& __r1, _R2&& __r2, _OutR&& __result_r, _Fp __binary_op, _Proj1 __proj1 = {},
+             _Proj2 __proj2 = {}) const noexcept {
+    auto __res = (*this)(__exec, std::ranges::begin(__r1), std::ranges::end(__r1), std::ranges::begin(__r2), std::ranges::end(__r2),
+                       std::ranges::begin(__result_r), std::ranges::end(__result_r), std::move(__binary_op), std::move(__proj1),
+                       std::move(__proj2));
+    return {par::__borrowed<_R1>(std::move(__res.in1)), par::__borrowed<_R2>(std::move(__res.in2)),
+            par::__borrowed<_OutR>(std::move(__res.out))};
   }
 };
 
 // [alg.replace]/7-12: N = min(last - first, result_last - result).
-template <class Fn>
-struct ranges_par_algo<Fn, par::kind::replace_copy> : Fn {
-  using Fn::operator();
-  template <class Ep, std::random_access_iterator I, std::sized_sentinel_for<I> S, std::random_access_iterator O,
-            std::sized_sentinel_for<O> OutS, class Proj = std::identity, class T1 = std::projected_value_t<I, Proj>,
-            class T2 = std::iter_value_t<O>>
-    requires ycxx::detail::execution_policy<Ep> && std::indirectly_copyable<I, O> &&
-             std::indirect_binary_predicate<std::ranges::equal_to, std::projected<I, Proj>, const T1*> &&
-             std::indirectly_writable<O, const T2&>
-  std::ranges::in_out_result<I, O> operator()(Ep&&, I first, S last, O result, OutS result_last,
-                                                    const T1& old_value, const T2& new_value,
-                                                    Proj proj = {}) const noexcept {
-    auto n = par::min_of<std::iter_difference_t<I>>(last - first,
-                                                         static_cast<std::iter_difference_t<I>>(result_last - result));
-    return static_cast<const Fn&>(*this)(first, first + n, std::move(result), old_value, new_value, std::move(proj));
+template <class _Fn>
+struct __ranges_par_algo<_Fn, par::kind::replace_copy> : _Fn {
+  using _Fn::operator();
+  template <class _Ep_, std::random_access_iterator _Ip, std::sized_sentinel_for<_Ip> _Sp, std::random_access_iterator _Op,
+            std::sized_sentinel_for<_Op> _OutS, class _Proj = std::identity, class _T1 = std::projected_value_t<_Ip, _Proj>,
+            class _T2 = std::iter_value_t<_Op>>
+    requires __ycxx::__detail::__execution_policy<_Ep_> && std::indirectly_copyable<_Ip, _Op> &&
+             std::indirect_binary_predicate<std::ranges::equal_to, std::projected<_Ip, _Proj>, const _T1*> &&
+             std::indirectly_writable<_Op, const _T2&>
+  std::ranges::in_out_result<_Ip, _Op> operator()(_Ep_&&, _Ip first, _Sp last, _Op result, _OutS __result_last,
+                                                    const _T1& __old_value, const _T2& __new_value,
+                                                    _Proj proj = {}) const noexcept {
+    auto n = par::__min_of<std::iter_difference_t<_Ip>>(last - first,
+                                                         static_cast<std::iter_difference_t<_Ip>>(__result_last - result));
+    return static_cast<const _Fn&>(*this)(first, first + n, std::move(result), __old_value, __new_value, std::move(proj));
   }
-  template <class Ep, sized_random_access_range R, sized_random_access_range OutR, class Proj = std::identity,
-            class T1 = std::projected_value_t<std::ranges::iterator_t<R>, Proj>,
-            class T2 = std::ranges::range_value_t<OutR>>
-    requires ycxx::detail::execution_policy<Ep> &&
-             std::indirectly_copyable<std::ranges::iterator_t<R>, std::ranges::iterator_t<OutR>> &&
-             std::indirect_binary_predicate<std::ranges::equal_to, std::projected<std::ranges::iterator_t<R>, Proj>,
-                                            const T1*> &&
-             std::indirectly_writable<std::ranges::iterator_t<OutR>, const T2&>
-  std::ranges::in_out_result<std::ranges::borrowed_iterator_t<R>, std::ranges::borrowed_iterator_t<OutR>>
-  operator()(Ep&& exec, R&& r, OutR&& result_r, const T1& old_value, const T2& new_value,
-             Proj proj = {}) const noexcept {
-    auto res = (*this)(exec, std::ranges::begin(r), std::ranges::end(r), std::ranges::begin(result_r),
-                       std::ranges::end(result_r), old_value, new_value, std::move(proj));
-    return {par::borrowed<R>(std::move(res.in)), par::borrowed<OutR>(std::move(res.out))};
+  template <class _Ep_, __sized_random_access_range _Rp, __sized_random_access_range _OutR, class _Proj = std::identity,
+            class _T1 = std::projected_value_t<std::ranges::iterator_t<_Rp>, _Proj>,
+            class _T2 = std::ranges::range_value_t<_OutR>>
+    requires __ycxx::__detail::__execution_policy<_Ep_> &&
+             std::indirectly_copyable<std::ranges::iterator_t<_Rp>, std::ranges::iterator_t<_OutR>> &&
+             std::indirect_binary_predicate<std::ranges::equal_to, std::projected<std::ranges::iterator_t<_Rp>, _Proj>,
+                                            const _T1*> &&
+             std::indirectly_writable<std::ranges::iterator_t<_OutR>, const _T2&>
+  std::ranges::in_out_result<std::ranges::borrowed_iterator_t<_Rp>, std::ranges::borrowed_iterator_t<_OutR>>
+  operator()(_Ep_&& __exec, _Rp&& r, _OutR&& __result_r, const _T1& __old_value, const _T2& __new_value,
+             _Proj proj = {}) const noexcept {
+    auto __res = (*this)(__exec, std::ranges::begin(r), std::ranges::end(r), std::ranges::begin(__result_r),
+                       std::ranges::end(__result_r), __old_value, __new_value, std::move(proj));
+    return {par::__borrowed<_Rp>(std::move(__res.in)), par::__borrowed<_OutR>(std::move(__res.out))};
   }
 };
 
-template <class Fn>
-struct ranges_par_algo<Fn, par::kind::replace_copy_if> : Fn {
-  using Fn::operator();
-  template <class Ep, std::random_access_iterator I, std::sized_sentinel_for<I> S, std::random_access_iterator O,
-            std::sized_sentinel_for<O> OutS, class T = std::iter_value_t<O>, class Proj = std::identity,
-            std::indirect_unary_predicate<std::projected<I, Proj>> Pred>
-    requires ycxx::detail::execution_policy<Ep> && std::indirectly_copyable<I, O> &&
-             std::indirectly_writable<O, const T&>
-  std::ranges::in_out_result<I, O> operator()(Ep&&, I first, S last, O result, OutS result_last, Pred pred,
-                                                       const T& new_value, Proj proj = {}) const noexcept {
-    auto n = par::min_of<std::iter_difference_t<I>>(last - first,
-                                                         static_cast<std::iter_difference_t<I>>(result_last - result));
-    return static_cast<const Fn&>(*this)(first, first + n, std::move(result), std::move(pred), new_value,
+template <class _Fn>
+struct __ranges_par_algo<_Fn, par::kind::replace_copy_if> : _Fn {
+  using _Fn::operator();
+  template <class _Ep_, std::random_access_iterator _Ip, std::sized_sentinel_for<_Ip> _Sp, std::random_access_iterator _Op,
+            std::sized_sentinel_for<_Op> _OutS, class _Tp = std::iter_value_t<_Op>, class _Proj = std::identity,
+            std::indirect_unary_predicate<std::projected<_Ip, _Proj>> _Pred>
+    requires __ycxx::__detail::__execution_policy<_Ep_> && std::indirectly_copyable<_Ip, _Op> &&
+             std::indirectly_writable<_Op, const _Tp&>
+  std::ranges::in_out_result<_Ip, _Op> operator()(_Ep_&&, _Ip first, _Sp last, _Op result, _OutS __result_last, _Pred pred,
+                                                       const _Tp& __new_value, _Proj proj = {}) const noexcept {
+    auto n = par::__min_of<std::iter_difference_t<_Ip>>(last - first,
+                                                         static_cast<std::iter_difference_t<_Ip>>(__result_last - result));
+    return static_cast<const _Fn&>(*this)(first, first + n, std::move(result), std::move(pred), __new_value,
                                          std::move(proj));
   }
-  template <class Ep, sized_random_access_range R, sized_random_access_range OutR,
-            class T = std::ranges::range_value_t<OutR>, class Proj = std::identity,
-            std::indirect_unary_predicate<std::projected<std::ranges::iterator_t<R>, Proj>> Pred>
-    requires ycxx::detail::execution_policy<Ep> &&
-             std::indirectly_copyable<std::ranges::iterator_t<R>, std::ranges::iterator_t<OutR>> &&
-             std::indirectly_writable<std::ranges::iterator_t<OutR>, const T&>
-  std::ranges::in_out_result<std::ranges::borrowed_iterator_t<R>, std::ranges::borrowed_iterator_t<OutR>>
-  operator()(Ep&& exec, R&& r, OutR&& result_r, Pred pred, const T& new_value, Proj proj = {}) const noexcept {
-    auto res = (*this)(exec, std::ranges::begin(r), std::ranges::end(r), std::ranges::begin(result_r),
-                       std::ranges::end(result_r), std::move(pred), new_value, std::move(proj));
-    return {par::borrowed<R>(std::move(res.in)), par::borrowed<OutR>(std::move(res.out))};
+  template <class _Ep_, __sized_random_access_range _Rp, __sized_random_access_range _OutR,
+            class _Tp = std::ranges::range_value_t<_OutR>, class _Proj = std::identity,
+            std::indirect_unary_predicate<std::projected<std::ranges::iterator_t<_Rp>, _Proj>> _Pred>
+    requires __ycxx::__detail::__execution_policy<_Ep_> &&
+             std::indirectly_copyable<std::ranges::iterator_t<_Rp>, std::ranges::iterator_t<_OutR>> &&
+             std::indirectly_writable<std::ranges::iterator_t<_OutR>, const _Tp&>
+  std::ranges::in_out_result<std::ranges::borrowed_iterator_t<_Rp>, std::ranges::borrowed_iterator_t<_OutR>>
+  operator()(_Ep_&& __exec, _Rp&& r, _OutR&& __result_r, _Pred pred, const _Tp& __new_value, _Proj proj = {}) const noexcept {
+    auto __res = (*this)(__exec, std::ranges::begin(r), std::ranges::end(r), std::ranges::begin(__result_r),
+                       std::ranges::end(__result_r), std::move(pred), __new_value, std::move(proj));
+    return {par::__borrowed<_Rp>(std::move(__res.in)), par::__borrowed<_OutR>(std::move(__res.out))};
   }
 };
 
 // [alg.reverse]/10-14: the last N elements, reversed.
-template <class Fn>
-struct ranges_par_algo<Fn, par::kind::reverse_copy> : Fn {
-  using Fn::operator();
-  template <class Ep, std::random_access_iterator I, std::sized_sentinel_for<I> S, std::random_access_iterator O,
-            std::sized_sentinel_for<O> OutS>
-    requires ycxx::detail::execution_policy<Ep> && std::indirectly_copyable<I, O>
-  std::ranges::reverse_copy_truncated_result<I, O> operator()(Ep&&, I first, S last, O result,
-                                                              OutS result_last) const noexcept {
-    auto n = par::min_of<std::iter_difference_t<I>>(last - first,
-                                                         static_cast<std::iter_difference_t<I>>(result_last - result));
-    I end = par::end_iter(first, last);
-    I new_first = end - n;
-    auto res = static_cast<const Fn&>(*this)(new_first, end, std::move(result));
-    return {std::move(end), std::move(new_first), std::move(res.out)};
+template <class _Fn>
+struct __ranges_par_algo<_Fn, par::kind::reverse_copy> : _Fn {
+  using _Fn::operator();
+  template <class _Ep_, std::random_access_iterator _Ip, std::sized_sentinel_for<_Ip> _Sp, std::random_access_iterator _Op,
+            std::sized_sentinel_for<_Op> _OutS>
+    requires __ycxx::__detail::__execution_policy<_Ep_> && std::indirectly_copyable<_Ip, _Op>
+  std::ranges::reverse_copy_truncated_result<_Ip, _Op> operator()(_Ep_&&, _Ip first, _Sp last, _Op result,
+                                                              _OutS __result_last) const noexcept {
+    auto n = par::__min_of<std::iter_difference_t<_Ip>>(last - first,
+                                                         static_cast<std::iter_difference_t<_Ip>>(__result_last - result));
+    _Ip end = par::__end_iter(first, last);
+    _Ip __new_first = end - n;
+    auto __res = static_cast<const _Fn&>(*this)(__new_first, end, std::move(result));
+    return {std::move(end), std::move(__new_first), std::move(__res.out)};
   }
-  template <class Ep, sized_random_access_range R, sized_random_access_range OutR>
-    requires ycxx::detail::execution_policy<Ep> &&
-             std::indirectly_copyable<std::ranges::iterator_t<R>, std::ranges::iterator_t<OutR>>
-  std::ranges::reverse_copy_truncated_result<std::ranges::borrowed_iterator_t<R>,
-  std::ranges::borrowed_iterator_t<OutR>>
-  operator()(Ep&& exec, R&& r, OutR&& result_r) const noexcept {
-    auto res = (*this)(exec, std::ranges::begin(r), std::ranges::end(r), std::ranges::begin(result_r),
-                       std::ranges::end(result_r));
-    return {par::borrowed<R>(std::move(res.in1)), par::borrowed<R>(std::move(res.in2)),
-            par::borrowed<OutR>(std::move(res.out))};
+  template <class _Ep_, __sized_random_access_range _Rp, __sized_random_access_range _OutR>
+    requires __ycxx::__detail::__execution_policy<_Ep_> &&
+             std::indirectly_copyable<std::ranges::iterator_t<_Rp>, std::ranges::iterator_t<_OutR>>
+  std::ranges::reverse_copy_truncated_result<std::ranges::borrowed_iterator_t<_Rp>,
+  std::ranges::borrowed_iterator_t<_OutR>>
+  operator()(_Ep_&& __exec, _Rp&& r, _OutR&& __result_r) const noexcept {
+    auto __res = (*this)(__exec, std::ranges::begin(r), std::ranges::end(r), std::ranges::begin(__result_r),
+                       std::ranges::end(__result_r));
+    return {par::__borrowed<_Rp>(std::move(__res.in1)), par::__borrowed<_Rp>(std::move(__res.in2)),
+            par::__borrowed<_OutR>(std::move(__res.out))};
   }
 };
 
 // [alg.rotate]/12-18.
-template <class Fn>
-struct ranges_par_algo<Fn, par::kind::rotate_copy> : Fn {
-  using Fn::operator();
-  template <class Ep, std::random_access_iterator I, std::sized_sentinel_for<I> S, std::random_access_iterator O,
-            std::sized_sentinel_for<O> OutS>
-    requires ycxx::detail::execution_policy<Ep> && std::indirectly_copyable<I, O>
-  std::ranges::rotate_copy_truncated_result<I, O> operator()(Ep&&, I first, I middle, S last, O result,
-                                                             OutS result_last) const noexcept {
-    using D = std::iter_difference_t<I>;
-    const D m = last - first;
-    const D n = par::min_of<D>(m, static_cast<D>(result_last - result));
-    const I end = par::end_iter(first, last);
-    const D tail = end - middle;
-    if (n < tail) {
-      for (D i = 0; i < n; ++i, (void)++result)
-        *result = *(middle + i);
-      return {middle + n, std::move(first), std::move(result)};
+template <class _Fn>
+struct __ranges_par_algo<_Fn, par::kind::rotate_copy> : _Fn {
+  using _Fn::operator();
+  template <class _Ep_, std::random_access_iterator _Ip, std::sized_sentinel_for<_Ip> _Sp, std::random_access_iterator _Op,
+            std::sized_sentinel_for<_Op> _OutS>
+    requires __ycxx::__detail::__execution_policy<_Ep_> && std::indirectly_copyable<_Ip, _Op>
+  std::ranges::rotate_copy_truncated_result<_Ip, _Op> operator()(_Ep_&&, _Ip first, _Ip __middle, _Sp last, _Op result,
+                                                             _OutS __result_last) const noexcept {
+    using _Dp = std::iter_difference_t<_Ip>;
+    const _Dp m = last - first;
+    const _Dp n = par::__min_of<_Dp>(m, static_cast<_Dp>(__result_last - result));
+    const _Ip end = par::__end_iter(first, last);
+    const _Dp __tail = end - __middle;
+    if (n < __tail) {
+      for (_Dp i = 0; i < n; ++i, (void)++result)
+        *result = *(__middle + i);
+      return {__middle + n, std::move(first), std::move(result)};
     }
-    for (I i = middle; i != end; ++i, (void)++result)
+    for (_Ip i = __middle; i != end; ++i, (void)++result)
       *result = *i;
-    for (D i = 0; i < n - tail; ++i, (void)++result)
+    for (_Dp i = 0; i < n - __tail; ++i, (void)++result)
       *result = *(first + i);
-    return {end, first + (m == 0 ? 0 : (n + (middle - first)) % m), std::move(result)};
+    return {end, first + (m == 0 ? 0 : (n + (__middle - first)) % m), std::move(result)};
   }
-  template <class Ep, sized_random_access_range R, sized_random_access_range OutR>
-    requires ycxx::detail::execution_policy<Ep> &&
-             std::indirectly_copyable<std::ranges::iterator_t<R>, std::ranges::iterator_t<OutR>>
-  std::ranges::rotate_copy_truncated_result<std::ranges::borrowed_iterator_t<R>, std::ranges::borrowed_iterator_t<OutR>>
-  operator()(Ep&& exec, R&& r, std::ranges::iterator_t<R> middle, OutR&& result_r) const noexcept {
-    auto res = (*this)(exec, std::ranges::begin(r), std::move(middle), std::ranges::end(r),
-                       std::ranges::begin(result_r),
-                       std::ranges::end(result_r));
-    return {par::borrowed<R>(std::move(res.in1)), par::borrowed<R>(std::move(res.in2)),
-            par::borrowed<OutR>(std::move(res.out))};
+  template <class _Ep_, __sized_random_access_range _Rp, __sized_random_access_range _OutR>
+    requires __ycxx::__detail::__execution_policy<_Ep_> &&
+             std::indirectly_copyable<std::ranges::iterator_t<_Rp>, std::ranges::iterator_t<_OutR>>
+  std::ranges::rotate_copy_truncated_result<std::ranges::borrowed_iterator_t<_Rp>, std::ranges::borrowed_iterator_t<_OutR>>
+  operator()(_Ep_&& __exec, _Rp&& r, std::ranges::iterator_t<_Rp> __middle, _OutR&& __result_r) const noexcept {
+    auto __res = (*this)(__exec, std::ranges::begin(r), std::move(__middle), std::ranges::end(r),
+                       std::ranges::begin(__result_r),
+                       std::ranges::end(__result_r));
+    return {par::__borrowed<_Rp>(std::move(__res.in1)), par::__borrowed<_Rp>(std::move(__res.in2)),
+            par::__borrowed<_OutR>(std::move(__res.out))};
   }
 };
 
 // [alg.partitions]/14-22: stops at the first element whose output range is full.
-template <class Fn>
-struct ranges_par_algo<Fn, par::kind::partition_copy> : Fn {
-  using Fn::operator();
-  template <class Ep, std::random_access_iterator I, std::sized_sentinel_for<I> S, std::random_access_iterator O1,
-            std::sized_sentinel_for<O1> OutS1, std::random_access_iterator O2, std::sized_sentinel_for<O2> OutS2,
-            class Proj = std::identity, std::indirect_unary_predicate<std::projected<I, Proj>> Pred>
-    requires ycxx::detail::execution_policy<Ep> && std::indirectly_copyable<I, O1> && std::indirectly_copyable<I, O2>
-  std::ranges::in_out_out_result<I, O1, O2> operator()(Ep&&, I first, S last, O1 out_true, OutS1 last_true,
-                                                           O2 out_false, OutS2 last_false, Pred pred,
-                                                           Proj proj = {}) const noexcept {
+template <class _Fn>
+struct __ranges_par_algo<_Fn, par::kind::partition_copy> : _Fn {
+  using _Fn::operator();
+  template <class _Ep_, std::random_access_iterator _Ip, std::sized_sentinel_for<_Ip> _Sp, std::random_access_iterator _O1,
+            std::sized_sentinel_for<_O1> _OutS1, std::random_access_iterator _O2, std::sized_sentinel_for<_O2> _OutS2,
+            class _Proj = std::identity, std::indirect_unary_predicate<std::projected<_Ip, _Proj>> _Pred>
+    requires __ycxx::__detail::__execution_policy<_Ep_> && std::indirectly_copyable<_Ip, _O1> && std::indirectly_copyable<_Ip, _O2>
+  std::ranges::in_out_out_result<_Ip, _O1, _O2> operator()(_Ep_&&, _Ip first, _Sp last, _O1 __out_true, _OutS1 __last_true,
+                                                           _O2 __out_false, _OutS2 __last_false, _Pred pred,
+                                                           _Proj proj = {}) const noexcept {
     for (; first != last; ++first) {
-      if (::ycxx::detail::invoke(pred, ::ycxx::detail::invoke(proj, *first))) {
-        if (out_true == last_true)
+      if (::__ycxx::__detail::invoke(pred, ::__ycxx::__detail::invoke(proj, *first))) {
+        if (__out_true == __last_true)
           break;
-        *out_true = *first;
-        ++out_true;
+        *__out_true = *first;
+        ++__out_true;
       } else {
-        if (out_false == last_false)
+        if (__out_false == __last_false)
           break;
-        *out_false = *first;
-        ++out_false;
+        *__out_false = *first;
+        ++__out_false;
       }
     }
-    return {std::move(first), std::move(out_true), std::move(out_false)};
+    return {std::move(first), std::move(__out_true), std::move(__out_false)};
   }
-  template <class Ep, sized_random_access_range R, sized_random_access_range OutR1, sized_random_access_range OutR2,
-            class Proj = std::identity, std::indirect_unary_predicate<std::projected<std::ranges::iterator_t<R>, Proj>> Pred>
-    requires ycxx::detail::execution_policy<Ep> &&
-             std::indirectly_copyable<std::ranges::iterator_t<R>, std::ranges::iterator_t<OutR1>> &&
-             std::indirectly_copyable<std::ranges::iterator_t<R>, std::ranges::iterator_t<OutR2>>
-  std::ranges::in_out_out_result<std::ranges::borrowed_iterator_t<R>, std::ranges::borrowed_iterator_t<OutR1>,
-                                     std::ranges::borrowed_iterator_t<OutR2>>
-  operator()(Ep&& exec, R&& r, OutR1&& out_true_r, OutR2&& out_false_r, Pred pred, Proj proj = {}) const noexcept {
-    auto res = (*this)(exec, std::ranges::begin(r), std::ranges::end(r), std::ranges::begin(out_true_r),
-                       std::ranges::end(out_true_r), std::ranges::begin(out_false_r), std::ranges::end(out_false_r),
+  template <class _Ep_, __sized_random_access_range _Rp, __sized_random_access_range _OutR1, __sized_random_access_range _OutR2,
+            class _Proj = std::identity, std::indirect_unary_predicate<std::projected<std::ranges::iterator_t<_Rp>, _Proj>> _Pred>
+    requires __ycxx::__detail::__execution_policy<_Ep_> &&
+             std::indirectly_copyable<std::ranges::iterator_t<_Rp>, std::ranges::iterator_t<_OutR1>> &&
+             std::indirectly_copyable<std::ranges::iterator_t<_Rp>, std::ranges::iterator_t<_OutR2>>
+  std::ranges::in_out_out_result<std::ranges::borrowed_iterator_t<_Rp>, std::ranges::borrowed_iterator_t<_OutR1>,
+                                     std::ranges::borrowed_iterator_t<_OutR2>>
+  operator()(_Ep_&& __exec, _Rp&& r, _OutR1&& __out_true_r, _OutR2&& __out_false_r, _Pred pred, _Proj proj = {}) const noexcept {
+    auto __res = (*this)(__exec, std::ranges::begin(r), std::ranges::end(r), std::ranges::begin(__out_true_r),
+                       std::ranges::end(__out_true_r), std::ranges::begin(__out_false_r), std::ranges::end(__out_false_r),
                        std::move(pred), std::move(proj));
-    return {par::borrowed<R>(std::move(res.in)), par::borrowed<OutR1>(std::move(res.out1)),
-            par::borrowed<OutR2>(std::move(res.out2))};
+    return {par::__borrowed<_Rp>(std::move(__res.in)), par::__borrowed<_OutR1>(std::move(__res.out1)),
+            par::__borrowed<_OutR2>(std::move(__res.out2))};
   }
 };
 
 // [alg.merge] and the set operations ([alg.set.operations]): the sequential loops, stopped when
 // the output range is full.
-template <class Fn, par::kind K>
-  requires(K == par::kind::merge || K == par::kind::set_union || K == par::kind::set_intersection ||
-           K == par::kind::set_difference || K == par::kind::set_symmetric_difference)
-struct ranges_par_algo<Fn, K> : Fn {
-  using Fn::operator();
-  template <class Ep, std::random_access_iterator I1, std::sized_sentinel_for<I1> S1, std::random_access_iterator I2,
-            std::sized_sentinel_for<I2> S2, std::random_access_iterator O, std::sized_sentinel_for<O> OutS,
-            class Comp = std::ranges::less, class Proj1 = std::identity, class Proj2 = std::identity>
-    requires ycxx::detail::execution_policy<Ep> && std::mergeable<I1, I2, O, Comp, Proj1, Proj2>
-  std::ranges::in_in_out_result<I1, I2, O> operator()(Ep&&, I1 first1, S1 last1, I2 first2, S2 last2, O result,
-                                                      OutS result_last, Comp comp = {}, Proj1 proj1 = {},
-                                                      Proj2 proj2 = {}) const noexcept {
-    if constexpr (K == par::kind::merge)
-      return par::merge_bounded(std::move(first1), last1, std::move(first2), last2, std::move(result), result_last,
-                                comp, proj1, proj2);
+template <class _Fn, par::kind _Kp>
+  requires(_Kp == par::kind::merge || _Kp == par::kind::set_union || _Kp == par::kind::set_intersection ||
+           _Kp == par::kind::set_difference || _Kp == par::kind::set_symmetric_difference)
+struct __ranges_par_algo<_Fn, _Kp> : _Fn {
+  using _Fn::operator();
+  template <class _Ep_, std::random_access_iterator _I1, std::sized_sentinel_for<_I1> _S1, std::random_access_iterator _I2,
+            std::sized_sentinel_for<_I2> _S2, std::random_access_iterator _Op, std::sized_sentinel_for<_Op> _OutS,
+            class _Comp = std::ranges::less, class _Proj1 = std::identity, class _Proj2 = std::identity>
+    requires __ycxx::__detail::__execution_policy<_Ep_> && std::mergeable<_I1, _I2, _Op, _Comp, _Proj1, _Proj2>
+  std::ranges::in_in_out_result<_I1, _I2, _Op> operator()(_Ep_&&, _I1 __first1, _S1 __last1, _I2 __first2, _S2 __last2, _Op result,
+                                                      _OutS __result_last, _Comp comp = {}, _Proj1 __proj1 = {},
+                                                      _Proj2 __proj2 = {}) const noexcept {
+    if constexpr (_Kp == par::kind::merge)
+      return par::__merge_bounded(std::move(__first1), __last1, std::move(__first2), __last2, std::move(result), __result_last,
+                                comp, __proj1, __proj2);
     else
-      return par::set_op_bounded<K>(std::move(first1), last1, std::move(first2), last2, std::move(result), result_last,
-                                    comp, proj1, proj2);
+      return par::__set_op_bounded<_Kp>(std::move(__first1), __last1, std::move(__first2), __last2, std::move(result), __result_last,
+                                    comp, __proj1, __proj2);
   }
-  template <class Ep, sized_random_access_range R1, sized_random_access_range R2, sized_random_access_range OutR,
-            class Comp = std::ranges::less, class Proj1 = std::identity, class Proj2 = std::identity>
-    requires ycxx::detail::execution_policy<Ep> &&
-             std::mergeable<std::ranges::iterator_t<R1>, std::ranges::iterator_t<R2>, std::ranges::iterator_t<OutR>,
-                            Comp, Proj1, Proj2>
-  std::ranges::in_in_out_result<std::ranges::borrowed_iterator_t<R1>, std::ranges::borrowed_iterator_t<R2>,
-                                std::ranges::borrowed_iterator_t<OutR>>
-  operator()(Ep&& exec, R1&& r1, R2&& r2, OutR&& result_r, Comp comp = {}, Proj1 proj1 = {},
-             Proj2 proj2 = {}) const noexcept {
-    auto res = (*this)(exec, std::ranges::begin(r1), std::ranges::end(r1), std::ranges::begin(r2), std::ranges::end(r2),
-                       std::ranges::begin(result_r), std::ranges::end(result_r), std::move(comp), std::move(proj1),
-                       std::move(proj2));
-    return {par::borrowed<R1>(std::move(res.in1)), par::borrowed<R2>(std::move(res.in2)),
-            par::borrowed<OutR>(std::move(res.out))};
+  template <class _Ep_, __sized_random_access_range _R1, __sized_random_access_range _R2, __sized_random_access_range _OutR,
+            class _Comp = std::ranges::less, class _Proj1 = std::identity, class _Proj2 = std::identity>
+    requires __ycxx::__detail::__execution_policy<_Ep_> &&
+             std::mergeable<std::ranges::iterator_t<_R1>, std::ranges::iterator_t<_R2>, std::ranges::iterator_t<_OutR>,
+                            _Comp, _Proj1, _Proj2>
+  std::ranges::in_in_out_result<std::ranges::borrowed_iterator_t<_R1>, std::ranges::borrowed_iterator_t<_R2>,
+                                std::ranges::borrowed_iterator_t<_OutR>>
+  operator()(_Ep_&& __exec, _R1&& __r1, _R2&& __r2, _OutR&& __result_r, _Comp comp = {}, _Proj1 __proj1 = {},
+             _Proj2 __proj2 = {}) const noexcept {
+    auto __res = (*this)(__exec, std::ranges::begin(__r1), std::ranges::end(__r1), std::ranges::begin(__r2), std::ranges::end(__r2),
+                       std::ranges::begin(__result_r), std::ranges::end(__result_r), std::move(comp), std::move(__proj1),
+                       std::move(__proj2));
+    return {par::__borrowed<_R1>(std::move(__res.in1)), par::__borrowed<_R2>(std::move(__res.in2)),
+            par::__borrowed<_OutR>(std::move(__res.out))};
   }
 };
 
-}} // namespace ycxx::adl_free
+}} // namespace __ycxx::__adl_free

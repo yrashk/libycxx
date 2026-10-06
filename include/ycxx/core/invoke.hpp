@@ -4,206 +4,206 @@
 #include <ycxx/core/meta_base.hpp>
 #include <ycxx/core/move.hpp>
 
-namespace [[gnu::visibility("hidden")]] std {
-template <class T>
+namespace [[__gnu__::__visibility__("hidden")]] std {
+template <class _Tp>
 class reference_wrapper;
 } // namespace std
 
-namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
 
-template <class T>
-inline constexpr bool is_reference_wrapper = false;
-template <class T>
-inline constexpr bool is_reference_wrapper<std::reference_wrapper<T>> = true;
+template <class _Tp>
+inline constexpr bool __is_reference_wrapper = false;
+template <class _Tp>
+inline constexpr bool __is_reference_wrapper<std::reference_wrapper<_Tp>> = true;
 
-template <class M>
-struct member_pointer_class;
-template <class M, class C>
-struct member_pointer_class<M C::*> {
-  using type = C;
-  using member = M;
+template <class _Mp>
+struct __member_pointer_class;
+template <class _Mp, class _Cp>
+struct __member_pointer_class<_Mp _Cp::*> {
+  using type = _Cp;
+  using __member = _Mp;
 };
 
 // Dispatch tag computed from the callable and the first argument.
-enum class invoke_kind { plain, mem_fn_ref, mem_fn_rw, mem_fn_ptr, mem_obj_ref, mem_obj_rw, mem_obj_ptr };
+enum class __invoke_kind { __plain, __mem_fn_ref, __mem_fn_rw, __mem_fn_ptr, __mem_obj_ref, __mem_obj_rw, __mem_obj_ptr };
 
-template <class F, class... Args>
-consteval invoke_kind classify_invoke() {
-  using FD = __remove_cvref(F);
-  if constexpr (__is_member_pointer(FD) && sizeof...(Args) > 0) {
-    using C = typename member_pointer_class<FD>::type;
-    using T1 = __remove_cvref(Args...[0]);
-    constexpr bool fn = __is_member_function_pointer(FD);
-    if constexpr (__is_same(C, T1) || __is_base_of(C, T1))
-      return fn ? invoke_kind::mem_fn_ref : invoke_kind::mem_obj_ref;
-    else if constexpr (is_reference_wrapper<T1>)
-      return fn ? invoke_kind::mem_fn_rw : invoke_kind::mem_obj_rw;
+template <class _Fp, class... _Args>
+consteval __invoke_kind __classify_invoke() {
+  using _FD = __remove_cvref(_Fp);
+  if constexpr (__is_member_pointer(_FD) && sizeof...(_Args) > 0) {
+    using _Cp = typename __member_pointer_class<_FD>::type;
+    using _T1 = __remove_cvref(_Args...[0]);
+    constexpr bool __fn = __is_member_function_pointer(_FD);
+    if constexpr (__is_same(_Cp, _T1) || __is_base_of(_Cp, _T1))
+      return __fn ? __invoke_kind::__mem_fn_ref : __invoke_kind::__mem_obj_ref;
+    else if constexpr (__is_reference_wrapper<_T1>)
+      return __fn ? __invoke_kind::__mem_fn_rw : __invoke_kind::__mem_obj_rw;
     else
-      return fn ? invoke_kind::mem_fn_ptr : invoke_kind::mem_obj_ptr;
+      return __fn ? __invoke_kind::__mem_fn_ptr : __invoke_kind::__mem_obj_ptr;
   } else {
-    return invoke_kind::plain;
+    return __invoke_kind::__plain;
   }
 }
 
-template <invoke_kind K>
-struct invoker;
+template <__invoke_kind _Kp>
+struct __invoker;
 
 template <>
-struct invoker<invoke_kind::plain> {
-  template <class F, class... Args>
-  static constexpr auto call(F&& f, Args&&... args) noexcept(noexcept(static_cast<decltype(f)&&>(f)(static_cast<decltype(args)&&>(args)...)))
-      -> decltype(static_cast<decltype(f)&&>(f)(static_cast<decltype(args)&&>(args)...)) {
-    return static_cast<decltype(f)&&>(f)(static_cast<decltype(args)&&>(args)...);
+struct __invoker<__invoke_kind::__plain> {
+  template <class _Fp, class... _Args>
+  static constexpr auto __call(_Fp&& __f, _Args&&... __args) noexcept(noexcept(static_cast<decltype(__f)&&>(__f)(static_cast<decltype(__args)&&>(__args)...)))
+      -> decltype(static_cast<decltype(__f)&&>(__f)(static_cast<decltype(__args)&&>(__args)...)) {
+    return static_cast<decltype(__f)&&>(__f)(static_cast<decltype(__args)&&>(__args)...);
   }
 };
 template <>
-struct invoker<invoke_kind::mem_fn_ref> {
-  template <class F, class T1, class... Args>
-  static constexpr auto call(F f, T1&& t1, Args&&... args) noexcept(noexcept((static_cast<decltype(t1)&&>(t1).*f)(static_cast<decltype(args)&&>(args)...)))
-      -> decltype((static_cast<decltype(t1)&&>(t1).*f)(static_cast<decltype(args)&&>(args)...)) {
-    return (static_cast<decltype(t1)&&>(t1).*f)(static_cast<decltype(args)&&>(args)...);
+struct __invoker<__invoke_kind::__mem_fn_ref> {
+  template <class _Fp, class _T1, class... _Args>
+  static constexpr auto __call(_Fp __f, _T1&& __t1, _Args&&... __args) noexcept(noexcept((static_cast<decltype(__t1)&&>(__t1).*__f)(static_cast<decltype(__args)&&>(__args)...)))
+      -> decltype((static_cast<decltype(__t1)&&>(__t1).*__f)(static_cast<decltype(__args)&&>(__args)...)) {
+    return (static_cast<decltype(__t1)&&>(__t1).*__f)(static_cast<decltype(__args)&&>(__args)...);
   }
 };
 template <>
-struct invoker<invoke_kind::mem_fn_rw> {
-  template <class F, class T1, class... Args>
-  static constexpr auto call(F f, T1&& t1, Args&&... args) noexcept(noexcept((t1.get().*f)(static_cast<decltype(args)&&>(args)...)))
-      -> decltype((t1.get().*f)(static_cast<decltype(args)&&>(args)...)) {
-    return (t1.get().*f)(static_cast<decltype(args)&&>(args)...);
+struct __invoker<__invoke_kind::__mem_fn_rw> {
+  template <class _Fp, class _T1, class... _Args>
+  static constexpr auto __call(_Fp __f, _T1&& __t1, _Args&&... __args) noexcept(noexcept((__t1.get().*__f)(static_cast<decltype(__args)&&>(__args)...)))
+      -> decltype((__t1.get().*__f)(static_cast<decltype(__args)&&>(__args)...)) {
+    return (__t1.get().*__f)(static_cast<decltype(__args)&&>(__args)...);
   }
 };
 template <>
-struct invoker<invoke_kind::mem_fn_ptr> {
-  template <class F, class T1, class... Args>
-  static constexpr auto call(F f, T1&& t1, Args&&... args) noexcept(noexcept(((*static_cast<decltype(t1)&&>(t1)).*f)(static_cast<decltype(args)&&>(args)...)))
-      -> decltype(((*static_cast<decltype(t1)&&>(t1)).*f)(static_cast<decltype(args)&&>(args)...)) {
-    return ((*static_cast<decltype(t1)&&>(t1)).*f)(static_cast<decltype(args)&&>(args)...);
+struct __invoker<__invoke_kind::__mem_fn_ptr> {
+  template <class _Fp, class _T1, class... _Args>
+  static constexpr auto __call(_Fp __f, _T1&& __t1, _Args&&... __args) noexcept(noexcept(((*static_cast<decltype(__t1)&&>(__t1)).*__f)(static_cast<decltype(__args)&&>(__args)...)))
+      -> decltype(((*static_cast<decltype(__t1)&&>(__t1)).*__f)(static_cast<decltype(__args)&&>(__args)...)) {
+    return ((*static_cast<decltype(__t1)&&>(__t1)).*__f)(static_cast<decltype(__args)&&>(__args)...);
   }
 };
 template <>
-struct invoker<invoke_kind::mem_obj_ref> {
-  template <class F, class T1>
-  static constexpr auto call(F f, T1&& t1) noexcept -> decltype(static_cast<decltype(t1)&&>(t1).*f) {
-    return static_cast<decltype(t1)&&>(t1).*f;
+struct __invoker<__invoke_kind::__mem_obj_ref> {
+  template <class _Fp, class _T1>
+  static constexpr auto __call(_Fp __f, _T1&& __t1) noexcept -> decltype(static_cast<decltype(__t1)&&>(__t1).*__f) {
+    return static_cast<decltype(__t1)&&>(__t1).*__f;
   }
 };
 template <>
-struct invoker<invoke_kind::mem_obj_rw> {
-  template <class F, class T1>
-  static constexpr auto call(F f, T1&& t1) noexcept -> decltype(t1.get().*f) {
-    return t1.get().*f;
+struct __invoker<__invoke_kind::__mem_obj_rw> {
+  template <class _Fp, class _T1>
+  static constexpr auto __call(_Fp __f, _T1&& __t1) noexcept -> decltype(__t1.get().*__f) {
+    return __t1.get().*__f;
   }
 };
 template <>
-struct invoker<invoke_kind::mem_obj_ptr> {
-  template <class F, class T1>
-  static constexpr auto call(F f, T1&& t1) noexcept(noexcept((*static_cast<decltype(t1)&&>(t1)).*f)) -> decltype((*static_cast<decltype(t1)&&>(t1)).*f) {
-    return (*static_cast<decltype(t1)&&>(t1)).*f;
+struct __invoker<__invoke_kind::__mem_obj_ptr> {
+  template <class _Fp, class _T1>
+  static constexpr auto __call(_Fp __f, _T1&& __t1) noexcept(noexcept((*static_cast<decltype(__t1)&&>(__t1)).*__f)) -> decltype((*static_cast<decltype(__t1)&&>(__t1)).*__f) {
+    return (*static_cast<decltype(__t1)&&>(__t1)).*__f;
   }
 };
 
-template <class F, class... Args>
-using invoker_for = invoker<classify_invoke<F, Args...>()>;
+template <class _Fp, class... _Args>
+using __invoker_for = __invoker<__classify_invoke<_Fp, _Args...>()>;
 
 // The INVOKE expression itself.
-template <class F, class... Args>
-[[gnu::always_inline]] constexpr auto invoke(F&& f, Args&&... args) noexcept(
-    noexcept(invoker_for<F, Args...>::call(static_cast<decltype(f)&&>(f), static_cast<decltype(args)&&>(args)...)))
-    -> decltype(invoker_for<F, Args...>::call(static_cast<decltype(f)&&>(f), static_cast<decltype(args)&&>(args)...)) {
-  return invoker_for<F, Args...>::call(static_cast<decltype(f)&&>(f), static_cast<decltype(args)&&>(args)...);
+template <class _Fp, class... _Args>
+[[__gnu__::__always_inline__]] constexpr auto invoke(_Fp&& __f, _Args&&... __args) noexcept(
+    noexcept(__invoker_for<_Fp, _Args...>::__call(static_cast<decltype(__f)&&>(__f), static_cast<decltype(__args)&&>(__args)...)))
+    -> decltype(__invoker_for<_Fp, _Args...>::__call(static_cast<decltype(__f)&&>(__f), static_cast<decltype(__args)&&>(__args)...)) {
+  return __invoker_for<_Fp, _Args...>::__call(static_cast<decltype(__f)&&>(__f), static_cast<decltype(__args)&&>(__args)...);
 }
 
-template <class F, class... Args>
-concept invocable_ = requires(F&& f, Args&&... args) { ::ycxx::detail::invoke(static_cast<decltype(f)&&>(f), static_cast<decltype(args)&&>(args)...); };
+template <class _Fp, class... _Args>
+concept __invocable_ = requires(_Fp&& __f, _Args&&... __args) { ::__ycxx::__detail::invoke(static_cast<decltype(__f)&&>(__f), static_cast<decltype(__args)&&>(__args)...); };
 
-template <class F, class... Args>
-concept nothrow_invocable_ = requires(F&& f, Args&&... args) {
-  { ::ycxx::detail::invoke(static_cast<decltype(f)&&>(f), static_cast<decltype(args)&&>(args)...) } noexcept;
+template <class _Fp, class... _Args>
+concept __nothrow_invocable_ = requires(_Fp&& __f, _Args&&... __args) {
+  { ::__ycxx::__detail::invoke(static_cast<decltype(__f)&&>(__f), static_cast<decltype(__args)&&>(__args)...) } noexcept;
 };
 
-template <class F, class... Args>
-using invoke_result_t = decltype(::ycxx::detail::invoke(std::declval<F>(), std::declval<Args>()...));
+template <class _Fp, class... _Args>
+using invoke_result_t = decltype(::__ycxx::__detail::invoke(std::declval<_Fp>(), std::declval<_Args>()...));
 
 // Implicit conversion test that also works with non-movable prvalues (guaranteed elision).
-template <class T>
-void implicitly_convert_to(T) noexcept;
+template <class _Tp>
+void __implicitly_convert_to(_Tp) noexcept;
 
-template <class R, class F, class... Args>
-consteval bool is_invocable_r_impl() {
-  if constexpr (!invocable_<F, Args...>)
+template <class _Rp, class _Fp, class... _Args>
+consteval bool __is_invocable_r_impl() {
+  if constexpr (!__invocable_<_Fp, _Args...>)
     return false;
-  else if constexpr (::ycxx::detail::is_void_v<R>)
+  else if constexpr (::__ycxx::__detail::is_void_v<_Rp>)
     return true;
   else
-    return requires { ::ycxx::detail::implicitly_convert_to<R>(::ycxx::detail::invoke(std::declval<F>(), std::declval<Args>()...)); } &&
-           !__reference_converts_from_temporary(R, invoke_result_t<F, Args...>);
+    return requires { ::__ycxx::__detail::__implicitly_convert_to<_Rp>(::__ycxx::__detail::invoke(std::declval<_Fp>(), std::declval<_Args>()...)); } &&
+           !__reference_converts_from_temporary(_Rp, invoke_result_t<_Fp, _Args...>);
 }
 
-template <class R, class F, class... Args>
-consteval bool is_nothrow_invocable_r_impl() {
-  if constexpr (!nothrow_invocable_<F, Args...>)
+template <class _Rp, class _Fp, class... _Args>
+consteval bool __is_nothrow_invocable_r_impl() {
+  if constexpr (!__nothrow_invocable_<_Fp, _Args...>)
     return false;
-  else if constexpr (::ycxx::detail::is_void_v<R>)
+  else if constexpr (::__ycxx::__detail::is_void_v<_Rp>)
     return true;
   else
     return requires {
-      { ::ycxx::detail::implicitly_convert_to<R>(::ycxx::detail::invoke(std::declval<F>(), std::declval<Args>()...)) } noexcept;
-    } && !__reference_converts_from_temporary(R, invoke_result_t<F, Args...>);
+      { ::__ycxx::__detail::__implicitly_convert_to<_Rp>(::__ycxx::__detail::invoke(std::declval<_Fp>(), std::declval<_Args>()...)) } noexcept;
+    } && !__reference_converts_from_temporary(_Rp, invoke_result_t<_Fp, _Args...>);
 }
 
 // INVOKE<R>
-template <class R, class F, class... Args>
-[[gnu::always_inline]] constexpr R invoke_r(F&& f, Args&&... args) noexcept(is_nothrow_invocable_r_impl<R, F, Args...>()) {
-  if constexpr (::ycxx::detail::is_void_v<R>)
-    static_cast<void>(::ycxx::detail::invoke(static_cast<decltype(f)&&>(f), static_cast<decltype(args)&&>(args)...));
+template <class _Rp, class _Fp, class... _Args>
+[[__gnu__::__always_inline__]] constexpr _Rp invoke_r(_Fp&& __f, _Args&&... __args) noexcept(__is_nothrow_invocable_r_impl<_Rp, _Fp, _Args...>()) {
+  if constexpr (::__ycxx::__detail::is_void_v<_Rp>)
+    static_cast<void>(::__ycxx::__detail::invoke(static_cast<decltype(__f)&&>(__f), static_cast<decltype(__args)&&>(__args)...));
   else
-    return ::ycxx::detail::invoke(static_cast<decltype(f)&&>(f), static_cast<decltype(args)&&>(args)...);
+    return ::__ycxx::__detail::invoke(static_cast<decltype(__f)&&>(__f), static_cast<decltype(__args)&&>(__args)...);
 }
 
-}} // namespace ycxx::detail
+}} // namespace __ycxx::__detail
 
-namespace [[gnu::visibility("hidden")]] std {
+namespace [[__gnu__::__visibility__("hidden")]] std {
 
-template <class F, class... Args>
+template <class _Fp, class... _Args>
 struct invoke_result {};
-template <class F, class... Args>
-  requires ycxx::detail::invocable_<F, Args...>
-struct invoke_result<F, Args...> {
-  using type = ycxx::detail::invoke_result_t<F, Args...>;
+template <class _Fp, class... _Args>
+  requires __ycxx::__detail::__invocable_<_Fp, _Args...>
+struct invoke_result<_Fp, _Args...> {
+  using type = __ycxx::__detail::invoke_result_t<_Fp, _Args...>;
 };
-template <class F, class... Args>
-using invoke_result_t = typename invoke_result<F, Args...>::type;
+template <class _Fp, class... _Args>
+using invoke_result_t = typename invoke_result<_Fp, _Args...>::type;
 
-template <class F, class... Args>
-struct is_invocable : bool_constant<ycxx::detail::invocable_<F, Args...>> {};
-template <class F, class... Args>
-inline constexpr bool is_invocable_v = ycxx::detail::invocable_<F, Args...>;
+template <class _Fp, class... _Args>
+struct is_invocable : bool_constant<__ycxx::__detail::__invocable_<_Fp, _Args...>> {};
+template <class _Fp, class... _Args>
+inline constexpr bool is_invocable_v = __ycxx::__detail::__invocable_<_Fp, _Args...>;
 
-template <class R, class F, class... Args>
-struct is_invocable_r : bool_constant<ycxx::detail::is_invocable_r_impl<R, F, Args...>()> {};
-template <class R, class F, class... Args>
-inline constexpr bool is_invocable_r_v = ycxx::detail::is_invocable_r_impl<R, F, Args...>();
+template <class _Rp, class _Fp, class... _Args>
+struct is_invocable_r : bool_constant<__ycxx::__detail::__is_invocable_r_impl<_Rp, _Fp, _Args...>()> {};
+template <class _Rp, class _Fp, class... _Args>
+inline constexpr bool is_invocable_r_v = __ycxx::__detail::__is_invocable_r_impl<_Rp, _Fp, _Args...>();
 
-template <class F, class... Args>
-struct is_nothrow_invocable : bool_constant<ycxx::detail::nothrow_invocable_<F, Args...>> {};
-template <class F, class... Args>
-inline constexpr bool is_nothrow_invocable_v = ycxx::detail::nothrow_invocable_<F, Args...>;
+template <class _Fp, class... _Args>
+struct is_nothrow_invocable : bool_constant<__ycxx::__detail::__nothrow_invocable_<_Fp, _Args...>> {};
+template <class _Fp, class... _Args>
+inline constexpr bool is_nothrow_invocable_v = __ycxx::__detail::__nothrow_invocable_<_Fp, _Args...>;
 
-template <class R, class F, class... Args>
-struct is_nothrow_invocable_r : bool_constant<ycxx::detail::is_nothrow_invocable_r_impl<R, F, Args...>()> {};
-template <class R, class F, class... Args>
-inline constexpr bool is_nothrow_invocable_r_v = ycxx::detail::is_nothrow_invocable_r_impl<R, F, Args...>();
+template <class _Rp, class _Fp, class... _Args>
+struct is_nothrow_invocable_r : bool_constant<__ycxx::__detail::__is_nothrow_invocable_r_impl<_Rp, _Fp, _Args...>()> {};
+template <class _Rp, class _Fp, class... _Args>
+inline constexpr bool is_nothrow_invocable_r_v = __ycxx::__detail::__is_nothrow_invocable_r_impl<_Rp, _Fp, _Args...>();
 
-template <class F, class... Args>
-  requires is_invocable_v<F, Args...>
-constexpr invoke_result_t<F, Args...> invoke(F&& f, Args&&... args) noexcept(is_nothrow_invocable_v<F, Args...>) {
-  return ycxx::detail::invoke(static_cast<decltype(f)&&>(f), static_cast<decltype(args)&&>(args)...);
+template <class _Fp, class... _Args>
+  requires is_invocable_v<_Fp, _Args...>
+constexpr invoke_result_t<_Fp, _Args...> invoke(_Fp&& __f, _Args&&... __args) noexcept(is_nothrow_invocable_v<_Fp, _Args...>) {
+  return __ycxx::__detail::invoke(static_cast<decltype(__f)&&>(__f), static_cast<decltype(__args)&&>(__args)...);
 }
 
-template <class R, class F, class... Args>
-  requires is_invocable_r_v<R, F, Args...>
-constexpr R invoke_r(F&& f, Args&&... args) noexcept(is_nothrow_invocable_r_v<R, F, Args...>) {
-  return ycxx::detail::invoke_r<R>(static_cast<decltype(f)&&>(f), static_cast<decltype(args)&&>(args)...);
+template <class _Rp, class _Fp, class... _Args>
+  requires is_invocable_r_v<_Rp, _Fp, _Args...>
+constexpr _Rp invoke_r(_Fp&& __f, _Args&&... __args) noexcept(is_nothrow_invocable_r_v<_Rp, _Fp, _Args...>) {
+  return __ycxx::__detail::invoke_r<_Rp>(static_cast<decltype(__f)&&>(__f), static_cast<decltype(__args)&&>(__args)...);
 }
 
 } // namespace std

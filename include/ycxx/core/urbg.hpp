@@ -4,13 +4,13 @@
 
 #include <ycxx/core/concepts.hpp>
 
-namespace [[gnu::visibility("hidden")]] std {
+namespace [[__gnu__::__visibility__("hidden")]] std {
 
-template <class G>
-concept uniform_random_bit_generator = invocable<G&> && unsigned_integral<invoke_result_t<G&>> && requires {
-  { G::min() } -> same_as<invoke_result_t<G&>>;
-  { G::max() } -> same_as<invoke_result_t<G&>>;
-  requires bool_constant<(G::min() < G::max())>::value;
+template <class _Gp>
+concept uniform_random_bit_generator = invocable<_Gp&> && unsigned_integral<invoke_result_t<_Gp&>> && requires {
+  { _Gp::min() } -> same_as<invoke_result_t<_Gp&>>;
+  { _Gp::max() } -> same_as<invoke_result_t<_Gp&>>;
+  requires bool_constant<(_Gp::min() < _Gp::max())>::value;
 };
 
 } // namespace std

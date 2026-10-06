@@ -6,7 +6,7 @@
 // "Each header that declares the template formatter provides" those specializations
 // ([format.formatter.spec]/2), so <vector>, <stack> and <queue> must make them complete. Nothing
 // can call parse or format without the contexts of <format>, so only the class layouts are
-// here: the state (fmt_spec) and member functions whose bodies call ycxx::detail functions that
+// here: the state (fmt_spec) and member functions whose bodies call __ycxx::__detail functions that
 // are only declared here and defined in format_base.hpp. They are found by qualified lookup at
 // the definition and instantiated where a formatting function is used, after <format>.
 //
@@ -20,205 +20,205 @@
 #include <ycxx/core/cstddef.hpp>
 #include <ycxx/core/type_traits.hpp>
 
-namespace [[gnu::visibility("hidden")]] std {
-template <class CharT>
+namespace [[__gnu__::__visibility__("hidden")]] std {
+template <class _CharT>
 struct char_traits;
-template <class T>
+template <class _Tp>
 class allocator;
-template <class charT, class traits, class Allocator>
+template <class __charT, class __traits, class _Allocator>
 class basic_string;
-template <class charT, class traits>
+template <class __charT, class __traits>
 class basic_string_view;
 
 // [format.formatter]: the primary template is disabled ([format.formatter.spec]/5, /7).
-template <class T, class charT = char>
+template <class _Tp, class __charT = char>
 struct formatter {
   formatter() = delete;
   formatter(const formatter&) = delete;
   formatter& operator=(const formatter&) = delete;
 };
 
-template <class charT>
+template <class __charT>
 class basic_format_parse_context;
-template <class Out, class charT>
+template <class _Out, class __charT>
 class basic_format_context;
 
 // [format.formatter.locking]
-template <class T>
+template <class _Tp>
 inline constexpr bool enable_nonlocking_formatter_optimization = false;
 } // namespace std
 
-namespace [[gnu::visibility("hidden")]] ycxx { namespace adl_free {
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __adl_free {
 // format_context::iterator (format_base.hpp).
-template <class charT>
-class fmt_iter;
+template <class __charT>
+class __fmt_iter;
 
 // A disabled formatter specialization ([format.formatter.spec]/7).
-struct fmt_disabled {
-  fmt_disabled() = delete;
-  fmt_disabled(const fmt_disabled&) = delete;
-  fmt_disabled& operator=(const fmt_disabled&) = delete;
+struct __fmt_disabled {
+  __fmt_disabled() = delete;
+  __fmt_disabled(const __fmt_disabled&) = delete;
+  __fmt_disabled& operator=(const __fmt_disabled&) = delete;
 };
-}} // namespace ycxx::adl_free
+}} // namespace __ycxx::__adl_free
 
-namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
 
-template <class charT>
-concept fmt_char = __is_same(charT, char) || __is_same(charT, wchar_t);
+template <class __charT>
+concept __fmt_char = __is_same(__charT, char) || __is_same(__charT, wchar_t);
 
 // [format.formattable]
-template <class T, class Context, class Formatter = typename Context::template formatter_type<std::remove_const_t<T>>>
-concept fmt_formattable_with =
-    std::semiregular<Formatter> &&
-    requires(Formatter& f, const Formatter& cf, T&& t, Context fc,
-             std::basic_format_parse_context<typename Context::char_type> pc) {
-      { f.parse(pc) } -> std::same_as<typename decltype(pc)::iterator>;
-      { cf.format(t, fc) } -> std::same_as<typename Context::iterator>;
+template <class _Tp, class _Context, class _Formatter = typename _Context::template formatter_type<std::remove_const_t<_Tp>>>
+concept __fmt_formattable_with =
+    std::semiregular<_Formatter> &&
+    requires(_Formatter& __f, const _Formatter& __cf, _Tp&& t, _Context __fc,
+             std::basic_format_parse_context<typename _Context::char_type> __pc) {
+      { __f.parse(__pc) } -> std::same_as<typename decltype(__pc)::iterator>;
+      { __cf.format(t, __fc) } -> std::same_as<typename _Context::iterator>;
     };
 
 // ---- the std-format-spec ([format.string.std]) ------------------------------------------------
 
-enum class fmt_align : unsigned char { none, left, right, center };
-enum class fmt_sign : unsigned char { none, plus, minus, space };
-enum class fmt_dyn : unsigned char { none, value, arg };
+enum class __fmt_align : unsigned char { none, left, right, __center };
+enum class __fmt_sign : unsigned char { none, plus, minus, space };
+enum class __fmt_dyn : unsigned char { none, value, arg };
 // The argument categories whose formatters interpret the std-format-spec.
-enum class fmt_cat : unsigned char { integer, character, boolean, floating, string, pointer };
+enum class __fmt_cat : unsigned char { __integer, character, __boolean, __floating, string, pointer };
 
-template <class charT>
-struct fmt_spec {
-  charT fill[4] = {charT(' ')};
-  unsigned char fill_len = 1;
-  fmt_align align = fmt_align::none;
-  fmt_sign sign = fmt_sign::none;
-  bool alt = false;
+template <class __charT>
+struct __fmt_spec {
+  __charT fill[4] = {__charT(' ')};
+  unsigned char __fill_len = 1;
+  __fmt_align align = __fmt_align::none;
+  __fmt_sign sign = __fmt_sign::none;
+  bool __alt = false;
   bool zero = false;
-  bool localized = false;
-  fmt_dyn width_kind = fmt_dyn::none;
-  fmt_dyn prec_kind = fmt_dyn::none;
+  bool __localized = false;
+  __fmt_dyn __width_kind = __fmt_dyn::none;
+  __fmt_dyn __prec_kind = __fmt_dyn::none;
   char type = 0; // presentation type, 0 for none
   std::size_t width = 0;     // value, or argument index
   std::size_t precision = 0; // value, or argument index
 };
 
 // The cv-unqualified floating-point types (every one has a <charconv> format).
-template <class T>
-inline constexpr bool fmt_is_float = __is_same(T, std::remove_cv_t<T>) && ycxx::detail::is_floating_v<T>;
+template <class _Tp>
+inline constexpr bool __fmt_is_float = __is_same(_Tp, std::remove_cv_t<_Tp>) && __ycxx::__detail::__is_floating_v<_Tp>;
 
 // Defined in format_base.hpp. parse returns the parse context's iterator, const charT*
 // (checked there).
-template <class charT>
-constexpr const charT* fmt_parse_spec(std::basic_format_parse_context<charT>& pc, fmt_spec<charT>& s, fmt_cat cat);
-template <class charT, class T, class Context>
-constexpr typename Context::iterator fmt_format_int(Context& ctx, T value, const fmt_spec<charT>& s);
-template <class charT, class Context>
-constexpr typename Context::iterator fmt_write_string(Context& ctx, const charT* p, std::size_t n,
-                                                      const fmt_spec<charT>& s, bool is_char = false);
-template <class charT, class Context>
-constexpr typename Context::iterator fmt_format_char(Context& ctx, charT c, const fmt_spec<charT>& s);
-template <class charT, class Context>
-constexpr typename Context::iterator fmt_format_bool(Context& ctx, bool b, const fmt_spec<charT>& s);
-template <class charT, class Context>
-constexpr typename Context::iterator fmt_format_pointer(Context& ctx, const void* p, const fmt_spec<charT>& s);
-template <class charT, class T, class Context>
-typename Context::iterator fmt_format_float(Context& ctx, T value, const fmt_spec<charT>& s);
+template <class __charT>
+constexpr const __charT* __fmt_parse_spec(std::basic_format_parse_context<__charT>& __pc, __fmt_spec<__charT>& s, __fmt_cat cat);
+template <class __charT, class _Tp, class _Context>
+constexpr typename _Context::iterator __fmt_format_int(_Context& __ctx, _Tp value, const __fmt_spec<__charT>& s);
+template <class __charT, class _Context>
+constexpr typename _Context::iterator __fmt_write_string(_Context& __ctx, const __charT* p, std::size_t n,
+                                                      const __fmt_spec<__charT>& s, bool __is_char = false);
+template <class __charT, class _Context>
+constexpr typename _Context::iterator __fmt_format_char(_Context& __ctx, __charT c, const __fmt_spec<__charT>& s);
+template <class __charT, class _Context>
+constexpr typename _Context::iterator __fmt_format_bool(_Context& __ctx, bool b, const __fmt_spec<__charT>& s);
+template <class __charT, class _Context>
+constexpr typename _Context::iterator __fmt_format_pointer(_Context& __ctx, const void* p, const __fmt_spec<__charT>& s);
+template <class __charT, class _Tp, class _Context>
+typename _Context::iterator __fmt_format_float(_Context& __ctx, _Tp value, const __fmt_spec<__charT>& s);
 
-}} // namespace ycxx::detail
+}} // namespace __ycxx::__detail
 
-namespace [[gnu::visibility("hidden")]] std {
+namespace [[__gnu__::__visibility__("hidden")]] std {
 // [format.formattable]
-template <class T, class charT>
+template <class _Tp, class __charT>
 concept formattable =
-    ycxx::detail::fmt_formattable_with<remove_reference_t<T>, basic_format_context<ycxx::adl_free::fmt_iter<charT>, charT>>;
+    __ycxx::__detail::__fmt_formattable_with<remove_reference_t<_Tp>, basic_format_context<__ycxx::__adl_free::__fmt_iter<__charT>, __charT>>;
 } // namespace std
 
 // ---- the formatter specializations of [format.formatter.spec] -----------------------------------
 
-namespace [[gnu::visibility("hidden")]] ycxx { namespace adl_free {
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __adl_free {
 
 // The formatters interpreting a std-format-spec.
-template <class charT, ycxx::detail::fmt_cat Cat>
-class fmt_std_formatter {
+template <class __charT, __ycxx::__detail::__fmt_cat _Cat>
+class __fmt_std_formatter {
 protected:
-  ycxx::detail::fmt_spec<charT> spec_;
+  __ycxx::__detail::__fmt_spec<__charT> __spec_;
 
 public:
-  constexpr const charT* parse(std::basic_format_parse_context<charT>& pc) {
-    return ycxx::detail::fmt_parse_spec(pc, spec_, Cat);
+  constexpr const __charT* parse(std::basic_format_parse_context<__charT>& __pc) {
+    return __ycxx::__detail::__fmt_parse_spec(__pc, __spec_, _Cat);
   }
 };
 
-template <class charT>
-class fmt_string_formatter : public fmt_std_formatter<charT, ycxx::detail::fmt_cat::string> {
+template <class __charT>
+class __fmt_string_formatter : public __fmt_std_formatter<__charT, __ycxx::__detail::__fmt_cat::string> {
 public:
-  constexpr void set_debug_format() { this->spec_.type = '?'; }
+  constexpr void set_debug_format() { this->__spec_.type = '?'; }
 
 protected:
-  template <class FormatContext>
-  constexpr typename FormatContext::iterator do_format(const charT* p, std::size_t n, FormatContext& ctx) const {
-    return ycxx::detail::fmt_write_string(ctx, p, n, this->spec_);
+  template <class _FormatContext>
+  constexpr typename _FormatContext::iterator __do_format(const __charT* p, std::size_t n, _FormatContext& __ctx) const {
+    return __ycxx::__detail::__fmt_write_string(__ctx, p, n, this->__spec_);
   }
 };
 
-}} // namespace ycxx::adl_free
+}} // namespace __ycxx::__adl_free
 
-namespace [[gnu::visibility("hidden")]] std {
+namespace [[__gnu__::__visibility__("hidden")]] std {
 
 // /2.1: characters.
-template <ycxx::detail::fmt_char charT>
-struct formatter<charT, charT> : ycxx::adl_free::fmt_std_formatter<charT, ycxx::detail::fmt_cat::character> {
-  template <class FormatContext>
-  constexpr typename FormatContext::iterator format(charT c, FormatContext& ctx) const {
-    return ycxx::detail::fmt_format_char(ctx, c, this->spec_);
+template <__ycxx::__detail::__fmt_char __charT>
+struct formatter<__charT, __charT> : __ycxx::__adl_free::__fmt_std_formatter<__charT, __ycxx::__detail::__fmt_cat::character> {
+  template <class _FormatContext>
+  constexpr typename _FormatContext::iterator format(__charT c, _FormatContext& __ctx) const {
+    return __ycxx::__detail::__fmt_format_char(__ctx, c, this->__spec_);
   }
-  constexpr void set_debug_format() { this->spec_.type = '?'; }
+  constexpr void set_debug_format() { this->__spec_.type = '?'; }
 };
 template <>
-struct formatter<char, wchar_t> : ycxx::adl_free::fmt_std_formatter<wchar_t, ycxx::detail::fmt_cat::character> {
-  template <class FormatContext>
-  constexpr typename FormatContext::iterator format(char c, FormatContext& ctx) const {
-    return ycxx::detail::fmt_format_char(ctx, static_cast<wchar_t>(static_cast<unsigned char>(c)), this->spec_);
+struct formatter<char, wchar_t> : __ycxx::__adl_free::__fmt_std_formatter<wchar_t, __ycxx::__detail::__fmt_cat::character> {
+  template <class _FormatContext>
+  constexpr typename _FormatContext::iterator format(char c, _FormatContext& __ctx) const {
+    return __ycxx::__detail::__fmt_format_char(__ctx, static_cast<wchar_t>(static_cast<unsigned char>(c)), this->__spec_);
   }
-  constexpr void set_debug_format() { this->spec_.type = '?'; }
+  constexpr void set_debug_format() { this->__spec_.type = '?'; }
 };
 
 // /2.2: strings.
-template <ycxx::detail::fmt_char charT>
-struct formatter<charT*, charT> : ycxx::adl_free::fmt_string_formatter<charT> {
-  template <class FormatContext>
-  constexpr typename FormatContext::iterator format(charT* s, FormatContext& ctx) const {
-    return this->do_format(s, char_traits<charT>::length(s), ctx);
+template <__ycxx::__detail::__fmt_char __charT>
+struct formatter<__charT*, __charT> : __ycxx::__adl_free::__fmt_string_formatter<__charT> {
+  template <class _FormatContext>
+  constexpr typename _FormatContext::iterator format(__charT* s, _FormatContext& __ctx) const {
+    return this->__do_format(s, char_traits<__charT>::length(s), __ctx);
   }
 };
-template <ycxx::detail::fmt_char charT>
-struct formatter<const charT*, charT> : ycxx::adl_free::fmt_string_formatter<charT> {
-  template <class FormatContext>
-  constexpr typename FormatContext::iterator format(const charT* s, FormatContext& ctx) const {
-    return this->do_format(s, char_traits<charT>::length(s), ctx);
+template <__ycxx::__detail::__fmt_char __charT>
+struct formatter<const __charT*, __charT> : __ycxx::__adl_free::__fmt_string_formatter<__charT> {
+  template <class _FormatContext>
+  constexpr typename _FormatContext::iterator format(const __charT* s, _FormatContext& __ctx) const {
+    return this->__do_format(s, char_traits<__charT>::length(s), __ctx);
   }
 };
-template <ycxx::detail::fmt_char charT, size_t N>
-struct formatter<charT[N], charT> : ycxx::adl_free::fmt_string_formatter<charT> {
-  template <class FormatContext>
-  constexpr typename FormatContext::iterator format(const charT (&s)[N], FormatContext& ctx) const {
+template <__ycxx::__detail::__fmt_char __charT, size_t _Np>
+struct formatter<__charT[_Np], __charT> : __ycxx::__adl_free::__fmt_string_formatter<__charT> {
+  template <class _FormatContext>
+  constexpr typename _FormatContext::iterator format(const __charT (&s)[_Np], _FormatContext& __ctx) const {
     size_t n = 0;
-    while (n != N && s[n] != charT())
+    while (n != _Np && s[n] != __charT())
       ++n;
-    return this->do_format(s, n, ctx);
+    return this->__do_format(s, n, __ctx);
   }
 };
-template <ycxx::detail::fmt_char charT, class traits, class Allocator>
-struct formatter<basic_string<charT, traits, Allocator>, charT> : ycxx::adl_free::fmt_string_formatter<charT> {
-  template <class FormatContext>
-  constexpr typename FormatContext::iterator format(const basic_string<charT, traits, Allocator>& s,
-                                                    FormatContext& ctx) const {
-    return this->do_format(s.data(), s.size(), ctx);
+template <__ycxx::__detail::__fmt_char __charT, class __traits, class _Allocator>
+struct formatter<basic_string<__charT, __traits, _Allocator>, __charT> : __ycxx::__adl_free::__fmt_string_formatter<__charT> {
+  template <class _FormatContext>
+  constexpr typename _FormatContext::iterator format(const basic_string<__charT, __traits, _Allocator>& s,
+                                                    _FormatContext& __ctx) const {
+    return this->__do_format(s.data(), s.size(), __ctx);
   }
 };
-template <ycxx::detail::fmt_char charT, class traits>
-struct formatter<basic_string_view<charT, traits>, charT> : ycxx::adl_free::fmt_string_formatter<charT> {
-  template <class FormatContext>
-  constexpr typename FormatContext::iterator format(basic_string_view<charT, traits> s, FormatContext& ctx) const {
-    return this->do_format(s.data(), s.size(), ctx);
+template <__ycxx::__detail::__fmt_char __charT, class __traits>
+struct formatter<basic_string_view<__charT, __traits>, __charT> : __ycxx::__adl_free::__fmt_string_formatter<__charT> {
+  template <class _FormatContext>
+  constexpr typename _FormatContext::iterator format(basic_string_view<__charT, __traits> s, _FormatContext& __ctx) const {
+    return this->__do_format(s.data(), s.size(), __ctx);
   }
 };
 
@@ -226,63 +226,63 @@ struct formatter<basic_string_view<charT, traits>, charT> : ycxx::adl_free::fmt_
 // specializations of the primary template: declared here, a use of one between another header
 // and <format> cannot instantiate the primary template first.
 template <>
-struct formatter<char*, wchar_t> : ycxx::adl_free::fmt_disabled {};
+struct formatter<char*, wchar_t> : __ycxx::__adl_free::__fmt_disabled {};
 template <>
-struct formatter<const char*, wchar_t> : ycxx::adl_free::fmt_disabled {};
-template <size_t N>
-struct formatter<char[N], wchar_t> : ycxx::adl_free::fmt_disabled {};
-template <class traits, class Allocator>
-struct formatter<basic_string<char, traits, Allocator>, wchar_t> : ycxx::adl_free::fmt_disabled {};
-template <class traits>
-struct formatter<basic_string_view<char, traits>, wchar_t> : ycxx::adl_free::fmt_disabled {};
+struct formatter<const char*, wchar_t> : __ycxx::__adl_free::__fmt_disabled {};
+template <size_t _Np>
+struct formatter<char[_Np], wchar_t> : __ycxx::__adl_free::__fmt_disabled {};
+template <class __traits, class _Allocator>
+struct formatter<basic_string<char, __traits, _Allocator>, wchar_t> : __ycxx::__adl_free::__fmt_disabled {};
+template <class __traits>
+struct formatter<basic_string_view<char, __traits>, wchar_t> : __ycxx::__adl_free::__fmt_disabled {};
 
 // /2.3: integers and bool.
-template <class T, ycxx::detail::fmt_char charT>
-  requires(__is_same(T, remove_cv_t<T>) && ycxx::detail::is_signed_or_unsigned_integer<T>)
-struct formatter<T, charT> : ycxx::adl_free::fmt_std_formatter<charT, ycxx::detail::fmt_cat::integer> {
-  template <class FormatContext>
-  constexpr typename FormatContext::iterator format(T value, FormatContext& ctx) const {
-    return ycxx::detail::fmt_format_int(ctx, value, this->spec_);
+template <class _Tp, __ycxx::__detail::__fmt_char __charT>
+  requires(__is_same(_Tp, remove_cv_t<_Tp>) && __ycxx::__detail::__is_signed_or_unsigned_integer<_Tp>)
+struct formatter<_Tp, __charT> : __ycxx::__adl_free::__fmt_std_formatter<__charT, __ycxx::__detail::__fmt_cat::__integer> {
+  template <class _FormatContext>
+  constexpr typename _FormatContext::iterator format(_Tp value, _FormatContext& __ctx) const {
+    return __ycxx::__detail::__fmt_format_int(__ctx, value, this->__spec_);
   }
 };
-template <ycxx::detail::fmt_char charT>
-struct formatter<bool, charT> : ycxx::adl_free::fmt_std_formatter<charT, ycxx::detail::fmt_cat::boolean> {
-  template <class FormatContext>
-  constexpr typename FormatContext::iterator format(bool value, FormatContext& ctx) const {
-    return ycxx::detail::fmt_format_bool(ctx, value, this->spec_);
+template <__ycxx::__detail::__fmt_char __charT>
+struct formatter<bool, __charT> : __ycxx::__adl_free::__fmt_std_formatter<__charT, __ycxx::__detail::__fmt_cat::__boolean> {
+  template <class _FormatContext>
+  constexpr typename _FormatContext::iterator format(bool value, _FormatContext& __ctx) const {
+    return __ycxx::__detail::__fmt_format_bool(__ctx, value, this->__spec_);
   }
 };
 
 // /2.4: floating-point types.
-template <class T, ycxx::detail::fmt_char charT>
-  requires ycxx::detail::fmt_is_float<T>
-struct formatter<T, charT> : ycxx::adl_free::fmt_std_formatter<charT, ycxx::detail::fmt_cat::floating> {
-  template <class FormatContext>
-  typename FormatContext::iterator format(T value, FormatContext& ctx) const {
-    return ycxx::detail::fmt_format_float(ctx, value, this->spec_);
+template <class _Tp, __ycxx::__detail::__fmt_char __charT>
+  requires __ycxx::__detail::__fmt_is_float<_Tp>
+struct formatter<_Tp, __charT> : __ycxx::__adl_free::__fmt_std_formatter<__charT, __ycxx::__detail::__fmt_cat::__floating> {
+  template <class _FormatContext>
+  typename _FormatContext::iterator format(_Tp value, _FormatContext& __ctx) const {
+    return __ycxx::__detail::__fmt_format_float(__ctx, value, this->__spec_);
   }
 };
 
 // /2.5, /2.6: pointers.
-template <ycxx::detail::fmt_char charT>
-struct formatter<nullptr_t, charT> : ycxx::adl_free::fmt_std_formatter<charT, ycxx::detail::fmt_cat::pointer> {
-  template <class FormatContext>
-  constexpr typename FormatContext::iterator format(nullptr_t, FormatContext& ctx) const {
-    return ycxx::detail::fmt_format_pointer(ctx, nullptr, this->spec_);
+template <__ycxx::__detail::__fmt_char __charT>
+struct formatter<nullptr_t, __charT> : __ycxx::__adl_free::__fmt_std_formatter<__charT, __ycxx::__detail::__fmt_cat::pointer> {
+  template <class _FormatContext>
+  constexpr typename _FormatContext::iterator format(nullptr_t, _FormatContext& __ctx) const {
+    return __ycxx::__detail::__fmt_format_pointer(__ctx, nullptr, this->__spec_);
   }
 };
-template <ycxx::detail::fmt_char charT>
-struct formatter<void*, charT> : ycxx::adl_free::fmt_std_formatter<charT, ycxx::detail::fmt_cat::pointer> {
-  template <class FormatContext>
-  typename FormatContext::iterator format(void* p, FormatContext& ctx) const {
-    return ycxx::detail::fmt_format_pointer(ctx, p, this->spec_);
+template <__ycxx::__detail::__fmt_char __charT>
+struct formatter<void*, __charT> : __ycxx::__adl_free::__fmt_std_formatter<__charT, __ycxx::__detail::__fmt_cat::pointer> {
+  template <class _FormatContext>
+  typename _FormatContext::iterator format(void* p, _FormatContext& __ctx) const {
+    return __ycxx::__detail::__fmt_format_pointer(__ctx, p, this->__spec_);
   }
 };
-template <ycxx::detail::fmt_char charT>
-struct formatter<const void*, charT> : ycxx::adl_free::fmt_std_formatter<charT, ycxx::detail::fmt_cat::pointer> {
-  template <class FormatContext>
-  typename FormatContext::iterator format(const void* p, FormatContext& ctx) const {
-    return ycxx::detail::fmt_format_pointer(ctx, p, this->spec_);
+template <__ycxx::__detail::__fmt_char __charT>
+struct formatter<const void*, __charT> : __ycxx::__adl_free::__fmt_std_formatter<__charT, __ycxx::__detail::__fmt_cat::pointer> {
+  template <class _FormatContext>
+  typename _FormatContext::iterator format(const void* p, _FormatContext& __ctx) const {
+    return __ycxx::__detail::__fmt_format_pointer(__ctx, p, this->__spec_);
   }
 };
 
@@ -293,20 +293,20 @@ template <>
 inline constexpr bool enable_nonlocking_formatter_optimization<wchar_t> = true;
 template <>
 inline constexpr bool enable_nonlocking_formatter_optimization<bool> = true;
-template <class T>
-  requires(__is_same(T, remove_cv_t<T>) &&
-           (ycxx::detail::is_signed_or_unsigned_integer<T> || ycxx::detail::fmt_is_float<T>))
-inline constexpr bool enable_nonlocking_formatter_optimization<T> = true;
-template <ycxx::detail::fmt_char charT>
-inline constexpr bool enable_nonlocking_formatter_optimization<charT*> = true;
-template <ycxx::detail::fmt_char charT>
-inline constexpr bool enable_nonlocking_formatter_optimization<const charT*> = true;
-template <ycxx::detail::fmt_char charT, size_t N>
-inline constexpr bool enable_nonlocking_formatter_optimization<charT[N]> = true;
-template <ycxx::detail::fmt_char charT, class traits, class Allocator>
-inline constexpr bool enable_nonlocking_formatter_optimization<basic_string<charT, traits, Allocator>> = true;
-template <ycxx::detail::fmt_char charT, class traits>
-inline constexpr bool enable_nonlocking_formatter_optimization<basic_string_view<charT, traits>> = true;
+template <class _Tp>
+  requires(__is_same(_Tp, remove_cv_t<_Tp>) &&
+           (__ycxx::__detail::__is_signed_or_unsigned_integer<_Tp> || __ycxx::__detail::__fmt_is_float<_Tp>))
+inline constexpr bool enable_nonlocking_formatter_optimization<_Tp> = true;
+template <__ycxx::__detail::__fmt_char __charT>
+inline constexpr bool enable_nonlocking_formatter_optimization<__charT*> = true;
+template <__ycxx::__detail::__fmt_char __charT>
+inline constexpr bool enable_nonlocking_formatter_optimization<const __charT*> = true;
+template <__ycxx::__detail::__fmt_char __charT, size_t _Np>
+inline constexpr bool enable_nonlocking_formatter_optimization<__charT[_Np]> = true;
+template <__ycxx::__detail::__fmt_char __charT, class __traits, class _Allocator>
+inline constexpr bool enable_nonlocking_formatter_optimization<basic_string<__charT, __traits, _Allocator>> = true;
+template <__ycxx::__detail::__fmt_char __charT, class __traits>
+inline constexpr bool enable_nonlocking_formatter_optimization<basic_string_view<__charT, __traits>> = true;
 template <>
 inline constexpr bool enable_nonlocking_formatter_optimization<nullptr_t> = true;
 template <>

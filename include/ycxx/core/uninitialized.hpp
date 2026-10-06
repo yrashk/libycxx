@@ -17,176 +17,176 @@
 #include <ycxx/core/algo_results.hpp>
 #include <ycxx/core/execution_policy.hpp>
 
-namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
 
 // [special.mem.concepts]
-template <class I>
-concept nothrow_input_iterator = std::input_iterator<I> && std::is_lvalue_reference_v<std::iter_reference_t<I>> &&
-                                 std::same_as<std::remove_cvref_t<std::iter_reference_t<I>>, std::iter_value_t<I>>;
-template <class S, class I>
-concept nothrow_sentinel_for = std::sentinel_for<S, I>;
-template <class R>
-concept nothrow_input_range = std::ranges::range<R> && nothrow_input_iterator<std::ranges::iterator_t<R>> &&
-                              nothrow_sentinel_for<std::ranges::sentinel_t<R>, std::ranges::iterator_t<R>>;
-template <class I>
-concept nothrow_forward_iterator = nothrow_input_iterator<I> && std::forward_iterator<I> && nothrow_sentinel_for<I, I>;
-template <class R>
-concept nothrow_forward_range = nothrow_input_range<R> && nothrow_forward_iterator<std::ranges::iterator_t<R>>;
-template <class S, class I>
-concept nothrow_sized_sentinel_for = nothrow_sentinel_for<S, I> && std::sized_sentinel_for<S, I>;
-template <class I>
-concept nothrow_random_access_iterator = nothrow_forward_iterator<I> && std::random_access_iterator<I> &&
-                                         nothrow_sized_sentinel_for<I, I>;
-template <class R>
-concept nothrow_sized_random_access_range = nothrow_forward_range<R> &&
-                                            nothrow_random_access_iterator<std::ranges::iterator_t<R>> &&
-                                            std::ranges::sized_range<R>;
-template <class R>
-concept sized_random_access_range = std::ranges::random_access_range<R> && std::ranges::sized_range<R>;
+template <class _Ip>
+concept __nothrow_input_iterator = std::input_iterator<_Ip> && std::is_lvalue_reference_v<std::iter_reference_t<_Ip>> &&
+                                 std::same_as<std::remove_cvref_t<std::iter_reference_t<_Ip>>, std::iter_value_t<_Ip>>;
+template <class _Sp, class _Ip>
+concept __nothrow_sentinel_for = std::sentinel_for<_Sp, _Ip>;
+template <class _Rp>
+concept __nothrow_input_range = std::ranges::range<_Rp> && __nothrow_input_iterator<std::ranges::iterator_t<_Rp>> &&
+                              __nothrow_sentinel_for<std::ranges::sentinel_t<_Rp>, std::ranges::iterator_t<_Rp>>;
+template <class _Ip>
+concept __nothrow_forward_iterator = __nothrow_input_iterator<_Ip> && std::forward_iterator<_Ip> && __nothrow_sentinel_for<_Ip, _Ip>;
+template <class _Rp>
+concept __nothrow_forward_range = __nothrow_input_range<_Rp> && __nothrow_forward_iterator<std::ranges::iterator_t<_Rp>>;
+template <class _Sp, class _Ip>
+concept __nothrow_sized_sentinel_for = __nothrow_sentinel_for<_Sp, _Ip> && std::sized_sentinel_for<_Sp, _Ip>;
+template <class _Ip>
+concept __nothrow_random_access_iterator = __nothrow_forward_iterator<_Ip> && std::random_access_iterator<_Ip> &&
+                                         __nothrow_sized_sentinel_for<_Ip, _Ip>;
+template <class _Rp>
+concept __nothrow_sized_random_access_range = __nothrow_forward_range<_Rp> &&
+                                            __nothrow_random_access_iterator<std::ranges::iterator_t<_Rp>> &&
+                                            std::ranges::sized_range<_Rp>;
+template <class _Rp>
+concept __sized_random_access_range = std::ranges::random_access_range<_Rp> && std::ranges::sized_range<_Rp>;
 
 // voidify ([specialized.algorithms.general]/4).
-template <class T>
-constexpr void* voidify(T& obj) noexcept {
-  return __builtin_addressof(obj);
+template <class _Tp>
+constexpr void* __voidify(_Tp& __obj) noexcept {
+  return __builtin_addressof(__obj);
 }
 
 // deref-move ([specialized.algorithms.general]/4).
-template <class I>
-constexpr decltype(auto) deref_move(I& it) {
-  if constexpr (std::is_lvalue_reference_v<decltype(*it)>)
-    return static_cast<std::remove_reference_t<decltype(*it)>&&>(*it);
+template <class _Ip>
+constexpr decltype(auto) __deref_move(_Ip& __it) {
+  if constexpr (std::is_lvalue_reference_v<decltype(*__it)>)
+    return static_cast<std::remove_reference_t<decltype(*__it)>&&>(*__it);
   else
-    return *it;
+    return *__it;
 }
 
 // Destroys [first, *cur) on scope exit unless released: the rollback of a partially
 // constructed range.
-template <class I>
-struct uninit_guard {
-  I first;
-  I* cur;
-  constexpr ~uninit_guard() {
+template <class _Ip>
+struct __uninit_guard {
+  _Ip first;
+  _Ip* cur;
+  constexpr ~__uninit_guard() {
     if (cur)
       for (; first != *cur; ++first)
         std::destroy_at(__builtin_addressof(*first));
   }
   constexpr void release() noexcept { cur = nullptr; }
 };
-template <class I>
-uninit_guard(I, I*) -> uninit_guard<I>;
+template <class _Ip>
+__uninit_guard(_Ip, _Ip*) -> __uninit_guard<_Ip>;
 
-}} // namespace ycxx::detail
+}} // namespace __ycxx::__detail
 
-namespace [[gnu::visibility("hidden")]] std {
+namespace [[__gnu__::__visibility__("hidden")]] std {
 
 // [uninitialized.construct.default]
-template <class NoThrowForwardIterator>
-constexpr void uninitialized_default_construct(NoThrowForwardIterator first, NoThrowForwardIterator last) {
-  using T = typename iterator_traits<NoThrowForwardIterator>::value_type;
-  NoThrowForwardIterator cur = first;
-  ycxx::detail::uninit_guard g{first, __builtin_addressof(cur)};
+template <class _NoThrowForwardIterator>
+constexpr void uninitialized_default_construct(_NoThrowForwardIterator first, _NoThrowForwardIterator last) {
+  using _Tp = typename iterator_traits<_NoThrowForwardIterator>::value_type;
+  _NoThrowForwardIterator cur = first;
+  __ycxx::__detail::__uninit_guard __g{first, __builtin_addressof(cur)};
   for (; cur != last; ++cur)
-    ::new (::ycxx::detail::voidify(*cur)) T;
-  g.release();
+    ::new (::__ycxx::__detail::__voidify(*cur)) _Tp;
+  __g.release();
 }
-template <class NoThrowForwardIterator, class Size>
-constexpr NoThrowForwardIterator uninitialized_default_construct_n(NoThrowForwardIterator first, Size n) {
-  using T = typename iterator_traits<NoThrowForwardIterator>::value_type;
-  NoThrowForwardIterator cur = first;
-  ycxx::detail::uninit_guard g{first, __builtin_addressof(cur)};
+template <class _NoThrowForwardIterator, class _Size>
+constexpr _NoThrowForwardIterator uninitialized_default_construct_n(_NoThrowForwardIterator first, _Size n) {
+  using _Tp = typename iterator_traits<_NoThrowForwardIterator>::value_type;
+  _NoThrowForwardIterator cur = first;
+  __ycxx::__detail::__uninit_guard __g{first, __builtin_addressof(cur)};
   for (; n > 0; (void)++cur, --n)
-    ::new (::ycxx::detail::voidify(*cur)) T;
-  g.release();
+    ::new (::__ycxx::__detail::__voidify(*cur)) _Tp;
+  __g.release();
   return cur;
 }
 
 // [uninitialized.construct.value]
-template <class NoThrowForwardIterator>
-constexpr void uninitialized_value_construct(NoThrowForwardIterator first, NoThrowForwardIterator last) {
-  using T = typename iterator_traits<NoThrowForwardIterator>::value_type;
-  NoThrowForwardIterator cur = first;
-  ycxx::detail::uninit_guard g{first, __builtin_addressof(cur)};
+template <class _NoThrowForwardIterator>
+constexpr void uninitialized_value_construct(_NoThrowForwardIterator first, _NoThrowForwardIterator last) {
+  using _Tp = typename iterator_traits<_NoThrowForwardIterator>::value_type;
+  _NoThrowForwardIterator cur = first;
+  __ycxx::__detail::__uninit_guard __g{first, __builtin_addressof(cur)};
   for (; cur != last; ++cur)
-    ::new (::ycxx::detail::voidify(*cur)) T();
-  g.release();
+    ::new (::__ycxx::__detail::__voidify(*cur)) _Tp();
+  __g.release();
 }
-template <class NoThrowForwardIterator, class Size>
-constexpr NoThrowForwardIterator uninitialized_value_construct_n(NoThrowForwardIterator first, Size n) {
-  using T = typename iterator_traits<NoThrowForwardIterator>::value_type;
-  NoThrowForwardIterator cur = first;
-  ycxx::detail::uninit_guard g{first, __builtin_addressof(cur)};
+template <class _NoThrowForwardIterator, class _Size>
+constexpr _NoThrowForwardIterator uninitialized_value_construct_n(_NoThrowForwardIterator first, _Size n) {
+  using _Tp = typename iterator_traits<_NoThrowForwardIterator>::value_type;
+  _NoThrowForwardIterator cur = first;
+  __ycxx::__detail::__uninit_guard __g{first, __builtin_addressof(cur)};
   for (; n > 0; (void)++cur, --n)
-    ::new (::ycxx::detail::voidify(*cur)) T();
-  g.release();
+    ::new (::__ycxx::__detail::__voidify(*cur)) _Tp();
+  __g.release();
   return cur;
 }
 
 // [uninitialized.copy]
-template <class InputIterator, class NoThrowForwardIterator>
-constexpr NoThrowForwardIterator uninitialized_copy(InputIterator first, InputIterator last,
-                                                    NoThrowForwardIterator result) {
-  using T = typename iterator_traits<NoThrowForwardIterator>::value_type;
-  NoThrowForwardIterator cur = result;
-  ycxx::detail::uninit_guard g{result, __builtin_addressof(cur)};
+template <class _InputIterator, class _NoThrowForwardIterator>
+constexpr _NoThrowForwardIterator uninitialized_copy(_InputIterator first, _InputIterator last,
+                                                    _NoThrowForwardIterator result) {
+  using _Tp = typename iterator_traits<_NoThrowForwardIterator>::value_type;
+  _NoThrowForwardIterator cur = result;
+  __ycxx::__detail::__uninit_guard __g{result, __builtin_addressof(cur)};
   for (; first != last; ++cur, (void)++first)
-    ::new (::ycxx::detail::voidify(*cur)) T(*first);
-  g.release();
+    ::new (::__ycxx::__detail::__voidify(*cur)) _Tp(*first);
+  __g.release();
   return cur;
 }
-template <class InputIterator, class Size, class NoThrowForwardIterator>
-constexpr NoThrowForwardIterator uninitialized_copy_n(InputIterator first, Size n, NoThrowForwardIterator result) {
-  using T = typename iterator_traits<NoThrowForwardIterator>::value_type;
-  NoThrowForwardIterator cur = result;
-  ycxx::detail::uninit_guard g{result, __builtin_addressof(cur)};
+template <class _InputIterator, class _Size, class _NoThrowForwardIterator>
+constexpr _NoThrowForwardIterator uninitialized_copy_n(_InputIterator first, _Size n, _NoThrowForwardIterator result) {
+  using _Tp = typename iterator_traits<_NoThrowForwardIterator>::value_type;
+  _NoThrowForwardIterator cur = result;
+  __ycxx::__detail::__uninit_guard __g{result, __builtin_addressof(cur)};
   for (; n > 0; ++cur, (void)++first, --n)
-    ::new (::ycxx::detail::voidify(*cur)) T(*first);
-  g.release();
+    ::new (::__ycxx::__detail::__voidify(*cur)) _Tp(*first);
+  __g.release();
   return cur;
 }
 
 // [uninitialized.move]
-template <class InputIterator, class NoThrowForwardIterator>
-constexpr NoThrowForwardIterator uninitialized_move(InputIterator first, InputIterator last,
-                                                    NoThrowForwardIterator result) {
-  using T = typename iterator_traits<NoThrowForwardIterator>::value_type;
-  NoThrowForwardIterator cur = result;
-  ycxx::detail::uninit_guard g{result, __builtin_addressof(cur)};
+template <class _InputIterator, class _NoThrowForwardIterator>
+constexpr _NoThrowForwardIterator uninitialized_move(_InputIterator first, _InputIterator last,
+                                                    _NoThrowForwardIterator result) {
+  using _Tp = typename iterator_traits<_NoThrowForwardIterator>::value_type;
+  _NoThrowForwardIterator cur = result;
+  __ycxx::__detail::__uninit_guard __g{result, __builtin_addressof(cur)};
   for (; first != last; (void)++cur, ++first)
-    ::new (::ycxx::detail::voidify(*cur)) T(::ycxx::detail::deref_move(first));
-  g.release();
+    ::new (::__ycxx::__detail::__voidify(*cur)) _Tp(::__ycxx::__detail::__deref_move(first));
+  __g.release();
   return cur;
 }
-template <class InputIterator, class Size, class NoThrowForwardIterator>
-constexpr pair<InputIterator, NoThrowForwardIterator> uninitialized_move_n(InputIterator first, Size n,
-                                                                           NoThrowForwardIterator result) {
-  using T = typename iterator_traits<NoThrowForwardIterator>::value_type;
-  NoThrowForwardIterator cur = result;
-  ycxx::detail::uninit_guard g{result, __builtin_addressof(cur)};
+template <class _InputIterator, class _Size, class _NoThrowForwardIterator>
+constexpr pair<_InputIterator, _NoThrowForwardIterator> uninitialized_move_n(_InputIterator first, _Size n,
+                                                                           _NoThrowForwardIterator result) {
+  using _Tp = typename iterator_traits<_NoThrowForwardIterator>::value_type;
+  _NoThrowForwardIterator cur = result;
+  __ycxx::__detail::__uninit_guard __g{result, __builtin_addressof(cur)};
   for (; n > 0; ++cur, (void)++first, --n)
-    ::new (::ycxx::detail::voidify(*cur)) T(::ycxx::detail::deref_move(first));
-  g.release();
+    ::new (::__ycxx::__detail::__voidify(*cur)) _Tp(::__ycxx::__detail::__deref_move(first));
+  __g.release();
   return {first, cur};
 }
 
 // [uninitialized.fill]
-template <class NoThrowForwardIterator, class T = typename iterator_traits<NoThrowForwardIterator>::value_type>
-constexpr void uninitialized_fill(NoThrowForwardIterator first, NoThrowForwardIterator last, const T& x) {
-  using V = typename iterator_traits<NoThrowForwardIterator>::value_type;
-  NoThrowForwardIterator cur = first;
-  ycxx::detail::uninit_guard g{first, __builtin_addressof(cur)};
+template <class _NoThrowForwardIterator, class _Tp = typename iterator_traits<_NoThrowForwardIterator>::value_type>
+constexpr void uninitialized_fill(_NoThrowForwardIterator first, _NoThrowForwardIterator last, const _Tp& __x) {
+  using _Vp = typename iterator_traits<_NoThrowForwardIterator>::value_type;
+  _NoThrowForwardIterator cur = first;
+  __ycxx::__detail::__uninit_guard __g{first, __builtin_addressof(cur)};
   for (; cur != last; ++cur)
-    ::new (::ycxx::detail::voidify(*cur)) V(x);
-  g.release();
+    ::new (::__ycxx::__detail::__voidify(*cur)) _Vp(__x);
+  __g.release();
 }
-template <class NoThrowForwardIterator, class Size,
-          class T = typename iterator_traits<NoThrowForwardIterator>::value_type>
-constexpr NoThrowForwardIterator uninitialized_fill_n(NoThrowForwardIterator first, Size n, const T& x) {
-  using V = typename iterator_traits<NoThrowForwardIterator>::value_type;
-  NoThrowForwardIterator cur = first;
-  ycxx::detail::uninit_guard g{first, __builtin_addressof(cur)};
+template <class _NoThrowForwardIterator, class _Size,
+          class _Tp = typename iterator_traits<_NoThrowForwardIterator>::value_type>
+constexpr _NoThrowForwardIterator uninitialized_fill_n(_NoThrowForwardIterator first, _Size n, const _Tp& __x) {
+  using _Vp = typename iterator_traits<_NoThrowForwardIterator>::value_type;
+  _NoThrowForwardIterator cur = first;
+  __ycxx::__detail::__uninit_guard __g{first, __builtin_addressof(cur)};
   for (; n--; ++cur)
-    ::new (::ycxx::detail::voidify(*cur)) V(x);
-  g.release();
+    ::new (::__ycxx::__detail::__voidify(*cur)) _Vp(__x);
+  __g.release();
   return cur;
 }
 
@@ -195,18 +195,18 @@ constexpr NoThrowForwardIterator uninitialized_fill_n(NoThrowForwardIterator fir
 // ---------------------------------------------------------------------------------------------
 // std::ranges forms
 // ---------------------------------------------------------------------------------------------
-namespace [[gnu::visibility("hidden")]] std { namespace ranges {
-template <class I, class O>
-using uninitialized_copy_result = in_out_result<I, O>;
-template <class I, class O>
-using uninitialized_copy_n_result = in_out_result<I, O>;
-template <class I, class O>
-using uninitialized_move_result = in_out_result<I, O>;
-template <class I, class O>
-using uninitialized_move_n_result = in_out_result<I, O>;
+namespace [[__gnu__::__visibility__("hidden")]] std { namespace ranges {
+template <class _Ip, class _Op>
+using uninitialized_copy_result = in_out_result<_Ip, _Op>;
+template <class _Ip, class _Op>
+using uninitialized_copy_n_result = in_out_result<_Ip, _Op>;
+template <class _Ip, class _Op>
+using uninitialized_move_result = in_out_result<_Ip, _Op>;
+template <class _Ip, class _Op>
+using uninitialized_move_n_result = in_out_result<_Ip, _Op>;
 }} // namespace std::ranges
 
-namespace [[gnu::visibility("hidden")]] ycxx { namespace detail::uninit_fn {
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail::__uninit_fn {
 
 using std::iter_difference_t;
 using std::iter_value_t;
@@ -214,306 +214,306 @@ using std::ranges::borrowed_iterator_t;
 using std::ranges::range_value_t;
 
 // The element type the range forms construct: remove_reference_t<iter_reference_t<I>>.
-template <class I>
-using elem_t = std::remove_reference_t<std::iter_reference_t<I>>;
+template <class _Ip>
+using __elem_t = std::remove_reference_t<std::iter_reference_t<_Ip>>;
 
-struct default_construct {
-  template <nothrow_forward_iterator I, nothrow_sentinel_for<I> S>
-    requires std::default_initializable<iter_value_t<I>>
-  static constexpr I operator()(I first, S last) {
-    I cur = first;
-    uninit_guard g{first, __builtin_addressof(cur)};
+struct __default_construct {
+  template <__nothrow_forward_iterator _Ip, __nothrow_sentinel_for<_Ip> _Sp>
+    requires std::default_initializable<iter_value_t<_Ip>>
+  static constexpr _Ip operator()(_Ip first, _Sp last) {
+    _Ip cur = first;
+    __uninit_guard __g{first, __builtin_addressof(cur)};
     for (; cur != last; ++cur)
-      ::new (::ycxx::detail::voidify(*cur)) elem_t<I>;
-    g.release();
+      ::new (::__ycxx::__detail::__voidify(*cur)) __elem_t<_Ip>;
+    __g.release();
     return cur;
   }
-  template <nothrow_forward_range R>
-    requires std::default_initializable<range_value_t<R>>
-  static constexpr borrowed_iterator_t<R> operator()(R&& r) {
+  template <__nothrow_forward_range _Rp>
+    requires std::default_initializable<range_value_t<_Rp>>
+  static constexpr borrowed_iterator_t<_Rp> operator()(_Rp&& r) {
     return operator()(std::ranges::begin(r), std::ranges::end(r));
   }
-  template <execution_policy Ep, nothrow_random_access_iterator I, nothrow_sized_sentinel_for<I> S>
-    requires std::default_initializable<iter_value_t<I>>
-  static I operator()(Ep&&, I first, S last) noexcept {
-    return operator()(static_cast<I&&>(first), static_cast<S&&>(last));
+  template <__execution_policy _Ep_, __nothrow_random_access_iterator _Ip, __nothrow_sized_sentinel_for<_Ip> _Sp>
+    requires std::default_initializable<iter_value_t<_Ip>>
+  static _Ip operator()(_Ep_&&, _Ip first, _Sp last) noexcept {
+    return operator()(static_cast<_Ip&&>(first), static_cast<_Sp&&>(last));
   }
-  template <execution_policy Ep, nothrow_sized_random_access_range R>
-    requires std::default_initializable<range_value_t<R>>
-  static borrowed_iterator_t<R> operator()(Ep&&, R&& r) noexcept {
-    return operator()(static_cast<R&&>(r));
+  template <__execution_policy _Ep_, __nothrow_sized_random_access_range _Rp>
+    requires std::default_initializable<range_value_t<_Rp>>
+  static borrowed_iterator_t<_Rp> operator()(_Ep_&&, _Rp&& r) noexcept {
+    return operator()(static_cast<_Rp&&>(r));
   }
 };
-struct default_construct_n {
-  template <nothrow_forward_iterator I>
-    requires std::default_initializable<iter_value_t<I>>
-  static constexpr I operator()(I first, iter_difference_t<I> n) {
-    I cur = first;
-    uninit_guard g{first, __builtin_addressof(cur)};
+struct __default_construct_n {
+  template <__nothrow_forward_iterator _Ip>
+    requires std::default_initializable<iter_value_t<_Ip>>
+  static constexpr _Ip operator()(_Ip first, iter_difference_t<_Ip> n) {
+    _Ip cur = first;
+    __uninit_guard __g{first, __builtin_addressof(cur)};
     for (; n > 0; (void)++cur, --n)
-      ::new (::ycxx::detail::voidify(*cur)) elem_t<I>;
-    g.release();
+      ::new (::__ycxx::__detail::__voidify(*cur)) __elem_t<_Ip>;
+    __g.release();
     return cur;
   }
-  template <execution_policy Ep, nothrow_random_access_iterator I>
-    requires std::default_initializable<iter_value_t<I>>
-  static I operator()(Ep&&, I first, iter_difference_t<I> n) noexcept {
-    return operator()(static_cast<I&&>(first), n);
+  template <__execution_policy _Ep_, __nothrow_random_access_iterator _Ip>
+    requires std::default_initializable<iter_value_t<_Ip>>
+  static _Ip operator()(_Ep_&&, _Ip first, iter_difference_t<_Ip> n) noexcept {
+    return operator()(static_cast<_Ip&&>(first), n);
   }
 };
 
-struct value_construct {
-  template <nothrow_forward_iterator I, nothrow_sentinel_for<I> S>
-    requires std::default_initializable<iter_value_t<I>>
-  static constexpr I operator()(I first, S last) {
-    I cur = first;
-    uninit_guard g{first, __builtin_addressof(cur)};
+struct __value_construct {
+  template <__nothrow_forward_iterator _Ip, __nothrow_sentinel_for<_Ip> _Sp>
+    requires std::default_initializable<iter_value_t<_Ip>>
+  static constexpr _Ip operator()(_Ip first, _Sp last) {
+    _Ip cur = first;
+    __uninit_guard __g{first, __builtin_addressof(cur)};
     for (; cur != last; ++cur)
-      ::new (::ycxx::detail::voidify(*cur)) elem_t<I>();
-    g.release();
+      ::new (::__ycxx::__detail::__voidify(*cur)) __elem_t<_Ip>();
+    __g.release();
     return cur;
   }
-  template <nothrow_forward_range R>
-    requires std::default_initializable<range_value_t<R>>
-  static constexpr borrowed_iterator_t<R> operator()(R&& r) {
+  template <__nothrow_forward_range _Rp>
+    requires std::default_initializable<range_value_t<_Rp>>
+  static constexpr borrowed_iterator_t<_Rp> operator()(_Rp&& r) {
     return operator()(std::ranges::begin(r), std::ranges::end(r));
   }
-  template <execution_policy Ep, nothrow_random_access_iterator I, nothrow_sized_sentinel_for<I> S>
-    requires std::default_initializable<iter_value_t<I>>
-  static I operator()(Ep&&, I first, S last) noexcept {
-    return operator()(static_cast<I&&>(first), static_cast<S&&>(last));
+  template <__execution_policy _Ep_, __nothrow_random_access_iterator _Ip, __nothrow_sized_sentinel_for<_Ip> _Sp>
+    requires std::default_initializable<iter_value_t<_Ip>>
+  static _Ip operator()(_Ep_&&, _Ip first, _Sp last) noexcept {
+    return operator()(static_cast<_Ip&&>(first), static_cast<_Sp&&>(last));
   }
-  template <execution_policy Ep, nothrow_sized_random_access_range R>
-    requires std::default_initializable<range_value_t<R>>
-  static borrowed_iterator_t<R> operator()(Ep&&, R&& r) noexcept {
-    return operator()(static_cast<R&&>(r));
+  template <__execution_policy _Ep_, __nothrow_sized_random_access_range _Rp>
+    requires std::default_initializable<range_value_t<_Rp>>
+  static borrowed_iterator_t<_Rp> operator()(_Ep_&&, _Rp&& r) noexcept {
+    return operator()(static_cast<_Rp&&>(r));
   }
 };
-struct value_construct_n {
-  template <nothrow_forward_iterator I>
-    requires std::default_initializable<iter_value_t<I>>
-  static constexpr I operator()(I first, iter_difference_t<I> n) {
-    I cur = first;
-    uninit_guard g{first, __builtin_addressof(cur)};
+struct __value_construct_n {
+  template <__nothrow_forward_iterator _Ip>
+    requires std::default_initializable<iter_value_t<_Ip>>
+  static constexpr _Ip operator()(_Ip first, iter_difference_t<_Ip> n) {
+    _Ip cur = first;
+    __uninit_guard __g{first, __builtin_addressof(cur)};
     for (; n > 0; (void)++cur, --n)
-      ::new (::ycxx::detail::voidify(*cur)) elem_t<I>();
-    g.release();
+      ::new (::__ycxx::__detail::__voidify(*cur)) __elem_t<_Ip>();
+    __g.release();
     return cur;
   }
-  template <execution_policy Ep, nothrow_random_access_iterator I>
-    requires std::default_initializable<iter_value_t<I>>
-  static I operator()(Ep&&, I first, iter_difference_t<I> n) noexcept {
-    return operator()(static_cast<I&&>(first), n);
+  template <__execution_policy _Ep_, __nothrow_random_access_iterator _Ip>
+    requires std::default_initializable<iter_value_t<_Ip>>
+  static _Ip operator()(_Ep_&&, _Ip first, iter_difference_t<_Ip> n) noexcept {
+    return operator()(static_cast<_Ip&&>(first), n);
   }
 };
 
 struct copy {
-  template <std::input_iterator I, std::sentinel_for<I> S1, nothrow_forward_iterator O, nothrow_sentinel_for<O> S2>
-    requires std::constructible_from<iter_value_t<O>, std::iter_reference_t<I>>
-  static constexpr std::ranges::uninitialized_copy_result<I, O> operator()(I ifirst, S1 ilast, O ofirst, S2 olast) {
-    O cur = ofirst;
-    uninit_guard g{ofirst, __builtin_addressof(cur)};
-    for (; ifirst != ilast && cur != olast; ++cur, (void)++ifirst)
-      ::new (::ycxx::detail::voidify(*cur)) elem_t<O>(*ifirst);
-    g.release();
-    return {static_cast<I&&>(ifirst), cur};
+  template <std::input_iterator _Ip, std::sentinel_for<_Ip> _S1, __nothrow_forward_iterator _Op, __nothrow_sentinel_for<_Op> _S2>
+    requires std::constructible_from<iter_value_t<_Op>, std::iter_reference_t<_Ip>>
+  static constexpr std::ranges::uninitialized_copy_result<_Ip, _Op> operator()(_Ip __ifirst, _S1 __ilast, _Op __ofirst, _S2 __olast) {
+    _Op cur = __ofirst;
+    __uninit_guard __g{__ofirst, __builtin_addressof(cur)};
+    for (; __ifirst != __ilast && cur != __olast; ++cur, (void)++__ifirst)
+      ::new (::__ycxx::__detail::__voidify(*cur)) __elem_t<_Op>(*__ifirst);
+    __g.release();
+    return {static_cast<_Ip&&>(__ifirst), cur};
   }
-  template <std::ranges::input_range IR, nothrow_forward_range OR>
-    requires std::constructible_from<range_value_t<OR>, std::ranges::range_reference_t<IR>>
-  static constexpr std::ranges::uninitialized_copy_result<borrowed_iterator_t<IR>, borrowed_iterator_t<OR>>
-  operator()(IR&& in_range, OR&& out_range) {
-    auto r = operator()(std::ranges::begin(in_range), std::ranges::end(in_range), std::ranges::begin(out_range),
-                        std::ranges::end(out_range));
+  template <std::ranges::input_range _IR, __nothrow_forward_range _OR>
+    requires std::constructible_from<range_value_t<_OR>, std::ranges::range_reference_t<_IR>>
+  static constexpr std::ranges::uninitialized_copy_result<borrowed_iterator_t<_IR>, borrowed_iterator_t<_OR>>
+  operator()(_IR&& in_range, _OR&& __out_range) {
+    auto r = operator()(std::ranges::begin(in_range), std::ranges::end(in_range), std::ranges::begin(__out_range),
+                        std::ranges::end(__out_range));
     return {static_cast<decltype(r.in)&&>(r.in), r.out};
   }
-  template <execution_policy Ep, std::random_access_iterator I, std::sized_sentinel_for<I> S1,
-            nothrow_random_access_iterator O, nothrow_sized_sentinel_for<O> S2>
-    requires std::constructible_from<iter_value_t<O>, std::iter_reference_t<I>>
-  static std::ranges::uninitialized_copy_result<I, O> operator()(Ep&&, I ifirst, S1 ilast, O ofirst, S2 olast) noexcept {
-    return operator()(static_cast<I&&>(ifirst), static_cast<S1&&>(ilast), static_cast<O&&>(ofirst),
-                      static_cast<S2&&>(olast));
+  template <__execution_policy _Ep_, std::random_access_iterator _Ip, std::sized_sentinel_for<_Ip> _S1,
+            __nothrow_random_access_iterator _Op, __nothrow_sized_sentinel_for<_Op> _S2>
+    requires std::constructible_from<iter_value_t<_Op>, std::iter_reference_t<_Ip>>
+  static std::ranges::uninitialized_copy_result<_Ip, _Op> operator()(_Ep_&&, _Ip __ifirst, _S1 __ilast, _Op __ofirst, _S2 __olast) noexcept {
+    return operator()(static_cast<_Ip&&>(__ifirst), static_cast<_S1&&>(__ilast), static_cast<_Op&&>(__ofirst),
+                      static_cast<_S2&&>(__olast));
   }
-  template <execution_policy Ep, sized_random_access_range IR, nothrow_sized_random_access_range OR>
-    requires std::constructible_from<range_value_t<OR>, std::ranges::range_reference_t<IR>>
-  static std::ranges::uninitialized_copy_result<borrowed_iterator_t<IR>, borrowed_iterator_t<OR>>
-  operator()(Ep&&, IR&& in_range, OR&& out_range) noexcept {
-    return operator()(static_cast<IR&&>(in_range), static_cast<OR&&>(out_range));
+  template <__execution_policy _Ep_, __sized_random_access_range _IR, __nothrow_sized_random_access_range _OR>
+    requires std::constructible_from<range_value_t<_OR>, std::ranges::range_reference_t<_IR>>
+  static std::ranges::uninitialized_copy_result<borrowed_iterator_t<_IR>, borrowed_iterator_t<_OR>>
+  operator()(_Ep_&&, _IR&& in_range, _OR&& __out_range) noexcept {
+    return operator()(static_cast<_IR&&>(in_range), static_cast<_OR&&>(__out_range));
   }
 };
 struct copy_n {
-  template <std::input_iterator I, nothrow_forward_iterator O, nothrow_sentinel_for<O> S>
-    requires std::constructible_from<iter_value_t<O>, std::iter_reference_t<I>>
-  static constexpr std::ranges::uninitialized_copy_n_result<I, O> operator()(I ifirst, iter_difference_t<I> n,
-                                                                             O ofirst, S olast) {
-    O cur = ofirst;
-    uninit_guard g{ofirst, __builtin_addressof(cur)};
-    for (; n > 0 && cur != olast; ++cur, (void)++ifirst, --n)
-      ::new (::ycxx::detail::voidify(*cur)) elem_t<O>(*ifirst);
-    g.release();
-    return {static_cast<I&&>(ifirst), cur};
+  template <std::input_iterator _Ip, __nothrow_forward_iterator _Op, __nothrow_sentinel_for<_Op> _Sp>
+    requires std::constructible_from<iter_value_t<_Op>, std::iter_reference_t<_Ip>>
+  static constexpr std::ranges::uninitialized_copy_n_result<_Ip, _Op> operator()(_Ip __ifirst, iter_difference_t<_Ip> n,
+                                                                             _Op __ofirst, _Sp __olast) {
+    _Op cur = __ofirst;
+    __uninit_guard __g{__ofirst, __builtin_addressof(cur)};
+    for (; n > 0 && cur != __olast; ++cur, (void)++__ifirst, --n)
+      ::new (::__ycxx::__detail::__voidify(*cur)) __elem_t<_Op>(*__ifirst);
+    __g.release();
+    return {static_cast<_Ip&&>(__ifirst), cur};
   }
-  template <execution_policy Ep, std::random_access_iterator I, nothrow_random_access_iterator O,
-            nothrow_sized_sentinel_for<O> S>
-    requires std::constructible_from<iter_value_t<O>, std::iter_reference_t<I>>
-  static std::ranges::uninitialized_copy_n_result<I, O> operator()(Ep&&, I ifirst, iter_difference_t<I> n, O ofirst,
-                                                                   S olast) noexcept {
-    return operator()(static_cast<I&&>(ifirst), n, static_cast<O&&>(ofirst), static_cast<S&&>(olast));
+  template <__execution_policy _Ep_, std::random_access_iterator _Ip, __nothrow_random_access_iterator _Op,
+            __nothrow_sized_sentinel_for<_Op> _Sp>
+    requires std::constructible_from<iter_value_t<_Op>, std::iter_reference_t<_Ip>>
+  static std::ranges::uninitialized_copy_n_result<_Ip, _Op> operator()(_Ep_&&, _Ip __ifirst, iter_difference_t<_Ip> n, _Op __ofirst,
+                                                                   _Sp __olast) noexcept {
+    return operator()(static_cast<_Ip&&>(__ifirst), n, static_cast<_Op&&>(__ofirst), static_cast<_Sp&&>(__olast));
   }
 };
 
 struct move {
-  template <std::input_iterator I, std::sentinel_for<I> S1, nothrow_forward_iterator O, nothrow_sentinel_for<O> S2>
-    requires std::constructible_from<iter_value_t<O>, std::iter_rvalue_reference_t<I>>
-  static constexpr std::ranges::uninitialized_move_result<I, O> operator()(I ifirst, S1 ilast, O ofirst, S2 olast) {
-    O cur = ofirst;
-    uninit_guard g{ofirst, __builtin_addressof(cur)};
-    for (; ifirst != ilast && cur != olast; ++cur, (void)++ifirst)
-      ::new (::ycxx::detail::voidify(*cur)) elem_t<O>(std::ranges::iter_move(ifirst));
-    g.release();
-    return {static_cast<I&&>(ifirst), cur};
+  template <std::input_iterator _Ip, std::sentinel_for<_Ip> _S1, __nothrow_forward_iterator _Op, __nothrow_sentinel_for<_Op> _S2>
+    requires std::constructible_from<iter_value_t<_Op>, std::iter_rvalue_reference_t<_Ip>>
+  static constexpr std::ranges::uninitialized_move_result<_Ip, _Op> operator()(_Ip __ifirst, _S1 __ilast, _Op __ofirst, _S2 __olast) {
+    _Op cur = __ofirst;
+    __uninit_guard __g{__ofirst, __builtin_addressof(cur)};
+    for (; __ifirst != __ilast && cur != __olast; ++cur, (void)++__ifirst)
+      ::new (::__ycxx::__detail::__voidify(*cur)) __elem_t<_Op>(std::ranges::iter_move(__ifirst));
+    __g.release();
+    return {static_cast<_Ip&&>(__ifirst), cur};
   }
-  template <std::ranges::input_range IR, nothrow_forward_range OR>
-    requires std::constructible_from<range_value_t<OR>, std::ranges::range_rvalue_reference_t<IR>>
-  static constexpr std::ranges::uninitialized_move_result<borrowed_iterator_t<IR>, borrowed_iterator_t<OR>>
-  operator()(IR&& in_range, OR&& out_range) {
-    auto r = operator()(std::ranges::begin(in_range), std::ranges::end(in_range), std::ranges::begin(out_range),
-                        std::ranges::end(out_range));
+  template <std::ranges::input_range _IR, __nothrow_forward_range _OR>
+    requires std::constructible_from<range_value_t<_OR>, std::ranges::range_rvalue_reference_t<_IR>>
+  static constexpr std::ranges::uninitialized_move_result<borrowed_iterator_t<_IR>, borrowed_iterator_t<_OR>>
+  operator()(_IR&& in_range, _OR&& __out_range) {
+    auto r = operator()(std::ranges::begin(in_range), std::ranges::end(in_range), std::ranges::begin(__out_range),
+                        std::ranges::end(__out_range));
     return {static_cast<decltype(r.in)&&>(r.in), r.out};
   }
-  template <execution_policy Ep, std::random_access_iterator I, std::sized_sentinel_for<I> S1,
-            nothrow_random_access_iterator O, nothrow_sized_sentinel_for<O> S2>
-    requires std::constructible_from<iter_value_t<O>, std::iter_rvalue_reference_t<I>>
-  static std::ranges::uninitialized_move_result<I, O> operator()(Ep&&, I ifirst, S1 ilast, O ofirst, S2 olast) noexcept {
-    return operator()(static_cast<I&&>(ifirst), static_cast<S1&&>(ilast), static_cast<O&&>(ofirst),
-                      static_cast<S2&&>(olast));
+  template <__execution_policy _Ep_, std::random_access_iterator _Ip, std::sized_sentinel_for<_Ip> _S1,
+            __nothrow_random_access_iterator _Op, __nothrow_sized_sentinel_for<_Op> _S2>
+    requires std::constructible_from<iter_value_t<_Op>, std::iter_rvalue_reference_t<_Ip>>
+  static std::ranges::uninitialized_move_result<_Ip, _Op> operator()(_Ep_&&, _Ip __ifirst, _S1 __ilast, _Op __ofirst, _S2 __olast) noexcept {
+    return operator()(static_cast<_Ip&&>(__ifirst), static_cast<_S1&&>(__ilast), static_cast<_Op&&>(__ofirst),
+                      static_cast<_S2&&>(__olast));
   }
-  template <execution_policy Ep, sized_random_access_range IR, nothrow_sized_random_access_range OR>
-    requires std::constructible_from<range_value_t<OR>, std::ranges::range_rvalue_reference_t<IR>>
-  static std::ranges::uninitialized_move_result<borrowed_iterator_t<IR>, borrowed_iterator_t<OR>>
-  operator()(Ep&&, IR&& in_range, OR&& out_range) noexcept {
-    return operator()(static_cast<IR&&>(in_range), static_cast<OR&&>(out_range));
+  template <__execution_policy _Ep_, __sized_random_access_range _IR, __nothrow_sized_random_access_range _OR>
+    requires std::constructible_from<range_value_t<_OR>, std::ranges::range_rvalue_reference_t<_IR>>
+  static std::ranges::uninitialized_move_result<borrowed_iterator_t<_IR>, borrowed_iterator_t<_OR>>
+  operator()(_Ep_&&, _IR&& in_range, _OR&& __out_range) noexcept {
+    return operator()(static_cast<_IR&&>(in_range), static_cast<_OR&&>(__out_range));
   }
 };
-struct move_n {
-  template <std::input_iterator I, nothrow_forward_iterator O, nothrow_sentinel_for<O> S>
-    requires std::constructible_from<iter_value_t<O>, std::iter_rvalue_reference_t<I>>
-  static constexpr std::ranges::uninitialized_move_n_result<I, O> operator()(I ifirst, iter_difference_t<I> n,
-                                                                             O ofirst, S olast) {
-    O cur = ofirst;
-    uninit_guard g{ofirst, __builtin_addressof(cur)};
-    for (; n > 0 && cur != olast; ++cur, (void)++ifirst, --n)
-      ::new (::ycxx::detail::voidify(*cur)) elem_t<O>(std::ranges::iter_move(ifirst));
-    g.release();
-    return {static_cast<I&&>(ifirst), cur};
+struct __move_n {
+  template <std::input_iterator _Ip, __nothrow_forward_iterator _Op, __nothrow_sentinel_for<_Op> _Sp>
+    requires std::constructible_from<iter_value_t<_Op>, std::iter_rvalue_reference_t<_Ip>>
+  static constexpr std::ranges::uninitialized_move_n_result<_Ip, _Op> operator()(_Ip __ifirst, iter_difference_t<_Ip> n,
+                                                                             _Op __ofirst, _Sp __olast) {
+    _Op cur = __ofirst;
+    __uninit_guard __g{__ofirst, __builtin_addressof(cur)};
+    for (; n > 0 && cur != __olast; ++cur, (void)++__ifirst, --n)
+      ::new (::__ycxx::__detail::__voidify(*cur)) __elem_t<_Op>(std::ranges::iter_move(__ifirst));
+    __g.release();
+    return {static_cast<_Ip&&>(__ifirst), cur};
   }
-  template <execution_policy Ep, std::random_access_iterator I, nothrow_random_access_iterator O,
-            nothrow_sized_sentinel_for<O> S>
-    requires std::constructible_from<iter_value_t<O>, std::iter_rvalue_reference_t<I>>
-  static std::ranges::uninitialized_move_n_result<I, O> operator()(Ep&&, I ifirst, iter_difference_t<I> n, O ofirst,
-                                                                   S olast) noexcept {
-    return operator()(static_cast<I&&>(ifirst), n, static_cast<O&&>(ofirst), static_cast<S&&>(olast));
+  template <__execution_policy _Ep_, std::random_access_iterator _Ip, __nothrow_random_access_iterator _Op,
+            __nothrow_sized_sentinel_for<_Op> _Sp>
+    requires std::constructible_from<iter_value_t<_Op>, std::iter_rvalue_reference_t<_Ip>>
+  static std::ranges::uninitialized_move_n_result<_Ip, _Op> operator()(_Ep_&&, _Ip __ifirst, iter_difference_t<_Ip> n, _Op __ofirst,
+                                                                   _Sp __olast) noexcept {
+    return operator()(static_cast<_Ip&&>(__ifirst), n, static_cast<_Op&&>(__ofirst), static_cast<_Sp&&>(__olast));
   }
 };
 
 struct fill {
-  template <nothrow_forward_iterator I, nothrow_sentinel_for<I> S, class T = iter_value_t<I>>
-    requires std::constructible_from<iter_value_t<I>, const T&>
-  static constexpr I operator()(I first, S last, const T& x) {
-    I cur = first;
-    uninit_guard g{first, __builtin_addressof(cur)};
+  template <__nothrow_forward_iterator _Ip, __nothrow_sentinel_for<_Ip> _Sp, class _Tp = iter_value_t<_Ip>>
+    requires std::constructible_from<iter_value_t<_Ip>, const _Tp&>
+  static constexpr _Ip operator()(_Ip first, _Sp last, const _Tp& __x) {
+    _Ip cur = first;
+    __uninit_guard __g{first, __builtin_addressof(cur)};
     for (; cur != last; ++cur)
-      ::new (::ycxx::detail::voidify(*cur)) elem_t<I>(x);
-    g.release();
+      ::new (::__ycxx::__detail::__voidify(*cur)) __elem_t<_Ip>(__x);
+    __g.release();
     return cur;
   }
-  template <nothrow_forward_range R, class T = range_value_t<R>>
-    requires std::constructible_from<range_value_t<R>, const T&>
-  static constexpr borrowed_iterator_t<R> operator()(R&& r, const T& x) {
-    return operator()(std::ranges::begin(r), std::ranges::end(r), x);
+  template <__nothrow_forward_range _Rp, class _Tp = range_value_t<_Rp>>
+    requires std::constructible_from<range_value_t<_Rp>, const _Tp&>
+  static constexpr borrowed_iterator_t<_Rp> operator()(_Rp&& r, const _Tp& __x) {
+    return operator()(std::ranges::begin(r), std::ranges::end(r), __x);
   }
-  template <execution_policy Ep, nothrow_random_access_iterator I, nothrow_sized_sentinel_for<I> S,
-            class T = iter_value_t<I>>
-    requires std::constructible_from<iter_value_t<I>, const T&>
-  static I operator()(Ep&&, I first, S last, const T& x) noexcept {
-    return operator()(static_cast<I&&>(first), static_cast<S&&>(last), x);
+  template <__execution_policy _Ep_, __nothrow_random_access_iterator _Ip, __nothrow_sized_sentinel_for<_Ip> _Sp,
+            class _Tp = iter_value_t<_Ip>>
+    requires std::constructible_from<iter_value_t<_Ip>, const _Tp&>
+  static _Ip operator()(_Ep_&&, _Ip first, _Sp last, const _Tp& __x) noexcept {
+    return operator()(static_cast<_Ip&&>(first), static_cast<_Sp&&>(last), __x);
   }
-  template <execution_policy Ep, nothrow_sized_random_access_range R, class T = range_value_t<R>>
-    requires std::constructible_from<range_value_t<R>, const T&>
-  static borrowed_iterator_t<R> operator()(Ep&&, R&& r, const T& x) noexcept {
-    return operator()(static_cast<R&&>(r), x);
+  template <__execution_policy _Ep_, __nothrow_sized_random_access_range _Rp, class _Tp = range_value_t<_Rp>>
+    requires std::constructible_from<range_value_t<_Rp>, const _Tp&>
+  static borrowed_iterator_t<_Rp> operator()(_Ep_&&, _Rp&& r, const _Tp& __x) noexcept {
+    return operator()(static_cast<_Rp&&>(r), __x);
   }
 };
 struct fill_n {
-  template <nothrow_forward_iterator I, class T = iter_value_t<I>>
-    requires std::constructible_from<iter_value_t<I>, const T&>
-  static constexpr I operator()(I first, iter_difference_t<I> n, const T& x) {
-    I cur = first;
-    uninit_guard g{first, __builtin_addressof(cur)};
+  template <__nothrow_forward_iterator _Ip, class _Tp = iter_value_t<_Ip>>
+    requires std::constructible_from<iter_value_t<_Ip>, const _Tp&>
+  static constexpr _Ip operator()(_Ip first, iter_difference_t<_Ip> n, const _Tp& __x) {
+    _Ip cur = first;
+    __uninit_guard __g{first, __builtin_addressof(cur)};
     for (; n > 0; (void)++cur, --n)
-      ::new (::ycxx::detail::voidify(*cur)) elem_t<I>(x);
-    g.release();
+      ::new (::__ycxx::__detail::__voidify(*cur)) __elem_t<_Ip>(__x);
+    __g.release();
     return cur;
   }
-  template <execution_policy Ep, nothrow_random_access_iterator I, class T = iter_value_t<I>>
-    requires std::constructible_from<iter_value_t<I>, const T&>
-  static I operator()(Ep&&, I first, iter_difference_t<I> n, const T& x) noexcept {
-    return operator()(static_cast<I&&>(first), n, x);
+  template <__execution_policy _Ep_, __nothrow_random_access_iterator _Ip, class _Tp = iter_value_t<_Ip>>
+    requires std::constructible_from<iter_value_t<_Ip>, const _Tp&>
+  static _Ip operator()(_Ep_&&, _Ip first, iter_difference_t<_Ip> n, const _Tp& __x) noexcept {
+    return operator()(static_cast<_Ip&&>(first), n, __x);
   }
 };
 
 // [specialized.destroy]
 struct destroy {
-  template <nothrow_input_iterator I, nothrow_sentinel_for<I> S>
-    requires std::destructible<iter_value_t<I>>
-  static constexpr I operator()(I first, S last) noexcept {
+  template <__nothrow_input_iterator _Ip, __nothrow_sentinel_for<_Ip> _Sp>
+    requires std::destructible<iter_value_t<_Ip>>
+  static constexpr _Ip operator()(_Ip first, _Sp last) noexcept {
     for (; first != last; ++first)
       std::destroy_at(__builtin_addressof(*first));
     return first;
   }
-  template <nothrow_input_range R>
-    requires std::destructible<range_value_t<R>>
-  static constexpr borrowed_iterator_t<R> operator()(R&& r) noexcept {
+  template <__nothrow_input_range _Rp>
+    requires std::destructible<range_value_t<_Rp>>
+  static constexpr borrowed_iterator_t<_Rp> operator()(_Rp&& r) noexcept {
     return operator()(std::ranges::begin(r), std::ranges::end(r));
   }
-  template <execution_policy Ep, nothrow_random_access_iterator I, nothrow_sized_sentinel_for<I> S>
-    requires std::destructible<iter_value_t<I>>
-  static I operator()(Ep&&, I first, S last) noexcept {
-    return operator()(static_cast<I&&>(first), static_cast<S&&>(last));
+  template <__execution_policy _Ep_, __nothrow_random_access_iterator _Ip, __nothrow_sized_sentinel_for<_Ip> _Sp>
+    requires std::destructible<iter_value_t<_Ip>>
+  static _Ip operator()(_Ep_&&, _Ip first, _Sp last) noexcept {
+    return operator()(static_cast<_Ip&&>(first), static_cast<_Sp&&>(last));
   }
-  template <execution_policy Ep, nothrow_sized_random_access_range R>
-    requires std::destructible<range_value_t<R>>
-  static borrowed_iterator_t<R> operator()(Ep&&, R&& r) noexcept {
-    return operator()(static_cast<R&&>(r));
+  template <__execution_policy _Ep_, __nothrow_sized_random_access_range _Rp>
+    requires std::destructible<range_value_t<_Rp>>
+  static borrowed_iterator_t<_Rp> operator()(_Ep_&&, _Rp&& r) noexcept {
+    return operator()(static_cast<_Rp&&>(r));
   }
 };
 struct destroy_n {
-  template <nothrow_input_iterator I>
-    requires std::destructible<iter_value_t<I>>
-  static constexpr I operator()(I first, iter_difference_t<I> n) noexcept {
+  template <__nothrow_input_iterator _Ip>
+    requires std::destructible<iter_value_t<_Ip>>
+  static constexpr _Ip operator()(_Ip first, iter_difference_t<_Ip> n) noexcept {
     for (; n > 0; (void)++first, --n)
       std::destroy_at(__builtin_addressof(*first));
     return first;
   }
-  template <execution_policy Ep, nothrow_random_access_iterator I>
-    requires std::destructible<iter_value_t<I>>
-  static I operator()(Ep&&, I first, iter_difference_t<I> n) noexcept {
-    return operator()(static_cast<I&&>(first), n);
+  template <__execution_policy _Ep_, __nothrow_random_access_iterator _Ip>
+    requires std::destructible<iter_value_t<_Ip>>
+  static _Ip operator()(_Ep_&&, _Ip first, iter_difference_t<_Ip> n) noexcept {
+    return operator()(static_cast<_Ip&&>(first), n);
   }
 };
 
-}} // namespace ycxx::detail::uninit_fn
+}} // namespace __ycxx::__detail::__uninit_fn
 
-namespace [[gnu::visibility("hidden")]] std { namespace ranges {
-inline constexpr ycxx::detail::uninit_fn::default_construct uninitialized_default_construct{};
-inline constexpr ycxx::detail::uninit_fn::default_construct_n uninitialized_default_construct_n{};
-inline constexpr ycxx::detail::uninit_fn::value_construct uninitialized_value_construct{};
-inline constexpr ycxx::detail::uninit_fn::value_construct_n uninitialized_value_construct_n{};
-inline constexpr ycxx::detail::uninit_fn::copy uninitialized_copy{};
-inline constexpr ycxx::detail::uninit_fn::copy_n uninitialized_copy_n{};
-inline constexpr ycxx::detail::uninit_fn::move uninitialized_move{};
-inline constexpr ycxx::detail::uninit_fn::move_n uninitialized_move_n{};
-inline constexpr ycxx::detail::uninit_fn::fill uninitialized_fill{};
-inline constexpr ycxx::detail::uninit_fn::fill_n uninitialized_fill_n{};
-inline constexpr ycxx::detail::uninit_fn::destroy destroy{};
-inline constexpr ycxx::detail::uninit_fn::destroy_n destroy_n{};
+namespace [[__gnu__::__visibility__("hidden")]] std { namespace ranges {
+inline constexpr __ycxx::__detail::__uninit_fn::__default_construct uninitialized_default_construct{};
+inline constexpr __ycxx::__detail::__uninit_fn::__default_construct_n uninitialized_default_construct_n{};
+inline constexpr __ycxx::__detail::__uninit_fn::__value_construct uninitialized_value_construct{};
+inline constexpr __ycxx::__detail::__uninit_fn::__value_construct_n uninitialized_value_construct_n{};
+inline constexpr __ycxx::__detail::__uninit_fn::copy uninitialized_copy{};
+inline constexpr __ycxx::__detail::__uninit_fn::copy_n uninitialized_copy_n{};
+inline constexpr __ycxx::__detail::__uninit_fn::move uninitialized_move{};
+inline constexpr __ycxx::__detail::__uninit_fn::__move_n uninitialized_move_n{};
+inline constexpr __ycxx::__detail::__uninit_fn::fill uninitialized_fill{};
+inline constexpr __ycxx::__detail::__uninit_fn::fill_n uninitialized_fill_n{};
+inline constexpr __ycxx::__detail::__uninit_fn::destroy destroy{};
+inline constexpr __ycxx::__detail::__uninit_fn::destroy_n destroy_n{};
 }} // namespace std::ranges

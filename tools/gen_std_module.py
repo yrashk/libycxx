@@ -15,22 +15,22 @@ export lists are read from the headers by the compilers, never written by hand:
    namespaces is exported: classes, enumerations (and the enumerators of unscoped ones),
    functions and operators, variables, typedefs and aliases, concepts, templates, and the
    using-declarations of the C wrappers (`using ::printf;`). Inline namespaces are redeclared
-   inline, the implementation's too (std::ranges::cpo, which holds the customization point
+   inline, the implementation's too (std::ranges::__cpo, which holds the customization point
    objects: their using-declarations cannot be placed in std::ranges itself, where the views'
    iterators declare hidden friends of the same names); a
    using-directive (std::chrono's of chrono_literals) is replaced by using-declarations of the
    nominated namespace's names; a namespace alias (std::views) is redeclared. Not exported:
    names reserved to the implementation (`_X`, `__x`), explicit and partial specializations,
-   deduction guides, and anything outside namespace std (`ycxx::detail`, `ycxx::adl_free`),
+   deduction guides, and anything outside namespace std (`__ycxx::__detail`, `__ycxx::__adl_free`),
    which stays reachable but invisible to an importer. A nested namespace of std that is neither
    in STD_NAMESPACES nor inline stops the generator: it would be an implementation name in std.
 2. GCC (tools/ycxx-cxx gcc -freflection) compiles a probe that walks namespace std with
    reflection (members_of, source_location_of) and prints each named member with its
    declaration's file and line. Declarations that only one compiler or configuration declares
    are found through those locations and through Clang's: a declaration inside an
-   `#if YCXX_HAS_<X>` region of a header (std::is_structural, <meta>) is exported under the same
+   `#if _YCXX_HAS_<X>` region of a header (std::is_structural, <meta>) is exported under the same
    `#if` in the module, since a using-declaration of an undeclared name is an error. (The
-   `#if` tests a YCXX_HAS_* switch, as DECISIONS §1 rule 4 allows.)
+   `#if` tests a _YCXX_HAS_* switch, as DECISIONS §1 rule 4 allows.)
 3. std.compat ([std.modules]/3) also exports, at global scope, the names that the C++ headers
    for C library facilities declare in std and that libycxx's or the C library's <name.h>
    headers declare in the global namespace (except [support.c.headers.other]/1's exclusions),
@@ -66,7 +66,7 @@ COMPAT_HEADERS = [h[1:] + ".h" for h in C_HEADERS] + ["stdbit.h", "stdckdint.h"]
 
 # The namespaces nested in std that the draft names (std::views is an alias of
 # std::ranges::views). Any other nested namespace of std must be inline (the implementation's
-# std::ranges::cpo); it is redeclared inline in the module.
+# std::ranges::__cpo); it is redeclared inline in the module.
 STD_NAMESPACES = {
     "chrono", "chrono_literals", "complex_literals", "contracts", "execution", "filesystem", "linalg",
     "literals", "meta", "numbers", "parallel_scheduler_replacement", "placeholders", "pmr", "ranges",
@@ -102,17 +102,17 @@ def run(cmd, **kw):
 
 
 # ---------------------------------------------------------------------------------------------
-# The #if YCXX_HAS_* regions of the headers: (file, line) -> the condition that declares it.
+# The #if _YCXX_HAS_* regions of the headers: (file, line) -> the condition that declares it.
 
 COND = re.compile(r"^\s*#\s*(if|ifdef|ifndef|elif|else|endif)\b(.*)")
-HAS = re.compile(r"^\s*(!?)\s*(YCXX_HAS_\w+)\s*(//.*)?$")
+HAS = re.compile(r"^\s*(!?)\s*(_YCXX_HAS_\w+)\s*(//.*)?$")
 _regions = {}
 
 
 def condition_at(path, line):
-    """The YCXX_HAS_* condition (e.g. 'YCXX_HAS_REFLECTION', '!YCXX_HAS_RTTI', or a conjunction
+    """The _YCXX_HAS_* condition (e.g. '_YCXX_HAS_REFLECTION', '!_YCXX_HAS_RTTI', or a conjunction
     'A && B') under which line `line` of `path` is compiled, or '' when it is unconditional
-    (other conditionals, such as YCXX_HOSTED, are not modelled: the module is hosted)."""
+    (other conditionals, such as _YCXX_HOSTED, are not modelled: the module is hosted)."""
     path = os.path.realpath(path)
     if not path.startswith(str(INCLUDE) + os.sep):
         return ""
@@ -372,7 +372,7 @@ consteval std::string members() {
   return out;
 }
 // The header-defined default error handler calls the PAL; this program links without libycxx.
-extern "C" void ycxx_pal_abort(const char*) noexcept { __builtin_trap(); }
+extern "C" void __ycxx_pal_abort(const char*) noexcept { __builtin_trap(); }
 int main() { std::fputs(std::define_static_string(members()), stdout); }
 """
 
@@ -444,7 +444,7 @@ def collect(root, namespaces):
                 for name, conds in nominated.names.items():
                     add(path, name, conds)
         for name, child in ns.children.items():
-            # An inline namespace of the implementation (std::ranges::cpo) is redeclared too, rather
+            # An inline namespace of the implementation (std::ranges::__cpo) is redeclared too, rather
             # than its members being exported from the parent: a using-declaration of the CPO
             # std::ranges::iter_move directly in std::ranges would conflict with the hidden friends
             # iter_move that the views' iterators declare there (GCC 16 rejects an instantiation in
@@ -473,7 +473,7 @@ def inline_path(root_std, path):
 
 
 def add_gcc_only(exports, entries, known_namespaces):
-    """The names GCC's probe finds in a YCXX_HAS_* region and Clang did not export: declared only
+    """The names GCC's probe finds in a _YCXX_HAS_* region and Clang did not export: declared only
     where that switch is set. A namespace declared in such a region contributes all its names."""
     # Standard namespaces first declared in such a region (std::meta): their members inherit it.
     ns_cond = {}
@@ -545,7 +545,7 @@ def hide_initializer(symbol):
     """The module's initializer is libycxx's too: hidden (DECISIONS §2), as the compilers give it
     default visibility whatever -fvisibility says."""
     return ["// DECISIONS §2: the module initializer is hidden like every other symbol of libycxx.",
-            f'asm((::ycxx::detail::hide_symbol("{symbol}")));', ""]
+            f'asm((::__ycxx::__detail::__hide_symbol("{symbol}")));', ""]
 
 
 def using(path, name):

@@ -9,7 +9,7 @@
 
 #include <atomic>
 
-#define _Atomic(T) ::std::atomic<T>
+#define _Atomic(_Tp) ::std::atomic<_Tp>
 
 using std::memory_order;
 using std::memory_order_relaxed;

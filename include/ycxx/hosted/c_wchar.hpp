@@ -5,18 +5,18 @@
 // #include_next finds the C library's header past libycxx's include directory, where this file
 // was found. Its declarations of the functions <cwchar> declares as const-correct pairs are
 // renamed while it is read ([library.c]; some C libraries declare only
-// `wchar_t* f(const wchar_t*, ...)`), so that <wchar.h> can place libycxx's pairs in the global
+// `wchar_t* __f(const wchar_t*, ...)`), so that <wchar.h> can place libycxx's pairs in the global
 // namespace; whichever libycxx header comes first reads it so. The renamed declarations are never
-// used: ycxx::detail::c_wchar declares the C functions again under their assembler names.
+// used: __ycxx::__detail::__c_wchar declares the C functions again under their assembler names.
 #pragma once
 
 #include <ycxx/config.hpp>
 
-#define wcschr ycxx_c_wcschr
-#define wcspbrk ycxx_c_wcspbrk
-#define wcsrchr ycxx_c_wcsrchr
-#define wcsstr ycxx_c_wcsstr
-#define wmemchr ycxx_c_wmemchr
+#define wcschr __ycxx_c_wcschr
+#define wcspbrk __ycxx_c_wcspbrk
+#define wcsrchr __ycxx_c_wcsrchr
+#define wcsstr __ycxx_c_wcsstr
+#define wmemchr __ycxx_c_wmemchr
 #include_next <wchar.h>
 #undef wcschr
 #undef wcspbrk
@@ -25,28 +25,28 @@
 #undef wmemchr
 
 // Core's freestanding std::mbstate_t (ycxx/core/mbstate.hpp) has this C library's layout.
-static_assert(sizeof(::mbstate_t) == ycxx::detail::cfg::mbstate_size &&
-                  alignof(::mbstate_t) == ycxx::detail::cfg::mbstate_align,
+static_assert(sizeof(::mbstate_t) == __ycxx::__detail::__cfg::__mbstate_size &&
+                  alignof(::mbstate_t) == __ycxx::__detail::__cfg::__mbstate_align,
               "libycxx: cfg::mbstate_size/_align do not match this C library's ::mbstate_t");
 
-namespace [[gnu::visibility("hidden")]] std {
+namespace [[__gnu__::__visibility__("hidden")]] std {
 using ::mbstate_t;
 } // namespace std
 
 // An assembler name is the object-file symbol verbatim: Mach-O prefixes C symbols with '_'.
 // The functions are the C library's: default visibility (DECISIONS §2).
-namespace [[gnu::visibility("default")]] ycxx { namespace detail::c_wchar {
-#if YCXX_TARGET_DARWIN
+namespace [[__gnu__::__visibility__("default")]] __ycxx { namespace __detail::__c_wchar {
+#if _YCXX_TARGET_DARWIN
 wchar_t* wcschr(const wchar_t* s, wchar_t c) noexcept __asm__("_wcschr");
-wchar_t* wcspbrk(const wchar_t* s1, const wchar_t* s2) noexcept __asm__("_wcspbrk");
+wchar_t* wcspbrk(const wchar_t* __s1, const wchar_t* __s2) noexcept __asm__("_wcspbrk");
 wchar_t* wcsrchr(const wchar_t* s, wchar_t c) noexcept __asm__("_wcsrchr");
-wchar_t* wcsstr(const wchar_t* s1, const wchar_t* s2) noexcept __asm__("_wcsstr");
+wchar_t* wcsstr(const wchar_t* __s1, const wchar_t* __s2) noexcept __asm__("_wcsstr");
 wchar_t* wmemchr(const wchar_t* s, wchar_t c, __SIZE_TYPE__ n) noexcept __asm__("_wmemchr");
 #else
 wchar_t* wcschr(const wchar_t* s, wchar_t c) noexcept __asm__("wcschr");
-wchar_t* wcspbrk(const wchar_t* s1, const wchar_t* s2) noexcept __asm__("wcspbrk");
+wchar_t* wcspbrk(const wchar_t* __s1, const wchar_t* __s2) noexcept __asm__("wcspbrk");
 wchar_t* wcsrchr(const wchar_t* s, wchar_t c) noexcept __asm__("wcsrchr");
-wchar_t* wcsstr(const wchar_t* s1, const wchar_t* s2) noexcept __asm__("wcsstr");
+wchar_t* wcsstr(const wchar_t* __s1, const wchar_t* __s2) noexcept __asm__("wcsstr");
 wchar_t* wmemchr(const wchar_t* s, wchar_t c, __SIZE_TYPE__ n) noexcept __asm__("wmemchr");
 #endif
-}} // namespace ycxx::detail::c_wchar
+}} // namespace __ycxx::__detail::__c_wchar

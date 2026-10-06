@@ -1,5 +1,5 @@
 // libycxx hosted runtime: strfromd, strfromf and strfroml (C23 7.24.1.3) for C libraries that
-// lack them (YCXX_C_HAS_STRFROM 0: cmake/ycxx-c-library.cmake found none). <cstdlib> then declares std::strfromd
+// lack them (_YCXX_C_HAS_STRFROM 0: cmake/ycxx-c-library.cmake found none). <cstdlib> then declares std::strfromd
 // and friends as calls of these; elsewhere they are unused, but built everywhere so that every
 // platform compiles them.
 //
@@ -22,35 +22,35 @@
 namespace {
 
 struct strfrom_format {
-  char spec[8]; // "%", ".*" when there is a precision, the length modifier, the conversion
+  char __spec[8]; // "%", ".*" when there is a precision, the length modifier, the conversion
   int precision;
   bool has_precision;
 };
 
 // 0, or the errno value for a format that cannot be used.
-int parse(const char* f, bool long_double, strfrom_format& out) noexcept {
-  if (f == nullptr || *f++ != '%')
+int parse(const char* __f, bool long_double, strfrom_format& out) noexcept {
+  if (__f == nullptr || *__f++ != '%')
     return EINVAL;
-  char* o = out.spec;
-  *o++ = '%';
+  char* __o = out.__spec;
+  *__o++ = '%';
   out.has_precision = false;
   out.precision = 0;
-  if (*f == '.') { // "." alone is precision 0
-    ++f;
+  if (*__f == '.') { // "." alone is precision 0
+    ++__f;
     out.has_precision = true;
     long long p = 0;
-    for (; *f >= '0' && *f <= '9'; ++f)
-      if ((p = p * 10 + (*f - '0')) > INT_MAX)
+    for (; *__f >= '0' && *__f <= '9'; ++__f)
+      if ((p = p * 10 + (*__f - '0')) > INT_MAX)
         p = static_cast<long long>(INT_MAX) + 1; // saturated
     if (p > INT_MAX)
       return EOVERFLOW;
     out.precision = static_cast<int>(p);
-    *o++ = '.';
-    *o++ = '*';
+    *__o++ = '.';
+    *__o++ = '*';
   }
   if (long_double)
-    *o++ = 'L';
-  switch (*f) {
+    *__o++ = 'L';
+  switch (*__f) {
   case 'a':
   case 'A':
   case 'e':
@@ -59,31 +59,31 @@ int parse(const char* f, bool long_double, strfrom_format& out) noexcept {
   case 'F':
   case 'g':
   case 'G':
-    *o++ = *f++;
+    *__o++ = *__f++;
     break;
   default:
     return EINVAL;
   }
-  *o = '\0';
-  return *f == '\0' ? 0 : EINVAL;
+  *__o = '\0';
+  return *__f == '\0' ? 0 : EINVAL;
 }
 
-template <class T>
-int format_value(char* s, std::size_t n, const char* format, T fp) noexcept {
-  strfrom_format f;
-  if (const int e = parse(format, __is_same(T, long double), f)) {
+template <class _Tp>
+int format_value(char* s, std::size_t n, const char* format, _Tp __fp) noexcept {
+  strfrom_format __f;
+  if (const int e = parse(format, __is_same(_Tp, long double), __f)) {
     errno = e;
     return -1;
   }
-  return f.has_precision ? std::snprintf(s, n, f.spec, f.precision, fp) : std::snprintf(s, n, f.spec, fp);
+  return __f.has_precision ? std::snprintf(s, n, __f.__spec, __f.precision, __fp) : std::snprintf(s, n, __f.__spec, __fp);
 }
 
 } // namespace
 
-int ycxx::detail::strfrom(char* s, std::size_t n, const char* format, double fp) noexcept {
-  return format_value(s, n, format, fp);
+int __ycxx::__detail::__strfrom(char* s, std::size_t n, const char* format, double __fp) noexcept {
+  return format_value(s, n, format, __fp);
 }
 
-int ycxx::detail::strfrom(char* s, std::size_t n, const char* format, long double fp) noexcept {
-  return format_value(s, n, format, fp);
+int __ycxx::__detail::__strfrom(char* s, std::size_t n, const char* format, long double __fp) noexcept {
+  return format_value(s, n, format, __fp);
 }

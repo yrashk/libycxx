@@ -9,7 +9,7 @@ struct name_entry {
   int value;
 };
 
-bool same(const char* a, const char* b, std::size_t n) noexcept {
+bool __same(const char* a, const char* b, std::size_t n) noexcept {
   for (std::size_t i = 0; i < n; ++i)
     if (a[i] != b[i] || b[i] == '\0')
       return false;
@@ -26,7 +26,7 @@ constexpr name_entry class_names[] = {
     // alnum plus the underscore; upper and lower are subsets of alnum, included so that the mask
     // also holds them on a C library whose ctype masks give alnum a bit of its own.
     {"w", static_cast<int>(std::ctype_base::alnum | std::ctype_base::upper | std::ctype_base::lower |
-                           ycxx::detail::regex_word_bit)},
+                           __ycxx::__detail::__regex_word_bit)},
 };
 
 // The collating-symbol names of the POSIX portable character set (Base Definitions, 6.1 and
@@ -55,11 +55,11 @@ constexpr name_entry collate_names[] = {
 
 } // namespace
 
-namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
 
-unsigned regex_class_by_name(const char* name, std::size_t n, bool icase) noexcept {
+unsigned __regex_class_by_name(const char* name, std::size_t n, bool icase) noexcept {
   for (const name_entry& e : class_names) {
-    if (!same(name, e.name, n))
+    if (!__same(name, e.name, n))
       continue;
     unsigned m = static_cast<unsigned>(e.value);
     // [re.traits] footnote 217: without regard to case, [[:lower:]] is the same as [[:alpha:]].
@@ -70,14 +70,14 @@ unsigned regex_class_by_name(const char* name, std::size_t n, bool icase) noexce
   return 0;
 }
 
-int regex_collate_by_name(const char* name, std::size_t n) noexcept {
+int __regex_collate_by_name(const char* name, std::size_t n) noexcept {
   for (const name_entry& e : collate_names)
-    if (same(name, e.name, n))
+    if (__same(name, e.name, n))
       return e.value;
   return -1;
 }
 
-const char* regex_error_message(int code) noexcept {
+const char* __regex_error_message(int code) noexcept {
   switch (code) {
   case 1: return "regex_error: invalid collating element name";
   case 2: return "regex_error: invalid character class name";
@@ -96,12 +96,12 @@ const char* regex_error_message(int code) noexcept {
   }
 }
 
-}} // namespace ycxx::detail
+}} // namespace __ycxx::__detail
 
-namespace [[gnu::visibility("hidden")]] std {
+namespace [[__gnu__::__visibility__("hidden")]] std {
 
-regex_error::regex_error(regex_constants::error_type ecode)
-    : runtime_error(::ycxx::detail::regex_error_message(ecode)), code_(ecode) {}
+regex_error::regex_error(regex_constants::error_type __ecode)
+    : runtime_error(::__ycxx::__detail::__regex_error_message(__ecode)), __code_(__ecode) {}
 regex_error::~regex_error() {}
 
 } // namespace std

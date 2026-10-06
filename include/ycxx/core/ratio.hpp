@@ -10,12 +10,12 @@
 #include <ycxx/core/cstdint.hpp>
 #include <ycxx/core/meta_base.hpp>
 
-namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
 
-consteval std::intmax_t ratio_abs(std::intmax_t x) { return x < 0 ? -x : x; }
-consteval std::intmax_t ratio_gcd(std::intmax_t a, std::intmax_t b) {
-  a = ycxx::detail::ratio_abs(a);
-  b = ycxx::detail::ratio_abs(b);
+consteval std::intmax_t __ratio_abs(std::intmax_t __x) { return __x < 0 ? -__x : __x; }
+consteval std::intmax_t __ratio_gcd(std::intmax_t a, std::intmax_t b) {
+  a = __ycxx::__detail::__ratio_abs(a);
+  b = __ycxx::__detail::__ratio_abs(b);
   while (b != 0) {
     std::intmax_t t = a % b;
     a = b;
@@ -25,170 +25,170 @@ consteval std::intmax_t ratio_gcd(std::intmax_t a, std::intmax_t b) {
 }
 
 // A reduced fraction; `ok` is false when a value does not fit in intmax_t.
-struct ratio_value {
+struct __ratio_value {
   std::intmax_t num;
   std::intmax_t den;
   bool ok;
 };
 
 // a/b + c/d with b, d > 0 and both fractions reduced.
-template <class Wide = ycxx::detail::int128>
-consteval ratio_value ratio_add_values(std::intmax_t a, std::intmax_t b, std::intmax_t c, std::intmax_t d) {
-  const std::intmax_t g = ycxx::detail::ratio_gcd(b, d);
-  const std::intmax_t bg = b / g, dg = d / g;
+template <class _Wide = __ycxx::__detail::__y_int128>
+consteval __ratio_value __ratio_add_values(std::intmax_t a, std::intmax_t b, std::intmax_t c, std::intmax_t d) {
+  const std::intmax_t __g = __ycxx::__detail::__ratio_gcd(b, d);
+  const std::intmax_t __bg = b / __g, __dg = d / __g;
   // a/b + c/d = (a*dg + c*bg) / (bg*d); gcd(a*dg + c*bg, bg*dg) == 1, so only g can be shared.
-  if constexpr (cfg::has_int128) {
-    using wide = Wide;
-    const wide n = wide(a) * dg + wide(c) * bg;
-    const wide g2 = n == 0 ? wide(g) : wide(ycxx::detail::ratio_gcd(static_cast<std::intmax_t>(n % g), g));
-    const wide num = n / g2, den = wide(bg) * (d / static_cast<std::intmax_t>(g2));
-    constexpr wide hi = wide(__INTMAX_MAX__);
-    if (num > hi || num < -hi || den > hi) return {0, 1, false};
+  if constexpr (__cfg::__has_int128) {
+    using __wide = _Wide;
+    const __wide n = __wide(a) * __dg + __wide(c) * __bg;
+    const __wide __g2 = n == 0 ? __wide(__g) : __wide(__ycxx::__detail::__ratio_gcd(static_cast<std::intmax_t>(n % __g), __g));
+    const __wide num = n / __g2, den = __wide(__bg) * (d / static_cast<std::intmax_t>(__g2));
+    constexpr __wide __hi = __wide(__INTMAX_MAX__);
+    if (num > __hi || num < -__hi || den > __hi) return {0, 1, false};
     return {static_cast<std::intmax_t>(num), static_cast<std::intmax_t>(den), true};
   } else {
-    std::intmax_t x, y, n, den;
-    if (__builtin_mul_overflow(a, dg, &x) || __builtin_mul_overflow(c, bg, &y) || __builtin_add_overflow(x, y, &n))
+    std::intmax_t __x, y, n, den;
+    if (__builtin_mul_overflow(a, __dg, &__x) || __builtin_mul_overflow(c, __bg, &y) || __builtin_add_overflow(__x, y, &n))
       return {0, 1, false};
-    const std::intmax_t g2 = n == 0 ? g : ycxx::detail::ratio_gcd(n % g, g);
-    if (__builtin_mul_overflow(bg, d / g2, &den) || n / g2 == -__INTMAX_MAX__ - 1) return {0, 1, false};
-    return {n / g2, den, true};
+    const std::intmax_t __g2 = n == 0 ? __g : __ycxx::__detail::__ratio_gcd(n % __g, __g);
+    if (__builtin_mul_overflow(__bg, d / __g2, &den) || n / __g2 == -__INTMAX_MAX__ - 1) return {0, 1, false};
+    return {n / __g2, den, true};
   }
 }
 
-consteval ratio_value ratio_mul_values(std::intmax_t a, std::intmax_t b, std::intmax_t c, std::intmax_t d) {
+consteval __ratio_value __ratio_mul_values(std::intmax_t a, std::intmax_t b, std::intmax_t c, std::intmax_t d) {
   // (a/b) * (c/d) with both reduced: cancel across first, then the product is reduced.
-  const std::intmax_t g1 = ycxx::detail::ratio_gcd(a, d), g2 = ycxx::detail::ratio_gcd(c, b);
+  const std::intmax_t __g1 = __ycxx::__detail::__ratio_gcd(a, d), __g2 = __ycxx::__detail::__ratio_gcd(c, b);
   if (a == 0 || c == 0) return {0, 1, true};
   std::intmax_t num, den;
-  if (__builtin_mul_overflow(a / g1, c / g2, &num) || __builtin_mul_overflow(b / g2, d / g1, &den) ||
+  if (__builtin_mul_overflow(a / __g1, c / __g2, &num) || __builtin_mul_overflow(b / __g2, d / __g1, &den) ||
       num == -__INTMAX_MAX__ - 1)
     return {0, 1, false};
   return {num, den, true};
 }
 
 // sign(a/b - c/d) for b, d > 0, without overflow (continued-fraction comparison).
-consteval int ratio_compare(std::intmax_t a, std::intmax_t b, std::intmax_t c, std::intmax_t d) {
+consteval int __ratio_compare(std::intmax_t a, std::intmax_t b, std::intmax_t c, std::intmax_t d) {
   if ((a < 0) != (c < 0)) return a < 0 ? -1 : 1;
-  if (a < 0) return ycxx::detail::ratio_compare(-c, d, -a, b);
+  if (a < 0) return __ycxx::__detail::__ratio_compare(-c, d, -a, b);
   // Both non-negative: compare integer parts, then the reciprocals of the remainders.
   for (int flip = 1;; flip = -flip) {
-    const std::intmax_t qa = a / b, qc = c / d;
-    if (qa != qc) return qa < qc ? -flip : flip;
-    const std::intmax_t ra = a % b, rc = c % d;
-    if (ra == 0 || rc == 0) return ra == rc ? 0 : (ra == 0 ? -flip : flip);
+    const std::intmax_t __qa = a / b, __qc = c / d;
+    if (__qa != __qc) return __qa < __qc ? -flip : flip;
+    const std::intmax_t __ra = a % b, __rc = c % d;
+    if (__ra == 0 || __rc == 0) return __ra == __rc ? 0 : (__ra == 0 ? -flip : flip);
     // a/b - qa = ra/b; compare b/ra with d/rc in the opposite direction.
     a = b;
-    b = ra;
+    b = __ra;
     c = d;
-    d = rc;
+    d = __rc;
   }
 }
 
-template <class R>
-inline constexpr bool is_ratio = false;
+template <class _Rp>
+inline constexpr bool __is_ratio = false;
 
-template <class R1, class R2>
-struct ratio_check {
-  static_assert(is_ratio<R1> && is_ratio<R2>,
+template <class _R1, class _R2>
+struct __ratio_check {
+  static_assert(__is_ratio<_R1> && __is_ratio<_R2>,
                 "[ratio.general]/2: R1 and R2 must be specializations of std::ratio");
 };
 
-}} // namespace ycxx::detail
+}} // namespace __ycxx::__detail
 
-namespace [[gnu::visibility("hidden")]] std {
+namespace [[__gnu__::__visibility__("hidden")]] std {
 
-template <intmax_t N, intmax_t D = 1>
+template <intmax_t _Np, intmax_t _Dp = 1>
 class ratio {
-  static_assert(D != 0, "[ratio.ratio]/1: the denominator of std::ratio must not be zero");
-  static_assert(N != -__INTMAX_MAX__ - 1 && D != -__INTMAX_MAX__ - 1,
+  static_assert(_Dp != 0, "[ratio.ratio]/1: the denominator of std::ratio must not be zero");
+  static_assert(_Np != -__INTMAX_MAX__ - 1 && _Dp != -__INTMAX_MAX__ - 1,
                 "[ratio.ratio]/1: the absolute values of N and D must be representable by intmax_t");
-  static constexpr intmax_t g = D == 0 ? 1 : ycxx::detail::ratio_gcd(N, D == 0 ? 1 : D);
+  static constexpr intmax_t __g = _Dp == 0 ? 1 : __ycxx::__detail::__ratio_gcd(_Np, _Dp == 0 ? 1 : _Dp);
 
 public:
-  static constexpr intmax_t num = (D < 0 ? -N : N) / g;
-  static constexpr intmax_t den = (D < 0 ? -D : D) / g;
+  static constexpr intmax_t num = (_Dp < 0 ? -_Np : _Np) / __g;
+  static constexpr intmax_t den = (_Dp < 0 ? -_Dp : _Dp) / __g;
   using type = ratio<num, den>;
 };
 
 } // namespace std
 
-namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
 
-template <std::intmax_t N, std::intmax_t D>
-inline constexpr bool is_ratio<std::ratio<N, D>> = true;
+template <std::intmax_t _Np, std::intmax_t _Dp>
+inline constexpr bool __is_ratio<std::ratio<_Np, _Dp>> = true;
 
-template <ratio_value V>
-struct ratio_result {
-  static_assert(V.ok, "[ratio.arithmetic]/2: the result of the std::ratio arithmetic is not representable by intmax_t");
-  using type = std::ratio<V.ok ? V.num : 0, V.ok ? V.den : 1>;
+template <__ratio_value _Vp>
+struct __ratio_result {
+  static_assert(_Vp.ok, "[ratio.arithmetic]/2: the result of the std::ratio arithmetic is not representable by intmax_t");
+  using type = std::ratio<_Vp.ok ? _Vp.num : 0, _Vp.ok ? _Vp.den : 1>;
 };
 
-template <class R1, class R2, bool Negate>
-consteval ratio_value ratio_add_of() {
-  (void)ratio_check<R1, R2>{};
-  return ycxx::detail::ratio_add_values(R1::num, R1::den, Negate ? -R2::num : R2::num, R2::den);
+template <class _R1, class _R2, bool _Negate>
+consteval __ratio_value __ratio_add_of() {
+  (void)__ratio_check<_R1, _R2>{};
+  return __ycxx::__detail::__ratio_add_values(_R1::num, _R1::den, _Negate ? -_R2::num : _R2::num, _R2::den);
 }
-template <class R1, class R2>
-consteval ratio_value ratio_divide_of() {
-  (void)ratio_check<R1, R2>{};
-  static_assert(R2::num != 0, "[ratio.arithmetic]: std::ratio_divide by zero");
-  if constexpr (R2::num == 0)
+template <class _R1, class _R2>
+consteval __ratio_value __ratio_divide_of() {
+  (void)__ratio_check<_R1, _R2>{};
+  static_assert(_R2::num != 0, "[ratio.arithmetic]: std::ratio_divide by zero");
+  if constexpr (_R2::num == 0)
     return {0, 1, true};
   else
-    return ycxx::detail::ratio_mul_values(R1::num, R1::den, R2::num < 0 ? -R2::den : R2::den,
-                                          R2::num < 0 ? -R2::num : R2::num);
+    return __ycxx::__detail::__ratio_mul_values(_R1::num, _R1::den, _R2::num < 0 ? -_R2::den : _R2::den,
+                                          _R2::num < 0 ? -_R2::num : _R2::num);
 }
-template <class R1, class R2>
-consteval ratio_value ratio_multiply_of() {
-  (void)ratio_check<R1, R2>{};
-  return ycxx::detail::ratio_mul_values(R1::num, R1::den, R2::num, R2::den);
+template <class _R1, class _R2>
+consteval __ratio_value __ratio_multiply_of() {
+  (void)__ratio_check<_R1, _R2>{};
+  return __ycxx::__detail::__ratio_mul_values(_R1::num, _R1::den, _R2::num, _R2::den);
 }
-template <class R1, class R2>
-consteval int ratio_compare_of() {
-  (void)ratio_check<R1, R2>{};
-  return ycxx::detail::ratio_compare(R1::num, R1::den, R2::num, R2::den);
+template <class _R1, class _R2>
+consteval int __ratio_compare_of() {
+  (void)__ratio_check<_R1, _R2>{};
+  return __ycxx::__detail::__ratio_compare(_R1::num, _R1::den, _R2::num, _R2::den);
 }
 
-}} // namespace ycxx::detail
+}} // namespace __ycxx::__detail
 
-namespace [[gnu::visibility("hidden")]] std {
+namespace [[__gnu__::__visibility__("hidden")]] std {
 
 // [ratio.arithmetic]
-template <class R1, class R2>
-using ratio_add = typename ycxx::detail::ratio_result<ycxx::detail::ratio_add_of<R1, R2, false>()>::type;
-template <class R1, class R2>
-using ratio_subtract = typename ycxx::detail::ratio_result<ycxx::detail::ratio_add_of<R1, R2, true>()>::type;
-template <class R1, class R2>
-using ratio_multiply = typename ycxx::detail::ratio_result<ycxx::detail::ratio_multiply_of<R1, R2>()>::type;
-template <class R1, class R2>
-using ratio_divide = typename ycxx::detail::ratio_result<ycxx::detail::ratio_divide_of<R1, R2>()>::type;
+template <class _R1, class _R2>
+using ratio_add = typename __ycxx::__detail::__ratio_result<__ycxx::__detail::__ratio_add_of<_R1, _R2, false>()>::type;
+template <class _R1, class _R2>
+using ratio_subtract = typename __ycxx::__detail::__ratio_result<__ycxx::__detail::__ratio_add_of<_R1, _R2, true>()>::type;
+template <class _R1, class _R2>
+using ratio_multiply = typename __ycxx::__detail::__ratio_result<__ycxx::__detail::__ratio_multiply_of<_R1, _R2>()>::type;
+template <class _R1, class _R2>
+using ratio_divide = typename __ycxx::__detail::__ratio_result<__ycxx::__detail::__ratio_divide_of<_R1, _R2>()>::type;
 
 // [ratio.comparison]
-template <class R1, class R2>
-struct ratio_equal : bool_constant<ycxx::detail::ratio_compare_of<R1, R2>() == 0> {};
-template <class R1, class R2>
-struct ratio_not_equal : bool_constant<ycxx::detail::ratio_compare_of<R1, R2>() != 0> {};
-template <class R1, class R2>
-struct ratio_less : bool_constant<(ycxx::detail::ratio_compare_of<R1, R2>() < 0)> {};
-template <class R1, class R2>
-struct ratio_less_equal : bool_constant<(ycxx::detail::ratio_compare_of<R1, R2>() <= 0)> {};
-template <class R1, class R2>
-struct ratio_greater : bool_constant<(ycxx::detail::ratio_compare_of<R1, R2>() > 0)> {};
-template <class R1, class R2>
-struct ratio_greater_equal : bool_constant<(ycxx::detail::ratio_compare_of<R1, R2>() >= 0)> {};
+template <class _R1, class _R2>
+struct ratio_equal : bool_constant<__ycxx::__detail::__ratio_compare_of<_R1, _R2>() == 0> {};
+template <class _R1, class _R2>
+struct ratio_not_equal : bool_constant<__ycxx::__detail::__ratio_compare_of<_R1, _R2>() != 0> {};
+template <class _R1, class _R2>
+struct ratio_less : bool_constant<(__ycxx::__detail::__ratio_compare_of<_R1, _R2>() < 0)> {};
+template <class _R1, class _R2>
+struct ratio_less_equal : bool_constant<(__ycxx::__detail::__ratio_compare_of<_R1, _R2>() <= 0)> {};
+template <class _R1, class _R2>
+struct ratio_greater : bool_constant<(__ycxx::__detail::__ratio_compare_of<_R1, _R2>() > 0)> {};
+template <class _R1, class _R2>
+struct ratio_greater_equal : bool_constant<(__ycxx::__detail::__ratio_compare_of<_R1, _R2>() >= 0)> {};
 
-template <class R1, class R2>
-constexpr bool ratio_equal_v = ratio_equal<R1, R2>::value;
-template <class R1, class R2>
-constexpr bool ratio_not_equal_v = ratio_not_equal<R1, R2>::value;
-template <class R1, class R2>
-constexpr bool ratio_less_v = ratio_less<R1, R2>::value;
-template <class R1, class R2>
-constexpr bool ratio_less_equal_v = ratio_less_equal<R1, R2>::value;
-template <class R1, class R2>
-constexpr bool ratio_greater_v = ratio_greater<R1, R2>::value;
-template <class R1, class R2>
-constexpr bool ratio_greater_equal_v = ratio_greater_equal<R1, R2>::value;
+template <class _R1, class _R2>
+constexpr bool ratio_equal_v = ratio_equal<_R1, _R2>::value;
+template <class _R1, class _R2>
+constexpr bool ratio_not_equal_v = ratio_not_equal<_R1, _R2>::value;
+template <class _R1, class _R2>
+constexpr bool ratio_less_v = ratio_less<_R1, _R2>::value;
+template <class _R1, class _R2>
+constexpr bool ratio_less_equal_v = ratio_less_equal<_R1, _R2>::value;
+template <class _R1, class _R2>
+constexpr bool ratio_greater_v = ratio_greater<_R1, _R2>::value;
+template <class _R1, class _R2>
+constexpr bool ratio_greater_equal_v = ratio_greater_equal<_R1, _R2>::value;
 
 // [ratio.si]: quecto ... zepto and zetta ... quetta need more than 64 bits, so they are declared
 // only where intmax_t is wider (/1); there is no such target among those libycxx supports.

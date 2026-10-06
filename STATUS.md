@@ -527,12 +527,22 @@ compilers; `visit_format_arg.pass.cpp` needs `EOF` from `constexpr_char_traits.h
   C library does (`0x0.000000000000001p-16385` is the smallest), so that both forms agree there.
 
 ## Known limitations and draft defects
+- Reserved names (DECISIONS §2): the headers spell every name of their own as a reserved
+  identifier, so a program may `#define` any name the standard library does not declare
+  (`tests/ycxx/conformance/nasty_macros*`, 5875 such macros; `tools/uglify.py --check` in the
+  policy stage). The standard names come from the draft's index of library names (a snapshot,
+  `tools/uglify.py --fetch-index`), the std modules' export lists and a hand-kept list of the
+  names the index misses (`tools/data/uglify/allowed.txt`); a standard name missing from all
+  three is renamed, harmlessly. Not covered: 17 names that glibc's own headers break on when
+  they are macros (`f`, `l`, `y0`, `link`, ...; `tools/data/uglify/nasty-macros.txt`). The PAL
+  (`__ycxx_pal_*`) and the allocation table (`__ycxx_allocation_functions`) changed their
+  symbol names; a port's PAL implements the reserved names.
 - Modules (`import std;`, `import std.compat;`; DECISIONS §16): built per project from
   `modules/*.cppm` (CMake `ycxx::modules`, `tools/ycxx-modules`), never shipped as BMIs. CMake's
   `CMAKE_CXX_MODULE_STD` is not supported (needs CMake >= 3.30, and would build the toolchain's
   library's module; CMake here is 3.28). The export lists are generated on Linux/glibc; on Darwin
   the modules are untested (std.compat's global C names may differ there). The implementation's
-  inline namespace `std::ranges::cpo` (and `std::cpo`) is visible to importers (the CPOs must be
+  inline namespace `std::ranges::__cpo` (and `std::__cpo`) is visible to importers (the CPOs must be
   exported from it, DECISIONS §16). GCC: see known compiler gaps (no #include and import of the
   library in one translation unit). `<bits/stdc++.h>` exists (every header) because GCC's
   `-fmodules` looks it up for every standard #include.

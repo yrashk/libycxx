@@ -7,38 +7,38 @@
 #include <ycxx/core/range_access.hpp>
 #include <ycxx/core/ranges_base.hpp>
 
-namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
 
 // [container.reqmts]: a type qualifies as an allocator if A::value_type is a type and
 // declval<A&>().allocate(size_t{}) is well-formed.
-template <class A>
-concept qualifies_as_allocator = requires(A& a) {
-  typename A::value_type;
+template <class _Ap>
+concept __qualifies_as_allocator = requires(_Ap& a) {
+  typename _Ap::value_type;
   a.allocate(std::size_t{});
 };
 
 // allocator_traits<A>::size_type, a substitution failure when A does not qualify as an
 // allocator: an implicit deduction guide from a constructor such as
 // vector(size_type, const T&, const Allocator&) then drops out instead of instantiating X<T, A> ([container.reqmts]/69, [container.requirements.general]).
-template <class A>
-  requires qualifies_as_allocator<A>
-using alloc_size_t = typename std::allocator_traits<A>::size_type;
+template <class _Ap>
+  requires __qualifies_as_allocator<_Ap>
+using __alloc_size_t = typename std::allocator_traits<_Ap>::size_type;
 
 // [container.reqmts]: integral types never qualify as input iterators; libycxx also requires
 // an iterator_category derived from input_iterator_tag.
-template <class I>
-concept qualifies_as_input_iterator = !std::is_integral_v<I> && requires {
-  typename std::iterator_traits<I>::iterator_category;
-} && std::is_convertible_v<typename std::iterator_traits<I>::iterator_category, std::input_iterator_tag>;
+template <class _Ip>
+concept __qualifies_as_input_iterator = !std::is_integral_v<_Ip> && requires {
+  typename std::iterator_traits<_Ip>::iterator_category;
+} && std::is_convertible_v<typename std::iterator_traits<_Ip>::iterator_category, std::input_iterator_tag>;
 
 // [container.intro.reqmts]
-template <class R, class T>
-concept container_compatible_range =
-    std::ranges::input_range<R> && std::convertible_to<std::ranges::range_reference_t<R>, T>;
+template <class _Rp, class _Tp>
+concept __container_compatible_range =
+    std::ranges::input_range<_Rp> && std::convertible_to<std::ranges::range_reference_t<_Rp>, _Tp>;
 
-}} // namespace ycxx::detail
+}} // namespace __ycxx::__detail
 
-namespace [[gnu::visibility("hidden")]] ycxx { namespace adl_free {
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __adl_free {
 
 // The iterator of a contiguous container: a wrapped T* (T possibly const). Owner makes the
 // iterators of different containers distinct types; Diff is the container's difference_type.
@@ -46,61 +46,61 @@ namespace [[gnu::visibility("hidden")]] ycxx { namespace adl_free {
 // would make overloads such as basic_string::insert(size_type, ...) /
 // insert(const_iterator, ...) ambiguous). Comparisons are hidden friends taking two iterators of
 // the same type; an iterator converts to the matching const iterator, so mixed comparisons work.
-template <class T, class Owner, class Diff>
-class contiguous_iter {
-  T* p_ = nullptr;
+template <class _Tp, class _Owner, class _Diff>
+class __contiguous_iter {
+  _Tp* __p_ = nullptr;
 
 public:
   using iterator_concept = std::contiguous_iterator_tag;
   using iterator_category = std::random_access_iterator_tag;
-  using value_type = std::remove_cv_t<T>;
-  using difference_type = Diff;
-  using pointer = T*;
-  using reference = T&;
+  using value_type = std::remove_cv_t<_Tp>;
+  using difference_type = _Diff;
+  using pointer = _Tp*;
+  using reference = _Tp&;
 
-  constexpr contiguous_iter() noexcept = default;
-  constexpr explicit contiguous_iter(T* p) noexcept : p_(p) {}
-  template <class U>
-    requires std::is_same_v<const U, T> && (!std::is_same_v<U, T>)
-  constexpr contiguous_iter(const contiguous_iter<U, Owner, Diff>& o) noexcept : p_(o.base()) {}
+  constexpr __contiguous_iter() noexcept = default;
+  constexpr explicit __contiguous_iter(_Tp* p) noexcept : __p_(p) {}
+  template <class _Up>
+    requires std::is_same_v<const _Up, _Tp> && (!std::is_same_v<_Up, _Tp>)
+  constexpr __contiguous_iter(const __contiguous_iter<_Up, _Owner, _Diff>& __o) noexcept : __p_(__o.base()) {}
 
-  constexpr T* base() const noexcept { return p_; }
+  constexpr _Tp* base() const noexcept { return __p_; }
 
-  constexpr reference operator*() const noexcept { return *p_; }
-  constexpr pointer operator->() const noexcept { return p_; }
-  constexpr reference operator[](difference_type n) const noexcept { return p_[n]; }
+  constexpr reference operator*() const noexcept { return *__p_; }
+  constexpr pointer operator->() const noexcept { return __p_; }
+  constexpr reference operator[](difference_type n) const noexcept { return __p_[n]; }
 
-  constexpr contiguous_iter& operator++() noexcept {
-    ++p_;
+  constexpr __contiguous_iter& operator++() noexcept {
+    ++__p_;
     return *this;
   }
-  constexpr contiguous_iter operator++(int) noexcept { return contiguous_iter(p_++); }
-  constexpr contiguous_iter& operator--() noexcept {
-    --p_;
+  constexpr __contiguous_iter operator++(int) noexcept { return __contiguous_iter(__p_++); }
+  constexpr __contiguous_iter& operator--() noexcept {
+    --__p_;
     return *this;
   }
-  constexpr contiguous_iter operator--(int) noexcept { return contiguous_iter(p_--); }
-  constexpr contiguous_iter& operator+=(difference_type n) noexcept {
-    p_ += n;
+  constexpr __contiguous_iter operator--(int) noexcept { return __contiguous_iter(__p_--); }
+  constexpr __contiguous_iter& operator+=(difference_type n) noexcept {
+    __p_ += n;
     return *this;
   }
-  constexpr contiguous_iter& operator-=(difference_type n) noexcept {
-    p_ -= n;
+  constexpr __contiguous_iter& operator-=(difference_type n) noexcept {
+    __p_ -= n;
     return *this;
   }
 
-  friend constexpr contiguous_iter operator+(contiguous_iter i, difference_type n) noexcept { return i += n; }
-  friend constexpr contiguous_iter operator+(difference_type n, contiguous_iter i) noexcept { return i += n; }
-  friend constexpr contiguous_iter operator-(contiguous_iter i, difference_type n) noexcept { return i -= n; }
-  friend constexpr difference_type operator-(const contiguous_iter& a, const contiguous_iter& b) noexcept {
-    return static_cast<difference_type>(a.p_ - b.p_);
+  friend constexpr __contiguous_iter operator+(__contiguous_iter i, difference_type n) noexcept { return i += n; }
+  friend constexpr __contiguous_iter operator+(difference_type n, __contiguous_iter i) noexcept { return i += n; }
+  friend constexpr __contiguous_iter operator-(__contiguous_iter i, difference_type n) noexcept { return i -= n; }
+  friend constexpr difference_type operator-(const __contiguous_iter& a, const __contiguous_iter& b) noexcept {
+    return static_cast<difference_type>(a.__p_ - b.__p_);
   }
-  friend constexpr bool operator==(const contiguous_iter& a, const contiguous_iter& b) noexcept {
-    return a.p_ == b.p_;
+  friend constexpr bool operator==(const __contiguous_iter& a, const __contiguous_iter& b) noexcept {
+    return a.__p_ == b.__p_;
   }
-  friend constexpr std::strong_ordering operator<=>(const contiguous_iter& a, const contiguous_iter& b) noexcept {
-    return a.p_ <=> b.p_;
+  friend constexpr std::strong_ordering operator<=>(const __contiguous_iter& a, const __contiguous_iter& b) noexcept {
+    return a.__p_ <=> b.__p_;
   }
 };
 
-}} // namespace ycxx::adl_free
+}} // namespace __ycxx::__adl_free

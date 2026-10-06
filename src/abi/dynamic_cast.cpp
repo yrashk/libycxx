@@ -2,7 +2,7 @@
 #include "rtti.hpp"
 
 using namespace __cxxabiv1;
-using ycxx::abi::rtti_kind;
+using __ycxx::__abi::__rtti_kind;
 
 namespace {
 
@@ -18,9 +18,9 @@ namespace {
 // them for a repetition anywhere in the hierarchy), every subobject lies on exactly one path,
 // and the walk stops once it has seen the source and a dst.
 struct cast_walk {
-  const __class_type_info* src;
-  const char* sub;
-  const __class_type_info* dst;
+  const __class_type_info* __src;
+  const char* __sub;
+  const __class_type_info* __dst;
   bool unique_bases;
 
   bool src_seen = false;
@@ -37,45 +37,45 @@ struct cast_walk {
   // diamonds would otherwise be walked along exponentially many paths. Past its capacity the
   // walk simply enters again.
   struct seen_state {
-    const char* addr;
+    const char* __addr;
     const char* in_dst;
     unsigned flags;
   };
   static constexpr int capacity = 64;
-  seen_state seen[capacity];
+  seen_state __seen[capacity];
   int nseen = 0;
-  bool enter(const char* addr, const char* in_dst, unsigned flags) noexcept {
+  bool __enter(const char* __addr, const char* in_dst, unsigned flags) noexcept {
     for (int i = 0; i < nseen; ++i)
-      if (seen[i].addr == addr && seen[i].in_dst == in_dst && seen[i].flags == flags)
+      if (__seen[i].__addr == __addr && __seen[i].in_dst == in_dst && __seen[i].flags == flags)
         return false;
     if (nseen < capacity)
-      seen[nseen++] = {addr, in_dst, flags};
+      __seen[nseen++] = {__addr, in_dst, flags};
     return true;
   }
 
   cast_walk(const __class_type_info* s, const char* at, const __class_type_info* d, bool unique) noexcept
-      : src(s), sub(at), dst(d), unique_bases(unique) {}
+      : __src(s), __sub(at), __dst(d), unique_bases(unique) {}
 
   // The subobject of type t at addr. pub: the path from the most derived object is public;
   // in_dst: the dst subobject on this path, or null; dst_pub: the path from in_dst is public;
   // below_src: the source is on this path. Returns true to end the walk.
-  bool visit(const __class_type_info* t, const char* addr, bool pub, const char* in_dst, bool dst_pub,
+  bool visit(const __class_type_info* t, const char* __addr, bool __pub, const char* in_dst, bool dst_pub,
              bool below_src) {
-    if (in_dst == nullptr && ycxx::abi::same_type(*t, *dst)) {
+    if (in_dst == nullptr && __ycxx::__abi::__same_type(*t, *__dst)) {
       if (across_count == 0) {
-        across = addr;
+        across = __addr;
         across_count = 1;
-        across_public = pub;
-      } else if (across == addr) {
-        across_public = across_public || pub;
+        across_public = __pub;
+      } else if (across == __addr) {
+        across_public = across_public || __pub;
       } else {
         across_count = 2;
       }
-      in_dst = addr;
+      in_dst = __addr;
       dst_pub = true;
-    } else if (!below_src && addr == sub && ycxx::abi::same_type(*t, *src)) {
+    } else if (!below_src && __addr == __sub && __ycxx::__abi::__same_type(*t, *__src)) {
       src_seen = true;
-      src_public = src_public || pub;
+      src_public = src_public || __pub;
       below_src = true;
       if (in_dst != nullptr) {
         if (down_count == 0) {
@@ -91,26 +91,26 @@ struct cast_walk {
     }
     if (unique_bases && src_seen && across_count != 0)
       return true;
-    switch (ycxx::abi::kind_of(*t)) {
-    case rtti_kind::class_si:
+    switch (__ycxx::__abi::__kind_of(*t)) {
+    case __rtti_kind::__class_si:
       // §2.9.4: a single public non-virtual base at offset zero.
-      return visit(static_cast<const __si_class_type_info*>(t)->__base_type, addr, pub, in_dst, dst_pub, below_src);
-    case rtti_kind::class_vmi: {
-      auto* vmi = static_cast<const __vmi_class_type_info*>(t);
-      for (unsigned i = 0; i < vmi->__base_count; ++i) {
-        const __base_class_type_info& b = vmi->bases()[i];
+      return visit(static_cast<const __si_class_type_info*>(t)->__base_type, __addr, __pub, in_dst, dst_pub, below_src);
+    case __rtti_kind::__class_vmi: {
+      auto* __vmi = static_cast<const __vmi_class_type_info*>(t);
+      for (unsigned i = 0; i < __vmi->__base_count; ++i) {
+        const __base_class_type_info& b = __vmi->__y_bases()[i];
         // As in walk_bases (rtti.hpp): a virtual base's offset is stored in this subobject's
         // vtable, at b.offset() from its virtual pointer.
-        const char* child = addr + b.offset();
+        const char* __child = __addr + b.offset();
         const bool p = b.is_public();
         if (b.is_virtual()) {
-          child = addr + *reinterpret_cast<const std::ptrdiff_t*>(*reinterpret_cast<const char* const*>(addr) +
+          __child = __addr + *reinterpret_cast<const std::ptrdiff_t*>(*reinterpret_cast<const char* const*>(__addr) +
                                                                   b.offset());
-          const unsigned flags = (pub && p ? 1u : 0u) | (dst_pub && p ? 2u : 0u) | (below_src ? 4u : 0u);
-          if (!enter(child, in_dst, flags))
+          const unsigned flags = (__pub && p ? 1u : 0u) | (dst_pub && p ? 2u : 0u) | (below_src ? 4u : 0u);
+          if (!__enter(__child, in_dst, flags))
             continue;
         }
-        if (visit(b.__base_type, child, pub && p, in_dst, dst_pub && p, below_src))
+        if (visit(b.__base_type, __child, __pub && p, in_dst, dst_pub && p, below_src))
           return true;
       }
       return false;
@@ -129,25 +129,25 @@ struct cast_walk {
 //       dst; -3 src is a public base of dst several times, never virtually. Only the first
 //       form is used, for a fast path; every result is otherwise computed from the RTTI.
 // Returns the dst object, or nullptr when the run-time check fails.
-extern "C" [[gnu::visibility("hidden")]] void* __dynamic_cast(const void* sub, const __class_type_info* src, const __class_type_info* dst,
+extern "C" [[__gnu__::__visibility__("hidden")]] void* __dynamic_cast(const void* __sub, const __class_type_info* __src, const __class_type_info* __dst,
                                 std::ptrdiff_t src2dst_offset) {
   // §2.9.4: vtable entry -2 is the offset from this virtual pointer to the top of the object,
   // entry -1 the type_info of that object. During construction or destruction the virtual
   // pointer names a construction vtable, whose entries describe the class under construction
   // ([class.cdtor]/6 treats it as the most derived object).
-  const char* vptr = *static_cast<const char* const*>(sub);
-  std::ptrdiff_t to_top = reinterpret_cast<const std::ptrdiff_t*>(vptr)[-2];
-  auto* mdo_info = reinterpret_cast<const std::type_info* const*>(vptr)[-1];
+  const char* __vptr = *static_cast<const char* const*>(__sub);
+  std::ptrdiff_t to_top = reinterpret_cast<const std::ptrdiff_t*>(__vptr)[-2];
+  auto* mdo_info = reinterpret_cast<const std::type_info* const*>(__vptr)[-1];
   if (mdo_info == nullptr) // a vtable emitted without RTTI (-fno-rtti)
     return nullptr;
   auto* mdo_type = static_cast<const __class_type_info*>(mdo_info);
-  const char* mdo = static_cast<const char*>(sub) + to_top;
-  const char* source = static_cast<const char*>(sub);
+  const char* mdo = static_cast<const char*>(__sub) + to_top;
+  const char* __source = static_cast<const char*>(__sub);
 
   // Fast path, the common downcast to the most derived type: the hint says the src subobject
   // at that offset is the only src base of dst and is public, and a class has no subobject of
   // its own type, so the most derived object is the one dst object containing it.
-  if (src2dst_offset >= 0 && mdo + src2dst_offset == source && ycxx::abi::same_type(*mdo_type, *dst))
+  if (src2dst_offset >= 0 && mdo + src2dst_offset == __source && __ycxx::__abi::__same_type(*mdo_type, *__dst))
     return const_cast<char*>(mdo);
 
   // Single inheritance from the top (the usual case): those classes are all at the most derived
@@ -156,31 +156,31 @@ extern "C" [[gnu::visibility("hidden")]] void* __dynamic_cast(const void* sub, c
   // src. A source below the chain (say, behind a private base of its last class) needs the full
   // walk. If the chain is the whole hierarchy and dst is not in it, dst is no base.
   const __class_type_info* t = mdo_type;
-  rtti_kind k = ycxx::abi::kind_of(*t);
+  __rtti_kind k = __ycxx::__abi::__kind_of(*t);
   bool dst_in_chain = false;
   bool src_in_chain = false;
   for (;;) {
-    dst_in_chain = dst_in_chain || ycxx::abi::same_type(*t, *dst);
-    src_in_chain = src_in_chain || (source == mdo && ycxx::abi::same_type(*t, *src));
+    dst_in_chain = dst_in_chain || __ycxx::__abi::__same_type(*t, *__dst);
+    src_in_chain = src_in_chain || (__source == mdo && __ycxx::__abi::__same_type(*t, *__src));
     if (dst_in_chain && src_in_chain)
       return const_cast<char*>(mdo);
-    if (k != rtti_kind::class_si)
+    if (k != __rtti_kind::__class_si)
       break;
     t = static_cast<const __si_class_type_info*>(t)->__base_type;
-    k = ycxx::abi::kind_of(*t);
+    k = __ycxx::__abi::__kind_of(*t);
   }
-  if (k != rtti_kind::class_vmi)
+  if (k != __rtti_kind::__class_vmi)
     return nullptr;
 
   // The classes above t occur once each (none can be a base of t), so t's flags tell whether
   // any base class repeats.
-  cast_walk w(src, source, dst, static_cast<const __vmi_class_type_info*>(t)->__flags == 0);
-  w.visit(mdo_type, mdo, true, nullptr, true, false);
-  if (w.down_count == 1 && w.down_public)
-    return const_cast<char*>(w.down);
+  cast_walk __w(__src, __source, __dst, static_cast<const __vmi_class_type_info*>(t)->__flags == 0);
+  __w.visit(mdo_type, mdo, true, nullptr, true, false);
+  if (__w.down_count == 1 && __w.down_public)
+    return const_cast<char*>(__w.down);
   // [expr.dynamic.cast]/9.2, the cross cast: the source must be a public base of the most
   // derived object, and dst an unambiguous public base of it.
-  if (w.src_public && w.across_count == 1 && w.across_public)
-    return const_cast<char*>(w.across);
+  if (__w.src_public && __w.across_count == 1 && __w.across_public)
+    return const_cast<char*>(__w.across);
   return nullptr;
 }

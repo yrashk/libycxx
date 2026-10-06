@@ -4,7 +4,7 @@
 - Only include/ycxx/config.hpp may inspect compiler/target macros.
 - #define is allowed only in config.hpp and in files listed in MANDATED_MACRO_FILES (which
   define standard-mandated macros such as INT_MAX or __cpp_lib_*).
-- Elsewhere, #if/#ifdef/#ifndef/#elif may only test YCXX_HAS_* / YCXX_* switches.
+- Elsewhere, #if/#ifdef/#ifndef/#elif may only test _YCXX_HAS_* / _YCXX_* switches.
 - Every header starts with #pragma once.
 """
 import pathlib, re, sys
@@ -28,7 +28,7 @@ MANDATED_MACRO_FILES = {
 REINCLUDABLE = {"cassert"}
 COND = re.compile(r"^\s*#\s*(if|ifdef|ifndef|elif|elifdef|elifndef)\b(.*)")
 DEFINE = re.compile(r"^\s*#\s*(define|undef)\s+(\w+)")
-SWITCH = re.compile(r"^\s*!?\s*(YCXX_[A-Z0-9_]+)(\s*(&&|\|\|)\s*!?\s*YCXX_[A-Z0-9_]+)*\s*$")
+SWITCH = re.compile(r"^\s*!?\s*(_YCXX_[A-Z0-9_]+)(\s*(&&|\|\|)\s*!?\s*_YCXX_[A-Z0-9_]+)*\s*$")
 
 errors = []
 for path in sorted(p for p in ROOT.rglob("*") if p.is_file()):
@@ -46,7 +46,7 @@ for path in sorted(p for p in ROOT.rglob("*") if p.is_file()):
         m = COND.match(line)
         if m and not mandated:
             if not SWITCH.match(m.group(2).split("//")[0]):
-                errors.append(f"{rel}:{n}: preprocessor conditional must test only YCXX_* switches: {line.strip()}")
+                errors.append(f"{rel}:{n}: preprocessor conditional must test only _YCXX_* switches: {line.strip()}")
 
 for e in errors:
     print(e)

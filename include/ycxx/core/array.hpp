@@ -7,64 +7,64 @@
 #include <ycxx/core/error.hpp>
 #include <initializer_list>
 
-namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
 // Storage for array<T, 0>: no elements, but alignof(T) and data() support.
-template <class T>
-struct alignas(T) empty_array_storage {};
+template <class _Tp>
+struct alignas(_Tp) __empty_array_storage {};
 // array<const T, 0> is not assignable, like array<const T, N> for N > 0.
-template <class T>
-struct alignas(T) empty_array_storage<const T> {
-  empty_array_storage& operator=(const empty_array_storage&) = delete;
+template <class _Tp>
+struct alignas(_Tp) __empty_array_storage<const _Tp> {
+  __empty_array_storage& operator=(const __empty_array_storage&) = delete;
 };
-template <class T, std::size_t N>
-struct array_storage {
-  using type = T[N];
+template <class _Tp, std::size_t _Np>
+struct __array_storage {
+  using type = _Tp[_Np];
 };
-template <class T>
-struct array_storage<T, 0> {
-  using type = empty_array_storage<T>;
+template <class _Tp>
+struct __array_storage<_Tp, 0> {
+  using type = __empty_array_storage<_Tp>;
 };
-}} // namespace ycxx::detail
+}} // namespace __ycxx::__detail
 
-namespace [[gnu::visibility("hidden")]] std {
+namespace [[__gnu__::__visibility__("hidden")]] std {
 
-template <class T, size_t N>
+template <class _Tp, size_t _Np>
 struct array {
-  using value_type = T;
-  using pointer = T*;
-  using const_pointer = const T*;
-  using reference = T&;
-  using const_reference = const T&;
+  using value_type = _Tp;
+  using pointer = _Tp*;
+  using const_pointer = const _Tp*;
+  using reference = _Tp&;
+  using const_reference = const _Tp&;
   using size_type = size_t;
   using difference_type = ptrdiff_t;
-  using iterator = T*;
-  using const_iterator = const T*;
+  using iterator = _Tp*;
+  using const_iterator = const _Tp*;
   using reverse_iterator = std::reverse_iterator<iterator>;
   using const_reverse_iterator = std::reverse_iterator<const_iterator>;
 
   // Public because array is an aggregate ([array.overview]); the reserved name keeps it out of
   // the way of user macros.
-  typename ycxx::detail::array_storage<T, N>::type __elems;
+  typename __ycxx::__detail::__array_storage<_Tp, _Np>::type __elems;
 
-  constexpr void fill(const T& u) {
-    for (size_t i = 0; i < N; ++i)
-      data()[i] = u;
+  constexpr void fill(const _Tp& __u) {
+    for (size_t i = 0; i < _Np; ++i)
+      data()[i] = __u;
   }
-  constexpr void swap(array& a) noexcept(N == 0 || is_nothrow_swappable_v<T>) {
+  constexpr void swap(array& a) noexcept(_Np == 0 || is_nothrow_swappable_v<_Tp>) {
     // Not redundant: for N == 0, T need not be swappable, and the loop body must not be instantiated.
-    if constexpr (N != 0)
-      for (size_t i = 0; i < N; ++i)
-        ycxx::detail::swap_adl::do_swap(data()[i], a.data()[i]);
+    if constexpr (_Np != 0)
+      for (size_t i = 0; i < _Np; ++i)
+        __ycxx::__detail::__swap_adl::__do_swap(data()[i], a.data()[i]);
   }
 
   constexpr pointer data() noexcept {
-    if constexpr (N == 0)
+    if constexpr (_Np == 0)
       return nullptr;
     else
       return __elems;
   }
   constexpr const_pointer data() const noexcept {
-    if constexpr (N == 0)
+    if constexpr (_Np == 0)
       return nullptr;
     else
       return __elems;
@@ -72,8 +72,8 @@ struct array {
 
   constexpr iterator begin() noexcept { return data(); }
   constexpr const_iterator begin() const noexcept { return data(); }
-  constexpr iterator end() noexcept { return data() + N; }
-  constexpr const_iterator end() const noexcept { return data() + N; }
+  constexpr iterator end() noexcept { return data() + _Np; }
+  constexpr const_iterator end() const noexcept { return data() + _Np; }
   constexpr reverse_iterator rbegin() noexcept { return reverse_iterator(end()); }
   constexpr const_reverse_iterator rbegin() const noexcept { return const_reverse_iterator(end()); }
   constexpr reverse_iterator rend() noexcept { return reverse_iterator(begin()); }
@@ -83,115 +83,115 @@ struct array {
   constexpr const_reverse_iterator crbegin() const noexcept { return rbegin(); }
   constexpr const_reverse_iterator crend() const noexcept { return rend(); }
 
-  [[nodiscard]] constexpr bool empty() const noexcept { return N == 0; }
-  constexpr size_type size() const noexcept { return N; }
-  constexpr size_type max_size() const noexcept { return N; }
+  [[nodiscard]] constexpr bool empty() const noexcept { return _Np == 0; }
+  constexpr size_type size() const noexcept { return _Np; }
+  constexpr size_type max_size() const noexcept { return _Np; }
 
   constexpr reference operator[](size_type n) {
-    ycxx::detail::precondition(n < N, "std::array::operator[]: index out of range");
+    __ycxx::__detail::__precondition(n < _Np, "std::array::operator[]: index out of range");
     return data()[n];
   }
   constexpr const_reference operator[](size_type n) const {
-    ycxx::detail::precondition(n < N, "std::array::operator[]: index out of range");
+    __ycxx::__detail::__precondition(n < _Np, "std::array::operator[]: index out of range");
     return data()[n];
   }
   constexpr reference at(size_type n) {
-    if (n >= N)
-      ycxx::detail::throw_out_of_range("std::array::at: index out of range");
+    if (n >= _Np)
+      __ycxx::__detail::__throw_out_of_range("std::array::at: index out of range");
     return data()[n];
   }
   constexpr const_reference at(size_type n) const {
-    if (n >= N)
-      ycxx::detail::throw_out_of_range("std::array::at: index out of range");
+    if (n >= _Np)
+      __ycxx::__detail::__throw_out_of_range("std::array::at: index out of range");
     return data()[n];
   }
   constexpr reference front() {
-    ycxx::detail::precondition(N != 0, "std::array::front: empty array");
+    __ycxx::__detail::__precondition(_Np != 0, "std::array::front: empty array");
     return data()[0];
   }
   constexpr const_reference front() const {
-    ycxx::detail::precondition(N != 0, "std::array::front: empty array");
+    __ycxx::__detail::__precondition(_Np != 0, "std::array::front: empty array");
     return data()[0];
   }
   constexpr reference back() {
-    ycxx::detail::precondition(N != 0, "std::array::back: empty array");
-    return data()[N - 1];
+    __ycxx::__detail::__precondition(_Np != 0, "std::array::back: empty array");
+    return data()[_Np - 1];
   }
   constexpr const_reference back() const {
-    ycxx::detail::precondition(N != 0, "std::array::back: empty array");
-    return data()[N - 1];
+    __ycxx::__detail::__precondition(_Np != 0, "std::array::back: empty array");
+    return data()[_Np - 1];
   }
 };
 
-template <class T, class... U>
-  requires(is_same_v<T, U> && ...)
-array(T, U...) -> array<T, 1 + sizeof...(U)>;
+template <class _Tp, class... _Up>
+  requires(is_same_v<_Tp, _Up> && ...)
+array(_Tp, _Up...) -> array<_Tp, 1 + sizeof...(_Up)>;
 
-template <class T, size_t N>
-constexpr bool operator==(const array<T, N>& x, const array<T, N>& y) {
-  for (size_t i = 0; i < N; ++i)
-    if (!(x[i] == y[i]))
+template <class _Tp, size_t _Np>
+constexpr bool operator==(const array<_Tp, _Np>& __x, const array<_Tp, _Np>& y) {
+  for (size_t i = 0; i < _Np; ++i)
+    if (!(__x[i] == y[i]))
       return false;
   return true;
 }
-template <class T, size_t N>
-constexpr ycxx::detail::synth_three_way_result<T> operator<=>(const array<T, N>& x, const array<T, N>& y) {
-  for (size_t i = 0; i < N; ++i)
-    if (auto c = ycxx::detail::synth_three_way(x[i], y[i]); c != 0)
+template <class _Tp, size_t _Np>
+constexpr __ycxx::__detail::__synth_three_way_result<_Tp> operator<=>(const array<_Tp, _Np>& __x, const array<_Tp, _Np>& y) {
+  for (size_t i = 0; i < _Np; ++i)
+    if (auto c = __ycxx::__detail::__synth_three_way(__x[i], y[i]); c != 0)
       return c;
   return strong_ordering::equal;
 }
 
-template <class T, size_t N>
-  requires(N == 0 || is_swappable_v<T>)
-constexpr void swap(array<T, N>& x, array<T, N>& y) noexcept(noexcept(x.swap(y))) {
-  x.swap(y);
+template <class _Tp, size_t _Np>
+  requires(_Np == 0 || is_swappable_v<_Tp>)
+constexpr void swap(array<_Tp, _Np>& __x, array<_Tp, _Np>& y) noexcept(noexcept(__x.swap(y))) {
+  __x.swap(y);
 }
 
 // [array.creation]
-template <class T, size_t N>
-constexpr array<remove_cv_t<T>, N> to_array(T (&a)[N]) {
-  static_assert(!is_array_v<T>, "std::to_array: multidimensional arrays are not supported");
-  static_assert(is_constructible_v<remove_cv_t<T>, T&>, "std::to_array: T must be copy constructible");
-  return [&]<size_t... I>(index_sequence<I...>) { return array<remove_cv_t<T>, N>{{a[I]...}}; }(
-      make_index_sequence<N>{});
+template <class _Tp, size_t _Np>
+constexpr array<remove_cv_t<_Tp>, _Np> to_array(_Tp (&a)[_Np]) {
+  static_assert(!is_array_v<_Tp>, "std::to_array: multidimensional arrays are not supported");
+  static_assert(is_constructible_v<remove_cv_t<_Tp>, _Tp&>, "std::to_array: T must be copy constructible");
+  return [&]<size_t... _Ip>(index_sequence<_Ip...>) { return array<remove_cv_t<_Tp>, _Np>{{a[_Ip]...}}; }(
+      make_index_sequence<_Np>{});
 }
-template <class T, size_t N>
-constexpr array<remove_cv_t<T>, N> to_array(T (&&a)[N]) {
-  static_assert(!is_array_v<T>, "std::to_array: multidimensional arrays are not supported");
-  static_assert(is_constructible_v<remove_cv_t<T>, T>, "std::to_array: T must be move constructible");
-  return [&]<size_t... I>(index_sequence<I...>) {
-    return array<remove_cv_t<T>, N>{{static_cast<T&&>(a[I])...}};
-  }(make_index_sequence<N>{});
+template <class _Tp, size_t _Np>
+constexpr array<remove_cv_t<_Tp>, _Np> to_array(_Tp (&&a)[_Np]) {
+  static_assert(!is_array_v<_Tp>, "std::to_array: multidimensional arrays are not supported");
+  static_assert(is_constructible_v<remove_cv_t<_Tp>, _Tp>, "std::to_array: T must be move constructible");
+  return [&]<size_t... _Ip>(index_sequence<_Ip...>) {
+    return array<remove_cv_t<_Tp>, _Np>{{static_cast<_Tp&&>(a[_Ip])...}};
+  }(make_index_sequence<_Np>{});
 }
 
 // [array.tuple]
-template <class T, size_t N>
-struct tuple_size<array<T, N>> : integral_constant<size_t, N> {};
-template <size_t I, class T, size_t N>
-struct tuple_element<I, array<T, N>> {
-  static_assert(I < N, "tuple_element index out of range for std::array");
-  using type = T;
+template <class _Tp, size_t _Np>
+struct tuple_size<array<_Tp, _Np>> : integral_constant<size_t, _Np> {};
+template <size_t _Ip, class _Tp, size_t _Np>
+struct tuple_element<_Ip, array<_Tp, _Np>> {
+  static_assert(_Ip < _Np, "tuple_element index out of range for std::array");
+  using type = _Tp;
 };
-template <size_t I, class T, size_t N>
-constexpr T& get(array<T, N>& a) noexcept {
-  static_assert(I < N, "std::get: index out of range for std::array");
-  return a.__elems[I];
+template <size_t _Ip, class _Tp, size_t _Np>
+constexpr _Tp& get(array<_Tp, _Np>& a) noexcept {
+  static_assert(_Ip < _Np, "std::get: index out of range for std::array");
+  return a.__elems[_Ip];
 }
-template <size_t I, class T, size_t N>
-constexpr T&& get(array<T, N>&& a) noexcept {
-  static_assert(I < N, "std::get: index out of range for std::array");
-  return static_cast<T&&>(a.__elems[I]);
+template <size_t _Ip, class _Tp, size_t _Np>
+constexpr _Tp&& get(array<_Tp, _Np>&& a) noexcept {
+  static_assert(_Ip < _Np, "std::get: index out of range for std::array");
+  return static_cast<_Tp&&>(a.__elems[_Ip]);
 }
-template <size_t I, class T, size_t N>
-constexpr const T& get(const array<T, N>& a) noexcept {
-  static_assert(I < N, "std::get: index out of range for std::array");
-  return a.__elems[I];
+template <size_t _Ip, class _Tp, size_t _Np>
+constexpr const _Tp& get(const array<_Tp, _Np>& a) noexcept {
+  static_assert(_Ip < _Np, "std::get: index out of range for std::array");
+  return a.__elems[_Ip];
 }
-template <size_t I, class T, size_t N>
-constexpr const T&& get(const array<T, N>&& a) noexcept {
-  static_assert(I < N, "std::get: index out of range for std::array");
-  return static_cast<const T&&>(a.__elems[I]);
+template <size_t _Ip, class _Tp, size_t _Np>
+constexpr const _Tp&& get(const array<_Tp, _Np>&& a) noexcept {
+  static_assert(_Ip < _Np, "std::get: index out of range for std::array");
+  return static_cast<const _Tp&&>(a.__elems[_Ip]);
 }
 
 } // namespace std

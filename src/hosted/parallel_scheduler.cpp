@@ -14,7 +14,7 @@
 #include <thread>
 #include <vector>
 
-namespace [[gnu::visibility("hidden")]] ycxx { namespace detail { namespace exec {
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail { namespace __exec {
 namespace {
 namespace psr = std::execution::parallel_scheduler_replacement;
 
@@ -24,112 +24,112 @@ struct pool_item {
 };
 
 bool stop_requested(const psr::receiver_proxy& r) noexcept {
-  auto tok = r.try_query<std::inplace_stop_token>(std::get_stop_token);
-  return tok && tok->stop_requested();
+  auto __tok = r.try_query<std::inplace_stop_token>(std::get_stop_token);
+  return __tok && __tok->stop_requested();
 }
 
 // Storage for an item of type T: the proxy's buffer when it fits, else the heap.
-template <class T>
-T* place(std::span<std::byte> s, bool& heap) {
+template <class _Tp>
+_Tp* place(std::span<std::byte> s, bool& __heap) {
   void* p = s.data();
   std::size_t space = s.size();
-  if (s.data() && std::align(alignof(T), sizeof(T), p, space)) {
-    heap = false;
-    return static_cast<T*>(p);
+  if (s.data() && std::align(alignof(_Tp), sizeof(_Tp), p, space)) {
+    __heap = false;
+    return static_cast<_Tp*>(p);
   }
-  heap = true;
-  return static_cast<T*>(::operator new(sizeof(T), std::align_val_t(alignof(T))));
+  __heap = true;
+  return static_cast<_Tp*>(::operator new(sizeof(_Tp), std::align_val_t(alignof(_Tp))));
 }
-template <class T>
-void unplace(T* t, bool heap) noexcept {
-  t->~T();
-  if (heap)
-    ::operator delete(static_cast<void*>(t), std::align_val_t(alignof(T)));
+template <class _Tp>
+void unplace(_Tp* t, bool __heap) noexcept {
+  t->~_Tp();
+  if (__heap)
+    ::operator delete(static_cast<void*>(t), std::align_val_t(alignof(_Tp)));
 }
 
 class thread_pool_backend final : public psr::parallel_scheduler_backend {
-  std::mutex m_;
-  std::condition_variable cv_;
-  pool_item* head_ = nullptr;
-  pool_item* tail_ = nullptr;
+  std::mutex __m_;
+  std::condition_variable __cv_;
+  pool_item* __head_ = nullptr;
+  pool_item* __tail_ = nullptr;
   bool stop_ = false;
   std::vector<std::thread> workers_;
 
-  void push(pool_item* it) noexcept {
-    it->next = nullptr;
+  void push(pool_item* __it) noexcept {
+    __it->next = nullptr;
     {
-      std::lock_guard<std::mutex> l(m_);
-      if (tail_)
-        tail_->next = it;
+      std::lock_guard<std::mutex> __l(__m_);
+      if (__tail_)
+        __tail_->next = __it;
       else
-        head_ = it;
-      tail_ = it;
+        __head_ = __it;
+      __tail_ = __it;
     }
-    cv_.notify_one();
+    __cv_.notify_one();
   }
-  void work() noexcept {
+  void __work() noexcept {
     for (;;) {
-      pool_item* it;
+      pool_item* __it;
       {
-        std::unique_lock<std::mutex> l(m_);
-        cv_.wait(l, [&] { return head_ != nullptr || stop_; });
-        if (!head_)
+        std::unique_lock<std::mutex> __l(__m_);
+        __cv_.wait(__l, [&] { return __head_ != nullptr || stop_; });
+        if (!__head_)
           return;
-        it = head_;
-        head_ = it->next;
-        if (!head_)
-          tail_ = nullptr;
+        __it = __head_;
+        __head_ = __it->next;
+        if (!__head_)
+          __tail_ = nullptr;
       }
-      it->run(it);
+      __it->run(__it);
     }
   }
 
   struct single : pool_item {
     psr::receiver_proxy* r;
-    bool heap;
+    bool __heap;
   };
   struct bulk : pool_item {
     thread_pool_backend* pool;
     psr::bulk_item_receiver_proxy* r;
-    std::size_t n, chunk, chunks;
+    std::size_t n, chunk, __chunks;
     std::size_t claimed = 0; // atomic: the next chunk index
     std::size_t done = 0;    // atomic: chunks finished
-    bool stopped = false;    // atomic
-    bool heap;
+    bool __stopped = false;    // atomic
+    bool __heap;
   };
 
   static void run_single(pool_item* p) noexcept {
-    auto* it = static_cast<single*>(p);
-    psr::receiver_proxy* r = it->r;
-    unplace(it, it->heap);
+    auto* __it = static_cast<single*>(p);
+    psr::receiver_proxy* r = __it->r;
+    unplace(__it, __it->__heap);
     if (stop_requested(*r))
       r->set_stopped();
     else
       r->set_value();
   }
-  static void run_bulk(pool_item* p) noexcept {
-    auto* it = static_cast<bulk*>(p);
-    const std::size_t chunks = it->chunks;
-    const std::size_t i = __atomic_fetch_add(&it->claimed, 1, __ATOMIC_ACQ_REL);
-    if (i + 1 < chunks)
-      it->pool->push(it); // let another worker claim the next chunk
-    if (stop_requested(*it->r)) {
-      __atomic_store_n(&it->stopped, true, __ATOMIC_RELEASE);
-    } else if (!__atomic_load_n(&it->stopped, __ATOMIC_ACQUIRE)) {
-      const std::size_t b = i * it->chunk;
-      const std::size_t e = b + it->chunk < it->n ? b + it->chunk : it->n;
-      it->r->execute(b, e);
+  static void __run_bulk(pool_item* p) noexcept {
+    auto* __it = static_cast<bulk*>(p);
+    const std::size_t __chunks = __it->__chunks;
+    const std::size_t i = __atomic_fetch_add(&__it->claimed, 1, __ATOMIC_ACQ_REL);
+    if (i + 1 < __chunks)
+      __it->pool->push(__it); // let another worker claim the next chunk
+    if (stop_requested(*__it->r)) {
+      __atomic_store_n(&__it->__stopped, true, __ATOMIC_RELEASE);
+    } else if (!__atomic_load_n(&__it->__stopped, __ATOMIC_ACQUIRE)) {
+      const std::size_t b = i * __it->chunk;
+      const std::size_t e = b + __it->chunk < __it->n ? b + __it->chunk : __it->n;
+      __it->r->execute(b, e);
     }
     // The item is only read before the increment: once another worker's increment is the last,
     // it completes the proxy and the item's storage goes.
-    if (__atomic_add_fetch(&it->done, 1, __ATOMIC_ACQ_REL) == chunks)
-      finish(it);
+    if (__atomic_add_fetch(&__it->done, 1, __ATOMIC_ACQ_REL) == __chunks)
+      finish(__it);
   }
-  static void finish(bulk* it) noexcept {
-    psr::bulk_item_receiver_proxy* r = it->r;
-    const bool stopped = __atomic_load_n(&it->stopped, __ATOMIC_ACQUIRE);
-    unplace(it, it->heap);
-    if (stopped)
+  static void finish(bulk* __it) noexcept {
+    psr::bulk_item_receiver_proxy* r = __it->r;
+    const bool __stopped = __atomic_load_n(&__it->__stopped, __ATOMIC_ACQUIRE);
+    unplace(__it, __it->__heap);
+    if (__stopped)
       r->set_stopped();
     else
       r->set_value();
@@ -142,23 +142,23 @@ class thread_pool_backend final : public psr::parallel_scheduler_backend {
         r.set_value();
       return;
     }
-    bool heap;
-    bulk* it;
+    bool __heap;
+    bulk* __it;
     try {
-      it = place<bulk>(s, heap);
+      __it = place<bulk>(s, __heap);
     } catch (...) {
       r.set_error(std::current_exception());
       return;
     }
-    ::new (static_cast<void*>(it)) bulk();
-    it->run = &run_bulk;
-    it->pool = this;
-    it->r = &r;
-    it->n = n;
-    it->chunk = chunk;
-    it->chunks = (n + chunk - 1) / chunk;
-    it->heap = heap;
-    push(it);
+    ::new (static_cast<void*>(__it)) bulk();
+    __it->run = &__run_bulk;
+    __it->pool = this;
+    __it->r = &r;
+    __it->n = n;
+    __it->chunk = chunk;
+    __it->__chunks = (n + chunk - 1) / chunk;
+    __it->__heap = __heap;
+    push(__it);
   }
 
 public:
@@ -168,38 +168,38 @@ public:
       n = 1;
     workers_.reserve(n);
     for (unsigned i = 0; i < n; ++i)
-      workers_.emplace_back([this] { work(); });
+      workers_.emplace_back([this] { __work(); });
   }
   ~thread_pool_backend() override {
     {
-      std::lock_guard<std::mutex> l(m_);
+      std::lock_guard<std::mutex> __l(__m_);
       stop_ = true;
     }
-    cv_.notify_all();
+    __cv_.notify_all();
     for (auto& t : workers_)
       t.join();
   }
 
   void schedule(psr::receiver_proxy& r, std::span<std::byte> s) noexcept override {
-    bool heap;
-    single* it;
+    bool __heap;
+    single* __it;
     try {
-      it = place<single>(s, heap);
+      __it = place<single>(s, __heap);
     } catch (...) {
       r.set_error(std::current_exception());
       return;
     }
-    ::new (static_cast<void*>(it)) single();
-    it->run = &run_single;
-    it->r = &r;
-    it->heap = heap;
-    push(it);
+    ::new (static_cast<void*>(__it)) single();
+    __it->run = &run_single;
+    __it->r = &r;
+    __it->__heap = __heap;
+    push(__it);
   }
   void schedule_bulk_chunked(std::size_t n, psr::bulk_item_receiver_proxy& r, std::span<std::byte> s) noexcept override {
     // About four chunks per worker: enough to balance uneven iterations, few enough to keep the
     // per-chunk overhead small.
-    const std::size_t parts = 4 * workers_.size();
-    schedule_bulk(n, n / parts + (n % parts != 0), r, s);
+    const std::size_t __parts = 4 * workers_.size();
+    schedule_bulk(n, n / __parts + (n % __parts != 0), r, s);
   }
   void schedule_bulk_unchunked(std::size_t n, psr::bulk_item_receiver_proxy& r, std::span<std::byte> s) noexcept override {
     schedule_bulk(n, 1, r, s);
@@ -207,9 +207,9 @@ public:
 };
 } // namespace
 
-std::shared_ptr<psr::parallel_scheduler_backend> default_parallel_scheduler_backend() {
+std::shared_ptr<psr::parallel_scheduler_backend> __default_parallel_scheduler_backend() {
   // Constructed on first use; destroyed (its threads joined) at exit.
-  static const std::shared_ptr<psr::parallel_scheduler_backend> backend = std::make_shared<thread_pool_backend>();
-  return backend;
+  static const std::shared_ptr<psr::parallel_scheduler_backend> __backend = std::make_shared<thread_pool_backend>();
+  return __backend;
 }
-}}} // namespace ycxx::detail::exec
+}}} // namespace __ycxx::__detail::__exec

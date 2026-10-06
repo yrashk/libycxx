@@ -6,262 +6,262 @@
 #include <ycxx/core/tuple.hpp>
 #include <ycxx/core/char_traits.hpp>
 
-namespace [[gnu::visibility("hidden")]] std { namespace ranges {
+namespace [[__gnu__::__visibility__("hidden")]] std { namespace ranges {
 
 // [range.empty]
-template <class T>
-  requires is_object_v<T>
-class empty_view : public view_interface<empty_view<T>> {
+template <class _Tp>
+  requires is_object_v<_Tp>
+class empty_view : public view_interface<empty_view<_Tp>> {
 public:
-  static constexpr T* begin() noexcept { return nullptr; }
-  static constexpr T* end() noexcept { return nullptr; }
-  static constexpr T* data() noexcept { return nullptr; }
+  static constexpr _Tp* begin() noexcept { return nullptr; }
+  static constexpr _Tp* end() noexcept { return nullptr; }
+  static constexpr _Tp* data() noexcept { return nullptr; }
   static constexpr size_t size() noexcept { return 0; }
   static constexpr bool empty() noexcept { return true; }
 };
-template <class T>
-constexpr bool enable_borrowed_range<empty_view<T>> = true;
+template <class _Tp>
+constexpr bool enable_borrowed_range<empty_view<_Tp>> = true;
 
 namespace views {
-template <class T>
-constexpr empty_view<T> empty{};
+template <class _Tp>
+constexpr empty_view<_Tp> empty{};
 } // namespace views
 
 // [range.single]
-template <move_constructible T>
-  requires is_object_v<T>
-class single_view : public view_interface<single_view<T>> {
-  ycxx::detail::movable_box<T> value_;
+template <move_constructible _Tp>
+  requires is_object_v<_Tp>
+class single_view : public view_interface<single_view<_Tp>> {
+  __ycxx::__detail::__movable_box<_Tp> __value_;
 
 public:
   // The constructors are noexcept when constructing T is (a permitted strengthening).
   single_view()
-    requires default_initializable<T>
+    requires default_initializable<_Tp>
   = default;
-  constexpr explicit single_view(const T& t) noexcept(is_nothrow_copy_constructible_v<T>)
-    requires copy_constructible<T>
-      : value_(in_place, t) {}
-  constexpr explicit single_view(T&& t) noexcept(is_nothrow_move_constructible_v<T>) : value_(in_place, std::move(t)) {}
-  template <class... Args>
-    requires constructible_from<T, Args...>
-  constexpr explicit single_view(in_place_t, Args&&... args) noexcept(is_nothrow_constructible_v<T, Args...>)
-      : value_(in_place, static_cast<Args&&>(args)...) {}
+  constexpr explicit single_view(const _Tp& t) noexcept(is_nothrow_copy_constructible_v<_Tp>)
+    requires copy_constructible<_Tp>
+      : __value_(in_place, t) {}
+  constexpr explicit single_view(_Tp&& t) noexcept(is_nothrow_move_constructible_v<_Tp>) : __value_(in_place, std::move(t)) {}
+  template <class... _Args>
+    requires constructible_from<_Tp, _Args...>
+  constexpr explicit single_view(in_place_t, _Args&&... __args) noexcept(is_nothrow_constructible_v<_Tp, _Args...>)
+      : __value_(in_place, static_cast<_Args&&>(__args)...) {}
 
-  constexpr T* begin() noexcept { return data(); }
-  constexpr const T* begin() const noexcept { return data(); }
-  constexpr T* end() noexcept { return data() + 1; }
-  constexpr const T* end() const noexcept { return data() + 1; }
+  constexpr _Tp* begin() noexcept { return data(); }
+  constexpr const _Tp* begin() const noexcept { return data(); }
+  constexpr _Tp* end() noexcept { return data() + 1; }
+  constexpr const _Tp* end() const noexcept { return data() + 1; }
   static constexpr bool empty() noexcept { return false; }
   static constexpr size_t size() noexcept { return 1; }
-  constexpr T* data() noexcept { return value_.operator->(); }
-  constexpr const T* data() const noexcept { return value_.operator->(); }
+  constexpr _Tp* data() noexcept { return __value_.operator->(); }
+  constexpr const _Tp* data() const noexcept { return __value_.operator->(); }
 };
-template <class T>
-single_view(T) -> single_view<T>;
+template <class _Tp>
+single_view(_Tp) -> single_view<_Tp>;
 
 }} // namespace std::ranges
 
-namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
 
 // ---- [range.iota.view] -------------------------------------------------------------------------
 // IOTA-DIFF-T(W): a signed type wider than an integral W; int128 serves the 64-bit types (and
 // itself, as the signed-integer-like type of width not less than W).
-template <class W>
-consteval auto iota_diff() {
-  if constexpr (!std::is_integral_v<W> || sizeof(std::iter_difference_t<W>) > sizeof(W))
-    return std::type_identity<std::iter_difference_t<W>>{};
-  else if constexpr (sizeof(signed char) > sizeof(W))
+template <class _Wp>
+consteval auto __iota_diff() {
+  if constexpr (!std::is_integral_v<_Wp> || sizeof(std::iter_difference_t<_Wp>) > sizeof(_Wp))
+    return std::type_identity<std::iter_difference_t<_Wp>>{};
+  else if constexpr (sizeof(signed char) > sizeof(_Wp))
     return std::type_identity<signed char>{};
-  else if constexpr (sizeof(short) > sizeof(W))
+  else if constexpr (sizeof(short) > sizeof(_Wp))
     return std::type_identity<short>{};
-  else if constexpr (sizeof(int) > sizeof(W))
+  else if constexpr (sizeof(int) > sizeof(_Wp))
     return std::type_identity<int>{};
-  else if constexpr (sizeof(long long) > sizeof(W))
+  else if constexpr (sizeof(long long) > sizeof(_Wp))
     return std::type_identity<long long>{};
-  else if constexpr (cfg::has_int128)
-    return std::type_identity<int128>{};
+  else if constexpr (__cfg::__has_int128)
+    return std::type_identity<__y_int128>{};
   else
     return std::type_identity<long long>{};
 }
-template <class W>
-using iota_diff_t = typename decltype(::ycxx::detail::iota_diff<W>())::type;
+template <class _Wp>
+using __iota_diff_t = typename decltype(::__ycxx::__detail::__iota_diff<_Wp>())::type;
 
-template <class I>
-concept decrementable = std::incrementable<I> && requires(I i) {
-  { --i } -> std::same_as<I&>;
-  { i-- } -> std::same_as<I>;
+template <class _Ip>
+concept __decrementable = std::incrementable<_Ip> && requires(_Ip i) {
+  { --i } -> std::same_as<_Ip&>;
+  { i-- } -> std::same_as<_Ip>;
 };
 
-template <class I>
-concept advanceable = decrementable<I> && std::totally_ordered<I> && requires(I i, const I j, const iota_diff_t<I> n) {
-  { i += n } -> std::same_as<I&>;
-  { i -= n } -> std::same_as<I&>;
-  I(j + n);
-  I(n + j);
-  I(j - n);
-  { j - j } -> std::convertible_to<iota_diff_t<I>>;
+template <class _Ip>
+concept __advanceable = __decrementable<_Ip> && std::totally_ordered<_Ip> && requires(_Ip i, const _Ip __j, const __iota_diff_t<_Ip> n) {
+  { i += n } -> std::same_as<_Ip&>;
+  { i -= n } -> std::same_as<_Ip&>;
+  _Ip(__j + n);
+  _Ip(n + __j);
+  _Ip(__j - n);
+  { __j - __j } -> std::convertible_to<__iota_diff_t<_Ip>>;
 };
 
-template <class W>
-consteval auto iota_concept() {
-  if constexpr (advanceable<W>)
+template <class _Wp>
+consteval auto __iota_concept() {
+  if constexpr (__advanceable<_Wp>)
     return std::random_access_iterator_tag{};
-  else if constexpr (decrementable<W>)
+  else if constexpr (__decrementable<_Wp>)
     return std::bidirectional_iterator_tag{};
-  else if constexpr (std::incrementable<W>)
+  else if constexpr (std::incrementable<_Wp>)
     return std::forward_iterator_tag{};
   else
     return std::input_iterator_tag{};
 }
 
-template <class W>
-struct iota_category {};
-template <class W>
-  requires std::incrementable<W> && std::is_integral_v<iota_diff_t<W>>
-struct iota_category<W> {
+template <class _Wp>
+struct __iota_category {};
+template <class _Wp>
+  requires std::incrementable<_Wp> && std::is_integral_v<__iota_diff_t<_Wp>>
+struct __iota_category<_Wp> {
   using iterator_category = std::input_iterator_tag;
 };
 
-}} // namespace ycxx::detail
+}} // namespace __ycxx::__detail
 
-namespace [[gnu::visibility("hidden")]] std { namespace ranges {
+namespace [[__gnu__::__visibility__("hidden")]] std { namespace ranges {
 
-template <weakly_incrementable W, semiregular Bound = unreachable_sentinel_t>
-  requires ycxx::detail::weakly_equality_comparable_with<W, Bound> && copyable<W>
-class iota_view : public view_interface<iota_view<W, Bound>> {
+template <weakly_incrementable _Wp, semiregular _Bound = unreachable_sentinel_t>
+  requires __ycxx::__detail::__weakly_equality_comparable_with<_Wp, _Bound> && copyable<_Wp>
+class iota_view : public view_interface<iota_view<_Wp, _Bound>> {
   struct sentinel;
 
-  struct iterator : ycxx::detail::iota_category<W> {
+  struct iterator : __ycxx::__detail::__iota_category<_Wp> {
   private:
     friend iota_view;
-    W value_ = W();
-    constexpr explicit iterator(W value) : value_(value) {}
+    _Wp __value_ = _Wp();
+    constexpr explicit iterator(_Wp value) : __value_(value) {}
 
   public:
-    using iterator_concept = decltype(ycxx::detail::iota_concept<W>());
-    using value_type = W;
-    using difference_type = ycxx::detail::iota_diff_t<W>;
+    using iterator_concept = decltype(__ycxx::__detail::__iota_concept<_Wp>());
+    using value_type = _Wp;
+    using difference_type = __ycxx::__detail::__iota_diff_t<_Wp>;
 
     iterator()
-      requires default_initializable<W>
+      requires default_initializable<_Wp>
     = default;
 
-    constexpr W operator*() const noexcept(is_nothrow_copy_constructible_v<W>) { return value_; }
+    constexpr _Wp operator*() const noexcept(is_nothrow_copy_constructible_v<_Wp>) { return __value_; }
     constexpr iterator& operator++() {
-      ++value_;
+      ++__value_;
       return *this;
     }
     constexpr void operator++(int) { ++*this; }
     constexpr iterator operator++(int)
-      requires incrementable<W>
+      requires incrementable<_Wp>
     {
-      auto tmp = *this;
+      auto __tmp = *this;
       ++*this;
-      return tmp;
+      return __tmp;
     }
     constexpr iterator& operator--()
-      requires ycxx::detail::decrementable<W>
+      requires __ycxx::__detail::__decrementable<_Wp>
     {
-      --value_;
+      --__value_;
       return *this;
     }
     constexpr iterator operator--(int)
-      requires ycxx::detail::decrementable<W>
+      requires __ycxx::__detail::__decrementable<_Wp>
     {
-      auto tmp = *this;
+      auto __tmp = *this;
       --*this;
-      return tmp;
+      return __tmp;
     }
     constexpr iterator& operator+=(difference_type n)
-      requires ycxx::detail::advanceable<W>
+      requires __ycxx::__detail::__advanceable<_Wp>
     {
-      if constexpr (ycxx::detail::integer_like<W> && !ycxx::detail::signed_integer_like<W>) {
+      if constexpr (__ycxx::__detail::__integer_like<_Wp> && !__ycxx::__detail::__signed_integer_like<_Wp>) {
         if (n >= difference_type(0))
-          value_ += static_cast<W>(n);
+          __value_ += static_cast<_Wp>(n);
         else
-          value_ -= static_cast<W>(-n);
+          __value_ -= static_cast<_Wp>(-n);
       } else {
-        value_ += n;
+        __value_ += n;
       }
       return *this;
     }
     constexpr iterator& operator-=(difference_type n)
-      requires ycxx::detail::advanceable<W>
+      requires __ycxx::__detail::__advanceable<_Wp>
     {
-      if constexpr (ycxx::detail::integer_like<W> && !ycxx::detail::signed_integer_like<W>) {
+      if constexpr (__ycxx::__detail::__integer_like<_Wp> && !__ycxx::__detail::__signed_integer_like<_Wp>) {
         if (n >= difference_type(0))
-          value_ -= static_cast<W>(n);
+          __value_ -= static_cast<_Wp>(n);
         else
-          value_ += static_cast<W>(-n);
+          __value_ += static_cast<_Wp>(-n);
       } else {
-        value_ -= n;
+        __value_ -= n;
       }
       return *this;
     }
-    constexpr W operator[](difference_type n) const
-      requires ycxx::detail::advanceable<W>
+    constexpr _Wp operator[](difference_type n) const
+      requires __ycxx::__detail::__advanceable<_Wp>
     {
-      return W(value_ + n);
+      return _Wp(__value_ + n);
     }
 
-    friend constexpr bool operator==(const iterator& x, const iterator& y)
-      requires equality_comparable<W>
+    friend constexpr bool operator==(const iterator& __x, const iterator& y)
+      requires equality_comparable<_Wp>
     {
-      return x.value_ == y.value_;
+      return __x.__value_ == y.__value_;
     }
-    friend constexpr bool operator<(const iterator& x, const iterator& y)
-      requires totally_ordered<W>
+    friend constexpr bool operator<(const iterator& __x, const iterator& y)
+      requires totally_ordered<_Wp>
     {
-      return x.value_ < y.value_;
+      return __x.__value_ < y.__value_;
     }
-    friend constexpr bool operator>(const iterator& x, const iterator& y)
-      requires totally_ordered<W>
+    friend constexpr bool operator>(const iterator& __x, const iterator& y)
+      requires totally_ordered<_Wp>
     {
-      return y < x;
+      return y < __x;
     }
-    friend constexpr bool operator<=(const iterator& x, const iterator& y)
-      requires totally_ordered<W>
+    friend constexpr bool operator<=(const iterator& __x, const iterator& y)
+      requires totally_ordered<_Wp>
     {
-      return !(y < x);
+      return !(y < __x);
     }
-    friend constexpr bool operator>=(const iterator& x, const iterator& y)
-      requires totally_ordered<W>
+    friend constexpr bool operator>=(const iterator& __x, const iterator& y)
+      requires totally_ordered<_Wp>
     {
-      return !(x < y);
+      return !(__x < y);
     }
-    friend constexpr auto operator<=>(const iterator& x, const iterator& y)
-      requires totally_ordered<W> && three_way_comparable<W>
+    friend constexpr auto operator<=>(const iterator& __x, const iterator& y)
+      requires totally_ordered<_Wp> && three_way_comparable<_Wp>
     {
-      return x.value_ <=> y.value_;
+      return __x.__value_ <=> y.__value_;
     }
     friend constexpr iterator operator+(iterator i, difference_type n)
-      requires ycxx::detail::advanceable<W>
+      requires __ycxx::__detail::__advanceable<_Wp>
     {
       i += n;
       return i;
     }
     friend constexpr iterator operator+(difference_type n, iterator i)
-      requires ycxx::detail::advanceable<W>
+      requires __ycxx::__detail::__advanceable<_Wp>
     {
       return i + n;
     }
     friend constexpr iterator operator-(iterator i, difference_type n)
-      requires ycxx::detail::advanceable<W>
+      requires __ycxx::__detail::__advanceable<_Wp>
     {
       i -= n;
       return i;
     }
-    friend constexpr difference_type operator-(const iterator& x, const iterator& y)
-      requires ycxx::detail::advanceable<W>
+    friend constexpr difference_type operator-(const iterator& __x, const iterator& y)
+      requires __ycxx::__detail::__advanceable<_Wp>
     {
-      using D = difference_type;
-      if constexpr (ycxx::detail::integer_like<W>) {
-        if constexpr (ycxx::detail::signed_integer_like<W>)
-          return D(D(x.value_) - D(y.value_));
+      using _Dp = difference_type;
+      if constexpr (__ycxx::__detail::__integer_like<_Wp>) {
+        if constexpr (__ycxx::__detail::__signed_integer_like<_Wp>)
+          return _Dp(_Dp(__x.__value_) - _Dp(y.__value_));
         else
-          return (y.value_ > x.value_) ? D(-D(y.value_ - x.value_)) : D(x.value_ - y.value_);
+          return (y.__value_ > __x.__value_) ? _Dp(-_Dp(y.__value_ - __x.__value_)) : _Dp(__x.__value_ - y.__value_);
       } else {
-        return x.value_ - y.value_;
+        return __x.__value_ - y.__value_;
       }
     }
   };
@@ -270,183 +270,183 @@ private:
   struct sentinel {
   private:
     friend iota_view;
-    Bound bound_ = Bound();
-    constexpr explicit sentinel(Bound bound) : bound_(bound) {}
+    _Bound __bound_ = _Bound();
+    constexpr explicit sentinel(_Bound __y_bound) : __bound_(__y_bound) {}
 
   public:
     sentinel() = default;
-    friend constexpr bool operator==(const iterator& x, const sentinel& y) { return x.value_ == y.bound_; }
-    friend constexpr iter_difference_t<W> operator-(const iterator& x, const sentinel& y)
-      requires sized_sentinel_for<Bound, W>
+    friend constexpr bool operator==(const iterator& __x, const sentinel& y) { return __x.__value_ == y.__bound_; }
+    friend constexpr iter_difference_t<_Wp> operator-(const iterator& __x, const sentinel& y)
+      requires sized_sentinel_for<_Bound, _Wp>
     {
-      return x.value_ - y.bound_;
+      return __x.__value_ - y.__bound_;
     }
-    friend constexpr iter_difference_t<W> operator-(const sentinel& x, const iterator& y)
-      requires sized_sentinel_for<Bound, W>
+    friend constexpr iter_difference_t<_Wp> operator-(const sentinel& __x, const iterator& y)
+      requires sized_sentinel_for<_Bound, _Wp>
     {
-      return -(y - x);
+      return -(y - __x);
     }
   };
 
-  using last_type =
-      conditional_t<same_as<W, Bound>, iterator, conditional_t<same_as<Bound, unreachable_sentinel_t>, Bound, sentinel>>;
+  using __last_type =
+      conditional_t<same_as<_Wp, _Bound>, iterator, conditional_t<same_as<_Bound, unreachable_sentinel_t>, _Bound, sentinel>>;
 
-  [[no_unique_address]] W value_ = W();
-  [[no_unique_address]] Bound bound_ = Bound();
+  [[no_unique_address]] _Wp __value_ = _Wp();
+  [[no_unique_address]] _Bound __bound_ = _Bound();
 
 public:
   iota_view()
-    requires default_initializable<W>
+    requires default_initializable<_Wp>
   = default;
   // The constructors are noexcept when copying W and Bound is (a permitted strengthening).
-  constexpr explicit iota_view(W value) noexcept(is_nothrow_copy_constructible_v<W>) : value_(value) {
-    if constexpr (totally_ordered_with<W, Bound>)
-      ::ycxx::detail::precondition(bool(value_ <= bound_), "iota_view: the bound is not reachable from the value");
+  constexpr explicit iota_view(_Wp value) noexcept(is_nothrow_copy_constructible_v<_Wp>) : __value_(value) {
+    if constexpr (totally_ordered_with<_Wp, _Bound>)
+      ::__ycxx::__detail::__precondition(bool(__value_ <= __bound_), "iota_view: the bound is not reachable from the value");
   }
-  constexpr explicit iota_view(type_identity_t<W> value, type_identity_t<Bound> bound) noexcept(
-      is_nothrow_copy_constructible_v<W> && is_nothrow_copy_constructible_v<Bound>)
-      : value_(value), bound_(bound) {
-    if constexpr (totally_ordered_with<W, Bound>)
-      ::ycxx::detail::precondition(bool(value_ <= bound_), "iota_view: the bound is not reachable from the value");
+  constexpr explicit iota_view(type_identity_t<_Wp> value, type_identity_t<_Bound> __y_bound) noexcept(
+      is_nothrow_copy_constructible_v<_Wp> && is_nothrow_copy_constructible_v<_Bound>)
+      : __value_(value), __bound_(__y_bound) {
+    if constexpr (totally_ordered_with<_Wp, _Bound>)
+      ::__ycxx::__detail::__precondition(bool(__value_ <= __bound_), "iota_view: the bound is not reachable from the value");
   }
-  constexpr explicit iota_view(iterator first, last_type last)
-      : iota_view(first.value_, [&]() -> Bound {
-          if constexpr (same_as<W, Bound>)
-            return last.value_;
-          else if constexpr (same_as<Bound, unreachable_sentinel_t>)
+  constexpr explicit iota_view(iterator first, __last_type last)
+      : iota_view(first.__value_, [&]() -> _Bound {
+          if constexpr (same_as<_Wp, _Bound>)
+            return last.__value_;
+          else if constexpr (same_as<_Bound, unreachable_sentinel_t>)
             return last;
           else
-            return last.bound_;
+            return last.__bound_;
         }()) {}
 
-  constexpr iterator begin() const { return iterator{value_}; }
+  constexpr iterator begin() const { return iterator{__value_}; }
   constexpr auto end() const {
-    if constexpr (same_as<Bound, unreachable_sentinel_t>)
+    if constexpr (same_as<_Bound, unreachable_sentinel_t>)
       return unreachable_sentinel;
     else
-      return sentinel{bound_};
+      return sentinel{__bound_};
   }
   constexpr iterator end() const
-    requires same_as<W, Bound>
+    requires same_as<_Wp, _Bound>
   {
-    return iterator{bound_};
+    return iterator{__bound_};
   }
-  constexpr bool empty() const { return value_ == bound_; }
+  constexpr bool empty() const { return __value_ == __bound_; }
   constexpr auto size() const
-    requires(same_as<W, Bound> && ycxx::detail::advanceable<W>) ||
-            (ycxx::detail::integer_like<W> && ycxx::detail::integer_like<Bound>) || sized_sentinel_for<Bound, W>
+    requires(same_as<_Wp, _Bound> && __ycxx::__detail::__advanceable<_Wp>) ||
+            (__ycxx::__detail::__integer_like<_Wp> && __ycxx::__detail::__integer_like<_Bound>) || sized_sentinel_for<_Bound, _Wp>
   {
-    using ycxx::detail::to_unsigned_like;
-    if constexpr (ycxx::detail::integer_like<W> && ycxx::detail::integer_like<Bound>) {
+    using __ycxx::__detail::__to_unsigned_like;
+    if constexpr (__ycxx::__detail::__integer_like<_Wp> && __ycxx::__detail::__integer_like<_Bound>) {
       // The value of the specified expression, computed without negating a minimum value: both
       // operands converted (sign-extended) to a common unsigned type, whose modular difference
       // is the exact size. The result type is the specified one, made unsigned where integral
       // promotion turned it signed (narrow W).
-      using R0 = decltype(to_unsigned_like(bound_) - to_unsigned_like(value_));
-      using R = conditional_t<signed_integral<R0>, make_unsigned_t<R0>, R0>;
-      using UC = make_unsigned_t<common_type_t<W, Bound>>;
-      return static_cast<R>(static_cast<UC>(static_cast<UC>(bound_) - static_cast<UC>(value_)));
+      using _R0 = decltype(__to_unsigned_like(__bound_) - __to_unsigned_like(__value_));
+      using _Rp = conditional_t<signed_integral<_R0>, make_unsigned_t<_R0>, _R0>;
+      using _UC = make_unsigned_t<common_type_t<_Wp, _Bound>>;
+      return static_cast<_Rp>(static_cast<_UC>(static_cast<_UC>(__bound_) - static_cast<_UC>(__value_)));
     } else {
-      return to_unsigned_like(bound_ - value_);
+      return __to_unsigned_like(__bound_ - __value_);
     }
   }
 };
 
-template <class W, class Bound>
-  requires(!ycxx::detail::integer_like<W> || !ycxx::detail::integer_like<Bound> ||
-           (ycxx::detail::signed_integer_like<W> == ycxx::detail::signed_integer_like<Bound>))
-iota_view(W, Bound) -> iota_view<W, Bound>;
+template <class _Wp, class _Bound>
+  requires(!__ycxx::__detail::__integer_like<_Wp> || !__ycxx::__detail::__integer_like<_Bound> ||
+           (__ycxx::__detail::__signed_integer_like<_Wp> == __ycxx::__detail::__signed_integer_like<_Bound>))
+iota_view(_Wp, _Bound) -> iota_view<_Wp, _Bound>;
 
-template <class W, class Bound>
-constexpr bool enable_borrowed_range<iota_view<W, Bound>> = true;
+template <class _Wp, class _Bound>
+constexpr bool enable_borrowed_range<iota_view<_Wp, _Bound>> = true;
 
 }} // namespace std::ranges
 
-namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
 
 // ---- [range.repeat.view] -----------------------------------------------------------------------
-template <class T>
-concept integer_like_with_usable_difference_type =
-    signed_integer_like<T> || (integer_like<T> && std::weakly_incrementable<T>);
+template <class _Tp>
+concept __integer_like_with_usable_difference_type =
+    __signed_integer_like<_Tp> || (__integer_like<_Tp> && std::weakly_incrementable<_Tp>);
 
-template <class T>
-inline constexpr bool is_iota_view = false;
-struct repeat_access;
-template <class W, class B>
-inline constexpr bool is_iota_view<std::ranges::iota_view<W, B>> = true;
+template <class _Tp>
+inline constexpr bool __is_iota_view = false;
+struct __repeat_access;
+template <class _Wp, class _Bp>
+inline constexpr bool __is_iota_view<std::ranges::iota_view<_Wp, _Bp>> = true;
 
-}} // namespace ycxx::detail
+}} // namespace __ycxx::__detail
 
-namespace [[gnu::visibility("hidden")]] std { namespace ranges {
+namespace [[__gnu__::__visibility__("hidden")]] std { namespace ranges {
 
-template <move_constructible T, semiregular Bound = unreachable_sentinel_t>
-  requires(is_object_v<T> && same_as<T, remove_cv_t<T>> &&
-           (ycxx::detail::integer_like_with_usable_difference_type<Bound> || same_as<Bound, unreachable_sentinel_t>))
-class repeat_view : public view_interface<repeat_view<T, Bound>> {
-  using index_type = conditional_t<same_as<Bound, unreachable_sentinel_t>, ptrdiff_t, Bound>;
-  static constexpr bool bounded = !same_as<Bound, unreachable_sentinel_t>;
+template <move_constructible _Tp, semiregular _Bound = unreachable_sentinel_t>
+  requires(is_object_v<_Tp> && same_as<_Tp, remove_cv_t<_Tp>> &&
+           (__ycxx::__detail::__integer_like_with_usable_difference_type<_Bound> || same_as<_Bound, unreachable_sentinel_t>))
+class repeat_view : public view_interface<repeat_view<_Tp, _Bound>> {
+  using index_type = conditional_t<same_as<_Bound, unreachable_sentinel_t>, ptrdiff_t, _Bound>;
+  static constexpr bool __bounded = !same_as<_Bound, unreachable_sentinel_t>;
 
   // views::take / views::drop read the value ([range.take.overview]/2.5).
-  friend struct ycxx::detail::repeat_access;
+  friend struct __ycxx::__detail::__repeat_access;
 
-  [[no_unique_address]] ycxx::detail::movable_box<T> value_;
-  [[no_unique_address]] Bound bound_ = Bound();
+  [[no_unique_address]] __ycxx::__detail::__movable_box<_Tp> __value_;
+  [[no_unique_address]] _Bound __bound_ = _Bound();
 
   class iterator {
     friend repeat_view;
-    const T* value_ = nullptr;
-    index_type current_ = index_type();
+    const _Tp* __value_ = nullptr;
+    index_type __current_ = index_type();
 
-    constexpr explicit iterator(const T* value, index_type b = index_type()) : value_(value), current_(b) {
-      if constexpr (bounded)
-        ::ycxx::detail::precondition(b >= 0, "repeat_view: negative bound");
+    constexpr explicit iterator(const _Tp* value, index_type b = index_type()) : __value_(value), __current_(b) {
+      if constexpr (__bounded)
+        ::__ycxx::__detail::__precondition(b >= 0, "repeat_view: negative bound");
     }
 
   public:
     using iterator_concept = random_access_iterator_tag;
     using iterator_category = random_access_iterator_tag;
-    using value_type = T;
+    using value_type = _Tp;
     using difference_type =
-        conditional_t<ycxx::detail::signed_integer_like<index_type>, index_type, ycxx::detail::iota_diff_t<index_type>>;
+        conditional_t<__ycxx::__detail::__signed_integer_like<index_type>, index_type, __ycxx::__detail::__iota_diff_t<index_type>>;
 
     iterator() = default;
-    constexpr const T& operator*() const noexcept { return *value_; }
+    constexpr const _Tp& operator*() const noexcept { return *__value_; }
     constexpr iterator& operator++() {
-      ++current_;
+      ++__current_;
       return *this;
     }
     constexpr iterator operator++(int) {
-      auto tmp = *this;
+      auto __tmp = *this;
       ++*this;
-      return tmp;
+      return __tmp;
     }
     constexpr iterator& operator--() {
-      if constexpr (bounded)
-        ::ycxx::detail::precondition(current_ > 0, "repeat_view::iterator: decrement before the start");
-      --current_;
+      if constexpr (__bounded)
+        ::__ycxx::__detail::__precondition(__current_ > 0, "repeat_view::iterator: decrement before the start");
+      --__current_;
       return *this;
     }
     constexpr iterator operator--(int) {
-      auto tmp = *this;
+      auto __tmp = *this;
       --*this;
-      return tmp;
+      return __tmp;
     }
     constexpr iterator& operator+=(difference_type n) {
-      if constexpr (bounded)
-        ::ycxx::detail::precondition(current_ + n >= 0, "repeat_view::iterator: advance before the start");
-      current_ += n;
+      if constexpr (__bounded)
+        ::__ycxx::__detail::__precondition(__current_ + n >= 0, "repeat_view::iterator: advance before the start");
+      __current_ += n;
       return *this;
     }
     constexpr iterator& operator-=(difference_type n) {
-      if constexpr (bounded)
-        ::ycxx::detail::precondition(current_ - n >= 0, "repeat_view::iterator: advance before the start");
-      current_ -= n;
+      if constexpr (__bounded)
+        ::__ycxx::__detail::__precondition(__current_ - n >= 0, "repeat_view::iterator: advance before the start");
+      __current_ -= n;
       return *this;
     }
-    constexpr const T& operator[](difference_type n) const noexcept { return *(*this + n); }
+    constexpr const _Tp& operator[](difference_type n) const noexcept { return *(*this + n); }
 
-    friend constexpr bool operator==(const iterator& x, const iterator& y) { return x.current_ == y.current_; }
-    friend constexpr auto operator<=>(const iterator& x, const iterator& y) { return x.current_ <=> y.current_; }
+    friend constexpr bool operator==(const iterator& __x, const iterator& y) { return __x.__current_ == y.__current_; }
+    friend constexpr auto operator<=>(const iterator& __x, const iterator& y) { return __x.__current_ <=> y.__current_; }
     friend constexpr iterator operator+(iterator i, difference_type n) {
       i += n;
       return i;
@@ -459,157 +459,157 @@ class repeat_view : public view_interface<repeat_view<T, Bound>> {
       i -= n;
       return i;
     }
-    friend constexpr difference_type operator-(const iterator& x, const iterator& y) {
-      return static_cast<difference_type>(x.current_) - static_cast<difference_type>(y.current_);
+    friend constexpr difference_type operator-(const iterator& __x, const iterator& y) {
+      return static_cast<difference_type>(__x.__current_) - static_cast<difference_type>(y.__current_);
     }
   };
 
 public:
   repeat_view()
-    requires default_initializable<T>
+    requires default_initializable<_Tp>
   = default;
-  constexpr explicit repeat_view(const T& value, Bound bound = Bound())
-    requires copy_constructible<T>
-      : value_(in_place, value), bound_(bound) {
-    if constexpr (bounded)
-      ::ycxx::detail::precondition(bound >= 0, "repeat_view: negative bound");
+  constexpr explicit repeat_view(const _Tp& value, _Bound __y_bound = _Bound())
+    requires copy_constructible<_Tp>
+      : __value_(in_place, value), __bound_(__y_bound) {
+    if constexpr (__bounded)
+      ::__ycxx::__detail::__precondition(__y_bound >= 0, "repeat_view: negative bound");
   }
-  constexpr explicit repeat_view(T&& value, Bound bound = Bound()) : value_(in_place, std::move(value)), bound_(bound) {
-    if constexpr (bounded)
-      ::ycxx::detail::precondition(bound >= 0, "repeat_view: negative bound");
+  constexpr explicit repeat_view(_Tp&& value, _Bound __y_bound = _Bound()) : __value_(in_place, std::move(value)), __bound_(__y_bound) {
+    if constexpr (__bounded)
+      ::__ycxx::__detail::__precondition(__y_bound >= 0, "repeat_view: negative bound");
   }
-  template <class... TArgs, class... BoundArgs>
-    requires constructible_from<T, TArgs...> && constructible_from<Bound, BoundArgs...>
-  constexpr explicit repeat_view(piecewise_construct_t, tuple<TArgs...> value_args,
-                                 tuple<BoundArgs...> bound_args = tuple<>{})
-      : value_(in_place, std::make_from_tuple<T>(std::move(value_args))),
-        bound_(std::make_from_tuple<Bound>(std::move(bound_args))) {
-    if constexpr (bounded)
-      ::ycxx::detail::precondition(bound_ >= 0, "repeat_view: negative bound");
+  template <class... _TArgs, class... _BoundArgs>
+    requires constructible_from<_Tp, _TArgs...> && constructible_from<_Bound, _BoundArgs...>
+  constexpr explicit repeat_view(piecewise_construct_t, tuple<_TArgs...> __value_args,
+                                 tuple<_BoundArgs...> __bound_args = tuple<>{})
+      : __value_(in_place, std::make_from_tuple<_Tp>(std::move(__value_args))),
+        __bound_(std::make_from_tuple<_Bound>(std::move(__bound_args))) {
+    if constexpr (__bounded)
+      ::__ycxx::__detail::__precondition(__bound_ >= 0, "repeat_view: negative bound");
   }
 
-  constexpr iterator begin() const { return iterator(__builtin_addressof(*value_)); }
+  constexpr iterator begin() const { return iterator(__builtin_addressof(*__value_)); }
   constexpr iterator end() const
-    requires(!same_as<Bound, unreachable_sentinel_t>)
+    requires(!same_as<_Bound, unreachable_sentinel_t>)
   {
-    return iterator(__builtin_addressof(*value_), bound_);
+    return iterator(__builtin_addressof(*__value_), __bound_);
   }
   constexpr unreachable_sentinel_t end() const noexcept { return unreachable_sentinel; }
   constexpr auto size() const
-    requires(!same_as<Bound, unreachable_sentinel_t>)
+    requires(!same_as<_Bound, unreachable_sentinel_t>)
   {
-    return ::ycxx::detail::to_unsigned_like(bound_);
+    return ::__ycxx::__detail::__to_unsigned_like(__bound_);
   }
 };
 
-template <class T, class Bound = unreachable_sentinel_t>
-repeat_view(T, Bound = Bound()) -> repeat_view<T, Bound>;
+template <class _Tp, class _Bound = unreachable_sentinel_t>
+repeat_view(_Tp, _Bound = _Bound()) -> repeat_view<_Tp, _Bound>;
 
 }} // namespace std::ranges
 
-namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
 
-template <class T>
-inline constexpr bool is_repeat_view = false;
-template <class T, class B>
-inline constexpr bool is_repeat_view<std::ranges::repeat_view<T, B>> = true;
+template <class _Tp>
+inline constexpr bool __is_repeat_view = false;
+template <class _Tp, class _Bp>
+inline constexpr bool __is_repeat_view<std::ranges::repeat_view<_Tp, _Bp>> = true;
 
 // The stored value of a repeat_view, for views::take and views::drop (*E.value_).
-struct repeat_access {
-  template <class R>
-  static constexpr decltype(auto) value(R&& r) noexcept {
-    return *static_cast<R&&>(r).value_;
+struct __repeat_access {
+  template <class _Rp>
+  static constexpr decltype(auto) value(_Rp&& r) noexcept {
+    return *static_cast<_Rp&&>(r).__value_;
   }
 };
 
-namespace view_fn {
+namespace __view_fn {
 
-struct single_fn {
-  template <class T>
-    requires requires { std::ranges::single_view<std::decay_t<T>>(std::declval<T>()); }
-  [[nodiscard]] constexpr auto operator()(T&& t) const
-      noexcept(noexcept(std::ranges::single_view<std::decay_t<T>>(static_cast<T&&>(t)))) {
-    return std::ranges::single_view<std::decay_t<T>>(static_cast<T&&>(t));
+struct __single_fn {
+  template <class _Tp>
+    requires requires { std::ranges::single_view<std::decay_t<_Tp>>(std::declval<_Tp>()); }
+  [[nodiscard]] constexpr auto operator()(_Tp&& t) const
+      noexcept(noexcept(std::ranges::single_view<std::decay_t<_Tp>>(static_cast<_Tp&&>(t)))) {
+    return std::ranges::single_view<std::decay_t<_Tp>>(static_cast<_Tp&&>(t));
   }
 };
 
-struct iota_fn {
-  template <class W>
-    requires requires { std::ranges::iota_view<std::decay_t<W>>(std::declval<W>()); }
-  [[nodiscard]] constexpr auto operator()(W&& value) const
-      noexcept(noexcept(std::ranges::iota_view<std::decay_t<W>>(static_cast<W&&>(value)))) {
-    return std::ranges::iota_view<std::decay_t<W>>(static_cast<W&&>(value));
+struct __iota_fn {
+  template <class _Wp>
+    requires requires { std::ranges::iota_view<std::decay_t<_Wp>>(std::declval<_Wp>()); }
+  [[nodiscard]] constexpr auto operator()(_Wp&& value) const
+      noexcept(noexcept(std::ranges::iota_view<std::decay_t<_Wp>>(static_cast<_Wp&&>(value)))) {
+    return std::ranges::iota_view<std::decay_t<_Wp>>(static_cast<_Wp&&>(value));
   }
-  template <class W, class B>
-    requires requires { std::ranges::iota_view(std::declval<W>(), std::declval<B>()); }
-  [[nodiscard]] constexpr auto operator()(W&& value, B&& bound) const
-      noexcept(noexcept(std::ranges::iota_view(static_cast<W&&>(value), static_cast<B&&>(bound)))) {
-    return std::ranges::iota_view(static_cast<W&&>(value), static_cast<B&&>(bound));
-  }
-};
-
-struct indices_fn {
-  template <class E>
-    requires integer_like<std::remove_cvref_t<E>> &&
-             requires { iota_fn{}(std::remove_cvref_t<E>(0), std::declval<E>()); }
-  [[nodiscard]] constexpr auto operator()(E&& e) const
-      noexcept(noexcept(iota_fn{}(std::remove_cvref_t<E>(0), static_cast<E&&>(e)))) {
-    return iota_fn{}(std::remove_cvref_t<E>(0), static_cast<E&&>(e));
+  template <class _Wp, class _Bp>
+    requires requires { std::ranges::iota_view(std::declval<_Wp>(), std::declval<_Bp>()); }
+  [[nodiscard]] constexpr auto operator()(_Wp&& value, _Bp&& __y_bound) const
+      noexcept(noexcept(std::ranges::iota_view(static_cast<_Wp&&>(value), static_cast<_Bp&&>(__y_bound)))) {
+    return std::ranges::iota_view(static_cast<_Wp&&>(value), static_cast<_Bp&&>(__y_bound));
   }
 };
 
-struct repeat_fn {
-  template <class T>
-    requires requires { std::ranges::repeat_view<std::decay_t<T>>(std::declval<T>()); }
-  [[nodiscard]] constexpr auto operator()(T&& value) const
-      noexcept(noexcept(std::ranges::repeat_view<std::decay_t<T>>(static_cast<T&&>(value)))) {
-    return std::ranges::repeat_view<std::decay_t<T>>(static_cast<T&&>(value));
+struct __indices_fn {
+  template <class _Ep>
+    requires __integer_like<std::remove_cvref_t<_Ep>> &&
+             requires { __iota_fn{}(std::remove_cvref_t<_Ep>(0), std::declval<_Ep>()); }
+  [[nodiscard]] constexpr auto operator()(_Ep&& e) const
+      noexcept(noexcept(__iota_fn{}(std::remove_cvref_t<_Ep>(0), static_cast<_Ep&&>(e)))) {
+    return __iota_fn{}(std::remove_cvref_t<_Ep>(0), static_cast<_Ep&&>(e));
   }
-  template <class T, class B>
-    requires requires { std::ranges::repeat_view(std::declval<T>(), std::declval<B>()); }
-  [[nodiscard]] constexpr auto operator()(T&& value, B&& bound) const
-      noexcept(noexcept(std::ranges::repeat_view(static_cast<T&&>(value), static_cast<B&&>(bound)))) {
-    return std::ranges::repeat_view(static_cast<T&&>(value), static_cast<B&&>(bound));
+};
+
+struct __repeat_fn {
+  template <class _Tp>
+    requires requires { std::ranges::repeat_view<std::decay_t<_Tp>>(std::declval<_Tp>()); }
+  [[nodiscard]] constexpr auto operator()(_Tp&& value) const
+      noexcept(noexcept(std::ranges::repeat_view<std::decay_t<_Tp>>(static_cast<_Tp&&>(value)))) {
+    return std::ranges::repeat_view<std::decay_t<_Tp>>(static_cast<_Tp&&>(value));
+  }
+  template <class _Tp, class _Bp>
+    requires requires { std::ranges::repeat_view(std::declval<_Tp>(), std::declval<_Bp>()); }
+  [[nodiscard]] constexpr auto operator()(_Tp&& value, _Bp&& __y_bound) const
+      noexcept(noexcept(std::ranges::repeat_view(static_cast<_Tp&&>(value), static_cast<_Bp&&>(__y_bound)))) {
+    return std::ranges::repeat_view(static_cast<_Tp&&>(value), static_cast<_Bp&&>(__y_bound));
   }
 };
 
 } // namespace view_fn
-}} // namespace ycxx::detail
+}} // namespace __ycxx::__detail
 
-namespace [[gnu::visibility("hidden")]] std { namespace ranges::views {
-inline constexpr ycxx::detail::view_fn::single_fn single{};
-inline constexpr ycxx::detail::view_fn::iota_fn iota{};
-inline constexpr ycxx::detail::view_fn::indices_fn indices{};
-inline constexpr ycxx::detail::view_fn::repeat_fn repeat{};
+namespace [[__gnu__::__visibility__("hidden")]] std { namespace ranges::views {
+inline constexpr __ycxx::__detail::__view_fn::__single_fn single{};
+inline constexpr __ycxx::__detail::__view_fn::__iota_fn iota{};
+inline constexpr __ycxx::__detail::__view_fn::__indices_fn indices{};
+inline constexpr __ycxx::__detail::__view_fn::__repeat_fn repeat{};
 }} // namespace std::ranges::views
 
 // ---- [range.istream] ---------------------------------------------------------------------------
 // The view needs only the stream's interface: basic_istream is declared here (without default
 // arguments, which <istream>/<iosfwd> supply) and must be complete where the view is used.
-namespace [[gnu::visibility("hidden")]] std {
-template <class CharT, class Traits>
+namespace [[__gnu__::__visibility__("hidden")]] std {
+template <class _CharT, class _Traits>
 class basic_istream;
 } // namespace std
 
-namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
-template <class Val, class CharT, class Traits>
-concept stream_extractable = requires(std::basic_istream<CharT, Traits>& is, Val& t) { is >> t; };
-}} // namespace ycxx::detail
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+template <class _Val, class _CharT, class _Traits>
+concept __stream_extractable = requires(std::basic_istream<_CharT, _Traits>& is, _Val& t) { is >> t; };
+}} // namespace __ycxx::__detail
 
-namespace [[gnu::visibility("hidden")]] std { namespace ranges {
+namespace [[__gnu__::__visibility__("hidden")]] std { namespace ranges {
 
-template <movable Val, class CharT, class Traits = char_traits<CharT>>
-  requires default_initializable<Val> && ycxx::detail::stream_extractable<Val, CharT, Traits>
-class basic_istream_view : public view_interface<basic_istream_view<Val, CharT, Traits>> {
+template <movable _Val, class _CharT, class _Traits = char_traits<_CharT>>
+  requires default_initializable<_Val> && __ycxx::__detail::__stream_extractable<_Val, _CharT, _Traits>
+class basic_istream_view : public view_interface<basic_istream_view<_Val, _CharT, _Traits>> {
   class iterator {
     friend basic_istream_view;
-    basic_istream_view* parent_;
-    constexpr explicit iterator(basic_istream_view& parent) noexcept : parent_(__builtin_addressof(parent)) {}
+    basic_istream_view* __parent_;
+    constexpr explicit iterator(basic_istream_view& __parent) noexcept : __parent_(__builtin_addressof(__parent)) {}
 
   public:
     using iterator_concept = input_iterator_tag;
     using difference_type = ptrdiff_t;
-    using value_type = Val;
+    using value_type = _Val;
 
     iterator(const iterator&) = delete;
     iterator(iterator&&) = default;
@@ -617,54 +617,54 @@ class basic_istream_view : public view_interface<basic_istream_view<Val, CharT, 
     iterator& operator=(iterator&&) = default;
 
     iterator& operator++() {
-      *parent_->stream_ >> parent_->value_;
+      *__parent_->__stream_ >> __parent_->__value_;
       return *this;
     }
     void operator++(int) { ++*this; }
-    Val& operator*() const { return parent_->value_; }
-    friend bool operator==(const iterator& x, default_sentinel_t) { return !*x.parent_->stream_; }
+    _Val& operator*() const { return __parent_->__value_; }
+    friend bool operator==(const iterator& __x, default_sentinel_t) { return !*__x.__parent_->__stream_; }
   };
 
-  basic_istream<CharT, Traits>* stream_;
-  Val value_ = Val();
+  basic_istream<_CharT, _Traits>* __stream_;
+  _Val __value_ = _Val();
 
 public:
-  constexpr explicit basic_istream_view(basic_istream<CharT, Traits>& stream) : stream_(__builtin_addressof(stream)) {}
+  constexpr explicit basic_istream_view(basic_istream<_CharT, _Traits>& stream) : __stream_(__builtin_addressof(stream)) {}
   constexpr auto begin() {
-    *stream_ >> value_;
+    *__stream_ >> __value_;
     return iterator{*this};
   }
   constexpr default_sentinel_t end() const noexcept { return default_sentinel; }
 };
 
-template <class Val>
-using istream_view = basic_istream_view<Val, char>;
-template <class Val>
-using wistream_view = basic_istream_view<Val, wchar_t>;
+template <class _Val>
+using istream_view = basic_istream_view<_Val, char>;
+template <class _Val>
+using wistream_view = basic_istream_view<_Val, wchar_t>;
 
 }} // namespace std::ranges
 
-namespace [[gnu::visibility("hidden")]] ycxx { namespace detail::view_fn {
-template <class T>
-struct istream_fn {
-  template <class E>
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail::__view_fn {
+template <class _Tp>
+struct __istream_fn {
+  template <class _Ep>
     requires requires {
-      typename std::remove_cvref_t<E>::char_type;
-      typename std::remove_cvref_t<E>::traits_type;
-    } && std::derived_from<std::remove_cvref_t<E>, std::basic_istream<typename std::remove_cvref_t<E>::char_type,
-                                                                     typename std::remove_cvref_t<E>::traits_type>> &&
-             requires(E& e) {
-               std::ranges::basic_istream_view<T, typename std::remove_cvref_t<E>::char_type,
-                                               typename std::remove_cvref_t<E>::traits_type>(e);
+      typename std::remove_cvref_t<_Ep>::char_type;
+      typename std::remove_cvref_t<_Ep>::traits_type;
+    } && std::derived_from<std::remove_cvref_t<_Ep>, std::basic_istream<typename std::remove_cvref_t<_Ep>::char_type,
+                                                                     typename std::remove_cvref_t<_Ep>::traits_type>> &&
+             requires(_Ep& e) {
+               std::ranges::basic_istream_view<_Tp, typename std::remove_cvref_t<_Ep>::char_type,
+                                               typename std::remove_cvref_t<_Ep>::traits_type>(e);
              }
-  [[nodiscard]] constexpr auto operator()(E&& e) const {
-    using U = std::remove_cvref_t<E>;
-    return std::ranges::basic_istream_view<T, typename U::char_type, typename U::traits_type>(e);
+  [[nodiscard]] constexpr auto operator()(_Ep&& e) const {
+    using _Up = std::remove_cvref_t<_Ep>;
+    return std::ranges::basic_istream_view<_Tp, typename _Up::char_type, typename _Up::traits_type>(e);
   }
 };
-}} // namespace ycxx::detail::view_fn
+}} // namespace __ycxx::__detail::__view_fn
 
-namespace [[gnu::visibility("hidden")]] std { namespace ranges::views {
-template <class T>
-constexpr ycxx::detail::view_fn::istream_fn<T> istream{};
+namespace [[__gnu__::__visibility__("hidden")]] std { namespace ranges::views {
+template <class _Tp>
+constexpr __ycxx::__detail::__view_fn::__istream_fn<_Tp> istream{};
 }} // namespace std::ranges::views

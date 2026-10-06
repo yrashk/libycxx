@@ -197,20 +197,20 @@ file(CONFIGURE OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/generated/abi/fundamental_type
 // function, as assembler names; rtti.cpp hides them. Ends with nullptr.
 #pragma once
 
-namespace ycxx::abi {
+namespace __ycxx::__abi {
 inline constexpr const char* fundamental_type_info_symbols[] = {
     @_ycxx_ti_text@nullptr};
-} // namespace ycxx::abi
+} // namespace __ycxx::__abi
 ]=] @ONLY)
 target_include_directories(ycxx_abi PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/generated)
 message(STATUS "libycxx: ${_ycxx_ti_count} fundamental type_info symbols to hide (src/abi/rtti.cpp)")
 
 set_source_files_properties(src/abi/exception_classes.cpp src/hosted/stdexcept.cpp
-                            PROPERTIES COMPILE_DEFINITIONS YCXX_EXCEPTION_KEY_FUNCTIONS)
+                            PROPERTIES COMPILE_DEFINITIONS _YCXX_EXCEPTION_KEY_FUNCTIONS)
 # The standard stream objects are initialized with a priority reserved for the implementation,
 # ahead of every program's static objects (src/hosted/iostream.cpp); so is the classic locale
 # (src/hosted/locale.cpp). ELF only: Mach-O has no initialization priorities, and <iostream>
-# defines an ios_base::Init per translation unit there (YCXX_HAS_INIT_PRIORITY, config.hpp).
+# defines an ios_base::Init per translation unit there (_YCXX_HAS_INIT_PRIORITY, config.hpp).
 set_source_files_properties(src/hosted/iostream.cpp src/hosted/locale.cpp PROPERTIES COMPILE_OPTIONS
   $<IF:$<CXX_COMPILER_ID:GNU>,-Wno-prio-ctor-dtor,-Wno-init-priority-reserved>)
 # The classic locale holds the Annex D codecvt facets ([depr.locale.category]), which are

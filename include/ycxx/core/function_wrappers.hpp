@@ -1,7 +1,7 @@
 // libycxx core: polymorphic function wrappers ([func.wrap]): bad_function_call, function,
 // move_only_function, copyable_function and function_ref.
 //
-// The owning wrappers share one implementation, ycxx::adl_free::fn_base: a three-pointer
+// The owning wrappers share one implementation, __ycxx::__adl_free::__fn_base: a three-pointer
 // small buffer, a call thunk and a pointer to a per-type operations table (relocate, destroy,
 // copy, type identity). Targets that fit and are nothrow-move-constructible live in the buffer;
 // others are allocated with a plain new-expression (honouring a class-specific operator new, as
@@ -25,7 +25,7 @@
 #include <ycxx/core/typeinfo.hpp>
 #include <ycxx/core/utility_base.hpp>
 
-namespace [[gnu::visibility("hidden")]] std {
+namespace [[__gnu__::__visibility__("hidden")]] std {
 
 // ---- [func.wrap.badcall] ----
 class bad_function_call : public exception {
@@ -48,433 +48,433 @@ class function_ref;
 
 } // namespace std
 
-namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
-[[noreturn]] [[gnu::cold]] inline void throw_bad_function_call() {
-  ::ycxx::detail::raise_with(ycxx_error_bad_function_call, "std::bad_function_call", [] { return std::bad_function_call(); });
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+[[noreturn]] [[__gnu__::__cold__]] inline void __throw_bad_function_call() {
+  ::__ycxx::__detail::__raise_with(ycxx_error_bad_function_call, "std::bad_function_call", [] { return std::bad_function_call(); });
 }
-}} // namespace ycxx::detail
+}} // namespace __ycxx::__detail
 
-namespace [[gnu::visibility("hidden")]] ycxx { namespace detail::fw {
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail::__fw {
 
-enum class kind : unsigned char { function, move_only, copyable };
+enum class kind : unsigned char { function, __move_only, copyable };
 // The cv/ref qualifiers of the call operator. `function` is invoked as FD& from a const call
 // operator ([func.wrap.func.inv]).
-enum class quals : unsigned char { none, c, lref, clref, rref, crref, function };
+enum class __quals : unsigned char { none, c, __lref, __clref, __rref, __crref, function };
 
-// `VT cv ref` (the is-callable-from check) and `VT inv-quals` (the invocation).
-template <quals Q, class VT>
-struct quals_of;
-template <class VT>
-struct quals_of<quals::none, VT> {
-  using cvref = VT;
-  using inv = VT&;
+// `_VT __cv ref` (the is-callable-from check) and `_VT __inv-__quals` (the invocation).
+template <__quals _Qp, class _VT>
+struct __quals_of;
+template <class _VT>
+struct __quals_of<__quals::none, _VT> {
+  using __cvref = _VT;
+  using __inv = _VT&;
 };
-template <class VT>
-struct quals_of<quals::c, VT> {
-  using cvref = const VT;
-  using inv = const VT&;
+template <class _VT>
+struct __quals_of<__quals::c, _VT> {
+  using __cvref = const _VT;
+  using __inv = const _VT&;
 };
-template <class VT>
-struct quals_of<quals::lref, VT> {
-  using cvref = VT&;
-  using inv = VT&;
+template <class _VT>
+struct __quals_of<__quals::__lref, _VT> {
+  using __cvref = _VT&;
+  using __inv = _VT&;
 };
-template <class VT>
-struct quals_of<quals::clref, VT> {
-  using cvref = const VT&;
-  using inv = const VT&;
+template <class _VT>
+struct __quals_of<__quals::__clref, _VT> {
+  using __cvref = const _VT&;
+  using __inv = const _VT&;
 };
-template <class VT>
-struct quals_of<quals::rref, VT> {
-  using cvref = VT&&;
-  using inv = VT&&;
+template <class _VT>
+struct __quals_of<__quals::__rref, _VT> {
+  using __cvref = _VT&&;
+  using __inv = _VT&&;
 };
-template <class VT>
-struct quals_of<quals::crref, VT> {
-  using cvref = const VT&&;
-  using inv = const VT&&;
+template <class _VT>
+struct __quals_of<__quals::__crref, _VT> {
+  using __cvref = const _VT&&;
+  using __inv = const _VT&&;
 };
-template <class VT>
-struct quals_of<quals::function, VT> {
-  using cvref = VT&;
-  using inv = VT&;
+template <class _VT>
+struct __quals_of<__quals::function, _VT> {
+  using __cvref = _VT&;
+  using __inv = _VT&;
 };
 
-template <bool N, class R, class F, class... A>
-consteval bool invocable_r() {
-  if constexpr (N)
-    return std::is_nothrow_invocable_r_v<R, F, A...>;
+template <bool _Np, class _Rp, class _Fp, class... _Ap>
+consteval bool __invocable_r() {
+  if constexpr (_Np)
+    return std::is_nothrow_invocable_r_v<_Rp, _Fp, _Ap...>;
   else
-    return std::is_invocable_r_v<R, F, A...>;
+    return std::is_invocable_r_v<_Rp, _Fp, _Ap...>;
 }
 
 // How an argument crosses the thunk boundary.
-template <class A>
-using param_t = std::conditional_t<std::is_scalar_v<A>, A, A&&>;
+template <class _Ap>
+using __param_t = std::conditional_t<std::is_scalar_v<_Ap>, _Ap, _Ap&&>;
 
-inline constexpr std::size_t small_size = 3 * sizeof(void*);
+inline constexpr std::size_t __small_size = 3 * sizeof(void*);
 // fn_base's move assignment relies on no wrapper fitting in the buffer.
-union storage {
+union __storage {
   void* p;
-  alignas(void*) unsigned char buf[small_size];
+  alignas(void*) unsigned char __buf[__small_size];
 };
 
-template <class VT>
-inline constexpr bool is_small =
-    sizeof(VT) <= small_size && alignof(VT) <= alignof(storage) && std::is_nothrow_move_constructible_v<VT>;
+template <class _VT>
+inline constexpr bool __is_small =
+    sizeof(_VT) <= __small_size && alignof(_VT) <= alignof(__storage) && std::is_nothrow_move_constructible_v<_VT>;
 
-template <class VT>
-[[gnu::always_inline]] inline VT* target(storage& s) noexcept {
-  if constexpr (is_small<VT>)
-    return std::launder(reinterpret_cast<VT*>(s.buf));
+template <class _VT>
+[[__gnu__::__always_inline__]] inline _VT* target(__storage& s) noexcept {
+  if constexpr (__is_small<_VT>)
+    return std::launder(reinterpret_cast<_VT*>(s.__buf));
   else
-    return static_cast<VT*>(s.p);
+    return static_cast<_VT*>(s.p);
 }
 
-struct ops {
-  void (*relocate)(storage& dst, storage& src) noexcept; // nullptr: copy the storage bytes
-  void (*destroy)(storage&) noexcept;                     // nullptr: nothing to do
-  void (*copy)(storage& dst, const storage& src);         // nullptr for move_only_function
+struct __ops {
+  void (*__relocate)(__storage& __dst, __storage& __src) noexcept; // nullptr: copy the storage bytes
+  void (*destroy)(__storage&) noexcept;                     // nullptr: nothing to do
+  void (*copy)(__storage& __dst, const __storage& __src);         // nullptr for move_only_function
   const void* tag;                                        // identifies the target type
   const std::type_info* type;                             // nullptr without RTTI
 };
 
-template <class T>
-inline constexpr char type_tag = 0;
+template <class _Tp>
+inline constexpr char __type_tag = 0;
 
-template <class VT>
-struct handler {
-  static void relocate(storage& d, storage& s) noexcept {
-    VT* src = ::ycxx::detail::fw::target<VT>(s);
-    ::new (static_cast<void*>(d.buf)) VT(static_cast<VT&&>(*src));
-    src->~VT();
+template <class _VT>
+struct __handler {
+  static void __relocate(__storage& d, __storage& s) noexcept {
+    _VT* __src = ::__ycxx::__detail::__fw::target<_VT>(s);
+    ::new (static_cast<void*>(d.__buf)) _VT(static_cast<_VT&&>(*__src));
+    __src->~_VT();
   }
-  static void destroy(storage& s) noexcept {
-    if constexpr (is_small<VT>)
-      ::ycxx::detail::fw::target<VT>(s)->~VT();
+  static void destroy(__storage& s) noexcept {
+    if constexpr (__is_small<_VT>)
+      ::__ycxx::__detail::__fw::target<_VT>(s)->~_VT();
     else
-      delete ::ycxx::detail::fw::target<VT>(s);
+      delete ::__ycxx::__detail::__fw::target<_VT>(s);
   }
-  static void copy(storage& d, const storage& s) {
-    const VT& src = *::ycxx::detail::fw::target<VT>(const_cast<storage&>(s));
-    if constexpr (is_small<VT>)
-      ::new (static_cast<void*>(d.buf)) VT(src);
+  static void copy(__storage& d, const __storage& s) {
+    const _VT& __src = *::__ycxx::__detail::__fw::target<_VT>(const_cast<__storage&>(s));
+    if constexpr (__is_small<_VT>)
+      ::new (static_cast<void*>(d.__buf)) _VT(__src);
     else
-      d.p = new VT(src);
+      d.p = new _VT(__src);
   }
 };
 
 // Each entry names a handler member only when it is needed, so a move-only or immovable target
 // never instantiates the copy or relocate code.
-template <class VT>
-consteval auto relocate_fn() {
-  using fn = void (*)(storage&, storage&) noexcept;
-  if constexpr (is_small<VT> && !std::is_trivially_copyable_v<VT>)
-    return fn(&handler<VT>::relocate);
+template <class _VT>
+consteval auto __relocate_fn() {
+  using __fn = void (*)(__storage&, __storage&) noexcept;
+  if constexpr (__is_small<_VT> && !std::is_trivially_copyable_v<_VT>)
+    return __fn(&__handler<_VT>::__relocate);
   else
-    return fn(nullptr);
+    return __fn(nullptr);
 }
-template <class VT>
-consteval auto destroy_fn() {
-  using fn = void (*)(storage&) noexcept;
-  if constexpr (is_small<VT> && std::is_trivially_destructible_v<VT>)
-    return fn(nullptr);
+template <class _VT>
+consteval auto __destroy_fn() {
+  using __fn = void (*)(__storage&) noexcept;
+  if constexpr (__is_small<_VT> && std::is_trivially_destructible_v<_VT>)
+    return __fn(nullptr);
   else
-    return fn(&handler<VT>::destroy);
+    return __fn(&__handler<_VT>::destroy);
 }
-template <class VT, bool Copy>
-consteval auto copy_fn() {
-  using fn = void (*)(storage&, const storage&);
-  if constexpr (Copy)
-    return fn(&handler<VT>::copy);
+template <class _VT, bool _Copy>
+consteval auto __copy_fn() {
+  using __fn = void (*)(__storage&, const __storage&);
+  if constexpr (_Copy)
+    return __fn(&__handler<_VT>::copy);
   else
-    return fn(nullptr);
+    return __fn(nullptr);
 }
 
-template <class VT, bool Copy>
-inline constexpr ops ops_for = {relocate_fn<VT>(), destroy_fn<VT>(), copy_fn<VT, Copy>(), &type_tag<VT>,
-                                ::ycxx::detail::type_id<VT>};
+template <class _VT, bool _Copy>
+inline constexpr __ops __ops_for = {__relocate_fn<_VT>(), __destroy_fn<_VT>(), __copy_fn<_VT, _Copy>(), &__type_tag<_VT>,
+                                ::__ycxx::__detail::__type_id<_VT>};
 
-[[gnu::always_inline]] inline void relocate(const ops* op, storage& d, storage& s) noexcept {
-  if (op->relocate)
-    op->relocate(d, s);
+[[__gnu__::__always_inline__]] inline void __relocate(const __ops* op, __storage& d, __storage& s) noexcept {
+  if (op->__relocate)
+    op->__relocate(d, s);
   else
-    __builtin_memcpy(&d, &s, sizeof(storage)); // implicitly creates the trivially copyable target
+    __builtin_memcpy(&d, &s, sizeof(__storage)); // implicitly creates the trivially copyable target
 }
 
-template <class VT, class Inv, bool N, class R, class... A>
-R call_target(storage& s, param_t<A>... a) noexcept(N) {
-  return ::ycxx::detail::invoke_r<R>(static_cast<Inv>(*::ycxx::detail::fw::target<VT>(s)),
-                                     static_cast<param_t<A>&&>(a)...);
+template <class _VT, class _Inv, bool _Np, class _Rp, class... _Ap>
+_Rp __call_target(__storage& s, __param_t<_Ap>... a) noexcept(_Np) {
+  return ::__ycxx::__detail::invoke_r<_Rp>(static_cast<_Inv>(*::__ycxx::__detail::__fw::target<_VT>(s)),
+                                     static_cast<__param_t<_Ap>&&>(a)...);
 }
-template <bool N, class R, class... A>
-[[noreturn]] R call_empty(storage&, param_t<A>...) noexcept(N) {
-  ::ycxx::detail::assertion_failed("std::move_only_function/copyable_function: called with no target");
+template <bool _Np, class _Rp, class... _Ap>
+[[noreturn]] _Rp __call_empty(__storage&, __param_t<_Ap>...) noexcept(_Np) {
+  ::__ycxx::__detail::__assertion_failed("std::move_only_function/copyable_function: called with no target");
 }
-template <class R, class... A>
-[[noreturn]] R call_empty_function(storage&, param_t<A>...) {
-  ::ycxx::detail::throw_bad_function_call();
+template <class _Rp, class... _Ap>
+[[noreturn]] _Rp __call_empty_function(__storage&, __param_t<_Ap>...) {
+  ::__ycxx::__detail::__throw_bad_function_call();
 }
 
-struct empty_function_target {};
+struct __empty_function_target {};
 
-template <class T>
-inline constexpr bool is_in_place_type = false;
-template <class T>
-inline constexpr bool is_in_place_type<std::in_place_type_t<T>> = true;
+template <class _Tp>
+inline constexpr bool __is_in_place_type = false;
+template <class _Tp>
+inline constexpr bool __is_in_place_type<std::in_place_type_t<_Tp>> = true;
 
-template <class T>
-inline constexpr bool is_function_spec = false;
-template <class S>
-inline constexpr bool is_function_spec<std::function<S>> = true;
-template <class T>
-inline constexpr bool is_move_only_spec = false;
-template <class... S>
-inline constexpr bool is_move_only_spec<std::move_only_function<S...>> = true;
-template <class T>
-inline constexpr bool is_copyable_spec = false;
-template <class... S>
-inline constexpr bool is_copyable_spec<std::copyable_function<S...>> = true;
+template <class _Tp>
+inline constexpr bool __is_function_spec = false;
+template <class _Sp>
+inline constexpr bool __is_function_spec<std::function<_Sp>> = true;
+template <class _Tp>
+inline constexpr bool __is_move_only_spec = false;
+template <class... _Sp>
+inline constexpr bool __is_move_only_spec<std::move_only_function<_Sp...>> = true;
+template <class _Tp>
+inline constexpr bool __is_copyable_spec = false;
+template <class... _Sp>
+inline constexpr bool __is_copyable_spec<std::copyable_function<_Sp...>> = true;
 
 // Sources whose emptiness carries over ([func.wrap.func.con]/12.3, [func.wrap.move.ctor]/8.3,
 // [func.wrap.copy.ctor]/10.3).
-template <kind K, class T>
-inline constexpr bool empty_carries =
-    K == kind::function    ? is_function_spec<T>
-    : K == kind::copyable  ? is_copyable_spec<T>
-                           : is_move_only_spec<T> || is_copyable_spec<T>;
+template <kind _Kp, class _Tp>
+inline constexpr bool __empty_carries =
+    _Kp == kind::function    ? __is_function_spec<_Tp>
+    : _Kp == kind::copyable  ? __is_copyable_spec<_Tp>
+                           : __is_move_only_spec<_Tp> || __is_copyable_spec<_Tp>;
 
-template <class VT>
-inline constexpr bool is_nullable_pointer =
-    (std::is_pointer_v<VT> && std::is_function_v<std::remove_pointer_t<VT>>) || std::is_member_pointer_v<VT>;
+template <class _VT>
+inline constexpr bool __is_nullable_pointer =
+    (std::is_pointer_v<_VT> && std::is_function_v<std::remove_pointer_t<_VT>>) || std::is_member_pointer_v<_VT>;
 
 // ---- deduction-guide support ----
 // R(G::*)(A...) cv &opt noexcept(E) -> R(A...) noexcept(E) ([func.wrap.func.con]/16.1,
 // [func.wrap.ref.deduct]/5.1).
-template <class M>
-struct memfn_sig {};
-template <class R, class G, class... A, bool E>
-struct memfn_sig<R (G::*)(A...) noexcept(E)> {
-  using type = R(A...) noexcept(E);
-  using plain = R(A...);
+template <class _Mp>
+struct __memfn_sig {};
+template <class _Rp, class _Gp, class... _Ap, bool _Ep>
+struct __memfn_sig<_Rp (_Gp::*)(_Ap...) noexcept(_Ep)> {
+  using type = _Rp(_Ap...) noexcept(_Ep);
+  using __plain = _Rp(_Ap...);
 };
-template <class R, class G, class... A, bool E>
-struct memfn_sig<R (G::*)(A...) const noexcept(E)> : memfn_sig<R (G::*)(A...) noexcept(E)> {};
-template <class R, class G, class... A, bool E>
-struct memfn_sig<R (G::*)(A...) volatile noexcept(E)> : memfn_sig<R (G::*)(A...) noexcept(E)> {};
-template <class R, class G, class... A, bool E>
-struct memfn_sig<R (G::*)(A...) const volatile noexcept(E)> : memfn_sig<R (G::*)(A...) noexcept(E)> {};
-template <class R, class G, class... A, bool E>
-struct memfn_sig<R (G::*)(A...) & noexcept(E)> : memfn_sig<R (G::*)(A...) noexcept(E)> {};
-template <class R, class G, class... A, bool E>
-struct memfn_sig<R (G::*)(A...) const & noexcept(E)> : memfn_sig<R (G::*)(A...) noexcept(E)> {};
-template <class R, class G, class... A, bool E>
-struct memfn_sig<R (G::*)(A...) volatile & noexcept(E)> : memfn_sig<R (G::*)(A...) noexcept(E)> {};
-template <class R, class G, class... A, bool E>
-struct memfn_sig<R (G::*)(A...) const volatile & noexcept(E)> : memfn_sig<R (G::*)(A...) noexcept(E)> {};
+template <class _Rp, class _Gp, class... _Ap, bool _Ep>
+struct __memfn_sig<_Rp (_Gp::*)(_Ap...) const noexcept(_Ep)> : __memfn_sig<_Rp (_Gp::*)(_Ap...) noexcept(_Ep)> {};
+template <class _Rp, class _Gp, class... _Ap, bool _Ep>
+struct __memfn_sig<_Rp (_Gp::*)(_Ap...) volatile noexcept(_Ep)> : __memfn_sig<_Rp (_Gp::*)(_Ap...) noexcept(_Ep)> {};
+template <class _Rp, class _Gp, class... _Ap, bool _Ep>
+struct __memfn_sig<_Rp (_Gp::*)(_Ap...) const volatile noexcept(_Ep)> : __memfn_sig<_Rp (_Gp::*)(_Ap...) noexcept(_Ep)> {};
+template <class _Rp, class _Gp, class... _Ap, bool _Ep>
+struct __memfn_sig<_Rp (_Gp::*)(_Ap...) & noexcept(_Ep)> : __memfn_sig<_Rp (_Gp::*)(_Ap...) noexcept(_Ep)> {};
+template <class _Rp, class _Gp, class... _Ap, bool _Ep>
+struct __memfn_sig<_Rp (_Gp::*)(_Ap...) const & noexcept(_Ep)> : __memfn_sig<_Rp (_Gp::*)(_Ap...) noexcept(_Ep)> {};
+template <class _Rp, class _Gp, class... _Ap, bool _Ep>
+struct __memfn_sig<_Rp (_Gp::*)(_Ap...) volatile & noexcept(_Ep)> : __memfn_sig<_Rp (_Gp::*)(_Ap...) noexcept(_Ep)> {};
+template <class _Rp, class _Gp, class... _Ap, bool _Ep>
+struct __memfn_sig<_Rp (_Gp::*)(_Ap...) const volatile & noexcept(_Ep)> : __memfn_sig<_Rp (_Gp::*)(_Ap...) noexcept(_Ep)> {};
 
 // A function pointer from &F::operator() comes from an explicit-object member function or a
 // static one ([func.wrap.func.con]/16). A static operator() accepts every parameter as an
 // argument; an explicit-object one takes its first parameter from the object expression, so
 // called with all of them it has one argument too many.
-template <class F, class R, class... A>
-struct fnptr_sig {};
-template <class F, class R, class... A>
-  requires requires { std::declval<F&>().operator()(std::declval<A>()...); }
-struct fnptr_sig<F, R, A...> {
-  using plain = R(A...);
+template <class _Fp, class _Rp, class... _Ap>
+struct __fnptr_sig {};
+template <class _Fp, class _Rp, class... _Ap>
+  requires requires { std::declval<_Fp&>().operator()(std::declval<_Ap>()...); }
+struct __fnptr_sig<_Fp, _Rp, _Ap...> {
+  using __plain = _Rp(_Ap...);
 };
-template <class F, class R, class G, class... A>
-  requires(!requires { std::declval<F&>().operator()(std::declval<G>(), std::declval<A>()...); })
-struct fnptr_sig<F, R, G, A...> {
-  using plain = R(A...);
-};
-
-template <class F, class M>
-struct call_op_sig {};
-template <class F, class M>
-  requires requires { typename memfn_sig<M>::plain; }
-struct call_op_sig<F, M> {
-  using type = typename memfn_sig<M>::plain;
-};
-template <class F, class R, class... A, bool E>
-  requires requires { typename fnptr_sig<F, R, A...>::plain; }
-struct call_op_sig<F, R (*)(A...) noexcept(E)> {
-  using type = typename fnptr_sig<F, R, A...>::plain;
+template <class _Fp, class _Rp, class _Gp, class... _Ap>
+  requires(!requires { std::declval<_Fp&>().operator()(std::declval<_Gp>(), std::declval<_Ap>()...); })
+struct __fnptr_sig<_Fp, _Rp, _Gp, _Ap...> {
+  using __plain = _Rp(_Ap...);
 };
 
-template <class F>
-struct function_guide {};
-template <class F>
-  requires requires { &F::operator(); }
-struct function_guide<F> : call_op_sig<F, decltype(&F::operator())> {};
+template <class _Fp, class _Mp>
+struct __call_op_sig {};
+template <class _Fp, class _Mp>
+  requires requires { typename __memfn_sig<_Mp>::__plain; }
+struct __call_op_sig<_Fp, _Mp> {
+  using type = typename __memfn_sig<_Mp>::__plain;
+};
+template <class _Fp, class _Rp, class... _Ap, bool _Ep>
+  requires requires { typename __fnptr_sig<_Fp, _Rp, _Ap...>::__plain; }
+struct __call_op_sig<_Fp, _Rp (*)(_Ap...) noexcept(_Ep)> {
+  using type = typename __fnptr_sig<_Fp, _Rp, _Ap...>::__plain;
+};
+
+template <class _Fp>
+struct __function_guide {};
+template <class _Fp>
+  requires requires { &_Fp::operator(); }
+struct __function_guide<_Fp> : __call_op_sig<_Fp, decltype(&_Fp::operator())> {};
 
 // [func.wrap.ref.deduct]/5.
-template <class F, class T>
-struct fref_bound_sig {};
-template <class F, class T>
-  requires std::is_member_function_pointer_v<F> && requires { typename memfn_sig<F>::type; }
-struct fref_bound_sig<F, T> {
-  using type = typename memfn_sig<F>::type;
+template <class _Fp, class _Tp>
+struct __fref_bound_sig {};
+template <class _Fp, class _Tp>
+  requires std::is_member_function_pointer_v<_Fp> && requires { typename __memfn_sig<_Fp>::type; }
+struct __fref_bound_sig<_Fp, _Tp> {
+  using type = typename __memfn_sig<_Fp>::type;
 };
-template <class M, class G, class T>
-  requires std::is_object_v<M> && requires { typename std::invoke_result<M G::*, T&>::type; }
-struct fref_bound_sig<M G::*, T> {
-  using type = std::invoke_result_t<M G::*, T&>() noexcept;
+template <class _Mp, class _Gp, class _Tp>
+  requires std::is_object_v<_Mp> && requires { typename std::invoke_result<_Mp _Gp::*, _Tp&>::type; }
+struct __fref_bound_sig<_Mp _Gp::*, _Tp> {
+  using type = std::invoke_result_t<_Mp _Gp::*, _Tp&>() noexcept;
 };
-template <class R, class G, class... A, bool E, class T>
-struct fref_bound_sig<R (*)(G, A...) noexcept(E), T> {
-  using type = R(A...) noexcept(E);
+template <class _Rp, class _Gp, class... _Ap, bool _Ep, class _Tp>
+struct __fref_bound_sig<_Rp (*)(_Gp, _Ap...) noexcept(_Ep), _Tp> {
+  using type = _Rp(_Ap...) noexcept(_Ep);
 };
 
 // ---- function_ref support ----
-union bound_entity {
-  const volatile void* obj;
-  void (*fn)();
+union __bound_entity {
+  const volatile void* __obj;
+  void (*__fn)();
 };
 
 // is-convertible-from-specialization<F> for function_ref<R(A...) cv noexcept(N)>, where C is cv.
-template <bool C, bool N, class Sig, class F>
-inline constexpr bool fref_from_spec = false;
-template <bool C, bool N, class R, class... A, bool N2>
-inline constexpr bool fref_from_spec<C, N, R(A...), std::function_ref<R(A...) noexcept(N2)>> = (N2 || !N) && !C;
-template <bool C, bool N, class R, class... A, bool N2>
-inline constexpr bool fref_from_spec<C, N, R(A...), std::function_ref<R(A...) const noexcept(N2)>> = N2 || !N;
+template <bool _Cp, bool _Np, class _Sig, class _Fp>
+inline constexpr bool __fref_from_spec = false;
+template <bool _Cp, bool _Np, class _Rp, class... _Ap, bool _N2>
+inline constexpr bool __fref_from_spec<_Cp, _Np, _Rp(_Ap...), std::function_ref<_Rp(_Ap...) noexcept(_N2)>> = (_N2 || !_Np) && !_Cp;
+template <bool _Cp, bool _Np, class _Rp, class... _Ap, bool _N2>
+inline constexpr bool __fref_from_spec<_Cp, _Np, _Rp(_Ap...), std::function_ref<_Rp(_Ap...) const noexcept(_N2)>> = _N2 || !_Np;
 
-template <class T>
-inline constexpr bool is_constant_wrapper = false;
-template <auto X, class T>
-inline constexpr bool is_constant_wrapper<std::constant_wrapper<X, T>> = true;
+template <class _Tp>
+inline constexpr bool __is_constant_wrapper = false;
+template <auto _Xp, class _Tp>
+inline constexpr bool __is_constant_wrapper<std::constant_wrapper<_Xp, _Tp>> = true;
 
-}} // namespace ycxx::detail::fw
+}} // namespace __ycxx::__detail::__fw
 
-namespace [[gnu::visibility("hidden")]] ycxx { namespace adl_free {
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __adl_free {
 
 // The owning wrappers. Self is the derived std:: class.
-template <class Self, ::ycxx::detail::fw::kind K, ::ycxx::detail::fw::quals Q, bool N, class R, class... A>
-class fn_base {
-  template <class, ::ycxx::detail::fw::kind, ::ycxx::detail::fw::quals, bool, class, class...>
-  friend class fn_base;
-  using storage = ::ycxx::detail::fw::storage;
-  using ops = ::ycxx::detail::fw::ops;
-  using kind = ::ycxx::detail::fw::kind;
-  using thunk_t = R (*)(storage&, ::ycxx::detail::fw::param_t<A>...) noexcept(N);
+template <class _Self, ::__ycxx::__detail::__fw::kind _Kp, ::__ycxx::__detail::__fw::__quals _Qp, bool _Np, class _Rp, class... _Ap>
+class __fn_base {
+  template <class, ::__ycxx::__detail::__fw::kind, ::__ycxx::__detail::__fw::__quals, bool, class, class...>
+  friend class __fn_base;
+  using __storage = ::__ycxx::__detail::__fw::__storage;
+  using __ops = ::__ycxx::__detail::__fw::__ops;
+  using kind = ::__ycxx::__detail::__fw::kind;
+  using __thunk_t = _Rp (*)(__storage&, ::__ycxx::__detail::__fw::__param_t<_Ap>...) noexcept(_Np);
 
-  static constexpr bool copyable = K != kind::move_only;
+  static constexpr bool copyable = _Kp != kind::__move_only;
 
-  static constexpr thunk_t empty_thunk() noexcept {
-    if constexpr (K == kind::function)
-      return &::ycxx::detail::fw::call_empty_function<R, A...>;
+  static constexpr __thunk_t __empty_thunk() noexcept {
+    if constexpr (_Kp == kind::function)
+      return &::__ycxx::__detail::__fw::__call_empty_function<_Rp, _Ap...>;
     else
-      return &::ycxx::detail::fw::call_empty<N, R, A...>;
+      return &::__ycxx::__detail::__fw::__call_empty<_Np, _Rp, _Ap...>;
   }
 
   // is-callable-from<VT>
-  template <class VT>
-  static consteval bool callable_from() {
-    using q = ::ycxx::detail::fw::quals_of<Q, VT>;
-    return ::ycxx::detail::fw::invocable_r<N, R, typename q::cvref, A...>() &&
-           ::ycxx::detail::fw::invocable_r<N, R, typename q::inv, A...>();
+  template <class _VT>
+  static consteval bool __callable_from() {
+    using __q = ::__ycxx::__detail::__fw::__quals_of<_Qp, _VT>;
+    return ::__ycxx::__detail::__fw::__invocable_r<_Np, _Rp, typename __q::__cvref, _Ap...>() &&
+           ::__ycxx::__detail::__fw::__invocable_r<_Np, _Rp, typename __q::__inv, _Ap...>();
   }
 
-  Self& self() noexcept { return static_cast<Self&>(*this); }
+  _Self& __self() noexcept { return static_cast<_Self&>(*this); }
 
   // Another owning wrapper with the same R and argument passing ([func.wrap.general]/3: avoid double wrapping).
   // Its target, invoked through its own thunk, is what invoking it would do; is-callable-from
   // has already checked that our qualifiers may call it.
-  static_assert(sizeof(storage) + 2 * sizeof(void*) > ::ycxx::detail::fw::small_size);
+  static_assert(sizeof(__storage) + 2 * sizeof(void*) > ::__ycxx::__detail::__fw::__small_size);
 
   // The thunks need only agree on how arguments travel: T and T&& both pass a class-type
   // argument as T&&, and [func.wrap.general]/2 lets the inner invocation alias it.
-  template <class... A2>
-  static constexpr bool same_thunk_args =
-      std::is_same_v<void(::ycxx::detail::fw::param_t<A>...), void(::ycxx::detail::fw::param_t<A2>...)>;
-  template <class S2, kind K2, ::ycxx::detail::fw::quals Q2, bool N2, class... A2>
-    requires same_thunk_args<A2...>
-  static S2* self_of(fn_base<S2, K2, Q2, N2, R, A2...>*);
-  template <class S2, kind K2, ::ycxx::detail::fw::quals Q2, bool N2, class... A2>
-    requires same_thunk_args<A2...>
-  static fn_base<S2, K2, Q2, N2, R, A2...>* base_of(fn_base<S2, K2, Q2, N2, R, A2...>* p) noexcept {
+  template <class... _A2>
+  static constexpr bool __same_thunk_args =
+      std::is_same_v<void(::__ycxx::__detail::__fw::__param_t<_Ap>...), void(::__ycxx::__detail::__fw::__param_t<_A2>...)>;
+  template <class _S2, kind _K2, ::__ycxx::__detail::__fw::__quals _Q2, bool _N2, class... _A2>
+    requires __same_thunk_args<_A2...>
+  static _S2* __self_of(__fn_base<_S2, _K2, _Q2, _N2, _Rp, _A2...>*);
+  template <class _S2, kind _K2, ::__ycxx::__detail::__fw::__quals _Q2, bool _N2, class... _A2>
+    requires __same_thunk_args<_A2...>
+  static __fn_base<_S2, _K2, _Q2, _N2, _Rp, _A2...>* __base_of(__fn_base<_S2, _K2, _Q2, _N2, _Rp, _A2...>* p) noexcept {
     return p;
   }
   // Strengthened noexcept ([res.on.exception.handling]/5): nothing can throw when the target is
   // stored in place and constructed without throwing, or when another wrapper's target is taken.
-  template <class VT, class... Args>
-  static consteval bool ctor_noexcept() {
-    if constexpr (sizeof...(Args) == 1 && adoptable<VT>())
-      return (... && (std::is_rvalue_reference_v<Args&&> && !std::is_const_v<std::remove_reference_t<Args>>));
+  template <class _VT, class... _Args>
+  static consteval bool __ctor_noexcept() {
+    if constexpr (sizeof...(_Args) == 1 && __adoptable<_VT>())
+      return (... && (std::is_rvalue_reference_v<_Args&&> && !std::is_const_v<std::remove_reference_t<_Args>>));
     else
-      return ::ycxx::detail::fw::is_small<VT> && std::is_nothrow_constructible_v<VT, Args...>;
+      return ::__ycxx::__detail::__fw::__is_small<_VT> && std::is_nothrow_constructible_v<_VT, _Args...>;
   }
 
   // Not for std::function: its target_type() and target() expose the target's type, which must
   // be the source wrapper ([func.wrap.func.con]/13, [func.wrap.func.targ]).
-  template <class Src>
-  static consteval bool adoptable() {
-    if constexpr (K == kind::function)
+  template <class _Src>
+  static consteval bool __adoptable() {
+    if constexpr (_Kp == kind::function)
       return false;
-    else if constexpr (requires(Src* p) { fn_base::self_of(p); })
-      return std::is_same_v<decltype(fn_base::self_of(static_cast<Src*>(nullptr))), Src*>;
+    else if constexpr (requires(_Src* p) { __fn_base::__self_of(p); })
+      return std::is_same_v<decltype(__fn_base::__self_of(static_cast<_Src*>(nullptr))), _Src*>;
     else
       return false;
   }
 
-  template <class VT, class... Args>
-  void emplace(Args&&... args) {
-    if constexpr (::ycxx::detail::fw::is_small<VT>)
-      ::new (static_cast<void*>(s_.buf)) VT(static_cast<Args&&>(args)...);
+  template <class _VT, class... _Args>
+  void emplace(_Args&&... __args) {
+    if constexpr (::__ycxx::__detail::__fw::__is_small<_VT>)
+      ::new (static_cast<void*>(__s_.__buf)) _VT(static_cast<_Args&&>(__args)...);
     else
-      s_.p = new VT(static_cast<Args&&>(args)...);
-    ops_ = &::ycxx::detail::fw::ops_for<VT, copyable>;
-    call_ = &::ycxx::detail::fw::call_target<VT, typename ::ycxx::detail::fw::quals_of<Q, VT>::inv, N, R, A...>;
+      __s_.p = new _VT(static_cast<_Args&&>(__args)...);
+    __ops_ = &::__ycxx::__detail::__fw::__ops_for<_VT, copyable>;
+    __call_ = &::__ycxx::__detail::__fw::__call_target<_VT, typename ::__ycxx::__detail::__fw::__quals_of<_Qp, _VT>::__inv, _Np, _Rp, _Ap...>;
   }
 
-  void take(fn_base& o) noexcept {
-    if (o.ops_) {
-      ::ycxx::detail::fw::relocate(o.ops_, s_, o.s_);
-      ops_ = o.ops_;
-      call_ = o.call_;
-      o.ops_ = nullptr;
-      o.call_ = empty_thunk();
+  void take(__fn_base& __o) noexcept {
+    if (__o.__ops_) {
+      ::__ycxx::__detail::__fw::__relocate(__o.__ops_, __s_, __o.__s_);
+      __ops_ = __o.__ops_;
+      __call_ = __o.__call_;
+      __o.__ops_ = nullptr;
+      __o.__call_ = __empty_thunk();
     }
   }
 
   void reset() noexcept {
-    if (ops_) {
-      if (ops_->destroy)
-        ops_->destroy(s_);
-      ops_ = nullptr;
-      call_ = empty_thunk();
+    if (__ops_) {
+      if (__ops_->destroy)
+        __ops_->destroy(__s_);
+      __ops_ = nullptr;
+      __call_ = __empty_thunk();
     }
   }
 
-  void swap_impl(fn_base& o) noexcept {
-    if (this == __builtin_addressof(o))
+  void __swap_impl(__fn_base& __o) noexcept {
+    if (this == __builtin_addressof(__o))
       return;
-    storage tmp;
-    if (o.ops_)
-      ::ycxx::detail::fw::relocate(o.ops_, tmp, o.s_);
-    if (ops_)
-      ::ycxx::detail::fw::relocate(ops_, o.s_, s_);
-    if (o.ops_)
-      ::ycxx::detail::fw::relocate(o.ops_, s_, tmp);
-    const ops* op = ops_;
-    ops_ = o.ops_;
-    o.ops_ = op;
-    thunk_t c = call_;
-    call_ = o.call_;
-    o.call_ = c;
+    __storage __tmp;
+    if (__o.__ops_)
+      ::__ycxx::__detail::__fw::__relocate(__o.__ops_, __tmp, __o.__s_);
+    if (__ops_)
+      ::__ycxx::__detail::__fw::__relocate(__ops_, __o.__s_, __s_);
+    if (__o.__ops_)
+      ::__ycxx::__detail::__fw::__relocate(__o.__ops_, __s_, __tmp);
+    const __ops* op = __ops_;
+    __ops_ = __o.__ops_;
+    __o.__ops_ = op;
+    __thunk_t c = __call_;
+    __call_ = __o.__call_;
+    __o.__call_ = c;
   }
 
-  template <class T>
-  bool holds() const noexcept {
-    if (!ops_)
+  template <class _Tp>
+  bool __holds() const noexcept {
+    if (!__ops_)
       return false;
-    if (ops_->tag == &::ycxx::detail::fw::type_tag<T>)
+    if (__ops_->tag == &::__ycxx::__detail::__fw::__type_tag<_Tp>)
       return true;
     // Two copies of one table can exist across shared libraries.
-    if constexpr (::ycxx::detail::cfg::rtti)
-      return *ops_->type == *::ycxx::detail::type_id<T>;
+    if constexpr (::__ycxx::__detail::__cfg::__rtti)
+      return *__ops_->type == *::__ycxx::__detail::__type_id<_Tp>;
     else
       return false;
   }
@@ -482,89 +482,89 @@ class fn_base {
 protected:
   // The buffer is not at offset 0: an empty target there could share its address with another
   // object of its type, such as an empty base of a class that has this wrapper as a member.
-  thunk_t call_ = empty_thunk();
-  const ops* ops_ = nullptr;
-  mutable storage s_;
+  __thunk_t __call_ = __empty_thunk();
+  const __ops* __ops_ = nullptr;
+  mutable __storage __s_;
 
 public:
-  using result_type = R;
+  using result_type = _Rp;
 
   // User-provided, as the wrappers' default constructors are in the draft, so `const function<F>
   // f;` is valid ([dcl.init.general]/8: s_ has no default member initializer).
-  fn_base() noexcept {}
-  fn_base(std::nullptr_t) noexcept {}
-  fn_base(fn_base&& o) noexcept { take(o); }
-  fn_base(const fn_base& o)
+  __fn_base() noexcept {}
+  __fn_base(std::nullptr_t) noexcept {}
+  __fn_base(__fn_base&& __o) noexcept { take(__o); }
+  __fn_base(const __fn_base& __o)
     requires copyable
   {
-    if (o.ops_) {
-      o.ops_->copy(s_, o.s_);
-      ops_ = o.ops_;
-      call_ = o.call_;
+    if (__o.__ops_) {
+      __o.__ops_->copy(__s_, __o.__s_);
+      __ops_ = __o.__ops_;
+      __call_ = __o.__call_;
     }
   }
 
-  template <class F, class VT = std::decay_t<F>>
-    requires(!std::is_same_v<std::remove_cvref_t<F>, Self>) && (!std::is_same_v<std::remove_cvref_t<F>, fn_base>) &&
-            (!::ycxx::detail::fw::is_in_place_type<std::remove_cvref_t<F>>) && (callable_from<VT>())
-  fn_base(F&& f) noexcept(ctor_noexcept<VT, F>()) {
-    static_assert(std::is_constructible_v<VT, F>, "std::function/move_only_function/copyable_function: Mandates: is_constructible_v<VT, F>");
+  template <class _Fp, class _VT = std::decay_t<_Fp>>
+    requires(!std::is_same_v<std::remove_cvref_t<_Fp>, _Self>) && (!std::is_same_v<std::remove_cvref_t<_Fp>, __fn_base>) &&
+            (!::__ycxx::__detail::__fw::__is_in_place_type<std::remove_cvref_t<_Fp>>) && (__callable_from<_VT>())
+  __fn_base(_Fp&& __f) noexcept(__ctor_noexcept<_VT, _Fp>()) {
+    static_assert(std::is_constructible_v<_VT, _Fp>, "std::function/move_only_function/copyable_function: Mandates: is_constructible_v<VT, F>");
     if constexpr (copyable)
-      static_assert(std::is_copy_constructible_v<VT>, "std::function/move_only_function/copyable_function: Mandates: VT is copy constructible");
-    if constexpr (std::is_constructible_v<VT, F> && (!copyable || std::is_copy_constructible_v<VT>)) {
-      if constexpr (::ycxx::detail::fw::is_nullable_pointer<VT>) {
-        if (f == nullptr)
+      static_assert(std::is_copy_constructible_v<_VT>, "std::function/move_only_function/copyable_function: Mandates: VT is copy constructible");
+    if constexpr (std::is_constructible_v<_VT, _Fp> && (!copyable || std::is_copy_constructible_v<_VT>)) {
+      if constexpr (::__ycxx::__detail::__fw::__is_nullable_pointer<_VT>) {
+        if (__f == nullptr)
           return;
-      } else if constexpr (adoptable<VT>()) {
-        auto* src = fn_base::base_of(const_cast<VT*>(__builtin_addressof(f)));
-        if (src->ops_) {
-          if constexpr (std::is_rvalue_reference_v<F&&> && !std::is_const_v<std::remove_reference_t<F>>)
-            ::ycxx::detail::fw::relocate(src->ops_, s_, src->s_);
+      } else if constexpr (__adoptable<_VT>()) {
+        auto* __src = __fn_base::__base_of(const_cast<_VT*>(__builtin_addressof(__f)));
+        if (__src->__ops_) {
+          if constexpr (std::is_rvalue_reference_v<_Fp&&> && !std::is_const_v<std::remove_reference_t<_Fp>>)
+            ::__ycxx::__detail::__fw::__relocate(__src->__ops_, __s_, __src->__s_);
           else
-            src->ops_->copy(s_, src->s_);
-          ops_ = src->ops_;
-          call_ = src->call_;
-          if constexpr (std::is_rvalue_reference_v<F&&> && !std::is_const_v<std::remove_reference_t<F>>) {
-            src->ops_ = nullptr;
-            src->call_ = src->empty_thunk();
+            __src->__ops_->copy(__s_, __src->__s_);
+          __ops_ = __src->__ops_;
+          __call_ = __src->__call_;
+          if constexpr (std::is_rvalue_reference_v<_Fp&&> && !std::is_const_v<std::remove_reference_t<_Fp>>) {
+            __src->__ops_ = nullptr;
+            __src->__call_ = __src->__empty_thunk();
           }
           return;
         }
-        if constexpr (::ycxx::detail::fw::empty_carries<K, VT>) {
+        if constexpr (::__ycxx::__detail::__fw::__empty_carries<_Kp, _VT>) {
           return;
         } else {
           // An empty std::function becomes a target of a move_only_function or
           // copyable_function: a stateless stand-in that throws as invoking it would.
-          ops_ = &::ycxx::detail::fw::ops_for<::ycxx::detail::fw::empty_function_target, copyable>;
-          call_ = &::ycxx::detail::fw::call_empty_function<R, A...>;
+          __ops_ = &::__ycxx::__detail::__fw::__ops_for<::__ycxx::__detail::__fw::__empty_function_target, copyable>;
+          __call_ = &::__ycxx::__detail::__fw::__call_empty_function<_Rp, _Ap...>;
           return;
         }
-      } else if constexpr (::ycxx::detail::fw::empty_carries<K, VT>) {
-        if (!static_cast<bool>(f))
+      } else if constexpr (::__ycxx::__detail::__fw::__empty_carries<_Kp, _VT>) {
+        if (!static_cast<bool>(__f))
           return;
       }
-      emplace<VT>(static_cast<F&&>(f));
+      emplace<_VT>(static_cast<_Fp&&>(__f));
     }
   }
 
-  template <class T, class... Args, class VT = std::decay_t<T>>
-    requires(K != kind::function) && std::is_constructible_v<VT, Args...> && (callable_from<VT>())
-  explicit fn_base(std::in_place_type_t<T>, Args&&... args) noexcept(ctor_noexcept<VT, Args...>()) {
-    static_assert(std::is_same_v<VT, T>, "std::function/move_only_function/copyable_function: Mandates: VT is the same type as T");
+  template <class _Tp, class... _Args, class _VT = std::decay_t<_Tp>>
+    requires(_Kp != kind::function) && std::is_constructible_v<_VT, _Args...> && (__callable_from<_VT>())
+  explicit __fn_base(std::in_place_type_t<_Tp>, _Args&&... __args) noexcept(__ctor_noexcept<_VT, _Args...>()) {
+    static_assert(std::is_same_v<_VT, _Tp>, "std::function/move_only_function/copyable_function: Mandates: VT is the same type as T");
     if constexpr (copyable)
-      static_assert(std::is_copy_constructible_v<VT>, "std::function/move_only_function/copyable_function: Mandates: VT is copy constructible");
-    if constexpr (std::is_same_v<VT, T> && (!copyable || std::is_copy_constructible_v<VT>))
-      emplace<VT>(static_cast<Args&&>(args)...);
+      static_assert(std::is_copy_constructible_v<_VT>, "std::function/move_only_function/copyable_function: Mandates: VT is copy constructible");
+    if constexpr (std::is_same_v<_VT, _Tp> && (!copyable || std::is_copy_constructible_v<_VT>))
+      emplace<_VT>(static_cast<_Args&&>(__args)...);
   }
-  template <class T, class U, class... Args, class VT = std::decay_t<T>>
-    requires(K != kind::function) && std::is_constructible_v<VT, std::initializer_list<U>&, Args...> &&
-            (callable_from<VT>())
-  explicit fn_base(std::in_place_type_t<T>, std::initializer_list<U> il, Args&&... args) {
-    static_assert(std::is_same_v<VT, T>, "std::function/move_only_function/copyable_function: Mandates: VT is the same type as T");
+  template <class _Tp, class _Up, class... _Args, class _VT = std::decay_t<_Tp>>
+    requires(_Kp != kind::function) && std::is_constructible_v<_VT, std::initializer_list<_Up>&, _Args...> &&
+            (__callable_from<_VT>())
+  explicit __fn_base(std::in_place_type_t<_Tp>, std::initializer_list<_Up> il, _Args&&... __args) {
+    static_assert(std::is_same_v<_VT, _Tp>, "std::function/move_only_function/copyable_function: Mandates: VT is the same type as T");
     if constexpr (copyable)
-      static_assert(std::is_copy_constructible_v<VT>, "std::function/move_only_function/copyable_function: Mandates: VT is copy constructible");
-    if constexpr (std::is_same_v<VT, T> && (!copyable || std::is_copy_constructible_v<VT>))
-      emplace<VT>(il, static_cast<Args&&>(args)...);
+      static_assert(std::is_copy_constructible_v<_VT>, "std::function/move_only_function/copyable_function: Mandates: VT is copy constructible");
+    if constexpr (std::is_same_v<_VT, _Tp> && (!copyable || std::is_copy_constructible_v<_VT>))
+      emplace<_VT>(il, static_cast<_Args&&>(__args)...);
   }
 
   // "Equivalent to: W(std::move(f)).swap(*this)": the old target is destroyed only after the
@@ -572,428 +572,428 @@ public:
   // aside; one that can contain a wrapper (at least 40 bytes) is never in the 24-byte buffer, so
   // that move leaves it, and the source inside it, where they are. The source's target is
   // relocated once.
-  fn_base& operator=(fn_base&& o) noexcept {
-    if (this != __builtin_addressof(o)) {
-      storage old;
-      const ops* old_ops = ops_;
-      if (old_ops)
-        ::ycxx::detail::fw::relocate(old_ops, old, s_);
-      ops_ = nullptr;
-      call_ = empty_thunk();
-      take(o);
-      if (old_ops && old_ops->destroy)
-        old_ops->destroy(old);
+  __fn_base& operator=(__fn_base&& __o) noexcept {
+    if (this != __builtin_addressof(__o)) {
+      __storage __old;
+      const __ops* __old_ops = __ops_;
+      if (__old_ops)
+        ::__ycxx::__detail::__fw::__relocate(__old_ops, __old, __s_);
+      __ops_ = nullptr;
+      __call_ = __empty_thunk();
+      take(__o);
+      if (__old_ops && __old_ops->destroy)
+        __old_ops->destroy(__old);
     }
     return *this;
   }
   // "Equivalent to: W(f).swap(*this)": self-assignment copies too. Releasing the old target and
   // taking the copy's is that swap with one relocation fewer.
-  fn_base& operator=(const fn_base& o)
+  __fn_base& operator=(const __fn_base& __o)
     requires copyable
   {
-    fn_base tmp(o);
+    __fn_base __tmp(__o);
     reset();
-    take(tmp);
+    take(__tmp);
     return *this;
   }
-  Self& operator=(std::nullptr_t) noexcept {
+  _Self& operator=(std::nullptr_t) noexcept {
     reset();
-    return self();
+    return __self();
   }
-  template <class F>
-    requires(!std::is_same_v<std::remove_cvref_t<F>, Self>) && (!std::is_same_v<std::remove_cvref_t<F>, fn_base>) &&
-            (K == kind::function ? std::is_invocable_r_v<R, std::decay_t<F>&, A...>
-                                 : std::is_constructible_v<Self, F>)
-  Self& operator=(F&& f) {
-    Self tmp(static_cast<F&&>(f));
+  template <class _Fp>
+    requires(!std::is_same_v<std::remove_cvref_t<_Fp>, _Self>) && (!std::is_same_v<std::remove_cvref_t<_Fp>, __fn_base>) &&
+            (_Kp == kind::function ? std::is_invocable_r_v<_Rp, std::decay_t<_Fp>&, _Ap...>
+                                 : std::is_constructible_v<_Self, _Fp>)
+  _Self& operator=(_Fp&& __f) {
+    _Self __tmp(static_cast<_Fp&&>(__f));
     reset();
-    take(tmp);
-    return self();
+    take(__tmp);
+    return __self();
   }
 
-  ~fn_base() {
-    if (ops_ && ops_->destroy)
-      ops_->destroy(s_);
+  ~__fn_base() {
+    if (__ops_ && __ops_->destroy)
+      __ops_->destroy(__s_);
   }
 
-  void swap(Self& other) noexcept { swap_impl(other); }
-  explicit operator bool() const noexcept { return ops_ != nullptr; }
+  void swap(_Self& other) noexcept { __swap_impl(other); }
+  explicit operator bool() const noexcept { return __ops_ != nullptr; }
 
   // ---- [func.wrap.func.targ] ----
   const std::type_info& target_type() const noexcept
-    requires(K == kind::function) && ::ycxx::detail::cfg::rtti
+    requires(_Kp == kind::function) && ::__ycxx::__detail::__cfg::__rtti
   {
-    return ops_ ? *ops_->type : *::ycxx::detail::type_id<void>;
+    return __ops_ ? *__ops_->type : *::__ycxx::__detail::__type_id<void>;
   }
-  template <class T>
-    requires(K == kind::function)
-  T* target() noexcept {
-    using U = std::remove_cv_t<T>;
-    if constexpr (std::is_object_v<U> && !std::is_array_v<U>) {
-      if (holds<U>())
-        return ::ycxx::detail::fw::target<U>(s_);
+  template <class _Tp>
+    requires(_Kp == kind::function)
+  _Tp* target() noexcept {
+    using _Up = std::remove_cv_t<_Tp>;
+    if constexpr (std::is_object_v<_Up> && !std::is_array_v<_Up>) {
+      if (__holds<_Up>())
+        return ::__ycxx::__detail::__fw::target<_Up>(__s_);
     }
     return nullptr;
   }
-  template <class T>
-    requires(K == kind::function)
-  const T* target() const noexcept {
-    return const_cast<fn_base*>(this)->template target<T>();
+  template <class _Tp>
+    requires(_Kp == kind::function)
+  const _Tp* target() const noexcept {
+    return const_cast<__fn_base*>(this)->template target<_Tp>();
   }
 
-  friend void swap(Self& a, Self& b) noexcept { a.swap(b); }
-  friend bool operator==(const Self& f, std::nullptr_t) noexcept { return !f; }
+  friend void swap(_Self& a, _Self& b) noexcept { a.swap(b); }
+  friend bool operator==(const _Self& __f, std::nullptr_t) noexcept { return !__f; }
 };
 
 // function_ref. Self is the derived std:: class; C is the cv placeholder.
-template <class Self, bool C, bool N, class R, class... A>
-class fref_base {
+template <class _Self, bool _Cp, bool _Np, class _Rp, class... _Ap>
+class __fref_base {
   template <class, bool, bool, class, class...>
-  friend class fref_base;
+  friend class __fref_base;
 
-  using bound_entity = ::ycxx::detail::fw::bound_entity;
-  using thunk_t = R (*)(bound_entity, ::ycxx::detail::fw::param_t<A>...) noexcept(N);
-  template <class T>
-  using cv = std::conditional_t<C, const T, T>;
+  using __bound_entity = ::__ycxx::__detail::__fw::__bound_entity;
+  using __thunk_t = _Rp (*)(__bound_entity, ::__ycxx::__detail::__fw::__param_t<_Ap>...) noexcept(_Np);
+  template <class _Tp>
+  using __cv = std::conditional_t<_Cp, const _Tp, _Tp>;
 
-  template <class... T>
-  static consteval bool invocable_using() {
-    return ::ycxx::detail::fw::invocable_r<N, R, T..., A...>();
+  template <class... _Tp>
+  static consteval bool __invocable_using() {
+    return ::__ycxx::__detail::__fw::__invocable_r<_Np, _Rp, _Tp..., _Ap...>();
   }
 
-  template <class F>
-  static R fn_thunk(bound_entity be, ::ycxx::detail::fw::param_t<A>... a) noexcept(N) {
-    return ::ycxx::detail::invoke_r<R>(reinterpret_cast<F*>(be.fn), static_cast<::ycxx::detail::fw::param_t<A>&&>(a)...);
+  template <class _Fp>
+  static _Rp __fn_thunk(__bound_entity __be, ::__ycxx::__detail::__fw::__param_t<_Ap>... a) noexcept(_Np) {
+    return ::__ycxx::__detail::invoke_r<_Rp>(reinterpret_cast<_Fp*>(__be.__fn), static_cast<::__ycxx::__detail::__fw::__param_t<_Ap>&&>(a)...);
   }
-  template <class T> // T is cv-qualified as stored
-  static R obj_thunk(bound_entity be, ::ycxx::detail::fw::param_t<A>... a) noexcept(N) {
-    return ::ycxx::detail::invoke_r<R>(*static_cast<T*>(const_cast<void*>(be.obj)),
-                                       static_cast<::ycxx::detail::fw::param_t<A>&&>(a)...);
+  template <class _Tp> // T is cv-qualified as stored
+  static _Rp __obj_thunk(__bound_entity __be, ::__ycxx::__detail::__fw::__param_t<_Ap>... a) noexcept(_Np) {
+    return ::__ycxx::__detail::invoke_r<_Rp>(*static_cast<_Tp*>(const_cast<void*>(__be.__obj)),
+                                       static_cast<::__ycxx::__detail::__fw::__param_t<_Ap>&&>(a)...);
   }
-  template <class CW>
-  static R cw_thunk(bound_entity, ::ycxx::detail::fw::param_t<A>... a) noexcept(N) {
-    return ::ycxx::detail::invoke_r<R>(CW::value, static_cast<::ycxx::detail::fw::param_t<A>&&>(a)...);
+  template <class _CW>
+  static _Rp __cw_thunk(__bound_entity, ::__ycxx::__detail::__fw::__param_t<_Ap>... a) noexcept(_Np) {
+    return ::__ycxx::__detail::invoke_r<_Rp>(_CW::value, static_cast<::__ycxx::__detail::__fw::__param_t<_Ap>&&>(a)...);
   }
-  template <class CW, class T>
-  static R cw_obj_thunk(bound_entity be, ::ycxx::detail::fw::param_t<A>... a) noexcept(N) {
-    T* p;
-    if constexpr (std::is_function_v<T>)
-      p = reinterpret_cast<T*>(be.fn);
+  template <class _CW, class _Tp>
+  static _Rp __cw_obj_thunk(__bound_entity __be, ::__ycxx::__detail::__fw::__param_t<_Ap>... a) noexcept(_Np) {
+    _Tp* p;
+    if constexpr (std::is_function_v<_Tp>)
+      p = reinterpret_cast<_Tp*>(__be.__fn);
     else
-      p = static_cast<T*>(const_cast<void*>(be.obj));
-    return ::ycxx::detail::invoke_r<R>(CW::value, *p, static_cast<::ycxx::detail::fw::param_t<A>&&>(a)...);
+      p = static_cast<_Tp*>(const_cast<void*>(__be.__obj));
+    return ::__ycxx::__detail::invoke_r<_Rp>(_CW::value, *p, static_cast<::__ycxx::__detail::__fw::__param_t<_Ap>&&>(a)...);
   }
-  template <class CW, class P>
-  static R cw_ptr_thunk(bound_entity be, ::ycxx::detail::fw::param_t<A>... a) noexcept(N) {
-    P p;
-    if constexpr (std::is_function_v<std::remove_pointer_t<P>>)
-      p = reinterpret_cast<P>(be.fn);
+  template <class _CW, class _Pp>
+  static _Rp __cw_ptr_thunk(__bound_entity __be, ::__ycxx::__detail::__fw::__param_t<_Ap>... a) noexcept(_Np) {
+    _Pp p;
+    if constexpr (std::is_function_v<std::remove_pointer_t<_Pp>>)
+      p = reinterpret_cast<_Pp>(__be.__fn);
     else
-      p = static_cast<P>(const_cast<void*>(be.obj));
-    return ::ycxx::detail::invoke_r<R>(CW::value, p, static_cast<::ycxx::detail::fw::param_t<A>&&>(a)...);
+      p = static_cast<_Pp>(const_cast<void*>(__be.__obj));
+    return ::__ycxx::__detail::invoke_r<_Rp>(_CW::value, p, static_cast<::__ycxx::__detail::__fw::__param_t<_Ap>&&>(a)...);
   }
 
-  template <class CW>
-  static consteval void check_cw_not_null() {
-    using F = typename CW::value_type;
-    if constexpr (std::is_pointer_v<F> || std::is_member_pointer_v<F>)
-      static_assert(CW::value != nullptr, "std::function_ref: Mandates: f.value != nullptr");
+  template <class _CW>
+  static consteval void __check_cw_not_null() {
+    using _Fp = typename _CW::value_type;
+    if constexpr (std::is_pointer_v<_Fp> || std::is_member_pointer_v<_Fp>)
+      static_assert(_CW::value != nullptr, "std::function_ref: Mandates: f.value != nullptr");
   }
 
-  bound_entity be_;
-  thunk_t thunk_;
+  __bound_entity __be_;
+  __thunk_t __thunk_;
 
 public:
   // ---- [func.wrap.ref.ctor] ----
-  template <class F>
-    requires std::is_function_v<F> && (invocable_using<F>())
-  fref_base(F* f) noexcept {
-    ::ycxx::detail::precondition(f != nullptr, "std::function_ref: null function pointer");
-    be_.fn = reinterpret_cast<void (*)()>(f);
-    thunk_ = &fn_thunk<F>;
+  template <class _Fp>
+    requires std::is_function_v<_Fp> && (__invocable_using<_Fp>())
+  __fref_base(_Fp* __f) noexcept {
+    ::__ycxx::__detail::__precondition(__f != nullptr, "std::function_ref: null function pointer");
+    __be_.__fn = reinterpret_cast<void (*)()>(__f);
+    __thunk_ = &__fn_thunk<_Fp>;
   }
 
-  template <class F, class T = std::remove_reference_t<F>>
-    requires(!std::is_same_v<std::remove_cvref_t<F>, Self>) && (!std::is_same_v<std::remove_cvref_t<F>, fref_base>) &&
-            (!std::is_member_pointer_v<T>) &&
-            (invocable_using<cv<T>&>())
-  constexpr fref_base(F&& f) noexcept {
-    if constexpr (::ycxx::detail::fw::fref_from_spec<C, N, R(A...), std::remove_cv_t<T>>) {
-      be_ = f.be_;
-      thunk_ = f.thunk_;
+  template <class _Fp, class _Tp = std::remove_reference_t<_Fp>>
+    requires(!std::is_same_v<std::remove_cvref_t<_Fp>, _Self>) && (!std::is_same_v<std::remove_cvref_t<_Fp>, __fref_base>) &&
+            (!std::is_member_pointer_v<_Tp>) &&
+            (__invocable_using<__cv<_Tp>&>())
+  constexpr __fref_base(_Fp&& __f) noexcept {
+    if constexpr (::__ycxx::__detail::__fw::__fref_from_spec<_Cp, _Np, _Rp(_Ap...), std::remove_cv_t<_Tp>>) {
+      __be_ = __f.__be_;
+      __thunk_ = __f.__thunk_;
     } else {
       // (A function lvalue picks the F* constructor by partial ordering.)
-      be_.obj = __builtin_addressof(f);
-      thunk_ = &obj_thunk<cv<T>>;
+      __be_.__obj = __builtin_addressof(__f);
+      __thunk_ = &__obj_thunk<__cv<_Tp>>;
     }
   }
 
-  template <auto c, class F>
-    requires(invocable_using<const F&>())
-  constexpr fref_base(std::constant_wrapper<c, F>) noexcept {
-    using CW = std::constant_wrapper<c, F>;
-    check_cw_not_null<CW>();
-    if constexpr (sizeof...(A) != 0)
-      static_assert(!::ycxx::detail::cw_constant_call<CW, A...>,
+  template <auto c, class _Fp>
+    requires(__invocable_using<const _Fp&>())
+  constexpr __fref_base(std::constant_wrapper<c, _Fp>) noexcept {
+    using _CW = std::constant_wrapper<c, _Fp>;
+    __check_cw_not_null<_CW>();
+    if constexpr (sizeof...(_Ap) != 0)
+      static_assert(!::__ycxx::__detail::__cw_constant_call<_CW, _Ap...>,
                     "std::function_ref: Mandates: the call does not produce a constant_wrapper");
-    be_.obj = nullptr;
-    thunk_ = &cw_thunk<CW>;
+    __be_.__obj = nullptr;
+    __thunk_ = &__cw_thunk<_CW>;
   }
 
-  template <auto c, class F, class U, class T = std::remove_reference_t<U>>
-    requires(!std::is_rvalue_reference_v<U &&>) && (invocable_using<const F&, cv<T>&>())
-  constexpr fref_base(std::constant_wrapper<c, F>, U&& obj) noexcept {
-    using CW = std::constant_wrapper<c, F>;
-    check_cw_not_null<CW>();
-    if constexpr (std::is_function_v<T>)
-      be_.fn = reinterpret_cast<void (*)()>(&obj);
+  template <auto c, class _Fp, class _Up, class _Tp = std::remove_reference_t<_Up>>
+    requires(!std::is_rvalue_reference_v<_Up &&>) && (__invocable_using<const _Fp&, __cv<_Tp>&>())
+  constexpr __fref_base(std::constant_wrapper<c, _Fp>, _Up&& __obj) noexcept {
+    using _CW = std::constant_wrapper<c, _Fp>;
+    __check_cw_not_null<_CW>();
+    if constexpr (std::is_function_v<_Tp>)
+      __be_.__fn = reinterpret_cast<void (*)()>(&__obj);
     else
-      be_.obj = __builtin_addressof(obj);
-    thunk_ = &cw_obj_thunk<CW, cv<T>>;
+      __be_.__obj = __builtin_addressof(__obj);
+    __thunk_ = &__cw_obj_thunk<_CW, __cv<_Tp>>;
   }
 
-  template <auto c, class F, class T>
-    requires(!C) && (invocable_using<const F&, T*>())
-  constexpr fref_base(std::constant_wrapper<c, F>, T* obj) noexcept {
-    using CW = std::constant_wrapper<c, F>;
-    check_cw_not_null<CW>();
-    if constexpr (std::is_member_pointer_v<F>)
-      ::ycxx::detail::precondition(obj != nullptr, "std::function_ref: null object pointer");
-    if constexpr (std::is_function_v<T>)
-      be_.fn = reinterpret_cast<void (*)()>(obj);
+  template <auto c, class _Fp, class _Tp>
+    requires(!_Cp) && (__invocable_using<const _Fp&, _Tp*>())
+  constexpr __fref_base(std::constant_wrapper<c, _Fp>, _Tp* __obj) noexcept {
+    using _CW = std::constant_wrapper<c, _Fp>;
+    __check_cw_not_null<_CW>();
+    if constexpr (std::is_member_pointer_v<_Fp>)
+      ::__ycxx::__detail::__precondition(__obj != nullptr, "std::function_ref: null object pointer");
+    if constexpr (std::is_function_v<_Tp>)
+      __be_.__fn = reinterpret_cast<void (*)()>(__obj);
     else
-      be_.obj = obj;
-    thunk_ = &cw_ptr_thunk<CW, T*>;
+      __be_.__obj = __obj;
+    __thunk_ = &__cw_ptr_thunk<_CW, _Tp*>;
   }
-  template <auto c, class F, class T>
-    requires C && (invocable_using<const F&, const T*>())
-  constexpr fref_base(std::constant_wrapper<c, F>, const T* obj) noexcept {
-    using CW = std::constant_wrapper<c, F>;
-    check_cw_not_null<CW>();
-    if constexpr (std::is_member_pointer_v<F>)
-      ::ycxx::detail::precondition(obj != nullptr, "std::function_ref: null object pointer");
-    if constexpr (std::is_function_v<T>)
-      be_.fn = reinterpret_cast<void (*)()>(obj);
+  template <auto c, class _Fp, class _Tp>
+    requires _Cp && (__invocable_using<const _Fp&, const _Tp*>())
+  constexpr __fref_base(std::constant_wrapper<c, _Fp>, const _Tp* __obj) noexcept {
+    using _CW = std::constant_wrapper<c, _Fp>;
+    __check_cw_not_null<_CW>();
+    if constexpr (std::is_member_pointer_v<_Fp>)
+      ::__ycxx::__detail::__precondition(__obj != nullptr, "std::function_ref: null object pointer");
+    if constexpr (std::is_function_v<_Tp>)
+      __be_.__fn = reinterpret_cast<void (*)()>(__obj);
     else
-      be_.obj = obj;
-    thunk_ = &cw_ptr_thunk<CW, const T*>;
+      __be_.__obj = __obj;
+    __thunk_ = &__cw_ptr_thunk<_CW, const _Tp*>;
   }
 
-  constexpr fref_base(const fref_base&) noexcept = default;
-  constexpr fref_base& operator=(const fref_base&) noexcept = default;
+  constexpr __fref_base(const __fref_base&) noexcept = default;
+  constexpr __fref_base& operator=(const __fref_base&) noexcept = default;
 
   // ---- [func.wrap.ref.inv] ----
-  R operator()(A... a) const noexcept(N) { return thunk_(be_, static_cast<A&&>(a)...); }
+  _Rp operator()(_Ap... a) const noexcept(_Np) { return __thunk_(__be_, static_cast<_Ap&&>(a)...); }
 };
 
-}} // namespace ycxx::adl_free
+}} // namespace __ycxx::__adl_free
 
-namespace [[gnu::visibility("hidden")]] std {
+namespace [[__gnu__::__visibility__("hidden")]] std {
 
 // ---- [func.wrap.func] ----
-template <class R, class... A>
-class function<R(A...)>
-    : public ::ycxx::adl_free::fn_base<function<R(A...)>, ::ycxx::detail::fw::kind::function,
-                                       ::ycxx::detail::fw::quals::function, false, R, A...> {
-  using base = ::ycxx::adl_free::fn_base<function, ::ycxx::detail::fw::kind::function,
-                                         ::ycxx::detail::fw::quals::function, false, R, A...>;
+template <class _Rp, class... _Ap>
+class function<_Rp(_Ap...)>
+    : public ::__ycxx::__adl_free::__fn_base<function<_Rp(_Ap...)>, ::__ycxx::__detail::__fw::kind::function,
+                                       ::__ycxx::__detail::__fw::__quals::function, false, _Rp, _Ap...> {
+  using base = ::__ycxx::__adl_free::__fn_base<function, ::__ycxx::__detail::__fw::kind::function,
+                                         ::__ycxx::__detail::__fw::__quals::function, false, _Rp, _Ap...>;
 
 public:
   using base::base;
   using base::operator=;
 
-  template <class F>
-  function& operator=(reference_wrapper<F> f) noexcept {
-    function(f).swap(*this);
+  template <class _Fp>
+  function& operator=(reference_wrapper<_Fp> __f) noexcept {
+    function(__f).swap(*this);
     return *this;
   }
 
-  R operator()(A... a) const { return this->call_(this->s_, static_cast<A&&>(a)...); }
+  _Rp operator()(_Ap... a) const { return this->__call_(this->__s_, static_cast<_Ap&&>(a)...); }
 };
 
-template <class R, class... A>
-function(R (*)(A...)) -> function<R(A...)>;
-template <class F>
-  requires requires { typename ::ycxx::detail::fw::function_guide<F>::type; }
-function(F) -> function<typename ::ycxx::detail::fw::function_guide<F>::type>;
+template <class _Rp, class... _Ap>
+function(_Rp (*)(_Ap...)) -> function<_Rp(_Ap...)>;
+template <class _Fp>
+  requires requires { typename ::__ycxx::__detail::__fw::__function_guide<_Fp>::type; }
+function(_Fp) -> function<typename ::__ycxx::__detail::__fw::__function_guide<_Fp>::type>;
 
 // ---- [func.wrap.move] / [func.wrap.copy] ----
 // One partial specialization per cv/ref combination; noex is deduced.
-template <class R, class... A, bool N>
-class move_only_function<R(A...) noexcept(N)>
-    : public ::ycxx::adl_free::fn_base<move_only_function<R(A...) noexcept(N)>, ::ycxx::detail::fw::kind::move_only,
-                                       ::ycxx::detail::fw::quals::none, N, R, A...> {
-  using base = typename move_only_function::fn_base;
+template <class _Rp, class... _Ap, bool _Np>
+class move_only_function<_Rp(_Ap...) noexcept(_Np)>
+    : public ::__ycxx::__adl_free::__fn_base<move_only_function<_Rp(_Ap...) noexcept(_Np)>, ::__ycxx::__detail::__fw::kind::__move_only,
+                                       ::__ycxx::__detail::__fw::__quals::none, _Np, _Rp, _Ap...> {
+  using base = typename move_only_function::__fn_base;
 
 public:
   using base::base;
   using base::operator=;
-  R operator()(A... a) noexcept(N) { return this->call_(this->s_, static_cast<A&&>(a)...); }
+  _Rp operator()(_Ap... a) noexcept(_Np) { return this->__call_(this->__s_, static_cast<_Ap&&>(a)...); }
 };
-template <class R, class... A, bool N>
-class move_only_function<R(A...) const noexcept(N)>
-    : public ::ycxx::adl_free::fn_base<move_only_function<R(A...) const noexcept(N)>,
-                                       ::ycxx::detail::fw::kind::move_only, ::ycxx::detail::fw::quals::c, N, R, A...> {
-  using base = typename move_only_function::fn_base;
+template <class _Rp, class... _Ap, bool _Np>
+class move_only_function<_Rp(_Ap...) const noexcept(_Np)>
+    : public ::__ycxx::__adl_free::__fn_base<move_only_function<_Rp(_Ap...) const noexcept(_Np)>,
+                                       ::__ycxx::__detail::__fw::kind::__move_only, ::__ycxx::__detail::__fw::__quals::c, _Np, _Rp, _Ap...> {
+  using base = typename move_only_function::__fn_base;
 
 public:
   using base::base;
   using base::operator=;
-  R operator()(A... a) const noexcept(N) { return this->call_(this->s_, static_cast<A&&>(a)...); }
+  _Rp operator()(_Ap... a) const noexcept(_Np) { return this->__call_(this->__s_, static_cast<_Ap&&>(a)...); }
 };
-template <class R, class... A, bool N>
-class move_only_function<R(A...) & noexcept(N)>
-    : public ::ycxx::adl_free::fn_base<move_only_function<R(A...) & noexcept(N)>, ::ycxx::detail::fw::kind::move_only,
-                                       ::ycxx::detail::fw::quals::lref, N, R, A...> {
-  using base = typename move_only_function::fn_base;
+template <class _Rp, class... _Ap, bool _Np>
+class move_only_function<_Rp(_Ap...) & noexcept(_Np)>
+    : public ::__ycxx::__adl_free::__fn_base<move_only_function<_Rp(_Ap...) & noexcept(_Np)>, ::__ycxx::__detail::__fw::kind::__move_only,
+                                       ::__ycxx::__detail::__fw::__quals::__lref, _Np, _Rp, _Ap...> {
+  using base = typename move_only_function::__fn_base;
 
 public:
   using base::base;
   using base::operator=;
-  R operator()(A... a) & noexcept(N) { return this->call_(this->s_, static_cast<A&&>(a)...); }
+  _Rp operator()(_Ap... a) & noexcept(_Np) { return this->__call_(this->__s_, static_cast<_Ap&&>(a)...); }
 };
-template <class R, class... A, bool N>
-class move_only_function<R(A...) const & noexcept(N)>
-    : public ::ycxx::adl_free::fn_base<move_only_function<R(A...) const & noexcept(N)>,
-                                       ::ycxx::detail::fw::kind::move_only, ::ycxx::detail::fw::quals::clref, N, R,
-                                       A...> {
-  using base = typename move_only_function::fn_base;
+template <class _Rp, class... _Ap, bool _Np>
+class move_only_function<_Rp(_Ap...) const & noexcept(_Np)>
+    : public ::__ycxx::__adl_free::__fn_base<move_only_function<_Rp(_Ap...) const & noexcept(_Np)>,
+                                       ::__ycxx::__detail::__fw::kind::__move_only, ::__ycxx::__detail::__fw::__quals::__clref, _Np, _Rp,
+                                       _Ap...> {
+  using base = typename move_only_function::__fn_base;
 
 public:
   using base::base;
   using base::operator=;
-  R operator()(A... a) const & noexcept(N) { return this->call_(this->s_, static_cast<A&&>(a)...); }
+  _Rp operator()(_Ap... a) const & noexcept(_Np) { return this->__call_(this->__s_, static_cast<_Ap&&>(a)...); }
 };
-template <class R, class... A, bool N>
-class move_only_function<R(A...) && noexcept(N)>
-    : public ::ycxx::adl_free::fn_base<move_only_function<R(A...) && noexcept(N)>,
-                                       ::ycxx::detail::fw::kind::move_only, ::ycxx::detail::fw::quals::rref, N, R, A...> {
-  using base = typename move_only_function::fn_base;
+template <class _Rp, class... _Ap, bool _Np>
+class move_only_function<_Rp(_Ap...) && noexcept(_Np)>
+    : public ::__ycxx::__adl_free::__fn_base<move_only_function<_Rp(_Ap...) && noexcept(_Np)>,
+                                       ::__ycxx::__detail::__fw::kind::__move_only, ::__ycxx::__detail::__fw::__quals::__rref, _Np, _Rp, _Ap...> {
+  using base = typename move_only_function::__fn_base;
 
 public:
   using base::base;
   using base::operator=;
-  R operator()(A... a) && noexcept(N) { return this->call_(this->s_, static_cast<A&&>(a)...); }
+  _Rp operator()(_Ap... a) && noexcept(_Np) { return this->__call_(this->__s_, static_cast<_Ap&&>(a)...); }
 };
-template <class R, class... A, bool N>
-class move_only_function<R(A...) const && noexcept(N)>
-    : public ::ycxx::adl_free::fn_base<move_only_function<R(A...) const && noexcept(N)>,
-                                       ::ycxx::detail::fw::kind::move_only, ::ycxx::detail::fw::quals::crref, N, R,
-                                       A...> {
-  using base = typename move_only_function::fn_base;
+template <class _Rp, class... _Ap, bool _Np>
+class move_only_function<_Rp(_Ap...) const && noexcept(_Np)>
+    : public ::__ycxx::__adl_free::__fn_base<move_only_function<_Rp(_Ap...) const && noexcept(_Np)>,
+                                       ::__ycxx::__detail::__fw::kind::__move_only, ::__ycxx::__detail::__fw::__quals::__crref, _Np, _Rp,
+                                       _Ap...> {
+  using base = typename move_only_function::__fn_base;
 
 public:
   using base::base;
   using base::operator=;
-  R operator()(A... a) const && noexcept(N) { return this->call_(this->s_, static_cast<A&&>(a)...); }
+  _Rp operator()(_Ap... a) const && noexcept(_Np) { return this->__call_(this->__s_, static_cast<_Ap&&>(a)...); }
 };
 
-template <class R, class... A, bool N>
-class copyable_function<R(A...) noexcept(N)>
-    : public ::ycxx::adl_free::fn_base<copyable_function<R(A...) noexcept(N)>, ::ycxx::detail::fw::kind::copyable,
-                                       ::ycxx::detail::fw::quals::none, N, R, A...> {
-  using base = typename copyable_function::fn_base;
+template <class _Rp, class... _Ap, bool _Np>
+class copyable_function<_Rp(_Ap...) noexcept(_Np)>
+    : public ::__ycxx::__adl_free::__fn_base<copyable_function<_Rp(_Ap...) noexcept(_Np)>, ::__ycxx::__detail::__fw::kind::copyable,
+                                       ::__ycxx::__detail::__fw::__quals::none, _Np, _Rp, _Ap...> {
+  using base = typename copyable_function::__fn_base;
 
 public:
   using base::base;
   using base::operator=;
-  R operator()(A... a) noexcept(N) { return this->call_(this->s_, static_cast<A&&>(a)...); }
+  _Rp operator()(_Ap... a) noexcept(_Np) { return this->__call_(this->__s_, static_cast<_Ap&&>(a)...); }
 };
-template <class R, class... A, bool N>
-class copyable_function<R(A...) const noexcept(N)>
-    : public ::ycxx::adl_free::fn_base<copyable_function<R(A...) const noexcept(N)>,
-                                       ::ycxx::detail::fw::kind::copyable, ::ycxx::detail::fw::quals::c, N, R, A...> {
-  using base = typename copyable_function::fn_base;
+template <class _Rp, class... _Ap, bool _Np>
+class copyable_function<_Rp(_Ap...) const noexcept(_Np)>
+    : public ::__ycxx::__adl_free::__fn_base<copyable_function<_Rp(_Ap...) const noexcept(_Np)>,
+                                       ::__ycxx::__detail::__fw::kind::copyable, ::__ycxx::__detail::__fw::__quals::c, _Np, _Rp, _Ap...> {
+  using base = typename copyable_function::__fn_base;
 
 public:
   using base::base;
   using base::operator=;
-  R operator()(A... a) const noexcept(N) { return this->call_(this->s_, static_cast<A&&>(a)...); }
+  _Rp operator()(_Ap... a) const noexcept(_Np) { return this->__call_(this->__s_, static_cast<_Ap&&>(a)...); }
 };
-template <class R, class... A, bool N>
-class copyable_function<R(A...) & noexcept(N)>
-    : public ::ycxx::adl_free::fn_base<copyable_function<R(A...) & noexcept(N)>, ::ycxx::detail::fw::kind::copyable,
-                                       ::ycxx::detail::fw::quals::lref, N, R, A...> {
-  using base = typename copyable_function::fn_base;
+template <class _Rp, class... _Ap, bool _Np>
+class copyable_function<_Rp(_Ap...) & noexcept(_Np)>
+    : public ::__ycxx::__adl_free::__fn_base<copyable_function<_Rp(_Ap...) & noexcept(_Np)>, ::__ycxx::__detail::__fw::kind::copyable,
+                                       ::__ycxx::__detail::__fw::__quals::__lref, _Np, _Rp, _Ap...> {
+  using base = typename copyable_function::__fn_base;
 
 public:
   using base::base;
   using base::operator=;
-  R operator()(A... a) & noexcept(N) { return this->call_(this->s_, static_cast<A&&>(a)...); }
+  _Rp operator()(_Ap... a) & noexcept(_Np) { return this->__call_(this->__s_, static_cast<_Ap&&>(a)...); }
 };
-template <class R, class... A, bool N>
-class copyable_function<R(A...) const & noexcept(N)>
-    : public ::ycxx::adl_free::fn_base<copyable_function<R(A...) const & noexcept(N)>,
-                                       ::ycxx::detail::fw::kind::copyable, ::ycxx::detail::fw::quals::clref, N, R, A...> {
-  using base = typename copyable_function::fn_base;
+template <class _Rp, class... _Ap, bool _Np>
+class copyable_function<_Rp(_Ap...) const & noexcept(_Np)>
+    : public ::__ycxx::__adl_free::__fn_base<copyable_function<_Rp(_Ap...) const & noexcept(_Np)>,
+                                       ::__ycxx::__detail::__fw::kind::copyable, ::__ycxx::__detail::__fw::__quals::__clref, _Np, _Rp, _Ap...> {
+  using base = typename copyable_function::__fn_base;
 
 public:
   using base::base;
   using base::operator=;
-  R operator()(A... a) const & noexcept(N) { return this->call_(this->s_, static_cast<A&&>(a)...); }
+  _Rp operator()(_Ap... a) const & noexcept(_Np) { return this->__call_(this->__s_, static_cast<_Ap&&>(a)...); }
 };
-template <class R, class... A, bool N>
-class copyable_function<R(A...) && noexcept(N)>
-    : public ::ycxx::adl_free::fn_base<copyable_function<R(A...) && noexcept(N)>, ::ycxx::detail::fw::kind::copyable,
-                                       ::ycxx::detail::fw::quals::rref, N, R, A...> {
-  using base = typename copyable_function::fn_base;
+template <class _Rp, class... _Ap, bool _Np>
+class copyable_function<_Rp(_Ap...) && noexcept(_Np)>
+    : public ::__ycxx::__adl_free::__fn_base<copyable_function<_Rp(_Ap...) && noexcept(_Np)>, ::__ycxx::__detail::__fw::kind::copyable,
+                                       ::__ycxx::__detail::__fw::__quals::__rref, _Np, _Rp, _Ap...> {
+  using base = typename copyable_function::__fn_base;
 
 public:
   using base::base;
   using base::operator=;
-  R operator()(A... a) && noexcept(N) { return this->call_(this->s_, static_cast<A&&>(a)...); }
+  _Rp operator()(_Ap... a) && noexcept(_Np) { return this->__call_(this->__s_, static_cast<_Ap&&>(a)...); }
 };
-template <class R, class... A, bool N>
-class copyable_function<R(A...) const && noexcept(N)>
-    : public ::ycxx::adl_free::fn_base<copyable_function<R(A...) const && noexcept(N)>,
-                                       ::ycxx::detail::fw::kind::copyable, ::ycxx::detail::fw::quals::crref, N, R,
-                                       A...> {
-  using base = typename copyable_function::fn_base;
+template <class _Rp, class... _Ap, bool _Np>
+class copyable_function<_Rp(_Ap...) const && noexcept(_Np)>
+    : public ::__ycxx::__adl_free::__fn_base<copyable_function<_Rp(_Ap...) const && noexcept(_Np)>,
+                                       ::__ycxx::__detail::__fw::kind::copyable, ::__ycxx::__detail::__fw::__quals::__crref, _Np, _Rp,
+                                       _Ap...> {
+  using base = typename copyable_function::__fn_base;
 
 public:
   using base::base;
   using base::operator=;
-  R operator()(A... a) const && noexcept(N) { return this->call_(this->s_, static_cast<A&&>(a)...); }
+  _Rp operator()(_Ap... a) const && noexcept(_Np) { return this->__call_(this->__s_, static_cast<_Ap&&>(a)...); }
 };
 
 // ---- [func.wrap.ref] ----
-template <class R, class... A, bool N>
-class function_ref<R(A...) noexcept(N)>
-    : public ::ycxx::adl_free::fref_base<function_ref<R(A...) noexcept(N)>, false, N, R, A...> {
-  using base = typename function_ref::fref_base;
+template <class _Rp, class... _Ap, bool _Np>
+class function_ref<_Rp(_Ap...) noexcept(_Np)>
+    : public ::__ycxx::__adl_free::__fref_base<function_ref<_Rp(_Ap...) noexcept(_Np)>, false, _Np, _Rp, _Ap...> {
+  using base = typename function_ref::__fref_base;
 
 public:
   using base::base;
   // Declared here, not in the base: a using-declaration would also bring in the base's copy
   // assignment, which competes with this class's for any argument convertible to both.
-  template <class T>
-    requires(!::ycxx::detail::fw::fref_from_spec<false, N, R(A...), T>) && (!is_pointer_v<T>) &&
-            (!::ycxx::detail::fw::is_constant_wrapper<T>)
-  function_ref& operator=(T) = delete;
+  template <class _Tp>
+    requires(!::__ycxx::__detail::__fw::__fref_from_spec<false, _Np, _Rp(_Ap...), _Tp>) && (!is_pointer_v<_Tp>) &&
+            (!::__ycxx::__detail::__fw::__is_constant_wrapper<_Tp>)
+  function_ref& operator=(_Tp) = delete;
 };
-template <class R, class... A, bool N>
-class function_ref<R(A...) const noexcept(N)>
-    : public ::ycxx::adl_free::fref_base<function_ref<R(A...) const noexcept(N)>, true, N, R, A...> {
-  using base = typename function_ref::fref_base;
+template <class _Rp, class... _Ap, bool _Np>
+class function_ref<_Rp(_Ap...) const noexcept(_Np)>
+    : public ::__ycxx::__adl_free::__fref_base<function_ref<_Rp(_Ap...) const noexcept(_Np)>, true, _Np, _Rp, _Ap...> {
+  using base = typename function_ref::__fref_base;
 
 public:
   using base::base;
   // Declared here, not in the base: a using-declaration would also bring in the base's copy
   // assignment, which competes with this class's for any argument convertible to both.
-  template <class T>
-    requires(!::ycxx::detail::fw::fref_from_spec<true, N, R(A...), T>) && (!is_pointer_v<T>) &&
-            (!::ycxx::detail::fw::is_constant_wrapper<T>)
-  function_ref& operator=(T) = delete;
+  template <class _Tp>
+    requires(!::__ycxx::__detail::__fw::__fref_from_spec<true, _Np, _Rp(_Ap...), _Tp>) && (!is_pointer_v<_Tp>) &&
+            (!::__ycxx::__detail::__fw::__is_constant_wrapper<_Tp>)
+  function_ref& operator=(_Tp) = delete;
 };
 
-template <class F>
-  requires is_function_v<F>
-function_ref(F*) -> function_ref<F>;
-template <auto c, class F0>
-  requires is_function_v<remove_pointer_t<F0>>
-function_ref(constant_wrapper<c, F0>) -> function_ref<remove_pointer_t<F0>>;
-template <auto c, class F, class T>
-  requires requires { typename ::ycxx::detail::fw::fref_bound_sig<F, T>::type; }
-function_ref(constant_wrapper<c, F>, T&&) -> function_ref<typename ::ycxx::detail::fw::fref_bound_sig<F, T>::type>;
+template <class _Fp>
+  requires is_function_v<_Fp>
+function_ref(_Fp*) -> function_ref<_Fp>;
+template <auto c, class _F0>
+  requires is_function_v<remove_pointer_t<_F0>>
+function_ref(constant_wrapper<c, _F0>) -> function_ref<remove_pointer_t<_F0>>;
+template <auto c, class _Fp, class _Tp>
+  requires requires { typename ::__ycxx::__detail::__fw::__fref_bound_sig<_Fp, _Tp>::type; }
+function_ref(constant_wrapper<c, _Fp>, _Tp&&) -> function_ref<typename ::__ycxx::__detail::__fw::__fref_bound_sig<_Fp, _Tp>::type>;
 
 } // namespace std

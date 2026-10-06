@@ -7,25 +7,25 @@
 #include <ycxx/core/format_base.hpp>
 #include <ycxx/hosted/ostream.hpp>
 
-namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
 // [ostream.formatted.print]/4: a formatted output function writing vformat(os.getloc(), fmt,
-// args), followed by a newline if `newline`.
-void vprint_ostream(std::ostream& os, std::string_view fmt, std::format_args args, bool newline);
-}} // namespace ycxx::detail
+// args), followed by a newline if `__newline`.
+void __vprint_ostream(std::ostream& __os, std::string_view __fmt, std::format_args __args, bool __newline);
+}} // namespace __ycxx::__detail
 
-namespace [[gnu::visibility("hidden")]] std {
+namespace [[__gnu__::__visibility__("hidden")]] std {
 
-void vprint_unicode(ostream& os, string_view fmt, format_args args);
-void vprint_nonunicode(ostream& os, string_view fmt, format_args args);
+void vprint_unicode(ostream& __os, string_view __fmt, format_args __args);
+void vprint_nonunicode(ostream& __os, string_view __fmt, format_args __args);
 
-template <class... Args>
-void print(ostream& os, format_string<Args...> fmt, Args&&... args) {
-  ycxx::detail::vprint_ostream(os, fmt.get(), make_format_args(args...), false);
+template <class... _Args>
+void print(ostream& __os, format_string<_Args...> __fmt, _Args&&... __args) {
+  __ycxx::__detail::__vprint_ostream(__os, __fmt.get(), make_format_args(__args...), false);
 }
-template <class... Args>
-void println(ostream& os, format_string<Args...> fmt, Args&&... args) {
-  ycxx::detail::vprint_ostream(os, fmt.get(), make_format_args(args...), true);
+template <class... _Args>
+void println(ostream& __os, format_string<_Args...> __fmt, _Args&&... __args) {
+  __ycxx::__detail::__vprint_ostream(__os, __fmt.get(), make_format_args(__args...), true);
 }
-void println(ostream& os);
+void println(ostream& __os);
 
 } // namespace std

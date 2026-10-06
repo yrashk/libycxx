@@ -5,38 +5,38 @@
 
 #include <ycxx/core/format_decl.hpp>
 
-namespace [[gnu::visibility("hidden")]] ycxx { namespace adl_free {
-template <class Word>
-class bit_ref;
-}} // namespace ycxx::adl_free
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __adl_free {
+template <class _Word>
+class __bit_ref;
+}} // namespace __ycxx::__adl_free
 
-namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
-template <class T>
-inline constexpr bool fmt_is_bit_ref = false;
-template <class Word>
-inline constexpr bool fmt_is_bit_ref<ycxx::adl_free::bit_ref<Word>> = true;
-}} // namespace ycxx::detail
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+template <class _Tp>
+inline constexpr bool __fmt_is_bit_ref = false;
+template <class _Word>
+inline constexpr bool __fmt_is_bit_ref<__ycxx::__adl_free::__bit_ref<_Word>> = true;
+}} // namespace __ycxx::__detail
 
-namespace [[gnu::visibility("hidden")]] std {
+namespace [[__gnu__::__visibility__("hidden")]] std {
 
-template <class T, class charT>
-  requires ycxx::detail::fmt_is_bit_ref<T>
-struct formatter<T, charT> {
+template <class _Tp, class __charT>
+  requires __ycxx::__detail::__fmt_is_bit_ref<_Tp>
+struct formatter<_Tp, __charT> {
 private:
-  formatter<bool, charT> underlying_;
+  formatter<bool, __charT> __underlying_;
 
 public:
-  template <class ParseContext>
-  constexpr typename ParseContext::iterator parse(ParseContext& ctx) {
-    return underlying_.parse(ctx);
+  template <class _ParseContext>
+  constexpr typename _ParseContext::iterator parse(_ParseContext& __ctx) {
+    return __underlying_.parse(__ctx);
   }
-  template <class FormatContext>
-  constexpr typename FormatContext::iterator format(const T& ref, FormatContext& ctx) const {
-    return underlying_.format(ref, ctx);
+  template <class _FormatContext>
+  constexpr typename _FormatContext::iterator format(const _Tp& ref, _FormatContext& __ctx) const {
+    return __underlying_.format(ref, __ctx);
   }
 };
 // [format.formatter.spec]/3: not specified otherwise.
-template <class Word>
-inline constexpr bool enable_nonlocking_formatter_optimization<ycxx::adl_free::bit_ref<Word>> = true;
+template <class _Word>
+inline constexpr bool enable_nonlocking_formatter_optimization<__ycxx::__adl_free::__bit_ref<_Word>> = true;
 
 } // namespace std

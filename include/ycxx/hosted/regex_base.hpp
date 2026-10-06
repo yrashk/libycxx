@@ -16,7 +16,7 @@
 #include <ycxx/core/error.hpp>
 #include <ycxx/hosted/locale_base.hpp>
 
-namespace [[gnu::visibility("hidden")]] std { namespace regex_constants {
+namespace [[__gnu__::__visibility__("hidden")]] std { namespace regex_constants {
 
 // [re.synopt]
 enum syntax_option_type : unsigned {};
@@ -95,145 +95,145 @@ inline constexpr error_type error_stack = error_type(13);
 
 }} // namespace std::regex_constants
 
-namespace [[gnu::visibility("hidden")]] std {
+namespace [[__gnu__::__visibility__("hidden")]] std {
 
 // [re.badexp]. The constructor (what() is a fixed message per code) and the destructor (the key
 // function) are in the hosted runtime.
 class regex_error : public runtime_error {
-  regex_constants::error_type code_;
+  regex_constants::error_type __code_;
 
 public:
-  explicit regex_error(regex_constants::error_type ecode);
+  explicit regex_error(regex_constants::error_type __ecode);
   regex_error(const regex_error&) noexcept = default;
   regex_error& operator=(const regex_error&) noexcept = default;
   ~regex_error() override;
 
-  regex_constants::error_type code() const { return code_; }
+  regex_constants::error_type code() const { return __code_; }
   const char* what() const noexcept override { return runtime_error::what(); }
 };
 
 } // namespace std
 
-namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
 
 // src/hosted/regex.cpp. The names are ASCII, already narrowed; class names lower-cased.
 // The class mask of a name of Table 121 (0 if unknown); icase maps lower and upper to alpha.
-unsigned regex_class_by_name(const char* name, std::size_t n, bool icase) noexcept;
+unsigned __regex_class_by_name(const char* name, std::size_t n, bool icase) noexcept;
 // The character a single character or a POSIX collating-symbol name ("period", "NUL", ...)
 // stands for, or -1.
-int regex_collate_by_name(const char* name, std::size_t n) noexcept;
+int __regex_collate_by_name(const char* name, std::size_t n) noexcept;
 // The fixed message of regex_error(code).
-const char* regex_error_message(int code) noexcept;
+const char* __regex_error_message(int code) noexcept;
 
-[[noreturn]] [[gnu::cold]] inline void throw_regex_error(std::regex_constants::error_type e) {
-  ::ycxx::detail::raise_with(ycxx_error_regex_error, ::ycxx::detail::regex_error_message(e),
+[[noreturn]] [[__gnu__::__cold__]] inline void __throw_regex_error(std::regex_constants::error_type e) {
+  ::__ycxx::__detail::__raise_with(ycxx_error_regex_error, ::__ycxx::__detail::__regex_error_message(e),
                              [e] { return std::regex_error(e); });
 }
 
 // The bit regex_traits adds to alnum for the class "w" (the underscore).
-inline constexpr unsigned regex_word_bit = 1u << 16;
+inline constexpr unsigned __regex_word_bit = 1u << 16;
 
-}} // namespace ycxx::detail
+}} // namespace __ycxx::__detail
 
-namespace [[gnu::visibility("hidden")]] std {
+namespace [[__gnu__::__visibility__("hidden")]] std {
 
 // [re.traits]
-template <class charT>
+template <class __charT>
 struct regex_traits {
-  using char_type = charT;
+  using char_type = __charT;
   using string_type = basic_string<char_type>;
   using locale_type = locale;
   using char_class_type = unsigned;
 
-  regex_traits() { cache(); }
+  regex_traits() { __cache(); }
 
-  static size_t length(const char_type* p) { return char_traits<charT>::length(p); }
-  charT translate(charT c) const { return c; }
-  charT translate_nocase(charT c) const { return ct_->tolower(c); }
+  static size_t length(const char_type* p) { return char_traits<__charT>::length(p); }
+  __charT translate(__charT c) const { return c; }
+  __charT translate_nocase(__charT c) const { return __ct_->tolower(c); }
 
-  template <class ForwardIterator>
-  string_type transform(ForwardIterator first, ForwardIterator last) const {
+  template <class _ForwardIterator>
+  string_type transform(_ForwardIterator first, _ForwardIterator last) const {
     string_type s(first, last);
-    return col_->transform(s.data(), s.data() + s.size());
+    return __col_->transform(s.data(), s.data() + s.size());
   }
   // [re.traits]/7 returns an empty key unless the facet is a collate_byname whose key form is
   // known. The collate facets of every locale libycxx provides (collate and collate_byname alike)
   // compare code points one by one, as the POSIX locale does, so their sort keys have no
   // secondary weights and the whole key is the primary key: every character is its own
   // equivalence class ([[=a=]] matches 'a' only).
-  template <class ForwardIterator>
-  string_type transform_primary(ForwardIterator first, ForwardIterator last) const {
+  template <class _ForwardIterator>
+  string_type transform_primary(_ForwardIterator first, _ForwardIterator last) const {
     return transform(first, last);
   }
-  template <class ForwardIterator>
-  string_type lookup_collatename(ForwardIterator first, ForwardIterator last) const {
-    char buf[32];
+  template <class _ForwardIterator>
+  string_type lookup_collatename(_ForwardIterator first, _ForwardIterator last) const {
+    char __buf[32];
     size_t n = 0;
     for (; first != last; ++first) {
-      if (n == sizeof buf)
+      if (n == sizeof __buf)
         return string_type();
-      const charT c = *first;
-      const char nc = ct_->narrow(c, '\0');
-      if (nc == '\0' || static_cast<unsigned char>(nc) > 127)
+      const __charT c = *first;
+      const char __nc = __ct_->narrow(c, '\0');
+      if (__nc == '\0' || static_cast<unsigned char>(__nc) > 127)
         return string_type();
-      buf[n++] = nc;
+      __buf[n++] = __nc;
     }
     if (n == 1)
-      return string_type(1, ct_->widen(buf[0]));
-    const int code = ::ycxx::detail::regex_collate_by_name(buf, n);
-    return code < 0 ? string_type() : string_type(1, ct_->widen(static_cast<char>(code)));
+      return string_type(1, __ct_->widen(__buf[0]));
+    const int code = ::__ycxx::__detail::__regex_collate_by_name(__buf, n);
+    return code < 0 ? string_type() : string_type(1, __ct_->widen(static_cast<char>(code)));
   }
-  template <class ForwardIterator>
-  char_class_type lookup_classname(ForwardIterator first, ForwardIterator last, bool icase = false) const {
-    char buf[16];
+  template <class _ForwardIterator>
+  char_class_type lookup_classname(_ForwardIterator first, _ForwardIterator last, bool icase = false) const {
+    char __buf[16];
     size_t n = 0;
     for (; first != last; ++first) {
-      if (n == sizeof buf)
+      if (n == sizeof __buf)
         return 0;
-      char nc = ct_->narrow(*first, '\0');
-      if (nc >= 'A' && nc <= 'Z')
-        nc = static_cast<char>(nc - 'A' + 'a');
-      if (nc < 'a' || nc > 'z')
+      char __nc = __ct_->narrow(*first, '\0');
+      if (__nc >= 'A' && __nc <= 'Z')
+        __nc = static_cast<char>(__nc - 'A' + 'a');
+      if (__nc < 'a' || __nc > 'z')
         return 0;
-      buf[n++] = nc;
+      __buf[n++] = __nc;
     }
-    return ::ycxx::detail::regex_class_by_name(buf, n, icase);
+    return ::__ycxx::__detail::__regex_class_by_name(__buf, n, icase);
   }
-  bool isctype(charT c, char_class_type f) const {
-    const auto m = static_cast<ctype_base::mask>(f & 0xFFFFu);
-    if (m != 0 && ct_->is(m, c))
+  bool isctype(__charT c, char_class_type __f) const {
+    const auto m = static_cast<ctype_base::mask>(__f & 0xFFFFu);
+    if (m != 0 && __ct_->is(m, c))
       return true;
-    return (f & ::ycxx::detail::regex_word_bit) != 0 && c == ct_->widen('_');
+    return (__f & ::__ycxx::__detail::__regex_word_bit) != 0 && c == __ct_->widen('_');
   }
-  int value(charT ch, int radix) const {
-    ::ycxx::detail::precondition(radix == 8 || radix == 10 || radix == 16, "regex_traits::value: radix must be 8, 10 or 16");
-    const char c = ct_->narrow(ch, '\0');
-    int v = -1;
+  int value(__charT __ch, int radix) const {
+    ::__ycxx::__detail::__precondition(radix == 8 || radix == 10 || radix == 16, "regex_traits::value: radix must be 8, 10 or 16");
+    const char c = __ct_->narrow(__ch, '\0');
+    int __v = -1;
     if (c >= '0' && c <= '9')
-      v = c - '0';
+      __v = c - '0';
     else if (c >= 'a' && c <= 'f')
-      v = c - 'a' + 10;
+      __v = c - 'a' + 10;
     else if (c >= 'A' && c <= 'F')
-      v = c - 'A' + 10;
-    return v < radix ? v : -1;
+      __v = c - 'A' + 10;
+    return __v < radix ? __v : -1;
   }
-  locale_type imbue(locale_type l) {
-    locale_type old = loc_;
-    loc_ = l;
-    cache();
-    return old;
+  locale_type imbue(locale_type __l) {
+    locale_type __old = __loc_;
+    __loc_ = __l;
+    __cache();
+    return __old;
   }
-  locale_type getloc() const { return loc_; }
+  locale_type getloc() const { return __loc_; }
 
 private:
-  void cache() {
-    ct_ = __builtin_addressof(use_facet<ctype<charT>>(loc_));
-    col_ = __builtin_addressof(use_facet<collate<charT>>(loc_));
+  void __cache() {
+    __ct_ = __builtin_addressof(use_facet<ctype<__charT>>(__loc_));
+    __col_ = __builtin_addressof(use_facet<collate<__charT>>(__loc_));
   }
 
-  locale loc_;
-  const ctype<charT>* ct_ = nullptr;
-  const collate<charT>* col_ = nullptr;
+  locale __loc_;
+  const ctype<__charT>* __ct_ = nullptr;
+  const collate<__charT>* __col_ = nullptr;
 };
 
 } // namespace std

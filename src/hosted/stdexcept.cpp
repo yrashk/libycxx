@@ -5,35 +5,35 @@
 #include <string>
 #include <ycxx/core/error.hpp>
 
-namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
 
 namespace {
 // Block layout: [refcount (size_t)] [characters ... '\0']. The text pointer points at the
 // characters.
-struct header {
-  __SIZE_TYPE__ refs;
+struct __header {
+  __SIZE_TYPE__ __refs;
 };
-header* header_of(const char* text) noexcept {
-  return reinterpret_cast<header*>(const_cast<char*>(text)) - 1;
+__header* header_of(const char* __text) noexcept {
+  return reinterpret_cast<__header*>(const_cast<char*>(__text)) - 1;
 }
 } // namespace
 
-const char* message_create(const char* s, std::size_t n) {
-  void* mem = ::operator new(sizeof(header) + n + 1);
-  auto* h = ::new (mem) header{1};
-  char* text = reinterpret_cast<char*>(h + 1);
-  __builtin_memcpy(text, s, n);
-  text[n] = '\0';
-  return text;
+const char* __message_create(const char* s, std::size_t n) {
+  void* __mem = ::operator new(sizeof(__header) + n + 1);
+  auto* h = ::new (__mem) __header{1};
+  char* __text = reinterpret_cast<char*>(h + 1);
+  __builtin_memcpy(__text, s, n);
+  __text[n] = '\0';
+  return __text;
 }
-void message_retain(const char* text) noexcept { __atomic_fetch_add(&header_of(text)->refs, 1, __ATOMIC_RELAXED); }
-void message_release(const char* text) noexcept {
-  header* h = header_of(text);
-  if (__atomic_fetch_sub(&h->refs, 1, __ATOMIC_ACQ_REL) == 1)
+void __message_retain(const char* __text) noexcept { __atomic_fetch_add(&header_of(__text)->__refs, 1, __ATOMIC_RELAXED); }
+void __message_release(const char* __text) noexcept {
+  __header* h = header_of(__text);
+  if (__atomic_fetch_sub(&h->__refs, 1, __ATOMIC_ACQ_REL) == 1)
     ::operator delete(h);
 }
 
-[[noreturn]] void throw_std(ycxx_error_kind kind, const char* what) {
+[[noreturn]] void __throw_std(ycxx_error_kind kind, const char* what) {
   switch (kind) {
   case ycxx_error_logic_error: throw std::logic_error(what);
   case ycxx_error_domain_error: throw std::domain_error(what);
@@ -50,12 +50,12 @@ void message_release(const char* text) noexcept {
   }
 }
 
-}} // namespace ycxx::detail
+}} // namespace __ycxx::__detail
 
-// This file is built with YCXX_EXCEPTION_KEY_FUNCTIONS (CMakeLists.txt), so the classes declare
+// This file is built with _YCXX_EXCEPTION_KEY_FUNCTIONS (CMakeLists.txt), so the classes declare
 // their destructors out of line here, and this translation unit, built with RTTI, emits their
 // vtables for programs whose other translation units are built without RTTI (stdexcept.hpp).
-namespace [[gnu::visibility("hidden")]] std {
+namespace [[__gnu__::__visibility__("hidden")]] std {
 logic_error::~logic_error() {}
 runtime_error::~runtime_error() {}
 domain_error::~domain_error() {}

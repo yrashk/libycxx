@@ -1,9 +1,9 @@
 // libycxx core: inplace_vector ([inplace.vector]) and its erasure functions.
 //
-// Representation: the elements live in an anonymous union `{ T d_[N]; ... }` (so no element
+// Representation: the elements live in an anonymous union `{ _Tp __d_[_Np]; ... }` (so no element
 // is constructed until it is inserted), followed by the size in the smallest unsigned type
 // that can hold N. For N == 0 the storage is an empty class. All of it lives in the base
-// ycxx::adl_free::iv_storage, whose special members are defaulted (trivial) exactly when
+// __ycxx::__adl_free::__iv_storage, whose special members are defaulted (trivial) exactly when
 // [inplace.vector.overview]/5 asks for a trivial special member of inplace_vector, which then
 // declares none of its own.
 //
@@ -30,320 +30,320 @@
 #include <ycxx/core/swap.hpp>
 #include <ycxx/core/utility_base.hpp>
 
-namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
 
 // Probe: can construct_at begin the lifetime of one element of an array that is a union
 // member with no active member, during constant evaluation (P3074)?
-namespace iv_probe {
-struct elem {
-  int v;
-  constexpr elem(int x) : v(x) {}
-  constexpr ~elem() {}
+namespace __iv_probe {
+struct __elem {
+  int __v;
+  constexpr __elem(int __x) : __v(__x) {}
+  constexpr ~__elem() {}
 };
-template <class T>
-union holder {
-  T d[2];
-  constexpr holder() {}
-  constexpr ~holder() {}
+template <class _Tp>
+union __holder {
+  _Tp d[2];
+  constexpr __holder() {}
+  constexpr ~__holder() {}
 };
-template <class T>
+template <class _Tp>
 constexpr bool run() {
-  holder<T> h;
+  __holder<_Tp> h;
   std::construct_at(h.d + 0, 1);
-  const bool r = h.d[0].v == 1;
+  const bool r = h.d[0].__v == 1;
   std::destroy_at(h.d + 0);
   return r;
 }
-template <class T>
-concept works = requires { typename std::bool_constant<run<T>()>; };
+template <class _Tp>
+concept __works = requires { typename std::bool_constant<run<_Tp>()>; };
 } // namespace iv_probe
-inline constexpr bool union_array_lifetime = iv_probe::works<iv_probe::elem>;
+inline constexpr bool __union_array_lifetime = __iv_probe::__works<__iv_probe::__elem>;
 
-template <std::size_t N>
-using iv_size_t = std::conditional_t<
-    (N <= 0xffu), unsigned char,
-    std::conditional_t<(N <= 0xffffu), unsigned short, std::conditional_t<(N <= 0xffffffffu), unsigned, std::size_t>>>;
+template <std::size_t _Np>
+using __iv_size_t = std::conditional_t<
+    (_Np <= 0xffu), unsigned char,
+    std::conditional_t<(_Np <= 0xffffu), unsigned short, std::conditional_t<(_Np <= 0xffffffffu), unsigned, std::size_t>>>;
 
-}} // namespace ycxx::detail
+}} // namespace __ycxx::__detail
 
-namespace [[gnu::visibility("hidden")]] ycxx { namespace adl_free {
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __adl_free {
 
-template <class T, std::size_t N, bool = (N == 0)>
-struct iv_storage;
+template <class _Tp, std::size_t _Np, bool = (_Np == 0)>
+struct __iv_storage;
 
 // N == 0: empty and trivial ([inplace.vector.overview]/5).
-template <class T, std::size_t N>
-struct iv_storage<T, N, true> {
-  static constexpr T* iv_data() noexcept { return nullptr; }
-  static constexpr std::size_t iv_size() noexcept { return 0; }
-  static constexpr void iv_set_size(std::size_t) noexcept {}
-  static constexpr void iv_prepare() noexcept {}
+template <class _Tp, std::size_t _Np>
+struct __iv_storage<_Tp, _Np, true> {
+  static constexpr _Tp* __iv_data() noexcept { return nullptr; }
+  static constexpr std::size_t __iv_size() noexcept { return 0; }
+  static constexpr void __iv_set_size(std::size_t) noexcept {}
+  static constexpr void __iv_prepare() noexcept {}
 };
 
-template <class T, std::size_t N>
-struct iv_storage<T, N, false> {
-  using size_type = ycxx::detail::iv_size_t<N>;
+template <class _Tp, std::size_t _Np>
+struct __iv_storage<_Tp, _Np, false> {
+  using size_type = __ycxx::__detail::__iv_size_t<_Np>;
   // See the header comment.
-  static constexpr bool prefill = std::is_trivially_destructible_v<T> && std::is_default_constructible_v<T>;
-  static constexpr bool heap = !ycxx::detail::union_array_lifetime && !std::is_trivially_destructible_v<T>;
+  static constexpr bool __prefill = std::is_trivially_destructible_v<_Tp> && std::is_default_constructible_v<_Tp>;
+  static constexpr bool __heap = !__ycxx::__detail::__union_array_lifetime && !std::is_trivially_destructible_v<_Tp>;
 
   union {
-    T d_[N];
-    std::conditional_t<heap, T*, unsigned char> cx_;
+    _Tp __d_[_Np];
+    std::conditional_t<__heap, _Tp*, unsigned char> __cx_;
   };
-  size_type n_ = 0;
+  size_type __n_ = 0;
 
-  constexpr T* iv_data() noexcept {
-    if constexpr (heap) {
+  constexpr _Tp* __iv_data() noexcept {
+    if constexpr (__heap) {
       if consteval {
-        return cx_;
+        return __cx_;
       }
     }
-    return d_;
+    return __d_;
   }
-  constexpr const T* iv_data() const noexcept {
-    if constexpr (heap) {
+  constexpr const _Tp* __iv_data() const noexcept {
+    if constexpr (__heap) {
       if consteval {
-        return cx_;
+        return __cx_;
       }
     }
-    return d_;
+    return __d_;
   }
-  constexpr std::size_t iv_size() const noexcept { return n_; }
-  constexpr void iv_set_size(std::size_t n) noexcept { n_ = static_cast<size_type>(n); }
+  constexpr std::size_t __iv_size() const noexcept { return __n_; }
+  constexpr void __iv_set_size(std::size_t n) noexcept { __n_ = static_cast<size_type>(n); }
   // Called before elements are constructed.
-  constexpr void iv_prepare() {
-    if constexpr (heap) {
+  constexpr void __iv_prepare() {
+    if constexpr (__heap) {
       if consteval {
-        if (!cx_)
-          cx_ = std::allocator<T>().allocate(N);
+        if (!__cx_)
+          __cx_ = std::allocator<_Tp>().allocate(_Np);
       }
     }
   }
-  constexpr void iv_destroy_from(std::size_t k) noexcept {
-    T* const p = iv_data();
-    for (std::size_t i = k; i != n_; ++i)
+  constexpr void __iv_destroy_from(std::size_t k) noexcept {
+    _Tp* const p = __iv_data();
+    for (std::size_t i = k; i != __n_; ++i)
       std::destroy_at(p + i);
-    n_ = static_cast<size_type>(k);
+    __n_ = static_cast<size_type>(k);
   }
-  template <class Src>
-  constexpr void iv_construct_from(Src* q, std::size_t n) {
-    iv_prepare();
-    T* const p = iv_data();
-    for (std::size_t i = n_; i != n; ++i) {
-      if constexpr (std::is_const_v<Src>)
-        std::construct_at(p + i, q[i]);
+  template <class _Src>
+  constexpr void __iv_construct_from(_Src* __q, std::size_t n) {
+    __iv_prepare();
+    _Tp* const p = __iv_data();
+    for (std::size_t i = __n_; i != n; ++i) {
+      if constexpr (std::is_const_v<_Src>)
+        std::construct_at(p + i, __q[i]);
       else
-        std::construct_at(p + i, static_cast<T&&>(q[i]));
-      ++n_;
+        std::construct_at(p + i, static_cast<_Tp&&>(__q[i]));
+      ++__n_;
     }
   }
 
-  constexpr iv_storage() noexcept {
+  constexpr __iv_storage() noexcept {
     if consteval {
-      if constexpr (heap)
-        cx_ = nullptr;
-      else if constexpr (prefill)
-        std::construct_at(__builtin_addressof(d_));
+      if constexpr (__heap)
+        __cx_ = nullptr;
+      else if constexpr (__prefill)
+        std::construct_at(__builtin_addressof(__d_));
     }
   }
 
-  constexpr iv_storage(const iv_storage&)
-    requires std::is_trivially_copy_constructible_v<T>
+  constexpr __iv_storage(const __iv_storage&)
+    requires std::is_trivially_copy_constructible_v<_Tp>
   = default;
   // (The copy operations' noexcept is a strengthening; the draft specifies none.)
-  constexpr iv_storage(const iv_storage& o) noexcept(std::is_nothrow_copy_constructible_v<T>) : iv_storage() {
-    iv_construct_from(o.iv_data(), o.n_);
+  constexpr __iv_storage(const __iv_storage& __o) noexcept(std::is_nothrow_copy_constructible_v<_Tp>) : __iv_storage() {
+    __iv_construct_from(__o.__iv_data(), __o.__n_);
   }
 
-  constexpr iv_storage(iv_storage&&)
-    requires std::is_trivially_move_constructible_v<T>
+  constexpr __iv_storage(__iv_storage&&)
+    requires std::is_trivially_move_constructible_v<_Tp>
   = default;
-  constexpr iv_storage(iv_storage&& o) noexcept(std::is_nothrow_move_constructible_v<T>) : iv_storage() {
-    iv_construct_from(o.iv_data(), o.n_);
+  constexpr __iv_storage(__iv_storage&& __o) noexcept(std::is_nothrow_move_constructible_v<_Tp>) : __iv_storage() {
+    __iv_construct_from(__o.__iv_data(), __o.__n_);
   }
 
-  constexpr iv_storage& operator=(const iv_storage&)
-    requires std::is_trivially_destructible_v<T> && std::is_trivially_copy_constructible_v<T> &&
-                 std::is_trivially_copy_assignable_v<T>
+  constexpr __iv_storage& operator=(const __iv_storage&)
+    requires std::is_trivially_destructible_v<_Tp> && std::is_trivially_copy_constructible_v<_Tp> &&
+                 std::is_trivially_copy_assignable_v<_Tp>
   = default;
-  constexpr iv_storage& operator=(const iv_storage& o) noexcept(std::is_nothrow_copy_constructible_v<T> &&
-                                                                std::is_nothrow_copy_assignable_v<T>) {
-    if (this != __builtin_addressof(o)) {
-      const T* const q = o.iv_data();
-      T* const p = iv_data();
-      const std::size_t common = n_ < o.n_ ? n_ : o.n_;
+  constexpr __iv_storage& operator=(const __iv_storage& __o) noexcept(std::is_nothrow_copy_constructible_v<_Tp> &&
+                                                                std::is_nothrow_copy_assignable_v<_Tp>) {
+    if (this != __builtin_addressof(__o)) {
+      const _Tp* const __q = __o.__iv_data();
+      _Tp* const p = __iv_data();
+      const std::size_t common = __n_ < __o.__n_ ? __n_ : __o.__n_;
       for (std::size_t i = 0; i != common; ++i)
-        p[i] = q[i];
-      if (o.n_ > n_)
-        iv_construct_from(q, o.n_);
+        p[i] = __q[i];
+      if (__o.__n_ > __n_)
+        __iv_construct_from(__q, __o.__n_);
       else
-        iv_destroy_from(o.n_);
+        __iv_destroy_from(__o.__n_);
     }
     return *this;
   }
 
-  constexpr iv_storage& operator=(iv_storage&&)
-    requires std::is_trivially_destructible_v<T> && std::is_trivially_move_constructible_v<T> &&
-                 std::is_trivially_move_assignable_v<T>
+  constexpr __iv_storage& operator=(__iv_storage&&)
+    requires std::is_trivially_destructible_v<_Tp> && std::is_trivially_move_constructible_v<_Tp> &&
+                 std::is_trivially_move_assignable_v<_Tp>
   = default;
-  constexpr iv_storage& operator=(iv_storage&& o) noexcept(std::is_nothrow_move_assignable_v<T> &&
-                                                           std::is_nothrow_move_constructible_v<T>) {
-    if (this != __builtin_addressof(o)) {
-      T* const q = o.iv_data();
-      T* const p = iv_data();
-      const std::size_t common = n_ < o.n_ ? n_ : o.n_;
+  constexpr __iv_storage& operator=(__iv_storage&& __o) noexcept(std::is_nothrow_move_assignable_v<_Tp> &&
+                                                           std::is_nothrow_move_constructible_v<_Tp>) {
+    if (this != __builtin_addressof(__o)) {
+      _Tp* const __q = __o.__iv_data();
+      _Tp* const p = __iv_data();
+      const std::size_t common = __n_ < __o.__n_ ? __n_ : __o.__n_;
       for (std::size_t i = 0; i != common; ++i)
-        p[i] = static_cast<T&&>(q[i]);
-      if (o.n_ > n_)
-        iv_construct_from(q, o.n_);
+        p[i] = static_cast<_Tp&&>(__q[i]);
+      if (__o.__n_ > __n_)
+        __iv_construct_from(__q, __o.__n_);
       else
-        iv_destroy_from(o.n_);
+        __iv_destroy_from(__o.__n_);
     }
     return *this;
   }
 
-  constexpr ~iv_storage()
-    requires std::is_trivially_destructible_v<T>
+  constexpr ~__iv_storage()
+    requires std::is_trivially_destructible_v<_Tp>
   = default;
-  constexpr ~iv_storage() {
-    iv_destroy_from(0);
-    if constexpr (heap) {
+  constexpr ~__iv_storage() {
+    __iv_destroy_from(0);
+    if constexpr (__heap) {
       if consteval {
-        if (cx_)
-          std::allocator<T>().deallocate(cx_, N);
+        if (__cx_)
+          std::allocator<_Tp>().deallocate(__cx_, _Np);
       }
     }
   }
 };
 
-}} // namespace ycxx::adl_free
+}} // namespace __ycxx::__adl_free
 
-namespace [[gnu::visibility("hidden")]] std {
+namespace [[__gnu__::__visibility__("hidden")]] std {
 
-template <class T, size_t N>
-class inplace_vector : ycxx::adl_free::iv_storage<T, N> {
-  using base = ycxx::adl_free::iv_storage<T, N>;
+template <class _Tp, size_t _Np>
+class inplace_vector : __ycxx::__adl_free::__iv_storage<_Tp, _Np> {
+  using base = __ycxx::__adl_free::__iv_storage<_Tp, _Np>;
 
 public:
   // ---- types ----
-  using value_type = T;
-  using pointer = T*;
-  using const_pointer = const T*;
+  using value_type = _Tp;
+  using pointer = _Tp*;
+  using const_pointer = const _Tp*;
   using reference = value_type&;
   using const_reference = const value_type&;
   using size_type = size_t;
   using difference_type = ptrdiff_t;
-  using iterator = ycxx::adl_free::contiguous_iter<T, inplace_vector, difference_type>;
-  using const_iterator = ycxx::adl_free::contiguous_iter<const T, inplace_vector, difference_type>;
+  using iterator = __ycxx::__adl_free::__contiguous_iter<_Tp, inplace_vector, difference_type>;
+  using const_iterator = __ycxx::__adl_free::__contiguous_iter<const _Tp, inplace_vector, difference_type>;
   using reverse_iterator = std::reverse_iterator<iterator>;
   using const_reverse_iterator = std::reverse_iterator<const_iterator>;
 
 private:
-  static constexpr void check_room(size_type have, size_type add) {
-    if (add > N - have)
-      ycxx::detail::throw_bad_alloc();
+  static constexpr void __check_room(size_type __have, size_type add) {
+    if (add > _Np - __have)
+      __ycxx::__detail::__throw_bad_alloc();
   }
   // Appends one element; size() < N.
-  template <class... Args>
-  constexpr T& construct_back(Args&&... args) {
-    if constexpr (N == 0) {
-      ycxx::detail::throw_bad_alloc(); // unreachable: callers check the room first
+  template <class... _Args>
+  constexpr _Tp& __construct_back(_Args&&... __args) {
+    if constexpr (_Np == 0) {
+      __ycxx::__detail::__throw_bad_alloc(); // unreachable: callers check the room first
     } else {
-      this->iv_prepare();
-      T* const p = this->iv_data() + this->iv_size();
-      std::construct_at(p, static_cast<Args&&>(args)...);
-      this->iv_set_size(this->iv_size() + 1);
+      this->__iv_prepare();
+      _Tp* const p = this->__iv_data() + this->__iv_size();
+      std::construct_at(p, static_cast<_Args&&>(__args)...);
+      this->__iv_set_size(this->__iv_size() + 1);
       return *p;
     }
   }
-  // Removes the elements appended since `old` unless released (an exception unwinds past it).
-  struct append_guard {
-    inplace_vector& v;
-    size_type old;
-    constexpr ~append_guard() {
-      if (old != size_type(-1))
-        v.truncate(old);
+  // Removes the elements appended since `__old` unless released (an exception unwinds past it).
+  struct __append_guard {
+    inplace_vector& __v;
+    size_type __old;
+    constexpr ~__append_guard() {
+      if (__old != size_type(-1))
+        __v.__truncate(__old);
     }
   };
-  constexpr void truncate(size_type n) noexcept {
-    if constexpr (N != 0)
-      this->iv_destroy_from(n);
+  constexpr void __truncate(size_type n) noexcept {
+    if constexpr (_Np != 0)
+      this->__iv_destroy_from(n);
   }
 
   // Appends the n elements of [first, last), or nothing when they do not fit.
-  template <class It, class Sent>
-  constexpr void append_counted(It first, Sent last, size_type n) {
-    check_room(size(), n);
+  template <class _It, class _Sent>
+  constexpr void __append_counted(_It first, _Sent last, size_type n) {
+    __check_room(size(), n);
     (void)last;
-    append_guard g{*this, size()};
+    __append_guard __g{*this, size()};
     for (size_type i = 0; i != n; ++i) {
-      construct_back(*first);
+      __construct_back(*first);
       ++first;
     }
-    g.old = size_type(-1);
+    __g.__old = size_type(-1);
   }
   // Appends the elements of a single-pass sequence; bad_alloc (with no effects) when they do
   // not fit.
-  template <class It, class Sent>
-  constexpr void append_input(It first, Sent last) {
-    append_guard g{*this, size()};
+  template <class _It, class _Sent>
+  constexpr void __append_input(_It first, _Sent last) {
+    __append_guard __g{*this, size()};
     for (; first != last; ++first) {
-      check_room(size(), 1);
-      construct_back(*first);
+      __check_room(size(), 1);
+      __construct_back(*first);
     }
-    g.old = size_type(-1);
+    __g.__old = size_type(-1);
   }
-  // Rotates the elements appended since index `old` to index off.
-  constexpr iterator move_into_place(size_type off, size_type old) {
-    T* const p = data();
-    ycxx::detail::rotate_elements<ycxx::detail::plain_temp<T>>(p + off, p + old, p + size());
-    return begin() + static_cast<difference_type>(off);
+  // Rotates the elements appended since index `__old` to index off.
+  constexpr iterator __move_into_place(size_type __off, size_type __old) {
+    _Tp* const p = data();
+    __ycxx::__detail::__rotate_elements<__ycxx::__detail::__plain_temp<_Tp>>(p + __off, p + __old, p + size());
+    return begin() + static_cast<difference_type>(__off);
   }
-  template <class It, class Sent>
-  constexpr void assign_counted(It first, Sent last, size_type n) {
-    check_room(0, n);
-    T* const p = data();
-    const size_type sz = size();
-    const size_type common = n < sz ? n : sz;
+  template <class _It, class _Sent>
+  constexpr void __assign_counted(_It first, _Sent last, size_type n) {
+    __check_room(0, n);
+    _Tp* const p = data();
+    const size_type __sz = size();
+    const size_type common = n < __sz ? n : __sz;
     for (size_type i = 0; i != common; ++i) {
       p[i] = *first;
       ++first;
     }
-    if (n <= sz)
-      truncate(n);
+    if (n <= __sz)
+      __truncate(n);
     else
-      append_counted(static_cast<It&&>(first), static_cast<Sent&&>(last), n - sz);
+      __append_counted(static_cast<_It&&>(first), static_cast<_Sent&&>(last), n - __sz);
   }
-  template <class It, class Sent>
-  constexpr void assign_input(It first, Sent last) {
-    T* const p = data();
+  template <class _It, class _Sent>
+  constexpr void __assign_input(_It first, _Sent last) {
+    _Tp* const p = data();
     size_type i = 0;
     for (; i != size() && first != last; ++first) {
       p[i] = *first;
       ++i;
     }
     if (i != size())
-      truncate(i);
+      __truncate(i);
     else
-      append_input(static_cast<It&&>(first), static_cast<Sent&&>(last));
+      __append_input(static_cast<_It&&>(first), static_cast<_Sent&&>(last));
   }
-  template <class R>
-  static constexpr bool counted_range = ranges::forward_range<R> || ranges::sized_range<R>;
+  template <class _Rp>
+  static constexpr bool __counted_range = ranges::forward_range<_Rp> || ranges::sized_range<_Rp>;
   // [inplace.vector.cons]/9: Mandates: ranges::size(rg) <= N when it is a constant expression.
-  template <class R>
-  static constexpr void check_constant_size(R& rg) {
-    if constexpr (requires { typename integral_constant<size_t, static_cast<size_t>(ranges::size(rg))>; })
-      static_assert(static_cast<size_t>(ranges::size(rg)) <= N,
+  template <class _Rp>
+  static constexpr void __check_constant_size(_Rp& __rg) {
+    if constexpr (requires { typename integral_constant<size_t, static_cast<size_t>(ranges::size(__rg))>; })
+      static_assert(static_cast<size_t>(ranges::size(__rg)) <= _Np,
                     "std::inplace_vector(from_range_t, R&&): the range has more than N elements");
   }
-  template <class R>
-  constexpr void append_range_impl(R& rg) {
-    if constexpr (counted_range<R>) {
-      const auto n = ranges::distance(rg);
-      append_counted(ranges::begin(rg), ranges::end(rg), static_cast<size_type>(n));
+  template <class _Rp>
+  constexpr void __append_range_impl(_Rp& __rg) {
+    if constexpr (__counted_range<_Rp>) {
+      const auto n = ranges::distance(__rg);
+      __append_counted(ranges::begin(__rg), ranges::end(__rg), static_cast<size_type>(n));
     } else {
-      append_input(ranges::begin(rg), ranges::end(rg));
+      __append_input(ranges::begin(__rg), ranges::end(__rg));
     }
   }
 
@@ -351,78 +351,78 @@ public:
   // ---- [inplace.vector.cons] ----
   constexpr inplace_vector() noexcept = default;
   constexpr explicit inplace_vector(size_type n) {
-    check_room(0, n);
+    __check_room(0, n);
     for (size_type i = 0; i != n; ++i)
-      construct_back();
+      __construct_back();
   }
-  constexpr inplace_vector(size_type n, const T& value) {
-    check_room(0, n);
+  constexpr inplace_vector(size_type n, const _Tp& value) {
+    __check_room(0, n);
     for (size_type i = 0; i != n; ++i)
-      construct_back(value);
+      __construct_back(value);
   }
-  template <class InputIterator>
-    requires ycxx::detail::qualifies_as_input_iterator<InputIterator>
-  constexpr inplace_vector(InputIterator first, InputIterator last) {
-    if constexpr (ycxx::detail::multipass_iterator<InputIterator>) {
-      const auto n = ycxx::detail::iter_pair_distance(first, last);
-      append_counted(static_cast<InputIterator&&>(first), static_cast<InputIterator&&>(last),
+  template <class _InputIterator>
+    requires __ycxx::__detail::__qualifies_as_input_iterator<_InputIterator>
+  constexpr inplace_vector(_InputIterator first, _InputIterator last) {
+    if constexpr (__ycxx::__detail::__multipass_iterator<_InputIterator>) {
+      const auto n = __ycxx::__detail::__iter_pair_distance(first, last);
+      __append_counted(static_cast<_InputIterator&&>(first), static_cast<_InputIterator&&>(last),
                      static_cast<size_type>(n));
     } else {
-      append_input(static_cast<InputIterator&&>(first), static_cast<InputIterator&&>(last));
+      __append_input(static_cast<_InputIterator&&>(first), static_cast<_InputIterator&&>(last));
     }
   }
-  template <ycxx::detail::from_range_tag Tag, ycxx::detail::container_compatible_range<T> R>
-  constexpr inplace_vector(Tag, R&& rg) {
-    check_constant_size(rg);
-    append_range_impl(rg);
+  template <__ycxx::__detail::__from_range_tag _Tag, __ycxx::__detail::__container_compatible_range<_Tp> _Rp>
+  constexpr inplace_vector(_Tag, _Rp&& __rg) {
+    __check_constant_size(__rg);
+    __append_range_impl(__rg);
   }
-  constexpr inplace_vector(initializer_list<T> il) { append_counted(il.begin(), il.end(), il.size()); }
+  constexpr inplace_vector(initializer_list<_Tp> il) { __append_counted(il.begin(), il.end(), il.size()); }
   // Copy and move construction and assignment and the destructor come from the base.
 
-  constexpr inplace_vector& operator=(initializer_list<T> il) {
-    assign_counted(il.begin(), il.end(), il.size());
+  constexpr inplace_vector& operator=(initializer_list<_Tp> il) {
+    __assign_counted(il.begin(), il.end(), il.size());
     return *this;
   }
-  template <class InputIterator>
-    requires ycxx::detail::qualifies_as_input_iterator<InputIterator>
-  constexpr void assign(InputIterator first, InputIterator last) {
-    if constexpr (ycxx::detail::multipass_iterator<InputIterator>) {
-      const auto n = ycxx::detail::iter_pair_distance(first, last);
-      assign_counted(static_cast<InputIterator&&>(first), static_cast<InputIterator&&>(last),
+  template <class _InputIterator>
+    requires __ycxx::__detail::__qualifies_as_input_iterator<_InputIterator>
+  constexpr void assign(_InputIterator first, _InputIterator last) {
+    if constexpr (__ycxx::__detail::__multipass_iterator<_InputIterator>) {
+      const auto n = __ycxx::__detail::__iter_pair_distance(first, last);
+      __assign_counted(static_cast<_InputIterator&&>(first), static_cast<_InputIterator&&>(last),
                      static_cast<size_type>(n));
     } else {
-      assign_input(static_cast<InputIterator&&>(first), static_cast<InputIterator&&>(last));
+      __assign_input(static_cast<_InputIterator&&>(first), static_cast<_InputIterator&&>(last));
     }
   }
-  template <ycxx::detail::container_compatible_range<T> R>
-  constexpr void assign_range(R&& rg) {
-    static_assert(assignable_from<T&, ranges::range_reference_t<R>>,
+  template <__ycxx::__detail::__container_compatible_range<_Tp> _Rp>
+  constexpr void assign_range(_Rp&& __rg) {
+    static_assert(assignable_from<_Tp&, ranges::range_reference_t<_Rp>>,
                   "std::inplace_vector::assign_range: T& must be assignable from the range's reference type");
-    if constexpr (counted_range<R>) {
-      const auto n = ranges::distance(rg);
-      assign_counted(ranges::begin(rg), ranges::end(rg), static_cast<size_type>(n));
+    if constexpr (__counted_range<_Rp>) {
+      const auto n = ranges::distance(__rg);
+      __assign_counted(ranges::begin(__rg), ranges::end(__rg), static_cast<size_type>(n));
     } else {
-      assign_input(ranges::begin(rg), ranges::end(rg));
+      __assign_input(ranges::begin(__rg), ranges::end(__rg));
     }
   }
-  constexpr void assign(size_type n, const T& u) {
-    check_room(0, n);
-    T* const p = data();
-    const size_type sz = size();
-    const size_type common = n < sz ? n : sz;
+  constexpr void assign(size_type n, const _Tp& __u) {
+    __check_room(0, n);
+    _Tp* const p = data();
+    const size_type __sz = size();
+    const size_type common = n < __sz ? n : __sz;
     for (size_type i = 0; i != common; ++i)
-      p[i] = u;
-    if (n <= sz) {
-      truncate(n);
+      p[i] = __u;
+    if (n <= __sz) {
+      __truncate(n);
     } else {
       // u may be an element; it is not touched by the appends.
-      append_guard g{*this, sz};
-      for (size_type i = sz; i != n; ++i)
-        construct_back(u);
-      g.old = size_type(-1);
+      __append_guard __g{*this, __sz};
+      for (size_type i = __sz; i != n; ++i)
+        __construct_back(__u);
+      __g.__old = size_type(-1);
     }
   }
-  constexpr void assign(initializer_list<T> il) { assign_counted(il.begin(), il.end(), il.size()); }
+  constexpr void assign(initializer_list<_Tp> il) { __assign_counted(il.begin(), il.end(), il.size()); }
 
   // ---- iterators ----
   constexpr iterator begin() noexcept { return iterator(data()); }
@@ -439,253 +439,253 @@ public:
   constexpr const_reverse_iterator crend() const noexcept { return rend(); }
 
   // ---- [inplace.vector.capacity] ----
-  [[nodiscard]] constexpr bool empty() const noexcept { return this->iv_size() == 0; }
-  constexpr size_type size() const noexcept { return this->iv_size(); }
-  static constexpr size_type max_size() noexcept { return N; }
-  static constexpr size_type capacity() noexcept { return N; }
-  constexpr void resize(size_type sz) {
+  [[nodiscard]] constexpr bool empty() const noexcept { return this->__iv_size() == 0; }
+  constexpr size_type size() const noexcept { return this->__iv_size(); }
+  static constexpr size_type max_size() noexcept { return _Np; }
+  static constexpr size_type capacity() noexcept { return _Np; }
+  constexpr void resize(size_type __sz) {
     const size_type cur = size();
-    if (sz <= cur) {
-      truncate(sz);
+    if (__sz <= cur) {
+      __truncate(__sz);
       return;
     }
-    check_room(0, sz);
-    append_guard g{*this, cur};
-    for (size_type i = cur; i != sz; ++i)
-      construct_back();
-    g.old = size_type(-1);
+    __check_room(0, __sz);
+    __append_guard __g{*this, cur};
+    for (size_type i = cur; i != __sz; ++i)
+      __construct_back();
+    __g.__old = size_type(-1);
   }
-  constexpr void resize(size_type sz, const T& c) {
+  constexpr void resize(size_type __sz, const _Tp& c) {
     const size_type cur = size();
-    if (sz <= cur) {
-      truncate(sz);
+    if (__sz <= cur) {
+      __truncate(__sz);
       return;
     }
-    check_room(0, sz);
-    append_guard g{*this, cur};
-    for (size_type i = cur; i != sz; ++i)
-      construct_back(c);
-    g.old = size_type(-1);
+    __check_room(0, __sz);
+    __append_guard __g{*this, cur};
+    for (size_type i = cur; i != __sz; ++i)
+      __construct_back(c);
+    __g.__old = size_type(-1);
   }
   static constexpr void reserve(size_type n) {
-    if (n > N)
-      ycxx::detail::throw_bad_alloc();
+    if (n > _Np)
+      __ycxx::__detail::__throw_bad_alloc();
   }
   static constexpr void shrink_to_fit() noexcept {}
 
   // ---- element access ----
   constexpr reference operator[](size_type n) {
-    ycxx::detail::precondition(n < size(), "std::inplace_vector::operator[]: index out of range");
+    __ycxx::__detail::__precondition(n < size(), "std::inplace_vector::operator[]: index out of range");
     return data()[n];
   }
   constexpr const_reference operator[](size_type n) const {
-    ycxx::detail::precondition(n < size(), "std::inplace_vector::operator[]: index out of range");
+    __ycxx::__detail::__precondition(n < size(), "std::inplace_vector::operator[]: index out of range");
     return data()[n];
   }
   constexpr reference at(size_type n) {
     if (n >= size())
-      ycxx::detail::throw_out_of_range("std::inplace_vector::at: index out of range");
+      __ycxx::__detail::__throw_out_of_range("std::inplace_vector::at: index out of range");
     return data()[n];
   }
   constexpr const_reference at(size_type n) const {
     if (n >= size())
-      ycxx::detail::throw_out_of_range("std::inplace_vector::at: index out of range");
+      __ycxx::__detail::__throw_out_of_range("std::inplace_vector::at: index out of range");
     return data()[n];
   }
   constexpr reference front() {
-    ycxx::detail::precondition(size() != 0, "std::inplace_vector::front: empty inplace_vector");
+    __ycxx::__detail::__precondition(size() != 0, "std::inplace_vector::front: empty inplace_vector");
     return data()[0];
   }
   constexpr const_reference front() const {
-    ycxx::detail::precondition(size() != 0, "std::inplace_vector::front: empty inplace_vector");
+    __ycxx::__detail::__precondition(size() != 0, "std::inplace_vector::front: empty inplace_vector");
     return data()[0];
   }
   constexpr reference back() {
-    ycxx::detail::precondition(size() != 0, "std::inplace_vector::back: empty inplace_vector");
+    __ycxx::__detail::__precondition(size() != 0, "std::inplace_vector::back: empty inplace_vector");
     return data()[size() - 1];
   }
   constexpr const_reference back() const {
-    ycxx::detail::precondition(size() != 0, "std::inplace_vector::back: empty inplace_vector");
+    __ycxx::__detail::__precondition(size() != 0, "std::inplace_vector::back: empty inplace_vector");
     return data()[size() - 1];
   }
 
   // ---- [inplace.vector.data] ----
-  constexpr T* data() noexcept { return this->iv_data(); }
-  constexpr const T* data() const noexcept { return this->iv_data(); }
+  constexpr _Tp* data() noexcept { return this->__iv_data(); }
+  constexpr const _Tp* data() const noexcept { return this->__iv_data(); }
 
   // ---- [inplace.vector.modifiers] ----
-  template <class... Args>
-  constexpr reference emplace_back(Args&&... args) {
-    check_room(size(), 1);
-    return construct_back(static_cast<Args&&>(args)...);
+  template <class... _Args>
+  constexpr reference emplace_back(_Args&&... __args) {
+    __check_room(size(), 1);
+    return __construct_back(static_cast<_Args&&>(__args)...);
   }
-  constexpr reference push_back(const T& x) { return emplace_back(x); }
-  constexpr reference push_back(T&& x) { return emplace_back(static_cast<T&&>(x)); }
-  template <ycxx::detail::container_compatible_range<T> R>
-  constexpr void append_range(R&& rg) {
-    append_range_impl(rg);
+  constexpr reference push_back(const _Tp& __x) { return emplace_back(__x); }
+  constexpr reference push_back(_Tp&& __x) { return emplace_back(static_cast<_Tp&&>(__x)); }
+  template <__ycxx::__detail::__container_compatible_range<_Tp> _Rp>
+  constexpr void append_range(_Rp&& __rg) {
+    __append_range_impl(__rg);
   }
   constexpr void pop_back() {
-    ycxx::detail::precondition(size() != 0, "std::inplace_vector::pop_back: empty inplace_vector");
-    truncate(size() - 1);
+    __ycxx::__detail::__precondition(size() != 0, "std::inplace_vector::pop_back: empty inplace_vector");
+    __truncate(size() - 1);
   }
 
-  template <class... Args>
-  constexpr optional<reference> try_emplace_back(Args&&... args) {
-    if (size() == N)
+  template <class... _Args>
+  constexpr optional<reference> try_emplace_back(_Args&&... __args) {
+    if (size() == _Np)
       return nullopt;
-    return optional<reference>(in_place, construct_back(static_cast<Args&&>(args)...));
+    return optional<reference>(in_place, __construct_back(static_cast<_Args&&>(__args)...));
   }
-  constexpr optional<reference> try_push_back(const T& x) { return try_emplace_back(x); }
-  constexpr optional<reference> try_push_back(T&& x) { return try_emplace_back(static_cast<T&&>(x)); }
-  template <class... Args>
-  constexpr reference unchecked_emplace_back(Args&&... args) {
-    ycxx::detail::precondition(size() < N, "std::inplace_vector::unchecked_emplace_back: inplace_vector is full");
-    return construct_back(static_cast<Args&&>(args)...);
+  constexpr optional<reference> try_push_back(const _Tp& __x) { return try_emplace_back(__x); }
+  constexpr optional<reference> try_push_back(_Tp&& __x) { return try_emplace_back(static_cast<_Tp&&>(__x)); }
+  template <class... _Args>
+  constexpr reference unchecked_emplace_back(_Args&&... __args) {
+    __ycxx::__detail::__precondition(size() < _Np, "std::inplace_vector::unchecked_emplace_back: inplace_vector is full");
+    return __construct_back(static_cast<_Args&&>(__args)...);
   }
-  constexpr reference unchecked_push_back(const T& x) { return unchecked_emplace_back(x); }
-  constexpr reference unchecked_push_back(T&& x) { return unchecked_emplace_back(static_cast<T&&>(x)); }
+  constexpr reference unchecked_push_back(const _Tp& __x) { return unchecked_emplace_back(__x); }
+  constexpr reference unchecked_push_back(_Tp&& __x) { return unchecked_emplace_back(static_cast<_Tp&&>(__x)); }
 
   // Insertions construct the new elements at the end (so arguments that refer to elements stay
   // intact and an exception leaves begin() + [0, size()) as it was), then rotate them into place.
-  template <class... Args>
-  constexpr iterator emplace(const_iterator position, Args&&... args) {
-    const size_type off = static_cast<size_type>(position - cbegin());
-    check_room(size(), 1);
-    const size_type old = size();
-    construct_back(static_cast<Args&&>(args)...);
-    return move_into_place(off, old);
+  template <class... _Args>
+  constexpr iterator emplace(const_iterator position, _Args&&... __args) {
+    const size_type __off = static_cast<size_type>(position - cbegin());
+    __check_room(size(), 1);
+    const size_type __old = size();
+    __construct_back(static_cast<_Args&&>(__args)...);
+    return __move_into_place(__off, __old);
   }
-  constexpr iterator insert(const_iterator position, const T& x) { return emplace(position, x); }
-  constexpr iterator insert(const_iterator position, T&& x) { return emplace(position, static_cast<T&&>(x)); }
-  constexpr iterator insert(const_iterator position, size_type n, const T& x) {
-    const size_type off = static_cast<size_type>(position - cbegin());
-    check_room(size(), n);
-    const size_type old = size();
-    append_guard g{*this, old};
+  constexpr iterator insert(const_iterator position, const _Tp& __x) { return emplace(position, __x); }
+  constexpr iterator insert(const_iterator position, _Tp&& __x) { return emplace(position, static_cast<_Tp&&>(__x)); }
+  constexpr iterator insert(const_iterator position, size_type n, const _Tp& __x) {
+    const size_type __off = static_cast<size_type>(position - cbegin());
+    __check_room(size(), n);
+    const size_type __old = size();
+    __append_guard __g{*this, __old};
     for (size_type i = 0; i != n; ++i)
-      construct_back(x);
-    g.old = size_type(-1);
-    return move_into_place(off, old);
+      __construct_back(__x);
+    __g.__old = size_type(-1);
+    return __move_into_place(__off, __old);
   }
-  template <class InputIterator>
-    requires ycxx::detail::qualifies_as_input_iterator<InputIterator>
-  constexpr iterator insert(const_iterator position, InputIterator first, InputIterator last) {
-    const size_type off = static_cast<size_type>(position - cbegin());
-    const size_type old = size();
-    if constexpr (ycxx::detail::multipass_iterator<InputIterator>) {
-      const auto n = ycxx::detail::iter_pair_distance(first, last);
-      append_counted(static_cast<InputIterator&&>(first), static_cast<InputIterator&&>(last),
+  template <class _InputIterator>
+    requires __ycxx::__detail::__qualifies_as_input_iterator<_InputIterator>
+  constexpr iterator insert(const_iterator position, _InputIterator first, _InputIterator last) {
+    const size_type __off = static_cast<size_type>(position - cbegin());
+    const size_type __old = size();
+    if constexpr (__ycxx::__detail::__multipass_iterator<_InputIterator>) {
+      const auto n = __ycxx::__detail::__iter_pair_distance(first, last);
+      __append_counted(static_cast<_InputIterator&&>(first), static_cast<_InputIterator&&>(last),
                      static_cast<size_type>(n));
     } else {
-      append_input(static_cast<InputIterator&&>(first), static_cast<InputIterator&&>(last));
+      __append_input(static_cast<_InputIterator&&>(first), static_cast<_InputIterator&&>(last));
     }
-    return move_into_place(off, old);
+    return __move_into_place(__off, __old);
   }
-  template <ycxx::detail::container_compatible_range<T> R>
-  constexpr iterator insert_range(const_iterator position, R&& rg) {
-    const size_type off = static_cast<size_type>(position - cbegin());
-    const size_type old = size();
-    append_range_impl(rg);
-    return move_into_place(off, old);
+  template <__ycxx::__detail::__container_compatible_range<_Tp> _Rp>
+  constexpr iterator insert_range(const_iterator position, _Rp&& __rg) {
+    const size_type __off = static_cast<size_type>(position - cbegin());
+    const size_type __old = size();
+    __append_range_impl(__rg);
+    return __move_into_place(__off, __old);
   }
-  constexpr iterator insert(const_iterator position, initializer_list<T> il) {
-    const size_type off = static_cast<size_type>(position - cbegin());
-    const size_type old = size();
-    append_counted(il.begin(), il.end(), il.size());
-    return move_into_place(off, old);
+  constexpr iterator insert(const_iterator position, initializer_list<_Tp> il) {
+    const size_type __off = static_cast<size_type>(position - cbegin());
+    const size_type __old = size();
+    __append_counted(il.begin(), il.end(), il.size());
+    return __move_into_place(__off, __old);
   }
 
   constexpr iterator erase(const_iterator position) {
-    ycxx::detail::precondition(position != cend(), "std::inplace_vector::erase: iterator not dereferenceable");
+    __ycxx::__detail::__precondition(position != cend(), "std::inplace_vector::erase: iterator not dereferenceable");
     return erase(position, position + 1);
   }
   constexpr iterator erase(const_iterator first, const_iterator last) {
     const size_type p = static_cast<size_type>(first - cbegin());
-    const size_type q = static_cast<size_type>(last - cbegin());
-    if (p != q) {
-      T* const d = data();
-      const size_type sz = size();
-      for (size_type i = q; i != sz; ++i)
-        d[p + (i - q)] = static_cast<T&&>(d[i]);
-      truncate(sz - (q - p));
+    const size_type __q = static_cast<size_type>(last - cbegin());
+    if (p != __q) {
+      _Tp* const d = data();
+      const size_type __sz = size();
+      for (size_type i = __q; i != __sz; ++i)
+        d[p + (i - __q)] = static_cast<_Tp&&>(d[i]);
+      __truncate(__sz - (__q - p));
     }
     return begin() + static_cast<difference_type>(p);
   }
-  constexpr void swap(inplace_vector& x) noexcept(N == 0 ||
-                                                  (is_nothrow_swappable_v<T> && is_nothrow_move_constructible_v<T>)) {
-    if constexpr (N != 0) {
-      if (this == __builtin_addressof(x))
+  constexpr void swap(inplace_vector& __x) noexcept(_Np == 0 ||
+                                                  (is_nothrow_swappable_v<_Tp> && is_nothrow_move_constructible_v<_Tp>)) {
+    if constexpr (_Np != 0) {
+      if (this == __builtin_addressof(__x))
         return;
-      inplace_vector& lng = size() < x.size() ? x : *this;
-      inplace_vector& shrt = size() < x.size() ? *this : x;
-      T* const a = shrt.data();
-      T* const b = lng.data();
-      const size_type m = shrt.size();
+      inplace_vector& __lng = size() < __x.size() ? __x : *this;
+      inplace_vector& __shrt = size() < __x.size() ? *this : __x;
+      _Tp* const a = __shrt.data();
+      _Tp* const b = __lng.data();
+      const size_type m = __shrt.size();
       for (size_type i = 0; i != m; ++i)
-        ycxx::detail::swap_adl::do_swap(a[i], b[i]);
-      for (size_type i = m; i != lng.size(); ++i)
-        shrt.construct_back(static_cast<T&&>(b[i]));
-      lng.truncate(m);
+        __ycxx::__detail::__swap_adl::__do_swap(a[i], b[i]);
+      for (size_type i = m; i != __lng.size(); ++i)
+        __shrt.__construct_back(static_cast<_Tp&&>(b[i]));
+      __lng.__truncate(m);
     }
   }
-  constexpr void clear() noexcept { truncate(0); }
+  constexpr void clear() noexcept { __truncate(0); }
 
-  friend constexpr bool operator==(const inplace_vector& x, const inplace_vector& y) {
-    const size_type n = x.size();
+  friend constexpr bool operator==(const inplace_vector& __x, const inplace_vector& y) {
+    const size_type n = __x.size();
     if (n != y.size())
       return false;
-    const T* const a = x.data();
-    const T* const b = y.data();
+    const _Tp* const a = __x.data();
+    const _Tp* const b = y.data();
     for (size_type i = 0; i != n; ++i)
       if (!static_cast<bool>(a[i] == b[i]))
         return false;
     return true;
   }
-  friend constexpr auto operator<=>(const inplace_vector& x, const inplace_vector& y)
-    requires requires(const T t) { ycxx::detail::synth_three_way(t, t); }
+  friend constexpr auto operator<=>(const inplace_vector& __x, const inplace_vector& y)
+    requires requires(const _Tp t) { __ycxx::__detail::__synth_three_way(t, t); }
   {
-    using R = ycxx::detail::synth_three_way_result<T>;
-    const size_type nx = x.size();
-    const size_type ny = y.size();
-    const size_type n = nx < ny ? nx : ny;
-    const T* const a = x.data();
-    const T* const b = y.data();
+    using _Rp = __ycxx::__detail::__synth_three_way_result<_Tp>;
+    const size_type __nx = __x.size();
+    const size_type __ny = y.size();
+    const size_type n = __nx < __ny ? __nx : __ny;
+    const _Tp* const a = __x.data();
+    const _Tp* const b = y.data();
     for (size_type i = 0; i != n; ++i)
-      if (auto c = ycxx::detail::synth_three_way(a[i], b[i]); c != 0)
-        return static_cast<R>(c);
-    return static_cast<R>(nx <=> ny);
+      if (auto c = __ycxx::__detail::__synth_three_way(a[i], b[i]); c != 0)
+        return static_cast<_Rp>(c);
+    return static_cast<_Rp>(__nx <=> __ny);
   }
-  friend constexpr void swap(inplace_vector& x,
-                             inplace_vector& y) noexcept(N == 0 || (is_nothrow_swappable_v<T> &&
-                                                                    is_nothrow_move_constructible_v<T>)) {
-    x.swap(y);
+  friend constexpr void swap(inplace_vector& __x,
+                             inplace_vector& y) noexcept(_Np == 0 || (is_nothrow_swappable_v<_Tp> &&
+                                                                    is_nothrow_move_constructible_v<_Tp>)) {
+    __x.swap(y);
   }
 };
 
 // ---- [inplace.vector.erasure] ----
-template <class T, size_t N, class Predicate>
-constexpr typename inplace_vector<T, N>::size_type erase_if(inplace_vector<T, N>& c, Predicate pred) {
-  T* const base = c.data();
-  T* first = base;
-  T* const last = base + c.size();
+template <class _Tp, size_t _Np, class _Predicate>
+constexpr typename inplace_vector<_Tp, _Np>::size_type erase_if(inplace_vector<_Tp, _Np>& c, _Predicate pred) {
+  _Tp* const base = c.data();
+  _Tp* first = base;
+  _Tp* const last = base + c.size();
   while (first != last && !static_cast<bool>(pred(*first)))
     ++first;
-  T* out = first;
+  _Tp* out = first;
   if (first != last) {
     for (++first; first != last; ++first)
       if (!static_cast<bool>(pred(*first))) {
-        *out = static_cast<T&&>(*first);
+        *out = static_cast<_Tp&&>(*first);
         ++out;
       }
   }
-  const auto r = static_cast<typename inplace_vector<T, N>::size_type>(last - out);
+  const auto r = static_cast<typename inplace_vector<_Tp, _Np>::size_type>(last - out);
   c.erase(c.begin() + (out - base), c.end());
   return r;
 }
-template <class T, size_t N, class U = T>
-constexpr typename inplace_vector<T, N>::size_type erase(inplace_vector<T, N>& c, const U& value) {
-  return std::erase_if(c, [&value](const T& e) { return static_cast<bool>(e == value); });
+template <class _Tp, size_t _Np, class _Up = _Tp>
+constexpr typename inplace_vector<_Tp, _Np>::size_type erase(inplace_vector<_Tp, _Np>& c, const _Up& value) {
+  return std::erase_if(c, [&value](const _Tp& e) { return static_cast<bool>(e == value); });
 }
 
 } // namespace std

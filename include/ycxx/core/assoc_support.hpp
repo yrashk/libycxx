@@ -7,33 +7,33 @@
 #include <ycxx/core/pair.hpp>
 #include <ycxx/core/sequence_support.hpp>
 
-namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
 
-template <class Compare>
-concept transparent_compare = requires { typename Compare::is_transparent; };
+template <class _Compare>
+concept __transparent_compare = requires { typename _Compare::is_transparent; };
 
 // [associative.reqmts.general]/180: the heterogeneous erase and extract (and other members with
 // the same constraint) do not take arguments convertible to the container's iterators.
-template <class Compare, class K, class It, class CIt>
-concept transparent_non_iter =
-    transparent_compare<Compare> && !std::is_convertible_v<K&&, It> && !std::is_convertible_v<K&&, CIt>;
+template <class _Compare, class _Kp, class _It, class _CIt>
+concept __transparent_non_iter =
+    __transparent_compare<_Compare> && !std::is_convertible_v<_Kp&&, _It> && !std::is_convertible_v<_Kp&&, _CIt>;
 
-template <class I>
-using iter_key_type = std::remove_cvref_t<std::tuple_element_t<0, iter_value_type<I>>>;
-template <class I>
-using iter_mapped_type = std::remove_cvref_t<std::tuple_element_t<1, iter_value_type<I>>>;
-template <class I>
-using iter_to_alloc_type = std::pair<const iter_key_type<I>, iter_mapped_type<I>>;
-template <class R>
-using range_key_type = std::remove_cvref_t<std::tuple_element_t<0, std::ranges::range_value_t<R>>>;
-template <class R>
-using range_mapped_type = std::remove_cvref_t<std::tuple_element_t<1, std::ranges::range_value_t<R>>>;
-template <class R>
-using range_to_alloc_type = std::pair<const range_key_type<R>, range_mapped_type<R>>;
+template <class _Ip>
+using __iter_key_type = std::remove_cvref_t<std::tuple_element_t<0, __iter_value_type<_Ip>>>;
+template <class _Ip>
+using __iter_mapped_type = std::remove_cvref_t<std::tuple_element_t<1, __iter_value_type<_Ip>>>;
+template <class _Ip>
+using __iter_to_alloc_type = std::pair<const __iter_key_type<_Ip>, __iter_mapped_type<_Ip>>;
+template <class _Rp>
+using __range_key_type = std::remove_cvref_t<std::tuple_element_t<0, std::ranges::range_value_t<_Rp>>>;
+template <class _Rp>
+using __range_mapped_type = std::remove_cvref_t<std::tuple_element_t<1, std::ranges::range_value_t<_Rp>>>;
+template <class _Rp>
+using __range_to_alloc_type = std::pair<const __range_key_type<_Rp>, __range_mapped_type<_Rp>>;
 
 // A deduced Compare must not qualify as an allocator ([associative.reqmts.general]/181,
 // [container.adaptors.general]/6).
-template <class C>
-concept deducible_compare = !qualifies_as_allocator<C>;
+template <class _Cp>
+concept __deducible_compare = !__qualifies_as_allocator<_Cp>;
 
-}} // namespace ycxx::detail
+}} // namespace __ycxx::__detail

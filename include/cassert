@@ -8,5 +8,5 @@
 #ifdef NDEBUG
 #  define assert(...) ((void)0)
 #else
-#  define assert(...) (static_cast<bool>(__VA_ARGS__) ? void(0) : ::ycxx::detail::assert_failed(#__VA_ARGS__))
+#  define assert(...) (static_cast<bool>(__VA_ARGS__) ? void(0) : ::__ycxx::__detail::__assert_failed(#__VA_ARGS__))
 #endif

@@ -3,14 +3,14 @@
 
 #include <ycxx/core/exception_base.hpp>
 
-namespace [[gnu::visibility("hidden")]] std {
+namespace [[__gnu__::__visibility__("hidden")]] std {
 
 class bad_exception : public exception {
 public:
   constexpr bad_exception() noexcept {}
   constexpr bad_exception(const bad_exception&) noexcept = default;
   constexpr bad_exception& operator=(const bad_exception&) noexcept = default;
-#if !YCXX_EXCEPTION_DTOR_OUT_OF_LINE
+#if !_YCXX_EXCEPTION_DTOR_OUT_OF_LINE
   constexpr ~bad_exception() override {}
 #else
   ~bad_exception() override; // see the header comment of exception_base.hpp
@@ -20,7 +20,7 @@ public:
 
 using terminate_handler = void (*)();
 terminate_handler get_terminate() noexcept;
-terminate_handler set_terminate(terminate_handler f) noexcept;
+terminate_handler set_terminate(terminate_handler __f) noexcept;
 [[noreturn]] void terminate() noexcept;
 int uncaught_exceptions() noexcept;
 

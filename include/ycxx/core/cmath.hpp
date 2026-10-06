@@ -19,7 +19,7 @@
 #include <ycxx/core/math_abs.hpp>
 #include <ycxx/core/meta_base.hpp>
 
-#if YCXX_HOSTED
+#if _YCXX_HOSTED
 // The C library's macros, from its <math.h>: libycxx's own <math.h> (which a program may include
 // before or after <cmath>) adds the C++ declarations to the global namespace, so this skips it.
 #  include_next <math.h>
@@ -40,24 +40,24 @@
 #undef islessgreater
 #undef isunordered
 
-namespace [[gnu::visibility("hidden")]] std {
+namespace [[__gnu__::__visibility__("hidden")]] std {
 // FLT_EVAL_METHOD 0: float/double; 1: double/double; 2: long double/long double.
-using float_t = conditional_t<ycxx::detail::cfg::flt_eval_method == 1, double,
-                              conditional_t<ycxx::detail::cfg::flt_eval_method == 2, long double, float>>;
-using double_t = conditional_t<ycxx::detail::cfg::flt_eval_method == 2, long double, double>;
+using float_t = conditional_t<__ycxx::__detail::__cfg::__flt_eval_method == 1, double,
+                              conditional_t<__ycxx::__detail::__cfg::__flt_eval_method == 2, long double, float>>;
+using double_t = conditional_t<__ycxx::__detail::__cfg::__flt_eval_method == 2, long double, double>;
 
 // Not constexpr; templates for the reason given in cmath_std.hpp.
 template <class = void>
-double nan(const char* tagp) noexcept {
-  return __builtin_nan(tagp);
+double nan(const char* __tagp) noexcept {
+  return __builtin_nan(__tagp);
 }
 template <class = void>
-float nanf(const char* tagp) noexcept {
-  return __builtin_nanf(tagp);
+float nanf(const char* __tagp) noexcept {
+  return __builtin_nanf(__tagp);
 }
 template <class = void>
-long double nanl(const char* tagp) noexcept {
-  return __builtin_nanl(tagp);
+long double nanl(const char* __tagp) noexcept {
+  return __builtin_nanl(__tagp);
 }
 } // namespace std
 

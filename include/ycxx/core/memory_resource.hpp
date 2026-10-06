@@ -15,11 +15,11 @@
 #include <ycxx/core/memory_resource_fwd.hpp>
 #include <ycxx/core/tuple.hpp>
 
-namespace [[gnu::visibility("hidden")]] std { namespace pmr {
+namespace [[__gnu__::__visibility__("hidden")]] std { namespace pmr {
 
 // [mem.res.class]
 class memory_resource {
-  static constexpr size_t max_align = alignof(max_align_t);
+  static constexpr size_t __max_align = alignof(max_align_t);
 
 public:
   memory_resource() = default;
@@ -27,13 +27,13 @@ public:
   virtual ~memory_resource(); // key function: defined in the hosted runtime
   memory_resource& operator=(const memory_resource&) = default;
 
-  void* allocate(size_t bytes, size_t alignment = max_align) { return do_allocate(bytes, alignment); }
-  void deallocate(void* p, size_t bytes, size_t alignment = max_align) { do_deallocate(p, bytes, alignment); }
+  void* allocate(size_t __bytes, size_t alignment = __max_align) { return do_allocate(__bytes, alignment); }
+  void deallocate(void* p, size_t __bytes, size_t alignment = __max_align) { do_deallocate(p, __bytes, alignment); }
   bool is_equal(const memory_resource& other) const noexcept { return do_is_equal(other); }
 
 private:
-  virtual void* do_allocate(size_t bytes, size_t alignment) = 0;
-  virtual void do_deallocate(void* p, size_t bytes, size_t alignment) = 0;
+  virtual void* do_allocate(size_t __bytes, size_t alignment) = 0;
+  virtual void do_deallocate(void* p, size_t __bytes, size_t alignment) = 0;
   virtual bool do_is_equal(const memory_resource& other) const noexcept = 0;
 };
 
@@ -50,96 +50,96 @@ memory_resource* get_default_resource() noexcept;
 
 }} // namespace std::pmr
 
-namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
 // Deallocates a polymorphic_allocator::new_object allocation unless dismissed (the
 // constructor did not throw).
-template <class Alloc, class T>
-struct new_object_guard {
-  Alloc& alloc;
-  T* p;
-  ~new_object_guard() {
+template <class _Alloc, class _Tp>
+struct __new_object_guard {
+  _Alloc& __alloc;
+  _Tp* p;
+  ~__new_object_guard() {
     if (p != nullptr)
-      alloc.deallocate_object(p);
+      __alloc.deallocate_object(p);
   }
 };
-}} // namespace ycxx::detail
+}} // namespace __ycxx::__detail
 
-namespace [[gnu::visibility("hidden")]] std { namespace pmr {
+namespace [[__gnu__::__visibility__("hidden")]] std { namespace pmr {
 
 // [mem.poly.allocator.class]. The default template argument is in memory_resource_fwd.hpp.
-template <class Tp>
+template <class _Tp_>
 class polymorphic_allocator {
-  memory_resource* memory_rsrc;
+  memory_resource* __memory_rsrc;
 
-  template <class T>
-  static constexpr void check_count(size_t n) {
-    if (n > static_cast<size_t>(-1) / sizeof(T))
-      ycxx::detail::throw_bad_array_new_length();
+  template <class _Tp>
+  static constexpr void __check_count(size_t n) {
+    if (n > static_cast<size_t>(-1) / sizeof(_Tp))
+      __ycxx::__detail::__throw_bad_array_new_length();
   }
 
 public:
-  using value_type = Tp;
+  using value_type = _Tp_;
 
-  polymorphic_allocator() noexcept : memory_rsrc(std::pmr::get_default_resource()) {}
-  polymorphic_allocator(memory_resource* r) : memory_rsrc(r) {
-    ycxx::detail::precondition(r != nullptr, "polymorphic_allocator: null memory resource");
+  polymorphic_allocator() noexcept : __memory_rsrc(std::pmr::get_default_resource()) {}
+  polymorphic_allocator(memory_resource* r) : __memory_rsrc(r) {
+    __ycxx::__detail::__precondition(r != nullptr, "polymorphic_allocator: null memory resource");
   }
   polymorphic_allocator(const polymorphic_allocator& other) = default;
-  template <class U>
-  polymorphic_allocator(const polymorphic_allocator<U>& other) noexcept : memory_rsrc(other.resource()) {}
+  template <class _Up>
+  polymorphic_allocator(const polymorphic_allocator<_Up>& other) noexcept : __memory_rsrc(other.resource()) {}
   polymorphic_allocator& operator=(const polymorphic_allocator&) = delete;
 
   // [mem.poly.allocator.mem]
-  [[nodiscard]] Tp* allocate(size_t n) {
-    check_count<Tp>(n);
-    return static_cast<Tp*>(memory_rsrc->allocate(n * sizeof(Tp), alignof(Tp)));
+  [[nodiscard]] _Tp_* allocate(size_t n) {
+    __check_count<_Tp_>(n);
+    return static_cast<_Tp_*>(__memory_rsrc->allocate(n * sizeof(_Tp_), alignof(_Tp_)));
   }
-  void deallocate(Tp* p, size_t n) { memory_rsrc->deallocate(p, n * sizeof(Tp), alignof(Tp)); }
+  void deallocate(_Tp_* p, size_t n) { __memory_rsrc->deallocate(p, n * sizeof(_Tp_), alignof(_Tp_)); }
 
-  [[nodiscard]] void* allocate_bytes(size_t nbytes, size_t alignment = alignof(max_align_t)) {
-    return memory_rsrc->allocate(nbytes, alignment);
+  [[nodiscard]] void* allocate_bytes(size_t __nbytes, size_t alignment = alignof(max_align_t)) {
+    return __memory_rsrc->allocate(__nbytes, alignment);
   }
-  void deallocate_bytes(void* p, size_t nbytes, size_t alignment = alignof(max_align_t)) {
-    memory_rsrc->deallocate(p, nbytes, alignment);
-  }
-
-  template <class T>
-  [[nodiscard]] T* allocate_object(size_t n = 1) {
-    check_count<T>(n);
-    return static_cast<T*>(allocate_bytes(n * sizeof(T), alignof(T)));
-  }
-  template <class T>
-  void deallocate_object(T* p, size_t n = 1) {
-    deallocate_bytes(p, n * sizeof(T), alignof(T));
+  void deallocate_bytes(void* p, size_t __nbytes, size_t alignment = alignof(max_align_t)) {
+    __memory_rsrc->deallocate(p, __nbytes, alignment);
   }
 
-  template <class T, class... CtorArgs>
-  [[nodiscard]] T* new_object(CtorArgs&&... ctor_args) {
-    T* p = allocate_object<T>();
-    ycxx::detail::new_object_guard<polymorphic_allocator, T> guard{*this, p};
-    construct(p, static_cast<CtorArgs&&>(ctor_args)...);
-    guard.p = nullptr;
+  template <class _Tp>
+  [[nodiscard]] _Tp* allocate_object(size_t n = 1) {
+    __check_count<_Tp>(n);
+    return static_cast<_Tp*>(allocate_bytes(n * sizeof(_Tp), alignof(_Tp)));
+  }
+  template <class _Tp>
+  void deallocate_object(_Tp* p, size_t n = 1) {
+    deallocate_bytes(p, n * sizeof(_Tp), alignof(_Tp));
+  }
+
+  template <class _Tp, class... _CtorArgs>
+  [[nodiscard]] _Tp* new_object(_CtorArgs&&... __ctor_args) {
+    _Tp* p = allocate_object<_Tp>();
+    __ycxx::__detail::__new_object_guard<polymorphic_allocator, _Tp> __guard{*this, p};
+    construct(p, static_cast<_CtorArgs&&>(__ctor_args)...);
+    __guard.p = nullptr;
     return p;
   }
-  template <class T>
-  void delete_object(T* p) {
+  template <class _Tp>
+  void delete_object(_Tp* p) {
     destroy(p);
     deallocate_object(p);
   }
 
   // Uses-allocator construction with *this ([allocator.uses.construction]); the pair
   // overloads of uses_allocator_construction_args pass the allocator to both members.
-  template <class T, class... Args>
-  void construct(T* p, Args&&... args) {
-    std::uninitialized_construct_using_allocator(p, *this, static_cast<Args&&>(args)...);
+  template <class _Tp, class... _Args>
+  void construct(_Tp* p, _Args&&... __args) {
+    std::uninitialized_construct_using_allocator(p, *this, static_cast<_Args&&>(__args)...);
   }
-  template <class T>
-  void destroy(T* p) {
-    p->~T();
+  template <class _Tp>
+  void destroy(_Tp* p) {
+    p->~_Tp();
   }
 
   polymorphic_allocator select_on_container_copy_construction() const { return polymorphic_allocator(); }
-  memory_resource* resource() const { return memory_rsrc; }
+  memory_resource* resource() const { return __memory_rsrc; }
 
   friend bool operator==(const polymorphic_allocator& a, const polymorphic_allocator& b) noexcept {
     return *a.resource() == *b.resource();
@@ -147,8 +147,8 @@ public:
 };
 
 // [mem.poly.allocator.eq]
-template <class T1, class T2>
-bool operator==(const polymorphic_allocator<T1>& a, const polymorphic_allocator<T2>& b) noexcept {
+template <class _T1, class _T2>
+bool operator==(const polymorphic_allocator<_T1>& a, const polymorphic_allocator<_T2>& b) noexcept {
   return *a.resource() == *b.resource();
 }
 

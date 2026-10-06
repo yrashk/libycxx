@@ -8,11 +8,11 @@
 #include "../../runtime/new/hidden.hpp"
 #include "../../runtime/new/allocation_table.hpp"
 
-asm((ycxx::detail::hide_allocation_function("_Zna#RKSt9nothrow_t")));
+asm((__ycxx::__detail::__hide_allocation_function("_Zna#RKSt9nothrow_t")));
 
 void* operator new[](std::size_t n, const std::nothrow_t&) noexcept {
-  if (auto f = ycxx_allocation_functions.new_array_nothrow; f != ycxx::detail::own_allocation_functions.new_array_nothrow)
-    return f(n, 0);
+  if (auto __f = __ycxx_allocation_functions.__new_array_nothrow; __f != __ycxx::__detail::__own_allocation_functions.__new_array_nothrow)
+    return __f(n, 0);
   // The array default forwards to the single form, so both must be the defaults for null.
-  return ycxx::detail::try_or_null(&ycxx_default_new_array != nullptr && &ycxx_fs_default_new != nullptr, [&] { return ::operator new[](n); });
+  return __ycxx::__detail::__try_or_null(&__ycxx_default_new_array != nullptr && &__ycxx_fs_default_new != nullptr, [&] { return ::operator new[](n); });
 }

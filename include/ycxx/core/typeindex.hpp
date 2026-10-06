@@ -6,29 +6,29 @@
 #include <ycxx/core/hash.hpp>
 #include <ycxx/core/typeinfo.hpp>
 
-namespace [[gnu::visibility("hidden")]] std {
+namespace [[__gnu__::__visibility__("hidden")]] std {
 
 class type_index {
-  const type_info* target_;
+  const type_info* __target_;
 
 public:
-  type_index(const type_info& rhs) noexcept : target_(&rhs) {}
+  type_index(const type_info& __rhs) noexcept : __target_(&__rhs) {}
 
-  bool operator==(const type_index& rhs) const noexcept { return *target_ == *rhs.target_; }
-  bool operator<(const type_index& rhs) const noexcept { return target_->before(*rhs.target_); }
-  bool operator>(const type_index& rhs) const noexcept { return rhs.target_->before(*target_); }
-  bool operator<=(const type_index& rhs) const noexcept { return !rhs.target_->before(*target_); }
-  bool operator>=(const type_index& rhs) const noexcept { return !target_->before(*rhs.target_); }
-  strong_ordering operator<=>(const type_index& rhs) const noexcept {
-    if (*target_ == *rhs.target_)
+  bool operator==(const type_index& __rhs) const noexcept { return *__target_ == *__rhs.__target_; }
+  bool operator<(const type_index& __rhs) const noexcept { return __target_->before(*__rhs.__target_); }
+  bool operator>(const type_index& __rhs) const noexcept { return __rhs.__target_->before(*__target_); }
+  bool operator<=(const type_index& __rhs) const noexcept { return !__rhs.__target_->before(*__target_); }
+  bool operator>=(const type_index& __rhs) const noexcept { return !__target_->before(*__rhs.__target_); }
+  strong_ordering operator<=>(const type_index& __rhs) const noexcept {
+    if (*__target_ == *__rhs.__target_)
       return strong_ordering::equal;
-    if (target_->before(*rhs.target_))
+    if (__target_->before(*__rhs.__target_))
       return strong_ordering::less;
     return strong_ordering::greater;
   }
 
-  size_t hash_code() const noexcept { return target_->hash_code(); }
-  const char* name() const noexcept { return target_->name(); }
+  size_t hash_code() const noexcept { return __target_->hash_code(); }
+  const char* name() const noexcept { return __target_->name(); }
 };
 
 template <>

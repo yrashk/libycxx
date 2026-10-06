@@ -1152,6 +1152,18 @@ Wording problems found while writing the spec-derived tests (tests/ycxx), not ye
   `ev` holds, and get_completion_signatures transforms the sender first
   ([exec.getcomplsigs]), so `affine(just(1))` has `just(1)`'s signatures in `env<>`. libycxx
   follows /5 there (own test `execution/affine_member_and_signatures`).
+- [task.state]/5.2: when the receiver's stop token is not of type `stop_token_type`, the task's
+  own `source` must be initialized so that `source->stop_possible()` returns the receiver
+  token's `stop_possible()`. With the default `stop_source_type`, `inplace_stop_source`, whose
+  `stop_possible()` is always true ([stopsource.inplace.mem]), that cannot hold for a receiver
+  whose token cannot be stopped (`never_stop_token`, e.g. any `env<>` receiver). libycxx meets it
+  for a source type constructible from `nostopstate` (`stop_source`; own test
+  `execution/task_environment_customization`).
+- [exec.when.all]/15.1: the value completion `set_value(rcvr, values...)` is evaluated (not
+  under `if constexpr`) whenever the disposition is `started`, also when `values_tuple` is
+  `tuple<>` because some child has no value completion (/13). By [exec.snd.expos]/47 that makes
+  `set_value_t()` a completion signature of, e.g., `when_all(just(1), just_stopped())`, which
+  can never complete with a value; libycxx (and, presumably, the intent) leaves it out.
 
 ## Performance
 `bench/` (manual, not in CI; DECISIONS §15) times the hot paths against libstdc++ on both

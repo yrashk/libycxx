@@ -548,6 +548,120 @@ Left failing (both compilers unless noted):
   parameter (17 20_util/*/value.cc; P0522); `__is_assignable(U&, void() const)` true; `__is_constructible(D&&, B&&)`
   false for an aggregate D derived from B; no reflection; no `__builtin_is_structural`.
 
+## Whole suite with the DejaGnu default (2026-10-06)
+
+`18a25bd` made a test without `dg-do` run, as libstdc++'s DejaGnu driver does (its default action
+is `run`); until then the harness only compiled the 1,723 such tests (27_io 746, 22_locale 474,
+...), so their PASS checked nothing at run time. Whole testsuite on both compilers
+(`tools/run-conformance libstdcxx gcc|clang -- -j4`, this machine has no extra locales enabled
+for libycxx: named-locale tests are UNSUPPORTED through `tests/ycxxlit/locales.py`, as everywhere
+until the named-locale branch lands):
+
+| | Pass | Fail | XFAIL | Unsupported |
+|---|---:|---:|---:|---:|
+| GCC 16.2, before the testsuite-helper round (CI) | 5100 | 211 | 0 | 3244 |
+| GCC 16.2, helpers + DejaGnu default, before this triage | 6208 | 169 | 0 | 2178 |
+| GCC 16.2, after (re-run; 5 of its 18 failures are the last skip entries, counted UNSUPPORTED) | 6206 | 13 | 1 | 2335 |
+| Clang 23.1, before the testsuite-helper round (CI) | 5063 | 245 | 0 | 3247 |
+| Clang 23.1, helpers + DejaGnu default, before this triage | 6162 | 196 | 23 | 2174 |
+| Clang 23.1, after (the run above with the final lists applied; not re-run) | 6161 | 13 | 37 | 2344 |
+
+Every failure of those two runs was read (diagnostic or failed assertion, test source, draft
+clause) and ends in one of the policy's states (README, "Failures and CI"):
+
+**Fixed in libycxx.**
+- `<new>`: the replaceable allocation functions are declared `[[gnu::externally_visible]]`; under
+  GCC's `-fwhole-program` a program's replacement `operator delete(void*)` was localized and the
+  library's sized delete, which calls it ([new.delete.single]), reached the default
+  ([replacement.functions]; 18_support/50594.cc).
+- `basic_ostream::tellp`/`seekp`: [ostream.seeks] makes them construct a sentry but not behave as
+  unformatted output functions, so an exception from the stream buffer propagates and leaves the
+  state alone (27_io/basic_ostream/{seekp,tellp}/{char,wchar_t}/exceptions_badbit_throw.cc).
+- `basic_const_iterator`: `operator-(const S&, const basic_const_iterator&)` deduces its right
+  operand (a `basic_const_iterator` or derived class). Converting it made
+  `sized_sentinel_for<optional<basic_const_iterator<I>>, I>` depend on itself, so
+  `x | views::chunk(3) | views::transform(views::as_const) | views::join` did not compile
+  ([const.iterators.ops]; libstdc++ PR 115046; std/ranges/adaptors/as_const/1.cc).
+
+**Skipped** (`skip.txt`, section "The whole suite once tests without dg-do run", and the Clang
+entries after it; every entry was checked to match only failing tests):
+- implementation-specific (unspecified, implementation-defined or undefined behaviour the test
+  expects a result from): names used without their header ([res.on.headers]/1: 18 tests, among
+  them the vector/vector<bool> `std::equal`/`std::fill` tests); libstdc++'s `what()` / `thread::id`
+  text; deque iterator triviality, `list::size()` folding, comparison counts of hinted inserts,
+  which equivalent element `find` returns, `copy_n` increments, LWG 2714's complex extraction;
+  a non-symmetric transparent `key_equal` ([unord.req.general]/10.20.1); `assign` with
+  non-assignable elements; construct/destroy counts of range insertion; testsuite_allocator.h's
+  `uneq_allocator`/`tracker_allocator` bypassed by the inherited `allocate_at_least` (6 more
+  vector tests, incl. vector/modifiers/swap/{2,3}.cc and vector/bool/modifiers/swap/{1,2}.cc);
+  a UTF-8 classic `codecvt<wchar_t, char>`; `has_facet` of a derived facet sharing its base's id;
+  the classic `moneypunct`'s `decimal_point`; stringbuf pointers, `setbuf`, `showmanyc`, seeking
+  the sequence a stringbuf was not opened for; filebuf putback and buffering; a directory read
+  error; the exception rules of `>> streambuf*` / `<< streambuf*` (the unformatted-function rules
+  vs. the tests' failbit); the sentry's optional failbit (n3168); null `charT*` insertion, `++` on an
+  end-of-stream `istream_iterator`, `ostreambuf_iterator(nullptr)` (undefined); grouping of the
+  octal prefix; `~ios_base::Init` swallowing a flush exception; Clang-only failures of tests that
+  explicitly specialize a container's member `swap` ([namespace.std]/4.1: undefined; the seven
+  {deque,list,map,multimap,multiset,set,vector}/modifiers/swap/1.cc).
+- divergence (the test contradicts the draft): `duration<const char>`; `byteswap` of a volatile
+  in a constant expression; mdspan padding 0, a zero constant stride, an out-of-range slice;
+  num_get's thousands-separator handling (stage 2 discards every separator while grouping is
+  non-empty, stage 3 stores then checks: 10 tests); money_get storing digits on failure;
+  money_put's `space`; `date_order()` of the classic locale (mdy); `app` without `ate`; `seekoff(0,
+  cur)` writing no unshift sequence; layout_traits.h's uninitialized `constexpr` variable template
+  (ill-formed NDR; Clang-only failures of 6 mdspan tests).
+- extension: diagnostics for undefined behaviour (incomplete types, a foreign `rebind`,
+  `_GLIBCXX_CONCEPT_CHECKS`), noexcept strengthenings (`common_iterator`, `bit_ceil`),
+  `vector<bool>::insert(pos)`, variant's swappability through a deleted `swap`.
+- pre-c++26: `std::begin` from `<initializer_list>` (P3016), comparing arrays (P2865), synopsis
+  redeclarations without the draft's `noexcept` (Clang-only failures).
+
+**Unsupported with one compiler** (new `tests/libstdcxx/unsupported.txt`, the libstdc++
+counterpart of libc++'s list; harness support in `libstdcxx_format.py`): Clang only:
+source_location columns (implementation-defined), `[[gnu::optimize("O0")]]` frame counts,
+`__LONG_LONG_WIDTH__`, `std::float32_t` (optional), a default argument as a substitution failure.
+
+**Expected failures** (`xfail.txt`; each reproduced without the library): GCC: destroy/121024.cc
+(PR c++/102284, the test's own `dg-xfail-if`). Clang: cannot throw during constant evaluation
+(3 tests); no `__builtin_is_corresponding_member` / `__builtin_is_pointer_interconvertible_with_class`
+(4); no `__builtin_is_structural` / reflection (3 more); template `operator==` rewritten despite a
+corresponding `operator!=` ([over.match.oper]/4); explicit constructors left out of
+copy-list-initialization (atomic_ref/ctor.cc); `typename Layout::mapping<E>` without `template`
+rejected ([temp.names]/7.3.4; 2 mdspan tests).
+
+**Re-checked older entries.** The `uint_fast32_t`/`uint_fast64_t`/`intmax_t` tests and the
+`std::printf`/`wcscmp` ones of the missing-include entry compile now (libycxx declares the global
+`intN_t` names; the testsuite helpers include what they use): 7 tests removed from it
+(20_util/from_chars/{4,8}.cc, 20_util/ratio/requirements/constexpr_data.cc,
+21_strings/basic_string/operations/compare/wchar_t/1.cc, the independent_bits_engine /
+shuffle_order_engine constexpr requirements). vector/modifiers/swap/1.cc is the member-swap
+specialization above (undefined; GCC runs it and passes).
+
+**Left failing** (libycxx bugs or gaps; both compilers unless noted):
+- 20_util/bitset/cons/string_view{,_wide}.cc (A-doc, DECISIONS §2): `#define C char` before
+  the headers; `C` is a template-parameter name in 23 headers. A program may define it
+  ([macro.names]/1). Fix: rename the parameter throughout `include/`.
+- 18_support/exception/version.cc, 19_diagnostics/headers/stdexcept/version.cc (B):
+  `__cpp_lib_constexpr_exceptions` (202502L, [version.syn]) is undefined: `current_exception`,
+  `nested_exception`, `throw_with_nested`/`rethrow_if_nested` and `uncaught_exceptions` are not
+  constexpr ([exception.syn], [propagation], [except.nested]), and Clang 23 cannot throw during
+  constant evaluation.
+- 27_io/objects/wchar_t/{9662,12048-2,12048-4}.cc: the synchronized wide standard streams write
+  and read bytes through the buffer's `codecvt` (`putc`/`getc`/`ungetc`), so `wcout << L"x"` leaves
+  `stdout` byte-oriented and `fwide(stdout, 0) < 0`, after which `fputws` fails, and `fgetwc(stdin)`
+  after `wcin.unget()` fails. [iostream.objects.overview]/6: mixing operations "follows the same
+  semantics as mixing such operations on FILEs"; repro: `std::wcout << L"Hello"; assert(std::fwide(stdout, 0) >= 0);`.
+- 22_locale/money_get/get/{char,wchar_t}/19.cc (locale facet; left to the named-locale branch):
+  pattern `{value, symbol, none, sign}` with empty signs, no showbase, input "10$": the symbol is
+  consumed (and eofbit set) although nothing after it needs characters; [locale.money.get.virtuals]/2
+  "the currency symbol is optional and is consumed only if other characters are needed to
+  complete the format" (expected: `*end == '$'`, err unchanged).
+- 22_locale/time_get/get_{monthname,weekday}/{char,wchar_t}/5.cc (locale facet; same): with
+  `err == failbit | eofbit` on entry, `get_monthname("September ")` recognizes the name (returns
+  the iterator at ' ') but does not store `tm_mon`; [locale.time.get.virtuals] do_get_monthname
+  reads the name and sets the member regardless of the incoming state. Repro: `err = failbit |
+  eofbit; tg.get_monthname(s.begin(), s.end(), iss, err, &t)` leaves `t.tm_mon == 0`.
+
 <!-- counterparts:begin (generated) -->
 ## Skipped tests without a counterpart
 

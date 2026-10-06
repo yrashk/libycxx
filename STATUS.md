@@ -461,6 +461,12 @@ a defect in a test.
 - GCC 16.2: `PR31384` (conversion function vs converting constructor in direct-init of `tuple`)
   resolves differently from Clang; the libc++ expectation matches Clang.
 
+- GCC 16.2: value-initializing a class whose implicit default constructor is not trivial and
+  that has a `const` member of an empty class type without a default member initializer is
+  rejected ("uninitialized const member"), although an empty class is const-default-constructible
+  ([dcl.init.general]/8); reduced: `struct E {}; struct V { V() {} }; struct S { const E e; V v;
+  }; auto s = S();`. Clang accepts. `execution::prop` avoids the pattern (own test
+  `execution/prop_env_construction`).
 - Clang 23.1: no exceptions during constant evaluation (P3068). A sender's consteval
   `get_completion_signatures` that throws is just not a constant expression there, so which
   exception it threw cannot be told: without an environment such a sender counts as dependent
@@ -1159,6 +1165,24 @@ Wording problems found while writing the spec-derived tests (tests/ycxx), not ye
   whose token cannot be stopped (`never_stop_token`, e.g. any `env<>` receiver). libycxx meets it
   for a source type constructible from `nostopstate` (`stop_source`; own test
   `execution/task_environment_customization`).
+- [exec.sched]/6 requires `get_completion_scheduler<T>(sch, envs...)` and
+  `get_completion_scheduler<T>(get_env(schedule(sch)), envs...)` (and the same for
+  `get_completion_domain`) to be both ill-formed or both well-formed and equal, but
+  [exec.get.compl.sched]/5.2 makes a scheduler without the query its own completion scheduler
+  only when `envs` is not empty, and for every tag. So without an environment the schedule
+  sender may not answer, while [exec.run.loop.types]/5 requires run_loop's to answer
+  (`get_completion_scheduler<set_value_t>(get_env(schedule(sch))) == sch`, also [exec.sched]/5);
+  and with one, the sender must claim the scheduler for `set_error_t` too, which
+  [exec.run.loop.types]/5 excludes and [exec.get.compl.sched]/6 makes ill-formed to ask for a
+  sender without error completions. libycxx answers per tag where the completions run on the
+  scheduler (own test `execution/scheduler_query_consistency`).
+- [exec.get.compl.domain]/2.3 asks the completion scheduler for its domain through `TRY-QUERY`,
+  and /2.4's `default_domain` applies only when `attrs` is itself a scheduler: attributes whose
+  completion scheduler has no domain of its own (`run_loop`'s, a program's) have no completion
+  domain, though [exec.snd.general]/3 gives every sender with completions of a tag one (e.g.
+  `then(schedule(sch), f)`), and [exec.sched]/6 requires the schedule sender's to match the
+  scheduler's (`default_domain` given an environment). libycxx's run_loop schedule sender answers
+  `default_domain` itself.
 - [exec.when.all]/15.1: the value completion `set_value(rcvr, values...)` is evaluated (not
   under `if constexpr`) whenever the disposition is `started`, also when `values_tuple` is
   `tuple<>` because some child has no value completion (/13). By [exec.snd.expos]/47 that makes

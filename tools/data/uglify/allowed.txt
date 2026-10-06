@@ -31,14 +31,20 @@ elapsed is_leap_second                                                     # lea
 leap_seconds links version zones                                           # tzdb
 error_types sender_concept receiver_concept operation_state_concept scheduler_concept  # [exec]
 start_scheduler_type stop_source_type stop_token_type                      # execution::task
+# [execution.syn] (the std module's lists missed them while its generator stopped on
+# parallel_scheduler_replacement):
+completion_signatures_of_t dependent_sender_error enable_sender error_types_of_t
+get_await_completion_adaptor get_await_completion_adaptor_t sends_stopped spawn stop_token_of_t
+tag_of_t execute
 first_type second_type                                                     # pair
 fractional_width                                                           # hh_mm_ss
-insert_return_type                                                         # associative containers
+insert_return_type inserted node                                           # associative containers
+key_container_type mapped_container_type                                   # flat_map
 is_steady is_transparent                                                   # clocks; transparent comparators
 is_specialized has_denorm                                                  # numeric_limits
 istream_type ostream_type streambuf_type iterator_type regex_type syncbuf_type locale_type
 off_type pos_type
-eq_int_type not_eof to_char_type to_int_type                               # char_traits
+eq lt eq_int_type not_eof to_char_type to_int_type comparison_category  # char_traits
 lock_shared unlock_shared try_lock_shared try_lock_shared_for try_lock_shared_until  # shared mutexes
 max_associations                                                           # simple_counting_scope
 monetary numeric                                                           # locale categories

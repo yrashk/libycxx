@@ -2,7 +2,9 @@
 // [re.traits]/5: translate_nocase(c) is use_facet<ctype<charT>>(getloc()).tolower(c); /6:
 //   transform is the locale's collate::transform; /12: isctype(c, f) asks the locale's ctype
 //   (and '_' is in the class of "w"); /15-17: imbue(loc) makes getloc() == loc and returns the
-//   global locale at construction (no earlier imbue) or the previous argument; /18: getloc().
+//   global locale at construction (no earlier imbue) or the previous argument; /18: getloc();
+//   /7: transform_primary is the primary key for a collate_byname whose key form is known, and
+//   [re.grammar]/14.3 matches [[=a=]] by it.
 // [re.regex.locale]/1: basic_regex::imbue returns the traits' imbue result, and afterwards the
 //   regex does not match any character sequence (until it is assigned a new pattern).
 // [re.grammar]/14.1: with icase, characters match if translate_nocase gives the same result;
@@ -16,6 +18,12 @@
 #include <string>
 #include "check.hpp"
 #include "named_locale.hpp"
+
+#if defined(__APPLE__)
+constexpr bool kDarwin = true; // Darwin's key form is not documented: whole keys
+#else
+constexpr bool kDarwin = false;
+#endif
 
 int main() {
   const char* utf8_name = require_locale("de_DE.UTF-8");
@@ -80,6 +88,34 @@ int main() {
     CHECK(!std::regex_match(L"d", r));
     std::wregex plain(L"[a-c]"); // without collate: code point order, U+00E4 > 'c'
     CHECK(!std::regex_match(L"\u00e4", plain));
+  }
+  // equivalence classes: [re.traits]/7 gives the primary key when the collate_byname's key form
+  // is known, which libycxx knows for the C library's multi-level keys (glibc: the levels each
+  // end with the value 1); otherwise each character is its own class. The C library's own
+  // wcsxfrm key of "a" tells which form it uses.
+  {
+    const bool levels = !kDarwin && in_c_locale(utf8_name, [] {
+      wchar_t k[64];
+      const size_t n = wcsxfrm(k, L"a", 64);
+      return n < 64 && wmemchr(k, 1, n) != nullptr;
+    });
+    std::regex_traits<wchar_t> t;
+    t.imbue(utf8);
+    const std::wstring a = L"a", A = L"A", ae = L"ä", b = L"b";
+    const auto pa = t.transform_primary(a.begin(), a.end());
+    CHECK(!pa.empty());
+    CHECK((pa == t.transform_primary(ae.begin(), ae.end())) == levels);
+    CHECK((pa == t.transform_primary(A.begin(), A.end())) == levels);
+    CHECK(pa != t.transform_primary(b.begin(), b.end()));
+    std::wregex r;
+    r.imbue(utf8);
+    r.assign(L"[[=a=]]+");
+    CHECK(std::regex_match(L"a", r));
+    CHECK(std::regex_match(L"aAä", r) == levels);
+    CHECK(!std::regex_match(L"b", r));
+    // the classic locale's collate facet is not a collate_byname: its whole key
+    std::regex_traits<wchar_t> c;
+    CHECK(c.transform_primary(a.begin(), a.end()) == c.transform(a.begin(), a.end()));
   }
   // the global locale at construction
   {

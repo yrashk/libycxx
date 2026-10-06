@@ -1,0 +1,13 @@
+# libc++ tests whose own `// XFAIL: <expression>` describes libc++, not libycxx: a failure of
+# libc++'s implementation, or of a compiler on code libc++'s implementation makes. Matched by
+# libycxx's features, such an XFAIL would report XPASS (which fails the run) for a test libycxx
+# passes; with the line here the test runs as a plain test instead, PASS or FAIL, and its output
+# names the XFAIL dropped and why (tests/ycxxlit/skips.py). The test is never edited.
+# Format:  <path regex relative to libcxx/test/std> | <the XFAIL expression, verbatim> | <reason>
+#
+# tsan: libc++ expects its floating-point fetch_add/fetch_sub (atomic<float/double/long double>
+# and atomic_ref of them) to fail under ThreadSanitizer on x86-64 (llvm.org/PR72893, cited by the
+# tests). libycxx's pass under ThreadSanitizer with Clang (tools/test -c clang -s tsan, libycxx
+# instrumented too; tests/libcxx/TRIAGE.md, "ThreadSanitizer").
+atomics/atomics\.types\.generic/atomics\.types\.float/fetch_(add|sub)\.pass\.cpp | target={{x86_64-.*}} && tsan | libc++'s expected failure under ThreadSanitizer on x86-64 (llvm.org/PR72893) is about libc++'s implementation; libycxx's floating-point fetch_add/fetch_sub pass under ThreadSanitizer
+atomics/atomics\.ref/fetch_(add|sub)\.pass\.cpp | target={{x86_64-.*}} && tsan | libc++'s expected failure under ThreadSanitizer on x86-64 (llvm.org/PR72893) is about libc++'s implementation; libycxx's floating-point fetch_add/fetch_sub pass under ThreadSanitizer

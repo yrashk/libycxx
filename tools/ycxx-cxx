@@ -84,7 +84,9 @@ if [ $link = 1 ]; then
   # (libclang_rt.tsan_cxx) whole, and it holds only strong definitions of the global allocation
   # functions: a program's replacement would be a second definition, and libycxx's defaults
   # (new_handler, bad_alloc) would be bypassed. Race detection does not need them: libycxx's
-  # allocation functions call malloc, which the sanitizer intercepts (DECISIONS §6.8).
+  # allocation functions call malloc, which the sanitizer intercepts (DECISIONS §6.8). GCC links
+  # its shared libtsan.so, which defines them too, ahead of every input; a TSan build's link
+  # options (ycxx-link-options) name libycxx's defaults' anchors, so the program's own win.
   if [ $which = clang ]; then
     for a in "$@"; do
       case $a in -fsanitize=*thread*) table_opts="$table_opts -fno-sanitize-link-c++-runtime"; break ;; esac

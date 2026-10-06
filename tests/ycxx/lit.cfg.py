@@ -40,9 +40,8 @@ sys.path.insert(0, os.path.join(repo, 'tests'))
 from ycxxlit.ycxx_format import YcxxFormat
 
 flags = ['-I' + os.path.join(repo, 'tests', 'ycxx', 'support'), '-Wall', '-Wextra']
-if sanitizer:
-    flags += ['-fsanitize=' + ','.join({'asan': 'address', 'ubsan': 'undefined', 'tsan': 'thread'}[s] for s in sanitizer.split(',')),
-              '-fno-sanitize-recover=all', '-g']
+from ycxxlit import sanitizers
+flags += sanitizers.compile_flags(sanitizers.parse(sanitizer))
 if libdir:
     flags = ['--libdir=' + libdir] + flags
 if hardened:
@@ -64,17 +63,10 @@ if enabled('-frtti', '-fno-rtti'):
     features.add('rtti')
 config.available_features = features
 
-# ThreadSanitizer's options, after any of the caller's own TSAN_OPTIONS, set on each test
-# program's command line (its transcript): the suppressions (tests/ycxx/tsan.supp, each with its
-# reason), and allocator_may_return_null=1: malloc returns null for a size it cannot serve, as C
-# requires, instead of ending the program (libycxx's operator new then calls the new_handler
-# and throws bad_alloc, which the new/ tests check; tools/ycxx-cxx keeps libycxx's allocation
-# functions under TSan).
-run_env = {}
-if 'tsan' in features:
-    run_env['TSAN_OPTIONS'] = ':'.join(o for o in (os.environ.get('TSAN_OPTIONS', ''),
-                                                   'suppressions=' + os.path.join(repo, 'tests', 'ycxx', 'tsan.supp'),
-                                                   'allocator_may_return_null=1') if o)
+# The sanitizers' options, set on each test program's command line (its transcript): for
+# ThreadSanitizer the suppressions (tests/ycxx/tsan.supp, each with its reason) and
+# allocator_may_return_null=1 (tests/ycxxlit/sanitizers.py).
+run_env = sanitizers.run_env(sanitizers.parse(sanitizer), os.path.join(repo, 'tests', 'ycxx'))
 
 wrapper = 'ref-cxx' if reference else 'ycxx-cxx'
 # Journaled: every finished test's result is kept even if the run is stopped (Ctrl-C).

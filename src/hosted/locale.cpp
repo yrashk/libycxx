@@ -2,10 +2,14 @@
 // members: ctype<char>'s table, the four required codecvt specializations.
 //
 // A locale_impl holds an array of facet pointers indexed by locale::id and the locale's name
-// (null when unnamed). Every named locale has the classic facets (the names supported are the
-// "C" ones, see ycxx/hosted/locale_base.hpp); a name is either one name for all categories or
-// a composite "LC_COLLATE=...;LC_CTYPE=...;LC_MONETARY=...;LC_NUMERIC=...;LC_TIME=...;
-// LC_MESSAGES=..." when the categories were taken from different names.
+// (null when unnamed). A name is either one name for all categories or a composite
+// "LC_COLLATE=...;LC_CTYPE=...;LC_MONETARY=...;LC_NUMERIC=...;LC_TIME=...;LC_MESSAGES=..." when
+// the categories were taken from different names. The categories of a name with the classic
+// semantics ("C", "POSIX", "C.UTF-8") have the classic facets; those of any other name the
+// _byname facets built on the C library's locale of that name (src/hosted/locale_named.cpp),
+// where the draft makes the facet depend on the locale: the codecvt facets other than
+// codecvt<wchar_t, char, mbstate_t>, num_get/num_put and money_get/money_put stay the classic
+// ones (they read the locale through the other facets).
 #include <locale>
 #include <clocale>
 #include <cstdlib>
@@ -13,6 +17,7 @@
 #include <new>
 #include <ycxx/core/single_threaded.hpp>
 #include <ycxx/hosted/memory_resource.hpp> // ycxx::detail::pal_lock
+#include "locale_named.hpp"
 
 namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 
@@ -205,47 +210,40 @@ std::string join(const split_name& n) {
   return r;
 }
 
-// A supported single locale name, normalized ("POSIX" is "C"); null if unsupported.
-const char* normalize_simple(const char* name) {
-  if (std::strcmp(name, "C") == 0 || std::strcmp(name, "POSIX") == 0)
-    return "C";
-  if (std::strcmp(name, "C.UTF-8") == 0 || std::strcmp(name, "C.utf8") == 0)
-    return name;
-  return nullptr;
-}
-
-// The environment's name for category c ([locale.cons]/4: ""), falling back to "C" for names
-// whose conventions are not supported.
-const char* environment_name(int c) {
+// The environment's name for category c ([locale.cons]/4: ""): LC_ALL, LC_<category>, LANG;
+// "C" when none is set or the C library has no locale of that name.
+std::string environment_name(int c) {
   const char* v = std::getenv("LC_ALL");
   if (v == nullptr || *v == '\0')
     v = std::getenv(category_names[c]);
   if (v == nullptr || *v == '\0')
     v = std::getenv("LANG");
-  if (v == nullptr || *v == '\0')
+  if (v == nullptr || *v == '\0' || std::strchr(v, '=') != nullptr)
     return "C";
-  const char* n = normalize_simple(v);
-  return n != nullptr ? n : "C";
+  if (const char* n = ycxx::detail::classic_locale_name(v))
+    return n;
+  return ycxx::detail::named_exists(v, c) ? std::string(v) : std::string("C");
 }
 
-// Resolves a std_name to its normalized (possibly composite) form; false if not supported.
-bool resolve_name(const char* name, std::string& out) {
+// Splits a std_name into its names per category (the environment's for "" and for an empty
+// part; "POSIX" is "C"); false if malformed. Whether the C library has them is found when the
+// facets are built.
+bool resolve_parts(const char* name, split_name& parts) {
   if (name == nullptr)
     return false;
-  split_name parts;
   if (*name == '\0') {
     for (int c = 0; c < ncategories; ++c)
       parts.part[c] = environment_name(c);
-  } else if (!split(name, parts)) {
+    return true;
+  }
+  if (!split(name, parts))
     return false;
-  }
   for (int c = 0; c < ncategories; ++c) {
-    const char* n = parts.part[c].empty() ? environment_name(c) : normalize_simple(parts.part[c].c_str());
-    if (n == nullptr)
-      return false;
-    parts.part[c] = n;
+    if (parts.part[c].empty())
+      parts.part[c] = environment_name(c);
+    else if (const char* n = ycxx::detail::classic_locale_name(parts.part[c].c_str()))
+      parts.part[c] = n;
   }
-  out = join(parts);
   return true;
 }
 
@@ -267,39 +265,48 @@ union immortal {
   ~immortal() {}
 };
 
+// The classic locale's facets and tables live in static storage, never freed: no allocation
+// function is called for them, so a program that replaces operator new and counts what is
+// outstanding does not count them.
+template <class F, class... A>
+F* in_static(A... a) {
+  alignas(F) static unsigned char storage[sizeof(F)];
+  return ::new (static_cast<void*>(storage)) F(a...);
+}
+
 locale_impl* make_classic() {
   // refs == 1: the classic facets are never deleted
   const std::locale::facet* facets[] = {
-      new std::collate<char>(1),
-      new std::collate<wchar_t>(1),
-      new std::ctype<char>(nullptr, false, 1),
-      new std::ctype<wchar_t>(1),
-      new std::codecvt<char, char, std::mbstate_t>(1),
-      new std::codecvt<wchar_t, char, std::mbstate_t>(1),
-      new std::codecvt<char16_t, char8_t, std::mbstate_t>(1),
-      new std::codecvt<char32_t, char8_t, std::mbstate_t>(1),
-      new std::codecvt<char16_t, char, std::mbstate_t>(1),
-      new std::codecvt<char32_t, char, std::mbstate_t>(1),
-      new std::moneypunct<char, false>(1),
-      new std::moneypunct<char, true>(1),
-      new std::moneypunct<wchar_t, false>(1),
-      new std::moneypunct<wchar_t, true>(1),
-      new std::money_get<char>(1),
-      new std::money_get<wchar_t>(1),
-      new std::money_put<char>(1),
-      new std::money_put<wchar_t>(1),
-      new std::numpunct<char>(1),
-      new std::numpunct<wchar_t>(1),
-      new std::num_get<char>(1),
-      new std::num_get<wchar_t>(1),
-      new std::num_put<char>(1),
-      new std::num_put<wchar_t>(1),
-      new std::time_get<char>(1),
-      new std::time_get<wchar_t>(1),
-      new std::time_put<char>(1),
-      new std::time_put<wchar_t>(1),
-      new std::messages<char>(1),
-      new std::messages<wchar_t>(1),
+      in_static<std::collate<char>>(1),
+      in_static<std::collate<wchar_t>>(1),
+      in_static<std::ctype<char>>(nullptr, false, 1),
+      in_static<std::ctype<wchar_t>>(1),
+      in_static<std::codecvt<char, char, std::mbstate_t>>(1),
+      in_static<std::codecvt<wchar_t, char, std::mbstate_t>>(1),
+      in_static<std::codecvt<char16_t, char8_t, std::mbstate_t>>(1),
+      in_static<std::codecvt<char32_t, char8_t, std::mbstate_t>>(1),
+      in_static<std::codecvt<char16_t, char, std::mbstate_t>>(1),
+      in_static<std::codecvt<char32_t, char, std::mbstate_t>>(1),
+      in_static<std::moneypunct<char, false>>(1),
+      in_static<std::moneypunct<char, true>>(1),
+      in_static<std::moneypunct<wchar_t, false>>(1),
+      in_static<std::moneypunct<wchar_t, true>>(1),
+      in_static<std::money_get<char>>(1),
+      in_static<std::money_get<wchar_t>>(1),
+      in_static<std::money_put<char>>(1),
+      in_static<std::money_put<wchar_t>>(1),
+      in_static<std::numpunct<char>>(1),
+      in_static<std::numpunct<wchar_t>>(1),
+      in_static<std::num_get<char>>(1),
+      in_static<std::num_get<wchar_t>>(1),
+      in_static<std::num_put<char>>(1),
+      in_static<std::num_put<wchar_t>>(1),
+      in_static<std::time_get<char>>(1),
+      in_static<std::time_get<wchar_t>>(1),
+      in_static<std::time_put<char>>(1),
+      in_static<std::time_put<wchar_t>>(1),
+      in_static<std::messages<char>>(1),
+      in_static<std::messages<wchar_t>>(1),
   };
   const std::locale::id* ids[] = {
       &std::collate<char>::id,
@@ -339,7 +346,12 @@ locale_impl* make_classic() {
     if (k > top)
       top = k;
   }
-  locale_impl* p = new_impl(top + 1, "C");
+  // in static storage too while the ids fit (they do unless a program assigns many before the
+  // classic locale is first used)
+  static const std::locale::facet* table[64];
+  static char name[] = "C";
+  static locale_impl impl{1, table, 64, name};
+  locale_impl* p = top + 1 <= 64 ? &impl : new_impl(top + 1, "C");
   for (std::size_t k = 0; k < sizeof ids / sizeof ids[0]; ++k)
     set_facet(p, locale_access::index(*ids[k]), facets[k]);
   return p;
@@ -368,6 +380,97 @@ struct build_classic {
 #else
 build_classic classic_at_startup;
 #endif
+
+// ---- the facets of a named category -------------------------------------------------------------
+
+// Builds the facets of category c for name (a single name without classic semantics), in the
+// order of ids_of(c); null where the classic facet is kept. All or nothing: throws
+// runtime_error (naming what) if the C library has no such locale.
+void build_named(int c, const char* name, const char* what, const std::locale::facet** out) {
+  // held while the facets are built, so they share one opening of the C library's locale
+  ycxx::detail::named_locale* h = ycxx::detail::named_open(name, category_bits[c], what);
+  struct held {
+    ycxx::detail::named_locale* h;
+    const std::locale::facet** out;
+    int n;
+    ~held() {
+      ycxx::detail::named_release(h);
+      for (int k = 0; k < n; ++k) // facets built before an exception (n is 0 on success)
+        if (out[k] != nullptr) {
+          locale_access::retain(out[k]);
+          locale_access::release(out[k]);
+        }
+    }
+  } guard{h, out, 0};
+  const int n = ids_of(c).n;
+  for (int k = 0; k < n; ++k)
+    out[k] = nullptr;
+  guard.n = n;
+  switch (c) {
+  case 0:
+    out[0] = new std::collate_byname<char>(name);
+    out[1] = new std::collate_byname<wchar_t>(name);
+    break;
+  case 1:
+    out[0] = new std::ctype_byname<char>(name);
+    out[1] = new std::ctype_byname<wchar_t>(name);
+    out[3] = new std::codecvt_byname<wchar_t, char, std::mbstate_t>(name);
+    break;
+  case 2:
+    out[0] = new std::moneypunct_byname<char, false>(name);
+    out[1] = new std::moneypunct_byname<char, true>(name);
+    out[2] = new std::moneypunct_byname<wchar_t, false>(name);
+    out[3] = new std::moneypunct_byname<wchar_t, true>(name);
+    break;
+  case 3:
+    out[0] = new std::numpunct_byname<char>(name);
+    out[1] = new std::numpunct_byname<wchar_t>(name);
+    break;
+  case 4:
+    out[0] = new std::time_get_byname<char>(name);
+    out[1] = new std::time_get_byname<wchar_t>(name);
+    out[2] = new std::time_put_byname<char>(name);
+    out[3] = new std::time_put_byname<wchar_t>(name);
+    break;
+  default:
+    out[0] = new std::messages_byname<char>(name);
+    out[1] = new std::messages_byname<wchar_t>(name);
+    break;
+  }
+  guard.n = 0;
+}
+
+// Installs in p the facets of category c that implement `name` (one name): the classic ones,
+// or those built by build_named.
+void install_category(locale_impl* p, int c, const char* name, const char* what) {
+  const locale_impl* one = locale_access::impl(classic_locale());
+  const category_ids& ids = ids_of(c);
+  const std::locale::facet* built[12] = {};
+  if (ycxx::detail::classic_locale_name(name) == nullptr)
+    build_named(c, name, what, built);
+  for (int k = 0; k < ids.n; ++k) {
+    const std::size_t i = locale_access::index(*ids.ids[k]);
+    set_facet(p, i, built[k] != nullptr ? built[k] : (i < one->nfacets ? one->facets[i] : nullptr));
+  }
+}
+
+// Installs the categories cats of parts in p; on an exception p is released.
+void install_parts(locale_impl* p, const split_name& parts, std::locale::category cats) {
+  if constexpr (ycxx::detail::cfg::exceptions) {
+    try {
+      for (int c = 0; c < ncategories; ++c)
+        if (cats & category_bits[c])
+          install_category(p, c, parts.part[c].c_str(), "std::locale");
+    } catch (...) {
+      release(p);
+      throw;
+    }
+  } else {
+    for (int c = 0; c < ncategories; ++c)
+      if (cats & category_bits[c])
+        install_category(p, c, parts.part[c].c_str(), "std::locale");
+  }
+}
 
 // The global locale ([locale.statics]): one for the program, under a lock.
 ycxx::detail::pal_lock global_lock;
@@ -404,42 +507,37 @@ locale::locale() noexcept {
 locale::locale(const locale& other) noexcept : impl_(other.impl_) { retain(impl_); }
 
 locale::locale(const char* std_name) : impl_(nullptr) {
-  string name;
-  if (!resolve_name(std_name, name))
+  split_name parts;
+  if (!resolve_parts(std_name, parts))
     bad_name("std::locale", std_name);
-  impl_ = clone(classic_locale().impl_, 0, name.c_str());
+  const string name = join(parts);
+  locale_impl* p = clone(classic_locale().impl_, 0, name.c_str());
+  install_parts(p, parts, all);
+  impl_ = p;
 }
 
 locale::locale(const locale& other, const char* std_name, category cats) : impl_(nullptr) {
-  string name;
-  if (!resolve_name(std_name, name))
+  split_name b;
+  if (!resolve_parts(std_name, b))
     bad_name("std::locale", std_name);
   const locale_impl* one = classic_locale().impl_;
   string result;
   if (other.impl_->name != nullptr) {
-    split_name a, b;
+    split_name a;
     split(other.impl_->name, a);
-    split(name.c_str(), b);
     for (int c = 0; c < ncategories; ++c)
       if (cats & category_bits[c])
         a.part[c] = b.part[c];
     result = join(a);
   }
   locale_impl* p = clone(other.impl_, one->nfacets, other.impl_->name != nullptr ? result.c_str() : nullptr);
-  for (int c = 0; c < ncategories; ++c) {
-    if (!(cats & category_bits[c]))
-      continue;
-    const category_ids& ids = ids_of(c);
-    for (int k = 0; k < ids.n; ++k) {
-      const size_t i = locale_access::index(*ids.ids[k]);
-      set_facet(p, i, i < one->nfacets ? one->facets[i] : nullptr);
-    }
-  }
+  install_parts(p, b, cats);
   impl_ = p;
 }
 
 locale::locale(const locale& other, const locale& one, category cats) : impl_(nullptr) {
   string result;
+  // [locale.cons]/15 (LWG 3676): with cats none, named iff other is; otherwise iff both are
   const bool named = other.impl_->name != nullptr && (cats == none || one.impl_->name != nullptr);
   if (named) {
     split_name a, b;
@@ -502,28 +600,32 @@ const locale::facet* locale::find(const id& i) const noexcept {
 locale locale::global(const locale& loc) {
   const locale& c = classic_locale();
   locale_impl* old;
+  split_name parts; // before the reference is taken: split may throw bad_alloc
+  const bool named = loc.impl_->name != nullptr;
+  if (named)
+    split(loc.impl_->name, parts);
   retain(loc.impl_);
   {
+    // setlocale under the same lock, so that concurrent calls leave the C library's locale and
+    // the global locale set by the same call
     lock_guard g(global_lock);
     old = global_impl;
     global_impl = loc.impl_;
+    if (named) {
+      bool same = true;
+      for (int k = 1; k < ncategories; ++k)
+        same = same && parts.part[k] == parts.part[0];
+      if (same) {
+        ::setlocale(LC_ALL, parts.part[0].c_str());
+      } else {
+        for (int k = 0; k < ncategories; ++k)
+          ::setlocale(c_categories[k], parts.part[k].c_str());
+      }
+    }
   }
   if (old == nullptr) { // the classic locale, whose reference the global did not hold
     old = c.impl_;
     retain(old);
-  }
-  if (loc.impl_->name != nullptr) {
-    split_name parts;
-    split(loc.impl_->name, parts);
-    bool same = true;
-    for (int k = 1; k < ncategories; ++k)
-      same = same && parts.part[k] == parts.part[0];
-    if (same) {
-      ::setlocale(LC_ALL, parts.part[0].c_str());
-    } else {
-      for (int k = 0; k < ncategories; ++k)
-        ::setlocale(c_categories[k], parts.part[k].c_str());
-    }
   }
   return locale_access::make(old); // adopts the global's reference
 }
@@ -988,9 +1090,28 @@ int codecvt<char16_t, char, mbstate_t>::do_max_length() const noexcept { return 
 namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 
 void check_locale_name(const char* name, const char* what) {
-  std::string resolved;
-  if (!resolve_name(name, resolved))
+  split_name parts;
+  if (!resolve_parts(name, parts))
     bad_name(what, name);
+  for (int c = 0; c < ncategories; ++c)
+    if (classic_locale_name(parts.part[c].c_str()) == nullptr && !named_exists(parts.part[c].c_str(), c))
+      bad_name(what, parts.part[c].c_str());
+}
+
+const char* classic_locale_name(const char* name) noexcept {
+  if (std::strcmp(name, "C") == 0 || std::strcmp(name, "POSIX") == 0)
+    return "C";
+  if (std::strcmp(name, "C.UTF-8") == 0 || std::strcmp(name, "C.utf8") == 0)
+    return name;
+  return nullptr;
+}
+
+bool locale_name_part(const char* name, int c, std::string& out) {
+  split_name parts;
+  if (!resolve_parts(name, parts))
+    return false;
+  out = parts.part[c];
+  return true;
 }
 
 }} // namespace ycxx::detail

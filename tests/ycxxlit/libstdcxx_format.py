@@ -289,6 +289,10 @@ class LibstdcxxFormat(lit.formats.FileBasedTest):
             elif kind == 'require-namedlocale':
                 name = (args[0] if args else rest).strip().strip('"').strip()
                 why = locales.usable(name, self.locale_probe)
+                # testsuite_hooks.h's ISO_8859(15, x) is "x.ISO8859-15@euro" on glibc: a test
+                # requiring x.ISO8859-15 opens that name when it uses the macro
+                if not why and name.endswith('.ISO8859-15') and re.search(r'\bISO_8859\s*\(\s*15\b', src):
+                    why = locales.usable(name + '@euro', self.locale_probe)
                 if why:
                     return lit.Test.Result(lit.Test.UNSUPPORTED, why)
             elif kind.startswith('require-'):

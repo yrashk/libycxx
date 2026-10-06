@@ -5,7 +5,7 @@
 #include <ycxx/core/exception_base.hpp>
 #include <ycxx/core/error.hpp>
 
-namespace [[gnu::visibility("hidden")]] std {
+namespace [[__gnu__::__visibility__("hidden")]] std {
 
 struct destroying_delete_t {
   explicit destroying_delete_t() = default;
@@ -22,11 +22,11 @@ extern const nothrow_t nothrow;
 
 using new_handler = void (*)();
 new_handler get_new_handler() noexcept;
-new_handler set_new_handler(new_handler new_p) noexcept;
+new_handler set_new_handler(new_handler __new_p) noexcept;
 
-template <class T>
-[[nodiscard]] constexpr T* launder(T* p) noexcept {
-  static_assert(!__is_function(T) && !ycxx::detail::is_void_v<T>, "std::launder of function or void pointer");
+template <class _Tp>
+[[nodiscard]] constexpr _Tp* launder(_Tp* p) noexcept {
+  static_assert(!__is_function(_Tp) && !__ycxx::__detail::is_void_v<_Tp>, "std::launder of function or void pointer");
   return __builtin_launder(p);
 }
 
@@ -48,32 +48,32 @@ inline constexpr size_t hardware_constructive_interference_size = 64;
 // the -Wattributes push.
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wattributes"
-[[nodiscard, gnu::externally_visible]] void* operator new(std::size_t size);
-[[nodiscard, gnu::externally_visible]] void* operator new(std::size_t size, std::align_val_t alignment);
-[[gnu::visibility("default")]] [[nodiscard, gnu::externally_visible]] void* operator new(std::size_t size, const std::nothrow_t&) noexcept;
-[[gnu::visibility("default")]] [[nodiscard, gnu::externally_visible]] void* operator new(std::size_t size, std::align_val_t alignment, const std::nothrow_t&) noexcept;
-[[gnu::externally_visible]] void operator delete(void* ptr) noexcept;
-[[gnu::externally_visible]] void operator delete(void* ptr, std::size_t size) noexcept;
-[[gnu::externally_visible]] void operator delete(void* ptr, std::align_val_t alignment) noexcept;
-[[gnu::externally_visible]] void operator delete(void* ptr, std::size_t size, std::align_val_t alignment) noexcept;
-[[gnu::visibility("default")]] [[gnu::externally_visible]] void operator delete(void* ptr, const std::nothrow_t&) noexcept;
-[[gnu::visibility("default")]] [[gnu::externally_visible]] void operator delete(void* ptr, std::align_val_t alignment, const std::nothrow_t&) noexcept;
-[[nodiscard, gnu::externally_visible]] void* operator new[](std::size_t size);
-[[nodiscard, gnu::externally_visible]] void* operator new[](std::size_t size, std::align_val_t alignment);
-[[gnu::visibility("default")]] [[nodiscard, gnu::externally_visible]] void* operator new[](std::size_t size, const std::nothrow_t&) noexcept;
-[[gnu::visibility("default")]] [[nodiscard, gnu::externally_visible]] void* operator new[](std::size_t size, std::align_val_t alignment, const std::nothrow_t&) noexcept;
-[[gnu::externally_visible]] void operator delete[](void* ptr) noexcept;
-[[gnu::externally_visible]] void operator delete[](void* ptr, std::size_t size) noexcept;
-[[gnu::externally_visible]] void operator delete[](void* ptr, std::align_val_t alignment) noexcept;
-[[gnu::externally_visible]] void operator delete[](void* ptr, std::size_t size, std::align_val_t alignment) noexcept;
-[[gnu::visibility("default")]] [[gnu::externally_visible]] void operator delete[](void* ptr, const std::nothrow_t&) noexcept;
-[[gnu::visibility("default")]] [[gnu::externally_visible]] void operator delete[](void* ptr, std::align_val_t alignment, const std::nothrow_t&) noexcept;
+[[nodiscard, __gnu__::__externally_visible__]] void* operator new(std::size_t size);
+[[nodiscard, __gnu__::__externally_visible__]] void* operator new(std::size_t size, std::align_val_t alignment);
+[[__gnu__::__visibility__("default")]] [[nodiscard, __gnu__::__externally_visible__]] void* operator new(std::size_t size, const std::nothrow_t&) noexcept;
+[[__gnu__::__visibility__("default")]] [[nodiscard, __gnu__::__externally_visible__]] void* operator new(std::size_t size, std::align_val_t alignment, const std::nothrow_t&) noexcept;
+[[__gnu__::__externally_visible__]] void operator delete(void* ptr) noexcept;
+[[__gnu__::__externally_visible__]] void operator delete(void* ptr, std::size_t size) noexcept;
+[[__gnu__::__externally_visible__]] void operator delete(void* ptr, std::align_val_t alignment) noexcept;
+[[__gnu__::__externally_visible__]] void operator delete(void* ptr, std::size_t size, std::align_val_t alignment) noexcept;
+[[__gnu__::__visibility__("default")]] [[__gnu__::__externally_visible__]] void operator delete(void* ptr, const std::nothrow_t&) noexcept;
+[[__gnu__::__visibility__("default")]] [[__gnu__::__externally_visible__]] void operator delete(void* ptr, std::align_val_t alignment, const std::nothrow_t&) noexcept;
+[[nodiscard, __gnu__::__externally_visible__]] void* operator new[](std::size_t size);
+[[nodiscard, __gnu__::__externally_visible__]] void* operator new[](std::size_t size, std::align_val_t alignment);
+[[__gnu__::__visibility__("default")]] [[nodiscard, __gnu__::__externally_visible__]] void* operator new[](std::size_t size, const std::nothrow_t&) noexcept;
+[[__gnu__::__visibility__("default")]] [[nodiscard, __gnu__::__externally_visible__]] void* operator new[](std::size_t size, std::align_val_t alignment, const std::nothrow_t&) noexcept;
+[[__gnu__::__externally_visible__]] void operator delete[](void* ptr) noexcept;
+[[__gnu__::__externally_visible__]] void operator delete[](void* ptr, std::size_t size) noexcept;
+[[__gnu__::__externally_visible__]] void operator delete[](void* ptr, std::align_val_t alignment) noexcept;
+[[__gnu__::__externally_visible__]] void operator delete[](void* ptr, std::size_t size, std::align_val_t alignment) noexcept;
+[[__gnu__::__visibility__("default")]] [[__gnu__::__externally_visible__]] void operator delete[](void* ptr, const std::nothrow_t&) noexcept;
+[[__gnu__::__visibility__("default")]] [[__gnu__::__externally_visible__]] void operator delete[](void* ptr, std::align_val_t alignment, const std::nothrow_t&) noexcept;
 #pragma GCC diagnostic pop
 
 
 // Non-allocating forms (constexpr since C++26). Not replaceable and defined here, so hidden like
 // the library's namespaces (DECISIONS §2).
-[[nodiscard, gnu::visibility("hidden")]] constexpr void* operator new(std::size_t, void* ptr) noexcept { return ptr; }
-[[nodiscard, gnu::visibility("hidden")]] constexpr void* operator new[](std::size_t, void* ptr) noexcept { return ptr; }
-[[gnu::visibility("hidden")]] constexpr void operator delete(void*, void*) noexcept {}
-[[gnu::visibility("hidden")]] constexpr void operator delete[](void*, void*) noexcept {}
+[[nodiscard, __gnu__::__visibility__("hidden")]] constexpr void* operator new(std::size_t, void* ptr) noexcept { return ptr; }
+[[nodiscard, __gnu__::__visibility__("hidden")]] constexpr void* operator new[](std::size_t, void* ptr) noexcept { return ptr; }
+[[__gnu__::__visibility__("hidden")]] constexpr void operator delete(void*, void*) noexcept {}
+[[__gnu__::__visibility__("hidden")]] constexpr void operator delete[](void*, void*) noexcept {}

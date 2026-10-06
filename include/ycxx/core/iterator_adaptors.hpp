@@ -10,57 +10,57 @@
 // =============================================================================================
 // reverse_iterator
 // =============================================================================================
-namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
-template <class It>
-consteval auto reverse_category() {
-  using C = typename std::iterator_traits<It>::iterator_category;
-  if constexpr (std::derived_from<C, std::random_access_iterator_tag>)
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+template <class _It>
+consteval auto __reverse_category() {
+  using _Cp = typename std::iterator_traits<_It>::iterator_category;
+  if constexpr (std::derived_from<_Cp, std::random_access_iterator_tag>)
     return std::type_identity<std::random_access_iterator_tag>{};
   else
-    return std::type_identity<C>{};
+    return std::type_identity<_Cp>{};
 }
-}} // namespace ycxx::detail
+}} // namespace __ycxx::__detail
 
-namespace [[gnu::visibility("hidden")]] std {
+namespace [[__gnu__::__visibility__("hidden")]] std {
 
-template <class Iterator>
+template <class _Iterator>
 class reverse_iterator {
 public:
-  using iterator_type = Iterator;
+  using iterator_type = _Iterator;
   using iterator_concept =
-      conditional_t<random_access_iterator<Iterator>, random_access_iterator_tag, bidirectional_iterator_tag>;
-  using iterator_category = typename decltype(ycxx::detail::reverse_category<Iterator>())::type;
-  using value_type = iter_value_t<Iterator>;
-  using difference_type = iter_difference_t<Iterator>;
-  using pointer = typename iterator_traits<Iterator>::pointer;
-  using reference = iter_reference_t<Iterator>;
+      conditional_t<random_access_iterator<_Iterator>, random_access_iterator_tag, bidirectional_iterator_tag>;
+  using iterator_category = typename decltype(__ycxx::__detail::__reverse_category<_Iterator>())::type;
+  using value_type = iter_value_t<_Iterator>;
+  using difference_type = iter_difference_t<_Iterator>;
+  using pointer = typename iterator_traits<_Iterator>::pointer;
+  using reference = iter_reference_t<_Iterator>;
 
   constexpr reverse_iterator() = default;
-  constexpr explicit reverse_iterator(Iterator x) : current(static_cast<Iterator&&>(x)) {}
-  template <class U>
-    requires(!is_same_v<U, Iterator> && convertible_to<const U&, Iterator>)
-  constexpr reverse_iterator(const reverse_iterator<U>& u) : current(u.base()) {}
-  template <class U>
-    requires(!is_same_v<U, Iterator> && convertible_to<const U&, Iterator> && assignable_from<Iterator&, const U&>)
-  constexpr reverse_iterator& operator=(const reverse_iterator<U>& u) {
-    current = u.base();
+  constexpr explicit reverse_iterator(_Iterator __x) : current(static_cast<_Iterator&&>(__x)) {}
+  template <class _Up>
+    requires(!is_same_v<_Up, _Iterator> && convertible_to<const _Up&, _Iterator>)
+  constexpr reverse_iterator(const reverse_iterator<_Up>& __u) : current(__u.base()) {}
+  template <class _Up>
+    requires(!is_same_v<_Up, _Iterator> && convertible_to<const _Up&, _Iterator> && assignable_from<_Iterator&, const _Up&>)
+  constexpr reverse_iterator& operator=(const reverse_iterator<_Up>& __u) {
+    current = __u.base();
     return *this;
   }
 
-  constexpr Iterator base() const { return current; }
+  constexpr _Iterator base() const { return current; }
   constexpr reference operator*() const {
-    Iterator tmp = current;
-    return *--tmp;
+    _Iterator __tmp = current;
+    return *--__tmp;
   }
   constexpr pointer operator->() const
-    requires(is_pointer_v<Iterator> || requires(const Iterator i) { i.operator->(); })
+    requires(is_pointer_v<_Iterator> || requires(const _Iterator i) { i.operator->(); })
   {
-    Iterator tmp = current;
-    --tmp;
-    if constexpr (is_pointer_v<Iterator>)
-      return tmp;
+    _Iterator __tmp = current;
+    --__tmp;
+    if constexpr (is_pointer_v<_Iterator>)
+      return __tmp;
     else
-      return tmp.operator->();
+      return __tmp.operator->();
   }
 
   constexpr reverse_iterator& operator++() {
@@ -68,18 +68,18 @@ public:
     return *this;
   }
   constexpr reverse_iterator operator++(int) {
-    reverse_iterator tmp = *this;
+    reverse_iterator __tmp = *this;
     --current;
-    return tmp;
+    return __tmp;
   }
   constexpr reverse_iterator& operator--() {
     ++current;
     return *this;
   }
   constexpr reverse_iterator operator--(int) {
-    reverse_iterator tmp = *this;
+    reverse_iterator __tmp = *this;
     ++current;
-    return tmp;
+    return __tmp;
   }
   constexpr reverse_iterator operator+(difference_type n) const { return reverse_iterator(current - n); }
   constexpr reverse_iterator& operator+=(difference_type n) {
@@ -93,95 +93,95 @@ public:
   }
   constexpr reference operator[](difference_type n) const { return current[-n - 1]; }
 
-  friend constexpr iter_rvalue_reference_t<Iterator> iter_move(const reverse_iterator& i) noexcept(
-      is_nothrow_copy_constructible_v<Iterator> && noexcept(ranges::iter_move(--declval<Iterator&>()))) {
-    auto tmp = i.base();
-    return ranges::iter_move(--tmp);
+  friend constexpr iter_rvalue_reference_t<_Iterator> iter_move(const reverse_iterator& i) noexcept(
+      is_nothrow_copy_constructible_v<_Iterator> && noexcept(ranges::iter_move(--declval<_Iterator&>()))) {
+    auto __tmp = i.base();
+    return ranges::iter_move(--__tmp);
   }
-  template <indirectly_swappable<Iterator> Iterator2>
-  friend constexpr void iter_swap(const reverse_iterator& x, const reverse_iterator<Iterator2>& y) noexcept(
-      is_nothrow_copy_constructible_v<Iterator> && is_nothrow_copy_constructible_v<Iterator2> &&
-      noexcept(ranges::iter_swap(--declval<Iterator&>(), --declval<Iterator2&>()))) {
-    auto xtmp = x.base();
-    auto ytmp = y.base();
-    ranges::iter_swap(--xtmp, --ytmp);
+  template <indirectly_swappable<_Iterator> _Iterator2>
+  friend constexpr void iter_swap(const reverse_iterator& __x, const reverse_iterator<_Iterator2>& y) noexcept(
+      is_nothrow_copy_constructible_v<_Iterator> && is_nothrow_copy_constructible_v<_Iterator2> &&
+      noexcept(ranges::iter_swap(--declval<_Iterator&>(), --declval<_Iterator2&>()))) {
+    auto __xtmp = __x.base();
+    auto __ytmp = y.base();
+    ranges::iter_swap(--__xtmp, --__ytmp);
   }
 
 protected:
-  Iterator current = Iterator();
+  _Iterator current = _Iterator();
 };
 
-template <class I1, class I2>
-  requires requires(const I1& x, const I2& y) {
-    { x == y } -> convertible_to<bool>;
+template <class _I1, class _I2>
+  requires requires(const _I1& __x, const _I2& y) {
+    { __x == y } -> convertible_to<bool>;
   }
-constexpr bool operator==(const reverse_iterator<I1>& x, const reverse_iterator<I2>& y) {
-  return x.base() == y.base();
+constexpr bool operator==(const reverse_iterator<_I1>& __x, const reverse_iterator<_I2>& y) {
+  return __x.base() == y.base();
 }
-template <class I1, class I2>
-  requires requires(const I1& x, const I2& y) {
-    { x != y } -> convertible_to<bool>;
+template <class _I1, class _I2>
+  requires requires(const _I1& __x, const _I2& y) {
+    { __x != y } -> convertible_to<bool>;
   }
-constexpr bool operator!=(const reverse_iterator<I1>& x, const reverse_iterator<I2>& y) {
-  return x.base() != y.base();
+constexpr bool operator!=(const reverse_iterator<_I1>& __x, const reverse_iterator<_I2>& y) {
+  return __x.base() != y.base();
 }
-template <class I1, class I2>
-  requires requires(const I1& x, const I2& y) {
-    { x > y } -> convertible_to<bool>;
+template <class _I1, class _I2>
+  requires requires(const _I1& __x, const _I2& y) {
+    { __x > y } -> convertible_to<bool>;
   }
-constexpr bool operator<(const reverse_iterator<I1>& x, const reverse_iterator<I2>& y) {
-  return x.base() > y.base();
+constexpr bool operator<(const reverse_iterator<_I1>& __x, const reverse_iterator<_I2>& y) {
+  return __x.base() > y.base();
 }
-template <class I1, class I2>
-  requires requires(const I1& x, const I2& y) {
-    { x < y } -> convertible_to<bool>;
+template <class _I1, class _I2>
+  requires requires(const _I1& __x, const _I2& y) {
+    { __x < y } -> convertible_to<bool>;
   }
-constexpr bool operator>(const reverse_iterator<I1>& x, const reverse_iterator<I2>& y) {
-  return x.base() < y.base();
+constexpr bool operator>(const reverse_iterator<_I1>& __x, const reverse_iterator<_I2>& y) {
+  return __x.base() < y.base();
 }
-template <class I1, class I2>
-  requires requires(const I1& x, const I2& y) {
-    { x >= y } -> convertible_to<bool>;
+template <class _I1, class _I2>
+  requires requires(const _I1& __x, const _I2& y) {
+    { __x >= y } -> convertible_to<bool>;
   }
-constexpr bool operator<=(const reverse_iterator<I1>& x, const reverse_iterator<I2>& y) {
-  return x.base() >= y.base();
+constexpr bool operator<=(const reverse_iterator<_I1>& __x, const reverse_iterator<_I2>& y) {
+  return __x.base() >= y.base();
 }
-template <class I1, class I2>
-  requires requires(const I1& x, const I2& y) {
-    { x <= y } -> convertible_to<bool>;
+template <class _I1, class _I2>
+  requires requires(const _I1& __x, const _I2& y) {
+    { __x <= y } -> convertible_to<bool>;
   }
-constexpr bool operator>=(const reverse_iterator<I1>& x, const reverse_iterator<I2>& y) {
-  return x.base() <= y.base();
+constexpr bool operator>=(const reverse_iterator<_I1>& __x, const reverse_iterator<_I2>& y) {
+  return __x.base() <= y.base();
 }
-template <class I1, three_way_comparable_with<I1> I2>
-constexpr compare_three_way_result_t<I1, I2> operator<=>(const reverse_iterator<I1>& x,
-                                                         const reverse_iterator<I2>& y) {
-  return y.base() <=> x.base();
+template <class _I1, three_way_comparable_with<_I1> _I2>
+constexpr compare_three_way_result_t<_I1, _I2> operator<=>(const reverse_iterator<_I1>& __x,
+                                                         const reverse_iterator<_I2>& y) {
+  return y.base() <=> __x.base();
 }
-template <class I1, class I2>
-constexpr auto operator-(const reverse_iterator<I1>& x, const reverse_iterator<I2>& y)
-    -> decltype(y.base() - x.base()) {
-  return y.base() - x.base();
+template <class _I1, class _I2>
+constexpr auto operator-(const reverse_iterator<_I1>& __x, const reverse_iterator<_I2>& y)
+    -> decltype(y.base() - __x.base()) {
+  return y.base() - __x.base();
 }
-template <class I>
-constexpr reverse_iterator<I> operator+(iter_difference_t<I> n, const reverse_iterator<I>& x) {
-  return reverse_iterator<I>(x.base() - n);
+template <class _Ip>
+constexpr reverse_iterator<_Ip> operator+(iter_difference_t<_Ip> n, const reverse_iterator<_Ip>& __x) {
+  return reverse_iterator<_Ip>(__x.base() - n);
 }
-template <class I>
-constexpr reverse_iterator<I> make_reverse_iterator(I i) {
-  return reverse_iterator<I>(static_cast<I&&>(i));
+template <class _Ip>
+constexpr reverse_iterator<_Ip> make_reverse_iterator(_Ip i) {
+  return reverse_iterator<_Ip>(static_cast<_Ip&&>(i));
 }
-template <class I1, class I2>
-  requires(!sized_sentinel_for<I1, I2>)
-constexpr bool disable_sized_sentinel_for<reverse_iterator<I1>, reverse_iterator<I2>> = true;
+template <class _I1, class _I2>
+  requires(!sized_sentinel_for<_I1, _I2>)
+constexpr bool disable_sized_sentinel_for<reverse_iterator<_I1>, reverse_iterator<_I2>> = true;
 
 // =============================================================================================
 // insert iterators
 // =============================================================================================
-template <class Container>
+template <class _Container>
 class back_insert_iterator {
 protected:
-  Container* container;
+  _Container* container;
 
 public:
   using iterator_category = output_iterator_tag;
@@ -189,30 +189,30 @@ public:
   using difference_type = ptrdiff_t;
   using pointer = void;
   using reference = void;
-  using container_type = Container;
+  using container_type = _Container;
 
-  constexpr explicit back_insert_iterator(Container& x) : container(__builtin_addressof(x)) {}
-  constexpr back_insert_iterator& operator=(const typename Container::value_type& v) {
-    container->push_back(v);
+  constexpr explicit back_insert_iterator(_Container& __x) : container(__builtin_addressof(__x)) {}
+  constexpr back_insert_iterator& operator=(const typename _Container::value_type& __v) {
+    container->push_back(__v);
     return *this;
   }
-  constexpr back_insert_iterator& operator=(typename Container::value_type&& v) {
-    container->push_back(static_cast<typename Container::value_type&&>(v));
+  constexpr back_insert_iterator& operator=(typename _Container::value_type&& __v) {
+    container->push_back(static_cast<typename _Container::value_type&&>(__v));
     return *this;
   }
   constexpr back_insert_iterator& operator*() { return *this; }
   constexpr back_insert_iterator& operator++() { return *this; }
   constexpr back_insert_iterator operator++(int) { return *this; }
 };
-template <class Container>
-constexpr back_insert_iterator<Container> back_inserter(Container& x) {
-  return back_insert_iterator<Container>(x);
+template <class _Container>
+constexpr back_insert_iterator<_Container> back_inserter(_Container& __x) {
+  return back_insert_iterator<_Container>(__x);
 }
 
-template <class Container>
+template <class _Container>
 class front_insert_iterator {
 protected:
-  Container* container;
+  _Container* container;
 
 public:
   using iterator_category = output_iterator_tag;
@@ -220,31 +220,31 @@ public:
   using difference_type = ptrdiff_t;
   using pointer = void;
   using reference = void;
-  using container_type = Container;
+  using container_type = _Container;
 
-  constexpr explicit front_insert_iterator(Container& x) : container(__builtin_addressof(x)) {}
-  constexpr front_insert_iterator& operator=(const typename Container::value_type& v) {
-    container->push_front(v);
+  constexpr explicit front_insert_iterator(_Container& __x) : container(__builtin_addressof(__x)) {}
+  constexpr front_insert_iterator& operator=(const typename _Container::value_type& __v) {
+    container->push_front(__v);
     return *this;
   }
-  constexpr front_insert_iterator& operator=(typename Container::value_type&& v) {
-    container->push_front(static_cast<typename Container::value_type&&>(v));
+  constexpr front_insert_iterator& operator=(typename _Container::value_type&& __v) {
+    container->push_front(static_cast<typename _Container::value_type&&>(__v));
     return *this;
   }
   constexpr front_insert_iterator& operator*() { return *this; }
   constexpr front_insert_iterator& operator++() { return *this; }
   constexpr front_insert_iterator operator++(int) { return *this; }
 };
-template <class Container>
-constexpr front_insert_iterator<Container> front_inserter(Container& x) {
-  return front_insert_iterator<Container>(x);
+template <class _Container>
+constexpr front_insert_iterator<_Container> front_inserter(_Container& __x) {
+  return front_insert_iterator<_Container>(__x);
 }
 
-template <class Container>
+template <class _Container>
 class insert_iterator {
 protected:
-  Container* container;
-  ranges::iterator_t<Container> iter;
+  _Container* container;
+  ranges::iterator_t<_Container> iter;
 
 public:
   using iterator_category = output_iterator_tag;
@@ -252,17 +252,17 @@ public:
   using difference_type = ptrdiff_t;
   using pointer = void;
   using reference = void;
-  using container_type = Container;
+  using container_type = _Container;
 
-  constexpr insert_iterator(Container& x, ranges::iterator_t<Container> i)
-      : container(__builtin_addressof(x)), iter(static_cast<ranges::iterator_t<Container>&&>(i)) {}
-  constexpr insert_iterator& operator=(const typename Container::value_type& v) {
-    iter = container->insert(iter, v);
+  constexpr insert_iterator(_Container& __x, ranges::iterator_t<_Container> i)
+      : container(__builtin_addressof(__x)), iter(static_cast<ranges::iterator_t<_Container>&&>(i)) {}
+  constexpr insert_iterator& operator=(const typename _Container::value_type& __v) {
+    iter = container->insert(iter, __v);
     ++iter;
     return *this;
   }
-  constexpr insert_iterator& operator=(typename Container::value_type&& v) {
-    iter = container->insert(iter, static_cast<typename Container::value_type&&>(v));
+  constexpr insert_iterator& operator=(typename _Container::value_type&& __v) {
+    iter = container->insert(iter, static_cast<typename _Container::value_type&&>(__v));
     ++iter;
     return *this;
   }
@@ -270,285 +270,285 @@ public:
   constexpr insert_iterator& operator++() { return *this; }
   constexpr insert_iterator& operator++(int) { return *this; }
 };
-template <class Container>
-constexpr insert_iterator<Container> inserter(Container& x, ranges::iterator_t<Container> i) {
-  return insert_iterator<Container>(x, i);
+template <class _Container>
+constexpr insert_iterator<_Container> inserter(_Container& __x, ranges::iterator_t<_Container> i) {
+  return insert_iterator<_Container>(__x, i);
 }
 
 // =============================================================================================
 // [const.iterators]
 // =============================================================================================
-template <indirectly_readable It>
-using iter_const_reference_t = common_reference_t<const iter_value_t<It>&&, iter_reference_t<It>>;
+template <indirectly_readable _It>
+using iter_const_reference_t = common_reference_t<const iter_value_t<_It>&&, iter_reference_t<_It>>;
 
 } // namespace std
 
-namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
-template <class It>
-concept constant_iterator = std::input_iterator<It> && std::same_as<std::iter_const_reference_t<It>, std::iter_reference_t<It>>;
-template <std::indirectly_readable It>
-using iter_const_rvalue_reference_t = std::common_reference_t<const std::iter_value_t<It>&&, std::iter_rvalue_reference_t<It>>;
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+template <class _It>
+concept __constant_iterator = std::input_iterator<_It> && std::same_as<std::iter_const_reference_t<_It>, std::iter_reference_t<_It>>;
+template <std::indirectly_readable _It>
+using __iter_const_rvalue_reference_t = std::common_reference_t<const std::iter_value_t<_It>&&, std::iter_rvalue_reference_t<_It>>;
 
-template <class I>
-consteval auto const_iter_concept() {
-  if constexpr (std::contiguous_iterator<I>)
+template <class _Ip>
+consteval auto __const_iter_concept() {
+  if constexpr (std::contiguous_iterator<_Ip>)
     return std::type_identity<std::contiguous_iterator_tag>{};
-  else if constexpr (std::random_access_iterator<I>)
+  else if constexpr (std::random_access_iterator<_Ip>)
     return std::type_identity<std::random_access_iterator_tag>{};
-  else if constexpr (std::bidirectional_iterator<I>)
+  else if constexpr (std::bidirectional_iterator<_Ip>)
     return std::type_identity<std::bidirectional_iterator_tag>{};
-  else if constexpr (std::forward_iterator<I>)
+  else if constexpr (std::forward_iterator<_Ip>)
     return std::type_identity<std::forward_iterator_tag>{};
   else
     return std::type_identity<std::input_iterator_tag>{};
 }
 
-}} // namespace ycxx::detail
+}} // namespace __ycxx::__detail
 
-// Base classes of std types live in ycxx::adl_free, a namespace that declares no functions:
+// Base classes of std types live in __ycxx::__adl_free, a namespace that declares no functions:
 // a base's namespace is an associated namespace for ADL ([basic.lookup.argdep]/3), so a
-// ycxx::detail base would expose every internal function to lookup on the std type.
-namespace [[gnu::visibility("hidden")]] ycxx { namespace adl_free {
-template <class I>
-struct const_iter_category {};
-template <std::forward_iterator I>
-struct const_iter_category<I> {
-  using iterator_category = typename std::iterator_traits<I>::iterator_category;
+// __ycxx::__detail base would expose every internal function to lookup on the std type.
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __adl_free {
+template <class _Ip>
+struct __const_iter_category {};
+template <std::forward_iterator _Ip>
+struct __const_iter_category<_Ip> {
+  using iterator_category = typename std::iterator_traits<_Ip>::iterator_category;
 };
-}} // namespace ycxx::adl_free
+}} // namespace __ycxx::__adl_free
 
-namespace [[gnu::visibility("hidden")]] std {
+namespace [[__gnu__::__visibility__("hidden")]] std {
 
-template <input_iterator Iter>
+template <input_iterator _Iter>
 class basic_const_iterator;
 
 } // namespace std
 
-namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
-template <class T>
-inline constexpr bool is_basic_const_iterator = false;
-template <class I>
-inline constexpr bool is_basic_const_iterator<std::basic_const_iterator<I>> = true;
-template <class T>
-concept not_a_const_iterator = !is_basic_const_iterator<T>;
-template <class T, class U>
-concept different_from = !std::same_as<std::remove_cvref_t<T>, std::remove_cvref_t<U>>;
-// `it < i` alone, a part of totally_ordered_with<Iter, I> tested first by basic_const_iterator's
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+template <class _Tp>
+inline constexpr bool __is_basic_const_iterator = false;
+template <class _Ip>
+inline constexpr bool __is_basic_const_iterator<std::basic_const_iterator<_Ip>> = true;
+template <class _Tp>
+concept __not_a_const_iterator = !__is_basic_const_iterator<_Tp>;
+template <class _Tp, class _Up>
+concept __different_from = !std::same_as<std::remove_cvref_t<_Tp>, std::remove_cvref_t<_Up>>;
+// `__it < i` alone, a part of totally_ordered_with<Iter, I> tested first by basic_const_iterator's
 // comparisons with another type I. Found by argument-dependent lookup for an adaptor over a
 // basic_const_iterator (reverse_iterator<basic_const_iterator<It>>), those operators would
 // otherwise ask whether I is totally ordered while I's own comparison is being resolved
 // (libstdc++ PR 112490); this test fails first, without asking about I < I.
-template <class Iter, class I>
-concept const_iter_less_with = requires(const Iter& it, const I& i) { it < i; };
-}} // namespace ycxx::detail
+template <class _Iter, class _Ip>
+concept __const_iter_less_with = requires(const _Iter& __it, const _Ip& i) { __it < i; };
+}} // namespace __ycxx::__detail
 
-namespace [[gnu::visibility("hidden")]] std {
+namespace [[__gnu__::__visibility__("hidden")]] std {
 
-template <input_iterator Iter>
-class basic_const_iterator : public ycxx::adl_free::const_iter_category<Iter> {
+template <input_iterator _Iter>
+class basic_const_iterator : public __ycxx::__adl_free::__const_iter_category<_Iter> {
   template <input_iterator>
   friend class basic_const_iterator;
-  Iter current_ = Iter();
-  using reference = iter_const_reference_t<Iter>;
-  using rvalue_reference = ycxx::detail::iter_const_rvalue_reference_t<Iter>;
+  _Iter __current_ = _Iter();
+  using reference = iter_const_reference_t<_Iter>;
+  using __rvalue_reference = __ycxx::__detail::__iter_const_rvalue_reference_t<_Iter>;
 
 public:
-  using iterator_concept = typename decltype(ycxx::detail::const_iter_concept<Iter>())::type;
-  using value_type = iter_value_t<Iter>;
-  using difference_type = iter_difference_t<Iter>;
-  using iterator_type = Iter;
+  using iterator_concept = typename decltype(__ycxx::__detail::__const_iter_concept<_Iter>())::type;
+  using value_type = iter_value_t<_Iter>;
+  using difference_type = iter_difference_t<_Iter>;
+  using iterator_type = _Iter;
 
   basic_const_iterator()
-    requires default_initializable<Iter>
+    requires default_initializable<_Iter>
   = default;
-  constexpr basic_const_iterator(Iter x) : current_(static_cast<Iter&&>(x)) {}
-  template <convertible_to<Iter> U>
-  constexpr basic_const_iterator(basic_const_iterator<U> other) : current_(static_cast<U&&>(other.current_)) {}
-  template <ycxx::detail::different_from<basic_const_iterator> T>
-    requires convertible_to<T, Iter>
-  constexpr basic_const_iterator(T&& x) : current_(static_cast<T&&>(x)) {}
+  constexpr basic_const_iterator(_Iter __x) : __current_(static_cast<_Iter&&>(__x)) {}
+  template <convertible_to<_Iter> _Up>
+  constexpr basic_const_iterator(basic_const_iterator<_Up> other) : __current_(static_cast<_Up&&>(other.__current_)) {}
+  template <__ycxx::__detail::__different_from<basic_const_iterator> _Tp>
+    requires convertible_to<_Tp, _Iter>
+  constexpr basic_const_iterator(_Tp&& __x) : __current_(static_cast<_Tp&&>(__x)) {}
 
-  constexpr const Iter& base() const& noexcept { return current_; }
-  constexpr Iter base() && { return static_cast<Iter&&>(current_); }
+  constexpr const _Iter& base() const& noexcept { return __current_; }
+  constexpr _Iter base() && { return static_cast<_Iter&&>(__current_); }
 
-  constexpr reference operator*() const { return static_cast<reference>(*current_); }
+  constexpr reference operator*() const { return static_cast<reference>(*__current_); }
   constexpr const auto* operator->() const
-    requires is_lvalue_reference_v<iter_reference_t<Iter>> &&
-             same_as<remove_cvref_t<iter_reference_t<Iter>>, value_type>
+    requires is_lvalue_reference_v<iter_reference_t<_Iter>> &&
+             same_as<remove_cvref_t<iter_reference_t<_Iter>>, value_type>
   {
-    if constexpr (contiguous_iterator<Iter>)
-      return std::to_address(current_);
+    if constexpr (contiguous_iterator<_Iter>)
+      return std::to_address(__current_);
     else
-      return __builtin_addressof(*current_);
+      return __builtin_addressof(*__current_);
   }
 
   constexpr basic_const_iterator& operator++() {
-    ++current_;
+    ++__current_;
     return *this;
   }
-  constexpr void operator++(int) { ++current_; }
+  constexpr void operator++(int) { ++__current_; }
   constexpr basic_const_iterator operator++(int)
-    requires forward_iterator<Iter>
+    requires forward_iterator<_Iter>
   {
-    auto tmp = *this;
+    auto __tmp = *this;
     ++*this;
-    return tmp;
+    return __tmp;
   }
   constexpr basic_const_iterator& operator--()
-    requires bidirectional_iterator<Iter>
+    requires bidirectional_iterator<_Iter>
   {
-    --current_;
+    --__current_;
     return *this;
   }
   constexpr basic_const_iterator operator--(int)
-    requires bidirectional_iterator<Iter>
+    requires bidirectional_iterator<_Iter>
   {
-    auto tmp = *this;
+    auto __tmp = *this;
     --*this;
-    return tmp;
+    return __tmp;
   }
   constexpr basic_const_iterator& operator+=(difference_type n)
-    requires random_access_iterator<Iter>
+    requires random_access_iterator<_Iter>
   {
-    current_ += n;
+    __current_ += n;
     return *this;
   }
   constexpr basic_const_iterator& operator-=(difference_type n)
-    requires random_access_iterator<Iter>
+    requires random_access_iterator<_Iter>
   {
-    current_ -= n;
+    __current_ -= n;
     return *this;
   }
   constexpr reference operator[](difference_type n) const
-    requires random_access_iterator<Iter>
+    requires random_access_iterator<_Iter>
   {
-    return static_cast<reference>(current_[n]);
+    return static_cast<reference>(__current_[n]);
   }
 
-  template <sentinel_for<Iter> S>
-  constexpr bool operator==(const S& s) const {
-    return current_ == s;
+  template <sentinel_for<_Iter> _Sp>
+  constexpr bool operator==(const _Sp& s) const {
+    return __current_ == s;
   }
 
-  template <ycxx::detail::not_a_const_iterator CI>
-    requires ycxx::detail::constant_iterator<CI> && convertible_to<const Iter&, CI>
-  constexpr operator CI() const& {
-    return current_;
+  template <__ycxx::__detail::__not_a_const_iterator _CI>
+    requires __ycxx::__detail::__constant_iterator<_CI> && convertible_to<const _Iter&, _CI>
+  constexpr operator _CI() const& {
+    return __current_;
   }
-  template <ycxx::detail::not_a_const_iterator CI>
-    requires ycxx::detail::constant_iterator<CI> && convertible_to<Iter, CI>
-  constexpr operator CI() && {
-    return static_cast<Iter&&>(current_);
+  template <__ycxx::__detail::__not_a_const_iterator _CI>
+    requires __ycxx::__detail::__constant_iterator<_CI> && convertible_to<_Iter, _CI>
+  constexpr operator _CI() && {
+    return static_cast<_Iter&&>(__current_);
   }
 
   constexpr bool operator<(const basic_const_iterator& y) const
-    requires random_access_iterator<Iter>
+    requires random_access_iterator<_Iter>
   {
-    return current_ < y.current_;
+    return __current_ < y.__current_;
   }
   constexpr bool operator>(const basic_const_iterator& y) const
-    requires random_access_iterator<Iter>
+    requires random_access_iterator<_Iter>
   {
-    return current_ > y.current_;
+    return __current_ > y.__current_;
   }
   constexpr bool operator<=(const basic_const_iterator& y) const
-    requires random_access_iterator<Iter>
+    requires random_access_iterator<_Iter>
   {
-    return current_ <= y.current_;
+    return __current_ <= y.__current_;
   }
   constexpr bool operator>=(const basic_const_iterator& y) const
-    requires random_access_iterator<Iter>
+    requires random_access_iterator<_Iter>
   {
-    return current_ >= y.current_;
+    return __current_ >= y.__current_;
   }
   constexpr auto operator<=>(const basic_const_iterator& y) const
-    requires random_access_iterator<Iter> && three_way_comparable<Iter>
+    requires random_access_iterator<_Iter> && three_way_comparable<_Iter>
   {
-    return current_ <=> y.current_;
+    return __current_ <=> y.__current_;
   }
 
-  template <ycxx::detail::different_from<basic_const_iterator> I>
-  constexpr bool operator<(const I& y) const
-    requires random_access_iterator<Iter> && ycxx::detail::const_iter_less_with<Iter, I> &&
-             totally_ordered_with<Iter, I>
+  template <__ycxx::__detail::__different_from<basic_const_iterator> _Ip>
+  constexpr bool operator<(const _Ip& y) const
+    requires random_access_iterator<_Iter> && __ycxx::__detail::__const_iter_less_with<_Iter, _Ip> &&
+             totally_ordered_with<_Iter, _Ip>
   {
-    return current_ < y;
+    return __current_ < y;
   }
-  template <ycxx::detail::different_from<basic_const_iterator> I>
-  constexpr bool operator>(const I& y) const
-    requires random_access_iterator<Iter> && ycxx::detail::const_iter_less_with<Iter, I> &&
-             totally_ordered_with<Iter, I>
+  template <__ycxx::__detail::__different_from<basic_const_iterator> _Ip>
+  constexpr bool operator>(const _Ip& y) const
+    requires random_access_iterator<_Iter> && __ycxx::__detail::__const_iter_less_with<_Iter, _Ip> &&
+             totally_ordered_with<_Iter, _Ip>
   {
-    return current_ > y;
+    return __current_ > y;
   }
-  template <ycxx::detail::different_from<basic_const_iterator> I>
-  constexpr bool operator<=(const I& y) const
-    requires random_access_iterator<Iter> && ycxx::detail::const_iter_less_with<Iter, I> &&
-             totally_ordered_with<Iter, I>
+  template <__ycxx::__detail::__different_from<basic_const_iterator> _Ip>
+  constexpr bool operator<=(const _Ip& y) const
+    requires random_access_iterator<_Iter> && __ycxx::__detail::__const_iter_less_with<_Iter, _Ip> &&
+             totally_ordered_with<_Iter, _Ip>
   {
-    return current_ <= y;
+    return __current_ <= y;
   }
-  template <ycxx::detail::different_from<basic_const_iterator> I>
-  constexpr bool operator>=(const I& y) const
-    requires random_access_iterator<Iter> && ycxx::detail::const_iter_less_with<Iter, I> &&
-             totally_ordered_with<Iter, I>
+  template <__ycxx::__detail::__different_from<basic_const_iterator> _Ip>
+  constexpr bool operator>=(const _Ip& y) const
+    requires random_access_iterator<_Iter> && __ycxx::__detail::__const_iter_less_with<_Iter, _Ip> &&
+             totally_ordered_with<_Iter, _Ip>
   {
-    return current_ >= y;
+    return __current_ >= y;
   }
-  template <ycxx::detail::different_from<basic_const_iterator> I>
-  constexpr auto operator<=>(const I& y) const
-    requires random_access_iterator<Iter> && ycxx::detail::const_iter_less_with<Iter, I> &&
-             totally_ordered_with<Iter, I> && three_way_comparable_with<Iter, I>
+  template <__ycxx::__detail::__different_from<basic_const_iterator> _Ip>
+  constexpr auto operator<=>(const _Ip& y) const
+    requires random_access_iterator<_Iter> && __ycxx::__detail::__const_iter_less_with<_Iter, _Ip> &&
+             totally_ordered_with<_Iter, _Ip> && three_way_comparable_with<_Iter, _Ip>
   {
-    return current_ <=> y;
+    return __current_ <=> y;
   }
-  template <ycxx::detail::not_a_const_iterator I>
-  friend constexpr bool operator<(const I& x, const basic_const_iterator& y)
-    requires random_access_iterator<Iter> && ycxx::detail::const_iter_less_with<Iter, I> &&
-             totally_ordered_with<Iter, I>
+  template <__ycxx::__detail::__not_a_const_iterator _Ip>
+  friend constexpr bool operator<(const _Ip& __x, const basic_const_iterator& y)
+    requires random_access_iterator<_Iter> && __ycxx::__detail::__const_iter_less_with<_Iter, _Ip> &&
+             totally_ordered_with<_Iter, _Ip>
   {
-    return x < y.current_;
+    return __x < y.__current_;
   }
-  template <ycxx::detail::not_a_const_iterator I>
-  friend constexpr bool operator>(const I& x, const basic_const_iterator& y)
-    requires random_access_iterator<Iter> && ycxx::detail::const_iter_less_with<Iter, I> &&
-             totally_ordered_with<Iter, I>
+  template <__ycxx::__detail::__not_a_const_iterator _Ip>
+  friend constexpr bool operator>(const _Ip& __x, const basic_const_iterator& y)
+    requires random_access_iterator<_Iter> && __ycxx::__detail::__const_iter_less_with<_Iter, _Ip> &&
+             totally_ordered_with<_Iter, _Ip>
   {
-    return x > y.current_;
+    return __x > y.__current_;
   }
-  template <ycxx::detail::not_a_const_iterator I>
-  friend constexpr bool operator<=(const I& x, const basic_const_iterator& y)
-    requires random_access_iterator<Iter> && ycxx::detail::const_iter_less_with<Iter, I> &&
-             totally_ordered_with<Iter, I>
+  template <__ycxx::__detail::__not_a_const_iterator _Ip>
+  friend constexpr bool operator<=(const _Ip& __x, const basic_const_iterator& y)
+    requires random_access_iterator<_Iter> && __ycxx::__detail::__const_iter_less_with<_Iter, _Ip> &&
+             totally_ordered_with<_Iter, _Ip>
   {
-    return x <= y.current_;
+    return __x <= y.__current_;
   }
-  template <ycxx::detail::not_a_const_iterator I>
-  friend constexpr bool operator>=(const I& x, const basic_const_iterator& y)
-    requires random_access_iterator<Iter> && ycxx::detail::const_iter_less_with<Iter, I> &&
-             totally_ordered_with<Iter, I>
+  template <__ycxx::__detail::__not_a_const_iterator _Ip>
+  friend constexpr bool operator>=(const _Ip& __x, const basic_const_iterator& y)
+    requires random_access_iterator<_Iter> && __ycxx::__detail::__const_iter_less_with<_Iter, _Ip> &&
+             totally_ordered_with<_Iter, _Ip>
   {
-    return x >= y.current_;
+    return __x >= y.__current_;
   }
 
   friend constexpr basic_const_iterator operator+(const basic_const_iterator& i, difference_type n)
-    requires random_access_iterator<Iter>
+    requires random_access_iterator<_Iter>
   {
-    return basic_const_iterator(i.current_ + n);
+    return basic_const_iterator(i.__current_ + n);
   }
   friend constexpr basic_const_iterator operator+(difference_type n, const basic_const_iterator& i)
-    requires random_access_iterator<Iter>
+    requires random_access_iterator<_Iter>
   {
-    return basic_const_iterator(i.current_ + n);
+    return basic_const_iterator(i.__current_ + n);
   }
   friend constexpr basic_const_iterator operator-(const basic_const_iterator& i, difference_type n)
-    requires random_access_iterator<Iter>
+    requires random_access_iterator<_Iter>
   {
-    return basic_const_iterator(i.current_ - n);
+    return basic_const_iterator(i.__current_ - n);
   }
-  template <sized_sentinel_for<Iter> S>
-  constexpr difference_type operator-(const S& y) const {
-    return current_ - y;
+  template <sized_sentinel_for<_Iter> _Sp>
+  constexpr difference_type operator-(const _Sp& y) const {
+    return __current_ - y;
   }
   // The right operand is deduced (a basic_const_iterator or a class derived from it) instead of
   // converted to basic_const_iterator: an S whose associated classes include this one (such as
@@ -556,460 +556,460 @@ public:
   // sized_sentinel_for<S, Iter> ask for s - i, which considers this friend with the same S again
   // (Iter converts to basic_const_iterator): a constraint that depends on itself (libstdc++
   // PR 115046). Only through ADL with an operand that converts but is not derived does it differ.
-  template <ycxx::detail::not_a_const_iterator S, class Self>
-    requires derived_from<Self, basic_const_iterator> && sized_sentinel_for<S, Iter>
-  friend constexpr difference_type operator-(const S& x, const Self& y) {
-    return x - static_cast<const basic_const_iterator&>(y).current_;
+  template <__ycxx::__detail::__not_a_const_iterator _Sp, class _Self>
+    requires derived_from<_Self, basic_const_iterator> && sized_sentinel_for<_Sp, _Iter>
+  friend constexpr difference_type operator-(const _Sp& __x, const _Self& y) {
+    return __x - static_cast<const basic_const_iterator&>(y).__current_;
   }
 
-  friend constexpr rvalue_reference iter_move(const basic_const_iterator& i) noexcept(
-      noexcept(static_cast<rvalue_reference>(ranges::iter_move(i.current_)))) {
-    return static_cast<rvalue_reference>(ranges::iter_move(i.current_));
+  friend constexpr __rvalue_reference iter_move(const basic_const_iterator& i) noexcept(
+      noexcept(static_cast<__rvalue_reference>(ranges::iter_move(i.__current_)))) {
+    return static_cast<__rvalue_reference>(ranges::iter_move(i.__current_));
   }
 };
 
-template <class T, common_with<T> U>
-  requires input_iterator<common_type_t<T, U>>
-struct common_type<basic_const_iterator<T>, U> {
-  using type = basic_const_iterator<common_type_t<T, U>>;
+template <class _Tp, common_with<_Tp> _Up>
+  requires input_iterator<common_type_t<_Tp, _Up>>
+struct common_type<basic_const_iterator<_Tp>, _Up> {
+  using type = basic_const_iterator<common_type_t<_Tp, _Up>>;
 };
-template <class T, common_with<T> U>
-  requires input_iterator<common_type_t<T, U>>
-struct common_type<U, basic_const_iterator<T>> {
-  using type = basic_const_iterator<common_type_t<T, U>>;
+template <class _Tp, common_with<_Tp> _Up>
+  requires input_iterator<common_type_t<_Tp, _Up>>
+struct common_type<_Up, basic_const_iterator<_Tp>> {
+  using type = basic_const_iterator<common_type_t<_Tp, _Up>>;
 };
-template <class T, common_with<T> U>
-  requires input_iterator<common_type_t<T, U>>
-struct common_type<basic_const_iterator<T>, basic_const_iterator<U>> {
-  using type = basic_const_iterator<common_type_t<T, U>>;
+template <class _Tp, common_with<_Tp> _Up>
+  requires input_iterator<common_type_t<_Tp, _Up>>
+struct common_type<basic_const_iterator<_Tp>, basic_const_iterator<_Up>> {
+  using type = basic_const_iterator<common_type_t<_Tp, _Up>>;
 };
 
-template <input_iterator I>
-using const_iterator = conditional_t<ycxx::detail::constant_iterator<I>, I, basic_const_iterator<I>>;
+template <input_iterator _Ip>
+using const_iterator = conditional_t<__ycxx::__detail::__constant_iterator<_Ip>, _Ip, basic_const_iterator<_Ip>>;
 
 } // namespace std
 
-namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
-template <class S>
-struct const_sentinel_impl {
-  using type = S;
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+template <class _Sp>
+struct __const_sentinel_impl {
+  using type = _Sp;
 };
-template <std::input_iterator S>
-struct const_sentinel_impl<S> {
-  using type = std::const_iterator<S>;
+template <std::input_iterator _Sp>
+struct __const_sentinel_impl<_Sp> {
+  using type = std::const_iterator<_Sp>;
 };
-}} // namespace ycxx::detail
+}} // namespace __ycxx::__detail
 
-namespace [[gnu::visibility("hidden")]] std {
+namespace [[__gnu__::__visibility__("hidden")]] std {
 
-template <semiregular S>
-using const_sentinel = typename ycxx::detail::const_sentinel_impl<S>::type;
+template <semiregular _Sp>
+using const_sentinel = typename __ycxx::__detail::__const_sentinel_impl<_Sp>::type;
 
-template <input_iterator I>
-constexpr const_iterator<I> make_const_iterator(I it) {
-  return it;
+template <input_iterator _Ip>
+constexpr const_iterator<_Ip> make_const_iterator(_Ip __it) {
+  return __it;
 }
-template <semiregular S>
-constexpr const_sentinel<S> make_const_sentinel(S s) {
+template <semiregular _Sp>
+constexpr const_sentinel<_Sp> make_const_sentinel(_Sp s) {
   return s;
 }
 
 // =============================================================================================
 // move_iterator / move_sentinel
 // =============================================================================================
-template <semiregular S>
+template <semiregular _Sp>
 class move_sentinel {
-  S last_ = S();
+  _Sp __last_ = _Sp();
 
 public:
   constexpr move_sentinel() = default;
-  constexpr explicit move_sentinel(S s) : last_(static_cast<S&&>(s)) {}
-  template <class S2>
-    requires convertible_to<const S2&, S>
-  constexpr move_sentinel(const move_sentinel<S2>& s) : last_(s.base()) {}
-  template <class S2>
-    requires assignable_from<S&, const S2&>
-  constexpr move_sentinel& operator=(const move_sentinel<S2>& s) {
-    last_ = s.base();
+  constexpr explicit move_sentinel(_Sp s) : __last_(static_cast<_Sp&&>(s)) {}
+  template <class _S2>
+    requires convertible_to<const _S2&, _Sp>
+  constexpr move_sentinel(const move_sentinel<_S2>& s) : __last_(s.base()) {}
+  template <class _S2>
+    requires assignable_from<_Sp&, const _S2&>
+  constexpr move_sentinel& operator=(const move_sentinel<_S2>& s) {
+    __last_ = s.base();
     return *this;
   }
-  constexpr S base() const { return last_; }
+  constexpr _Sp base() const { return __last_; }
 };
 
 } // namespace std
 
-namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
-template <class I>
-consteval auto move_iter_concept() {
-  if constexpr (std::random_access_iterator<I>)
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+template <class _Ip>
+consteval auto __move_iter_concept() {
+  if constexpr (std::random_access_iterator<_Ip>)
     return std::type_identity<std::random_access_iterator_tag>{};
-  else if constexpr (std::bidirectional_iterator<I>)
+  else if constexpr (std::bidirectional_iterator<_Ip>)
     return std::type_identity<std::bidirectional_iterator_tag>{};
-  else if constexpr (std::forward_iterator<I>)
+  else if constexpr (std::forward_iterator<_Ip>)
     return std::type_identity<std::forward_iterator_tag>{};
   else
     return std::type_identity<std::input_iterator_tag>{};
 }
-}} // namespace ycxx::detail
+}} // namespace __ycxx::__detail
 
-// Base classes of std types live in ycxx::adl_free, a namespace that declares no functions:
+// Base classes of std types live in __ycxx::__adl_free, a namespace that declares no functions:
 // a base's namespace is an associated namespace for ADL ([basic.lookup.argdep]/3), so a
-// ycxx::detail base would expose every internal function to lookup on the std type.
-namespace [[gnu::visibility("hidden")]] ycxx { namespace adl_free {
-template <class I>
-struct move_iter_category {};
-template <class I>
-  requires requires { typename std::iterator_traits<I>::iterator_category; }
-struct move_iter_category<I> {
+// __ycxx::__detail base would expose every internal function to lookup on the std type.
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __adl_free {
+template <class _Ip>
+struct __move_iter_category {};
+template <class _Ip>
+  requires requires { typename std::iterator_traits<_Ip>::iterator_category; }
+struct __move_iter_category<_Ip> {
   using iterator_category =
-      std::conditional_t<std::derived_from<typename std::iterator_traits<I>::iterator_category,
+      std::conditional_t<std::derived_from<typename std::iterator_traits<_Ip>::iterator_category,
                                            std::random_access_iterator_tag>,
-                         std::random_access_iterator_tag, typename std::iterator_traits<I>::iterator_category>;
+                         std::random_access_iterator_tag, typename std::iterator_traits<_Ip>::iterator_category>;
 };
-}} // namespace ycxx::adl_free
+}} // namespace __ycxx::__adl_free
 
-namespace [[gnu::visibility("hidden")]] std {
+namespace [[__gnu__::__visibility__("hidden")]] std {
 
-template <class Iterator>
-class move_iterator : public ycxx::adl_free::move_iter_category<Iterator> {
-  Iterator current_ = Iterator();
+template <class _Iterator>
+class move_iterator : public __ycxx::__adl_free::__move_iter_category<_Iterator> {
+  _Iterator __current_ = _Iterator();
 
 public:
-  using iterator_type = Iterator;
-  using iterator_concept = typename decltype(ycxx::detail::move_iter_concept<Iterator>())::type;
-  using value_type = iter_value_t<Iterator>;
-  using difference_type = iter_difference_t<Iterator>;
-  using pointer = Iterator;
-  using reference = iter_rvalue_reference_t<Iterator>;
+  using iterator_type = _Iterator;
+  using iterator_concept = typename decltype(__ycxx::__detail::__move_iter_concept<_Iterator>())::type;
+  using value_type = iter_value_t<_Iterator>;
+  using difference_type = iter_difference_t<_Iterator>;
+  using pointer = _Iterator;
+  using reference = iter_rvalue_reference_t<_Iterator>;
 
   constexpr move_iterator()
-    requires default_initializable<Iterator>
+    requires default_initializable<_Iterator>
   = default;
-  constexpr explicit move_iterator(Iterator i) : current_(static_cast<Iterator&&>(i)) {}
-  template <class U>
-    requires(!is_same_v<U, Iterator> && convertible_to<const U&, Iterator>)
-  constexpr move_iterator(const move_iterator<U>& u) : current_(u.base()) {}
-  template <class U>
-    requires(!is_same_v<U, Iterator> && convertible_to<const U&, Iterator> && assignable_from<Iterator&, const U&>)
-  constexpr move_iterator& operator=(const move_iterator<U>& u) {
-    current_ = u.base();
+  constexpr explicit move_iterator(_Iterator i) : __current_(static_cast<_Iterator&&>(i)) {}
+  template <class _Up>
+    requires(!is_same_v<_Up, _Iterator> && convertible_to<const _Up&, _Iterator>)
+  constexpr move_iterator(const move_iterator<_Up>& __u) : __current_(__u.base()) {}
+  template <class _Up>
+    requires(!is_same_v<_Up, _Iterator> && convertible_to<const _Up&, _Iterator> && assignable_from<_Iterator&, const _Up&>)
+  constexpr move_iterator& operator=(const move_iterator<_Up>& __u) {
+    __current_ = __u.base();
     return *this;
   }
 
-  constexpr const Iterator& base() const& noexcept { return current_; }
-  constexpr Iterator base() && { return static_cast<Iterator&&>(current_); }
+  constexpr const _Iterator& base() const& noexcept { return __current_; }
+  constexpr _Iterator base() && { return static_cast<_Iterator&&>(__current_); }
 
-  constexpr reference operator*() const { return ranges::iter_move(current_); }
+  constexpr reference operator*() const { return ranges::iter_move(__current_); }
   [[deprecated("move_iterator::operator-> is deprecated ([depr.move.iter.elem])")]]
   constexpr pointer operator->() const {
-    return current_;
+    return __current_;
   }
 
   constexpr move_iterator& operator++() {
-    ++current_;
+    ++__current_;
     return *this;
   }
   constexpr auto operator++(int) {
-    if constexpr (forward_iterator<Iterator>) {
-      move_iterator tmp = *this;
-      ++current_;
-      return tmp;
+    if constexpr (forward_iterator<_Iterator>) {
+      move_iterator __tmp = *this;
+      ++__current_;
+      return __tmp;
     } else {
-      ++current_;
+      ++__current_;
     }
   }
   constexpr move_iterator& operator--() {
-    --current_;
+    --__current_;
     return *this;
   }
   constexpr move_iterator operator--(int) {
-    move_iterator tmp = *this;
-    --current_;
-    return tmp;
+    move_iterator __tmp = *this;
+    --__current_;
+    return __tmp;
   }
-  constexpr move_iterator operator+(difference_type n) const { return move_iterator(current_ + n); }
+  constexpr move_iterator operator+(difference_type n) const { return move_iterator(__current_ + n); }
   constexpr move_iterator& operator+=(difference_type n) {
-    current_ += n;
+    __current_ += n;
     return *this;
   }
-  constexpr move_iterator operator-(difference_type n) const { return move_iterator(current_ - n); }
+  constexpr move_iterator operator-(difference_type n) const { return move_iterator(__current_ - n); }
   constexpr move_iterator& operator-=(difference_type n) {
-    current_ -= n;
+    __current_ -= n;
     return *this;
   }
-  constexpr reference operator[](difference_type n) const { return ranges::iter_move(current_ + n); }
+  constexpr reference operator[](difference_type n) const { return ranges::iter_move(__current_ + n); }
 
-  template <sentinel_for<Iterator> S>
-  friend constexpr bool operator==(const move_iterator& x, const move_sentinel<S>& y) {
-    return x.base() == y.base();
+  template <sentinel_for<_Iterator> _Sp>
+  friend constexpr bool operator==(const move_iterator& __x, const move_sentinel<_Sp>& y) {
+    return __x.base() == y.base();
   }
-  template <sized_sentinel_for<Iterator> S>
-  friend constexpr iter_difference_t<Iterator> operator-(const move_sentinel<S>& x, const move_iterator& y) {
-    return x.base() - y.base();
+  template <sized_sentinel_for<_Iterator> _Sp>
+  friend constexpr iter_difference_t<_Iterator> operator-(const move_sentinel<_Sp>& __x, const move_iterator& y) {
+    return __x.base() - y.base();
   }
-  template <sized_sentinel_for<Iterator> S>
-  friend constexpr iter_difference_t<Iterator> operator-(const move_iterator& x, const move_sentinel<S>& y) {
-    return x.base() - y.base();
+  template <sized_sentinel_for<_Iterator> _Sp>
+  friend constexpr iter_difference_t<_Iterator> operator-(const move_iterator& __x, const move_sentinel<_Sp>& y) {
+    return __x.base() - y.base();
   }
-  friend constexpr iter_rvalue_reference_t<Iterator> iter_move(const move_iterator& i) noexcept(
-      noexcept(ranges::iter_move(i.current_))) {
-    return ranges::iter_move(i.current_);
+  friend constexpr iter_rvalue_reference_t<_Iterator> iter_move(const move_iterator& i) noexcept(
+      noexcept(ranges::iter_move(i.__current_))) {
+    return ranges::iter_move(i.__current_);
   }
-  template <indirectly_swappable<Iterator> Iterator2>
-  friend constexpr void iter_swap(const move_iterator& x, const move_iterator<Iterator2>& y) noexcept(
-      noexcept(ranges::iter_swap(x.current_, y.base()))) {
-    ranges::iter_swap(x.current_, y.base());
+  template <indirectly_swappable<_Iterator> _Iterator2>
+  friend constexpr void iter_swap(const move_iterator& __x, const move_iterator<_Iterator2>& y) noexcept(
+      noexcept(ranges::iter_swap(__x.__current_, y.base()))) {
+    ranges::iter_swap(__x.__current_, y.base());
   }
 };
 
-template <class I1, class I2>
-  requires requires(const I1& x, const I2& y) {
-    { x == y } -> convertible_to<bool>;
+template <class _I1, class _I2>
+  requires requires(const _I1& __x, const _I2& y) {
+    { __x == y } -> convertible_to<bool>;
   }
-constexpr bool operator==(const move_iterator<I1>& x, const move_iterator<I2>& y) {
-  return x.base() == y.base();
+constexpr bool operator==(const move_iterator<_I1>& __x, const move_iterator<_I2>& y) {
+  return __x.base() == y.base();
 }
-template <class I1, class I2>
-  requires requires(const I1& x, const I2& y) {
-    { x < y } -> convertible_to<bool>;
+template <class _I1, class _I2>
+  requires requires(const _I1& __x, const _I2& y) {
+    { __x < y } -> convertible_to<bool>;
   }
-constexpr bool operator<(const move_iterator<I1>& x, const move_iterator<I2>& y) {
-  return x.base() < y.base();
+constexpr bool operator<(const move_iterator<_I1>& __x, const move_iterator<_I2>& y) {
+  return __x.base() < y.base();
 }
-template <class I1, class I2>
-  requires requires(const I1& x, const I2& y) {
-    { y < x } -> convertible_to<bool>;
+template <class _I1, class _I2>
+  requires requires(const _I1& __x, const _I2& y) {
+    { y < __x } -> convertible_to<bool>;
   }
-constexpr bool operator>(const move_iterator<I1>& x, const move_iterator<I2>& y) {
-  return y < x;
+constexpr bool operator>(const move_iterator<_I1>& __x, const move_iterator<_I2>& y) {
+  return y < __x;
 }
-template <class I1, class I2>
-  requires requires(const I1& x, const I2& y) {
-    { y < x } -> convertible_to<bool>;
+template <class _I1, class _I2>
+  requires requires(const _I1& __x, const _I2& y) {
+    { y < __x } -> convertible_to<bool>;
   }
-constexpr bool operator<=(const move_iterator<I1>& x, const move_iterator<I2>& y) {
-  return !(y < x);
+constexpr bool operator<=(const move_iterator<_I1>& __x, const move_iterator<_I2>& y) {
+  return !(y < __x);
 }
-template <class I1, class I2>
-  requires requires(const I1& x, const I2& y) {
-    { x < y } -> convertible_to<bool>;
+template <class _I1, class _I2>
+  requires requires(const _I1& __x, const _I2& y) {
+    { __x < y } -> convertible_to<bool>;
   }
-constexpr bool operator>=(const move_iterator<I1>& x, const move_iterator<I2>& y) {
-  return !(x < y);
+constexpr bool operator>=(const move_iterator<_I1>& __x, const move_iterator<_I2>& y) {
+  return !(__x < y);
 }
-template <class I1, three_way_comparable_with<I1> I2>
-constexpr compare_three_way_result_t<I1, I2> operator<=>(const move_iterator<I1>& x, const move_iterator<I2>& y) {
-  return x.base() <=> y.base();
+template <class _I1, three_way_comparable_with<_I1> _I2>
+constexpr compare_three_way_result_t<_I1, _I2> operator<=>(const move_iterator<_I1>& __x, const move_iterator<_I2>& y) {
+  return __x.base() <=> y.base();
 }
-template <class I1, class I2>
-constexpr auto operator-(const move_iterator<I1>& x, const move_iterator<I2>& y) -> decltype(x.base() - y.base()) {
-  return x.base() - y.base();
+template <class _I1, class _I2>
+constexpr auto operator-(const move_iterator<_I1>& __x, const move_iterator<_I2>& y) -> decltype(__x.base() - y.base()) {
+  return __x.base() - y.base();
 }
-template <class I>
-  requires requires(const I& i, iter_difference_t<I> n) {
-    { i + n } -> same_as<I>;
+template <class _Ip>
+  requires requires(const _Ip& i, iter_difference_t<_Ip> n) {
+    { i + n } -> same_as<_Ip>;
   }
-constexpr move_iterator<I> operator+(iter_difference_t<I> n, const move_iterator<I>& x) {
-  return x + n;
+constexpr move_iterator<_Ip> operator+(iter_difference_t<_Ip> n, const move_iterator<_Ip>& __x) {
+  return __x + n;
 }
-template <class I>
-constexpr move_iterator<I> make_move_iterator(I i) {
-  return move_iterator<I>(static_cast<I&&>(i));
+template <class _Ip>
+constexpr move_iterator<_Ip> make_move_iterator(_Ip i) {
+  return move_iterator<_Ip>(static_cast<_Ip&&>(i));
 }
-template <class I1, class I2>
-  requires(!sized_sentinel_for<I1, I2>)
-constexpr bool disable_sized_sentinel_for<move_iterator<I1>, move_iterator<I2>> = true;
+template <class _I1, class _I2>
+  requires(!sized_sentinel_for<_I1, _I2>)
+constexpr bool disable_sized_sentinel_for<move_iterator<_I1>, move_iterator<_I2>> = true;
 
 // =============================================================================================
 // counted_iterator
 // =============================================================================================
 } // namespace std
 
-// Base classes of std types live in ycxx::adl_free, a namespace that declares no functions:
+// Base classes of std types live in __ycxx::__adl_free, a namespace that declares no functions:
 // a base's namespace is an associated namespace for ADL ([basic.lookup.argdep]/3), so a
-// ycxx::detail base would expose every internal function to lookup on the std type.
-namespace [[gnu::visibility("hidden")]] ycxx { namespace adl_free {
-template <class I>
-struct counted_value_type {};
-template <std::indirectly_readable I>
-struct counted_value_type<I> {
-  using value_type = std::iter_value_t<I>;
+// __ycxx::__detail base would expose every internal function to lookup on the std type.
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __adl_free {
+template <class _Ip>
+struct __counted_value_type {};
+template <std::indirectly_readable _Ip>
+struct __counted_value_type<_Ip> {
+  using value_type = std::iter_value_t<_Ip>;
 };
-template <class I>
-struct counted_concept {};
-template <class I>
-  requires requires { typename I::iterator_concept; }
-struct counted_concept<I> {
-  using iterator_concept = typename I::iterator_concept;
+template <class _Ip>
+struct __counted_concept {};
+template <class _Ip>
+  requires requires { typename _Ip::iterator_concept; }
+struct __counted_concept<_Ip> {
+  using iterator_concept = typename _Ip::iterator_concept;
 };
-template <class I>
-struct counted_category {};
-template <class I>
-  requires requires { typename I::iterator_category; }
-struct counted_category<I> {
-  using iterator_category = typename I::iterator_category;
+template <class _Ip>
+struct __counted_category {};
+template <class _Ip>
+  requires requires { typename _Ip::iterator_category; }
+struct __counted_category<_Ip> {
+  using iterator_category = typename _Ip::iterator_category;
 };
-}} // namespace ycxx::adl_free
+}} // namespace __ycxx::__adl_free
 
-namespace [[gnu::visibility("hidden")]] std {
+namespace [[__gnu__::__visibility__("hidden")]] std {
 
-template <input_or_output_iterator I>
-class counted_iterator : public ycxx::adl_free::counted_value_type<I>,
-                         public ycxx::adl_free::counted_concept<I>,
-                         public ycxx::adl_free::counted_category<I> {
-  template <input_or_output_iterator I2>
+template <input_or_output_iterator _Ip>
+class counted_iterator : public __ycxx::__adl_free::__counted_value_type<_Ip>,
+                         public __ycxx::__adl_free::__counted_concept<_Ip>,
+                         public __ycxx::__adl_free::__counted_category<_Ip> {
+  template <input_or_output_iterator _I2>
   friend class counted_iterator;
 
-  I current_ = I();
-  iter_difference_t<I> length_ = 0;
+  _Ip __current_ = _Ip();
+  iter_difference_t<_Ip> __length_ = 0;
 
 public:
-  using iterator_type = I;
-  using difference_type = iter_difference_t<I>;
+  using iterator_type = _Ip;
+  using difference_type = iter_difference_t<_Ip>;
 
   constexpr counted_iterator()
-    requires default_initializable<I>
+    requires default_initializable<_Ip>
   = default;
-  constexpr counted_iterator(I x, iter_difference_t<I> n) : current_(static_cast<I&&>(x)), length_(n) {
-    ycxx::detail::precondition(n >= 0, "counted_iterator: negative count");
+  constexpr counted_iterator(_Ip __x, iter_difference_t<_Ip> n) : __current_(static_cast<_Ip&&>(__x)), __length_(n) {
+    __ycxx::__detail::__precondition(n >= 0, "counted_iterator: negative count");
   }
-  template <class I2>
-    requires convertible_to<const I2&, I>
-  constexpr counted_iterator(const counted_iterator<I2>& x) : current_(x.current_), length_(x.length_) {}
-  template <class I2>
-    requires assignable_from<I&, const I2&>
-  constexpr counted_iterator& operator=(const counted_iterator<I2>& x) {
-    current_ = x.current_;
-    length_ = x.length_;
+  template <class _I2>
+    requires convertible_to<const _I2&, _Ip>
+  constexpr counted_iterator(const counted_iterator<_I2>& __x) : __current_(__x.__current_), __length_(__x.__length_) {}
+  template <class _I2>
+    requires assignable_from<_Ip&, const _I2&>
+  constexpr counted_iterator& operator=(const counted_iterator<_I2>& __x) {
+    __current_ = __x.__current_;
+    __length_ = __x.__length_;
     return *this;
   }
 
-  constexpr const I& base() const& noexcept { return current_; }
-  constexpr I base() && { return static_cast<I&&>(current_); }
-  constexpr iter_difference_t<I> count() const noexcept { return length_; }
+  constexpr const _Ip& base() const& noexcept { return __current_; }
+  constexpr _Ip base() && { return static_cast<_Ip&&>(__current_); }
+  constexpr iter_difference_t<_Ip> count() const noexcept { return __length_; }
 
-  constexpr decltype(auto) operator*() { return *current_; }
+  constexpr decltype(auto) operator*() { return *__current_; }
   constexpr decltype(auto) operator*() const
-    requires ycxx::detail::dereferenceable<const I>
+    requires __ycxx::__detail::__dereferenceable<const _Ip>
   {
-    return *current_;
+    return *__current_;
   }
   constexpr auto operator->() const noexcept
-    requires contiguous_iterator<I>
+    requires contiguous_iterator<_Ip>
   {
-    return std::to_address(current_);
+    return std::to_address(__current_);
   }
 
   constexpr counted_iterator& operator++() {
-    ++current_;
-    --length_;
+    ++__current_;
+    --__length_;
     return *this;
   }
   constexpr decltype(auto) operator++(int) {
-    if constexpr (forward_iterator<I>) {
-      counted_iterator tmp = *this;
+    if constexpr (forward_iterator<_Ip>) {
+      counted_iterator __tmp = *this;
       ++*this;
-      return tmp;
+      return __tmp;
     } else {
-      --length_;
-      if constexpr (ycxx::detail::cfg::exceptions) {
+      --__length_;
+      if constexpr (__ycxx::__detail::__cfg::exceptions) {
         try {
-          return current_++;
+          return __current_++;
         } catch (...) {
-          ++length_;
+          ++__length_;
           throw;
         }
       } else {
-        return current_++;
+        return __current_++;
       }
     }
   }
   constexpr counted_iterator& operator--()
-    requires bidirectional_iterator<I>
+    requires bidirectional_iterator<_Ip>
   {
-    --current_;
-    ++length_;
+    --__current_;
+    ++__length_;
     return *this;
   }
   constexpr counted_iterator operator--(int)
-    requires bidirectional_iterator<I>
+    requires bidirectional_iterator<_Ip>
   {
-    counted_iterator tmp = *this;
+    counted_iterator __tmp = *this;
     --*this;
-    return tmp;
+    return __tmp;
   }
-  constexpr counted_iterator operator+(iter_difference_t<I> n) const
-    requires random_access_iterator<I>
+  constexpr counted_iterator operator+(iter_difference_t<_Ip> n) const
+    requires random_access_iterator<_Ip>
   {
-    return counted_iterator(current_ + n, length_ - n);
+    return counted_iterator(__current_ + n, __length_ - n);
   }
-  friend constexpr counted_iterator operator+(iter_difference_t<I> n, const counted_iterator& x)
-    requires random_access_iterator<I>
+  friend constexpr counted_iterator operator+(iter_difference_t<_Ip> n, const counted_iterator& __x)
+    requires random_access_iterator<_Ip>
   {
-    return x + n;
+    return __x + n;
   }
-  constexpr counted_iterator& operator+=(iter_difference_t<I> n)
-    requires random_access_iterator<I>
+  constexpr counted_iterator& operator+=(iter_difference_t<_Ip> n)
+    requires random_access_iterator<_Ip>
   {
-    current_ += n;
-    length_ -= n;
+    __current_ += n;
+    __length_ -= n;
     return *this;
   }
-  constexpr counted_iterator operator-(iter_difference_t<I> n) const
-    requires random_access_iterator<I>
+  constexpr counted_iterator operator-(iter_difference_t<_Ip> n) const
+    requires random_access_iterator<_Ip>
   {
-    return counted_iterator(current_ - n, length_ + n);
+    return counted_iterator(__current_ - n, __length_ + n);
   }
-  template <common_with<I> I2>
-  friend constexpr iter_difference_t<I2> operator-(const counted_iterator& x, const counted_iterator<I2>& y) {
-    return y.length_ - x.length_;
+  template <common_with<_Ip> _I2>
+  friend constexpr iter_difference_t<_I2> operator-(const counted_iterator& __x, const counted_iterator<_I2>& y) {
+    return y.__length_ - __x.__length_;
   }
-  friend constexpr iter_difference_t<I> operator-(const counted_iterator& x, default_sentinel_t) noexcept {
-    return -x.length_;
+  friend constexpr iter_difference_t<_Ip> operator-(const counted_iterator& __x, default_sentinel_t) noexcept {
+    return -__x.__length_;
   }
-  friend constexpr iter_difference_t<I> operator-(default_sentinel_t, const counted_iterator& y) noexcept {
-    return y.length_;
+  friend constexpr iter_difference_t<_Ip> operator-(default_sentinel_t, const counted_iterator& y) noexcept {
+    return y.__length_;
   }
-  constexpr counted_iterator& operator-=(iter_difference_t<I> n)
-    requires random_access_iterator<I>
+  constexpr counted_iterator& operator-=(iter_difference_t<_Ip> n)
+    requires random_access_iterator<_Ip>
   {
-    current_ -= n;
-    length_ += n;
+    __current_ -= n;
+    __length_ += n;
     return *this;
   }
-  constexpr decltype(auto) operator[](iter_difference_t<I> n) const
-    requires random_access_iterator<I>
+  constexpr decltype(auto) operator[](iter_difference_t<_Ip> n) const
+    requires random_access_iterator<_Ip>
   {
-    return current_[n];
+    return __current_[n];
   }
 
-  template <common_with<I> I2>
-  friend constexpr bool operator==(const counted_iterator& x, const counted_iterator<I2>& y) {
-    return x.length_ == y.length_;
+  template <common_with<_Ip> _I2>
+  friend constexpr bool operator==(const counted_iterator& __x, const counted_iterator<_I2>& y) {
+    return __x.__length_ == y.__length_;
   }
-  friend constexpr bool operator==(const counted_iterator& x, default_sentinel_t) noexcept { return x.length_ == 0; }
-  template <common_with<I> I2>
-  friend constexpr strong_ordering operator<=>(const counted_iterator& x, const counted_iterator<I2>& y) {
-    return y.length_ <=> x.length_;
+  friend constexpr bool operator==(const counted_iterator& __x, default_sentinel_t) noexcept { return __x.__length_ == 0; }
+  template <common_with<_Ip> _I2>
+  friend constexpr strong_ordering operator<=>(const counted_iterator& __x, const counted_iterator<_I2>& y) {
+    return y.__length_ <=> __x.__length_;
   }
 
-  friend constexpr iter_rvalue_reference_t<I> iter_move(const counted_iterator& i) noexcept(
-      noexcept(ranges::iter_move(i.current_)))
-    requires input_iterator<I>
+  friend constexpr iter_rvalue_reference_t<_Ip> iter_move(const counted_iterator& i) noexcept(
+      noexcept(ranges::iter_move(i.__current_)))
+    requires input_iterator<_Ip>
   {
-    return ranges::iter_move(i.current_);
+    return ranges::iter_move(i.__current_);
   }
-  template <indirectly_swappable<I> I2>
-  friend constexpr void iter_swap(const counted_iterator& x, const counted_iterator<I2>& y) noexcept(
-      noexcept(ranges::iter_swap(x.current_, y.current_))) {
-    ranges::iter_swap(x.current_, y.current_);
+  template <indirectly_swappable<_Ip> _I2>
+  friend constexpr void iter_swap(const counted_iterator& __x, const counted_iterator<_I2>& y) noexcept(
+      noexcept(ranges::iter_swap(__x.__current_, y.__current_))) {
+    ranges::iter_swap(__x.__current_, y.__current_);
   }
 };
 
-template <input_iterator I>
-  requires same_as<ycxx::detail::iter_traits<I>, iterator_traits<I>>
-struct iterator_traits<counted_iterator<I>> : iterator_traits<I> {
-  using pointer = conditional_t<contiguous_iterator<I>, add_pointer_t<iter_reference_t<I>>, void>;
+template <input_iterator _Ip>
+  requires same_as<__ycxx::__detail::__iter_traits<_Ip>, iterator_traits<_Ip>>
+struct iterator_traits<counted_iterator<_Ip>> : iterator_traits<_Ip> {
+  using pointer = conditional_t<contiguous_iterator<_Ip>, add_pointer_t<iter_reference_t<_Ip>>, void>;
 };
 
 // =============================================================================================
@@ -1017,252 +1017,252 @@ struct iterator_traits<counted_iterator<I>> : iterator_traits<I> {
 // =============================================================================================
 } // namespace std
 
-namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
 // [common.iter.nav]/5: the second condition of it++'s first form. A concept, so that
 // iter_value_t<I> is formed only for a readable I (its conjuncts are checked in order).
-template <class I>
-concept common_iter_postfix_proxy = std::indirectly_readable<I> &&
-                                    std::constructible_from<std::iter_value_t<I>, std::iter_reference_t<I>> &&
-                                    std::move_constructible<std::iter_value_t<I>>;
-}} // namespace ycxx::detail
+template <class _Ip>
+concept __common_iter_postfix_proxy = std::indirectly_readable<_Ip> &&
+                                    std::constructible_from<std::iter_value_t<_Ip>, std::iter_reference_t<_Ip>> &&
+                                    std::move_constructible<std::iter_value_t<_Ip>>;
+}} // namespace __ycxx::__detail
 
-namespace [[gnu::visibility("hidden")]] std {
+namespace [[__gnu__::__visibility__("hidden")]] std {
 
-template <input_or_output_iterator I, sentinel_for<I> S>
-  requires(!same_as<I, S> && copyable<I>)
+template <input_or_output_iterator _Ip, sentinel_for<_Ip> _Sp>
+  requires(!same_as<_Ip, _Sp> && copyable<_Ip>)
 class common_iterator {
-  template <input_or_output_iterator I2, sentinel_for<I2> S2>
-    requires(!same_as<I2, S2> && copyable<I2>)
+  template <input_or_output_iterator _I2, sentinel_for<_I2> _S2>
+    requires(!same_as<_I2, _S2> && copyable<_I2>)
   friend class common_iterator;
 
   // A two-alternative variant: index 0 = iterator, 1 = sentinel.
   union {
-    I it_;
-    S sent_;
+    _Ip __it_;
+    _Sp __sent_;
   };
-  unsigned char index_;
+  unsigned char __index_;
 
   class proxy {
-    iter_value_t<I> keep_;
+    iter_value_t<_Ip> __keep_;
 
   public:
-    constexpr proxy(iter_reference_t<I>&& x) : keep_(static_cast<iter_reference_t<I>&&>(x)) {}
-    constexpr const iter_value_t<I>* operator->() const noexcept { return __builtin_addressof(keep_); }
+    constexpr proxy(iter_reference_t<_Ip>&& __x) : __keep_(static_cast<iter_reference_t<_Ip>&&>(__x)) {}
+    constexpr const iter_value_t<_Ip>* operator->() const noexcept { return __builtin_addressof(__keep_); }
   };
-  class postfix_proxy {
-    iter_value_t<I> keep_;
+  class __postfix_proxy {
+    iter_value_t<_Ip> __keep_;
 
   public:
-    constexpr postfix_proxy(iter_reference_t<I>&& x) : keep_(static_cast<iter_reference_t<I>&&>(x)) {}
-    constexpr const iter_value_t<I>& operator*() const noexcept { return keep_; }
+    constexpr __postfix_proxy(iter_reference_t<_Ip>&& __x) : __keep_(static_cast<iter_reference_t<_Ip>&&>(__x)) {}
+    constexpr const iter_value_t<_Ip>& operator*() const noexcept { return __keep_; }
   };
 
   constexpr void destroy() noexcept {
-    if (index_ == 0)
-      std::destroy_at(__builtin_addressof(it_));
-    else if (index_ == 1)
-      std::destroy_at(__builtin_addressof(sent_));
+    if (__index_ == 0)
+      std::destroy_at(__builtin_addressof(__it_));
+    else if (__index_ == 1)
+      std::destroy_at(__builtin_addressof(__sent_));
   }
-  template <class Other>
-  constexpr void copy_from(Other&& o) {
-    if (o.index_ == 0)
-      std::construct_at(__builtin_addressof(it_), static_cast<Other&&>(o).it_);
-    else if (o.index_ == 1)
-      std::construct_at(__builtin_addressof(sent_), static_cast<Other&&>(o).sent_);
-    index_ = o.index_; // 2 (valueless) copies as valueless
+  template <class _Other>
+  constexpr void __copy_from(_Other&& __o) {
+    if (__o.__index_ == 0)
+      std::construct_at(__builtin_addressof(__it_), static_cast<_Other&&>(__o).__it_);
+    else if (__o.__index_ == 1)
+      std::construct_at(__builtin_addressof(__sent_), static_cast<_Other&&>(__o).__sent_);
+    __index_ = __o.__index_; // 2 (valueless) copies as valueless
   }
 
 public:
   constexpr common_iterator()
-    requires default_initializable<I>
-      : it_(), index_(0) {}
-  constexpr common_iterator(I i) : it_(static_cast<I&&>(i)), index_(0) {}
-  constexpr common_iterator(S s) : sent_(static_cast<S&&>(s)), index_(1) {}
-  template <class I2, class S2>
-    requires convertible_to<const I2&, I> && convertible_to<const S2&, S>
-  constexpr common_iterator(const common_iterator<I2, S2>& x) : index_(x.index_) {
-    if (x.index_ == 0)
-      std::construct_at(__builtin_addressof(it_), x.it_);
+    requires default_initializable<_Ip>
+      : __it_(), __index_(0) {}
+  constexpr common_iterator(_Ip i) : __it_(static_cast<_Ip&&>(i)), __index_(0) {}
+  constexpr common_iterator(_Sp s) : __sent_(static_cast<_Sp&&>(s)), __index_(1) {}
+  template <class _I2, class _S2>
+    requires convertible_to<const _I2&, _Ip> && convertible_to<const _S2&, _Sp>
+  constexpr common_iterator(const common_iterator<_I2, _S2>& __x) : __index_(__x.__index_) {
+    if (__x.__index_ == 0)
+      std::construct_at(__builtin_addressof(__it_), __x.__it_);
     else
-      std::construct_at(__builtin_addressof(sent_), x.sent_);
+      std::construct_at(__builtin_addressof(__sent_), __x.__sent_);
   }
-  constexpr common_iterator(const common_iterator& x)
-    requires(is_trivially_copy_constructible_v<I> && is_trivially_copy_constructible_v<S>)
+  constexpr common_iterator(const common_iterator& __x)
+    requires(is_trivially_copy_constructible_v<_Ip> && is_trivially_copy_constructible_v<_Sp>)
   = default;
-  constexpr common_iterator(const common_iterator& x) : index_(2) { copy_from(x); }
-  constexpr common_iterator(common_iterator&& x)
-    requires(is_trivially_move_constructible_v<I> && is_trivially_move_constructible_v<S>)
+  constexpr common_iterator(const common_iterator& __x) : __index_(2) { __copy_from(__x); }
+  constexpr common_iterator(common_iterator&& __x)
+    requires(is_trivially_move_constructible_v<_Ip> && is_trivially_move_constructible_v<_Sp>)
   = default;
-  constexpr common_iterator(common_iterator&& x) : index_(2) { copy_from(static_cast<common_iterator&&>(x)); }
+  constexpr common_iterator(common_iterator&& __x) : __index_(2) { __copy_from(static_cast<common_iterator&&>(__x)); }
   constexpr ~common_iterator()
-    requires(is_trivially_destructible_v<I> && is_trivially_destructible_v<S>)
+    requires(is_trivially_destructible_v<_Ip> && is_trivially_destructible_v<_Sp>)
   = default;
   constexpr ~common_iterator() { destroy(); }
 
-  template <class I2, class S2>
-    requires convertible_to<const I2&, I> && convertible_to<const S2&, S> && assignable_from<I&, const I2&> &&
-             assignable_from<S&, const S2&>
-  constexpr common_iterator& operator=(const common_iterator<I2, S2>& x) {
-    if (index_ == x.index_) {
-      if (index_ == 0)
-        it_ = x.it_;
+  template <class _I2, class _S2>
+    requires convertible_to<const _I2&, _Ip> && convertible_to<const _S2&, _Sp> && assignable_from<_Ip&, const _I2&> &&
+             assignable_from<_Sp&, const _S2&>
+  constexpr common_iterator& operator=(const common_iterator<_I2, _S2>& __x) {
+    if (__index_ == __x.__index_) {
+      if (__index_ == 0)
+        __it_ = __x.__it_;
       else
-        sent_ = x.sent_;
+        __sent_ = __x.__sent_;
     } else {
       destroy();
-      index_ = 2;
-      if (x.index_ == 0)
-        std::construct_at(__builtin_addressof(it_), x.it_);
+      __index_ = 2;
+      if (__x.__index_ == 0)
+        std::construct_at(__builtin_addressof(__it_), __x.__it_);
       else
-        std::construct_at(__builtin_addressof(sent_), x.sent_);
-      index_ = x.index_;
+        std::construct_at(__builtin_addressof(__sent_), __x.__sent_);
+      __index_ = __x.__index_;
     }
     return *this;
   }
-  constexpr common_iterator& operator=(const common_iterator& x)
-    requires(is_trivially_copy_assignable_v<I> && is_trivially_copy_assignable_v<S> &&
-             is_trivially_copy_constructible_v<I> && is_trivially_copy_constructible_v<S> &&
-             is_trivially_destructible_v<I> && is_trivially_destructible_v<S>)
+  constexpr common_iterator& operator=(const common_iterator& __x)
+    requires(is_trivially_copy_assignable_v<_Ip> && is_trivially_copy_assignable_v<_Sp> &&
+             is_trivially_copy_constructible_v<_Ip> && is_trivially_copy_constructible_v<_Sp> &&
+             is_trivially_destructible_v<_Ip> && is_trivially_destructible_v<_Sp>)
   = default;
-  constexpr common_iterator& operator=(const common_iterator& x) {
-    if (this != &x) {
-      if (index_ == x.index_ && index_ == 0)
-        it_ = x.it_;
-      else if (index_ == x.index_ && index_ == 1)
-        sent_ = x.sent_;
+  constexpr common_iterator& operator=(const common_iterator& __x) {
+    if (this != &__x) {
+      if (__index_ == __x.__index_ && __index_ == 0)
+        __it_ = __x.__it_;
+      else if (__index_ == __x.__index_ && __index_ == 1)
+        __sent_ = __x.__sent_;
       else {
         destroy();
-        index_ = 2;
-        copy_from(x);
+        __index_ = 2;
+        __copy_from(__x);
       }
     }
     return *this;
   }
-  constexpr common_iterator& operator=(common_iterator&& x)
-    requires(is_trivially_move_assignable_v<I> && is_trivially_move_assignable_v<S> &&
-             is_trivially_move_constructible_v<I> && is_trivially_move_constructible_v<S> &&
-             is_trivially_destructible_v<I> && is_trivially_destructible_v<S>)
+  constexpr common_iterator& operator=(common_iterator&& __x)
+    requires(is_trivially_move_assignable_v<_Ip> && is_trivially_move_assignable_v<_Sp> &&
+             is_trivially_move_constructible_v<_Ip> && is_trivially_move_constructible_v<_Sp> &&
+             is_trivially_destructible_v<_Ip> && is_trivially_destructible_v<_Sp>)
   = default;
-  constexpr common_iterator& operator=(common_iterator&& x) {
-    if (index_ == x.index_ && index_ == 0)
-      it_ = static_cast<I&&>(x.it_);
-    else if (index_ == x.index_ && index_ == 1)
-      sent_ = static_cast<S&&>(x.sent_);
+  constexpr common_iterator& operator=(common_iterator&& __x) {
+    if (__index_ == __x.__index_ && __index_ == 0)
+      __it_ = static_cast<_Ip&&>(__x.__it_);
+    else if (__index_ == __x.__index_ && __index_ == 1)
+      __sent_ = static_cast<_Sp&&>(__x.__sent_);
     else {
       destroy();
-      index_ = 2;
-      copy_from(static_cast<common_iterator&&>(x));
+      __index_ = 2;
+      __copy_from(static_cast<common_iterator&&>(__x));
     }
     return *this;
   }
 
   constexpr decltype(auto) operator*() {
-    ycxx::detail::precondition(index_ == 0, "common_iterator: dereferencing a sentinel");
-    return *it_;
+    __ycxx::__detail::__precondition(__index_ == 0, "common_iterator: dereferencing a sentinel");
+    return *__it_;
   }
   constexpr decltype(auto) operator*() const
-    requires ycxx::detail::dereferenceable<const I>
+    requires __ycxx::__detail::__dereferenceable<const _Ip>
   {
-    ycxx::detail::precondition(index_ == 0, "common_iterator: dereferencing a sentinel");
-    return *it_;
+    __ycxx::__detail::__precondition(__index_ == 0, "common_iterator: dereferencing a sentinel");
+    return *__it_;
   }
   constexpr auto operator->() const
-    requires indirectly_readable<const I> &&
-             (requires(const I& i) { i.operator->(); } || is_reference_v<iter_reference_t<I>> ||
-              constructible_from<iter_value_t<I>, iter_reference_t<I>>)
+    requires indirectly_readable<const _Ip> &&
+             (requires(const _Ip& i) { i.operator->(); } || is_reference_v<iter_reference_t<_Ip>> ||
+              constructible_from<iter_value_t<_Ip>, iter_reference_t<_Ip>>)
   {
-    ycxx::detail::precondition(index_ == 0, "common_iterator: operator-> on a sentinel");
-    if constexpr (is_pointer_v<I> || requires(const I& i) { i.operator->(); }) {
-      return it_;
-    } else if constexpr (is_reference_v<iter_reference_t<I>>) {
-      auto&& tmp = *it_;
-      return __builtin_addressof(tmp);
+    __ycxx::__detail::__precondition(__index_ == 0, "common_iterator: operator-> on a sentinel");
+    if constexpr (is_pointer_v<_Ip> || requires(const _Ip& i) { i.operator->(); }) {
+      return __it_;
+    } else if constexpr (is_reference_v<iter_reference_t<_Ip>>) {
+      auto&& __tmp = *__it_;
+      return __builtin_addressof(__tmp);
     } else {
-      return proxy(*it_);
+      return proxy(*__it_);
     }
   }
 
   constexpr common_iterator& operator++() {
-    ycxx::detail::precondition(index_ == 0, "common_iterator: incrementing a sentinel");
-    ++it_;
+    __ycxx::__detail::__precondition(__index_ == 0, "common_iterator: incrementing a sentinel");
+    ++__it_;
     return *this;
   }
   constexpr decltype(auto) operator++(int) {
-    ycxx::detail::precondition(index_ == 0, "common_iterator: incrementing a sentinel");
-    if constexpr (forward_iterator<I>) {
-      common_iterator tmp = *this;
+    __ycxx::__detail::__precondition(__index_ == 0, "common_iterator: incrementing a sentinel");
+    if constexpr (forward_iterator<_Ip>) {
+      common_iterator __tmp = *this;
       ++*this;
-      return tmp;
-    } else if constexpr (requires(I& i) {
-                           { *i++ } -> ycxx::detail::can_reference;
-                         } || !ycxx::detail::common_iter_postfix_proxy<I>) {
-      return it_++;
+      return __tmp;
+    } else if constexpr (requires(_Ip& i) {
+                           { *i++ } -> __ycxx::__detail::__can_reference;
+                         } || !__ycxx::__detail::__common_iter_postfix_proxy<_Ip>) {
+      return __it_++;
     } else {
-      postfix_proxy p(*it_);
+      __postfix_proxy p(*__it_);
       ++*this;
       return p;
     }
   }
 
-  template <class I2, sentinel_for<I> S2>
-    requires sentinel_for<S, I2>
-  friend constexpr bool operator==(const common_iterator& x, const common_iterator<I2, S2>& y) {
-    if (x.index_ == y.index_) {
-      if constexpr (equality_comparable_with<I, I2>) {
-        if (x.index_ == 0)
-          return x.it_ == y.it_;
+  template <class _I2, sentinel_for<_Ip> _S2>
+    requires sentinel_for<_Sp, _I2>
+  friend constexpr bool operator==(const common_iterator& __x, const common_iterator<_I2, _S2>& y) {
+    if (__x.__index_ == y.__index_) {
+      if constexpr (equality_comparable_with<_Ip, _I2>) {
+        if (__x.__index_ == 0)
+          return __x.__it_ == y.__it_;
       }
       return true;
     }
-    return x.index_ == 0 ? x.it_ == y.sent_ : x.sent_ == y.it_;
+    return __x.__index_ == 0 ? __x.__it_ == y.__sent_ : __x.__sent_ == y.__it_;
   }
 
-  template <sized_sentinel_for<I> I2, sized_sentinel_for<I> S2>
-    requires sized_sentinel_for<S, I2>
-  friend constexpr iter_difference_t<I2> operator-(const common_iterator& x, const common_iterator<I2, S2>& y) {
-    if (x.index_ == 1 && y.index_ == 1)
+  template <sized_sentinel_for<_Ip> _I2, sized_sentinel_for<_Ip> _S2>
+    requires sized_sentinel_for<_Sp, _I2>
+  friend constexpr iter_difference_t<_I2> operator-(const common_iterator& __x, const common_iterator<_I2, _S2>& y) {
+    if (__x.__index_ == 1 && y.__index_ == 1)
       return 0;
-    if (x.index_ == 0 && y.index_ == 0)
-      return x.it_ - y.it_;
-    return x.index_ == 0 ? x.it_ - y.sent_ : x.sent_ - y.it_;
+    if (__x.__index_ == 0 && y.__index_ == 0)
+      return __x.__it_ - y.__it_;
+    return __x.__index_ == 0 ? __x.__it_ - y.__sent_ : __x.__sent_ - y.__it_;
   }
 
-  friend constexpr decltype(auto) iter_move(const common_iterator& i) noexcept(noexcept(ranges::iter_move(declval<const I&>())))
-    requires input_iterator<I>
+  friend constexpr decltype(auto) iter_move(const common_iterator& i) noexcept(noexcept(ranges::iter_move(declval<const _Ip&>())))
+    requires input_iterator<_Ip>
   {
-    return ranges::iter_move(i.it_);
+    return ranges::iter_move(i.__it_);
   }
-  template <indirectly_swappable<I> I2, class S2>
-  friend constexpr void iter_swap(const common_iterator& x, const common_iterator<I2, S2>& y) noexcept(
-      noexcept(ranges::iter_swap(declval<const I&>(), declval<const I2&>()))) {
-    ranges::iter_swap(x.it_, y.it_);
+  template <indirectly_swappable<_Ip> _I2, class _S2>
+  friend constexpr void iter_swap(const common_iterator& __x, const common_iterator<_I2, _S2>& y) noexcept(
+      noexcept(ranges::iter_swap(declval<const _Ip&>(), declval<const _I2&>()))) {
+    ranges::iter_swap(__x.__it_, y.__it_);
   }
 };
 
-template <class I, class S>
-struct incrementable_traits<common_iterator<I, S>> {
-  using difference_type = iter_difference_t<I>;
+template <class _Ip, class _Sp>
+struct incrementable_traits<common_iterator<_Ip, _Sp>> {
+  using difference_type = iter_difference_t<_Ip>;
 };
 
 } // namespace std
 
-namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
-template <class I, class S>
-consteval auto common_iter_pointer() {
-  if constexpr (requires(const std::common_iterator<I, S>& a) { a.operator->(); })
-    return std::type_identity<decltype(std::declval<const std::common_iterator<I, S>&>().operator->())>{};
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+template <class _Ip, class _Sp>
+consteval auto __common_iter_pointer() {
+  if constexpr (requires(const std::common_iterator<_Ip, _Sp>& a) { a.operator->(); })
+    return std::type_identity<decltype(std::declval<const std::common_iterator<_Ip, _Sp>&>().operator->())>{};
   else
     return std::type_identity<void>{};
 }
-}} // namespace ycxx::detail
+}} // namespace __ycxx::__detail
 
-namespace [[gnu::visibility("hidden")]] std {
-template <input_iterator I, class S>
-struct iterator_traits<common_iterator<I, S>> {
-  using iterator_concept = conditional_t<forward_iterator<I>, forward_iterator_tag, input_iterator_tag>;
+namespace [[__gnu__::__visibility__("hidden")]] std {
+template <input_iterator _Ip, class _Sp>
+struct iterator_traits<common_iterator<_Ip, _Sp>> {
+  using iterator_concept = conditional_t<forward_iterator<_Ip>, forward_iterator_tag, input_iterator_tag>;
   using iterator_category = decltype([] {
-    if constexpr (requires { typename iterator_traits<I>::iterator_category; }) {
-      if constexpr (derived_from<typename iterator_traits<I>::iterator_category, forward_iterator_tag>)
+    if constexpr (requires { typename iterator_traits<_Ip>::iterator_category; }) {
+      if constexpr (derived_from<typename iterator_traits<_Ip>::iterator_category, forward_iterator_tag>)
         return forward_iterator_tag{};
       else
         return input_iterator_tag{};
@@ -1270,10 +1270,10 @@ struct iterator_traits<common_iterator<I, S>> {
       return input_iterator_tag{};
     }
   }());
-  using value_type = iter_value_t<I>;
-  using difference_type = iter_difference_t<I>;
-  using pointer = typename decltype(ycxx::detail::common_iter_pointer<I, S>())::type;
-  using reference = iter_reference_t<I>;
+  using value_type = iter_value_t<_Ip>;
+  using difference_type = iter_difference_t<_Ip>;
+  using pointer = typename decltype(__ycxx::__detail::__common_iter_pointer<_Ip, _Sp>())::type;
+  using reference = iter_reference_t<_Ip>;
 };
 
 } // namespace std
@@ -1281,80 +1281,80 @@ struct iterator_traits<common_iterator<I, S>> {
 // =============================================================================================
 // range access CPOs that need adaptors
 // =============================================================================================
-namespace [[gnu::visibility("hidden")]] ycxx { namespace detail::range_access {
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail::__range_access {
 
-namespace rbegin_ns {
+namespace __rbegin_ns {
 void rbegin() = delete; // hides outer declarations: the call below uses argument-dependent lookup only
-template <class T>
-concept member = requires(T& t) {
+template <class _Tp>
+concept __member = requires(_Tp& t) {
   { auto(t.rbegin()) } -> std::input_or_output_iterator;
 };
-template <class T>
-concept adl = class_or_enum<T> && requires(T& t) {
+template <class _Tp>
+concept __adl = __class_or_enum<_Tp> && requires(_Tp& t) {
   { auto(rbegin(t)) } -> std::input_or_output_iterator;
 };
-template <class T>
-concept reversible = requires(T& t) {
+template <class _Tp>
+concept __reversible = requires(_Tp& t) {
   { std::ranges::begin(t) } -> std::bidirectional_iterator;
   { std::ranges::end(t) } -> std::same_as<decltype(std::ranges::begin(t))>;
 };
-struct fn {
-  template <class T>
+struct __fn {
+  template <class _Tp>
   static consteval bool nothrow() {
-    if constexpr (member<T>)
-      return noexcept(auto(std::declval<T&>().rbegin()));
-    else if constexpr (adl<T>)
-      return noexcept(auto(rbegin(std::declval<T&>())));
+    if constexpr (__member<_Tp>)
+      return noexcept(auto(std::declval<_Tp&>().rbegin()));
+    else if constexpr (__adl<_Tp>)
+      return noexcept(auto(rbegin(std::declval<_Tp&>())));
     else
-      return noexcept(std::make_reverse_iterator(std::ranges::end(std::declval<T&>())));
+      return noexcept(std::make_reverse_iterator(std::ranges::end(std::declval<_Tp&>())));
   }
-  template <class T>
-    requires maybe_borrowed<T> && (member<T> || adl<T> || reversible<T>)
-  [[nodiscard]] constexpr auto operator()(T&& t) const noexcept(nothrow<T>()) {
-    if constexpr (member<T>)
+  template <class _Tp>
+    requires __maybe_borrowed<_Tp> && (__member<_Tp> || __adl<_Tp> || __reversible<_Tp>)
+  [[nodiscard]] constexpr auto operator()(_Tp&& t) const noexcept(nothrow<_Tp>()) {
+    if constexpr (__member<_Tp>)
       return t.rbegin();
-    else if constexpr (adl<T>)
+    else if constexpr (__adl<_Tp>)
       return rbegin(t);
     else
       return std::make_reverse_iterator(std::ranges::end(t));
   }
 };
 } // namespace rbegin_ns
-}} // namespace ycxx::detail::range_access
+}} // namespace __ycxx::__detail::__range_access
 
-namespace [[gnu::visibility("hidden")]] std { namespace ranges {
-inline namespace cpo {
-inline constexpr ycxx::detail::range_access::rbegin_ns::fn rbegin{};
+namespace [[__gnu__::__visibility__("hidden")]] std { namespace ranges {
+inline namespace __cpo {
+inline constexpr __ycxx::__detail::__range_access::__rbegin_ns::__fn rbegin{};
 }
 }} // namespace std::ranges
 
-namespace [[gnu::visibility("hidden")]] ycxx { namespace detail::range_access {
-namespace rend_ns {
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail::__range_access {
+namespace __rend_ns {
 void rend() = delete; // hides outer declarations: the call below uses argument-dependent lookup only
-template <class T>
-concept member = requires(T& t) {
+template <class _Tp>
+concept __member = requires(_Tp& t) {
   { auto(t.rend()) } -> std::sentinel_for<decltype(std::ranges::rbegin(t))>;
 };
-template <class T>
-concept adl = class_or_enum<T> && requires(T& t) {
+template <class _Tp>
+concept __adl = __class_or_enum<_Tp> && requires(_Tp& t) {
   { auto(rend(t)) } -> std::sentinel_for<decltype(std::ranges::rbegin(t))>;
 };
-struct fn {
-  template <class T>
+struct __fn {
+  template <class _Tp>
   static consteval bool nothrow() {
-    if constexpr (member<T>)
-      return noexcept(auto(std::declval<T&>().rend()));
-    else if constexpr (adl<T>)
-      return noexcept(auto(rend(std::declval<T&>())));
+    if constexpr (__member<_Tp>)
+      return noexcept(auto(std::declval<_Tp&>().rend()));
+    else if constexpr (__adl<_Tp>)
+      return noexcept(auto(rend(std::declval<_Tp&>())));
     else
-      return noexcept(std::make_reverse_iterator(std::ranges::begin(std::declval<T&>())));
+      return noexcept(std::make_reverse_iterator(std::ranges::begin(std::declval<_Tp&>())));
   }
-  template <class T>
-    requires maybe_borrowed<T> && (member<T> || adl<T> || rbegin_ns::reversible<T>)
-  [[nodiscard]] constexpr auto operator()(T&& t) const noexcept(nothrow<T>()) {
-    if constexpr (member<T>)
+  template <class _Tp>
+    requires __maybe_borrowed<_Tp> && (__member<_Tp> || __adl<_Tp> || __rbegin_ns::__reversible<_Tp>)
+  [[nodiscard]] constexpr auto operator()(_Tp&& t) const noexcept(nothrow<_Tp>()) {
+    if constexpr (__member<_Tp>)
       return t.rend();
-    else if constexpr (adl<T>)
+    else if constexpr (__adl<_Tp>)
       return rend(t);
     else
       return std::make_reverse_iterator(std::ranges::begin(t));
@@ -1362,149 +1362,149 @@ struct fn {
 };
 } // namespace rend_ns
 
-}} // namespace ycxx::detail::range_access
+}} // namespace __ycxx::__detail::__range_access
 
-namespace [[gnu::visibility("hidden")]] std { namespace ranges {
-inline namespace cpo {
-inline constexpr ycxx::detail::range_access::rend_ns::fn rend{};
+namespace [[__gnu__::__visibility__("hidden")]] std { namespace ranges {
+inline namespace __cpo {
+inline constexpr __ycxx::__detail::__range_access::__rend_ns::__fn rend{};
 } // namespace cpo
 
-template <class T>
-concept constant_range = input_range<T> && ycxx::detail::constant_iterator<iterator_t<T>>;
+template <class _Tp>
+concept constant_range = input_range<_Tp> && __ycxx::__detail::__constant_iterator<iterator_t<_Tp>>;
 }} // namespace std::ranges
 
-namespace [[gnu::visibility("hidden")]] ycxx { namespace detail::range_access {
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail::__range_access {
 
-template <std::ranges::input_range R>
-constexpr auto& possibly_const_range(R& r) noexcept {
-  if constexpr (std::ranges::input_range<const R>)
-    return const_cast<const R&>(r);
+template <std::ranges::input_range _Rp>
+constexpr auto& __possibly_const_range(_Rp& r) noexcept {
+  if constexpr (std::ranges::input_range<const _Rp>)
+    return const_cast<const _Rp&>(r);
   else
     return r;
 }
 
-template <class T>
-constexpr auto as_const_pointer(const T* p) noexcept {
+template <class _Tp>
+constexpr auto __as_const_pointer(const _Tp* p) noexcept {
   return p;
 }
 
-namespace cbegin_ns {
-struct fn {
-  template <class T>
-    requires maybe_borrowed<T> && requires(T& t) { std::ranges::begin(::ycxx::detail::range_access::possibly_const_range(t)); }
-  [[nodiscard]] constexpr auto operator()(T&& t) const
-      noexcept(noexcept(std::const_iterator<decltype(std::ranges::begin(::ycxx::detail::range_access::possibly_const_range(t)))>(
-          std::ranges::begin(::ycxx::detail::range_access::possibly_const_range(t))))) {
-    return std::const_iterator<decltype(std::ranges::begin(::ycxx::detail::range_access::possibly_const_range(t)))>(
-        std::ranges::begin(::ycxx::detail::range_access::possibly_const_range(t)));
+namespace __cbegin_ns {
+struct __fn {
+  template <class _Tp>
+    requires __maybe_borrowed<_Tp> && requires(_Tp& t) { std::ranges::begin(::__ycxx::__detail::__range_access::__possibly_const_range(t)); }
+  [[nodiscard]] constexpr auto operator()(_Tp&& t) const
+      noexcept(noexcept(std::const_iterator<decltype(std::ranges::begin(::__ycxx::__detail::__range_access::__possibly_const_range(t)))>(
+          std::ranges::begin(::__ycxx::__detail::__range_access::__possibly_const_range(t))))) {
+    return std::const_iterator<decltype(std::ranges::begin(::__ycxx::__detail::__range_access::__possibly_const_range(t)))>(
+        std::ranges::begin(::__ycxx::__detail::__range_access::__possibly_const_range(t)));
   }
 };
 } // namespace cbegin_ns
-namespace cend_ns {
-struct fn {
-  template <class T>
-    requires maybe_borrowed<T> && requires(T& t) { std::ranges::end(::ycxx::detail::range_access::possibly_const_range(t)); }
-  [[nodiscard]] constexpr auto operator()(T&& t) const
-      noexcept(noexcept(std::const_sentinel<decltype(std::ranges::end(::ycxx::detail::range_access::possibly_const_range(t)))>(
-          std::ranges::end(::ycxx::detail::range_access::possibly_const_range(t))))) {
-    return std::const_sentinel<decltype(std::ranges::end(::ycxx::detail::range_access::possibly_const_range(t)))>(
-        std::ranges::end(::ycxx::detail::range_access::possibly_const_range(t)));
+namespace __cend_ns {
+struct __fn {
+  template <class _Tp>
+    requires __maybe_borrowed<_Tp> && requires(_Tp& t) { std::ranges::end(::__ycxx::__detail::__range_access::__possibly_const_range(t)); }
+  [[nodiscard]] constexpr auto operator()(_Tp&& t) const
+      noexcept(noexcept(std::const_sentinel<decltype(std::ranges::end(::__ycxx::__detail::__range_access::__possibly_const_range(t)))>(
+          std::ranges::end(::__ycxx::__detail::__range_access::__possibly_const_range(t))))) {
+    return std::const_sentinel<decltype(std::ranges::end(::__ycxx::__detail::__range_access::__possibly_const_range(t)))>(
+        std::ranges::end(::__ycxx::__detail::__range_access::__possibly_const_range(t)));
   }
 };
 } // namespace cend_ns
-namespace crbegin_ns {
-struct fn {
-  template <class T>
-    requires maybe_borrowed<T> && requires(T& t) { std::ranges::rbegin(::ycxx::detail::range_access::possibly_const_range(t)); }
-  [[nodiscard]] constexpr auto operator()(T&& t) const
-      noexcept(noexcept(std::const_iterator<decltype(std::ranges::rbegin(::ycxx::detail::range_access::possibly_const_range(t)))>(
-          std::ranges::rbegin(::ycxx::detail::range_access::possibly_const_range(t))))) {
-    return std::const_iterator<decltype(std::ranges::rbegin(::ycxx::detail::range_access::possibly_const_range(t)))>(
-        std::ranges::rbegin(::ycxx::detail::range_access::possibly_const_range(t)));
+namespace __crbegin_ns {
+struct __fn {
+  template <class _Tp>
+    requires __maybe_borrowed<_Tp> && requires(_Tp& t) { std::ranges::rbegin(::__ycxx::__detail::__range_access::__possibly_const_range(t)); }
+  [[nodiscard]] constexpr auto operator()(_Tp&& t) const
+      noexcept(noexcept(std::const_iterator<decltype(std::ranges::rbegin(::__ycxx::__detail::__range_access::__possibly_const_range(t)))>(
+          std::ranges::rbegin(::__ycxx::__detail::__range_access::__possibly_const_range(t))))) {
+    return std::const_iterator<decltype(std::ranges::rbegin(::__ycxx::__detail::__range_access::__possibly_const_range(t)))>(
+        std::ranges::rbegin(::__ycxx::__detail::__range_access::__possibly_const_range(t)));
   }
 };
 } // namespace crbegin_ns
-namespace crend_ns {
-struct fn {
-  template <class T>
-    requires maybe_borrowed<T> && requires(T& t) { std::ranges::rend(::ycxx::detail::range_access::possibly_const_range(t)); }
-  [[nodiscard]] constexpr auto operator()(T&& t) const
-      noexcept(noexcept(std::const_sentinel<decltype(std::ranges::rend(::ycxx::detail::range_access::possibly_const_range(t)))>(
-          std::ranges::rend(::ycxx::detail::range_access::possibly_const_range(t))))) {
-    return std::const_sentinel<decltype(std::ranges::rend(::ycxx::detail::range_access::possibly_const_range(t)))>(
-        std::ranges::rend(::ycxx::detail::range_access::possibly_const_range(t)));
+namespace __crend_ns {
+struct __fn {
+  template <class _Tp>
+    requires __maybe_borrowed<_Tp> && requires(_Tp& t) { std::ranges::rend(::__ycxx::__detail::__range_access::__possibly_const_range(t)); }
+  [[nodiscard]] constexpr auto operator()(_Tp&& t) const
+      noexcept(noexcept(std::const_sentinel<decltype(std::ranges::rend(::__ycxx::__detail::__range_access::__possibly_const_range(t)))>(
+          std::ranges::rend(::__ycxx::__detail::__range_access::__possibly_const_range(t))))) {
+    return std::const_sentinel<decltype(std::ranges::rend(::__ycxx::__detail::__range_access::__possibly_const_range(t)))>(
+        std::ranges::rend(::__ycxx::__detail::__range_access::__possibly_const_range(t)));
   }
 };
 } // namespace crend_ns
-namespace cdata_ns {
-struct fn {
-  template <class T>
-    requires maybe_borrowed<T> && requires(T& t) { std::ranges::data(::ycxx::detail::range_access::possibly_const_range(t)); }
-  [[nodiscard]] constexpr auto operator()(T&& t) const
-      noexcept(noexcept(std::ranges::data(::ycxx::detail::range_access::possibly_const_range(t)))) {
-    return ::ycxx::detail::range_access::as_const_pointer(std::ranges::data(::ycxx::detail::range_access::possibly_const_range(t)));
+namespace __cdata_ns {
+struct __fn {
+  template <class _Tp>
+    requires __maybe_borrowed<_Tp> && requires(_Tp& t) { std::ranges::data(::__ycxx::__detail::__range_access::__possibly_const_range(t)); }
+  [[nodiscard]] constexpr auto operator()(_Tp&& t) const
+      noexcept(noexcept(std::ranges::data(::__ycxx::__detail::__range_access::__possibly_const_range(t)))) {
+    return ::__ycxx::__detail::__range_access::__as_const_pointer(std::ranges::data(::__ycxx::__detail::__range_access::__possibly_const_range(t)));
   }
 };
 } // namespace cdata_ns
 
-}} // namespace ycxx::detail::range_access
+}} // namespace __ycxx::__detail::__range_access
 
-namespace [[gnu::visibility("hidden")]] std { namespace ranges {
-inline namespace cpo {
-inline constexpr ycxx::detail::range_access::cbegin_ns::fn cbegin{};
-inline constexpr ycxx::detail::range_access::cend_ns::fn cend{};
-inline constexpr ycxx::detail::range_access::crbegin_ns::fn crbegin{};
-inline constexpr ycxx::detail::range_access::crend_ns::fn crend{};
-inline constexpr ycxx::detail::range_access::cdata_ns::fn cdata{};
+namespace [[__gnu__::__visibility__("hidden")]] std { namespace ranges {
+inline namespace __cpo {
+inline constexpr __ycxx::__detail::__range_access::__cbegin_ns::__fn cbegin{};
+inline constexpr __ycxx::__detail::__range_access::__cend_ns::__fn cend{};
+inline constexpr __ycxx::__detail::__range_access::__crbegin_ns::__fn crbegin{};
+inline constexpr __ycxx::__detail::__range_access::__crend_ns::__fn crend{};
+inline constexpr __ycxx::__detail::__range_access::__cdata_ns::__fn cdata{};
 } // namespace cpo
 
-template <range R>
-using const_iterator_t = decltype(ranges::cbegin(declval<R&>()));
-template <range R>
-using const_sentinel_t = decltype(ranges::cend(declval<R&>()));
-template <range R>
-using range_const_reference_t = iter_const_reference_t<iterator_t<R>>;
+template <range _Rp>
+using const_iterator_t = decltype(ranges::cbegin(declval<_Rp&>()));
+template <range _Rp>
+using const_sentinel_t = decltype(ranges::cend(declval<_Rp&>()));
+template <range _Rp>
+using range_const_reference_t = iter_const_reference_t<iterator_t<_Rp>>;
 }} // namespace std::ranges
 
-namespace [[gnu::visibility("hidden")]] std {
-template <class C>
-constexpr auto rbegin(C& c) noexcept(noexcept(c.rbegin())) -> decltype(c.rbegin()) {
+namespace [[__gnu__::__visibility__("hidden")]] std {
+template <class _Cp>
+constexpr auto rbegin(_Cp& c) noexcept(noexcept(c.rbegin())) -> decltype(c.rbegin()) {
   return c.rbegin();
 }
-template <class C>
-constexpr auto rbegin(const C& c) noexcept(noexcept(c.rbegin())) -> decltype(c.rbegin()) {
+template <class _Cp>
+constexpr auto rbegin(const _Cp& c) noexcept(noexcept(c.rbegin())) -> decltype(c.rbegin()) {
   return c.rbegin();
 }
-template <class C>
-constexpr auto rend(C& c) noexcept(noexcept(c.rend())) -> decltype(c.rend()) {
+template <class _Cp>
+constexpr auto rend(_Cp& c) noexcept(noexcept(c.rend())) -> decltype(c.rend()) {
   return c.rend();
 }
-template <class C>
-constexpr auto rend(const C& c) noexcept(noexcept(c.rend())) -> decltype(c.rend()) {
+template <class _Cp>
+constexpr auto rend(const _Cp& c) noexcept(noexcept(c.rend())) -> decltype(c.rend()) {
   return c.rend();
 }
-template <class T, size_t N>
-constexpr reverse_iterator<T*> rbegin(T (&a)[N]) noexcept {
-  return reverse_iterator<T*>(a + N);
+template <class _Tp, size_t _Np>
+constexpr reverse_iterator<_Tp*> rbegin(_Tp (&a)[_Np]) noexcept {
+  return reverse_iterator<_Tp*>(a + _Np);
 }
-template <class T, size_t N>
-constexpr reverse_iterator<T*> rend(T (&a)[N]) noexcept {
-  return reverse_iterator<T*>(a);
+template <class _Tp, size_t _Np>
+constexpr reverse_iterator<_Tp*> rend(_Tp (&a)[_Np]) noexcept {
+  return reverse_iterator<_Tp*>(a);
 }
-template <class E>
-constexpr reverse_iterator<const E*> rbegin(initializer_list<E> il) noexcept {
-  return reverse_iterator<const E*>(il.end());
+template <class _Ep>
+constexpr reverse_iterator<const _Ep*> rbegin(initializer_list<_Ep> il) noexcept {
+  return reverse_iterator<const _Ep*>(il.end());
 }
-template <class E>
-constexpr reverse_iterator<const E*> rend(initializer_list<E> il) noexcept {
-  return reverse_iterator<const E*>(il.begin());
+template <class _Ep>
+constexpr reverse_iterator<const _Ep*> rend(initializer_list<_Ep> il) noexcept {
+  return reverse_iterator<const _Ep*>(il.begin());
 }
-template <class C>
-constexpr auto crbegin(const C& c) noexcept(noexcept(std::rbegin(c))) -> decltype(std::rbegin(c)) {
+template <class _Cp>
+constexpr auto crbegin(const _Cp& c) noexcept(noexcept(std::rbegin(c))) -> decltype(std::rbegin(c)) {
   return std::rbegin(c);
 }
-template <class C>
-constexpr auto crend(const C& c) noexcept(noexcept(std::rend(c))) -> decltype(std::rend(c)) {
+template <class _Cp>
+constexpr auto crend(const _Cp& c) noexcept(noexcept(std::rend(c))) -> decltype(std::rend(c)) {
   return std::rend(c);
 }
 } // namespace std

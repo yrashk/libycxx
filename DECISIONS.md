@@ -249,7 +249,40 @@ tooling.
   before the renaming as macros expanding to invalid tokens, then include every public header,
   together, one by one, and after `import std;`; every name a later run renames in include/
   joins that list (`tools/data/uglify/nasty-macros.txt`) and the tests. The draft's index is a snapshot
-  (`tools/uglify.py --fetch-index` refreshes it). After a merge:
+  (`tools/uglify.py --fetch-index` refreshes it).
+  **The index misses names**, mostly members a program provides and the library looks up
+  (`Rcvr::make_receiver_for`, `Environment::template env_type<...>`) and members a program
+  names (`member_offset::bytes`, the designator `.annotations`): renamed, they break programs
+  silently. So `--check` also compares the renaming with **`tools/data/uglify/draft-names.txt`**,
+  the names the draft's library code spells for programs, which `tools/gen_draft_names.py`
+  extracts from https://eel.is/c++draft/full and which records the draft's revision
+  (Eelis/draft's commit). Read are the library's clauses ([library] to [exec], and [depr]),
+  without examples and notes (a program's own names), and in them the code blocks, the item
+  declarations and the code in sentences and tables. A name counts when it is declared at
+  namespace or class scope (a declarator-id outside parentheses and template argument lists, a
+  `using` alias, a class, a concept, an enumerator), used as a member or a qualified name (after
+  `.`, `->`, `::`, also `::template`: this covers the requirements' `X::type`, the designators
+  and the protocols of program-defined types), or alone in a table's first column (the
+  enumerators of `path::format`). Exposition-only names are told apart by their typesetting:
+  eel.is renders the draft's italics as `<i>`, so an italic name never counts, nor does a
+  declaration with a comment "exposition only" (after it, or on the line before it); the members
+  of a class whose name is italic do count (programs read `insert-return-type`'s `inserted` and
+  `node`). Parameters and template
+  parameters are inside parentheses or template argument lists (eel.is marks the latter's angle
+  brackets, unlike the `<` operator), and locals are in a function's body: a code block of an
+  item's description, or one whose top level has statements, is a body. A capital letter (`T`,
+  `X`) is a placeholder. What this cannot tell apart, exposition-only members that the draft
+  does not set in italics (`regex_iterator`'s `match`, `basic_stringbuf`'s `mode`, when_all's
+  `disp`) and a few table entries and slips, is listed in `allowed.txt`'s `[draft-internal]`
+  section with the reason, and stays renamed. `--check` fails when a name of `draft-names.txt`
+  is renamed (spelled reserved in the headers, or recorded in `renamed.txt`) and is neither
+  allowed nor in `[draft-internal]`, or when a `[draft-internal]` entry excuses nothing; the
+  renaming run warns about the same names. The fix is the `[standard]` section, and a test in
+  `tests/ycxx` (`conformance/standard_member_names/` or the area's directory) that spells the
+  name from a program-defined type. Names the core language looks up in a program's types
+  (`get_return_object_on_allocation_failure`, `::handle_contract_violation`) are outside the
+  library's clauses and are listed in `[standard]` by hand. To refresh the list for a new
+  draft: `python3 tools/gen_draft_names.py && python3 tools/uglify.py --check`. After a merge:
   `python3 tools/uglify.py && python3 tools/gen_std_module.py && python3 tools/uglify.py --check`.
 
 ## 3. Freestanding layering

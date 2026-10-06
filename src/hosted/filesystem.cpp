@@ -553,9 +553,9 @@ struct __fs_rec_state {
   // on request), as the evaluation of status() in /21.2 would.
   bool descend(bool& through_link) const noexcept {
     error_code ec;
-    __fs::file_type __lt = __entry.type_of(true, ec);
-    through_link = __lt == __fs::file_type::symlink;
-    if (__lt == __fs::file_type::directory || __lt == __fs::file_type::none)
+    __fs::file_type lt = __entry.type_of(true, ec);
+    through_link = lt == __fs::file_type::symlink;
+    if (lt == __fs::file_type::directory || lt == __fs::file_type::none)
       return true;
     if (!through_link || !has(__fs::directory_options::follow_directory_symlink))
       return false;
@@ -882,8 +882,8 @@ void copy(const path& from, const path& to, copy_options options, error_code& ec
   }
   ec.clear();
   if (exists(t)) { // (4.5.2)
-    error_code __eq;
-    if (equivalent(from, to, __eq)) {
+    error_code eq;
+    if (equivalent(from, to, eq)) {
       ec = errno_code(EEXIST);
       return;
     }

@@ -150,12 +150,12 @@ struct __quoted_out {
     // the sequence: delim, each character (escape and delim escaped), delim
     std::size_t __len = 2;
     for (std::size_t i = 0; i < __q.n; ++i)
-      __len += _Tp::__eq(__q.s[i], __q.__delim) || _Tp::__eq(__q.s[i], __q.__escape) ? 2 : 1;
+      __len += _Tp::eq(__q.s[i], __q.__delim) || _Tp::eq(__q.s[i], __q.__escape) ? 2 : 1;
     ::__ycxx::__detail::__small_buffer<__charT, 128> seq(__len);
     __charT* p = seq.get();
     *p++ = __q.__delim;
     for (std::size_t i = 0; i < __q.n; ++i) {
-      if (_Tp::__eq(__q.s[i], __q.__delim) || _Tp::__eq(__q.s[i], __q.__escape))
+      if (_Tp::eq(__q.s[i], __q.__delim) || _Tp::eq(__q.s[i], __q.__escape))
         *p++ = __q.__escape;
       *p++ = __q.s[i];
     }
@@ -176,7 +176,7 @@ struct __quoted_inout {
     __charT c;
     if (!(in >> c))
       return in;
-    if (!__traits::__eq(c, __q.__delim)) {
+    if (!__traits::eq(c, __q.__delim)) {
       in.unget();
       return in >> *__q.s;
     }
@@ -186,9 +186,9 @@ struct __quoted_inout {
     for (;;) {
       if (!(in >> c))
         break;
-      if (__traits::__eq(c, __q.__delim))
+      if (__traits::eq(c, __q.__delim))
         break;
-      if (__traits::__eq(c, __q.__escape)) {
+      if (__traits::eq(c, __q.__escape)) {
         if (!(in >> c))
           break;
       }

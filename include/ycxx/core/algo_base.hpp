@@ -470,8 +470,8 @@ constexpr _Ip __adjacent_find_impl(_Ip first, _Sp last, _Pp pred) {
 }
 
 template <class _I1, class _S1, class _I2, class _S2, class _Pp>
-constexpr std::pair<_I1, _I2> __mismatch_impl(_I1 __first1, _S1 __last1, _I2 __first2, _S2 __last2, _Pp __eq) {
-  while (__first1 != __last1 && __first2 != __last2 && __eq(*__first1, *__first2)) {
+constexpr std::pair<_I1, _I2> __mismatch_impl(_I1 __first1, _S1 __last1, _I2 __first2, _S2 __last2, _Pp eq) {
+  while (__first1 != __last1 && __first2 != __last2 && eq(*__first1, *__first2)) {
     ++__first1;
     ++__first2;
   }
@@ -479,8 +479,8 @@ constexpr std::pair<_I1, _I2> __mismatch_impl(_I1 __first1, _S1 __last1, _I2 __f
 }
 // The three-iterator form: the second range is as long as the first.
 template <class _I1, class _S1, class _I2, class _Pp>
-constexpr std::pair<_I1, _I2> __mismatch3_impl(_I1 __first1, _S1 __last1, _I2 __first2, _Pp __eq) {
-  while (__first1 != __last1 && __eq(*__first1, *__first2)) {
+constexpr std::pair<_I1, _I2> __mismatch3_impl(_I1 __first1, _S1 __last1, _I2 __first2, _Pp eq) {
+  while (__first1 != __last1 && eq(*__first1, *__first2)) {
     ++__first1;
     ++__first2;
   }
@@ -488,19 +488,19 @@ constexpr std::pair<_I1, _I2> __mismatch3_impl(_I1 __first1, _S1 __last1, _I2 __
 }
 
 template <class _I1, class _S1, class _I2, class _S2, class _Pp>
-constexpr bool __equal_impl(_I1 __first1, _S1 __last1, _I2 __first2, _S2 __last2, _Pp __eq) {
+constexpr bool __equal_impl(_I1 __first1, _S1 __last1, _I2 __first2, _S2 __last2, _Pp eq) {
   // [alg.equal]/5: no comparisons when the lengths are known to differ.
   if constexpr ((std::sized_sentinel_for<_S1, _I1> || (std::same_as<_I1, _S1> && __ra_iter<_I1>)) &&
                 (std::sized_sentinel_for<_S2, _I2> || (std::same_as<_I2, _S2> && __ra_iter<_I2>))) {
     if (__last1 - __first1 != __last2 - __first2)
       return false;
     for (; __first1 != __last1; (void)++__first1, (void)++__first2)
-      if (!__eq(*__first1, *__first2))
+      if (!eq(*__first1, *__first2))
         return false;
     return true;
   } else {
     for (; __first1 != __last1 && __first2 != __last2; (void)++__first1, (void)++__first2)
-      if (!__eq(*__first1, *__first2))
+      if (!eq(*__first1, *__first2))
         return false;
     return __first1 == __last1 && __first2 == __last2;
   }
@@ -518,7 +518,7 @@ constexpr bool __lex_compare_impl(_I1 __first1, _S1 __last1, _I2 __first2, _S2 _
 }
 
 template <class _Tp>
-concept __comparison_category = !std::is_void_v<std::common_comparison_category_t<_Tp>>;
+concept comparison_category = !std::is_void_v<std::common_comparison_category_t<_Tp>>;
 
 }} // namespace __ycxx::__detail
 
@@ -788,7 +788,7 @@ template <class _InputIterator1, class _InputIterator2, class _Cmp>
                                                                _InputIterator2 __b2, _InputIterator2 __e2, _Cmp comp)
     -> decltype(comp(*__b1, *__b2)) {
   using _Rp = decltype(comp(*__b1, *__b2));
-  static_assert(__ycxx::__detail::__comparison_category<_Rp>,
+  static_assert(__ycxx::__detail::comparison_category<_Rp>,
                 "std::lexicographical_compare_three_way: comp must return a comparison category type");
   for (; __b1 != __e1 && __b2 != __e2; (void)++__b1, (void)++__b2)
     if (auto c = comp(*__b1, *__b2); c != 0)

@@ -53,7 +53,7 @@ public:
 };
 
 struct bulk_item_receiver_proxy : receiver_proxy {
-  virtual void __execute(size_t, size_t) noexcept = 0;
+  virtual void execute(size_t, size_t) noexcept = 0;
 };
 
 struct parallel_scheduler_backend {
@@ -101,7 +101,7 @@ struct __exec_proxy_stop<_Token> {
 // completion, the backend never seeing a stop request) is not reachable and terminates.
 template <class _Base, class _Rcvr, bool _Errors = true>
 struct __exec_receiver_proxy_for : _Base {
-  using __token_t = std::__stop_token_of_t<std::execution::env_of_t<_Rcvr>>;
+  using __token_t = std::stop_token_of_t<std::execution::env_of_t<_Rcvr>>;
   _Rcvr* __rcvr;
   __exec_proxy_stop<__token_t> __stop;
 
@@ -241,7 +241,7 @@ template <bool _Chunked, class _Child, class _Shape, class _Fp, class _Rcvr>
 struct __exec_par_bulk_op {
   using operation_state_concept = std::execution::operation_state_tag;
   using __backend_t = std::execution::parallel_scheduler_replacement::parallel_scheduler_backend;
-  using __child_sigs = std::execution::__completion_signatures_of_t<_Child, ::__ycxx::__detail::__exec::__fwd_env_t<std::execution::env_of_t<_Rcvr>>>;
+  using __child_sigs = std::execution::completion_signatures_of_t<_Child, ::__ycxx::__detail::__exec::__fwd_env_t<std::execution::env_of_t<_Rcvr>>>;
   template <class _Args>
   struct __values_tuple;
   template <class... _Ts>
@@ -275,7 +275,7 @@ struct __exec_par_bulk_op {
     __exec_par_bulk_op* op;
     explicit __proxy_t(__exec_par_bulk_op* __o) noexcept
         : __exec_receiver_proxy_for<std::execution::parallel_scheduler_replacement::bulk_item_receiver_proxy, _Rcvr>(__builtin_addressof(__o->__rcvr)), op(__o) {}
-    void __execute(std::size_t i, std::size_t __j) noexcept override { op->__execute(i, __j); }
+    void execute(std::size_t i, std::size_t __j) noexcept override { op->execute(i, __j); }
     void set_value() noexcept override {
       this->__stop.detach();
       op->finish();
@@ -322,7 +322,7 @@ struct __exec_par_bulk_op {
     else
       __backend->schedule_bulk_unchunked(n, proxy, std::span<std::byte>(__storage));
   }
-  void __execute(std::size_t i, std::size_t __j) noexcept {
+  void execute(std::size_t i, std::size_t __j) noexcept {
     auto __body = [&]<class _Tuple>(_Tuple& t) {
       if constexpr (!std::is_same_v<_Tuple, std::monostate>) {
         std::apply(
@@ -398,14 +398,14 @@ struct __exec_par_bulk_sender {
 
 struct __exec_par_domain {
   template <class _Sndr, class _Env>
-    requires((std::is_same_v<std::execution::__tag_of_t<_Sndr>, std::execution::bulk_chunked_t> ||
-              std::is_same_v<std::execution::__tag_of_t<_Sndr>, std::execution::bulk_unchunked_t>) &&
+    requires((std::is_same_v<std::execution::tag_of_t<_Sndr>, std::execution::bulk_chunked_t> ||
+              std::is_same_v<std::execution::tag_of_t<_Sndr>, std::execution::bulk_unchunked_t>) &&
              requires(_Sndr&& s, const _Env& env) {
                { std::execution::get_completion_scheduler<std::execution::set_value_t>(std::execution::get_env(s.template get<2>()), ::__ycxx::__detail::__exec::__fwd_env(env)) }
                  -> std::same_as<std::execution::parallel_scheduler>;
              })
   static constexpr auto transform_sender(std::execution::set_value_t, _Sndr&& __sndr, const _Env& env) {
-    constexpr bool __chunked = std::is_same_v<std::execution::__tag_of_t<_Sndr>, std::execution::bulk_chunked_t>;
+    constexpr bool __chunked = std::is_same_v<std::execution::tag_of_t<_Sndr>, std::execution::bulk_chunked_t>;
     auto&& data = static_cast<_Sndr&&>(__sndr).template get<1>();
     auto&& __child = static_cast<_Sndr&&>(__sndr).template get<2>();
     using _Pol = std::remove_cvref_t<decltype(data.template get<0>())>;

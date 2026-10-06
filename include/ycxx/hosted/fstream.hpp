@@ -162,7 +162,7 @@ protected:
       return __traits::not_eof(c);
     }
     this->gbump(-1);
-    if (!__traits::__eq(__traits::to_char_type(c), *this->gptr()))
+    if (!__traits::eq(__traits::to_char_type(c), *this->gptr()))
       *this->gptr() = __traits::to_char_type(c); // only in the buffer, not in the file
     return c;
   }

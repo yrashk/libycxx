@@ -34,14 +34,14 @@ constexpr std::pair<_Ip, _Op> __remove_copy_if_impl(_Ip first, _Sp last, _Op res
 
 // Keeps the first element of every group of consecutive equivalent elements.
 template <class _Ops, class _Ip, class _Sp, class _Pp>
-constexpr _Ip __unique_impl(_Ip first, _Sp last, _Pp __eq) {
-  first = ::__ycxx::__detail::__adjacent_find_impl(static_cast<_Ip&&>(first), last, __eq);
+constexpr _Ip __unique_impl(_Ip first, _Sp last, _Pp eq) {
+  first = ::__ycxx::__detail::__adjacent_find_impl(static_cast<_Ip&&>(first), last, eq);
   if (first == last)
     return first;
   _Ip out = first; // *out is the last element kept; *++first is known to be its duplicate
   ++first;
   for (++first; first != last; ++first)
-    if (!__eq(*out, *first))
+    if (!eq(*out, *first))
       *++out = _Ops::iter_move(first);
   return ++out;
 }
@@ -49,7 +49,7 @@ constexpr _Ip __unique_impl(_Ip first, _Sp last, _Pp __eq) {
 // unique_copy: Kind 0 compares with the last kept input element (forward input), 1 with the
 // last element written (readable output of the same value type), 2 with a stored copy.
 template <int _Kind, class _Ip, class _Sp, class _Op, class _Pp>
-constexpr std::pair<_Ip, _Op> __unique_copy_impl(_Ip first, _Sp last, _Op result, _Pp __eq) {
+constexpr std::pair<_Ip, _Op> __unique_copy_impl(_Ip first, _Sp last, _Op result, _Pp eq) {
   if (first == last)
     return {static_cast<_Ip&&>(first), static_cast<_Op&&>(result)};
   if constexpr (_Kind == 0) {
@@ -57,7 +57,7 @@ constexpr std::pair<_Ip, _Op> __unique_copy_impl(_Ip first, _Sp last, _Op result
     *result = *first;
     ++result;
     while (++first != last)
-      if (!__eq(*__kept, *first)) {
+      if (!eq(*__kept, *first)) {
         __kept = first;
         *result = *first;
         ++result;
@@ -67,7 +67,7 @@ constexpr std::pair<_Ip, _Op> __unique_copy_impl(_Ip first, _Sp last, _Op result
     *result = *first;
     ++result;
     while (++first != last)
-      if (!__eq(*__written, *first)) {
+      if (!eq(*__written, *first)) {
         __written = result;
         *result = *first;
         ++result;
@@ -78,7 +78,7 @@ constexpr std::pair<_Ip, _Op> __unique_copy_impl(_Ip first, _Sp last, _Op result
     ++result;
     while (++first != last) {
       decltype(auto) __x = *first;
-      if (!__eq(__kept, __x)) {
+      if (!eq(__kept, __x)) {
         __kept = static_cast<decltype(__x)&&>(__x);
         *result = __kept;
         ++result;

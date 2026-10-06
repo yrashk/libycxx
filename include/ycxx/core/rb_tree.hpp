@@ -405,9 +405,9 @@ class __rb_tree {
   using __alloc_traits = std::allocator_traits<_Allocator>;
 
 protected:
-  using __node = __rb_node<_Vp>;
+  using node = __rb_node<_Vp>;
   using __node_base = __rb_node_base;
-  using __node_alloc = typename info::template rebind<__node>;
+  using __node_alloc = typename info::template rebind<node>;
   using __node_traits = std::allocator_traits<__node_alloc>;
 
 public:
@@ -425,7 +425,7 @@ public:
   using const_iterator = __rb_iter<const _Vp, difference_type>;
   using reverse_iterator = std::reverse_iterator<iterator>;
   using const_reverse_iterator = std::reverse_iterator<const_iterator>;
-  using node_type = __node_handle<__node, _Allocator, _IsMap>;
+  using node_type = __node_handle<node, _Allocator, _IsMap>;
 
 protected:
   static constexpr bool __pocca = info::__pocca;
@@ -442,15 +442,15 @@ protected:
 
   // ---- nodes ----
   static constexpr __node_base* __nd(const_iterator __it) noexcept { return __it.__n_; }
-  static constexpr _Vp& value(__node_base* n) noexcept { return static_cast<__node*>(n)->value; }
+  static constexpr _Vp& value(__node_base* n) noexcept { return static_cast<node*>(n)->value; }
   static constexpr const key_type& __key(__node_base* n) noexcept {
     if constexpr (_IsMap)
-      return static_cast<__node*>(n)->value.first;
+      return static_cast<node*>(n)->value.first;
     else
-      return static_cast<__node*>(n)->value;
+      return static_cast<node*>(n)->value;
   }
   template <class _Ap, class _Bp>
-  constexpr bool __lt(const _Ap& a, const _Bp& b) const {
+  constexpr bool lt(const _Ap& a, const _Bp& b) const {
     return static_cast<bool>(__comp_(a, b));
   }
 
@@ -472,10 +472,10 @@ protected:
   constexpr __node_base* __last_node() const noexcept { return __hdr_->right; }
 
   template <class... _Args>
-  constexpr __node* __make_node(_Args&&... __args) {
+  constexpr node* __make_node(_Args&&... __args) {
     if (__size_ == max_size())
       ::__ycxx::__detail::__throw_length_error("associative container: size would exceed max_size()");
-    __node* n = std::to_address(__node_traits::allocate(__na_, 1));
+    node* n = std::to_address(__node_traits::allocate(__na_, 1));
     std::construct_at(n);
     ::__ycxx::__detail::__rollback __rb{[&] {
       std::destroy_at(n);
@@ -486,7 +486,7 @@ protected:
     return n;
   }
   constexpr void __free_node(__node_base* b) noexcept {
-    __node* n = static_cast<__node*>(b);
+    node* n = static_cast<node*>(b);
     __node_traits::destroy(__na_, __builtin_addressof(n->value));
     std::destroy_at(n);
     __node_traits::deallocate(__na_, ::__ycxx::__detail::__to_alloc_pointer<typename __node_traits::pointer>(n), 1);
@@ -545,7 +545,7 @@ protected:
     bool __go_left = true;
     while (__x) {
       y = __x;
-      __go_left = __lt(k, __key(__x));
+      __go_left = lt(k, __key(__x));
       __x = __go_left ? __x->left : __x->right;
     }
     return {y, __go_left, nullptr};
@@ -557,7 +557,7 @@ protected:
     bool __go_left = true;
     while (__x) {
       y = __x;
-      __go_left = !__lt(__key(__x), k);
+      __go_left = !lt(__key(__x), k);
       __x = __go_left ? __x->left : __x->right;
     }
     return {y, __go_left, nullptr};
@@ -568,7 +568,7 @@ protected:
     // The lower bound: of several elements equivalent to a heterogeneous k, the first is found.
     __pos p = __pos_lower(k);
     __node_base* __lb = p.left ? p.__parent : ::__ycxx::__detail::__rb_next(p.__parent);
-    if (__lb != __hdr_ && !__lt(k, __key(__lb)))
+    if (__lb != __hdr_ && !lt(k, __key(__lb)))
       return {nullptr, false, __lb};
     return p;
   }
@@ -585,23 +585,23 @@ protected:
     if (!__hint)
       __hint = h;
     if (__hint == h) {
-      if (__size_ > 0 && __lt(__key(h->right), k))
+      if (__size_ > 0 && lt(__key(h->right), k))
         return {h->right, false, nullptr};
       return __pos_unique(k);
     }
-    if (__lt(k, __key(__hint))) {
+    if (lt(k, __key(__hint))) {
       if (__hint == __first_)
         return {__hint, true, nullptr};
       __node_base* before = ::__ycxx::__detail::__rb_prev(__hint);
-      if (__lt(__key(before), k))
+      if (lt(__key(before), k))
         return __between(before, __hint);
       return __pos_unique(k);
     }
-    if (__lt(__key(__hint), k)) {
+    if (lt(__key(__hint), k)) {
       if (__hint == h->right)
         return {__hint, false, nullptr};
       __node_base* __after = ::__ycxx::__detail::__rb_next(__hint);
-      if (__lt(k, __key(__after)))
+      if (lt(k, __key(__after)))
         return __between(__hint, __after);
       return __pos_unique(k);
     }
@@ -616,15 +616,15 @@ protected:
     if (__hint == h) {
       if (__size_ == 0)
         return {h, true, nullptr};
-      if (!__lt(k, __key(h->right)))
+      if (!lt(k, __key(h->right)))
         return {h->right, false, nullptr};
       return __pos_upper(k);
     }
-    if (!__lt(__key(__hint), k)) { // k <= *hint
+    if (!lt(__key(__hint), k)) { // k <= *hint
       if (__hint == __first_)
         return {__hint, true, nullptr};
       __node_base* before = ::__ycxx::__detail::__rb_prev(__hint);
-      if (!__lt(k, __key(before)))
+      if (!lt(k, __key(before)))
         return __between(before, __hint);
       return __pos_upper(k);
     }
@@ -632,7 +632,7 @@ protected:
     if (__hint == h->right)
       return {__hint, false, nullptr};
     __node_base* __after = ::__ycxx::__detail::__rb_next(__hint);
-    if (!__lt(__key(__after), k))
+    if (!lt(__key(__after), k))
       return __between(__hint, __after);
     return __pos_lower(k);
   }
@@ -646,7 +646,7 @@ protected:
       __pos p = __pos_unique(::__ycxx::__detail::__key_arg<key_type, _IsMap>(__args...));
       if (p.__existing)
         return {p.__existing, false};
-      __node* n = __make_node(static_cast<_Args&&>(__args)...);
+      node* n = __make_node(static_cast<_Args&&>(__args)...);
       __link(n, p);
       return {n, true};
     } else {
@@ -665,7 +665,7 @@ protected:
       __pos p = __pos_unique_hint(__hint, ::__ycxx::__detail::__key_arg<key_type, _IsMap>(__args...));
       if (p.__existing)
         return p.__existing;
-      __node* n = __make_node(static_cast<_Args&&>(__args)...);
+      node* n = __make_node(static_cast<_Args&&>(__args)...);
       __link(n, p);
       return n;
     } else {
@@ -715,7 +715,7 @@ protected:
     __pos p = __hint ? __pos_unique_hint(__hint, k) : __pos_unique(k);
     if (p.__existing)
       return {p.__existing, false};
-    __node* n = __make_node(static_cast<_Args&&>(__args)...);
+    node* n = __make_node(static_cast<_Args&&>(__args)...);
     __link(n, p);
     return {n, true};
   }
@@ -728,7 +728,7 @@ protected:
 
   // ---- node handles ----
   constexpr node_type __make_handle(__node_base* n) noexcept {
-    return ::__ycxx::__detail::__node_handle_access::__make<node_type>(static_cast<__node*>(n), allocator_type(__na_));
+    return ::__ycxx::__detail::__node_handle_access::__make<node_type>(static_cast<node*>(n), allocator_type(__na_));
   }
   constexpr void __check_handle(const node_type& __nh) const noexcept {
     if constexpr (!__always_equal)
@@ -943,7 +943,7 @@ protected:
   constexpr __node_base* lower(const _Kp& k) const {
     __node_base* y = __hdr_;
     for (__node_base* __x = __root(); __x;) {
-      if (!__lt(__key(__x), k)) {
+      if (!lt(__key(__x), k)) {
         y = __x;
         __x = __x->left;
       } else {
@@ -956,7 +956,7 @@ protected:
   constexpr __node_base* upper(const _Kp& k) const {
     __node_base* y = __hdr_;
     for (__node_base* __x = __root(); __x;) {
-      if (__lt(k, __key(__x))) {
+      if (lt(k, __key(__x))) {
         y = __x;
         __x = __x->left;
       } else {
@@ -968,7 +968,7 @@ protected:
   template <class _Kp>
   constexpr __node_base* __find_node(const _Kp& k) const {
     __node_base* n = lower(k);
-    if (n == __hdr_ || __lt(k, __key(n)))
+    if (n == __hdr_ || lt(k, __key(n)))
       return __hdr_;
     return n;
   }

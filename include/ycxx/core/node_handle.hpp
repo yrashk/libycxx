@@ -39,12 +39,12 @@ struct __node_handle_types<_Vp, true> {
 
 template <class _Node, class _Alloc, bool _IsMap>
 class __node_handle : public __node_handle_types<std::remove_cvref_t<decltype(std::declval<_Node&>().value)>, _IsMap> {
-  using __node = _Node;
+  using node = _Node;
   using _Vp = std::remove_cvref_t<decltype(std::declval<_Node&>().value)>;
   using __ator_traits = std::allocator_traits<_Alloc>;
-  using __node_traits = typename __ator_traits::template rebind_traits<__node>;
+  using __node_traits = typename __ator_traits::template rebind_traits<node>;
   using __node_pointer = typename __node_traits::pointer;
-  using __node_alloc = typename __ator_traits::template rebind_alloc<__node>;
+  using __node_alloc = typename __ator_traits::template rebind_alloc<node>;
 
   friend struct ::__ycxx::__detail::__node_handle_access;
 
@@ -59,9 +59,9 @@ private:
     _Alloc __alloc_;
   };
 
-  constexpr __node* __raw() const noexcept { return __ptr_ == nullptr ? nullptr : std::to_address(__ptr_); }
+  constexpr node* __raw() const noexcept { return __ptr_ == nullptr ? nullptr : std::to_address(__ptr_); }
   constexpr void __destroy_node() noexcept {
-    __node* n = __raw();
+    node* n = __raw();
     __ator_traits::destroy(__alloc_, __builtin_addressof(n->value));
     std::destroy_at(n);
     __node_alloc __na(__alloc_);
@@ -74,7 +74,7 @@ private:
       __ptr_ = __node_pointer();
     }
   }
-  constexpr __node_handle(__node* n, const _Alloc& a) noexcept
+  constexpr __node_handle(node* n, const _Alloc& a) noexcept
       : __ptr_(::__ycxx::__detail::__to_alloc_pointer<__node_pointer>(n)) {
     std::construct_at(__builtin_addressof(__alloc_), a);
   }
@@ -183,8 +183,8 @@ public:
 template <class _Iterator, class _NodeType>
 struct insert_return_type {
   _Iterator position;
-  bool __inserted;
-  _NodeType __node;
+  bool inserted;
+  _NodeType node;
 };
 
 }} // namespace __ycxx::__adl_free

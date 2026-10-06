@@ -75,7 +75,7 @@ namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __adl_free {
 template <class _Sch, class _Child, class _Rcvr>
 struct __exec_continues_on_state {
   using __variant_t =
-      typename ::__ycxx::__detail::__exec::__continues_on_variant<std::execution::__completion_signatures_of_t<_Child, ::__ycxx::__detail::__exec::__fwd_env_t<std::execution::env_of_t<_Rcvr>>>>::type;
+      typename ::__ycxx::__detail::__exec::__continues_on_variant<std::execution::completion_signatures_of_t<_Child, ::__ycxx::__detail::__exec::__fwd_env_t<std::execution::env_of_t<_Rcvr>>>>::type;
 
   _Rcvr& __rcvr;
   __variant_t __async_result;
@@ -187,7 +187,7 @@ struct starts_on_t {
     return __ycxx::__detail::__exec::__make_sender(*this, static_cast<_Sch&&>(__sch), static_cast<_Sndr&&>(__sndr));
   }
   template <class _OutSndr, class _Env>
-    requires is_same_v<__tag_of_t<_OutSndr>, starts_on_t>
+    requires is_same_v<tag_of_t<_OutSndr>, starts_on_t>
   static constexpr auto transform_sender(set_value_t, _OutSndr&& __out_sndr, const _Env&) {
     using _Sp = decay_t<__ycxx::__detail::__exec::__child_type<_OutSndr>>;
     return let_value(continues_on(just(), static_cast<_OutSndr&&>(__out_sndr).template get<1>()),
@@ -227,7 +227,7 @@ struct on_t {
   }
 
   template <class _OutSndr, class _Env>
-    requires is_same_v<__tag_of_t<_OutSndr>, on_t>
+    requires is_same_v<tag_of_t<_OutSndr>, on_t>
   static constexpr auto transform_sender(set_value_t, _OutSndr&& __out_sndr, const _Env& env) {
     auto&& data = static_cast<_OutSndr&&>(__out_sndr).template get<1>();
     auto&& __child = static_cast<_OutSndr&&>(__out_sndr).template get<2>();
@@ -292,7 +292,7 @@ template <class _Sch, class _Env>
 concept __infallible_scheduler =
     std::execution::scheduler<_Sch> &&
     (std::same_as<std::execution::completion_signatures<set_value_t()>, __csigs_of_t<decltype(std::execution::schedule(std::declval<_Sch>())), _Env>> ||
-     (!std::unstoppable_token<std::__stop_token_of_t<_Env>> &&
+     (!std::unstoppable_token<std::stop_token_of_t<_Env>> &&
       (std::same_as<std::execution::completion_signatures<set_value_t(), set_stopped_t()>,
                     __csigs_of_t<decltype(std::execution::schedule(std::declval<_Sch>())), _Env>> ||
        std::same_as<std::execution::completion_signatures<set_stopped_t(), set_value_t()>,
@@ -330,7 +330,7 @@ struct affine_t : sender_adaptor_closure<affine_t> {
   // start scheduler that is infallible in the environment, the sender stays as it is and its
   // completion signatures report the error ([exec.affine]/7).
   template <class _Sndr, class _Env>
-    requires is_same_v<__tag_of_t<_Sndr>, affine_t> &&
+    requires is_same_v<tag_of_t<_Sndr>, affine_t> &&
              (__ycxx::__detail::__exec::__has_affine_member<__ycxx::__detail::__exec::__child_type<_Sndr>> ||
               requires(const _Env& __ev) {
                 requires __ycxx::__detail::__exec::__infallible_scheduler<decltype(get_start_scheduler(__ev)), _Env>;
@@ -461,7 +461,7 @@ template <class _Rcvr, class... _Children>
 struct __when_all_types {
   using __env_t = __when_all_env_t<std::execution::env_of_t<_Rcvr>>;
   using __values_tuple = typename __when_all_values<__env_t, _Children...>::type;
-  using __all_sigs = __sigs_concat_t<std::execution::__completion_signatures_of_t<_Children, __env_t>...>;
+  using __all_sigs = __sigs_concat_t<std::execution::completion_signatures_of_t<_Children, __env_t>...>;
   using __copy_fail = std::conditional_t<__nothrow_decay_copy_sigs<__all_sigs>, ::__ycxx::__adl_free::__exec_none_such, std::exception_ptr>;
   template <class _Args>
   struct __decayed_error;
@@ -476,8 +476,8 @@ struct __when_all_types {
     using type = __apply_unique_t<std::variant, ::__ycxx::__adl_free::__exec_none_such, __copy_fail, typename __decayed_error<_Lists>::type...>;
   };
   using __errors_variant = typename __errors_variant_of<__sigs_args_t<set_error_t, __all_sigs>>::type;
-  static constexpr bool __sends_stopped = __sigs_count<set_stopped_t, __all_sigs> != 0;
-  using stop_callback = std::stop_callback_for_t<std::__stop_token_of_t<std::execution::env_of_t<_Rcvr>>, ::__ycxx::__adl_free::__exec_on_stop_request>;
+  static constexpr bool sends_stopped = __sigs_count<set_stopped_t, __all_sigs> != 0;
+  using stop_callback = std::stop_callback_for_t<std::stop_token_of_t<std::execution::env_of_t<_Rcvr>>, ::__ycxx::__adl_free::__exec_on_stop_request>;
 };
 }}} // namespace __ycxx::__detail::__exec
 
@@ -525,7 +525,7 @@ struct __exec_when_all_state {
           },
           __errors);
     } else {
-      if constexpr (__types::__sends_stopped) {
+      if constexpr (__types::sends_stopped) {
         __on_stop.reset();
         std::execution::set_stopped(static_cast<_Rcvr&&>(__rcvr));
       }
@@ -644,7 +644,7 @@ struct when_all_with_variant_t {
     return __ycxx::__detail::__exec::__make_sender(*this, __ycxx::__detail::__exec::__empty_data(), static_cast<_Sndrs&&>(__sndrs)...);
   }
   template <class _Sndr, class _Env>
-    requires is_same_v<__tag_of_t<_Sndr>, when_all_with_variant_t>
+    requires is_same_v<tag_of_t<_Sndr>, when_all_with_variant_t>
   static constexpr auto transform_sender(set_value_t, _Sndr&& __sndr, const _Env&) {
     return [&]<size_t... _Is>(index_sequence<_Is...>) {
       return when_all(into_variant(static_cast<_Sndr&&>(__sndr).template get<_Is + 2>())...);
@@ -695,8 +695,8 @@ struct __exec_stop_when_sender {
   _Token token;
 
   template <class _Env>
-  using __stoken_for = std::conditional_t<std::unstoppable_token<std::__stop_token_of_t<_Env>>, _Token,
-                                        __exec_either_stop_token<_Token, std::__stop_token_of_t<_Env>>>;
+  using __stoken_for = std::conditional_t<std::unstoppable_token<std::stop_token_of_t<_Env>>, _Token,
+                                        __exec_either_stop_token<_Token, std::stop_token_of_t<_Env>>>;
   template <class _Self, class _Env>
   using __inner_t = decltype(std::execution::write_env(std::declval<std::remove_cvref_t<_Self>>().__sndr,
                                                      std::execution::prop(std::get_stop_token, std::declval<__stoken_for<_Env>>())));

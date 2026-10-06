@@ -639,7 +639,7 @@ template <class _It, class __charT, class __traits>
 class __re_posix_sub {
   using __prog = __re_program<__charT, __traits>;
   using __flag_t = std::regex_constants::match_flag_type;
-  using __node = __re_node<__charT>;
+  using node = __re_node<__charT>;
 
   const __prog& _P_;
   const __traits& __tr_;
@@ -780,7 +780,7 @@ class __re_posix_sub {
         return _Ep[k];
     return -1;
   }
-  void __reset_groups(const __node& __x) {
+  void __reset_groups(const node& __x) {
     for (int __g = __x.__group_lo; __g < __x.__group_hi; ++__g) {
       __caps_[2 * static_cast<std::size_t>(__g)] = -1;
       __caps_[2 * static_cast<std::size_t>(__g) + 1] = -1;
@@ -788,7 +788,7 @@ class __re_posix_sub {
   }
   // Assigns the subexpressions of node n, which matches [s, t).
   void span(int n, std::ptrdiff_t s, std::ptrdiff_t t) {
-    const __node& __x = _P_.__nodes[static_cast<std::size_t>(n)];
+    const node& __x = _P_.__nodes[static_cast<std::size_t>(n)];
     switch (__x.kind) {
     case __re_kind::__group:
       __caps_[2 * static_cast<std::size_t>(__x.__val)] = s;

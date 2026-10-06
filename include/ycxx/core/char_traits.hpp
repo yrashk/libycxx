@@ -49,11 +49,11 @@ struct __char_traits_base {
   using off_type = std::streamoff;
   using pos_type = std::fpos<std::mbstate_t>;
   using state_type = std::mbstate_t;
-  using __comparison_category = std::strong_ordering;
+  using comparison_category = std::strong_ordering;
 
   static constexpr void assign(char_type& __c1, const char_type& __c2) noexcept { __c1 = __c2; }
-  static constexpr bool __eq(char_type __c1, char_type __c2) noexcept { return __c1 == __c2; }
-  static constexpr bool __lt(char_type __c1, char_type __c2) noexcept {
+  static constexpr bool eq(char_type __c1, char_type __c2) noexcept { return __c1 == __c2; }
+  static constexpr bool lt(char_type __c1, char_type __c2) noexcept {
     return static_cast<_Up>(__c1) < static_cast<_Up>(__c2);
   }
 
@@ -64,9 +64,9 @@ struct __char_traits_base {
       }
     }
     for (std::size_t i = 0; i < n; ++i) {
-      if (__lt(__s1[i], __s2[i]))
+      if (lt(__s1[i], __s2[i]))
         return -1;
-      if (__lt(__s2[i], __s1[i]))
+      if (lt(__s2[i], __s1[i]))
         return 1;
     }
     return 0;
@@ -80,7 +80,7 @@ struct __char_traits_base {
       }
     }
     std::size_t n = 0;
-    while (!__eq(s[n], char_type()))
+    while (!eq(s[n], char_type()))
       ++n;
     return n;
   }
@@ -91,7 +91,7 @@ struct __char_traits_base {
       }
     }
     for (std::size_t i = 0; i < n; ++i)
-      if (__eq(s[i], a))
+      if (eq(s[i], a))
         return s + i;
     return nullptr;
   }

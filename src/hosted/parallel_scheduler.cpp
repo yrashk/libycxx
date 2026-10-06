@@ -118,7 +118,7 @@ class thread_pool_backend final : public psr::parallel_scheduler_backend {
     } else if (!__atomic_load_n(&__it->__stopped, __ATOMIC_ACQUIRE)) {
       const std::size_t b = i * __it->chunk;
       const std::size_t e = b + __it->chunk < __it->n ? b + __it->chunk : __it->n;
-      __it->r->__execute(b, e);
+      __it->r->execute(b, e);
     }
     // The item is only read before the increment: once another worker's increment is the last,
     // it completes the proxy and the item's storage goes.

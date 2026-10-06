@@ -208,7 +208,7 @@ class __re_compiler {
   using __rc_err = std::regex_constants::error_type;
   using string_type = typename __traits::string_type;
   using __class_type = typename __traits::char_class_type;
-  using __node = __re_node<__charT>;
+  using node = __re_node<__charT>;
   using __set_type = __re_set<__charT, __traits>;
 
   // Limits on the size of a translated expression (error_space beyond them): the tree and the
@@ -225,7 +225,7 @@ class __re_compiler {
   __re_program<__charT, __traits>& _P_;
   const __charT* __p_;
   const __charT* __end_;
-  std::vector<__node> __nodes_;
+  std::vector<node> __nodes_;
   std::vector<char> __closed_; // POSIX: closed_[n] once group n is complete (not vector<bool>, which <vector> specializes)
   int __max_backref_ = 0;
   int __depth_ = 0;
@@ -241,35 +241,35 @@ class __re_compiler {
   bool __at2(char c, char d) const { return at(c) && __p_ + 1 != __end_ && __p_[1] == static_cast<__charT>(d); }
   int digit(__charT c, int radix) const { return __tr_.value(c, radix); }
 
-  int add(__node n) {
+  int add(node n) {
     if (__nodes_.size() >= __max_nodes)
       fail(std::regex_constants::error_space);
-    __nodes_.push_back(static_cast<__node&&>(n));
+    __nodes_.push_back(static_cast<node&&>(n));
     return static_cast<int>(__nodes_.size() - 1);
   }
   int __leaf(__re_kind k) {
-    __node n;
+    node n;
     n.kind = k;
-    return add(static_cast<__node&&>(n));
+    return add(static_cast<node&&>(n));
   }
   int literal(__charT c) {
-    __node n;
+    node n;
     n.kind = __re_kind::__chr;
     n.__ch = c;
-    return add(static_cast<__node&&>(n));
+    return add(static_cast<node&&>(n));
   }
   int list(__re_kind k, std::vector<int>& __kids) {
     if (__kids.empty())
       return __leaf(__re_kind::empty);
     if (__kids.size() == 1)
       return __kids[0];
-    __node n;
+    node n;
     n.kind = k;
     n.__kids = static_cast<std::vector<int>&&>(__kids);
-    return add(static_cast<__node&&>(n));
+    return add(static_cast<node&&>(n));
   }
   int repeat(int __atom, int __mn, int __mx, bool __greedy, int __g_lo) {
-    __node n;
+    node n;
     n.kind = __re_kind::repeat;
     n.min = __mn;
     n.max = __mx;
@@ -277,7 +277,7 @@ class __re_compiler {
     n.__group_lo = __g_lo;
     n.__group_hi = _P_.__groups + 1;
     n.__kids.push_back(__atom);
-    return add(static_cast<__node&&>(n));
+    return add(static_cast<node&&>(n));
   }
   int __open_group() {
     ++_P_.__groups;
@@ -285,30 +285,30 @@ class __re_compiler {
     return _P_.__groups;
   }
   int __group(int num, int __inner) {
-    __node n;
+    node n;
     n.kind = __re_kind::__group;
     n.__val = num;
     n.__group_lo = num;
     n.__group_hi = _P_.__groups + 1;
     n.__kids.push_back(__inner);
     __closed_[static_cast<std::size_t>(num)] = 1;
-    return add(static_cast<__node&&>(n));
+    return add(static_cast<node&&>(n));
   }
   int __backref(int num) {
-    __node n;
+    node n;
     n.kind = __re_kind::__backref;
     n.__val = num;
     _P_.__has_backref = true;
     if (num > __max_backref_)
       __max_backref_ = num;
-    return add(static_cast<__node&&>(n));
+    return add(static_cast<node&&>(n));
   }
   int __new_set(__set_type&& s) {
     _P_.__sets.push_back(static_cast<__set_type&&>(s));
-    __node n;
+    node n;
     n.kind = __re_kind::set;
     n.__val = static_cast<int>(_P_.__sets.size() - 1);
-    return add(static_cast<__node&&>(n));
+    return add(static_cast<node&&>(n));
   }
   int __class_escape(__charT e) {
     // \d \D \s \S \w \W: [re.grammar]/7.
@@ -617,10 +617,10 @@ class __re_compiler {
       if (!at(')'))
         fail(std::regex_constants::error_paren);
       ++__p_;
-      __node __x;
+      node __x;
       __x.kind = __neg ? __re_kind::__nlook : __re_kind::__look;
       __x.__kids.push_back(__inner);
-      n = add(static_cast<__node&&>(__x));
+      n = add(static_cast<node&&>(__x));
       __no_quantifier();
       return n;
     }
@@ -955,7 +955,7 @@ class __re_compiler {
 
   // ---- analysis and code generation -------------------------------------------------------------
   bool __y_nullable(int n) const {
-    const __node& __x = __nodes_[static_cast<std::size_t>(n)];
+    const node& __x = __nodes_[static_cast<std::size_t>(n)];
     switch (__x.kind) {
     case __re_kind::__chr:
     case __re_kind::any:
@@ -986,7 +986,7 @@ class __re_compiler {
   // The number of nodes expand() makes of n, saturated at max_expanded + 1; also too large when
   // one atom would be copied more than max_copies times.
   std::size_t __expanded_size(int n) const {
-    const __node& __x = __nodes_[static_cast<std::size_t>(n)];
+    const node& __x = __nodes_[static_cast<std::size_t>(n)];
     std::size_t s = 1;
     for (int k : __x.__kids)
       s += __expanded_size(k);
@@ -1000,10 +1000,10 @@ class __re_compiler {
   }
   // Copies the subtree n (POSIX expansion of bounded repetitions).
   int __clone(int n) {
-    __node __x = __nodes_[static_cast<std::size_t>(n)];
+    node __x = __nodes_[static_cast<std::size_t>(n)];
     for (int& k : __x.__kids)
       k = __clone(k);
-    return add(static_cast<__node&&>(__x));
+    return add(static_cast<node&&>(__x));
   }
   // Rewrites every repetition into x?, x* and concatenations (nfa programs).
   int expand(int n) {
@@ -1012,7 +1012,7 @@ class __re_compiler {
       const int k = expand(__nodes_[static_cast<std::size_t>(n)].__kids[i]);
       __nodes_[static_cast<std::size_t>(n)].__kids[i] = k;
     }
-    const __node __x = __nodes_[static_cast<std::size_t>(n)];
+    const node __x = __nodes_[static_cast<std::size_t>(n)];
     if (__x.kind != __re_kind::repeat || (__x.min == 0 && (__x.max == 1 || __x.max < 0)))
       return n;
     if (__x.max == 0)
@@ -1022,7 +1022,7 @@ class __re_compiler {
       return __body;
     // A tail follows another iteration of the same repetition: it makes no empty iteration.
     auto __opt = [&](int __kid, int __mx, bool __tail) {
-      __node r;
+      node r;
       r.kind = __re_kind::repeat;
       r.min = 0;
       r.max = __mx;
@@ -1030,7 +1030,7 @@ class __re_compiler {
       r.__group_lo = __x.__group_lo;
       r.__group_hi = __x.__group_hi;
       r.__kids.push_back(__kid);
-      return add(static_cast<__node&&>(r));
+      return add(static_cast<node&&>(r));
     };
     std::vector<int> seq;
     for (int i = 0; i < __x.min; ++i)
@@ -1062,7 +1062,7 @@ class __re_compiler {
   __re_inst<__charT>& __at_pc(int i) { return _P_.code[static_cast<std::size_t>(i)]; }
 
   void __gen(int n) {
-    const __node __x = __nodes_[static_cast<std::size_t>(n)]; // gen never adds nodes, but keep a copy
+    const node __x = __nodes_[static_cast<std::size_t>(n)]; // gen never adds nodes, but keep a copy
     if (_P_.__nfa)
       _P_.__node_begin[static_cast<std::size_t>(n)] = __pc();
     switch (__x.kind) {
@@ -1132,7 +1132,7 @@ class __re_compiler {
     if (_P_.__nfa)
       _P_.__node_end[static_cast<std::size_t>(n)] = __pc();
   }
-  void __gen_repeat(const __node& __x) {
+  void __gen_repeat(const node& __x) {
     if (_P_.__nfa) { // only x? and x* remain after expand()
       const int s = emit(__re_op::split);
       __at_pc(s).a = s + 1;
@@ -1361,7 +1361,7 @@ public:
     __gen(__root);
     emit(__re_op::__match);
     if (_Pp.__nfa) {
-      _Pp.__nodes = static_cast<std::vector<__node>&&>(__nodes_);
+      _Pp.__nodes = static_cast<std::vector<node>&&>(__nodes_);
       _Pp.__root = __root;
     }
     finish();

@@ -109,16 +109,16 @@ constexpr void permute(_Cp& c, const std::size_t* __perm, std::size_t* __work, s
 // The rows [0, lo) are sorted by key; sorts the rows [lo, size) stably and merges them in, so
 // that all rows are sorted, stably (of equivalent keys, earlier rows first).
 template <class _Less, class _Keys, class... _Others>
-constexpr void __sort_rows(_Less& __lt, std::size_t __lo, _Keys& keys, _Others&... __others) {
+constexpr void __sort_rows(_Less& lt, std::size_t __lo, _Keys& keys, _Others&... __others) {
   const std::size_t n = keys.size();
   auto __key = [&keys](std::size_t i) -> decltype(auto) { return ::__ycxx::__detail::__row_at(keys, i); };
   bool __tail_sorted = true;
   for (std::size_t i = __lo + 1; i < n && __tail_sorted; ++i)
-    __tail_sorted = !__lt(__key(i), __key(i - 1));
+    __tail_sorted = !lt(__key(i), __key(i - 1));
   // joined: the (sorted) new rows all belong after the old ones.
   bool __joined = __lo == 0 || __lo >= n;
   if (__tail_sorted && !__joined)
-    __joined = !__lt(__key(__lo), __key(__lo - 1));
+    __joined = !lt(__key(__lo), __key(__lo - 1));
   if (__tail_sorted && __joined)
     return;
   ::__ycxx::__detail::__index_buffer __order(n), __work(n);
@@ -126,15 +126,15 @@ constexpr void __sort_rows(_Less& __lt, std::size_t __lo, _Keys& keys, _Others&.
     __order.p[i] = i;
   if (!__tail_sorted) {
     std::stable_sort(__order.p + __lo, __order.p + n,
-                     [&](std::size_t a, std::size_t b) -> bool { return __lt(__key(a), __key(b)); });
+                     [&](std::size_t a, std::size_t b) -> bool { return lt(__key(a), __key(b)); });
     if (!__joined)
-      __joined = !__lt(__key(__order.p[__lo]), __key(__lo - 1));
+      __joined = !lt(__key(__order.p[__lo]), __key(__lo - 1));
   }
   if (!__joined) {
     // Merge the identity [0, lo) with order[lo, n); old rows first among equivalent keys.
     std::size_t a = 0, b = __lo, out = 0;
     while (a < __lo && b < n) {
-      if (__lt(__key(__order.p[b]), __key(a)))
+      if (lt(__key(__order.p[b]), __key(a)))
         __work.p[out++] = __order.p[b++];
       else
         __work.p[out++] = a++;
@@ -153,13 +153,13 @@ constexpr void __sort_rows(_Less& __lt, std::size_t __lo, _Keys& keys, _Others&.
 // The rows are sorted; keeps the first row of each run of equivalent keys and erases the rest.
 // One comparison per row.
 template <class _Less, class _Keys, class... _Others>
-constexpr void __unique_rows(_Less& __lt, _Keys& keys, _Others&... __others) {
+constexpr void __unique_rows(_Less& lt, _Keys& keys, _Others&... __others) {
   const std::size_t n = keys.size();
   if (n < 2)
     return;
   std::size_t __w = 0;
   for (std::size_t r = 1; r < n; ++r) {
-    if (__lt(::__ycxx::__detail::__row_at(keys, __w), ::__ycxx::__detail::__row_at(keys, r))) {
+    if (lt(::__ycxx::__detail::__row_at(keys, __w), ::__ycxx::__detail::__row_at(keys, r))) {
       ++__w;
       if (__w != r) {
         ::__ycxx::__detail::__move_row(keys, __w, r);

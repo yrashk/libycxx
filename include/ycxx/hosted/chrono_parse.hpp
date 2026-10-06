@@ -393,9 +393,9 @@ public:
           __bump();
         continue;
       }
-      if (!__traits::__eq(*p, __charT('%'))) {
+      if (!__traits::eq(*p, __charT('%'))) {
         const int_type c = peek();
-        if (__traits::eq_int_type(c, __traits::eof()) || !__traits::__eq(__traits::to_char_type(c), *p))
+        if (__traits::eq_int_type(c, __traits::eof()) || !__traits::eq(__traits::to_char_type(c), *p))
           return false;
         __bump();
         continue;

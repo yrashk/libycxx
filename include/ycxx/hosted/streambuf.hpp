@@ -75,7 +75,7 @@ public:
 
   // [streambuf.pub.pback]
   int_type sputbackc(char_type c) {
-    if (__gbeg_ < __gnext_ && __traits::__eq(c, __gnext_[-1]))
+    if (__gbeg_ < __gnext_ && __traits::eq(c, __gnext_[-1]))
       return __traits::to_int_type(*--__gnext_);
     return pbackfail(__traits::to_int_type(c));
   }

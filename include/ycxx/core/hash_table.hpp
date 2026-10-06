@@ -245,9 +245,9 @@ class __hash_table {
 protected:
   using info = ::__ycxx::__detail::__alloc_info<_Alloc>;
   static constexpr bool __is_map = !std::is_same_v<_Key, _Value>;
-  using __node = ::__ycxx::__detail::__hash_node<_Value>;
+  using node = ::__ycxx::__detail::__hash_node<_Value>;
   using __node_base = ::__ycxx::__detail::__hash_node_base;
-  using __node_alloc = typename info::template rebind<__node>;
+  using __node_alloc = typename info::template rebind<node>;
   using __node_traits = std::allocator_traits<__node_alloc>;
   using __cell_alloc = typename info::template rebind<__node_base>;
   using __cell_traits = std::allocator_traits<__cell_alloc>;
@@ -287,7 +287,7 @@ protected:
 
   // ---- nodes ----
   static constexpr iterator __to_iter(__node_base* n) noexcept { return iterator(n); }
-  static constexpr __node* __as_node(__node_base* p) noexcept { return static_cast<__node*>(p); }
+  static constexpr node* __as_node(__node_base* p) noexcept { return static_cast<node*>(p); }
   static constexpr const _Key& __key_of(const _Value& __v) noexcept {
     if constexpr (__is_map)
       return __v.first;
@@ -304,13 +304,13 @@ protected:
     return static_cast<std::size_t>(__hash_(k));
   }
   template <class _Kp>
-  constexpr bool equal(const _Kp& k, const __node* n) const {
+  constexpr bool equal(const _Kp& k, const node* n) const {
     return static_cast<bool>(__pred_(k, __key_of(n->value)));
   }
 
   template <class... _Args>
-  constexpr __node* __make_node(_Args&&... __args) {
-    __node* n = std::to_address(__node_traits::allocate(__na_, 1));
+  constexpr node* __make_node(_Args&&... __args) {
+    node* n = std::to_address(__node_traits::allocate(__na_, 1));
     std::construct_at(n);
     ::__ycxx::__detail::__rollback __rb{[&] {
       std::destroy_at(n);
@@ -320,7 +320,7 @@ protected:
     __rb.release();
     return n;
   }
-  constexpr void __free_node(__node* n) noexcept {
+  constexpr void __free_node(node* n) noexcept {
     __node_traits::destroy(__na_, __builtin_addressof(n->value));
     std::destroy_at(n);
     __node_traits::deallocate(__na_, ::__ycxx::__detail::__to_alloc_pointer<typename __node_traits::pointer>(n), 1);
@@ -328,13 +328,13 @@ protected:
   // Frees a node unless released: the node of an insertion that may still fail.
   struct __node_guard {
     __hash_table* t;
-    __node* n;
+    node* n;
     constexpr ~__node_guard() {
       if (n)
         t->__free_node(n);
     }
-    constexpr __node* release() noexcept {
-      __node* r = n;
+    constexpr node* release() noexcept {
+      node* r = n;
       n = nullptr;
       return r;
     }
@@ -443,7 +443,7 @@ protected:
 
   // ---- linking ----
   // Links n as the first node of bucket b.
-  constexpr void __link_front(__node* n, size_type b) noexcept {
+  constexpr void __link_front(node* n, size_type b) noexcept {
     __node_base* const prev = __cells_[b].next;
     if (prev) {
       n->next = prev->next;
@@ -459,7 +459,7 @@ protected:
     ++__size_;
   }
   // Links n after pos, a node of bucket b.
-  constexpr void __link_after(__node_base* __pos, __node* n, size_type b) noexcept {
+  constexpr void __link_after(__node_base* __pos, node* n, size_type b) noexcept {
     n->next = __pos->next;
     __pos->next = n;
     if (n->next) {
@@ -470,8 +470,8 @@ protected:
     ++__size_;
   }
   // Unlinks the node after prev, which is in bucket b.
-  constexpr __node* __unlink_after(__node_base* prev, size_type b) noexcept {
-    __node* const n = __as_node(prev->next);
+  constexpr node* __unlink_after(__node_base* prev, size_type b) noexcept {
+    node* const n = __as_node(prev->next);
     __node_base* const next = n->next;
     if (__cells_[b].next == prev) { // n is the first node of its bucket
       if (!next) {
@@ -511,7 +511,7 @@ protected:
     if (!prev)
       return nullptr;
     for (__node_base* p = prev->next; p; prev = p, p = p->next) {
-      const __node* const n = __as_node(p);
+      const node* const n = __as_node(p);
       if (n->hash == h) {
         if (equal(k, n))
           return prev;
@@ -548,7 +548,7 @@ protected:
   // ---- insertion ----
   // Links the detached node n (hash h, already searched for: prev is the node before its
   // group, or null). Grows the table first; the only failure is that allocation.
-  constexpr __node* __link_new(__node* n, std::size_t h, __node_base* __group_prev) {
+  constexpr node* __link_new(node* n, std::size_t h, __node_base* __group_prev) {
     __node_base* last = nullptr;
     if constexpr (_Multi) {
       if (__group_prev)
@@ -562,14 +562,14 @@ protected:
       __link_front(n, __bucket_of(h));
     return n;
   }
-  constexpr __emplace_result __make_result(__node_base* n, bool __inserted) noexcept {
+  constexpr __emplace_result __make_result(__node_base* n, bool inserted) noexcept {
     if constexpr (_Multi)
       return iterator(n);
     else
-      return __emplace_result(iterator(n), __inserted);
+      return __emplace_result(iterator(n), inserted);
   }
   // Inserts a constructed node (freed if it is not kept).
-  constexpr __emplace_result __insert_node(__node* n) {
+  constexpr __emplace_result __insert_node(node* n) {
     __node_guard __g{this, n};
     const std::size_t h = __hash_of(__key_of(n->value));
     __node_base* const prev = __find_prev(__key_of(n->value), h);
@@ -637,7 +637,7 @@ protected:
   }
   // Equivalent keys: links the detached node n right after the hint when the hint holds an
   // equivalent key, else at the end of its group.
-  constexpr void __link_hinted(const_iterator __hint, __node* n) {
+  constexpr void __link_hinted(const_iterator __hint, node* n) {
     const std::size_t h = __hash_of(__key_of(n->value));
     if (__node_base* const __pos = __hint_pos(__hint, __key_of(n->value), h)) {
       __grow_for(1);
@@ -647,7 +647,7 @@ protected:
       __link_new(n, h, __find_prev(__key_of(n->value), h));
     }
   }
-  constexpr iterator __insert_node_hint(const_iterator __hint, __node* n) {
+  constexpr iterator __insert_node_hint(const_iterator __hint, node* n) {
     __node_guard __g{this, n};
     __link_hinted(__hint, n);
     return iterator(__g.release());
@@ -676,8 +676,8 @@ protected:
     __node_base* __tail = __head();
     std::size_t __prev_bucket = static_cast<std::size_t>(-1);
     for (__node_base* p = __o.first(); p; p = p->next) {
-      __node* const __src = __as_node(p);
-      __node* n;
+      node* const __src = __as_node(p);
+      node* n;
       if constexpr (__move_values)
         n = __make_node(static_cast<_Value&&>(__src->value));
       else
@@ -827,7 +827,7 @@ protected:
       ::__ycxx::__detail::__precondition(__na_ == __src.__na_, "unordered container merge: unequal allocators");
     __node_base* prev = __src.first() ? __src.__head() : nullptr;
     while (prev && prev->next) {
-      __node* const n = __as_node(prev->next);
+      node* const n = __as_node(prev->next);
       const std::size_t h = __hash_of(__key_of(n->value));
       __node_base* const __gp = __find_prev(__key_of(n->value), h);
       if constexpr (!_Multi) {
@@ -952,7 +952,7 @@ public:
 
   constexpr node_type extract(const_iterator position) {
     ::__ycxx::__detail::__precondition(position.__n_ != nullptr, "unordered container extract: end() iterator");
-    __node* const n = __unlink_after(__prev_of(position.__n_), __bucket_of(__as_node(position.__n_)->hash));
+    node* const n = __unlink_after(__prev_of(position.__n_), __bucket_of(__as_node(position.__n_)->hash));
     return __nh_access::__make<node_type>(n, get_allocator());
   }
   constexpr node_type extract(const key_type& __x) { return __extract_key(__x); }
@@ -970,7 +970,7 @@ public:
     }
     ::__ycxx::__detail::__precondition(info::__always_equal || __nh.get_allocator() == get_allocator(),
                                  "unordered container insert(node_type&&): unequal allocators");
-    __node* const n = __nh_access::peek(__nh);
+    node* const n = __nh_access::peek(__nh);
     const std::size_t h = __hash_of(__key_of(n->value));
     __node_base* const prev = __find_prev(__key_of(n->value), h);
     if constexpr (!_Multi) {
@@ -989,7 +989,7 @@ public:
       return end();
     ::__ycxx::__detail::__precondition(info::__always_equal || __nh.get_allocator() == get_allocator(),
                                  "unordered container insert(node_type&&): unequal allocators");
-    __node* const n = __nh_access::peek(__nh);
+    node* const n = __nh_access::peek(__nh);
     if constexpr (_Multi) {
       __link_hinted(__hint, n);
       __nh_access::take(__nh);

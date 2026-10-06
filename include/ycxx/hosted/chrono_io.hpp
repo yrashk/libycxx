@@ -1584,8 +1584,8 @@ basic_ostream<__charT, __traits>& operator<<(basic_ostream<__charT, __traits>& _
 // [time.clock.local]/2-4
 template <class __charT, class __traits, class _Duration>
   requires requires(basic_ostream<__charT, __traits>& __os, const sys_time<_Duration>& __st) { __os << __st; }
-basic_ostream<__charT, __traits>& operator<<(basic_ostream<__charT, __traits>& __os, const local_time<_Duration>& __lt) {
-  return __os << sys_time<_Duration>(__lt.time_since_epoch());
+basic_ostream<__charT, __traits>& operator<<(basic_ostream<__charT, __traits>& __os, const local_time<_Duration>& lt) {
+  return __os << sys_time<_Duration>(lt.time_since_epoch());
 }
 
 // [time.cal]

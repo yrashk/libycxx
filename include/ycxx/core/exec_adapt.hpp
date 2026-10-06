@@ -99,9 +99,14 @@ struct __exec_probe_receiver {
 }} // namespace __ycxx::__adl_free
 
 namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail { namespace __exec {
+// Whether connecting _Sp to a receiver with environment _Env is noexcept. A sender without
+// completion signatures in _Env is not connected at all (connect would be ill-formed, as a hard
+// error), so the caller can report the invalid signatures instead.
 template <class _Sp, class _Env>
 consteval bool __nothrow_connect_in() {
-  if constexpr (requires { std::execution::connect(std::declval<_Sp>(), std::declval<::__ycxx::__adl_free::__exec_probe_receiver<_Env>>()); })
+  if constexpr (!std::execution::sender_in<_Sp, _Env>)
+    return false;
+  else if constexpr (requires { std::execution::connect(std::declval<_Sp>(), std::declval<::__ycxx::__adl_free::__exec_probe_receiver<_Env>>()); })
     return noexcept(std::execution::connect(std::declval<_Sp>(), std::declval<::__ycxx::__adl_free::__exec_probe_receiver<_Env>>()));
   else
     return false;

@@ -5,7 +5,7 @@
 #include <locale>
 #include <string>
 
-namespace ycxx::detail {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 
 // The six categories, in the order of the composite names: LC_COLLATE, LC_CTYPE, LC_MONETARY,
 // LC_NUMERIC, LC_TIME, LC_MESSAGES (index = the bit of std::locale::category, from collate).
@@ -25,4 +25,4 @@ bool named_exists(const char* name, int c);
 // semantics; empty if the C library has no such locale.
 std::string named_codeset(const char* name);
 
-} // namespace ycxx::detail
+}} // namespace ycxx::detail

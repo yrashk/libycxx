@@ -10,5 +10,5 @@ import std.compat;
 // (No names of the program's own: most short ones are macros here.)
 int main() {
   std::println("{}", std::vector<std::string>{"a", "b"});
-  return std::ranges::count(std::vector<std::string>{"a", "b"}, "a") == 1 ? 0 : 1;
+  return std::ranges::count(std::vector<std::string>{"a", "b"}, std::string("a")) == 1 ? 0 : 1;
 }

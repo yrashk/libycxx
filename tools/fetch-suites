@@ -61,11 +61,16 @@ if [ $want_libstdcxx = 1 ]; then
     ui_ok "already there" "($d)"
   else
     rm -rf "$d" "$cache/gcc-${gcc}"
-    url=https://ftp.gnu.org/gnu/gcc/gcc-${gcc}/gcc-${gcc}.tar.xz
-    if command -v curl >/dev/null 2>&1; then get="curl -fsSL --retry 3 $url"; else get="wget -qO- $url"; fi
+    # The GNU site, then GCC's own release directory (a mirror of it), should one be unreachable
+    # (CI has seen ftp.gnu.org refuse connections for minutes): each is tried in turn, with a short
+    # connection timeout so that an unreachable one fails fast.
+    urls="https://ftp.gnu.org/gnu/gcc/gcc-${gcc}/gcc-${gcc}.tar.xz https://gcc.gnu.org/pub/gcc/releases/gcc-${gcc}/gcc-${gcc}.tar.xz"
+    if command -v curl >/dev/null 2>&1; then get="curl -fsSL --connect-timeout 20 --retry 2"; else get="wget -qO- --timeout=20 --tries=2"; fi
     # Only the testsuite leaves the stream: the member pattern selects it (GNU tar and bsdtar).
     if ui_step "download gcc-${gcc}.tar.xz, extract libstdc++-v3/testsuite" "$logs/fetch-libstdcxx.log" \
-         sh -c "set -e; $get | tar -xJf - -C '$cache' 'gcc-${gcc}/libstdc++-v3/testsuite'"; then
+         sh -c "for u in $urls; do echo \"from \$u\"; rm -rf '$cache/gcc-${gcc}';
+                  if $get \"\$u\" | tar -xJf - -C '$cache' 'gcc-${gcc}/libstdc++-v3/testsuite'; then exit 0; fi
+                done; exit 1"; then
       mv "$cache/gcc-${gcc}/libstdc++-v3/testsuite" "$d"
       rm -rf "$cache/gcc-${gcc}"
       echo "$gcc" >"$d/.ycxx-gcc-version"

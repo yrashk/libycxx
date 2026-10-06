@@ -719,4 +719,4 @@ zip_transform_fn ziperator zm zone zone_ zone_name zr zt_has_default zt_has_loca
 zt_local_choose_ok zt_local_ok zt_representation
 
 [not-definable]
-brk constant cs element err f finite fs j1 l link significand tick truncate unlink y0 y1 random cospi sinpi cold alloc_size clang j
+brk constant cs element err f finite fs j1 l link significand tick truncate unlink y0 y1 random cospi sinpi cold alloc_size clang j aligned ts type_id

@@ -529,7 +529,7 @@ compilers; `visit_format_arg.pass.cpp` needs `EOF` from `constexpr_char_traits.h
 ## Known limitations and draft defects
 - Reserved names (DECISIONS §2): the headers spell every name of their own as a reserved
   identifier, so a program may `#define` any name the standard library does not declare
-  (`tests/ycxx/conformance/nasty_macros*`, 5875 such macros; `tools/uglify.py --check` in the
+  (`tests/ycxx/conformance/nasty_macros*`, 5877 such macros; `tools/uglify.py --check` in the
   policy stage). The standard names come from the draft's index of library names (a snapshot,
   `tools/uglify.py --fetch-index`), the std modules' export lists and a hand-kept list of the
   names the index misses (`tools/data/uglify/allowed.txt`); a standard name missing from all

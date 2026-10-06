@@ -600,28 +600,32 @@ const locale::facet* locale::find(const id& i) const noexcept {
 locale locale::global(const locale& loc) {
   const locale& c = classic_locale();
   locale_impl* old;
+  split_name parts; // before the reference is taken: split may throw bad_alloc
+  const bool named = loc.impl_->name != nullptr;
+  if (named)
+    split(loc.impl_->name, parts);
   retain(loc.impl_);
   {
+    // setlocale under the same lock, so that concurrent calls leave the C library's locale and
+    // the global locale set by the same call
     lock_guard g(global_lock);
     old = global_impl;
     global_impl = loc.impl_;
+    if (named) {
+      bool same = true;
+      for (int k = 1; k < ncategories; ++k)
+        same = same && parts.part[k] == parts.part[0];
+      if (same) {
+        ::setlocale(LC_ALL, parts.part[0].c_str());
+      } else {
+        for (int k = 0; k < ncategories; ++k)
+          ::setlocale(c_categories[k], parts.part[k].c_str());
+      }
+    }
   }
   if (old == nullptr) { // the classic locale, whose reference the global did not hold
     old = c.impl_;
     retain(old);
-  }
-  if (loc.impl_->name != nullptr) {
-    split_name parts;
-    split(loc.impl_->name, parts);
-    bool same = true;
-    for (int k = 1; k < ncategories; ++k)
-      same = same && parts.part[k] == parts.part[0];
-    if (same) {
-      ::setlocale(LC_ALL, parts.part[0].c_str());
-    } else {
-      for (int k = 0; k < ncategories; ++k)
-        ::setlocale(c_categories[k], parts.part[k].c_str());
-    }
   }
   return locale_access::make(old); // adopts the global's reference
 }

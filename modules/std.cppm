@@ -129,7 +129,7 @@ module;
 export module std;
 
 // DECISIONS §2: the module initializer is hidden like every other symbol of libycxx.
-asm((::ycxx::detail::hide_symbol("_ZGIW3std")));
+asm((::__ycxx::__detail::__hide_symbol("_ZGIW3std")));
 
 export namespace std {
   using std::FILE;
@@ -736,6 +736,8 @@ export namespace std {
   using std::forward_iterator_tag;
   using std::forward_like;
   using std::forward_list;
+  using std::forwarding_query;
+  using std::forwarding_query_t;
   using std::fpclassify;
   using std::fpos;
   using std::fpos_t;
@@ -785,10 +787,14 @@ export namespace std {
   using std::generic_category;
   using std::geometric_distribution;
   using std::get;
+  using std::get_allocator;
+  using std::get_allocator_t;
   using std::get_deleter;
   using std::get_if;
   using std::get_money;
   using std::get_new_handler;
+  using std::get_stop_token;
+  using std::get_stop_token_t;
   using std::get_terminate;
   using std::get_time;
   using std::getc;
@@ -2058,6 +2064,14 @@ export namespace std {
   using std::wstringstream;
   using std::wsyncbuf;
   namespace views = std::ranges::views;
+  inline namespace __cpo {
+    using std::__cpo::compare_partial_order_fallback;
+    using std::__cpo::compare_strong_order_fallback;
+    using std::__cpo::compare_weak_order_fallback;
+    using std::__cpo::partial_order;
+    using std::__cpo::strong_order;
+    using std::__cpo::weak_order;
+  }
   namespace chrono {
     using std::chrono::April;
     using std::chrono::August;
@@ -2198,23 +2212,141 @@ export namespace std {
     using std::contracts::evaluation_semantic;
     using std::contracts::invoke_default_contract_violation_handler;
   }
-  inline namespace cpo {
-    using std::cpo::compare_partial_order_fallback;
-    using std::cpo::compare_strong_order_fallback;
-    using std::cpo::compare_weak_order_fallback;
-    using std::cpo::partial_order;
-    using std::cpo::strong_order;
-    using std::cpo::weak_order;
-  }
   namespace execution {
+    using std::execution::affine;
+    using std::execution::affine_t;
+    using std::execution::apply_sender;
+    using std::execution::as_awaitable;
+    using std::execution::as_awaitable_t;
+    using std::execution::associate;
+    using std::execution::associate_t;
+    using std::execution::bulk;
+    using std::execution::bulk_chunked;
+    using std::execution::bulk_chunked_t;
+    using std::execution::bulk_t;
+    using std::execution::bulk_unchunked;
+    using std::execution::bulk_unchunked_t;
+    using std::execution::completion_signatures;
+    using std::execution::connect;
+    using std::execution::connect_result_t;
+    using std::execution::connect_t;
+    using std::execution::continues_on;
+    using std::execution::continues_on_t;
+    using std::execution::counting_scope;
+    using std::execution::default_domain;
+    using std::execution::dependent_sender;
+    using std::execution::env;
+    using std::execution::env_of_t;
+    using std::execution::forward_progress_guarantee;
+    using std::execution::get_completion_domain;
+    using std::execution::get_completion_domain_t;
+    using std::execution::get_completion_scheduler;
+    using std::execution::get_completion_scheduler_t;
+    using std::execution::get_completion_signatures;
+    using std::execution::get_delegation_scheduler;
+    using std::execution::get_delegation_scheduler_t;
+    using std::execution::get_domain;
+    using std::execution::get_domain_t;
+    using std::execution::get_env;
+    using std::execution::get_env_t;
+    using std::execution::get_forward_progress_guarantee;
+    using std::execution::get_forward_progress_guarantee_t;
+    using std::execution::get_parallel_scheduler;
+    using std::execution::get_scheduler;
+    using std::execution::get_scheduler_t;
+    using std::execution::get_start_scheduler;
+    using std::execution::get_start_scheduler_t;
+    using std::execution::indeterminate_domain;
+    using std::execution::inlinable_receiver;
+    using std::execution::inline_scheduler;
+    using std::execution::into_variant;
+    using std::execution::into_variant_t;
+    using std::execution::just;
+    using std::execution::just_error;
+    using std::execution::just_error_t;
+    using std::execution::just_stopped;
+    using std::execution::just_stopped_t;
+    using std::execution::just_t;
+    using std::execution::let_error;
+    using std::execution::let_error_t;
+    using std::execution::let_stopped;
+    using std::execution::let_stopped_t;
+    using std::execution::let_value;
+    using std::execution::let_value_t;
+    using std::execution::on;
+    using std::execution::on_t;
+    using std::execution::operation_state;
+    using std::execution::operation_state_tag;
+    using std::execution::operator|;
     using std::execution::par;
     using std::execution::par_unseq;
     using std::execution::parallel_policy;
+    using std::execution::parallel_scheduler;
     using std::execution::parallel_unsequenced_policy;
+    using std::execution::prop;
+    using std::execution::read_env;
+    using std::execution::receiver;
+    using std::execution::receiver_tag;
+    using std::execution::run_loop;
+    using std::execution::schedule;
+    using std::execution::schedule_from;
+    using std::execution::schedule_from_t;
+    using std::execution::schedule_result_t;
+    using std::execution::schedule_t;
+    using std::execution::scheduler;
+    using std::execution::scheduler_tag;
+    using std::execution::scope_association;
+    using std::execution::scope_token;
+    using std::execution::sender;
+    using std::execution::sender_adaptor_closure;
+    using std::execution::sender_in;
+    using std::execution::sender_tag;
     using std::execution::seq;
     using std::execution::sequenced_policy;
+    using std::execution::set_error;
+    using std::execution::set_error_t;
+    using std::execution::set_stopped;
+    using std::execution::set_stopped_t;
+    using std::execution::set_value;
+    using std::execution::set_value_t;
+    using std::execution::simple_counting_scope;
+    using std::execution::spawn_future;
+    using std::execution::spawn_future_t;
+    using std::execution::spawn_t;
+    using std::execution::start;
+    using std::execution::start_t;
+    using std::execution::starts_on;
+    using std::execution::starts_on_t;
+    using std::execution::stopped_as_error;
+    using std::execution::stopped_as_error_t;
+    using std::execution::stopped_as_optional;
+    using std::execution::stopped_as_optional_t;
+    using std::execution::task;
+    using std::execution::task_scheduler;
+    using std::execution::then;
+    using std::execution::then_t;
+    using std::execution::transform_sender;
     using std::execution::unseq;
     using std::execution::unsequenced_policy;
+    using std::execution::unstoppable;
+    using std::execution::upon_error;
+    using std::execution::upon_error_t;
+    using std::execution::upon_stopped;
+    using std::execution::upon_stopped_t;
+    using std::execution::value_types_of_t;
+    using std::execution::when_all;
+    using std::execution::when_all_t;
+    using std::execution::when_all_with_variant;
+    using std::execution::when_all_with_variant_t;
+    using std::execution::with_awaitable_senders;
+    using std::execution::with_error;
+    using std::execution::write_env;
+    namespace parallel_scheduler_replacement {
+      using std::execution::parallel_scheduler_replacement::bulk_item_receiver_proxy;
+      using std::execution::parallel_scheduler_replacement::parallel_scheduler_backend;
+      using std::execution::parallel_scheduler_replacement::query_parallel_scheduler_backend;
+      using std::execution::parallel_scheduler_replacement::receiver_proxy;
+    }
   }
   namespace filesystem {
     using std::filesystem::absolute;
@@ -2699,24 +2831,24 @@ export namespace std {
     using std::ranges::wistream_view;
     using std::ranges::zip_transform_view;
     using std::ranges::zip_view;
-    inline namespace cpo {
-      using std::ranges::cpo::begin;
-      using std::ranges::cpo::cbegin;
-      using std::ranges::cpo::cdata;
-      using std::ranges::cpo::cend;
-      using std::ranges::cpo::crbegin;
-      using std::ranges::cpo::crend;
-      using std::ranges::cpo::data;
-      using std::ranges::cpo::empty;
-      using std::ranges::cpo::end;
-      using std::ranges::cpo::iter_move;
-      using std::ranges::cpo::iter_swap;
-      using std::ranges::cpo::rbegin;
-      using std::ranges::cpo::rend;
-      using std::ranges::cpo::reserve_hint;
-      using std::ranges::cpo::size;
-      using std::ranges::cpo::ssize;
-      using std::ranges::cpo::swap;
+    inline namespace __cpo {
+      using std::ranges::__cpo::begin;
+      using std::ranges::__cpo::cbegin;
+      using std::ranges::__cpo::cdata;
+      using std::ranges::__cpo::cend;
+      using std::ranges::__cpo::crbegin;
+      using std::ranges::__cpo::crend;
+      using std::ranges::__cpo::data;
+      using std::ranges::__cpo::empty;
+      using std::ranges::__cpo::end;
+      using std::ranges::__cpo::iter_move;
+      using std::ranges::__cpo::iter_swap;
+      using std::ranges::__cpo::rbegin;
+      using std::ranges::__cpo::rend;
+      using std::ranges::__cpo::reserve_hint;
+      using std::ranges::__cpo::size;
+      using std::ranges::__cpo::ssize;
+      using std::ranges::__cpo::swap;
     }
     namespace views {
       using std::ranges::views::adjacent;
@@ -2983,48 +3115,52 @@ export namespace std {
     using std::this_thread::get_id;
     using std::this_thread::sleep_for;
     using std::this_thread::sleep_until;
+    using std::this_thread::sync_wait;
+    using std::this_thread::sync_wait_t;
+    using std::this_thread::sync_wait_with_variant;
+    using std::this_thread::sync_wait_with_variant_t;
     using std::this_thread::yield;
   }
 } // namespace std
 
-#if YCXX_HAS_BFLOAT16_T
+#if _YCXX_HAS_BFLOAT16_T
 export namespace std {
   using std::bfloat16_t;
 } // namespace std
 #endif
 
-#if YCXX_HAS_FLOAT128_T
+#if _YCXX_HAS_FLOAT128_T
 export namespace std {
   using std::float128_t;
 } // namespace std
 #endif
 
-#if YCXX_HAS_FLOAT16_T
+#if _YCXX_HAS_FLOAT16_T
 export namespace std {
   using std::float16_t;
 } // namespace std
 #endif
 
-#if YCXX_HAS_FLOAT32_T
+#if _YCXX_HAS_FLOAT32_T
 export namespace std {
   using std::float32_t;
 } // namespace std
 #endif
 
-#if YCXX_HAS_FLOAT64_T
+#if _YCXX_HAS_FLOAT64_T
 export namespace std {
   using std::float64_t;
 } // namespace std
 #endif
 
-#if YCXX_HAS_IS_STRUCTURAL
+#if _YCXX_HAS_IS_STRUCTURAL
 export namespace std {
   using std::is_structural;
   using std::is_structural_v;
 } // namespace std
 #endif
 
-#if YCXX_HAS_REFLECTION
+#if _YCXX_HAS_REFLECTION
 export namespace std {
   using std::define_static_array;
   using std::define_static_object;

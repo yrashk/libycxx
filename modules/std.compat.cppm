@@ -39,7 +39,7 @@ export module std.compat;
 export import std;
 
 // DECISIONS §2: the module initializer is hidden like every other symbol of libycxx.
-asm((::ycxx::detail::hide_symbol("_ZGIW3stdW6compat")));
+asm((::__ycxx::__detail::__hide_symbol("_ZGIW3stdW6compat")));
 
 // [std.modules]/3: the C library's names in the global namespace.
 export {

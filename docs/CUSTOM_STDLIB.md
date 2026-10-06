@@ -97,6 +97,19 @@ libstdc++'s freestanding mode is a separate configuration of the whole library
 `Generic-no-localization.cmake` [libcxx-caches]. libycxx's split is by layer, so one build serves
 both modes; the price is that the freestanding archive needs its own build path.
 
+Between the two modes, libycxx's hosted library is split into **hosted layers** (DECISIONS §18):
+
+- Each layer is a set of PAL primitives: memory, console, clock, threads, files, and the C library
+  itself, among others.
+- `-DYCXX_PAL=none` builds only what the selected layers enable, and the integrator's providers
+  supply their primitives (`ycxx_add_hosted_layer`).
+- A use of an absent layer fails at compile or link time, naming the layer.
+- `examples/hosted-layers` runs containers, `std::print` and exceptions on a bare-metal x86_64
+  kernel booted by Limine.
+
+libc++'s closest equivalents are its feature switches (no filesystem, no localization, no
+threads). Those remove features; they do not let the integrator supply them.
+
 ### The ABI runtime
 
 libycxx has its own Itanium ABI runtime (`src/abi`, `libycxx-abi.a`: exceptions, RTTI,

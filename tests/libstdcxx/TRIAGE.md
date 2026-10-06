@@ -50,7 +50,7 @@ workaround, and on GCC the C++ `<stdckdint.h>` and an F test (20_util/stdbit/1.c
 
 - **(A)**: all 21 (A) and 3 A-QoI tests pass on both compilers. The only (A)-table test still
   failing is 20_util/optional/relops/constrained.cc on Clang, a Clang 23 problem (D, see the
-  outcome column). The six A-doc tests (macro `C`) still fail, as documented.
+  outcome column). The A-doc tests (macro `C`) pass since the headers spell only reserved names (DECISIONS §2); the four 27_io ones are skipped for including bits/move.h.
 - **(E) fixed in the harness** (each fix commented in the code), all rerun:
   - `tests/ycxxlit/libstdcxx_format.py`: the `testsuite/data` files a test names are copied into
     its run directory (20_util/hash/chi2_q_document_words.cc and the basic_fstream/basic_ifstream
@@ -359,14 +359,9 @@ extensions, internals or unspecified behaviour; or (c) a compiler gap.
 | 23_containers/vector/modifiers/insert_vs_emplace.cc (both) | `v.emplace(p, std::move(x))` and `v.emplace(p, X{})` before the end built a temporary: one move and one destruction more than `insert(p, T&&)`. The counts are not specified, but the temporary was unnecessary: [res.on.arguments]/1.3 "the implementation may assume that this parameter is a unique reference to this argument" | `vector::emplace` with a single non-const rvalue `T` takes the `insert(p, T&&)` path |
 | 30_threads/async/async.cc (both) | `test_pr91486_wait_until` allows three calls of a user clock's `now()`, one of them the test's own; `condition_variable::wait_until` on a clock other than system/steady read `Clock::now()` twice before waiting and once after | every timed wait (condition_variable(_any), the timed mutexes, shared_mutex, sleep_until, the atomic-wait helpers) reads `Clock::now()` once before each wait; `deadline_at` takes that value |
 
-Not fixed, a documented deviation (A-doc, DECISIONS §2): 20_util/bitset/cons/string_view.cc and
-string_view_wide.cc `#define C char` before including the headers, and `invoke.hpp`,
-`compare.hpp`, `range_access.hpp` (whose parameter is the draft's own `C`, [iterator.range]),
-`iterator_adaptors.hpp`, `algo_base.hpp`, `algo_sort.hpp`, `optional.hpp` and `type_traits.hpp` use
-`C` as a template-parameter name. With the macro renamed in the test, string_view.cc passes. A
-program may define the macro ([macro.names]/1 forbids only "names declared in any standard library
-header"), so this is a libycxx defect. Fixing it means renaming `C` throughout `include/` (23
-files, several of them being edited by the other rounds), and the other plain names would remain.
+Fixed since (DECISIONS §2, reserved names): 20_util/bitset/cons/string_view.cc and
+string_view_wide.cc `#define C char` before including the headers. Every name of the headers' own
+is now reserved (`C` -> `_Cp`; tools/uglify.py), and both pass on both compilers.
 
 ### (b) libstdc++ extensions, internals or unspecified behaviour
 
@@ -638,9 +633,6 @@ shuffle_order_engine constexpr requirements). vector/modifiers/swap/1.cc is the 
 specialization above (undefined; GCC runs it and passes).
 
 **Left failing** (libycxx bugs or gaps; both compilers unless noted):
-- 20_util/bitset/cons/string_view{,_wide}.cc (A-doc, DECISIONS §2): `#define C char` before
-  the headers; `C` is a template-parameter name in 23 headers. A program may define it
-  ([macro.names]/1). Fix: rename the parameter throughout `include/`.
 - 18_support/exception/version.cc, 19_diagnostics/headers/stdexcept/version.cc (B):
   `__cpp_lib_constexpr_exceptions` (202502L, [version.syn]) is undefined: `current_exception`,
   `nested_exception`, `throw_with_nested`/`rethrow_if_nested` and `uncaught_exceptions` are not

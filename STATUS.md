@@ -274,6 +274,30 @@ CMake builds the freestanding runtime archive for the compiler's target with
 `-DYCXX_FREESTANDING_RUNTIME=ON` and installs it as `ycxx::freestanding`; `tests/cmake/run.sh`
 links the smoke program with the installed archive.
 
+## Hosted layers (DECISIONS §18)
+`-DYCXX_PAL=none` with `YCXX_HOSTED_LAYERS` builds the hosted library from the integrator's
+providers. The layers and their primitives (`include/ycxx/pal.h`) are `abort` (always), `memory`,
+`console`, `clock`, `threads`, `random`, `files`, `environment`, `debug` and `clib` (the C
+library). `YCXX_PAL=posix`, the default, is unchanged.
+
+Status of the examples in `examples/hosted-layers` (`tests/cmake/run.sh`, part 11):
+
+| Example | Layers | GCC 16.2 | Clang 23.1 |
+|---|---|---|---|
+| A, `host/`: a host program with its own heap, console and clock | abort memory console clock | runs | runs |
+| B, `limine/`: a bare-metal x86_64 kernel, booted by Limine in QEMU 8.2 (TCG), exceptions included | abort memory console clock | boots, passes | boots, passes |
+| C, `files/`: the file streams over the program's own RAM disk | clib memory files | runs | runs |
+
+The absent-layer diagnostics are checked (`absent_*` targets): `std::thread` is a static_assert,
+`sleep_for` and `random_device` are link errors naming `ycxx_pal_sleep_until` and
+`ycxx_pal_random_open`, and `<fstream>` without `clib` is an `#error`.
+
+Not yet done:
+
+- `<filesystem>` and the time zone database have no primitives (POSIX only).
+- `threads`, `files` and `debug` require `clib`: `thread.cpp` uses `<cfenv>`.
+- macOS is untested; the CMake test runs part 11 on Linux only.
+
 ## macOS (Darwin)
 Target: Apple Silicon (arm64) first, x86_64 kept in mind, with Homebrew GCC 16.2 and Clang 23.1
 against Apple's SDK and libSystem (`tools/toolchain/provision`, `activate.sh`, `tools/ycxx-cxx`,

@@ -77,6 +77,30 @@ directory, for `<stddef.h>`); the program provides `memcpy`,
 `memmove`, `memset`, `memcmp` and its entry point (`tests/freestanding/rt.c` is an example).
 `tools/check_freestanding.sh` builds the same archive for bare-metal targets.
 
+### Hosted layers: hosted without an operating system
+
+The hosted library is split into layers of support: `abort`, `memory`, `console`, `clock`,
+`threads`, `random`, `files`, `environment`, `debug`, and the C library itself (`clib`). Each
+layer is a few C primitives of `include/ycxx/pal.h`. `-DYCXX_PAL=none
+"-DYCXX_HOSTED_LAYERS=memory;console;clock"` builds libycxx without its POSIX platform layer, and
+your own providers supply the selected layers:
+
+```cmake
+set(YCXX_PAL none)
+set(YCXX_HOSTED_LAYERS memory console clock)
+add_subdirectory(libycxx)
+ycxx_add_hosted_layer(memory PROVIDER my_heap)    # or SOURCES heap.c, or -DYCXX_PAL_MEMORY_PROVIDER=...
+```
+
+A feature whose layer is absent fails to compile or link, naming the layer or its primitive.
+`examples/hosted-layers` has three working examples:
+
+- containers, `std::print` and exceptions on a host OS with the program's own heap and console;
+- the same on bare x86_64, booted by Limine in QEMU;
+- the file streams over a RAM disk of the program's own.
+
+The design is DECISIONS §18.
+
 Without CMake, `tools/ycxx-cxx gcc|clang <args>` compiles and links against the libycxx built in
 `build/<compiler>`.
 

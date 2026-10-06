@@ -36,6 +36,8 @@ support_lib = build_support_lib(wrapper, compiler, flags, tests_root, repo, conf
 # library under test through a program built once per run.
 from ycxxlit import locales
 locale_probe = locales.build_probe(wrapper, compiler, config.test_exec_root)
-config.test_format = LibstdcxxFormat(wrapper, compiler, flags,
-                                     os.path.join(repo, 'tests', 'libstdcxx', 'skip.txt'), locale_probe,
-                                     support_lib)
+# Journaled: every finished test's result is kept even if the run is stopped (Ctrl-C).
+from ycxxlit.journal import Journaled
+config.test_format = Journaled(LibstdcxxFormat(wrapper, compiler, flags,
+                                               os.path.join(repo, 'tests', 'libstdcxx', 'skip.txt'), locale_probe,
+                                               support_lib))

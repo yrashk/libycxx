@@ -651,7 +651,26 @@ under the same name. Otherwise it gets one alias template in `config.hpp`.
   `ios_base::Init` object with `init_priority(100)` (before any program static object, after the
   runtime's own), never destroyed; that object's destructor flushes them. Their buffers work on
   the C streams through C stdio (unbuffered while synchronized), so `sync_with_stdio(true)` needs
-  no extra coordination.
+  no extra coordination. `sync_with_stdio(false)` gives cout and wcout a buffer of their own and
+  changes nothing else.
+- **The wide objects do wide I/O on the C streams.** [iostream.objects.overview]/6 makes mixing
+  wide and narrow operations behave as on FILEs, and [ios.members.static]/3 makes the
+  synchronized objects' characters the C stream's: so wcin, wcout, wcerr and wclog use `fgetwc`,
+  `ungetwc` and `fputws`/`fputwc` (a null-terminated copy of each piece of a write), the C stream
+  becomes wide-oriented (`fwide(stdout, 0) > 0` after `wcout << L"x"`), and `wprintf`, `fputws`
+  and `fgetwc` interleave with them; mixing `cout` and `wcout` on one C stream is what mixing
+  byte and wide functions is in C. The C library then converts, with its `LC_CTYPE`: until the
+  program calls `setlocale`, that is the "C" locale, where (glibc) a character outside the basic
+  character set fails and sets badbit, as `fputwc` does. A buffer whose locale gets another
+  codecvt<wchar_t, char, mbstate_t> facet than the one it started with (a program's own facet,
+  through `imbue`) behaves as basic_filebuf<wchar_t> ([iostream.objects.overview]/2): it converts
+  through that facet and does byte I/O (`fwrite`, `getc`/`ungetc`), as libc++'s
+  wcout-imbue/wcin-imbue tests expect. The classic locale and the named locales share the
+  classic facet, so imbuing them keeps the wide C I/O. Rejected: converting with the classic
+  codecvt (UTF-8) and writing bytes, as libycxx did before: the C stream was left byte-oriented,
+  so `fputws` after `wcout` failed and `fgetwc` after `wcin.unget()` too (libstdc++
+  27_io/objects/wchar_t/{9662,12048-2,12048-4}.cc); and the C library's conversion for every
+  locale, imbued facets ignored, which breaks [iostream.objects.overview]/2.
 - **Concurrent use of the synchronized standard objects** ([iostream.objects.overview]/7: no
   data race from concurrent formatted and unformatted input and output) without slowing down
   other streams or single-threaded programs:
@@ -662,13 +681,14 @@ under the same name. Otherwise it gets one alias template in `config.hpp`.
     transition to failure or end of file, once per stream in practice; `clear` is a store.
     `width(n)` stores only a changed value (every inserter ends with `width(0)`).
   - *The standard objects' buffers* hold a futex mutex of their own (`ycxx::detail::futex_mutex`)
-    on their input side (underflow, uflow, pbackfail) and, for the wide buffers, around the
-    conversion to bytes. It guards what a buffer keeps between calls (the last extracted
-    character for sungetc; the wide buffers' conversion states) and makes a peek (read, then
-    give the bytes back with ungetc) atomic with respect to the object's other readers, so they
-    never see its characters out of order. Neither buffer holds characters itself: the wide one
-    also returns a peeked or put-back character's bytes to the C stream (more than ISO C's one
-    byte of push-back for a multibyte character; glibc and Darwin's libc allow it), so C stdio
+    on their input side (underflow, uflow, pbackfail) and, for the wide buffers, around each
+    write. It guards what a buffer keeps between calls (the last extracted character for
+    sungetc; the wide buffers' locale and conversion states) and makes a peek (read, then give
+    the character back with ungetwc, or ungetc) atomic with respect to the object's other
+    readers, so they never see its characters out of order. Neither buffer holds characters
+    itself: the wide one also returns a peeked or put-back character to the C stream (through an
+    imbued codecvt, its bytes: more than ISO C's one byte of push-back for a multibyte
+    character; glibc and Darwin's libc allow it), so C stdio
     and every reader see each character once, in order. Uncontended it costs one atomic exchange each
     way, on top of the C stream's own lock; in a single-threaded process (`single_threaded()`)
     plain loads and stores. Output through the narrow buffers takes no extra lock (putc and

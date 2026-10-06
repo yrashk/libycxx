@@ -646,7 +646,7 @@ specialization above (undefined; GCC runs it and passes).
   Clang 23, which cannot throw during constant evaluation (XFAIL there, xfail.txt). The functions
   once listed here (`current_exception`, `nested_exception`, `uncaught_exceptions`) are not
   constexpr in the current draft (P3818; DECISIONS §4).
-- 27_io/objects/wchar_t/{9662,12048-2,12048-4}.cc: the synchronized wide standard streams write
+- **Fixed** (the wide objects do wide I/O on the C streams, DECISIONS §7; pass on both compilers): 27_io/objects/wchar_t/{9662,12048-2,12048-4}.cc: the synchronized wide standard streams write
   and read bytes through the buffer's `codecvt` (`putc`/`getc`/`ungetc`), so `wcout << L"x"` leaves
   `stdout` byte-oriented and `fwide(stdout, 0) < 0`, after which `fputws` fails, and `fgetwc(stdin)`
   after `wcin.unget()` fails. [iostream.objects.overview]/6: mixing operations "follows the same

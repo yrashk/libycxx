@@ -683,7 +683,10 @@ compilers; `visit_format_arg.pass.cpp` needs `EOF` from `constexpr_char_traits.h
   have no default constructor (libstdc++ extension); no `wstring_convert`/`wbuffer_convert`
   (removed in C++26), no `<codecvt>`; `fstream`'s path overloads are constrained templates.
   Standard stream objects synchronized with stdio write character by
-  character through `putc` (bulk writes through `fwrite`). The UTF-16 codecvts' `out` takes a
+  character through `putc` (bulk writes through `fwrite`); the wide ones do wide I/O on the C
+  streams (`fputws`, `fgetwc`, `ungetwc`; DECISIONS §7), so the C library converts with its
+  `LC_CTYPE`: before `setlocale`, `wcout << L"\u00e9"` fails (badbit) as `fputwc` does on glibc,
+  unless a codecvt facet of the program's own is imbued. The UTF-16 codecvts' `out` takes a
   high surrogate into the state (so out(from, from + 1) succeeds, as [locale.codecvt.virtuals]/4
   requires of a filebuf facet); `unshift` reports `error` while one is pending. libstdc++'s
   `codecvt_unicode.h` expects `partial` with from_next before it instead; `money_get` with
@@ -1088,9 +1091,6 @@ levels: 29.7 s -> 0.01 s; libstdc++ 8.6 s). Remaining above 1.5x: deque push at 
 - libstdc++ suite, still failing (tests/libstdcxx/TRIAGE.md, "Whole suite with the DejaGnu
   default"; every other failure is fixed, skipped or an expected compiler failure): the
   template-parameter name `C` vs. a user macro (bitset/cons/string_view{,_wide}.cc, DECISIONS §2);
-  the wide
-  standard streams write bytes through the codecvt instead of C wide I/O, so `wcout` leaves
-  `stdout` byte-oriented ([iostream.objects.overview]/6; objects/wchar_t/{9662,12048-2,12048-4}.cc);
   locale facets (not changed in that round, the named-locale branch owns them): `money_get`
   consumes an optional currency symbol that nothing after it needs ([locale.money.get.virtuals]/2;
   money_get/get/*/19.cc), and `time_get::get_monthname`/`get_weekday` do not store the field when

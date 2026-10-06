@@ -180,12 +180,15 @@ install_gcc() {
   [ -n "$sdk" ] && extra="--with-sysroot=$sdk --with-native-system-header-dir=/usr/include"
   [ $with_sanitizers = 1 ] && extra="$extra --enable-libsanitizer"
   say "configuring and building GCC $GCC_VERSION with $jobs jobs (this takes a while)"
+  # The compiler itself without debug information (CFLAGS/CXXFLAGS -O2: GCC's default adds -g,
+  # which makes the build tree about 4.5 GB instead of under 2), installed stripped; the target
+  # libraries keep their own flags.
   # shellcheck disable=SC2086
   (cd "$build" &&
-   "$src/configure" --prefix="$dest" --enable-languages=c,c++ --disable-multilib \
+   CFLAGS=-O2 CXXFLAGS=-O2 "$src/configure" --prefix="$dest" --enable-languages=c,c++ --disable-multilib \
      --disable-bootstrap --disable-nls $extra >"$build/configure.log" 2>&1 &&
    make -j"$jobs" >"$build/make.log" 2>&1 &&
-   make install >"$build/install.log" 2>&1) || {
+   make install-strip >"$build/install.log" 2>&1) || {
     [ "$os" = Darwin ] && say "on macOS, 'provision --use-brew' installs Homebrew's GCC instead"
     die "GCC build failed; see the logs in $build"
   }

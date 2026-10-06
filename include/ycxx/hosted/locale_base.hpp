@@ -100,14 +100,16 @@ private:
 // [locale.facet]
 class locale::facet {
 protected:
-  explicit facet(size_t refs = 0) noexcept : refs_(refs) {}
+  // [locale.facet]/3: refs 0, deleted with the last locale holding it; otherwise never deleted
+  // (the count starts at 1, so the locales' references can neither bring it to 0 nor wrap it)
+  explicit facet(size_t refs = 0) noexcept : refs_(refs != 0 ? 1 : 0) {}
   virtual ~facet();
   facet(const facet&) = delete;
   void operator=(const facet&) = delete;
 
 private:
   friend ycxx::detail::locale_access;
-  mutable size_t refs_; // refs, plus one per locale holding the facet (atomic)
+  mutable size_t refs_; // refs != 0, plus one per locale holding the facet (atomic)
 };
 
 // [locale.id]

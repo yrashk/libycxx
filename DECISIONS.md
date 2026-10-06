@@ -159,8 +159,9 @@ tooling.
     under a name only libycxx uses, whose entries call that image's `::operator new` ...
     `::operator delete[]` (thunks with `size_t`/`void*` signatures). The dynamic linker binds
     every image to the first image's table: the program's, which the CMake package and
-    `tools/ycxx-cxx` keep in it (`-u`, and `--export-dynamic-symbol` where the linker has it;
-    both probed, `cmake/ycxx-link.cmake`); in a host that does not link libycxx, the first
+    `tools/ycxx-cxx` keep in it (`-u` of a hidden anchor in the table's archive member, since a
+    libycxx shared library on the link line would satisfy `-u` of the table itself, and
+    `--export-dynamic-symbol` where the linker has it; both probed, `cmake/ycxx-link.cmake`); in a host that does not link libycxx, the first
     libycxx library's. Each default first looks up its entry and forwards when the entry is not
     its own image's; otherwise it is the process's default. So a program's replacement serves
     every libycxx image ([replacement.functions]/2), objects cross libycxx images, and libycxx

@@ -45,6 +45,12 @@ constexpr ycxx_allocation_functions_t entries = {
 extern "C" [[gnu::weak, gnu::visibility("default")]] constinit const ycxx_allocation_functions_t
     ycxx_allocation_functions = entries;
 
+// What the link options name as undefined (cmake/ycxx-link.cmake) to pull this member into a
+// program: hidden, so a shared library on the program's link line, which exports
+// ycxx_allocation_functions, cannot satisfy the reference instead (the program would then have no
+// table of its own, and every image would use that library's).
+extern "C" [[gnu::visibility("hidden")]] const char ycxx_allocation_table_anchor = 0;
+
 namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 constinit const ycxx_allocation_functions_t own_allocation_functions = entries;
 }} // namespace ycxx::detail

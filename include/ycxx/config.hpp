@@ -306,6 +306,13 @@ inline constexpr bool exceptions = YCXX_HAS_EXCEPTIONS;
 inline constexpr bool rtti = YCXX_HAS_RTTI;
 // Whether exception_ptr can hold an exception during constant evaluation (YCXX_HAS_CONSTEXPR_EXCEPTION_PTR).
 inline constexpr bool constexpr_exception_ptr = YCXX_HAS_CONSTEXPR_EXCEPTION_PTR && YCXX_HAS_EXCEPTIONS;
+// Whether a constant evaluation can throw and catch exceptions (P3068, __cpp_constexpr_exceptions;
+// GCC 16 can, Clang 23 cannot: a throw there ends the constant evaluation).
+#if defined(__cpp_constexpr_exceptions) && defined(__cpp_exceptions)
+inline constexpr bool constexpr_exceptions = true;
+#else
+inline constexpr bool constexpr_exceptions = false;
+#endif
 inline constexpr bool hosted = YCXX_HOSTED;
 inline constexpr bool hardened = YCXX_HARDENED;
 inline constexpr bool reflection = YCXX_HAS_REFLECTION;

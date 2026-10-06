@@ -37,6 +37,10 @@
 #                              by default tools/fetch-suites fetches it into the cache first
 #   -h, --help
 #
+# Ctrl-C stops the run gracefully: the step or suite running is cut short (a suite keeps the
+# results of the tests that ran, and writes its logs and report), the remaining steps are listed as
+# skipped, and the summary and composite report are made as usual. Exit status 130.
+#
 # At the end: build/test-logs/run.html, the composite report of the run (every stage and suite,
 # every failure in full, copy buttons, the whole report as Markdown in run.md), to share.
 #
@@ -101,6 +105,7 @@ results=$logs/summary.txt
 : >"$results"
 : >"$logs/.run-start"
 t_start=$(date +%s)
+ui_catch_interrupt
 broken= # compilers whose library did not build: their suites are skipped
 
 # record STATUS LABEL SECONDS-OR-REASON [LOG] [COMMAND] [REPORT]: one line of $results, fields
@@ -108,13 +113,24 @@ broken= # compilers whose library did not build: their suites are skipped
 us=$(printf '\037')
 record() { printf '%s\037%s\037%s\037%s\037%s\037%s\n' "$1" "$2" "$3" "${4:-}" "${5:-}" "${6:-}" >>"$results"; }
 
+# not_run LABEL: after Ctrl-C, the steps that follow are listed as skipped, not run (true then).
+not_run() {
+  [ "${ui_interrupted}" = 1 ] || return 1
+  ui_skip "$1" "(not run: interrupted)"
+  record skip "$1" "(not run: interrupted)"
+}
+
 # step LABEL LOGNAME CMD...: one recorded step, its output in build/test-logs/LOGNAME.log.
 step() {
   s_label=$1 s_log=$logs/$2.log
   shift 2
+  ! not_run "$s_label" || return 1
   s_t0=$(date +%s)
   if ui_step "$s_label" "$s_log" "$@"; then
     record ok "$s_label" $(($(date +%s) - s_t0)) "$s_log" "$(ui_quote "$@")"
+  elif [ "${ui_interrupted}" = 1 ]; then
+    record interrupted "$s_label" $(($(date +%s) - s_t0)) "$s_log" "$(ui_quote "$@")"
+    return 1
   else
     record FAIL "$s_label" $(($(date +%s) - s_t0)) "$s_log" "$(ui_quote "$@")"
     finish_if_fail_fast
@@ -128,18 +144,23 @@ step() {
 direct() {
   d_label=$1 d_log=${2:+$logs/$2.log} d_report=$3
   shift 3
+  ! not_run "$d_label" || return 1
   d_t0=$(date +%s)
   ui_cmd "$@"
   if [ -n "$d_log" ]; then
     d_sf=$d_log.status
+    # tee ignores Ctrl-C, so that it keeps what the interrupted command prints while stopping.
     { set +e; YCXX_COLOR=$([ -n "${ui_reset}" ] && echo always || echo never) "$@" 2>&1; echo $? >"$d_sf"; } |
-      tee "$d_log"
+      (trap '' INT; exec tee "$d_log")
     d_st=$(cat "$d_sf" 2>/dev/null || echo 1); rm -f "$d_sf"
   else
     d_st=0; "$@" || d_st=$?
   fi
   if [ "$d_st" = 0 ]; then
     record ok "$d_label" $(($(date +%s) - d_t0)) "$d_log" "$(ui_quote "$@")" "$d_report"
+  elif [ "${ui_interrupted}" = 1 ]; then
+    record interrupted "$d_label" $(($(date +%s) - d_t0)) "$d_log" "$(ui_quote "$@")" "$d_report"
+    return 1
   else
     record FAIL "$d_label" $(($(date +%s) - d_t0)) "$d_log" "$(ui_quote "$@")" "$d_report"
     ui_failed=1
@@ -157,18 +178,23 @@ cc_of() { if [ "$1" = gcc ]; then echo "${YCXX_GCC:-gcc-16}"; else echo "${YCXX_
 
 summary() {
   ui_title "Summary"
-  nok=0 nfail=0 nskip=0
+  nok=0 nfail=0 nskip=0 nint=0
   # The third field is a duration in seconds, or for a skipped step the reason.
   while IFS=$us read -r st label extra _; do
     case $st in
       ok) ui_ok "$label" "($(ui_duration "$extra"))"; nok=$((nok + 1)) ;;
       skip) ui_skip "$label" "$extra"; nskip=$((nskip + 1)) ;;
+      interrupted) ui_warn "$label" "(interrupted after $(ui_duration "$extra"))"; nint=$((nint + 1)) ;;
       *) ui_fail "$label" "($(ui_duration "$extra"))"; nfail=$((nfail + 1)) ;;
     esac
   done <"$results"
   total=$(ui_duration $(($(date +%s) - t_start)))
   echo
-  if [ $nfail = 0 ]; then
+  if [ "${ui_interrupted}" = 1 ]; then
+    printf '  %s%s interrupted (Ctrl-C)%s after %s: %d passed, %d failed, %d cut short, %d skipped or not run;\n' \
+      "${ui_yellow}${ui_bold}" "${ui_sym_warn}" "${ui_reset}" "$total" "$nok" "$nfail" "$nint" "$nskip"
+    printf '  what ran is kept in the logs and reports, in %s\n' "$logs"
+  elif [ $nfail = 0 ]; then
     printf '  %s%s %d step%s passed%s in %s; logs in %s\n' "${ui_green}${ui_bold}" "${ui_sym_ok}" "$nok" \
       "$([ $nok = 1 ] || echo s)" \
       "${ui_reset}" "$total" "$logs"
@@ -176,7 +202,7 @@ summary() {
     printf '  %s%s %d of %d steps failed%s in %s; logs in %s\n' "${ui_red}${ui_bold}" "${ui_sym_fail}" "$nfail" \
       $((nok + nfail)) "${ui_reset}" "$total" "$logs"
   fi
-  [ $nskip = 0 ] || printf '  %s%d skipped%s\n' "${ui_yellow}" "$nskip" "${ui_reset}"
+  [ $nskip = 0 ] || [ "${ui_interrupted}" = 1 ] || printf '  %s%d skipped%s\n' "${ui_yellow}" "$nskip" "${ui_reset}"
   # The reports of the suites run now: every test, how it was run and what it printed.
   reports=$(find "$logs" -name '*.html' -newer "$logs/.run-start" ! -name run.html 2>/dev/null | sort)
   if [ -n "$reports" ]; then
@@ -191,6 +217,7 @@ summary() {
   [ "$dirty" = 0 ] || commit="$commit (+$dirty uncommitted changes)"
   set --
   for c in $compilers; do set -- "$@" "$c=$($(cxx_of $c) --version 2>/dev/null | head -n 1)"; done
+  [ "${ui_interrupted}" = 0 ] || set -- "$@" "interrupted=yes (Ctrl-C): the steps after it were not run"
   if python3 "$repo/tools/lib/run_report.py" "$results" "$logs/run" "command=$invocation" "started=$started" \
        "commit=$commit" "host=$(uname -srm)" "$@" "logs=$logs"; then
     echo
@@ -251,6 +278,7 @@ for stage in $stages; do
         label="$stage suite, $c${sanitizer:+, $sanitizer}"
         [ "${YCXX_HARDENED:-0}" = 1 ] && label="$label, hardened"
         label=$label${ycxx_config_name:+, ${ycxx_config_name}}
+        ! not_run "$label" || continue
         case " $broken " in *" $c "*)
           ui_section "$label"; ui_skip "$label" "(the $c build failed)"
           record skip "$label" "(the $c build failed)"; continue ;;
@@ -286,6 +314,8 @@ for stage in $stages; do
 done
 
 summary
-# The exit status: 1 when any step failed (a suite step fails when any of its tests does).
+# The exit status: 130 after Ctrl-C, else 1 when any step failed (a suite step fails when any of
+# its tests does).
+[ "${ui_interrupted}" = 0 ] || exit 130
 if grep -q "^FAIL$us" "$results"; then exit 1; fi
 exit 0

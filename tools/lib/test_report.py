@@ -145,8 +145,23 @@ def markdown(title, meta, counts, tests, elapsed, cov=None):
 def main():
     results, base = sys.argv[1], sys.argv[2]
     meta = dict(a.split('=', 1) for a in sys.argv[3:])
-    with open(results, encoding='utf-8') as f:
-        data = json.load(f)
+    try:
+        with open(results, encoding='utf-8') as f:
+            data = json.load(f)
+    except (OSError, ValueError):  # lit stopped before writing it
+        data = {'tests': []}
+    # A run stopped with Ctrl-C: lit's JSON lacks tests that finished out of order; the journal
+    # (tests/ycxxlit/journal.py) has every test that finished.
+    known = {t['name'] for t in data['tests']}
+    try:
+        with open(meta.get('_journal', ''), encoding='utf-8') as f:
+            for line in f:
+                t = json.loads(line)
+                if t['name'] not in known:
+                    known.add(t['name'])
+                    data['tests'].append(t)
+    except (OSError, ValueError):
+        pass
     tests = []
     for t in data.get('tests', []):
         name = t['name'].split(' :: ', 1)[-1]

@@ -67,7 +67,6 @@ filter=""
 while [ $# -gt 0 ] && [ "$1" != "--" ]; do filter="${filter:+$filter|}$1"; shift; done
 [ "$1" = "--" ] && shift
 
-# lit test names are "<suite> :: <path relative to the test root>"; filter on the path.
 # The library the tests link: build/<compiler>, or for a sanitizer run a build of libycxx
 # instrumented with the same sanitizers, build/<compiler>-<sanitizers> (DECISIONS §6.8). The lit
 # configurations pass it to tools/ycxx-cxx (--libdir), so that each test's transcript names it.
@@ -85,6 +84,7 @@ fi
 if [ -z "$libdir" ] && [ -n "$san_flags" ] && [ "${YCXX_STDLIB:-}" != libstdcxx ]; then
   libdir=$repo/build/$compiler-$(echo "$SANITIZER" | tr , -)
 fi
+# lit test names are "<suite> :: <path relative to the test root>"; filter on the path.
 set -- ${filter:+--filter ":: ($filter)"} --param repo="$repo" --param compiler="$compiler" \
   --param tests="$tests" ${SANITIZER:+--param sanitizer=$SANITIZER} ${libdir:+--param libdir=$libdir} \
   ${YCXX_STDLIB:+--param stdlib=$YCXX_STDLIB} "$@"

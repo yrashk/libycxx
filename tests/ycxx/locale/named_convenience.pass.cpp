@@ -36,7 +36,7 @@ int main() {
 
   for (int i = 0; i < 256; ++i)
     agrees(static_cast<char>(i), l1);
-  for (wchar_t w : {L'a', L'Z', L' ', L'\t', L'7', L'ä', L'Ä', L'ß', L'Ω', L'€', L'　'})
+  for (wchar_t w : {L'a', L'Z', L' ', L'\t', L'7', L'\u00e4', L'\u00c4', L'\u00df', L'\u03a9', L'\u20ac', L'\u3000'})
     agrees(w, u8);
 
   // the C library's view of the same characters
@@ -48,12 +48,12 @@ int main() {
   const bool c_alpha = in_c_locale(latin1, [] { return isalpha(0xE4) != 0; });
   CHECK(c_alpha);
 
-  CHECK(std::isalpha(L'ä', u8));
-  CHECK(std::toupper(L'ä', u8) == L'Ä');
-  CHECK(std::tolower(L'Ω', u8) == L'ω');
-  CHECK(!std::isalpha(L'€', u8));
-  const bool c_space = in_c_locale(utf8, [] { return iswspace(L'　') != 0; });
-  CHECK(std::isspace(L'　', u8) == c_space);
+  CHECK(std::isalpha(L'\u00e4', u8));
+  CHECK(std::toupper(L'\u00e4', u8) == L'\u00c4');
+  CHECK(std::tolower(L'\u03a9', u8) == L'\u03c9');
+  CHECK(!std::isalpha(L'\u20ac', u8));
+  const bool c_space = in_c_locale(utf8, [] { return iswspace(L'\u3000') != 0; });
+  CHECK(std::isspace(L'\u3000', u8) == c_space);
   // the classic locale's char facet: an unsigned char beyond ASCII is not a letter there
   CHECK(!std::isalpha(ae, std::locale::classic()));
   CHECK(std::toupper(ae, std::locale::classic()) == ae);

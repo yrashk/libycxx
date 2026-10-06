@@ -26,13 +26,13 @@ static const char* utf8;
 
 static int child_latin1_out() {
   std::wcout.imbue(std::locale(latin1));
-  std::wcout << L"éß " << 1234.5 << std::flush;
+  std::wcout << L"\u00e9\u00df " << 1234.5 << std::flush;
   return std::wcout.good() ? 0 : 2;
 }
 
 static int child_utf8_out() {
   std::wcout.imbue(std::locale(utf8));
-  std::wcout << L"é€" << std::flush;
+  std::wcout << L"\u00e9\u20ac" << std::flush;
   return std::wcout.good() ? 0 : 2;
 }
 
@@ -47,7 +47,7 @@ static int child_latin1_in() {
   std::wcin.imbue(std::locale(latin1));
   std::wstring s;
   std::wcin >> s;
-  if (s != L"éß") return 5;
+  if (s != L"\u00e9\u00df") return 5;
   wchar_t c = 0;
   std::wcin >> c;
   if (c != L'x') return 6;

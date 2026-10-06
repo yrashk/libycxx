@@ -503,8 +503,17 @@ tooling.
   destructors as the runtime's own classes (defined in `src/hosted/stdexcept.cpp`, built with
   RTTI and `YCXX_EXCEPTION_KEY_FUNCTIONS`), because the runtime throws them; there they are not
   constexpr-destructible. `system_error` is not constexpr in the draft and keeps its key function.
-  `__cpp_lib_constexpr_exceptions` stays undefined: Clang 23 cannot throw during constant
-  evaluation.
+  `__cpp_lib_constexpr_exceptions` is defined only where the whole feature works: constant
+  evaluation can throw (`YCXX_HAS_CONSTEXPR_EXCEPTIONS`, from `__cpp_constexpr_exceptions`) and
+  hold exceptions in `exception_ptr` (below), i.e. on GCC 16; Clang 23 cannot throw during
+  constant evaluation, so there it is undefined.
+- **What is not constexpr.** `current_exception`, `uncaught_exceptions`, `nested_exception`,
+  `throw_with_nested` and `rethrow_if_nested` are not constexpr in the draft: P3068 made them
+  so, P3818 took it back (a `const` local initialized from them would be constant-initialized
+  in a context without exceptions), leaving the exposition-only current-exception. They stay
+  run-time functions ([constexpr.functions]/1 forbids adding constexpr), although GCC 16 could
+  evaluate them: it also has `__builtin_uncaught_exceptions()` (found among the compiler's
+  strings; it counts the evaluation's uncaught exceptions). Own test `exception/not_constexpr`.
 - **`exception_ptr` during constant evaluation (GCC).** GCC 16 keeps a constant evaluation's
   exceptions itself and has two builtins for them, documented nowhere (not in its manual) but
   reported by `__has_builtin` (`YCXX_HAS_CONSTEXPR_EXCEPTION_PTR`; the names were found among the

@@ -158,7 +158,7 @@ using __impls_of = __impls_for<__tag_t<_Sndr>>;
 template <class _Sndr, class _Rcvr>
 using state_type = std::decay_t<decltype(__impls_of<_Sndr>::__get_state(std::declval<_Sndr>(), std::declval<_Rcvr&>()))>;
 template <class _Index, class _Sndr, class _Rcvr>
-using __env_type = decltype(__impls_of<_Sndr>::get_env(_Index(), std::declval<state_type<_Sndr, _Rcvr>&>(), std::declval<const _Rcvr&>()));
+using __basic_env_type = decltype(__impls_of<_Sndr>::get_env(_Index(), std::declval<state_type<_Sndr, _Rcvr>&>(), std::declval<const _Rcvr&>()));
 
 }}} // namespace __ycxx::__detail::__exec
 
@@ -184,7 +184,7 @@ struct __exec_basic_state {
 
 // basic-receiver ([exec.snd.expos]/29)
 template <class _Sndr, class _Rcvr, class _Index>
-  requires ::__ycxx::__detail::__exec::__valid_specialization<::__ycxx::__detail::__exec::__env_type, _Index, _Sndr, _Rcvr>
+  requires ::__ycxx::__detail::__exec::__valid_specialization<::__ycxx::__detail::__exec::__basic_env_type, _Index, _Sndr, _Rcvr>
 struct __exec_basic_receiver {
   using receiver_concept = std::execution::receiver_tag;
   using __impls = ::__ycxx::__detail::__exec::__impls_of<_Sndr>;
@@ -207,7 +207,7 @@ struct __exec_basic_receiver {
   {
     __impls::complete(_Index(), op->state, op->__rcvr, std::execution::set_stopped_t());
   }
-  constexpr auto get_env() const noexcept -> ::__ycxx::__detail::__exec::__env_type<_Index, _Sndr, _Rcvr> {
+  constexpr auto get_env() const noexcept -> ::__ycxx::__detail::__exec::__basic_env_type<_Index, _Sndr, _Rcvr> {
     return __impls::get_env(_Index(), op->state, op->__rcvr);
   }
 

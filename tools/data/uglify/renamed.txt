@@ -1944,7 +1944,6 @@ enumeration
 env_member_t
 env_ptr
 env_t
-env_type
 environment_has_no_start_scheduler
 envs
 eof_

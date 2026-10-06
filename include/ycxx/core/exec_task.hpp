@@ -441,9 +441,9 @@ struct __task_own_env {
   using type = std::execution::env<>;
 };
 template <class _Environment, class _RcvrEnv>
-  requires requires { typename _Environment::template __env_type<_RcvrEnv>; }
+  requires requires { typename _Environment::template env_type<_RcvrEnv>; }
 struct __task_own_env<_Environment, _RcvrEnv> {
-  using type = typename _Environment::template __env_type<_RcvrEnv>;
+  using type = typename _Environment::template env_type<_RcvrEnv>;
 };
 
 // return_value or return_void ([task.promise]/10-11): a promise type may not declare both.

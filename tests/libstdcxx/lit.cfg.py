@@ -6,6 +6,9 @@ repo = lit_config.params['repo']
 compiler = lit_config.params.get('compiler', 'gcc')
 tests_root = lit_config.params.get('tests', '/opt/src/libstdcxx-testsuite')
 sanitizer = lit_config.params.get('sanitizer', '')
+# The libycxx build to link (tools/ycxx-cxx --libdir); a sanitizer run's is instrumented with the
+# same sanitizers (tools/run-conformance; DECISIONS §6.8).
+libdir = lit_config.params.get('libdir', '')
 
 config.name = f'libycxx-libstdcxx-{compiler}'
 config.test_source_root = tests_root
@@ -27,8 +30,10 @@ flags = ['-I' + os.path.join(tests_root, 'util'), '-I' + os.path.join(repo, 'tes
          # system_error), and the new-ABI branch is the one that describes the standard.
          '-D_GLIBCXX_USE_CXX11_ABI=1', '-w', '-fdiagnostics-color=never' if compiler == 'gcc' else '-fno-diagnostics-color']
 if sanitizer:
-    flags += ['-fsanitize=' + ','.join({'asan': 'address', 'ubsan': 'undefined'}[s] for s in sanitizer.split(',')),
+    flags += ['-fsanitize=' + ','.join({'asan': 'address', 'ubsan': 'undefined', 'tsan': 'thread'}[s] for s in sanitizer.split(',')),
               '-fno-sanitize-recover=all', '-g']
+if libdir:
+    flags = ['--libdir=' + libdir] + flags
 wrapper = os.path.join(repo, 'tools', 'ycxx-cxx')
 # The testsuite's support library (DejaGnu's libtestc++.a): the helpers' out-of-line definitions.
 support_lib = build_support_lib(wrapper, compiler, flags, tests_root, repo, config.test_exec_root)

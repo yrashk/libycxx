@@ -698,6 +698,65 @@ under the same name. Otherwise it gets one alias template in `config.hpp`.
    tests' full transcripts stay in the suites' own reports, which keeps the page shareable. Every report can be copied, or
    read without a browser, as self-contained Markdown that a person or an AI assistant can act
    on directly.
+8. **Sanitizer runs test an instrumented libycxx.** A sanitizer checks only the code compiled
+   with it. ThreadSanitizer derives happens-before from the atomic operations it sees and from
+   the functions it intercepts (pthread, malloc); libycxx's mutexes, condition variables,
+   `call_once`, the parallel scheduler's queue and the exception and `shared_ptr` reference
+   counts are atomics and futex calls, so in an uninstrumented archive every hand-off through
+   them is invisible and reported as a race (observed: the 307 reports of the six `execution/`
+   failures of 2026-10-06 all crossed `src/hosted/parallel_scheduler.cpp`'s queue or the
+   exception reference counts of `src/abi/exception.cpp`; none remained with the instrumented
+   library). So `SANITIZER=<list>` (`tools/test -s`) compiles the tests with the sanitizers and
+   links them with libycxx built with the same ones:
+   - `-DYCXX_SANITIZE=address,undefined,thread` (any of them, the compilers' names) compiles
+     `libycxx.a` and `libycxx-abi.a` with `-fsanitize=<list> -fno-sanitize-recover=all
+     -fno-omit-frame-pointer`, and `ycxx::ycxx` adds `-fsanitize=<list>` to the program's link.
+     Empty by default: the default build, and the runs without a sanitizer, are unchanged.
+   - `tools/run-conformance` configures `build/<cc>-<sanitizers>` (`asan` -> `address`, `ubsan`
+     -> `undefined`, `tsan` -> `thread`; `build/clang-asan-ubsan`, `build/clang-tsan`) on first
+     use, RelWithDebInfo with the same compilers as `build/<cc>`, and brings it up to date
+     before each run; the lit configurations hand it to `tools/ycxx-cxx --libdir=DIR`, so each
+     test's transcript names the library it linked. `YCXX_LIBDIR` names another build.
+   - Everything in both archives is instrumented, the ABI runtime included (the personality
+     routine runs instrumented under the unwinder's calls; Clang's ThreadSanitizer pass gives
+     every instrumented function an exception path that leaves its shadow frame). Not
+     instrumented: the unwinder (the toolchain's `libgcc_s`) and the C library, which the
+     sanitizers intercept where they need to.
+   - The sanitizer runtimes are self-contained. Clang's static runtimes (linked whole, ahead of
+     the program's archives) need nothing of a C++ runtime but `_Unwind_Backtrace` and
+     `_Unwind_GetIP` (`nm -u`; ASan's C++ part also `__cxa_begin_catch`, for its
+     `__clang_call_terminate`, which binds to libycxx's within the program's own link); GCC's
+     `libtsan.so` needs `libc`, `libm` and `libgcc_s` only (`readelf -d`). All refer to
+     `__cxa_demangle` weakly, which libycxx does not define: it stays null and the runtimes
+     demangle with their own. No system C++ runtime enters the process.
+   - What a runtime defines itself wins over libycxx's archive members, which are then never
+     pulled in. ASan's global allocation functions are weak, so a program's replacement still
+     wins; the tests of libycxx's own (new_handler loops, forwarding) are `UNSUPPORTED-SANITIZER:
+     asan`. ThreadSanitizer's (Clang's `libclang_rt.tsan_cxx`) are strong: a replacement would be
+     a second definition. They are its only C++ part, and race detection does not need them
+     (libycxx's call malloc, which is intercepted), so `tools/ycxx-cxx` and `ycxx::ycxx` link
+     Clang's TSan programs with `-fno-sanitize-link-c++-runtime`; libycxx's allocation functions
+     and allocation table then serve the program, and the own suite's TSan runs set
+     `allocator_may_return_null=1` so that malloc reports failure as C specifies.
+     ThreadSanitizer's runtime also defines `__cxa_guard_acquire`/`release`/`abort`; libycxx's
+     are an archive member of their own (`src/abi/guard.cpp`), so the sanitizer's, which it
+     understands, are used. ASan's weak `__cxa_throw` and `__cxa_rethrow_primary_exception`
+     interceptors give way to libycxx's (strong, in the program); its `_Unwind_RaiseException`
+     interceptor sits in front of `libgcc_s`'s and unpoisons the stack on every throw. GCC's
+     driver puts the shared `libtsan.so` first on the link line, so with GCC its allocation
+     functions serve the program as ASan's do (the tests of libycxx's own then fail: STATUS,
+     own-suite configurations); the nightly TSan job is Clang's.
+   - GCC's `-Wtsan` (on by default, an error under `-Werror`) is turned off for a ThreadSanitizer
+     build: the library's seq_cst fences order a store before a later load (atomic
+     wait/notify, hazard pointers, rcu); no data relies on them for happens-before.
+   - Sanitized programs run slower and start slower; the own suite gives a test program 180 s
+     instead of 60 under a sanitizer.
+   - A ThreadSanitizer report is a race in the library (fixed, never suppressed) or in a test
+     (the test fixed), or a false positive explained in `tests/ycxx/tsan.supp`, which the own
+     suite passes in `TSAN_OPTIONS` on each program's command line. It holds one entry, for the
+     test of fence-to-fence synchronization (`atomic/fences`), since ThreadSanitizer does not
+     model stand-alone fences; nothing in the library is suppressed, and the library's
+     reference counts use acq_rel decrements rather than fences for that reason (§15).
 
 ## 7. Iostreams and localization (hosted)
 

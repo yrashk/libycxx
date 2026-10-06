@@ -1,0 +1,15 @@
+# ThreadSanitizer suppressions for the own suite (tests/ycxx), passed by tests/ycxx/lit.cfg.py as
+# TSAN_OPTIONS=suppressions=<this file> to every test program of a `-s tsan` run (the test's
+# transcript shows it). DECISIONS §6.8: a report is a race to fix (in the library or the test),
+# or a false positive, explained here with what ThreadSanitizer cannot see. Nothing in the
+# library is suppressed. Format: <kind>:<function, source file or module>, matched against every
+# frame of the report's stacks (ThreadSanitizer's documentation, "Suppressions").
+
+# atomic/fences.pass.cpp: [atomics.fences]/2-4, fence-to-fence synchronization: a release fence
+# followed by a relaxed store, read by a relaxed load followed by an acquire fence, orders the
+# producer's plain write of `payload` before the consumer's read. ThreadSanitizer does not model
+# stand-alone fences (it derives happens-before from the atomic operations' own orders only;
+# GCC's -Wtsan warns that atomic_thread_fence is not supported with -fsanitize=thread), so it
+# reports the payload accesses. The test is about exactly that pattern; it keeps running under TSan for
+# its checks.
+race:tests/ycxx/atomic/fences.pass.cpp

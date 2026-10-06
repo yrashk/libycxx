@@ -1,8 +1,9 @@
 name: full
 
 # The long runs, nightly and on demand (Actions > full > Run workflow): libc++'s and libstdc++'s
-# whole suites on both compilers, on Linux and macOS, the own suite under ASan+UBSan, and the own
-# suite hardened, with -fno-exceptions and with -O2.
+# whole suites on both compilers, on Linux and macOS, the own suite under ASan+UBSan and under
+# ThreadSanitizer (each with libycxx instrumented too), and the own suite hardened, with
+# -fno-exceptions and with -O2.
 # Any test reported FAIL (or XPASS) fails its job: there are no lists of known failures. A test
 # that cannot pass for a reason outside the test and the library (a compiler bug) is an expected
 # failure with its reason (the suite's xfail.txt, or // XFAIL in an own test); one that does not
@@ -45,21 +46,30 @@ jobs:
             build/test-logs/*.tsv
             build/test-logs/*.log
 
+  # The own suite under sanitizers, linked with a libycxx instrumented with the same ones
+  # (tools/run-conformance builds build/clang-<sanitizers>; DECISIONS §6.8): ASan+UBSan, and
+  # ThreadSanitizer (its false positives explained in tests/ycxx/tsan.supp).
   linux-sanitizers:
     runs-on: ubuntu-24.04
     container: gcc:16
-    timeout-minutes: 180
+    timeout-minutes: 240
+    strategy:
+      fail-fast: false
+      matrix:
+        sanitizer:
+          - { name: asan-ubsan, list: 'asan,ubsan' }
+          - { name: tsan, list: tsan }
     steps:
       - uses: actions/checkout@v4
       - name: Toolchains
         uses: ./.github/actions/setup-linux
-      - name: Own suite, clang, -fsanitize=address,undefined (tools/test)
-        run: tools/test -j4 -q -c clang -s asan,ubsan build ycxx
+      - name: Own suite, clang, ${{ matrix.sanitizer.list }} (tools/test; libycxx instrumented too)
+        run: tools/test -j4 -q -c clang -s ${{ matrix.sanitizer.list }} build ycxx
       - name: Test reports
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: full-linux-ycxx-clang-asan-ubsan
+          name: full-linux-ycxx-clang-${{ matrix.sanitizer.name }}
           path: |
             build/test-logs/*.html
             build/test-logs/*.md

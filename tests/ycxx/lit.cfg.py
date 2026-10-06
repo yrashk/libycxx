@@ -8,11 +8,16 @@
 #   cxxflags="..."     extra compiler flags appended to every test's, e.g. -fno-exceptions (lit
 #                      feature "exceptions" is then absent), -fno-rtti ("rtti" absent), -O2
 #   config=<name>      the short name of that configuration (exec root and log suffix)
+#   sanitizer=<list>   asan, ubsan, tsan (comma-separated): compile the tests with them
+#   libdir=<dir>       the libycxx build to link (tools/ycxx-cxx --libdir): for a sanitizer run,
+#                      tools/run-conformance passes the build instrumented with the same
+#                      sanitizers, build/<compiler>-<sanitizers> (DECISIONS §6.8)
 import os, platform, shlex, sys
 
 repo = lit_config.params['repo']
 compiler = lit_config.params.get('compiler', 'clang')
 sanitizer = lit_config.params.get('sanitizer', '')
+libdir = lit_config.params.get('libdir', '')
 stdlib = lit_config.params.get('stdlib', 'ycxx')
 hardened = lit_config.params.get('hardened', '0') not in ('', '0', 'false', 'no', 'off')
 cxxflags = shlex.split(lit_config.params.get('cxxflags', ''))
@@ -38,11 +43,8 @@ flags = ['-I' + os.path.join(repo, 'tests', 'ycxx', 'support'), '-Wall', '-Wextr
 if sanitizer:
     flags += ['-fsanitize=' + ','.join({'asan': 'address', 'ubsan': 'undefined', 'tsan': 'thread'}[s] for s in sanitizer.split(',')),
               '-fno-sanitize-recover=all', '-g']
-    if 'tsan' in sanitizer.split(','):
-        # The TSan runtime defines __cxa_guard_* too (interceptors); keep its definitions. Link
-        # against a runtime built with -fsanitize=thread (YCXX_LIBDIR, see tools/ycxx-cxx) so
-        # that its atomics are seen.
-        flags += ['-Wl,--allow-multiple-definition']
+if libdir:
+    flags = ['--libdir=' + libdir] + flags
 if hardened:
     flags += ['-DYCXX_HARDENED=1']
 flags += cxxflags
@@ -62,8 +64,20 @@ if enabled('-frtti', '-fno-rtti'):
     features.add('rtti')
 config.available_features = features
 
+# ThreadSanitizer's options, after any of the caller's own TSAN_OPTIONS, set on each test
+# program's command line (its transcript): the suppressions (tests/ycxx/tsan.supp, each with its
+# reason), and allocator_may_return_null=1: malloc returns null for a size it cannot serve, as C
+# requires, instead of ending the program (libycxx's operator new then calls the new_handler
+# and throws bad_alloc, which the new/ tests check; tools/ycxx-cxx keeps libycxx's allocation
+# functions under TSan).
+run_env = {}
+if 'tsan' in features:
+    run_env['TSAN_OPTIONS'] = ':'.join(o for o in (os.environ.get('TSAN_OPTIONS', ''),
+                                                   'suppressions=' + os.path.join(repo, 'tests', 'ycxx', 'tsan.supp'),
+                                                   'allocator_may_return_null=1') if o)
+
 wrapper = 'ref-cxx' if reference else 'ycxx-cxx'
 # Journaled: every finished test's result is kept even if the run is stopped (Ctrl-C).
 from ycxxlit.journal import Journaled
 config.test_format = Journaled(YcxxFormat(os.path.join(repo, 'tools', wrapper), compiler, flags,
-                                          sanitizer.split(',') if sanitizer else (), features))
+                                          sanitizer.split(',') if sanitizer else (), features, run_env))

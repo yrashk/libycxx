@@ -274,12 +274,23 @@ test that relies on one compiler's implementation-defined behaviour or extension
 `source_location` columns or predefined macros, an optional `std::float32_t`) is listed the same
 way in `tests/libstdcxx/unsupported.txt`, with that compiler's name.
 
+Sanitizer runs (`tools/test -s asan,ubsan`, `-s tsan`; `SANITIZER=` for `tools/run-conformance`)
+compile the tests with the sanitizers and link them with a libycxx built with the same ones,
+`build/<cc>-<sanitizers>` (`build/clang-tsan`), which `tools/run-conformance` configures and
+brings up to date itself (CMake option `YCXX_SANITIZE`; DECISIONS §6.8). A sanitizer sees only
+instrumented code: with an uninstrumented library ThreadSanitizer reports every hand-off through
+libycxx's own mutexes, queues and reference counts. A ThreadSanitizer report is a race to fix,
+in the library or the test, or a false positive suppressed in `tests/ycxx/tsan.supp` with its
+reason (the suite passes it in `TSAN_OPTIONS`). GCC needs its sanitizer runtimes (`libasan`,
+`libtsan`), which some GCC builds lack.
+
 CI (`.github/workflows/ci.yml`), on every push, runs `tools/test policy build freestanding cmake
 ycxx` on Linux (the `gcc:16` container, Clang 23 from apt.llvm.org) and macOS (Apple Silicon,
 Homebrew's GCC 16, the provisioned Clang 23), plus a sample of the external suites on Linux.
 `.github/workflows/full.yml`, nightly and on demand, runs libc++'s and libstdc++'s whole suites on
-both compilers on both platforms, the own suite under ASan+UBSan, and the own suite on both
-compilers hardened, with `-fno-exceptions` and with `-O2`. Every job uploads its reports as an
+both compilers on both platforms, the own suite under ASan+UBSan and under ThreadSanitizer (Clang,
+libycxx instrumented too), and the own suite on both compilers hardened, with `-fno-exceptions`
+and with `-O2`. Every job uploads its reports as an
 artifact.
 Tests that need a named locale (libstdc++'s `dg-require-namedlocale`, libc++'s `locale.<name>`
 features) run when the C library has it (`tests/ycxxlit/locales.py`); `tools/ci/gen-locales`

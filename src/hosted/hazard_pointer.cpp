@@ -29,9 +29,18 @@ bool is_protected(const void* __object) noexcept {
   return false;
 }
 
+// Whether this thread is reclaiming, and whether a deleter it ran retired further objects. Such a
+// retire does not reclaim itself: a chain of objects whose deleters each retire the next would
+// otherwise nest one reclamation per link, a stack as deep as the chain (2,000,000 links
+// overflowed 8 MiB; ThreadSanitizer's shadow stack failed at 20,000). The running reclamation
+// makes another pass instead, so that what deleters retire is reclaimed as promptly as before
+// (each pass runs deleters only for objects reclaimed once, so the passes end).
+constinit thread_local bool reclaiming = false;
+constinit thread_local bool reclaim_due = false;
+
 // Takes the retired list, reclaims every object no hazard pointer is associated with, and puts
 // the others back.
-void __reclaim() noexcept {
+void reclaim_pass() noexcept {
   __hp_retired_node* list = __atomic_exchange_n(&retired, static_cast<__hp_retired_node*>(nullptr), __ATOMIC_ACQUIRE);
   if (!list)
     return;
@@ -60,6 +69,15 @@ void __reclaim() noexcept {
     push_retired(keep_first, keep_last);
 }
 
+void __reclaim() noexcept {
+  reclaiming = true;
+  do {
+    reclaim_due = false;
+    reclaim_pass();
+  } while (reclaim_due);
+  reclaiming = false;
+}
+
 } // namespace
 
 __hp_record* __hp_acquire() {
@@ -85,7 +103,10 @@ void __hp_release(__hp_record* r) noexcept {
 
 void __hp_retire(__hp_retired_node* n) noexcept {
   push_retired(n, n);
-  if (__atomic_add_fetch(&retired_count, 1, __ATOMIC_RELAXED) >= reclaim_threshold())
+  const ycxx_pal_u32 __count = __atomic_add_fetch(&retired_count, 1, __ATOMIC_RELAXED);
+  if (reclaiming)
+    reclaim_due = true; // called by a deleter: the reclamation running makes another pass
+  else if (__count >= reclaim_threshold())
     __reclaim();
 }
 

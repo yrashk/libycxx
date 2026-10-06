@@ -4,12 +4,13 @@
 // execution shall wait for completion of the initialization." So the initializer runs once,
 // and every thread observes the fully initialized object.
 // FLAGS: -pthread
+#include <atomic>
 #include <pthread.h>
 #include <sched.h>
 #include "check.hpp"
 
 static int init_runs = 0;  // only touched by the (single) initializer
-static volatile int go = 0;
+static std::atomic<int> go{0};  // the start signal: an atomic, so that reading it races with nothing
 
 struct Slow {
   int value;

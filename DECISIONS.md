@@ -633,11 +633,53 @@ under the same name. Otherwise it gets one alias template in `config.hpp`.
   template arguments.
 - **locale** is a pointer to a reference-counted, immutable implementation object (facet array
   indexed by `locale::id`, name). `locale::id` gets its index on first use, so facets work during
-  static initialization; the classic locale is built on first use and never destroyed. Named
-  locales: `"C"`, `"POSIX"`, `"C.UTF-8"` and `""` (the environment, which must name one of
-  those, else the classic locale); any other name, and the `_byname` facets with such a name,
-  throw `runtime_error`. The environment's own conventions (other languages, money, dates) are
-  not supported: no C-library locale is consulted.
+  static initialization; the classic locale is built on first use and never destroyed.
+- **Named locales are the C library's** (glibc, Darwin's libc; `src/hosted/locale_named.cpp`).
+  `"C"`, `"POSIX"` (named `"C"`) and `"C.UTF-8"`/`"C.utf8"` have the classic facets on every
+  platform. Any other name is valid for a category when `newlocale` accepts it for that category
+  (`locale(name)`: every category; `locale(other, name, cats)`: those of `cats`); `""` is the
+  environment's name per category (`LC_ALL`, `LC_<category>`, `LANG`; `"C"` when that names no
+  locale the C library has), and composite names have the form
+  `LC_COLLATE=...;LC_CTYPE=...;LC_MONETARY=...;LC_NUMERIC=...;LC_TIME=...;LC_MESSAGES=...` (one
+  name when all six agree). A named category holds the `_byname` facets of its name: ctype,
+  `codecvt<wchar_t, char, mbstate_t>`, numpunct, moneypunct, time_get, time_put, collate and
+  messages for char and wchar_t. `codecvt<char, char>`, the UTF `codecvt`s ([locale.codecvt.general]
+  makes them locale-independent), num_get/num_put and money_get/money_put stay the classic
+  objects: they read the locale through the other facets. The `_byname` facets of other
+  character types check the name and have the classic semantics.
+  - *One `locale_t` per (name, category)*, opened with that category and the name's LC_CTYPE (so
+    strings convert in the name's encoding), reference-counted by the facets that use it and
+    freed with the last; immutable once opened. Data the facets need often is read once: the
+    ctype<char> table and case maps, widen/narrow tables (btowc; narrow is wctob by the reverse
+    table); numpunct, moneypunct and time_get read theirs when constructed. Per-call work uses
+    the `_l` functions (`is*_l`, `isw*_l`, `tow*_l`, `strcoll_l`, `strxfrm_l`, `wcscoll_l`,
+    `wcsxfrm_l`, `strftime_l`, `wcsftime_l`, `nl_langinfo_l`), and the calling thread's
+    `uselocale` (restored before returning) where the C library has none (`mbrtowc`/`wcrtomb`,
+    `btowc`, `catopen`; glibc's `localeconv`, called under a lock because it fills one static
+    object; Darwin's `localeconv_l` is found by a `requires` probe). The global C locale and other
+    threads' locales are never changed, except by `locale::global` ([locale.statics]/2:
+    `setlocale` per category for a named locale).
+  - *Values the draft leaves to the implementation:* ctype<char> gives a byte that is not a
+    character by itself (`btowc` is `WEOF`: a multibyte encoding's lead and continuation bytes)
+    no class and no case mapping (glibc's `is*_l` agree; Darwin's read such a byte as the code
+    point of its value); a numpunct/moneypunct separator that is
+    not one char in the locale's encoding (fr_FR.UTF-8's U+202F) is `' '` for the narrow facet
+    when it is a space character, else the classic value; the wide facet has the character; an
+    empty `thousands_sep` gives `','` and no grouping. moneypunct's patterns follow POSIX's
+    `cs_precedes`/`sep_by_space`/`sign_posn` (`int_` ones for `Intl`): a separating space is the
+    pattern's `space` field (so money_get then requires white space there,
+    [locale.money.get.virtuals]/2), sign position 0 gives the sign string `"()"`, and
+    `curr_symbol()` is `currency_symbol`/`int_curr_symbol` unchanged (libstdc++'s choice;
+    libc++ moves the space into the symbol). time_get reads the locale's day, month and AM/PM
+    names and its `%c %x %X %r` formats (`D_T_FMT` & co.); `get_date` reads the `%x` format;
+    `date_order()` is the order of `%x`'s fields. `codecvt::encoding()` is 1 for single-byte
+    encodings, else 0 (a state-dependent encoding is not detected: the only probe, `mbtowc(0, 0,
+    0)`, resets a state shared by all threads). messages opens catalogs with `catopen`
+    (`NL_CAT_LOCALE`, the name's LC_MESSAGES) and `catgets`; the classic messages has none.
+    `locale::encoding()` is the C library's `CODESET` for the name's LC_CTYPE.
+  - Rejected: precomputing every facet's data in the locale_t entry (the time and money data
+    are only needed by those facets), and caching locale_t objects forever (a program that
+    walks many names would keep them all).
 - **Classic-locale choices** where the draft leaves them implementation-defined:
   `codecvt<wchar_t, char, mbstate_t>` converts UTF-32 to and from UTF-8 (so `encoding()` is 0
   and `max_length()` 4), `ctype<charT>` for character types other than `char` classifies ASCII

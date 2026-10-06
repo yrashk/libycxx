@@ -663,6 +663,51 @@ specialization above (undefined; GCC runs it and passes).
   eofbit; tg.get_monthname(s.begin(), s.end(), iss, err, &t)` leaves `t.tm_mon == 0`.
 
 <!-- counterparts:begin (generated) -->
+## Named locales (2026-10-05)
+
+With named locales on the C library's (DECISIONS §7), `dg-require-namedlocale` holds for every
+name the C library has. Directories `22_locale 27_io 21_strings std/time`, both compilers: 24
+failures each: one fixed, 23 classified in skip.txt (block "Named locales"), each checked to pass with the
+non-standard part removed unless said otherwise:
+- 22_locale/locale/global_locale_objects/2.cc, locale/cons/29217.cc: `setlocale`/`LC_ALL` without
+  `<clocale>`; 29217 also expects glibc's twelve-category composite name.
+- 22_locale/messages/13631.cc, members/char/{1,2,3}.cc, messages_byname/named_equivalence.cc:
+  libstdc++'s three-argument `messages::open` and `LOCALEDIR` (gettext).
+- std/time/{day,month,month_day,weekday,year,year_month}/io.cc: parse fields the type cannot
+  represent ([time.parse]/16, divergence).
+- std/time/{month_day_last,month_weekday,month_weekday_last,weekday_indexed,weekday_last,
+  year_month_day_last,year_month_weekday_last}/io.cc: libstdc++'s format_error messages, `%u`/`%w`
+  of a weekday that is not ok() (libycxx throws, as libc++ requires), unspecified days.
+- std/time/{year_month_day,year_month_weekday}/io.cc: week numbers and days of the year of
+  dates that are not ok() (libycxx throws, [time.format]/3).
+- std/time/format/localized.cc: the base `time_put` writing the stream locale's names.
+- **Fixed**: std/time/format/pr117214.cc (`{:L%c}` of a zoned_time or local_time wrote the
+  process's time zone: the zone is now passed in `tm_zone`/`tm_gmtoff`).
+27_io/objects/wchar_t/13582-1_xin.cc stays skipped; its reason no longer mentions the locale.
+
+**After merging the DejaGnu-default round (tests without dg-do run, 2026-10-06):** 22_locale has
+42 more failures per compiler among the tests that now run with named locales. Fixed in libycxx
+(the coordinator's report, own tests `locale/money_get_optional_symbol`,
+`locale/time_get_err_on_entry`): money_get consumed an optional currency symbol nothing after it
+needed (money_get/get/*/19.cc); get_weekday/get_monthname/get_year did not store their field when
+err held failbit on entry (time_get/get_{weekday,monthname}/*/5.cc); money_get accepted a
+thousands separator first or doubled (money_get/get/*/15.cc, [locale.moneypunct.general]/3
+units grammar). Skipped (block "Named-locale tests without dg-do"): time_get get_date/get_time/
+get_weekday 2.cc, 12750.cc and their wrapped_* (the classic facet reading the stream locale's
+names), get_date 26701.cc (four-digit %y), date_order and moneypunct/members wrapped_* (include
+the skipped 1.cc), moneypunct/members 2.cc and money_put/put 2.cc (the classic negative_sign),
+money_put/put 1.cc (fill for space), money_get/get 10.cc ("-0", eofbit at the end).
+The 15 left after that (both compilers): fixed in libycxx: facet/2.cc (a facet constructed with
+refs = SIZE_MAX was deleted when its count wrapped; nonzero refs now means never deleted, own
+test `locale/facet_refs`), basic_filebuf/underflow/wchar_t/5.cc (an unbuffered converting filebuf
+read a whole block ahead; own test `fstream/wfilebuf_unbuffered_read`). Skipped, each with its
+reason: codecvt/{encoding,max_length}/wchar_t/wrapped_* and basic_filebuf/imbue/wchar_t/2.cc
+(the classic wide codecvt is UTF-8, as their 1.cc), num_get/get/*/9.cc (stop at a thousands
+separator, as 12.cc), locale/cons/38368.cc (the classic moneypunct's '.' and ','),
+global_locale_objects/14071.cc (glibc's twelve-category name), time_put/put/char/9780-1.cc (the
+byname facet's own names, not the stream locale's). The other three left at the time,
+objects/wchar_t/{9662,12048-2,12048-4}.cc, were fixed on the wide-streams branch (see above).
+
 ## Skipped tests without a counterpart
 
 Tests skipped (or UNSUPPORTED) as tied to the other library's internals, extensions or modes whose subject the draft does not specify, so libycxx's own suite has no test for it: the trace reports them as "no libycxx counterpart". Patterns are anchored regexes (like skip.txt); the linked ones carry `// COUNTERPART:` in tests/ycxx (tests/ycxxlit/counterparts.py).

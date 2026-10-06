@@ -597,6 +597,35 @@ diagnostics at nonsensical places in `charconv.hpp`) did not reproduce and pass 
   possible"; nothing is said about the get area or the size of the buffer. Both use
   en_US.UTF-8 later as well.
 
+## Named locales (2026-10-05)
+
+libycxx's named locales are now the C library's (DECISIONS §7), so `tests/ycxxlit/locales.py`
+provides `locale.<name>` for every name the C library has, and the 137 tests of the previous
+section run. Directories `localization input.output time strings utilities/format`, both
+compilers; 25 (GCC) / 23 (Clang) failed at first. Outcome:
+
+- **Fixed in libycxx**: the chrono `L`
+  conversions now give `time_put` the value's zone (`tm_zone`, `tm_gmtoff`), so `%c` of a locale
+  that shows `%Z` no longer writes the process's zone (libstdc++ pr117214 likewise).
+- **Harness**: locale.codecvt.byname/ctor_char16_t, ctor_char32_t (and `_char8_t`) construct a
+  facet with "en_US" without declaring it: `tools/ci/gen-locales` generates en_US, and the suite
+  provides `missing-locale.en_US` where it is absent (`unsupported.txt`); they pass here.
+- **Skipped** (skip.txt, block "Named locales", each with its reason and, where it applies, a
+  check that the test passes with that part removed): filebuf.virtuals/overflow, underflow
+  (buffer layout); ext.manip/get_time (white space before `%a`; glibc's strptime agrees with
+  libycxx); ostream.formatted.print and format.functions locale-specific_form (P3505 to_chars
+  ranges, shortest long double); locale.ctype.byname/widen_1, widen_many (the "C" part's
+  glibc btowc); money.get/put `*_fr_FR`, `*_ru_RU`, moneypunct.byname curr_symbol, neg_format,
+  pos_format (libc++'s money patterns: space moved into the symbol); moneypunct.byname/
+  negative_sign (the "C" part, see above); time.get.byname/get_date, get_date_wide (zh_CN without
+  separators; libc++'s stop position); time.syn/formatter.duration (hours of a duration reduced
+  modulo 24; shortest long double), formatter.year (LWG 4022 "-01"; glibc's `%EC` of year 0),
+  formatter.weekday, weekday_index, weekday_last (glibc strftime's `%u` of weekday(8); libycxx
+  throws, as libc++'s year_month_weekday invalid-value tests require); locale.cons/
+  name_construction (expects no name for `locale(en, unnamed, none)`; [locale.cons]/15, LWG 3676,
+  gives it en's, as libstdc++'s locale/cons/names.cc checks).
+- No XFAIL was added: none of these is a compiler bug.
+
 ## Appendix: `<version>` audit
 
 Every [version.syn] macro was compared with what libycxx defines in `<version>` and in each

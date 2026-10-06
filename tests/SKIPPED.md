@@ -15,7 +15,7 @@ UNSUPPORTED with the reason.
 | `infrastructure` | Needs harness features we do not emulate (shell `RUN:` lines, `.sh.cpp`, generated tests, warning-only `-verify` tests). |
 
 Automatically unsupported: tests whose `REQUIRES:` features we do not provide (locales such as
-`locale.fr_FR.UTF-8`, `libcpp-*` configuration features, availability markers), tests with `RUN:`
+`locale.fr_FR.UTF-8` that the C library lacks, `libcpp-*` configuration features, availability markers), tests with `RUN:`
 lines, and `.verify.cpp` tests without `expected-error` (they check only warnings).
 
 ## Expected failures (xfail.txt)
@@ -31,7 +31,9 @@ any other failure.
 `tests/libcxx/unsupported.txt` (`<path regex> | <lit feature> | <reason>`; the libc++ suite, whose
 lit configuration has features) lists tests that do not apply in one configuration only; they are
 reported UNSUPPORTED while the lit feature is available and run normally otherwise. `root` (the harness runs as root, `os.geteuid() == 0`, as in CI's
-Linux containers): tests that expect a permission error, which root never gets. `clang`: tests
+Linux containers): tests that expect a permission error, which root never gets. `missing-locale.<name>`
+(`tests/ycxxlit/locales.py`): tests that use a locale name without requiring it, run where the C
+library lacks that locale (`tools/ci/gen-locales` generates it). `clang`: tests
 that also exercise a libc++ extension under Clang only (`_BitInt`); the reason starts with the
 skip category.
 `tests/libstdcxx/unsupported.txt` (`<path regex> | gcc|clang | <reason>`) does the same for the

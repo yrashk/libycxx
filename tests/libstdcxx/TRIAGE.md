@@ -685,6 +685,19 @@ non-standard part removed unless said otherwise:
   process's time zone: the zone is now passed in `tm_zone`/`tm_gmtoff`).
 27_io/objects/wchar_t/13582-1_xin.cc stays skipped; its reason no longer mentions the locale.
 
+**After merging the DejaGnu-default round (tests without dg-do run, 2026-10-06):** 22_locale has
+42 more failures per compiler among the tests that now run with named locales. Fixed in libycxx
+(the coordinator's report, own tests `locale/money_get_optional_symbol`,
+`locale/time_get_err_on_entry`): money_get consumed an optional currency symbol nothing after it
+needed (money_get/get/*/19.cc); get_weekday/get_monthname/get_year did not store their field when
+err held failbit on entry (time_get/get_{weekday,monthname}/*/5.cc); money_get accepted a
+thousands separator first or doubled (money_get/get/*/15.cc, [locale.moneypunct.general]/3
+units grammar). Skipped (block "Named-locale tests without dg-do"): time_get get_date/get_time/
+get_weekday 2.cc, 12750.cc and their wrapped_* (the classic facet reading the stream locale's
+names), get_date 26701.cc (four-digit %y), date_order and moneypunct/members wrapped_* (include
+the skipped 1.cc), moneypunct/members 2.cc and money_put/put 2.cc (the classic negative_sign),
+money_put/put 1.cc (fill for space), money_get/get 10.cc ("-0", eofbit at the end).
+
 ## Skipped tests without a counterpart
 
 Tests skipped (or UNSUPPORTED) as tied to the other library's internals, extensions or modes whose subject the draft does not specify, so libycxx's own suite has no test for it: the trace reports them as "no libycxx counterpart". Patterns are anchored regexes (like skip.txt); the linked ones carry `// COUNTERPART:` in tests/ycxx (tests/ycxxlit/counterparts.py).

@@ -35,7 +35,7 @@ int main() {
     out.imbue(latin1);
     out.open(p1);
     CHECK(out.is_open());
-    out << L"äöü " << 1234.5;
+    out << L"\u00e4\u00f6\u00fc " << 1234.5;
     out.close();
     CHECK(out.good());
   }
@@ -47,20 +47,20 @@ int main() {
     std::wstring s;
     double d = 0;
     in >> s >> d;
-    CHECK(s == L"äöü");
+    CHECK(s == L"\u00e4\u00f6\u00fc");
     CHECK(d == 1234.5);
     // fixed width 1: seek by characters
     in.clear();
     in.seekg(2);
     CHECK(in.good());
-    CHECK(in.get() == L'ü');
+    CHECK(in.get() == L'\u00fc');
     CHECK(in.tellg() == std::wifstream::pos_type(3));
   }
   {
     std::wofstream out;
     out.imbue(utf8);
     out.open(p2);
-    out << L"€ä";
+    out << L"\u20ac\u00e4";
     out.close();
     CHECK(out.good());
   }
@@ -71,7 +71,7 @@ int main() {
     in.open(p2);
     std::wstring s;
     std::getline(in, s);
-    CHECK(s == L"€ä");
+    CHECK(s == L"\u20ac\u00e4");
     CHECK(in.eof() && !in.bad());
   }
   {
@@ -79,7 +79,7 @@ int main() {
     std::wofstream out;
     out.imbue(latin1);
     out.open(p3);
-    out << L"a€";
+    out << L"a\u20ac";
     out.flush();
     CHECK(out.bad());
   }

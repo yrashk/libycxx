@@ -29,7 +29,7 @@ int main() {
   {
     std::locale a(std::locale::classic(), new ctype_w(de, 0));
     std::locale b = a;
-    CHECK(std::use_facet<std::ctype<wchar_t>>(b).toupper(L'ä') == L'Ä');
+    CHECK(std::use_facet<std::ctype<wchar_t>>(b).toupper(L'\u00e4') == L'\u00c4');
     {
       std::locale c(b, new numpunct_c(std::string(de), 0));
       CHECK(std::use_facet<std::numpunct<char>>(c).decimal_point() == ',');

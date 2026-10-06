@@ -142,7 +142,7 @@ struct section {
 struct object_file {
   char path[4096] = {};
   const void* map = nullptr;
-  __ycxx_pal_size map_size = 0;
+  ycxx_pal_size map_size = 0;
   bool is64 = false;
   section symtab, symstr, dynsym, dynstr, line, line_str, str;
   section info, abbrev, ranges, rnglists, __addr, str_offsets;
@@ -408,7 +408,7 @@ bool run_line_program(const object_file& __f, reader& __unit, bool dwarf64, std:
     const char* name;
     std::uint64_t __dir;
   };
-  std::vector<file_entry> files;
+  std::vector<file_entry> __files;
   if (version >= 5) {
     for (int table = 0; table < 2; ++table) {
       const unsigned nformats = static_cast<unsigned>(__unit.__u(1));
@@ -440,7 +440,7 @@ bool run_line_program(const object_file& __f, reader& __unit, bool dwarf64, std:
         if (table == 0)
           dirs.push_back(path);
         else
-          files.push_back({path, __dir});
+          __files.push_back({path, __dir});
       }
     }
   } else {
@@ -453,7 +453,7 @@ bool run_line_program(const object_file& __f, reader& __unit, bool dwarf64, std:
         break;
       dirs.push_back(d);
     }
-    files.push_back({"", 0}); // file indices are 1-based before DWARF 5
+    __files.push_back({"", 0}); // file indices are 1-based before DWARF 5
     for (;;) {
       const char* name = __unit.str();
       if (!__unit.ok)
@@ -463,7 +463,7 @@ bool run_line_program(const object_file& __f, reader& __unit, bool dwarf64, std:
       const std::uint64_t __dir = __unit.uleb();
       __unit.uleb(); // modification time
       __unit.uleb(); // length
-      files.push_back({name, __dir});
+      __files.push_back({name, __dir});
     }
   }
   if (!__unit.ok)
@@ -477,8 +477,8 @@ bool run_line_program(const object_file& __f, reader& __unit, bool dwarf64, std:
   std::uint64_t prev_address = 0, prev_file = 0, prev_line = 0;
   const auto emit = [&]() -> bool {
     if (have_prev && prev_address <= __addr && __addr < address) {
-      if (prev_file < files.size()) {
-        const file_entry& fe = files[prev_file];
+      if (prev_file < __files.size()) {
+        const file_entry& fe = __files[prev_file];
         __res.__file = join_path(fe.__dir < dirs.size() ? dirs[fe.__dir] : nullptr, fe.name);
       }
       __res.line = static_cast<std::uint32_t>(prev_line);
@@ -1121,16 +1121,16 @@ object_file* object_named(const char* path) {
       victim = &__f;
   }
   if (victim->map != nullptr)
-    __ycxx_pal_unmap_file(victim->map, victim->map_size);
+    ycxx_pal_unmap_file(victim->map, victim->map_size);
   *victim = object_file();
-  if (__ycxx_pal_map_file(path, &victim->map, &victim->map_size) != 0) {
+  if (ycxx_pal_map_file(path, &victim->map, &victim->map_size) != 0) {
     victim->map = nullptr;
     return nullptr;
   }
   copy_path(victim->path, path);
   if (!parse_elf(*victim)) {
     // Nothing usable; the mapping stays cached as a negative answer.
-    const __ycxx_pal_size size = victim->map_size;
+    const ycxx_pal_size size = victim->map_size;
     const void* map = victim->map;
     *victim = object_file();
     victim->map = map;
@@ -1149,11 +1149,11 @@ struct symbolized {
 symbolized symbolize(std::uintptr_t __pc, bool want_function, bool want_line) {
   symbolized out;
   char path[4096];
-  __ycxx_pal_handle __bias = 0;
+  ycxx_pal_handle __bias = 0;
   const char* __raw_name = nullptr;
   {
     std::lock_guard<std::mutex> lock(cache_mutex);
-    if (__ycxx_pal_object_of(__pc, path, sizeof path, &__bias) == 0) {
+    if (ycxx_pal_object_of(__pc, path, sizeof path, &__bias) == 0) {
       if (object_file* __f = object_named(path)) {
         const std::uint64_t __addr = __pc - __bias;
         if (want_function && !find_function(*__f, __addr, out.function)) {
@@ -1174,8 +1174,8 @@ symbolized symbolize(std::uintptr_t __pc, bool want_function, bool want_line) {
     }
   }
   if (want_function && out.function.empty()) {
-    __ycxx_pal_handle start;
-    if (__ycxx_pal_dynamic_symbol(__pc, &__raw_name, &start) == 0 && __raw_name != nullptr)
+    ycxx_pal_handle start;
+    if (ycxx_pal_dynamic_symbol(__pc, &__raw_name, &start) == 0 && __raw_name != nullptr)
       out.function = __raw_name;
   }
   if (!out.function.empty()) {

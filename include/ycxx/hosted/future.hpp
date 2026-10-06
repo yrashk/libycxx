@@ -94,7 +94,7 @@ protected:
 
   std::mutex __m_;
   std::condition_variable __cv_;
-  __ycxx_pal_u32 __refs_ = 1;
+  ycxx_pal_u32 __refs_ = 1;
   status __status_ = status::empty;
   bool __retrieved_ = false;
   std::exception_ptr __exc_;

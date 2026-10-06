@@ -5,7 +5,7 @@
 #include <system_error>
 #include <cerrno>
 
-namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
 
 namespace {
 
@@ -18,85 +18,85 @@ void write_file(std::FILE* stream, const char* p, std::size_t n) {
   }
 }
 
-void format_to_file(std::FILE* stream, std::string_view fmt, std::format_args args, bool newline) {
-  fmt_dynbuf<char> buf;
-  ::ycxx::detail::fmt_vformat(buf, fmt, args, nullptr);
-  if (newline)
-    buf.push_back('\n');
-  write_file(stream, buf.data(), buf.size());
+void format_to_file(std::FILE* stream, std::string_view __fmt, std::format_args __args, bool __newline) {
+  __fmt_dynbuf<char> __buf;
+  ::__ycxx::__detail::__fmt_vformat(__buf, __fmt, __args, nullptr);
+  if (__newline)
+    __buf.push_back('\n');
+  write_file(stream, __buf.data(), __buf.size());
 }
 
 } // namespace
 
-void vprint_file(std::FILE* stream, std::string_view fmt, std::format_args args, bool newline) {
-  format_to_file(stream, fmt, args, newline);
+void __vprint_file(std::FILE* stream, std::string_view __fmt, std::format_args __args, bool __newline) {
+  format_to_file(stream, __fmt, __args, __newline);
 }
 
 // Standard output is C's stdout ([print.fun]/3: print(fmt, args) is print(stdout, fmt, args)).
 // Without a C library, src/hosted/print_console.cpp defines these instead (DECISIONS §18).
-void vprint_stdout(std::string_view fmt, std::format_args args, bool newline) {
-  format_to_file(stdout, fmt, args, newline);
+void __vprint_stdout(std::string_view __fmt, std::format_args __args, bool __newline) {
+  format_to_file(stdout, __fmt, __args, __newline);
 }
 
-void vprint_ostream(std::ostream& os, std::string_view fmt, std::format_args args, bool newline) {
-  std::ios_base::iostate err = std::ios_base::goodbit;
-  if (std::ostream::sentry ok{os}) {
+void __vprint_ostream(std::ostream& __os, std::string_view __fmt, std::format_args __args, bool __newline) {
+  std::ios_base::iostate __err = std::ios_base::goodbit;
+  if (std::ostream::sentry ok{__os}) {
     // An exception from vformat propagates as is: no badbit, whatever exceptions() says (/4.2).
     bool formatting = true;
-    ::ycxx::detail::guarded_io(
-        os,
+    ::__ycxx::__detail::__guarded_io(
+        __os,
         [&] {
-          std::string out = std::vformat(os.getloc(), fmt, args);
+          std::string out = std::vformat(__os.getloc(), __fmt, __args);
           formatting = false;
-          if (newline)
+          if (__newline)
             out.push_back('\n');
           const std::streamsize n = static_cast<std::streamsize>(out.size());
-          if (os.rdbuf()->sputn(out.data(), n) != n)
-            err |= std::ios_base::badbit;
+          if (__os.rdbuf()->sputn(out.data(), n) != n)
+            __err |= std::ios_base::badbit;
         },
         formatting);
   }
-  if (err)
-    os.setstate(err);
+  if (__err)
+    __os.setstate(__err);
 }
 
-}} // namespace ycxx::detail
+}} // namespace __ycxx::__detail
 
-namespace [[gnu::visibility("hidden")]] std {
+namespace [[__gnu__::__visibility__("hidden")]] std {
 
-void vprint_unicode(FILE* stream, string_view fmt, format_args args) {
-  ycxx::detail::format_to_file(stream, fmt, args, false);
+void vprint_unicode(FILE* stream, string_view __fmt, format_args __args) {
+  __ycxx::__detail::format_to_file(stream, __fmt, __args, false);
 }
-void vprint_unicode_buffered(FILE* stream, string_view fmt, format_args args) {
-  ycxx::detail::format_to_file(stream, fmt, args, false);
+void vprint_unicode_buffered(FILE* stream, string_view __fmt, format_args __args) {
+  __ycxx::__detail::format_to_file(stream, __fmt, __args, false);
 }
-void vprint_nonunicode(FILE* stream, string_view fmt, format_args args) {
-  ycxx::detail::format_to_file(stream, fmt, args, false);
+void vprint_nonunicode(FILE* stream, string_view __fmt, format_args __args) {
+  __ycxx::__detail::format_to_file(stream, __fmt, __args, false);
 }
-void vprint_nonunicode_buffered(FILE* stream, string_view fmt, format_args args) {
-  ycxx::detail::format_to_file(stream, fmt, args, false);
+void vprint_nonunicode_buffered(FILE* stream, string_view __fmt, format_args __args) {
+  __ycxx::__detail::format_to_file(stream, __fmt, __args, false);
 }
-void vprint_unicode(string_view fmt, format_args args) {
-  ycxx::detail::format_to_file(stdout, fmt, args, false);
+void vprint_unicode(string_view __fmt, format_args __args) {
+  __ycxx::__detail::format_to_file(stdout, __fmt, __args, false);
 }
-void vprint_nonunicode(string_view fmt, format_args args) {
-  ycxx::detail::format_to_file(stdout, fmt, args, false);
+void vprint_nonunicode(string_view __fmt, format_args __args) {
+  __ycxx::__detail::format_to_file(stdout, __fmt, __args, false);
 }
 void println(FILE* stream) {
-  ycxx::detail::write_file(stream, "\n", 1);
+  __ycxx::__detail::write_file(stream, "\n", 1);
 }
 void println() {
-  ycxx::detail::write_file(stdout, "\n", 1);
+  __ycxx::__detail::write_file(stdout, "\n", 1);
 }
 
-void vprint_unicode(ostream& os, string_view fmt, format_args args) {
-  ycxx::detail::vprint_ostream(os, fmt, args, false);
+void vprint_unicode(ostream& __os, string_view __fmt, format_args __args) {
+  __ycxx::__detail::__vprint_ostream(__os, __fmt, __args, false);
 }
-void vprint_nonunicode(ostream& os, string_view fmt, format_args args) {
-  ycxx::detail::vprint_ostream(os, fmt, args, false);
+void vprint_nonunicode(ostream& __os, string_view __fmt, format_args __args) {
+  __ycxx::__detail::__vprint_ostream(__os, __fmt, __args, false);
 }
-void println(ostream& os) {
-  ycxx::detail::vprint_ostream(os, "\n", format_args(make_format_args()), false);
+void println(ostream& __os) {
+  __ycxx::__detail::__vprint_ostream(__os, "\n", format_args(make_format_args()), false);
 }
 
 } // namespace std

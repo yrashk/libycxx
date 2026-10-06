@@ -3,7 +3,7 @@
 // timed waits on the atomic slot table.
 //
 // Mutexes and condition variables are built directly on the PAL's address wait
-// (__ycxx_pal_wait / __ycxx_pal_wake_* / __ycxx_pal_wait_until; a futex on Linux), not on pthread
+// (ycxx_pal_wait / ycxx_pal_wake_* / ycxx_pal_wait_until; a futex on Linux), not on pthread
 // mutexes: they are constexpr-constructible, need no destruction, and the PAL stays small. The
 // mutex is the classic three-state futex lock (0 free, 1 held, 2 held and maybe waited for).
 #pragma once
@@ -72,7 +72,7 @@ constexpr __pal_deadline __make_deadline(int clock, long long ns) noexcept {
 // The monotonic-clock deadline `__rel` from now.
 template <class _Rep, class _Period>
 __pal_deadline __deadline_after(const std::chrono::duration<_Rep, _Period>& __rel) {
-  return ::__ycxx::__detail::__make_deadline(__ycxx_pal_clock_monotonic, ::__ycxx::__detail::__pal_clock_ns(__ycxx_pal_clock_monotonic) +
+  return ::__ycxx::__detail::__make_deadline(ycxx_pal_clock_monotonic, ::__ycxx::__detail::__pal_clock_ns(ycxx_pal_clock_monotonic) +
                                                                      ::__ycxx::__detail::__clamped_ns(__rel));
 }
 
@@ -83,7 +83,7 @@ template <class _Clock, class _Duration>
 __pal_deadline __deadline_at(const std::chrono::time_point<_Clock, _Duration>& abs, const typename _Clock::time_point& now) {
   using namespace std::chrono;
   if constexpr (std::is_same_v<_Clock, system_clock> || std::is_same_v<_Clock, steady_clock>) {
-    constexpr int clock = std::is_same_v<_Clock, system_clock> ? __ycxx_pal_clock_realtime : __ycxx_pal_clock_monotonic;
+    constexpr int clock = std::is_same_v<_Clock, system_clock> ? ycxx_pal_clock_realtime : ycxx_pal_clock_monotonic;
     const auto __since = abs.time_since_epoch();
     long long ns;
     if (__since < duration<long double>(-static_cast<long double>(__wait_limit_ns) / 1e9L))
@@ -106,14 +106,14 @@ std::chrono::steady_clock::time_point __steady_deadline(const std::chrono::durat
 
 // ---- the futex mutex ----------------------------------------------------------------------------
 class __futex_mutex {
-  __ycxx_pal_u32 __state_ = 0;
+  ycxx_pal_u32 __state_ = 0;
 
   [[__gnu__::__noinline__]] void __lock_slow() noexcept {
     for (int i = 0; i < 100; ++i)
       if (__atomic_load_n(&__state_, __ATOMIC_RELAXED) == 0 && try_lock())
         return;
     while (__atomic_exchange_n(&__state_, 2, __ATOMIC_ACQUIRE) != 0)
-      ::__ycxx_pal_wait(&__state_, 2);
+      ::ycxx_pal_wait(&__state_, 2);
   }
 
 public:
@@ -131,7 +131,7 @@ public:
       __state_ = 1;
       return true;
     }
-    __ycxx_pal_u32 e = 0;
+    ycxx_pal_u32 e = 0;
     return __atomic_compare_exchange_n(&__state_, &e, 1, false, __ATOMIC_ACQUIRE, __ATOMIC_RELAXED);
   }
   void lock() noexcept {
@@ -145,8 +145,8 @@ public:
     for (;;) {
       if (__atomic_exchange_n(&__state_, 2, __ATOMIC_ACQUIRE) == 0)
         return true;
-      if (::__ycxx_pal_wait_until(&__state_, 2, d.clock, d.__sec, d.__nsec) != 0) {
-        __ycxx_pal_u32 e = 0;
+      if (::ycxx_pal_wait_until(&__state_, 2, d.clock, d.__sec, d.__nsec) != 0) {
+        ycxx_pal_u32 e = 0;
         return __atomic_compare_exchange_n(&__state_, &e, 2, false, __ATOMIC_ACQUIRE, __ATOMIC_RELAXED);
       }
     }
@@ -157,7 +157,7 @@ public:
       return;
     }
     if (__atomic_exchange_n(&__state_, 0, __ATOMIC_RELEASE) == 2)
-      ::__ycxx_pal_wake_one(&__state_);
+      ::ycxx_pal_wake_one(&__state_);
   }
 };
 
@@ -198,6 +198,6 @@ bool __atomic_wait_until_done_by(const volatile void* __addr, _Done done, const 
   }
 }
 
-inline __ycxx_pal_handle __this_thread_handle() noexcept { return ::__ycxx_pal_thread_self(); }
+inline ycxx_pal_handle __this_thread_handle() noexcept { return ::ycxx_pal_thread_self(); }
 
 }} // namespace __ycxx::__detail

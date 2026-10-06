@@ -7,13 +7,13 @@ namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
 namespace {
 
 __hp_record* records = nullptr;        // atomic; push-only
-__ycxx_pal_u32 record_count = 0;       // atomic
+ycxx_pal_u32 record_count = 0;       // atomic
 __hp_retired_node* retired = nullptr;  // atomic; the retired objects not yet reclaimed
-__ycxx_pal_u32 retired_count = 0;      // atomic; about the length of `retired`
+ycxx_pal_u32 retired_count = 0;      // atomic; about the length of `retired`
 
 // Reclamation starts when this many objects are retired: proportional to the number of hazard
 // pointers, so each scan reclaims at least about half of what it looks at.
-__ycxx_pal_u32 reclaim_threshold() noexcept { return 2 * __atomic_load_n(&record_count, __ATOMIC_RELAXED) + 64; }
+ycxx_pal_u32 reclaim_threshold() noexcept { return 2 * __atomic_load_n(&record_count, __ATOMIC_RELAXED) + 64; }
 
 void push_retired(__hp_retired_node* first, __hp_retired_node* last) noexcept {
   __hp_retired_node* __head = __atomic_load_n(&retired, __ATOMIC_RELAXED);
@@ -40,7 +40,7 @@ void __reclaim() noexcept {
   __atomic_thread_fence(__ATOMIC_SEQ_CST);
   __hp_retired_node* keep_first = nullptr;
   __hp_retired_node* keep_last = nullptr;
-  __ycxx_pal_u32 __kept = 0, taken = 0;
+  ycxx_pal_u32 __kept = 0, taken = 0;
   while (list) {
     __hp_retired_node* n = list;
     list = n->__hp_next_;
@@ -64,7 +64,7 @@ void __reclaim() noexcept {
 
 __hp_record* __hp_acquire() {
   for (__hp_record* r = __atomic_load_n(&records, __ATOMIC_ACQUIRE); r; r = r->next) {
-    __ycxx_pal_u32 free = 0;
+    ycxx_pal_u32 free = 0;
     if (__atomic_load_n(&r->__owned, __ATOMIC_RELAXED) == 0 &&
         __atomic_compare_exchange_n(&r->__owned, &free, 1, false, __ATOMIC_ACQUIRE, __ATOMIC_RELAXED))
       return r;

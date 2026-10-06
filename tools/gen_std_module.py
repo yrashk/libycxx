@@ -372,7 +372,7 @@ consteval std::string members() {
   return out;
 }
 // The header-defined default error handler calls the PAL; this program links without libycxx.
-extern "C" void __ycxx_pal_abort(const char*) noexcept { __builtin_trap(); }
+extern "C" void ycxx_pal_abort(const char*) noexcept { __builtin_trap(); }
 int main() { std::fputs(std::define_static_string(members()), stdout); }
 """
 

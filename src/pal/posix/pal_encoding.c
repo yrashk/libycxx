@@ -13,7 +13,7 @@
 #  include <xlocale.h>
 #endif
 
-int __ycxx_pal_environment_encoding(char* __buf, __ycxx_pal_size n) {
+int ycxx_pal_environment_encoding(char* __buf, ycxx_pal_size n) {
   if (n == 0)
     return EINVAL;
   // The codeset of the POSIX locale "" ([text.encoding.members]/14), through a locale object of

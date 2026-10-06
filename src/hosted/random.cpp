@@ -12,20 +12,20 @@ namespace {
 } // namespace
 
 random_device::random_device() {
-  if (int e = ::__ycxx_pal_random_open("default", 7, &__handle_))
+  if (int e = ::ycxx_pal_random_open("default", 7, &__handle_))
     random_device_error(e, "std::random_device: cannot open the system random source");
 }
 
 random_device::random_device(const string& token) {
-  if (int e = ::__ycxx_pal_random_open(token.data(), token.size(), &__handle_))
+  if (int e = ::ycxx_pal_random_open(token.data(), token.size(), &__handle_))
     random_device_error(e, "std::random_device: unsupported or unavailable token");
 }
 
-random_device::~random_device() { ::__ycxx_pal_random_close(__handle_); }
+random_device::~random_device() { ::ycxx_pal_random_close(__handle_); }
 
 random_device::result_type random_device::operator()() {
   if (__avail_ == 0) {
-    if (int e = ::__ycxx_pal_random_read(__handle_, __buffer_, sizeof __buffer_))
+    if (int e = ::ycxx_pal_random_read(__handle_, __buffer_, sizeof __buffer_))
       random_device_error(e, "std::random_device: cannot read the random source");
     __avail_ = __buffer_size;
   }

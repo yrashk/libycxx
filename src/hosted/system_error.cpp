@@ -12,7 +12,7 @@ namespace {
 
 std::string error_message(int __ev) {
   char __buf[256];
-  ::__ycxx_pal_error_message(__ev, __buf, sizeof __buf);
+  ::ycxx_pal_error_message(__ev, __buf, sizeof __buf);
   return std::string(__buf);
 }
 
@@ -48,8 +48,8 @@ bool is_posix_errno(int __ev) noexcept {
       // [depr.cerrno]: no_message_available, no_stream_resources, not_a_stream, stream_timeout
       // (deprecated enumerators, named by their errno values: core's, so that this also builds
       // without the C library's <errno.h>, DECISIONS §18).
-      errc(ycxx::detail::errno_enodata), errc(ycxx::detail::errno_enosr), errc(ycxx::detail::errno_enostr),
-      errc(ycxx::detail::errno_etime),
+      errc(__ycxx::__detail::__errno_enodata), errc(__ycxx::__detail::__errno_enosr), errc(__ycxx::__detail::__errno_enostr),
+      errc(__ycxx::__detail::__errno_etime),
   };
   for (errc e : posix)
     if (static_cast<int>(e) == __ev)

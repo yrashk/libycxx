@@ -5,4 +5,4 @@
 #include <debugging>
 #include <ycxx/pal.h>
 
-bool std::is_debugger_present() noexcept { return __ycxx_pal_debugger_present() != 0; }
+bool std::is_debugger_present() noexcept { return ycxx_pal_debugger_present() != 0; }

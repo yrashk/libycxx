@@ -13,7 +13,7 @@ void* operator new(std::size_t n, std::align_val_t a) {
   if (n == 0)
     n = 1;
   for (;;) {
-    if (void* p = __ycxx_pal_allocate(n, static_cast<std::size_t>(a)))
+    if (void* p = ycxx_pal_allocate(n, static_cast<std::size_t>(a)))
       return p;
     std::new_handler h = std::get_new_handler();
     if (!h)

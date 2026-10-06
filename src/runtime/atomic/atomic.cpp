@@ -2,7 +2,7 @@
 // objects and the slot table behind atomic waiting and notifying (ycxx/core/atomic_base.hpp).
 //
 // Both tables are keyed by the object's address and blocked on through the PAL's address wait
-// (__ycxx_pal_wait / __ycxx_pal_wake_*); the freestanding archive's default PAL hooks return at
+// (ycxx_pal_wait / ycxx_pal_wake_*); the freestanding archive's default PAL hooks return at
 // once, which turns every wait into a spin.
 #include <ycxx/core/atomic_base.hpp>
 #include <ycxx/pal.h>
@@ -21,13 +21,13 @@ unsigned slot_of(const volatile void* __addr) noexcept {
 
 // One cache line per entry, so unrelated objects do not contend through false sharing.
 struct alignas(64) lock_entry {
-  __ycxx_pal_u32 state; // 0: free, 1: held, 2: held and possibly waited for
+  ycxx_pal_u32 state; // 0: free, 1: held, 2: held and possibly waited for
 };
 constinit lock_entry locks[table_size] = {};
 
 struct alignas(64) wait_entry {
-  __ycxx_pal_u32 version; // bumped by every notification with waiters
-  __ycxx_pal_u32 __waiters; // threads between atomic_wait_prepare and the end of their wait
+  ycxx_pal_u32 version; // bumped by every notification with waiters
+  ycxx_pal_u32 __waiters; // threads between atomic_wait_prepare and the end of their wait
 };
 constinit wait_entry waits[table_size] = {};
 
@@ -36,8 +36,8 @@ constinit wait_entry waits[table_size] = {};
 namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
 
 void __atomic_lock(const volatile void* __addr) noexcept {
-  __ycxx_pal_u32* s = &locks[slot_of(__addr)].state;
-  __ycxx_pal_u32 c = 0;
+  ycxx_pal_u32* s = &locks[slot_of(__addr)].state;
+  ycxx_pal_u32 c = 0;
   if (__atomic_compare_exchange_n(s, &c, 1, false, __ATOMIC_ACQUIRE, __ATOMIC_RELAXED))
     return;
   for (int i = 0; i < 64; ++i) {
@@ -47,13 +47,13 @@ void __atomic_lock(const volatile void* __addr) noexcept {
       return;
   }
   while (__atomic_exchange_n(s, 2, __ATOMIC_ACQUIRE) != 0)
-    ::__ycxx_pal_wait(s, 2);
+    ::ycxx_pal_wait(s, 2);
 }
 
 void __atomic_unlock(const volatile void* __addr) noexcept {
-  __ycxx_pal_u32* s = &locks[slot_of(__addr)].state;
+  ycxx_pal_u32* s = &locks[slot_of(__addr)].state;
   if (__atomic_exchange_n(s, 0, __ATOMIC_RELEASE) == 2)
-    ::__ycxx_pal_wake_one(s);
+    ::ycxx_pal_wake_one(s);
 }
 
 // The protocol: a waiter increments `__waiters`, reads `version`, then (after a seq_cst fence)
@@ -65,14 +65,14 @@ void __atomic_unlock(const volatile void* __addr) noexcept {
 std::uint32_t __atomic_wait_prepare(const volatile void* __addr) noexcept {
   wait_entry& e = waits[slot_of(__addr)];
   __atomic_fetch_add(&e.__waiters, 1, __ATOMIC_SEQ_CST);
-  const __ycxx_pal_u32 __ticket = __atomic_load_n(&e.version, __ATOMIC_ACQUIRE);
+  const ycxx_pal_u32 __ticket = __atomic_load_n(&e.version, __ATOMIC_ACQUIRE);
   __atomic_thread_fence(__ATOMIC_SEQ_CST);
   return __ticket;
 }
 
 void __atomic_wait_block(const volatile void* __addr, std::uint32_t __ticket) noexcept {
   wait_entry& e = waits[slot_of(__addr)];
-  ::__ycxx_pal_wait(&e.version, __ticket);
+  ::ycxx_pal_wait(&e.version, __ticket);
   __atomic_fetch_sub(&e.__waiters, 1, __ATOMIC_RELAXED);
 }
 
@@ -86,7 +86,7 @@ void __atomic_notify(const volatile void* __addr) noexcept {
   if (__atomic_load_n(&e.__waiters, __ATOMIC_RELAXED) == 0)
     return;
   __atomic_fetch_add(&e.version, 1, __ATOMIC_RELEASE);
-  ::__ycxx_pal_wake_all(&e.version);
+  ::ycxx_pal_wake_all(&e.version);
 }
 
 // For the hosted timed wait (src/hosted/thread.cpp), which shares the slot table.

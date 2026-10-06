@@ -8,8 +8,8 @@
 
 // The environment's (the C library's, or a bare-metal program's own): the Itanium C++ ABI's
 // registration of a destructor to run at exit (3.3.5.3).
-extern "C" int __cxa_atexit(void (*f)(void*), void* obj, void* dso) noexcept;
+extern "C" int __cxa_atexit(void (*__f)(void*), void* __obj, void* __dso) noexcept;
 
-extern "C" int ycxx_pal_thread_atexit(void (*f)(void*), void* obj, void* dso) noexcept {
-  return __cxa_atexit(f, obj, dso);
+extern "C" int ycxx_pal_thread_atexit(void (*__f)(void*), void* __obj, void* __dso) noexcept {
+  return __cxa_atexit(__f, __obj, __dso);
 }

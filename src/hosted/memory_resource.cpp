@@ -186,7 +186,7 @@ void __pal_lock::lock() noexcept {
     return;
   // Contended: mark the lock as having waiters and sleep until it is released.
   while (__atomic_exchange_n(&state, 2, __ATOMIC_ACQUIRE) != 0)
-    __ycxx_pal_wait(&state, 2);
+    ycxx_pal_wait(&state, 2);
 }
 
 void __pal_lock::unlock() noexcept {
@@ -195,7 +195,7 @@ void __pal_lock::unlock() noexcept {
     return;
   }
   if (__atomic_exchange_n(&state, 0, __ATOMIC_RELEASE) == 2)
-    __ycxx_pal_wake_all(&state);
+    ycxx_pal_wake_all(&state);
 }
 
 namespace {

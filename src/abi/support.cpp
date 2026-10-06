@@ -14,12 +14,12 @@ namespace {
 // waiters.
 struct guard_view {
   unsigned char* done;
-  __ycxx_pal_u32* state;
+  ycxx_pal_u32* state;
 };
 guard_view view(std::int64_t* __g) noexcept {
-  return {reinterpret_cast<unsigned char*>(__g), reinterpret_cast<__ycxx_pal_u32*>(__g) + 1};
+  return {reinterpret_cast<unsigned char*>(__g), reinterpret_cast<ycxx_pal_u32*>(__g) + 1};
 }
-enum : __ycxx_pal_u32 { idle = 0, __busy = 1, busy_waiters = 2 };
+enum : ycxx_pal_u32 { idle = 0, __busy = 1, busy_waiters = 2 };
 
 // The guards this thread is initializing, innermost last. Re-entering one of them is recursive
 // initialization, undefined by [stmt.dcl]/3; it would otherwise wait for itself forever, so it
@@ -41,14 +41,14 @@ void push_initializing(std::int64_t* __g) noexcept {
 }
 void pop_initializing() noexcept { --nesting; }
 
-void end_guard(__ycxx_pal_u32* state) noexcept {
+void end_guard(ycxx_pal_u32* state) noexcept {
   if (__atomic_exchange_n(state, idle, __ATOMIC_ACQ_REL) == busy_waiters)
-    __ycxx_pal_wake_all(state);
+    ycxx_pal_wake_all(state);
 }
 
 std::new_handler new_handler_v;
 
-[[noreturn]] void fatal(const char* __msg) noexcept { __ycxx_pal_abort(__msg); }
+[[noreturn]] void fatal(const char* __msg) noexcept { ycxx_pal_abort(__msg); }
 
 } // namespace
 
@@ -62,7 +62,7 @@ extern "C" {
   for (;;) {
     if (__atomic_load_n(__v.done, __ATOMIC_ACQUIRE))
       return 0;
-    __ycxx_pal_u32 s = idle;
+    ycxx_pal_u32 s = idle;
     if (__atomic_compare_exchange_n(__v.state, &s, __busy, false, __ATOMIC_ACQUIRE, __ATOMIC_ACQUIRE)) {
       // Completed between the two loads?
       if (__atomic_load_n(__v.done, __ATOMIC_ACQUIRE)) {
@@ -77,7 +77,7 @@ extern "C" {
     if (s == __busy && !__atomic_compare_exchange_n(__v.state, &s, busy_waiters, false, __ATOMIC_ACQUIRE,
                                                    __ATOMIC_ACQUIRE))
       continue;
-    __ycxx_pal_wait(__v.state, busy_waiters);
+    ycxx_pal_wait(__v.state, busy_waiters);
   }
 }
 
@@ -101,7 +101,7 @@ extern "C" {
 [[noreturn, __gnu__::__visibility__("hidden")]] void __cxa_throw_bad_array_new_length() { throw std::bad_array_new_length(); }
 
 [[__gnu__::__visibility__("hidden")]] int __cxa_thread_atexit(void (*dtor)(void*), void* __obj, void* __dso) noexcept {
-  if (__ycxx_pal_thread_atexit(dtor, __obj, __dso) != 0)
+  if (ycxx_pal_thread_atexit(dtor, __obj, __dso) != 0)
     fatal("cannot register a thread_local destructor");
   return 0;
 }

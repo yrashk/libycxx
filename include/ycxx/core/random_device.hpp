@@ -33,7 +33,7 @@ public:
 
 private:
   static constexpr unsigned __buffer_size = 16;
-  __ycxx_pal_handle __handle_;
+  ycxx_pal_handle __handle_;
   unsigned __avail_ = 0; // values left in buffer_, consumed from the end
   result_type __buffer_[__buffer_size];
 };

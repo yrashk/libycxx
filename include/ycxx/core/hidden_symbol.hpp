@@ -1,8 +1,8 @@
 // libycxx core: an assembler directive that hides one symbol (DECISIONS §2), for definitions the
 // compilers give default visibility whatever the source says: the initializers of the modules
 // std and std.compat (modules/std.cppm: `asm((__ycxx::__detail::__hide_symbol("_ZGIW3std")));`; the
-// compilers emit them with default visibility, -fvisibility=hidden included). `.__y_hidden` on ELF,
-// `.__private_extern` on Mach-O, whose symbols carry the C prefix '_'.
+// compilers emit them with default visibility, -fvisibility=hidden included). `.hidden` on ELF,
+// `.private_extern` on Mach-O, whose symbols carry the C prefix '_'.
 #pragma once
 
 #include <ycxx/config.hpp>

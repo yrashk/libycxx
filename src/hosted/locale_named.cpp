@@ -1035,28 +1035,28 @@ namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
 // own equivalence class, and the full key is the primary one too, which the caller uses when this
 // returns false. Darwin's key form is not documented: false there as well.
 template <class __charT>
-static bool primary_key(const std::collate<__charT>& f, const __charT* __low, const __charT* __high,
+static bool primary_key(const std::collate<__charT>& __f, const __charT* __low, const __charT* __high,
                         std::basic_string<__charT>& out) {
   if constexpr (__cfg::__darwin)
     return false;
-  if (typeid(f) != typeid(std::collate_byname<__charT>))
+  if (typeid(__f) != typeid(std::collate_byname<__charT>))
     return false;
   const __charT a[1] = {__charT('a')};
-  if (f.transform(a, a + 1).find(__charT(1)) == std::basic_string<__charT>::npos)
+  if (__f.transform(a, a + 1).find(__charT(1)) == std::basic_string<__charT>::npos)
     return false;
-  out = f.transform(__low, __high);
+  out = __f.transform(__low, __high);
   const std::size_t __end = out.find(__charT(1));
   if (__end != std::basic_string<__charT>::npos)
     out.resize(__end);
   return true;
 }
 
-bool __regex_primary_key(const std::collate<char>& f, const char* __low, const char* __high, std::string& out) {
-  return primary_key(f, __low, __high, out);
+bool __regex_primary_key(const std::collate<char>& __f, const char* __low, const char* __high, std::string& out) {
+  return primary_key(__f, __low, __high, out);
 }
-bool __regex_primary_key(const std::collate<wchar_t>& f, const wchar_t* __low, const wchar_t* __high,
+bool __regex_primary_key(const std::collate<wchar_t>& __f, const wchar_t* __low, const wchar_t* __high,
                          std::wstring& out) {
-  return primary_key(f, __low, __high, out);
+  return primary_key(__f, __low, __high, out);
 }
 
 }} // namespace __ycxx::__detail

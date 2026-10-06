@@ -194,7 +194,10 @@ for one of three reasons, each handled where it is decided:
 
 A libc++ test that cannot apply in one configuration only, such as a permission-error test when
 the run is as root (CI's Linux containers), is listed in `tests/libcxx/unsupported.txt` with the
-lit feature naming that configuration (`root`), and reported UNSUPPORTED only there.
+lit feature naming that configuration (`root`), and reported UNSUPPORTED only there. A libstdc++
+test that relies on one compiler's implementation-defined behaviour or extensions (GCC's
+`source_location` columns or predefined macros, an optional `std::float32_t`) is listed the same
+way in `tests/libstdcxx/unsupported.txt`, with that compiler's name.
 
 CI (`.github/workflows/ci.yml`), on every push, runs `tools/test policy build freestanding cmake
 ycxx` on Linux (the `gcc:16` container, Clang 23 from apt.llvm.org) and macOS (Apple Silicon,

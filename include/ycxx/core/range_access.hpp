@@ -83,7 +83,7 @@ struct __fn {
 }} // namespace __ycxx::__detail::__range_access
 
 namespace [[__gnu__::__visibility__("hidden")]] std { namespace ranges {
-inline namespace cpo {
+inline namespace __cpo {
 inline constexpr __ycxx::__detail::__range_access::__begin_ns::__fn begin{};
 }
 template <class _Tp>
@@ -135,7 +135,7 @@ struct __fn {
 }} // namespace __ycxx::__detail::__range_access
 
 namespace [[__gnu__::__visibility__("hidden")]] std { namespace ranges {
-inline namespace cpo {
+inline namespace __cpo {
 inline constexpr __ycxx::__detail::__range_access::__end_ns::__fn end{};
 }
 
@@ -217,7 +217,7 @@ struct __fn {
 }} // namespace __ycxx::__detail::__range_access
 
 namespace [[__gnu__::__visibility__("hidden")]] std { namespace ranges {
-inline namespace cpo {
+inline namespace __cpo {
 inline constexpr __ycxx::__detail::__range_access::__size_ns::__fn size{};
 }
 }} // namespace std::ranges
@@ -340,7 +340,7 @@ struct __fn {
 }} // namespace __ycxx::__detail::__range_access
 
 namespace [[__gnu__::__visibility__("hidden")]] std { namespace ranges {
-inline namespace cpo {
+inline namespace __cpo {
 inline constexpr __ycxx::__detail::__range_access::__ssize_ns::__fn ssize{};
 inline constexpr __ycxx::__detail::__range_access::__empty_ns::__fn empty{};
 inline constexpr __ycxx::__detail::__range_access::__data_ns::__fn data{};

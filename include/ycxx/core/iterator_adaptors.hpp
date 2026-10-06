@@ -1317,7 +1317,7 @@ struct __fn {
 }} // namespace __ycxx::__detail::__range_access
 
 namespace [[__gnu__::__visibility__("hidden")]] std { namespace ranges {
-inline namespace cpo {
+inline namespace __cpo {
 inline constexpr __ycxx::__detail::__range_access::__rbegin_ns::__fn rbegin{};
 }
 }} // namespace std::ranges
@@ -1359,7 +1359,7 @@ struct __fn {
 }} // namespace __ycxx::__detail::__range_access
 
 namespace [[__gnu__::__visibility__("hidden")]] std { namespace ranges {
-inline namespace cpo {
+inline namespace __cpo {
 inline constexpr __ycxx::__detail::__range_access::__rend_ns::__fn rend{};
 } // namespace cpo
 
@@ -1444,7 +1444,7 @@ struct __fn {
 }} // namespace __ycxx::__detail::__range_access
 
 namespace [[__gnu__::__visibility__("hidden")]] std { namespace ranges {
-inline namespace cpo {
+inline namespace __cpo {
 inline constexpr __ycxx::__detail::__range_access::__cbegin_ns::__fn cbegin{};
 inline constexpr __ycxx::__detail::__range_access::__cend_ns::__fn cend{};
 inline constexpr __ycxx::__detail::__range_access::__crbegin_ns::__fn crbegin{};

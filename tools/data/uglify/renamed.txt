@@ -1597,6 +1597,7 @@ counter_
 counts_ok
 cp
 cpair
+cpo
 cpow
 cpp17_bidirectional_iterator
 cpp17_category_from

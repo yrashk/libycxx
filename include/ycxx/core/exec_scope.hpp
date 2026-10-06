@@ -752,7 +752,7 @@ private:
     std::visit(
         [&__rcvr](auto& tuple) noexcept {
           if constexpr (!std::is_same_v<std::remove_cvref_t<decltype(tuple)>, std::monostate>) {
-            std::apply([&__rcvr](auto cpo, auto&... __vals) noexcept { cpo(static_cast<_Rcvr&&>(__rcvr), static_cast<std::remove_reference_t<decltype(__vals)>&&>(__vals)...); },
+            std::apply([&__rcvr](auto __cpo, auto&... __vals) noexcept { __cpo(static_cast<_Rcvr&&>(__rcvr), static_cast<std::remove_reference_t<decltype(__vals)>&&>(__vals)...); },
                        tuple);
           }
         },

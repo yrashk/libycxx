@@ -602,13 +602,12 @@ def nasty_tests():
 #include "nasty_macros.hpp"
 """ + "".join(f"#include <{h}>\n" for h in headers) + "\nint main() {}\n"
     out[TESTS / "nasty_macros_import.compile.pass.cpp"] = gen + """// [macro.names]/1 with the standard library modules ([std.modules]): the program's macros do not
-// reach the modules' declarations, and the headers mixed in after the import still compile.
+// reach the modules' declarations. (No header after the import: GCC 16 does not merge a textual
+// definition that follows an import, modules/import_then_include.pass.cpp.)
 // MODULES: std std.compat
 #include "nasty_macros.hpp"
 import std;
 import std.compat;
-#include <vector>
-#include <string>
 
 // (No names of the program's own: most short ones are macros here.)
 int main() {

@@ -14,18 +14,33 @@ std::locale std::basic_format_context<Out, charT>::locale() {
 }
 
 namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
+// Without a C library (DECISIONS §18: YCXX_PAL=none without 'clib') the classic locale is the only
+// one, and its numpunct values ([facet.numpunct.virtuals]) are used directly: the locale runtime
+// is not built there.
 template <class charT, class Context>
 fmt_numpunct<charT> fmt_get_numpunct(Context& ctx) {
-  const std::locale loc = ctx.locale();
-  const std::numpunct<charT>& np = std::use_facet<std::numpunct<charT>>(loc);
-  return {np.grouping(), np.thousands_sep(), np.decimal_point()};
+  if constexpr (cfg::hosted) {
+    const std::locale loc = ctx.locale();
+    const std::numpunct<charT>& np = std::use_facet<std::numpunct<charT>>(loc);
+    return {np.grouping(), np.thousands_sep(), np.decimal_point()};
+  } else {
+    static_cast<void>(ctx);
+    return {std::string(), static_cast<charT>(','), static_cast<charT>('.')};
+  }
 }
 
 template <class charT, class Context>
 std::basic_string<charT> fmt_get_boolname(Context& ctx, bool value) {
-  const std::locale loc = ctx.locale();
-  const std::numpunct<charT>& np = std::use_facet<std::numpunct<charT>>(loc);
-  return value ? np.truename() : np.falsename();
+  if constexpr (cfg::hosted) {
+    const std::locale loc = ctx.locale();
+    const std::numpunct<charT>& np = std::use_facet<std::numpunct<charT>>(loc);
+    return value ? np.truename() : np.falsename();
+  } else {
+    static_cast<void>(ctx);
+    constexpr charT t[] = {'t', 'r', 'u', 'e'};
+    constexpr charT f[] = {'f', 'a', 'l', 's', 'e'};
+    return value ? std::basic_string<charT>(t, 4) : std::basic_string<charT>(f, 5);
+  }
 }
 
 // Instantiated in the hosted runtime.

@@ -26,6 +26,15 @@ endif()
 
 include("${CMAKE_CURRENT_LIST_DIR}/libycxxTargets.cmake")
 
+# The hosted layers this build has (DECISIONS §18) and ycxx_add_hosted_layer, which attaches the
+# program's providers of a YCXX_PAL=none build to ycxx::ycxx.
+set(libycxx_PAL "@YCXX_PAL@")
+set(libycxx_HOSTED_LAYERS "@YCXX_SELECTED_HOSTED_LAYERS@")
+include("${CMAKE_CURRENT_LIST_DIR}/ycxx-hosted-layers.cmake")
+set_property(GLOBAL PROPERTY YCXX_PAL_SELECTED "${libycxx_PAL}")
+set_property(GLOBAL PROPERTY YCXX_HOSTED_LAYERS_SELECTED "${libycxx_HOSTED_LAYERS}")
+set_property(GLOBAL PROPERTY YCXX_PAL_INCLUDE_DIR "${PACKAGE_PREFIX_DIR}/@YCXX_INSTALL_INCLUDEDIR@")
+
 # Linux, Clang: the C runtime startup files and libgcc come from GCC 16's installation, not
 # Clang's default choice of GCC (which can be older), as with tools/ycxx-cxx and the toolchain
 # file. The directory: the consumer's YCXX_GCC_INSTALL_DIR (CMake or environment variable), else

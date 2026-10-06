@@ -25,6 +25,11 @@
 
 namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 
+// Whether the program has the 'threads' hosted layer (DECISIONS §18); dependent, so that only
+// constructing a thread fails without it.
+template <class...>
+inline constexpr bool has_threads = cfg::layer::threads;
+
 // The hosted runtime (src/hosted/thread.cpp): starts a thread running run(arg) after naming it
 // (name, not necessarily null-terminated, is copied first; null for none). Throws system_error
 // if no thread can be started.
@@ -298,7 +303,11 @@ namespace [[gnu::visibility("hidden")]] std {
 template <class... Args>
   requires(sizeof...(Args) > 0) && (!is_same_v<remove_cvref_t<tuple_element_t<0, tuple<Args...>>>, thread>)
 thread::thread(Args&&... args)
-    : handle_(ycxx::detail::thread_access::start<false>(nullptr, static_cast<Args&&>(args)...)) {}
+    : handle_(ycxx::detail::thread_access::start<false>(nullptr, static_cast<Args&&>(args)...)) {
+  static_assert(ycxx::detail::has_threads<Args...>,
+                "std::thread needs the 'threads' hosted layer: libycxx was configured without it "
+                "(YCXX_HOSTED_LAYERS, DECISIONS §18), so there is one thread of execution");
+}
 
 inline void thread::join() { ycxx::detail::thread_access::join(handle_); }
 inline void thread::detach() { ycxx::detail::thread_access::detach(handle_); }
@@ -317,6 +326,9 @@ public:
   template <class... Args>
     requires(sizeof...(Args) > 0) && (!is_same_v<remove_cvref_t<tuple_element_t<0, tuple<Args...>>>, jthread>)
   explicit jthread(Args&&... args) : ssource_() {
+    static_assert(ycxx::detail::has_threads<Args...>,
+                  "std::jthread needs the 'threads' hosted layer: libycxx was configured without it "
+                  "(YCXX_HOSTED_LAYERS, DECISIONS §18), so there is one thread of execution");
     thread_.handle_ = ycxx::detail::thread_access::start<true>(&ssource_, static_cast<Args&&>(args)...);
   }
   ~jthread() {

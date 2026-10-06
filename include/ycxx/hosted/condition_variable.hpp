@@ -18,7 +18,7 @@
 #include <ycxx/core/chrono_base.hpp>
 #include <ycxx/hosted/chrono_clocks.hpp>
 #include <ycxx/hosted/mutex.hpp>
-#include <ycxx/hosted/stop_token.hpp>
+#include <ycxx/core/stop_token.hpp>
 #include <ycxx/hosted/thread_support.hpp>
 #include <ycxx/pal.h>
 

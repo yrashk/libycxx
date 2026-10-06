@@ -197,6 +197,14 @@
 #define __cpp_lib_ranges_fold 202207L
 #define __cpp_lib_ranges_iota 202202L
 #define __cpp_lib_ranges_starts_ends_with 202106L
+// <execution>: senders and receivers ([exec]); core, but parallel_scheduler's default backend is
+// in the hosted runtime.
+#define __cpp_lib_senders 202506L
+#define __cpp_lib_counting_scope 202506L
+#define __cpp_lib_task 202506L
+#if YCXX_HOSTED
+#  define __cpp_lib_parallel_scheduler 202506L
+#endif
 // <ranges>
 #define __cpp_lib_ranges 202406L
 #define __cpp_lib_freestanding_ranges 202306L

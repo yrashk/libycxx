@@ -245,18 +245,20 @@ when parsing, `fractional_width` of ratio<1, 2^62>, `hh_mm_ss` layout, an error 
 
 ## Own-suite configurations (runs of 2026-10-05, 2438 tests)
 `tools/test --hardened` / `--cxxflags=... --config-name=...` (README, Own tests); the nightly
-`full.yml` runs them, and any failure fails the job.
+`full.yml` runs them, and any failure fails the job. The hardened and noexcept rows predate the
+senders' tests; execution/, stop_token/ and version/ pass in both (and under ASan+UBSan, and
+TSan with a TSan-built runtime) on both compilers.
 
 | Configuration | GCC 16.2 | Clang 23.1 |
 |---|---|---|
-| default (the `precondition/` death tests UNSUPPORTED) | 2371 pass / 0 fail / 13 xfail / 54 unsupported | 2364 pass / 0 fail / 20 xfail / 54 unsupported |
+| default (the `precondition/` death tests UNSUPPORTED; 2457 tests, 2026-10-06, with `<execution>`'s senders) | 2391 pass / 0 fail / 12 xfail / 54 unsupported | 2384 pass / 0 fail / 19 xfail / 54 unsupported |
 | hardened (`-DYCXX_HARDENED=1`) | 2425 pass / 0 fail / 13 xfail | 2418 pass / 0 fail / 20 xfail |
 | noexcept (`-fno-exceptions`; tests `REQUIRES: exceptions` UNSUPPORTED) | 1941 pass / 0 fail / 7 xfail / 490 unsupported | 1941 pass / 0 fail / 7 xfail / 490 unsupported |
 
 Every expected failure carries its reason in the test (`// XFAIL:` for causes outside the library
 and the test, `// XFAIL-COMPILER:` for a missing compiler feature): the draft defect
 `char_traits/eof`, the Itanium ABI and GCC handler-recording limits (`except/handler_*`), GCC's
-contract detection mode (`contracts/observe`), the unimplemented senders of `<execution>`, and on
+contract detection mode (`contracts/observe`), and on
 Clang the features it lacks (constant-evaluation throws, contracts, reflection, builtins).
 
 ## Freestanding
@@ -936,8 +938,29 @@ compilers; `visit_format_arg.pass.cpp` needs `EOF` from `constexpr_char_traits.h
   are noexcept (an escaping exception calls terminate); so are the ranges:: ExecutionPolicy
   overloads (P3179, `algo_ranges_parallel.hpp`: each algorithm object's type adds them to the
   sequential niebloid), including the ranges:: uninitialized_*/destroy ones of `<memory>`;
-  `__cpp_lib_parallel_algorithm` is 202506L. Not provided: the
-  senders/receivers part of `<execution>`.
+  `__cpp_lib_parallel_algorithm` is 202506L. The senders/receivers part: next entry.
+- `<execution>` senders and receivers ([exec], core; DECISIONS §17): queries and environments
+  (`forwarding_query`, `get_allocator`, `get_stop_token`, `get_env`, `get_domain`,
+  `get_scheduler`, `get_start_scheduler`, `get_delegation_scheduler`,
+  `get_forward_progress_guarantee`, `get_completion_scheduler`, `get_completion_domain`,
+  `get_await_completion_adaptor`, `prop`, `env`), receivers, operation states, completion
+  signatures, the sender and scheduler concepts, `default_domain`/`indeterminate_domain`,
+  `transform_sender`, `apply_sender`, `get_completion_signatures`, `connect` (awaitables too);
+  factories `just`, `just_error`, `just_stopped`, `read_env`, `schedule`; adaptors `write_env`,
+  `unstoppable`, `then`, `upon_error`, `upon_stopped`, `let_value`, `let_error`, `let_stopped`,
+  `bulk`, `bulk_chunked`, `bulk_unchunked`, `when_all`, `when_all_with_variant`, `into_variant`,
+  `stopped_as_optional`, `stopped_as_error`, `schedule_from`, `continues_on`, `starts_on`, `on`,
+  `affine`, `associate`, `spawn_future`, the pipe syntax (`sender_adaptor_closure`); consumers
+  `this_thread::sync_wait`, `sync_wait_with_variant`, `spawn`; `run_loop`, `inline_scheduler`,
+  `as_awaitable`, `with_awaitable_senders`, `simple_counting_scope`, `counting_scope`, `task`,
+  `task_scheduler`, `with_error`, `parallel_scheduler` with the `parallel_scheduler_replacement`
+  interface and a thread-pool backend in the hosted runtime. `__cpp_lib_senders`,
+  `__cpp_lib_counting_scope`, `__cpp_lib_task` 202506L, `__cpp_lib_parallel_scheduler` 202506L
+  (hosted). Own suite execution: every test passes on both compilers, also under ASan+UBSan and
+  (the threaded ones) TSan. Known limitations: `split`/`ensure_started` are not in the draft
+  (P3682) and not provided; `tag_of_t` recognises tuple-like senders only; task_scheduler
+  allocates its backend at every construction; when_all and let report no completion
+  scheduler/domain; the draft questions of DECISIONS §17.
 - `boyer_moore_searcher`/`boyer_moore_horspool_searcher` (`ycxx/core/searcher.hpp`): bad-character
   table (a 256-entry array for byte-sized integers compared with `equal_to`, otherwise a hash table of
   the pattern's equivalence classes that calls pred only on equal hash values), plus the good-suffix
@@ -1004,7 +1027,8 @@ compilers; `visit_format_arg.pass.cpp` needs `EOF` from `constexpr_char_traits.h
   `_GLIBCXX_ASSERTIONS`; libycxx checks only under YCXX_HARDENED), and tests needing
   `<sstream>`/`<iostream>`/`<chrono>`/`<map>`/`<limits>`.
 
-- Concurrency support (`<atomic>`, `<stdatomic.h>`, `<thread>`, `<stop_token>`, `<mutex>`,
+- Concurrency support (`<atomic>`, `<stdatomic.h>`, `<thread>`, `<stop_token>` (core since the
+  senders: DECISIONS §3), `<mutex>`,
   `<shared_mutex>`, `<condition_variable>`, `<semaphore>`, `<latch>`, `<barrier>`, `<future>`,
   `<rcu>`, `<hazard_pointer>`; DECISIONS §3): own suite atomic, thread, mutex,
   condition_variable, future, latch, barrier, semaphore, stop_token, ratio and
@@ -1061,9 +1085,10 @@ levels: 29.7 s -> 0.01 s; libstdc++ 8.6 s). Remaining above 1.5x: deque push at 
 - **Decided (user, 2026-10-05): C names through `<string>` and `<cstdint>`.** Hosted `<string>`
   (the character traits) provides `EOF` (it includes `<cstdio>`; `WEOF` comes with `<wchar.h>`),
   and `<cstdint>` also declares the global `::int64_t`... names, as libstdc++, libc++ and MSVC do.
-- libc++ suite, still failing, being libycxx gaps (tests/libcxx/TRIAGE.md, "Policy round"): no
-  senders/receivers
-  (`__cpp_lib_senders`: support.limits execution.version, version.version). (The `<wchar.h>` and
+- libc++ suite: the former gaps are closed: `import std;`/`import std.compat;` (DECISIONS §16;
+  modules/std and std.compat pass on Clang) and senders/receivers (DECISIONS §17). support.limits
+  execution.version and version.version are skipped (divergence: they expect older drafts'
+  values, `__cpp_lib_senders` 202406L among them). (The `<wchar.h>` and
   `<stddef.h>` wrappers exist since the own-suite fixes.)
 - Next (Phase 5): full libc++/libstdc++ sweeps with triage (tests/libcxx/TRIAGE.md,
   tests/libstdcxx/TRIAGE.md), fixing the libycxx bugs they find; then a whole-library review

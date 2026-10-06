@@ -334,6 +334,13 @@ if(YCXX_SANITIZE)
     endif()
   endforeach()
   set(_ycxx_sanitize_flags -fsanitize=${YCXX_SANITIZE} -fno-sanitize-recover=all -fno-omit-frame-pointer)
+  # GCC warns (-Wtsan) that ThreadSanitizer does not model atomic_thread_fence. The library's
+  # seq_cst fences (the atomic wait/notify protocol, hazard pointers, rcu) order a store before a
+  # later load (Dekker); no plain data relies on them for happens-before, which comes from the
+  # atomic operations themselves, so the sanitizer misses nothing it would report.
+  if(YCXX_SANITIZE MATCHES "thread" AND CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+    list(APPEND _ycxx_sanitize_flags -Wno-tsan)
+  endif()
   target_compile_options(ycxx PRIVATE ${_ycxx_sanitize_flags})
   target_compile_options(ycxx_abi PRIVATE ${_ycxx_sanitize_flags})
   message(STATUS "libycxx: instrumented with -fsanitize=${YCXX_SANITIZE}")

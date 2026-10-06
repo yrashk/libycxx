@@ -5,10 +5,13 @@
 # conformance/nasty_macros* tests include every public header after it. tools/uglify.py --check
 # keeps new ones from appearing.
 #
-# Left out: the names that break glibc's headers, which the public headers include (with _GNU_SOURCE,
-# which g++ and clang++ define), when they are macros: glibc declares or uses them itself, so that
-# no program can define them whatever libycxx does (found by defining each):
-#   brk constant cs element err f finite fs j1 l link significand tick truncate unlink y0 y1
+# tools/uglify.py adds the names it renames in include/ to this list (sorted, wrapped), so a merge
+# that brings new plain names gets them tested too.
+#
+# [not-definable]: left out, the names that break glibc's headers, which the public headers
+# include (with _GNU_SOURCE, which g++ and clang++ define), when they are macros: glibc declares
+# or uses them itself, so that no program can define them whatever libycxx does (found by
+# defining each).
 A A1 A2 AA AD Abi Abis Acc Accessor AccessorPolicy AccessorType Adaptor Align Alignment Alloc Alloc2
 Allocator Allocator2 Alt Arg ArgLists ArgTypes Args Args1 Args2 Array As Assoc Attrs B B1 BA BAt
 Base BiIter BidirIt BidirectionalIterator BidirectionalIterator1 BidirectionalIterator2
@@ -31,14 +34,14 @@ IntType Integrals International Intl Inv Ios Is IsMap Istream It Iter Iterator I
 K2 KArg KC KIt Keep Key KeyContainer Keys Kind L L1 L2 L3 LF LHS LM LR LT L_ Lanes LastType Layout
 LayoutLeftPaddedMapping LayoutMapping LayoutPolicy LayoutRightPaddedMapping LeastMaxValue Left Len
 Less List Lists Lock Ls M M1 M2 MArgs MC MDS1 MDS2 MIt MS Make Map MappedContainer Mapping
-MappingType Min Mode Multi Mutex MutexTypes N N2 NB NH NS N_ Negate NestedAccessor NestedLayout
-NewSender Next NoThrowForwardIterator Node NodeType Np O O1 O2 OD OO OO1 OO2 OR OS OUTERC Offset
-OffsetType One Op Operation Ops Opt Os Ostream Other OtherAccessor OtherByteAlignment OtherConst
-OtherElementType OtherExtent OtherExtents OtherIndexType OtherIndexTypes OtherLayoutPolicy
-OtherMapping OtherNestedAccessor OtherPromise Others Out OutIt OutMat OutObj OutR OutR1 OutR2 OutS
-OutS1 OutS2 OutSndr OutVec OuterA1 OuterA2 OuterAlloc OuterIter OuterTraits OutputIter
-OutputIterator OutputIterator1 OutputIterator2 Owner P P1 P2 PATTERNC PAlloc PC PM PT PV P_
-PadStride Padded Padding PaddingValue Pair PairLike Parent Parsable ParseContext Path Pattern
+MappingType MayOverlap Min Mode Multi Mutex MutexTypes N N2 NB NH NS N_ Negate NestedAccessor
+NestedLayout NewSender Next NoThrowForwardIterator Node NodeType Np O O1 O2 OD OO OO1 OO2 OR OS
+OUTERC Offset OffsetType One Op Operation Ops Opt Os Ostream Other OtherAccessor OtherByteAlignment
+OtherConst OtherElementType OtherExtent OtherExtents OtherIndexType OtherIndexTypes
+OtherLayoutPolicy OtherMapping OtherNestedAccessor OtherPromise Others Out OutIt OutMat OutObj OutR
+OutR1 OutR2 OutS OutS1 OutS2 OutSndr OutVec OuterA1 OuterA2 OuterAlloc OuterIter OuterTraits
+OutputIter OutputIterator OutputIterator1 OutputIterator2 Owner P P1 P2 PATTERNC PAlloc PC PM PT PV
+P_ PadStride Padded Padding PaddingValue Pair PairLike Parent Parsable ParseContext Path Pattern
 PatternBase PatternIter Period Period1 Period2 Plan Pointer Pol Policy PopulationIterator Pred
 Predicate Present Proj Proj1 Proj2 Promise Ptr Put Q Q2 Query QueryTag R R0 R1 R2 RAI1 RHS ROS RQ
 RQual RRef RandomAccessIterator RandomAccessIterator1 RandomAccessIterator2 Rank RankDynamic Rcvr
@@ -682,7 +685,7 @@ wide_is_zero wide_isqrt wide_low_bits wide_mul wide_mul_small wide_resize wide_s
 wide_shr wide_sub widen_ascii width_ width_kind width_prefix width_result with with_alloc with_index
 with_iterator_category with_n with_reference with_spawn_allocator with_token within wk wl wm wn wnu
 woken word word_alloc word_bits word_class word_traits wordb words words_ words_for work work_of
-work_t works wphi wptr wr wrap_add wrap_rcvr wrap_sender wrap_sub wrapped_ wrapper_castable
+work_t works wphi wptr wr wrap_add wrap_rcvr wrap_sender wrap_sub wrapped_ wrapper wrapper_castable
 wrapper_init_bound_t wrapper_init_t write_converted write_elements write_entered write_env_t
 write_out writing written wx wy x x2 x86 x87_extended x87_hash_layout x87_layout x_ xbuf_ xbuf_size_
 xd xe xend_ xi xi2 xj xmax xmin xnext_ xor_ xor_assign xp xpict_ xpos xr xref xs xtmp y2 y_ y_int
@@ -707,3 +710,6 @@ ycxx_type ycxx_v yd yday year_in_century yi yield_error_awaiter yielded_error ym
 ytmp yy z z1 z2 za zb zentinel zero_ok zero_only zeros zeros_at zeta_em zip_ zip_fn zip_is_common
 zip_transform_fn ziperator zm zone_ zone_name zr zt_has_default zt_has_locate zt_local_choose_ok
 zt_local_ok zt_representation
+
+[not-definable]
+brk constant cs element err f finite fs j1 l link significand tick truncate unlink y0 y1

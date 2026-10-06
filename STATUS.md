@@ -1135,6 +1135,9 @@ Wording problems found while writing the spec-derived tests (tests/ycxx), not ye
   `transform_sender(set_value_t, BulkSndr&&, const Env&) noexcept(see below)`, but /14-15
   specify `transform_sender(BulkSndr&&, const Env&)` without the tag (the parallel scheduler's
   domain, [exec.par.scheduler], has the tag in both places).
+- [simd.bit]/15: the Constraints of `shl(const V& x, S s)` / `shr(const V& x, S s)` name
+  `VX::value_type`, but those templates' parameter is `V` (`VX` belongs to the two-vector
+  overloads of /13).
 - [exec.snd.transform]/3: transform-recurse uses `transformed-sender(dom, tag, s)`, a name
   defined nowhere (the paragraph defines `transformed-sndr`).
 - [exec.affine]/7 says that get_completion_signatures of `affine(sndr)` exits with an exception

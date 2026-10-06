@@ -3,6 +3,7 @@
 // block statics (in other functions); and an initializer may run concurrently with another
 // thread initializing a different static.
 // FLAGS: -pthread
+#include <atomic>
 #include <pthread.h>
 #include <sched.h>
 #include "check.hpp"
@@ -19,7 +20,7 @@ static int& outer() {
   return o;
 }
 
-static volatile int a_started = 0, b_done = 0;
+static std::atomic<int> a_started{0}, b_done{0};  // signals between the threads
 
 static int init_a() {
   a_started = 1;

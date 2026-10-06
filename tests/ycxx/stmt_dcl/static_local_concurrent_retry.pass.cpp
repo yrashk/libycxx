@@ -4,13 +4,14 @@
 // attempt must therefore let a waiting thread run the initializer itself.
 // FLAGS: -pthread
 // REQUIRES: exceptions
+#include <atomic>
 #include <pthread.h>
 #include <sched.h>
 #include "check.hpp"
 
 static pthread_mutex_t mu = PTHREAD_MUTEX_INITIALIZER;
 static int attempts = 0;
-static volatile int go = 0;
+static std::atomic<int> go{0};  // the start signal: an atomic, so that reading it races with nothing
 
 static int init_value() {
   pthread_mutex_lock(&mu);

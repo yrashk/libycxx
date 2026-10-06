@@ -1,18 +1,23 @@
 #!/usr/bin/env python3
 """Enforce hidden visibility for libycxx's namespaces (DECISIONS.md section 2).
 
-Every namespace-scope opening of `std`, `ycxx` or `__cxxabiv1` in include/ must read
+Every namespace-scope opening of `std`, `ycxx` or `__cxxabiv1` in include/ and in the C++ sources
+of src/ must read
 `namespace [[gnu::visibility("hidden")]] NAME {`. The attribute applies only to the block it is
 written on, so a reopening without it would emit default-visibility (exported) symbols; and a
 nested namespace definition (`namespace std::ranges {`) cannot carry attributes, so it is spelled
-`namespace [[gnu::visibility("hidden")]] std { namespace ranges {` and closed with `}}`.
+`namespace [[gnu::visibility("hidden")]] std { namespace ranges {` and closed with `}}`. The
+runtime's sources are not compiled with -fvisibility=hidden: what they define outside these
+namespaces (C-linkage entry points) carries its own attribute.
 
   tools/check_visibility.py          report unannotated openings
   tools/check_visibility.py --fix    rewrite them (and the matching closing braces) in place
 """
 import pathlib, re, sys
 
-ROOT = pathlib.Path(__file__).resolve().parent.parent / "include"
+REPO = pathlib.Path(__file__).resolve().parent.parent
+ROOTS = (REPO / "include", REPO / "src")
+SOURCE_SUFFIXES = {".cpp", ".hpp"}  # under src/; include/ has extensionless headers too
 ATTR = '[[gnu::visibility("hidden")]]'
 # An unannotated file-scope opening: `namespace std {`, `namespace ycxx::detail::x {`, ...
 OPEN = re.compile(r'^namespace ((?:std|ycxx|__cxxabiv1)\b)((?:::\w+)*) \{')
@@ -93,9 +98,11 @@ def fix(text):
 def main():
     apply = "--fix" in sys.argv[1:]
     errors = []
-    for path in sorted(p for p in ROOT.rglob("*") if p.is_file()):
+    paths = [p for p in ROOTS[0].rglob("*") if p.is_file()]
+    paths += [p for p in ROOTS[1].rglob("*") if p.is_file() and p.suffix in SOURCE_SUFFIXES]
+    for path in sorted(paths):
         text = path.read_text()
-        rel = path.relative_to(ROOT).as_posix()
+        rel = path.relative_to(REPO).as_posix()
         if apply:
             new, count = fix(text)
             if count:

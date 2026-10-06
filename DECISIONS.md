@@ -117,13 +117,23 @@ tooling.
     declares at global scope or includes: the C library's functions (a hidden reference cannot
     bind to a shared libc), the replaceable functions; every header would have to keep its
     C-library includes outside the region.
-  - **Archives.** `libycxx.a`, `libycxx-abi.a` (and the freestanding runtime archive) are built
-    with `-fvisibility=hidden`. Users need no flag to get hidden symbols, but GCC warns
+  - **Archives.** The sources of `libycxx.a`, `libycxx-abi.a` (and the freestanding runtime
+    archive) say what is hidden themselves, as the headers do: every file-scope opening of `std`,
+    `ycxx` and `__cxxabiv1` in `src/` carries the attribute (`tools/check_visibility.py` covers
+    `src/` too), and what they define outside those namespaces carries
+    `[[gnu::visibility("hidden")]]` on its declaration: the ABI entry points (`__cxa_*`,
+    `__dynamic_cast`, `__gxx_personality_v0`), the PAL (`ycxx/pal.h`), the replaceable hooks'
+    defaults (`handle_contract_violation`, `ycxx_error_handler`) and the runtime's markers. No
+    `-fvisibility=hidden`: a flag changes what a declaration means without the source saying so
+    (it would also narrow the allocation table's declaration, which must stay default), and a
+    build of the sources by other means gets the same result. Only `ycxx_allocation_functions`
+    is exported (checked: `nm` of both archives, both compilers). Users need no flag to get
+    hidden symbols, but GCC warns
     (`-Wattributes`) about each program class with a member or base of a library class type: it
     gives such a class the lower visibility and says so. The warning says nothing about the
     program, so the CMake package (`ycxx::headers`) and `tools/ycxx-cxx` pass `-Wno-attributes`
-    to GCC; other build systems add it themselves (STATUS, known limitations). What the compilers keep default despite the
-    flag is hidden with assembler directives (`asm((constant-expression))`, `.hidden` on ELF,
+    to GCC; other build systems add it themselves (STATUS, known limitations). What the compilers
+    keep default despite an attribute is hidden with assembler directives (`asm((constant-expression))`, `.hidden` on ELF,
     `.private_extern` on Mach-O): GCC's seven predeclared `__cxa_*` entry points (GCC ignores an attribute on them with a warning),
     and the fundamental type_info objects GCC emits with `__fundamental_type_info`'s key function.
     Which of those exist depends on the target (AArch64 adds `__bf16`, `__mfp8` and the SVE types),

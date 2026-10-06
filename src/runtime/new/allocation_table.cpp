@@ -45,6 +45,6 @@ constexpr ycxx_allocation_functions_t entries = {
 extern "C" [[gnu::weak, gnu::visibility("default")]] constinit const ycxx_allocation_functions_t
     ycxx_allocation_functions = entries;
 
-namespace ycxx::detail {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 constinit const ycxx_allocation_functions_t own_allocation_functions = entries;
-} // namespace ycxx::detail
+}} // namespace ycxx::detail

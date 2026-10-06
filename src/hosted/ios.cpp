@@ -68,7 +68,7 @@ bool grow(T*& array, std::size_t& size, std::size_t idx) noexcept {
 
 } // namespace
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 
 const error_category& iostream_category() noexcept { return iostream_object.object; }
 
@@ -239,8 +239,8 @@ void ios_base::storage_failed() {
 
 } // namespace std
 
-namespace ycxx::detail {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 
 void throw_ios_failure(const char* what) { throw std::ios_base::failure(what); }
 
-} // namespace ycxx::detail
+}} // namespace ycxx::detail

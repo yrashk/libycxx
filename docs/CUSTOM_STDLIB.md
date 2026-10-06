@@ -130,8 +130,10 @@ baseline check, an inline ABI namespace) only once ABI stability is promised.
 ### Visibility
 
 libycxx hides everything (DECISIONS §2): every file-scope opening of `std` and `ycxx` is
-`namespace [[gnu::visibility("hidden")]] std {` (enforced by `tools/check_visibility.py`), the
-archives are built with `-fvisibility=hidden`, and what the compilers keep default is hidden with
+`namespace [[gnu::visibility("hidden")]] std {` in the headers and the runtime's sources alike
+(enforced by `tools/check_visibility.py`), the runtime's C-linkage entry points carry
+`[[gnu::visibility("hidden")]]` on their declarations (no `-fvisibility=hidden`: the sources say
+what is hidden, whoever builds them), and what the compilers keep default is hidden with
 assembler directives: GCC's predeclared `__cxa_*` entry points, and GCC's fundamental type_info
 objects. Which fundamental type_info objects a compiler emits depends on the target (GCC 16.2 for
 aarch64-apple-darwin emits 300 symbols, with the SVE, `__bf16` and `__mfp8` types; 150 of them are

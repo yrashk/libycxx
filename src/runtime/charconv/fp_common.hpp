@@ -8,7 +8,7 @@
 
 #include <charconv>
 
-namespace ycxx::detail::fpconv {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail::fpconv {
 
 using u32 = unsigned int;
 using u64 = unsigned long long;
@@ -448,4 +448,4 @@ inline char* write_exponent(char* p, int x) {
   return p + d;
 }
 
-} // namespace ycxx::detail::fpconv
+}} // namespace ycxx::detail::fpconv

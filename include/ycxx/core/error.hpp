@@ -51,7 +51,7 @@ enum ycxx_error_kind : int {
 // Weak default: a strong definition anywhere in the program replaces it. Hosted builds report
 // the message through the PAL and abort; freestanding builds trap. (The PAL call sits in a
 // discarded `if constexpr` branch when freestanding, so no PAL symbol is referenced.)
-[[noreturn, gnu::weak, gnu::cold, gnu::noinline]] void ycxx_error_handler(ycxx_error_kind, const char* what) noexcept {
+[[noreturn, gnu::weak, gnu::cold, gnu::noinline, gnu::visibility("hidden")]] void ycxx_error_handler(ycxx_error_kind, const char* what) noexcept {
   if constexpr (ycxx::detail::cfg::hosted)
     ycxx_pal_abort(what);
   else
@@ -63,7 +63,7 @@ enum ycxx_error_kind : int {
 namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 
 [[noreturn]] [[gnu::cold]] inline void assertion_failed(const char* msg) noexcept {
-  ::ycxx_error_handler(ycxx_error_assertion, msg);
+   ::ycxx_error_handler(ycxx_error_assertion, msg);
 }
 
 // Defined in the hosted runtime (built with exceptions); throws the <stdexcept> class of `kind`.
@@ -74,7 +74,7 @@ namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
   if constexpr (cfg::exceptions)
     throw_std(kind, what);
   else
-    ::ycxx_error_handler(kind, what);
+     ::ycxx_error_handler(kind, what);
 }
 
 // The same hook for exception types that cannot cross the C-linkage runtime boundary (class
@@ -86,7 +86,7 @@ template <class Make>
   if constexpr (cfg::exceptions)
     throw static_cast<Make&&>(make)();
   else
-    ::ycxx_error_handler(kind, what);
+     ::ycxx_error_handler(kind, what);
 }
 
 // Library precondition check: active when YCXX_HARDENED=1. During constant evaluation a

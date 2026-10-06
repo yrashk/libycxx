@@ -4,14 +4,14 @@
 #include <format>
 #include <locale>
 
-namespace ycxx::detail {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 
 template fmt_numpunct<char> fmt_get_numpunct<char, fmt_context<char>>(fmt_context<char>&);
 template fmt_numpunct<wchar_t> fmt_get_numpunct<wchar_t, fmt_context<wchar_t>>(fmt_context<wchar_t>&);
 template std::string fmt_get_boolname<char, fmt_context<char>>(fmt_context<char>&, bool);
 template std::wstring fmt_get_boolname<wchar_t, fmt_context<wchar_t>>(fmt_context<wchar_t>&, bool);
 
-} // namespace ycxx::detail
+}} // namespace ycxx::detail
 
 template std::locale std::format_context::locale();
 template std::locale std::wformat_context::locale();

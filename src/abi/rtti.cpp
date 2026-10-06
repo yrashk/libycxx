@@ -7,7 +7,7 @@
 // Defining std::type_info's key function emits _ZTVSt9type_info and _ZTISt9type_info here.
 std::type_info::~type_info() {}
 
-namespace __cxxabiv1 {
+namespace [[gnu::visibility("hidden")]] __cxxabiv1 {
 
 // Each destructor is its class's key function: defining it emits the class's vtable (and
 // type_info) here, once (§2.9.4, final note).
@@ -53,7 +53,7 @@ consteval ycxx::abi::asm_text hide_fundamental_type_infos() {
 } // namespace
 asm((hide_fundamental_type_infos()));
 
-namespace ycxx::abi {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace abi {
 
 using namespace __cxxabiv1;
 
@@ -343,4 +343,4 @@ bool catch_matches(const std::type_info* handler, const std::type_info* thrown, 
   return false;
 }
 
-} // namespace ycxx::abi
+}} // namespace ycxx::abi

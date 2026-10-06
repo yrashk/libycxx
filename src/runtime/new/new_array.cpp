@@ -12,4 +12,4 @@ void* operator new[](std::size_t n) {
 }
 // Marks that the default (forwarding) operator new[] is linked (see
 // src/freestanding/new/try_or_null.hpp).
-extern "C" const char ycxx_default_new_array = 0;
+extern "C" [[gnu::visibility("hidden")]] const char ycxx_default_new_array = 0;

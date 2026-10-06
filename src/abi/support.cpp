@@ -57,7 +57,7 @@ extern "C" {
 // Returns 1 when the caller must run the initialization (then __cxa_guard_release or
 // __cxa_guard_abort follows), 0 when it is already complete. A thread that finds another one
 // initializing blocks until that completes or aborts ([stmt.dcl]/3).
-int __cxa_guard_acquire(std::int64_t* g) {
+[[gnu::visibility("hidden")]] int __cxa_guard_acquire(std::int64_t* g) {
   const guard_view v = view(g);
   for (;;) {
     if (__atomic_load_n(v.done, __ATOMIC_ACQUIRE))
@@ -81,26 +81,26 @@ int __cxa_guard_acquire(std::int64_t* g) {
   }
 }
 
-void __cxa_guard_release(std::int64_t* g) noexcept {
+[[gnu::visibility("hidden")]] void __cxa_guard_release(std::int64_t* g) noexcept {
   const guard_view v = view(g);
   pop_initializing();
   __atomic_store_n(v.done, 1, __ATOMIC_RELEASE);
   end_guard(v.state);
 }
 
-void __cxa_guard_abort(std::int64_t* g) noexcept {
+[[gnu::visibility("hidden")]] void __cxa_guard_abort(std::int64_t* g) noexcept {
   pop_initializing();
   end_guard(view(g).state);
 }
 
-[[noreturn]] void __cxa_pure_virtual() { fatal("pure virtual function called"); }
-[[noreturn]] void __cxa_deleted_virtual() { fatal("deleted virtual function called"); }
+[[noreturn, gnu::visibility("hidden")]] void __cxa_pure_virtual() { fatal("pure virtual function called"); }
+[[noreturn, gnu::visibility("hidden")]] void __cxa_deleted_virtual() { fatal("deleted virtual function called"); }
 
-[[noreturn]] void __cxa_bad_cast() { throw std::bad_cast(); }
-[[noreturn]] void __cxa_bad_typeid() { throw std::bad_typeid(); }
-[[noreturn]] void __cxa_throw_bad_array_new_length() { throw std::bad_array_new_length(); }
+[[noreturn, gnu::visibility("hidden")]] void __cxa_bad_cast() { throw std::bad_cast(); }
+[[noreturn, gnu::visibility("hidden")]] void __cxa_bad_typeid() { throw std::bad_typeid(); }
+[[noreturn, gnu::visibility("hidden")]] void __cxa_throw_bad_array_new_length() { throw std::bad_array_new_length(); }
 
-int __cxa_thread_atexit(void (*dtor)(void*), void* obj, void* dso) noexcept {
+[[gnu::visibility("hidden")]] int __cxa_thread_atexit(void (*dtor)(void*), void* obj, void* dso) noexcept {
   if (ycxx_pal_thread_atexit(dtor, obj, dso) != 0)
     fatal("cannot register a thread_local destructor");
   return 0;
@@ -108,7 +108,7 @@ int __cxa_thread_atexit(void (*dtor)(void*), void* obj, void* dso) noexcept {
 
 } // extern "C"
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 
 const nothrow_t nothrow{};
 

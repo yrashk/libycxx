@@ -1,8 +1,9 @@
 """lit test format for libc++'s conformance tests (libcxx/test/std), run against libycxx."""
 import os, re, shutil, tempfile
 import lit.formats, lit.Test, lit.TestRunner
-from ycxxlit import locales, stdmodules, transcript
-from ycxxlit.skips import load_skips, match_skip, load_unsupported, match_unsupported, load_xfails, apply_xfail
+from ycxxlit import locales, sanitizers, stdmodules, transcript
+from ycxxlit.skips import (load_skips, match_skip, load_unsupported, match_unsupported, load_xfails, apply_xfail,
+                           load_ignored_xfails, drop_ignored_xfails)
 from ycxxlit import counterparts
 
 COND_FLAGS = re.compile(r'//\s*ADDITIONAL_COMPILE_FLAGS(?:\(([^)]*)\))?:(.*)')
@@ -23,11 +24,16 @@ def run_environment():
 
 
 class LibcxxFormat(lit.formats.FileBasedTest):
-    def __init__(self, wrapper, compiler, base_flags, features, skip_file):
+    def __init__(self, wrapper, compiler, base_flags, features, skip_file, sanitizer_list=(), run_env=None):
         self.wrapper, self.compiler, self.base_flags, self.features = wrapper, compiler, base_flags, set(features)
+        # A sanitizer run: the sanitizers' options on each program's command line (its transcript
+        # shows them), and a longer time limit (tests/ycxxlit/sanitizers.py).
+        self.run_prefix = sanitizers.run_prefix(run_env)
+        self.run_timeout = sanitizers.run_timeout(sanitizer_list, 120)
         self.skips = load_skips(os.path.join(os.path.dirname(os.path.dirname(skip_file)), 'common', 'skip.txt'), skip_file)
         self.xfails = load_xfails(os.path.join(os.path.dirname(skip_file), 'xfail.txt'))
         self.unsupported = load_unsupported(os.path.join(os.path.dirname(skip_file), 'unsupported.txt'))
+        self.ignored_xfails = load_ignored_xfails(os.path.join(os.path.dirname(skip_file), 'ignored-xfail.txt'))
         self.counterparts = counterparts.Index(os.path.join(os.path.dirname(os.path.dirname(skip_file)), 'ycxx'))
 
     def execute(self, test, lit_config):
@@ -60,6 +66,8 @@ class LibcxxFormat(lit.formats.FileBasedTest):
             return lit.Test.Result(lit.Test.UNSUPPORTED, 'unsupported: ' + ', '.join(unsupported))
         if script:  # tests with explicit RUN lines rely on libc++'s substitutions
             return lit.Test.Result(lit.Test.UNSUPPORTED, 'RUN lines are not supported')
+        # libc++'s own XFAILs that describe libc++ rather than libycxx (tests/libcxx/ignored-xfail.txt).
+        test.xfails, xfail_note = drop_ignored_xfails(self.ignored_xfails, rel, test.xfails)
 
         src = open(path, encoding='utf-8', errors='replace').read()
         flags = list(self.base_flags)
@@ -96,7 +104,10 @@ class LibcxxFormat(lit.formats.FileBasedTest):
                     shutil.copytree(s, os.path.join(tmp, os.path.basename(d)), dirs_exist_ok=True)
                 elif os.path.exists(s):
                     shutil.copy(s, tmp)
-            return self.run(name, path, src, flags, tmp)
+            result = self.run(name, path, src, flags, tmp)
+            if xfail_note:
+                result.output = xfail_note + (result.output or '')
+            return result
         finally:
             shutil.rmtree(tmp, ignore_errors=True)
 
@@ -135,7 +146,7 @@ class LibcxxFormat(lit.formats.FileBasedTest):
             rc, out = self.compile([path, '-o', exe] + flags, tmp)
             if rc != 0:
                 return lit.Test.Result(lit.Test.FAIL, 'COMPILE FAILED\n' + out)
-            rc, ran = transcript.run('run', [exe], tmp, 120, env=run_environment())
+            rc, ran = transcript.run('run', self.run_prefix + [exe], tmp, self.run_timeout, env=run_environment())
             return lit.Test.Result(lit.Test.PASS if rc == 0 else lit.Test.FAIL, out + ran)
         return lit.Test.Result(lit.Test.UNSUPPORTED, 'unknown test kind')
 

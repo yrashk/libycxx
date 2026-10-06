@@ -14,7 +14,7 @@ implementation-specific.
 """
 import os, re, shutil, tempfile
 import lit.formats, lit.Test
-from ycxxlit import transcript
+from ycxxlit import sanitizers, transcript
 from ycxxlit.skips import load_skips, match_skip, load_unsupported, match_unsupported, load_xfails, apply_xfail
 from ycxxlit import counterparts
 from ycxxlit import locales
@@ -186,14 +186,21 @@ def selector_of(args, key):
 
 
 class LibstdcxxFormat(lit.formats.FileBasedTest):
-    def __init__(self, wrapper, compiler, base_flags, skip_file, locale_probe=None, support_lib=None):
+    def __init__(self, wrapper, compiler, base_flags, skip_file, locale_probe=None, support_lib=None,
+                 sanitizer_list=(), run_env=None):
         self.wrapper, self.compiler, self.base_flags = wrapper, compiler, base_flags
+        # A sanitizer run: the sanitizers' options on each program's command line (its transcript
+        # shows them), and a longer time limit (tests/ycxxlit/sanitizers.py).
+        self.sanitizer_list = set(sanitizer_list)
+        self.run_prefix = sanitizers.run_prefix(run_env)
+        self.run_timeout = sanitizers.run_timeout(sanitizer_list, 120)
         self.locale_probe = locale_probe  # locales.build_probe
         self.support_lib = support_lib  # libtestc++.a (build_support_lib), linked into every program
         self.skips = load_skips(os.path.join(os.path.dirname(os.path.dirname(skip_file)), 'common', 'skip.txt'), skip_file)
         self.xfails = load_xfails(os.path.join(os.path.dirname(skip_file), 'xfail.txt'))
-        # Tests that do not apply with one compiler only (tests/libstdcxx/unsupported.txt; the
-        # features are the compiler's name, as for libc++'s list).
+        # Tests that do not apply with one compiler or one sanitizer only
+        # (tests/libstdcxx/unsupported.txt; the features are the compiler's name and the
+        # sanitizers', tsan, asan, ubsan, as for libc++'s list).
         self.unsupported = load_unsupported(os.path.join(os.path.dirname(skip_file), 'unsupported.txt'))
         self.counterparts = counterparts.Index(os.path.join(os.path.dirname(os.path.dirname(skip_file)), 'ycxx'))
 
@@ -212,7 +219,7 @@ class LibstdcxxFormat(lit.formats.FileBasedTest):
         why = extension_use(src)
         if why:
             return lit.Test.Result(lit.Test.UNSUPPORTED, f'skipped (extension): {why}')
-        why = match_unsupported(self.unsupported, rel, {self.compiler})
+        why = match_unsupported(self.unsupported, rel, {self.compiler} | self.sanitizer_list)
         if why:
             return lit.Test.Result(lit.Test.UNSUPPORTED, why)
 
@@ -380,6 +387,7 @@ class LibstdcxxFormat(lit.formats.FileBasedTest):
             return lit.Test.Result(lit.Test.FAIL, 'COMPILE FAILED\n' + out)
         if action == 'link':
             return lit.Test.Result(lit.Test.PASS, out)
-        rc, ran = transcript.run('run', [exe], tmp, 120, '; must fail' if expect_fail_run else '')
+        rc, ran = transcript.run('run', self.run_prefix + [exe], tmp, self.run_timeout,
+                                 '; must fail' if expect_fail_run else '')
         ok = rc is not None and (rc == 0) != expect_fail_run
         return lit.Test.Result(lit.Test.PASS if ok else lit.Test.FAIL, out + ran)

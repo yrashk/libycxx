@@ -14,6 +14,12 @@ Tests that do not apply in one configuration only (tests/libcxx/unsupported.txt)
 UNSUPPORTED only while a lit feature names it: `root` when the tests run as root (permission
 errors cannot happen), a compiler for a test that exercises an extension with that compiler only.
 They still run everywhere else. A line is `<path regex> | <feature> | <reason>`.
+
+A libc++ test's own `// XFAIL: <expression>` that describes libc++, not libycxx (a failure of
+libc++'s implementation, or of a compiler on code libc++ emits and libycxx does not), is listed in
+tests/libcxx/ignored-xfail.txt: the test then runs as a plain test, PASS or FAIL, with the
+reason in its output, instead of reporting XPASS. A line is
+`<path regex> | <the XFAIL expression, verbatim> | <reason>`.
 """
 import os, re
 
@@ -84,3 +90,22 @@ def apply_xfail(result, xfails, rel, compiler):
                 result.output = f'listed as an expected failure ({who}: {why}) but passed: remove it from xfail.txt\n' + (result.output or '')
             break
     return result
+
+
+def load_ignored_xfails(path):
+    entries = []
+    if os.path.exists(path):
+        for line in open(path):
+            line = line.strip()
+            if not line or line.startswith('#'):
+                continue
+            pat, expr, why = [x.strip() for x in line.split(' | ', 2)]
+            entries.append((re.compile(pat), expr, why))
+    return entries
+
+
+def drop_ignored_xfails(entries, rel, xfails):
+    """(the test's XFAIL expressions without those listed for it, a note on each one dropped)."""
+    dropped = {expr: why for pat, expr, why in entries if pat.fullmatch(rel) and expr in xfails}
+    note = ''.join(f"the test's own XFAIL: {expr} does not apply to libycxx ({why})\n" for expr, why in dropped.items())
+    return [x for x in xfails if x not in dropped], note

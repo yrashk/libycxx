@@ -1,7 +1,8 @@
 # The identifiers tools/uglify.py never renames besides keywords, reserved identifiers, the draft's
 # index of library names (library-index.txt) and the names the std and std.compat modules export
 # (DECISIONS §2). One or more names per line; `re:` introduces a Python regular expression that
-# must match the whole name; `#` starts a comment.
+# must match the whole name; `#` starts a comment. The [draft-internal] section is the exception:
+# its names are renamed (see there).
 
 [standard]
 # Declared in a standard library header ([macro.names]/1), but missing from the draft's index of
@@ -62,6 +63,10 @@ store_xor                                                                  # ato
 underlying                                                                 # range_formatter
 yielded                                                                    # generator
 c r                                                                        # linalg::setup_givens_rotation_result
+# Names a program provides that the core language looks up (draft-names.txt reads only the
+# library's clauses): a coroutine promise's get_return_object_on_allocation_failure
+# ([dcl.fct.def.coroutine]/10), the replaceable contract-violation handler ([basic.contract.handler]/1).
+get_return_object_on_allocation_failure handle_contract_violation
 # The namespaces std and the draft's namespaces nested in it ([namespace.std], [namespace.posix]).
 std posix chrono chrono_literals complex_literals contracts execution filesystem linalg literals meta
 numbers parallel_scheduler_replacement placeholders pmr ranges regex_constants rel_ops simd
@@ -80,6 +85,22 @@ re:U?INT(MAX|PTR)_(MAX|MIN|WIDTH|C)
 re:(PRI|SCN)[bBdiouxX](FAST|LEAST)?(8|16|32|64|MAX|PTR)
 re:(PTRDIFF|SIZE|SIG_ATOMIC|WCHAR|WINT)_(MAX|MIN|WIDTH)
 re:(FLT|DBL|LDBL)_NORM_MAX                                                 # <cfloat> (C23)
+
+[draft-internal]
+# Names of draft-names.txt (the names the draft's library code spells, tools/gen_draft_names.py)
+# that programs never spell: the generator cannot tell them from standard names, so they are listed
+# here, each with the reason, and stay renamed. `tools/uglify.py --check` fails on any other name
+# of that list that it renames, and on an entry here that is no longer needed.
+disp errors                     # members of when_all's exposition-only state-type, used only by its exposition [exec.when.all]
+keep_ sbuf_                     # istreambuf_iterator's proxy: an exposition-only class [istreambuf.iterator.proxy]
+match                           # regex_iterator's exposition-only member [re.regiter.general]
+mode                            # basic_stringbuf's exposition-only member [stringbuf.general]
+v_                              # common_iterator's exposition-only member [common.iterator]
+u                               # a variable the requirements declare, `X u(a);` [allocator.requirements.general]/2
+f                               # "each static member function f": a placeholder [iterator.concept.winc]/11
+g o x                           # presentation types, characters of a format specification [format.string.std]
+sub                             # the key of fetch_key, a table's entry [atomics.types.int]
+limits                          # a slip in the draft's markup: "max()numeric.limits" [istream.unformatted]/25.1
 
 [user]
 # libycxx's documented user-facing names (README, DECISIONS §1, §4).

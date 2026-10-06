@@ -224,6 +224,17 @@ class Names:
         # [src-platform]: the C library's and the system's names the runtime's sources use, kept
         # there only (a header that spells one as a name of its own still gets it renamed).
         self.src_platform = set(allowed.pop("src-platform", []))
+        # [draft-internal]: names of draft-names.txt that programs never spell, renamed all the same.
+        self.draft_internal = set(allowed.pop("draft-internal", []))
+        # draft-names.txt: the names the draft's library code spells for programs (with the
+        # subclause), which must not be renamed unless [draft-internal] says why.
+        self.draft = {}
+        dn = DATA / "draft-names.txt"
+        if dn.exists():
+            for line in dn.read_text().splitlines():
+                m = re.match(r"\s*([A-Za-z_]\w*)\s*(?:#\s*\[([^\]]*)\])?", line)
+                if m:
+                    self.draft[m.group(1)] = m.group(2) or ""
         rec = DATA / "renamed.txt"
         self.recorded = set(_read_list(rec).get("default", [])) if rec.exists() else set()
         self.allowed, self.allowed_re = {}, []
@@ -502,6 +513,8 @@ def rename_tree(names, verbose=True):
             print(f"uglify: wrote {t}")
         print(f"uglify: {len(headers.renamed) + len(src_headers.renamed)} identifiers renamed in the headers "
               f"({len(new_names)} new), {changed} files changed")
+        for msg in draft_problems(Names(), checked_files()):
+            print(f"uglify: warning: {msg}", file=sys.stderr)
 
 
 def uglify_text(text):
@@ -522,6 +535,32 @@ def survey(names, files):
                 found[t] = (c + 1, where or f"{p.relative_to(REPO)}:{line}")
             line += t.count("\n")
     return found
+
+
+def draft_problems(names, files):
+    """The messages for the names of draft-names.txt that the tool renames (in the reserved
+    spelling in `files`, or recorded in renamed.txt) and that allowed.txt's [draft-internal]
+    does not excuse, and for the [draft-internal] entries that excuse nothing."""
+    toks = set()
+    for p in files:
+        toks.update(t for k, t in lex(p.read_text()) if k == "ident")
+    out = []
+    for w, sec in sorted(names.draft.items()):
+        if names.kind(w) is not None or w in names.draft_internal:
+            continue
+        new = names.new_name(w)
+        if new in toks or w in names.recorded:
+            out.append(f"tools/data/uglify/draft-names.txt: `{w}` ([{sec}]) is a name the draft's library code "
+                       f"spells for programs, but it is renamed (`{new}`): add it to [standard] in "
+                       "tools/data/uglify/allowed.txt, or to [draft-internal] if programs never spell it "
+                       "(DECISIONS §2)")
+    if names.draft:
+        for w in sorted(names.draft_internal):
+            if w not in names.draft:
+                out.append(f"tools/data/uglify/allowed.txt: [draft-internal] `{w}` is not in draft-names.txt; remove it")
+            elif names.kind(w) is not None:
+                out.append(f"tools/data/uglify/allowed.txt: [draft-internal] `{w}` is allowed elsewhere; remove it")
+    return out
 
 
 def stats(names):
@@ -705,7 +744,10 @@ def main():
         stale = gen_tests(check=True) if a.check else []
         for p in stale:
             print(f"{p}: out of date (tools/uglify.py --gen-tests)", file=sys.stderr)
-        return 1 if a.check and (found or stale) else 0
+        draft = draft_problems(names, checked_files()) if a.check else []
+        for msg in draft:
+            print(msg, file=sys.stderr)
+        return 1 if a.check and (found or stale or draft) else 0
     rename_tree(names)
     return 0
 

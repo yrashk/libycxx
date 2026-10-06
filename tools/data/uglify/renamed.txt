@@ -793,7 +793,6 @@ anchor
 and_
 and_assign
 and_then_impl
-annotations
 any_below
 any_digit
 any_impl
@@ -1046,7 +1045,6 @@ bit_ref
 bit_unsigned
 bitint_info
 bitint_width
-bits
 bits_
 bits_below
 bits_digits
@@ -1138,7 +1136,6 @@ by
 by_alloc
 by_diff
 by_ptrdiff
-bytes
 byteswap_std
 c1
 c16

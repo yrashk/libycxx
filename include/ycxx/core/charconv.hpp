@@ -221,10 +221,10 @@ inline constexpr int __fp_value_bytes = __fp_kind_of<_Tp>() == __fp_kind::__x87_
 
 template <class _Tp>
 __fp_raw __fp_to_raw(_Tp value) noexcept {
-  struct __bytes {
+  struct bytes {
     unsigned char b[sizeof(_Tp)];
   };
-  __bytes in = __builtin_bit_cast(__bytes, value);
+  bytes in = __builtin_bit_cast(bytes, value);
   __fp_raw r;
   for (int i = 0; i < __fp_value_bytes<_Tp>; ++i) {
     int __pos = std::endian::native == std::endian::little ? i : __fp_value_bytes<_Tp> - 1 - i;
@@ -238,10 +238,10 @@ __fp_raw __fp_to_raw(_Tp value) noexcept {
 }
 template <class _Tp>
 _Tp __fp_from_raw(__fp_raw r) noexcept {
-  struct __bytes {
+  struct bytes {
     unsigned char b[sizeof(_Tp)];
   };
-  __bytes out{};
+  bytes out{};
   for (int i = 0; i < __fp_value_bytes<_Tp>; ++i) {
     int __pos = std::endian::native == std::endian::little ? i : __fp_value_bytes<_Tp> - 1 - i;
     out.b[__pos] = static_cast<unsigned char>(i < 8 ? r.__lo >> (8 * i) : r.__hi >> (8 * (i - 8)));
@@ -251,9 +251,9 @@ _Tp __fp_from_raw(__fp_raw r) noexcept {
 
 // Out-of-line conversions (src/runtime/charconv). `__fmt` is a chars_format value, or 0 for the
 // overload without one; `precision` is the requested precision, or -1 for the shortest form.
-std::to_chars_result __fp_to_chars(char* first, char* last, __fp_kind kind, __fp_raw __bits, int __fmt, int precision) noexcept;
-// Stores the result in `__bits` only when the conversion succeeds.
-std::from_chars_result __fp_from_chars(const char* first, const char* last, __fp_kind kind, __fp_raw& __bits, int __fmt) noexcept;
+std::to_chars_result __fp_to_chars(char* first, char* last, __fp_kind kind, __fp_raw bits, int __fmt, int precision) noexcept;
+// Stores the result in `bits` only when the conversion succeeds.
+std::from_chars_result __fp_from_chars(const char* first, const char* last, __fp_kind kind, __fp_raw& bits, int __fmt) noexcept;
 
 constexpr bool __charconv_valid_format(std::chars_format __fmt) noexcept {
   return __fmt == std::chars_format::scientific || __fmt == std::chars_format::fixed || __fmt == std::chars_format::hex ||
@@ -283,11 +283,11 @@ std::to_chars_result __to_chars_float(char* first, char* last, _Tp value, std::c
 template <class _Tp>
 std::from_chars_result __from_chars_float(const char* first, const char* last, _Tp& value, std::chars_format __fmt) noexcept {
   __ycxx::__detail::__precondition(__ycxx::__detail::__charconv_valid_format(__fmt), "std::from_chars: invalid chars_format");
-  __fp_raw __bits;
+  __fp_raw bits;
   std::from_chars_result r =
-      __ycxx::__detail::__fp_from_chars(first, last, __ycxx::__detail::__fp_kind_of<_Tp>(), __bits, static_cast<int>(__fmt));
+      __ycxx::__detail::__fp_from_chars(first, last, __ycxx::__detail::__fp_kind_of<_Tp>(), bits, static_cast<int>(__fmt));
   if (r.ec == std::errc{})
-    value = __ycxx::__detail::__fp_from_raw<_Tp>(__bits);
+    value = __ycxx::__detail::__fp_from_raw<_Tp>(bits);
   return r;
 }
 

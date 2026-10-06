@@ -27,13 +27,13 @@ public:
   virtual ~memory_resource(); // key function: defined in the hosted runtime
   memory_resource& operator=(const memory_resource&) = default;
 
-  void* allocate(size_t __bytes, size_t alignment = __max_align) { return do_allocate(__bytes, alignment); }
-  void deallocate(void* p, size_t __bytes, size_t alignment = __max_align) { do_deallocate(p, __bytes, alignment); }
+  void* allocate(size_t bytes, size_t alignment = __max_align) { return do_allocate(bytes, alignment); }
+  void deallocate(void* p, size_t bytes, size_t alignment = __max_align) { do_deallocate(p, bytes, alignment); }
   bool is_equal(const memory_resource& other) const noexcept { return do_is_equal(other); }
 
 private:
-  virtual void* do_allocate(size_t __bytes, size_t alignment) = 0;
-  virtual void do_deallocate(void* p, size_t __bytes, size_t alignment) = 0;
+  virtual void* do_allocate(size_t bytes, size_t alignment) = 0;
+  virtual void do_deallocate(void* p, size_t bytes, size_t alignment) = 0;
   virtual bool do_is_equal(const memory_resource& other) const noexcept = 0;
 };
 

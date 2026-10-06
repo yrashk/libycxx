@@ -254,8 +254,8 @@ constexpr _Sp __simd_shift(const _Sp& a, __simd_size_t n) noexcept {
 // elements are visited one by one).
 template <class _Sp>
 consteval std::size_t __simd_word_size() {
-  constexpr std::size_t __bytes = sizeof(_Sp);
-  return __bytes % 8 == 0 ? 8 : __bytes % 4 == 0 ? 4 : __bytes % 2 == 0 ? 2 : 1;
+  constexpr std::size_t bytes = sizeof(_Sp);
+  return bytes % 8 == 0 ? 8 : bytes % 4 == 0 ? 4 : bytes % 2 == 0 ? 2 : 1;
 }
 template <class _Sp>
 using __simd_word =
@@ -956,10 +956,10 @@ template <size_t _Bytes, class _Abi>
 constexpr __ycxx::__detail::__simd_size_t reduce_count(const basic_mask<_Bytes, _Abi>& k) noexcept {
   const auto& s = __ycxx::__detail::__simd_access::data(k);
   using _Sp = remove_cvref_t<decltype(s)>;
-  int __bits = 0;
+  int bits = 0;
   for (auto __w : __ycxx::__detail::__simd_words(s).__v)
-    __bits += std::popcount(__w);
-  return __bits / static_cast<int>(sizeof(typename _Sp::element_type) * __CHAR_BIT__);
+    bits += std::popcount(__w);
+  return bits / static_cast<int>(sizeof(typename _Sp::element_type) * __CHAR_BIT__);
 }
 template <size_t _Bytes, class _Abi>
 constexpr __ycxx::__detail::__simd_size_t reduce_min_index(const basic_mask<_Bytes, _Abi>& k) {

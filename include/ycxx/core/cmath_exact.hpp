@@ -121,14 +121,14 @@ constexpr _Ip __fp_to_integer(_Tp __x, __fp_rint_mode __mode) noexcept {
     __ycxx::__detail::__fpm::__fp_report(__fe_invalid);
     return static_cast<_Ip>(-__LONG_LONG_MAX__ - 1);
   }
-  constexpr int __bits = 8 * int(sizeof(_Ip)) - 1;
+  constexpr int bits = 8 * int(sizeof(_Ip)) - 1;
   bool __inexact = false;
-  if (__v.exp + __ycxx::__detail::__fpm::__wide_bitlen(__v.__sig) > __bits + 1) { // |x| >= 2^(bits + 1)
+  if (__v.exp + __ycxx::__detail::__fpm::__wide_bitlen(__v.__sig) > bits + 1) { // |x| >= 2^(bits + 1)
     __ycxx::__detail::__fpm::__fp_report(__fe_invalid);
     return static_cast<_Ip>(-__LONG_LONG_MAX__ - 1);
   }
   const __wide<2> __ip = __ycxx::__detail::__fpm::__fp_integer_part<_Tp>(__v, __mode, __inexact);
-  const __y_u64 __limit = (__y_u64(1) << __bits) - (__v.__neg ? 0 : 1); // magnitude limit
+  const __y_u64 __limit = (__y_u64(1) << bits) - (__v.__neg ? 0 : 1); // magnitude limit
   if (__ip.__w[1] != 0 || __ip.__w[0] > __limit) {
     __ycxx::__detail::__fpm::__fp_report(__fe_invalid);
     return static_cast<_Ip>(-__LONG_LONG_MAX__ - 1);

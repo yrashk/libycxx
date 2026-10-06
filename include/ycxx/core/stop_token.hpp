@@ -51,7 +51,7 @@ class __stop_state {
       cur = __atomic_load_n(&__bits_, __ATOMIC_RELAXED);
     }
   }
-  void unlock(__ycxx_pal_u32 __bits) noexcept { __atomic_store_n(&__bits_, __bits & ~__locked_bit, __ATOMIC_RELEASE); }
+  void unlock(__ycxx_pal_u32 bits) noexcept { __atomic_store_n(&__bits_, bits & ~__locked_bit, __ATOMIC_RELEASE); }
 
 public:
   constexpr __stop_state() noexcept = default;

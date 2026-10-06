@@ -81,7 +81,7 @@ class __bit_iter {
   friend struct __ycxx::__detail::__bit_algos;
 
   using __wptr = std::conditional_t<_Const, const _Word*, _Word*>;
-  static constexpr std::ptrdiff_t __bits = std::numeric_limits<_Word>::digits;
+  static constexpr std::ptrdiff_t bits = std::numeric_limits<_Word>::digits;
 
   __wptr __w_ = nullptr;
   unsigned __b_ = 0;
@@ -109,7 +109,7 @@ public:
   constexpr reference operator[](difference_type n) const noexcept { return *(*this + n); }
 
   constexpr __bit_iter& operator++() noexcept {
-    if (++__b_ == static_cast<unsigned>(__bits)) {
+    if (++__b_ == static_cast<unsigned>(bits)) {
       __b_ = 0;
       ++__w_;
     }
@@ -122,7 +122,7 @@ public:
   }
   constexpr __bit_iter& operator--() noexcept {
     if (__b_ == 0) {
-      __b_ = static_cast<unsigned>(__bits - 1);
+      __b_ = static_cast<unsigned>(bits - 1);
       --__w_;
     } else {
       --__b_;
@@ -137,12 +137,12 @@ public:
   constexpr __bit_iter& operator+=(difference_type n) noexcept {
     const std::ptrdiff_t i = static_cast<std::ptrdiff_t>(__b_) + static_cast<std::ptrdiff_t>(n);
     if (i >= 0) {
-      __w_ += i / __bits;
-      __b_ = static_cast<unsigned>(i % __bits);
+      __w_ += i / bits;
+      __b_ = static_cast<unsigned>(i % bits);
     } else {
-      const std::ptrdiff_t k = (-i - 1) / __bits + 1; // words to step back
+      const std::ptrdiff_t k = (-i - 1) / bits + 1; // words to step back
       __w_ -= k;
-      __b_ = static_cast<unsigned>(i + k * __bits);
+      __b_ = static_cast<unsigned>(i + k * bits);
     }
     return *this;
   }
@@ -152,7 +152,7 @@ public:
   friend constexpr __bit_iter operator+(difference_type n, __bit_iter i) noexcept { return i += n; }
   friend constexpr __bit_iter operator-(__bit_iter i, difference_type n) noexcept { return i -= n; }
   friend constexpr difference_type operator-(const __bit_iter& a, const __bit_iter& b) noexcept {
-    return static_cast<difference_type>((a.__w_ - b.__w_) * __bits + static_cast<std::ptrdiff_t>(a.__b_) -
+    return static_cast<difference_type>((a.__w_ - b.__w_) * bits + static_cast<std::ptrdiff_t>(a.__b_) -
                                         static_cast<std::ptrdiff_t>(b.__b_));
   }
   friend constexpr bool operator==(const __bit_iter& a, const __bit_iter& b) noexcept {
@@ -175,19 +175,19 @@ template <class _Word, class _Diff, bool _Const>
 struct __bit_algos<__ycxx::__adl_free::__bit_iter<_Word, _Diff, _Const>> {
   using iter = __ycxx::__adl_free::__bit_iter<_Word, _Diff, _Const>;
   static constexpr bool __enabled = true;
-  static constexpr unsigned __bits = std::numeric_limits<_Word>::digits;
+  static constexpr unsigned bits = std::numeric_limits<_Word>::digits;
   static constexpr _Word all = static_cast<_Word>(~_Word(0));
 
   // The bits [lo, hi) of a word, lo < hi <= bits.
   static constexpr _Word mask(unsigned __lo, unsigned __hi) noexcept {
-    return static_cast<_Word>((__hi == __bits ? all : static_cast<_Word>(_Word(1) << __hi) - _Word(1)) & static_cast<_Word>(all << __lo));
+    return static_cast<_Word>((__hi == bits ? all : static_cast<_Word>(_Word(1) << __hi) - _Word(1)) & static_cast<_Word>(all << __lo));
   }
 
   static constexpr void fill(iter first, iter last, bool value) noexcept
     requires(!_Const)
   {
     for (_Word* __w = first.__w_;; ++__w) {
-      const unsigned __lo = __w == first.__w_ ? first.__b_ : 0, __hi = __w == last.__w_ ? last.__b_ : __bits;
+      const unsigned __lo = __w == first.__w_ ? first.__b_ : 0, __hi = __w == last.__w_ ? last.__b_ : bits;
       if (__lo < __hi)
         *__w = value ? static_cast<_Word>(*__w | mask(__lo, __hi)) : static_cast<_Word>(*__w & static_cast<_Word>(~mask(__lo, __hi)));
       if (__w == last.__w_)
@@ -196,7 +196,7 @@ struct __bit_algos<__ycxx::__adl_free::__bit_iter<_Word, _Diff, _Const>> {
   }
   static constexpr iter find(iter first, iter last, bool value) noexcept {
     for (auto __w = first.__w_;; ++__w) {
-      const unsigned __lo = __w == first.__w_ ? first.__b_ : 0, __hi = __w == last.__w_ ? last.__b_ : __bits;
+      const unsigned __lo = __w == first.__w_ ? first.__b_ : 0, __hi = __w == last.__w_ ? last.__b_ : bits;
       const _Word m = __lo < __hi ? static_cast<_Word>((value ? *__w : static_cast<_Word>(~*__w)) & mask(__lo, __hi)) : _Word(0);
       if (m != 0)
         return iter(__w, static_cast<unsigned>(__builtin_ctzg(m)));
@@ -207,7 +207,7 @@ struct __bit_algos<__ycxx::__adl_free::__bit_iter<_Word, _Diff, _Const>> {
   static constexpr _Diff count(iter first, iter last, bool value) noexcept {
     _Diff n = 0;
     for (auto __w = first.__w_;; ++__w) {
-      const unsigned __lo = __w == first.__w_ ? first.__b_ : 0, __hi = __w == last.__w_ ? last.__b_ : __bits;
+      const unsigned __lo = __w == first.__w_ ? first.__b_ : 0, __hi = __w == last.__w_ ? last.__b_ : bits;
       if (__lo < __hi)
         n += static_cast<_Diff>(__builtin_popcountg(static_cast<_Word>((value ? *__w : static_cast<_Word>(~*__w)) & mask(__lo, __hi))));
       if (__w == last.__w_)
@@ -228,7 +228,7 @@ class vector<bool, _Allocator> {
   using __word = size_t;
   using __word_alloc = typename __alloc_traits::template rebind_alloc<__word>;
   using __word_traits = allocator_traits<__word_alloc>;
-  static constexpr size_t __bits = numeric_limits<__word>::digits;
+  static constexpr size_t bits = numeric_limits<__word>::digits;
 
 public:
   // ---- types ----
@@ -261,23 +261,23 @@ private:
   [[no_unique_address]] __word_alloc __alloc_;
 
   static constexpr size_type __words_for(size_type __nbits) noexcept {
-    return static_cast<size_type>(__nbits / __bits + (__nbits % __bits != 0));
+    return static_cast<size_type>(__nbits / bits + (__nbits % bits != 0));
   }
   // Word i with the bits at or past size() cleared (for comparisons and hashing).
   constexpr __word __masked_word(size_type i) const noexcept {
     const __word __w = __words_[i];
-    const size_type __tail = __size_ - i * __bits;
-    return __tail >= __bits ? __w : (__w & ((__word(1) << __tail) - 1));
+    const size_type __tail = __size_ - i * bits;
+    return __tail >= bits ? __w : (__w & ((__word(1) << __tail) - 1));
   }
   static constexpr bool get(const __word* __w, size_type i) noexcept {
-    return ((__w[i / __bits] >> (i % __bits)) & __word(1)) != 0;
+    return ((__w[i / bits] >> (i % bits)) & __word(1)) != 0;
   }
   static constexpr void set(__word* __w, size_type i, bool __v) noexcept {
-    const __word m = __word(1) << (i % __bits);
+    const __word m = __word(1) << (i % bits);
     if (__v)
-      __w[i / __bits] |= m;
+      __w[i / bits] |= m;
     else
-      __w[i / __bits] &= ~m;
+      __w[i / bits] &= ~m;
   }
 
   // ---- storage ----
@@ -577,9 +577,9 @@ public:
   // ---- iterators ----
   constexpr iterator begin() noexcept { return iterator(__words_, 0); }
   constexpr const_iterator begin() const noexcept { return const_iterator(__words_, 0); }
-  constexpr iterator end() noexcept { return iterator(__words_ + __size_ / __bits, static_cast<unsigned>(__size_ % __bits)); }
+  constexpr iterator end() noexcept { return iterator(__words_ + __size_ / bits, static_cast<unsigned>(__size_ % bits)); }
   constexpr const_iterator end() const noexcept {
-    return const_iterator(__words_ + __size_ / __bits, static_cast<unsigned>(__size_ % __bits));
+    return const_iterator(__words_ + __size_ / bits, static_cast<unsigned>(__size_ % bits));
   }
   constexpr reverse_iterator rbegin() noexcept { return reverse_iterator(end()); }
   constexpr const_reverse_iterator rbegin() const noexcept { return const_reverse_iterator(end()); }
@@ -598,9 +598,9 @@ public:
     const auto __diff_max = static_cast<make_unsigned_t<difference_type>>(numeric_limits<difference_type>::max());
     const size_type __dm = __diff_max < numeric_limits<size_type>::max() ? static_cast<size_type>(__diff_max)
                                                                      : numeric_limits<size_type>::max();
-    return __by_alloc <= __dm / __bits ? static_cast<size_type>(__by_alloc * __bits) : __dm;
+    return __by_alloc <= __dm / bits ? static_cast<size_type>(__by_alloc * bits) : __dm;
   }
-  constexpr size_type capacity() const noexcept { return static_cast<size_type>(__cap_ * __bits); }
+  constexpr size_type capacity() const noexcept { return static_cast<size_type>(__cap_ * bits); }
   constexpr void resize(size_type __sz, bool c = false) {
     if (__sz <= __size_)
       __size_ = __sz;
@@ -644,7 +644,7 @@ public:
   // ---- element access ----
   constexpr reference operator[](size_type n) {
     __ycxx::__detail::__precondition(n < __size_, "std::vector<bool>::operator[]: index out of range");
-    return reference(__words_ + n / __bits, __word(1) << (n % __bits));
+    return reference(__words_ + n / bits, __word(1) << (n % bits));
   }
   constexpr const_reference operator[](size_type n) const {
     __ycxx::__detail::__precondition(n < __size_, "std::vector<bool>::operator[]: index out of range");
@@ -653,7 +653,7 @@ public:
   constexpr reference at(size_type n) {
     if (n >= __size_)
       __ycxx::__detail::__throw_out_of_range("std::vector<bool>::at: index out of range");
-    return reference(__words_ + n / __bits, __word(1) << (n % __bits));
+    return reference(__words_ + n / bits, __word(1) << (n % bits));
   }
   constexpr const_reference at(size_type n) const {
     if (n >= __size_)
@@ -670,7 +670,7 @@ public:
   }
   constexpr reference back() {
     __ycxx::__detail::__precondition(__size_ != 0, "std::vector<bool>::back: empty vector");
-    return reference(__words_ + (__size_ - 1) / __bits, __word(1) << ((__size_ - 1) % __bits));
+    return reference(__words_ + (__size_ - 1) / bits, __word(1) << ((__size_ - 1) % bits));
   }
   constexpr const_reference back() const {
     __ycxx::__detail::__precondition(__size_ != 0, "std::vector<bool>::back: empty vector");

@@ -60,8 +60,8 @@ public:
   __pool_core& operator=(const __pool_core&) = delete;
   ~__pool_core() { release(); }
 
-  void* allocate(std::size_t __bytes, std::size_t alignment);
-  void deallocate(void* p, std::size_t __bytes, std::size_t alignment) noexcept;
+  void* allocate(std::size_t bytes, std::size_t alignment);
+  void deallocate(void* p, std::size_t bytes, std::size_t alignment) noexcept;
   void release() noexcept;
   std::pmr::memory_resource* __upstream() const noexcept { return __upstream_; }
   std::pmr::pool_options options() const noexcept { return __opts_; }
@@ -105,8 +105,8 @@ public:
   pool_options options() const;
 
 protected:
-  void* do_allocate(size_t __bytes, size_t alignment) override;
-  void do_deallocate(void* p, size_t __bytes, size_t alignment) override;
+  void* do_allocate(size_t bytes, size_t alignment) override;
+  void do_deallocate(void* p, size_t bytes, size_t alignment) override;
   bool do_is_equal(const memory_resource& other) const noexcept override;
 
 private:
@@ -131,8 +131,8 @@ public:
   pool_options options() const;
 
 protected:
-  void* do_allocate(size_t __bytes, size_t alignment) override;
-  void do_deallocate(void* p, size_t __bytes, size_t alignment) override;
+  void* do_allocate(size_t bytes, size_t alignment) override;
+  void do_deallocate(void* p, size_t bytes, size_t alignment) override;
   bool do_is_equal(const memory_resource& other) const noexcept override;
 
 private:
@@ -158,8 +158,8 @@ public:
   memory_resource* upstream_resource() const;
 
 protected:
-  void* do_allocate(size_t __bytes, size_t alignment) override;
-  void do_deallocate(void* p, size_t __bytes, size_t alignment) override;
+  void* do_allocate(size_t bytes, size_t alignment) override;
+  void do_deallocate(void* p, size_t bytes, size_t alignment) override;
   bool do_is_equal(const memory_resource& other) const noexcept override;
 
 private:

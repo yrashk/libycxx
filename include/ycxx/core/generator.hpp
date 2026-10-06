@@ -88,7 +88,7 @@ struct __gen_promise_base {
 
 // The unit of frame allocation.
 struct alignas(__cfg::__default_new_alignment) __gen_frame_unit {
-  unsigned char __bytes[__cfg::__default_new_alignment];
+  unsigned char bytes[__cfg::__default_new_alignment];
 };
 static_assert(sizeof(__gen_frame_unit) == __cfg::__default_new_alignment);
 

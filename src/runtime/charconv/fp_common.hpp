@@ -100,18 +100,18 @@ struct __decoded {
 
 inline __u128 __to_u128(__fp_raw r) { return (static_cast<__u128>(r.__hi) << 64) | r.__lo; }
 inline __fp_raw __from_u128(__u128 __v) { return __fp_raw{static_cast<__y_u64>(__v), static_cast<__y_u64>(__v >> 64)}; }
-inline __u128 __low_mask(int __bits) { return __bits >= 128 ? ~__u128(0) : (__u128(1) << __bits) - 1; }
+inline __u128 __low_mask(int bits) { return bits >= 128 ? ~__u128(0) : (__u128(1) << bits) - 1; }
 
 template <kind _Kp>
 __decoded __decode(__fp_raw __raw) {
   constexpr format __f = __fmt_of<_Kp>;
-  __u128 __bits = __ycxx::__detail::__fpconv::__to_u128(__raw);
+  __u128 bits = __ycxx::__detail::__fpconv::__to_u128(__raw);
   const int __fb = __f.__field_bits();
   const int __bias = __f.__emax;
   __decoded d{};
-  d.__negative = ((__bits >> (__fb + __f.__exp_bits)) & 1) != 0;
-  int __bexp = static_cast<int>((__bits >> __fb) & ((__u128(1) << __f.__exp_bits) - 1));
-  __u128 field = __bits & __ycxx::__detail::__fpconv::__low_mask(__fb);
+  d.__negative = ((bits >> (__fb + __f.__exp_bits)) & 1) != 0;
+  int __bexp = static_cast<int>((bits >> __fb) & ((__u128(1) << __f.__exp_bits) - 1));
+  __u128 field = bits & __ycxx::__detail::__fpconv::__low_mask(__fb);
   if (__bexp == (1 << __f.__exp_bits) - 1) {
     __u128 __payload = field & __ycxx::__detail::__fpconv::__low_mask(__f.p - 1); // x87: ignore the explicit bit
     d.__cls = __payload == 0 ? __fp_class::infinity : __fp_class::nan;
@@ -140,8 +140,8 @@ __fp_raw __encode(bool __negative, __u128 m, int __biased) {
   constexpr format __f = __fmt_of<_Kp>;
   const int __fb = __f.__field_bits();
   __u128 field = m & __ycxx::__detail::__fpconv::__low_mask(__fb);
-  __u128 __bits = field | (static_cast<__u128>(__biased) << __fb) | (static_cast<__u128>(__negative ? 1 : 0) << (__fb + __f.__exp_bits));
-  return __ycxx::__detail::__fpconv::__from_u128(__bits);
+  __u128 bits = field | (static_cast<__u128>(__biased) << __fb) | (static_cast<__u128>(__negative ? 1 : 0) << (__fb + __f.__exp_bits));
+  return __ycxx::__detail::__fpconv::__from_u128(bits);
 }
 template <kind _Kp>
 __fp_raw __encode_infinity(bool __negative) {
@@ -274,10 +274,10 @@ struct __bignum {
     __mul_pow5(k);
     shift_left(k);
   }
-  void shift_left(int __bits) {
-    if (n == 0 || __bits == 0)
+  void shift_left(int bits) {
+    if (n == 0 || bits == 0)
       return;
-    int __limbs = __bits / 32, s = __bits % 32;
+    int __limbs = bits / 32, s = bits % 32;
     // Each limb is assigned from its source limbs, highest first (a source limb is never at a
     // higher index than its destination), so no limb is read before it is written.
     if (s == 0) {

@@ -291,7 +291,7 @@ private:
   // so the scan is O(size() + s.size()) instead of O(size() * s.size()).
   struct __char_set {
     const basic_string_view& s;
-    unsigned long long __bits[4] = {};
+    unsigned long long bits[4] = {};
     bool __use_table = false;
     constexpr explicit __char_set(const basic_string_view& set) : s(set) {
       if constexpr (sizeof(__charT) == 1 && is_same_v<__traits, char_traits<__charT>>) {
@@ -299,7 +299,7 @@ private:
           __use_table = true;
           for (__charT c : set) {
             const unsigned __u = static_cast<unsigned char>(c);
-            __bits[__u / 64] |= 1ull << (__u % 64);
+            bits[__u / 64] |= 1ull << (__u % 64);
           }
         }
       }
@@ -308,7 +308,7 @@ private:
       if constexpr (sizeof(__charT) == 1) {
         if (__use_table) {
           const unsigned __u = static_cast<unsigned char>(c);
-          return (__bits[__u / 64] >> (__u % 64)) & 1;
+          return (bits[__u / 64] >> (__u % 64)) & 1;
         }
       }
       return __traits::find(s.__data_, s.__size_, c) != nullptr;

@@ -38,7 +38,7 @@ static_assert(sizeof(conv_tail) <= tail_size);
 
 // The internal object of each function, used for a null state pointer (C23 7.30.1/1).
 struct internal_state {
-  alignas(::mbstate_t) unsigned char __bytes[(sizeof(::mbstate_t) > tail_size ? sizeof(::mbstate_t) : tail_size) +
+  alignas(::mbstate_t) unsigned char bytes[(sizeof(::mbstate_t) > tail_size ? sizeof(::mbstate_t) : tail_size) +
                                            tail_size];
 };
 internal_state mbrtoc8_internal, c8rtomb_internal, mbrtoc16_internal, c16rtomb_internal, mbrtoc32_internal,
@@ -49,7 +49,7 @@ struct state_ref {
   void* __ps;
   std::size_t size;
   state_ref(void* p, std::size_t n, internal_state& internal) noexcept
-      : __ps(p != nullptr ? p : internal.__bytes), size(p != nullptr ? n : sizeof internal.__bytes) {}
+      : __ps(p != nullptr ? p : internal.bytes), size(p != nullptr ? n : sizeof internal.bytes) {}
   ::mbstate_t* c_state() const noexcept { return static_cast<::mbstate_t*>(__ps); }
   bool has_tail() const noexcept { return size >= 2 * tail_size; }
   conv_tail load() const noexcept {

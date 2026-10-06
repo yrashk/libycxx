@@ -219,7 +219,7 @@ constexpr __mpf<_Np> __mp_recip(const __mpf<_Np>& b) noexcept {
   __f.exp = -64 * _Np;
   __mpf<_Np> y = __ycxx::__detail::__fpm::__mp_from_double<_Np>(1.0 / __ycxx::__detail::__fpm::__mp_lead(__f));
   const __mpf<_Np> __one = __ycxx::__detail::__fpm::__mp_one<_Np>();
-  for (int __bits = 50; __bits < 64 * _Np + 8; __bits *= 2) {
+  for (int bits = 50; bits < 64 * _Np + 8; bits *= 2) {
     const __mpf<_Np> e = __ycxx::__detail::__fpm::__mp_sub(__one, __ycxx::__detail::__fpm::__mp_mul(__f, y));
     y = __ycxx::__detail::__fpm::__mp_add(y, __ycxx::__detail::__fpm::__mp_mul(y, e));
   }
@@ -250,7 +250,7 @@ constexpr __mpf<_Np> __mp_sqrt(const __mpf<_Np>& a) noexcept {
   for (int i = 0; i < 8; ++i) __yd = __yd * (3.0 - __fd * __yd * __yd) * 0.5;
   __mpf<_Np> y = __ycxx::__detail::__fpm::__mp_from_double<_Np>(__yd);
   const __mpf<_Np> __one = __ycxx::__detail::__fpm::__mp_one<_Np>();
-  for (int __bits = 48; __bits < 64 * _Np + 8; __bits *= 2) {
+  for (int bits = 48; bits < 64 * _Np + 8; bits *= 2) {
     const __mpf<_Np> e = __ycxx::__detail::__fpm::__mp_sub(__one, __ycxx::__detail::__fpm::__mp_mul(__f, __ycxx::__detail::__fpm::__mp_mul(y, y)));
     y = __ycxx::__detail::__fpm::__mp_add(y, __ycxx::__detail::__fpm::__mp_ldexp(__ycxx::__detail::__fpm::__mp_mul(y, e), -1));
   }

@@ -324,9 +324,9 @@ consteval vector<info> enumerators_of(info __type_enum);
 
 // [meta.reflection.layout]
 struct member_offset {
-  ptrdiff_t __bytes;
-  ptrdiff_t __bits;
-  constexpr ptrdiff_t total_bits() const { return __bytes * __CHAR_BIT__ + __bits; }
+  ptrdiff_t bytes;
+  ptrdiff_t bits;
+  constexpr ptrdiff_t total_bits() const { return bytes * __CHAR_BIT__ + bits; }
   auto operator<=>(const member_offset&) const = default;
 };
 consteval member_offset offset_of(info r);
@@ -380,7 +380,7 @@ struct data_member_options {
   optional<int> alignment{};
   optional<int> bit_width{};
   bool no_unique_address = false;
-  vector<info> __annotations{};
+  vector<info> annotations{};
 };
 consteval info data_member_spec(info type, data_member_options options);
 consteval bool is_data_member_spec(info r);

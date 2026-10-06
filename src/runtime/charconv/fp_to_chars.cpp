@@ -691,8 +691,8 @@ std::to_chars_result __to_chars_shortest(char* first, char* last, const __decode
 }
 
 template <kind _Kp>
-std::to_chars_result to_chars_impl(char* first, char* last, __fp_raw __bits, int __fmt, int precision) {
-  const __decoded __v = __ycxx::__detail::__fpconv::__decode<_Kp>(__bits);
+std::to_chars_result to_chars_impl(char* first, char* last, __fp_raw bits, int __fmt, int precision) {
+  const __decoded __v = __ycxx::__detail::__fpconv::__decode<_Kp>(bits);
   std::to_chars_result r;
   if (__ycxx::__detail::__fpconv::__write_special(first, last, __v, r))
     return r;
@@ -713,22 +713,22 @@ std::to_chars_result to_chars_impl(char* first, char* last, __fp_raw __bits, int
 } // namespace
 }} // namespace __ycxx::__detail::__fpconv
 
-std::to_chars_result __ycxx::__detail::__fp_to_chars(char* first, char* last, __fp_kind kind, __fp_raw __bits, int __fmt,
+std::to_chars_result __ycxx::__detail::__fp_to_chars(char* first, char* last, __fp_kind kind, __fp_raw bits, int __fmt,
                                                int precision) noexcept {
   using enum __ycxx::__detail::__fp_kind;
   switch (kind) {
   case __binary16:
-    return __ycxx::__detail::__fpconv::to_chars_impl<__binary16>(first, last, __bits, __fmt, precision);
+    return __ycxx::__detail::__fpconv::to_chars_impl<__binary16>(first, last, bits, __fmt, precision);
   case __bfloat16:
-    return __ycxx::__detail::__fpconv::to_chars_impl<__bfloat16>(first, last, __bits, __fmt, precision);
+    return __ycxx::__detail::__fpconv::to_chars_impl<__bfloat16>(first, last, bits, __fmt, precision);
   case __binary32:
-    return __ycxx::__detail::__fpconv::to_chars_impl<__binary32>(first, last, __bits, __fmt, precision);
+    return __ycxx::__detail::__fpconv::to_chars_impl<__binary32>(first, last, bits, __fmt, precision);
   case __binary64:
-    return __ycxx::__detail::__fpconv::to_chars_impl<__binary64>(first, last, __bits, __fmt, precision);
+    return __ycxx::__detail::__fpconv::to_chars_impl<__binary64>(first, last, bits, __fmt, precision);
   case __x87_extended:
-    return __ycxx::__detail::__fpconv::to_chars_impl<__x87_extended>(first, last, __bits, __fmt, precision);
+    return __ycxx::__detail::__fpconv::to_chars_impl<__x87_extended>(first, last, bits, __fmt, precision);
   case __binary128:
-    return __ycxx::__detail::__fpconv::to_chars_impl<__binary128>(first, last, __bits, __fmt, precision);
+    return __ycxx::__detail::__fpconv::to_chars_impl<__binary128>(first, last, bits, __fmt, precision);
   }
   __builtin_unreachable();
 }

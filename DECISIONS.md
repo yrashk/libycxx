@@ -1314,8 +1314,9 @@ under the same name. Otherwise it gets one alias template in `config.hpp`.
 - **Attributes.** An adaptor reports a completion scheduler or domain only where its semantics
   determine it ([exec.snd.general]/3-4): a single-child adaptor maps each of its completion tags
   to the child completions whose agents complete it (then: value from value; error from error and
-  value), a scheduler for a single source, the COMMON-DOMAIN otherwise; when_all and let report
-  none (COMPL-DOMAIN then falls back to indeterminate_domain<>, default_domain's transformations).
+  value), a scheduler for a single source, the COMMON-DOMAIN otherwise; when_all reports its
+  children's COMMON-DOMAIN (tests/ycxx/execution/sync_wait_customization); let reports none
+  (COMPL-DOMAIN then falls back to indeterminate_domain<>, default_domain's transformations).
 - **noexcept.** Where the draft gives a noexcept-specifier it is used as written; the sender
   factories and adaptors are noexcept when their decay-copies are (a strengthening
   [res.on.exception.handling] allows; make-sender has none in the draft).

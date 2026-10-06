@@ -213,6 +213,9 @@
 #define __cpp_lib_formatters 202302L
 #define __cpp_lib_stacktrace 202011L
 #define __cpp_lib_hardened_basic_stacktrace 202506L
+// The modules std and std.compat ([std.modules]): modules/std.cppm, modules/std.compat.cppm,
+// built by the CMake package (ycxx::modules) or tools/ycxx-modules (DECISIONS §16).
+#define __cpp_lib_modules 202207L
 // <contracts>: the language feature is the compiler's (GCC 16; not Clang 23)
 #if YCXX_HAS_CONTRACTS
 #  define __cpp_lib_contracts 202502L

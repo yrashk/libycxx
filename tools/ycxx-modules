@@ -1,0 +1,49 @@
+#!/bin/sh
+# Build libycxx's standard library modules std and std.compat ([std.modules]) for one compiler.
+#   ycxx-modules gcc|clang [-o DIR] [compiler flags...]
+# DIR (default build/<compiler>/modules) receives
+#   clang: std.pcm, std.compat.pcm      the built module interfaces (BMIs)
+#   gcc:   std.gcm, std.compat.gcm      the compiled module interfaces (CMIs), and module.map, the
+#                                       -fmodule-mapper file naming them
+#   libycxx-modules.a                   the modules' object files (their initializers)
+#   flags                               the compile flags that use them (one line)
+# The modules come from modules/std.cppm and modules/std.compat.cppm (tools/gen_std_module.py).
+# Pass the flags of the code that will import them (-O2, -fno-exceptions, -DYCXX_HARDENED=1,
+# -fsanitize=...): a BMI is only valid with the options it was built with (Clang rejects a
+# mismatch, GCC does not always notice one). Then compile and link with
+#   ycxx-cxx clang|gcc --std-modules[=DIR] [flags...] prog.cpp -o prog
+# which adds the flags and links the archive (README, "Modules").
+here=$(cd "$(dirname "$0")/.." && pwd)
+which=$1
+case $which in
+  gcc|clang) shift ;;
+  *) echo "usage: ycxx-modules gcc|clang [-o DIR] [compiler flags...]" >&2; exit 2 ;;
+esac
+dir=$here/build/$which/modules
+if [ "${1:-}" = -o ]; then
+  [ $# -ge 2 ] || { echo "ycxx-modules: -o needs a directory" >&2; exit 2; }
+  dir=$2
+  shift 2
+fi
+mkdir -p "$dir" || exit 1
+dir=$(cd "$dir" && pwd)
+src=$here/modules
+cxx="$here/tools/ycxx-cxx $which"
+set -e
+if [ "$which" = clang ]; then
+  # `std` is a module name reserved to the implementation, which libycxx is.
+  $cxx -Wno-reserved-module-identifier "$@" -fmodule-output="$dir/std.pcm" -c "$src/std.cppm" -o "$dir/std.o"
+  $cxx -Wno-reserved-module-identifier "$@" -fmodule-file=std="$dir/std.pcm" \
+    -fmodule-output="$dir/std.compat.pcm" -c "$src/std.compat.cppm" -o "$dir/std.compat.o"
+  use="-fmodule-file=std=$dir/std.pcm -fmodule-file=std.compat=$dir/std.compat.pcm"
+else
+  # The module mapper file names each module's CMI (instead of ./gcm.cache, relative to the
+  # directory of each compilation).
+  printf 'std %s/std.gcm\nstd.compat %s/std.compat.gcm\n' "$dir" "$dir" >"$dir/module.map"
+  use="-fmodules -fmodule-mapper=$dir/module.map"
+  $cxx $use "$@" -c "$src/std.cppm" -o "$dir/std.o"
+  $cxx $use "$@" -c "$src/std.compat.cppm" -o "$dir/std.compat.o"
+fi
+rm -f "$dir/libycxx-modules.a"
+ar rcs "$dir/libycxx-modules.a" "$dir/std.o" "$dir/std.compat.o"
+printf '%s\n' "$use" >"$dir/flags"

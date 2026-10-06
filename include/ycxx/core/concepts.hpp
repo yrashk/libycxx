@@ -104,7 +104,7 @@ struct __fn {
 }} // namespace __ycxx::__detail::__swap_cpo
 
 namespace [[__gnu__::__visibility__("hidden")]] std { namespace ranges {
-inline namespace cpo {
+inline namespace __cpo {
 inline constexpr __ycxx::__detail::__swap_cpo::__fn swap{};
 }
 }} // namespace std::ranges

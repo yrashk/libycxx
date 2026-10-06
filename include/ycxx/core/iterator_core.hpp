@@ -335,7 +335,7 @@ struct __fn {
 }} // namespace __ycxx::__detail::__iter_move_cpo
 
 namespace [[__gnu__::__visibility__("hidden")]] std { namespace ranges {
-inline namespace cpo {
+inline namespace __cpo {
 inline constexpr __ycxx::__detail::__iter_move_cpo::__fn iter_move{};
 }
 }} // namespace std::ranges
@@ -672,7 +672,7 @@ struct __fn {
 }} // namespace __ycxx::__detail::__iter_swap_cpo
 
 namespace [[__gnu__::__visibility__("hidden")]] std { namespace ranges {
-inline namespace cpo {
+inline namespace __cpo {
 inline constexpr __ycxx::__detail::__iter_swap_cpo::__fn iter_swap{};
 }
 }} // namespace std::ranges

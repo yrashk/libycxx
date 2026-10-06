@@ -313,7 +313,7 @@ consteval int __type_compare() {
 
 namespace [[__gnu__::__visibility__("hidden")]] std {
 
-inline namespace cpo {
+inline namespace __cpo {
 inline constexpr __ycxx::__detail::__cmp_cpo::__strong_order_fn strong_order{};
 inline constexpr __ycxx::__detail::__cmp_cpo::__weak_order_fn weak_order{};
 inline constexpr __ycxx::__detail::__cmp_cpo::__partial_order_fn partial_order{};

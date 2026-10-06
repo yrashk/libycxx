@@ -23,7 +23,9 @@
 #   -c, --compiler gcc|clang   only this compiler (repeatable; default both)
 #   -f, --filter DIR           suite stages: only tests under DIR (repeatable)
 #   -j, --jobs N               parallel jobs for ninja and lit
-#   -s, --sanitizer LIST       suite stages: build tests with -fsanitize (asan, ubsan, tsan)
+#   -s, --sanitizer LIST       suite stages: build tests with -fsanitize (asan, ubsan, tsan) and
+#                              link them with libycxx built with the same sanitizers
+#                              (build/<cc>-<sanitizers>, configured and built on first use)
 #   --hardened                 own suite: compile the tests with -DYCXX_HARDENED=1 (the library's
 #                              run-time precondition checks) and run the death tests of
 #                              tests/ycxx/precondition (YCXX_HARDENED=1)

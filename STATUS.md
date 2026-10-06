@@ -247,8 +247,26 @@ when parsing, `fractional_width` of ratio<1, 2^62>, `hh_mm_ss` layout, an error 
 ## Own-suite configurations (runs of 2026-10-05, 2438 tests)
 `tools/test --hardened` / `--cxxflags=... --config-name=...` (README, Own tests); the nightly
 `full.yml` runs them, and any failure fails the job. The hardened and noexcept rows predate the
-senders' tests; execution/, stop_token/ and version/ pass in both (and under ASan+UBSan, and
-TSan with a TSan-built runtime) on both compilers.
+senders' tests; execution/, stop_token/ and version/ pass in both (and under ASan+UBSan and
+TSan) on both compilers.
+
+Sanitizer runs link libycxx built with the same sanitizers (`build/<cc>-<sanitizers>`, made by
+`tools/run-conformance`; DECISIONS §6.8). Runs of 2026-10-06, whole own suite, Clang 23.1:
+
+| Configuration | Result |
+|---|---|
+| TSan (`-s tsan`, `build/clang-tsan`) | 2695 pass / 0 fail / 39 xfail / 57 unsupported; no ThreadSanitizer report but the one suppressed in `tests/ycxx/tsan.supp` (`atomic/fences`: TSan does not model fences); the concurrency directories clean in 4 more repetitions |
+| ASan (`-s asan`, `build/clang-asan`) | 2685 pass / 0 fail / 39 xfail / 67 unsupported |
+
+With the uninstrumented library the TSan run of `execution/` failed 6 tests with 307 reports,
+every one a hand-off through `src/hosted/parallel_scheduler.cpp`'s queue (futex mutex) or the
+exception reference counts (`src/abi/exception.cpp`), which ThreadSanitizer could not see; with
+the instrumented library they are gone. GCC: GCC 16.2 here has no sanitizer runtimes; with GCC
+13's `libtsan.so.2` (`--cxxflags=-B<dir>`, not a supported setup) the whole suite gives no
+ThreadSanitizer report, and 8 failures, all from the shared `libtsan.so` (linked first by GCC's
+driver) supplying the global allocation functions in place of libycxx's: the tests of libycxx's
+own `operator new` (new_handler loop, bad_alloc for impossible sizes, forwarding to a
+replacement), as under ASan. So the nightly TSan job is Clang's.
 
 | Configuration | GCC 16.2 | Clang 23.1 |
 |---|---|---|
@@ -1112,9 +1130,9 @@ compilers; `visit_format_arg.pass.cpp` needs `EOF` from `constexpr_char_traits.h
   `<rcu>`, `<hazard_pointer>`; DECISIONS §3): own suite atomic, thread, mutex,
   condition_variable, future, latch, barrier, semaphore, stop_token, ratio and
   memory_resource/synchronized_pool_threads 128/128 on both compilers,
-  stable over repeated runs, clean under ASan and under TSan (Clang, with a runtime built with
-  `-fsanitize=thread`: `YCXX_LIBDIR=build/clang-tsan SANITIZER=tsan`; `atomic/fences` is reported
-  because TSan does not model fences). `<chrono>` is complete (see Time below). libc++
+  stable over repeated runs, clean under ASan and under TSan (Clang, `tools/test -s tsan`, with
+  libycxx instrumented too; `atomic/fences`' report is suppressed, since TSan does not model
+  fences: `tests/ycxx/tsan.supp`). `<chrono>` is complete (see Time below). libc++
   atomics 5 -> 115/115 and thread 11 -> 334/338 (both compilers); libstdc++ 29_atomics 0 -> 82/82
   (GCC), 81/82 (Clang, compiler gap above) and 30_threads 0 -> 309/315 (both; the rest need
   `<iostream>`/`<sstream>`/`<format>` or utc_clock). Limitations: `notify_one` can wake more than

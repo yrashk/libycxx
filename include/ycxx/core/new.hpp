@@ -39,7 +39,7 @@ inline constexpr size_t hardware_constructive_interference_size = 64;
 // libycxx-freestanding.a (no heap); one function per archive member, so a program may replace
 // any subset (src/runtime/new). Externally visible for GCC: under -fwhole-program it would
 // otherwise localize a program's replacement, and the library's default functions (e.g. the
-// sized delete, which calls the unsized one) would not reach it (GCC PR 50594); Clang does not
+// sized delete, which calls the unsized one) would not reach it (GCC bugzilla 50594); Clang does not
 // know the attribute, hence the -Wattributes push.
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wattributes"

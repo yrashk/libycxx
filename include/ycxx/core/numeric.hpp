@@ -24,11 +24,17 @@ constexpr T accumulate(InputIterator first, InputIterator last, T init, BinaryOp
   return init;
 }
 
-// [reduce]: GENERALIZED_SUM may group and reorder freely; done left to right here.
+// [reduce]: GENERALIZED_SUM may group and reorder freely; done left to right here. The
+// Mandates ([reduce]/5) only require binary_op(init, *first) etc. with lvalues, so the
+// accumulator is moved only when binary_op accepts an rvalue (no copy per step otherwise).
 template <class InputIterator, class T, class BinaryOperation>
 constexpr T reduce(InputIterator first, InputIterator last, T init, BinaryOperation binary_op) {
-  for (; first != last; ++first)
-    init = binary_op(std::move(init), *first);
+  for (; first != last; ++first) {
+    if constexpr (is_invocable_v<BinaryOperation&, T&&, decltype(*first)>)
+      init = binary_op(std::move(init), *first);
+    else
+      init = binary_op(init, *first);
+  }
   return init;
 }
 template <class InputIterator, class T>

@@ -4,7 +4,7 @@
 
 #include <string>
 
-namespace ycxx::detail {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 
 // The demangled form of a mangled name ("_Z..."), in the style of the toolchains' c++filt
 // ("ns::f<int>(char const*) const"); a clone suffix (".cold", ".isra.0", ...) is shown as
@@ -12,4 +12,4 @@ namespace ycxx::detail {
 // uses a construct this demangler does not know. Throws bad_alloc only.
 bool demangle(const char* mangled, std::string& out);
 
-} // namespace ycxx::detail
+}} // namespace ycxx::detail

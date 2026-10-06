@@ -41,7 +41,7 @@ std::FILE* file(void* f) noexcept { return static_cast<std::FILE*>(f); }
 
 } // namespace
 
-namespace ycxx::detail {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 
 void* file_open(const char* name, std::ios_base::openmode mode) noexcept {
   const char* m = stdio_mode(mode);
@@ -83,4 +83,4 @@ bool file_flush(void* f) noexcept { return std::fflush(file(f)) == 0; }
 
 int file_native(void* f) noexcept { return ::fileno(file(f)); }
 
-} // namespace ycxx::detail
+}} // namespace ycxx::detail

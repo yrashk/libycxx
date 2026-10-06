@@ -19,7 +19,7 @@
 #include <ycxx/hosted/memory_resource.hpp> // ycxx::detail::pal_lock
 #include "locale_named.hpp"
 
-namespace ycxx::detail {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 
 struct locale_impl {
   std::size_t refs; // atomic
@@ -39,7 +39,7 @@ struct locale_access {
   static std::locale make(locale_impl* p) noexcept { return std::locale(locale_impl_tag(), p); }
 };
 
-} // namespace ycxx::detail
+}} // namespace ycxx::detail
 
 namespace {
 
@@ -485,7 +485,7 @@ struct lock_guard {
 
 } // namespace
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 
 locale::facet::~facet() {}
 
@@ -914,7 +914,7 @@ int utf8_length(const E* from, const E* end, std::size_t max, int units_per_cp_m
 
 } // namespace
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 
 // codecvt<char, char, mbstate_t>: the degenerate conversion.
 locale::id codecvt<char, char, mbstate_t>::id;
@@ -1083,7 +1083,7 @@ int codecvt<char16_t, char, mbstate_t>::do_max_length() const noexcept { return 
 
 } // namespace std
 
-namespace ycxx::detail {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 
 void check_locale_name(const char* name, const char* what) {
   split_name parts;
@@ -1110,4 +1110,4 @@ bool locale_name_part(const char* name, int c, std::string& out) {
   return true;
 }
 
-} // namespace ycxx::detail
+}} // namespace ycxx::detail

@@ -5,8 +5,8 @@
 // linked instead.
 #include <contracts>
 
-void handle_contract_violation(const std::contracts::contract_violation& v);
+[[gnu::visibility("hidden")]] void handle_contract_violation(const std::contracts::contract_violation& v);
 
-void handle_contract_violation(const std::contracts::contract_violation& v) {
+[[gnu::visibility("hidden")]] void handle_contract_violation(const std::contracts::contract_violation& v) {
   std::contracts::invoke_default_contract_violation_handler(v);
 }

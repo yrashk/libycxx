@@ -5,7 +5,7 @@
 #include <system_error>
 #include <cerrno>
 
-namespace ycxx::detail {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 
 namespace {
 
@@ -54,9 +54,9 @@ void vprint_ostream(std::ostream& os, std::string_view fmt, std::format_args arg
     os.setstate(err);
 }
 
-} // namespace ycxx::detail
+}} // namespace ycxx::detail
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 
 void vprint_unicode(FILE* stream, string_view fmt, format_args args) {
   ycxx::detail::format_to_file(stream, fmt, args, false);

@@ -7,7 +7,7 @@
 #include <new>
 #include <typeinfo>
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 
 exception::~exception() {}
 bad_alloc::~bad_alloc() {}

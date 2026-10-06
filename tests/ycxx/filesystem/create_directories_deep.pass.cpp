@@ -4,9 +4,13 @@
 // ([fs.op.is.dir]). create_directory works "as if by POSIX mkdir" ([fs.op.create.directory]/1),
 // which may fail for a path of PATH_MAX bytes or more (ENAMETOOLONG), so the path stays below
 // the platform's PATH_MAX (<limits.h>: 4096 on Linux, where 1100 elements fit; 1024 on Darwin,
-// whose $TMPDIR is long too).
+// whose $TMPDIR is long too). The budget is measured on the temporary directory's resolved path
+// (POSIX realpath): mkdir may also fail with ENAMETOOLONG when resolving a symbolic link in the
+// path gives an intermediate result longer than PATH_MAX (POSIX mkdir, [ENAMETOOLONG]); Darwin's
+// $TMPDIR is under /var, a symbolic link to /private/var.
 #include <filesystem>
 #include <limits.h>
+#include <stdlib.h>
 #include <system_error>
 #include "check.hpp"
 #include "fs_tmpdir.hpp"
@@ -15,8 +19,11 @@ namespace fs = std::filesystem;
 
 int main() {
   TmpDir t;
-  fs::path p = t.str();
-  const std::size_t room = PATH_MAX - 1 - t.str().size() - 4;  // "/e/f" below
+  char resolved[PATH_MAX];
+  CHECK(::realpath(t.str().c_str(), resolved) != nullptr);
+  const std::string base = resolved;
+  fs::path p = base;
+  const std::size_t room = PATH_MAX - 1 - base.size() - 4;  // "/e/f" below
   const std::size_t depth = room / 2 < 1100 ? room / 2 : 1100;   // "/d" each
   CHECK(depth >= 400);
   for (std::size_t i = 0; i < depth; ++i) p /= "d";

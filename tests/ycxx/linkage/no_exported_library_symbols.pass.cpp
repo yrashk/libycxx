@@ -1,10 +1,13 @@
 // A program built with libycxx exports none of the library's definitions (DECISIONS §2): not
 // those the headers emit in the program (inline functions, template instantiations, type_info
 // objects and vtables, inline variables), not those of the archives (the runtime, the ABI
-// runtime, the default allocation functions). Another C++ library in the process (Apple's
-// libc++/libc++abi, which every Darwin process loads; libstdc++ in a shared object) can then
-// neither take over libycxx's definitions nor be taken over by them.
-//   [replacement.functions]/2: a program's own replacement of operator new is still the one used.
+// runtime). Another C++ library in the process (Apple's libc++/libc++abi, which every Darwin
+// process loads; libstdc++ in a shared object) can then neither take over libycxx's definitions
+// nor be taken over by them; that includes libycxx's default allocation functions (the images
+// that link libycxx share them through the allocation table, ycxx_allocation_functions, a name of
+// libycxx's own).
+//   [replacement.functions]/2: a program's own replacement of operator new is still the one used,
+//   and is exported as the program's other functions are (the test's own: _Znwm, _ZdlPv, _ZdlPvm).
 // The test lists the symbols its executable exports (ELF: `nm -D`, the dynamic symbol table,
 // which -rdynamic fills with every default-visibility symbol; Mach-O: `nm -gU`) and fails on any
 // mangled name that is not the test's own (namespace `own`) and on the ABI runtime's names.
@@ -96,23 +99,6 @@ void* operator new(std::size_t n) {
 void operator delete(void* p) noexcept { std::free(p); }
 void operator delete(void* p, std::size_t) noexcept { std::free(p); }
 
-// typeinfo or typeinfo name of a fundamental type or of a pointer to one: _ZTI/_ZTS, then P or PK,
-// then a builtin type's code (a lower-case letter, or D and a letter: Di, DF16_, ...).
-namespace own {
-bool fundamental_type_info(const std::string& name) {
-  if (name.rfind("_ZTI", 0) != 0 && name.rfind("_ZTS", 0) != 0)
-    return false;
-  std::string rest = name.substr(4);
-  if (rest.rfind("PK", 0) == 0)
-    rest.erase(0, 2);
-  else if (rest.rfind("P", 0) == 0)
-    rest.erase(0, 1);
-  if (rest.size() == 1)
-    return rest[0] >= 'a' && rest[0] <= 'z';
-  return rest.size() > 1 && rest[0] == 'D' && ((rest[1] >= 'A' && rest[1] <= 'Z') || (rest[1] >= 'a' && rest[1] <= 'z'));
-}
-} // namespace own
-
 int main(int, char** argv) {
   CHECK(own::run() == 7);
   CHECK(own::replaced_new_calls > 0);
@@ -138,17 +124,12 @@ int main(int, char** argv) {
     ++symbols;
     if (name.rfind("__Z", 0) == 0)
       name.erase(0, 1); // Mach-O's C prefix
-    bool library = (name.rfind("_Z", 0) == 0 && name.find("3own") == std::string::npos &&
-                    name != "_Znwm" && name != "_Znwj" && name != "_ZdlPv" && name != "_ZdlPvm" &&
-                    name != "_ZdlPvj") ||
+    // The test's own replacements (size_t is m or j).
+    bool own_replacement = name == "_Znwm" || name == "_Znwj" || name == "_ZdlPv" || name == "_ZdlPvm" ||
+                           name == "_ZdlPvj";
+    bool library = (name.rfind("_Z", 0) == 0 && name.find("3own") == std::string::npos && !own_replacement) ||
                    name.find("__cxa_") != std::string::npos || name.find("__gxx_personality") != std::string::npos ||
                    name.find("ycxx_pal_") != std::string::npos;
-    if (library && os == "Darwin" && own::fundamental_type_info(name)) {
-      // GCC gives these default visibility; they are hidden on ELF only (DECISIONS §2). Benign on
-      // Darwin: libc++abi exports the same objects, with the same layout and names.
-      std::printf("tolerated: %s\n", s.c_str());
-      continue;
-    }
     if (library) {
       std::printf("exported: %s\n", s.c_str());
       ++foreign;

@@ -3,7 +3,7 @@
 #include <new>
 #include <ycxx/hosted/hazard_pointer.hpp>
 
-namespace ycxx::detail {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 namespace {
 
 hp_record* records = nullptr;        // atomic; push-only
@@ -89,4 +89,4 @@ void hp_retire(hp_retired_node* n) noexcept {
     reclaim();
 }
 
-} // namespace ycxx::detail
+}} // namespace ycxx::detail

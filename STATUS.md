@@ -15,7 +15,7 @@ Conformance oracles (run only, never edited): libc++ tests from `llvmorg-23.1.2`
 |---|---|---|
 | Own suite `tests/ycxx` (2146 tests, `65e7235`) | 2131 pass / 10 fail / 5 xfail | 2124 pass / 6 fail / 16 xfail |
 | libc++ `libcxx/test/std` (8543 tests, `7e6a93f`) | 7494 pass / 211 fail (209 + 2 unresolved: compile timeouts under load) / 836 unsupported (was 7439 / 532 raw) | 7495 pass / 215 fail / 832 unsupported (was 7440 / 536 raw) |
-| libstdc++ testsuite (8555 tests, `7e6a93f`) | 4823 pass / 141 fail / 3591 unsupported (was 4754 / 484) | 4786 pass / 175 fail / 3594 unsupported (was 4715 / 523) |
+| libstdc++ testsuite (8555 tests; 2026-10-06, testsuite helpers and tests without `dg-do` running) | 6206 pass / 13 fail / 1 xfail / 2335 unsupported (was 4823 / 141 on 2026-10-05) | 6161 pass / 13 fail / 37 xfail / 2344 unsupported (projected from the full run with the final lists; was 4786 / 175) |
 | Own suite against libstdc++ (reference, `tests/ycxx/REFERENCE.md`) | 1754 pass / 387 fail / 5 xfail | 1718 pass / 412 fail / 16 xfail |
 
 Every libc++ and libstdc++ failure is categorised in `tests/libcxx/TRIAGE.md` and
@@ -246,18 +246,20 @@ when parsing, `fractional_width` of ratio<1, 2^62>, `hh_mm_ss` layout, an error 
 
 ## Own-suite configurations (runs of 2026-10-05, 2438 tests)
 `tools/test --hardened` / `--cxxflags=... --config-name=...` (README, Own tests); the nightly
-`full.yml` runs them, and any failure fails the job.
+`full.yml` runs them, and any failure fails the job. The hardened and noexcept rows predate the
+senders' tests; execution/, stop_token/ and version/ pass in both (and under ASan+UBSan, and
+TSan with a TSan-built runtime) on both compilers.
 
 | Configuration | GCC 16.2 | Clang 23.1 |
 |---|---|---|
-| default (the `precondition/` death tests UNSUPPORTED) | 2371 pass / 0 fail / 13 xfail / 54 unsupported | 2364 pass / 0 fail / 20 xfail / 54 unsupported |
+| default (the `precondition/` death tests UNSUPPORTED; 2457 tests, 2026-10-06, with `<execution>`'s senders) | 2391 pass / 0 fail / 12 xfail / 54 unsupported | 2384 pass / 0 fail / 19 xfail / 54 unsupported |
 | hardened (`-DYCXX_HARDENED=1`) | 2425 pass / 0 fail / 13 xfail | 2418 pass / 0 fail / 20 xfail |
 | noexcept (`-fno-exceptions`; tests `REQUIRES: exceptions` UNSUPPORTED) | 1941 pass / 0 fail / 7 xfail / 490 unsupported | 1941 pass / 0 fail / 7 xfail / 490 unsupported |
 
 Every expected failure carries its reason in the test (`// XFAIL:` for causes outside the library
 and the test, `// XFAIL-COMPILER:` for a missing compiler feature): the draft defect
 `char_traits/eof`, the Itanium ABI and GCC handler-recording limits (`except/handler_*`), GCC's
-contract detection mode (`contracts/observe`), the unimplemented senders of `<execution>`, and on
+contract detection mode (`contracts/observe`), and on
 Clang the features it lacks (constant-evaluation throws, contracts, reflection, builtins).
 
 ## Freestanding
@@ -289,10 +291,14 @@ Ported:
   `FP_SUBNORMAL` (1-5), `FP_ILOGBNAN` (INT_MIN), `math_errhandling` (MATH_ERREXCEPT: that libm
   never sets errno; `cmath_check.cpp` compares the C library's only when it is a constant),
   `mbstate_t` (128 bytes, aligned to 8). The hosted checks against the C headers remain.
-- C23 functions libSystem lacks, provided by the hosted runtime: `strfromd/f/l`
-  (`src/hosted/strfrom.cpp`, on snprintf), `mbrtoc8`/`c8rtomb`, and the four char16_t/char32_t
-  conversions where the SDK has no `<uchar.h>` (`src/hosted/uchar.cpp`, on mbrtowc/wcrtomb),
-  `timespec_getres` (`src/hosted/ctime.cpp`, TIME_UTC only, on clock_getres).
+- C23 functions libSystem lacks (found by `cmake/ycxx-c-library.cmake`, not assumed), provided by
+  the hosted runtime: `strfromd/f/l` (`src/hosted/strfrom.cpp`, on snprintf), `mbrtoc8`/`c8rtomb`,
+  and the four char16_t/char32_t conversions (the SDK has no `<uchar.h>`; `src/hosted/uchar.cpp`,
+  on mbrtowc/wcrtomb; libycxx's `<uchar.h>` places them in the global namespace),
+  `timespec_getres` (`src/hosted/ctime.cpp`, TIME_UTC only, on clock_getres; global through
+  libycxx's `<time.h>`). `_PRINTF_NAN_LEN_MAX` is the probe's measurement of libSystem's printf
+  (3: it prints every NaN as `nan`). `atexit`/`at_quick_exit` are redeclared noexcept, and the
+  const-correct `strchr` ... `wmemchr` pairs are libycxx's at global scope too.
 - Static initialization: Mach-O has no init priorities, so `<iostream>` defines an
   `ios_base::Init` per translation unit there (DECISIONS §7); checked on Linux by building with
   `-U__ELF__`.
@@ -325,17 +331,23 @@ dyld coalesces exported weak definitions across images, a non-weak one winning: 
 libycxx's header-emitted definitions (`std::current_exception`, and with GCC the exception
 classes' type_info and members) to libc++'s, and patched libycxx's `operator delete` into the
 shared cache. Fixed by hidden visibility (DECISIONS §2): nothing of libycxx is exported, so no
-weak-definition binds remain except, with GCC, the fundamental type_info objects (benign: same
-objects in libc++abi). Expected in CI: `exception`, `except`, `rtti`, `future` pass on both
+weak-definition binds remain. GCC's fundamental type_info objects are hidden too (the list comes
+from a configure-time probe of the compiler): on aarch64-apple-darwin GCC 16.2 emits 300 such
+symbols, 150 of which (the SVE, `__bf16`, `__mfp8`, decimal and `_FloatN` forms) Apple's libc++abi
+does not export, so tolerating them as "libc++abi's objects" was wrong. Expected in CI: `exception`, `except`, `rtti`, `future` pass on both
 compilers apart from the documented `except/handler_pointer_reference{,_exact}` (both) and
 `handler_array_decay`, `handler_function_pointer` (GCC) handler limitation;
 `linkage/no_exported_library_symbols` passes;
 `tests/cmake/run.sh` (not in CI) shows no exports and "mine 3 other 3" with Apple's libc++.
 
 Unverified or known gaps on macOS:
-- Darwin's C library predates C23 in places libycxx forwards to it: whether its printf/scanf
-  have `%b` and its `strto*` the `0b` prefix is probed by `cinttypes/functions_macros` (a note
-  when missing); its `iswctype` with `wctype("...")` may disagree with the `isw*` functions
+- Darwin's C library predates C23 in places libycxx forwards to it: its printf has neither `%b`
+  nor `%B` (macOS 26: `snprintf("%b", 5u)` gives "b"), so own test `cstdio/c23_conversions` fails
+  there (a C library gap: libycxx's `<cstdio>` is the C library's printf) and `PRIBN` stay
+  undefined ([cinttypes.syn]/2); whether its scanf has `%b` and its `strto*` the `0b` prefix is
+  probed by `cinttypes/functions_macros` (a note when missing); its `strftime` `%z` gives the
+  local offset for a `gmtime` result (own test `ctime/c23_functions` passes only with `TZ=UTC`,
+  as in CI); its `iswctype` with `wctype("...")` may disagree with the `isw*` functions
   beyond ASCII under "C.UTF-8" (`cwctype/classification` notes the C library's disagreements).
 - `<stacktrace>`: frames are captured (libSystem's `_Unwind_Backtrace`), but only `dladdr`
   names them (exported symbols only) and there are no file names or lines: the runtime reads ELF
@@ -371,6 +383,19 @@ libstdc++ 16 lacks, GCC/Clang differences, C-header gaps and ABI limits. No fail
 a defect in a test.
 
 ## Known compiler gaps and bugs
+- GCC 16.2, modules (`-fmodules`): one translation unit cannot both #include a standard header
+  and `import std;`. Importing after an #include of some of the headers fails to read the module
+  ("failed to read compiled module cluster N: Bad file data"; reduced: a module whose global
+  module fragment has `<vector>` and `<string>`, imported after `#include <vector>`); an #include
+  after the import redefines what the module made reachable ("redefinition of ...": textual
+  merging after an import is not implemented, gcc.info "C++ Modules", reproduced without
+  libycxx). Own tests `modules/include_then_import`, `modules/import_then_include` are XFAIL on
+  GCC; separate translation units mix freely (`modules/mixed_translation_units`). Clang handles
+  both orders.
+- GCC 16.2, modules: a declaration of the C library's that a program redeclares differently
+  before `import std;` (`extern "C" void abort();` without `noexcept`, as
+  `tests/ycxx/support/check.hpp` does) is rejected ("conflicting 'noexcept' specifier for imported
+  declaration"); module tests use `module_check.hpp`.
 - GCC 16.2: no `__builtin_is_within_lifetime`, so `std::is_within_lifetime` is unavailable on GCC
   (constraint, probed in-language). Consequence: `std::start_lifetime` cannot detect an
   already-live object in constant evaluation on GCC, so it re-begins its lifetime and loses
@@ -414,6 +439,17 @@ a defect in a test.
   test 29_atomics/atomic_ref/ctor) treat the explicit constructor as a candidate and find the call
   ambiguous ([over.match.list]).
 
+- Clang 23.1 (also Apple clang 21) on Darwin: an `inline thread_local` variable with dynamic
+  initialization and hidden visibility (from `-fvisibility=hidden` or from its type's visibility,
+  so every such variable of a libycxx class type, DECISIONS §2) gets its TLS init function
+  `_ZTH<name>` as a strong private external symbol: the IR has a `linkonce_odr hidden alias` to the
+  TU's `__tls_init`, which the Mach-O backend emits without the weak bit (with default visibility
+  it is a local symbol; ELF targets emit it weak). Two TUs defining the variable fail to link with
+  "duplicate symbol 'thread-local initialization routine for ...'". GCC 16.2 (weak `_ZTH`) links.
+  Repro without libycxx: `s.h`: `struct S { S(); int v; }; inline thread_local S t;`; `a.cpp`:
+  `#include "s.h"` `S::S() : v(1) {} int* f() { return &t.v; }`; `b.cpp`: `#include "s.h"`
+  `int* f(); int main() { return f() != &t.v; }`; `clang++ -fvisibility=hidden a.cpp b.cpp`.
+  Own test `linkage/odr_inline_entities` is XFAIL on Clang on Darwin (`XFAIL: clang-darwin`).
 - Clang 23.1: the type_info name string of a class with internal linkage is emitted without the
   leading `*` (GCC emits `*N12_GLOBAL__N_1...`) that tells the Itanium runtime to compare
   type_info objects by address, so same-named unnamed-namespace classes of different translation
@@ -503,6 +539,15 @@ compilers; `visit_format_arg.pass.cpp` needs `EOF` from `constexpr_char_traits.h
   C library does (`0x0.000000000000001p-16385` is the smallest), so that both forms agree there.
 
 ## Known limitations and draft defects
+- Modules (`import std;`, `import std.compat;`; DECISIONS §16): built per project from
+  `modules/*.cppm` (CMake `ycxx::modules`, `tools/ycxx-modules`), never shipped as BMIs. CMake's
+  `CMAKE_CXX_MODULE_STD` is not supported (needs CMake >= 3.30, and would build the toolchain's
+  library's module; CMake here is 3.28). The export lists are generated on Linux/glibc; on Darwin
+  the modules are untested (std.compat's global C names may differ there). The implementation's
+  inline namespace `std::ranges::cpo` (and `std::cpo`) is visible to importers (the CPOs must be
+  exported from it, DECISIONS §16). GCC: see known compiler gaps (no #include and import of the
+  library in one translation unit). `<bits/stdc++.h>` exists (every header) because GCC's
+  `-fmodules` looks it up for every standard #include.
 - `submdspan` of a `layout_stride` (or non-unit-stride) mapping: [mdspan.sub.map.common]/6 builds
   a `layout_stride::mapping` whose strides need not meet [mdspan.layout.stride.cons]/4.3, although
   the layout is unique: that condition is sufficient, not necessary, despite its Note (extents
@@ -510,7 +555,12 @@ compilers; `visit_format_arg.pass.cpp` needs `EOF` from `constexpr_char_traits.h
   {2, 9}, is unique and fails it). libycxx constructs submdspan results without that check (the
   other preconditions are still checked in hardened builds); a draft defect to report.
 - Hidden visibility (DECISIONS §2): a program or shared library exports none of libycxx's
-  symbols. **GCC warns** (`-Wattributes`: "'S' declared with greater visibility than the type of
+  symbols; its images share their default allocation functions through the allocation table
+  `ycxx_allocation_functions` (DECISIONS §2), kept in a program by link options the CMake
+  package and `tools/ycxx-cxx` add (`-u`, and `--export-dynamic-symbol` on ELF); other build
+  systems add them themselves (`<build>/ycxx-link-options` lists them). Without them, a program
+  that references no default allocation function lacks the table, and its replacements do not
+  reach the libycxx shared libraries it loads. **GCC warns** (`-Wattributes`: "'S' declared with greater visibility than the type of
   its field" / "than its base") for every program class outside libycxx's namespaces with a
   member or base of a library class type (`struct S { std::string s; };`, a class derived from
   `std::runtime_error`); GCC has no way to hide a class's members and type_info without hiding
@@ -672,6 +722,10 @@ compilers; `visit_format_arg.pass.cpp` needs `EOF` from `constexpr_char_traits.h
   destroy/121024.cc fails on GCC (PR c++/102284, marked dg-xfail-if, which the harness ignores).
 - `FLT_ROUNDS` is the constant 1 with GCC (no `__builtin_flt_rounds`), as in GCC's own
   `<float.h>`; it does not follow `fesetround`. Clang reports the current mode.
+- The searching functions (`strchr` ... `wmemchr`) are libycxx's const/non-const pairs in both
+  namespaces on every C library: the C library's declarations are renamed while its header is
+  read (DECISIONS §3), so a C header read before libycxx's (bypassing its include directory)
+  leaves the C signature in place.
 - `std::any` allocates large values with a plain new-expression, honouring a class-specific
   `operator new`. A type that deletes it cannot be stored (libstdc++ any/83658 relies on this).
 - Freestanding programs built with GCC link libgcc (helpers such as `__popcountdi2`).
@@ -903,8 +957,29 @@ compilers; `visit_format_arg.pass.cpp` needs `EOF` from `constexpr_char_traits.h
   are noexcept (an escaping exception calls terminate); so are the ranges:: ExecutionPolicy
   overloads (P3179, `algo_ranges_parallel.hpp`: each algorithm object's type adds them to the
   sequential niebloid), including the ranges:: uninitialized_*/destroy ones of `<memory>`;
-  `__cpp_lib_parallel_algorithm` is 202506L. Not provided: the
-  senders/receivers part of `<execution>`.
+  `__cpp_lib_parallel_algorithm` is 202506L. The senders/receivers part: next entry.
+- `<execution>` senders and receivers ([exec], core; DECISIONS §17): queries and environments
+  (`forwarding_query`, `get_allocator`, `get_stop_token`, `get_env`, `get_domain`,
+  `get_scheduler`, `get_start_scheduler`, `get_delegation_scheduler`,
+  `get_forward_progress_guarantee`, `get_completion_scheduler`, `get_completion_domain`,
+  `get_await_completion_adaptor`, `prop`, `env`), receivers, operation states, completion
+  signatures, the sender and scheduler concepts, `default_domain`/`indeterminate_domain`,
+  `transform_sender`, `apply_sender`, `get_completion_signatures`, `connect` (awaitables too);
+  factories `just`, `just_error`, `just_stopped`, `read_env`, `schedule`; adaptors `write_env`,
+  `unstoppable`, `then`, `upon_error`, `upon_stopped`, `let_value`, `let_error`, `let_stopped`,
+  `bulk`, `bulk_chunked`, `bulk_unchunked`, `when_all`, `when_all_with_variant`, `into_variant`,
+  `stopped_as_optional`, `stopped_as_error`, `schedule_from`, `continues_on`, `starts_on`, `on`,
+  `affine`, `associate`, `spawn_future`, the pipe syntax (`sender_adaptor_closure`); consumers
+  `this_thread::sync_wait`, `sync_wait_with_variant`, `spawn`; `run_loop`, `inline_scheduler`,
+  `as_awaitable`, `with_awaitable_senders`, `simple_counting_scope`, `counting_scope`, `task`,
+  `task_scheduler`, `with_error`, `parallel_scheduler` with the `parallel_scheduler_replacement`
+  interface and a thread-pool backend in the hosted runtime. `__cpp_lib_senders`,
+  `__cpp_lib_counting_scope`, `__cpp_lib_task` 202506L, `__cpp_lib_parallel_scheduler` 202506L
+  (hosted). Own suite execution: every test passes on both compilers, also under ASan+UBSan and
+  (the threaded ones) TSan. Known limitations: `split`/`ensure_started` are not in the draft
+  (P3682) and not provided; `tag_of_t` recognises tuple-like senders only; task_scheduler
+  allocates its backend at every construction; when_all and let report no completion
+  scheduler/domain; the draft questions of DECISIONS §17.
 - `boyer_moore_searcher`/`boyer_moore_horspool_searcher` (`ycxx/core/searcher.hpp`): bad-character
   table (a 256-entry array for byte-sized integers compared with `equal_to`, otherwise a hash table of
   the pattern's equivalence classes that calls pred only on equal hash values), plus the good-suffix
@@ -971,7 +1046,8 @@ compilers; `visit_format_arg.pass.cpp` needs `EOF` from `constexpr_char_traits.h
   `_GLIBCXX_ASSERTIONS`; libycxx checks only under YCXX_HARDENED), and tests needing
   `<sstream>`/`<iostream>`/`<chrono>`/`<map>`/`<limits>`.
 
-- Concurrency support (`<atomic>`, `<stdatomic.h>`, `<thread>`, `<stop_token>`, `<mutex>`,
+- Concurrency support (`<atomic>`, `<stdatomic.h>`, `<thread>`, `<stop_token>` (core since the
+  senders: DECISIONS §3), `<mutex>`,
   `<shared_mutex>`, `<condition_variable>`, `<semaphore>`, `<latch>`, `<barrier>`, `<future>`,
   `<rcu>`, `<hazard_pointer>`; DECISIONS §3): own suite atomic, thread, mutex,
   condition_variable, future, latch, barrier, semaphore, stop_token, ratio and
@@ -1028,9 +1104,21 @@ levels: 29.7 s -> 0.01 s; libstdc++ 8.6 s). Remaining above 1.5x: deque push at 
 - **Decided (user, 2026-10-05): C names through `<string>` and `<cstdint>`.** Hosted `<string>`
   (the character traits) provides `EOF` (it includes `<cstdio>`; `WEOF` comes with `<wchar.h>`),
   and `<cstdint>` also declares the global `::int64_t`... names, as libstdc++, libc++ and MSVC do.
-- libc++ suite, still failing, being libycxx gaps (tests/libcxx/TRIAGE.md, "Policy round"): no
-  `import std;`/`import std.compat;` (modules/std, std.compat; Clang), no senders/receivers
-  (`__cpp_lib_senders`: support.limits execution.version, version.version). (The `<wchar.h>` and
+- libstdc++ suite, still failing (tests/libstdcxx/TRIAGE.md, "Whole suite with the DejaGnu
+  default"; every other failure is fixed, skipped or an expected compiler failure): the
+  template-parameter name `C` vs. a user macro (bitset/cons/string_view{,_wide}.cc, DECISIONS §2);
+  `__cpp_lib_constexpr_exceptions` (P3068 is incomplete: `current_exception`, `nested_exception`,
+  `uncaught_exceptions` are not constexpr; Clang cannot throw in constant evaluation); the wide
+  standard streams write bytes through the codecvt instead of C wide I/O, so `wcout` leaves
+  `stdout` byte-oriented ([iostream.objects.overview]/6; objects/wchar_t/{9662,12048-2,12048-4}.cc);
+  locale facets (not changed in that round, the named-locale branch owns them): `money_get`
+  consumes an optional currency symbol that nothing after it needs ([locale.money.get.virtuals]/2;
+  money_get/get/*/19.cc), and `time_get::get_monthname`/`get_weekday` do not store the field when
+  `err` already holds failbit on entry (time_get/get_{monthname,weekday}/*/5.cc).
+- libc++ suite: the former gaps are closed: `import std;`/`import std.compat;` (DECISIONS §16;
+  modules/std and std.compat pass on Clang) and senders/receivers (DECISIONS §17). support.limits
+  execution.version and version.version are skipped (divergence: they expect older drafts'
+  values, `__cpp_lib_senders` 202406L among them). (The `<wchar.h>` and
   `<stddef.h>` wrappers exist since the own-suite fixes.)
 - Next (Phase 5): full libc++/libstdc++ sweeps with triage (tests/libcxx/TRIAGE.md,
   tests/libstdcxx/TRIAGE.md), fixing the libycxx bugs they find; then a whole-library review

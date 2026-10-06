@@ -13,7 +13,7 @@
 // Hexadecimal significands are exact up to 120 bits, plus a sticky bit.
 #include "fp_common.hpp"
 
-namespace ycxx::detail::fpconv {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail::fpconv {
 namespace {
 
 bool is_digit(char c) { return c >= '0' && c <= '9'; }
@@ -512,7 +512,7 @@ std::from_chars_result from_chars_impl(const char* first, const char* last, fp_r
 }
 
 } // namespace
-} // namespace ycxx::detail::fpconv
+}} // namespace ycxx::detail::fpconv
 
 std::from_chars_result ycxx::detail::fp_from_chars(const char* first, const char* last, fp_kind kind, fp_raw& bits,
                                                    int fmt) noexcept {

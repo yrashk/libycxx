@@ -2,11 +2,12 @@
 // fundamental types (§2.9.2), and exception handler matching ([except.handle]/3).
 #include "internal.hpp"
 #include "rtti.hpp"
+#include <abi/fundamental_type_infos.hpp>
 
 // Defining std::type_info's key function emits _ZTVSt9type_info and _ZTISt9type_info here.
 std::type_info::~type_info() {}
 
-namespace __cxxabiv1 {
+namespace [[gnu::visibility("hidden")]] __cxxabiv1 {
 
 // Each destructor is its class's key function: defining it emits the class's vtable (and
 // type_info) here, once (§2.9.4, final note).
@@ -31,35 +32,28 @@ __pointer_to_member_type_info::~__pointer_to_member_type_info() {}
 
 } // namespace __cxxabiv1
 
-// GCC gives the fundamental type_info objects above default visibility whatever -fvisibility says
-// (Clang hides them). Exported from a program or shared object, they would be the ones another
+// GCC gives the fundamental type_info objects default visibility whatever -fvisibility says.
+// Exported from a program or shared object, they would be the ones another
 // C++ runtime in the process binds its own references to (DECISIONS §2), so they are hidden with
-// assembler directives: `.weak` + `.hidden` for every type GCC may know; the assembler drops the
-// directives for the types this target lacks, since nothing here defines or references them.
-// ELF only: Mach-O's two-level namespace keeps other images from binding to them.
+// assembler directives (`.hidden` on ELF, `.private_extern` on Mach-O). Which ones the compiler
+// emits depends on the target (AArch64 adds __bf16, __mfp8 and the SVE types), so the list is
+// the compiler's own: the build compiles a probe defining this key function and lists its
+// type_info symbols (CMakeLists.txt, generated fundamental_type_infos.hpp, assembler names).
+// Every compiler's list is hidden: a directive for a symbol already hidden changes nothing.
 namespace {
 consteval ycxx::abi::asm_text hide_fundamental_type_infos() {
   ycxx::abi::asm_text a;
-  if (!ycxx::detail::cfg::gcc || ycxx::detail::cfg::darwin)
-    return a;
-  for (const char* type : {"v", "b", "c", "a", "h", "s", "t", "w", "i", "j", "l", "m", "x", "y", "n", "o", "f", "d",
-                           "e", "g", "Dn", "Ds", "Di", "Du", "Df", "Dd", "De", "Dh", "DF16_", "DF16b", "DF32_",
-                           "DF64_", "DF128_", "DF32x", "DF64x", "DF128x"})
-    for (const char* kind : {"_ZTI", "_ZTS"})
-      for (const char* pointer : {"", "P", "PK"})
-        for (const char* directive : {".weak ", ".hidden "}) {
-          a.append(directive);
-          a.append(kind);
-          a.append(pointer);
-          a.append(type);
-          a.append("\n");
-        }
+  for (const char* const* symbol = ycxx::abi::fundamental_type_info_symbols; *symbol; ++symbol) {
+    a.append(ycxx::detail::cfg::darwin ? ".private_extern " : ".hidden ");
+    a.append(*symbol);
+    a.append("\n");
+  }
   return a;
 }
 } // namespace
 asm((hide_fundamental_type_infos()));
 
-namespace ycxx::abi {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace abi {
 
 using namespace __cxxabiv1;
 
@@ -349,4 +343,4 @@ bool catch_matches(const std::type_info* handler, const std::type_info* thrown, 
   return false;
 }
 
-} // namespace ycxx::abi
+}} // namespace ycxx::abi

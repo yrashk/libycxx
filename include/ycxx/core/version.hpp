@@ -197,6 +197,14 @@
 #define __cpp_lib_ranges_fold 202207L
 #define __cpp_lib_ranges_iota 202202L
 #define __cpp_lib_ranges_starts_ends_with 202106L
+// <execution>: senders and receivers ([exec]); core, but parallel_scheduler's default backend is
+// in the hosted runtime.
+#define __cpp_lib_senders 202506L
+#define __cpp_lib_counting_scope 202506L
+#define __cpp_lib_task 202506L
+#if YCXX_HOSTED
+#  define __cpp_lib_parallel_scheduler 202506L
+#endif
 // <ranges>
 #define __cpp_lib_ranges 202406L
 #define __cpp_lib_freestanding_ranges 202306L
@@ -213,6 +221,9 @@
 #define __cpp_lib_formatters 202302L
 #define __cpp_lib_stacktrace 202011L
 #define __cpp_lib_hardened_basic_stacktrace 202506L
+// The modules std and std.compat ([std.modules]): modules/std.cppm, modules/std.compat.cppm,
+// built by the CMake package (ycxx::modules) or tools/ycxx-modules (DECISIONS §16).
+#define __cpp_lib_modules 202207L
 // <contracts>: the language feature is the compiler's (GCC 16; not Clang 23)
 #if YCXX_HAS_CONTRACTS
 #  define __cpp_lib_contracts 202502L

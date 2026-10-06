@@ -9,7 +9,7 @@
 #include <ycxx/core/single_threaded.hpp>
 #include <ycxx/pal.h>
 
-namespace ycxx::detail {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 
 // Lives at the start of a free pool block.
 struct pool_free_block {
@@ -34,6 +34,16 @@ struct pool_big_footer {
 namespace {
 
 constexpr std::size_t size_max = static_cast<std::size_t>(-1);
+
+// A request too large to add the resource's bookkeeping to. do_allocate of the pool and
+// monotonic resources "Throws: nothing unless upstream_resource()->allocate() throws"
+// ([mem.res.pool.mem], [mem.res.monotonic.buffer.mem]): ask upstream for size_max bytes, which it
+// cannot provide, so that its exception is the one thrown.
+[[noreturn]] void request_impossible(std::pmr::memory_resource& upstream, std::size_t align) {
+  void* p = upstream.allocate(size_max, align);
+  upstream.deallocate(p, size_max, align); // an upstream that claims success: still no room
+  ycxx::detail::throw_bad_alloc();
+}
 
 constexpr std::size_t round_up(std::size_t n, std::size_t a) noexcept { return (n + a - 1) & ~(a - 1); }
 
@@ -123,7 +133,7 @@ void* pool_core::allocate(std::size_t bytes, std::size_t alignment) {
   // Directly from upstream, with a footer linking it into big_.
   const std::size_t align = alignment > alignof(pool_big_footer) ? alignment : alignof(pool_big_footer);
   if (bytes > size_max - sizeof(pool_big_footer) - alignof(pool_big_footer))
-    ycxx::detail::throw_bad_alloc();
+    ycxx::detail::request_impossible(*upstream_, align);
   const std::size_t off = footer_offset<pool_big_footer>(bytes);
   const std::size_t total = off + sizeof(pool_big_footer);
   char* base = static_cast<char*>(upstream_->allocate(total, align));
@@ -197,7 +207,7 @@ struct lock_guard {
 };
 } // namespace
 
-} // namespace ycxx::detail
+}} // namespace ycxx::detail
 
 // ---- memory_resource and the global resources ([mem.res.global]) -------------------------------
 
@@ -249,7 +259,7 @@ constinit std::pmr::memory_resource* default_resource = &new_delete_storage.obje
 
 } // namespace
 
-namespace std::pmr {
+namespace [[gnu::visibility("hidden")]] std { namespace pmr {
 
 memory_resource::~memory_resource() = default;
 
@@ -342,6 +352,10 @@ void monotonic_buffer_resource::release() {
 memory_resource* monotonic_buffer_resource::upstream_resource() const { return upstream_rsrc; }
 
 void* monotonic_buffer_resource::do_allocate(size_t bytes, size_t alignment) {
+  // "A pointer to allocated storage ([basic.stc.dynamic.allocation])": distinct for every
+  // request, so a zero-size request still takes a byte.
+  if (bytes == 0)
+    bytes = 1;
   // From the current buffer, if it fits.
   if (cur_ != nullptr) {
     const auto at = reinterpret_cast<uintptr_t>(cur_);
@@ -356,7 +370,7 @@ void* monotonic_buffer_resource::do_allocate(size_t bytes, size_t alignment) {
   // with the chain footer after them.
   using footer = ycxx::detail::pool_chunk_footer;
   if (bytes > size_t(-1) - sizeof(footer) - alignof(footer))
-    ycxx::detail::throw_bad_alloc();
+    ycxx::detail::request_impossible(*upstream_rsrc, alignment > alignof(footer) ? alignment : alignof(footer));
   size_t usable = bytes > next_buffer_size ? bytes : next_buffer_size;
   if (usable > size_t(-1) - sizeof(footer) - alignof(footer))
     usable = bytes;
@@ -375,4 +389,4 @@ void monotonic_buffer_resource::do_deallocate(void*, size_t, size_t) {}
 
 bool monotonic_buffer_resource::do_is_equal(const memory_resource& other) const noexcept { return this == &other; }
 
-} // namespace std::pmr
+}} // namespace std::pmr

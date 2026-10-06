@@ -19,7 +19,7 @@
 #include <ycxx/core/tuple.hpp>
 #include <ycxx/core/type_traits.hpp>
 #include <ycxx/hosted/chrono_clocks.hpp>
-#include <ycxx/hosted/stop_token.hpp>
+#include <ycxx/core/stop_token.hpp>
 #include <ycxx/hosted/thread_support.hpp>
 #include <ycxx/pal.h>
 

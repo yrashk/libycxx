@@ -6,10 +6,13 @@
 #include <ycxx/core/error.hpp>
 #include "try_or_null.hpp"
 #include "../../runtime/new/hidden.hpp"
+#include "../../runtime/new/allocation_table.hpp"
 
 asm((ycxx::detail::hide_allocation_function("_Zna#RKSt9nothrow_t")));
 
 void* operator new[](std::size_t n, const std::nothrow_t&) noexcept {
+  if (auto f = ycxx_allocation_functions.new_array_nothrow; f != ycxx::detail::own_allocation_functions.new_array_nothrow)
+    return f(n, 0);
   // The array default forwards to the single form, so both must be the defaults for null.
   return ycxx::detail::try_or_null(&ycxx_default_new_array != nullptr && &ycxx_fs_default_new != nullptr, [&] { return ::operator new[](n); });
 }

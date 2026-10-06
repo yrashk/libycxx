@@ -690,6 +690,9 @@ compilers; `visit_format_arg.pass.cpp` needs `EOF` from `constexpr_char_traits.h
   (libstdc++'s choice); `money_put` without `showbase` then writes that space; a numpunct
   separator that is not one char (fr_FR.UTF-8's U+202F) is `' '` for char; `time_get` of a named
   locale reads its `%x`/`%c`/`%X`/`%r` formats strictly (no libc++-style separator leniency);
+  the base `time_get`/`time_put` facets are the "C" locale's whatever the stream's locale (only
+  the `_byname` facets read a named locale; libstdc++'s base facets consult the stream's);
+  the classic `moneypunct::negative_sign()` is "-" (libstdc++'s tests expect the C locale's "");
   `messages` has no gettext extension (`catopen`/`catgets` catalogs only); `codecvt::encoding()`
   of a named locale does not detect state-dependent encodings (0); a composite name lists the six
   standard categories, not glibc's twelve. `codecvt<wchar_t, char>` is UTF-8 in the classic locale, so `encoding()` is 0 and wide file streams cannot seek by an

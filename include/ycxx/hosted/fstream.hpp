@@ -471,7 +471,10 @@ private:
       }
       bool at_eof = false;
       if (xend_ < xbuf_size_) {
-        const size_t got = ycxx::detail::file_read(file_, xbuf_ + xend_, xbuf_size_ - xend_);
+        // unbuffered (setbuf(0, 0)): one byte at a time, so that no byte past the character is
+        // read (the bytes read so far never complete a character: each is converted when it does)
+        const size_t want = unbuffered_ ? 1 : xbuf_size_ - xend_;
+        const size_t got = ycxx::detail::file_read(file_, xbuf_ + xend_, want);
         at_eof = got == 0;
         xend_ += got;
       }

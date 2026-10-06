@@ -122,10 +122,10 @@ unsigned __regex_class_by_name(const char* name, std::size_t n, bool icase) noex
 // The character a single character or a POSIX collating-symbol name ("period", "NUL", ...)
 // stands for, or -1.
 int __regex_collate_by_name(const char* name, std::size_t n) noexcept;
-// src/hosted/locale_named.cpp: the primary sort key of [__low, __high) into out, if f is a
+// src/hosted/locale_named.cpp: the primary sort key of [__low, __high) into out, if __f is a
 // collate_byname whose key form is known ([re.traits]/7); false otherwise.
-bool __regex_primary_key(const std::collate<char>& f, const char* __low, const char* __high, std::string& out);
-bool __regex_primary_key(const std::collate<wchar_t>& f, const wchar_t* __low, const wchar_t* __high,
+bool __regex_primary_key(const std::collate<char>& __f, const char* __low, const char* __high, std::string& out);
+bool __regex_primary_key(const std::collate<wchar_t>& __f, const wchar_t* __low, const wchar_t* __high,
                          std::wstring& out);
 // The fixed message of regex_error(code).
 const char* __regex_error_message(int code) noexcept;

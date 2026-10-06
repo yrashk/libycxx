@@ -14,8 +14,18 @@
 // synchronized with stdio (the default) they keep no buffer of their own: every character goes
 // through putc / getc / ungetc, so output and input interleave with C stdio exactly
 // ([ios.members.static]/3). sync_with_stdio(false) gives the output buffers a buffer of their
-// own. The wide objects convert through the codecvt<wchar_t, char, mbstate_t> of their buffer's
-// locale and write bytes, so they do not set the C streams' orientation.
+// own.
+//
+// The wide objects do wide I/O on the C streams (fputwc / fputws, fgetwc, ungetwc), so the C
+// stream becomes wide-oriented and they mix with the C library's wide functions as FILEs do
+// ([iostream.objects.overview]/6, [ios.members.static]/3 for the wide streams): wcout leaves
+// stdout wide-oriented, and wcin.unget() gives the character back for fgetwc. The C library
+// converts, with its LC_CTYPE (the "C" locale until the program calls setlocale, where a
+// character outside the basic character set fails). A buffer imbued with a locale whose
+// codecvt<wchar_t, char, mbstate_t> is not the one it started with (a program's own facet) does
+// what a basic_filebuf<wchar_t> does instead ([iostream.objects.overview]/2): it converts through
+// that facet and does byte I/O on the C stream. sync_with_stdio(false) changes only the
+// buffering (DECISIONS §7).
 //
 // The input and output functions of the synchronized objects may be called from several threads
 // at once ([iostream.objects.overview]/7; DECISIONS §7). Each buffer's input side (underflow,
@@ -33,6 +43,7 @@
 #include <istream>
 #include <ostream>
 #include <cstdio>
+#include <cwchar>
 #include <new>
 #include <ycxx/hosted/thread_support.hpp>
 
@@ -142,7 +153,7 @@ private:
 // ---- wchar_t ----------------------------------------------------------------------------------
 class wstdio_buf final : public std::wstreambuf {
 public:
-  explicit wstdio_buf(std::FILE* f) : f_(f), cvt_(&std::use_facet<cvt_type>(getloc())) {}
+  explicit wstdio_buf(std::FILE* f) : f_(f), cvt_(&std::use_facet<cvt_type>(getloc())), c_cvt_(cvt_) {}
 
   void set_buffered(bool b) {
     sync();
@@ -155,7 +166,14 @@ public:
 protected:
   using cvt_type = std::codecvt<wchar_t, char, std::mbstate_t>;
 
-  void imbue(const std::locale& loc) override { cvt_ = &std::use_facet<cvt_type>(loc); }
+  // Characters already in the put area (sync_with_stdio(false)) are written the way they were
+  // put, before the conversion changes.
+  void imbue(const std::locale& loc) override {
+    if (pbase() != nullptr)
+      flush_buffer();
+    guard g(lock_);
+    cvt_ = &std::use_facet<cvt_type>(loc);
+  }
 
   int_type overflow(int_type c) override {
     if (pbase() != nullptr && !flush_buffer())
@@ -184,18 +202,31 @@ protected:
       return -1;
     return std::fflush(f_) == 0 ? 0 : -1;
   }
-  // Like the narrow buffer, this one holds no characters: a peeked character's bytes go back to
-  // the C stream (ungetc), and so does a put-back character, converted to bytes. C stdio and the
-  // other readers of the object then see every character exactly once and in order. A character
-  // of more than one byte needs more than the one byte of push-back that ISO C guarantees; glibc
-  // and Darwin's libc provide it.
+  // Like the narrow buffer, this one holds no characters: a peeked character goes back to the C
+  // stream (ungetwc), and so does a put-back character. C stdio and the other readers of the
+  // object then see every character exactly once and in order. Through a codecvt the character's
+  // bytes go back (ungetc); a character of more than one byte needs more than the one byte of
+  // push-back that ISO C guarantees, which glibc and Darwin's libc provide.
   int_type underflow() override {
     guard g(lock_);
+    if (wide_c_io()) {
+      const std::wint_t c = std::fgetwc(f_);
+      if (c == WEOF)
+        return traits_type::eof();
+      std::ungetwc(c, f_);
+      return traits_type::to_int_type(static_cast<wchar_t>(c));
+    }
     return read(false);
   }
   int_type uflow() override {
     guard g(lock_);
-    const int_type c = read(true);
+    int_type c;
+    if (wide_c_io()) {
+      const std::wint_t w = std::fgetwc(f_);
+      c = w == WEOF ? traits_type::eof() : traits_type::to_int_type(static_cast<wchar_t>(w));
+    } else {
+      c = read(true);
+    }
     if (!traits_type::eq_int_type(c, traits_type::eof())) {
       last_ = traits_type::to_char_type(c);
       has_last_ = true;
@@ -211,6 +242,8 @@ protected:
     }
     has_last_ = false;
     const wchar_t w = traits_type::to_char_type(c);
+    if (wide_c_io())
+      return std::ungetwc(static_cast<std::wint_t>(w), f_) == WEOF ? traits_type::eof() : c;
     char bytes[16];
     std::size_t n = 1;
     bytes[0] = static_cast<char>(w);
@@ -229,9 +262,15 @@ protected:
   }
 
 private:
-  // Converts and writes s[0..n) as bytes.
+  // Whether the C library does the I/O and the conversion (the C stream's wide functions), or
+  // the buffer's codecvt with the C stream's byte functions (lock_ is held).
+  bool wide_c_io() const noexcept { return cvt_ == c_cvt_; }
+
+  // Writes s[0..n): wide characters, or bytes converted by the codecvt.
   bool write(const wchar_t* s, std::size_t n) {
-    guard g(lock_); // for state_; the bytes of one call also stay together
+    guard g(lock_); // for state_ and cvt_; the characters of one call also stay together
+    if (wide_c_io())
+      return write_wide(s, n);
     char out[256];
     const wchar_t* from = s;
     const wchar_t* const end = s + n;
@@ -253,6 +292,31 @@ private:
       if (next == from && bytes == 0)
         return false; // no progress
       from = next;
+    }
+    return true;
+  }
+  // fputws a null-terminated copy of each piece without a null character; fputwc the null
+  // characters (lock_ is held).
+  bool write_wide(const wchar_t* s, std::size_t n) {
+    wchar_t piece[128];
+    while (n != 0) {
+      if (*s == L'\0') {
+        if (std::fputwc(L'\0', f_) == WEOF)
+          return false;
+        ++s;
+        --n;
+        continue;
+      }
+      std::size_t k = 0;
+      while (k != n && k != sizeof piece / sizeof piece[0] - 1 && s[k] != L'\0') {
+        piece[k] = s[k];
+        ++k;
+      }
+      piece[k] = L'\0';
+      if (std::fputws(piece, f_) < 0)
+        return false;
+      s += k;
+      n -= k;
     }
     return true;
   }
@@ -297,7 +361,8 @@ private:
   }
 
   std::FILE* f_;
-  const cvt_type* cvt_;
+  const cvt_type* cvt_;   // the locale's (guarded by lock_)
+  const cvt_type* c_cvt_; // the initial locale's: with it, the C library converts
   ycxx::detail::futex_mutex lock_; // guards the members below
   std::mbstate_t state_{};
   std::mbstate_t in_state_{};

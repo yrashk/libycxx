@@ -131,11 +131,20 @@ private:
   mutable size_t __index_ = 0;
 };
 
+// [locale.facet]/2: passing a volatile-qualified facet to a locale function expecting a facet is
+// ill-formed (a const-qualified one is valid): the four templates below check it.
 template <class _Facet>
-locale::locale(const locale& other, _Facet* __f) : locale(other, __f, _Facet::id) {}
+locale::locale(const locale& other, _Facet* __f) : locale(other, __f, _Facet::id) {
+  static_assert(!is_volatile_v<_Facet>,
+                "std::locale(const locale&, Facet*): a volatile-qualified facet is not a valid Facet "
+                "([locale.facet]/2)");
+}
 
 template <class _Facet>
 locale locale::combine(const locale& other) const {
+  static_assert(!is_volatile_v<_Facet>,
+                "std::locale::combine: a volatile-qualified facet is not a valid Facet "
+                "([locale.facet]/2)");
   const facet* __f = other.find(_Facet::id);
   if (__f == nullptr)
     ::__ycxx::__detail::__throw_runtime_error("std::locale::combine: the facet is not present in the other locale");
@@ -145,6 +154,9 @@ locale locale::combine(const locale& other) const {
 // [locale.global.templates]
 template <class _Facet>
 const _Facet& use_facet(const locale& __loc) {
+  static_assert(!is_volatile_v<_Facet>,
+                "std::use_facet: a volatile-qualified facet is not a valid Facet "
+                "([locale.facet]/2)");
   const locale::facet* __f = __loc.find(_Facet::id);
   if (__f == nullptr)
     ::__ycxx::__detail::__raise_with(ycxx_error_bad_cast, "std::use_facet: the facet is not present in the locale",
@@ -153,6 +165,9 @@ const _Facet& use_facet(const locale& __loc) {
 }
 template <class _Facet>
 bool has_facet(const locale& __loc) noexcept {
+  static_assert(!is_volatile_v<_Facet>,
+                "std::has_facet: a volatile-qualified facet is not a valid Facet "
+                "([locale.facet]/2)");
   return __loc.find(_Facet::id) != nullptr;
 }
 

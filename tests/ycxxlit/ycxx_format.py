@@ -99,6 +99,10 @@ class YcxxFormat(lit.formats.FileBasedTest):
         self.run_prefix = ['env'] + [f'{k}={v}' for k, v in run_env.items()] if run_env else []
         self.repo = os.path.dirname(os.path.dirname(os.path.abspath(wrapper)))
         self.sanitizers = set(sanitizers)
+        # A test program's time limit: 60 s, three times that under a sanitizer (ThreadSanitizer
+        # slows programs down 5-15 times and adds a start-up to every process; the tests that
+        # fork a child per failure point took 40 s of 60 under Clang's).
+        self.run_timeout = 180 if self.sanitizers else 60
         self.features = set(features)
 
     def compile(self, args, cwd, expect=''):
@@ -240,7 +244,8 @@ class YcxxFormat(lit.formats.FileBasedTest):
                 out += o
                 if rc != 0:
                     return lit.Test.Result(lit.Test.FAIL, 'COMPILE FAILED\n' + out)
-                rc, ran = transcript.run('run', self.run_prefix + [exe], tmp, 60, '; must terminate' if terminate else '')
+                rc, ran = transcript.run('run', self.run_prefix + [exe], tmp, self.run_timeout,
+                                         '; must terminate' if terminate else '')
                 if terminate:
                     return self.check_terminated(rc, terminate.group(1), out + ran, ran)
                 if rc == RUNTIME_UNSUPPORTED_STATUS:

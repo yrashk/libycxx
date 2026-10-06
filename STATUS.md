@@ -461,6 +461,12 @@ a defect in a test.
 - GCC 16.2: `PR31384` (conversion function vs converting constructor in direct-init of `tuple`)
   resolves differently from Clang; the libc++ expectation matches Clang.
 
+- Clang 23.1: no exceptions during constant evaluation (P3068). A sender's consteval
+  `get_completion_signatures` that throws is just not a constant expression there, so which
+  exception it threw cannot be told: without an environment such a sender counts as dependent
+  even when it throws something other than `dependent_sender_error` ([exec.getcomplsigs]/3.1,
+  [exec.snd.concepts]), and a library check-types' exception cannot be caught (DECISIONS §17);
+  own test `execution/get_completion_signatures_throws` is XFAIL on Clang.
 - GCC 16.2 and Clang 23.1: neither implements [expr.new]/20.2 (retrying the allocation
   function lookup with an added `align_val_t` argument for an over-aligned type); own test
   `new/class_aligned_lookup_added_alignment` is XFAIL on both.

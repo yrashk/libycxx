@@ -63,5 +63,7 @@ if enabled('-frtti', '-fno-rtti'):
 config.available_features = features
 
 wrapper = 'ref-cxx' if reference else 'ycxx-cxx'
-config.test_format = YcxxFormat(os.path.join(repo, 'tools', wrapper), compiler, flags,
-                                sanitizer.split(',') if sanitizer else (), features)
+# Journaled: every finished test's result is kept even if the run is stopped (Ctrl-C).
+from ycxxlit.journal import Journaled
+config.test_format = Journaled(YcxxFormat(os.path.join(repo, 'tools', wrapper), compiler, flags,
+                                          sanitizer.split(',') if sanitizer else (), features))

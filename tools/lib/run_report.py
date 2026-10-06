@@ -4,7 +4,7 @@
     run_report.py STEPS OUT_BASE [KEY=VALUE...]
 
 STEPS is tools/test's record of the run: one line per step, fields separated by the ASCII unit
-separator: status (ok, FAIL, skip), label, seconds (or, for a skipped step, why), log file,
+separator: status (ok, FAIL, skip, interrupted: cut short by Ctrl-C), label, seconds (or, for a skipped step, why), log file,
 command, and the HTML report of a suite step (whose <run>.data.json, written by test_report.py,
 holds the suite's tests). KEY=VALUE pairs describe the run.
 
@@ -243,11 +243,18 @@ def main():
     nfail = sum(s['status'] == 'FAIL' for s in steps)
     nok = sum(s['status'] == 'ok' for s in steps)
     nskip = sum(s['status'] == 'skip' for s in steps)
+    nint = sum(s['status'] == 'interrupted' for s in steps)
     ntests = sum(len(su['tests']) for su in suites)
     nbad = sum(su['bad'] for su in suites)
-    verdict = (f'{nfail} of {nok + nfail} stages failed' if nfail else f'all {nok} stages passed') + \
-              (f', {nskip} skipped' if nskip else '') + \
-              (f'; {nbad} of {ntests} tests failed' if nbad else f'; all {ntests} tests passed' if ntests else '')
+    if nint or meta.get('interrupted'):
+        verdict = 'interrupted (Ctrl-C); stages: ' + \
+                  ', '.join(f'{n} {what}' for n, what in ((nok, 'passed'), (nfail, 'failed'), (nint, 'cut short'),
+                                                            (nskip, 'skipped or not run')) if n) + \
+                  (f'; {ntests} tests ran, ' + (f'{nbad} failed' if nbad else 'all passed') if ntests else '')
+    else:
+        verdict = (f'{nfail} of {nok + nfail} stages failed' if nfail else f'all {nok} stages passed') + \
+                  (f', {nskip} skipped' if nskip else '') + \
+                  (f'; {nbad} of {ntests} tests failed' if nbad else f'; all {ntests} tests passed' if ntests else '')
     title = 'libycxx test run'
     md = markdown(title, verdict, meta, steps, suites)
     with open(base + '.md', 'w', encoding='utf-8') as f:
@@ -300,7 +307,7 @@ table.meta td { padding: 2px 0; font-family: ui-monospace, SFMono-Regular, Menlo
   align-items: baseline; }
 .st { font-weight: 600; font-size: 12px; }
 .st.ok, .st.good { color: var(--good); } .st.FAIL, .st.bad { color: var(--bad); }
-.st.skip { color: var(--skip); }
+.st.skip, .st.interrupted { color: var(--skip); }
 .label { font-weight: 500; overflow-wrap: anywhere; }
 .cmd { display: block; color: var(--muted); font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
   font-size: 12px; overflow-wrap: anywhere; font-weight: 400; }

@@ -7,13 +7,13 @@
 #include "../../runtime/new/hidden.hpp"
 #include "../../runtime/new/allocation_table.hpp"
 
-asm((ycxx::detail::hide_allocation_function("_Znw#St11align_val_t")));
+asm((__ycxx::__detail::__hide_allocation_function("_Znw#St11align_val_t")));
 
 void* operator new(std::size_t n, std::align_val_t a) {
-  if (auto f = ycxx_allocation_functions.new_align; f != ycxx::detail::own_allocation_functions.new_align)
-    return f(n, static_cast<std::size_t>(a));
-  ycxx::detail::throw_bad_alloc();
+  if (auto __f = __ycxx_allocation_functions.__new_align; __f != __ycxx::__detail::__own_allocation_functions.__new_align)
+    return __f(n, static_cast<std::size_t>(a));
+  __ycxx::__detail::__throw_bad_alloc();
 }
 // Marks that this heap-less default is the operator new linked into the program (see
 // try_or_null.hpp).
-extern "C" const char ycxx_fs_default_new_align = 0;
+extern "C" const char __ycxx_fs_default_new_align = 0;

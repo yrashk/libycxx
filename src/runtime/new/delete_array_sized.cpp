@@ -3,10 +3,10 @@
 #include "hidden.hpp"
 #include "allocation_table.hpp"
 
-asm((ycxx::detail::hide_allocation_function("_ZdaPv#")));
+asm((__ycxx::__detail::__hide_allocation_function("_ZdaPv#")));
 
 void operator delete[](void* p, std::size_t n) noexcept {
-  if (auto f = ycxx_allocation_functions.delete_array_sized; f != ycxx::detail::own_allocation_functions.delete_array_sized)
-    return f(p, n, 0);
+  if (auto __f = __ycxx_allocation_functions.__delete_array_sized; __f != __ycxx::__detail::__own_allocation_functions.__delete_array_sized)
+    return __f(p, n, 0);
   ::operator delete[](p);
 }

@@ -7,57 +7,57 @@
 #include <ycxx/core/iosfwd.hpp>
 #include <ycxx/hosted/thread.hpp>
 
-namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
 // The decimal digits of id's representation, written backwards ending at end.
-inline char* thread_id_chars(char* end, std::thread::id id) noexcept {
-  return ::ycxx::detail::charconv_write_unsigned(end, static_cast<unsigned long long>(thread_access::handle_of(id)), 10);
+inline char* __thread_id_chars(char* end, std::thread::id id) noexcept {
+  return ::__ycxx::__detail::__charconv_write_unsigned(end, static_cast<unsigned long long>(__thread_access::__handle_of(id)), 10);
 }
-}} // namespace ycxx::detail
+}} // namespace __ycxx::__detail
 
-namespace [[gnu::visibility("hidden")]] std {
+namespace [[__gnu__::__visibility__("hidden")]] std {
 
 // [thread.thread.id]/9: "Inserts the text representation for charT of id", the one formatter uses,
 // as a character sequence: the stream's basefield, showpos... and its locale's numpunct do not
 // change it; width, fill and adjustfield pad it as any string ([ostream.formatted.reqmts]/3).
-template <class charT, class traits>
-basic_ostream<charT, traits>& operator<<(basic_ostream<charT, traits>& out, thread::id id) {
-  char buf[24];
-  char* const end = buf + sizeof(buf);
-  const char* const first = ycxx::detail::thread_id_chars(end, id);
-  charT text[sizeof(buf) + 1];
+template <class __charT, class __traits>
+basic_ostream<__charT, __traits>& operator<<(basic_ostream<__charT, __traits>& out, thread::id id) {
+  char __buf[24];
+  char* const end = __buf + sizeof(__buf);
+  const char* const first = __ycxx::__detail::__thread_id_chars(end, id);
+  __charT __text[sizeof(__buf) + 1];
   const size_t n = static_cast<size_t>(end - first);
   for (size_t i = 0; i != n; ++i)
-    text[i] = static_cast<charT>(first[i]);
-  text[n] = charT();
-  return out << static_cast<const charT*>(text);
+    __text[i] = static_cast<__charT>(first[i]);
+  __text[n] = __charT();
+  return out << static_cast<const __charT*>(__text);
 }
 
 // thread-id-format-spec: fill-and-align(opt) width(opt); the default alignment is right.
-template <ycxx::detail::fmt_char charT>
-struct formatter<thread::id, charT> {
+template <__ycxx::__detail::__fmt_char __charT>
+struct formatter<thread::id, __charT> {
 private:
-  ycxx::detail::fmt_spec<charT> spec_;
+  __ycxx::__detail::__fmt_spec<__charT> __spec_;
 
 public:
-  constexpr typename basic_format_parse_context<charT>::iterator parse(basic_format_parse_context<charT>& ctx) {
-    auto p = ycxx::detail::fmt_parse_fill_align(ctx.begin(), ctx.end(), spec_);
-    p = ycxx::detail::fmt_parse_width(ctx, p, ctx.end(), spec_);
-    if (p != ctx.end() && *p != charT('}'))
-      ycxx::detail::throw_format_error("std::formatter<std::thread::id>: invalid thread-id-format-spec");
+  constexpr typename basic_format_parse_context<__charT>::iterator parse(basic_format_parse_context<__charT>& __ctx) {
+    auto p = __ycxx::__detail::__fmt_parse_fill_align(__ctx.begin(), __ctx.end(), __spec_);
+    p = __ycxx::__detail::__fmt_parse_width(__ctx, p, __ctx.end(), __spec_);
+    if (p != __ctx.end() && *p != __charT('}'))
+      __ycxx::__detail::__throw_format_error("std::formatter<std::thread::id>: invalid thread-id-format-spec");
     return p;
   }
 
-  template <class FormatContext>
-  typename FormatContext::iterator format(thread::id id, FormatContext& ctx) const {
-    char buf[24];
-    char* const end = buf + sizeof(buf);
-    const char* const first = ycxx::detail::thread_id_chars(end, id);
-    charT text[24];
+  template <class _FormatContext>
+  typename _FormatContext::iterator format(thread::id id, _FormatContext& __ctx) const {
+    char __buf[24];
+    char* const end = __buf + sizeof(__buf);
+    const char* const first = __ycxx::__detail::__thread_id_chars(end, id);
+    __charT __text[24];
     const size_t n = static_cast<size_t>(end - first);
     for (size_t i = 0; i != n; ++i)
-      text[i] = static_cast<charT>(first[i]);
-    return ycxx::detail::fmt_write_padded<charT>(ctx.out(), spec_, ycxx::detail::fmt_align::right,
-                                                 ycxx::detail::fmt_width(spec_, ctx), n, text, n);
+      __text[i] = static_cast<__charT>(first[i]);
+    return __ycxx::__detail::__fmt_write_padded<__charT>(__ctx.out(), __spec_, __ycxx::__detail::__fmt_align::right,
+                                                 __ycxx::__detail::__fmt_width(__spec_, __ctx), n, __text, n);
   }
 };
 

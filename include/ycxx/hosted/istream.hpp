@@ -9,69 +9,69 @@
 
 #include <ycxx/hosted/ostream.hpp>
 
-namespace [[gnu::visibility("hidden")]] std {
+namespace [[__gnu__::__visibility__("hidden")]] std {
 
-template <class charT, class traits>
-class basic_istream : virtual public basic_ios<charT, traits> {
+template <class __charT, class __traits>
+class basic_istream : virtual public basic_ios<__charT, __traits> {
 public:
-  using char_type = charT;
-  using int_type = typename traits::int_type;
-  using pos_type = typename traits::pos_type;
-  using off_type = typename traits::off_type;
-  using traits_type = traits;
+  using char_type = __charT;
+  using int_type = typename __traits::int_type;
+  using pos_type = typename __traits::pos_type;
+  using off_type = typename __traits::off_type;
+  using traits_type = __traits;
 
-  explicit basic_istream(basic_streambuf<charT, traits>* sb) : gcount_(0) { this->init(sb); }
+  explicit basic_istream(basic_streambuf<__charT, __traits>* __sb) : __gcount_(0) { this->init(__sb); }
   ~basic_istream() override {}
 
   class sentry;
 
   // [istream.extractors]
-  basic_istream& operator>>(basic_istream& (*pf)(basic_istream&)) { return pf(*this); }
-  basic_istream& operator>>(basic_ios<charT, traits>& (*pf)(basic_ios<charT, traits>&)) {
-    pf(*this);
+  basic_istream& operator>>(basic_istream& (*__pf)(basic_istream&)) { return __pf(*this); }
+  basic_istream& operator>>(basic_ios<__charT, __traits>& (*__pf)(basic_ios<__charT, __traits>&)) {
+    __pf(*this);
     return *this;
   }
-  basic_istream& operator>>(ios_base& (*pf)(ios_base&)) {
-    pf(*this);
+  basic_istream& operator>>(ios_base& (*__pf)(ios_base&)) {
+    __pf(*this);
     return *this;
   }
 
   // [istream.formatted.arithmetic]
-  basic_istream& operator>>(bool& n) { return get_number(n); }
-  basic_istream& operator>>(short& n) { return get_narrowed(n); }
-  basic_istream& operator>>(unsigned short& n) { return get_number(n); }
-  basic_istream& operator>>(int& n) { return get_narrowed(n); }
-  basic_istream& operator>>(unsigned int& n) { return get_number(n); }
-  basic_istream& operator>>(long& n) { return get_number(n); }
-  basic_istream& operator>>(unsigned long& n) { return get_number(n); }
-  basic_istream& operator>>(long long& n) { return get_number(n); }
-  basic_istream& operator>>(unsigned long long& n) { return get_number(n); }
-  basic_istream& operator>>(float& f) { return get_number(f); }
-  basic_istream& operator>>(double& f) { return get_number(f); }
-  basic_istream& operator>>(long double& f) { return get_number(f); }
-  template <class F>
-    requires ycxx::detail::is_extended_floating_point<F> && ycxx::detail::fp_rank_le<F, long double>
-  basic_istream& operator>>(F& f);
-  basic_istream& operator>>(void*& p) { return get_number(p); }
-  basic_istream& operator>>(basic_streambuf<char_type, traits>* sb);
+  basic_istream& operator>>(bool& n) { return __get_number(n); }
+  basic_istream& operator>>(short& n) { return __get_narrowed(n); }
+  basic_istream& operator>>(unsigned short& n) { return __get_number(n); }
+  basic_istream& operator>>(int& n) { return __get_narrowed(n); }
+  basic_istream& operator>>(unsigned int& n) { return __get_number(n); }
+  basic_istream& operator>>(long& n) { return __get_number(n); }
+  basic_istream& operator>>(unsigned long& n) { return __get_number(n); }
+  basic_istream& operator>>(long long& n) { return __get_number(n); }
+  basic_istream& operator>>(unsigned long long& n) { return __get_number(n); }
+  basic_istream& operator>>(float& __f) { return __get_number(__f); }
+  basic_istream& operator>>(double& __f) { return __get_number(__f); }
+  basic_istream& operator>>(long double& __f) { return __get_number(__f); }
+  template <class _Fp>
+    requires __ycxx::__detail::__is_extended_floating_point<_Fp> && __ycxx::__detail::__fp_rank_le<_Fp, long double>
+  basic_istream& operator>>(_Fp& __f);
+  basic_istream& operator>>(void*& p) { return __get_number(p); }
+  basic_istream& operator>>(basic_streambuf<char_type, __traits>* __sb);
 
   // [istream.unformatted]
-  streamsize gcount() const { return __atomic_load_n(&gcount_, __ATOMIC_RELAXED); }
+  streamsize gcount() const { return __atomic_load_n(&__gcount_, __ATOMIC_RELAXED); }
   int_type get();
   basic_istream& get(char_type& c);
   basic_istream& get(char_type* s, streamsize n) { return get(s, n, this->widen('\n')); }
-  basic_istream& get(char_type* s, streamsize n, char_type delim);
-  basic_istream& get(basic_streambuf<char_type, traits>& sb) { return get(sb, this->widen('\n')); }
-  basic_istream& get(basic_streambuf<char_type, traits>& sb, char_type delim);
+  basic_istream& get(char_type* s, streamsize n, char_type __delim);
+  basic_istream& get(basic_streambuf<char_type, __traits>& __sb) { return get(__sb, this->widen('\n')); }
+  basic_istream& get(basic_streambuf<char_type, __traits>& __sb, char_type __delim);
   basic_istream& getline(char_type* s, streamsize n) { return getline(s, n, this->widen('\n')); }
-  basic_istream& getline(char_type* s, streamsize n, char_type delim);
-  basic_istream& ignore(streamsize n = 1, int_type delim = traits::eof());
+  basic_istream& getline(char_type* s, streamsize n, char_type __delim);
+  basic_istream& ignore(streamsize n = 1, int_type __delim = __traits::eof());
   // A template (exactly char_type is deduced), so that ignore(n, -1L) still picks the int_type
   // overload instead of being ambiguous.
-  template <class C>
-    requires is_same_v<C, char_type> && is_same_v<char_type, char>
-  basic_istream& ignore(streamsize n, C delim) {
-    return ignore(n, traits::to_int_type(delim));
+  template <class _Cp>
+    requires is_same_v<_Cp, char_type> && is_same_v<char_type, char>
+  basic_istream& ignore(streamsize n, _Cp __delim) {
+    return ignore(n, __traits::to_int_type(__delim));
   }
   int_type peek();
   basic_istream& read(char_type* s, streamsize n);
@@ -80,54 +80,54 @@ public:
   basic_istream& unget();
   int sync();
   pos_type tellg();
-  basic_istream& seekg(pos_type pos);
-  basic_istream& seekg(off_type off, ios_base::seekdir dir);
+  basic_istream& seekg(pos_type __pos);
+  basic_istream& seekg(off_type __off, ios_base::seekdir __dir);
 
 protected:
   basic_istream(const basic_istream&) = delete;
-  basic_istream(basic_istream&& rhs) : gcount_(rhs.gcount_) {
-    this->move(rhs);
-    rhs.gcount_ = 0;
+  basic_istream(basic_istream&& __rhs) : __gcount_(__rhs.__gcount_) {
+    this->move(__rhs);
+    __rhs.__gcount_ = 0;
   }
   basic_istream& operator=(const basic_istream&) = delete;
-  basic_istream& operator=(basic_istream&& rhs) {
-    swap(rhs);
+  basic_istream& operator=(basic_istream&& __rhs) {
+    swap(__rhs);
     return *this;
   }
-  void swap(basic_istream& rhs) {
-    basic_ios<charT, traits>::swap(rhs);
-    const streamsize g = gcount_;
-    gcount_ = rhs.gcount_;
-    rhs.gcount_ = g;
+  void swap(basic_istream& __rhs) {
+    basic_ios<__charT, __traits>::swap(__rhs);
+    const streamsize __g = __gcount_;
+    __gcount_ = __rhs.__gcount_;
+    __rhs.__gcount_ = __g;
   }
 
 private:
-  template <class V>
-  basic_istream& get_number(V& v);
-  template <class V>
-  basic_istream& get_narrowed(V& v);
+  template <class _Vp>
+  basic_istream& __get_number(_Vp& __v);
+  template <class _Vp>
+  basic_istream& __get_narrowed(_Vp& __v);
   // gcount_ is read and written with relaxed atomic operations (ordinary loads and stores on the
   // supported targets): every unformatted input function stores it, and those functions may run
   // concurrently on a synchronized standard stream object ([iostream.objects.overview]/7;
   // DECISIONS §7).
-  void set_gcount(streamsize n) noexcept { __atomic_store_n(&gcount_, n, __ATOMIC_RELAXED); }
+  void __set_gcount(streamsize n) noexcept { __atomic_store_n(&__gcount_, n, __ATOMIC_RELAXED); }
   // the end of an unformatted input function: the count, then setstate
-  void finish(ios_base::iostate err, streamsize count) {
-    set_gcount(count);
-    if (err)
-      this->setstate(err);
+  void finish(ios_base::iostate __err, streamsize count) {
+    __set_gcount(count);
+    if (__err)
+      this->setstate(__err);
   }
 
-  streamsize gcount_ = 0;
+  streamsize __gcount_ = 0;
 };
 
 // [istream.sentry]
-template <class charT, class traits>
-class basic_istream<charT, traits>::sentry {
-  bool ok_;
+template <class __charT, class __traits>
+class basic_istream<__charT, __traits>::sentry {
+  bool __ok_;
 
 public:
-  explicit sentry(basic_istream& is, bool noskipws = false) : ok_(false) {
+  explicit sentry(basic_istream& is, bool noskipws = false) : __ok_(false) {
     if (!is.good()) {
       is.setstate(ios_base::failbit);
       return;
@@ -135,580 +135,580 @@ public:
     if (is.tie() != nullptr)
       is.tie()->flush();
     if (!noskipws && (is.flags() & ios_base::skipws)) {
-      ios_base::iostate err = ios_base::goodbit;
-      ycxx::detail::guarded_io(is, [&] {
-        const ctype<charT>& ct = use_facet<ctype<charT>>(ycxx::detail::ios_access::locale_of(is));
-        basic_streambuf<charT, traits>* sb = is.rdbuf();
-        for (int_type c = sb->sgetc();; c = sb->snextc()) {
-          if (traits::eq_int_type(c, traits::eof())) {
-            err |= ios_base::failbit | ios_base::eofbit;
+      ios_base::iostate __err = ios_base::goodbit;
+      __ycxx::__detail::__guarded_io(is, [&] {
+        const ctype<__charT>& __ct = use_facet<ctype<__charT>>(__ycxx::__detail::__ios_access::__locale_of(is));
+        basic_streambuf<__charT, __traits>* __sb = is.rdbuf();
+        for (int_type c = __sb->sgetc();; c = __sb->snextc()) {
+          if (__traits::eq_int_type(c, __traits::eof())) {
+            __err |= ios_base::failbit | ios_base::eofbit;
             break;
           }
-          if (!ct.is(ctype_base::space, traits::to_char_type(c)))
+          if (!__ct.is(ctype_base::space, __traits::to_char_type(c)))
             break;
         }
       });
-      if (err)
-        is.setstate(err);
+      if (__err)
+        is.setstate(__err);
     }
-    ok_ = is.good();
+    __ok_ = is.good();
   }
   ~sentry() {}
-  explicit operator bool() const { return ok_; }
+  explicit operator bool() const { return __ok_; }
   sentry(const sentry&) = delete;
   sentry& operator=(const sentry&) = delete;
 };
 
-template <class charT, class traits>
-template <class V>
-basic_istream<charT, traits>& basic_istream<charT, traits>::get_number(V& v) {
-  ios_base::iostate err = ios_base::goodbit;
+template <class __charT, class __traits>
+template <class _Vp>
+basic_istream<__charT, __traits>& basic_istream<__charT, __traits>::__get_number(_Vp& __v) {
+  ios_base::iostate __err = ios_base::goodbit;
   if (sentry ok{*this}) {
-    ycxx::detail::guarded_io(*this, [&] {
-      using It = istreambuf_iterator<charT, traits>;
-      use_facet<num_get<charT, It>>(ycxx::detail::ios_access::locale_of(*this)).get(It(*this), It(), *this, err, v);
+    __ycxx::__detail::__guarded_io(*this, [&] {
+      using _It = istreambuf_iterator<__charT, __traits>;
+      use_facet<num_get<__charT, _It>>(__ycxx::__detail::__ios_access::__locale_of(*this)).get(_It(*this), _It(), *this, __err, __v);
     });
   }
-  if (err)
-    this->setstate(err);
+  if (__err)
+    this->setstate(__err);
   return *this;
 }
 
 // [istream.formatted.arithmetic]/2-3: short and int through long, clamped.
-template <class charT, class traits>
-template <class V>
-basic_istream<charT, traits>& basic_istream<charT, traits>::get_narrowed(V& v) {
-  ios_base::iostate err = ios_base::goodbit;
+template <class __charT, class __traits>
+template <class _Vp>
+basic_istream<__charT, __traits>& basic_istream<__charT, __traits>::__get_narrowed(_Vp& __v) {
+  ios_base::iostate __err = ios_base::goodbit;
   if (sentry ok{*this}) {
-    ycxx::detail::guarded_io(*this, [&] {
-      using It = istreambuf_iterator<charT, traits>;
-      long lval = 0;
-      use_facet<num_get<charT, It>>(ycxx::detail::ios_access::locale_of(*this)).get(It(*this), It(), *this, err, lval);
-      if (lval < numeric_limits<V>::min()) {
-        err |= ios_base::failbit;
-        v = numeric_limits<V>::min();
-      } else if (numeric_limits<V>::max() < lval) {
-        err |= ios_base::failbit;
-        v = numeric_limits<V>::max();
+    __ycxx::__detail::__guarded_io(*this, [&] {
+      using _It = istreambuf_iterator<__charT, __traits>;
+      long __lval = 0;
+      use_facet<num_get<__charT, _It>>(__ycxx::__detail::__ios_access::__locale_of(*this)).get(_It(*this), _It(), *this, __err, __lval);
+      if (__lval < numeric_limits<_Vp>::min()) {
+        __err |= ios_base::failbit;
+        __v = numeric_limits<_Vp>::min();
+      } else if (numeric_limits<_Vp>::max() < __lval) {
+        __err |= ios_base::failbit;
+        __v = numeric_limits<_Vp>::max();
       } else {
-        v = static_cast<V>(lval);
+        __v = static_cast<_Vp>(__lval);
       }
     });
   }
-  if (err)
-    this->setstate(err);
+  if (__err)
+    this->setstate(__err);
   return *this;
 }
 
 // [istream.formatted.arithmetic]/4-6
-template <class charT, class traits>
-template <class F>
-  requires ycxx::detail::is_extended_floating_point<F> && ycxx::detail::fp_rank_le<F, long double>
-basic_istream<charT, traits>& basic_istream<charT, traits>::operator>>(F& val) {
-  using FP = conditional_t<ycxx::detail::fp_rank_le<F, float>, float,
-                           conditional_t<ycxx::detail::fp_rank_le<F, double>, double, long double>>;
-  ios_base::iostate err = ios_base::goodbit;
+template <class __charT, class __traits>
+template <class _Fp>
+  requires __ycxx::__detail::__is_extended_floating_point<_Fp> && __ycxx::__detail::__fp_rank_le<_Fp, long double>
+basic_istream<__charT, __traits>& basic_istream<__charT, __traits>::operator>>(_Fp& __val) {
+  using _FP = conditional_t<__ycxx::__detail::__fp_rank_le<_Fp, float>, float,
+                           conditional_t<__ycxx::__detail::__fp_rank_le<_Fp, double>, double, long double>>;
+  ios_base::iostate __err = ios_base::goodbit;
   if (sentry ok{*this}) {
-    ycxx::detail::guarded_io(*this, [&] {
-      using It = istreambuf_iterator<charT, traits>;
-      FP fval = 0;
-      use_facet<num_get<charT, It>>(ycxx::detail::ios_access::locale_of(*this)).get(It(*this), It(), *this, err, fval);
-      if (fval < -static_cast<FP>(numeric_limits<F>::max())) {
-        err |= ios_base::failbit;
-        val = -numeric_limits<F>::max();
-      } else if (static_cast<FP>(numeric_limits<F>::max()) < fval) {
-        err |= ios_base::failbit;
-        val = numeric_limits<F>::max();
+    __ycxx::__detail::__guarded_io(*this, [&] {
+      using _It = istreambuf_iterator<__charT, __traits>;
+      _FP __fval = 0;
+      use_facet<num_get<__charT, _It>>(__ycxx::__detail::__ios_access::__locale_of(*this)).get(_It(*this), _It(), *this, __err, __fval);
+      if (__fval < -static_cast<_FP>(numeric_limits<_Fp>::max())) {
+        __err |= ios_base::failbit;
+        __val = -numeric_limits<_Fp>::max();
+      } else if (static_cast<_FP>(numeric_limits<_Fp>::max()) < __fval) {
+        __err |= ios_base::failbit;
+        __val = numeric_limits<_Fp>::max();
       } else {
-        val = static_cast<F>(fval);
+        __val = static_cast<_Fp>(__fval);
       }
     });
   }
-  if (err)
-    this->setstate(err);
+  if (__err)
+    this->setstate(__err);
   return *this;
 }
 
 // [istream.extractors]/14-15
-template <class charT, class traits>
-basic_istream<charT, traits>& basic_istream<charT, traits>::operator>>(basic_streambuf<char_type, traits>* sb) {
-  ios_base::iostate err = ios_base::goodbit;
+template <class __charT, class __traits>
+basic_istream<__charT, __traits>& basic_istream<__charT, __traits>::operator>>(basic_streambuf<char_type, __traits>* __sb) {
+  ios_base::iostate __err = ios_base::goodbit;
   streamsize n = 0;
-  if (sb == nullptr) {
-    set_gcount(0);
+  if (__sb == nullptr) {
+    __set_gcount(0);
     this->setstate(ios_base::failbit);
     return *this;
   }
   if (sentry ok{*this, true}) {
-    ycxx::detail::guarded_io(*this, [&] {
-      basic_streambuf<charT, traits>* in = this->rdbuf();
+    __ycxx::__detail::__guarded_io(*this, [&] {
+      basic_streambuf<__charT, __traits>* in = this->rdbuf();
       for (int_type c = in->sgetc();; c = in->snextc()) {
-        if (traits::eq_int_type(c, traits::eof())) {
-          err |= ios_base::eofbit;
+        if (__traits::eq_int_type(c, __traits::eof())) {
+          __err |= ios_base::eofbit;
           break;
         }
         // an exception from the output sequence is caught (14.3)
-        bool inserted = false;
-        if constexpr (ycxx::detail::cfg::exceptions) {
+        bool __inserted = false;
+        if constexpr (__ycxx::__detail::__cfg::exceptions) {
           try {
-            inserted = !traits::eq_int_type(sb->sputc(traits::to_char_type(c)), traits::eof());
+            __inserted = !__traits::eq_int_type(__sb->sputc(__traits::to_char_type(c)), __traits::eof());
           } catch (...) {
           }
         } else {
-          inserted = !traits::eq_int_type(sb->sputc(traits::to_char_type(c)), traits::eof());
+          __inserted = !__traits::eq_int_type(__sb->sputc(__traits::to_char_type(c)), __traits::eof());
         }
-        if (!inserted)
+        if (!__inserted)
           break;
         ++n;
       }
     });
   }
   if (n == 0)
-    err |= ios_base::failbit;
-  finish(err, n);
+    __err |= ios_base::failbit;
+  finish(__err, n);
   return *this;
 }
 
-template <class charT, class traits>
-typename basic_istream<charT, traits>::int_type basic_istream<charT, traits>::get() {
-  ios_base::iostate err = ios_base::goodbit;
-  int_type c = traits::eof();
+template <class __charT, class __traits>
+typename basic_istream<__charT, __traits>::int_type basic_istream<__charT, __traits>::get() {
+  ios_base::iostate __err = ios_base::goodbit;
+  int_type c = __traits::eof();
   streamsize n = 0;
   if (sentry ok{*this, true}) {
-    ycxx::detail::guarded_io(*this, [&] {
+    __ycxx::__detail::__guarded_io(*this, [&] {
       c = this->rdbuf()->sbumpc();
-      if (traits::eq_int_type(c, traits::eof()))
-        err |= ios_base::eofbit | ios_base::failbit;
+      if (__traits::eq_int_type(c, __traits::eof()))
+        __err |= ios_base::eofbit | ios_base::failbit;
       else
         n = 1;
     });
   }
-  finish(err, n);
+  finish(__err, n);
   return c;
 }
 
-template <class charT, class traits>
-basic_istream<charT, traits>& basic_istream<charT, traits>::get(char_type& c) {
+template <class __charT, class __traits>
+basic_istream<__charT, __traits>& basic_istream<__charT, __traits>::get(char_type& c) {
   const int_type r = get();
-  if (!traits::eq_int_type(r, traits::eof()))
-    c = traits::to_char_type(r);
+  if (!__traits::eq_int_type(r, __traits::eof()))
+    c = __traits::to_char_type(r);
   return *this;
 }
 
-template <class charT, class traits>
-basic_istream<charT, traits>& basic_istream<charT, traits>::get(char_type* s, streamsize n, char_type delim) {
-  ios_base::iostate err = ios_base::goodbit;
+template <class __charT, class __traits>
+basic_istream<__charT, __traits>& basic_istream<__charT, __traits>::get(char_type* s, streamsize n, char_type __delim) {
+  ios_base::iostate __err = ios_base::goodbit;
   streamsize count = 0;
   if (sentry ok{*this, true}) {
-    ycxx::detail::guarded_io(*this, [&] {
-      basic_streambuf<charT, traits>* sb = this->rdbuf();
-      for (int_type c = sb->sgetc(); count + 1 < n; c = sb->snextc()) {
-        if (traits::eq_int_type(c, traits::eof())) {
-          err |= ios_base::eofbit;
+    __ycxx::__detail::__guarded_io(*this, [&] {
+      basic_streambuf<__charT, __traits>* __sb = this->rdbuf();
+      for (int_type c = __sb->sgetc(); count + 1 < n; c = __sb->snextc()) {
+        if (__traits::eq_int_type(c, __traits::eof())) {
+          __err |= ios_base::eofbit;
           break;
         }
-        if (traits::eq(traits::to_char_type(c), delim))
+        if (__traits::__eq(__traits::to_char_type(c), __delim))
           break;
-        s[count++] = traits::to_char_type(c);
+        s[count++] = __traits::to_char_type(c);
       }
     });
   }
   if (n > 0)
-    s[count] = charT();
+    s[count] = __charT();
   if (count == 0)
-    err |= ios_base::failbit;
-  finish(err, count);
+    __err |= ios_base::failbit;
+  finish(__err, count);
   return *this;
 }
 
-template <class charT, class traits>
-basic_istream<charT, traits>& basic_istream<charT, traits>::get(basic_streambuf<char_type, traits>& sb,
-                                                                char_type delim) {
-  ios_base::iostate err = ios_base::goodbit;
+template <class __charT, class __traits>
+basic_istream<__charT, __traits>& basic_istream<__charT, __traits>::get(basic_streambuf<char_type, __traits>& __sb,
+                                                                char_type __delim) {
+  ios_base::iostate __err = ios_base::goodbit;
   streamsize count = 0;
   if (sentry ok{*this, true}) {
-    ycxx::detail::guarded_io(*this, [&] {
-      basic_streambuf<charT, traits>* in = this->rdbuf();
+    __ycxx::__detail::__guarded_io(*this, [&] {
+      basic_streambuf<__charT, __traits>* in = this->rdbuf();
       for (int_type c = in->sgetc();; c = in->snextc()) {
-        if (traits::eq_int_type(c, traits::eof())) {
-          err |= ios_base::eofbit;
+        if (__traits::eq_int_type(c, __traits::eof())) {
+          __err |= ios_base::eofbit;
           break;
         }
-        if (traits::eq(traits::to_char_type(c), delim))
+        if (__traits::__eq(__traits::to_char_type(c), __delim))
           break;
         // an exception from sb is caught but not rethrown (13.4)
-        bool inserted = false;
-        if constexpr (ycxx::detail::cfg::exceptions) {
+        bool __inserted = false;
+        if constexpr (__ycxx::__detail::__cfg::exceptions) {
           try {
-            inserted = !traits::eq_int_type(sb.sputc(traits::to_char_type(c)), traits::eof());
+            __inserted = !__traits::eq_int_type(__sb.sputc(__traits::to_char_type(c)), __traits::eof());
           } catch (...) {
           }
         } else {
-          inserted = !traits::eq_int_type(sb.sputc(traits::to_char_type(c)), traits::eof());
+          __inserted = !__traits::eq_int_type(__sb.sputc(__traits::to_char_type(c)), __traits::eof());
         }
-        if (!inserted)
+        if (!__inserted)
           break;
         ++count;
       }
     });
   }
   if (count == 0)
-    err |= ios_base::failbit;
-  finish(err, count);
+    __err |= ios_base::failbit;
+  finish(__err, count);
   return *this;
 }
 
-template <class charT, class traits>
-basic_istream<charT, traits>& basic_istream<charT, traits>::getline(char_type* s, streamsize n, char_type delim) {
-  ios_base::iostate err = ios_base::goodbit;
-  streamsize count = 0, stored = 0;
+template <class __charT, class __traits>
+basic_istream<__charT, __traits>& basic_istream<__charT, __traits>::getline(char_type* s, streamsize n, char_type __delim) {
+  ios_base::iostate __err = ios_base::goodbit;
+  streamsize count = 0, __stored = 0;
   if (sentry ok{*this, true}) {
-    ycxx::detail::guarded_io(*this, [&] {
-      basic_streambuf<charT, traits>* sb = this->rdbuf();
-      for (int_type c = sb->sgetc();; c = sb->snextc()) {
-        if (traits::eq_int_type(c, traits::eof())) {
-          err |= ios_base::eofbit;
+    __ycxx::__detail::__guarded_io(*this, [&] {
+      basic_streambuf<__charT, __traits>* __sb = this->rdbuf();
+      for (int_type c = __sb->sgetc();; c = __sb->snextc()) {
+        if (__traits::eq_int_type(c, __traits::eof())) {
+          __err |= ios_base::eofbit;
           break;
         }
-        if (traits::eq(traits::to_char_type(c), delim)) {
+        if (__traits::__eq(__traits::to_char_type(c), __delim)) {
           ++count; // extracted, not stored
-          sb->sbumpc();
+          __sb->sbumpc();
           break;
         }
-        if (n < 1 || stored + 1 >= n) {
-          err |= ios_base::failbit;
+        if (n < 1 || __stored + 1 >= n) {
+          __err |= ios_base::failbit;
           break;
         }
-        s[stored++] = traits::to_char_type(c);
+        s[__stored++] = __traits::to_char_type(c);
         ++count;
       }
     });
   }
   if (n > 0)
-    s[stored] = charT();
+    s[__stored] = __charT();
   if (count == 0)
-    err |= ios_base::failbit;
-  finish(err, count);
+    __err |= ios_base::failbit;
+  finish(__err, count);
   return *this;
 }
 
-template <class charT, class traits>
-basic_istream<charT, traits>& basic_istream<charT, traits>::ignore(streamsize n, int_type delim) {
-  ios_base::iostate err = ios_base::goodbit;
+template <class __charT, class __traits>
+basic_istream<__charT, __traits>& basic_istream<__charT, __traits>::ignore(streamsize n, int_type __delim) {
+  ios_base::iostate __err = ios_base::goodbit;
   streamsize count = 0;
   if (sentry ok{*this, true}) {
-    ycxx::detail::guarded_io(*this, [&] {
-      basic_streambuf<charT, traits>* sb = this->rdbuf();
-      const bool unlimited = n == numeric_limits<streamsize>::max();
-      while (unlimited || count < n) {
-        const int_type c = sb->sbumpc();
-        if (traits::eq_int_type(c, traits::eof())) {
-          err |= ios_base::eofbit;
+    __ycxx::__detail::__guarded_io(*this, [&] {
+      basic_streambuf<__charT, __traits>* __sb = this->rdbuf();
+      const bool __unlimited = n == numeric_limits<streamsize>::max();
+      while (__unlimited || count < n) {
+        const int_type c = __sb->sbumpc();
+        if (__traits::eq_int_type(c, __traits::eof())) {
+          __err |= ios_base::eofbit;
           break;
         }
         if (count != numeric_limits<streamsize>::max())
           ++count;
-        if (traits::eq_int_type(c, delim))
+        if (__traits::eq_int_type(c, __delim))
           break;
       }
     });
   }
-  finish(err, count);
+  finish(__err, count);
   return *this;
 }
 
-template <class charT, class traits>
-typename basic_istream<charT, traits>::int_type basic_istream<charT, traits>::peek() {
-  ios_base::iostate err = ios_base::goodbit;
-  int_type c = traits::eof();
+template <class __charT, class __traits>
+typename basic_istream<__charT, __traits>::int_type basic_istream<__charT, __traits>::peek() {
+  ios_base::iostate __err = ios_base::goodbit;
+  int_type c = __traits::eof();
   if (sentry ok{*this, true}) {
-    ycxx::detail::guarded_io(*this, [&] {
+    __ycxx::__detail::__guarded_io(*this, [&] {
       c = this->rdbuf()->sgetc();
-      if (traits::eq_int_type(c, traits::eof()))
-        err |= ios_base::eofbit;
+      if (__traits::eq_int_type(c, __traits::eof()))
+        __err |= ios_base::eofbit;
     });
   }
-  finish(err, 0);
+  finish(__err, 0);
   return c;
 }
 
-template <class charT, class traits>
-basic_istream<charT, traits>& basic_istream<charT, traits>::read(char_type* s, streamsize n) {
-  ios_base::iostate err = ios_base::goodbit;
+template <class __charT, class __traits>
+basic_istream<__charT, __traits>& basic_istream<__charT, __traits>::read(char_type* s, streamsize n) {
+  ios_base::iostate __err = ios_base::goodbit;
   streamsize count = 0;
   if (sentry ok{*this, true}) {
-    ycxx::detail::guarded_io(*this, [&] {
+    __ycxx::__detail::__guarded_io(*this, [&] {
       count = this->rdbuf()->sgetn(s, n);
       if (count != n)
-        err |= ios_base::failbit | ios_base::eofbit;
+        __err |= ios_base::failbit | ios_base::eofbit;
     });
   } else {
-    err |= ios_base::failbit;
+    __err |= ios_base::failbit;
   }
-  finish(err, count);
+  finish(__err, count);
   return *this;
 }
 
-template <class charT, class traits>
-streamsize basic_istream<charT, traits>::readsome(char_type* s, streamsize n) {
-  ios_base::iostate err = ios_base::goodbit;
+template <class __charT, class __traits>
+streamsize basic_istream<__charT, __traits>::readsome(char_type* s, streamsize n) {
+  ios_base::iostate __err = ios_base::goodbit;
   streamsize count = 0;
   if (sentry ok{*this, true}) {
-    ycxx::detail::guarded_io(*this, [&] {
-      const streamsize avail = this->rdbuf()->in_avail();
-      if (avail == -1)
-        err |= ios_base::eofbit;
-      else if (avail > 0)
-        count = this->rdbuf()->sgetn(s, avail < n ? avail : n);
+    __ycxx::__detail::__guarded_io(*this, [&] {
+      const streamsize __avail = this->rdbuf()->in_avail();
+      if (__avail == -1)
+        __err |= ios_base::eofbit;
+      else if (__avail > 0)
+        count = this->rdbuf()->sgetn(s, __avail < n ? __avail : n);
     });
   } else {
-    err |= ios_base::failbit;
+    __err |= ios_base::failbit;
   }
-  finish(err, count);
+  finish(__err, count);
   return count;
 }
 
-template <class charT, class traits>
-basic_istream<charT, traits>& basic_istream<charT, traits>::putback(char_type c) {
+template <class __charT, class __traits>
+basic_istream<__charT, __traits>& basic_istream<__charT, __traits>::putback(char_type c) {
   this->clear(this->rdstate() & ~ios_base::eofbit);
-  ios_base::iostate err = ios_base::goodbit;
+  ios_base::iostate __err = ios_base::goodbit;
   if (sentry ok{*this, true}) {
-    ycxx::detail::guarded_io(*this, [&] {
-      if (this->rdbuf() == nullptr || traits::eq_int_type(this->rdbuf()->sputbackc(c), traits::eof()))
-        err |= ios_base::badbit;
+    __ycxx::__detail::__guarded_io(*this, [&] {
+      if (this->rdbuf() == nullptr || __traits::eq_int_type(this->rdbuf()->sputbackc(c), __traits::eof()))
+        __err |= ios_base::badbit;
     });
   } else {
-    err |= ios_base::failbit;
+    __err |= ios_base::failbit;
   }
-  finish(err, 0);
+  finish(__err, 0);
   return *this;
 }
 
-template <class charT, class traits>
-basic_istream<charT, traits>& basic_istream<charT, traits>::unget() {
+template <class __charT, class __traits>
+basic_istream<__charT, __traits>& basic_istream<__charT, __traits>::unget() {
   this->clear(this->rdstate() & ~ios_base::eofbit);
-  ios_base::iostate err = ios_base::goodbit;
+  ios_base::iostate __err = ios_base::goodbit;
   if (sentry ok{*this, true}) {
-    ycxx::detail::guarded_io(*this, [&] {
-      if (this->rdbuf() == nullptr || traits::eq_int_type(this->rdbuf()->sungetc(), traits::eof()))
-        err |= ios_base::badbit;
+    __ycxx::__detail::__guarded_io(*this, [&] {
+      if (this->rdbuf() == nullptr || __traits::eq_int_type(this->rdbuf()->sungetc(), __traits::eof()))
+        __err |= ios_base::badbit;
     });
   } else {
-    err |= ios_base::failbit;
+    __err |= ios_base::failbit;
   }
-  finish(err, 0);
+  finish(__err, 0);
   return *this;
 }
 
-template <class charT, class traits>
-int basic_istream<charT, traits>::sync() {
-  ios_base::iostate err = ios_base::goodbit;
+template <class __charT, class __traits>
+int basic_istream<__charT, __traits>::sync() {
+  ios_base::iostate __err = ios_base::goodbit;
   int r = 0;
   if (sentry ok{*this, true}) {
-    ycxx::detail::guarded_io(*this, [&] {
+    __ycxx::__detail::__guarded_io(*this, [&] {
       if (this->rdbuf() == nullptr) {
         r = -1;
       } else if (this->rdbuf()->pubsync() == -1) {
-        err |= ios_base::badbit;
+        __err |= ios_base::badbit;
         r = -1;
       }
     });
   } else {
     r = -1;
   }
-  if (err)
-    this->setstate(err);
+  if (__err)
+    this->setstate(__err);
   return r;
 }
 
-template <class charT, class traits>
-typename basic_istream<charT, traits>::pos_type basic_istream<charT, traits>::tellg() {
+template <class __charT, class __traits>
+typename basic_istream<__charT, __traits>::pos_type basic_istream<__charT, __traits>::tellg() {
   pos_type r = pos_type(off_type(-1));
   sentry ok{*this, true};
   if (!this->fail())
-    ycxx::detail::guarded_io(*this, [&] { r = this->rdbuf()->pubseekoff(0, ios_base::cur, ios_base::in); });
+    __ycxx::__detail::__guarded_io(*this, [&] { r = this->rdbuf()->pubseekoff(0, ios_base::cur, ios_base::in); });
   return r;
 }
 
-template <class charT, class traits>
-basic_istream<charT, traits>& basic_istream<charT, traits>::seekg(pos_type pos) {
+template <class __charT, class __traits>
+basic_istream<__charT, __traits>& basic_istream<__charT, __traits>::seekg(pos_type __pos) {
   this->clear(this->rdstate() & ~ios_base::eofbit);
-  ios_base::iostate err = ios_base::goodbit;
+  ios_base::iostate __err = ios_base::goodbit;
   sentry ok{*this, true};
   if (!this->fail()) {
-    ycxx::detail::guarded_io(*this, [&] {
-      if (this->rdbuf()->pubseekpos(pos, ios_base::in) == pos_type(off_type(-1)))
-        err |= ios_base::failbit;
+    __ycxx::__detail::__guarded_io(*this, [&] {
+      if (this->rdbuf()->pubseekpos(__pos, ios_base::in) == pos_type(off_type(-1)))
+        __err |= ios_base::failbit;
     });
   }
-  if (err)
-    this->setstate(err);
+  if (__err)
+    this->setstate(__err);
   return *this;
 }
 
-template <class charT, class traits>
-basic_istream<charT, traits>& basic_istream<charT, traits>::seekg(off_type off, ios_base::seekdir dir) {
+template <class __charT, class __traits>
+basic_istream<__charT, __traits>& basic_istream<__charT, __traits>::seekg(off_type __off, ios_base::seekdir __dir) {
   this->clear(this->rdstate() & ~ios_base::eofbit);
-  ios_base::iostate err = ios_base::goodbit;
+  ios_base::iostate __err = ios_base::goodbit;
   sentry ok{*this, true};
   if (!this->fail()) {
-    ycxx::detail::guarded_io(*this, [&] {
-      if (this->rdbuf()->pubseekoff(off, dir, ios_base::in) == pos_type(off_type(-1)))
-        err |= ios_base::failbit;
+    __ycxx::__detail::__guarded_io(*this, [&] {
+      if (this->rdbuf()->pubseekoff(__off, __dir, ios_base::in) == pos_type(off_type(-1)))
+        __err |= ios_base::failbit;
     });
   }
-  if (err)
-    this->setstate(err);
+  if (__err)
+    this->setstate(__err);
   return *this;
 }
 
 // [istream.extractors]/7-13
-template <class charT, class traits, size_t N>
-basic_istream<charT, traits>& operator>>(basic_istream<charT, traits>& in, charT (&s)[N]) {
-  ios_base::iostate err = ios_base::goodbit;
+template <class __charT, class __traits, size_t _Np>
+basic_istream<__charT, __traits>& operator>>(basic_istream<__charT, __traits>& in, __charT (&s)[_Np]) {
+  ios_base::iostate __err = ios_base::goodbit;
   size_t count = 0;
-  if (typename basic_istream<charT, traits>::sentry ok{in}) {
-    ycxx::detail::guarded_io(in, [&] {
-      const streamsize w = in.width();
-      const size_t n = w > 0 && static_cast<size_t>(w) < N ? static_cast<size_t>(w) : N;
-      const ctype<charT>& ct = use_facet<ctype<charT>>(ycxx::detail::ios_access::locale_of(in));
-      basic_streambuf<charT, traits>* sb = in.rdbuf();
-      for (typename traits::int_type c = sb->sgetc(); count + 1 < n; c = sb->snextc()) {
-        if (traits::eq_int_type(c, traits::eof())) {
-          err |= ios_base::eofbit;
+  if (typename basic_istream<__charT, __traits>::sentry ok{in}) {
+    __ycxx::__detail::__guarded_io(in, [&] {
+      const streamsize __w = in.width();
+      const size_t n = __w > 0 && static_cast<size_t>(__w) < _Np ? static_cast<size_t>(__w) : _Np;
+      const ctype<__charT>& __ct = use_facet<ctype<__charT>>(__ycxx::__detail::__ios_access::__locale_of(in));
+      basic_streambuf<__charT, __traits>* __sb = in.rdbuf();
+      for (typename __traits::int_type c = __sb->sgetc(); count + 1 < n; c = __sb->snextc()) {
+        if (__traits::eq_int_type(c, __traits::eof())) {
+          __err |= ios_base::eofbit;
           break;
         }
-        if (ct.is(ctype_base::space, traits::to_char_type(c)))
+        if (__ct.is(ctype_base::space, __traits::to_char_type(c)))
           break;
-        s[count++] = traits::to_char_type(c);
+        s[count++] = __traits::to_char_type(c);
       }
-      s[count] = charT();
+      s[count] = __charT();
       in.width(0);
     });
   }
   if (count == 0)
-    err |= ios_base::failbit;
-  if (err)
-    in.setstate(err);
+    __err |= ios_base::failbit;
+  if (__err)
+    in.setstate(__err);
   return in;
 }
-template <class traits, size_t N>
+template <class __traits, size_t _Np>
 [[deprecated("signed char / unsigned char stream extraction is deprecated ([depr.istream.extractors]); use char")]]
-basic_istream<char, traits>& operator>>(basic_istream<char, traits>& in, unsigned char (&s)[N]) {
-  return in >> reinterpret_cast<char(&)[N]>(s);
+basic_istream<char, __traits>& operator>>(basic_istream<char, __traits>& in, unsigned char (&s)[_Np]) {
+  return in >> reinterpret_cast<char(&)[_Np]>(s);
 }
-template <class traits, size_t N>
+template <class __traits, size_t _Np>
 [[deprecated("signed char / unsigned char stream extraction is deprecated ([depr.istream.extractors]); use char")]]
-basic_istream<char, traits>& operator>>(basic_istream<char, traits>& in, signed char (&s)[N]) {
-  return in >> reinterpret_cast<char(&)[N]>(s);
+basic_istream<char, __traits>& operator>>(basic_istream<char, __traits>& in, signed char (&s)[_Np]) {
+  return in >> reinterpret_cast<char(&)[_Np]>(s);
 }
 
-template <class charT, class traits>
-basic_istream<charT, traits>& operator>>(basic_istream<charT, traits>& in, charT& c) {
-  ios_base::iostate err = ios_base::goodbit;
-  if (typename basic_istream<charT, traits>::sentry ok{in}) {
-    ycxx::detail::guarded_io(in, [&] {
-      const typename traits::int_type r = in.rdbuf()->sbumpc();
-      if (traits::eq_int_type(r, traits::eof()))
-        err |= ios_base::eofbit | ios_base::failbit;
+template <class __charT, class __traits>
+basic_istream<__charT, __traits>& operator>>(basic_istream<__charT, __traits>& in, __charT& c) {
+  ios_base::iostate __err = ios_base::goodbit;
+  if (typename basic_istream<__charT, __traits>::sentry ok{in}) {
+    __ycxx::__detail::__guarded_io(in, [&] {
+      const typename __traits::int_type r = in.rdbuf()->sbumpc();
+      if (__traits::eq_int_type(r, __traits::eof()))
+        __err |= ios_base::eofbit | ios_base::failbit;
       else
-        c = traits::to_char_type(r);
+        c = __traits::to_char_type(r);
     });
   }
-  if (err)
-    in.setstate(err);
+  if (__err)
+    in.setstate(__err);
   return in;
 }
-template <class traits>
+template <class __traits>
 [[deprecated("signed char / unsigned char stream extraction is deprecated ([depr.istream.extractors]); use char")]]
-basic_istream<char, traits>& operator>>(basic_istream<char, traits>& in, unsigned char& c) {
+basic_istream<char, __traits>& operator>>(basic_istream<char, __traits>& in, unsigned char& c) {
   return in >> reinterpret_cast<char&>(c);
 }
-template <class traits>
+template <class __traits>
 [[deprecated("signed char / unsigned char stream extraction is deprecated ([depr.istream.extractors]); use char")]]
-basic_istream<char, traits>& operator>>(basic_istream<char, traits>& in, signed char& c) {
+basic_istream<char, __traits>& operator>>(basic_istream<char, __traits>& in, signed char& c) {
   return in >> reinterpret_cast<char&>(c);
 }
 
 // [istream.manip]
-template <class charT, class traits>
-basic_istream<charT, traits>& ws(basic_istream<charT, traits>& is) {
-  ios_base::iostate err = ios_base::goodbit;
-  if (typename basic_istream<charT, traits>::sentry ok{is, true}) {
-    ycxx::detail::guarded_io(is, [&] {
-      const ctype<charT>& ct = use_facet<ctype<charT>>(ycxx::detail::ios_access::locale_of(is));
-      basic_streambuf<charT, traits>* sb = is.rdbuf();
-      for (typename traits::int_type c = sb->sgetc();; c = sb->snextc()) {
-        if (traits::eq_int_type(c, traits::eof())) {
-          err |= ios_base::eofbit;
+template <class __charT, class __traits>
+basic_istream<__charT, __traits>& ws(basic_istream<__charT, __traits>& is) {
+  ios_base::iostate __err = ios_base::goodbit;
+  if (typename basic_istream<__charT, __traits>::sentry ok{is, true}) {
+    __ycxx::__detail::__guarded_io(is, [&] {
+      const ctype<__charT>& __ct = use_facet<ctype<__charT>>(__ycxx::__detail::__ios_access::__locale_of(is));
+      basic_streambuf<__charT, __traits>* __sb = is.rdbuf();
+      for (typename __traits::int_type c = __sb->sgetc();; c = __sb->snextc()) {
+        if (__traits::eq_int_type(c, __traits::eof())) {
+          __err |= ios_base::eofbit;
           break;
         }
-        if (!ct.is(ctype_base::space, traits::to_char_type(c)))
+        if (!__ct.is(ctype_base::space, __traits::to_char_type(c)))
           break;
       }
     });
   }
-  if (err)
-    is.setstate(err);
+  if (__err)
+    is.setstate(__err);
   return is;
 }
 
 // [istream.rvalue]
-template <class Istream, class T>
-  requires derived_from<Istream, ios_base> && (!is_same_v<remove_cv_t<Istream>, ios_base>) &&
-           requires(Istream& is, T&& x) { is >> static_cast<T&&>(x); }
-Istream&& operator>>(Istream&& is, T&& x) {
-  is >> static_cast<T&&>(x);
-  return static_cast<Istream&&>(is);
+template <class _Istream, class _Tp>
+  requires derived_from<_Istream, ios_base> && (!is_same_v<remove_cv_t<_Istream>, ios_base>) &&
+           requires(_Istream& is, _Tp&& __x) { is >> static_cast<_Tp&&>(__x); }
+_Istream&& operator>>(_Istream&& is, _Tp&& __x) {
+  is >> static_cast<_Tp&&>(__x);
+  return static_cast<_Istream&&>(is);
 }
 
 // [iostreamclass]
-template <class charT, class traits>
-class basic_iostream : public basic_istream<charT, traits>, public basic_ostream<charT, traits> {
+template <class __charT, class __traits>
+class basic_iostream : public basic_istream<__charT, __traits>, public basic_ostream<__charT, __traits> {
 public:
-  using char_type = charT;
-  using int_type = typename traits::int_type;
-  using pos_type = typename traits::pos_type;
-  using off_type = typename traits::off_type;
-  using traits_type = traits;
+  using char_type = __charT;
+  using int_type = typename __traits::int_type;
+  using pos_type = typename __traits::pos_type;
+  using off_type = typename __traits::off_type;
+  using traits_type = __traits;
 
   // The basic_ostream part does not initialize the shared basic_ios a second time.
-  explicit basic_iostream(basic_streambuf<charT, traits>* sb) : basic_istream<charT, traits>(sb) {}
+  explicit basic_iostream(basic_streambuf<__charT, __traits>* __sb) : basic_istream<__charT, __traits>(__sb) {}
   ~basic_iostream() override {}
 
 protected:
   basic_iostream(const basic_iostream&) = delete;
-  basic_iostream(basic_iostream&& rhs) : basic_istream<charT, traits>(static_cast<basic_istream<charT, traits>&&>(rhs)) {}
+  basic_iostream(basic_iostream&& __rhs) : basic_istream<__charT, __traits>(static_cast<basic_istream<__charT, __traits>&&>(__rhs)) {}
   basic_iostream& operator=(const basic_iostream&) = delete;
-  basic_iostream& operator=(basic_iostream&& rhs) {
-    swap(rhs);
+  basic_iostream& operator=(basic_iostream&& __rhs) {
+    swap(__rhs);
     return *this;
   }
-  void swap(basic_iostream& rhs) { basic_istream<charT, traits>::swap(rhs); }
+  void swap(basic_iostream& __rhs) { basic_istream<__charT, __traits>::swap(__rhs); }
 };
 
 // [string.io]
-template <class charT, class traits, class Allocator>
-basic_istream<charT, traits>& operator>>(basic_istream<charT, traits>& is, basic_string<charT, traits, Allocator>& str) {
-  ios_base::iostate err = ios_base::goodbit;
+template <class __charT, class __traits, class _Allocator>
+basic_istream<__charT, __traits>& operator>>(basic_istream<__charT, __traits>& is, basic_string<__charT, __traits, _Allocator>& str) {
+  ios_base::iostate __err = ios_base::goodbit;
   bool any = false;
-  if (typename basic_istream<charT, traits>::sentry ok{is}) {
-    ycxx::detail::guarded_io(is, [&] {
+  if (typename basic_istream<__charT, __traits>::sentry ok{is}) {
+    __ycxx::__detail::__guarded_io(is, [&] {
       str.erase();
-      const streamsize w = is.width();
-      using size_type = typename basic_string<charT, traits, Allocator>::size_type;
-      const size_type n = w > 0 ? static_cast<size_type>(w) : str.max_size();
-      const ctype<charT>& ct = use_facet<ctype<charT>>(ycxx::detail::ios_access::locale_of(is));
-      basic_streambuf<charT, traits>* sb = is.rdbuf();
+      const streamsize __w = is.width();
+      using size_type = typename basic_string<__charT, __traits, _Allocator>::size_type;
+      const size_type n = __w > 0 ? static_cast<size_type>(__w) : str.max_size();
+      const ctype<__charT>& __ct = use_facet<ctype<__charT>>(__ycxx::__detail::__ios_access::__locale_of(is));
+      basic_streambuf<__charT, __traits>* __sb = is.rdbuf();
       size_type count = 0;
-      for (typename traits::int_type c = sb->sgetc(); count < n; c = sb->snextc()) {
-        if (traits::eq_int_type(c, traits::eof())) {
-          err |= ios_base::eofbit;
+      for (typename __traits::int_type c = __sb->sgetc(); count < n; c = __sb->snextc()) {
+        if (__traits::eq_int_type(c, __traits::eof())) {
+          __err |= ios_base::eofbit;
           break;
         }
-        if (ct.is(ctype_base::space, traits::to_char_type(c)))
+        if (__ct.is(ctype_base::space, __traits::to_char_type(c)))
           break;
-        str.push_back(traits::to_char_type(c));
+        str.push_back(__traits::to_char_type(c));
         ++count;
       }
       any = count != 0;
@@ -716,114 +716,114 @@ basic_istream<charT, traits>& operator>>(basic_istream<charT, traits>& is, basic
     });
   }
   if (!any)
-    err |= ios_base::failbit;
-  if (err)
-    is.setstate(err);
+    __err |= ios_base::failbit;
+  if (__err)
+    is.setstate(__err);
   return is;
 }
 
-template <class charT, class traits, class Allocator>
-basic_istream<charT, traits>& getline(basic_istream<charT, traits>& is, basic_string<charT, traits, Allocator>& str,
-                                      charT delim) {
-  ios_base::iostate err = ios_base::goodbit;
+template <class __charT, class __traits, class _Allocator>
+basic_istream<__charT, __traits>& getline(basic_istream<__charT, __traits>& is, basic_string<__charT, __traits, _Allocator>& str,
+                                      __charT __delim) {
+  ios_base::iostate __err = ios_base::goodbit;
   bool any = false;
-  if (typename basic_istream<charT, traits>::sentry ok{is, true}) {
-    ycxx::detail::guarded_io(is, [&] {
+  if (typename basic_istream<__charT, __traits>::sentry ok{is, true}) {
+    __ycxx::__detail::__guarded_io(is, [&] {
       str.erase();
-      basic_streambuf<charT, traits>* sb = is.rdbuf();
-      for (typename traits::int_type c = sb->sgetc();; c = sb->snextc()) {
-        if (traits::eq_int_type(c, traits::eof())) {
-          err |= ios_base::eofbit;
+      basic_streambuf<__charT, __traits>* __sb = is.rdbuf();
+      for (typename __traits::int_type c = __sb->sgetc();; c = __sb->snextc()) {
+        if (__traits::eq_int_type(c, __traits::eof())) {
+          __err |= ios_base::eofbit;
           break;
         }
-        if (traits::eq(traits::to_char_type(c), delim)) {
-          sb->sbumpc();
+        if (__traits::__eq(__traits::to_char_type(c), __delim)) {
+          __sb->sbumpc();
           any = true;
           break;
         }
         if (str.size() == str.max_size()) {
-          err |= ios_base::failbit;
+          __err |= ios_base::failbit;
           break;
         }
-        str.push_back(traits::to_char_type(c));
+        str.push_back(__traits::to_char_type(c));
         any = true;
       }
     });
   }
   if (!any)
-    err |= ios_base::failbit;
-  if (err)
-    is.setstate(err);
+    __err |= ios_base::failbit;
+  if (__err)
+    is.setstate(__err);
   return is;
 }
-template <class charT, class traits, class Allocator>
-basic_istream<charT, traits>& getline(basic_istream<charT, traits>&& is, basic_string<charT, traits, Allocator>& str,
-                                      charT delim) {
-  return std::getline(is, str, delim);
+template <class __charT, class __traits, class _Allocator>
+basic_istream<__charT, __traits>& getline(basic_istream<__charT, __traits>&& is, basic_string<__charT, __traits, _Allocator>& str,
+                                      __charT __delim) {
+  return std::getline(is, str, __delim);
 }
-template <class charT, class traits, class Allocator>
-basic_istream<charT, traits>& getline(basic_istream<charT, traits>& is, basic_string<charT, traits, Allocator>& str) {
+template <class __charT, class __traits, class _Allocator>
+basic_istream<__charT, __traits>& getline(basic_istream<__charT, __traits>& is, basic_string<__charT, __traits, _Allocator>& str) {
   return std::getline(is, str, is.widen('\n'));
 }
-template <class charT, class traits, class Allocator>
-basic_istream<charT, traits>& getline(basic_istream<charT, traits>&& is, basic_string<charT, traits, Allocator>& str) {
+template <class __charT, class __traits, class _Allocator>
+basic_istream<__charT, __traits>& getline(basic_istream<__charT, __traits>&& is, basic_string<__charT, __traits, _Allocator>& str) {
   return std::getline(is, str, is.widen('\n'));
 }
 
 // [bitset.operators]
-template <class charT, class traits, size_t N>
-basic_istream<charT, traits>& operator>>(basic_istream<charT, traits>& is, bitset<N>& x) {
-  ios_base::iostate err = ios_base::goodbit;
-  basic_string<charT, traits> str;
-  const charT zero = is.widen('0'), one = is.widen('1');
-  if (typename basic_istream<charT, traits>::sentry ok{is}) {
-    ycxx::detail::guarded_io(is, [&] {
-      basic_streambuf<charT, traits>* sb = is.rdbuf();
-      for (typename traits::int_type c = sb->sgetc(); str.size() < N; c = sb->snextc()) {
-        if (traits::eq_int_type(c, traits::eof())) {
-          err |= ios_base::eofbit;
+template <class __charT, class __traits, size_t _Np>
+basic_istream<__charT, __traits>& operator>>(basic_istream<__charT, __traits>& is, bitset<_Np>& __x) {
+  ios_base::iostate __err = ios_base::goodbit;
+  basic_string<__charT, __traits> str;
+  const __charT zero = is.widen('0'), __one = is.widen('1');
+  if (typename basic_istream<__charT, __traits>::sentry ok{is}) {
+    __ycxx::__detail::__guarded_io(is, [&] {
+      basic_streambuf<__charT, __traits>* __sb = is.rdbuf();
+      for (typename __traits::int_type c = __sb->sgetc(); str.size() < _Np; c = __sb->snextc()) {
+        if (__traits::eq_int_type(c, __traits::eof())) {
+          __err |= ios_base::eofbit;
           break;
         }
-        const charT ch = traits::to_char_type(c);
-        if (!traits::eq(ch, zero) && !traits::eq(ch, one))
+        const __charT __ch = __traits::to_char_type(c);
+        if (!__traits::__eq(__ch, zero) && !__traits::__eq(__ch, __one))
           break;
-        str.push_back(ch);
+        str.push_back(__ch);
       }
     });
-    if (N > 0 && str.empty())
-      err |= ios_base::failbit;
+    if (_Np > 0 && str.empty())
+      __err |= ios_base::failbit;
     else
-      x = bitset<N>(str, 0, basic_string<charT, traits>::npos, zero, one);
+      __x = bitset<_Np>(str, 0, basic_string<__charT, __traits>::npos, zero, __one);
   }
-  if (err)
-    is.setstate(err);
+  if (__err)
+    is.setstate(__err);
   return is;
 }
 
 // [complex.ops]: a series of simpler extractions: u, (u) or (u,v). x changes only when a whole
 // number was read.
-template <class T>
+template <class _Tp>
 class complex;
-template <class T, class charT, class traits>
-basic_istream<charT, traits>& operator>>(basic_istream<charT, traits>& is, complex<T>& x) {
-  T re{}, im{};
-  charT ch{};
-  if (!(is >> ch))
+template <class _Tp, class __charT, class __traits>
+basic_istream<__charT, __traits>& operator>>(basic_istream<__charT, __traits>& is, complex<_Tp>& __x) {
+  _Tp __re{}, __im{};
+  __charT __ch{};
+  if (!(is >> __ch))
     return is;
-  if (!traits::eq(ch, is.widen('('))) {
-    is.putback(ch);
-    if (is >> re)
-      x = complex<T>(re, im);
+  if (!__traits::__eq(__ch, is.widen('('))) {
+    is.putback(__ch);
+    if (is >> __re)
+      __x = complex<_Tp>(__re, __im);
     return is;
   }
-  if (!(is >> re >> ch))
+  if (!(is >> __re >> __ch))
     return is;
-  if (traits::eq(ch, is.widen(','))) {
-    if (!(is >> im >> ch))
+  if (__traits::__eq(__ch, is.widen(','))) {
+    if (!(is >> __im >> __ch))
       return is;
   }
-  if (traits::eq(ch, is.widen(')')))
-    x = complex<T>(re, im);
+  if (__traits::__eq(__ch, is.widen(')')))
+    __x = complex<_Tp>(__re, __im);
   else
     is.setstate(ios_base::failbit);
   return is;

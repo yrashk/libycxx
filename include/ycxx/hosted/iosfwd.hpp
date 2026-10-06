@@ -10,52 +10,52 @@
 #include <ycxx/core/char_traits.hpp>
 #include <ycxx/core/iosfwd.hpp>
 
-namespace [[gnu::visibility("hidden")]] std {
+namespace [[__gnu__::__visibility__("hidden")]] std {
 
-template <class T>
+template <class _Tp>
 class allocator;
 
-template <class charT, class traits = char_traits<charT>>
+template <class __charT, class __traits = char_traits<__charT>>
 class basic_ios;
-template <class charT, class traits = char_traits<charT>>
+template <class __charT, class __traits = char_traits<__charT>>
 class basic_streambuf;
-template <class charT, class traits = char_traits<charT>>
+template <class __charT, class __traits = char_traits<__charT>>
 class basic_istream;
-template <class charT, class traits = char_traits<charT>>
+template <class __charT, class __traits = char_traits<__charT>>
 class basic_ostream;
-template <class charT, class traits = char_traits<charT>>
+template <class __charT, class __traits = char_traits<__charT>>
 class basic_iostream;
 
-template <class charT, class traits = char_traits<charT>, class Allocator = allocator<charT>>
+template <class __charT, class __traits = char_traits<__charT>, class _Allocator = allocator<__charT>>
 class basic_stringbuf;
-template <class charT, class traits = char_traits<charT>, class Allocator = allocator<charT>>
+template <class __charT, class __traits = char_traits<__charT>, class _Allocator = allocator<__charT>>
 class basic_istringstream;
-template <class charT, class traits = char_traits<charT>, class Allocator = allocator<charT>>
+template <class __charT, class __traits = char_traits<__charT>, class _Allocator = allocator<__charT>>
 class basic_ostringstream;
-template <class charT, class traits = char_traits<charT>, class Allocator = allocator<charT>>
+template <class __charT, class __traits = char_traits<__charT>, class _Allocator = allocator<__charT>>
 class basic_stringstream;
 
-template <class charT, class traits = char_traits<charT>>
+template <class __charT, class __traits = char_traits<__charT>>
 class basic_spanbuf;
-template <class charT, class traits = char_traits<charT>>
+template <class __charT, class __traits = char_traits<__charT>>
 class basic_ispanstream;
-template <class charT, class traits = char_traits<charT>>
+template <class __charT, class __traits = char_traits<__charT>>
 class basic_ospanstream;
-template <class charT, class traits = char_traits<charT>>
+template <class __charT, class __traits = char_traits<__charT>>
 class basic_spanstream;
 
-template <class charT, class traits = char_traits<charT>>
+template <class __charT, class __traits = char_traits<__charT>>
 class basic_filebuf;
-template <class charT, class traits = char_traits<charT>>
+template <class __charT, class __traits = char_traits<__charT>>
 class basic_ifstream;
-template <class charT, class traits = char_traits<charT>>
+template <class __charT, class __traits = char_traits<__charT>>
 class basic_ofstream;
-template <class charT, class traits = char_traits<charT>>
+template <class __charT, class __traits = char_traits<__charT>>
 class basic_fstream;
 
-template <class charT, class traits = char_traits<charT>, class Allocator = allocator<charT>>
+template <class __charT, class __traits = char_traits<__charT>, class _Allocator = allocator<__charT>>
 class basic_syncbuf;
-template <class charT, class traits = char_traits<charT>, class Allocator = allocator<charT>>
+template <class __charT, class __traits = char_traits<__charT>, class _Allocator = allocator<__charT>>
 class basic_osyncstream;
 
 using ios = basic_ios<char>;

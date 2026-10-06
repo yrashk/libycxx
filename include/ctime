@@ -20,11 +20,11 @@ extern "C" {
 
 // timespec_getres (C23 7.29.2.7) for C libraries without it, in the hosted runtime
 // (src/hosted/ctime.cpp): the resolution of TIME_UTC, from clock_getres(CLOCK_REALTIME).
-namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
-int c_timespec_getres(::timespec* ts, int base) noexcept;
-}} // namespace ycxx::detail
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+int __c_timespec_getres(::timespec* __ts, int base) noexcept;
+}} // namespace __ycxx::__detail
 
-namespace [[gnu::visibility("hidden")]] std {
+namespace [[__gnu__::__visibility__("hidden")]] std {
 using ::clock_t;
 using ::time_t;
 using ::tm;
@@ -42,15 +42,15 @@ using ::gmtime_r;
 using ::localtime;
 using ::localtime_r;
 using ::strftime;
-#if YCXX_C_HAS_TIMESPEC_GETRES
+#if _YCXX_C_HAS_TIMESPEC_GETRES
 using ::timespec_getres;
 #else
 // timespec_getres (C23 7.29.2.7), which this C library lacks: libycxx's own (src/hosted/ctime.cpp).
 // A template, as strfromd is: should the C library gain it, its ::timespec_getres wins unqualified
 // calls under `using namespace std;`.
 template <class = void>
-inline int timespec_getres(timespec* ts, int base) noexcept {
-  return ycxx::detail::c_timespec_getres(ts, base);
+inline int timespec_getres(timespec* __ts, int base) noexcept {
+  return __ycxx::__detail::__c_timespec_getres(__ts, base);
 }
 #endif
 } // namespace std

@@ -1,29 +1,29 @@
 // libycxx core: an assembler directive that hides one symbol (DECISIONS §2), for definitions the
 // compilers give default visibility whatever the source says: the initializers of the modules
-// std and std.compat (modules/std.cppm: `asm((ycxx::detail::hide_symbol("_ZGIW3std")));`; the
-// compilers emit them with default visibility, -fvisibility=hidden included). `.hidden` on ELF,
-// `.private_extern` on Mach-O, whose symbols carry the C prefix '_'.
+// std and std.compat (modules/std.cppm: `asm((__ycxx::__detail::__hide_symbol("_ZGIW3std")));`; the
+// compilers emit them with default visibility, -fvisibility=hidden included). `.__y_hidden` on ELF,
+// `.__private_extern` on Mach-O, whose symbols carry the C prefix '_'.
 #pragma once
 
 #include <ycxx/config.hpp>
 
-namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
 
-struct asm_text {
-  char text[128]{};
+struct __asm_text {
+  char __text[128]{};
   decltype(sizeof 0) length = 0;
-  constexpr const char* data() const noexcept { return text; }
+  constexpr const char* data() const noexcept { return __text; }
   constexpr decltype(sizeof 0) size() const noexcept { return length; }
 };
 
-consteval asm_text hide_symbol(const char* mangled) {
-  asm_text d;
-  for (const char* p = cfg::darwin ? ".private_extern _" : ".hidden "; *p; ++p)
-    d.text[d.length++] = *p;
-  for (; *mangled; ++mangled)
-    d.text[d.length++] = *mangled;
-  d.text[d.length++] = '\n';
+consteval __asm_text __hide_symbol(const char* __mangled) {
+  __asm_text d;
+  for (const char* p = __cfg::__darwin ? ".private_extern _" : ".hidden "; *p; ++p)
+    d.__text[d.length++] = *p;
+  for (; *__mangled; ++__mangled)
+    d.__text[d.length++] = *__mangled;
+  d.__text[d.length++] = '\n';
   return d;
 }
 
-}} // namespace ycxx::detail
+}} // namespace __ycxx::__detail

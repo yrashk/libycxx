@@ -5,174 +5,174 @@
 
 #include <ycxx/core/exec_adapt.hpp>
 
-namespace [[gnu::visibility("hidden")]] ycxx { namespace detail { namespace exec {
-template <class Sch>
-struct bind_scheduler : std::bool_constant<std::execution::scheduler<Sch>> {};
-}}} // namespace ycxx::detail::exec
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail { namespace __exec {
+template <class _Sch>
+struct __bind_scheduler : std::bool_constant<std::execution::scheduler<_Sch>> {};
+}}} // namespace __ycxx::__detail::__exec
 
 // ---------------------------------------------------------------------------------------------
 // [exec.schedule.from], [exec.continues.on]
-namespace [[gnu::visibility("hidden")]] std { namespace execution {
+namespace [[__gnu__::__visibility__("hidden")]] std { namespace execution {
 struct schedule_from_t {
-  template <sender Sndr>
-  constexpr auto operator()(Sndr&& sndr) const noexcept(is_nothrow_constructible_v<decay_t<Sndr>, Sndr>) {
-    return ycxx::detail::exec::make_sender(*this, ycxx::detail::exec::empty_data(), static_cast<Sndr&&>(sndr));
+  template <sender _Sndr>
+  constexpr auto operator()(_Sndr&& __sndr) const noexcept(is_nothrow_constructible_v<decay_t<_Sndr>, _Sndr>) {
+    return __ycxx::__detail::__exec::__make_sender(*this, __ycxx::__detail::__exec::__empty_data(), static_cast<_Sndr&&>(__sndr));
   }
 };
 inline constexpr schedule_from_t schedule_from{};
 struct continues_on_t;
 }} // namespace std::execution
 
-namespace [[gnu::visibility("hidden")]] ycxx { namespace detail { namespace exec {
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail { namespace __exec {
 
 // The completion signatures of schedule(sch) other than its value completion.
-template <class Sch, class... Env>
-struct schedule_non_value_sigs {
-  using CS = csigs_of_t<std::execution::schedule_result_t<Sch>, fwd_env_t<Env>...>;
-  template <class Sig>
-  using f = std::conditional_t<std::is_same_v<typename sig_tag<Sig>::type, set_value_t>, no_sigs, std::execution::completion_signatures<Sig>>;
-  using type = sigs_map_t<CS, f>;
+template <class _Sch, class... _Env>
+struct __schedule_non_value_sigs {
+  using _CS = __csigs_of_t<std::execution::schedule_result_t<_Sch>, __fwd_env_t<_Env>...>;
+  template <class _Sig>
+  using __f = std::conditional_t<std::is_same_v<typename __sig_tag<_Sig>::type, set_value_t>, __no_sigs, std::execution::completion_signatures<_Sig>>;
+  using type = __sigs_map_t<_CS, __f>;
 };
 
-template <class Sch, class ChildSigs, class... Env>
-struct continues_on_sigs {
-  static auto pick() {
-    using SchSigs = csigs_of_t<std::execution::schedule_result_t<Sch>, fwd_env_t<Env>...>;
-    if constexpr (!is_csigs<SchSigs>)
-      return std::type_identity<SchSigs>{};
-    else if constexpr (!is_csigs<ChildSigs>)
-      return std::type_identity<ChildSigs>{};
-    else if constexpr (!decay_copyable_sigs<ChildSigs>)
-      return std::type_identity<invalid_sigs<result_datums_not_decay_copyable, ChildSigs>>{};
+template <class _Sch, class _ChildSigs, class... _Env>
+struct __continues_on_sigs {
+  static auto __pick() {
+    using _SchSigs = __csigs_of_t<std::execution::schedule_result_t<_Sch>, __fwd_env_t<_Env>...>;
+    if constexpr (!__is_csigs<_SchSigs>)
+      return std::type_identity<_SchSigs>{};
+    else if constexpr (!__is_csigs<_ChildSigs>)
+      return std::type_identity<_ChildSigs>{};
+    else if constexpr (!__decay_copyable_sigs<_ChildSigs>)
+      return std::type_identity<__invalid_sigs<__result_datums_not_decay_copyable, _ChildSigs>>{};
     else
-      return std::type_identity<sigs_concat_t<sigs_map_t<ChildSigs, decayed_sig_t>,
-                                              std::conditional_t<nothrow_decay_copy_sigs<ChildSigs>, no_sigs, eptr_sigs>,
-                                              typename schedule_non_value_sigs<Sch, Env...>::type>>{};
+      return std::type_identity<__sigs_concat_t<__sigs_map_t<_ChildSigs, __decayed_sig_t>,
+                                              std::conditional_t<__nothrow_decay_copy_sigs<_ChildSigs>, __no_sigs, __eptr_sigs>,
+                                              typename __schedule_non_value_sigs<_Sch, _Env...>::type>>{};
   }
-  using type = typename decltype(pick())::type;
+  using type = typename decltype(__pick())::type;
 };
 
-template <class Sig>
-struct as_tuple_of_sig;
-template <class Tag, class... Args>
-struct as_tuple_of_sig<Tag(Args...)> {
-  using type = decayed_tuple<Tag, Args...>;
+template <class _Sig>
+struct __as_tuple_of_sig;
+template <class _Tag, class... _Args>
+struct __as_tuple_of_sig<_Tag(_Args...)> {
+  using type = __decayed_tuple<_Tag, _Args...>;
 };
-template <class CS>
-struct continues_on_variant;
-template <class... Sigs>
-struct continues_on_variant<std::execution::completion_signatures<Sigs...>> {
+template <class _CS>
+struct __continues_on_variant;
+template <class... _Sigs>
+struct __continues_on_variant<std::execution::completion_signatures<_Sigs...>> {
   using type = std::conditional_t<
-      (nothrow_decay_copy_sig<Sigs> && ...),
-      apply_unique_t<std::variant, std::monostate, typename as_tuple_of_sig<Sigs>::type...>,
-      apply_unique_t<std::variant, std::monostate, typename as_tuple_of_sig<Sigs>::type..., std::tuple<set_error_t, std::exception_ptr>>>;
+      (__nothrow_decay_copy_sig<_Sigs> && ...),
+      __apply_unique_t<std::variant, std::monostate, typename __as_tuple_of_sig<_Sigs>::type...>,
+      __apply_unique_t<std::variant, std::monostate, typename __as_tuple_of_sig<_Sigs>::type..., std::tuple<set_error_t, std::exception_ptr>>>;
 };
-}}} // namespace ycxx::detail::exec
+}}} // namespace __ycxx::__detail::__exec
 
-namespace [[gnu::visibility("hidden")]] ycxx { namespace adl_free {
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __adl_free {
 // The state of continues_on ([exec.continues.on]/5): the child's result, kept until the schedule
 // operation completes.
-template <class Sch, class Child, class Rcvr>
-struct exec_continues_on_state {
-  using variant_t =
-      typename ::ycxx::detail::exec::continues_on_variant<std::execution::completion_signatures_of_t<Child, ::ycxx::detail::exec::fwd_env_t<std::execution::env_of_t<Rcvr>>>>::type;
+template <class _Sch, class _Child, class _Rcvr>
+struct __exec_continues_on_state {
+  using __variant_t =
+      typename ::__ycxx::__detail::__exec::__continues_on_variant<std::execution::__completion_signatures_of_t<_Child, ::__ycxx::__detail::__exec::__fwd_env_t<std::execution::env_of_t<_Rcvr>>>>::type;
 
-  Rcvr& rcvr;
-  variant_t async_result;
+  _Rcvr& __rcvr;
+  __variant_t __async_result;
 
-  struct receiver_t {
+  struct __receiver_t {
     using receiver_concept = std::execution::receiver_tag;
-    exec_continues_on_state* state;
+    __exec_continues_on_state* state;
     void set_value() && noexcept {
       std::visit(
-          [this]<class Tuple>(Tuple& result) noexcept -> void {
-            if constexpr (!std::is_same_v<std::monostate, Tuple>) {
+          [this]<class _Tuple>(_Tuple& result) noexcept -> void {
+            if constexpr (!std::is_same_v<std::monostate, _Tuple>) {
               std::apply(
-                  [this](auto& tag, auto&... args) noexcept {
-                    tag(static_cast<Rcvr&&>(state->rcvr), static_cast<std::remove_reference_t<decltype(args)>&&>(args)...);
+                  [this](auto& tag, auto&... __args) noexcept {
+                    tag(static_cast<_Rcvr&&>(state->__rcvr), static_cast<std::remove_reference_t<decltype(__args)>&&>(__args)...);
                   },
                   result);
             }
           },
-          state->async_result);
+          state->__async_result);
     }
-    template <class Error>
-    void set_error(Error&& err) && noexcept {
-      std::execution::set_error(static_cast<Rcvr&&>(state->rcvr), static_cast<Error&&>(err));
+    template <class _Error>
+    void set_error(_Error&& __err) && noexcept {
+      std::execution::set_error(static_cast<_Rcvr&&>(state->__rcvr), static_cast<_Error&&>(__err));
     }
-    void set_stopped() && noexcept { std::execution::set_stopped(static_cast<Rcvr&&>(state->rcvr)); }
-    decltype(auto) get_env() const noexcept { return ::ycxx::detail::exec::fwd_env(std::execution::get_env(state->rcvr)); }
+    void set_stopped() && noexcept { std::execution::set_stopped(static_cast<_Rcvr&&>(state->__rcvr)); }
+    decltype(auto) get_env() const noexcept { return ::__ycxx::__detail::__exec::__fwd_env(std::execution::get_env(state->__rcvr)); }
   };
-  using operation_t = std::execution::connect_result_t<std::execution::schedule_result_t<Sch&>, receiver_t>;
+  using __operation_t = std::execution::connect_result_t<std::execution::schedule_result_t<_Sch&>, __receiver_t>;
 
-  operation_t op_state;
+  __operation_t __op_state;
 
-  explicit exec_continues_on_state(Sch& sch, Rcvr& r) noexcept(
-      std::is_nothrow_invocable_v<std::execution::connect_t, std::execution::schedule_result_t<Sch&>, receiver_t>)
-      : rcvr(r), op_state(std::execution::connect(std::execution::schedule(sch), receiver_t{this})) {}
-  exec_continues_on_state(exec_continues_on_state&&) = delete;
+  explicit __exec_continues_on_state(_Sch& __sch, _Rcvr& r) noexcept(
+      std::is_nothrow_invocable_v<std::execution::connect_t, std::execution::schedule_result_t<_Sch&>, __receiver_t>)
+      : __rcvr(r), __op_state(std::execution::connect(std::execution::schedule(__sch), __receiver_t{this})) {}
+  __exec_continues_on_state(__exec_continues_on_state&&) = delete;
 };
-}} // namespace ycxx::adl_free
+}} // namespace __ycxx::__adl_free
 
-namespace [[gnu::visibility("hidden")]] ycxx { namespace detail { namespace exec {
-template <class Sch>
-struct continues_on_attrs {
-  Sch sch;
-  template <class... Envs>
-  constexpr auto query(std::execution::get_completion_scheduler_t<set_value_t>, const Envs&... envs) const noexcept {
-    if constexpr (sizeof...(Envs) != 0)
-      return std::execution::get_completion_scheduler<set_value_t>(sch, envs...);
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail { namespace __exec {
+template <class _Sch>
+struct __continues_on_attrs {
+  _Sch __sch;
+  template <class... _Envs>
+  constexpr auto query(std::execution::get_completion_scheduler_t<set_value_t>, const _Envs&... __envs) const noexcept {
+    if constexpr (sizeof...(_Envs) != 0)
+      return std::execution::get_completion_scheduler<set_value_t>(__sch, __envs...);
     else
-      return sch;
+      return __sch;
   }
-  template <class... Envs>
-    requires requires(const Sch& s, const Envs&... e) { std::execution::get_completion_domain<set_value_t>(s, e...); }
-  constexpr auto query(std::execution::get_completion_domain_t<set_value_t>, const Envs&... envs) const noexcept {
-    return std::execution::get_completion_domain<set_value_t>(sch, envs...);
+  template <class... _Envs>
+    requires requires(const _Sch& s, const _Envs&... e) { std::execution::get_completion_domain<set_value_t>(s, e...); }
+  constexpr auto query(std::execution::get_completion_domain_t<set_value_t>, const _Envs&... __envs) const noexcept {
+    return std::execution::get_completion_domain<set_value_t>(__sch, __envs...);
   }
 };
 
 template <>
-struct impls_for<std::execution::continues_on_t> : default_impls {
-  template <class Sch, class Child>
-  static constexpr auto get_attrs(const Sch& sch, const Child&) noexcept {
-    return continues_on_attrs<Sch>{sch};
+struct __impls_for<std::execution::continues_on_t> : __default_impls {
+  template <class _Sch, class _Child>
+  static constexpr auto __get_attrs(const _Sch& __sch, const _Child&) noexcept {
+    return __continues_on_attrs<_Sch>{__sch};
   }
-  template <class Sndr, class Rcvr>
-    requires std::execution::sender_in<child_type<Sndr>, fwd_env_t<std::execution::env_of_t<Rcvr>>>
-  static constexpr auto get_state(Sndr&& sndr, Rcvr& rcvr) noexcept(
-      std::is_nothrow_constructible_v<::ycxx::adl_free::exec_continues_on_state<std::decay_t<data_type<Sndr>>, child_type<Sndr>, Rcvr>,
-                                      std::decay_t<data_type<Sndr>>&, Rcvr&>) {
-    using sched_t = std::decay_t<data_type<Sndr>>;
-    auto sch = static_cast<Sndr&&>(sndr).template get<1>();
-    return ::ycxx::adl_free::exec_continues_on_state<sched_t, child_type<Sndr>, Rcvr>(sch, rcvr);
+  template <class _Sndr, class _Rcvr>
+    requires std::execution::sender_in<__child_type<_Sndr>, __fwd_env_t<std::execution::env_of_t<_Rcvr>>>
+  static constexpr auto __get_state(_Sndr&& __sndr, _Rcvr& __rcvr) noexcept(
+      std::is_nothrow_constructible_v<::__ycxx::__adl_free::__exec_continues_on_state<std::decay_t<__data_type<_Sndr>>, __child_type<_Sndr>, _Rcvr>,
+                                      std::decay_t<__data_type<_Sndr>>&, _Rcvr&>) {
+    using __sched_t = std::decay_t<__data_type<_Sndr>>;
+    auto __sch = static_cast<_Sndr&&>(__sndr).template get<1>();
+    return ::__ycxx::__adl_free::__exec_continues_on_state<__sched_t, __child_type<_Sndr>, _Rcvr>(__sch, __rcvr);
   }
-  template <class Index, class State, class Rcvr, class Tag, class... Args>
-  static constexpr void complete(Index, State& state, Rcvr&, Tag, Args&&... args) noexcept {
-    using result_t = decayed_tuple<Tag, Args...>;
-    constexpr bool nothrow = (std::is_nothrow_constructible_v<std::decay_t<Args>, Args> && ...);
-    if constexpr (nothrow || !cfg::exceptions) {
-      state.async_result.template emplace<result_t>(Tag(), static_cast<Args&&>(args)...);
+  template <class _Index, class _State, class _Rcvr, class _Tag, class... _Args>
+  static constexpr void complete(_Index, _State& state, _Rcvr&, _Tag, _Args&&... __args) noexcept {
+    using __result_t = __decayed_tuple<_Tag, _Args...>;
+    constexpr bool nothrow = (std::is_nothrow_constructible_v<std::decay_t<_Args>, _Args> && ...);
+    if constexpr (nothrow || !__cfg::exceptions) {
+      state.__async_result.template emplace<__result_t>(_Tag(), static_cast<_Args&&>(__args)...);
     } else {
       try {
-        state.async_result.template emplace<result_t>(Tag(), static_cast<Args&&>(args)...);
+        state.__async_result.template emplace<__result_t>(_Tag(), static_cast<_Args&&>(__args)...);
       } catch (...) {
-        state.async_result.template emplace<std::tuple<set_error_t, std::exception_ptr>>(std::execution::set_error, std::current_exception());
+        state.__async_result.template emplace<std::tuple<set_error_t, std::exception_ptr>>(std::execution::set_error, std::current_exception());
       }
     }
-    std::execution::start(state.op_state);
+    std::execution::start(state.__op_state);
   }
-  template <class Sndr, class... Env>
-  using csigs = typename continues_on_sigs<std::decay_t<data_type<Sndr>>, child_sigs_t<Sndr, Env...>, Env...>::type;
+  template <class _Sndr, class... _Env>
+  using __csigs = typename __continues_on_sigs<std::decay_t<__data_type<_Sndr>>, __child_sigs_t<_Sndr, _Env...>, _Env...>::type;
 };
-}}} // namespace ycxx::detail::exec
+}}} // namespace __ycxx::__detail::__exec
 
-namespace [[gnu::visibility("hidden")]] std { namespace execution {
-struct continues_on_t : ycxx::detail::exec::pipeable_adaptor<continues_on_t, 1, ycxx::detail::exec::bind_scheduler> {
-  using ycxx::detail::exec::pipeable_adaptor<continues_on_t, 1, ycxx::detail::exec::bind_scheduler>::operator();
-  template <sender Sndr, scheduler Sch>
-  constexpr auto operator()(Sndr&& sndr, Sch&& sch) const {
-    return ycxx::detail::exec::make_sender(*this, static_cast<Sch&&>(sch), schedule_from(static_cast<Sndr&&>(sndr)));
+namespace [[__gnu__::__visibility__("hidden")]] std { namespace execution {
+struct continues_on_t : __ycxx::__detail::__exec::__pipeable_adaptor<continues_on_t, 1, __ycxx::__detail::__exec::__bind_scheduler> {
+  using __ycxx::__detail::__exec::__pipeable_adaptor<continues_on_t, 1, __ycxx::__detail::__exec::__bind_scheduler>::operator();
+  template <sender _Sndr, scheduler _Sch>
+  constexpr auto operator()(_Sndr&& __sndr, _Sch&& __sch) const {
+    return __ycxx::__detail::__exec::__make_sender(*this, static_cast<_Sch&&>(__sch), schedule_from(static_cast<_Sndr&&>(__sndr)));
   }
 };
 inline constexpr continues_on_t continues_on{};
@@ -180,475 +180,475 @@ inline constexpr continues_on_t continues_on{};
 
 // ---------------------------------------------------------------------------------------------
 // [exec.starts.on], [exec.on]
-namespace [[gnu::visibility("hidden")]] std { namespace execution {
+namespace [[__gnu__::__visibility__("hidden")]] std { namespace execution {
 struct starts_on_t {
-  template <scheduler Sch, sender Sndr>
-  constexpr auto operator()(Sch&& sch, Sndr&& sndr) const {
-    return ycxx::detail::exec::make_sender(*this, static_cast<Sch&&>(sch), static_cast<Sndr&&>(sndr));
+  template <scheduler _Sch, sender _Sndr>
+  constexpr auto operator()(_Sch&& __sch, _Sndr&& __sndr) const {
+    return __ycxx::__detail::__exec::__make_sender(*this, static_cast<_Sch&&>(__sch), static_cast<_Sndr&&>(__sndr));
   }
-  template <class OutSndr, class Env>
-    requires is_same_v<tag_of_t<OutSndr>, starts_on_t>
-  static constexpr auto transform_sender(set_value_t, OutSndr&& out_sndr, const Env&) {
-    using S = decay_t<ycxx::detail::exec::child_type<OutSndr>>;
-    return let_value(continues_on(just(), static_cast<OutSndr&&>(out_sndr).template get<1>()),
-                     [sndr = static_cast<OutSndr&&>(out_sndr).template get<2>()]() mutable noexcept(is_nothrow_move_constructible_v<S>) {
-                       return static_cast<S&&>(sndr);
+  template <class _OutSndr, class _Env>
+    requires is_same_v<__tag_of_t<_OutSndr>, starts_on_t>
+  static constexpr auto transform_sender(set_value_t, _OutSndr&& __out_sndr, const _Env&) {
+    using _Sp = decay_t<__ycxx::__detail::__exec::__child_type<_OutSndr>>;
+    return let_value(continues_on(just(), static_cast<_OutSndr&&>(__out_sndr).template get<1>()),
+                     [__sndr = static_cast<_OutSndr&&>(__out_sndr).template get<2>()]() mutable noexcept(is_nothrow_move_constructible_v<_Sp>) {
+                       return static_cast<_Sp&&>(__sndr);
                      });
   }
 };
 inline constexpr starts_on_t starts_on{};
 }} // namespace std::execution
 
-namespace [[gnu::visibility("hidden")]] ycxx { namespace detail { namespace exec {
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail { namespace __exec {
 template <>
-struct impls_for<std::execution::starts_on_t> : default_impls {
-  template <class Sndr, class... Env>
-  using csigs = sigs_concat_t<child_sigs_t<Sndr, Env...>, typename schedule_non_value_sigs<std::decay_t<data_type<Sndr>>, Env...>::type>;
+struct __impls_for<std::execution::starts_on_t> : __default_impls {
+  template <class _Sndr, class... _Env>
+  using __csigs = __sigs_concat_t<__child_sigs_t<_Sndr, _Env...>, typename __schedule_non_value_sigs<std::decay_t<__data_type<_Sndr>>, _Env...>::type>;
 };
-}}} // namespace ycxx::detail::exec
+}}} // namespace __ycxx::__detail::__exec
 
-namespace [[gnu::visibility("hidden")]] std { namespace execution {
+namespace [[__gnu__::__visibility__("hidden")]] std { namespace execution {
 struct on_t {
-  template <scheduler Sch, sender Sndr>
-    requires(!ycxx::detail::exec::pipeable_closure<Sndr>)
-  constexpr auto operator()(Sch&& sch, Sndr&& sndr) const {
-    return ycxx::detail::exec::make_sender(*this, static_cast<Sch&&>(sch), static_cast<Sndr&&>(sndr));
+  template <scheduler _Sch, sender _Sndr>
+    requires(!__ycxx::__detail::__exec::__pipeable_closure<_Sndr>)
+  constexpr auto operator()(_Sch&& __sch, _Sndr&& __sndr) const {
+    return __ycxx::__detail::__exec::__make_sender(*this, static_cast<_Sch&&>(__sch), static_cast<_Sndr&&>(__sndr));
   }
-  template <sender Sndr, scheduler Sch, ycxx::detail::exec::pipeable_closure Closure>
-  constexpr auto operator()(Sndr&& sndr, Sch&& sch, Closure&& closure) const {
-    return ycxx::detail::exec::make_sender(*this, ycxx::detail::exec::make_product(static_cast<Sch&&>(sch), static_cast<Closure&&>(closure)),
-                                           static_cast<Sndr&&>(sndr));
+  template <sender _Sndr, scheduler _Sch, __ycxx::__detail::__exec::__pipeable_closure _Closure>
+  constexpr auto operator()(_Sndr&& __sndr, _Sch&& __sch, _Closure&& __closure) const {
+    return __ycxx::__detail::__exec::__make_sender(*this, __ycxx::__detail::__exec::__make_product(static_cast<_Sch&&>(__sch), static_cast<_Closure&&>(__closure)),
+                                           static_cast<_Sndr&&>(__sndr));
   }
   // on(sch, closure): the pipeable partial application of on(sndr, sch, closure).
-  template <scheduler Sch, ycxx::detail::exec::pipeable_closure Closure>
-    requires(!sender<Closure>)
-  constexpr auto operator()(Sch&& sch, Closure&& closure) const {
-    return ycxx::detail::exec::bind_closure(*this, static_cast<Sch&&>(sch), static_cast<Closure&&>(closure));
+  template <scheduler _Sch, __ycxx::__detail::__exec::__pipeable_closure _Closure>
+    requires(!sender<_Closure>)
+  constexpr auto operator()(_Sch&& __sch, _Closure&& __closure) const {
+    return __ycxx::__detail::__exec::__bind_closure(*this, static_cast<_Sch&&>(__sch), static_cast<_Closure&&>(__closure));
   }
 
-  template <class OutSndr, class Env>
-    requires is_same_v<tag_of_t<OutSndr>, on_t>
-  static constexpr auto transform_sender(set_value_t, OutSndr&& out_sndr, const Env& env) {
-    auto&& data = static_cast<OutSndr&&>(out_sndr).template get<1>();
-    auto&& child = static_cast<OutSndr&&>(out_sndr).template get<2>();
+  template <class _OutSndr, class _Env>
+    requires is_same_v<__tag_of_t<_OutSndr>, on_t>
+  static constexpr auto transform_sender(set_value_t, _OutSndr&& __out_sndr, const _Env& env) {
+    auto&& data = static_cast<_OutSndr&&>(__out_sndr).template get<1>();
+    auto&& __child = static_cast<_OutSndr&&>(__out_sndr).template get<2>();
     if constexpr (scheduler<decltype(data)>) {
-      auto orig_sch = ycxx::detail::exec::call_with_default(get_start_scheduler, ycxx::adl_free::exec_not_a_scheduler(), env);
-      return continues_on(starts_on(std::forward_like<OutSndr>(data), std::forward_like<OutSndr>(child)), static_cast<decltype(orig_sch)&&>(orig_sch));
+      auto __orig_sch = __ycxx::__detail::__exec::__call_with_default(get_start_scheduler, __ycxx::__adl_free::__exec_not_a_scheduler(), env);
+      return continues_on(starts_on(std::forward_like<_OutSndr>(data), std::forward_like<_OutSndr>(__child)), static_cast<decltype(__orig_sch)&&>(__orig_sch));
     } else {
-      auto orig_sch = ycxx::detail::exec::call_with_default(get_completion_scheduler<set_value_t>, ycxx::adl_free::exec_not_a_scheduler(),
-                                                            get_env(child), env);
-      return continues_on(std::forward_like<OutSndr>(data.template get<1>())(
-                              continues_on(std::forward_like<OutSndr>(child), std::forward_like<OutSndr>(data.template get<0>()))),
-                          static_cast<decltype(orig_sch)&&>(orig_sch));
+      auto __orig_sch = __ycxx::__detail::__exec::__call_with_default(get_completion_scheduler<set_value_t>, __ycxx::__adl_free::__exec_not_a_scheduler(),
+                                                            get_env(__child), env);
+      return continues_on(std::forward_like<_OutSndr>(data.template get<1>())(
+                              continues_on(std::forward_like<_OutSndr>(__child), std::forward_like<_OutSndr>(data.template get<0>()))),
+                          static_cast<decltype(__orig_sch)&&>(__orig_sch));
     }
   }
 };
 inline constexpr on_t on{};
 }} // namespace std::execution
 
-namespace [[gnu::visibility("hidden")]] ycxx { namespace detail { namespace exec {
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail { namespace __exec {
 // on's completions depend on the scheduler the receiver's environment names; it is always
 // transformed (to continues_on/starts_on) before it is connected.
 template <>
-struct impls_for<std::execution::on_t> : default_impls {
-  template <class Sndr, class... Env>
-  struct sigs {
-    using type = dependent_sigs;
+struct __impls_for<std::execution::on_t> : __default_impls {
+  template <class _Sndr, class... _Env>
+  struct __sigs {
+    using type = __dependent_sigs;
   };
-  template <class Sndr, class Env>
-  struct sigs<Sndr, Env> {
-    using type = invalid_sigs<environment_has_no_start_scheduler, Sndr, Env>;
+  template <class _Sndr, class _Env>
+  struct __sigs<_Sndr, _Env> {
+    using type = __invalid_sigs<__environment_has_no_start_scheduler, _Sndr, _Env>;
   };
-  template <class Sndr, class... Env>
-  using csigs = typename sigs<Sndr, Env...>::type;
+  template <class _Sndr, class... _Env>
+  using __csigs = typename __sigs<_Sndr, _Env...>::type;
 };
-}}} // namespace ycxx::detail::exec
+}}} // namespace __ycxx::__detail::__exec
 
 // ---------------------------------------------------------------------------------------------
 // [exec.affine]
-namespace [[gnu::visibility("hidden")]] ycxx { namespace adl_free {
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __adl_free {
 // UNSTOPPABLE-SCHEDULER(sch) ([exec.affine]/4)
-template <class Sch>
-struct exec_unstoppable_scheduler {
+template <class _Sch>
+struct __exec_unstoppable_scheduler {
   using scheduler_concept = std::execution::scheduler_tag;
-  Sch sch;
-  constexpr auto schedule() const noexcept(noexcept(std::execution::unstoppable(std::execution::schedule(sch)))) {
-    return std::execution::unstoppable(std::execution::schedule(sch));
+  _Sch __sch;
+  constexpr auto schedule() const noexcept(noexcept(std::execution::unstoppable(std::execution::schedule(__sch)))) {
+    return std::execution::unstoppable(std::execution::schedule(__sch));
   }
-  template <class Q, class... As>
-    requires requires(const Sch& s, Q q, As&&... as) { s.query(q, static_cast<As&&>(as)...); }
-  constexpr decltype(auto) query(Q q, As&&... as) const noexcept(noexcept(sch.query(q, static_cast<As&&>(as)...))) {
-    return sch.query(q, static_cast<As&&>(as)...);
+  template <class _Qp, class... _As>
+    requires requires(const _Sch& s, _Qp __q, _As&&... __as) { s.query(__q, static_cast<_As&&>(__as)...); }
+  constexpr decltype(auto) query(_Qp __q, _As&&... __as) const noexcept(noexcept(__sch.query(__q, static_cast<_As&&>(__as)...))) {
+    return __sch.query(__q, static_cast<_As&&>(__as)...);
   }
-  friend constexpr bool operator==(const exec_unstoppable_scheduler& a, const exec_unstoppable_scheduler& b) noexcept {
-    return a.sch == b.sch;
+  friend constexpr bool operator==(const __exec_unstoppable_scheduler& a, const __exec_unstoppable_scheduler& b) noexcept {
+    return a.__sch == b.__sch;
   }
 };
-}} // namespace ycxx::adl_free
+}} // namespace __ycxx::__adl_free
 
-namespace [[gnu::visibility("hidden")]] ycxx { namespace detail { namespace exec {
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail { namespace __exec {
 // infallible-scheduler<Sch, Env> ([exec.sched]/8)
-template <class Sch, class Env>
-concept infallible_scheduler =
-    std::execution::scheduler<Sch> &&
-    (std::same_as<std::execution::completion_signatures<set_value_t()>, csigs_of_t<decltype(std::execution::schedule(std::declval<Sch>())), Env>> ||
-     (!std::unstoppable_token<std::stop_token_of_t<Env>> &&
+template <class _Sch, class _Env>
+concept __infallible_scheduler =
+    std::execution::scheduler<_Sch> &&
+    (std::same_as<std::execution::completion_signatures<set_value_t()>, __csigs_of_t<decltype(std::execution::schedule(std::declval<_Sch>())), _Env>> ||
+     (!std::unstoppable_token<std::__stop_token_of_t<_Env>> &&
       (std::same_as<std::execution::completion_signatures<set_value_t(), set_stopped_t()>,
-                    csigs_of_t<decltype(std::execution::schedule(std::declval<Sch>())), Env>> ||
+                    __csigs_of_t<decltype(std::execution::schedule(std::declval<_Sch>())), _Env>> ||
        std::same_as<std::execution::completion_signatures<set_stopped_t(), set_value_t()>,
-                    csigs_of_t<decltype(std::execution::schedule(std::declval<Sch>())), Env>>)));
+                    __csigs_of_t<decltype(std::execution::schedule(std::declval<_Sch>())), _Env>>)));
 
-template <class Child>
-concept has_affine_member = requires(Child&& c) { static_cast<Child&&>(c).affine(); };
+template <class _Child>
+concept __has_affine_member = requires(_Child&& c) { static_cast<_Child&&>(c).affine(); };
 
-template <class Sndr, class... Env>
-struct affine_sigs {
-  static auto pick() {
-    using Child = child_type<Sndr>;
-    if constexpr (has_affine_member<Child>) {
-      return std::type_identity<csigs_of_t<decltype(std::declval<Child>().affine()), Env...>>{};
-    } else if constexpr (sizeof...(Env) == 0) {
-      return std::type_identity<dependent_sigs>{};
-    } else if constexpr (!requires(const Env...[0]& e) { std::execution::get_start_scheduler(e); }) {
-      return std::type_identity<invalid_sigs<environment_has_no_start_scheduler, Sndr, Env...>>{};
+template <class _Sndr, class... _Env>
+struct __affine_sigs {
+  static auto __pick() {
+    using _Child = __child_type<_Sndr>;
+    if constexpr (__has_affine_member<_Child>) {
+      return std::type_identity<__csigs_of_t<decltype(std::declval<_Child>().affine()), _Env...>>{};
+    } else if constexpr (sizeof...(_Env) == 0) {
+      return std::type_identity<__dependent_sigs>{};
+    } else if constexpr (!requires(const _Env...[0]& e) { std::execution::get_start_scheduler(e); }) {
+      return std::type_identity<__invalid_sigs<__environment_has_no_start_scheduler, _Sndr, _Env...>>{};
     } else {
-      return std::type_identity<invalid_sigs<start_scheduler_is_not_infallible, Sndr, Env...>>{};
+      return std::type_identity<__invalid_sigs<__start_scheduler_is_not_infallible, _Sndr, _Env...>>{};
     }
   }
-  using type = typename decltype(pick())::type;
+  using type = typename decltype(__pick())::type;
 };
 
-}}} // namespace ycxx::detail::exec
+}}} // namespace __ycxx::__detail::__exec
 
-namespace [[gnu::visibility("hidden")]] std { namespace execution {
+namespace [[__gnu__::__visibility__("hidden")]] std { namespace execution {
 struct affine_t : sender_adaptor_closure<affine_t> {
-  template <sender Sndr>
-  constexpr auto operator()(Sndr&& sndr) const {
-    return ycxx::detail::exec::make_sender(*this, env<>(), static_cast<Sndr&&>(sndr));
+  template <sender _Sndr>
+  constexpr auto operator()(_Sndr&& __sndr) const {
+    return __ycxx::__detail::__exec::__make_sender(*this, env<>(), static_cast<_Sndr&&>(__sndr));
   }
   // [exec.affine]/5 (a set_value transformation, like the other lowered adaptors). Without a
   // start scheduler that is infallible in the environment, the sender stays as it is and its
   // completion signatures report the error ([exec.affine]/7).
-  template <class Sndr, class Env>
-    requires is_same_v<tag_of_t<Sndr>, affine_t> &&
-             (ycxx::detail::exec::has_affine_member<ycxx::detail::exec::child_type<Sndr>> ||
-              requires(const Env& ev) {
-                requires ycxx::detail::exec::infallible_scheduler<decltype(get_start_scheduler(ev)), Env>;
+  template <class _Sndr, class _Env>
+    requires is_same_v<__tag_of_t<_Sndr>, affine_t> &&
+             (__ycxx::__detail::__exec::__has_affine_member<__ycxx::__detail::__exec::__child_type<_Sndr>> ||
+              requires(const _Env& __ev) {
+                requires __ycxx::__detail::__exec::__infallible_scheduler<decltype(get_start_scheduler(__ev)), _Env>;
               })
-  static constexpr auto transform_sender(set_value_t, Sndr&& sndr, const Env& ev) {
-    if constexpr (ycxx::detail::exec::has_affine_member<ycxx::detail::exec::child_type<Sndr>>) {
-      return static_cast<Sndr&&>(sndr).template get<2>().affine();
+  static constexpr auto transform_sender(set_value_t, _Sndr&& __sndr, const _Env& __ev) {
+    if constexpr (__ycxx::__detail::__exec::__has_affine_member<__ycxx::__detail::__exec::__child_type<_Sndr>>) {
+      return static_cast<_Sndr&&>(__sndr).template get<2>().affine();
     } else {
-      using S = decay_t<decltype(get_start_scheduler(ev))>;
-      return continues_on(static_cast<Sndr&&>(sndr).template get<2>(), ycxx::adl_free::exec_unstoppable_scheduler<S>{get_start_scheduler(ev)});
+      using _Sp = decay_t<decltype(get_start_scheduler(__ev))>;
+      return continues_on(static_cast<_Sndr&&>(__sndr).template get<2>(), __ycxx::__adl_free::__exec_unstoppable_scheduler<_Sp>{get_start_scheduler(__ev)});
     }
   }
 };
 inline constexpr affine_t affine{};
 }} // namespace std::execution
 
-namespace [[gnu::visibility("hidden")]] ycxx { namespace detail { namespace exec {
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail { namespace __exec {
 template <>
-struct impls_for<std::execution::affine_t> : default_impls {
-  template <class Sndr, class... Env>
-  using csigs = typename affine_sigs<Sndr, Env...>::type;
+struct __impls_for<std::execution::affine_t> : __default_impls {
+  template <class _Sndr, class... _Env>
+  using __csigs = typename __affine_sigs<_Sndr, _Env...>::type;
 };
-}}} // namespace ycxx::detail::exec
+}}} // namespace __ycxx::__detail::__exec
 
 // ---------------------------------------------------------------------------------------------
 // [exec.when.all]
-namespace [[gnu::visibility("hidden")]] ycxx { namespace adl_free {
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __adl_free {
 // make-when-all-env(stop_src, env) ([exec.when.all]/5)
-template <class Env>
-struct exec_when_all_env {
-  const std::inplace_stop_source* stop_src;
-  Env env;
-  std::inplace_stop_token query(std::get_stop_token_t) const noexcept { return stop_src->get_token(); }
-  template <::ycxx::detail::exec::forwarding_query_c Q, class... As>
-    requires(!std::is_same_v<Q, std::get_stop_token_t>) && ::ycxx::detail::exec::has_query<std::remove_cvref_t<Env>, Q, As...>
-  constexpr decltype(auto) query(Q q, As&&... as) const
-      noexcept(noexcept(::ycxx::detail::exec::as_const_ref(env).query(q, static_cast<As&&>(as)...))) {
-    return ::ycxx::detail::exec::as_const_ref(env).query(q, static_cast<As&&>(as)...);
+template <class _Env>
+struct __exec_when_all_env {
+  const std::inplace_stop_source* __stop_src;
+  _Env env;
+  std::inplace_stop_token query(std::get_stop_token_t) const noexcept { return __stop_src->get_token(); }
+  template <::__ycxx::__detail::__exec::__forwarding_query_c _Qp, class... _As>
+    requires(!std::is_same_v<_Qp, std::get_stop_token_t>) && ::__ycxx::__detail::__exec::__has_query<std::remove_cvref_t<_Env>, _Qp, _As...>
+  constexpr decltype(auto) query(_Qp __q, _As&&... __as) const
+      noexcept(noexcept(::__ycxx::__detail::__exec::__as_const_ref(env).query(__q, static_cast<_As&&>(__as)...))) {
+    return ::__ycxx::__detail::__exec::__as_const_ref(env).query(__q, static_cast<_As&&>(__as)...);
   }
 };
 // on-stop-request ([exec.snd.expos]/16)
-struct exec_on_stop_request {
-  std::inplace_stop_source& stop_src;
-  void operator()() noexcept { stop_src.request_stop(); }
+struct __exec_on_stop_request {
+  std::inplace_stop_source& __stop_src;
+  void operator()() noexcept { __stop_src.request_stop(); }
 };
-struct exec_none_such {};
-}} // namespace ycxx::adl_free
+struct __exec_none_such {};
+}} // namespace __ycxx::__adl_free
 
-namespace [[gnu::visibility("hidden")]] ycxx { namespace detail { namespace exec {
-template <class Env>
-constexpr auto make_when_all_env(std::inplace_stop_source& stop_src, Env&& env) noexcept {
-  return ::ycxx::adl_free::exec_when_all_env<env_member_t<Env>>{&stop_src, static_cast<Env&&>(env)};
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail { namespace __exec {
+template <class _Env>
+constexpr auto __make_when_all_env(std::inplace_stop_source& __stop_src, _Env&& env) noexcept {
+  return ::__ycxx::__adl_free::__exec_when_all_env<__env_member_t<_Env>>{&__stop_src, static_cast<_Env&&>(env)};
 }
-template <class Env>
-using when_all_env_t = decltype(::ycxx::detail::exec::make_when_all_env(std::declval<std::inplace_stop_source&>(), std::declval<Env>()));
+template <class _Env>
+using __when_all_env_t = decltype(::__ycxx::__detail::__exec::__make_when_all_env(std::declval<std::inplace_stop_source&>(), std::declval<_Env>()));
 
 // The completion signatures of when_all(sndrs...) ([exec.when.all]/9, /15).
-template <class Sig>
-struct when_all_error_sig {
-  using type = no_sigs;
+template <class _Sig>
+struct __when_all_error_sig {
+  using type = __no_sigs;
 };
-template <class E>
-struct when_all_error_sig<set_error_t(E)> {
-  using type = std::execution::completion_signatures<set_error_t(std::decay_t<E>)>;
+template <class _Ep>
+struct __when_all_error_sig<set_error_t(_Ep)> {
+  using type = std::execution::completion_signatures<set_error_t(std::decay_t<_Ep>)>;
 };
-template <class Sig>
-using when_all_error_sig_t = typename when_all_error_sig<Sig>::type;
-template <class ArgLists>
-struct only_args {
-  using type = tlist<>;
+template <class _Sig>
+using __when_all_error_sig_t = typename __when_all_error_sig<_Sig>::type;
+template <class _ArgLists>
+struct __only_args {
+  using type = __tlist<>;
 };
-template <class Args>
-struct only_args<tlist<Args>> {
-  using type = Args;
+template <class _Args>
+struct __only_args<__tlist<_Args>> {
+  using type = _Args;
 };
-template <class Values>
-struct when_all_value_sig;
-template <class... Vs>
-struct when_all_value_sig<tlist<Vs...>> {
-  using type = std::execution::completion_signatures<set_value_t(std::decay_t<Vs>...)>;
+template <class _Values>
+struct __when_all_value_sig;
+template <class... _Vs>
+struct __when_all_value_sig<__tlist<_Vs...>> {
+  using type = std::execution::completion_signatures<set_value_t(std::decay_t<_Vs>...)>;
 };
 
-template <class... ChildSigs>
-struct when_all_sigs {
-  template <class CS>
-  using non_values = sigs_map_t<CS, when_all_error_sig_t>;
+template <class... _ChildSigs>
+struct __when_all_sigs {
+  template <class _CS>
+  using __non_values = __sigs_map_t<_CS, __when_all_error_sig_t>;
 
-  static auto pick() {
-    if constexpr (!(is_csigs<ChildSigs> && ...)) {
-      return std::type_identity<sigs_concat_t<ChildSigs...>>{};
-    } else if constexpr (((sigs_count<set_value_t, ChildSigs> >= 2) || ...)) {
-      return std::type_identity<invalid_sigs<when_all_child_has_more_than_one_value_completion, ChildSigs...>>{};
-    } else if constexpr (!(decay_copyable_sigs<ChildSigs> && ...)) {
-      return std::type_identity<invalid_sigs<result_datums_not_decay_copyable, ChildSigs...>>{};
+  static auto __pick() {
+    if constexpr (!(__is_csigs<_ChildSigs> && ...)) {
+      return std::type_identity<__sigs_concat_t<_ChildSigs...>>{};
+    } else if constexpr (((__sigs_count<set_value_t, _ChildSigs> >= 2) || ...)) {
+      return std::type_identity<__invalid_sigs<__when_all_child_has_more_than_one_value_completion, _ChildSigs...>>{};
+    } else if constexpr (!(__decay_copyable_sigs<_ChildSigs> && ...)) {
+      return std::type_identity<__invalid_sigs<__result_datums_not_decay_copyable, _ChildSigs...>>{};
     } else {
-      constexpr bool all_values = ((sigs_count<set_value_t, ChildSigs> == 1) && ...);
-      using value_sigs = std::conditional_t<
-          all_values,
-          typename when_all_value_sig<typename tlist_concat<typename only_args<sigs_args_t<set_value_t, ChildSigs>>::type...>::type>::type,
-          no_sigs>;
-      constexpr bool nothrow = (nothrow_decay_copy_sigs<ChildSigs> && ...);
-      constexpr bool stopped = ((sigs_count<set_stopped_t, ChildSigs> != 0) || ...);
-      return std::type_identity<sigs_concat_t<value_sigs, non_values<ChildSigs>..., std::conditional_t<nothrow, no_sigs, eptr_sigs>,
-                                              std::conditional_t<stopped, std::execution::completion_signatures<set_stopped_t()>, no_sigs>>>{};
+      constexpr bool __all_values = ((__sigs_count<set_value_t, _ChildSigs> == 1) && ...);
+      using __value_sigs = std::conditional_t<
+          __all_values,
+          typename __when_all_value_sig<typename __tlist_concat<typename __only_args<__sigs_args_t<set_value_t, _ChildSigs>>::type...>::type>::type,
+          __no_sigs>;
+      constexpr bool nothrow = (__nothrow_decay_copy_sigs<_ChildSigs> && ...);
+      constexpr bool __stopped = ((__sigs_count<set_stopped_t, _ChildSigs> != 0) || ...);
+      return std::type_identity<__sigs_concat_t<__value_sigs, __non_values<_ChildSigs>..., std::conditional_t<nothrow, __no_sigs, __eptr_sigs>,
+                                              std::conditional_t<__stopped, std::execution::completion_signatures<set_stopped_t()>, __no_sigs>>>{};
     }
   }
-  using type = typename decltype(pick())::type;
+  using type = typename decltype(__pick())::type;
 };
 
 // disposition ([exec.when.all]/11), as plain values: the __atomic builtins take no enumerations.
-struct when_all_disposition {
-  static constexpr unsigned char started = 0, error = 1, stopped = 2;
+struct __when_all_disposition {
+  static constexpr unsigned char __started = 0, error = 1, __stopped = 2;
 };
 
 // values_tuple ([exec.when.all]/13): the values of every child as optionals, or tuple<> when a
 // child has no single value completion.
-template <class Env, class... Children>
-struct when_all_values {
+template <class _Env, class... _Children>
+struct __when_all_values {
   using type = std::tuple<>;
 };
-template <class Env, class... Children>
-  requires(requires { typename std::execution::value_types_of_t<Children, Env, decayed_tuple, std::optional>; } && ...)
-struct when_all_values<Env, Children...> {
-  using type = std::tuple<std::execution::value_types_of_t<Children, Env, decayed_tuple, std::optional>...>;
+template <class _Env, class... _Children>
+  requires(requires { typename std::execution::value_types_of_t<_Children, _Env, __decayed_tuple, std::optional>; } && ...)
+struct __when_all_values<_Env, _Children...> {
+  using type = std::tuple<std::execution::value_types_of_t<_Children, _Env, __decayed_tuple, std::optional>...>;
 };
 
-template <class Rcvr, class... Children>
-struct when_all_types {
-  using env_t = when_all_env_t<std::execution::env_of_t<Rcvr>>;
-  using values_tuple = typename when_all_values<env_t, Children...>::type;
-  using all_sigs = sigs_concat_t<std::execution::completion_signatures_of_t<Children, env_t>...>;
-  using copy_fail = std::conditional_t<nothrow_decay_copy_sigs<all_sigs>, ::ycxx::adl_free::exec_none_such, std::exception_ptr>;
-  template <class Args>
-  struct decayed_error;
-  template <class E>
-  struct decayed_error<tlist<E>> {
-    using type = std::decay_t<E>;
+template <class _Rcvr, class... _Children>
+struct __when_all_types {
+  using __env_t = __when_all_env_t<std::execution::env_of_t<_Rcvr>>;
+  using __values_tuple = typename __when_all_values<__env_t, _Children...>::type;
+  using __all_sigs = __sigs_concat_t<std::execution::__completion_signatures_of_t<_Children, __env_t>...>;
+  using __copy_fail = std::conditional_t<__nothrow_decay_copy_sigs<__all_sigs>, ::__ycxx::__adl_free::__exec_none_such, std::exception_ptr>;
+  template <class _Args>
+  struct __decayed_error;
+  template <class _Ep>
+  struct __decayed_error<__tlist<_Ep>> {
+    using type = std::decay_t<_Ep>;
   };
-  template <class Lists>
-  struct errors_variant_of;
-  template <class... Lists>
-  struct errors_variant_of<tlist<Lists...>> {
-    using type = apply_unique_t<std::variant, ::ycxx::adl_free::exec_none_such, copy_fail, typename decayed_error<Lists>::type...>;
+  template <class _Lists>
+  struct __errors_variant_of;
+  template <class... _Lists>
+  struct __errors_variant_of<__tlist<_Lists...>> {
+    using type = __apply_unique_t<std::variant, ::__ycxx::__adl_free::__exec_none_such, __copy_fail, typename __decayed_error<_Lists>::type...>;
   };
-  using errors_variant = typename errors_variant_of<sigs_args_t<set_error_t, all_sigs>>::type;
-  static constexpr bool sends_stopped = sigs_count<set_stopped_t, all_sigs> != 0;
-  using stop_callback = std::stop_callback_for_t<std::stop_token_of_t<std::execution::env_of_t<Rcvr>>, ::ycxx::adl_free::exec_on_stop_request>;
+  using __errors_variant = typename __errors_variant_of<__sigs_args_t<set_error_t, __all_sigs>>::type;
+  static constexpr bool __sends_stopped = __sigs_count<set_stopped_t, __all_sigs> != 0;
+  using stop_callback = std::stop_callback_for_t<std::__stop_token_of_t<std::execution::env_of_t<_Rcvr>>, ::__ycxx::__adl_free::__exec_on_stop_request>;
 };
-}}} // namespace ycxx::detail::exec
+}}} // namespace __ycxx::__detail::__exec
 
-namespace [[gnu::visibility("hidden")]] ycxx { namespace adl_free {
-template <class Rcvr, class... Children>
-struct exec_when_all_state {
-  using types = ::ycxx::detail::exec::when_all_types<Rcvr, Children...>;
-  using disposition = ::ycxx::detail::exec::when_all_disposition;
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __adl_free {
+template <class _Rcvr, class... _Children>
+struct __exec_when_all_state {
+  using __types = ::__ycxx::__detail::__exec::__when_all_types<_Rcvr, _Children...>;
+  using __disposition = ::__ycxx::__detail::__exec::__when_all_disposition;
 
-  std::size_t count = sizeof...(Children);
-  std::inplace_stop_source stop_src{};
-  unsigned char disp = disposition::started;
-  typename types::errors_variant errors{};
-  typename types::values_tuple values{};
-  std::optional<typename types::stop_callback> on_stop{std::nullopt};
+  std::size_t count = sizeof...(_Children);
+  std::inplace_stop_source __stop_src{};
+  unsigned char __disp = __disposition::__started;
+  typename __types::__errors_variant __errors{};
+  typename __types::__values_tuple values{};
+  std::optional<typename __types::stop_callback> __on_stop{std::nullopt};
 
-  exec_when_all_state() = default;
-  exec_when_all_state(exec_when_all_state&&) = delete;
+  __exec_when_all_state() = default;
+  __exec_when_all_state(__exec_when_all_state&&) = delete;
 
-  void arrive(Rcvr& rcvr) noexcept {
+  void arrive(_Rcvr& __rcvr) noexcept {
     if (__atomic_sub_fetch(&count, 1, __ATOMIC_ACQ_REL) == 0)
-      complete(rcvr);
+      complete(__rcvr);
   }
-  void complete(Rcvr& rcvr) noexcept {
-    const unsigned char d = __atomic_load_n(&disp, __ATOMIC_ACQUIRE);
-    if (d == disposition::started) {
-      if constexpr (!std::is_same_v<typename types::values_tuple, std::tuple<>>) {
-        on_stop.reset();
+  void complete(_Rcvr& __rcvr) noexcept {
+    const unsigned char d = __atomic_load_n(&__disp, __ATOMIC_ACQUIRE);
+    if (d == __disposition::__started) {
+      if constexpr (!std::is_same_v<typename __types::__values_tuple, std::tuple<>>) {
+        __on_stop.reset();
         std::apply(
-            [&](auto&... opts) noexcept {
+            [&](auto&... __opts) noexcept {
               std::apply(
                   [&](auto&... t) noexcept {
-                    std::execution::set_value(static_cast<Rcvr&&>(rcvr), static_cast<std::remove_reference_t<decltype(t)>&&>(t)...);
+                    std::execution::set_value(static_cast<_Rcvr&&>(__rcvr), static_cast<std::remove_reference_t<decltype(t)>&&>(t)...);
                   },
-                         std::tuple_cat(std::apply([](auto&... v) noexcept { return std::tuple<decltype(v)&...>(v...); }, *opts)...));
+                         std::tuple_cat(std::apply([](auto&... __v) noexcept { return std::tuple<decltype(__v)&...>(__v...); }, *__opts)...));
             },
             values);
       }
-    } else if (d == disposition::error) {
-      on_stop.reset();
+    } else if (d == __disposition::error) {
+      __on_stop.reset();
       std::visit(
-          [&]<class Error>(Error& error) noexcept {
-            if constexpr (!std::is_same_v<Error, exec_none_such>)
-              std::execution::set_error(static_cast<Rcvr&&>(rcvr), static_cast<Error&&>(error));
+          [&]<class _Error>(_Error& error) noexcept {
+            if constexpr (!std::is_same_v<_Error, __exec_none_such>)
+              std::execution::set_error(static_cast<_Rcvr&&>(__rcvr), static_cast<_Error&&>(error));
           },
-          errors);
+          __errors);
     } else {
-      if constexpr (types::sends_stopped) {
-        on_stop.reset();
-        std::execution::set_stopped(static_cast<Rcvr&&>(rcvr));
+      if constexpr (__types::__sends_stopped) {
+        __on_stop.reset();
+        std::execution::set_stopped(static_cast<_Rcvr&&>(__rcvr));
       }
     }
   }
 };
-}} // namespace ycxx::adl_free
+}} // namespace __ycxx::__adl_free
 
-namespace [[gnu::visibility("hidden")]] std { namespace execution {
+namespace [[__gnu__::__visibility__("hidden")]] std { namespace execution {
 struct when_all_t;
 struct when_all_with_variant_t;
 }} // namespace std::execution
 
-namespace [[gnu::visibility("hidden")]] ycxx { namespace detail { namespace exec {
-template <class Rcvr>
-struct when_all_make_state {
-  template <class Tag, class Data, class... Children>
-  auto operator()(Tag, Data, Children&&...) const {
-    return ::ycxx::adl_free::exec_when_all_state<Rcvr, Children&&...>();
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail { namespace __exec {
+template <class _Rcvr>
+struct __when_all_make_state {
+  template <class _Tag, class _Data, class... _Children>
+  auto operator()(_Tag, _Data, _Children&&...) const {
+    return ::__ycxx::__adl_free::__exec_when_all_state<_Rcvr, _Children&&...>();
   }
 };
 
 template <>
-struct impls_for<std::execution::when_all_t> : default_impls {
-  template <class Index, class State, class Rcvr>
-  static constexpr auto get_env(Index, State& state, const Rcvr& rcvr) noexcept {
-    return ::ycxx::detail::exec::make_when_all_env(state.stop_src, std::execution::get_env(rcvr));
+struct __impls_for<std::execution::when_all_t> : __default_impls {
+  template <class _Index, class _State, class _Rcvr>
+  static constexpr auto get_env(_Index, _State& state, const _Rcvr& __rcvr) noexcept {
+    return ::__ycxx::__detail::__exec::__make_when_all_env(state.__stop_src, std::execution::get_env(__rcvr));
   }
-  template <class Sndr, class Rcvr>
-  static constexpr auto get_state(Sndr&& sndr, Rcvr&) noexcept(noexcept(static_cast<Sndr&&>(sndr).apply(when_all_make_state<Rcvr>()))) {
-    return static_cast<Sndr&&>(sndr).apply(when_all_make_state<Rcvr>());
+  template <class _Sndr, class _Rcvr>
+  static constexpr auto __get_state(_Sndr&& __sndr, _Rcvr&) noexcept(noexcept(static_cast<_Sndr&&>(__sndr).apply(__when_all_make_state<_Rcvr>()))) {
+    return static_cast<_Sndr&&>(__sndr).apply(__when_all_make_state<_Rcvr>());
   }
-  template <class State, class Rcvr, class... Ops>
-  static constexpr void start(State& state, Rcvr& rcvr, Ops&... ops) noexcept {
-    state.on_stop.emplace(std::get_stop_token(std::execution::get_env(rcvr)), ::ycxx::adl_free::exec_on_stop_request{state.stop_src});
-    (std::execution::start(ops), ...);
+  template <class _State, class _Rcvr, class... _Ops>
+  static constexpr void start(_State& state, _Rcvr& __rcvr, _Ops&... __ops) noexcept {
+    state.__on_stop.emplace(std::get_stop_token(std::execution::get_env(__rcvr)), ::__ycxx::__adl_free::__exec_on_stop_request{state.__stop_src});
+    (std::execution::start(__ops), ...);
   }
-  template <class Index, class State, class Rcvr, class Set, class... Args>
-  static constexpr void complete(Index, State& state, Rcvr& rcvr, Set, Args&&... args) noexcept {
-    using disposition = when_all_disposition;
-    if constexpr (std::is_same_v<Set, set_error_t>) {
-      if (__atomic_exchange_n(&state.disp, disposition::error, __ATOMIC_ACQ_REL) != disposition::error) {
-        state.stop_src.request_stop();
-        using E = std::decay_t<Args...[0]>;
-        if constexpr (std::is_nothrow_constructible_v<E, Args...> || !cfg::exceptions) {
-          state.errors.template emplace<E>(static_cast<Args&&>(args)...);
+  template <class _Index, class _State, class _Rcvr, class _Set, class... _Args>
+  static constexpr void complete(_Index, _State& state, _Rcvr& __rcvr, _Set, _Args&&... __args) noexcept {
+    using __disposition = __when_all_disposition;
+    if constexpr (std::is_same_v<_Set, set_error_t>) {
+      if (__atomic_exchange_n(&state.__disp, __disposition::error, __ATOMIC_ACQ_REL) != __disposition::error) {
+        state.__stop_src.request_stop();
+        using _Ep = std::decay_t<_Args...[0]>;
+        if constexpr (std::is_nothrow_constructible_v<_Ep, _Args...> || !__cfg::exceptions) {
+          state.__errors.template emplace<_Ep>(static_cast<_Args&&>(__args)...);
         } else {
           try {
-            state.errors.template emplace<E>(static_cast<Args&&>(args)...);
+            state.__errors.template emplace<_Ep>(static_cast<_Args&&>(__args)...);
           } catch (...) {
-            state.errors.template emplace<std::exception_ptr>(std::current_exception());
+            state.__errors.template emplace<std::exception_ptr>(std::current_exception());
           }
         }
       }
-    } else if constexpr (std::is_same_v<Set, set_stopped_t>) {
-      unsigned char expected = disposition::started;
-      if (__atomic_compare_exchange_n(&state.disp, &expected, disposition::stopped, false, __ATOMIC_ACQ_REL, __ATOMIC_ACQUIRE))
-        state.stop_src.request_stop();
-    } else if constexpr (!std::is_same_v<decltype(State::values), std::tuple<>>) {
-      if (__atomic_load_n(&state.disp, __ATOMIC_ACQUIRE) == disposition::started) {
-        auto& opt = std::get<Index::value>(state.values);
-        if constexpr (std::is_nothrow_constructible_v<decayed_tuple<Args...>, Args...> || !cfg::exceptions) {
-          opt.emplace(static_cast<Args&&>(args)...);
+    } else if constexpr (std::is_same_v<_Set, set_stopped_t>) {
+      unsigned char expected = __disposition::__started;
+      if (__atomic_compare_exchange_n(&state.__disp, &expected, __disposition::__stopped, false, __ATOMIC_ACQ_REL, __ATOMIC_ACQUIRE))
+        state.__stop_src.request_stop();
+    } else if constexpr (!std::is_same_v<decltype(_State::values), std::tuple<>>) {
+      if (__atomic_load_n(&state.__disp, __ATOMIC_ACQUIRE) == __disposition::__started) {
+        auto& __opt = std::get<_Index::value>(state.values);
+        if constexpr (std::is_nothrow_constructible_v<__decayed_tuple<_Args...>, _Args...> || !__cfg::exceptions) {
+          __opt.emplace(static_cast<_Args&&>(__args)...);
         } else {
           try {
-            opt.emplace(static_cast<Args&&>(args)...);
+            __opt.emplace(static_cast<_Args&&>(__args)...);
           } catch (...) {
-            complete(Index(), state, rcvr, std::execution::set_error, std::current_exception());
+            complete(_Index(), state, __rcvr, std::execution::set_error, std::current_exception());
             return;
           }
         }
       }
     }
-    state.arrive(rcvr);
+    state.arrive(__rcvr);
   }
-  template <class Sndr, class Is, class... Env>
-  struct sigs;
-  template <class Sndr, std::size_t... Is, class... Env>
-  struct sigs<Sndr, std::index_sequence<Is...>, Env...> {
-    using type = typename when_all_sigs<csigs_of_t<child_type<Sndr, Is>, when_all_env_t<Env>...>...>::type;
+  template <class _Sndr, class _Is, class... _Env>
+  struct __sigs;
+  template <class _Sndr, std::size_t... _Is, class... _Env>
+  struct __sigs<_Sndr, std::index_sequence<_Is...>, _Env...> {
+    using type = typename __when_all_sigs<__csigs_of_t<__child_type<_Sndr, _Is>, __when_all_env_t<_Env>...>...>::type;
   };
-  template <class Sndr, class... Env>
-  using csigs = typename sigs<Sndr, indices_for<Sndr>, Env...>::type;
+  template <class _Sndr, class... _Env>
+  using __csigs = typename __sigs<_Sndr, __indices_for<_Sndr>, _Env...>::type;
 };
 
 template <>
-struct impls_for<std::execution::when_all_with_variant_t> : default_impls {
-  template <class Sndr, class Is, class... Env>
-  struct sigs;
-  template <class Sndr, std::size_t... Is, class... Env>
-  struct sigs<Sndr, std::index_sequence<Is...>, Env...> {
-    using type = typename impls_for<std::execution::when_all_t>::template csigs<
-        basic_sender_t<std::execution::when_all_t, empty_data,
-                       basic_sender_t<std::execution::into_variant_t, empty_data, std::decay_t<child_type<Sndr, Is>>>...>,
-        Env...>;
+struct __impls_for<std::execution::when_all_with_variant_t> : __default_impls {
+  template <class _Sndr, class _Is, class... _Env>
+  struct __sigs;
+  template <class _Sndr, std::size_t... _Is, class... _Env>
+  struct __sigs<_Sndr, std::index_sequence<_Is...>, _Env...> {
+    using type = typename __impls_for<std::execution::when_all_t>::template __csigs<
+        __basic_sender_t<std::execution::when_all_t, __empty_data,
+                       __basic_sender_t<std::execution::into_variant_t, __empty_data, std::decay_t<__child_type<_Sndr, _Is>>>...>,
+        _Env...>;
   };
-  template <class Sndr, class... Env>
-  using csigs = typename sigs<Sndr, indices_for<Sndr>, Env...>::type;
+  template <class _Sndr, class... _Env>
+  using __csigs = typename __sigs<_Sndr, __indices_for<_Sndr>, _Env...>::type;
 };
-}}} // namespace ycxx::detail::exec
+}}} // namespace __ycxx::__detail::__exec
 
-namespace [[gnu::visibility("hidden")]] std { namespace execution {
+namespace [[__gnu__::__visibility__("hidden")]] std { namespace execution {
 struct when_all_t {
-  template <sender... Sndrs>
-    requires(sizeof...(Sndrs) != 0)
-  constexpr auto operator()(Sndrs&&... sndrs) const noexcept((is_nothrow_constructible_v<decay_t<Sndrs>, Sndrs> && ...)) {
-    return ycxx::detail::exec::make_sender(*this, ycxx::detail::exec::empty_data(), static_cast<Sndrs&&>(sndrs)...);
+  template <sender... _Sndrs>
+    requires(sizeof...(_Sndrs) != 0)
+  constexpr auto operator()(_Sndrs&&... __sndrs) const noexcept((is_nothrow_constructible_v<decay_t<_Sndrs>, _Sndrs> && ...)) {
+    return __ycxx::__detail::__exec::__make_sender(*this, __ycxx::__detail::__exec::__empty_data(), static_cast<_Sndrs&&>(__sndrs)...);
   }
 };
 inline constexpr when_all_t when_all{};
 
 struct when_all_with_variant_t {
-  template <sender... Sndrs>
-    requires(sizeof...(Sndrs) != 0)
-  constexpr auto operator()(Sndrs&&... sndrs) const noexcept((is_nothrow_constructible_v<decay_t<Sndrs>, Sndrs> && ...)) {
-    return ycxx::detail::exec::make_sender(*this, ycxx::detail::exec::empty_data(), static_cast<Sndrs&&>(sndrs)...);
+  template <sender... _Sndrs>
+    requires(sizeof...(_Sndrs) != 0)
+  constexpr auto operator()(_Sndrs&&... __sndrs) const noexcept((is_nothrow_constructible_v<decay_t<_Sndrs>, _Sndrs> && ...)) {
+    return __ycxx::__detail::__exec::__make_sender(*this, __ycxx::__detail::__exec::__empty_data(), static_cast<_Sndrs&&>(__sndrs)...);
   }
-  template <class Sndr, class Env>
-    requires is_same_v<tag_of_t<Sndr>, when_all_with_variant_t>
-  static constexpr auto transform_sender(set_value_t, Sndr&& sndr, const Env&) {
-    return [&]<size_t... Is>(index_sequence<Is...>) {
-      return when_all(into_variant(static_cast<Sndr&&>(sndr).template get<Is + 2>())...);
-    }(ycxx::detail::exec::indices_for<Sndr>());
+  template <class _Sndr, class _Env>
+    requires is_same_v<__tag_of_t<_Sndr>, when_all_with_variant_t>
+  static constexpr auto transform_sender(set_value_t, _Sndr&& __sndr, const _Env&) {
+    return [&]<size_t... _Is>(index_sequence<_Is...>) {
+      return when_all(into_variant(static_cast<_Sndr&&>(__sndr).template get<_Is + 2>())...);
+    }(__ycxx::__detail::__exec::__indices_for<_Sndr>());
   }
 };
 inline constexpr when_all_with_variant_t when_all_with_variant{};
@@ -656,91 +656,91 @@ inline constexpr when_all_with_variant_t when_all_with_variant{};
 
 // ---------------------------------------------------------------------------------------------
 // stop-when(sndr, token) ([exec.stop.when])
-namespace [[gnu::visibility("hidden")]] ycxx { namespace adl_free {
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __adl_free {
 // stoken-t: stop requested when either token's is, callbacks run on either's stop request.
-template <class T1, class T2>
-struct exec_either_stop_token {
-  T1 t1;
-  T2 t2;
+template <class _T1, class _T2>
+struct __exec_either_stop_token {
+  _T1 __t1;
+  _T2 __t2;
 
-  template <class Fn>
+  template <class _Fn>
   struct callback_type {
     struct forward {
-      callback_type* self;
+      callback_type* __self;
       void operator()() noexcept {
-        if (!__atomic_exchange_n(&self->fired, true, __ATOMIC_ACQ_REL))
-          static_cast<Fn&&>(self->fn)();
+        if (!__atomic_exchange_n(&__self->__fired, true, __ATOMIC_ACQ_REL))
+          static_cast<_Fn&&>(__self->__fn)();
       }
     };
-    Fn fn;
-    bool fired = false;
-    std::stop_callback_for_t<T1, forward> cb1;
-    std::stop_callback_for_t<T2, forward> cb2;
+    _Fn __fn;
+    bool __fired = false;
+    std::stop_callback_for_t<_T1, forward> __cb1;
+    std::stop_callback_for_t<_T2, forward> __cb2;
 
     template <class Init>
-    callback_type(const exec_either_stop_token& tok, Init&& init) noexcept(std::is_nothrow_constructible_v<Fn, Init>)
-        : fn(static_cast<Init&&>(init)), cb1(tok.t1, forward{this}), cb2(tok.t2, forward{this}) {}
+    callback_type(const __exec_either_stop_token& __tok, Init&& init) noexcept(std::is_nothrow_constructible_v<_Fn, Init>)
+        : __fn(static_cast<Init&&>(init)), __cb1(__tok.__t1, forward{this}), __cb2(__tok.__t2, forward{this}) {}
     callback_type(callback_type&&) = delete;
   };
 
-  bool stop_requested() const noexcept { return t1.stop_requested() || t2.stop_requested(); }
-  bool stop_possible() const noexcept { return t1.stop_possible() || t2.stop_possible(); }
-  bool operator==(const exec_either_stop_token&) const = default;
+  bool stop_requested() const noexcept { return __t1.stop_requested() || __t2.stop_requested(); }
+  bool stop_possible() const noexcept { return __t1.stop_possible() || __t2.stop_possible(); }
+  bool operator==(const __exec_either_stop_token&) const = default;
 };
 
-template <class Sndr, class Token>
-struct exec_stop_when_sender {
+template <class _Sndr, class _Token>
+struct __exec_stop_when_sender {
   using sender_concept = std::execution::sender_tag;
-  Sndr sndr;
-  Token token;
+  _Sndr __sndr;
+  _Token token;
 
-  template <class Env>
-  using stoken_for = std::conditional_t<std::unstoppable_token<std::stop_token_of_t<Env>>, Token,
-                                        exec_either_stop_token<Token, std::stop_token_of_t<Env>>>;
-  template <class Self, class Env>
-  using inner_t = decltype(std::execution::write_env(std::declval<std::remove_cvref_t<Self>>().sndr,
-                                                     std::execution::prop(std::get_stop_token, std::declval<stoken_for<Env>>())));
-  template <class Self, class... Env>
-  struct sigs {
-    using type = ::ycxx::detail::exec::csigs_of_t<::ycxx::detail::forward_like_t<Self, Sndr>>;
+  template <class _Env>
+  using __stoken_for = std::conditional_t<std::unstoppable_token<std::__stop_token_of_t<_Env>>, _Token,
+                                        __exec_either_stop_token<_Token, std::__stop_token_of_t<_Env>>>;
+  template <class _Self, class _Env>
+  using __inner_t = decltype(std::execution::write_env(std::declval<std::remove_cvref_t<_Self>>().__sndr,
+                                                     std::execution::prop(std::get_stop_token, std::declval<__stoken_for<_Env>>())));
+  template <class _Self, class... _Env>
+  struct __sigs {
+    using type = ::__ycxx::__detail::__exec::__csigs_of_t<::__ycxx::__detail::__forward_like_t<_Self, _Sndr>>;
   };
-  template <class Self, class Env>
-  struct sigs<Self, Env> {
-    using type = ::ycxx::detail::exec::csigs_of_t<inner_t<Self, Env>, Env>;
+  template <class _Self, class _Env>
+  struct __sigs<_Self, _Env> {
+    using type = ::__ycxx::__detail::__exec::__csigs_of_t<__inner_t<_Self, _Env>, _Env>;
   };
-  template <class Self, class... Env>
-  using ycxx_csigs = typename sigs<Self, Env...>::type;
-  template <class Self, class... Env>
+  template <class _Self, class... _Env>
+  using __ycxx_csigs = typename __sigs<_Self, _Env...>::type;
+  template <class _Self, class... _Env>
   static consteval auto get_completion_signatures() {
-    return ::ycxx::detail::exec::checked_sigs<ycxx_csigs<Self, Env...>>();
+    return ::__ycxx::__detail::__exec::__checked_sigs<__ycxx_csigs<_Self, _Env...>>();
   }
 
-  decltype(auto) get_env() const noexcept { return ::ycxx::detail::exec::fwd_env(std::execution::get_env(sndr)); }
+  decltype(auto) get_env() const noexcept { return ::__ycxx::__detail::__exec::__fwd_env(std::execution::get_env(__sndr)); }
 
-  template <::ycxx::detail::exec::decays_to<exec_stop_when_sender> Self, std::execution::receiver Rcvr>
-  auto connect(this Self&& self, Rcvr rcvr) {
-    auto rtoken = std::get_stop_token(std::execution::get_env(rcvr));
-    if constexpr (std::unstoppable_token<decltype(rtoken)>) {
-      return std::execution::connect(std::execution::write_env(std::forward_like<Self>(self.sndr),
-                                                               std::execution::prop(std::get_stop_token, std::forward_like<Self>(self.token))),
-                                     static_cast<Rcvr&&>(rcvr));
+  template <::__ycxx::__detail::__exec::__decays_to<__exec_stop_when_sender> _Self, std::execution::receiver _Rcvr>
+  auto connect(this _Self&& __self, _Rcvr __rcvr) {
+    auto __rtoken = std::get_stop_token(std::execution::get_env(__rcvr));
+    if constexpr (std::unstoppable_token<decltype(__rtoken)>) {
+      return std::execution::connect(std::execution::write_env(std::forward_like<_Self>(__self.__sndr),
+                                                               std::execution::prop(std::get_stop_token, std::forward_like<_Self>(__self.token))),
+                                     static_cast<_Rcvr&&>(__rcvr));
     } else {
-      using stoken_t = exec_either_stop_token<Token, decltype(rtoken)>;
+      using __stoken_t = __exec_either_stop_token<_Token, decltype(__rtoken)>;
       return std::execution::connect(
-          std::execution::write_env(std::forward_like<Self>(self.sndr),
-                                    std::execution::prop(std::get_stop_token, stoken_t{std::forward_like<Self>(self.token), rtoken})),
-          static_cast<Rcvr&&>(rcvr));
+          std::execution::write_env(std::forward_like<_Self>(__self.__sndr),
+                                    std::execution::prop(std::get_stop_token, __stoken_t{std::forward_like<_Self>(__self.token), __rtoken})),
+          static_cast<_Rcvr&&>(__rcvr));
     }
   }
 };
-}} // namespace ycxx::adl_free
+}} // namespace __ycxx::__adl_free
 
-namespace [[gnu::visibility("hidden")]] ycxx { namespace detail { namespace exec {
-template <std::execution::sender Sndr, std::stoppable_token Token>
-constexpr auto stop_when(Sndr&& sndr, Token token) {
-  if constexpr (std::unstoppable_token<Token>)
-    return std::decay_t<Sndr>(static_cast<Sndr&&>(sndr));
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail { namespace __exec {
+template <std::execution::sender _Sndr, std::stoppable_token _Token>
+constexpr auto __stop_when(_Sndr&& __sndr, _Token token) {
+  if constexpr (std::unstoppable_token<_Token>)
+    return std::decay_t<_Sndr>(static_cast<_Sndr&&>(__sndr));
   else
-    return ::ycxx::adl_free::exec_stop_when_sender<std::decay_t<Sndr>, Token>{static_cast<Sndr&&>(sndr), static_cast<Token&&>(token)};
+    return ::__ycxx::__adl_free::__exec_stop_when_sender<std::decay_t<_Sndr>, _Token>{static_cast<_Sndr&&>(__sndr), static_cast<_Token&&>(token)};
 }
-}}} // namespace ycxx::detail::exec
+}}} // namespace __ycxx::__detail::__exec

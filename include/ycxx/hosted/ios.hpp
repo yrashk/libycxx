@@ -14,56 +14,56 @@
 #include <ycxx/hosted/iosfwd.hpp>
 #include <ycxx/hosted/locale_base.hpp>
 
-namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
-struct ios_access;
-}} // namespace ycxx::detail
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+struct __ios_access;
+}} // namespace __ycxx::__detail
 
-namespace [[gnu::visibility("hidden")]] std {
+namespace [[__gnu__::__visibility__("hidden")]] std {
 
 using streamsize = ptrdiff_t;
 
 // [fpos]
-template <class stateT>
+template <class __stateT>
 class fpos {
 public:
-  constexpr fpos(streamoff off = 0) noexcept(is_nothrow_default_constructible_v<stateT>) : st_(), off_(off) {}
-  constexpr operator streamoff() const noexcept { return off_; }
+  constexpr fpos(streamoff __off = 0) noexcept(is_nothrow_default_constructible_v<__stateT>) : __st_(), __off_(__off) {}
+  constexpr operator streamoff() const noexcept { return __off_; }
 
-  stateT state() const { return st_; }
-  void state(stateT s) { st_ = s; }
+  __stateT state() const { return __st_; }
+  void state(__stateT s) { __st_ = s; }
 
-  friend bool operator==(const fpos& p, const fpos& q) noexcept { return p.off_ == q.off_; }
-  // `p == o` for an integer o: without this overload (a template, so that it is an exact match), the comparison would be ambiguous between
+  friend bool operator==(const fpos& p, const fpos& __q) noexcept { return p.__off_ == __q.__off_; }
+  // `p == __o` for an integer o: without this overload (a template, so that it is an exact match), the comparison would be ambiguous between
   // converting o to fpos and converting p to streamoff.
-  template <class I>
-    requires is_integral_v<I>
-  friend bool operator==(const fpos& p, I o) noexcept {
-    return p.off_ == o;
+  template <class _Ip>
+    requires is_integral_v<_Ip>
+  friend bool operator==(const fpos& p, _Ip __o) noexcept {
+    return p.__off_ == __o;
   }
-  friend streamoff operator-(const fpos& p, const fpos& q) noexcept { return p.off_ - q.off_; }
-  fpos& operator+=(streamoff o) noexcept {
-    off_ += o;
+  friend streamoff operator-(const fpos& p, const fpos& __q) noexcept { return p.__off_ - __q.__off_; }
+  fpos& operator+=(streamoff __o) noexcept {
+    __off_ += __o;
     return *this;
   }
-  fpos& operator-=(streamoff o) noexcept {
-    off_ -= o;
+  fpos& operator-=(streamoff __o) noexcept {
+    __off_ -= __o;
     return *this;
   }
-  fpos operator+(streamoff o) const {
+  fpos operator+(streamoff __o) const {
     fpos r = *this;
-    r += o;
+    r += __o;
     return r;
   }
-  fpos operator-(streamoff o) const {
+  fpos operator-(streamoff __o) const {
     fpos r = *this;
-    r -= o;
+    r -= __o;
     return r;
   }
-  friend fpos operator+(streamoff o, const fpos& p) { return p + o; }
+  friend fpos operator+(streamoff __o, const fpos& p) { return p + __o; }
 
 private:
-  stateT st_;
-  streamoff off_;
+  __stateT __st_;
+  streamoff __off_;
 };
 
 // [error.reporting]
@@ -76,7 +76,7 @@ inline error_condition make_error_condition(io_errc e) noexcept {
   return error_condition(static_cast<int>(e), iostream_category());
 }
 
-template <class charT, class traits>
+template <class __charT, class __traits>
 class basic_ios;
 
 // [ios.base]
@@ -150,55 +150,55 @@ public:
   friend constexpr openmode& operator^=(openmode& a, openmode b) noexcept { return a = a ^ b; }
 
   // [fmtflags.state]
-  fmtflags flags() const { return flags_; }
-  fmtflags flags(fmtflags fmtfl) {
-    const fmtflags old = flags_;
-    flags_ = fmtfl;
-    return old;
+  fmtflags flags() const { return __flags_; }
+  fmtflags flags(fmtflags __fmtfl) {
+    const fmtflags __old = __flags_;
+    __flags_ = __fmtfl;
+    return __old;
   }
-  fmtflags setf(fmtflags fmtfl) {
-    const fmtflags old = flags_;
-    flags_ |= fmtfl;
-    return old;
+  fmtflags setf(fmtflags __fmtfl) {
+    const fmtflags __old = __flags_;
+    __flags_ |= __fmtfl;
+    return __old;
   }
-  fmtflags setf(fmtflags fmtfl, fmtflags mask) {
-    const fmtflags old = flags_;
-    flags_ = (flags_ & ~mask) | (fmtfl & mask);
-    return old;
+  fmtflags setf(fmtflags __fmtfl, fmtflags mask) {
+    const fmtflags __old = __flags_;
+    __flags_ = (__flags_ & ~mask) | (__fmtfl & mask);
+    return __old;
   }
-  void unsetf(fmtflags mask) { flags_ &= ~mask; }
-  streamsize precision() const { return prec_; }
-  streamsize precision(streamsize prec) {
-    const streamsize old = prec_;
-    prec_ = prec;
-    return old;
+  void unsetf(fmtflags mask) { __flags_ &= ~mask; }
+  streamsize precision() const { return __prec_; }
+  streamsize precision(streamsize __prec) {
+    const streamsize __old = __prec_;
+    __prec_ = __prec;
+    return __old;
   }
-  streamsize width() const { return width_; }
+  streamsize width() const { return __width_; }
   // Stores only a changed value: every formatted inserter ends with width(0), and concurrent
   // formatted output on a synchronized standard stream must not race
   // ([iostream.objects.overview]/7), which plain stores of the same zero would.
-  streamsize width(streamsize wide) {
-    const streamsize old = width_;
-    if (old != wide)
-      width_ = wide;
-    return old;
+  streamsize width(streamsize __wide) {
+    const streamsize __old = __width_;
+    if (__old != __wide)
+      __width_ = __wide;
+    return __old;
   }
 
   // [ios.base.locales]
-  locale imbue(const locale& loc);
-  locale getloc() const { return loc_; }
+  locale imbue(const locale& __loc);
+  locale getloc() const { return __loc_; }
 
   // [ios.base.storage]
   static int xalloc();
-  long& iword(int idx);
-  void*& pword(int idx);
+  long& iword(int __idx);
+  void*& pword(int __idx);
 
   virtual ~ios_base();
 
   // [ios.base.callback]
   enum event { erase_event, imbue_event, copyfmt_event };
-  using event_callback = void (*)(event, ios_base&, int idx);
-  void register_callback(event_callback fn, int idx);
+  using event_callback = void (*)(event, ios_base&, int __idx);
+  void register_callback(event_callback __fn, int __idx);
 
   ios_base(const ios_base&) = delete;
   ios_base& operator=(const ios_base&) = delete;
@@ -206,27 +206,27 @@ public:
   static bool sync_with_stdio(bool sync = true);
 
 protected:
-  ios_base() : loc_(locale::classic()) {}
+  ios_base() : __loc_(locale::classic()) {}
 
 private:
-  template <class charT, class traits>
+  template <class __charT, class __traits>
   friend class basic_ios;
-  friend struct ycxx::detail::ios_access;
+  friend struct __ycxx::__detail::__ios_access;
 
-  struct callback {
-    event_callback fn;
-    int idx;
+  struct __y_callback {
+    event_callback __fn;
+    int __idx;
   };
-  struct storage; // iword/pword arrays and callbacks (src/hosted/ios.cpp)
+  struct __storage; // iword/pword arrays and callbacks (src/hosted/ios.cpp)
 
   // The ios_base part of basic_ios::init, copyfmt, move and swap.
-  void init_base(bool has_buf);
-  void call_callbacks(event ev) noexcept;
-  void copy_base(const ios_base& rhs); // flags, width, precision, locale, arrays, callbacks
-  void move_base(ios_base& rhs) noexcept;
-  void swap_base(ios_base& rhs) noexcept;
+  void __init_base(bool __has_buf);
+  void __call_callbacks(event __ev) noexcept;
+  void __copy_base(const ios_base& __rhs); // flags, width, precision, locale, arrays, callbacks
+  void __move_base(ios_base& __rhs) noexcept;
+  void __swap_base(ios_base& __rhs) noexcept;
   // setstate(badbit) for a failed iword/pword (may throw failure).
-  void storage_failed();
+  void __storage_failed();
 
   // The stream state is read and written with relaxed atomic operations, and bits are added
   // with an atomic OR only when they change it: input functions on a synchronized standard
@@ -234,30 +234,30 @@ private:
   // reads the state (the sentry's good()) and sets bits at end of file. A relaxed load or store
   // is an ordinary load or store on the supported targets; the read-modify-write happens only on
   // a transition (DECISIONS §7).
-  iostate load_state() const noexcept { return __atomic_load_n(&state_, __ATOMIC_RELAXED); }
-  void store_state(iostate s) noexcept { __atomic_store_n(&state_, s, __ATOMIC_RELAXED); }
+  iostate __load_state() const noexcept { return __atomic_load_n(&__state_, __ATOMIC_RELAXED); }
+  void __store_state(iostate s) noexcept { __atomic_store_n(&__state_, s, __ATOMIC_RELAXED); }
   // Adds the bits of s; returns the new state.
-  iostate add_state(iostate s) noexcept {
-    const iostate old = load_state();
-    if ((old | s) == old)
-      return old;
-    return __atomic_or_fetch(&state_, s, __ATOMIC_RELAXED);
+  iostate __add_state(iostate s) noexcept {
+    const iostate __old = __load_state();
+    if ((__old | s) == __old)
+      return __old;
+    return __atomic_or_fetch(&__state_, s, __ATOMIC_RELAXED);
   }
 
-  fmtflags flags_ = fmtflags(skipws | dec);
-  iostate state_ = goodbit;
-  iostate except_ = goodbit;
-  streamsize prec_ = 6;
-  streamsize width_ = 0;
-  locale loc_;
-  storage* store_ = nullptr;
+  fmtflags __flags_ = fmtflags(skipws | dec);
+  iostate __state_ = goodbit;
+  iostate __except_ = goodbit;
+  streamsize __prec_ = 6;
+  streamsize __width_ = 0;
+  locale __loc_;
+  __storage* __store_ = nullptr;
 };
 
 // [ios.failure]
 class ios_base::failure : public system_error {
 public:
-  explicit failure(const string& msg, const error_code& ec = io_errc::stream);
-  explicit failure(const char* msg, const error_code& ec = io_errc::stream);
+  explicit failure(const string& __msg, const error_code& ec = io_errc::stream);
+  explicit failure(const char* __msg, const error_code& ec = io_errc::stream);
   failure(const failure&) noexcept = default;
   failure& operator=(const failure&) noexcept = default;
   ~failure() override; // the key function, in the hosted runtime
@@ -274,192 +274,192 @@ public:
 
 } // namespace std
 
-namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
 
-struct ios_access {
+struct __ios_access {
   // Sets badbit without throwing failure (the exception rule of the I/O functions).
-  static void set_badbit_quietly(std::ios_base& s) noexcept { s.add_state(std::ios_base::badbit); }
-  static void set_failbit_quietly(std::ios_base& s) noexcept { s.add_state(std::ios_base::failbit); }
+  static void __set_badbit_quietly(std::ios_base& s) noexcept { s.__add_state(std::ios_base::badbit); }
+  static void __set_failbit_quietly(std::ios_base& s) noexcept { s.__add_state(std::ios_base::failbit); }
   // The stream's locale itself (getloc() returns a copy, which costs two reference-count updates).
-  static const std::locale& locale_of(const std::ios_base& s) noexcept { return s.loc_; }
+  static const std::locale& __locale_of(const std::ios_base& s) noexcept { return s.__loc_; }
 };
 
 // Throws ios_base::failure(what) (hosted runtime); without exceptions, the error handler.
-[[noreturn]] void throw_ios_failure(const char* what);
-[[noreturn]] [[gnu::cold]] inline void raise_ios_failure(const char* what) {
-  if constexpr (cfg::exceptions)
-    ::ycxx::detail::throw_ios_failure(what);
+[[noreturn]] void __throw_ios_failure(const char* what);
+[[noreturn]] [[__gnu__::__cold__]] inline void __raise_ios_failure(const char* what) {
+  if constexpr (__cfg::exceptions)
+    ::__ycxx::__detail::__throw_ios_failure(what);
   else
     ::ycxx_error_handler(ycxx_error_system_error, what);
 }
 
 // The exception rule of the formatted and unformatted I/O functions ([istream.formatted.reqmts]/1,
-// [ostream.formatted.reqmts]/1, [istream.unformatted]/1, ...): an exception thrown by `body` sets
+// [ostream.formatted.reqmts]/1, [istream.unformatted]/1, ...): an exception thrown by `__body` sets
 // badbit without throwing failure, and is rethrown if badbit is in exceptions(). Exceptions
 // thrown by clear() are not caught: callers collect the state and call setstate afterwards.
-// With `pass` set by the time an exception escapes body, the exception has already been dealt
+// With `__pass` set by the time an exception escapes body, the exception has already been dealt
 // with by body's own rule and is propagated unchanged.
-template <class Ios, class F>
-void guarded_io(Ios& s, F&& body, const bool& pass) {
-  if constexpr (cfg::exceptions) {
+template <class _Ios, class _Fp>
+void __guarded_io(_Ios& s, _Fp&& __body, const bool& __pass) {
+  if constexpr (__cfg::exceptions) {
     try {
-      static_cast<F&&>(body)();
+      static_cast<_Fp&&>(__body)();
     } catch (...) {
-      if (pass)
+      if (__pass)
         throw;
-      ::ycxx::detail::ios_access::set_badbit_quietly(s);
+      ::__ycxx::__detail::__ios_access::__set_badbit_quietly(s);
       if (s.exceptions() & std::ios_base::badbit)
         throw;
     }
   } else {
-    static_cast<F&&>(body)();
+    static_cast<_Fp&&>(__body)();
   }
 }
-template <class Ios, class F>
-void guarded_io(Ios& s, F&& body) {
-  constexpr bool never = false;
-  ::ycxx::detail::guarded_io(s, static_cast<F&&>(body), never);
+template <class _Ios, class _Fp>
+void __guarded_io(_Ios& s, _Fp&& __body) {
+  constexpr bool __never = false;
+  ::__ycxx::__detail::__guarded_io(s, static_cast<_Fp&&>(__body), __never);
 }
 
-}} // namespace ycxx::detail
+}} // namespace __ycxx::__detail
 
-namespace [[gnu::visibility("hidden")]] std {
+namespace [[__gnu__::__visibility__("hidden")]] std {
 
 // [ios]
-template <class charT, class traits>
+template <class __charT, class __traits>
 class basic_ios : public ios_base {
 public:
-  using char_type = charT;
-  using int_type = typename traits::int_type;
-  using pos_type = typename traits::pos_type;
-  using off_type = typename traits::off_type;
-  using traits_type = traits;
+  using char_type = __charT;
+  using int_type = typename __traits::int_type;
+  using pos_type = typename __traits::pos_type;
+  using off_type = typename __traits::off_type;
+  using traits_type = __traits;
 
   // [iostate.flags]
   explicit operator bool() const { return !fail(); }
   bool operator!() const { return fail(); }
-  iostate rdstate() const { return load_state(); }
+  iostate rdstate() const { return __load_state(); }
   void clear(iostate state = goodbit) {
-    if (sb_ == nullptr)
+    if (__sb_ == nullptr)
       state |= badbit;
-    store_state(state);
-    if (state & except_)
-      ::ycxx::detail::raise_ios_failure("std::basic_ios::clear: the stream state matches exceptions()");
+    __store_state(state);
+    if (state & __except_)
+      ::__ycxx::__detail::__raise_ios_failure("std::basic_ios::clear: the stream state matches exceptions()");
   }
   // clear(rdstate() | state), as one atomic OR that is skipped when no bit is new (see load_state).
   void setstate(iostate state) {
-    if (sb_ == nullptr)
+    if (__sb_ == nullptr)
       state |= badbit;
-    if (add_state(state) & except_)
-      ::ycxx::detail::raise_ios_failure("std::basic_ios::clear: the stream state matches exceptions()");
+    if (__add_state(state) & __except_)
+      ::__ycxx::__detail::__raise_ios_failure("std::basic_ios::clear: the stream state matches exceptions()");
   }
-  bool good() const { return load_state() == goodbit; }
-  bool eof() const { return (load_state() & eofbit) != 0; }
-  bool fail() const { return (load_state() & (failbit | badbit)) != 0; }
-  bool bad() const { return (load_state() & badbit) != 0; }
-  iostate exceptions() const { return except_; }
-  void exceptions(iostate except) {
-    except_ = except;
+  bool good() const { return __load_state() == goodbit; }
+  bool eof() const { return (__load_state() & eofbit) != 0; }
+  bool fail() const { return (__load_state() & (failbit | badbit)) != 0; }
+  bool bad() const { return (__load_state() & badbit) != 0; }
+  iostate exceptions() const { return __except_; }
+  void exceptions(iostate __y_except) {
+    __except_ = __y_except;
     clear(rdstate());
   }
 
   // [basic.ios.cons]
-  explicit basic_ios(basic_streambuf<charT, traits>* sb) { init(sb); }
+  explicit basic_ios(basic_streambuf<__charT, __traits>* __sb) { init(__sb); }
   ~basic_ios() override {}
   basic_ios(const basic_ios&) = delete;
   basic_ios& operator=(const basic_ios&) = delete;
 
   // [basic.ios.members]
-  basic_ostream<charT, traits>* tie() const { return tie_; }
-  basic_ostream<charT, traits>* tie(basic_ostream<charT, traits>* tiestr) {
-    basic_ostream<charT, traits>* old = tie_;
-    tie_ = tiestr;
-    return old;
+  basic_ostream<__charT, __traits>* tie() const { return __tie_; }
+  basic_ostream<__charT, __traits>* tie(basic_ostream<__charT, __traits>* __tiestr) {
+    basic_ostream<__charT, __traits>* __old = __tie_;
+    __tie_ = __tiestr;
+    return __old;
   }
-  basic_streambuf<charT, traits>* rdbuf() const { return sb_; }
-  basic_streambuf<charT, traits>* rdbuf(basic_streambuf<charT, traits>* sb) {
-    basic_streambuf<charT, traits>* old = sb_;
-    sb_ = sb;
+  basic_streambuf<__charT, __traits>* rdbuf() const { return __sb_; }
+  basic_streambuf<__charT, __traits>* rdbuf(basic_streambuf<__charT, __traits>* __sb) {
+    basic_streambuf<__charT, __traits>* __old = __sb_;
+    __sb_ = __sb;
     clear();
-    return old;
+    return __old;
   }
 
-  basic_ios& copyfmt(const basic_ios& rhs) {
-    if (this == __builtin_addressof(rhs))
+  basic_ios& copyfmt(const basic_ios& __rhs) {
+    if (this == __builtin_addressof(__rhs))
       return *this;
-    call_callbacks(erase_event);
-    copy_base(rhs);
-    tie_ = rhs.tie_;
-    fill_ = rhs.fill_;
-    fill_set_ = rhs.fill_set_;
-    call_callbacks(copyfmt_event);
-    exceptions(rhs.exceptions());
+    __call_callbacks(erase_event);
+    __copy_base(__rhs);
+    __tie_ = __rhs.__tie_;
+    __fill_ = __rhs.__fill_;
+    __fill_set_ = __rhs.__fill_set_;
+    __call_callbacks(copyfmt_event);
+    exceptions(__rhs.exceptions());
     return *this;
   }
 
   char_type fill() const {
-    if (!fill_set_) {
-      fill_ = widen(' ');
-      fill_set_ = true;
+    if (!__fill_set_) {
+      __fill_ = widen(' ');
+      __fill_set_ = true;
     }
-    return fill_;
+    return __fill_;
   }
-  char_type fill(char_type ch) {
-    const char_type old = fill();
-    fill_ = ch;
-    return old;
-  }
-
-  locale imbue(const locale& loc) {
-    locale old = ios_base::imbue(loc);
-    if (sb_ != nullptr)
-      sb_->pubimbue(loc);
-    return old;
+  char_type fill(char_type __ch) {
+    const char_type __old = fill();
+    __fill_ = __ch;
+    return __old;
   }
 
-  char narrow(char_type c, char dfault) const { return use_facet<ctype<char_type>>(getloc()).narrow(c, dfault); }
+  locale imbue(const locale& __loc) {
+    locale __old = ios_base::imbue(__loc);
+    if (__sb_ != nullptr)
+      __sb_->pubimbue(__loc);
+    return __old;
+  }
+
+  char narrow(char_type c, char __dfault) const { return use_facet<ctype<char_type>>(getloc()).narrow(c, __dfault); }
   char_type widen(char c) const { return use_facet<ctype<char_type>>(getloc()).widen(c); }
 
 protected:
   basic_ios() {}
-  void init(basic_streambuf<charT, traits>* sb) {
-    init_base(sb != nullptr);
-    sb_ = sb;
-    tie_ = nullptr;
+  void init(basic_streambuf<__charT, __traits>* __sb) {
+    __init_base(__sb != nullptr);
+    __sb_ = __sb;
+    __tie_ = nullptr;
     // [basic.ios.cons] Table: fill() is widen(' ') in the locale at this point; without a
     // ctype<charT> there, it is computed on first use
-    fill_set_ = has_facet<ctype<charT>>(getloc());
-    if (fill_set_)
-      fill_ = widen(' ');
+    __fill_set_ = has_facet<ctype<__charT>>(getloc());
+    if (__fill_set_)
+      __fill_ = widen(' ');
   }
-  void move(basic_ios& rhs) {
-    move_base(rhs);
-    tie_ = rhs.tie_;
-    rhs.tie_ = nullptr;
-    fill_ = rhs.fill_;
-    fill_set_ = rhs.fill_set_;
-    sb_ = nullptr;
+  void move(basic_ios& __rhs) {
+    __move_base(__rhs);
+    __tie_ = __rhs.__tie_;
+    __rhs.__tie_ = nullptr;
+    __fill_ = __rhs.__fill_;
+    __fill_set_ = __rhs.__fill_set_;
+    __sb_ = nullptr;
   }
-  void move(basic_ios&& rhs) { move(rhs); }
-  void swap(basic_ios& rhs) noexcept {
-    swap_base(rhs);
-    basic_ostream<charT, traits>* t = tie_;
-    tie_ = rhs.tie_;
-    rhs.tie_ = t;
-    const char_type f = fill_;
-    fill_ = rhs.fill_;
-    rhs.fill_ = f;
-    const bool fs = fill_set_;
-    fill_set_ = rhs.fill_set_;
-    rhs.fill_set_ = fs;
+  void move(basic_ios&& __rhs) { move(__rhs); }
+  void swap(basic_ios& __rhs) noexcept {
+    __swap_base(__rhs);
+    basic_ostream<__charT, __traits>* t = __tie_;
+    __tie_ = __rhs.__tie_;
+    __rhs.__tie_ = t;
+    const char_type __f = __fill_;
+    __fill_ = __rhs.__fill_;
+    __rhs.__fill_ = __f;
+    const bool __fs = __fill_set_;
+    __fill_set_ = __rhs.__fill_set_;
+    __rhs.__fill_set_ = __fs;
   }
-  void set_rdbuf(basic_streambuf<charT, traits>* sb) { sb_ = sb; }
+  void set_rdbuf(basic_streambuf<__charT, __traits>* __sb) { __sb_ = __sb; }
 
 private:
-  basic_streambuf<charT, traits>* sb_ = nullptr;
-  basic_ostream<charT, traits>* tie_ = nullptr;
-  mutable char_type fill_{};
-  mutable bool fill_set_ = false;
+  basic_streambuf<__charT, __traits>* __sb_ = nullptr;
+  basic_ostream<__charT, __traits>* __tie_ = nullptr;
+  mutable char_type __fill_{};
+  mutable bool __fill_set_ = false;
 };
 
 // [std.ios.manip]

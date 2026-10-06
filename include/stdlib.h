@@ -18,11 +18,11 @@ using std::ldiv;
 using std::lldiv;
 using std::bsearch;
 using std::memalignment;
-#  if YCXX_HOSTED
+#  if _YCXX_HOSTED
 using std::free_sized;
 using std::free_aligned_sized;
 #  endif
-#  if YCXX_HOSTED && !YCXX_C_HAS_STRFROM
+#  if _YCXX_HOSTED && !_YCXX_C_HAS_STRFROM
 using std::strfromd;
 using std::strfromf;
 using std::strfroml;

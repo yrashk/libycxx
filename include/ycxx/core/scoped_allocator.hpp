@@ -10,99 +10,99 @@
 #include <ycxx/core/memory_base.hpp>
 #include <ycxx/core/tuple.hpp>
 
-namespace [[gnu::visibility("hidden")]] std {
-template <class OuterAlloc, class... InnerAllocs>
+namespace [[__gnu__::__visibility__("hidden")]] std {
+template <class _OuterAlloc, class... _InnerAllocs>
 class scoped_allocator_adaptor;
 } // namespace std
 
-namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
 
-struct no_inner_allocator {};
+struct __no_inner_allocator {};
 
-template <class... InnerAllocs>
-struct scoped_inner {
-  using type = std::scoped_allocator_adaptor<InnerAllocs...>;
+template <class... _InnerAllocs>
+struct __scoped_inner {
+  using type = std::scoped_allocator_adaptor<_InnerAllocs...>;
 };
 template <>
-struct scoped_inner<> {
-  using type = no_inner_allocator;
+struct __scoped_inner<> {
+  using type = __no_inner_allocator;
 };
 
 // OUTERMOST(x) ([allocator.adaptor.members]/1).
-template <class A>
-constexpr auto& scoped_outermost(A& a) noexcept {
+template <class _Ap>
+constexpr auto& __scoped_outermost(_Ap& a) noexcept {
   if constexpr (requires { a.outer_allocator(); })
-    return ::ycxx::detail::scoped_outermost(a.outer_allocator());
+    return ::__ycxx::__detail::__scoped_outermost(a.outer_allocator());
   else
     return a;
 }
 
-struct scoped_select_tag {};
+struct __scoped_select_tag {};
 
-}} // namespace ycxx::detail
+}} // namespace __ycxx::__detail
 
-namespace [[gnu::visibility("hidden")]] std {
+namespace [[__gnu__::__visibility__("hidden")]] std {
 
-template <class OuterAlloc, class... InnerAllocs>
-class scoped_allocator_adaptor : public OuterAlloc {
-  using OuterTraits = allocator_traits<OuterAlloc>;
-  static constexpr bool has_inner = sizeof...(InnerAllocs) != 0;
-  using inner_storage = typename ycxx::detail::scoped_inner<InnerAllocs...>::type;
+template <class _OuterAlloc, class... _InnerAllocs>
+class scoped_allocator_adaptor : public _OuterAlloc {
+  using _OuterTraits = allocator_traits<_OuterAlloc>;
+  static constexpr bool __has_inner = sizeof...(_InnerAllocs) != 0;
+  using __inner_storage = typename __ycxx::__detail::__scoped_inner<_InnerAllocs...>::type;
 
   template <class, class...>
   friend class scoped_allocator_adaptor;
 
-  [[no_unique_address]] inner_storage inner;
+  [[no_unique_address]] __inner_storage __inner;
 
   // For select_on_container_copy_construction: the outer allocator and a ready inner adaptor.
-  scoped_allocator_adaptor(ycxx::detail::scoped_select_tag, OuterAlloc&& outer, inner_storage&& in) noexcept
-      : OuterAlloc(static_cast<OuterAlloc&&>(outer)), inner(static_cast<inner_storage&&>(in)) {}
+  scoped_allocator_adaptor(__ycxx::__detail::__scoped_select_tag, _OuterAlloc&& outer, __inner_storage&& in) noexcept
+      : _OuterAlloc(static_cast<_OuterAlloc&&>(outer)), __inner(static_cast<__inner_storage&&>(in)) {}
 
 public:
-  using outer_allocator_type = OuterAlloc;
-  using inner_allocator_type = conditional_t<has_inner, inner_storage, scoped_allocator_adaptor>;
-  using value_type = typename OuterTraits::value_type;
-  using size_type = typename OuterTraits::size_type;
-  using difference_type = typename OuterTraits::difference_type;
-  using pointer = typename OuterTraits::pointer;
-  using const_pointer = typename OuterTraits::const_pointer;
-  using void_pointer = typename OuterTraits::void_pointer;
-  using const_void_pointer = typename OuterTraits::const_void_pointer;
+  using outer_allocator_type = _OuterAlloc;
+  using inner_allocator_type = conditional_t<__has_inner, __inner_storage, scoped_allocator_adaptor>;
+  using value_type = typename _OuterTraits::value_type;
+  using size_type = typename _OuterTraits::size_type;
+  using difference_type = typename _OuterTraits::difference_type;
+  using pointer = typename _OuterTraits::pointer;
+  using const_pointer = typename _OuterTraits::const_pointer;
+  using void_pointer = typename _OuterTraits::void_pointer;
+  using const_void_pointer = typename _OuterTraits::const_void_pointer;
   using propagate_on_container_copy_assignment =
-      bool_constant<(OuterTraits::propagate_on_container_copy_assignment::value || ... ||
-                     allocator_traits<InnerAllocs>::propagate_on_container_copy_assignment::value)>;
+      bool_constant<(_OuterTraits::propagate_on_container_copy_assignment::value || ... ||
+                     allocator_traits<_InnerAllocs>::propagate_on_container_copy_assignment::value)>;
   using propagate_on_container_move_assignment =
-      bool_constant<(OuterTraits::propagate_on_container_move_assignment::value || ... ||
-                     allocator_traits<InnerAllocs>::propagate_on_container_move_assignment::value)>;
+      bool_constant<(_OuterTraits::propagate_on_container_move_assignment::value || ... ||
+                     allocator_traits<_InnerAllocs>::propagate_on_container_move_assignment::value)>;
   using propagate_on_container_swap =
-      bool_constant<(OuterTraits::propagate_on_container_swap::value || ... ||
-                     allocator_traits<InnerAllocs>::propagate_on_container_swap::value)>;
+      bool_constant<(_OuterTraits::propagate_on_container_swap::value || ... ||
+                     allocator_traits<_InnerAllocs>::propagate_on_container_swap::value)>;
   using is_always_equal =
-      bool_constant<(OuterTraits::is_always_equal::value && ... && allocator_traits<InnerAllocs>::is_always_equal::value)>;
+      bool_constant<(_OuterTraits::is_always_equal::value && ... && allocator_traits<_InnerAllocs>::is_always_equal::value)>;
 
-  template <class Tp>
+  template <class _Tp_>
   struct rebind {
-    using other = scoped_allocator_adaptor<typename OuterTraits::template rebind_alloc<Tp>, InnerAllocs...>;
+    using other = scoped_allocator_adaptor<typename _OuterTraits::template rebind_alloc<_Tp_>, _InnerAllocs...>;
   };
 
   // [allocator.adaptor.cnstr]
-  scoped_allocator_adaptor() : OuterAlloc(), inner() {}
-  template <class OuterA2>
-    requires is_constructible_v<OuterAlloc, OuterA2>
-  scoped_allocator_adaptor(OuterA2&& outerAlloc, const InnerAllocs&... innerAllocs) noexcept
-      : OuterAlloc(static_cast<OuterA2&&>(outerAlloc)), inner(innerAllocs...) {}
+  scoped_allocator_adaptor() : _OuterAlloc(), __inner() {}
+  template <class _OuterA2>
+    requires is_constructible_v<_OuterAlloc, _OuterA2>
+  scoped_allocator_adaptor(_OuterA2&& __outerAlloc, const _InnerAllocs&... __innerAllocs) noexcept
+      : _OuterAlloc(static_cast<_OuterA2&&>(__outerAlloc)), __inner(__innerAllocs...) {}
   scoped_allocator_adaptor(const scoped_allocator_adaptor& other) noexcept
-      : OuterAlloc(other.outer_allocator()), inner(other.inner) {}
+      : _OuterAlloc(other.outer_allocator()), __inner(other.__inner) {}
   scoped_allocator_adaptor(scoped_allocator_adaptor&& other) noexcept
-      : OuterAlloc(static_cast<OuterAlloc&&>(other.outer_allocator())), inner(static_cast<inner_storage&&>(other.inner)) {}
-  template <class OuterA2>
-    requires is_constructible_v<OuterAlloc, const OuterA2&>
-  scoped_allocator_adaptor(const scoped_allocator_adaptor<OuterA2, InnerAllocs...>& other) noexcept
-      : OuterAlloc(other.outer_allocator()), inner(other.inner) {}
-  template <class OuterA2>
-    requires is_constructible_v<OuterAlloc, OuterA2>
-  scoped_allocator_adaptor(scoped_allocator_adaptor<OuterA2, InnerAllocs...>&& other) noexcept
-      : OuterAlloc(static_cast<OuterA2&&>(other.outer_allocator())), inner(static_cast<inner_storage&&>(other.inner)) {}
+      : _OuterAlloc(static_cast<_OuterAlloc&&>(other.outer_allocator())), __inner(static_cast<__inner_storage&&>(other.__inner)) {}
+  template <class _OuterA2>
+    requires is_constructible_v<_OuterAlloc, const _OuterA2&>
+  scoped_allocator_adaptor(const scoped_allocator_adaptor<_OuterA2, _InnerAllocs...>& other) noexcept
+      : _OuterAlloc(other.outer_allocator()), __inner(other.__inner) {}
+  template <class _OuterA2>
+    requires is_constructible_v<_OuterAlloc, _OuterA2>
+  scoped_allocator_adaptor(scoped_allocator_adaptor<_OuterA2, _InnerAllocs...>&& other) noexcept
+      : _OuterAlloc(static_cast<_OuterA2&&>(other.outer_allocator())), __inner(static_cast<__inner_storage&&>(other.__inner)) {}
 
   scoped_allocator_adaptor& operator=(const scoped_allocator_adaptor&) = default;
   scoped_allocator_adaptor& operator=(scoped_allocator_adaptor&&) = default;
@@ -110,61 +110,61 @@ public:
 
   // [allocator.adaptor.members]
   inner_allocator_type& inner_allocator() noexcept {
-    if constexpr (has_inner)
-      return inner;
+    if constexpr (__has_inner)
+      return __inner;
     else
       return *this;
   }
   const inner_allocator_type& inner_allocator() const noexcept {
-    if constexpr (has_inner)
-      return inner;
+    if constexpr (__has_inner)
+      return __inner;
     else
       return *this;
   }
-  outer_allocator_type& outer_allocator() noexcept { return static_cast<OuterAlloc&>(*this); }
-  const outer_allocator_type& outer_allocator() const noexcept { return static_cast<const OuterAlloc&>(*this); }
+  outer_allocator_type& outer_allocator() noexcept { return static_cast<_OuterAlloc&>(*this); }
+  const outer_allocator_type& outer_allocator() const noexcept { return static_cast<const _OuterAlloc&>(*this); }
 
-  [[nodiscard]] pointer allocate(size_type n) { return OuterTraits::allocate(outer_allocator(), n); }
-  [[nodiscard]] pointer allocate(size_type n, const_void_pointer hint) {
-    return OuterTraits::allocate(outer_allocator(), n, hint);
+  [[nodiscard]] pointer allocate(size_type n) { return _OuterTraits::allocate(outer_allocator(), n); }
+  [[nodiscard]] pointer allocate(size_type n, const_void_pointer __hint) {
+    return _OuterTraits::allocate(outer_allocator(), n, __hint);
   }
-  void deallocate(pointer p, size_type n) noexcept { OuterTraits::deallocate(outer_allocator(), p, n); }
-  size_type max_size() const { return OuterTraits::max_size(outer_allocator()); }
+  void deallocate(pointer p, size_type n) noexcept { _OuterTraits::deallocate(outer_allocator(), p, n); }
+  size_type max_size() const { return _OuterTraits::max_size(outer_allocator()); }
 
-  template <class T, class... Args>
-  void construct(T* p, Args&&... args) {
+  template <class _Tp, class... _Args>
+  void construct(_Tp* p, _Args&&... __args) {
     std::apply(
-        [p, this](auto&&... newargs) {
-          auto& outermost = ::ycxx::detail::scoped_outermost(*this);
-          allocator_traits<remove_reference_t<decltype(outermost)>>::construct(
-              outermost, p, static_cast<decltype(newargs)&&>(newargs)...);
+        [p, this](auto&&... __newargs) {
+          auto& __outermost = ::__ycxx::__detail::__scoped_outermost(*this);
+          allocator_traits<remove_reference_t<decltype(__outermost)>>::construct(
+              __outermost, p, static_cast<decltype(__newargs)&&>(__newargs)...);
         },
-        std::uses_allocator_construction_args<T>(inner_allocator(), static_cast<Args&&>(args)...));
+        std::uses_allocator_construction_args<_Tp>(inner_allocator(), static_cast<_Args&&>(__args)...));
   }
-  template <class T>
-  void destroy(T* p) {
-    auto& outermost = ::ycxx::detail::scoped_outermost(*this);
-    allocator_traits<remove_reference_t<decltype(outermost)>>::destroy(outermost, p);
+  template <class _Tp>
+  void destroy(_Tp* p) {
+    auto& __outermost = ::__ycxx::__detail::__scoped_outermost(*this);
+    allocator_traits<remove_reference_t<decltype(__outermost)>>::destroy(__outermost, p);
   }
 
   scoped_allocator_adaptor select_on_container_copy_construction() const {
-    if constexpr (has_inner)
-      return scoped_allocator_adaptor(ycxx::detail::scoped_select_tag{},
-                                      OuterTraits::select_on_container_copy_construction(outer_allocator()),
-                                      inner.select_on_container_copy_construction());
+    if constexpr (__has_inner)
+      return scoped_allocator_adaptor(__ycxx::__detail::__scoped_select_tag{},
+                                      _OuterTraits::select_on_container_copy_construction(outer_allocator()),
+                                      __inner.select_on_container_copy_construction());
     else
-      return scoped_allocator_adaptor(OuterTraits::select_on_container_copy_construction(outer_allocator()));
+      return scoped_allocator_adaptor(_OuterTraits::select_on_container_copy_construction(outer_allocator()));
   }
 };
 
-template <class OuterAlloc, class... InnerAllocs>
-scoped_allocator_adaptor(OuterAlloc, InnerAllocs...) -> scoped_allocator_adaptor<OuterAlloc, InnerAllocs...>;
+template <class _OuterAlloc, class... _InnerAllocs>
+scoped_allocator_adaptor(_OuterAlloc, _InnerAllocs...) -> scoped_allocator_adaptor<_OuterAlloc, _InnerAllocs...>;
 
 // [scoped.adaptor.operators]
-template <class OuterA1, class OuterA2, class... InnerAllocs>
-bool operator==(const scoped_allocator_adaptor<OuterA1, InnerAllocs...>& a,
-                const scoped_allocator_adaptor<OuterA2, InnerAllocs...>& b) noexcept {
-  if constexpr (sizeof...(InnerAllocs) == 0)
+template <class _OuterA1, class _OuterA2, class... _InnerAllocs>
+bool operator==(const scoped_allocator_adaptor<_OuterA1, _InnerAllocs...>& a,
+                const scoped_allocator_adaptor<_OuterA2, _InnerAllocs...>& b) noexcept {
+  if constexpr (sizeof...(_InnerAllocs) == 0)
     return a.outer_allocator() == b.outer_allocator();
   else
     return a.outer_allocator() == b.outer_allocator() && a.inner_allocator() == b.inner_allocator();

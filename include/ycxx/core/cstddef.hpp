@@ -17,7 +17,7 @@ typedef decltype(sizeof(0)) size_t;
 typedef decltype(static_cast<int*>(nullptr) - static_cast<int*>(nullptr)) ptrdiff_t;
 typedef decltype(nullptr) nullptr_t;
 
-namespace [[gnu::visibility("hidden")]] std {
+namespace [[__gnu__::__visibility__("hidden")]] std {
 using ::size_t;
 using ::ptrdiff_t;
 using ::nullptr_t;
@@ -25,49 +25,49 @@ using ::max_align_t;
 
 enum class byte : unsigned char {};
 
-template <class IntType>
-  requires ::ycxx::detail::is_integral_v<IntType>
-constexpr byte& operator<<=(byte& b, IntType shift) noexcept {
+template <class _IntType>
+  requires ::__ycxx::__detail::is_integral_v<_IntType>
+constexpr byte& operator<<=(byte& b, _IntType shift) noexcept {
   return b = byte(static_cast<unsigned int>(b) << shift);
 }
-template <class IntType>
-  requires ::ycxx::detail::is_integral_v<IntType>
-constexpr byte operator<<(byte b, IntType shift) noexcept {
+template <class _IntType>
+  requires ::__ycxx::__detail::is_integral_v<_IntType>
+constexpr byte operator<<(byte b, _IntType shift) noexcept {
   return byte(static_cast<unsigned int>(b) << shift);
 }
-template <class IntType>
-  requires ::ycxx::detail::is_integral_v<IntType>
-constexpr byte& operator>>=(byte& b, IntType shift) noexcept {
+template <class _IntType>
+  requires ::__ycxx::__detail::is_integral_v<_IntType>
+constexpr byte& operator>>=(byte& b, _IntType shift) noexcept {
   return b = byte(static_cast<unsigned int>(b) >> shift);
 }
-template <class IntType>
-  requires ::ycxx::detail::is_integral_v<IntType>
-constexpr byte operator>>(byte b, IntType shift) noexcept {
+template <class _IntType>
+  requires ::__ycxx::__detail::is_integral_v<_IntType>
+constexpr byte operator>>(byte b, _IntType shift) noexcept {
   return byte(static_cast<unsigned int>(b) >> shift);
 }
-constexpr byte& operator|=(byte& l, byte r) noexcept {
-  return l = byte(static_cast<unsigned int>(l) | static_cast<unsigned int>(r));
+constexpr byte& operator|=(byte& __l, byte r) noexcept {
+  return __l = byte(static_cast<unsigned int>(__l) | static_cast<unsigned int>(r));
 }
-constexpr byte& operator&=(byte& l, byte r) noexcept {
-  return l = byte(static_cast<unsigned int>(l) & static_cast<unsigned int>(r));
+constexpr byte& operator&=(byte& __l, byte r) noexcept {
+  return __l = byte(static_cast<unsigned int>(__l) & static_cast<unsigned int>(r));
 }
-constexpr byte& operator^=(byte& l, byte r) noexcept {
-  return l = byte(static_cast<unsigned int>(l) ^ static_cast<unsigned int>(r));
+constexpr byte& operator^=(byte& __l, byte r) noexcept {
+  return __l = byte(static_cast<unsigned int>(__l) ^ static_cast<unsigned int>(r));
 }
-constexpr byte operator|(byte l, byte r) noexcept {
-  return byte(static_cast<unsigned int>(l) | static_cast<unsigned int>(r));
+constexpr byte operator|(byte __l, byte r) noexcept {
+  return byte(static_cast<unsigned int>(__l) | static_cast<unsigned int>(r));
 }
-constexpr byte operator&(byte l, byte r) noexcept {
-  return byte(static_cast<unsigned int>(l) & static_cast<unsigned int>(r));
+constexpr byte operator&(byte __l, byte r) noexcept {
+  return byte(static_cast<unsigned int>(__l) & static_cast<unsigned int>(r));
 }
-constexpr byte operator^(byte l, byte r) noexcept {
-  return byte(static_cast<unsigned int>(l) ^ static_cast<unsigned int>(r));
+constexpr byte operator^(byte __l, byte r) noexcept {
+  return byte(static_cast<unsigned int>(__l) ^ static_cast<unsigned int>(r));
 }
 constexpr byte operator~(byte b) noexcept { return byte(~static_cast<unsigned int>(b)); }
-template <class IntType>
-  requires ::ycxx::detail::is_integral_v<IntType>
-constexpr IntType to_integer(byte b) noexcept {
-  return static_cast<IntType>(b);
+template <class _IntType>
+  requires ::__ycxx::__detail::is_integral_v<_IntType>
+constexpr _IntType to_integer(byte b) noexcept {
+  return static_cast<_IntType>(b);
 }
 } // namespace std
 
@@ -75,6 +75,6 @@ constexpr IntType to_integer(byte b) noexcept {
 #  define NULL __null
 #endif
 #ifndef offsetof
-#  define offsetof(type, member) __builtin_offsetof(type, member)
+#  define offsetof(type, __member) __builtin_offsetof(type, __member)
 #endif
 

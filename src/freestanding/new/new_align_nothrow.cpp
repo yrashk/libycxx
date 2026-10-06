@@ -8,10 +8,10 @@
 #include "../../runtime/new/hidden.hpp"
 #include "../../runtime/new/allocation_table.hpp"
 
-asm((ycxx::detail::hide_allocation_function("_Znw#St11align_val_tRKSt9nothrow_t")));
+asm((__ycxx::__detail::__hide_allocation_function("_Znw#St11align_val_tRKSt9nothrow_t")));
 
 void* operator new(std::size_t n, std::align_val_t a, const std::nothrow_t&) noexcept {
-  if (auto f = ycxx_allocation_functions.new_align_nothrow; f != ycxx::detail::own_allocation_functions.new_align_nothrow)
-    return f(n, static_cast<std::size_t>(a));
-  return ycxx::detail::try_or_null(&ycxx_fs_default_new_align != nullptr, [&] { return ::operator new(n, a); });
+  if (auto __f = __ycxx_allocation_functions.__new_align_nothrow; __f != __ycxx::__detail::__own_allocation_functions.__new_align_nothrow)
+    return __f(n, static_cast<std::size_t>(a));
+  return __ycxx::__detail::__try_or_null(&__ycxx_fs_default_new_align != nullptr, [&] { return ::operator new(n, a); });
 }

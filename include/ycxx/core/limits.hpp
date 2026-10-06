@@ -1,13 +1,13 @@
 // libycxx core: <limits>
 //
 // Integer limits are computed from the type. Floating-point limits are computed from the
-// three per-format facts in ycxx::detail::fp_format (config.hpp): mantissa digits, min_exp and
+// three per-format facts in __ycxx::__detail::__fp_format (config.hpp): mantissa digits, min_exp and
 // max_exp. Every derived value is a constant expression evaluated in the type's own arithmetic.
 #pragma once
 
 #include <ycxx/core/type_traits.hpp>
 
-namespace [[gnu::visibility("hidden")]] std {
+namespace [[__gnu__::__visibility__("hidden")]] std {
 
 enum float_round_style {
   round_indeterminate = -1,
@@ -26,19 +26,19 @@ enum [[deprecated("float_denorm_style is deprecated ([depr.numeric.limits.has.de
 
 } // namespace std
 
-namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
 
 // floor(e * log10(2)) for |e| < 2^31 (log10(2) is irrational, so no product is an integer).
-consteval int floor_log10_pow2(int e) {
-  constexpr int128 num = 301029995663981195LL; // log10(2) * 10^18
-  constexpr int128 den = 1000000000000000000LL;
-  int128 p = static_cast<int128>(e) * num;
+consteval int __floor_log10_pow2(int e) {
+  constexpr __y_int128 num = 301029995663981195LL; // log10(2) * 10^18
+  constexpr __y_int128 den = 1000000000000000000LL;
+  __y_int128 p = static_cast<__y_int128>(e) * num;
   return static_cast<int>(p >= 0 ? p / den : -((-p + den - 1) / den));
 }
 
-template <class T>
-consteval T pow2(int e) {
-  T r = 1;
+template <class _Tp>
+consteval _Tp __pow2(int e) {
+  _Tp r = 1;
   for (; e > 0; --e)
     r *= 2;
   for (; e < 0; ++e)
@@ -47,7 +47,7 @@ consteval T pow2(int e) {
 }
 
 // Defaults shared by every specialization ([numeric.limits.general]).
-struct limits_base {
+struct __limits_base {
   static constexpr bool is_specialized = false;
   static constexpr int digits = 0;
   static constexpr int digits10 = 0;
@@ -75,43 +75,43 @@ struct limits_base {
   static constexpr bool has_denorm_loss = false;
 };
 
-template <class T>
-struct int_limits : limits_base {
+template <class _Tp>
+struct __int_limits : __limits_base {
   static constexpr bool is_specialized = true;
-  static constexpr bool is_signed = bitint_width<T> != 0 ? bitint_info<T>::is_signed : is_signed_v<T>;
-  static constexpr int width = bitint_width<T> != 0 ? bitint_width<T> : static_cast<int>(sizeof(T) * __CHAR_BIT__);
+  static constexpr bool is_signed = __bitint_width<_Tp> != 0 ? __bitint_info<_Tp>::is_signed : is_signed_v<_Tp>;
+  static constexpr int width = __bitint_width<_Tp> != 0 ? __bitint_width<_Tp> : static_cast<int>(sizeof(_Tp) * __CHAR_BIT__);
   static constexpr int digits = width - (is_signed ? 1 : 0);
-  static constexpr int digits10 = floor_log10_pow2(digits);
+  static constexpr int digits10 = __floor_log10_pow2(digits);
   static constexpr bool is_integer = true;
   static constexpr bool is_exact = true;
   static constexpr int radix = 2;
   static constexpr bool is_bounded = true;
   static constexpr bool is_modulo = !is_signed;
   // Only types not subject to integral promotion can trap on division (char types never do).
-  static constexpr bool traps = cfg::integer_division_traps && bitint_width<T> == 0 &&
-                                is_signed_or_unsigned_integer<T> && sizeof(T) >= sizeof(int);
+  static constexpr bool traps = __cfg::__integer_division_traps && __bitint_width<_Tp> == 0 &&
+                                __is_signed_or_unsigned_integer<_Tp> && sizeof(_Tp) >= sizeof(int);
 
   // 2^digits - 1, built without overflow for any width (including _BitInt(N)).
-  static constexpr T max_value = [] {
-    T r = 0;
+  static constexpr _Tp __max_value = [] {
+    _Tp r = 0;
     for (int i = 0; i < digits; ++i)
-      r = static_cast<T>(r * 2 + 1);
+      r = static_cast<_Tp>(r * 2 + 1);
     return r;
   }();
-  static constexpr T min_value = is_signed ? static_cast<T>(-max_value - 1) : T(0);
+  static constexpr _Tp __min_value = is_signed ? static_cast<_Tp>(-__max_value - 1) : _Tp(0);
 
-  static constexpr T(min)() noexcept { return min_value; }
-  static constexpr T(max)() noexcept { return max_value; }
-  static constexpr T lowest() noexcept { return min_value; }
-  static constexpr T epsilon() noexcept { return T(0); }
-  static constexpr T round_error() noexcept { return T(0); }
-  static constexpr T infinity() noexcept { return T(0); }
-  static constexpr T quiet_NaN() noexcept { return T(0); }
-  static constexpr T signaling_NaN() noexcept { return T(0); }
-  static constexpr T denorm_min() noexcept { return T(0); }
+  static constexpr _Tp(min)() noexcept { return __min_value; }
+  static constexpr _Tp(max)() noexcept { return __max_value; }
+  static constexpr _Tp lowest() noexcept { return __min_value; }
+  static constexpr _Tp epsilon() noexcept { return _Tp(0); }
+  static constexpr _Tp round_error() noexcept { return _Tp(0); }
+  static constexpr _Tp infinity() noexcept { return _Tp(0); }
+  static constexpr _Tp quiet_NaN() noexcept { return _Tp(0); }
+  static constexpr _Tp signaling_NaN() noexcept { return _Tp(0); }
+  static constexpr _Tp denorm_min() noexcept { return _Tp(0); }
 };
 
-struct bool_limits : limits_base {
+struct __bool_limits : __limits_base {
   static constexpr bool is_specialized = true;
   static constexpr int digits = 1;
   static constexpr bool is_integer = true;
@@ -131,42 +131,42 @@ struct bool_limits : limits_base {
 
 // Signaling NaN for a binary interchange format: exponent all ones, quiet bit clear,
 // lowest payload bit set. Built from the format facts, then bit_cast.
-template <class T>
-consteval T make_signaling_nan() {
-  constexpr fp_format_info f = fp_format<T>;
-  if constexpr (__is_same(T, long double) && f.digits == 64) {
+template <class _Tp>
+consteval _Tp __make_signaling_nan() {
+  constexpr __fp_format_info __f = __fp_format<_Tp>;
+  if constexpr (__is_same(_Tp, long double) && __f.digits == 64) {
     return __builtin_nansl(""); // x87 extended: explicit integer bit, not an interchange format
   } else {
-    using U = std::conditional_t<sizeof(T) == 2, unsigned short,
-                            std::conditional_t<sizeof(T) == 4, unsigned int,
-                                          std::conditional_t<sizeof(T) == 8, unsigned long long, uint128>>>;
-    constexpr int mant_bits = f.digits - 1;
-    constexpr int exp_bits = static_cast<int>(sizeof(T) * __CHAR_BIT__) - 1 - mant_bits;
-    U bits = ((U(1) << exp_bits) - 1) << mant_bits; // exponent all ones
-    bits |= U(1) << (mant_bits - 2);                 // non-zero payload, quiet bit (top) clear
-    return __builtin_bit_cast(T, bits);
+    using _Up = std::conditional_t<sizeof(_Tp) == 2, unsigned short,
+                            std::conditional_t<sizeof(_Tp) == 4, unsigned int,
+                                          std::conditional_t<sizeof(_Tp) == 8, unsigned long long, __uint128>>>;
+    constexpr int __mant_bits = __f.digits - 1;
+    constexpr int __exp_bits = static_cast<int>(sizeof(_Tp) * __CHAR_BIT__) - 1 - __mant_bits;
+    _Up __bits = ((_Up(1) << __exp_bits) - 1) << __mant_bits; // exponent all ones
+    __bits |= _Up(1) << (__mant_bits - 2);                 // non-zero payload, quiet bit (top) clear
+    return __builtin_bit_cast(_Tp, __bits);
   }
 }
 
-template <class T>
-struct fp_limits : limits_base {
-  static constexpr fp_format_info fmt = fp_format<T>;
+template <class _Tp>
+struct __fp_limits : __limits_base {
+  static constexpr __fp_format_info __fmt = __fp_format<_Tp>;
 
   static constexpr bool is_specialized = true;
-  static constexpr int digits = fmt.digits;
-  static constexpr int digits10 = floor_log10_pow2(digits - 1);
-  static constexpr int max_digits10 = 2 + floor_log10_pow2(digits);
+  static constexpr int digits = __fmt.digits;
+  static constexpr int digits10 = __floor_log10_pow2(digits - 1);
+  static constexpr int max_digits10 = 2 + __floor_log10_pow2(digits);
   static constexpr bool is_signed = true;
   static constexpr int radix = 2;
-  static constexpr int min_exponent = fmt.min_exp;
-  static constexpr int min_exponent10 = -floor_log10_pow2(1 - fmt.min_exp);
-  static constexpr int max_exponent = fmt.max_exp;
-  static constexpr int max_exponent10 = floor_log10_pow2(fmt.max_exp);
+  static constexpr int min_exponent = __fmt.__min_exp;
+  static constexpr int min_exponent10 = -__floor_log10_pow2(1 - __fmt.__min_exp);
+  static constexpr int max_exponent = __fmt.__max_exp;
+  static constexpr int max_exponent10 = __floor_log10_pow2(__fmt.__max_exp);
   static constexpr bool has_infinity = true;
   static constexpr bool has_quiet_NaN = true;
   static constexpr bool has_signaling_NaN = true;
   // bfloat16 (8-bit mantissa) is not an ISO/IEC 60559 format.
-  static constexpr bool is_iec559 = fmt.digits != 8;
+  static constexpr bool is_iec559 = __fmt.digits != 8;
   static constexpr bool is_bounded = true;
   static constexpr std::float_round_style round_style = std::round_to_nearest;
   // Every supported format has subnormals (denorm_min() is one); the values are unspecified.
@@ -175,57 +175,57 @@ struct fp_limits : limits_base {
   [[deprecated("has_denorm_loss is deprecated ([depr.numeric.limits.has.denorm])")]]
   static constexpr bool has_denorm_loss = false;
 
-  static constexpr T(min)() noexcept { return pow2<T>(fmt.min_exp - 1); }
-  static constexpr T(max)() noexcept {
+  static constexpr _Tp(min)() noexcept { return __pow2<_Tp>(__fmt.__min_exp - 1); }
+  static constexpr _Tp(max)() noexcept {
     // (2 - 2^(1-digits)) * 2^(max_exp-1), computed without overflow.
-    return (T(2) - pow2<T>(1 - fmt.digits)) * pow2<T>(fmt.max_exp - 1);
+    return (_Tp(2) - __pow2<_Tp>(1 - __fmt.digits)) * __pow2<_Tp>(__fmt.__max_exp - 1);
   }
-  static constexpr T lowest() noexcept { return -(max)(); }
-  static constexpr T epsilon() noexcept { return pow2<T>(1 - fmt.digits); }
-  static constexpr T round_error() noexcept { return T(0.5); }
-  static constexpr T infinity() noexcept { return static_cast<T>(__builtin_huge_valf()); }
-  static constexpr T quiet_NaN() noexcept { return static_cast<T>(__builtin_nanf("")); }
-  static constexpr T signaling_NaN() noexcept { return make_signaling_nan<T>(); }
-  static constexpr T denorm_min() noexcept { return pow2<T>(fmt.min_exp - fmt.digits); }
+  static constexpr _Tp lowest() noexcept { return -(max)(); }
+  static constexpr _Tp epsilon() noexcept { return __pow2<_Tp>(1 - __fmt.digits); }
+  static constexpr _Tp round_error() noexcept { return _Tp(0.5); }
+  static constexpr _Tp infinity() noexcept { return static_cast<_Tp>(__builtin_huge_valf()); }
+  static constexpr _Tp quiet_NaN() noexcept { return static_cast<_Tp>(__builtin_nanf("")); }
+  static constexpr _Tp signaling_NaN() noexcept { return __make_signaling_nan<_Tp>(); }
+  static constexpr _Tp denorm_min() noexcept { return __pow2<_Tp>(__fmt.__min_exp - __fmt.digits); }
 };
 
-template <class T>
-struct generic_limits : limits_base {
-  static constexpr T(min)() noexcept { return T(); }
-  static constexpr T(max)() noexcept { return T(); }
-  static constexpr T lowest() noexcept { return T(); }
-  static constexpr T epsilon() noexcept { return T(); }
-  static constexpr T round_error() noexcept { return T(); }
-  static constexpr T infinity() noexcept { return T(); }
-  static constexpr T quiet_NaN() noexcept { return T(); }
-  static constexpr T signaling_NaN() noexcept { return T(); }
-  static constexpr T denorm_min() noexcept { return T(); }
+template <class _Tp>
+struct __generic_limits : __limits_base {
+  static constexpr _Tp(min)() noexcept { return _Tp(); }
+  static constexpr _Tp(max)() noexcept { return _Tp(); }
+  static constexpr _Tp lowest() noexcept { return _Tp(); }
+  static constexpr _Tp epsilon() noexcept { return _Tp(); }
+  static constexpr _Tp round_error() noexcept { return _Tp(); }
+  static constexpr _Tp infinity() noexcept { return _Tp(); }
+  static constexpr _Tp quiet_NaN() noexcept { return _Tp(); }
+  static constexpr _Tp signaling_NaN() noexcept { return _Tp(); }
+  static constexpr _Tp denorm_min() noexcept { return _Tp(); }
 };
 
-template <class T>
-consteval auto select_limits() {
-  if constexpr (__is_same(T, bool))
-    return bool_limits{};
-  else if constexpr (is_integral_v<T> || bitint_width<T> != 0)
-    return int_limits<T>{};
-  else if constexpr (is_floating_v<T> || __is_same(T, gnu_float128))
-    return fp_limits<T>{};
+template <class _Tp>
+consteval auto __select_limits() {
+  if constexpr (__is_same(_Tp, bool))
+    return __bool_limits{};
+  else if constexpr (is_integral_v<_Tp> || __bitint_width<_Tp> != 0)
+    return __int_limits<_Tp>{};
+  else if constexpr (__is_floating_v<_Tp> || __is_same(_Tp, __gnu_float128))
+    return __fp_limits<_Tp>{};
   else
-    return generic_limits<T>{};
+    return __generic_limits<_Tp>{};
 }
 
-}} // namespace ycxx::detail
+}} // namespace __ycxx::__detail
 
-namespace [[gnu::visibility("hidden")]] std {
+namespace [[__gnu__::__visibility__("hidden")]] std {
 
-template <class T>
-class numeric_limits : public decltype(ycxx::detail::select_limits<T>()) {};
+template <class _Tp>
+class numeric_limits : public decltype(__ycxx::__detail::__select_limits<_Tp>()) {};
 
-template <class T>
-class numeric_limits<const T> : public numeric_limits<T> {};
-template <class T>
-class numeric_limits<volatile T> : public numeric_limits<T> {};
-template <class T>
-class numeric_limits<const volatile T> : public numeric_limits<T> {};
+template <class _Tp>
+class numeric_limits<const _Tp> : public numeric_limits<_Tp> {};
+template <class _Tp>
+class numeric_limits<volatile _Tp> : public numeric_limits<_Tp> {};
+template <class _Tp>
+class numeric_limits<const volatile _Tp> : public numeric_limits<_Tp> {};
 
 } // namespace std

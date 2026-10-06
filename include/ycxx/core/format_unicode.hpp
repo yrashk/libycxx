@@ -12,289 +12,289 @@
 #include <ycxx/core/cstddef.hpp>
 #include <ycxx/core/format_unicode_tables.hpp>
 
-namespace [[gnu::visibility("hidden")]] ycxx { namespace detail::uni {
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail::__uni {
 
 // The encoding form of charT's literals: 8, 16 or 32 (UTF-8/16/32), 0 for anything else.
-consteval int literal_encoding_char() {
+consteval int __literal_encoding_char() {
   constexpr char s[] = "é";
   return sizeof(s) == 3 && static_cast<unsigned char>(s[0]) == 0xc3 && static_cast<unsigned char>(s[1]) == 0xa9 ? 8 : 0;
 }
-consteval int literal_encoding_wchar() {
+consteval int __literal_encoding_wchar() {
   constexpr wchar_t s[] = L"\U0001F600";
   if constexpr (sizeof(wchar_t) >= 4)
     return sizeof(s) / sizeof(wchar_t) == 2 && static_cast<unsigned long>(s[0]) == 0x1F600 ? 32 : 0;
   else
     return sizeof(s) / sizeof(wchar_t) == 3 && static_cast<unsigned long>(s[0]) == 0xD83D ? 16 : 0;
 }
-template <class charT>
-inline constexpr int encoding = __is_same(charT, char) ? literal_encoding_char() : literal_encoding_wchar();
+template <class __charT>
+inline constexpr int encoding = __is_same(__charT, char) ? __literal_encoding_char() : __literal_encoding_wchar();
 
-// One code unit sequence: a code point (`ok`), or a maximal ill-formed subsequence of `len`
+// One code unit sequence: a code point (`ok`), or a maximal ill-formed subsequence of `__len`
 // code units (Unicode 3.9, U+FFFD substitution of maximal subparts).
-struct decoded {
-  char32_t cp;
-  unsigned len;
+struct __decoded {
+  char32_t __cp;
+  unsigned __len;
   bool ok;
 };
 
-template <class charT>
-constexpr decoded decode(const charT* p, const charT* e) noexcept {
-  if constexpr (encoding<charT> == 8) {
-    const unsigned b0 = static_cast<unsigned char>(*p);
-    if (b0 < 0x80)
-      return {b0, 1, true};
+template <class __charT>
+constexpr __decoded __decode(const __charT* p, const __charT* e) noexcept {
+  if constexpr (encoding<__charT> == 8) {
+    const unsigned __b0 = static_cast<unsigned char>(*p);
+    if (__b0 < 0x80)
+      return {__b0, 1, true};
     unsigned n;
-    unsigned lo = 0x80, hi = 0xbf;
-    if (b0 < 0xc2)
+    unsigned __lo = 0x80, __hi = 0xbf;
+    if (__b0 < 0xc2)
       return {0, 1, false};
-    else if (b0 < 0xe0)
+    else if (__b0 < 0xe0)
       n = 2;
-    else if (b0 < 0xf0) {
+    else if (__b0 < 0xf0) {
       n = 3;
-      if (b0 == 0xe0)
-        lo = 0xa0;
-      else if (b0 == 0xed)
-        hi = 0x9f; // no surrogates
-    } else if (b0 < 0xf5) {
+      if (__b0 == 0xe0)
+        __lo = 0xa0;
+      else if (__b0 == 0xed)
+        __hi = 0x9f; // no surrogates
+    } else if (__b0 < 0xf5) {
       n = 4;
-      if (b0 == 0xf0)
-        lo = 0x90;
-      else if (b0 == 0xf4)
-        hi = 0x8f; // nothing above U+10FFFF
+      if (__b0 == 0xf0)
+        __lo = 0x90;
+      else if (__b0 == 0xf4)
+        __hi = 0x8f; // nothing above U+10FFFF
     } else
       return {0, 1, false};
-    char32_t cp = b0 & (0x7f >> n);
+    char32_t __cp = __b0 & (0x7f >> n);
     for (unsigned i = 1; i != n; ++i) {
       if (p + i == e)
         return {0, i, false};
       const unsigned b = static_cast<unsigned char>(p[i]);
-      if (b < lo || b > hi)
+      if (b < __lo || b > __hi)
         return {0, i, false};
-      lo = 0x80;
-      hi = 0xbf;
-      cp = cp << 6 | (b & 0x3f);
+      __lo = 0x80;
+      __hi = 0xbf;
+      __cp = __cp << 6 | (b & 0x3f);
     }
-    return {cp, n, true};
-  } else if constexpr (encoding<charT> == 16) {
-    const char32_t u = static_cast<char16_t>(*p);
-    if (u < 0xd800 || u > 0xdfff)
-      return {u, 1, true};
-    if (u < 0xdc00 && p + 1 != e) {
-      const char32_t v = static_cast<char16_t>(p[1]);
-      if (v >= 0xdc00 && v <= 0xdfff)
-        return {0x10000 + ((u - 0xd800) << 10) + (v - 0xdc00), 2, true};
+    return {__cp, n, true};
+  } else if constexpr (encoding<__charT> == 16) {
+    const char32_t __u = static_cast<char16_t>(*p);
+    if (__u < 0xd800 || __u > 0xdfff)
+      return {__u, 1, true};
+    if (__u < 0xdc00 && p + 1 != e) {
+      const char32_t __v = static_cast<char16_t>(p[1]);
+      if (__v >= 0xdc00 && __v <= 0xdfff)
+        return {0x10000 + ((__u - 0xd800) << 10) + (__v - 0xdc00), 2, true};
     }
     return {0, 1, false};
-  } else if constexpr (encoding<charT> == 32) {
-    const char32_t u = static_cast<char32_t>(*p);
-    return {u, 1, u <= 0x10ffff && (u < 0xd800 || u > 0xdfff)};
+  } else if constexpr (encoding<__charT> == 32) {
+    const char32_t __u = static_cast<char32_t>(*p);
+    return {__u, 1, __u <= 0x10ffff && (__u < 0xd800 || __u > 0xdfff)};
   } else {
     return {static_cast<unsigned char>(*p), 1, true};
   }
 }
 
 // A code unit's value as an unsigned number.
-template <class charT>
-constexpr unsigned long unit_value(charT c) noexcept {
-  if constexpr (sizeof(charT) == 1)
+template <class __charT>
+constexpr unsigned long __unit_value(__charT c) noexcept {
+  if constexpr (sizeof(__charT) == 1)
     return static_cast<unsigned char>(c);
-  else if constexpr (sizeof(charT) == 2)
+  else if constexpr (sizeof(__charT) == 2)
     return static_cast<char16_t>(c);
   else
     return static_cast<char32_t>(c);
 }
 
 // The property byte of the run containing c (tables: first code point << 8 | properties).
-template <std::size_t N>
-constexpr unsigned run_lookup(const unsigned (&t)[N], char32_t c) noexcept {
-  const unsigned key = static_cast<unsigned>(c) << 8 | 0xff;
-  std::size_t lo = 0, hi = N; // t[0] starts at U+0000
-  while (hi - lo > 1) {
-    const std::size_t mid = lo + (hi - lo) / 2;
-    if (t[mid] <= key)
-      lo = mid;
+template <std::size_t _Np>
+constexpr unsigned __run_lookup(const unsigned (&t)[_Np], char32_t c) noexcept {
+  const unsigned __key = static_cast<unsigned>(c) << 8 | 0xff;
+  std::size_t __lo = 0, __hi = _Np; // t[0] starts at U+0000
+  while (__hi - __lo > 1) {
+    const std::size_t __mid = __lo + (__hi - __lo) / 2;
+    if (t[__mid] <= __key)
+      __lo = __mid;
     else
-      hi = mid;
+      __hi = __mid;
   }
-  return t[lo] & 0xff;
+  return t[__lo] & 0xff;
 }
 
 // cluster_runs properties of c, with the Hangul syllables' LV / LVT computed.
-constexpr unsigned cluster_props(char32_t c) noexcept {
-  unsigned p = ::ycxx::detail::uni::run_lookup(cluster_runs, c);
+constexpr unsigned __cluster_props(char32_t c) noexcept {
+  unsigned p = ::__ycxx::__detail::__uni::__run_lookup(__cluster_runs, c);
   if (c >= 0xac00 && c <= 0xd7a3)
-    p = (p & ~0xfu) | ((c - 0xac00) % 28 == 0 ? gcb_lv : gcb_lvt);
+    p = (p & ~0xfu) | ((c - 0xac00) % 28 == 0 ? __gcb_lv : __gcb_lvt);
   return p;
 }
 // An ill-formed sequence counts as U+FFFD: Grapheme_Cluster_Break Other, field width 1.
-inline constexpr unsigned replacement_props = gcb_other;
+inline constexpr unsigned __replacement_props = __gcb_other;
 
 // The extended grapheme cluster boundary rules of UAX #29 (GB3-GB13, GB999), applied to one
 // code point after another.
-class cluster_breaker {
-  unsigned prev_ = 0;
-  bool started_ = false;
-  bool ri_odd_ = false;   // an odd number of Regional_Indicator code points precedes
-  unsigned char xpict_ = 0; // 1: ExtPict Extend*, 2: ExtPict Extend* ZWJ precedes
-  bool linker_ = false;   // InCB=Linker InCB=Extend* precedes
+class __cluster_breaker {
+  unsigned __prev_ = 0;
+  bool __started_ = false;
+  bool __ri_odd_ = false;   // an odd number of Regional_Indicator code points precedes
+  unsigned char __xpict_ = 0; // 1: ExtPict Extend*, 2: ExtPict Extend* ZWJ precedes
+  bool __linker_ = false;   // InCB=Linker InCB=Extend* precedes
 
 public:
   // Whether a cluster starts at a code point with properties p.
   constexpr bool next(unsigned p) noexcept {
-    const unsigned cur = p & 0xf, prev = prev_ & 0xf;
-    const unsigned incb = (p >> 5) & 3;
-    const bool pict = (p >> 4) & 1;
-    bool brk;
-    if (!started_)
-      brk = true;
-    else if (prev == gcb_cr && cur == gcb_lf)
-      brk = false; // GB3
-    else if (prev == gcb_cr || prev == gcb_lf || prev == gcb_control || cur == gcb_cr || cur == gcb_lf ||
-             cur == gcb_control)
-      brk = true; // GB4, GB5
-    else if (prev == gcb_l && (cur == gcb_l || cur == gcb_v || cur == gcb_lv || cur == gcb_lvt))
-      brk = false; // GB6
-    else if ((prev == gcb_lv || prev == gcb_v) && (cur == gcb_v || cur == gcb_t))
-      brk = false; // GB7
-    else if ((prev == gcb_lvt || prev == gcb_t) && cur == gcb_t)
-      brk = false; // GB8
-    else if (cur == gcb_extend || cur == gcb_zwj || cur == gcb_spacingmark || prev == gcb_prepend)
-      brk = false; // GB9, GB9a, GB9b
-    else if (linker_ && incb == incb_consonant)
-      brk = false; // GB9c
-    else if (xpict_ == 2 && pict)
-      brk = false; // GB11
-    else if (cur == gcb_regional_indicator && prev == gcb_regional_indicator && ri_odd_)
-      brk = false; // GB12, GB13
+    const unsigned cur = p & 0xf, prev = __prev_ & 0xf;
+    const unsigned __incb = (p >> 5) & 3;
+    const bool __pict = (p >> 4) & 1;
+    bool __brk;
+    if (!__started_)
+      __brk = true;
+    else if (prev == __gcb_cr && cur == __gcb_lf)
+      __brk = false; // GB3
+    else if (prev == __gcb_cr || prev == __gcb_lf || prev == __gcb_control || cur == __gcb_cr || cur == __gcb_lf ||
+             cur == __gcb_control)
+      __brk = true; // GB4, GB5
+    else if (prev == __gcb_l && (cur == __gcb_l || cur == __gcb_v || cur == __gcb_lv || cur == __gcb_lvt))
+      __brk = false; // GB6
+    else if ((prev == __gcb_lv || prev == __gcb_v) && (cur == __gcb_v || cur == __gcb_t))
+      __brk = false; // GB7
+    else if ((prev == __gcb_lvt || prev == __gcb_t) && cur == __gcb_t)
+      __brk = false; // GB8
+    else if (cur == __gcb_extend || cur == __gcb_zwj || cur == __gcb_spacingmark || prev == __gcb_prepend)
+      __brk = false; // GB9, GB9a, GB9b
+    else if (__linker_ && __incb == __incb_consonant)
+      __brk = false; // GB9c
+    else if (__xpict_ == 2 && __pict)
+      __brk = false; // GB11
+    else if (cur == __gcb_regional_indicator && prev == __gcb_regional_indicator && __ri_odd_)
+      __brk = false; // GB12, GB13
     else
-      brk = true; // GB999
-    ri_odd_ = cur == gcb_regional_indicator && !(prev == gcb_regional_indicator && ri_odd_ && started_);
-    if (pict)
-      xpict_ = 1;
-    else if (xpict_ == 1 && cur == gcb_extend)
-      xpict_ = 1;
-    else if (xpict_ == 1 && cur == gcb_zwj)
-      xpict_ = 2;
+      __brk = true; // GB999
+    __ri_odd_ = cur == __gcb_regional_indicator && !(prev == __gcb_regional_indicator && __ri_odd_ && __started_);
+    if (__pict)
+      __xpict_ = 1;
+    else if (__xpict_ == 1 && cur == __gcb_extend)
+      __xpict_ = 1;
+    else if (__xpict_ == 1 && cur == __gcb_zwj)
+      __xpict_ = 2;
     else
-      xpict_ = 0;
-    linker_ = incb == incb_linker || (linker_ && incb == incb_extend);
-    prev_ = p;
-    started_ = true;
-    return brk;
+      __xpict_ = 0;
+    __linker_ = __incb == __incb_linker || (__linker_ && __incb == __incb_extend);
+    __prev_ = p;
+    __started_ = true;
+    return __brk;
   }
 };
 
 // The field width of [p, p + n), and of its longest prefix of whole clusters whose width does not
 // exceed max_width: {code units of the prefix, its width}.
-struct width_result {
-  std::size_t units;
+struct __width_result {
+  std::size_t __units;
   std::size_t width;
 };
-template <class charT>
-constexpr width_result width_prefix(const charT* p, std::size_t n, std::size_t max_width) noexcept {
-  if constexpr (encoding<charT> == 0) {
-    const std::size_t k = n < max_width ? n : max_width;
+template <class __charT>
+constexpr __width_result __width_prefix(const __charT* p, std::size_t n, std::size_t __max_width) noexcept {
+  if constexpr (encoding<__charT> == 0) {
+    const std::size_t k = n < __max_width ? n : __max_width;
     return {k, k};
   } else {
-    const charT* const b = p;
-    const charT* const e = p + n;
+    const __charT* const b = p;
+    const __charT* const e = p + n;
     // Printable ASCII: one cluster of width 1 per code unit (CR LF is the only ASCII pair that
     // forms one cluster, and it is handled below).
     std::size_t width = 0;
     while (p != e && static_cast<char32_t>(*p) >= 0x20 && static_cast<char32_t>(*p) < 0x7f) {
-      if (width == max_width)
+      if (width == __max_width)
         return {static_cast<std::size_t>(p - b), width};
       ++width;
       ++p;
     }
     if (p == e)
       return {n, width};
-    cluster_breaker brk;
+    __cluster_breaker __brk;
     if (p != b)
-      brk.next(::ycxx::detail::uni::cluster_props(static_cast<char32_t>(p[-1])));
+      __brk.next(::__ycxx::__detail::__uni::__cluster_props(static_cast<char32_t>(p[-1])));
     while (p != e) {
-      const decoded d = ::ycxx::detail::uni::decode(p, e);
-      const unsigned props = d.ok ? ::ycxx::detail::uni::cluster_props(d.cp) : replacement_props;
-      if (brk.next(props)) {
-        const std::size_t w = (props & 0x80) ? 2 : 1;
-        if (width + w > max_width)
+      const __decoded d = ::__ycxx::__detail::__uni::__decode(p, e);
+      const unsigned __props = d.ok ? ::__ycxx::__detail::__uni::__cluster_props(d.__cp) : __replacement_props;
+      if (__brk.next(__props)) {
+        const std::size_t __w = (__props & 0x80) ? 2 : 1;
+        if (width + __w > __max_width)
           return {static_cast<std::size_t>(p - b), width};
-        width += w;
+        width += __w;
       }
-      p += d.len;
+      p += d.__len;
     }
     return {n, width};
   }
 }
-template <class charT>
-constexpr std::size_t width(const charT* p, std::size_t n) noexcept {
-  return ::ycxx::detail::uni::width_prefix(p, n, static_cast<std::size_t>(-1)).width;
+template <class __charT>
+constexpr std::size_t width(const __charT* p, std::size_t n) noexcept {
+  return ::__ycxx::__detail::__uni::__width_prefix(p, n, static_cast<std::size_t>(-1)).width;
 }
 
 // The escaped string ([format.string.escaped]/2) or character (/3) representation of
 // [p, p + n), written through put(const charT*, size_t).
-template <class charT, class Put>
-constexpr void escape(const charT* p, std::size_t n, bool is_char, Put&& put) {
-  const charT quote = is_char ? charT('\'') : charT('"');
-  put(&quote, 1);
-  const charT* const e = p + n;
-  bool prev_plain = false; // the previous character was appended without translation
-  const auto put_hex = [&put](char kind, unsigned long v) {
-    charT buf[16];
+template <class __charT, class _Put>
+constexpr void __escape(const __charT* p, std::size_t n, bool __is_char, _Put&& put) {
+  const __charT __quote = __is_char ? __charT('\'') : __charT('"');
+  put(&__quote, 1);
+  const __charT* const e = p + n;
+  bool __prev_plain = false; // the previous character was appended without translation
+  const auto __put_hex = [&put](char kind, unsigned long __v) {
+    __charT __buf[16];
     int i = 15;
-    buf[i--] = charT('}');
+    __buf[i--] = __charT('}');
     do {
-      buf[i--] = charT("0123456789abcdef"[v & 0xf]);
-      v >>= 4;
-    } while (v != 0);
-    buf[i--] = charT('{');
-    buf[i--] = charT(kind);
-    buf[i] = charT('\\');
-    put(buf + i, static_cast<std::size_t>(16 - i));
+      __buf[i--] = __charT("0123456789abcdef"[__v & 0xf]);
+      __v >>= 4;
+    } while (__v != 0);
+    __buf[i--] = __charT('{');
+    __buf[i--] = __charT(kind);
+    __buf[i] = __charT('\\');
+    put(__buf + i, static_cast<std::size_t>(16 - i));
   };
   while (p != e) {
-    const decoded d = ::ycxx::detail::uni::decode(p, e);
+    const __decoded d = ::__ycxx::__detail::__uni::__decode(p, e);
     if (!d.ok) {
-      for (unsigned i = 0; i != d.len; ++i)
-        put_hex('x', ::ycxx::detail::uni::unit_value(p[i]));
-      prev_plain = false;
-      p += d.len;
+      for (unsigned i = 0; i != d.__len; ++i)
+        __put_hex('x', ::__ycxx::__detail::__uni::__unit_value(p[i]));
+      __prev_plain = false;
+      p += d.__len;
       continue;
     }
-    const char32_t c = d.cp;
-    charT esc = 0;
+    const char32_t c = d.__cp;
+    __charT __esc = 0;
     switch (c) {
-    case U'\t': esc = charT('t'); break;
-    case U'\n': esc = charT('n'); break;
-    case U'\r': esc = charT('r'); break;
-    case U'\\': esc = charT('\\'); break;
-    case U'"': esc = is_char ? charT(0) : charT('"'); break;
-    case U'\'': esc = is_char ? charT('\'') : charT(0); break;
+    case U'\t': __esc = __charT('t'); break;
+    case U'\n': __esc = __charT('n'); break;
+    case U'\r': __esc = __charT('r'); break;
+    case U'\\': __esc = __charT('\\'); break;
+    case U'"': __esc = __is_char ? __charT(0) : __charT('"'); break;
+    case U'\'': __esc = __is_char ? __charT('\'') : __charT(0); break;
     default: break;
     }
-    if (esc != 0) {
-      const charT two[2] = {charT('\\'), esc};
-      put(two, 2);
-      prev_plain = false;
+    if (__esc != 0) {
+      const __charT __two[2] = {__charT('\\'), __esc};
+      put(__two, 2);
+      __prev_plain = false;
     } else {
       bool hex;
-      if constexpr (encoding<charT> == 0) {
+      if constexpr (encoding<__charT> == 0) {
         hex = c < 0x20 || c == 0x7f;
       } else {
-        const unsigned props = c < 0x7f ? (c < 0x20 ? 1u : 0u) : ::ycxx::detail::uni::run_lookup(escape_runs, c);
-        hex = c != U' ' && ((props & 1) || ((props & 2) && !prev_plain));
+        const unsigned __props = c < 0x7f ? (c < 0x20 ? 1u : 0u) : ::__ycxx::__detail::__uni::__run_lookup(__escape_runs, c);
+        hex = c != U' ' && ((__props & 1) || ((__props & 2) && !__prev_plain));
       }
       if (hex) {
-        put_hex('u', static_cast<unsigned long>(c));
-        prev_plain = false;
+        __put_hex('u', static_cast<unsigned long>(c));
+        __prev_plain = false;
       } else {
-        put(p, d.len);
-        prev_plain = true;
+        put(p, d.__len);
+        __prev_plain = true;
       }
     }
-    p += d.len;
+    p += d.__len;
   }
-  put(&quote, 1);
+  put(&__quote, 1);
 }
 
-}} // namespace ycxx::detail::uni
+}} // namespace __ycxx::__detail::__uni

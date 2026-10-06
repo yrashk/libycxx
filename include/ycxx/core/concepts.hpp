@@ -4,166 +4,166 @@
 #include <ycxx/core/type_traits.hpp>
 #include <ycxx/core/compare.hpp>
 
-namespace [[gnu::visibility("hidden")]] std {
+namespace [[__gnu__::__visibility__("hidden")]] std {
 
-template <class T, class U>
-concept same_as = ycxx::detail::same_as_<T, U>;
+template <class _Tp, class _Up>
+concept same_as = __ycxx::__detail::__same_as_<_Tp, _Up>;
 
-template <class Derived, class Base>
+template <class _Derived, class _Base>
 concept derived_from =
-    __is_base_of(Base, Derived) && __is_convertible(const volatile Derived*, const volatile Base*);
+    __is_base_of(_Base, _Derived) && __is_convertible(const volatile _Derived*, const volatile _Base*);
 
-template <class From, class To>
-concept convertible_to = ycxx::detail::convertible_to_<From, To>;
+template <class _From, class _To>
+concept convertible_to = __ycxx::__detail::__convertible_to_<_From, _To>;
 
-template <class T, class U>
-concept common_reference_with = ycxx::detail::common_reference_with_<T, U>;
+template <class _Tp, class _Up>
+concept common_reference_with = __ycxx::__detail::__common_reference_with_<_Tp, _Up>;
 
-template <class T, class U>
+template <class _Tp, class _Up>
 concept common_with =
-    same_as<common_type_t<T, U>, common_type_t<U, T>> && requires {
-      static_cast<common_type_t<T, U>>(std::declval<T>());
-      static_cast<common_type_t<T, U>>(std::declval<U>());
-    } && common_reference_with<add_lvalue_reference_t<const T>, add_lvalue_reference_t<const U>> &&
-    common_reference_with<add_lvalue_reference_t<common_type_t<T, U>>,
-                          common_reference_t<add_lvalue_reference_t<const T>, add_lvalue_reference_t<const U>>>;
+    same_as<common_type_t<_Tp, _Up>, common_type_t<_Up, _Tp>> && requires {
+      static_cast<common_type_t<_Tp, _Up>>(std::declval<_Tp>());
+      static_cast<common_type_t<_Tp, _Up>>(std::declval<_Up>());
+    } && common_reference_with<add_lvalue_reference_t<const _Tp>, add_lvalue_reference_t<const _Up>> &&
+    common_reference_with<add_lvalue_reference_t<common_type_t<_Tp, _Up>>,
+                          common_reference_t<add_lvalue_reference_t<const _Tp>, add_lvalue_reference_t<const _Up>>>;
 
-template <class T>
-concept integral = ::ycxx::detail::is_integral_v<T>;
-template <class T>
-concept signed_integral = integral<T> && ::ycxx::detail::is_signed_v<T>;
-template <class T>
-concept unsigned_integral = integral<T> && !signed_integral<T>;
-template <class T>
-concept floating_point = ::ycxx::detail::is_floating_v<T>;
+template <class _Tp>
+concept integral = ::__ycxx::__detail::is_integral_v<_Tp>;
+template <class _Tp>
+concept signed_integral = integral<_Tp> && ::__ycxx::__detail::is_signed_v<_Tp>;
+template <class _Tp>
+concept unsigned_integral = integral<_Tp> && !signed_integral<_Tp>;
+template <class _Tp>
+concept floating_point = ::__ycxx::__detail::__is_floating_v<_Tp>;
 
-template <class LHS, class RHS>
+template <class _LHS, class _RHS>
 concept assignable_from =
-    ::ycxx::detail::is_lref_v<LHS> &&
-    common_reference_with<const ::ycxx::detail::remove_ref_t<LHS>&, const ::ycxx::detail::remove_ref_t<RHS>&> &&
-    requires(LHS lhs, RHS&& rhs) {
-      { lhs = static_cast<RHS&&>(rhs) } -> same_as<LHS>;
+    ::__ycxx::__detail::__is_lref_v<_LHS> &&
+    common_reference_with<const ::__ycxx::__detail::__remove_ref_t<_LHS>&, const ::__ycxx::__detail::__remove_ref_t<_RHS>&> &&
+    requires(_LHS __lhs, _RHS&& __rhs) {
+      { __lhs = static_cast<_RHS&&>(__rhs) } -> same_as<_LHS>;
     };
 
-template <class T>
-concept destructible = __is_nothrow_destructible(T);
+template <class _Tp>
+concept destructible = __is_nothrow_destructible(_Tp);
 
-template <class T, class... Args>
-concept constructible_from = destructible<T> && __is_constructible(T, Args...);
+template <class _Tp, class... _Args>
+concept constructible_from = destructible<_Tp> && __is_constructible(_Tp, _Args...);
 
-template <class T>
-concept default_initializable = constructible_from<T> && requires { T{}; } && requires { ::new T; };
+template <class _Tp>
+concept default_initializable = constructible_from<_Tp> && requires { _Tp{}; } && requires { ::new _Tp; };
 
-template <class T>
-concept move_constructible = constructible_from<T, T> && convertible_to<T, T>;
+template <class _Tp>
+concept move_constructible = constructible_from<_Tp, _Tp> && convertible_to<_Tp, _Tp>;
 
-template <class T>
-concept copy_constructible = move_constructible<T> && constructible_from<T, T&> && convertible_to<T&, T> &&
-                             constructible_from<T, const T&> && convertible_to<const T&, T> &&
-                             constructible_from<T, const T> && convertible_to<const T, T>;
+template <class _Tp>
+concept copy_constructible = move_constructible<_Tp> && constructible_from<_Tp, _Tp&> && convertible_to<_Tp&, _Tp> &&
+                             constructible_from<_Tp, const _Tp&> && convertible_to<const _Tp&, _Tp> &&
+                             constructible_from<_Tp, const _Tp> && convertible_to<const _Tp, _Tp>;
 
 } // namespace std
 
 // ranges::swap customization point object
-namespace [[gnu::visibility("hidden")]] ycxx { namespace detail::swap_cpo {
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail::__swap_cpo {
 
-template <class T>
-void swap(T&, T&) = delete;
+template <class _Tp>
+void swap(_Tp&, _Tp&) = delete;
 
-template <class T, class U>
-concept adl_swappable = (__is_class(__remove_cvref(T)) || __is_union(__remove_cvref(T)) || __is_enum(__remove_cvref(T)) ||
-                         __is_class(__remove_cvref(U)) || __is_union(__remove_cvref(U)) || __is_enum(__remove_cvref(U))) &&
-                        requires(T&& t, U&& u) { swap(static_cast<T&&>(t), static_cast<U&&>(u)); };
+template <class _Tp, class _Up>
+concept __adl_swappable = (__is_class(__remove_cvref(_Tp)) || __is_union(__remove_cvref(_Tp)) || __is_enum(__remove_cvref(_Tp)) ||
+                         __is_class(__remove_cvref(_Up)) || __is_union(__remove_cvref(_Up)) || __is_enum(__remove_cvref(_Up))) &&
+                        requires(_Tp&& t, _Up&& __u) { swap(static_cast<_Tp&&>(t), static_cast<_Up&&>(__u)); };
 
-template <class T>
-concept move_and_assign = std::move_constructible<T> && std::assignable_from<T&, T>;
+template <class _Tp>
+concept __move_and_assign = std::move_constructible<_Tp> && std::assignable_from<_Tp&, _Tp>;
 
-struct fn {
-  template <class T, class U>
-    requires adl_swappable<T, U>
-  constexpr void operator()(T&& t, U&& u) const noexcept(noexcept(swap(static_cast<T&&>(t), static_cast<U&&>(u)))) {
-    swap(static_cast<T&&>(t), static_cast<U&&>(u));
+struct __fn {
+  template <class _Tp, class _Up>
+    requires __adl_swappable<_Tp, _Up>
+  constexpr void operator()(_Tp&& t, _Up&& __u) const noexcept(noexcept(swap(static_cast<_Tp&&>(t), static_cast<_Up&&>(__u)))) {
+    swap(static_cast<_Tp&&>(t), static_cast<_Up&&>(__u));
   }
 
-  template <class T, class U, std::size_t N>
-    requires(!adl_swappable<T (&)[N], U (&)[N]>) && requires(const fn& f, T& a, U& b) { f(a, b); }
-  constexpr void operator()(T (&t)[N], U (&u)[N]) const noexcept(noexcept((*this)(*t, *u))) {
-    for (std::size_t i = 0; i < N; ++i)
-      (*this)(t[i], u[i]);
+  template <class _Tp, class _Up, std::size_t _Np>
+    requires(!__adl_swappable<_Tp (&)[_Np], _Up (&)[_Np]>) && requires(const __fn& __f, _Tp& a, _Up& b) { __f(a, b); }
+  constexpr void operator()(_Tp (&t)[_Np], _Up (&__u)[_Np]) const noexcept(noexcept((*this)(*t, *__u))) {
+    for (std::size_t i = 0; i < _Np; ++i)
+      (*this)(t[i], __u[i]);
   }
 
-  template <class T>
-    requires(!adl_swappable<T&, T&>) && move_and_assign<T>
-  constexpr void operator()(T& a, T& b) const
-      noexcept(__is_nothrow_constructible(T, T &&) && __is_nothrow_assignable(T&, T &&)) {
-    T tmp(static_cast<T&&>(a));
-    a = static_cast<T&&>(b);
-    b = static_cast<T&&>(tmp);
+  template <class _Tp>
+    requires(!__adl_swappable<_Tp&, _Tp&>) && __move_and_assign<_Tp>
+  constexpr void operator()(_Tp& a, _Tp& b) const
+      noexcept(__is_nothrow_constructible(_Tp, _Tp &&) && __is_nothrow_assignable(_Tp&, _Tp &&)) {
+    _Tp __tmp(static_cast<_Tp&&>(a));
+    a = static_cast<_Tp&&>(b);
+    b = static_cast<_Tp&&>(__tmp);
   }
 };
-}} // namespace ycxx::detail::swap_cpo
+}} // namespace __ycxx::__detail::__swap_cpo
 
-namespace [[gnu::visibility("hidden")]] std { namespace ranges {
+namespace [[__gnu__::__visibility__("hidden")]] std { namespace ranges {
 inline namespace cpo {
-inline constexpr ycxx::detail::swap_cpo::fn swap{};
+inline constexpr __ycxx::__detail::__swap_cpo::__fn swap{};
 }
 }} // namespace std::ranges
 
-namespace [[gnu::visibility("hidden")]] std {
+namespace [[__gnu__::__visibility__("hidden")]] std {
 
-template <class T>
-concept swappable = requires(T& a, T& b) { ranges::swap(a, b); };
+template <class _Tp>
+concept swappable = requires(_Tp& a, _Tp& b) { ranges::swap(a, b); };
 
-template <class T, class U>
-concept swappable_with = common_reference_with<T, U> && requires(T&& t, U&& u) {
-  ranges::swap(static_cast<T&&>(t), static_cast<T&&>(t));
-  ranges::swap(static_cast<U&&>(u), static_cast<U&&>(u));
-  ranges::swap(static_cast<T&&>(t), static_cast<U&&>(u));
-  ranges::swap(static_cast<U&&>(u), static_cast<T&&>(t));
+template <class _Tp, class _Up>
+concept swappable_with = common_reference_with<_Tp, _Up> && requires(_Tp&& t, _Up&& __u) {
+  ranges::swap(static_cast<_Tp&&>(t), static_cast<_Tp&&>(t));
+  ranges::swap(static_cast<_Up&&>(__u), static_cast<_Up&&>(__u));
+  ranges::swap(static_cast<_Tp&&>(t), static_cast<_Up&&>(__u));
+  ranges::swap(static_cast<_Up&&>(__u), static_cast<_Tp&&>(t));
 };
 
-template <class T>
-concept equality_comparable = ycxx::detail::weakly_equality_comparable_with<T, T>;
+template <class _Tp>
+concept equality_comparable = __ycxx::__detail::__weakly_equality_comparable_with<_Tp, _Tp>;
 
-template <class T, class U>
+template <class _Tp, class _Up>
 concept equality_comparable_with =
-    equality_comparable<T> && equality_comparable<U> && ycxx::detail::comparison_common_type_with<T, U> &&
-    equality_comparable<common_reference_t<const ::ycxx::detail::remove_ref_t<T>&, const ::ycxx::detail::remove_ref_t<U>&>> &&
-    ycxx::detail::weakly_equality_comparable_with<T, U>;
+    equality_comparable<_Tp> && equality_comparable<_Up> && __ycxx::__detail::__comparison_common_type_with<_Tp, _Up> &&
+    equality_comparable<common_reference_t<const ::__ycxx::__detail::__remove_ref_t<_Tp>&, const ::__ycxx::__detail::__remove_ref_t<_Up>&>> &&
+    __ycxx::__detail::__weakly_equality_comparable_with<_Tp, _Up>;
 
-template <class T>
-concept totally_ordered = equality_comparable<T> && ycxx::detail::partially_ordered_with<T, T>;
+template <class _Tp>
+concept totally_ordered = equality_comparable<_Tp> && __ycxx::__detail::__partially_ordered_with<_Tp, _Tp>;
 
-template <class T, class U>
+template <class _Tp, class _Up>
 concept totally_ordered_with =
-    totally_ordered<T> && totally_ordered<U> && equality_comparable_with<T, U> &&
-    totally_ordered<common_reference_t<const ::ycxx::detail::remove_ref_t<T>&, const ::ycxx::detail::remove_ref_t<U>&>> &&
-    ycxx::detail::partially_ordered_with<T, U>;
+    totally_ordered<_Tp> && totally_ordered<_Up> && equality_comparable_with<_Tp, _Up> &&
+    totally_ordered<common_reference_t<const ::__ycxx::__detail::__remove_ref_t<_Tp>&, const ::__ycxx::__detail::__remove_ref_t<_Up>&>> &&
+    __ycxx::__detail::__partially_ordered_with<_Tp, _Up>;
 
-template <class T>
-concept movable = is_object_v<T> && move_constructible<T> && assignable_from<T&, T> && swappable<T>;
-template <class T>
-concept copyable = copy_constructible<T> && movable<T> && assignable_from<T&, T&> &&
-                   assignable_from<T&, const T&> && assignable_from<T&, const T>;
-template <class T>
-concept semiregular = copyable<T> && default_initializable<T>;
-template <class T>
-concept regular = semiregular<T> && equality_comparable<T>;
+template <class _Tp>
+concept movable = is_object_v<_Tp> && move_constructible<_Tp> && assignable_from<_Tp&, _Tp> && swappable<_Tp>;
+template <class _Tp>
+concept copyable = copy_constructible<_Tp> && movable<_Tp> && assignable_from<_Tp&, _Tp&> &&
+                   assignable_from<_Tp&, const _Tp&> && assignable_from<_Tp&, const _Tp>;
+template <class _Tp>
+concept semiregular = copyable<_Tp> && default_initializable<_Tp>;
+template <class _Tp>
+concept regular = semiregular<_Tp> && equality_comparable<_Tp>;
 
-template <class F, class... Args>
-concept invocable = ycxx::detail::invocable_<F, Args...>;
-template <class F, class... Args>
-concept regular_invocable = invocable<F, Args...>;
+template <class _Fp, class... _Args>
+concept invocable = __ycxx::__detail::__invocable_<_Fp, _Args...>;
+template <class _Fp, class... _Args>
+concept regular_invocable = invocable<_Fp, _Args...>;
 
-template <class F, class... Args>
+template <class _Fp, class... _Args>
 concept predicate =
-    regular_invocable<F, Args...> && ycxx::detail::boolean_testable<invoke_result_t<F, Args...>>;
-template <class R, class T, class U>
-concept relation = predicate<R, T, T> && predicate<R, U, U> && predicate<R, T, U> && predicate<R, U, T>;
-template <class R, class T, class U>
-concept equivalence_relation = relation<R, T, U>;
-template <class R, class T, class U>
-concept strict_weak_order = relation<R, T, U>;
+    regular_invocable<_Fp, _Args...> && __ycxx::__detail::__boolean_testable<invoke_result_t<_Fp, _Args...>>;
+template <class _Rp, class _Tp, class _Up>
+concept relation = predicate<_Rp, _Tp, _Tp> && predicate<_Rp, _Up, _Up> && predicate<_Rp, _Tp, _Up> && predicate<_Rp, _Up, _Tp>;
+template <class _Rp, class _Tp, class _Up>
+concept equivalence_relation = relation<_Rp, _Tp, _Up>;
+template <class _Rp, class _Tp, class _Up>
+concept strict_weak_order = relation<_Rp, _Tp, _Up>;
 
 } // namespace std
 

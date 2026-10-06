@@ -12,7 +12,7 @@
 // The node is held as rebind_traits<Node>::pointer ([container.node.overview]), so a class-type
 // allocator pointer works; the allocator lives in a union member, alive exactly while the
 // handle is non-empty. The containers create and empty handles through
-// ycxx::detail::node_handle_access: make<NH>(node, alloc), take(nh) (empties nh, returns the
+// __ycxx::__detail::__node_handle_access: make<NH>(node, alloc), take(nh) (empties nh, returns the
 // node) and peek(nh).
 #pragma once
 
@@ -20,195 +20,195 @@
 #include <ycxx/core/sequence_support.hpp>
 #include <ycxx/core/swap.hpp>
 
-namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
-struct node_handle_access;
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+struct __node_handle_access;
 }}
 
-namespace [[gnu::visibility("hidden")]] ycxx { namespace adl_free {
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __adl_free {
 
 // The key/mapped types of a map node handle and the value type of a set node handle.
-template <class V, bool Map>
-struct node_handle_types {
-  using value_type = V;
+template <class _Vp, bool _Map>
+struct __node_handle_types {
+  using value_type = _Vp;
 };
-template <class V>
-struct node_handle_types<V, true> {
-  using key_type = std::remove_const_t<typename V::first_type>;
-  using mapped_type = typename V::second_type;
+template <class _Vp>
+struct __node_handle_types<_Vp, true> {
+  using key_type = std::remove_const_t<typename _Vp::first_type>;
+  using mapped_type = typename _Vp::second_type;
 };
 
-template <class Node, class Alloc, bool IsMap>
-class node_handle : public node_handle_types<std::remove_cvref_t<decltype(std::declval<Node&>().value)>, IsMap> {
-  using node = Node;
-  using V = std::remove_cvref_t<decltype(std::declval<Node&>().value)>;
-  using ator_traits = std::allocator_traits<Alloc>;
-  using node_traits = typename ator_traits::template rebind_traits<node>;
-  using node_pointer = typename node_traits::pointer;
-  using node_alloc = typename ator_traits::template rebind_alloc<node>;
+template <class _Node, class _Alloc, bool _IsMap>
+class __node_handle : public __node_handle_types<std::remove_cvref_t<decltype(std::declval<_Node&>().value)>, _IsMap> {
+  using __node = _Node;
+  using _Vp = std::remove_cvref_t<decltype(std::declval<_Node&>().value)>;
+  using __ator_traits = std::allocator_traits<_Alloc>;
+  using __node_traits = typename __ator_traits::template rebind_traits<__node>;
+  using __node_pointer = typename __node_traits::pointer;
+  using __node_alloc = typename __ator_traits::template rebind_alloc<__node>;
 
-  friend struct ::ycxx::detail::node_handle_access;
+  friend struct ::__ycxx::__detail::__node_handle_access;
 
 public:
-  using allocator_type = Alloc;
+  using allocator_type = _Alloc;
 
 private:
-  node_pointer ptr_ = node_pointer();
+  __node_pointer __ptr_ = __node_pointer();
   // optional<allocator_type> alloc_, without the <optional> dependency: engaged iff ptr_ is
   // not null.
   union {
-    Alloc alloc_;
+    _Alloc __alloc_;
   };
 
-  constexpr node* raw() const noexcept { return ptr_ == nullptr ? nullptr : std::to_address(ptr_); }
-  constexpr void destroy_node() noexcept {
-    node* n = raw();
-    ator_traits::destroy(alloc_, __builtin_addressof(n->value));
+  constexpr __node* __raw() const noexcept { return __ptr_ == nullptr ? nullptr : std::to_address(__ptr_); }
+  constexpr void __destroy_node() noexcept {
+    __node* n = __raw();
+    __ator_traits::destroy(__alloc_, __builtin_addressof(n->value));
     std::destroy_at(n);
-    node_alloc na(alloc_);
-    node_traits::deallocate(na, ptr_, 1);
+    __node_alloc __na(__alloc_);
+    __node_traits::deallocate(__na, __ptr_, 1);
   }
   // Leaves *this empty without touching the node.
   constexpr void reset() noexcept {
-    if (ptr_ != nullptr) {
-      std::destroy_at(__builtin_addressof(alloc_));
-      ptr_ = node_pointer();
+    if (__ptr_ != nullptr) {
+      std::destroy_at(__builtin_addressof(__alloc_));
+      __ptr_ = __node_pointer();
     }
   }
-  constexpr node_handle(node* n, const Alloc& a) noexcept
-      : ptr_(::ycxx::detail::to_alloc_pointer<node_pointer>(n)) {
-    std::construct_at(__builtin_addressof(alloc_), a);
+  constexpr __node_handle(__node* n, const _Alloc& a) noexcept
+      : __ptr_(::__ycxx::__detail::__to_alloc_pointer<__node_pointer>(n)) {
+    std::construct_at(__builtin_addressof(__alloc_), a);
   }
 
 public:
   // ---- [container.node.cons] ----
-  constexpr node_handle() noexcept {}
-  constexpr node_handle(node_handle&& nh) noexcept : ptr_(nh.ptr_) {
-    if (ptr_ != nullptr) {
-      std::construct_at(__builtin_addressof(alloc_), static_cast<Alloc&&>(nh.alloc_));
-      std::destroy_at(__builtin_addressof(nh.alloc_));
-      nh.ptr_ = node_pointer();
+  constexpr __node_handle() noexcept {}
+  constexpr __node_handle(__node_handle&& __nh) noexcept : __ptr_(__nh.__ptr_) {
+    if (__ptr_ != nullptr) {
+      std::construct_at(__builtin_addressof(__alloc_), static_cast<_Alloc&&>(__nh.__alloc_));
+      std::destroy_at(__builtin_addressof(__nh.__alloc_));
+      __nh.__ptr_ = __node_pointer();
     }
   }
-  constexpr node_handle& operator=(node_handle&& nh) noexcept {
-    if (this == __builtin_addressof(nh)) {
+  constexpr __node_handle& operator=(__node_handle&& __nh) noexcept {
+    if (this == __builtin_addressof(__nh)) {
       // [container.node.cons]/3 applied to one object: the element is destroyed, and the
       // handle ends up empty.
-      if (ptr_ != nullptr) {
-        destroy_node();
+      if (__ptr_ != nullptr) {
+        __destroy_node();
         reset();
       }
       return *this;
     }
-    if (ptr_ != nullptr) {
-      ::ycxx::detail::precondition(ator_traits::propagate_on_container_move_assignment::value ||
-                                       nh.ptr_ == nullptr || alloc_ == nh.alloc_,
+    if (__ptr_ != nullptr) {
+      ::__ycxx::__detail::__precondition(__ator_traits::propagate_on_container_move_assignment::value ||
+                                       __nh.__ptr_ == nullptr || __alloc_ == __nh.__alloc_,
                                    "node handle move assignment: unequal allocators that do not propagate");
-      destroy_node();
+      __destroy_node();
     }
-    if (nh.ptr_ == nullptr) {
+    if (__nh.__ptr_ == nullptr) {
       reset();
       return *this;
     }
-    if (ptr_ == nullptr)
-      std::construct_at(__builtin_addressof(alloc_), static_cast<Alloc&&>(nh.alloc_));
-    else if constexpr (ator_traits::propagate_on_container_move_assignment::value)
-      alloc_ = static_cast<Alloc&&>(nh.alloc_);
-    ptr_ = nh.ptr_;
-    nh.reset();
+    if (__ptr_ == nullptr)
+      std::construct_at(__builtin_addressof(__alloc_), static_cast<_Alloc&&>(__nh.__alloc_));
+    else if constexpr (__ator_traits::propagate_on_container_move_assignment::value)
+      __alloc_ = static_cast<_Alloc&&>(__nh.__alloc_);
+    __ptr_ = __nh.__ptr_;
+    __nh.reset();
     return *this;
   }
 
   // ---- [container.node.dtor] ----
-  constexpr ~node_handle() {
-    if (ptr_ != nullptr) {
-      destroy_node();
-      std::destroy_at(__builtin_addressof(alloc_));
+  constexpr ~__node_handle() {
+    if (__ptr_ != nullptr) {
+      __destroy_node();
+      std::destroy_at(__builtin_addressof(__alloc_));
     }
   }
 
   // ---- [container.node.observers] ----
-  constexpr V& value() const noexcept
-    requires(!IsMap)
+  constexpr _Vp& value() const noexcept
+    requires(!_IsMap)
   {
-    ::ycxx::detail::precondition(ptr_ != nullptr, "node handle: empty");
-    return raw()->value;
+    ::__ycxx::__detail::__precondition(__ptr_ != nullptr, "node handle: empty");
+    return __raw()->value;
   }
   // Not constexpr ([container.node.overview]): the key of a map element is a const object.
-  auto& key() const noexcept
-    requires IsMap
+  auto& __key() const noexcept
+    requires _IsMap
   {
-    ::ycxx::detail::precondition(ptr_ != nullptr, "node handle: empty");
-    return const_cast<std::remove_const_t<typename V::first_type>&>(raw()->value.first);
+    ::__ycxx::__detail::__precondition(__ptr_ != nullptr, "node handle: empty");
+    return const_cast<std::remove_const_t<typename _Vp::first_type>&>(__raw()->value.first);
   }
-  constexpr auto& mapped() const noexcept
-    requires IsMap
+  constexpr auto& __mapped() const noexcept
+    requires _IsMap
   {
-    ::ycxx::detail::precondition(ptr_ != nullptr, "node handle: empty");
-    return raw()->value.second;
+    ::__ycxx::__detail::__precondition(__ptr_ != nullptr, "node handle: empty");
+    return __raw()->value.second;
   }
   constexpr allocator_type get_allocator() const {
-    ::ycxx::detail::precondition(ptr_ != nullptr, "node handle: empty");
-    return alloc_;
+    ::__ycxx::__detail::__precondition(__ptr_ != nullptr, "node handle: empty");
+    return __alloc_;
   }
-  constexpr explicit operator bool() const noexcept { return ptr_ != nullptr; }
-  [[nodiscard]] constexpr bool empty() const noexcept { return ptr_ == nullptr; }
+  constexpr explicit operator bool() const noexcept { return __ptr_ != nullptr; }
+  [[nodiscard]] constexpr bool empty() const noexcept { return __ptr_ == nullptr; }
 
   // ---- [container.node.modifiers] ----
-  constexpr void swap(node_handle& nh) noexcept(ator_traits::propagate_on_container_swap::value ||
-                                                ator_traits::is_always_equal::value) {
-    if (this == __builtin_addressof(nh))
+  constexpr void swap(__node_handle& __nh) noexcept(__ator_traits::propagate_on_container_swap::value ||
+                                                __ator_traits::is_always_equal::value) {
+    if (this == __builtin_addressof(__nh))
       return;
-    const bool a = ptr_ != nullptr, b = nh.ptr_ != nullptr;
+    const bool a = __ptr_ != nullptr, b = __nh.__ptr_ != nullptr;
     if (a && b) {
-      if constexpr (ator_traits::propagate_on_container_swap::value)
-        ::ycxx::detail::swap_adl::do_swap(alloc_, nh.alloc_);
+      if constexpr (__ator_traits::propagate_on_container_swap::value)
+        ::__ycxx::__detail::__swap_adl::__do_swap(__alloc_, __nh.__alloc_);
       else
-        ::ycxx::detail::precondition(ator_traits::is_always_equal::value || alloc_ == nh.alloc_,
+        ::__ycxx::__detail::__precondition(__ator_traits::is_always_equal::value || __alloc_ == __nh.__alloc_,
                                      "node handle swap: unequal allocators that do not propagate");
     } else if (a) {
-      std::construct_at(__builtin_addressof(nh.alloc_), static_cast<Alloc&&>(alloc_));
-      std::destroy_at(__builtin_addressof(alloc_));
+      std::construct_at(__builtin_addressof(__nh.__alloc_), static_cast<_Alloc&&>(__alloc_));
+      std::destroy_at(__builtin_addressof(__alloc_));
     } else if (b) {
-      std::construct_at(__builtin_addressof(alloc_), static_cast<Alloc&&>(nh.alloc_));
-      std::destroy_at(__builtin_addressof(nh.alloc_));
+      std::construct_at(__builtin_addressof(__alloc_), static_cast<_Alloc&&>(__nh.__alloc_));
+      std::destroy_at(__builtin_addressof(__nh.__alloc_));
     }
-    const node_pointer t = ptr_;
-    ptr_ = nh.ptr_;
-    nh.ptr_ = t;
+    const __node_pointer t = __ptr_;
+    __ptr_ = __nh.__ptr_;
+    __nh.__ptr_ = t;
   }
-  friend constexpr void swap(node_handle& x, node_handle& y) noexcept(noexcept(x.swap(y))) { x.swap(y); }
+  friend constexpr void swap(__node_handle& __x, __node_handle& y) noexcept(noexcept(__x.swap(y))) { __x.swap(y); }
 };
 
 // [container.insert.return]
-template <class Iterator, class NodeType>
+template <class _Iterator, class _NodeType>
 struct insert_return_type {
-  Iterator position;
-  bool inserted;
-  NodeType node;
+  _Iterator position;
+  bool __inserted;
+  _NodeType __node;
 };
 
-}} // namespace ycxx::adl_free
+}} // namespace __ycxx::__adl_free
 
-namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
 
 // How the containers make, inspect and empty node handles.
-struct node_handle_access {
-  template <class NH, class Node, class Alloc>
-  static constexpr NH make(Node* n, const Alloc& a) noexcept {
-    return NH(n, a);
+struct __node_handle_access {
+  template <class _NH, class _Node, class _Alloc>
+  static constexpr _NH __make(_Node* n, const _Alloc& a) noexcept {
+    return _NH(n, a);
   }
   // The node owned by nh (null if empty).
-  template <class NH>
-  static constexpr auto* peek(const NH& nh) noexcept {
-    return nh.raw();
+  template <class _NH>
+  static constexpr auto* peek(const _NH& __nh) noexcept {
+    return __nh.__raw();
   }
   // Takes the node out of nh, which becomes empty.
-  template <class NH>
-  static constexpr auto* take(NH& nh) noexcept {
-    auto* n = nh.raw();
-    nh.reset();
+  template <class _NH>
+  static constexpr auto* take(_NH& __nh) noexcept {
+    auto* n = __nh.__raw();
+    __nh.reset();
     return n;
   }
 };
 
-}} // namespace ycxx::detail
+}} // namespace __ycxx::__detail

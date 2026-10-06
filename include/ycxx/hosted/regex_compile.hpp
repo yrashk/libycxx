@@ -19,555 +19,555 @@
 #include <ycxx/core/vector.hpp>
 #include <ycxx/hosted/regex_base.hpp>
 
-namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
 
-enum class re_kind : unsigned char {
-  empty, chr, any, set, bol, eol, wordb, nwordb, backref, group, look, nlook, concat, alt, repeat
+enum class __re_kind : unsigned char {
+  empty, __chr, any, set, __bol, __eol, __wordb, __nwordb, __backref, __group, __look, __nlook, concat, __alt, repeat
 };
 
-template <class charT>
-struct re_node {
-  re_kind kind = re_kind::empty;
-  bool greedy = true;
-  bool tail = false;      // POSIX expansion: a repetition that follows an iteration of its own
-  charT ch{};
-  int val = 0;            // set index; group or back-reference number
+template <class __charT>
+struct __re_node {
+  __re_kind kind = __re_kind::empty;
+  bool __greedy = true;
+  bool __tail = false;      // POSIX expansion: a repetition that follows an iteration of its own
+  __charT __ch{};
+  int __val = 0;            // set index; group or back-reference number
   int min = 0, max = 0;   // repeat; max < 0: unbounded
-  int group_lo = 0, group_hi = 0; // repeat and group: the groups numbered inside, [lo, hi)
-  std::vector<int> kids;
+  int __group_lo = 0, __group_hi = 0; // repeat and group: the groups numbered inside, [lo, hi)
+  std::vector<int> __kids;
 };
 
 // The order of a character code: the unsigned value of an integral character type.
-template <class charT>
-constexpr auto re_ord(charT c) noexcept {
-  if constexpr (std::is_integral_v<charT>)
-    return static_cast<std::make_unsigned_t<charT>>(c);
+template <class __charT>
+constexpr auto __re_ord(__charT c) noexcept {
+  if constexpr (std::is_integral_v<__charT>)
+    return static_cast<std::make_unsigned_t<__charT>>(c);
   else
     return c;
 }
 // Code units below 256 have precomputed answers (case folding, set membership, word class).
-template <class charT>
-inline constexpr bool re_cacheable = std::is_integral_v<charT>;
+template <class __charT>
+inline constexpr bool __re_cacheable = std::is_integral_v<__charT>;
 
-template <class charT>
-constexpr bool re_line_terminator(charT c) noexcept {
-  if (c == charT('\n') || c == charT('\r'))
+template <class __charT>
+constexpr bool __re_line_terminator(__charT c) noexcept {
+  if (c == __charT('\n') || c == __charT('\r'))
     return true;
-  if constexpr (std::is_integral_v<charT> && sizeof(charT) > 1)
-    return re_ord(c) == 0x2028u || re_ord(c) == 0x2029u;
+  if constexpr (std::is_integral_v<__charT> && sizeof(__charT) > 1)
+    return __re_ord(c) == 0x2028u || __re_ord(c) == 0x2029u;
   else
     return false;
 }
 
-template <class charT, class traits>
-struct re_set {
-  using string_type = typename traits::string_type;
-  using class_type = typename traits::char_class_type;
+template <class __charT, class __traits>
+struct __re_set {
+  using string_type = typename __traits::string_type;
+  using __class_type = typename __traits::char_class_type;
   struct range {
-    charT lo, hi;
+    __charT __lo, __hi;
   };
   bool negate = false;
-  std::basic_string<charT> chars;  // translated
+  std::basic_string<__charT> __chars;  // translated
   std::vector<range> ranges;
-  std::vector<string_type> coll_lo, coll_hi;  // collate: sort keys of the range ends
-  class_type classes{};
-  std::vector<class_type> neg_classes;        // \D, \S, \W inside brackets
-  std::vector<string_type> equivs;            // primary sort keys
-  unsigned char cache[32] = {};               // membership of the code units below 256
-  unsigned char range_fold[32] = {};          // icase: the case-folded code units below 256 of
+  std::vector<string_type> __coll_lo, __coll_hi;  // collate: sort keys of the range ends
+  __class_type __classes{};
+  std::vector<__class_type> __neg_classes;        // \D, \S, \W inside brackets
+  std::vector<string_type> __equivs;            // primary sort keys
+  unsigned char __cache[32] = {};               // membership of the code units below 256
+  unsigned char __range_fold[32] = {};          // icase: the case-folded code units below 256 of
                                               // the characters of the ranges
 };
 
-enum class re_op : unsigned char {
-  chr, any, set, split, jmp, open, close, bol, eol, wordb, nwordb, backref, look, look_end,
-  loop_enter, loop_iter, loop_tail, rep, match
+enum class __re_op : unsigned char {
+  __chr, any, set, split, __jmp, open, close, __bol, __eol, __wordb, __nwordb, __backref, __look, __look_end,
+  __loop_enter, __loop_iter, __loop_tail, rep, __match
 };
 
-template <class charT>
-struct re_inst {
-  re_op op;
-  bool flag = false; // any: stops at line terminators; look: negative
-  charT ch{};        // chr: the translated character
+template <class __charT>
+struct __re_inst {
+  __re_op op;
+  bool __flag = false; // any: stops at line terminators; look: negative
+  __charT __ch{};        // chr: the translated character
   int a = 0, b = 0;  // split: preferred, other; jmp: target; set: index; open/close/backref: group;
                      // look: its look_end; loop_*, rep: loop index
 };
 
-struct re_loop {
+struct __re_loop {
   int min = 0, max = 0; // max < 0: unbounded
-  bool greedy = true;
-  int iter_pc = 0, exit_pc = 0;
-  int group_lo = 0, group_hi = 0;
+  bool __greedy = true;
+  int __iter_pc = 0, __exit_pc = 0;
+  int __group_lo = 0, __group_hi = 0;
 };
 
-template <class charT, class traits>
-struct re_program {
-  using set_type = re_set<charT, traits>;
-  using class_type = typename traits::char_class_type;
+template <class __charT, class __traits>
+struct __re_program {
+  using __set_type = __re_set<__charT, __traits>;
+  using __class_type = typename __traits::char_class_type;
 
   std::regex_constants::syntax_option_type flags{};
-  bool icase = false, collate = false, multiline = false, ecma = true;
+  bool icase = false, collate = false, multiline = false, __ecma = true;
   bool posix = false;   // leftmost-longest
-  bool nfa = false;     // compiled for the NFA simulation (POSIX without back-references)
-  bool has_backref = false;
-  bool memo = false;    // the backtracker may remember failed (pc, position) pairs
-  int groups = 0;       // capturing groups (also counted under nosubs, for back-references)
-  std::vector<re_inst<charT>> code;
-  std::vector<re_loop> loops;
-  std::vector<set_type> sets;
+  bool __nfa = false;     // compiled for the NFA simulation (POSIX without back-references)
+  bool __has_backref = false;
+  bool __memo = false;    // the backtracker may remember failed (pc, position) pairs
+  int __groups = 0;       // capturing groups (also counted under nosubs, for back-references)
+  std::vector<__re_inst<__charT>> code;
+  std::vector<__re_loop> __loops;
+  std::vector<__set_type> __sets;
   // nfa: the expanded tree and each node's code range; the epsilon predecessors of each pc.
-  std::vector<re_node<charT>> nodes;
-  int root = -1;
-  std::vector<int> node_begin, node_end;
-  std::vector<std::vector<int>> eps_pred;
+  std::vector<__re_node<__charT>> __nodes;
+  int __root = -1;
+  std::vector<int> __node_begin, __node_end;
+  std::vector<std::vector<int>> __eps_pred;
   // memo: the dense index of each pc where a failed (pc, position) pair is remembered, or -1.
-  std::vector<int> memo_index;
-  int memo_points = 0;
-  std::vector<int> memo_loops;        // the loops whose body is nullable (at most 4)
-  std::vector<unsigned> memo_mask;    // per memo point: bit k if inside an iteration of memo_loops[k]
+  std::vector<int> __memo_index;
+  int __memo_points = 0;
+  std::vector<int> __memo_loops;        // the loops whose body is nullable (at most 4)
+  std::vector<unsigned> __memo_mask;    // per memo point: bit k if inside an iteration of memo_loops[k]
   // Caches for the code units below 256.
-  charT fold[256] = {};
-  unsigned char word[32] = {};
-  class_type word_class{};
+  __charT __fold[256] = {};
+  unsigned char __word[32] = {};
+  __class_type __word_class{};
 
-  static bool bit(const unsigned char* bits, unsigned u) noexcept { return (bits[u >> 3] >> (u & 7)) & 1; }
+  static bool __bit(const unsigned char* __bits, unsigned __u) noexcept { return (__bits[__u >> 3] >> (__u & 7)) & 1; }
 
   // The character as compared: [re.grammar]/14.1.
-  charT tx(const traits& tr, charT c) const {
-    if constexpr (re_cacheable<charT>) {
-      if (re_ord(c) < 256u)
-        return fold[re_ord(c)];
+  __charT __tx(const __traits& __tr, __charT c) const {
+    if constexpr (__re_cacheable<__charT>) {
+      if (__re_ord(c) < 256u)
+        return __fold[__re_ord(c)];
     }
-    return icase ? tr.translate_nocase(c) : collate ? tr.translate(c) : c;
+    return icase ? __tr.translate_nocase(c) : collate ? __tr.translate(c) : c;
   }
-  bool is_word(const traits& tr, charT c) const {
-    if constexpr (re_cacheable<charT>) {
-      if (re_ord(c) < 256u)
-        return bit(word, unsigned(re_ord(c)));
+  bool __is_word(const __traits& __tr, __charT c) const {
+    if constexpr (__re_cacheable<__charT>) {
+      if (__re_ord(c) < 256u)
+        return __bit(__word, unsigned(__re_ord(c)));
     }
-    return tr.isctype(c, word_class);
+    return __tr.isctype(c, __word_class);
   }
-  bool set_slow(const traits& tr, const set_type& s, charT c) const {
-    const charT t = icase ? tr.translate_nocase(c) : collate ? tr.translate(c) : c;
-    bool in = s.chars.find(t) != std::basic_string<charT>::npos;
+  bool __set_slow(const __traits& __tr, const __set_type& s, __charT c) const {
+    const __charT t = icase ? __tr.translate_nocase(c) : collate ? __tr.translate(c) : c;
+    bool in = s.__chars.find(t) != std::basic_string<__charT>::npos;
     for (std::size_t i = 0; !in && i < s.ranges.size(); ++i) {
       const auto& r = s.ranges[i];
-      in = (re_ord(r.lo) <= re_ord(c) && re_ord(c) <= re_ord(r.hi)) ||
-           (icase && re_ord(r.lo) <= re_ord(t) && re_ord(t) <= re_ord(r.hi));
+      in = (__re_ord(r.__lo) <= __re_ord(c) && __re_ord(c) <= __re_ord(r.__hi)) ||
+           (icase && __re_ord(r.__lo) <= __re_ord(t) && __re_ord(t) <= __re_ord(r.__hi));
     }
     // icase: c is in a range if some character of the range folds to what c folds to ([T-f]
     // holds 't', since it holds 'T'); exact for the folded values below 256.
-    if constexpr (re_cacheable<charT>) {
-      if (!in && icase && re_ord(t) < 256u)
-        in = bit(s.range_fold, unsigned(re_ord(t)));
+    if constexpr (__re_cacheable<__charT>) {
+      if (!in && icase && __re_ord(t) < 256u)
+        in = __bit(s.__range_fold, unsigned(__re_ord(t)));
     }
     // [re.grammar]/14.2: collating ranges compare sort keys; without regard to case, the folded
     // character is tried too.
-    for (int pass = 0; !in && !s.coll_lo.empty() && pass < (icase ? 2 : 1); ++pass) {
-      const charT k[1] = {pass == 0 ? tr.translate(c) : t};
-      const auto key = tr.transform(k, k + 1);
-      for (std::size_t i = 0; !in && i < s.coll_lo.size(); ++i)
-        in = !(key < s.coll_lo[i]) && !(s.coll_hi[i] < key);
+    for (int __pass = 0; !in && !s.__coll_lo.empty() && __pass < (icase ? 2 : 1); ++__pass) {
+      const __charT k[1] = {__pass == 0 ? __tr.translate(c) : t};
+      const auto __key = __tr.transform(k, k + 1);
+      for (std::size_t i = 0; !in && i < s.__coll_lo.size(); ++i)
+        in = !(__key < s.__coll_lo[i]) && !(s.__coll_hi[i] < __key);
     }
-    if (!in && s.classes != class_type{})
-      in = tr.isctype(c, s.classes);
-    for (std::size_t i = 0; !in && i < s.neg_classes.size(); ++i)
-      in = !tr.isctype(c, s.neg_classes[i]);
-    if (!in && !s.equivs.empty()) {
-      const charT k[1] = {c};
-      const auto key = tr.transform_primary(k, k + 1);
-      for (std::size_t i = 0; !in && i < s.equivs.size(); ++i)
-        in = key == s.equivs[i];
+    if (!in && s.__classes != __class_type{})
+      in = __tr.isctype(c, s.__classes);
+    for (std::size_t i = 0; !in && i < s.__neg_classes.size(); ++i)
+      in = !__tr.isctype(c, s.__neg_classes[i]);
+    if (!in && !s.__equivs.empty()) {
+      const __charT k[1] = {c};
+      const auto __key = __tr.transform_primary(k, k + 1);
+      for (std::size_t i = 0; !in && i < s.__equivs.size(); ++i)
+        in = __key == s.__equivs[i];
     }
     return in != s.negate;
   }
-  bool in_set(const traits& tr, int idx, charT c) const {
-    const set_type& s = sets[static_cast<std::size_t>(idx)];
-    if constexpr (re_cacheable<charT>) {
-      if (re_ord(c) < 256u)
-        return bit(s.cache, unsigned(re_ord(c)));
+  bool __in_set(const __traits& __tr, int __idx, __charT c) const {
+    const __set_type& s = __sets[static_cast<std::size_t>(__idx)];
+    if constexpr (__re_cacheable<__charT>) {
+      if (__re_ord(c) < 256u)
+        return __bit(s.__cache, unsigned(__re_ord(c)));
     }
-    return set_slow(tr, s, c);
+    return __set_slow(__tr, s, c);
   }
   // Does the single-character instruction at pc accept c?
-  bool single(const traits& tr, int pc, charT c) const {
-    const re_inst<charT>& in = code[static_cast<std::size_t>(pc)];
+  bool single(const __traits& __tr, int __pc, __charT c) const {
+    const __re_inst<__charT>& in = code[static_cast<std::size_t>(__pc)];
     switch (in.op) {
-    case re_op::chr:
-      return tx(tr, c) == in.ch;
-    case re_op::any:
-      return !in.flag || !::ycxx::detail::re_line_terminator(c);
+    case __re_op::__chr:
+      return __tx(__tr, c) == in.__ch;
+    case __re_op::any:
+      return !in.__flag || !::__ycxx::__detail::__re_line_terminator(c);
     default:
-      return in_set(tr, in.a, c);
+      return __in_set(__tr, in.a, c);
     }
   }
 };
 
 // ---- the translator ---------------------------------------------------------------------------
-template <class charT, class traits>
-class re_compiler {
-  using rc_err = std::regex_constants::error_type;
-  using string_type = typename traits::string_type;
-  using class_type = typename traits::char_class_type;
-  using node = re_node<charT>;
-  using set_type = re_set<charT, traits>;
+template <class __charT, class __traits>
+class __re_compiler {
+  using __rc_err = std::regex_constants::error_type;
+  using string_type = typename __traits::string_type;
+  using __class_type = typename __traits::char_class_type;
+  using __node = __re_node<__charT>;
+  using __set_type = __re_set<__charT, __traits>;
 
   // Limits on the size of a translated expression (error_space beyond them): the tree and the
   // code, and the nesting of groups (the translator and the matchers recurse over the tree).
-  static constexpr std::size_t max_nodes = 1u << 20;
-  static constexpr int max_depth = 1000;
-  static constexpr int max_count = 0x7fffffff;
+  static constexpr std::size_t __max_nodes = 1u << 20;
+  static constexpr int __max_depth = 1000;
+  static constexpr int __max_count = 0x7fffffff;
   // POSIX: bounded repetitions are expanded for the NFA only up to this many nodes in all and
   // this many copies of one atom; beyond, the program backtracks (keeping the longest match).
-  static constexpr std::size_t max_expanded = 1u << 16;
-  static constexpr int max_copies = 256;
+  static constexpr std::size_t __max_expanded = 1u << 16;
+  static constexpr int __max_copies = 256;
 
-  const traits& tr_;
-  re_program<charT, traits>& P_;
-  const charT* p_;
-  const charT* end_;
-  std::vector<node> nodes_;
-  std::vector<char> closed_; // POSIX: closed_[n] once group n is complete (not vector<bool>, which <vector> specializes)
-  int max_backref_ = 0;
-  int depth_ = 0;
-  enum grammar { ecma, bre, ere, awk_g } g_ = ecma;
+  const __traits& __tr_;
+  __re_program<__charT, __traits>& _P_;
+  const __charT* __p_;
+  const __charT* __end_;
+  std::vector<__node> __nodes_;
+  std::vector<char> __closed_; // POSIX: closed_[n] once group n is complete (not vector<bool>, which <vector> specializes)
+  int __max_backref_ = 0;
+  int __depth_ = 0;
+  enum __grammar { __ecma, __bre, __ere, __awk_g } __g_ = __ecma;
 
-  [[noreturn]] static void fail(rc_err e) { ::ycxx::detail::throw_regex_error(e); }
-  void enter() {
-    if (++depth_ > max_depth)
+  [[noreturn]] static void fail(__rc_err e) { ::__ycxx::__detail::__throw_regex_error(e); }
+  void __enter() {
+    if (++__depth_ > __max_depth)
       fail(std::regex_constants::error_space);
   }
 
-  bool at(char c) const { return p_ != end_ && *p_ == static_cast<charT>(c); }
-  bool at2(char c, char d) const { return at(c) && p_ + 1 != end_ && p_[1] == static_cast<charT>(d); }
-  int digit(charT c, int radix) const { return tr_.value(c, radix); }
+  bool at(char c) const { return __p_ != __end_ && *__p_ == static_cast<__charT>(c); }
+  bool __at2(char c, char d) const { return at(c) && __p_ + 1 != __end_ && __p_[1] == static_cast<__charT>(d); }
+  int digit(__charT c, int radix) const { return __tr_.value(c, radix); }
 
-  int add(node n) {
-    if (nodes_.size() >= max_nodes)
+  int add(__node n) {
+    if (__nodes_.size() >= __max_nodes)
       fail(std::regex_constants::error_space);
-    nodes_.push_back(static_cast<node&&>(n));
-    return static_cast<int>(nodes_.size() - 1);
+    __nodes_.push_back(static_cast<__node&&>(n));
+    return static_cast<int>(__nodes_.size() - 1);
   }
-  int leaf(re_kind k) {
-    node n;
+  int __leaf(__re_kind k) {
+    __node n;
     n.kind = k;
-    return add(static_cast<node&&>(n));
+    return add(static_cast<__node&&>(n));
   }
-  int literal(charT c) {
-    node n;
-    n.kind = re_kind::chr;
-    n.ch = c;
-    return add(static_cast<node&&>(n));
+  int literal(__charT c) {
+    __node n;
+    n.kind = __re_kind::__chr;
+    n.__ch = c;
+    return add(static_cast<__node&&>(n));
   }
-  int list(re_kind k, std::vector<int>& kids) {
-    if (kids.empty())
-      return leaf(re_kind::empty);
-    if (kids.size() == 1)
-      return kids[0];
-    node n;
+  int list(__re_kind k, std::vector<int>& __kids) {
+    if (__kids.empty())
+      return __leaf(__re_kind::empty);
+    if (__kids.size() == 1)
+      return __kids[0];
+    __node n;
     n.kind = k;
-    n.kids = static_cast<std::vector<int>&&>(kids);
-    return add(static_cast<node&&>(n));
+    n.__kids = static_cast<std::vector<int>&&>(__kids);
+    return add(static_cast<__node&&>(n));
   }
-  int repeat(int atom, int mn, int mx, bool greedy, int g_lo) {
-    node n;
-    n.kind = re_kind::repeat;
-    n.min = mn;
-    n.max = mx;
-    n.greedy = greedy;
-    n.group_lo = g_lo;
-    n.group_hi = P_.groups + 1;
-    n.kids.push_back(atom);
-    return add(static_cast<node&&>(n));
+  int repeat(int __atom, int __mn, int __mx, bool __greedy, int __g_lo) {
+    __node n;
+    n.kind = __re_kind::repeat;
+    n.min = __mn;
+    n.max = __mx;
+    n.__greedy = __greedy;
+    n.__group_lo = __g_lo;
+    n.__group_hi = _P_.__groups + 1;
+    n.__kids.push_back(__atom);
+    return add(static_cast<__node&&>(n));
   }
-  int open_group() {
-    ++P_.groups;
-    closed_.push_back(0);
-    return P_.groups;
+  int __open_group() {
+    ++_P_.__groups;
+    __closed_.push_back(0);
+    return _P_.__groups;
   }
-  int group(int num, int inner) {
-    node n;
-    n.kind = re_kind::group;
-    n.val = num;
-    n.group_lo = num;
-    n.group_hi = P_.groups + 1;
-    n.kids.push_back(inner);
-    closed_[static_cast<std::size_t>(num)] = 1;
-    return add(static_cast<node&&>(n));
+  int __group(int num, int __inner) {
+    __node n;
+    n.kind = __re_kind::__group;
+    n.__val = num;
+    n.__group_lo = num;
+    n.__group_hi = _P_.__groups + 1;
+    n.__kids.push_back(__inner);
+    __closed_[static_cast<std::size_t>(num)] = 1;
+    return add(static_cast<__node&&>(n));
   }
-  int backref(int num) {
-    node n;
-    n.kind = re_kind::backref;
-    n.val = num;
-    P_.has_backref = true;
-    if (num > max_backref_)
-      max_backref_ = num;
-    return add(static_cast<node&&>(n));
+  int __backref(int num) {
+    __node n;
+    n.kind = __re_kind::__backref;
+    n.__val = num;
+    _P_.__has_backref = true;
+    if (num > __max_backref_)
+      __max_backref_ = num;
+    return add(static_cast<__node&&>(n));
   }
-  int new_set(set_type&& s) {
-    P_.sets.push_back(static_cast<set_type&&>(s));
-    node n;
-    n.kind = re_kind::set;
-    n.val = static_cast<int>(P_.sets.size() - 1);
-    return add(static_cast<node&&>(n));
+  int __new_set(__set_type&& s) {
+    _P_.__sets.push_back(static_cast<__set_type&&>(s));
+    __node n;
+    n.kind = __re_kind::set;
+    n.__val = static_cast<int>(_P_.__sets.size() - 1);
+    return add(static_cast<__node&&>(n));
   }
-  int class_escape(charT e) {
+  int __class_escape(__charT e) {
     // \d \D \s \S \w \W: [re.grammar]/7.
-    const char name = static_cast<char>(re_ord(e) | 0x20); // the lower-case letter
-    const charT nm[1] = {static_cast<charT>(name)};
-    set_type s;
-    s.classes = tr_.lookup_classname(nm, nm + 1, P_.icase);
-    s.negate = e != static_cast<charT>(name);
-    return new_set(static_cast<set_type&&>(s));
+    const char name = static_cast<char>(__re_ord(e) | 0x20); // the lower-case letter
+    const __charT __nm[1] = {static_cast<__charT>(name)};
+    __set_type s;
+    s.__classes = __tr_.lookup_classname(__nm, __nm + 1, _P_.icase);
+    s.negate = e != static_cast<__charT>(name);
+    return __new_set(static_cast<__set_type&&>(s));
   }
-  charT translate(charT c) const {
-    return P_.icase ? tr_.translate_nocase(c) : P_.collate ? tr_.translate(c) : c;
+  __charT translate(__charT c) const {
+    return _P_.icase ? __tr_.translate_nocase(c) : _P_.collate ? __tr_.translate(c) : c;
   }
 
   // A decimal number of a {} interval or a back-reference; error `e` on overflow.
-  int number(rc_err e) {
-    long long v = 0;
-    while (p_ != end_ && digit(*p_, 10) >= 0) {
-      v = v * 10 + digit(*p_, 10);
-      if (v > max_count)
+  int __number(__rc_err e) {
+    long long __v = 0;
+    while (__p_ != __end_ && digit(*__p_, 10) >= 0) {
+      __v = __v * 10 + digit(*__p_, 10);
+      if (__v > __max_count)
         fail(e);
-      ++p_;
+      ++__p_;
     }
-    return static_cast<int>(v);
+    return static_cast<int>(__v);
   }
   // The contents of an interval after its opening brace: m, m, or m,n, then the closing brace
   // ("}" or, in a BRE, "\}").
-  void interval(int& mn, int& mx, bool bre) {
-    if (p_ == end_)
+  void __interval(int& __mn, int& __mx, bool __bre) {
+    if (__p_ == __end_)
       fail(std::regex_constants::error_brace);
-    if (digit(*p_, 10) < 0)
+    if (digit(*__p_, 10) < 0)
       fail(std::regex_constants::error_badbrace);
-    mn = number(std::regex_constants::error_badbrace);
-    mx = mn;
+    __mn = __number(std::regex_constants::error_badbrace);
+    __mx = __mn;
     if (at(',')) {
-      ++p_;
-      mx = (p_ != end_ && digit(*p_, 10) >= 0) ? number(std::regex_constants::error_badbrace) : -1;
+      ++__p_;
+      __mx = (__p_ != __end_ && digit(*__p_, 10) >= 0) ? __number(std::regex_constants::error_badbrace) : -1;
     }
     // Anything but the closing brace after the numbers (end of pattern, "{1,2,3}") leaves the
     // brace unmatched.
-    if (!(bre ? at2('\\', '}') : at('}')))
+    if (!(__bre ? __at2('\\', '}') : at('}')))
       fail(std::regex_constants::error_brace);
-    p_ += bre ? 2 : 1;
-    if (mx >= 0 && mx < mn)
+    __p_ += __bre ? 2 : 1;
+    if (__mx >= 0 && __mx < __mn)
       fail(std::regex_constants::error_badbrace);
   }
 
   // ---- bracket expressions --------------------------------------------------------------------
-  struct class_atom {
-    enum { chr, cls, neg_cls, equiv } kind = chr;
-    charT c{};
-    class_type m{};
-    string_type key;
+  struct __class_atom {
+    enum { __chr, __cls, __neg_cls, __equiv } kind = __chr;
+    __charT c{};
+    __class_type m{};
+    string_type __key;
   };
   // [:name:], [.name.] or [=name=], at "[" followed by one of ":.=".
-  class_atom bracket_special() {
-    const charT delim = p_[1];
-    p_ += 2;
-    const charT* q = p_;
-    while (q != end_ && !(*q == delim && q + 1 != end_ && q[1] == static_cast<charT>(']')))
-      ++q;
-    if (q == end_)
+  __class_atom __bracket_special() {
+    const __charT __delim = __p_[1];
+    __p_ += 2;
+    const __charT* __q = __p_;
+    while (__q != __end_ && !(*__q == __delim && __q + 1 != __end_ && __q[1] == static_cast<__charT>(']')))
+      ++__q;
+    if (__q == __end_)
       fail(std::regex_constants::error_brack);
-    const charT* nb = p_;
-    p_ = q + 2;
-    class_atom a;
-    if (delim == static_cast<charT>(':')) {
-      a.kind = class_atom::cls;
-      a.m = tr_.lookup_classname(nb, q, P_.icase);
-      if (a.m == class_type{})
+    const __charT* __nb = __p_;
+    __p_ = __q + 2;
+    __class_atom a;
+    if (__delim == static_cast<__charT>(':')) {
+      a.kind = __class_atom::__cls;
+      a.m = __tr_.lookup_classname(__nb, __q, _P_.icase);
+      if (a.m == __class_type{})
         fail(std::regex_constants::error_ctype);
       return a;
     }
-    string_type name = tr_.lookup_collatename(nb, q);
+    string_type name = __tr_.lookup_collatename(__nb, __q);
     if (name.empty())
       fail(std::regex_constants::error_collate);
-    if (delim == static_cast<charT>('.')) {
+    if (__delim == static_cast<__charT>('.')) {
       if (name.size() != 1)
         fail(std::regex_constants::error_collate);
       a.c = name[0];
       return a;
     }
-    a.kind = class_atom::equiv;
-    a.key = tr_.transform_primary(name.begin(), name.end());
-    if (a.key.empty())
+    a.kind = __class_atom::__equiv;
+    a.__key = __tr_.transform_primary(name.begin(), name.end());
+    if (a.__key.empty())
       fail(std::regex_constants::error_collate);
     return a;
   }
-  void add_atom(set_type& s, class_atom& a) {
+  void __add_atom(__set_type& s, __class_atom& a) {
     switch (a.kind) {
-    case class_atom::chr:
-      s.chars.push_back(translate(a.c));
+    case __class_atom::__chr:
+      s.__chars.push_back(translate(a.c));
       break;
-    case class_atom::cls:
-      s.classes |= a.m;
+    case __class_atom::__cls:
+      s.__classes |= a.m;
       break;
-    case class_atom::neg_cls:
-      s.neg_classes.push_back(a.m);
+    case __class_atom::__neg_cls:
+      s.__neg_classes.push_back(a.m);
       break;
-    case class_atom::equiv:
-      s.equivs.push_back(static_cast<string_type&&>(a.key));
+    case __class_atom::__equiv:
+      s.__equivs.push_back(static_cast<string_type&&>(a.__key));
       break;
     }
   }
-  void add_range(set_type& s, const class_atom& a, const class_atom& b) {
-    if (a.kind != class_atom::chr || b.kind != class_atom::chr)
+  void __add_range(__set_type& s, const __class_atom& a, const __class_atom& b) {
+    if (a.kind != __class_atom::__chr || b.kind != __class_atom::__chr)
       fail(std::regex_constants::error_range);
-    string_type lo, hi;
-    if (P_.collate) {
-      const charT ka[1] = {tr_.translate(a.c)};
-      const charT kb[1] = {tr_.translate(b.c)};
-      lo = tr_.transform(ka, ka + 1);
-      hi = tr_.transform(kb, kb + 1);
-      if (hi < lo)
+    string_type __lo, __hi;
+    if (_P_.collate) {
+      const __charT __ka[1] = {__tr_.translate(a.c)};
+      const __charT __kb[1] = {__tr_.translate(b.c)};
+      __lo = __tr_.transform(__ka, __ka + 1);
+      __hi = __tr_.transform(__kb, __kb + 1);
+      if (__hi < __lo)
         fail(std::regex_constants::error_range);
     } else {
-      if (re_ord(b.c) < re_ord(a.c))
+      if (__re_ord(b.c) < __re_ord(a.c))
         fail(std::regex_constants::error_range);
       s.ranges.push_back({a.c, b.c});
     }
     // icase: the folded values of the range's characters below 256.
-    if constexpr (re_cacheable<charT>) {
-      if (P_.icase)
-        for (unsigned u = 0; u < 256u; ++u) {
-          const charT c = static_cast<charT>(u);
+    if constexpr (__re_cacheable<__charT>) {
+      if (_P_.icase)
+        for (unsigned __u = 0; __u < 256u; ++__u) {
+          const __charT c = static_cast<__charT>(__u);
           bool in;
-          if (P_.collate) {
-            const charT k[1] = {tr_.translate(c)};
-            const string_type key = tr_.transform(k, k + 1);
-            in = !(key < lo) && !(hi < key);
+          if (_P_.collate) {
+            const __charT k[1] = {__tr_.translate(c)};
+            const string_type __key = __tr_.transform(k, k + 1);
+            in = !(__key < __lo) && !(__hi < __key);
           } else {
-            in = re_ord(a.c) <= u && u <= re_ord(b.c);
+            in = __re_ord(a.c) <= __u && __u <= __re_ord(b.c);
           }
-          const auto f = re_ord(tr_.translate_nocase(c));
-          if (in && f < 256u)
-            s.range_fold[f >> 3] |= static_cast<unsigned char>(1u << (f & 7));
+          const auto __f = __re_ord(__tr_.translate_nocase(c));
+          if (in && __f < 256u)
+            s.__range_fold[__f >> 3] |= static_cast<unsigned char>(1u << (__f & 7));
         }
     }
-    if (P_.collate) {
-      s.coll_lo.push_back(static_cast<string_type&&>(lo));
-      s.coll_hi.push_back(static_cast<string_type&&>(hi));
+    if (_P_.collate) {
+      s.__coll_lo.push_back(static_cast<string_type&&>(__lo));
+      s.__coll_hi.push_back(static_cast<string_type&&>(__hi));
     }
   }
   // ECMAScript ClassAtom (with the [re.grammar]/3 additions).
-  class_atom ecma_class_atom() {
-    class_atom a;
+  __class_atom __ecma_class_atom() {
+    __class_atom a;
     if (at('\\')) {
-      ++p_;
-      if (p_ == end_)
+      ++__p_;
+      if (__p_ == __end_)
         fail(std::regex_constants::error_escape);
-      const charT e = *p_;
-      switch (static_cast<char>(re_ord(e) < 128u ? re_ord(e) : 0)) {
+      const __charT e = *__p_;
+      switch (static_cast<char>(__re_ord(e) < 128u ? __re_ord(e) : 0)) {
       case 'b':
-        ++p_;
-        a.c = charT(8);
+        ++__p_;
+        a.c = __charT(8);
         return a;
       case 'd': case 's': case 'w': case 'D': case 'S': case 'W': {
-        ++p_;
-        const char name = static_cast<char>(re_ord(e) | 0x20);
-        const charT nm[1] = {static_cast<charT>(name)};
-        a.m = tr_.lookup_classname(nm, nm + 1, P_.icase);
-        a.kind = e == static_cast<charT>(name) ? class_atom::cls : class_atom::neg_cls;
+        ++__p_;
+        const char name = static_cast<char>(__re_ord(e) | 0x20);
+        const __charT __nm[1] = {static_cast<__charT>(name)};
+        a.m = __tr_.lookup_classname(__nm, __nm + 1, _P_.icase);
+        a.kind = e == static_cast<__charT>(name) ? __class_atom::__cls : __class_atom::__neg_cls;
         return a;
       }
       default:
         if (digit(e, 10) > 0) // a back-reference is not a character ([re.grammar], ES5 15.10.2.19)
           fail(std::regex_constants::error_escape);
-        a.c = ecma_char_escape();
+        a.c = __ecma_char_escape();
         return a;
       }
     }
-    if (at('[') && p_ + 1 != end_ &&
-        (p_[1] == static_cast<charT>(':') || p_[1] == static_cast<charT>('.') || p_[1] == static_cast<charT>('=')))
-      return bracket_special();
-    a.c = *p_++;
+    if (at('[') && __p_ + 1 != __end_ &&
+        (__p_[1] == static_cast<__charT>(':') || __p_[1] == static_cast<__charT>('.') || __p_[1] == static_cast<__charT>('=')))
+      return __bracket_special();
+    a.c = *__p_++;
     return a;
   }
   // A POSIX bracket expression element ([[:class:]], [.coll.], [=equiv=], an awk escape).
-  class_atom posix_class_atom() {
-    if (at('[') && p_ + 1 != end_ &&
-        (p_[1] == static_cast<charT>(':') || p_[1] == static_cast<charT>('.') || p_[1] == static_cast<charT>('=')))
-      return bracket_special();
-    class_atom a;
-    if (g_ == awk_g && at('\\')) {
-      ++p_;
-      a.c = awk_escape();
+  __class_atom __posix_class_atom() {
+    if (at('[') && __p_ + 1 != __end_ &&
+        (__p_[1] == static_cast<__charT>(':') || __p_[1] == static_cast<__charT>('.') || __p_[1] == static_cast<__charT>('=')))
+      return __bracket_special();
+    __class_atom a;
+    if (__g_ == __awk_g && at('\\')) {
+      ++__p_;
+      a.c = __awk_escape();
       return a;
     }
-    a.c = *p_++;
+    a.c = *__p_++;
     return a;
   }
-  int bracket() { // after '['
-    set_type s;
+  int __bracket() { // after '['
+    __set_type s;
     if (at('^')) {
-      ++p_;
+      ++__p_;
       s.negate = true;
     }
     for (bool first = true;; first = false) {
-      if (p_ == end_)
+      if (__p_ == __end_)
         fail(std::regex_constants::error_brack);
-      if (at(']') && (g_ == ecma || !first)) {
-        ++p_;
+      if (at(']') && (__g_ == __ecma || !first)) {
+        ++__p_;
         break;
       }
-      class_atom a = g_ == ecma ? ecma_class_atom() : posix_class_atom();
-      if (at('-') && p_ + 1 != end_ && p_[1] != static_cast<charT>(']')) {
-        ++p_;
-        class_atom b = g_ == ecma ? ecma_class_atom() : posix_class_atom();
-        add_range(s, a, b);
+      __class_atom a = __g_ == __ecma ? __ecma_class_atom() : __posix_class_atom();
+      if (at('-') && __p_ + 1 != __end_ && __p_[1] != static_cast<__charT>(']')) {
+        ++__p_;
+        __class_atom b = __g_ == __ecma ? __ecma_class_atom() : __posix_class_atom();
+        __add_range(s, a, b);
       } else {
-        add_atom(s, a);
+        __add_atom(s, a);
       }
     }
-    return new_set(static_cast<set_type&&>(s));
+    return __new_set(static_cast<__set_type&&>(s));
   }
 
   // ---- ECMAScript ---------------------------------------------------------------------------
   // CharacterEscape after the backslash (at *p_): ControlEscape, \cX, \xHH, \uHHHH, \0 and
   // IdentityEscape ("SourceCharacter but not c", [re.grammar]/3).
-  charT ecma_char_escape() {
-    const charT e = *p_++;
-    const auto u = re_ord(e);
-    if (u < 128u) {
-      switch (static_cast<char>(u)) {
-      case 'f': return charT(0x0C);
-      case 'n': return charT(0x0A);
-      case 'r': return charT(0x0D);
-      case 't': return charT(0x09);
-      case 'v': return charT(0x0B);
+  __charT __ecma_char_escape() {
+    const __charT e = *__p_++;
+    const auto __u = __re_ord(e);
+    if (__u < 128u) {
+      switch (static_cast<char>(__u)) {
+      case 'f': return __charT(0x0C);
+      case 'n': return __charT(0x0A);
+      case 'r': return __charT(0x0D);
+      case 't': return __charT(0x09);
+      case 'v': return __charT(0x0B);
       case '0':
-        if (p_ != end_ && digit(*p_, 10) >= 0)
+        if (__p_ != __end_ && digit(*__p_, 10) >= 0)
           fail(std::regex_constants::error_escape);
-        return charT(0);
+        return __charT(0);
       case 'c': {
-        if (p_ == end_)
+        if (__p_ == __end_)
           fail(std::regex_constants::error_escape);
-        const auto l = re_ord(*p_);
-        if (!((l >= 'a' && l <= 'z') || (l >= 'A' && l <= 'Z')))
+        const auto __l = __re_ord(*__p_);
+        if (!((__l >= 'a' && __l <= 'z') || (__l >= 'A' && __l <= 'Z')))
           fail(std::regex_constants::error_escape);
-        ++p_;
-        return charT(l % 32);
+        ++__p_;
+        return __charT(__l % 32);
       }
       case 'x':
       case 'u': {
-        const int n = u == 'x' ? 2 : 4;
-        unsigned long v = 0;
+        const int n = __u == 'x' ? 2 : 4;
+        unsigned long __v = 0;
         for (int i = 0; i < n; ++i) {
-          const int d = p_ != end_ ? digit(*p_, 16) : -1;
+          const int d = __p_ != __end_ ? digit(*__p_, 16) : -1;
           if (d < 0)
             fail(std::regex_constants::error_escape);
-          v = v * 16 + static_cast<unsigned long>(d);
-          ++p_;
+          __v = __v * 16 + static_cast<unsigned long>(d);
+          ++__p_;
         }
         // [re.grammar]/12: a value that does not fit in charT is an error.
-        if constexpr (std::is_integral_v<charT>) {
-          if (v > static_cast<unsigned long>(static_cast<std::make_unsigned_t<charT>>(-1)))
+        if constexpr (std::is_integral_v<__charT>) {
+          if (__v > static_cast<unsigned long>(static_cast<std::make_unsigned_t<__charT>>(-1)))
             fail(std::regex_constants::error_escape);
         }
-        return static_cast<charT>(v);
+        return static_cast<__charT>(__v);
       }
       default:
         break;
@@ -575,157 +575,157 @@ class re_compiler {
     }
     return e;
   }
-  void no_quantifier() {
+  void __no_quantifier() {
     if (at('*') || at('+') || at('?') || at('{'))
       fail(std::regex_constants::error_badrepeat);
   }
-  int ecma_disjunction() {
-    enter();
-    std::vector<int> alts;
-    alts.push_back(ecma_alternative());
+  int __ecma_disjunction() {
+    __enter();
+    std::vector<int> __alts;
+    __alts.push_back(__ecma_alternative());
     while (at('|')) {
-      ++p_;
-      alts.push_back(ecma_alternative());
+      ++__p_;
+      __alts.push_back(__ecma_alternative());
     }
-    --depth_;
-    return list(re_kind::alt, alts);
+    --__depth_;
+    return list(__re_kind::__alt, __alts);
   }
-  int ecma_alternative() {
-    std::vector<int> terms;
-    while (p_ != end_ && !at('|') && !at(')'))
-      terms.push_back(ecma_term());
-    return list(re_kind::concat, terms);
+  int __ecma_alternative() {
+    std::vector<int> __terms;
+    while (__p_ != __end_ && !at('|') && !at(')'))
+      __terms.push_back(__ecma_term());
+    return list(__re_kind::concat, __terms);
   }
-  int ecma_term() {
+  int __ecma_term() {
     int n;
     if (at('^') || at('$')) {
-      n = leaf(at('^') ? re_kind::bol : re_kind::eol);
-      ++p_;
-      no_quantifier();
+      n = __leaf(at('^') ? __re_kind::__bol : __re_kind::__eol);
+      ++__p_;
+      __no_quantifier();
       return n;
     }
-    if (at2('\\', 'b') || at2('\\', 'B')) {
-      n = leaf(p_[1] == static_cast<charT>('b') ? re_kind::wordb : re_kind::nwordb);
-      p_ += 2;
-      no_quantifier();
+    if (__at2('\\', 'b') || __at2('\\', 'B')) {
+      n = __leaf(__p_[1] == static_cast<__charT>('b') ? __re_kind::__wordb : __re_kind::__nwordb);
+      __p_ += 2;
+      __no_quantifier();
       return n;
     }
-    if (at2('(', '?') && p_ + 2 != end_ && (p_[2] == static_cast<charT>('=') || p_[2] == static_cast<charT>('!'))) {
-      const bool neg = p_[2] == static_cast<charT>('!');
-      p_ += 3;
-      const int inner = ecma_disjunction();
+    if (__at2('(', '?') && __p_ + 2 != __end_ && (__p_[2] == static_cast<__charT>('=') || __p_[2] == static_cast<__charT>('!'))) {
+      const bool __neg = __p_[2] == static_cast<__charT>('!');
+      __p_ += 3;
+      const int __inner = __ecma_disjunction();
       if (!at(')'))
         fail(std::regex_constants::error_paren);
-      ++p_;
-      node x;
-      x.kind = neg ? re_kind::nlook : re_kind::look;
-      x.kids.push_back(inner);
-      n = add(static_cast<node&&>(x));
-      no_quantifier();
+      ++__p_;
+      __node __x;
+      __x.kind = __neg ? __re_kind::__nlook : __re_kind::__look;
+      __x.__kids.push_back(__inner);
+      n = add(static_cast<__node&&>(__x));
+      __no_quantifier();
       return n;
     }
-    const int g0 = P_.groups + 1;
-    return quantifier(ecma_atom(), g0);
+    const int __g0 = _P_.__groups + 1;
+    return __quantifier(__ecma_atom(), __g0);
   }
-  int ecma_atom() {
-    const charT c = *p_;
-    const auto u = re_ord(c);
-    switch (static_cast<char>(u < 128u ? u : 0)) {
+  int __ecma_atom() {
+    const __charT c = *__p_;
+    const auto __u = __re_ord(c);
+    switch (static_cast<char>(__u < 128u ? __u : 0)) {
     case '.':
-      ++p_;
-      return leaf(re_kind::any);
+      ++__p_;
+      return __leaf(__re_kind::any);
     case '(': {
-      ++p_;
-      if (at2('?', ':')) {
-        p_ += 2;
-        const int inner = ecma_disjunction();
+      ++__p_;
+      if (__at2('?', ':')) {
+        __p_ += 2;
+        const int __inner = __ecma_disjunction();
         if (!at(')'))
           fail(std::regex_constants::error_paren);
-        ++p_;
-        return inner;
+        ++__p_;
+        return __inner;
       }
       if (at('?'))
         fail(std::regex_constants::error_badrepeat);
-      const int num = open_group();
-      const int inner = ecma_disjunction();
+      const int num = __open_group();
+      const int __inner = __ecma_disjunction();
       if (!at(')'))
         fail(std::regex_constants::error_paren);
-      ++p_;
-      return group(num, inner);
+      ++__p_;
+      return __group(num, __inner);
     }
     case '[':
-      ++p_;
-      return bracket();
+      ++__p_;
+      return __bracket();
     case '\\': {
-      ++p_;
-      if (p_ == end_)
+      ++__p_;
+      if (__p_ == __end_)
         fail(std::regex_constants::error_escape);
-      const charT e = *p_;
-      const auto eu = re_ord(e);
-      if (eu < 128u) {
-        switch (static_cast<char>(eu)) {
+      const __charT e = *__p_;
+      const auto __eu = __re_ord(e);
+      if (__eu < 128u) {
+        switch (static_cast<char>(__eu)) {
         case 'd': case 'D': case 's': case 'S': case 'w': case 'W':
-          ++p_;
-          return class_escape(e);
+          ++__p_;
+          return __class_escape(e);
         default:
           break;
         }
       }
       if (digit(e, 10) > 0)
-        return backref(number(std::regex_constants::error_backref));
-      return literal(ecma_char_escape());
+        return __backref(__number(std::regex_constants::error_backref));
+      return literal(__ecma_char_escape());
     }
     case '*': case '+': case '?': case '{':
       fail(std::regex_constants::error_badrepeat);
     default:
-      ++p_;
+      ++__p_;
       return literal(c);
     }
   }
-  int quantifier(int atom, int g0) {
-    if (p_ == end_)
-      return atom;
-    int mn, mx;
+  int __quantifier(int __atom, int __g0) {
+    if (__p_ == __end_)
+      return __atom;
+    int __mn, __mx;
     if (at('*')) {
-      mn = 0, mx = -1;
-      ++p_;
+      __mn = 0, __mx = -1;
+      ++__p_;
     } else if (at('+')) {
-      mn = 1, mx = -1;
-      ++p_;
+      __mn = 1, __mx = -1;
+      ++__p_;
     } else if (at('?')) {
-      mn = 0, mx = 1;
-      ++p_;
+      __mn = 0, __mx = 1;
+      ++__p_;
     } else if (at('{')) {
-      ++p_;
-      interval(mn, mx, false);
+      ++__p_;
+      __interval(__mn, __mx, false);
     } else {
-      return atom;
+      return __atom;
     }
-    bool greedy = true;
+    bool __greedy = true;
     if (at('?')) {
-      ++p_;
-      greedy = false;
+      ++__p_;
+      __greedy = false;
     }
-    no_quantifier();
-    return repeat(atom, mn, mx, greedy, g0);
+    __no_quantifier();
+    return repeat(__atom, __mn, __mx, __greedy, __g0);
   }
 
   // ---- POSIX ----------------------------------------------------------------------------------
   // An awk escape after the backslash ([re.synopt] awk: the escapes of POSIX awk).
-  charT awk_escape() {
-    if (p_ == end_)
+  __charT __awk_escape() {
+    if (__p_ == __end_)
       fail(std::regex_constants::error_escape);
-    const charT e = *p_++;
-    const auto u = re_ord(e);
-    if (u < 128u) {
-      switch (static_cast<char>(u)) {
-      case 'a': return charT(7);
-      case 'b': return charT(8);
-      case 'f': return charT(12);
-      case 'n': return charT(10);
-      case 'r': return charT(13);
-      case 't': return charT(9);
-      case 'v': return charT(11);
+    const __charT e = *__p_++;
+    const auto __u = __re_ord(e);
+    if (__u < 128u) {
+      switch (static_cast<char>(__u)) {
+      case 'a': return __charT(7);
+      case 'b': return __charT(8);
+      case 'f': return __charT(12);
+      case 'n': return __charT(10);
+      case 'r': return __charT(13);
+      case 't': return __charT(9);
+      case 'v': return __charT(11);
       case '"': case '/': case '\\': case '^': case '.': case '[': case ']': case '$': case '(': case ')':
       case '|': case '*': case '+': case '?': case '{': case '}':
         return e;
@@ -734,24 +734,24 @@ class re_compiler {
       }
     }
     if (digit(e, 8) >= 0) {
-      unsigned v = static_cast<unsigned>(digit(e, 8));
-      for (int i = 0; i < 2 && p_ != end_ && digit(*p_, 8) >= 0; ++i)
-        v = v * 8 + static_cast<unsigned>(digit(*p_++, 8));
-      return static_cast<charT>(v);
+      unsigned __v = static_cast<unsigned>(digit(e, 8));
+      for (int i = 0; i < 2 && __p_ != __end_ && digit(*__p_, 8) >= 0; ++i)
+        __v = __v * 8 + static_cast<unsigned>(digit(*__p_++, 8));
+      return static_cast<__charT>(__v);
     }
     fail(std::regex_constants::error_escape);
   }
-  int posix_backref(charT e) {
+  int __posix_backref(__charT e) {
     const int num = digit(e, 10);
-    if (num > P_.groups || !closed_[static_cast<std::size_t>(num)])
+    if (num > _P_.__groups || !__closed_[static_cast<std::size_t>(num)])
       fail(std::regex_constants::error_backref);
-    return backref(num);
+    return __backref(num);
   }
-  static bool posix_special(charT e) {
-    const auto u = re_ord(e);
-    if (u >= 128u)
+  static bool __posix_special(__charT e) {
+    const auto __u = __re_ord(e);
+    if (__u >= 128u)
       return false;
-    switch (static_cast<char>(u)) {
+    switch (static_cast<char>(__u)) {
     case '^': case '.': case '[': case ']': case '$': case '(': case ')': case '|': case '*': case '+':
     case '?': case '{': case '}': case '\\':
       return true;
@@ -760,487 +760,487 @@ class re_compiler {
     }
   }
   // A basic regular expression (basic, grep), up to the end or "\)".
-  int bre_expr() {
-    enter();
-    std::vector<int> terms;
+  int __bre_expr() {
+    __enter();
+    std::vector<int> __terms;
     if (at('^')) {
-      ++p_;
-      terms.push_back(leaf(re_kind::bol));
+      ++__p_;
+      __terms.push_back(__leaf(__re_kind::__bol));
     }
     bool start = true;
-    while (p_ != end_ && !at2('\\', ')')) {
-      if (at('$') && (p_ + 1 == end_ || (p_[1] == static_cast<charT>('\\') && p_ + 2 != end_ && p_[2] == static_cast<charT>(')')))) {
-        ++p_;
-        terms.push_back(leaf(re_kind::eol));
+    while (__p_ != __end_ && !__at2('\\', ')')) {
+      if (at('$') && (__p_ + 1 == __end_ || (__p_[1] == static_cast<__charT>('\\') && __p_ + 2 != __end_ && __p_[2] == static_cast<__charT>(')')))) {
+        ++__p_;
+        __terms.push_back(__leaf(__re_kind::__eol));
         continue;
       }
-      const int g0 = P_.groups + 1;
-      int atom;
+      const int __g0 = _P_.__groups + 1;
+      int __atom;
       if (start && at('*')) { // a leading '*' is an ordinary character
-        ++p_;
-        atom = literal(charT('*'));
+        ++__p_;
+        __atom = literal(__charT('*'));
       } else {
-        atom = bre_atom();
+        __atom = __bre_atom();
       }
       start = false;
       for (;;) {
-        int mn, mx;
+        int __mn, __mx;
         if (at('*')) {
-          ++p_;
-          mn = 0, mx = -1;
-        } else if (at2('\\', '{')) {
-          p_ += 2;
-          interval(mn, mx, true);
+          ++__p_;
+          __mn = 0, __mx = -1;
+        } else if (__at2('\\', '{')) {
+          __p_ += 2;
+          __interval(__mn, __mx, true);
         } else {
           break;
         }
-        atom = repeat(atom, mn, mx, true, g0);
+        __atom = repeat(__atom, __mn, __mx, true, __g0);
       }
-      terms.push_back(atom);
+      __terms.push_back(__atom);
     }
-    --depth_;
-    return list(re_kind::concat, terms);
+    --__depth_;
+    return list(__re_kind::concat, __terms);
   }
-  int bre_atom() {
-    const charT c = *p_;
-    if (c == static_cast<charT>('.')) {
-      ++p_;
-      return leaf(re_kind::any);
+  int __bre_atom() {
+    const __charT c = *__p_;
+    if (c == static_cast<__charT>('.')) {
+      ++__p_;
+      return __leaf(__re_kind::any);
     }
-    if (c == static_cast<charT>('[')) {
-      ++p_;
-      return bracket();
+    if (c == static_cast<__charT>('[')) {
+      ++__p_;
+      return __bracket();
     }
-    if (c != static_cast<charT>('\\')) {
-      ++p_;
+    if (c != static_cast<__charT>('\\')) {
+      ++__p_;
       return literal(c);
     }
-    if (p_ + 1 == end_)
+    if (__p_ + 1 == __end_)
       fail(std::regex_constants::error_escape);
-    const charT e = p_[1];
-    p_ += 2;
-    if (e == static_cast<charT>('(')) {
-      const int num = open_group();
-      const int inner = bre_expr();
-      if (!at2('\\', ')'))
+    const __charT e = __p_[1];
+    __p_ += 2;
+    if (e == static_cast<__charT>('(')) {
+      const int num = __open_group();
+      const int __inner = __bre_expr();
+      if (!__at2('\\', ')'))
         fail(std::regex_constants::error_paren);
-      p_ += 2;
-      return group(num, inner);
+      __p_ += 2;
+      return __group(num, __inner);
     }
-    if (e == static_cast<charT>('{'))
+    if (e == static_cast<__charT>('{'))
       fail(std::regex_constants::error_badrepeat);
-    if (e == static_cast<charT>('}'))
+    if (e == static_cast<__charT>('}'))
       fail(std::regex_constants::error_brace);
     if (digit(e, 10) > 0)
-      return posix_backref(e);
-    const auto u = re_ord(e);
-    if (u < 128u && (static_cast<char>(u) == '.' || static_cast<char>(u) == '[' || static_cast<char>(u) == ']' ||
-                     static_cast<char>(u) == '\\' || static_cast<char>(u) == '*' || static_cast<char>(u) == '^' ||
-                     static_cast<char>(u) == '$'))
+      return __posix_backref(e);
+    const auto __u = __re_ord(e);
+    if (__u < 128u && (static_cast<char>(__u) == '.' || static_cast<char>(__u) == '[' || static_cast<char>(__u) == ']' ||
+                     static_cast<char>(__u) == '\\' || static_cast<char>(__u) == '*' || static_cast<char>(__u) == '^' ||
+                     static_cast<char>(__u) == '$'))
       return literal(e);
     fail(std::regex_constants::error_escape);
   }
   // An extended regular expression (extended, egrep, awk).
-  int ere_alt() {
-    enter();
-    std::vector<int> alts;
-    alts.push_back(ere_branch());
+  int __ere_alt() {
+    __enter();
+    std::vector<int> __alts;
+    __alts.push_back(__ere_branch());
     while (at('|')) {
-      ++p_;
-      alts.push_back(ere_branch());
+      ++__p_;
+      __alts.push_back(__ere_branch());
     }
-    --depth_;
-    return list(re_kind::alt, alts);
+    --__depth_;
+    return list(__re_kind::__alt, __alts);
   }
-  int ere_branch() {
-    std::vector<int> terms;
-    while (p_ != end_ && !at('|') && !at(')'))
-      terms.push_back(ere_expr());
-    return list(re_kind::concat, terms);
+  int __ere_branch() {
+    std::vector<int> __terms;
+    while (__p_ != __end_ && !at('|') && !at(')'))
+      __terms.push_back(__ere_expr());
+    return list(__re_kind::concat, __terms);
   }
-  int ere_expr() {
-    const charT c = *p_;
-    const auto u = re_ord(c);
-    const int g0 = P_.groups + 1;
-    int atom;
-    switch (static_cast<char>(u < 128u ? u : 0)) {
+  int __ere_expr() {
+    const __charT c = *__p_;
+    const auto __u = __re_ord(c);
+    const int __g0 = _P_.__groups + 1;
+    int __atom;
+    switch (static_cast<char>(__u < 128u ? __u : 0)) {
     case '^':
     case '$':
-      ++p_;
-      atom = leaf(c == static_cast<charT>('^') ? re_kind::bol : re_kind::eol);
-      no_quantifier();
-      return atom;
+      ++__p_;
+      __atom = __leaf(c == static_cast<__charT>('^') ? __re_kind::__bol : __re_kind::__eol);
+      __no_quantifier();
+      return __atom;
     case '*': case '+': case '?': case '{':
       fail(std::regex_constants::error_badrepeat);
     case '(': {
-      ++p_;
-      const int num = open_group();
-      const int inner = ere_alt();
+      ++__p_;
+      const int num = __open_group();
+      const int __inner = __ere_alt();
       if (!at(')'))
         fail(std::regex_constants::error_paren);
-      ++p_;
-      atom = group(num, inner);
+      ++__p_;
+      __atom = __group(num, __inner);
       break;
     }
     case '.':
-      ++p_;
-      atom = leaf(re_kind::any);
+      ++__p_;
+      __atom = __leaf(__re_kind::any);
       break;
     case '[':
-      ++p_;
-      atom = bracket();
+      ++__p_;
+      __atom = __bracket();
       break;
     case '\\': {
-      ++p_;
-      if (g_ == awk_g) {
-        atom = literal(awk_escape());
+      ++__p_;
+      if (__g_ == __awk_g) {
+        __atom = literal(__awk_escape());
         break;
       }
-      if (p_ == end_)
+      if (__p_ == __end_)
         fail(std::regex_constants::error_escape);
-      const charT e = *p_++;
+      const __charT e = *__p_++;
       if (digit(e, 10) > 0)
-        atom = posix_backref(e);
-      else if (posix_special(e))
-        atom = literal(e);
+        __atom = __posix_backref(e);
+      else if (__posix_special(e))
+        __atom = literal(e);
       else
         fail(std::regex_constants::error_escape);
       break;
     }
     default:
-      ++p_;
-      atom = literal(c);
+      ++__p_;
+      __atom = literal(c);
       break;
     }
     for (;;) {
-      int mn, mx;
+      int __mn, __mx;
       if (at('*')) {
-        mn = 0, mx = -1;
+        __mn = 0, __mx = -1;
       } else if (at('+')) {
-        mn = 1, mx = -1;
+        __mn = 1, __mx = -1;
       } else if (at('?')) {
-        mn = 0, mx = 1;
+        __mn = 0, __mx = 1;
       } else if (at('{')) {
-        ++p_;
-        interval(mn, mx, false);
-        atom = repeat(atom, mn, mx, true, g0);
+        ++__p_;
+        __interval(__mn, __mx, false);
+        __atom = repeat(__atom, __mn, __mx, true, __g0);
         continue;
       } else {
         break;
       }
-      ++p_;
-      atom = repeat(atom, mn, mx, true, g0);
+      ++__p_;
+      __atom = repeat(__atom, __mn, __mx, true, __g0);
     }
-    return atom;
+    return __atom;
   }
   // grep and egrep: the lines of the pattern are alternatives.
-  int lines(bool bre) {
-    std::vector<int> alts;
-    const charT* all_end = end_;
+  int __lines(bool __bre) {
+    std::vector<int> __alts;
+    const __charT* __all_end = __end_;
     for (;;) {
-      const charT* nl = p_;
-      while (nl != all_end && *nl != static_cast<charT>('\n'))
-        ++nl;
-      end_ = nl;
-      alts.push_back(bre ? bre_expr() : ere_alt());
-      if (p_ != end_)
+      const __charT* __nl = __p_;
+      while (__nl != __all_end && *__nl != static_cast<__charT>('\n'))
+        ++__nl;
+      __end_ = __nl;
+      __alts.push_back(__bre ? __bre_expr() : __ere_alt());
+      if (__p_ != __end_)
         fail(std::regex_constants::error_paren);
-      end_ = all_end;
-      if (nl == all_end)
+      __end_ = __all_end;
+      if (__nl == __all_end)
         break;
-      p_ = nl + 1;
+      __p_ = __nl + 1;
     }
-    return list(re_kind::alt, alts);
+    return list(__re_kind::__alt, __alts);
   }
 
   // ---- analysis and code generation -------------------------------------------------------------
-  bool nullable(int n) const {
-    const node& x = nodes_[static_cast<std::size_t>(n)];
-    switch (x.kind) {
-    case re_kind::chr:
-    case re_kind::any:
-    case re_kind::set:
+  bool __y_nullable(int n) const {
+    const __node& __x = __nodes_[static_cast<std::size_t>(n)];
+    switch (__x.kind) {
+    case __re_kind::__chr:
+    case __re_kind::any:
+    case __re_kind::set:
       return false;
-    case re_kind::group:
-      return nullable(x.kids[0]);
-    case re_kind::concat:
-      for (int k : x.kids)
-        if (!nullable(k))
+    case __re_kind::__group:
+      return __y_nullable(__x.__kids[0]);
+    case __re_kind::concat:
+      for (int k : __x.__kids)
+        if (!__y_nullable(k))
           return false;
       return true;
-    case re_kind::alt:
-      for (int k : x.kids)
-        if (nullable(k))
+    case __re_kind::__alt:
+      for (int k : __x.__kids)
+        if (__y_nullable(k))
           return true;
       return false;
-    case re_kind::repeat:
-      return x.min == 0 || nullable(x.kids[0]);
+    case __re_kind::repeat:
+      return __x.min == 0 || __y_nullable(__x.__kids[0]);
     default: // empty, assertions, lookahead, back-reference
       return true;
     }
   }
-  bool single_char(int n) const {
-    const re_kind k = nodes_[static_cast<std::size_t>(n)].kind;
-    return k == re_kind::chr || k == re_kind::any || k == re_kind::set;
+  bool __single_char(int n) const {
+    const __re_kind k = __nodes_[static_cast<std::size_t>(n)].kind;
+    return k == __re_kind::__chr || k == __re_kind::any || k == __re_kind::set;
   }
   // The number of nodes expand() makes of n, saturated at max_expanded + 1; also too large when
   // one atom would be copied more than max_copies times.
-  std::size_t expanded_size(int n) const {
-    const node& x = nodes_[static_cast<std::size_t>(n)];
+  std::size_t __expanded_size(int n) const {
+    const __node& __x = __nodes_[static_cast<std::size_t>(n)];
     std::size_t s = 1;
-    for (int k : x.kids)
-      s += expanded_size(k);
-    if (x.kind == re_kind::repeat) {
-      const int copies = x.max < 0 ? x.min + 1 : x.max;
-      if (copies > max_copies)
-        return max_expanded + 1;
-      s *= static_cast<std::size_t>(copies < 1 ? 1 : copies) * 2;
+    for (int k : __x.__kids)
+      s += __expanded_size(k);
+    if (__x.kind == __re_kind::repeat) {
+      const int __copies = __x.max < 0 ? __x.min + 1 : __x.max;
+      if (__copies > __max_copies)
+        return __max_expanded + 1;
+      s *= static_cast<std::size_t>(__copies < 1 ? 1 : __copies) * 2;
     }
-    return s > max_expanded ? max_expanded + 1 : s;
+    return s > __max_expanded ? __max_expanded + 1 : s;
   }
   // Copies the subtree n (POSIX expansion of bounded repetitions).
-  int clone(int n) {
-    node x = nodes_[static_cast<std::size_t>(n)];
-    for (int& k : x.kids)
-      k = clone(k);
-    return add(static_cast<node&&>(x));
+  int __clone(int n) {
+    __node __x = __nodes_[static_cast<std::size_t>(n)];
+    for (int& k : __x.__kids)
+      k = __clone(k);
+    return add(static_cast<__node&&>(__x));
   }
   // Rewrites every repetition into x?, x* and concatenations (nfa programs).
   int expand(int n) {
-    const std::size_t nk = nodes_[static_cast<std::size_t>(n)].kids.size();
-    for (std::size_t i = 0; i < nk; ++i) {
-      const int k = expand(nodes_[static_cast<std::size_t>(n)].kids[i]);
-      nodes_[static_cast<std::size_t>(n)].kids[i] = k;
+    const std::size_t __nk = __nodes_[static_cast<std::size_t>(n)].__kids.size();
+    for (std::size_t i = 0; i < __nk; ++i) {
+      const int k = expand(__nodes_[static_cast<std::size_t>(n)].__kids[i]);
+      __nodes_[static_cast<std::size_t>(n)].__kids[i] = k;
     }
-    const node x = nodes_[static_cast<std::size_t>(n)];
-    if (x.kind != re_kind::repeat || (x.min == 0 && (x.max == 1 || x.max < 0)))
+    const __node __x = __nodes_[static_cast<std::size_t>(n)];
+    if (__x.kind != __re_kind::repeat || (__x.min == 0 && (__x.max == 1 || __x.max < 0)))
       return n;
-    if (x.max == 0)
-      return leaf(re_kind::empty);
-    const int body = x.kids[0];
-    if (x.min == 1 && x.max == 1)
-      return body;
+    if (__x.max == 0)
+      return __leaf(__re_kind::empty);
+    const int __body = __x.__kids[0];
+    if (__x.min == 1 && __x.max == 1)
+      return __body;
     // A tail follows another iteration of the same repetition: it makes no empty iteration.
-    auto opt = [&](int kid, int mx, bool tail) {
-      node r;
-      r.kind = re_kind::repeat;
+    auto __opt = [&](int __kid, int __mx, bool __tail) {
+      __node r;
+      r.kind = __re_kind::repeat;
       r.min = 0;
-      r.max = mx;
-      r.tail = tail;
-      r.group_lo = x.group_lo;
-      r.group_hi = x.group_hi;
-      r.kids.push_back(kid);
-      return add(static_cast<node&&>(r));
+      r.max = __mx;
+      r.__tail = __tail;
+      r.__group_lo = __x.__group_lo;
+      r.__group_hi = __x.__group_hi;
+      r.__kids.push_back(__kid);
+      return add(static_cast<__node&&>(r));
     };
     std::vector<int> seq;
-    for (int i = 0; i < x.min; ++i)
-      seq.push_back(i == 0 ? body : clone(body));
-    if (x.max < 0) {
-      seq.push_back(opt(x.min == 0 ? body : clone(body), -1, x.min > 0));
-    } else if (x.max > x.min) { // x{0,3} is (x(x(x)?)?)?
-      int tail = opt(x.min == 0 ? body : clone(body), 1, x.min > 0 || x.max - x.min > 1);
-      for (int i = x.min + 1; i < x.max; ++i) {
-        std::vector<int> pair{clone(body), tail};
-        tail = opt(list(re_kind::concat, pair), 1, x.min > 0 || i + 1 < x.max);
+    for (int i = 0; i < __x.min; ++i)
+      seq.push_back(i == 0 ? __body : __clone(__body));
+    if (__x.max < 0) {
+      seq.push_back(__opt(__x.min == 0 ? __body : __clone(__body), -1, __x.min > 0));
+    } else if (__x.max > __x.min) { // x{0,3} is (x(x(x)?)?)?
+      int __tail = __opt(__x.min == 0 ? __body : __clone(__body), 1, __x.min > 0 || __x.max - __x.min > 1);
+      for (int i = __x.min + 1; i < __x.max; ++i) {
+        std::vector<int> pair{__clone(__body), __tail};
+        __tail = __opt(list(__re_kind::concat, pair), 1, __x.min > 0 || i + 1 < __x.max);
       }
-      seq.push_back(tail);
+      seq.push_back(__tail);
     }
-    return list(re_kind::concat, seq);
+    return list(__re_kind::concat, seq);
   }
 
-  int emit(re_op op, int a = 0, bool flag = false) {
-    if (P_.code.size() >= max_nodes)
+  int emit(__re_op op, int a = 0, bool __flag = false) {
+    if (_P_.code.size() >= __max_nodes)
       fail(std::regex_constants::error_space);
-    re_inst<charT> in;
+    __re_inst<__charT> in;
     in.op = op;
     in.a = a;
-    in.flag = flag;
-    P_.code.push_back(in);
-    return static_cast<int>(P_.code.size() - 1);
+    in.__flag = __flag;
+    _P_.code.push_back(in);
+    return static_cast<int>(_P_.code.size() - 1);
   }
-  int pc() const { return static_cast<int>(P_.code.size()); }
-  re_inst<charT>& at_pc(int i) { return P_.code[static_cast<std::size_t>(i)]; }
+  int __pc() const { return static_cast<int>(_P_.code.size()); }
+  __re_inst<__charT>& __at_pc(int i) { return _P_.code[static_cast<std::size_t>(i)]; }
 
-  void gen(int n) {
-    const node x = nodes_[static_cast<std::size_t>(n)]; // gen never adds nodes, but keep a copy
-    if (P_.nfa)
-      P_.node_begin[static_cast<std::size_t>(n)] = pc();
-    switch (x.kind) {
-    case re_kind::empty:
+  void __gen(int n) {
+    const __node __x = __nodes_[static_cast<std::size_t>(n)]; // gen never adds nodes, but keep a copy
+    if (_P_.__nfa)
+      _P_.__node_begin[static_cast<std::size_t>(n)] = __pc();
+    switch (__x.kind) {
+    case __re_kind::empty:
       break;
-    case re_kind::chr:
-      at_pc(emit(re_op::chr)).ch = translate(x.ch);
+    case __re_kind::__chr:
+      __at_pc(emit(__re_op::__chr)).__ch = translate(__x.__ch);
       break;
-    case re_kind::any:
-      emit(re_op::any, 0, P_.ecma);
+    case __re_kind::any:
+      emit(__re_op::any, 0, _P_.__ecma);
       break;
-    case re_kind::set:
-      emit(re_op::set, x.val);
+    case __re_kind::set:
+      emit(__re_op::set, __x.__val);
       break;
-    case re_kind::bol:
-      emit(re_op::bol);
+    case __re_kind::__bol:
+      emit(__re_op::__bol);
       break;
-    case re_kind::eol:
-      emit(re_op::eol);
+    case __re_kind::__eol:
+      emit(__re_op::__eol);
       break;
-    case re_kind::wordb:
-      emit(re_op::wordb);
+    case __re_kind::__wordb:
+      emit(__re_op::__wordb);
       break;
-    case re_kind::nwordb:
-      emit(re_op::nwordb);
+    case __re_kind::__nwordb:
+      emit(__re_op::__nwordb);
       break;
-    case re_kind::backref:
-      emit(re_op::backref, x.val);
+    case __re_kind::__backref:
+      emit(__re_op::__backref, __x.__val);
       break;
-    case re_kind::group:
-      emit(re_op::open, x.val);
-      gen(x.kids[0]);
-      emit(re_op::close, x.val);
+    case __re_kind::__group:
+      emit(__re_op::open, __x.__val);
+      __gen(__x.__kids[0]);
+      emit(__re_op::close, __x.__val);
       break;
-    case re_kind::look:
-    case re_kind::nlook: {
-      const int l = emit(re_op::look, 0, x.kind == re_kind::nlook);
-      gen(x.kids[0]);
-      at_pc(l).a = emit(re_op::look_end);
+    case __re_kind::__look:
+    case __re_kind::__nlook: {
+      const int __l = emit(__re_op::__look, 0, __x.kind == __re_kind::__nlook);
+      __gen(__x.__kids[0]);
+      __at_pc(__l).a = emit(__re_op::__look_end);
       break;
     }
-    case re_kind::concat:
-      for (int k : x.kids)
-        gen(k);
+    case __re_kind::concat:
+      for (int k : __x.__kids)
+        __gen(k);
       break;
-    case re_kind::alt: {
-      std::vector<int> jumps;
-      for (std::size_t i = 0; i < x.kids.size(); ++i) {
-        if (i + 1 < x.kids.size()) {
-          const int s = emit(re_op::split);
-          at_pc(s).a = s + 1;
-          gen(x.kids[i]);
-          jumps.push_back(emit(re_op::jmp));
-          at_pc(s).b = pc();
+    case __re_kind::__alt: {
+      std::vector<int> __jumps;
+      for (std::size_t i = 0; i < __x.__kids.size(); ++i) {
+        if (i + 1 < __x.__kids.size()) {
+          const int s = emit(__re_op::split);
+          __at_pc(s).a = s + 1;
+          __gen(__x.__kids[i]);
+          __jumps.push_back(emit(__re_op::__jmp));
+          __at_pc(s).b = __pc();
         } else {
-          gen(x.kids[i]);
+          __gen(__x.__kids[i]);
         }
       }
-      for (int j : jumps)
-        at_pc(j).a = pc();
+      for (int __j : __jumps)
+        __at_pc(__j).a = __pc();
       break;
     }
-    case re_kind::repeat:
-      gen_repeat(x);
+    case __re_kind::repeat:
+      __gen_repeat(__x);
       break;
     }
-    if (P_.nfa)
-      P_.node_end[static_cast<std::size_t>(n)] = pc();
+    if (_P_.__nfa)
+      _P_.__node_end[static_cast<std::size_t>(n)] = __pc();
   }
-  void gen_repeat(const node& x) {
-    if (P_.nfa) { // only x? and x* remain after expand()
-      const int s = emit(re_op::split);
-      at_pc(s).a = s + 1;
-      gen(x.kids[0]);
-      if (x.max < 0)
-        emit(re_op::jmp, s);
-      at_pc(s).b = pc();
+  void __gen_repeat(const __node& __x) {
+    if (_P_.__nfa) { // only x? and x* remain after expand()
+      const int s = emit(__re_op::split);
+      __at_pc(s).a = s + 1;
+      __gen(__x.__kids[0]);
+      if (__x.max < 0)
+        emit(__re_op::__jmp, s);
+      __at_pc(s).b = __pc();
       return;
     }
-    if (x.max == 0)
+    if (__x.max == 0)
       return;
-    if (x.min == 1 && x.max == 1) {
-      gen(x.kids[0]);
-      return;
-    }
-    re_loop lp;
-    lp.min = x.min;
-    lp.max = x.max;
-    lp.greedy = x.greedy;
-    lp.group_lo = x.group_lo;
-    lp.group_hi = x.group_hi;
-    const int li = static_cast<int>(P_.loops.size());
-    P_.loops.push_back(lp);
-    if (single_char(x.kids[0])) {
-      emit(re_op::rep, li);
-      gen(x.kids[0]);
-      P_.loops[static_cast<std::size_t>(li)].exit_pc = pc();
+    if (__x.min == 1 && __x.max == 1) {
+      __gen(__x.__kids[0]);
       return;
     }
-    emit(re_op::loop_enter, li);
-    const int it = emit(re_op::loop_iter, li);
-    gen(x.kids[0]);
-    emit(re_op::loop_tail, li);
-    P_.loops[static_cast<std::size_t>(li)].iter_pc = it;
-    P_.loops[static_cast<std::size_t>(li)].exit_pc = pc();
+    __re_loop __lp;
+    __lp.min = __x.min;
+    __lp.max = __x.max;
+    __lp.__greedy = __x.__greedy;
+    __lp.__group_lo = __x.__group_lo;
+    __lp.__group_hi = __x.__group_hi;
+    const int __li = static_cast<int>(_P_.__loops.size());
+    _P_.__loops.push_back(__lp);
+    if (__single_char(__x.__kids[0])) {
+      emit(__re_op::rep, __li);
+      __gen(__x.__kids[0]);
+      _P_.__loops[static_cast<std::size_t>(__li)].__exit_pc = __pc();
+      return;
+    }
+    emit(__re_op::__loop_enter, __li);
+    const int __it = emit(__re_op::__loop_iter, __li);
+    __gen(__x.__kids[0]);
+    emit(__re_op::__loop_tail, __li);
+    _P_.__loops[static_cast<std::size_t>(__li)].__iter_pc = __it;
+    _P_.__loops[static_cast<std::size_t>(__li)].__exit_pc = __pc();
     // Whether the backtracker may remember failures: what follows a pc must not depend on the
     // loop's counter, so max is 1 or unbounded, and min at most 1. An iteration that can match
     // the empty string adds one bit of state, whether it began at the current position (the
     // empty check), which joins the memo key; only for min == 0, and for at most 4 such loops.
-    const bool counts_ok = x.max == 1 || (x.max < 0 && x.min <= 1);
-    if (!counts_ok)
-      P_.memo = false;
-    else if (nullable(x.kids[0])) {
-      if (x.min != 0 || P_.memo_loops.size() == 4)
-        P_.memo = false;
+    const bool __counts_ok = __x.max == 1 || (__x.max < 0 && __x.min <= 1);
+    if (!__counts_ok)
+      _P_.__memo = false;
+    else if (__y_nullable(__x.__kids[0])) {
+      if (__x.min != 0 || _P_.__memo_loops.size() == 4)
+        _P_.__memo = false;
       else
-        P_.memo_loops.push_back(li);
+        _P_.__memo_loops.push_back(__li);
     }
   }
 
   void finish() {
-    auto& P = P_;
+    auto& _Pp = _P_;
     // The memo points: where the backtracker resumes or branches.
-    if (P.memo) {
-      P.memo_index.assign(P.code.size(), -1);
-      auto mark = [&](int i) {
-        if (P.memo_index[static_cast<std::size_t>(i)] < 0)
-          P.memo_index[static_cast<std::size_t>(i)] = P.memo_points++;
+    if (_Pp.__memo) {
+      _Pp.__memo_index.assign(_Pp.code.size(), -1);
+      auto __mark = [&](int i) {
+        if (_Pp.__memo_index[static_cast<std::size_t>(i)] < 0)
+          _Pp.__memo_index[static_cast<std::size_t>(i)] = _Pp.__memo_points++;
       };
-      for (std::size_t i = 0; i < P.code.size(); ++i) {
-        const auto& in = P.code[i];
-        if (in.op == re_op::split) {
-          mark(in.a);
-          mark(in.b);
-        } else if (in.op == re_op::look) {
-          mark(static_cast<int>(i));
+      for (std::size_t i = 0; i < _Pp.code.size(); ++i) {
+        const auto& in = _Pp.code[i];
+        if (in.op == __re_op::split) {
+          __mark(in.a);
+          __mark(in.b);
+        } else if (in.op == __re_op::__look) {
+          __mark(static_cast<int>(i));
         }
       }
-      for (const re_loop& lp : P.loops) {
-        if (lp.iter_pc != 0)
-          mark(lp.iter_pc);
-        mark(lp.exit_pc);
+      for (const __re_loop& __lp : _Pp.__loops) {
+        if (__lp.__iter_pc != 0)
+          __mark(__lp.__iter_pc);
+        __mark(__lp.__exit_pc);
       }
       // A lookahead's body succeeds by reaching its look_end without ending the search, so a
       // (pc, position) pair visited there may have succeeded: no memo inside lookaheads (the
       // look instruction itself is a memo point: what follows it depends only on the position).
-      for (std::size_t i = 0; i < P.code.size(); ++i)
-        if (P.code[i].op == re_op::look)
-          for (int j = static_cast<int>(i) + 1; j <= P.code[i].a; ++j)
-            P.memo_index[static_cast<std::size_t>(j)] = -1;
+      for (std::size_t i = 0; i < _Pp.code.size(); ++i)
+        if (_Pp.code[i].op == __re_op::__look)
+          for (int __j = static_cast<int>(i) + 1; __j <= _Pp.code[i].a; ++__j)
+            _Pp.__memo_index[static_cast<std::size_t>(__j)] = -1;
       // For each memo point, the nullable-body loops whose iteration it lies in.
-      P.memo_mask.assign(static_cast<std::size_t>(P.memo_points), 0);
-      for (std::size_t i = 0; i < P.code.size(); ++i) {
-        const int mp = P.memo_index[i];
-        if (mp < 0)
+      _Pp.__memo_mask.assign(static_cast<std::size_t>(_Pp.__memo_points), 0);
+      for (std::size_t i = 0; i < _Pp.code.size(); ++i) {
+        const int __mp = _Pp.__memo_index[i];
+        if (__mp < 0)
           continue;
-        for (std::size_t k = 0; k < P.memo_loops.size(); ++k) {
-          const re_loop& lp = P.loops[static_cast<std::size_t>(P.memo_loops[k])];
-          if (static_cast<int>(i) > lp.iter_pc && static_cast<int>(i) < lp.exit_pc)
-            P.memo_mask[static_cast<std::size_t>(mp)] |= 1u << k;
+        for (std::size_t k = 0; k < _Pp.__memo_loops.size(); ++k) {
+          const __re_loop& __lp = _Pp.__loops[static_cast<std::size_t>(_Pp.__memo_loops[k])];
+          if (static_cast<int>(i) > __lp.__iter_pc && static_cast<int>(i) < __lp.__exit_pc)
+            _Pp.__memo_mask[static_cast<std::size_t>(__mp)] |= 1u << k;
         }
       }
     }
-    if (P.nfa) {
-      P.eps_pred.assign(P.code.size() + 1, {});
-      for (std::size_t i = 0; i < P.code.size(); ++i) {
-        const auto& in = P.code[i];
-        const int ii = static_cast<int>(i);
+    if (_Pp.__nfa) {
+      _Pp.__eps_pred.assign(_Pp.code.size() + 1, {});
+      for (std::size_t i = 0; i < _Pp.code.size(); ++i) {
+        const auto& in = _Pp.code[i];
+        const int __ii = static_cast<int>(i);
         switch (in.op) {
-        case re_op::split:
-          P.eps_pred[static_cast<std::size_t>(in.a)].push_back(ii);
-          P.eps_pred[static_cast<std::size_t>(in.b)].push_back(ii);
+        case __re_op::split:
+          _Pp.__eps_pred[static_cast<std::size_t>(in.a)].push_back(__ii);
+          _Pp.__eps_pred[static_cast<std::size_t>(in.b)].push_back(__ii);
           break;
-        case re_op::jmp:
-          P.eps_pred[static_cast<std::size_t>(in.a)].push_back(ii);
+        case __re_op::__jmp:
+          _Pp.__eps_pred[static_cast<std::size_t>(in.a)].push_back(__ii);
           break;
-        case re_op::open: case re_op::close: case re_op::bol: case re_op::eol: case re_op::wordb: case re_op::nwordb:
-          P.eps_pred[i + 1].push_back(ii);
+        case __re_op::open: case __re_op::close: case __re_op::__bol: case __re_op::__eol: case __re_op::__wordb: case __re_op::__nwordb:
+          _Pp.__eps_pred[i + 1].push_back(__ii);
           break;
         default:
           break;
@@ -1249,123 +1249,123 @@ class re_compiler {
     }
     // Caches for the code units below 256.
     {
-      const char w[1] = {'w'};
-      charT wn[1] = {static_cast<charT>(w[0])};
-      P.word_class = tr_.lookup_classname(wn, wn + 1, false);
+      const char __w[1] = {'w'};
+      __charT __wn[1] = {static_cast<__charT>(__w[0])};
+      _Pp.__word_class = __tr_.lookup_classname(__wn, __wn + 1, false);
     }
-    if constexpr (re_cacheable<charT>) {
-      auto set_bit = [](unsigned char* bits, unsigned u) { bits[u >> 3] |= static_cast<unsigned char>(1u << (u & 7)); };
+    if constexpr (__re_cacheable<__charT>) {
+      auto __set_bit = [](unsigned char* __bits, unsigned __u) { __bits[__u >> 3] |= static_cast<unsigned char>(1u << (__u & 7)); };
       // The code units below 256 a class matches, computed once per distinct class.
-      struct class_entry {
-        class_type f;
+      struct __class_entry {
+        __class_type __f;
         unsigned char b[32];
       };
-      std::vector<class_entry> class_bits;
-      auto bits_of = [&](class_type f) -> const unsigned char* {
-        for (auto& e : class_bits)
-          if (e.f == f)
+      std::vector<__class_entry> __class_bits;
+      auto __bits_of = [&](__class_type __f) -> const unsigned char* {
+        for (auto& e : __class_bits)
+          if (e.__f == __f)
             return e.b;
-        class_entry& e = class_bits.emplace_back(class_entry{f, {}});
-        for (unsigned u = 0; u < 256; ++u)
-          if (tr_.isctype(static_cast<charT>(u), f))
-            set_bit(e.b, u);
+        __class_entry& e = __class_bits.emplace_back(__class_entry{__f, {}});
+        for (unsigned __u = 0; __u < 256; ++__u)
+          if (__tr_.isctype(static_cast<__charT>(__u), __f))
+            __set_bit(e.b, __u);
         return e.b;
       };
-      for (unsigned u = 0; u < 256; ++u) {
-        const charT c = static_cast<charT>(u);
-        P.fold[u] = P.icase ? tr_.translate_nocase(c) : P.collate ? tr_.translate(c) : c;
+      for (unsigned __u = 0; __u < 256; ++__u) {
+        const __charT c = static_cast<__charT>(__u);
+        _Pp.__fold[__u] = _Pp.icase ? __tr_.translate_nocase(c) : _Pp.collate ? __tr_.translate(c) : c;
       }
-      const unsigned char* word = bits_of(P.word_class);
+      const unsigned char* __word = __bits_of(_Pp.__word_class);
       for (unsigned i = 0; i < 32; ++i)
-        P.word[i] = word[i];
-      for (auto& s : P.sets) {
-        if (P.icase || P.collate || !s.coll_lo.empty() || !s.equivs.empty()) {
-          for (unsigned u = 0; u < 256; ++u)
-            if (P.set_slow(tr_, s, static_cast<charT>(u)))
-              set_bit(s.cache, u);
+        _Pp.__word[i] = __word[i];
+      for (auto& s : _Pp.__sets) {
+        if (_Pp.icase || _Pp.collate || !s.__coll_lo.empty() || !s.__equivs.empty()) {
+          for (unsigned __u = 0; __u < 256; ++__u)
+            if (_Pp.__set_slow(__tr_, s, static_cast<__charT>(__u)))
+              __set_bit(s.__cache, __u);
           continue;
         }
         // What set_slow decides for c below 256 when nothing is translated, folded or collated:
         // the listed characters, the ranges by code, the classes, the negated classes.
-        for (charT ch : s.chars)
-          if (re_ord(ch) < 256u)
-            set_bit(s.cache, unsigned(re_ord(ch)));
+        for (__charT __ch : s.__chars)
+          if (__re_ord(__ch) < 256u)
+            __set_bit(s.__cache, unsigned(__re_ord(__ch)));
         for (const auto& r : s.ranges)
-          for (unsigned long long u = re_ord(r.lo); u <= re_ord(r.hi) && u < 256u; ++u)
-            set_bit(s.cache, unsigned(u));
-        if (s.classes != class_type{}) {
-          const unsigned char* b = bits_of(s.classes);
+          for (unsigned long long __u = __re_ord(r.__lo); __u <= __re_ord(r.__hi) && __u < 256u; ++__u)
+            __set_bit(s.__cache, unsigned(__u));
+        if (s.__classes != __class_type{}) {
+          const unsigned char* b = __bits_of(s.__classes);
           for (unsigned i = 0; i < 32; ++i)
-            s.cache[i] |= b[i];
+            s.__cache[i] |= b[i];
         }
-        for (const class_type f : s.neg_classes) {
-          const unsigned char* b = bits_of(f);
+        for (const __class_type __f : s.__neg_classes) {
+          const unsigned char* b = __bits_of(__f);
           for (unsigned i = 0; i < 32; ++i)
-            s.cache[i] |= static_cast<unsigned char>(~b[i]);
+            s.__cache[i] |= static_cast<unsigned char>(~b[i]);
         }
         if (s.negate)
           for (unsigned i = 0; i < 32; ++i)
-            s.cache[i] = static_cast<unsigned char>(~s.cache[i]);
+            s.__cache[i] = static_cast<unsigned char>(~s.__cache[i]);
       }
     }
   }
 
 public:
-  re_compiler(const traits& tr, re_program<charT, traits>& P) : tr_(tr), P_(P) {}
+  __re_compiler(const __traits& __tr, __re_program<__charT, __traits>& _Pp) : __tr_(__tr), _P_(_Pp) {}
 
-  void compile(const charT* first, const charT* last, std::regex_constants::syntax_option_type f) {
-    namespace rc = std::regex_constants;
-    auto& P = P_;
-    P.flags = f;
-    P.icase = (f & rc::icase) != 0;
-    P.collate = (f & rc::collate) != 0;
+  void __compile(const __charT* first, const __charT* last, std::regex_constants::syntax_option_type __f) {
+    namespace __rc = std::regex_constants;
+    auto& _Pp = _P_;
+    _Pp.flags = __f;
+    _Pp.icase = (__f & __rc::icase) != 0;
+    _Pp.collate = (__f & __rc::collate) != 0;
     // [re.synopt]/1: a valid value has at most one grammar element. error_type has no code for
     // this; error_complexity says the expression cannot be handled.
-    const unsigned grammars = unsigned(f & (rc::ECMAScript | rc::basic | rc::extended | rc::awk | rc::grep | rc::egrep));
-    if ((grammars & (grammars - 1)) != 0)
-      fail(rc::error_complexity);
-    if ((f & rc::basic) || (f & rc::grep))
-      g_ = bre;
-    else if ((f & rc::extended) || (f & rc::egrep))
-      g_ = ere;
-    else if (f & rc::awk)
-      g_ = awk_g;
+    const unsigned __grammars = unsigned(__f & (__rc::ECMAScript | __rc::basic | __rc::extended | __rc::awk | __rc::grep | __rc::egrep));
+    if ((__grammars & (__grammars - 1)) != 0)
+      fail(__rc::error_complexity);
+    if ((__f & __rc::basic) || (__f & __rc::grep))
+      __g_ = __bre;
+    else if ((__f & __rc::extended) || (__f & __rc::egrep))
+      __g_ = __ere;
+    else if (__f & __rc::awk)
+      __g_ = __awk_g;
     else
-      g_ = ecma;
-    P.ecma = g_ == ecma;
-    P.posix = !P.ecma;
-    P.multiline = P.ecma && (f & rc::multiline) != 0;
-    P.memo = true;
-    closed_.push_back(1); // group 0
-    p_ = first;
-    end_ = last;
-    int root;
-    if ((f & rc::grep) || (f & rc::egrep)) {
-      root = lines(g_ == bre);
+      __g_ = __ecma;
+    _Pp.__ecma = __g_ == __ecma;
+    _Pp.posix = !_Pp.__ecma;
+    _Pp.multiline = _Pp.__ecma && (__f & __rc::multiline) != 0;
+    _Pp.__memo = true;
+    __closed_.push_back(1); // group 0
+    __p_ = first;
+    __end_ = last;
+    int __root;
+    if ((__f & __rc::grep) || (__f & __rc::egrep)) {
+      __root = __lines(__g_ == __bre);
     } else {
-      root = g_ == ecma ? ecma_disjunction() : g_ == bre ? bre_expr() : ere_alt();
-      if (p_ != end_)
-        fail(rc::error_paren);
+      __root = __g_ == __ecma ? __ecma_disjunction() : __g_ == __bre ? __bre_expr() : __ere_alt();
+      if (__p_ != __end_)
+        fail(__rc::error_paren);
     }
-    if (max_backref_ > P.groups)
-      fail(rc::error_backref);
-    if (P.has_backref)
-      P.memo = false;
-    P.nfa = P.posix && !P.has_backref && expanded_size(root) <= max_expanded;
-    if (P.nfa) {
-      root = expand(root);
-      P.node_begin.assign(nodes_.size(), 0);
-      P.node_end.assign(nodes_.size(), 0);
-      P.memo = false;
+    if (__max_backref_ > _Pp.__groups)
+      fail(__rc::error_backref);
+    if (_Pp.__has_backref)
+      _Pp.__memo = false;
+    _Pp.__nfa = _Pp.posix && !_Pp.__has_backref && __expanded_size(__root) <= __max_expanded;
+    if (_Pp.__nfa) {
+      __root = expand(__root);
+      _Pp.__node_begin.assign(__nodes_.size(), 0);
+      _Pp.__node_end.assign(__nodes_.size(), 0);
+      _Pp.__memo = false;
     }
-    gen(root);
-    emit(re_op::match);
-    if (P.nfa) {
-      P.nodes = static_cast<std::vector<node>&&>(nodes_);
-      P.root = root;
+    __gen(__root);
+    emit(__re_op::__match);
+    if (_Pp.__nfa) {
+      _Pp.__nodes = static_cast<std::vector<__node>&&>(__nodes_);
+      _Pp.__root = __root;
     }
     finish();
   }
 };
 
-}} // namespace ycxx::detail
+}} // namespace __ycxx::__detail

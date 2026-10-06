@@ -24,10 +24,10 @@ std::text_encoding from_name(const char* name) {
 // environment (setenv) do not affect the result; setlocale never does.
 std::text_encoding std::text_encoding::environment() {
   static const text_encoding env = [] {
-    char buf[max_name_length + 2] = {};
-    if (ycxx_pal_environment_encoding(buf, sizeof buf) != 0)
+    char __buf[max_name_length + 2] = {};
+    if (__ycxx_pal_environment_encoding(__buf, sizeof __buf) != 0)
       return text_encoding();
-    return from_name(buf);
+    return from_name(__buf);
   }();
   return env;
 }
@@ -39,9 +39,9 @@ std::text_encoding std::locale::encoding() const {
   if (n == "*")
     return text_encoding();
   string ctype = n;
-  if (const auto pos = n.find("LC_CTYPE="); pos != string::npos) {
-    const auto end = n.find(';', pos);
-    ctype = n.substr(pos + 9, end == string::npos ? string::npos : end - pos - 9);
+  if (const auto __pos = n.find("LC_CTYPE="); __pos != string::npos) {
+    const auto end = n.find(';', __pos);
+    ctype = n.substr(__pos + 9, end == string::npos ? string::npos : end - __pos - 9);
   }
   if (ctype == "C" || ctype == "POSIX")
     return text_encoding(text_encoding::id::ASCII);

@@ -10,13 +10,13 @@
 extern "C++" {
 #  include <cuchar>
 }
-#  if !YCXX_C_HAS_UCHAR_H
+#  if !_YCXX_C_HAS_UCHAR_H
 using std::mbrtoc16;
 using std::c16rtomb;
 using std::mbrtoc32;
 using std::c32rtomb;
 #  endif
-#  if !YCXX_C_HAS_MBRTOC8
+#  if !_YCXX_C_HAS_MBRTOC8
 using std::mbrtoc8;
 using std::c8rtomb;
 #  endif

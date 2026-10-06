@@ -2,7 +2,7 @@
 #include <system_error>
 #include <ycxx/pal.h>
 
-namespace [[gnu::visibility("hidden")]] std {
+namespace [[__gnu__::__visibility__("hidden")]] std {
 
 error_category::~error_category() {}
 
@@ -10,15 +10,15 @@ error_category::~error_category() {}
 
 namespace {
 
-std::string error_message(int ev) {
-  char buf[256];
-  ::ycxx_pal_error_message(ev, buf, sizeof buf);
-  return std::string(buf);
+std::string error_message(int __ev) {
+  char __buf[256];
+  ::__ycxx_pal_error_message(__ev, __buf, sizeof __buf);
+  return std::string(__buf);
 }
 
 // [syserr.errcat.objects]/4: the system error values that correspond to a POSIX errno value
 // are those of errc (on POSIX systems the system category's values are errno values).
-bool is_posix_errno(int ev) noexcept {
+bool is_posix_errno(int __ev) noexcept {
   using std::errc;
   constexpr errc posix[] = {
       errc::address_family_not_supported, errc::address_in_use, errc::address_not_available,
@@ -50,7 +50,7 @@ bool is_posix_errno(int ev) noexcept {
       errc(ENODATA), errc(ENOSR), errc(ENOSTR), errc(ETIME),
   };
   for (errc e : posix)
-    if (static_cast<int>(e) == ev)
+    if (static_cast<int>(e) == __ev)
       return true;
   return false;
 }
@@ -59,35 +59,35 @@ class generic_error_category final : public std::error_category {
 public:
   constexpr generic_error_category() noexcept {}
   const char* name() const noexcept override { return "generic"; }
-  std::string message(int ev) const override { return error_message(ev); }
+  std::string message(int __ev) const override { return error_message(__ev); }
 };
 
 class system_error_category final : public std::error_category {
 public:
   constexpr system_error_category() noexcept {}
   const char* name() const noexcept override { return "system"; }
-  std::string message(int ev) const override { return error_message(ev); }
-  std::error_condition default_error_condition(int ev) const noexcept override {
-    if (ev == 0 || is_posix_errno(ev))
-      return std::error_condition(ev, std::generic_category());
-    return std::error_condition(ev, *this);
+  std::string message(int __ev) const override { return error_message(__ev); }
+  std::error_condition default_error_condition(int __ev) const noexcept override {
+    if (__ev == 0 || is_posix_errno(__ev))
+      return std::error_condition(__ev, std::generic_category());
+    return std::error_condition(__ev, *this);
   }
 };
 
 // Constant-initialized, so usable from any other static initializer, and never destroyed, so
 // usable from any static destructor too ([syserr.errcat.objects]: every call returns the same
 // object).
-template <class T>
+template <class _Tp>
 union immortal {
-  T object;
-  constexpr immortal() noexcept : object() {}
+  _Tp __object;
+  constexpr immortal() noexcept : __object() {}
   ~immortal() {}
 };
 constinit immortal<generic_error_category> generic_object;
 constinit immortal<system_error_category> system_object;
 
-std::string compose(const char* what_arg, std::size_t n, const std::error_code& ec) {
-  std::string s(what_arg, n);
+std::string compose(const char* __what_arg, std::size_t n, const std::error_code& ec) {
+  std::string s(__what_arg, n);
   if (n != 0)
     s += ": ";
   s += ec.message();
@@ -96,21 +96,21 @@ std::string compose(const char* what_arg, std::size_t n, const std::error_code& 
 
 } // namespace
 
-namespace [[gnu::visibility("hidden")]] std {
+namespace [[__gnu__::__visibility__("hidden")]] std {
 
-const error_category& generic_category() noexcept { return generic_object.object; }
-const error_category& system_category() noexcept { return system_object.object; }
+const error_category& generic_category() noexcept { return generic_object.__object; }
+const error_category& system_category() noexcept { return system_object.__object; }
 
-system_error::system_error(error_code ec, const string& what_arg)
-    : runtime_error(compose(what_arg.data(), what_arg.size(), ec)), code_(ec) {}
-system_error::system_error(error_code ec, const char* what_arg)
-    : runtime_error(compose(what_arg, __builtin_strlen(what_arg), ec)), code_(ec) {}
-system_error::system_error(error_code ec) : runtime_error(ec.message()), code_(ec) {}
-system_error::system_error(int ev, const error_category& ecat, const string& what_arg)
-    : system_error(error_code(ev, ecat), what_arg) {}
-system_error::system_error(int ev, const error_category& ecat, const char* what_arg)
-    : system_error(error_code(ev, ecat), what_arg) {}
-system_error::system_error(int ev, const error_category& ecat) : system_error(error_code(ev, ecat)) {}
+system_error::system_error(error_code ec, const string& __what_arg)
+    : runtime_error(compose(__what_arg.data(), __what_arg.size(), ec)), __code_(ec) {}
+system_error::system_error(error_code ec, const char* __what_arg)
+    : runtime_error(compose(__what_arg, __builtin_strlen(__what_arg), ec)), __code_(ec) {}
+system_error::system_error(error_code ec) : runtime_error(ec.message()), __code_(ec) {}
+system_error::system_error(int __ev, const error_category& __ecat, const string& __what_arg)
+    : system_error(error_code(__ev, __ecat), __what_arg) {}
+system_error::system_error(int __ev, const error_category& __ecat, const char* __what_arg)
+    : system_error(error_code(__ev, __ecat), __what_arg) {}
+system_error::system_error(int __ev, const error_category& __ecat) : system_error(error_code(__ev, __ecat)) {}
 system_error::~system_error() {}
 
 } // namespace std

@@ -3,159 +3,159 @@
 
 #include <ycxx/core/concepts.hpp>
 
-namespace [[gnu::visibility("hidden")]] std { namespace ranges {
+namespace [[__gnu__::__visibility__("hidden")]] std { namespace ranges {
 
-template <class I, class F>
+template <class _Ip, class _Fp>
 struct in_fun_result {
-  [[no_unique_address]] I in;
-  [[no_unique_address]] F fun;
+  [[no_unique_address]] _Ip in;
+  [[no_unique_address]] _Fp fun;
 
-  template <class I2, class F2>
-    requires convertible_to<const I&, I2> && convertible_to<const F&, F2>
-  constexpr operator in_fun_result<I2, F2>() const& {
+  template <class _I2, class _F2>
+    requires convertible_to<const _Ip&, _I2> && convertible_to<const _Fp&, _F2>
+  constexpr operator in_fun_result<_I2, _F2>() const& {
     return {in, fun};
   }
-  template <class I2, class F2>
-    requires convertible_to<I, I2> && convertible_to<F, F2>
-  constexpr operator in_fun_result<I2, F2>() && {
+  template <class _I2, class _F2>
+    requires convertible_to<_Ip, _I2> && convertible_to<_Fp, _F2>
+  constexpr operator in_fun_result<_I2, _F2>() && {
     return {std::move(in), std::move(fun)};
   }
 };
 
-template <class I1, class I2>
+template <class _I1, class _I2>
 struct in_in_result {
-  [[no_unique_address]] I1 in1;
-  [[no_unique_address]] I2 in2;
+  [[no_unique_address]] _I1 in1;
+  [[no_unique_address]] _I2 in2;
 
-  template <class II1, class II2>
-    requires convertible_to<const I1&, II1> && convertible_to<const I2&, II2>
-  constexpr operator in_in_result<II1, II2>() const& {
+  template <class _II1, class _II2>
+    requires convertible_to<const _I1&, _II1> && convertible_to<const _I2&, _II2>
+  constexpr operator in_in_result<_II1, _II2>() const& {
     return {in1, in2};
   }
-  template <class II1, class II2>
-    requires convertible_to<I1, II1> && convertible_to<I2, II2>
-  constexpr operator in_in_result<II1, II2>() && {
+  template <class _II1, class _II2>
+    requires convertible_to<_I1, _II1> && convertible_to<_I2, _II2>
+  constexpr operator in_in_result<_II1, _II2>() && {
     return {std::move(in1), std::move(in2)};
   }
 };
 
-template <class I, class O>
+template <class _Ip, class _Op>
 struct in_out_result {
-  [[no_unique_address]] I in;
-  [[no_unique_address]] O out;
+  [[no_unique_address]] _Ip in;
+  [[no_unique_address]] _Op out;
 
-  template <class I2, class O2>
-    requires convertible_to<const I&, I2> && convertible_to<const O&, O2>
-  constexpr operator in_out_result<I2, O2>() const& {
+  template <class _I2, class _O2>
+    requires convertible_to<const _Ip&, _I2> && convertible_to<const _Op&, _O2>
+  constexpr operator in_out_result<_I2, _O2>() const& {
     return {in, out};
   }
-  template <class I2, class O2>
-    requires convertible_to<I, I2> && convertible_to<O, O2>
-  constexpr operator in_out_result<I2, O2>() && {
+  template <class _I2, class _O2>
+    requires convertible_to<_Ip, _I2> && convertible_to<_Op, _O2>
+  constexpr operator in_out_result<_I2, _O2>() && {
     return {std::move(in), std::move(out)};
   }
 };
 
-template <class I1, class I2, class O>
+template <class _I1, class _I2, class _Op>
 struct in_in_out_result {
-  [[no_unique_address]] I1 in1;
-  [[no_unique_address]] I2 in2;
-  [[no_unique_address]] O out;
+  [[no_unique_address]] _I1 in1;
+  [[no_unique_address]] _I2 in2;
+  [[no_unique_address]] _Op out;
 
-  template <class II1, class II2, class OO>
-    requires convertible_to<const I1&, II1> && convertible_to<const I2&, II2> && convertible_to<const O&, OO>
-  constexpr operator in_in_out_result<II1, II2, OO>() const& {
+  template <class _II1, class _II2, class _OO>
+    requires convertible_to<const _I1&, _II1> && convertible_to<const _I2&, _II2> && convertible_to<const _Op&, _OO>
+  constexpr operator in_in_out_result<_II1, _II2, _OO>() const& {
     return {in1, in2, out};
   }
-  template <class II1, class II2, class OO>
-    requires convertible_to<I1, II1> && convertible_to<I2, II2> && convertible_to<O, OO>
-  constexpr operator in_in_out_result<II1, II2, OO>() && {
+  template <class _II1, class _II2, class _OO>
+    requires convertible_to<_I1, _II1> && convertible_to<_I2, _II2> && convertible_to<_Op, _OO>
+  constexpr operator in_in_out_result<_II1, _II2, _OO>() && {
     return {std::move(in1), std::move(in2), std::move(out)};
   }
 };
 
-template <class I, class O1, class O2>
+template <class _Ip, class _O1, class _O2>
 struct in_out_out_result {
-  [[no_unique_address]] I in;
-  [[no_unique_address]] O1 out1;
-  [[no_unique_address]] O2 out2;
+  [[no_unique_address]] _Ip in;
+  [[no_unique_address]] _O1 out1;
+  [[no_unique_address]] _O2 out2;
 
-  template <class II, class OO1, class OO2>
-    requires convertible_to<const I&, II> && convertible_to<const O1&, OO1> && convertible_to<const O2&, OO2>
-  constexpr operator in_out_out_result<II, OO1, OO2>() const& {
+  template <class _II, class _OO1, class _OO2>
+    requires convertible_to<const _Ip&, _II> && convertible_to<const _O1&, _OO1> && convertible_to<const _O2&, _OO2>
+  constexpr operator in_out_out_result<_II, _OO1, _OO2>() const& {
     return {in, out1, out2};
   }
-  template <class II, class OO1, class OO2>
-    requires convertible_to<I, II> && convertible_to<O1, OO1> && convertible_to<O2, OO2>
-  constexpr operator in_out_out_result<II, OO1, OO2>() && {
+  template <class _II, class _OO1, class _OO2>
+    requires convertible_to<_Ip, _II> && convertible_to<_O1, _OO1> && convertible_to<_O2, _OO2>
+  constexpr operator in_out_out_result<_II, _OO1, _OO2>() && {
     return {std::move(in), std::move(out1), std::move(out2)};
   }
 };
 
-template <class T>
+template <class _Tp>
 struct min_max_result {
-  [[no_unique_address]] T min;
-  [[no_unique_address]] T max;
+  [[no_unique_address]] _Tp min;
+  [[no_unique_address]] _Tp max;
 
-  template <class T2>
-    requires convertible_to<const T&, T2>
-  constexpr operator min_max_result<T2>() const& {
+  template <class _T2>
+    requires convertible_to<const _Tp&, _T2>
+  constexpr operator min_max_result<_T2>() const& {
     return {min, max};
   }
-  template <class T2>
-    requires convertible_to<T, T2>
-  constexpr operator min_max_result<T2>() && {
+  template <class _T2>
+    requires convertible_to<_Tp, _T2>
+  constexpr operator min_max_result<_T2>() && {
     return {std::move(min), std::move(max)};
   }
 };
 
-template <class I>
+template <class _Ip>
 struct in_found_result {
-  [[no_unique_address]] I in;
+  [[no_unique_address]] _Ip in;
   bool found;
 
-  template <class I2>
-    requires convertible_to<const I&, I2>
-  constexpr operator in_found_result<I2>() const& {
+  template <class _I2>
+    requires convertible_to<const _Ip&, _I2>
+  constexpr operator in_found_result<_I2>() const& {
     return {in, found};
   }
-  template <class I2>
-    requires convertible_to<I, I2>
-  constexpr operator in_found_result<I2>() && {
+  template <class _I2>
+    requires convertible_to<_Ip, _I2>
+  constexpr operator in_found_result<_I2>() && {
     return {std::move(in), found};
   }
 };
 
-template <class I, class T>
+template <class _Ip, class _Tp>
 struct in_value_result {
-  [[no_unique_address]] I in;
-  [[no_unique_address]] T value;
+  [[no_unique_address]] _Ip in;
+  [[no_unique_address]] _Tp value;
 
-  template <class I2, class T2>
-    requires convertible_to<const I&, I2> && convertible_to<const T&, T2>
-  constexpr operator in_value_result<I2, T2>() const& {
+  template <class _I2, class _T2>
+    requires convertible_to<const _Ip&, _I2> && convertible_to<const _Tp&, _T2>
+  constexpr operator in_value_result<_I2, _T2>() const& {
     return {in, value};
   }
-  template <class I2, class T2>
-    requires convertible_to<I, I2> && convertible_to<T, T2>
-  constexpr operator in_value_result<I2, T2>() && {
+  template <class _I2, class _T2>
+    requires convertible_to<_Ip, _I2> && convertible_to<_Tp, _T2>
+  constexpr operator in_value_result<_I2, _T2>() && {
     return {std::move(in), std::move(value)};
   }
 };
 
-template <class O, class T>
+template <class _Op, class _Tp>
 struct out_value_result {
-  [[no_unique_address]] O out;
-  [[no_unique_address]] T value;
+  [[no_unique_address]] _Op out;
+  [[no_unique_address]] _Tp value;
 
-  template <class O2, class T2>
-    requires convertible_to<const O&, O2> && convertible_to<const T&, T2>
-  constexpr operator out_value_result<O2, T2>() const& {
+  template <class _O2, class _T2>
+    requires convertible_to<const _Op&, _O2> && convertible_to<const _Tp&, _T2>
+  constexpr operator out_value_result<_O2, _T2>() const& {
     return {out, value};
   }
-  template <class O2, class T2>
-    requires convertible_to<O, O2> && convertible_to<T, T2>
-  constexpr operator out_value_result<O2, T2>() && {
+  template <class _O2, class _T2>
+    requires convertible_to<_Op, _O2> && convertible_to<_Tp, _T2>
+  constexpr operator out_value_result<_O2, _T2>() && {
     return {std::move(out), std::move(value)};
   }
 };

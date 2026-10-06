@@ -8,57 +8,57 @@
 #include <ycxx/core/meta_base.hpp>
 #include <ycxx/core/prim_traits.hpp>
 
-namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
 
-template <class T>
-inline constexpr int fp_std_index = -1;
+template <class _Tp>
+inline constexpr int __fp_std_index = -1;
 template <>
-inline constexpr int fp_std_index<float> = 0;
+inline constexpr int __fp_std_index<float> = 0;
 template <>
-inline constexpr int fp_std_index<double> = 1;
+inline constexpr int __fp_std_index<double> = 1;
 template <>
-inline constexpr int fp_std_index<long double> = 2;
+inline constexpr int __fp_std_index<long double> = 2;
 
 // The set of values of A is a subset of that of B (all formats here are binary).
-template <class A, class B>
-inline constexpr bool fp_values_subset =
-    fp_format<A>.digits <= fp_format<B>.digits && fp_format<A>.max_exp <= fp_format<B>.max_exp &&
-    fp_format<A>.min_exp >= fp_format<B>.min_exp &&
-    fp_format<A>.min_exp - fp_format<A>.digits >= fp_format<B>.min_exp - fp_format<B>.digits;
-template <class A, class B>
-inline constexpr bool fp_same_values = fp_values_subset<A, B> && fp_values_subset<B, A>;
+template <class _Ap, class _Bp>
+inline constexpr bool __fp_values_subset =
+    __fp_format<_Ap>.digits <= __fp_format<_Bp>.digits && __fp_format<_Ap>.__max_exp <= __fp_format<_Bp>.__max_exp &&
+    __fp_format<_Ap>.__min_exp >= __fp_format<_Bp>.__min_exp &&
+    __fp_format<_Ap>.__min_exp - __fp_format<_Ap>.digits >= __fp_format<_Bp>.__min_exp - __fp_format<_Bp>.digits;
+template <class _Ap, class _Bp>
+inline constexpr bool __fp_same_values = __fp_values_subset<_Ap, _Bp> && __fp_values_subset<_Bp, _Ap>;
 
 // [conv.rank]/2: an extended type with the values of exactly one standard type has that
 // type's rank; with the values of several, the rank of double.
-template <class T>
-consteval int fp_rank_index() {
-  if constexpr (fp_std_index<T> >= 0)
-    return fp_std_index<T>;
-  else if constexpr (fp_same_values<T, double>)
+template <class _Tp>
+consteval int __fp_rank_index() {
+  if constexpr (__fp_std_index<_Tp> >= 0)
+    return __fp_std_index<_Tp>;
+  else if constexpr (__fp_same_values<_Tp, double>)
     return 1;
-  else if constexpr (fp_same_values<T, float>)
+  else if constexpr (__fp_same_values<_Tp, float>)
     return 0;
-  else if constexpr (fp_same_values<T, long double>)
+  else if constexpr (__fp_same_values<_Tp, long double>)
     return 2;
   else
     return -1;
 }
 
 // Compares (rank, subrank): 1 if A is greater, -1 if B is, 0 if the same type, 2 if unordered.
-template <class A, class B>
-consteval int fp_rank_compare() {
-  if constexpr (__is_same(A, B)) {
+template <class _Ap, class _Bp>
+consteval int __fp_rank_compare() {
+  if constexpr (__is_same(_Ap, _Bp)) {
     return 0;
   } else {
-    constexpr int ia = ycxx::detail::fp_rank_index<A>(), ib = ycxx::detail::fp_rank_index<B>();
-    if constexpr (ia >= 0 && ib >= 0) {
-      if constexpr (ia != ib)
-        return ia > ib ? 1 : -1;
+    constexpr int __ia = __ycxx::__detail::__fp_rank_index<_Ap>(), __ib = __ycxx::__detail::__fp_rank_index<_Bp>();
+    if constexpr (__ia >= 0 && __ib >= 0) {
+      if constexpr (__ia != __ib)
+        return __ia > __ib ? 1 : -1;
       else // equal rank: the extended type has the greater subrank
-        return fp_std_index<A> >= 0 ? -1 : 1;
-    } else if constexpr (fp_values_subset<A, B> && !fp_values_subset<B, A>) {
+        return __fp_std_index<_Ap> >= 0 ? -1 : 1;
+    } else if constexpr (__fp_values_subset<_Ap, _Bp> && !__fp_values_subset<_Bp, _Ap>) {
       return -1;
-    } else if constexpr (fp_values_subset<B, A> && !fp_values_subset<A, B>) {
+    } else if constexpr (__fp_values_subset<_Bp, _Ap> && !__fp_values_subset<_Ap, _Bp>) {
       return 1;
     } else {
       return 2;
@@ -66,42 +66,42 @@ consteval int fp_rank_compare() {
   }
 }
 
-template <class T>
-using cmath_as_fp = std::conditional_t<is_integral_v<T>, double, std::remove_cv_t<T>>;
+template <class _Tp>
+using __cmath_as_fp = std::conditional_t<is_integral_v<_Tp>, double, std::remove_cv_t<_Tp>>;
 
-template <class C, class... Ts>
-inline constexpr bool fp_is_greatest = ((__is_same(C, Ts) || ycxx::detail::fp_rank_compare<C, Ts>() == 1) && ...);
+template <class _Cp, class... _Ts>
+inline constexpr bool __fp_is_greatest = ((__is_same(_Cp, _Ts) || __ycxx::__detail::__fp_rank_compare<_Cp, _Ts>() == 1) && ...);
 
-template <class... Ts>
-struct fp_greatest_of {};
-template <class... Ts>
-  requires(fp_is_greatest<Ts, Ts...> || ...)
-struct fp_greatest_of<Ts...> {
+template <class... _Ts>
+struct __fp_greatest_of {};
+template <class... _Ts>
+  requires(__fp_is_greatest<_Ts, _Ts...> || ...)
+struct __fp_greatest_of<_Ts...> {
   // The first candidate that is greatest.
-  template <class C, class... Rest>
-  static consteval auto pick() {
-    if constexpr (fp_is_greatest<C, Ts...>)
-      return std::type_identity<C>{};
+  template <class _Cp, class... _Rest>
+  static consteval auto __pick() {
+    if constexpr (__fp_is_greatest<_Cp, _Ts...>)
+      return std::type_identity<_Cp>{};
     else
-      return pick<Rest...>();
+      return __pick<_Rest...>();
   }
-  using type = typename decltype(pick<Ts...>())::type;
+  using type = typename decltype(__pick<_Ts...>())::type;
 };
 
 // [cmath.syn]/3: every argument is arithmetic and a type of greatest rank and subrank exists.
-template <class... As>
-concept cmath_args = ((is_arithmetic_v<As> && ...)) && requires { typename fp_greatest_of<cmath_as_fp<As>...>::type; };
+template <class... _As>
+concept __cmath_args = ((is_arithmetic_v<_As> && ...)) && requires { typename __fp_greatest_of<__cmath_as_fp<_As>...>::type; };
 
 // The additional overloads with two or three parameters: arithmetic arguments that are not
 // all of the same floating-point type (those use the per-type overloads).
-template <class A, class... As>
-concept cmath_mixed = cmath_args<A, As...> && !(is_floating_v<A> && (__is_same(A, As) && ...));
+template <class _Ap, class... _As>
+concept __cmath_mixed = __cmath_args<_Ap, _As...> && !(__is_floating_v<_Ap> && (__is_same(_Ap, _As) && ...));
 
 // The per-type overloads: T is the floating-point type F (false for an unavailable one).
-template <class T, class F>
-concept fp_is = __is_same(T, F) && is_floating_v<F>;
+template <class _Tp, class _Fp>
+concept __fp_is = __is_same(_Tp, _Fp) && __is_floating_v<_Fp>;
 
-template <class... As>
-using cmath_promote_t = typename fp_greatest_of<cmath_as_fp<As>...>::type;
+template <class... _As>
+using __cmath_promote_t = typename __fp_greatest_of<__cmath_as_fp<_As>...>::type;
 
-}} // namespace ycxx::detail
+}} // namespace __ycxx::__detail

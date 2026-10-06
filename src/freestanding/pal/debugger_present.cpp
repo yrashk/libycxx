@@ -1,5 +1,5 @@
 // libycxx freestanding runtime: the default PAL debugger query, which answers false. A
-// freestanding program can define ycxx_pal_debugger_present (or std::is_debugger_present).
+// freestanding program can define __ycxx_pal_debugger_present (or std::is_debugger_present).
 #include <ycxx/pal.h>
 
-extern "C" int ycxx_pal_debugger_present() noexcept { return 0; }
+extern "C" int __ycxx_pal_debugger_present() noexcept { return 0; }

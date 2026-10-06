@@ -11,32 +11,32 @@ namespace {
 using std::size_t;
 
 struct out {
-  char* buf;
-  size_t cap;
-  size_t len = 0;
+  char* __buf;
+  size_t __cap;
+  size_t __len = 0;
   void put(char c) {
-    if (len < cap)
-      buf[len] = c;
-    ++len;
+    if (__len < __cap)
+      __buf[__len] = c;
+    ++__len;
   }
   void put(const char* s) {
     while (*s)
       put(*s++);
   }
   // v in decimal, at least width digits, padded with pad
-  void number(long long v, int width, char pad = '0') {
+  void __number(long long __v, int width, char __pad = '0') {
     char d[24];
     int n = 0;
-    const bool neg = v < 0;
-    unsigned long long u = neg ? 0ull - static_cast<unsigned long long>(v) : static_cast<unsigned long long>(v);
+    const bool __neg = __v < 0;
+    unsigned long long __u = __neg ? 0ull - static_cast<unsigned long long>(__v) : static_cast<unsigned long long>(__v);
     do {
-      d[n++] = static_cast<char>('0' + u % 10);
-      u /= 10;
-    } while (u != 0);
-    if (neg)
+      d[n++] = static_cast<char>('0' + __u % 10);
+      __u /= 10;
+    } while (__u != 0);
+    if (__neg)
       put('-');
-    for (int i = n + (neg ? 1 : 0); i < width; ++i)
-      put(pad);
+    for (int i = n + (__neg ? 1 : 0); i < width; ++i)
+      put(__pad);
     while (n != 0)
       put(d[--n]);
   }
@@ -46,189 +46,189 @@ long long floor_div(long long a, long long b) { return a / b - ((a % b != 0) && 
 
 // ISO 8601 weeks: the number of weeks in year y and the week-based year/week of t.
 int iso_weeks_in(long long y) {
-  auto p = [](long long x) { return ((x + floor_div(x, 4) - floor_div(x, 100) + floor_div(x, 400)) % 7 + 7) % 7; };
+  auto p = [](long long __x) { return ((__x + floor_div(__x, 4) - floor_div(__x, 100) + floor_div(__x, 400)) % 7 + 7) % 7; };
   return 52 + (p(y) == 4 || p(y - 1) == 3 ? 1 : 0);
 }
-void iso_week(const std::tm* t, long long& year, int& week) {
+void iso_week(const std::tm* t, long long& year, int& __week) {
   year = t->tm_year + 1900LL;
   const int wday_mon = (t->tm_wday + 6) % 7; // Monday = 0
-  week = (t->tm_yday - wday_mon + 10) / 7;
-  if (week < 1) {
+  __week = (t->tm_yday - wday_mon + 10) / 7;
+  if (__week < 1) {
     --year;
-    week = iso_weeks_in(year);
-  } else if (week > iso_weeks_in(year)) {
+    __week = iso_weeks_in(year);
+  } else if (__week > iso_weeks_in(year)) {
     ++year;
-    week = 1;
+    __week = 1;
   }
 }
 
-void format(out& o, const std::tm* t, char spec, char mod);
+void format(out& __o, const std::tm* t, char __spec, char __mod);
 
-void format_pattern(out& o, const std::tm* t, const char* p) {
+void format_pattern(out& __o, const std::tm* t, const char* p) {
   for (; *p; ++p) {
     if (*p == '%' && p[1] != '\0') {
-      format(o, t, p[1], 0);
+      format(__o, t, p[1], 0);
       ++p;
     } else {
-      o.put(*p);
+      __o.put(*p);
     }
   }
 }
 
-const char* name_or(const char* const* names, int i, int n) { return i >= 0 && i < n ? names[i] : "?"; }
+const char* name_or(const char* const* __names, int i, int n) { return i >= 0 && i < n ? __names[i] : "?"; }
 
-void format(out& o, const std::tm* t, char spec, char mod) {
-  using ycxx::detail::c_month_names;
-  using ycxx::detail::c_weekday_names;
+void format(out& __o, const std::tm* t, char __spec, char __mod) {
+  using __ycxx::__detail::__c_month_names;
+  using __ycxx::__detail::__c_weekday_names;
   const long long year = t->tm_year + 1900LL;
-  switch (spec) {
+  switch (__spec) {
   case 'a':
-    o.put(name_or(c_weekday_names + 7, t->tm_wday, 7));
+    __o.put(name_or(__c_weekday_names + 7, t->tm_wday, 7));
     return;
   case 'A':
-    o.put(name_or(c_weekday_names, t->tm_wday, 7));
+    __o.put(name_or(__c_weekday_names, t->tm_wday, 7));
     return;
   case 'b':
   case 'h':
-    o.put(name_or(c_month_names + 12, t->tm_mon, 12));
+    __o.put(name_or(__c_month_names + 12, t->tm_mon, 12));
     return;
   case 'B':
-    o.put(name_or(c_month_names, t->tm_mon, 12));
+    __o.put(name_or(__c_month_names, t->tm_mon, 12));
     return;
   case 'c':
-    format_pattern(o, t, "%a %b %e %H:%M:%S %Y");
+    format_pattern(__o, t, "%a %b %e %H:%M:%S %Y");
     return;
   case 'C':
-    o.number(floor_div(year, 100), 2);
+    __o.__number(floor_div(year, 100), 2);
     return;
   case 'd':
-    o.number(t->tm_mday, 2);
+    __o.__number(t->tm_mday, 2);
     return;
   case 'D':
   case 'x':
-    format_pattern(o, t, "%m/%d/%y");
+    format_pattern(__o, t, "%m/%d/%y");
     return;
   case 'e':
-    o.number(t->tm_mday, 2, ' ');
+    __o.__number(t->tm_mday, 2, ' ');
     return;
   case 'F':
-    format_pattern(o, t, "%Y-%m-%d");
+    format_pattern(__o, t, "%Y-%m-%d");
     return;
   case 'g': {
     long long y;
-    int w;
-    iso_week(t, y, w);
-    o.number((y < 0 ? -y : y) % 100, 2);
+    int __w;
+    iso_week(t, y, __w);
+    __o.__number((y < 0 ? -y : y) % 100, 2);
     return;
   }
   case 'G': {
     long long y;
-    int w;
-    iso_week(t, y, w);
-    o.number(y, 1); // as %Y
+    int __w;
+    iso_week(t, y, __w);
+    __o.__number(y, 1); // as %Y
     return;
   }
   case 'H':
-    o.number(t->tm_hour, 2);
+    __o.__number(t->tm_hour, 2);
     return;
   case 'I':
-    o.number(t->tm_hour % 12 == 0 ? 12 : t->tm_hour % 12, 2);
+    __o.__number(t->tm_hour % 12 == 0 ? 12 : t->tm_hour % 12, 2);
     return;
   case 'j':
-    o.number(t->tm_yday + 1, 3);
+    __o.__number(t->tm_yday + 1, 3);
     return;
   case 'm':
-    o.number(t->tm_mon + 1, 2);
+    __o.__number(t->tm_mon + 1, 2);
     return;
   case 'M':
-    o.number(t->tm_min, 2);
+    __o.__number(t->tm_min, 2);
     return;
   case 'n':
-    o.put('\n');
+    __o.put('\n');
     return;
   case 'p':
-    o.put(t->tm_hour < 12 ? "AM" : "PM");
+    __o.put(t->tm_hour < 12 ? "AM" : "PM");
     return;
   case 'r':
-    format_pattern(o, t, "%I:%M:%S %p");
+    format_pattern(__o, t, "%I:%M:%S %p");
     return;
   case 'R':
-    format_pattern(o, t, "%H:%M");
+    format_pattern(__o, t, "%H:%M");
     return;
   case 'S':
-    o.number(t->tm_sec, 2);
+    __o.__number(t->tm_sec, 2);
     return;
   case 't':
-    o.put('\t');
+    __o.put('\t');
     return;
   case 'T':
   case 'X':
-    format_pattern(o, t, "%H:%M:%S");
+    format_pattern(__o, t, "%H:%M:%S");
     return;
   case 'u':
-    o.number(t->tm_wday == 0 ? 7 : t->tm_wday, 1);
+    __o.__number(t->tm_wday == 0 ? 7 : t->tm_wday, 1);
     return;
   case 'U':
-    o.number((t->tm_yday + 7 - t->tm_wday) / 7, 2);
+    __o.__number((t->tm_yday + 7 - t->tm_wday) / 7, 2);
     return;
   case 'V': {
     long long y;
-    int w;
-    iso_week(t, y, w);
-    o.number(w, 2);
+    int __w;
+    iso_week(t, y, __w);
+    __o.__number(__w, 2);
     return;
   }
   case 'w':
-    o.number(t->tm_wday, 1);
+    __o.__number(t->tm_wday, 1);
     return;
   case 'W':
-    o.number((t->tm_yday + 7 - (t->tm_wday + 6) % 7) / 7, 2);
+    __o.__number((t->tm_yday + 7 - (t->tm_wday + 6) % 7) / 7, 2);
     return;
   case 'y':
-    o.number((year < 0 ? -year : year) % 100, 2);
+    __o.__number((year < 0 ? -year : year) % 100, 2);
     return;
   case 'Y':
-    o.number(year, 1);
+    __o.__number(year, 1);
     return;
   case 'z':
   case 'Z': {
-    char buf[64];
-    const char f[3] = {'%', spec, '\0'};
-    const size_t n = std::strftime(buf, sizeof buf, f, t);
+    char __buf[64];
+    const char __f[3] = {'%', __spec, '\0'};
+    const size_t n = std::strftime(__buf, sizeof __buf, __f, t);
     for (size_t i = 0; i < n; ++i)
-      o.put(buf[i]);
+      __o.put(__buf[i]);
     return;
   }
   case '%':
-    o.put('%');
+    __o.put('%');
     return;
   default:
-    o.put('%');
-    if (mod)
-      o.put(mod);
-    o.put(spec);
+    __o.put('%');
+    if (__mod)
+      __o.put(__mod);
+    __o.put(__spec);
     return;
   }
 }
 
 } // namespace
 
-namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
 
-size_t time_put_c(char* buf, size_t cap, const std::tm* t, char format, char modifier) noexcept {
-  out o{buf, cap};
-  const bool e_ok = format == 'c' || format == 'C' || format == 'x' || format == 'X' || format == 'y' || format == 'Y';
-  const bool o_ok = format == 'd' || format == 'e' || format == 'H' || format == 'I' || format == 'm' ||
+size_t __time_put_c(char* __buf, size_t __cap, const std::tm* t, char format, char __modifier) noexcept {
+  out __o{__buf, __cap};
+  const bool __e_ok = format == 'c' || format == 'C' || format == 'x' || format == 'X' || format == 'y' || format == 'Y';
+  const bool __o_ok = format == 'd' || format == 'e' || format == 'H' || format == 'I' || format == 'm' ||
                     format == 'M' || format == 'S' || format == 'u' || format == 'U' || format == 'V' ||
                     format == 'w' || format == 'W' || format == 'y';
-  if (modifier != 0 && !((modifier == 'E' && e_ok) || (modifier == 'O' && o_ok))) {
-    o.put('%');
-    o.put(modifier);
-    o.put(format);
-    return o.len;
+  if (__modifier != 0 && !((__modifier == 'E' && __e_ok) || (__modifier == 'O' && __o_ok))) {
+    __o.put('%');
+    __o.put(__modifier);
+    __o.put(format);
+    return __o.__len;
   }
-  ::format(o, t, format, modifier);
-  return o.len;
+  ::format(__o, t, format, __modifier);
+  return __o.__len;
 }
 
-}} // namespace ycxx::detail
+}} // namespace __ycxx::__detail

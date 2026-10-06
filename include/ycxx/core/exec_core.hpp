@@ -328,8 +328,13 @@ namespace [[__gnu__::__visibility__("hidden")]] std { namespace execution {
 // [exec.prop]
 template <class _QueryTag, class _ValueType>
 struct prop {
-  [[no_unique_address]] const _QueryTag __query_;
+  [[no_unique_address]] _QueryTag __query_;
   _ValueType __value_;
+  // Not assignable ([exec.prop]/4). Not a const query_: with a value type whose default
+  // constructor is not trivial, GCC 16 then rejects prop<Q, V>() ("uninitialized const member"),
+  // although an empty class is const-default-constructible ([dcl.init.general]/8); a const
+  // member with a default member initializer avoids that.
+  [[no_unique_address]] const __ycxx::__adl_free::__exec_not_assignable __no_assign_{};
   constexpr const _ValueType& query(_QueryTag, auto&&...) const noexcept { return __value_; }
 };
 template <class _QueryTag, class _ValueType>

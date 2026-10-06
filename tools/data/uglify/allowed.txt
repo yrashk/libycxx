@@ -1,0 +1,74 @@
+# The identifiers tools/uglify.py never renames besides keywords, reserved identifiers, the draft's
+# index of library names (library-index.txt) and the names the std and std.compat modules export
+# (DECISIONS §2). One or more names per line; `re:` introduces a Python regular expression that
+# must match the whole name; `#` starts a comment.
+
+[standard]
+# Declared in a standard library header ([macro.names]/1), but missing from the draft's index of
+# library names. Members of standard classes:
+adjustfield app ate badbit basefield beg binary cur eofbit failbit floatfield goodbit noreplace  # ios_base
+copyfmt_event erase_event imbue_event event_callback                       # ios_base
+alignment_value                                                            # aligned_union [depr.meta.types]
+arrival_token                                                              # barrier
+auto_format generic_format native_format                                   # path::format
+available                                                                  # space_info
+block_size used_block                                                      # discard_block_engine
+default_seed multiplier                                                    # linear_congruential_engine
+initialization_multiplier mask_bits shift_size state_size word_size xor_mask  # mersenne_twister_engine
+tempering_b tempering_c tempering_d tempering_l tempering_s tempering_t tempering_u
+long_lag short_lag                                                         # subtract_with_carry_engine
+multipliers round_consts round_count word_count                            # philox_engine
+discard seed param_type distribution_type                                  # [rand.req]
+column line file_name function_name                                        # source_location
+comment kind location semantic is_terminating detection_mode              # contracts::contract_violation
+evaluation_exception predicate_false enforce observe quick_enforce         # contracts enumerators
+concurrent parallel weakly_parallel                                        # forward_progress_guarantee
+container container_type iter current                                      # insert iterators, reverse_iterator
+delete_object                                                              # polymorphic_allocator
+deleter_type weak_type                                                     # unique_ptr, shared_ptr
+den num                                                                    # ratio
+elapsed is_leap_second                                                     # leap_second_info
+leap_seconds links version zones                                           # tzdb
+error_types sender_concept receiver_concept operation_state_concept scheduler_concept  # [exec]
+start_scheduler_type stop_source_type stop_token_type                      # execution::task
+first_type second_type                                                     # pair
+fractional_width                                                           # hh_mm_ss
+insert_return_type                                                         # associative containers
+is_steady is_transparent                                                   # clocks; transparent comparators
+is_specialized has_denorm                                                  # numeric_limits
+istream_type ostream_type streambuf_type iterator_type regex_type syncbuf_type locale_type
+off_type pos_type
+eq_int_type not_eof to_char_type to_int_type                               # char_traits
+lock_shared unlock_shared try_lock_shared try_lock_shared_for try_lock_shared_until  # shared mutexes
+max_associations                                                           # simple_counting_scope
+monetary numeric                                                           # locale categories
+mutex_type                                                                 # lock_guard, unique_lock, ...
+neg_format pos_format                                                      # moneypunct
+npos                                                                       # basic_string, basic_string_view
+pop_front top                                                              # sequence containers, adaptors
+rebind_traits                                                              # allocator_traits
+store_xor                                                                  # atomic_ref, atomic
+underlying                                                                 # range_formatter
+yielded                                                                    # generator
+c r                                                                        # linalg::setup_givens_rotation_result
+posix                                                                      # [namespace.posix]
+# The C library's names the C++ headers for C library facilities declare ([headers]/10, C23):
+tm_sec tm_min tm_hour tm_mday tm_mon tm_year tm_wday tm_yday tm_isdst      # struct tm
+tv_sec tv_nsec                                                             # struct timespec
+quot rem                                                                   # div_t, ldiv_t, lldiv_t, imaxdiv_t
+decimal_point thousands_sep grouping int_curr_symbol currency_symbol mon_decimal_point
+mon_thousands_sep mon_grouping positive_sign negative_sign int_frac_digits frac_digits
+p_cs_precedes p_sep_by_space n_cs_precedes n_sep_by_space p_sign_posn n_sign_posn
+int_p_cs_precedes int_p_sep_by_space int_n_cs_precedes int_n_sep_by_space int_p_sign_posn int_n_sign_posn  # struct lconv
+# <cstdint>, <cinttypes>: the index lists INTN_MAX, PRIdN, ... once, with N as a placeholder.
+re:U?INT(_FAST|_LEAST)?(8|16|32|64)_(MAX|MIN|WIDTH|C)
+re:U?INT(MAX|PTR)_(MAX|MIN|WIDTH|C)
+re:(PRI|SCN)[bBdiouxX](FAST|LEAST)?(8|16|32|64|MAX|PTR)
+re:(PTRDIFF|SIZE|SIG_ATOMIC|WCHAR|WINT)_(MAX|MIN|WIDTH)
+re:(FLT|DBL|LDBL)_NORM_MAX                                                 # <cfloat> (C23)
+
+[user]
+# libycxx's documented user-facing names (README, DECISIONS §1, §4).
+YCXX_HARDENED                                                              # -DYCXX_HARDENED=1
+ycxx_error_handler ycxx_error_kind                                         # -fno-exceptions hook
+re:ycxx_error_[a-z_]+                                                      # ycxx_error_kind's enumerators

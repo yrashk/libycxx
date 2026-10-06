@@ -992,7 +992,11 @@ private:
         }
         break;
       case money_base::value: {
+        // [locale.moneypunct.general]/3: units ::= digits [thousands-sep units], so a separator
+        // only follows a digit (not first, not doubled, not before the decimal point); one that
+        // does not ends the value there
         bool point_seen = false;
+        bool after_sep = false;
         int frac_got = 0;
         while (!at_end()) {
           const charT c = *s;
@@ -1004,22 +1008,24 @@ private:
             } else {
               ++run;
             }
+            after_sep = false;
             digits.push_back(ct.narrow(c, '0'));
-          } else if (frac > 0 && !point_seen && c == point) {
+          } else if (frac > 0 && !point_seen && !after_sep && c == point) {
             point_seen = true;
-          } else if (!grouping.empty() && !point_seen && c == sep) {
+          } else if (!grouping.empty() && !point_seen && run > 0 && c == sep) {
             if (ngroups < 64)
               groups[ngroups++] = run;
             run = 0;
             seen_sep = true;
+            after_sep = true;
           } else {
             break;
           }
           ++s;
         }
-        // [locale.moneypunct.general]/3: a decimal point must be followed by exactly
-        // frac_digits() digits; without one, the digits are stored as they appear
-        if (digits.empty() || (point_seen && frac_got != frac)) {
+        // a decimal point must be followed by exactly frac_digits() digits; without one, the
+        // digits are stored as they appear
+        if (digits.empty() || after_sep || (point_seen && frac_got != frac)) {
           failed = true;
           break;
         }

@@ -33,6 +33,8 @@ elapsed is_leap_second                                                     # lea
 leap_seconds links version zones                                           # tzdb
 error_types sender_concept receiver_concept operation_state_concept scheduler_concept  # [exec]
 start_scheduler_type stop_source_type stop_token_type                      # execution::task
+bytes bits                                                                 # meta::member_offset
+annotations                                                                # meta::data_member_options
 # [execution.syn] (the std module's lists missed them while its generator stopped on
 # parallel_scheduler_replacement):
 completion_signatures_of_t dependent_sender_error enable_sender error_types_of_t

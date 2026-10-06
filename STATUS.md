@@ -1113,11 +1113,11 @@ levels: 29.7 s -> 0.01 s; libstdc++ 8.6 s). Remaining above 1.5x: deque push at 
   `__cpp_lib_constexpr_exceptions` (P3068 is incomplete: `current_exception`, `nested_exception`,
   `uncaught_exceptions` are not constexpr; Clang cannot throw in constant evaluation); the wide
   standard streams write bytes through the codecvt instead of C wide I/O, so `wcout` leaves
-  `stdout` byte-oriented ([iostream.objects.overview]/6; objects/wchar_t/{9662,12048-2,12048-4}.cc);
-  locale facets (not changed in that round, the named-locale branch owns them): `money_get`
-  consumes an optional currency symbol that nothing after it needs ([locale.money.get.virtuals]/2;
-  money_get/get/*/19.cc), and `time_get::get_monthname`/`get_weekday` do not store the field when
-  `err` already holds failbit on entry (time_get/get_{monthname,weekday}/*/5.cc).
+  `stdout` byte-oriented ([iostream.objects.overview]/6; objects/wchar_t/{9662,12048-2,12048-4}.cc;
+  needs a decision: C wide I/O would convert with the C locale instead of the imbued codecvt, and
+  the classic wide streams would lose UTF-8 output). The named-locale branch fixed the locale
+  facet failures (money_get's optional symbol, time_get fields with failbit on entry, facet refs
+  wraparound, unbuffered wide filebuf reads).
 - libc++ suite: the former gaps are closed: `import std;`/`import std.compat;` (DECISIONS §16;
   modules/std and std.compat pass on Clang) and senders/receivers (DECISIONS §17). support.limits
   execution.version and version.version are skipped (divergence: they expect older drafts'

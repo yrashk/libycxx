@@ -697,6 +697,16 @@ get_weekday 2.cc, 12750.cc and their wrapped_* (the classic facet reading the st
 names), get_date 26701.cc (four-digit %y), date_order and moneypunct/members wrapped_* (include
 the skipped 1.cc), moneypunct/members 2.cc and money_put/put 2.cc (the classic negative_sign),
 money_put/put 1.cc (fill for space), money_get/get 10.cc ("-0", eofbit at the end).
+The 15 left after that (both compilers): fixed in libycxx: facet/2.cc (a facet constructed with
+refs = SIZE_MAX was deleted when its count wrapped; nonzero refs now means never deleted, own
+test `locale/facet_refs`), basic_filebuf/underflow/wchar_t/5.cc (an unbuffered converting filebuf
+read a whole block ahead; own test `fstream/wfilebuf_unbuffered_read`). Skipped, each with its
+reason: codecvt/{encoding,max_length}/wchar_t/wrapped_* and basic_filebuf/imbue/wchar_t/2.cc
+(the classic wide codecvt is UTF-8, as their 1.cc), num_get/get/*/9.cc (stop at a thousands
+separator, as 12.cc), locale/cons/38368.cc (the classic moneypunct's '.' and ','),
+global_locale_objects/14071.cc (glibc's twelve-category name), time_put/put/char/9780-1.cc (the
+byname facet's own names, not the stream locale's). Left failing (not named-locale tests; a
+design decision, STATUS): objects/wchar_t/{9662,12048-2,12048-4}.cc.
 
 ## Skipped tests without a counterpart
 

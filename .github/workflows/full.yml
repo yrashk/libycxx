@@ -46,30 +46,100 @@ jobs:
             build/test-logs/*.tsv
             build/test-logs/*.log
 
-  # The own suite under sanitizers, linked with a libycxx instrumented with the same ones
-  # (tools/run-conformance builds build/clang-<sanitizers>; DECISIONS §6.8): ASan+UBSan, and
-  # ThreadSanitizer (its false positives explained in tests/ycxx/tsan.supp).
-  linux-sanitizers:
+  # The own suite under ASan+UBSan, linked with a libycxx instrumented with the same sanitizers
+  # (tools/run-conformance builds build/clang-asan-ubsan; DECISIONS §6.8).
+  linux-asan-ubsan:
     runs-on: ubuntu-24.04
     container: gcc:16
     timeout-minutes: 240
-    strategy:
-      fail-fast: false
-      matrix:
-        sanitizer:
-          - { name: asan-ubsan, list: 'asan,ubsan' }
-          - { name: tsan, list: tsan }
     steps:
       - uses: actions/checkout@v4
       - name: Toolchains
         uses: ./.github/actions/setup-linux
-      - name: Own suite, clang, ${{ matrix.sanitizer.list }} (tools/test; libycxx instrumented too)
-        run: tools/test -j4 -q -c clang -s ${{ matrix.sanitizer.list }} build ycxx
+      - name: Own suite, clang, asan,ubsan (tools/test; libycxx instrumented too)
+        run: tools/test -j4 -q -c clang -s asan,ubsan build ycxx
       - name: Test reports
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: full-linux-ycxx-clang-${{ matrix.sanitizer.name }}
+          name: full-linux-ycxx-clang-asan-ubsan
+          path: |
+            build/test-logs/*.html
+            build/test-logs/*.md
+            build/test-logs/*.tsv
+            build/test-logs/*.log
+
+  # ThreadSanitizer: the own suite and libc++'s and libstdc++'s whole suites, with both compilers,
+  # each linked with a libycxx instrumented with TSan too (build/<cc>-tsan; DECISIONS §6.8). On
+  # the bare runner, with toolchains provisioned for it (.github/actions/setup-linux-tsan): TSan
+  # needs vm.mmap_rnd_bits <= 28, which a container cannot set, and GCC's libtsan, which a GCC
+  # configured without libsanitizer lacks; tools/toolchain/provision --with-sanitizers builds GCC
+  # 16.2 with it. tsan-toolchain builds that GCC once and caches it (keyed on the version and the
+  # provision script); the suite jobs restore it. A report is a race to fix, or a false positive
+  # suppressed with its reason in tests/<suite>/tsan.supp; any FAIL fails the job.
+  tsan-toolchain:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 150
+    steps:
+      - uses: actions/checkout@v4
+      - name: Toolchains for ThreadSanitizer (GCC 16.2 with libsanitizer, built and cached on a miss)
+        uses: ./.github/actions/setup-linux-tsan
+        with:
+          save-gcc: 'true'
+      - name: Both compilers link and run a ThreadSanitizer program
+        run: |
+          . tools/toolchain/activate.sh
+          for cxx in "$YCXX_GXX" "$YCXX_CLANGXX"; do
+            echo 'int main() {}' | "$cxx" -x c++ -fsanitize=thread - -o tsan-probe -Wl,-rpath,"$(dirname "$("$YCXX_GXX" -print-file-name=libtsan.so)")"
+            ./tsan-probe && echo "$cxx: ThreadSanitizer links and runs"
+          done
+
+  linux-tsan:
+    needs: tsan-toolchain
+    runs-on: ubuntu-24.04
+    timeout-minutes: 360
+    strategy:
+      fail-fast: false
+      matrix:
+        compiler: [clang, gcc]
+        # libc++'s suite in two parts of about 4300 tests each, so that each stays well within a
+        # job's time limit: the directories of std/ named in libcxx-1, and all the others.
+        part:
+          - { name: ycxx, stage: ycxx, dirs: '', others: false }
+          - { name: libcxx-1, stage: libcxx, dirs: 'algorithms containers input.output iterators language.support library localization ranges', others: false }
+          - { name: libcxx-2, stage: libcxx, dirs: 'algorithms containers input.output iterators language.support library localization ranges', others: true }
+          - { name: libstdcxx, stage: libstdcxx, dirs: '', others: false }
+    env:
+      YCXX_LONG_TESTS: '1'   # libc++'s long_tests feature
+    steps:
+      - uses: actions/checkout@v4
+      - name: Toolchains for ThreadSanitizer (GCC restored from the cache), and the suites' locales
+        uses: ./.github/actions/setup-linux-tsan
+        with:
+          locales: ${{ matrix.part.stage != 'ycxx' }}
+      - name: ${{ matrix.part.name }}, ${{ matrix.compiler }}, tsan (tools/test; libycxx instrumented too; fetches the suite)
+        run: |
+          set -- ${{ matrix.part.dirs }}
+          if [ "${{ matrix.part.others }}" = true ]; then
+            # Every directory of libc++'s std/ but those: a directory a newer suite adds runs too.
+            tools/fetch-suites --libcxx-only
+            . tools/lib/env.sh
+            ycxx_suite_dirs
+            named=" $* "
+            set --
+            for d in "$ycxx_libcxx_tests"/std/*/; do
+              d=$(basename "$d")
+              case $named in *" $d "*) ;; *) set -- "$@" "$d" ;; esac
+            done
+          fi
+          filters=
+          for d in "$@"; do filters="$filters -f $d"; done
+          tools/test -j4 -q -c ${{ matrix.compiler }} -s tsan $filters build ${{ matrix.part.stage }}
+      - name: Test reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: full-linux-${{ matrix.part.name }}-${{ matrix.compiler }}-tsan
           path: |
             build/test-logs/*.html
             build/test-logs/*.md

@@ -235,7 +235,11 @@ public:
     requires(is_default_constructible_v<_Types> && ...)
       : __s_() {}
 
-  constexpr explicit(!(is_convertible_v<const _Types&, _Types> && ...)) tuple(const _Types&... __args)
+  // noexcept as the converting constructor below: a strengthening ([res.on.exception.handling]/5)
+  // the senders rely on, deciding whether decayed-tuple{as...} can throw from the decay-copies
+  // of as... ([exec.when.all]/12, /17; [exec.into.variant]/6).
+  constexpr explicit(!(is_convertible_v<const _Types&, _Types> && ...)) tuple(const _Types&... __args) noexcept(
+      (is_nothrow_copy_constructible_v<_Types> && ...))
     requires(sizeof...(_Types) >= 1) && (is_copy_constructible_v<_Types> && ...)
       : __s_(in_place, __args...) {}
 

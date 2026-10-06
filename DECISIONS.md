@@ -203,9 +203,50 @@ tooling.
     what keeps the exception classes from being coalesced on Darwin. Clang does not warn.
   Tested by `tests/ycxx/linkage/no_exported_library_symbols` and `tests/cmake/run.sh` (exports
   of the example programs; `tests/cmake/visibility`, libycxx and libstdc++ in one process).
-- Template parameters and locals use plain names (`T`, `first`), not reserved `_Ugly` names.
-  Known deviation: a user macro that collides with such a name, defined before including a
-  libycxx header, can break the header.
+- **Every name of the headers' own is reserved** ([macro.names]/1: a program that includes a
+  standard header may `#define` any identifier the standard library does not declare and that
+  [lex.name]/4 does not reserve: `#define C char`, `#define first`, `#define detail`). So the
+  headers (include/ and the runtime's src/**/*.hpp) spell template parameters, function
+  parameters, locals, members that are not standard, helpers, internal namespaces and internal
+  macros as reserved identifiers; standard names (`first`, `value_type`, `size`) stay as they
+  are, also where a local reuses one. The scheme depends only on the spelling:
+  - lowercase-initial `x` -> `__x`: `ycxx` -> `__ycxx`, `detail` -> `__detail`,
+    `adl_free` -> `__adl_free`, `first1` -> `__first1`, `size_` -> `__size_`, the platform
+    layer `ycxx_pal_wait` -> `__ycxx_pal_wait`, the allocation table
+    `__ycxx_allocation_functions` (its `-u` anchor `__ycxx_allocation_table_anchor`);
+  - one capital letter `X` -> `_Xp` (`T` -> `_Tp`, `C` -> `_Cp`: `_C`, `_L`, `_N`, ... are
+    macros of some C libraries' `<ctype.h>`); a name that is already a capital and `p` gets a
+    trailing `_` (`Ep` -> `_Ep_`); any other uppercase-initial `X` -> `_X` (`Alloc` -> `_Alloc`,
+    `T1` -> `_T1`, `YCXX_HAS_RTTI` -> `_YCXX_HAS_RTTI`, `YCXX_HOSTED` -> `_YCXX_HOSTED`);
+  - attributes take their reserved spellings: `[[__gnu__::__visibility__("hidden")]]`,
+    `[[__gnu__::__cold__]]`, `__attribute__((__unused__))` (the standard attribute-tokens are
+    reserved already, [cpp.replace.general]/9);
+  - a spelling that the compilers or some platform already use (a keyword or builtin such as
+    `__int128`, `__make_integer_seq`, a macro such as BSD's `__unused`, Darwin's `__weak` and
+    `__block`, glibc's `__always_inline`; `tools/data/uglify/avoid.txt`) becomes `__y_x` /
+    `_Y_X` (`unused` -> `__y_unused`, `int128` -> `__y_int128`).
+  Not renamed: the names the standard library declares (the draft's index of library names,
+  the names the std and std.compat modules export, and `tools/data/uglify/allowed.txt`'s
+  [standard] section for those the index misses: `npos`, `failbit`, `param_type`, struct tm's
+  members, `INT8_C` ...), and libycxx's documented user-facing names: `YCXX_HARDENED`, and the
+  `-fno-exceptions` hook `ycxx_error_handler`, `ycxx_error_kind` and its `ycxx_error_*`
+  enumerators (§4). In the runtime's sources the names the C library and the system declare
+  stay (`exception_class` of `_Unwind_Exception`, `link`, `unlink`, `truncate`; [src-platform]).
+  Comments keep their text, but code in them follows (backquoted code, `ycxx::`-qualified names,
+  `ycxx_`/`YCXX_` words); prose in DECISIONS, STATUS and the docs names internals by their plain
+  spelling (`ycxx::detail::precondition` is `__ycxx::__detail::__precondition`).
+  **`tools/uglify.py`** does the renaming on the token level (string literals, header names,
+  `#pragma` lines and the C library's assembler names untouched), in include/, src/, the C++ and
+  symbol names of the CMake files and tools/ycxx-cxx; it is idempotent, and records every name it
+  renamed (`tools/data/uglify/renamed.txt`) so that a merged source written with the old names is
+  fixed by running it again. The header generators (tools/gen_*.py) keep plain-name templates
+  and pass their output through it. `tools/uglify.py --check` (policy stage of `tools/test`, so
+  `tools/check-all`) fails when a header spells a non-reserved name the standard does not
+  declare. `tests/ycxx/conformance/nasty_macros*` define the 5896 identifiers the headers used
+  before the renaming as macros expanding to invalid tokens, then include every public header,
+  together, one by one, and after `import std;`. The draft's index is a snapshot
+  (`tools/uglify.py --fetch-index` refreshes it). After a merge:
+  `python3 tools/uglify.py && python3 tools/gen_std_module.py && python3 tools/uglify.py --check`.
 
 ## 3. Freestanding layering
 

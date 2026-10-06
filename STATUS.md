@@ -751,9 +751,11 @@ compilers; `visit_format_arg.pass.cpp` needs `EOF` from `constexpr_char_traits.h
   Groups nested more than 1000 deep throw `regex_error(error_space)` (the translator and the
   matchers recurse over the tree).
   Multi-character collating elements (`[[.ch.]]`) are not supported (no locale defines them).
-  regex_traits::transform_primary returns the full sort key (the provided collate facets have no
-  secondary weights) for collate and collate_byname facets alike; [re.traits]/7 would return an
-  empty key for the classic locale's collate facet, making every `[[=x=]]` invalid.
+  regex_traits::transform_primary returns the primary key of a named locale's collate_byname
+  where the C library's key form is known (glibc's multi-level keys: `[[=a=]]` matches `A` and
+  `á`), and the full sort key otherwise (the classic locale's collate facet, a locale whose keys
+  have one level, Darwin), where [re.traits]/7 would return an empty key, making every `[[=x=]]`
+  invalid.
 - Iostreams/locale: named locales are the C library's (DECISIONS §7): a name the C library
   lacks throws `runtime_error`, and tests that need one are UNSUPPORTED (`tests/ycxxlit/locales.py`;
   `tools/ci/gen-locales` generates the suites' names on glibc). Where the draft leaves a choice,

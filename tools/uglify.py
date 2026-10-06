@@ -218,8 +218,6 @@ class Names:
             if p.exists():
                 for m in re.findall(r"\busing\s+([^;=]*);", p.read_text()):
                     self.modules.add(m.split("::")[-1].strip())
-                for m in re.findall(r"\bnamespace\s+(\w+)", p.read_text()):
-                    self.modules.add(m)
         allowed = _read_list(DATA / "allowed.txt")
         # [src-platform]: the C library's and the system's names the runtime's sources use, kept
         # there only (a header that spells one as a name of its own still gets it renamed).

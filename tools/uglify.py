@@ -435,13 +435,12 @@ def checked_files():
 # CMake's bracket arguments (the probes, the generated headers).
 TEXT_FILES = ["CMakeLists.txt", "cmake/ycxx-c-library.cmake", "cmake/ycxx-link.cmake", "tools/ycxx-cxx"]
 _WORDS = re.compile(r"\b(?:ycxx|YCXX)_\w+\b")
-_QUALIFIED_CODE = re.compile(r"(?<![\w/.-])(::)?ycxx(::[A-Za-z_]\w*)+")
 _CMAKE_BRACKET = re.compile(r"\[(=*)\[(.*?)\]\1\]", re.S)
 
 
 def rename_text(text, renamer, cmake):
     if cmake:  # in the C++ of the probes and the generated headers, the `ycxx::` names
-        text = _CMAKE_BRACKET.sub(lambda m: f"[{m.group(1)}[" + _QUALIFIED_CODE.sub(
+        text = _CMAKE_BRACKET.sub(lambda m: f"[{m.group(1)}[" + _QUALIFIED.sub(
             lambda q: renamer.code(q.group()), m.group(2)) + f"]{m.group(1)}]", text)
     return _WORDS.sub(lambda m: renamer.map(m.group()), text)
 
@@ -465,6 +464,7 @@ def rename_tree(names, verbose=True):
     src_headers = Renamer(names, protect=names.src_platform)
     run(src_headers, [p for p in src_files() if p.suffix in (".hpp", ".h")])
     renamed = set(headers.renamed) | set(src_headers.renamed) | names.recorded
+    names.check_injective(renamed)
     sources = Renamer(names, protect=names.src_platform, only=renamed)
     run(sources, [p for p in src_files() if p.suffix not in (".hpp", ".h")])
     for rel in TEXT_FILES:

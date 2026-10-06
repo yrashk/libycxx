@@ -604,8 +604,7 @@ provides `locale.<name>` for every name the C library has, and the 137 tests of 
 section run. Directories `localization input.output time strings utilities/format`, both
 compilers; 25 (GCC) / 23 (Clang) failed at first. Outcome:
 
-- **Fixed in libycxx**: locale/locale.cons/name_construction (`locale(other, one, none)` kept
-  other's name although `one` has none; [locale.cons]: named iff both are); the chrono `L`
+- **Fixed in libycxx**: the chrono `L`
   conversions now give `time_put` the value's zone (`tm_zone`, `tm_gmtoff`), so `%c` of a locale
   that shows `%Z` no longer writes the process's zone (libstdc++ pr117214 likewise).
 - **Harness**: locale.codecvt.byname/ctor_char16_t, ctor_char32_t (and `_char8_t`) construct a
@@ -622,7 +621,9 @@ compilers; 25 (GCC) / 23 (Clang) failed at first. Outcome:
   separators; libc++'s stop position); time.syn/formatter.duration (hours of a duration reduced
   modulo 24; shortest long double), formatter.year (LWG 4022 "-01"; glibc's `%EC` of year 0),
   formatter.weekday, weekday_index, weekday_last (glibc strftime's `%u` of weekday(8); libycxx
-  throws, as libc++'s year_month_weekday invalid-value tests require).
+  throws, as libc++'s year_month_weekday invalid-value tests require); locale.cons/
+  name_construction (expects no name for `locale(en, unnamed, none)`; [locale.cons]/15, LWG 3676,
+  gives it en's, as libstdc++'s locale/cons/names.cc checks).
 - No XFAIL was added: none of these is a compiler bug.
 
 ## Appendix: `<version>` audit

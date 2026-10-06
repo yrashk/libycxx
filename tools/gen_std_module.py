@@ -69,7 +69,8 @@ COMPAT_HEADERS = [h[1:] + ".h" for h in C_HEADERS] + ["stdbit.h", "stdckdint.h"]
 # std::ranges::cpo); it is redeclared inline in the module.
 STD_NAMESPACES = {
     "chrono", "chrono_literals", "complex_literals", "contracts", "execution", "filesystem", "linalg",
-    "literals", "meta", "numbers", "placeholders", "pmr", "ranges", "regex_constants", "rel_ops", "simd",
+    "literals", "meta", "numbers", "parallel_scheduler_replacement", "placeholders", "pmr", "ranges",
+    "regex_constants", "rel_ops", "simd",
     "string_literals", "string_view_literals", "this_thread", "views",
 }
 # Not placed in the global namespace by <name.h> ([support.c.headers.other]/1): the special

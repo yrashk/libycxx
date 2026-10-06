@@ -1,7 +1,19 @@
 // -*- C++ -*-  libycxx: <execution>   [core]
-// Partial: the execution policies ([execpol]). Senders and receivers ([exec]) are not provided.
+// The execution policies ([execpol]) and the execution control library ([exec]: senders,
+// receivers, schedulers, run_loop, sync_wait, coroutine utilities, async scopes, task). Only
+// parallel_scheduler's default backend (a thread pool) is in the hosted runtime.
 #pragma once
 
 #include <ycxx/config.hpp>
 #include <ycxx/core/version.hpp>
 #include <ycxx/core/execution_policy.hpp>
+#include <ycxx/core/exec_core.hpp>
+#include <ycxx/core/exec_basic.hpp>
+#include <ycxx/core/exec_factories.hpp>
+#include <ycxx/core/exec_adapt.hpp>
+#include <ycxx/core/exec_adapt_sched.hpp>
+#include <ycxx/core/exec_run_loop.hpp>
+#include <ycxx/core/exec_coro.hpp>
+#include <ycxx/core/exec_scope.hpp>
+#include <ycxx/core/exec_parallel.hpp>
+#include <ycxx/core/exec_task.hpp>

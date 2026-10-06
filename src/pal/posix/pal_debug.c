@@ -18,7 +18,7 @@
 #  include <sys/types.h>
 #endif
 
-int __ycxx_pal_debugger_present(void) {
+int ycxx_pal_debugger_present(void) {
 #if defined(__linux__)
   // "TracerPid:\t<pid>" in /proc/self/status: nonzero while a tracer (ptrace) is attached.
   const int __saved = errno;
@@ -69,7 +69,7 @@ struct pal_object_query {
   ElfW(Addr) __pc;
   char* path;
   size_t n;
-  __ycxx_pal_handle* __bias;
+  ycxx_pal_handle* __bias;
   int found;
 };
 
@@ -89,7 +89,7 @@ static int pal_object_callback(struct dl_phdr_info* info, size_t size, void* dat
         __len = __q->n - 1;
       memcpy(__q->path, name, __len);
       __q->path[__len] = '\0';
-      *__q->__bias = (__ycxx_pal_handle)info->dlpi_addr;
+      *__q->__bias = (ycxx_pal_handle)info->dlpi_addr;
       __q->found = 1;
       return 1;
     }
@@ -98,7 +98,7 @@ static int pal_object_callback(struct dl_phdr_info* info, size_t size, void* dat
 }
 #endif
 
-int __ycxx_pal_object_of(__ycxx_pal_handle __pc, char* path, __ycxx_pal_size n, __ycxx_pal_handle* __bias) {
+int ycxx_pal_object_of(ycxx_pal_handle __pc, char* path, ycxx_pal_size n, ycxx_pal_handle* __bias) {
   if (n == 0)
     return EINVAL;
 #if defined(__linux__) || defined(__FreeBSD__)
@@ -113,16 +113,16 @@ int __ycxx_pal_object_of(__ycxx_pal_handle __pc, char* path, __ycxx_pal_size n, 
 #endif
 }
 
-int __ycxx_pal_dynamic_symbol(__ycxx_pal_handle __pc, const char** name, __ycxx_pal_handle* start) {
+int ycxx_pal_dynamic_symbol(ycxx_pal_handle __pc, const char** name, ycxx_pal_handle* start) {
   Dl_info info;
   if (dladdr((const void*)__pc, &info) == 0 || info.dli_sname == NULL)
     return ENOENT;
   *name = info.dli_sname;
-  *start = (__ycxx_pal_handle)info.dli_saddr;
+  *start = (ycxx_pal_handle)info.dli_saddr;
   return 0;
 }
 
-int __ycxx_pal_map_file(const char* path, const void** data, __ycxx_pal_size* size) {
+int ycxx_pal_map_file(const char* path, const void** data, ycxx_pal_size* size) {
   const int __saved = errno;
   int __fd = open(path, O_RDONLY | O_CLOEXEC);
   if (__fd < 0) {
@@ -140,7 +140,7 @@ int __ycxx_pal_map_file(const char* path, const void** data, __ycxx_pal_size* si
       r = errno;
     } else {
       *data = p;
-      *size = (__ycxx_pal_size)__st.st_size;
+      *size = (ycxx_pal_size)__st.st_size;
     }
   }
   close(__fd);
@@ -148,4 +148,4 @@ int __ycxx_pal_map_file(const char* path, const void** data, __ycxx_pal_size* si
   return r;
 }
 
-void __ycxx_pal_unmap_file(const void* data, __ycxx_pal_size size) { munmap((void*)data, size); }
+void ycxx_pal_unmap_file(const void* data, ycxx_pal_size size) { munmap((void*)data, size); }

@@ -60,11 +60,11 @@ namespace {
 using epoch_t = unsigned long long;
 
 // The queue is evaluated by an outermost unlock or a retire once it holds this many.
-constexpr __ycxx_pal_u32 batch_threshold = 1000;
+constexpr ycxx_pal_u32 batch_threshold = 1000;
 
 struct alignas(64) reader_record {
   epoch_t start;        // atomic: 0 outside a region, else the epoch its outermost lock read
-  __ycxx_pal_u32 __owned;   // atomic: a thread holds this record
+  ycxx_pal_u32 __owned;   // atomic: a thread holds this record
   reader_record* next;  // the next heap record (immutable once published)
 };
 
@@ -74,21 +74,21 @@ constinit reader_record fixed[fixed_records] = {};
 reader_record* __extra = nullptr; // atomic; push-only list of heap records
 
 epoch_t epoch = 1;                  // atomic: G
-__ycxx_pal_u32 waiting = 0;           // atomic: threads blocked until the readers pass an epoch
-__ycxx_pal_u32 unlock_seq = 0;        // atomic: bumped by an unlock that sees `waiting`
+ycxx_pal_u32 waiting = 0;           // atomic: threads blocked until the readers pass an epoch
+ycxx_pal_u32 unlock_seq = 0;        // atomic: bumped by an unlock that sees `waiting`
 constinit __futex_mutex queue_m;      // guards the queue
 constinit __futex_mutex evaluation_m; // one batch of evaluations at a time
 __rcu_node* queue_head = nullptr;     // in epoch order
 __rcu_node** queue_tail = &queue_head;
 epoch_t queue_last = 0;             // the epoch of the last queued node (under queue_m)
-__ycxx_pal_u32 queued = 0;            // atomic (written under queue_m)
+ycxx_pal_u32 queued = 0;            // atomic (written under queue_m)
 
 constinit thread_local unsigned depth = 0;               // the nesting depth of this thread's regions
 constinit thread_local reader_record* __record = nullptr;  // this thread's record, once it has one
 constinit thread_local bool evaluating = false;          // this thread runs a batch of evaluations
 
 bool try_own(reader_record* r) noexcept {
-  __ycxx_pal_u32 free = 0;
+  ycxx_pal_u32 free = 0;
   return __atomic_load_n(&r->__owned, __ATOMIC_RELAXED) == 0 &&
          __atomic_compare_exchange_n(&r->__owned, &free, 1, false, __ATOMIC_ACQUIRE, __ATOMIC_RELAXED);
 }
@@ -96,7 +96,7 @@ bool try_own(reader_record* r) noexcept {
 void readers_changed() noexcept {
   if (__atomic_load_n(&waiting, __ATOMIC_SEQ_CST) != 0) {
     __atomic_fetch_add(&unlock_seq, 1, __ATOMIC_SEQ_CST);
-    ::__ycxx_pal_wake_all(&unlock_seq);
+    ::ycxx_pal_wake_all(&unlock_seq);
   }
 }
 
@@ -126,9 +126,9 @@ void release_record(void* arg) noexcept {
         break;
       }
   if (!r) {
-    void* p = ::__ycxx_pal_allocate(sizeof(reader_record), alignof(reader_record));
+    void* p = ::ycxx_pal_allocate(sizeof(reader_record), alignof(reader_record));
     if (!p)
-      ::__ycxx_pal_abort("rcu_domain::lock: cannot allocate a reader record");
+      ::ycxx_pal_abort("rcu_domain::lock: cannot allocate a reader record");
     r = ::new (p) reader_record{0, 1, nullptr};
     reader_record* __head = __atomic_load_n(&__extra, __ATOMIC_RELAXED);
     do
@@ -138,7 +138,7 @@ void release_record(void* arg) noexcept {
   __record = r;
   // If the hook cannot be registered the record stays owned after the thread ends: its start is
   // 0 then, so it holds nothing back; it is only never reused.
-  static_cast<void>(::__ycxx_pal_at_thread_end(&release_record, r));
+  static_cast<void>(::ycxx_pal_at_thread_end(&release_record, r));
   return r;
 }
 
@@ -165,10 +165,10 @@ void wait_for_readers(epoch_t e) noexcept {
     return;
   __atomic_fetch_add(&waiting, 1, __ATOMIC_SEQ_CST);
   for (;;) {
-    const __ycxx_pal_u32 __seen = __atomic_load_n(&unlock_seq, __ATOMIC_SEQ_CST);
+    const ycxx_pal_u32 __seen = __atomic_load_n(&unlock_seq, __ATOMIC_SEQ_CST);
     if (readers_past(e))
       break;
-    ::__ycxx_pal_wait(&unlock_seq, __seen);
+    ::ycxx_pal_wait(&unlock_seq, __seen);
   }
   __atomic_fetch_sub(&waiting, 1, __ATOMIC_RELAXED);
 }
@@ -186,7 +186,7 @@ void evaluate_through(epoch_t e) noexcept {
   __rcu_node* list = nullptr;
   if (queue_head && queue_head->__rcu_epoch_ <= e) {
     __rcu_node* last = queue_head;
-    __ycxx_pal_u32 n = 1;
+    ycxx_pal_u32 n = 1;
     for (; last->__rcu_next_ && last->__rcu_next_->__rcu_epoch_ <= e; ++n)
       last = last->__rcu_next_;
     list = queue_head;

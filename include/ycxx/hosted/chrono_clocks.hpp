@@ -1,5 +1,5 @@
 // libycxx hosted: the clocks of <chrono> ([time.clock.system], [time.clock.steady],
-// [time.clock.hires], [time.clock.file]), on the PAL's __ycxx_pal_clock_now.
+// [time.clock.hires], [time.clock.file]), on the PAL's ycxx_pal_clock_now.
 //
 // All three count nanoseconds in a long long. system_clock is the realtime clock (Unix time),
 // steady_clock the monotonic clock, high_resolution_clock a distinct steady clock whose
@@ -13,15 +13,15 @@
 #include <ycxx/config.hpp>
 #include <ycxx/core/chrono_base.hpp>
 #include <ycxx/pal.h>
-#if YCXX_HOSTED
+#if _YCXX_HOSTED
 #  include <time.h>
 #endif
 
 namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
 // The current value of a PAL clock in nanoseconds.
 inline long long __pal_clock_ns(int clock) noexcept {
-  __ycxx_pal_i64 __sec = 0, __nsec = 0;
-  ::__ycxx_pal_clock_now(clock, &__sec, &__nsec);
+  ycxx_pal_i64 __sec = 0, __nsec = 0;
+  ::ycxx_pal_clock_now(clock, &__sec, &__nsec);
   return static_cast<long long>(__sec) * 1'000'000'000 + static_cast<long long>(__nsec);
 }
 }} // namespace __ycxx::__detail
@@ -37,9 +37,9 @@ public:
   static constexpr bool is_steady = false;
 
   static time_point now() noexcept {
-    return time_point(duration(__ycxx::__detail::__pal_clock_ns(__ycxx_pal_clock_realtime)));
+    return time_point(duration(__ycxx::__detail::__pal_clock_ns(ycxx_pal_clock_realtime)));
   }
-#if YCXX_HOSTED
+#if _YCXX_HOSTED
   // Truncated toward negative infinity to whole seconds.
   static ::time_t to_time_t(const time_point& t) noexcept {
     return static_cast<::time_t>(chrono::floor<seconds>(t.time_since_epoch()).count());
@@ -59,7 +59,7 @@ public:
   static constexpr bool is_steady = true;
 
   static time_point now() noexcept {
-    return time_point(duration(__ycxx::__detail::__pal_clock_ns(__ycxx_pal_clock_monotonic)));
+    return time_point(duration(__ycxx::__detail::__pal_clock_ns(ycxx_pal_clock_monotonic)));
   }
 };
 
@@ -86,7 +86,7 @@ public:
   static constexpr bool is_steady = false;
 
   static time_point now() noexcept {
-    return time_point(duration(::__ycxx::__detail::__pal_clock_ns(__ycxx_pal_clock_realtime)));
+    return time_point(duration(::__ycxx::__detail::__pal_clock_ns(ycxx_pal_clock_realtime)));
   }
   // [time.clock.file.members]: the same epoch as system_clock.
   template <class _Duration>

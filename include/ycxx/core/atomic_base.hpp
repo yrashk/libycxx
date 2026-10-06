@@ -12,11 +12,11 @@
 //
 // Other types are lock-based: each operation holds one lock of a striped table of 256 locks
 // (selected by the object's address) in the runtime archive (src/runtime/atomic), so libycxx
-// needs no libatomic. A lock waits through the PAL (__ycxx_pal_wait) after a short spin.
+// needs no libatomic. A lock waits through the PAL (ycxx_pal_wait) after a short spin.
 //
 // Waiting and notifying go through a second table of 256 address-keyed slots, also in the
 // runtime archive: a waiter registers in its slot, re-checks the value and blocks on the slot's
-// 32-bit version counter (__ycxx_pal_wait); a notification bumps the version and wakes the slot
+// 32-bit version counter (ycxx_pal_wait); a notification bumps the version and wakes the slot
 // only when it has waiters, so notify on an object nobody waits for costs a fence and a load.
 // Slots are shared between addresses, so notify_one wakes every waiter of the slot (the others
 // re-check their value and block again).

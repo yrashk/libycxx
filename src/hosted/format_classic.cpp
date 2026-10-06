@@ -6,11 +6,11 @@
 // locale runtime, which is built with the C library only).
 #include <format>
 
-namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
 
-template fmt_numpunct<char> fmt_get_numpunct<char, fmt_context<char>>(fmt_context<char>&);
-template fmt_numpunct<wchar_t> fmt_get_numpunct<wchar_t, fmt_context<wchar_t>>(fmt_context<wchar_t>&);
-template std::string fmt_get_boolname<char, fmt_context<char>>(fmt_context<char>&, bool);
-template std::wstring fmt_get_boolname<wchar_t, fmt_context<wchar_t>>(fmt_context<wchar_t>&, bool);
+template __fmt_numpunct<char> __fmt_get_numpunct<char, __fmt_context<char>>(__fmt_context<char>&);
+template __fmt_numpunct<wchar_t> __fmt_get_numpunct<wchar_t, __fmt_context<wchar_t>>(__fmt_context<wchar_t>&);
+template std::string __fmt_get_boolname<char, __fmt_context<char>>(__fmt_context<char>&, bool);
+template std::wstring __fmt_get_boolname<wchar_t, __fmt_context<wchar_t>>(__fmt_context<wchar_t>&, bool);
 
-}} // namespace ycxx::detail
+}} // namespace __ycxx::__detail

@@ -26,7 +26,7 @@ void* trampoline(void* p) {
   start_record* r = static_cast<start_record*>(p);
   std::fesetenv(&r->fenv);
   if (r->named)
-    ::__ycxx_pal_thread_set_name(r->name);
+    ::ycxx_pal_thread_set_name(r->name);
   void (*run)(void*) = r->run;
   void* arg = r->arg;
   ::operator delete(r);
@@ -49,7 +49,7 @@ bool __handling_foreign_exception() noexcept { return __cxxabiv1::__cxa_current_
   throw std::system_error(std::error_code(__ev, std::generic_category()), what);
 }
 
-__ycxx_pal_handle __thread_start(void (*run)(void*), void* arg, std::size_t __stack_size, const char* name,
+ycxx_pal_handle __thread_start(void (*run)(void*), void* arg, std::size_t __stack_size, const char* name,
                              std::size_t __name_size) {
   start_record* r = static_cast<start_record*>(::operator new(sizeof(start_record) + __name_size));
   r->run = run;
@@ -59,8 +59,8 @@ __ycxx_pal_handle __thread_start(void (*run)(void*), void* arg, std::size_t __st
   if (r->named)
     __builtin_memcpy(r->name, name, __name_size);
   r->name[r->named ? __name_size : 0] = '\0';
-  __ycxx_pal_handle h = 0;
-  if (int e = ::__ycxx_pal_thread_create(&h, &trampoline, r, __stack_size); e != 0) {
+  ycxx_pal_handle h = 0;
+  if (int e = ::ycxx_pal_thread_create(&h, &trampoline, r, __stack_size); e != 0) {
     ::operator delete(r);
     ::__ycxx::__detail::__raise_system_error(static_cast<std::errc>(e), "thread: cannot start a thread");
   }
@@ -68,7 +68,7 @@ __ycxx_pal_handle __thread_start(void (*run)(void*), void* arg, std::size_t __st
 }
 
 void __at_thread_exit(void (*__f)(void*), void* arg) {
-  if (int e = ::__ycxx_pal_at_thread_end(__f, arg); e != 0)
+  if (int e = ::ycxx_pal_at_thread_end(__f, arg); e != 0)
     ::__ycxx::__detail::__raise_system_error(static_cast<std::errc>(e), "cannot register a thread-exit action");
 }
 
@@ -78,7 +78,7 @@ bool __atomic_wait_block_until(const volatile void* __addr, std::uint32_t __tick
                              long long __nsec) noexcept {
   std::uint32_t* __waiters = nullptr;
   std::uint32_t* version = ::__ycxx::__detail::__atomic_wait_entry(__addr, __waiters);
-  const int r = ::__ycxx_pal_wait_until(version, __ticket, clock, __sec, __nsec);
+  const int r = ::ycxx_pal_wait_until(version, __ticket, clock, __sec, __nsec);
   __atomic_fetch_sub(__waiters, 1, __ATOMIC_RELAXED);
   return r == 0;
 }

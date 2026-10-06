@@ -53,14 +53,14 @@ bool pool_free(void* p) noexcept {
 // read as null).
 __exception_header* allocate_header(std::size_t __thrown_size) noexcept {
   const std::size_t size = header_pad + sizeof(__exception_header) + __thrown_size;
-  void* p = __ycxx_pal_allocate(size, object_alignment);
+  void* p = ycxx_pal_allocate(size, object_alignment);
   std::size_t recorded = size;
   if (!p) {
     p = pool_allocate(size);
     recorded = 0;
   }
   if (!p)
-    __ycxx_pal_abort("cannot allocate an exception object");
+    ycxx_pal_abort("cannot allocate an exception object");
   __exception_header* h = reinterpret_cast<__exception_header*>(static_cast<unsigned char*>(p) + header_pad);
   __builtin_memset(h, 0, sizeof(__exception_header));
   h->__allocation_size = recorded;
@@ -71,7 +71,7 @@ void free_header(__exception_header* h) noexcept {
   if (h->__allocation_size == 0)
     pool_free(block);
   else
-    __ycxx_pal_deallocate(block, h->__allocation_size, object_alignment);
+    ycxx_pal_deallocate(block, h->__allocation_size, object_alignment);
 }
 
 // Called when something other than this runtime deletes one of our exceptions
@@ -89,10 +89,10 @@ void cleanup_native(_Unwind_Reason_Code reason, _Unwind_Exception* __ue) {
 constinit thread_local __eh_globals thread_globals{};
 
 void write_err(const char* s) noexcept {
-  __ycxx_pal_size n = 0, __w = 0;
+  ycxx_pal_size n = 0, __w = 0;
   while (s[n])
     ++n;
-  __ycxx_pal_write(__ycxx_pal_stderr, s, n, &__w);
+  ycxx_pal_write(ycxx_pal_stderr, s, n, &__w);
 }
 
 // The default terminate handler: reports the current exception (its mangled type name, and
@@ -102,7 +102,7 @@ constinit thread_local bool in_default_terminate = false;
 void default_terminate() {
   // what() may itself end in terminate; report once.
   if (in_default_terminate)
-    __ycxx_pal_abort("terminate called recursively");
+    ycxx_pal_abort("terminate called recursively");
   in_default_terminate = true;
   __eh_globals* __g = __globals();
   __exception_header* h = __g->__caught_exceptions;
@@ -115,11 +115,11 @@ void default_terminate() {
       write_err(static_cast<const std::exception*>(__obj)->what());
     }
     write_err("\n");
-    __ycxx_pal_abort(nullptr);
+    ycxx_pal_abort(nullptr);
   }
   if (h)
-    __ycxx_pal_abort("terminate called after throwing a foreign exception");
-  __ycxx_pal_abort("terminate called without an active exception");
+    ycxx_pal_abort("terminate called after throwing a foreign exception");
+  ycxx_pal_abort("terminate called without an active exception");
 }
 
 // The current handler; starts as (and a null argument to set_terminate restores) the default.
@@ -132,7 +132,7 @@ std::terminate_handler terminate_handler_v = default_terminate;
     __f();
   } catch (...) {
   }
-  __ycxx_pal_abort("terminate handler returned");
+  ycxx_pal_abort("terminate handler returned");
 }
 
 } // namespace

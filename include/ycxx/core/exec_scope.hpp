@@ -22,7 +22,7 @@ struct __exec_spin_lock {
     for (int __spins = 0; __atomic_exchange_n(&__word, 1u, __ATOMIC_ACQUIRE) != 0;)
       while (__atomic_load_n(&__word, __ATOMIC_RELAXED) != 0)
         if (++__spins > 64)
-          ::__ycxx_pal_thread_yield();
+          ::ycxx_pal_thread_yield();
   }
   void unlock() noexcept { __atomic_store_n(&__word, 0u, __ATOMIC_RELEASE); }
 };

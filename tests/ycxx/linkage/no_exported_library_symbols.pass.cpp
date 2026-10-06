@@ -129,7 +129,7 @@ int main(int, char** argv) {
                            name == "_ZdlPvj";
     bool library = (name.rfind("_Z", 0) == 0 && name.find("3own") == std::string::npos && !own_replacement) ||
                    name.find("__cxa_") != std::string::npos || name.find("__gxx_personality") != std::string::npos ||
-                   name.find("__ycxx_pal_") != std::string::npos;
+                   name.find("ycxx_pal_") != std::string::npos;
     if (library) {
       std::printf("exported: %s\n", s.c_str());
       ++foreign;

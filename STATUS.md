@@ -571,7 +571,7 @@ compilers; `visit_format_arg.pass.cpp` needs `EOF` from `constexpr_char_traits.h
   names the index misses (`tools/data/uglify/allowed.txt`); a standard name missing from all
   three is renamed, harmlessly. Not covered: 17 names that glibc's own headers break on when
   they are macros (`f`, `l`, `y0`, `link`, ...; `tools/data/uglify/nasty-macros.txt`). The PAL
-  (`__ycxx_pal_*`) and the allocation table (`__ycxx_allocation_functions`) changed their
+  (`ycxx_pal_*`) and the allocation table (`__ycxx_allocation_functions`) changed their
   symbol names; a port's PAL implements the reserved names.
 - Modules (`import std;`, `import std.compat;`; DECISIONS §16): built per project from
   `modules/*.cppm` (CMake `ycxx::modules`, `tools/ycxx-modules`), never shipped as BMIs. CMake's

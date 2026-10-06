@@ -41,7 +41,7 @@ What is allowed (never renamed):
 
 The renaming (DECISIONS §2) depends only on the spelling:
   - `ycxx` -> `__ycxx`, `detail` -> `__detail`, any lowercase-initial name x -> `__x`
-    (`first1` -> `__first1`, `size_` -> `__size_`, `ycxx_pal_wait` -> `__ycxx_pal_wait`);
+    (`first1` -> `__first1`, `size_` -> `__size_`, `ycxx_pal_wait` -> `ycxx_pal_wait`);
   - a single capital letter X -> `_Xp` (`T` -> `_Tp`, `C` -> `_Cp`; `_C` and its kind are macros
     of some C libraries' <ctype.h>);
   - any other uppercase-initial name X -> `_X` (`Alloc` -> `_Alloc`, `T1` -> `_T1`,
@@ -443,7 +443,8 @@ def checked_files():
 # Files in other languages that spell libycxx's symbols, macros or C++ code: their `ycxx_x` and
 # `YCXX_X` words that the map renames are renamed, and so are the `ycxx::` names in the C++ of
 # CMake's bracket arguments (the probes, the generated headers).
-TEXT_FILES = ["CMakeLists.txt", "cmake/ycxx-c-library.cmake", "cmake/ycxx-link.cmake", "tools/ycxx-cxx"]
+TEXT_FILES = ["CMakeLists.txt", "cmake/ycxx-c-library.cmake", "cmake/ycxx-hosted-layers.cmake", "cmake/ycxx-link.cmake",
+              "tools/ycxx-cxx"]
 _WORDS = re.compile(r"\b(?:ycxx|YCXX)_\w+\b")
 _CMAKE_BRACKET = re.compile(r"\[(=*)\[(.*?)\]\1\]", re.S)
 

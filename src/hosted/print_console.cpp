@@ -8,40 +8,40 @@
 #include <system_error>
 #include <ycxx/pal.h>
 
-namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
 
 namespace {
 
 void write_stdout(const char* p, std::size_t n) {
   while (n != 0) {
-    ycxx_pal_size w = 0;
-    if (const int e = ::ycxx_pal_write(ycxx_pal_stdout, p, n, &w); e != 0)
+    ycxx_pal_size __w = 0;
+    if (const int e = ::ycxx_pal_write(ycxx_pal_stdout, p, n, &__w); e != 0)
       throw std::system_error(e, std::generic_category(), "std::print: writing to the console failed");
-    if (w == 0)
+    if (__w == 0)
       throw std::system_error(static_cast<int>(std::errc::io_error), std::generic_category(),
                               "std::print: the console accepted nothing");
-    p += w;
-    n -= w;
+    p += __w;
+    n -= __w;
   }
 }
 
 } // namespace
 
-void vprint_stdout(std::string_view fmt, std::format_args args, bool newline) {
-  fmt_dynbuf<char> buf;
-  ::ycxx::detail::fmt_vformat(buf, fmt, args, nullptr);
-  if (newline)
-    buf.push_back('\n');
-  write_stdout(buf.data(), buf.size());
+void __vprint_stdout(std::string_view __fmt, std::format_args __args, bool __newline) {
+  __fmt_dynbuf<char> __buf;
+  ::__ycxx::__detail::__fmt_vformat(__buf, __fmt, __args, nullptr);
+  if (__newline)
+    __buf.push_back('\n');
+  write_stdout(__buf.data(), __buf.size());
 }
 
-}} // namespace ycxx::detail
+}} // namespace __ycxx::__detail
 
-namespace [[gnu::visibility("hidden")]] std {
+namespace [[__gnu__::__visibility__("hidden")]] std {
 
 // A console needs no native Unicode API: the UTF-8 goes out unchanged ([print.fun]/10.1).
-void vprint_unicode(string_view fmt, format_args args) { ycxx::detail::vprint_stdout(fmt, args, false); }
-void vprint_nonunicode(string_view fmt, format_args args) { ycxx::detail::vprint_stdout(fmt, args, false); }
-void println() { ycxx::detail::write_stdout("\n", 1); }
+void vprint_unicode(string_view __fmt, format_args __args) { __ycxx::__detail::__vprint_stdout(__fmt, __args, false); }
+void vprint_nonunicode(string_view __fmt, format_args __args) { __ycxx::__detail::__vprint_stdout(__fmt, __args, false); }
+void println() { __ycxx::__detail::write_stdout("\n", 1); }
 
 } // namespace std

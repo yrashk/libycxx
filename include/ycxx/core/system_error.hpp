@@ -4,7 +4,7 @@
 // needs a single definition or the C library is in the hosted runtime
 // (src/hosted/system_error.cpp, DECISIONS §3): generic_category() and system_category() (objects
 // that are constant-initialized and never destroyed, so they stay usable during static
-// destruction), their messages (through the PAL's __ycxx_pal_error_message), the destructors of
+// destruction), their messages (through the PAL's ycxx_pal_error_message), the destructors of
 // error_category and system_error (their key functions, so their vtables and type_info are
 // emitted there, with RTTI) and system_error's constructors. A freestanding program can name
 // these types but gets a link error if it uses those parts.

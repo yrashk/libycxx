@@ -212,7 +212,7 @@ tooling.
   are, also where a local reuses one. The scheme depends only on the spelling:
   - lowercase-initial `x` -> `__x`: `ycxx` -> `__ycxx`, `detail` -> `__detail`,
     `adl_free` -> `__adl_free`, `first1` -> `__first1`, `size_` -> `__size_`, the platform
-    layer `ycxx_pal_wait` -> `__ycxx_pal_wait`, the allocation table
+    layer `ycxx_pal_wait` -> `ycxx_pal_wait`, the allocation table
     `__ycxx_allocation_functions` (its `-u` anchor `__ycxx_allocation_table_anchor`);
   - one capital letter `X` -> `_Xp` (`T` -> `_Tp`, `C` -> `_Cp`: `_C`, `_L`, `_N`, ... are
     macros of some C libraries' `<ctype.h>`); a name that is already a capital and `p` gets a
@@ -230,7 +230,10 @@ tooling.
   [standard] section for those the index misses: `npos`, `failbit`, `param_type`, struct tm's
   members, `INT8_C` ...), and libycxx's documented user-facing names: `YCXX_HARDENED`, and the
   `-fno-exceptions` hook `ycxx_error_handler`, `ycxx_error_kind` and its `ycxx_error_*`
-  enumerators (§4). In the runtime's sources the names the C library and the system declare
+  enumerators (§4), and the hosted layers' interface that integrators implement (§18): the
+  primitives `ycxx_pal_*` with `YCXX_PAL_NOEXCEPT`/`YCXX_PAL_NORETURN` of `<ycxx/pal.h>`, and the
+  CMake names `YCXX_PAL`, `YCXX_HOSTED_LAYERS`, `YCXX_PAL_<LAYER>_PROVIDER`,
+  `ycxx_add_hosted_layer`. In the runtime's sources the names the C library and the system declare
   stay (`exception_class` of `_Unwind_Exception`, `link`, `unlink`, `truncate`; [src-platform]).
   Comments keep their text, but code in them follows (backquoted code, `ycxx::`-qualified names,
   `ycxx_`/`YCXX_` words); prose in DECISIONS, STATUS and the docs names internals by their plain

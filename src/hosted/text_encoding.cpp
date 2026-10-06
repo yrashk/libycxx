@@ -26,7 +26,7 @@ std::text_encoding from_name(const char* name) {
 std::text_encoding std::text_encoding::environment() {
   static const text_encoding env = [] {
     char __buf[max_name_length + 2] = {};
-    if (__ycxx_pal_environment_encoding(__buf, sizeof __buf) != 0)
+    if (ycxx_pal_environment_encoding(__buf, sizeof __buf) != 0)
       return text_encoding();
     return from_name(__buf);
   }();
@@ -49,10 +49,10 @@ std::text_encoding std::locale::encoding() const {
     return text_encoding(text_encoding::id::ASCII);
   // any other name: the C library's codeset for it (a name with the classic semantics,
   // "C.UTF-8", is named by its suffix)
-  if (ycxx::detail::classic_locale_name(ctype.c_str()) == nullptr) {
-    const string cs = ycxx::detail::named_codeset(ctype.c_str());
-    if (!cs.empty())
-      return from_name(cs.c_str());
+  if (__ycxx::__detail::__classic_locale_name(ctype.c_str()) == nullptr) {
+    const string __cs = __ycxx::__detail::__named_codeset(ctype.c_str());
+    if (!__cs.empty())
+      return from_name(__cs.c_str());
   }
   if (const auto dot = ctype.find('.'); dot != string::npos)
     return from_name(ctype.c_str() + dot + 1);

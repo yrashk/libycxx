@@ -25,10 +25,10 @@
 namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
 
 class __futex_condvar {
-  __ycxx_pal_u32 __seq_ = 0;
-  __ycxx_pal_u32 __waiters_ = 0;
+  ycxx_pal_u32 __seq_ = 0;
+  ycxx_pal_u32 __waiters_ = 0;
 
-  __ycxx_pal_u32 __enter() noexcept {
+  ycxx_pal_u32 __enter() noexcept {
     __atomic_fetch_add(&__waiters_, 1, __ATOMIC_SEQ_CST);
     return __atomic_load_n(&__seq_, __ATOMIC_SEQ_CST);
   }
@@ -40,35 +40,35 @@ public:
   __futex_condvar& operator=(const __futex_condvar&) = delete;
   ~__futex_condvar() {
     while (__atomic_load_n(&__waiters_, __ATOMIC_ACQUIRE) != 0)
-      ::__ycxx_pal_thread_yield();
+      ::ycxx_pal_thread_yield();
   }
 
   void notify_one() noexcept {
     __atomic_fetch_add(&__seq_, 1, __ATOMIC_SEQ_CST);
     if (__atomic_load_n(&__waiters_, __ATOMIC_SEQ_CST) != 0)
-      ::__ycxx_pal_wake_one(&__seq_);
+      ::ycxx_pal_wake_one(&__seq_);
   }
   void notify_all() noexcept {
     __atomic_fetch_add(&__seq_, 1, __ATOMIC_SEQ_CST);
     if (__atomic_load_n(&__waiters_, __ATOMIC_SEQ_CST) != 0)
-      ::__ycxx_pal_wake_all(&__seq_);
+      ::ycxx_pal_wake_all(&__seq_);
   }
 
   // m is held; it is released while blocked and held again on return.
   template <class _Mp>
   void wait(_Mp& m) noexcept {
-    const __ycxx_pal_u32 s = __enter();
+    const ycxx_pal_u32 s = __enter();
     m.unlock();
-    ::__ycxx_pal_wait(&__seq_, s);
+    ::ycxx_pal_wait(&__seq_, s);
     __y_leave(); // the last access to *this
     m.lock();
   }
   // As wait, but returns by the deadline: false if it returned because the deadline passed.
   template <class _Mp>
   bool wait_until(_Mp& m, const __pal_deadline& d) noexcept {
-    const __ycxx_pal_u32 s = __enter();
+    const ycxx_pal_u32 s = __enter();
     m.unlock();
-    const int r = ::__ycxx_pal_wait_until(&__seq_, s, d.clock, d.__sec, d.__nsec);
+    const int r = ::ycxx_pal_wait_until(&__seq_, s, d.clock, d.__sec, d.__nsec);
     __y_leave(); // the last access to *this
     m.lock();
     return r == 0;
@@ -161,7 +161,7 @@ inline void notify_all_at_thread_exit(condition_variable& __cond, unique_lock<mu
 class condition_variable_any {
   __ycxx::__detail::__futex_mutex __m_;
   __ycxx::__detail::__futex_condvar __cv_;
-  __ycxx_pal_u32 __active_ = 0; // waiters that may still touch m_
+  ycxx_pal_u32 __active_ = 0; // waiters that may still touch m_
 
   // Re-locks the caller's lock; [thread.condition.condvarany.wait]: terminate if that fails.
   template <class _Lock>
@@ -207,7 +207,7 @@ public:
   condition_variable_any() = default;
   ~condition_variable_any() {
     while (__atomic_load_n(&__active_, __ATOMIC_ACQUIRE) != 0)
-      ::__ycxx_pal_thread_yield();
+      ::ycxx_pal_thread_yield();
   }
   condition_variable_any(const condition_variable_any&) = delete;
   condition_variable_any& operator=(const condition_variable_any&) = delete;

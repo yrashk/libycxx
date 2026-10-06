@@ -88,6 +88,8 @@ re:ycxx_error_[a-z_]+                                                      # ycx
 re:ycxx_pal_[a-z0-9_]+                                                     # the hosted layers' primitives,
 YCXX_PAL_NOEXCEPT YCXX_PAL_NORETURN                                        # which integrators implement
                                                                            # (<ycxx/pal.h>, DECISIONS §18)
+YCXX_PAL YCXX_HOSTED_LAYERS ycxx_add_hosted_layer                          # their CMake interface
+re:YCXX_PAL_[A-Z0-9_]+_PROVIDER
 
 [src-platform]
 # The C library's, the unwinder's and the system's names that the runtime's sources (src/) use,

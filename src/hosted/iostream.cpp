@@ -8,7 +8,7 @@
 // so the streams exist before any user static initializer runs, and that object's destructor runs
 // after every ordinary static destructor and flushes the output streams. Mach-O has no such
 // priorities: there <iostream> defines an Init object in every translation unit that includes it
-// (YCXX_HAS_INIT_PRIORITY, config.hpp; DECISIONS §7). They are never destroyed.
+// (_YCXX_HAS_INIT_PRIORITY, config.hpp; DECISIONS §7). They are never destroyed.
 //
 // Their stream buffers work on the C streams stdin, stdout and stderr through C stdio. While
 // synchronized with stdio (the default) they keep no buffer of their own: every character goes
@@ -50,20 +50,20 @@
 namespace {
 
 // Holds a buffer's lock for the duration of one of its operations.
-class guard {
+class __guard {
 public:
-  explicit guard(ycxx::detail::futex_mutex& m) noexcept : m_(m) { m_.lock(); }
-  ~guard() { m_.unlock(); }
-  guard(const guard&) = delete;
-  guard& operator=(const guard&) = delete;
+  explicit __guard(__ycxx::__detail::__futex_mutex& m) noexcept : __m_(m) { __m_.lock(); }
+  ~__guard() { __m_.unlock(); }
+  __guard(const __guard&) = delete;
+  __guard& operator=(const __guard&) = delete;
 
 private:
-  ycxx::detail::futex_mutex& m_;
+  __ycxx::__detail::__futex_mutex& __m_;
 };
 
-template <class T>
+template <class _Tp>
 union immortal {
-  T object;
+  _Tp __object;
   immortal() {}
   ~immortal() {}
 };
@@ -71,13 +71,13 @@ union immortal {
 // ---- char -------------------------------------------------------------------------------------
 class stdio_buf final : public std::streambuf {
 public:
-  explicit stdio_buf(std::FILE* f) noexcept : f_(f) {}
+  explicit stdio_buf(std::FILE* __f) noexcept : __f_(__f) {}
 
   // Switches between unbuffered (synchronized) and buffered output.
   void set_buffered(bool b) {
     sync();
     if (b)
-      setp(buf_, buf_ + sizeof buf_);
+      setp(__buf_, __buf_ + sizeof __buf_);
     else
       setp(nullptr, nullptr);
   }
@@ -93,7 +93,7 @@ protected:
       pbump(1);
       return c;
     }
-    return std::putc(c, f_) == EOF ? traits_type::eof() : c;
+    return std::putc(c, __f_) == EOF ? traits_type::eof() : c;
   }
   std::streamsize xsputn(const char* s, std::streamsize n) override {
     if (pbase() != nullptr) {
@@ -102,77 +102,77 @@ protected:
       if (!flush_buffer())
         return 0;
     }
-    return static_cast<std::streamsize>(std::fwrite(s, 1, static_cast<std::size_t>(n), f_));
+    return static_cast<std::streamsize>(std::fwrite(s, 1, static_cast<std::size_t>(n), __f_));
   }
   int sync() override {
     if (pbase() != nullptr && !flush_buffer())
       return -1;
-    return std::fflush(f_) == 0 ? 0 : -1;
+    return std::fflush(__f_) == 0 ? 0 : -1;
   }
   int_type underflow() override {
-    guard g(lock_);
-    const int c = std::getc(f_);
+    __guard __g(__lock_);
+    const int c = std::getc(__f_);
     if (c == EOF)
       return traits_type::eof();
-    std::ungetc(c, f_);
+    std::ungetc(c, __f_);
     return c;
   }
   int_type uflow() override {
-    guard g(lock_);
-    const int c = std::getc(f_);
+    __guard __g(__lock_);
+    const int c = std::getc(__f_);
     if (c == EOF)
       return traits_type::eof();
-    last_ = c;
+    __last_ = c;
     return c;
   }
   int_type pbackfail(int_type c) override {
-    guard g(lock_);
+    __guard __g(__lock_);
     if (traits_type::eq_int_type(c, traits_type::eof())) {
-      if (last_ == EOF)
+      if (__last_ == EOF)
         return traits_type::eof();
-      c = last_;
+      c = __last_;
     }
-    last_ = EOF;
-    return std::ungetc(c, f_) == EOF ? traits_type::eof() : c;
+    __last_ = EOF;
+    return std::ungetc(c, __f_) == EOF ? traits_type::eof() : c;
   }
 
 private:
   bool flush_buffer() {
     const std::size_t n = static_cast<std::size_t>(pptr() - pbase());
-    const bool ok = n == 0 || std::fwrite(pbase(), 1, n, f_) == n;
-    setp(buf_, buf_ + sizeof buf_);
+    const bool ok = n == 0 || std::fwrite(pbase(), 1, n, __f_) == n;
+    setp(__buf_, __buf_ + sizeof __buf_);
     return ok;
   }
 
-  std::FILE* f_;
-  ycxx::detail::futex_mutex lock_; // the input side
-  int last_ = EOF; // the character last extracted, for sungetc (guarded by lock_)
-  char buf_[1024];
+  std::FILE* __f_;
+  __ycxx::__detail::__futex_mutex __lock_; // the input side
+  int __last_ = EOF; // the character last extracted, for sungetc (guarded by lock_)
+  char __buf_[1024];
 };
 
 // ---- wchar_t ----------------------------------------------------------------------------------
 class wstdio_buf final : public std::wstreambuf {
 public:
-  explicit wstdio_buf(std::FILE* f) : f_(f), cvt_(&std::use_facet<cvt_type>(getloc())), c_cvt_(cvt_) {}
+  explicit wstdio_buf(std::FILE* __f) : __f_(__f), __cvt_(&std::use_facet<__cvt_type>(getloc())), c_cvt_(__cvt_) {}
 
   void set_buffered(bool b) {
     sync();
     if (b)
-      setp(buf_, buf_ + sizeof buf_ / sizeof buf_[0]);
+      setp(__buf_, __buf_ + sizeof __buf_ / sizeof __buf_[0]);
     else
       setp(nullptr, nullptr);
   }
 
 protected:
-  using cvt_type = std::codecvt<wchar_t, char, std::mbstate_t>;
+  using __cvt_type = std::codecvt<wchar_t, char, std::mbstate_t>;
 
   // Characters already in the put area (sync_with_stdio(false)) are written the way they were
   // put, before the conversion changes.
-  void imbue(const std::locale& loc) override {
+  void imbue(const std::locale& __loc) override {
     if (pbase() != nullptr)
       flush_buffer();
-    guard g(lock_);
-    cvt_ = &std::use_facet<cvt_type>(loc);
+    __guard __g(__lock_);
+    __cvt_ = &std::use_facet<__cvt_type>(__loc);
   }
 
   int_type overflow(int_type c) override {
@@ -185,8 +185,8 @@ protected:
       pbump(1);
       return c;
     }
-    const wchar_t w = traits_type::to_char_type(c);
-    return write(&w, 1) ? c : traits_type::eof();
+    const wchar_t __w = traits_type::to_char_type(c);
+    return write(&__w, 1) ? c : traits_type::eof();
   }
   std::streamsize xsputn(const wchar_t* s, std::streamsize n) override {
     if (pbase() != nullptr) {
@@ -200,7 +200,7 @@ protected:
   int sync() override {
     if (pbase() != nullptr && !flush_buffer())
       return -1;
-    return std::fflush(f_) == 0 ? 0 : -1;
+    return std::fflush(__f_) == 0 ? 0 : -1;
   }
   // Like the narrow buffer, this one holds no characters: a peeked character goes back to the C
   // stream (ungetwc), and so does a put-back character. C stdio and the other readers of the
@@ -208,55 +208,55 @@ protected:
   // bytes go back (ungetc); a character of more than one byte needs more than the one byte of
   // push-back that ISO C guarantees, which glibc and Darwin's libc provide.
   int_type underflow() override {
-    guard g(lock_);
+    __guard __g(__lock_);
     if (wide_c_io()) {
-      const std::wint_t c = std::fgetwc(f_);
+      const std::wint_t c = std::fgetwc(__f_);
       if (c == WEOF)
         return traits_type::eof();
-      std::ungetwc(c, f_);
+      std::ungetwc(c, __f_);
       return traits_type::to_int_type(static_cast<wchar_t>(c));
     }
     return read(false);
   }
   int_type uflow() override {
-    guard g(lock_);
+    __guard __g(__lock_);
     int_type c;
     if (wide_c_io()) {
-      const std::wint_t w = std::fgetwc(f_);
-      c = w == WEOF ? traits_type::eof() : traits_type::to_int_type(static_cast<wchar_t>(w));
+      const std::wint_t __w = std::fgetwc(__f_);
+      c = __w == WEOF ? traits_type::eof() : traits_type::to_int_type(static_cast<wchar_t>(__w));
     } else {
       c = read(true);
     }
     if (!traits_type::eq_int_type(c, traits_type::eof())) {
-      last_ = traits_type::to_char_type(c);
+      __last_ = traits_type::to_char_type(c);
       has_last_ = true;
     }
     return c;
   }
   int_type pbackfail(int_type c) override {
-    guard g(lock_);
+    __guard __g(__lock_);
     if (traits_type::eq_int_type(c, traits_type::eof())) {
       if (!has_last_)
         return traits_type::eof();
-      c = traits_type::to_int_type(last_);
+      c = traits_type::to_int_type(__last_);
     }
     has_last_ = false;
-    const wchar_t w = traits_type::to_char_type(c);
+    const wchar_t __w = traits_type::to_char_type(c);
     if (wide_c_io())
-      return std::ungetwc(static_cast<std::wint_t>(w), f_) == WEOF ? traits_type::eof() : c;
+      return std::ungetwc(static_cast<std::wint_t>(__w), __f_) == WEOF ? traits_type::eof() : c;
     char bytes[16];
     std::size_t n = 1;
-    bytes[0] = static_cast<char>(w);
-    std::mbstate_t st{};
-    const wchar_t* from_next;
+    bytes[0] = static_cast<char>(__w);
+    std::mbstate_t __st{};
+    const wchar_t* __from_next;
     char* to = bytes;
-    const std::codecvt_base::result r = cvt_->out(st, &w, &w + 1, from_next, bytes, bytes + sizeof bytes, to);
+    const std::codecvt_base::result r = __cvt_->out(__st, &__w, &__w + 1, __from_next, bytes, bytes + sizeof bytes, to);
     if (r == std::codecvt_base::error || r == std::codecvt_base::partial)
       return traits_type::eof();
     if (r == std::codecvt_base::ok)
       n = static_cast<std::size_t>(to - bytes);
     while (n != 0)
-      if (std::ungetc(static_cast<unsigned char>(bytes[--n]), f_) == EOF)
+      if (std::ungetc(static_cast<unsigned char>(bytes[--n]), __f_) == EOF)
         return traits_type::eof();
     return c;
   }
@@ -264,11 +264,11 @@ protected:
 private:
   // Whether the C library does the I/O and the conversion (the C stream's wide functions), or
   // the buffer's codecvt with the C stream's byte functions (lock_ is held).
-  bool wide_c_io() const noexcept { return cvt_ == c_cvt_; }
+  bool wide_c_io() const noexcept { return __cvt_ == c_cvt_; }
 
   // Writes s[0..n): wide characters, or bytes converted by the codecvt.
   bool write(const wchar_t* s, std::size_t n) {
-    guard g(lock_); // for state_ and cvt_; the characters of one call also stay together
+    __guard __g(__lock_); // for state_ and cvt_; the characters of one call also stay together
     if (wide_c_io())
       return write_wide(s, n);
     char out[256];
@@ -277,17 +277,17 @@ private:
     while (from != end) {
       const wchar_t* next = from;
       char* to = out;
-      const std::codecvt_base::result r = cvt_->out(state_, from, end, next, out, out + sizeof out, to);
+      const std::codecvt_base::result r = __cvt_->out(__state_, from, end, next, out, out + sizeof out, to);
       if (r == std::codecvt_base::error)
         return false;
       if (r == std::codecvt_base::noconv) {
         for (; from != end; ++from)
-          if (std::putc(static_cast<char>(*from), f_) == EOF)
+          if (std::putc(static_cast<char>(*from), __f_) == EOF)
             return false;
         return true;
       }
       const std::size_t bytes = static_cast<std::size_t>(to - out);
-      if (bytes != 0 && std::fwrite(out, 1, bytes, f_) != bytes)
+      if (bytes != 0 && std::fwrite(out, 1, bytes, __f_) != bytes)
         return false;
       if (next == from && bytes == 0)
         return false; // no progress
@@ -301,7 +301,7 @@ private:
     wchar_t piece[128];
     while (n != 0) {
       if (*s == L'\0') {
-        if (std::fputwc(L'\0', f_) == WEOF)
+        if (std::fputwc(L'\0', __f_) == WEOF)
           return false;
         ++s;
         --n;
@@ -313,7 +313,7 @@ private:
         ++k;
       }
       piece[k] = L'\0';
-      if (std::fputws(piece, f_) < 0)
+      if (std::fputws(piece, __f_) < 0)
         return false;
       s += k;
       n -= k;
@@ -326,29 +326,29 @@ private:
     char bytes[8];
     int n = 0;
     while (n < static_cast<int>(sizeof bytes)) {
-      const int b = std::getc(f_);
+      const int b = std::getc(__f_);
       if (b == EOF)
         return traits_type::eof();
       bytes[n++] = static_cast<char>(b);
-      wchar_t w;
-      const char* from_next;
-      wchar_t* to_next;
-      std::mbstate_t st = in_state_;
-      const std::codecvt_base::result r = cvt_->in(st, bytes, bytes + n, from_next, &w, &w + 1, to_next);
+      wchar_t __w;
+      const char* __from_next;
+      wchar_t* __to_next;
+      std::mbstate_t __st = in_state_;
+      const std::codecvt_base::result r = __cvt_->in(__st, bytes, bytes + n, __from_next, &__w, &__w + 1, __to_next);
       if (r == std::codecvt_base::noconv) {
         if (!consume)
-          std::ungetc(static_cast<unsigned char>(bytes[0]), f_);
+          std::ungetc(static_cast<unsigned char>(bytes[0]), __f_);
         return traits_type::to_int_type(static_cast<wchar_t>(static_cast<unsigned char>(bytes[0])));
       }
       if (r == std::codecvt_base::error)
         return traits_type::eof();
-      if (to_next != &w) {
+      if (__to_next != &__w) {
         if (consume)
-          in_state_ = st;
+          in_state_ = __st;
         // give back the bytes beyond the character, and the character's own unless consumed
-        for (const char* p = bytes + n, *stop = consume ? from_next : bytes; p != stop;)
-          std::ungetc(static_cast<unsigned char>(*--p), f_);
-        return traits_type::to_int_type(w);
+        for (const char* p = bytes + n, *__stop = consume ? __from_next : bytes; p != __stop;)
+          std::ungetc(static_cast<unsigned char>(*--p), __f_);
+        return traits_type::to_int_type(__w);
       }
     }
     return traits_type::eof();
@@ -356,19 +356,19 @@ private:
   bool flush_buffer() {
     const std::size_t n = static_cast<std::size_t>(pptr() - pbase());
     const bool ok = n == 0 || write(pbase(), n);
-    setp(buf_, buf_ + sizeof buf_ / sizeof buf_[0]);
+    setp(__buf_, __buf_ + sizeof __buf_ / sizeof __buf_[0]);
     return ok;
   }
 
-  std::FILE* f_;
-  const cvt_type* cvt_;   // the locale's (guarded by lock_)
-  const cvt_type* c_cvt_; // the initial locale's: with it, the C library converts
-  ycxx::detail::futex_mutex lock_; // guards the members below
-  std::mbstate_t state_{};
+  std::FILE* __f_;
+  const __cvt_type* __cvt_;   // the locale's (guarded by lock_)
+  const __cvt_type* c_cvt_; // the initial locale's: with it, the C library converts
+  __ycxx::__detail::__futex_mutex __lock_; // guards the members below
+  std::mbstate_t __state_{};
   std::mbstate_t in_state_{};
-  wchar_t last_ = 0;
+  wchar_t __last_ = 0;
   bool has_last_ = false;
-  wchar_t buf_[256];
+  wchar_t __buf_[256];
 };
 
 immortal<stdio_buf> cin_buf, cout_buf, cerr_buf;
@@ -380,7 +380,7 @@ bool synced = true;  // sync_with_stdio state
 } // namespace
 
 // The objects, as storage; <iostream> declares them with their stream types.
-namespace [[gnu::visibility("hidden")]] std {
+namespace [[__gnu__::__visibility__("hidden")]] std {
 alignas(istream) unsigned char cin[sizeof(istream)];
 alignas(ostream) unsigned char cout[sizeof(ostream)];
 alignas(ostream) unsigned char cerr[sizeof(ostream)];
@@ -393,29 +393,29 @@ alignas(wostream) unsigned char wclog[sizeof(wostream)];
 
 namespace {
 
-template <class S>
-S& object(unsigned char* storage) {
-  return *std::launder(reinterpret_cast<S*>(storage));
+template <class _Sp>
+_Sp& __object(unsigned char* __storage) {
+  return *std::launder(reinterpret_cast<_Sp*>(__storage));
 }
 
 bool construct_objects() {
-  ::new (static_cast<void*>(&cin_buf.object)) stdio_buf(stdin);
-  ::new (static_cast<void*>(&cout_buf.object)) stdio_buf(stdout);
-  ::new (static_cast<void*>(&cerr_buf.object)) stdio_buf(stderr);
-  ::new (static_cast<void*>(&wcin_buf.object)) wstdio_buf(stdin);
-  ::new (static_cast<void*>(&wcout_buf.object)) wstdio_buf(stdout);
-  ::new (static_cast<void*>(&wcerr_buf.object)) wstdio_buf(stderr);
-  std::ostream* out = ::new (static_cast<void*>(std::cout)) std::ostream(&cout_buf.object);
-  std::istream* in = ::new (static_cast<void*>(std::cin)) std::istream(&cin_buf.object);
-  std::ostream* err = ::new (static_cast<void*>(std::cerr)) std::ostream(&cerr_buf.object);
-  ::new (static_cast<void*>(std::clog)) std::ostream(&cerr_buf.object);
+  ::new (static_cast<void*>(&cin_buf.__object)) stdio_buf(stdin);
+  ::new (static_cast<void*>(&cout_buf.__object)) stdio_buf(stdout);
+  ::new (static_cast<void*>(&cerr_buf.__object)) stdio_buf(stderr);
+  ::new (static_cast<void*>(&wcin_buf.__object)) wstdio_buf(stdin);
+  ::new (static_cast<void*>(&wcout_buf.__object)) wstdio_buf(stdout);
+  ::new (static_cast<void*>(&wcerr_buf.__object)) wstdio_buf(stderr);
+  std::ostream* out = ::new (static_cast<void*>(std::cout)) std::ostream(&cout_buf.__object);
+  std::istream* in = ::new (static_cast<void*>(std::cin)) std::istream(&cin_buf.__object);
+  std::ostream* __err = ::new (static_cast<void*>(std::cerr)) std::ostream(&cerr_buf.__object);
+  ::new (static_cast<void*>(std::clog)) std::ostream(&cerr_buf.__object);
   in->tie(out);
-  err->setf(std::ios_base::unitbuf);
-  err->tie(out);
-  std::wostream* wout = ::new (static_cast<void*>(std::wcout)) std::wostream(&wcout_buf.object);
-  std::wistream* win = ::new (static_cast<void*>(std::wcin)) std::wistream(&wcin_buf.object);
-  std::wostream* werr = ::new (static_cast<void*>(std::wcerr)) std::wostream(&wcerr_buf.object);
-  ::new (static_cast<void*>(std::wclog)) std::wostream(&wcerr_buf.object);
+  __err->setf(std::ios_base::unitbuf);
+  __err->tie(out);
+  std::wostream* wout = ::new (static_cast<void*>(std::wcout)) std::wostream(&wcout_buf.__object);
+  std::wistream* win = ::new (static_cast<void*>(std::wcin)) std::wistream(&wcin_buf.__object);
+  std::wostream* werr = ::new (static_cast<void*>(std::wcerr)) std::wostream(&wcerr_buf.__object);
+  ::new (static_cast<void*>(std::wclog)) std::wostream(&wcerr_buf.__object);
   win->tie(wout);
   werr->setf(std::ios_base::unitbuf);
   werr->tie(wout);
@@ -423,17 +423,17 @@ bool construct_objects() {
 }
 
 void flush_objects() {
-  object<std::ostream>(std::cout).flush();
-  object<std::ostream>(std::cerr).flush();
-  object<std::ostream>(std::clog).flush();
-  object<std::wostream>(std::wcout).flush();
-  object<std::wostream>(std::wcerr).flush();
-  object<std::wostream>(std::wclog).flush();
+  __object<std::ostream>(std::cout).flush();
+  __object<std::ostream>(std::cerr).flush();
+  __object<std::ostream>(std::clog).flush();
+  __object<std::wostream>(std::wcout).flush();
+  __object<std::wostream>(std::wcerr).flush();
+  __object<std::wostream>(std::wclog).flush();
 }
 
 } // namespace
 
-namespace [[gnu::visibility("hidden")]] std {
+namespace [[__gnu__::__visibility__("hidden")]] std {
 
 ios_base::Init::Init() {
   static const bool constructed = construct_objects();
@@ -447,22 +447,22 @@ ios_base::Init::~Init() {
 }
 
 bool ios_base::sync_with_stdio(bool sync) {
-  const bool old = synced;
-  if (sync != old) {
+  const bool __old = synced;
+  if (sync != __old) {
     synced = sync;
-    cout_buf.object.set_buffered(!sync);
-    wcout_buf.object.set_buffered(!sync);
+    cout_buf.__object.set_buffered(!sync);
+    wcout_buf.__object.set_buffered(!sync);
   }
-  return old;
+  return __old;
 }
 
 } // namespace std
 
 namespace {
-#if YCXX_HAS_INIT_PRIORITY
+#if _YCXX_HAS_INIT_PRIORITY
 // Initialized before every object with ordinary static initialization (priorities 101 and up
 // belong to programs); destroyed after them.
-[[gnu::init_priority(100)]] std::ios_base::Init runtime_init;
+[[__gnu__::__init_priority__(100)]] std::ios_base::Init runtime_init;
 #else
 // Mach-O orders static initialization only by link order, where the runtime comes after the
 // program's objects: there each translation unit that includes <iostream> has an Init object of

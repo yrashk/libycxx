@@ -31,10 +31,10 @@
 
 
 #if __has_include(<sys/single_threaded.h>)
-const char* const __ycxx_pal_single_threaded = &__libc_single_threaded;
+const char* const ycxx_pal_single_threaded = &__libc_single_threaded;
 #else
 static const char ycxx_pal_never_single_threaded = 0;
-const char* const __ycxx_pal_single_threaded = &ycxx_pal_never_single_threaded;
+const char* const ycxx_pal_single_threaded = &ycxx_pal_never_single_threaded;
 #endif
 
 /* The alignment malloc guarantees: that of max_align_t, and 16 bytes on Darwin, whose malloc
@@ -46,7 +46,7 @@ enum { pal_malloc_align = 16 };
 enum { pal_malloc_align = alignof(max_align_t) };
 #endif
 
-void* __ycxx_pal_allocate(__ycxx_pal_size size, __ycxx_pal_size align) {
+void* ycxx_pal_allocate(ycxx_pal_size size, ycxx_pal_size align) {
   if (align <= pal_malloc_align)
     return malloc(size);
   void* p = NULL;
@@ -55,9 +55,9 @@ void* __ycxx_pal_allocate(__ycxx_pal_size size, __ycxx_pal_size align) {
   return posix_memalign(&p, align, size) == 0 ? p : NULL;
 }
 
-void __ycxx_pal_deallocate(void* p, __ycxx_pal_size, __ycxx_pal_size) { free(p); }
+void ycxx_pal_deallocate(void* p, ycxx_pal_size, ycxx_pal_size) { free(p); }
 
-void __ycxx_pal_abort(const char* __msg) {
+void ycxx_pal_abort(const char* __msg) {
   if (__msg) {
     (void)!write(2, __msg, strlen(__msg));
     (void)!write(2, "\n", 1);
@@ -65,76 +65,76 @@ void __ycxx_pal_abort(const char* __msg) {
   abort();
 }
 
-void __ycxx_pal_exit(int status) { exit(status); }
+void ycxx_pal_exit(int status) { exit(status); }
 
-int __ycxx_pal_write(__ycxx_pal_handle __fd, const void* data, __ycxx_pal_size n, __ycxx_pal_size* __written) {
+int ycxx_pal_write(ycxx_pal_handle __fd, const void* data, ycxx_pal_size n, ycxx_pal_size* __written) {
   ssize_t r;
   do
     r = write((int)(__fd), data, n);
   while (r < 0 && errno == EINTR);
   if (r < 0)
     return errno;
-  *__written = (__ycxx_pal_size)(r);
+  *__written = (ycxx_pal_size)(r);
   return 0;
 }
 
-int __ycxx_pal_read(__ycxx_pal_handle __fd, void* data, __ycxx_pal_size n, __ycxx_pal_size* __got) {
+int ycxx_pal_read(ycxx_pal_handle __fd, void* data, ycxx_pal_size n, ycxx_pal_size* __got) {
   ssize_t r;
   do
     r = read((int)(__fd), data, n);
   while (r < 0 && errno == EINTR);
   if (r < 0)
     return errno;
-  *__got = (__ycxx_pal_size)(r);
+  *__got = (ycxx_pal_size)(r);
   return 0;
 }
 
-int __ycxx_pal_is_terminal(__ycxx_pal_handle __fd) { return isatty((int)(__fd)); }
+int ycxx_pal_is_terminal(ycxx_pal_handle __fd) { return isatty((int)(__fd)); }
 
-int __ycxx_pal_clock_now(int clock, __ycxx_pal_i64* __sec, __ycxx_pal_i64* __nsec) {
+int ycxx_pal_clock_now(int clock, ycxx_pal_i64* __sec, ycxx_pal_i64* __nsec) {
   struct timespec __ts;
-  if (clock_gettime(clock == __ycxx_pal_clock_monotonic ? CLOCK_MONOTONIC : CLOCK_REALTIME, &__ts) != 0)
+  if (clock_gettime(clock == ycxx_pal_clock_monotonic ? CLOCK_MONOTONIC : CLOCK_REALTIME, &__ts) != 0)
     return errno;
   *__sec = __ts.tv_sec;
   *__nsec = __ts.tv_nsec;
   return 0;
 }
 
-int __ycxx_pal_random(void* data, __ycxx_pal_size n) {
+int ycxx_pal_random(void* data, ycxx_pal_size n) {
   unsigned char* p = (unsigned char*)data;
   while (n) {
     ssize_t r = getentropy(p, n > 256 ? 256 : n) == 0 ? (n > 256 ? 256 : (ssize_t)(n)) : -1;
     if (r < 0)
       return errno;
     p += r;
-    n -= (__ycxx_pal_size)(r);
+    n -= (ycxx_pal_size)(r);
   }
   return 0;
 }
 
 /* Random sources: handle 0 is the system generator, any other handle is a file descriptor + 1. */
-int __ycxx_pal_random_open(const char* token, __ycxx_pal_size __len, __ycxx_pal_handle* h) {
-  static const char* const files[] = {"/dev/urandom", "/dev/random"};
+int ycxx_pal_random_open(const char* token, ycxx_pal_size __len, ycxx_pal_handle* h) {
+  static const char* const __files[] = {"/dev/urandom", "/dev/random"};
   if ((__len == 7 && memcmp(token, "default", 7) == 0) || (__len == 9 && memcmp(token, "getrandom", 9) == 0)) {
     *h = 0;
     return 0;
   }
-  for (size_t i = 0; i < sizeof files / sizeof files[0]; ++i) {
-    if (__len == strlen(files[i]) && memcmp(token, files[i], __len) == 0) {
+  for (size_t i = 0; i < sizeof __files / sizeof __files[0]; ++i) {
+    if (__len == strlen(__files[i]) && memcmp(token, __files[i], __len) == 0) {
       int __fd;
       do
-        __fd = open(files[i], O_RDONLY | O_CLOEXEC);
+        __fd = open(__files[i], O_RDONLY | O_CLOEXEC);
       while (__fd < 0 && errno == EINTR);
       if (__fd < 0)
         return errno;
-      *h = (__ycxx_pal_handle)__fd + 1;
+      *h = (ycxx_pal_handle)__fd + 1;
       return 0;
     }
   }
   return EINVAL;
 }
 
-static int read_all(int __fd, unsigned char* p, __ycxx_pal_size n) {
+static int read_all(int __fd, unsigned char* p, ycxx_pal_size n) {
   while (n) {
     ssize_t r = read(__fd, p, n);
     if (r < 0) {
@@ -145,15 +145,15 @@ static int read_all(int __fd, unsigned char* p, __ycxx_pal_size n) {
     if (r == 0)
       return EIO;
     p += r;
-    n -= (__ycxx_pal_size)r;
+    n -= (ycxx_pal_size)r;
   }
   return 0;
 }
 
-int __ycxx_pal_random_read(__ycxx_pal_handle h, void* data, __ycxx_pal_size n) {
+int ycxx_pal_random_read(ycxx_pal_handle h, void* data, ycxx_pal_size n) {
   if (h != 0)
     return read_all((int)(h - 1), (unsigned char*)data, n);
-  int e = __ycxx_pal_random(data, n);
+  int e = ycxx_pal_random(data, n);
   if (e == ENOSYS) { /* no getrandom/getentropy: fall back to the device */
     int __fd = open("/dev/urandom", O_RDONLY | O_CLOEXEC);
     if (__fd < 0)
@@ -164,7 +164,7 @@ int __ycxx_pal_random_read(__ycxx_pal_handle h, void* data, __ycxx_pal_size n) {
   return e;
 }
 
-void __ycxx_pal_random_close(__ycxx_pal_handle h) {
+void ycxx_pal_random_close(ycxx_pal_handle h) {
   if (h != 0)
     close((int)(h - 1));
 }
@@ -180,7 +180,7 @@ extern int __ulock_wake(uint32_t operation, void* __addr, uint64_t wake_value);
 enum { pal_ul_compare_and_wait = 1, pal_ulf_wake_all = 0x100, pal_ulf_no_errno = 0x01000000 };
 #endif
 
-void __ycxx_pal_wait(const __ycxx_pal_u32* __addr, __ycxx_pal_u32 expected) {
+void ycxx_pal_wait(const ycxx_pal_u32* __addr, ycxx_pal_u32 expected) {
 #if defined(__linux__)
   syscall(SYS_futex, __addr, FUTEX_WAIT_PRIVATE, expected, NULL, NULL, 0);
 #elif defined(__APPLE__)
@@ -194,7 +194,7 @@ void __ycxx_pal_wait(const __ycxx_pal_u32* __addr, __ycxx_pal_u32 expected) {
 #endif
 }
 
-void __ycxx_pal_wake_all(const __ycxx_pal_u32* __addr) {
+void ycxx_pal_wake_all(const ycxx_pal_u32* __addr) {
 #if defined(__linux__)
   syscall(SYS_futex, __addr, FUTEX_WAKE_PRIVATE, 0x7fffffff, NULL, NULL, 0);
 #elif defined(__APPLE__)
@@ -204,7 +204,7 @@ void __ycxx_pal_wake_all(const __ycxx_pal_u32* __addr) {
 #endif
 }
 
-void __ycxx_pal_wake_one(const __ycxx_pal_u32* __addr) {
+void ycxx_pal_wake_one(const ycxx_pal_u32* __addr) {
 #if defined(__linux__)
   syscall(SYS_futex, __addr, FUTEX_WAKE_PRIVATE, 1, NULL, NULL, 0);
 #elif defined(__APPLE__)
@@ -214,23 +214,23 @@ void __ycxx_pal_wake_one(const __ycxx_pal_u32* __addr) {
 #endif
 }
 
-static clockid_t pal_clockid(int clock) { return clock == __ycxx_pal_clock_monotonic ? CLOCK_MONOTONIC : CLOCK_REALTIME; }
+static clockid_t pal_clockid(int clock) { return clock == ycxx_pal_clock_monotonic ? CLOCK_MONOTONIC : CLOCK_REALTIME; }
 
 /* Whether the absolute time sec:nsec of `clock` has passed. */
-__attribute__((__unused__)) static int pal_passed(int clock, __ycxx_pal_i64 __sec, __ycxx_pal_i64 __nsec) {
+__attribute__((__unused__)) static int pal_passed(int clock, ycxx_pal_i64 __sec, ycxx_pal_i64 __nsec) {
   struct timespec now;
   clock_gettime(pal_clockid(clock), &now);
   return now.tv_sec > __sec || (now.tv_sec == __sec && now.tv_nsec >= __nsec);
 }
 
-int __ycxx_pal_wait_until(const __ycxx_pal_u32* __addr, __ycxx_pal_u32 expected, int clock, __ycxx_pal_i64 __sec,
-                        __ycxx_pal_i64 __nsec) {
+int ycxx_pal_wait_until(const ycxx_pal_u32* __addr, ycxx_pal_u32 expected, int clock, ycxx_pal_i64 __sec,
+                        ycxx_pal_i64 __nsec) {
   if (__sec < 0)
     return ETIMEDOUT;
 #if defined(__linux__)
   /* FUTEX_WAIT_BITSET takes an absolute time, on CLOCK_MONOTONIC unless FUTEX_CLOCK_REALTIME. */
   struct timespec __ts = {(time_t)__sec, (long)__nsec};
-  int op = FUTEX_WAIT_BITSET_PRIVATE | (clock == __ycxx_pal_clock_realtime ? FUTEX_CLOCK_REALTIME : 0);
+  int op = FUTEX_WAIT_BITSET_PRIVATE | (clock == ycxx_pal_clock_realtime ? FUTEX_CLOCK_REALTIME : 0);
   long r = syscall(SYS_futex, __addr, op, expected, &__ts, NULL, FUTEX_BITSET_MATCH_ANY);
   if (r != 0 && errno == ETIMEDOUT)
     return ETIMEDOUT;
@@ -242,9 +242,9 @@ int __ycxx_pal_wait_until(const __ycxx_pal_u32* __addr, __ycxx_pal_u32 expected,
   clock_gettime(pal_clockid(clock), &now);
   if (now.tv_sec > __sec || (now.tv_sec == __sec && now.tv_nsec >= __nsec))
     return ETIMEDOUT;
-  const __ycxx_pal_i64 left_ns = (__sec - (__ycxx_pal_i64)now.tv_sec) * 1000000000 + (__nsec - (__ycxx_pal_i64)now.tv_nsec);
-  const __ycxx_pal_i64 left_us = left_ns / 1000 + (left_ns % 1000 != 0);
-  const uint32_t timeout = left_us >= (__ycxx_pal_i64)UINT32_MAX ? UINT32_MAX - 1 : (uint32_t)left_us;
+  const ycxx_pal_i64 left_ns = (__sec - (ycxx_pal_i64)now.tv_sec) * 1000000000 + (__nsec - (ycxx_pal_i64)now.tv_nsec);
+  const ycxx_pal_i64 left_us = left_ns / 1000 + (left_ns % 1000 != 0);
+  const uint32_t timeout = left_us >= (ycxx_pal_i64)UINT32_MAX ? UINT32_MAX - 1 : (uint32_t)left_us;
   const int r = __ulock_wait(pal_ul_compare_and_wait | pal_ulf_no_errno, (void*)__addr, expected, timeout);
   if (r == -ETIMEDOUT && pal_passed(clock, __sec, __nsec))
     return ETIMEDOUT;
@@ -252,13 +252,13 @@ int __ycxx_pal_wait_until(const __ycxx_pal_u32* __addr, __ycxx_pal_u32 expected,
 #else
   if (pal_passed(clock, __sec, __nsec))
     return ETIMEDOUT;
-  __ycxx_pal_wait(__addr, expected);
+  ycxx_pal_wait(__addr, expected);
   return 0;
 #endif
 }
 
 /* ---- threads ---- */
-int __ycxx_pal_thread_create(__ycxx_pal_handle* thread, void* (*start)(void*), void* arg, __ycxx_pal_size __stack_size) {
+int ycxx_pal_thread_create(ycxx_pal_handle* thread, void* (*start)(void*), void* arg, ycxx_pal_size __stack_size) {
   pthread_attr_t __attr;
   int r = pthread_attr_init(&__attr);
   if (r != 0)
@@ -269,27 +269,27 @@ int __ycxx_pal_thread_create(__ycxx_pal_handle* thread, void* (*start)(void*), v
        header defines it differs between C libraries), in whole pages (Darwin's
        pthread_attr_setstacksize rejects anything else). */
     const long min = sysconf(_SC_THREAD_STACK_MIN), page = sysconf(_SC_PAGESIZE);
-    if (min > 0 && __stack_size < (__ycxx_pal_size)min)
-      __stack_size = (__ycxx_pal_size)min;
-    if (page > 0 && __stack_size % (__ycxx_pal_size)page != 0 && __stack_size <= (__ycxx_pal_size)-1 - (__ycxx_pal_size)page)
-      __stack_size += (__ycxx_pal_size)page - __stack_size % (__ycxx_pal_size)page;
+    if (min > 0 && __stack_size < (ycxx_pal_size)min)
+      __stack_size = (ycxx_pal_size)min;
+    if (page > 0 && __stack_size % (ycxx_pal_size)page != 0 && __stack_size <= (ycxx_pal_size)-1 - (ycxx_pal_size)page)
+      __stack_size += (ycxx_pal_size)page - __stack_size % (ycxx_pal_size)page;
     (void)pthread_attr_setstacksize(&__attr, __stack_size);
   }
   pthread_t t;
   r = pthread_create(&t, &__attr, start, arg);
   pthread_attr_destroy(&__attr);
   if (r == 0)
-    *thread = (__ycxx_pal_handle)t;
+    *thread = (ycxx_pal_handle)t;
   return r;
 }
 
-int __ycxx_pal_thread_join(__ycxx_pal_handle thread) { return pthread_join((pthread_t)thread, NULL); }
+int ycxx_pal_thread_join(ycxx_pal_handle thread) { return pthread_join((pthread_t)thread, NULL); }
 
-int __ycxx_pal_thread_detach(__ycxx_pal_handle thread) { return pthread_detach((pthread_t)thread); }
+int ycxx_pal_thread_detach(ycxx_pal_handle thread) { return pthread_detach((pthread_t)thread); }
 
-__ycxx_pal_handle __ycxx_pal_thread_self(void) { return (__ycxx_pal_handle)pthread_self(); }
+ycxx_pal_handle ycxx_pal_thread_self(void) { return (ycxx_pal_handle)pthread_self(); }
 
-void __ycxx_pal_thread_set_name(const char* name) {
+void ycxx_pal_thread_set_name(const char* name) {
 #if defined(__APPLE__)
   pthread_setname_np(name);
 #elif defined(__linux__)
@@ -306,9 +306,9 @@ void __ycxx_pal_thread_set_name(const char* name) {
 #endif
 }
 
-void __ycxx_pal_thread_yield(void) { sched_yield(); }
+void ycxx_pal_thread_yield(void) { sched_yield(); }
 
-unsigned __ycxx_pal_hardware_concurrency(void) {
+unsigned ycxx_pal_hardware_concurrency(void) {
 #if defined(__linux__)
   cpu_set_t set;
   if (sched_getaffinity(0, sizeof set, &set) == 0) {
@@ -321,7 +321,7 @@ unsigned __ycxx_pal_hardware_concurrency(void) {
   return n > 0 ? (unsigned)n : 0;
 }
 
-void __ycxx_pal_sleep_until(int clock, __ycxx_pal_i64 __sec, __ycxx_pal_i64 __nsec) {
+void ycxx_pal_sleep_until(int clock, ycxx_pal_i64 __sec, ycxx_pal_i64 __nsec) {
   if (__sec < 0)
     return;
 #if defined(__linux__)
@@ -349,7 +349,7 @@ void __ycxx_pal_sleep_until(int clock, __ycxx_pal_i64 __sec, __ycxx_pal_i64 __ns
 /* libSystem's registration function for thread_local destructors. */
 extern void _tlv_atexit(void (*)(void*), void*);
 
-int __ycxx_pal_thread_atexit(void (*__f)(void*), void* __obj, void* __dso) {
+int ycxx_pal_thread_atexit(void (*__f)(void*), void* __obj, void* __dso) {
   (void)__dso;
   _tlv_atexit(__f, __obj);
   return 0;
@@ -358,7 +358,7 @@ int __ycxx_pal_thread_atexit(void (*__f)(void*), void* __obj, void* __dso) {
 /* glibc's registration function for thread_local destructors; other C libraries may lack it. */
 extern int __cxa_thread_atexit_impl(void (*)(void*), void*, void*) __attribute__((__weak__));
 
-int __ycxx_pal_thread_atexit(void (*__f)(void*), void* __obj, void* __dso) {
+int ycxx_pal_thread_atexit(void (*__f)(void*), void* __obj, void* __dso) {
   if (__cxa_thread_atexit_impl)
     return __cxa_thread_atexit_impl(__f, __obj, __dso);
   return -1;
@@ -389,7 +389,7 @@ static void pal_run_end_list(void* p) {
 
 static void pal_make_end_key(void) { pal_end_key_ok = pthread_key_create(&pal_end_key, pal_run_end_list) == 0; }
 
-int __ycxx_pal_at_thread_end(void (*__f)(void*), void* arg) {
+int ycxx_pal_at_thread_end(void (*__f)(void*), void* arg) {
   pthread_once(&pal_end_once, pal_make_end_key);
   if (!pal_end_key_ok)
     return EAGAIN;
@@ -405,7 +405,7 @@ int __ycxx_pal_at_thread_end(void (*__f)(void*), void* arg) {
   return r;
 }
 
-int __ycxx_pal_error_message(int __ev, char* __buf, __ycxx_pal_size n) {
+int ycxx_pal_error_message(int __ev, char* __buf, ycxx_pal_size n) {
   if (n == 0)
     return EINVAL;
   const int __saved = errno; /* [syserr.general]/2: errno stays unchanged */

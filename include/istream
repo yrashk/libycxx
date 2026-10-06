@@ -5,7 +5,7 @@
 // Its runtime (or the header itself) needs the C library: a translation unit compiled freestanding
 // (a hosted-layers build without the C library, DECISIONS §18) stops here, not in the C library's
 // missing headers or at link time.
-#if !YCXX_HOSTED
+#if !_YCXX_HOSTED
 #  error "libycxx: <istream> needs the C library (the 'clib' hosted layer, DECISIONS §18); this translation unit is compiled freestanding"
 #endif
 #include <ycxx/core/version.hpp>

@@ -37,7 +37,7 @@ using __adl_free::__hp_retired_node;
 struct __hp_record {
   const void* value;  // atomic
   __hp_record* next;    // immutable once the record is in the list
-  __ycxx_pal_u32 __owned; // atomic
+  ycxx_pal_u32 __owned; // atomic
 };
 
 // ---- the hosted runtime (src/hosted/hazard_pointer.cpp) ---------------------------------------

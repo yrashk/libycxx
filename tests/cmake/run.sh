@@ -85,10 +85,10 @@ library_exports() {
       if command -v dyld_info >/dev/null; then
         dyld_info -fixups "$1" | grep 'weak-def-coalesce' | awk '{ print $NF }' | sed 's|.*/||'
       fi; } | sed 's/^_//' |
-      grep -E '^(_Z|__cxa_|__gxx_personality|__dynamic_cast|__ycxx_pal_)' || :
+      grep -E '^(_Z|__cxa_|__gxx_personality|__dynamic_cast|ycxx_pal_)' || :
   else
     nm -D --defined-only "$1" | awk '{ print $NF }' |
-      grep -E '^(_Z|__cxa_|__gxx_personality|__dynamic_cast|__ycxx_pal_)' || :
+      grep -E '^(_Z|__cxa_|__gxx_personality|__dynamic_cast|ycxx_pal_)' || :
   fi
 }
 

@@ -4,8 +4,8 @@
 // layer is absent; with it the provider defines ycxx_pal_environment_encoding.
 #include <ycxx/pal.h>
 
-extern "C" int ycxx_pal_environment_encoding(char* buf, ycxx_pal_size n) noexcept {
+extern "C" int ycxx_pal_environment_encoding(char* __buf, ycxx_pal_size n) noexcept {
   if (n != 0)
-    buf[0] = '\0';
+    __buf[0] = '\0';
   return 0;
 }

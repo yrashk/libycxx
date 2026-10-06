@@ -44,7 +44,7 @@ __slot* find_slot(const void* key) noexcept {
     if (s->key == key)
       return s;
   if (free_slot == nullptr) {
-    void* __mem = __ycxx_pal_allocate(sizeof(__slot), alignof(__slot));
+    void* __mem = ycxx_pal_allocate(sizeof(__slot), alignof(__slot));
     if (__mem == nullptr)
       return nullptr;
     free_slot = ::new (__mem) __slot;
@@ -71,7 +71,7 @@ void* __syncbuf_lock(const void* key) noexcept {
     }
     const std::uint32_t __seen = __atomic_load_n(&releases, __ATOMIC_RELAXED);
     table_lock.unlock();
-    __ycxx_pal_wait(&releases, __seen);
+    ycxx_pal_wait(&releases, __seen);
   }
   s->lock.lock();
   return s;
@@ -94,9 +94,9 @@ void __syncbuf_unlock(void* handle) noexcept {
   table_lock.unlock();
   if (freed) {
     if (allocated(s))
-      __ycxx_pal_deallocate(s, sizeof(__slot), alignof(__slot));
+      ycxx_pal_deallocate(s, sizeof(__slot), alignof(__slot));
     __atomic_fetch_add(&releases, 1, __ATOMIC_RELAXED);
-    __ycxx_pal_wake_all(&releases);
+    ycxx_pal_wake_all(&releases);
   }
 }
 

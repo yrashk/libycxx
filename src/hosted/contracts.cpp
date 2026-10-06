@@ -11,10 +11,10 @@
 namespace {
 
 void put(const char* s) noexcept {
-  __ycxx_pal_size n = std::strlen(s), done = 0;
+  ycxx_pal_size n = std::strlen(s), done = 0;
   while (done < n) {
-    __ycxx_pal_size __w = 0;
-    if (__ycxx_pal_write(__ycxx_pal_stderr, s + done, n - done, &__w) != 0 || __w == 0)
+    ycxx_pal_size __w = 0;
+    if (ycxx_pal_write(ycxx_pal_stderr, s + done, n - done, &__w) != 0 || __w == 0)
       return;
     done += __w;
   }

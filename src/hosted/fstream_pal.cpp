@@ -8,55 +8,55 @@
 
 namespace {
 
-// [filebuf.members] Table 146: the primitive's flags for `mode & ~ate`, or 0 if the combination
+// [filebuf.members] Table 146: the primitive's flags for `__mode & ~ate`, or 0 if the combination
 // is not in the table (binary changes nothing: there is no newline translation).
-int file_flags(std::ios_base::openmode mode) noexcept {
+int file_flags(std::ios_base::openmode __mode) noexcept {
   using std::ios_base;
-  constexpr int r = ycxx_pal_file_read_access, w = ycxx_pal_file_write_access, a = ycxx_pal_file_append,
-                c = ycxx_pal_file_create, t = ycxx_pal_file_truncate, x = ycxx_pal_file_exclusive;
-  switch (mode & ~(ios_base::ate | ios_base::binary)) {
+  constexpr int r = ycxx_pal_file_read_access, __w = ycxx_pal_file_write_access, a = ycxx_pal_file_append,
+                c = ycxx_pal_file_create, t = ycxx_pal_file_truncate, __x = ycxx_pal_file_exclusive;
+  switch (__mode & ~(ios_base::ate | ios_base::binary)) {
   case ios_base::out:
   case ios_base::out | ios_base::trunc:
-    return w | c | t; // "w"
+    return __w | c | t; // "w"
   case ios_base::out | ios_base::noreplace:
   case ios_base::out | ios_base::trunc | ios_base::noreplace:
-    return w | c | t | x; // "wx"
+    return __w | c | t | __x; // "wx"
   case ios_base::out | ios_base::app:
   case ios_base::app:
-    return w | a | c; // "a"
+    return __w | a | c; // "a"
   case ios_base::in:
     return r; // "r"
   case ios_base::in | ios_base::out:
-    return r | w; // "r+"
+    return r | __w; // "r+"
   case ios_base::in | ios_base::out | ios_base::trunc:
-    return r | w | c | t; // "w+"
+    return r | __w | c | t; // "w+"
   case ios_base::in | ios_base::out | ios_base::trunc | ios_base::noreplace:
-    return r | w | c | t | x; // "w+x"
+    return r | __w | c | t | __x; // "w+x"
   case ios_base::in | ios_base::out | ios_base::app:
   case ios_base::in | ios_base::app:
-    return r | w | a | c; // "a+"
+    return r | __w | a | c; // "a+"
   default:
     return 0;
   }
 }
 
-ycxx_pal_handle handle(void* f) noexcept { return reinterpret_cast<ycxx_pal_handle>(f); }
+ycxx_pal_handle handle(void* __f) noexcept { return reinterpret_cast<ycxx_pal_handle>(__f); }
 
 } // namespace
 
-namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
 
-void* file_open(const char* name, std::ios_base::openmode mode) noexcept {
-  const int flags = file_flags(mode);
+void* __file_open(const char* name, std::ios_base::openmode __mode) noexcept {
+  const int flags = file_flags(__mode);
   if (flags == 0)
     return nullptr;
   ycxx_pal_handle h = 0;
   if (::ycxx_pal_file_open(name, flags, &h) != 0 || h == 0)
     return nullptr;
   // [filebuf.members]/4-5: ate positions the file at its end; a failure closes it again.
-  if (mode & std::ios_base::ate) {
-    ycxx_pal_i64 pos = 0;
-    if (::ycxx_pal_file_seek(h, 0, 2, &pos) != 0) {
+  if (__mode & std::ios_base::ate) {
+    ycxx_pal_i64 __pos = 0;
+    if (::ycxx_pal_file_seek(h, 0, 2, &__pos) != 0) {
       ::ycxx_pal_file_close(h);
       return nullptr;
     }
@@ -64,40 +64,40 @@ void* file_open(const char* name, std::ios_base::openmode mode) noexcept {
   return reinterpret_cast<void*>(h);
 }
 
-bool file_close(void* f) noexcept { return ::ycxx_pal_file_close(handle(f)) == 0; }
+bool __file_close(void* __f) noexcept { return ::ycxx_pal_file_close(handle(__f)) == 0; }
 
-std::size_t file_read(void* f, char* buf, std::size_t n) noexcept {
+std::size_t __file_read(void* __f, char* __buf, std::size_t n) noexcept {
   std::size_t done = 0;
   while (done < n) {
-    ycxx_pal_size got = 0;
-    if (::ycxx_pal_file_read(handle(f), buf + done, n - done, &got) != 0 || got == 0)
+    ycxx_pal_size __got = 0;
+    if (::ycxx_pal_file_read(handle(__f), __buf + done, n - done, &__got) != 0 || __got == 0)
       break;
-    done += got;
+    done += __got;
   }
   return done;
 }
 
-bool file_write(void* f, const char* buf, std::size_t n) noexcept {
+bool __file_write(void* __f, const char* __buf, std::size_t n) noexcept {
   while (n != 0) {
-    ycxx_pal_size w = 0;
-    if (::ycxx_pal_file_write(handle(f), buf, n, &w) != 0 || w == 0)
+    ycxx_pal_size __w = 0;
+    if (::ycxx_pal_file_write(handle(__f), __buf, n, &__w) != 0 || __w == 0)
       return false;
-    buf += w;
-    n -= w;
+    __buf += __w;
+    n -= __w;
   }
   return true;
 }
 
-long long file_seek(void* f, long long off, int whence) noexcept {
-  ycxx_pal_i64 pos = 0;
-  if (::ycxx_pal_file_seek(handle(f), off, whence, &pos) != 0)
+long long __file_seek(void* __f, long long __off, int __whence) noexcept {
+  ycxx_pal_i64 __pos = 0;
+  if (::ycxx_pal_file_seek(handle(__f), __off, __whence, &__pos) != 0)
     return -1;
-  return static_cast<long long>(pos);
+  return static_cast<long long>(__pos);
 }
 
-bool file_flush(void* f) noexcept { return ::ycxx_pal_file_flush(handle(f)) == 0; }
+bool __file_flush(void* __f) noexcept { return ::ycxx_pal_file_flush(handle(__f)) == 0; }
 
 // basic_filebuf::native_handle(): the provider's handle (an int, as the POSIX descriptor is).
-int file_native(void* f) noexcept { return static_cast<int>(handle(f)); }
+int __file_native(void* __f) noexcept { return static_cast<int>(handle(__f)); }
 
-}} // namespace ycxx::detail
+}} // namespace __ycxx::__detail

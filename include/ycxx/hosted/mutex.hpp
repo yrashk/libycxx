@@ -22,12 +22,12 @@ namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
 // A futex mutex that can also be owned recursively by one thread.
 class __recursive_futex_mutex {
   __futex_mutex __m_;
-  __ycxx_pal_handle __owner_ = 0; // read by other threads (atomically), written by the owner
+  ycxx_pal_handle __owner_ = 0; // read by other threads (atomically), written by the owner
   unsigned long __count_ = 0;
 
-  bool __owned_by_caller() const noexcept { return __atomic_load_n(&__owner_, __ATOMIC_RELAXED) == ::__ycxx_pal_thread_self(); }
+  bool __owned_by_caller() const noexcept { return __atomic_load_n(&__owner_, __ATOMIC_RELAXED) == ::ycxx_pal_thread_self(); }
   void take() noexcept {
-    __atomic_store_n(&__owner_, ::__ycxx_pal_thread_self(), __ATOMIC_RELAXED);
+    __atomic_store_n(&__owner_, ::ycxx_pal_thread_self(), __ATOMIC_RELAXED);
     __count_ = 1;
   }
 
@@ -70,7 +70,7 @@ public:
   }
   void unlock() noexcept {
     if (--__count_ == 0) {
-      __atomic_store_n(&__owner_, __ycxx_pal_handle{0}, __ATOMIC_RELAXED);
+      __atomic_store_n(&__owner_, ycxx_pal_handle{0}, __ATOMIC_RELAXED);
       __m_.unlock();
     }
   }
@@ -442,26 +442,26 @@ struct once_flag {
   once_flag& operator=(const once_flag&) = delete;
 
 private:
-  __ycxx_pal_u32 __state_ = 0; // 0: not run, 1: running, 2: running with waiters, 3: done
+  ycxx_pal_u32 __state_ = 0; // 0: not run, 1: running, 2: running with waiters, 3: done
   template <class _Callable, class... _Args>
   friend void call_once(once_flag& __flag, _Callable&& __func, _Args&&... __args);
 };
 
 template <class _Callable, class... _Args>
 void call_once(once_flag& __flag, _Callable&& __func, _Args&&... __args) {
-  __ycxx_pal_u32* s = &__flag.__state_;
+  ycxx_pal_u32* s = &__flag.__state_;
   if (__atomic_load_n(s, __ATOMIC_ACQUIRE) == 3)
     return;
   for (;;) {
-    __ycxx_pal_u32 cur = 0;
+    ycxx_pal_u32 cur = 0;
     if (__atomic_compare_exchange_n(s, &cur, 1, false, __ATOMIC_ACQUIRE, __ATOMIC_ACQUIRE)) {
       // An exceptional execution leaves the flag unset and lets a waiter try.
       struct reset {
-        __ycxx_pal_u32* s;
-        __ycxx_pal_u32 to;
+        ycxx_pal_u32* s;
+        ycxx_pal_u32 to;
         ~reset() {
           if (__atomic_exchange_n(s, to, __ATOMIC_RELEASE) == 2)
-            ::__ycxx_pal_wake_all(s);
+            ::ycxx_pal_wake_all(s);
         }
       } r{s, 0};
       __ycxx::__detail::invoke(static_cast<_Callable&&>(__func), static_cast<_Args&&>(__args)...);
@@ -472,7 +472,7 @@ void call_once(once_flag& __flag, _Callable&& __func, _Args&&... __args) {
       return;
     if (cur == 1 && !__atomic_compare_exchange_n(s, &cur, 2, false, __ATOMIC_RELAXED, __ATOMIC_ACQUIRE))
       continue;
-    ::__ycxx_pal_wait(s, 2);
+    ::ycxx_pal_wait(s, 2);
   }
 }
 

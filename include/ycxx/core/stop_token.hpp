@@ -32,14 +32,14 @@ namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
 using __adl_free::__stop_callback_node;
 
 class __stop_state {
-  static constexpr __ycxx_pal_u32 __requested_bit = 1, __locked_bit = 2;
-  __ycxx_pal_u32 __bits_ = 0;
+  static constexpr ycxx_pal_u32 __requested_bit = 1, __locked_bit = 2;
+  ycxx_pal_u32 __bits_ = 0;
   __stop_callback_node* __head_ = nullptr;
-  __ycxx_pal_handle __requester_ = 0; // the thread running request_stop's callbacks
+  ycxx_pal_handle __requester_ = 0; // the thread running request_stop's callbacks
 
   // Takes the list lock; returns the bits seen (with the lock bit clear).
-  __ycxx_pal_u32 lock() noexcept {
-    __ycxx_pal_u32 cur = __atomic_load_n(&__bits_, __ATOMIC_RELAXED);
+  ycxx_pal_u32 lock() noexcept {
+    ycxx_pal_u32 cur = __atomic_load_n(&__bits_, __ATOMIC_RELAXED);
     for (int __spins = 0;; ++__spins) {
       if (!(cur & __locked_bit)) {
         if (__atomic_compare_exchange_n(&__bits_, &cur, cur | __locked_bit, true, __ATOMIC_ACQUIRE, __ATOMIC_RELAXED))
@@ -47,11 +47,11 @@ class __stop_state {
         continue;
       }
       if (__spins > 64)
-        ::__ycxx_pal_thread_yield();
+        ::ycxx_pal_thread_yield();
       cur = __atomic_load_n(&__bits_, __ATOMIC_RELAXED);
     }
   }
-  void unlock(__ycxx_pal_u32 bits) noexcept { __atomic_store_n(&__bits_, bits & ~__locked_bit, __ATOMIC_RELEASE); }
+  void unlock(ycxx_pal_u32 bits) noexcept { __atomic_store_n(&__bits_, bits & ~__locked_bit, __ATOMIC_RELEASE); }
 
 public:
   constexpr __stop_state() noexcept = default;
@@ -61,13 +61,13 @@ public:
   bool stop_requested() const noexcept { return (__atomic_load_n(&__bits_, __ATOMIC_ACQUIRE) & __requested_bit) != 0; }
 
   bool request_stop() noexcept {
-    __ycxx_pal_u32 b = lock();
+    ycxx_pal_u32 b = lock();
     if (b & __requested_bit) {
       unlock(b);
       return false;
     }
     b |= __requested_bit;
-    __requester_ = ::__ycxx_pal_thread_self();
+    __requester_ = ::ycxx_pal_thread_self();
     __atomic_store_n(&__bits_, b | __locked_bit, __ATOMIC_RELEASE); // publish the request, keep the lock
     while (__stop_callback_node* n = __head_) {
       __head_ = n->next;
@@ -91,7 +91,7 @@ public:
 
   // Registers n; false (n not registered) if a stop was already requested.
   bool add(__stop_callback_node* n) noexcept {
-    __ycxx_pal_u32 b = lock();
+    ycxx_pal_u32 b = lock();
     if (b & __requested_bit) {
       unlock(b);
       return false;
@@ -107,7 +107,7 @@ public:
 
   // Deregisters n, waiting for its invocation on another thread to finish.
   void remove(__stop_callback_node* n) noexcept {
-    __ycxx_pal_u32 b = lock();
+    ycxx_pal_u32 b = lock();
     if (n->prev) {
       *n->prev = n->next;
       if (n->next)
@@ -115,10 +115,10 @@ public:
       unlock(b);
       return;
     }
-    const __ycxx_pal_handle __requester = __requester_;
+    const ycxx_pal_handle __requester = __requester_;
     unlock(b);
     // Taken off the list by request_stop: it has run, or runs now.
-    if (__requester == ::__ycxx_pal_thread_self()) {
+    if (__requester == ::ycxx_pal_thread_self()) {
       // On this thread: it finished already, or this is its own invocation destroying it.
       if (__atomic_load_n(&n->done, __ATOMIC_ACQUIRE) == 0 && n->__removed)
         *n->__removed = true;
@@ -131,8 +131,8 @@ public:
 // The shared stop state of stop_source/stop_token/stop_callback.
 struct __shared_stop_state {
   __stop_state state;
-  __ycxx_pal_u32 __refs = 1;    // every owner: sources, tokens and registered callbacks
-  __ycxx_pal_u32 __sources = 1; // the stop_source objects
+  ycxx_pal_u32 __refs = 1;    // every owner: sources, tokens and registered callbacks
+  ycxx_pal_u32 __sources = 1; // the stop_source objects
 
   static void __retain(__shared_stop_state* s) noexcept {
     if (s)

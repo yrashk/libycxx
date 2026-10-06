@@ -5,9 +5,12 @@
 # all of them use the first image's, the program's. A program gets the table from the archive only
 # when something it links references a default allocation function; one that replaces every form
 # it uses would not, and then a shared library's table would be the process's, bypassing the
-# program's replacements. So the program is linked with the table named as undefined (-u), and,
-# where programs export only what the shared libraries named at link time import (ELF), with the
-# table exported (--export-dynamic-symbol), so that a library loaded later binds to it.
+# program's replacements. So the program is linked with the table's archive member named as
+# undefined (-u ycxx_allocation_table_anchor, a hidden symbol of that member: the table itself would
+# not do, since a libycxx shared library on the link line exports it and satisfies the reference
+# first), and, where programs export only what the shared libraries named at link time import
+# (ELF), with the table exported (--export-dynamic-symbol), so that a library loaded later binds to
+# it.
 #
 # Both are found by asking the toolchain: the assembler name's prefix from the compiler
 # (__USER_LABEL_PREFIX__, read from a compiled object, so cross compilation works), and whether the
@@ -35,7 +38,7 @@ const char ycxx_label_prefix[] = "YCXX_LABEL_PREFIX[" YCXX_STR(__USER_LABEL_PREF
   endif()
   set(prefix "${CMAKE_MATCH_1}")
 
-  set(options "LINKER:-u,${prefix}ycxx_allocation_functions")
+  set(options "LINKER:-u,${prefix}ycxx_allocation_table_anchor")
   check_linker_flag(CXX "LINKER:--export-dynamic-symbol=ycxx_allocation_functions" has_export_dynamic_symbol)
   if(has_export_dynamic_symbol)
     list(APPEND options "LINKER:--export-dynamic-symbol=ycxx_allocation_functions")

@@ -17,324 +17,324 @@
 #include <ycxx/core/utility_base.hpp>
 #include <ycxx/core/error.hpp>
 
-namespace [[gnu::visibility("hidden")]] std {
-template <class T, class Allocator>
+namespace [[__gnu__::__visibility__("hidden")]] std {
+template <class _Tp, class _Allocator>
 class indirect;
 }
 
-namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
 
-template <class T>
-inline constexpr bool is_indirect = false;
-template <class T, class A>
-inline constexpr bool is_indirect<std::indirect<T, A>> = true;
+template <class _Tp>
+inline constexpr bool __is_indirect = false;
+template <class _Tp, class _Ap>
+inline constexpr bool __is_indirect<std::indirect<_Tp, _Ap>> = true;
 
 // [indirect.general]/5, [polymorphic.general]/5: the value types indirect and polymorphic reject.
-template <class T>
-inline constexpr bool composite_value_ok = std::is_object_v<T> && !std::is_array_v<T> &&
-                                           !std::is_same_v<T, std::in_place_t> && !is_in_place_type<T> &&
-                                           std::is_same_v<T, std::remove_cv_t<T>>;
+template <class _Tp>
+inline constexpr bool __composite_value_ok = std::is_object_v<_Tp> && !std::is_array_v<_Tp> &&
+                                           !std::is_same_v<_Tp, std::in_place_t> && !__is_in_place_type<_Tp> &&
+                                           std::is_same_v<_Tp, std::remove_cv_t<_Tp>>;
 
 // T is a complete type (for the Mandates that require one).
-template <class T>
-concept complete_type = requires { sizeof(T); };
+template <class _Tp>
+concept __complete_type = requires { sizeof(_Tp); };
 
-}} // namespace ycxx::detail
+}} // namespace __ycxx::__detail
 
-namespace [[gnu::visibility("hidden")]] std {
+namespace [[__gnu__::__visibility__("hidden")]] std {
 
-template <class T, class Allocator = allocator<T>>
+template <class _Tp, class _Allocator = allocator<_Tp>>
 class indirect {
-  static_assert(ycxx::detail::composite_value_ok<T>,
+  static_assert(__ycxx::__detail::__composite_value_ok<_Tp>,
                 "std::indirect: T must be a cv-unqualified object type that is not an array, in_place_t or "
                 "a specialization of in_place_type_t");
-  static_assert(is_same_v<typename allocator_traits<Allocator>::value_type, T>,
+  static_assert(is_same_v<typename allocator_traits<_Allocator>::value_type, _Tp>,
                 "std::indirect: allocator_traits<Allocator>::value_type must be T");
 
-  using traits = allocator_traits<Allocator>;
+  using __traits = allocator_traits<_Allocator>;
 
 public:
-  using value_type = T;
-  using allocator_type = Allocator;
-  using pointer = typename traits::pointer;
-  using const_pointer = typename traits::const_pointer;
+  using value_type = _Tp;
+  using allocator_type = _Allocator;
+  using pointer = typename __traits::pointer;
+  using const_pointer = typename __traits::const_pointer;
 
 private:
-  pointer p_ = nullptr;
-  [[no_unique_address]] Allocator alloc_ = Allocator();
+  pointer __p_ = nullptr;
+  [[no_unique_address]] _Allocator __alloc_ = _Allocator();
 
-  template <class U, class AA>
+  template <class _Up, class _AA>
   friend class indirect;
 
   // A new owned object constructed with args using a; nothing leaks if construction throws.
-  template <class... Args>
-  static constexpr pointer make(Allocator& a, Args&&... args) {
-    pointer np = traits::allocate(a, 1);
-    ycxx::detail::rollback guard{[&] { traits::deallocate(a, np, 1); }};
-    traits::construct(a, std::to_address(np), static_cast<Args&&>(args)...);
-    guard.release();
-    return np;
+  template <class... _Args>
+  static constexpr pointer __make(_Allocator& a, _Args&&... __args) {
+    pointer __np = __traits::allocate(a, 1);
+    __ycxx::__detail::__rollback __guard{[&] { __traits::deallocate(a, __np, 1); }};
+    __traits::construct(a, std::to_address(__np), static_cast<_Args&&>(__args)...);
+    __guard.release();
+    return __np;
   }
   // Destroys and frees the owned object q, which was allocated with a (or an equal allocator).
-  static constexpr void dispose(Allocator& a, pointer q) noexcept {
-    if (q != nullptr) {
-      traits::destroy(a, std::to_address(q));
-      traits::deallocate(a, q, 1);
+  static constexpr void __dispose(_Allocator& a, pointer __q) noexcept {
+    if (__q != nullptr) {
+      __traits::destroy(a, std::to_address(__q));
+      __traits::deallocate(a, __q, 1);
     }
   }
   // An owned object for a constructor that was given (or defaulted) the allocator.
-  template <class... Args>
-  constexpr void init(Args&&... args) {
-    p_ = make(alloc_, static_cast<Args&&>(args)...);
+  template <class... _Args>
+  constexpr void init(_Args&&... __args) {
+    __p_ = __make(__alloc_, static_cast<_Args&&>(__args)...);
   }
 
 public:
   // ---- [indirect.ctor] ----
   constexpr explicit indirect()
-    requires is_default_constructible_v<Allocator>
+    requires is_default_constructible_v<_Allocator>
   {
-    static_assert(is_default_constructible_v<T>, "std::indirect(): T must be default constructible");
+    static_assert(is_default_constructible_v<_Tp>, "std::indirect(): T must be default constructible");
     init();
   }
-  constexpr explicit indirect(allocator_arg_t, const Allocator& a) : alloc_(a) {
-    static_assert(is_default_constructible_v<T>, "std::indirect(allocator_arg_t, a): T must be default constructible");
+  constexpr explicit indirect(allocator_arg_t, const _Allocator& a) : __alloc_(a) {
+    static_assert(is_default_constructible_v<_Tp>, "std::indirect(allocator_arg_t, a): T must be default constructible");
     init();
   }
-  constexpr indirect(const indirect& other) : alloc_(traits::select_on_container_copy_construction(other.alloc_)) {
-    static_assert(is_copy_constructible_v<T>, "std::indirect: T must be copy constructible");
-    if (other.p_ != nullptr)
-      init(*other.p_);
+  constexpr indirect(const indirect& other) : __alloc_(__traits::select_on_container_copy_construction(other.__alloc_)) {
+    static_assert(is_copy_constructible_v<_Tp>, "std::indirect: T must be copy constructible");
+    if (other.__p_ != nullptr)
+      init(*other.__p_);
   }
-  constexpr indirect(allocator_arg_t, const Allocator& a, const indirect& other) : alloc_(a) {
-    static_assert(is_copy_constructible_v<T>, "std::indirect: T must be copy constructible");
-    if (other.p_ != nullptr)
-      init(*other.p_);
+  constexpr indirect(allocator_arg_t, const _Allocator& a, const indirect& other) : __alloc_(a) {
+    static_assert(is_copy_constructible_v<_Tp>, "std::indirect: T must be copy constructible");
+    if (other.__p_ != nullptr)
+      init(*other.__p_);
   }
-  constexpr indirect(indirect&& other) noexcept : p_(other.p_), alloc_(static_cast<Allocator&&>(other.alloc_)) {
-    other.p_ = nullptr;
+  constexpr indirect(indirect&& other) noexcept : __p_(other.__p_), __alloc_(static_cast<_Allocator&&>(other.__alloc_)) {
+    other.__p_ = nullptr;
   }
-  constexpr indirect(allocator_arg_t, const Allocator& a, indirect&& other) noexcept(traits::is_always_equal::value)
-      : alloc_(a) {
-    if constexpr (!traits::is_always_equal::value)
-      static_assert(ycxx::detail::complete_type<T>,
+  constexpr indirect(allocator_arg_t, const _Allocator& a, indirect&& other) noexcept(__traits::is_always_equal::value)
+      : __alloc_(a) {
+    if constexpr (!__traits::is_always_equal::value)
+      static_assert(__ycxx::__detail::__complete_type<_Tp>,
                     "std::indirect: T must be complete for the allocator-extended move constructor");
-    if (other.p_ == nullptr)
+    if (other.__p_ == nullptr)
       return;
-    if constexpr (traits::is_always_equal::value) {
-      p_ = other.p_;
-      other.p_ = nullptr;
+    if constexpr (__traits::is_always_equal::value) {
+      __p_ = other.__p_;
+      other.__p_ = nullptr;
     } else {
-      if (alloc_ == other.alloc_) {
-        p_ = other.p_;
-        other.p_ = nullptr;
+      if (__alloc_ == other.__alloc_) {
+        __p_ = other.__p_;
+        other.__p_ = nullptr;
       } else {
-        init(static_cast<T&&>(*other.p_));
+        init(static_cast<_Tp&&>(*other.__p_));
         // [indirect.ctor]/16 Postconditions: other is valueless.
-        dispose(other.alloc_, other.p_);
-        other.p_ = nullptr;
+        __dispose(other.__alloc_, other.__p_);
+        other.__p_ = nullptr;
       }
     }
   }
-  template <class U = T>
-    requires(!is_same_v<remove_cvref_t<U>, indirect>) && (!is_same_v<remove_cvref_t<U>, in_place_t>) &&
-            is_constructible_v<T, U> && is_default_constructible_v<Allocator>
-  constexpr explicit indirect(U&& u) {
-    init(static_cast<U&&>(u));
+  template <class _Up = _Tp>
+    requires(!is_same_v<remove_cvref_t<_Up>, indirect>) && (!is_same_v<remove_cvref_t<_Up>, in_place_t>) &&
+            is_constructible_v<_Tp, _Up> && is_default_constructible_v<_Allocator>
+  constexpr explicit indirect(_Up&& __u) {
+    init(static_cast<_Up&&>(__u));
   }
-  template <class U = T>
-    requires(!is_same_v<remove_cvref_t<U>, indirect>) && (!is_same_v<remove_cvref_t<U>, in_place_t>) &&
-            is_constructible_v<T, U>
-  constexpr explicit indirect(allocator_arg_t, const Allocator& a, U&& u) : alloc_(a) {
-    init(static_cast<U&&>(u));
+  template <class _Up = _Tp>
+    requires(!is_same_v<remove_cvref_t<_Up>, indirect>) && (!is_same_v<remove_cvref_t<_Up>, in_place_t>) &&
+            is_constructible_v<_Tp, _Up>
+  constexpr explicit indirect(allocator_arg_t, const _Allocator& a, _Up&& __u) : __alloc_(a) {
+    init(static_cast<_Up&&>(__u));
   }
-  template <class... Us>
-    requires is_constructible_v<T, Us...> && is_default_constructible_v<Allocator>
-  constexpr explicit indirect(in_place_t, Us&&... us) {
-    init(static_cast<Us&&>(us)...);
+  template <class... _Us>
+    requires is_constructible_v<_Tp, _Us...> && is_default_constructible_v<_Allocator>
+  constexpr explicit indirect(in_place_t, _Us&&... us) {
+    init(static_cast<_Us&&>(us)...);
   }
-  template <class... Us>
-    requires is_constructible_v<T, Us...>
-  constexpr explicit indirect(allocator_arg_t, const Allocator& a, in_place_t, Us&&... us) : alloc_(a) {
-    init(static_cast<Us&&>(us)...);
+  template <class... _Us>
+    requires is_constructible_v<_Tp, _Us...>
+  constexpr explicit indirect(allocator_arg_t, const _Allocator& a, in_place_t, _Us&&... us) : __alloc_(a) {
+    init(static_cast<_Us&&>(us)...);
   }
-  template <class I, class... Us>
-    requires is_constructible_v<T, initializer_list<I>&, Us...> && is_default_constructible_v<Allocator>
-  constexpr explicit indirect(in_place_t, initializer_list<I> ilist, Us&&... us) {
-    init(ilist, static_cast<Us&&>(us)...);
+  template <class _Ip, class... _Us>
+    requires is_constructible_v<_Tp, initializer_list<_Ip>&, _Us...> && is_default_constructible_v<_Allocator>
+  constexpr explicit indirect(in_place_t, initializer_list<_Ip> __ilist, _Us&&... us) {
+    init(__ilist, static_cast<_Us&&>(us)...);
   }
-  template <class I, class... Us>
-    requires is_constructible_v<T, initializer_list<I>&, Us...>
-  constexpr explicit indirect(allocator_arg_t, const Allocator& a, in_place_t, initializer_list<I> ilist, Us&&... us)
-      : alloc_(a) {
-    init(ilist, static_cast<Us&&>(us)...);
+  template <class _Ip, class... _Us>
+    requires is_constructible_v<_Tp, initializer_list<_Ip>&, _Us...>
+  constexpr explicit indirect(allocator_arg_t, const _Allocator& a, in_place_t, initializer_list<_Ip> __ilist, _Us&&... us)
+      : __alloc_(a) {
+    init(__ilist, static_cast<_Us&&>(us)...);
   }
 
   // ---- [indirect.dtor] ----
   constexpr ~indirect() {
-    static_assert(ycxx::detail::complete_type<T>, "std::indirect: T must be complete where the destructor is used");
-    dispose(alloc_, p_);
+    static_assert(__ycxx::__detail::__complete_type<_Tp>, "std::indirect: T must be complete where the destructor is used");
+    __dispose(__alloc_, __p_);
   }
 
   // ---- [indirect.assign] ----
   constexpr indirect& operator=(const indirect& other) {
-    static_assert(is_copy_assignable_v<T> && is_copy_constructible_v<T>,
+    static_assert(is_copy_assignable_v<_Tp> && is_copy_constructible_v<_Tp>,
                   "std::indirect: copy assignment needs a copy-assignable and copy-constructible T");
     if (__builtin_addressof(other) == this)
       return *this;
-    constexpr bool update = traits::propagate_on_container_copy_assignment::value;
-    if (other.p_ == nullptr) {
-      dispose(alloc_, p_);
-      p_ = nullptr;
-    } else if (p_ != nullptr && alloc_ == other.alloc_) {
-      *p_ = *other.p_;
+    constexpr bool __update = __traits::propagate_on_container_copy_assignment::value;
+    if (other.__p_ == nullptr) {
+      __dispose(__alloc_, __p_);
+      __p_ = nullptr;
+    } else if (__p_ != nullptr && __alloc_ == other.__alloc_) {
+      *__p_ = *other.__p_;
     } else {
-      pointer np;
-      if constexpr (update) {
-        Allocator a(other.alloc_);
-        np = make(a, *other.p_);
+      pointer __np;
+      if constexpr (__update) {
+        _Allocator a(other.__alloc_);
+        __np = __make(a, *other.__p_);
       } else {
-        np = make(alloc_, *other.p_);
+        __np = __make(__alloc_, *other.__p_);
       }
-      dispose(alloc_, p_);
-      p_ = np;
+      __dispose(__alloc_, __p_);
+      __p_ = __np;
     }
-    if constexpr (update)
-      alloc_ = other.alloc_;
+    if constexpr (__update)
+      __alloc_ = other.__alloc_;
     return *this;
   }
-  constexpr indirect& operator=(indirect&& other) noexcept(traits::propagate_on_container_move_assignment::value ||
-                                                          traits::is_always_equal::value) {
-    constexpr bool update = traits::propagate_on_container_move_assignment::value;
-    if constexpr (!update && !traits::is_always_equal::value)
-      static_assert(is_move_constructible_v<T>, "std::indirect: move assignment needs a move-constructible T");
+  constexpr indirect& operator=(indirect&& other) noexcept(__traits::propagate_on_container_move_assignment::value ||
+                                                          __traits::is_always_equal::value) {
+    constexpr bool __update = __traits::propagate_on_container_move_assignment::value;
+    if constexpr (!__update && !__traits::is_always_equal::value)
+      static_assert(is_move_constructible_v<_Tp>, "std::indirect: move assignment needs a move-constructible T");
     if (__builtin_addressof(other) == this)
       return *this;
-    if (other.p_ == nullptr) {
-      dispose(alloc_, p_);
-      p_ = nullptr;
-    } else if (update || traits::is_always_equal::value || alloc_ == other.alloc_) {
-      dispose(alloc_, p_);
-      p_ = other.p_;
-      other.p_ = nullptr;
+    if (other.__p_ == nullptr) {
+      __dispose(__alloc_, __p_);
+      __p_ = nullptr;
+    } else if (__update || __traits::is_always_equal::value || __alloc_ == other.__alloc_) {
+      __dispose(__alloc_, __p_);
+      __p_ = other.__p_;
+      other.__p_ = nullptr;
     } else {
-      if constexpr (!update && !traits::is_always_equal::value) {
-        pointer np = make(alloc_, static_cast<T&&>(*other.p_));
-        dispose(alloc_, p_);
-        p_ = np;
-        dispose(other.alloc_, other.p_); // [indirect.assign]/7 Postconditions: other is valueless.
-        other.p_ = nullptr;
+      if constexpr (!__update && !__traits::is_always_equal::value) {
+        pointer __np = __make(__alloc_, static_cast<_Tp&&>(*other.__p_));
+        __dispose(__alloc_, __p_);
+        __p_ = __np;
+        __dispose(other.__alloc_, other.__p_); // [indirect.assign]/7 Postconditions: other is valueless.
+        other.__p_ = nullptr;
       }
     }
     // "Replaced with a copy of the allocator in other" ([indirect.assign]/7, [polymorphic.assign]/7):
     // by move assignment: an allocator whose propagate_on_container_move_assignment is true need
     // only be Cpp17MoveAssignable, not Cpp17CopyAssignable ([allocator.requirements.general]).
-    if constexpr (update)
-      alloc_ = static_cast<Allocator&&>(other.alloc_);
+    if constexpr (__update)
+      __alloc_ = static_cast<_Allocator&&>(other.__alloc_);
     return *this;
   }
-  template <class U = T>
-    requires(!is_same_v<remove_cvref_t<U>, indirect>) && is_constructible_v<T, U> && is_assignable_v<T&, U>
-  constexpr indirect& operator=(U&& u) {
-    if (p_ == nullptr)
-      init(static_cast<U&&>(u));
+  template <class _Up = _Tp>
+    requires(!is_same_v<remove_cvref_t<_Up>, indirect>) && is_constructible_v<_Tp, _Up> && is_assignable_v<_Tp&, _Up>
+  constexpr indirect& operator=(_Up&& __u) {
+    if (__p_ == nullptr)
+      init(static_cast<_Up&&>(__u));
     else
-      *p_ = static_cast<U&&>(u);
+      *__p_ = static_cast<_Up&&>(__u);
     return *this;
   }
 
   // ---- [indirect.obs] ----
-  constexpr const T& operator*() const& noexcept {
-    ycxx::detail::precondition(p_ != nullptr, "std::indirect::operator*: valueless");
-    return *p_;
+  constexpr const _Tp& operator*() const& noexcept {
+    __ycxx::__detail::__precondition(__p_ != nullptr, "std::indirect::operator*: valueless");
+    return *__p_;
   }
-  constexpr T& operator*() & noexcept {
-    ycxx::detail::precondition(p_ != nullptr, "std::indirect::operator*: valueless");
-    return *p_;
+  constexpr _Tp& operator*() & noexcept {
+    __ycxx::__detail::__precondition(__p_ != nullptr, "std::indirect::operator*: valueless");
+    return *__p_;
   }
-  constexpr const T&& operator*() const&& noexcept {
-    ycxx::detail::precondition(p_ != nullptr, "std::indirect::operator*: valueless");
-    return static_cast<const T&&>(*p_);
+  constexpr const _Tp&& operator*() const&& noexcept {
+    __ycxx::__detail::__precondition(__p_ != nullptr, "std::indirect::operator*: valueless");
+    return static_cast<const _Tp&&>(*__p_);
   }
-  constexpr T&& operator*() && noexcept {
-    ycxx::detail::precondition(p_ != nullptr, "std::indirect::operator*: valueless");
-    return static_cast<T&&>(*p_);
+  constexpr _Tp&& operator*() && noexcept {
+    __ycxx::__detail::__precondition(__p_ != nullptr, "std::indirect::operator*: valueless");
+    return static_cast<_Tp&&>(*__p_);
   }
   constexpr const_pointer operator->() const noexcept {
-    ycxx::detail::precondition(p_ != nullptr, "std::indirect::operator->: valueless");
-    return p_;
+    __ycxx::__detail::__precondition(__p_ != nullptr, "std::indirect::operator->: valueless");
+    return __p_;
   }
   constexpr pointer operator->() noexcept {
-    ycxx::detail::precondition(p_ != nullptr, "std::indirect::operator->: valueless");
-    return p_;
+    __ycxx::__detail::__precondition(__p_ != nullptr, "std::indirect::operator->: valueless");
+    return __p_;
   }
-  constexpr bool valueless_after_move() const noexcept { return p_ == nullptr; }
-  constexpr allocator_type get_allocator() const noexcept { return alloc_; }
+  constexpr bool valueless_after_move() const noexcept { return __p_ == nullptr; }
+  constexpr allocator_type get_allocator() const noexcept { return __alloc_; }
 
   // ---- [indirect.swap] ----
-  constexpr void swap(indirect& other) noexcept(traits::propagate_on_container_swap::value ||
-                                               traits::is_always_equal::value) {
-    if constexpr (traits::propagate_on_container_swap::value)
-      ycxx::detail::swap_adl::do_swap(alloc_, other.alloc_);
+  constexpr void swap(indirect& other) noexcept(__traits::propagate_on_container_swap::value ||
+                                               __traits::is_always_equal::value) {
+    if constexpr (__traits::propagate_on_container_swap::value)
+      __ycxx::__detail::__swap_adl::__do_swap(__alloc_, other.__alloc_);
     else
-      ycxx::detail::precondition(traits::is_always_equal::value || alloc_ == other.alloc_,
+      __ycxx::__detail::__precondition(__traits::is_always_equal::value || __alloc_ == other.__alloc_,
                                  "std::indirect::swap: unequal allocators that do not propagate");
-    pointer t = p_;
-    p_ = other.p_;
-    other.p_ = t;
+    pointer t = __p_;
+    __p_ = other.__p_;
+    other.__p_ = t;
   }
-  friend constexpr void swap(indirect& lhs, indirect& rhs) noexcept(noexcept(lhs.swap(rhs))) { lhs.swap(rhs); }
+  friend constexpr void swap(indirect& __lhs, indirect& __rhs) noexcept(noexcept(__lhs.swap(__rhs))) { __lhs.swap(__rhs); }
 
   // ---- [indirect.relops] ----
-  template <class U, class AA>
-  friend constexpr bool operator==(const indirect& lhs, const indirect<U, AA>& rhs) noexcept(noexcept(bool(*lhs ==
-                                                                                                          *rhs))) {
-    static_assert(requires { static_cast<bool>(*lhs == *rhs); },
+  template <class _Up, class _AA>
+  friend constexpr bool operator==(const indirect& __lhs, const indirect<_Up, _AA>& __rhs) noexcept(noexcept(bool(*__lhs ==
+                                                                                                          *__rhs))) {
+    static_assert(requires { static_cast<bool>(*__lhs == *__rhs); },
                   "std::indirect: operator== needs *lhs == *rhs convertible to bool");
-    if (lhs.p_ == nullptr || rhs.p_ == nullptr)
-      return (lhs.p_ == nullptr) == (rhs.p_ == nullptr);
-    return static_cast<bool>(*lhs.p_ == *rhs.p_);
+    if (__lhs.__p_ == nullptr || __rhs.__p_ == nullptr)
+      return (__lhs.__p_ == nullptr) == (__rhs.__p_ == nullptr);
+    return static_cast<bool>(*__lhs.__p_ == *__rhs.__p_);
   }
-  template <class U, class AA>
-  friend constexpr auto operator<=>(const indirect& lhs, const indirect<U, AA>& rhs)
-      -> ycxx::detail::synth_three_way_result<T, U> {
-    if (lhs.p_ == nullptr || rhs.p_ == nullptr)
-      return !(lhs.p_ == nullptr) <=> !(rhs.p_ == nullptr);
-    return ycxx::detail::synth_three_way(*lhs.p_, *rhs.p_);
+  template <class _Up, class _AA>
+  friend constexpr auto operator<=>(const indirect& __lhs, const indirect<_Up, _AA>& __rhs)
+      -> __ycxx::__detail::__synth_three_way_result<_Tp, _Up> {
+    if (__lhs.__p_ == nullptr || __rhs.__p_ == nullptr)
+      return !(__lhs.__p_ == nullptr) <=> !(__rhs.__p_ == nullptr);
+    return __ycxx::__detail::__synth_three_way(*__lhs.__p_, *__rhs.__p_);
   }
 
   // ---- [indirect.comp.with.t] ----
   // Not for U an indirect: the operators above are more specialized and are chosen for those
   // anyway, and leaving them out keeps the return type's synth-three-way from recursing.
-  template <class U>
-    requires(!ycxx::detail::is_indirect<U>)
-  friend constexpr bool operator==(const indirect& lhs, const U& rhs) noexcept(noexcept(bool(*lhs == rhs))) {
-    static_assert(requires { static_cast<bool>(*lhs == rhs); },
+  template <class _Up>
+    requires(!__ycxx::__detail::__is_indirect<_Up>)
+  friend constexpr bool operator==(const indirect& __lhs, const _Up& __rhs) noexcept(noexcept(bool(*__lhs == __rhs))) {
+    static_assert(requires { static_cast<bool>(*__lhs == __rhs); },
                   "std::indirect: operator== needs *lhs == rhs convertible to bool");
-    if (lhs.p_ == nullptr)
+    if (__lhs.__p_ == nullptr)
       return false;
-    return static_cast<bool>(*lhs.p_ == rhs);
+    return static_cast<bool>(*__lhs.__p_ == __rhs);
   }
-  template <class U>
-    requires(!ycxx::detail::is_indirect<U>)
-  friend constexpr auto operator<=>(const indirect& lhs, const U& rhs) -> ycxx::detail::synth_three_way_result<T, U> {
-    if (lhs.p_ == nullptr)
+  template <class _Up>
+    requires(!__ycxx::__detail::__is_indirect<_Up>)
+  friend constexpr auto operator<=>(const indirect& __lhs, const _Up& __rhs) -> __ycxx::__detail::__synth_three_way_result<_Tp, _Up> {
+    if (__lhs.__p_ == nullptr)
       return strong_ordering::less;
-    return ycxx::detail::synth_three_way(*lhs.p_, rhs);
+    return __ycxx::__detail::__synth_three_way(*__lhs.__p_, __rhs);
   }
 };
 
-template <class Value>
-indirect(Value) -> indirect<Value>;
-template <class Allocator, class Value>
-indirect(allocator_arg_t, Allocator, Value)
-    -> indirect<Value, typename allocator_traits<Allocator>::template rebind_alloc<Value>>;
+template <class _Value>
+indirect(_Value) -> indirect<_Value>;
+template <class _Allocator, class _Value>
+indirect(allocator_arg_t, _Allocator, _Value)
+    -> indirect<_Value, typename allocator_traits<_Allocator>::template rebind_alloc<_Value>>;
 
 // [indirect.hash]: enabled iff hash<T> is; a valueless object hashes to 0.
-template <class T, class Allocator>
-  requires ycxx::detail::hash_enabled<T>
-struct hash<indirect<T, Allocator>> {
-  constexpr size_t operator()(const indirect<T, Allocator>& i) const {
-    return i.valueless_after_move() ? size_t(0) : hash<T>()(*i);
+template <class _Tp, class _Allocator>
+  requires __ycxx::__detail::__hash_enabled<_Tp>
+struct hash<indirect<_Tp, _Allocator>> {
+  constexpr size_t operator()(const indirect<_Tp, _Allocator>& i) const {
+    return i.valueless_after_move() ? size_t(0) : hash<_Tp>()(*i);
   }
 };
 

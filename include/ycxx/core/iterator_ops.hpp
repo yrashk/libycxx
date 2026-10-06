@@ -3,49 +3,49 @@
 
 #include <ycxx/core/range_access.hpp>
 
-namespace [[gnu::visibility("hidden")]] std {
+namespace [[__gnu__::__visibility__("hidden")]] std {
 
 // [iterator.operations]
-template <class InputIt, class Distance>
-constexpr void advance(InputIt& it, Distance n) {
-  using cat = typename iterator_traits<InputIt>::iterator_category;
-  auto d = static_cast<typename iterator_traits<InputIt>::difference_type>(n);
+template <class _InputIt, class _Distance>
+constexpr void advance(_InputIt& __it, _Distance n) {
+  using cat = typename iterator_traits<_InputIt>::iterator_category;
+  auto d = static_cast<typename iterator_traits<_InputIt>::difference_type>(n);
   if constexpr (is_base_of_v<random_access_iterator_tag, cat>) {
-    it += d;
+    __it += d;
   } else if constexpr (is_base_of_v<bidirectional_iterator_tag, cat>) {
     for (; d > 0; --d)
-      ++it;
+      ++__it;
     for (; d < 0; ++d)
-      --it;
+      --__it;
   } else {
-    ycxx::detail::precondition(d >= 0, "std::advance: negative distance for a non-bidirectional iterator");
+    __ycxx::__detail::__precondition(d >= 0, "std::advance: negative distance for a non-bidirectional iterator");
     for (; d > 0; --d)
-      ++it;
+      ++__it;
   }
 }
 
-template <class InputIt>
-constexpr typename iterator_traits<InputIt>::difference_type distance(InputIt first, InputIt last) {
-  using cat = typename iterator_traits<InputIt>::iterator_category;
+template <class _InputIt>
+constexpr typename iterator_traits<_InputIt>::difference_type distance(_InputIt first, _InputIt last) {
+  using cat = typename iterator_traits<_InputIt>::iterator_category;
   if constexpr (is_base_of_v<random_access_iterator_tag, cat>) {
     return last - first;
   } else {
-    typename iterator_traits<InputIt>::difference_type n = 0;
+    typename iterator_traits<_InputIt>::difference_type n = 0;
     for (; first != last; ++first)
       ++n;
     return n;
   }
 }
 
-template <class InputIt>
-constexpr InputIt next(InputIt it, typename iterator_traits<InputIt>::difference_type n = 1) {
-  std::advance(it, n);
-  return it;
+template <class _InputIt>
+constexpr _InputIt next(_InputIt __it, typename iterator_traits<_InputIt>::difference_type n = 1) {
+  std::advance(__it, n);
+  return __it;
 }
-template <class BidirIt>
-constexpr BidirIt prev(BidirIt it, typename iterator_traits<BidirIt>::difference_type n = 1) {
-  std::advance(it, -n);
-  return it;
+template <class _BidirIt>
+constexpr _BidirIt prev(_BidirIt __it, typename iterator_traits<_BidirIt>::difference_type n = 1) {
+  std::advance(__it, -n);
+  return __it;
 }
 
 // [default.sentinel], [unreachable.sentinel]
@@ -53,8 +53,8 @@ struct default_sentinel_t {};
 inline constexpr default_sentinel_t default_sentinel{};
 
 struct unreachable_sentinel_t {
-  template <weakly_incrementable I>
-  friend constexpr bool operator==(unreachable_sentinel_t, const I&) noexcept {
+  template <weakly_incrementable _Ip>
+  friend constexpr bool operator==(unreachable_sentinel_t, const _Ip&) noexcept {
     return false;
   }
 };
@@ -62,134 +62,134 @@ inline constexpr unreachable_sentinel_t unreachable_sentinel{};
 
 } // namespace std
 
-namespace [[gnu::visibility("hidden")]] ycxx { namespace detail::iter_ops {
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail::__iter_ops {
 
-struct advance_fn {
-  template <std::input_or_output_iterator I>
-  constexpr void operator()(I& i, std::iter_difference_t<I> n) const {
-    if constexpr (std::random_access_iterator<I>) {
+struct __advance_fn {
+  template <std::input_or_output_iterator _Ip>
+  constexpr void operator()(_Ip& i, std::iter_difference_t<_Ip> n) const {
+    if constexpr (std::random_access_iterator<_Ip>) {
       i += n;
     } else {
-      if constexpr (std::bidirectional_iterator<I>) {
+      if constexpr (std::bidirectional_iterator<_Ip>) {
         for (; n < 0; ++n)
           --i;
       } else {
-        precondition(n >= 0, "ranges::advance: negative n for a non-bidirectional iterator");
+        __precondition(n >= 0, "ranges::advance: negative n for a non-bidirectional iterator");
       }
       for (; n > 0; --n)
         ++i;
     }
   }
 
-  template <std::input_or_output_iterator I, std::sentinel_for<I> S>
-  constexpr void operator()(I& i, S bound) const {
-    if constexpr (std::assignable_from<I&, S>)
-      i = static_cast<S&&>(bound);
-    else if constexpr (std::sized_sentinel_for<S, I>)
-      (*this)(i, bound - i);
+  template <std::input_or_output_iterator _Ip, std::sentinel_for<_Ip> _Sp>
+  constexpr void operator()(_Ip& i, _Sp __y_bound) const {
+    if constexpr (std::assignable_from<_Ip&, _Sp>)
+      i = static_cast<_Sp&&>(__y_bound);
+    else if constexpr (std::sized_sentinel_for<_Sp, _Ip>)
+      (*this)(i, __y_bound - i);
     else
-      while (i != bound)
+      while (i != __y_bound)
         ++i;
   }
 
-  template <std::input_or_output_iterator I, std::sentinel_for<I> S>
-  constexpr std::iter_difference_t<I> operator()(I& i, std::iter_difference_t<I> n, S bound) const {
-    if constexpr (std::sized_sentinel_for<S, I>) {
+  template <std::input_or_output_iterator _Ip, std::sentinel_for<_Ip> _Sp>
+  constexpr std::iter_difference_t<_Ip> operator()(_Ip& i, std::iter_difference_t<_Ip> n, _Sp __y_bound) const {
+    if constexpr (std::sized_sentinel_for<_Sp, _Ip>) {
       // [range.iter.op.advance]/6.1: if |n| >= |bound - i| go to bound, else advance by n. With
       // opposite signs |n| >= |d| is n + d >= 0 (n >= 0) or n + d <= 0, which cannot overflow.
-      const auto d = bound - i;
-      const bool reach = (n >= 0) == (d >= 0) ? (n >= 0 ? n >= d : n <= d) : (n >= 0 ? n + d >= 0 : n + d <= 0);
-      if (reach) {
-        (*this)(i, bound);
+      const auto d = __y_bound - i;
+      const bool __reach = (n >= 0) == (d >= 0) ? (n >= 0 ? n >= d : n <= d) : (n >= 0 ? n + d >= 0 : n + d <= 0);
+      if (__reach) {
+        (*this)(i, __y_bound);
         return n - d;
       }
       (*this)(i, n);
       return 0;
     } else {
-      if constexpr (std::bidirectional_iterator<I> && std::same_as<I, S>) {
-        for (; n < 0 && i != bound; ++n)
+      if constexpr (std::bidirectional_iterator<_Ip> && std::same_as<_Ip, _Sp>) {
+        for (; n < 0 && i != __y_bound; ++n)
           --i;
       }
-      for (; n > 0 && i != bound; --n)
+      for (; n > 0 && i != __y_bound; --n)
         ++i;
       return n;
     }
   }
 };
 
-struct distance_fn {
-  template <std::input_or_output_iterator I, std::sentinel_for<I> S>
-    requires(!std::sized_sentinel_for<S, I>)
-  constexpr std::iter_difference_t<I> operator()(I first, S last) const {
-    std::iter_difference_t<I> n = 0;
+struct __distance_fn {
+  template <std::input_or_output_iterator _Ip, std::sentinel_for<_Ip> _Sp>
+    requires(!std::sized_sentinel_for<_Sp, _Ip>)
+  constexpr std::iter_difference_t<_Ip> operator()(_Ip first, _Sp last) const {
+    std::iter_difference_t<_Ip> n = 0;
     for (; first != last; ++first)
       ++n;
     return n;
   }
-  template <class I, std::sized_sentinel_for<std::decay_t<I>> S>
-  constexpr std::iter_difference_t<std::decay_t<I>> operator()(I&& first, S last) const {
+  template <class _Ip, std::sized_sentinel_for<std::decay_t<_Ip>> _Sp>
+  constexpr std::iter_difference_t<std::decay_t<_Ip>> operator()(_Ip&& first, _Sp last) const {
     // [range.iter.op.distance]/3 (LWG 4242): first itself, so a volatile iterator works; an
     // array decays.
-    if constexpr (!std::is_array_v<std::remove_reference_t<I>>)
+    if constexpr (!std::is_array_v<std::remove_reference_t<_Ip>>)
       return last - first;
     else
-      return last - static_cast<std::decay_t<I>>(first);
+      return last - static_cast<std::decay_t<_Ip>>(first);
   }
-  template <std::ranges::range R>
-  constexpr std::ranges::range_difference_t<R> operator()(R&& r) const {
-    if constexpr (std::ranges::sized_range<R>)
-      return static_cast<std::ranges::range_difference_t<R>>(std::ranges::size(r));
+  template <std::ranges::range _Rp>
+  constexpr std::ranges::range_difference_t<_Rp> operator()(_Rp&& r) const {
+    if constexpr (std::ranges::sized_range<_Rp>)
+      return static_cast<std::ranges::range_difference_t<_Rp>>(std::ranges::size(r));
     else
       return (*this)(std::ranges::begin(r), std::ranges::end(r));
   }
 };
 
-struct next_fn {
-  template <std::input_or_output_iterator I>
-  constexpr I operator()(I x) const {
-    ++x;
-    return x;
+struct __next_fn {
+  template <std::input_or_output_iterator _Ip>
+  constexpr _Ip operator()(_Ip __x) const {
+    ++__x;
+    return __x;
   }
-  template <std::input_or_output_iterator I>
-  constexpr I operator()(I x, std::iter_difference_t<I> n) const {
-    advance_fn{}(x, n);
-    return x;
+  template <std::input_or_output_iterator _Ip>
+  constexpr _Ip operator()(_Ip __x, std::iter_difference_t<_Ip> n) const {
+    __advance_fn{}(__x, n);
+    return __x;
   }
-  template <std::input_or_output_iterator I, std::sentinel_for<I> S>
-  constexpr I operator()(I x, S bound) const {
-    advance_fn{}(x, bound);
-    return x;
+  template <std::input_or_output_iterator _Ip, std::sentinel_for<_Ip> _Sp>
+  constexpr _Ip operator()(_Ip __x, _Sp __y_bound) const {
+    __advance_fn{}(__x, __y_bound);
+    return __x;
   }
-  template <std::input_or_output_iterator I, std::sentinel_for<I> S>
-  constexpr I operator()(I x, std::iter_difference_t<I> n, S bound) const {
-    advance_fn{}(x, n, bound);
-    return x;
-  }
-};
-
-struct prev_fn {
-  template <std::bidirectional_iterator I>
-  constexpr I operator()(I x) const {
-    --x;
-    return x;
-  }
-  template <std::bidirectional_iterator I>
-  constexpr I operator()(I x, std::iter_difference_t<I> n) const {
-    advance_fn{}(x, -n);
-    return x;
-  }
-  template <std::bidirectional_iterator I>
-  constexpr I operator()(I x, std::iter_difference_t<I> n, I bound) const {
-    advance_fn{}(x, -n, bound);
-    return x;
+  template <std::input_or_output_iterator _Ip, std::sentinel_for<_Ip> _Sp>
+  constexpr _Ip operator()(_Ip __x, std::iter_difference_t<_Ip> n, _Sp __y_bound) const {
+    __advance_fn{}(__x, n, __y_bound);
+    return __x;
   }
 };
 
-}} // namespace ycxx::detail::iter_ops
+struct __prev_fn {
+  template <std::bidirectional_iterator _Ip>
+  constexpr _Ip operator()(_Ip __x) const {
+    --__x;
+    return __x;
+  }
+  template <std::bidirectional_iterator _Ip>
+  constexpr _Ip operator()(_Ip __x, std::iter_difference_t<_Ip> n) const {
+    __advance_fn{}(__x, -n);
+    return __x;
+  }
+  template <std::bidirectional_iterator _Ip>
+  constexpr _Ip operator()(_Ip __x, std::iter_difference_t<_Ip> n, _Ip __y_bound) const {
+    __advance_fn{}(__x, -n, __y_bound);
+    return __x;
+  }
+};
 
-namespace [[gnu::visibility("hidden")]] std { namespace ranges {
-inline constexpr ycxx::detail::iter_ops::advance_fn advance{};
-inline constexpr ycxx::detail::iter_ops::distance_fn distance{};
-inline constexpr ycxx::detail::iter_ops::next_fn next{};
-inline constexpr ycxx::detail::iter_ops::prev_fn prev{};
+}} // namespace __ycxx::__detail::__iter_ops
+
+namespace [[__gnu__::__visibility__("hidden")]] std { namespace ranges {
+inline constexpr __ycxx::__detail::__iter_ops::__advance_fn advance{};
+inline constexpr __ycxx::__detail::__iter_ops::__distance_fn distance{};
+inline constexpr __ycxx::__detail::__iter_ops::__next_fn next{};
+inline constexpr __ycxx::__detail::__iter_ops::__prev_fn prev{};
 }} // namespace std::ranges

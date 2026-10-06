@@ -315,6 +315,7 @@ Map
 MappedContainer
 Mapping
 MappingType
+MayOverlap
 Min
 Mode
 Multi
@@ -5849,6 +5850,7 @@ wrap_rcvr
 wrap_sender
 wrap_sub
 wrapped_
+wrapper
 wrapper_castable
 wrapper_init_bound_t
 wrapper_init_t

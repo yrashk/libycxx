@@ -51,7 +51,10 @@ store_xor                                                                  # ato
 underlying                                                                 # range_formatter
 yielded                                                                    # generator
 c r                                                                        # linalg::setup_givens_rotation_result
-posix                                                                      # [namespace.posix]
+# The namespaces std and the draft's namespaces nested in it ([namespace.std], [namespace.posix]).
+std posix chrono chrono_literals complex_literals contracts execution filesystem linalg literals meta
+numbers parallel_scheduler_replacement placeholders pmr ranges regex_constants rel_ops simd
+string_literals string_view_literals this_thread views
 # The C library's names the C++ headers for C library facilities declare ([headers]/10, C23):
 tm_sec tm_min tm_hour tm_mday tm_mon tm_year tm_wday tm_yday tm_isdst      # struct tm
 tv_sec tv_nsec                                                             # struct timespec

@@ -428,6 +428,14 @@ a defect in a test.
   `std::is_structural` is not declared (own tests `meta/*` XFAIL on Clang).
 - GCC 16.2: `is_applicable_type`, `is_nothrow_applicable_type` and `apply_result` are not
   metafunctions ("unknown metafunction"); the library implements them through `substitute`.
+- GCC 16.2, reflection: the `tuple_size`, `tuple_element` and `variant_alternative`
+  metafunctions instantiate their class template, so `tuple_size(^^int)` ("couldn't instantiate
+  'std::tuple_size<int>'") and `variant_alternative(5, ^^variant<int, long>)` (the Mandates'
+  static_assert) are compile errors instead of throwing `meta::exception`
+  ([meta.reflection.traits]/3.1); own test `meta/reflection_traits_errors` is XFAIL on GCC.
+  `__has_unique_object_representations(decltype(^^int))` is an internal compiler error (in
+  `type_has_unique_obj_representations`, cp/tree.cc:5150), so
+  `has_unique_object_representations_v<meta::info>` cannot be evaluated.
 - Clang 23.1: no `__builtin_is_corresponding_member` or
   `__builtin_is_pointer_interconvertible_with_class`.
 - Clang 23.1: `std::optional<Inner>` declared as a member of the class enclosing `Inner`, where
@@ -1123,6 +1131,10 @@ Wording problems found while writing the spec-derived tests (tests/ycxx), not ye
 - [alg.rotate]/15.2 (the parallel `ranges::rotate_copy` with an output sentinel): the result
   `{last, first + (N + (middle - first)) % M, result + N}` divides by M = `last - first`, which
   is 0 for an empty input range (N = 0 = `last - middle`, so 15.2 is the case that applies).
+- [exec.task.scheduler]: the class `ts-domain` declares
+  `transform_sender(set_value_t, BulkSndr&&, const Env&) noexcept(see below)`, but /14-15
+  specify `transform_sender(BulkSndr&&, const Env&)` without the tag (the parallel scheduler's
+  domain, [exec.par.scheduler], has the tag in both places).
 
 ## Performance
 `bench/` (manual, not in CI; DECISIONS §15) times the hot paths against libstdc++ on both

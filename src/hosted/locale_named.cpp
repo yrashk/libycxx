@@ -67,7 +67,7 @@ constexpr std::size_t mb_incomplete = static_cast<std::size_t>(-2);
 
 } // namespace
 
-namespace ycxx::detail {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 
 struct named_locale {
   std::size_t refs; // under cache_lock
@@ -88,7 +88,7 @@ struct named_locale {
   int mb_max; // MB_CUR_MAX
 };
 
-} // namespace ycxx::detail
+}} // namespace ycxx::detail
 
 namespace {
 
@@ -577,7 +577,7 @@ int open_catalog(const named_locale* h, const std::string& fn) {
 
 } // namespace
 
-namespace ycxx::detail {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 
 named_locale* named_open(const char* name, int cat, const char* what) {
   if (name == nullptr)
@@ -701,7 +701,7 @@ std::string named_codeset(const char* name) {
   return r;
 }
 
-} // namespace ycxx::detail
+}} // namespace ycxx::detail
 
 namespace std {
 

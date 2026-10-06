@@ -14,6 +14,11 @@
 #define __cpp_lib_constexpr_new 202406L
 #define __cpp_lib_uncaught_exceptions 201411L
 #define __cpp_lib_exception_ptr_cast 202603L
+// P3068/P3378 constexpr exceptions: needs throwing during constant evaluation and exception_ptr
+// there (GCC 16; Clang 23 cannot throw during constant evaluation). DECISIONS §4.
+#if YCXX_HAS_CONSTEXPR_EXCEPTIONS && YCXX_HAS_CONSTEXPR_EXCEPTION_PTR
+#  define __cpp_lib_constexpr_exceptions 202502L
+#endif
 #define __cpp_lib_initializer_list 202511L
 
 // <compare> <concepts>

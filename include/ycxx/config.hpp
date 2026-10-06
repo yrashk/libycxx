@@ -109,6 +109,15 @@
 #else
 #  define YCXX_HAS_CONSTEXPR_EXCEPTION_PTR 0
 #endif
+// Throwing and catching during constant evaluation (P3068's core-language part,
+// __cpp_constexpr_exceptions): GCC 16 can, Clang 23 cannot (a throw there ends the constant
+// evaluation). Together with YCXX_HAS_CONSTEXPR_EXCEPTION_PTR it decides
+// __cpp_lib_constexpr_exceptions (version.hpp), which must be usable in #if.
+#if defined(__cpp_constexpr_exceptions) && defined(__cpp_exceptions)
+#  define YCXX_HAS_CONSTEXPR_EXCEPTIONS 1
+#else
+#  define YCXX_HAS_CONSTEXPR_EXCEPTIONS 0
+#endif
 // Contract assertions (P2900): __cpp_lib_contracts is defined only where the compiler has them.
 #if defined(__cpp_contracts)
 #  define YCXX_HAS_CONTRACTS 1
@@ -302,13 +311,8 @@ inline constexpr bool exceptions = YCXX_HAS_EXCEPTIONS;
 inline constexpr bool rtti = YCXX_HAS_RTTI;
 // Whether exception_ptr can hold an exception during constant evaluation (YCXX_HAS_CONSTEXPR_EXCEPTION_PTR).
 inline constexpr bool constexpr_exception_ptr = YCXX_HAS_CONSTEXPR_EXCEPTION_PTR && YCXX_HAS_EXCEPTIONS;
-// Whether a constant evaluation can throw and catch exceptions (P3068, __cpp_constexpr_exceptions;
-// GCC 16 can, Clang 23 cannot: a throw there ends the constant evaluation).
-#if defined(__cpp_constexpr_exceptions) && defined(__cpp_exceptions)
-inline constexpr bool constexpr_exceptions = true;
-#else
-inline constexpr bool constexpr_exceptions = false;
-#endif
+// Whether a constant evaluation can throw and catch exceptions (YCXX_HAS_CONSTEXPR_EXCEPTIONS).
+inline constexpr bool constexpr_exceptions = YCXX_HAS_CONSTEXPR_EXCEPTIONS;
 inline constexpr bool hosted = YCXX_HOSTED;
 inline constexpr bool hardened = YCXX_HARDENED;
 inline constexpr bool reflection = YCXX_HAS_REFLECTION;

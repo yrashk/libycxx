@@ -703,7 +703,7 @@ std::string named_codeset(const char* name) {
 
 }} // namespace ycxx::detail
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 
 // ---- ctype_byname<wchar_t> -----------------------------------------------------------------------
 

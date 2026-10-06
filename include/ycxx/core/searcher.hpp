@@ -61,7 +61,7 @@ public:
 
 struct __searcher_slot {
   std::size_t hash = 0;
-  std::ptrdiff_t __key = -1; // index of the class's representative in the pattern; -1: empty
+  std::ptrdiff_t key = -1; // index of the class's representative in the pattern; -1: empty
   std::ptrdiff_t value = 0;
 };
 
@@ -104,13 +104,13 @@ public:
       const std::size_t mask = __slots_.size() - 1;
       for (std::size_t s = h & mask;; s = (s + 1) & mask) {
         __searcher_slot& __slot = __slots_[s];
-        if (__slot.__key < 0) {
+        if (__slot.key < 0) {
           __slot.hash = h;
-          __slot.__key = k;
+          __slot.key = k;
           __slot.value = value;
           return;
         }
-        if (__slot.hash == h && static_cast<bool>(pred(__pat[k], __pat[__slot.__key]))) {
+        if (__slot.hash == h && static_cast<bool>(pred(__pat[k], __pat[__slot.key]))) {
           __slot.value = value;
           return;
         }
@@ -134,10 +134,10 @@ public:
       const std::size_t mask = __slots_.size() - 1;
       for (std::size_t s = h & mask;; s = (s + 1) & mask) {
         const __searcher_slot& __slot = __slots_[s];
-        if (__slot.__key < 0) return none;
+        if (__slot.key < 0) return none;
         if (__slot.hash == h) {
           if (__budget-- == 0) return unknown;
-          if (static_cast<bool>(pred(__x, __pat[__slot.__key]))) return __slot.value;
+          if (static_cast<bool>(pred(__x, __pat[__slot.key]))) return __slot.value;
         }
       }
     }

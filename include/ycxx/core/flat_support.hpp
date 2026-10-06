@@ -111,14 +111,14 @@ constexpr void permute(_Cp& c, const std::size_t* __perm, std::size_t* __work, s
 template <class _Less, class _Keys, class... _Others>
 constexpr void __sort_rows(_Less& lt, std::size_t __lo, _Keys& keys, _Others&... __others) {
   const std::size_t n = keys.size();
-  auto __key = [&keys](std::size_t i) -> decltype(auto) { return ::__ycxx::__detail::__row_at(keys, i); };
+  auto key = [&keys](std::size_t i) -> decltype(auto) { return ::__ycxx::__detail::__row_at(keys, i); };
   bool __tail_sorted = true;
   for (std::size_t i = __lo + 1; i < n && __tail_sorted; ++i)
-    __tail_sorted = !lt(__key(i), __key(i - 1));
+    __tail_sorted = !lt(key(i), key(i - 1));
   // joined: the (sorted) new rows all belong after the old ones.
   bool __joined = __lo == 0 || __lo >= n;
   if (__tail_sorted && !__joined)
-    __joined = !lt(__key(__lo), __key(__lo - 1));
+    __joined = !lt(key(__lo), key(__lo - 1));
   if (__tail_sorted && __joined)
     return;
   ::__ycxx::__detail::__index_buffer __order(n), __work(n);
@@ -126,15 +126,15 @@ constexpr void __sort_rows(_Less& lt, std::size_t __lo, _Keys& keys, _Others&...
     __order.p[i] = i;
   if (!__tail_sorted) {
     std::stable_sort(__order.p + __lo, __order.p + n,
-                     [&](std::size_t a, std::size_t b) -> bool { return lt(__key(a), __key(b)); });
+                     [&](std::size_t a, std::size_t b) -> bool { return lt(key(a), key(b)); });
     if (!__joined)
-      __joined = !lt(__key(__order.p[__lo]), __key(__lo - 1));
+      __joined = !lt(key(__order.p[__lo]), key(__lo - 1));
   }
   if (!__joined) {
     // Merge the identity [0, lo) with order[lo, n); old rows first among equivalent keys.
     std::size_t a = 0, b = __lo, out = 0;
     while (a < __lo && b < n) {
-      if (lt(__key(__order.p[b]), __key(a)))
+      if (lt(key(__order.p[b]), key(a)))
         __work.p[out++] = __order.p[b++];
       else
         __work.p[out++] = a++;

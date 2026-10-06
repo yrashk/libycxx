@@ -164,9 +164,9 @@ struct __re_program {
     // character is tried too.
     for (int __pass = 0; !in && !s.__coll_lo.empty() && __pass < (icase ? 2 : 1); ++__pass) {
       const __charT k[1] = {__pass == 0 ? __tr.translate(c) : t};
-      const auto __key = __tr.transform(k, k + 1);
+      const auto key = __tr.transform(k, k + 1);
       for (std::size_t i = 0; !in && i < s.__coll_lo.size(); ++i)
-        in = !(__key < s.__coll_lo[i]) && !(s.__coll_hi[i] < __key);
+        in = !(key < s.__coll_lo[i]) && !(s.__coll_hi[i] < key);
     }
     if (!in && s.__classes != __class_type{})
       in = __tr.isctype(c, s.__classes);
@@ -174,9 +174,9 @@ struct __re_program {
       in = !__tr.isctype(c, s.__neg_classes[i]);
     if (!in && !s.__equivs.empty()) {
       const __charT k[1] = {c};
-      const auto __key = __tr.transform_primary(k, k + 1);
+      const auto key = __tr.transform_primary(k, k + 1);
       for (std::size_t i = 0; !in && i < s.__equivs.size(); ++i)
-        in = __key == s.__equivs[i];
+        in = key == s.__equivs[i];
     }
     return in != s.negate;
   }
@@ -361,7 +361,7 @@ class __re_compiler {
     enum { __chr, __cls, __neg_cls, __equiv } kind = __chr;
     __charT c{};
     __class_type m{};
-    string_type __key;
+    string_type key;
   };
   // [:name:], [.name.] or [=name=], at "[" followed by one of ":.=".
   __class_atom __bracket_special() {
@@ -392,8 +392,8 @@ class __re_compiler {
       return a;
     }
     a.kind = __class_atom::__equiv;
-    a.__key = __tr_.transform_primary(name.begin(), name.end());
-    if (a.__key.empty())
+    a.key = __tr_.transform_primary(name.begin(), name.end());
+    if (a.key.empty())
       fail(std::regex_constants::error_collate);
     return a;
   }
@@ -409,7 +409,7 @@ class __re_compiler {
       s.__neg_classes.push_back(a.m);
       break;
     case __class_atom::__equiv:
-      s.__equivs.push_back(static_cast<string_type&&>(a.__key));
+      s.__equivs.push_back(static_cast<string_type&&>(a.key));
       break;
     }
   }
@@ -437,8 +437,8 @@ class __re_compiler {
           bool in;
           if (_P_.collate) {
             const __charT k[1] = {__tr_.translate(c)};
-            const string_type __key = __tr_.transform(k, k + 1);
-            in = !(__key < __lo) && !(__hi < __key);
+            const string_type key = __tr_.transform(k, k + 1);
+            in = !(key < __lo) && !(__hi < key);
           } else {
             in = __re_ord(a.c) <= __u && __u <= __re_ord(b.c);
           }

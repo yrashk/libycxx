@@ -271,7 +271,7 @@ inline constexpr __te_name __te_names[882] = {
 };
 
 struct __te_key {
-  const char* __key;
+  const char* key;
   std::int_least32_t mib;
 };
 

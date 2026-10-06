@@ -964,7 +964,7 @@ class hh_mm_ss {
   static_assert(__ycxx::__detail::__is_duration<_Duration>, "hh_mm_ss: Duration must be a specialization of duration");
 
 public:
-  static constexpr unsigned fractional_width = __ycxx::__detail::__hms_fractional_width(_Duration::__period::den);
+  static constexpr unsigned fractional_width = __ycxx::__detail::__hms_fractional_width(_Duration::period::den);
   using precision = chrono::duration<common_type_t<typename _Duration::rep, seconds::rep>,
                                      ratio<1, __ycxx::__detail::__pow10(fractional_width)>>;
 
@@ -977,7 +977,7 @@ private:
 
   // abs(d) ([time.hms.members]/2) in precision's rep, which is at least long long: negating the
   // most negative count of a narrower rep in Duration's own rep would overflow.
-  using __wide = chrono::duration<typename precision::rep, typename _Duration::__period>;
+  using __wide = chrono::duration<typename precision::rep, typename _Duration::period>;
   static constexpr __wide __abs_of(_Duration d) noexcept { return d < _Duration::zero() ? -__wide(d) : __wide(d); }
 
 public:

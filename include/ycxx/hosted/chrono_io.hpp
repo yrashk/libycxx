@@ -241,7 +241,7 @@ constexpr void __chrono_set_time(__chrono_fields<__charT>& __f, const std::chron
     __f.width = std::chrono::hh_mm_ss<_Dur>::fractional_width;
     if constexpr (std::chrono::treat_as_floating_point_v<typename __prec::rep>)
       __f.subseconds = static_cast<unsigned long long>(
-          std::chrono::duration_cast<std::chrono::duration<long long, typename __prec::__period>>(h.subseconds()).count());
+          std::chrono::duration_cast<std::chrono::duration<long long, typename __prec::period>>(h.subseconds()).count());
     else
       __f.subseconds = static_cast<unsigned long long>(h.subseconds().count());
   }
@@ -1223,7 +1223,7 @@ struct __chrono_traits<std::chrono::sys_time<_Duration>> {
   // os << sys_days is os << year_month_day{dp}. (Duration{1} < days{1}, compared as ratios: in
   // the common type a day of a fine period such as femto overflows.)
   static constexpr const char* __dflt = std::chrono::treat_as_floating_point_v<typename _Duration::rep> ||
-                                              std::ratio_less_v<typename _Duration::__period, std::ratio<86400>>
+                                              std::ratio_less_v<typename _Duration::period, std::ratio<86400>>
                                           ? "%F %T"
                                           : "%F";
 };
@@ -1336,7 +1336,7 @@ void __chrono_text(__fmt_dynbuf<__charT>& b, const _Tp& __v, const _PC* first, c
   __chrono_out<__charT> __o{b, __loc};
   if (first == last && __chrono_traits<_Tp>::__dflt == nullptr) {
     if constexpr (requires { ::__ycxx::__detail::__chrono_default(__o, __v); }) {
-      if constexpr (requires { typename _Tp::__period; })
+      if constexpr (requires { typename _Tp::period; })
         ::__ycxx::__detail::__chrono_default(__o, __v, precision);
       else
         ::__ycxx::__detail::__chrono_default(__o, __v);

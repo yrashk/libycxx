@@ -3201,7 +3201,6 @@ keep_
 keep_both
 keep_undos
 kept
-key
 key_arg
 key_at
 key_cont
@@ -3489,7 +3488,6 @@ map2
 map_
 map_alloc
 map_traits
-mapped
 mapped_attrs
 mapped_cont
 margs
@@ -4203,7 +4201,6 @@ pending_
 per
 per8
 per_args
-period
 perm
 perms_
 permutation_fn

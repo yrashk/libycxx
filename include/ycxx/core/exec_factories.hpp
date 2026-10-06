@@ -135,6 +135,7 @@ struct __exec_inline_state {
   _Rcvr __rcvr;
   constexpr void start() & noexcept { std::execution::set_value(static_cast<_Rcvr&&>(__rcvr)); }
 };
+struct __exec_inline_sender_attrs;
 struct __exec_inline_sender {
   using sender_concept = std::execution::sender_tag;
   template <class _Self, class... _Env>
@@ -143,7 +144,7 @@ struct __exec_inline_sender {
   static consteval auto get_completion_signatures() {
     return std::execution::completion_signatures<std::execution::set_value_t()>();
   }
-  constexpr auto get_env() const noexcept { return ::__ycxx::__detail::__exec::__inline_attrs<std::execution::set_value_t>(); }
+  constexpr __exec_inline_sender_attrs get_env() const noexcept;
   template <class _Rcvr>
   constexpr __exec_inline_state<std::remove_cvref_t<_Rcvr>> connect(_Rcvr&& __rcvr) const
       noexcept(std::is_nothrow_constructible_v<std::remove_cvref_t<_Rcvr>, _Rcvr>) {
@@ -172,3 +173,24 @@ public:
   }
 };
 }} // namespace std::execution
+
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __adl_free {
+// The schedule sender's attributes answer as the scheduler does ([exec.sched]/6): the scheduler's
+// queries are inline-attrs' ([exec.inline.scheduler]/1), and where those have no answer (an
+// environment without get_scheduler) the scheduler is its own completion scheduler
+// ([exec.get.compl.sched]/5.2).
+struct __exec_inline_sender_attrs {
+  template <class _Env>
+  constexpr auto query(std::execution::get_completion_scheduler_t<std::execution::set_value_t>, const _Env& env) const noexcept {
+    if constexpr (requires { std::execution::get_scheduler(env); })
+      return std::execution::get_scheduler(env);
+    else
+      return std::execution::inline_scheduler();
+  }
+  template <class _Env>
+  constexpr auto query(std::execution::get_completion_domain_t<std::execution::set_value_t>, const _Env& env) const noexcept {
+    return std::execution::get_domain(env);
+  }
+};
+constexpr __exec_inline_sender_attrs __exec_inline_sender::get_env() const noexcept { return {}; }
+}} // namespace __ycxx::__adl_free

@@ -984,3 +984,101 @@ under the same name. Otherwise it gets one alias template in `config.hpp`.
   `numpunct<char>` facets by address and then skip the virtual calls (atoms are the characters
   themselves, '.' and no grouping); fields are accumulated in place. The stream's locale is used
   in place (`ios_access::locale_of`) rather than through a `getloc()` copy.
+
+## 16. Senders and receivers (`<execution>`, [exec])
+
+- **Layering.** Everything is core (`ycxx/core/exec_*.hpp`, included by `<execution>`), so the
+  senders are freestanding-capable: `<stop_token>` moved to core for them (§3). The one hosted
+  part is parallel_scheduler's default backend, a thread pool (`src/hosted/parallel_scheduler.cpp`),
+  reached through the replaceable `query_parallel_scheduler_backend`, alone in its archive member
+  (`src/hosted/parallel_scheduler_query.cpp`) like the replaceable allocation functions; a
+  program's definition replaces it (own test `execution/exec_parallel_replace`).
+  `__cpp_lib_parallel_scheduler` is defined only when hosted.
+- **The exposition-only machinery is real code.** basic-sender is an aggregate of indexed leaves
+  with a member `get<I>` and `tuple_size`/`tuple_element`, so `auto&& [tag, data, ...children] =
+  sndr` works, as [exec.snd.expos]/45 requires. A leaf has `[[no_unique_address]]` only for
+  an empty movable type: initializing a potentially-overlapping subobject from a prvalue is not a
+  guaranteed elision, and operation states cannot be moved. `impls-for<Tag>` holds static
+  member functions instead of the draft's lambdas, plus `csigs<Sndr, Env...>` (below).
+  `tag_of_t` recognises tuple-like senders (every library sender); an aggregate of another
+  shape is not recognised (detecting a structured binding of an arbitrary aggregate needs
+  reflection).
+- **Completion signatures are computed as types.** Every library sender has a member alias
+  template `ycxx_csigs<Self, Env...>` naming its `completion_signatures`, or one of two error
+  types: `dependent_sigs` (no environment and the signatures need one) or
+  `invalid_sigs<problem, info...>` (what the draft reports by throwing from
+  `get_completion_signatures`; the problem type's name, e.g.
+  `function_not_invocable_with_these_arguments`, shows in diagnostics). The adaptors combine their
+  children's results without constant evaluation. The public consteval
+  `get_completion_signatures<Sndr, Env...>()` returns the specialization or throws
+  `dependent_sender_error` or an exception derived from `std::exception`
+  ([exec.getcomplsigs]/3); Clang 23 cannot throw during constant evaluation, so there the throw
+  makes the call non-constant, which is all `sender_in` observes. A sender that is not the
+  library's is asked through its static member function: when that is not a constant
+  expression, GCC (`cfg::constexpr_exceptions`, new in `config.hpp`) catches to tell
+  `dependent_sender_error` from other errors; on Clang it is dependent when no environment was
+  given, else invalid. `is-constant<get_completion_signatures<...>()>` is written
+  `typename constant<...>`: a concept-id whose argument is not a constant is still satisfied
+  (the parameter mapping of `true` is empty).
+- **make-sender's Mandates are a static_assert**: `then(just(string()), [](int){...})` is a
+  compile-time error naming the problem, not a sender without completions.
+- **No allocation in the common paths.** The operation states are built in place (connect results
+  in leaves, let's second operation and continues_on's state through guaranteed elision; let's
+  operation variant is a small union of operation states with an index, as `variant::emplace`
+  cannot construct from emplace-from without a move); run_loop and the thread pool queue
+  operation states intrusively (the pool's items live in the proxies' preallocated backend
+  storage, 128 bytes). Allocating: a task's coroutine frame (with its allocator), connect of an
+  awaitable that is not a sender (a coroutine frame), spawn/spawn_future's state (with the
+  allocator of [exec.spawn]/9), and task_scheduler, which holds its backend through
+  allocate_shared on every construction (a task constructs one at each start; the recommended
+  practice of [exec.task.scheduler]/4, avoiding it for small schedulers, is not followed yet).
+- **Concurrency.** when_all's count and disposition, the counting scopes' state and spawn_future's
+  hand-over between complete/consume/try-set-stopped/abandon are small `__atomic` words or spin
+  locks around a few stores; completions run outside the locks. run_loop blocks in the PAL's
+  address wait.
+- **Draft questions, and what libycxx does** (the draft is the working draft of 2026-10):
+  - `sync_wait`/`sync_wait_with_variant` dispatch on `COMPL-DOMAIN(set_value_t, sndr, env)`
+    rather than `get_completion_domain<set_value_t>(get_env(sndr), env)`, which is ill-formed
+    for a sender without completion-domain attributes (every user sender).
+  - `sync_wait_with_variant` returns `optional<value_types_of_t<Sndr, sync-wait-env>>` of the
+    given sender; [exec.sync.wait.var]/1 names the into_variant sender's, whose value is a variant
+    of tuples of that.
+  - basic-state's state is computed from the stored receiver; the draft's mem-initializer names
+    the constructor parameter, already moved from.
+  - let-state's receiver cannot be a member of let-state: let-state's operation variant holds
+    the operation connected to it. The receiver is keyed by let-state's parameters instead.
+  - `let-cpo.transform_sender(s, es...)` and `affine.transform_sender(sndr, ev)` take no tag;
+    libycxx lowers them on `set_value_t`, as the other adaptors.
+  - The parallel scheduler's and task_scheduler's domains do not require `sender_in<Sndr, Env>`
+    of the bulk sender: computing it transforms the sender with the same domain (endless
+    recursion).
+  - bulk_chunked's check-types tests f with bulk_unchunked's arity; libycxx tests
+    `f(b, e, args...)`.
+  - spawn_future's try-set-stopped ([exec.spawn.future]/12.1) would destroy the state while its
+    operation runs; the state is destroyed when that operation completes instead. Its
+    try-cancel requests a stop that can complete that operation, whose complete-then-destroy
+    would free the state under try-cancel: try-cancel pins the state, and the last of the two
+    destroys it.
+  - `inline_scheduler::schedule()` is const and the scheduler answers
+    `get_forward_progress_guarantee` (weakly_parallel): without them it does not model scheduler
+    (`scheduler<const inline_scheduler&>`, and the query the concept requires).
+  - run_loop's operation does not evaluate set_stopped when the receiver's token is
+    unstoppable: its completion signatures are then `set_value_t()` alone ([exec.run.loop.types]/6).
+  - stopped_as_optional, starts_on and affine compute their signatures before their
+    transformation too (the draft gives default-impls', i.e. the child's).
+  - The member type form `using completion_signatures = ...` of [exec.cmplsig]'s example is
+    accepted; [exec.getcomplsigs] lists only the member function.
+  - parallel_scheduler's schedule sender can complete with an error (the backend's proxy has
+    set_error), so it is not an infallible-scheduler, and `task_scheduler(parallel_scheduler)`
+    is ill-formed ([exec.task.scheduler]/2).
+  - continues_on is also pipeable (`sndr | continues_on(sch)`, as in P2300);
+    [exec.continues.on] calls it a customization point object.
+  - `split` and `ensure_started` are not in the draft (P3682 removed them); not provided.
+- **Attributes.** An adaptor reports a completion scheduler or domain only where its semantics
+  determine it ([exec.snd.general]/3-4): a single-child adaptor maps each of its completion tags
+  to the child completions whose agents complete it (then: value from value; error from error and
+  value), a scheduler for a single source, the COMMON-DOMAIN otherwise; when_all and let report
+  none (COMPL-DOMAIN then falls back to indeterminate_domain<>, default_domain's transformations).
+- **noexcept.** Where the draft gives a noexcept-specifier it is used as written; the sender
+  factories and adaptors are noexcept when their decay-copies are (a strengthening
+  [res.on.exception.handling] allows; make-sender has none in the draft).

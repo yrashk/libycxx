@@ -15,7 +15,7 @@ Conformance oracles (run only, never edited): libc++ tests from `llvmorg-23.1.2`
 |---|---|---|
 | Own suite `tests/ycxx` (2146 tests, `65e7235`) | 2131 pass / 10 fail / 5 xfail | 2124 pass / 6 fail / 16 xfail |
 | libc++ `libcxx/test/std` (8543 tests, `7e6a93f`) | 7494 pass / 211 fail (209 + 2 unresolved: compile timeouts under load) / 836 unsupported (was 7439 / 532 raw) | 7495 pass / 215 fail / 832 unsupported (was 7440 / 536 raw) |
-| libstdc++ testsuite (8555 tests, `7e6a93f`) | 4823 pass / 141 fail / 3591 unsupported (was 4754 / 484) | 4786 pass / 175 fail / 3594 unsupported (was 4715 / 523) |
+| libstdc++ testsuite (8555 tests; 2026-10-06, testsuite helpers and tests without `dg-do` running) | 6206 pass / 13 fail / 1 xfail / 2335 unsupported (was 4823 / 141 on 2026-10-05) | 6161 pass / 13 fail / 37 xfail / 2344 unsupported (projected from the full run with the final lists; was 4786 / 175) |
 | Own suite against libstdc++ (reference, `tests/ycxx/REFERENCE.md`) | 1754 pass / 387 fail / 5 xfail | 1718 pass / 412 fail / 16 xfail |
 
 Every libc++ and libstdc++ failure is categorised in `tests/libcxx/TRIAGE.md` and
@@ -1085,6 +1085,17 @@ levels: 29.7 s -> 0.01 s; libstdc++ 8.6 s). Remaining above 1.5x: deque push at 
 - **Decided (user, 2026-10-05): C names through `<string>` and `<cstdint>`.** Hosted `<string>`
   (the character traits) provides `EOF` (it includes `<cstdio>`; `WEOF` comes with `<wchar.h>`),
   and `<cstdint>` also declares the global `::int64_t`... names, as libstdc++, libc++ and MSVC do.
+- libstdc++ suite, still failing (tests/libstdcxx/TRIAGE.md, "Whole suite with the DejaGnu
+  default"; every other failure is fixed, skipped or an expected compiler failure): the
+  template-parameter name `C` vs. a user macro (bitset/cons/string_view{,_wide}.cc, DECISIONS §2);
+  `__cpp_lib_constexpr_exceptions` (P3068 is incomplete: `current_exception`, `nested_exception`,
+  `uncaught_exceptions` are not constexpr; Clang cannot throw in constant evaluation); the wide
+  standard streams write bytes through the codecvt instead of C wide I/O, so `wcout` leaves
+  `stdout` byte-oriented ([iostream.objects.overview]/6; objects/wchar_t/{9662,12048-2,12048-4}.cc);
+  locale facets (not changed in that round, the named-locale branch owns them): `money_get`
+  consumes an optional currency symbol that nothing after it needs ([locale.money.get.virtuals]/2;
+  money_get/get/*/19.cc), and `time_get::get_monthname`/`get_weekday` do not store the field when
+  `err` already holds failbit on entry (time_get/get_{monthname,weekday}/*/5.cc).
 - libc++ suite: the former gaps are closed: `import std;`/`import std.compat;` (DECISIONS §16;
   modules/std and std.compat pass on Clang) and senders/receivers (DECISIONS §17). support.limits
   execution.version and version.version are skipped (divergence: they expect older drafts'

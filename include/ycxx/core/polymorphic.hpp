@@ -238,8 +238,11 @@ public:
         other.b_ = nullptr;
       }
     }
+    // "Replaced with a copy of the allocator in other" ([indirect.assign]/7, [polymorphic.assign]/7):
+    // by move assignment: an allocator whose propagate_on_container_move_assignment is true need
+    // only be Cpp17MoveAssignable, not Cpp17CopyAssignable ([allocator.requirements.general]).
     if constexpr (update)
-      alloc_ = other.alloc_;
+      alloc_ = static_cast<Allocator&&>(other.alloc_);
     return *this;
   }
 

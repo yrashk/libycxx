@@ -34,3 +34,6 @@ reported UNSUPPORTED while the lit feature is available and run normally otherwi
 Linux containers): tests that expect a permission error, which root never gets. `clang`: tests
 that also exercise a libc++ extension under Clang only (`_BitInt`); the reason starts with the
 skip category.
+`tests/libstdcxx/unsupported.txt` (`<path regex> | gcc|clang | <reason>`) does the same for the
+libstdc++ suite, with the compiler as the configuration: tests that rely on one compiler's
+implementation-defined behaviour, predefined macros, attributes or optional types.

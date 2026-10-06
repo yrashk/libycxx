@@ -48,11 +48,11 @@ protected:
 
   // ---- helpers ----
   template <class _Ap, class _Bp>
-  constexpr bool __lt(const _Ap& a, const _Bp& b) const {
+  constexpr bool lt(const _Ap& a, const _Bp& b) const {
     return static_cast<bool>(static_cast<const key_compare&>(__compare_)(a, b));
   }
   constexpr auto __less_fn() const noexcept {
-    return [this](const auto& a, const auto& b) -> bool { return __lt(a, b); };
+    return [this](const auto& a, const auto& b) -> bool { return lt(a, b); };
   }
   constexpr const key_type& __key_at(std::size_t i) const { return ::__ycxx::__detail::__row_at(__c_, i); }
   constexpr const_iterator __it_at(std::size_t i) const noexcept {
@@ -68,7 +68,7 @@ protected:
     std::size_t n = __hi - __lo;
     while (n > 0) {
       const std::size_t __half = n / 2;
-      if (__lt(__key_at(__lo + __half), __x)) {
+      if (lt(__key_at(__lo + __half), __x)) {
         __lo += __half + 1;
         n -= __half + 1;
       } else {
@@ -86,7 +86,7 @@ protected:
     std::size_t n = __hi - __lo;
     while (n > 0) {
       const std::size_t __half = n / 2;
-      if (!__lt(__x, __key_at(__lo + __half))) {
+      if (!lt(__x, __key_at(__lo + __half))) {
         __lo += __half + 1;
         n -= __half + 1;
       } else {
@@ -102,28 +102,28 @@ protected:
   template <class _Kp>
   constexpr std::size_t __find_index(const _Kp& __x) const {
     const std::size_t i = __lower_index(__x);
-    if (i == __c_.size() || __lt(__x, __key_at(i)))
+    if (i == __c_.size() || lt(__x, __key_at(i)))
       return __c_.size();
     return i;
   }
   template <class _Kp>
   constexpr std::pair<std::size_t, bool> __unique_pos(const _Kp& __x) const {
     const std::size_t i = __lower_index(__x);
-    return {i, i != __c_.size() && !__lt(__x, __key_at(i))};
+    return {i, i != __c_.size() && !lt(__x, __key_at(i))};
   }
   template <class _Kp>
   constexpr std::pair<std::size_t, bool> __unique_pos_hint(const_iterator __hint, const _Kp& __x) const {
     const std::size_t h = __index_of(__hint);
-    if ((h == 0 || __lt(__key_at(h - 1), __x)) && (h == __c_.size() || __lt(__x, __key_at(h))))
+    if ((h == 0 || lt(__key_at(h - 1), __x)) && (h == __c_.size() || lt(__x, __key_at(h))))
       return {h, false};
     return __unique_pos(__x);
   }
   template <class _Kp>
   constexpr std::size_t __multi_pos_hint(const_iterator __hint, const _Kp& __x) const {
     const std::size_t h = __index_of(__hint);
-    if (h > 0 && __lt(__x, __key_at(h - 1)))
+    if (h > 0 && lt(__x, __key_at(h - 1)))
       return __upper_index(__x, 0, h - 1);
-    if (h < __c_.size() && __lt(__key_at(h), __x))
+    if (h < __c_.size() && lt(__key_at(h), __x))
       return __lower_index(__x, h + 1, __c_.size());
     return h;
   }

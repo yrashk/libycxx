@@ -213,8 +213,8 @@ private:
     if (!__map_)
       return iterator();
     const size_type abs = __start_ + i;
-    _Tp* const* __node = __map_ + abs / _Bp;
-    return iterator(*__node + abs % _Bp, *__node, __node);
+    _Tp* const* node = __map_ + abs / _Bp;
+    return iterator(*node + abs % _Bp, *node, node);
   }
 
   // Creates the map and one block; the empty deque starts at offset off of that block.

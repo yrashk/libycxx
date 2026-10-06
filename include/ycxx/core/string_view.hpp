@@ -30,9 +30,9 @@ struct __sv_comparison_category {
   using type = std::weak_ordering;
 };
 template <class __traits>
-  requires requires { typename __traits::__comparison_category; }
+  requires requires { typename __traits::comparison_category; }
 struct __sv_comparison_category<__traits> {
-  using type = typename __traits::__comparison_category;
+  using type = typename __traits::comparison_category;
 };
 }} // namespace __ycxx::__detail
 
@@ -176,12 +176,12 @@ public:
   constexpr bool starts_with(basic_string_view __x) const noexcept {
     return __size_ >= __x.__size_ && basic_string_view(__data_, __x.__size_).compare(__x) == 0;
   }
-  constexpr bool starts_with(__charT __x) const noexcept { return !empty() && __traits::__eq(__data_[0], __x); }
+  constexpr bool starts_with(__charT __x) const noexcept { return !empty() && __traits::eq(__data_[0], __x); }
   constexpr bool starts_with(const __charT* __x) const { return starts_with(basic_string_view(__x)); }
   constexpr bool ends_with(basic_string_view __x) const noexcept {
     return __size_ >= __x.__size_ && basic_string_view(__data_ + (__size_ - __x.__size_), __x.__size_).compare(__x) == 0;
   }
-  constexpr bool ends_with(__charT __x) const noexcept { return !empty() && __traits::__eq(__data_[__size_ - 1], __x); }
+  constexpr bool ends_with(__charT __x) const noexcept { return !empty() && __traits::eq(__data_[__size_ - 1], __x); }
   constexpr bool ends_with(const __charT* __x) const { return ends_with(basic_string_view(__x)); }
   constexpr bool contains(basic_string_view __x) const noexcept { return find(__x) != npos; }
   constexpr bool contains(__charT __x) const noexcept { return find(__x) != npos; }

@@ -248,16 +248,16 @@ basic_istream<__charT, __traits>& basic_istream<__charT, __traits>::operator>>(b
           break;
         }
         // an exception from the output sequence is caught (14.3)
-        bool __inserted = false;
+        bool inserted = false;
         if constexpr (__ycxx::__detail::__cfg::exceptions) {
           try {
-            __inserted = !__traits::eq_int_type(__sb->sputc(__traits::to_char_type(c)), __traits::eof());
+            inserted = !__traits::eq_int_type(__sb->sputc(__traits::to_char_type(c)), __traits::eof());
           } catch (...) {
           }
         } else {
-          __inserted = !__traits::eq_int_type(__sb->sputc(__traits::to_char_type(c)), __traits::eof());
+          inserted = !__traits::eq_int_type(__sb->sputc(__traits::to_char_type(c)), __traits::eof());
         }
-        if (!__inserted)
+        if (!inserted)
           break;
         ++n;
       }
@@ -307,7 +307,7 @@ basic_istream<__charT, __traits>& basic_istream<__charT, __traits>::get(char_typ
           __err |= ios_base::eofbit;
           break;
         }
-        if (__traits::__eq(__traits::to_char_type(c), __delim))
+        if (__traits::eq(__traits::to_char_type(c), __delim))
           break;
         s[count++] = __traits::to_char_type(c);
       }
@@ -334,19 +334,19 @@ basic_istream<__charT, __traits>& basic_istream<__charT, __traits>::get(basic_st
           __err |= ios_base::eofbit;
           break;
         }
-        if (__traits::__eq(__traits::to_char_type(c), __delim))
+        if (__traits::eq(__traits::to_char_type(c), __delim))
           break;
         // an exception from sb is caught but not rethrown (13.4)
-        bool __inserted = false;
+        bool inserted = false;
         if constexpr (__ycxx::__detail::__cfg::exceptions) {
           try {
-            __inserted = !__traits::eq_int_type(__sb.sputc(__traits::to_char_type(c)), __traits::eof());
+            inserted = !__traits::eq_int_type(__sb.sputc(__traits::to_char_type(c)), __traits::eof());
           } catch (...) {
           }
         } else {
-          __inserted = !__traits::eq_int_type(__sb.sputc(__traits::to_char_type(c)), __traits::eof());
+          inserted = !__traits::eq_int_type(__sb.sputc(__traits::to_char_type(c)), __traits::eof());
         }
-        if (!__inserted)
+        if (!inserted)
           break;
         ++count;
       }
@@ -370,7 +370,7 @@ basic_istream<__charT, __traits>& basic_istream<__charT, __traits>::getline(char
           __err |= ios_base::eofbit;
           break;
         }
-        if (__traits::__eq(__traits::to_char_type(c), __delim)) {
+        if (__traits::eq(__traits::to_char_type(c), __delim)) {
           ++count; // extracted, not stored
           __sb->sbumpc();
           break;
@@ -736,7 +736,7 @@ basic_istream<__charT, __traits>& getline(basic_istream<__charT, __traits>& is, 
           __err |= ios_base::eofbit;
           break;
         }
-        if (__traits::__eq(__traits::to_char_type(c), __delim)) {
+        if (__traits::eq(__traits::to_char_type(c), __delim)) {
           __sb->sbumpc();
           any = true;
           break;
@@ -785,7 +785,7 @@ basic_istream<__charT, __traits>& operator>>(basic_istream<__charT, __traits>& i
           break;
         }
         const __charT __ch = __traits::to_char_type(c);
-        if (!__traits::__eq(__ch, zero) && !__traits::__eq(__ch, __one))
+        if (!__traits::eq(__ch, zero) && !__traits::eq(__ch, __one))
           break;
         str.push_back(__ch);
       }
@@ -810,7 +810,7 @@ basic_istream<__charT, __traits>& operator>>(basic_istream<__charT, __traits>& i
   __charT __ch{};
   if (!(is >> __ch))
     return is;
-  if (!__traits::__eq(__ch, is.widen('('))) {
+  if (!__traits::eq(__ch, is.widen('('))) {
     is.putback(__ch);
     if (is >> __re)
       __x = complex<_Tp>(__re, __im);
@@ -818,11 +818,11 @@ basic_istream<__charT, __traits>& operator>>(basic_istream<__charT, __traits>& i
   }
   if (!(is >> __re >> __ch))
     return is;
-  if (__traits::__eq(__ch, is.widen(','))) {
+  if (__traits::eq(__ch, is.widen(','))) {
     if (!(is >> __im >> __ch))
       return is;
   }
-  if (__traits::__eq(__ch, is.widen(')')))
+  if (__traits::eq(__ch, is.widen(')')))
     __x = complex<_Tp>(__re, __im);
   else
     is.setstate(ios_base::failbit);

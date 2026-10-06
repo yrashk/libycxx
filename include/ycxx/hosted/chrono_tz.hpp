@@ -67,7 +67,7 @@ struct __tzdb_node;
 // The hosted runtime's entry points. The bool functions return false when the zone's data
 // cannot be read; the pointer functions return null when nothing can be found or loaded.
 bool __tz_get_sys_info(const std::chrono::time_zone& __tz, std::chrono::sys_seconds __st, std::chrono::sys_info& out);
-bool __tz_get_local_info(const std::chrono::time_zone& __tz, std::chrono::local_seconds __lt, std::chrono::local_info& out);
+bool __tz_get_local_info(const std::chrono::time_zone& __tz, std::chrono::local_seconds lt, std::chrono::local_info& out);
 std::chrono::tzdb_list* __tzdb_list_instance() noexcept;
 const std::chrono::tzdb* __tzdb_reload() noexcept;
 std::string __tzdb_remote_version();
@@ -197,9 +197,9 @@ class time_zone {
       ::__ycxx::__detail::__throw_tz_unreadable(__name_);
     return i;
   }
-  local_info __info_at(local_seconds __lt) const {
+  local_info __info_at(local_seconds lt) const {
     local_info i{};
-    if (!::__ycxx::__detail::__tz_get_local_info(*this, __lt, i))
+    if (!::__ycxx::__detail::__tz_get_local_info(*this, lt, i))
       ::__ycxx::__detail::__throw_tz_unreadable(__name_);
     return i;
   }
@@ -344,7 +344,7 @@ public:
       return t;
     }
     friend bool operator==(const const_iterator& __x, const const_iterator& y) noexcept { return __x.__p_ == y.__p_; }
-    const __ycxx::__detail::__tzdb_node* __node(__ycxx::__detail::__tz_ctor_tag) const noexcept { return __p_; }
+    const __ycxx::__detail::__tzdb_node* node(__ycxx::__detail::__tz_ctor_tag) const noexcept { return __p_; }
   };
 
   const tzdb& front() const noexcept { return __atomic_load_n(&__head_, __ATOMIC_ACQUIRE)->__db; }
@@ -773,8 +773,8 @@ public:
     __tp_ = __st;
     return *this;
   }
-  zoned_time& operator=(const local_time<_Duration>& __lt) {
-    __tp_ = __zone_->to_sys(__lt);
+  zoned_time& operator=(const local_time<_Duration>& lt) {
+    __tp_ = __zone_->to_sys(lt);
     return *this;
   }
 

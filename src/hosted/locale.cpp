@@ -167,19 +167,19 @@ bool split(const char* name, split_name& out) {
   bool __seen[ncategories] = {};
   const char* s = name;
   while (*s) {
-    const char* __eq = std::strchr(s, '=');
-    if (__eq == nullptr)
+    const char* eq = std::strchr(s, '=');
+    if (eq == nullptr)
       return false;
-    const char* end = std::strchr(__eq, ';');
+    const char* end = std::strchr(eq, ';');
     if (end == nullptr)
-      end = __eq + std::strlen(__eq);
+      end = eq + std::strlen(eq);
     int c = 0;
-    while (c < ncategories && !(std::strlen(category_names[c]) == static_cast<std::size_t>(__eq - s) &&
-                                std::strncmp(category_names[c], s, static_cast<std::size_t>(__eq - s)) == 0))
+    while (c < ncategories && !(std::strlen(category_names[c]) == static_cast<std::size_t>(eq - s) &&
+                                std::strncmp(category_names[c], s, static_cast<std::size_t>(eq - s)) == 0))
       ++c;
     if (c == ncategories)
       return false;
-    out.part[c].assign(__eq + 1, end);
+    out.part[c].assign(eq + 1, end);
     __seen[c] = true;
     s = *end ? end + 1 : end;
   }

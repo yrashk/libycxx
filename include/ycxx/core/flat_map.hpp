@@ -131,8 +131,8 @@ public:
   using const_iterator = __flat_map_iter<_KC, _MC, true>;
   using reverse_iterator = std::reverse_iterator<iterator>;
   using const_reverse_iterator = std::reverse_iterator<const_iterator>;
-  using __key_container_type = _KC;
-  using __mapped_container_type = _MC;
+  using key_container_type = _KC;
+  using mapped_container_type = _MC;
 
   class value_compare {
     friend class __flat_map_base;
@@ -144,8 +144,8 @@ public:
   };
 
   struct containers {
-    __key_container_type keys;
-    __mapped_container_type values;
+    key_container_type keys;
+    mapped_container_type values;
   };
 
 protected:
@@ -154,11 +154,11 @@ protected:
 
   // ---- helpers ----
   template <class _Ap, class _Bp>
-  constexpr bool __lt(const _Ap& a, const _Bp& b) const {
+  constexpr bool lt(const _Ap& a, const _Bp& b) const {
     return static_cast<bool>(static_cast<const key_compare&>(__compare_)(a, b));
   }
   constexpr auto __less_fn() const noexcept {
-    return [this](const auto& a, const auto& b) -> bool { return __lt(a, b); };
+    return [this](const auto& a, const auto& b) -> bool { return lt(a, b); };
   }
   constexpr const key_type& __key_at(size_type i) const { return ::__ycxx::__detail::__row_at(__c_.keys, i); }
   constexpr iterator __it_at(size_type i) noexcept {
@@ -184,7 +184,7 @@ protected:
     size_type n = __hi - __lo;
     while (n > 0) {
       const size_type __half = n / 2;
-      if (__lt(__key_at(__lo + __half), __x)) {
+      if (lt(__key_at(__lo + __half), __x)) {
         __lo += __half + 1;
         n -= __half + 1;
       } else {
@@ -202,7 +202,7 @@ protected:
     size_type n = __hi - __lo;
     while (n > 0) {
       const size_type __half = n / 2;
-      if (!__lt(__x, __key_at(__lo + __half))) {
+      if (!lt(__x, __key_at(__lo + __half))) {
         __lo += __half + 1;
         n -= __half + 1;
       } else {
@@ -214,7 +214,7 @@ protected:
   template <class _Kp>
   constexpr size_type __find_index(const _Kp& __x) const {
     const size_type i = __lower_index(__x);
-    if (i == size() || __lt(__x, __key_at(i)))
+    if (i == size() || lt(__x, __key_at(i)))
       return size();
     return i;
   }
@@ -222,13 +222,13 @@ protected:
   template <class _Kp>
   constexpr std::pair<size_type, bool> __unique_pos(const _Kp& __x) const {
     const size_type i = __lower_index(__x);
-    return {i, i != size() && !__lt(__x, __key_at(i))};
+    return {i, i != size() && !lt(__x, __key_at(i))};
   }
   // Unique keys with a hint: constant comparisons when x belongs just before hint.
   template <class _Kp>
   constexpr std::pair<size_type, bool> __unique_pos_hint(const_iterator __hint, const _Kp& __x) const {
     const size_type h = __index_of(__hint);
-    if ((h == 0 || __lt(__key_at(h - 1), __x)) && (h == size() || __lt(__x, __key_at(h))))
+    if ((h == 0 || lt(__key_at(h - 1), __x)) && (h == size() || lt(__x, __key_at(h))))
       return {h, false};
     return __unique_pos(__x);
   }
@@ -236,9 +236,9 @@ protected:
   template <class _Kp>
   constexpr size_type __multi_pos_hint(const_iterator __hint, const _Kp& __x) const {
     const size_type h = __index_of(__hint);
-    if (h > 0 && __lt(__x, __key_at(h - 1)))
+    if (h > 0 && lt(__x, __key_at(h - 1)))
       return __upper_index(__x, 0, h - 1);
-    if (h < size() && __lt(__key_at(h), __x))
+    if (h < size() && lt(__key_at(h), __x))
       return __lower_index(__x, h + 1, size());
     return h;
   }
@@ -397,7 +397,7 @@ public:
     auto __g = __guard();
     return containers{static_cast<_KC&&>(__c_.keys), static_cast<_MC&&>(__c_.values)};
   }
-  constexpr void replace(__key_container_type&& __key_cont, __mapped_container_type&& __mapped_cont) {
+  constexpr void replace(key_container_type&& __key_cont, mapped_container_type&& __mapped_cont) {
     ::__ycxx::__detail::__precondition(__key_cont.size() == __mapped_cont.size(),
                                  "flat_map::replace: key and mapped containers of different sizes");
     auto __g = __guard();
@@ -442,8 +442,8 @@ public:
   // ---- observers ----
   constexpr key_compare key_comp() const { return __compare_; }
   constexpr value_compare value_comp() const { return value_compare(__compare_); }
-  constexpr const __key_container_type& keys() const noexcept { return __c_.keys; }
-  constexpr const __mapped_container_type& values() const noexcept { return __c_.values; }
+  constexpr const key_container_type& keys() const noexcept { return __c_.keys; }
+  constexpr const mapped_container_type& values() const noexcept { return __c_.values; }
 
   // ---- map operations ----
   constexpr iterator find(const key_type& __x) { return __it_at(__find_index(__x)); }
@@ -544,9 +544,9 @@ public:
   using typename base::difference_type;
   using typename base::iterator;
   using typename base::key_compare;
-  using typename base::__key_container_type;
+  using typename base::key_container_type;
   using typename base::key_type;
-  using typename base::__mapped_container_type;
+  using typename base::mapped_container_type;
   using typename base::mapped_type;
   using typename base::reference;
   using typename base::reverse_iterator;
@@ -567,14 +567,14 @@ public:
     return *this;
   }
   constexpr explicit flat_map(const key_compare& comp) : base(comp) {}
-  constexpr flat_map(__key_container_type __key_cont, __mapped_container_type __mapped_cont,
+  constexpr flat_map(key_container_type __key_cont, mapped_container_type __mapped_cont,
                      const key_compare& comp = key_compare())
-      : base(static_cast<__key_container_type&&>(__key_cont), static_cast<__mapped_container_type&&>(__mapped_cont), comp) {
+      : base(static_cast<key_container_type&&>(__key_cont), static_cast<mapped_container_type&&>(__mapped_cont), comp) {
     this->__sort_all();
   }
-  constexpr flat_map(sorted_unique_t, __key_container_type __key_cont, __mapped_container_type __mapped_cont,
+  constexpr flat_map(sorted_unique_t, key_container_type __key_cont, mapped_container_type __mapped_cont,
                      const key_compare& comp = key_compare())
-      : base(static_cast<__key_container_type&&>(__key_cont), static_cast<__mapped_container_type&&>(__mapped_cont), comp) {
+      : base(static_cast<key_container_type&&>(__key_cont), static_cast<mapped_container_type&&>(__mapped_cont), comp) {
     __ycxx::__detail::__precondition(this->__c_.keys.size() == this->__c_.values.size(),
                                "flat_map: key and mapped containers of different sizes");
   }
@@ -609,25 +609,25 @@ public:
   constexpr flat_map(const key_compare& comp, const _Alloc& a) : base(comp, a) {}
   template <class _Alloc>
     requires __ycxx::__detail::__flat_alloc_for<_Alloc, _KeyContainer, _MappedContainer>
-  constexpr flat_map(const __key_container_type& __key_cont, const __mapped_container_type& __mapped_cont, const _Alloc& a)
+  constexpr flat_map(const key_container_type& __key_cont, const mapped_container_type& __mapped_cont, const _Alloc& a)
       : base(__key_cont, __mapped_cont, key_compare(), a) {
     this->__sort_all();
   }
   template <class _Alloc>
     requires __ycxx::__detail::__flat_alloc_for<_Alloc, _KeyContainer, _MappedContainer>
-  constexpr flat_map(const __key_container_type& __key_cont, const __mapped_container_type& __mapped_cont,
+  constexpr flat_map(const key_container_type& __key_cont, const mapped_container_type& __mapped_cont,
                      const key_compare& comp, const _Alloc& a)
       : base(__key_cont, __mapped_cont, comp, a) {
     this->__sort_all();
   }
   template <class _Alloc>
     requires __ycxx::__detail::__flat_alloc_for<_Alloc, _KeyContainer, _MappedContainer>
-  constexpr flat_map(sorted_unique_t, const __key_container_type& __key_cont, const __mapped_container_type& __mapped_cont,
+  constexpr flat_map(sorted_unique_t, const key_container_type& __key_cont, const mapped_container_type& __mapped_cont,
                      const _Alloc& a)
       : base(__key_cont, __mapped_cont, key_compare(), a) {}
   template <class _Alloc>
     requires __ycxx::__detail::__flat_alloc_for<_Alloc, _KeyContainer, _MappedContainer>
-  constexpr flat_map(sorted_unique_t, const __key_container_type& __key_cont, const __mapped_container_type& __mapped_cont,
+  constexpr flat_map(sorted_unique_t, const key_container_type& __key_cont, const mapped_container_type& __mapped_cont,
                      const key_compare& comp, const _Alloc& a)
       : base(__key_cont, __mapped_cont, comp, a) {}
   template <class _Alloc>
@@ -864,8 +864,8 @@ public:
     return __insert_or_assign_impl(this->__unique_pos_hint(__hint, k), static_cast<_Kp&&>(k), static_cast<_Mp&&>(__obj)).first;
   }
 
-  constexpr void swap(flat_map& y) noexcept(is_nothrow_swappable_v<__key_container_type> &&
-                                            is_nothrow_swappable_v<__mapped_container_type> &&
+  constexpr void swap(flat_map& y) noexcept(is_nothrow_swappable_v<key_container_type> &&
+                                            is_nothrow_swappable_v<mapped_container_type> &&
                                             is_nothrow_swappable_v<key_compare>) {
     this->__swap_impl(y);
   }
@@ -927,9 +927,9 @@ public:
   using typename base::difference_type;
   using typename base::iterator;
   using typename base::key_compare;
-  using typename base::__key_container_type;
+  using typename base::key_container_type;
   using typename base::key_type;
-  using typename base::__mapped_container_type;
+  using typename base::mapped_container_type;
   using typename base::mapped_type;
   using typename base::reference;
   using typename base::reverse_iterator;
@@ -950,14 +950,14 @@ public:
     return *this;
   }
   constexpr explicit flat_multimap(const key_compare& comp) : base(comp) {}
-  constexpr flat_multimap(__key_container_type __key_cont, __mapped_container_type __mapped_cont,
+  constexpr flat_multimap(key_container_type __key_cont, mapped_container_type __mapped_cont,
                           const key_compare& comp = key_compare())
-      : base(static_cast<__key_container_type&&>(__key_cont), static_cast<__mapped_container_type&&>(__mapped_cont), comp) {
+      : base(static_cast<key_container_type&&>(__key_cont), static_cast<mapped_container_type&&>(__mapped_cont), comp) {
     this->__sort_all();
   }
-  constexpr flat_multimap(sorted_equivalent_t, __key_container_type __key_cont, __mapped_container_type __mapped_cont,
+  constexpr flat_multimap(sorted_equivalent_t, key_container_type __key_cont, mapped_container_type __mapped_cont,
                           const key_compare& comp = key_compare())
-      : base(static_cast<__key_container_type&&>(__key_cont), static_cast<__mapped_container_type&&>(__mapped_cont), comp) {
+      : base(static_cast<key_container_type&&>(__key_cont), static_cast<mapped_container_type&&>(__mapped_cont), comp) {
     __ycxx::__detail::__precondition(this->__c_.keys.size() == this->__c_.values.size(),
                                "flat_multimap: key and mapped containers of different sizes");
   }
@@ -995,27 +995,27 @@ public:
   constexpr flat_multimap(const key_compare& comp, const _Alloc& a) : base(comp, a) {}
   template <class _Alloc>
     requires __ycxx::__detail::__flat_alloc_for<_Alloc, _KeyContainer, _MappedContainer>
-  constexpr flat_multimap(const __key_container_type& __key_cont, const __mapped_container_type& __mapped_cont,
+  constexpr flat_multimap(const key_container_type& __key_cont, const mapped_container_type& __mapped_cont,
                           const _Alloc& a)
       : base(__key_cont, __mapped_cont, key_compare(), a) {
     this->__sort_all();
   }
   template <class _Alloc>
     requires __ycxx::__detail::__flat_alloc_for<_Alloc, _KeyContainer, _MappedContainer>
-  constexpr flat_multimap(const __key_container_type& __key_cont, const __mapped_container_type& __mapped_cont,
+  constexpr flat_multimap(const key_container_type& __key_cont, const mapped_container_type& __mapped_cont,
                           const key_compare& comp, const _Alloc& a)
       : base(__key_cont, __mapped_cont, comp, a) {
     this->__sort_all();
   }
   template <class _Alloc>
     requires __ycxx::__detail::__flat_alloc_for<_Alloc, _KeyContainer, _MappedContainer>
-  constexpr flat_multimap(sorted_equivalent_t, const __key_container_type& __key_cont,
-                          const __mapped_container_type& __mapped_cont, const _Alloc& a)
+  constexpr flat_multimap(sorted_equivalent_t, const key_container_type& __key_cont,
+                          const mapped_container_type& __mapped_cont, const _Alloc& a)
       : base(__key_cont, __mapped_cont, key_compare(), a) {}
   template <class _Alloc>
     requires __ycxx::__detail::__flat_alloc_for<_Alloc, _KeyContainer, _MappedContainer>
-  constexpr flat_multimap(sorted_equivalent_t, const __key_container_type& __key_cont,
-                          const __mapped_container_type& __mapped_cont, const key_compare& comp, const _Alloc& a)
+  constexpr flat_multimap(sorted_equivalent_t, const key_container_type& __key_cont,
+                          const mapped_container_type& __mapped_cont, const key_compare& comp, const _Alloc& a)
       : base(__key_cont, __mapped_cont, comp, a) {}
   template <class _Alloc>
     requires __ycxx::__detail::__flat_alloc_for<_Alloc, _KeyContainer, _MappedContainer>
@@ -1142,8 +1142,8 @@ public:
     insert(sorted_equivalent, il.begin(), il.end());
   }
 
-  constexpr void swap(flat_multimap& y) noexcept(is_nothrow_swappable_v<__key_container_type> &&
-                                                 is_nothrow_swappable_v<__mapped_container_type> &&
+  constexpr void swap(flat_multimap& y) noexcept(is_nothrow_swappable_v<key_container_type> &&
+                                                 is_nothrow_swappable_v<mapped_container_type> &&
                                                  is_nothrow_swappable_v<key_compare>) {
     this->__swap_impl(y);
   }

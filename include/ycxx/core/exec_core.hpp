@@ -305,7 +305,7 @@ struct get_stop_token_t {
 inline constexpr get_stop_token_t get_stop_token{};
 
 template <class _Tp>
-using __stop_token_of_t = remove_cvref_t<decltype(get_stop_token(declval<_Tp>()))>;
+using stop_token_of_t = remove_cvref_t<decltype(get_stop_token(declval<_Tp>()))>;
 
 } // namespace std
 
@@ -543,12 +543,12 @@ struct __exec_env_promise : __exec_with_await_transform<__exec_env_promise<_Env>
 namespace [[__gnu__::__visibility__("hidden")]] std { namespace execution {
 
 template <class _Sndr>
-inline constexpr bool __enable_sender =
+inline constexpr bool enable_sender =
     requires { requires derived_from<typename _Sndr::sender_concept, sender_tag>; } ||
     __ycxx::__detail::__exec::__is_awaitable<_Sndr, __ycxx::__adl_free::__exec_env_promise<env<>>>;
 
 template <class _Sndr>
-concept sender = __enable_sender<remove_cvref_t<_Sndr>> && requires(const remove_cvref_t<_Sndr>& __sndr) {
+concept sender = enable_sender<remove_cvref_t<_Sndr>> && requires(const remove_cvref_t<_Sndr>& __sndr) {
   { get_env(__sndr) } -> __ycxx::__detail::__exec::__queryable;
 } && move_constructible<remove_cvref_t<_Sndr>> && constructible_from<remove_cvref_t<_Sndr>, _Sndr>;
 
@@ -786,16 +786,16 @@ struct get_delegation_scheduler_t {
 inline constexpr get_delegation_scheduler_t get_delegation_scheduler{};
 
 // [exec.get.await.adapt]
-struct __get_await_completion_adaptor_t {
+struct get_await_completion_adaptor_t {
   static constexpr bool query(forwarding_query_t) noexcept { return true; }
   template <class _Self, class _Env>
     requires requires(const _Env& env, const _Self& __q) { env.query(__q); }
   constexpr decltype(auto) operator()(this const _Self&, const _Env& env) noexcept {
-    static_assert(noexcept(env.query(__get_await_completion_adaptor_t{})), "get_await_completion_adaptor: the query must be noexcept");
-    return env.query(__get_await_completion_adaptor_t{});
+    static_assert(noexcept(env.query(get_await_completion_adaptor_t{})), "get_await_completion_adaptor: the query must be noexcept");
+    return env.query(get_await_completion_adaptor_t{});
   }
 };
-inline constexpr __get_await_completion_adaptor_t __get_await_completion_adaptor{};
+inline constexpr get_await_completion_adaptor_t get_await_completion_adaptor{};
 
 }} // namespace std::execution
 
@@ -888,7 +888,7 @@ struct completion_signatures {
   }
 };
 
-struct __dependent_sender_error : exception {
+struct dependent_sender_error : exception {
   constexpr const char* what() const noexcept override { return "std::execution::dependent_sender_error"; }
 };
 
@@ -1092,7 +1092,7 @@ struct __tag_of<_Sndr> {
 namespace [[__gnu__::__visibility__("hidden")]] std { namespace execution {
 
 template <sender _Sndr>
-using __tag_of_t = typename __ycxx::__detail::__exec::__tag_of<_Sndr>::type;
+using tag_of_t = typename __ycxx::__detail::__exec::__tag_of<_Sndr>::type;
 
 // [exec.domain.default]
 struct default_domain {
@@ -1111,10 +1111,10 @@ struct default_domain {
 private:
   template <class _Tag, class _Sndr, class _Env>
   static constexpr decltype(auto) __ycxx_transform(_Tag, _Sndr&& __sndr, const _Env& env) noexcept(
-      noexcept(__tag_of_t<_Sndr>().transform_sender(_Tag(), static_cast<_Sndr&&>(__sndr), env)))
-    requires requires { __tag_of_t<_Sndr>().transform_sender(_Tag(), static_cast<_Sndr&&>(__sndr), env); }
+      noexcept(tag_of_t<_Sndr>().transform_sender(_Tag(), static_cast<_Sndr&&>(__sndr), env)))
+    requires requires { tag_of_t<_Sndr>().transform_sender(_Tag(), static_cast<_Sndr&&>(__sndr), env); }
   {
-    return __tag_of_t<_Sndr>().transform_sender(_Tag(), static_cast<_Sndr&&>(__sndr), env);
+    return tag_of_t<_Sndr>().transform_sender(_Tag(), static_cast<_Sndr&&>(__sndr), env);
   }
   template <class _Tag, class _Sndr, class _Env>
   static constexpr _Sndr __ycxx_transform(_Tag, _Sndr&& __sndr, const _Env&) noexcept {
@@ -1266,7 +1266,7 @@ struct __completion_signatures_error : std::exception {
   constexpr const char* what() const noexcept override { return "std::execution: invalid sender for the environment"; }
 };
 template <class... _Info>
-struct __completion_signatures_error<__dependent_sigs, _Info...> : std::execution::__dependent_sender_error {};
+struct __completion_signatures_error<__dependent_sigs, _Info...> : std::execution::dependent_sender_error {};
 
 void __sender_type_error_without_exceptions() noexcept; // never defined: makes the call non-constant
 
@@ -1309,7 +1309,7 @@ consteval int __classify_member_complsigs_error() {
     try {
       (void)std::remove_reference_t<_Sp>::template get_completion_signatures<_Sp, _Env...>();
       return 0;
-    } catch (std::execution::__dependent_sender_error&) {
+    } catch (std::execution::dependent_sender_error&) {
       return 1;
     } catch (...) {
       return 2;
@@ -1410,20 +1410,20 @@ concept dependent_sender = sender<_Sndr> && is_same_v<__ycxx::__detail::__exec::
 
 template <class _Sndr, class... _Env>
   requires sender_in<_Sndr, _Env...>
-using __completion_signatures_of_t = __ycxx::__detail::__exec::__csigs_of_t<_Sndr, _Env...>;
+using completion_signatures_of_t = __ycxx::__detail::__exec::__csigs_of_t<_Sndr, _Env...>;
 
 template <class _Sndr, class _Env = env<>, template <class...> class _Tuple = __ycxx::__detail::__exec::__decayed_tuple,
           template <class...> class _Variant = __ycxx::__detail::__exec::__variant_or_empty>
   requires sender_in<_Sndr, _Env>
-using value_types_of_t = __ycxx::__detail::__exec::__gather_signatures<set_value_t, __completion_signatures_of_t<_Sndr, _Env>, _Tuple, _Variant>;
+using value_types_of_t = __ycxx::__detail::__exec::__gather_signatures<set_value_t, completion_signatures_of_t<_Sndr, _Env>, _Tuple, _Variant>;
 
 template <class _Sndr, class _Env = env<>, template <class...> class _Variant = __ycxx::__detail::__exec::__variant_or_empty>
   requires sender_in<_Sndr, _Env>
-using __error_types_of_t = __ycxx::__detail::__exec::__gather_signatures<set_error_t, __completion_signatures_of_t<_Sndr, _Env>, type_identity_t, _Variant>;
+using error_types_of_t = __ycxx::__detail::__exec::__gather_signatures<set_error_t, completion_signatures_of_t<_Sndr, _Env>, type_identity_t, _Variant>;
 
 template <class _Sndr, class _Env = env<>>
   requires sender_in<_Sndr, _Env>
-constexpr bool __sends_stopped = __ycxx::__detail::__exec::__sigs_count<set_stopped_t, __completion_signatures_of_t<_Sndr, _Env>> != 0;
+constexpr bool sends_stopped = __ycxx::__detail::__exec::__sigs_count<set_stopped_t, completion_signatures_of_t<_Sndr, _Env>> != 0;
 
 }} // namespace std::execution
 
@@ -1450,7 +1450,7 @@ struct __single_value_of<__tlist<__tlist<_T0, _T1, _Ts...>>> {
   using type = __decayed_tuple<_T0, _T1, _Ts...>;
 };
 template <class _Sndr, class... _Env>
-struct __single_sender_value : __single_value_of<__sigs_args_t<std::execution::set_value_t, std::execution::__completion_signatures_of_t<_Sndr, _Env...>>> {};
+struct __single_sender_value : __single_value_of<__sigs_args_t<std::execution::set_value_t, std::execution::completion_signatures_of_t<_Sndr, _Env...>>> {};
 template <class _Sndr, class... _Env>
   requires std::execution::sender_in<_Sndr, _Env...>
 using __single_sender_value_type = typename __single_sender_value<_Sndr, _Env...>::type;
@@ -1475,7 +1475,7 @@ using __value_signature = std::execution::set_value_t(_As...);
 template <class _Sndr, class _SetValue, class... _Env>
 concept __sender_in_of_impl =
     std::execution::sender_in<_Sndr, _Env...> &&
-    __matching_sig<_SetValue, __gather_signatures<std::execution::set_value_t, std::execution::__completion_signatures_of_t<_Sndr, _Env...>,
+    __matching_sig<_SetValue, __gather_signatures<std::execution::set_value_t, std::execution::completion_signatures_of_t<_Sndr, _Env...>,
                                              __value_signature, std::type_identity_t>>;
 template <class _Sndr, class _Env, class... _Values>
 concept __sender_in_of = __sender_in_of_impl<_Sndr, std::execution::set_value_t(_Values...), _Env>;
@@ -1665,6 +1665,6 @@ namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail { na
 // sender-to ([exec.snd.concepts])
 template <class _Sndr, class _Rcvr>
 concept __sender_to = std::execution::sender_in<_Sndr, std::execution::env_of_t<_Rcvr>> &&
-                    __receiver_of<_Rcvr, std::execution::__completion_signatures_of_t<_Sndr, std::execution::env_of_t<_Rcvr>>> &&
+                    __receiver_of<_Rcvr, std::execution::completion_signatures_of_t<_Sndr, std::execution::env_of_t<_Rcvr>>> &&
                     requires(_Sndr&& __sndr, _Rcvr&& __rcvr) { std::execution::connect(static_cast<_Sndr&&>(__sndr), static_cast<_Rcvr&&>(__rcvr)); };
 }}} // namespace __ycxx::__detail::__exec

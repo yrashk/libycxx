@@ -19,10 +19,10 @@ constexpr std::iter_difference_t<_Ip> __count_if_impl(_Ip first, _Sp last, _Pp p
 }
 
 template <class _I1, class _S1, class _I2, class _S2, class _Pp>
-constexpr _I1 __find_first_of_impl(_I1 __first1, _S1 __last1, _I2 __first2, _S2 __last2, _Pp __eq) {
+constexpr _I1 __find_first_of_impl(_I1 __first1, _S1 __last1, _I2 __first2, _S2 __last2, _Pp eq) {
   for (; __first1 != __last1; ++__first1)
     for (_I2 __j = __first2; __j != __last2; ++__j)
-      if (__eq(*__first1, *__j))
+      if (eq(*__first1, *__j))
         return __first1;
   return __first1;
 }
@@ -30,7 +30,7 @@ constexpr _I1 __find_first_of_impl(_I1 __first1, _S1 __last1, _I2 __first2, _S2 
 // The first occurrence of [first2, last2) in [first1, last1): {match, match end}, or
 // {last1, last1}. An empty pattern matches at first1.
 template <class _I1, class _S1, class _I2, class _S2, class _Pp>
-constexpr std::pair<_I1, _I1> __search_impl(_I1 __first1, _S1 __last1, _I2 __first2, _S2 __last2, _Pp __eq) {
+constexpr std::pair<_I1, _I1> __search_impl(_I1 __first1, _S1 __last1, _I2 __first2, _S2 __last2, _Pp eq) {
   if constexpr (std::sized_sentinel_for<_S1, _I1> && std::sized_sentinel_for<_S2, _I2>) {
     // Lengths known: never start a match that cannot fit.
     auto __n1 = __last1 - __first1;
@@ -41,7 +41,7 @@ constexpr std::pair<_I1, _I1> __search_impl(_I1 __first1, _S1 __last1, _I2 __fir
       for (;; (void)++i, (void)++__j) {
         if (__j == __last2)
           return {__first1, i};
-        if (!__eq(*i, *__j))
+        if (!eq(*i, *__j))
           break;
       }
     }
@@ -56,7 +56,7 @@ constexpr std::pair<_I1, _I1> __search_impl(_I1 __first1, _S1 __last1, _I2 __fir
           return {__first1, i};
         if (i == __last1)
           return {i, i};
-        if (!__eq(*i, *__j))
+        if (!eq(*i, *__j))
           break;
       }
     }
@@ -65,11 +65,11 @@ constexpr std::pair<_I1, _I1> __search_impl(_I1 __first1, _S1 __last1, _I2 __fir
 
 // count consecutive elements e with eq(e) ({match, match end} or {last, last}).
 template <class _Ip, class _Sp, class _Pp>
-constexpr std::pair<_Ip, _Ip> __search_n_impl(_Ip first, _Sp last, std::iter_difference_t<_Ip> count, _Pp __eq) {
+constexpr std::pair<_Ip, _Ip> __search_n_impl(_Ip first, _Sp last, std::iter_difference_t<_Ip> count, _Pp eq) {
   if (count <= 0)
     return {first, first};
   for (; first != last; ++first) {
-    if (!__eq(*first))
+    if (!eq(*first))
       continue;
     _Ip start = first;
     std::iter_difference_t<_Ip> n = 1;
@@ -78,7 +78,7 @@ constexpr std::pair<_Ip, _Ip> __search_n_impl(_Ip first, _Sp last, std::iter_dif
         return {start, ++first};
       if (++first == last)
         return {first, first};
-      if (!__eq(*first))
+      if (!eq(*first))
         break;
       ++n;
     }
@@ -92,11 +92,11 @@ constexpr std::pair<_Ip, _Ip> __search_n_impl(_Ip first, _Sp last, std::iter_dif
 // iterators the candidates are tried from the back and the first match ends the search;
 // otherwise a window of M elements slides forward and the last match is kept.
 template <class _I1, class _S1, class _I2, class _S2, class _Pp>
-constexpr std::pair<_I1, _I1> __find_end_impl(_I1 __first1, _S1 __last1, _I2 __first2, _S2 __last2, _Pp __eq) {
+constexpr std::pair<_I1, _I1> __find_end_impl(_I1 __first1, _S1 __last1, _I2 __first2, _S2 __last2, _Pp eq) {
   // Whether the pattern occurs at start; on success stop is the end of the match.
   auto __match_at = [&](_I1 start, _I1& __stop) {
     for (_I2 __j = __first2; __j != __last2; (void)++start, (void)++__j)
-      if (!__eq(*start, *__j))
+      if (!eq(*start, *__j))
         return false;
     __stop = start;
     return true;
@@ -148,7 +148,7 @@ constexpr std::pair<_I1, _I1> __find_end_impl(_I1 __first1, _S1 __last1, _I2 __f
 }
 
 template <class _I1, class _S1, class _I2, class _S2, class _Pp>
-constexpr bool __is_permutation_impl(_I1 __first1, _S1 __last1, _I2 __first2, _S2 __last2, _Pp __eq) {
+constexpr bool __is_permutation_impl(_I1 __first1, _S1 __last1, _I2 __first2, _S2 __last2, _Pp eq) {
   if constexpr ((std::sized_sentinel_for<_S1, _I1> || (std::same_as<_I1, _S1> && __ra_iter<_I1>)) &&
                 (std::sized_sentinel_for<_S2, _I2> || (std::same_as<_I2, _S2> && __ra_iter<_I2>))) {
     if (__last1 - __first1 != __last2 - __first2)
@@ -156,7 +156,7 @@ constexpr bool __is_permutation_impl(_I1 __first1, _S1 __last1, _I2 __first2, _S
   }
   // The common prefix needs no counting.
   for (; __first1 != __last1 && __first2 != __last2; (void)++__first1, (void)++__first2)
-    if (!__eq(*__first1, *__first2))
+    if (!eq(*__first1, *__first2))
       break;
   if (__first1 == __last1 || __first2 == __last2)
     return __first1 == __last1 && __first2 == __last2;
@@ -166,7 +166,7 @@ constexpr bool __is_permutation_impl(_I1 __first1, _S1 __last1, _I2 __first2, _S
   for (_I1 i = __first1; i != __last1; ++i) {
     bool __seen = false; // the value was counted already at an earlier position
     for (_I1 k = __first1; k != i; ++k)
-      if (__eq.__same1(*k, *i)) {
+      if (eq.__same1(*k, *i)) {
         __seen = true;
         break;
       }
@@ -174,14 +174,14 @@ constexpr bool __is_permutation_impl(_I1 __first1, _S1 __last1, _I2 __first2, _S
       continue;
     std::iter_difference_t<_I2> __c2 = 0;
     for (_I2 __j = __first2; __j != __last2; ++__j)
-      if (__eq(*i, *__j))
+      if (eq(*i, *__j))
         ++__c2;
     if (__c2 == 0)
       return false;
     std::iter_difference_t<_I2> __c1 = 1;
     _I1 k = i;
     for (++k; k != __last1; ++k)
-      if (__eq.__same1(*i, *k))
+      if (eq.__same1(*i, *k))
         ++__c1;
     if (__c1 != __c2)
       return false;
@@ -370,8 +370,8 @@ template <class _ForwardIterator, class _Size, class _Tp = typename iterator_tra
   auto n = ::__ycxx::__detail::__integral_count(count);
   if (n <= 0)
     return first;
-  auto __eq = [&pred, &value](auto&& e) -> bool { return static_cast<bool>(pred(static_cast<decltype(e)&&>(e), value)); };
-  return ::__ycxx::__detail::__search_n_impl(first, last, static_cast<iter_difference_t<_ForwardIterator>>(n), __eq).first;
+  auto eq = [&pred, &value](auto&& e) -> bool { return static_cast<bool>(pred(static_cast<decltype(e)&&>(e), value)); };
+  return ::__ycxx::__detail::__search_n_impl(first, last, static_cast<iter_difference_t<_ForwardIterator>>(n), eq).first;
 }
 template <class _ForwardIterator, class _Size, class _Tp = typename iterator_traits<_ForwardIterator>::value_type>
 [[nodiscard]] constexpr _ForwardIterator search_n(_ForwardIterator first, _ForwardIterator last, _Size count,
@@ -718,11 +718,11 @@ struct __search_n_fn {
     requires std::indirectly_comparable<_Ip, const _Tp*, _Pred, _Proj>
   [[nodiscard]] constexpr std::ranges::subrange<_Ip> operator()(_Ip first, _Sp last, std::iter_difference_t<_Ip> count,
                                                               const _Tp& value, _Pred pred = {}, _Proj proj = {}) const {
-    auto __eq = [&](auto&& e) -> bool {
+    auto eq = [&](auto&& e) -> bool {
       return static_cast<bool>(
           ::__ycxx::__detail::invoke(pred, ::__ycxx::__detail::invoke(proj, static_cast<decltype(e)&&>(e)), value));
     };
-    auto r = ::__ycxx::__detail::__search_n_impl(std::move(first), last, count, __eq);
+    auto r = ::__ycxx::__detail::__search_n_impl(std::move(first), last, count, eq);
     return {std::move(r.first), std::move(r.second)};
   }
   template <std::ranges::forward_range _Rp, class _Pred = std::ranges::equal_to, class _Proj = std::identity,

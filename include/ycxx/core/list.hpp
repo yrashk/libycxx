@@ -119,9 +119,9 @@ class list {
 
   using info = __ycxx::__detail::__alloc_info<_Allocator>;
   using __alloc_traits = allocator_traits<_Allocator>;
-  using __node = __ycxx::__detail::__list_node<_Tp>;
+  using node = __ycxx::__detail::__list_node<_Tp>;
   using __node_base = __ycxx::__detail::__list_node_base;
-  using __node_alloc = typename info::template rebind<__node>;
+  using __node_alloc = typename info::template rebind<node>;
   using __node_traits = allocator_traits<__node_alloc>;
 
 public:
@@ -167,11 +167,11 @@ private:
   }
   // The node of position p (the sentinel, created if need be, for end()).
   constexpr __node_base* __pos_node(const_iterator p) { return p.__n_ ? p.__n_ : sentinel(); }
-  static constexpr _Tp& value(__node_base* n) noexcept { return static_cast<__node*>(n)->value; }
+  static constexpr _Tp& value(__node_base* n) noexcept { return static_cast<node*>(n)->value; }
 
   template <class... _Args>
-  constexpr __node* __make_node(_Args&&... __args) {
-    __node* n = std::to_address(__node_traits::allocate(__na_, 1));
+  constexpr node* __make_node(_Args&&... __args) {
+    node* n = std::to_address(__node_traits::allocate(__na_, 1));
     std::construct_at(n);
     __ycxx::__detail::__rollback __rb{[&] {
       std::destroy_at(n);
@@ -182,7 +182,7 @@ private:
     return n;
   }
   constexpr void __free_node(__node_base* b) noexcept {
-    __node* n = static_cast<__node*>(b);
+    node* n = static_cast<node*>(b);
     __node_traits::destroy(__na_, __builtin_addressof(n->value));
     std::destroy_at(n);
     __node_traits::deallocate(__na_, __ycxx::__detail::__to_alloc_pointer<typename __node_traits::pointer>(n), 1);
@@ -530,7 +530,7 @@ public:
     if (__size_ == max_size())
       __ycxx::__detail::__throw_length_error("std::list: size would exceed max_size()");
     __node_base* const __pos = __pos_node(position);
-    __node* n = __make_node(static_cast<_Args&&>(__args)...);
+    node* n = __make_node(static_cast<_Args&&>(__args)...);
     __link_before(__pos, n);
     ++__size_;
     return iterator(n);

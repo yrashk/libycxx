@@ -577,12 +577,12 @@ bool __ycxx::__detail::__tz_get_sys_info(const __chr::time_zone& __tz, __chr::sy
   return true;
 }
 
-bool __ycxx::__detail::__tz_get_local_info(const __chr::time_zone& __tz, __chr::local_seconds __lt, __chr::local_info& out) {
+bool __ycxx::__detail::__tz_get_local_info(const __chr::time_zone& __tz, __chr::local_seconds lt, __chr::local_info& out) {
   const __tz_data* d = loaded(__tz);
   if (d == nullptr)
     return false;
   // Offsets stay within a day and a few hours: look at the periods around lt - 30h .. lt + 30h.
-  const int64_t __l = __lt.time_since_epoch().count();
+  const int64_t __l = lt.time_since_epoch().count();
   const int64_t window = 30 * 3600;
   info found[2];
   int nfound = 0;
@@ -946,13 +946,13 @@ __chr::tzdb_list* __ycxx::__detail::__tzdb_list_instance() noexcept {
     if (__db == nullptr)
       return nullptr;
     auto* __l = new (std::nothrow) __chr::tzdb_list(__tz_ctor_tag{});
-    auto* __node = __l == nullptr ? nullptr : new (std::nothrow) __tzdb_node{static_cast<__chr::tzdb&&>(*__db), nullptr};
+    auto* node = __l == nullptr ? nullptr : new (std::nothrow) __tzdb_node{static_cast<__chr::tzdb&&>(*__db), nullptr};
     delete __db;
-    if (__node == nullptr) {
+    if (node == nullptr) {
       delete __l;
       return nullptr;
     }
-    __l->push_front(__tz_ctor_tag{}, __node);
+    __l->push_front(__tz_ctor_tag{}, node);
     __atomic_store_n(&list, __l, __ATOMIC_RELEASE);
     return __l;
   } catch (...) { // the mutex (system_error)
@@ -972,10 +972,10 @@ const __chr::tzdb* __ycxx::__detail::__tzdb_reload() noexcept {
     __chr::tzdb* __db = load_tzdb();
     if (__db == nullptr)
       return nullptr;
-    auto* __node = new __tzdb_node{static_cast<__chr::tzdb&&>(*__db), nullptr};
+    auto* node = new __tzdb_node{static_cast<__chr::tzdb&&>(*__db), nullptr};
     delete __db;
-    __l->push_front(__tz_ctor_tag{}, __node);
-    return &__node->__db;
+    __l->push_front(__tz_ctor_tag{}, node);
+    return &node->__db;
   } catch (...) {
     return nullptr;
   }

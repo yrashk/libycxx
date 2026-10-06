@@ -109,7 +109,7 @@ struct __lor {
     return a || b;
   }
 };
-struct __eq {
+struct eq {
   template <class _Ap, class _Bp>
   constexpr auto operator()(const _Ap& a, const _Bp& b) const -> decltype(a == b) {
     return a == b;
@@ -121,7 +121,7 @@ struct __ne {
     return a != b;
   }
 };
-struct __lt {
+struct lt {
   template <class _Ap, class _Bp>
   constexpr auto operator()(const _Ap& a, const _Bp& b) const -> decltype(a < b) {
     return a < b;
@@ -1107,15 +1107,15 @@ valarray<bool> operator||(const typename valarray<_Tp>::value_type& __x, const v
 }
 template <class _Tp>
 valarray<bool> operator==(const valarray<_Tp>& __x, const valarray<_Tp>& y) {
-  return __ycxx::__detail::__va_binary<bool>(__x, y, __ycxx::__detail::__va_op::__eq{});
+  return __ycxx::__detail::__va_binary<bool>(__x, y, __ycxx::__detail::__va_op::eq{});
 }
 template <class _Tp>
 valarray<bool> operator==(const valarray<_Tp>& __x, const typename valarray<_Tp>::value_type& y) {
-  return __ycxx::__detail::__va_binary_left<bool>(__x, y, __ycxx::__detail::__va_op::__eq{});
+  return __ycxx::__detail::__va_binary_left<bool>(__x, y, __ycxx::__detail::__va_op::eq{});
 }
 template <class _Tp>
 valarray<bool> operator==(const typename valarray<_Tp>::value_type& __x, const valarray<_Tp>& y) {
-  return __ycxx::__detail::__va_binary_right<bool>(__x, y, __ycxx::__detail::__va_op::__eq{});
+  return __ycxx::__detail::__va_binary_right<bool>(__x, y, __ycxx::__detail::__va_op::eq{});
 }
 template <class _Tp>
 valarray<bool> operator!=(const valarray<_Tp>& __x, const valarray<_Tp>& y) {
@@ -1131,15 +1131,15 @@ valarray<bool> operator!=(const typename valarray<_Tp>::value_type& __x, const v
 }
 template <class _Tp>
 valarray<bool> operator<(const valarray<_Tp>& __x, const valarray<_Tp>& y) {
-  return __ycxx::__detail::__va_binary<bool>(__x, y, __ycxx::__detail::__va_op::__lt{});
+  return __ycxx::__detail::__va_binary<bool>(__x, y, __ycxx::__detail::__va_op::lt{});
 }
 template <class _Tp>
 valarray<bool> operator<(const valarray<_Tp>& __x, const typename valarray<_Tp>::value_type& y) {
-  return __ycxx::__detail::__va_binary_left<bool>(__x, y, __ycxx::__detail::__va_op::__lt{});
+  return __ycxx::__detail::__va_binary_left<bool>(__x, y, __ycxx::__detail::__va_op::lt{});
 }
 template <class _Tp>
 valarray<bool> operator<(const typename valarray<_Tp>::value_type& __x, const valarray<_Tp>& y) {
-  return __ycxx::__detail::__va_binary_right<bool>(__x, y, __ycxx::__detail::__va_op::__lt{});
+  return __ycxx::__detail::__va_binary_right<bool>(__x, y, __ycxx::__detail::__va_op::lt{});
 }
 template <class _Tp>
 valarray<bool> operator>(const valarray<_Tp>& __x, const valarray<_Tp>& y) {

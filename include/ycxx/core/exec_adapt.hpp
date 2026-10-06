@@ -380,7 +380,7 @@ struct __let_state_key {};
 
 template <class _Cpo, class _Sndr, class _Fn, class _Rcvr>
 struct __let_types {
-  using __child_sigs = std::execution::__completion_signatures_of_t<_Sndr, __fwd_env_t<std::execution::env_of_t<_Rcvr>>>;
+  using __child_sigs = std::execution::completion_signatures_of_t<_Sndr, __fwd_env_t<std::execution::env_of_t<_Rcvr>>>;
   using __env_t = __let_env_t<_Cpo, _Sndr, std::execution::env_of_t<_Rcvr>>;
   using __receiver2 = ::__ycxx::__adl_free::__exec_let_receiver2<_Rcvr, __env_t>;
   using __let_args = __sigs_args_t<_Cpo, __child_sigs>;
@@ -572,7 +572,7 @@ struct __let_adaptor : __pipeable_adaptor<_Self, 1, __bind_movable_value> {
   }
   // let-cpo.transform_sender ([exec.let]/6), on set_value like the other lowered adaptors.
   template <class _Sndr, class _Env>
-    requires std::is_same_v<std::execution::__tag_of_t<_Sndr>, _Self>
+    requires std::is_same_v<std::execution::tag_of_t<_Sndr>, _Self>
   static constexpr auto transform_sender(set_value_t, _Sndr&& s, const _Env&) {
     using __child_t = std::decay_t<__child_type<_Sndr>>;
     using __fn_t = std::decay_t<__data_type<_Sndr>>;
@@ -665,7 +665,7 @@ struct stopped_as_optional_t : sender_adaptor_closure<stopped_as_optional_t> {
     return __ycxx::__detail::__exec::__make_sender(*this, __ycxx::__detail::__exec::__empty_data(), static_cast<_Sndr&&>(__sndr));
   }
   template <class _Sndr, class _Env>
-    requires is_same_v<__tag_of_t<_Sndr>, stopped_as_optional_t>
+    requires is_same_v<tag_of_t<_Sndr>, stopped_as_optional_t>
   static constexpr auto transform_sender(set_value_t, _Sndr&& __sndr, const _Env&) {
     using __child_t = __ycxx::__detail::__exec::__child_type<_Sndr>;
     if constexpr (!sender_in<__child_t, __ycxx::__detail::__exec::__fwd_env_t<_Env>>) {
@@ -690,7 +690,7 @@ struct stopped_as_error_t : __ycxx::__detail::__exec::__pipeable_adaptor<stopped
     return __ycxx::__detail::__exec::__make_sender(*this, static_cast<_Err&&>(__err), static_cast<_Sndr&&>(__sndr));
   }
   template <class _Sndr, class _Env>
-    requires is_same_v<__tag_of_t<_Sndr>, stopped_as_error_t>
+    requires is_same_v<tag_of_t<_Sndr>, stopped_as_error_t>
   static constexpr auto transform_sender(set_value_t, _Sndr&& __sndr, const _Env&) {
     using _Ep = decay_t<__ycxx::__detail::__exec::__data_type<_Sndr>>;
     return let_stopped_t()(static_cast<_Sndr&&>(__sndr).template get<2>(),
@@ -832,7 +832,7 @@ struct bulk_unchunked_t : __ycxx::__detail::__exec::__bulk_adaptor<bulk_unchunke
 struct bulk_t : __ycxx::__detail::__exec::__bulk_adaptor<bulk_t> {
   // [exec.bulk]/4: bulk becomes bulk_chunked, each chunk a loop over its indices.
   template <class _Sndr, class _Env>
-    requires is_same_v<__tag_of_t<_Sndr>, bulk_t>
+    requires is_same_v<tag_of_t<_Sndr>, bulk_t>
   static constexpr auto transform_sender(set_value_t, _Sndr&& __sndr, const _Env&) {
     auto&& data = static_cast<_Sndr&&>(__sndr).template get<1>();
     using _Shape = remove_cvref_t<decltype(data.template get<1>())>;

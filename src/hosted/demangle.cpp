@@ -22,11 +22,11 @@ using std::string_view;
 
 // ---- nodes ---------------------------------------------------------------------------------------
 
-struct __node {
+struct node {
   enum class kind { other, name, pointer, function, array, qualified, special_function_name };
   kind k = kind::other;
-  explicit __node(kind kk = kind::other) : k(kk) {}
-  virtual ~__node() = default;
+  explicit node(kind kk = kind::other) : k(kk) {}
+  virtual ~node() = default;
   virtual void left(string& __o) const = 0;
   virtual void right(string&) const {}
   // A declarator part to the right of the name: function parameters or array bounds.
@@ -36,7 +36,7 @@ struct __node {
     right(__o);
   }
 };
-using node_list = std::vector<const __node*>;
+using node_list = std::vector<const node*>;
 
 void print_list(string& __o, const node_list& __l);
 
@@ -46,33 +46,33 @@ void print_list(string& __o, const node_list& __l);
 constexpr std::size_t max_output = 1 << 16;
 bool over(const string& __o) { return __o.size() > max_output; }
 
-struct text_node final : __node {
+struct text_node final : node {
   string __text;
-  explicit text_node(string t, kind kk = kind::name) : __node(kk), __text(static_cast<string&&>(t)) {}
+  explicit text_node(string t, kind kk = kind::name) : node(kk), __text(static_cast<string&&>(t)) {}
   void left(string& __o) const override { __o += __text; }
 };
 
 // A standard abbreviation (Sa, Sb, Ss, Si, So, Sd): its short form, the full form a constructor
 // or destructor is qualified with, and the class name such a member is named after.
-struct abbrev_node final : __node {
+struct abbrev_node final : node {
   const char* short_form;
   const char* full_form;
   const char* class_name;
-  abbrev_node(const char* s, const char* __f, const char* c) : __node(kind::name), short_form(s), full_form(__f), class_name(c) {}
+  abbrev_node(const char* s, const char* __f, const char* c) : node(kind::name), short_form(s), full_form(__f), class_name(c) {}
   void left(string& __o) const override { __o += short_form; }
 };
 
 // A pack of template arguments (J ... E), or an expanded parameter pack: prints its elements.
-struct __list_node final : __node {
+struct __list_node final : node {
   node_list __y_elems;
   explicit __list_node(node_list e) : __y_elems(static_cast<node_list&&>(e)) {}
   void left(string& __o) const override { print_list(__o, __y_elems); }
 };
 
-struct nested_node final : __node {
-  const __node* qual;
-  const __node* name;
-  nested_node(const __node* __q, const __node* n) : __node(kind::name), qual(__q), name(n) {}
+struct nested_node final : node {
+  const node* qual;
+  const node* name;
+  nested_node(const node* __q, const node* n) : node(kind::name), qual(__q), name(n) {}
   void left(string& __o) const override {
     if (over(__o))
       return;
@@ -82,10 +82,10 @@ struct nested_node final : __node {
   }
 };
 
-struct template_node final : __node {
-  const __node* name;
+struct template_node final : node {
+  const node* name;
   node_list __args;
-  template_node(const __node* n, node_list a) : __node(kind::name), name(n), __args(static_cast<node_list&&>(a)) {}
+  template_node(const node* n, node_list a) : node(kind::name), name(n), __args(static_cast<node_list&&>(a)) {}
   void left(string& __o) const override {
     if (over(__o))
       return;
@@ -98,10 +98,10 @@ struct template_node final : __node {
   }
 };
 
-struct qual_node final : __node {
-  const __node* __inner;
+struct qual_node final : node {
+  const node* __inner;
   string __cv; // " const", " volatile", " restrict", in that order
-  qual_node(const __node* i, string __q) : __node(kind::qualified), __inner(i), __cv(static_cast<string&&>(__q)) {}
+  qual_node(const node* i, string __q) : node(kind::qualified), __inner(i), __cv(static_cast<string&&>(__q)) {}
   void left(string& __o) const override {
     __inner->left(__o);
     __o += __cv;
@@ -110,12 +110,12 @@ struct qual_node final : __node {
   bool has_right() const override { return __inner->has_right(); }
 };
 
-struct function_node final : __node {
-  const __node* __ret; // null for a function encoding without a return type
+struct function_node final : node {
+  const node* __ret; // null for a function encoding without a return type
   node_list __params;
   string __quals; // cv- and ref-qualifiers and exception specification, after the parameters
-  function_node(const __node* r, node_list p, string __q)
-      : __node(kind::function), __ret(r), __params(static_cast<node_list&&>(p)), __quals(static_cast<string&&>(__q)) {}
+  function_node(const node* r, node_list p, string __q)
+      : node(kind::function), __ret(r), __params(static_cast<node_list&&>(p)), __quals(static_cast<string&&>(__q)) {}
   void left(string& __o) const override {
     if (__ret)
       __ret->left(__o);
@@ -137,12 +137,12 @@ struct function_node final : __node {
   }
 };
 
-const __node* __resolve(const __node* n);
+const node* __resolve(const node* n);
 
-struct pointer_node final : __node {
-  const __node* __pointee;
+struct pointer_node final : node {
+  const node* __pointee;
   const char* __sym; // "*", "&", "&&"
-  pointer_node(const __node* p, const char* s) : __node(kind::pointer), __pointee(p), __sym(s) {}
+  pointer_node(const node* p, const char* s) : node(kind::pointer), __pointee(p), __sym(s) {}
   // A reference to a reference collapses ([dcl.ref]/7): & wins.
   const pointer_node* collapsed(pointer_node& __tmp) const {
     if (__sym[0] != '&')
@@ -177,10 +177,10 @@ struct pointer_node final : __node {
   }
 };
 
-struct array_node final : __node {
-  const __node* __elem;
+struct array_node final : node {
+  const node* __elem;
   string dim;
-  array_node(const __node* e, string d) : __node(kind::array), __elem(e), dim(static_cast<string&&>(d)) {}
+  array_node(const node* e, string d) : node(kind::array), __elem(e), dim(static_cast<string&&>(d)) {}
   void left(string& __o) const override { __elem->left(__o); }
   void right(string& __o) const override {
     __o += " [";
@@ -191,10 +191,10 @@ struct array_node final : __node {
   bool has_right() const override { return true; }
 };
 
-struct ptrmem_node final : __node {
-  const __node* __cls;
-  const __node* __member;
-  ptrmem_node(const __node* c, const __node* m) : __node(kind::pointer), __cls(c), __member(m) {}
+struct ptrmem_node final : node {
+  const node* __cls;
+  const node* __member;
+  ptrmem_node(const node* c, const node* m) : node(kind::pointer), __cls(c), __member(m) {}
   void left(string& __o) const override {
     __member->left(__o);
     __o += __member->has_right() ? " (" : " ";
@@ -210,12 +210,12 @@ struct ptrmem_node final : __node {
 };
 
 // A function encoding: [return type] name(parameters) qualifiers.
-struct encoding_node final : __node {
-  const __node* __ret;
-  const __node* name;
+struct encoding_node final : node {
+  const node* __ret;
+  const node* name;
   node_list __params;
   string __quals;
-  encoding_node(const __node* r, const __node* n, node_list p, string __q)
+  encoding_node(const node* r, const node* n, node_list p, string __q)
       : __ret(r), name(n), __params(static_cast<node_list&&>(p)), __quals(static_cast<string&&>(__q)) {}
   void left(string& __o) const override {
     if (__ret) {
@@ -233,11 +233,11 @@ struct encoding_node final : __node {
   }
 };
 
-struct prefix_node final : __node {
+struct prefix_node final : node {
   const char* prefix;
-  const __node* __inner;
+  const node* __inner;
   string suffix;
-  prefix_node(const char* p, const __node* i, string s = string())
+  prefix_node(const char* p, const node* i, string s = string())
       : prefix(p), __inner(i), suffix(static_cast<string&&>(s)) {}
   void left(string& __o) const override {
     __o += prefix;
@@ -263,15 +263,15 @@ struct param_scope {
   node_list __args;
 };
 
-struct param_node final : __node {
+struct param_node final : node {
   const param_scope* scope;
   std::size_t __idx;
   param_node(const param_scope* s, std::size_t i) : scope(s), __idx(i) {}
-  const __node* target() const { return scope && __idx < scope->__args.size() ? scope->__args[__idx] : nullptr; }
+  const node* target() const { return scope && __idx < scope->__args.size() ? scope->__args[__idx] : nullptr; }
   // The node printed: the argument, or for a pack the element of the current expansion
   // iteration; null when there is none (unbound, or a pack outside an iteration).
-  const __node* current() const {
-    const __node* t = target();
+  const node* current() const {
+    const node* t = target();
     auto __l = dynamic_cast<const __list_node*>(t);
     if (__l == nullptr)
       return t;
@@ -308,7 +308,7 @@ struct param_node final : __node {
     const active_guard __g(this);
     if (__g.cycle || over(__o))
       return unbound(__o);
-    if (const __node* c = current())
+    if (const node* c = current())
       c->left(__o);
     else if (target() == nullptr)
       unbound(__o);
@@ -319,21 +319,21 @@ struct param_node final : __node {
     const active_guard __g(this);
     if (__g.cycle || over(__o))
       return;
-    if (const __node* c = current())
+    if (const node* c = current())
       c->right(__o);
   }
   bool has_right() const override {
     const active_guard __g(this);
     if (__g.cycle)
       return false;
-    const __node* c = current();
+    const node* c = current();
     return c && c->has_right();
   }
   void print(string& __o) const override {
     const active_guard __g(this);
     if (__g.cycle || over(__o))
       return unbound(__o);
-    if (const __node* c = current())
+    if (const node* c = current())
       c->print(__o);
     else if (target() == nullptr)
       unbound(__o);
@@ -343,12 +343,12 @@ struct param_node final : __node {
 };
 
 // The node a param_node stands for (in the current expansion iteration); else n itself.
-const __node* __resolve(const __node* n) {
+const node* __resolve(const node* n) {
   for (int hops = 0; hops < 16; ++hops) { // a parameter can name another (or, crafted, itself)
     auto p = dynamic_cast<const param_node*>(n);
     if (p == nullptr)
       break;
-    const __node* c = p->current();
+    const node* c = p->current();
     if (c == nullptr)
       break;
     n = c;
@@ -356,9 +356,9 @@ const __node* __resolve(const __node* n) {
   return n;
 }
 
-struct pack_expansion_node final : __node {
-  const __node* __inner;
-  explicit pack_expansion_node(const __node* i) : __inner(i) {}
+struct pack_expansion_node final : node {
+  const node* __inner;
+  explicit pack_expansion_node(const node* i) : __inner(i) {}
   void left(string& __o) const override {
     const pack_state __saved = pack;
     pack = {-2, -1};
@@ -383,7 +383,7 @@ struct pack_expansion_node final : __node {
 
 void print_list(string& __o, const node_list& __l) {
   bool first = true;
-  for (const __node* n : __l) {
+  for (const node* n : __l) {
     if (over(__o))
       return;
     const string::size_type before = __o.size();
@@ -435,7 +435,7 @@ public:
   bool parse(string& out) {
     if (!consume("_Z"))
       return false;
-    const __node* e = encoding();
+    const node* e = encoding();
     if (!e)
       return false;
     string suffix;
@@ -462,7 +462,7 @@ public:
 private:
   const char* __p_;
   const char* __end_;
-  std::vector<std::unique_ptr<__node>> arena_;
+  std::vector<std::unique_ptr<node>> arena_;
   node_list __subs_;
   param_scope* __scope_ = nullptr; // the template parameters T_ refers to
   int __depth_ = 0;
@@ -481,9 +481,9 @@ private:
 
   template <class _Np, class... _Args>
   const _Np* __make(_Args&&... __args) {
-    std::unique_ptr<__node> n(new _Np(static_cast<_Args&&>(__args)...));
+    std::unique_ptr<node> n(new _Np(static_cast<_Args&&>(__args)...));
     const _Np* r = static_cast<const _Np*>(n.get());
-    arena_.push_back(static_cast<std::unique_ptr<__node>&&>(n));
+    arena_.push_back(static_cast<std::unique_ptr<node>&&>(n));
     return r;
   }
   std::vector<std::unique_ptr<param_scope>> scopes_;
@@ -493,7 +493,7 @@ private:
     scopes_.push_back(static_cast<std::unique_ptr<param_scope>&&>(__sc));
     return r;
   }
-  const __node* __text(string s, __node::kind k = __node::kind::name) { return __make<text_node>(static_cast<string&&>(s), k); }
+  const node* __text(string s, node::kind k = node::kind::name) { return __make<text_node>(static_cast<string&&>(s), k); }
 
   char peek(std::size_t i = 0) const { return static_cast<std::size_t>(__end_ - __p_) > i ? __p_[i] : '\0'; }
   bool consume(char c) {
@@ -543,7 +543,7 @@ private:
   }
 
   // <encoding> ::= <name> <bare-function-type> | <name> | <special-name>
-  const __node* encoding() {
+  const node* encoding() {
     depth_guard __g(*this);
     if (!__g.ok)
       return nullptr;
@@ -556,7 +556,7 @@ private:
     ended_with_template_args_ = false;
     ctor_dtor_conv_ = false;
     string __quals;
-    const __node* n = name(&__quals);
+    const node* n = name(&__quals);
     encoding_name_ = saved_enc;
     if (!n)
       return nullptr;
@@ -565,7 +565,7 @@ private:
       __scope_ = saved_scope;
       return n;
     }
-    const __node* __ret = nullptr;
+    const node* __ret = nullptr;
     if (is_template && !no_return) {
       __ret = type();
       if (!__ret)
@@ -584,7 +584,7 @@ private:
       return true;
     }
     while (__p_ != __end_ && peek() != 'E' && peek() != '.') {
-      const __node* t = type();
+      const node* t = type();
       if (!t)
         return false;
       __params.push_back(t);
@@ -610,7 +610,7 @@ private:
     return false;
   }
 
-  const __node* special_name() {
+  const node* special_name() {
     struct simple {
       const char* code;
       const char* prefix;
@@ -619,13 +619,13 @@ private:
         {"TV", "vtable for "}, {"TT", "VTT for "}, {"TI", "typeinfo for "}, {"TS", "typeinfo name for "}};
     for (const simple& s : type_specials)
       if (consume(s.code)) {
-        const __node* t = type();
+        const node* t = type();
         return t ? __make<prefix_node>(s.prefix, t) : nullptr;
       }
     if (consume("Tc")) {
       if (!call_offset() || !call_offset())
         return nullptr;
-      const __node* e = encoding();
+      const node* e = encoding();
       return e ? __make<prefix_node>("covariant return thunk to ", e) : nullptr;
     }
     if (peek() == 'T' && (peek(1) == 'h' || peek(1) == 'v')) {
@@ -633,20 +633,20 @@ private:
       ++__p_; // call_offset reads the h or v
       if (!call_offset())
         return nullptr;
-      const __node* e = encoding();
+      const node* e = encoding();
       return e ? __make<prefix_node>(is_virtual ? "virtual thunk to " : "non-virtual thunk to ", e) : nullptr;
     }
     if (consume("TH") || consume("TW")) {
       const bool init = __p_[-1] == 'H';
-      const __node* n = name(nullptr);
+      const node* n = name(nullptr);
       return n ? __make<prefix_node>(init ? "TLS init function for " : "TLS wrapper function for ", n) : nullptr;
     }
     if (consume("GV")) {
-      const __node* n = name(nullptr);
+      const node* n = name(nullptr);
       return n ? __make<prefix_node>("guard variable for ", n) : nullptr;
     }
     if (consume("GR")) {
-      const __node* n = name(nullptr);
+      const node* n = name(nullptr);
       if (!n)
         return nullptr;
       std::size_t __v;
@@ -655,14 +655,14 @@ private:
       return __make<prefix_node>("reference temporary for ", n);
     }
     if (consume("GTt") || consume("GTn")) {
-      const __node* e = encoding();
+      const node* e = encoding();
       return e ? __make<prefix_node>("transaction clone for ", e) : nullptr;
     }
     return nullptr;
   }
 
   // <name>. quals receives the cv- and ref-qualifiers of a nested name (member functions).
-  const __node* name(string* __quals) {
+  const node* name(string* __quals) {
     depth_guard __g(*this);
     if (!__g.ok)
       return nullptr;
@@ -670,7 +670,7 @@ private:
       return nested_name(__quals);
     if (peek() == 'Z')
       return local_name(__quals);
-    const __node* n;
+    const node* n;
     if (peek() == 'S' && peek(1) != 't') {
       n = substitution();
       if (!n || peek() != 'I')
@@ -689,7 +689,7 @@ private:
     return template_args_of(n);
   }
 
-  const __node* template_args_of(const __node* n) {
+  const node* template_args_of(const node* n) {
     node_list __args;
     if (!template_args(__args))
       return nullptr;
@@ -715,7 +715,7 @@ private:
 
   // <nested-name> ::= N [<CV-qualifiers>] [<ref-qualifier>] <prefix> <unqualified-name> E
   //               ::= N [<CV-qualifiers>] [<ref-qualifier>] <template-prefix> <template-args> E
-  const __node* nested_name(string* __quals) {
+  const node* nested_name(string* __quals) {
     if (!consume('N'))
       return nullptr;
     string __q = cv_qualifiers();
@@ -725,7 +725,7 @@ private:
       __q += " &&";
     if (__quals)
       *__quals = __q;
-    const __node* current = nullptr;
+    const node* current = nullptr;
     string last_name; // for constructors and destructors
     bool is_std = false;
     while (!consume('E')) {
@@ -733,7 +733,7 @@ private:
         return nullptr;
       if (encoding_name_)
         ended_with_template_args_ = false;
-      const __node* comp = nullptr;
+      const node* comp = nullptr;
       if (peek() == 'S' && peek(1) == 't') {
         __p_ += 2;
         is_std = true;
@@ -799,7 +799,7 @@ private:
   }
 
   // The unqualified name a constructor or destructor of the class n is named after.
-  static string base_name(const __node* n) {
+  static string base_name(const node* n) {
     for (;;) {
       if (auto t = dynamic_cast<const template_node*>(n))
         n = t->name;
@@ -817,19 +817,19 @@ private:
 
   // <local-name> ::= Z <encoding> E <entity name> [<discriminator>]
   //              ::= Z <encoding> E s [<discriminator>]
-  const __node* local_name(string* __quals) {
+  const node* local_name(string* __quals) {
     if (!consume('Z'))
       return nullptr;
     const bool saved_enc = encoding_name_;
     const bool saved_ended = ended_with_template_args_, saved_cdc = ctor_dtor_conv_;
     encoding_name_ = false;
-    const __node* __fn = encoding();
+    const node* __fn = encoding();
     encoding_name_ = saved_enc;
     ended_with_template_args_ = saved_ended;
     ctor_dtor_conv_ = saved_cdc;
     if (!__fn || !consume('E'))
       return nullptr;
-    const __node* entity;
+    const node* entity;
     if (consume('s')) {
       entity = __text("string literal");
     } else {
@@ -861,7 +861,7 @@ private:
   }
 
   // <source-name> ::= <positive length number> <identifier>
-  const __node* source_name() {
+  const node* source_name() {
     std::size_t n;
     if (!__number(n) || n == 0 || static_cast<std::size_t>(__end_ - __p_) < n)
       return nullptr;
@@ -874,9 +874,9 @@ private:
 
   // <unqualified-name> [<abi-tags>]. last_name is the previous component's name (for
   // constructors and destructors) and receives this one's.
-  const __node* unqualified_name(string* last_name) {
+  const node* unqualified_name(string* last_name) {
     consume('L'); // internal linkage
-    const __node* n = nullptr;
+    const node* n = nullptr;
     const char c = peek();
     if (c >= '1' && c <= '9') {
       n = source_name();
@@ -911,7 +911,7 @@ private:
       string s = "[";
       bool first = true;
       while (!consume('E')) {
-        const __node* id = source_name();
+        const node* id = source_name();
         if (!id)
           return nullptr;
         if (!first)
@@ -926,7 +926,7 @@ private:
     if (!n)
       return nullptr;
     while (consume('B')) { // <abi-tag>
-      const __node* tag = source_name();
+      const node* tag = source_name();
       if (!tag)
         return nullptr;
       string s;
@@ -940,7 +940,7 @@ private:
   }
 
   // <unnamed-type-name> ::= Ut [<number>] _ | Ul <lambda-sig> E [<number>] _
-  const __node* unnamed_type_name() {
+  const node* unnamed_type_name() {
     if (consume("Ut")) {
       std::size_t __v = 0;
       const bool has = __number(__v);
@@ -971,11 +971,11 @@ private:
     return nullptr;
   }
 
-  const __node* operator_name() {
+  const node* operator_name() {
     if (consume("cv")) { // conversion operator
       const bool __saved = encoding_name_;
       encoding_name_ = false;
-      const __node* t = type();
+      const node* t = type();
       encoding_name_ = __saved;
       if (!t)
         return nullptr;
@@ -986,7 +986,7 @@ private:
       return __text(static_cast<string&&>(s));
     }
     if (consume("li")) { // literal operator
-      const __node* id = source_name();
+      const node* id = source_name();
       if (!id)
         return nullptr;
       string s = "operator\"\" ";
@@ -995,7 +995,7 @@ private:
     }
     if (peek() == 'v' && peek(1) >= '0' && peek(1) <= '9') { // vendor extended operator
       __p_ += 2;
-      const __node* id = source_name();
+      const node* id = source_name();
       if (!id)
         return nullptr;
       string s = "operator ";
@@ -1016,7 +1016,7 @@ private:
   }
 
   // <substitution> ::= S_ | S <seq-id> _ | Sa | Sb | Ss | Si | So | Sd
-  const __node* substitution() {
+  const node* substitution() {
     if (!consume('S'))
       return nullptr;
     struct abbrev {
@@ -1046,7 +1046,7 @@ private:
   }
 
   // <template-param> ::= T_ | T <number> _
-  const __node* template_param() {
+  const node* template_param() {
     if (!consume('T'))
       return nullptr;
     std::size_t __idx = 0;
@@ -1072,7 +1072,7 @@ private:
           return false;
         continue;
       }
-      const __node* a = template_arg();
+      const node* a = template_arg();
       if (!a)
         return false;
       __args.push_back(a);
@@ -1081,14 +1081,14 @@ private:
     return true;
   }
 
-  const __node* template_arg() {
+  const node* template_arg() {
     depth_guard __g(*this);
     if (!__g.ok)
       return nullptr;
     if (peek() == 'L')
       return expr_primary();
     if (consume('X')) {
-      const __node* e = expression();
+      const node* e = expression();
       return e && consume('E') ? e : nullptr;
     }
     if (consume('J')) {
@@ -1096,7 +1096,7 @@ private:
       while (!consume('E')) {
         if (__p_ == __end_)
           return nullptr;
-        const __node* a = template_arg();
+        const node* a = template_arg();
         if (!a)
           return nullptr;
         pack.push_back(a);
@@ -1106,10 +1106,10 @@ private:
     return type();
   }
 
-  const __node* decltype_node() {
+  const node* decltype_node() {
     if (!consume("Dt") && !consume("DT"))
       return nullptr;
-    const __node* e = expression();
+    const node* e = expression();
     if (!e || !consume('E'))
       return nullptr;
     string s = "decltype(";
@@ -1119,18 +1119,18 @@ private:
   }
 
   // <type>
-  const __node* type() {
+  const node* type() {
     depth_guard __g(*this);
     if (!__g.ok)
       return nullptr;
     const bool __saved = encoding_name_;
     encoding_name_ = false;
-    const __node* t = type_inner();
+    const node* t = type_inner();
     encoding_name_ = __saved;
     return t;
   }
 
-  const __node* __y_builtin(char c) {
+  const node* __y_builtin(char c) {
     switch (c) {
     case 'v': return __text("void");
     case 'w': return __text("wchar_t");
@@ -1157,13 +1157,13 @@ private:
     }
   }
 
-  const __node* type_inner() {
+  const node* type_inner() {
     const char c = peek();
-    if (const __node* b = (c >= 'a' && c <= 'z' && c != 'u') ? __y_builtin(c) : nullptr) {
+    if (const node* b = (c >= 'a' && c <= 'z' && c != 'u') ? __y_builtin(c) : nullptr) {
       ++__p_;
       return b;
     }
-    const __node* t = nullptr;
+    const node* t = nullptr;
     switch (c) {
     case 'u': { // vendor extended type
       ++__p_;
@@ -1214,7 +1214,7 @@ private:
       }
       if (d == 'p') { // pack expansion
         __p_ += 2;
-        const __node* __inner = type();
+        const node* __inner = type();
         if (!__inner)
           return nullptr;
         t = __make<pack_expansion_node>(__inner);
@@ -1229,7 +1229,7 @@ private:
         std::size_t n;
         if (!__number(n) || !consume('_'))
           return nullptr;
-        const __node* e = type();
+        const node* e = type();
         if (!e)
           return nullptr;
         string s;
@@ -1252,7 +1252,7 @@ private:
         t = function_type(static_cast<string&&>(__q));
         break;
       }
-      const __node* __inner = type();
+      const node* __inner = type();
       if (!__inner)
         return nullptr;
       t = __make<qual_node>(__inner, static_cast<string&&>(__q));
@@ -1262,7 +1262,7 @@ private:
     case 'R':
     case 'O': {
       ++__p_;
-      const __node* __inner = type();
+      const node* __inner = type();
       if (!__inner)
         return nullptr;
       t = __make<pointer_node>(__inner, c == 'P' ? "*" : c == 'R' ? "&" : "&&");
@@ -1271,7 +1271,7 @@ private:
     case 'C':
     case 'G': {
       ++__p_;
-      const __node* __inner = type();
+      const node* __inner = type();
       if (!__inner)
         return nullptr;
       string s;
@@ -1292,14 +1292,14 @@ private:
           return nullptr;
         dim = std::to_string(n);
       } else if (peek() != '_') {
-        const __node* e = expression();
+        const node* e = expression();
         if (!e)
           return nullptr;
         e->print(dim);
       }
       if (!consume('_'))
         return nullptr;
-      const __node* __elem = type();
+      const node* __elem = type();
       if (!__elem)
         return nullptr;
       t = __make<array_node>(__elem, static_cast<string&&>(dim));
@@ -1307,10 +1307,10 @@ private:
     }
     case 'M': {
       ++__p_;
-      const __node* __cls = type();
+      const node* __cls = type();
       if (!__cls)
         return nullptr;
-      const __node* __mem = type();
+      const node* __mem = type();
       if (!__mem)
         return nullptr;
       t = __make<ptrmem_node>(__cls, __mem);
@@ -1335,7 +1335,7 @@ private:
         t = name(nullptr);
         break;
       }
-      const __node* s = substitution();
+      const node* s = substitution();
       if (!s)
         return nullptr;
       if (peek() != 'I')
@@ -1364,11 +1364,11 @@ private:
 
   // <function-type> ::= [<CV-qualifiers>] [<exception-spec>] [Dx] F [Y] <bare-function-type>
   //                     [<ref-qualifier>] E
-  const __node* function_type(string __quals) {
+  const node* function_type(string __quals) {
     if (consume("Do")) {
       __quals += " noexcept";
     } else if (consume("DO")) {
-      const __node* e = expression();
+      const node* e = expression();
       if (!e || !consume('E'))
         return nullptr;
       __quals += " noexcept(";
@@ -1378,7 +1378,7 @@ private:
       __quals += " throw(";
       bool first = true;
       while (!consume('E')) {
-        const __node* t = type();
+        const node* t = type();
         if (!t)
           return nullptr;
         if (!first)
@@ -1392,7 +1392,7 @@ private:
     if (!consume('F'))
       return nullptr;
     consume('Y');
-    const __node* __ret = type();
+    const node* __ret = type();
     if (!__ret)
       return nullptr;
     node_list __params;
@@ -1402,7 +1402,7 @@ private:
     while (peek() != 'E' && !(peek() == 'R' && peek(1) == 'E') && !(peek() == 'O' && peek(1) == 'E')) {
       if (__p_ == __end_)
         return nullptr;
-      const __node* t = type();
+      const node* t = type();
       if (!t)
         return nullptr;
       __params.push_back(t);
@@ -1419,20 +1419,20 @@ private:
 
   // <expr-primary> ::= L <type> <value number> E | L <type> <value float> E | L <mangled-name> E
   //                ::= L _Z <encoding> E | LDnE | LDn0E
-  const __node* expr_primary() {
+  const node* expr_primary() {
     if (!consume('L'))
       return nullptr;
     if (consume("_Z")) {
       const bool __saved = encoding_name_;
       encoding_name_ = false;
-      const __node* e = encoding();
+      const node* e = encoding();
       encoding_name_ = __saved;
       return e && consume('E') ? e : nullptr;
     }
     if (consume("DnE") || consume("Dn0E"))
       return __text("nullptr");
     const char __tc = peek();
-    const __node* t = type();
+    const node* t = type();
     if (!t)
       return nullptr;
     string __v;
@@ -1464,8 +1464,8 @@ private:
   }
 
   // <simple-id> ::= <source-name> [<template-args>] (also an operator name)
-  const __node* simple_id() {
-    const __node* n = peek() >= '1' && peek() <= '9' ? source_name() : (consume("on"), operator_name());
+  const node* simple_id() {
+    const node* n = peek() >= '1' && peek() <= '9' ? source_name() : (consume("on"), operator_name());
     if (!n)
       return nullptr;
     if (peek() == 'I') {
@@ -1478,7 +1478,7 @@ private:
   }
 
   // <expression>, common forms only.
-  const __node* expression() {
+  const node* expression() {
     depth_guard __g(*this);
     if (!__g.ok)
       return nullptr;
@@ -1501,29 +1501,29 @@ private:
       return __text(has ? "fp" + std::to_string(n + 1) : string("fp"));
     }
     if (consume("sp")) {
-      const __node* e = expression();
+      const node* e = expression();
       return e ? __make<pack_expansion_node>(e) : nullptr;
     }
     if (consume("st") || consume("at")) {
       const bool size = __p_[-2] == 's';
-      const __node* t = type();
+      const node* t = type();
       return t ? __make<prefix_node>(size ? "sizeof (" : "alignof (", t, ")") : nullptr;
     }
     if (consume("sz") || consume("az")) {
       const bool size = __p_[-2] == 's';
-      const __node* e = expression();
+      const node* e = expression();
       return e ? __make<prefix_node>(size ? "sizeof (" : "alignof (", e, ")") : nullptr;
     }
     if (consume("sZ")) {
-      const __node* t = template_param();
+      const node* t = template_param();
       return t ? __make<prefix_node>("sizeof...(", t, ")") : nullptr;
     }
     if (consume("gs")) { // ::name
-      const __node* e = expression();
+      const node* e = expression();
       return e ? __make<prefix_node>("::", e) : nullptr;
     }
     if (consume("sr")) { // unresolved names
-      const __node* scope = nullptr;
+      const node* scope = nullptr;
       const bool levels = consume('N') || (peek() >= '1' && peek() <= '9');
       if (!(peek() >= '1' && peek() <= '9')) { // sr [N] <unresolved-type>
         scope = type();
@@ -1532,26 +1532,26 @@ private:
       }
       if (levels) { // <unresolved-qualifier-level>* E
         while (!consume('E')) {
-          const __node* __q = simple_id();
+          const node* __q = simple_id();
           if (!__q)
             return nullptr;
           scope = scope ? __make<nested_node>(scope, __q) : __q;
         }
       }
-      const __node* n = simple_id();
+      const node* n = simple_id();
       if (!n)
         return nullptr;
       return scope ? __make<nested_node>(scope, n) : n;
     }
     if (consume("cl")) {
-      const __node* callee = expression();
+      const node* callee = expression();
       if (!callee)
         return nullptr;
       node_list __args;
       while (!consume('E')) {
         if (__p_ == __end_)
           return nullptr;
-        const __node* a = expression();
+        const node* a = expression();
         if (!a)
           return nullptr;
         __args.push_back(a);
@@ -1564,7 +1564,7 @@ private:
       return __text(static_cast<string&&>(s));
     }
     if (consume("cv")) {
-      const __node* t = type();
+      const node* t = type();
       if (!t)
         return nullptr;
       node_list __args;
@@ -1572,13 +1572,13 @@ private:
         while (!consume('E')) {
           if (__p_ == __end_)
             return nullptr;
-          const __node* a = expression();
+          const node* a = expression();
           if (!a)
             return nullptr;
           __args.push_back(a);
         }
       } else {
-        const __node* a = expression();
+        const node* a = expression();
         if (!a)
           return nullptr;
         __args.push_back(a);
@@ -1592,10 +1592,10 @@ private:
     }
     if (consume("dt") || consume("pt")) {
       const bool __arrow = __p_[-2] == 'p';
-      const __node* __obj = expression();
+      const node* __obj = expression();
       if (!__obj)
         return nullptr;
-      const __node* __member = peek() >= '1' && peek() <= '9' ? unqualified_name(nullptr) : expression();
+      const node* __member = peek() >= '1' && peek() <= '9' ? unqualified_name(nullptr) : expression();
       if (!__member)
         return nullptr;
       string s;
@@ -1609,7 +1609,7 @@ private:
         __p_ += 2;
         node_list operands;
         for (int i = 0; i < op->arity; ++i) {
-          const __node* e = expression();
+          const node* e = expression();
           if (!e)
             return nullptr;
           operands.push_back(e);

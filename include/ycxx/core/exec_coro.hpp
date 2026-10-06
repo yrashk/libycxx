@@ -77,8 +77,8 @@ namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail { na
 // adapt-for-await-completion(s) ([exec.as.awaitable]/8)
 template <class _Sp>
 constexpr decltype(auto) __adapt_for_await_completion(_Sp&& s) {
-  if constexpr (requires { std::execution::__get_await_completion_adaptor(std::execution::get_env(s))(static_cast<_Sp&&>(s)); })
-    return std::execution::__get_await_completion_adaptor(std::execution::get_env(s))(static_cast<_Sp&&>(s));
+  if constexpr (requires { std::execution::get_await_completion_adaptor(std::execution::get_env(s))(static_cast<_Sp&&>(s)); })
+    return std::execution::get_await_completion_adaptor(std::execution::get_env(s))(static_cast<_Sp&&>(s));
   else
     return static_cast<_Sp&&>(s);
 }

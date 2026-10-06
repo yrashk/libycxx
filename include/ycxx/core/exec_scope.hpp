@@ -569,7 +569,7 @@ struct spawn_t {
     });
   }
 };
-inline constexpr spawn_t __spawn{};
+inline constexpr spawn_t spawn{};
 }} // namespace std::execution
 
 // ---------------------------------------------------------------------------------------------
@@ -644,9 +644,9 @@ using __future_spawned_sender =
 namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __adl_free {
 template <class _Alloc, class _Token, class _Sender, class _Env>
 struct __exec_spawn_future_state final
-    : __exec_spawn_future_state_base<std::execution::__completion_signatures_of_t<::__ycxx::__detail::__exec::__future_spawned_sender<_Sender, _Env>,
+    : __exec_spawn_future_state_base<std::execution::completion_signatures_of_t<::__ycxx::__detail::__exec::__future_spawned_sender<_Sender, _Env>,
                                                                               std::execution::env<>>> {
-  using __sigs_t = std::execution::__completion_signatures_of_t<::__ycxx::__detail::__exec::__future_spawned_sender<_Sender, _Env>, std::execution::env<>>;
+  using __sigs_t = std::execution::completion_signatures_of_t<::__ycxx::__detail::__exec::__future_spawned_sender<_Sender, _Env>, std::execution::env<>>;
   using __base_t = __exec_spawn_future_state_base<__sigs_t>;
   using __receiver_t = __exec_spawn_future_receiver<__sigs_t>;
   using __op_t = std::execution::connect_result_t<::__ycxx::__detail::__exec::__future_spawned_sender<_Sender, _Env>, __receiver_t>;
@@ -828,7 +828,7 @@ struct __exec_future_operation {
     __exec_try_cancelable* state;
     void operator()() noexcept { state->__try_cancel(); }
   };
-  using __stop_token_t = std::__stop_token_of_t<std::execution::env_of_t<_Rcvr>>;
+  using __stop_token_t = std::stop_token_of_t<std::execution::env_of_t<_Rcvr>>;
   using __stop_callback_t = std::stop_callback_for_t<__stop_token_t, __y_callback>;
   struct __rcvr_t {
     using receiver_concept = std::execution::receiver_tag;

@@ -57,13 +57,13 @@ class bitset {
     const size_t __rlen = n < str.size() - __pos ? n : str.size() - __pos;
     for (size_t i = 0; i < __rlen; ++i) {
       const __charT c = str[__pos + i];
-      if (!__traits::__eq(c, zero) && !__traits::__eq(c, __one))
+      if (!__traits::eq(c, zero) && !__traits::eq(c, __one))
         __ycxx::__detail::__throw_invalid_argument("std::bitset: character is neither zero nor one");
     }
     const size_t m = _Np < __rlen ? _Np : __rlen;
     // Character position pos + m - 1 is bit 0.
     for (size_t b = 0; b < m; ++b)
-      if (__traits::__eq(str[__pos + m - 1 - b], __one))
+      if (__traits::eq(str[__pos + m - 1 - b], __one))
         put(b, true);
   }
 

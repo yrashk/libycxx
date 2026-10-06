@@ -21,7 +21,7 @@ class unordered_map : public __ycxx::__adl_free::__hash_table<_Key, pair<const _
   static_assert(__ycxx::__detail::__allocator_for<_Allocator, pair<const _Key, _Tp>>,
                 "std::unordered_map: Allocator::value_type must be pair<const Key, T> ([container.alloc.reqmts])");
   using base = __ycxx::__adl_free::__hash_table<_Key, pair<const _Key, _Tp>, _Hash, _Pred, _Allocator, false>;
-  using __node = typename base::__node;
+  using node = typename base::node;
   using __node_base = typename base::__node_base;
 
 public:
@@ -262,14 +262,14 @@ private:
     __node_base* const n = this->__find_node(k);
     if (!n)
       __ycxx::__detail::__throw_out_of_range("std::unordered_map::at: key not found");
-    return static_cast<__node*>(n)->value.second;
+    return static_cast<node*>(n)->value.second;
   }
   template <class _Rp, class _Kp>
   constexpr optional<_Rp> __lookup_key(const _Kp& k) const {
     __node_base* const n = this->__find_node(k);
     if (!n)
       return nullopt;
-    return optional<_Rp>(static_cast<__node*>(n)->value.second);
+    return optional<_Rp>(static_cast<node*>(n)->value.second);
   }
   // insert_or_assign: assigns to the mapped value of the element with key k, or inserts
   // value_type(key, obj) ([unord.map.modifiers]/18-33).
@@ -279,7 +279,7 @@ private:
                   "std::unordered_map::insert_or_assign: mapped_type must be assignable from M");
     const size_t h = this->__hash_of(k);
     if (__node_base* const prev = this->__find_prev(k, h)) {
-      static_cast<__node*>(prev->next)->value.second = static_cast<_Mp&&>(__obj);
+      static_cast<node*>(prev->next)->value.second = static_cast<_Mp&&>(__obj);
       return {base::__to_iter(prev->next), false};
     }
     typename base::__node_guard __g{this, this->__make_node(static_cast<_KArg&&>(__key), static_cast<_Mp&&>(__obj))};

@@ -191,7 +191,7 @@ struct __ts_bulk_fn {
   std::size_t __shape;
   void operator()(std::size_t i) const noexcept {
     const std::size_t b = i * chunk;
-    r->__execute(b, b + chunk < __shape ? b + chunk : __shape);
+    r->execute(b, b + chunk < __shape ? b + chunk : __shape);
   }
 };
 }}} // namespace __ycxx::__detail::__exec
@@ -247,7 +247,7 @@ task_scheduler::task_scheduler(_Sch&& __sch, _Allocator __alloc)
 class task_scheduler::__ts_domain : public default_domain {
 public:
   template <class _BulkSndr, class _Env>
-    requires(is_same_v<__tag_of_t<_BulkSndr>, bulk_chunked_t> || is_same_v<__tag_of_t<_BulkSndr>, bulk_unchunked_t>) &&
+    requires(is_same_v<tag_of_t<_BulkSndr>, bulk_chunked_t> || is_same_v<tag_of_t<_BulkSndr>, bulk_unchunked_t>) &&
             requires(_BulkSndr&& b) { auto(static_cast<_BulkSndr&&>(b)); }
   static constexpr auto transform_sender(set_value_t, _BulkSndr&& __bulk_sndr, const _Env& env) noexcept(is_nothrow_constructible_v<decay_t<_BulkSndr>, _BulkSndr>) {
     auto&& data = static_cast<_BulkSndr&&>(__bulk_sndr).template get<1>();
@@ -257,7 +257,7 @@ public:
     if constexpr (!is_same_v<decltype(__sch), task_scheduler>) {
       return __ycxx::__adl_free::__exec_not_a_sender();
     } else {
-      constexpr bool __chunked = is_same_v<__tag_of_t<_BulkSndr>, bulk_chunked_t>;
+      constexpr bool __chunked = is_same_v<tag_of_t<_BulkSndr>, bulk_chunked_t>;
       using _Shape = remove_cvref_t<decltype(data.template get<1>())>;
       using _Fp = remove_cvref_t<decltype(data.template get<2>())>;
       return __ycxx::__adl_free::__exec_par_bulk_sender<__chunked, remove_cvref_t<decltype(__child)>, _Shape, _Fp>{
@@ -279,7 +279,7 @@ struct __exec_ts_sender {
   using sender_concept = std::execution::sender_tag;
   std::execution::task_scheduler __sch;
   template <class _Self, class... _Env>
-  using __ycxx_csigs = std::conditional_t<(std::unstoppable_token<std::__stop_token_of_t<_Env>> && ...) && sizeof...(_Env) != 0,
+  using __ycxx_csigs = std::conditional_t<(std::unstoppable_token<std::stop_token_of_t<_Env>> && ...) && sizeof...(_Env) != 0,
                                         std::execution::completion_signatures<std::execution::set_value_t()>,
                                         std::execution::completion_signatures<std::execution::set_value_t(), std::execution::set_stopped_t()>>;
   template <class _Self, class... _Env>
@@ -492,7 +492,7 @@ public:
   class state : __state_base {
     friend class task;
     using __own_env_t = typename __ycxx::__detail::__exec::__task_own_env<_Environment, decltype(get_env(declval<_Rcvr>()))>::type;
-    using __rcvr_token_t = __stop_token_of_t<env_of_t<_Rcvr>>;
+    using __rcvr_token_t = stop_token_of_t<env_of_t<_Rcvr>>;
 
     coroutine_handle<promise_type> handle;
     remove_cvref_t<_Rcvr> __rcvr;

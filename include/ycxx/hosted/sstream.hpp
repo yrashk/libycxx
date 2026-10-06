@@ -183,7 +183,7 @@ protected:
       this->gbump(-1);
       return __traits::not_eof(c);
     }
-    if (__traits::__eq(__traits::to_char_type(c), this->gptr()[-1])) {
+    if (__traits::eq(__traits::to_char_type(c), this->gptr()[-1])) {
       this->gbump(-1);
       return c;
     }

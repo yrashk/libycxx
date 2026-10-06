@@ -17,7 +17,7 @@ class run_loop;
 
 namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __adl_free {
 struct __exec_run_loop_opstate_base {
-  void (*__execute)(__exec_run_loop_opstate_base*) noexcept;
+  void (*execute)(__exec_run_loop_opstate_base*) noexcept;
   std::execution::run_loop* __loop;
   __exec_run_loop_opstate_base* next = nullptr;
 };
@@ -104,7 +104,7 @@ public:
       __state_ = __running;
     unlock();
     while (base* op = pop_front())
-      op->__execute(op);
+      op->execute(op);
   }
   void finish() noexcept {
     lock();
@@ -135,7 +135,7 @@ private:
     auto& __o = *static_cast<__exec_run_loop_opstate*>(b);
     // With an unstoppable token the only completion signature is set_value_t()
     // ([exec.run.loop.types]/6): set_stopped is then not even potentially evaluated.
-    if constexpr (std::unstoppable_token<std::__stop_token_of_t<std::execution::env_of_t<_Rcvr>>>) {
+    if constexpr (std::unstoppable_token<std::stop_token_of_t<std::execution::env_of_t<_Rcvr>>>) {
       std::execution::set_value(static_cast<_Rcvr&&>(__o.__rcvr));
     } else {
       if (std::get_stop_token(std::execution::get_env(__o.__rcvr)).stop_requested())
@@ -178,7 +178,7 @@ class __exec_run_loop_sender {
 public:
   using sender_concept = std::execution::sender_tag;
   template <class _Self, class... _Env>
-  using __ycxx_csigs = std::conditional_t<(std::unstoppable_token<std::__stop_token_of_t<_Env>> && ...) && sizeof...(_Env) != 0,
+  using __ycxx_csigs = std::conditional_t<(std::unstoppable_token<std::stop_token_of_t<_Env>> && ...) && sizeof...(_Env) != 0,
                                         std::execution::completion_signatures<std::execution::set_value_t()>,
                                         std::execution::completion_signatures<std::execution::set_value_t(), std::execution::set_stopped_t()>>;
   template <class _Self, class... _Env>

@@ -235,6 +235,10 @@ class Names:
         self.avoid = {w for ws in avoid.values() for w in ws if not w.startswith("re:")}
         self.avoid_re = [re.compile(w[3:] + r"\Z") for ws in avoid.values() for w in ws if w.startswith("re:")]
         self._cache = {}
+        # Names an earlier run renamed that the allow-list now names (a standard name the lists
+        # missed): their new spellings are turned back.
+        self.restore = {self.new_name(w): w for w in self.recorded if self.kind(w) is not None}
+        self.recorded -= set(self.restore.values())
 
     def kind(self, w):
         """None for a name to rename, else why it stays."""
@@ -300,6 +304,9 @@ class Renamer:
         self.renamed = {}
 
     def map(self, w):
+        old = self.names.restore.get(w)
+        if old is not None:  # renamed once, allowed since: spelled as the standard spells it
+            return old
         if w in self.protect or (self.only is not None and w not in self.only) or self.names.kind(w) is not None:
             return w
         new = self.names.new_name(w)
@@ -477,7 +484,7 @@ def rename_tree(names, verbose=True):
             p.write_text(new)
             changed += 1
     new_names = renamed - names.recorded
-    if new_names:
+    if new_names or names.restore:
         (DATA / "renamed.txt").write_text(
             "# Every identifier tools/uglify.py has renamed (DECISIONS §2); written by the tool. The runtime's\n"
             "# sources (src/) are renamed by this list, so a merged source that still spells an old name is\n"

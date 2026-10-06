@@ -173,6 +173,13 @@ class __exec_run_loop_sender {
     constexpr __exec_run_loop_scheduler query(std::execution::get_completion_scheduler_t<_Tag>) const noexcept {
       return __exec_run_loop_scheduler(__loop);
     }
+    // [exec.sched]/6: as the scheduler's, which has no domain of its own: default_domain when
+    // given an environment ([exec.get.compl.domain]/2.4), else none.
+    template <class _Tag, class _Env>
+      requires(std::is_same_v<_Tag, std::execution::set_value_t> || std::is_same_v<_Tag, std::execution::set_stopped_t>)
+    constexpr std::execution::default_domain query(std::execution::get_completion_domain_t<_Tag>, const _Env&) const noexcept {
+      return {};
+    }
   };
 
 public:

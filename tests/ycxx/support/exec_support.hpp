@@ -6,6 +6,7 @@
 #include <execution>
 #include <optional>
 #include <tuple>
+#include <type_traits>
 #include <utility>
 
 namespace exec_test {
@@ -73,4 +74,17 @@ bool throws_value(F f, int v) {
   }
   return false;
 }
+// same_sigs<A, B>: A and B are completion_signatures specializations with the same set of
+// signatures ([exec.async.ops]: a set; the order of the template arguments is not specified).
+template <class Sig, class Sigs>
+inline constexpr bool has_sig = false;
+template <class Sig, class... Sigs>
+inline constexpr bool has_sig<Sig, ex::completion_signatures<Sigs...>> = (std::is_same_v<Sig, Sigs> || ...);
+template <class A, class B>
+inline constexpr bool sigs_subset = false;
+template <class... As, class B>
+inline constexpr bool sigs_subset<ex::completion_signatures<As...>, B> = (has_sig<As, B> && ...);
+template <class A, class B>
+inline constexpr bool same_sigs = sigs_subset<A, B> && sigs_subset<B, A>;
+
 } // namespace exec_test

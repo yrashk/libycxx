@@ -28,276 +28,276 @@
 #include <ycxx/core/hash.hpp>
 #include <ycxx/core/iterator_core.hpp>
 
-namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
 
 // A heap array owned by its holder, copied deeply. It has no move operations: a moved-from
 // searcher must still search, so moving one copies its tables.
-template <class T>
-class searcher_array {
-  T* p_ = nullptr;
-  std::size_t n_ = 0;
+template <class _Tp>
+class __searcher_array {
+  _Tp* __p_ = nullptr;
+  std::size_t __n_ = 0;
 
 public:
-  searcher_array() = default;
-  explicit searcher_array(std::size_t n) : p_(n != 0 ? new T[n]() : nullptr), n_(n) {}
-  searcher_array(const searcher_array& o) : searcher_array(o.n_) {
-    for (std::size_t k = 0; k != n_; ++k) p_[k] = o.p_[k];
+  __searcher_array() = default;
+  explicit __searcher_array(std::size_t n) : __p_(n != 0 ? new _Tp[n]() : nullptr), __n_(n) {}
+  __searcher_array(const __searcher_array& __o) : __searcher_array(__o.__n_) {
+    for (std::size_t k = 0; k != __n_; ++k) __p_[k] = __o.__p_[k];
   }
-  searcher_array& operator=(const searcher_array& o) {
-    searcher_array copy(o);
-    T* p = p_;
-    p_ = copy.p_;
-    copy.p_ = p;
-    std::size_t n = n_;
-    n_ = copy.n_;
-    copy.n_ = n;
+  __searcher_array& operator=(const __searcher_array& __o) {
+    __searcher_array copy(__o);
+    _Tp* p = __p_;
+    __p_ = copy.__p_;
+    copy.__p_ = p;
+    std::size_t n = __n_;
+    __n_ = copy.__n_;
+    copy.__n_ = n;
     return *this;
   }
-  ~searcher_array() { delete[] p_; }
+  ~__searcher_array() { delete[] __p_; }
 
-  std::size_t size() const noexcept { return n_; }
-  T& operator[](std::size_t k) const noexcept { return p_[k]; }
+  std::size_t size() const noexcept { return __n_; }
+  _Tp& operator[](std::size_t k) const noexcept { return __p_[k]; }
 };
 
-struct searcher_slot {
+struct __searcher_slot {
   std::size_t hash = 0;
-  std::ptrdiff_t key = -1; // index of the class's representative in the pattern; -1: empty
+  std::ptrdiff_t __key = -1; // index of the class's representative in the pattern; -1: empty
   std::ptrdiff_t value = 0;
 };
 
-template <class V, class Hash, class Pred>
-inline constexpr bool searcher_byte_table =
-    (std::is_integral_v<V> || std::is_same_v<V, std::byte>) && sizeof(V) == 1 &&
-    (std::is_same_v<Pred, std::equal_to<>> || std::is_same_v<Pred, std::equal_to<V>>);
+template <class _Vp, class _Hash, class _Pred>
+inline constexpr bool __searcher_byte_table =
+    (std::is_integral_v<_Vp> || std::is_same_v<_Vp, std::byte>) && sizeof(_Vp) == 1 &&
+    (std::is_same_v<_Pred, std::equal_to<>> || std::is_same_v<_Pred, std::equal_to<_Vp>>);
 
 // The bad-character table: maps the class of a value to a ptrdiff_t, `none` when absent.
-template <class RAI1, class Hash, class Pred>
-class searcher_table {
-  using V = typename std::iterator_traits<RAI1>::value_type;
-  static constexpr bool bytes = searcher_byte_table<V, Hash, Pred>;
+template <class _RAI1, class _Hash, class _Pred>
+class __searcher_table {
+  using _Vp = typename std::iterator_traits<_RAI1>::value_type;
+  static constexpr bool __bytes = __searcher_byte_table<_Vp, _Hash, _Pred>;
 
-  searcher_array<std::conditional_t<bytes, std::ptrdiff_t, searcher_slot>> slots_;
+  __searcher_array<std::conditional_t<__bytes, std::ptrdiff_t, __searcher_slot>> __slots_;
 
 public:
   enum : std::ptrdiff_t { none = -1, unknown = -2 };
 
   // A table for up to `count` classes (none: an empty table, in which every lookup fails).
-  explicit searcher_table(std::size_t count) : slots_(count == 0 ? 0 : bytes ? 256 : capacity(count)) {
-    if constexpr (bytes)
-      for (std::size_t k = 0; k != slots_.size(); ++k) slots_[k] = none;
+  explicit __searcher_table(std::size_t count) : __slots_(count == 0 ? 0 : __bytes ? 256 : capacity(count)) {
+    if constexpr (__bytes)
+      for (std::size_t k = 0; k != __slots_.size(); ++k) __slots_[k] = none;
   }
 
 private:
   static constexpr std::size_t capacity(std::size_t count) noexcept {
-    std::size_t cap = 4; // a power of two, at least twice count: a probe always ends
-    while (cap < 2 * count) cap *= 2;
-    return cap;
+    std::size_t __cap = 4; // a power of two, at least twice count: a probe always ends
+    while (__cap < 2 * count) __cap *= 2;
+    return __cap;
   }
 
 public:
   // Sets the value of the class of pat[k] (inserting the class).
-  void set(const RAI1& pat, std::ptrdiff_t k, std::ptrdiff_t value, const Hash& hf, const Pred& pred) {
-    if constexpr (bytes) {
-      slots_[static_cast<unsigned char>(pat[k])] = value;
+  void set(const _RAI1& __pat, std::ptrdiff_t k, std::ptrdiff_t value, const _Hash& __hf, const _Pred& pred) {
+    if constexpr (__bytes) {
+      __slots_[static_cast<unsigned char>(__pat[k])] = value;
     } else {
-      const std::size_t h = static_cast<std::size_t>(hf(pat[k]));
-      const std::size_t mask = slots_.size() - 1;
+      const std::size_t h = static_cast<std::size_t>(__hf(__pat[k]));
+      const std::size_t mask = __slots_.size() - 1;
       for (std::size_t s = h & mask;; s = (s + 1) & mask) {
-        searcher_slot& slot = slots_[s];
-        if (slot.key < 0) {
-          slot.hash = h;
-          slot.key = k;
-          slot.value = value;
+        __searcher_slot& __slot = __slots_[s];
+        if (__slot.__key < 0) {
+          __slot.hash = h;
+          __slot.__key = k;
+          __slot.value = value;
           return;
         }
-        if (slot.hash == h && static_cast<bool>(pred(pat[k], pat[slot.key]))) {
-          slot.value = value;
+        if (__slot.hash == h && static_cast<bool>(pred(__pat[k], __pat[__slot.__key]))) {
+          __slot.value = value;
           return;
         }
       }
     }
   }
 
-  // The value of the class of x: none when absent, unknown when more than `budget` calls of pred
+  // The value of the class of x: none when absent, unknown when more than `__budget` calls of pred
   // would be needed to tell.
-  template <class T>
-  std::ptrdiff_t find(const T& x, const RAI1& pat, const Hash& hf, const Pred& pred, std::ptrdiff_t budget) const {
-    if (slots_.size() == 0) return none;
-    if constexpr (bytes) {
-      (void)pat;
-      (void)hf;
+  template <class _Tp>
+  std::ptrdiff_t find(const _Tp& __x, const _RAI1& __pat, const _Hash& __hf, const _Pred& pred, std::ptrdiff_t __budget) const {
+    if (__slots_.size() == 0) return none;
+    if constexpr (__bytes) {
+      (void)__pat;
+      (void)__hf;
       (void)pred;
-      (void)budget;
-      return slots_[static_cast<unsigned char>(x)];
+      (void)__budget;
+      return __slots_[static_cast<unsigned char>(__x)];
     } else {
-      const std::size_t h = static_cast<std::size_t>(hf(x));
-      const std::size_t mask = slots_.size() - 1;
+      const std::size_t h = static_cast<std::size_t>(__hf(__x));
+      const std::size_t mask = __slots_.size() - 1;
       for (std::size_t s = h & mask;; s = (s + 1) & mask) {
-        const searcher_slot& slot = slots_[s];
-        if (slot.key < 0) return none;
-        if (slot.hash == h) {
-          if (budget-- == 0) return unknown;
-          if (static_cast<bool>(pred(x, pat[slot.key]))) return slot.value;
+        const __searcher_slot& __slot = __slots_[s];
+        if (__slot.__key < 0) return none;
+        if (__slot.hash == h) {
+          if (__budget-- == 0) return unknown;
+          if (static_cast<bool>(pred(__x, __pat[__slot.__key]))) return __slot.value;
         }
       }
     }
   }
 };
 
-}} // namespace ycxx::detail
+}} // namespace __ycxx::__detail
 
-namespace [[gnu::visibility("hidden")]] std {
+namespace [[__gnu__::__visibility__("hidden")]] std {
 
-template <class ForwardIterator1, class BinaryPredicate = equal_to<>>
+template <class _ForwardIterator1, class _BinaryPredicate = equal_to<>>
 class default_searcher {
-  ForwardIterator1 pat_first_;
-  ForwardIterator1 pat_last_;
-  BinaryPredicate pred_;
+  _ForwardIterator1 __pat_first_;
+  _ForwardIterator1 __pat_last_;
+  _BinaryPredicate __pred_;
 
 public:
-  constexpr default_searcher(ForwardIterator1 pat_first, ForwardIterator1 pat_last,
-                             BinaryPredicate pred = BinaryPredicate())
-      : pat_first_(pat_first), pat_last_(pat_last), pred_(pred) {}
+  constexpr default_searcher(_ForwardIterator1 __pat_first, _ForwardIterator1 __pat_last,
+                             _BinaryPredicate pred = _BinaryPredicate())
+      : __pat_first_(__pat_first), __pat_last_(__pat_last), __pred_(pred) {}
 
-  template <class ForwardIterator2>
-  constexpr pair<ForwardIterator2, ForwardIterator2> operator()(ForwardIterator2 first, ForwardIterator2 last) const {
-    BinaryPredicate pred = pred_; // std::search takes its predicate by value
-    return ::ycxx::detail::search_impl(first, last, pat_first_, pat_last_, ::ycxx::detail::ref_pred(pred));
+  template <class _ForwardIterator2>
+  constexpr pair<_ForwardIterator2, _ForwardIterator2> operator()(_ForwardIterator2 first, _ForwardIterator2 last) const {
+    _BinaryPredicate pred = __pred_; // std::search takes its predicate by value
+    return ::__ycxx::__detail::__search_impl(first, last, __pat_first_, __pat_last_, ::__ycxx::__detail::__ref_pred(pred));
   }
 };
 
-template <class RandomAccessIterator1, class Hash = hash<typename iterator_traits<RandomAccessIterator1>::value_type>,
-          class BinaryPredicate = equal_to<>>
+template <class _RandomAccessIterator1, class _Hash = hash<typename iterator_traits<_RandomAccessIterator1>::value_type>,
+          class _BinaryPredicate = equal_to<>>
 class boyer_moore_searcher {
-  using table_type = ::ycxx::detail::searcher_table<RandomAccessIterator1, Hash, BinaryPredicate>;
+  using __table_type = ::__ycxx::__detail::__searcher_table<_RandomAccessIterator1, _Hash, _BinaryPredicate>;
 
-  RandomAccessIterator1 pat_first_;
-  RandomAccessIterator1 pat_last_;
-  Hash hash_;
-  BinaryPredicate pred_;
-  table_type last_;                                       // class -> index of its last occurrence
-  ::ycxx::detail::searcher_array<ptrdiff_t> good_suffix_; // mismatch index -> shift
+  _RandomAccessIterator1 __pat_first_;
+  _RandomAccessIterator1 __pat_last_;
+  _Hash __hash_;
+  _BinaryPredicate __pred_;
+  __table_type __last_;                                       // class -> index of its last occurrence
+  ::__ycxx::__detail::__searcher_array<ptrdiff_t> __good_suffix_; // mismatch index -> shift
 
 public:
-  boyer_moore_searcher(RandomAccessIterator1 pat_first, RandomAccessIterator1 pat_last, Hash hf = Hash(),
-                       BinaryPredicate pred = BinaryPredicate())
-      : pat_first_(pat_first), pat_last_(pat_last), hash_(hf), pred_(pred),
-        last_(static_cast<size_t>(pat_last - pat_first)), good_suffix_(static_cast<size_t>(pat_last - pat_first)) {
-    const ptrdiff_t m = static_cast<ptrdiff_t>(pat_last_ - pat_first_);
+  boyer_moore_searcher(_RandomAccessIterator1 __pat_first, _RandomAccessIterator1 __pat_last, _Hash __hf = _Hash(),
+                       _BinaryPredicate pred = _BinaryPredicate())
+      : __pat_first_(__pat_first), __pat_last_(__pat_last), __hash_(__hf), __pred_(pred),
+        __last_(static_cast<size_t>(__pat_last - __pat_first)), __good_suffix_(static_cast<size_t>(__pat_last - __pat_first)) {
+    const ptrdiff_t m = static_cast<ptrdiff_t>(__pat_last_ - __pat_first_);
     if (m == 0) return;
-    const RandomAccessIterator1& p = pat_first_;
-    for (ptrdiff_t k = 0; k != m; ++k) last_.set(p, k, k, hash_, pred_);
+    const _RandomAccessIterator1& p = __pat_first_;
+    for (ptrdiff_t k = 0; k != m; ++k) __last_.set(p, k, k, __hash_, __pred_);
 
     // suffix[i]: the length of the longest common suffix of p[0, i] and p.
-    ::ycxx::detail::searcher_array<ptrdiff_t> suffix(static_cast<size_t>(m));
+    ::__ycxx::__detail::__searcher_array<ptrdiff_t> suffix(static_cast<size_t>(m));
     suffix[m - 1] = m;
-    ptrdiff_t g = m - 1, f = m - 1;
+    ptrdiff_t __g = m - 1, __f = m - 1;
     for (ptrdiff_t i = m - 2; i >= 0; --i) {
-      if (i > g && suffix[i + m - 1 - f] < i - g) {
-        suffix[i] = suffix[i + m - 1 - f];
+      if (i > __g && suffix[i + m - 1 - __f] < i - __g) {
+        suffix[i] = suffix[i + m - 1 - __f];
       } else {
-        if (i < g) g = i;
-        f = i;
-        while (g >= 0 && static_cast<bool>(pred_(p[g], p[g + m - 1 - f]))) --g;
-        suffix[i] = f - g;
+        if (i < __g) __g = i;
+        __f = i;
+        while (__g >= 0 && static_cast<bool>(__pred_(p[__g], p[__g + m - 1 - __f]))) --__g;
+        suffix[i] = __f - __g;
       }
     }
-    for (ptrdiff_t i = 0; i != m; ++i) good_suffix_[i] = m;
-    ptrdiff_t j = 0;
+    for (ptrdiff_t i = 0; i != m; ++i) __good_suffix_[i] = m;
+    ptrdiff_t __j = 0;
     for (ptrdiff_t i = m - 1; i >= 0; --i) {
       if (suffix[i] == i + 1) {
-        for (; j < m - 1 - i; ++j)
-          if (good_suffix_[j] == m) good_suffix_[j] = m - 1 - i;
+        for (; __j < m - 1 - i; ++__j)
+          if (__good_suffix_[__j] == m) __good_suffix_[__j] = m - 1 - i;
       }
     }
-    for (ptrdiff_t i = 0; i <= m - 2; ++i) good_suffix_[m - 1 - suffix[i]] = m - 1 - i;
+    for (ptrdiff_t i = 0; i <= m - 2; ++i) __good_suffix_[m - 1 - suffix[i]] = m - 1 - i;
   }
 
-  template <class RandomAccessIterator2>
-  pair<RandomAccessIterator2, RandomAccessIterator2> operator()(RandomAccessIterator2 first,
-                                                                RandomAccessIterator2 last) const {
-    static_assert(is_same_v<typename iterator_traits<RandomAccessIterator1>::value_type,
-                            typename iterator_traits<RandomAccessIterator2>::value_type>,
+  template <class _RandomAccessIterator2>
+  pair<_RandomAccessIterator2, _RandomAccessIterator2> operator()(_RandomAccessIterator2 first,
+                                                                _RandomAccessIterator2 last) const {
+    static_assert(is_same_v<typename iterator_traits<_RandomAccessIterator1>::value_type,
+                            typename iterator_traits<_RandomAccessIterator2>::value_type>,
                   "boyer_moore_searcher: the pattern and the text must have the same value type");
-    using D = typename iterator_traits<RandomAccessIterator2>::difference_type;
-    const ptrdiff_t m = static_cast<ptrdiff_t>(pat_last_ - pat_first_);
+    using _Dp = typename iterator_traits<_RandomAccessIterator2>::difference_type;
+    const ptrdiff_t m = static_cast<ptrdiff_t>(__pat_last_ - __pat_first_);
     if (m == 0) return {first, first};
-    const D n = last - first;
-    const RandomAccessIterator1& p = pat_first_;
-    for (D i = 0; n - i >= static_cast<D>(m);) {
-      ptrdiff_t j = m - 1;
-      while (j >= 0 && static_cast<bool>(pred_(first[i + static_cast<D>(j)], p[j]))) --j;
-      if (j < 0) {
-        RandomAccessIterator2 r = first + i;
-        return {r, r + static_cast<D>(m)};
+    const _Dp n = last - first;
+    const _RandomAccessIterator1& p = __pat_first_;
+    for (_Dp i = 0; n - i >= static_cast<_Dp>(m);) {
+      ptrdiff_t __j = m - 1;
+      while (__j >= 0 && static_cast<bool>(__pred_(first[i + static_cast<_Dp>(__j)], p[__j]))) --__j;
+      if (__j < 0) {
+        _RandomAccessIterator2 r = first + i;
+        return {r, r + static_cast<_Dp>(m)};
       }
-      ptrdiff_t shift = good_suffix_[j];
-      if (shift < j + 1) {
-        const ptrdiff_t at = last_.find(first[i + static_cast<D>(j)], p, hash_, pred_, j);
-        if (at == table_type::none)
-          shift = j + 1;
-        else if (at != table_type::unknown && j - at > shift)
-          shift = j - at;
+      ptrdiff_t shift = __good_suffix_[__j];
+      if (shift < __j + 1) {
+        const ptrdiff_t at = __last_.find(first[i + static_cast<_Dp>(__j)], p, __hash_, __pred_, __j);
+        if (at == __table_type::none)
+          shift = __j + 1;
+        else if (at != __table_type::unknown && __j - at > shift)
+          shift = __j - at;
       }
-      i += static_cast<D>(shift);
+      i += static_cast<_Dp>(shift);
     }
     return {last, last};
   }
 };
 
-template <class RandomAccessIterator1, class Hash = hash<typename iterator_traits<RandomAccessIterator1>::value_type>,
-          class BinaryPredicate = equal_to<>>
+template <class _RandomAccessIterator1, class _Hash = hash<typename iterator_traits<_RandomAccessIterator1>::value_type>,
+          class _BinaryPredicate = equal_to<>>
 class boyer_moore_horspool_searcher {
-  using table_type = ::ycxx::detail::searcher_table<RandomAccessIterator1, Hash, BinaryPredicate>;
+  using __table_type = ::__ycxx::__detail::__searcher_table<_RandomAccessIterator1, _Hash, _BinaryPredicate>;
 
-  RandomAccessIterator1 pat_first_;
-  RandomAccessIterator1 pat_last_;
-  Hash hash_;
-  BinaryPredicate pred_;
-  table_type shift_;         // class -> distance of its last occurrence in p[0, m-1) from p[m-1]
-  ptrdiff_t last_shift_ = 0; // the shift for the class of p[m-1]
+  _RandomAccessIterator1 __pat_first_;
+  _RandomAccessIterator1 __pat_last_;
+  _Hash __hash_;
+  _BinaryPredicate __pred_;
+  __table_type __shift_;         // class -> distance of its last occurrence in p[0, m-1) from p[m-1]
+  ptrdiff_t __last_shift_ = 0; // the shift for the class of p[m-1]
 
 public:
-  boyer_moore_horspool_searcher(RandomAccessIterator1 pat_first, RandomAccessIterator1 pat_last, Hash hf = Hash(),
-                                BinaryPredicate pred = BinaryPredicate())
-      : pat_first_(pat_first), pat_last_(pat_last), hash_(hf), pred_(pred),
-        shift_(pat_last == pat_first ? 0 : static_cast<size_t>(pat_last - pat_first) - 1) {
-    const ptrdiff_t m = static_cast<ptrdiff_t>(pat_last_ - pat_first_);
+  boyer_moore_horspool_searcher(_RandomAccessIterator1 __pat_first, _RandomAccessIterator1 __pat_last, _Hash __hf = _Hash(),
+                                _BinaryPredicate pred = _BinaryPredicate())
+      : __pat_first_(__pat_first), __pat_last_(__pat_last), __hash_(__hf), __pred_(pred),
+        __shift_(__pat_last == __pat_first ? 0 : static_cast<size_t>(__pat_last - __pat_first) - 1) {
+    const ptrdiff_t m = static_cast<ptrdiff_t>(__pat_last_ - __pat_first_);
     if (m == 0) return;
-    const RandomAccessIterator1& p = pat_first_;
-    for (ptrdiff_t k = 0; k != m - 1; ++k) shift_.set(p, k, m - 1 - k, hash_, pred_);
-    const ptrdiff_t s = shift_.find(p[m - 1], p, hash_, pred_, m);
-    last_shift_ = s == table_type::none ? m : s;
+    const _RandomAccessIterator1& p = __pat_first_;
+    for (ptrdiff_t k = 0; k != m - 1; ++k) __shift_.set(p, k, m - 1 - k, __hash_, __pred_);
+    const ptrdiff_t s = __shift_.find(p[m - 1], p, __hash_, __pred_, m);
+    __last_shift_ = s == __table_type::none ? m : s;
   }
 
-  template <class RandomAccessIterator2>
-  pair<RandomAccessIterator2, RandomAccessIterator2> operator()(RandomAccessIterator2 first,
-                                                                RandomAccessIterator2 last) const {
-    static_assert(is_same_v<typename iterator_traits<RandomAccessIterator1>::value_type,
-                            typename iterator_traits<RandomAccessIterator2>::value_type>,
+  template <class _RandomAccessIterator2>
+  pair<_RandomAccessIterator2, _RandomAccessIterator2> operator()(_RandomAccessIterator2 first,
+                                                                _RandomAccessIterator2 last) const {
+    static_assert(is_same_v<typename iterator_traits<_RandomAccessIterator1>::value_type,
+                            typename iterator_traits<_RandomAccessIterator2>::value_type>,
                   "boyer_moore_horspool_searcher: the pattern and the text must have the same value type");
-    using D = typename iterator_traits<RandomAccessIterator2>::difference_type;
-    const ptrdiff_t m = static_cast<ptrdiff_t>(pat_last_ - pat_first_);
+    using _Dp = typename iterator_traits<_RandomAccessIterator2>::difference_type;
+    const ptrdiff_t m = static_cast<ptrdiff_t>(__pat_last_ - __pat_first_);
     if (m == 0) return {first, first};
-    const D n = last - first;
-    const RandomAccessIterator1& p = pat_first_;
-    for (D i = 0; n - i >= static_cast<D>(m);) {
-      const D end = i + static_cast<D>(m - 1);
+    const _Dp n = last - first;
+    const _RandomAccessIterator1& p = __pat_first_;
+    for (_Dp i = 0; n - i >= static_cast<_Dp>(m);) {
+      const _Dp end = i + static_cast<_Dp>(m - 1);
       ptrdiff_t shift;
-      if (static_cast<bool>(pred_(first[end], p[m - 1]))) {
-        ptrdiff_t j = m - 2;
-        while (j >= 0 && static_cast<bool>(pred_(first[i + static_cast<D>(j)], p[j]))) --j;
-        if (j < 0) {
-          RandomAccessIterator2 r = first + i;
-          return {r, r + static_cast<D>(m)};
+      if (static_cast<bool>(__pred_(first[end], p[m - 1]))) {
+        ptrdiff_t __j = m - 2;
+        while (__j >= 0 && static_cast<bool>(__pred_(first[i + static_cast<_Dp>(__j)], p[__j]))) --__j;
+        if (__j < 0) {
+          _RandomAccessIterator2 r = first + i;
+          return {r, r + static_cast<_Dp>(m)};
         }
-        shift = last_shift_;
+        shift = __last_shift_;
       } else {
         // The table holds at most m - 1 classes, so the lookup never runs out of its budget.
-        const ptrdiff_t s = shift_.find(first[end], p, hash_, pred_, m - 1);
-        shift = s < 0 ? (s == table_type::none ? m : 1) : s;
+        const ptrdiff_t s = __shift_.find(first[end], p, __hash_, __pred_, m - 1);
+        shift = s < 0 ? (s == __table_type::none ? m : 1) : s;
       }
-      i += static_cast<D>(shift);
+      i += static_cast<_Dp>(shift);
     }
     return {last, last};
   }

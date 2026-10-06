@@ -5,6 +5,6 @@
 #include <ycxx/core/version.hpp>
 #include <ycxx/core/bitset.hpp>
 #include <string> // [bitset.syn]
-#if YCXX_HOSTED
+#if _YCXX_HOSTED
 #  include <iosfwd> // [bitset.syn]: for istream, ostream
 #endif

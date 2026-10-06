@@ -17,198 +17,198 @@
 #include <ycxx/core/memory_base.hpp>
 #include <ycxx/core/uninitialized.hpp>
 
-namespace [[gnu::visibility("hidden")]] std {
-template <class T>
+namespace [[__gnu__::__visibility__("hidden")]] std {
+template <class _Tp>
 class valarray;
 class slice;
-template <class T>
+template <class _Tp>
 class slice_array;
 class gslice;
-template <class T>
+template <class _Tp>
 class gslice_array;
-template <class T>
+template <class _Tp>
 class mask_array;
-template <class T>
+template <class _Tp>
 class indirect_array;
 } // namespace std
 
-namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
 
 // The operations, as function objects (the result is converted to T, or to bool for the
 // comparisons, by the caller).
-namespace va_op {
+namespace __va_op {
 struct plus {
-  template <class A, class B>
-  constexpr auto operator()(const A& a, const B& b) const -> decltype(a + b) {
+  template <class _Ap, class _Bp>
+  constexpr auto operator()(const _Ap& a, const _Bp& b) const -> decltype(a + b) {
     return a + b;
   }
 };
 struct minus {
-  template <class A, class B>
-  constexpr auto operator()(const A& a, const B& b) const -> decltype(a - b) {
+  template <class _Ap, class _Bp>
+  constexpr auto operator()(const _Ap& a, const _Bp& b) const -> decltype(a - b) {
     return a - b;
   }
 };
-struct mul {
-  template <class A, class B>
-  constexpr auto operator()(const A& a, const B& b) const -> decltype(a * b) {
+struct __mul {
+  template <class _Ap, class _Bp>
+  constexpr auto operator()(const _Ap& a, const _Bp& b) const -> decltype(a * b) {
     return a * b;
   }
 };
 struct div {
-  template <class A, class B>
-  constexpr auto operator()(const A& a, const B& b) const -> decltype(a / b) {
+  template <class _Ap, class _Bp>
+  constexpr auto operator()(const _Ap& a, const _Bp& b) const -> decltype(a / b) {
     return a / b;
   }
 };
-struct mod {
-  template <class A, class B>
-  constexpr auto operator()(const A& a, const B& b) const -> decltype(a % b) {
+struct __mod {
+  template <class _Ap, class _Bp>
+  constexpr auto operator()(const _Ap& a, const _Bp& b) const -> decltype(a % b) {
     return a % b;
   }
 };
-struct bxor {
-  template <class A, class B>
-  constexpr auto operator()(const A& a, const B& b) const -> decltype(a ^ b) {
+struct __bxor {
+  template <class _Ap, class _Bp>
+  constexpr auto operator()(const _Ap& a, const _Bp& b) const -> decltype(a ^ b) {
     return a ^ b;
   }
 };
-struct band {
-  template <class A, class B>
-  constexpr auto operator()(const A& a, const B& b) const -> decltype(a & b) {
+struct __band {
+  template <class _Ap, class _Bp>
+  constexpr auto operator()(const _Ap& a, const _Bp& b) const -> decltype(a & b) {
     return a & b;
   }
 };
-struct bor {
-  template <class A, class B>
-  constexpr auto operator()(const A& a, const B& b) const -> decltype(a | b) {
+struct __bor {
+  template <class _Ap, class _Bp>
+  constexpr auto operator()(const _Ap& a, const _Bp& b) const -> decltype(a | b) {
     return a | b;
   }
 };
 struct shl {
-  template <class A, class B>
-  constexpr auto operator()(const A& a, const B& b) const -> decltype(a << b) {
+  template <class _Ap, class _Bp>
+  constexpr auto operator()(const _Ap& a, const _Bp& b) const -> decltype(a << b) {
     return a << b;
   }
 };
 struct shr {
-  template <class A, class B>
-  constexpr auto operator()(const A& a, const B& b) const -> decltype(a >> b) {
+  template <class _Ap, class _Bp>
+  constexpr auto operator()(const _Ap& a, const _Bp& b) const -> decltype(a >> b) {
     return a >> b;
   }
 };
-struct land {
-  template <class A, class B>
-  constexpr auto operator()(const A& a, const B& b) const -> decltype(a && b) {
+struct __land {
+  template <class _Ap, class _Bp>
+  constexpr auto operator()(const _Ap& a, const _Bp& b) const -> decltype(a && b) {
     return a && b;
   }
 };
-struct lor {
-  template <class A, class B>
-  constexpr auto operator()(const A& a, const B& b) const -> decltype(a || b) {
+struct __lor {
+  template <class _Ap, class _Bp>
+  constexpr auto operator()(const _Ap& a, const _Bp& b) const -> decltype(a || b) {
     return a || b;
   }
 };
-struct eq {
-  template <class A, class B>
-  constexpr auto operator()(const A& a, const B& b) const -> decltype(a == b) {
+struct __eq {
+  template <class _Ap, class _Bp>
+  constexpr auto operator()(const _Ap& a, const _Bp& b) const -> decltype(a == b) {
     return a == b;
   }
 };
-struct ne {
-  template <class A, class B>
-  constexpr auto operator()(const A& a, const B& b) const -> decltype(a != b) {
+struct __ne {
+  template <class _Ap, class _Bp>
+  constexpr auto operator()(const _Ap& a, const _Bp& b) const -> decltype(a != b) {
     return a != b;
   }
 };
-struct lt {
-  template <class A, class B>
-  constexpr auto operator()(const A& a, const B& b) const -> decltype(a < b) {
+struct __lt {
+  template <class _Ap, class _Bp>
+  constexpr auto operator()(const _Ap& a, const _Bp& b) const -> decltype(a < b) {
     return a < b;
   }
 };
-struct gt {
-  template <class A, class B>
-  constexpr auto operator()(const A& a, const B& b) const -> decltype(a > b) {
+struct __gt {
+  template <class _Ap, class _Bp>
+  constexpr auto operator()(const _Ap& a, const _Bp& b) const -> decltype(a > b) {
     return a > b;
   }
 };
-struct le {
-  template <class A, class B>
-  constexpr auto operator()(const A& a, const B& b) const -> decltype(a <= b) {
+struct __le {
+  template <class _Ap, class _Bp>
+  constexpr auto operator()(const _Ap& a, const _Bp& b) const -> decltype(a <= b) {
     return a <= b;
   }
 };
-struct ge {
-  template <class A, class B>
-  constexpr auto operator()(const A& a, const B& b) const -> decltype(a >= b) {
+struct __ge {
+  template <class _Ap, class _Bp>
+  constexpr auto operator()(const _Ap& a, const _Bp& b) const -> decltype(a >= b) {
     return a >= b;
   }
 };
 // Compound assignments.
-struct plus_assign {
-  template <class A, class B>
-  constexpr void operator()(A& a, const B& b) const {
+struct __plus_assign {
+  template <class _Ap, class _Bp>
+  constexpr void operator()(_Ap& a, const _Bp& b) const {
     a += b;
   }
 };
-struct minus_assign {
-  template <class A, class B>
-  constexpr void operator()(A& a, const B& b) const {
+struct __minus_assign {
+  template <class _Ap, class _Bp>
+  constexpr void operator()(_Ap& a, const _Bp& b) const {
     a -= b;
   }
 };
-struct mul_assign {
-  template <class A, class B>
-  constexpr void operator()(A& a, const B& b) const {
+struct __mul_assign {
+  template <class _Ap, class _Bp>
+  constexpr void operator()(_Ap& a, const _Bp& b) const {
     a *= b;
   }
 };
-struct div_assign {
-  template <class A, class B>
-  constexpr void operator()(A& a, const B& b) const {
+struct __div_assign {
+  template <class _Ap, class _Bp>
+  constexpr void operator()(_Ap& a, const _Bp& b) const {
     a /= b;
   }
 };
-struct mod_assign {
-  template <class A, class B>
-  constexpr void operator()(A& a, const B& b) const {
+struct __mod_assign {
+  template <class _Ap, class _Bp>
+  constexpr void operator()(_Ap& a, const _Bp& b) const {
     a %= b;
   }
 };
-struct xor_assign {
-  template <class A, class B>
-  constexpr void operator()(A& a, const B& b) const {
+struct __xor_assign {
+  template <class _Ap, class _Bp>
+  constexpr void operator()(_Ap& a, const _Bp& b) const {
     a ^= b;
   }
 };
-struct and_assign {
-  template <class A, class B>
-  constexpr void operator()(A& a, const B& b) const {
+struct __and_assign {
+  template <class _Ap, class _Bp>
+  constexpr void operator()(_Ap& a, const _Bp& b) const {
     a &= b;
   }
 };
-struct or_assign {
-  template <class A, class B>
-  constexpr void operator()(A& a, const B& b) const {
+struct __or_assign {
+  template <class _Ap, class _Bp>
+  constexpr void operator()(_Ap& a, const _Bp& b) const {
     a |= b;
   }
 };
-struct shl_assign {
-  template <class A, class B>
-  constexpr void operator()(A& a, const B& b) const {
+struct __shl_assign {
+  template <class _Ap, class _Bp>
+  constexpr void operator()(_Ap& a, const _Bp& b) const {
     a <<= b;
   }
 };
-struct shr_assign {
-  template <class A, class B>
-  constexpr void operator()(A& a, const B& b) const {
+struct __shr_assign {
+  template <class _Ap, class _Bp>
+  constexpr void operator()(_Ap& a, const _Bp& b) const {
     a >>= b;
   }
 };
 struct assign {
-  template <class A, class B>
-  constexpr void operator()(A& a, const B& b) const {
+  template <class _Ap, class _Bp>
+  constexpr void operator()(_Ap& a, const _Bp& b) const {
     a = b;
   }
 };
@@ -217,7 +217,7 @@ struct assign {
 // [valarray.transcend]/1: "A unique function with the indicated name can be applied
 // (unqualified) to an operand of type T": the calls below are unqualified on purpose, with the
 // std:: functions visible.
-namespace va_math {
+namespace __va_math {
 using std::abs;
 using std::acos;
 using std::asin;
@@ -234,1030 +234,1030 @@ using std::sinh;
 using std::sqrt;
 using std::tan;
 using std::tanh;
-struct f_abs {
-  template <class X>
-  auto operator()(const X& x) const -> decltype(abs(x)) {
-    return abs(x);
+struct __f_abs {
+  template <class _Xp>
+  auto operator()(const _Xp& __x) const -> decltype(abs(__x)) {
+    return abs(__x);
   }
 };
-struct f_acos {
-  template <class X>
-  auto operator()(const X& x) const -> decltype(acos(x)) {
-    return acos(x);
+struct __f_acos {
+  template <class _Xp>
+  auto operator()(const _Xp& __x) const -> decltype(acos(__x)) {
+    return acos(__x);
   }
 };
-struct f_asin {
-  template <class X>
-  auto operator()(const X& x) const -> decltype(asin(x)) {
-    return asin(x);
+struct __f_asin {
+  template <class _Xp>
+  auto operator()(const _Xp& __x) const -> decltype(asin(__x)) {
+    return asin(__x);
   }
 };
-struct f_atan {
-  template <class X>
-  auto operator()(const X& x) const -> decltype(atan(x)) {
-    return atan(x);
+struct __f_atan {
+  template <class _Xp>
+  auto operator()(const _Xp& __x) const -> decltype(atan(__x)) {
+    return atan(__x);
   }
 };
-struct f_atan2 {
-  template <class X>
-  auto operator()(const X& x, const X& y) const -> decltype(atan2(x, y)) {
-    return atan2(x, y);
+struct __f_atan2 {
+  template <class _Xp>
+  auto operator()(const _Xp& __x, const _Xp& y) const -> decltype(atan2(__x, y)) {
+    return atan2(__x, y);
   }
 };
-struct f_cos {
-  template <class X>
-  auto operator()(const X& x) const -> decltype(cos(x)) {
-    return cos(x);
+struct __f_cos {
+  template <class _Xp>
+  auto operator()(const _Xp& __x) const -> decltype(cos(__x)) {
+    return cos(__x);
   }
 };
-struct f_cosh {
-  template <class X>
-  auto operator()(const X& x) const -> decltype(cosh(x)) {
-    return cosh(x);
+struct __f_cosh {
+  template <class _Xp>
+  auto operator()(const _Xp& __x) const -> decltype(cosh(__x)) {
+    return cosh(__x);
   }
 };
-struct f_exp {
-  template <class X>
-  auto operator()(const X& x) const -> decltype(exp(x)) {
-    return exp(x);
+struct __f_exp {
+  template <class _Xp>
+  auto operator()(const _Xp& __x) const -> decltype(exp(__x)) {
+    return exp(__x);
   }
 };
-struct f_log {
-  template <class X>
-  auto operator()(const X& x) const -> decltype(log(x)) {
-    return log(x);
+struct __f_log {
+  template <class _Xp>
+  auto operator()(const _Xp& __x) const -> decltype(log(__x)) {
+    return log(__x);
   }
 };
-struct f_log10 {
-  template <class X>
-  auto operator()(const X& x) const -> decltype(log10(x)) {
-    return log10(x);
+struct __f_log10 {
+  template <class _Xp>
+  auto operator()(const _Xp& __x) const -> decltype(log10(__x)) {
+    return log10(__x);
   }
 };
-struct f_pow {
-  template <class X>
-  auto operator()(const X& x, const X& y) const -> decltype(pow(x, y)) {
-    return pow(x, y);
+struct __f_pow {
+  template <class _Xp>
+  auto operator()(const _Xp& __x, const _Xp& y) const -> decltype(pow(__x, y)) {
+    return pow(__x, y);
   }
 };
-struct f_sin {
-  template <class X>
-  auto operator()(const X& x) const -> decltype(sin(x)) {
-    return sin(x);
+struct __f_sin {
+  template <class _Xp>
+  auto operator()(const _Xp& __x) const -> decltype(sin(__x)) {
+    return sin(__x);
   }
 };
-struct f_sinh {
-  template <class X>
-  auto operator()(const X& x) const -> decltype(sinh(x)) {
-    return sinh(x);
+struct __f_sinh {
+  template <class _Xp>
+  auto operator()(const _Xp& __x) const -> decltype(sinh(__x)) {
+    return sinh(__x);
   }
 };
-struct f_sqrt {
-  template <class X>
-  auto operator()(const X& x) const -> decltype(sqrt(x)) {
-    return sqrt(x);
+struct __f_sqrt {
+  template <class _Xp>
+  auto operator()(const _Xp& __x) const -> decltype(sqrt(__x)) {
+    return sqrt(__x);
   }
 };
-struct f_tan {
-  template <class X>
-  auto operator()(const X& x) const -> decltype(tan(x)) {
-    return tan(x);
+struct __f_tan {
+  template <class _Xp>
+  auto operator()(const _Xp& __x) const -> decltype(tan(__x)) {
+    return tan(__x);
   }
 };
-struct f_tanh {
-  template <class X>
-  auto operator()(const X& x) const -> decltype(tanh(x)) {
-    return tanh(x);
+struct __f_tanh {
+  template <class _Xp>
+  auto operator()(const _Xp& __x) const -> decltype(tanh(__x)) {
+    return tanh(__x);
   }
 };
 } // namespace va_math
 
 // Builds valarray<R> of n elements, element i initialised with f(i).
-struct va_access;
+struct __va_access;
 
-}} // namespace ycxx::detail
+}} // namespace __ycxx::__detail
 
-namespace [[gnu::visibility("hidden")]] std {
+namespace [[__gnu__::__visibility__("hidden")]] std {
 
 // ---- slice ([class.slice]) ---------------------------------------------------------------------
 class slice {
 public:
-  slice() : start_(0), size_(0), stride_(0) {}
-  slice(size_t start, size_t length, size_t stride) : start_(start), size_(length), stride_(stride) {}
+  slice() : __start_(0), __size_(0), __stride_(0) {}
+  slice(size_t start, size_t length, size_t stride) : __start_(start), __size_(length), __stride_(stride) {}
   slice(const slice&) = default;
-  size_t start() const { return start_; }
-  size_t size() const { return size_; }
-  size_t stride() const { return stride_; }
-  friend bool operator==(const slice& x, const slice& y) {
-    return x.start() == y.start() && x.size() == y.size() && x.stride() == y.stride();
+  size_t start() const { return __start_; }
+  size_t size() const { return __size_; }
+  size_t stride() const { return __stride_; }
+  friend bool operator==(const slice& __x, const slice& y) {
+    return __x.start() == y.start() && __x.size() == y.size() && __x.stride() == y.stride();
   }
 
 private:
-  size_t start_, size_, stride_;
+  size_t __start_, __size_, __stride_;
 };
 
 // ---- valarray ([template.valarray]) --------------------------------------------------------------
-template <class T>
+template <class _Tp>
 class valarray {
 public:
-  using value_type = T;
-  using iterator = T*;
-  using const_iterator = const T*;
+  using value_type = _Tp;
+  using iterator = _Tp*;
+  using const_iterator = const _Tp*;
 
   // [valarray.cons]
-  valarray() noexcept : data_(nullptr), size_(0) {}
-  explicit valarray(size_t n) : data_(nullptr), size_(0) {
-    build(n, [](T* p, size_t k) { std::uninitialized_value_construct_n(p, k); });
+  valarray() noexcept : __data_(nullptr), __size_(0) {}
+  explicit valarray(size_t n) : __data_(nullptr), __size_(0) {
+    __build(n, [](_Tp* p, size_t k) { std::uninitialized_value_construct_n(p, k); });
   }
-  valarray(const T& v, size_t n) : data_(nullptr), size_(0) {
-    build(n, [&v](T* p, size_t k) { std::uninitialized_fill_n(p, k, v); });
+  valarray(const _Tp& __v, size_t n) : __data_(nullptr), __size_(0) {
+    __build(n, [&__v](_Tp* p, size_t k) { std::uninitialized_fill_n(p, k, __v); });
   }
-  valarray(const T* p, size_t n) : data_(nullptr), size_(0) {
-    build(n, [p](T* d, size_t k) { std::uninitialized_copy_n(p, k, d); });
+  valarray(const _Tp* p, size_t n) : __data_(nullptr), __size_(0) {
+    __build(n, [p](_Tp* d, size_t k) { std::uninitialized_copy_n(p, k, d); });
   }
-  valarray(const valarray& v) : valarray(v.data_, v.size_) {}
-  valarray(valarray&& v) noexcept : data_(v.data_), size_(v.size_) {
-    v.data_ = nullptr;
-    v.size_ = 0;
+  valarray(const valarray& __v) : valarray(__v.__data_, __v.__size_) {}
+  valarray(valarray&& __v) noexcept : __data_(__v.__data_), __size_(__v.__size_) {
+    __v.__data_ = nullptr;
+    __v.__size_ = 0;
   }
-  valarray(const slice_array<T>& s);
-  valarray(const gslice_array<T>& s);
-  valarray(const mask_array<T>& s);
-  valarray(const indirect_array<T>& s);
-  valarray(initializer_list<T> il) : valarray(il.begin(), il.size()) {}
+  valarray(const slice_array<_Tp>& s);
+  valarray(const gslice_array<_Tp>& s);
+  valarray(const mask_array<_Tp>& s);
+  valarray(const indirect_array<_Tp>& s);
+  valarray(initializer_list<_Tp> il) : valarray(il.begin(), il.size()) {}
   ~valarray() { release(); }
 
   // [valarray.assign]
-  valarray& operator=(const valarray& v) {
-    if (this == __builtin_addressof(v)) return *this;
-    if (size_ == v.size_) {
-      for (size_t i = 0; i < size_; ++i) data_[i] = v.data_[i];
+  valarray& operator=(const valarray& __v) {
+    if (this == __builtin_addressof(__v)) return *this;
+    if (__size_ == __v.__size_) {
+      for (size_t i = 0; i < __size_; ++i) __data_[i] = __v.__data_[i];
     } else {
-      valarray tmp(v);
-      swap(tmp);
+      valarray __tmp(__v);
+      swap(__tmp);
     }
     return *this;
   }
-  valarray& operator=(valarray&& v) noexcept {
-    if (this != __builtin_addressof(v)) {
+  valarray& operator=(valarray&& __v) noexcept {
+    if (this != __builtin_addressof(__v)) {
       release();
-      data_ = v.data_;
-      size_ = v.size_;
-      v.data_ = nullptr;
-      v.size_ = 0;
+      __data_ = __v.__data_;
+      __size_ = __v.__size_;
+      __v.__data_ = nullptr;
+      __v.__size_ = 0;
     }
     return *this;
   }
-  valarray& operator=(initializer_list<T> il) { return *this = valarray(il); }
-  valarray& operator=(const T& v) {
-    for (size_t i = 0; i < size_; ++i) data_[i] = v;
+  valarray& operator=(initializer_list<_Tp> il) { return *this = valarray(il); }
+  valarray& operator=(const _Tp& __v) {
+    for (size_t i = 0; i < __size_; ++i) __data_[i] = __v;
     return *this;
   }
-  valarray& operator=(const slice_array<T>& s);
-  valarray& operator=(const gslice_array<T>& s);
-  valarray& operator=(const mask_array<T>& s);
-  valarray& operator=(const indirect_array<T>& s);
+  valarray& operator=(const slice_array<_Tp>& s);
+  valarray& operator=(const gslice_array<_Tp>& s);
+  valarray& operator=(const mask_array<_Tp>& s);
+  valarray& operator=(const indirect_array<_Tp>& s);
 
   // [valarray.access]
-  const T& operator[](size_t n) const {
-    ycxx::detail::precondition(n < size_, "std::valarray::operator[]: index out of range");
-    return data_[n];
+  const _Tp& operator[](size_t n) const {
+    __ycxx::__detail::__precondition(n < __size_, "std::valarray::operator[]: index out of range");
+    return __data_[n];
   }
-  T& operator[](size_t n) {
-    ycxx::detail::precondition(n < size_, "std::valarray::operator[]: index out of range");
-    return data_[n];
+  _Tp& operator[](size_t n) {
+    __ycxx::__detail::__precondition(n < __size_, "std::valarray::operator[]: index out of range");
+    return __data_[n];
   }
 
   // [valarray.sub]
   valarray operator[](slice s) const;
-  slice_array<T> operator[](slice s);
-  valarray operator[](const gslice& g) const;
-  gslice_array<T> operator[](const gslice& g);
+  slice_array<_Tp> operator[](slice s);
+  valarray operator[](const gslice& __g) const;
+  gslice_array<_Tp> operator[](const gslice& __g);
   valarray operator[](const valarray<bool>& mask) const;
-  mask_array<T> operator[](const valarray<bool>& mask);
-  valarray operator[](const valarray<size_t>& ind) const;
-  indirect_array<T> operator[](const valarray<size_t>& ind);
+  mask_array<_Tp> operator[](const valarray<bool>& mask);
+  valarray operator[](const valarray<size_t>& __ind) const;
+  indirect_array<_Tp> operator[](const valarray<size_t>& __ind);
 
   // [valarray.unary]
   valarray operator+() const {
-    return map([](const T& x) -> T { return +x; });
+    return map([](const _Tp& __x) -> _Tp { return +__x; });
   }
   valarray operator-() const {
-    return map([](const T& x) -> T { return -x; });
+    return map([](const _Tp& __x) -> _Tp { return -__x; });
   }
   valarray operator~() const {
-    return map([](const T& x) -> T { return ~x; });
+    return map([](const _Tp& __x) -> _Tp { return ~__x; });
   }
   valarray<bool> operator!() const;
 
   // [valarray.cassign]
-  valarray& operator*=(const T& v) { return update(v, ycxx::detail::va_op::mul_assign{}); }
-  valarray& operator/=(const T& v) { return update(v, ycxx::detail::va_op::div_assign{}); }
-  valarray& operator%=(const T& v) { return update(v, ycxx::detail::va_op::mod_assign{}); }
-  valarray& operator+=(const T& v) { return update(v, ycxx::detail::va_op::plus_assign{}); }
-  valarray& operator-=(const T& v) { return update(v, ycxx::detail::va_op::minus_assign{}); }
-  valarray& operator^=(const T& v) { return update(v, ycxx::detail::va_op::xor_assign{}); }
-  valarray& operator&=(const T& v) { return update(v, ycxx::detail::va_op::and_assign{}); }
-  valarray& operator|=(const T& v) { return update(v, ycxx::detail::va_op::or_assign{}); }
-  valarray& operator<<=(const T& v) { return update(v, ycxx::detail::va_op::shl_assign{}); }
-  valarray& operator>>=(const T& v) { return update(v, ycxx::detail::va_op::shr_assign{}); }
-  valarray& operator*=(const valarray& v) { return update(v, ycxx::detail::va_op::mul_assign{}); }
-  valarray& operator/=(const valarray& v) { return update(v, ycxx::detail::va_op::div_assign{}); }
-  valarray& operator%=(const valarray& v) { return update(v, ycxx::detail::va_op::mod_assign{}); }
-  valarray& operator+=(const valarray& v) { return update(v, ycxx::detail::va_op::plus_assign{}); }
-  valarray& operator-=(const valarray& v) { return update(v, ycxx::detail::va_op::minus_assign{}); }
-  valarray& operator^=(const valarray& v) { return update(v, ycxx::detail::va_op::xor_assign{}); }
-  valarray& operator|=(const valarray& v) { return update(v, ycxx::detail::va_op::or_assign{}); }
-  valarray& operator&=(const valarray& v) { return update(v, ycxx::detail::va_op::and_assign{}); }
-  valarray& operator<<=(const valarray& v) { return update(v, ycxx::detail::va_op::shl_assign{}); }
-  valarray& operator>>=(const valarray& v) { return update(v, ycxx::detail::va_op::shr_assign{}); }
+  valarray& operator*=(const _Tp& __v) { return __update(__v, __ycxx::__detail::__va_op::__mul_assign{}); }
+  valarray& operator/=(const _Tp& __v) { return __update(__v, __ycxx::__detail::__va_op::__div_assign{}); }
+  valarray& operator%=(const _Tp& __v) { return __update(__v, __ycxx::__detail::__va_op::__mod_assign{}); }
+  valarray& operator+=(const _Tp& __v) { return __update(__v, __ycxx::__detail::__va_op::__plus_assign{}); }
+  valarray& operator-=(const _Tp& __v) { return __update(__v, __ycxx::__detail::__va_op::__minus_assign{}); }
+  valarray& operator^=(const _Tp& __v) { return __update(__v, __ycxx::__detail::__va_op::__xor_assign{}); }
+  valarray& operator&=(const _Tp& __v) { return __update(__v, __ycxx::__detail::__va_op::__and_assign{}); }
+  valarray& operator|=(const _Tp& __v) { return __update(__v, __ycxx::__detail::__va_op::__or_assign{}); }
+  valarray& operator<<=(const _Tp& __v) { return __update(__v, __ycxx::__detail::__va_op::__shl_assign{}); }
+  valarray& operator>>=(const _Tp& __v) { return __update(__v, __ycxx::__detail::__va_op::__shr_assign{}); }
+  valarray& operator*=(const valarray& __v) { return __update(__v, __ycxx::__detail::__va_op::__mul_assign{}); }
+  valarray& operator/=(const valarray& __v) { return __update(__v, __ycxx::__detail::__va_op::__div_assign{}); }
+  valarray& operator%=(const valarray& __v) { return __update(__v, __ycxx::__detail::__va_op::__mod_assign{}); }
+  valarray& operator+=(const valarray& __v) { return __update(__v, __ycxx::__detail::__va_op::__plus_assign{}); }
+  valarray& operator-=(const valarray& __v) { return __update(__v, __ycxx::__detail::__va_op::__minus_assign{}); }
+  valarray& operator^=(const valarray& __v) { return __update(__v, __ycxx::__detail::__va_op::__xor_assign{}); }
+  valarray& operator|=(const valarray& __v) { return __update(__v, __ycxx::__detail::__va_op::__or_assign{}); }
+  valarray& operator&=(const valarray& __v) { return __update(__v, __ycxx::__detail::__va_op::__and_assign{}); }
+  valarray& operator<<=(const valarray& __v) { return __update(__v, __ycxx::__detail::__va_op::__shl_assign{}); }
+  valarray& operator>>=(const valarray& __v) { return __update(__v, __ycxx::__detail::__va_op::__shr_assign{}); }
 
   // [valarray.range]
-  iterator begin() noexcept { return data_; }
-  iterator end() noexcept { return data_ + size_; }
-  const_iterator begin() const noexcept { return data_; }
-  const_iterator end() const noexcept { return data_ + size_; }
+  iterator begin() noexcept { return __data_; }
+  iterator end() noexcept { return __data_ + __size_; }
+  const_iterator begin() const noexcept { return __data_; }
+  const_iterator end() const noexcept { return __data_ + __size_; }
 
   // [valarray.members]
-  void swap(valarray& v) noexcept {
-    T* d = data_;
-    data_ = v.data_;
-    v.data_ = d;
-    const size_t s = size_;
-    size_ = v.size_;
-    v.size_ = s;
+  void swap(valarray& __v) noexcept {
+    _Tp* d = __data_;
+    __data_ = __v.__data_;
+    __v.__data_ = d;
+    const size_t s = __size_;
+    __size_ = __v.__size_;
+    __v.__size_ = s;
   }
-  size_t size() const noexcept { return size_; }
-  T sum() const {
-    ycxx::detail::precondition(size_ > 0, "std::valarray::sum: empty array");
-    T r = data_[0];
-    for (size_t i = 1; i < size_; ++i) r += data_[i];
+  size_t size() const noexcept { return __size_; }
+  _Tp sum() const {
+    __ycxx::__detail::__precondition(__size_ > 0, "std::valarray::sum: empty array");
+    _Tp r = __data_[0];
+    for (size_t i = 1; i < __size_; ++i) r += __data_[i];
     return r;
   }
-  T min() const {
-    ycxx::detail::precondition(size_ > 0, "std::valarray::min: empty array");
+  _Tp min() const {
+    __ycxx::__detail::__precondition(__size_ > 0, "std::valarray::min: empty array");
     size_t k = 0;
-    for (size_t i = 1; i < size_; ++i)
-      if (data_[i] < data_[k]) k = i;
-    return data_[k];
+    for (size_t i = 1; i < __size_; ++i)
+      if (__data_[i] < __data_[k]) k = i;
+    return __data_[k];
   }
-  T max() const {
-    ycxx::detail::precondition(size_ > 0, "std::valarray::max: empty array");
+  _Tp max() const {
+    __ycxx::__detail::__precondition(__size_ > 0, "std::valarray::max: empty array");
     size_t k = 0;
-    for (size_t i = 1; i < size_; ++i)
-      if (data_[k] < data_[i]) k = i;
-    return data_[k];
+    for (size_t i = 1; i < __size_; ++i)
+      if (__data_[k] < __data_[i]) k = i;
+    return __data_[k];
   }
   valarray shift(int n) const {
-    valarray r(size_);
-    for (size_t i = 0; i < size_; ++i) {
-      const long long j = static_cast<long long>(i) + n;
-      if (j >= 0 && static_cast<unsigned long long>(j) < size_) r.data_[i] = data_[j];
+    valarray r(__size_);
+    for (size_t i = 0; i < __size_; ++i) {
+      const long long __j = static_cast<long long>(i) + n;
+      if (__j >= 0 && static_cast<unsigned long long>(__j) < __size_) r.__data_[i] = __data_[__j];
     }
     return r;
   }
   valarray cshift(int n) const {
-    if (size_ == 0) return valarray();
-    const long long sz = static_cast<long long>(size_);
-    long long k = n % sz;
-    if (k < 0) k += sz;
+    if (__size_ == 0) return valarray();
+    const long long __sz = static_cast<long long>(__size_);
+    long long k = n % __sz;
+    if (k < 0) k += __sz;
     const size_t first = static_cast<size_t>(k);
-    return generate(size_, [this, first](size_t i) -> const T& {
-      return data_[i < size_ - first ? first + i : i - (size_ - first)];
+    return generate(__size_, [this, first](size_t i) -> const _Tp& {
+      return __data_[i < __size_ - first ? first + i : i - (__size_ - first)];
     });
   }
-  valarray apply(T func(T)) const {
-    return map([func](const T& x) -> T { return func(x); });
+  valarray apply(_Tp __func(_Tp)) const {
+    return map([__func](const _Tp& __x) -> _Tp { return __func(__x); });
   }
-  valarray apply(T func(const T&)) const {
-    return map([func](const T& x) -> T { return func(x); });
+  valarray apply(_Tp __func(const _Tp&)) const {
+    return map([__func](const _Tp& __x) -> _Tp { return __func(__x); });
   }
-  void resize(size_t sz, T c = T()) {
-    if (sz == size_) {
-      for (size_t i = 0; i < size_; ++i) data_[i] = c;
+  void resize(size_t __sz, _Tp c = _Tp()) {
+    if (__sz == __size_) {
+      for (size_t i = 0; i < __size_; ++i) __data_[i] = c;
       return;
     }
-    valarray tmp(c, sz);
-    swap(tmp);
+    valarray __tmp(c, __sz);
+    swap(__tmp);
   }
 
 private:
-  template <class U>
+  template <class _Up>
   friend class valarray;
-  friend struct ycxx::detail::va_access;
+  friend struct __ycxx::__detail::__va_access;
 
   // A deallocation guard for a partially built array (exception safety without try).
-  struct storage {
-    T* p;
+  struct __storage {
+    _Tp* p;
     size_t n;
-    ~storage() {
-      if (p) std::allocator<T>().deallocate(p, n);
+    ~__storage() {
+      if (p) std::allocator<_Tp>().deallocate(p, n);
     }
   };
   // Allocates n elements and lets init construct all of them (init either constructs every
   // element or destroys what it constructed and throws, as the uninitialized algorithms do).
   template <class Init>
-  void build(size_t n, Init init) {
+  void __build(size_t n, Init init) {
     if (n == 0) return;
-    storage s{std::allocator<T>().allocate(n), n};
+    __storage s{std::allocator<_Tp>().allocate(n), n};
     init(s.p, n);
-    data_ = s.p;
-    size_ = n;
+    __data_ = s.p;
+    __size_ = n;
     s.p = nullptr;
   }
   void release() noexcept {
-    if (data_) {
-      std::destroy_n(data_, size_);
-      std::allocator<T>().deallocate(data_, size_);
-      data_ = nullptr;
-      size_ = 0;
+    if (__data_) {
+      std::destroy_n(__data_, __size_);
+      std::allocator<_Tp>().deallocate(__data_, __size_);
+      __data_ = nullptr;
+      __size_ = 0;
     }
   }
   // Builds an array of n elements, element i initialised with f(i), converted to T.
-  template <class F>
-  static valarray generate(size_t n, F f) {
+  template <class _Fp>
+  static valarray generate(size_t n, _Fp __f) {
     valarray r;
-    r.build(n, [&f](T* p, size_t cnt) {
+    r.__build(n, [&__f](_Tp* p, size_t __cnt) {
       size_t i = 0;
-      struct undo {
-        T* p;
+      struct __undo {
+        _Tp* p;
         size_t* i;
         bool done;
-        ~undo() {
+        ~__undo() {
           if (!done) std::destroy_n(p, *i);
         }
-      } u{p, &i, false};
-      for (; i < cnt; ++i) ::new (static_cast<void*>(p + i)) T(f(i));
-      u.done = true;
+      } __u{p, &i, false};
+      for (; i < __cnt; ++i) ::new (static_cast<void*>(p + i)) _Tp(__f(i));
+      __u.done = true;
     });
     return r;
   }
-  template <class F>
-  valarray map(F f) const {
-    return generate(size_, [this, &f](size_t i) { return f(data_[i]); });
+  template <class _Fp>
+  valarray map(_Fp __f) const {
+    return generate(__size_, [this, &__f](size_t i) { return __f(__data_[i]); });
   }
-  template <class Op>
-  valarray& update(const T& v, Op op) {
-    for (size_t i = 0; i < size_; ++i) op(data_[i], v);
+  template <class _Op_>
+  valarray& __update(const _Tp& __v, _Op_ op) {
+    for (size_t i = 0; i < __size_; ++i) op(__data_[i], __v);
     return *this;
   }
-  template <class Op>
-  valarray& update(const valarray& v, Op op) {
-    ycxx::detail::precondition(size_ == v.size_, "std::valarray compound assignment: sizes differ");
-    if (this == __builtin_addressof(v)) {
-      const valarray copy(v);
-      for (size_t i = 0; i < size_; ++i) op(data_[i], copy.data_[i]);
+  template <class _Op_>
+  valarray& __update(const valarray& __v, _Op_ op) {
+    __ycxx::__detail::__precondition(__size_ == __v.__size_, "std::valarray compound assignment: sizes differ");
+    if (this == __builtin_addressof(__v)) {
+      const valarray copy(__v);
+      for (size_t i = 0; i < __size_; ++i) op(__data_[i], copy.__data_[i]);
     } else {
-      for (size_t i = 0; i < size_; ++i) op(data_[i], v.data_[i]);
+      for (size_t i = 0; i < __size_; ++i) op(__data_[i], __v.__data_[i]);
     }
     return *this;
   }
 
-  T* data_;
-  size_t size_;
+  _Tp* __data_;
+  size_t __size_;
 };
 
-template <class T, size_t cnt>
-valarray(const T (&)[cnt], size_t) -> valarray<T>;
+template <class _Tp, size_t __cnt>
+valarray(const _Tp (&)[__cnt], size_t) -> valarray<_Tp>;
 
 } // namespace std
 
-namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
 
-struct va_access {
-  template <class R, class F>
-  static std::valarray<R> generate(std::size_t n, F f) {
-    return std::valarray<R>::generate(n, f);
+struct __va_access {
+  template <class _Rp, class _Fp>
+  static std::valarray<_Rp> generate(std::size_t n, _Fp __f) {
+    return std::valarray<_Rp>::generate(n, __f);
   }
-  template <class T>
-  static T* data(const std::valarray<T>& v) {
-    return v.data_;
+  template <class _Tp>
+  static _Tp* data(const std::valarray<_Tp>& __v) {
+    return __v.__data_;
   }
 };
 
 // The element indices a gslice selects, the highest-ordered index turning fastest.
-inline std::valarray<std::size_t> gslice_indices(std::size_t start, const std::valarray<std::size_t>& len,
+inline std::valarray<std::size_t> __gslice_indices(std::size_t start, const std::valarray<std::size_t>& __len,
                                                  const std::valarray<std::size_t>& str) {
-  const std::size_t dims = len.size() < str.size() ? len.size() : str.size();
-  std::size_t total = dims == 0 ? 0 : 1;
-  for (std::size_t j = 0; j < dims; ++j) total *= len[j];
-  std::valarray<std::size_t> idx(total);
-  if (total == 0) return idx;
-  std::valarray<std::size_t> pos(dims);
-  for (std::size_t k = 0; k < total; ++k) {
-    std::size_t off = start;
-    for (std::size_t j = 0; j < dims; ++j) off += pos[j] * str[j];
-    idx[k] = off;
-    for (std::size_t j = dims; j-- > 0;) { // odometer: the last index turns fastest
-      if (++pos[j] < len[j]) break;
-      pos[j] = 0;
+  const std::size_t dims = __len.size() < str.size() ? __len.size() : str.size();
+  std::size_t __total = dims == 0 ? 0 : 1;
+  for (std::size_t __j = 0; __j < dims; ++__j) __total *= __len[__j];
+  std::valarray<std::size_t> __idx(__total);
+  if (__total == 0) return __idx;
+  std::valarray<std::size_t> __pos(dims);
+  for (std::size_t k = 0; k < __total; ++k) {
+    std::size_t __off = start;
+    for (std::size_t __j = 0; __j < dims; ++__j) __off += __pos[__j] * str[__j];
+    __idx[k] = __off;
+    for (std::size_t __j = dims; __j-- > 0;) { // odometer: the last index turns fastest
+      if (++__pos[__j] < __len[__j]) break;
+      __pos[__j] = 0;
     }
   }
-  return idx;
+  return __idx;
 }
 
 // The indices of the true elements of a mask.
-inline std::valarray<std::size_t> va_mask_indices(const std::valarray<bool>& mask) {
+inline std::valarray<std::size_t> __va_mask_indices(const std::valarray<bool>& mask) {
   std::size_t n = 0;
   for (std::size_t i = 0; i < mask.size(); ++i) n += mask[i] ? 1 : 0;
-  std::valarray<std::size_t> idx(n);
+  std::valarray<std::size_t> __idx(n);
   for (std::size_t i = 0, k = 0; i < mask.size(); ++i)
-    if (mask[i]) idx[k++] = i;
-  return idx;
+    if (mask[i]) __idx[k++] = i;
+  return __idx;
 }
 
-}} // namespace ycxx::detail
+}} // namespace __ycxx::__detail
 
-namespace [[gnu::visibility("hidden")]] std {
+namespace [[__gnu__::__visibility__("hidden")]] std {
 
 // ---- gslice ([class.gslice]) ---------------------------------------------------------------------
 class gslice {
 public:
-  gslice() : start_(0) {}
-  gslice(size_t s, const valarray<size_t>& l, const valarray<size_t>& d) : start_(s), size_(l), stride_(d) {}
-  size_t start() const { return start_; }
-  valarray<size_t> size() const { return size_; }
-  valarray<size_t> stride() const { return stride_; }
+  gslice() : __start_(0) {}
+  gslice(size_t s, const valarray<size_t>& __l, const valarray<size_t>& d) : __start_(s), __size_(__l), __stride_(d) {}
+  size_t start() const { return __start_; }
+  valarray<size_t> size() const { return __size_; }
+  valarray<size_t> stride() const { return __stride_; }
 
 private:
-  template <class T>
+  template <class _Tp>
   friend class valarray;
-  valarray<size_t> indices() const { return ycxx::detail::gslice_indices(start_, size_, stride_); }
+  valarray<size_t> indices() const { return __ycxx::__detail::__gslice_indices(__start_, __size_, __stride_); }
 
-  size_t start_;
-  valarray<size_t> size_;
-  valarray<size_t> stride_;
+  size_t __start_;
+  valarray<size_t> __size_;
+  valarray<size_t> __stride_;
 };
 
 // ---- the subset classes --------------------------------------------------------------------------
 // slice_array refers to base[start + i * stride]; the others to base[idx[i]].
-template <class T>
+template <class _Tp>
 class slice_array {
 public:
-  using value_type = T;
-  void operator=(const valarray<T>& v) const { apply(v, ycxx::detail::va_op::assign{}); }
-  void operator*=(const valarray<T>& v) const { apply(v, ycxx::detail::va_op::mul_assign{}); }
-  void operator/=(const valarray<T>& v) const { apply(v, ycxx::detail::va_op::div_assign{}); }
-  void operator%=(const valarray<T>& v) const { apply(v, ycxx::detail::va_op::mod_assign{}); }
-  void operator+=(const valarray<T>& v) const { apply(v, ycxx::detail::va_op::plus_assign{}); }
-  void operator-=(const valarray<T>& v) const { apply(v, ycxx::detail::va_op::minus_assign{}); }
-  void operator^=(const valarray<T>& v) const { apply(v, ycxx::detail::va_op::xor_assign{}); }
-  void operator&=(const valarray<T>& v) const { apply(v, ycxx::detail::va_op::and_assign{}); }
-  void operator|=(const valarray<T>& v) const { apply(v, ycxx::detail::va_op::or_assign{}); }
-  void operator<<=(const valarray<T>& v) const { apply(v, ycxx::detail::va_op::shl_assign{}); }
-  void operator>>=(const valarray<T>& v) const { apply(v, ycxx::detail::va_op::shr_assign{}); }
+  using value_type = _Tp;
+  void operator=(const valarray<_Tp>& __v) const { apply(__v, __ycxx::__detail::__va_op::assign{}); }
+  void operator*=(const valarray<_Tp>& __v) const { apply(__v, __ycxx::__detail::__va_op::__mul_assign{}); }
+  void operator/=(const valarray<_Tp>& __v) const { apply(__v, __ycxx::__detail::__va_op::__div_assign{}); }
+  void operator%=(const valarray<_Tp>& __v) const { apply(__v, __ycxx::__detail::__va_op::__mod_assign{}); }
+  void operator+=(const valarray<_Tp>& __v) const { apply(__v, __ycxx::__detail::__va_op::__plus_assign{}); }
+  void operator-=(const valarray<_Tp>& __v) const { apply(__v, __ycxx::__detail::__va_op::__minus_assign{}); }
+  void operator^=(const valarray<_Tp>& __v) const { apply(__v, __ycxx::__detail::__va_op::__xor_assign{}); }
+  void operator&=(const valarray<_Tp>& __v) const { apply(__v, __ycxx::__detail::__va_op::__and_assign{}); }
+  void operator|=(const valarray<_Tp>& __v) const { apply(__v, __ycxx::__detail::__va_op::__or_assign{}); }
+  void operator<<=(const valarray<_Tp>& __v) const { apply(__v, __ycxx::__detail::__va_op::__shl_assign{}); }
+  void operator>>=(const valarray<_Tp>& __v) const { apply(__v, __ycxx::__detail::__va_op::__shr_assign{}); }
   slice_array(const slice_array&) = default;
   ~slice_array() = default;
   const slice_array& operator=(const slice_array& s) const {
-    for (size_t i = 0; i < size_; ++i) at(i) = s.at(i);
+    for (size_t i = 0; i < __size_; ++i) at(i) = s.at(i);
     return *this;
   }
-  void operator=(const T& v) const {
-    for (size_t i = 0; i < size_; ++i) at(i) = v;
+  void operator=(const _Tp& __v) const {
+    for (size_t i = 0; i < __size_; ++i) at(i) = __v;
   }
   slice_array() = delete;
 
 private:
-  template <class U>
+  template <class _Up>
   friend class valarray;
-  slice_array(T* base, const slice& s) : base_(base), start_(s.start()), size_(s.size()), stride_(s.stride()) {}
-  T& at(size_t i) const { return base_[start_ + i * stride_]; }
-  template <class Op>
-  void apply(const valarray<T>& v, Op op) const {
-    for (size_t i = 0; i < size_; ++i) op(at(i), v[i]);
+  slice_array(_Tp* base, const slice& s) : __base_(base), __start_(s.start()), __size_(s.size()), __stride_(s.stride()) {}
+  _Tp& at(size_t i) const { return __base_[__start_ + i * __stride_]; }
+  template <class _Op_>
+  void apply(const valarray<_Tp>& __v, _Op_ op) const {
+    for (size_t i = 0; i < __size_; ++i) op(at(i), __v[i]);
   }
 
-  T* base_;
-  size_t start_, size_, stride_;
+  _Tp* __base_;
+  size_t __start_, __size_, __stride_;
 };
 
 } // namespace std
 
-namespace [[gnu::visibility("hidden")]] ycxx { namespace adl_free {
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __adl_free {
 // The common part of gslice_array, mask_array and indirect_array: base[idx[i]].
-template <class T>
-class valarray_indexed {
+template <class _Tp>
+class __valarray_indexed {
 public:
-  using value_type = T;
-  void operator*=(const std::valarray<T>& v) const { apply(v, ycxx::detail::va_op::mul_assign{}); }
-  void operator/=(const std::valarray<T>& v) const { apply(v, ycxx::detail::va_op::div_assign{}); }
-  void operator%=(const std::valarray<T>& v) const { apply(v, ycxx::detail::va_op::mod_assign{}); }
-  void operator+=(const std::valarray<T>& v) const { apply(v, ycxx::detail::va_op::plus_assign{}); }
-  void operator-=(const std::valarray<T>& v) const { apply(v, ycxx::detail::va_op::minus_assign{}); }
-  void operator^=(const std::valarray<T>& v) const { apply(v, ycxx::detail::va_op::xor_assign{}); }
-  void operator&=(const std::valarray<T>& v) const { apply(v, ycxx::detail::va_op::and_assign{}); }
-  void operator|=(const std::valarray<T>& v) const { apply(v, ycxx::detail::va_op::or_assign{}); }
-  void operator<<=(const std::valarray<T>& v) const { apply(v, ycxx::detail::va_op::shl_assign{}); }
-  void operator>>=(const std::valarray<T>& v) const { apply(v, ycxx::detail::va_op::shr_assign{}); }
+  using value_type = _Tp;
+  void operator*=(const std::valarray<_Tp>& __v) const { apply(__v, __ycxx::__detail::__va_op::__mul_assign{}); }
+  void operator/=(const std::valarray<_Tp>& __v) const { apply(__v, __ycxx::__detail::__va_op::__div_assign{}); }
+  void operator%=(const std::valarray<_Tp>& __v) const { apply(__v, __ycxx::__detail::__va_op::__mod_assign{}); }
+  void operator+=(const std::valarray<_Tp>& __v) const { apply(__v, __ycxx::__detail::__va_op::__plus_assign{}); }
+  void operator-=(const std::valarray<_Tp>& __v) const { apply(__v, __ycxx::__detail::__va_op::__minus_assign{}); }
+  void operator^=(const std::valarray<_Tp>& __v) const { apply(__v, __ycxx::__detail::__va_op::__xor_assign{}); }
+  void operator&=(const std::valarray<_Tp>& __v) const { apply(__v, __ycxx::__detail::__va_op::__and_assign{}); }
+  void operator|=(const std::valarray<_Tp>& __v) const { apply(__v, __ycxx::__detail::__va_op::__or_assign{}); }
+  void operator<<=(const std::valarray<_Tp>& __v) const { apply(__v, __ycxx::__detail::__va_op::__shl_assign{}); }
+  void operator>>=(const std::valarray<_Tp>& __v) const { apply(__v, __ycxx::__detail::__va_op::__shr_assign{}); }
 
 protected:
-  valarray_indexed(T* base, std::valarray<std::size_t>&& idx)
-      : base_(base), idx_(static_cast<std::valarray<std::size_t>&&>(idx)) {}
-  valarray_indexed(const valarray_indexed&) = default;
-  ~valarray_indexed() = default;
-  valarray_indexed& operator=(const valarray_indexed&) = delete;
+  __valarray_indexed(_Tp* base, std::valarray<std::size_t>&& __idx)
+      : __base_(base), __idx_(static_cast<std::valarray<std::size_t>&&>(__idx)) {}
+  __valarray_indexed(const __valarray_indexed&) = default;
+  ~__valarray_indexed() = default;
+  __valarray_indexed& operator=(const __valarray_indexed&) = delete;
 
-  template <class Op>
-  void apply(const std::valarray<T>& v, Op op) const {
-    for (std::size_t i = 0; i < idx_.size(); ++i) op(base_[idx_[i]], v[i]);
+  template <class _Op_>
+  void apply(const std::valarray<_Tp>& __v, _Op_ op) const {
+    for (std::size_t i = 0; i < __idx_.size(); ++i) op(__base_[__idx_[i]], __v[i]);
   }
-  void fill(const T& v) const {
-    for (std::size_t i = 0; i < idx_.size(); ++i) base_[idx_[i]] = v;
+  void fill(const _Tp& __v) const {
+    for (std::size_t i = 0; i < __idx_.size(); ++i) __base_[__idx_[i]] = __v;
   }
-  void copy_from(const valarray_indexed& s) const {
-    for (std::size_t i = 0; i < idx_.size(); ++i) base_[idx_[i]] = s.base_[s.idx_[i]];
+  void __copy_from(const __valarray_indexed& s) const {
+    for (std::size_t i = 0; i < __idx_.size(); ++i) __base_[__idx_[i]] = s.__base_[s.__idx_[i]];
   }
 
-  template <class U>
+  template <class _Up>
   friend class std::valarray;
 
-  T* base_;
-  std::valarray<std::size_t> idx_;
+  _Tp* __base_;
+  std::valarray<std::size_t> __idx_;
 };
-}} // namespace ycxx::adl_free
+}} // namespace __ycxx::__adl_free
 
-namespace [[gnu::visibility("hidden")]] std {
+namespace [[__gnu__::__visibility__("hidden")]] std {
 
-template <class T>
-class gslice_array : public ycxx::adl_free::valarray_indexed<T> {
-  using base = ycxx::adl_free::valarray_indexed<T>;
+template <class _Tp>
+class gslice_array : public __ycxx::__adl_free::__valarray_indexed<_Tp> {
+  using base = __ycxx::__adl_free::__valarray_indexed<_Tp>;
 
 public:
-  using value_type = T;
-  void operator=(const valarray<T>& v) const { this->apply(v, ycxx::detail::va_op::assign{}); }
+  using value_type = _Tp;
+  void operator=(const valarray<_Tp>& __v) const { this->apply(__v, __ycxx::__detail::__va_op::assign{}); }
   gslice_array(const gslice_array&) = default;
   ~gslice_array() = default;
   const gslice_array& operator=(const gslice_array& s) const {
-    this->copy_from(s);
+    this->__copy_from(s);
     return *this;
   }
-  void operator=(const T& v) const { this->fill(v); }
+  void operator=(const _Tp& __v) const { this->fill(__v); }
   gslice_array() = delete;
 
 private:
-  template <class U>
+  template <class _Up>
   friend class valarray;
-  gslice_array(T* p, valarray<size_t>&& idx) : base(p, static_cast<valarray<size_t>&&>(idx)) {}
+  gslice_array(_Tp* p, valarray<size_t>&& __idx) : base(p, static_cast<valarray<size_t>&&>(__idx)) {}
 };
 
-template <class T>
-class mask_array : public ycxx::adl_free::valarray_indexed<T> {
-  using base = ycxx::adl_free::valarray_indexed<T>;
+template <class _Tp>
+class mask_array : public __ycxx::__adl_free::__valarray_indexed<_Tp> {
+  using base = __ycxx::__adl_free::__valarray_indexed<_Tp>;
 
 public:
-  using value_type = T;
-  void operator=(const valarray<T>& v) const { this->apply(v, ycxx::detail::va_op::assign{}); }
+  using value_type = _Tp;
+  void operator=(const valarray<_Tp>& __v) const { this->apply(__v, __ycxx::__detail::__va_op::assign{}); }
   mask_array(const mask_array&) = default;
   ~mask_array() = default;
   const mask_array& operator=(const mask_array& s) const {
-    this->copy_from(s);
+    this->__copy_from(s);
     return *this;
   }
-  void operator=(const T& v) const { this->fill(v); }
+  void operator=(const _Tp& __v) const { this->fill(__v); }
   mask_array() = delete;
 
 private:
-  template <class U>
+  template <class _Up>
   friend class valarray;
-  mask_array(T* p, valarray<size_t>&& idx) : base(p, static_cast<valarray<size_t>&&>(idx)) {}
+  mask_array(_Tp* p, valarray<size_t>&& __idx) : base(p, static_cast<valarray<size_t>&&>(__idx)) {}
 };
 
-template <class T>
-class indirect_array : public ycxx::adl_free::valarray_indexed<T> {
-  using base = ycxx::adl_free::valarray_indexed<T>;
+template <class _Tp>
+class indirect_array : public __ycxx::__adl_free::__valarray_indexed<_Tp> {
+  using base = __ycxx::__adl_free::__valarray_indexed<_Tp>;
 
 public:
-  using value_type = T;
-  void operator=(const valarray<T>& v) const { this->apply(v, ycxx::detail::va_op::assign{}); }
+  using value_type = _Tp;
+  void operator=(const valarray<_Tp>& __v) const { this->apply(__v, __ycxx::__detail::__va_op::assign{}); }
   indirect_array(const indirect_array&) = default;
   ~indirect_array() = default;
   const indirect_array& operator=(const indirect_array& s) const {
-    this->copy_from(s);
+    this->__copy_from(s);
     return *this;
   }
-  void operator=(const T& v) const { this->fill(v); }
+  void operator=(const _Tp& __v) const { this->fill(__v); }
   indirect_array() = delete;
 
 private:
-  template <class U>
+  template <class _Up>
   friend class valarray;
-  indirect_array(T* p, valarray<size_t>&& idx) : base(p, static_cast<valarray<size_t>&&>(idx)) {}
+  indirect_array(_Tp* p, valarray<size_t>&& __idx) : base(p, static_cast<valarray<size_t>&&>(__idx)) {}
 };
 
 // ---- valarray members that need the subset classes -----------------------------------------------
-template <class T>
-valarray<T>::valarray(const slice_array<T>& s) : data_(nullptr), size_(0) {
-  *this = generate(s.size_, [&s](size_t i) -> const T& { return s.at(i); });
+template <class _Tp>
+valarray<_Tp>::valarray(const slice_array<_Tp>& s) : __data_(nullptr), __size_(0) {
+  *this = generate(s.__size_, [&s](size_t i) -> const _Tp& { return s.at(i); });
 }
-template <class T>
-valarray<T>::valarray(const gslice_array<T>& s) : data_(nullptr), size_(0) {
-  *this = generate(s.idx_.size(), [&s](size_t i) -> const T& { return s.base_[s.idx_[i]]; });
+template <class _Tp>
+valarray<_Tp>::valarray(const gslice_array<_Tp>& s) : __data_(nullptr), __size_(0) {
+  *this = generate(s.__idx_.size(), [&s](size_t i) -> const _Tp& { return s.__base_[s.__idx_[i]]; });
 }
-template <class T>
-valarray<T>::valarray(const mask_array<T>& s) : data_(nullptr), size_(0) {
-  *this = generate(s.idx_.size(), [&s](size_t i) -> const T& { return s.base_[s.idx_[i]]; });
+template <class _Tp>
+valarray<_Tp>::valarray(const mask_array<_Tp>& s) : __data_(nullptr), __size_(0) {
+  *this = generate(s.__idx_.size(), [&s](size_t i) -> const _Tp& { return s.__base_[s.__idx_[i]]; });
 }
-template <class T>
-valarray<T>::valarray(const indirect_array<T>& s) : data_(nullptr), size_(0) {
-  *this = generate(s.idx_.size(), [&s](size_t i) -> const T& { return s.base_[s.idx_[i]]; });
+template <class _Tp>
+valarray<_Tp>::valarray(const indirect_array<_Tp>& s) : __data_(nullptr), __size_(0) {
+  *this = generate(s.__idx_.size(), [&s](size_t i) -> const _Tp& { return s.__base_[s.__idx_[i]]; });
 }
-template <class T>
-valarray<T>& valarray<T>::operator=(const slice_array<T>& s) {
-  ycxx::detail::precondition(s.size_ == size_, "std::valarray::operator=: the slice_array length differs");
-  for (size_t i = 0; i < size_; ++i) data_[i] = s.at(i);
+template <class _Tp>
+valarray<_Tp>& valarray<_Tp>::operator=(const slice_array<_Tp>& s) {
+  __ycxx::__detail::__precondition(s.__size_ == __size_, "std::valarray::operator=: the slice_array length differs");
+  for (size_t i = 0; i < __size_; ++i) __data_[i] = s.at(i);
   return *this;
 }
-template <class T>
-valarray<T>& valarray<T>::operator=(const gslice_array<T>& s) {
-  ycxx::detail::precondition(s.idx_.size() == size_, "std::valarray::operator=: the gslice_array length differs");
-  for (size_t i = 0; i < size_; ++i) data_[i] = s.base_[s.idx_[i]];
+template <class _Tp>
+valarray<_Tp>& valarray<_Tp>::operator=(const gslice_array<_Tp>& s) {
+  __ycxx::__detail::__precondition(s.__idx_.size() == __size_, "std::valarray::operator=: the gslice_array length differs");
+  for (size_t i = 0; i < __size_; ++i) __data_[i] = s.__base_[s.__idx_[i]];
   return *this;
 }
-template <class T>
-valarray<T>& valarray<T>::operator=(const mask_array<T>& s) {
-  ycxx::detail::precondition(s.idx_.size() == size_, "std::valarray::operator=: the mask_array length differs");
-  for (size_t i = 0; i < size_; ++i) data_[i] = s.base_[s.idx_[i]];
+template <class _Tp>
+valarray<_Tp>& valarray<_Tp>::operator=(const mask_array<_Tp>& s) {
+  __ycxx::__detail::__precondition(s.__idx_.size() == __size_, "std::valarray::operator=: the mask_array length differs");
+  for (size_t i = 0; i < __size_; ++i) __data_[i] = s.__base_[s.__idx_[i]];
   return *this;
 }
-template <class T>
-valarray<T>& valarray<T>::operator=(const indirect_array<T>& s) {
-  ycxx::detail::precondition(s.idx_.size() == size_, "std::valarray::operator=: the indirect_array length differs");
-  for (size_t i = 0; i < size_; ++i) data_[i] = s.base_[s.idx_[i]];
+template <class _Tp>
+valarray<_Tp>& valarray<_Tp>::operator=(const indirect_array<_Tp>& s) {
+  __ycxx::__detail::__precondition(s.__idx_.size() == __size_, "std::valarray::operator=: the indirect_array length differs");
+  for (size_t i = 0; i < __size_; ++i) __data_[i] = s.__base_[s.__idx_[i]];
   return *this;
 }
 
-template <class T>
-valarray<T> valarray<T>::operator[](slice s) const {
-  return generate(s.size(), [this, &s](size_t i) -> const T& { return data_[s.start() + i * s.stride()]; });
+template <class _Tp>
+valarray<_Tp> valarray<_Tp>::operator[](slice s) const {
+  return generate(s.size(), [this, &s](size_t i) -> const _Tp& { return __data_[s.start() + i * s.stride()]; });
 }
-template <class T>
-slice_array<T> valarray<T>::operator[](slice s) {
-  return slice_array<T>(data_, s);
+template <class _Tp>
+slice_array<_Tp> valarray<_Tp>::operator[](slice s) {
+  return slice_array<_Tp>(__data_, s);
 }
-template <class T>
-valarray<T> valarray<T>::operator[](const gslice& g) const {
-  const valarray<size_t> idx = g.indices();
-  return generate(idx.size(), [this, &idx](size_t i) -> const T& { return data_[idx[i]]; });
+template <class _Tp>
+valarray<_Tp> valarray<_Tp>::operator[](const gslice& __g) const {
+  const valarray<size_t> __idx = __g.indices();
+  return generate(__idx.size(), [this, &__idx](size_t i) -> const _Tp& { return __data_[__idx[i]]; });
 }
-template <class T>
-gslice_array<T> valarray<T>::operator[](const gslice& g) {
-  return gslice_array<T>(data_, g.indices());
+template <class _Tp>
+gslice_array<_Tp> valarray<_Tp>::operator[](const gslice& __g) {
+  return gslice_array<_Tp>(__data_, __g.indices());
 }
-template <class T>
-valarray<T> valarray<T>::operator[](const valarray<bool>& mask) const {
-  const valarray<size_t> idx = ycxx::detail::va_mask_indices(mask);
-  return generate(idx.size(), [this, &idx](size_t i) -> const T& { return data_[idx[i]]; });
+template <class _Tp>
+valarray<_Tp> valarray<_Tp>::operator[](const valarray<bool>& mask) const {
+  const valarray<size_t> __idx = __ycxx::__detail::__va_mask_indices(mask);
+  return generate(__idx.size(), [this, &__idx](size_t i) -> const _Tp& { return __data_[__idx[i]]; });
 }
-template <class T>
-mask_array<T> valarray<T>::operator[](const valarray<bool>& mask) {
-  return mask_array<T>(data_, ycxx::detail::va_mask_indices(mask));
+template <class _Tp>
+mask_array<_Tp> valarray<_Tp>::operator[](const valarray<bool>& mask) {
+  return mask_array<_Tp>(__data_, __ycxx::__detail::__va_mask_indices(mask));
 }
-template <class T>
-valarray<T> valarray<T>::operator[](const valarray<size_t>& ind) const {
-  return generate(ind.size(), [this, &ind](size_t i) -> const T& { return data_[ind[i]]; });
+template <class _Tp>
+valarray<_Tp> valarray<_Tp>::operator[](const valarray<size_t>& __ind) const {
+  return generate(__ind.size(), [this, &__ind](size_t i) -> const _Tp& { return __data_[__ind[i]]; });
 }
-template <class T>
-indirect_array<T> valarray<T>::operator[](const valarray<size_t>& ind) {
-  return indirect_array<T>(data_, valarray<size_t>(ind));
+template <class _Tp>
+indirect_array<_Tp> valarray<_Tp>::operator[](const valarray<size_t>& __ind) {
+  return indirect_array<_Tp>(__data_, valarray<size_t>(__ind));
 }
-template <class T>
-valarray<bool> valarray<T>::operator!() const {
-  return valarray<bool>::generate(size_, [this](size_t i) -> bool { return !data_[i]; });
+template <class _Tp>
+valarray<bool> valarray<_Tp>::operator!() const {
+  return valarray<bool>::generate(__size_, [this](size_t i) -> bool { return !__data_[i]; });
 }
 
 // ---- [valarray.special] ----------------------------------------------------------------------------
-template <class T>
-void swap(valarray<T>& x, valarray<T>& y) noexcept {
-  x.swap(y);
+template <class _Tp>
+void swap(valarray<_Tp>& __x, valarray<_Tp>& y) noexcept {
+  __x.swap(y);
 }
 
 } // namespace std
 
 // ---- [valarray.binary], [valarray.comparison], [valarray.transcend] ----------------------------------
-namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
-template <class R, class T, class Op>
-std::valarray<R> va_binary(const std::valarray<T>& x, const std::valarray<T>& y, Op op) {
-  ycxx::detail::precondition(x.size() == y.size(), "std::valarray binary operator: sizes differ");
-  const T* a = ycxx::detail::va_access::data(x);
-  const T* b = ycxx::detail::va_access::data(y);
-  return ycxx::detail::va_access::generate<R>(x.size(), [a, b, &op](std::size_t i) -> R { return op(a[i], b[i]); });
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+template <class _Rp, class _Tp, class _Op_>
+std::valarray<_Rp> __va_binary(const std::valarray<_Tp>& __x, const std::valarray<_Tp>& y, _Op_ op) {
+  __ycxx::__detail::__precondition(__x.size() == y.size(), "std::valarray binary operator: sizes differ");
+  const _Tp* a = __ycxx::__detail::__va_access::data(__x);
+  const _Tp* b = __ycxx::__detail::__va_access::data(y);
+  return __ycxx::__detail::__va_access::generate<_Rp>(__x.size(), [a, b, &op](std::size_t i) -> _Rp { return op(a[i], b[i]); });
 }
-template <class R, class T, class Op>
-std::valarray<R> va_binary_left(const std::valarray<T>& x, const T& y, Op op) {
-  const T* a = ycxx::detail::va_access::data(x);
-  return ycxx::detail::va_access::generate<R>(x.size(), [a, &y, &op](std::size_t i) -> R { return op(a[i], y); });
+template <class _Rp, class _Tp, class _Op_>
+std::valarray<_Rp> __va_binary_left(const std::valarray<_Tp>& __x, const _Tp& y, _Op_ op) {
+  const _Tp* a = __ycxx::__detail::__va_access::data(__x);
+  return __ycxx::__detail::__va_access::generate<_Rp>(__x.size(), [a, &y, &op](std::size_t i) -> _Rp { return op(a[i], y); });
 }
-template <class R, class T, class Op>
-std::valarray<R> va_binary_right(const T& x, const std::valarray<T>& y, Op op) {
-  const T* b = ycxx::detail::va_access::data(y);
-  return ycxx::detail::va_access::generate<R>(y.size(), [b, &x, &op](std::size_t i) -> R { return op(x, b[i]); });
+template <class _Rp, class _Tp, class _Op_>
+std::valarray<_Rp> __va_binary_right(const _Tp& __x, const std::valarray<_Tp>& y, _Op_ op) {
+  const _Tp* b = __ycxx::__detail::__va_access::data(y);
+  return __ycxx::__detail::__va_access::generate<_Rp>(y.size(), [b, &__x, &op](std::size_t i) -> _Rp { return op(__x, b[i]); });
 }
-template <class T, class F>
-std::valarray<T> va_map(const std::valarray<T>& x, F f) {
-  const T* a = ycxx::detail::va_access::data(x);
-  return ycxx::detail::va_access::generate<T>(x.size(), [a, &f](std::size_t i) -> T { return f(a[i]); });
+template <class _Tp, class _Fp>
+std::valarray<_Tp> __va_map(const std::valarray<_Tp>& __x, _Fp __f) {
+  const _Tp* a = __ycxx::__detail::__va_access::data(__x);
+  return __ycxx::__detail::__va_access::generate<_Tp>(__x.size(), [a, &__f](std::size_t i) -> _Tp { return __f(a[i]); });
 }
-}} // namespace ycxx::detail
+}} // namespace __ycxx::__detail
 
-namespace [[gnu::visibility("hidden")]] std {
+namespace [[__gnu__::__visibility__("hidden")]] std {
 
-template <class T>
-valarray<T> operator*(const valarray<T>& x, const valarray<T>& y) {
-  return ycxx::detail::va_binary<T>(x, y, ycxx::detail::va_op::mul{});
+template <class _Tp>
+valarray<_Tp> operator*(const valarray<_Tp>& __x, const valarray<_Tp>& y) {
+  return __ycxx::__detail::__va_binary<_Tp>(__x, y, __ycxx::__detail::__va_op::__mul{});
 }
-template <class T>
-valarray<T> operator*(const valarray<T>& x, const typename valarray<T>::value_type& y) {
-  return ycxx::detail::va_binary_left<T>(x, y, ycxx::detail::va_op::mul{});
+template <class _Tp>
+valarray<_Tp> operator*(const valarray<_Tp>& __x, const typename valarray<_Tp>::value_type& y) {
+  return __ycxx::__detail::__va_binary_left<_Tp>(__x, y, __ycxx::__detail::__va_op::__mul{});
 }
-template <class T>
-valarray<T> operator*(const typename valarray<T>::value_type& x, const valarray<T>& y) {
-  return ycxx::detail::va_binary_right<T>(x, y, ycxx::detail::va_op::mul{});
+template <class _Tp>
+valarray<_Tp> operator*(const typename valarray<_Tp>::value_type& __x, const valarray<_Tp>& y) {
+  return __ycxx::__detail::__va_binary_right<_Tp>(__x, y, __ycxx::__detail::__va_op::__mul{});
 }
-template <class T>
-valarray<T> operator/(const valarray<T>& x, const valarray<T>& y) {
-  return ycxx::detail::va_binary<T>(x, y, ycxx::detail::va_op::div{});
+template <class _Tp>
+valarray<_Tp> operator/(const valarray<_Tp>& __x, const valarray<_Tp>& y) {
+  return __ycxx::__detail::__va_binary<_Tp>(__x, y, __ycxx::__detail::__va_op::div{});
 }
-template <class T>
-valarray<T> operator/(const valarray<T>& x, const typename valarray<T>::value_type& y) {
-  return ycxx::detail::va_binary_left<T>(x, y, ycxx::detail::va_op::div{});
+template <class _Tp>
+valarray<_Tp> operator/(const valarray<_Tp>& __x, const typename valarray<_Tp>::value_type& y) {
+  return __ycxx::__detail::__va_binary_left<_Tp>(__x, y, __ycxx::__detail::__va_op::div{});
 }
-template <class T>
-valarray<T> operator/(const typename valarray<T>::value_type& x, const valarray<T>& y) {
-  return ycxx::detail::va_binary_right<T>(x, y, ycxx::detail::va_op::div{});
+template <class _Tp>
+valarray<_Tp> operator/(const typename valarray<_Tp>::value_type& __x, const valarray<_Tp>& y) {
+  return __ycxx::__detail::__va_binary_right<_Tp>(__x, y, __ycxx::__detail::__va_op::div{});
 }
-template <class T>
-valarray<T> operator%(const valarray<T>& x, const valarray<T>& y) {
-  return ycxx::detail::va_binary<T>(x, y, ycxx::detail::va_op::mod{});
+template <class _Tp>
+valarray<_Tp> operator%(const valarray<_Tp>& __x, const valarray<_Tp>& y) {
+  return __ycxx::__detail::__va_binary<_Tp>(__x, y, __ycxx::__detail::__va_op::__mod{});
 }
-template <class T>
-valarray<T> operator%(const valarray<T>& x, const typename valarray<T>::value_type& y) {
-  return ycxx::detail::va_binary_left<T>(x, y, ycxx::detail::va_op::mod{});
+template <class _Tp>
+valarray<_Tp> operator%(const valarray<_Tp>& __x, const typename valarray<_Tp>::value_type& y) {
+  return __ycxx::__detail::__va_binary_left<_Tp>(__x, y, __ycxx::__detail::__va_op::__mod{});
 }
-template <class T>
-valarray<T> operator%(const typename valarray<T>::value_type& x, const valarray<T>& y) {
-  return ycxx::detail::va_binary_right<T>(x, y, ycxx::detail::va_op::mod{});
+template <class _Tp>
+valarray<_Tp> operator%(const typename valarray<_Tp>::value_type& __x, const valarray<_Tp>& y) {
+  return __ycxx::__detail::__va_binary_right<_Tp>(__x, y, __ycxx::__detail::__va_op::__mod{});
 }
-template <class T>
-valarray<T> operator+(const valarray<T>& x, const valarray<T>& y) {
-  return ycxx::detail::va_binary<T>(x, y, ycxx::detail::va_op::plus{});
+template <class _Tp>
+valarray<_Tp> operator+(const valarray<_Tp>& __x, const valarray<_Tp>& y) {
+  return __ycxx::__detail::__va_binary<_Tp>(__x, y, __ycxx::__detail::__va_op::plus{});
 }
-template <class T>
-valarray<T> operator+(const valarray<T>& x, const typename valarray<T>::value_type& y) {
-  return ycxx::detail::va_binary_left<T>(x, y, ycxx::detail::va_op::plus{});
+template <class _Tp>
+valarray<_Tp> operator+(const valarray<_Tp>& __x, const typename valarray<_Tp>::value_type& y) {
+  return __ycxx::__detail::__va_binary_left<_Tp>(__x, y, __ycxx::__detail::__va_op::plus{});
 }
-template <class T>
-valarray<T> operator+(const typename valarray<T>::value_type& x, const valarray<T>& y) {
-  return ycxx::detail::va_binary_right<T>(x, y, ycxx::detail::va_op::plus{});
+template <class _Tp>
+valarray<_Tp> operator+(const typename valarray<_Tp>::value_type& __x, const valarray<_Tp>& y) {
+  return __ycxx::__detail::__va_binary_right<_Tp>(__x, y, __ycxx::__detail::__va_op::plus{});
 }
-template <class T>
-valarray<T> operator-(const valarray<T>& x, const valarray<T>& y) {
-  return ycxx::detail::va_binary<T>(x, y, ycxx::detail::va_op::minus{});
+template <class _Tp>
+valarray<_Tp> operator-(const valarray<_Tp>& __x, const valarray<_Tp>& y) {
+  return __ycxx::__detail::__va_binary<_Tp>(__x, y, __ycxx::__detail::__va_op::minus{});
 }
-template <class T>
-valarray<T> operator-(const valarray<T>& x, const typename valarray<T>::value_type& y) {
-  return ycxx::detail::va_binary_left<T>(x, y, ycxx::detail::va_op::minus{});
+template <class _Tp>
+valarray<_Tp> operator-(const valarray<_Tp>& __x, const typename valarray<_Tp>::value_type& y) {
+  return __ycxx::__detail::__va_binary_left<_Tp>(__x, y, __ycxx::__detail::__va_op::minus{});
 }
-template <class T>
-valarray<T> operator-(const typename valarray<T>::value_type& x, const valarray<T>& y) {
-  return ycxx::detail::va_binary_right<T>(x, y, ycxx::detail::va_op::minus{});
+template <class _Tp>
+valarray<_Tp> operator-(const typename valarray<_Tp>::value_type& __x, const valarray<_Tp>& y) {
+  return __ycxx::__detail::__va_binary_right<_Tp>(__x, y, __ycxx::__detail::__va_op::minus{});
 }
-template <class T>
-valarray<T> operator^(const valarray<T>& x, const valarray<T>& y) {
-  return ycxx::detail::va_binary<T>(x, y, ycxx::detail::va_op::bxor{});
+template <class _Tp>
+valarray<_Tp> operator^(const valarray<_Tp>& __x, const valarray<_Tp>& y) {
+  return __ycxx::__detail::__va_binary<_Tp>(__x, y, __ycxx::__detail::__va_op::__bxor{});
 }
-template <class T>
-valarray<T> operator^(const valarray<T>& x, const typename valarray<T>::value_type& y) {
-  return ycxx::detail::va_binary_left<T>(x, y, ycxx::detail::va_op::bxor{});
+template <class _Tp>
+valarray<_Tp> operator^(const valarray<_Tp>& __x, const typename valarray<_Tp>::value_type& y) {
+  return __ycxx::__detail::__va_binary_left<_Tp>(__x, y, __ycxx::__detail::__va_op::__bxor{});
 }
-template <class T>
-valarray<T> operator^(const typename valarray<T>::value_type& x, const valarray<T>& y) {
-  return ycxx::detail::va_binary_right<T>(x, y, ycxx::detail::va_op::bxor{});
+template <class _Tp>
+valarray<_Tp> operator^(const typename valarray<_Tp>::value_type& __x, const valarray<_Tp>& y) {
+  return __ycxx::__detail::__va_binary_right<_Tp>(__x, y, __ycxx::__detail::__va_op::__bxor{});
 }
-template <class T>
-valarray<T> operator&(const valarray<T>& x, const valarray<T>& y) {
-  return ycxx::detail::va_binary<T>(x, y, ycxx::detail::va_op::band{});
+template <class _Tp>
+valarray<_Tp> operator&(const valarray<_Tp>& __x, const valarray<_Tp>& y) {
+  return __ycxx::__detail::__va_binary<_Tp>(__x, y, __ycxx::__detail::__va_op::__band{});
 }
-template <class T>
-valarray<T> operator&(const valarray<T>& x, const typename valarray<T>::value_type& y) {
-  return ycxx::detail::va_binary_left<T>(x, y, ycxx::detail::va_op::band{});
+template <class _Tp>
+valarray<_Tp> operator&(const valarray<_Tp>& __x, const typename valarray<_Tp>::value_type& y) {
+  return __ycxx::__detail::__va_binary_left<_Tp>(__x, y, __ycxx::__detail::__va_op::__band{});
 }
-template <class T>
-valarray<T> operator&(const typename valarray<T>::value_type& x, const valarray<T>& y) {
-  return ycxx::detail::va_binary_right<T>(x, y, ycxx::detail::va_op::band{});
+template <class _Tp>
+valarray<_Tp> operator&(const typename valarray<_Tp>::value_type& __x, const valarray<_Tp>& y) {
+  return __ycxx::__detail::__va_binary_right<_Tp>(__x, y, __ycxx::__detail::__va_op::__band{});
 }
-template <class T>
-valarray<T> operator|(const valarray<T>& x, const valarray<T>& y) {
-  return ycxx::detail::va_binary<T>(x, y, ycxx::detail::va_op::bor{});
+template <class _Tp>
+valarray<_Tp> operator|(const valarray<_Tp>& __x, const valarray<_Tp>& y) {
+  return __ycxx::__detail::__va_binary<_Tp>(__x, y, __ycxx::__detail::__va_op::__bor{});
 }
-template <class T>
-valarray<T> operator|(const valarray<T>& x, const typename valarray<T>::value_type& y) {
-  return ycxx::detail::va_binary_left<T>(x, y, ycxx::detail::va_op::bor{});
+template <class _Tp>
+valarray<_Tp> operator|(const valarray<_Tp>& __x, const typename valarray<_Tp>::value_type& y) {
+  return __ycxx::__detail::__va_binary_left<_Tp>(__x, y, __ycxx::__detail::__va_op::__bor{});
 }
-template <class T>
-valarray<T> operator|(const typename valarray<T>::value_type& x, const valarray<T>& y) {
-  return ycxx::detail::va_binary_right<T>(x, y, ycxx::detail::va_op::bor{});
+template <class _Tp>
+valarray<_Tp> operator|(const typename valarray<_Tp>::value_type& __x, const valarray<_Tp>& y) {
+  return __ycxx::__detail::__va_binary_right<_Tp>(__x, y, __ycxx::__detail::__va_op::__bor{});
 }
-template <class T>
-valarray<T> operator<<(const valarray<T>& x, const valarray<T>& y) {
-  return ycxx::detail::va_binary<T>(x, y, ycxx::detail::va_op::shl{});
+template <class _Tp>
+valarray<_Tp> operator<<(const valarray<_Tp>& __x, const valarray<_Tp>& y) {
+  return __ycxx::__detail::__va_binary<_Tp>(__x, y, __ycxx::__detail::__va_op::shl{});
 }
-template <class T>
-valarray<T> operator<<(const valarray<T>& x, const typename valarray<T>::value_type& y) {
-  return ycxx::detail::va_binary_left<T>(x, y, ycxx::detail::va_op::shl{});
+template <class _Tp>
+valarray<_Tp> operator<<(const valarray<_Tp>& __x, const typename valarray<_Tp>::value_type& y) {
+  return __ycxx::__detail::__va_binary_left<_Tp>(__x, y, __ycxx::__detail::__va_op::shl{});
 }
-template <class T>
-valarray<T> operator<<(const typename valarray<T>::value_type& x, const valarray<T>& y) {
-  return ycxx::detail::va_binary_right<T>(x, y, ycxx::detail::va_op::shl{});
+template <class _Tp>
+valarray<_Tp> operator<<(const typename valarray<_Tp>::value_type& __x, const valarray<_Tp>& y) {
+  return __ycxx::__detail::__va_binary_right<_Tp>(__x, y, __ycxx::__detail::__va_op::shl{});
 }
-template <class T>
-valarray<T> operator>>(const valarray<T>& x, const valarray<T>& y) {
-  return ycxx::detail::va_binary<T>(x, y, ycxx::detail::va_op::shr{});
+template <class _Tp>
+valarray<_Tp> operator>>(const valarray<_Tp>& __x, const valarray<_Tp>& y) {
+  return __ycxx::__detail::__va_binary<_Tp>(__x, y, __ycxx::__detail::__va_op::shr{});
 }
-template <class T>
-valarray<T> operator>>(const valarray<T>& x, const typename valarray<T>::value_type& y) {
-  return ycxx::detail::va_binary_left<T>(x, y, ycxx::detail::va_op::shr{});
+template <class _Tp>
+valarray<_Tp> operator>>(const valarray<_Tp>& __x, const typename valarray<_Tp>::value_type& y) {
+  return __ycxx::__detail::__va_binary_left<_Tp>(__x, y, __ycxx::__detail::__va_op::shr{});
 }
-template <class T>
-valarray<T> operator>>(const typename valarray<T>::value_type& x, const valarray<T>& y) {
-  return ycxx::detail::va_binary_right<T>(x, y, ycxx::detail::va_op::shr{});
+template <class _Tp>
+valarray<_Tp> operator>>(const typename valarray<_Tp>::value_type& __x, const valarray<_Tp>& y) {
+  return __ycxx::__detail::__va_binary_right<_Tp>(__x, y, __ycxx::__detail::__va_op::shr{});
 }
-template <class T>
-valarray<bool> operator&&(const valarray<T>& x, const valarray<T>& y) {
-  return ycxx::detail::va_binary<bool>(x, y, ycxx::detail::va_op::land{});
+template <class _Tp>
+valarray<bool> operator&&(const valarray<_Tp>& __x, const valarray<_Tp>& y) {
+  return __ycxx::__detail::__va_binary<bool>(__x, y, __ycxx::__detail::__va_op::__land{});
 }
-template <class T>
-valarray<bool> operator&&(const valarray<T>& x, const typename valarray<T>::value_type& y) {
-  return ycxx::detail::va_binary_left<bool>(x, y, ycxx::detail::va_op::land{});
+template <class _Tp>
+valarray<bool> operator&&(const valarray<_Tp>& __x, const typename valarray<_Tp>::value_type& y) {
+  return __ycxx::__detail::__va_binary_left<bool>(__x, y, __ycxx::__detail::__va_op::__land{});
 }
-template <class T>
-valarray<bool> operator&&(const typename valarray<T>::value_type& x, const valarray<T>& y) {
-  return ycxx::detail::va_binary_right<bool>(x, y, ycxx::detail::va_op::land{});
+template <class _Tp>
+valarray<bool> operator&&(const typename valarray<_Tp>::value_type& __x, const valarray<_Tp>& y) {
+  return __ycxx::__detail::__va_binary_right<bool>(__x, y, __ycxx::__detail::__va_op::__land{});
 }
-template <class T>
-valarray<bool> operator||(const valarray<T>& x, const valarray<T>& y) {
-  return ycxx::detail::va_binary<bool>(x, y, ycxx::detail::va_op::lor{});
+template <class _Tp>
+valarray<bool> operator||(const valarray<_Tp>& __x, const valarray<_Tp>& y) {
+  return __ycxx::__detail::__va_binary<bool>(__x, y, __ycxx::__detail::__va_op::__lor{});
 }
-template <class T>
-valarray<bool> operator||(const valarray<T>& x, const typename valarray<T>::value_type& y) {
-  return ycxx::detail::va_binary_left<bool>(x, y, ycxx::detail::va_op::lor{});
+template <class _Tp>
+valarray<bool> operator||(const valarray<_Tp>& __x, const typename valarray<_Tp>::value_type& y) {
+  return __ycxx::__detail::__va_binary_left<bool>(__x, y, __ycxx::__detail::__va_op::__lor{});
 }
-template <class T>
-valarray<bool> operator||(const typename valarray<T>::value_type& x, const valarray<T>& y) {
-  return ycxx::detail::va_binary_right<bool>(x, y, ycxx::detail::va_op::lor{});
+template <class _Tp>
+valarray<bool> operator||(const typename valarray<_Tp>::value_type& __x, const valarray<_Tp>& y) {
+  return __ycxx::__detail::__va_binary_right<bool>(__x, y, __ycxx::__detail::__va_op::__lor{});
 }
-template <class T>
-valarray<bool> operator==(const valarray<T>& x, const valarray<T>& y) {
-  return ycxx::detail::va_binary<bool>(x, y, ycxx::detail::va_op::eq{});
+template <class _Tp>
+valarray<bool> operator==(const valarray<_Tp>& __x, const valarray<_Tp>& y) {
+  return __ycxx::__detail::__va_binary<bool>(__x, y, __ycxx::__detail::__va_op::__eq{});
 }
-template <class T>
-valarray<bool> operator==(const valarray<T>& x, const typename valarray<T>::value_type& y) {
-  return ycxx::detail::va_binary_left<bool>(x, y, ycxx::detail::va_op::eq{});
+template <class _Tp>
+valarray<bool> operator==(const valarray<_Tp>& __x, const typename valarray<_Tp>::value_type& y) {
+  return __ycxx::__detail::__va_binary_left<bool>(__x, y, __ycxx::__detail::__va_op::__eq{});
 }
-template <class T>
-valarray<bool> operator==(const typename valarray<T>::value_type& x, const valarray<T>& y) {
-  return ycxx::detail::va_binary_right<bool>(x, y, ycxx::detail::va_op::eq{});
+template <class _Tp>
+valarray<bool> operator==(const typename valarray<_Tp>::value_type& __x, const valarray<_Tp>& y) {
+  return __ycxx::__detail::__va_binary_right<bool>(__x, y, __ycxx::__detail::__va_op::__eq{});
 }
-template <class T>
-valarray<bool> operator!=(const valarray<T>& x, const valarray<T>& y) {
-  return ycxx::detail::va_binary<bool>(x, y, ycxx::detail::va_op::ne{});
+template <class _Tp>
+valarray<bool> operator!=(const valarray<_Tp>& __x, const valarray<_Tp>& y) {
+  return __ycxx::__detail::__va_binary<bool>(__x, y, __ycxx::__detail::__va_op::__ne{});
 }
-template <class T>
-valarray<bool> operator!=(const valarray<T>& x, const typename valarray<T>::value_type& y) {
-  return ycxx::detail::va_binary_left<bool>(x, y, ycxx::detail::va_op::ne{});
+template <class _Tp>
+valarray<bool> operator!=(const valarray<_Tp>& __x, const typename valarray<_Tp>::value_type& y) {
+  return __ycxx::__detail::__va_binary_left<bool>(__x, y, __ycxx::__detail::__va_op::__ne{});
 }
-template <class T>
-valarray<bool> operator!=(const typename valarray<T>::value_type& x, const valarray<T>& y) {
-  return ycxx::detail::va_binary_right<bool>(x, y, ycxx::detail::va_op::ne{});
+template <class _Tp>
+valarray<bool> operator!=(const typename valarray<_Tp>::value_type& __x, const valarray<_Tp>& y) {
+  return __ycxx::__detail::__va_binary_right<bool>(__x, y, __ycxx::__detail::__va_op::__ne{});
 }
-template <class T>
-valarray<bool> operator<(const valarray<T>& x, const valarray<T>& y) {
-  return ycxx::detail::va_binary<bool>(x, y, ycxx::detail::va_op::lt{});
+template <class _Tp>
+valarray<bool> operator<(const valarray<_Tp>& __x, const valarray<_Tp>& y) {
+  return __ycxx::__detail::__va_binary<bool>(__x, y, __ycxx::__detail::__va_op::__lt{});
 }
-template <class T>
-valarray<bool> operator<(const valarray<T>& x, const typename valarray<T>::value_type& y) {
-  return ycxx::detail::va_binary_left<bool>(x, y, ycxx::detail::va_op::lt{});
+template <class _Tp>
+valarray<bool> operator<(const valarray<_Tp>& __x, const typename valarray<_Tp>::value_type& y) {
+  return __ycxx::__detail::__va_binary_left<bool>(__x, y, __ycxx::__detail::__va_op::__lt{});
 }
-template <class T>
-valarray<bool> operator<(const typename valarray<T>::value_type& x, const valarray<T>& y) {
-  return ycxx::detail::va_binary_right<bool>(x, y, ycxx::detail::va_op::lt{});
+template <class _Tp>
+valarray<bool> operator<(const typename valarray<_Tp>::value_type& __x, const valarray<_Tp>& y) {
+  return __ycxx::__detail::__va_binary_right<bool>(__x, y, __ycxx::__detail::__va_op::__lt{});
 }
-template <class T>
-valarray<bool> operator>(const valarray<T>& x, const valarray<T>& y) {
-  return ycxx::detail::va_binary<bool>(x, y, ycxx::detail::va_op::gt{});
+template <class _Tp>
+valarray<bool> operator>(const valarray<_Tp>& __x, const valarray<_Tp>& y) {
+  return __ycxx::__detail::__va_binary<bool>(__x, y, __ycxx::__detail::__va_op::__gt{});
 }
-template <class T>
-valarray<bool> operator>(const valarray<T>& x, const typename valarray<T>::value_type& y) {
-  return ycxx::detail::va_binary_left<bool>(x, y, ycxx::detail::va_op::gt{});
+template <class _Tp>
+valarray<bool> operator>(const valarray<_Tp>& __x, const typename valarray<_Tp>::value_type& y) {
+  return __ycxx::__detail::__va_binary_left<bool>(__x, y, __ycxx::__detail::__va_op::__gt{});
 }
-template <class T>
-valarray<bool> operator>(const typename valarray<T>::value_type& x, const valarray<T>& y) {
-  return ycxx::detail::va_binary_right<bool>(x, y, ycxx::detail::va_op::gt{});
+template <class _Tp>
+valarray<bool> operator>(const typename valarray<_Tp>::value_type& __x, const valarray<_Tp>& y) {
+  return __ycxx::__detail::__va_binary_right<bool>(__x, y, __ycxx::__detail::__va_op::__gt{});
 }
-template <class T>
-valarray<bool> operator<=(const valarray<T>& x, const valarray<T>& y) {
-  return ycxx::detail::va_binary<bool>(x, y, ycxx::detail::va_op::le{});
+template <class _Tp>
+valarray<bool> operator<=(const valarray<_Tp>& __x, const valarray<_Tp>& y) {
+  return __ycxx::__detail::__va_binary<bool>(__x, y, __ycxx::__detail::__va_op::__le{});
 }
-template <class T>
-valarray<bool> operator<=(const valarray<T>& x, const typename valarray<T>::value_type& y) {
-  return ycxx::detail::va_binary_left<bool>(x, y, ycxx::detail::va_op::le{});
+template <class _Tp>
+valarray<bool> operator<=(const valarray<_Tp>& __x, const typename valarray<_Tp>::value_type& y) {
+  return __ycxx::__detail::__va_binary_left<bool>(__x, y, __ycxx::__detail::__va_op::__le{});
 }
-template <class T>
-valarray<bool> operator<=(const typename valarray<T>::value_type& x, const valarray<T>& y) {
-  return ycxx::detail::va_binary_right<bool>(x, y, ycxx::detail::va_op::le{});
+template <class _Tp>
+valarray<bool> operator<=(const typename valarray<_Tp>::value_type& __x, const valarray<_Tp>& y) {
+  return __ycxx::__detail::__va_binary_right<bool>(__x, y, __ycxx::__detail::__va_op::__le{});
 }
-template <class T>
-valarray<bool> operator>=(const valarray<T>& x, const valarray<T>& y) {
-  return ycxx::detail::va_binary<bool>(x, y, ycxx::detail::va_op::ge{});
+template <class _Tp>
+valarray<bool> operator>=(const valarray<_Tp>& __x, const valarray<_Tp>& y) {
+  return __ycxx::__detail::__va_binary<bool>(__x, y, __ycxx::__detail::__va_op::__ge{});
 }
-template <class T>
-valarray<bool> operator>=(const valarray<T>& x, const typename valarray<T>::value_type& y) {
-  return ycxx::detail::va_binary_left<bool>(x, y, ycxx::detail::va_op::ge{});
+template <class _Tp>
+valarray<bool> operator>=(const valarray<_Tp>& __x, const typename valarray<_Tp>::value_type& y) {
+  return __ycxx::__detail::__va_binary_left<bool>(__x, y, __ycxx::__detail::__va_op::__ge{});
 }
-template <class T>
-valarray<bool> operator>=(const typename valarray<T>::value_type& x, const valarray<T>& y) {
-  return ycxx::detail::va_binary_right<bool>(x, y, ycxx::detail::va_op::ge{});
+template <class _Tp>
+valarray<bool> operator>=(const typename valarray<_Tp>::value_type& __x, const valarray<_Tp>& y) {
+  return __ycxx::__detail::__va_binary_right<bool>(__x, y, __ycxx::__detail::__va_op::__ge{});
 }
 
 // [valarray.transcend]
-template <class T>
-valarray<T> abs(const valarray<T>& x) {
-  return ycxx::detail::va_map(x, ycxx::detail::va_math::f_abs{});
+template <class _Tp>
+valarray<_Tp> abs(const valarray<_Tp>& __x) {
+  return __ycxx::__detail::__va_map(__x, __ycxx::__detail::__va_math::__f_abs{});
 }
-template <class T>
-valarray<T> acos(const valarray<T>& x) {
-  return ycxx::detail::va_map(x, ycxx::detail::va_math::f_acos{});
+template <class _Tp>
+valarray<_Tp> acos(const valarray<_Tp>& __x) {
+  return __ycxx::__detail::__va_map(__x, __ycxx::__detail::__va_math::__f_acos{});
 }
-template <class T>
-valarray<T> asin(const valarray<T>& x) {
-  return ycxx::detail::va_map(x, ycxx::detail::va_math::f_asin{});
+template <class _Tp>
+valarray<_Tp> asin(const valarray<_Tp>& __x) {
+  return __ycxx::__detail::__va_map(__x, __ycxx::__detail::__va_math::__f_asin{});
 }
-template <class T>
-valarray<T> atan(const valarray<T>& x) {
-  return ycxx::detail::va_map(x, ycxx::detail::va_math::f_atan{});
+template <class _Tp>
+valarray<_Tp> atan(const valarray<_Tp>& __x) {
+  return __ycxx::__detail::__va_map(__x, __ycxx::__detail::__va_math::__f_atan{});
 }
-template <class T>
-valarray<T> cos(const valarray<T>& x) {
-  return ycxx::detail::va_map(x, ycxx::detail::va_math::f_cos{});
+template <class _Tp>
+valarray<_Tp> cos(const valarray<_Tp>& __x) {
+  return __ycxx::__detail::__va_map(__x, __ycxx::__detail::__va_math::__f_cos{});
 }
-template <class T>
-valarray<T> cosh(const valarray<T>& x) {
-  return ycxx::detail::va_map(x, ycxx::detail::va_math::f_cosh{});
+template <class _Tp>
+valarray<_Tp> cosh(const valarray<_Tp>& __x) {
+  return __ycxx::__detail::__va_map(__x, __ycxx::__detail::__va_math::__f_cosh{});
 }
-template <class T>
-valarray<T> exp(const valarray<T>& x) {
-  return ycxx::detail::va_map(x, ycxx::detail::va_math::f_exp{});
+template <class _Tp>
+valarray<_Tp> exp(const valarray<_Tp>& __x) {
+  return __ycxx::__detail::__va_map(__x, __ycxx::__detail::__va_math::__f_exp{});
 }
-template <class T>
-valarray<T> log(const valarray<T>& x) {
-  return ycxx::detail::va_map(x, ycxx::detail::va_math::f_log{});
+template <class _Tp>
+valarray<_Tp> log(const valarray<_Tp>& __x) {
+  return __ycxx::__detail::__va_map(__x, __ycxx::__detail::__va_math::__f_log{});
 }
-template <class T>
-valarray<T> log10(const valarray<T>& x) {
-  return ycxx::detail::va_map(x, ycxx::detail::va_math::f_log10{});
+template <class _Tp>
+valarray<_Tp> log10(const valarray<_Tp>& __x) {
+  return __ycxx::__detail::__va_map(__x, __ycxx::__detail::__va_math::__f_log10{});
 }
-template <class T>
-valarray<T> sin(const valarray<T>& x) {
-  return ycxx::detail::va_map(x, ycxx::detail::va_math::f_sin{});
+template <class _Tp>
+valarray<_Tp> sin(const valarray<_Tp>& __x) {
+  return __ycxx::__detail::__va_map(__x, __ycxx::__detail::__va_math::__f_sin{});
 }
-template <class T>
-valarray<T> sinh(const valarray<T>& x) {
-  return ycxx::detail::va_map(x, ycxx::detail::va_math::f_sinh{});
+template <class _Tp>
+valarray<_Tp> sinh(const valarray<_Tp>& __x) {
+  return __ycxx::__detail::__va_map(__x, __ycxx::__detail::__va_math::__f_sinh{});
 }
-template <class T>
-valarray<T> sqrt(const valarray<T>& x) {
-  return ycxx::detail::va_map(x, ycxx::detail::va_math::f_sqrt{});
+template <class _Tp>
+valarray<_Tp> sqrt(const valarray<_Tp>& __x) {
+  return __ycxx::__detail::__va_map(__x, __ycxx::__detail::__va_math::__f_sqrt{});
 }
-template <class T>
-valarray<T> tan(const valarray<T>& x) {
-  return ycxx::detail::va_map(x, ycxx::detail::va_math::f_tan{});
+template <class _Tp>
+valarray<_Tp> tan(const valarray<_Tp>& __x) {
+  return __ycxx::__detail::__va_map(__x, __ycxx::__detail::__va_math::__f_tan{});
 }
-template <class T>
-valarray<T> tanh(const valarray<T>& x) {
-  return ycxx::detail::va_map(x, ycxx::detail::va_math::f_tanh{});
+template <class _Tp>
+valarray<_Tp> tanh(const valarray<_Tp>& __x) {
+  return __ycxx::__detail::__va_map(__x, __ycxx::__detail::__va_math::__f_tanh{});
 }
-template <class T>
-valarray<T> atan2(const valarray<T>& x, const valarray<T>& y) {
-  return ycxx::detail::va_binary<T>(x, y, ycxx::detail::va_math::f_atan2{});
+template <class _Tp>
+valarray<_Tp> atan2(const valarray<_Tp>& __x, const valarray<_Tp>& y) {
+  return __ycxx::__detail::__va_binary<_Tp>(__x, y, __ycxx::__detail::__va_math::__f_atan2{});
 }
-template <class T>
-valarray<T> atan2(const valarray<T>& x, const typename valarray<T>::value_type& y) {
-  return ycxx::detail::va_binary_left<T>(x, y, ycxx::detail::va_math::f_atan2{});
+template <class _Tp>
+valarray<_Tp> atan2(const valarray<_Tp>& __x, const typename valarray<_Tp>::value_type& y) {
+  return __ycxx::__detail::__va_binary_left<_Tp>(__x, y, __ycxx::__detail::__va_math::__f_atan2{});
 }
-template <class T>
-valarray<T> atan2(const typename valarray<T>::value_type& x, const valarray<T>& y) {
-  return ycxx::detail::va_binary_right<T>(x, y, ycxx::detail::va_math::f_atan2{});
+template <class _Tp>
+valarray<_Tp> atan2(const typename valarray<_Tp>::value_type& __x, const valarray<_Tp>& y) {
+  return __ycxx::__detail::__va_binary_right<_Tp>(__x, y, __ycxx::__detail::__va_math::__f_atan2{});
 }
-template <class T>
-valarray<T> pow(const valarray<T>& x, const valarray<T>& y) {
-  return ycxx::detail::va_binary<T>(x, y, ycxx::detail::va_math::f_pow{});
+template <class _Tp>
+valarray<_Tp> pow(const valarray<_Tp>& __x, const valarray<_Tp>& y) {
+  return __ycxx::__detail::__va_binary<_Tp>(__x, y, __ycxx::__detail::__va_math::__f_pow{});
 }
-template <class T>
-valarray<T> pow(const valarray<T>& x, const typename valarray<T>::value_type& y) {
-  return ycxx::detail::va_binary_left<T>(x, y, ycxx::detail::va_math::f_pow{});
+template <class _Tp>
+valarray<_Tp> pow(const valarray<_Tp>& __x, const typename valarray<_Tp>::value_type& y) {
+  return __ycxx::__detail::__va_binary_left<_Tp>(__x, y, __ycxx::__detail::__va_math::__f_pow{});
 }
-template <class T>
-valarray<T> pow(const typename valarray<T>::value_type& x, const valarray<T>& y) {
-  return ycxx::detail::va_binary_right<T>(x, y, ycxx::detail::va_math::f_pow{});
+template <class _Tp>
+valarray<_Tp> pow(const typename valarray<_Tp>::value_type& __x, const valarray<_Tp>& y) {
+  return __ycxx::__detail::__va_binary_right<_Tp>(__x, y, __ycxx::__detail::__va_math::__f_pow{});
 }
 
 } // namespace std

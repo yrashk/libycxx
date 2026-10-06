@@ -4,674 +4,674 @@
 
 #include <ycxx/config.hpp>
 
-namespace [[gnu::visibility("hidden")]] ycxx { namespace detail::fpm::bi {
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail::__fpm::__bi {
 
 template <bool>
-struct fold_probe {};
+struct __fold_probe {};
 
-template <class C>
-constexpr C acos(C x) noexcept {
-  if constexpr (__is_same(C, float))
-    return __builtin_acosf(x);
-  else if constexpr (__is_same(C, double))
-    return __builtin_acos(x);
-  else if constexpr (__is_same(C, long double))
-    return __builtin_acosl(x);
+template <class _Cp>
+constexpr _Cp acos(_Cp __x) noexcept {
+  if constexpr (__is_same(_Cp, float))
+    return __builtin_acosf(__x);
+  else if constexpr (__is_same(_Cp, double))
+    return __builtin_acos(__x);
+  else if constexpr (__is_same(_Cp, long double))
+    return __builtin_acosl(__x);
   else
-    return __builtin_acosf128(x);
+    return __builtin_acosf128(__x);
 }
-template <class C>
-constexpr C asin(C x) noexcept {
-  if constexpr (__is_same(C, float))
-    return __builtin_asinf(x);
-  else if constexpr (__is_same(C, double))
-    return __builtin_asin(x);
-  else if constexpr (__is_same(C, long double))
-    return __builtin_asinl(x);
+template <class _Cp>
+constexpr _Cp asin(_Cp __x) noexcept {
+  if constexpr (__is_same(_Cp, float))
+    return __builtin_asinf(__x);
+  else if constexpr (__is_same(_Cp, double))
+    return __builtin_asin(__x);
+  else if constexpr (__is_same(_Cp, long double))
+    return __builtin_asinl(__x);
   else
-    return __builtin_asinf128(x);
+    return __builtin_asinf128(__x);
 }
-template <class C>
-constexpr C atan(C x) noexcept {
-  if constexpr (__is_same(C, float))
-    return __builtin_atanf(x);
-  else if constexpr (__is_same(C, double))
-    return __builtin_atan(x);
-  else if constexpr (__is_same(C, long double))
-    return __builtin_atanl(x);
+template <class _Cp>
+constexpr _Cp atan(_Cp __x) noexcept {
+  if constexpr (__is_same(_Cp, float))
+    return __builtin_atanf(__x);
+  else if constexpr (__is_same(_Cp, double))
+    return __builtin_atan(__x);
+  else if constexpr (__is_same(_Cp, long double))
+    return __builtin_atanl(__x);
   else
-    return __builtin_atanf128(x);
+    return __builtin_atanf128(__x);
 }
-template <class C>
-constexpr C cos(C x) noexcept {
-  if constexpr (__is_same(C, float))
-    return __builtin_cosf(x);
-  else if constexpr (__is_same(C, double))
-    return __builtin_cos(x);
-  else if constexpr (__is_same(C, long double))
-    return __builtin_cosl(x);
+template <class _Cp>
+constexpr _Cp cos(_Cp __x) noexcept {
+  if constexpr (__is_same(_Cp, float))
+    return __builtin_cosf(__x);
+  else if constexpr (__is_same(_Cp, double))
+    return __builtin_cos(__x);
+  else if constexpr (__is_same(_Cp, long double))
+    return __builtin_cosl(__x);
   else
-    return __builtin_cosf128(x);
+    return __builtin_cosf128(__x);
 }
-template <class C>
-constexpr C sin(C x) noexcept {
-  if constexpr (__is_same(C, float))
-    return __builtin_sinf(x);
-  else if constexpr (__is_same(C, double))
-    return __builtin_sin(x);
-  else if constexpr (__is_same(C, long double))
-    return __builtin_sinl(x);
+template <class _Cp>
+constexpr _Cp sin(_Cp __x) noexcept {
+  if constexpr (__is_same(_Cp, float))
+    return __builtin_sinf(__x);
+  else if constexpr (__is_same(_Cp, double))
+    return __builtin_sin(__x);
+  else if constexpr (__is_same(_Cp, long double))
+    return __builtin_sinl(__x);
   else
-    return __builtin_sinf128(x);
+    return __builtin_sinf128(__x);
 }
-template <class C>
-constexpr C tan(C x) noexcept {
-  if constexpr (__is_same(C, float))
-    return __builtin_tanf(x);
-  else if constexpr (__is_same(C, double))
-    return __builtin_tan(x);
-  else if constexpr (__is_same(C, long double))
-    return __builtin_tanl(x);
+template <class _Cp>
+constexpr _Cp tan(_Cp __x) noexcept {
+  if constexpr (__is_same(_Cp, float))
+    return __builtin_tanf(__x);
+  else if constexpr (__is_same(_Cp, double))
+    return __builtin_tan(__x);
+  else if constexpr (__is_same(_Cp, long double))
+    return __builtin_tanl(__x);
   else
-    return __builtin_tanf128(x);
+    return __builtin_tanf128(__x);
 }
-template <class C>
-constexpr C acosh(C x) noexcept {
-  if constexpr (__is_same(C, float))
-    return __builtin_acoshf(x);
-  else if constexpr (__is_same(C, double))
-    return __builtin_acosh(x);
-  else if constexpr (__is_same(C, long double))
-    return __builtin_acoshl(x);
+template <class _Cp>
+constexpr _Cp acosh(_Cp __x) noexcept {
+  if constexpr (__is_same(_Cp, float))
+    return __builtin_acoshf(__x);
+  else if constexpr (__is_same(_Cp, double))
+    return __builtin_acosh(__x);
+  else if constexpr (__is_same(_Cp, long double))
+    return __builtin_acoshl(__x);
   else
-    return __builtin_acoshf128(x);
+    return __builtin_acoshf128(__x);
 }
-template <class C>
-constexpr C asinh(C x) noexcept {
-  if constexpr (__is_same(C, float))
-    return __builtin_asinhf(x);
-  else if constexpr (__is_same(C, double))
-    return __builtin_asinh(x);
-  else if constexpr (__is_same(C, long double))
-    return __builtin_asinhl(x);
+template <class _Cp>
+constexpr _Cp asinh(_Cp __x) noexcept {
+  if constexpr (__is_same(_Cp, float))
+    return __builtin_asinhf(__x);
+  else if constexpr (__is_same(_Cp, double))
+    return __builtin_asinh(__x);
+  else if constexpr (__is_same(_Cp, long double))
+    return __builtin_asinhl(__x);
   else
-    return __builtin_asinhf128(x);
+    return __builtin_asinhf128(__x);
 }
-template <class C>
-constexpr C atanh(C x) noexcept {
-  if constexpr (__is_same(C, float))
-    return __builtin_atanhf(x);
-  else if constexpr (__is_same(C, double))
-    return __builtin_atanh(x);
-  else if constexpr (__is_same(C, long double))
-    return __builtin_atanhl(x);
+template <class _Cp>
+constexpr _Cp atanh(_Cp __x) noexcept {
+  if constexpr (__is_same(_Cp, float))
+    return __builtin_atanhf(__x);
+  else if constexpr (__is_same(_Cp, double))
+    return __builtin_atanh(__x);
+  else if constexpr (__is_same(_Cp, long double))
+    return __builtin_atanhl(__x);
   else
-    return __builtin_atanhf128(x);
+    return __builtin_atanhf128(__x);
 }
-template <class C>
-constexpr C cosh(C x) noexcept {
-  if constexpr (__is_same(C, float))
-    return __builtin_coshf(x);
-  else if constexpr (__is_same(C, double))
-    return __builtin_cosh(x);
-  else if constexpr (__is_same(C, long double))
-    return __builtin_coshl(x);
+template <class _Cp>
+constexpr _Cp cosh(_Cp __x) noexcept {
+  if constexpr (__is_same(_Cp, float))
+    return __builtin_coshf(__x);
+  else if constexpr (__is_same(_Cp, double))
+    return __builtin_cosh(__x);
+  else if constexpr (__is_same(_Cp, long double))
+    return __builtin_coshl(__x);
   else
-    return __builtin_coshf128(x);
+    return __builtin_coshf128(__x);
 }
-template <class C>
-constexpr C sinh(C x) noexcept {
-  if constexpr (__is_same(C, float))
-    return __builtin_sinhf(x);
-  else if constexpr (__is_same(C, double))
-    return __builtin_sinh(x);
-  else if constexpr (__is_same(C, long double))
-    return __builtin_sinhl(x);
+template <class _Cp>
+constexpr _Cp sinh(_Cp __x) noexcept {
+  if constexpr (__is_same(_Cp, float))
+    return __builtin_sinhf(__x);
+  else if constexpr (__is_same(_Cp, double))
+    return __builtin_sinh(__x);
+  else if constexpr (__is_same(_Cp, long double))
+    return __builtin_sinhl(__x);
   else
-    return __builtin_sinhf128(x);
+    return __builtin_sinhf128(__x);
 }
-template <class C>
-constexpr C tanh(C x) noexcept {
-  if constexpr (__is_same(C, float))
-    return __builtin_tanhf(x);
-  else if constexpr (__is_same(C, double))
-    return __builtin_tanh(x);
-  else if constexpr (__is_same(C, long double))
-    return __builtin_tanhl(x);
+template <class _Cp>
+constexpr _Cp tanh(_Cp __x) noexcept {
+  if constexpr (__is_same(_Cp, float))
+    return __builtin_tanhf(__x);
+  else if constexpr (__is_same(_Cp, double))
+    return __builtin_tanh(__x);
+  else if constexpr (__is_same(_Cp, long double))
+    return __builtin_tanhl(__x);
   else
-    return __builtin_tanhf128(x);
+    return __builtin_tanhf128(__x);
 }
-template <class C>
-constexpr C exp(C x) noexcept {
-  if constexpr (__is_same(C, float))
-    return __builtin_expf(x);
-  else if constexpr (__is_same(C, double))
-    return __builtin_exp(x);
-  else if constexpr (__is_same(C, long double))
-    return __builtin_expl(x);
+template <class _Cp>
+constexpr _Cp exp(_Cp __x) noexcept {
+  if constexpr (__is_same(_Cp, float))
+    return __builtin_expf(__x);
+  else if constexpr (__is_same(_Cp, double))
+    return __builtin_exp(__x);
+  else if constexpr (__is_same(_Cp, long double))
+    return __builtin_expl(__x);
   else
-    return __builtin_expf128(x);
+    return __builtin_expf128(__x);
 }
-template <class C>
-constexpr C exp2(C x) noexcept {
-  if constexpr (__is_same(C, float))
-    return __builtin_exp2f(x);
-  else if constexpr (__is_same(C, double))
-    return __builtin_exp2(x);
-  else if constexpr (__is_same(C, long double))
-    return __builtin_exp2l(x);
+template <class _Cp>
+constexpr _Cp exp2(_Cp __x) noexcept {
+  if constexpr (__is_same(_Cp, float))
+    return __builtin_exp2f(__x);
+  else if constexpr (__is_same(_Cp, double))
+    return __builtin_exp2(__x);
+  else if constexpr (__is_same(_Cp, long double))
+    return __builtin_exp2l(__x);
   else
-    return __builtin_exp2f128(x);
+    return __builtin_exp2f128(__x);
 }
-template <class C>
-constexpr C expm1(C x) noexcept {
-  if constexpr (__is_same(C, float))
-    return __builtin_expm1f(x);
-  else if constexpr (__is_same(C, double))
-    return __builtin_expm1(x);
-  else if constexpr (__is_same(C, long double))
-    return __builtin_expm1l(x);
+template <class _Cp>
+constexpr _Cp expm1(_Cp __x) noexcept {
+  if constexpr (__is_same(_Cp, float))
+    return __builtin_expm1f(__x);
+  else if constexpr (__is_same(_Cp, double))
+    return __builtin_expm1(__x);
+  else if constexpr (__is_same(_Cp, long double))
+    return __builtin_expm1l(__x);
   else
-    return __builtin_expm1f128(x);
+    return __builtin_expm1f128(__x);
 }
-template <class C>
-constexpr C log(C x) noexcept {
-  if constexpr (__is_same(C, float))
-    return __builtin_logf(x);
-  else if constexpr (__is_same(C, double))
-    return __builtin_log(x);
-  else if constexpr (__is_same(C, long double))
-    return __builtin_logl(x);
+template <class _Cp>
+constexpr _Cp log(_Cp __x) noexcept {
+  if constexpr (__is_same(_Cp, float))
+    return __builtin_logf(__x);
+  else if constexpr (__is_same(_Cp, double))
+    return __builtin_log(__x);
+  else if constexpr (__is_same(_Cp, long double))
+    return __builtin_logl(__x);
   else
-    return __builtin_logf128(x);
+    return __builtin_logf128(__x);
 }
-template <class C>
-constexpr C log10(C x) noexcept {
-  if constexpr (__is_same(C, float))
-    return __builtin_log10f(x);
-  else if constexpr (__is_same(C, double))
-    return __builtin_log10(x);
-  else if constexpr (__is_same(C, long double))
-    return __builtin_log10l(x);
+template <class _Cp>
+constexpr _Cp log10(_Cp __x) noexcept {
+  if constexpr (__is_same(_Cp, float))
+    return __builtin_log10f(__x);
+  else if constexpr (__is_same(_Cp, double))
+    return __builtin_log10(__x);
+  else if constexpr (__is_same(_Cp, long double))
+    return __builtin_log10l(__x);
   else
-    return __builtin_log10f128(x);
+    return __builtin_log10f128(__x);
 }
-template <class C>
-constexpr C log1p(C x) noexcept {
-  if constexpr (__is_same(C, float))
-    return __builtin_log1pf(x);
-  else if constexpr (__is_same(C, double))
-    return __builtin_log1p(x);
-  else if constexpr (__is_same(C, long double))
-    return __builtin_log1pl(x);
+template <class _Cp>
+constexpr _Cp log1p(_Cp __x) noexcept {
+  if constexpr (__is_same(_Cp, float))
+    return __builtin_log1pf(__x);
+  else if constexpr (__is_same(_Cp, double))
+    return __builtin_log1p(__x);
+  else if constexpr (__is_same(_Cp, long double))
+    return __builtin_log1pl(__x);
   else
-    return __builtin_log1pf128(x);
+    return __builtin_log1pf128(__x);
 }
-template <class C>
-constexpr C log2(C x) noexcept {
-  if constexpr (__is_same(C, float))
-    return __builtin_log2f(x);
-  else if constexpr (__is_same(C, double))
-    return __builtin_log2(x);
-  else if constexpr (__is_same(C, long double))
-    return __builtin_log2l(x);
+template <class _Cp>
+constexpr _Cp log2(_Cp __x) noexcept {
+  if constexpr (__is_same(_Cp, float))
+    return __builtin_log2f(__x);
+  else if constexpr (__is_same(_Cp, double))
+    return __builtin_log2(__x);
+  else if constexpr (__is_same(_Cp, long double))
+    return __builtin_log2l(__x);
   else
-    return __builtin_log2f128(x);
+    return __builtin_log2f128(__x);
 }
-template <class C>
-constexpr C logb(C x) noexcept {
-  if constexpr (__is_same(C, float))
-    return __builtin_logbf(x);
-  else if constexpr (__is_same(C, double))
-    return __builtin_logb(x);
-  else if constexpr (__is_same(C, long double))
-    return __builtin_logbl(x);
+template <class _Cp>
+constexpr _Cp logb(_Cp __x) noexcept {
+  if constexpr (__is_same(_Cp, float))
+    return __builtin_logbf(__x);
+  else if constexpr (__is_same(_Cp, double))
+    return __builtin_logb(__x);
+  else if constexpr (__is_same(_Cp, long double))
+    return __builtin_logbl(__x);
   else
-    return __builtin_logbf128(x);
+    return __builtin_logbf128(__x);
 }
-template <class C>
-constexpr C cbrt(C x) noexcept {
-  if constexpr (__is_same(C, float))
-    return __builtin_cbrtf(x);
-  else if constexpr (__is_same(C, double))
-    return __builtin_cbrt(x);
-  else if constexpr (__is_same(C, long double))
-    return __builtin_cbrtl(x);
+template <class _Cp>
+constexpr _Cp cbrt(_Cp __x) noexcept {
+  if constexpr (__is_same(_Cp, float))
+    return __builtin_cbrtf(__x);
+  else if constexpr (__is_same(_Cp, double))
+    return __builtin_cbrt(__x);
+  else if constexpr (__is_same(_Cp, long double))
+    return __builtin_cbrtl(__x);
   else
-    return __builtin_cbrtf128(x);
+    return __builtin_cbrtf128(__x);
 }
-template <class C>
-constexpr C sqrt(C x) noexcept {
-  if constexpr (__is_same(C, float))
-    return __builtin_sqrtf(x);
-  else if constexpr (__is_same(C, double))
-    return __builtin_sqrt(x);
-  else if constexpr (__is_same(C, long double))
-    return __builtin_sqrtl(x);
+template <class _Cp>
+constexpr _Cp sqrt(_Cp __x) noexcept {
+  if constexpr (__is_same(_Cp, float))
+    return __builtin_sqrtf(__x);
+  else if constexpr (__is_same(_Cp, double))
+    return __builtin_sqrt(__x);
+  else if constexpr (__is_same(_Cp, long double))
+    return __builtin_sqrtl(__x);
   else
-    return __builtin_sqrtf128(x);
+    return __builtin_sqrtf128(__x);
 }
-template <class C>
-constexpr C erf(C x) noexcept {
-  if constexpr (__is_same(C, float))
-    return __builtin_erff(x);
-  else if constexpr (__is_same(C, double))
-    return __builtin_erf(x);
-  else if constexpr (__is_same(C, long double))
-    return __builtin_erfl(x);
+template <class _Cp>
+constexpr _Cp erf(_Cp __x) noexcept {
+  if constexpr (__is_same(_Cp, float))
+    return __builtin_erff(__x);
+  else if constexpr (__is_same(_Cp, double))
+    return __builtin_erf(__x);
+  else if constexpr (__is_same(_Cp, long double))
+    return __builtin_erfl(__x);
   else
-    return __builtin_erff128(x);
+    return __builtin_erff128(__x);
 }
-template <class C>
-constexpr C erfc(C x) noexcept {
-  if constexpr (__is_same(C, float))
-    return __builtin_erfcf(x);
-  else if constexpr (__is_same(C, double))
-    return __builtin_erfc(x);
-  else if constexpr (__is_same(C, long double))
-    return __builtin_erfcl(x);
+template <class _Cp>
+constexpr _Cp erfc(_Cp __x) noexcept {
+  if constexpr (__is_same(_Cp, float))
+    return __builtin_erfcf(__x);
+  else if constexpr (__is_same(_Cp, double))
+    return __builtin_erfc(__x);
+  else if constexpr (__is_same(_Cp, long double))
+    return __builtin_erfcl(__x);
   else
-    return __builtin_erfcf128(x);
+    return __builtin_erfcf128(__x);
 }
-template <class C>
-constexpr C lgamma(C x) noexcept {
-  if constexpr (__is_same(C, float))
-    return __builtin_lgammaf(x);
-  else if constexpr (__is_same(C, double))
-    return __builtin_lgamma(x);
-  else if constexpr (__is_same(C, long double))
-    return __builtin_lgammal(x);
+template <class _Cp>
+constexpr _Cp lgamma(_Cp __x) noexcept {
+  if constexpr (__is_same(_Cp, float))
+    return __builtin_lgammaf(__x);
+  else if constexpr (__is_same(_Cp, double))
+    return __builtin_lgamma(__x);
+  else if constexpr (__is_same(_Cp, long double))
+    return __builtin_lgammal(__x);
   else
-    return __builtin_lgammaf128(x);
+    return __builtin_lgammaf128(__x);
 }
-template <class C>
-constexpr C tgamma(C x) noexcept {
-  if constexpr (__is_same(C, float))
-    return __builtin_tgammaf(x);
-  else if constexpr (__is_same(C, double))
-    return __builtin_tgamma(x);
-  else if constexpr (__is_same(C, long double))
-    return __builtin_tgammal(x);
+template <class _Cp>
+constexpr _Cp tgamma(_Cp __x) noexcept {
+  if constexpr (__is_same(_Cp, float))
+    return __builtin_tgammaf(__x);
+  else if constexpr (__is_same(_Cp, double))
+    return __builtin_tgamma(__x);
+  else if constexpr (__is_same(_Cp, long double))
+    return __builtin_tgammal(__x);
   else
-    return __builtin_tgammaf128(x);
+    return __builtin_tgammaf128(__x);
 }
-template <class C>
-constexpr C ceil(C x) noexcept {
-  if constexpr (__is_same(C, float))
-    return __builtin_ceilf(x);
-  else if constexpr (__is_same(C, double))
-    return __builtin_ceil(x);
-  else if constexpr (__is_same(C, long double))
-    return __builtin_ceill(x);
+template <class _Cp>
+constexpr _Cp ceil(_Cp __x) noexcept {
+  if constexpr (__is_same(_Cp, float))
+    return __builtin_ceilf(__x);
+  else if constexpr (__is_same(_Cp, double))
+    return __builtin_ceil(__x);
+  else if constexpr (__is_same(_Cp, long double))
+    return __builtin_ceill(__x);
   else
-    return __builtin_ceilf128(x);
+    return __builtin_ceilf128(__x);
 }
-template <class C>
-constexpr C floor(C x) noexcept {
-  if constexpr (__is_same(C, float))
-    return __builtin_floorf(x);
-  else if constexpr (__is_same(C, double))
-    return __builtin_floor(x);
-  else if constexpr (__is_same(C, long double))
-    return __builtin_floorl(x);
+template <class _Cp>
+constexpr _Cp floor(_Cp __x) noexcept {
+  if constexpr (__is_same(_Cp, float))
+    return __builtin_floorf(__x);
+  else if constexpr (__is_same(_Cp, double))
+    return __builtin_floor(__x);
+  else if constexpr (__is_same(_Cp, long double))
+    return __builtin_floorl(__x);
   else
-    return __builtin_floorf128(x);
+    return __builtin_floorf128(__x);
 }
-template <class C>
-constexpr C round(C x) noexcept {
-  if constexpr (__is_same(C, float))
-    return __builtin_roundf(x);
-  else if constexpr (__is_same(C, double))
-    return __builtin_round(x);
-  else if constexpr (__is_same(C, long double))
-    return __builtin_roundl(x);
+template <class _Cp>
+constexpr _Cp round(_Cp __x) noexcept {
+  if constexpr (__is_same(_Cp, float))
+    return __builtin_roundf(__x);
+  else if constexpr (__is_same(_Cp, double))
+    return __builtin_round(__x);
+  else if constexpr (__is_same(_Cp, long double))
+    return __builtin_roundl(__x);
   else
-    return __builtin_roundf128(x);
+    return __builtin_roundf128(__x);
 }
-template <class C>
-constexpr C trunc(C x) noexcept {
-  if constexpr (__is_same(C, float))
-    return __builtin_truncf(x);
-  else if constexpr (__is_same(C, double))
-    return __builtin_trunc(x);
-  else if constexpr (__is_same(C, long double))
-    return __builtin_truncl(x);
+template <class _Cp>
+constexpr _Cp trunc(_Cp __x) noexcept {
+  if constexpr (__is_same(_Cp, float))
+    return __builtin_truncf(__x);
+  else if constexpr (__is_same(_Cp, double))
+    return __builtin_trunc(__x);
+  else if constexpr (__is_same(_Cp, long double))
+    return __builtin_truncl(__x);
   else
-    return __builtin_truncf128(x);
+    return __builtin_truncf128(__x);
 }
-template <class C>
-constexpr C fabs(C x) noexcept {
-  if constexpr (__is_same(C, float))
-    return __builtin_fabsf(x);
-  else if constexpr (__is_same(C, double))
-    return __builtin_fabs(x);
-  else if constexpr (__is_same(C, long double))
-    return __builtin_fabsl(x);
+template <class _Cp>
+constexpr _Cp fabs(_Cp __x) noexcept {
+  if constexpr (__is_same(_Cp, float))
+    return __builtin_fabsf(__x);
+  else if constexpr (__is_same(_Cp, double))
+    return __builtin_fabs(__x);
+  else if constexpr (__is_same(_Cp, long double))
+    return __builtin_fabsl(__x);
   else
-    return __builtin_fabsf128(x);
+    return __builtin_fabsf128(__x);
 }
-template <class C>
-constexpr C nearbyint(C x) noexcept {
-  if constexpr (__is_same(C, float))
-    return __builtin_nearbyintf(x);
-  else if constexpr (__is_same(C, double))
-    return __builtin_nearbyint(x);
-  else if constexpr (__is_same(C, long double))
-    return __builtin_nearbyintl(x);
+template <class _Cp>
+constexpr _Cp nearbyint(_Cp __x) noexcept {
+  if constexpr (__is_same(_Cp, float))
+    return __builtin_nearbyintf(__x);
+  else if constexpr (__is_same(_Cp, double))
+    return __builtin_nearbyint(__x);
+  else if constexpr (__is_same(_Cp, long double))
+    return __builtin_nearbyintl(__x);
   else
-    return __builtin_nearbyintf128(x);
+    return __builtin_nearbyintf128(__x);
 }
-template <class C>
-constexpr C rint(C x) noexcept {
-  if constexpr (__is_same(C, float))
-    return __builtin_rintf(x);
-  else if constexpr (__is_same(C, double))
-    return __builtin_rint(x);
-  else if constexpr (__is_same(C, long double))
-    return __builtin_rintl(x);
+template <class _Cp>
+constexpr _Cp rint(_Cp __x) noexcept {
+  if constexpr (__is_same(_Cp, float))
+    return __builtin_rintf(__x);
+  else if constexpr (__is_same(_Cp, double))
+    return __builtin_rint(__x);
+  else if constexpr (__is_same(_Cp, long double))
+    return __builtin_rintl(__x);
   else
-    return __builtin_rintf128(x);
+    return __builtin_rintf128(__x);
 }
-template <class C>
-constexpr C atan2(C x, C y) noexcept {
-  if constexpr (__is_same(C, float))
-    return __builtin_atan2f(x, y);
-  else if constexpr (__is_same(C, double))
-    return __builtin_atan2(x, y);
-  else if constexpr (__is_same(C, long double))
-    return __builtin_atan2l(x, y);
+template <class _Cp>
+constexpr _Cp atan2(_Cp __x, _Cp y) noexcept {
+  if constexpr (__is_same(_Cp, float))
+    return __builtin_atan2f(__x, y);
+  else if constexpr (__is_same(_Cp, double))
+    return __builtin_atan2(__x, y);
+  else if constexpr (__is_same(_Cp, long double))
+    return __builtin_atan2l(__x, y);
   else
-    return __builtin_atan2f128(x, y);
+    return __builtin_atan2f128(__x, y);
 }
-template <class C>
-constexpr C hypot(C x, C y) noexcept {
-  if constexpr (__is_same(C, float))
-    return __builtin_hypotf(x, y);
-  else if constexpr (__is_same(C, double))
-    return __builtin_hypot(x, y);
-  else if constexpr (__is_same(C, long double))
-    return __builtin_hypotl(x, y);
+template <class _Cp>
+constexpr _Cp hypot(_Cp __x, _Cp y) noexcept {
+  if constexpr (__is_same(_Cp, float))
+    return __builtin_hypotf(__x, y);
+  else if constexpr (__is_same(_Cp, double))
+    return __builtin_hypot(__x, y);
+  else if constexpr (__is_same(_Cp, long double))
+    return __builtin_hypotl(__x, y);
   else
-    return __builtin_hypotf128(x, y);
+    return __builtin_hypotf128(__x, y);
 }
-template <class C>
-constexpr C pow(C x, C y) noexcept {
-  if constexpr (__is_same(C, float))
-    return __builtin_powf(x, y);
-  else if constexpr (__is_same(C, double))
-    return __builtin_pow(x, y);
-  else if constexpr (__is_same(C, long double))
-    return __builtin_powl(x, y);
+template <class _Cp>
+constexpr _Cp pow(_Cp __x, _Cp y) noexcept {
+  if constexpr (__is_same(_Cp, float))
+    return __builtin_powf(__x, y);
+  else if constexpr (__is_same(_Cp, double))
+    return __builtin_pow(__x, y);
+  else if constexpr (__is_same(_Cp, long double))
+    return __builtin_powl(__x, y);
   else
-    return __builtin_powf128(x, y);
+    return __builtin_powf128(__x, y);
 }
-template <class C>
-constexpr C fmod(C x, C y) noexcept {
-  if constexpr (__is_same(C, float))
-    return __builtin_fmodf(x, y);
-  else if constexpr (__is_same(C, double))
-    return __builtin_fmod(x, y);
-  else if constexpr (__is_same(C, long double))
-    return __builtin_fmodl(x, y);
+template <class _Cp>
+constexpr _Cp fmod(_Cp __x, _Cp y) noexcept {
+  if constexpr (__is_same(_Cp, float))
+    return __builtin_fmodf(__x, y);
+  else if constexpr (__is_same(_Cp, double))
+    return __builtin_fmod(__x, y);
+  else if constexpr (__is_same(_Cp, long double))
+    return __builtin_fmodl(__x, y);
   else
-    return __builtin_fmodf128(x, y);
+    return __builtin_fmodf128(__x, y);
 }
-template <class C>
-constexpr C remainder(C x, C y) noexcept {
-  if constexpr (__is_same(C, float))
-    return __builtin_remainderf(x, y);
-  else if constexpr (__is_same(C, double))
-    return __builtin_remainder(x, y);
-  else if constexpr (__is_same(C, long double))
-    return __builtin_remainderl(x, y);
+template <class _Cp>
+constexpr _Cp remainder(_Cp __x, _Cp y) noexcept {
+  if constexpr (__is_same(_Cp, float))
+    return __builtin_remainderf(__x, y);
+  else if constexpr (__is_same(_Cp, double))
+    return __builtin_remainder(__x, y);
+  else if constexpr (__is_same(_Cp, long double))
+    return __builtin_remainderl(__x, y);
   else
-    return __builtin_remainderf128(x, y);
+    return __builtin_remainderf128(__x, y);
 }
-template <class C>
-constexpr C copysign(C x, C y) noexcept {
-  if constexpr (__is_same(C, float))
-    return __builtin_copysignf(x, y);
-  else if constexpr (__is_same(C, double))
-    return __builtin_copysign(x, y);
-  else if constexpr (__is_same(C, long double))
-    return __builtin_copysignl(x, y);
+template <class _Cp>
+constexpr _Cp copysign(_Cp __x, _Cp y) noexcept {
+  if constexpr (__is_same(_Cp, float))
+    return __builtin_copysignf(__x, y);
+  else if constexpr (__is_same(_Cp, double))
+    return __builtin_copysign(__x, y);
+  else if constexpr (__is_same(_Cp, long double))
+    return __builtin_copysignl(__x, y);
   else
-    return __builtin_copysignf128(x, y);
+    return __builtin_copysignf128(__x, y);
 }
-template <class C>
-constexpr C nextafter(C x, C y) noexcept {
-  if constexpr (__is_same(C, float))
-    return __builtin_nextafterf(x, y);
-  else if constexpr (__is_same(C, double))
-    return __builtin_nextafter(x, y);
-  else if constexpr (__is_same(C, long double))
-    return __builtin_nextafterl(x, y);
+template <class _Cp>
+constexpr _Cp nextafter(_Cp __x, _Cp y) noexcept {
+  if constexpr (__is_same(_Cp, float))
+    return __builtin_nextafterf(__x, y);
+  else if constexpr (__is_same(_Cp, double))
+    return __builtin_nextafter(__x, y);
+  else if constexpr (__is_same(_Cp, long double))
+    return __builtin_nextafterl(__x, y);
   else
-    return __builtin_nextafterf128(x, y);
+    return __builtin_nextafterf128(__x, y);
 }
-template <class C>
-constexpr C fdim(C x, C y) noexcept {
-  if constexpr (__is_same(C, float))
-    return __builtin_fdimf(x, y);
-  else if constexpr (__is_same(C, double))
-    return __builtin_fdim(x, y);
-  else if constexpr (__is_same(C, long double))
-    return __builtin_fdiml(x, y);
+template <class _Cp>
+constexpr _Cp fdim(_Cp __x, _Cp y) noexcept {
+  if constexpr (__is_same(_Cp, float))
+    return __builtin_fdimf(__x, y);
+  else if constexpr (__is_same(_Cp, double))
+    return __builtin_fdim(__x, y);
+  else if constexpr (__is_same(_Cp, long double))
+    return __builtin_fdiml(__x, y);
   else
-    return __builtin_fdimf128(x, y);
+    return __builtin_fdimf128(__x, y);
 }
-template <class C>
-constexpr C fmax(C x, C y) noexcept {
-  if constexpr (__is_same(C, float))
-    return __builtin_fmaxf(x, y);
-  else if constexpr (__is_same(C, double))
-    return __builtin_fmax(x, y);
-  else if constexpr (__is_same(C, long double))
-    return __builtin_fmaxl(x, y);
+template <class _Cp>
+constexpr _Cp fmax(_Cp __x, _Cp y) noexcept {
+  if constexpr (__is_same(_Cp, float))
+    return __builtin_fmaxf(__x, y);
+  else if constexpr (__is_same(_Cp, double))
+    return __builtin_fmax(__x, y);
+  else if constexpr (__is_same(_Cp, long double))
+    return __builtin_fmaxl(__x, y);
   else
-    return __builtin_fmaxf128(x, y);
+    return __builtin_fmaxf128(__x, y);
 }
-template <class C>
-constexpr C fmin(C x, C y) noexcept {
-  if constexpr (__is_same(C, float))
-    return __builtin_fminf(x, y);
-  else if constexpr (__is_same(C, double))
-    return __builtin_fmin(x, y);
-  else if constexpr (__is_same(C, long double))
-    return __builtin_fminl(x, y);
+template <class _Cp>
+constexpr _Cp fmin(_Cp __x, _Cp y) noexcept {
+  if constexpr (__is_same(_Cp, float))
+    return __builtin_fminf(__x, y);
+  else if constexpr (__is_same(_Cp, double))
+    return __builtin_fmin(__x, y);
+  else if constexpr (__is_same(_Cp, long double))
+    return __builtin_fminl(__x, y);
   else
-    return __builtin_fminf128(x, y);
+    return __builtin_fminf128(__x, y);
 }
-template <class C>
-constexpr C fma(C x, C y, C z) noexcept {
-  if constexpr (__is_same(C, float))
-    return __builtin_fmaf(x, y, z);
-  else if constexpr (__is_same(C, double))
-    return __builtin_fma(x, y, z);
-  else if constexpr (__is_same(C, long double))
-    return __builtin_fmal(x, y, z);
+template <class _Cp>
+constexpr _Cp fma(_Cp __x, _Cp y, _Cp __z) noexcept {
+  if constexpr (__is_same(_Cp, float))
+    return __builtin_fmaf(__x, y, __z);
+  else if constexpr (__is_same(_Cp, double))
+    return __builtin_fma(__x, y, __z);
+  else if constexpr (__is_same(_Cp, long double))
+    return __builtin_fmal(__x, y, __z);
   else
-    return __builtin_fmaf128(x, y, z);
+    return __builtin_fmaf128(__x, y, __z);
 }
-template <class C>
-constexpr int ilogb(C x) noexcept {
-  if constexpr (__is_same(C, float))
-    return __builtin_ilogbf(x);
-  else if constexpr (__is_same(C, double))
-    return __builtin_ilogb(x);
-  else if constexpr (__is_same(C, long double))
-    return __builtin_ilogbl(x);
+template <class _Cp>
+constexpr int ilogb(_Cp __x) noexcept {
+  if constexpr (__is_same(_Cp, float))
+    return __builtin_ilogbf(__x);
+  else if constexpr (__is_same(_Cp, double))
+    return __builtin_ilogb(__x);
+  else if constexpr (__is_same(_Cp, long double))
+    return __builtin_ilogbl(__x);
   else
-    return __builtin_ilogbf128(x);
+    return __builtin_ilogbf128(__x);
 }
-template <class C>
-constexpr long lround(C x) noexcept {
-  if constexpr (__is_same(C, float))
-    return __builtin_lroundf(x);
-  else if constexpr (__is_same(C, double))
-    return __builtin_lround(x);
-  else if constexpr (__is_same(C, long double))
-    return __builtin_lroundl(x);
+template <class _Cp>
+constexpr long lround(_Cp __x) noexcept {
+  if constexpr (__is_same(_Cp, float))
+    return __builtin_lroundf(__x);
+  else if constexpr (__is_same(_Cp, double))
+    return __builtin_lround(__x);
+  else if constexpr (__is_same(_Cp, long double))
+    return __builtin_lroundl(__x);
   else
-    return __builtin_lroundf128(x);
+    return __builtin_lroundf128(__x);
 }
-template <class C>
-constexpr long long llround(C x) noexcept {
-  if constexpr (__is_same(C, float))
-    return __builtin_llroundf(x);
-  else if constexpr (__is_same(C, double))
-    return __builtin_llround(x);
-  else if constexpr (__is_same(C, long double))
-    return __builtin_llroundl(x);
+template <class _Cp>
+constexpr long long llround(_Cp __x) noexcept {
+  if constexpr (__is_same(_Cp, float))
+    return __builtin_llroundf(__x);
+  else if constexpr (__is_same(_Cp, double))
+    return __builtin_llround(__x);
+  else if constexpr (__is_same(_Cp, long double))
+    return __builtin_llroundl(__x);
   else
-    return __builtin_llroundf128(x);
+    return __builtin_llroundf128(__x);
 }
-template <class C>
-constexpr long lrint(C x) noexcept {
-  if constexpr (__is_same(C, float))
-    return __builtin_lrintf(x);
-  else if constexpr (__is_same(C, double))
-    return __builtin_lrint(x);
-  else if constexpr (__is_same(C, long double))
-    return __builtin_lrintl(x);
+template <class _Cp>
+constexpr long lrint(_Cp __x) noexcept {
+  if constexpr (__is_same(_Cp, float))
+    return __builtin_lrintf(__x);
+  else if constexpr (__is_same(_Cp, double))
+    return __builtin_lrint(__x);
+  else if constexpr (__is_same(_Cp, long double))
+    return __builtin_lrintl(__x);
   else
-    return __builtin_lrintf128(x);
+    return __builtin_lrintf128(__x);
 }
-template <class C>
-constexpr long long llrint(C x) noexcept {
-  if constexpr (__is_same(C, float))
-    return __builtin_llrintf(x);
-  else if constexpr (__is_same(C, double))
-    return __builtin_llrint(x);
-  else if constexpr (__is_same(C, long double))
-    return __builtin_llrintl(x);
+template <class _Cp>
+constexpr long long llrint(_Cp __x) noexcept {
+  if constexpr (__is_same(_Cp, float))
+    return __builtin_llrintf(__x);
+  else if constexpr (__is_same(_Cp, double))
+    return __builtin_llrint(__x);
+  else if constexpr (__is_same(_Cp, long double))
+    return __builtin_llrintl(__x);
   else
-    return __builtin_llrintf128(x);
+    return __builtin_llrintf128(__x);
 }
-template <class C>
-constexpr C frexp(C x, int* e) noexcept {
-  if constexpr (__is_same(C, float))
-    return __builtin_frexpf(x, e);
-  else if constexpr (__is_same(C, double))
-    return __builtin_frexp(x, e);
-  else if constexpr (__is_same(C, long double))
-    return __builtin_frexpl(x, e);
+template <class _Cp>
+constexpr _Cp frexp(_Cp __x, int* e) noexcept {
+  if constexpr (__is_same(_Cp, float))
+    return __builtin_frexpf(__x, e);
+  else if constexpr (__is_same(_Cp, double))
+    return __builtin_frexp(__x, e);
+  else if constexpr (__is_same(_Cp, long double))
+    return __builtin_frexpl(__x, e);
   else
-    return __builtin_frexpf128(x, e);
+    return __builtin_frexpf128(__x, e);
 }
-template <class C>
-constexpr C ldexp(C x, int e) noexcept {
-  if constexpr (__is_same(C, float))
-    return __builtin_ldexpf(x, e);
-  else if constexpr (__is_same(C, double))
-    return __builtin_ldexp(x, e);
-  else if constexpr (__is_same(C, long double))
-    return __builtin_ldexpl(x, e);
+template <class _Cp>
+constexpr _Cp ldexp(_Cp __x, int e) noexcept {
+  if constexpr (__is_same(_Cp, float))
+    return __builtin_ldexpf(__x, e);
+  else if constexpr (__is_same(_Cp, double))
+    return __builtin_ldexp(__x, e);
+  else if constexpr (__is_same(_Cp, long double))
+    return __builtin_ldexpl(__x, e);
   else
-    return __builtin_ldexpf128(x, e);
+    return __builtin_ldexpf128(__x, e);
 }
-template <class C>
-constexpr C scalbn(C x, int e) noexcept {
-  if constexpr (__is_same(C, float))
-    return __builtin_scalbnf(x, e);
-  else if constexpr (__is_same(C, double))
-    return __builtin_scalbn(x, e);
-  else if constexpr (__is_same(C, long double))
-    return __builtin_scalbnl(x, e);
+template <class _Cp>
+constexpr _Cp scalbn(_Cp __x, int e) noexcept {
+  if constexpr (__is_same(_Cp, float))
+    return __builtin_scalbnf(__x, e);
+  else if constexpr (__is_same(_Cp, double))
+    return __builtin_scalbn(__x, e);
+  else if constexpr (__is_same(_Cp, long double))
+    return __builtin_scalbnl(__x, e);
   else
-    return __builtin_scalbnf128(x, e);
+    return __builtin_scalbnf128(__x, e);
 }
-template <class C>
-constexpr C scalbln(C x, long e) noexcept {
-  if constexpr (__is_same(C, float))
-    return __builtin_scalblnf(x, e);
-  else if constexpr (__is_same(C, double))
-    return __builtin_scalbln(x, e);
-  else if constexpr (__is_same(C, long double))
-    return __builtin_scalblnl(x, e);
+template <class _Cp>
+constexpr _Cp scalbln(_Cp __x, long e) noexcept {
+  if constexpr (__is_same(_Cp, float))
+    return __builtin_scalblnf(__x, e);
+  else if constexpr (__is_same(_Cp, double))
+    return __builtin_scalbln(__x, e);
+  else if constexpr (__is_same(_Cp, long double))
+    return __builtin_scalblnl(__x, e);
   else
-    return __builtin_scalblnf128(x, e);
+    return __builtin_scalblnf128(__x, e);
 }
-template <class C>
-constexpr C modf(C x, C* i) noexcept {
-  if constexpr (__is_same(C, float))
-    return __builtin_modff(x, i);
-  else if constexpr (__is_same(C, double))
-    return __builtin_modf(x, i);
-  else if constexpr (__is_same(C, long double))
-    return __builtin_modfl(x, i);
+template <class _Cp>
+constexpr _Cp modf(_Cp __x, _Cp* i) noexcept {
+  if constexpr (__is_same(_Cp, float))
+    return __builtin_modff(__x, i);
+  else if constexpr (__is_same(_Cp, double))
+    return __builtin_modf(__x, i);
+  else if constexpr (__is_same(_Cp, long double))
+    return __builtin_modfl(__x, i);
   else
-    return __builtin_modff128(x, i);
+    return __builtin_modff128(__x, i);
 }
-template <class C>
-constexpr C remquo(C x, C y, int* q) noexcept {
-  if constexpr (__is_same(C, float))
-    return __builtin_remquof(x, y, q);
-  else if constexpr (__is_same(C, double))
-    return __builtin_remquo(x, y, q);
-  else if constexpr (__is_same(C, long double))
-    return __builtin_remquol(x, y, q);
+template <class _Cp>
+constexpr _Cp remquo(_Cp __x, _Cp y, int* __q) noexcept {
+  if constexpr (__is_same(_Cp, float))
+    return __builtin_remquof(__x, y, __q);
+  else if constexpr (__is_same(_Cp, double))
+    return __builtin_remquo(__x, y, __q);
+  else if constexpr (__is_same(_Cp, long double))
+    return __builtin_remquol(__x, y, __q);
   else
-    return __builtin_remquof128(x, y, q);
+    return __builtin_remquof128(__x, y, __q);
 }
-template <class C>
-constexpr C nexttoward(C x, long double y) noexcept {
-  if constexpr (__is_same(C, float))
-    return __builtin_nexttowardf(x, y);
-  else if constexpr (__is_same(C, double))
-    return __builtin_nexttoward(x, y);
-  else if constexpr (__is_same(C, long double))
-    return __builtin_nexttowardl(x, y);
+template <class _Cp>
+constexpr _Cp nexttoward(_Cp __x, long double y) noexcept {
+  if constexpr (__is_same(_Cp, float))
+    return __builtin_nexttowardf(__x, y);
+  else if constexpr (__is_same(_Cp, double))
+    return __builtin_nexttoward(__x, y);
+  else if constexpr (__is_same(_Cp, long double))
+    return __builtin_nexttowardl(__x, y);
 }
-template <class C>
-concept folds_acos = requires { typename fold_probe<(bi::acos<C>(C(0.5)) == bi::acos<C>(C(0.5)))>; };
-template <class C>
-concept folds_asin = requires { typename fold_probe<(bi::asin<C>(C(0.5)) == bi::asin<C>(C(0.5)))>; };
-template <class C>
-concept folds_atan = requires { typename fold_probe<(bi::atan<C>(C(0.5)) == bi::atan<C>(C(0.5)))>; };
-template <class C>
-concept folds_cos = requires { typename fold_probe<(bi::cos<C>(C(0.5)) == bi::cos<C>(C(0.5)))>; };
-template <class C>
-concept folds_sin = requires { typename fold_probe<(bi::sin<C>(C(0.5)) == bi::sin<C>(C(0.5)))>; };
-template <class C>
-concept folds_tan = requires { typename fold_probe<(bi::tan<C>(C(0.5)) == bi::tan<C>(C(0.5)))>; };
-template <class C>
-concept folds_asinh = requires { typename fold_probe<(bi::asinh<C>(C(0.5)) == bi::asinh<C>(C(0.5)))>; };
-template <class C>
-concept folds_atanh = requires { typename fold_probe<(bi::atanh<C>(C(0.5)) == bi::atanh<C>(C(0.5)))>; };
-template <class C>
-concept folds_cosh = requires { typename fold_probe<(bi::cosh<C>(C(0.5)) == bi::cosh<C>(C(0.5)))>; };
-template <class C>
-concept folds_sinh = requires { typename fold_probe<(bi::sinh<C>(C(0.5)) == bi::sinh<C>(C(0.5)))>; };
-template <class C>
-concept folds_tanh = requires { typename fold_probe<(bi::tanh<C>(C(0.5)) == bi::tanh<C>(C(0.5)))>; };
-template <class C>
-concept folds_exp = requires { typename fold_probe<(bi::exp<C>(C(0.5)) == bi::exp<C>(C(0.5)))>; };
-template <class C>
-concept folds_exp2 = requires { typename fold_probe<(bi::exp2<C>(C(0.5)) == bi::exp2<C>(C(0.5)))>; };
-template <class C>
-concept folds_expm1 = requires { typename fold_probe<(bi::expm1<C>(C(0.5)) == bi::expm1<C>(C(0.5)))>; };
-template <class C>
-concept folds_log = requires { typename fold_probe<(bi::log<C>(C(0.5)) == bi::log<C>(C(0.5)))>; };
-template <class C>
-concept folds_log10 = requires { typename fold_probe<(bi::log10<C>(C(0.5)) == bi::log10<C>(C(0.5)))>; };
-template <class C>
-concept folds_log1p = requires { typename fold_probe<(bi::log1p<C>(C(0.5)) == bi::log1p<C>(C(0.5)))>; };
-template <class C>
-concept folds_log2 = requires { typename fold_probe<(bi::log2<C>(C(0.5)) == bi::log2<C>(C(0.5)))>; };
-template <class C>
-concept folds_erf = requires { typename fold_probe<(bi::erf<C>(C(0.5)) == bi::erf<C>(C(0.5)))>; };
-template <class C>
-concept folds_erfc = requires { typename fold_probe<(bi::erfc<C>(C(0.5)) == bi::erfc<C>(C(0.5)))>; };
-template <class C>
-concept folds_acosh = requires { typename fold_probe<(bi::acosh<C>(C(1.5)) == bi::acosh<C>(C(1.5)))>; };
-template <class C>
-concept folds_lgamma = requires { typename fold_probe<(bi::lgamma<C>(C(2.5)) == bi::lgamma<C>(C(2.5)))>; };
-template <class C>
-concept folds_tgamma = requires { typename fold_probe<(bi::tgamma<C>(C(2.5)) == bi::tgamma<C>(C(2.5)))>; };
-template <class C>
-concept folds_pow = requires { typename fold_probe<(bi::pow<C>(C(0.5), C(0.25)) == bi::pow<C>(C(0.5), C(0.25)))>; };
-template <class C>
-concept folds_atan2 = requires { typename fold_probe<(bi::atan2<C>(C(0.5), C(0.25)) == bi::atan2<C>(C(0.5), C(0.25)))>; };
+template <class _Cp>
+concept __folds_acos = requires { typename __fold_probe<(__bi::acos<_Cp>(_Cp(0.5)) == __bi::acos<_Cp>(_Cp(0.5)))>; };
+template <class _Cp>
+concept __folds_asin = requires { typename __fold_probe<(__bi::asin<_Cp>(_Cp(0.5)) == __bi::asin<_Cp>(_Cp(0.5)))>; };
+template <class _Cp>
+concept __folds_atan = requires { typename __fold_probe<(__bi::atan<_Cp>(_Cp(0.5)) == __bi::atan<_Cp>(_Cp(0.5)))>; };
+template <class _Cp>
+concept __folds_cos = requires { typename __fold_probe<(__bi::cos<_Cp>(_Cp(0.5)) == __bi::cos<_Cp>(_Cp(0.5)))>; };
+template <class _Cp>
+concept __folds_sin = requires { typename __fold_probe<(__bi::sin<_Cp>(_Cp(0.5)) == __bi::sin<_Cp>(_Cp(0.5)))>; };
+template <class _Cp>
+concept __folds_tan = requires { typename __fold_probe<(__bi::tan<_Cp>(_Cp(0.5)) == __bi::tan<_Cp>(_Cp(0.5)))>; };
+template <class _Cp>
+concept __folds_asinh = requires { typename __fold_probe<(__bi::asinh<_Cp>(_Cp(0.5)) == __bi::asinh<_Cp>(_Cp(0.5)))>; };
+template <class _Cp>
+concept __folds_atanh = requires { typename __fold_probe<(__bi::atanh<_Cp>(_Cp(0.5)) == __bi::atanh<_Cp>(_Cp(0.5)))>; };
+template <class _Cp>
+concept __folds_cosh = requires { typename __fold_probe<(__bi::cosh<_Cp>(_Cp(0.5)) == __bi::cosh<_Cp>(_Cp(0.5)))>; };
+template <class _Cp>
+concept __folds_sinh = requires { typename __fold_probe<(__bi::sinh<_Cp>(_Cp(0.5)) == __bi::sinh<_Cp>(_Cp(0.5)))>; };
+template <class _Cp>
+concept __folds_tanh = requires { typename __fold_probe<(__bi::tanh<_Cp>(_Cp(0.5)) == __bi::tanh<_Cp>(_Cp(0.5)))>; };
+template <class _Cp>
+concept __folds_exp = requires { typename __fold_probe<(__bi::exp<_Cp>(_Cp(0.5)) == __bi::exp<_Cp>(_Cp(0.5)))>; };
+template <class _Cp>
+concept __folds_exp2 = requires { typename __fold_probe<(__bi::exp2<_Cp>(_Cp(0.5)) == __bi::exp2<_Cp>(_Cp(0.5)))>; };
+template <class _Cp>
+concept __folds_expm1 = requires { typename __fold_probe<(__bi::expm1<_Cp>(_Cp(0.5)) == __bi::expm1<_Cp>(_Cp(0.5)))>; };
+template <class _Cp>
+concept __folds_log = requires { typename __fold_probe<(__bi::log<_Cp>(_Cp(0.5)) == __bi::log<_Cp>(_Cp(0.5)))>; };
+template <class _Cp>
+concept __folds_log10 = requires { typename __fold_probe<(__bi::log10<_Cp>(_Cp(0.5)) == __bi::log10<_Cp>(_Cp(0.5)))>; };
+template <class _Cp>
+concept __folds_log1p = requires { typename __fold_probe<(__bi::log1p<_Cp>(_Cp(0.5)) == __bi::log1p<_Cp>(_Cp(0.5)))>; };
+template <class _Cp>
+concept __folds_log2 = requires { typename __fold_probe<(__bi::log2<_Cp>(_Cp(0.5)) == __bi::log2<_Cp>(_Cp(0.5)))>; };
+template <class _Cp>
+concept __folds_erf = requires { typename __fold_probe<(__bi::erf<_Cp>(_Cp(0.5)) == __bi::erf<_Cp>(_Cp(0.5)))>; };
+template <class _Cp>
+concept __folds_erfc = requires { typename __fold_probe<(__bi::erfc<_Cp>(_Cp(0.5)) == __bi::erfc<_Cp>(_Cp(0.5)))>; };
+template <class _Cp>
+concept __folds_acosh = requires { typename __fold_probe<(__bi::acosh<_Cp>(_Cp(1.5)) == __bi::acosh<_Cp>(_Cp(1.5)))>; };
+template <class _Cp>
+concept __folds_lgamma = requires { typename __fold_probe<(__bi::lgamma<_Cp>(_Cp(2.5)) == __bi::lgamma<_Cp>(_Cp(2.5)))>; };
+template <class _Cp>
+concept __folds_tgamma = requires { typename __fold_probe<(__bi::tgamma<_Cp>(_Cp(2.5)) == __bi::tgamma<_Cp>(_Cp(2.5)))>; };
+template <class _Cp>
+concept __folds_pow = requires { typename __fold_probe<(__bi::pow<_Cp>(_Cp(0.5), _Cp(0.25)) == __bi::pow<_Cp>(_Cp(0.5), _Cp(0.25)))>; };
+template <class _Cp>
+concept __folds_atan2 = requires { typename __fold_probe<(__bi::atan2<_Cp>(_Cp(0.5), _Cp(0.25)) == __bi::atan2<_Cp>(_Cp(0.5), _Cp(0.25)))>; };
 
-}} // namespace ycxx::detail::fpm::bi
+}} // namespace __ycxx::__detail::__fpm::__bi

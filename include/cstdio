@@ -12,11 +12,11 @@
 
 // _PRINTF_NAN_LEN_MAX (C23 7.23.1), for a C library that does not define it: the longest NaN
 // output of its printf, measured when libycxx is configured (cmake/ycxx-c-library.cmake).
-#if !defined(_PRINTF_NAN_LEN_MAX) && defined(YCXX_C_PRINTF_NAN_LEN_MAX)
-#  define _PRINTF_NAN_LEN_MAX YCXX_C_PRINTF_NAN_LEN_MAX
+#if !defined(_PRINTF_NAN_LEN_MAX) && defined(_YCXX_C_PRINTF_NAN_LEN_MAX)
+#  define _PRINTF_NAN_LEN_MAX _YCXX_C_PRINTF_NAN_LEN_MAX
 #endif
 
-namespace [[gnu::visibility("hidden")]] std {
+namespace [[__gnu__::__visibility__("hidden")]] std {
 using ::FILE;
 using ::fpos_t;
 using ::remove;

@@ -9,8 +9,8 @@
 // The C library's declarations of the functions libycxx declares itself (constexpr, noexcept, or
 // the const-correct pairs) are renamed while its header is read, so that libycxx's can take the
 // names in the global namespace ([support.c.headers.other]/1; DECISIONS §3).
-#define imaxabs ycxx_c_imaxabs
-#define imaxdiv ycxx_c_imaxdiv
+#define imaxabs __ycxx_c_imaxabs
+#define imaxdiv __ycxx_c_imaxdiv
 #include_next <inttypes.h>
 #undef imaxabs
 #undef imaxdiv
@@ -19,16 +19,16 @@
 #  define __STDC_VERSION_INTTYPES_H__ 202311L
 #endif
 
-#if YCXX_TARGET_DARWIN && !defined(PRIb8)
-namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
-static_assert(is_any_of<std::uint8_t, unsigned char> && is_any_of<std::uint16_t, unsigned short> &&
-              is_any_of<std::uint32_t, unsigned> && is_any_of<std::uint64_t, unsigned long long> &&
-              is_any_of<std::uintptr_t, unsigned long>);
-static_assert(is_any_of<std::uint_least8_t, std::uint8_t> && is_any_of<std::uint_fast8_t, std::uint8_t>);
-static_assert(is_any_of<std::uint_least16_t, std::uint16_t> && is_any_of<std::uint_fast16_t, std::uint16_t>);
-static_assert(is_any_of<std::uint_least32_t, std::uint32_t> && is_any_of<std::uint_fast32_t, std::uint32_t>);
-static_assert(is_any_of<std::uint_least64_t, std::uint64_t> && is_any_of<std::uint_fast64_t, std::uint64_t>);
-}} // namespace ycxx::detail
+#if _YCXX_TARGET_DARWIN && !defined(PRIb8)
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+static_assert(__is_any_of<std::uint8_t, unsigned char> && __is_any_of<std::uint16_t, unsigned short> &&
+              __is_any_of<std::uint32_t, unsigned> && __is_any_of<std::uint64_t, unsigned long long> &&
+              __is_any_of<std::uintptr_t, unsigned long>);
+static_assert(__is_any_of<std::uint_least8_t, std::uint8_t> && __is_any_of<std::uint_fast8_t, std::uint8_t>);
+static_assert(__is_any_of<std::uint_least16_t, std::uint16_t> && __is_any_of<std::uint_fast16_t, std::uint16_t>);
+static_assert(__is_any_of<std::uint_least32_t, std::uint32_t> && __is_any_of<std::uint_fast32_t, std::uint32_t>);
+static_assert(__is_any_of<std::uint_least64_t, std::uint64_t> && __is_any_of<std::uint_fast64_t, std::uint64_t>);
+}} // namespace __ycxx::__detail
 #  define PRIb8 "hhb"
 #  define SCNb8 "hhb"
 #  define PRIbLEAST8 "hhb"
@@ -59,7 +59,7 @@ static_assert(is_any_of<std::uint_least64_t, std::uint64_t> && is_any_of<std::ui
 #  define SCNbPTR "lb"
 #endif
 
-namespace [[gnu::visibility("hidden")]] std {
+namespace [[__gnu__::__visibility__("hidden")]] std {
 using ::imaxdiv_t;
 using ::strtoimax;
 using ::strtoumax;
@@ -70,14 +70,14 @@ using ::wcstoumax;
 // div). Templates: under `using namespace std;` an unqualified call prefers the C library's.
 // (The optional abs/div overloads for intmax_t exist only when it is an extended integer type.)
 template <class = void>
-constexpr intmax_t imaxabs(intmax_t j) noexcept {
-  return j < 0 ? -j : j;
+constexpr intmax_t imaxabs(intmax_t __j) noexcept {
+  return __j < 0 ? -__j : __j;
 }
 template <class = void>
-constexpr imaxdiv_t imaxdiv(intmax_t numer, intmax_t denom) noexcept {
+constexpr imaxdiv_t imaxdiv(intmax_t __numer, intmax_t __denom) noexcept {
   imaxdiv_t r{};
-  r.quot = numer / denom;
-  r.rem = numer % denom;
+  r.quot = __numer / __denom;
+  r.rem = __numer % __denom;
   return r;
 }
 } // namespace std

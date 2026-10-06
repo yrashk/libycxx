@@ -13,79 +13,79 @@
 
 namespace {
 
-struct slot {
-  const void* key = nullptr; // null: free (table slots)
+struct __slot {
+  const void* __key = nullptr; // null: free (table slots)
   std::uint32_t users = 0;   // emits holding or waiting for `lock`
-  ycxx::detail::pal_lock lock;
-  slot* next = nullptr; // the allocated slots in use, a list
+  __ycxx::__detail::__pal_lock lock;
+  __slot* next = nullptr; // the allocated slots in use, a list
 };
 
 constexpr unsigned slot_count = 64;
-constinit slot slots[slot_count];
-constinit slot* extra = nullptr; // allocated slots in use
-constinit ycxx::detail::pal_lock table_lock;
+constinit __slot __slots[slot_count];
+constinit __slot* __extra = nullptr; // allocated slots in use
+constinit __ycxx::__detail::__pal_lock table_lock;
 constinit std::uint32_t releases = 0; // bumped when a slot is freed; waited on when none is free
 
-bool allocated(const slot* s) noexcept {
-  const auto a = reinterpret_cast<__UINTPTR_TYPE__>(s), t = reinterpret_cast<__UINTPTR_TYPE__>(slots);
-  return a - t >= sizeof slots; // not one of the table's (also when a < t)
+bool allocated(const __slot* s) noexcept {
+  const auto a = reinterpret_cast<__UINTPTR_TYPE__>(s), t = reinterpret_cast<__UINTPTR_TYPE__>(__slots);
+  return a - t >= sizeof __slots; // not one of the table's (also when a < t)
 }
 
 // Under table_lock: the slot for key, a new one for it, or null when none can be had.
-slot* find_slot(const void* key) noexcept {
-  slot* free_slot = nullptr;
-  for (slot& candidate : slots) {
-    if (candidate.key == key)
+__slot* find_slot(const void* __key) noexcept {
+  __slot* free_slot = nullptr;
+  for (__slot& candidate : __slots) {
+    if (candidate.__key == __key)
       return &candidate;
-    if (candidate.key == nullptr && free_slot == nullptr)
+    if (candidate.__key == nullptr && free_slot == nullptr)
       free_slot = &candidate;
   }
-  for (slot* s = extra; s != nullptr; s = s->next)
-    if (s->key == key)
+  for (__slot* s = __extra; s != nullptr; s = s->next)
+    if (s->__key == __key)
       return s;
   if (free_slot == nullptr) {
-    void* mem = ycxx_pal_allocate(sizeof(slot), alignof(slot));
-    if (mem == nullptr)
+    void* __mem = __ycxx_pal_allocate(sizeof(__slot), alignof(__slot));
+    if (__mem == nullptr)
       return nullptr;
-    free_slot = ::new (mem) slot;
-    free_slot->next = extra;
-    extra = free_slot;
+    free_slot = ::new (__mem) __slot;
+    free_slot->next = __extra;
+    __extra = free_slot;
   }
-  free_slot->key = key;
+  free_slot->__key = __key;
   return free_slot;
 }
 
 } // namespace
 
-namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
 
-void* syncbuf_lock(const void* key) noexcept {
-  slot* s;
+void* __syncbuf_lock(const void* __key) noexcept {
+  __slot* s;
   for (;;) {
     table_lock.lock();
-    s = find_slot(key);
+    s = find_slot(__key);
     if (s != nullptr) {
       ++s->users;
       table_lock.unlock();
       break;
     }
-    const std::uint32_t seen = __atomic_load_n(&releases, __ATOMIC_RELAXED);
+    const std::uint32_t __seen = __atomic_load_n(&releases, __ATOMIC_RELAXED);
     table_lock.unlock();
-    ycxx_pal_wait(&releases, seen);
+    __ycxx_pal_wait(&releases, __seen);
   }
   s->lock.lock();
   return s;
 }
 
-void syncbuf_unlock(void* handle) noexcept {
-  slot* s = static_cast<slot*>(handle);
+void __syncbuf_unlock(void* handle) noexcept {
+  __slot* s = static_cast<__slot*>(handle);
   s->lock.unlock();
   table_lock.lock();
   const bool freed = --s->users == 0;
   if (freed) {
-    s->key = nullptr;
+    s->__key = nullptr;
     if (allocated(s)) {
-      slot** link = &extra;
+      __slot** link = &__extra;
       while (*link != s)
         link = &(*link)->next;
       *link = s->next;
@@ -94,10 +94,10 @@ void syncbuf_unlock(void* handle) noexcept {
   table_lock.unlock();
   if (freed) {
     if (allocated(s))
-      ycxx_pal_deallocate(s, sizeof(slot), alignof(slot));
+      __ycxx_pal_deallocate(s, sizeof(__slot), alignof(__slot));
     __atomic_fetch_add(&releases, 1, __ATOMIC_RELAXED);
-    ycxx_pal_wake_all(&releases);
+    __ycxx_pal_wake_all(&releases);
   }
 }
 
-}} // namespace ycxx::detail
+}} // namespace __ycxx::__detail

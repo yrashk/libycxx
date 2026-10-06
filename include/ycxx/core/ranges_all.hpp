@@ -4,162 +4,162 @@
 #include <ycxx/core/ranges_subrange.hpp>
 #include <ycxx/core/ranges_adaptor.hpp>
 
-namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
 // FUN of [range.ref.view]: non-template functions, so binding through two equally good
 // conversion functions is ambiguous (function-template partial ordering would prefer R&).
-template <class R>
-struct ref_view_fun {
-  static void fun(R&) noexcept;
-  static void fun(R&&) = delete;
+template <class _Rp>
+struct __ref_view_fun {
+  static void fun(_Rp&) noexcept;
+  static void fun(_Rp&&) = delete;
 };
-}} // namespace ycxx::detail
+}} // namespace __ycxx::__detail
 
-namespace [[gnu::visibility("hidden")]] std { namespace ranges {
+namespace [[__gnu__::__visibility__("hidden")]] std { namespace ranges {
 
-template <range R>
-  requires is_object_v<R>
-class ref_view : public view_interface<ref_view<R>> {
-  R* r_;
+template <range _Rp>
+  requires is_object_v<_Rp>
+class ref_view : public view_interface<ref_view<_Rp>> {
+  _Rp* __r_;
 
 public:
-  template <ycxx::detail::different_from<ref_view> T>
-    requires convertible_to<T, R&> && requires { ycxx::detail::ref_view_fun<R>::fun(declval<T>()); }
-  constexpr ref_view(T&& t) : r_(__builtin_addressof(static_cast<R&>(static_cast<T&&>(t)))) {}
+  template <__ycxx::__detail::__different_from<ref_view> _Tp>
+    requires convertible_to<_Tp, _Rp&> && requires { __ycxx::__detail::__ref_view_fun<_Rp>::fun(declval<_Tp>()); }
+  constexpr ref_view(_Tp&& t) : __r_(__builtin_addressof(static_cast<_Rp&>(static_cast<_Tp&&>(t)))) {}
 
-  constexpr R& base() const { return *r_; }
-  constexpr iterator_t<R> begin() const { return ranges::begin(*r_); }
-  constexpr sentinel_t<R> end() const { return ranges::end(*r_); }
+  constexpr _Rp& base() const { return *__r_; }
+  constexpr iterator_t<_Rp> begin() const { return ranges::begin(*__r_); }
+  constexpr sentinel_t<_Rp> end() const { return ranges::end(*__r_); }
   constexpr bool empty() const
-    requires requires { ranges::empty(*r_); }
+    requires requires { ranges::empty(*__r_); }
   {
-    return ranges::empty(*r_);
+    return ranges::empty(*__r_);
   }
   constexpr auto size() const
-    requires sized_range<R>
+    requires sized_range<_Rp>
   {
-    return ranges::size(*r_);
+    return ranges::size(*__r_);
   }
   constexpr auto reserve_hint() const
-    requires approximately_sized_range<R>
+    requires approximately_sized_range<_Rp>
   {
-    return ranges::reserve_hint(*r_);
+    return ranges::reserve_hint(*__r_);
   }
   constexpr auto data() const
-    requires contiguous_range<R>
+    requires contiguous_range<_Rp>
   {
-    return ranges::data(*r_);
+    return ranges::data(*__r_);
   }
 };
-template <class R>
-ref_view(R&) -> ref_view<R>;
-template <class T>
-constexpr bool enable_borrowed_range<ref_view<T>> = true;
+template <class _Rp>
+ref_view(_Rp&) -> ref_view<_Rp>;
+template <class _Tp>
+constexpr bool enable_borrowed_range<ref_view<_Tp>> = true;
 
-template <range R>
-  requires movable<R> && (!ycxx::detail::is_init_list_v<remove_cvref_t<R>>)
-class owning_view : public view_interface<owning_view<R>> {
-  R r_ = R();
+template <range _Rp>
+  requires movable<_Rp> && (!__ycxx::__detail::__is_init_list_v<remove_cvref_t<_Rp>>)
+class owning_view : public view_interface<owning_view<_Rp>> {
+  _Rp __r_ = _Rp();
 
 public:
   owning_view()
-    requires default_initializable<R>
+    requires default_initializable<_Rp>
   = default;
-  constexpr owning_view(R&& t) : r_(std::move(t)) {}
+  constexpr owning_view(_Rp&& t) : __r_(std::move(t)) {}
   owning_view(owning_view&&) = default;
   owning_view& operator=(owning_view&&) = default;
 
-  constexpr R& base() & noexcept { return r_; }
-  constexpr const R& base() const& noexcept { return r_; }
-  constexpr R&& base() && noexcept { return std::move(r_); }
-  constexpr const R&& base() const&& noexcept { return std::move(r_); }
+  constexpr _Rp& base() & noexcept { return __r_; }
+  constexpr const _Rp& base() const& noexcept { return __r_; }
+  constexpr _Rp&& base() && noexcept { return std::move(__r_); }
+  constexpr const _Rp&& base() const&& noexcept { return std::move(__r_); }
 
-  constexpr iterator_t<R> begin() { return ranges::begin(r_); }
-  constexpr sentinel_t<R> end() { return ranges::end(r_); }
+  constexpr iterator_t<_Rp> begin() { return ranges::begin(__r_); }
+  constexpr sentinel_t<_Rp> end() { return ranges::end(__r_); }
   constexpr auto begin() const
-    requires range<const R>
+    requires range<const _Rp>
   {
-    return ranges::begin(r_);
+    return ranges::begin(__r_);
   }
   constexpr auto end() const
-    requires range<const R>
+    requires range<const _Rp>
   {
-    return ranges::end(r_);
+    return ranges::end(__r_);
   }
   constexpr bool empty()
-    requires requires { ranges::empty(r_); }
+    requires requires { ranges::empty(__r_); }
   {
-    return ranges::empty(r_);
+    return ranges::empty(__r_);
   }
   constexpr bool empty() const
-    requires requires { ranges::empty(r_); }
+    requires requires { ranges::empty(__r_); }
   {
-    return ranges::empty(r_);
+    return ranges::empty(__r_);
   }
   constexpr auto size()
-    requires sized_range<R>
+    requires sized_range<_Rp>
   {
-    return ranges::size(r_);
+    return ranges::size(__r_);
   }
   constexpr auto size() const
-    requires sized_range<const R>
+    requires sized_range<const _Rp>
   {
-    return ranges::size(r_);
+    return ranges::size(__r_);
   }
   constexpr auto reserve_hint()
-    requires approximately_sized_range<R>
+    requires approximately_sized_range<_Rp>
   {
-    return ranges::reserve_hint(r_);
+    return ranges::reserve_hint(__r_);
   }
   constexpr auto reserve_hint() const
-    requires approximately_sized_range<const R>
+    requires approximately_sized_range<const _Rp>
   {
-    return ranges::reserve_hint(r_);
+    return ranges::reserve_hint(__r_);
   }
   constexpr auto data()
-    requires contiguous_range<R>
+    requires contiguous_range<_Rp>
   {
-    return ranges::data(r_);
+    return ranges::data(__r_);
   }
   constexpr auto data() const
-    requires contiguous_range<const R>
+    requires contiguous_range<const _Rp>
   {
-    return ranges::data(r_);
+    return ranges::data(__r_);
   }
 };
-template <class T>
-constexpr bool enable_borrowed_range<owning_view<T>> = enable_borrowed_range<T>;
+template <class _Tp>
+constexpr bool enable_borrowed_range<owning_view<_Tp>> = enable_borrowed_range<_Tp>;
 
 }} // namespace std::ranges
 
-namespace [[gnu::visibility("hidden")]] ycxx { namespace detail::range_all {
-struct fn : std::ranges::range_adaptor_closure<fn> {
-  template <class R>
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail::__range_all {
+struct __fn : std::ranges::range_adaptor_closure<__fn> {
+  template <class _Rp>
   static consteval bool nothrow() {
-    if constexpr (std::ranges::view<std::decay_t<R>>)
-      return std::is_nothrow_convertible_v<R, std::decay_t<R>>;
-    else if constexpr (requires { std::ranges::ref_view{std::declval<R>()}; })
-      return noexcept(std::ranges::ref_view{std::declval<R>()});
+    if constexpr (std::ranges::view<std::decay_t<_Rp>>)
+      return std::is_nothrow_convertible_v<_Rp, std::decay_t<_Rp>>;
+    else if constexpr (requires { std::ranges::ref_view{std::declval<_Rp>()}; })
+      return noexcept(std::ranges::ref_view{std::declval<_Rp>()});
     else
-      return noexcept(std::ranges::owning_view{std::declval<R>()});
+      return noexcept(std::ranges::owning_view{std::declval<_Rp>()});
   }
-  template <std::ranges::viewable_range R>
-  [[nodiscard]] constexpr auto operator()(R&& r) const noexcept(nothrow<R>()) {
-    if constexpr (std::ranges::view<std::decay_t<R>>)
-      return ::ycxx::detail::decay_copy(static_cast<R&&>(r));
-    else if constexpr (requires { std::ranges::ref_view{static_cast<R&&>(r)}; })
-      return std::ranges::ref_view{static_cast<R&&>(r)};
+  template <std::ranges::viewable_range _Rp>
+  [[nodiscard]] constexpr auto operator()(_Rp&& r) const noexcept(nothrow<_Rp>()) {
+    if constexpr (std::ranges::view<std::decay_t<_Rp>>)
+      return ::__ycxx::__detail::__decay_copy(static_cast<_Rp&&>(r));
+    else if constexpr (requires { std::ranges::ref_view{static_cast<_Rp&&>(r)}; })
+      return std::ranges::ref_view{static_cast<_Rp&&>(r)};
     else
-      return std::ranges::owning_view{static_cast<R&&>(r)};
+      return std::ranges::owning_view{static_cast<_Rp&&>(r)};
   }
 };
-}} // namespace ycxx::detail::range_all
+}} // namespace __ycxx::__detail::__range_all
 
-namespace [[gnu::visibility("hidden")]] std { namespace ranges::views {
-inline constexpr ycxx::detail::range_all::fn all{};
-template <viewable_range R>
-using all_t = decltype(all(declval<R>()));
+namespace [[__gnu__::__visibility__("hidden")]] std { namespace ranges::views {
+inline constexpr __ycxx::__detail::__range_all::__fn all{};
+template <viewable_range _Rp>
+using all_t = decltype(all(declval<_Rp>()));
 }} // namespace std::ranges::views
 
-namespace [[gnu::visibility("hidden")]] std {
+namespace [[__gnu__::__visibility__("hidden")]] std {
 namespace views = ranges::views;
 } // namespace std

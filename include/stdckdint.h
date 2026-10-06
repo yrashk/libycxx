@@ -13,28 +13,28 @@
 
 #define __STDC_VERSION_STDCKDINT_H__ 202311L
 
-namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
-template <class T1, class T2, class T3>
-consteval bool ckd_mandates() {
-  static_assert(is_signed_or_unsigned_integer<T1> && is_signed_or_unsigned_integer<T2> &&
-                    is_signed_or_unsigned_integer<T3>,
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+template <class _T1, class _T2, class _T3>
+consteval bool __ckd_mandates() {
+  static_assert(__is_signed_or_unsigned_integer<_T1> && __is_signed_or_unsigned_integer<_T2> &&
+                    __is_signed_or_unsigned_integer<_T3>,
                 "<stdckdint.h>: Mandates: each of type1, type2 and type3 is a signed or unsigned integer type");
   return true;
 }
-}} // namespace ycxx::detail
+}} // namespace __ycxx::__detail
 
-template <class type1, class type2, class type3>
-inline bool ckd_add(type1* result, type2 a, type3 b) noexcept {
-  static_assert(::ycxx::detail::ckd_mandates<type1, type2, type3>());
+template <class __type1, class __type2, class __type3>
+inline bool ckd_add(__type1* result, __type2 a, __type3 b) noexcept {
+  static_assert(::__ycxx::__detail::__ckd_mandates<__type1, __type2, __type3>());
   return __builtin_add_overflow(a, b, result);
 }
-template <class type1, class type2, class type3>
-inline bool ckd_sub(type1* result, type2 a, type3 b) noexcept {
-  static_assert(::ycxx::detail::ckd_mandates<type1, type2, type3>());
+template <class __type1, class __type2, class __type3>
+inline bool ckd_sub(__type1* result, __type2 a, __type3 b) noexcept {
+  static_assert(::__ycxx::__detail::__ckd_mandates<__type1, __type2, __type3>());
   return __builtin_sub_overflow(a, b, result);
 }
-template <class type1, class type2, class type3>
-inline bool ckd_mul(type1* result, type2 a, type3 b) noexcept {
-  static_assert(::ycxx::detail::ckd_mandates<type1, type2, type3>());
+template <class __type1, class __type2, class __type3>
+inline bool ckd_mul(__type1* result, __type2 a, __type3 b) noexcept {
+  static_assert(::__ycxx::__detail::__ckd_mandates<__type1, __type2, __type3>());
   return __builtin_mul_overflow(a, b, result);
 }

@@ -16,37 +16,37 @@
 
 #include <ycxx/core/source_location.hpp>
 
-namespace [[gnu::visibility("hidden")]] std { namespace contracts {
+namespace [[__gnu__::__visibility__("hidden")]] std { namespace contracts {
 
 enum class assertion_kind : unsigned short { pre = 1, post = 2, assert = 3 };
 enum class evaluation_semantic : unsigned short { ignore = 1, observe = 2, enforce = 3, quick_enforce = 4 };
 enum class detection_mode : unsigned short { predicate_false = 1, evaluation_exception = 2 };
 
 class contract_violation {
-  unsigned short version_;
-  unsigned short kind_;
-  unsigned short semantic_;
-  unsigned short mode_;
-  const char* comment_;
-  const void* location_;
-  void* ext_;
+  unsigned short __version_;
+  unsigned short __kind_;
+  unsigned short __semantic_;
+  unsigned short __mode_;
+  const char* __comment_;
+  const void* __location_;
+  void* __ext_;
 
 public:
   contract_violation(const contract_violation&) = delete;
   contract_violation& operator=(const contract_violation&) = delete;
   ~contract_violation() = default;
 
-  const char* comment() const noexcept { return comment_ != nullptr ? comment_ : ""; }
-  contracts::detection_mode detection_mode() const noexcept { return static_cast<contracts::detection_mode>(mode_); }
+  const char* comment() const noexcept { return __comment_ != nullptr ? __comment_ : ""; }
+  contracts::detection_mode detection_mode() const noexcept { return static_cast<contracts::detection_mode>(__mode_); }
   bool is_terminating() const noexcept {
-    return semantic_ == static_cast<unsigned short>(evaluation_semantic::enforce) ||
-           semantic_ == static_cast<unsigned short>(evaluation_semantic::quick_enforce);
+    return __semantic_ == static_cast<unsigned short>(evaluation_semantic::enforce) ||
+           __semantic_ == static_cast<unsigned short>(evaluation_semantic::quick_enforce);
   }
-  assertion_kind kind() const noexcept { return static_cast<assertion_kind>(kind_); }
-  source_location location() const noexcept { return source_location::from_builtin(location_); }
-  evaluation_semantic semantic() const noexcept { return static_cast<evaluation_semantic>(semantic_); }
+  assertion_kind kind() const noexcept { return static_cast<assertion_kind>(__kind_); }
+  source_location location() const noexcept { return source_location::__from_builtin(__location_); }
+  evaluation_semantic semantic() const noexcept { return static_cast<evaluation_semantic>(__semantic_); }
 };
 
-void invoke_default_contract_violation_handler(const contract_violation& v);
+void invoke_default_contract_violation_handler(const contract_violation& __v);
 
 }} // namespace std::contracts

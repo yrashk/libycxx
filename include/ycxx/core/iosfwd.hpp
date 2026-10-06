@@ -12,22 +12,22 @@
 
 #include <ycxx/core/char_traits.hpp>
 
-namespace [[gnu::visibility("hidden")]] std {
+namespace [[__gnu__::__visibility__("hidden")]] std {
 
-template <class charT, class traits>
+template <class __charT, class __traits>
 class basic_ios;
-template <class charT, class traits>
+template <class __charT, class __traits>
 class basic_streambuf;
-template <class charT, class traits>
+template <class __charT, class __traits>
 class basic_istream;
-template <class charT, class traits>
+template <class __charT, class __traits>
 class basic_ostream;
-template <class charT, class traits>
+template <class __charT, class __traits>
 class basic_iostream;
 
-template <class charT, class traits = char_traits<charT>>
+template <class __charT, class __traits = char_traits<__charT>>
 class istreambuf_iterator;
-template <class charT, class traits = char_traits<charT>>
+template <class __charT, class __traits = char_traits<__charT>>
 class ostreambuf_iterator;
 
 } // namespace std

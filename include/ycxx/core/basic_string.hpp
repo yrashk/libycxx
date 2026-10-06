@@ -27,37 +27,37 @@
 #include <ycxx/core/string_view.hpp>
 #include <ycxx/core/swap.hpp>
 
-namespace [[gnu::visibility("hidden")]] std {
+namespace [[__gnu__::__visibility__("hidden")]] std {
 
-template <class charT, class traits = char_traits<charT>, class Allocator = allocator<charT>>
+template <class __charT, class __traits = char_traits<__charT>, class _Allocator = allocator<__charT>>
 class basic_string;
 
-template <class charT, class traits, class Allocator>
+template <class __charT, class __traits, class _Allocator>
 class basic_string {
-  static_assert(is_same_v<typename traits::char_type, charT>,
+  static_assert(is_same_v<typename __traits::char_type, __charT>,
                 "std::basic_string: traits::char_type must be charT ([string.require])");
-  static_assert(is_same_v<typename Allocator::value_type, charT>,
+  static_assert(is_same_v<typename _Allocator::value_type, __charT>,
                 "std::basic_string: Allocator::value_type must be charT ([string.require])");
-  static_assert(!is_array_v<charT> && is_trivially_copyable_v<charT> && is_trivially_default_constructible_v<charT> &&
-                    is_standard_layout_v<charT>,
+  static_assert(!is_array_v<__charT> && is_trivially_copyable_v<__charT> && is_trivially_default_constructible_v<__charT> &&
+                    is_standard_layout_v<__charT>,
                 "std::basic_string: charT must be a char-like type");
 
-  using alloc_traits = allocator_traits<Allocator>;
-  using sv_type = basic_string_view<charT, traits>;
+  using __alloc_traits = allocator_traits<_Allocator>;
+  using __sv_type = basic_string_view<__charT, __traits>;
 
 public:
   // ---- types ----
-  using traits_type = traits;
-  using value_type = charT;
-  using allocator_type = Allocator;
-  using size_type = typename alloc_traits::size_type;
-  using difference_type = typename alloc_traits::difference_type;
-  using pointer = typename alloc_traits::pointer;
-  using const_pointer = typename alloc_traits::const_pointer;
+  using traits_type = __traits;
+  using value_type = __charT;
+  using allocator_type = _Allocator;
+  using size_type = typename __alloc_traits::size_type;
+  using difference_type = typename __alloc_traits::difference_type;
+  using pointer = typename __alloc_traits::pointer;
+  using const_pointer = typename __alloc_traits::const_pointer;
   using reference = value_type&;
   using const_reference = const value_type&;
-  using iterator = ycxx::adl_free::contiguous_iter<charT, basic_string, difference_type>;
-  using const_iterator = ycxx::adl_free::contiguous_iter<const charT, basic_string, difference_type>;
+  using iterator = __ycxx::__adl_free::__contiguous_iter<__charT, basic_string, difference_type>;
+  using const_iterator = __ycxx::__adl_free::__contiguous_iter<const __charT, basic_string, difference_type>;
   using reverse_iterator = std::reverse_iterator<iterator>;
   using const_reverse_iterator = std::reverse_iterator<const_iterator>;
   static constexpr size_type npos = size_type(-1);
@@ -66,434 +66,434 @@ private:
   // T is "string-view-like": the constraint of most string_view-taking members. Extension:
   // classes derived from basic_string are excluded, so that they bind to the basic_string
   // overloads (a derived rvalue is then moved from, not copied through a string_view).
-  template <class T>
-  static constexpr bool sv_like = is_convertible_v<const T&, sv_type> && !is_convertible_v<const T&, const charT*> &&
-                                  !is_convertible_v<const T*, const basic_string*>;
+  template <class _Tp>
+  static constexpr bool __sv_like = is_convertible_v<const _Tp&, __sv_type> && !is_convertible_v<const _Tp&, const __charT*> &&
+                                  !is_convertible_v<const _Tp*, const basic_string*>;
   // An iterator whose elements can be read through a charT pointer.
-  template <class It>
-  static constexpr bool char_ptr_iter = contiguous_iterator<It> && is_same_v<iter_value_t<It>, charT>;
+  template <class _It>
+  static constexpr bool __char_ptr_iter = contiguous_iterator<_It> && is_same_v<iter_value_t<_It>, __charT>;
 
-  static constexpr bool pocca = alloc_traits::propagate_on_container_copy_assignment::value;
-  static constexpr bool pocma = alloc_traits::propagate_on_container_move_assignment::value;
-  static constexpr bool pocs = alloc_traits::propagate_on_container_swap::value;
-  static constexpr bool always_equal = alloc_traits::is_always_equal::value;
+  static constexpr bool __pocca = __alloc_traits::propagate_on_container_copy_assignment::value;
+  static constexpr bool __pocma = __alloc_traits::propagate_on_container_move_assignment::value;
+  static constexpr bool __pocs = __alloc_traits::propagate_on_container_swap::value;
+  static constexpr bool __always_equal = __alloc_traits::is_always_equal::value;
 
   // Inline buffer: 16 bytes' worth of characters (at least one, for the terminator).
-  static constexpr size_t buf_len = 16 / sizeof(charT) > 1 ? 16 / sizeof(charT) : 1;
-  static constexpr size_type sso_cap = buf_len - 1;
+  static constexpr size_t __buf_len = 16 / sizeof(__charT) > 1 ? 16 / sizeof(__charT) : 1;
+  static constexpr size_type __sso_cap = __buf_len - 1;
 
-  charT* ptr_;
-  size_type size_;
+  __charT* __ptr_;
+  size_type __size_;
   union {
-    size_type cap_;
-    charT buf_[buf_len];
+    size_type __cap_;
+    __charT __buf_[__buf_len];
   };
-  [[no_unique_address]] Allocator alloc_;
+  [[no_unique_address]] _Allocator __alloc_;
 
   // ---- representation helpers ----
-  constexpr bool is_long() const noexcept { return ptr_ != buf_; }
-  constexpr size_type cap() const noexcept { return is_long() ? cap_ : sso_cap; }
+  constexpr bool __is_long() const noexcept { return __ptr_ != __buf_; }
+  constexpr size_type __cap() const noexcept { return __is_long() ? __cap_ : __sso_cap; }
 
   // Makes buf_ the active union member (ending cap_'s lifetime) and points ptr_ at it. During
   // constant evaluation every element is initialized: a constant-initialized string must not
   // hold indeterminate values.
-  constexpr void activate_buf() noexcept {
-    buf_[0] = charT();
+  constexpr void __activate_buf() noexcept {
+    __buf_[0] = __charT();
     if consteval {
-      for (size_t i = 1; i < buf_len; ++i)
-        buf_[i] = charT();
+      for (size_t i = 1; i < __buf_len; ++i)
+        __buf_[i] = __charT();
     }
-    ptr_ = buf_;
+    __ptr_ = __buf_;
   }
   // Makes *this an empty short string. Any long storage must already have been released (or
   // taken over).
-  constexpr void set_short_empty() noexcept {
-    activate_buf();
-    size_ = 0;
+  constexpr void __set_short_empty() noexcept {
+    __activate_buf();
+    __size_ = 0;
   }
-  constexpr void set_long(charT* p, size_type c) noexcept {
-    ptr_ = p;
-    cap_ = c;
+  constexpr void __set_long(__charT* p, size_type c) noexcept {
+    __ptr_ = p;
+    __cap_ = c;
   }
 
   struct block {
-    charT* p;
-    size_type cap; // characters, excluding the terminator
+    __charT* p;
+    size_type __cap; // characters, excluding the terminator
   };
   // Storage for at least n characters plus the terminator.
-  static constexpr block allocate_block(Allocator& a, size_type n) {
-    auto r = alloc_traits::allocate_at_least(a, n + 1);
-    charT* p = std::to_address(r.ptr);
+  static constexpr block __allocate_block(_Allocator& a, size_type n) {
+    auto r = __alloc_traits::allocate_at_least(a, n + 1);
+    __charT* p = std::to_address(r.ptr);
     if consteval {
       for (size_type i = 0; i < r.count; ++i)
         std::construct_at(p + i);
     }
     return {p, static_cast<size_type>(r.count - 1)};
   }
-  static constexpr void deallocate_block(Allocator& a, charT* p, size_type c) noexcept {
-    alloc_traits::deallocate(a, pointer_traits<pointer>::pointer_to(*p), c + 1);
+  static constexpr void __deallocate_block(_Allocator& a, __charT* p, size_type c) noexcept {
+    __alloc_traits::deallocate(a, pointer_traits<pointer>::pointer_to(*p), c + 1);
   }
-  constexpr void free_storage() noexcept {
-    if (is_long())
-      deallocate_block(alloc_, ptr_, cap_);
+  constexpr void __free_storage() noexcept {
+    if (__is_long())
+      __deallocate_block(__alloc_, __ptr_, __cap_);
   }
 
-  constexpr void check_length(size_type n, const char* what) const {
+  constexpr void __check_length(size_type n, const char* what) const {
     if (n > max_size())
-      ycxx::detail::throw_length_error(what);
+      __ycxx::__detail::__throw_length_error(what);
   }
-  constexpr void check_pos(size_type pos, const char* what) const {
-    if (pos > size_)
-      ycxx::detail::throw_out_of_range(what);
+  constexpr void __check_pos(size_type __pos, const char* what) const {
+    if (__pos > __size_)
+      __ycxx::__detail::__throw_out_of_range(what);
   }
-  constexpr size_type clamp(size_type pos, size_type n) const noexcept {
-    return n < size_ - pos ? n : size_ - pos;
+  constexpr size_type clamp(size_type __pos, size_type n) const noexcept {
+    return n < __size_ - __pos ? n : __size_ - __pos;
   }
 
   // Capacity for a string that must grow to new_size (> cap()): geometric growth.
-  constexpr size_type grow_cap(size_type new_size) const {
+  constexpr size_type __grow_cap(size_type __new_size) const {
     const size_type ms = max_size();
-    if (new_size > ms)
-      ycxx::detail::throw_length_error("std::basic_string: length exceeds max_size()");
-    const size_type c = cap();
-    size_type nc = c <= ms / 2 ? 2 * c : ms;
-    return nc < new_size ? new_size : nc;
+    if (__new_size > ms)
+      __ycxx::__detail::__throw_length_error("std::basic_string: length exceeds max_size()");
+    const size_type c = __cap();
+    size_type __nc = c <= ms / 2 ? 2 * c : ms;
+    return __nc < __new_size ? __new_size : __nc;
   }
 
   // Initialisation of a freshly constructed object (no storage owned yet).
-  constexpr void init_copy(const charT* s, size_type n) {
-    if (n <= sso_cap) {
-      activate_buf();
+  constexpr void __init_copy(const __charT* s, size_type n) {
+    if (n <= __sso_cap) {
+      __activate_buf();
     } else {
-      check_length(n, "std::basic_string: length exceeds max_size()");
-      block b = allocate_block(alloc_, n);
-      set_long(b.p, b.cap);
+      __check_length(n, "std::basic_string: length exceeds max_size()");
+      block b = __allocate_block(__alloc_, n);
+      __set_long(b.p, b.__cap);
     }
-    traits::copy(ptr_, s, n);
-    traits::assign(ptr_[n], charT());
-    size_ = n;
+    __traits::copy(__ptr_, s, n);
+    __traits::assign(__ptr_[n], __charT());
+    __size_ = n;
   }
-  constexpr void init_fill(size_type n, charT c) {
-    if (n <= sso_cap) {
-      activate_buf();
+  constexpr void __init_fill(size_type n, __charT c) {
+    if (n <= __sso_cap) {
+      __activate_buf();
     } else {
-      check_length(n, "std::basic_string: length exceeds max_size()");
-      block b = allocate_block(alloc_, n);
-      set_long(b.p, b.cap);
+      __check_length(n, "std::basic_string: length exceeds max_size()");
+      block b = __allocate_block(__alloc_, n);
+      __set_long(b.p, b.__cap);
     }
-    traits::assign(ptr_, n, c);
-    traits::assign(ptr_[n], charT());
-    size_ = n;
+    __traits::assign(__ptr_, n, c);
+    __traits::assign(__ptr_[n], __charT());
+    __size_ = n;
   }
   // Takes over o's characters (and storage, if long); o becomes empty. *this owns nothing.
-  constexpr void take(basic_string& o) noexcept {
-    if (o.is_long()) {
-      set_long(o.ptr_, o.cap_);
-      size_ = o.size_;
+  constexpr void take(basic_string& __o) noexcept {
+    if (__o.__is_long()) {
+      __set_long(__o.__ptr_, __o.__cap_);
+      __size_ = __o.__size_;
     } else {
-      activate_buf();
-      traits::copy(buf_, o.buf_, o.size_ + 1);
-      size_ = o.size_;
+      __activate_buf();
+      __traits::copy(__buf_, __o.__buf_, __o.__size_ + 1);
+      __size_ = __o.__size_;
     }
-    o.set_short_empty();
+    __o.__set_short_empty();
   }
 
   // Moves the characters into a new block of capacity at least c (>= size_).
-  constexpr void reallocate(size_type c) {
-    block b = allocate_block(alloc_, c);
-    traits::copy(b.p, ptr_, size_ + 1);
-    free_storage();
-    set_long(b.p, b.cap);
+  constexpr void __reallocate(size_type c) {
+    block b = __allocate_block(__alloc_, c);
+    __traits::copy(b.p, __ptr_, __size_ + 1);
+    __free_storage();
+    __set_long(b.p, b.__cap);
   }
 
   // Index of s within [data(), data() + size()], or npos. Only equality comparisons are made
   // during constant evaluation, where pointers into unrelated objects cannot be ordered.
-  constexpr size_type offset_of(const charT* s) const noexcept {
+  constexpr size_type offset_of(const __charT* s) const noexcept {
     if consteval {
-      for (size_type i = 0; i <= size_; ++i)
-        if (ptr_ + i == s)
+      for (size_type i = 0; i <= __size_; ++i)
+        if (__ptr_ + i == s)
           return i;
       return npos;
     } else {
       const auto a = reinterpret_cast<__UINTPTR_TYPE__>(s);
-      const auto b = reinterpret_cast<__UINTPTR_TYPE__>(ptr_);
-      if (a < b || a > b + size_ * sizeof(charT))
+      const auto b = reinterpret_cast<__UINTPTR_TYPE__>(__ptr_);
+      if (a < b || a > b + __size_ * sizeof(__charT))
         return npos;
-      return static_cast<size_type>((a - b) / sizeof(charT));
+      return static_cast<size_type>((a - b) / sizeof(__charT));
     }
   }
 
   // Replaces [pos, pos + n1) with [s, s + n2); pos <= size_, n1 <= size_ - pos. The source may
   // lie inside *this. Strong guarantee: everything that can throw happens before any change.
-  constexpr basic_string& replace_impl(size_type pos, size_type n1, const charT* s, size_type n2) {
-    const size_type sz = size_;
-    if (n2 > n1 && n2 - n1 > max_size() - sz)
-      ycxx::detail::throw_length_error("std::basic_string: length exceeds max_size()");
-    const size_type new_size = sz - n1 + n2;
-    const size_type tail = sz - pos - n1;
-    if (new_size > cap()) {
+  constexpr basic_string& __replace_impl(size_type __pos, size_type __n1, const __charT* s, size_type __n2) {
+    const size_type __sz = __size_;
+    if (__n2 > __n1 && __n2 - __n1 > max_size() - __sz)
+      __ycxx::__detail::__throw_length_error("std::basic_string: length exceeds max_size()");
+    const size_type __new_size = __sz - __n1 + __n2;
+    const size_type __tail = __sz - __pos - __n1;
+    if (__new_size > __cap()) {
       // The old characters stay intact until the new block is complete, so s may alias them.
-      block b = allocate_block(alloc_, grow_cap(new_size));
-      traits::copy(b.p, ptr_, pos);
-      traits::copy(b.p + pos, s, n2);
-      traits::copy(b.p + pos + n2, ptr_ + pos + n1, tail);
-      traits::assign(b.p[new_size], charT());
-      free_storage();
-      set_long(b.p, b.cap);
-      size_ = new_size;
+      block b = __allocate_block(__alloc_, __grow_cap(__new_size));
+      __traits::copy(b.p, __ptr_, __pos);
+      __traits::copy(b.p + __pos, s, __n2);
+      __traits::copy(b.p + __pos + __n2, __ptr_ + __pos + __n1, __tail);
+      __traits::assign(b.p[__new_size], __charT());
+      __free_storage();
+      __set_long(b.p, b.__cap);
+      __size_ = __new_size;
       return *this;
     }
-    charT* const p = ptr_;
-    const size_type off = n2 == 0 ? npos : offset_of(s);
-    if (off == npos) {
-      if (n1 != n2)
-        traits::move(p + pos + n2, p + pos + n1, tail);
-      traits::copy(p + pos, s, n2);
-    } else if (n1 == n2) {
-      traits::move(p + pos, p + off, n2);
-    } else if (n2 < n1) {
+    __charT* const p = __ptr_;
+    const size_type __off = __n2 == 0 ? npos : offset_of(s);
+    if (__off == npos) {
+      if (__n1 != __n2)
+        __traits::move(p + __pos + __n2, p + __pos + __n1, __tail);
+      __traits::copy(p + __pos, s, __n2);
+    } else if (__n1 == __n2) {
+      __traits::move(p + __pos, p + __off, __n2);
+    } else if (__n2 < __n1) {
       // Shrinking: place the source first (it ends up inside the replaced range), then close
       // the gap.
-      traits::move(p + pos, p + off, n2);
-      traits::move(p + pos + n2, p + pos + n1, tail);
+      __traits::move(p + __pos, p + __off, __n2);
+      __traits::move(p + __pos + __n2, p + __pos + __n1, __tail);
     } else {
       // Growing: open the gap first (moving the terminator too, which the source may include).
       // Source characters at or after pos + n1 move by n2 - n1.
-      traits::move(p + pos + n2, p + pos + n1, tail + 1);
-      if (off + n2 <= pos + n1) {
-        traits::move(p + pos, p + off, n2);
-      } else if (off >= pos + n1) {
-        traits::copy(p + pos, p + off + (n2 - n1), n2);
+      __traits::move(p + __pos + __n2, p + __pos + __n1, __tail + 1);
+      if (__off + __n2 <= __pos + __n1) {
+        __traits::move(p + __pos, p + __off, __n2);
+      } else if (__off >= __pos + __n1) {
+        __traits::copy(p + __pos, p + __off + (__n2 - __n1), __n2);
       } else {
-        const size_type k = pos + n1 - off; // unmoved prefix of the source
-        traits::move(p + pos, p + off, k);
-        traits::copy(p + pos + k, p + pos + n2, n2 - k);
+        const size_type k = __pos + __n1 - __off; // unmoved prefix of the source
+        __traits::move(p + __pos, p + __off, k);
+        __traits::copy(p + __pos + k, p + __pos + __n2, __n2 - k);
       }
     }
-    traits::assign(p[new_size], charT());
-    size_ = new_size;
+    __traits::assign(p[__new_size], __charT());
+    __size_ = __new_size;
     return *this;
   }
 
   // Replaces [pos, pos + n1) with n2 copies of c (same preconditions as replace_impl).
-  constexpr basic_string& replace_fill(size_type pos, size_type n1, size_type n2, charT c) {
-    const size_type sz = size_;
-    if (n2 > n1 && n2 - n1 > max_size() - sz)
-      ycxx::detail::throw_length_error("std::basic_string: length exceeds max_size()");
-    const size_type new_size = sz - n1 + n2;
-    const size_type tail = sz - pos - n1;
-    if (new_size > cap()) {
-      block b = allocate_block(alloc_, grow_cap(new_size));
-      traits::copy(b.p, ptr_, pos);
-      traits::assign(b.p + pos, n2, c);
-      traits::copy(b.p + pos + n2, ptr_ + pos + n1, tail);
-      traits::assign(b.p[new_size], charT());
-      free_storage();
-      set_long(b.p, b.cap);
+  constexpr basic_string& __replace_fill(size_type __pos, size_type __n1, size_type __n2, __charT c) {
+    const size_type __sz = __size_;
+    if (__n2 > __n1 && __n2 - __n1 > max_size() - __sz)
+      __ycxx::__detail::__throw_length_error("std::basic_string: length exceeds max_size()");
+    const size_type __new_size = __sz - __n1 + __n2;
+    const size_type __tail = __sz - __pos - __n1;
+    if (__new_size > __cap()) {
+      block b = __allocate_block(__alloc_, __grow_cap(__new_size));
+      __traits::copy(b.p, __ptr_, __pos);
+      __traits::assign(b.p + __pos, __n2, c);
+      __traits::copy(b.p + __pos + __n2, __ptr_ + __pos + __n1, __tail);
+      __traits::assign(b.p[__new_size], __charT());
+      __free_storage();
+      __set_long(b.p, b.__cap);
     } else {
-      if (n1 != n2)
-        traits::move(ptr_ + pos + n2, ptr_ + pos + n1, tail);
-      traits::assign(ptr_ + pos, n2, c);
-      traits::assign(ptr_[new_size], charT());
+      if (__n1 != __n2)
+        __traits::move(__ptr_ + __pos + __n2, __ptr_ + __pos + __n1, __tail);
+      __traits::assign(__ptr_ + __pos, __n2, c);
+      __traits::assign(__ptr_[__new_size], __charT());
     }
-    size_ = new_size;
+    __size_ = __new_size;
     return *this;
   }
 
-  constexpr void erase_impl(size_type pos, size_type n) noexcept {
+  constexpr void __erase_impl(size_type __pos, size_type n) noexcept {
     if (n == 0)
       return;
-    traits::move(ptr_ + pos, ptr_ + pos + n, size_ - pos - n);
-    size_ -= n;
-    traits::assign(ptr_[size_], charT());
+    __traits::move(__ptr_ + __pos, __ptr_ + __pos + n, __size_ - __pos - n);
+    __size_ -= n;
+    __traits::assign(__ptr_[__size_], __charT());
   }
 
   // Appends [first, last) to *this element by element; the elements must not live in *this.
-  template <class It, class Sent>
-  constexpr void append_elements(It first, Sent last) {
-    if constexpr (forward_iterator<It>) {
+  template <class _It, class _Sent>
+  constexpr void __append_elements(_It first, _Sent last) {
+    if constexpr (forward_iterator<_It>) {
       const auto d = ranges::distance(first, last);
-      if (static_cast<make_unsigned_t<decltype(d)>>(d) > max_size() - size_)
-        ycxx::detail::throw_length_error("std::basic_string: length exceeds max_size()");
+      if (static_cast<make_unsigned_t<decltype(d)>>(d) > max_size() - __size_)
+        __ycxx::__detail::__throw_length_error("std::basic_string: length exceeds max_size()");
       const size_type n = static_cast<size_type>(d);
-      if (size_ + n > cap())
-        reallocate(grow_cap(size_ + n));
-      charT* p = ptr_ + size_;
+      if (__size_ + n > __cap())
+        __reallocate(__grow_cap(__size_ + n));
+      __charT* p = __ptr_ + __size_;
       for (; first != last; ++first) // no ',' on the user's iterator
-        traits::assign(*p++, static_cast<charT>(*first));
-      size_ += n;
-      traits::assign(ptr_[size_], charT());
+        __traits::assign(*p++, static_cast<__charT>(*first));
+      __size_ += n;
+      __traits::assign(__ptr_[__size_], __charT());
     } else {
       for (; first != last; ++first)
-        push_back(static_cast<charT>(*first));
+        push_back(static_cast<__charT>(*first));
     }
   }
   // A string holding [first, last), with this string's allocator; used where the elements may
   // live in *this.
-  template <class It, class Sent>
-  constexpr basic_string temp_of(It first, Sent last) const {
-    basic_string t(alloc_);
-    t.append_elements(static_cast<It&&>(first), static_cast<Sent&&>(last));
+  template <class _It, class _Sent>
+  constexpr basic_string __temp_of(_It first, _Sent last) const {
+    basic_string t(__alloc_);
+    t.__append_elements(static_cast<_It&&>(first), static_cast<_Sent&&>(last));
     return t;
   }
-  template <class R>
-  static constexpr bool char_contiguous_range =
-      ranges::contiguous_range<R> && ranges::sized_range<R> && is_same_v<ranges::range_value_t<R>, charT>;
+  template <class _Rp>
+  static constexpr bool __char_contiguous_range =
+      ranges::contiguous_range<_Rp> && ranges::sized_range<_Rp> && is_same_v<ranges::range_value_t<_Rp>, __charT>;
 
 public:
   // ---- [string.cons] ----
-  constexpr basic_string() noexcept(noexcept(Allocator())) : basic_string(Allocator()) {}
-  constexpr explicit basic_string(const Allocator& a) noexcept : ptr_(nullptr), size_(0), alloc_(a) {
-    set_short_empty();
+  constexpr basic_string() noexcept(noexcept(_Allocator())) : basic_string(_Allocator()) {}
+  constexpr explicit basic_string(const _Allocator& a) noexcept : __ptr_(nullptr), __size_(0), __alloc_(a) {
+    __set_short_empty();
   }
   constexpr basic_string(const basic_string& str)
-      : ptr_(nullptr), size_(0), alloc_(alloc_traits::select_on_container_copy_construction(str.alloc_)) {
-    init_copy(str.ptr_, str.size_);
+      : __ptr_(nullptr), __size_(0), __alloc_(__alloc_traits::select_on_container_copy_construction(str.__alloc_)) {
+    __init_copy(str.__ptr_, str.__size_);
   }
   constexpr basic_string(basic_string&& str) noexcept
-      : ptr_(nullptr), size_(0), alloc_(static_cast<Allocator&&>(str.alloc_)) {
+      : __ptr_(nullptr), __size_(0), __alloc_(static_cast<_Allocator&&>(str.__alloc_)) {
     take(str);
   }
-  constexpr basic_string(const basic_string& str, size_type pos, const Allocator& a = Allocator())
-      : basic_string(str, pos, npos, a) {}
-  constexpr basic_string(const basic_string& str, size_type pos, size_type n, const Allocator& a = Allocator())
-      : ptr_(nullptr), size_(0), alloc_(a) {
-    str.check_pos(pos, "std::basic_string: pos > str.size()");
-    init_copy(str.ptr_ + pos, str.clamp(pos, n));
+  constexpr basic_string(const basic_string& str, size_type __pos, const _Allocator& a = _Allocator())
+      : basic_string(str, __pos, npos, a) {}
+  constexpr basic_string(const basic_string& str, size_type __pos, size_type n, const _Allocator& a = _Allocator())
+      : __ptr_(nullptr), __size_(0), __alloc_(a) {
+    str.__check_pos(__pos, "std::basic_string: pos > str.size()");
+    __init_copy(str.__ptr_ + __pos, str.clamp(__pos, n));
   }
-  constexpr basic_string(basic_string&& str, size_type pos, const Allocator& a = Allocator())
-      : basic_string(static_cast<basic_string&&>(str), pos, npos, a) {}
-  constexpr basic_string(basic_string&& str, size_type pos, size_type n, const Allocator& a = Allocator())
+  constexpr basic_string(basic_string&& str, size_type __pos, const _Allocator& a = _Allocator())
+      : basic_string(static_cast<basic_string&&>(str), __pos, npos, a) {}
+  constexpr basic_string(basic_string&& str, size_type __pos, size_type n, const _Allocator& a = _Allocator())
       : basic_string(a) {
-    str.check_pos(pos, "std::basic_string: pos > str.size()");
-    const size_type rlen = str.clamp(pos, n);
-    if (always_equal || alloc_ == str.alloc_) {
+    str.__check_pos(__pos, "std::basic_string: pos > str.size()");
+    const size_type __rlen = str.clamp(__pos, n);
+    if (__always_equal || __alloc_ == str.__alloc_) {
       // Reuse str's storage ([string.cons]/8).
       take(str);
-      traits::move(ptr_, ptr_ + pos, rlen);
-      size_ = rlen;
-      traits::assign(ptr_[rlen], charT());
+      __traits::move(__ptr_, __ptr_ + __pos, __rlen);
+      __size_ = __rlen;
+      __traits::assign(__ptr_[__rlen], __charT());
     } else {
-      assign(str.ptr_ + pos, rlen);
+      assign(str.__ptr_ + __pos, __rlen);
     }
   }
-  template <class T>
-    requires is_convertible_v<const T&, basic_string_view<charT, traits>>
-  constexpr basic_string(const T& t, ycxx::detail::alloc_size_t<Allocator> pos, ycxx::detail::alloc_size_t<Allocator> n, const Allocator& a = Allocator())
-      : ptr_(nullptr), size_(0), alloc_(a) {
-    const sv_type sv = sv_type(t).substr(pos, n);
-    init_copy(sv.data(), sv.size());
+  template <class _Tp>
+    requires is_convertible_v<const _Tp&, basic_string_view<__charT, __traits>>
+  constexpr basic_string(const _Tp& t, __ycxx::__detail::__alloc_size_t<_Allocator> __pos, __ycxx::__detail::__alloc_size_t<_Allocator> n, const _Allocator& a = _Allocator())
+      : __ptr_(nullptr), __size_(0), __alloc_(a) {
+    const __sv_type sv = __sv_type(t).substr(__pos, n);
+    __init_copy(sv.data(), sv.size());
   }
-  template <class T>
-    requires sv_like<T>
-  constexpr explicit basic_string(const T& t, const Allocator& a = Allocator()) : ptr_(nullptr), size_(0), alloc_(a) {
-    const sv_type sv = t;
-    init_copy(sv.data(), sv.size());
+  template <class _Tp>
+    requires __sv_like<_Tp>
+  constexpr explicit basic_string(const _Tp& t, const _Allocator& a = _Allocator()) : __ptr_(nullptr), __size_(0), __alloc_(a) {
+    const __sv_type sv = t;
+    __init_copy(sv.data(), sv.size());
   }
-  constexpr basic_string(const charT* s, ycxx::detail::alloc_size_t<Allocator> n, const Allocator& a = Allocator())
-      : ptr_(nullptr), size_(0), alloc_(a) {
-    ycxx::detail::precondition(s != nullptr || n == 0, "std::basic_string: null pointer with nonzero length");
-    init_copy(s, n);
+  constexpr basic_string(const __charT* s, __ycxx::__detail::__alloc_size_t<_Allocator> n, const _Allocator& a = _Allocator())
+      : __ptr_(nullptr), __size_(0), __alloc_(a) {
+    __ycxx::__detail::__precondition(s != nullptr || n == 0, "std::basic_string: null pointer with nonzero length");
+    __init_copy(s, n);
   }
-  constexpr basic_string(const charT* s, const Allocator& a = Allocator())
-    requires ycxx::detail::qualifies_as_allocator<Allocator>
-      : ptr_(nullptr), size_(0), alloc_(a) {
-    ycxx::detail::precondition(s != nullptr, "std::basic_string: null pointer");
-    init_copy(s, traits::length(s));
+  constexpr basic_string(const __charT* s, const _Allocator& a = _Allocator())
+    requires __ycxx::__detail::__qualifies_as_allocator<_Allocator>
+      : __ptr_(nullptr), __size_(0), __alloc_(a) {
+    __ycxx::__detail::__precondition(s != nullptr, "std::basic_string: null pointer");
+    __init_copy(s, __traits::length(s));
   }
   basic_string(nullptr_t) = delete;
-  constexpr basic_string(ycxx::detail::alloc_size_t<Allocator> n, charT c, const Allocator& a = Allocator())
-    requires ycxx::detail::qualifies_as_allocator<Allocator>
-      : ptr_(nullptr), size_(0), alloc_(a) {
-    init_fill(n, c);
+  constexpr basic_string(__ycxx::__detail::__alloc_size_t<_Allocator> n, __charT c, const _Allocator& a = _Allocator())
+    requires __ycxx::__detail::__qualifies_as_allocator<_Allocator>
+      : __ptr_(nullptr), __size_(0), __alloc_(a) {
+    __init_fill(n, c);
   }
-  template <class InputIterator>
-    requires ycxx::detail::qualifies_as_input_iterator<InputIterator>
-  constexpr basic_string(InputIterator begin, InputIterator end, const Allocator& a = Allocator()) : basic_string(a) {
-    append_elements(static_cast<InputIterator&&>(begin), static_cast<InputIterator&&>(end));
+  template <class _InputIterator>
+    requires __ycxx::__detail::__qualifies_as_input_iterator<_InputIterator>
+  constexpr basic_string(_InputIterator begin, _InputIterator end, const _Allocator& a = _Allocator()) : basic_string(a) {
+    __append_elements(static_cast<_InputIterator&&>(begin), static_cast<_InputIterator&&>(end));
   }
-  template <ycxx::detail::container_compatible_range<charT> R>
-  constexpr basic_string(from_range_t, R&& rg, const Allocator& a = Allocator()) : basic_string(a) {
-    if constexpr (char_contiguous_range<R>)
-      append(ranges::data(rg), static_cast<size_type>(ranges::size(rg)));
+  template <__ycxx::__detail::__container_compatible_range<__charT> _Rp>
+  constexpr basic_string(from_range_t, _Rp&& __rg, const _Allocator& a = _Allocator()) : basic_string(a) {
+    if constexpr (__char_contiguous_range<_Rp>)
+      append(ranges::data(__rg), static_cast<size_type>(ranges::size(__rg)));
     else
-      append_elements(ranges::begin(rg), ranges::end(rg));
+      __append_elements(ranges::begin(__rg), ranges::end(__rg));
   }
-  constexpr basic_string(initializer_list<charT> il, const Allocator& a = Allocator())
-      : ptr_(nullptr), size_(0), alloc_(a) {
-    init_copy(il.begin(), il.size());
+  constexpr basic_string(initializer_list<__charT> il, const _Allocator& a = _Allocator())
+      : __ptr_(nullptr), __size_(0), __alloc_(a) {
+    __init_copy(il.begin(), il.size());
   }
-  constexpr basic_string(const basic_string& str, const Allocator& a) : ptr_(nullptr), size_(0), alloc_(a) {
-    init_copy(str.ptr_, str.size_);
+  constexpr basic_string(const basic_string& str, const _Allocator& a) : __ptr_(nullptr), __size_(0), __alloc_(a) {
+    __init_copy(str.__ptr_, str.__size_);
   }
-  constexpr basic_string(basic_string&& str, const Allocator& a) : ptr_(nullptr), size_(0), alloc_(a) {
-    if (always_equal || alloc_ == str.alloc_)
+  constexpr basic_string(basic_string&& str, const _Allocator& a) : __ptr_(nullptr), __size_(0), __alloc_(a) {
+    if (__always_equal || __alloc_ == str.__alloc_)
       take(str);
     else
-      init_copy(str.ptr_, str.size_);
+      __init_copy(str.__ptr_, str.__size_);
   }
 
-  constexpr ~basic_string() { free_storage(); }
+  constexpr ~basic_string() { __free_storage(); }
 
   constexpr basic_string& operator=(const basic_string& str) {
     if (this == __builtin_addressof(str))
       return *this;
-    if constexpr (pocca) {
-      if (!always_equal && alloc_ != str.alloc_) {
+    if constexpr (__pocca) {
+      if (!__always_equal && __alloc_ != str.__alloc_) {
         // The new allocator must own the storage: allocate with it before releasing ours.
-        Allocator na = str.alloc_;
-        if (str.size_ <= sso_cap) {
-          free_storage();
-          alloc_ = na;
-          set_short_empty();
+        _Allocator __na = str.__alloc_;
+        if (str.__size_ <= __sso_cap) {
+          __free_storage();
+          __alloc_ = __na;
+          __set_short_empty();
         } else {
-          block b = allocate_block(na, str.size_);
-          free_storage();
-          alloc_ = na;
-          set_long(b.p, b.cap);
+          block b = __allocate_block(__na, str.__size_);
+          __free_storage();
+          __alloc_ = __na;
+          __set_long(b.p, b.__cap);
         }
-        traits::copy(ptr_, str.ptr_, str.size_ + 1);
-        size_ = str.size_;
+        __traits::copy(__ptr_, str.__ptr_, str.__size_ + 1);
+        __size_ = str.__size_;
         return *this;
       }
-      alloc_ = str.alloc_;
+      __alloc_ = str.__alloc_;
     }
-    return replace_impl(0, size_, str.ptr_, str.size_);
+    return __replace_impl(0, __size_, str.__ptr_, str.__size_);
   }
-  constexpr basic_string& operator=(basic_string&& str) noexcept(pocma || always_equal) {
+  constexpr basic_string& operator=(basic_string&& str) noexcept(__pocma || __always_equal) {
     if (this == __builtin_addressof(str))
       return *this;
-    if constexpr (pocma || always_equal) {
-      free_storage();
-      if constexpr (pocma)
-        alloc_ = static_cast<Allocator&&>(str.alloc_);
+    if constexpr (__pocma || __always_equal) {
+      __free_storage();
+      if constexpr (__pocma)
+        __alloc_ = static_cast<_Allocator&&>(str.__alloc_);
       take(str);
     } else {
-      if (alloc_ == str.alloc_) {
-        free_storage();
+      if (__alloc_ == str.__alloc_) {
+        __free_storage();
         take(str);
       } else {
-        replace_impl(0, size_, str.ptr_, str.size_);
+        __replace_impl(0, __size_, str.__ptr_, str.__size_);
       }
     }
     return *this;
   }
-  template <class T>
-    requires sv_like<T>
-  constexpr basic_string& operator=(const T& t) {
-    const sv_type sv = t;
+  template <class _Tp>
+    requires __sv_like<_Tp>
+  constexpr basic_string& operator=(const _Tp& t) {
+    const __sv_type sv = t;
     return assign(sv);
   }
-  constexpr basic_string& operator=(const charT* s) { return *this = sv_type(s); }
+  constexpr basic_string& operator=(const __charT* s) { return *this = __sv_type(s); }
   basic_string& operator=(nullptr_t) = delete;
-  constexpr basic_string& operator=(charT c) { return *this = sv_type(__builtin_addressof(c), 1); }
-  constexpr basic_string& operator=(initializer_list<charT> il) { return *this = sv_type(il.begin(), il.size()); }
+  constexpr basic_string& operator=(__charT c) { return *this = __sv_type(__builtin_addressof(c), 1); }
+  constexpr basic_string& operator=(initializer_list<__charT> il) { return *this = __sv_type(il.begin(), il.size()); }
 
   // ---- [string.iterators] ----
-  constexpr iterator begin() noexcept { return iterator(ptr_); }
-  constexpr const_iterator begin() const noexcept { return const_iterator(ptr_); }
-  constexpr iterator end() noexcept { return iterator(ptr_ + size_); }
-  constexpr const_iterator end() const noexcept { return const_iterator(ptr_ + size_); }
+  constexpr iterator begin() noexcept { return iterator(__ptr_); }
+  constexpr const_iterator begin() const noexcept { return const_iterator(__ptr_); }
+  constexpr iterator end() noexcept { return iterator(__ptr_ + __size_); }
+  constexpr const_iterator end() const noexcept { return const_iterator(__ptr_ + __size_); }
   constexpr reverse_iterator rbegin() noexcept { return reverse_iterator(end()); }
   constexpr const_reverse_iterator rbegin() const noexcept { return const_reverse_iterator(end()); }
   constexpr reverse_iterator rend() noexcept { return reverse_iterator(begin()); }
@@ -504,811 +504,811 @@ public:
   constexpr const_reverse_iterator crend() const noexcept { return rend(); }
 
   // ---- [string.capacity] ----
-  constexpr size_type size() const noexcept { return size_; }
-  constexpr size_type length() const noexcept { return size_; }
+  constexpr size_type size() const noexcept { return __size_; }
+  constexpr size_type length() const noexcept { return __size_; }
   constexpr size_type max_size() const noexcept {
     // One element of every allocation holds the terminator; pointer differences over the string
     // must be representable, and no object is larger than PTRDIFF_MAX bytes.
-    const size_type by_alloc = alloc_traits::max_size(alloc_);
-    const auto diff_max = static_cast<make_unsigned_t<difference_type>>(numeric_limits<difference_type>::max()) /
-                          sizeof(charT);
-    const size_type by_diff = diff_max < numeric_limits<size_type>::max() ? static_cast<size_type>(diff_max)
+    const size_type __by_alloc = __alloc_traits::max_size(__alloc_);
+    const auto __diff_max = static_cast<make_unsigned_t<difference_type>>(numeric_limits<difference_type>::max()) /
+                          sizeof(__charT);
+    const size_type __by_diff = __diff_max < numeric_limits<size_type>::max() ? static_cast<size_type>(__diff_max)
                                                                           : numeric_limits<size_type>::max();
-    return (by_alloc < by_diff ? by_alloc : by_diff) - 1;
+    return (__by_alloc < __by_diff ? __by_alloc : __by_diff) - 1;
   }
-  constexpr void resize(size_type n, charT c) {
-    if (n <= size_) {
-      size_ = n;
-      traits::assign(ptr_[n], charT());
+  constexpr void resize(size_type n, __charT c) {
+    if (n <= __size_) {
+      __size_ = n;
+      __traits::assign(__ptr_[n], __charT());
     } else {
-      append(n - size_, c);
+      append(n - __size_, c);
     }
   }
-  constexpr void resize(size_type n) { resize(n, charT()); }
-  template <class Operation>
-  constexpr void resize_and_overwrite(size_type n, Operation op) {
-    using R = decltype(static_cast<Operation&&>(op)(declval<charT*>(), declval<size_type>()));
-    static_assert(ycxx::detail::integer_like<R>,
+  constexpr void resize(size_type n) { resize(n, __charT()); }
+  template <class _Operation>
+  constexpr void resize_and_overwrite(size_type n, _Operation op) {
+    using _Rp = decltype(static_cast<_Operation&&>(op)(declval<__charT*>(), declval<size_type>()));
+    static_assert(__ycxx::__detail::__integer_like<_Rp>,
                   "std::basic_string::resize_and_overwrite: the operation must return an integer-like type");
-    if (n > cap()) {
-      check_length(n, "std::basic_string::resize_and_overwrite: n > max_size()");
-      reallocate(n);
+    if (n > __cap()) {
+      __check_length(n, "std::basic_string::resize_and_overwrite: n > max_size()");
+      __reallocate(n);
     }
-    charT* const p = ptr_;
+    __charT* const p = __ptr_;
     const size_type m = n;
     // [string.capacity]/7 calls p and m "values": they are passed as prvalues, so the operation
     // may take them by value or by rvalue reference.
-    const R r = static_cast<Operation&&>(op)(static_cast<charT*>(p), static_cast<size_type>(m));
-    if constexpr (is_signed_v<R>)
-      ycxx::detail::precondition(r >= 0, "std::basic_string::resize_and_overwrite: negative result");
-    ycxx::detail::precondition(static_cast<make_unsigned_t<R>>(r) <= m,
+    const _Rp r = static_cast<_Operation&&>(op)(static_cast<__charT*>(p), static_cast<size_type>(m));
+    if constexpr (is_signed_v<_Rp>)
+      __ycxx::__detail::__precondition(r >= 0, "std::basic_string::resize_and_overwrite: negative result");
+    __ycxx::__detail::__precondition(static_cast<make_unsigned_t<_Rp>>(r) <= m,
                                "std::basic_string::resize_and_overwrite: result greater than n");
-    size_ = static_cast<size_type>(r);
-    traits::assign(p[size_], charT());
+    __size_ = static_cast<size_type>(r);
+    __traits::assign(p[__size_], __charT());
   }
-  constexpr size_type capacity() const noexcept { return cap(); }
-  constexpr void reserve(size_type res_arg) {
-    check_length(res_arg, "std::basic_string::reserve: argument exceeds max_size()");
-    if (res_arg > cap())
-      reallocate(res_arg);
+  constexpr size_type capacity() const noexcept { return __cap(); }
+  constexpr void reserve(size_type __res_arg) {
+    __check_length(__res_arg, "std::basic_string::reserve: argument exceeds max_size()");
+    if (__res_arg > __cap())
+      __reallocate(__res_arg);
   }
   constexpr void shrink_to_fit() {
-    if (!is_long())
+    if (!__is_long())
       return;
-    if (size_ <= sso_cap) {
-      charT* const old = ptr_;
-      const size_type old_cap = cap_;
-      activate_buf();
-      traits::copy(buf_, old, size_ + 1);
-      deallocate_block(alloc_, old, old_cap);
-    } else if (cap_ > size_) {
-      block b = allocate_block(alloc_, size_);
-      if (b.cap >= cap_) { // the allocator gave nothing back
-        deallocate_block(alloc_, b.p, b.cap);
+    if (__size_ <= __sso_cap) {
+      __charT* const __old = __ptr_;
+      const size_type __old_cap = __cap_;
+      __activate_buf();
+      __traits::copy(__buf_, __old, __size_ + 1);
+      __deallocate_block(__alloc_, __old, __old_cap);
+    } else if (__cap_ > __size_) {
+      block b = __allocate_block(__alloc_, __size_);
+      if (b.__cap >= __cap_) { // the allocator gave nothing back
+        __deallocate_block(__alloc_, b.p, b.__cap);
         return;
       }
-      traits::copy(b.p, ptr_, size_ + 1);
-      free_storage();
-      set_long(b.p, b.cap);
+      __traits::copy(b.p, __ptr_, __size_ + 1);
+      __free_storage();
+      __set_long(b.p, b.__cap);
     }
   }
   constexpr void clear() noexcept {
-    size_ = 0;
-    traits::assign(ptr_[0], charT());
+    __size_ = 0;
+    __traits::assign(__ptr_[0], __charT());
   }
-  [[nodiscard]] constexpr bool empty() const noexcept { return size_ == 0; }
+  [[nodiscard]] constexpr bool empty() const noexcept { return __size_ == 0; }
 
   // ---- [string.access] ----
-  constexpr const_reference operator[](size_type pos) const {
-    ycxx::detail::precondition(pos <= size_, "std::basic_string::operator[]: index out of range");
-    return ptr_[pos];
+  constexpr const_reference operator[](size_type __pos) const {
+    __ycxx::__detail::__precondition(__pos <= __size_, "std::basic_string::operator[]: index out of range");
+    return __ptr_[__pos];
   }
-  constexpr reference operator[](size_type pos) {
-    ycxx::detail::precondition(pos <= size_, "std::basic_string::operator[]: index out of range");
-    return ptr_[pos];
+  constexpr reference operator[](size_type __pos) {
+    __ycxx::__detail::__precondition(__pos <= __size_, "std::basic_string::operator[]: index out of range");
+    return __ptr_[__pos];
   }
   constexpr const_reference at(size_type n) const {
-    if (n >= size_)
-      ycxx::detail::throw_out_of_range("std::basic_string::at: index out of range");
-    return ptr_[n];
+    if (n >= __size_)
+      __ycxx::__detail::__throw_out_of_range("std::basic_string::at: index out of range");
+    return __ptr_[n];
   }
   constexpr reference at(size_type n) {
-    if (n >= size_)
-      ycxx::detail::throw_out_of_range("std::basic_string::at: index out of range");
-    return ptr_[n];
+    if (n >= __size_)
+      __ycxx::__detail::__throw_out_of_range("std::basic_string::at: index out of range");
+    return __ptr_[n];
   }
   constexpr const_reference front() const {
-    ycxx::detail::precondition(size_ != 0, "std::basic_string::front: empty string");
-    return ptr_[0];
+    __ycxx::__detail::__precondition(__size_ != 0, "std::basic_string::front: empty string");
+    return __ptr_[0];
   }
   constexpr reference front() {
-    ycxx::detail::precondition(size_ != 0, "std::basic_string::front: empty string");
-    return ptr_[0];
+    __ycxx::__detail::__precondition(__size_ != 0, "std::basic_string::front: empty string");
+    return __ptr_[0];
   }
   constexpr const_reference back() const {
-    ycxx::detail::precondition(size_ != 0, "std::basic_string::back: empty string");
-    return ptr_[size_ - 1];
+    __ycxx::__detail::__precondition(__size_ != 0, "std::basic_string::back: empty string");
+    return __ptr_[__size_ - 1];
   }
   constexpr reference back() {
-    ycxx::detail::precondition(size_ != 0, "std::basic_string::back: empty string");
-    return ptr_[size_ - 1];
+    __ycxx::__detail::__precondition(__size_ != 0, "std::basic_string::back: empty string");
+    return __ptr_[__size_ - 1];
   }
 
   // ---- [string.op.append] ----
   constexpr basic_string& operator+=(const basic_string& str) { return append(str); }
-  template <class T>
-    requires sv_like<T>
-  constexpr basic_string& operator+=(const T& t) {
-    const sv_type sv = t;
+  template <class _Tp>
+    requires __sv_like<_Tp>
+  constexpr basic_string& operator+=(const _Tp& t) {
+    const __sv_type sv = t;
     return append(sv.data(), sv.size());
   }
-  constexpr basic_string& operator+=(const charT* s) { return append(s); }
-  constexpr basic_string& operator+=(charT c) {
+  constexpr basic_string& operator+=(const __charT* s) { return append(s); }
+  constexpr basic_string& operator+=(__charT c) {
     push_back(c);
     return *this;
   }
-  constexpr basic_string& operator+=(initializer_list<charT> il) { return append(il); }
+  constexpr basic_string& operator+=(initializer_list<__charT> il) { return append(il); }
 
   // ---- [string.append] ----
-  constexpr basic_string& append(const basic_string& str) { return append(str.ptr_, str.size_); }
-  constexpr basic_string& append(const basic_string& str, size_type pos, size_type n = npos) {
-    return append(sv_type(str).substr(pos, n));
+  constexpr basic_string& append(const basic_string& str) { return append(str.__ptr_, str.__size_); }
+  constexpr basic_string& append(const basic_string& str, size_type __pos, size_type n = npos) {
+    return append(__sv_type(str).substr(__pos, n));
   }
-  template <class T>
-    requires sv_like<T>
-  constexpr basic_string& append(const T& t) {
-    const sv_type sv = t;
+  template <class _Tp>
+    requires __sv_like<_Tp>
+  constexpr basic_string& append(const _Tp& t) {
+    const __sv_type sv = t;
     return append(sv.data(), sv.size());
   }
-  template <class T>
-    requires sv_like<T>
-  constexpr basic_string& append(const T& t, size_type pos, size_type n = npos) {
-    const sv_type sv = t;
-    return append(sv.substr(pos, n));
+  template <class _Tp>
+    requires __sv_like<_Tp>
+  constexpr basic_string& append(const _Tp& t, size_type __pos, size_type n = npos) {
+    const __sv_type sv = t;
+    return append(sv.substr(__pos, n));
   }
-  constexpr basic_string& append(const charT* s, size_type n) {
-    ycxx::detail::precondition(s != nullptr || n == 0, "std::basic_string::append: null pointer");
-    if (n <= cap() - size_) {
+  constexpr basic_string& append(const __charT* s, size_type n) {
+    __ycxx::__detail::__precondition(s != nullptr || n == 0, "std::basic_string::append: null pointer");
+    if (n <= __cap() - __size_) {
       // In place: the destination lies past every character, so even a source inside *this
       // stays intact (move() also covers a source that includes the terminator).
-      traits::move(ptr_ + size_, s, n);
-      size_ += n;
-      traits::assign(ptr_[size_], charT());
+      __traits::move(__ptr_ + __size_, s, n);
+      __size_ += n;
+      __traits::assign(__ptr_[__size_], __charT());
       return *this;
     }
-    return replace_impl(size_, 0, s, n);
+    return __replace_impl(__size_, 0, s, n);
   }
-  constexpr basic_string& append(const charT* s) {
-    ycxx::detail::precondition(s != nullptr, "std::basic_string::append: null pointer");
-    return append(s, traits::length(s));
+  constexpr basic_string& append(const __charT* s) {
+    __ycxx::__detail::__precondition(s != nullptr, "std::basic_string::append: null pointer");
+    return append(s, __traits::length(s));
   }
-  constexpr basic_string& append(const charT* s, size_type pos, size_type n) { return append(sv_type(s).substr(pos, n)); }
-  constexpr basic_string& append(size_type n, charT c) { return replace_fill(size_, 0, n, c); }
-  template <class InputIterator>
-    requires ycxx::detail::qualifies_as_input_iterator<InputIterator>
-  constexpr basic_string& append(InputIterator first, InputIterator last) {
-    if constexpr (char_ptr_iter<InputIterator>)
+  constexpr basic_string& append(const __charT* s, size_type __pos, size_type n) { return append(__sv_type(s).substr(__pos, n)); }
+  constexpr basic_string& append(size_type n, __charT c) { return __replace_fill(__size_, 0, n, c); }
+  template <class _InputIterator>
+    requires __ycxx::__detail::__qualifies_as_input_iterator<_InputIterator>
+  constexpr basic_string& append(_InputIterator first, _InputIterator last) {
+    if constexpr (__char_ptr_iter<_InputIterator>)
       return append(std::to_address(first), static_cast<size_type>(last - first));
     else
-      return append(temp_of(first, last));
+      return append(__temp_of(first, last));
   }
-  template <ycxx::detail::container_compatible_range<charT> R>
-  constexpr basic_string& append_range(R&& rg) {
-    if constexpr (char_contiguous_range<R>)
-      return append(ranges::data(rg), static_cast<size_type>(ranges::size(rg)));
+  template <__ycxx::__detail::__container_compatible_range<__charT> _Rp>
+  constexpr basic_string& append_range(_Rp&& __rg) {
+    if constexpr (__char_contiguous_range<_Rp>)
+      return append(ranges::data(__rg), static_cast<size_type>(ranges::size(__rg)));
     else
-      return append(temp_of(ranges::begin(rg), ranges::end(rg)));
+      return append(__temp_of(ranges::begin(__rg), ranges::end(__rg)));
   }
-  constexpr basic_string& append(initializer_list<charT> il) { return append(il.begin(), il.size()); }
-  constexpr void push_back(charT c) {
-    const size_type n = size_;
-    if (n == cap())
-      reallocate(grow_cap(n + 1));
+  constexpr basic_string& append(initializer_list<__charT> il) { return append(il.begin(), il.size()); }
+  constexpr void push_back(__charT c) {
+    const size_type n = __size_;
+    if (n == __cap())
+      __reallocate(__grow_cap(n + 1));
     // Through locals: a store of a char could alias ptr_ and size_ and force their reload.
-    charT* const p = ptr_;
-    traits::assign(p[n], c);
-    traits::assign(p[n + 1], charT());
-    size_ = n + 1;
+    __charT* const p = __ptr_;
+    __traits::assign(p[n], c);
+    __traits::assign(p[n + 1], __charT());
+    __size_ = n + 1;
   }
 
   // ---- [string.assign] ----
   constexpr basic_string& assign(const basic_string& str) { return *this = str; }
-  constexpr basic_string& assign(basic_string&& str) noexcept(pocma || always_equal) {
+  constexpr basic_string& assign(basic_string&& str) noexcept(__pocma || __always_equal) {
     return *this = static_cast<basic_string&&>(str);
   }
-  constexpr basic_string& assign(const basic_string& str, size_type pos, size_type n = npos) {
-    return assign(sv_type(str).substr(pos, n));
+  constexpr basic_string& assign(const basic_string& str, size_type __pos, size_type n = npos) {
+    return assign(__sv_type(str).substr(__pos, n));
   }
-  template <class T>
-    requires sv_like<T>
-  constexpr basic_string& assign(const T& t) {
-    const sv_type sv = t;
+  template <class _Tp>
+    requires __sv_like<_Tp>
+  constexpr basic_string& assign(const _Tp& t) {
+    const __sv_type sv = t;
     return assign(sv.data(), sv.size());
   }
-  template <class T>
-    requires sv_like<T>
-  constexpr basic_string& assign(const T& t, size_type pos, size_type n = npos) {
-    const sv_type sv = t;
-    return assign(sv.substr(pos, n));
+  template <class _Tp>
+    requires __sv_like<_Tp>
+  constexpr basic_string& assign(const _Tp& t, size_type __pos, size_type n = npos) {
+    const __sv_type sv = t;
+    return assign(sv.substr(__pos, n));
   }
-  constexpr basic_string& assign(const charT* s, size_type n) {
-    ycxx::detail::precondition(s != nullptr || n == 0, "std::basic_string::assign: null pointer");
-    return replace_impl(0, size_, s, n);
+  constexpr basic_string& assign(const __charT* s, size_type n) {
+    __ycxx::__detail::__precondition(s != nullptr || n == 0, "std::basic_string::assign: null pointer");
+    return __replace_impl(0, __size_, s, n);
   }
-  constexpr basic_string& assign(const charT* s) {
-    ycxx::detail::precondition(s != nullptr, "std::basic_string::assign: null pointer");
-    return assign(s, traits::length(s));
+  constexpr basic_string& assign(const __charT* s) {
+    __ycxx::__detail::__precondition(s != nullptr, "std::basic_string::assign: null pointer");
+    return assign(s, __traits::length(s));
   }
-  constexpr basic_string& assign(const charT* s, size_type pos, size_type n) { return assign(sv_type(s).substr(pos, n)); }
-  constexpr basic_string& assign(initializer_list<charT> il) { return assign(il.begin(), il.size()); }
-  constexpr basic_string& assign(size_type n, charT c) { return replace_fill(0, size_, n, c); }
-  template <class InputIterator>
-    requires ycxx::detail::qualifies_as_input_iterator<InputIterator>
-  constexpr basic_string& assign(InputIterator first, InputIterator last) {
-    if constexpr (char_ptr_iter<InputIterator>)
+  constexpr basic_string& assign(const __charT* s, size_type __pos, size_type n) { return assign(__sv_type(s).substr(__pos, n)); }
+  constexpr basic_string& assign(initializer_list<__charT> il) { return assign(il.begin(), il.size()); }
+  constexpr basic_string& assign(size_type n, __charT c) { return __replace_fill(0, __size_, n, c); }
+  template <class _InputIterator>
+    requires __ycxx::__detail::__qualifies_as_input_iterator<_InputIterator>
+  constexpr basic_string& assign(_InputIterator first, _InputIterator last) {
+    if constexpr (__char_ptr_iter<_InputIterator>)
       return assign(std::to_address(first), static_cast<size_type>(last - first));
     else
-      return assign(temp_of(first, last));
+      return assign(__temp_of(first, last));
   }
-  template <ycxx::detail::container_compatible_range<charT> R>
-  constexpr basic_string& assign_range(R&& rg) {
-    if constexpr (char_contiguous_range<R>)
-      return assign(ranges::data(rg), static_cast<size_type>(ranges::size(rg)));
+  template <__ycxx::__detail::__container_compatible_range<__charT> _Rp>
+  constexpr basic_string& assign_range(_Rp&& __rg) {
+    if constexpr (__char_contiguous_range<_Rp>)
+      return assign(ranges::data(__rg), static_cast<size_type>(ranges::size(__rg)));
     else
-      return assign(temp_of(ranges::begin(rg), ranges::end(rg)));
+      return assign(__temp_of(ranges::begin(__rg), ranges::end(__rg)));
   }
 
   // ---- [string.insert] ----
-  constexpr basic_string& insert(size_type pos, const basic_string& str) { return insert(pos, str.ptr_, str.size_); }
-  constexpr basic_string& insert(size_type pos1, const basic_string& str, size_type pos2, size_type n = npos) {
-    return insert(pos1, sv_type(str), pos2, n);
+  constexpr basic_string& insert(size_type __pos, const basic_string& str) { return insert(__pos, str.__ptr_, str.__size_); }
+  constexpr basic_string& insert(size_type __pos1, const basic_string& str, size_type __pos2, size_type n = npos) {
+    return insert(__pos1, __sv_type(str), __pos2, n);
   }
-  template <class T>
-    requires sv_like<T>
-  constexpr basic_string& insert(size_type pos, const T& t) {
-    const sv_type sv = t;
-    return insert(pos, sv.data(), sv.size());
+  template <class _Tp>
+    requires __sv_like<_Tp>
+  constexpr basic_string& insert(size_type __pos, const _Tp& t) {
+    const __sv_type sv = t;
+    return insert(__pos, sv.data(), sv.size());
   }
-  template <class T>
-    requires sv_like<T>
-  constexpr basic_string& insert(size_type pos1, const T& t, size_type pos2, size_type n = npos) {
-    const sv_type sv = t;
-    return insert(pos1, sv.substr(pos2, n));
+  template <class _Tp>
+    requires __sv_like<_Tp>
+  constexpr basic_string& insert(size_type __pos1, const _Tp& t, size_type __pos2, size_type n = npos) {
+    const __sv_type sv = t;
+    return insert(__pos1, sv.substr(__pos2, n));
   }
-  constexpr basic_string& insert(size_type pos, const charT* s, size_type n) {
-    ycxx::detail::precondition(s != nullptr || n == 0, "std::basic_string::insert: null pointer");
-    check_pos(pos, "std::basic_string::insert: pos > size()");
-    return replace_impl(pos, 0, s, n);
+  constexpr basic_string& insert(size_type __pos, const __charT* s, size_type n) {
+    __ycxx::__detail::__precondition(s != nullptr || n == 0, "std::basic_string::insert: null pointer");
+    __check_pos(__pos, "std::basic_string::insert: pos > size()");
+    return __replace_impl(__pos, 0, s, n);
   }
-  constexpr basic_string& insert(size_type pos, const charT* s) {
-    ycxx::detail::precondition(s != nullptr, "std::basic_string::insert: null pointer");
-    return insert(pos, s, traits::length(s));
+  constexpr basic_string& insert(size_type __pos, const __charT* s) {
+    __ycxx::__detail::__precondition(s != nullptr, "std::basic_string::insert: null pointer");
+    return insert(__pos, s, __traits::length(s));
   }
-  constexpr basic_string& insert(size_type pos, size_type n, charT c) {
-    check_pos(pos, "std::basic_string::insert: pos > size()");
-    return replace_fill(pos, 0, n, c);
+  constexpr basic_string& insert(size_type __pos, size_type n, __charT c) {
+    __check_pos(__pos, "std::basic_string::insert: pos > size()");
+    return __replace_fill(__pos, 0, n, c);
   }
-  constexpr iterator insert(const_iterator p, charT c) {
-    const size_type pos = static_cast<size_type>(p - cbegin());
-    replace_fill(pos, 0, 1, c);
-    return begin() + static_cast<difference_type>(pos);
+  constexpr iterator insert(const_iterator p, __charT c) {
+    const size_type __pos = static_cast<size_type>(p - cbegin());
+    __replace_fill(__pos, 0, 1, c);
+    return begin() + static_cast<difference_type>(__pos);
   }
-  constexpr iterator insert(const_iterator p, size_type n, charT c) {
-    const size_type pos = static_cast<size_type>(p - cbegin());
-    replace_fill(pos, 0, n, c);
-    return begin() + static_cast<difference_type>(pos);
+  constexpr iterator insert(const_iterator p, size_type n, __charT c) {
+    const size_type __pos = static_cast<size_type>(p - cbegin());
+    __replace_fill(__pos, 0, n, c);
+    return begin() + static_cast<difference_type>(__pos);
   }
-  template <class InputIterator>
-    requires ycxx::detail::qualifies_as_input_iterator<InputIterator>
-  constexpr iterator insert(const_iterator p, InputIterator first, InputIterator last) {
-    const size_type pos = static_cast<size_type>(p - cbegin());
-    if constexpr (char_ptr_iter<InputIterator>) {
-      replace_impl(pos, 0, std::to_address(first), static_cast<size_type>(last - first));
+  template <class _InputIterator>
+    requires __ycxx::__detail::__qualifies_as_input_iterator<_InputIterator>
+  constexpr iterator insert(const_iterator p, _InputIterator first, _InputIterator last) {
+    const size_type __pos = static_cast<size_type>(p - cbegin());
+    if constexpr (__char_ptr_iter<_InputIterator>) {
+      __replace_impl(__pos, 0, std::to_address(first), static_cast<size_type>(last - first));
     } else {
-      const basic_string t = temp_of(first, last);
-      replace_impl(pos, 0, t.ptr_, t.size_);
+      const basic_string t = __temp_of(first, last);
+      __replace_impl(__pos, 0, t.__ptr_, t.__size_);
     }
-    return begin() + static_cast<difference_type>(pos);
+    return begin() + static_cast<difference_type>(__pos);
   }
-  template <ycxx::detail::container_compatible_range<charT> R>
-  constexpr iterator insert_range(const_iterator p, R&& rg) {
-    const size_type pos = static_cast<size_type>(p - cbegin());
-    if constexpr (char_contiguous_range<R>) {
-      replace_impl(pos, 0, ranges::data(rg), static_cast<size_type>(ranges::size(rg)));
+  template <__ycxx::__detail::__container_compatible_range<__charT> _Rp>
+  constexpr iterator insert_range(const_iterator p, _Rp&& __rg) {
+    const size_type __pos = static_cast<size_type>(p - cbegin());
+    if constexpr (__char_contiguous_range<_Rp>) {
+      __replace_impl(__pos, 0, ranges::data(__rg), static_cast<size_type>(ranges::size(__rg)));
     } else {
-      const basic_string t = temp_of(ranges::begin(rg), ranges::end(rg));
-      replace_impl(pos, 0, t.ptr_, t.size_);
+      const basic_string t = __temp_of(ranges::begin(__rg), ranges::end(__rg));
+      __replace_impl(__pos, 0, t.__ptr_, t.__size_);
     }
-    return begin() + static_cast<difference_type>(pos);
+    return begin() + static_cast<difference_type>(__pos);
   }
-  constexpr iterator insert(const_iterator p, initializer_list<charT> il) {
-    const size_type pos = static_cast<size_type>(p - cbegin());
-    replace_impl(pos, 0, il.begin(), il.size());
-    return begin() + static_cast<difference_type>(pos);
+  constexpr iterator insert(const_iterator p, initializer_list<__charT> il) {
+    const size_type __pos = static_cast<size_type>(p - cbegin());
+    __replace_impl(__pos, 0, il.begin(), il.size());
+    return begin() + static_cast<difference_type>(__pos);
   }
 
   // ---- [string.erase] ----
-  constexpr basic_string& erase(size_type pos = 0, size_type n = npos) {
-    check_pos(pos, "std::basic_string::erase: pos > size()");
-    erase_impl(pos, clamp(pos, n));
+  constexpr basic_string& erase(size_type __pos = 0, size_type n = npos) {
+    __check_pos(__pos, "std::basic_string::erase: pos > size()");
+    __erase_impl(__pos, clamp(__pos, n));
     return *this;
   }
   constexpr iterator erase(const_iterator p) noexcept {
-    const size_type pos = static_cast<size_type>(p - cbegin());
-    ycxx::detail::precondition(pos < size_, "std::basic_string::erase: iterator not dereferenceable");
-    erase_impl(pos, 1);
-    return begin() + static_cast<difference_type>(pos);
+    const size_type __pos = static_cast<size_type>(p - cbegin());
+    __ycxx::__detail::__precondition(__pos < __size_, "std::basic_string::erase: iterator not dereferenceable");
+    __erase_impl(__pos, 1);
+    return begin() + static_cast<difference_type>(__pos);
   }
   constexpr iterator erase(const_iterator first, const_iterator last) noexcept {
-    const size_type pos = static_cast<size_type>(first - cbegin());
-    erase_impl(pos, static_cast<size_type>(last - first));
-    return begin() + static_cast<difference_type>(pos);
+    const size_type __pos = static_cast<size_type>(first - cbegin());
+    __erase_impl(__pos, static_cast<size_type>(last - first));
+    return begin() + static_cast<difference_type>(__pos);
   }
   constexpr void pop_back() noexcept {
-    ycxx::detail::precondition(size_ != 0, "std::basic_string::pop_back: empty string");
-    --size_;
-    traits::assign(ptr_[size_], charT());
+    __ycxx::__detail::__precondition(__size_ != 0, "std::basic_string::pop_back: empty string");
+    --__size_;
+    __traits::assign(__ptr_[__size_], __charT());
   }
 
   // ---- [string.replace] ----
-  constexpr basic_string& replace(size_type pos1, size_type n1, const basic_string& str) {
-    return replace(pos1, n1, str.ptr_, str.size_);
+  constexpr basic_string& replace(size_type __pos1, size_type __n1, const basic_string& str) {
+    return replace(__pos1, __n1, str.__ptr_, str.__size_);
   }
-  constexpr basic_string& replace(size_type pos1, size_type n1, const basic_string& str, size_type pos2,
-                                  size_type n2 = npos) {
-    return replace(pos1, n1, sv_type(str).substr(pos2, n2));
+  constexpr basic_string& replace(size_type __pos1, size_type __n1, const basic_string& str, size_type __pos2,
+                                  size_type __n2 = npos) {
+    return replace(__pos1, __n1, __sv_type(str).substr(__pos2, __n2));
   }
-  template <class T>
-    requires sv_like<T>
-  constexpr basic_string& replace(size_type pos1, size_type n1, const T& t) {
-    const sv_type sv = t;
-    return replace(pos1, n1, sv.data(), sv.size());
+  template <class _Tp>
+    requires __sv_like<_Tp>
+  constexpr basic_string& replace(size_type __pos1, size_type __n1, const _Tp& t) {
+    const __sv_type sv = t;
+    return replace(__pos1, __n1, sv.data(), sv.size());
   }
-  template <class T>
-    requires sv_like<T>
-  constexpr basic_string& replace(size_type pos1, size_type n1, const T& t, size_type pos2, size_type n2 = npos) {
-    const sv_type sv = t;
-    return replace(pos1, n1, sv.substr(pos2, n2));
+  template <class _Tp>
+    requires __sv_like<_Tp>
+  constexpr basic_string& replace(size_type __pos1, size_type __n1, const _Tp& t, size_type __pos2, size_type __n2 = npos) {
+    const __sv_type sv = t;
+    return replace(__pos1, __n1, sv.substr(__pos2, __n2));
   }
-  constexpr basic_string& replace(size_type pos1, size_type n1, const charT* s, size_type n2) {
-    ycxx::detail::precondition(s != nullptr || n2 == 0, "std::basic_string::replace: null pointer");
-    check_pos(pos1, "std::basic_string::replace: pos > size()");
-    return replace_impl(pos1, clamp(pos1, n1), s, n2);
+  constexpr basic_string& replace(size_type __pos1, size_type __n1, const __charT* s, size_type __n2) {
+    __ycxx::__detail::__precondition(s != nullptr || __n2 == 0, "std::basic_string::replace: null pointer");
+    __check_pos(__pos1, "std::basic_string::replace: pos > size()");
+    return __replace_impl(__pos1, clamp(__pos1, __n1), s, __n2);
   }
-  constexpr basic_string& replace(size_type pos, size_type n1, const charT* s) {
-    ycxx::detail::precondition(s != nullptr, "std::basic_string::replace: null pointer");
-    return replace(pos, n1, s, traits::length(s));
+  constexpr basic_string& replace(size_type __pos, size_type __n1, const __charT* s) {
+    __ycxx::__detail::__precondition(s != nullptr, "std::basic_string::replace: null pointer");
+    return replace(__pos, __n1, s, __traits::length(s));
   }
-  constexpr basic_string& replace(size_type pos1, size_type n1, size_type n2, charT c) {
-    check_pos(pos1, "std::basic_string::replace: pos > size()");
-    return replace_fill(pos1, clamp(pos1, n1), n2, c);
+  constexpr basic_string& replace(size_type __pos1, size_type __n1, size_type __n2, __charT c) {
+    __check_pos(__pos1, "std::basic_string::replace: pos > size()");
+    return __replace_fill(__pos1, clamp(__pos1, __n1), __n2, c);
   }
-  constexpr basic_string& replace(const_iterator i1, const_iterator i2, const basic_string& str) {
-    return replace(i1, i2, sv_type(str));
+  constexpr basic_string& replace(const_iterator __i1, const_iterator __i2, const basic_string& str) {
+    return replace(__i1, __i2, __sv_type(str));
   }
-  template <class T>
-    requires sv_like<T>
-  constexpr basic_string& replace(const_iterator i1, const_iterator i2, const T& t) {
-    const sv_type sv = t;
-    return replace_impl(static_cast<size_type>(i1 - cbegin()), static_cast<size_type>(i2 - i1), sv.data(), sv.size());
+  template <class _Tp>
+    requires __sv_like<_Tp>
+  constexpr basic_string& replace(const_iterator __i1, const_iterator __i2, const _Tp& t) {
+    const __sv_type sv = t;
+    return __replace_impl(static_cast<size_type>(__i1 - cbegin()), static_cast<size_type>(__i2 - __i1), sv.data(), sv.size());
   }
-  constexpr basic_string& replace(const_iterator i1, const_iterator i2, const charT* s, size_type n) {
-    return replace(i1, i2, sv_type(s, n));
+  constexpr basic_string& replace(const_iterator __i1, const_iterator __i2, const __charT* s, size_type n) {
+    return replace(__i1, __i2, __sv_type(s, n));
   }
-  constexpr basic_string& replace(const_iterator i1, const_iterator i2, const charT* s) {
-    return replace(i1, i2, sv_type(s));
+  constexpr basic_string& replace(const_iterator __i1, const_iterator __i2, const __charT* s) {
+    return replace(__i1, __i2, __sv_type(s));
   }
-  constexpr basic_string& replace(const_iterator i1, const_iterator i2, size_type n, charT c) {
-    return replace_fill(static_cast<size_type>(i1 - cbegin()), static_cast<size_type>(i2 - i1), n, c);
+  constexpr basic_string& replace(const_iterator __i1, const_iterator __i2, size_type n, __charT c) {
+    return __replace_fill(static_cast<size_type>(__i1 - cbegin()), static_cast<size_type>(__i2 - __i1), n, c);
   }
-  template <class InputIterator>
-    requires ycxx::detail::qualifies_as_input_iterator<InputIterator>
-  constexpr basic_string& replace(const_iterator i1, const_iterator i2, InputIterator j1, InputIterator j2) {
-    const size_type pos = static_cast<size_type>(i1 - cbegin());
-    const size_type n1 = static_cast<size_type>(i2 - i1);
-    if constexpr (char_ptr_iter<InputIterator>) {
-      return replace_impl(pos, n1, std::to_address(j1), static_cast<size_type>(j2 - j1));
+  template <class _InputIterator>
+    requires __ycxx::__detail::__qualifies_as_input_iterator<_InputIterator>
+  constexpr basic_string& replace(const_iterator __i1, const_iterator __i2, _InputIterator __j1, _InputIterator __j2) {
+    const size_type __pos = static_cast<size_type>(__i1 - cbegin());
+    const size_type __n1 = static_cast<size_type>(__i2 - __i1);
+    if constexpr (__char_ptr_iter<_InputIterator>) {
+      return __replace_impl(__pos, __n1, std::to_address(__j1), static_cast<size_type>(__j2 - __j1));
     } else {
-      const basic_string t = temp_of(j1, j2);
-      return replace_impl(pos, n1, t.ptr_, t.size_);
+      const basic_string t = __temp_of(__j1, __j2);
+      return __replace_impl(__pos, __n1, t.__ptr_, t.__size_);
     }
   }
-  template <ycxx::detail::container_compatible_range<charT> R>
-  constexpr basic_string& replace_with_range(const_iterator i1, const_iterator i2, R&& rg) {
-    const size_type pos = static_cast<size_type>(i1 - cbegin());
-    const size_type n1 = static_cast<size_type>(i2 - i1);
-    if constexpr (char_contiguous_range<R>) {
-      return replace_impl(pos, n1, ranges::data(rg), static_cast<size_type>(ranges::size(rg)));
+  template <__ycxx::__detail::__container_compatible_range<__charT> _Rp>
+  constexpr basic_string& replace_with_range(const_iterator __i1, const_iterator __i2, _Rp&& __rg) {
+    const size_type __pos = static_cast<size_type>(__i1 - cbegin());
+    const size_type __n1 = static_cast<size_type>(__i2 - __i1);
+    if constexpr (__char_contiguous_range<_Rp>) {
+      return __replace_impl(__pos, __n1, ranges::data(__rg), static_cast<size_type>(ranges::size(__rg)));
     } else {
-      const basic_string t = temp_of(ranges::begin(rg), ranges::end(rg));
-      return replace_impl(pos, n1, t.ptr_, t.size_);
+      const basic_string t = __temp_of(ranges::begin(__rg), ranges::end(__rg));
+      return __replace_impl(__pos, __n1, t.__ptr_, t.__size_);
     }
   }
-  constexpr basic_string& replace(const_iterator i1, const_iterator i2, initializer_list<charT> il) {
-    return replace(i1, i2, il.begin(), il.size());
+  constexpr basic_string& replace(const_iterator __i1, const_iterator __i2, initializer_list<__charT> il) {
+    return replace(__i1, __i2, il.begin(), il.size());
   }
 
   // ---- [string.copy], [string.swap] ----
-  constexpr size_type copy(charT* s, size_type n, size_type pos = 0) const {
-    return static_cast<size_type>(sv_type(*this).copy(s, n, pos));
+  constexpr size_type copy(__charT* s, size_type n, size_type __pos = 0) const {
+    return static_cast<size_type>(__sv_type(*this).copy(s, n, __pos));
   }
-  constexpr void swap(basic_string& s) noexcept(pocs || always_equal) {
+  constexpr void swap(basic_string& s) noexcept(__pocs || __always_equal) {
     if (this == __builtin_addressof(s))
       return;
-    if constexpr (pocs)
-      ::ycxx::detail::swap_adl::do_swap(alloc_, s.alloc_);
+    if constexpr (__pocs)
+      ::__ycxx::__detail::__swap_adl::__do_swap(__alloc_, s.__alloc_);
     else
-      ycxx::detail::precondition(always_equal || alloc_ == s.alloc_,
+      __ycxx::__detail::__precondition(__always_equal || __alloc_ == s.__alloc_,
                                  "std::basic_string::swap: unequal allocators that do not propagate");
-    const bool l1 = is_long(), l2 = s.is_long();
-    if (l1 && l2) {
-      charT* const p = ptr_;
-      const size_type c = cap_;
-      set_long(s.ptr_, s.cap_);
-      s.set_long(p, c);
-    } else if (!l1 && !l2) {
-      charT tmp[buf_len];
-      traits::copy(tmp, buf_, size_ + 1);
-      traits::copy(buf_, s.buf_, s.size_ + 1);
-      traits::copy(s.buf_, tmp, size_ + 1);
+    const bool __l1 = __is_long(), __l2 = s.__is_long();
+    if (__l1 && __l2) {
+      __charT* const p = __ptr_;
+      const size_type c = __cap_;
+      __set_long(s.__ptr_, s.__cap_);
+      s.__set_long(p, c);
+    } else if (!__l1 && !__l2) {
+      __charT __tmp[__buf_len];
+      __traits::copy(__tmp, __buf_, __size_ + 1);
+      __traits::copy(__buf_, s.__buf_, s.__size_ + 1);
+      __traits::copy(s.__buf_, __tmp, __size_ + 1);
     } else {
-      basic_string& lng = l1 ? *this : s;
-      basic_string& shrt = l1 ? s : *this;
-      charT tmp[buf_len];
-      traits::copy(tmp, shrt.buf_, shrt.size_ + 1);
-      shrt.set_long(lng.ptr_, lng.cap_);
-      lng.activate_buf();
-      traits::copy(lng.buf_, tmp, shrt.size_ + 1);
+      basic_string& __lng = __l1 ? *this : s;
+      basic_string& __shrt = __l1 ? s : *this;
+      __charT __tmp[__buf_len];
+      __traits::copy(__tmp, __shrt.__buf_, __shrt.__size_ + 1);
+      __shrt.__set_long(__lng.__ptr_, __lng.__cap_);
+      __lng.__activate_buf();
+      __traits::copy(__lng.__buf_, __tmp, __shrt.__size_ + 1);
     }
-    const size_type n = size_;
-    size_ = s.size_;
-    s.size_ = n;
+    const size_type n = __size_;
+    __size_ = s.__size_;
+    s.__size_ = n;
   }
 
   // ---- [string.accessors] ----
-  constexpr const charT* c_str() const noexcept { return ptr_; }
-  constexpr const charT* data() const noexcept { return ptr_; }
-  constexpr charT* data() noexcept { return ptr_; }
-  constexpr operator basic_string_view<charT, traits>() const noexcept { return sv_type(ptr_, size_); }
-  constexpr allocator_type get_allocator() const noexcept { return alloc_; }
+  constexpr const __charT* c_str() const noexcept { return __ptr_; }
+  constexpr const __charT* data() const noexcept { return __ptr_; }
+  constexpr __charT* data() noexcept { return __ptr_; }
+  constexpr operator basic_string_view<__charT, __traits>() const noexcept { return __sv_type(__ptr_, __size_); }
+  constexpr allocator_type get_allocator() const noexcept { return __alloc_; }
 
   // ---- [string.find] ----
 private:
-  static constexpr size_type to_npos(size_t r) noexcept { return r == sv_type::npos ? npos : static_cast<size_type>(r); }
+  static constexpr size_type __to_npos(size_t r) noexcept { return r == __sv_type::npos ? npos : static_cast<size_type>(r); }
 
 public:
-  template <class T>
-    requires sv_like<T>
-  constexpr size_type find(const T& t, size_type pos = 0) const noexcept(is_nothrow_convertible_v<const T&, sv_type>) {
-    const sv_type sv = t;
-    return to_npos(sv_type(*this).find(sv, pos));
+  template <class _Tp>
+    requires __sv_like<_Tp>
+  constexpr size_type find(const _Tp& t, size_type __pos = 0) const noexcept(is_nothrow_convertible_v<const _Tp&, __sv_type>) {
+    const __sv_type sv = t;
+    return __to_npos(__sv_type(*this).find(sv, __pos));
   }
-  constexpr size_type find(const basic_string& str, size_type pos = 0) const noexcept {
-    return to_npos(sv_type(*this).find(sv_type(str), pos));
+  constexpr size_type find(const basic_string& str, size_type __pos = 0) const noexcept {
+    return __to_npos(__sv_type(*this).find(__sv_type(str), __pos));
   }
-  constexpr size_type find(const charT* s, size_type pos, size_type n) const {
-    return to_npos(sv_type(*this).find(sv_type(s, n), pos));
+  constexpr size_type find(const __charT* s, size_type __pos, size_type n) const {
+    return __to_npos(__sv_type(*this).find(__sv_type(s, n), __pos));
   }
-  constexpr size_type find(const charT* s, size_type pos = 0) const {
-    return to_npos(sv_type(*this).find(sv_type(s), pos));
+  constexpr size_type find(const __charT* s, size_type __pos = 0) const {
+    return __to_npos(__sv_type(*this).find(__sv_type(s), __pos));
   }
-  constexpr size_type find(charT c, size_type pos = 0) const noexcept { return to_npos(sv_type(*this).find(c, pos)); }
+  constexpr size_type find(__charT c, size_type __pos = 0) const noexcept { return __to_npos(__sv_type(*this).find(c, __pos)); }
 
-  template <class T>
-    requires sv_like<T>
-  constexpr size_type rfind(const T& t, size_type pos = npos) const noexcept(is_nothrow_convertible_v<const T&, sv_type>) {
-    const sv_type sv = t;
-    return to_npos(sv_type(*this).rfind(sv, pos));
+  template <class _Tp>
+    requires __sv_like<_Tp>
+  constexpr size_type rfind(const _Tp& t, size_type __pos = npos) const noexcept(is_nothrow_convertible_v<const _Tp&, __sv_type>) {
+    const __sv_type sv = t;
+    return __to_npos(__sv_type(*this).rfind(sv, __pos));
   }
-  constexpr size_type rfind(const basic_string& str, size_type pos = npos) const noexcept {
-    return to_npos(sv_type(*this).rfind(sv_type(str), pos));
+  constexpr size_type rfind(const basic_string& str, size_type __pos = npos) const noexcept {
+    return __to_npos(__sv_type(*this).rfind(__sv_type(str), __pos));
   }
-  constexpr size_type rfind(const charT* s, size_type pos, size_type n) const {
-    return to_npos(sv_type(*this).rfind(sv_type(s, n), pos));
+  constexpr size_type rfind(const __charT* s, size_type __pos, size_type n) const {
+    return __to_npos(__sv_type(*this).rfind(__sv_type(s, n), __pos));
   }
-  constexpr size_type rfind(const charT* s, size_type pos = npos) const {
-    return to_npos(sv_type(*this).rfind(sv_type(s), pos));
+  constexpr size_type rfind(const __charT* s, size_type __pos = npos) const {
+    return __to_npos(__sv_type(*this).rfind(__sv_type(s), __pos));
   }
-  constexpr size_type rfind(charT c, size_type pos = npos) const noexcept {
-    return to_npos(sv_type(*this).rfind(c, pos));
-  }
-
-  template <class T>
-    requires sv_like<T>
-  constexpr size_type find_first_of(const T& t, size_type pos = 0) const
-      noexcept(is_nothrow_convertible_v<const T&, sv_type>) {
-    const sv_type sv = t;
-    return to_npos(sv_type(*this).find_first_of(sv, pos));
-  }
-  constexpr size_type find_first_of(const basic_string& str, size_type pos = 0) const noexcept {
-    return to_npos(sv_type(*this).find_first_of(sv_type(str), pos));
-  }
-  constexpr size_type find_first_of(const charT* s, size_type pos, size_type n) const {
-    return to_npos(sv_type(*this).find_first_of(sv_type(s, n), pos));
-  }
-  constexpr size_type find_first_of(const charT* s, size_type pos = 0) const {
-    return to_npos(sv_type(*this).find_first_of(sv_type(s), pos));
-  }
-  constexpr size_type find_first_of(charT c, size_type pos = 0) const noexcept {
-    return to_npos(sv_type(*this).find_first_of(c, pos));
+  constexpr size_type rfind(__charT c, size_type __pos = npos) const noexcept {
+    return __to_npos(__sv_type(*this).rfind(c, __pos));
   }
 
-  template <class T>
-    requires sv_like<T>
-  constexpr size_type find_last_of(const T& t, size_type pos = npos) const
-      noexcept(is_nothrow_convertible_v<const T&, sv_type>) {
-    const sv_type sv = t;
-    return to_npos(sv_type(*this).find_last_of(sv, pos));
+  template <class _Tp>
+    requires __sv_like<_Tp>
+  constexpr size_type find_first_of(const _Tp& t, size_type __pos = 0) const
+      noexcept(is_nothrow_convertible_v<const _Tp&, __sv_type>) {
+    const __sv_type sv = t;
+    return __to_npos(__sv_type(*this).find_first_of(sv, __pos));
   }
-  constexpr size_type find_last_of(const basic_string& str, size_type pos = npos) const noexcept {
-    return to_npos(sv_type(*this).find_last_of(sv_type(str), pos));
+  constexpr size_type find_first_of(const basic_string& str, size_type __pos = 0) const noexcept {
+    return __to_npos(__sv_type(*this).find_first_of(__sv_type(str), __pos));
   }
-  constexpr size_type find_last_of(const charT* s, size_type pos, size_type n) const {
-    return to_npos(sv_type(*this).find_last_of(sv_type(s, n), pos));
+  constexpr size_type find_first_of(const __charT* s, size_type __pos, size_type n) const {
+    return __to_npos(__sv_type(*this).find_first_of(__sv_type(s, n), __pos));
   }
-  constexpr size_type find_last_of(const charT* s, size_type pos = npos) const {
-    return to_npos(sv_type(*this).find_last_of(sv_type(s), pos));
+  constexpr size_type find_first_of(const __charT* s, size_type __pos = 0) const {
+    return __to_npos(__sv_type(*this).find_first_of(__sv_type(s), __pos));
   }
-  constexpr size_type find_last_of(charT c, size_type pos = npos) const noexcept {
-    return to_npos(sv_type(*this).find_last_of(c, pos));
-  }
-
-  template <class T>
-    requires sv_like<T>
-  constexpr size_type find_first_not_of(const T& t, size_type pos = 0) const
-      noexcept(is_nothrow_convertible_v<const T&, sv_type>) {
-    const sv_type sv = t;
-    return to_npos(sv_type(*this).find_first_not_of(sv, pos));
-  }
-  constexpr size_type find_first_not_of(const basic_string& str, size_type pos = 0) const noexcept {
-    return to_npos(sv_type(*this).find_first_not_of(sv_type(str), pos));
-  }
-  constexpr size_type find_first_not_of(const charT* s, size_type pos, size_type n) const {
-    return to_npos(sv_type(*this).find_first_not_of(sv_type(s, n), pos));
-  }
-  constexpr size_type find_first_not_of(const charT* s, size_type pos = 0) const {
-    return to_npos(sv_type(*this).find_first_not_of(sv_type(s), pos));
-  }
-  constexpr size_type find_first_not_of(charT c, size_type pos = 0) const noexcept {
-    return to_npos(sv_type(*this).find_first_not_of(c, pos));
+  constexpr size_type find_first_of(__charT c, size_type __pos = 0) const noexcept {
+    return __to_npos(__sv_type(*this).find_first_of(c, __pos));
   }
 
-  template <class T>
-    requires sv_like<T>
-  constexpr size_type find_last_not_of(const T& t, size_type pos = npos) const
-      noexcept(is_nothrow_convertible_v<const T&, sv_type>) {
-    const sv_type sv = t;
-    return to_npos(sv_type(*this).find_last_not_of(sv, pos));
+  template <class _Tp>
+    requires __sv_like<_Tp>
+  constexpr size_type find_last_of(const _Tp& t, size_type __pos = npos) const
+      noexcept(is_nothrow_convertible_v<const _Tp&, __sv_type>) {
+    const __sv_type sv = t;
+    return __to_npos(__sv_type(*this).find_last_of(sv, __pos));
   }
-  constexpr size_type find_last_not_of(const basic_string& str, size_type pos = npos) const noexcept {
-    return to_npos(sv_type(*this).find_last_not_of(sv_type(str), pos));
+  constexpr size_type find_last_of(const basic_string& str, size_type __pos = npos) const noexcept {
+    return __to_npos(__sv_type(*this).find_last_of(__sv_type(str), __pos));
   }
-  constexpr size_type find_last_not_of(const charT* s, size_type pos, size_type n) const {
-    return to_npos(sv_type(*this).find_last_not_of(sv_type(s, n), pos));
+  constexpr size_type find_last_of(const __charT* s, size_type __pos, size_type n) const {
+    return __to_npos(__sv_type(*this).find_last_of(__sv_type(s, n), __pos));
   }
-  constexpr size_type find_last_not_of(const charT* s, size_type pos = npos) const {
-    return to_npos(sv_type(*this).find_last_not_of(sv_type(s), pos));
+  constexpr size_type find_last_of(const __charT* s, size_type __pos = npos) const {
+    return __to_npos(__sv_type(*this).find_last_of(__sv_type(s), __pos));
   }
-  constexpr size_type find_last_not_of(charT c, size_type pos = npos) const noexcept {
-    return to_npos(sv_type(*this).find_last_not_of(c, pos));
+  constexpr size_type find_last_of(__charT c, size_type __pos = npos) const noexcept {
+    return __to_npos(__sv_type(*this).find_last_of(c, __pos));
+  }
+
+  template <class _Tp>
+    requires __sv_like<_Tp>
+  constexpr size_type find_first_not_of(const _Tp& t, size_type __pos = 0) const
+      noexcept(is_nothrow_convertible_v<const _Tp&, __sv_type>) {
+    const __sv_type sv = t;
+    return __to_npos(__sv_type(*this).find_first_not_of(sv, __pos));
+  }
+  constexpr size_type find_first_not_of(const basic_string& str, size_type __pos = 0) const noexcept {
+    return __to_npos(__sv_type(*this).find_first_not_of(__sv_type(str), __pos));
+  }
+  constexpr size_type find_first_not_of(const __charT* s, size_type __pos, size_type n) const {
+    return __to_npos(__sv_type(*this).find_first_not_of(__sv_type(s, n), __pos));
+  }
+  constexpr size_type find_first_not_of(const __charT* s, size_type __pos = 0) const {
+    return __to_npos(__sv_type(*this).find_first_not_of(__sv_type(s), __pos));
+  }
+  constexpr size_type find_first_not_of(__charT c, size_type __pos = 0) const noexcept {
+    return __to_npos(__sv_type(*this).find_first_not_of(c, __pos));
+  }
+
+  template <class _Tp>
+    requires __sv_like<_Tp>
+  constexpr size_type find_last_not_of(const _Tp& t, size_type __pos = npos) const
+      noexcept(is_nothrow_convertible_v<const _Tp&, __sv_type>) {
+    const __sv_type sv = t;
+    return __to_npos(__sv_type(*this).find_last_not_of(sv, __pos));
+  }
+  constexpr size_type find_last_not_of(const basic_string& str, size_type __pos = npos) const noexcept {
+    return __to_npos(__sv_type(*this).find_last_not_of(__sv_type(str), __pos));
+  }
+  constexpr size_type find_last_not_of(const __charT* s, size_type __pos, size_type n) const {
+    return __to_npos(__sv_type(*this).find_last_not_of(__sv_type(s, n), __pos));
+  }
+  constexpr size_type find_last_not_of(const __charT* s, size_type __pos = npos) const {
+    return __to_npos(__sv_type(*this).find_last_not_of(__sv_type(s), __pos));
+  }
+  constexpr size_type find_last_not_of(__charT c, size_type __pos = npos) const noexcept {
+    return __to_npos(__sv_type(*this).find_last_not_of(c, __pos));
   }
 
   // ---- [string.substr] ----
-  constexpr basic_string substr(size_type pos = 0, size_type n = npos) const& { return basic_string(*this, pos, n); }
-  constexpr basic_string substr(size_type pos = 0, size_type n = npos) && {
-    return basic_string(static_cast<basic_string&&>(*this), pos, n);
+  constexpr basic_string substr(size_type __pos = 0, size_type n = npos) const& { return basic_string(*this, __pos, n); }
+  constexpr basic_string substr(size_type __pos = 0, size_type n = npos) && {
+    return basic_string(static_cast<basic_string&&>(*this), __pos, n);
   }
-  constexpr basic_string_view<charT, traits> subview(size_type pos = 0, size_type n = npos) const {
-    return sv_type(*this).subview(pos, n);
+  constexpr basic_string_view<__charT, __traits> subview(size_type __pos = 0, size_type n = npos) const {
+    return __sv_type(*this).subview(__pos, n);
   }
 
   // ---- [string.compare] ----
-  template <class T>
-    requires sv_like<T>
-  constexpr int compare(const T& t) const noexcept(is_nothrow_convertible_v<const T&, sv_type>) {
-    return sv_type(*this).compare(t);
+  template <class _Tp>
+    requires __sv_like<_Tp>
+  constexpr int compare(const _Tp& t) const noexcept(is_nothrow_convertible_v<const _Tp&, __sv_type>) {
+    return __sv_type(*this).compare(t);
   }
-  template <class T>
-    requires sv_like<T>
-  constexpr int compare(size_type pos1, size_type n1, const T& t) const {
-    return sv_type(*this).substr(pos1, n1).compare(t);
+  template <class _Tp>
+    requires __sv_like<_Tp>
+  constexpr int compare(size_type __pos1, size_type __n1, const _Tp& t) const {
+    return __sv_type(*this).substr(__pos1, __n1).compare(t);
   }
-  template <class T>
-    requires sv_like<T>
-  constexpr int compare(size_type pos1, size_type n1, const T& t, size_type pos2, size_type n2 = npos) const {
-    const sv_type s = *this, sv = t;
-    return s.substr(pos1, n1).compare(sv.substr(pos2, n2));
+  template <class _Tp>
+    requires __sv_like<_Tp>
+  constexpr int compare(size_type __pos1, size_type __n1, const _Tp& t, size_type __pos2, size_type __n2 = npos) const {
+    const __sv_type s = *this, sv = t;
+    return s.substr(__pos1, __n1).compare(sv.substr(__pos2, __n2));
   }
-  constexpr int compare(const basic_string& str) const noexcept { return sv_type(*this).compare(sv_type(str)); }
-  constexpr int compare(size_type pos1, size_type n1, const basic_string& str) const {
-    return sv_type(*this).substr(pos1, n1).compare(sv_type(str));
+  constexpr int compare(const basic_string& str) const noexcept { return __sv_type(*this).compare(__sv_type(str)); }
+  constexpr int compare(size_type __pos1, size_type __n1, const basic_string& str) const {
+    return __sv_type(*this).substr(__pos1, __n1).compare(__sv_type(str));
   }
-  constexpr int compare(size_type pos1, size_type n1, const basic_string& str, size_type pos2,
-                        size_type n2 = npos) const {
-    return sv_type(*this).substr(pos1, n1).compare(sv_type(str).substr(pos2, n2));
+  constexpr int compare(size_type __pos1, size_type __n1, const basic_string& str, size_type __pos2,
+                        size_type __n2 = npos) const {
+    return __sv_type(*this).substr(__pos1, __n1).compare(__sv_type(str).substr(__pos2, __n2));
   }
-  constexpr int compare(const charT* s) const { return sv_type(*this).compare(sv_type(s)); }
-  constexpr int compare(size_type pos1, size_type n1, const charT* s) const {
-    return sv_type(*this).substr(pos1, n1).compare(sv_type(s));
+  constexpr int compare(const __charT* s) const { return __sv_type(*this).compare(__sv_type(s)); }
+  constexpr int compare(size_type __pos1, size_type __n1, const __charT* s) const {
+    return __sv_type(*this).substr(__pos1, __n1).compare(__sv_type(s));
   }
-  constexpr int compare(size_type pos1, size_type n1, const charT* s, size_type n2) const {
-    return sv_type(*this).substr(pos1, n1).compare(sv_type(s, n2));
+  constexpr int compare(size_type __pos1, size_type __n1, const __charT* s, size_type __n2) const {
+    return __sv_type(*this).substr(__pos1, __n1).compare(__sv_type(s, __n2));
   }
 
   // ---- [string.starts.with], [string.ends.with], [string.contains] ----
-  constexpr bool starts_with(basic_string_view<charT, traits> x) const noexcept { return sv_type(*this).starts_with(x); }
-  constexpr bool starts_with(charT x) const noexcept { return sv_type(*this).starts_with(x); }
-  constexpr bool starts_with(const charT* x) const { return sv_type(*this).starts_with(x); }
-  constexpr bool ends_with(basic_string_view<charT, traits> x) const noexcept { return sv_type(*this).ends_with(x); }
-  constexpr bool ends_with(charT x) const noexcept { return sv_type(*this).ends_with(x); }
-  constexpr bool ends_with(const charT* x) const { return sv_type(*this).ends_with(x); }
-  constexpr bool contains(basic_string_view<charT, traits> x) const noexcept { return sv_type(*this).contains(x); }
-  constexpr bool contains(charT x) const noexcept { return sv_type(*this).contains(x); }
-  constexpr bool contains(const charT* x) const { return sv_type(*this).contains(x); }
+  constexpr bool starts_with(basic_string_view<__charT, __traits> __x) const noexcept { return __sv_type(*this).starts_with(__x); }
+  constexpr bool starts_with(__charT __x) const noexcept { return __sv_type(*this).starts_with(__x); }
+  constexpr bool starts_with(const __charT* __x) const { return __sv_type(*this).starts_with(__x); }
+  constexpr bool ends_with(basic_string_view<__charT, __traits> __x) const noexcept { return __sv_type(*this).ends_with(__x); }
+  constexpr bool ends_with(__charT __x) const noexcept { return __sv_type(*this).ends_with(__x); }
+  constexpr bool ends_with(const __charT* __x) const { return __sv_type(*this).ends_with(__x); }
+  constexpr bool contains(basic_string_view<__charT, __traits> __x) const noexcept { return __sv_type(*this).contains(__x); }
+  constexpr bool contains(__charT __x) const noexcept { return __sv_type(*this).contains(__x); }
+  constexpr bool contains(const __charT* __x) const { return __sv_type(*this).contains(__x); }
 };
 
 // ---- deduction guides ([string.cons]) ----
-template <class InputIterator, class Allocator = allocator<typename iterator_traits<InputIterator>::value_type>>
-  requires ycxx::detail::qualifies_as_input_iterator<InputIterator> && ycxx::detail::qualifies_as_allocator<Allocator>
-basic_string(InputIterator, InputIterator, Allocator = Allocator())
-    -> basic_string<typename iterator_traits<InputIterator>::value_type,
-                    char_traits<typename iterator_traits<InputIterator>::value_type>, Allocator>;
-template <ranges::input_range R, class Allocator = allocator<ranges::range_value_t<R>>>
-  requires ycxx::detail::qualifies_as_allocator<Allocator>
-basic_string(from_range_t, R&&, Allocator = Allocator())
-    -> basic_string<ranges::range_value_t<R>, char_traits<ranges::range_value_t<R>>, Allocator>;
-template <class charT, class traits, class Allocator = allocator<charT>>
-  requires ycxx::detail::qualifies_as_allocator<Allocator>
-explicit basic_string(basic_string_view<charT, traits>, const Allocator& = Allocator())
-    -> basic_string<charT, traits, Allocator>;
-template <class charT, class traits, class Allocator = allocator<charT>>
-  requires ycxx::detail::qualifies_as_allocator<Allocator>
-basic_string(basic_string_view<charT, traits>, typename basic_string<charT, traits, Allocator>::size_type,
-             typename basic_string<charT, traits, Allocator>::size_type, const Allocator& = Allocator())
-    -> basic_string<charT, traits, Allocator>;
+template <class _InputIterator, class _Allocator = allocator<typename iterator_traits<_InputIterator>::value_type>>
+  requires __ycxx::__detail::__qualifies_as_input_iterator<_InputIterator> && __ycxx::__detail::__qualifies_as_allocator<_Allocator>
+basic_string(_InputIterator, _InputIterator, _Allocator = _Allocator())
+    -> basic_string<typename iterator_traits<_InputIterator>::value_type,
+                    char_traits<typename iterator_traits<_InputIterator>::value_type>, _Allocator>;
+template <ranges::input_range _Rp, class _Allocator = allocator<ranges::range_value_t<_Rp>>>
+  requires __ycxx::__detail::__qualifies_as_allocator<_Allocator>
+basic_string(from_range_t, _Rp&&, _Allocator = _Allocator())
+    -> basic_string<ranges::range_value_t<_Rp>, char_traits<ranges::range_value_t<_Rp>>, _Allocator>;
+template <class __charT, class __traits, class _Allocator = allocator<__charT>>
+  requires __ycxx::__detail::__qualifies_as_allocator<_Allocator>
+explicit basic_string(basic_string_view<__charT, __traits>, const _Allocator& = _Allocator())
+    -> basic_string<__charT, __traits, _Allocator>;
+template <class __charT, class __traits, class _Allocator = allocator<__charT>>
+  requires __ycxx::__detail::__qualifies_as_allocator<_Allocator>
+basic_string(basic_string_view<__charT, __traits>, typename basic_string<__charT, __traits, _Allocator>::size_type,
+             typename basic_string<__charT, __traits, _Allocator>::size_type, const _Allocator& = _Allocator())
+    -> basic_string<__charT, __traits, _Allocator>;
 
 } // namespace std
 
-namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
 
 // lhs + rhs as a new string with allocator a ([string.op.plus]: a copy of one operand, then an
 // append or insert), sized once.
-template <class S>
-constexpr S string_concat(const typename S::allocator_type& a, const typename S::value_type* l,
-                          typename S::size_type nl, const typename S::value_type* r, typename S::size_type nr) {
-  S s(a);
-  if (nr > s.max_size() || nl > s.max_size() - nr)
-    ::ycxx::detail::throw_length_error("std::operator+: length exceeds max_size()");
-  s.reserve(nl + nr);
-  s.append(l, nl);
-  s.append(r, nr);
+template <class _Sp>
+constexpr _Sp __string_concat(const typename _Sp::allocator_type& a, const typename _Sp::value_type* __l,
+                          typename _Sp::size_type __nl, const typename _Sp::value_type* r, typename _Sp::size_type __nr) {
+  _Sp s(a);
+  if (__nr > s.max_size() || __nl > s.max_size() - __nr)
+    ::__ycxx::__detail::__throw_length_error("std::operator+: length exceeds max_size()");
+  s.reserve(__nl + __nr);
+  s.append(__l, __nl);
+  s.append(r, __nr);
   return s;
 }
-template <class S>
-constexpr typename S::allocator_type copy_alloc(const S& s) {
-  return std::allocator_traits<typename S::allocator_type>::select_on_container_copy_construction(s.get_allocator());
+template <class _Sp>
+constexpr typename _Sp::allocator_type __copy_alloc(const _Sp& s) {
+  return std::allocator_traits<typename _Sp::allocator_type>::select_on_container_copy_construction(s.get_allocator());
 }
 
-}} // namespace ycxx::detail
+}} // namespace __ycxx::__detail
 
-namespace [[gnu::visibility("hidden")]] std {
+namespace [[__gnu__::__visibility__("hidden")]] std {
 
 // ---- [string.op.plus] ----
-template <class charT, class traits, class Allocator>
-constexpr basic_string<charT, traits, Allocator> operator+(const basic_string<charT, traits, Allocator>& lhs,
-                                                           const basic_string<charT, traits, Allocator>& rhs) {
-  using S = basic_string<charT, traits, Allocator>;
-  return ycxx::detail::string_concat<S>(ycxx::detail::copy_alloc(lhs), lhs.data(), lhs.size(), rhs.data(), rhs.size());
+template <class __charT, class __traits, class _Allocator>
+constexpr basic_string<__charT, __traits, _Allocator> operator+(const basic_string<__charT, __traits, _Allocator>& __lhs,
+                                                           const basic_string<__charT, __traits, _Allocator>& __rhs) {
+  using _Sp = basic_string<__charT, __traits, _Allocator>;
+  return __ycxx::__detail::__string_concat<_Sp>(__ycxx::__detail::__copy_alloc(__lhs), __lhs.data(), __lhs.size(), __rhs.data(), __rhs.size());
 }
-template <class charT, class traits, class Allocator>
-constexpr basic_string<charT, traits, Allocator> operator+(basic_string<charT, traits, Allocator>&& lhs,
-                                                           const basic_string<charT, traits, Allocator>& rhs) {
-  lhs.append(rhs);
-  return static_cast<basic_string<charT, traits, Allocator>&&>(lhs);
+template <class __charT, class __traits, class _Allocator>
+constexpr basic_string<__charT, __traits, _Allocator> operator+(basic_string<__charT, __traits, _Allocator>&& __lhs,
+                                                           const basic_string<__charT, __traits, _Allocator>& __rhs) {
+  __lhs.append(__rhs);
+  return static_cast<basic_string<__charT, __traits, _Allocator>&&>(__lhs);
 }
-template <class charT, class traits, class Allocator>
-constexpr basic_string<charT, traits, Allocator> operator+(const basic_string<charT, traits, Allocator>& lhs,
-                                                           basic_string<charT, traits, Allocator>&& rhs) {
-  rhs.insert(0, lhs);
-  return static_cast<basic_string<charT, traits, Allocator>&&>(rhs);
+template <class __charT, class __traits, class _Allocator>
+constexpr basic_string<__charT, __traits, _Allocator> operator+(const basic_string<__charT, __traits, _Allocator>& __lhs,
+                                                           basic_string<__charT, __traits, _Allocator>&& __rhs) {
+  __rhs.insert(0, __lhs);
+  return static_cast<basic_string<__charT, __traits, _Allocator>&&>(__rhs);
 }
-template <class charT, class traits, class Allocator>
-constexpr basic_string<charT, traits, Allocator> operator+(basic_string<charT, traits, Allocator>&& lhs,
-                                                           basic_string<charT, traits, Allocator>&& rhs) {
+template <class __charT, class __traits, class _Allocator>
+constexpr basic_string<__charT, __traits, _Allocator> operator+(basic_string<__charT, __traits, _Allocator>&& __lhs,
+                                                           basic_string<__charT, __traits, _Allocator>&& __rhs) {
   // Note 1: with equal allocators either operand's storage may be reused; take rhs's when only
   // it has room for the result.
-  if (lhs.capacity() - lhs.size() < rhs.size() && rhs.capacity() - rhs.size() >= lhs.size() &&
-      lhs.get_allocator() == rhs.get_allocator()) {
-    rhs.insert(0, lhs);
-    return static_cast<basic_string<charT, traits, Allocator>&&>(rhs);
+  if (__lhs.capacity() - __lhs.size() < __rhs.size() && __rhs.capacity() - __rhs.size() >= __lhs.size() &&
+      __lhs.get_allocator() == __rhs.get_allocator()) {
+    __rhs.insert(0, __lhs);
+    return static_cast<basic_string<__charT, __traits, _Allocator>&&>(__rhs);
   }
-  lhs.append(rhs);
-  return static_cast<basic_string<charT, traits, Allocator>&&>(lhs);
+  __lhs.append(__rhs);
+  return static_cast<basic_string<__charT, __traits, _Allocator>&&>(__lhs);
 }
-template <class charT, class traits, class Allocator>
-constexpr basic_string<charT, traits, Allocator> operator+(const charT* lhs,
-                                                           const basic_string<charT, traits, Allocator>& rhs) {
-  using S = basic_string<charT, traits, Allocator>;
-  return ycxx::detail::string_concat<S>(ycxx::detail::copy_alloc(rhs), lhs,
-                                        static_cast<typename S::size_type>(traits::length(lhs)), rhs.data(), rhs.size());
+template <class __charT, class __traits, class _Allocator>
+constexpr basic_string<__charT, __traits, _Allocator> operator+(const __charT* __lhs,
+                                                           const basic_string<__charT, __traits, _Allocator>& __rhs) {
+  using _Sp = basic_string<__charT, __traits, _Allocator>;
+  return __ycxx::__detail::__string_concat<_Sp>(__ycxx::__detail::__copy_alloc(__rhs), __lhs,
+                                        static_cast<typename _Sp::size_type>(__traits::length(__lhs)), __rhs.data(), __rhs.size());
 }
-template <class charT, class traits, class Allocator>
-constexpr basic_string<charT, traits, Allocator> operator+(const charT* lhs, basic_string<charT, traits, Allocator>&& rhs) {
-  rhs.insert(0, lhs);
-  return static_cast<basic_string<charT, traits, Allocator>&&>(rhs);
+template <class __charT, class __traits, class _Allocator>
+constexpr basic_string<__charT, __traits, _Allocator> operator+(const __charT* __lhs, basic_string<__charT, __traits, _Allocator>&& __rhs) {
+  __rhs.insert(0, __lhs);
+  return static_cast<basic_string<__charT, __traits, _Allocator>&&>(__rhs);
 }
-template <class charT, class traits, class Allocator>
-constexpr basic_string<charT, traits, Allocator> operator+(charT lhs, const basic_string<charT, traits, Allocator>& rhs) {
-  using S = basic_string<charT, traits, Allocator>;
-  return ycxx::detail::string_concat<S>(ycxx::detail::copy_alloc(rhs), __builtin_addressof(lhs), 1, rhs.data(), rhs.size());
+template <class __charT, class __traits, class _Allocator>
+constexpr basic_string<__charT, __traits, _Allocator> operator+(__charT __lhs, const basic_string<__charT, __traits, _Allocator>& __rhs) {
+  using _Sp = basic_string<__charT, __traits, _Allocator>;
+  return __ycxx::__detail::__string_concat<_Sp>(__ycxx::__detail::__copy_alloc(__rhs), __builtin_addressof(__lhs), 1, __rhs.data(), __rhs.size());
 }
-template <class charT, class traits, class Allocator>
-constexpr basic_string<charT, traits, Allocator> operator+(charT lhs, basic_string<charT, traits, Allocator>&& rhs) {
-  rhs.insert(rhs.begin(), lhs);
-  return static_cast<basic_string<charT, traits, Allocator>&&>(rhs);
+template <class __charT, class __traits, class _Allocator>
+constexpr basic_string<__charT, __traits, _Allocator> operator+(__charT __lhs, basic_string<__charT, __traits, _Allocator>&& __rhs) {
+  __rhs.insert(__rhs.begin(), __lhs);
+  return static_cast<basic_string<__charT, __traits, _Allocator>&&>(__rhs);
 }
-template <class charT, class traits, class Allocator>
-constexpr basic_string<charT, traits, Allocator> operator+(const basic_string<charT, traits, Allocator>& lhs,
-                                                           const charT* rhs) {
-  using S = basic_string<charT, traits, Allocator>;
-  return ycxx::detail::string_concat<S>(ycxx::detail::copy_alloc(lhs), lhs.data(), lhs.size(), rhs,
-                                        static_cast<typename S::size_type>(traits::length(rhs)));
+template <class __charT, class __traits, class _Allocator>
+constexpr basic_string<__charT, __traits, _Allocator> operator+(const basic_string<__charT, __traits, _Allocator>& __lhs,
+                                                           const __charT* __rhs) {
+  using _Sp = basic_string<__charT, __traits, _Allocator>;
+  return __ycxx::__detail::__string_concat<_Sp>(__ycxx::__detail::__copy_alloc(__lhs), __lhs.data(), __lhs.size(), __rhs,
+                                        static_cast<typename _Sp::size_type>(__traits::length(__rhs)));
 }
-template <class charT, class traits, class Allocator>
-constexpr basic_string<charT, traits, Allocator> operator+(basic_string<charT, traits, Allocator>&& lhs, const charT* rhs) {
-  lhs.append(rhs);
-  return static_cast<basic_string<charT, traits, Allocator>&&>(lhs);
+template <class __charT, class __traits, class _Allocator>
+constexpr basic_string<__charT, __traits, _Allocator> operator+(basic_string<__charT, __traits, _Allocator>&& __lhs, const __charT* __rhs) {
+  __lhs.append(__rhs);
+  return static_cast<basic_string<__charT, __traits, _Allocator>&&>(__lhs);
 }
-template <class charT, class traits, class Allocator>
-constexpr basic_string<charT, traits, Allocator> operator+(const basic_string<charT, traits, Allocator>& lhs, charT rhs) {
-  using S = basic_string<charT, traits, Allocator>;
-  return ycxx::detail::string_concat<S>(ycxx::detail::copy_alloc(lhs), lhs.data(), lhs.size(), __builtin_addressof(rhs), 1);
+template <class __charT, class __traits, class _Allocator>
+constexpr basic_string<__charT, __traits, _Allocator> operator+(const basic_string<__charT, __traits, _Allocator>& __lhs, __charT __rhs) {
+  using _Sp = basic_string<__charT, __traits, _Allocator>;
+  return __ycxx::__detail::__string_concat<_Sp>(__ycxx::__detail::__copy_alloc(__lhs), __lhs.data(), __lhs.size(), __builtin_addressof(__rhs), 1);
 }
-template <class charT, class traits, class Allocator>
-constexpr basic_string<charT, traits, Allocator> operator+(basic_string<charT, traits, Allocator>&& lhs, charT rhs) {
-  lhs.push_back(rhs);
-  return static_cast<basic_string<charT, traits, Allocator>&&>(lhs);
+template <class __charT, class __traits, class _Allocator>
+constexpr basic_string<__charT, __traits, _Allocator> operator+(basic_string<__charT, __traits, _Allocator>&& __lhs, __charT __rhs) {
+  __lhs.push_back(__rhs);
+  return static_cast<basic_string<__charT, __traits, _Allocator>&&>(__lhs);
 }
-template <class charT, class traits, class Allocator>
-constexpr basic_string<charT, traits, Allocator> operator+(const basic_string<charT, traits, Allocator>& lhs,
-                                                           type_identity_t<basic_string_view<charT, traits>> rhs) {
-  using S = basic_string<charT, traits, Allocator>;
-  return ycxx::detail::string_concat<S>(ycxx::detail::copy_alloc(lhs), lhs.data(), lhs.size(), rhs.data(),
-                                        static_cast<typename S::size_type>(rhs.size()));
+template <class __charT, class __traits, class _Allocator>
+constexpr basic_string<__charT, __traits, _Allocator> operator+(const basic_string<__charT, __traits, _Allocator>& __lhs,
+                                                           type_identity_t<basic_string_view<__charT, __traits>> __rhs) {
+  using _Sp = basic_string<__charT, __traits, _Allocator>;
+  return __ycxx::__detail::__string_concat<_Sp>(__ycxx::__detail::__copy_alloc(__lhs), __lhs.data(), __lhs.size(), __rhs.data(),
+                                        static_cast<typename _Sp::size_type>(__rhs.size()));
 }
-template <class charT, class traits, class Allocator>
-constexpr basic_string<charT, traits, Allocator> operator+(basic_string<charT, traits, Allocator>&& lhs,
-                                                           type_identity_t<basic_string_view<charT, traits>> rhs) {
-  lhs.append(rhs);
-  return static_cast<basic_string<charT, traits, Allocator>&&>(lhs);
+template <class __charT, class __traits, class _Allocator>
+constexpr basic_string<__charT, __traits, _Allocator> operator+(basic_string<__charT, __traits, _Allocator>&& __lhs,
+                                                           type_identity_t<basic_string_view<__charT, __traits>> __rhs) {
+  __lhs.append(__rhs);
+  return static_cast<basic_string<__charT, __traits, _Allocator>&&>(__lhs);
 }
-template <class charT, class traits, class Allocator>
-constexpr basic_string<charT, traits, Allocator> operator+(type_identity_t<basic_string_view<charT, traits>> lhs,
-                                                           const basic_string<charT, traits, Allocator>& rhs) {
-  using S = basic_string<charT, traits, Allocator>;
-  return ycxx::detail::string_concat<S>(ycxx::detail::copy_alloc(rhs), lhs.data(),
-                                        static_cast<typename S::size_type>(lhs.size()), rhs.data(), rhs.size());
+template <class __charT, class __traits, class _Allocator>
+constexpr basic_string<__charT, __traits, _Allocator> operator+(type_identity_t<basic_string_view<__charT, __traits>> __lhs,
+                                                           const basic_string<__charT, __traits, _Allocator>& __rhs) {
+  using _Sp = basic_string<__charT, __traits, _Allocator>;
+  return __ycxx::__detail::__string_concat<_Sp>(__ycxx::__detail::__copy_alloc(__rhs), __lhs.data(),
+                                        static_cast<typename _Sp::size_type>(__lhs.size()), __rhs.data(), __rhs.size());
 }
-template <class charT, class traits, class Allocator>
-constexpr basic_string<charT, traits, Allocator> operator+(type_identity_t<basic_string_view<charT, traits>> lhs,
-                                                           basic_string<charT, traits, Allocator>&& rhs) {
-  rhs.insert(0, lhs);
-  return static_cast<basic_string<charT, traits, Allocator>&&>(rhs);
+template <class __charT, class __traits, class _Allocator>
+constexpr basic_string<__charT, __traits, _Allocator> operator+(type_identity_t<basic_string_view<__charT, __traits>> __lhs,
+                                                           basic_string<__charT, __traits, _Allocator>&& __rhs) {
+  __rhs.insert(0, __lhs);
+  return static_cast<basic_string<__charT, __traits, _Allocator>&&>(__rhs);
 }
 
 // ---- [string.cmp] ----
-template <class charT, class traits, class Allocator>
-constexpr bool operator==(const basic_string<charT, traits, Allocator>& lhs,
-                          const basic_string<charT, traits, Allocator>& rhs) noexcept {
-  return basic_string_view<charT, traits>(lhs) == basic_string_view<charT, traits>(rhs);
+template <class __charT, class __traits, class _Allocator>
+constexpr bool operator==(const basic_string<__charT, __traits, _Allocator>& __lhs,
+                          const basic_string<__charT, __traits, _Allocator>& __rhs) noexcept {
+  return basic_string_view<__charT, __traits>(__lhs) == basic_string_view<__charT, __traits>(__rhs);
 }
-template <class charT, class traits, class Allocator>
-constexpr bool operator==(const basic_string<charT, traits, Allocator>& lhs, const charT* rhs) {
-  return basic_string_view<charT, traits>(lhs) == basic_string_view<charT, traits>(rhs);
+template <class __charT, class __traits, class _Allocator>
+constexpr bool operator==(const basic_string<__charT, __traits, _Allocator>& __lhs, const __charT* __rhs) {
+  return basic_string_view<__charT, __traits>(__lhs) == basic_string_view<__charT, __traits>(__rhs);
 }
-template <class charT, class traits, class Allocator>
-constexpr auto operator<=>(const basic_string<charT, traits, Allocator>& lhs,
-                           const basic_string<charT, traits, Allocator>& rhs) noexcept
-    -> decltype(basic_string_view<charT, traits>(lhs) <=> basic_string_view<charT, traits>(rhs)) {
-  return basic_string_view<charT, traits>(lhs) <=> basic_string_view<charT, traits>(rhs);
+template <class __charT, class __traits, class _Allocator>
+constexpr auto operator<=>(const basic_string<__charT, __traits, _Allocator>& __lhs,
+                           const basic_string<__charT, __traits, _Allocator>& __rhs) noexcept
+    -> decltype(basic_string_view<__charT, __traits>(__lhs) <=> basic_string_view<__charT, __traits>(__rhs)) {
+  return basic_string_view<__charT, __traits>(__lhs) <=> basic_string_view<__charT, __traits>(__rhs);
 }
-template <class charT, class traits, class Allocator>
-constexpr auto operator<=>(const basic_string<charT, traits, Allocator>& lhs, const charT* rhs)
-    -> decltype(basic_string_view<charT, traits>(lhs) <=> basic_string_view<charT, traits>(rhs)) {
-  return basic_string_view<charT, traits>(lhs) <=> basic_string_view<charT, traits>(rhs);
+template <class __charT, class __traits, class _Allocator>
+constexpr auto operator<=>(const basic_string<__charT, __traits, _Allocator>& __lhs, const __charT* __rhs)
+    -> decltype(basic_string_view<__charT, __traits>(__lhs) <=> basic_string_view<__charT, __traits>(__rhs)) {
+  return basic_string_view<__charT, __traits>(__lhs) <=> basic_string_view<__charT, __traits>(__rhs);
 }
 
 // ---- [string.special] ----
-template <class charT, class traits, class Allocator>
-constexpr void swap(basic_string<charT, traits, Allocator>& lhs,
-                    basic_string<charT, traits, Allocator>& rhs) noexcept(noexcept(lhs.swap(rhs))) {
-  lhs.swap(rhs);
+template <class __charT, class __traits, class _Allocator>
+constexpr void swap(basic_string<__charT, __traits, _Allocator>& __lhs,
+                    basic_string<__charT, __traits, _Allocator>& __rhs) noexcept(noexcept(__lhs.swap(__rhs))) {
+  __lhs.swap(__rhs);
 }
 
 // ---- [string.erasure] ----
-template <class charT, class traits, class Allocator, class Predicate>
-constexpr typename basic_string<charT, traits, Allocator>::size_type erase_if(basic_string<charT, traits, Allocator>& c,
-                                                                              Predicate pred) {
+template <class __charT, class __traits, class _Allocator, class _Predicate>
+constexpr typename basic_string<__charT, __traits, _Allocator>::size_type erase_if(basic_string<__charT, __traits, _Allocator>& c,
+                                                                              _Predicate pred) {
   // remove_if, then erase the tail.
   auto first = c.begin();
   const auto last = c.end();
@@ -1318,16 +1318,16 @@ constexpr typename basic_string<charT, traits, Allocator>::size_type erase_if(ba
   if (first != last) {
     for (++first; first != last; ++first)
       if (!bool(pred(*first)))
-        *out++ = static_cast<charT&&>(*first);
+        *out++ = static_cast<__charT&&>(*first);
   }
-  const auto r = static_cast<typename basic_string<charT, traits, Allocator>::size_type>(last - out);
+  const auto r = static_cast<typename basic_string<__charT, __traits, _Allocator>::size_type>(last - out);
   c.erase(out, last);
   return r;
 }
-template <class charT, class traits, class Allocator, class U = charT>
-constexpr typename basic_string<charT, traits, Allocator>::size_type erase(basic_string<charT, traits, Allocator>& c,
-                                                                           const U& value) {
-  return std::erase_if(c, [&value](const charT& e) { return bool(e == value); });
+template <class __charT, class __traits, class _Allocator, class _Up = __charT>
+constexpr typename basic_string<__charT, __traits, _Allocator>::size_type erase(basic_string<__charT, __traits, _Allocator>& c,
+                                                                           const _Up& value) {
+  return std::erase_if(c, [&value](const __charT& e) { return bool(e == value); });
 }
 
 // ---- typedef-names ----
@@ -1338,8 +1338,8 @@ using u32string = basic_string<char32_t>;
 using wstring = basic_string<wchar_t>;
 
 namespace pmr {
-template <class charT, class traits = char_traits<charT>>
-using basic_string = std::basic_string<charT, traits, polymorphic_allocator<charT>>;
+template <class __charT, class __traits = char_traits<__charT>>
+using basic_string = std::basic_string<__charT, __traits, polymorphic_allocator<__charT>>;
 using string = basic_string<char>;
 using u8string = basic_string<char8_t>;
 using u16string = basic_string<char16_t>;
@@ -1350,68 +1350,68 @@ using wstring = basic_string<wchar_t>;
 } // namespace std
 
 // ---- [basic.string.hash] ----
-namespace [[gnu::visibility("hidden")]] ycxx { namespace adl_free {
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __adl_free {
 // hash<S>()(s) == hash<SV>()(SV(s)) for the five standard string types.
-template <class S>
-struct string_hash {
-  [[nodiscard]] std::size_t operator()(const S& s) const noexcept {
-    return std::hash<std::basic_string_view<typename S::value_type>>()(
-        std::basic_string_view<typename S::value_type>(s.data(), s.size()));
+template <class _Sp>
+struct __string_hash {
+  [[nodiscard]] std::size_t operator()(const _Sp& s) const noexcept {
+    return std::hash<std::basic_string_view<typename _Sp::value_type>>()(
+        std::basic_string_view<typename _Sp::value_type>(s.data(), s.size()));
   }
 };
-}} // namespace ycxx::adl_free
+}} // namespace __ycxx::__adl_free
 
-namespace [[gnu::visibility("hidden")]] std {
+namespace [[__gnu__::__visibility__("hidden")]] std {
 
-template <class A>
-struct hash<basic_string<char, char_traits<char>, A>>
-    : ycxx::adl_free::string_hash<basic_string<char, char_traits<char>, A>> {};
-template <class A>
-struct hash<basic_string<char8_t, char_traits<char8_t>, A>>
-    : ycxx::adl_free::string_hash<basic_string<char8_t, char_traits<char8_t>, A>> {};
-template <class A>
-struct hash<basic_string<char16_t, char_traits<char16_t>, A>>
-    : ycxx::adl_free::string_hash<basic_string<char16_t, char_traits<char16_t>, A>> {};
-template <class A>
-struct hash<basic_string<char32_t, char_traits<char32_t>, A>>
-    : ycxx::adl_free::string_hash<basic_string<char32_t, char_traits<char32_t>, A>> {};
-template <class A>
-struct hash<basic_string<wchar_t, char_traits<wchar_t>, A>>
-    : ycxx::adl_free::string_hash<basic_string<wchar_t, char_traits<wchar_t>, A>> {};
+template <class _Ap>
+struct hash<basic_string<char, char_traits<char>, _Ap>>
+    : __ycxx::__adl_free::__string_hash<basic_string<char, char_traits<char>, _Ap>> {};
+template <class _Ap>
+struct hash<basic_string<char8_t, char_traits<char8_t>, _Ap>>
+    : __ycxx::__adl_free::__string_hash<basic_string<char8_t, char_traits<char8_t>, _Ap>> {};
+template <class _Ap>
+struct hash<basic_string<char16_t, char_traits<char16_t>, _Ap>>
+    : __ycxx::__adl_free::__string_hash<basic_string<char16_t, char_traits<char16_t>, _Ap>> {};
+template <class _Ap>
+struct hash<basic_string<char32_t, char_traits<char32_t>, _Ap>>
+    : __ycxx::__adl_free::__string_hash<basic_string<char32_t, char_traits<char32_t>, _Ap>> {};
+template <class _Ap>
+struct hash<basic_string<wchar_t, char_traits<wchar_t>, _Ap>>
+    : __ycxx::__adl_free::__string_hash<basic_string<wchar_t, char_traits<wchar_t>, _Ap>> {};
 
 // ---- [basic.string.literals] ----
 inline namespace literals {
 inline namespace string_literals {
-constexpr string operator""s(const char* str, size_t len) { return string(str, len); }
-constexpr u8string operator""s(const char8_t* str, size_t len) { return u8string(str, len); }
-constexpr u16string operator""s(const char16_t* str, size_t len) { return u16string(str, len); }
-constexpr u32string operator""s(const char32_t* str, size_t len) { return u32string(str, len); }
-constexpr wstring operator""s(const wchar_t* str, size_t len) { return wstring(str, len); }
+constexpr string operator""s(const char* str, size_t __len) { return string(str, __len); }
+constexpr u8string operator""s(const char8_t* str, size_t __len) { return u8string(str, __len); }
+constexpr u16string operator""s(const char16_t* str, size_t __len) { return u16string(str, __len); }
+constexpr u32string operator""s(const char32_t* str, size_t __len) { return u32string(str, __len); }
+constexpr wstring operator""s(const wchar_t* str, size_t __len) { return wstring(str, __len); }
 } // namespace string_literals
 } // namespace literals
 
 } // namespace std
 
 // ---- [string.conversions] ----
-namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
 
 // format("{}", v) for an integer: decimal digits, a leading '-' for negative values.
-template <class charT, class T>
-constexpr std::basic_string<charT> integer_to_string(T v) {
-  using U = std::make_unsigned_t<T>;
-  U u = static_cast<U>(v);
-  bool neg = false;
-  if constexpr (std::is_signed_v<T>) {
-    if (v < 0) {
-      neg = true;
-      u = static_cast<U>(U(0) - u);
+template <class __charT, class _Tp>
+constexpr std::basic_string<__charT> __integer_to_string(_Tp __v) {
+  using _Up = std::make_unsigned_t<_Tp>;
+  _Up __u = static_cast<_Up>(__v);
+  bool __neg = false;
+  if constexpr (std::is_signed_v<_Tp>) {
+    if (__v < 0) {
+      __neg = true;
+      __u = static_cast<_Up>(_Up(0) - __u);
     }
   }
-  [[indeterminate]] charT buf[std::numeric_limits<U>::digits10 + 2];
-  charT* const end = buf + sizeof(buf) / sizeof(charT);
-  charT* p = end;
+  [[indeterminate]] __charT __buf[std::numeric_limits<_Up>::digits10 + 2];
+  __charT* const end = __buf + sizeof(__buf) / sizeof(__charT);
+  __charT* p = end;
   // Two digits per division.
-  static constexpr auto pairs = [] {
+  static constexpr auto __pairs = [] {
     struct table {
       char c[200];
     } t{};
@@ -1421,83 +1421,83 @@ constexpr std::basic_string<charT> integer_to_string(T v) {
     }
     return t;
   }();
-  while (u >= 100) {
-    const auto r = static_cast<unsigned>(u % 100);
-    u /= 100;
+  while (__u >= 100) {
+    const auto r = static_cast<unsigned>(__u % 100);
+    __u /= 100;
     p -= 2;
-    p[0] = static_cast<charT>(pairs.c[2 * r]);
-    p[1] = static_cast<charT>(pairs.c[2 * r + 1]);
+    p[0] = static_cast<__charT>(__pairs.c[2 * r]);
+    p[1] = static_cast<__charT>(__pairs.c[2 * r + 1]);
   }
-  if (u >= 10) {
+  if (__u >= 10) {
     p -= 2;
-    p[0] = static_cast<charT>(pairs.c[2 * u]);
-    p[1] = static_cast<charT>(pairs.c[2 * u + 1]);
+    p[0] = static_cast<__charT>(__pairs.c[2 * __u]);
+    p[1] = static_cast<__charT>(__pairs.c[2 * __u + 1]);
   } else {
-    *--p = static_cast<charT>('0' + static_cast<int>(u));
+    *--p = static_cast<__charT>('0' + static_cast<int>(__u));
   }
-  if (neg)
-    *--p = static_cast<charT>('-');
-  return std::basic_string<charT>(p, static_cast<std::size_t>(end - p));
+  if (__neg)
+    *--p = static_cast<__charT>('-');
+  return std::basic_string<__charT>(p, static_cast<std::size_t>(end - p));
 }
 
-}} // namespace ycxx::detail
+}} // namespace __ycxx::__detail
 
-namespace [[gnu::visibility("hidden")]] std {
+namespace [[__gnu__::__visibility__("hidden")]] std {
 
 // Defined in the hosted runtime (src/hosted/string.cpp): they call the C library.
-int stoi(const string& str, size_t* idx = nullptr, int base = 10);
-long stol(const string& str, size_t* idx = nullptr, int base = 10);
-unsigned long stoul(const string& str, size_t* idx = nullptr, int base = 10);
-long long stoll(const string& str, size_t* idx = nullptr, int base = 10);
-unsigned long long stoull(const string& str, size_t* idx = nullptr, int base = 10);
-float stof(const string& str, size_t* idx = nullptr);
-double stod(const string& str, size_t* idx = nullptr);
-long double stold(const string& str, size_t* idx = nullptr);
-int stoi(const wstring& str, size_t* idx = nullptr, int base = 10);
-long stol(const wstring& str, size_t* idx = nullptr, int base = 10);
-unsigned long stoul(const wstring& str, size_t* idx = nullptr, int base = 10);
-long long stoll(const wstring& str, size_t* idx = nullptr, int base = 10);
-unsigned long long stoull(const wstring& str, size_t* idx = nullptr, int base = 10);
-float stof(const wstring& str, size_t* idx = nullptr);
-double stod(const wstring& str, size_t* idx = nullptr);
-long double stold(const wstring& str, size_t* idx = nullptr);
-string to_string(float val);
-string to_string(double val);
-string to_string(long double val);
-wstring to_wstring(float val);
-wstring to_wstring(double val);
-wstring to_wstring(long double val);
+int stoi(const string& str, size_t* __idx = nullptr, int base = 10);
+long stol(const string& str, size_t* __idx = nullptr, int base = 10);
+unsigned long stoul(const string& str, size_t* __idx = nullptr, int base = 10);
+long long stoll(const string& str, size_t* __idx = nullptr, int base = 10);
+unsigned long long stoull(const string& str, size_t* __idx = nullptr, int base = 10);
+float stof(const string& str, size_t* __idx = nullptr);
+double stod(const string& str, size_t* __idx = nullptr);
+long double stold(const string& str, size_t* __idx = nullptr);
+int stoi(const wstring& str, size_t* __idx = nullptr, int base = 10);
+long stol(const wstring& str, size_t* __idx = nullptr, int base = 10);
+unsigned long stoul(const wstring& str, size_t* __idx = nullptr, int base = 10);
+long long stoll(const wstring& str, size_t* __idx = nullptr, int base = 10);
+unsigned long long stoull(const wstring& str, size_t* __idx = nullptr, int base = 10);
+float stof(const wstring& str, size_t* __idx = nullptr);
+double stod(const wstring& str, size_t* __idx = nullptr);
+long double stold(const wstring& str, size_t* __idx = nullptr);
+string to_string(float __val);
+string to_string(double __val);
+string to_string(long double __val);
+wstring to_wstring(float __val);
+wstring to_wstring(double __val);
+wstring to_wstring(long double __val);
 
-constexpr string to_string(int val) { return ycxx::detail::integer_to_string<char>(val); }
-constexpr string to_string(unsigned val) { return ycxx::detail::integer_to_string<char>(val); }
-constexpr string to_string(long val) { return ycxx::detail::integer_to_string<char>(val); }
-constexpr string to_string(unsigned long val) { return ycxx::detail::integer_to_string<char>(val); }
-constexpr string to_string(long long val) { return ycxx::detail::integer_to_string<char>(val); }
-constexpr string to_string(unsigned long long val) { return ycxx::detail::integer_to_string<char>(val); }
-constexpr wstring to_wstring(int val) { return ycxx::detail::integer_to_string<wchar_t>(val); }
-constexpr wstring to_wstring(unsigned val) { return ycxx::detail::integer_to_string<wchar_t>(val); }
-constexpr wstring to_wstring(long val) { return ycxx::detail::integer_to_string<wchar_t>(val); }
-constexpr wstring to_wstring(unsigned long val) { return ycxx::detail::integer_to_string<wchar_t>(val); }
-constexpr wstring to_wstring(long long val) { return ycxx::detail::integer_to_string<wchar_t>(val); }
-constexpr wstring to_wstring(unsigned long long val) { return ycxx::detail::integer_to_string<wchar_t>(val); }
+constexpr string to_string(int __val) { return __ycxx::__detail::__integer_to_string<char>(__val); }
+constexpr string to_string(unsigned __val) { return __ycxx::__detail::__integer_to_string<char>(__val); }
+constexpr string to_string(long __val) { return __ycxx::__detail::__integer_to_string<char>(__val); }
+constexpr string to_string(unsigned long __val) { return __ycxx::__detail::__integer_to_string<char>(__val); }
+constexpr string to_string(long long __val) { return __ycxx::__detail::__integer_to_string<char>(__val); }
+constexpr string to_string(unsigned long long __val) { return __ycxx::__detail::__integer_to_string<char>(__val); }
+constexpr wstring to_wstring(int __val) { return __ycxx::__detail::__integer_to_string<wchar_t>(__val); }
+constexpr wstring to_wstring(unsigned __val) { return __ycxx::__detail::__integer_to_string<wchar_t>(__val); }
+constexpr wstring to_wstring(long __val) { return __ycxx::__detail::__integer_to_string<wchar_t>(__val); }
+constexpr wstring to_wstring(unsigned long __val) { return __ycxx::__detail::__integer_to_string<wchar_t>(__val); }
+constexpr wstring to_wstring(long long __val) { return __ycxx::__detail::__integer_to_string<wchar_t>(__val); }
+constexpr wstring to_wstring(unsigned long long __val) { return __ycxx::__detail::__integer_to_string<wchar_t>(__val); }
 
 // [string.io]: declared against the iostreams' forward declarations; defined with the streams
 // (ycxx/hosted/istream.hpp, ycxx/hosted/ostream.hpp), so <string> does not include them.
-template <class charT, class traits, class Allocator>
-basic_istream<charT, traits>& operator>>(basic_istream<charT, traits>& is, basic_string<charT, traits, Allocator>& str);
-template <class charT, class traits, class Allocator>
-basic_ostream<charT, traits>& operator<<(basic_ostream<charT, traits>& os,
-                                         const basic_string<charT, traits, Allocator>& str);
-template <class charT, class traits, class Allocator>
-basic_istream<charT, traits>& getline(basic_istream<charT, traits>& is, basic_string<charT, traits, Allocator>& str,
-                                      charT delim);
-template <class charT, class traits, class Allocator>
-basic_istream<charT, traits>& getline(basic_istream<charT, traits>&& is, basic_string<charT, traits, Allocator>& str,
-                                      charT delim);
-template <class charT, class traits, class Allocator>
-basic_istream<charT, traits>& getline(basic_istream<charT, traits>& is, basic_string<charT, traits, Allocator>& str);
-template <class charT, class traits, class Allocator>
-basic_istream<charT, traits>& getline(basic_istream<charT, traits>&& is, basic_string<charT, traits, Allocator>& str);
+template <class __charT, class __traits, class _Allocator>
+basic_istream<__charT, __traits>& operator>>(basic_istream<__charT, __traits>& is, basic_string<__charT, __traits, _Allocator>& str);
+template <class __charT, class __traits, class _Allocator>
+basic_ostream<__charT, __traits>& operator<<(basic_ostream<__charT, __traits>& __os,
+                                         const basic_string<__charT, __traits, _Allocator>& str);
+template <class __charT, class __traits, class _Allocator>
+basic_istream<__charT, __traits>& getline(basic_istream<__charT, __traits>& is, basic_string<__charT, __traits, _Allocator>& str,
+                                      __charT __delim);
+template <class __charT, class __traits, class _Allocator>
+basic_istream<__charT, __traits>& getline(basic_istream<__charT, __traits>&& is, basic_string<__charT, __traits, _Allocator>& str,
+                                      __charT __delim);
+template <class __charT, class __traits, class _Allocator>
+basic_istream<__charT, __traits>& getline(basic_istream<__charT, __traits>& is, basic_string<__charT, __traits, _Allocator>& str);
+template <class __charT, class __traits, class _Allocator>
+basic_istream<__charT, __traits>& getline(basic_istream<__charT, __traits>&& is, basic_string<__charT, __traits, _Allocator>& str);
 
 } // namespace std
 

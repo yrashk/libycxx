@@ -5,132 +5,132 @@
 #include <ycxx/core/execution_policy.hpp>
 #include <ycxx/core/numeric.hpp>
 
-namespace [[gnu::visibility("hidden")]] std {
+namespace [[__gnu__::__visibility__("hidden")]] std {
 
-template <class ExecutionPolicy, class ForwardIterator>
-  requires ycxx::detail::execution_policy<ExecutionPolicy>
-typename iterator_traits<ForwardIterator>::value_type reduce(ExecutionPolicy&&, ForwardIterator first,
-                                                             ForwardIterator last) noexcept {
+template <class _ExecutionPolicy, class _ForwardIterator>
+  requires __ycxx::__detail::__execution_policy<_ExecutionPolicy>
+typename iterator_traits<_ForwardIterator>::value_type reduce(_ExecutionPolicy&&, _ForwardIterator first,
+                                                             _ForwardIterator last) noexcept {
   return std::reduce(first, last);
 }
 
-template <class ExecutionPolicy, class ForwardIterator, class T>
-  requires ycxx::detail::execution_policy<ExecutionPolicy>
-T reduce(ExecutionPolicy&&, ForwardIterator first, ForwardIterator last, T init) noexcept {
+template <class _ExecutionPolicy, class _ForwardIterator, class _Tp>
+  requires __ycxx::__detail::__execution_policy<_ExecutionPolicy>
+_Tp reduce(_ExecutionPolicy&&, _ForwardIterator first, _ForwardIterator last, _Tp init) noexcept {
   return std::reduce(first, last, std::move(init));
 }
 
-template <class ExecutionPolicy, class ForwardIterator, class T, class BinaryOperation>
-  requires ycxx::detail::execution_policy<ExecutionPolicy>
-T reduce(ExecutionPolicy&&, ForwardIterator first, ForwardIterator last, T init, BinaryOperation binary_op) noexcept {
-  return std::reduce(first, last, std::move(init), binary_op);
+template <class _ExecutionPolicy, class _ForwardIterator, class _Tp, class _BinaryOperation>
+  requires __ycxx::__detail::__execution_policy<_ExecutionPolicy>
+_Tp reduce(_ExecutionPolicy&&, _ForwardIterator first, _ForwardIterator last, _Tp init, _BinaryOperation __binary_op) noexcept {
+  return std::reduce(first, last, std::move(init), __binary_op);
 }
 
-template <class ExecutionPolicy, class ForwardIterator1, class ForwardIterator2, class T>
-  requires ycxx::detail::execution_policy<ExecutionPolicy>
-T transform_reduce(ExecutionPolicy&&, ForwardIterator1 first1, ForwardIterator1 last1, ForwardIterator2 first2,
-                   T init) noexcept {
-  return std::transform_reduce(first1, last1, first2, std::move(init));
+template <class _ExecutionPolicy, class _ForwardIterator1, class _ForwardIterator2, class _Tp>
+  requires __ycxx::__detail::__execution_policy<_ExecutionPolicy>
+_Tp transform_reduce(_ExecutionPolicy&&, _ForwardIterator1 __first1, _ForwardIterator1 __last1, _ForwardIterator2 __first2,
+                   _Tp init) noexcept {
+  return std::transform_reduce(__first1, __last1, __first2, std::move(init));
 }
 
-template <class ExecutionPolicy, class ForwardIterator1, class ForwardIterator2, class T, class BinaryOperation1,
-          class BinaryOperation2>
-  requires ycxx::detail::execution_policy<ExecutionPolicy>
-T transform_reduce(ExecutionPolicy&&, ForwardIterator1 first1, ForwardIterator1 last1, ForwardIterator2 first2, T init,
-                   BinaryOperation1 binary_op1, BinaryOperation2 binary_op2) noexcept {
-  return std::transform_reduce(first1, last1, first2, std::move(init), binary_op1, binary_op2);
+template <class _ExecutionPolicy, class _ForwardIterator1, class _ForwardIterator2, class _Tp, class _BinaryOperation1,
+          class _BinaryOperation2>
+  requires __ycxx::__detail::__execution_policy<_ExecutionPolicy>
+_Tp transform_reduce(_ExecutionPolicy&&, _ForwardIterator1 __first1, _ForwardIterator1 __last1, _ForwardIterator2 __first2, _Tp init,
+                   _BinaryOperation1 __binary_op1, _BinaryOperation2 __binary_op2) noexcept {
+  return std::transform_reduce(__first1, __last1, __first2, std::move(init), __binary_op1, __binary_op2);
 }
 
-template <class ExecutionPolicy, class ForwardIterator, class T, class BinaryOperation, class UnaryOperation>
-  requires ycxx::detail::execution_policy<ExecutionPolicy>
-T transform_reduce(ExecutionPolicy&&, ForwardIterator first, ForwardIterator last, T init, BinaryOperation binary_op,
-                   UnaryOperation unary_op) noexcept {
-  return std::transform_reduce(first, last, std::move(init), binary_op, unary_op);
+template <class _ExecutionPolicy, class _ForwardIterator, class _Tp, class _BinaryOperation, class _UnaryOperation>
+  requires __ycxx::__detail::__execution_policy<_ExecutionPolicy>
+_Tp transform_reduce(_ExecutionPolicy&&, _ForwardIterator first, _ForwardIterator last, _Tp init, _BinaryOperation __binary_op,
+                   _UnaryOperation __unary_op) noexcept {
+  return std::transform_reduce(first, last, std::move(init), __binary_op, __unary_op);
 }
 
-template <class ExecutionPolicy, class ForwardIterator1, class ForwardIterator2, class T>
-  requires ycxx::detail::execution_policy<ExecutionPolicy>
-ForwardIterator2 exclusive_scan(ExecutionPolicy&&, ForwardIterator1 first, ForwardIterator1 last,
-                                ForwardIterator2 result, T init) noexcept {
+template <class _ExecutionPolicy, class _ForwardIterator1, class _ForwardIterator2, class _Tp>
+  requires __ycxx::__detail::__execution_policy<_ExecutionPolicy>
+_ForwardIterator2 exclusive_scan(_ExecutionPolicy&&, _ForwardIterator1 first, _ForwardIterator1 last,
+                                _ForwardIterator2 result, _Tp init) noexcept {
   return std::exclusive_scan(first, last, result, std::move(init));
 }
 
-template <class ExecutionPolicy, class ForwardIterator1, class ForwardIterator2, class T, class BinaryOperation>
-  requires ycxx::detail::execution_policy<ExecutionPolicy>
-ForwardIterator2 exclusive_scan(ExecutionPolicy&&, ForwardIterator1 first, ForwardIterator1 last,
-                                ForwardIterator2 result, T init, BinaryOperation binary_op) noexcept {
-  return std::exclusive_scan(first, last, result, std::move(init), binary_op);
+template <class _ExecutionPolicy, class _ForwardIterator1, class _ForwardIterator2, class _Tp, class _BinaryOperation>
+  requires __ycxx::__detail::__execution_policy<_ExecutionPolicy>
+_ForwardIterator2 exclusive_scan(_ExecutionPolicy&&, _ForwardIterator1 first, _ForwardIterator1 last,
+                                _ForwardIterator2 result, _Tp init, _BinaryOperation __binary_op) noexcept {
+  return std::exclusive_scan(first, last, result, std::move(init), __binary_op);
 }
 
-template <class ExecutionPolicy, class ForwardIterator1, class ForwardIterator2>
-  requires ycxx::detail::execution_policy<ExecutionPolicy>
-ForwardIterator2 inclusive_scan(ExecutionPolicy&&, ForwardIterator1 first, ForwardIterator1 last,
-                                ForwardIterator2 result) noexcept {
+template <class _ExecutionPolicy, class _ForwardIterator1, class _ForwardIterator2>
+  requires __ycxx::__detail::__execution_policy<_ExecutionPolicy>
+_ForwardIterator2 inclusive_scan(_ExecutionPolicy&&, _ForwardIterator1 first, _ForwardIterator1 last,
+                                _ForwardIterator2 result) noexcept {
   return std::inclusive_scan(first, last, result);
 }
 
-template <class ExecutionPolicy, class ForwardIterator1, class ForwardIterator2, class BinaryOperation>
-  requires ycxx::detail::execution_policy<ExecutionPolicy>
-ForwardIterator2 inclusive_scan(ExecutionPolicy&&, ForwardIterator1 first, ForwardIterator1 last,
-                                ForwardIterator2 result, BinaryOperation binary_op) noexcept {
-  return std::inclusive_scan(first, last, result, binary_op);
+template <class _ExecutionPolicy, class _ForwardIterator1, class _ForwardIterator2, class _BinaryOperation>
+  requires __ycxx::__detail::__execution_policy<_ExecutionPolicy>
+_ForwardIterator2 inclusive_scan(_ExecutionPolicy&&, _ForwardIterator1 first, _ForwardIterator1 last,
+                                _ForwardIterator2 result, _BinaryOperation __binary_op) noexcept {
+  return std::inclusive_scan(first, last, result, __binary_op);
 }
 
-template <class ExecutionPolicy, class ForwardIterator1, class ForwardIterator2, class BinaryOperation, class T>
-  requires ycxx::detail::execution_policy<ExecutionPolicy>
-ForwardIterator2 inclusive_scan(ExecutionPolicy&&, ForwardIterator1 first, ForwardIterator1 last,
-                                ForwardIterator2 result, BinaryOperation binary_op, T init) noexcept {
-  return std::inclusive_scan(first, last, result, binary_op, std::move(init));
+template <class _ExecutionPolicy, class _ForwardIterator1, class _ForwardIterator2, class _BinaryOperation, class _Tp>
+  requires __ycxx::__detail::__execution_policy<_ExecutionPolicy>
+_ForwardIterator2 inclusive_scan(_ExecutionPolicy&&, _ForwardIterator1 first, _ForwardIterator1 last,
+                                _ForwardIterator2 result, _BinaryOperation __binary_op, _Tp init) noexcept {
+  return std::inclusive_scan(first, last, result, __binary_op, std::move(init));
 }
 
-template <class ExecutionPolicy, class ForwardIterator1, class ForwardIterator2, class T, class BinaryOperation,
-          class UnaryOperation>
-  requires ycxx::detail::execution_policy<ExecutionPolicy>
-ForwardIterator2 transform_exclusive_scan(ExecutionPolicy&&, ForwardIterator1 first, ForwardIterator1 last,
-                                          ForwardIterator2 result, T init, BinaryOperation binary_op,
-                                          UnaryOperation unary_op) noexcept {
-  return std::transform_exclusive_scan(first, last, result, std::move(init), binary_op, unary_op);
+template <class _ExecutionPolicy, class _ForwardIterator1, class _ForwardIterator2, class _Tp, class _BinaryOperation,
+          class _UnaryOperation>
+  requires __ycxx::__detail::__execution_policy<_ExecutionPolicy>
+_ForwardIterator2 transform_exclusive_scan(_ExecutionPolicy&&, _ForwardIterator1 first, _ForwardIterator1 last,
+                                          _ForwardIterator2 result, _Tp init, _BinaryOperation __binary_op,
+                                          _UnaryOperation __unary_op) noexcept {
+  return std::transform_exclusive_scan(first, last, result, std::move(init), __binary_op, __unary_op);
 }
 
-template <class ExecutionPolicy, class ForwardIterator1, class ForwardIterator2, class BinaryOperation,
-          class UnaryOperation>
-  requires ycxx::detail::execution_policy<ExecutionPolicy>
-ForwardIterator2 transform_inclusive_scan(ExecutionPolicy&&, ForwardIterator1 first, ForwardIterator1 last,
-                                          ForwardIterator2 result, BinaryOperation binary_op,
-                                          UnaryOperation unary_op) noexcept {
-  return std::transform_inclusive_scan(first, last, result, binary_op, unary_op);
+template <class _ExecutionPolicy, class _ForwardIterator1, class _ForwardIterator2, class _BinaryOperation,
+          class _UnaryOperation>
+  requires __ycxx::__detail::__execution_policy<_ExecutionPolicy>
+_ForwardIterator2 transform_inclusive_scan(_ExecutionPolicy&&, _ForwardIterator1 first, _ForwardIterator1 last,
+                                          _ForwardIterator2 result, _BinaryOperation __binary_op,
+                                          _UnaryOperation __unary_op) noexcept {
+  return std::transform_inclusive_scan(first, last, result, __binary_op, __unary_op);
 }
 
-template <class ExecutionPolicy, class ForwardIterator1, class ForwardIterator2, class BinaryOperation,
-          class UnaryOperation, class T>
-  requires ycxx::detail::execution_policy<ExecutionPolicy>
-ForwardIterator2 transform_inclusive_scan(ExecutionPolicy&&, ForwardIterator1 first, ForwardIterator1 last,
-                                          ForwardIterator2 result, BinaryOperation binary_op, UnaryOperation unary_op,
-                                          T init) noexcept {
-  return std::transform_inclusive_scan(first, last, result, binary_op, unary_op, std::move(init));
+template <class _ExecutionPolicy, class _ForwardIterator1, class _ForwardIterator2, class _BinaryOperation,
+          class _UnaryOperation, class _Tp>
+  requires __ycxx::__detail::__execution_policy<_ExecutionPolicy>
+_ForwardIterator2 transform_inclusive_scan(_ExecutionPolicy&&, _ForwardIterator1 first, _ForwardIterator1 last,
+                                          _ForwardIterator2 result, _BinaryOperation __binary_op, _UnaryOperation __unary_op,
+                                          _Tp init) noexcept {
+  return std::transform_inclusive_scan(first, last, result, __binary_op, __unary_op, std::move(init));
 }
 
 // [adjacent.difference]/5: unlike the overloads without a policy (an accumulator and a copy of
 // each element, binary_op(val, std::move(acc))), these pass the input elements themselves and
 // make no T.
-template <class ExecutionPolicy, class ForwardIterator1, class ForwardIterator2, class BinaryOperation>
-  requires ycxx::detail::execution_policy<ExecutionPolicy>
-ForwardIterator2 adjacent_difference(ExecutionPolicy&&, ForwardIterator1 first, ForwardIterator1 last,
-                                     ForwardIterator2 result, BinaryOperation binary_op) noexcept {
+template <class _ExecutionPolicy, class _ForwardIterator1, class _ForwardIterator2, class _BinaryOperation>
+  requires __ycxx::__detail::__execution_policy<_ExecutionPolicy>
+_ForwardIterator2 adjacent_difference(_ExecutionPolicy&&, _ForwardIterator1 first, _ForwardIterator1 last,
+                                     _ForwardIterator2 result, _BinaryOperation __binary_op) noexcept {
   if (first == last)
     return result;
   *result = *first;
   ++result;
-  for (ForwardIterator1 prev = first; ++first != last; prev = first, (void)++result)
-    *result = binary_op(*first, *prev);
+  for (_ForwardIterator1 prev = first; ++first != last; prev = first, (void)++result)
+    *result = __binary_op(*first, *prev);
   return result;
 }
 
-template <class ExecutionPolicy, class ForwardIterator1, class ForwardIterator2>
-  requires ycxx::detail::execution_policy<ExecutionPolicy>
-ForwardIterator2 adjacent_difference(ExecutionPolicy&& exec, ForwardIterator1 first, ForwardIterator1 last,
-                                     ForwardIterator2 result) noexcept {
-  return std::adjacent_difference(static_cast<ExecutionPolicy&&>(exec), first, last, result, minus<>());
+template <class _ExecutionPolicy, class _ForwardIterator1, class _ForwardIterator2>
+  requires __ycxx::__detail::__execution_policy<_ExecutionPolicy>
+_ForwardIterator2 adjacent_difference(_ExecutionPolicy&& __exec, _ForwardIterator1 first, _ForwardIterator1 last,
+                                     _ForwardIterator2 result) noexcept {
+  return std::adjacent_difference(static_cast<_ExecutionPolicy&&>(__exec), first, last, result, minus<>());
 }
 
 } // namespace std

@@ -18,21 +18,21 @@
 #include <ycxx/core/error.hpp>
 #include <ycxx/core/text_encoding_table.hpp>
 
-namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
 
 // The comp-name canonical form of s ([text.encoding.members]/19): letters (lower-cased) and
 // digits only, where a run of '0' is dropped unless a numeric prefix (a digit 1-9, possibly
 // followed by characters that are neither digits nor letters) immediately precedes it. Writes
 // at most s.size() characters to out and returns the length.
-constexpr std::size_t te_canon(std::string_view s, char* out) noexcept {
+constexpr std::size_t __te_canon(std::string_view s, char* out) noexcept {
   std::size_t n = 0;
-  bool prefix = false, keep = false;
+  bool prefix = false, __keep = false;
   char prev = '\0';
   for (char c : s) {
     if (c == '0') {
       if (prev != '0')
-        keep = prefix;
-      if (keep)
+        __keep = prefix;
+      if (__keep)
         out[n++] = '0';
       prefix = false;
     } else if (c >= '1' && c <= '9') {
@@ -50,47 +50,47 @@ constexpr std::size_t te_canon(std::string_view s, char* out) noexcept {
   return n;
 }
 
-constexpr bool te_comp_name(std::string_view a, std::string_view b) noexcept {
-  char ca[64] = {}, cb[64] = {};
+constexpr bool __te_comp_name(std::string_view a, std::string_view b) noexcept {
+  char __ca[64] = {}, __cb[64] = {};
   if (a.size() > 63 || b.size() > 63)
     return false;
-  return std::string_view(ca, te_canon(a, ca)) == std::string_view(cb, te_canon(b, cb));
+  return std::string_view(__ca, __te_canon(a, __ca)) == std::string_view(__cb, __te_canon(b, __cb));
 }
 
 // The MIBenum of the known registered encoding named enc (compared by comp-name), or 1 (other).
-constexpr std::int_least32_t te_lookup(std::string_view enc) noexcept {
-  char buf[64] = {};
-  const std::string_view key(buf, te_canon(enc, buf));
-  std::size_t lo = 0, hi = sizeof(te_keys) / sizeof(te_keys[0]);
-  while (lo < hi) {
-    const std::size_t mid = lo + (hi - lo) / 2;
-    const std::string_view k(te_keys[mid].key);
-    if (k == key)
-      return te_keys[mid].mib;
-    if (k < key)
-      lo = mid + 1;
+constexpr std::int_least32_t __te_lookup(std::string_view __enc) noexcept {
+  char __buf[64] = {};
+  const std::string_view __key(__buf, __te_canon(__enc, __buf));
+  std::size_t __lo = 0, __hi = sizeof(__te_keys) / sizeof(__te_keys[0]);
+  while (__lo < __hi) {
+    const std::size_t __mid = __lo + (__hi - __lo) / 2;
+    const std::string_view k(__te_keys[__mid].__key);
+    if (k == __key)
+      return __te_keys[__mid].mib;
+    if (k < __key)
+      __lo = __mid + 1;
     else
-      hi = mid;
+      __hi = __mid;
   }
   return 1;
 }
 
 // The first entry of te_names with MIBenum mib, or the end of the table.
-constexpr const te_name* te_first(std::int_least32_t mib) noexcept {
-  std::size_t lo = 0, hi = sizeof(te_names) / sizeof(te_names[0]);
-  while (lo < hi) {
-    const std::size_t mid = lo + (hi - lo) / 2;
-    if (te_names[mid].mib < mib)
-      lo = mid + 1;
+constexpr const __te_name* __te_first(std::int_least32_t mib) noexcept {
+  std::size_t __lo = 0, __hi = sizeof(__te_names) / sizeof(__te_names[0]);
+  while (__lo < __hi) {
+    const std::size_t __mid = __lo + (__hi - __lo) / 2;
+    if (__te_names[__mid].mib < mib)
+      __lo = __mid + 1;
     else
-      hi = mid;
+      __hi = __mid;
   }
-  return te_names + lo;
+  return __te_names + __lo;
 }
 
-}} // namespace ycxx::detail
+}} // namespace __ycxx::__detail
 
-namespace [[gnu::visibility("hidden")]] std {
+namespace [[__gnu__::__visibility__("hidden")]] std {
 
 struct text_encoding {
   static constexpr size_t max_name_length = 63;
@@ -359,45 +359,45 @@ struct text_encoding {
   using enum id;
 
   constexpr text_encoding() = default;
-  constexpr explicit text_encoding(string_view enc) noexcept {
-    ycxx::detail::precondition(enc.size() <= max_name_length,
+  constexpr explicit text_encoding(string_view __enc) noexcept {
+    __ycxx::__detail::__precondition(__enc.size() <= max_name_length,
                                "std::text_encoding: the name is longer than max_name_length");
-    ycxx::detail::precondition(enc.find('\0') == string_view::npos, "std::text_encoding: the name contains a null");
-    const size_t n = enc.size() <= max_name_length ? enc.size() : max_name_length;
+    __ycxx::__detail::__precondition(__enc.find('\0') == string_view::npos, "std::text_encoding: the name contains a null");
+    const size_t n = __enc.size() <= max_name_length ? __enc.size() : max_name_length;
     for (size_t i = 0; i < n; ++i)
-      name_[i] = enc[i];
-    mib_ = static_cast<id>(ycxx::detail::te_lookup(enc.substr(0, n)));
+      __name_[i] = __enc[i];
+    __mib_ = static_cast<id>(__ycxx::__detail::__te_lookup(__enc.substr(0, n)));
   }
-  constexpr text_encoding(id i) noexcept : mib_(i) {
+  constexpr text_encoding(id i) noexcept : __mib_(i) {
     if (i == id::other || i == id::unknown)
       return;
-    const ycxx::detail::te_name* e = ycxx::detail::te_first(static_cast<int_least32_t>(i));
-    ycxx::detail::precondition(e != end_of_table() && e->mib == static_cast<int_least32_t>(i),
+    const __ycxx::__detail::__te_name* e = __ycxx::__detail::__te_first(static_cast<int_least32_t>(i));
+    __ycxx::__detail::__precondition(e != __end_of_table() && e->mib == static_cast<int_least32_t>(i),
                                "std::text_encoding: not an enumerator of text_encoding::id");
-    if (e == end_of_table() || e->mib != static_cast<int_least32_t>(i))
+    if (e == __end_of_table() || e->mib != static_cast<int_least32_t>(i))
       return;
     for (size_t k = 0; e->name[k] != '\0'; ++k)
-      name_[k] = e->name[k];
+      __name_[k] = e->name[k];
   }
 
-  constexpr id mib() const noexcept { return mib_; }
-  constexpr const char* name() const noexcept { return name_; }
+  constexpr id mib() const noexcept { return __mib_; }
+  constexpr const char* name() const noexcept { return __name_; }
 
   struct aliases_view;
   constexpr aliases_view aliases() const noexcept;
 
   friend constexpr bool operator==(const text_encoding& a, const text_encoding& b) noexcept {
-    if (a.mib_ == id::other && b.mib_ == id::other)
-      return ycxx::detail::te_comp_name(a.name_, b.name_);
-    return a.mib_ == b.mib_;
+    if (a.__mib_ == id::other && b.__mib_ == id::other)
+      return __ycxx::__detail::__te_comp_name(a.__name_, b.__name_);
+    return a.__mib_ == b.__mib_;
   }
-  friend constexpr bool operator==(const text_encoding& encoding, id i) noexcept { return encoding.mib_ == i; }
+  friend constexpr bool operator==(const text_encoding& encoding, id i) noexcept { return encoding.__mib_ == i; }
 
   static consteval text_encoding literal() noexcept {
     static_assert(CHAR_BIT == 8, "std::text_encoding::literal: CHAR_BIT must be 8");
-    if (string_view(ycxx::detail::cfg::literal_encoding).empty())
+    if (string_view(__ycxx::__detail::__cfg::__literal_encoding).empty())
       return text_encoding();
-    return text_encoding(string_view(ycxx::detail::cfg::literal_encoding));
+    return text_encoding(string_view(__ycxx::__detail::__cfg::__literal_encoding));
   }
   static text_encoding environment();
   template <id i>
@@ -407,18 +407,18 @@ struct text_encoding {
   }
 
 private:
-  id mib_ = id::unknown;
-  char name_[max_name_length + 1] = {0};
+  id __mib_ = id::unknown;
+  char __name_[max_name_length + 1] = {0};
 
-  static constexpr const ycxx::detail::te_name* end_of_table() noexcept {
-    return ycxx::detail::te_names + sizeof(ycxx::detail::te_names) / sizeof(ycxx::detail::te_names[0]);
+  static constexpr const __ycxx::__detail::__te_name* __end_of_table() noexcept {
+    return __ycxx::__detail::__te_names + sizeof(__ycxx::__detail::__te_names) / sizeof(__ycxx::__detail::__te_names[0]);
   }
 };
 
 // [text.encoding.aliases]: a view of a contiguous run of the registry table.
 struct text_encoding::aliases_view : ranges::view_interface<text_encoding::aliases_view> {
   class iterator {
-    const ycxx::detail::te_name* p_ = nullptr;
+    const __ycxx::__detail::__te_name* __p_ = nullptr;
 
   public:
     using value_type = const char*;
@@ -427,55 +427,55 @@ struct text_encoding::aliases_view : ranges::view_interface<text_encoding::alias
     using iterator_category = input_iterator_tag; // the reference is a prvalue
 
     constexpr iterator() noexcept = default;
-    constexpr explicit iterator(const ycxx::detail::te_name* p) noexcept : p_(p) {}
+    constexpr explicit iterator(const __ycxx::__detail::__te_name* p) noexcept : __p_(p) {}
 
-    constexpr const char* operator*() const noexcept { return p_->name; }
-    constexpr const char* operator[](difference_type n) const noexcept { return p_[n].name; }
+    constexpr const char* operator*() const noexcept { return __p_->name; }
+    constexpr const char* operator[](difference_type n) const noexcept { return __p_[n].name; }
     constexpr iterator& operator++() noexcept {
-      ++p_;
+      ++__p_;
       return *this;
     }
-    constexpr iterator operator++(int) noexcept { return iterator(p_++); }
+    constexpr iterator operator++(int) noexcept { return iterator(__p_++); }
     constexpr iterator& operator--() noexcept {
-      --p_;
+      --__p_;
       return *this;
     }
-    constexpr iterator operator--(int) noexcept { return iterator(p_--); }
+    constexpr iterator operator--(int) noexcept { return iterator(__p_--); }
     constexpr iterator& operator+=(difference_type n) noexcept {
-      p_ += n;
+      __p_ += n;
       return *this;
     }
     constexpr iterator& operator-=(difference_type n) noexcept {
-      p_ -= n;
+      __p_ -= n;
       return *this;
     }
-    friend constexpr iterator operator+(iterator i, difference_type n) noexcept { return iterator(i.p_ + n); }
-    friend constexpr iterator operator+(difference_type n, iterator i) noexcept { return iterator(i.p_ + n); }
-    friend constexpr iterator operator-(iterator i, difference_type n) noexcept { return iterator(i.p_ - n); }
-    friend constexpr difference_type operator-(const iterator& a, const iterator& b) noexcept { return a.p_ - b.p_; }
-    friend constexpr bool operator==(const iterator& a, const iterator& b) noexcept { return a.p_ == b.p_; }
+    friend constexpr iterator operator+(iterator i, difference_type n) noexcept { return iterator(i.__p_ + n); }
+    friend constexpr iterator operator+(difference_type n, iterator i) noexcept { return iterator(i.__p_ + n); }
+    friend constexpr iterator operator-(iterator i, difference_type n) noexcept { return iterator(i.__p_ - n); }
+    friend constexpr difference_type operator-(const iterator& a, const iterator& b) noexcept { return a.__p_ - b.__p_; }
+    friend constexpr bool operator==(const iterator& a, const iterator& b) noexcept { return a.__p_ == b.__p_; }
     friend constexpr strong_ordering operator<=>(const iterator& a, const iterator& b) noexcept {
-      return a.p_ <=> b.p_;
+      return a.__p_ <=> b.__p_;
     }
   };
 
   constexpr aliases_view() noexcept = default;
-  constexpr aliases_view(const ycxx::detail::te_name* first, const ycxx::detail::te_name* last) noexcept
-      : first_(first), last_(last) {}
-  constexpr iterator begin() const noexcept { return iterator(first_); }
-  constexpr iterator end() const noexcept { return iterator(last_); }
+  constexpr aliases_view(const __ycxx::__detail::__te_name* first, const __ycxx::__detail::__te_name* last) noexcept
+      : __first_(first), __last_(last) {}
+  constexpr iterator begin() const noexcept { return iterator(__first_); }
+  constexpr iterator end() const noexcept { return iterator(__last_); }
 
 private:
-  const ycxx::detail::te_name* first_ = nullptr;
-  const ycxx::detail::te_name* last_ = nullptr;
+  const __ycxx::__detail::__te_name* __first_ = nullptr;
+  const __ycxx::__detail::__te_name* __last_ = nullptr;
 };
 
 constexpr text_encoding::aliases_view text_encoding::aliases() const noexcept {
-  if (mib_ == id::other || mib_ == id::unknown)
+  if (__mib_ == id::other || __mib_ == id::unknown)
     return aliases_view();
-  const ycxx::detail::te_name* first = ycxx::detail::te_first(static_cast<int_least32_t>(mib_));
-  const ycxx::detail::te_name* last = first;
-  while (last != end_of_table() && last->mib == static_cast<int_least32_t>(mib_))
+  const __ycxx::__detail::__te_name* first = __ycxx::__detail::__te_first(static_cast<int_least32_t>(__mib_));
+  const __ycxx::__detail::__te_name* last = first;
+  while (last != __end_of_table() && last->mib == static_cast<int_least32_t>(__mib_))
     ++last;
   return aliases_view(first, last);
 }
@@ -489,9 +489,9 @@ struct hash<text_encoding> {
   size_t operator()(const text_encoding& e) const noexcept {
     if (e.mib() != text_encoding::id::other)
       return static_cast<size_t>(e.mib());
-    char buf[text_encoding::max_name_length + 1] = {};
-    const size_t n = ycxx::detail::te_canon(e.name(), buf);
-    return static_cast<size_t>(ycxx::detail::hash_chars(buf, n));
+    char __buf[text_encoding::max_name_length + 1] = {};
+    const size_t n = __ycxx::__detail::__te_canon(e.name(), __buf);
+    return static_cast<size_t>(__ycxx::__detail::__hash_chars(__buf, n));
   }
 };
 

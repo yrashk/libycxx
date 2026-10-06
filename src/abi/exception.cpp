@@ -6,7 +6,7 @@
 #include <new>
 #include <ycxx/pal.h>
 
-namespace [[gnu::visibility("hidden")]] ycxx { namespace abi {
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __abi {
 namespace {
 
 // ---- Layout ----
@@ -16,8 +16,8 @@ namespace {
 // 64-byte aligned and starts with `header_pad` unused bytes, so that the header ends there.
 constexpr std::size_t object_alignment = 64;
 constexpr std::size_t header_pad =
-    (sizeof(exception_header) + object_alignment - 1) / object_alignment * object_alignment -
-    sizeof(exception_header);
+    (sizeof(__exception_header) + object_alignment - 1) / object_alignment * object_alignment -
+    sizeof(__exception_header);
 
 // ---- Emergency pool ----
 // When the heap is exhausted, exceptions (typically bad_alloc) come from a fixed pool of
@@ -31,10 +31,10 @@ unsigned long long pool_used; // bit i: block i in use
 void* pool_allocate(std::size_t size) noexcept {
   if (size > pool_block)
     return nullptr;
-  unsigned long long used = __atomic_load_n(&pool_used, __ATOMIC_RELAXED);
-  while (~used != 0) {
-    const int i = __builtin_ctzll(~used);
-    if (__atomic_compare_exchange_n(&pool_used, &used, used | (1ULL << i), false, __ATOMIC_ACQUIRE,
+  unsigned long long __y_used = __atomic_load_n(&pool_used, __ATOMIC_RELAXED);
+  while (~__y_used != 0) {
+    const int i = __builtin_ctzll(~__y_used);
+    if (__atomic_compare_exchange_n(&pool_used, &__y_used, __y_used | (1ULL << i), false, __ATOMIC_ACQUIRE,
                                     __ATOMIC_RELAXED))
       return pool + i * pool_block;
   }
@@ -49,50 +49,50 @@ bool pool_free(void* p) noexcept {
   return true;
 }
 
-// A header followed by `thrown_size` bytes, the header zero-initialized (so unset cached fields
+// A header followed by `__thrown_size` bytes, the header zero-initialized (so unset cached fields
 // read as null).
-exception_header* allocate_header(std::size_t thrown_size) noexcept {
-  const std::size_t size = header_pad + sizeof(exception_header) + thrown_size;
-  void* p = ycxx_pal_allocate(size, object_alignment);
+__exception_header* allocate_header(std::size_t __thrown_size) noexcept {
+  const std::size_t size = header_pad + sizeof(__exception_header) + __thrown_size;
+  void* p = __ycxx_pal_allocate(size, object_alignment);
   std::size_t recorded = size;
   if (!p) {
     p = pool_allocate(size);
     recorded = 0;
   }
   if (!p)
-    ycxx_pal_abort("cannot allocate an exception object");
-  exception_header* h = reinterpret_cast<exception_header*>(static_cast<unsigned char*>(p) + header_pad);
-  __builtin_memset(h, 0, sizeof(exception_header));
-  h->allocation_size = recorded;
+    __ycxx_pal_abort("cannot allocate an exception object");
+  __exception_header* h = reinterpret_cast<__exception_header*>(static_cast<unsigned char*>(p) + header_pad);
+  __builtin_memset(h, 0, sizeof(__exception_header));
+  h->__allocation_size = recorded;
   return h;
 }
-void free_header(exception_header* h) noexcept {
+void free_header(__exception_header* h) noexcept {
   unsigned char* block = reinterpret_cast<unsigned char*>(h) - header_pad;
-  if (h->allocation_size == 0)
+  if (h->__allocation_size == 0)
     pool_free(block);
   else
-    ycxx_pal_deallocate(block, h->allocation_size, object_alignment);
+    __ycxx_pal_deallocate(block, h->__allocation_size, object_alignment);
 }
 
 // Called when something other than this runtime deletes one of our exceptions
 // (_Unwind_DeleteException from a foreign catch), or when a forced unwind ends.
-void cleanup_native(_Unwind_Reason_Code reason, _Unwind_Exception* ue) {
+void cleanup_native(_Unwind_Reason_Code reason, _Unwind_Exception* __ue) {
   if (reason != _URC_FOREIGN_EXCEPTION_CAUGHT && reason != _URC_NO_REASON)
     std::terminate();
   // Caught (and finished) by another runtime's handler: no longer uncaught.
   if (reason == _URC_FOREIGN_EXCEPTION_CAUGHT)
-    --header_of_unwind(ue)->counted_in->uncaught_exceptions;
-  release(header_of_unwind(ue));
+    --__header_of_unwind(__ue)->__counted_in->uncaught_exceptions;
+  release(__header_of_unwind(__ue));
 }
 
 
-constinit thread_local eh_globals thread_globals{};
+constinit thread_local __eh_globals thread_globals{};
 
 void write_err(const char* s) noexcept {
-  ycxx_pal_size n = 0, w = 0;
+  __ycxx_pal_size n = 0, __w = 0;
   while (s[n])
     ++n;
-  ycxx_pal_write(ycxx_pal_stderr, s, n, &w);
+  __ycxx_pal_write(__ycxx_pal_stderr, s, n, &__w);
 }
 
 // The default terminate handler: reports the current exception (its mangled type name, and
@@ -102,58 +102,58 @@ constinit thread_local bool in_default_terminate = false;
 void default_terminate() {
   // what() may itself end in terminate; report once.
   if (in_default_terminate)
-    ycxx_pal_abort("terminate called recursively");
+    __ycxx_pal_abort("terminate called recursively");
   in_default_terminate = true;
-  eh_globals* g = globals();
-  exception_header* h = g->caught_exceptions;
-  if (h && is_native(h->unwind_header.exception_class)) {
+  __eh_globals* __g = __globals();
+  __exception_header* h = __g->__caught_exceptions;
+  if (h && __is_native(h->__unwind_header.exception_class)) {
     write_err("terminate called after throwing an exception of type ");
-    write_err(h->exception_type->name());
-    void* obj = object_of(h);
-    if (catch_matches(&typeid(std::exception), h->exception_type, &obj)) {
+    write_err(h->__exception_type->name());
+    void* __obj = object_of(h);
+    if (__catch_matches(&typeid(std::exception), h->__exception_type, &__obj)) {
       write_err(": ");
-      write_err(static_cast<const std::exception*>(obj)->what());
+      write_err(static_cast<const std::exception*>(__obj)->what());
     }
     write_err("\n");
-    ycxx_pal_abort(nullptr);
+    __ycxx_pal_abort(nullptr);
   }
   if (h)
-    ycxx_pal_abort("terminate called after throwing a foreign exception");
-  ycxx_pal_abort("terminate called without an active exception");
+    __ycxx_pal_abort("terminate called after throwing a foreign exception");
+  __ycxx_pal_abort("terminate called without an active exception");
 }
 
 // The current handler; starts as (and a null argument to set_terminate restores) the default.
 std::terminate_handler terminate_handler_v = default_terminate;
 
-[[noreturn]] void call_terminate_handler(std::terminate_handler f) noexcept {
+[[noreturn]] void call_terminate_handler(std::terminate_handler __f) noexcept {
   // [terminate.handler]/2: a terminate handler shall not return; one that does (or throws)
   // ends the program here.
   try {
-    f();
+    __f();
   } catch (...) {
   }
-  ycxx_pal_abort("terminate handler returned");
+  __ycxx_pal_abort("terminate handler returned");
 }
 
 } // namespace
 
-eh_globals* globals() noexcept { return &thread_globals; }
+__eh_globals* __globals() noexcept { return &thread_globals; }
 
-exception_header* retain_primary(exception_header* h) noexcept {
-  exception_header* p = is_dependent(h) ? header_of_object(h->primary_object) : h;
-  __atomic_fetch_add(&p->reference_count, 1, __ATOMIC_RELAXED);
+__exception_header* __retain_primary(__exception_header* h) noexcept {
+  __exception_header* p = __is_dependent(h) ? __header_of_object(h->__primary_object) : h;
+  __atomic_fetch_add(&p->__reference_count, 1, __ATOMIC_RELAXED);
   return p;
 }
 
-void release(exception_header* h) noexcept {
-  if (is_dependent(h)) {
-    exception_header* p = header_of_object(h->primary_object);
+void release(__exception_header* h) noexcept {
+  if (__is_dependent(h)) {
+    __exception_header* p = __header_of_object(h->__primary_object);
     free_header(h);
     h = p;
   }
-  if (__atomic_sub_fetch(&h->reference_count, 1, __ATOMIC_ACQ_REL) == 0) {
-    if (h->exception_destructor)
-      h->exception_destructor(h + 1);
+  if (__atomic_sub_fetch(&h->__reference_count, 1, __ATOMIC_ACQ_REL) == 0) {
+    if (h->__exception_destructor)
+      h->__exception_destructor(h + 1);
     free_header(h);
   }
 }
@@ -161,56 +161,56 @@ void release(exception_header* h) noexcept {
 // release() for the end of a handler ([except.throw]/4.1): the exception object's destructor may
 // exit via an exception, which then propagates from the end of the handler (/9 and
 // [except.terminate]/1 call terminate only during unwinding); the header is freed either way.
-void release_at_handler_exit(exception_header* h) {
-  if (is_dependent(h)) {
-    exception_header* p = header_of_object(h->primary_object);
+void release_at_handler_exit(__exception_header* h) {
+  if (__is_dependent(h)) {
+    __exception_header* p = __header_of_object(h->__primary_object);
     free_header(h);
     h = p;
   }
-  if (__atomic_sub_fetch(&h->reference_count, 1, __ATOMIC_ACQ_REL) == 0) {
+  if (__atomic_sub_fetch(&h->__reference_count, 1, __ATOMIC_ACQ_REL) == 0) {
     struct free_on_exit {
-      exception_header* h;
+      __exception_header* h;
       ~free_on_exit() { free_header(h); }
-    } guard{h};
-    if (h->exception_destructor)
-      h->exception_destructor(h + 1);
+    } __guard{h};
+    if (h->__exception_destructor)
+      h->__exception_destructor(h + 1);
   }
 }
 
-[[noreturn]] void terminate_for(_Unwind_Exception* ue) noexcept {
-  __cxa_begin_catch(ue);
+[[noreturn]] void __terminate_for(_Unwind_Exception* __ue) noexcept {
+  __cxa_begin_catch(__ue);
   std::terminate();
 }
 
 // Throws an exception whose header is already filled in apart from the unwind fields. Inlined
 // into its callers: each frame between the throw and the handler is unwound twice (search and
 // cleanup phases), so a helper frame of its own would make every throw slower.
-[[noreturn]] [[gnu::always_inline]] inline void raise(exception_header* h) {
+[[noreturn]] [[__gnu__::__always_inline__]] inline void raise(__exception_header* h) {
   h->unexpected_handler = nullptr;
   h->terminate_handler = std::get_terminate();
-  h->unwind_header.exception_cleanup = cleanup_native;
-  h->counted_in = globals();
-  ++h->counted_in->uncaught_exceptions;
-  _Unwind_RaiseException(&h->unwind_header);
+  h->__unwind_header.exception_cleanup = cleanup_native;
+  h->__counted_in = __globals();
+  ++h->__counted_in->uncaught_exceptions;
+  _Unwind_RaiseException(&h->__unwind_header);
   // No handler: [except.handle]/9.
-  terminate_for(&h->unwind_header);
+  __terminate_for(&h->__unwind_header);
 }
 
 // rethrow_exception: a dependent exception referring to `primary` (which gains a reference).
-[[noreturn]] void rethrow_primary(void* primary_object) {
-  exception_header* p = header_of_object(primary_object);
-  exception_header* d = allocate_header(0);
-  d->primary_object = primary_object;
-  d->exception_type = p->exception_type;
-  d->exception_destructor = p->exception_destructor;
-  d->unwind_header.exception_class = dependent_class;
-  retain_primary(p);
+[[noreturn]] void __rethrow_primary(void* __primary_object) {
+  __exception_header* p = __header_of_object(__primary_object);
+  __exception_header* d = allocate_header(0);
+  d->__primary_object = __primary_object;
+  d->__exception_type = p->__exception_type;
+  d->__exception_destructor = p->__exception_destructor;
+  d->__unwind_header.exception_class = __dependent_class;
+  __retain_primary(p);
   raise(d);
 }
 
-}} // namespace ycxx::abi
+}} // namespace __ycxx::__abi
 
-using namespace ycxx::abi;
+using namespace __ycxx::__abi;
 
 // The runtime's entry points are declared hidden (DECISIONS §2), but GCC declares the entry points
 // that its exception-handling code calls itself, with default visibility, and keeps that
@@ -219,12 +219,12 @@ using namespace ycxx::abi;
 // its runtime: with the rest hidden, a process holding another runtime (libstdc++'s) would bind
 // these names to one runtime and the others to the other. Clang already hides them.
 namespace {
-consteval asm_text hide_compiler_declared_entry_points() {
-  asm_text a;
+consteval __asm_text hide_compiler_declared_entry_points() {
+  __asm_text a;
   for (const char* name : {"__cxa_allocate_exception", "__cxa_free_exception", "__cxa_throw", "__cxa_begin_catch",
                            "__cxa_end_catch", "__cxa_call_unexpected", "__cxa_call_terminate"}) {
     // Mach-O symbols carry the C prefix '_'.
-    a.append(ycxx::detail::cfg::darwin ? ".private_extern _" : ".hidden ");
+    a.append(__ycxx::__detail::__cfg::__darwin ? ".private_extern _" : ".hidden ");
     a.append(name);
     a.append("\n");
   }
@@ -235,128 +235,128 @@ asm((hide_compiler_declared_entry_points()));
 
 extern "C" {
 
-[[gnu::visibility("hidden")]] eh_globals* __cxa_get_globals() noexcept { return globals(); }
-[[gnu::visibility("hidden")]] eh_globals* __cxa_get_globals_fast() noexcept { return globals(); }
+[[__gnu__::__visibility__("hidden")]] __eh_globals* __cxa_get_globals() noexcept { return __globals(); }
+[[__gnu__::__visibility__("hidden")]] __eh_globals* __cxa_get_globals_fast() noexcept { return __globals(); }
 
-void* __cxa_allocate_exception(std::size_t thrown_size) noexcept {
-  exception_header* h = allocate_header(thrown_size);
-  h->reference_count = 1;
+void* __cxa_allocate_exception(std::size_t __thrown_size) noexcept {
+  __exception_header* h = allocate_header(__thrown_size);
+  h->__reference_count = 1;
   return h + 1;
 }
 
-void __cxa_free_exception(void* thrown) noexcept { free_header(header_of_object(thrown)); }
+void __cxa_free_exception(void* __thrown) noexcept { free_header(__header_of_object(__thrown)); }
 
 // (GCC predeclares __cxa_throw with a void* type_info parameter.)
-[[noreturn]] void __cxa_throw(void* thrown, void* tinfo, void (*dest)(void*)) {
-  exception_header* h = header_of_object(thrown);
-  h->exception_type = static_cast<std::type_info*>(tinfo);
-  h->exception_destructor = dest;
-  h->unwind_header.exception_class = primary_class;
+[[noreturn]] void __cxa_throw(void* __thrown, void* __tinfo, void (*__dest)(void*)) {
+  __exception_header* h = __header_of_object(__thrown);
+  h->__exception_type = static_cast<std::type_info*>(__tinfo);
+  h->__exception_destructor = __dest;
+  h->__unwind_header.exception_class = __primary_class;
   raise(h);
 }
 
-[[gnu::visibility("hidden")]] void* __cxa_get_exception_ptr(void* ue) noexcept {
-  _Unwind_Exception* u = static_cast<_Unwind_Exception*>(ue);
-  if (!is_native(u->exception_class))
-    return u + 1;
-  return header_of_unwind(u)->adjusted_ptr;
+[[__gnu__::__visibility__("hidden")]] void* __cxa_get_exception_ptr(void* __ue) noexcept {
+  _Unwind_Exception* __u = static_cast<_Unwind_Exception*>(__ue);
+  if (!__is_native(__u->exception_class))
+    return __u + 1;
+  return __header_of_unwind(__u)->__adjusted_ptr;
 }
 
-void* __cxa_begin_catch(void* ue) noexcept {
-  _Unwind_Exception* u = static_cast<_Unwind_Exception*>(ue);
-  eh_globals* g = globals();
-  exception_header* h = header_of_unwind(u);
-  if (!is_native(u->exception_class)) {
+void* __cxa_begin_catch(void* __ue) noexcept {
+  _Unwind_Exception* __u = static_cast<_Unwind_Exception*>(__ue);
+  __eh_globals* __g = __globals();
+  __exception_header* h = __header_of_unwind(__u);
+  if (!__is_native(__u->exception_class)) {
     // A foreign exception has no header of ours; it can only be the bottom of the caught stack
     // (nothing can be linked below it), so it may not be caught while another is.
-    if (g->caught_exceptions)
+    if (__g->__caught_exceptions)
       std::terminate();
-    g->caught_exceptions = h;
-    return u + 1;
+    __g->__caught_exceptions = h;
+    return __u + 1;
   }
   // handler_count is negative while the exception is being rethrown.
-  const int count = h->handler_count < 0 ? -h->handler_count + 1 : h->handler_count + 1;
-  h->handler_count = count;
-  if (h != g->caught_exceptions) {
-    h->next_exception = g->caught_exceptions;
-    g->caught_exceptions = h;
+  const int count = h->__handler_count < 0 ? -h->__handler_count + 1 : h->__handler_count + 1;
+  h->__handler_count = count;
+  if (h != __g->__caught_exceptions) {
+    h->__next_exception = __g->__caught_exceptions;
+    __g->__caught_exceptions = h;
   }
-  --h->counted_in->uncaught_exceptions; // the throwing image's count (eh.hpp)
-  return h->adjusted_ptr;
+  --h->__counted_in->uncaught_exceptions; // the throwing image's count (eh.hpp)
+  return h->__adjusted_ptr;
 }
 
 void __cxa_end_catch() {
-  eh_globals* g = globals();
-  exception_header* h = g->caught_exceptions;
+  __eh_globals* __g = __globals();
+  __exception_header* h = __g->__caught_exceptions;
   if (!h)
     return;
-  if (!is_native(h->unwind_header.exception_class)) {
-    g->caught_exceptions = nullptr;
-    _Unwind_DeleteException(&h->unwind_header);
+  if (!__is_native(h->__unwind_header.exception_class)) {
+    __g->__caught_exceptions = nullptr;
+    _Unwind_DeleteException(&h->__unwind_header);
     return;
   }
-  if (h->handler_count < 0) {
+  if (h->__handler_count < 0) {
     // Rethrown: still in flight; leaves the caught stack when its last handler exits.
-    if (++h->handler_count == 0)
-      g->caught_exceptions = h->next_exception;
-  } else if (--h->handler_count == 0) {
-    g->caught_exceptions = h->next_exception;
+    if (++h->__handler_count == 0)
+      __g->__caught_exceptions = h->__next_exception;
+  } else if (--h->__handler_count == 0) {
+    __g->__caught_exceptions = h->__next_exception;
     release_at_handler_exit(h);
   }
 }
 
-[[noreturn, gnu::visibility("hidden")]] void __cxa_rethrow() {
-  eh_globals* g = globals();
-  exception_header* h = g->caught_exceptions;
+[[noreturn, __gnu__::__visibility__("hidden")]] void __cxa_rethrow() {
+  __eh_globals* __g = __globals();
+  __exception_header* h = __g->__caught_exceptions;
   if (!h)
     std::terminate();
-  if (is_native(h->unwind_header.exception_class)) {
+  if (__is_native(h->__unwind_header.exception_class)) {
     // Already being rethrown (a `throw;` while unwinding from an earlier one, e.g. in a
     // destructor's handler): its unwind header is in use, so throw a dependent exception that
     // refers to the same object.
-    if (h->handler_count < 0)
-      rethrow_primary(object_of(h));
-    h->handler_count = -h->handler_count;
-    h->counted_in = g;
-    ++g->uncaught_exceptions;
+    if (h->__handler_count < 0)
+      __rethrow_primary(object_of(h));
+    h->__handler_count = -h->__handler_count;
+    h->__counted_in = __g;
+    ++__g->uncaught_exceptions;
   } else {
     // Ending the foreign handler must not delete it: it is in flight again.
-    g->caught_exceptions = nullptr;
+    __g->__caught_exceptions = nullptr;
   }
-  _Unwind_Resume_or_Rethrow(&h->unwind_header);
-  terminate_for(&h->unwind_header);
+  _Unwind_Resume_or_Rethrow(&h->__unwind_header);
+  __terminate_for(&h->__unwind_header);
 }
 
-[[gnu::visibility("hidden")]] std::type_info* __cxa_current_exception_type() noexcept {
-  exception_header* h = globals()->caught_exceptions;
-  if (!h || !is_native(h->unwind_header.exception_class))
+[[__gnu__::__visibility__("hidden")]] std::type_info* __cxa_current_exception_type() noexcept {
+  __exception_header* h = __globals()->__caught_exceptions;
+  if (!h || !__is_native(h->__unwind_header.exception_class))
     return nullptr;
-  return h->exception_type;
+  return h->__exception_type;
 }
 
 // Landing pads that must terminate: GCC calls this for a violated exception specification
 // (C++26 has only noexcept, which GCC encodes as a gap in the call-site table instead).
-[[noreturn]] void __cxa_call_unexpected(void* ue) noexcept { terminate_for(static_cast<_Unwind_Exception*>(ue)); }
-[[noreturn]] void __cxa_call_terminate(void* ue) noexcept {
-  if (ue)
-    __cxa_begin_catch(ue);
+[[noreturn]] void __cxa_call_unexpected(void* __ue) noexcept { __terminate_for(static_cast<_Unwind_Exception*>(__ue)); }
+[[noreturn]] void __cxa_call_terminate(void* __ue) noexcept {
+  if (__ue)
+    __cxa_begin_catch(__ue);
   std::terminate();
 }
 
 } // extern "C"
 
-namespace [[gnu::visibility("hidden")]] std {
+namespace [[__gnu__::__visibility__("hidden")]] std {
 
 // [set.terminate]/2 leaves open whether null designates the default handler; here it does.
-terminate_handler set_terminate(terminate_handler f) noexcept {
-  return __atomic_exchange_n(&ycxx::abi::terminate_handler_v, f ? f : ycxx::abi::default_terminate,
+terminate_handler set_terminate(terminate_handler __f) noexcept {
+  return __atomic_exchange_n(&__ycxx::__abi::terminate_handler_v, __f ? __f : __ycxx::__abi::default_terminate,
                              __ATOMIC_ACQ_REL);
 }
 terminate_handler get_terminate() noexcept {
-  return __atomic_load_n(&ycxx::abi::terminate_handler_v, __ATOMIC_ACQUIRE);
+  return __atomic_load_n(&__ycxx::__abi::terminate_handler_v, __ATOMIC_ACQUIRE);
 }
-[[noreturn]] void terminate() noexcept { ycxx::abi::call_terminate_handler(get_terminate()); }
+[[noreturn]] void terminate() noexcept { __ycxx::__abi::call_terminate_handler(get_terminate()); }
 
-int uncaught_exceptions() noexcept { return static_cast<int>(ycxx::abi::globals()->uncaught_exceptions); }
+int uncaught_exceptions() noexcept { return static_cast<int>(__ycxx::__abi::__globals()->uncaught_exceptions); }
 
 } // namespace std

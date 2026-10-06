@@ -21,71 +21,71 @@
 #include <ycxx/core/type_traits.hpp>
 #include <ycxx/core/unique_ptr.hpp>
 
-namespace [[gnu::visibility("hidden")]] ycxx { namespace adl_free {
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __adl_free {
 // The link of a retired object (the base of every hazard_pointer_obj_base).
-struct hp_retired_node {
-  hp_retired_node* hp_next_;
-  const void* hp_object_;                          // the T object the hazard pointers name
-  void (*hp_reclaim_)(hp_retired_node*) noexcept; // invokes the deleter
+struct __hp_retired_node {
+  __hp_retired_node* __hp_next_;
+  const void* __hp_object_;                          // the T object the hazard pointers name
+  void (*__hp_reclaim_)(__hp_retired_node*) noexcept; // invokes the deleter
 };
-}} // namespace ycxx::adl_free
+}} // namespace __ycxx::__adl_free
 
-namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
-using adl_free::hp_retired_node;
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+using __adl_free::__hp_retired_node;
 
 // A hazard pointer: the value its owner publishes, and whether a hazard_pointer owns it.
-struct hp_record {
+struct __hp_record {
   const void* value;  // atomic
-  hp_record* next;    // immutable once the record is in the list
-  ycxx_pal_u32 owned; // atomic
+  __hp_record* next;    // immutable once the record is in the list
+  __ycxx_pal_u32 __owned; // atomic
 };
 
 // ---- the hosted runtime (src/hosted/hazard_pointer.cpp) ---------------------------------------
 // An unowned record, now owned by the caller; throws bad_alloc if a new one cannot be allocated.
-hp_record* hp_acquire();
-void hp_release(hp_record* r) noexcept;
+__hp_record* __hp_acquire();
+void __hp_release(__hp_record* r) noexcept;
 // Retires n (its object and reclaim function are set); may reclaim retired objects.
-void hp_retire(hp_retired_node* n) noexcept;
+void __hp_retire(__hp_retired_node* n) noexcept;
 
 // [saferecl.hp.general]/2: exactly one public, non-virtual base hazard_pointer_obj_base<T, D>.
-template <class T, class Base>
-concept hp_protectable_via = std::is_base_of_v<Base, T> && requires(T* p) { static_cast<Base*>(p); } &&
-                             requires(Base* b) { static_cast<T*>(b); };
+template <class _Tp, class _Base>
+concept __hp_protectable_via = std::is_base_of_v<_Base, _Tp> && requires(_Tp* p) { static_cast<_Base*>(p); } &&
+                             requires(_Base* b) { static_cast<_Tp*>(b); };
 
-template <class T>
-concept hazard_protectable = requires { typename T::ycxx_hp_base; } &&
-                             std::is_same_v<typename T::ycxx_hp_base::ycxx_hp_object, std::remove_cv_t<T>> &&
-                             hp_protectable_via<std::remove_cv_t<T>, typename T::ycxx_hp_base>;
+template <class _Tp>
+concept __hazard_protectable = requires { typename _Tp::__ycxx_hp_base; } &&
+                             std::is_same_v<typename _Tp::__ycxx_hp_base::__ycxx_hp_object, std::remove_cv_t<_Tp>> &&
+                             __hp_protectable_via<std::remove_cv_t<_Tp>, typename _Tp::__ycxx_hp_base>;
 
-struct hp_access;
+struct __hp_access;
 
-}} // namespace ycxx::detail
+}} // namespace __ycxx::__detail
 
-namespace [[gnu::visibility("hidden")]] std {
+namespace [[__gnu__::__visibility__("hidden")]] std {
 
 // [saferecl.hp.base]
-template <class T, class D = default_delete<T>>
-class hazard_pointer_obj_base : ycxx::adl_free::hp_retired_node {
-  [[no_unique_address]] D deleter_;
+template <class _Tp, class _Dp = default_delete<_Tp>>
+class hazard_pointer_obj_base : __ycxx::__adl_free::__hp_retired_node {
+  [[no_unique_address]] _Dp __deleter_;
 
-  static void reclaim(ycxx::adl_free::hp_retired_node* n) noexcept {
-    hazard_pointer_obj_base* self = static_cast<hazard_pointer_obj_base*>(n);
-    self->deleter_(static_cast<T*>(self));
+  static void __reclaim(__ycxx::__adl_free::__hp_retired_node* n) noexcept {
+    hazard_pointer_obj_base* __self = static_cast<hazard_pointer_obj_base*>(n);
+    __self->__deleter_(static_cast<_Tp*>(__self));
   }
 
 public:
   // For the hazard-protectable check: the base class of T (ambiguous, so absent, when T has
   // several hazard_pointer_obj_base bases).
-  using ycxx_hp_base = hazard_pointer_obj_base;
-  using ycxx_hp_object = T;
+  using __ycxx_hp_base = hazard_pointer_obj_base;
+  using __ycxx_hp_object = _Tp;
 
-  void retire(D d = D()) noexcept {
-    static_assert(ycxx::detail::hazard_protectable<T>, "hazard_pointer_obj_base::retire: T is not hazard-protectable");
-    deleter_ = static_cast<D&&>(d);
-    T* x = static_cast<T*>(this);
-    this->hp_object_ = static_cast<const void*>(x);
-    this->hp_reclaim_ = &reclaim;
-    ycxx::detail::hp_retire(this);
+  void retire(_Dp d = _Dp()) noexcept {
+    static_assert(__ycxx::__detail::__hazard_protectable<_Tp>, "hazard_pointer_obj_base::retire: T is not hazard-protectable");
+    __deleter_ = static_cast<_Dp&&>(d);
+    _Tp* __x = static_cast<_Tp*>(this);
+    this->__hp_object_ = static_cast<const void*>(__x);
+    this->__hp_reclaim_ = &__reclaim;
+    __ycxx::__detail::__hp_retire(this);
   }
 
 protected:
@@ -99,118 +99,118 @@ protected:
 
 // [saferecl.hp.holder]
 class hazard_pointer {
-  ycxx::detail::hp_record* rec_ = nullptr;
+  __ycxx::__detail::__hp_record* __rec_ = nullptr;
 
-  explicit hazard_pointer(ycxx::detail::hp_record* r) noexcept : rec_(r) {}
-  friend struct ycxx::detail::hp_access;
+  explicit hazard_pointer(__ycxx::__detail::__hp_record* r) noexcept : __rec_(r) {}
+  friend struct __ycxx::__detail::__hp_access;
 
   void set(const void* p) noexcept {
-    ycxx::detail::precondition(rec_ != nullptr, "hazard_pointer: *this is empty");
-    __atomic_store_n(&rec_->value, p, __ATOMIC_SEQ_CST);
+    __ycxx::__detail::__precondition(__rec_ != nullptr, "hazard_pointer: *this is empty");
+    __atomic_store_n(&__rec_->value, p, __ATOMIC_SEQ_CST);
     __atomic_thread_fence(__ATOMIC_SEQ_CST);
   }
 
 public:
   hazard_pointer() noexcept = default;
-  hazard_pointer(hazard_pointer&& other) noexcept : rec_(other.rec_) { other.rec_ = nullptr; }
+  hazard_pointer(hazard_pointer&& other) noexcept : __rec_(other.__rec_) { other.__rec_ = nullptr; }
   hazard_pointer& operator=(hazard_pointer&& other) noexcept {
     if (this != __builtin_addressof(other)) {
-      if (rec_)
-        ycxx::detail::hp_release(rec_);
-      rec_ = other.rec_;
-      other.rec_ = nullptr;
+      if (__rec_)
+        __ycxx::__detail::__hp_release(__rec_);
+      __rec_ = other.__rec_;
+      other.__rec_ = nullptr;
     }
     return *this;
   }
   ~hazard_pointer() {
-    if (rec_)
-      ycxx::detail::hp_release(rec_);
+    if (__rec_)
+      __ycxx::__detail::__hp_release(__rec_);
   }
 
-  [[nodiscard]] bool empty() const noexcept { return rec_ == nullptr; }
+  [[nodiscard]] bool empty() const noexcept { return __rec_ == nullptr; }
 
-  template <class T>
-  T* protect(const atomic<T*>& src) noexcept {
-    T* ptr = src.load(memory_order::relaxed);
-    while (!try_protect(ptr, src)) {
+  template <class _Tp>
+  _Tp* protect(const atomic<_Tp*>& __src) noexcept {
+    _Tp* ptr = __src.load(memory_order::relaxed);
+    while (!try_protect(ptr, __src)) {
     }
     return ptr;
   }
-  template <class T>
-  bool try_protect(T*& ptr, const atomic<T*>& src) noexcept {
-    static_assert(ycxx::detail::hazard_protectable<T>, "hazard_pointer::try_protect: T is not hazard-protectable");
-    T* const old = ptr;
-    reset_protection(old);
-    ptr = src.load(memory_order::acquire);
-    if (old != ptr) {
+  template <class _Tp>
+  bool try_protect(_Tp*& ptr, const atomic<_Tp*>& __src) noexcept {
+    static_assert(__ycxx::__detail::__hazard_protectable<_Tp>, "hazard_pointer::try_protect: T is not hazard-protectable");
+    _Tp* const __old = ptr;
+    reset_protection(__old);
+    ptr = __src.load(memory_order::acquire);
+    if (__old != ptr) {
       reset_protection();
       return false;
     }
     return true;
   }
-  template <class T>
-  void reset_protection(const T* ptr) noexcept {
-    static_assert(ycxx::detail::hazard_protectable<T>,
+  template <class _Tp>
+  void reset_protection(const _Tp* ptr) noexcept {
+    static_assert(__ycxx::__detail::__hazard_protectable<_Tp>,
                   "hazard_pointer::reset_protection: T is not hazard-protectable");
     set(static_cast<const void*>(ptr));
   }
   void reset_protection(nullptr_t = nullptr) noexcept {
-    ycxx::detail::precondition(rec_ != nullptr, "hazard_pointer: *this is empty");
-    __atomic_store_n(&rec_->value, static_cast<const void*>(nullptr), __ATOMIC_RELEASE);
+    __ycxx::__detail::__precondition(__rec_ != nullptr, "hazard_pointer: *this is empty");
+    __atomic_store_n(&__rec_->value, static_cast<const void*>(nullptr), __ATOMIC_RELEASE);
   }
   void swap(hazard_pointer& other) noexcept {
-    ycxx::detail::hp_record* r = rec_;
-    rec_ = other.rec_;
-    other.rec_ = r;
+    __ycxx::__detail::__hp_record* r = __rec_;
+    __rec_ = other.__rec_;
+    other.__rec_ = r;
   }
 };
 
 } // namespace std
 
-namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
-struct hp_access {
-  static std::hazard_pointer make(hp_record* r) noexcept { return std::hazard_pointer(r); }
-  static hp_record*& record(std::hazard_pointer& h) noexcept { return h.rec_; }
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+struct __hp_access {
+  static std::hazard_pointer __make(__hp_record* r) noexcept { return std::hazard_pointer(r); }
+  static __hp_record*& __record(std::hazard_pointer& h) noexcept { return h.__rec_; }
 };
-}} // namespace ycxx::detail
+}} // namespace __ycxx::__detail
 
-namespace [[gnu::visibility("hidden")]] std {
+namespace [[__gnu__::__visibility__("hidden")]] std {
 
 // [saferecl.hp.holder.nonmem]
 [[nodiscard]] inline hazard_pointer make_hazard_pointer() {
-  return ycxx::detail::hp_access::make(ycxx::detail::hp_acquire());
+  return __ycxx::__detail::__hp_access::__make(__ycxx::__detail::__hp_acquire());
 }
 inline void swap(hazard_pointer& a, hazard_pointer& b) noexcept { a.swap(b); }
 
-inline void make_hazard_pointer_batch(span<hazard_pointer> batch) {
+inline void make_hazard_pointer_batch(span<hazard_pointer> __batch) {
   // All or nothing: a record this call gave an element is marked (owned == 2) until every
   // element has one; if an acquisition throws, the marked ones are given back.
-  struct undo {
+  struct __undo {
     span<hazard_pointer> b;
-    ~undo() {
+    ~__undo() {
       for (hazard_pointer& h : b) {
-        ycxx::detail::hp_record*& r = ycxx::detail::hp_access::record(h);
-        if (r && __atomic_load_n(&r->owned, __ATOMIC_RELAXED) == 2) {
-          ycxx::detail::hp_release(r);
+        __ycxx::__detail::__hp_record*& r = __ycxx::__detail::__hp_access::__record(h);
+        if (r && __atomic_load_n(&r->__owned, __ATOMIC_RELAXED) == 2) {
+          __ycxx::__detail::__hp_release(r);
           r = nullptr;
         }
       }
     }
-  } u{batch};
-  for (hazard_pointer& h : batch) {
-    ycxx::detail::hp_record*& r = ycxx::detail::hp_access::record(h);
+  } __u{__batch};
+  for (hazard_pointer& h : __batch) {
+    __ycxx::__detail::__hp_record*& r = __ycxx::__detail::__hp_access::__record(h);
     if (!r) {
-      r = ycxx::detail::hp_acquire();
-      __atomic_store_n(&r->owned, 2, __ATOMIC_RELAXED);
+      r = __ycxx::__detail::__hp_acquire();
+      __atomic_store_n(&r->__owned, 2, __ATOMIC_RELAXED);
     }
   }
-  for (hazard_pointer& h : batch)
-    if (ycxx::detail::hp_record* r = ycxx::detail::hp_access::record(h))
-      __atomic_store_n(&r->owned, 1, __ATOMIC_RELAXED);
-  u.b = {};
+  for (hazard_pointer& h : __batch)
+    if (__ycxx::__detail::__hp_record* r = __ycxx::__detail::__hp_access::__record(h))
+      __atomic_store_n(&r->__owned, 1, __ATOMIC_RELAXED);
+  __u.b = {};
 }
-inline void clear_hazard_pointer_batch(span<hazard_pointer> batch) noexcept {
-  for (hazard_pointer& h : batch)
+inline void clear_hazard_pointer_batch(span<hazard_pointer> __batch) noexcept {
+  for (hazard_pointer& h : __batch)
     h = hazard_pointer();
 }
 

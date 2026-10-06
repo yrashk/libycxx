@@ -5,21 +5,21 @@
 
 #include <ycxx/config.hpp>
 
-namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
 
 // value = 0.m[0]m[1]m[2] (binary, top bit set) * 2^(exp + 1), truncated to 192 bits. The
 // constants are irrational, so the truncated tail is never zero (rounding needs no sticky bit).
-struct math_constant_bits {
+struct __math_constant_bits {
   int exp;
   unsigned long long m[3];
 };
 
-enum class math_constant : unsigned char {
+enum class __math_constant : unsigned char {
   e, log2e, log10e, pi, inv_pi, inv_sqrtpi, ln2, ln10, sqrt2, sqrt3, inv_sqrt3, egamma, phi
 };
 
 // Generated with 400-bit arithmetic: floor(c * 2^(191 - exp)), exp = floor(log2(c)).
-inline constexpr math_constant_bits math_constant_table[] = {
+inline constexpr __math_constant_bits __math_constant_table[] = {
     {1, {0xadf85458a2bb4a9aull, 0xafdc5620273d3cf1ull, 0xd8b9c583ce2d3695ull}},  // e
     {0, {0xb8aa3b295c17f0bbull, 0xbe87fed0691d3e88ull, 0xeb577aa8dd695a58ull}},  // log2(e)
     {-2, {0xde5bd8a937287195ull, 0x355baaafad33dc32ull, 0x3ee3460245c9a202ull}}, // log10(e)
@@ -37,34 +37,34 @@ inline constexpr math_constant_bits math_constant_table[] = {
 
 // The nearest value of T (any floating-point format with at most 127 significand bits) to the
 // constant `c`.
-template <class T>
-consteval T math_constant_value(math_constant c) {
-  const math_constant_bits& b = ycxx::detail::math_constant_table[static_cast<int>(c)];
-  constexpr int p = ycxx::detail::fp_format<T>.digits;
+template <class _Tp>
+consteval _Tp __math_constant_value(__math_constant c) {
+  const __math_constant_bits& b = __ycxx::__detail::__math_constant_table[static_cast<int>(c)];
+  constexpr int p = __ycxx::__detail::__fp_format<_Tp>.digits;
   static_assert(p > 0 && p < 128, "libycxx: unsupported floating-point format");
   // q = the top p bits, rounded by the next bit (the tail beyond it is never zero).
-  unsigned long long hi = 0, lo = 0; // q = hi * 2^64 + lo
+  unsigned long long __hi = 0, __lo = 0; // q = hi * 2^64 + lo
   for (int i = 0; i <= p; ++i) {     // bit i counts from the top of m
-    const unsigned long long bit = (b.m[i / 64] >> (63 - i % 64)) & 1;
+    const unsigned long long __bit = (b.m[i / 64] >> (63 - i % 64)) & 1;
     if (i == p) {
-      if (bit && ++lo == 0) ++hi;
+      if (__bit && ++__lo == 0) ++__hi;
     } else {
-      hi = (hi << 1) | (lo >> 63);
-      lo = (lo << 1) | bit;
+      __hi = (__hi << 1) | (__lo >> 63);
+      __lo = (__lo << 1) | __bit;
     }
   }
   int exp = b.exp - (p - 1);
-  if (p < 64 ? (lo >> p) != 0 : p == 64 ? hi != 0 : (hi >> (p - 64)) != 0) {
+  if (p < 64 ? (__lo >> p) != 0 : p == 64 ? __hi != 0 : (__hi >> (p - 64)) != 0) {
     // Rounded up to 2^p: renormalise.
-    lo = (lo >> 1) | (hi << 63);
-    hi >>= 1;
+    __lo = (__lo >> 1) | (__hi << 63);
+    __hi >>= 1;
     ++exp;
   }
-  T v = T(lo); // exact: q has at most p bits
-  if constexpr (p > 64) v += T(hi) * T(4294967296.0) * T(4294967296.0);
-  for (; exp > 0; --exp) v *= T(2);
-  for (; exp < 0; ++exp) v /= T(2);
-  return v;
+  _Tp __v = _Tp(__lo); // exact: q has at most p bits
+  if constexpr (p > 64) __v += _Tp(__hi) * _Tp(4294967296.0) * _Tp(4294967296.0);
+  for (; exp > 0; --exp) __v *= _Tp(2);
+  for (; exp < 0; ++exp) __v /= _Tp(2);
+  return __v;
 }
 
-}} // namespace ycxx::detail
+}} // namespace __ycxx::__detail

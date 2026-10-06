@@ -9,113 +9,113 @@
 #include <ycxx/core/bind.hpp>
 #include <ycxx/core/memory_base.hpp>
 
-namespace [[gnu::visibility("hidden")]] std { namespace ranges {
+namespace [[__gnu__::__visibility__("hidden")]] std { namespace ranges {
 // [range.adaptor.object]/2: a class derived from range_adaptor_closure<D> (and not a range) is a
 // range adaptor closure object type. The pipe operators below are found through this base.
-template <class D>
-  requires is_class_v<D> && same_as<D, remove_cv_t<D>>
+template <class _Dp>
+  requires is_class_v<_Dp> && same_as<_Dp, remove_cv_t<_Dp>>
 class range_adaptor_closure {};
 }} // namespace std::ranges
 
-namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
 
-template <bool Const, class T>
-using maybe_const = std::conditional_t<Const, const T, T>;
+template <bool _Const, class _Tp>
+using __maybe_const = std::conditional_t<_Const, const _Tp, _Tp>;
 
-template <class I>
-concept has_arrow = std::input_iterator<I> && (std::is_pointer_v<I> || requires(const I i) { i.operator->(); });
+template <class _Ip>
+concept __has_arrow = std::input_iterator<_Ip> && (std::is_pointer_v<_Ip> || requires(const _Ip i) { i.operator->(); });
 
-template <class R>
-concept range_with_movable_references = std::ranges::input_range<R> &&
-                                        std::move_constructible<std::ranges::range_reference_t<R>> &&
-                                        std::move_constructible<std::ranges::range_rvalue_reference_t<R>>;
+template <class _Rp>
+concept __range_with_movable_references = std::ranges::input_range<_Rp> &&
+                                        std::move_constructible<std::ranges::range_reference_t<_Rp>> &&
+                                        std::move_constructible<std::ranges::range_rvalue_reference_t<_Rp>>;
 
-template <class T>
-constexpr T& as_lvalue(T&& t) noexcept {
-  return static_cast<T&>(t);
+template <class _Tp>
+constexpr _Tp& __as_lvalue(_Tp&& t) noexcept {
+  return static_cast<_Tp&>(t);
 }
 
 // The type is publicly derived from range_adaptor_closure of itself, from no other specialization
 // (deduction from a pointer then finds exactly one base), and is not a range.
-template <class T>
-concept range_adaptor_closure_object =
-    !std::ranges::range<std::remove_cvref_t<T>> &&
-    std::derived_from<std::remove_cvref_t<T>, std::ranges::range_adaptor_closure<std::remove_cvref_t<T>>> &&
-    requires(std::remove_cvref_t<T>* p) { []<class U>(const std::ranges::range_adaptor_closure<U>*) {}(p); };
+template <class _Tp>
+concept __range_adaptor_closure_object =
+    !std::ranges::range<std::remove_cvref_t<_Tp>> &&
+    std::derived_from<std::remove_cvref_t<_Tp>, std::ranges::range_adaptor_closure<std::remove_cvref_t<_Tp>>> &&
+    requires(std::remove_cvref_t<_Tp>* p) { []<class _Up>(const std::ranges::range_adaptor_closure<_Up>*) {}(p); };
 
 // iterator_category of the views' iterators: iterator_traits<I>::iterator_category.
-template <class I>
-using iter_category_t = typename std::iterator_traits<I>::iterator_category;
+template <class _Ip>
+using __iter_category_t = typename std::iterator_traits<_Ip>::iterator_category;
 
-}} // namespace ycxx::detail
+}} // namespace __ycxx::__detail
 
-namespace [[gnu::visibility("hidden")]] ycxx { namespace adl_free {
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __adl_free {
 
 // C | D ([range.adaptor.object]/1): a perfect forwarding call wrapper with call pattern d(c(arg)).
-template <class C, class D>
-struct pipe_closure : std::ranges::range_adaptor_closure<pipe_closure<C, D>> {
-  [[no_unique_address]] C c;
-  [[no_unique_address]] D d;
+template <class _Cp, class _Dp>
+struct __pipe_closure : std::ranges::range_adaptor_closure<__pipe_closure<_Cp, _Dp>> {
+  [[no_unique_address]] _Cp c;
+  [[no_unique_address]] _Dp d;
 
-  template <class CC, class DD>
-  constexpr pipe_closure(wrapper_init_t, CC&& cc, DD&& dd) : c(static_cast<CC&&>(cc)), d(static_cast<DD&&>(dd)) {}
+  template <class _CC, class _DD>
+  constexpr __pipe_closure(__wrapper_init_t, _CC&& __cc, _DD&& __dd) : c(static_cast<_CC&&>(__cc)), d(static_cast<_DD&&>(__dd)) {}
 
-  template <class Self, class R>
-    requires wrapper_castable<Self, pipe_closure> && std::invocable<ycxx::detail::forward_like_t<Self, C>, R> &&
-             std::invocable<ycxx::detail::forward_like_t<Self, D>,
-                            std::invoke_result_t<ycxx::detail::forward_like_t<Self, C>, R>>
-  constexpr decltype(auto) operator()(this Self&& self, R&& r) noexcept(
-      std::is_nothrow_invocable_v<ycxx::detail::forward_like_t<Self, C>, R> &&
-      std::is_nothrow_invocable_v<ycxx::detail::forward_like_t<Self, D>,
-                                  std::invoke_result_t<ycxx::detail::forward_like_t<Self, C>, R>>) {
+  template <class _Self, class _Rp>
+    requires __wrapper_castable<_Self, __pipe_closure> && std::invocable<__ycxx::__detail::__forward_like_t<_Self, _Cp>, _Rp> &&
+             std::invocable<__ycxx::__detail::__forward_like_t<_Self, _Dp>,
+                            std::invoke_result_t<__ycxx::__detail::__forward_like_t<_Self, _Cp>, _Rp>>
+  constexpr decltype(auto) operator()(this _Self&& __self, _Rp&& r) noexcept(
+      std::is_nothrow_invocable_v<__ycxx::__detail::__forward_like_t<_Self, _Cp>, _Rp> &&
+      std::is_nothrow_invocable_v<__ycxx::__detail::__forward_like_t<_Self, _Dp>,
+                                  std::invoke_result_t<__ycxx::__detail::__forward_like_t<_Self, _Cp>, _Rp>>) {
     // Through the wrapper type: Self may be a class derived from it, even privately.
-    auto&& w = (ycxx::detail::copy_cvref<Self&&, pipe_closure>)self;
-    return ::ycxx::detail::invoke(std::forward_like<Self>(w.d),
-                                  ::ycxx::detail::invoke(std::forward_like<Self>(w.c), static_cast<R&&>(r)));
+    auto&& __w = (__ycxx::__detail::__copy_cvref<_Self&&, __pipe_closure>)__self;
+    return ::__ycxx::__detail::invoke(std::forward_like<_Self>(__w.d),
+                                  ::__ycxx::__detail::invoke(std::forward_like<_Self>(__w.c), static_cast<_Rp&&>(r)));
   }
 };
 
 // adaptor(args...) ([range.adaptor.object]/8): the call pattern adaptor(r, bound_args...) is
 // bind_back's, so the closure reuses its wrapper.
-template <class Adaptor, class... Bound>
-struct adaptor_closure : partial_wrapper<false, Adaptor, Bound...>,
-                         std::ranges::range_adaptor_closure<adaptor_closure<Adaptor, Bound...>> {
-  using partial_wrapper<false, Adaptor, Bound...>::partial_wrapper;
+template <class _Adaptor, class... _Bound>
+struct __adaptor_closure : __partial_wrapper<false, _Adaptor, _Bound...>,
+                         std::ranges::range_adaptor_closure<__adaptor_closure<_Adaptor, _Bound...>> {
+  using __partial_wrapper<false, _Adaptor, _Bound...>::__partial_wrapper;
 };
 
-}} // namespace ycxx::adl_free
+}} // namespace __ycxx::__adl_free
 
-namespace [[gnu::visibility("hidden")]] std { namespace ranges {
+namespace [[__gnu__::__visibility__("hidden")]] std { namespace ranges {
 
 // R | C is C(R); C | D composes. Declared in std::ranges, an associated namespace of every
 // closure type through its range_adaptor_closure base.
-template <class R, class C>
-  requires(!ycxx::detail::range_adaptor_closure_object<R>) && ycxx::detail::range_adaptor_closure_object<C> &&
-          invocable<C, R>
-constexpr decltype(auto) operator|(R&& r, C&& c) noexcept(is_nothrow_invocable_v<C, R>) {
-  return ::ycxx::detail::invoke(static_cast<C&&>(c), static_cast<R&&>(r));
+template <class _Rp, class _Cp>
+  requires(!__ycxx::__detail::__range_adaptor_closure_object<_Rp>) && __ycxx::__detail::__range_adaptor_closure_object<_Cp> &&
+          invocable<_Cp, _Rp>
+constexpr decltype(auto) operator|(_Rp&& r, _Cp&& c) noexcept(is_nothrow_invocable_v<_Cp, _Rp>) {
+  return ::__ycxx::__detail::invoke(static_cast<_Cp&&>(c), static_cast<_Rp&&>(r));
 }
 
-template <class C, class D>
-  requires ycxx::detail::range_adaptor_closure_object<C> && ycxx::detail::range_adaptor_closure_object<D> &&
-           constructible_from<decay_t<C>, C> && constructible_from<decay_t<D>, D>
-constexpr auto operator|(C&& c, D&& d) noexcept(is_nothrow_constructible_v<decay_t<C>, C> &&
-                                                is_nothrow_constructible_v<decay_t<D>, D>) {
-  return ycxx::adl_free::pipe_closure<decay_t<C>, decay_t<D>>(ycxx::adl_free::wrapper_init_t{}, static_cast<C&&>(c),
-                                                              static_cast<D&&>(d));
+template <class _Cp, class _Dp>
+  requires __ycxx::__detail::__range_adaptor_closure_object<_Cp> && __ycxx::__detail::__range_adaptor_closure_object<_Dp> &&
+           constructible_from<decay_t<_Cp>, _Cp> && constructible_from<decay_t<_Dp>, _Dp>
+constexpr auto operator|(_Cp&& c, _Dp&& d) noexcept(is_nothrow_constructible_v<decay_t<_Cp>, _Cp> &&
+                                                is_nothrow_constructible_v<decay_t<_Dp>, _Dp>) {
+  return __ycxx::__adl_free::__pipe_closure<decay_t<_Cp>, decay_t<_Dp>>(__ycxx::__adl_free::__wrapper_init_t{}, static_cast<_Cp&&>(c),
+                                                              static_cast<_Dp&&>(d));
 }
 
 }} // namespace std::ranges
 
-namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
 
 // adaptor(args...): the closure binding args (decayed copies) after the range argument.
-template <class Adaptor, class... Args>
-  requires(std::constructible_from<std::decay_t<Args>, Args> && ...)
-constexpr auto bind_adaptor(const Adaptor& a, Args&&... args) noexcept(
-    (std::is_nothrow_constructible_v<std::decay_t<Args>, Args> && ...)) {
-  return ycxx::adl_free::adaptor_closure<Adaptor, std::decay_t<Args>...>(ycxx::adl_free::wrapper_init_t{}, a,
-                                                                         static_cast<Args&&>(args)...);
+template <class _Adaptor, class... _Args>
+  requires(std::constructible_from<std::decay_t<_Args>, _Args> && ...)
+constexpr auto __bind_adaptor(const _Adaptor& a, _Args&&... __args) noexcept(
+    (std::is_nothrow_constructible_v<std::decay_t<_Args>, _Args> && ...)) {
+  return __ycxx::__adl_free::__adaptor_closure<_Adaptor, std::decay_t<_Args>...>(__ycxx::__adl_free::__wrapper_init_t{}, a,
+                                                                         static_cast<_Args&&>(__args)...);
 }
 
 // ---- [range.move.wrap] movable-box -----------------------------------------------------------
@@ -123,314 +123,314 @@ constexpr auto bind_adaptor(const Adaptor& a, Args&&... args) noexcept(
 // empty state: T is copyable (movable, for a move-only T), or construction cannot throw.
 // Assignment by destroy-and-reconstruct writes the whole object, so that form keeps T in a plain
 // member: a [[no_unique_address]] T could share its tail padding with a neighbour.
-template <class T>
-concept boxable = std::move_constructible<T> && std::is_object_v<T>;
-template <class T>
-concept box_assignable = (std::copy_constructible<T> && std::copyable<T>) || (!std::copy_constructible<T> && std::movable<T>);
-template <class T>
-concept box_nothrow =
-    std::is_nothrow_move_constructible_v<T> && (!std::copy_constructible<T> || std::is_nothrow_copy_constructible_v<T>);
+template <class _Tp>
+concept __boxable = std::move_constructible<_Tp> && std::is_object_v<_Tp>;
+template <class _Tp>
+concept __box_assignable = (std::copy_constructible<_Tp> && std::copyable<_Tp>) || (!std::copy_constructible<_Tp> && std::movable<_Tp>);
+template <class _Tp>
+concept __box_nothrow =
+    std::is_nothrow_move_constructible_v<_Tp> && (!std::copy_constructible<_Tp> || std::is_nothrow_copy_constructible_v<_Tp>);
 
-template <class T>
-  requires boxable<T>
-class movable_box {
+template <class _Tp>
+  requires __boxable<_Tp>
+class __movable_box {
   // The general form: an optional<T>.
   union {
-    T value_;
+    _Tp __value_;
   };
-  bool engaged_ = false;
+  bool __engaged_ = false;
 
-  template <class... Args>
-  constexpr void construct(Args&&... args) {
-    std::construct_at(__builtin_addressof(value_), static_cast<Args&&>(args)...);
-    engaged_ = true;
+  template <class... _Args>
+  constexpr void construct(_Args&&... __args) {
+    std::construct_at(__builtin_addressof(__value_), static_cast<_Args&&>(__args)...);
+    __engaged_ = true;
   }
 
 public:
-  constexpr movable_box() noexcept(std::is_nothrow_default_constructible_v<T>)
-    requires std::default_initializable<T>
-      : value_(), engaged_(true) {}
-  template <class... Args>
-    requires std::constructible_from<T, Args...>
-  constexpr explicit movable_box(std::in_place_t, Args&&... args) noexcept(std::is_nothrow_constructible_v<T, Args...>)
-      : value_(static_cast<Args&&>(args)...), engaged_(true) {}
+  constexpr __movable_box() noexcept(std::is_nothrow_default_constructible_v<_Tp>)
+    requires std::default_initializable<_Tp>
+      : __value_(), __engaged_(true) {}
+  template <class... _Args>
+    requires std::constructible_from<_Tp, _Args...>
+  constexpr explicit __movable_box(std::in_place_t, _Args&&... __args) noexcept(std::is_nothrow_constructible_v<_Tp, _Args...>)
+      : __value_(static_cast<_Args&&>(__args)...), __engaged_(true) {}
 
-  constexpr movable_box(const movable_box& o) noexcept(std::is_nothrow_copy_constructible_v<T>)
-    requires std::copy_constructible<T>
+  constexpr __movable_box(const __movable_box& __o) noexcept(std::is_nothrow_copy_constructible_v<_Tp>)
+    requires std::copy_constructible<_Tp>
   {
-    if (o.engaged_)
-      construct(o.value_);
+    if (__o.__engaged_)
+      construct(__o.__value_);
   }
-  constexpr movable_box(movable_box&& o) noexcept(std::is_nothrow_move_constructible_v<T>) {
-    if (o.engaged_)
-      construct(std::move(o.value_));
+  constexpr __movable_box(__movable_box&& __o) noexcept(std::is_nothrow_move_constructible_v<_Tp>) {
+    if (__o.__engaged_)
+      construct(std::move(__o.__value_));
   }
-  constexpr movable_box& operator=(const movable_box& o) noexcept(std::is_nothrow_copy_constructible_v<T>)
-    requires std::copy_constructible<T>
+  constexpr __movable_box& operator=(const __movable_box& __o) noexcept(std::is_nothrow_copy_constructible_v<_Tp>)
+    requires std::copy_constructible<_Tp>
   {
-    if (this != __builtin_addressof(o)) {
+    if (this != __builtin_addressof(__o)) {
       reset();
-      if (o.engaged_)
-        construct(o.value_);
+      if (__o.__engaged_)
+        construct(__o.__value_);
     }
     return *this;
   }
-  constexpr movable_box& operator=(movable_box&& o) noexcept(std::is_nothrow_move_constructible_v<T>) {
-    if (this != __builtin_addressof(o)) {
+  constexpr __movable_box& operator=(__movable_box&& __o) noexcept(std::is_nothrow_move_constructible_v<_Tp>) {
+    if (this != __builtin_addressof(__o)) {
       reset();
-      if (o.engaged_)
-        construct(std::move(o.value_));
+      if (__o.__engaged_)
+        construct(std::move(__o.__value_));
     }
     return *this;
   }
-  constexpr ~movable_box() { reset(); }
+  constexpr ~__movable_box() { reset(); }
 
   constexpr void reset() noexcept {
-    if (engaged_) {
-      std::destroy_at(__builtin_addressof(value_));
-      engaged_ = false;
+    if (__engaged_) {
+      std::destroy_at(__builtin_addressof(__value_));
+      __engaged_ = false;
     }
   }
-  constexpr bool has_value() const noexcept { return engaged_; }
-  constexpr T& operator*() & noexcept { return value_; }
-  constexpr const T& operator*() const& noexcept { return value_; }
-  constexpr T&& operator*() && noexcept { return std::move(value_); }
-  constexpr const T&& operator*() const&& noexcept { return std::move(value_); }
-  constexpr T* operator->() noexcept { return __builtin_addressof(value_); }
-  constexpr const T* operator->() const noexcept { return __builtin_addressof(value_); }
+  constexpr bool has_value() const noexcept { return __engaged_; }
+  constexpr _Tp& operator*() & noexcept { return __value_; }
+  constexpr const _Tp& operator*() const& noexcept { return __value_; }
+  constexpr _Tp&& operator*() && noexcept { return std::move(__value_); }
+  constexpr const _Tp&& operator*() const&& noexcept { return std::move(__value_); }
+  constexpr _Tp* operator->() noexcept { return __builtin_addressof(__value_); }
+  constexpr const _Tp* operator->() const noexcept { return __builtin_addressof(__value_); }
 };
 
-template <class T>
-  requires boxable<T> && box_assignable<T>
-class movable_box<T> {
-  [[no_unique_address]] T value_;
+template <class _Tp>
+  requires __boxable<_Tp> && __box_assignable<_Tp>
+class __movable_box<_Tp> {
+  [[no_unique_address]] _Tp __value_;
 
 public:
-  constexpr movable_box() noexcept(std::is_nothrow_default_constructible_v<T>)
-    requires std::default_initializable<T>
-      : value_() {}
-  template <class... Args>
-    requires std::constructible_from<T, Args...>
-  constexpr explicit movable_box(std::in_place_t, Args&&... args) noexcept(std::is_nothrow_constructible_v<T, Args...>)
-      : value_(static_cast<Args&&>(args)...) {}
+  constexpr __movable_box() noexcept(std::is_nothrow_default_constructible_v<_Tp>)
+    requires std::default_initializable<_Tp>
+      : __value_() {}
+  template <class... _Args>
+    requires std::constructible_from<_Tp, _Args...>
+  constexpr explicit __movable_box(std::in_place_t, _Args&&... __args) noexcept(std::is_nothrow_constructible_v<_Tp, _Args...>)
+      : __value_(static_cast<_Args&&>(__args)...) {}
 
   constexpr bool has_value() const noexcept { return true; }
-  constexpr T& operator*() & noexcept { return value_; }
-  constexpr const T& operator*() const& noexcept { return value_; }
-  constexpr T&& operator*() && noexcept { return std::move(value_); }
-  constexpr const T&& operator*() const&& noexcept { return std::move(value_); }
-  constexpr T* operator->() noexcept { return __builtin_addressof(value_); }
-  constexpr const T* operator->() const noexcept { return __builtin_addressof(value_); }
+  constexpr _Tp& operator*() & noexcept { return __value_; }
+  constexpr const _Tp& operator*() const& noexcept { return __value_; }
+  constexpr _Tp&& operator*() && noexcept { return std::move(__value_); }
+  constexpr const _Tp&& operator*() const&& noexcept { return std::move(__value_); }
+  constexpr _Tp* operator->() noexcept { return __builtin_addressof(__value_); }
+  constexpr const _Tp* operator->() const noexcept { return __builtin_addressof(__value_); }
 };
 
-template <class T>
-  requires boxable<T> && (!box_assignable<T>) && box_nothrow<T>
-class movable_box<T> {
-  T value_;
+template <class _Tp>
+  requires __boxable<_Tp> && (!__box_assignable<_Tp>) && __box_nothrow<_Tp>
+class __movable_box<_Tp> {
+  _Tp __value_;
 
 public:
-  constexpr movable_box() noexcept(std::is_nothrow_default_constructible_v<T>)
-    requires std::default_initializable<T>
-      : value_() {}
-  template <class... Args>
-    requires std::constructible_from<T, Args...>
-  constexpr explicit movable_box(std::in_place_t, Args&&... args) noexcept(std::is_nothrow_constructible_v<T, Args...>)
-      : value_(static_cast<Args&&>(args)...) {}
+  constexpr __movable_box() noexcept(std::is_nothrow_default_constructible_v<_Tp>)
+    requires std::default_initializable<_Tp>
+      : __value_() {}
+  template <class... _Args>
+    requires std::constructible_from<_Tp, _Args...>
+  constexpr explicit __movable_box(std::in_place_t, _Args&&... __args) noexcept(std::is_nothrow_constructible_v<_Tp, _Args...>)
+      : __value_(static_cast<_Args&&>(__args)...) {}
 
-  movable_box(const movable_box&) = default;
-  movable_box(movable_box&&) = default;
-  constexpr movable_box& operator=(const movable_box& o) noexcept
-    requires std::copy_constructible<T>
+  __movable_box(const __movable_box&) = default;
+  __movable_box(__movable_box&&) = default;
+  constexpr __movable_box& operator=(const __movable_box& __o) noexcept
+    requires std::copy_constructible<_Tp>
   {
-    if (this != __builtin_addressof(o)) {
-      std::destroy_at(__builtin_addressof(value_));
-      std::construct_at(__builtin_addressof(value_), o.value_);
+    if (this != __builtin_addressof(__o)) {
+      std::destroy_at(__builtin_addressof(__value_));
+      std::construct_at(__builtin_addressof(__value_), __o.__value_);
     }
     return *this;
   }
-  constexpr movable_box& operator=(movable_box&& o) noexcept {
-    if (this != __builtin_addressof(o)) {
-      std::destroy_at(__builtin_addressof(value_));
-      std::construct_at(__builtin_addressof(value_), std::move(o.value_));
+  constexpr __movable_box& operator=(__movable_box&& __o) noexcept {
+    if (this != __builtin_addressof(__o)) {
+      std::destroy_at(__builtin_addressof(__value_));
+      std::construct_at(__builtin_addressof(__value_), std::move(__o.__value_));
     }
     return *this;
   }
 
   constexpr bool has_value() const noexcept { return true; }
-  constexpr T& operator*() & noexcept { return value_; }
-  constexpr const T& operator*() const& noexcept { return value_; }
-  constexpr T&& operator*() && noexcept { return std::move(value_); }
-  constexpr const T&& operator*() const&& noexcept { return std::move(value_); }
-  constexpr T* operator->() noexcept { return __builtin_addressof(value_); }
-  constexpr const T* operator->() const noexcept { return __builtin_addressof(value_); }
+  constexpr _Tp& operator*() & noexcept { return __value_; }
+  constexpr const _Tp& operator*() const& noexcept { return __value_; }
+  constexpr _Tp&& operator*() && noexcept { return std::move(__value_); }
+  constexpr const _Tp&& operator*() const&& noexcept { return std::move(__value_); }
+  constexpr _Tp* operator->() noexcept { return __builtin_addressof(__value_); }
+  constexpr const _Tp* operator->() const noexcept { return __builtin_addressof(__value_); }
 };
 
 // ---- [range.nonprop.cache] non-propagating-cache ----------------------------------------------
 // An optional<T> that is emptied rather than copied or moved.
-template <class T>
-  requires std::is_object_v<T>
-class non_propagating_cache {
+template <class _Tp>
+  requires std::is_object_v<_Tp>
+class __non_propagating_cache {
   union {
-    T value_;
+    _Tp __value_;
   };
-  bool engaged_ = false;
+  bool __engaged_ = false;
 
 public:
-  constexpr non_propagating_cache() noexcept {}
-  constexpr non_propagating_cache(const non_propagating_cache&) noexcept {}
-  constexpr non_propagating_cache(non_propagating_cache&& other) noexcept { other.reset(); }
-  constexpr non_propagating_cache& operator=(const non_propagating_cache& other) noexcept {
+  constexpr __non_propagating_cache() noexcept {}
+  constexpr __non_propagating_cache(const __non_propagating_cache&) noexcept {}
+  constexpr __non_propagating_cache(__non_propagating_cache&& other) noexcept { other.reset(); }
+  constexpr __non_propagating_cache& operator=(const __non_propagating_cache& other) noexcept {
     if (__builtin_addressof(other) != this)
       reset();
     return *this;
   }
-  constexpr non_propagating_cache& operator=(non_propagating_cache&& other) noexcept {
+  constexpr __non_propagating_cache& operator=(__non_propagating_cache&& other) noexcept {
     reset();
     other.reset();
     return *this;
   }
-  constexpr ~non_propagating_cache() { reset(); }
+  constexpr ~__non_propagating_cache() { reset(); }
 
   constexpr void reset() noexcept {
-    if (engaged_) {
-      engaged_ = false;
-      std::destroy_at(__builtin_addressof(value_));
+    if (__engaged_) {
+      __engaged_ = false;
+      std::destroy_at(__builtin_addressof(__value_));
     }
   }
-  constexpr bool has_value() const noexcept { return engaged_; }
-  constexpr T& operator*() noexcept { return value_; }
-  constexpr const T& operator*() const noexcept { return value_; }
-  constexpr T* operator->() noexcept { return __builtin_addressof(value_); }
-  constexpr const T* operator->() const noexcept { return __builtin_addressof(value_); }
+  constexpr bool has_value() const noexcept { return __engaged_; }
+  constexpr _Tp& operator*() noexcept { return __value_; }
+  constexpr const _Tp& operator*() const noexcept { return __value_; }
+  constexpr _Tp* operator->() noexcept { return __builtin_addressof(__value_); }
+  constexpr const _Tp* operator->() const noexcept { return __builtin_addressof(__value_); }
 
-  template <class... Args>
-  constexpr T& emplace(Args&&... args) {
+  template <class... _Args>
+  constexpr _Tp& emplace(_Args&&... __args) {
     reset();
-    std::construct_at(__builtin_addressof(value_), static_cast<Args&&>(args)...);
-    engaged_ = true;
-    return value_;
+    std::construct_at(__builtin_addressof(__value_), static_cast<_Args&&>(__args)...);
+    __engaged_ = true;
+    return __value_;
   }
   // Direct-non-list-initialization from *i: a prvalue *i initializes the value in place.
-  template <class I>
-  constexpr T& emplace_deref(const I& i) {
+  template <class _Ip>
+  constexpr _Tp& __emplace_deref(const _Ip& i) {
     reset();
-    ::new (static_cast<void*>(__builtin_addressof(value_))) T(*i);
-    engaged_ = true;
-    return value_;
+    ::new (static_cast<void*>(__builtin_addressof(__value_))) _Tp(*i);
+    __engaged_ = true;
+    return __value_;
   }
 };
 
 // The type of an absent member ("present only if").
-struct empty_cache {};
+struct __empty_cache {};
 
 // The position cached by the begin() of filter_view, drop_view, drop_while_view and
 // reverse_view: an iterator into R, or for a random-access range its offset from the start (no
 // iterator plus engaged flag is stored). Like non-propagating-cache, it is emptied rather than
 // copied or moved.
-template <class R>
-class position_cache {
-  non_propagating_cache<std::ranges::iterator_t<R>> it_;
+template <class _Rp>
+class __position_cache {
+  __non_propagating_cache<std::ranges::iterator_t<_Rp>> __it_;
 
 public:
-  constexpr bool has_value() const noexcept { return it_.has_value(); }
-  constexpr std::ranges::iterator_t<R> get(R&) const { return *it_; }
-  constexpr void set(R&, const std::ranges::iterator_t<R>& it) { it_.emplace(it); }
+  constexpr bool has_value() const noexcept { return __it_.has_value(); }
+  constexpr std::ranges::iterator_t<_Rp> get(_Rp&) const { return *__it_; }
+  constexpr void set(_Rp&, const std::ranges::iterator_t<_Rp>& __it) { __it_.emplace(__it); }
 };
-template <std::ranges::random_access_range R>
-class position_cache<R> {
-  std::ranges::range_difference_t<R> offset_ = -1;
+template <std::ranges::random_access_range _Rp>
+class __position_cache<_Rp> {
+  std::ranges::range_difference_t<_Rp> __offset_ = -1;
 
 public:
-  constexpr position_cache() noexcept = default;
-  constexpr position_cache(const position_cache&) noexcept {}
-  constexpr position_cache(position_cache&& other) noexcept { other.offset_ = -1; }
-  constexpr position_cache& operator=(const position_cache& other) noexcept {
+  constexpr __position_cache() noexcept = default;
+  constexpr __position_cache(const __position_cache&) noexcept {}
+  constexpr __position_cache(__position_cache&& other) noexcept { other.__offset_ = -1; }
+  constexpr __position_cache& operator=(const __position_cache& other) noexcept {
     if (__builtin_addressof(other) != this)
-      offset_ = -1;
+      __offset_ = -1;
     return *this;
   }
-  constexpr position_cache& operator=(position_cache&& other) noexcept {
-    offset_ = -1;
-    other.offset_ = -1;
+  constexpr __position_cache& operator=(__position_cache&& other) noexcept {
+    __offset_ = -1;
+    other.__offset_ = -1;
     return *this;
   }
-  constexpr bool has_value() const noexcept { return offset_ >= 0; }
-  constexpr std::ranges::iterator_t<R> get(R& r) const { return std::ranges::begin(r) + offset_; }
-  constexpr void set(R& r, const std::ranges::iterator_t<R>& it) { offset_ = it - std::ranges::begin(r); }
+  constexpr bool has_value() const noexcept { return __offset_ >= 0; }
+  constexpr std::ranges::iterator_t<_Rp> get(_Rp& r) const { return std::ranges::begin(r) + __offset_; }
+  constexpr void set(_Rp& r, const std::ranges::iterator_t<_Rp>& __it) { __offset_ = __it - std::ranges::begin(r); }
 };
-template <bool Present, class R>
-struct position_cache_select {
-  using type = empty_cache;
+template <bool _Present, class _Rp>
+struct __position_cache_select {
+  using type = __empty_cache;
 };
-template <class R>
-struct position_cache_select<true, R> {
-  using type = position_cache<R>;
+template <class _Rp>
+struct __position_cache_select<true, _Rp> {
+  using type = __position_cache<_Rp>;
 };
-template <bool Present, class R>
-using position_cache_if = typename position_cache_select<Present, R>::type;
+template <bool _Present, class _Rp>
+using __position_cache_if = typename __position_cache_select<_Present, _Rp>::type;
 
 // A non-propagating-cache member that is present only when Present is true.
-template <bool Present, class T>
-struct cache_select {
-  using type = empty_cache;
+template <bool _Present, class _Tp>
+struct __cache_select {
+  using type = __empty_cache;
 };
-template <class T>
-struct cache_select<true, T> {
-  using type = non_propagating_cache<T>;
+template <class _Tp>
+struct __cache_select<true, _Tp> {
+  using type = __non_propagating_cache<_Tp>;
 };
-template <bool Present, class T>
-using cache_if = typename cache_select<Present, T>::type;
+template <bool _Present, class _Tp>
+using __cache_if = typename __cache_select<_Present, _Tp>::type;
 
-}} // namespace ycxx::detail
+}} // namespace __ycxx::__detail
 
-namespace [[gnu::visibility("hidden")]] ycxx { namespace adl_free {
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __adl_free {
 // Bases that give a view's iterator its iterator_category member, or none ("not always present").
-struct no_iterator_category {};
-template <class Tag>
-struct with_iterator_category {
-  using iterator_category = Tag;
+struct __no_iterator_category {};
+template <class _Tag>
+struct __with_iterator_category {
+  using iterator_category = _Tag;
 };
-}} // namespace ycxx::adl_free
+}} // namespace __ycxx::__adl_free
 
-namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
 
 // Tag is void: no iterator_category member.
-template <class Tag>
-using category_base = std::conditional_t<std::is_void_v<Tag>, ycxx::adl_free::no_iterator_category,
-                                         ycxx::adl_free::with_iterator_category<Tag>>;
+template <class _Tag>
+using __category_base = std::conditional_t<std::is_void_v<_Tag>, __ycxx::__adl_free::__no_iterator_category,
+                                         __ycxx::__adl_free::__with_iterator_category<_Tag>>;
 
 // The iterator_concept most views give their iterator: the strength of the underlying range,
 // capped at random access.
-template <class Base>
-consteval auto range_strength() {
-  if constexpr (std::ranges::random_access_range<Base>)
+template <class _Base>
+consteval auto __range_strength() {
+  if constexpr (std::ranges::random_access_range<_Base>)
     return std::random_access_iterator_tag{};
-  else if constexpr (std::ranges::bidirectional_range<Base>)
+  else if constexpr (std::ranges::bidirectional_range<_Base>)
     return std::bidirectional_iterator_tag{};
-  else if constexpr (std::ranges::forward_range<Base>)
+  else if constexpr (std::ranges::forward_range<_Base>)
     return std::forward_iterator_tag{};
   else
     return std::input_iterator_tag{};
 }
-template <class Base>
-using range_strength_t = decltype(::ycxx::detail::range_strength<Base>());
+template <class _Base>
+using __range_strength_t = decltype(::__ycxx::__detail::__range_strength<_Base>());
 
 // Access to the private members of the views' iterators and sentinels from the hidden friends of
 // their sibling classes (befriending a class does not reliably extend to its hidden friends).
-// Every such iterator and sentinel declares `friend ycxx::detail::view_access;`.
-struct view_access {
-  template <class T>
-  static constexpr auto&& current(T&& t) noexcept {
-    return static_cast<T&&>(t).current_;
+// Every such iterator and sentinel declares `friend __ycxx::__detail::__view_access;`.
+struct __view_access {
+  template <class _Tp>
+  static constexpr auto&& current(_Tp&& t) noexcept {
+    return static_cast<_Tp&&>(t).__current_;
   }
-  template <class T>
-  static constexpr auto&& parent(T&& t) noexcept {
-    return static_cast<T&&>(t).parent_;
+  template <class _Tp>
+  static constexpr auto&& __parent(_Tp&& t) noexcept {
+    return static_cast<_Tp&&>(t).__parent_;
   }
-  template <class T>
-  static constexpr auto&& end(T&& t) noexcept {
-    return static_cast<T&&>(t).end_;
+  template <class _Tp>
+  static constexpr auto&& end(_Tp&& t) noexcept {
+    return static_cast<_Tp&&>(t).__end_;
   }
 };
 
-}} // namespace ycxx::detail
+}} // namespace __ycxx::__detail

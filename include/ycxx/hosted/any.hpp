@@ -16,7 +16,7 @@
 #include <ycxx/core/utility_base.hpp>
 #include <initializer_list>
 
-namespace [[gnu::visibility("hidden")]] std {
+namespace [[__gnu__::__visibility__("hidden")]] std {
 
 class bad_any_cast : public bad_cast {
 public:
@@ -27,119 +27,119 @@ class any;
 
 } // namespace std
 
-namespace [[gnu::visibility("hidden")]] ycxx { namespace detail::any_impl {
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail::__any_impl {
 
-union storage {
+union __storage {
   void* ptr;
-  alignas(void*) unsigned char buf[3 * sizeof(void*)];
+  alignas(void*) unsigned char __buf[3 * sizeof(void*)];
 };
 
-template <class T>
-inline constexpr bool stored_inline =
-    sizeof(T) <= sizeof(storage) && alignof(storage) % alignof(T) == 0 && std::is_nothrow_move_constructible_v<T>;
+template <class _Tp>
+inline constexpr bool __stored_inline =
+    sizeof(_Tp) <= sizeof(__storage) && alignof(__storage) % alignof(_Tp) == 0 && std::is_nothrow_move_constructible_v<_Tp>;
 
 struct table {
-  void (*destroy)(storage&) noexcept;
-  void (*copy)(const storage& src, storage& dst); // constructs dst from src
-  void (*move)(storage& src, storage& dst) noexcept; // constructs dst from src, then destroys src
-  void* (*get)(storage&) noexcept;
-#if YCXX_HAS_RTTI
+  void (*destroy)(__storage&) noexcept;
+  void (*copy)(const __storage& __src, __storage& __dst); // constructs dst from src
+  void (*move)(__storage& __src, __storage& __dst) noexcept; // constructs dst from src, then destroys src
+  void* (*get)(__storage&) noexcept;
+#if _YCXX_HAS_RTTI
   const std::type_info& (*type)() noexcept;
 #endif
 };
 
-template <class T>
-struct ops {
-  static T* obj(storage& s) noexcept {
-    if constexpr (stored_inline<T>)
-      return std::launder(reinterpret_cast<T*>(s.buf));
+template <class _Tp>
+struct __ops {
+  static _Tp* __obj(__storage& s) noexcept {
+    if constexpr (__stored_inline<_Tp>)
+      return std::launder(reinterpret_cast<_Tp*>(s.__buf));
     else
-      return static_cast<T*>(s.ptr);
+      return static_cast<_Tp*>(s.ptr);
   }
-  template <class... Args>
-  static void create(storage& s, Args&&... args) {
-    if constexpr (stored_inline<T>)
-      ::new (static_cast<void*>(s.buf)) T(static_cast<Args&&>(args)...);
+  template <class... _Args>
+  static void __create(__storage& s, _Args&&... __args) {
+    if constexpr (__stored_inline<_Tp>)
+      ::new (static_cast<void*>(s.__buf)) _Tp(static_cast<_Args&&>(__args)...);
     else
       // A plain new-expression: a class-specific operator new/delete is honoured (a type that
       // deletes its operator new is not meant to live on the heap, so it cannot be stored).
-      s.ptr = new T(static_cast<Args&&>(args)...);
+      s.ptr = new _Tp(static_cast<_Args&&>(__args)...);
   }
-  static void destroy(storage& s) noexcept {
-    if constexpr (stored_inline<T>)
-      obj(s)->~T();
+  static void destroy(__storage& s) noexcept {
+    if constexpr (__stored_inline<_Tp>)
+      __obj(s)->~_Tp();
     else
-      delete obj(s);
+      delete __obj(s);
   }
   // [any.cons]/2: copies from any_cast<const T&>(other), so the const T& constructor is chosen.
-  static void copy(const storage& src, storage& dst) {
-    create(dst, *static_cast<const T*>(obj(const_cast<storage&>(src))));
+  static void copy(const __storage& __src, __storage& __dst) {
+    __create(__dst, *static_cast<const _Tp*>(__obj(const_cast<__storage&>(__src))));
   }
-  static void move(storage& src, storage& dst) noexcept {
-    if constexpr (stored_inline<T>) {
-      ::new (static_cast<void*>(dst.buf)) T(static_cast<T&&>(*obj(src)));
-      obj(src)->~T();
+  static void move(__storage& __src, __storage& __dst) noexcept {
+    if constexpr (__stored_inline<_Tp>) {
+      ::new (static_cast<void*>(__dst.__buf)) _Tp(static_cast<_Tp&&>(*__obj(__src)));
+      __obj(__src)->~_Tp();
     } else {
-      dst.ptr = src.ptr;
+      __dst.ptr = __src.ptr;
     }
   }
-  static void* get(storage& s) noexcept { return obj(s); }
-#if YCXX_HAS_RTTI
-  static const std::type_info& type() noexcept { return typeid(T); }
+  static void* get(__storage& s) noexcept { return __obj(s); }
+#if _YCXX_HAS_RTTI
+  static const std::type_info& type() noexcept { return typeid(_Tp); }
 #endif
 };
 
-template <class T>
-inline constexpr table table_for = {&ops<T>::destroy, &ops<T>::copy, &ops<T>::move, &ops<T>::get,
-#if YCXX_HAS_RTTI
-                                    &ops<T>::type
+template <class _Tp>
+inline constexpr table __table_for = {&__ops<_Tp>::destroy, &__ops<_Tp>::copy, &__ops<_Tp>::move, &__ops<_Tp>::get,
+#if _YCXX_HAS_RTTI
+                                    &__ops<_Tp>::type
 #endif
 };
 
-template <class T>
-inline constexpr bool is_in_place_type_t = false;
-template <class T>
-inline constexpr bool is_in_place_type_t<std::in_place_type_t<T>> = true;
+template <class _Tp>
+inline constexpr bool __is_in_place_type_t = false;
+template <class _Tp>
+inline constexpr bool __is_in_place_type_t<std::in_place_type_t<_Tp>> = true;
 
-}} // namespace ycxx::detail::any_impl
+}} // namespace __ycxx::__detail::__any_impl
 
-namespace [[gnu::visibility("hidden")]] std {
+namespace [[__gnu__::__visibility__("hidden")]] std {
 
 class any {
-  ycxx::detail::any_impl::storage s_;
-  const ycxx::detail::any_impl::table* t_ = nullptr;
+  __ycxx::__detail::__any_impl::__storage __s_;
+  const __ycxx::__detail::__any_impl::table* __t_ = nullptr;
 
-  template <class T>
-  friend const T* any_cast(const any*) noexcept;
-  template <class T>
-  friend T* any_cast(any*) noexcept;
+  template <class _Tp>
+  friend const _Tp* any_cast(const any*) noexcept;
+  template <class _Tp>
+  friend _Tp* any_cast(any*) noexcept;
 
-  template <class VT, class... Args>
-  VT& create(Args&&... args) {
-    ycxx::detail::any_impl::ops<VT>::create(s_, static_cast<Args&&>(args)...);
-    t_ = &ycxx::detail::any_impl::table_for<VT>;
-    return *ycxx::detail::any_impl::ops<VT>::obj(s_);
+  template <class _VT, class... _Args>
+  _VT& __create(_Args&&... __args) {
+    __ycxx::__detail::__any_impl::__ops<_VT>::__create(__s_, static_cast<_Args&&>(__args)...);
+    __t_ = &__ycxx::__detail::__any_impl::__table_for<_VT>;
+    return *__ycxx::__detail::__any_impl::__ops<_VT>::__obj(__s_);
   }
   // Takes over other's value (other is left empty).
   void take(any& other) noexcept {
-    if (other.t_) {
-      other.t_->move(other.s_, s_);
-      t_ = other.t_;
-      other.t_ = nullptr;
+    if (other.__t_) {
+      other.__t_->move(other.__s_, __s_);
+      __t_ = other.__t_;
+      other.__t_ = nullptr;
     }
   }
-  template <class T>
-  bool holds() const noexcept {
+  template <class _Tp>
+  bool __holds() const noexcept {
     // Only copy-constructible types are ever stored ([any.class.general]/4); for any other T,
     // naming table_for<T> would instantiate its copy operation ([any.nonmembers]/9-10 only
     // Mandate !is_void_v<T>).
-    if constexpr (!is_copy_constructible_v<T>) {
+    if constexpr (!is_copy_constructible_v<_Tp>) {
       return false;
     } else {
-      if (t_ == &ycxx::detail::any_impl::table_for<T>)
+      if (__t_ == &__ycxx::__detail::__any_impl::__table_for<_Tp>)
         return true;
-#if YCXX_HAS_RTTI
-      return t_ && t_->type() == typeid(T);
+#if _YCXX_HAS_RTTI
+      return __t_ && __t_->type() == typeid(_Tp);
 #else
       return false;
 #endif
@@ -148,162 +148,162 @@ class any {
 
 public:
   // ---- [any.cons] ----
-  constexpr any() noexcept : s_{} {}
+  constexpr any() noexcept : __s_{} {}
   any(const any& other) {
-    if (other.t_) {
-      other.t_->copy(other.s_, s_);
-      t_ = other.t_;
+    if (other.__t_) {
+      other.__t_->copy(other.__s_, __s_);
+      __t_ = other.__t_;
     }
   }
   any(any&& other) noexcept { take(other); }
 
   // The constraints are checked by SFINAE on the *class* is_copy_constructible<VT>, not by a
-  // requires-clause. Deciding whether a type with a constructor from any (`A(any)`), or
+  // requires-clause. Deciding whether a type with a constructor from any (`_Ap(any)`), or
   // tuple<any>, is copyable asks whether any is constructible from that type, which asks the
   // same question again. Through a default template argument the inner query sees an incomplete
   // is_copy_constructible<VT> and quietly drops the candidate. A requires-clause would make the
   // re-entry a hard error ("satisfaction depends on itself") on both compilers.
-  template <class T, class VT = decay_t<T>,
-            enable_if_t<!is_same_v<VT, any> && !ycxx::detail::any_impl::is_in_place_type_t<VT>, int> = 0,
-            enable_if_t<is_copy_constructible<VT>::value, int> = 0>
-  any(T&& value) {
-    create<VT>(static_cast<T&&>(value));
+  template <class _Tp, class _VT = decay_t<_Tp>,
+            enable_if_t<!is_same_v<_VT, any> && !__ycxx::__detail::__any_impl::__is_in_place_type_t<_VT>, int> = 0,
+            enable_if_t<is_copy_constructible<_VT>::value, int> = 0>
+  any(_Tp&& value) {
+    __create<_VT>(static_cast<_Tp&&>(value));
   }
-  template <class T, class... Args, class VT = decay_t<T>>
-    requires is_copy_constructible_v<VT> && is_constructible_v<VT, Args...>
-  explicit any(in_place_type_t<T>, Args&&... args) {
-    create<VT>(static_cast<Args&&>(args)...);
+  template <class _Tp, class... _Args, class _VT = decay_t<_Tp>>
+    requires is_copy_constructible_v<_VT> && is_constructible_v<_VT, _Args...>
+  explicit any(in_place_type_t<_Tp>, _Args&&... __args) {
+    __create<_VT>(static_cast<_Args&&>(__args)...);
   }
-  template <class T, class U, class... Args, class VT = decay_t<T>>
-    requires is_copy_constructible_v<VT> && is_constructible_v<VT, initializer_list<U>&, Args...>
-  explicit any(in_place_type_t<T>, initializer_list<U> il, Args&&... args) {
-    create<VT>(il, static_cast<Args&&>(args)...);
+  template <class _Tp, class _Up, class... _Args, class _VT = decay_t<_Tp>>
+    requires is_copy_constructible_v<_VT> && is_constructible_v<_VT, initializer_list<_Up>&, _Args...>
+  explicit any(in_place_type_t<_Tp>, initializer_list<_Up> il, _Args&&... __args) {
+    __create<_VT>(il, static_cast<_Args&&>(__args)...);
   }
 
   ~any() { reset(); }
 
   // ---- [any.assign] ----
-  any& operator=(const any& rhs) {
-    any(rhs).swap(*this);
+  any& operator=(const any& __rhs) {
+    any(__rhs).swap(*this);
     return *this;
   }
-  any& operator=(any&& rhs) noexcept {
-    any(static_cast<any&&>(rhs)).swap(*this);
+  any& operator=(any&& __rhs) noexcept {
+    any(static_cast<any&&>(__rhs)).swap(*this);
     return *this;
   }
-  template <class T, class VT = decay_t<T>, enable_if_t<!is_same_v<VT, any>, int> = 0,
-            enable_if_t<is_copy_constructible<VT>::value, int> = 0> // see any(T&&)
-  any& operator=(T&& rhs) {
+  template <class _Tp, class _VT = decay_t<_Tp>, enable_if_t<!is_same_v<_VT, any>, int> = 0,
+            enable_if_t<is_copy_constructible<_VT>::value, int> = 0> // see any(T&&)
+  any& operator=(_Tp&& __rhs) {
     // Not any(rhs): for VT = in_place_type_t<X> that would pick the in_place constructor and
     // store an X instead of the tag ([any.assign]/10).
-    any tmp;
-    tmp.create<VT>(static_cast<T&&>(rhs));
-    tmp.swap(*this);
+    any __tmp;
+    __tmp.__create<_VT>(static_cast<_Tp&&>(__rhs));
+    __tmp.swap(*this);
     return *this;
   }
 
   // ---- [any.modifiers] ----
-  template <class T, class... Args, class VT = decay_t<T>>
-    requires is_copy_constructible_v<VT> && is_constructible_v<VT, Args...>
-  VT& emplace(Args&&... args) {
+  template <class _Tp, class... _Args, class _VT = decay_t<_Tp>>
+    requires is_copy_constructible_v<_VT> && is_constructible_v<_VT, _Args...>
+  _VT& emplace(_Args&&... __args) {
     reset();
-    return create<VT>(static_cast<Args&&>(args)...);
+    return __create<_VT>(static_cast<_Args&&>(__args)...);
   }
-  template <class T, class U, class... Args, class VT = decay_t<T>>
-    requires is_copy_constructible_v<VT> && is_constructible_v<VT, initializer_list<U>&, Args...>
-  VT& emplace(initializer_list<U> il, Args&&... args) {
+  template <class _Tp, class _Up, class... _Args, class _VT = decay_t<_Tp>>
+    requires is_copy_constructible_v<_VT> && is_constructible_v<_VT, initializer_list<_Up>&, _Args...>
+  _VT& emplace(initializer_list<_Up> il, _Args&&... __args) {
     reset();
-    return create<VT>(il, static_cast<Args&&>(args)...);
+    return __create<_VT>(il, static_cast<_Args&&>(__args)...);
   }
   void reset() noexcept {
-    if (t_) {
-      t_->destroy(s_);
-      t_ = nullptr;
+    if (__t_) {
+      __t_->destroy(__s_);
+      __t_ = nullptr;
     }
   }
-  void swap(any& rhs) noexcept {
-    if (this == &rhs)
+  void swap(any& __rhs) noexcept {
+    if (this == &__rhs)
       return;
-    any tmp;
-    tmp.take(rhs);
-    rhs.take(*this);
-    take(tmp);
+    any __tmp;
+    __tmp.take(__rhs);
+    __rhs.take(*this);
+    take(__tmp);
   }
 
   // ---- [any.observers] ----
-  bool has_value() const noexcept { return t_ != nullptr; }
-#if YCXX_HAS_RTTI // typeid cannot even be parsed under -fno-rtti
-  const type_info& type() const noexcept { return t_ ? t_->type() : typeid(void); }
+  bool has_value() const noexcept { return __t_ != nullptr; }
+#if _YCXX_HAS_RTTI // typeid cannot even be parsed under -fno-rtti
+  const type_info& type() const noexcept { return __t_ ? __t_->type() : typeid(void); }
 #endif
 };
 
 // ---- [any.nonmembers] ----
-inline void swap(any& x, any& y) noexcept { x.swap(y); }
+inline void swap(any& __x, any& y) noexcept { __x.swap(y); }
 
 // Constrained (QoI; the draft only says "Equivalent to"), so make_any is SFINAE-friendly.
-template <class T, class... Args>
-  requires is_constructible_v<any, in_place_type_t<T>, Args...>
-any make_any(Args&&... args) {
-  return any(in_place_type<T>, static_cast<Args&&>(args)...);
+template <class _Tp, class... _Args>
+  requires is_constructible_v<any, in_place_type_t<_Tp>, _Args...>
+any make_any(_Args&&... __args) {
+  return any(in_place_type<_Tp>, static_cast<_Args&&>(__args)...);
 }
-template <class T, class U, class... Args>
-  requires is_constructible_v<any, in_place_type_t<T>, initializer_list<U>&, Args...>
-any make_any(initializer_list<U> il, Args&&... args) {
-  return any(in_place_type<T>, il, static_cast<Args&&>(args)...);
+template <class _Tp, class _Up, class... _Args>
+  requires is_constructible_v<any, in_place_type_t<_Tp>, initializer_list<_Up>&, _Args...>
+any make_any(initializer_list<_Up> il, _Args&&... __args) {
+  return any(in_place_type<_Tp>, il, static_cast<_Args&&>(__args)...);
 }
 
-template <class T>
-const T* any_cast(const any* operand) noexcept {
-  static_assert(!is_void_v<T>, "std::any_cast: T must not be void");
-  if constexpr (is_object_v<T> && !is_array_v<T>) {
-    if (operand && operand->holds<remove_cv_t<T>>())
-      return static_cast<const T*>(operand->t_->get(const_cast<ycxx::detail::any_impl::storage&>(operand->s_)));
+template <class _Tp>
+const _Tp* any_cast(const any* __operand) noexcept {
+  static_assert(!is_void_v<_Tp>, "std::any_cast: T must not be void");
+  if constexpr (is_object_v<_Tp> && !is_array_v<_Tp>) {
+    if (__operand && __operand->__holds<remove_cv_t<_Tp>>())
+      return static_cast<const _Tp*>(__operand->__t_->get(const_cast<__ycxx::__detail::__any_impl::__storage&>(__operand->__s_)));
   }
   return nullptr; // function and array types are never contained
 }
-template <class T>
-T* any_cast(any* operand) noexcept {
-  static_assert(!is_void_v<T>, "std::any_cast: T must not be void");
-  if constexpr (is_object_v<T> && !is_array_v<T>) {
-    if (operand && operand->holds<remove_cv_t<T>>())
-      return static_cast<T*>(operand->t_->get(operand->s_));
+template <class _Tp>
+_Tp* any_cast(any* __operand) noexcept {
+  static_assert(!is_void_v<_Tp>, "std::any_cast: T must not be void");
+  if constexpr (is_object_v<_Tp> && !is_array_v<_Tp>) {
+    if (__operand && __operand->__holds<remove_cv_t<_Tp>>())
+      return static_cast<_Tp*>(__operand->__t_->get(__operand->__s_));
   }
   return nullptr;
 }
 
 } // namespace std
 
-namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
-[[noreturn]] [[gnu::cold]] inline void throw_bad_any_cast() {
-  ::ycxx::detail::raise_with(ycxx_error_bad_any_cast, "std::bad_any_cast", [] { return std::bad_any_cast(); });
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+[[noreturn]] [[__gnu__::__cold__]] inline void __throw_bad_any_cast() {
+  ::__ycxx::__detail::__raise_with(ycxx_error_bad_any_cast, "std::bad_any_cast", [] { return std::bad_any_cast(); });
 }
-}} // namespace ycxx::detail
+}} // namespace __ycxx::__detail
 
-namespace [[gnu::visibility("hidden")]] std {
+namespace [[__gnu__::__visibility__("hidden")]] std {
 
-template <class T>
-T any_cast(const any& operand) {
-  using U = remove_cvref_t<T>;
-  static_assert(is_constructible_v<T, const U&>, "std::any_cast: T must be constructible from const U&");
-  if (const U* p = std::any_cast<U>(&operand))
-    return static_cast<T>(*p);
-  ycxx::detail::throw_bad_any_cast();
+template <class _Tp>
+_Tp any_cast(const any& __operand) {
+  using _Up = remove_cvref_t<_Tp>;
+  static_assert(is_constructible_v<_Tp, const _Up&>, "std::any_cast: T must be constructible from const U&");
+  if (const _Up* p = std::any_cast<_Up>(&__operand))
+    return static_cast<_Tp>(*p);
+  __ycxx::__detail::__throw_bad_any_cast();
 }
-template <class T>
-T any_cast(any& operand) {
-  using U = remove_cvref_t<T>;
-  static_assert(is_constructible_v<T, U&>, "std::any_cast: T must be constructible from U&");
-  if (U* p = std::any_cast<U>(&operand))
-    return static_cast<T>(*p);
-  ycxx::detail::throw_bad_any_cast();
+template <class _Tp>
+_Tp any_cast(any& __operand) {
+  using _Up = remove_cvref_t<_Tp>;
+  static_assert(is_constructible_v<_Tp, _Up&>, "std::any_cast: T must be constructible from U&");
+  if (_Up* p = std::any_cast<_Up>(&__operand))
+    return static_cast<_Tp>(*p);
+  __ycxx::__detail::__throw_bad_any_cast();
 }
-template <class T>
-T any_cast(any&& operand) {
-  using U = remove_cvref_t<T>;
-  static_assert(is_constructible_v<T, U>, "std::any_cast: T must be constructible from U");
-  if (U* p = std::any_cast<U>(&operand))
-    return static_cast<T>(static_cast<U&&>(*p));
-  ycxx::detail::throw_bad_any_cast();
+template <class _Tp>
+_Tp any_cast(any&& __operand) {
+  using _Up = remove_cvref_t<_Tp>;
+  static_assert(is_constructible_v<_Tp, _Up>, "std::any_cast: T must be constructible from U");
+  if (_Up* p = std::any_cast<_Up>(&__operand))
+    return static_cast<_Tp>(static_cast<_Up&&>(*p));
+  __ycxx::__detail::__throw_bad_any_cast();
 }
 
 } // namespace std

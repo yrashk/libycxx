@@ -6,7 +6,7 @@
 // (basic-sender, make-sender, product-type, FWD-ENV, JOIN-ENV, ...; [exec.snd.expos]).
 //
 // Completion signatures are computed as types. A library sender's member alias template
-// ycxx_csigs<Self, Env...> names its completion_signatures specialization, or one of two error
+// __ycxx_csigs<Self, Env...> names its completion_signatures specialization, or one of two error
 // types: dependent_sigs (no environment given and the signatures depend on it) or
 // invalid_sigs<What, Info...> (a type error the draft reports by throwing from
 // get_completion_signatures). The public consteval get_completion_signatures<Sndr, Env...>()
@@ -33,121 +33,121 @@
 
 // ---------------------------------------------------------------------------------------------
 // Type lists and small metafunctions.
-namespace [[gnu::visibility("hidden")]] ycxx { namespace detail { namespace exec {
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail { namespace __exec {
 
-template <class... Ts>
-struct tlist {};
+template <class... _Ts>
+struct __tlist {};
 
-template <class T, class List>
-inline constexpr bool in_tlist = false;
-template <class T, class... Ts>
-inline constexpr bool in_tlist<T, tlist<Ts...>> = (std::is_same_v<T, Ts> || ...);
+template <class _Tp, class _List>
+inline constexpr bool __in_tlist = false;
+template <class _Tp, class... _Ts>
+inline constexpr bool __in_tlist<_Tp, __tlist<_Ts...>> = (std::is_same_v<_Tp, _Ts> || ...);
 
 // Appends each type not yet in the list (order of first appearance kept).
-template <class List, class... Ts>
-struct tlist_add {
-  using type = List;
+template <class _List, class... _Ts>
+struct __tlist_add {
+  using type = _List;
 };
-template <class... Ls, class T, class... Ts>
-struct tlist_add<tlist<Ls...>, T, Ts...>
-    : tlist_add<std::conditional_t<in_tlist<T, tlist<Ls...>>, tlist<Ls...>, tlist<Ls..., T>>, Ts...> {};
-template <class... Ts>
-using unique_tlist = typename tlist_add<tlist<>, Ts...>::type;
+template <class... _Ls, class _Tp, class... _Ts>
+struct __tlist_add<__tlist<_Ls...>, _Tp, _Ts...>
+    : __tlist_add<std::conditional_t<__in_tlist<_Tp, __tlist<_Ls...>>, __tlist<_Ls...>, __tlist<_Ls..., _Tp>>, _Ts...> {};
+template <class... _Ts>
+using __unique_tlist = typename __tlist_add<__tlist<>, _Ts...>::type;
 
-template <template <class...> class F, class List>
-struct tlist_apply;
-template <template <class...> class F, class... Ts>
-struct tlist_apply<F, tlist<Ts...>> {
-  using type = F<Ts...>;
+template <template <class...> class _Fp, class _List>
+struct __tlist_apply;
+template <template <class...> class _Fp, class... _Ts>
+struct __tlist_apply<_Fp, __tlist<_Ts...>> {
+  using type = _Fp<_Ts...>;
 };
-template <template <class...> class F, class List>
-using tlist_apply_t = typename tlist_apply<F, List>::type;
+template <template <class...> class _Fp, class _List>
+using __tlist_apply_t = typename __tlist_apply<_Fp, _List>::type;
 
 // Template arguments with duplicates removed, as in "variant<...> except with duplicate types
 // removed".
-template <template <class...> class F, class... Ts>
-using apply_unique_t = tlist_apply_t<F, unique_tlist<Ts...>>;
+template <template <class...> class _Fp, class... _Ts>
+using __apply_unique_t = __tlist_apply_t<_Fp, __unique_tlist<_Ts...>>;
 
-template <class... Lists>
-struct tlist_concat {
-  using type = tlist<>;
+template <class... _Lists>
+struct __tlist_concat {
+  using type = __tlist<>;
 };
-template <class... Ts>
-struct tlist_concat<tlist<Ts...>> {
-  using type = tlist<Ts...>;
+template <class... _Ts>
+struct __tlist_concat<__tlist<_Ts...>> {
+  using type = __tlist<_Ts...>;
 };
-template <class... As, class... Bs, class... Rest>
-struct tlist_concat<tlist<As...>, tlist<Bs...>, Rest...> : tlist_concat<tlist<As..., Bs...>, Rest...> {};
+template <class... _As, class... _Bs, class... _Rest>
+struct __tlist_concat<__tlist<_As...>, __tlist<_Bs...>, _Rest...> : __tlist_concat<__tlist<_As..., _Bs...>, _Rest...> {};
 
-template <bool... Bs>
-inline constexpr std::size_t first_true = [] {
-  constexpr bool v[] = {Bs..., true};
+template <bool... _Bs>
+inline constexpr std::size_t __first_true = [] {
+  constexpr bool __v[] = {_Bs..., true};
   std::size_t i = 0;
-  while (!v[i])
+  while (!__v[i])
     ++i;
   return i;
 }();
 
-template <class... Ts>
+template <class... _Ts>
 inline constexpr std::size_t max_size = [] {
   std::size_t m = 1;
-  ((m = sizeof(Ts) > m ? sizeof(Ts) : m), ...);
+  ((m = sizeof(_Ts) > m ? sizeof(_Ts) : m), ...);
   return m;
 }();
 
 // [exec.general]/6, [exec.snd.expos], [func.require] exposition-only concepts.
-template <class T>
-concept movable_value = std::move_constructible<std::decay_t<T>> && std::constructible_from<std::decay_t<T>, T> &&
-                        (!std::is_array_v<std::remove_reference_t<T>>);
-template <class From, class To>
-concept decays_to = std::same_as<std::decay_t<From>, To>;
-template <class T>
-concept class_type = decays_to<T, T> && std::is_class_v<T>;
-template <class T>
-concept queryable = std::destructible<T>;
-template <class F, class... As>
-concept callable = requires(F&& f, As&&... as) { static_cast<F&&>(f)(static_cast<As&&>(as)...); };
-template <class F, class... As>
-concept nothrow_callable =
-    callable<F, As...> && requires(F&& f, As&&... as) {
-      { static_cast<F&&>(f)(static_cast<As&&>(as)...) } noexcept;
+template <class _Tp>
+concept __movable_value = std::move_constructible<std::decay_t<_Tp>> && std::constructible_from<std::decay_t<_Tp>, _Tp> &&
+                        (!std::is_array_v<std::remove_reference_t<_Tp>>);
+template <class _From, class _To>
+concept __decays_to = std::same_as<std::decay_t<_From>, _To>;
+template <class _Tp>
+concept __class_type = __decays_to<_Tp, _Tp> && std::is_class_v<_Tp>;
+template <class _Tp>
+concept __queryable = std::destructible<_Tp>;
+template <class _Fp, class... _As>
+concept __callable = requires(_Fp&& __f, _As&&... __as) { static_cast<_Fp&&>(__f)(static_cast<_As&&>(__as)...); };
+template <class _Fp, class... _As>
+concept __nothrow_callable =
+    __callable<_Fp, _As...> && requires(_Fp&& __f, _As&&... __as) {
+      { static_cast<_Fp&&>(__f)(static_cast<_As&&>(__as)...) } noexcept;
     };
-template <class F, class... As>
-using call_result_t = decltype(std::declval<F>()(std::declval<As>()...));
-template <template <class...> class T, class... As>
-concept valid_specialization = requires { typename T<As...>; };
+template <class _Fp, class... _As>
+using __call_result_t = decltype(std::declval<_Fp>()(std::declval<_As>()...));
+template <template <class...> class _Tp, class... _As>
+concept __valid_specialization = requires { typename _Tp<_As...>; };
 
-template <class T>
-[[gnu::always_inline]] constexpr const T& as_const_ref(const T& x) noexcept {
-  return x;
+template <class _Tp>
+[[__gnu__::__always_inline__]] constexpr const _Tp& __as_const_ref(const _Tp& __x) noexcept {
+  return __x;
 }
 
 // T, made dependent on U (defers the completeness check of a type used before its definition).
-template <class T, class U>
-struct dependent_type {
-  using type = T;
+template <class _Tp, class _Up>
+struct __dependent_type {
+  using type = _Tp;
 };
-template <class T, class U>
-using dependent_t = typename dependent_type<T, U>::type;
+template <class _Tp, class _Up>
+using __dependent_t = typename __dependent_type<_Tp, _Up>::type;
 
-template <auto V>
-struct constant {
-  static constexpr auto value = V;
+template <auto _Vp>
+struct __y_constant {
+  static constexpr auto value = _Vp;
 };
 
 // The "unspecified empty trivially copyable class type that models semiregular" of make-sender's
 // default Data (also the {} data of the adaptors that have none).
-struct empty_data {};
+struct __empty_data {};
 
 // decayed-typeof<cpo>
-template <const auto& Cpo>
-using decayed_typeof = std::decay_t<decltype(Cpo)>;
+template <const auto& _Cpo>
+using __decayed_typeof = std::decay_t<decltype(_Cpo)>;
 
-}}} // namespace ycxx::detail::exec
+}}} // namespace __ycxx::__detail::__exec
 
 // ---------------------------------------------------------------------------------------------
 // Completion functions, start, and the concept tags ([exec.recv], [exec.opstate]).
-namespace [[gnu::visibility("hidden")]] std { namespace execution {
+namespace [[__gnu__::__visibility__("hidden")]] std { namespace execution {
 
 struct scheduler_tag {};
 struct receiver_tag {};
@@ -156,40 +156,40 @@ struct sender_tag {};
 
 // [exec.set.value]
 struct set_value_t {
-  template <class Rcvr, class... Vs>
-    requires(!is_lvalue_reference_v<Rcvr> && !is_const_v<Rcvr>) &&
-            requires(Rcvr&& r, Vs&&... vs) { static_cast<Rcvr&&>(r).set_value(static_cast<Vs&&>(vs)...); }
-  constexpr void operator()(Rcvr&& rcvr, Vs&&... vs) const noexcept {
-    static_assert(noexcept(static_cast<Rcvr&&>(rcvr).set_value(static_cast<Vs&&>(vs)...)),
+  template <class _Rcvr, class... _Vs>
+    requires(!is_lvalue_reference_v<_Rcvr> && !is_const_v<_Rcvr>) &&
+            requires(_Rcvr&& r, _Vs&&... __vs) { static_cast<_Rcvr&&>(r).set_value(static_cast<_Vs&&>(__vs)...); }
+  constexpr void operator()(_Rcvr&& __rcvr, _Vs&&... __vs) const noexcept {
+    static_assert(noexcept(static_cast<_Rcvr&&>(__rcvr).set_value(static_cast<_Vs&&>(__vs)...)),
                   "set_value: the receiver's set_value must be noexcept");
-    static_assert(is_void_v<decltype(static_cast<Rcvr&&>(rcvr).set_value(static_cast<Vs&&>(vs)...))>,
+    static_assert(is_void_v<decltype(static_cast<_Rcvr&&>(__rcvr).set_value(static_cast<_Vs&&>(__vs)...))>,
                   "set_value: the receiver's set_value must return void");
-    static_cast<Rcvr&&>(rcvr).set_value(static_cast<Vs&&>(vs)...);
+    static_cast<_Rcvr&&>(__rcvr).set_value(static_cast<_Vs&&>(__vs)...);
   }
 };
 // [exec.set.error]
 struct set_error_t {
-  template <class Rcvr, class E>
-    requires(!is_lvalue_reference_v<Rcvr> && !is_const_v<Rcvr>) &&
-            requires(Rcvr&& r, E&& e) { static_cast<Rcvr&&>(r).set_error(static_cast<E&&>(e)); }
-  constexpr void operator()(Rcvr&& rcvr, E&& err) const noexcept {
-    static_assert(noexcept(static_cast<Rcvr&&>(rcvr).set_error(static_cast<E&&>(err))),
+  template <class _Rcvr, class _Ep>
+    requires(!is_lvalue_reference_v<_Rcvr> && !is_const_v<_Rcvr>) &&
+            requires(_Rcvr&& r, _Ep&& e) { static_cast<_Rcvr&&>(r).set_error(static_cast<_Ep&&>(e)); }
+  constexpr void operator()(_Rcvr&& __rcvr, _Ep&& __err) const noexcept {
+    static_assert(noexcept(static_cast<_Rcvr&&>(__rcvr).set_error(static_cast<_Ep&&>(__err))),
                   "set_error: the receiver's set_error must be noexcept");
-    static_assert(is_void_v<decltype(static_cast<Rcvr&&>(rcvr).set_error(static_cast<E&&>(err)))>,
+    static_assert(is_void_v<decltype(static_cast<_Rcvr&&>(__rcvr).set_error(static_cast<_Ep&&>(__err)))>,
                   "set_error: the receiver's set_error must return void");
-    static_cast<Rcvr&&>(rcvr).set_error(static_cast<E&&>(err));
+    static_cast<_Rcvr&&>(__rcvr).set_error(static_cast<_Ep&&>(__err));
   }
 };
 // [exec.set.stopped]
 struct set_stopped_t {
-  template <class Rcvr>
-    requires(!is_lvalue_reference_v<Rcvr> && !is_const_v<Rcvr>) &&
-            requires(Rcvr&& r) { static_cast<Rcvr&&>(r).set_stopped(); }
-  constexpr void operator()(Rcvr&& rcvr) const noexcept {
-    static_assert(noexcept(static_cast<Rcvr&&>(rcvr).set_stopped()), "set_stopped: the receiver's set_stopped must be noexcept");
-    static_assert(is_void_v<decltype(static_cast<Rcvr&&>(rcvr).set_stopped())>,
+  template <class _Rcvr>
+    requires(!is_lvalue_reference_v<_Rcvr> && !is_const_v<_Rcvr>) &&
+            requires(_Rcvr&& r) { static_cast<_Rcvr&&>(r).set_stopped(); }
+  constexpr void operator()(_Rcvr&& __rcvr) const noexcept {
+    static_assert(noexcept(static_cast<_Rcvr&&>(__rcvr).set_stopped()), "set_stopped: the receiver's set_stopped must be noexcept");
+    static_assert(is_void_v<decltype(static_cast<_Rcvr&&>(__rcvr).set_stopped())>,
                   "set_stopped: the receiver's set_stopped must return void");
-    static_cast<Rcvr&&>(rcvr).set_stopped();
+    static_cast<_Rcvr&&>(__rcvr).set_stopped();
   }
 };
 inline constexpr set_value_t set_value{};
@@ -198,44 +198,44 @@ inline constexpr set_stopped_t set_stopped{};
 
 // [exec.opstate.start]
 struct start_t {
-  template <class Op>
-    requires requires(Op& op) { op.start(); }
-  constexpr void operator()(Op& op) const noexcept {
+  template <class _Op_>
+    requires requires(_Op_& op) { op.start(); }
+  constexpr void operator()(_Op_& op) const noexcept {
     static_assert(noexcept(op.start()), "start: the operation state's start must be noexcept");
     static_assert(is_void_v<decltype(op.start())>, "start: the operation state's start must return void");
     op.start();
   }
-  template <class Op>
-  void operator()(Op&& op) const = delete; // [exec.opstate.start]/1: ill-formed for an rvalue
+  template <class _Op_>
+  void operator()(_Op_&& op) const = delete; // [exec.opstate.start]/1: ill-formed for an rvalue
 };
 inline constexpr start_t start{};
 
-template <class O>
-concept operation_state = derived_from<typename O::operation_state_concept, operation_state_tag> && requires(O& o) { start(o); };
+template <class _Op>
+concept operation_state = derived_from<typename _Op::operation_state_concept, operation_state_tag> && requires(_Op& __o) { start(__o); };
 
 }} // namespace std::execution
 
-namespace [[gnu::visibility("hidden")]] ycxx { namespace detail { namespace exec {
-template <class Tag>
-concept completion_tag =
-    std::same_as<Tag, std::execution::set_value_t> || std::same_as<Tag, std::execution::set_error_t> ||
-    std::same_as<Tag, std::execution::set_stopped_t>;
-}}} // namespace ycxx::detail::exec
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail { namespace __exec {
+template <class _Tag>
+concept __completion_tag =
+    std::same_as<_Tag, std::execution::set_value_t> || std::same_as<_Tag, std::execution::set_error_t> ||
+    std::same_as<_Tag, std::execution::set_stopped_t>;
+}}} // namespace __ycxx::__detail::__exec
 
 // ---------------------------------------------------------------------------------------------
 // Queries ([exec.queries]) and queryable utilities ([exec.envs]).
-namespace [[gnu::visibility("hidden")]] std {
+namespace [[__gnu__::__visibility__("hidden")]] std {
 
 // [exec.fwd.env]
 struct forwarding_query_t {
-  template <class Q>
-  constexpr bool operator()(Q q) const noexcept {
-    if constexpr (requires { q.query(forwarding_query_t{}); }) {
-      static_assert(noexcept(q.query(forwarding_query_t{})), "forwarding_query: the query must be noexcept");
-      static_assert(is_same_v<decltype(q.query(forwarding_query_t{})), bool>, "forwarding_query: the query must return bool");
-      return q.query(forwarding_query_t{});
+  template <class _Qp>
+  constexpr bool operator()(_Qp __q) const noexcept {
+    if constexpr (requires { __q.query(forwarding_query_t{}); }) {
+      static_assert(noexcept(__q.query(forwarding_query_t{})), "forwarding_query: the query must be noexcept");
+      static_assert(is_same_v<decltype(__q.query(forwarding_query_t{})), bool>, "forwarding_query: the query must return bool");
+      return __q.query(forwarding_query_t{});
     } else {
-      return derived_from<Q, forwarding_query_t>;
+      return derived_from<_Qp, forwarding_query_t>;
     }
   }
 };
@@ -243,44 +243,44 @@ inline constexpr forwarding_query_t forwarding_query{};
 
 } // namespace std
 
-namespace [[gnu::visibility("hidden")]] ycxx { namespace detail { namespace exec {
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail { namespace __exec {
 // forwarding-query ([execution.syn]): forwarding_query(T{}) is true.
-template <class Q>
-concept forwarding_query_c = requires { requires std::forwarding_query_t{}(Q{}); };
+template <class _Qp>
+concept __forwarding_query_c = requires { requires std::forwarding_query_t{}(_Qp{}); };
 
-template <class Env, class Q, class... As>
-concept has_query = requires(const Env& env, As&&... as) { env.query(Q(), static_cast<As&&>(as)...); };
+template <class _Env, class _Qp, class... _As>
+concept __has_query = requires(const _Env& env, _As&&... __as) { env.query(_Qp(), static_cast<_As&&>(__as)...); };
 
 // TRY-QUERY(q, tag, args...) ([exec.queries.expos]/2).
-template <class Q, class Tag, class... As>
-concept try_queryable = requires(const Q& q, Tag tag, const As&... as) { q.query(tag, as...); } ||
-                        requires(const Q& q, Tag tag) { q.query(tag); };
-template <class Q, class Tag, class... As>
-  requires try_queryable<Q, Tag, As...>
-[[gnu::always_inline]] constexpr decltype(auto) try_query(const Q& q, Tag tag, const As&... as) noexcept {
-  if constexpr (requires { q.query(tag, as...); })
-    return q.query(tag, as...);
+template <class _Qp, class _Tag, class... _As>
+concept __try_queryable = requires(const _Qp& __q, _Tag tag, const _As&... __as) { __q.query(tag, __as...); } ||
+                        requires(const _Qp& __q, _Tag tag) { __q.query(tag); };
+template <class _Qp, class _Tag, class... _As>
+  requires __try_queryable<_Qp, _Tag, _As...>
+[[__gnu__::__always_inline__]] constexpr decltype(auto) try_query(const _Qp& __q, _Tag tag, const _As&... __as) noexcept {
+  if constexpr (requires { __q.query(tag, __as...); })
+    return __q.query(tag, __as...);
   else {
-    ((void)as, ...);
-    return q.query(tag);
+    ((void)__as, ...);
+    return __q.query(tag);
   }
 }
-template <class Q, class Tag, class... As>
-using try_query_t = decltype(::ycxx::detail::exec::try_query(std::declval<const Q&>(), Tag(), std::declval<const As&>()...));
+template <class _Qp, class _Tag, class... _As>
+using __try_query_t = decltype(::__ycxx::__detail::__exec::try_query(std::declval<const _Qp&>(), _Tag(), std::declval<const _As&>()...));
 
 // HIDE-SCHED(q) ([exec.queries.expos]/3): q with get_scheduler and get_domain removed.
-template <class Env>
-struct hide_sched_env;
-}}} // namespace ycxx::detail::exec
+template <class _Env>
+struct __hide_sched_env;
+}}} // namespace __ycxx::__detail::__exec
 
-namespace [[gnu::visibility("hidden")]] std {
+namespace [[__gnu__::__visibility__("hidden")]] std {
 
 // [exec.get.allocator]
 struct get_allocator_t {
   static constexpr bool query(forwarding_query_t) noexcept { return true; }
-  template <class Self, class Env>
-    requires requires(const Env& env, const Self& q) { env.query(q); }
-  constexpr decltype(auto) operator()(this const Self&, const Env& env) noexcept {
+  template <class _Self, class _Env>
+    requires requires(const _Env& env, const _Self& __q) { env.query(__q); }
+  constexpr decltype(auto) operator()(this const _Self&, const _Env& env) noexcept {
     static_assert(noexcept(env.query(get_allocator_t{})), "get_allocator: the query must be noexcept");
     return env.query(get_allocator_t{});
   }
@@ -290,8 +290,8 @@ inline constexpr get_allocator_t get_allocator{};
 // [exec.get.stop.token]
 struct get_stop_token_t {
   static constexpr bool query(forwarding_query_t) noexcept { return true; }
-  template <class Env>
-  constexpr decltype(auto) operator()(const Env& env) const noexcept {
+  template <class _Env>
+  constexpr decltype(auto) operator()(const _Env& env) const noexcept {
     if constexpr (requires { env.query(get_stop_token_t{}); }) {
       static_assert(noexcept(env.query(get_stop_token_t{})), "get_stop_token: the query must be noexcept");
       static_assert(stoppable_token<remove_cvref_t<decltype(env.query(get_stop_token_t{}))>>,
@@ -304,261 +304,261 @@ struct get_stop_token_t {
 };
 inline constexpr get_stop_token_t get_stop_token{};
 
-template <class T>
-using stop_token_of_t = remove_cvref_t<decltype(get_stop_token(declval<T>()))>;
+template <class _Tp>
+using __stop_token_of_t = remove_cvref_t<decltype(get_stop_token(declval<_Tp>()))>;
 
 } // namespace std
 
-namespace [[gnu::visibility("hidden")]] ycxx { namespace adl_free {
-template <std::size_t I, class E>
-struct exec_env_leaf {
-  [[no_unique_address]] E ycxx_env;
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __adl_free {
+template <std::size_t _Ip, class _Ep>
+struct __exec_env_leaf {
+  [[no_unique_address]] _Ep __ycxx_env;
 };
-template <class Is, class... Es>
-struct exec_env_storage;
-template <std::size_t... Is, class... Es>
-struct exec_env_storage<std::index_sequence<Is...>, Es...> : exec_env_leaf<Is, Es>... {};
+template <class _Is, class... _Es>
+struct __exec_env_storage;
+template <std::size_t... _Is, class... _Es>
+struct __exec_env_storage<std::index_sequence<_Is...>, _Es...> : __exec_env_leaf<_Is, _Es>... {};
 // A const empty member makes env and prop not assignable ([exec.prop]/4, [exec.env]/2) while
 // keeping their implicit copy and move constructors (and their aggregate-ness).
-struct exec_not_assignable {};
-}} // namespace ycxx::adl_free
+struct __exec_not_assignable {};
+}} // namespace __ycxx::__adl_free
 
-namespace [[gnu::visibility("hidden")]] std { namespace execution {
+namespace [[__gnu__::__visibility__("hidden")]] std { namespace execution {
 
 // [exec.prop]
-template <class QueryTag, class ValueType>
+template <class _QueryTag, class _ValueType>
 struct prop {
-  [[no_unique_address]] const QueryTag query_;
-  ValueType value_;
-  constexpr const ValueType& query(QueryTag, auto&&...) const noexcept { return value_; }
+  [[no_unique_address]] const _QueryTag __query_;
+  _ValueType __value_;
+  constexpr const _ValueType& query(_QueryTag, auto&&...) const noexcept { return __value_; }
 };
-template <class QueryTag, class ValueType>
-prop(QueryTag, ValueType) -> prop<QueryTag, unwrap_reference_t<ValueType>>;
+template <class _QueryTag, class _ValueType>
+prop(_QueryTag, _ValueType) -> prop<_QueryTag, unwrap_reference_t<_ValueType>>;
 
 // [exec.env]
-template <ycxx::detail::exec::queryable... Envs>
-struct env : ycxx::adl_free::exec_env_storage<index_sequence_for<Envs...>, Envs...> {
+template <__ycxx::__detail::__exec::__queryable... _Envs>
+struct env : __ycxx::__adl_free::__exec_env_storage<index_sequence_for<_Envs...>, _Envs...> {
   // A constructor rather than aggregate initialization, which would need brace elision into the
   // storage base (warned about by -Wmissing-braces at every env{...}).
   env() = default;
-  template <class... As>
-    requires(sizeof...(As) == sizeof...(Envs) && sizeof...(As) != 0 && (constructible_from<Envs, As> && ...) &&
-             (!is_same_v<remove_cvref_t<As>, env> && ...))
-  constexpr env(As&&... as) noexcept((is_nothrow_constructible_v<Envs, As> && ...))
-      : ycxx::adl_free::exec_env_storage<index_sequence_for<Envs...>, Envs...>{{static_cast<As&&>(as)}...} {}
+  template <class... _As>
+    requires(sizeof...(_As) == sizeof...(_Envs) && sizeof...(_As) != 0 && (constructible_from<_Envs, _As> && ...) &&
+             (!is_same_v<remove_cvref_t<_As>, env> && ...))
+  constexpr env(_As&&... __as) noexcept((is_nothrow_constructible_v<_Envs, _As> && ...))
+      : __ycxx::__adl_free::__exec_env_storage<index_sequence_for<_Envs...>, _Envs...>{{static_cast<_As&&>(__as)}...} {}
   env(const env&) = default;
   env(env&&) = default;
   env& operator=(const env&) = delete; // [exec.env]/2
 
-  template <class QueryTag, class... Args>
-    requires(ycxx::detail::exec::has_query<Envs, QueryTag, Args...> || ...)
-  constexpr decltype(auto) query(QueryTag q, Args&&... args) const
-      noexcept(noexcept(this->template ycxx_first<QueryTag, Args...>().query(q, static_cast<Args&&>(args)...))) {
-    return ycxx_first<QueryTag, Args...>().query(q, static_cast<Args&&>(args)...);
+  template <class _QueryTag, class... _Args>
+    requires(__ycxx::__detail::__exec::__has_query<_Envs, _QueryTag, _Args...> || ...)
+  constexpr decltype(auto) query(_QueryTag __q, _Args&&... __args) const
+      noexcept(noexcept(this->template __ycxx_first<_QueryTag, _Args...>().query(__q, static_cast<_Args&&>(__args)...))) {
+    return __ycxx_first<_QueryTag, _Args...>().query(__q, static_cast<_Args&&>(__args)...);
   }
 
   // The first element whose query is well-formed ([exec.env]/6).
-  template <class QueryTag, class... Args>
-  constexpr const auto& ycxx_first() const noexcept {
-    constexpr size_t i = ycxx::detail::exec::first_true<ycxx::detail::exec::has_query<Envs, QueryTag, Args...>...>;
-    return static_cast<const ycxx::adl_free::exec_env_leaf<i, Envs...[i]>&>(*this).ycxx_env;
+  template <class _QueryTag, class... _Args>
+  constexpr const auto& __ycxx_first() const noexcept {
+    constexpr size_t i = __ycxx::__detail::__exec::__first_true<__ycxx::__detail::__exec::__has_query<_Envs, _QueryTag, _Args...>...>;
+    return static_cast<const __ycxx::__adl_free::__exec_env_leaf<i, _Envs...[i]>&>(*this).__ycxx_env;
   }
 };
-template <class... Envs>
-env(Envs...) -> env<unwrap_reference_t<Envs>...>;
+template <class... _Envs>
+env(_Envs...) -> env<unwrap_reference_t<_Envs>...>;
 
 // [exec.get.env]
 struct get_env_t {
-  template <class T>
-  constexpr decltype(auto) operator()(const T& o) const noexcept {
-    if constexpr (requires { o.get_env(); }) {
-      static_assert(noexcept(o.get_env()), "get_env: the get_env member must be noexcept");
-      static_assert(ycxx::detail::exec::queryable<remove_cvref_t<decltype(o.get_env())>>);
-      return o.get_env();
+  template <class _Tp>
+  constexpr decltype(auto) operator()(const _Tp& __o) const noexcept {
+    if constexpr (requires { __o.get_env(); }) {
+      static_assert(noexcept(__o.get_env()), "get_env: the get_env member must be noexcept");
+      static_assert(__ycxx::__detail::__exec::__queryable<remove_cvref_t<decltype(__o.get_env())>>);
+      return __o.get_env();
     } else {
       return env<>{};
     }
   }
 };
 inline constexpr get_env_t get_env{};
-template <class T>
-using env_of_t = decltype(get_env(declval<T>()));
+template <class _Tp>
+using env_of_t = decltype(get_env(declval<_Tp>()));
 
 }} // namespace std::execution
 
-namespace [[gnu::visibility("hidden")]] ycxx { namespace adl_free {
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __adl_free {
 // FWD-ENV(env) ([exec.snd.expos]/4): the forwarding queries of env. E is the environment type,
 // or a const lvalue reference to it when the argument was an lvalue.
-template <class E>
-struct exec_fwd_env {
-  E ycxx_env;
-  template <::ycxx::detail::exec::forwarding_query_c Q, class... As>
-    requires ::ycxx::detail::exec::has_query<std::remove_cvref_t<E>, Q, As...>
-  constexpr decltype(auto) query(Q q, As&&... as) const
-      noexcept(noexcept(::ycxx::detail::exec::as_const_ref(ycxx_env).query(q, static_cast<As&&>(as)...))) {
-    return ::ycxx::detail::exec::as_const_ref(ycxx_env).query(q, static_cast<As&&>(as)...);
+template <class _Ep>
+struct __exec_fwd_env {
+  _Ep __ycxx_env;
+  template <::__ycxx::__detail::__exec::__forwarding_query_c _Qp, class... _As>
+    requires ::__ycxx::__detail::__exec::__has_query<std::remove_cvref_t<_Ep>, _Qp, _As...>
+  constexpr decltype(auto) query(_Qp __q, _As&&... __as) const
+      noexcept(noexcept(::__ycxx::__detail::__exec::__as_const_ref(__ycxx_env).query(__q, static_cast<_As&&>(__as)...))) {
+    return ::__ycxx::__detail::__exec::__as_const_ref(__ycxx_env).query(__q, static_cast<_As&&>(__as)...);
   }
 };
 // JOIN-ENV(env1, env2) ([exec.snd.expos]/6).
-template <class E1, class E2>
-struct exec_join_env {
-  E1 ycxx_env1;
-  E2 ycxx_env2;
-  template <class Q, class... As>
-    requires ::ycxx::detail::exec::has_query<std::remove_cvref_t<E1>, Q, As...>
-  constexpr decltype(auto) query(Q q, As&&... as) const
-      noexcept(noexcept(::ycxx::detail::exec::as_const_ref(ycxx_env1).query(q, static_cast<As&&>(as)...))) {
-    return ::ycxx::detail::exec::as_const_ref(ycxx_env1).query(q, static_cast<As&&>(as)...);
+template <class _E1, class _E2>
+struct __exec_join_env {
+  _E1 __ycxx_env1;
+  _E2 __ycxx_env2;
+  template <class _Qp, class... _As>
+    requires ::__ycxx::__detail::__exec::__has_query<std::remove_cvref_t<_E1>, _Qp, _As...>
+  constexpr decltype(auto) query(_Qp __q, _As&&... __as) const
+      noexcept(noexcept(::__ycxx::__detail::__exec::__as_const_ref(__ycxx_env1).query(__q, static_cast<_As&&>(__as)...))) {
+    return ::__ycxx::__detail::__exec::__as_const_ref(__ycxx_env1).query(__q, static_cast<_As&&>(__as)...);
   }
-  template <class Q, class... As>
-    requires(!::ycxx::detail::exec::has_query<std::remove_cvref_t<E1>, Q, As...> &&
-             ::ycxx::detail::exec::has_query<std::remove_cvref_t<E2>, Q, As...>)
-  constexpr decltype(auto) query(Q q, As&&... as) const
-      noexcept(noexcept(::ycxx::detail::exec::as_const_ref(ycxx_env2).query(q, static_cast<As&&>(as)...))) {
-    return ::ycxx::detail::exec::as_const_ref(ycxx_env2).query(q, static_cast<As&&>(as)...);
+  template <class _Qp, class... _As>
+    requires(!::__ycxx::__detail::__exec::__has_query<std::remove_cvref_t<_E1>, _Qp, _As...> &&
+             ::__ycxx::__detail::__exec::__has_query<std::remove_cvref_t<_E2>, _Qp, _As...>)
+  constexpr decltype(auto) query(_Qp __q, _As&&... __as) const
+      noexcept(noexcept(::__ycxx::__detail::__exec::__as_const_ref(__ycxx_env2).query(__q, static_cast<_As&&>(__as)...))) {
+    return ::__ycxx::__detail::__exec::__as_const_ref(__ycxx_env2).query(__q, static_cast<_As&&>(__as)...);
   }
 };
-}} // namespace ycxx::adl_free
+}} // namespace __ycxx::__adl_free
 
-namespace [[gnu::visibility("hidden")]] ycxx { namespace detail { namespace exec {
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail { namespace __exec {
 // An environment argument kept by reference when it is an lvalue, by value otherwise.
-template <class E>
-using env_member_t = std::conditional_t<std::is_lvalue_reference_v<E>, const std::remove_reference_t<E>&, std::remove_cvref_t<E>>;
+template <class _Ep>
+using __env_member_t = std::conditional_t<std::is_lvalue_reference_v<_Ep>, const std::remove_reference_t<_Ep>&, std::remove_cvref_t<_Ep>>;
 
-template <class E>
-constexpr auto fwd_env(E&& e) noexcept(std::is_nothrow_constructible_v<env_member_t<E>, E>) {
-  return ::ycxx::adl_free::exec_fwd_env<env_member_t<E>>{static_cast<E&&>(e)};
+template <class _Ep>
+constexpr auto __fwd_env(_Ep&& e) noexcept(std::is_nothrow_constructible_v<__env_member_t<_Ep>, _Ep>) {
+  return ::__ycxx::__adl_free::__exec_fwd_env<__env_member_t<_Ep>>{static_cast<_Ep&&>(e)};
 }
-template <class E>
-using fwd_env_t = decltype(::ycxx::detail::exec::fwd_env(std::declval<E>()));
+template <class _Ep>
+using __fwd_env_t = decltype(::__ycxx::__detail::__exec::__fwd_env(std::declval<_Ep>()));
 
-template <class E1, class E2>
-constexpr auto join_env(E1&& e1, E2&& e2) noexcept(std::is_nothrow_constructible_v<env_member_t<E1>, E1> &&
-                                                   std::is_nothrow_constructible_v<env_member_t<E2>, E2>) {
-  return ::ycxx::adl_free::exec_join_env<env_member_t<E1>, env_member_t<E2>>{static_cast<E1&&>(e1), static_cast<E2&&>(e2)};
+template <class _E1, class _E2>
+constexpr auto __join_env(_E1&& __e1, _E2&& __e2) noexcept(std::is_nothrow_constructible_v<__env_member_t<_E1>, _E1> &&
+                                                   std::is_nothrow_constructible_v<__env_member_t<_E2>, _E2>) {
+  return ::__ycxx::__adl_free::__exec_join_env<__env_member_t<_E1>, __env_member_t<_E2>>{static_cast<_E1&&>(__e1), static_cast<_E2&&>(__e2)};
 }
-template <class E1, class E2>
-using join_env_t = decltype(::ycxx::detail::exec::join_env(std::declval<E1>(), std::declval<E2>()));
-}}} // namespace ycxx::detail::exec
+template <class _E1, class _E2>
+using __join_env_t = decltype(::__ycxx::__detail::__exec::__join_env(std::declval<_E1>(), std::declval<_E2>()));
+}}} // namespace __ycxx::__detail::__exec
 
 // ---------------------------------------------------------------------------------------------
 // Awaitable helpers ([exec.awaitable]).
-namespace [[gnu::visibility("hidden")]] ycxx { namespace detail { namespace exec {
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail { namespace __exec {
 
-template <class T>
-inline constexpr bool is_coroutine_handle = false;
-template <class P>
-inline constexpr bool is_coroutine_handle<std::coroutine_handle<P>> = true;
-template <class T>
-concept await_suspend_result = std::is_void_v<T> || std::is_same_v<T, bool> || is_coroutine_handle<T>;
+template <class _Tp>
+inline constexpr bool __is_coroutine_handle = false;
+template <class _Pp>
+inline constexpr bool __is_coroutine_handle<std::coroutine_handle<_Pp>> = true;
+template <class _Tp>
+concept __await_suspend_result = std::is_void_v<_Tp> || std::is_same_v<_Tp, bool> || __is_coroutine_handle<_Tp>;
 
-template <class A, class... Promise>
-concept is_awaiter = requires(A& a, std::coroutine_handle<Promise...> h) {
+template <class _Ap, class... _Promise>
+concept __is_awaiter = requires(_Ap& a, std::coroutine_handle<_Promise...> h) {
   a.await_ready() ? 1 : 0;
-  { a.await_suspend(h) } -> await_suspend_result;
+  { a.await_suspend(h) } -> __await_suspend_result;
   a.await_resume();
 };
 
 // GET-AWAITER(c, p): await_transform, then operator co_await (member or not), then the operand.
-struct none_such_promise {};
+struct __none_such_promise {};
 
-template <class C>
-[[gnu::always_inline]] constexpr decltype(auto) get_awaiter_after_transform(C&& c) noexcept {
-  return static_cast<C&&>(c);
+template <class _Cp>
+[[__gnu__::__always_inline__]] constexpr decltype(auto) __get_awaiter_after_transform(_Cp&& c) noexcept {
+  return static_cast<_Cp&&>(c);
 }
-template <class C>
-  requires requires(C&& c) { static_cast<C&&>(c).operator co_await(); }
-constexpr decltype(auto) get_awaiter_after_transform(C&& c) noexcept(noexcept(static_cast<C&&>(c).operator co_await())) {
-  return static_cast<C&&>(c).operator co_await();
+template <class _Cp>
+  requires requires(_Cp&& c) { static_cast<_Cp&&>(c).operator co_await(); }
+constexpr decltype(auto) __get_awaiter_after_transform(_Cp&& c) noexcept(noexcept(static_cast<_Cp&&>(c).operator co_await())) {
+  return static_cast<_Cp&&>(c).operator co_await();
 }
-template <class C>
-  requires(!requires(C&& c) { static_cast<C&&>(c).operator co_await(); }) &&
-          requires(C&& c) { operator co_await(static_cast<C&&>(c)); }
-constexpr decltype(auto) get_awaiter_after_transform(C&& c) noexcept(noexcept(operator co_await(static_cast<C&&>(c)))) {
-  return operator co_await(static_cast<C&&>(c));
+template <class _Cp>
+  requires(!requires(_Cp&& c) { static_cast<_Cp&&>(c).operator co_await(); }) &&
+          requires(_Cp&& c) { operator co_await(static_cast<_Cp&&>(c)); }
+constexpr decltype(auto) __get_awaiter_after_transform(_Cp&& c) noexcept(noexcept(operator co_await(static_cast<_Cp&&>(c)))) {
+  return operator co_await(static_cast<_Cp&&>(c));
 }
 
-template <class C, class Promise>
-constexpr decltype(auto) get_awaiter(C&& c, Promise& p) {
-  if constexpr (requires { p.await_transform(static_cast<C&&>(c)); })
-    return ::ycxx::detail::exec::get_awaiter_after_transform(p.await_transform(static_cast<C&&>(c)));
+template <class _Cp, class _Promise>
+constexpr decltype(auto) __get_awaiter(_Cp&& c, _Promise& p) {
+  if constexpr (requires { p.await_transform(static_cast<_Cp&&>(c)); })
+    return ::__ycxx::__detail::__exec::__get_awaiter_after_transform(p.await_transform(static_cast<_Cp&&>(c)));
   else
-    return ::ycxx::detail::exec::get_awaiter_after_transform(static_cast<C&&>(c));
+    return ::__ycxx::__detail::__exec::__get_awaiter_after_transform(static_cast<_Cp&&>(c));
 }
 // GET-AWAITER(c): with a promise that has no await_transform.
-template <class C>
-constexpr decltype(auto) get_awaiter(C&& c) {
-  return ::ycxx::detail::exec::get_awaiter_after_transform(static_cast<C&&>(c));
+template <class _Cp>
+constexpr decltype(auto) __get_awaiter(_Cp&& c) {
+  return ::__ycxx::__detail::__exec::__get_awaiter_after_transform(static_cast<_Cp&&>(c));
 }
 
-template <class C, class... Promise>
-concept is_awaitable = requires(C (*fc)() noexcept, Promise&... p) {
-  { ::ycxx::detail::exec::get_awaiter(fc(), p...) } -> is_awaiter<Promise...>;
+template <class _Cp, class... _Promise>
+concept __is_awaitable = requires(_Cp (*__fc)() noexcept, _Promise&... p) {
+  { ::__ycxx::__detail::__exec::__get_awaiter(__fc(), p...) } -> __is_awaiter<_Promise...>;
 };
-template <class C>
-concept is_awaitable_np = requires(C (*fc)() noexcept, none_such_promise& p) {
-  { ::ycxx::detail::exec::get_awaiter(fc(), p) } -> is_awaiter<>;
+template <class _Cp>
+concept __is_awaitable_np = requires(_Cp (*__fc)() noexcept, __none_such_promise& p) {
+  { ::__ycxx::__detail::__exec::__get_awaiter(__fc(), p) } -> __is_awaiter<>;
 };
 
-template <class C, class... Promise>
-using await_result_type =
-    decltype(::ycxx::detail::exec::get_awaiter(std::declval<C>(), std::declval<Promise&>()...).await_resume());
+template <class _Cp, class... _Promise>
+using __await_result_type =
+    decltype(::__ycxx::__detail::__exec::__get_awaiter(std::declval<_Cp>(), std::declval<_Promise&>()...).await_resume());
 
 // with-await-transform ([exec.awaitable]/5)
-template <class T, class Promise>
-concept has_as_awaitable = requires(T&& t, Promise& p) {
-  { static_cast<T&&>(t).as_awaitable(p) } -> is_awaitable<Promise&>;
+template <class _Tp, class _Promise>
+concept __has_as_awaitable = requires(_Tp&& t, _Promise& p) {
+  { static_cast<_Tp&&>(t).as_awaitable(p) } -> __is_awaitable<_Promise&>;
 };
 
-}}} // namespace ycxx::detail::exec
+}}} // namespace __ycxx::__detail::__exec
 
-namespace [[gnu::visibility("hidden")]] ycxx { namespace adl_free {
-template <class Derived>
-struct exec_with_await_transform {
-  template <class T>
-  T&& await_transform(T&& value) noexcept {
-    return static_cast<T&&>(value);
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __adl_free {
+template <class _Derived>
+struct __exec_with_await_transform {
+  template <class _Tp>
+  _Tp&& await_transform(_Tp&& value) noexcept {
+    return static_cast<_Tp&&>(value);
   }
-  template <::ycxx::detail::exec::has_as_awaitable<Derived> T>
-  auto await_transform(T&& value) noexcept(noexcept(static_cast<T&&>(value).as_awaitable(std::declval<Derived&>())))
-      -> decltype(static_cast<T&&>(value).as_awaitable(std::declval<Derived&>())) {
-    return static_cast<T&&>(value).as_awaitable(static_cast<Derived&>(*this));
+  template <::__ycxx::__detail::__exec::__has_as_awaitable<_Derived> _Tp>
+  auto await_transform(_Tp&& value) noexcept(noexcept(static_cast<_Tp&&>(value).as_awaitable(std::declval<_Derived&>())))
+      -> decltype(static_cast<_Tp&&>(value).as_awaitable(std::declval<_Derived&>())) {
+    return static_cast<_Tp&&>(value).as_awaitable(static_cast<_Derived&>(*this));
   }
 };
 // env-promise ([exec.awaitable]/6): used only for type computations.
-template <class Env>
-struct exec_env_promise : exec_with_await_transform<exec_env_promise<Env>> {
+template <class _Env>
+struct __exec_env_promise : __exec_with_await_transform<__exec_env_promise<_Env>> {
   void get_return_object() noexcept;
   std::suspend_always initial_suspend() noexcept;
   std::suspend_always final_suspend() noexcept;
   void unhandled_exception() noexcept;
   void return_void() noexcept;
   std::coroutine_handle<> unhandled_stopped() noexcept;
-  const Env& get_env() const noexcept;
+  const _Env& get_env() const noexcept;
 };
-}} // namespace ycxx::adl_free
+}} // namespace __ycxx::__adl_free
 
 // ---------------------------------------------------------------------------------------------
 // The sender concept, schedule and schedulers ([exec.snd.concepts], [exec.schedule], [exec.sched]).
-namespace [[gnu::visibility("hidden")]] std { namespace execution {
+namespace [[__gnu__::__visibility__("hidden")]] std { namespace execution {
 
-template <class Sndr>
-inline constexpr bool enable_sender =
-    requires { requires derived_from<typename Sndr::sender_concept, sender_tag>; } ||
-    ycxx::detail::exec::is_awaitable<Sndr, ycxx::adl_free::exec_env_promise<env<>>>;
+template <class _Sndr>
+inline constexpr bool __enable_sender =
+    requires { requires derived_from<typename _Sndr::sender_concept, sender_tag>; } ||
+    __ycxx::__detail::__exec::__is_awaitable<_Sndr, __ycxx::__adl_free::__exec_env_promise<env<>>>;
 
-template <class Sndr>
-concept sender = enable_sender<remove_cvref_t<Sndr>> && requires(const remove_cvref_t<Sndr>& sndr) {
-  { get_env(sndr) } -> ycxx::detail::exec::queryable;
-} && move_constructible<remove_cvref_t<Sndr>> && constructible_from<remove_cvref_t<Sndr>, Sndr>;
+template <class _Sndr>
+concept sender = __enable_sender<remove_cvref_t<_Sndr>> && requires(const remove_cvref_t<_Sndr>& __sndr) {
+  { get_env(__sndr) } -> __ycxx::__detail::__exec::__queryable;
+} && move_constructible<remove_cvref_t<_Sndr>> && constructible_from<remove_cvref_t<_Sndr>, _Sndr>;
 
 // [exec.schedule]
 struct schedule_t {
-  template <class Sch>
-    requires requires(Sch&& sch) { static_cast<Sch&&>(sch).schedule(); }
-  constexpr decltype(auto) operator()(Sch&& sch) const noexcept(noexcept(static_cast<Sch&&>(sch).schedule())) {
-    static_assert(sender<decltype(static_cast<Sch&&>(sch).schedule())>, "schedule: the result must be a sender");
-    return static_cast<Sch&&>(sch).schedule();
+  template <class _Sch>
+    requires requires(_Sch&& __sch) { static_cast<_Sch&&>(__sch).schedule(); }
+  constexpr decltype(auto) operator()(_Sch&& __sch) const noexcept(noexcept(static_cast<_Sch&&>(__sch).schedule())) {
+    static_assert(sender<decltype(static_cast<_Sch&&>(__sch).schedule())>, "schedule: the result must be a sender");
+    return static_cast<_Sch&&>(__sch).schedule();
   }
 };
 inline constexpr schedule_t schedule{};
@@ -567,25 +567,25 @@ enum class forward_progress_guarantee { concurrent, parallel, weakly_parallel };
 
 }} // namespace std::execution
 
-namespace [[gnu::visibility("hidden")]] ycxx { namespace detail { namespace exec {
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail { namespace __exec {
 // The scheduler concept without its get_forward_progress_guarantee requirement, which that query
 // itself requires of its argument.
-template <class Sch>
-concept scheduler_base = std::derived_from<typename std::remove_cvref_t<Sch>::scheduler_concept, std::execution::scheduler_tag> &&
-                         queryable<Sch> && requires(Sch&& sch) {
-                           { std::execution::schedule(static_cast<Sch&&>(sch)) } -> std::execution::sender;
-                         } && std::equality_comparable<std::remove_cvref_t<Sch>> && std::copyable<std::remove_cvref_t<Sch>>;
-}}} // namespace ycxx::detail::exec
+template <class _Sch>
+concept __scheduler_base = std::derived_from<typename std::remove_cvref_t<_Sch>::scheduler_concept, std::execution::scheduler_tag> &&
+                         __queryable<_Sch> && requires(_Sch&& __sch) {
+                           { std::execution::schedule(static_cast<_Sch&&>(__sch)) } -> std::execution::sender;
+                         } && std::equality_comparable<std::remove_cvref_t<_Sch>> && std::copyable<std::remove_cvref_t<_Sch>>;
+}}} // namespace __ycxx::__detail::__exec
 
-namespace [[gnu::visibility("hidden")]] std { namespace execution {
+namespace [[__gnu__::__visibility__("hidden")]] std { namespace execution {
 
 // [exec.get.fwd.progress]
 struct get_forward_progress_guarantee_t {
-  template <class Self, class Sch>
-    requires ycxx::detail::exec::scheduler_base<Sch&> &&
-             requires(const remove_cvref_t<Sch>& s, const Self& q) { s.query(q); }
-  constexpr forward_progress_guarantee operator()(this const Self&, Sch&& sch) noexcept {
-    const auto& s = sch;
+  template <class _Self, class _Sch>
+    requires __ycxx::__detail::__exec::__scheduler_base<_Sch&> &&
+             requires(const remove_cvref_t<_Sch>& s, const _Self& __q) { s.query(__q); }
+  constexpr forward_progress_guarantee operator()(this const _Self&, _Sch&& __sch) noexcept {
+    const auto& s = __sch;
     static_assert(noexcept(s.query(get_forward_progress_guarantee_t{})),
                   "get_forward_progress_guarantee: the query must be noexcept");
     static_assert(is_same_v<decltype(s.query(get_forward_progress_guarantee_t{})), forward_progress_guarantee>,
@@ -596,138 +596,138 @@ struct get_forward_progress_guarantee_t {
 inline constexpr get_forward_progress_guarantee_t get_forward_progress_guarantee{};
 
 // [exec.sched]
-template <class Sch>
-concept scheduler = ycxx::detail::exec::scheduler_base<Sch> && requires(Sch&& sch) {
-  { get_forward_progress_guarantee(sch) } -> same_as<forward_progress_guarantee>;
+template <class _Sch>
+concept scheduler = __ycxx::__detail::__exec::__scheduler_base<_Sch> && requires(_Sch&& __sch) {
+  { get_forward_progress_guarantee(__sch) } -> same_as<forward_progress_guarantee>;
 };
 
-template <scheduler Sch>
-using schedule_result_t = decltype(schedule(declval<Sch>()));
+template <scheduler _Sch>
+using schedule_result_t = decltype(schedule(declval<_Sch>()));
 
 // [exec.get.compl.sched]
-template <class CPO>
+template <class _CPO>
 struct get_completion_scheduler_t;
-template <class CPO = void>
+template <class _CPO = void>
 struct get_completion_domain_t;
 struct default_domain;
-template <class... Domains>
+template <class... _Domains>
 struct indeterminate_domain;
 
 }} // namespace std::execution
 
-namespace [[gnu::visibility("hidden")]] ycxx { namespace detail { namespace exec {
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail { namespace __exec {
 // RECURSE-QUERY(sch, envs...) ([exec.get.compl.sched]/4).
-template <class Sch, class... Envs>
-constexpr auto recurse_query(Sch sch, const Envs&... envs) noexcept {
-  using gcs = std::execution::get_completion_scheduler_t<dependent_t<std::execution::set_value_t, Sch>>;
-  if constexpr (try_queryable<Sch, gcs, Envs...>) {
-    auto sch2 = ::ycxx::detail::exec::try_query(sch, gcs{}, envs...);
-    if constexpr (std::is_same_v<decltype(sch2), Sch>) {
-      while (!(sch2 == sch)) {
-        sch = sch2;
-        if constexpr (std::is_same_v<decltype(::ycxx::detail::exec::try_query(sch, gcs{}, envs...)), Sch>)
-          sch2 = ::ycxx::detail::exec::try_query(sch, gcs{}, envs...);
+template <class _Sch, class... _Envs>
+constexpr auto __recurse_query(_Sch __sch, const _Envs&... __envs) noexcept {
+  using __gcs = std::execution::get_completion_scheduler_t<__dependent_t<std::execution::set_value_t, _Sch>>;
+  if constexpr (__try_queryable<_Sch, __gcs, _Envs...>) {
+    auto __sch2 = ::__ycxx::__detail::__exec::try_query(__sch, __gcs{}, __envs...);
+    if constexpr (std::is_same_v<decltype(__sch2), _Sch>) {
+      while (!(__sch2 == __sch)) {
+        __sch = __sch2;
+        if constexpr (std::is_same_v<decltype(::__ycxx::__detail::__exec::try_query(__sch, __gcs{}, __envs...)), _Sch>)
+          __sch2 = ::__ycxx::__detail::__exec::try_query(__sch, __gcs{}, __envs...);
       }
-      return sch;
+      return __sch;
     } else {
-      return ::ycxx::detail::exec::recurse_query(sch2, envs...);
+      return ::__ycxx::__detail::__exec::__recurse_query(__sch2, __envs...);
     }
   } else {
-    return sch;
+    return __sch;
   }
 }
-template <class Tag, class Q, class... Envs>
-concept completion_scheduler_via_query =
-    try_queryable<Q, std::execution::get_completion_scheduler_t<Tag>, Envs...> &&
-    requires(const Q& q, const Envs&... envs) {
-      ::ycxx::detail::exec::recurse_query(
-          ::ycxx::detail::exec::try_query(q, std::execution::get_completion_scheduler_t<Tag>{}, envs...), envs...);
+template <class _Tag, class _Qp, class... _Envs>
+concept __completion_scheduler_via_query =
+    __try_queryable<_Qp, std::execution::get_completion_scheduler_t<_Tag>, _Envs...> &&
+    requires(const _Qp& __q, const _Envs&... __envs) {
+      ::__ycxx::__detail::__exec::__recurse_query(
+          ::__ycxx::__detail::__exec::try_query(__q, std::execution::get_completion_scheduler_t<_Tag>{}, __envs...), __envs...);
     };
-}}} // namespace ycxx::detail::exec
+}}} // namespace __ycxx::__detail::__exec
 
-namespace [[gnu::visibility("hidden")]] std { namespace execution {
+namespace [[__gnu__::__visibility__("hidden")]] std { namespace execution {
 
-template <class CPO>
+template <class _CPO>
 struct get_completion_scheduler_t {
   static constexpr bool query(forwarding_query_t) noexcept { return true; }
-  template <class Q, class... Envs>
-    requires ycxx::detail::exec::completion_tag<CPO> &&
-             (ycxx::detail::exec::completion_scheduler_via_query<CPO, Q, Envs...> ||
-              (sizeof...(Envs) != 0 && scheduler<const Q&>))
-  constexpr auto operator()(const Q& q, const Envs&... envs) const noexcept {
-    if constexpr (ycxx::detail::exec::completion_scheduler_via_query<CPO, Q, Envs...>) {
-      auto s = ycxx::detail::exec::recurse_query(ycxx::detail::exec::try_query(q, *this, envs...), envs...);
+  template <class _Qp, class... _Envs>
+    requires __ycxx::__detail::__exec::__completion_tag<_CPO> &&
+             (__ycxx::__detail::__exec::__completion_scheduler_via_query<_CPO, _Qp, _Envs...> ||
+              (sizeof...(_Envs) != 0 && scheduler<const _Qp&>))
+  constexpr auto operator()(const _Qp& __q, const _Envs&... __envs) const noexcept {
+    if constexpr (__ycxx::__detail::__exec::__completion_scheduler_via_query<_CPO, _Qp, _Envs...>) {
+      auto s = __ycxx::__detail::__exec::__recurse_query(__ycxx::__detail::__exec::try_query(__q, *this, __envs...), __envs...);
       static_assert(scheduler<decltype(s)>, "get_completion_scheduler: the result must be a scheduler");
       return s;
     } else {
-      ((void)envs, ...);
-      return q;
+      ((void)__envs, ...);
+      return __q;
     }
   }
 };
-template <class CPO>
-constexpr get_completion_scheduler_t<CPO> get_completion_scheduler{};
+template <class _CPO>
+constexpr get_completion_scheduler_t<_CPO> get_completion_scheduler{};
 
 }} // namespace std::execution
 
-namespace [[gnu::visibility("hidden")]] ycxx { namespace detail { namespace exec {
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail { namespace __exec {
 // The D of get_completion_domain<Tag>(attrs, envs...) ([exec.get.compl.domain]/2); void when
 // that expression is ill-formed.
-template <class Tag, class A, class... Envs>
-struct compl_domain {
-  static auto pick() {
+template <class _Tag, class _Ap, class... _Envs>
+struct __compl_domain {
+  static auto __pick() {
     using std::execution::get_completion_domain_t;
     using std::execution::get_completion_scheduler_t;
-    if constexpr (try_queryable<A, get_completion_domain_t<Tag>, Envs...>)
-      return std::type_identity<std::remove_cvref_t<try_query_t<A, get_completion_domain_t<Tag>, Envs...>>>{};
-    else if constexpr (std::is_void_v<Tag>)
-      return std::type_identity<typename compl_domain<std::execution::set_value_t, A, Envs...>::type>{};
-    else if constexpr (requires(const A& a, const Envs&... e) {
-                         ::ycxx::detail::exec::try_query(get_completion_scheduler_t<Tag>{}(a, e...),
-                                                         get_completion_domain_t<dependent_t<std::execution::set_value_t, A>>{}, e...);
+    if constexpr (__try_queryable<_Ap, get_completion_domain_t<_Tag>, _Envs...>)
+      return std::type_identity<std::remove_cvref_t<__try_query_t<_Ap, get_completion_domain_t<_Tag>, _Envs...>>>{};
+    else if constexpr (std::is_void_v<_Tag>)
+      return std::type_identity<typename __compl_domain<std::execution::set_value_t, _Ap, _Envs...>::type>{};
+    else if constexpr (requires(const _Ap& a, const _Envs&... e) {
+                         ::__ycxx::__detail::__exec::try_query(get_completion_scheduler_t<_Tag>{}(a, e...),
+                                                         get_completion_domain_t<__dependent_t<std::execution::set_value_t, _Ap>>{}, e...);
                        })
-      return std::type_identity<std::remove_cvref_t<decltype(::ycxx::detail::exec::try_query(
-          get_completion_scheduler_t<Tag>{}(std::declval<const A&>(), std::declval<const Envs&>()...),
-          get_completion_domain_t<dependent_t<std::execution::set_value_t, A>>{}, std::declval<const Envs&>()...))>>{};
-    else if constexpr (std::execution::scheduler<const A&> && sizeof...(Envs) != 0)
+      return std::type_identity<std::remove_cvref_t<decltype(::__ycxx::__detail::__exec::try_query(
+          get_completion_scheduler_t<_Tag>{}(std::declval<const _Ap&>(), std::declval<const _Envs&>()...),
+          get_completion_domain_t<__dependent_t<std::execution::set_value_t, _Ap>>{}, std::declval<const _Envs&>()...))>>{};
+    else if constexpr (std::execution::scheduler<const _Ap&> && sizeof...(_Envs) != 0)
       return std::type_identity<std::execution::default_domain>{};
     else
       return std::type_identity<void>{};
   }
-  using type = typename decltype(pick())::type;
+  using type = typename decltype(__pick())::type;
 };
-template <class Tag, class A, class... Envs>
-using compl_domain_t = typename compl_domain<Tag, A, Envs...>::type;
-}}} // namespace ycxx::detail::exec
+template <class _Tag, class _Ap, class... _Envs>
+using __compl_domain_t = typename __compl_domain<_Tag, _Ap, _Envs...>::type;
+}}} // namespace __ycxx::__detail::__exec
 
-namespace [[gnu::visibility("hidden")]] std { namespace execution {
+namespace [[__gnu__::__visibility__("hidden")]] std { namespace execution {
 
 // [exec.get.compl.domain]
-template <class CPO>
+template <class _CPO>
 struct get_completion_domain_t {
   static constexpr bool query(forwarding_query_t) noexcept { return true; }
-  template <class A, class... Envs>
-    requires(is_void_v<CPO> || ycxx::detail::exec::completion_tag<CPO>) &&
-            (!is_void_v<ycxx::detail::exec::compl_domain_t<CPO, A, Envs...>>)
-  constexpr auto operator()(const A&, const Envs&...) const noexcept {
-    using D = ycxx::detail::exec::compl_domain_t<CPO, A, Envs...>;
-    static_assert(noexcept(D()), "get_completion_domain: constructing the domain must not throw");
-    return D();
+  template <class _Ap, class... _Envs>
+    requires(is_void_v<_CPO> || __ycxx::__detail::__exec::__completion_tag<_CPO>) &&
+            (!is_void_v<__ycxx::__detail::__exec::__compl_domain_t<_CPO, _Ap, _Envs...>>)
+  constexpr auto operator()(const _Ap&, const _Envs&...) const noexcept {
+    using _Dp = __ycxx::__detail::__exec::__compl_domain_t<_CPO, _Ap, _Envs...>;
+    static_assert(noexcept(_Dp()), "get_completion_domain: constructing the domain must not throw");
+    return _Dp();
   }
 };
-template <class CPO = void>
-constexpr get_completion_domain_t<CPO> get_completion_domain{};
+template <class _CPO = void>
+constexpr get_completion_domain_t<_CPO> get_completion_domain{};
 
 // [exec.get.scheduler]
 struct get_scheduler_t {
   static constexpr bool query(forwarding_query_t) noexcept { return true; }
-  template <class Self, class Env>
-    requires requires(const Env& env, const Self& q, const ycxx::detail::exec::hide_sched_env<Env>& h) {
-      get_completion_scheduler_t<set_value_t>{}(env.query(q), h);
+  template <class _Self, class _Env>
+    requires requires(const _Env& env, const _Self& __q, const __ycxx::__detail::__exec::__hide_sched_env<_Env>& h) {
+      get_completion_scheduler_t<set_value_t>{}(env.query(__q), h);
     }
-  constexpr auto operator()(this const Self&, const Env& env) noexcept {
+  constexpr auto operator()(this const _Self&, const _Env& env) noexcept {
     static_assert(noexcept(env.query(get_scheduler_t{})), "get_scheduler: the query must be noexcept");
-    auto s = get_completion_scheduler_t<set_value_t>{}(env.query(get_scheduler_t{}), ycxx::detail::exec::hide_sched_env<Env>{env});
+    auto s = get_completion_scheduler_t<set_value_t>{}(env.query(get_scheduler_t{}), __ycxx::__detail::__exec::__hide_sched_env<_Env>{env});
     static_assert(scheduler<decltype(s)>, "get_scheduler: the result must be a scheduler");
     return s;
   }
@@ -737,23 +737,23 @@ inline constexpr get_scheduler_t get_scheduler{};
 // [exec.get.domain]
 struct get_domain_t {
   static constexpr bool query(forwarding_query_t) noexcept { return true; }
-  template <class Env>
-  static constexpr auto ycxx_pick() noexcept {
-    if constexpr (requires(const Env& env) { auto(env.query(get_domain_t{})); })
-      return type_identity<decltype(auto(declval<const Env&>().query(get_domain_t{})))>{};
-    else if constexpr (requires(const Env& env, const ycxx::detail::exec::hide_sched_env<Env>& h) {
+  template <class _Env>
+  static constexpr auto __ycxx_pick() noexcept {
+    if constexpr (requires(const _Env& env) { auto(env.query(get_domain_t{})); })
+      return type_identity<decltype(auto(declval<const _Env&>().query(get_domain_t{})))>{};
+    else if constexpr (requires(const _Env& env, const __ycxx::__detail::__exec::__hide_sched_env<_Env>& h) {
                          get_completion_domain_t<set_value_t>{}(get_scheduler_t{}(env), h);
                        })
       return type_identity<decltype(get_completion_domain_t<set_value_t>{}(
-          get_scheduler_t{}(declval<const Env&>()), declval<const ycxx::detail::exec::hide_sched_env<Env>&>()))>{};
+          get_scheduler_t{}(declval<const _Env&>()), declval<const __ycxx::__detail::__exec::__hide_sched_env<_Env>&>()))>{};
     else
       return type_identity<default_domain>{};
   }
-  template <class Env>
-  constexpr auto operator()(const Env&) const noexcept {
-    using D = typename decltype(ycxx_pick<Env>())::type;
-    static_assert(noexcept(D()), "get_domain: constructing the domain must not throw");
-    return D();
+  template <class _Env>
+  constexpr auto operator()(const _Env&) const noexcept {
+    using _Dp = typename decltype(__ycxx_pick<_Env>())::type;
+    static_assert(noexcept(_Dp()), "get_domain: constructing the domain must not throw");
+    return _Dp();
   }
 };
 inline constexpr get_domain_t get_domain{};
@@ -761,9 +761,9 @@ inline constexpr get_domain_t get_domain{};
 // [exec.get.start.scheduler]
 struct get_start_scheduler_t {
   static constexpr bool query(forwarding_query_t) noexcept { return true; }
-  template <class Self, class Env>
-    requires requires(const Env& env, const Self& q) { env.query(q); }
-  constexpr decltype(auto) operator()(this const Self&, const Env& env) noexcept {
+  template <class _Self, class _Env>
+    requires requires(const _Env& env, const _Self& __q) { env.query(__q); }
+  constexpr decltype(auto) operator()(this const _Self&, const _Env& env) noexcept {
     static_assert(noexcept(env.query(get_start_scheduler_t{})), "get_start_scheduler: the query must be noexcept");
     static_assert(scheduler<decltype(env.query(get_start_scheduler_t{}))>, "get_start_scheduler: the result must be a scheduler");
     return env.query(get_start_scheduler_t{});
@@ -774,9 +774,9 @@ inline constexpr get_start_scheduler_t get_start_scheduler{};
 // [exec.get.delegation.scheduler]
 struct get_delegation_scheduler_t {
   static constexpr bool query(forwarding_query_t) noexcept { return true; }
-  template <class Self, class Env>
-    requires requires(const Env& env, const Self& q) { env.query(q); }
-  constexpr decltype(auto) operator()(this const Self&, const Env& env) noexcept {
+  template <class _Self, class _Env>
+    requires requires(const _Env& env, const _Self& __q) { env.query(__q); }
+  constexpr decltype(auto) operator()(this const _Self&, const _Env& env) noexcept {
     static_assert(noexcept(env.query(get_delegation_scheduler_t{})), "get_delegation_scheduler: the query must be noexcept");
     static_assert(scheduler<decltype(env.query(get_delegation_scheduler_t{}))>,
                   "get_delegation_scheduler: the result must be a scheduler");
@@ -786,361 +786,361 @@ struct get_delegation_scheduler_t {
 inline constexpr get_delegation_scheduler_t get_delegation_scheduler{};
 
 // [exec.get.await.adapt]
-struct get_await_completion_adaptor_t {
+struct __get_await_completion_adaptor_t {
   static constexpr bool query(forwarding_query_t) noexcept { return true; }
-  template <class Self, class Env>
-    requires requires(const Env& env, const Self& q) { env.query(q); }
-  constexpr decltype(auto) operator()(this const Self&, const Env& env) noexcept {
-    static_assert(noexcept(env.query(get_await_completion_adaptor_t{})), "get_await_completion_adaptor: the query must be noexcept");
-    return env.query(get_await_completion_adaptor_t{});
+  template <class _Self, class _Env>
+    requires requires(const _Env& env, const _Self& __q) { env.query(__q); }
+  constexpr decltype(auto) operator()(this const _Self&, const _Env& env) noexcept {
+    static_assert(noexcept(env.query(__get_await_completion_adaptor_t{})), "get_await_completion_adaptor: the query must be noexcept");
+    return env.query(__get_await_completion_adaptor_t{});
   }
 };
-inline constexpr get_await_completion_adaptor_t get_await_completion_adaptor{};
+inline constexpr __get_await_completion_adaptor_t __get_await_completion_adaptor{};
 
 }} // namespace std::execution
 
-namespace [[gnu::visibility("hidden")]] ycxx { namespace detail { namespace exec {
-template <class Env>
-struct hide_sched_env {
-  const Env& env;
-  template <class Q, class... As>
-    requires(!std::is_same_v<Q, std::execution::get_scheduler_t> && !std::is_same_v<Q, std::execution::get_domain_t>) &&
-            has_query<Env, Q, As...>
-  constexpr decltype(auto) query(Q q, As&&... as) const noexcept(noexcept(env.query(q, static_cast<As&&>(as)...))) {
-    return env.query(q, static_cast<As&&>(as)...);
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail { namespace __exec {
+template <class _Env>
+struct __hide_sched_env {
+  const _Env& env;
+  template <class _Qp, class... _As>
+    requires(!std::is_same_v<_Qp, std::execution::get_scheduler_t> && !std::is_same_v<_Qp, std::execution::get_domain_t>) &&
+            __has_query<_Env, _Qp, _As...>
+  constexpr decltype(auto) query(_Qp __q, _As&&... __as) const noexcept(noexcept(env.query(__q, static_cast<_As&&>(__as)...))) {
+    return env.query(__q, static_cast<_As&&>(__as)...);
   }
 };
 
 // inline-attrs<Tag> ([exec.snd.expos]/59): the attributes of a sender that completes with Tag on
 // the agent that starts it.
-template <class Tag>
-struct inline_attrs {
-  template <class Env>
-    requires requires(const Env& env) { std::execution::get_scheduler(env); }
-  constexpr auto query(std::execution::get_completion_scheduler_t<Tag>, const Env& env) const noexcept {
+template <class _Tag>
+struct __inline_attrs {
+  template <class _Env>
+    requires requires(const _Env& env) { std::execution::get_scheduler(env); }
+  constexpr auto query(std::execution::get_completion_scheduler_t<_Tag>, const _Env& env) const noexcept {
     return std::execution::get_scheduler(env);
   }
-  template <class Env>
-  constexpr auto query(std::execution::get_completion_domain_t<Tag>, const Env& env) const noexcept {
+  template <class _Env>
+  constexpr auto query(std::execution::get_completion_domain_t<_Tag>, const _Env& env) const noexcept {
     return std::execution::get_domain(env);
   }
 };
 
 // COMMON-DOMAIN(domains...) ([exec.snd.expos]/8), as a type.
-template <class... Ds>
-struct common_domain {
-  static auto pick() {
-    if constexpr (requires { typename std::common_type_t<Ds...>; requires (sizeof...(Ds) != 0); })
-      return std::type_identity<std::common_type_t<Ds...>>{};
+template <class... _Ds>
+struct __common_domain {
+  static auto __pick() {
+    if constexpr (requires { typename std::common_type_t<_Ds...>; requires (sizeof...(_Ds) != 0); })
+      return std::type_identity<std::common_type_t<_Ds...>>{};
     else
-      return std::type_identity<apply_unique_t<std::execution::indeterminate_domain, Ds...>>{};
+      return std::type_identity<__apply_unique_t<std::execution::indeterminate_domain, _Ds...>>{};
   }
-  using type = typename decltype(pick())::type;
+  using type = typename decltype(__pick())::type;
 };
-template <class... Ds>
-using common_domain_t = typename common_domain<Ds...>::type;
+template <class... _Ds>
+using __common_domain_t = typename __common_domain<_Ds...>::type;
 
 // COMPL-DOMAIN(Tag, sndr, envs) ([exec.snd.expos]/9), as a type.
-template <class Tag, class Sndr, class... Envs>
-using compl_domain_of_t = std::conditional_t<
-    !std::is_void_v<compl_domain_t<Tag, std::remove_cvref_t<decltype(std::execution::get_env(std::declval<Sndr>()))>, Envs...>> ||
-        sizeof...(Envs) == 0,
-    compl_domain_t<Tag, std::remove_cvref_t<decltype(std::execution::get_env(std::declval<Sndr>()))>, Envs...>,
+template <class _Tag, class _Sndr, class... _Envs>
+using __compl_domain_of_t = std::conditional_t<
+    !std::is_void_v<__compl_domain_t<_Tag, std::remove_cvref_t<decltype(std::execution::get_env(std::declval<_Sndr>()))>, _Envs...>> ||
+        sizeof...(_Envs) == 0,
+    __compl_domain_t<_Tag, std::remove_cvref_t<decltype(std::execution::get_env(std::declval<_Sndr>()))>, _Envs...>,
     std::execution::indeterminate_domain<>>;
-}}} // namespace ycxx::detail::exec
+}}} // namespace __ycxx::__detail::__exec
 
 // ---------------------------------------------------------------------------------------------
 // Completion signatures ([exec.cmplsig]).
-namespace [[gnu::visibility("hidden")]] ycxx { namespace detail { namespace exec {
-template <class Fn>
-inline constexpr bool is_completion_signature = false;
-template <class... Vs>
-inline constexpr bool is_completion_signature<std::execution::set_value_t(Vs...)> =
-    ((std::is_object_v<Vs> || std::is_reference_v<Vs>) && ...);
-template <class E>
-inline constexpr bool is_completion_signature<std::execution::set_error_t(E)> = std::is_object_v<E> || std::is_reference_v<E>;
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail { namespace __exec {
+template <class _Fn>
+inline constexpr bool __is_completion_signature = false;
+template <class... _Vs>
+inline constexpr bool __is_completion_signature<std::execution::set_value_t(_Vs...)> =
+    ((std::is_object_v<_Vs> || std::is_reference_v<_Vs>) && ...);
+template <class _Ep>
+inline constexpr bool __is_completion_signature<std::execution::set_error_t(_Ep)> = std::is_object_v<_Ep> || std::is_reference_v<_Ep>;
 template <>
-inline constexpr bool is_completion_signature<std::execution::set_stopped_t()> = true;
-template <class Fn>
-concept completion_signature = is_completion_signature<Fn>;
+inline constexpr bool __is_completion_signature<std::execution::set_stopped_t()> = true;
+template <class _Fn>
+concept __completion_signature = __is_completion_signature<_Fn>;
 
-template <class Sig>
-struct sig_tag;
-template <class Tag, class... As>
-struct sig_tag<Tag(As...)> {
-  using type = Tag;
-  using args = tlist<As...>;
+template <class _Sig>
+struct __sig_tag;
+template <class _Tag, class... _As>
+struct __sig_tag<_Tag(_As...)> {
+  using type = _Tag;
+  using __args = __tlist<_As...>;
 };
-}}} // namespace ycxx::detail::exec
+}}} // namespace __ycxx::__detail::__exec
 
-namespace [[gnu::visibility("hidden")]] std { namespace execution {
+namespace [[__gnu__::__visibility__("hidden")]] std { namespace execution {
 
-template <ycxx::detail::exec::completion_signature... Fns>
+template <__ycxx::__detail::__exec::__completion_signature... _Fns>
 struct completion_signatures {
   // count-of(tag) and for-each(fn) ([exec.cmplsig]/8), exposition-only in the draft.
-  template <class Tag>
-  static constexpr size_t ycxx_count_of(Tag) {
-    return (size_t{0} + ... + size_t{is_same_v<typename ycxx::detail::exec::sig_tag<Fns>::type, decay_t<Tag>>});
+  template <class _Tag>
+  static constexpr size_t __ycxx_count_of(_Tag) {
+    return (size_t{0} + ... + size_t{is_same_v<typename __ycxx::__detail::__exec::__sig_tag<_Fns>::type, decay_t<_Tag>>});
   }
-  template <class Fn>
-  static constexpr void ycxx_for_each(Fn&& fn) {
-    (fn(static_cast<Fns*>(nullptr)), ...);
+  template <class _Fn>
+  static constexpr void __ycxx_for_each(_Fn&& __fn) {
+    (__fn(static_cast<_Fns*>(nullptr)), ...);
   }
 };
 
-struct dependent_sender_error : exception {
+struct __dependent_sender_error : exception {
   constexpr const char* what() const noexcept override { return "std::execution::dependent_sender_error"; }
 };
 
 }} // namespace std::execution
 
-namespace [[gnu::visibility("hidden")]] ycxx { namespace detail { namespace exec {
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail { namespace __exec {
 
-template <class T>
-inline constexpr bool is_csigs = false;
-template <class... Fns>
-inline constexpr bool is_csigs<std::execution::completion_signatures<Fns...>> = true;
-template <class T>
-concept valid_completion_signatures = is_csigs<T>;
+template <class _Tp>
+inline constexpr bool __is_csigs = false;
+template <class... _Fns>
+inline constexpr bool __is_csigs<std::execution::completion_signatures<_Fns...>> = true;
+template <class _Tp>
+concept __valid_completion_signatures = __is_csigs<_Tp>;
 
 // The error results of a completion-signature computation.
-struct dependent_sigs {};
-template <class What, class... Info>
-struct invalid_sigs {};
-template <class T>
-inline constexpr bool is_invalid_sigs = false;
-template <class What, class... Info>
-inline constexpr bool is_invalid_sigs<invalid_sigs<What, Info...>> = true;
+struct __dependent_sigs {};
+template <class _What, class... _Info>
+struct __invalid_sigs {};
+template <class _Tp>
+inline constexpr bool __is_invalid_sigs = false;
+template <class _What, class... _Info>
+inline constexpr bool __is_invalid_sigs<__invalid_sigs<_What, _Info...>> = true;
 
 // Problems reported by invalid_sigs (the names show in diagnostics).
-struct sender_has_no_completion_signatures;
-struct not_a_sender_for_this_environment;
-struct function_not_invocable_with_these_arguments;
-struct result_datums_not_decay_copyable;
-struct let_function_must_return_a_sender;
-struct when_all_child_has_more_than_one_value_completion;
-struct sender_has_not_exactly_one_value_completion;
-struct environment_has_no_start_scheduler;
-struct start_scheduler_is_not_infallible;
-struct read_env_query_ill_formed_or_void;
-struct transform_sender_ill_formed;
+struct __sender_has_no_completion_signatures;
+struct __not_a_sender_for_this_environment;
+struct __function_not_invocable_with_these_arguments;
+struct __result_datums_not_decay_copyable;
+struct __let_function_must_return_a_sender;
+struct __when_all_child_has_more_than_one_value_completion;
+struct __sender_has_not_exactly_one_value_completion;
+struct __environment_has_no_start_scheduler;
+struct __start_scheduler_is_not_infallible;
+struct __read_env_query_ill_formed_or_void;
+struct __transform_sender_ill_formed;
 
 // Sets of completion signatures with duplicates removed; an error operand gives the error
 // (the first invalid one, else dependent).
-template <class... CS>
-struct sigs_concat;
+template <class... _CS>
+struct __sigs_concat;
 template <>
-struct sigs_concat<> {
+struct __sigs_concat<> {
   using type = std::execution::completion_signatures<>;
 };
-template <class... Fns>
-struct sigs_concat<std::execution::completion_signatures<Fns...>> {
-  using type = apply_unique_t<std::execution::completion_signatures, Fns...>;
+template <class... _Fns>
+struct __sigs_concat<std::execution::completion_signatures<_Fns...>> {
+  using type = __apply_unique_t<std::execution::completion_signatures, _Fns...>;
 };
-template <class... As, class... Bs, class... Rest>
-struct sigs_concat<std::execution::completion_signatures<As...>, std::execution::completion_signatures<Bs...>, Rest...>
-    : sigs_concat<std::execution::completion_signatures<As..., Bs...>, Rest...> {};
-template <class First, class... Rest>
-  requires(!is_csigs<First>)
-struct sigs_concat<First, Rest...> {
-  static auto pick() {
-    if constexpr (is_invalid_sigs<First>)
-      return std::type_identity<First>{};
-    else if constexpr (requires { typename sigs_concat<Rest...>::type; requires is_invalid_sigs<typename sigs_concat<Rest...>::type>; })
-      return std::type_identity<typename sigs_concat<Rest...>::type>{};
+template <class... _As, class... _Bs, class... _Rest>
+struct __sigs_concat<std::execution::completion_signatures<_As...>, std::execution::completion_signatures<_Bs...>, _Rest...>
+    : __sigs_concat<std::execution::completion_signatures<_As..., _Bs...>, _Rest...> {};
+template <class _First, class... _Rest>
+  requires(!__is_csigs<_First>)
+struct __sigs_concat<_First, _Rest...> {
+  static auto __pick() {
+    if constexpr (__is_invalid_sigs<_First>)
+      return std::type_identity<_First>{};
+    else if constexpr (requires { typename __sigs_concat<_Rest...>::type; requires __is_invalid_sigs<typename __sigs_concat<_Rest...>::type>; })
+      return std::type_identity<typename __sigs_concat<_Rest...>::type>{};
     else
-      return std::type_identity<First>{};
+      return std::type_identity<_First>{};
   }
-  using type = typename decltype(pick())::type;
+  using type = typename decltype(__pick())::type;
 };
-template <class CS, class... Rest>
-  requires is_csigs<CS> && (sizeof...(Rest) != 0) && (!is_csigs<Rest> || ...)
-struct sigs_concat<CS, Rest...> {
-  static auto pick() {
-    using R = typename sigs_concat<Rest...>::type;
-    if constexpr (is_csigs<R>)
-      return std::type_identity<typename sigs_concat<CS, R>::type>{};
+template <class _CS, class... _Rest>
+  requires __is_csigs<_CS> && (sizeof...(_Rest) != 0) && (!__is_csigs<_Rest> || ...)
+struct __sigs_concat<_CS, _Rest...> {
+  static auto __pick() {
+    using _Rp = typename __sigs_concat<_Rest...>::type;
+    if constexpr (__is_csigs<_Rp>)
+      return std::type_identity<typename __sigs_concat<_CS, _Rp>::type>{};
     else
-      return std::type_identity<R>{};
+      return std::type_identity<_Rp>{};
   }
-  using type = typename decltype(pick())::type;
+  using type = typename decltype(__pick())::type;
 };
-template <class... CS>
-using sigs_concat_t = typename sigs_concat<CS...>::type;
+template <class... _CS>
+using __sigs_concat_t = typename __sigs_concat<_CS...>::type;
 
 // Maps each signature of CS through F<Sig> (a completion_signatures or an error) and joins the
 // results; an error CS is the result.
-template <class CS, template <class> class F>
-struct sigs_map {
-  using type = CS;
+template <class _CS, template <class> class _Fp>
+struct __sigs_map {
+  using type = _CS;
 };
-template <class... Sigs, template <class> class F>
-struct sigs_map<std::execution::completion_signatures<Sigs...>, F> {
-  using type = sigs_concat_t<F<Sigs>...>;
+template <class... _Sigs, template <class> class _Fp>
+struct __sigs_map<std::execution::completion_signatures<_Sigs...>, _Fp> {
+  using type = __sigs_concat_t<_Fp<_Sigs>...>;
 };
-template <class CS, template <class> class F>
-using sigs_map_t = typename sigs_map<CS, F>::type;
+template <class _CS, template <class> class _Fp>
+using __sigs_map_t = typename __sigs_map<_CS, _Fp>::type;
 
 // The signatures with the given tag, as a tlist of the argument tlists.
-template <class Tag, class CS>
-struct sigs_args;
-template <class Tag, class... Sigs>
-struct sigs_args<Tag, std::execution::completion_signatures<Sigs...>> {
-  using type = typename tlist_concat<
-      std::conditional_t<std::is_same_v<typename sig_tag<Sigs>::type, Tag>, tlist<typename sig_tag<Sigs>::args>, tlist<>>...>::type;
+template <class _Tag, class _CS>
+struct __sigs_args;
+template <class _Tag, class... _Sigs>
+struct __sigs_args<_Tag, std::execution::completion_signatures<_Sigs...>> {
+  using type = typename __tlist_concat<
+      std::conditional_t<std::is_same_v<typename __sig_tag<_Sigs>::type, _Tag>, __tlist<typename __sig_tag<_Sigs>::__args>, __tlist<>>...>::type;
 };
-template <class Tag, class CS>
-using sigs_args_t = typename sigs_args<Tag, CS>::type;
+template <class _Tag, class _CS>
+using __sigs_args_t = typename __sigs_args<_Tag, _CS>::type;
 
-template <class Tag, class CS>
-inline constexpr std::size_t sigs_count = 0;
-template <class Tag, class... Sigs>
-inline constexpr std::size_t sigs_count<Tag, std::execution::completion_signatures<Sigs...>> =
-    (std::size_t{0} + ... + std::size_t{std::is_same_v<typename sig_tag<Sigs>::type, Tag>});
+template <class _Tag, class _CS>
+inline constexpr std::size_t __sigs_count = 0;
+template <class _Tag, class... _Sigs>
+inline constexpr std::size_t __sigs_count<_Tag, std::execution::completion_signatures<_Sigs...>> =
+    (std::size_t{0} + ... + std::size_t{std::is_same_v<typename __sig_tag<_Sigs>::type, _Tag>});
 
 // META-APPLY ([exec.cmplsig]/6).
 template <bool>
-struct indirect_meta_apply {
-  template <template <class...> class T, class... As>
-  using meta_apply = T<As...>;
+struct __indirect_meta_apply {
+  template <template <class...> class _Tp, class... _As>
+  using __meta_apply = _Tp<_As...>;
 };
 template <class...>
-concept always_true = true;
+concept __always_true = true;
 
 // Alias templates throughout, so that a Tuple or Variant of the wrong arity is a substitution
 // failure (a nested class template would make it a hard error).
-template <class Args>
-struct gather_tuple;
-template <class... As>
-struct gather_tuple<tlist<As...>> {
-  template <template <class...> class Tuple>
-  using with = typename indirect_meta_apply<always_true<As...>>::template meta_apply<Tuple, As...>;
+template <class _Args>
+struct __gather_tuple;
+template <class... _As>
+struct __gather_tuple<__tlist<_As...>> {
+  template <template <class...> class _Tuple>
+  using __with = typename __indirect_meta_apply<__always_true<_As...>>::template __meta_apply<_Tuple, _As...>;
 };
-template <class ArgLists>
-struct gather_variant;
-template <class... ArgLists>
-struct gather_variant<tlist<ArgLists...>> {
-  template <template <class...> class Tuple, template <class...> class Variant>
-  using with = typename indirect_meta_apply<always_true<ArgLists...>>::template meta_apply<
-      Variant, typename gather_tuple<ArgLists>::template with<Tuple>...>;
+template <class _ArgLists>
+struct __gather_variant;
+template <class... _ArgLists>
+struct __gather_variant<__tlist<_ArgLists...>> {
+  template <template <class...> class _Tuple, template <class...> class _Variant>
+  using __with = typename __indirect_meta_apply<__always_true<_ArgLists...>>::template __meta_apply<
+      _Variant, typename __gather_tuple<_ArgLists>::template __with<_Tuple>...>;
 };
 // gather-signatures<Tag, Completions, Tuple, Variant>
-template <class Tag, valid_completion_signatures Completions, template <class...> class Tuple, template <class...> class Variant>
-using gather_signatures = typename gather_variant<sigs_args_t<Tag, Completions>>::template with<Tuple, Variant>;
+template <class _Tag, __valid_completion_signatures _Completions, template <class...> class _Tuple, template <class...> class _Variant>
+using __gather_signatures = typename __gather_variant<__sigs_args_t<_Tag, _Completions>>::template __with<_Tuple, _Variant>;
 
-template <class... Ts>
-using decayed_tuple = std::tuple<std::decay_t<Ts>...>;
+template <class... _Ts>
+using __decayed_tuple = std::tuple<std::decay_t<_Ts>...>;
 
-struct empty_variant {
-  empty_variant() = delete;
+struct __empty_variant {
+  __empty_variant() = delete;
 };
-template <class... Ts>
-struct variant_or_empty_impl {
-  using type = apply_unique_t<std::variant, std::decay_t<Ts>...>;
+template <class... _Ts>
+struct __variant_or_empty_impl {
+  using type = __apply_unique_t<std::variant, std::decay_t<_Ts>...>;
 };
 template <>
-struct variant_or_empty_impl<> {
-  using type = empty_variant;
+struct __variant_or_empty_impl<> {
+  using type = __empty_variant;
 };
-template <class... Ts>
-using variant_or_empty = typename variant_or_empty_impl<Ts...>::type;
+template <class... _Ts>
+using __variant_or_empty = typename __variant_or_empty_impl<_Ts...>::type;
 
-template <class... Ts>
-struct type_list_tl {};
+template <class... _Ts>
+struct __type_list_tl {};
 
 // MATCHING-SIG(F1, F2) ([exec.general]/7)
-template <class F1, class F2>
-inline constexpr bool matching_sig = false;
-template <class R1, class... A1, class R2, class... A2>
-inline constexpr bool matching_sig<R1(A1...), R2(A2...)> = std::is_same_v<R1(A1 && ...), R2(A2 && ...)>;
+template <class _F1, class _F2>
+inline constexpr bool __matching_sig = false;
+template <class _R1, class... _A1, class _R2, class... _A2>
+inline constexpr bool __matching_sig<_R1(_A1...), _R2(_A2...)> = std::is_same_v<_R1(_A1 && ...), _R2(_A2 && ...)>;
 
 // SET-VALUE-SIG(T)
-template <class T>
-struct set_value_sig {
-  using type = std::execution::set_value_t(T);
+template <class _Tp>
+struct __set_value_sig {
+  using type = std::execution::set_value_t(_Tp);
 };
-template <class T>
-  requires std::is_void_v<T>
-struct set_value_sig<T> {
+template <class _Tp>
+  requires std::is_void_v<_Tp>
+struct __set_value_sig<_Tp> {
   using type = std::execution::set_value_t();
 };
-template <class T>
-using set_value_sig_t = typename set_value_sig<T>::type;
+template <class _Tp>
+using __set_value_sig_t = typename __set_value_sig<_Tp>::type;
 
-}}} // namespace ycxx::detail::exec
+}}} // namespace __ycxx::__detail::__exec
 
 // ---------------------------------------------------------------------------------------------
 // Domains, transform_sender, apply_sender ([exec.domain.indeterminate], [exec.domain.default],
 // [exec.snd.transform], [exec.snd.apply]); tag_of_t ([exec.snd.concepts]/6).
-namespace [[gnu::visibility("hidden")]] ycxx { namespace detail { namespace exec {
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail { namespace __exec {
 // tag_of_t: the type of the first element of a tuple-like sender with at least two elements
 // (the library's senders). Aggregates of other forms are not recognised (DECISIONS).
-template <class Sndr>
-concept has_sender_tag = requires(Sndr&& s) {
-  requires std::tuple_size<std::remove_cvref_t<Sndr>>::value >= 2;
-  static_cast<Sndr&&>(s).template get<0>();
+template <class _Sndr>
+concept __has_sender_tag = requires(_Sndr&& s) {
+  requires std::tuple_size<std::remove_cvref_t<_Sndr>>::value >= 2;
+  static_cast<_Sndr&&>(s).template get<0>();
 };
-template <class Sndr>
-struct tag_of {};
-template <class Sndr>
-  requires has_sender_tag<Sndr>
-struct tag_of<Sndr> {
-  using type = std::decay_t<decltype(std::declval<Sndr>().template get<0>())>;
+template <class _Sndr>
+struct __tag_of {};
+template <class _Sndr>
+  requires __has_sender_tag<_Sndr>
+struct __tag_of<_Sndr> {
+  using type = std::decay_t<decltype(std::declval<_Sndr>().template get<0>())>;
 };
-}}} // namespace ycxx::detail::exec
+}}} // namespace __ycxx::__detail::__exec
 
-namespace [[gnu::visibility("hidden")]] std { namespace execution {
+namespace [[__gnu__::__visibility__("hidden")]] std { namespace execution {
 
-template <sender Sndr>
-using tag_of_t = typename ycxx::detail::exec::tag_of<Sndr>::type;
+template <sender _Sndr>
+using __tag_of_t = typename __ycxx::__detail::__exec::__tag_of<_Sndr>::type;
 
 // [exec.domain.default]
 struct default_domain {
-  template <class Tag, sender Sndr, ycxx::detail::exec::queryable Env>
-  static constexpr decltype(auto) transform_sender(Tag, Sndr&& sndr, const Env& env) noexcept(
-      noexcept(ycxx_transform(Tag(), static_cast<Sndr&&>(sndr), env))) {
-    return ycxx_transform(Tag(), static_cast<Sndr&&>(sndr), env);
+  template <class _Tag, sender _Sndr, __ycxx::__detail::__exec::__queryable _Env>
+  static constexpr decltype(auto) transform_sender(_Tag, _Sndr&& __sndr, const _Env& env) noexcept(
+      noexcept(__ycxx_transform(_Tag(), static_cast<_Sndr&&>(__sndr), env))) {
+    return __ycxx_transform(_Tag(), static_cast<_Sndr&&>(__sndr), env);
   }
-  template <class Tag, sender Sndr, class... Args>
-    requires requires(Sndr&& sndr, Args&&... args) { Tag().apply_sender(static_cast<Sndr&&>(sndr), static_cast<Args&&>(args)...); }
-  static constexpr decltype(auto) apply_sender(Tag, Sndr&& sndr, Args&&... args) noexcept(
-      noexcept(Tag().apply_sender(static_cast<Sndr&&>(sndr), static_cast<Args&&>(args)...))) {
-    return Tag().apply_sender(static_cast<Sndr&&>(sndr), static_cast<Args&&>(args)...);
+  template <class _Tag, sender _Sndr, class... _Args>
+    requires requires(_Sndr&& __sndr, _Args&&... __args) { _Tag().apply_sender(static_cast<_Sndr&&>(__sndr), static_cast<_Args&&>(__args)...); }
+  static constexpr decltype(auto) apply_sender(_Tag, _Sndr&& __sndr, _Args&&... __args) noexcept(
+      noexcept(_Tag().apply_sender(static_cast<_Sndr&&>(__sndr), static_cast<_Args&&>(__args)...))) {
+    return _Tag().apply_sender(static_cast<_Sndr&&>(__sndr), static_cast<_Args&&>(__args)...);
   }
 
 private:
-  template <class Tag, class Sndr, class Env>
-  static constexpr decltype(auto) ycxx_transform(Tag, Sndr&& sndr, const Env& env) noexcept(
-      noexcept(tag_of_t<Sndr>().transform_sender(Tag(), static_cast<Sndr&&>(sndr), env)))
-    requires requires { tag_of_t<Sndr>().transform_sender(Tag(), static_cast<Sndr&&>(sndr), env); }
+  template <class _Tag, class _Sndr, class _Env>
+  static constexpr decltype(auto) __ycxx_transform(_Tag, _Sndr&& __sndr, const _Env& env) noexcept(
+      noexcept(__tag_of_t<_Sndr>().transform_sender(_Tag(), static_cast<_Sndr&&>(__sndr), env)))
+    requires requires { __tag_of_t<_Sndr>().transform_sender(_Tag(), static_cast<_Sndr&&>(__sndr), env); }
   {
-    return tag_of_t<Sndr>().transform_sender(Tag(), static_cast<Sndr&&>(sndr), env);
+    return __tag_of_t<_Sndr>().transform_sender(_Tag(), static_cast<_Sndr&&>(__sndr), env);
   }
-  template <class Tag, class Sndr, class Env>
-  static constexpr Sndr ycxx_transform(Tag, Sndr&& sndr, const Env&) noexcept {
-    return static_cast<Sndr>(static_cast<Sndr&&>(sndr));
+  template <class _Tag, class _Sndr, class _Env>
+  static constexpr _Sndr __ycxx_transform(_Tag, _Sndr&& __sndr, const _Env&) noexcept {
+    return static_cast<_Sndr>(static_cast<_Sndr&&>(__sndr));
   }
 };
 
 // [exec.domain.indeterminate]
-template <class... Domains>
+template <class... _Domains>
 struct indeterminate_domain {
   indeterminate_domain() = default;
   constexpr indeterminate_domain(auto&&) noexcept {}
-  template <class Tag, sender Sndr, ycxx::detail::exec::queryable Env>
-  static constexpr decltype(auto) transform_sender(Tag, Sndr&& sndr, const Env& env) noexcept(
-      noexcept(default_domain().transform_sender(Tag(), static_cast<Sndr&&>(sndr), env))) {
-    using R = decay_t<decltype(default_domain().transform_sender(Tag(), static_cast<Sndr&&>(sndr), env))>;
-    static_assert((ycxx_agrees<Domains, R, Tag, Sndr, Env> && ...),
+  template <class _Tag, sender _Sndr, __ycxx::__detail::__exec::__queryable _Env>
+  static constexpr decltype(auto) transform_sender(_Tag, _Sndr&& __sndr, const _Env& env) noexcept(
+      noexcept(default_domain().transform_sender(_Tag(), static_cast<_Sndr&&>(__sndr), env))) {
+    using _Rp = decay_t<decltype(default_domain().transform_sender(_Tag(), static_cast<_Sndr&&>(__sndr), env))>;
+    static_assert((__ycxx_agrees<_Domains, _Rp, _Tag, _Sndr, _Env> && ...),
                   "indeterminate_domain: the possible domains transform the sender differently");
-    return default_domain().transform_sender(Tag(), static_cast<Sndr&&>(sndr), env);
+    return default_domain().transform_sender(_Tag(), static_cast<_Sndr&&>(__sndr), env);
   }
 
 private:
-  template <class D, class R, class Tag, class Sndr, class Env>
-  static constexpr bool ycxx_agrees = [] {
-    if constexpr (requires { D().transform_sender(Tag(), declval<Sndr>(), declval<const Env&>()); })
-      return is_same_v<decay_t<decltype(D().transform_sender(Tag(), declval<Sndr>(), declval<const Env&>()))>, R>;
+  template <class _Dp, class _Rp, class _Tag, class _Sndr, class _Env>
+  static constexpr bool __ycxx_agrees = [] {
+    if constexpr (requires { _Dp().transform_sender(_Tag(), declval<_Sndr>(), declval<const _Env&>()); })
+      return is_same_v<decay_t<decltype(_Dp().transform_sender(_Tag(), declval<_Sndr>(), declval<const _Env&>()))>, _Rp>;
     else
       return true;
   }();
@@ -1148,146 +1148,146 @@ private:
 
 }} // namespace std::execution
 
-namespace [[gnu::visibility("hidden")]] std {
+namespace [[__gnu__::__visibility__("hidden")]] std {
 // [exec.domain.indeterminate]/4
-template <class... Ds, class... Es>
-struct common_type<execution::indeterminate_domain<Ds...>, execution::indeterminate_domain<Es...>> {
-  using type = ycxx::detail::exec::apply_unique_t<execution::indeterminate_domain, Ds..., Es...>;
+template <class... _Ds, class... _Es>
+struct common_type<execution::indeterminate_domain<_Ds...>, execution::indeterminate_domain<_Es...>> {
+  using type = __ycxx::__detail::__exec::__apply_unique_t<execution::indeterminate_domain, _Ds..., _Es...>;
 };
-template <class... Ds, class D>
-struct common_type<execution::indeterminate_domain<Ds...>, D> {
-  using type = conditional_t<sizeof...(Ds) == 0, D, ycxx::detail::exec::apply_unique_t<execution::indeterminate_domain, Ds..., D>>;
+template <class... _Ds, class _Dp>
+struct common_type<execution::indeterminate_domain<_Ds...>, _Dp> {
+  using type = conditional_t<sizeof...(_Ds) == 0, _Dp, __ycxx::__detail::__exec::__apply_unique_t<execution::indeterminate_domain, _Ds..., _Dp>>;
 };
-template <class D, class... Ds>
-struct common_type<D, execution::indeterminate_domain<Ds...>> {
-  using type = conditional_t<sizeof...(Ds) == 0, D, ycxx::detail::exec::apply_unique_t<execution::indeterminate_domain, Ds..., D>>;
+template <class _Dp, class... _Ds>
+struct common_type<_Dp, execution::indeterminate_domain<_Ds...>> {
+  using type = conditional_t<sizeof...(_Ds) == 0, _Dp, __ycxx::__detail::__exec::__apply_unique_t<execution::indeterminate_domain, _Ds..., _Dp>>;
 };
 } // namespace std
 
-namespace [[gnu::visibility("hidden")]] ycxx { namespace detail { namespace exec {
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail { namespace __exec {
 // transformed-sndr(dom, tag, s) and transform-recurse ([exec.snd.transform]/3).
-template <class Dom, class Tag, class Sndr, class Env>
-constexpr decltype(auto) transformed_sndr(Dom dom, Tag tag, Sndr&& s, const Env& env) noexcept(
-    noexcept(std::execution::default_domain().transform_sender(tag, static_cast<Sndr&&>(s), env))) {
-  if constexpr (requires { dom.transform_sender(tag, static_cast<Sndr&&>(s), env); })
-    return dom.transform_sender(tag, static_cast<Sndr&&>(s), env);
+template <class _Dom, class _Tag, class _Sndr, class _Env>
+constexpr decltype(auto) __transformed_sndr(_Dom __dom, _Tag tag, _Sndr&& s, const _Env& env) noexcept(
+    noexcept(std::execution::default_domain().transform_sender(tag, static_cast<_Sndr&&>(s), env))) {
+  if constexpr (requires { __dom.transform_sender(tag, static_cast<_Sndr&&>(s), env); })
+    return __dom.transform_sender(tag, static_cast<_Sndr&&>(s), env);
   else
-    return std::execution::default_domain().transform_sender(tag, static_cast<Sndr&&>(s), env);
+    return std::execution::default_domain().transform_sender(tag, static_cast<_Sndr&&>(s), env);
 }
 
-template <class S, class Env>
-using completion_domain_for = std::conditional_t<
-    std::is_void_v<compl_domain_t<void, std::remove_cvref_t<decltype(std::execution::get_env(std::declval<S>()))>, Env>>,
+template <class _Sp, class _Env>
+using __completion_domain_for = std::conditional_t<
+    std::is_void_v<__compl_domain_t<void, std::remove_cvref_t<decltype(std::execution::get_env(std::declval<_Sp>()))>, _Env>>,
     std::execution::default_domain,
-    compl_domain_t<void, std::remove_cvref_t<decltype(std::execution::get_env(std::declval<S>()))>, Env>>;
-template <class Env>
-using start_domain_for = decltype(std::execution::get_domain(std::declval<const Env&>()));
+    __compl_domain_t<void, std::remove_cvref_t<decltype(std::execution::get_env(std::declval<_Sp>()))>, _Env>>;
+template <class _Env>
+using __start_domain_for = decltype(std::execution::get_domain(std::declval<const _Env&>()));
 
-template <class Dom, class Tag, class Sndr, class Env>
-constexpr decltype(auto) transform_recurse(Dom dom, Tag tag, Sndr&& s, const Env& env) {
-  using S2 = decltype(::ycxx::detail::exec::transformed_sndr(dom, tag, static_cast<Sndr&&>(s), env));
-  if constexpr (std::is_same_v<std::remove_cvref_t<S2>, std::remove_cvref_t<Sndr>>) {
-    return ::ycxx::detail::exec::transformed_sndr(dom, tag, static_cast<Sndr&&>(s), env);
+template <class _Dom, class _Tag, class _Sndr, class _Env>
+constexpr decltype(auto) __transform_recurse(_Dom __dom, _Tag tag, _Sndr&& s, const _Env& env) {
+  using _S2 = decltype(::__ycxx::__detail::__exec::__transformed_sndr(__dom, tag, static_cast<_Sndr&&>(s), env));
+  if constexpr (std::is_same_v<std::remove_cvref_t<_S2>, std::remove_cvref_t<_Sndr>>) {
+    return ::__ycxx::__detail::__exec::__transformed_sndr(__dom, tag, static_cast<_Sndr&&>(s), env);
   } else {
-    using Dom2 = std::conditional_t<std::is_same_v<Tag, std::execution::start_t>, start_domain_for<Env>, completion_domain_for<S2, Env>>;
-    return ::ycxx::detail::exec::transform_recurse(Dom2(), tag, ::ycxx::detail::exec::transformed_sndr(dom, tag, static_cast<Sndr&&>(s), env), env);
+    using _Dom2 = std::conditional_t<std::is_same_v<_Tag, std::execution::start_t>, __start_domain_for<_Env>, __completion_domain_for<_S2, _Env>>;
+    return ::__ycxx::__detail::__exec::__transform_recurse(_Dom2(), tag, ::__ycxx::__detail::__exec::__transformed_sndr(__dom, tag, static_cast<_Sndr&&>(s), env), env);
   }
 }
 // Whether a transformation may throw: the noexcept of every step.
-template <class Dom, class Tag, class Sndr, class Env>
-consteval bool transform_recurse_nothrow() {
-  using S2 = decltype(::ycxx::detail::exec::transformed_sndr(Dom(), Tag(), std::declval<Sndr>(), std::declval<const Env&>()));
-  constexpr bool here = noexcept(::ycxx::detail::exec::transformed_sndr(Dom(), Tag(), std::declval<Sndr>(), std::declval<const Env&>()));
-  if constexpr (std::is_same_v<std::remove_cvref_t<S2>, std::remove_cvref_t<Sndr>>) {
-    return here;
+template <class _Dom, class _Tag, class _Sndr, class _Env>
+consteval bool __transform_recurse_nothrow() {
+  using _S2 = decltype(::__ycxx::__detail::__exec::__transformed_sndr(_Dom(), _Tag(), std::declval<_Sndr>(), std::declval<const _Env&>()));
+  constexpr bool __here = noexcept(::__ycxx::__detail::__exec::__transformed_sndr(_Dom(), _Tag(), std::declval<_Sndr>(), std::declval<const _Env&>()));
+  if constexpr (std::is_same_v<std::remove_cvref_t<_S2>, std::remove_cvref_t<_Sndr>>) {
+    return __here;
   } else {
-    using Dom2 = std::conditional_t<std::is_same_v<Tag, std::execution::start_t>, start_domain_for<Env>, completion_domain_for<S2, Env>>;
-    return here && ::ycxx::detail::exec::transform_recurse_nothrow<Dom2, Tag, S2, Env>();
+    using _Dom2 = std::conditional_t<std::is_same_v<_Tag, std::execution::start_t>, __start_domain_for<_Env>, __completion_domain_for<_S2, _Env>>;
+    return __here && ::__ycxx::__detail::__exec::__transform_recurse_nothrow<_Dom2, _Tag, _S2, _Env>();
   }
 }
-}}} // namespace ycxx::detail::exec
+}}} // namespace __ycxx::__detail::__exec
 
-namespace [[gnu::visibility("hidden")]] std { namespace execution {
+namespace [[__gnu__::__visibility__("hidden")]] std { namespace execution {
 
 // [exec.snd.transform]
-template <sender Sndr, ycxx::detail::exec::queryable Env>
-constexpr decltype(auto) transform_sender(Sndr&& sndr, const Env& env) noexcept(
-    ycxx::detail::exec::transform_recurse_nothrow<ycxx::detail::exec::completion_domain_for<Sndr, Env>, set_value_t, Sndr, Env>() &&
-    ycxx::detail::exec::transform_recurse_nothrow<
-        ycxx::detail::exec::start_domain_for<Env>, start_t,
-        decltype(ycxx::detail::exec::transform_recurse(ycxx::detail::exec::completion_domain_for<Sndr, Env>(), set_value_t(),
-                                                       declval<Sndr>(), declval<const Env&>())),
-        Env>()) {
-  using namespace ycxx::detail::exec;
-  return transform_recurse(start_domain_for<Env>(), start_t(),
-                           transform_recurse(completion_domain_for<Sndr, Env>(), set_value_t(), static_cast<Sndr&&>(sndr), env), env);
+template <sender _Sndr, __ycxx::__detail::__exec::__queryable _Env>
+constexpr decltype(auto) transform_sender(_Sndr&& __sndr, const _Env& env) noexcept(
+    __ycxx::__detail::__exec::__transform_recurse_nothrow<__ycxx::__detail::__exec::__completion_domain_for<_Sndr, _Env>, set_value_t, _Sndr, _Env>() &&
+    __ycxx::__detail::__exec::__transform_recurse_nothrow<
+        __ycxx::__detail::__exec::__start_domain_for<_Env>, start_t,
+        decltype(__ycxx::__detail::__exec::__transform_recurse(__ycxx::__detail::__exec::__completion_domain_for<_Sndr, _Env>(), set_value_t(),
+                                                       declval<_Sndr>(), declval<const _Env&>())),
+        _Env>()) {
+  using namespace __ycxx::__detail::__exec;
+  return __transform_recurse(__start_domain_for<_Env>(), start_t(),
+                           __transform_recurse(__completion_domain_for<_Sndr, _Env>(), set_value_t(), static_cast<_Sndr&&>(__sndr), env), env);
 }
 
 }} // namespace std::execution
 
-namespace [[gnu::visibility("hidden")]] ycxx { namespace detail { namespace exec {
-template <class Domain, class Tag, class Sndr, class... Args>
-consteval bool apply_nothrow() {
-  if constexpr (requires { std::declval<Domain&>().apply_sender(Tag(), std::declval<Sndr>(), std::declval<Args>()...); })
-    return noexcept(std::declval<Domain&>().apply_sender(Tag(), std::declval<Sndr>(), std::declval<Args>()...));
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail { namespace __exec {
+template <class _Domain, class _Tag, class _Sndr, class... _Args>
+consteval bool __apply_nothrow() {
+  if constexpr (requires { std::declval<_Domain&>().apply_sender(_Tag(), std::declval<_Sndr>(), std::declval<_Args>()...); })
+    return noexcept(std::declval<_Domain&>().apply_sender(_Tag(), std::declval<_Sndr>(), std::declval<_Args>()...));
   else
-    return noexcept(std::execution::default_domain().apply_sender(Tag(), std::declval<Sndr>(), std::declval<Args>()...));
+    return noexcept(std::execution::default_domain().apply_sender(_Tag(), std::declval<_Sndr>(), std::declval<_Args>()...));
 }
-template <class Domain, class Tag, class Sndr, class... Args>
-constexpr decltype(auto) apply_dispatch(Domain dom, Tag, Sndr&& sndr, Args&&... args) noexcept(apply_nothrow<Domain, Tag, Sndr, Args...>()) {
-  if constexpr (requires { dom.apply_sender(Tag(), static_cast<Sndr&&>(sndr), static_cast<Args&&>(args)...); })
-    return dom.apply_sender(Tag(), static_cast<Sndr&&>(sndr), static_cast<Args&&>(args)...);
+template <class _Domain, class _Tag, class _Sndr, class... _Args>
+constexpr decltype(auto) __apply_dispatch(_Domain __dom, _Tag, _Sndr&& __sndr, _Args&&... __args) noexcept(__apply_nothrow<_Domain, _Tag, _Sndr, _Args...>()) {
+  if constexpr (requires { __dom.apply_sender(_Tag(), static_cast<_Sndr&&>(__sndr), static_cast<_Args&&>(__args)...); })
+    return __dom.apply_sender(_Tag(), static_cast<_Sndr&&>(__sndr), static_cast<_Args&&>(__args)...);
   else
-    return std::execution::default_domain().apply_sender(Tag(), static_cast<Sndr&&>(sndr), static_cast<Args&&>(args)...);
+    return std::execution::default_domain().apply_sender(_Tag(), static_cast<_Sndr&&>(__sndr), static_cast<_Args&&>(__args)...);
 }
-}}} // namespace ycxx::detail::exec
+}}} // namespace __ycxx::__detail::__exec
 
-namespace [[gnu::visibility("hidden")]] std { namespace execution {
-template <class Domain, class Tag, sender Sndr, class... Args>
-  requires requires(Domain dom, Sndr&& sndr, Args&&... args) {
-    dom.apply_sender(Tag(), static_cast<Sndr&&>(sndr), static_cast<Args&&>(args)...);
-  } || requires(Sndr&& sndr, Args&&... args) {
-    default_domain().apply_sender(Tag(), static_cast<Sndr&&>(sndr), static_cast<Args&&>(args)...);
+namespace [[__gnu__::__visibility__("hidden")]] std { namespace execution {
+template <class _Domain, class _Tag, sender _Sndr, class... _Args>
+  requires requires(_Domain __dom, _Sndr&& __sndr, _Args&&... __args) {
+    __dom.apply_sender(_Tag(), static_cast<_Sndr&&>(__sndr), static_cast<_Args&&>(__args)...);
+  } || requires(_Sndr&& __sndr, _Args&&... __args) {
+    default_domain().apply_sender(_Tag(), static_cast<_Sndr&&>(__sndr), static_cast<_Args&&>(__args)...);
   }
-constexpr decltype(auto) apply_sender(Domain dom, Tag, Sndr&& sndr, Args&&... args) noexcept(
-    ycxx::detail::exec::apply_nothrow<Domain, Tag, Sndr, Args...>()) {
-  return ycxx::detail::exec::apply_dispatch(dom, Tag(), static_cast<Sndr&&>(sndr), static_cast<Args&&>(args)...);
+constexpr decltype(auto) apply_sender(_Domain __dom, _Tag, _Sndr&& __sndr, _Args&&... __args) noexcept(
+    __ycxx::__detail::__exec::__apply_nothrow<_Domain, _Tag, _Sndr, _Args...>()) {
+  return __ycxx::__detail::__exec::__apply_dispatch(__dom, _Tag(), static_cast<_Sndr&&>(__sndr), static_cast<_Args&&>(__args)...);
 }
 }} // namespace std::execution
 
 // ---------------------------------------------------------------------------------------------
 // get_completion_signatures ([exec.getcomplsigs]) and the concepts built on it.
-namespace [[gnu::visibility("hidden")]] ycxx { namespace detail { namespace exec {
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail { namespace __exec {
 
 // The exception get_completion_signatures throws for an invalid sender (the "unspecified-
 // exception" of [exec.snd.general]/6 and the "except" of [exec.getcomplsigs]/1).
-template <class What, class... Info>
-struct completion_signatures_error : std::exception {
+template <class _What, class... _Info>
+struct __completion_signatures_error : std::exception {
   constexpr const char* what() const noexcept override { return "std::execution: invalid sender for the environment"; }
 };
-template <class... Info>
-struct completion_signatures_error<dependent_sigs, Info...> : std::execution::dependent_sender_error {};
+template <class... _Info>
+struct __completion_signatures_error<__dependent_sigs, _Info...> : std::execution::__dependent_sender_error {};
 
-void sender_type_error_without_exceptions() noexcept; // never defined: makes the call non-constant
+void __sender_type_error_without_exceptions() noexcept; // never defined: makes the call non-constant
 
-template <class What, class... Info>
-[[noreturn]] consteval void report_sigs_error() {
-  if constexpr (cfg::exceptions)
-    throw completion_signatures_error<What, Info...>();
+template <class _What, class... _Info>
+[[noreturn]] consteval void __report_sigs_error() {
+  if constexpr (__cfg::exceptions)
+    throw __completion_signatures_error<_What, _Info...>();
   else
-    ::ycxx::detail::exec::sender_type_error_without_exceptions();
+    ::__ycxx::__detail::__exec::__sender_type_error_without_exceptions();
 }
 
 // CHECKED-COMPLSIGS: the completion_signatures of a computation, or the throw for its error.
-template <class R>
-consteval auto checked_sigs() {
-  if constexpr (is_csigs<R>) {
-    return R();
-  } else if constexpr (std::is_same_v<R, dependent_sigs>) {
-    ::ycxx::detail::exec::report_sigs_error<dependent_sigs>();
+template <class _Rp>
+consteval auto __checked_sigs() {
+  if constexpr (__is_csigs<_Rp>) {
+    return _Rp();
+  } else if constexpr (std::is_same_v<_Rp, __dependent_sigs>) {
+    ::__ycxx::__detail::__exec::__report_sigs_error<__dependent_sigs>();
     return std::execution::completion_signatures<>();
   } else {
-    []<class W, class... I>(invalid_sigs<W, I...>*) { ::ycxx::detail::exec::report_sigs_error<W, I...>(); }(static_cast<R*>(nullptr));
+    []<class _Wp, class... _Ip>(__invalid_sigs<_Wp, _Ip...>*) { ::__ycxx::__detail::__exec::__report_sigs_error<_Wp, _Ip...>(); }(static_cast<_Rp*>(nullptr));
     return std::execution::completion_signatures<>();
   }
 }
@@ -1296,20 +1296,20 @@ consteval auto checked_sigs() {
 // get_completion_signatures<Sndr, Env...>() when that is a constant expression; an error
 // otherwise (dependent if it throws dependent_sender_error; where a constant evaluation cannot
 // catch, dependent when no environment was given).
-template <class S, class... Env>
-concept has_member_complsigs = requires { std::remove_reference_t<S>::template get_completion_signatures<S, Env...>(); };
-template <class S, class... Env>
-concept constant_member_complsigs =
-    has_member_complsigs<S, Env...> &&
-    requires { typename constant<std::remove_reference_t<S>::template get_completion_signatures<S, Env...>()>; };
+template <class _Sp, class... _Env>
+concept __has_member_complsigs = requires { std::remove_reference_t<_Sp>::template get_completion_signatures<_Sp, _Env...>(); };
+template <class _Sp, class... _Env>
+concept __constant_member_complsigs =
+    __has_member_complsigs<_Sp, _Env...> &&
+    requires { typename __y_constant<std::remove_reference_t<_Sp>::template get_completion_signatures<_Sp, _Env...>()>; };
 
-template <class S, class... Env>
-consteval int classify_member_complsigs_error() {
-  if constexpr (cfg::constexpr_exceptions) {
+template <class _Sp, class... _Env>
+consteval int __classify_member_complsigs_error() {
+  if constexpr (__cfg::__constexpr_exceptions) {
     try {
-      (void)std::remove_reference_t<S>::template get_completion_signatures<S, Env...>();
+      (void)std::remove_reference_t<_Sp>::template get_completion_signatures<_Sp, _Env...>();
       return 0;
-    } catch (std::execution::dependent_sender_error&) {
+    } catch (std::execution::__dependent_sender_error&) {
       return 1;
     } catch (...) {
       return 2;
@@ -1318,353 +1318,353 @@ consteval int classify_member_complsigs_error() {
     return 2;
   }
 }
-template <class S, class... Env>
-struct member_complsigs {
-  static auto pick() {
-    if constexpr (constant_member_complsigs<S, Env...>) {
-      using R = std::remove_cvref_t<decltype(std::remove_reference_t<S>::template get_completion_signatures<S, Env...>())>;
-      if constexpr (is_csigs<R>)
-        return std::type_identity<R>{};
+template <class _Sp, class... _Env>
+struct __member_complsigs {
+  static auto __pick() {
+    if constexpr (__constant_member_complsigs<_Sp, _Env...>) {
+      using _Rp = std::remove_cvref_t<decltype(std::remove_reference_t<_Sp>::template get_completion_signatures<_Sp, _Env...>())>;
+      if constexpr (__is_csigs<_Rp>)
+        return std::type_identity<_Rp>{};
       else
-        return std::type_identity<invalid_sigs<sender_has_no_completion_signatures, S, Env...>>{};
-    } else if constexpr (cfg::constexpr_exceptions &&
-                         requires { typename constant<::ycxx::detail::exec::classify_member_complsigs_error<S, Env...>()>; }) {
-      if constexpr (::ycxx::detail::exec::classify_member_complsigs_error<S, Env...>() == 1)
-        return std::type_identity<dependent_sigs>{};
+        return std::type_identity<__invalid_sigs<__sender_has_no_completion_signatures, _Sp, _Env...>>{};
+    } else if constexpr (__cfg::__constexpr_exceptions &&
+                         requires { typename __y_constant<::__ycxx::__detail::__exec::__classify_member_complsigs_error<_Sp, _Env...>()>; }) {
+      if constexpr (::__ycxx::__detail::__exec::__classify_member_complsigs_error<_Sp, _Env...>() == 1)
+        return std::type_identity<__dependent_sigs>{};
       else
-        return std::type_identity<invalid_sigs<sender_has_no_completion_signatures, S, Env...>>{};
-    } else if constexpr (sizeof...(Env) == 0) {
-      return std::type_identity<dependent_sigs>{};
+        return std::type_identity<__invalid_sigs<__sender_has_no_completion_signatures, _Sp, _Env...>>{};
+    } else if constexpr (sizeof...(_Env) == 0) {
+      return std::type_identity<__dependent_sigs>{};
     } else {
-      return std::type_identity<invalid_sigs<sender_has_no_completion_signatures, S, Env...>>{};
+      return std::type_identity<__invalid_sigs<__sender_has_no_completion_signatures, _Sp, _Env...>>{};
     }
   }
-  using type = typename decltype(pick())::type;
+  using type = typename decltype(__pick())::type;
 };
 
-template <class S, class... Env>
-concept library_sender = requires { typename std::remove_reference_t<S>::template ycxx_csigs<S, Env...>; };
+template <class _Sp, class... _Env>
+concept __library_sender = requires { typename std::remove_reference_t<_Sp>::template __ycxx_csigs<_Sp, _Env...>; };
 
 // The type NewSndr of [exec.getcomplsigs]/1.
-template <class Sndr, class... Env>
-struct new_sndr {
-  using type = Sndr;
+template <class _Sndr, class... _Env>
+struct __new_sndr {
+  using type = _Sndr;
 };
-template <class Sndr, class Env>
-struct new_sndr<Sndr, Env> {
-  using type = decltype(std::execution::transform_sender(std::declval<Sndr>(), std::declval<Env>()));
+template <class _Sndr, class _Env>
+struct __new_sndr<_Sndr, _Env> {
+  using type = decltype(std::execution::transform_sender(std::declval<_Sndr>(), std::declval<_Env>()));
 };
 
-template <class Sndr, class... Env>
-struct csigs_of_impl {
-  static auto pick() {
-    if constexpr (sizeof...(Env) > 1) {
-      return std::type_identity<invalid_sigs<not_a_sender_for_this_environment, Sndr, Env...>>{};
-    } else if constexpr (!requires { typename new_sndr<Sndr, Env...>::type; }) {
-      return std::type_identity<invalid_sigs<transform_sender_ill_formed, Sndr, Env...>>{};
+template <class _Sndr, class... _Env>
+struct __csigs_of_impl {
+  static auto __pick() {
+    if constexpr (sizeof...(_Env) > 1) {
+      return std::type_identity<__invalid_sigs<__not_a_sender_for_this_environment, _Sndr, _Env...>>{};
+    } else if constexpr (!requires { typename __new_sndr<_Sndr, _Env...>::type; }) {
+      return std::type_identity<__invalid_sigs<__transform_sender_ill_formed, _Sndr, _Env...>>{};
     } else {
-      using NS = typename new_sndr<Sndr, Env...>::type;
-      using X = std::remove_reference_t<NS>;
-      if constexpr (library_sender<NS, Env...>)
-        return std::type_identity<typename X::template ycxx_csigs<NS, Env...>>{};
-      else if constexpr (has_member_complsigs<NS, Env...>)
-        return std::type_identity<typename member_complsigs<NS, Env...>::type>{};
-      else if constexpr (has_member_complsigs<NS>)
-        return std::type_identity<typename member_complsigs<NS>::type>{};
-      else if constexpr (requires { typename X::completion_signatures; requires is_csigs<typename X::completion_signatures>; })
+      using _NS = typename __new_sndr<_Sndr, _Env...>::type;
+      using _Xp = std::remove_reference_t<_NS>;
+      if constexpr (__library_sender<_NS, _Env...>)
+        return std::type_identity<typename _Xp::template __ycxx_csigs<_NS, _Env...>>{};
+      else if constexpr (__has_member_complsigs<_NS, _Env...>)
+        return std::type_identity<typename __member_complsigs<_NS, _Env...>::type>{};
+      else if constexpr (__has_member_complsigs<_NS>)
+        return std::type_identity<typename __member_complsigs<_NS>::type>{};
+      else if constexpr (requires { typename _Xp::completion_signatures; requires __is_csigs<typename _Xp::completion_signatures>; })
         // The form of [exec.cmplsig]'s example (a member type), which [exec.getcomplsigs] does
         // not list (DECISIONS: <execution>).
-        return std::type_identity<typename X::completion_signatures>{};
-      else if constexpr (is_awaitable<NS, ::ycxx::adl_free::exec_env_promise<Env>...>)
+        return std::type_identity<typename _Xp::completion_signatures>{};
+      else if constexpr (__is_awaitable<_NS, ::__ycxx::__adl_free::__exec_env_promise<_Env>...>)
         return std::type_identity<std::execution::completion_signatures<
-            set_value_sig_t<await_result_type<NS, ::ycxx::adl_free::exec_env_promise<Env>...>>,
+            __set_value_sig_t<__await_result_type<_NS, ::__ycxx::__adl_free::__exec_env_promise<_Env>...>>,
             std::execution::set_error_t(std::exception_ptr), std::execution::set_stopped_t()>>{};
-      else if constexpr (sizeof...(Env) == 0)
-        return std::type_identity<dependent_sigs>{};
+      else if constexpr (sizeof...(_Env) == 0)
+        return std::type_identity<__dependent_sigs>{};
       else
-        return std::type_identity<invalid_sigs<not_a_sender_for_this_environment, Sndr, Env...>>{};
+        return std::type_identity<__invalid_sigs<__not_a_sender_for_this_environment, _Sndr, _Env...>>{};
     }
   }
-  using type = typename decltype(pick())::type;
+  using type = typename decltype(__pick())::type;
 };
 // The completion signatures of Sndr in Env... (or an error type).
-template <class Sndr, class... Env>
-using csigs_of_t = typename csigs_of_impl<Sndr, Env...>::type;
+template <class _Sndr, class... _Env>
+using __csigs_of_t = typename __csigs_of_impl<_Sndr, _Env...>::type;
 
-}}} // namespace ycxx::detail::exec
+}}} // namespace __ycxx::__detail::__exec
 
-namespace [[gnu::visibility("hidden")]] std { namespace execution {
+namespace [[__gnu__::__visibility__("hidden")]] std { namespace execution {
 
-template <class Sndr, class... Env>
-  requires(sizeof...(Env) <= 1)
-consteval auto get_completion_signatures() -> ycxx::detail::exec::valid_completion_signatures auto {
-  return ycxx::detail::exec::checked_sigs<ycxx::detail::exec::csigs_of_t<Sndr, Env...>>();
+template <class _Sndr, class... _Env>
+  requires(sizeof...(_Env) <= 1)
+consteval auto get_completion_signatures() -> __ycxx::__detail::__exec::__valid_completion_signatures auto {
+  return __ycxx::__detail::__exec::__checked_sigs<__ycxx::__detail::__exec::__csigs_of_t<_Sndr, _Env...>>();
 }
 
-template <class Sndr, class... Env>
-concept sender_in = sender<Sndr> && (sizeof...(Env) <= 1) && (ycxx::detail::exec::queryable<Env> && ...) &&
-                    ycxx::detail::exec::is_csigs<ycxx::detail::exec::csigs_of_t<Sndr, Env...>>;
+template <class _Sndr, class... _Env>
+concept sender_in = sender<_Sndr> && (sizeof...(_Env) <= 1) && (__ycxx::__detail::__exec::__queryable<_Env> && ...) &&
+                    __ycxx::__detail::__exec::__is_csigs<__ycxx::__detail::__exec::__csigs_of_t<_Sndr, _Env...>>;
 
-template <class Sndr>
-concept dependent_sender = sender<Sndr> && is_same_v<ycxx::detail::exec::csigs_of_t<Sndr>, ycxx::detail::exec::dependent_sigs>;
+template <class _Sndr>
+concept dependent_sender = sender<_Sndr> && is_same_v<__ycxx::__detail::__exec::__csigs_of_t<_Sndr>, __ycxx::__detail::__exec::__dependent_sigs>;
 
-template <class Sndr, class... Env>
-  requires sender_in<Sndr, Env...>
-using completion_signatures_of_t = ycxx::detail::exec::csigs_of_t<Sndr, Env...>;
+template <class _Sndr, class... _Env>
+  requires sender_in<_Sndr, _Env...>
+using __completion_signatures_of_t = __ycxx::__detail::__exec::__csigs_of_t<_Sndr, _Env...>;
 
-template <class Sndr, class Env = env<>, template <class...> class Tuple = ycxx::detail::exec::decayed_tuple,
-          template <class...> class Variant = ycxx::detail::exec::variant_or_empty>
-  requires sender_in<Sndr, Env>
-using value_types_of_t = ycxx::detail::exec::gather_signatures<set_value_t, completion_signatures_of_t<Sndr, Env>, Tuple, Variant>;
+template <class _Sndr, class _Env = env<>, template <class...> class _Tuple = __ycxx::__detail::__exec::__decayed_tuple,
+          template <class...> class _Variant = __ycxx::__detail::__exec::__variant_or_empty>
+  requires sender_in<_Sndr, _Env>
+using value_types_of_t = __ycxx::__detail::__exec::__gather_signatures<set_value_t, __completion_signatures_of_t<_Sndr, _Env>, _Tuple, _Variant>;
 
-template <class Sndr, class Env = env<>, template <class...> class Variant = ycxx::detail::exec::variant_or_empty>
-  requires sender_in<Sndr, Env>
-using error_types_of_t = ycxx::detail::exec::gather_signatures<set_error_t, completion_signatures_of_t<Sndr, Env>, type_identity_t, Variant>;
+template <class _Sndr, class _Env = env<>, template <class...> class _Variant = __ycxx::__detail::__exec::__variant_or_empty>
+  requires sender_in<_Sndr, _Env>
+using __error_types_of_t = __ycxx::__detail::__exec::__gather_signatures<set_error_t, __completion_signatures_of_t<_Sndr, _Env>, type_identity_t, _Variant>;
 
-template <class Sndr, class Env = env<>>
-  requires sender_in<Sndr, Env>
-constexpr bool sends_stopped = ycxx::detail::exec::sigs_count<set_stopped_t, completion_signatures_of_t<Sndr, Env>> != 0;
+template <class _Sndr, class _Env = env<>>
+  requires sender_in<_Sndr, _Env>
+constexpr bool __sends_stopped = __ycxx::__detail::__exec::__sigs_count<set_stopped_t, __completion_signatures_of_t<_Sndr, _Env>> != 0;
 
 }} // namespace std::execution
 
-namespace [[gnu::visibility("hidden")]] ycxx { namespace detail { namespace exec {
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail { namespace __exec {
 // single-sender-value-type<Sndr, Env...> ([execution.syn]/2): from the value completions' argument
 // lists, decay_t<T> for one completion with one datum, void for none or one without datums,
 // decayed-tuple<Ts...> for one with several, and nothing otherwise.
-template <class ArgLists>
-struct single_value_of {};
+template <class _ArgLists>
+struct __single_value_of {};
 template <>
-struct single_value_of<tlist<>> {
+struct __single_value_of<__tlist<>> {
   using type = void;
 };
 template <>
-struct single_value_of<tlist<tlist<>>> {
+struct __single_value_of<__tlist<__tlist<>>> {
   using type = void;
 };
-template <class T>
-struct single_value_of<tlist<tlist<T>>> {
-  using type = std::decay_t<T>;
+template <class _Tp>
+struct __single_value_of<__tlist<__tlist<_Tp>>> {
+  using type = std::decay_t<_Tp>;
 };
-template <class T0, class T1, class... Ts>
-struct single_value_of<tlist<tlist<T0, T1, Ts...>>> {
-  using type = decayed_tuple<T0, T1, Ts...>;
+template <class _T0, class _T1, class... _Ts>
+struct __single_value_of<__tlist<__tlist<_T0, _T1, _Ts...>>> {
+  using type = __decayed_tuple<_T0, _T1, _Ts...>;
 };
-template <class Sndr, class... Env>
-struct single_sender_value : single_value_of<sigs_args_t<std::execution::set_value_t, std::execution::completion_signatures_of_t<Sndr, Env...>>> {};
-template <class Sndr, class... Env>
-  requires std::execution::sender_in<Sndr, Env...>
-using single_sender_value_type = typename single_sender_value<Sndr, Env...>::type;
+template <class _Sndr, class... _Env>
+struct __single_sender_value : __single_value_of<__sigs_args_t<std::execution::set_value_t, std::execution::__completion_signatures_of_t<_Sndr, _Env...>>> {};
+template <class _Sndr, class... _Env>
+  requires std::execution::sender_in<_Sndr, _Env...>
+using __single_sender_value_type = typename __single_sender_value<_Sndr, _Env...>::type;
 // single-sender-value-type, or void where it is ill-formed.
-template <class Sndr, class... Env>
-struct single_value_or_void {
+template <class _Sndr, class... _Env>
+struct __single_value_or_void {
   using type = void;
 };
-template <class Sndr, class... Env>
-  requires requires { typename single_sender_value<Sndr, Env...>::type; }
-struct single_value_or_void<Sndr, Env...> {
-  using type = typename single_sender_value<Sndr, Env...>::type;
+template <class _Sndr, class... _Env>
+  requires requires { typename __single_sender_value<_Sndr, _Env...>::type; }
+struct __single_value_or_void<_Sndr, _Env...> {
+  using type = typename __single_sender_value<_Sndr, _Env...>::type;
 };
-template <class Sndr, class... Env>
-using single_sender_value_or_void = typename single_value_or_void<Sndr, Env...>::type;
-template <class Sndr, class... Env>
-concept single_sender = std::execution::sender_in<Sndr, Env...> && requires { typename single_sender_value_type<Sndr, Env...>; };
+template <class _Sndr, class... _Env>
+using __single_sender_value_or_void = typename __single_value_or_void<_Sndr, _Env...>::type;
+template <class _Sndr, class... _Env>
+concept __single_sender = std::execution::sender_in<_Sndr, _Env...> && requires { typename __single_sender_value_type<_Sndr, _Env...>; };
 
 // sender-in-of / sender-of ([exec.snd.concepts]/5)
-template <class... As>
-using value_signature = std::execution::set_value_t(As...);
-template <class Sndr, class SetValue, class... Env>
-concept sender_in_of_impl =
-    std::execution::sender_in<Sndr, Env...> &&
-    matching_sig<SetValue, gather_signatures<std::execution::set_value_t, std::execution::completion_signatures_of_t<Sndr, Env...>,
-                                             value_signature, std::type_identity_t>>;
-template <class Sndr, class Env, class... Values>
-concept sender_in_of = sender_in_of_impl<Sndr, std::execution::set_value_t(Values...), Env>;
-template <class Sndr, class... Values>
-concept sender_of = sender_in_of_impl<Sndr, std::execution::set_value_t(Values...)>;
-}}} // namespace ycxx::detail::exec
+template <class... _As>
+using __value_signature = std::execution::set_value_t(_As...);
+template <class _Sndr, class _SetValue, class... _Env>
+concept __sender_in_of_impl =
+    std::execution::sender_in<_Sndr, _Env...> &&
+    __matching_sig<_SetValue, __gather_signatures<std::execution::set_value_t, std::execution::__completion_signatures_of_t<_Sndr, _Env...>,
+                                             __value_signature, std::type_identity_t>>;
+template <class _Sndr, class _Env, class... _Values>
+concept __sender_in_of = __sender_in_of_impl<_Sndr, std::execution::set_value_t(_Values...), _Env>;
+template <class _Sndr, class... _Values>
+concept __sender_of = __sender_in_of_impl<_Sndr, std::execution::set_value_t(_Values...)>;
+}}} // namespace __ycxx::__detail::__exec
 
 // ---------------------------------------------------------------------------------------------
 // Receiver concepts ([exec.recv.concepts]).
-namespace [[gnu::visibility("hidden")]] std { namespace execution {
+namespace [[__gnu__::__visibility__("hidden")]] std { namespace execution {
 
-template <class Rcvr>
-concept receiver = derived_from<typename remove_cvref_t<Rcvr>::receiver_concept, receiver_tag> &&
-                   requires(const remove_cvref_t<Rcvr>& rcvr) {
-                     { get_env(rcvr) } -> ycxx::detail::exec::queryable;
-                   } && move_constructible<remove_cvref_t<Rcvr>> && constructible_from<remove_cvref_t<Rcvr>, Rcvr> &&
-                   is_nothrow_move_constructible_v<remove_cvref_t<Rcvr>>;
+template <class _Rcvr>
+concept receiver = derived_from<typename remove_cvref_t<_Rcvr>::receiver_concept, receiver_tag> &&
+                   requires(const remove_cvref_t<_Rcvr>& __rcvr) {
+                     { get_env(__rcvr) } -> __ycxx::__detail::__exec::__queryable;
+                   } && move_constructible<remove_cvref_t<_Rcvr>> && constructible_from<remove_cvref_t<_Rcvr>, _Rcvr> &&
+                   is_nothrow_move_constructible_v<remove_cvref_t<_Rcvr>>;
 
-template <class Rcvr, class ChildOp>
-concept inlinable_receiver = receiver<Rcvr> && requires(ChildOp* child) {
-  { remove_cvref_t<Rcvr>::make_receiver_for(child) } noexcept -> same_as<remove_cvref_t<Rcvr>>;
+template <class _Rcvr, class _ChildOp>
+concept inlinable_receiver = receiver<_Rcvr> && requires(_ChildOp* __child) {
+  { remove_cvref_t<_Rcvr>::__make_receiver_for(__child) } noexcept -> same_as<remove_cvref_t<_Rcvr>>;
 };
 
 }} // namespace std::execution
 
-namespace [[gnu::visibility("hidden")]] ycxx { namespace detail { namespace exec {
-template <class Rcvr, class Sig>
-inline constexpr bool valid_completion_for = false;
-template <class Rcvr, class Tag, class... As>
-inline constexpr bool valid_completion_for<Rcvr, Tag(As...)> = callable<Tag, std::remove_cvref_t<Rcvr>, As...>;
-template <class Rcvr, class CS>
-inline constexpr bool has_completions = false;
-template <class Rcvr, class... Sigs>
-inline constexpr bool has_completions<Rcvr, std::execution::completion_signatures<Sigs...>> = (valid_completion_for<Rcvr, Sigs> && ...);
-template <class Rcvr, class Completions>
-concept receiver_of = std::execution::receiver<Rcvr> && has_completions<Rcvr, Completions>;
-}}} // namespace ycxx::detail::exec
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail { namespace __exec {
+template <class _Rcvr, class _Sig>
+inline constexpr bool __valid_completion_for = false;
+template <class _Rcvr, class _Tag, class... _As>
+inline constexpr bool __valid_completion_for<_Rcvr, _Tag(_As...)> = __callable<_Tag, std::remove_cvref_t<_Rcvr>, _As...>;
+template <class _Rcvr, class _CS>
+inline constexpr bool __has_completions = false;
+template <class _Rcvr, class... _Sigs>
+inline constexpr bool __has_completions<_Rcvr, std::execution::completion_signatures<_Sigs...>> = (__valid_completion_for<_Rcvr, _Sigs> && ...);
+template <class _Rcvr, class _Completions>
+concept __receiver_of = std::execution::receiver<_Rcvr> && __has_completions<_Rcvr, _Completions>;
+}}} // namespace __ycxx::__detail::__exec
 
 // ---------------------------------------------------------------------------------------------
 // connect ([exec.connect]).
-namespace [[gnu::visibility("hidden")]] ycxx { namespace adl_free {
-template <class DS, class DR>
-struct exec_connect_awaitable_promise;
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __adl_free {
+template <class _DS, class _DR>
+struct __exec_connect_awaitable_promise;
 
-template <class DS, class DR>
-struct exec_operation_state_task {
+template <class _DS, class _DR>
+struct __exec_operation_state_task {
   using operation_state_concept = std::execution::operation_state_tag;
-  using promise_type = exec_connect_awaitable_promise<DS, DR>;
-  explicit exec_operation_state_task(std::coroutine_handle<> h) noexcept : coro(h) {}
-  exec_operation_state_task(exec_operation_state_task&&) = delete;
-  ~exec_operation_state_task() { coro.destroy(); }
-  void start() & noexcept { coro.resume(); }
+  using promise_type = __exec_connect_awaitable_promise<_DS, _DR>;
+  explicit __exec_operation_state_task(std::coroutine_handle<> h) noexcept : __coro(h) {}
+  __exec_operation_state_task(__exec_operation_state_task&&) = delete;
+  ~__exec_operation_state_task() { __coro.destroy(); }
+  void start() & noexcept { __coro.resume(); }
 
 private:
-  std::coroutine_handle<> coro;
+  std::coroutine_handle<> __coro;
 };
 
-template <class DS, class DR>
-struct exec_connect_awaitable_promise : exec_with_await_transform<exec_connect_awaitable_promise<DS, DR>> {
-  exec_connect_awaitable_promise(DS&, DR& r) noexcept : rcvr(r) {}
+template <class _DS, class _DR>
+struct __exec_connect_awaitable_promise : __exec_with_await_transform<__exec_connect_awaitable_promise<_DS, _DR>> {
+  __exec_connect_awaitable_promise(_DS&, _DR& r) noexcept : __rcvr(r) {}
   std::suspend_always initial_suspend() noexcept { return {}; }
   [[noreturn]] std::suspend_always final_suspend() noexcept { __builtin_trap(); }
   [[noreturn]] void unhandled_exception() noexcept { __builtin_trap(); }
   [[noreturn]] void return_void() noexcept { __builtin_trap(); }
   std::coroutine_handle<> unhandled_stopped() noexcept {
-    std::execution::set_stopped(static_cast<DR&&>(rcvr));
+    std::execution::set_stopped(static_cast<_DR&&>(__rcvr));
     return std::noop_coroutine();
   }
-  exec_operation_state_task<DS, DR> get_return_object() noexcept {
-    return exec_operation_state_task<DS, DR>{std::coroutine_handle<exec_connect_awaitable_promise>::from_promise(*this)};
+  __exec_operation_state_task<_DS, _DR> get_return_object() noexcept {
+    return __exec_operation_state_task<_DS, _DR>{std::coroutine_handle<__exec_connect_awaitable_promise>::from_promise(*this)};
   }
-  std::execution::env_of_t<DR> get_env() const noexcept { return std::execution::get_env(rcvr); }
+  std::execution::env_of_t<_DR> get_env() const noexcept { return std::execution::get_env(__rcvr); }
 
 private:
-  DR& rcvr;
+  _DR& __rcvr;
 };
 
 // suspend-complete(fun, as...)
-template <class Fn>
-struct exec_suspend_complete {
-  Fn fn;
+template <class _Fn>
+struct __exec_suspend_complete {
+  _Fn __fn;
   static constexpr bool await_ready() noexcept { return false; }
-  void await_suspend(std::coroutine_handle<>) noexcept { fn(); }
+  void await_suspend(std::coroutine_handle<>) noexcept { __fn(); }
   [[noreturn]] void await_resume() noexcept { __builtin_unreachable(); }
 };
-}} // namespace ycxx::adl_free
+}} // namespace __ycxx::__adl_free
 
-namespace [[gnu::visibility("hidden")]] ycxx { namespace detail { namespace exec {
-template <class Fun, class... Ts>
-auto suspend_complete(Fun fun, Ts&&... as) noexcept {
-  auto fn = [&, fun]() noexcept { fun(static_cast<Ts&&>(as)...); };
-  return ::ycxx::adl_free::exec_suspend_complete<decltype(fn)>{fn};
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail { namespace __exec {
+template <class _Fun, class... _Ts>
+auto __suspend_complete(_Fun fun, _Ts&&... __as) noexcept {
+  auto __fn = [&, fun]() noexcept { fun(static_cast<_Ts&&>(__as)...); };
+  return ::__ycxx::__adl_free::__exec_suspend_complete<decltype(__fn)>{__fn};
 }
 
-template <class DS, class DR>
-using connect_awaitable_value = await_result_type<DS, ::ycxx::adl_free::exec_connect_awaitable_promise<DS, DR>>;
+template <class _DS, class _DR>
+using __connect_awaitable_value = __await_result_type<_DS, ::__ycxx::__adl_free::__exec_connect_awaitable_promise<_DS, _DR>>;
 
-template <class DS, class DR>
-using connect_awaitable_sigs =
-    std::execution::completion_signatures<set_value_sig_t<connect_awaitable_value<DS, DR>>,
+template <class _DS, class _DR>
+using __connect_awaitable_sigs =
+    std::execution::completion_signatures<__set_value_sig_t<__connect_awaitable_value<_DS, _DR>>,
                                           std::execution::set_error_t(std::exception_ptr), std::execution::set_stopped_t()>;
 
 // connect-awaitable(sndr, rcvr) ([exec.connect]/5). Its frame is allocated (only awaitables that
 // are not senders of their own come here).
-template <class DS, class DR>
-  requires(receiver_of<DR, connect_awaitable_sigs<DS, DR>>)
-::ycxx::adl_free::exec_operation_state_task<DS, DR> connect_awaitable(DS sndr, DR rcvr) {
-  std::exception_ptr ep;
-  if constexpr (cfg::exceptions) {
+template <class _DS, class _DR>
+  requires(__receiver_of<_DR, __connect_awaitable_sigs<_DS, _DR>>)
+::__ycxx::__adl_free::__exec_operation_state_task<_DS, _DR> __connect_awaitable(_DS __sndr, _DR __rcvr) {
+  std::exception_ptr __ep;
+  if constexpr (__cfg::exceptions) {
     try {
-      if constexpr (std::is_void_v<connect_awaitable_value<DS, DR>>) {
-        co_await static_cast<DS&&>(sndr);
-        co_await ::ycxx::detail::exec::suspend_complete(std::execution::set_value, static_cast<DR&&>(rcvr));
+      if constexpr (std::is_void_v<__connect_awaitable_value<_DS, _DR>>) {
+        co_await static_cast<_DS&&>(__sndr);
+        co_await ::__ycxx::__detail::__exec::__suspend_complete(std::execution::set_value, static_cast<_DR&&>(__rcvr));
       } else {
-        co_await ::ycxx::detail::exec::suspend_complete(std::execution::set_value, static_cast<DR&&>(rcvr),
-                                                         co_await static_cast<DS&&>(sndr));
+        co_await ::__ycxx::__detail::__exec::__suspend_complete(std::execution::set_value, static_cast<_DR&&>(__rcvr),
+                                                         co_await static_cast<_DS&&>(__sndr));
       }
     } catch (...) {
-      ep = std::current_exception();
+      __ep = std::current_exception();
     }
   } else {
-    if constexpr (std::is_void_v<connect_awaitable_value<DS, DR>>) {
-      co_await static_cast<DS&&>(sndr);
-      co_await ::ycxx::detail::exec::suspend_complete(std::execution::set_value, static_cast<DR&&>(rcvr));
+    if constexpr (std::is_void_v<__connect_awaitable_value<_DS, _DR>>) {
+      co_await static_cast<_DS&&>(__sndr);
+      co_await ::__ycxx::__detail::__exec::__suspend_complete(std::execution::set_value, static_cast<_DR&&>(__rcvr));
     } else {
-      co_await ::ycxx::detail::exec::suspend_complete(std::execution::set_value, static_cast<DR&&>(rcvr),
-                                                       co_await static_cast<DS&&>(sndr));
+      co_await ::__ycxx::__detail::__exec::__suspend_complete(std::execution::set_value, static_cast<_DR&&>(__rcvr),
+                                                       co_await static_cast<_DS&&>(__sndr));
     }
   }
-  co_await ::ycxx::detail::exec::suspend_complete(std::execution::set_error, static_cast<DR&&>(rcvr), static_cast<std::exception_ptr&&>(ep));
+  co_await ::__ycxx::__detail::__exec::__suspend_complete(std::execution::set_error, static_cast<_DR&&>(__rcvr), static_cast<std::exception_ptr&&>(__ep));
 }
 
-template <class Sndr, class Rcvr>
-using connect_new_sndr_t =
-    decltype(std::execution::transform_sender(std::declval<Sndr>(), std::execution::get_env(std::declval<const std::remove_cvref_t<Rcvr>&>())));
+template <class _Sndr, class _Rcvr>
+using __connect_new_sndr_t =
+    decltype(std::execution::transform_sender(std::declval<_Sndr>(), std::execution::get_env(std::declval<const std::remove_cvref_t<_Rcvr>&>())));
 
-template <class Sndr, class Rcvr>
-concept connect_via_member = requires(Sndr&& s, Rcvr&& r) {
-  std::execution::transform_sender(static_cast<Sndr&&>(s), std::execution::get_env(r));
-  std::execution::transform_sender(static_cast<Sndr&&>(s), std::execution::get_env(r)).connect(static_cast<Rcvr&&>(r));
+template <class _Sndr, class _Rcvr>
+concept __connect_via_member = requires(_Sndr&& s, _Rcvr&& r) {
+  std::execution::transform_sender(static_cast<_Sndr&&>(s), std::execution::get_env(r));
+  std::execution::transform_sender(static_cast<_Sndr&&>(s), std::execution::get_env(r)).connect(static_cast<_Rcvr&&>(r));
 };
-template <class Sndr, class Rcvr>
-concept connect_via_awaitable = requires(Sndr&& s, Rcvr&& r) {
-  std::execution::transform_sender(static_cast<Sndr&&>(s), std::execution::get_env(r));
-  ::ycxx::detail::exec::connect_awaitable<std::decay_t<connect_new_sndr_t<Sndr, Rcvr>>, std::decay_t<Rcvr>>(
-      std::execution::transform_sender(static_cast<Sndr&&>(s), std::execution::get_env(r)), static_cast<Rcvr&&>(r));
+template <class _Sndr, class _Rcvr>
+concept __connect_via_awaitable = requires(_Sndr&& s, _Rcvr&& r) {
+  std::execution::transform_sender(static_cast<_Sndr&&>(s), std::execution::get_env(r));
+  ::__ycxx::__detail::__exec::__connect_awaitable<std::decay_t<__connect_new_sndr_t<_Sndr, _Rcvr>>, std::decay_t<_Rcvr>>(
+      std::execution::transform_sender(static_cast<_Sndr&&>(s), std::execution::get_env(r)), static_cast<_Rcvr&&>(r));
 };
-}}} // namespace ycxx::detail::exec
+}}} // namespace __ycxx::__detail::__exec
 
-namespace [[gnu::visibility("hidden")]] std { namespace execution {
+namespace [[__gnu__::__visibility__("hidden")]] std { namespace execution {
 
 struct connect_t {
-  template <class Sndr, class Rcvr>
-    requires ycxx::detail::exec::connect_via_member<Sndr, Rcvr> || ycxx::detail::exec::connect_via_awaitable<Sndr, Rcvr>
-  constexpr auto operator()(Sndr&& sndr, Rcvr&& rcvr) const noexcept(ycxx_nothrow<Sndr, Rcvr>()) {
-    static_assert(sender_in<Sndr, env_of_t<Rcvr>>, "connect: the sender has no completion signatures in the receiver's environment");
-    static_assert(ycxx::detail::exec::receiver_of<Rcvr, ycxx::detail::exec::csigs_of_t<Sndr, env_of_t<Rcvr>>>,
+  template <class _Sndr, class _Rcvr>
+    requires __ycxx::__detail::__exec::__connect_via_member<_Sndr, _Rcvr> || __ycxx::__detail::__exec::__connect_via_awaitable<_Sndr, _Rcvr>
+  constexpr auto operator()(_Sndr&& __sndr, _Rcvr&& __rcvr) const noexcept(__ycxx_nothrow<_Sndr, _Rcvr>()) {
+    static_assert(sender_in<_Sndr, env_of_t<_Rcvr>>, "connect: the sender has no completion signatures in the receiver's environment");
+    static_assert(__ycxx::__detail::__exec::__receiver_of<_Rcvr, __ycxx::__detail::__exec::__csigs_of_t<_Sndr, env_of_t<_Rcvr>>>,
                   "connect: the receiver cannot accept every completion of the sender");
-    if constexpr (ycxx::detail::exec::connect_via_member<Sndr, Rcvr>) {
-      using R = decltype(transform_sender(static_cast<Sndr&&>(sndr), get_env(rcvr)).connect(static_cast<Rcvr&&>(rcvr)));
-      static_assert(operation_state<R>, "connect: the result must be an operation state");
-      return transform_sender(static_cast<Sndr&&>(sndr), get_env(rcvr)).connect(static_cast<Rcvr&&>(rcvr));
+    if constexpr (__ycxx::__detail::__exec::__connect_via_member<_Sndr, _Rcvr>) {
+      using _Rp = decltype(transform_sender(static_cast<_Sndr&&>(__sndr), get_env(__rcvr)).connect(static_cast<_Rcvr&&>(__rcvr)));
+      static_assert(operation_state<_Rp>, "connect: the result must be an operation state");
+      return transform_sender(static_cast<_Sndr&&>(__sndr), get_env(__rcvr)).connect(static_cast<_Rcvr&&>(__rcvr));
     } else {
-      using DS = decay_t<ycxx::detail::exec::connect_new_sndr_t<Sndr, Rcvr>>;
-      return ycxx::detail::exec::connect_awaitable<DS, decay_t<Rcvr>>(transform_sender(static_cast<Sndr&&>(sndr), get_env(rcvr)),
-                                                                     static_cast<Rcvr&&>(rcvr));
+      using _DS = decay_t<__ycxx::__detail::__exec::__connect_new_sndr_t<_Sndr, _Rcvr>>;
+      return __ycxx::__detail::__exec::__connect_awaitable<_DS, decay_t<_Rcvr>>(transform_sender(static_cast<_Sndr&&>(__sndr), get_env(__rcvr)),
+                                                                     static_cast<_Rcvr&&>(__rcvr));
     }
   }
 
 private:
-  template <class Sndr, class Rcvr>
-  static consteval bool ycxx_nothrow() {
-    if constexpr (ycxx::detail::exec::connect_via_member<Sndr, Rcvr>)
-      return noexcept(transform_sender(declval<Sndr>(), get_env(declval<Rcvr&>())).connect(declval<Rcvr>()));
+  template <class _Sndr, class _Rcvr>
+  static consteval bool __ycxx_nothrow() {
+    if constexpr (__ycxx::__detail::__exec::__connect_via_member<_Sndr, _Rcvr>)
+      return noexcept(transform_sender(declval<_Sndr>(), get_env(declval<_Rcvr&>())).connect(declval<_Rcvr>()));
     else
       return false;
   }
 };
 inline constexpr connect_t connect{};
 
-template <class Sndr, class Rcvr>
-using connect_result_t = decltype(connect(declval<Sndr>(), declval<Rcvr>()));
+template <class _Sndr, class _Rcvr>
+using connect_result_t = decltype(connect(declval<_Sndr>(), declval<_Rcvr>()));
 
 }} // namespace std::execution
 
-namespace [[gnu::visibility("hidden")]] ycxx { namespace detail { namespace exec {
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail { namespace __exec {
 // sender-to ([exec.snd.concepts])
-template <class Sndr, class Rcvr>
-concept sender_to = std::execution::sender_in<Sndr, std::execution::env_of_t<Rcvr>> &&
-                    receiver_of<Rcvr, std::execution::completion_signatures_of_t<Sndr, std::execution::env_of_t<Rcvr>>> &&
-                    requires(Sndr&& sndr, Rcvr&& rcvr) { std::execution::connect(static_cast<Sndr&&>(sndr), static_cast<Rcvr&&>(rcvr)); };
-}}} // namespace ycxx::detail::exec
+template <class _Sndr, class _Rcvr>
+concept __sender_to = std::execution::sender_in<_Sndr, std::execution::env_of_t<_Rcvr>> &&
+                    __receiver_of<_Rcvr, std::execution::__completion_signatures_of_t<_Sndr, std::execution::env_of_t<_Rcvr>>> &&
+                    requires(_Sndr&& __sndr, _Rcvr&& __rcvr) { std::execution::connect(static_cast<_Sndr&&>(__sndr), static_cast<_Rcvr&&>(__rcvr)); };
+}}} // namespace __ycxx::__detail::__exec

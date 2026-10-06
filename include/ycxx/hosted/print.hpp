@@ -12,37 +12,37 @@
 #include <ycxx/core/format_base.hpp>
 #include <cstdio>
 
-namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
-// Formats into a buffer, appends a newline if `newline`, and writes the result to stream.
-void vprint_file(std::FILE* stream, std::string_view fmt, std::format_args args, bool newline);
-}} // namespace ycxx::detail
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+// Formats into a buffer, appends a newline if `__newline`, and writes the result to stream.
+void __vprint_file(std::FILE* stream, std::string_view __fmt, std::format_args __args, bool __newline);
+}} // namespace __ycxx::__detail
 
-namespace [[gnu::visibility("hidden")]] std {
+namespace [[__gnu__::__visibility__("hidden")]] std {
 
-void vprint_unicode(FILE* stream, string_view fmt, format_args args);
-void vprint_unicode_buffered(FILE* stream, string_view fmt, format_args args);
-void vprint_nonunicode(FILE* stream, string_view fmt, format_args args);
-void vprint_nonunicode_buffered(FILE* stream, string_view fmt, format_args args);
-void vprint_unicode(string_view fmt, format_args args);
-void vprint_nonunicode(string_view fmt, format_args args);
+void vprint_unicode(FILE* stream, string_view __fmt, format_args __args);
+void vprint_unicode_buffered(FILE* stream, string_view __fmt, format_args __args);
+void vprint_nonunicode(FILE* stream, string_view __fmt, format_args __args);
+void vprint_nonunicode_buffered(FILE* stream, string_view __fmt, format_args __args);
+void vprint_unicode(string_view __fmt, format_args __args);
+void vprint_nonunicode(string_view __fmt, format_args __args);
 
-template <class... Args>
-void print(FILE* stream, format_string<Args...> fmt, Args&&... args) {
+template <class... _Args>
+void print(FILE* stream, format_string<_Args...> __fmt, _Args&&... __args) {
   // vprint_unicode, vprint_unicode_buffered, vprint_nonunicode and vprint_nonunicode_buffered
   // write the same bytes here (see above), whatever enable_nonlocking_formatter_optimization says.
-  ycxx::detail::vprint_file(stream, fmt.get(), make_format_args(args...), false);
+  __ycxx::__detail::__vprint_file(stream, __fmt.get(), make_format_args(__args...), false);
 }
-template <class... Args>
-void print(format_string<Args...> fmt, Args&&... args) {
-  ycxx::detail::vprint_file(stdout, fmt.get(), make_format_args(args...), false);
+template <class... _Args>
+void print(format_string<_Args...> __fmt, _Args&&... __args) {
+  __ycxx::__detail::__vprint_file(stdout, __fmt.get(), make_format_args(__args...), false);
 }
-template <class... Args>
-void println(FILE* stream, format_string<Args...> fmt, Args&&... args) {
-  ycxx::detail::vprint_file(stream, fmt.get(), make_format_args(args...), true);
+template <class... _Args>
+void println(FILE* stream, format_string<_Args...> __fmt, _Args&&... __args) {
+  __ycxx::__detail::__vprint_file(stream, __fmt.get(), make_format_args(__args...), true);
 }
-template <class... Args>
-void println(format_string<Args...> fmt, Args&&... args) {
-  ycxx::detail::vprint_file(stdout, fmt.get(), make_format_args(args...), true);
+template <class... _Args>
+void println(format_string<_Args...> __fmt, _Args&&... __args) {
+  __ycxx::__detail::__vprint_file(stdout, __fmt.get(), make_format_args(__args...), true);
 }
 void println(FILE* stream);
 void println();

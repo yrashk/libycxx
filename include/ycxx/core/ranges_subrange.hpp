@@ -9,154 +9,154 @@
 #include <ycxx/core/pair.hpp>
 #include <ycxx/core/error.hpp>
 
-namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
-template <class T>
-inline constexpr bool is_init_list_v = false;
-template <class T>
-inline constexpr bool is_init_list_v<std::initializer_list<T>> = true;
-}} // namespace ycxx::detail
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+template <class _Tp>
+inline constexpr bool __is_init_list_v = false;
+template <class _Tp>
+inline constexpr bool __is_init_list_v<std::initializer_list<_Tp>> = true;
+}} // namespace __ycxx::__detail
 
-namespace [[gnu::visibility("hidden")]] std { namespace ranges {
+namespace [[__gnu__::__visibility__("hidden")]] std { namespace ranges {
 
 // [range.view]
-template <class T>
-concept view = range<T> && movable<T> && enable_view<T>;
+template <class _Tp>
+concept view = range<_Tp> && movable<_Tp> && enable_view<_Tp>;
 
-template <class T>
+template <class _Tp>
 concept viewable_range =
-    range<T> && ((view<remove_cvref_t<T>> && constructible_from<remove_cvref_t<T>, T>) ||
-                 (!view<remove_cvref_t<T>> &&
-                  (is_lvalue_reference_v<T> || (movable<remove_reference_t<T>> && !ycxx::detail::is_init_list_v<remove_cvref_t<T>>))));
+    range<_Tp> && ((view<remove_cvref_t<_Tp>> && constructible_from<remove_cvref_t<_Tp>, _Tp>) ||
+                 (!view<remove_cvref_t<_Tp>> &&
+                  (is_lvalue_reference_v<_Tp> || (movable<remove_reference_t<_Tp>> && !__ycxx::__detail::__is_init_list_v<remove_cvref_t<_Tp>>))));
 
 }} // namespace std::ranges
 
-namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
-template <class R>
-concept simple_view = std::ranges::view<R> && std::ranges::range<const R> &&
-                      std::same_as<std::ranges::iterator_t<R>, std::ranges::iterator_t<const R>> &&
-                      std::same_as<std::ranges::sentinel_t<R>, std::ranges::sentinel_t<const R>>;
-}} // namespace ycxx::detail
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+template <class _Rp>
+concept __simple_view = std::ranges::view<_Rp> && std::ranges::range<const _Rp> &&
+                      std::same_as<std::ranges::iterator_t<_Rp>, std::ranges::iterator_t<const _Rp>> &&
+                      std::same_as<std::ranges::sentinel_t<_Rp>, std::ranges::sentinel_t<const _Rp>>;
+}} // namespace __ycxx::__detail
 
-namespace [[gnu::visibility("hidden")]] std { namespace ranges {
+namespace [[__gnu__::__visibility__("hidden")]] std { namespace ranges {
 
 // [view.interface]
-template <class D>
-  requires is_class_v<D> && same_as<D, remove_cv_t<D>>
+template <class _Dp>
+  requires is_class_v<_Dp> && same_as<_Dp, remove_cv_t<_Dp>>
 class view_interface {
-  constexpr D& derived() noexcept { return static_cast<D&>(*this); }
-  constexpr const D& derived() const noexcept { return static_cast<const D&>(*this); }
+  constexpr _Dp& __derived() noexcept { return static_cast<_Dp&>(*this); }
+  constexpr const _Dp& __derived() const noexcept { return static_cast<const _Dp&>(*this); }
 
 public:
   constexpr bool empty()
-    requires sized_range<D> || forward_range<D>
+    requires sized_range<_Dp> || forward_range<_Dp>
   {
-    if constexpr (sized_range<D>)
-      return ranges::size(derived()) == 0;
+    if constexpr (sized_range<_Dp>)
+      return ranges::size(__derived()) == 0;
     else
-      return ranges::begin(derived()) == ranges::end(derived());
+      return ranges::begin(__derived()) == ranges::end(__derived());
   }
   constexpr bool empty() const
-    requires sized_range<const D> || forward_range<const D>
+    requires sized_range<const _Dp> || forward_range<const _Dp>
   {
-    if constexpr (sized_range<const D>)
-      return ranges::size(derived()) == 0;
+    if constexpr (sized_range<const _Dp>)
+      return ranges::size(__derived()) == 0;
     else
-      return ranges::begin(derived()) == ranges::end(derived());
+      return ranges::begin(__derived()) == ranges::end(__derived());
   }
   constexpr auto cbegin()
-    requires input_range<D>
+    requires input_range<_Dp>
   {
-    return ranges::cbegin(derived());
+    return ranges::cbegin(__derived());
   }
   constexpr auto cbegin() const
-    requires input_range<const D>
+    requires input_range<const _Dp>
   {
-    return ranges::cbegin(derived());
+    return ranges::cbegin(__derived());
   }
   constexpr auto cend()
-    requires input_range<D>
+    requires input_range<_Dp>
   {
-    return ranges::cend(derived());
+    return ranges::cend(__derived());
   }
   constexpr auto cend() const
-    requires input_range<const D>
+    requires input_range<const _Dp>
   {
-    return ranges::cend(derived());
+    return ranges::cend(__derived());
   }
   constexpr explicit operator bool()
-    requires requires { ranges::empty(derived()); }
+    requires requires { ranges::empty(__derived()); }
   {
-    return !ranges::empty(derived());
+    return !ranges::empty(__derived());
   }
   constexpr explicit operator bool() const
-    requires requires { ranges::empty(derived()); }
+    requires requires { ranges::empty(__derived()); }
   {
-    return !ranges::empty(derived());
+    return !ranges::empty(__derived());
   }
   constexpr auto data()
-    requires contiguous_iterator<iterator_t<D>>
+    requires contiguous_iterator<iterator_t<_Dp>>
   {
-    return std::to_address(ranges::begin(derived()));
+    return std::to_address(ranges::begin(__derived()));
   }
   constexpr auto data() const
-    requires range<const D> && contiguous_iterator<iterator_t<const D>>
+    requires range<const _Dp> && contiguous_iterator<iterator_t<const _Dp>>
   {
-    return std::to_address(ranges::begin(derived()));
+    return std::to_address(ranges::begin(__derived()));
   }
   constexpr auto size()
-    requires forward_range<D> && sized_sentinel_for<sentinel_t<D>, iterator_t<D>>
+    requires forward_range<_Dp> && sized_sentinel_for<sentinel_t<_Dp>, iterator_t<_Dp>>
   {
-    return ::ycxx::detail::to_unsigned_like(ranges::end(derived()) - ranges::begin(derived()));
+    return ::__ycxx::__detail::__to_unsigned_like(ranges::end(__derived()) - ranges::begin(__derived()));
   }
   constexpr auto size() const
-    requires forward_range<const D> && sized_sentinel_for<sentinel_t<const D>, iterator_t<const D>>
+    requires forward_range<const _Dp> && sized_sentinel_for<sentinel_t<const _Dp>, iterator_t<const _Dp>>
   {
-    return ::ycxx::detail::to_unsigned_like(ranges::end(derived()) - ranges::begin(derived()));
+    return ::__ycxx::__detail::__to_unsigned_like(ranges::end(__derived()) - ranges::begin(__derived()));
   }
   constexpr decltype(auto) front()
-    requires forward_range<D>
+    requires forward_range<_Dp>
   {
-    ::ycxx::detail::precondition(!empty(), "view_interface::front: empty view");
-    return *ranges::begin(derived());
+    ::__ycxx::__detail::__precondition(!empty(), "view_interface::front: empty view");
+    return *ranges::begin(__derived());
   }
   constexpr decltype(auto) front() const
-    requires forward_range<const D>
+    requires forward_range<const _Dp>
   {
-    ::ycxx::detail::precondition(!empty(), "view_interface::front: empty view");
-    return *ranges::begin(derived());
+    ::__ycxx::__detail::__precondition(!empty(), "view_interface::front: empty view");
+    return *ranges::begin(__derived());
   }
   constexpr decltype(auto) back()
-    requires bidirectional_range<D> && common_range<D>
+    requires bidirectional_range<_Dp> && common_range<_Dp>
   {
-    ::ycxx::detail::precondition(!empty(), "view_interface::back: empty view");
-    return *ranges::prev(ranges::end(derived()));
+    ::__ycxx::__detail::__precondition(!empty(), "view_interface::back: empty view");
+    return *ranges::prev(ranges::end(__derived()));
   }
   constexpr decltype(auto) back() const
-    requires bidirectional_range<const D> && common_range<const D>
+    requires bidirectional_range<const _Dp> && common_range<const _Dp>
   {
-    ::ycxx::detail::precondition(!empty(), "view_interface::back: empty view");
-    return *ranges::prev(ranges::end(derived()));
+    ::__ycxx::__detail::__precondition(!empty(), "view_interface::back: empty view");
+    return *ranges::prev(ranges::end(__derived()));
   }
-  template <random_access_range R = D>
-  constexpr decltype(auto) operator[](range_difference_t<R> n) {
-    return ranges::begin(derived())[n];
+  template <random_access_range _Rp = _Dp>
+  constexpr decltype(auto) operator[](range_difference_t<_Rp> n) {
+    return ranges::begin(__derived())[n];
   }
-  template <random_access_range R = const D>
-  constexpr decltype(auto) operator[](range_difference_t<R> n) const {
-    return ranges::begin(derived())[n];
+  template <random_access_range _Rp = const _Dp>
+  constexpr decltype(auto) operator[](range_difference_t<_Rp> n) const {
+    return ranges::begin(__derived())[n];
   }
-  template <random_access_range R = D>
-    requires sized_range<R>
-  constexpr decltype(auto) at(range_difference_t<R> n) {
-    if (n < 0 || n >= ranges::distance(derived()))
-      ::ycxx::detail::throw_out_of_range("view_interface::at: index out of range");
+  template <random_access_range _Rp = _Dp>
+    requires sized_range<_Rp>
+  constexpr decltype(auto) at(range_difference_t<_Rp> n) {
+    if (n < 0 || n >= ranges::distance(__derived()))
+      ::__ycxx::__detail::__throw_out_of_range("view_interface::at: index out of range");
     return (*this)[n];
   }
-  template <random_access_range R = const D>
-    requires sized_range<R>
-  constexpr decltype(auto) at(range_difference_t<R> n) const {
-    if (n < 0 || n >= ranges::distance(derived()))
-      ::ycxx::detail::throw_out_of_range("view_interface::at: index out of range");
+  template <random_access_range _Rp = const _Dp>
+    requires sized_range<_Rp>
+  constexpr decltype(auto) at(range_difference_t<_Rp> n) const {
+    if (n < 0 || n >= ranges::distance(__derived()))
+      ::__ycxx::__detail::__throw_out_of_range("view_interface::at: index out of range");
     return (*this)[n];
   }
 };
@@ -166,213 +166,213 @@ enum class subrange_kind : bool { unsized, sized };
 
 }} // namespace std::ranges
 
-namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
-template <class From, class To>
-concept uses_nonqualification_pointer_conversion =
-    std::is_pointer_v<From> && std::is_pointer_v<To> &&
-    !std::convertible_to<std::remove_pointer_t<From> (*)[], std::remove_pointer_t<To> (*)[]>;
-template <class From, class To>
-concept convertible_to_non_slicing =
-    std::convertible_to<From, To> && !uses_nonqualification_pointer_conversion<std::decay_t<From>, std::decay_t<To>>;
-template <class T, class U, class V>
-concept pair_like_convertible_from = !std::ranges::range<T> && !std::is_reference_v<T> && pair_like<T> &&
-                                     std::constructible_from<T, U, V> &&
-                                     convertible_to_non_slicing<U, std::tuple_element_t<0, T>> &&
-                                     std::convertible_to<V, std::tuple_element_t<1, T>>;
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+template <class _From, class _To>
+concept __uses_nonqualification_pointer_conversion =
+    std::is_pointer_v<_From> && std::is_pointer_v<_To> &&
+    !std::convertible_to<std::remove_pointer_t<_From> (*)[], std::remove_pointer_t<_To> (*)[]>;
+template <class _From, class _To>
+concept __convertible_to_non_slicing =
+    std::convertible_to<_From, _To> && !__uses_nonqualification_pointer_conversion<std::decay_t<_From>, std::decay_t<_To>>;
+template <class _Tp, class _Up, class _Vp>
+concept __pair_like_convertible_from = !std::ranges::range<_Tp> && !std::is_reference_v<_Tp> && __pair_like<_Tp> &&
+                                     std::constructible_from<_Tp, _Up, _Vp> &&
+                                     __convertible_to_non_slicing<_Up, std::tuple_element_t<0, _Tp>> &&
+                                     std::convertible_to<_Vp, std::tuple_element_t<1, _Tp>>;
 
 // The stored size of a subrange that is sized only through its constructor argument.
-template <class D, bool Store>
-struct subrange_size {
-  constexpr subrange_size() = default;
-  constexpr subrange_size(D) noexcept {}
+template <class _Dp, bool _Store>
+struct __subrange_size {
+  constexpr __subrange_size() = default;
+  constexpr __subrange_size(_Dp) noexcept {}
 };
-template <class D>
-struct subrange_size<D, true> {
-  D value = 0;
+template <class _Dp>
+struct __subrange_size<_Dp, true> {
+  _Dp value = 0;
 };
-}} // namespace ycxx::detail
+}} // namespace __ycxx::__detail
 
-namespace [[gnu::visibility("hidden")]] std { namespace ranges {
+namespace [[__gnu__::__visibility__("hidden")]] std { namespace ranges {
 
-template <input_or_output_iterator I, sentinel_for<I> S = I,
-          subrange_kind K = sized_sentinel_for<S, I> ? subrange_kind::sized : subrange_kind::unsized>
-  requires(K == subrange_kind::sized || !sized_sentinel_for<S, I>)
-class subrange : public view_interface<subrange<I, S, K>> {
-  static constexpr bool StoreSize = K == subrange_kind::sized && !sized_sentinel_for<S, I>;
-  using size_type = make_unsigned_t<iter_difference_t<I>>;
+template <input_or_output_iterator _Ip, sentinel_for<_Ip> _Sp = _Ip,
+          subrange_kind _Kp = sized_sentinel_for<_Sp, _Ip> ? subrange_kind::sized : subrange_kind::unsized>
+  requires(_Kp == subrange_kind::sized || !sized_sentinel_for<_Sp, _Ip>)
+class subrange : public view_interface<subrange<_Ip, _Sp, _Kp>> {
+  static constexpr bool _StoreSize = _Kp == subrange_kind::sized && !sized_sentinel_for<_Sp, _Ip>;
+  using size_type = make_unsigned_t<iter_difference_t<_Ip>>;
 
-  [[no_unique_address]] I begin_ = I();
-  [[no_unique_address]] S end_ = S();
-  [[no_unique_address]] ycxx::detail::subrange_size<size_type, StoreSize> size_{};
+  [[no_unique_address]] _Ip __begin_ = _Ip();
+  [[no_unique_address]] _Sp __end_ = _Sp();
+  [[no_unique_address]] __ycxx::__detail::__subrange_size<size_type, _StoreSize> __size_{};
 
 public:
   subrange()
-    requires default_initializable<I>
+    requires default_initializable<_Ip>
   = default;
 
-  template <ycxx::detail::convertible_to_non_slicing<I> It>
-  constexpr subrange(It i, S s)
-    requires(!StoreSize)
-      : begin_(std::move(i)), end_(std::move(s)) {}
+  template <__ycxx::__detail::__convertible_to_non_slicing<_Ip> _It>
+  constexpr subrange(_It i, _Sp s)
+    requires(!_StoreSize)
+      : __begin_(std::move(i)), __end_(std::move(s)) {}
 
-  template <ycxx::detail::convertible_to_non_slicing<I> It>
-  constexpr subrange(It i, S s, size_type n)
-    requires(K == subrange_kind::sized)
-      : begin_(std::move(i)), end_(std::move(s)) {
-    if constexpr (StoreSize)
-      size_.value = n;
+  template <__ycxx::__detail::__convertible_to_non_slicing<_Ip> _It>
+  constexpr subrange(_It i, _Sp s, size_type n)
+    requires(_Kp == subrange_kind::sized)
+      : __begin_(std::move(i)), __end_(std::move(s)) {
+    if constexpr (_StoreSize)
+      __size_.value = n;
   }
 
-  template <ycxx::detail::different_from<subrange> R>
-    requires borrowed_range<R> && ycxx::detail::convertible_to_non_slicing<iterator_t<R>, I> &&
-             convertible_to<sentinel_t<R>, S>
-  constexpr subrange(R&& r)
-    requires(!StoreSize || sized_range<R>)
-      : begin_(ranges::begin(r)), end_(ranges::end(r)) {
-    if constexpr (StoreSize)
-      size_.value = static_cast<size_type>(ranges::size(r));
+  template <__ycxx::__detail::__different_from<subrange> _Rp>
+    requires borrowed_range<_Rp> && __ycxx::__detail::__convertible_to_non_slicing<iterator_t<_Rp>, _Ip> &&
+             convertible_to<sentinel_t<_Rp>, _Sp>
+  constexpr subrange(_Rp&& r)
+    requires(!_StoreSize || sized_range<_Rp>)
+      : __begin_(ranges::begin(r)), __end_(ranges::end(r)) {
+    if constexpr (_StoreSize)
+      __size_.value = static_cast<size_type>(ranges::size(r));
   }
 
-  template <borrowed_range R>
-    requires ycxx::detail::convertible_to_non_slicing<iterator_t<R>, I> && convertible_to<sentinel_t<R>, S>
-  constexpr subrange(R&& r, size_type n)
-    requires(K == subrange_kind::sized)
+  template <borrowed_range _Rp>
+    requires __ycxx::__detail::__convertible_to_non_slicing<iterator_t<_Rp>, _Ip> && convertible_to<sentinel_t<_Rp>, _Sp>
+  constexpr subrange(_Rp&& r, size_type n)
+    requires(_Kp == subrange_kind::sized)
       : subrange{ranges::begin(r), ranges::end(r), n} {}
 
-  template <ycxx::detail::different_from<subrange> PairLike>
-    requires ycxx::detail::pair_like_convertible_from<PairLike, const I&, const S&>
-  constexpr operator PairLike() const {
-    return PairLike(begin_, end_);
+  template <__ycxx::__detail::__different_from<subrange> _PairLike>
+    requires __ycxx::__detail::__pair_like_convertible_from<_PairLike, const _Ip&, const _Sp&>
+  constexpr operator _PairLike() const {
+    return _PairLike(__begin_, __end_);
   }
 
-  constexpr I begin() const
-    requires copyable<I>
+  constexpr _Ip begin() const
+    requires copyable<_Ip>
   {
-    return begin_;
+    return __begin_;
   }
-  [[nodiscard]] constexpr I begin()
-    requires(!copyable<I>)
+  [[nodiscard]] constexpr _Ip begin()
+    requires(!copyable<_Ip>)
   {
-    return std::move(begin_);
+    return std::move(__begin_);
   }
-  constexpr S end() const { return end_; }
-  constexpr bool empty() const { return begin_ == end_; }
+  constexpr _Sp end() const { return __end_; }
+  constexpr bool empty() const { return __begin_ == __end_; }
   constexpr size_type size() const
-    requires(K == subrange_kind::sized)
+    requires(_Kp == subrange_kind::sized)
   {
-    if constexpr (StoreSize)
-      return size_.value;
+    if constexpr (_StoreSize)
+      return __size_.value;
     else
-      return ::ycxx::detail::to_unsigned_like(end_ - begin_);
+      return ::__ycxx::__detail::__to_unsigned_like(__end_ - __begin_);
   }
 
-  [[nodiscard]] constexpr subrange next(iter_difference_t<I> n = 1) const&
-    requires forward_iterator<I>
+  [[nodiscard]] constexpr subrange next(iter_difference_t<_Ip> n = 1) const&
+    requires forward_iterator<_Ip>
   {
-    auto tmp = *this;
-    tmp.advance(n);
-    return tmp;
+    auto __tmp = *this;
+    __tmp.advance(n);
+    return __tmp;
   }
-  [[nodiscard]] constexpr subrange next(iter_difference_t<I> n = 1) && {
+  [[nodiscard]] constexpr subrange next(iter_difference_t<_Ip> n = 1) && {
     advance(n);
     return std::move(*this);
   }
-  [[nodiscard]] constexpr subrange prev(iter_difference_t<I> n = 1) const
-    requires bidirectional_iterator<I>
+  [[nodiscard]] constexpr subrange prev(iter_difference_t<_Ip> n = 1) const
+    requires bidirectional_iterator<_Ip>
   {
-    auto tmp = *this;
-    tmp.advance(-n);
-    return tmp;
+    auto __tmp = *this;
+    __tmp.advance(-n);
+    return __tmp;
   }
-  constexpr subrange& advance(iter_difference_t<I> n) {
-    if constexpr (bidirectional_iterator<I>) {
+  constexpr subrange& advance(iter_difference_t<_Ip> n) {
+    if constexpr (bidirectional_iterator<_Ip>) {
       if (n < 0) {
-        ranges::advance(begin_, n);
-        if constexpr (StoreSize)
-          size_.value += ::ycxx::detail::to_unsigned_like(-n);
+        ranges::advance(__begin_, n);
+        if constexpr (_StoreSize)
+          __size_.value += ::__ycxx::__detail::__to_unsigned_like(-n);
         return *this;
       }
     }
-    auto d = n - ranges::advance(begin_, n, end_);
-    if constexpr (StoreSize)
-      size_.value -= ::ycxx::detail::to_unsigned_like(d);
+    auto d = n - ranges::advance(__begin_, n, __end_);
+    if constexpr (_StoreSize)
+      __size_.value -= ::__ycxx::__detail::__to_unsigned_like(d);
     return *this;
   }
 };
 
-template <input_or_output_iterator I, sentinel_for<I> S>
-subrange(I, S) -> subrange<I, S>;
-template <input_or_output_iterator I, sentinel_for<I> S>
-subrange(I, S, make_unsigned_t<iter_difference_t<I>>) -> subrange<I, S, subrange_kind::sized>;
-template <borrowed_range R>
-subrange(R&&) -> subrange<iterator_t<R>, sentinel_t<R>,
-                          (sized_range<R> || sized_sentinel_for<sentinel_t<R>, iterator_t<R>>) ? subrange_kind::sized
+template <input_or_output_iterator _Ip, sentinel_for<_Ip> _Sp>
+subrange(_Ip, _Sp) -> subrange<_Ip, _Sp>;
+template <input_or_output_iterator _Ip, sentinel_for<_Ip> _Sp>
+subrange(_Ip, _Sp, make_unsigned_t<iter_difference_t<_Ip>>) -> subrange<_Ip, _Sp, subrange_kind::sized>;
+template <borrowed_range _Rp>
+subrange(_Rp&&) -> subrange<iterator_t<_Rp>, sentinel_t<_Rp>,
+                          (sized_range<_Rp> || sized_sentinel_for<sentinel_t<_Rp>, iterator_t<_Rp>>) ? subrange_kind::sized
                                                                                                : subrange_kind::unsized>;
-template <borrowed_range R>
-subrange(R&&, make_unsigned_t<range_difference_t<R>>) -> subrange<iterator_t<R>, sentinel_t<R>, subrange_kind::sized>;
+template <borrowed_range _Rp>
+subrange(_Rp&&, make_unsigned_t<range_difference_t<_Rp>>) -> subrange<iterator_t<_Rp>, sentinel_t<_Rp>, subrange_kind::sized>;
 
-template <size_t N, class I, class S, subrange_kind K>
-  requires((N == 0 && copyable<I>) || N == 1)
-constexpr auto get(const subrange<I, S, K>& r) {
-  if constexpr (N == 0)
+template <size_t _Np, class _Ip, class _Sp, subrange_kind _Kp>
+  requires((_Np == 0 && copyable<_Ip>) || _Np == 1)
+constexpr auto get(const subrange<_Ip, _Sp, _Kp>& r) {
+  if constexpr (_Np == 0)
     return r.begin();
   else
     return r.end();
 }
-template <size_t N, class I, class S, subrange_kind K>
-  requires(N < 2)
-constexpr auto get(subrange<I, S, K>&& r) {
-  if constexpr (N == 0)
+template <size_t _Np, class _Ip, class _Sp, subrange_kind _Kp>
+  requires(_Np < 2)
+constexpr auto get(subrange<_Ip, _Sp, _Kp>&& r) {
+  if constexpr (_Np == 0)
     return r.begin();
   else
     return r.end();
 }
 
-template <class I, class S, subrange_kind K>
-constexpr bool enable_borrowed_range<subrange<I, S, K>> = true;
+template <class _Ip, class _Sp, subrange_kind _Kp>
+constexpr bool enable_borrowed_range<subrange<_Ip, _Sp, _Kp>> = true;
 
 // [range.dangling]
 struct dangling {
   constexpr dangling() noexcept = default;
-  template <class... Args>
-  constexpr dangling(Args&&...) noexcept {}
+  template <class... _Args>
+  constexpr dangling(_Args&&...) noexcept {}
 };
 
-template <range R>
-using borrowed_iterator_t = conditional_t<borrowed_range<R>, iterator_t<R>, dangling>;
-template <range R>
-using borrowed_subrange_t = conditional_t<borrowed_range<R>, subrange<iterator_t<R>>, dangling>;
+template <range _Rp>
+using borrowed_iterator_t = conditional_t<borrowed_range<_Rp>, iterator_t<_Rp>, dangling>;
+template <range _Rp>
+using borrowed_subrange_t = conditional_t<borrowed_range<_Rp>, subrange<iterator_t<_Rp>>, dangling>;
 
 }} // namespace std::ranges
 
-namespace [[gnu::visibility("hidden")]] std {
+namespace [[__gnu__::__visibility__("hidden")]] std {
 using ranges::get;
 
-template <class I, class S, ranges::subrange_kind K>
-struct tuple_size<ranges::subrange<I, S, K>> : integral_constant<size_t, 2> {};
-template <class I, class S, ranges::subrange_kind K>
-struct tuple_element<0, ranges::subrange<I, S, K>> {
-  using type = I;
+template <class _Ip, class _Sp, ranges::subrange_kind _Kp>
+struct tuple_size<ranges::subrange<_Ip, _Sp, _Kp>> : integral_constant<size_t, 2> {};
+template <class _Ip, class _Sp, ranges::subrange_kind _Kp>
+struct tuple_element<0, ranges::subrange<_Ip, _Sp, _Kp>> {
+  using type = _Ip;
 };
-template <class I, class S, ranges::subrange_kind K>
-struct tuple_element<1, ranges::subrange<I, S, K>> {
-  using type = S;
+template <class _Ip, class _Sp, ranges::subrange_kind _Kp>
+struct tuple_element<1, ranges::subrange<_Ip, _Sp, _Kp>> {
+  using type = _Sp;
 };
-template <class I, class S, ranges::subrange_kind K>
-struct tuple_element<0, const ranges::subrange<I, S, K>> {
-  using type = I;
+template <class _Ip, class _Sp, ranges::subrange_kind _Kp>
+struct tuple_element<0, const ranges::subrange<_Ip, _Sp, _Kp>> {
+  using type = _Ip;
 };
-template <class I, class S, ranges::subrange_kind K>
-struct tuple_element<1, const ranges::subrange<I, S, K>> {
-  using type = S;
+template <class _Ip, class _Sp, ranges::subrange_kind _Kp>
+struct tuple_element<1, const ranges::subrange<_Ip, _Sp, _Kp>> {
+  using type = _Sp;
 };
 } // namespace std
 
-namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
-template <class I, class S, std::ranges::subrange_kind K>
-inline constexpr bool is_tuple_like_impl<std::ranges::subrange<I, S, K>> = true;
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+template <class _Ip, class _Sp, std::ranges::subrange_kind _Kp>
+inline constexpr bool __is_tuple_like_impl<std::ranges::subrange<_Ip, _Sp, _Kp>> = true;
 // Excluded from pair's and tuple's pair-like/tuple-like constructors and from the pair-like
 // uses_allocator_construction_args overload (pair.hpp).
-template <class I, class S, std::ranges::subrange_kind K>
-inline constexpr bool is_subrange<std::ranges::subrange<I, S, K>> = true;
-}} // namespace ycxx::detail
+template <class _Ip, class _Sp, std::ranges::subrange_kind _Kp>
+inline constexpr bool __is_subrange<std::ranges::subrange<_Ip, _Sp, _Kp>> = true;
+}} // namespace __ycxx::__detail

@@ -7,10 +7,10 @@
 #include "../../runtime/new/hidden.hpp"
 #include "../../runtime/new/allocation_table.hpp"
 
-asm((ycxx::detail::hide_allocation_function("_ZdlPvSt11align_val_t")));
+asm((__ycxx::__detail::__hide_allocation_function("_ZdlPvSt11align_val_t")));
 
 void operator delete(void* p, std::align_val_t a) noexcept {
-  if (auto f = ycxx_allocation_functions.delete_align; f != ycxx::detail::own_allocation_functions.delete_align)
-    return f(p, 0, static_cast<std::size_t>(a));
+  if (auto __f = __ycxx_allocation_functions.__delete_align; __f != __ycxx::__detail::__own_allocation_functions.__delete_align)
+    return __f(p, 0, static_cast<std::size_t>(a));
   
 }

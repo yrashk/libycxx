@@ -87,6 +87,8 @@ add_library(ycxx STATIC
   ${YCXX_CONTRACTS_SOURCES}
   src/hosted/contracts.cpp
   src/hosted/thread.cpp
+  src/hosted/parallel_scheduler.cpp
+  src/hosted/parallel_scheduler_query.cpp
   src/hosted/future.cpp
   src/hosted/rcu.cpp
   src/hosted/hazard_pointer.cpp

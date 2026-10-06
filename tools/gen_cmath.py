@@ -9,6 +9,9 @@ that is constant only if the builtin folds: DECISIONS §1.4, probing without the
 """
 import pathlib
 import re
+import sys
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
+from uglify import uglify_text  # noqa: E402  (the headers spell reserved names, DECISIONS §2)
 
 T = "C"
 UNARY = ("acos asin atan cos sin tan acosh asinh atanh cosh sinh tanh exp exp2 expm1 log log10 log1p log2 "
@@ -64,7 +67,7 @@ for f, a in PROBES.items():
     out.append(f"concept folds_{f} = requires {{ typename fold_probe<(bi::{f}<C>({a}) == bi::{f}<C>({a}))>; }};")
 out += ["", "} // namespace ycxx::detail::fpm::bi", ""]
 path = pathlib.Path(__file__).resolve().parent.parent / "include" / "ycxx" / "core" / "cmath_builtins.hpp"
-path.write_text("\n".join(out))
+path.write_text(uglify_text("\n".join(out)))
 print("wrote", path)
 
 # ---------------------------------------------------------------------------------------------
@@ -225,7 +228,7 @@ for name, sig, ret, impl, cexpr, fl in STD:
             std.append("}")
 std += ["", "} // namespace std", ""]
 path = pathlib.Path(__file__).resolve().parent.parent / "include" / "ycxx" / "core" / "cmath_std.hpp"
-path.write_text("\n".join(std))
+path.write_text(uglify_text("\n".join(std)))
 print("wrote", path)
 
 # ---------------------------------------------------------------------------------------------
@@ -250,5 +253,5 @@ mh = ["// -*- C++ -*-  libycxx: <math.h> ([support.c.headers.other])   [hosted; 
 mh += [f"using std::{n};" for n in names]
 mh += ["#endif", ""]
 path = pathlib.Path(__file__).resolve().parent.parent / "include" / "math.h"
-path.write_text("\n".join(mh))
+path.write_text(uglify_text("\n".join(mh)))
 print("wrote", path)

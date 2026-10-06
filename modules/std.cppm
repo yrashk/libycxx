@@ -1741,6 +1741,7 @@ export namespace std {
   using std::stop_callback_for_t;
   using std::stop_source;
   using std::stop_token;
+  using std::stop_token_of_t;
   using std::stoppable_token;
   using std::stoul;
   using std::stoull;
@@ -2227,6 +2228,7 @@ export namespace std {
     using std::execution::bulk_unchunked;
     using std::execution::bulk_unchunked_t;
     using std::execution::completion_signatures;
+    using std::execution::completion_signatures_of_t;
     using std::execution::connect;
     using std::execution::connect_result_t;
     using std::execution::connect_t;
@@ -2235,9 +2237,14 @@ export namespace std {
     using std::execution::counting_scope;
     using std::execution::default_domain;
     using std::execution::dependent_sender;
+    using std::execution::dependent_sender_error;
+    using std::execution::enable_sender;
     using std::execution::env;
     using std::execution::env_of_t;
+    using std::execution::error_types_of_t;
     using std::execution::forward_progress_guarantee;
+    using std::execution::get_await_completion_adaptor;
+    using std::execution::get_await_completion_adaptor_t;
     using std::execution::get_completion_domain;
     using std::execution::get_completion_domain_t;
     using std::execution::get_completion_scheduler;
@@ -2301,6 +2308,7 @@ export namespace std {
     using std::execution::sender_adaptor_closure;
     using std::execution::sender_in;
     using std::execution::sender_tag;
+    using std::execution::sends_stopped;
     using std::execution::seq;
     using std::execution::sequenced_policy;
     using std::execution::set_error;
@@ -2310,6 +2318,7 @@ export namespace std {
     using std::execution::set_value;
     using std::execution::set_value_t;
     using std::execution::simple_counting_scope;
+    using std::execution::spawn;
     using std::execution::spawn_future;
     using std::execution::spawn_future_t;
     using std::execution::spawn_t;
@@ -2321,6 +2330,7 @@ export namespace std {
     using std::execution::stopped_as_error_t;
     using std::execution::stopped_as_optional;
     using std::execution::stopped_as_optional_t;
+    using std::execution::tag_of_t;
     using std::execution::task;
     using std::execution::task_scheduler;
     using std::execution::then;

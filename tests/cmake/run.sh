@@ -22,7 +22,16 @@
 #      the freestanding smoke program (tests/freestanding) with no C library;
 #  10. the standard library modules: ycxx::modules is installed (libycxx-modules.a, the interface
 #      units as a CXX_MODULES file set) and examples/modules (`import std.compat;`) builds and runs
-#      from the installed package and with add_subdirectory, exporting none of libycxx's symbols.
+#      from the installed package and with add_subdirectory, exporting none of libycxx's symbols;
+#  11. the hosted layers (DECISIONS §18, examples/hosted-layers; Linux): Example A (host/, libycxx
+#      with YCXX_PAL=none and the program's own providers) builds, runs and prints its success
+#      line, has none of the POSIX platform layer and no malloc; its absent_* programs fail to
+#      build with diagnostics naming the missing layer; Example C (files/: the program's own
+#      'files' layer, a RAM disk, under the file streams) runs; on x86_64, Example B's kernel (limine/)
+#      links with no undefined symbol at the higher-half address. Booting it in QEMU (limine/run.sh)
+#      needs qemu-system-x86_64, xorriso and Limine's binary release: run with YCXX_TEST_QEMU=1
+#      (fetches Limine when missing), or automatically when the tools are installed and Limine is
+#      already in build/limine-v11.4.1-binary.
 #
 #   tests/cmake/run.sh [gcc] [clang]        (default: both)
 # Compilers come from the YCXX_* variables (tools/toolchain/activate.*), else g++-16 /
@@ -231,6 +240,103 @@ for c in $compilers; do
     bad $c "visibility: configure/build (see $log)"
   fi
 done
+
+# 11. the hosted layers: Example A (host program, own providers), its absent-layer programs, and
+# Example B's kernel (bare metal, Limine; booted in QEMU on request or when everything is there).
+if [ "$(uname -s)" = Linux ]; then
+  for c in $compilers; do
+    case $c in
+      gcc) cc=${YCXX_GCC:-gcc-16} cxx=${YCXX_GXX:-g++-16} ;;
+      clang) cc=${YCXX_CLANG:-clang-23} cxx=${YCXX_CLANGXX:-clang++-23} ;;
+    esac
+    ui_section "Hosted layers with $c (examples/hosted-layers)"
+    d=$work/$c/hosted-layers
+    rm -rf "$d"
+    mkdir -p "$d"
+    log=$d/log.txt
+    ui_info "log" "$log"
+    b=$d/host
+    if x cmake -S "$repo/examples/hosted-layers/host" -B "$b" -G Ninja -DCMAKE_C_COMPILER=$cc \
+         -DCMAKE_CXX_COMPILER=$cxx -DCMAKE_BUILD_TYPE=Release -DLIBYCXX_SOURCE_DIR="$repo" &&
+       x cmake --build "$b"; then
+      h_st=0
+      h_out=$("$b/hosted_layers_host" 2>&1) || h_st=$?
+      printf '$ %s\n%s\n[exit %s]\n' "$b/hosted_layers_host" "$h_out" "$h_st" >>"$log"
+      if [ "$h_st" = 0 ] && printf '%s\n' "$h_out" | grep -qx 'hosted-layers demo: ok'; then
+        ok $c "Example A (host, YCXX_PAL=none, own providers): build and run"
+      else
+        bad $c "Example A: the program failed (see $log)"
+      fi
+      # The program's primitives are its own: no POSIX platform layer, no C library heap.
+      if nm "$b/hosted_layers_host" | grep -qE ' (ycxx_pal_thread_create|ycxx_pal_random_open|ycxx_pal_map_file)$' ||
+         nm -u "$b/hosted_layers_host" | grep -qE ' (malloc|free)(@|$)'; then
+        bad $c "Example A: links libycxx's POSIX platform layer or malloc"
+      else
+        ok $c "Example A: none of libycxx's POSIX platform layer, no malloc"
+      fi
+    else
+      bad $c "Example A: configure/build (see $log)"
+    fi
+    # Absent layers fail when the program is built, naming the layer or its primitive.
+    for t in "thread:std::thread needs the 'threads' hosted layer" "sleep:undefined reference to .ycxx_pal_sleep_until" \
+             "random_device:undefined reference to .ycxx_pal_random_open" "fstream:<fstream> needs the C library (the 'clib' hosted layer"; do
+      name=${t%%:*} want=${t#*:}
+      if cmake --build "$b" --target absent_$name >"$d/absent_$name.log" 2>&1; then
+        bad $c "absent layer: absent_$name built"
+      elif grep -q "$want" "$d/absent_$name.log"; then
+        ok $c "absent layer: absent_$name fails to build, saying: $want"
+      else
+        bad $c "absent layer: absent_$name failed without the expected diagnostic (see $d/absent_$name.log)"
+      fi
+    done
+    # Example C: the program's own 'files' layer (a RAM disk) under the file streams, with the C
+    # library as a layer.
+    b=$d/files
+    if x cmake -S "$repo/examples/hosted-layers/files" -B "$b" -G Ninja -DCMAKE_C_COMPILER=$cc \
+         -DCMAKE_CXX_COMPILER=$cxx -DCMAKE_BUILD_TYPE=Release -DLIBYCXX_SOURCE_DIR="$repo" &&
+       x cmake --build "$b"; then
+      f_st=0
+      f_out=$(cd "$d" && "$b/hosted_layers_files" 2>&1) || f_st=$?
+      printf '$ %s\n%s\n[exit %s]\n' "$b/hosted_layers_files" "$f_out" "$f_st" >>"$log"
+      if [ "$f_st" = 0 ] && printf '%s\n' "$f_out" | grep -qx 'hosted-layers files demo: ok'; then
+        ok $c "Example C (the program's own files layer, a RAM disk, under the file streams): build and run"
+      else
+        bad $c "Example C: the program failed (see $log)"
+      fi
+    else
+      bad $c "Example C: configure/build (see $log)"
+    fi
+    # Example B: the kernel, built with its toolchain file (x86_64 hosts: the host compilers).
+    if [ "$(uname -m)" = x86_64 ]; then
+      k=$d/limine
+      if x cmake -S "$repo/examples/hosted-layers/limine" -B "$k" -G Ninja -DCMAKE_BUILD_TYPE=Release \
+           -DCMAKE_TOOLCHAIN_FILE="$repo/examples/hosted-layers/limine/toolchain.cmake" -DYCXX_COMPILER=$c &&
+         x cmake --build "$k"; then
+        undef=$(nm -u "$k/kernel.elf")
+        entry=$(readelf -h "$k/kernel.elf" | awk '/Entry point/ { print $4 }')
+        if [ -z "$undef" ] && [ "${entry#0xffffffff8}" != "$entry" ]; then
+          ok $c "Example B (bare metal): kernel.elf links, no undefined symbols, entry $entry"
+        else
+          printf 'undefined: %s\nentry: %s\n' "$undef" "$entry" >>"$log"
+          bad $c "Example B: kernel.elf has undefined symbols or a wrong entry (see $log)"
+        fi
+      else
+        bad $c "Example B: configure/build (see $log)"
+      fi
+      limine_dir=${LIMINE_DIR:-$repo/build/limine-v11.4.1-binary}
+      if [ "${YCXX_TEST_QEMU:-0}" = 1 ] || { command -v qemu-system-x86_64 >/dev/null &&
+           command -v xorriso >/dev/null && [ -f "$limine_dir/limine-bios-cd.bin" ]; }; then
+        if x env BUILD_DIR="$d/limine-boot" "$repo/examples/hosted-layers/limine/run.sh" $c; then
+          ok $c "Example B: booted by Limine in QEMU, the demonstration passed"
+        else
+          bad $c "Example B: the QEMU run failed (see $log; serial output in $d/limine-boot/serial.log)"
+        fi
+      else
+        ui_skip "[$c] Example B in QEMU" "(needs qemu-system-x86_64, xorriso and Limine in $limine_dir; YCXX_TEST_QEMU=1 fetches Limine)"
+      fi
+    fi
+  done
+fi
 
 # 5. an unsupported compiler is rejected by find_package (any installed prefix will do)
 for c in $compilers; do

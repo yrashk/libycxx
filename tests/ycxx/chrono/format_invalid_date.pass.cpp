@@ -4,6 +4,7 @@
 // day, so the specifiers that need one (%j, %U, %W, %V, %G, %g and their O forms) throw, as do
 // the weekday ones (%a, %A, %u, %w) unless the value holds a weekday of its own; the fields it
 // does hold (%Y, %m, %d, %F, %B for a valid month) are still formatted.
+// REQUIRES: exceptions
 #include <chrono>
 #include <format>
 #include <locale>

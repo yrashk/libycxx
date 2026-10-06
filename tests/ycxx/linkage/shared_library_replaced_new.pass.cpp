@@ -11,7 +11,7 @@
 //     every allocation; the nothrow single-object form is replaced too, and the shared library's
 //     nothrow allocation must reach that replacement.
 // FLAGS: -fPIC
-// UNSUPPORTED-SANITIZER: asan,tsan  the sanitizer runtime's replacement would compete with the test's own
+// UNSUPPORTED-SANITIZER: asan  the sanitizer runtime's replacement would compete with the test's own (under TSan, tools/ycxx-cxx links no sanitizer allocation functions)
 // SHARED: ../support/linkage/shared_alloc_lib.cpp
 // REQUIRES: exceptions
 #include <atomic>

@@ -11,7 +11,11 @@
 # clipboard; .md, the whole report as Markdown (also embedded in the .html); .tsv, one line per
 # test; .json, lit's results.
 # Environment: LIBCXX_TESTS, LIBSTDCXX_TESTS (default: /opt/src, else the cache that
-#              tools/fetch-suites fills; tools/lib/env.sh), SANITIZER (asan,ubsan),
+#              tools/fetch-suites fills; tools/lib/env.sh), SANITIZER (asan, ubsan, tsan; a
+#              comma-separated list: the tests are compiled with those sanitizers and linked with
+#              libycxx built with them, build/<compiler>-<sanitizers>, configured and brought up
+#              to date here; DECISIONS §6.8),
+#              YCXX_LIBDIR (the libycxx build to test instead of build/<compiler>[-<sanitizers>]),
 #              YCXX_STDLIB=libstdcxx (ycxx suite only: build against libstdc++ instead, the
 #              reference runs documented in tests/ycxx/REFERENCE.md),
 #              YCXX_LIT / YCXX_LIT_VERSION (how lit runs: tools/lib/env.sh; by default through uvx),
@@ -64,8 +68,25 @@ while [ $# -gt 0 ] && [ "$1" != "--" ]; do filter="${filter:+$filter|}$1"; shift
 [ "$1" = "--" ] && shift
 
 # lit test names are "<suite> :: <path relative to the test root>"; filter on the path.
+# The library the tests link: build/<compiler>, or for a sanitizer run a build of libycxx
+# instrumented with the same sanitizers, build/<compiler>-<sanitizers> (DECISIONS §6.8). The lit
+# configurations pass it to tools/ycxx-cxx (--libdir), so that each test's transcript names it.
+libdir=${YCXX_LIBDIR:-}
+san_flags=
+if [ -n "${SANITIZER:-}" ]; then
+  for s in $(echo "$SANITIZER" | tr , ' '); do
+    case $s in
+      asan) f=address ;; ubsan) f=undefined ;; tsan) f=thread ;;
+      *) echo "unknown sanitizer '$s' in SANITIZER (asan, ubsan, tsan)" >&2; exit 2 ;;
+    esac
+    san_flags=${san_flags:+$san_flags,}$f
+  done
+fi
+if [ -z "$libdir" ] && [ -n "$san_flags" ] && [ "${YCXX_STDLIB:-}" != libstdcxx ]; then
+  libdir=$repo/build/$compiler-$(echo "$SANITIZER" | tr , -)
+fi
 set -- ${filter:+--filter ":: ($filter)"} --param repo="$repo" --param compiler="$compiler" \
-  --param tests="$tests" ${SANITIZER:+--param sanitizer=$SANITIZER} \
+  --param tests="$tests" ${SANITIZER:+--param sanitizer=$SANITIZER} ${libdir:+--param libdir=$libdir} \
   ${YCXX_STDLIB:+--param stdlib=$YCXX_STDLIB} "$@"
 [ "${YCXX_HARDENED:-0}" = 1 ] && set -- --param hardened=1 "$@"
 if [ -n "${ycxx_config_name}" ]; then
@@ -103,6 +124,28 @@ if [ "${YCXX_STDLIB:-}" != libstdcxx ] && [ -z "${YCXX_LIBDIR:-}" ]; then
   elif [ ! -f "$repo/build/$compiler/libycxx.a" ]; then
     ui_fail "build/$compiler is not configured" "(tools/test -c $compiler build)"
     exit 2
+  fi
+  # A sanitizer run: the instrumented library, configured on first use like build/<compiler>
+  # (RelWithDebInfo, the same compilers) with YCXX_SANITIZE, and brought up to date.
+  if [ -n "$libdir" ]; then
+    rel=${libdir#"$repo/"}
+    if [ ! -f "$libdir/build.ninja" ]; then
+      case $compiler in
+        gcc) cc=${YCXX_GCC:-gcc-16} cxx=${YCXX_GXX:-g++-16} ;;
+        *) cc=${YCXX_CLANG:-clang-23} cxx=${YCXX_CLANGXX:-clang++-23} ;;
+      esac
+      if ! ui_step "configure $rel (-fsanitize=$san_flags)" "$repo/build/test-logs/configure-$compiler-for-$name.log" \
+        cmake -S "$repo" -B "$libdir" -G Ninja -DCMAKE_C_COMPILER="$cc" -DCMAKE_CXX_COMPILER="$cxx" \
+          -DCMAKE_BUILD_TYPE=RelWithDebInfo -DYCXX_SANITIZE="$san_flags"; then
+        [ "${ui_interrupted}" = 0 ] || exit 130
+        exit 1
+      fi
+    fi
+    if ! ui_step "library up to date ($rel, -fsanitize=$san_flags)" "$repo/build/test-logs/build-$compiler-for-$name-lib.log" \
+      ninja -C "$libdir"; then
+      [ "${ui_interrupted}" = 0 ] || exit 130
+      exit 1
+    fi
   fi
 fi
 # -a: lit prints every test's output, passing ones included: the commands the test ran, their
@@ -163,7 +206,9 @@ else ui_fail "$what: failures" "(lit exit $rc, $el)"; fi
 
 # The report: every test with its result, duration and transcript, and how the run was made.
 if [ -f "$base.json" ] || [ -f "$base.journal" ]; then
-  if [ "${YCXX_STDLIB:-}" = libstdcxx ]; then cxx_used="toolchain's libstdc++"; else cxx_used="libycxx, build/$compiler"; fi
+  if [ "${YCXX_STDLIB:-}" = libstdcxx ]; then cxx_used="toolchain's libstdc++"
+  elif [ -n "$libdir" ]; then cxx_used="libycxx, ${libdir#"$repo/"}${san_flags:+ (-fsanitize=$san_flags)}"
+  else cxx_used="libycxx, build/$compiler"; fi
   case $compiler in gcc) cxx=${YCXX_GXX:-g++-16} ;; *) cxx=${YCXX_CLANGXX:-clang++-23} ;; esac
   commit=$(git -C "$repo" rev-parse --short=12 HEAD 2>/dev/null || echo unknown)
   dirty=$(git -C "$repo" status --porcelain 2>/dev/null | wc -l | tr -d ' ')

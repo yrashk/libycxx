@@ -18,7 +18,7 @@
 #include "eh.hpp"
 #include "internal.hpp"
 
-namespace [[gnu::visibility("hidden")]] ycxx { namespace abi {
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __abi {
 namespace {
 
 enum : unsigned char {
@@ -65,18 +65,18 @@ std::intptr_t read_sleb128(const unsigned char*& p) noexcept {
   return static_cast<std::intptr_t>(result);
 }
 
-template <class T>
-T read_raw(const unsigned char*& p) noexcept {
-  T v;
-  __builtin_memcpy(&v, p, sizeof(T));
-  p += sizeof(T);
-  return v;
+template <class _Tp>
+_Tp read_raw(const unsigned char*& p) noexcept {
+  _Tp __v;
+  __builtin_memcpy(&__v, p, sizeof(_Tp));
+  p += sizeof(_Tp);
+  return __v;
 }
 
-std::size_t encoded_size(unsigned char enc) noexcept {
-  if (enc == pe_omit)
+std::size_t encoded_size(unsigned char __enc) noexcept {
+  if (__enc == pe_omit)
     return 0;
-  switch (enc & 0x0F) {
+  switch (__enc & 0x0F) {
   case pe_absptr:
     return sizeof(void*);
   case pe_udata2:
@@ -93,9 +93,9 @@ std::size_t encoded_size(unsigned char enc) noexcept {
   }
 }
 
-struct bases {
-  _Unwind_Context* ctx = nullptr;
-  std::uintptr_t func = 0;
+struct __y_bases {
+  _Unwind_Context* __ctx = nullptr;
+  std::uintptr_t __func = 0;
 };
 
 // The bases of DW_EH_PE_textrel and DW_EH_PE_datarel, asked of the unwinder only when an encoding
@@ -103,84 +103,84 @@ struct bases {
 // _Unwind_GetDataRelBase unavailable, and its libunwind aborts in them), and neither compiler
 // emits those encodings there (nor on the ELF targets libycxx supports). Templates, so that the
 // call is dependent and is not even looked at where the branch is discarded.
-template <class Context>
-std::uintptr_t text_rel_base(Context* ctx) noexcept {
-  if constexpr (!ycxx::detail::cfg::darwin) {
-    return _Unwind_GetTextRelBase(ctx);
+template <class _Context>
+std::uintptr_t text_rel_base(_Context* __ctx) noexcept {
+  if constexpr (!__ycxx::__detail::__cfg::__darwin) {
+    return _Unwind_GetTextRelBase(__ctx);
   } else {
-    (void)ctx;
+    (void)__ctx;
     std::terminate();
   }
 }
-template <class Context>
-std::uintptr_t data_rel_base(Context* ctx) noexcept {
-  if constexpr (!ycxx::detail::cfg::darwin) {
-    return _Unwind_GetDataRelBase(ctx);
+template <class _Context>
+std::uintptr_t data_rel_base(_Context* __ctx) noexcept {
+  if constexpr (!__ycxx::__detail::__cfg::__darwin) {
+    return _Unwind_GetDataRelBase(__ctx);
   } else {
-    (void)ctx;
+    (void)__ctx;
     std::terminate();
   }
 }
 
-std::uintptr_t read_encoded(const unsigned char*& p, unsigned char enc, const bases& b) noexcept {
-  if (enc == pe_omit)
+std::uintptr_t read_encoded(const unsigned char*& p, unsigned char __enc, const __y_bases& b) noexcept {
+  if (__enc == pe_omit)
     return 0;
   const unsigned char* start = p;
-  std::uintptr_t v;
-  switch (enc & 0x0F) {
+  std::uintptr_t __v;
+  switch (__enc & 0x0F) {
   case pe_absptr:
-    v = read_raw<std::uintptr_t>(p);
+    __v = read_raw<std::uintptr_t>(p);
     break;
   case pe_uleb128:
-    v = read_uleb128(p);
+    __v = read_uleb128(p);
     break;
   case pe_sleb128:
-    v = static_cast<std::uintptr_t>(read_sleb128(p));
+    __v = static_cast<std::uintptr_t>(read_sleb128(p));
     break;
   case pe_udata2:
-    v = read_raw<std::uint16_t>(p);
+    __v = read_raw<std::uint16_t>(p);
     break;
   case pe_udata4:
-    v = read_raw<std::uint32_t>(p);
+    __v = read_raw<std::uint32_t>(p);
     break;
   case pe_udata8:
-    v = static_cast<std::uintptr_t>(read_raw<std::uint64_t>(p));
+    __v = static_cast<std::uintptr_t>(read_raw<std::uint64_t>(p));
     break;
   case pe_sdata2:
-    v = static_cast<std::uintptr_t>(read_raw<std::int16_t>(p));
+    __v = static_cast<std::uintptr_t>(read_raw<std::int16_t>(p));
     break;
   case pe_sdata4:
-    v = static_cast<std::uintptr_t>(read_raw<std::int32_t>(p));
+    __v = static_cast<std::uintptr_t>(read_raw<std::int32_t>(p));
     break;
   case pe_sdata8:
-    v = static_cast<std::uintptr_t>(read_raw<std::int64_t>(p));
+    __v = static_cast<std::uintptr_t>(read_raw<std::int64_t>(p));
     break;
   default:
     std::terminate();
   }
-  if (v != 0) {
-    switch (enc & 0x70) {
+  if (__v != 0) {
+    switch (__enc & 0x70) {
     case pe_absptr:
       break;
     case pe_pcrel:
-      v += reinterpret_cast<std::uintptr_t>(start);
+      __v += reinterpret_cast<std::uintptr_t>(start);
       break;
     case pe_textrel:
-      v += ycxx::abi::text_rel_base(b.ctx);
+      __v += __ycxx::__abi::text_rel_base(b.__ctx);
       break;
     case pe_datarel:
-      v += ycxx::abi::data_rel_base(b.ctx);
+      __v += __ycxx::__abi::data_rel_base(b.__ctx);
       break;
     case pe_funcrel:
-      v += b.func;
+      __v += b.__func;
       break;
     default:
       std::terminate();
     }
-    if (enc & pe_indirect)
-      v = *reinterpret_cast<const std::uintptr_t*>(v);
+    if (__enc & pe_indirect)
+      __v = *reinterpret_cast<const std::uintptr_t*>(__v);
   }
-  return v;
+  return __v;
 }
 
 struct lsda_header {
@@ -192,88 +192,88 @@ struct lsda_header {
   const unsigned char* cs_end; // also the start of the action table
 };
 
-const unsigned char* parse_header(const unsigned char* p, const bases& b, lsda_header& h) noexcept {
+const unsigned char* parse_header(const unsigned char* p, const __y_bases& b, lsda_header& h) noexcept {
   const unsigned char lp_enc = *p++;
-  h.lpstart = lp_enc == pe_omit ? b.func : read_encoded(p, lp_enc, b);
+  h.lpstart = lp_enc == pe_omit ? b.__func : read_encoded(p, lp_enc, b);
   h.ttype_enc = *p++;
   h.ttype_end = nullptr;
   if (h.ttype_enc != pe_omit) {
-    const std::uintptr_t off = read_uleb128(p);
-    h.ttype_end = p + off;
+    const std::uintptr_t __off = read_uleb128(p);
+    h.ttype_end = p + __off;
   }
   h.cs_enc = *p++;
-  const std::uintptr_t len = read_uleb128(p);
+  const std::uintptr_t __len = read_uleb128(p);
   h.cs_begin = p;
-  h.cs_end = p + len;
+  h.cs_end = p + __len;
   return p;
 }
 
-const std::type_info* type_entry(const lsda_header& h, std::intptr_t index, const bases& b) noexcept {
+const std::type_info* type_entry(const lsda_header& h, std::intptr_t index, const __y_bases& b) noexcept {
   const unsigned char* p = h.ttype_end - index * static_cast<std::intptr_t>(encoded_size(h.ttype_enc));
   return reinterpret_cast<const std::type_info*>(read_encoded(p, h.ttype_enc, b));
 }
 
 // An exception specification (filter < 0) is violated when no listed type matches.
-bool spec_violated(const lsda_header& h, std::intptr_t filter, const std::type_info* thrown, void* obj,
-                   const bases& b) noexcept {
+bool spec_violated(const lsda_header& h, std::intptr_t filter, const std::type_info* __thrown, void* __obj,
+                   const __y_bases& b) noexcept {
   const unsigned char* p = h.ttype_end + (-filter - 1);
   while (const std::uintptr_t index = read_uleb128(p)) {
-    if (!thrown)
+    if (!__thrown)
       continue; // a foreign exception matches no listed type
-    void* adjusted = obj;
-    if (catch_matches(type_entry(h, static_cast<std::intptr_t>(index), b), thrown, &adjusted))
+    void* adjusted = __obj;
+    if (__catch_matches(type_entry(h, static_cast<std::intptr_t>(index), b), __thrown, &adjusted))
       return false;
   }
   return true;
 }
 
-enum class found { nothing, cleanup, handler, terminate };
+enum class found { nothing, cleanup, __handler, terminate };
 
 struct scan_result {
   found kind = found::nothing;
   std::uintptr_t landing_pad = 0;
   std::intptr_t switch_value = 0;
-  const unsigned char* action_record = nullptr;
+  const unsigned char* __action_record = nullptr;
   void* adjusted = nullptr;
 };
 
-scan_result scan(_Unwind_Action actions, bool native, _Unwind_Exception* ue, _Unwind_Context* ctx) noexcept {
+scan_result scan(_Unwind_Action actions, bool native, _Unwind_Exception* __ue, _Unwind_Context* __ctx) noexcept {
   scan_result r;
-  const unsigned char* lsda = ycxx::abi::lsda_of(ctx);
-  if (!lsda)
+  const unsigned char* __lsda = __ycxx::__abi::__lsda_of(__ctx);
+  if (!__lsda)
     return r;
-  bases b;
-  b.ctx = ctx;
-  b.func = _Unwind_GetRegionStart(ctx);
+  __y_bases b;
+  b.__ctx = __ctx;
+  b.__func = _Unwind_GetRegionStart(__ctx);
   int before = 0;
-  std::uintptr_t ip = _Unwind_GetIPInfo(ctx, &before);
+  std::uintptr_t __ip = _Unwind_GetIPInfo(__ctx, &before);
   if (!before)
-    --ip; // the return address may be the first instruction of the next region
+    --__ip; // the return address may be the first instruction of the next region
 
   lsda_header h;
-  parse_header(lsda, b, h);
+  parse_header(__lsda, b, h);
 
-  const std::type_info* thrown = nullptr;
-  void* obj = nullptr;
+  const std::type_info* __thrown = nullptr;
+  void* __obj = nullptr;
   if (native) {
-    exception_header* eh = header_of_unwind(ue);
-    thrown = eh->exception_type;
-    obj = object_of(eh);
+    __exception_header* eh = __header_of_unwind(__ue);
+    __thrown = eh->__exception_type;
+    __obj = object_of(eh);
   }
 
   const unsigned char* p = h.cs_begin;
   while (p < h.cs_end) {
     const std::uintptr_t start = read_encoded(p, h.cs_enc, b);
     const std::uintptr_t length = read_encoded(p, h.cs_enc, b);
-    const std::uintptr_t pad = read_encoded(p, h.cs_enc, b);
+    const std::uintptr_t __pad = read_encoded(p, h.cs_enc, b);
     const std::uintptr_t action = read_uleb128(p);
-    if (ip < b.func + start)
+    if (__ip < b.__func + start)
       break; // the table is sorted: no entry covers ip
-    if (ip >= b.func + start + length)
+    if (__ip >= b.__func + start + length)
       continue;
-    if (pad == 0)
+    if (__pad == 0)
       return r; // no landing pad: nothing to do in this frame
-    r.landing_pad = h.lpstart + pad;
+    r.landing_pad = h.lpstart + __pad;
     if (action == 0) {
       r.kind = found::cleanup;
       return r;
@@ -287,7 +287,7 @@ scan_result scan(_Unwind_Action actions, bool native, _Unwind_Exception* ue, _Un
       const std::intptr_t next = read_sleb128(rec);
       if (filter > 0) {
         const std::type_info* t = type_entry(h, filter, b);
-        void* adjusted = obj;
+        void* adjusted = __obj;
         // A forced unwind (thread cancellation, pthread_exit) runs cleanups but no handler of
         // its own choosing. Clang folds a frame's cleanups into its catch(...) landing pad and
         // records no separate cleanup action, so catch(...) counts as a cleanup: the landing
@@ -295,19 +295,19 @@ scan_result scan(_Unwind_Action actions, bool native, _Unwind_Exception* ue, _Un
         if (t == nullptr && (actions & _UA_FORCE_UNWIND))
           has_cleanup = true;
         if (!(actions & _UA_FORCE_UNWIND) &&
-            (t == nullptr || (native && catch_matches(t, thrown, &adjusted)))) {
-          r.kind = found::handler;
+            (t == nullptr || (native && __catch_matches(t, __thrown, &adjusted)))) {
+          r.kind = found::__handler;
           r.switch_value = filter;
-          r.action_record = this_rec;
-          r.adjusted = t == nullptr ? obj : adjusted;
+          r.__action_record = this_rec;
+          r.adjusted = t == nullptr ? __obj : adjusted;
           return r;
         }
       } else if (filter < 0) {
-        if (!(actions & _UA_FORCE_UNWIND) && spec_violated(h, filter, thrown, obj, b)) {
-          r.kind = found::handler;
+        if (!(actions & _UA_FORCE_UNWIND) && spec_violated(h, filter, __thrown, __obj, b)) {
+          r.kind = found::__handler;
           r.switch_value = filter;
-          r.action_record = this_rec;
-          r.adjusted = obj;
+          r.__action_record = this_rec;
+          r.adjusted = __obj;
           return r;
         }
       } else {
@@ -325,47 +325,47 @@ scan_result scan(_Unwind_Action actions, bool native, _Unwind_Exception* ue, _Un
   return r;
 }
 
-_Unwind_Reason_Code install(_Unwind_Context* ctx, _Unwind_Exception* ue, std::intptr_t switch_value,
+_Unwind_Reason_Code install(_Unwind_Context* __ctx, _Unwind_Exception* __ue, std::intptr_t switch_value,
                             std::uintptr_t landing_pad) noexcept {
-  _Unwind_SetGR(ctx, __builtin_eh_return_data_regno(0), reinterpret_cast<std::uintptr_t>(ue));
-  _Unwind_SetGR(ctx, __builtin_eh_return_data_regno(1), static_cast<std::uintptr_t>(switch_value));
-  _Unwind_SetIP(ctx, landing_pad);
+  _Unwind_SetGR(__ctx, __builtin_eh_return_data_regno(0), reinterpret_cast<std::uintptr_t>(__ue));
+  _Unwind_SetGR(__ctx, __builtin_eh_return_data_regno(1), static_cast<std::uintptr_t>(switch_value));
+  _Unwind_SetIP(__ctx, landing_pad);
   return _URC_INSTALL_CONTEXT;
 }
 
 } // namespace
-}} // namespace ycxx::abi
+}} // namespace __ycxx::__abi
 
-using namespace ycxx::abi;
+using namespace __ycxx::__abi;
 
-extern "C" [[gnu::visibility("hidden")]] _Unwind_Reason_Code __gxx_personality_v0(int version, _Unwind_Action actions, std::uint64_t cls,
-                                                    _Unwind_Exception* ue, _Unwind_Context* ctx) {
-  if (version != 1 || !ue || !ctx)
+extern "C" [[__gnu__::__visibility__("hidden")]] _Unwind_Reason_Code __gxx_personality_v0(int version, _Unwind_Action actions, std::uint64_t __cls,
+                                                    _Unwind_Exception* __ue, _Unwind_Context* __ctx) {
+  if (version != 1 || !__ue || !__ctx)
     return _URC_FATAL_PHASE1_ERROR;
-  const bool native = is_native(cls);
+  const bool native = __is_native(__cls);
 
   // Phase 2 in the frame phase 1 chose: use what phase 1 cached ([ABI-EH] 2.2.1).
   if (actions == (_UA_CLEANUP_PHASE | _UA_HANDLER_FRAME) && native) {
-    exception_header* h = header_of_unwind(ue);
-    return install(ctx, ue, h->handler_switch_value, reinterpret_cast<std::uintptr_t>(h->catch_temp));
+    __exception_header* h = __header_of_unwind(__ue);
+    return install(__ctx, __ue, h->__handler_switch_value, reinterpret_cast<std::uintptr_t>(h->__catch_temp));
   }
 
-  const scan_result r = scan(actions, native, ue, ctx);
+  const scan_result r = scan(actions, native, __ue, __ctx);
   if (actions & _UA_SEARCH_PHASE) {
     switch (r.kind) {
     case found::nothing:
     case found::cleanup:
       return _URC_CONTINUE_UNWIND;
     case found::terminate:
-      terminate_for(ue);
-    case found::handler:
+      __terminate_for(__ue);
+    case found::__handler:
       if (native) {
-        exception_header* h = header_of_unwind(ue);
-        h->handler_switch_value = static_cast<int>(r.switch_value);
-        h->action_record = r.action_record;
-        h->lsda = ycxx::abi::lsda_of(ctx);
-        h->catch_temp = reinterpret_cast<void*>(r.landing_pad);
-        h->adjusted_ptr = r.adjusted;
+        __exception_header* h = __header_of_unwind(__ue);
+        h->__handler_switch_value = static_cast<int>(r.switch_value);
+        h->__action_record = r.__action_record;
+        h->__lsda = __ycxx::__abi::__lsda_of(__ctx);
+        h->__catch_temp = reinterpret_cast<void*>(r.landing_pad);
+        h->__adjusted_ptr = r.adjusted;
       }
       return _URC_HANDLER_FOUND;
     }
@@ -376,15 +376,15 @@ extern "C" [[gnu::visibility("hidden")]] _Unwind_Reason_Code __gxx_personality_v
   case found::nothing:
     return _URC_CONTINUE_UNWIND;
   case found::terminate:
-    terminate_for(ue);
+    __terminate_for(__ue);
   case found::cleanup:
-    return install(ctx, ue, 0, r.landing_pad);
-  case found::handler:
+    return install(__ctx, __ue, 0, r.landing_pad);
+  case found::__handler:
     if (actions & _UA_HANDLER_FRAME)
-      return install(ctx, ue, r.switch_value, r.landing_pad); // a foreign exception's handler
+      return install(__ctx, __ue, r.switch_value, r.landing_pad); // a foreign exception's handler
     // A catch here that phase 1 did not choose: run the frame's cleanups only. Selector 0
     // matches no catch clause, so the landing pad resumes unwinding after them.
-    return install(ctx, ue, 0, r.landing_pad);
+    return install(__ctx, __ue, 0, r.landing_pad);
   }
   return _URC_FATAL_PHASE2_ERROR;
 }

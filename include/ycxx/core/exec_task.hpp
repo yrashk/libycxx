@@ -15,167 +15,167 @@
 
 // ---------------------------------------------------------------------------------------------
 // [exec.task.scheduler]
-namespace [[gnu::visibility("hidden")]] std { namespace execution {
+namespace [[__gnu__::__visibility__("hidden")]] std { namespace execution {
 class task_scheduler;
 }} // namespace std::execution
 
-namespace [[gnu::visibility("hidden")]] ycxx { namespace detail { namespace exec {
-struct ts_access;
-}}} // namespace ycxx::detail::exec
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail { namespace __exec {
+struct __ts_access;
+}}} // namespace __ycxx::__detail::__exec
 
-namespace [[gnu::visibility("hidden")]] ycxx { namespace adl_free {
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __adl_free {
 // What task_scheduler needs of its backend beyond parallel_scheduler_backend.
-struct exec_ts_backend_base : std::execution::parallel_scheduler_replacement::parallel_scheduler_backend {
-  virtual const void* ycxx_type() const noexcept = 0;
-  virtual const void* ycxx_sched() const noexcept = 0;
-  virtual std::execution::forward_progress_guarantee ycxx_fpg() const noexcept = 0;
-  virtual bool ycxx_equal_to(const std::execution::task_scheduler& lhs) const noexcept = 0;
+struct __exec_ts_backend_base : std::execution::parallel_scheduler_replacement::parallel_scheduler_backend {
+  virtual const void* __ycxx_type() const noexcept = 0;
+  virtual const void* __ycxx_sched() const noexcept = 0;
+  virtual std::execution::forward_progress_guarantee __ycxx_fpg() const noexcept = 0;
+  virtual bool __ycxx_equal_to(const std::execution::task_scheduler& __lhs) const noexcept = 0;
 };
 
 // just-sndr-like ([exec.task.scheduler]/9)
-template <class Sch>
-struct exec_just_sndr_like {
+template <class _Sch>
+struct __exec_just_sndr_like {
   using sender_concept = std::execution::sender_tag;
-  Sch sched;
-  template <class Self, class... Env>
-  using ycxx_csigs = std::execution::completion_signatures<std::execution::set_value_t()>;
-  template <class Self, class... Env>
+  _Sch __sched;
+  template <class _Self, class... _Env>
+  using __ycxx_csigs = std::execution::completion_signatures<std::execution::set_value_t()>;
+  template <class _Self, class... _Env>
   static consteval auto get_completion_signatures() {
     return std::execution::completion_signatures<std::execution::set_value_t()>();
   }
-  struct attrs {
-    Sch sched;
-    template <class... Envs>
-      requires requires(const Sch& s, const Envs&... e) { std::execution::get_completion_scheduler<std::execution::set_value_t>(s, e...); }
-    auto query(std::execution::get_completion_scheduler_t<std::execution::set_value_t>, const Envs&... envs) const noexcept {
-      return std::execution::get_completion_scheduler<std::execution::set_value_t>(sched, envs...);
+  struct __attrs {
+    _Sch __sched;
+    template <class... _Envs>
+      requires requires(const _Sch& s, const _Envs&... e) { std::execution::get_completion_scheduler<std::execution::set_value_t>(s, e...); }
+    auto query(std::execution::get_completion_scheduler_t<std::execution::set_value_t>, const _Envs&... __envs) const noexcept {
+      return std::execution::get_completion_scheduler<std::execution::set_value_t>(__sched, __envs...);
     }
-    template <class... Envs>
-      requires requires(const Sch& s, const Envs&... e) { std::execution::get_completion_domain<std::execution::set_value_t>(s, e...); }
-    auto query(std::execution::get_completion_domain_t<std::execution::set_value_t>, const Envs&... envs) const noexcept {
-      return std::execution::get_completion_domain<std::execution::set_value_t>(sched, envs...);
+    template <class... _Envs>
+      requires requires(const _Sch& s, const _Envs&... e) { std::execution::get_completion_domain<std::execution::set_value_t>(s, e...); }
+    auto query(std::execution::get_completion_domain_t<std::execution::set_value_t>, const _Envs&... __envs) const noexcept {
+      return std::execution::get_completion_domain<std::execution::set_value_t>(__sched, __envs...);
     }
   };
-  attrs get_env() const noexcept { return {sched}; }
-  template <class Rcvr>
-  exec_inline_state<std::remove_cvref_t<Rcvr>> connect(Rcvr&& rcvr) const noexcept(std::is_nothrow_constructible_v<std::remove_cvref_t<Rcvr>, Rcvr>) {
-    return {static_cast<Rcvr&&>(rcvr)};
+  __attrs get_env() const noexcept { return {__sched}; }
+  template <class _Rcvr>
+  __exec_inline_state<std::remove_cvref_t<_Rcvr>> connect(_Rcvr&& __rcvr) const noexcept(std::is_nothrow_constructible_v<std::remove_cvref_t<_Rcvr>, _Rcvr>) {
+    return {static_cast<_Rcvr&&>(__rcvr)};
   }
 };
 
 // WRAP-RCVR(r) ([exec.task.scheduler]/8) for an operation the backend placed in the proxy's
 // storage (or on the heap): it destroys that operation before it completes r.
-struct exec_wrap_env {
+struct __exec_wrap_env {
   std::execution::parallel_scheduler_replacement::receiver_proxy* r;
   std::inplace_stop_token query(std::get_stop_token_t) const noexcept {
     return r->try_query<std::inplace_stop_token>(std::get_stop_token).value_or(std::inplace_stop_token());
   }
 };
-struct exec_wrap_rcvr {
+struct __exec_wrap_rcvr {
   using receiver_concept = std::execution::receiver_tag;
   std::execution::parallel_scheduler_replacement::receiver_proxy* r;
   void* op;
   void (*destroy)(void*) noexcept;
 
   void set_value() && noexcept {
-    auto* rr = r;
+    auto* __rr = r;
     destroy(op);
-    rr->set_value();
+    __rr->set_value();
   }
-  template <class E>
-  void set_error(E&& e) && noexcept {
-    auto* rr = r;
-    std::exception_ptr ep = ::ycxx::detail::exec::as_except_ptr(static_cast<E&&>(e));
+  template <class _Ep>
+  void set_error(_Ep&& e) && noexcept {
+    auto* __rr = r;
+    std::exception_ptr __ep = ::__ycxx::__detail::__exec::__as_except_ptr(static_cast<_Ep&&>(e));
     destroy(op);
-    rr->set_error(static_cast<std::exception_ptr&&>(ep));
+    __rr->set_error(static_cast<std::exception_ptr&&>(__ep));
   }
   void set_stopped() && noexcept {
-    auto* rr = r;
+    auto* __rr = r;
     destroy(op);
-    rr->set_stopped();
+    __rr->set_stopped();
   }
-  exec_wrap_env get_env() const noexcept { return {r}; }
+  __exec_wrap_env get_env() const noexcept { return {r}; }
 };
-}} // namespace ycxx::adl_free
+}} // namespace __ycxx::__adl_free
 
-namespace [[gnu::visibility("hidden")]] std { namespace execution {
+namespace [[__gnu__::__visibility__("hidden")]] std { namespace execution {
 
 class task_scheduler {
-  class ts_domain;
-  template <scheduler Sch>
-  class backend_for;
-  friend struct ycxx::detail::exec::ts_access;
+  class __ts_domain;
+  template <scheduler _Sch>
+  class __backend_for;
+  friend struct __ycxx::__detail::__exec::__ts_access;
 
-  shared_ptr<ycxx::adl_free::exec_ts_backend_base> sch_;
+  shared_ptr<__ycxx::__adl_free::__exec_ts_backend_base> __sch_;
 
 public:
   using scheduler_concept = scheduler_tag;
 
-  template <class Sch, class Allocator = allocator<void>>
-    requires(!same_as<task_scheduler, remove_cvref_t<Sch>>) && scheduler<Sch>
-  explicit task_scheduler(Sch&& sch, Allocator alloc = {});
+  template <class _Sch, class _Allocator = allocator<void>>
+    requires(!same_as<task_scheduler, remove_cvref_t<_Sch>>) && scheduler<_Sch>
+  explicit task_scheduler(_Sch&& __sch, _Allocator __alloc = {});
   task_scheduler(const task_scheduler&) = default;
   task_scheduler& operator=(const task_scheduler&) = default;
 
   auto schedule() const noexcept;
 
-  friend bool operator==(const task_scheduler& lhs, const task_scheduler& rhs) noexcept { return rhs.sch_->ycxx_equal_to(lhs); }
+  friend bool operator==(const task_scheduler& __lhs, const task_scheduler& __rhs) noexcept { return __rhs.__sch_->__ycxx_equal_to(__lhs); }
   // TS deduced (only task_scheduler is accepted) so that the operator, found by argument-dependent
   // lookup for any type with task_scheduler among its template arguments, checks scheduler<Sch>
   // only when the left operand is a task_scheduler.
-  template <class TS, class Sch>
-    requires same_as<TS, task_scheduler> && (!same_as<task_scheduler, Sch>) && scheduler<Sch>
-  friend bool operator==(const TS& lhs, const Sch& rhs) noexcept {
-    if (lhs.sch_->ycxx_type() != &ycxx::detail::exec::type_key<Sch>)
+  template <class _TS, class _Sch>
+    requires same_as<_TS, task_scheduler> && (!same_as<task_scheduler, _Sch>) && scheduler<_Sch>
+  friend bool operator==(const _TS& __lhs, const _Sch& __rhs) noexcept {
+    if (__lhs.__sch_->__ycxx_type() != &__ycxx::__detail::__exec::__type_key<_Sch>)
       return false;
-    return *static_cast<const Sch*>(lhs.sch_->ycxx_sched()) == rhs;
+    return *static_cast<const _Sch*>(__lhs.__sch_->__ycxx_sched()) == __rhs;
   }
 
-  forward_progress_guarantee query(get_forward_progress_guarantee_t) const noexcept { return sch_->ycxx_fpg(); }
-  template <class... Envs>
-  ts_domain query(get_completion_domain_t<set_value_t>, const Envs&...) const noexcept;
+  forward_progress_guarantee query(get_forward_progress_guarantee_t) const noexcept { return __sch_->__ycxx_fpg(); }
+  template <class... _Envs>
+  __ts_domain query(get_completion_domain_t<set_value_t>, const _Envs&...) const noexcept;
 };
 
 }} // namespace std::execution
 
-namespace [[gnu::visibility("hidden")]] ycxx { namespace detail { namespace exec {
-struct ts_access {
-  static const auto& backend(const std::execution::task_scheduler& s) noexcept { return s.sch_; }
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail { namespace __exec {
+struct __ts_access {
+  static const auto& __backend(const std::execution::task_scheduler& s) noexcept { return s.__sch_; }
 };
 
 // An operation of type Op placed in a proxy's backend storage when it fits, else on the heap.
-template <class Op>
-struct placed_op {
-  static void destroy_in_place(void* p) noexcept { static_cast<Op*>(p)->~Op(); }
-  static void destroy_heap(void* p) noexcept {
-    static_cast<Op*>(p)->~Op();
-    ::operator delete(p, std::align_val_t(alignof(Op)));
+template <class _Op_>
+struct __placed_op {
+  static void __destroy_in_place(void* p) noexcept { static_cast<_Op_*>(p)->~_Op_(); }
+  static void __destroy_heap(void* p) noexcept {
+    static_cast<_Op_*>(p)->~_Op_();
+    ::operator delete(p, std::align_val_t(alignof(_Op_)));
   }
   // Constructs make(wrap_rcvr) in s or on the heap and starts it; failures complete r.
-  template <class Make>
-  static void run(std::execution::parallel_scheduler_replacement::receiver_proxy& r, std::span<std::byte> s, Make make) noexcept {
-    void* mem = s.data();
+  template <class _Make>
+  static void run(std::execution::parallel_scheduler_replacement::receiver_proxy& r, std::span<std::byte> s, _Make __make) noexcept {
+    void* __mem = s.data();
     std::size_t space = s.size();
-    bool heap = false;
-    if (!mem || !std::align(alignof(Op), sizeof(Op), mem, space)) {
-      mem = ::operator new(sizeof(Op), std::align_val_t(alignof(Op)), std::nothrow);
-      if (!mem) {
+    bool __heap = false;
+    if (!__mem || !std::align(alignof(_Op_), sizeof(_Op_), __mem, space)) {
+      __mem = ::operator new(sizeof(_Op_), std::align_val_t(alignof(_Op_)), std::nothrow);
+      if (!__mem) {
         r.set_error(std::make_exception_ptr(std::bad_alloc()));
         return;
       }
-      heap = true;
+      __heap = true;
     }
-    ::ycxx::adl_free::exec_wrap_rcvr w{&r, mem, heap ? &destroy_heap : &destroy_in_place};
-    auto construct = [&] { return ::new (mem) Op(make(w)); };
-    Op* op;
-    if constexpr (noexcept(make(w)) || !cfg::exceptions) {
+    ::__ycxx::__adl_free::__exec_wrap_rcvr __w{&r, __mem, __heap ? &__destroy_heap : &__destroy_in_place};
+    auto construct = [&] { return ::new (__mem) _Op_(__make(__w)); };
+    _Op_* op;
+    if constexpr (noexcept(__make(__w)) || !__cfg::exceptions) {
       op = construct();
     } else {
       try {
         op = construct();
       } catch (...) {
-        if (heap)
-          ::operator delete(mem, std::align_val_t(alignof(Op)));
+        if (__heap)
+          ::operator delete(__mem, std::align_val_t(alignof(_Op_)));
         r.set_error(std::current_exception());
         return;
       }
@@ -185,343 +185,343 @@ struct placed_op {
 };
 
 // fn of schedule_bulk_chunked / schedule_bulk_unchunked ([exec.task.scheduler]/11-12)
-struct ts_bulk_fn {
+struct __ts_bulk_fn {
   std::execution::parallel_scheduler_replacement::bulk_item_receiver_proxy* r;
   std::size_t chunk;
-  std::size_t shape;
+  std::size_t __shape;
   void operator()(std::size_t i) const noexcept {
     const std::size_t b = i * chunk;
-    r->execute(b, b + chunk < shape ? b + chunk : shape);
+    r->execute(b, b + chunk < __shape ? b + chunk : __shape);
   }
 };
-}}} // namespace ycxx::detail::exec
+}}} // namespace __ycxx::__detail::__exec
 
-namespace [[gnu::visibility("hidden")]] std { namespace execution {
+namespace [[__gnu__::__visibility__("hidden")]] std { namespace execution {
 
-template <scheduler Sch>
-class task_scheduler::backend_for : public ycxx::adl_free::exec_ts_backend_base {
-  using wrap_rcvr = ycxx::adl_free::exec_wrap_rcvr;
-  using bulk_sndr = decltype(bulk(declval<ycxx::adl_free::exec_just_sndr_like<Sch>>(), par, size_t(), ycxx::detail::exec::ts_bulk_fn()));
+template <scheduler _Sch>
+class task_scheduler::__backend_for : public __ycxx::__adl_free::__exec_ts_backend_base {
+  using __wrap_rcvr = __ycxx::__adl_free::__exec_wrap_rcvr;
+  using __bulk_sndr = decltype(bulk(declval<__ycxx::__adl_free::__exec_just_sndr_like<_Sch>>(), par, size_t(), __ycxx::__detail::__exec::__ts_bulk_fn()));
 
-  void run_bulk(size_t num_chunks, size_t chunk, size_t shape, parallel_scheduler_replacement::bulk_item_receiver_proxy& r,
+  void __run_bulk(size_t __num_chunks, size_t chunk, size_t __shape, parallel_scheduler_replacement::bulk_item_receiver_proxy& r,
                 span<byte> s) noexcept {
-    using op_t = connect_result_t<bulk_sndr, wrap_rcvr>;
-    ycxx::detail::exec::placed_op<op_t>::run(r, s, [&](wrap_rcvr w) {
-      return connect(bulk(ycxx::adl_free::exec_just_sndr_like<Sch>{sched_}, par, num_chunks, ycxx::detail::exec::ts_bulk_fn{&r, chunk, shape}),
-                     static_cast<wrap_rcvr&&>(w));
+    using __op_t = connect_result_t<__bulk_sndr, __wrap_rcvr>;
+    __ycxx::__detail::__exec::__placed_op<__op_t>::run(r, s, [&](__wrap_rcvr __w) {
+      return connect(bulk(__ycxx::__adl_free::__exec_just_sndr_like<_Sch>{__sched_}, par, __num_chunks, __ycxx::__detail::__exec::__ts_bulk_fn{&r, chunk, __shape}),
+                     static_cast<__wrap_rcvr&&>(__w));
     });
   }
 
 public:
-  explicit backend_for(Sch sch) : sched_(static_cast<Sch&&>(sch)) {}
+  explicit __backend_for(_Sch __sch) : __sched_(static_cast<_Sch&&>(__sch)) {}
 
   void schedule(parallel_scheduler_replacement::receiver_proxy& r, span<byte> s) noexcept override {
-    using op_t = connect_result_t<schedule_result_t<Sch&>, wrap_rcvr>;
-    ycxx::detail::exec::placed_op<op_t>::run(r, s, [&](wrap_rcvr w) { return connect(execution::schedule(sched_), static_cast<wrap_rcvr&&>(w)); });
+    using __op_t = connect_result_t<schedule_result_t<_Sch&>, __wrap_rcvr>;
+    __ycxx::__detail::__exec::__placed_op<__op_t>::run(r, s, [&](__wrap_rcvr __w) { return connect(execution::schedule(__sched_), static_cast<__wrap_rcvr&&>(__w)); });
   }
-  void schedule_bulk_chunked(size_t shape, parallel_scheduler_replacement::bulk_item_receiver_proxy& r, span<byte> s) noexcept override {
+  void schedule_bulk_chunked(size_t __shape, parallel_scheduler_replacement::bulk_item_receiver_proxy& r, span<byte> s) noexcept override {
     // chunk_size: at most 64 chunks (the scheduler behind is unknown).
-    const size_t chunk = shape == 0 ? 1 : (shape + 63) / 64;
-    run_bulk((shape + chunk - 1) / chunk, chunk, shape, r, s);
+    const size_t chunk = __shape == 0 ? 1 : (__shape + 63) / 64;
+    __run_bulk((__shape + chunk - 1) / chunk, chunk, __shape, r, s);
   }
-  void schedule_bulk_unchunked(size_t shape, parallel_scheduler_replacement::bulk_item_receiver_proxy& r, span<byte> s) noexcept override {
-    run_bulk(shape, 1, shape, r, s);
+  void schedule_bulk_unchunked(size_t __shape, parallel_scheduler_replacement::bulk_item_receiver_proxy& r, span<byte> s) noexcept override {
+    __run_bulk(__shape, 1, __shape, r, s);
   }
 
-  const void* ycxx_type() const noexcept override { return &ycxx::detail::exec::type_key<Sch>; }
-  const void* ycxx_sched() const noexcept override { return __builtin_addressof(sched_); }
-  forward_progress_guarantee ycxx_fpg() const noexcept override { return get_forward_progress_guarantee(sched_); }
-  bool ycxx_equal_to(const task_scheduler& lhs) const noexcept override { return lhs == sched_; }
+  const void* __ycxx_type() const noexcept override { return &__ycxx::__detail::__exec::__type_key<_Sch>; }
+  const void* __ycxx_sched() const noexcept override { return __builtin_addressof(__sched_); }
+  forward_progress_guarantee __ycxx_fpg() const noexcept override { return get_forward_progress_guarantee(__sched_); }
+  bool __ycxx_equal_to(const task_scheduler& __lhs) const noexcept override { return __lhs == __sched_; }
 
 private:
-  Sch sched_;
+  _Sch __sched_;
 };
 
-template <class Sch, class Allocator>
-  requires(!same_as<task_scheduler, remove_cvref_t<Sch>>) && scheduler<Sch>
-task_scheduler::task_scheduler(Sch&& sch, Allocator alloc)
-    : sch_(allocate_shared<backend_for<remove_cvref_t<Sch>>>(alloc, static_cast<Sch&&>(sch))) {
-  static_assert(ycxx::detail::exec::infallible_scheduler<Sch, env<>>, "task_scheduler: the scheduler must be infallible");
+template <class _Sch, class _Allocator>
+  requires(!same_as<task_scheduler, remove_cvref_t<_Sch>>) && scheduler<_Sch>
+task_scheduler::task_scheduler(_Sch&& __sch, _Allocator __alloc)
+    : __sch_(allocate_shared<__backend_for<remove_cvref_t<_Sch>>>(__alloc, static_cast<_Sch&&>(__sch))) {
+  static_assert(__ycxx::__detail::__exec::__infallible_scheduler<_Sch, env<>>, "task_scheduler: the scheduler must be infallible");
 }
 
-class task_scheduler::ts_domain : public default_domain {
+class task_scheduler::__ts_domain : public default_domain {
 public:
-  template <class BulkSndr, class Env>
-    requires(is_same_v<tag_of_t<BulkSndr>, bulk_chunked_t> || is_same_v<tag_of_t<BulkSndr>, bulk_unchunked_t>) &&
-            requires(BulkSndr&& b) { auto(static_cast<BulkSndr&&>(b)); }
-  static constexpr auto transform_sender(set_value_t, BulkSndr&& bulk_sndr, const Env& env) noexcept(is_nothrow_constructible_v<decay_t<BulkSndr>, BulkSndr>) {
-    auto&& data = static_cast<BulkSndr&&>(bulk_sndr).template get<1>();
-    auto&& child = static_cast<BulkSndr&&>(bulk_sndr).template get<2>();
-    auto sch = ycxx::detail::exec::call_with_default(get_completion_scheduler<set_value_t>, ycxx::adl_free::exec_not_a_scheduler(),
-                                                     get_env(child), ycxx::detail::exec::fwd_env(env));
-    if constexpr (!is_same_v<decltype(sch), task_scheduler>) {
-      return ycxx::adl_free::exec_not_a_sender();
+  template <class _BulkSndr, class _Env>
+    requires(is_same_v<tag_of_t<_BulkSndr>, bulk_chunked_t> || is_same_v<tag_of_t<_BulkSndr>, bulk_unchunked_t>) &&
+            requires(_BulkSndr&& b) { auto(static_cast<_BulkSndr&&>(b)); }
+  static constexpr auto transform_sender(set_value_t, _BulkSndr&& __bulk_sndr, const _Env& env) noexcept(is_nothrow_constructible_v<decay_t<_BulkSndr>, _BulkSndr>) {
+    auto&& data = static_cast<_BulkSndr&&>(__bulk_sndr).template get<1>();
+    auto&& __child = static_cast<_BulkSndr&&>(__bulk_sndr).template get<2>();
+    auto __sch = __ycxx::__detail::__exec::__call_with_default(get_completion_scheduler<set_value_t>, __ycxx::__adl_free::__exec_not_a_scheduler(),
+                                                     get_env(__child), __ycxx::__detail::__exec::__fwd_env(env));
+    if constexpr (!is_same_v<decltype(__sch), task_scheduler>) {
+      return __ycxx::__adl_free::__exec_not_a_sender();
     } else {
-      constexpr bool chunked = is_same_v<tag_of_t<BulkSndr>, bulk_chunked_t>;
-      using Shape = remove_cvref_t<decltype(data.template get<1>())>;
-      using F = remove_cvref_t<decltype(data.template get<2>())>;
-      return ycxx::adl_free::exec_par_bulk_sender<chunked, remove_cvref_t<decltype(child)>, Shape, F>{
-          std::forward_like<BulkSndr>(child), true, Shape(data.template get<1>()), std::forward_like<BulkSndr>(data.template get<2>()), sch.sch_};
+      constexpr bool __chunked = is_same_v<tag_of_t<_BulkSndr>, bulk_chunked_t>;
+      using _Shape = remove_cvref_t<decltype(data.template get<1>())>;
+      using _Fp = remove_cvref_t<decltype(data.template get<2>())>;
+      return __ycxx::__adl_free::__exec_par_bulk_sender<__chunked, remove_cvref_t<decltype(__child)>, _Shape, _Fp>{
+          std::forward_like<_BulkSndr>(__child), true, _Shape(data.template get<1>()), std::forward_like<_BulkSndr>(data.template get<2>()), __sch.__sch_};
     }
   }
 };
 
-template <class... Envs>
-task_scheduler::ts_domain task_scheduler::query(get_completion_domain_t<set_value_t>, const Envs&...) const noexcept {
+template <class... _Envs>
+task_scheduler::__ts_domain task_scheduler::query(get_completion_domain_t<set_value_t>, const _Envs&...) const noexcept {
   return {};
 }
 
 }} // namespace std::execution
 
-namespace [[gnu::visibility("hidden")]] ycxx { namespace adl_free {
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __adl_free {
 // ts-sndr ([exec.task.scheduler]/13)
-struct exec_ts_sender {
+struct __exec_ts_sender {
   using sender_concept = std::execution::sender_tag;
-  std::execution::task_scheduler sch;
-  template <class Self, class... Env>
-  using ycxx_csigs = std::conditional_t<(std::unstoppable_token<std::stop_token_of_t<Env>> && ...) && sizeof...(Env) != 0,
+  std::execution::task_scheduler __sch;
+  template <class _Self, class... _Env>
+  using __ycxx_csigs = std::conditional_t<(std::unstoppable_token<std::stop_token_of_t<_Env>> && ...) && sizeof...(_Env) != 0,
                                         std::execution::completion_signatures<std::execution::set_value_t()>,
                                         std::execution::completion_signatures<std::execution::set_value_t(), std::execution::set_stopped_t()>>;
-  template <class Self, class... Env>
+  template <class _Self, class... _Env>
   static consteval auto get_completion_signatures() {
-    return ycxx_csigs<Self, Env...>();
+    return __ycxx_csigs<_Self, _Env...>();
   }
-  struct attrs {
-    std::execution::task_scheduler sch;
-    template <class... Envs>
-    std::execution::task_scheduler query(std::execution::get_completion_scheduler_t<std::execution::set_value_t>, const Envs&...) const noexcept {
-      return sch;
+  struct __attrs {
+    std::execution::task_scheduler __sch;
+    template <class... _Envs>
+    std::execution::task_scheduler query(std::execution::get_completion_scheduler_t<std::execution::set_value_t>, const _Envs&...) const noexcept {
+      return __sch;
     }
-    template <class... Envs>
-    auto query(std::execution::get_completion_domain_t<std::execution::set_value_t>, const Envs&... envs) const noexcept {
-      return sch.query(std::execution::get_completion_domain<std::execution::set_value_t>, envs...);
+    template <class... _Envs>
+    auto query(std::execution::get_completion_domain_t<std::execution::set_value_t>, const _Envs&... __envs) const noexcept {
+      return __sch.query(std::execution::get_completion_domain<std::execution::set_value_t>, __envs...);
     }
   };
-  attrs get_env() const noexcept { return {sch}; }
-  template <class Rcvr>
-  exec_par_sched_op<std::decay_t<Rcvr>, false> connect(Rcvr&& rcvr) const noexcept(std::is_nothrow_constructible_v<std::decay_t<Rcvr>, Rcvr>) {
-    return {static_cast<Rcvr&&>(rcvr), ::ycxx::detail::exec::ts_access::backend(sch)};
+  __attrs get_env() const noexcept { return {__sch}; }
+  template <class _Rcvr>
+  __exec_par_sched_op<std::decay_t<_Rcvr>, false> connect(_Rcvr&& __rcvr) const noexcept(std::is_nothrow_constructible_v<std::decay_t<_Rcvr>, _Rcvr>) {
+    return {static_cast<_Rcvr&&>(__rcvr), ::__ycxx::__detail::__exec::__ts_access::__backend(__sch)};
   }
 };
-}} // namespace ycxx::adl_free
+}} // namespace __ycxx::__adl_free
 
-namespace [[gnu::visibility("hidden")]] std { namespace execution {
-inline auto task_scheduler::schedule() const noexcept { return ycxx::adl_free::exec_ts_sender{*this}; }
+namespace [[__gnu__::__visibility__("hidden")]] std { namespace execution {
+inline auto task_scheduler::schedule() const noexcept { return __ycxx::__adl_free::__exec_ts_sender{*this}; }
 
-template <class E>
+template <class _Ep>
 struct with_error {
-  using type = remove_cvref_t<E>;
+  using type = remove_cvref_t<_Ep>;
   type error;
 };
-template <class E>
-with_error(E) -> with_error<E>;
+template <class _Ep>
+with_error(_Ep) -> with_error<_Ep>;
 }} // namespace std::execution
 
 // ---------------------------------------------------------------------------------------------
 // [exec.task]
-namespace [[gnu::visibility("hidden")]] ycxx { namespace detail { namespace exec {
-template <class Env>
-struct task_types {
-  static auto alloc() {
-    if constexpr (requires { typename Env::allocator_type; })
-      return std::type_identity<typename Env::allocator_type>{};
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail { namespace __exec {
+template <class _Env>
+struct __task_types {
+  static auto __alloc() {
+    if constexpr (requires { typename _Env::allocator_type; })
+      return std::type_identity<typename _Env::allocator_type>{};
     else
       return std::type_identity<std::allocator<std::byte>>{};
   }
-  static auto sched() {
-    if constexpr (requires { typename Env::start_scheduler_type; })
-      return std::type_identity<typename Env::start_scheduler_type>{};
+  static auto __sched() {
+    if constexpr (requires { typename _Env::start_scheduler_type; })
+      return std::type_identity<typename _Env::start_scheduler_type>{};
     else
       return std::type_identity<std::execution::task_scheduler>{};
   }
-  static auto source() {
-    if constexpr (requires { typename Env::stop_source_type; })
-      return std::type_identity<typename Env::stop_source_type>{};
+  static auto __source() {
+    if constexpr (requires { typename _Env::stop_source_type; })
+      return std::type_identity<typename _Env::stop_source_type>{};
     else
       return std::type_identity<std::inplace_stop_source>{};
   }
-  static auto errors() {
-    if constexpr (requires { typename Env::error_types; })
-      return std::type_identity<typename Env::error_types>{};
+  static auto __errors() {
+    if constexpr (requires { typename _Env::error_types; })
+      return std::type_identity<typename _Env::error_types>{};
     else
       return std::type_identity<std::execution::completion_signatures<std::execution::set_error_t(std::exception_ptr)>>{};
   }
-  using allocator_type = typename decltype(alloc())::type;
-  using start_scheduler_type = typename decltype(sched())::type;
-  using stop_source_type = typename decltype(source())::type;
-  using error_types = typename decltype(errors())::type;
+  using allocator_type = typename decltype(__alloc())::type;
+  using start_scheduler_type = typename decltype(__sched())::type;
+  using stop_source_type = typename decltype(__source())::type;
+  using error_types = typename decltype(__errors())::type;
 };
 
-template <class CS>
-struct task_error_args {
+template <class _CS>
+struct __task_error_args {
   static constexpr bool valid = false;
 };
-template <class... Es>
-struct task_error_args<std::execution::completion_signatures<set_error_t(Es)...>> {
+template <class... _Es>
+struct __task_error_args<std::execution::completion_signatures<set_error_t(_Es)...>> {
   static constexpr bool valid = true;
-  using variant = std::variant<std::monostate, Es...>;
-  template <class E>
-  static constexpr std::size_t convertible_count = (std::size_t{0} + ... + std::size_t{std::is_convertible_v<E, Es>});
-  template <class E>
-  using target = Es...[first_true<std::is_convertible_v<E, Es>...>];
+  using variant = std::variant<std::monostate, _Es...>;
+  template <class _Ep>
+  static constexpr std::size_t __convertible_count = (std::size_t{0} + ... + std::size_t{std::is_convertible_v<_Ep, _Es>});
+  template <class _Ep>
+  using target = _Es...[__first_true<std::is_convertible_v<_Ep, _Es>...>];
 };
 
 // A unit of the frame allocation ([task.promise]/14): __STDCPP_DEFAULT_NEW_ALIGNMENT__ in size and
 // alignment.
-struct alignas(cfg::default_new_alignment) task_frame_unit {
-  std::byte b[cfg::default_new_alignment];
+struct alignas(__cfg::__default_new_alignment) __task_frame_unit {
+  std::byte b[__cfg::__default_new_alignment];
 };
-inline constexpr std::size_t task_units(std::size_t bytes) noexcept { return (bytes + sizeof(task_frame_unit) - 1) / sizeof(task_frame_unit); }
+inline constexpr std::size_t __task_units(std::size_t bytes) noexcept { return (bytes + sizeof(__task_frame_unit) - 1) / sizeof(__task_frame_unit); }
 
-template <class Alloc>
-void* task_frame_allocate(std::size_t size, const Alloc& alloc) {
-  using PAlloc = typename std::allocator_traits<Alloc>::template rebind_alloc<task_frame_unit>;
-  static_assert(std::is_pointer_v<typename std::allocator_traits<PAlloc>::pointer>, "task: the allocator's pointer must be a pointer type");
-  using dealloc_fn = void (*)(void*, std::size_t) noexcept;
-  PAlloc palloc(alloc);
-  const std::size_t n = task_units(size) + task_units(sizeof(dealloc_fn)) + task_units(sizeof(PAlloc));
-  task_frame_unit* p = std::allocator_traits<PAlloc>::allocate(palloc, n);
-  std::byte* tail = reinterpret_cast<std::byte*>(p + task_units(size));
-  dealloc_fn fn = [](void* frame, std::size_t sz) noexcept {
-    std::byte* t = static_cast<std::byte*>(frame) + task_units(sz) * sizeof(task_frame_unit);
-    PAlloc* pa = std::launder(reinterpret_cast<PAlloc*>(t + task_units(sizeof(dealloc_fn)) * sizeof(task_frame_unit)));
-    PAlloc a(static_cast<PAlloc&&>(*pa));
-    pa->~PAlloc();
-    const std::size_t m = task_units(sz) + task_units(sizeof(dealloc_fn)) + task_units(sizeof(PAlloc));
-    std::allocator_traits<PAlloc>::deallocate(a, static_cast<task_frame_unit*>(frame), m);
+template <class _Alloc>
+void* __task_frame_allocate(std::size_t size, const _Alloc& __alloc) {
+  using _PAlloc = typename std::allocator_traits<_Alloc>::template rebind_alloc<__task_frame_unit>;
+  static_assert(std::is_pointer_v<typename std::allocator_traits<_PAlloc>::pointer>, "task: the allocator's pointer must be a pointer type");
+  using __dealloc_fn = void (*)(void*, std::size_t) noexcept;
+  _PAlloc __palloc(__alloc);
+  const std::size_t n = __task_units(size) + __task_units(sizeof(__dealloc_fn)) + __task_units(sizeof(_PAlloc));
+  __task_frame_unit* p = std::allocator_traits<_PAlloc>::allocate(__palloc, n);
+  std::byte* __tail = reinterpret_cast<std::byte*>(p + __task_units(size));
+  __dealloc_fn __fn = [](void* __frame, std::size_t __sz) noexcept {
+    std::byte* t = static_cast<std::byte*>(__frame) + __task_units(__sz) * sizeof(__task_frame_unit);
+    _PAlloc* __pa = std::launder(reinterpret_cast<_PAlloc*>(t + __task_units(sizeof(__dealloc_fn)) * sizeof(__task_frame_unit)));
+    _PAlloc a(static_cast<_PAlloc&&>(*__pa));
+    __pa->~_PAlloc();
+    const std::size_t m = __task_units(__sz) + __task_units(sizeof(__dealloc_fn)) + __task_units(sizeof(_PAlloc));
+    std::allocator_traits<_PAlloc>::deallocate(a, static_cast<__task_frame_unit*>(__frame), m);
   };
-  ::new (static_cast<void*>(tail)) dealloc_fn(fn);
-  ::new (static_cast<void*>(tail + task_units(sizeof(dealloc_fn)) * sizeof(task_frame_unit))) PAlloc(static_cast<PAlloc&&>(palloc));
+  ::new (static_cast<void*>(__tail)) __dealloc_fn(__fn);
+  ::new (static_cast<void*>(__tail + __task_units(sizeof(__dealloc_fn)) * sizeof(__task_frame_unit))) _PAlloc(static_cast<_PAlloc&&>(__palloc));
   return p;
 }
-inline void task_frame_deallocate(void* p, std::size_t size) noexcept {
-  using dealloc_fn = void (*)(void*, std::size_t) noexcept;
-  dealloc_fn fn = *std::launder(reinterpret_cast<dealloc_fn*>(static_cast<std::byte*>(p) + task_units(size) * sizeof(task_frame_unit)));
-  fn(p, size);
+inline void __task_frame_deallocate(void* p, std::size_t size) noexcept {
+  using __dealloc_fn = void (*)(void*, std::size_t) noexcept;
+  __dealloc_fn __fn = *std::launder(reinterpret_cast<__dealloc_fn*>(static_cast<std::byte*>(p) + __task_units(size) * sizeof(__task_frame_unit)));
+  __fn(p, size);
 }
 
-template <class Sig, class CS>
-inline constexpr bool csigs_contain = false;
-template <class Sig, class... Sigs>
-inline constexpr bool csigs_contain<Sig, std::execution::completion_signatures<Sigs...>> = (std::is_same_v<Sig, Sigs> || ...);
+template <class _Sig, class _CS>
+inline constexpr bool __csigs_contain = false;
+template <class _Sig, class... _Sigs>
+inline constexpr bool __csigs_contain<_Sig, std::execution::completion_signatures<_Sigs...>> = (std::is_same_v<_Sig, _Sigs> || ...);
 
 // Requests a stop of the task's own stop source when the receiver's token is stopped.
-template <class Source>
-struct task_stop_forward {
-  Source* src;
-  void operator()() noexcept { src->request_stop(); }
+template <class _Source>
+struct __task_stop_forward {
+  _Source* __src;
+  void operator()() noexcept { __src->request_stop(); }
 };
 
 // The part of task<T, Environment>::state<Rcvr> the promise sees.
-template <class T, class Environment>
-struct task_state_base {
-  using types = task_types<Environment>;
-  using errors = task_error_args<typename types::error_types>;
-  using result_t = std::conditional_t<std::is_void_v<T>, std::monostate, std::conditional_t<std::is_reference_v<T>, std::reference_wrapper<std::remove_reference_t<T>>, T>>;
+template <class _Tp, class _Environment>
+struct __task_state_base {
+  using __types = __task_types<_Environment>;
+  using __errors = __task_error_args<typename __types::error_types>;
+  using __result_t = std::conditional_t<std::is_void_v<_Tp>, std::monostate, std::conditional_t<std::is_reference_v<_Tp>, std::reference_wrapper<std::remove_reference_t<_Tp>>, _Tp>>;
 
-  std::coroutine_handle<> handle_;
-  std::optional<result_t> result;
+  std::coroutine_handle<> __handle_;
+  std::optional<__result_t> result;
   std::exception_ptr error;
-  typename errors::variant yielded_error;
-  std::optional<typename types::start_scheduler_type> sched;
-  std::optional<typename types::allocator_type> alloc;
-  Environment* env_ptr = nullptr;
+  typename __errors::variant __yielded_error;
+  std::optional<typename __types::start_scheduler_type> __sched;
+  std::optional<typename __types::allocator_type> __alloc;
+  _Environment* __env_ptr = nullptr;
 
-  virtual decltype(std::declval<typename types::stop_source_type&>().get_token()) ycxx_stop_token() noexcept = 0;
-  virtual void ycxx_complete() noexcept = 0;
-  virtual void ycxx_complete_stopped() noexcept = 0;
-  virtual void ycxx_complete_yielded_error() noexcept = 0;
+  virtual decltype(std::declval<typename __types::stop_source_type&>().get_token()) __ycxx_stop_token() noexcept = 0;
+  virtual void __ycxx_complete() noexcept = 0;
+  virtual void __ycxx_complete_stopped() noexcept = 0;
+  virtual void __ycxx_complete_yielded_error() noexcept = 0;
 
 protected:
-  ~task_state_base() = default;
+  ~__task_state_base() = default;
 };
 // own-env-t ([task.state]/1)
-template <class Environment, class RcvrEnv>
-struct task_own_env {
+template <class _Environment, class _RcvrEnv>
+struct __task_own_env {
   using type = std::execution::env<>;
 };
-template <class Environment, class RcvrEnv>
-  requires requires { typename Environment::template env_type<RcvrEnv>; }
-struct task_own_env<Environment, RcvrEnv> {
-  using type = typename Environment::template env_type<RcvrEnv>;
+template <class _Environment, class _RcvrEnv>
+  requires requires { typename _Environment::template __env_type<_RcvrEnv>; }
+struct __task_own_env<_Environment, _RcvrEnv> {
+  using type = typename _Environment::template __env_type<_RcvrEnv>;
 };
 
 // return_value or return_void ([task.promise]/10-11): a promise type may not declare both.
-template <class T, class StateBase>
-struct task_promise_return {
-  StateBase* st_ = nullptr;
-  template <class V = T>
-    requires std::is_convertible_v<V, T>
-  void return_value(V&& value) {
-    if constexpr (std::is_reference_v<T>)
-      st_->result.emplace(static_cast<T>(static_cast<V&&>(value)));
+template <class _Tp, class _StateBase>
+struct __task_promise_return {
+  _StateBase* __st_ = nullptr;
+  template <class _Vp = _Tp>
+    requires std::is_convertible_v<_Vp, _Tp>
+  void return_value(_Vp&& value) {
+    if constexpr (std::is_reference_v<_Tp>)
+      __st_->result.emplace(static_cast<_Tp>(static_cast<_Vp&&>(value)));
     else
-      st_->result.emplace(static_cast<V&&>(value));
+      __st_->result.emplace(static_cast<_Vp&&>(value));
   }
 };
-template <class StateBase>
-struct task_promise_return<void, StateBase> {
-  StateBase* st_ = nullptr;
+template <class _StateBase>
+struct __task_promise_return<void, _StateBase> {
+  _StateBase* __st_ = nullptr;
   void return_void() noexcept {}
 };
-}}} // namespace ycxx::detail::exec
+}}} // namespace __ycxx::__detail::__exec
 
-namespace [[gnu::visibility("hidden")]] std { namespace execution {
+namespace [[__gnu__::__visibility__("hidden")]] std { namespace execution {
 
-template <class T = void, class Environment = env<>>
+template <class _Tp = void, class _Environment = env<>>
 class task {
-  static_assert(is_void_v<T> || is_reference_v<T> || (is_object_v<T> && !is_array_v<T> && is_same_v<T, remove_cv_t<T>>),
+  static_assert(is_void_v<_Tp> || is_reference_v<_Tp> || (is_object_v<_Tp> && !is_array_v<_Tp> && is_same_v<_Tp, remove_cv_t<_Tp>>),
                 "task<T, E>: T must be void, a reference type or a cv-unqualified non-array object type");
-  static_assert(is_class_v<Environment>, "task<T, E>: E must be a class type");
-  using types = ycxx::detail::exec::task_types<Environment>;
-  using state_base = ycxx::detail::exec::task_state_base<T, Environment>;
+  static_assert(is_class_v<_Environment>, "task<T, E>: E must be a class type");
+  using __types = __ycxx::__detail::__exec::__task_types<_Environment>;
+  using __state_base = __ycxx::__detail::__exec::__task_state_base<_Tp, _Environment>;
 
 public:
   using sender_concept = sender_tag;
-  using allocator_type = typename types::allocator_type;
-  using start_scheduler_type = typename types::start_scheduler_type;
-  using stop_source_type = typename types::stop_source_type;
+  using allocator_type = typename __types::allocator_type;
+  using start_scheduler_type = typename __types::start_scheduler_type;
+  using stop_source_type = typename __types::stop_source_type;
   using stop_token_type = decltype(declval<stop_source_type>().get_token());
-  using error_types = typename types::error_types;
-  static_assert(ycxx::detail::exec::task_error_args<error_types>::valid,
+  using error_types = typename __types::error_types;
+  static_assert(__ycxx::__detail::__exec::__task_error_args<error_types>::valid,
                 "task: error_types must be a completion_signatures of set_error_t(E) signatures");
 
   class promise_type;
 
-  template <receiver Rcvr>
-  class state : state_base {
+  template <receiver _Rcvr>
+  class state : __state_base {
     friend class task;
-    using own_env_t = typename ycxx::detail::exec::task_own_env<Environment, decltype(get_env(declval<Rcvr>()))>::type;
-    using rcvr_token_t = stop_token_of_t<env_of_t<Rcvr>>;
+    using __own_env_t = typename __ycxx::__detail::__exec::__task_own_env<_Environment, decltype(get_env(declval<_Rcvr>()))>::type;
+    using __rcvr_token_t = stop_token_of_t<env_of_t<_Rcvr>>;
 
     coroutine_handle<promise_type> handle;
-    remove_cvref_t<Rcvr> rcvr;
-    optional<stop_source_type> source;
-    optional<stop_callback_for_t<rcvr_token_t, ycxx::detail::exec::task_stop_forward<stop_source_type>>> source_link;
-    own_env_t own_env;
-    Environment environment;
+    remove_cvref_t<_Rcvr> __rcvr;
+    optional<stop_source_type> __source;
+    optional<stop_callback_for_t<__rcvr_token_t, __ycxx::__detail::__exec::__task_stop_forward<stop_source_type>>> __source_link;
+    __own_env_t __own_env;
+    _Environment environment;
 
-    static own_env_t make_own_env(const remove_cvref_t<Rcvr>& r) {
-      if constexpr (requires { own_env_t(get_env(r)); })
-        return own_env_t(get_env(r));
+    static __own_env_t __make_own_env(const remove_cvref_t<_Rcvr>& r) {
+      if constexpr (requires { __own_env_t(get_env(r)); })
+        return __own_env_t(get_env(r));
       else
-        return own_env_t();
+        return __own_env_t();
     }
-    static Environment make_environment(const own_env_t& o, const remove_cvref_t<Rcvr>& r) {
-      if constexpr (requires { Environment(o); })
-        return Environment(o);
-      else if constexpr (requires { Environment(get_env(r)); })
-        return Environment(get_env(r));
+    static _Environment __make_environment(const __own_env_t& __o, const remove_cvref_t<_Rcvr>& r) {
+      if constexpr (requires { _Environment(__o); })
+        return _Environment(__o);
+      else if constexpr (requires { _Environment(get_env(r)); })
+        return _Environment(get_env(r));
       else
-        return Environment();
+        return _Environment();
     }
 
-    void ycxx_destroy_frame() noexcept {
+    void __ycxx_destroy_frame() noexcept {
       if (handle) {
         auto h = handle;
         handle = {};
-        this->handle_ = {};
-        source_link.reset();
+        this->__handle_ = {};
+        __source_link.reset();
         h.destroy();
       }
     }
@@ -529,75 +529,75 @@ public:
   public:
     using operation_state_concept = operation_state_tag;
 
-    template <class R>
-    state(coroutine_handle<promise_type> h, R&& rr)
-        : handle(static_cast<coroutine_handle<promise_type>&&>(h)), rcvr(static_cast<R&&>(rr)), own_env(make_own_env(rcvr)),
-          environment(make_environment(own_env, rcvr)) {}
+    template <class _Rp>
+    state(coroutine_handle<promise_type> h, _Rp&& __rr)
+        : handle(static_cast<coroutine_handle<promise_type>&&>(h)), __rcvr(static_cast<_Rp&&>(__rr)), __own_env(__make_own_env(__rcvr)),
+          environment(__make_environment(__own_env, __rcvr)) {}
     state(state&&) = delete;
     ~state() {
-      source_link.reset();
+      __source_link.reset();
       if (handle)
         handle.destroy();
     }
 
     void start() & noexcept {
-      promise_type& prom = handle.promise();
-      prom.st_ = this;
-      this->handle_ = handle;
-      this->env_ptr = __builtin_addressof(environment);
-      if constexpr (requires { start_scheduler_type(get_start_scheduler(get_env(rcvr))); })
-        this->sched.emplace(get_start_scheduler(get_env(rcvr)));
+      promise_type& __prom = handle.promise();
+      __prom.__st_ = this;
+      this->__handle_ = handle;
+      this->__env_ptr = __builtin_addressof(environment);
+      if constexpr (requires { start_scheduler_type(get_start_scheduler(get_env(__rcvr))); })
+        this->__sched.emplace(get_start_scheduler(get_env(__rcvr)));
       else
-        this->sched.emplace();
-      if constexpr (requires { allocator_type(get_allocator(get_env(rcvr))); })
-        this->alloc.emplace(get_allocator(get_env(rcvr)));
+        this->__sched.emplace();
+      if constexpr (requires { allocator_type(get_allocator(get_env(__rcvr))); })
+        this->__alloc.emplace(get_allocator(get_env(__rcvr)));
       else
-        this->alloc.emplace();
+        this->__alloc.emplace();
       handle.resume();
     }
 
     // get-stop-token ([task.state]/5)
-    stop_token_type ycxx_stop_token() noexcept override {
-      if constexpr (same_as<stop_token_type, rcvr_token_t>) {
-        return get_stop_token(get_env(rcvr));
+    stop_token_type __ycxx_stop_token() noexcept override {
+      if constexpr (same_as<stop_token_type, __rcvr_token_t>) {
+        return get_stop_token(get_env(__rcvr));
       } else {
-        if (!source.has_value()) {
-          source.emplace();
-          auto tok = get_stop_token(get_env(rcvr));
-          if constexpr (!unstoppable_token<rcvr_token_t>)
-            source_link.emplace(tok, ycxx::detail::exec::task_stop_forward<stop_source_type>{&*source});
+        if (!__source.has_value()) {
+          __source.emplace();
+          auto __tok = get_stop_token(get_env(__rcvr));
+          if constexpr (!unstoppable_token<__rcvr_token_t>)
+            __source_link.emplace(__tok, __ycxx::__detail::__exec::__task_stop_forward<stop_source_type>{&*__source});
         }
-        return source->get_token();
+        return __source->get_token();
       }
     }
     // [task.promise]/3
-    void ycxx_complete() noexcept override {
-      ycxx_destroy_frame();
+    void __ycxx_complete() noexcept override {
+      __ycxx_destroy_frame();
       if (this->error) {
-        if constexpr (requires { set_error(static_cast<remove_cvref_t<Rcvr>&&>(rcvr), static_cast<exception_ptr&&>(this->error)); })
-          set_error(static_cast<remove_cvref_t<Rcvr>&&>(rcvr), static_cast<exception_ptr&&>(this->error));
-      } else if constexpr (is_void_v<T>) {
-        set_value(static_cast<remove_cvref_t<Rcvr>&&>(rcvr));
-      } else if constexpr (is_reference_v<T>) {
-        set_value(static_cast<remove_cvref_t<Rcvr>&&>(rcvr), static_cast<T>(this->result->get()));
+        if constexpr (requires { set_error(static_cast<remove_cvref_t<_Rcvr>&&>(__rcvr), static_cast<exception_ptr&&>(this->error)); })
+          set_error(static_cast<remove_cvref_t<_Rcvr>&&>(__rcvr), static_cast<exception_ptr&&>(this->error));
+      } else if constexpr (is_void_v<_Tp>) {
+        set_value(static_cast<remove_cvref_t<_Rcvr>&&>(__rcvr));
+      } else if constexpr (is_reference_v<_Tp>) {
+        set_value(static_cast<remove_cvref_t<_Rcvr>&&>(__rcvr), static_cast<_Tp>(this->result->get()));
       } else {
-        set_value(static_cast<remove_cvref_t<Rcvr>&&>(rcvr), static_cast<T&&>(*this->result));
+        set_value(static_cast<remove_cvref_t<_Rcvr>&&>(__rcvr), static_cast<_Tp&&>(*this->result));
       }
     }
     // [task.promise]/8
-    void ycxx_complete_stopped() noexcept override {
-      ycxx_destroy_frame();
-      set_stopped(static_cast<remove_cvref_t<Rcvr>&&>(rcvr));
+    void __ycxx_complete_stopped() noexcept override {
+      __ycxx_destroy_frame();
+      set_stopped(static_cast<remove_cvref_t<_Rcvr>&&>(__rcvr));
     }
     // [task.promise]/5
-    void ycxx_complete_yielded_error() noexcept override {
-      ycxx_destroy_frame();
+    void __ycxx_complete_yielded_error() noexcept override {
+      __ycxx_destroy_frame();
       visit(
-          [this]<class E>(E& e) noexcept {
-            if constexpr (!is_same_v<E, monostate>)
-              set_error(static_cast<remove_cvref_t<Rcvr>&&>(rcvr), static_cast<E&&>(e));
+          [this]<class _Ep>(_Ep& e) noexcept {
+            if constexpr (!is_same_v<_Ep, monostate>)
+              set_error(static_cast<remove_cvref_t<_Rcvr>&&>(__rcvr), static_cast<_Ep&&>(e));
           },
-          this->yielded_error);
+          this->__yielded_error);
     }
   };
 
@@ -607,20 +607,20 @@ public:
       handle.destroy();
   }
 
-  template <class Self, class... Env>
+  template <class _Self, class... _Env>
   static consteval auto get_completion_signatures() {
-    return ycxx_csigs<Self, Env...>();
+    return __ycxx_csigs<_Self, _Env...>();
   }
-  template <class Self, class... Env>
-  using ycxx_csigs = ycxx::detail::exec::sigs_concat_t<completion_signatures<ycxx::detail::exec::set_value_sig_t<T>>, error_types,
+  template <class _Self, class... _Env>
+  using __ycxx_csigs = __ycxx::__detail::__exec::__sigs_concat_t<completion_signatures<__ycxx::__detail::__exec::__set_value_sig_t<_Tp>>, error_types,
                                                        completion_signatures<set_stopped_t()>>;
 
-  template <receiver Rcvr>
-  state<Rcvr> connect(Rcvr&& recv) && {
-    static_assert(requires { allocator_type(get_allocator(get_env(recv))); } || requires { allocator_type(); },
+  template <receiver _Rcvr>
+  state<_Rcvr> connect(_Rcvr&& __recv) && {
+    static_assert(requires { allocator_type(get_allocator(get_env(__recv))); } || requires { allocator_type(); },
                   "task: the receiver's allocator cannot be converted to the task's allocator_type");
-    ycxx::detail::precondition(static_cast<bool>(handle), "task::connect: the task has no coroutine (moved from or connected)");
-    return state<Rcvr>(std::exchange(handle, {}), static_cast<Rcvr&&>(recv));
+    __ycxx::__detail::__precondition(static_cast<bool>(handle), "task::connect: the task has no coroutine (moved from or connected)");
+    return state<_Rcvr>(std::exchange(handle, {}), static_cast<_Rcvr&&>(__recv));
   }
 
 private:
@@ -628,80 +628,80 @@ private:
   coroutine_handle<promise_type> handle;
 };
 
-template <class T, class Environment>
-class task<T, Environment>::promise_type : public ycxx::detail::exec::task_promise_return<T, ycxx::detail::exec::task_state_base<T, Environment>> {
+template <class _Tp, class _Environment>
+class task<_Tp, _Environment>::promise_type : public __ycxx::__detail::__exec::__task_promise_return<_Tp, __ycxx::__detail::__exec::__task_state_base<_Tp, _Environment>> {
   template <receiver>
   friend class task::state;
-  using ycxx::detail::exec::task_promise_return<T, state_base>::st_;
-  using errors = ycxx::detail::exec::task_error_args<error_types>;
+  using __ycxx::__detail::__exec::__task_promise_return<_Tp, __state_base>::__st_;
+  using __errors = __ycxx::__detail::__exec::__task_error_args<error_types>;
 
-  struct final_awaiter {
+  struct __final_awaiter {
     static constexpr bool await_ready() noexcept { return false; }
-    void await_suspend(coroutine_handle<promise_type> h) noexcept { h.promise().st_->ycxx_complete(); }
+    void await_suspend(coroutine_handle<promise_type> h) noexcept { h.promise().__st_->__ycxx_complete(); }
     void await_resume() noexcept {}
   };
-  struct yield_error_awaiter {
-    state_base* st;
+  struct __yield_error_awaiter {
+    __state_base* __st;
     static constexpr bool await_ready() noexcept { return false; }
-    void await_suspend(coroutine_handle<>) noexcept { st->ycxx_complete_yielded_error(); }
+    void await_suspend(coroutine_handle<>) noexcept { __st->__ycxx_complete_yielded_error(); }
     void await_resume() noexcept {}
   };
-  struct env_t {
+  struct __env_t {
     const promise_type* p;
-    start_scheduler_type query(get_start_scheduler_t) const noexcept { return *p->st_->sched; }
-    allocator_type query(get_allocator_t) const noexcept { return *p->st_->alloc; }
-    stop_token_type query(get_stop_token_t) const noexcept { return p->st_->ycxx_stop_token(); }
-    template <class Q, class... As>
-      requires(!same_as<Q, get_start_scheduler_t> && !same_as<Q, get_allocator_t> && !same_as<Q, get_stop_token_t>) &&
-              ycxx::detail::exec::forwarding_query_c<Q> && ycxx::detail::exec::has_query<Environment, Q, As...>
-    constexpr decltype(auto) query(Q q, As&&... as) const noexcept(noexcept(declval<const Environment&>().query(q, static_cast<As&&>(as)...))) {
-      return ycxx::detail::exec::as_const_ref(*p->st_->env_ptr).query(q, static_cast<As&&>(as)...);
+    start_scheduler_type query(get_start_scheduler_t) const noexcept { return *p->__st_->__sched; }
+    allocator_type query(get_allocator_t) const noexcept { return *p->__st_->__alloc; }
+    stop_token_type query(get_stop_token_t) const noexcept { return p->__st_->__ycxx_stop_token(); }
+    template <class _Qp, class... _As>
+      requires(!same_as<_Qp, get_start_scheduler_t> && !same_as<_Qp, get_allocator_t> && !same_as<_Qp, get_stop_token_t>) &&
+              __ycxx::__detail::__exec::__forwarding_query_c<_Qp> && __ycxx::__detail::__exec::__has_query<_Environment, _Qp, _As...>
+    constexpr decltype(auto) query(_Qp __q, _As&&... __as) const noexcept(noexcept(declval<const _Environment&>().query(__q, static_cast<_As&&>(__as)...))) {
+      return __ycxx::__detail::__exec::__as_const_ref(*p->__st_->__env_ptr).query(__q, static_cast<_As&&>(__as)...);
     }
   };
 
 public:
   task get_return_object() noexcept { return task(coroutine_handle<promise_type>::from_promise(*this)); }
   static constexpr suspend_always initial_suspend() noexcept { return {}; }
-  auto final_suspend() noexcept { return final_awaiter{}; }
+  auto final_suspend() noexcept { return __final_awaiter{}; }
   // [task.promise]/7
   void unhandled_exception() {
-    if constexpr (ycxx::detail::exec::csigs_contain<set_error_t(exception_ptr), error_types>)
-      st_->error = std::current_exception();
+    if constexpr (__ycxx::__detail::__exec::__csigs_contain<set_error_t(exception_ptr), error_types>)
+      __st_->error = std::current_exception();
     else
       std::terminate();
   }
   coroutine_handle<> unhandled_stopped() noexcept {
-    st_->ycxx_complete_stopped();
+    __st_->__ycxx_complete_stopped();
     return noop_coroutine();
   }
-  template <class E>
-  auto yield_value(with_error<E> error) {
-    using Err = typename with_error<E>::type;
-    static_assert(errors::template convertible_count<Err> == 1,
+  template <class _Ep>
+  auto yield_value(with_error<_Ep> error) {
+    using _Err = typename with_error<_Ep>::type;
+    static_assert(__errors::template __convertible_count<_Err> == 1,
                   "task: co_yield with_error: the error must be convertible to exactly one of error_types");
-    using Cerr = typename errors::template target<Err>;
-    st_->yielded_error.template emplace<Cerr>(static_cast<Err&&>(error.error));
-    return yield_error_awaiter{st_};
+    using _Cerr = typename __errors::template target<_Err>;
+    __st_->__yielded_error.template emplace<_Cerr>(static_cast<_Err&&>(error.error));
+    return __yield_error_awaiter{__st_};
   }
-  template <sender Sender>
-  auto await_transform(Sender&& sndr) {
+  template <sender _Sender>
+  auto await_transform(_Sender&& __sndr) {
     if constexpr (same_as<inline_scheduler, start_scheduler_type>)
-      return as_awaitable(static_cast<Sender&&>(sndr), *this);
+      return as_awaitable(static_cast<_Sender&&>(__sndr), *this);
     else
-      return as_awaitable(affine(static_cast<Sender&&>(sndr)), *this);
+      return as_awaitable(affine(static_cast<_Sender&&>(__sndr)), *this);
   }
-  env_t get_env() const noexcept { return {this}; }
+  __env_t get_env() const noexcept { return {this}; }
 
   void* operator new(size_t size) { return operator new(size, allocator_arg, allocator_type()); }
-  template <class Alloc, class... Args>
-  void* operator new(size_t size, allocator_arg_t, Alloc alloc, Args&&...) {
-    return ycxx::detail::exec::task_frame_allocate(size, alloc);
+  template <class _Alloc, class... _Args>
+  void* operator new(size_t size, allocator_arg_t, _Alloc __alloc, _Args&&...) {
+    return __ycxx::__detail::__exec::__task_frame_allocate(size, __alloc);
   }
-  template <class This, class Alloc, class... Args>
-  void* operator new(size_t size, const This&, allocator_arg_t, Alloc alloc, Args&&...) {
-    return ycxx::detail::exec::task_frame_allocate(size, alloc);
+  template <class _This, class _Alloc, class... _Args>
+  void* operator new(size_t size, const _This&, allocator_arg_t, _Alloc __alloc, _Args&&...) {
+    return __ycxx::__detail::__exec::__task_frame_allocate(size, __alloc);
   }
-  void operator delete(void* pointer, size_t size) noexcept { ycxx::detail::exec::task_frame_deallocate(pointer, size); }
+  void operator delete(void* pointer, size_t size) noexcept { __ycxx::__detail::__exec::__task_frame_deallocate(pointer, size); }
 };
 
 }} // namespace std::execution

@@ -9,24 +9,24 @@
 #include <ycxx/core/single_threaded.hpp>
 #include <ycxx/pal.h>
 
-namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
 
 // Lives at the start of a free pool block.
-struct pool_free_block {
-  pool_free_block* next;
+struct __pool_free_block {
+  __pool_free_block* next;
 };
 // Lives at the end of a chunk (pools) or buffer (monotonic_buffer_resource) obtained from
 // upstream; `bytes` and `align` are the arguments of that upstream allocate call.
-struct pool_chunk_footer {
-  pool_chunk_footer* next;
+struct __pool_chunk_footer {
+  __pool_chunk_footer* next;
   std::size_t bytes;
   std::size_t align;
 };
 // Lives at the end of an allocation pool_core passed straight to upstream.
 // `bytes` and `align` are the arguments of the upstream allocate call, as for chunks.
-struct pool_big_footer {
-  pool_big_footer* prev;
-  pool_big_footer* next;
+struct __pool_big_footer {
+  __pool_big_footer* prev;
+  __pool_big_footer* next;
   std::size_t bytes;
   std::size_t align;
 };
@@ -39,10 +39,10 @@ constexpr std::size_t size_max = static_cast<std::size_t>(-1);
 // monotonic resources "Throws: nothing unless upstream_resource()->allocate() throws"
 // ([mem.res.pool.mem], [mem.res.monotonic.buffer.mem]): ask upstream for size_max bytes, which it
 // cannot provide, so that its exception is the one thrown.
-[[noreturn]] void request_impossible(std::pmr::memory_resource& upstream, std::size_t align) {
-  void* p = upstream.allocate(size_max, align);
-  upstream.deallocate(p, size_max, align); // an upstream that claims success: still no room
-  ycxx::detail::throw_bad_alloc();
+[[noreturn]] void request_impossible(std::pmr::memory_resource& __upstream, std::size_t align) {
+  void* p = __upstream.allocate(size_max, align);
+  __upstream.deallocate(p, size_max, align); // an upstream that claims success: still no room
+  __ycxx::__detail::__throw_bad_alloc();
 }
 
 constexpr std::size_t round_up(std::size_t n, std::size_t a) noexcept { return (n + a - 1) & ~(a - 1); }
@@ -60,12 +60,12 @@ constexpr std::size_t footer_offset(std::size_t bytes) noexcept {
   return round_up(bytes, alignof(Footer));
 }
 
-void free_chunks(pool_chunk_footer* c, std::pmr::memory_resource* upstream) noexcept {
+void free_chunks(__pool_chunk_footer* c, std::pmr::memory_resource* __upstream) noexcept {
   while (c != nullptr) {
-    pool_chunk_footer* next = c->next;
+    __pool_chunk_footer* next = c->next;
     const std::size_t bytes = c->bytes, align = c->align;
-    void* base = reinterpret_cast<char*>(c) + sizeof(pool_chunk_footer) - bytes;
-    upstream->deallocate(base, bytes, align);
+    void* base = reinterpret_cast<char*>(c) + sizeof(__pool_chunk_footer) - bytes;
+    __upstream->deallocate(base, bytes, align);
     c = next;
   }
 }
@@ -74,110 +74,110 @@ void free_chunks(pool_chunk_footer* c, std::pmr::memory_resource* upstream) noex
 
 // ---- pool_core -----------------------------------------------------------------------------
 
-pool_core::pool_core(const std::pmr::pool_options& opts, std::pmr::memory_resource* upstream) noexcept
-    : upstream_(upstream), opts_(opts) {
-  ycxx::detail::precondition(upstream != nullptr, "pool resource: null upstream resource");
-  if (opts_.max_blocks_per_chunk == 0 || opts_.max_blocks_per_chunk > max_blocks_limit)
-    opts_.max_blocks_per_chunk = max_blocks_limit;
-  std::size_t largest = opts_.largest_required_pool_block;
-  if (largest == 0 || largest > largest_block_limit)
-    largest = largest_block_limit;
-  if (largest < (std::size_t(1) << min_shift))
-    largest = std::size_t(1) << min_shift;
+__pool_core::__pool_core(const std::pmr::pool_options& __opts, std::pmr::memory_resource* __upstream) noexcept
+    : __upstream_(__upstream), __opts_(__opts) {
+  __ycxx::__detail::__precondition(__upstream != nullptr, "pool resource: null upstream resource");
+  if (__opts_.max_blocks_per_chunk == 0 || __opts_.max_blocks_per_chunk > __max_blocks_limit)
+    __opts_.max_blocks_per_chunk = __max_blocks_limit;
+  std::size_t largest = __opts_.largest_required_pool_block;
+  if (largest == 0 || largest > __largest_block_limit)
+    largest = __largest_block_limit;
+  if (largest < (std::size_t(1) << __min_shift))
+    largest = std::size_t(1) << __min_shift;
   largest = std::bit_ceil(largest);
-  opts_.largest_required_pool_block = largest;
-  bins_ = static_cast<unsigned>(std::countr_zero(largest)) - min_shift + 1;
+  __opts_.largest_required_pool_block = largest;
+  __bins_ = static_cast<unsigned>(std::countr_zero(largest)) - __min_shift + 1;
 }
 
-void* pool_core::refill(pool_bin& bin, std::size_t block) {
-  if (bin.next_blocks == 0) {
+void* __pool_core::__refill(__pool_bin& __bin, std::size_t block) {
+  if (__bin.__next_blocks == 0) {
     std::size_t n = first_chunk_bytes / block;
-    bin.next_blocks = n == 0 ? 1 : n;
+    __bin.__next_blocks = n == 0 ? 1 : n;
   }
-  std::size_t limit = max_chunk_bytes / block;
-  if (limit == 0)
-    limit = 1;
-  if (limit > opts_.max_blocks_per_chunk)
-    limit = opts_.max_blocks_per_chunk;
-  const std::size_t n = bin.next_blocks < limit ? bin.next_blocks : limit;
+  std::size_t __limit = max_chunk_bytes / block;
+  if (__limit == 0)
+    __limit = 1;
+  if (__limit > __opts_.max_blocks_per_chunk)
+    __limit = __opts_.max_blocks_per_chunk;
+  const std::size_t n = __bin.__next_blocks < __limit ? __bin.__next_blocks : __limit;
   // Blocks first, footer after them; block >= alignof(footer), so the footer is aligned.
-  const std::size_t bytes = n * block + sizeof(pool_chunk_footer);
-  char* base = static_cast<char*>(upstream_->allocate(bytes, block));
-  auto* footer = ::new (static_cast<void*>(base + n * block)) pool_chunk_footer{bin.chunks, bytes, block};
-  bin.chunks = footer;
-  bin.cur = base + block;
-  bin.end = base + n * block;
-  bin.next_blocks = n < limit ? n * 2 : limit;
+  const std::size_t bytes = n * block + sizeof(__pool_chunk_footer);
+  char* base = static_cast<char*>(__upstream_->allocate(bytes, block));
+  auto* footer = ::new (static_cast<void*>(base + n * block)) __pool_chunk_footer{__bin.__chunks, bytes, block};
+  __bin.__chunks = footer;
+  __bin.cur = base + block;
+  __bin.end = base + n * block;
+  __bin.__next_blocks = n < __limit ? n * 2 : __limit;
   return base;
 }
 
-void* pool_core::allocate(std::size_t bytes, std::size_t alignment) {
-  std::size_t need = bytes > alignment ? bytes : alignment;
-  if (need <= opts_.largest_required_pool_block) {
-    if (need < (std::size_t(1) << min_shift))
-      need = std::size_t(1) << min_shift;
-    const unsigned shift = static_cast<unsigned>(std::bit_width(need - 1));
+void* __pool_core::allocate(std::size_t bytes, std::size_t alignment) {
+  std::size_t __need = bytes > alignment ? bytes : alignment;
+  if (__need <= __opts_.largest_required_pool_block) {
+    if (__need < (std::size_t(1) << __min_shift))
+      __need = std::size_t(1) << __min_shift;
+    const unsigned shift = static_cast<unsigned>(std::bit_width(__need - 1));
     const std::size_t block = std::size_t(1) << shift;
-    pool_bin& bin = bin_[shift - min_shift];
-    if (pool_free_block* b = bin.free) {
-      bin.free = b->next;
+    __pool_bin& __bin = __bin_[shift - __min_shift];
+    if (__pool_free_block* b = __bin.free) {
+      __bin.free = b->next;
       return b;
     }
-    if (bin.cur != bin.end) {
-      char* p = bin.cur;
-      bin.cur += block;
+    if (__bin.cur != __bin.end) {
+      char* p = __bin.cur;
+      __bin.cur += block;
       return p;
     }
-    return refill(bin, block);
+    return __refill(__bin, block);
   }
   // Directly from upstream, with a footer linking it into big_.
-  const std::size_t align = alignment > alignof(pool_big_footer) ? alignment : alignof(pool_big_footer);
-  if (bytes > size_max - sizeof(pool_big_footer) - alignof(pool_big_footer))
-    ycxx::detail::request_impossible(*upstream_, align);
-  const std::size_t off = footer_offset<pool_big_footer>(bytes);
-  const std::size_t total = off + sizeof(pool_big_footer);
-  char* base = static_cast<char*>(upstream_->allocate(total, align));
-  auto* f = ::new (static_cast<void*>(base + off)) pool_big_footer{nullptr, big_, total, align};
-  if (big_ != nullptr)
-    big_->prev = f;
-  big_ = f;
+  const std::size_t align = alignment > alignof(__pool_big_footer) ? alignment : alignof(__pool_big_footer);
+  if (bytes > size_max - sizeof(__pool_big_footer) - alignof(__pool_big_footer))
+    __ycxx::__detail::request_impossible(*__upstream_, align);
+  const std::size_t __off = footer_offset<__pool_big_footer>(bytes);
+  const std::size_t __total = __off + sizeof(__pool_big_footer);
+  char* base = static_cast<char*>(__upstream_->allocate(__total, align));
+  auto* __f = ::new (static_cast<void*>(base + __off)) __pool_big_footer{nullptr, __big_, __total, align};
+  if (__big_ != nullptr)
+    __big_->prev = __f;
+  __big_ = __f;
   return base;
 }
 
-void pool_core::deallocate(void* p, std::size_t bytes, std::size_t alignment) noexcept {
-  std::size_t need = bytes > alignment ? bytes : alignment;
-  if (need <= opts_.largest_required_pool_block) {
-    if (need < (std::size_t(1) << min_shift))
-      need = std::size_t(1) << min_shift;
-    pool_bin& bin = bin_[std::bit_width(need - 1) - min_shift];
-    bin.free = ::new (p) pool_free_block{bin.free};
+void __pool_core::deallocate(void* p, std::size_t bytes, std::size_t alignment) noexcept {
+  std::size_t __need = bytes > alignment ? bytes : alignment;
+  if (__need <= __opts_.largest_required_pool_block) {
+    if (__need < (std::size_t(1) << __min_shift))
+      __need = std::size_t(1) << __min_shift;
+    __pool_bin& __bin = __bin_[std::bit_width(__need - 1) - __min_shift];
+    __bin.free = ::new (p) __pool_free_block{__bin.free};
     return;
   }
-  auto* f = reinterpret_cast<pool_big_footer*>(static_cast<char*>(p) + footer_offset<pool_big_footer>(bytes));
-  (f->prev != nullptr ? f->prev->next : big_) = f->next;
-  if (f->next != nullptr)
-    f->next->prev = f->prev;
-  upstream_->deallocate(p, f->bytes, f->align);
+  auto* __f = reinterpret_cast<__pool_big_footer*>(static_cast<char*>(p) + footer_offset<__pool_big_footer>(bytes));
+  (__f->prev != nullptr ? __f->prev->next : __big_) = __f->next;
+  if (__f->next != nullptr)
+    __f->next->prev = __f->prev;
+  __upstream_->deallocate(p, __f->bytes, __f->align);
 }
 
-void pool_core::release() noexcept {
-  for (unsigned i = 0; i < bins_; ++i) {
-    free_chunks(bin_[i].chunks, upstream_);
-    bin_[i] = pool_bin{};
+void __pool_core::release() noexcept {
+  for (unsigned i = 0; i < __bins_; ++i) {
+    free_chunks(__bin_[i].__chunks, __upstream_);
+    __bin_[i] = __pool_bin{};
   }
-  while (big_ != nullptr) {
-    pool_big_footer* f = big_;
-    big_ = f->next;
-    const std::size_t bytes = f->bytes, align = f->align;
-    upstream_->deallocate(reinterpret_cast<char*>(f) + sizeof(pool_big_footer) - bytes, bytes, align);
+  while (__big_ != nullptr) {
+    __pool_big_footer* __f = __big_;
+    __big_ = __f->next;
+    const std::size_t bytes = __f->bytes, align = __f->align;
+    __upstream_->deallocate(reinterpret_cast<char*>(__f) + sizeof(__pool_big_footer) - bytes, bytes, align);
   }
 }
 
 // ---- pal_lock --------------------------------------------------------------------------------
 
-void pal_lock::lock() noexcept {
+void __pal_lock::lock() noexcept {
   // Single-threaded (single_threaded.hpp): nobody else can hold or wait for the lock.
-  if (::ycxx::detail::single_threaded() && state == 0) {
+  if (::__ycxx::__detail::__single_threaded() && state == 0) {
     state = 1;
     return;
   }
@@ -186,28 +186,28 @@ void pal_lock::lock() noexcept {
     return;
   // Contended: mark the lock as having waiters and sleep until it is released.
   while (__atomic_exchange_n(&state, 2, __ATOMIC_ACQUIRE) != 0)
-    ycxx_pal_wait(&state, 2);
+    __ycxx_pal_wait(&state, 2);
 }
 
-void pal_lock::unlock() noexcept {
-  if (::ycxx::detail::single_threaded()) {
+void __pal_lock::unlock() noexcept {
+  if (::__ycxx::__detail::__single_threaded()) {
     state = 0;
     return;
   }
   if (__atomic_exchange_n(&state, 0, __ATOMIC_RELEASE) == 2)
-    ycxx_pal_wake_all(&state);
+    __ycxx_pal_wake_all(&state);
 }
 
 namespace {
 struct lock_guard {
-  pal_lock& l;
-  explicit lock_guard(pal_lock& lk) noexcept : l(lk) { l.lock(); }
-  ~lock_guard() { l.unlock(); }
+  __pal_lock& __l;
+  explicit lock_guard(__pal_lock& __lk) noexcept : __l(__lk) { __l.lock(); }
+  ~lock_guard() { __l.unlock(); }
   lock_guard(const lock_guard&) = delete;
 };
 } // namespace
 
-}} // namespace ycxx::detail
+}} // namespace __ycxx::__detail
 
 // ---- memory_resource and the global resources ([mem.res.global]) -------------------------------
 
@@ -233,7 +233,7 @@ public:
 };
 
 class null_memory_resource_t final : public std::pmr::memory_resource {
-  void* do_allocate(std::size_t, std::size_t) override { ycxx::detail::throw_bad_alloc(); }
+  void* do_allocate(std::size_t, std::size_t) override { __ycxx::__detail::__throw_bad_alloc(); }
   void do_deallocate(void*, std::size_t, std::size_t) override {}
   bool do_is_equal(const memory_resource& other) const noexcept override { return this == &other; }
 
@@ -245,66 +245,66 @@ public:
 // destroyed (the union's destructor does not destroy its member), so usable during static
 // destruction and from atexit functions too ([basic.start.term]/7): destroying them would reset
 // their vtable pointers to memory_resource's, whose functions are pure virtual.
-template <class T>
+template <class _Tp>
 union immortal {
-  T object;
-  constexpr immortal() noexcept : object() {}
+  _Tp __object;
+  constexpr immortal() noexcept : __object() {}
   ~immortal() {}
 };
 constinit immortal<new_delete_resource_t> new_delete_storage;
 constinit immortal<null_memory_resource_t> null_storage;
 // The default resource pointer: accessed only with __atomic builtins ([mem.res.global]/6:
 // set_default_resource synchronizes with later set/get calls).
-constinit std::pmr::memory_resource* default_resource = &new_delete_storage.object;
+constinit std::pmr::memory_resource* default_resource = &new_delete_storage.__object;
 
 } // namespace
 
-namespace [[gnu::visibility("hidden")]] std { namespace pmr {
+namespace [[__gnu__::__visibility__("hidden")]] std { namespace pmr {
 
 memory_resource::~memory_resource() = default;
 
-memory_resource* new_delete_resource() noexcept { return &new_delete_storage.object; }
-memory_resource* null_memory_resource() noexcept { return &null_storage.object; }
+memory_resource* new_delete_resource() noexcept { return &new_delete_storage.__object; }
+memory_resource* null_memory_resource() noexcept { return &null_storage.__object; }
 
 memory_resource* set_default_resource(memory_resource* r) noexcept {
   if (r == nullptr)
-    r = &new_delete_storage.object;
+    r = &new_delete_storage.__object;
   return __atomic_exchange_n(&default_resource, r, __ATOMIC_ACQ_REL);
 }
 memory_resource* get_default_resource() noexcept { return __atomic_load_n(&default_resource, __ATOMIC_ACQUIRE); }
 
 // ---- pool resources ([mem.res.pool]) ----------------------------------------------------------
 
-synchronized_pool_resource::synchronized_pool_resource(const pool_options& opts, memory_resource* upstream)
-    : core_(opts, upstream) {}
+synchronized_pool_resource::synchronized_pool_resource(const pool_options& __opts, memory_resource* __upstream)
+    : __core_(__opts, __upstream) {}
 synchronized_pool_resource::~synchronized_pool_resource() { release(); }
 void synchronized_pool_resource::release() {
-  ycxx::detail::lock_guard g(lock_);
-  core_.release();
+  __ycxx::__detail::lock_guard __g(__lock_);
+  __core_.release();
 }
-memory_resource* synchronized_pool_resource::upstream_resource() const { return core_.upstream(); }
-pool_options synchronized_pool_resource::options() const { return core_.options(); }
+memory_resource* synchronized_pool_resource::upstream_resource() const { return __core_.__upstream(); }
+pool_options synchronized_pool_resource::options() const { return __core_.options(); }
 void* synchronized_pool_resource::do_allocate(size_t bytes, size_t alignment) {
-  ycxx::detail::lock_guard g(lock_);
-  return core_.allocate(bytes, alignment);
+  __ycxx::__detail::lock_guard __g(__lock_);
+  return __core_.allocate(bytes, alignment);
 }
 void synchronized_pool_resource::do_deallocate(void* p, size_t bytes, size_t alignment) {
-  ycxx::detail::lock_guard g(lock_);
-  core_.deallocate(p, bytes, alignment);
+  __ycxx::__detail::lock_guard __g(__lock_);
+  __core_.deallocate(p, bytes, alignment);
 }
 bool synchronized_pool_resource::do_is_equal(const memory_resource& other) const noexcept { return this == &other; }
 
-unsynchronized_pool_resource::unsynchronized_pool_resource(const pool_options& opts, memory_resource* upstream)
-    : core_(opts, upstream) {}
+unsynchronized_pool_resource::unsynchronized_pool_resource(const pool_options& __opts, memory_resource* __upstream)
+    : __core_(__opts, __upstream) {}
 unsynchronized_pool_resource::~unsynchronized_pool_resource() { release(); }
-void unsynchronized_pool_resource::release() { core_.release(); }
-memory_resource* unsynchronized_pool_resource::upstream_resource() const { return core_.upstream(); }
-pool_options unsynchronized_pool_resource::options() const { return core_.options(); }
+void unsynchronized_pool_resource::release() { __core_.release(); }
+memory_resource* unsynchronized_pool_resource::upstream_resource() const { return __core_.__upstream(); }
+pool_options unsynchronized_pool_resource::options() const { return __core_.options(); }
 void* unsynchronized_pool_resource::do_allocate(size_t bytes, size_t alignment) {
-  return core_.allocate(bytes, alignment);
+  return __core_.allocate(bytes, alignment);
 }
 void unsynchronized_pool_resource::do_deallocate(void* p, size_t bytes, size_t alignment) {
-  core_.deallocate(p, bytes, alignment);
+  __core_.deallocate(p, bytes, alignment);
 }
 bool unsynchronized_pool_resource::do_is_equal(const memory_resource& other) const noexcept { return this == &other; }
 
@@ -318,38 +318,38 @@ constexpr size_t growth_factor = 2;
 size_t grown(size_t n) noexcept { return n > size_t(-1) / growth_factor ? size_t(-1) : n * growth_factor; }
 } // namespace
 
-monotonic_buffer_resource::monotonic_buffer_resource(memory_resource* upstream)
-    : monotonic_buffer_resource(default_buffer_size, upstream) {}
+monotonic_buffer_resource::monotonic_buffer_resource(memory_resource* __upstream)
+    : monotonic_buffer_resource(default_buffer_size, __upstream) {}
 
-monotonic_buffer_resource::monotonic_buffer_resource(size_t initial_size, memory_resource* upstream)
-    : upstream_rsrc(upstream), next_buffer_size(initial_size), initial_buffer_(nullptr), initial_buffer_size_(0),
-      initial_next_size_(initial_size) {
-  ycxx::detail::precondition(upstream != nullptr, "monotonic_buffer_resource: null upstream resource");
-  ycxx::detail::precondition(initial_size > 0, "monotonic_buffer_resource: initial_size is zero");
-  if (next_buffer_size == 0)
-    next_buffer_size = initial_next_size_ = 1;
+monotonic_buffer_resource::monotonic_buffer_resource(size_t __initial_size, memory_resource* __upstream)
+    : __upstream_rsrc(__upstream), __next_buffer_size(__initial_size), __initial_buffer_(nullptr), __initial_buffer_size_(0),
+      __initial_next_size_(__initial_size) {
+  __ycxx::__detail::__precondition(__upstream != nullptr, "monotonic_buffer_resource: null upstream resource");
+  __ycxx::__detail::__precondition(__initial_size > 0, "monotonic_buffer_resource: initial_size is zero");
+  if (__next_buffer_size == 0)
+    __next_buffer_size = __initial_next_size_ = 1;
 }
 
-monotonic_buffer_resource::monotonic_buffer_resource(void* buffer, size_t buffer_size, memory_resource* upstream)
-    : upstream_rsrc(upstream), cur_(static_cast<char*>(buffer)), end_(static_cast<char*>(buffer) + buffer_size),
-      next_buffer_size(grown(buffer_size == 0 ? 1 : buffer_size)), initial_buffer_(buffer),
-      initial_buffer_size_(buffer_size), initial_next_size_(next_buffer_size) {
-  ycxx::detail::precondition(upstream != nullptr, "monotonic_buffer_resource: null upstream resource");
-  if (buffer == nullptr)
-    cur_ = end_ = nullptr;
+monotonic_buffer_resource::monotonic_buffer_resource(void* __buffer, size_t __buffer_size, memory_resource* __upstream)
+    : __upstream_rsrc(__upstream), __cur_(static_cast<char*>(__buffer)), __end_(static_cast<char*>(__buffer) + __buffer_size),
+      __next_buffer_size(grown(__buffer_size == 0 ? 1 : __buffer_size)), __initial_buffer_(__buffer),
+      __initial_buffer_size_(__buffer_size), __initial_next_size_(__next_buffer_size) {
+  __ycxx::__detail::__precondition(__upstream != nullptr, "monotonic_buffer_resource: null upstream resource");
+  if (__buffer == nullptr)
+    __cur_ = __end_ = nullptr;
 }
 
 monotonic_buffer_resource::~monotonic_buffer_resource() { release(); }
 
 void monotonic_buffer_resource::release() {
-  ycxx::detail::free_chunks(buffers_, upstream_rsrc);
-  buffers_ = nullptr;
-  cur_ = static_cast<char*>(initial_buffer_);
-  end_ = cur_ == nullptr ? nullptr : cur_ + initial_buffer_size_;
-  next_buffer_size = initial_next_size_;
+  __ycxx::__detail::free_chunks(__buffers_, __upstream_rsrc);
+  __buffers_ = nullptr;
+  __cur_ = static_cast<char*>(__initial_buffer_);
+  __end_ = __cur_ == nullptr ? nullptr : __cur_ + __initial_buffer_size_;
+  __next_buffer_size = __initial_next_size_;
 }
 
-memory_resource* monotonic_buffer_resource::upstream_resource() const { return upstream_rsrc; }
+memory_resource* monotonic_buffer_resource::upstream_resource() const { return __upstream_rsrc; }
 
 void* monotonic_buffer_resource::do_allocate(size_t bytes, size_t alignment) {
   // "A pointer to allocated storage ([basic.stc.dynamic.allocation])": distinct for every
@@ -357,31 +357,31 @@ void* monotonic_buffer_resource::do_allocate(size_t bytes, size_t alignment) {
   if (bytes == 0)
     bytes = 1;
   // From the current buffer, if it fits.
-  if (cur_ != nullptr) {
-    const auto at = reinterpret_cast<uintptr_t>(cur_);
-    const size_t pad = (alignment - (at & (alignment - 1))) & (alignment - 1);
-    if (pad <= static_cast<size_t>(end_ - cur_) && bytes <= static_cast<size_t>(end_ - cur_) - pad) {
-      char* p = cur_ + pad;
-      cur_ = p + bytes;
+  if (__cur_ != nullptr) {
+    const auto at = reinterpret_cast<uintptr_t>(__cur_);
+    const size_t __pad = (alignment - (at & (alignment - 1))) & (alignment - 1);
+    if (__pad <= static_cast<size_t>(__end_ - __cur_) && bytes <= static_cast<size_t>(__end_ - __cur_) - __pad) {
+      char* p = __cur_ + __pad;
+      __cur_ = p + bytes;
       return p;
     }
   }
   // A new buffer: at least max(bytes, next_buffer_size) usable bytes, aligned to `alignment`,
   // with the chain footer after them.
-  using footer = ycxx::detail::pool_chunk_footer;
+  using footer = __ycxx::__detail::__pool_chunk_footer;
   if (bytes > size_t(-1) - sizeof(footer) - alignof(footer))
-    ycxx::detail::request_impossible(*upstream_rsrc, alignment > alignof(footer) ? alignment : alignof(footer));
-  size_t usable = bytes > next_buffer_size ? bytes : next_buffer_size;
+    __ycxx::__detail::request_impossible(*__upstream_rsrc, alignment > alignof(footer) ? alignment : alignof(footer));
+  size_t usable = bytes > __next_buffer_size ? bytes : __next_buffer_size;
   if (usable > size_t(-1) - sizeof(footer) - alignof(footer))
     usable = bytes;
-  usable = ycxx::detail::footer_offset<footer>(usable);
-  const size_t total = usable + sizeof(footer);
+  usable = __ycxx::__detail::footer_offset<footer>(usable);
+  const size_t __total = usable + sizeof(footer);
   const size_t align = alignment > alignof(footer) ? alignment : alignof(footer);
-  char* base = static_cast<char*>(upstream_rsrc->allocate(total, align));
-  buffers_ = ::new (static_cast<void*>(base + usable)) footer{buffers_, total, align};
-  next_buffer_size = grown(next_buffer_size);
-  cur_ = base + bytes;
-  end_ = base + usable;
+  char* base = static_cast<char*>(__upstream_rsrc->allocate(__total, align));
+  __buffers_ = ::new (static_cast<void*>(base + usable)) footer{__buffers_, __total, align};
+  __next_buffer_size = grown(__next_buffer_size);
+  __cur_ = base + bytes;
+  __end_ = base + usable;
   return base;
 }
 

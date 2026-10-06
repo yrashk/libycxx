@@ -7,8 +7,8 @@ class future_error_category final : public std::error_category {
 public:
   constexpr future_error_category() noexcept {}
   const char* name() const noexcept override { return "future"; }
-  std::string message(int ev) const override {
-    switch (static_cast<std::future_errc>(ev)) {
+  std::string message(int __ev) const override {
+    switch (static_cast<std::future_errc>(__ev)) {
     case std::future_errc::broken_promise:
       return "the promise was destroyed before it provided a result (broken promise)";
     case std::future_errc::future_already_retrieved:
@@ -25,14 +25,14 @@ public:
 // Constant-initialized and never destroyed, like the other category objects
 // (src/hosted/system_error.cpp).
 union immortal {
-  future_error_category object;
-  constexpr immortal() noexcept : object() {}
+  future_error_category __object;
+  constexpr immortal() noexcept : __object() {}
   ~immortal() {}
 };
 constinit immortal future_object;
 
 } // namespace
 
-namespace [[gnu::visibility("hidden")]] std {
-const error_category& future_category() noexcept { return future_object.object; }
+namespace [[__gnu__::__visibility__("hidden")]] std {
+const error_category& future_category() noexcept { return future_object.__object; }
 } // namespace std

@@ -2,7 +2,7 @@
 // shared by <flat_map> and <flat_set>.
 #pragma once
 
-namespace [[gnu::visibility("hidden")]] std {
+namespace [[__gnu__::__visibility__("hidden")]] std {
 
 struct sorted_unique_t {
   explicit sorted_unique_t() = default;

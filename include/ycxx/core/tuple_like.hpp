@@ -5,153 +5,153 @@
 #include <ycxx/core/invoke.hpp>
 #include <ycxx/core/integer_sequence.hpp>
 
-namespace [[gnu::visibility("hidden")]] std {
+namespace [[__gnu__::__visibility__("hidden")]] std {
 
-template <class T>
+template <class _Tp>
 struct tuple_size;
 
-template <class T>
-  requires requires { tuple_size<T>::value; }
-struct tuple_size<const T> : integral_constant<size_t, tuple_size<T>::value> {};
+template <class _Tp>
+  requires requires { tuple_size<_Tp>::value; }
+struct tuple_size<const _Tp> : integral_constant<size_t, tuple_size<_Tp>::value> {};
 // [depr.tuple]: the volatile and const volatile forms (Annex D). This header is reached from
 // <tuple>, <array>, <ranges> and <utility>, as /4 requires. GCC 16 ignores [[deprecated]] on a
 // partial specialization, so the member (value, type) carries it too: a direct use then warns on
 // both compilers.
-template <class T>
-  requires requires { tuple_size<T>::value; }
-struct [[deprecated("tuple_size<volatile T> is deprecated ([depr.tuple])")]] tuple_size<volatile T>
-    : integral_constant<size_t, tuple_size<T>::value> {
+template <class _Tp>
+  requires requires { tuple_size<_Tp>::value; }
+struct [[deprecated("tuple_size<volatile T> is deprecated ([depr.tuple])")]] tuple_size<volatile _Tp>
+    : integral_constant<size_t, tuple_size<_Tp>::value> {
   [[deprecated("tuple_size<volatile T> is deprecated ([depr.tuple])")]]
-  static constexpr size_t value = tuple_size<T>::value;
+  static constexpr size_t value = tuple_size<_Tp>::value;
 };
-template <class T>
-  requires requires { tuple_size<T>::value; }
-struct [[deprecated("tuple_size<const volatile T> is deprecated ([depr.tuple])")]] tuple_size<const volatile T>
-    : integral_constant<size_t, tuple_size<T>::value> {
+template <class _Tp>
+  requires requires { tuple_size<_Tp>::value; }
+struct [[deprecated("tuple_size<const volatile T> is deprecated ([depr.tuple])")]] tuple_size<const volatile _Tp>
+    : integral_constant<size_t, tuple_size<_Tp>::value> {
   [[deprecated("tuple_size<const volatile T> is deprecated ([depr.tuple])")]]
-  static constexpr size_t value = tuple_size<T>::value;
+  static constexpr size_t value = tuple_size<_Tp>::value;
 };
 
-template <class T>
-constexpr size_t tuple_size_v = tuple_size<T>::value;
+template <class _Tp>
+constexpr size_t tuple_size_v = tuple_size<_Tp>::value;
 
-template <size_t I, class T>
+template <size_t _Ip, class _Tp>
 struct tuple_element;
 
-template <size_t I, class T>
-struct tuple_element<I, const T> {
-  using type = const typename tuple_element<I, T>::type;
+template <size_t _Ip, class _Tp>
+struct tuple_element<_Ip, const _Tp> {
+  using type = const typename tuple_element<_Ip, _Tp>::type;
 };
-template <size_t I, class T>
-struct [[deprecated("tuple_element<I, volatile T> is deprecated ([depr.tuple])")]] tuple_element<I, volatile T> {
+template <size_t _Ip, class _Tp>
+struct [[deprecated("tuple_element<I, volatile T> is deprecated ([depr.tuple])")]] tuple_element<_Ip, volatile _Tp> {
   using type [[deprecated("tuple_element<I, volatile T> is deprecated ([depr.tuple])")]] =
-      volatile typename tuple_element<I, T>::type;
+      volatile typename tuple_element<_Ip, _Tp>::type;
 };
-template <size_t I, class T>
-struct [[deprecated("tuple_element<I, const volatile T> is deprecated ([depr.tuple])")]] tuple_element<I, const volatile T> {
+template <size_t _Ip, class _Tp>
+struct [[deprecated("tuple_element<I, const volatile T> is deprecated ([depr.tuple])")]] tuple_element<_Ip, const volatile _Tp> {
   using type [[deprecated("tuple_element<I, const volatile T> is deprecated ([depr.tuple])")]] =
-      const volatile typename tuple_element<I, T>::type;
+      const volatile typename tuple_element<_Ip, _Tp>::type;
 };
 
-template <size_t I, class T>
-using tuple_element_t = typename tuple_element<I, T>::type;
+template <size_t _Ip, class _Tp>
+using tuple_element_t = typename tuple_element<_Ip, _Tp>::type;
 
-template <class... Types>
+template <class... _Types>
 class tuple;
-template <class T1, class T2>
+template <class _T1, class _T2>
 struct pair;
-template <class T, size_t N>
+template <class _Tp, size_t _Np>
 struct array;
-template <class T>
+template <class _Tp>
 class complex;
 
 } // namespace std
 
-namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
 
-// Makes `get<I>(x)` parse as a template-id inside ycxx::detail so that argument-dependent
+// Makes `get<_Ip>(__x)` parse as a template-id inside __ycxx::__detail so that argument-dependent
 // lookup finds the std::get overloads of every tuple-like type. Never selected.
-struct get_poison {};
+struct __get_poison {};
 template <std::size_t>
-void get(get_poison) = delete;
+void get(__get_poison) = delete;
 
 // [tuple.like]: specializations of array, complex, pair, tuple, ranges::subrange.
-template <class T>
-inline constexpr bool is_tuple_like_impl = false;
-template <class... Ts>
-inline constexpr bool is_tuple_like_impl<std::tuple<Ts...>> = true;
-template <class T1, class T2>
-inline constexpr bool is_tuple_like_impl<std::pair<T1, T2>> = true;
-template <class T, std::size_t N>
-inline constexpr bool is_tuple_like_impl<std::array<T, N>> = true;
-template <class T>
-inline constexpr bool is_tuple_like_impl<std::complex<T>> = true;
+template <class _Tp>
+inline constexpr bool __is_tuple_like_impl = false;
+template <class... _Ts>
+inline constexpr bool __is_tuple_like_impl<std::tuple<_Ts...>> = true;
+template <class _T1, class _T2>
+inline constexpr bool __is_tuple_like_impl<std::pair<_T1, _T2>> = true;
+template <class _Tp, std::size_t _Np>
+inline constexpr bool __is_tuple_like_impl<std::array<_Tp, _Np>> = true;
+template <class _Tp>
+inline constexpr bool __is_tuple_like_impl<std::complex<_Tp>> = true;
 // ranges::subrange adds its own specialization in <ranges>.
 
-template <class T>
-concept tuple_like = is_tuple_like_impl<__remove_cvref(T)>;
+template <class _Tp>
+concept __tuple_like = __is_tuple_like_impl<__remove_cvref(_Tp)>;
 
-template <class T>
-concept pair_like = tuple_like<T> && std::tuple_size_v<__remove_cvref(T)> == 2;
+template <class _Tp>
+concept __pair_like = __tuple_like<_Tp> && std::tuple_size_v<__remove_cvref(_Tp)> == 2;
 
-}} // namespace ycxx::detail
+}} // namespace __ycxx::__detail
 
 // ---------------------------------------------------------------------------------------------
 // [meta.rel] is_applicable / is_nothrow_applicable, [meta.trans.other] apply_result
 // ELEMS-OF(Tuple) is get<I>(declval<Tuple>())... (found by ADL).
 // ---------------------------------------------------------------------------------------------
-namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
-template <class Fn, class Tuple, std::size_t... I>
-consteval bool applicable_impl(std::index_sequence<I...>*) {
-  return requires { ::ycxx::detail::invoke(std::declval<Fn>(), get<I>(std::declval<Tuple>())...); };
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+template <class _Fn, class _Tuple, std::size_t... _Ip>
+consteval bool __applicable_impl(std::index_sequence<_Ip...>*) {
+  return requires { ::__ycxx::__detail::invoke(std::declval<_Fn>(), get<_Ip>(std::declval<_Tuple>())...); };
 }
-template <class Fn, class Tuple, std::size_t... I>
-consteval bool nothrow_applicable_impl(std::index_sequence<I...>*) {
+template <class _Fn, class _Tuple, std::size_t... _Ip>
+consteval bool __nothrow_applicable_impl(std::index_sequence<_Ip...>*) {
   return requires {
-    { ::ycxx::detail::invoke(std::declval<Fn>(), get<I>(std::declval<Tuple>())...) } noexcept;
+    { ::__ycxx::__detail::invoke(std::declval<_Fn>(), get<_Ip>(std::declval<_Tuple>())...) } noexcept;
   };
 }
-template <class Fn, class Tuple, std::size_t... I>
-auto apply_result_impl(std::index_sequence<I...>*)
-    -> decltype(::ycxx::detail::invoke(std::declval<Fn>(), get<I>(std::declval<Tuple>())...));
+template <class _Fn, class _Tuple, std::size_t... _Ip>
+auto __apply_result_impl(std::index_sequence<_Ip...>*)
+    -> decltype(::__ycxx::__detail::invoke(std::declval<_Fn>(), get<_Ip>(std::declval<_Tuple>())...));
 
-template <class Tuple>
-using tuple_indices = std::make_index_sequence<std::tuple_size_v<std::remove_reference_t<Tuple>>>;
+template <class _Tuple>
+using __tuple_indices = std::make_index_sequence<std::tuple_size_v<std::remove_reference_t<_Tuple>>>;
 
-template <class Fn, class Tuple>
+template <class _Fn, class _Tuple>
 consteval bool is_applicable_v() {
-  if constexpr (tuple_like<Tuple>)
-    return applicable_impl<Fn, Tuple>(static_cast<tuple_indices<Tuple>*>(nullptr));
+  if constexpr (__tuple_like<_Tuple>)
+    return __applicable_impl<_Fn, _Tuple>(static_cast<__tuple_indices<_Tuple>*>(nullptr));
   else
     return false;
 }
-template <class Fn, class Tuple>
+template <class _Fn, class _Tuple>
 consteval bool is_nothrow_applicable_v() {
-  if constexpr (tuple_like<Tuple>)
-    return nothrow_applicable_impl<Fn, Tuple>(static_cast<tuple_indices<Tuple>*>(nullptr));
+  if constexpr (__tuple_like<_Tuple>)
+    return __nothrow_applicable_impl<_Fn, _Tuple>(static_cast<__tuple_indices<_Tuple>*>(nullptr));
   else
     return false;
 }
-}} // namespace ycxx::detail
+}} // namespace __ycxx::__detail
 
-namespace [[gnu::visibility("hidden")]] std {
-template <class Fn, class Tuple>
-struct is_applicable : bool_constant<ycxx::detail::is_applicable_v<Fn, Tuple>()> {};
-template <class Fn, class Tuple>
-constexpr bool is_applicable_v = ycxx::detail::is_applicable_v<Fn, Tuple>();
-template <class Fn, class Tuple>
-struct is_nothrow_applicable : bool_constant<ycxx::detail::is_nothrow_applicable_v<Fn, Tuple>()> {};
-template <class Fn, class Tuple>
-constexpr bool is_nothrow_applicable_v = ycxx::detail::is_nothrow_applicable_v<Fn, Tuple>();
+namespace [[__gnu__::__visibility__("hidden")]] std {
+template <class _Fn, class _Tuple>
+struct is_applicable : bool_constant<__ycxx::__detail::is_applicable_v<_Fn, _Tuple>()> {};
+template <class _Fn, class _Tuple>
+constexpr bool is_applicable_v = __ycxx::__detail::is_applicable_v<_Fn, _Tuple>();
+template <class _Fn, class _Tuple>
+struct is_nothrow_applicable : bool_constant<__ycxx::__detail::is_nothrow_applicable_v<_Fn, _Tuple>()> {};
+template <class _Fn, class _Tuple>
+constexpr bool is_nothrow_applicable_v = __ycxx::__detail::is_nothrow_applicable_v<_Fn, _Tuple>();
 
-template <class Fn, class Tuple>
+template <class _Fn, class _Tuple>
 struct apply_result {};
-template <class Fn, class Tuple>
-  requires(ycxx::detail::is_applicable_v<Fn, Tuple>())
-struct apply_result<Fn, Tuple> {
-  using type = decltype(ycxx::detail::apply_result_impl<Fn, Tuple>(
-      static_cast<ycxx::detail::tuple_indices<Tuple>*>(nullptr)));
+template <class _Fn, class _Tuple>
+  requires(__ycxx::__detail::is_applicable_v<_Fn, _Tuple>())
+struct apply_result<_Fn, _Tuple> {
+  using type = decltype(__ycxx::__detail::__apply_result_impl<_Fn, _Tuple>(
+      static_cast<__ycxx::__detail::__tuple_indices<_Tuple>*>(nullptr)));
 };
-template <class Fn, class Tuple>
-using apply_result_t = typename apply_result<Fn, Tuple>::type;
+template <class _Fn, class _Tuple>
+using apply_result_t = typename apply_result<_Fn, _Tuple>::type;
 } // namespace std

@@ -1,0 +1,61 @@
+# Reserved spellings tools/uglify.py never produces (DECISIONS §2): the implementation's other
+# parts already use them. A name whose spelling would be one of these is renamed to `__y_x`
+# (`_Y_X` for an uppercase-initial one) instead. `re:` introduces a Python regular expression that
+# must match the whole spelling; `#` starts a comment.
+
+[compiler]
+# Keywords, builtin types, templates and functions of GCC 16 and Clang 23 (found by compiling
+# each new spelling as a variable name, and from the compilers' documentation).
+__float128 __int128 __ibm128 __bf16 __fp16 __float80 __mfp8 __int8 __int16 __int32 __int64
+__real __imag __restrict __null __nullptr __thread __alignof __asm __attribute __complex __const
+__extension__ __inline __label__ __signed __typeof __volatile __decltype __auto_type __builtin
+__private_extern__ __module_private__ __declspec __cdecl __stdcall __fastcall __thiscall
+__vectorcall __regcall __pascal __forceinline __unaligned __w64 __ptr32 __ptr64 __sptr __uptr
+__try __except __finally __leave __super __interface __event __hook __unhook __raise
+__if_exists __if_not_exists __single_inheritance __multiple_inheritance __virtual_inheritance
+__noop __assume __identifier __uuidof __kindof __bases __direct_bases __underlying_type __decay
+__type_pack_element __make_integer_seq __integer_pack __datasizeof __array_rank __array_extent
+__common_type __builtin_common_type __dedup __vector __pixel __bool __global __local __constant
+__private __generic __read_only __write_only __read_write __kernel
+re:__(builtin|c11|opencl|hip|scoped_atomic|cxa|gxx|nvvm|nvptx|amdgcn|sanitizer|asan|tsan|msan|ubsan|lsan|hwasan)_\w*
+re:__atomic_(load|store|exchange|compare_exchange|(add|sub|and|xor|or|nand|min|max)_fetch|fetch_(add|sub|and|xor|or|nand|min|max)|test_and_set|clear|thread_fence|signal_fence|always_lock_free|is_lock_free|feraiseexcept)(_n)?
+re:__sync_(fetch_and_\w+|\w+_and_fetch|bool_compare_and_swap|val_compare_and_swap|lock_test_and_set|lock_release|synchronize|swap)
+# source_location::__impl is the class GCC's __builtin_source_location requires.
+__impl __elems
+
+[platform]
+# Predefined macros of the compilers for some target.
+__riscv __mips __sparc __powerpc __ppc __arm __thumb __i386 __amd64 __x86_64 __linux __unix
+__sun __hppa __ia64 __alpha __s390 __s390x __m68k __vax __sh __avr __xtensa __bpf __wasm
+__wasm32 __wasm64 __nvptx __hexagon __loongarch __loongarch64 __APPLE__ __MACH__ __ELF__
+__clang __GNUC __llvm __OPTIMIZE__ __NO_INLINE__ __STRICT_ANSI__ __CHAR_UNSIGNED__
+__SSE__ __AVX__ __ARM_ARCH __OpenBSD__ __FreeBSD__ __NetBSD__ __DragonFly__ __Fuchsia__
+__ANDROID__ __HAIKU__ __EMSCRIPTEN__ __wasi__ __CYGWIN__ __MINGW32__ __MINGW64__ __WIN32
+re:__\w+__
+# Macros of C library and system headers (glibc's <sys/cdefs.h>, the BSDs' and Darwin's
+# <sys/cdefs.h>, newlib's <ctype.h>, Linux's UAPI headers, Microsoft's SAL annotations), and
+# Objective-C/Blocks qualifiers that Clang defines on Darwin.
+__unused __used __dead __dead2 __pure __pure2 __aligned __packed __section __printflike
+__scanflike __format_arg __weak_reference __deprecated __deprecated_msg __unavailable
+__result_use_check __noescape __cold __returns_twice __exported __hidden __nonnull __nullable
+__null_unspecified __strong __weak __block __autoreleasing __unsafe_unretained __counted_by
+__sized_by __ended_by __single __unsafe_indexable __indexable __bidi_indexable __terminated_by
+__null_terminated __offsetof __rangeof __containerof __min_size __malloc_like __alloc_size
+__alloc_align __constructor __destructor __noinline __always_inline __predict_true
+__predict_false __lock_annotate __guarded_by __pt_guarded_by __nosanitizeaddress
+__nosanitizethread __nodiscard __writeonly __sentinel __weak_symbol __nonstring __trace
+__CONCAT __STRING __XSTRING __P __wur __THROW __THROWNL __NTH __attribute_pure__
+__attribute_const__ __extern_inline __extern_always_inline __fortify_function __errordecl
+__warndecl __flexarr __glibc_unlikely __glibc_likely __va_arg_pack __REDIRECT __ASMNAME
+__BEGIN_DECLS __END_DECLS __ptr_t __long_double_t __bos __bos0 __restrict_arr __inline
+__user __kernel __iomem __force __bitwise __safe __nocast __must_check __le16 __le32 __le64
+__be16 __be32 __be64 __u8 __u16 __u32 __u64 __s8 __s16 __s32 __s64 __aligned_u64
+__in __out __inout __in_opt __out_opt __inout_opt __deref __allocator __bound __callback
+__checkReturn __format_string __notnull __nullterminated __reserved __readonly __success
+__typefix __valid __field_ecount __out_ecount __in_ecount __in_bcount __out_bcount
+_C _L _N _P _S _U _X _B _A _E _T _CTYPE_A _CTYPE_C _CTYPE_D _CTYPE_G _CTYPE_L _CTYPE_P
+_CTYPE_S _CTYPE_U _CTYPE_X _CTYPE_B _CTYPE_R _CTYPE_I _CTYPE_T _CTYPE_Q _CTYPE_SW0
+_Complex _Imaginary _Bool _Atomic _Noreturn _Alignas _Alignof _Static_assert _Thread_local
+_Generic _BitInt _Decimal32 _Decimal64 _Decimal128 _Float16 _Float32 _Float64 _Float128
+_Float32x _Float64x _Float128x _Nonnull _Nullable _Null_unspecified _Nullable_result _Pragma
+_Accum _Fract _Sat _Countof _Lengthof _Clang

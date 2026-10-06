@@ -11,25 +11,25 @@
 #pragma once
 #include <ycxx/config.hpp>
 
-extern "C" [[gnu::weak]] const char ycxx_fs_default_new;
-extern "C" [[gnu::weak]] const char ycxx_fs_default_new_align;
-extern "C" [[gnu::weak]] const char ycxx_default_new_array;
-extern "C" [[gnu::weak]] const char ycxx_default_new_array_align;
+extern "C" [[__gnu__::__weak__]] const char __ycxx_fs_default_new;
+extern "C" [[__gnu__::__weak__]] const char __ycxx_fs_default_new_align;
+extern "C" [[__gnu__::__weak__]] const char __ycxx_default_new_array;
+extern "C" [[__gnu__::__weak__]] const char __ycxx_default_new_array_align;
 
-namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
 // A template, so that under -fno-exceptions the discarded try/catch is never instantiated.
-template <class F>
-void* try_or_null(bool heapless_default, F f) noexcept {
-  if (heapless_default)
+template <class _Fp>
+void* __try_or_null(bool __heapless_default, _Fp __f) noexcept {
+  if (__heapless_default)
     return nullptr;
-  if constexpr (cfg::exceptions) {
+  if constexpr (__cfg::exceptions) {
     try {
-      return f();
+      return __f();
     } catch (...) {
       return nullptr;
     }
   } else {
-    return f();
+    return __f();
   }
 }
-}} // namespace ycxx::detail
+}} // namespace __ycxx::__detail

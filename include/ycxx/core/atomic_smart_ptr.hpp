@@ -11,150 +11,150 @@
 #include <ycxx/core/atomic.hpp>
 #include <ycxx/core/shared_ptr.hpp>
 
-namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
 
 // Holds the striped lock of an atomic smart pointer (no-op during constant evaluation).
-class sp_atomic_guard {
-  const volatile void* addr_;
+class __sp_atomic_guard {
+  const volatile void* __addr_;
 
 public:
-  constexpr sp_atomic_guard(const volatile void* addr, std::memory_order o) noexcept : addr_(addr) {
+  constexpr __sp_atomic_guard(const volatile void* __addr, std::memory_order __o) noexcept : __addr_(__addr) {
     if !consteval {
-      ::ycxx::detail::atomic_lock(addr_);
-      if (o == std::memory_order::seq_cst)
+      ::__ycxx::__detail::__atomic_lock(__addr_);
+      if (__o == std::memory_order::seq_cst)
         __atomic_thread_fence(__ATOMIC_SEQ_CST);
     }
   }
-  sp_atomic_guard(const sp_atomic_guard&) = delete;
-  sp_atomic_guard& operator=(const sp_atomic_guard&) = delete;
-  constexpr ~sp_atomic_guard() {
+  __sp_atomic_guard(const __sp_atomic_guard&) = delete;
+  __sp_atomic_guard& operator=(const __sp_atomic_guard&) = delete;
+  constexpr ~__sp_atomic_guard() {
     if !consteval {
-      ::ycxx::detail::atomic_unlock(addr_);
+      ::__ycxx::__detail::__atomic_unlock(__addr_);
     }
   }
 };
 
-}} // namespace ycxx::detail
+}} // namespace __ycxx::__detail
 
-namespace [[gnu::visibility("hidden")]] ycxx { namespace adl_free {
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __adl_free {
 
 // The base of atomic<shared_ptr<T>> and atomic<weak_ptr<T>>; P is shared_ptr<T> or weak_ptr<T>.
-template <class P>
-class sp_atomic {
+template <class _Pp>
+class __sp_atomic {
 protected:
-  P p_;
+  _Pp __p_;
 
   // [util.smartptr.atomic.shared]/16: the same stored pointer, and shared ownership or both empty.
-  static constexpr bool equivalent(const P& a, const P& b) noexcept {
+  static constexpr bool equivalent(const _Pp& a, const _Pp& b) noexcept {
     if constexpr (requires { a.get(); })
       return a.get() == b.get() && a.owner_equal(b);
     else
-      return ::ycxx::detail::sp_access::stored(a) == ::ycxx::detail::sp_access::stored(b) && a.owner_equal(b);
+      return ::__ycxx::__detail::__sp_access::__stored(a) == ::__ycxx::__detail::__sp_access::__stored(b) && a.owner_equal(b);
   }
 
 public:
   static constexpr bool is_always_lock_free = false;
   bool is_lock_free() const noexcept { return false; }
 
-  constexpr sp_atomic() noexcept = default;
-  constexpr sp_atomic(P desired) noexcept : p_(static_cast<P&&>(desired)) {}
-  sp_atomic(const sp_atomic&) = delete;
-  void operator=(const sp_atomic&) = delete;
+  constexpr __sp_atomic() noexcept = default;
+  constexpr __sp_atomic(_Pp __desired) noexcept : __p_(static_cast<_Pp&&>(__desired)) {}
+  __sp_atomic(const __sp_atomic&) = delete;
+  void operator=(const __sp_atomic&) = delete;
 
-  constexpr P load(std::memory_order o = std::memory_order::seq_cst) const noexcept {
-    ::ycxx::detail::atomic_check_load(o);
-    ::ycxx::detail::sp_atomic_guard g(this, o);
-    return p_;
+  constexpr _Pp load(std::memory_order __o = std::memory_order::seq_cst) const noexcept {
+    ::__ycxx::__detail::__atomic_check_load(__o);
+    ::__ycxx::__detail::__sp_atomic_guard __g(this, __o);
+    return __p_;
   }
-  constexpr operator P() const noexcept { return load(); }
-  constexpr void store(P desired, std::memory_order o = std::memory_order::seq_cst) noexcept {
-    ::ycxx::detail::atomic_check_store(o);
+  constexpr operator _Pp() const noexcept { return load(); }
+  constexpr void store(_Pp __desired, std::memory_order __o = std::memory_order::seq_cst) noexcept {
+    ::__ycxx::__detail::__atomic_check_store(__o);
     {
-      ::ycxx::detail::sp_atomic_guard g(this, o);
-      p_.swap(desired);
+      ::__ycxx::__detail::__sp_atomic_guard __g(this, __o);
+      __p_.swap(__desired);
     }
     // desired (the old value) is released here, outside the lock.
   }
-  constexpr void operator=(P desired) noexcept { store(static_cast<P&&>(desired)); }
-  constexpr P exchange(P desired, std::memory_order o = std::memory_order::seq_cst) noexcept {
+  constexpr void operator=(_Pp __desired) noexcept { store(static_cast<_Pp&&>(__desired)); }
+  constexpr _Pp exchange(_Pp __desired, std::memory_order __o = std::memory_order::seq_cst) noexcept {
     {
-      ::ycxx::detail::sp_atomic_guard g(this, o);
-      p_.swap(desired);
+      ::__ycxx::__detail::__sp_atomic_guard __g(this, __o);
+      __p_.swap(__desired);
     }
-    return desired;
+    return __desired;
   }
-  constexpr bool compare_exchange_weak(P& expected, P desired, std::memory_order s, std::memory_order f) noexcept {
-    return compare_exchange_strong(expected, static_cast<P&&>(desired), s, f);
+  constexpr bool compare_exchange_weak(_Pp& expected, _Pp __desired, std::memory_order s, std::memory_order __f) noexcept {
+    return compare_exchange_strong(expected, static_cast<_Pp&&>(__desired), s, __f);
   }
-  constexpr bool compare_exchange_strong(P& expected, P desired, std::memory_order s, std::memory_order f) noexcept {
-    ::ycxx::detail::precondition(f != std::memory_order::release && f != std::memory_order::acq_rel,
+  constexpr bool compare_exchange_strong(_Pp& expected, _Pp __desired, std::memory_order s, std::memory_order __f) noexcept {
+    ::__ycxx::__detail::__precondition(__f != std::memory_order::release && __f != std::memory_order::acq_rel,
                                  "atomic compare_exchange: failure order must be relaxed, acquire or seq_cst");
-    P old; // the value to release after the lock is dropped
+    _Pp __old; // the value to release after the lock is dropped
     {
-      ::ycxx::detail::sp_atomic_guard g(this, s == std::memory_order::seq_cst || f == std::memory_order::seq_cst
+      ::__ycxx::__detail::__sp_atomic_guard __g(this, s == std::memory_order::seq_cst || __f == std::memory_order::seq_cst
                                   ? std::memory_order::seq_cst
                                   : s);
-      if (equivalent(p_, expected)) {
-        p_.swap(desired);
-        old.swap(desired);
+      if (equivalent(__p_, expected)) {
+        __p_.swap(__desired);
+        __old.swap(__desired);
         return true;
       }
-      old = p_; // the use count update is part of the atomic operation
+      __old = __p_; // the use count update is part of the atomic operation
     }
-    expected.swap(old);
+    expected.swap(__old);
     return false;
   }
-  constexpr bool compare_exchange_weak(P& expected, P desired, std::memory_order o = std::memory_order::seq_cst) noexcept {
-    return compare_exchange_strong(expected, static_cast<P&&>(desired), o, ::ycxx::detail::atomic_failure_order(o));
+  constexpr bool compare_exchange_weak(_Pp& expected, _Pp __desired, std::memory_order __o = std::memory_order::seq_cst) noexcept {
+    return compare_exchange_strong(expected, static_cast<_Pp&&>(__desired), __o, ::__ycxx::__detail::__atomic_failure_order(__o));
   }
-  constexpr bool compare_exchange_strong(P& expected, P desired,
-                                         std::memory_order o = std::memory_order::seq_cst) noexcept {
-    return compare_exchange_strong(expected, static_cast<P&&>(desired), o, ::ycxx::detail::atomic_failure_order(o));
+  constexpr bool compare_exchange_strong(_Pp& expected, _Pp __desired,
+                                         std::memory_order __o = std::memory_order::seq_cst) noexcept {
+    return compare_exchange_strong(expected, static_cast<_Pp&&>(__desired), __o, ::__ycxx::__detail::__atomic_failure_order(__o));
   }
 
-  constexpr void wait(P old, std::memory_order o = std::memory_order::seq_cst) const noexcept {
-    ::ycxx::detail::atomic_check_load(o);
+  constexpr void wait(_Pp __old, std::memory_order __o = std::memory_order::seq_cst) const noexcept {
+    ::__ycxx::__detail::__atomic_check_load(__o);
     if !consteval {
-      ::ycxx::detail::atomic_wait_until_done(this, [&] {
-        ::ycxx::detail::sp_atomic_guard g(this, o);
-        return !equivalent(p_, old);
+      ::__ycxx::__detail::__atomic_wait_until_done(this, [&] {
+        ::__ycxx::__detail::__sp_atomic_guard __g(this, __o);
+        return !equivalent(__p_, __old);
       });
     }
   }
-  constexpr void notify_one() noexcept { ::ycxx::detail::atomic_notify_all(this); }
-  constexpr void notify_all() noexcept { ::ycxx::detail::atomic_notify_all(this); }
+  constexpr void notify_one() noexcept { ::__ycxx::__detail::atomic_notify_all(this); }
+  constexpr void notify_all() noexcept { ::__ycxx::__detail::atomic_notify_all(this); }
 };
 
-}} // namespace ycxx::adl_free
+}} // namespace __ycxx::__adl_free
 
-namespace [[gnu::visibility("hidden")]] std {
+namespace [[__gnu__::__visibility__("hidden")]] std {
 
 // [util.smartptr.atomic.shared]
-template <class T>
-struct atomic<shared_ptr<T>> : ycxx::adl_free::sp_atomic<shared_ptr<T>> {
-  using value_type = shared_ptr<T>;
+template <class _Tp>
+struct atomic<shared_ptr<_Tp>> : __ycxx::__adl_free::__sp_atomic<shared_ptr<_Tp>> {
+  using value_type = shared_ptr<_Tp>;
 
   constexpr atomic() noexcept = default;
   constexpr atomic(nullptr_t) noexcept : atomic() {}
-  constexpr atomic(shared_ptr<T> desired) noexcept
-      : ycxx::adl_free::sp_atomic<shared_ptr<T>>(static_cast<shared_ptr<T>&&>(desired)) {}
+  constexpr atomic(shared_ptr<_Tp> __desired) noexcept
+      : __ycxx::__adl_free::__sp_atomic<shared_ptr<_Tp>>(static_cast<shared_ptr<_Tp>&&>(__desired)) {}
   atomic(const atomic&) = delete;
   void operator=(const atomic&) = delete;
-  constexpr void operator=(shared_ptr<T> desired) noexcept { this->store(static_cast<shared_ptr<T>&&>(desired)); }
+  constexpr void operator=(shared_ptr<_Tp> __desired) noexcept { this->store(static_cast<shared_ptr<_Tp>&&>(__desired)); }
   constexpr void operator=(nullptr_t) noexcept { this->store(nullptr); }
 };
 
 // [util.smartptr.atomic.weak]
-template <class T>
-struct atomic<weak_ptr<T>> : ycxx::adl_free::sp_atomic<weak_ptr<T>> {
-  using value_type = weak_ptr<T>;
+template <class _Tp>
+struct atomic<weak_ptr<_Tp>> : __ycxx::__adl_free::__sp_atomic<weak_ptr<_Tp>> {
+  using value_type = weak_ptr<_Tp>;
 
   constexpr atomic() noexcept = default;
-  constexpr atomic(weak_ptr<T> desired) noexcept
-      : ycxx::adl_free::sp_atomic<weak_ptr<T>>(static_cast<weak_ptr<T>&&>(desired)) {}
+  constexpr atomic(weak_ptr<_Tp> __desired) noexcept
+      : __ycxx::__adl_free::__sp_atomic<weak_ptr<_Tp>>(static_cast<weak_ptr<_Tp>&&>(__desired)) {}
   atomic(const atomic&) = delete;
   void operator=(const atomic&) = delete;
-  constexpr void operator=(weak_ptr<T> desired) noexcept { this->store(static_cast<weak_ptr<T>&&>(desired)); }
+  constexpr void operator=(weak_ptr<_Tp> __desired) noexcept { this->store(static_cast<weak_ptr<_Tp>&&>(__desired)); }
 };
 
 } // namespace std

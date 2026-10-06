@@ -67,7 +67,7 @@ int main(int, char** argv) {
       name.erase(0, 1); // Mach-O's C prefix
     bool fundamental_type_info = (name.starts_with("_ZTI") || name.starts_with("_ZTS")) && name.size() <= 8;
     bool library = (name.starts_with("_Z") && !name.contains("3own")) || name.contains("__cxa_") ||
-                   name.contains("__gxx_personality") || name.contains("ycxx_pal_");
+                   name.contains("__gxx_personality") || name.contains("__ycxx_pal_");
     if (library && os == "Darwin" && fundamental_type_info)
       continue; // default visibility on Darwin with GCC only (DECISIONS §2)
     if (library) {

@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
 """Enforce hidden visibility for libycxx's namespaces (DECISIONS.md section 2).
 
-Every namespace-scope opening of `std`, `ycxx` or `__cxxabiv1` in include/ and in the C++ sources
+Every namespace-scope opening of `std`, `__ycxx` or `__cxxabiv1` in include/ and in the C++ sources
 of src/ must read
-`namespace [[gnu::visibility("hidden")]] NAME {`. The attribute applies only to the block it is
+`namespace [[__gnu__::__visibility__("hidden")]] NAME {` (the attribute's reserved spelling: the
+program may define `gnu`, `visibility` and `hidden` as macros, DECISIONS §2). The attribute applies only to the block it is
 written on, so a reopening without it would emit default-visibility (exported) symbols; and a
 nested namespace definition (`namespace std::ranges {`) cannot carry attributes, so it is spelled
-`namespace [[gnu::visibility("hidden")]] std { namespace ranges {` and closed with `}}`. The
+`namespace [[__gnu__::__visibility__("hidden")]] std { namespace ranges {` and closed with `}}`. The
 runtime's sources are not compiled with -fvisibility=hidden: what they define outside these
 namespaces (C-linkage entry points) carries its own attribute.
 
@@ -18,9 +19,9 @@ import pathlib, re, sys
 REPO = pathlib.Path(__file__).resolve().parent.parent
 ROOTS = (REPO / "include", REPO / "src")
 SOURCE_SUFFIXES = {".cpp", ".hpp"}  # under src/; include/ has extensionless headers too
-ATTR = '[[gnu::visibility("hidden")]]'
-# An unannotated file-scope opening: `namespace std {`, `namespace ycxx::detail::x {`, ...
-OPEN = re.compile(r'^namespace ((?:std|ycxx|__cxxabiv1)\b)((?:::\w+)*) \{')
+ATTR = '[[__gnu__::__visibility__("hidden")]]'
+# An unannotated file-scope opening: `namespace std {`, `namespace __ycxx::__detail::__x {`, ...
+OPEN = re.compile(r'^namespace ((?:std|__ycxx|__cxxabiv1)\b)((?:::\w+)*) \{')
 PREFIXES = ("u8R", "uR", "UR", "LR", "R", "u8", "u", "U", "L")
 
 

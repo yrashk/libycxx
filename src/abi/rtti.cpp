@@ -7,7 +7,7 @@
 // Defining std::type_info's key function emits _ZTVSt9type_info and _ZTISt9type_info here.
 std::type_info::~type_info() {}
 
-namespace [[gnu::visibility("hidden")]] __cxxabiv1 {
+namespace [[__gnu__::__visibility__("hidden")]] __cxxabiv1 {
 
 // Each destructor is its class's key function: defining it emits the class's vtable (and
 // type_info) here, once (§2.9.4, final note).
@@ -41,10 +41,10 @@ __pointer_to_member_type_info::~__pointer_to_member_type_info() {}
 // type_info symbols (CMakeLists.txt, generated fundamental_type_infos.hpp, assembler names).
 // Every compiler's list is hidden: a directive for a symbol already hidden changes nothing.
 namespace {
-consteval ycxx::abi::asm_text hide_fundamental_type_infos() {
-  ycxx::abi::asm_text a;
-  for (const char* const* symbol = ycxx::abi::fundamental_type_info_symbols; *symbol; ++symbol) {
-    a.append(ycxx::detail::cfg::darwin ? ".private_extern " : ".hidden ");
+consteval __ycxx::__abi::__asm_text hide_fundamental_type_infos() {
+  __ycxx::__abi::__asm_text a;
+  for (const char* const* symbol = __ycxx::__abi::fundamental_type_info_symbols; *symbol; ++symbol) {
+    a.append(__ycxx::__detail::__cfg::__darwin ? ".private_extern " : ".hidden ");
     a.append(*symbol);
     a.append("\n");
   }
@@ -53,11 +53,11 @@ consteval ycxx::abi::asm_text hide_fundamental_type_infos() {
 } // namespace
 asm((hide_fundamental_type_infos()));
 
-namespace [[gnu::visibility("hidden")]] ycxx { namespace abi {
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __abi {
 
 using namespace __cxxabiv1;
 
-rtti_kind kind_of(const std::type_info& t) noexcept {
+__rtti_kind __kind_of(const std::type_info& t) noexcept {
   // The dynamic type of a type_info object is one of the ABI classes. Their type_info objects
   // are normally this runtime's, so addresses are compared first. Every image linking libycxx
   // has its own hidden copy of the runtime (DECISIONS §2), so a type_info object emitted in
@@ -66,37 +66,37 @@ rtti_kind kind_of(const std::type_info& t) noexcept {
   const std::type_info* d = &typeid(t);
   const struct {
     const std::type_info* type;
-    rtti_kind kind;
-  } kinds[] = {
-      {&typeid(__si_class_type_info), rtti_kind::class_si},
-      {&typeid(__vmi_class_type_info), rtti_kind::class_vmi},
-      {&typeid(__class_type_info), rtti_kind::class_plain},
-      {&typeid(__pointer_type_info), rtti_kind::pointer},
-      {&typeid(__fundamental_type_info), rtti_kind::fundamental},
-      {&typeid(__pointer_to_member_type_info), rtti_kind::member_pointer},
-      {&typeid(__enum_type_info), rtti_kind::enumeration},
-      {&typeid(__function_type_info), rtti_kind::function},
-      {&typeid(__array_type_info), rtti_kind::array},
+    __rtti_kind kind;
+  } __kinds[] = {
+      {&typeid(__si_class_type_info), __rtti_kind::__class_si},
+      {&typeid(__vmi_class_type_info), __rtti_kind::__class_vmi},
+      {&typeid(__class_type_info), __rtti_kind::__class_plain},
+      {&typeid(__pointer_type_info), __rtti_kind::pointer},
+      {&typeid(__fundamental_type_info), __rtti_kind::__fundamental},
+      {&typeid(__pointer_to_member_type_info), __rtti_kind::__member_pointer},
+      {&typeid(__enum_type_info), __rtti_kind::__enumeration},
+      {&typeid(__function_type_info), __rtti_kind::function},
+      {&typeid(__array_type_info), __rtti_kind::array},
   };
-  for (const auto& k : kinds)
+  for (const auto& k : __kinds)
     if (d == k.type)
       return k.kind;
-  for (const auto& k : kinds)
+  for (const auto& k : __kinds)
     if (*d == *k.type)
       return k.kind;
-  return rtti_kind::unknown;
+  return __rtti_kind::unknown;
 }
 
-base_search find_bases(const subobject& root, const __class_type_info& target) {
-  base_search r;
-  auto visit = [&](const subobject& s) {
-    if (!same_type(*s.type, target))
+__base_search __find_bases(const __subobject& __root, const __class_type_info& target) {
+  __base_search r;
+  auto visit = [&](const __subobject& s) {
+    if (!__same_type(*s.type, target))
       return false;
     if (r.count == 0) {
       r.count = 1;
       r.first = s;
       r.is_public = s.is_public;
-    } else if (same_subobject(r.first, s)) {
+    } else if (__same_subobject(r.first, s)) {
       r.is_public = r.is_public || s.is_public;
     } else {
       r.count = 2; // ambiguous; nothing more to learn
@@ -104,7 +104,7 @@ base_search find_bases(const subobject& root, const __class_type_info& target) {
     }
     return false;
   };
-  walk_bases(root, visit);
+  __walk_bases(__root, visit);
   return r;
 }
 
@@ -127,7 +127,7 @@ constexpr unsigned qualifier_mask =
 constexpr unsigned function_qualifier_mask =
     __pbase_type_info::__noexcept_mask | __pbase_type_info::__transaction_safe_mask;
 
-bool is_pointer_like(rtti_kind k) noexcept { return k == rtti_kind::pointer || k == rtti_kind::member_pointer; }
+bool is_pointer_like(__rtti_kind k) noexcept { return k == __rtti_kind::pointer || k == __rtti_kind::__member_pointer; }
 
 // The function "qualifiers" of a pointer or pointer to member. GCC 16.2 leaves __noexcept_mask
 // clear for pointers to noexcept member functions (_ZTIM1SDoFvvE has __flags 0 and __pointee
@@ -135,25 +135,25 @@ bool is_pointer_like(rtti_kind k) noexcept { return k == rtti_kind::pointer || k
 // M <class type> <member type> (§5.1.5.7), where <class type> is spelled exactly as the
 // context class's own name (it is the first component, so no substitution can abbreviate it)
 // and the member function type is [<CV-qualifiers>] [Do] [Dx] F ... E (§5.1.5.3).
-unsigned function_qualifiers(const __pbase_type_info* p, rtti_kind kind) {
-  unsigned f = p->__flags & function_qualifier_mask;
-  if (kind != rtti_kind::member_pointer || kind_of(*p->__pointee) != rtti_kind::function)
-    return f;
+unsigned function_qualifiers(const __pbase_type_info* p, __rtti_kind kind) {
+  unsigned __f = p->__flags & function_qualifier_mask;
+  if (kind != __rtti_kind::__member_pointer || __kind_of(*p->__pointee) != __rtti_kind::function)
+    return __f;
   const char* name = p->name();
-  const char* context = static_cast<const __pointer_to_member_type_info*>(p)->__context->name();
-  std::size_t n = __builtin_strlen(context);
-  if (name[0] != 'M' || __builtin_strncmp(name + 1, context, n) != 0)
-    return f;
+  const char* __context = static_cast<const __pointer_to_member_type_info*>(p)->__context->name();
+  std::size_t n = __builtin_strlen(__context);
+  if (name[0] != 'M' || __builtin_strncmp(name + 1, __context, n) != 0)
+    return __f;
   const char* s = name + 1 + n;
   while (*s == 'r' || *s == 'V' || *s == 'K')
     ++s;
   if (s[0] == 'D' && s[1] == 'o') {
-    f |= __pbase_type_info::__noexcept_mask;
+    __f |= __pbase_type_info::__noexcept_mask;
     s += 2;
   }
   if (s[0] == 'D' && s[1] == 'x')
-    f |= __pbase_type_info::__transaction_safe_mask;
-  return f;
+    __f |= __pbase_type_info::__transaction_safe_mask;
+  return __f;
 }
 
 // Whether a prvalue of the thrown pointer or pointer-to-member type converts to the handler's
@@ -180,55 +180,55 @@ unsigned function_qualifiers(const __pbase_type_info* p, rtti_kind kind) {
 bool same_member_function(const __pbase_type_info* t, const __pbase_type_info* h) {
   auto suffix = [](const __pbase_type_info* p) -> const char* {
     const char* name = p->name();
-    const char* context = static_cast<const __pointer_to_member_type_info*>(p)->__context->name();
-    std::size_t n = __builtin_strlen(context);
-    if (name[0] != 'M' || __builtin_strncmp(name + 1, context, n) != 0)
+    const char* __context = static_cast<const __pointer_to_member_type_info*>(p)->__context->name();
+    std::size_t n = __builtin_strlen(__context);
+    if (name[0] != 'M' || __builtin_strncmp(name + 1, __context, n) != 0)
       return nullptr;
     return name + 1 + n;
   };
-  const char* ts = suffix(t);
+  const char* __ts = suffix(t);
   const char* hs = suffix(h);
-  if (!ts || !hs)
+  if (!__ts || !hs)
     return *t->__pointee == *h->__pointee;
   auto is_cv = [](char c) { return c == 'r' || c == 'V' || c == 'K'; };
-  while (is_cv(*ts) && *ts == *hs) {
-    ++ts;
+  while (is_cv(*__ts) && *__ts == *hs) {
+    ++__ts;
     ++hs;
   }
-  if (is_cv(*ts) || is_cv(*hs))
+  if (is_cv(*__ts) || is_cv(*hs))
     return false; // different cv-qualifiers
   auto skip_exception_spec = [](const char* s) {
     while (s[0] == 'D' && (s[1] == 'o' || s[1] == 'x'))
       s += 2;
     return s;
   };
-  return __builtin_strcmp(skip_exception_spec(ts), skip_exception_spec(hs)) == 0;
+  return __builtin_strcmp(skip_exception_spec(__ts), skip_exception_spec(hs)) == 0;
 }
 
-bool qualification_convertible(const __pbase_type_info* t, const __pbase_type_info* h, rtti_kind kind) {
+bool qualification_convertible(const __pbase_type_info* t, const __pbase_type_info* h, __rtti_kind kind) {
   bool outer_const = true; // whether the handler is const at every level so far
   bool top = true;
   for (;;) {
-    unsigned tf = t->__flags;
-    unsigned hf = h->__flags;
-    if ((tf & ~hf & qualifier_mask) != 0)
+    unsigned __tf = t->__flags;
+    unsigned __hf = h->__flags;
+    if ((__tf & ~__hf & qualifier_mask) != 0)
       return false;
-    if ((hf & ~tf & qualifier_mask) != 0 && !outer_const)
+    if ((__hf & ~__tf & qualifier_mask) != 0 && !outer_const)
       return false;
     unsigned tfq = function_qualifiers(t, kind);
     unsigned hfq = function_qualifiers(h, kind);
     if (top ? (hfq & ~tfq) != 0 : hfq != tfq)
       return false;
-    if (kind == rtti_kind::member_pointer &&
+    if (kind == __rtti_kind::__member_pointer &&
         !(*static_cast<const __pointer_to_member_type_info*>(t)->__context ==
           *static_cast<const __pointer_to_member_type_info*>(h)->__context))
       return false;
-    outer_const = outer_const && (hf & __pbase_type_info::__const_mask) != 0;
+    outer_const = outer_const && (__hf & __pbase_type_info::__const_mask) != 0;
     top = false;
 
-    rtti_kind tk = kind_of(*t->__pointee);
-    rtti_kind hk = kind_of(*h->__pointee);
-    if (kind == rtti_kind::member_pointer && tk == rtti_kind::function && hk == rtti_kind::function)
+    __rtti_kind tk = __kind_of(*t->__pointee);
+    __rtti_kind hk = __kind_of(*h->__pointee);
+    if (kind == __rtti_kind::__member_pointer && tk == __rtti_kind::function && hk == __rtti_kind::function)
       return same_member_function(t, h);
     if (tk != hk || !is_pointer_like(tk))
       return *t->__pointee == *h->__pointee;
@@ -240,18 +240,18 @@ bool qualification_convertible(const __pbase_type_info* t, const __pbase_type_in
 
 // [except.handle]/3.3 for a pointer thrown to a pointer handler. *obj is the address of the
 // thrown pointer; on a match it becomes the converted pointer value.
-bool pointer_matches(const __pointer_type_info* h, const __pointer_type_info* t, void** obj) {
-  void* value = *static_cast<void* const*>(*obj);
-  rtti_kind hk = kind_of(*h->__pointee);
-  rtti_kind tk = kind_of(*t->__pointee);
+bool pointer_matches(const __pointer_type_info* h, const __pointer_type_info* t, void** __obj) {
+  void* value = *static_cast<void* const*>(*__obj);
+  __rtti_kind hk = __kind_of(*h->__pointee);
+  __rtti_kind tk = __kind_of(*t->__pointee);
   bool keeps_qualifiers = (t->__flags & ~h->__flags & qualifier_mask) == 0;
 
   // Pointer conversion to cv void* ([conv.ptr]/2), from any pointer to an object type. A
   // qualification conversion may follow, but only at the first level.
-  if (hk == rtti_kind::fundamental && *h->__pointee == typeid(void) && tk != rtti_kind::function) {
+  if (hk == __rtti_kind::__fundamental && *h->__pointee == typeid(void) && tk != __rtti_kind::function) {
     if (!keeps_qualifiers)
       return false;
-    *obj = value;
+    *__obj = value;
     return true;
   }
 
@@ -261,18 +261,18 @@ bool pointer_matches(const __pointer_type_info* h, const __pointer_type_info* t,
   if (is_class(hk) && is_class(tk) && !(*h->__pointee == *t->__pointee)) {
     if (!keeps_qualifiers)
       return false;
-    auto* derived = static_cast<const __class_type_info*>(t->__pointee);
+    auto* __derived = static_cast<const __class_type_info*>(t->__pointee);
     auto* base = static_cast<const __class_type_info*>(h->__pointee);
-    base_search r = find_bases(subobject{derived, static_cast<const char*>(value), nullptr, 0, true}, *base);
+    __base_search r = __find_bases(__subobject{__derived, static_cast<const char*>(value), nullptr, 0, true}, *base);
     if (r.count != 1 || !r.is_public)
       return false;
-    *obj = const_cast<char*>(r.first.addr); // nullptr for a null pointer
+    *__obj = const_cast<char*>(r.first.__addr); // nullptr for a null pointer
     return true;
   }
 
-  if (!qualification_convertible(t, h, rtti_kind::pointer))
+  if (!qualification_convertible(t, h, __rtti_kind::pointer))
     return false;
-  *obj = value;
+  *__obj = value;
   return true;
 }
 
@@ -291,56 +291,56 @@ bool pointer_matches(const __pointer_type_info* h, const __pointer_type_info* t,
 //     address in both. The address of the exception object serves all three: the value of a
 //     std::nullptr_t object is never read ([conv.lval]/3.1).
 //   - class and other non-pointer handlers: the address of the (base) object.
-// The handler's type_info does not tell `T&` from `const T&` (both record T), so pointer
-// conversions also apply to `catch (T*&)`, which [except.handle]/3.3 excludes.
-bool catch_matches(const std::type_info* handler, const std::type_info* thrown, void** obj) noexcept {
-  rtti_kind tk = kind_of(*thrown);
-  if (same_type(*handler, *thrown)) {
-    if (tk == rtti_kind::pointer)
-      *obj = *static_cast<void* const*>(*obj);
+// The handler's type_info does not tell `_Tp&` from `const _Tp&` (both record T), so pointer
+// conversions also apply to `catch (_Tp*&)`, which [except.handle]/3.3 excludes.
+bool __catch_matches(const std::type_info* __handler, const std::type_info* __thrown, void** __obj) noexcept {
+  __rtti_kind tk = __kind_of(*__thrown);
+  if (__same_type(*__handler, *__thrown)) {
+    if (tk == __rtti_kind::pointer)
+      *__obj = *static_cast<void* const*>(*__obj);
     return true;
   }
-  rtti_kind hk = kind_of(*handler);
+  __rtti_kind hk = __kind_of(*__handler);
 
   // [except.handle]/3.2: an unambiguous public base class of the exception's class.
   if (is_class(hk) && is_class(tk)) {
-    auto* derived = static_cast<const __class_type_info*>(thrown);
-    base_search r = find_bases(subobject{derived, static_cast<const char*>(*obj), nullptr, 0, true},
-                               *static_cast<const __class_type_info*>(handler));
+    auto* __derived = static_cast<const __class_type_info*>(__thrown);
+    __base_search r = __find_bases(__subobject{__derived, static_cast<const char*>(*__obj), nullptr, 0, true},
+                               *static_cast<const __class_type_info*>(__handler));
     if (r.count != 1 || !r.is_public)
       return false;
-    *obj = const_cast<char*>(r.first.addr);
+    *__obj = const_cast<char*>(r.first.__addr);
     return true;
   }
 
   // [except.handle]/3.4: std::nullptr_t caught as any pointer or pointer to member.
-  if (*thrown == typeid(std::nullptr_t)) {
-    if (hk == rtti_kind::pointer) {
-      *obj = nullptr;
+  if (*__thrown == typeid(std::nullptr_t)) {
+    if (hk == __rtti_kind::pointer) {
+      *__obj = nullptr;
       return true;
     }
-    if (hk == rtti_kind::member_pointer) {
-      auto* h = static_cast<const __pointer_to_member_type_info*>(handler);
+    if (hk == __rtti_kind::__member_pointer) {
+      auto* h = static_cast<const __pointer_to_member_type_info*>(__handler);
       const void* null_value = &null_data_member_pointer;
-      if (kind_of(*h->__pointee) == rtti_kind::function)
+      if (__kind_of(*h->__pointee) == __rtti_kind::function)
         null_value = &null_member_function_pointer;
-      *obj = const_cast<void*>(null_value);
+      *__obj = const_cast<void*>(null_value);
       return true;
     }
     return false;
   }
 
   // [except.handle]/3.3: pointer and qualification conversions, and function pointer conversions.
-  if (hk == rtti_kind::pointer && tk == rtti_kind::pointer)
-    return pointer_matches(static_cast<const __pointer_type_info*>(handler),
-                           static_cast<const __pointer_type_info*>(thrown), obj);
+  if (hk == __rtti_kind::pointer && tk == __rtti_kind::pointer)
+    return pointer_matches(static_cast<const __pointer_type_info*>(__handler),
+                           static_cast<const __pointer_type_info*>(__thrown), __obj);
   // Pointers to members: [conv.mem]/2 is a pointer-to-member conversion, not one of the
   // conversions [except.handle]/3.3 lists, so only qualification and function pointer
   // conversions apply, and they never change the representation.
-  if (hk == rtti_kind::member_pointer && tk == rtti_kind::member_pointer)
-    return qualification_convertible(static_cast<const __pbase_type_info*>(thrown),
-                                     static_cast<const __pbase_type_info*>(handler), rtti_kind::member_pointer);
+  if (hk == __rtti_kind::__member_pointer && tk == __rtti_kind::__member_pointer)
+    return qualification_convertible(static_cast<const __pbase_type_info*>(__thrown),
+                                     static_cast<const __pbase_type_info*>(__handler), __rtti_kind::__member_pointer);
   return false;
 }
 
-}} // namespace ycxx::abi
+}} // namespace __ycxx::__abi

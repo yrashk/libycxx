@@ -22,146 +22,146 @@
 #include <ycxx/core/memory_resource_fwd.hpp>
 #include <ycxx/core/ranges_to.hpp>
 
-namespace [[gnu::visibility("hidden")]] std {
-template <class Ref, class Val = void, class Allocator = void>
+namespace [[__gnu__::__visibility__("hidden")]] std {
+template <class _Ref, class _Val = void, class _Allocator = void>
 class generator;
 }
 
-namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
 
 // The part of a generator's promise that depends only on its yielded type, so that generators
 // with different value or allocator types but the same yielded type can be nested.
-template <class Yielded>
-struct gen_promise_base {
-  std::add_pointer_t<Yielded> value_ = nullptr;
-  std::exception_ptr except_;
-  std::coroutine_handle<> self_;
-  gen_promise_base* parent_ = nullptr; // null for the root
-  gen_promise_base* root_ = this;
-  gen_promise_base* top_ = this; // meaningful in the root: the innermost active generator
+template <class _Yielded>
+struct __gen_promise_base {
+  std::add_pointer_t<_Yielded> __value_ = nullptr;
+  std::exception_ptr __except_;
+  std::coroutine_handle<> __self_;
+  __gen_promise_base* __parent_ = nullptr; // null for the root
+  __gen_promise_base* __root_ = this;
+  __gen_promise_base* __top_ = this; // meaningful in the root: the innermost active generator
 
-  struct final_awaiter {
+  struct __final_awaiter {
     static constexpr bool await_ready() noexcept { return false; }
-    template <class P>
-    static std::coroutine_handle<> await_suspend(std::coroutine_handle<P> h) noexcept {
-      gen_promise_base& p = h.promise();
-      if (p.parent_ == nullptr)
+    template <class _Pp>
+    static std::coroutine_handle<> await_suspend(std::coroutine_handle<_Pp> h) noexcept {
+      __gen_promise_base& p = h.promise();
+      if (p.__parent_ == nullptr)
         return std::noop_coroutine();
-      p.root_->top_ = p.parent_;
-      return p.parent_->self_;
+      p.__root_->__top_ = p.__parent_;
+      return p.__parent_->__self_;
     }
     static constexpr void await_resume() noexcept {}
   };
 
   // co_yield of an lvalue when yielded is an rvalue reference: a copy kept in the frame.
-  template <class V>
-  struct copy_awaiter {
-    V v;
-    gen_promise_base* p;
+  template <class _Vp>
+  struct __copy_awaiter {
+    _Vp __v;
+    __gen_promise_base* p;
     static constexpr bool await_ready() noexcept { return false; }
-    void await_suspend(std::coroutine_handle<>) noexcept { p->value_ = __builtin_addressof(v); }
+    void await_suspend(std::coroutine_handle<>) noexcept { p->__value_ = __builtin_addressof(__v); }
     static constexpr void await_resume() noexcept {}
   };
 
   // co_yield elements_of(generator): owns the nested generator.
-  template <class Gen>
-  struct nested_awaiter {
-    Gen g;
+  template <class _Gen>
+  struct __nested_awaiter {
+    _Gen __g;
     static constexpr bool await_ready() noexcept { return false; }
-    template <class P>
-    std::coroutine_handle<> await_suspend(std::coroutine_handle<P> h) noexcept {
-      gen_promise_base& parent = h.promise();
-      auto handle = g.coroutine_;
-      gen_promise_base& child = handle.promise();
-      child.parent_ = __builtin_addressof(parent);
-      child.root_ = parent.root_;
-      parent.root_->top_ = __builtin_addressof(child);
+    template <class _Pp>
+    std::coroutine_handle<> await_suspend(std::coroutine_handle<_Pp> h) noexcept {
+      __gen_promise_base& __parent = h.promise();
+      auto handle = __g.__coroutine_;
+      __gen_promise_base& __child = handle.promise();
+      __child.__parent_ = __builtin_addressof(__parent);
+      __child.__root_ = __parent.__root_;
+      __parent.__root_->__top_ = __builtin_addressof(__child);
       return handle;
     }
     void await_resume() {
-      gen_promise_base& child = g.coroutine_.promise();
-      if (child.except_)
-        std::rethrow_exception(static_cast<std::exception_ptr&&>(child.except_));
+      __gen_promise_base& __child = __g.__coroutine_.promise();
+      if (__child.__except_)
+        std::rethrow_exception(static_cast<std::exception_ptr&&>(__child.__except_));
     }
   };
 };
 
 // The unit of frame allocation.
-struct alignas(cfg::default_new_alignment) gen_frame_unit {
-  unsigned char bytes[cfg::default_new_alignment];
+struct alignas(__cfg::__default_new_alignment) __gen_frame_unit {
+  unsigned char bytes[__cfg::__default_new_alignment];
 };
-static_assert(sizeof(gen_frame_unit) == cfg::default_new_alignment);
+static_assert(sizeof(__gen_frame_unit) == __cfg::__default_new_alignment);
 
-using gen_dealloc_fn = void (*)(void*, std::size_t) noexcept;
+using __gen_dealloc_fn = void (*)(void*, std::size_t) noexcept;
 
-constexpr std::size_t gen_round_up(std::size_t n, std::size_t a) noexcept { return (n + a - 1) / a * a; }
+constexpr std::size_t __gen_round_up(std::size_t n, std::size_t a) noexcept { return (n + a - 1) / a * a; }
 
 // Allocation of a frame of n bytes with B (an allocator of gen_frame_unit). Erased: the frame
 // also records how to deallocate it (Allocator = void).
-template <class B, bool Erased>
-struct gen_frame {
-  using traits = std::allocator_traits<B>;
-  static_assert(std::is_pointer_v<typename traits::pointer>,
+template <class _Bp, bool _Erased>
+struct __gen_frame {
+  using __traits = std::allocator_traits<_Bp>;
+  static_assert(std::is_pointer_v<typename __traits::pointer>,
                 "std::generator: the allocator's pointer type must be a pointer type");
-  static_assert(alignof(B) <= alignof(gen_frame_unit), "std::generator: over-aligned allocator");
-  static constexpr bool stateless = traits::is_always_equal::value && std::is_default_constructible_v<B>;
+  static_assert(alignof(_Bp) <= alignof(__gen_frame_unit), "std::generator: over-aligned allocator");
+  static constexpr bool __stateless = __traits::is_always_equal::value && std::is_default_constructible_v<_Bp>;
 
-  static constexpr std::size_t fn_offset(std::size_t n) noexcept { return gen_round_up(n, alignof(gen_dealloc_fn)); }
-  static constexpr std::size_t alloc_offset(std::size_t n) noexcept {
-    return gen_round_up(Erased ? fn_offset(n) + sizeof(gen_dealloc_fn) : n, alignof(B));
+  static constexpr std::size_t __fn_offset(std::size_t n) noexcept { return __gen_round_up(n, alignof(__gen_dealloc_fn)); }
+  static constexpr std::size_t __alloc_offset(std::size_t n) noexcept {
+    return __gen_round_up(_Erased ? __fn_offset(n) + sizeof(__gen_dealloc_fn) : n, alignof(_Bp));
   }
-  static constexpr std::size_t units(std::size_t n) noexcept {
-    std::size_t total = !stateless ? alloc_offset(n) + sizeof(B) : Erased ? fn_offset(n) + sizeof(gen_dealloc_fn) : n;
-    return (total + sizeof(gen_frame_unit) - 1) / sizeof(gen_frame_unit);
+  static constexpr std::size_t __units(std::size_t n) noexcept {
+    std::size_t __total = !__stateless ? __alloc_offset(n) + sizeof(_Bp) : _Erased ? __fn_offset(n) + sizeof(__gen_dealloc_fn) : n;
+    return (__total + sizeof(__gen_frame_unit) - 1) / sizeof(__gen_frame_unit);
   }
 
-  static void* allocate(B b, std::size_t n) {
-    gen_frame_unit* p = traits::allocate(b, units(n));
+  static void* allocate(_Bp b, std::size_t n) {
+    __gen_frame_unit* p = __traits::allocate(b, __units(n));
     unsigned char* c = reinterpret_cast<unsigned char*>(p);
-    if constexpr (Erased)
-      std::construct_at(reinterpret_cast<gen_dealloc_fn*>(c + fn_offset(n)), &deallocate);
-    if constexpr (!stateless)
-      std::construct_at(reinterpret_cast<B*>(c + alloc_offset(n)), static_cast<B&&>(b));
+    if constexpr (_Erased)
+      std::construct_at(reinterpret_cast<__gen_dealloc_fn*>(c + __fn_offset(n)), &deallocate);
+    if constexpr (!__stateless)
+      std::construct_at(reinterpret_cast<_Bp*>(c + __alloc_offset(n)), static_cast<_Bp&&>(b));
     return p;
   }
   static void deallocate(void* p, std::size_t n) noexcept {
-    if constexpr (stateless) {
-      B b;
-      traits::deallocate(b, static_cast<gen_frame_unit*>(p), units(n));
+    if constexpr (__stateless) {
+      _Bp b;
+      __traits::deallocate(b, static_cast<__gen_frame_unit*>(p), __units(n));
     } else {
-      B* stored = reinterpret_cast<B*>(static_cast<unsigned char*>(p) + alloc_offset(n));
-      B b(static_cast<B&&>(*stored));
-      std::destroy_at(stored);
-      traits::deallocate(b, static_cast<gen_frame_unit*>(p), units(n));
+      _Bp* __stored = reinterpret_cast<_Bp*>(static_cast<unsigned char*>(p) + __alloc_offset(n));
+      _Bp b(static_cast<_Bp&&>(*__stored));
+      std::destroy_at(__stored);
+      __traits::deallocate(b, static_cast<__gen_frame_unit*>(p), __units(n));
     }
   }
 };
 
 // Deallocation of a frame allocated through gen_frame<B, true>, whatever B was.
-inline void gen_erased_deallocate(void* p, std::size_t n) noexcept {
+inline void __gen_erased_deallocate(void* p, std::size_t n) noexcept {
   unsigned char* c = static_cast<unsigned char*>(p);
-  gen_dealloc_fn f = *reinterpret_cast<gen_dealloc_fn*>(c + gen_round_up(n, alignof(gen_dealloc_fn)));
-  f(p, n);
+  __gen_dealloc_fn __f = *reinterpret_cast<__gen_dealloc_fn*>(c + __gen_round_up(n, alignof(__gen_dealloc_fn)));
+  __f(p, n);
 }
 
 // [coro.generator.class]/1.1: Allocator is void or its pointer type is a pointer type.
-template <class A>
-inline constexpr bool gen_allocator_ok = std::is_pointer_v<typename std::allocator_traits<A>::pointer>;
+template <class _Ap>
+inline constexpr bool __gen_allocator_ok = std::is_pointer_v<typename std::allocator_traits<_Ap>::pointer>;
 template <>
-inline constexpr bool gen_allocator_ok<void> = true;
+inline constexpr bool __gen_allocator_ok<void> = true;
 
-}} // namespace ycxx::detail
+}} // namespace __ycxx::__detail
 
-namespace [[gnu::visibility("hidden")]] std {
+namespace [[__gnu__::__visibility__("hidden")]] std {
 
-template <class Ref, class Val, class Allocator>
-class generator : public ranges::view_interface<generator<Ref, Val, Allocator>> {
-  using value = conditional_t<is_void_v<Val>, remove_cvref_t<Ref>, Val>;
-  using reference = conditional_t<is_void_v<Val>, Ref&&, Ref>;
-  using rref = conditional_t<is_reference_v<reference>, remove_reference_t<reference>&&, reference>;
+template <class _Ref, class _Val, class _Allocator>
+class generator : public ranges::view_interface<generator<_Ref, _Val, _Allocator>> {
+  using value = conditional_t<is_void_v<_Val>, remove_cvref_t<_Ref>, _Val>;
+  using reference = conditional_t<is_void_v<_Val>, _Ref&&, _Ref>;
+  using __rref = conditional_t<is_reference_v<reference>, remove_reference_t<reference>&&, reference>;
 
   // [coro.generator.class]/1 Mandates.
-  static_assert(ycxx::detail::gen_allocator_ok<Allocator>,
+  static_assert(__ycxx::__detail::__gen_allocator_ok<_Allocator>,
                 "std::generator: allocator_traits<Allocator>::pointer must be a pointer type");
   static_assert(is_object_v<value> && is_same_v<value, remove_cv_t<value>>,
                 "std::generator: the value type must be a cv-unqualified object type");
@@ -170,8 +170,8 @@ class generator : public ranges::view_interface<generator<Ref, Val, Allocator>> 
                      copy_constructible<reference>),
                 "std::generator: the reference type must be a reference or a copy-constructible "
                 "cv-unqualified object type");
-  static_assert(common_reference_with<reference&&, value&> && common_reference_with<reference&&, rref&&> &&
-                    common_reference_with<rref&&, const value&>,
+  static_assert(common_reference_with<reference&&, value&> && common_reference_with<reference&&, __rref&&> &&
+                    common_reference_with<__rref&&, const value&>,
                 "std::generator: the reference and value types need a common reference");
 
   class iterator;
@@ -181,167 +181,167 @@ public:
   class promise_type;
 
 private:
-  template <class Y>
-  friend struct ycxx::detail::gen_promise_base;
+  template <class _Yp>
+  friend struct __ycxx::__detail::__gen_promise_base;
 
-  coroutine_handle<promise_type> coroutine_ = nullptr;
+  coroutine_handle<promise_type> __coroutine_ = nullptr;
 
-  explicit generator(coroutine_handle<promise_type> h) noexcept : coroutine_(h) {}
+  explicit generator(coroutine_handle<promise_type> h) noexcept : __coroutine_(h) {}
 
 public:
   generator(const generator&) = delete;
-  generator(generator&& other) noexcept : coroutine_(other.coroutine_) { other.coroutine_ = nullptr; }
+  generator(generator&& other) noexcept : __coroutine_(other.__coroutine_) { other.__coroutine_ = nullptr; }
   ~generator() {
-    if (coroutine_)
-      coroutine_.destroy();
+    if (__coroutine_)
+      __coroutine_.destroy();
   }
   generator& operator=(generator other) noexcept {
-    coroutine_handle<promise_type> t = coroutine_;
-    coroutine_ = other.coroutine_;
-    other.coroutine_ = t;
+    coroutine_handle<promise_type> t = __coroutine_;
+    __coroutine_ = other.__coroutine_;
+    other.__coroutine_ = t;
     return *this;
   }
 
   iterator begin() {
-    ycxx::detail::precondition(coroutine_ && !coroutine_.done(),
+    __ycxx::__detail::__precondition(__coroutine_ && !__coroutine_.done(),
                                "std::generator::begin: no coroutine suspended at its initial suspend point");
-    coroutine_.resume();
-    return iterator(coroutine_);
+    __coroutine_.resume();
+    return iterator(__coroutine_);
   }
   default_sentinel_t end() const noexcept { return default_sentinel; }
 };
 
-template <class Ref, class Val, class Allocator>
-class generator<Ref, Val, Allocator>::promise_type : public ycxx::detail::gen_promise_base<yielded> {
-  using base = ycxx::detail::gen_promise_base<yielded>;
-  template <class B, bool Erased>
-  using frame = ycxx::detail::gen_frame<B, Erased>;
-  template <class A>
-  using unit_alloc = typename allocator_traits<A>::template rebind_alloc<ycxx::detail::gen_frame_unit>;
-  static constexpr bool erased = is_void_v<Allocator>;
+template <class _Ref, class _Val, class _Allocator>
+class generator<_Ref, _Val, _Allocator>::promise_type : public __ycxx::__detail::__gen_promise_base<yielded> {
+  using base = __ycxx::__detail::__gen_promise_base<yielded>;
+  template <class _Bp, bool _Erased>
+  using __frame = __ycxx::__detail::__gen_frame<_Bp, _Erased>;
+  template <class _Ap>
+  using __unit_alloc = typename allocator_traits<_Ap>::template rebind_alloc<__ycxx::__detail::__gen_frame_unit>;
+  static constexpr bool __erased = is_void_v<_Allocator>;
 
-  template <class A>
-  static void* allocate(const A& a, size_t size) {
-    return frame<unit_alloc<A>, erased>::allocate(unit_alloc<A>(a), size);
+  template <class _Ap>
+  static void* allocate(const _Ap& a, size_t size) {
+    return __frame<__unit_alloc<_Ap>, __erased>::allocate(__unit_alloc<_Ap>(a), size);
   }
-  template <class Alloc>
-  static void* allocate_with(const Alloc& alloc, size_t size) {
-    static_assert(is_void_v<Allocator> || convertible_to<const Alloc&, Allocator>,
+  template <class _Alloc>
+  static void* __allocate_with(const _Alloc& __alloc, size_t size) {
+    static_assert(is_void_v<_Allocator> || convertible_to<const _Alloc&, _Allocator>,
                   "std::generator: the allocator argument must convert to Allocator");
-    using A = conditional_t<is_void_v<Allocator>, Alloc, Allocator>;
-    return allocate(A(alloc), size);
+    using _Ap = conditional_t<is_void_v<_Allocator>, _Alloc, _Allocator>;
+    return allocate(_Ap(__alloc), size);
   }
 
 public:
   generator get_return_object() noexcept {
     auto h = coroutine_handle<promise_type>::from_promise(*this);
-    this->self_ = h;
+    this->__self_ = h;
     return generator(h);
   }
   suspend_always initial_suspend() const noexcept { return {}; }
-  auto final_suspend() noexcept { return typename base::final_awaiter{}; }
+  auto final_suspend() noexcept { return typename base::__final_awaiter{}; }
 
-  suspend_always yield_value(yielded val) noexcept {
-    this->value_ = __builtin_addressof(val);
+  suspend_always yield_value(yielded __val) noexcept {
+    this->__value_ = __builtin_addressof(__val);
     return {};
   }
-  auto yield_value(const remove_reference_t<yielded>& lval)
+  auto yield_value(const remove_reference_t<yielded>& __lval)
     requires is_rvalue_reference_v<yielded> &&
              constructible_from<remove_cvref_t<yielded>, const remove_reference_t<yielded>&>
   {
-    return typename base::template copy_awaiter<remove_cvref_t<yielded>>{remove_cvref_t<yielded>(lval), this};
+    return typename base::template __copy_awaiter<remove_cvref_t<yielded>>{remove_cvref_t<yielded>(__lval), this};
   }
-  template <class R2, class V2, class Alloc2, class Unused>
-    requires same_as<typename generator<R2, V2, Alloc2>::yielded, yielded>
-  auto yield_value(ranges::elements_of<generator<R2, V2, Alloc2>&&, Unused> g) noexcept {
-    return typename base::template nested_awaiter<generator<R2, V2, Alloc2>>{
-        static_cast<generator<R2, V2, Alloc2>&&>(g.range)};
+  template <class _R2, class _V2, class _Alloc2, class _Unused>
+    requires same_as<typename generator<_R2, _V2, _Alloc2>::yielded, yielded>
+  auto yield_value(ranges::elements_of<generator<_R2, _V2, _Alloc2>&&, _Unused> __g) noexcept {
+    return typename base::template __nested_awaiter<generator<_R2, _V2, _Alloc2>>{
+        static_cast<generator<_R2, _V2, _Alloc2>&&>(__g.range)};
   }
-  template <class R2, class V2, class Alloc2, class Unused>
-    requires same_as<typename generator<R2, V2, Alloc2>::yielded, yielded>
-  auto yield_value(ranges::elements_of<generator<R2, V2, Alloc2>&, Unused> g) noexcept {
-    return typename base::template nested_awaiter<generator<R2, V2, Alloc2>>{
-        static_cast<generator<R2, V2, Alloc2>&&>(g.range)};
+  template <class _R2, class _V2, class _Alloc2, class _Unused>
+    requires same_as<typename generator<_R2, _V2, _Alloc2>::yielded, yielded>
+  auto yield_value(ranges::elements_of<generator<_R2, _V2, _Alloc2>&, _Unused> __g) noexcept {
+    return typename base::template __nested_awaiter<generator<_R2, _V2, _Alloc2>>{
+        static_cast<generator<_R2, _V2, _Alloc2>&&>(__g.range)};
   }
-  template <ranges::input_range R, class Alloc>
-    requires convertible_to<ranges::range_reference_t<R>, yielded>
-  auto yield_value(ranges::elements_of<R, Alloc> r) {
-    auto nested = [](allocator_arg_t, Alloc, ranges::iterator_t<R> i,
-                     ranges::sentinel_t<R> s) -> generator<yielded, void, Alloc> {
+  template <ranges::input_range _Rp, class _Alloc>
+    requires convertible_to<ranges::range_reference_t<_Rp>, yielded>
+  auto yield_value(ranges::elements_of<_Rp, _Alloc> r) {
+    auto __nested = [](allocator_arg_t, _Alloc, ranges::iterator_t<_Rp> i,
+                     ranges::sentinel_t<_Rp> s) -> generator<yielded, void, _Alloc> {
       for (; i != s; ++i)
         co_yield static_cast<yielded>(*i);
     };
     return yield_value(
-        ranges::elements_of(nested(allocator_arg, r.allocator, ranges::begin(r.range), ranges::end(r.range))));
+        ranges::elements_of(__nested(allocator_arg, r.allocator, ranges::begin(r.range), ranges::end(r.range))));
   }
 
   void await_transform() = delete;
   void return_void() const noexcept {}
   void unhandled_exception() {
-    if constexpr (ycxx::detail::cfg::exceptions) {
-      if (this->parent_ == nullptr)
+    if constexpr (__ycxx::__detail::__cfg::exceptions) {
+      if (this->__parent_ == nullptr)
         throw;
-      this->except_ = current_exception();
+      this->__except_ = current_exception();
     }
   }
 
   void* operator new(size_t size)
-    requires same_as<Allocator, void> || default_initializable<Allocator>
+    requires same_as<_Allocator, void> || default_initializable<_Allocator>
   {
-    if constexpr (is_void_v<Allocator>)
+    if constexpr (is_void_v<_Allocator>)
       return allocate(allocator<void>(), size);
     else
-      return allocate(Allocator(), size);
+      return allocate(_Allocator(), size);
   }
-  template <class Alloc, class... Args>
-  void* operator new(size_t size, allocator_arg_t, const Alloc& alloc, const Args&...) {
-    return allocate_with(alloc, size);
+  template <class _Alloc, class... _Args>
+  void* operator new(size_t size, allocator_arg_t, const _Alloc& __alloc, const _Args&...) {
+    return __allocate_with(__alloc, size);
   }
-  template <class This, class Alloc, class... Args>
-  void* operator new(size_t size, const This&, allocator_arg_t, const Alloc& alloc, const Args&...) {
-    return allocate_with(alloc, size);
+  template <class _This, class _Alloc, class... _Args>
+  void* operator new(size_t size, const _This&, allocator_arg_t, const _Alloc& __alloc, const _Args&...) {
+    return __allocate_with(__alloc, size);
   }
   void operator delete(void* pointer, size_t size) noexcept {
-    if constexpr (is_void_v<Allocator>)
-      ycxx::detail::gen_erased_deallocate(pointer, size);
+    if constexpr (is_void_v<_Allocator>)
+      __ycxx::__detail::__gen_erased_deallocate(pointer, size);
     else
-      frame<unit_alloc<Allocator>, false>::deallocate(pointer, size);
+      __frame<__unit_alloc<_Allocator>, false>::deallocate(pointer, size);
   }
 };
 
-template <class Ref, class Val, class Allocator>
-class generator<Ref, Val, Allocator>::iterator {
+template <class _Ref, class _Val, class _Allocator>
+class generator<_Ref, _Val, _Allocator>::iterator {
   friend class generator;
-  coroutine_handle<promise_type> coroutine_;
+  coroutine_handle<promise_type> __coroutine_;
 
-  explicit iterator(coroutine_handle<promise_type> h) noexcept : coroutine_(h) {}
+  explicit iterator(coroutine_handle<promise_type> h) noexcept : __coroutine_(h) {}
 
 public:
   using value_type = value;
   using difference_type = ptrdiff_t;
 
-  iterator(iterator&& other) noexcept : coroutine_(other.coroutine_) { other.coroutine_ = nullptr; }
+  iterator(iterator&& other) noexcept : __coroutine_(other.__coroutine_) { other.__coroutine_ = nullptr; }
   iterator& operator=(iterator&& other) noexcept {
-    coroutine_ = other.coroutine_;
-    other.coroutine_ = nullptr;
+    __coroutine_ = other.__coroutine_;
+    other.__coroutine_ = nullptr;
     return *this;
   }
   reference operator*() const noexcept(is_nothrow_copy_constructible_v<reference>) {
-    ycxx::detail::precondition(!coroutine_.done(), "std::generator::iterator::operator*: at the end");
-    return static_cast<reference>(*coroutine_.promise().top_->value_);
+    __ycxx::__detail::__precondition(!__coroutine_.done(), "std::generator::iterator::operator*: at the end");
+    return static_cast<reference>(*__coroutine_.promise().__top_->__value_);
   }
   iterator& operator++() {
-    ycxx::detail::precondition(!coroutine_.done(), "std::generator::iterator::operator++: at the end");
-    coroutine_.promise().top_->self_.resume();
+    __ycxx::__detail::__precondition(!__coroutine_.done(), "std::generator::iterator::operator++: at the end");
+    __coroutine_.promise().__top_->__self_.resume();
     return *this;
   }
   void operator++(int) { ++*this; }
-  friend bool operator==(const iterator& i, default_sentinel_t) { return i.coroutine_.done(); }
+  friend bool operator==(const iterator& i, default_sentinel_t) { return i.__coroutine_.done(); }
 };
 
 namespace pmr {
-template <class Ref, class Val = void>
-using generator = std::generator<Ref, Val, polymorphic_allocator<>>;
+template <class _Ref, class _Val = void>
+using generator = std::generator<_Ref, _Val, polymorphic_allocator<>>;
 }
 
 } // namespace std

@@ -12,8 +12,8 @@
 #define INFINITY (__builtin_inff ())
 #define NAN (__builtin_nanf (""))
 // The classification values (programs mix <math.h> and <cmath>, so they are the C library's):
-// glibc and musl 0-4, Darwin 1-5 (YCXX_TARGET_DARWIN, config.hpp).
-#if YCXX_TARGET_DARWIN
+// glibc and musl 0-4, Darwin 1-5 (_YCXX_TARGET_DARWIN, config.hpp).
+#if _YCXX_TARGET_DARWIN
 #  define FP_NAN 1
 #  define FP_INFINITE 2
 #  define FP_ZERO 3
@@ -26,20 +26,20 @@
 #  define FP_SUBNORMAL 3
 #  define FP_NORMAL 4
 #endif
-#if YCXX_FP_FAST_FMA
+#if _YCXX_FP_FAST_FMA
 #  define FP_FAST_FMA 1
 #endif
-#if YCXX_FP_FAST_FMAF
+#if _YCXX_FP_FAST_FMAF
 #  define FP_FAST_FMAF 1
 #endif
-#if YCXX_FP_FAST_FMAL
+#if _YCXX_FP_FAST_FMAL
 #  define FP_FAST_FMAL 1
 #endif
 #define FP_ILOGB0 (-2147483647 - 1)
-#define FP_ILOGBNAN YCXX_FP_ILOGBNAN
+#define FP_ILOGBNAN _YCXX_FP_ILOGBNAN
 #define MATH_ERRNO 1
 #define MATH_ERREXCEPT 2
-#if YCXX_MATH_ERRNO
+#if _YCXX_MATH_ERRNO
 #  define math_errhandling (MATH_ERRNO | MATH_ERREXCEPT)
 #else
 #  define math_errhandling (MATH_ERREXCEPT)

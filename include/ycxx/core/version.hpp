@@ -55,7 +55,7 @@
 #define __cpp_lib_start_lifetime_as 202207L
 // start_lifetime must leave an object already within its lifetime alone ([obj.lifetime]/2); in
 // constant evaluation that needs __builtin_is_within_lifetime.
-#if YCXX_HAS_IS_WITHIN_LIFETIME
+#if _YCXX_HAS_IS_WITHIN_LIFETIME
 #  define __cpp_lib_start_lifetime 202603L
 #endif
 #define __cpp_lib_freestanding_memory 202502L
@@ -165,12 +165,12 @@
 #define __cpp_lib_is_nothrow_convertible 201806L
 #define __cpp_lib_is_null_pointer 201309L
 #define __cpp_lib_is_scoped_enum 202011L
-#if YCXX_HAS_IS_STRUCTURAL
+#if _YCXX_HAS_IS_STRUCTURAL
 #  define __cpp_lib_is_structural 202603L
 #endif
 #define __cpp_lib_is_swappable 201603L
 #define __cpp_lib_is_virtual_base_of 202406L
-#if YCXX_HAS_IS_WITHIN_LIFETIME
+#if _YCXX_HAS_IS_WITHIN_LIFETIME
 #  define __cpp_lib_is_within_lifetime 202603L
 #endif
 #define __cpp_lib_logical_traits 201510L
@@ -181,7 +181,7 @@
 #define __cpp_lib_type_trait_variable_templates 201510L
 #define __cpp_lib_unwrap_ref 201811L
 #define __cpp_lib_void_t 201411L
-#if YCXX_HAS_MEMBER_INTERCONVERTIBILITY
+#if _YCXX_HAS_MEMBER_INTERCONVERTIBILITY
 #  define __cpp_lib_is_pointer_interconvertible 201907L
 #endif
 
@@ -207,7 +207,7 @@
 #define __cpp_lib_senders 202506L
 #define __cpp_lib_counting_scope 202506L
 #define __cpp_lib_task 202506L
-#if YCXX_HOSTED
+#if _YCXX_HOSTED
 #  define __cpp_lib_parallel_scheduler 202506L
 #endif
 // <ranges>
@@ -227,14 +227,14 @@
 #define __cpp_lib_stacktrace 202011L
 #define __cpp_lib_hardened_basic_stacktrace 202506L
 // The modules std and std.compat ([std.modules]): modules/std.cppm, modules/std.compat.cppm,
-// built by the CMake package (ycxx::modules) or tools/ycxx-modules (DECISIONS §16).
+// built by the CMake package (__ycxx::__modules) or tools/ycxx-modules (DECISIONS §16).
 #define __cpp_lib_modules 202207L
 // <contracts>: the language feature is the compiler's (GCC 16; not Clang 23)
-#if YCXX_HAS_CONTRACTS
+#if _YCXX_HAS_CONTRACTS
 #  define __cpp_lib_contracts 202502L
 #endif
 // <meta>: reflection is the compiler's (GCC 16 with -freflection; not Clang 23)
-#if YCXX_HAS_REFLECTION
+#if _YCXX_HAS_REFLECTION
 #  define __cpp_lib_reflection 202603L
 #  define __cpp_lib_define_static 202506L
 #endif
@@ -337,7 +337,7 @@
 #define __cpp_lib_stdatomic_h 202011L
 // [version.syn]/4: 202306L when the default allocation functions are those of a hosted
 // implementation; 0 for libycxx-freestanding.a, whose defaults have no heap.
-#if YCXX_HOSTED
+#if _YCXX_HOSTED
 // <thread> <stop_token> <mutex> <shared_mutex> <semaphore> <latch> <barrier>
 #  define __cpp_lib_jthread 201911L
 #  define __cpp_lib_thread_attributes 202606L

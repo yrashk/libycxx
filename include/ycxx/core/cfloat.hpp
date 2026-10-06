@@ -5,7 +5,7 @@
 #  define FLT_RADIX __FLT_RADIX__
 #endif
 #ifndef FLT_ROUNDS
-#  define FLT_ROUNDS YCXX_FLT_ROUNDS
+#  define FLT_ROUNDS _YCXX_FLT_ROUNDS
 #endif
 #ifndef FLT_EVAL_METHOD
 #  define FLT_EVAL_METHOD __FLT_EVAL_METHOD__

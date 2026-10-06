@@ -4,7 +4,7 @@
 #include <ycxx/config.hpp>
 #include <ycxx/core/version.hpp>
 #include <ycxx/core/cstddef.hpp>
-#if YCXX_HOSTED
+#if _YCXX_HOSTED
 #  include <errno.h>
 #else
 #  include <ycxx/core/cerrno_macros.hpp>

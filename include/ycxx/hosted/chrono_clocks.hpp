@@ -1,5 +1,5 @@
 // libycxx hosted: the clocks of <chrono> ([time.clock.system], [time.clock.steady],
-// [time.clock.hires], [time.clock.file]), on the PAL's ycxx_pal_clock_now.
+// [time.clock.hires], [time.clock.file]), on the PAL's __ycxx_pal_clock_now.
 //
 // All three count nanoseconds in a long long. system_clock is the realtime clock (Unix time),
 // steady_clock the monotonic clock, high_resolution_clock a distinct steady clock whose
@@ -17,16 +17,16 @@
 #  include <time.h>
 #endif
 
-namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
 // The current value of a PAL clock in nanoseconds.
-inline long long pal_clock_ns(int clock) noexcept {
-  ycxx_pal_i64 sec = 0, nsec = 0;
-  ::ycxx_pal_clock_now(clock, &sec, &nsec);
-  return static_cast<long long>(sec) * 1'000'000'000 + static_cast<long long>(nsec);
+inline long long __pal_clock_ns(int clock) noexcept {
+  __ycxx_pal_i64 __sec = 0, __nsec = 0;
+  ::__ycxx_pal_clock_now(clock, &__sec, &__nsec);
+  return static_cast<long long>(__sec) * 1'000'000'000 + static_cast<long long>(__nsec);
 }
-}} // namespace ycxx::detail
+}} // namespace __ycxx::__detail
 
-namespace [[gnu::visibility("hidden")]] std { namespace chrono {
+namespace [[__gnu__::__visibility__("hidden")]] std { namespace chrono {
 
 class system_clock {
 public:
@@ -37,7 +37,7 @@ public:
   static constexpr bool is_steady = false;
 
   static time_point now() noexcept {
-    return time_point(duration(ycxx::detail::pal_clock_ns(ycxx_pal_clock_realtime)));
+    return time_point(duration(__ycxx::__detail::__pal_clock_ns(__ycxx_pal_clock_realtime)));
   }
 #if YCXX_HOSTED
   // Truncated toward negative infinity to whole seconds.
@@ -59,7 +59,7 @@ public:
   static constexpr bool is_steady = true;
 
   static time_point now() noexcept {
-    return time_point(duration(ycxx::detail::pal_clock_ns(ycxx_pal_clock_monotonic)));
+    return time_point(duration(__ycxx::__detail::__pal_clock_ns(__ycxx_pal_clock_monotonic)));
   }
 };
 
@@ -76,7 +76,7 @@ public:
 
 }} // namespace std::chrono
 
-namespace [[gnu::visibility("hidden")]] ycxx { namespace adl_free {
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __adl_free {
 class file_clock {
 public:
   using rep = long long;
@@ -86,16 +86,16 @@ public:
   static constexpr bool is_steady = false;
 
   static time_point now() noexcept {
-    return time_point(duration(::ycxx::detail::pal_clock_ns(ycxx_pal_clock_realtime)));
+    return time_point(duration(::__ycxx::__detail::__pal_clock_ns(__ycxx_pal_clock_realtime)));
   }
   // [time.clock.file.members]: the same epoch as system_clock.
-  template <class Duration>
-  static std::chrono::sys_time<Duration> to_sys(const std::chrono::file_time<Duration>& t) {
-    return std::chrono::sys_time<Duration>(t.time_since_epoch());
+  template <class _Duration>
+  static std::chrono::sys_time<_Duration> to_sys(const std::chrono::file_time<_Duration>& t) {
+    return std::chrono::sys_time<_Duration>(t.time_since_epoch());
   }
-  template <class Duration>
-  static std::chrono::file_time<Duration> from_sys(const std::chrono::sys_time<Duration>& t) {
-    return std::chrono::file_time<Duration>(t.time_since_epoch());
+  template <class _Duration>
+  static std::chrono::file_time<_Duration> from_sys(const std::chrono::sys_time<_Duration>& t) {
+    return std::chrono::file_time<_Duration>(t.time_since_epoch());
   }
 };
-}} // namespace ycxx::adl_free
+}} // namespace __ycxx::__adl_free

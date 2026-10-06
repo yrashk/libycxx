@@ -3,14 +3,14 @@
 // Freestanding <cerrno> has no C library to take them from: the values are std::errc's (the
 // target's errno numbers, ycxx/core/errc.hpp), which the hosted <system_error> checks against the
 // C library's <errno.h>. They must be usable in #if, so they are literals here, one list per C
-// library family (YCXX_TARGET_DARWIN, config.hpp), checked against errc below. errno itself is
+// library family (_YCXX_TARGET_DARWIN, config.hpp), checked against errc below. errno itself is
 // not freestanding.
 #pragma once
 
 #include <ycxx/config.hpp>
 #include <ycxx/core/errc.hpp>
 
-#if YCXX_TARGET_DARWIN
+#if _YCXX_TARGET_DARWIN
 #  define E2BIG 7
 #  define EACCES 13
 #  define EADDRINUSE 48
@@ -170,12 +170,12 @@
 #  define EXDEV 18
 #endif
 
-namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
-consteval bool errno_macros_match_errc() {
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+consteval bool __errno_macros_match_errc() {
   using std::errc;
   const struct {
     errc e;
-    int v;
+    int __v;
   } table[] = {
       {errc::address_family_not_supported, EAFNOSUPPORT},
       {errc::address_in_use, EADDRINUSE},
@@ -252,10 +252,10 @@ consteval bool errno_macros_match_errc() {
       {errc::value_too_large, EOVERFLOW},
       {errc::wrong_protocol_type, EPROTOTYPE},
   };
-  for (const auto& entry : table)
-    if (static_cast<int>(entry.e) != entry.v)
+  for (const auto& __entry : table)
+    if (static_cast<int>(__entry.e) != __entry.__v)
       return false;
-  return ENODATA == errno_enodata && ENOSR == errno_enosr && ENOSTR == errno_enostr && ETIME == errno_etime;
+  return ENODATA == __errno_enodata && ENOSR == __errno_enosr && ENOSTR == __errno_enostr && ETIME == __errno_etime;
 }
-static_assert(ycxx::detail::errno_macros_match_errc(), "libycxx: the freestanding <cerrno> macros differ from std::errc");
-}} // namespace ycxx::detail
+static_assert(__ycxx::__detail::__errno_macros_match_errc(), "libycxx: the freestanding <cerrno> macros differ from std::errc");
+}} // namespace __ycxx::__detail

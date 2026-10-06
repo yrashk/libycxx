@@ -3,41 +3,41 @@
 
 #include <ycxx/core/error.hpp>
 
-namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
 
 // Appends `s` to buf[pos..cap), returns the new position.
-constexpr unsigned append_text(char* buf, unsigned pos, unsigned cap, const char* s) noexcept {
-  while (*s && pos + 1 < cap)
-    buf[pos++] = *s++;
-  return pos;
+constexpr unsigned __append_text(char* __buf, unsigned __pos, unsigned __cap, const char* s) noexcept {
+  while (*s && __pos + 1 < __cap)
+    __buf[__pos++] = *s++;
+  return __pos;
 }
-constexpr unsigned append_uint(char* buf, unsigned pos, unsigned cap, unsigned v) noexcept {
+constexpr unsigned __append_uint(char* __buf, unsigned __pos, unsigned __cap, unsigned __v) noexcept {
   char digits[10];
   unsigned n = 0;
   do
-    digits[n++] = static_cast<char>('0' + v % 10);
-  while (v /= 10);
-  while (n && pos + 1 < cap)
-    buf[pos++] = digits[--n];
-  return pos;
+    digits[n++] = static_cast<char>('0' + __v % 10);
+  while (__v /= 10);
+  while (n && __pos + 1 < __cap)
+    __buf[__pos++] = digits[--n];
+  return __pos;
 }
 
 // Not constexpr: reaching it during constant evaluation is the compile-time diagnostic.
-[[noreturn, gnu::cold, gnu::noinline]] inline void assert_failed(const char* expr, const char* file = __builtin_FILE(),
+[[noreturn, __gnu__::__cold__, __gnu__::__noinline__]] inline void __assert_failed(const char* __expr, const char* __file = __builtin_FILE(),
                                                                  unsigned line = __builtin_LINE(),
-                                                                 const char* func = __builtin_FUNCTION()) noexcept {
-  char msg[512];
+                                                                 const char* __func = __builtin_FUNCTION()) noexcept {
+  char __msg[512];
   unsigned p = 0;
-  p = append_text(msg, p, sizeof msg, file);
-  p = append_text(msg, p, sizeof msg, ":");
-  p = append_uint(msg, p, sizeof msg, line);
-  p = append_text(msg, p, sizeof msg, ": ");
-  p = append_text(msg, p, sizeof msg, func);
-  p = append_text(msg, p, sizeof msg, ": Assertion `");
-  p = append_text(msg, p, sizeof msg, expr);
-  p = append_text(msg, p, sizeof msg, "' failed.");
-  msg[p] = '\0';
-  ::ycxx_error_handler(ycxx_error_assertion, msg);
+  p = __append_text(__msg, p, sizeof __msg, __file);
+  p = __append_text(__msg, p, sizeof __msg, ":");
+  p = __append_uint(__msg, p, sizeof __msg, line);
+  p = __append_text(__msg, p, sizeof __msg, ": ");
+  p = __append_text(__msg, p, sizeof __msg, __func);
+  p = __append_text(__msg, p, sizeof __msg, ": Assertion `");
+  p = __append_text(__msg, p, sizeof __msg, __expr);
+  p = __append_text(__msg, p, sizeof __msg, "' failed.");
+  __msg[p] = '\0';
+  ::ycxx_error_handler(ycxx_error_assertion, __msg);
 }
 
-}} // namespace ycxx::detail
+}} // namespace __ycxx::__detail

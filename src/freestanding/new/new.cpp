@@ -7,13 +7,13 @@
 #include "../../runtime/new/hidden.hpp"
 #include "../../runtime/new/allocation_table.hpp"
 
-asm((ycxx::detail::hide_allocation_function("_Znw#")));
+asm((__ycxx::__detail::__hide_allocation_function("_Znw#")));
 
 void* operator new(std::size_t n) {
-  if (auto f = ycxx_allocation_functions.new_; f != ycxx::detail::own_allocation_functions.new_)
-    return f(n, 0);
-  ycxx::detail::throw_bad_alloc();
+  if (auto __f = __ycxx_allocation_functions.__new_; __f != __ycxx::__detail::__own_allocation_functions.__new_)
+    return __f(n, 0);
+  __ycxx::__detail::__throw_bad_alloc();
 }
 // Marks that this heap-less default is the operator new linked into the program (see
 // try_or_null.hpp).
-extern "C" const char ycxx_fs_default_new = 0;
+extern "C" const char __ycxx_fs_default_new = 0;

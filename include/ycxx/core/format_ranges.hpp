@@ -10,350 +10,350 @@
 #include <ycxx/core/ranges_all.hpp>
 #include <ycxx/core/tuple.hpp>
 
-namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
-template <class F>
-constexpr void fmt_set_debug(F& f) {
-  if constexpr (requires { f.set_debug_format(); })
-    f.set_debug_format();
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+template <class _Fp>
+constexpr void __fmt_set_debug(_Fp& __f) {
+  if constexpr (requires { __f.set_debug_format(); })
+    __f.set_debug_format();
 }
-}} // namespace ycxx::detail
+}} // namespace __ycxx::__detail
 
-namespace [[gnu::visibility("hidden")]] std {
+namespace [[__gnu__::__visibility__("hidden")]] std {
 
 // [format.range.formatter]
-template <class T, class charT = char>
-  requires same_as<remove_cvref_t<T>, T> && formattable<T, charT>
+template <class _Tp, class __charT = char>
+  requires same_as<remove_cvref_t<_Tp>, _Tp> && formattable<_Tp, __charT>
 class range_formatter {
   enum class kind : unsigned char { sequence, string, debug_string };
 
-  formatter<T, charT> underlying_;
-  basic_string_view<charT> separator_ = ycxx::detail::fmt_lit<charT>(", ", L", ");
-  basic_string_view<charT> opening_ = ycxx::detail::fmt_lit<charT>("[", L"[");
-  basic_string_view<charT> closing_ = ycxx::detail::fmt_lit<charT>("]", L"]");
-  ycxx::detail::fmt_spec<charT> spec_; // range-fill-and-align and width
-  kind kind_ = kind::sequence;
+  formatter<_Tp, __charT> __underlying_;
+  basic_string_view<__charT> __separator_ = __ycxx::__detail::__fmt_lit<__charT>(", ", L", ");
+  basic_string_view<__charT> __opening_ = __ycxx::__detail::__fmt_lit<__charT>("[", L"[");
+  basic_string_view<__charT> __closing_ = __ycxx::__detail::__fmt_lit<__charT>("]", L"]");
+  __ycxx::__detail::__fmt_spec<__charT> __spec_; // range-fill-and-align and width
+  kind __kind_ = kind::sequence;
 
-  template <class R, class FormatContext>
-  constexpr void write_elements(R& r, FormatContext& ctx) const {
-    ctx.advance_to(ycxx::detail::fmt_put<charT>(ctx.out(), opening_.data(), opening_.size()));
+  template <class _Rp, class _FormatContext>
+  constexpr void __write_elements(_Rp& r, _FormatContext& __ctx) const {
+    __ctx.advance_to(__ycxx::__detail::__fmt_put<__charT>(__ctx.out(), __opening_.data(), __opening_.size()));
     bool first = true;
-    auto it = ranges::begin(r);
+    auto __it = ranges::begin(r);
     const auto last = ranges::end(r);
-    for (; it != last; ++it) {
+    for (; __it != last; ++__it) {
       if (!first)
-        ctx.advance_to(ycxx::detail::fmt_put<charT>(ctx.out(), separator_.data(), separator_.size()));
+        __ctx.advance_to(__ycxx::__detail::__fmt_put<__charT>(__ctx.out(), __separator_.data(), __separator_.size()));
       first = false;
-      ctx.advance_to(underlying_.format(*it, ctx));
+      __ctx.advance_to(__underlying_.format(*__it, __ctx));
     }
-    ctx.advance_to(ycxx::detail::fmt_put<charT>(ctx.out(), closing_.data(), closing_.size()));
+    __ctx.advance_to(__ycxx::__detail::__fmt_put<__charT>(__ctx.out(), __closing_.data(), __closing_.size()));
   }
 
 public:
-  constexpr void set_separator(basic_string_view<charT> sep) noexcept { separator_ = sep; }
-  constexpr void set_brackets(basic_string_view<charT> opening, basic_string_view<charT> closing) noexcept {
-    opening_ = opening;
-    closing_ = closing;
+  constexpr void set_separator(basic_string_view<__charT> __sep) noexcept { __separator_ = __sep; }
+  constexpr void set_brackets(basic_string_view<__charT> __opening, basic_string_view<__charT> __closing) noexcept {
+    __opening_ = __opening;
+    __closing_ = __closing;
   }
-  constexpr formatter<T, charT>& underlying() noexcept { return underlying_; }
-  constexpr const formatter<T, charT>& underlying() const noexcept { return underlying_; }
+  constexpr formatter<_Tp, __charT>& underlying() noexcept { return __underlying_; }
+  constexpr const formatter<_Tp, __charT>& underlying() const noexcept { return __underlying_; }
 
-  template <class ParseContext>
-  constexpr typename ParseContext::iterator parse(ParseContext& ctx) {
-    auto p = ctx.begin();
-    const auto e = ctx.end();
-    p = ycxx::detail::fmt_parse_fill_align(p, e, spec_, false);
-    p = ycxx::detail::fmt_parse_width(ctx, p, e, spec_);
-    bool no_brackets = false;
-    if (p != e && *p == charT('n')) {
-      no_brackets = true;
+  template <class _ParseContext>
+  constexpr typename _ParseContext::iterator parse(_ParseContext& __ctx) {
+    auto p = __ctx.begin();
+    const auto e = __ctx.end();
+    p = __ycxx::__detail::__fmt_parse_fill_align(p, e, __spec_, false);
+    p = __ycxx::__detail::__fmt_parse_width(__ctx, p, e, __spec_);
+    bool __no_brackets = false;
+    if (p != e && *p == __charT('n')) {
+      __no_brackets = true;
       ++p;
     }
     bool map = false;
-    if (p != e && *p == charT('m')) {
-      if constexpr (!ycxx::detail::fmt_is_pair_or_2tuple<T>)
-        ycxx::detail::throw_format_error("std::range_formatter: m needs elements that are pairs or 2-tuples");
+    if (p != e && *p == __charT('m')) {
+      if constexpr (!__ycxx::__detail::__fmt_is_pair_or_2tuple<_Tp>)
+        __ycxx::__detail::__throw_format_error("std::range_formatter: m needs elements that are pairs or 2-tuples");
       map = true;
       ++p;
-    } else if (p != e && (*p == charT('s') || *p == charT('?'))) {
-      if (*p == charT('?')) {
+    } else if (p != e && (*p == __charT('s') || *p == __charT('?'))) {
+      if (*p == __charT('?')) {
         ++p;
-        if (p == e || *p != charT('s'))
-          ycxx::detail::throw_format_error("std::range_formatter: ? must be followed by s");
-        kind_ = kind::debug_string;
+        if (p == e || *p != __charT('s'))
+          __ycxx::__detail::__throw_format_error("std::range_formatter: ? must be followed by s");
+        __kind_ = kind::debug_string;
       } else {
-        kind_ = kind::string;
+        __kind_ = kind::string;
       }
       ++p;
-      if constexpr (!same_as<T, charT>)
-        ycxx::detail::throw_format_error("std::range_formatter: s and ?s need a range of the character type");
-      if (no_brackets)
-        ycxx::detail::throw_format_error("std::range_formatter: n cannot be combined with s or ?s");
+      if constexpr (!same_as<_Tp, __charT>)
+        __ycxx::__detail::__throw_format_error("std::range_formatter: s and ?s need a range of the character type");
+      if (__no_brackets)
+        __ycxx::__detail::__throw_format_error("std::range_formatter: n cannot be combined with s or ?s");
     }
-    const bool has_underlying = p != e && *p == charT(':');
-    if (has_underlying) {
-      if (kind_ != kind::sequence)
-        ycxx::detail::throw_format_error("std::range_formatter: s and ?s take no underlying format-spec");
+    const bool __has_underlying = p != e && *p == __charT(':');
+    if (__has_underlying) {
+      if (__kind_ != kind::sequence)
+        __ycxx::__detail::__throw_format_error("std::range_formatter: s and ?s take no underlying format-spec");
       ++p;
-    } else if (p != e && *p != charT('}')) {
-      ycxx::detail::throw_format_error("std::range_formatter: invalid range-format-spec");
+    } else if (p != e && *p != __charT('}')) {
+      __ycxx::__detail::__throw_format_error("std::range_formatter: invalid range-format-spec");
     }
     if (map) {
-      if constexpr (ycxx::detail::fmt_is_pair_or_2tuple<T>) {
-        set_brackets(ycxx::detail::fmt_lit<charT>("{", L"{"), ycxx::detail::fmt_lit<charT>("}", L"}"));
-        set_separator(ycxx::detail::fmt_lit<charT>(", ", L", "));
-        underlying_.set_brackets({}, {});
-        underlying_.set_separator(ycxx::detail::fmt_lit<charT>(": ", L": "));
+      if constexpr (__ycxx::__detail::__fmt_is_pair_or_2tuple<_Tp>) {
+        set_brackets(__ycxx::__detail::__fmt_lit<__charT>("{", L"{"), __ycxx::__detail::__fmt_lit<__charT>("}", L"}"));
+        set_separator(__ycxx::__detail::__fmt_lit<__charT>(", ", L", "));
+        __underlying_.set_brackets({}, {});
+        __underlying_.set_separator(__ycxx::__detail::__fmt_lit<__charT>(": ", L": "));
       }
     }
-    if (no_brackets)
+    if (__no_brackets)
       set_brackets({}, {});
-    ctx.advance_to(p);
-    p = underlying_.parse(ctx);
-    if constexpr (requires { underlying_.set_debug_format(); }) {
-      if (kind_ == kind::sequence && !has_underlying)
-        underlying_.set_debug_format();
+    __ctx.advance_to(p);
+    p = __underlying_.parse(__ctx);
+    if constexpr (requires { __underlying_.set_debug_format(); }) {
+      if (__kind_ == kind::sequence && !__has_underlying)
+        __underlying_.set_debug_format();
     }
     return p;
   }
 
-  template <ranges::input_range R, class FormatContext>
-    requires formattable<ranges::range_reference_t<R>, charT> && same_as<remove_cvref_t<ranges::range_reference_t<R>>, T>
-  constexpr typename FormatContext::iterator format(R&& r, FormatContext& ctx) const {
-    if constexpr (same_as<T, charT>) {
-      if (kind_ != kind::sequence) {
-        ycxx::detail::fmt_spec<charT> s = spec_;
-        s.type = kind_ == kind::debug_string ? '?' : 0;
-        if constexpr (ranges::contiguous_range<R> && ranges::sized_range<R>) {
-          return ycxx::detail::fmt_write_string(ctx, ranges::data(r), static_cast<size_t>(ranges::size(r)), s);
+  template <ranges::input_range _Rp, class _FormatContext>
+    requires formattable<ranges::range_reference_t<_Rp>, __charT> && same_as<remove_cvref_t<ranges::range_reference_t<_Rp>>, _Tp>
+  constexpr typename _FormatContext::iterator format(_Rp&& r, _FormatContext& __ctx) const {
+    if constexpr (same_as<_Tp, __charT>) {
+      if (__kind_ != kind::sequence) {
+        __ycxx::__detail::__fmt_spec<__charT> s = __spec_;
+        s.type = __kind_ == kind::debug_string ? '?' : 0;
+        if constexpr (ranges::contiguous_range<_Rp> && ranges::sized_range<_Rp>) {
+          return __ycxx::__detail::__fmt_write_string(__ctx, ranges::data(r), static_cast<size_t>(ranges::size(r)), s);
         } else {
-          const basic_string<charT> str(from_range, r);
-          return ycxx::detail::fmt_write_string(ctx, str.data(), str.size(), s);
+          const basic_string<__charT> str(from_range, r);
+          return __ycxx::__detail::__fmt_write_string(__ctx, str.data(), str.size(), s);
         }
       }
     }
-    const size_t width = ycxx::detail::fmt_width(spec_, ctx);
+    const size_t width = __ycxx::__detail::__fmt_width(__spec_, __ctx);
     if (width == 0) {
-      write_elements(r, ctx);
-      return ctx.out();
+      __write_elements(r, __ctx);
+      return __ctx.out();
     }
-    ycxx::detail::fmt_dynbuf<charT> tmp;
-    auto tctx = ycxx::detail::fmt_access::context_like(ctx, tmp);
-    write_elements(r, tctx);
-    return ycxx::detail::fmt_write_padded<charT>(ctx.out(), spec_, ycxx::detail::fmt_align::left, width,
-                                                 ycxx::detail::uni::width(tmp.data(), tmp.size()), tmp.data(),
-                                                 tmp.size());
+    __ycxx::__detail::__fmt_dynbuf<__charT> __tmp;
+    auto __tctx = __ycxx::__detail::__fmt_access::__context_like(__ctx, __tmp);
+    __write_elements(r, __tctx);
+    return __ycxx::__detail::__fmt_write_padded<__charT>(__ctx.out(), __spec_, __ycxx::__detail::__fmt_align::left, width,
+                                                 __ycxx::__detail::__uni::width(__tmp.data(), __tmp.size()), __tmp.data(),
+                                                 __tmp.size());
   }
 };
 
 } // namespace std
 
-namespace [[gnu::visibility("hidden")]] ycxx { namespace adl_free {
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __adl_free {
 
 // range-default-formatter ([format.range.fmtdef], [format.range.fmtmap], [format.range.fmtset],
 // [format.range.fmtstr]).
-template <std::range_format K, std::ranges::input_range R, class charT>
-struct fmt_range_default;
+template <std::range_format _Kp, std::ranges::input_range _Rp, class __charT>
+struct __fmt_range_default;
 
-template <std::ranges::input_range R, class charT>
-struct fmt_range_default<std::range_format::sequence, R, charT> {
+template <std::ranges::input_range _Rp, class __charT>
+struct __fmt_range_default<std::range_format::sequence, _Rp, __charT> {
 private:
-  using maybe_const_r = ycxx::detail::fmt_maybe_const<R, charT>;
-  std::range_formatter<std::remove_cvref_t<std::ranges::range_reference_t<maybe_const_r>>, charT> underlying_;
+  using __maybe_const_r = __ycxx::__detail::__fmt_maybe_const<_Rp, __charT>;
+  std::range_formatter<std::remove_cvref_t<std::ranges::range_reference_t<__maybe_const_r>>, __charT> __underlying_;
 
 public:
-  constexpr void set_separator(std::basic_string_view<charT> sep) noexcept { underlying_.set_separator(sep); }
-  constexpr void set_brackets(std::basic_string_view<charT> opening, std::basic_string_view<charT> closing) noexcept {
-    underlying_.set_brackets(opening, closing);
+  constexpr void set_separator(std::basic_string_view<__charT> __sep) noexcept { __underlying_.set_separator(__sep); }
+  constexpr void set_brackets(std::basic_string_view<__charT> __opening, std::basic_string_view<__charT> __closing) noexcept {
+    __underlying_.set_brackets(__opening, __closing);
   }
-  template <class ParseContext>
-  constexpr typename ParseContext::iterator parse(ParseContext& ctx) {
-    return underlying_.parse(ctx);
+  template <class _ParseContext>
+  constexpr typename _ParseContext::iterator parse(_ParseContext& __ctx) {
+    return __underlying_.parse(__ctx);
   }
-  template <class FormatContext>
-  constexpr typename FormatContext::iterator format(maybe_const_r& elems, FormatContext& ctx) const {
-    return underlying_.format(elems, ctx);
+  template <class _FormatContext>
+  constexpr typename _FormatContext::iterator format(__maybe_const_r& __y_elems, _FormatContext& __ctx) const {
+    return __underlying_.format(__y_elems, __ctx);
   }
 };
 
-template <std::ranges::input_range R, class charT>
-struct fmt_range_default<std::range_format::map, R, charT> {
+template <std::ranges::input_range _Rp, class __charT>
+struct __fmt_range_default<std::range_format::map, _Rp, __charT> {
 private:
-  using maybe_const_map = ycxx::detail::fmt_maybe_const<R, charT>;
-  using element_type = std::remove_cvref_t<std::ranges::range_reference_t<maybe_const_map>>;
-  std::range_formatter<element_type, charT> underlying_;
+  using __maybe_const_map = __ycxx::__detail::__fmt_maybe_const<_Rp, __charT>;
+  using element_type = std::remove_cvref_t<std::ranges::range_reference_t<__maybe_const_map>>;
+  std::range_formatter<element_type, __charT> __underlying_;
 
 public:
-  constexpr fmt_range_default() {
-    static_assert(ycxx::detail::fmt_is_pair_or_2tuple<element_type>,
+  constexpr __fmt_range_default() {
+    static_assert(__ycxx::__detail::__fmt_is_pair_or_2tuple<element_type>,
                   "std::formatter: a map's elements must be pairs or 2-tuples ([format.range.fmtmap]/1)");
-    underlying_.set_brackets(ycxx::detail::fmt_lit<charT>("{", L"{"), ycxx::detail::fmt_lit<charT>("}", L"}"));
-    underlying_.underlying().set_brackets({}, {});
-    underlying_.underlying().set_separator(ycxx::detail::fmt_lit<charT>(": ", L": "));
+    __underlying_.set_brackets(__ycxx::__detail::__fmt_lit<__charT>("{", L"{"), __ycxx::__detail::__fmt_lit<__charT>("}", L"}"));
+    __underlying_.underlying().set_brackets({}, {});
+    __underlying_.underlying().set_separator(__ycxx::__detail::__fmt_lit<__charT>(": ", L": "));
   }
-  template <class ParseContext>
-  constexpr typename ParseContext::iterator parse(ParseContext& ctx) {
-    return underlying_.parse(ctx);
+  template <class _ParseContext>
+  constexpr typename _ParseContext::iterator parse(_ParseContext& __ctx) {
+    return __underlying_.parse(__ctx);
   }
-  template <class FormatContext>
-  constexpr typename FormatContext::iterator format(maybe_const_map& r, FormatContext& ctx) const {
-    return underlying_.format(r, ctx);
+  template <class _FormatContext>
+  constexpr typename _FormatContext::iterator format(__maybe_const_map& r, _FormatContext& __ctx) const {
+    return __underlying_.format(r, __ctx);
   }
 };
 
-template <std::ranges::input_range R, class charT>
-struct fmt_range_default<std::range_format::set, R, charT> {
+template <std::ranges::input_range _Rp, class __charT>
+struct __fmt_range_default<std::range_format::set, _Rp, __charT> {
 private:
-  using maybe_const_set = ycxx::detail::fmt_maybe_const<R, charT>;
-  std::range_formatter<std::remove_cvref_t<std::ranges::range_reference_t<maybe_const_set>>, charT> underlying_;
+  using __maybe_const_set = __ycxx::__detail::__fmt_maybe_const<_Rp, __charT>;
+  std::range_formatter<std::remove_cvref_t<std::ranges::range_reference_t<__maybe_const_set>>, __charT> __underlying_;
 
 public:
-  constexpr fmt_range_default() {
-    underlying_.set_brackets(ycxx::detail::fmt_lit<charT>("{", L"{"), ycxx::detail::fmt_lit<charT>("}", L"}"));
+  constexpr __fmt_range_default() {
+    __underlying_.set_brackets(__ycxx::__detail::__fmt_lit<__charT>("{", L"{"), __ycxx::__detail::__fmt_lit<__charT>("}", L"}"));
   }
-  template <class ParseContext>
-  constexpr typename ParseContext::iterator parse(ParseContext& ctx) {
-    return underlying_.parse(ctx);
+  template <class _ParseContext>
+  constexpr typename _ParseContext::iterator parse(_ParseContext& __ctx) {
+    return __underlying_.parse(__ctx);
   }
-  template <class FormatContext>
-  constexpr typename FormatContext::iterator format(maybe_const_set& r, FormatContext& ctx) const {
-    return underlying_.format(r, ctx);
+  template <class _FormatContext>
+  constexpr typename _FormatContext::iterator format(__maybe_const_set& r, _FormatContext& __ctx) const {
+    return __underlying_.format(r, __ctx);
   }
 };
 
 // string and debug_string: formatted as basic_string<charT> (a view of the elements when the
 // range is contiguous, which formats the same).
-template <std::range_format K, std::ranges::input_range R, class charT>
-  requires(K == std::range_format::string || K == std::range_format::debug_string)
-struct fmt_range_default<K, R, charT> {
+template <std::range_format _Kp, std::ranges::input_range _Rp, class __charT>
+  requires(_Kp == std::range_format::string || _Kp == std::range_format::debug_string)
+struct __fmt_range_default<_Kp, _Rp, __charT> {
 private:
-  static_assert(__is_same(std::remove_cvref_t<std::ranges::range_reference_t<R>>, charT),
+  static_assert(__is_same(std::remove_cvref_t<std::ranges::range_reference_t<_Rp>>, __charT),
                 "std::formatter: a range formatted as a string must have elements of the character type "
                 "([format.range.fmtstr]/1)");
-  std::formatter<std::basic_string_view<charT>, charT> underlying_;
-  using str_r = std::conditional_t<std::ranges::input_range<const R>, const R, R>;
+  std::formatter<std::basic_string_view<__charT>, __charT> __underlying_;
+  using __str_r = std::conditional_t<std::ranges::input_range<const _Rp>, const _Rp, _Rp>;
 
 public:
-  template <class ParseContext>
-  constexpr typename ParseContext::iterator parse(ParseContext& ctx) {
-    auto i = underlying_.parse(ctx);
-    if constexpr (K == std::range_format::debug_string)
-      underlying_.set_debug_format();
+  template <class _ParseContext>
+  constexpr typename _ParseContext::iterator parse(_ParseContext& __ctx) {
+    auto i = __underlying_.parse(__ctx);
+    if constexpr (_Kp == std::range_format::debug_string)
+      __underlying_.set_debug_format();
     return i;
   }
-  template <class FormatContext>
-  constexpr typename FormatContext::iterator format(str_r& r, FormatContext& ctx) const {
-    if constexpr (std::ranges::contiguous_range<str_r> && std::ranges::sized_range<str_r>) {
-      return underlying_.format(std::basic_string_view<charT>(std::ranges::data(r), std::ranges::size(r)), ctx);
+  template <class _FormatContext>
+  constexpr typename _FormatContext::iterator format(__str_r& r, _FormatContext& __ctx) const {
+    if constexpr (std::ranges::contiguous_range<__str_r> && std::ranges::sized_range<__str_r>) {
+      return __underlying_.format(std::basic_string_view<__charT>(std::ranges::data(r), std::ranges::size(r)), __ctx);
     } else {
-      const std::basic_string<charT> s(std::from_range, r);
-      return underlying_.format(std::basic_string_view<charT>(s), ctx);
+      const std::basic_string<__charT> s(std::from_range, r);
+      return __underlying_.format(std::basic_string_view<__charT>(s), __ctx);
     }
   }
 };
 
 // [format.tuple]
-template <class charT, class Tuple, class... Ts>
-class fmt_tuple_formatter {
-  std::tuple<std::formatter<std::remove_cvref_t<Ts>, charT>...> underlying_;
-  std::basic_string_view<charT> separator_ = ycxx::detail::fmt_lit<charT>(", ", L", ");
-  std::basic_string_view<charT> opening_ = ycxx::detail::fmt_lit<charT>("(", L"(");
-  std::basic_string_view<charT> closing_ = ycxx::detail::fmt_lit<charT>(")", L")");
-  ycxx::detail::fmt_spec<charT> spec_;
+template <class __charT, class _Tuple, class... _Ts>
+class __fmt_tuple_formatter {
+  std::tuple<std::formatter<std::remove_cvref_t<_Ts>, __charT>...> __underlying_;
+  std::basic_string_view<__charT> __separator_ = __ycxx::__detail::__fmt_lit<__charT>(", ", L", ");
+  std::basic_string_view<__charT> __opening_ = __ycxx::__detail::__fmt_lit<__charT>("(", L"(");
+  std::basic_string_view<__charT> __closing_ = __ycxx::__detail::__fmt_lit<__charT>(")", L")");
+  __ycxx::__detail::__fmt_spec<__charT> __spec_;
 
-  using elems_t = std::conditional_t<(std::formattable<const Ts, charT> && ...), const Tuple, Tuple>;
+  using __elems_t = std::conditional_t<(std::formattable<const _Ts, __charT> && ...), const _Tuple, _Tuple>;
 
-  template <class FormatContext>
-  constexpr void write(elems_t& elems, FormatContext& ctx) const {
-    ctx.advance_to(ycxx::detail::fmt_put<charT>(ctx.out(), opening_.data(), opening_.size()));
-    [&]<std::size_t... I>(std::index_sequence<I...>) {
-      ((static_cast<void>(I != 0 ? (ctx.advance_to(ycxx::detail::fmt_put<charT>(ctx.out(), separator_.data(),
-                                                                                   separator_.size())),
+  template <class _FormatContext>
+  constexpr void write(__elems_t& __y_elems, _FormatContext& __ctx) const {
+    __ctx.advance_to(__ycxx::__detail::__fmt_put<__charT>(__ctx.out(), __opening_.data(), __opening_.size()));
+    [&]<std::size_t... _Ip>(std::index_sequence<_Ip...>) {
+      ((static_cast<void>(_Ip != 0 ? (__ctx.advance_to(__ycxx::__detail::__fmt_put<__charT>(__ctx.out(), __separator_.data(),
+                                                                                   __separator_.size())),
                                     0)
                                  : 0),
-        ctx.advance_to(std::get<I>(underlying_).format(std::get<I>(elems), ctx))),
+        __ctx.advance_to(std::get<_Ip>(__underlying_).format(std::get<_Ip>(__y_elems), __ctx))),
        ...);
-    }(std::index_sequence_for<Ts...>());
-    ctx.advance_to(ycxx::detail::fmt_put<charT>(ctx.out(), closing_.data(), closing_.size()));
+    }(std::index_sequence_for<_Ts...>());
+    __ctx.advance_to(__ycxx::__detail::__fmt_put<__charT>(__ctx.out(), __closing_.data(), __closing_.size()));
   }
 
 public:
-  constexpr void set_separator(std::basic_string_view<charT> sep) noexcept { separator_ = sep; }
-  constexpr void set_brackets(std::basic_string_view<charT> opening, std::basic_string_view<charT> closing) noexcept {
-    opening_ = opening;
-    closing_ = closing;
+  constexpr void set_separator(std::basic_string_view<__charT> __sep) noexcept { __separator_ = __sep; }
+  constexpr void set_brackets(std::basic_string_view<__charT> __opening, std::basic_string_view<__charT> __closing) noexcept {
+    __opening_ = __opening;
+    __closing_ = __closing;
   }
 
-  template <class ParseContext>
-  constexpr typename ParseContext::iterator parse(ParseContext& ctx) {
-    auto p = ctx.begin();
-    const auto e = ctx.end();
-    p = ycxx::detail::fmt_parse_fill_align(p, e, spec_, false);
-    p = ycxx::detail::fmt_parse_width(ctx, p, e, spec_);
-    if (p != e && *p == charT('m')) {
-      if constexpr (sizeof...(Ts) != 2)
-        ycxx::detail::throw_format_error("std::formatter: the m tuple-type needs exactly two elements");
-      set_separator(ycxx::detail::fmt_lit<charT>(": ", L": "));
+  template <class _ParseContext>
+  constexpr typename _ParseContext::iterator parse(_ParseContext& __ctx) {
+    auto p = __ctx.begin();
+    const auto e = __ctx.end();
+    p = __ycxx::__detail::__fmt_parse_fill_align(p, e, __spec_, false);
+    p = __ycxx::__detail::__fmt_parse_width(__ctx, p, e, __spec_);
+    if (p != e && *p == __charT('m')) {
+      if constexpr (sizeof...(_Ts) != 2)
+        __ycxx::__detail::__throw_format_error("std::formatter: the m tuple-type needs exactly two elements");
+      set_separator(__ycxx::__detail::__fmt_lit<__charT>(": ", L": "));
       set_brackets({}, {});
       ++p;
-    } else if (p != e && *p == charT('n')) {
+    } else if (p != e && *p == __charT('n')) {
       set_brackets({}, {});
       ++p;
     }
-    if (p != e && *p != charT('}'))
-      ycxx::detail::throw_format_error("std::formatter: invalid tuple-format-spec");
-    ctx.advance_to(p);
+    if (p != e && *p != __charT('}'))
+      __ycxx::__detail::__throw_format_error("std::formatter: invalid tuple-format-spec");
+    __ctx.advance_to(p);
     std::apply(
-        [&ctx, p](auto&... f) {
-          ((ctx.advance_to(p), static_cast<void>(f.parse(ctx))), ...);
-          (ycxx::detail::fmt_set_debug(f), ...);
+        [&__ctx, p](auto&... __f) {
+          ((__ctx.advance_to(p), static_cast<void>(__f.parse(__ctx))), ...);
+          (__ycxx::__detail::__fmt_set_debug(__f), ...);
         },
-        underlying_);
-    ctx.advance_to(p);
+        __underlying_);
+    __ctx.advance_to(p);
     return p;
   }
 
-  template <class FormatContext>
-  constexpr typename FormatContext::iterator format(elems_t& elems, FormatContext& ctx) const {
-    const std::size_t width = ycxx::detail::fmt_width(spec_, ctx);
+  template <class _FormatContext>
+  constexpr typename _FormatContext::iterator format(__elems_t& __y_elems, _FormatContext& __ctx) const {
+    const std::size_t width = __ycxx::__detail::__fmt_width(__spec_, __ctx);
     if (width == 0) {
-      write(elems, ctx);
-      return ctx.out();
+      write(__y_elems, __ctx);
+      return __ctx.out();
     }
-    ycxx::detail::fmt_dynbuf<charT> tmp;
-    auto tctx = ycxx::detail::fmt_access::context_like(ctx, tmp);
-    write(elems, tctx);
-    return ycxx::detail::fmt_write_padded<charT>(ctx.out(), spec_, ycxx::detail::fmt_align::left, width,
-                                                 ycxx::detail::uni::width(tmp.data(), tmp.size()), tmp.data(),
-                                                 tmp.size());
+    __ycxx::__detail::__fmt_dynbuf<__charT> __tmp;
+    auto __tctx = __ycxx::__detail::__fmt_access::__context_like(__ctx, __tmp);
+    write(__y_elems, __tctx);
+    return __ycxx::__detail::__fmt_write_padded<__charT>(__ctx.out(), __spec_, __ycxx::__detail::__fmt_align::left, width,
+                                                 __ycxx::__detail::__uni::width(__tmp.data(), __tmp.size()), __tmp.data(),
+                                                 __tmp.size());
   }
 };
 
-}} // namespace ycxx::adl_free
+}} // namespace __ycxx::__adl_free
 
-namespace [[gnu::visibility("hidden")]] std {
+namespace [[__gnu__::__visibility__("hidden")]] std {
 
 // [format.range.fmtmap], [format.range.fmtset], [format.range.fmtstr]
 // (format_kind<R> is only asked of cv-unqualified non-reference types: its primary template must
 // not be instantiated.)
-template <ranges::input_range R, class charT>
-  requires same_as<R, remove_cvref_t<R>> && (format_kind<R> != range_format::disabled) &&
-           formattable<ranges::range_reference_t<R>, charT>
-struct formatter<R, charT> : ycxx::adl_free::fmt_range_default<format_kind<R>, R, charT> {};
-template <ranges::input_range R>
-  requires same_as<R, remove_cvref_t<R>> && (format_kind<R> != range_format::disabled)
-inline constexpr bool enable_nonlocking_formatter_optimization<R> = false;
+template <ranges::input_range _Rp, class __charT>
+  requires same_as<_Rp, remove_cvref_t<_Rp>> && (format_kind<_Rp> != range_format::disabled) &&
+           formattable<ranges::range_reference_t<_Rp>, __charT>
+struct formatter<_Rp, __charT> : __ycxx::__adl_free::__fmt_range_default<format_kind<_Rp>, _Rp, __charT> {};
+template <ranges::input_range _Rp>
+  requires same_as<_Rp, remove_cvref_t<_Rp>> && (format_kind<_Rp> != range_format::disabled)
+inline constexpr bool enable_nonlocking_formatter_optimization<_Rp> = false;
 
 // [format.tuple]
-template <class charT, formattable<charT>... Ts>
-struct formatter<tuple<Ts...>, charT> : ycxx::adl_free::fmt_tuple_formatter<charT, tuple<Ts...>, Ts...> {};
-template <class charT, formattable<charT> T1, formattable<charT> T2>
-struct formatter<pair<T1, T2>, charT> : ycxx::adl_free::fmt_tuple_formatter<charT, pair<T1, T2>, T1, T2> {};
-template <class... Ts>
-inline constexpr bool enable_nonlocking_formatter_optimization<tuple<Ts...>> =
-    (enable_nonlocking_formatter_optimization<remove_cvref_t<Ts>> && ...);
-template <class T1, class T2>
-inline constexpr bool enable_nonlocking_formatter_optimization<pair<T1, T2>> =
-    enable_nonlocking_formatter_optimization<remove_cvref_t<T1>> &&
-    enable_nonlocking_formatter_optimization<remove_cvref_t<T2>>;
+template <class __charT, formattable<__charT>... _Ts>
+struct formatter<tuple<_Ts...>, __charT> : __ycxx::__adl_free::__fmt_tuple_formatter<__charT, tuple<_Ts...>, _Ts...> {};
+template <class __charT, formattable<__charT> _T1, formattable<__charT> _T2>
+struct formatter<pair<_T1, _T2>, __charT> : __ycxx::__adl_free::__fmt_tuple_formatter<__charT, pair<_T1, _T2>, _T1, _T2> {};
+template <class... _Ts>
+inline constexpr bool enable_nonlocking_formatter_optimization<tuple<_Ts...>> =
+    (enable_nonlocking_formatter_optimization<remove_cvref_t<_Ts>> && ...);
+template <class _T1, class _T2>
+inline constexpr bool enable_nonlocking_formatter_optimization<pair<_T1, _T2>> =
+    enable_nonlocking_formatter_optimization<remove_cvref_t<_T1>> &&
+    enable_nonlocking_formatter_optimization<remove_cvref_t<_T2>>;
 
 } // namespace std

@@ -11,275 +11,275 @@
 
 #include <ycxx/core/indirect.hpp>
 
-namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
 
-template <class T, class A>
-struct poly_block {
-  T* obj; // the owned object, as a T
-  constexpr virtual poly_block* clone(A& a) const = 0;
-  constexpr virtual poly_block* move_to(A& a) = 0;
+template <class _Tp, class _Ap>
+struct __poly_block {
+  _Tp* __obj; // the owned object, as a T
+  constexpr virtual __poly_block* __clone(_Ap& a) const = 0;
+  constexpr virtual __poly_block* __move_to(_Ap& a) = 0;
   // Destroys the owned object with a, then the block itself, and frees it with a.
-  constexpr virtual void dispose(A& a) noexcept = 0;
+  constexpr virtual void __dispose(_Ap& a) noexcept = 0;
 
 protected:
-  constexpr poly_block() noexcept = default;
-  constexpr ~poly_block() = default;
+  constexpr __poly_block() noexcept = default;
+  constexpr ~__poly_block() = default;
 };
 
-template <class T, class A, class U>
-struct poly_block_for final : poly_block<T, A> {
-  using traits = std::allocator_traits<A>;
-  using block_alloc = typename traits::template rebind_alloc<poly_block_for>;
-  using block_traits = std::allocator_traits<block_alloc>;
+template <class _Tp, class _Ap, class _Up>
+struct __poly_block_for final : __poly_block<_Tp, _Ap> {
+  using __traits = std::allocator_traits<_Ap>;
+  using __block_alloc = typename __traits::template rebind_alloc<__poly_block_for>;
+  using __block_traits = std::allocator_traits<__block_alloc>;
 
   union {
-    U u;
+    _Up __u;
   };
-  constexpr poly_block_for() noexcept {}
-  constexpr ~poly_block_for() {}
+  constexpr __poly_block_for() noexcept {}
+  constexpr ~__poly_block_for() {}
 
   // A new block owning a U constructed with args using a; nothing leaks if construction throws.
-  template <class... Args>
-  static constexpr poly_block_for* make(A& a, Args&&... args) {
-    block_alloc ba(a);
-    auto bp = block_traits::allocate(ba, 1);
-    poly_block_for* b = std::to_address(bp);
+  template <class... _Args>
+  static constexpr __poly_block_for* __make(_Ap& a, _Args&&... __args) {
+    __block_alloc __ba(a);
+    auto __bp = __block_traits::allocate(__ba, 1);
+    __poly_block_for* b = std::to_address(__bp);
     std::construct_at(b);
-    ycxx::detail::rollback guard{[&] {
+    __ycxx::__detail::__rollback __guard{[&] {
       std::destroy_at(b);
-      block_traits::deallocate(ba, bp, 1);
+      __block_traits::deallocate(__ba, __bp, 1);
     }};
-    traits::construct(a, __builtin_addressof(b->u), static_cast<Args&&>(args)...);
-    guard.release();
-    b->obj = __builtin_addressof(b->u);
+    __traits::construct(a, __builtin_addressof(b->__u), static_cast<_Args&&>(__args)...);
+    __guard.release();
+    b->__obj = __builtin_addressof(b->__u);
     return b;
   }
 
-  constexpr poly_block<T, A>* clone(A& a) const override { return make(a, static_cast<const U&>(u)); }
-  constexpr poly_block<T, A>* move_to(A& a) override { return make(a, static_cast<U&&>(u)); }
-  constexpr void dispose(A& a) noexcept override {
-    traits::destroy(a, __builtin_addressof(u));
-    block_alloc ba(a);
-    auto bp = ycxx::detail::to_alloc_pointer<typename block_traits::pointer>(this);
-    poly_block_for* self = this;
-    std::destroy_at(self);
-    block_traits::deallocate(ba, bp, 1);
+  constexpr __poly_block<_Tp, _Ap>* __clone(_Ap& a) const override { return __make(a, static_cast<const _Up&>(__u)); }
+  constexpr __poly_block<_Tp, _Ap>* __move_to(_Ap& a) override { return __make(a, static_cast<_Up&&>(__u)); }
+  constexpr void __dispose(_Ap& a) noexcept override {
+    __traits::destroy(a, __builtin_addressof(__u));
+    __block_alloc __ba(a);
+    auto __bp = __ycxx::__detail::__to_alloc_pointer<typename __block_traits::pointer>(this);
+    __poly_block_for* __self = this;
+    std::destroy_at(__self);
+    __block_traits::deallocate(__ba, __bp, 1);
   }
 };
 
-}} // namespace ycxx::detail
+}} // namespace __ycxx::__detail
 
-namespace [[gnu::visibility("hidden")]] std {
+namespace [[__gnu__::__visibility__("hidden")]] std {
 
-template <class T, class Allocator = allocator<T>>
+template <class _Tp, class _Allocator = allocator<_Tp>>
 class polymorphic {
-  static_assert(ycxx::detail::composite_value_ok<T>,
+  static_assert(__ycxx::__detail::__composite_value_ok<_Tp>,
                 "std::polymorphic: T must be a cv-unqualified object type that is not an array, in_place_t or "
                 "a specialization of in_place_type_t");
-  static_assert(is_same_v<typename allocator_traits<Allocator>::value_type, T>,
+  static_assert(is_same_v<typename allocator_traits<_Allocator>::value_type, _Tp>,
                 "std::polymorphic: allocator_traits<Allocator>::value_type must be T");
 
-  using traits = allocator_traits<Allocator>;
-  using block = ycxx::detail::poly_block<T, Allocator>;
-  template <class U>
-  using block_for = ycxx::detail::poly_block_for<T, Allocator, U>;
+  using __traits = allocator_traits<_Allocator>;
+  using block = __ycxx::__detail::__poly_block<_Tp, _Allocator>;
+  template <class _Up>
+  using __block_for = __ycxx::__detail::__poly_block_for<_Tp, _Allocator, _Up>;
 
 public:
-  using value_type = T;
-  using allocator_type = Allocator;
-  using pointer = typename traits::pointer;
-  using const_pointer = typename traits::const_pointer;
+  using value_type = _Tp;
+  using allocator_type = _Allocator;
+  using pointer = typename __traits::pointer;
+  using const_pointer = typename __traits::const_pointer;
 
 private:
-  block* b_ = nullptr;
-  [[no_unique_address]] Allocator alloc_ = Allocator();
+  block* __b_ = nullptr;
+  [[no_unique_address]] _Allocator __alloc_ = _Allocator();
 
-  template <class U, class... Args>
-  constexpr void init(Args&&... args) {
-    b_ = block_for<U>::make(alloc_, static_cast<Args&&>(args)...);
+  template <class _Up, class... _Args>
+  constexpr void init(_Args&&... __args) {
+    __b_ = __block_for<_Up>::__make(__alloc_, static_cast<_Args&&>(__args)...);
   }
-  static constexpr void dispose(Allocator& a, block* b) noexcept {
+  static constexpr void __dispose(_Allocator& a, block* b) noexcept {
     if (b != nullptr)
-      b->dispose(a);
+      b->__dispose(a);
   }
   // [polymorphic.ctor]/12-22: the constraints shared by the converting and in-place constructors.
-  template <class U, class... Args>
-  static constexpr bool owned_ok =
-      derived_from<U, T> && is_constructible_v<U, Args...> && is_copy_constructible_v<U>;
+  template <class _Up, class... _Args>
+  static constexpr bool __owned_ok =
+      derived_from<_Up, _Tp> && is_constructible_v<_Up, _Args...> && is_copy_constructible_v<_Up>;
 
 public:
   // ---- [polymorphic.ctor] ----
   constexpr explicit polymorphic()
-    requires is_default_constructible_v<Allocator>
+    requires is_default_constructible_v<_Allocator>
   {
-    static_assert(is_default_constructible_v<T> && is_copy_constructible_v<T>,
+    static_assert(is_default_constructible_v<_Tp> && is_copy_constructible_v<_Tp>,
                   "std::polymorphic(): T must be default and copy constructible");
-    init<T>();
+    init<_Tp>();
   }
-  constexpr explicit polymorphic(allocator_arg_t, const Allocator& a) : alloc_(a) {
-    static_assert(is_default_constructible_v<T> && is_copy_constructible_v<T>,
+  constexpr explicit polymorphic(allocator_arg_t, const _Allocator& a) : __alloc_(a) {
+    static_assert(is_default_constructible_v<_Tp> && is_copy_constructible_v<_Tp>,
                   "std::polymorphic(allocator_arg_t, a): T must be default and copy constructible");
-    init<T>();
+    init<_Tp>();
   }
   constexpr polymorphic(const polymorphic& other)
-      : alloc_(traits::select_on_container_copy_construction(other.alloc_)) {
-    if (other.b_ != nullptr)
-      b_ = other.b_->clone(alloc_);
+      : __alloc_(__traits::select_on_container_copy_construction(other.__alloc_)) {
+    if (other.__b_ != nullptr)
+      __b_ = other.__b_->__clone(__alloc_);
   }
-  constexpr polymorphic(allocator_arg_t, const Allocator& a, const polymorphic& other) : alloc_(a) {
-    if (other.b_ != nullptr)
-      b_ = other.b_->clone(alloc_);
+  constexpr polymorphic(allocator_arg_t, const _Allocator& a, const polymorphic& other) : __alloc_(a) {
+    if (other.__b_ != nullptr)
+      __b_ = other.__b_->__clone(__alloc_);
   }
   constexpr polymorphic(polymorphic&& other) noexcept
-      : b_(other.b_), alloc_(static_cast<Allocator&&>(other.alloc_)) {
-    other.b_ = nullptr;
+      : __b_(other.__b_), __alloc_(static_cast<_Allocator&&>(other.__alloc_)) {
+    other.__b_ = nullptr;
   }
-  constexpr polymorphic(allocator_arg_t, const Allocator& a, polymorphic&& other) noexcept(
-      traits::is_always_equal::value)
-      : alloc_(a) {
-    if (other.b_ == nullptr)
+  constexpr polymorphic(allocator_arg_t, const _Allocator& a, polymorphic&& other) noexcept(
+      __traits::is_always_equal::value)
+      : __alloc_(a) {
+    if (other.__b_ == nullptr)
       return;
-    if (traits::is_always_equal::value || alloc_ == other.alloc_) {
-      b_ = other.b_;
-      other.b_ = nullptr;
+    if (__traits::is_always_equal::value || __alloc_ == other.__alloc_) {
+      __b_ = other.__b_;
+      other.__b_ = nullptr;
     } else {
-      if constexpr (!traits::is_always_equal::value) {
-        b_ = other.b_->move_to(alloc_);
+      if constexpr (!__traits::is_always_equal::value) {
+        __b_ = other.__b_->__move_to(__alloc_);
         // Like indirect ([indirect.ctor]/16), other becomes valueless.
-        dispose(other.alloc_, other.b_);
-        other.b_ = nullptr;
+        __dispose(other.__alloc_, other.__b_);
+        other.__b_ = nullptr;
       }
     }
   }
-  template <class U = T>
-    requires(!is_same_v<remove_cvref_t<U>, polymorphic>) && owned_ok<remove_cvref_t<U>, U> &&
-            (!ycxx::detail::is_in_place_type<remove_cvref_t<U>>) && is_default_constructible_v<Allocator>
-  constexpr explicit polymorphic(U&& u) {
-    init<remove_cvref_t<U>>(static_cast<U&&>(u));
+  template <class _Up = _Tp>
+    requires(!is_same_v<remove_cvref_t<_Up>, polymorphic>) && __owned_ok<remove_cvref_t<_Up>, _Up> &&
+            (!__ycxx::__detail::__is_in_place_type<remove_cvref_t<_Up>>) && is_default_constructible_v<_Allocator>
+  constexpr explicit polymorphic(_Up&& __u) {
+    init<remove_cvref_t<_Up>>(static_cast<_Up&&>(__u));
   }
-  template <class U = T>
-    requires(!is_same_v<remove_cvref_t<U>, polymorphic>) && owned_ok<remove_cvref_t<U>, U> &&
-            (!ycxx::detail::is_in_place_type<remove_cvref_t<U>>)
-  constexpr explicit polymorphic(allocator_arg_t, const Allocator& a, U&& u) : alloc_(a) {
-    init<remove_cvref_t<U>>(static_cast<U&&>(u));
+  template <class _Up = _Tp>
+    requires(!is_same_v<remove_cvref_t<_Up>, polymorphic>) && __owned_ok<remove_cvref_t<_Up>, _Up> &&
+            (!__ycxx::__detail::__is_in_place_type<remove_cvref_t<_Up>>)
+  constexpr explicit polymorphic(allocator_arg_t, const _Allocator& a, _Up&& __u) : __alloc_(a) {
+    init<remove_cvref_t<_Up>>(static_cast<_Up&&>(__u));
   }
-  template <class U, class... Ts>
-    requires is_same_v<remove_cvref_t<U>, U> && owned_ok<U, Ts...> && is_default_constructible_v<Allocator>
-  constexpr explicit polymorphic(in_place_type_t<U>, Ts&&... ts) {
-    init<U>(static_cast<Ts&&>(ts)...);
+  template <class _Up, class... _Ts>
+    requires is_same_v<remove_cvref_t<_Up>, _Up> && __owned_ok<_Up, _Ts...> && is_default_constructible_v<_Allocator>
+  constexpr explicit polymorphic(in_place_type_t<_Up>, _Ts&&... __ts) {
+    init<_Up>(static_cast<_Ts&&>(__ts)...);
   }
-  template <class U, class... Ts>
-    requires is_same_v<remove_cvref_t<U>, U> && owned_ok<U, Ts...>
-  constexpr explicit polymorphic(allocator_arg_t, const Allocator& a, in_place_type_t<U>, Ts&&... ts) : alloc_(a) {
-    init<U>(static_cast<Ts&&>(ts)...);
+  template <class _Up, class... _Ts>
+    requires is_same_v<remove_cvref_t<_Up>, _Up> && __owned_ok<_Up, _Ts...>
+  constexpr explicit polymorphic(allocator_arg_t, const _Allocator& a, in_place_type_t<_Up>, _Ts&&... __ts) : __alloc_(a) {
+    init<_Up>(static_cast<_Ts&&>(__ts)...);
   }
-  template <class U, class I, class... Us>
-    requires is_same_v<remove_cvref_t<U>, U> && owned_ok<U, initializer_list<I>&, Us...> &&
-             is_default_constructible_v<Allocator>
-  constexpr explicit polymorphic(in_place_type_t<U>, initializer_list<I> ilist, Us&&... us) {
-    init<U>(ilist, static_cast<Us&&>(us)...);
+  template <class _Up, class _Ip, class... _Us>
+    requires is_same_v<remove_cvref_t<_Up>, _Up> && __owned_ok<_Up, initializer_list<_Ip>&, _Us...> &&
+             is_default_constructible_v<_Allocator>
+  constexpr explicit polymorphic(in_place_type_t<_Up>, initializer_list<_Ip> __ilist, _Us&&... us) {
+    init<_Up>(__ilist, static_cast<_Us&&>(us)...);
   }
-  template <class U, class I, class... Us>
-    requires is_same_v<remove_cvref_t<U>, U> && owned_ok<U, initializer_list<I>&, Us...>
-  constexpr explicit polymorphic(allocator_arg_t, const Allocator& a, in_place_type_t<U>, initializer_list<I> ilist,
-                                 Us&&... us)
-      : alloc_(a) {
-    init<U>(ilist, static_cast<Us&&>(us)...);
+  template <class _Up, class _Ip, class... _Us>
+    requires is_same_v<remove_cvref_t<_Up>, _Up> && __owned_ok<_Up, initializer_list<_Ip>&, _Us...>
+  constexpr explicit polymorphic(allocator_arg_t, const _Allocator& a, in_place_type_t<_Up>, initializer_list<_Ip> __ilist,
+                                 _Us&&... us)
+      : __alloc_(a) {
+    init<_Up>(__ilist, static_cast<_Us&&>(us)...);
   }
 
   // ---- [polymorphic.dtor] ----
   constexpr ~polymorphic() {
-    static_assert(ycxx::detail::complete_type<T>,
+    static_assert(__ycxx::__detail::__complete_type<_Tp>,
                   "std::polymorphic: T must be complete where the destructor is used");
-    dispose(alloc_, b_);
+    __dispose(__alloc_, __b_);
   }
 
   // ---- [polymorphic.assign] ----
   constexpr polymorphic& operator=(const polymorphic& other) {
-    static_assert(ycxx::detail::complete_type<T>, "std::polymorphic: T must be complete for copy assignment");
+    static_assert(__ycxx::__detail::__complete_type<_Tp>, "std::polymorphic: T must be complete for copy assignment");
     if (__builtin_addressof(other) == this)
       return *this;
-    constexpr bool update = traits::propagate_on_container_copy_assignment::value;
-    block* nb = nullptr;
-    if (other.b_ != nullptr) {
-      if constexpr (update) {
-        Allocator a(other.alloc_);
-        nb = other.b_->clone(a);
+    constexpr bool __update = __traits::propagate_on_container_copy_assignment::value;
+    block* __nb = nullptr;
+    if (other.__b_ != nullptr) {
+      if constexpr (__update) {
+        _Allocator a(other.__alloc_);
+        __nb = other.__b_->__clone(a);
       } else {
-        nb = other.b_->clone(alloc_);
+        __nb = other.__b_->__clone(__alloc_);
       }
     }
-    dispose(alloc_, b_);
-    b_ = nb;
-    if constexpr (update)
-      alloc_ = other.alloc_;
+    __dispose(__alloc_, __b_);
+    __b_ = __nb;
+    if constexpr (__update)
+      __alloc_ = other.__alloc_;
     return *this;
   }
   constexpr polymorphic& operator=(polymorphic&& other) noexcept(
-      traits::propagate_on_container_move_assignment::value || traits::is_always_equal::value) {
-    constexpr bool update = traits::propagate_on_container_move_assignment::value;
-    if constexpr (!update && !traits::is_always_equal::value)
-      static_assert(ycxx::detail::complete_type<T>, "std::polymorphic: T must be complete for move assignment");
+      __traits::propagate_on_container_move_assignment::value || __traits::is_always_equal::value) {
+    constexpr bool __update = __traits::propagate_on_container_move_assignment::value;
+    if constexpr (!__update && !__traits::is_always_equal::value)
+      static_assert(__ycxx::__detail::__complete_type<_Tp>, "std::polymorphic: T must be complete for move assignment");
     if (__builtin_addressof(other) == this)
       return *this;
-    if (other.b_ == nullptr) {
-      dispose(alloc_, b_);
-      b_ = nullptr;
-    } else if (update || traits::is_always_equal::value || alloc_ == other.alloc_) {
-      dispose(alloc_, b_);
-      b_ = other.b_;
-      other.b_ = nullptr;
+    if (other.__b_ == nullptr) {
+      __dispose(__alloc_, __b_);
+      __b_ = nullptr;
+    } else if (__update || __traits::is_always_equal::value || __alloc_ == other.__alloc_) {
+      __dispose(__alloc_, __b_);
+      __b_ = other.__b_;
+      other.__b_ = nullptr;
     } else {
-      if constexpr (!update && !traits::is_always_equal::value) {
-        block* nb = other.b_->move_to(alloc_);
-        dispose(alloc_, b_);
-        b_ = nb;
-        dispose(other.alloc_, other.b_);
-        other.b_ = nullptr;
+      if constexpr (!__update && !__traits::is_always_equal::value) {
+        block* __nb = other.__b_->__move_to(__alloc_);
+        __dispose(__alloc_, __b_);
+        __b_ = __nb;
+        __dispose(other.__alloc_, other.__b_);
+        other.__b_ = nullptr;
       }
     }
     // "Replaced with a copy of the allocator in other" ([indirect.assign]/7, [polymorphic.assign]/7):
     // by move assignment: an allocator whose propagate_on_container_move_assignment is true need
     // only be Cpp17MoveAssignable, not Cpp17CopyAssignable ([allocator.requirements.general]).
-    if constexpr (update)
-      alloc_ = static_cast<Allocator&&>(other.alloc_);
+    if constexpr (__update)
+      __alloc_ = static_cast<_Allocator&&>(other.__alloc_);
     return *this;
   }
 
   // ---- [polymorphic.obs] ----
-  constexpr const T& operator*() const noexcept {
-    ycxx::detail::precondition(b_ != nullptr, "std::polymorphic::operator*: valueless");
-    return *b_->obj;
+  constexpr const _Tp& operator*() const noexcept {
+    __ycxx::__detail::__precondition(__b_ != nullptr, "std::polymorphic::operator*: valueless");
+    return *__b_->__obj;
   }
-  constexpr T& operator*() noexcept {
-    ycxx::detail::precondition(b_ != nullptr, "std::polymorphic::operator*: valueless");
-    return *b_->obj;
+  constexpr _Tp& operator*() noexcept {
+    __ycxx::__detail::__precondition(__b_ != nullptr, "std::polymorphic::operator*: valueless");
+    return *__b_->__obj;
   }
   constexpr const_pointer operator->() const noexcept {
-    ycxx::detail::precondition(b_ != nullptr, "std::polymorphic::operator->: valueless");
-    return ycxx::detail::to_alloc_pointer<const_pointer>(static_cast<const T*>(b_->obj));
+    __ycxx::__detail::__precondition(__b_ != nullptr, "std::polymorphic::operator->: valueless");
+    return __ycxx::__detail::__to_alloc_pointer<const_pointer>(static_cast<const _Tp*>(__b_->__obj));
   }
   constexpr pointer operator->() noexcept {
-    ycxx::detail::precondition(b_ != nullptr, "std::polymorphic::operator->: valueless");
-    return ycxx::detail::to_alloc_pointer<pointer>(b_->obj);
+    __ycxx::__detail::__precondition(__b_ != nullptr, "std::polymorphic::operator->: valueless");
+    return __ycxx::__detail::__to_alloc_pointer<pointer>(__b_->__obj);
   }
-  constexpr bool valueless_after_move() const noexcept { return b_ == nullptr; }
-  constexpr allocator_type get_allocator() const noexcept { return alloc_; }
+  constexpr bool valueless_after_move() const noexcept { return __b_ == nullptr; }
+  constexpr allocator_type get_allocator() const noexcept { return __alloc_; }
 
   // ---- [polymorphic.swap] ----
-  constexpr void swap(polymorphic& other) noexcept(traits::propagate_on_container_swap::value ||
-                                                  traits::is_always_equal::value) {
-    if constexpr (traits::propagate_on_container_swap::value)
-      ycxx::detail::swap_adl::do_swap(alloc_, other.alloc_);
+  constexpr void swap(polymorphic& other) noexcept(__traits::propagate_on_container_swap::value ||
+                                                  __traits::is_always_equal::value) {
+    if constexpr (__traits::propagate_on_container_swap::value)
+      __ycxx::__detail::__swap_adl::__do_swap(__alloc_, other.__alloc_);
     else
-      ycxx::detail::precondition(traits::is_always_equal::value || alloc_ == other.alloc_,
+      __ycxx::__detail::__precondition(__traits::is_always_equal::value || __alloc_ == other.__alloc_,
                                  "std::polymorphic::swap: unequal allocators that do not propagate");
-    block* t = b_;
-    b_ = other.b_;
-    other.b_ = t;
+    block* t = __b_;
+    __b_ = other.__b_;
+    other.__b_ = t;
   }
-  friend constexpr void swap(polymorphic& lhs, polymorphic& rhs) noexcept(noexcept(lhs.swap(rhs))) {
-    lhs.swap(rhs);
+  friend constexpr void swap(polymorphic& __lhs, polymorphic& __rhs) noexcept(noexcept(__lhs.swap(__rhs))) {
+    __lhs.swap(__rhs);
   }
 };
 

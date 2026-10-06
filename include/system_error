@@ -14,18 +14,18 @@
 // Freestanding, only errc is required ([system.error.syn]); the categories are defined in the
 // hosted runtime, so a freestanding program that uses them gets a link error (like <string>'s
 // C-library parts, DECISIONS §3).
-#if YCXX_HOSTED
+#if _YCXX_HOSTED
 #  include <errno.h>
 
-namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
 // [system.error.syn]/1: each errc enumerator equals the <cerrno> macro of the same meaning.
 // Core spells the values out for each C library family (it cannot include <errno.h>); check
 // them against this C library.
-consteval bool errc_matches_errno() {
+consteval bool __errc_matches_errno() {
   using std::errc;
   const struct {
     errc e;
-    int v;
+    int __v;
   } table[] = {
       {errc::address_family_not_supported, EAFNOSUPPORT},
       {errc::address_in_use, EADDRINUSE},
@@ -102,15 +102,15 @@ consteval bool errc_matches_errno() {
       {errc::value_too_large, EOVERFLOW},
       {errc::wrong_protocol_type, EPROTOTYPE},
   };
-  for (const auto& entry : table)
-    if (static_cast<int>(entry.e) != entry.v)
+  for (const auto& __entry : table)
+    if (static_cast<int>(__entry.e) != __entry.__v)
       return false;
   return true;
 }
-static_assert(ycxx::detail::errc_matches_errno(), "libycxx: std::errc does not match this C library's errno values");
+static_assert(__ycxx::__detail::__errc_matches_errno(), "libycxx: std::errc does not match this C library's errno values");
 // The deprecated enumerators of [depr.cerrno] are not named here (that would warn); their values
 // in ycxx/core/errc.hpp are these constants.
-static_assert(ENODATA == errno_enodata && ENOSR == errno_enosr && ENOSTR == errno_enostr && ETIME == errno_etime,
+static_assert(ENODATA == __errno_enodata && ENOSR == __errno_enosr && ENOSTR == __errno_enostr && ETIME == __errno_etime,
               "libycxx: the [depr.cerrno] errc values do not match this C library's errno values");
-}} // namespace ycxx::detail
+}} // namespace __ycxx::__detail
 #endif

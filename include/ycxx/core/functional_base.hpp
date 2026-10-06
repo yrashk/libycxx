@@ -6,368 +6,368 @@
 #include <ycxx/core/compare.hpp>
 #include <ycxx/core/utility_base.hpp>
 
-namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
 // Converts any pointer-ish operand to an integer so that pointer comparisons form a strict
 // total order even across unrelated objects ([comparisons.general]/2).
-template <class T>
-constexpr __UINTPTR_TYPE__ ptr_value(const T& p) noexcept {
-  if constexpr (std::is_pointer_v<T>)
+template <class _Tp>
+constexpr __UINTPTR_TYPE__ __ptr_value(const _Tp& p) noexcept {
+  if constexpr (std::is_pointer_v<_Tp>)
     return reinterpret_cast<__UINTPTR_TYPE__>(p); // object and function pointers alike
   else
     return reinterpret_cast<__UINTPTR_TYPE__>(static_cast<const volatile void*>(p));
 }
 
-// BUILTIN-PTR-CMP(T, op, U): `t op u` resolves to a built-in operator comparing pointers. Both
+// BUILTIN-PTR-CMP(T, op, U): `t op __u` resolves to a built-in operator comparing pointers. Both
 // operands convert to pointers and no user-declared operator can be selected instead: neither an
 // `op` taking (t, u) nor, for the relational operators, an operator<=> in either operand order
 // (a rewritten candidate, [over.match.oper]/3.4), nor, for ==, a reversed operator==. The test
 // for class operands comes second, so pointers to incomplete classes are never completed.
-template <class T, class U>
-concept ptr_operands = std::is_convertible_v<T, const volatile void*> && std::is_convertible_v<U, const volatile void*>;
-template <class T, class U>
-concept user_less = requires(T&& t, U&& u) { operator<(static_cast<T&&>(t), static_cast<U&&>(u)); } ||
-                    requires(T&& t, U&& u) { static_cast<T&&>(t).operator<(static_cast<U&&>(u)); };
-template <class T, class U>
-concept user_greater = requires(T&& t, U&& u) { operator>(static_cast<T&&>(t), static_cast<U&&>(u)); } ||
-                       requires(T&& t, U&& u) { static_cast<T&&>(t).operator>(static_cast<U&&>(u)); };
-template <class T, class U>
-concept user_less_equal = requires(T&& t, U&& u) { operator<=(static_cast<T&&>(t), static_cast<U&&>(u)); } ||
-                          requires(T&& t, U&& u) { static_cast<T&&>(t).operator<=(static_cast<U&&>(u)); };
-template <class T, class U>
-concept user_greater_equal = requires(T&& t, U&& u) { operator>=(static_cast<T&&>(t), static_cast<U&&>(u)); } ||
-                             requires(T&& t, U&& u) { static_cast<T&&>(t).operator>=(static_cast<U&&>(u)); };
-template <class T, class U>
-concept user_equal = requires(T&& t, U&& u) { operator==(static_cast<T&&>(t), static_cast<U&&>(u)); } ||
-                     requires(T&& t, U&& u) { static_cast<T&&>(t).operator==(static_cast<U&&>(u)); } ||
-                     requires(T&& t, U&& u) { operator==(static_cast<U&&>(u), static_cast<T&&>(t)); } ||
-                     requires(T&& t, U&& u) { static_cast<U&&>(u).operator==(static_cast<T&&>(t)); };
+template <class _Tp, class _Up>
+concept __ptr_operands = std::is_convertible_v<_Tp, const volatile void*> && std::is_convertible_v<_Up, const volatile void*>;
+template <class _Tp, class _Up>
+concept __user_less = requires(_Tp&& t, _Up&& __u) { operator<(static_cast<_Tp&&>(t), static_cast<_Up&&>(__u)); } ||
+                    requires(_Tp&& t, _Up&& __u) { static_cast<_Tp&&>(t).operator<(static_cast<_Up&&>(__u)); };
+template <class _Tp, class _Up>
+concept __user_greater = requires(_Tp&& t, _Up&& __u) { operator>(static_cast<_Tp&&>(t), static_cast<_Up&&>(__u)); } ||
+                       requires(_Tp&& t, _Up&& __u) { static_cast<_Tp&&>(t).operator>(static_cast<_Up&&>(__u)); };
+template <class _Tp, class _Up>
+concept __user_less_equal = requires(_Tp&& t, _Up&& __u) { operator<=(static_cast<_Tp&&>(t), static_cast<_Up&&>(__u)); } ||
+                          requires(_Tp&& t, _Up&& __u) { static_cast<_Tp&&>(t).operator<=(static_cast<_Up&&>(__u)); };
+template <class _Tp, class _Up>
+concept __user_greater_equal = requires(_Tp&& t, _Up&& __u) { operator>=(static_cast<_Tp&&>(t), static_cast<_Up&&>(__u)); } ||
+                             requires(_Tp&& t, _Up&& __u) { static_cast<_Tp&&>(t).operator>=(static_cast<_Up&&>(__u)); };
+template <class _Tp, class _Up>
+concept __user_equal = requires(_Tp&& t, _Up&& __u) { operator==(static_cast<_Tp&&>(t), static_cast<_Up&&>(__u)); } ||
+                     requires(_Tp&& t, _Up&& __u) { static_cast<_Tp&&>(t).operator==(static_cast<_Up&&>(__u)); } ||
+                     requires(_Tp&& t, _Up&& __u) { operator==(static_cast<_Up&&>(__u), static_cast<_Tp&&>(t)); } ||
+                     requires(_Tp&& t, _Up&& __u) { static_cast<_Up&&>(__u).operator==(static_cast<_Tp&&>(t)); };
 
-template <class T, class U>
-concept builtin_ptr_less = requires(T&& t, U&& u) { static_cast<T&&>(t) < static_cast<U&&>(u); } && ptr_operands<T, U> &&
-                           (no_class_operand<T, U> || !(user_less<T, U> || user_three_way_candidate<T, U>));
-template <class T, class U>
-concept builtin_ptr_greater = requires(T&& t, U&& u) { static_cast<T&&>(t) > static_cast<U&&>(u); } && ptr_operands<T, U> &&
-                              (no_class_operand<T, U> || !(user_greater<T, U> || user_three_way_candidate<T, U>));
-template <class T, class U>
-concept builtin_ptr_less_equal = requires(T&& t, U&& u) { static_cast<T&&>(t) <= static_cast<U&&>(u); } &&
-                                 ptr_operands<T, U> &&
-                                 (no_class_operand<T, U> || !(user_less_equal<T, U> || user_three_way_candidate<T, U>));
-template <class T, class U>
-concept builtin_ptr_greater_equal = requires(T&& t, U&& u) { static_cast<T&&>(t) >= static_cast<U&&>(u); } &&
-                                    ptr_operands<T, U> &&
-                                    (no_class_operand<T, U> || !(user_greater_equal<T, U> || user_three_way_candidate<T, U>));
-template <class T, class U>
-concept builtin_ptr_eq = requires(T&& t, U&& u) { static_cast<T&&>(t) == static_cast<U&&>(u); } && ptr_operands<T, U> &&
-                         (no_class_operand<T, U> || !user_equal<T, U>);
+template <class _Tp, class _Up>
+concept __y_builtin_ptr_less = requires(_Tp&& t, _Up&& __u) { static_cast<_Tp&&>(t) < static_cast<_Up&&>(__u); } && __ptr_operands<_Tp, _Up> &&
+                           (__no_class_operand<_Tp, _Up> || !(__user_less<_Tp, _Up> || __user_three_way_candidate<_Tp, _Up>));
+template <class _Tp, class _Up>
+concept __y_builtin_ptr_greater = requires(_Tp&& t, _Up&& __u) { static_cast<_Tp&&>(t) > static_cast<_Up&&>(__u); } && __ptr_operands<_Tp, _Up> &&
+                              (__no_class_operand<_Tp, _Up> || !(__user_greater<_Tp, _Up> || __user_three_way_candidate<_Tp, _Up>));
+template <class _Tp, class _Up>
+concept __y_builtin_ptr_less_equal = requires(_Tp&& t, _Up&& __u) { static_cast<_Tp&&>(t) <= static_cast<_Up&&>(__u); } &&
+                                 __ptr_operands<_Tp, _Up> &&
+                                 (__no_class_operand<_Tp, _Up> || !(__user_less_equal<_Tp, _Up> || __user_three_way_candidate<_Tp, _Up>));
+template <class _Tp, class _Up>
+concept __y_builtin_ptr_greater_equal = requires(_Tp&& t, _Up&& __u) { static_cast<_Tp&&>(t) >= static_cast<_Up&&>(__u); } &&
+                                    __ptr_operands<_Tp, _Up> &&
+                                    (__no_class_operand<_Tp, _Up> || !(__user_greater_equal<_Tp, _Up> || __user_three_way_candidate<_Tp, _Up>));
+template <class _Tp, class _Up>
+concept __y_builtin_ptr_eq = requires(_Tp&& t, _Up&& __u) { static_cast<_Tp&&>(t) == static_cast<_Up&&>(__u); } && __ptr_operands<_Tp, _Up> &&
+                         (__no_class_operand<_Tp, _Up> || !__user_equal<_Tp, _Up>);
 
-template <class T, class U>
-constexpr bool total_less(const T& a, const U& b) {
+template <class _Tp, class _Up>
+constexpr bool __total_less(const _Tp& a, const _Up& b) {
   if consteval {
     // A null pointer orders before every other pointer; the core language leaves comparing
     // it with a pointer to an object unspecified, which constant evaluation rejects.
-    const volatile void* pa = a;
-    const volatile void* pb = b;
-    if (pb == nullptr)
+    const volatile void* __pa = a;
+    const volatile void* __pb = b;
+    if (__pb == nullptr)
       return false;
-    if (pa == nullptr)
+    if (__pa == nullptr)
       return true;
     return a < b;
   } else {
-    return ::ycxx::detail::ptr_value(a) < ::ycxx::detail::ptr_value(b);
+    return ::__ycxx::__detail::__ptr_value(a) < ::__ycxx::__detail::__ptr_value(b);
   }
 }
-}} // namespace ycxx::detail
+}} // namespace __ycxx::__detail
 
-namespace [[gnu::visibility("hidden")]] std {
+namespace [[__gnu__::__visibility__("hidden")]] std {
 
 // ---- arithmetic --------------------------------------------------------------------------------
-template <class T = void>
+template <class _Tp = void>
 struct plus {
-  constexpr T operator()(const T& x, const T& y) const { return x + y; }
+  constexpr _Tp operator()(const _Tp& __x, const _Tp& y) const { return __x + y; }
 };
-template <class T = void>
+template <class _Tp = void>
 struct minus {
-  constexpr T operator()(const T& x, const T& y) const { return x - y; }
+  constexpr _Tp operator()(const _Tp& __x, const _Tp& y) const { return __x - y; }
 };
-template <class T = void>
+template <class _Tp = void>
 struct multiplies {
-  constexpr T operator()(const T& x, const T& y) const { return x * y; }
+  constexpr _Tp operator()(const _Tp& __x, const _Tp& y) const { return __x * y; }
 };
-template <class T = void>
+template <class _Tp = void>
 struct divides {
-  constexpr T operator()(const T& x, const T& y) const { return x / y; }
+  constexpr _Tp operator()(const _Tp& __x, const _Tp& y) const { return __x / y; }
 };
-template <class T = void>
+template <class _Tp = void>
 struct modulus {
-  constexpr T operator()(const T& x, const T& y) const { return x % y; }
+  constexpr _Tp operator()(const _Tp& __x, const _Tp& y) const { return __x % y; }
 };
-template <class T = void>
+template <class _Tp = void>
 struct negate {
-  constexpr T operator()(const T& x) const { return -x; }
+  constexpr _Tp operator()(const _Tp& __x) const { return -__x; }
 };
 
 template <>
 struct plus<void> {
-  template <class T, class U>
-  constexpr auto operator()(T&& t, U&& u) const noexcept(noexcept(static_cast<T&&>(t) + static_cast<U&&>(u)))
-      -> decltype(static_cast<T&&>(t) + static_cast<U&&>(u)) {
-    return static_cast<T&&>(t) + static_cast<U&&>(u);
+  template <class _Tp, class _Up>
+  constexpr auto operator()(_Tp&& t, _Up&& __u) const noexcept(noexcept(static_cast<_Tp&&>(t) + static_cast<_Up&&>(__u)))
+      -> decltype(static_cast<_Tp&&>(t) + static_cast<_Up&&>(__u)) {
+    return static_cast<_Tp&&>(t) + static_cast<_Up&&>(__u);
   }
   using is_transparent = void;
 };
 template <>
 struct minus<void> {
-  template <class T, class U>
-  constexpr auto operator()(T&& t, U&& u) const noexcept(noexcept(static_cast<T&&>(t) - static_cast<U&&>(u)))
-      -> decltype(static_cast<T&&>(t) - static_cast<U&&>(u)) {
-    return static_cast<T&&>(t) - static_cast<U&&>(u);
+  template <class _Tp, class _Up>
+  constexpr auto operator()(_Tp&& t, _Up&& __u) const noexcept(noexcept(static_cast<_Tp&&>(t) - static_cast<_Up&&>(__u)))
+      -> decltype(static_cast<_Tp&&>(t) - static_cast<_Up&&>(__u)) {
+    return static_cast<_Tp&&>(t) - static_cast<_Up&&>(__u);
   }
   using is_transparent = void;
 };
 template <>
 struct multiplies<void> {
-  template <class T, class U>
-  constexpr auto operator()(T&& t, U&& u) const noexcept(noexcept(static_cast<T&&>(t) * static_cast<U&&>(u)))
-      -> decltype(static_cast<T&&>(t) * static_cast<U&&>(u)) {
-    return static_cast<T&&>(t) * static_cast<U&&>(u);
+  template <class _Tp, class _Up>
+  constexpr auto operator()(_Tp&& t, _Up&& __u) const noexcept(noexcept(static_cast<_Tp&&>(t) * static_cast<_Up&&>(__u)))
+      -> decltype(static_cast<_Tp&&>(t) * static_cast<_Up&&>(__u)) {
+    return static_cast<_Tp&&>(t) * static_cast<_Up&&>(__u);
   }
   using is_transparent = void;
 };
 template <>
 struct divides<void> {
-  template <class T, class U>
-  constexpr auto operator()(T&& t, U&& u) const noexcept(noexcept(static_cast<T&&>(t) / static_cast<U&&>(u)))
-      -> decltype(static_cast<T&&>(t) / static_cast<U&&>(u)) {
-    return static_cast<T&&>(t) / static_cast<U&&>(u);
+  template <class _Tp, class _Up>
+  constexpr auto operator()(_Tp&& t, _Up&& __u) const noexcept(noexcept(static_cast<_Tp&&>(t) / static_cast<_Up&&>(__u)))
+      -> decltype(static_cast<_Tp&&>(t) / static_cast<_Up&&>(__u)) {
+    return static_cast<_Tp&&>(t) / static_cast<_Up&&>(__u);
   }
   using is_transparent = void;
 };
 template <>
 struct modulus<void> {
-  template <class T, class U>
-  constexpr auto operator()(T&& t, U&& u) const noexcept(noexcept(static_cast<T&&>(t) % static_cast<U&&>(u)))
-      -> decltype(static_cast<T&&>(t) % static_cast<U&&>(u)) {
-    return static_cast<T&&>(t) % static_cast<U&&>(u);
+  template <class _Tp, class _Up>
+  constexpr auto operator()(_Tp&& t, _Up&& __u) const noexcept(noexcept(static_cast<_Tp&&>(t) % static_cast<_Up&&>(__u)))
+      -> decltype(static_cast<_Tp&&>(t) % static_cast<_Up&&>(__u)) {
+    return static_cast<_Tp&&>(t) % static_cast<_Up&&>(__u);
   }
   using is_transparent = void;
 };
 template <>
 struct negate<void> {
-  template <class T>
-  constexpr auto operator()(T&& t) const noexcept(noexcept(-static_cast<T&&>(t))) -> decltype(-static_cast<T&&>(t)) {
-    return -static_cast<T&&>(t);
+  template <class _Tp>
+  constexpr auto operator()(_Tp&& t) const noexcept(noexcept(-static_cast<_Tp&&>(t))) -> decltype(-static_cast<_Tp&&>(t)) {
+    return -static_cast<_Tp&&>(t);
   }
   using is_transparent = void;
 };
 
 // ---- comparisons -------------------------------------------------------------------------------
-template <class T = void>
+template <class _Tp = void>
 struct equal_to {
-  constexpr bool operator()(const T& x, const T& y) const { return x == y; }
+  constexpr bool operator()(const _Tp& __x, const _Tp& y) const { return __x == y; }
 };
-template <class T = void>
+template <class _Tp = void>
 struct not_equal_to {
-  constexpr bool operator()(const T& x, const T& y) const { return x != y; }
+  constexpr bool operator()(const _Tp& __x, const _Tp& y) const { return __x != y; }
 };
-template <class T = void>
+template <class _Tp = void>
 struct less {
-  constexpr bool operator()(const T& x, const T& y) const { return x < y; }
+  constexpr bool operator()(const _Tp& __x, const _Tp& y) const { return __x < y; }
 };
-template <class T = void>
+template <class _Tp = void>
 struct greater {
-  constexpr bool operator()(const T& x, const T& y) const { return x > y; }
+  constexpr bool operator()(const _Tp& __x, const _Tp& y) const { return __x > y; }
 };
-template <class T = void>
+template <class _Tp = void>
 struct less_equal {
-  constexpr bool operator()(const T& x, const T& y) const { return x <= y; }
+  constexpr bool operator()(const _Tp& __x, const _Tp& y) const { return __x <= y; }
 };
-template <class T = void>
+template <class _Tp = void>
 struct greater_equal {
-  constexpr bool operator()(const T& x, const T& y) const { return x >= y; }
+  constexpr bool operator()(const _Tp& __x, const _Tp& y) const { return __x >= y; }
 };
 
 // Pointer specializations: strict total order.
-template <class T>
-struct less<T*> {
-  constexpr bool operator()(T* x, T* y) const noexcept { return ycxx::detail::total_less(x, y); }
+template <class _Tp>
+struct less<_Tp*> {
+  constexpr bool operator()(_Tp* __x, _Tp* y) const noexcept { return __ycxx::__detail::__total_less(__x, y); }
 };
-template <class T>
-struct greater<T*> {
-  constexpr bool operator()(T* x, T* y) const noexcept { return ycxx::detail::total_less(y, x); }
+template <class _Tp>
+struct greater<_Tp*> {
+  constexpr bool operator()(_Tp* __x, _Tp* y) const noexcept { return __ycxx::__detail::__total_less(y, __x); }
 };
-template <class T>
-struct less_equal<T*> {
-  constexpr bool operator()(T* x, T* y) const noexcept { return !ycxx::detail::total_less(y, x); }
+template <class _Tp>
+struct less_equal<_Tp*> {
+  constexpr bool operator()(_Tp* __x, _Tp* y) const noexcept { return !__ycxx::__detail::__total_less(y, __x); }
 };
-template <class T>
-struct greater_equal<T*> {
-  constexpr bool operator()(T* x, T* y) const noexcept { return !ycxx::detail::total_less(x, y); }
+template <class _Tp>
+struct greater_equal<_Tp*> {
+  constexpr bool operator()(_Tp* __x, _Tp* y) const noexcept { return !__ycxx::__detail::__total_less(__x, y); }
 };
 
 template <>
 struct equal_to<void> {
-  template <class T, class U>
-  constexpr auto operator()(T&& t, U&& u) const noexcept(noexcept(static_cast<T&&>(t) == static_cast<U&&>(u)))
-      -> decltype(static_cast<T&&>(t) == static_cast<U&&>(u)) {
-    return static_cast<T&&>(t) == static_cast<U&&>(u);
+  template <class _Tp, class _Up>
+  constexpr auto operator()(_Tp&& t, _Up&& __u) const noexcept(noexcept(static_cast<_Tp&&>(t) == static_cast<_Up&&>(__u)))
+      -> decltype(static_cast<_Tp&&>(t) == static_cast<_Up&&>(__u)) {
+    return static_cast<_Tp&&>(t) == static_cast<_Up&&>(__u);
   }
   using is_transparent = void;
 };
 template <>
 struct not_equal_to<void> {
-  template <class T, class U>
-  constexpr auto operator()(T&& t, U&& u) const noexcept(noexcept(static_cast<T&&>(t) != static_cast<U&&>(u)))
-      -> decltype(static_cast<T&&>(t) != static_cast<U&&>(u)) {
-    return static_cast<T&&>(t) != static_cast<U&&>(u);
+  template <class _Tp, class _Up>
+  constexpr auto operator()(_Tp&& t, _Up&& __u) const noexcept(noexcept(static_cast<_Tp&&>(t) != static_cast<_Up&&>(__u)))
+      -> decltype(static_cast<_Tp&&>(t) != static_cast<_Up&&>(__u)) {
+    return static_cast<_Tp&&>(t) != static_cast<_Up&&>(__u);
   }
   using is_transparent = void;
 };
 template <>
 struct less<void> {
-  template <class T, class U>
-  constexpr auto operator()(T&& t, U&& u) const noexcept(noexcept(static_cast<T&&>(t) < static_cast<U&&>(u)))
-      -> decltype(static_cast<T&&>(t) < static_cast<U&&>(u)) {
-    if constexpr (ycxx::detail::builtin_ptr_less<T, U>)
-      return ycxx::detail::total_less(t, u);
+  template <class _Tp, class _Up>
+  constexpr auto operator()(_Tp&& t, _Up&& __u) const noexcept(noexcept(static_cast<_Tp&&>(t) < static_cast<_Up&&>(__u)))
+      -> decltype(static_cast<_Tp&&>(t) < static_cast<_Up&&>(__u)) {
+    if constexpr (__ycxx::__detail::__y_builtin_ptr_less<_Tp, _Up>)
+      return __ycxx::__detail::__total_less(t, __u);
     else
-      return static_cast<T&&>(t) < static_cast<U&&>(u);
+      return static_cast<_Tp&&>(t) < static_cast<_Up&&>(__u);
   }
   using is_transparent = void;
 };
 template <>
 struct greater<void> {
-  template <class T, class U>
-  constexpr auto operator()(T&& t, U&& u) const noexcept(noexcept(static_cast<T&&>(t) > static_cast<U&&>(u)))
-      -> decltype(static_cast<T&&>(t) > static_cast<U&&>(u)) {
-    if constexpr (ycxx::detail::builtin_ptr_greater<T, U>)
-      return ycxx::detail::total_less(u, t);
+  template <class _Tp, class _Up>
+  constexpr auto operator()(_Tp&& t, _Up&& __u) const noexcept(noexcept(static_cast<_Tp&&>(t) > static_cast<_Up&&>(__u)))
+      -> decltype(static_cast<_Tp&&>(t) > static_cast<_Up&&>(__u)) {
+    if constexpr (__ycxx::__detail::__y_builtin_ptr_greater<_Tp, _Up>)
+      return __ycxx::__detail::__total_less(__u, t);
     else
-      return static_cast<T&&>(t) > static_cast<U&&>(u);
+      return static_cast<_Tp&&>(t) > static_cast<_Up&&>(__u);
   }
   using is_transparent = void;
 };
 template <>
 struct less_equal<void> {
-  template <class T, class U>
-  constexpr auto operator()(T&& t, U&& u) const noexcept(noexcept(static_cast<T&&>(t) <= static_cast<U&&>(u)))
-      -> decltype(static_cast<T&&>(t) <= static_cast<U&&>(u)) {
-    if constexpr (ycxx::detail::builtin_ptr_less_equal<T, U>)
-      return !ycxx::detail::total_less(u, t);
+  template <class _Tp, class _Up>
+  constexpr auto operator()(_Tp&& t, _Up&& __u) const noexcept(noexcept(static_cast<_Tp&&>(t) <= static_cast<_Up&&>(__u)))
+      -> decltype(static_cast<_Tp&&>(t) <= static_cast<_Up&&>(__u)) {
+    if constexpr (__ycxx::__detail::__y_builtin_ptr_less_equal<_Tp, _Up>)
+      return !__ycxx::__detail::__total_less(__u, t);
     else
-      return static_cast<T&&>(t) <= static_cast<U&&>(u);
+      return static_cast<_Tp&&>(t) <= static_cast<_Up&&>(__u);
   }
   using is_transparent = void;
 };
 template <>
 struct greater_equal<void> {
-  template <class T, class U>
-  constexpr auto operator()(T&& t, U&& u) const noexcept(noexcept(static_cast<T&&>(t) >= static_cast<U&&>(u)))
-      -> decltype(static_cast<T&&>(t) >= static_cast<U&&>(u)) {
-    if constexpr (ycxx::detail::builtin_ptr_greater_equal<T, U>)
-      return !ycxx::detail::total_less(t, u);
+  template <class _Tp, class _Up>
+  constexpr auto operator()(_Tp&& t, _Up&& __u) const noexcept(noexcept(static_cast<_Tp&&>(t) >= static_cast<_Up&&>(__u)))
+      -> decltype(static_cast<_Tp&&>(t) >= static_cast<_Up&&>(__u)) {
+    if constexpr (__ycxx::__detail::__y_builtin_ptr_greater_equal<_Tp, _Up>)
+      return !__ycxx::__detail::__total_less(t, __u);
     else
-      return static_cast<T&&>(t) >= static_cast<U&&>(u);
+      return static_cast<_Tp&&>(t) >= static_cast<_Up&&>(__u);
   }
   using is_transparent = void;
 };
 
 // ---- logical / bitwise -------------------------------------------------------------------------
-template <class T = void>
+template <class _Tp = void>
 struct logical_and {
-  constexpr bool operator()(const T& x, const T& y) const { return x && y; }
+  constexpr bool operator()(const _Tp& __x, const _Tp& y) const { return __x && y; }
 };
-template <class T = void>
+template <class _Tp = void>
 struct logical_or {
-  constexpr bool operator()(const T& x, const T& y) const { return x || y; }
+  constexpr bool operator()(const _Tp& __x, const _Tp& y) const { return __x || y; }
 };
-template <class T = void>
+template <class _Tp = void>
 struct logical_not {
-  constexpr bool operator()(const T& x) const { return !x; }
+  constexpr bool operator()(const _Tp& __x) const { return !__x; }
 };
-template <class T = void>
+template <class _Tp = void>
 struct bit_and {
-  constexpr T operator()(const T& x, const T& y) const { return x & y; }
+  constexpr _Tp operator()(const _Tp& __x, const _Tp& y) const { return __x & y; }
 };
-template <class T = void>
+template <class _Tp = void>
 struct bit_or {
-  constexpr T operator()(const T& x, const T& y) const { return x | y; }
+  constexpr _Tp operator()(const _Tp& __x, const _Tp& y) const { return __x | y; }
 };
-template <class T = void>
+template <class _Tp = void>
 struct bit_xor {
-  constexpr T operator()(const T& x, const T& y) const { return x ^ y; }
+  constexpr _Tp operator()(const _Tp& __x, const _Tp& y) const { return __x ^ y; }
 };
-template <class T = void>
+template <class _Tp = void>
 struct bit_not {
-  constexpr T operator()(const T& x) const { return ~x; }
+  constexpr _Tp operator()(const _Tp& __x) const { return ~__x; }
 };
 
 template <>
 struct logical_and<void> {
-  template <class T, class U>
-  constexpr auto operator()(T&& t, U&& u) const noexcept(noexcept(static_cast<T&&>(t) && static_cast<U&&>(u)))
-      -> decltype(static_cast<T&&>(t) && static_cast<U&&>(u)) {
-    return static_cast<T&&>(t) && static_cast<U&&>(u);
+  template <class _Tp, class _Up>
+  constexpr auto operator()(_Tp&& t, _Up&& __u) const noexcept(noexcept(static_cast<_Tp&&>(t) && static_cast<_Up&&>(__u)))
+      -> decltype(static_cast<_Tp&&>(t) && static_cast<_Up&&>(__u)) {
+    return static_cast<_Tp&&>(t) && static_cast<_Up&&>(__u);
   }
   using is_transparent = void;
 };
 template <>
 struct logical_or<void> {
-  template <class T, class U>
-  constexpr auto operator()(T&& t, U&& u) const noexcept(noexcept(static_cast<T&&>(t) || static_cast<U&&>(u)))
-      -> decltype(static_cast<T&&>(t) || static_cast<U&&>(u)) {
-    return static_cast<T&&>(t) || static_cast<U&&>(u);
+  template <class _Tp, class _Up>
+  constexpr auto operator()(_Tp&& t, _Up&& __u) const noexcept(noexcept(static_cast<_Tp&&>(t) || static_cast<_Up&&>(__u)))
+      -> decltype(static_cast<_Tp&&>(t) || static_cast<_Up&&>(__u)) {
+    return static_cast<_Tp&&>(t) || static_cast<_Up&&>(__u);
   }
   using is_transparent = void;
 };
 template <>
 struct logical_not<void> {
-  template <class T>
-  constexpr auto operator()(T&& t) const noexcept(noexcept(!static_cast<T&&>(t))) -> decltype(!static_cast<T&&>(t)) {
-    return !static_cast<T&&>(t);
+  template <class _Tp>
+  constexpr auto operator()(_Tp&& t) const noexcept(noexcept(!static_cast<_Tp&&>(t))) -> decltype(!static_cast<_Tp&&>(t)) {
+    return !static_cast<_Tp&&>(t);
   }
   using is_transparent = void;
 };
 template <>
 struct bit_and<void> {
-  template <class T, class U>
-  constexpr auto operator()(T&& t, U&& u) const noexcept(noexcept(static_cast<T&&>(t) & static_cast<U&&>(u)))
-      -> decltype(static_cast<T&&>(t) & static_cast<U&&>(u)) {
-    return static_cast<T&&>(t) & static_cast<U&&>(u);
+  template <class _Tp, class _Up>
+  constexpr auto operator()(_Tp&& t, _Up&& __u) const noexcept(noexcept(static_cast<_Tp&&>(t) & static_cast<_Up&&>(__u)))
+      -> decltype(static_cast<_Tp&&>(t) & static_cast<_Up&&>(__u)) {
+    return static_cast<_Tp&&>(t) & static_cast<_Up&&>(__u);
   }
   using is_transparent = void;
 };
 template <>
 struct bit_or<void> {
-  template <class T, class U>
-  constexpr auto operator()(T&& t, U&& u) const noexcept(noexcept(static_cast<T&&>(t) | static_cast<U&&>(u)))
-      -> decltype(static_cast<T&&>(t) | static_cast<U&&>(u)) {
-    return static_cast<T&&>(t) | static_cast<U&&>(u);
+  template <class _Tp, class _Up>
+  constexpr auto operator()(_Tp&& t, _Up&& __u) const noexcept(noexcept(static_cast<_Tp&&>(t) | static_cast<_Up&&>(__u)))
+      -> decltype(static_cast<_Tp&&>(t) | static_cast<_Up&&>(__u)) {
+    return static_cast<_Tp&&>(t) | static_cast<_Up&&>(__u);
   }
   using is_transparent = void;
 };
 template <>
 struct bit_xor<void> {
-  template <class T, class U>
-  constexpr auto operator()(T&& t, U&& u) const noexcept(noexcept(static_cast<T&&>(t) ^ static_cast<U&&>(u)))
-      -> decltype(static_cast<T&&>(t) ^ static_cast<U&&>(u)) {
-    return static_cast<T&&>(t) ^ static_cast<U&&>(u);
+  template <class _Tp, class _Up>
+  constexpr auto operator()(_Tp&& t, _Up&& __u) const noexcept(noexcept(static_cast<_Tp&&>(t) ^ static_cast<_Up&&>(__u)))
+      -> decltype(static_cast<_Tp&&>(t) ^ static_cast<_Up&&>(__u)) {
+    return static_cast<_Tp&&>(t) ^ static_cast<_Up&&>(__u);
   }
   using is_transparent = void;
 };
 template <>
 struct bit_not<void> {
-  template <class T>
-  constexpr auto operator()(T&& t) const noexcept(noexcept(~static_cast<T&&>(t))) -> decltype(~static_cast<T&&>(t)) {
-    return ~static_cast<T&&>(t);
+  template <class _Tp>
+  constexpr auto operator()(_Tp&& t) const noexcept(noexcept(~static_cast<_Tp&&>(t))) -> decltype(~static_cast<_Tp&&>(t)) {
+    return ~static_cast<_Tp&&>(t);
   }
   using is_transparent = void;
 };
 
 // ---- identity ------------------------------------------------------------------------------
 struct identity {
-  template <class T>
-  [[nodiscard]] constexpr T&& operator()(T&& t) const noexcept {
-    return static_cast<T&&>(t);
+  template <class _Tp>
+  [[nodiscard]] constexpr _Tp&& operator()(_Tp&& t) const noexcept {
+    return static_cast<_Tp&&>(t);
   }
   using is_transparent = void;
 };
@@ -376,56 +376,56 @@ struct identity {
 namespace ranges {
 
 struct equal_to {
-  template <class T, class U>
-    requires equality_comparable_with<T, U>
-  constexpr bool operator()(T&& t, U&& u) const noexcept(noexcept(bool(static_cast<T&&>(t) == static_cast<U&&>(u)))) {
-    if constexpr (ycxx::detail::builtin_ptr_eq<T, U>)
-      return static_cast<const volatile void*>(t) == static_cast<const volatile void*>(u);
+  template <class _Tp, class _Up>
+    requires equality_comparable_with<_Tp, _Up>
+  constexpr bool operator()(_Tp&& t, _Up&& __u) const noexcept(noexcept(bool(static_cast<_Tp&&>(t) == static_cast<_Up&&>(__u)))) {
+    if constexpr (__ycxx::__detail::__y_builtin_ptr_eq<_Tp, _Up>)
+      return static_cast<const volatile void*>(t) == static_cast<const volatile void*>(__u);
     else
-      return static_cast<T&&>(t) == static_cast<U&&>(u);
+      return static_cast<_Tp&&>(t) == static_cast<_Up&&>(__u);
   }
   using is_transparent = void;
 };
 struct not_equal_to {
-  template <class T, class U>
-    requires equality_comparable_with<T, U>
-  constexpr bool operator()(T&& t, U&& u) const noexcept(noexcept(bool(static_cast<T&&>(t) == static_cast<U&&>(u)))) {
-    return !equal_to{}(static_cast<T&&>(t), static_cast<U&&>(u));
+  template <class _Tp, class _Up>
+    requires equality_comparable_with<_Tp, _Up>
+  constexpr bool operator()(_Tp&& t, _Up&& __u) const noexcept(noexcept(bool(static_cast<_Tp&&>(t) == static_cast<_Up&&>(__u)))) {
+    return !equal_to{}(static_cast<_Tp&&>(t), static_cast<_Up&&>(__u));
   }
   using is_transparent = void;
 };
 struct less {
-  template <class T, class U>
-    requires totally_ordered_with<T, U>
-  constexpr bool operator()(T&& t, U&& u) const noexcept(noexcept(bool(static_cast<T&&>(t) < static_cast<U&&>(u)))) {
-    if constexpr (ycxx::detail::builtin_ptr_less<T, U>)
-      return ycxx::detail::total_less(t, u);
+  template <class _Tp, class _Up>
+    requires totally_ordered_with<_Tp, _Up>
+  constexpr bool operator()(_Tp&& t, _Up&& __u) const noexcept(noexcept(bool(static_cast<_Tp&&>(t) < static_cast<_Up&&>(__u)))) {
+    if constexpr (__ycxx::__detail::__y_builtin_ptr_less<_Tp, _Up>)
+      return __ycxx::__detail::__total_less(t, __u);
     else
-      return static_cast<T&&>(t) < static_cast<U&&>(u);
+      return static_cast<_Tp&&>(t) < static_cast<_Up&&>(__u);
   }
   using is_transparent = void;
 };
 struct greater {
-  template <class T, class U>
-    requires totally_ordered_with<T, U>
-  constexpr bool operator()(T&& t, U&& u) const noexcept(noexcept(bool(static_cast<U&&>(u) < static_cast<T&&>(t)))) {
-    return less{}(static_cast<U&&>(u), static_cast<T&&>(t));
+  template <class _Tp, class _Up>
+    requires totally_ordered_with<_Tp, _Up>
+  constexpr bool operator()(_Tp&& t, _Up&& __u) const noexcept(noexcept(bool(static_cast<_Up&&>(__u) < static_cast<_Tp&&>(t)))) {
+    return less{}(static_cast<_Up&&>(__u), static_cast<_Tp&&>(t));
   }
   using is_transparent = void;
 };
 struct greater_equal {
-  template <class T, class U>
-    requires totally_ordered_with<T, U>
-  constexpr bool operator()(T&& t, U&& u) const noexcept(noexcept(bool(static_cast<T&&>(t) < static_cast<U&&>(u)))) {
-    return !less{}(static_cast<T&&>(t), static_cast<U&&>(u));
+  template <class _Tp, class _Up>
+    requires totally_ordered_with<_Tp, _Up>
+  constexpr bool operator()(_Tp&& t, _Up&& __u) const noexcept(noexcept(bool(static_cast<_Tp&&>(t) < static_cast<_Up&&>(__u)))) {
+    return !less{}(static_cast<_Tp&&>(t), static_cast<_Up&&>(__u));
   }
   using is_transparent = void;
 };
 struct less_equal {
-  template <class T, class U>
-    requires totally_ordered_with<T, U>
-  constexpr bool operator()(T&& t, U&& u) const noexcept(noexcept(bool(static_cast<U&&>(u) < static_cast<T&&>(t)))) {
-    return !less{}(static_cast<U&&>(u), static_cast<T&&>(t));
+  template <class _Tp, class _Up>
+    requires totally_ordered_with<_Tp, _Up>
+  constexpr bool operator()(_Tp&& t, _Up&& __u) const noexcept(noexcept(bool(static_cast<_Up&&>(__u) < static_cast<_Tp&&>(t)))) {
+    return !less{}(static_cast<_Up&&>(__u), static_cast<_Tp&&>(t));
   }
   using is_transparent = void;
 };
@@ -435,134 +435,134 @@ struct less_equal {
 // ---- [refwrap] -------------------------------------------------------------------------------
 } // namespace std
 
-namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
-template <class T>
-void refwrap_fun(T&) noexcept;
-template <class T>
-void refwrap_fun(T&&) = delete;
-}} // namespace ycxx::detail
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+template <class _Tp>
+void __refwrap_fun(_Tp&) noexcept;
+template <class _Tp>
+void __refwrap_fun(_Tp&&) = delete;
+}} // namespace __ycxx::__detail
 
-namespace [[gnu::visibility("hidden")]] std {
+namespace [[__gnu__::__visibility__("hidden")]] std {
 
-template <class T>
+template <class _Tp>
 class reference_wrapper {
-  T* ptr_;
+  _Tp* __ptr_;
 
 public:
-  using type = T;
+  using type = _Tp;
 
-  template <class U>
-    requires(!is_same_v<remove_cvref_t<U>, reference_wrapper>) &&
-            requires(U&& u) { ycxx::detail::refwrap_fun<T>(static_cast<U&&>(u)); }
-  constexpr reference_wrapper(U&& u) noexcept(noexcept(ycxx::detail::refwrap_fun<T>(static_cast<U&&>(u)))) {
-    T& r = static_cast<U&&>(u);
-    ptr_ = __builtin_addressof(r);
+  template <class _Up>
+    requires(!is_same_v<remove_cvref_t<_Up>, reference_wrapper>) &&
+            requires(_Up&& __u) { __ycxx::__detail::__refwrap_fun<_Tp>(static_cast<_Up&&>(__u)); }
+  constexpr reference_wrapper(_Up&& __u) noexcept(noexcept(__ycxx::__detail::__refwrap_fun<_Tp>(static_cast<_Up&&>(__u)))) {
+    _Tp& r = static_cast<_Up&&>(__u);
+    __ptr_ = __builtin_addressof(r);
   }
   constexpr reference_wrapper(const reference_wrapper&) noexcept = default;
   constexpr reference_wrapper& operator=(const reference_wrapper&) noexcept = default;
 
-  constexpr operator T&() const noexcept { return *ptr_; }
-  constexpr T& get() const noexcept { return *ptr_; }
+  constexpr operator _Tp&() const noexcept { return *__ptr_; }
+  constexpr _Tp& get() const noexcept { return *__ptr_; }
 
-  template <class... Args>
-  constexpr invoke_result_t<T&, Args...> operator()(Args&&... args) const
-      noexcept(is_nothrow_invocable_v<T&, Args...>) {
-    if constexpr (!is_function_v<T>)
-      static_assert(sizeof(T) != 0, "reference_wrapper: incomplete type");
-    return ycxx::detail::invoke(get(), static_cast<Args&&>(args)...);
+  template <class... _Args>
+  constexpr invoke_result_t<_Tp&, _Args...> operator()(_Args&&... __args) const
+      noexcept(is_nothrow_invocable_v<_Tp&, _Args...>) {
+    if constexpr (!is_function_v<_Tp>)
+      static_assert(sizeof(_Tp) != 0, "reference_wrapper: incomplete type");
+    return __ycxx::__detail::invoke(get(), static_cast<_Args&&>(__args)...);
   }
 
   // [refwrap.comparisons]
-  friend constexpr bool operator==(reference_wrapper x, reference_wrapper y)
+  friend constexpr bool operator==(reference_wrapper __x, reference_wrapper y)
     requires requires {
-      { x.get() == y.get() } -> ycxx::detail::boolean_testable;
+      { __x.get() == y.get() } -> __ycxx::__detail::__boolean_testable;
     }
   {
-    return x.get() == y.get();
+    return __x.get() == y.get();
   }
-  friend constexpr bool operator==(reference_wrapper x, const T& y)
+  friend constexpr bool operator==(reference_wrapper __x, const _Tp& y)
     requires requires {
-      { x.get() == y } -> ycxx::detail::boolean_testable;
+      { __x.get() == y } -> __ycxx::__detail::__boolean_testable;
     }
   {
-    return x.get() == y;
+    return __x.get() == y;
   }
-  friend constexpr bool operator==(reference_wrapper x, reference_wrapper<const T> y)
-    requires(!is_const_v<T>) && requires {
-      { x.get() == y.get() } -> ycxx::detail::boolean_testable;
+  friend constexpr bool operator==(reference_wrapper __x, reference_wrapper<const _Tp> y)
+    requires(!is_const_v<_Tp>) && requires {
+      { __x.get() == y.get() } -> __ycxx::__detail::__boolean_testable;
     }
   {
-    return x.get() == y.get();
+    return __x.get() == y.get();
   }
-  friend constexpr auto operator<=>(reference_wrapper x, reference_wrapper y)
-    requires requires(const T t) { ycxx::detail::synth_three_way(t, t); }
+  friend constexpr auto operator<=>(reference_wrapper __x, reference_wrapper y)
+    requires requires(const _Tp t) { __ycxx::__detail::__synth_three_way(t, t); }
   {
-    return ycxx::detail::synth_three_way(x.get(), y.get());
+    return __ycxx::__detail::__synth_three_way(__x.get(), y.get());
   }
-  friend constexpr auto operator<=>(reference_wrapper x, const T& y)
-    requires requires { ycxx::detail::synth_three_way(x.get(), y); }
+  friend constexpr auto operator<=>(reference_wrapper __x, const _Tp& y)
+    requires requires { __ycxx::__detail::__synth_three_way(__x.get(), y); }
   {
-    return ycxx::detail::synth_three_way(x.get(), y);
+    return __ycxx::__detail::__synth_three_way(__x.get(), y);
   }
-  friend constexpr auto operator<=>(reference_wrapper x, reference_wrapper<const T> y)
-    requires(!is_const_v<T>) && requires { ycxx::detail::synth_three_way(x.get(), y.get()); }
+  friend constexpr auto operator<=>(reference_wrapper __x, reference_wrapper<const _Tp> y)
+    requires(!is_const_v<_Tp>) && requires { __ycxx::__detail::__synth_three_way(__x.get(), y.get()); }
   {
-    return ycxx::detail::synth_three_way(x.get(), y.get());
+    return __ycxx::__detail::__synth_three_way(__x.get(), y.get());
   }
 };
 
-template <class T>
-reference_wrapper(T&) -> reference_wrapper<T>;
+template <class _Tp>
+reference_wrapper(_Tp&) -> reference_wrapper<_Tp>;
 
-template <class T>
-constexpr reference_wrapper<T> ref(T& t) noexcept {
-  return reference_wrapper<T>(t);
+template <class _Tp>
+constexpr reference_wrapper<_Tp> ref(_Tp& t) noexcept {
+  return reference_wrapper<_Tp>(t);
 }
-template <class T>
-constexpr reference_wrapper<T> ref(reference_wrapper<T> t) noexcept {
+template <class _Tp>
+constexpr reference_wrapper<_Tp> ref(reference_wrapper<_Tp> t) noexcept {
   return t;
 }
-template <class T>
-void ref(const T&&) = delete;
-template <class T>
-constexpr reference_wrapper<const T> cref(const T& t) noexcept {
-  return reference_wrapper<const T>(t);
+template <class _Tp>
+void ref(const _Tp&&) = delete;
+template <class _Tp>
+constexpr reference_wrapper<const _Tp> cref(const _Tp& t) noexcept {
+  return reference_wrapper<const _Tp>(t);
 }
-template <class T>
-constexpr reference_wrapper<const T> cref(reference_wrapper<T> t) noexcept {
-  return reference_wrapper<const T>(t.get());
+template <class _Tp>
+constexpr reference_wrapper<const _Tp> cref(reference_wrapper<_Tp> t) noexcept {
+  return reference_wrapper<const _Tp>(t.get());
 }
-template <class T>
-void cref(const T&&) = delete;
+template <class _Tp>
+void cref(const _Tp&&) = delete;
 
 // common_reference with reference_wrapper ([refwrap.common.ref])
 } // namespace std
 
-namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
-template <class T>
-inline constexpr bool is_ref_wrapper_v = false;
-template <class T>
-inline constexpr bool is_ref_wrapper_v<std::reference_wrapper<T>> = true;
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+template <class _Tp>
+inline constexpr bool __is_ref_wrapper_v = false;
+template <class _Tp>
+inline constexpr bool __is_ref_wrapper_v<std::reference_wrapper<_Tp>> = true;
 
-template <class R, class T, class RQ, class TQ>
-concept ref_wrap_common_reference_exists_with =
-    is_ref_wrapper_v<R> && requires { typename std::common_reference_t<typename R::type&, TQ>; } &&
-    std::convertible_to<RQ, std::common_reference_t<typename R::type&, TQ>>;
-}} // namespace ycxx::detail
+template <class _Rp, class _Tp, class _RQ, class _TQ>
+concept __ref_wrap_common_reference_exists_with =
+    __is_ref_wrapper_v<_Rp> && requires { typename std::common_reference_t<typename _Rp::type&, _TQ>; } &&
+    std::convertible_to<_RQ, std::common_reference_t<typename _Rp::type&, _TQ>>;
+}} // namespace __ycxx::__detail
 
-namespace [[gnu::visibility("hidden")]] std {
+namespace [[__gnu__::__visibility__("hidden")]] std {
 
-template <class R, class T, template <class> class RQual, template <class> class TQual>
-  requires(ycxx::detail::ref_wrap_common_reference_exists_with<R, T, RQual<R>, TQual<T>> &&
-           !ycxx::detail::ref_wrap_common_reference_exists_with<T, R, TQual<T>, RQual<R>>)
-struct basic_common_reference<R, T, RQual, TQual> {
-  using type = common_reference_t<typename R::type&, TQual<T>>;
+template <class _Rp, class _Tp, template <class> class _RQual, template <class> class _TQual>
+  requires(__ycxx::__detail::__ref_wrap_common_reference_exists_with<_Rp, _Tp, _RQual<_Rp>, _TQual<_Tp>> &&
+           !__ycxx::__detail::__ref_wrap_common_reference_exists_with<_Tp, _Rp, _TQual<_Tp>, _RQual<_Rp>>)
+struct basic_common_reference<_Rp, _Tp, _RQual, _TQual> {
+  using type = common_reference_t<typename _Rp::type&, _TQual<_Tp>>;
 };
-template <class T, class R, template <class> class TQual, template <class> class RQual>
-  requires(ycxx::detail::ref_wrap_common_reference_exists_with<R, T, RQual<R>, TQual<T>> &&
-           !ycxx::detail::ref_wrap_common_reference_exists_with<T, R, TQual<T>, RQual<R>>)
-struct basic_common_reference<T, R, TQual, RQual> {
-  using type = common_reference_t<typename R::type&, TQual<T>>;
+template <class _Tp, class _Rp, template <class> class _TQual, template <class> class _RQual>
+  requires(__ycxx::__detail::__ref_wrap_common_reference_exists_with<_Rp, _Tp, _RQual<_Rp>, _TQual<_Tp>> &&
+           !__ycxx::__detail::__ref_wrap_common_reference_exists_with<_Tp, _Rp, _TQual<_Tp>, _RQual<_Rp>>)
+struct basic_common_reference<_Tp, _Rp, _TQual, _RQual> {
+  using type = common_reference_t<typename _Rp::type&, _TQual<_Tp>>;
 };
 
 } // namespace std

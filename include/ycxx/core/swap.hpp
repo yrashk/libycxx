@@ -4,90 +4,90 @@
 #include <ycxx/core/meta_base.hpp>
 #include <ycxx/core/move.hpp>
 
-namespace [[gnu::visibility("hidden")]] std {
+namespace [[__gnu__::__visibility__("hidden")]] std {
 
-template <class T>
-  requires(is_constructible_v<T, T &&> && is_assignable_v<T&, T &&>)
-constexpr void swap(T& a, T& b) noexcept(is_nothrow_constructible_v<T, T &&> && is_nothrow_assignable_v<T&, T &&>) {
-  T tmp(static_cast<T&&>(a));
-  a = static_cast<T&&>(b);
-  b = static_cast<T&&>(tmp);
+template <class _Tp>
+  requires(is_constructible_v<_Tp, _Tp &&> && is_assignable_v<_Tp&, _Tp &&>)
+constexpr void swap(_Tp& a, _Tp& b) noexcept(is_nothrow_constructible_v<_Tp, _Tp &&> && is_nothrow_assignable_v<_Tp&, _Tp &&>) {
+  _Tp __tmp(static_cast<_Tp&&>(a));
+  a = static_cast<_Tp&&>(b);
+  b = static_cast<_Tp&&>(__tmp);
 }
 
 } // namespace std
 
-namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
 // Defined below, once both swap overloads are visible (needed for multidimensional arrays).
-template <class T>
-struct swappable_elem;
-}} // namespace ycxx::detail
+template <class _Tp>
+struct __swappable_elem;
+}} // namespace __ycxx::__detail
 
-namespace [[gnu::visibility("hidden")]] std {
-template <class T, size_t N>
-  requires ycxx::detail::swappable_elem<T>::value
-constexpr void swap(T (&a)[N], T (&b)[N]) noexcept(ycxx::detail::swappable_elem<T>::nothrow);
+namespace [[__gnu__::__visibility__("hidden")]] std {
+template <class _Tp, size_t _Np>
+  requires __ycxx::__detail::__swappable_elem<_Tp>::value
+constexpr void swap(_Tp (&a)[_Np], _Tp (&b)[_Np]) noexcept(__ycxx::__detail::__swappable_elem<_Tp>::nothrow);
 } // namespace std
 
-namespace [[gnu::visibility("hidden")]] ycxx { namespace detail::swap_adl {
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail::__swap_adl {
 using std::swap;
 
-template <class T, class U>
-concept swappable_with_ = requires(T&& t, U&& u) {
-  swap(static_cast<T&&>(t), static_cast<U&&>(u));
-  swap(static_cast<U&&>(u), static_cast<T&&>(t));
+template <class _Tp, class _Up>
+concept __swappable_with_ = requires(_Tp&& t, _Up&& __u) {
+  swap(static_cast<_Tp&&>(t), static_cast<_Up&&>(__u));
+  swap(static_cast<_Up&&>(__u), static_cast<_Tp&&>(t));
 };
 
-template <class T, class U>
-concept nothrow_swappable_with_ = swappable_with_<T, U> && requires(T&& t, U&& u) {
-  { swap(static_cast<T&&>(t), static_cast<U&&>(u)) } noexcept;
-  { swap(static_cast<U&&>(u), static_cast<T&&>(t)) } noexcept;
+template <class _Tp, class _Up>
+concept __nothrow_swappable_with_ = __swappable_with_<_Tp, _Up> && requires(_Tp&& t, _Up&& __u) {
+  { swap(static_cast<_Tp&&>(t), static_cast<_Up&&>(__u)) } noexcept;
+  { swap(static_cast<_Up&&>(__u), static_cast<_Tp&&>(t)) } noexcept;
 };
 
 // Calls swap with std::swap visible.
-template <class T, class U>
-constexpr void do_swap(T&& t, U&& u) noexcept(noexcept(swap(static_cast<T&&>(t), static_cast<U&&>(u)))) {
-  swap(static_cast<T&&>(t), static_cast<U&&>(u));
+template <class _Tp, class _Up>
+constexpr void __do_swap(_Tp&& t, _Up&& __u) noexcept(noexcept(swap(static_cast<_Tp&&>(t), static_cast<_Up&&>(__u)))) {
+  swap(static_cast<_Tp&&>(t), static_cast<_Up&&>(__u));
 }
-}} // namespace ycxx::detail::swap_adl
+}} // namespace __ycxx::__detail::__swap_adl
 
-namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
-template <class T>
-struct swappable_elem {
-  static constexpr bool value = swap_adl::swappable_with_<T&, T&>;
-  static constexpr bool nothrow = swap_adl::nothrow_swappable_with_<T&, T&>;
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+template <class _Tp>
+struct __swappable_elem {
+  static constexpr bool value = __swap_adl::__swappable_with_<_Tp&, _Tp&>;
+  static constexpr bool nothrow = __swap_adl::__nothrow_swappable_with_<_Tp&, _Tp&>;
 };
-}} // namespace ycxx::detail
+}} // namespace __ycxx::__detail
 
-namespace [[gnu::visibility("hidden")]] std {
+namespace [[__gnu__::__visibility__("hidden")]] std {
 
-template <class T, class U>
-struct is_swappable_with : bool_constant<ycxx::detail::swap_adl::swappable_with_<T, U>> {};
-template <class T, class U>
-inline constexpr bool is_swappable_with_v = ycxx::detail::swap_adl::swappable_with_<T, U>;
-template <class T>
-struct is_swappable : bool_constant<ycxx::detail::swap_adl::swappable_with_<__add_lvalue_reference(T),
-                                                                           __add_lvalue_reference(T)>> {};
-template <class T>
+template <class _Tp, class _Up>
+struct is_swappable_with : bool_constant<__ycxx::__detail::__swap_adl::__swappable_with_<_Tp, _Up>> {};
+template <class _Tp, class _Up>
+inline constexpr bool is_swappable_with_v = __ycxx::__detail::__swap_adl::__swappable_with_<_Tp, _Up>;
+template <class _Tp>
+struct is_swappable : bool_constant<__ycxx::__detail::__swap_adl::__swappable_with_<__add_lvalue_reference(_Tp),
+                                                                           __add_lvalue_reference(_Tp)>> {};
+template <class _Tp>
 inline constexpr bool is_swappable_v =
-    ycxx::detail::swap_adl::swappable_with_<__add_lvalue_reference(T), __add_lvalue_reference(T)>;
+    __ycxx::__detail::__swap_adl::__swappable_with_<__add_lvalue_reference(_Tp), __add_lvalue_reference(_Tp)>;
 
-template <class T, class U>
-struct is_nothrow_swappable_with : bool_constant<ycxx::detail::swap_adl::nothrow_swappable_with_<T, U>> {};
-template <class T, class U>
-inline constexpr bool is_nothrow_swappable_with_v = ycxx::detail::swap_adl::nothrow_swappable_with_<T, U>;
-template <class T>
+template <class _Tp, class _Up>
+struct is_nothrow_swappable_with : bool_constant<__ycxx::__detail::__swap_adl::__nothrow_swappable_with_<_Tp, _Up>> {};
+template <class _Tp, class _Up>
+inline constexpr bool is_nothrow_swappable_with_v = __ycxx::__detail::__swap_adl::__nothrow_swappable_with_<_Tp, _Up>;
+template <class _Tp>
 struct is_nothrow_swappable
-    : bool_constant<ycxx::detail::swap_adl::nothrow_swappable_with_<__add_lvalue_reference(T),
-                                                                    __add_lvalue_reference(T)>> {};
-template <class T>
+    : bool_constant<__ycxx::__detail::__swap_adl::__nothrow_swappable_with_<__add_lvalue_reference(_Tp),
+                                                                    __add_lvalue_reference(_Tp)>> {};
+template <class _Tp>
 inline constexpr bool is_nothrow_swappable_v =
-    ycxx::detail::swap_adl::nothrow_swappable_with_<__add_lvalue_reference(T), __add_lvalue_reference(T)>;
+    __ycxx::__detail::__swap_adl::__nothrow_swappable_with_<__add_lvalue_reference(_Tp), __add_lvalue_reference(_Tp)>;
 
-template <class T, size_t N>
-  requires ycxx::detail::swappable_elem<T>::value
-constexpr void swap(T (&a)[N], T (&b)[N]) noexcept(ycxx::detail::swappable_elem<T>::nothrow) {
-  for (size_t i = 0; i != N; ++i)
-    ycxx::detail::swap_adl::do_swap(a[i], b[i]);
+template <class _Tp, size_t _Np>
+  requires __ycxx::__detail::__swappable_elem<_Tp>::value
+constexpr void swap(_Tp (&a)[_Np], _Tp (&b)[_Np]) noexcept(__ycxx::__detail::__swappable_elem<_Tp>::nothrow) {
+  for (size_t i = 0; i != _Np; ++i)
+    __ycxx::__detail::__swap_adl::__do_swap(a[i], b[i]);
 }
 
 } // namespace std

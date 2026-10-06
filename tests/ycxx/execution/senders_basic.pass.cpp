@@ -19,7 +19,6 @@
 //     thread until finish() has been called and the queue is empty.
 // FLAGS: -pthread
 // REQUIRES: exceptions
-// XFAIL: any  not implemented yet: the senders/receivers part of <execution> (STATUS)
 #include <exception>
 #include <execution>
 #include <optional>
@@ -115,8 +114,9 @@ void adaptors() {
       },
       9));
 
-  // stopped_as_optional.
-  auto so = tt::sync_wait(ex::just(4) | ex::stopped_as_optional());
+  // stopped_as_optional: a one-argument pipeable adaptor object is itself the closure
+  // ([exec.adapt.obj]/4, [exec.stopped.opt]/2), so it is piped without a call.
+  auto so = tt::sync_wait(ex::just(4) | ex::stopped_as_optional);
   CHECK(so && std::get<0>(*so) == std::optional<int>(4));
 }
 

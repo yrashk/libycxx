@@ -389,8 +389,8 @@ struct leap_second_info {
 class utc_clock {
 public:
   using rep = long long;
-  using __period = nano;
-  using duration = chrono::duration<rep, __period>;
+  using period = nano;
+  using duration = chrono::duration<rep, period>;
   using time_point = chrono::time_point<utc_clock>;
   static constexpr bool is_steady = false;
 
@@ -448,8 +448,8 @@ leap_second_info get_leap_second_info(const utc_time<_Duration>& __ut) {
 class tai_clock {
 public:
   using rep = long long;
-  using __period = nano;
-  using duration = chrono::duration<rep, __period>;
+  using period = nano;
+  using duration = chrono::duration<rep, period>;
   using time_point = chrono::time_point<tai_clock>;
   static constexpr bool is_steady = false;
 
@@ -469,8 +469,8 @@ inline tai_clock::time_point tai_clock::now() { return from_utc(utc_clock::now()
 class gps_clock {
 public:
   using rep = long long;
-  using __period = nano;
-  using duration = chrono::duration<rep, __period>;
+  using period = nano;
+  using duration = chrono::duration<rep, period>;
   using time_point = chrono::time_point<gps_clock>;
   static constexpr bool is_steady = false;
 

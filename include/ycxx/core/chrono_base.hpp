@@ -88,7 +88,7 @@ struct duration_values {
 template <class _Tp>
 struct is_clock : bool_constant<requires {
   typename _Tp::rep;
-  typename _Tp::__period;
+  typename _Tp::period;
   typename _Tp::duration;
   typename _Tp::time_point;
   _Tp::is_steady;
@@ -101,7 +101,7 @@ constexpr bool is_clock_v = is_clock<_Tp>::value;
 template <class _ToDuration, class _Rep, class _Period>
   requires __ycxx::__detail::__is_duration<_ToDuration>
 constexpr _ToDuration duration_cast(const duration<_Rep, _Period>& d) {
-  using __cf = ratio_divide<_Period, typename _ToDuration::__period>;
+  using __cf = ratio_divide<_Period, typename _ToDuration::period>;
   using __cr = common_type_t<typename _ToDuration::rep, _Rep, intmax_t>;
   using __to_rep = typename _ToDuration::rep;
   if constexpr (__cf::num == 1 && __cf::den == 1)
@@ -125,7 +125,7 @@ class duration {
 
 public:
   using rep = _Rep;
-  using __period = typename _Period::type;
+  using period = typename _Period::type;
 
 private:
   rep __rep_;
@@ -137,9 +137,9 @@ public:
              (treat_as_floating_point_v<rep> || !treat_as_floating_point_v<_Rep2>)
   constexpr explicit duration(const _Rep2& r) : __rep_(r) {}
   template <class _Rep2, class _Period2>
-    requires is_convertible_v<const _Rep2&, rep> && __ycxx::__detail::__ratio_divide_valid<typename _Period2::type, __period> &&
+    requires is_convertible_v<const _Rep2&, rep> && __ycxx::__detail::__ratio_divide_valid<typename _Period2::type, period> &&
              (treat_as_floating_point_v<rep> ||
-              (ratio_divide<typename _Period2::type, __period>::den == 1 && !treat_as_floating_point_v<_Rep2>))
+              (ratio_divide<typename _Period2::type, period>::den == 1 && !treat_as_floating_point_v<_Rep2>))
   constexpr duration(const duration<_Rep2, _Period2>& d) : __rep_(chrono::duration_cast<duration>(d).count()) {}
   ~duration() = default;
   duration(const duration&) = default;
@@ -202,10 +202,10 @@ using minutes = duration<long long, ratio<60>>;
 using hours = duration<long long, ratio<3600>>;
 // The calendar durations count in long long too: sys_days + seconds then stays exact for every
 // representable date (a 32-bit count overflows when converted to seconds before 1902).
-using days = duration<long long, ratio_multiply<ratio<24>, hours::__period>>;
-using weeks = duration<long long, ratio_multiply<ratio<7>, days::__period>>;
-using years = duration<long long, ratio_multiply<ratio<146097, 400>, days::__period>>;
-using months = duration<long long, ratio_divide<years::__period, ratio<12>>>;
+using days = duration<long long, ratio_multiply<ratio<24>, hours::period>>;
+using weeks = duration<long long, ratio_multiply<ratio<7>, days::period>>;
+using years = duration<long long, ratio_multiply<ratio<146097, 400>, days::period>>;
+using months = duration<long long, ratio_divide<years::period, ratio<12>>>;
 
 // [time.duration.nonmember]
 template <class _Rep1, class _Period1, class _Rep2, class _Period2>
@@ -330,7 +330,7 @@ public:
   using clock = _Clock;
   using duration = _Duration;
   using rep = typename duration::rep;
-  using __period = typename duration::__period;
+  using period = typename duration::period;
 
 private:
   duration __d_;

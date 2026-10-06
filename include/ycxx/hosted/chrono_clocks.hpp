@@ -25,8 +25,8 @@ namespace [[__gnu__::__visibility__("hidden")]] std { namespace chrono {
 class system_clock {
 public:
   using rep = long long;
-  using __period = nano;
-  using duration = chrono::duration<rep, __period>;
+  using period = nano;
+  using duration = chrono::duration<rep, period>;
   using time_point = chrono::time_point<system_clock>;
   static constexpr bool is_steady = false;
 
@@ -45,8 +45,8 @@ public:
 class steady_clock {
 public:
   using rep = long long;
-  using __period = nano;
-  using duration = chrono::duration<rep, __period>;
+  using period = nano;
+  using duration = chrono::duration<rep, period>;
   using time_point = chrono::time_point<steady_clock, duration>;
   static constexpr bool is_steady = true;
 
@@ -58,7 +58,7 @@ public:
 class high_resolution_clock {
 public:
   using rep = steady_clock::rep;
-  using __period = steady_clock::__period;
+  using period = steady_clock::period;
   using duration = steady_clock::duration;
   using time_point = steady_clock::time_point;
   static constexpr bool is_steady = true;
@@ -72,8 +72,8 @@ namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __adl_free {
 class file_clock {
 public:
   using rep = long long;
-  using __period = std::nano;
-  using duration = std::chrono::duration<rep, __period>;
+  using period = std::nano;
+  using duration = std::chrono::duration<rep, period>;
   using time_point = std::chrono::time_point<file_clock>;
   static constexpr bool is_steady = false;
 

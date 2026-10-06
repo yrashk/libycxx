@@ -60,14 +60,14 @@ constexpr bool __te_comp_name(std::string_view a, std::string_view b) noexcept {
 // The MIBenum of the known registered encoding named enc (compared by comp-name), or 1 (other).
 constexpr std::int_least32_t __te_lookup(std::string_view __enc) noexcept {
   char __buf[64] = {};
-  const std::string_view __key(__buf, __te_canon(__enc, __buf));
+  const std::string_view key(__buf, __te_canon(__enc, __buf));
   std::size_t __lo = 0, __hi = sizeof(__te_keys) / sizeof(__te_keys[0]);
   while (__lo < __hi) {
     const std::size_t __mid = __lo + (__hi - __lo) / 2;
-    const std::string_view k(__te_keys[__mid].__key);
-    if (k == __key)
+    const std::string_view k(__te_keys[__mid].key);
+    if (k == key)
       return __te_keys[__mid].mib;
-    if (k < __key)
+    if (k < key)
       __lo = __mid + 1;
     else
       __hi = __mid;

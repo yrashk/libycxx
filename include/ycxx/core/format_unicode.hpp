@@ -107,11 +107,11 @@ constexpr unsigned long __unit_value(__charT c) noexcept {
 // The property byte of the run containing c (tables: first code point << 8 | properties).
 template <std::size_t _Np>
 constexpr unsigned __run_lookup(const unsigned (&t)[_Np], char32_t c) noexcept {
-  const unsigned __key = static_cast<unsigned>(c) << 8 | 0xff;
+  const unsigned key = static_cast<unsigned>(c) << 8 | 0xff;
   std::size_t __lo = 0, __hi = _Np; // t[0] starts at U+0000
   while (__hi - __lo > 1) {
     const std::size_t __mid = __lo + (__hi - __lo) / 2;
-    if (t[__mid] <= __key)
+    if (t[__mid] <= key)
       __lo = __mid;
     else
       __hi = __mid;

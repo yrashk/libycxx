@@ -16,13 +16,13 @@
 namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
 // The C semantics; compar's exceptions propagate ([alg.c.library]/4).
 template <class = void>
-const void* __c_bsearch(const void* __key, const void* base, std::size_t __nmemb, std::size_t size,
+const void* __c_bsearch(const void* key, const void* base, std::size_t __nmemb, std::size_t size,
                       int (*__compar)(const void*, const void*)) {
   const auto* b = static_cast<const unsigned char*>(base);
   while (__nmemb != 0) {
     const std::size_t __mid = __nmemb / 2;
     const unsigned char* p = b + __mid * size;
-    const int r = __compar(__key, p);
+    const int r = __compar(key, p);
     if (r == 0)
       return p;
     if (r > 0) {
@@ -38,12 +38,12 @@ const void* __c_bsearch(const void* __key, const void* base, std::size_t __nmemb
 
 namespace [[__gnu__::__visibility__("hidden")]] std {
 template <class = void>
-void* bsearch(const void* __key, void* base, size_t __nmemb, size_t size, int (*__compar)(const void*, const void*)) {
-  return const_cast<void*>(::__ycxx::__detail::__c_bsearch(__key, base, __nmemb, size, __compar));
+void* bsearch(const void* key, void* base, size_t __nmemb, size_t size, int (*__compar)(const void*, const void*)) {
+  return const_cast<void*>(::__ycxx::__detail::__c_bsearch(key, base, __nmemb, size, __compar));
 }
 template <class = void>
-const void* bsearch(const void* __key, const void* base, size_t __nmemb, size_t size,
+const void* bsearch(const void* key, const void* base, size_t __nmemb, size_t size,
                     int (*__compar)(const void*, const void*)) {
-  return ::__ycxx::__detail::__c_bsearch(__key, base, __nmemb, size, __compar);
+  return ::__ycxx::__detail::__c_bsearch(key, base, __nmemb, size, __compar);
 }
 } // namespace std

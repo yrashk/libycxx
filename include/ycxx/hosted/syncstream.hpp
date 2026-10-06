@@ -12,9 +12,9 @@
 #include <ycxx/hosted/ostream.hpp>
 
 namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
-// src/hosted/syncstream.cpp: locks the lock of the stream buffer at `__key` (blocking), and
+// src/hosted/syncstream.cpp: locks the lock of the stream buffer at `key` (blocking), and
 // returns the handle that syncbuf_unlock releases.
-void* __syncbuf_lock(const void* __key) noexcept;
+void* __syncbuf_lock(const void* key) noexcept;
 void __syncbuf_unlock(void* handle) noexcept;
 }} // namespace __ycxx::__detail
 

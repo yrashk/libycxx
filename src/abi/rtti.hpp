@@ -205,21 +205,21 @@ inline bool __same_subobject(const __subobject& a, const __subobject& b) noexcep
 // Past its capacity the walk simply enters again.
 struct __vbase_memo {
   static constexpr int capacity = 64;
-  const void* __key[capacity];
+  const void* key[capacity];
   bool is_public[capacity];
   int n = 0;
 
   // Whether the subtree must be walked; records the visit.
   bool __enter(const void* k, bool __pub) noexcept {
     for (int i = 0; i < n; ++i)
-      if (__key[i] == k) {
+      if (key[i] == k) {
         if (is_public[i] || !__pub)
           return false;
         is_public[i] = true;
         return true;
       }
     if (n < capacity) {
-      __key[n] = k;
+      key[n] = k;
       is_public[n] = __pub;
       ++n;
     }

@@ -274,7 +274,7 @@ private:
   // insert_or_assign: assigns to the mapped value of the element with key k, or inserts
   // value_type(key, obj) ([unord.map.modifiers]/18-33).
   template <class _Kp, class _KArg, class _Mp>
-  constexpr pair<iterator, bool> __assign_key(const _Kp& k, _KArg&& __key, _Mp&& __obj) {
+  constexpr pair<iterator, bool> __assign_key(const _Kp& k, _KArg&& key, _Mp&& __obj) {
     static_assert(is_assignable_v<mapped_type&, _Mp&&>,
                   "std::unordered_map::insert_or_assign: mapped_type must be assignable from M");
     const size_t h = this->__hash_of(k);
@@ -282,7 +282,7 @@ private:
       static_cast<node*>(prev->next)->value.second = static_cast<_Mp&&>(__obj);
       return {base::__to_iter(prev->next), false};
     }
-    typename base::__node_guard __g{this, this->__make_node(static_cast<_KArg&&>(__key), static_cast<_Mp&&>(__obj))};
+    typename base::__node_guard __g{this, this->__make_node(static_cast<_KArg&&>(key), static_cast<_Mp&&>(__obj))};
     this->__link_new(__g.n, h, nullptr);
     return {base::__to_iter(__g.release()), true};
   }

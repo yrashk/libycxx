@@ -134,13 +134,13 @@ public:
     return __raw()->value;
   }
   // Not constexpr ([container.node.overview]): the key of a map element is a const object.
-  auto& __key() const noexcept
+  auto& key() const noexcept
     requires _IsMap
   {
     ::__ycxx::__detail::__precondition(__ptr_ != nullptr, "node handle: empty");
     return const_cast<std::remove_const_t<typename _Vp::first_type>&>(__raw()->value.first);
   }
-  constexpr auto& __mapped() const noexcept
+  constexpr auto& mapped() const noexcept
     requires _IsMap
   {
     ::__ycxx::__detail::__precondition(__ptr_ != nullptr, "node handle: empty");

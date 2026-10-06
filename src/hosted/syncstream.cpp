@@ -14,7 +14,7 @@
 namespace {
 
 struct __slot {
-  const void* __key = nullptr; // null: free (table slots)
+  const void* key = nullptr; // null: free (table slots)
   std::uint32_t users = 0;   // emits holding or waiting for `lock`
   __ycxx::__detail::__pal_lock lock;
   __slot* next = nullptr; // the allocated slots in use, a list
@@ -32,16 +32,16 @@ bool allocated(const __slot* s) noexcept {
 }
 
 // Under table_lock: the slot for key, a new one for it, or null when none can be had.
-__slot* find_slot(const void* __key) noexcept {
+__slot* find_slot(const void* key) noexcept {
   __slot* free_slot = nullptr;
   for (__slot& candidate : __slots) {
-    if (candidate.__key == __key)
+    if (candidate.key == key)
       return &candidate;
-    if (candidate.__key == nullptr && free_slot == nullptr)
+    if (candidate.key == nullptr && free_slot == nullptr)
       free_slot = &candidate;
   }
   for (__slot* s = __extra; s != nullptr; s = s->next)
-    if (s->__key == __key)
+    if (s->key == key)
       return s;
   if (free_slot == nullptr) {
     void* __mem = __ycxx_pal_allocate(sizeof(__slot), alignof(__slot));
@@ -51,7 +51,7 @@ __slot* find_slot(const void* __key) noexcept {
     free_slot->next = __extra;
     __extra = free_slot;
   }
-  free_slot->__key = __key;
+  free_slot->key = key;
   return free_slot;
 }
 
@@ -59,11 +59,11 @@ __slot* find_slot(const void* __key) noexcept {
 
 namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
 
-void* __syncbuf_lock(const void* __key) noexcept {
+void* __syncbuf_lock(const void* key) noexcept {
   __slot* s;
   for (;;) {
     table_lock.lock();
-    s = find_slot(__key);
+    s = find_slot(key);
     if (s != nullptr) {
       ++s->users;
       table_lock.unlock();
@@ -83,7 +83,7 @@ void __syncbuf_unlock(void* handle) noexcept {
   table_lock.lock();
   const bool freed = --s->users == 0;
   if (freed) {
-    s->__key = nullptr;
+    s->key = nullptr;
     if (allocated(s)) {
       __slot** link = &__extra;
       while (*link != s)

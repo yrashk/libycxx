@@ -664,10 +664,10 @@ private:
         __perm[3] = __v[3];
       }
       for (size_t k = 0; k < __array_size; ++k) {
-        const __y_u64 __key = (__k_[k] + static_cast<__y_u64>(__q) * static_cast<__y_u64>(round_consts[k])) & mask;
+        const __y_u64 key = (__k_[k] + static_cast<__y_u64>(__q) * static_cast<__y_u64>(round_consts[k])) & mask;
         __y_u64 __hi, __lo;
         __mulhilo(__perm[2 * k], static_cast<__y_u64>(multipliers[k]), __hi, __lo);
-        __v[2 * k] = __hi ^ __key ^ __perm[2 * k + 1];
+        __v[2 * k] = __hi ^ key ^ __perm[2 * k + 1];
         __v[2 * k + 1] = __lo;
       }
     }

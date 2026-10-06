@@ -291,7 +291,7 @@ int64_t rule_local_time(const posix_date& d, int64_t y) {
 
 // ---- the zone data ------------------------------------------------------------------------------
 
-struct __period {
+struct period {
   int64_t begin;
   int32_t offset;  // seconds
   int32_t save;    // minutes
@@ -311,7 +311,7 @@ struct __ycxx::__detail::__tz_data {
   string name;
   std::once_flag once;
   bool ok = false;
-  vector<__period> periods; // sorted by begin; periods[0].begin == min_time
+  vector<period> periods; // sorted by begin; periods[0].begin == min_time
   vector<string> abbrevs;
   bool has_footer = false;
   posix_rule rule;
@@ -443,7 +443,7 @@ bool __ycxx::__detail::__tz_data::load_tzif(const string& __bytes) {
       if (save == 0)
         save = 60;
     }
-    const __period pd{__tr[i].at, t.utoff, save, t.abbrev};
+    const period pd{__tr[i].at, t.utoff, save, t.abbrev};
     if (!periods.empty() && periods.back().offset == pd.offset && periods.back().save == pd.save &&
         periods.back().abbrev == pd.abbrev)
       continue;
@@ -525,9 +525,9 @@ info __ycxx::__detail::__tz_data::rule_info(int64_t t) const {
 info __ycxx::__detail::__tz_data::sys_info(int64_t t) const {
   // The last period that begins at or before t.
   const auto __it = std::upper_bound(periods.begin(), periods.end(), t,
-                                   [](int64_t __v, const __period& pd) { return __v < pd.begin; });
+                                   [](int64_t __v, const period& pd) { return __v < pd.begin; });
   const size_t k = static_cast<size_t>(__it - periods.begin()) - 1;
-  const __period& pd = periods[k];
+  const period& pd = periods[k];
   if (has_footer && k + 1 == periods.size()) {
     // The last period continues into the footer's era; its values should agree with the
     // footer's at footer_from.

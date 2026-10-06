@@ -393,8 +393,14 @@ from `libclang_rt.asan_cxx-x86_64.a(asan_new_delete.cpp.o)`, not from `libycxx.a
 runs. libycxx's own suite marks the tests this changes (`new/*` forwarding and new_handler tests,
 `linkage/*` export and replacement tests) `// UNSUPPORTED-SANITIZER: asan` with the reason; the
 tests that exchange objects between images (`linkage/shared_library_exceptions`,
-`linkage/shared_library_allocation_exchange`) run under ASan, clean on macOS 26 with both compilers. GCC 16.2 here has no
-ASan runtime (`cannot find -lasan`), so sanitizer runs are Clang-only (STATUS).
+`linkage/shared_library_allocation_exchange`) run under ASan, clean on macOS 26 with both compilers. ThreadSanitizer's
+runtimes define the allocation functions too, Clang's in an archive linked whole and GCC's in the
+shared `libtsan.so`, linked ahead of every input; libycxx keeps its own there (Clang:
+`-fno-sanitize-link-c++-runtime`; both: weak defaults, each linked through an anchor that a TSan
+build's link options name as undefined, so that the program's definitions win over the shared
+runtime's; DECISIONS §6.8), and the `new/*` tests run under TSan. A GCC configured with
+`--disable-libsanitizer` has no sanitizer runtimes (`cannot find -ltsan`);
+`tools/toolchain/provision --with-sanitizers` builds GCC 16.2 with them.
 
 The rule that follows: test allocation-function behaviour without sanitizers, and mark, not
 delete, the tests a sanitizer runtime invalidates. The MSVC STL does the same in its expected
@@ -535,9 +541,14 @@ the same sanitizers, `build/<cc>-<sanitizers>`, which `tools/run-conformance` co
 uninstrumented library ThreadSanitizer reported every hand-off through libycxx's own futex
 mutexes, thread-pool queue and reference counts (DECISIONS §6.8, which also covers the sanitizer
 runtimes' allocation functions and static-local guards). Lit features `asan`/`ubsan`/`tsan` are
-set for the libc++ suite. Nightly CI runs the own suite with Clang under ASan+UBSan and under
-TSan, where every failure fails the job (a test that cannot run under a sanitizer says so in the
-test; TSan's false positives are suppressed in `tests/ycxx/tsan.supp`, each with its reason). Checked: `tools/test -c clang -s asan,ubsan -f optional ycxx`,
+set for the libc++ suite (and `tsan` can name a libstdc++ test in its `unsupported.txt`).
+Every program of a TSan run gets `TSAN_OPTIONS` on its command line: the suite's
+`tests/<suite>/tsan.supp`, false positives each with its reason, and
+`allocator_may_return_null=1`; a test program's time limit is three times the plain one
+(`tests/ycxxlit/sanitizers.py`). Nightly CI runs the own suite with Clang under ASan+UBSan, and
+all three suites under TSan with both compilers in a job of its own on the bare runner (GCC 16.2
+provisioned with libsanitizer and cached), where every failure fails the job (a test that cannot
+run under a sanitizer says so in the test or in the suite's lists). Checked: `tools/test -c clang -s asan,ubsan -f optional ycxx`,
 37 passed.
 
 Others: libc++ has `--param use_sanitizer=` (`Address`, `HWAddress`, `Undefined`, `Memory`,
@@ -577,7 +588,7 @@ compiles every test with `-DYCXX_HARDENED=1` and enables the death tests of
 `-fno-exceptions`/`-fno-rtti` there remove the `exceptions`/`rtti` features, which the 430 tests
 that throw or catch require. Each configuration has its own exec root, logs and reports
 (`ycxx-<cc>-hardened`, `ycxx-<cc>-<name>`), and fails on every FAIL like the default run. Nightly CI runs hardened, `-fno-exceptions` and `-O2`
-on both compilers, and the own suite under TSan (Gaps, items 3 and 6: done, except `-fno-rtti`).
+on both compilers, and all three suites under TSan (Gaps, items 3 and 6: done, except `-fno-rtti`).
 
 ### Reference runs against another library
 
@@ -638,7 +649,7 @@ script compiles each with `-DLIBCPP_OSS_FUZZ` and the fuzzing engine, using
 | Own tests | spec-only author; `.pass`/`.compile.pass`/`.compile.fail`, diagnostic regexes, death tests | rich kinds incl. `.verify.cpp`, `.sh.cpp`, `.gen.cpp` [libcxx-testing] | DejaGnu `dg-*` with message matching [libstdcxx-test] | `tests/std`, `tests/tr1` [msvc-readme] |
 | External suites | libc++'s and libstdc++'s, run only, fetched and pinned | can run against libstdc++ [libcxx-stdlib-libstdcxx-cfg] | not confirmed | libc++'s, from its llvm-project checkout [msvc-readme] |
 | Known failures | none: FAIL fails CI; skip lists with category and reason, `XFAIL` with reason in own tests, `xfail.txt` with reason for external suites | `XFAIL`/`UNSUPPORTED` in tests [libcxx-testing] | `xfail` selectors in tests [libstdcxx-test] | `expected_results.txt` by cause, per configuration [msvc-expected] |
-| Configurations | 2 compilers x 2 OSes; ASan+UBSan (Clang); hardened, `-fno-exceptions`, `-O2`, TSan (Linux, nightly) | hardening modes, no-exceptions, no-rtti, sanitizers, std modes, modules [libcxx-caches, libcxx-params] | `-std` list, debug mode, board flags [libstdcxx-test] | matrix files [msvc-matrix] |
+| Configurations | 2 compilers x 2 OSes; ASan+UBSan (Clang); hardened, `-fno-exceptions`, `-O2`; TSan on all suites, both compilers (Linux, nightly) | hardening modes, no-exceptions, no-rtti, sanitizers, std modes, modules [libcxx-caches, libcxx-params] | `-std` list, debug mode, board flags [libstdcxx-test] | matrix files [msvc-matrix] |
 | Reference runs | own suite against libstdc++ | suite against libstdc++ [libcxx-stdlib-libstdcxx-cfg] | not confirmed | not confirmed |
 | Reports | per-test transcripts, HTML/Markdown, provenance | lit output | `.sum`/`.log` [libstdcxx-test] | lit output [msvc-readme] |
 | Fuzzing | none | OSS-Fuzz [libcxx-oss-fuzz] | not confirmed | not confirmed |

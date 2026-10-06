@@ -121,8 +121,12 @@ namespace [[__gnu__::__visibility__("hidden")]] std { namespace execution {
 
 // [exec.as.awaitable]
 struct as_awaitable_t {
-  template <class _Expr, class _Promise>
-  constexpr decltype(auto) operator()(_Expr&& __expr, _Promise& p) const {
+  // Ill-formed unless p is an lvalue ([exec.as.awaitable]/7); a Promise& parameter would also
+  // bind a const rvalue.
+  template <class _Expr, class _Pp>
+    requires is_lvalue_reference_v<_Pp>
+  constexpr decltype(auto) operator()(_Expr&& __expr, _Pp&& p) const {
+    using _Promise = remove_reference_t<_Pp>;
     using namespace __ycxx::__detail::__exec;
     if constexpr (requires { static_cast<_Expr&&>(__expr).as_awaitable(p); }) {
       static_assert(__is_awaitable<decltype(static_cast<_Expr&&>(__expr).as_awaitable(p)), _Promise>,

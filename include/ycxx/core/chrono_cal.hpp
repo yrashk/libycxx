@@ -12,90 +12,90 @@
 #include <ycxx/core/chrono_base.hpp>
 #include <ycxx/core/compare.hpp>
 
-namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
 
 // Floored division and modulo.
-constexpr long long chrono_floor_div(long long a, long long b) noexcept {
-  const long long q = a / b;
-  return (a % b != 0 && ((a < 0) != (b < 0))) ? q - 1 : q;
+constexpr long long __chrono_floor_div(long long a, long long b) noexcept {
+  const long long __q = a / b;
+  return (a % b != 0 && ((a < 0) != (b < 0))) ? __q - 1 : __q;
 }
-constexpr long long chrono_modulo(long long a, long long b) noexcept {
+constexpr long long __chrono_modulo(long long a, long long b) noexcept {
   const long long r = a % b;
   return r != 0 && ((r < 0) != (b < 0)) ? r + b : r;
 }
 // a + b and a - b modulo 2^64: for results that are truncated to a narrow field anyway (day,
 // year), and for counts at the ends of the range, without signed overflow.
-constexpr unsigned long long wrap_add(long long a, long long b) noexcept {
+constexpr unsigned long long __wrap_add(long long a, long long b) noexcept {
   return static_cast<unsigned long long>(a) + static_cast<unsigned long long>(b);
 }
-constexpr unsigned long long wrap_sub(long long a, long long b) noexcept {
+constexpr unsigned long long __wrap_sub(long long a, long long b) noexcept {
   return static_cast<unsigned long long>(a) - static_cast<unsigned long long>(b);
 }
 
-struct civil_date {
+struct __civil_date {
   int y;
   unsigned m;
   unsigned d;
 };
 
 // Days since 1970-01-01 of the proleptic Gregorian date y-m-d (m in [1, 12], d any value).
-constexpr int days_from_civil(int y, unsigned m, unsigned d) noexcept {
-  const long long yy = static_cast<long long>(y) - (m <= 2 ? 1 : 0);
-  const long long era = ::ycxx::detail::chrono_floor_div(yy, 400);
-  const long long yoe = yy - era * 400;                                              // [0, 399]
-  const long long doy = (153 * (m > 2 ? m - 3 : m + 9) + 2) / 5 + static_cast<long long>(d) - 1; // [0, 365]
-  const long long doe = yoe * 365 + yoe / 4 - yoe / 100 + doy;                        // [0, 146096]
-  return static_cast<int>(era * 146097 + doe - 719468);
+constexpr int __days_from_civil(int y, unsigned m, unsigned d) noexcept {
+  const long long __yy = static_cast<long long>(y) - (m <= 2 ? 1 : 0);
+  const long long __era = ::__ycxx::__detail::__chrono_floor_div(__yy, 400);
+  const long long __yoe = __yy - __era * 400;                                              // [0, 399]
+  const long long __doy = (153 * (m > 2 ? m - 3 : m + 9) + 2) / 5 + static_cast<long long>(d) - 1; // [0, 365]
+  const long long __doe = __yoe * 365 + __yoe / 4 - __yoe / 100 + __doy;                        // [0, 146096]
+  return static_cast<int>(__era * 146097 + __doe - 719468);
 }
 
 // The proleptic Gregorian date of the day z days after 1970-01-01.
-constexpr civil_date civil_from_days(long long z) noexcept {
+constexpr __civil_date __civil_from_days(long long __z) noexcept {
   // z + 719468 days from 0000-03-01, split into eras without overflow for any z.
-  const long long shifted = ::ycxx::detail::chrono_modulo(z, 146097) + 719468;
-  const long long era = ::ycxx::detail::chrono_floor_div(z, 146097) + ::ycxx::detail::chrono_floor_div(shifted, 146097);
-  const long long doe = ::ycxx::detail::chrono_modulo(shifted, 146097);      // [0, 146096]
-  const long long yoe = (doe - doe / 1460 + doe / 36524 - doe / 146096) / 365; // [0, 399]
-  const long long doy = doe - (365 * yoe + yoe / 4 - yoe / 100);              // [0, 365]
-  const long long mp = (5 * doy + 2) / 153;                                   // [0, 11], March first
-  const unsigned d = static_cast<unsigned>(doy - (153 * mp + 2) / 5 + 1);
-  const unsigned m = static_cast<unsigned>(mp < 10 ? mp + 3 : mp - 9);
-  return {static_cast<int>(yoe + era * 400 + (m <= 2 ? 1 : 0)), m, d};
+  const long long __shifted = ::__ycxx::__detail::__chrono_modulo(__z, 146097) + 719468;
+  const long long __era = ::__ycxx::__detail::__chrono_floor_div(__z, 146097) + ::__ycxx::__detail::__chrono_floor_div(__shifted, 146097);
+  const long long __doe = ::__ycxx::__detail::__chrono_modulo(__shifted, 146097);      // [0, 146096]
+  const long long __yoe = (__doe - __doe / 1460 + __doe / 36524 - __doe / 146096) / 365; // [0, 399]
+  const long long __doy = __doe - (365 * __yoe + __yoe / 4 - __yoe / 100);              // [0, 365]
+  const long long __mp = (5 * __doy + 2) / 153;                                   // [0, 11], March first
+  const unsigned d = static_cast<unsigned>(__doy - (153 * __mp + 2) / 5 + 1);
+  const unsigned m = static_cast<unsigned>(__mp < 10 ? __mp + 3 : __mp - 9);
+  return {static_cast<int>(__yoe + __era * 400 + (m <= 2 ? 1 : 0)), m, d};
 }
 
 // 0 for Sunday.
-constexpr unsigned weekday_from_days(long long z) noexcept {
-  return static_cast<unsigned>(::ycxx::detail::chrono_modulo(::ycxx::detail::chrono_modulo(z, 7) + 4, 7));
+constexpr unsigned __weekday_from_days(long long __z) noexcept {
+  return static_cast<unsigned>(::__ycxx::__detail::__chrono_modulo(::__ycxx::__detail::__chrono_modulo(__z, 7) + 4, 7));
 }
 
-constexpr bool is_leap_year(int y) noexcept { return y % 4 == 0 && (y % 100 != 0 || y % 400 == 0); }
+constexpr bool __is_leap_year(int y) noexcept { return y % 4 == 0 && (y % 100 != 0 || y % 400 == 0); }
 
 // The number of days of month m (in [1, 12]) of year y.
-constexpr unsigned last_day_of(int y, unsigned m) noexcept {
+constexpr unsigned __last_day_of(int y, unsigned m) noexcept {
   constexpr unsigned char table[12] = {31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
-  return m == 2 && ::ycxx::detail::is_leap_year(y) ? 29u : table[m - 1];
+  return m == 2 && ::__ycxx::__detail::__is_leap_year(y) ? 29u : table[m - 1];
 }
 
 // hh_mm_ss::fractional_width ([time.hms.members]/1): the smallest w in [0, 18] such that 10^w is
 // a multiple of the reduced period's denominator, or 6.
-consteval unsigned hms_fractional_width(std::intmax_t den) {
-  unsigned twos = 0, fives = 0;
+consteval unsigned __hms_fractional_width(std::intmax_t den) {
+  unsigned __twos = 0, __fives = 0;
   while (den % 2 == 0)
-    den /= 2, ++twos;
+    den /= 2, ++__twos;
   while (den % 5 == 0)
-    den /= 5, ++fives;
-  const unsigned w = twos > fives ? twos : fives;
-  return den == 1 && w <= 18 ? w : 6;
+    den /= 5, ++__fives;
+  const unsigned __w = __twos > __fives ? __twos : __fives;
+  return den == 1 && __w <= 18 ? __w : 6;
 }
-consteval std::intmax_t pow10(unsigned n) {
+consteval std::intmax_t __pow10(unsigned n) {
   std::intmax_t r = 1;
   while (n-- != 0)
     r *= 10;
   return r;
 }
 
-}} // namespace ycxx::detail
+}} // namespace __ycxx::__detail
 
-namespace [[gnu::visibility("hidden")]] std { namespace chrono {
+namespace [[__gnu__::__visibility__("hidden")]] std { namespace chrono {
 
 // [time.cal.last]
 struct last_spec {
@@ -105,65 +105,65 @@ inline constexpr last_spec last{};
 
 // [time.cal.day]
 class day {
-  unsigned char d_;
+  unsigned char __d_;
 
 public:
   day() = default;
-  constexpr explicit day(unsigned d) noexcept : d_(static_cast<unsigned char>(d)) {}
+  constexpr explicit day(unsigned d) noexcept : __d_(static_cast<unsigned char>(d)) {}
   constexpr day& operator++() noexcept {
-    ++d_;
+    ++__d_;
     return *this;
   }
   constexpr day operator++(int) noexcept {
     day t = *this;
-    ++d_;
+    ++__d_;
     return t;
   }
   constexpr day& operator--() noexcept {
-    --d_;
+    --__d_;
     return *this;
   }
   constexpr day operator--(int) noexcept {
     day t = *this;
-    --d_;
+    --__d_;
     return t;
   }
   constexpr day& operator+=(const days& d) noexcept {
-    *this = day(static_cast<unsigned>(::ycxx::detail::wrap_add(d_, d.count())));
+    *this = day(static_cast<unsigned>(::__ycxx::__detail::__wrap_add(__d_, d.count())));
     return *this;
   }
   constexpr day& operator-=(const days& d) noexcept {
-    *this = day(static_cast<unsigned>(::ycxx::detail::wrap_sub(d_, d.count())));
+    *this = day(static_cast<unsigned>(::__ycxx::__detail::__wrap_sub(__d_, d.count())));
     return *this;
   }
-  constexpr explicit operator unsigned() const noexcept { return d_; }
-  constexpr bool ok() const noexcept { return d_ >= 1 && d_ <= 31; }
+  constexpr explicit operator unsigned() const noexcept { return __d_; }
+  constexpr bool ok() const noexcept { return __d_ >= 1 && __d_ <= 31; }
 };
 
-constexpr bool operator==(const day& x, const day& y) noexcept {
-  return static_cast<unsigned>(x) == static_cast<unsigned>(y);
+constexpr bool operator==(const day& __x, const day& y) noexcept {
+  return static_cast<unsigned>(__x) == static_cast<unsigned>(y);
 }
-constexpr strong_ordering operator<=>(const day& x, const day& y) noexcept {
-  return static_cast<unsigned>(x) <=> static_cast<unsigned>(y);
+constexpr strong_ordering operator<=>(const day& __x, const day& y) noexcept {
+  return static_cast<unsigned>(__x) <=> static_cast<unsigned>(y);
 }
-constexpr day operator+(const day& x, const days& y) noexcept {
-  return day(static_cast<unsigned>(::ycxx::detail::wrap_add(static_cast<unsigned>(x), y.count())));
+constexpr day operator+(const day& __x, const days& y) noexcept {
+  return day(static_cast<unsigned>(::__ycxx::__detail::__wrap_add(static_cast<unsigned>(__x), y.count())));
 }
-constexpr day operator+(const days& x, const day& y) noexcept { return y + x; }
-constexpr day operator-(const day& x, const days& y) noexcept {
-  return day(static_cast<unsigned>(::ycxx::detail::wrap_sub(static_cast<unsigned>(x), y.count())));
+constexpr day operator+(const days& __x, const day& y) noexcept { return y + __x; }
+constexpr day operator-(const day& __x, const days& y) noexcept {
+  return day(static_cast<unsigned>(::__ycxx::__detail::__wrap_sub(static_cast<unsigned>(__x), y.count())));
 }
-constexpr days operator-(const day& x, const day& y) noexcept {
-  return days(static_cast<int>(static_cast<unsigned>(x)) - static_cast<int>(static_cast<unsigned>(y)));
+constexpr days operator-(const day& __x, const day& y) noexcept {
+  return days(static_cast<int>(static_cast<unsigned>(__x)) - static_cast<int>(static_cast<unsigned>(y)));
 }
 
 // [time.cal.month]
 class month {
-  unsigned char m_;
+  unsigned char __m_;
 
 public:
   month() = default;
-  constexpr explicit month(unsigned m) noexcept : m_(static_cast<unsigned char>(m)) {}
+  constexpr explicit month(unsigned m) noexcept : __m_(static_cast<unsigned char>(m)) {}
   constexpr month& operator++() noexcept {
     *this += months(1);
     return *this;
@@ -184,34 +184,34 @@ public:
   }
   constexpr month& operator+=(const months& m) noexcept;
   constexpr month& operator-=(const months& m) noexcept;
-  constexpr explicit operator unsigned() const noexcept { return m_; }
-  constexpr bool ok() const noexcept { return m_ >= 1 && m_ <= 12; }
+  constexpr explicit operator unsigned() const noexcept { return __m_; }
+  constexpr bool ok() const noexcept { return __m_ >= 1 && __m_ <= 12; }
 };
 
-constexpr bool operator==(const month& x, const month& y) noexcept {
-  return static_cast<unsigned>(x) == static_cast<unsigned>(y);
+constexpr bool operator==(const month& __x, const month& y) noexcept {
+  return static_cast<unsigned>(__x) == static_cast<unsigned>(y);
 }
-constexpr strong_ordering operator<=>(const month& x, const month& y) noexcept {
-  return static_cast<unsigned>(x) <=> static_cast<unsigned>(y);
+constexpr strong_ordering operator<=>(const month& __x, const month& y) noexcept {
+  return static_cast<unsigned>(__x) <=> static_cast<unsigned>(y);
 }
-constexpr month operator+(const month& x, const months& y) noexcept {
+constexpr month operator+(const month& __x, const months& y) noexcept {
   return month(static_cast<unsigned>(
-      ::ycxx::detail::chrono_modulo(static_cast<long long>(static_cast<unsigned>(x)) - 1 +
-                                        ::ycxx::detail::chrono_modulo(y.count(), 12),
+      ::__ycxx::__detail::__chrono_modulo(static_cast<long long>(static_cast<unsigned>(__x)) - 1 +
+                                        ::__ycxx::__detail::__chrono_modulo(y.count(), 12),
                                     12) +
       1));
 }
-constexpr month operator+(const months& x, const month& y) noexcept { return y + x; }
-constexpr month operator-(const month& x, const months& y) noexcept {
+constexpr month operator+(const months& __x, const month& y) noexcept { return y + __x; }
+constexpr month operator-(const month& __x, const months& y) noexcept {
   return month(static_cast<unsigned>(
-      ::ycxx::detail::chrono_modulo(static_cast<long long>(static_cast<unsigned>(x)) - 1 -
-                                        ::ycxx::detail::chrono_modulo(y.count(), 12),
+      ::__ycxx::__detail::__chrono_modulo(static_cast<long long>(static_cast<unsigned>(__x)) - 1 -
+                                        ::__ycxx::__detail::__chrono_modulo(y.count(), 12),
                                     12) +
       1));
 }
-constexpr months operator-(const month& x, const month& y) noexcept {
-  return months(static_cast<int>(::ycxx::detail::chrono_modulo(
-      static_cast<long long>(static_cast<unsigned>(x)) - static_cast<long long>(static_cast<unsigned>(y)), 12)));
+constexpr months operator-(const month& __x, const month& y) noexcept {
+  return months(static_cast<int>(::__ycxx::__detail::__chrono_modulo(
+      static_cast<long long>(static_cast<unsigned>(__x)) - static_cast<long long>(static_cast<unsigned>(y)), 12)));
 }
 constexpr month& month::operator+=(const months& m) noexcept {
   *this = *this + m;
@@ -224,59 +224,59 @@ constexpr month& month::operator-=(const months& m) noexcept {
 
 // [time.cal.year]
 class year {
-  short y_;
+  short __y_;
 
 public:
   year() = default;
-  constexpr explicit year(int y) noexcept : y_(static_cast<short>(y)) {}
+  constexpr explicit year(int y) noexcept : __y_(static_cast<short>(y)) {}
   constexpr year& operator++() noexcept {
-    ++y_;
+    ++__y_;
     return *this;
   }
   constexpr year operator++(int) noexcept {
     year t = *this;
-    ++y_;
+    ++__y_;
     return t;
   }
   constexpr year& operator--() noexcept {
-    --y_;
+    --__y_;
     return *this;
   }
   constexpr year operator--(int) noexcept {
     year t = *this;
-    --y_;
+    --__y_;
     return t;
   }
   constexpr year& operator+=(const years& y) noexcept {
-    *this = year(static_cast<int>(::ycxx::detail::wrap_add(y_, y.count())));
+    *this = year(static_cast<int>(::__ycxx::__detail::__wrap_add(__y_, y.count())));
     return *this;
   }
   constexpr year& operator-=(const years& y) noexcept {
-    *this = year(static_cast<int>(::ycxx::detail::wrap_sub(y_, y.count())));
+    *this = year(static_cast<int>(::__ycxx::__detail::__wrap_sub(__y_, y.count())));
     return *this;
   }
   constexpr year operator+() const noexcept { return *this; }
-  constexpr year operator-() const noexcept { return year(-y_); }
-  constexpr bool is_leap() const noexcept { return ::ycxx::detail::is_leap_year(y_); }
-  constexpr explicit operator int() const noexcept { return y_; }
-  constexpr bool ok() const noexcept { return y_ != -32768; }
+  constexpr year operator-() const noexcept { return year(-__y_); }
+  constexpr bool is_leap() const noexcept { return ::__ycxx::__detail::__is_leap_year(__y_); }
+  constexpr explicit operator int() const noexcept { return __y_; }
+  constexpr bool ok() const noexcept { return __y_ != -32768; }
   static constexpr year min() noexcept { return year(-32767); }
   static constexpr year max() noexcept { return year(32767); }
 };
 
-constexpr bool operator==(const year& x, const year& y) noexcept { return static_cast<int>(x) == static_cast<int>(y); }
-constexpr strong_ordering operator<=>(const year& x, const year& y) noexcept {
-  return static_cast<int>(x) <=> static_cast<int>(y);
+constexpr bool operator==(const year& __x, const year& y) noexcept { return static_cast<int>(__x) == static_cast<int>(y); }
+constexpr strong_ordering operator<=>(const year& __x, const year& y) noexcept {
+  return static_cast<int>(__x) <=> static_cast<int>(y);
 }
-constexpr year operator+(const year& x, const years& y) noexcept {
-  return year(static_cast<int>(::ycxx::detail::wrap_add(static_cast<int>(x), y.count())));
+constexpr year operator+(const year& __x, const years& y) noexcept {
+  return year(static_cast<int>(::__ycxx::__detail::__wrap_add(static_cast<int>(__x), y.count())));
 }
-constexpr year operator+(const years& x, const year& y) noexcept { return y + x; }
-constexpr year operator-(const year& x, const years& y) noexcept {
-  return year(static_cast<int>(::ycxx::detail::wrap_sub(static_cast<int>(x), y.count())));
+constexpr year operator+(const years& __x, const year& y) noexcept { return y + __x; }
+constexpr year operator-(const year& __x, const years& y) noexcept {
+  return year(static_cast<int>(::__ycxx::__detail::__wrap_sub(static_cast<int>(__x), y.count())));
 }
-constexpr years operator-(const year& x, const year& y) noexcept {
-  return years(static_cast<int>(x) - static_cast<int>(y));
+constexpr years operator-(const year& __x, const year& y) noexcept {
+  return years(static_cast<int>(__x) - static_cast<int>(y));
 }
 
 class weekday_indexed;
@@ -284,15 +284,15 @@ class weekday_last;
 
 // [time.cal.wd]
 class weekday {
-  unsigned char wd_;
+  unsigned char __wd_;
 
 public:
   weekday() = default;
-  constexpr explicit weekday(unsigned wd) noexcept : wd_(static_cast<unsigned char>(wd == 7 ? 0 : wd)) {}
-  constexpr weekday(const sys_days& dp) noexcept
-      : wd_(static_cast<unsigned char>(::ycxx::detail::weekday_from_days(dp.time_since_epoch().count()))) {}
-  constexpr explicit weekday(const local_days& dp) noexcept
-      : wd_(static_cast<unsigned char>(::ycxx::detail::weekday_from_days(dp.time_since_epoch().count()))) {}
+  constexpr explicit weekday(unsigned __wd) noexcept : __wd_(static_cast<unsigned char>(__wd == 7 ? 0 : __wd)) {}
+  constexpr weekday(const sys_days& __dp) noexcept
+      : __wd_(static_cast<unsigned char>(::__ycxx::__detail::__weekday_from_days(__dp.time_since_epoch().count()))) {}
+  constexpr explicit weekday(const local_days& __dp) noexcept
+      : __wd_(static_cast<unsigned char>(::__ycxx::__detail::__weekday_from_days(__dp.time_since_epoch().count()))) {}
   constexpr weekday& operator++() noexcept {
     *this += days(1);
     return *this;
@@ -313,26 +313,26 @@ public:
   }
   constexpr weekday& operator+=(const days& d) noexcept;
   constexpr weekday& operator-=(const days& d) noexcept;
-  constexpr unsigned c_encoding() const noexcept { return wd_; }
-  constexpr unsigned iso_encoding() const noexcept { return wd_ == 0 ? 7u : wd_; }
-  constexpr bool ok() const noexcept { return wd_ <= 6; }
+  constexpr unsigned c_encoding() const noexcept { return __wd_; }
+  constexpr unsigned iso_encoding() const noexcept { return __wd_ == 0 ? 7u : __wd_; }
+  constexpr bool ok() const noexcept { return __wd_ <= 6; }
   constexpr weekday_indexed operator[](unsigned index) const noexcept;
   constexpr weekday_last operator[](last_spec) const noexcept;
 };
 
-constexpr bool operator==(const weekday& x, const weekday& y) noexcept { return x.c_encoding() == y.c_encoding(); }
-constexpr weekday operator+(const weekday& x, const days& y) noexcept {
-  return weekday(static_cast<unsigned>(::ycxx::detail::chrono_modulo(
-      static_cast<long long>(x.c_encoding()) + ::ycxx::detail::chrono_modulo(y.count(), 7), 7)));
+constexpr bool operator==(const weekday& __x, const weekday& y) noexcept { return __x.c_encoding() == y.c_encoding(); }
+constexpr weekday operator+(const weekday& __x, const days& y) noexcept {
+  return weekday(static_cast<unsigned>(::__ycxx::__detail::__chrono_modulo(
+      static_cast<long long>(__x.c_encoding()) + ::__ycxx::__detail::__chrono_modulo(y.count(), 7), 7)));
 }
-constexpr weekday operator+(const days& x, const weekday& y) noexcept { return y + x; }
-constexpr weekday operator-(const weekday& x, const days& y) noexcept {
-  return weekday(static_cast<unsigned>(::ycxx::detail::chrono_modulo(
-      static_cast<long long>(x.c_encoding()) - ::ycxx::detail::chrono_modulo(y.count(), 7), 7)));
+constexpr weekday operator+(const days& __x, const weekday& y) noexcept { return y + __x; }
+constexpr weekday operator-(const weekday& __x, const days& y) noexcept {
+  return weekday(static_cast<unsigned>(::__ycxx::__detail::__chrono_modulo(
+      static_cast<long long>(__x.c_encoding()) - ::__ycxx::__detail::__chrono_modulo(y.count(), 7), 7)));
 }
-constexpr days operator-(const weekday& x, const weekday& y) noexcept {
-  return days(static_cast<int>(::ycxx::detail::chrono_modulo(
-      static_cast<long long>(x.c_encoding()) - static_cast<long long>(y.c_encoding()), 7)));
+constexpr days operator-(const weekday& __x, const weekday& y) noexcept {
+  return days(static_cast<int>(::__ycxx::__detail::__chrono_modulo(
+      static_cast<long long>(__x.c_encoding()) - static_cast<long long>(y.c_encoding()), 7)));
 }
 constexpr weekday& weekday::operator+=(const days& d) noexcept {
   *this = *this + d;
@@ -345,102 +345,102 @@ constexpr weekday& weekday::operator-=(const days& d) noexcept {
 
 // [time.cal.wdidx]
 class weekday_indexed {
-  chrono::weekday wd_;
-  unsigned char index_;
+  chrono::weekday __wd_;
+  unsigned char __index_;
 
 public:
   weekday_indexed() = default;
-  constexpr weekday_indexed(const chrono::weekday& wd, unsigned index) noexcept
-      : wd_(wd), index_(static_cast<unsigned char>(index)) {}
-  constexpr chrono::weekday weekday() const noexcept { return wd_; }
-  constexpr unsigned index() const noexcept { return index_; }
-  constexpr bool ok() const noexcept { return wd_.ok() && index_ >= 1 && index_ <= 5; }
+  constexpr weekday_indexed(const chrono::weekday& __wd, unsigned index) noexcept
+      : __wd_(__wd), __index_(static_cast<unsigned char>(index)) {}
+  constexpr chrono::weekday weekday() const noexcept { return __wd_; }
+  constexpr unsigned index() const noexcept { return __index_; }
+  constexpr bool ok() const noexcept { return __wd_.ok() && __index_ >= 1 && __index_ <= 5; }
 };
-constexpr bool operator==(const weekday_indexed& x, const weekday_indexed& y) noexcept {
-  return x.weekday() == y.weekday() && x.index() == y.index();
+constexpr bool operator==(const weekday_indexed& __x, const weekday_indexed& y) noexcept {
+  return __x.weekday() == y.weekday() && __x.index() == y.index();
 }
 
 // [time.cal.wdlast]
 class weekday_last {
-  chrono::weekday wd_;
+  chrono::weekday __wd_;
 
 public:
-  constexpr explicit weekday_last(const chrono::weekday& wd) noexcept : wd_(wd) {}
-  constexpr chrono::weekday weekday() const noexcept { return wd_; }
-  constexpr bool ok() const noexcept { return wd_.ok(); }
+  constexpr explicit weekday_last(const chrono::weekday& __wd) noexcept : __wd_(__wd) {}
+  constexpr chrono::weekday weekday() const noexcept { return __wd_; }
+  constexpr bool ok() const noexcept { return __wd_.ok(); }
 };
-constexpr bool operator==(const weekday_last& x, const weekday_last& y) noexcept { return x.weekday() == y.weekday(); }
+constexpr bool operator==(const weekday_last& __x, const weekday_last& y) noexcept { return __x.weekday() == y.weekday(); }
 
 constexpr weekday_indexed weekday::operator[](unsigned index) const noexcept { return {*this, index}; }
 constexpr weekday_last weekday::operator[](last_spec) const noexcept { return weekday_last(*this); }
 
 // [time.cal.md]
 class month_day {
-  chrono::month m_;
-  chrono::day d_;
+  chrono::month __m_;
+  chrono::day __d_;
 
 public:
   month_day() = default;
-  constexpr month_day(const chrono::month& m, const chrono::day& d) noexcept : m_(m), d_(d) {}
-  constexpr chrono::month month() const noexcept { return m_; }
-  constexpr chrono::day day() const noexcept { return d_; }
+  constexpr month_day(const chrono::month& m, const chrono::day& d) noexcept : __m_(m), __d_(d) {}
+  constexpr chrono::month month() const noexcept { return __m_; }
+  constexpr chrono::day day() const noexcept { return __d_; }
   // February has 29 days here.
   constexpr bool ok() const noexcept {
-    return m_.ok() && static_cast<unsigned>(d_) >= 1 &&
-           static_cast<unsigned>(d_) <= ::ycxx::detail::last_day_of(2000, static_cast<unsigned>(m_));
+    return __m_.ok() && static_cast<unsigned>(__d_) >= 1 &&
+           static_cast<unsigned>(__d_) <= ::__ycxx::__detail::__last_day_of(2000, static_cast<unsigned>(__m_));
   }
 };
-constexpr bool operator==(const month_day& x, const month_day& y) noexcept {
-  return x.month() == y.month() && x.day() == y.day();
+constexpr bool operator==(const month_day& __x, const month_day& y) noexcept {
+  return __x.month() == y.month() && __x.day() == y.day();
 }
-constexpr strong_ordering operator<=>(const month_day& x, const month_day& y) noexcept {
-  if (auto c = x.month() <=> y.month(); c != 0)
+constexpr strong_ordering operator<=>(const month_day& __x, const month_day& y) noexcept {
+  if (auto c = __x.month() <=> y.month(); c != 0)
     return c;
-  return x.day() <=> y.day();
+  return __x.day() <=> y.day();
 }
 
 // [time.cal.mdlast]
 class month_day_last {
-  chrono::month m_;
+  chrono::month __m_;
 
 public:
-  constexpr explicit month_day_last(const chrono::month& m) noexcept : m_(m) {}
-  constexpr chrono::month month() const noexcept { return m_; }
-  constexpr bool ok() const noexcept { return m_.ok(); }
+  constexpr explicit month_day_last(const chrono::month& m) noexcept : __m_(m) {}
+  constexpr chrono::month month() const noexcept { return __m_; }
+  constexpr bool ok() const noexcept { return __m_.ok(); }
 };
-constexpr bool operator==(const month_day_last& x, const month_day_last& y) noexcept { return x.month() == y.month(); }
-constexpr strong_ordering operator<=>(const month_day_last& x, const month_day_last& y) noexcept {
-  return x.month() <=> y.month();
+constexpr bool operator==(const month_day_last& __x, const month_day_last& y) noexcept { return __x.month() == y.month(); }
+constexpr strong_ordering operator<=>(const month_day_last& __x, const month_day_last& y) noexcept {
+  return __x.month() <=> y.month();
 }
 
 // [time.cal.mwd]
 class month_weekday {
-  chrono::month m_;
-  chrono::weekday_indexed wdi_;
+  chrono::month __m_;
+  chrono::weekday_indexed __wdi_;
 
 public:
-  constexpr month_weekday(const chrono::month& m, const chrono::weekday_indexed& wdi) noexcept : m_(m), wdi_(wdi) {}
-  constexpr chrono::month month() const noexcept { return m_; }
-  constexpr chrono::weekday_indexed weekday_indexed() const noexcept { return wdi_; }
-  constexpr bool ok() const noexcept { return m_.ok() && wdi_.ok(); }
+  constexpr month_weekday(const chrono::month& m, const chrono::weekday_indexed& __wdi) noexcept : __m_(m), __wdi_(__wdi) {}
+  constexpr chrono::month month() const noexcept { return __m_; }
+  constexpr chrono::weekday_indexed weekday_indexed() const noexcept { return __wdi_; }
+  constexpr bool ok() const noexcept { return __m_.ok() && __wdi_.ok(); }
 };
-constexpr bool operator==(const month_weekday& x, const month_weekday& y) noexcept {
-  return x.month() == y.month() && x.weekday_indexed() == y.weekday_indexed();
+constexpr bool operator==(const month_weekday& __x, const month_weekday& y) noexcept {
+  return __x.month() == y.month() && __x.weekday_indexed() == y.weekday_indexed();
 }
 
 // [time.cal.mwdlast]
 class month_weekday_last {
-  chrono::month m_;
-  chrono::weekday_last wdl_;
+  chrono::month __m_;
+  chrono::weekday_last __wdl_;
 
 public:
-  constexpr month_weekday_last(const chrono::month& m, const chrono::weekday_last& wdl) noexcept : m_(m), wdl_(wdl) {}
-  constexpr chrono::month month() const noexcept { return m_; }
-  constexpr chrono::weekday_last weekday_last() const noexcept { return wdl_; }
-  constexpr bool ok() const noexcept { return m_.ok() && wdl_.ok(); }
+  constexpr month_weekday_last(const chrono::month& m, const chrono::weekday_last& __wdl) noexcept : __m_(m), __wdl_(__wdl) {}
+  constexpr chrono::month month() const noexcept { return __m_; }
+  constexpr chrono::weekday_last weekday_last() const noexcept { return __wdl_; }
+  constexpr bool ok() const noexcept { return __m_.ok() && __wdl_.ok(); }
 };
-constexpr bool operator==(const month_weekday_last& x, const month_weekday_last& y) noexcept {
-  return x.month() == y.month() && x.weekday_last() == y.weekday_last();
+constexpr bool operator==(const month_weekday_last& __x, const month_weekday_last& y) noexcept {
+  return __x.month() == y.month() && __x.weekday_last() == y.weekday_last();
 }
 
 // The months overloads of year_month and the types built on it are templates (template <class =
@@ -451,89 +451,89 @@ constexpr bool operator==(const month_weekday_last& x, const month_weekday_last&
 class year_month;
 }} // namespace std::chrono
 
-namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
-// ym + n months, or ym - n months with `subtract`, without signed overflow for any n.
-constexpr std::chrono::year_month add_months(const std::chrono::year_month& ym, long long n,
-                                             bool subtract = false) noexcept;
-}} // namespace ycxx::detail
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+// ym + n months, or ym - n months with `__subtract`, without signed overflow for any n.
+constexpr std::chrono::year_month __add_months(const std::chrono::year_month& __ym, long long n,
+                                             bool __subtract = false) noexcept;
+}} // namespace __ycxx::__detail
 
-namespace [[gnu::visibility("hidden")]] std { namespace chrono {
+namespace [[__gnu__::__visibility__("hidden")]] std { namespace chrono {
 class year_month {
-  chrono::year y_;
-  chrono::month m_;
+  chrono::year __y_;
+  chrono::month __m_;
 
 public:
   year_month() = default;
-  constexpr year_month(const chrono::year& y, const chrono::month& m) noexcept : y_(y), m_(m) {}
-  constexpr chrono::year year() const noexcept { return y_; }
-  constexpr chrono::month month() const noexcept { return m_; }
+  constexpr year_month(const chrono::year& y, const chrono::month& m) noexcept : __y_(y), __m_(m) {}
+  constexpr chrono::year year() const noexcept { return __y_; }
+  constexpr chrono::month month() const noexcept { return __m_; }
   template <class = void>
-  constexpr year_month& operator+=(const months& dm) noexcept;
+  constexpr year_month& operator+=(const months& __dm) noexcept;
   template <class = void>
-  constexpr year_month& operator-=(const months& dm) noexcept;
-  constexpr year_month& operator+=(const years& dy) noexcept {
-    y_ += dy;
+  constexpr year_month& operator-=(const months& __dm) noexcept;
+  constexpr year_month& operator+=(const years& __dy) noexcept {
+    __y_ += __dy;
     return *this;
   }
-  constexpr year_month& operator-=(const years& dy) noexcept {
-    y_ -= dy;
+  constexpr year_month& operator-=(const years& __dy) noexcept {
+    __y_ -= __dy;
     return *this;
   }
-  constexpr bool ok() const noexcept { return y_.ok() && m_.ok(); }
+  constexpr bool ok() const noexcept { return __y_.ok() && __m_.ok(); }
 };
-constexpr bool operator==(const year_month& x, const year_month& y) noexcept {
-  return x.year() == y.year() && x.month() == y.month();
+constexpr bool operator==(const year_month& __x, const year_month& y) noexcept {
+  return __x.year() == y.year() && __x.month() == y.month();
 }
-constexpr strong_ordering operator<=>(const year_month& x, const year_month& y) noexcept {
-  if (auto c = x.year() <=> y.year(); c != 0)
+constexpr strong_ordering operator<=>(const year_month& __x, const year_month& y) noexcept {
+  if (auto c = __x.year() <=> y.year(); c != 0)
     return c;
-  return x.month() <=> y.month();
+  return __x.month() <=> y.month();
 }
 }} // namespace std::chrono
 
-constexpr std::chrono::year_month ycxx::detail::add_months(const std::chrono::year_month& ym, long long n,
-                                                          bool subtract) noexcept {
+constexpr std::chrono::year_month __ycxx::__detail::__add_months(const std::chrono::year_month& __ym, long long n,
+                                                          bool __subtract) noexcept {
   // n = 12q + r with r in [0, 11]; the month moves by r, the year by q and the carry.
-  const long long q = ::ycxx::detail::chrono_floor_div(n, 12);
-  const long long r = ::ycxx::detail::chrono_modulo(n, 12);
-  const long long m = static_cast<long long>(static_cast<unsigned>(ym.month())) - 1 + (subtract ? -r : r);
-  const long long carry = ::ycxx::detail::chrono_floor_div(m, 12);
-  const unsigned long long y = (subtract ? ::ycxx::detail::wrap_sub(static_cast<int>(ym.year()), q)
-                                         : ::ycxx::detail::wrap_add(static_cast<int>(ym.year()), q)) +
-                               static_cast<unsigned long long>(carry);
+  const long long __q = ::__ycxx::__detail::__chrono_floor_div(n, 12);
+  const long long r = ::__ycxx::__detail::__chrono_modulo(n, 12);
+  const long long m = static_cast<long long>(static_cast<unsigned>(__ym.month())) - 1 + (__subtract ? -r : r);
+  const long long __carry = ::__ycxx::__detail::__chrono_floor_div(m, 12);
+  const unsigned long long y = (__subtract ? ::__ycxx::__detail::__wrap_sub(static_cast<int>(__ym.year()), __q)
+                                         : ::__ycxx::__detail::__wrap_add(static_cast<int>(__ym.year()), __q)) +
+                               static_cast<unsigned long long>(__carry);
   return {std::chrono::year(static_cast<int>(y)),
-          std::chrono::month(static_cast<unsigned>(::ycxx::detail::chrono_modulo(m, 12) + 1))};
+          std::chrono::month(static_cast<unsigned>(::__ycxx::__detail::__chrono_modulo(m, 12) + 1))};
 }
 
-namespace [[gnu::visibility("hidden")]] std { namespace chrono {
+namespace [[__gnu__::__visibility__("hidden")]] std { namespace chrono {
 template <class = void>
-constexpr year_month operator+(const year_month& ym, const months& dm) noexcept {
-  return ::ycxx::detail::add_months(ym, dm.count());
+constexpr year_month operator+(const year_month& __ym, const months& __dm) noexcept {
+  return ::__ycxx::__detail::__add_months(__ym, __dm.count());
 }
 template <class = void>
-constexpr year_month operator+(const months& dm, const year_month& ym) noexcept {
-  return ym + dm;
+constexpr year_month operator+(const months& __dm, const year_month& __ym) noexcept {
+  return __ym + __dm;
 }
 template <class = void>
-constexpr year_month operator-(const year_month& ym, const months& dm) noexcept {
-  return ::ycxx::detail::add_months(ym, dm.count(), true);
+constexpr year_month operator-(const year_month& __ym, const months& __dm) noexcept {
+  return ::__ycxx::__detail::__add_months(__ym, __dm.count(), true);
 }
-constexpr months operator-(const year_month& x, const year_month& y) noexcept {
+constexpr months operator-(const year_month& __x, const year_month& y) noexcept {
   return months(
-      (static_cast<int>(x.year()) - static_cast<int>(y.year())) * 12 +
-      (static_cast<int>(static_cast<unsigned>(x.month())) - static_cast<int>(static_cast<unsigned>(y.month()))));
+      (static_cast<int>(__x.year()) - static_cast<int>(y.year())) * 12 +
+      (static_cast<int>(static_cast<unsigned>(__x.month())) - static_cast<int>(static_cast<unsigned>(y.month()))));
 }
-constexpr year_month operator+(const year_month& ym, const years& dy) noexcept { return {ym.year() + dy, ym.month()}; }
-constexpr year_month operator+(const years& dy, const year_month& ym) noexcept { return ym + dy; }
-constexpr year_month operator-(const year_month& ym, const years& dy) noexcept { return {ym.year() - dy, ym.month()}; }
-template <class V>
-constexpr year_month& year_month::operator+=(const months& dm) noexcept {
-  *this = *this + dm;
+constexpr year_month operator+(const year_month& __ym, const years& __dy) noexcept { return {__ym.year() + __dy, __ym.month()}; }
+constexpr year_month operator+(const years& __dy, const year_month& __ym) noexcept { return __ym + __dy; }
+constexpr year_month operator-(const year_month& __ym, const years& __dy) noexcept { return {__ym.year() - __dy, __ym.month()}; }
+template <class _Vp>
+constexpr year_month& year_month::operator+=(const months& __dm) noexcept {
+  *this = *this + __dm;
   return *this;
 }
-template <class V>
-constexpr year_month& year_month::operator-=(const months& dm) noexcept {
-  *this = *this - dm;
+template <class _Vp>
+constexpr year_month& year_month::operator-=(const months& __dm) noexcept {
+  *this = *this - __dm;
   return *this;
 }
 
@@ -541,87 +541,87 @@ class year_month_day_last;
 
 // [time.cal.ymd]
 class year_month_day {
-  chrono::year y_;
-  chrono::month m_;
-  chrono::day d_;
+  chrono::year __y_;
+  chrono::month __m_;
+  chrono::day __d_;
 
-  static constexpr year_month_day from_days(long long z) noexcept {
-    const ycxx::detail::civil_date c = ::ycxx::detail::civil_from_days(z);
+  static constexpr year_month_day __from_days(long long __z) noexcept {
+    const __ycxx::__detail::__civil_date c = ::__ycxx::__detail::__civil_from_days(__z);
     return {chrono::year(c.y), chrono::month(c.m), chrono::day(c.d)};
   }
-  constexpr days to_days() const noexcept {
+  constexpr days __to_days() const noexcept {
     // For an invalid day of a valid year and month: sys_days{y/m/1d} + (d - 1d).
-    return days(::ycxx::detail::days_from_civil(static_cast<int>(y_), static_cast<unsigned>(m_), 1) +
-                (static_cast<int>(static_cast<unsigned>(d_)) - 1));
+    return days(::__ycxx::__detail::__days_from_civil(static_cast<int>(__y_), static_cast<unsigned>(__m_), 1) +
+                (static_cast<int>(static_cast<unsigned>(__d_)) - 1));
   }
 
 public:
   year_month_day() = default;
   constexpr year_month_day(const chrono::year& y, const chrono::month& m, const chrono::day& d) noexcept
-      : y_(y), m_(m), d_(d) {}
-  constexpr year_month_day(const year_month_day_last& ymdl) noexcept;
-  constexpr year_month_day(const sys_days& dp) noexcept : year_month_day(from_days(dp.time_since_epoch().count())) {}
-  constexpr explicit year_month_day(const local_days& dp) noexcept
-      : year_month_day(from_days(dp.time_since_epoch().count())) {}
+      : __y_(y), __m_(m), __d_(d) {}
+  constexpr year_month_day(const year_month_day_last& __ymdl) noexcept;
+  constexpr year_month_day(const sys_days& __dp) noexcept : year_month_day(__from_days(__dp.time_since_epoch().count())) {}
+  constexpr explicit year_month_day(const local_days& __dp) noexcept
+      : year_month_day(__from_days(__dp.time_since_epoch().count())) {}
   template <class = void>
   constexpr year_month_day& operator+=(const months& m) noexcept;
   template <class = void>
   constexpr year_month_day& operator-=(const months& m) noexcept;
   constexpr year_month_day& operator+=(const years& y) noexcept {
-    y_ += y;
+    __y_ += y;
     return *this;
   }
   constexpr year_month_day& operator-=(const years& y) noexcept {
-    y_ -= y;
+    __y_ -= y;
     return *this;
   }
-  constexpr chrono::year year() const noexcept { return y_; }
-  constexpr chrono::month month() const noexcept { return m_; }
-  constexpr chrono::day day() const noexcept { return d_; }
-  constexpr operator sys_days() const noexcept { return sys_days(to_days()); }
-  constexpr explicit operator local_days() const noexcept { return local_days(to_days()); }
+  constexpr chrono::year year() const noexcept { return __y_; }
+  constexpr chrono::month month() const noexcept { return __m_; }
+  constexpr chrono::day day() const noexcept { return __d_; }
+  constexpr operator sys_days() const noexcept { return sys_days(__to_days()); }
+  constexpr explicit operator local_days() const noexcept { return local_days(__to_days()); }
   constexpr bool ok() const noexcept {
-    return y_.ok() && m_.ok() && static_cast<unsigned>(d_) >= 1 &&
-           static_cast<unsigned>(d_) <= ::ycxx::detail::last_day_of(static_cast<int>(y_), static_cast<unsigned>(m_));
+    return __y_.ok() && __m_.ok() && static_cast<unsigned>(__d_) >= 1 &&
+           static_cast<unsigned>(__d_) <= ::__ycxx::__detail::__last_day_of(static_cast<int>(__y_), static_cast<unsigned>(__m_));
   }
 };
-constexpr bool operator==(const year_month_day& x, const year_month_day& y) noexcept {
-  return x.year() == y.year() && x.month() == y.month() && x.day() == y.day();
+constexpr bool operator==(const year_month_day& __x, const year_month_day& y) noexcept {
+  return __x.year() == y.year() && __x.month() == y.month() && __x.day() == y.day();
 }
-constexpr strong_ordering operator<=>(const year_month_day& x, const year_month_day& y) noexcept {
-  if (auto c = x.year() <=> y.year(); c != 0)
+constexpr strong_ordering operator<=>(const year_month_day& __x, const year_month_day& y) noexcept {
+  if (auto c = __x.year() <=> y.year(); c != 0)
     return c;
-  if (auto c = x.month() <=> y.month(); c != 0)
+  if (auto c = __x.month() <=> y.month(); c != 0)
     return c;
-  return x.day() <=> y.day();
+  return __x.day() <=> y.day();
 }
 template <class = void>
-constexpr year_month_day operator+(const year_month_day& ymd, const months& dm) noexcept {
-  const year_month ym = year_month(ymd.year(), ymd.month()) + dm;
-  return {ym.year(), ym.month(), ymd.day()};
+constexpr year_month_day operator+(const year_month_day& ymd, const months& __dm) noexcept {
+  const year_month __ym = year_month(ymd.year(), ymd.month()) + __dm;
+  return {__ym.year(), __ym.month(), ymd.day()};
 }
 template <class = void>
-constexpr year_month_day operator+(const months& dm, const year_month_day& ymd) noexcept {
-  return ymd + dm;
+constexpr year_month_day operator+(const months& __dm, const year_month_day& ymd) noexcept {
+  return ymd + __dm;
 }
 template <class = void>
-constexpr year_month_day operator-(const year_month_day& ymd, const months& dm) noexcept {
-  const year_month ym = ::ycxx::detail::add_months({ymd.year(), ymd.month()}, dm.count(), true);
-  return {ym.year(), ym.month(), ymd.day()};
+constexpr year_month_day operator-(const year_month_day& ymd, const months& __dm) noexcept {
+  const year_month __ym = ::__ycxx::__detail::__add_months({ymd.year(), ymd.month()}, __dm.count(), true);
+  return {__ym.year(), __ym.month(), ymd.day()};
 }
-constexpr year_month_day operator+(const year_month_day& ymd, const years& dy) noexcept {
-  return {ymd.year() + dy, ymd.month(), ymd.day()};
+constexpr year_month_day operator+(const year_month_day& ymd, const years& __dy) noexcept {
+  return {ymd.year() + __dy, ymd.month(), ymd.day()};
 }
-constexpr year_month_day operator+(const years& dy, const year_month_day& ymd) noexcept { return ymd + dy; }
-constexpr year_month_day operator-(const year_month_day& ymd, const years& dy) noexcept {
-  return {ymd.year() - dy, ymd.month(), ymd.day()};
+constexpr year_month_day operator+(const years& __dy, const year_month_day& ymd) noexcept { return ymd + __dy; }
+constexpr year_month_day operator-(const year_month_day& ymd, const years& __dy) noexcept {
+  return {ymd.year() - __dy, ymd.month(), ymd.day()};
 }
-template <class V>
+template <class _Vp>
 constexpr year_month_day& year_month_day::operator+=(const months& m) noexcept {
   *this = *this + m;
   return *this;
 }
-template <class V>
+template <class _Vp>
 constexpr year_month_day& year_month_day::operator-=(const months& m) noexcept {
   *this = *this - m;
   return *this;
@@ -629,168 +629,168 @@ constexpr year_month_day& year_month_day::operator-=(const months& m) noexcept {
 
 // [time.cal.ymdlast]
 class year_month_day_last {
-  chrono::year y_;
-  chrono::month_day_last mdl_;
+  chrono::year __y_;
+  chrono::month_day_last __mdl_;
 
 public:
-  constexpr year_month_day_last(const chrono::year& y, const chrono::month_day_last& mdl) noexcept
-      : y_(y), mdl_(mdl) {}
+  constexpr year_month_day_last(const chrono::year& y, const chrono::month_day_last& __mdl) noexcept
+      : __y_(y), __mdl_(__mdl) {}
   template <class = void>
   constexpr year_month_day_last& operator+=(const months& m) noexcept;
   template <class = void>
   constexpr year_month_day_last& operator-=(const months& m) noexcept;
   constexpr year_month_day_last& operator+=(const years& y) noexcept {
-    y_ += y;
+    __y_ += y;
     return *this;
   }
   constexpr year_month_day_last& operator-=(const years& y) noexcept {
-    y_ -= y;
+    __y_ -= y;
     return *this;
   }
-  constexpr chrono::year year() const noexcept { return y_; }
-  constexpr chrono::month month() const noexcept { return mdl_.month(); }
-  constexpr chrono::month_day_last month_day_last() const noexcept { return mdl_; }
+  constexpr chrono::year year() const noexcept { return __y_; }
+  constexpr chrono::month month() const noexcept { return __mdl_.month(); }
+  constexpr chrono::month_day_last month_day_last() const noexcept { return __mdl_; }
   // For a month that is not ok() (the value is unspecified there): 31.
   constexpr chrono::day day() const noexcept {
-    const unsigned m = static_cast<unsigned>(mdl_.month());
-    return chrono::day(m >= 1 && m <= 12 ? ::ycxx::detail::last_day_of(static_cast<int>(y_), m) : 31u);
+    const unsigned m = static_cast<unsigned>(__mdl_.month());
+    return chrono::day(m >= 1 && m <= 12 ? ::__ycxx::__detail::__last_day_of(static_cast<int>(__y_), m) : 31u);
   }
-  constexpr operator sys_days() const noexcept { return sys_days(year_month_day(y_, month(), day())); }
+  constexpr operator sys_days() const noexcept { return sys_days(year_month_day(__y_, month(), day())); }
   constexpr explicit operator local_days() const noexcept {
     return local_days(sys_days(*this).time_since_epoch());
   }
-  constexpr bool ok() const noexcept { return y_.ok() && mdl_.ok(); }
+  constexpr bool ok() const noexcept { return __y_.ok() && __mdl_.ok(); }
 };
-constexpr bool operator==(const year_month_day_last& x, const year_month_day_last& y) noexcept {
-  return x.year() == y.year() && x.month_day_last() == y.month_day_last();
+constexpr bool operator==(const year_month_day_last& __x, const year_month_day_last& y) noexcept {
+  return __x.year() == y.year() && __x.month_day_last() == y.month_day_last();
 }
-constexpr strong_ordering operator<=>(const year_month_day_last& x, const year_month_day_last& y) noexcept {
-  if (auto c = x.year() <=> y.year(); c != 0)
+constexpr strong_ordering operator<=>(const year_month_day_last& __x, const year_month_day_last& y) noexcept {
+  if (auto c = __x.year() <=> y.year(); c != 0)
     return c;
-  return x.month_day_last() <=> y.month_day_last();
+  return __x.month_day_last() <=> y.month_day_last();
 }
 template <class = void>
-constexpr year_month_day_last operator+(const year_month_day_last& ymdl, const months& dm) noexcept {
-  const year_month ym = year_month(ymdl.year(), ymdl.month()) + dm;
-  return {ym.year(), month_day_last(ym.month())};
+constexpr year_month_day_last operator+(const year_month_day_last& __ymdl, const months& __dm) noexcept {
+  const year_month __ym = year_month(__ymdl.year(), __ymdl.month()) + __dm;
+  return {__ym.year(), month_day_last(__ym.month())};
 }
 template <class = void>
-constexpr year_month_day_last operator+(const months& dm, const year_month_day_last& ymdl) noexcept {
-  return ymdl + dm;
+constexpr year_month_day_last operator+(const months& __dm, const year_month_day_last& __ymdl) noexcept {
+  return __ymdl + __dm;
 }
 template <class = void>
-constexpr year_month_day_last operator-(const year_month_day_last& ymdl, const months& dm) noexcept {
-  const year_month ym = ::ycxx::detail::add_months({ymdl.year(), ymdl.month()}, dm.count(), true);
-  return {ym.year(), month_day_last(ym.month())};
+constexpr year_month_day_last operator-(const year_month_day_last& __ymdl, const months& __dm) noexcept {
+  const year_month __ym = ::__ycxx::__detail::__add_months({__ymdl.year(), __ymdl.month()}, __dm.count(), true);
+  return {__ym.year(), month_day_last(__ym.month())};
 }
-constexpr year_month_day_last operator+(const year_month_day_last& ymdl, const years& dy) noexcept {
-  return {ymdl.year() + dy, ymdl.month_day_last()};
+constexpr year_month_day_last operator+(const year_month_day_last& __ymdl, const years& __dy) noexcept {
+  return {__ymdl.year() + __dy, __ymdl.month_day_last()};
 }
-constexpr year_month_day_last operator+(const years& dy, const year_month_day_last& ymdl) noexcept {
-  return ymdl + dy;
+constexpr year_month_day_last operator+(const years& __dy, const year_month_day_last& __ymdl) noexcept {
+  return __ymdl + __dy;
 }
-constexpr year_month_day_last operator-(const year_month_day_last& ymdl, const years& dy) noexcept {
-  return {ymdl.year() - dy, ymdl.month_day_last()};
+constexpr year_month_day_last operator-(const year_month_day_last& __ymdl, const years& __dy) noexcept {
+  return {__ymdl.year() - __dy, __ymdl.month_day_last()};
 }
-template <class V>
+template <class _Vp>
 constexpr year_month_day_last& year_month_day_last::operator+=(const months& m) noexcept {
   *this = *this + m;
   return *this;
 }
-template <class V>
+template <class _Vp>
 constexpr year_month_day_last& year_month_day_last::operator-=(const months& m) noexcept {
   *this = *this - m;
   return *this;
 }
 
-constexpr year_month_day::year_month_day(const year_month_day_last& ymdl) noexcept
-    : y_(ymdl.year()), m_(ymdl.month()), d_(ymdl.day()) {}
+constexpr year_month_day::year_month_day(const year_month_day_last& __ymdl) noexcept
+    : __y_(__ymdl.year()), __m_(__ymdl.month()), __d_(__ymdl.day()) {}
 
 // [time.cal.ymwd]
 class year_month_weekday {
-  chrono::year y_;
-  chrono::month m_;
-  chrono::weekday_indexed wdi_;
+  chrono::year __y_;
+  chrono::month __m_;
+  chrono::weekday_indexed __wdi_;
 
-  static constexpr year_month_weekday from_days(long long z) noexcept {
-    const ycxx::detail::civil_date c = ::ycxx::detail::civil_from_days(z);
+  static constexpr year_month_weekday __from_days(long long __z) noexcept {
+    const __ycxx::__detail::__civil_date c = ::__ycxx::__detail::__civil_from_days(__z);
     return {chrono::year(c.y), chrono::month(c.m),
-            chrono::weekday_indexed(chrono::weekday(::ycxx::detail::weekday_from_days(z)), (c.d - 1) / 7 + 1)};
+            chrono::weekday_indexed(chrono::weekday(::__ycxx::__detail::__weekday_from_days(__z)), (c.d - 1) / 7 + 1)};
   }
-  constexpr days to_days() const noexcept {
-    const int first = ::ycxx::detail::days_from_civil(static_cast<int>(y_), static_cast<unsigned>(m_), 1);
-    const chrono::weekday wd1(::ycxx::detail::weekday_from_days(first));
-    return days(first + (wdi_.weekday() - wd1).count() + (static_cast<int>(wdi_.index()) - 1) * 7);
+  constexpr days __to_days() const noexcept {
+    const int first = ::__ycxx::__detail::__days_from_civil(static_cast<int>(__y_), static_cast<unsigned>(__m_), 1);
+    const chrono::weekday __wd1(::__ycxx::__detail::__weekday_from_days(first));
+    return days(first + (__wdi_.weekday() - __wd1).count() + (static_cast<int>(__wdi_.index()) - 1) * 7);
   }
 
 public:
   year_month_weekday() = default;
   constexpr year_month_weekday(const chrono::year& y, const chrono::month& m,
-                               const chrono::weekday_indexed& wdi) noexcept
-      : y_(y), m_(m), wdi_(wdi) {}
-  constexpr year_month_weekday(const sys_days& dp) noexcept
-      : year_month_weekday(from_days(dp.time_since_epoch().count())) {}
-  constexpr explicit year_month_weekday(const local_days& dp) noexcept
-      : year_month_weekday(from_days(dp.time_since_epoch().count())) {}
+                               const chrono::weekday_indexed& __wdi) noexcept
+      : __y_(y), __m_(m), __wdi_(__wdi) {}
+  constexpr year_month_weekday(const sys_days& __dp) noexcept
+      : year_month_weekday(__from_days(__dp.time_since_epoch().count())) {}
+  constexpr explicit year_month_weekday(const local_days& __dp) noexcept
+      : year_month_weekday(__from_days(__dp.time_since_epoch().count())) {}
   template <class = void>
   constexpr year_month_weekday& operator+=(const months& m) noexcept;
   template <class = void>
   constexpr year_month_weekday& operator-=(const months& m) noexcept;
   constexpr year_month_weekday& operator+=(const years& y) noexcept {
-    y_ += y;
+    __y_ += y;
     return *this;
   }
   constexpr year_month_weekday& operator-=(const years& y) noexcept {
-    y_ -= y;
+    __y_ -= y;
     return *this;
   }
-  constexpr chrono::year year() const noexcept { return y_; }
-  constexpr chrono::month month() const noexcept { return m_; }
-  constexpr chrono::weekday weekday() const noexcept { return wdi_.weekday(); }
-  constexpr unsigned index() const noexcept { return wdi_.index(); }
-  constexpr chrono::weekday_indexed weekday_indexed() const noexcept { return wdi_; }
-  constexpr operator sys_days() const noexcept { return sys_days(to_days()); }
-  constexpr explicit operator local_days() const noexcept { return local_days(to_days()); }
+  constexpr chrono::year year() const noexcept { return __y_; }
+  constexpr chrono::month month() const noexcept { return __m_; }
+  constexpr chrono::weekday weekday() const noexcept { return __wdi_.weekday(); }
+  constexpr unsigned index() const noexcept { return __wdi_.index(); }
+  constexpr chrono::weekday_indexed weekday_indexed() const noexcept { return __wdi_; }
+  constexpr operator sys_days() const noexcept { return sys_days(__to_days()); }
+  constexpr explicit operator local_days() const noexcept { return local_days(__to_days()); }
   constexpr bool ok() const noexcept {
-    if (!y_.ok() || !m_.ok() || !wdi_.ok())
+    if (!__y_.ok() || !__m_.ok() || !__wdi_.ok())
       return false;
-    if (wdi_.index() <= 4)
+    if (__wdi_.index() <= 4)
       return true;
-    const int first = ::ycxx::detail::days_from_civil(static_cast<int>(y_), static_cast<unsigned>(m_), 1);
-    const unsigned d = static_cast<unsigned>(to_days().count() - first) + 1;
-    return d <= ::ycxx::detail::last_day_of(static_cast<int>(y_), static_cast<unsigned>(m_));
+    const int first = ::__ycxx::__detail::__days_from_civil(static_cast<int>(__y_), static_cast<unsigned>(__m_), 1);
+    const unsigned d = static_cast<unsigned>(__to_days().count() - first) + 1;
+    return d <= ::__ycxx::__detail::__last_day_of(static_cast<int>(__y_), static_cast<unsigned>(__m_));
   }
 };
-constexpr bool operator==(const year_month_weekday& x, const year_month_weekday& y) noexcept {
-  return x.year() == y.year() && x.month() == y.month() && x.weekday_indexed() == y.weekday_indexed();
+constexpr bool operator==(const year_month_weekday& __x, const year_month_weekday& y) noexcept {
+  return __x.year() == y.year() && __x.month() == y.month() && __x.weekday_indexed() == y.weekday_indexed();
 }
 template <class = void>
-constexpr year_month_weekday operator+(const year_month_weekday& ymwd, const months& dm) noexcept {
-  const year_month ym = year_month(ymwd.year(), ymwd.month()) + dm;
-  return {ym.year(), ym.month(), ymwd.weekday_indexed()};
+constexpr year_month_weekday operator+(const year_month_weekday& __ymwd, const months& __dm) noexcept {
+  const year_month __ym = year_month(__ymwd.year(), __ymwd.month()) + __dm;
+  return {__ym.year(), __ym.month(), __ymwd.weekday_indexed()};
 }
 template <class = void>
-constexpr year_month_weekday operator+(const months& dm, const year_month_weekday& ymwd) noexcept {
-  return ymwd + dm;
+constexpr year_month_weekday operator+(const months& __dm, const year_month_weekday& __ymwd) noexcept {
+  return __ymwd + __dm;
 }
 template <class = void>
-constexpr year_month_weekday operator-(const year_month_weekday& ymwd, const months& dm) noexcept {
-  const year_month ym = ::ycxx::detail::add_months({ymwd.year(), ymwd.month()}, dm.count(), true);
-  return {ym.year(), ym.month(), ymwd.weekday_indexed()};
+constexpr year_month_weekday operator-(const year_month_weekday& __ymwd, const months& __dm) noexcept {
+  const year_month __ym = ::__ycxx::__detail::__add_months({__ymwd.year(), __ymwd.month()}, __dm.count(), true);
+  return {__ym.year(), __ym.month(), __ymwd.weekday_indexed()};
 }
-constexpr year_month_weekday operator+(const year_month_weekday& ymwd, const years& dy) noexcept {
-  return {ymwd.year() + dy, ymwd.month(), ymwd.weekday_indexed()};
+constexpr year_month_weekday operator+(const year_month_weekday& __ymwd, const years& __dy) noexcept {
+  return {__ymwd.year() + __dy, __ymwd.month(), __ymwd.weekday_indexed()};
 }
-constexpr year_month_weekday operator+(const years& dy, const year_month_weekday& ymwd) noexcept { return ymwd + dy; }
-constexpr year_month_weekday operator-(const year_month_weekday& ymwd, const years& dy) noexcept {
-  return {ymwd.year() - dy, ymwd.month(), ymwd.weekday_indexed()};
+constexpr year_month_weekday operator+(const years& __dy, const year_month_weekday& __ymwd) noexcept { return __ymwd + __dy; }
+constexpr year_month_weekday operator-(const year_month_weekday& __ymwd, const years& __dy) noexcept {
+  return {__ymwd.year() - __dy, __ymwd.month(), __ymwd.weekday_indexed()};
 }
-template <class V>
+template <class _Vp>
 constexpr year_month_weekday& year_month_weekday::operator+=(const months& m) noexcept {
   *this = *this + m;
   return *this;
 }
-template <class V>
+template <class _Vp>
 constexpr year_month_weekday& year_month_weekday::operator-=(const months& m) noexcept {
   *this = *this - m;
   return *this;
@@ -798,72 +798,72 @@ constexpr year_month_weekday& year_month_weekday::operator-=(const months& m) no
 
 // [time.cal.ymwdlast]
 class year_month_weekday_last {
-  chrono::year y_;
-  chrono::month m_;
-  chrono::weekday_last wdl_;
+  chrono::year __y_;
+  chrono::month __m_;
+  chrono::weekday_last __wdl_;
 
-  constexpr days to_days() const noexcept {
-    const sys_days l = sys_days(year_month_day_last(y_, month_day_last(m_)));
-    return l.time_since_epoch() - (chrono::weekday(l) - wdl_.weekday());
+  constexpr days __to_days() const noexcept {
+    const sys_days __l = sys_days(year_month_day_last(__y_, month_day_last(__m_)));
+    return __l.time_since_epoch() - (chrono::weekday(__l) - __wdl_.weekday());
   }
 
 public:
   constexpr year_month_weekday_last(const chrono::year& y, const chrono::month& m,
-                                    const chrono::weekday_last& wdl) noexcept
-      : y_(y), m_(m), wdl_(wdl) {}
+                                    const chrono::weekday_last& __wdl) noexcept
+      : __y_(y), __m_(m), __wdl_(__wdl) {}
   template <class = void>
   constexpr year_month_weekday_last& operator+=(const months& m) noexcept;
   template <class = void>
   constexpr year_month_weekday_last& operator-=(const months& m) noexcept;
   constexpr year_month_weekday_last& operator+=(const years& y) noexcept {
-    y_ += y;
+    __y_ += y;
     return *this;
   }
   constexpr year_month_weekday_last& operator-=(const years& y) noexcept {
-    y_ -= y;
+    __y_ -= y;
     return *this;
   }
-  constexpr chrono::year year() const noexcept { return y_; }
-  constexpr chrono::month month() const noexcept { return m_; }
-  constexpr chrono::weekday weekday() const noexcept { return wdl_.weekday(); }
-  constexpr chrono::weekday_last weekday_last() const noexcept { return wdl_; }
-  constexpr operator sys_days() const noexcept { return sys_days(to_days()); }
-  constexpr explicit operator local_days() const noexcept { return local_days(to_days()); }
-  constexpr bool ok() const noexcept { return y_.ok() && m_.ok() && wdl_.ok(); }
+  constexpr chrono::year year() const noexcept { return __y_; }
+  constexpr chrono::month month() const noexcept { return __m_; }
+  constexpr chrono::weekday weekday() const noexcept { return __wdl_.weekday(); }
+  constexpr chrono::weekday_last weekday_last() const noexcept { return __wdl_; }
+  constexpr operator sys_days() const noexcept { return sys_days(__to_days()); }
+  constexpr explicit operator local_days() const noexcept { return local_days(__to_days()); }
+  constexpr bool ok() const noexcept { return __y_.ok() && __m_.ok() && __wdl_.ok(); }
 };
-constexpr bool operator==(const year_month_weekday_last& x, const year_month_weekday_last& y) noexcept {
-  return x.year() == y.year() && x.month() == y.month() && x.weekday_last() == y.weekday_last();
+constexpr bool operator==(const year_month_weekday_last& __x, const year_month_weekday_last& y) noexcept {
+  return __x.year() == y.year() && __x.month() == y.month() && __x.weekday_last() == y.weekday_last();
 }
 template <class = void>
-constexpr year_month_weekday_last operator+(const year_month_weekday_last& ymwdl, const months& dm) noexcept {
-  const year_month ym = year_month(ymwdl.year(), ymwdl.month()) + dm;
-  return {ym.year(), ym.month(), ymwdl.weekday_last()};
+constexpr year_month_weekday_last operator+(const year_month_weekday_last& __ymwdl, const months& __dm) noexcept {
+  const year_month __ym = year_month(__ymwdl.year(), __ymwdl.month()) + __dm;
+  return {__ym.year(), __ym.month(), __ymwdl.weekday_last()};
 }
 template <class = void>
-constexpr year_month_weekday_last operator+(const months& dm, const year_month_weekday_last& ymwdl) noexcept {
-  return ymwdl + dm;
+constexpr year_month_weekday_last operator+(const months& __dm, const year_month_weekday_last& __ymwdl) noexcept {
+  return __ymwdl + __dm;
 }
 template <class = void>
-constexpr year_month_weekday_last operator-(const year_month_weekday_last& ymwdl, const months& dm) noexcept {
-  const year_month ym =
-      ::ycxx::detail::add_months({ymwdl.year(), ymwdl.month()}, dm.count(), true);
-  return {ym.year(), ym.month(), ymwdl.weekday_last()};
+constexpr year_month_weekday_last operator-(const year_month_weekday_last& __ymwdl, const months& __dm) noexcept {
+  const year_month __ym =
+      ::__ycxx::__detail::__add_months({__ymwdl.year(), __ymwdl.month()}, __dm.count(), true);
+  return {__ym.year(), __ym.month(), __ymwdl.weekday_last()};
 }
-constexpr year_month_weekday_last operator+(const year_month_weekday_last& ymwdl, const years& dy) noexcept {
-  return {ymwdl.year() + dy, ymwdl.month(), ymwdl.weekday_last()};
+constexpr year_month_weekday_last operator+(const year_month_weekday_last& __ymwdl, const years& __dy) noexcept {
+  return {__ymwdl.year() + __dy, __ymwdl.month(), __ymwdl.weekday_last()};
 }
-constexpr year_month_weekday_last operator+(const years& dy, const year_month_weekday_last& ymwdl) noexcept {
-  return ymwdl + dy;
+constexpr year_month_weekday_last operator+(const years& __dy, const year_month_weekday_last& __ymwdl) noexcept {
+  return __ymwdl + __dy;
 }
-constexpr year_month_weekday_last operator-(const year_month_weekday_last& ymwdl, const years& dy) noexcept {
-  return {ymwdl.year() - dy, ymwdl.month(), ymwdl.weekday_last()};
+constexpr year_month_weekday_last operator-(const year_month_weekday_last& __ymwdl, const years& __dy) noexcept {
+  return {__ymwdl.year() - __dy, __ymwdl.month(), __ymwdl.weekday_last()};
 }
-template <class V>
+template <class _Vp>
 constexpr year_month_weekday_last& year_month_weekday_last::operator+=(const months& m) noexcept {
   *this = *this + m;
   return *this;
 }
-template <class V>
+template <class _Vp>
 constexpr year_month_weekday_last& year_month_weekday_last::operator-=(const months& m) noexcept {
   *this = *this - m;
   return *this;
@@ -885,57 +885,57 @@ constexpr month_day_last operator/(last_spec, const month& m) noexcept { return 
 constexpr month_day_last operator/(last_spec, int m) noexcept {
   return month_day_last(month(static_cast<unsigned>(m)));
 }
-constexpr month_weekday operator/(const month& m, const weekday_indexed& wdi) noexcept { return {m, wdi}; }
-constexpr month_weekday operator/(int m, const weekday_indexed& wdi) noexcept {
-  return {month(static_cast<unsigned>(m)), wdi};
+constexpr month_weekday operator/(const month& m, const weekday_indexed& __wdi) noexcept { return {m, __wdi}; }
+constexpr month_weekday operator/(int m, const weekday_indexed& __wdi) noexcept {
+  return {month(static_cast<unsigned>(m)), __wdi};
 }
-constexpr month_weekday operator/(const weekday_indexed& wdi, const month& m) noexcept { return {m, wdi}; }
-constexpr month_weekday operator/(const weekday_indexed& wdi, int m) noexcept {
-  return {month(static_cast<unsigned>(m)), wdi};
+constexpr month_weekday operator/(const weekday_indexed& __wdi, const month& m) noexcept { return {m, __wdi}; }
+constexpr month_weekday operator/(const weekday_indexed& __wdi, int m) noexcept {
+  return {month(static_cast<unsigned>(m)), __wdi};
 }
-constexpr month_weekday_last operator/(const month& m, const weekday_last& wdl) noexcept { return {m, wdl}; }
-constexpr month_weekday_last operator/(int m, const weekday_last& wdl) noexcept {
-  return {month(static_cast<unsigned>(m)), wdl};
+constexpr month_weekday_last operator/(const month& m, const weekday_last& __wdl) noexcept { return {m, __wdl}; }
+constexpr month_weekday_last operator/(int m, const weekday_last& __wdl) noexcept {
+  return {month(static_cast<unsigned>(m)), __wdl};
 }
-constexpr month_weekday_last operator/(const weekday_last& wdl, const month& m) noexcept { return {m, wdl}; }
-constexpr month_weekday_last operator/(const weekday_last& wdl, int m) noexcept {
-  return {month(static_cast<unsigned>(m)), wdl};
+constexpr month_weekday_last operator/(const weekday_last& __wdl, const month& m) noexcept { return {m, __wdl}; }
+constexpr month_weekday_last operator/(const weekday_last& __wdl, int m) noexcept {
+  return {month(static_cast<unsigned>(m)), __wdl};
 }
-constexpr year_month_day operator/(const year_month& ym, const day& d) noexcept { return {ym.year(), ym.month(), d}; }
-constexpr year_month_day operator/(const year_month& ym, int d) noexcept {
-  return {ym.year(), ym.month(), day(static_cast<unsigned>(d))};
+constexpr year_month_day operator/(const year_month& __ym, const day& d) noexcept { return {__ym.year(), __ym.month(), d}; }
+constexpr year_month_day operator/(const year_month& __ym, int d) noexcept {
+  return {__ym.year(), __ym.month(), day(static_cast<unsigned>(d))};
 }
-constexpr year_month_day operator/(const year& y, const month_day& md) noexcept { return {y, md.month(), md.day()}; }
-constexpr year_month_day operator/(int y, const month_day& md) noexcept { return year(y) / md; }
-constexpr year_month_day operator/(const month_day& md, const year& y) noexcept { return y / md; }
-constexpr year_month_day operator/(const month_day& md, int y) noexcept { return year(y) / md; }
-constexpr year_month_day_last operator/(const year_month& ym, last_spec) noexcept {
-  return {ym.year(), month_day_last(ym.month())};
+constexpr year_month_day operator/(const year& y, const month_day& __md) noexcept { return {y, __md.month(), __md.day()}; }
+constexpr year_month_day operator/(int y, const month_day& __md) noexcept { return year(y) / __md; }
+constexpr year_month_day operator/(const month_day& __md, const year& y) noexcept { return y / __md; }
+constexpr year_month_day operator/(const month_day& __md, int y) noexcept { return year(y) / __md; }
+constexpr year_month_day_last operator/(const year_month& __ym, last_spec) noexcept {
+  return {__ym.year(), month_day_last(__ym.month())};
 }
-constexpr year_month_day_last operator/(const year& y, const month_day_last& mdl) noexcept { return {y, mdl}; }
-constexpr year_month_day_last operator/(int y, const month_day_last& mdl) noexcept { return {year(y), mdl}; }
-constexpr year_month_day_last operator/(const month_day_last& mdl, const year& y) noexcept { return {y, mdl}; }
-constexpr year_month_day_last operator/(const month_day_last& mdl, int y) noexcept { return {year(y), mdl}; }
-constexpr year_month_weekday operator/(const year_month& ym, const weekday_indexed& wdi) noexcept {
-  return {ym.year(), ym.month(), wdi};
+constexpr year_month_day_last operator/(const year& y, const month_day_last& __mdl) noexcept { return {y, __mdl}; }
+constexpr year_month_day_last operator/(int y, const month_day_last& __mdl) noexcept { return {year(y), __mdl}; }
+constexpr year_month_day_last operator/(const month_day_last& __mdl, const year& y) noexcept { return {y, __mdl}; }
+constexpr year_month_day_last operator/(const month_day_last& __mdl, int y) noexcept { return {year(y), __mdl}; }
+constexpr year_month_weekday operator/(const year_month& __ym, const weekday_indexed& __wdi) noexcept {
+  return {__ym.year(), __ym.month(), __wdi};
 }
-constexpr year_month_weekday operator/(const year& y, const month_weekday& mwd) noexcept {
-  return {y, mwd.month(), mwd.weekday_indexed()};
+constexpr year_month_weekday operator/(const year& y, const month_weekday& __mwd) noexcept {
+  return {y, __mwd.month(), __mwd.weekday_indexed()};
 }
-constexpr year_month_weekday operator/(int y, const month_weekday& mwd) noexcept { return year(y) / mwd; }
-constexpr year_month_weekday operator/(const month_weekday& mwd, const year& y) noexcept { return y / mwd; }
-constexpr year_month_weekday operator/(const month_weekday& mwd, int y) noexcept { return year(y) / mwd; }
-constexpr year_month_weekday_last operator/(const year_month& ym, const weekday_last& wdl) noexcept {
-  return {ym.year(), ym.month(), wdl};
+constexpr year_month_weekday operator/(int y, const month_weekday& __mwd) noexcept { return year(y) / __mwd; }
+constexpr year_month_weekday operator/(const month_weekday& __mwd, const year& y) noexcept { return y / __mwd; }
+constexpr year_month_weekday operator/(const month_weekday& __mwd, int y) noexcept { return year(y) / __mwd; }
+constexpr year_month_weekday_last operator/(const year_month& __ym, const weekday_last& __wdl) noexcept {
+  return {__ym.year(), __ym.month(), __wdl};
 }
-constexpr year_month_weekday_last operator/(const year& y, const month_weekday_last& mwdl) noexcept {
-  return {y, mwdl.month(), mwdl.weekday_last()};
+constexpr year_month_weekday_last operator/(const year& y, const month_weekday_last& __mwdl) noexcept {
+  return {y, __mwdl.month(), __mwdl.weekday_last()};
 }
-constexpr year_month_weekday_last operator/(int y, const month_weekday_last& mwdl) noexcept { return year(y) / mwdl; }
-constexpr year_month_weekday_last operator/(const month_weekday_last& mwdl, const year& y) noexcept {
-  return y / mwdl;
+constexpr year_month_weekday_last operator/(int y, const month_weekday_last& __mwdl) noexcept { return year(y) / __mwdl; }
+constexpr year_month_weekday_last operator/(const month_weekday_last& __mwdl, const year& y) noexcept {
+  return y / __mwdl;
 }
-constexpr year_month_weekday_last operator/(const month_weekday_last& mwdl, int y) noexcept { return year(y) / mwdl; }
+constexpr year_month_weekday_last operator/(const month_weekday_last& __mwdl, int y) noexcept { return year(y) / __mwdl; }
 
 // Calendrical constants ([time.syn]).
 inline constexpr weekday Sunday{0};
@@ -959,47 +959,47 @@ inline constexpr month November{11};
 inline constexpr month December{12};
 
 // [time.hms]
-template <class Duration>
+template <class _Duration>
 class hh_mm_ss {
-  static_assert(ycxx::detail::is_duration<Duration>, "hh_mm_ss: Duration must be a specialization of duration");
+  static_assert(__ycxx::__detail::__is_duration<_Duration>, "hh_mm_ss: Duration must be a specialization of duration");
 
 public:
-  static constexpr unsigned fractional_width = ycxx::detail::hms_fractional_width(Duration::period::den);
-  using precision = chrono::duration<common_type_t<typename Duration::rep, seconds::rep>,
-                                     ratio<1, ycxx::detail::pow10(fractional_width)>>;
+  static constexpr unsigned fractional_width = __ycxx::__detail::__hms_fractional_width(_Duration::period::den);
+  using precision = chrono::duration<common_type_t<typename _Duration::rep, seconds::rep>,
+                                     ratio<1, __ycxx::__detail::__pow10(fractional_width)>>;
 
 private:
-  bool neg_;
-  chrono::hours h_;
-  chrono::minutes m_;
-  chrono::seconds s_;
-  precision ss_;
+  bool __neg_;
+  chrono::hours __h_;
+  chrono::minutes __m_;
+  chrono::seconds __s_;
+  precision __ss_;
 
   // abs(d) ([time.hms.members]/2) in precision's rep, which is at least long long: negating the
   // most negative count of a narrower rep in Duration's own rep would overflow.
-  using wide = chrono::duration<typename precision::rep, typename Duration::period>;
-  static constexpr wide abs_of(Duration d) noexcept { return d < Duration::zero() ? -wide(d) : wide(d); }
+  using __wide = chrono::duration<typename precision::rep, typename _Duration::period>;
+  static constexpr __wide __abs_of(_Duration d) noexcept { return d < _Duration::zero() ? -__wide(d) : __wide(d); }
 
 public:
-  constexpr hh_mm_ss() noexcept : hh_mm_ss(Duration::zero()) {}
-  constexpr explicit hh_mm_ss(Duration d)
-      : neg_(d < Duration::zero()), h_(chrono::duration_cast<chrono::hours>(abs_of(d))),
-        m_(chrono::duration_cast<chrono::minutes>(abs_of(d) - h_)),
-        s_(chrono::duration_cast<chrono::seconds>(abs_of(d) - h_ - m_)), ss_() {
+  constexpr hh_mm_ss() noexcept : hh_mm_ss(_Duration::zero()) {}
+  constexpr explicit hh_mm_ss(_Duration d)
+      : __neg_(d < _Duration::zero()), __h_(chrono::duration_cast<chrono::hours>(__abs_of(d))),
+        __m_(chrono::duration_cast<chrono::minutes>(__abs_of(d) - __h_)),
+        __s_(chrono::duration_cast<chrono::seconds>(__abs_of(d) - __h_ - __m_)), __ss_() {
     if constexpr (treat_as_floating_point_v<typename precision::rep>)
-      ss_ = abs_of(d) - h_ - m_ - s_;
+      __ss_ = __abs_of(d) - __h_ - __m_ - __s_;
     else
-      ss_ = chrono::duration_cast<precision>(abs_of(d) - h_ - m_ - s_);
+      __ss_ = chrono::duration_cast<precision>(__abs_of(d) - __h_ - __m_ - __s_);
   }
-  constexpr bool is_negative() const noexcept { return neg_; }
-  constexpr chrono::hours hours() const noexcept { return h_; }
-  constexpr chrono::minutes minutes() const noexcept { return m_; }
-  constexpr chrono::seconds seconds() const noexcept { return s_; }
-  constexpr precision subseconds() const noexcept { return ss_; }
+  constexpr bool is_negative() const noexcept { return __neg_; }
+  constexpr chrono::hours hours() const noexcept { return __h_; }
+  constexpr chrono::minutes minutes() const noexcept { return __m_; }
+  constexpr chrono::seconds seconds() const noexcept { return __s_; }
+  constexpr precision subseconds() const noexcept { return __ss_; }
   constexpr explicit operator precision() const noexcept { return to_duration(); }
   constexpr precision to_duration() const noexcept {
-    const precision p = h_ + m_ + s_ + ss_;
-    return neg_ ? -p : p;
+    const precision p = __h_ + __m_ + __s_ + __ss_;
+    return __neg_ ? -p : p;
   }
 };
 
@@ -1019,7 +1019,7 @@ constexpr hours make24(const hours& h, bool is_pm) noexcept {
 
 }} // namespace std::chrono
 
-namespace [[gnu::visibility("hidden")]] std {
+namespace [[__gnu__::__visibility__("hidden")]] std {
 inline namespace literals {
 inline namespace chrono_literals {
 // [time.cal.day.nonmembers], [time.cal.year.nonmembers]
@@ -1045,44 +1045,44 @@ struct hash<chrono::year> {
 };
 template <>
 struct hash<chrono::weekday> {
-  size_t operator()(const chrono::weekday& w) const noexcept { return w.c_encoding(); }
+  size_t operator()(const chrono::weekday& __w) const noexcept { return __w.c_encoding(); }
 };
 template <>
 struct hash<chrono::weekday_indexed> {
-  size_t operator()(const chrono::weekday_indexed& w) const noexcept {
-    return w.weekday().c_encoding() << 8 | (w.index() & 0xff);
+  size_t operator()(const chrono::weekday_indexed& __w) const noexcept {
+    return __w.weekday().c_encoding() << 8 | (__w.index() & 0xff);
   }
 };
 template <>
 struct hash<chrono::weekday_last> {
-  size_t operator()(const chrono::weekday_last& w) const noexcept { return w.weekday().c_encoding(); }
+  size_t operator()(const chrono::weekday_last& __w) const noexcept { return __w.weekday().c_encoding(); }
 };
 template <>
 struct hash<chrono::month_day> {
-  size_t operator()(const chrono::month_day& md) const noexcept {
-    return static_cast<unsigned>(md.month()) << 8 | static_cast<unsigned>(md.day());
+  size_t operator()(const chrono::month_day& __md) const noexcept {
+    return static_cast<unsigned>(__md.month()) << 8 | static_cast<unsigned>(__md.day());
   }
 };
 template <>
 struct hash<chrono::month_day_last> {
-  size_t operator()(const chrono::month_day_last& mdl) const noexcept { return static_cast<unsigned>(mdl.month()); }
+  size_t operator()(const chrono::month_day_last& __mdl) const noexcept { return static_cast<unsigned>(__mdl.month()); }
 };
 template <>
 struct hash<chrono::month_weekday> {
-  size_t operator()(const chrono::month_weekday& mwd) const noexcept {
-    return static_cast<unsigned>(mwd.month()) << 16 | hash<chrono::weekday_indexed>{}(mwd.weekday_indexed());
+  size_t operator()(const chrono::month_weekday& __mwd) const noexcept {
+    return static_cast<unsigned>(__mwd.month()) << 16 | hash<chrono::weekday_indexed>{}(__mwd.weekday_indexed());
   }
 };
 template <>
 struct hash<chrono::month_weekday_last> {
-  size_t operator()(const chrono::month_weekday_last& mwdl) const noexcept {
-    return static_cast<unsigned>(mwdl.month()) << 8 | mwdl.weekday_last().weekday().c_encoding();
+  size_t operator()(const chrono::month_weekday_last& __mwdl) const noexcept {
+    return static_cast<unsigned>(__mwdl.month()) << 8 | __mwdl.weekday_last().weekday().c_encoding();
   }
 };
 template <>
 struct hash<chrono::year_month> {
-  size_t operator()(const chrono::year_month& ym) const noexcept {
-    return hash<chrono::year>{}(ym.year()) << 8 | static_cast<unsigned>(ym.month());
+  size_t operator()(const chrono::year_month& __ym) const noexcept {
+    return hash<chrono::year>{}(__ym.year()) << 8 | static_cast<unsigned>(__ym.month());
   }
 };
 template <>
@@ -1094,22 +1094,22 @@ struct hash<chrono::year_month_day> {
 };
 template <>
 struct hash<chrono::year_month_day_last> {
-  size_t operator()(const chrono::year_month_day_last& ymdl) const noexcept {
-    return hash<chrono::year>{}(ymdl.year()) << 8 | static_cast<unsigned>(ymdl.month());
+  size_t operator()(const chrono::year_month_day_last& __ymdl) const noexcept {
+    return hash<chrono::year>{}(__ymdl.year()) << 8 | static_cast<unsigned>(__ymdl.month());
   }
 };
 template <>
 struct hash<chrono::year_month_weekday> {
-  size_t operator()(const chrono::year_month_weekday& ymwd) const noexcept {
-    return hash<chrono::year>{}(ymwd.year()) << 24 | static_cast<unsigned>(ymwd.month()) << 16 |
-           hash<chrono::weekday_indexed>{}(ymwd.weekday_indexed());
+  size_t operator()(const chrono::year_month_weekday& __ymwd) const noexcept {
+    return hash<chrono::year>{}(__ymwd.year()) << 24 | static_cast<unsigned>(__ymwd.month()) << 16 |
+           hash<chrono::weekday_indexed>{}(__ymwd.weekday_indexed());
   }
 };
 template <>
 struct hash<chrono::year_month_weekday_last> {
-  size_t operator()(const chrono::year_month_weekday_last& ymwdl) const noexcept {
-    return hash<chrono::year>{}(ymwdl.year()) << 16 | static_cast<unsigned>(ymwdl.month()) << 8 |
-           ymwdl.weekday().c_encoding();
+  size_t operator()(const chrono::year_month_weekday_last& __ymwdl) const noexcept {
+    return hash<chrono::year>{}(__ymwdl.year()) << 16 | static_cast<unsigned>(__ymwdl.month()) << 8 |
+           __ymwdl.weekday().c_encoding();
   }
 };
 

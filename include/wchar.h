@@ -10,7 +10,7 @@
 extern "C++" {
 #  include <cwchar>
 }
-#  if YCXX_HOSTED
+#  if _YCXX_HOSTED
 using std::wcschr;
 using std::wcspbrk;
 using std::wcsrchr;

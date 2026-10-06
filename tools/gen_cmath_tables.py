@@ -10,6 +10,9 @@ Needs mpmath (pip install mpmath). Re-run after changing the parameters below.
 Each constant is stored as in math_constants.hpp: 0.m (192 bits, truncated) * 2^(exp + 1).
 """
 import pathlib
+import sys
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
+from uglify import uglify_text  # noqa: E402  (the headers spell reserved names, DECISIONS §2)
 from mpmath import mp, mpf, bernoulli, log, pi, floor, taylor, gamma
 
 mp.prec = 20000
@@ -62,5 +65,5 @@ for c in taylor(lambda z: 1 / gamma(1 + z), 0, INV_GAMMA_TERMS - 1):
 out += ["};", "",
         "} // namespace ycxx::detail::fpm", ""]
 path = pathlib.Path(__file__).resolve().parent.parent / "include" / "ycxx" / "core" / "cmath_tables.hpp"
-path.write_text("\n".join(out))
+path.write_text(uglify_text("\n".join(out)))
 print("wrote", path)

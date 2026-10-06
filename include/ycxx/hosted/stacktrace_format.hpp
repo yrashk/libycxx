@@ -8,51 +8,51 @@
 #include <ycxx/core/format_unicode.hpp>
 #include <ycxx/hosted/stacktrace.hpp>
 
-namespace [[gnu::visibility("hidden")]] std {
+namespace [[__gnu__::__visibility__("hidden")]] std {
 
 template <>
 struct formatter<stacktrace_entry> {
 private:
-  ycxx::detail::fmt_spec<char> spec_;
+  __ycxx::__detail::__fmt_spec<char> __spec_;
 
 public:
-  constexpr format_parse_context::iterator parse(format_parse_context& ctx) {
-    auto p = ycxx::detail::fmt_parse_fill_align(ctx.begin(), ctx.end(), spec_);
-    p = ycxx::detail::fmt_parse_width(ctx, p, ctx.end(), spec_);
-    if (p != ctx.end() && *p != '}')
-      ycxx::detail::throw_format_error("std::formatter<std::stacktrace_entry>: invalid stacktrace-entry-format-spec");
+  constexpr format_parse_context::iterator parse(format_parse_context& __ctx) {
+    auto p = __ycxx::__detail::__fmt_parse_fill_align(__ctx.begin(), __ctx.end(), __spec_);
+    p = __ycxx::__detail::__fmt_parse_width(__ctx, p, __ctx.end(), __spec_);
+    if (p != __ctx.end() && *p != '}')
+      __ycxx::__detail::__throw_format_error("std::formatter<std::stacktrace_entry>: invalid stacktrace-entry-format-spec");
     return p;
   }
 
-  template <class FormatContext>
-  typename FormatContext::iterator format(const stacktrace_entry& e, FormatContext& ctx) const {
+  template <class _FormatContext>
+  typename _FormatContext::iterator format(const stacktrace_entry& e, _FormatContext& __ctx) const {
     const string s = std::to_string(e);
-    return ycxx::detail::fmt_write_padded<char>(ctx.out(), spec_, ycxx::detail::fmt_align::left,
-                                                ycxx::detail::fmt_width(spec_, ctx),
-                                                ycxx::detail::uni::width(s.data(), s.size()), s.data(), s.size());
+    return __ycxx::__detail::__fmt_write_padded<char>(__ctx.out(), __spec_, __ycxx::__detail::__fmt_align::left,
+                                                __ycxx::__detail::__fmt_width(__spec_, __ctx),
+                                                __ycxx::__detail::__uni::width(s.data(), s.size()), s.data(), s.size());
   }
 };
 
-template <class Allocator>
-struct formatter<basic_stacktrace<Allocator>> {
-  constexpr format_parse_context::iterator parse(format_parse_context& ctx) {
-    auto p = ctx.begin();
-    if (p != ctx.end() && *p != '}')
-      ycxx::detail::throw_format_error("std::formatter<std::basic_stacktrace>: the format-spec must be empty");
+template <class _Allocator>
+struct formatter<basic_stacktrace<_Allocator>> {
+  constexpr format_parse_context::iterator parse(format_parse_context& __ctx) {
+    auto p = __ctx.begin();
+    if (p != __ctx.end() && *p != '}')
+      __ycxx::__detail::__throw_format_error("std::formatter<std::basic_stacktrace>: the format-spec must be empty");
     return p;
   }
 
-  template <class FormatContext>
-  typename FormatContext::iterator format(const basic_stacktrace<Allocator>& st, FormatContext& ctx) const {
-    const string s = std::to_string(st);
-    return ycxx::detail::fmt_put<char>(ctx.out(), s.data(), s.size());
+  template <class _FormatContext>
+  typename _FormatContext::iterator format(const basic_stacktrace<_Allocator>& __st, _FormatContext& __ctx) const {
+    const string s = std::to_string(__st);
+    return __ycxx::__detail::__fmt_put<char>(__ctx.out(), s.data(), s.size());
   }
 };
 
 // [format.formatter.spec]/3 (not specified otherwise).
 template <>
 inline constexpr bool enable_nonlocking_formatter_optimization<stacktrace_entry> = true;
-template <class Allocator>
-inline constexpr bool enable_nonlocking_formatter_optimization<basic_stacktrace<Allocator>> = true;
+template <class _Allocator>
+inline constexpr bool enable_nonlocking_formatter_optimization<basic_stacktrace<_Allocator>> = true;
 
 } // namespace std

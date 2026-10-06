@@ -17,7 +17,7 @@
 #include <ycxx/core/swap.hpp>
 #include <initializer_list>
 
-namespace [[gnu::visibility("hidden")]] std {
+namespace [[__gnu__::__visibility__("hidden")]] std {
 
 class bad_variant_access : public exception {
 public:
@@ -30,161 +30,161 @@ public:
 
 } // namespace std
 
-namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
-[[noreturn]] [[gnu::cold]] constexpr void throw_bad_variant_access() {
-  ::ycxx::detail::raise_with(ycxx_error_bad_variant_access, "std::bad_variant_access", [] { return std::bad_variant_access(); });
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+[[noreturn]] [[__gnu__::__cold__]] constexpr void __throw_bad_variant_access() {
+  ::__ycxx::__detail::__raise_with(ycxx_error_bad_variant_access, "std::bad_variant_access", [] { return std::bad_variant_access(); });
 }
-}} // namespace ycxx::detail
+}} // namespace __ycxx::__detail
 
-namespace [[gnu::visibility("hidden")]] std {
+namespace [[__gnu__::__visibility__("hidden")]] std {
 
-template <class... Types>
+template <class... _Types>
 class variant;
 
-template <class T>
+template <class _Tp>
 struct variant_size;
-template <class T>
-struct variant_size<const T> : variant_size<T> {};
+template <class _Tp>
+struct variant_size<const _Tp> : variant_size<_Tp> {};
 // [depr.variant] (Annex D); the members repeat the attribute for GCC (see tuple_like.hpp).
-template <class T>
-struct [[deprecated("variant_size<volatile T> is deprecated ([depr.variant])")]] variant_size<volatile T>
-    : integral_constant<size_t, variant_size<T>::value> {
+template <class _Tp>
+struct [[deprecated("variant_size<volatile T> is deprecated ([depr.variant])")]] variant_size<volatile _Tp>
+    : integral_constant<size_t, variant_size<_Tp>::value> {
   [[deprecated("variant_size<volatile T> is deprecated ([depr.variant])")]]
-  static constexpr size_t value = variant_size<T>::value;
+  static constexpr size_t value = variant_size<_Tp>::value;
 };
-template <class T>
-struct [[deprecated("variant_size<const volatile T> is deprecated ([depr.variant])")]] variant_size<const volatile T>
-    : integral_constant<size_t, variant_size<T>::value> {
+template <class _Tp>
+struct [[deprecated("variant_size<const volatile T> is deprecated ([depr.variant])")]] variant_size<const volatile _Tp>
+    : integral_constant<size_t, variant_size<_Tp>::value> {
   [[deprecated("variant_size<const volatile T> is deprecated ([depr.variant])")]]
-  static constexpr size_t value = variant_size<T>::value;
+  static constexpr size_t value = variant_size<_Tp>::value;
 };
-template <class T>
-constexpr size_t variant_size_v = variant_size<T>::value;
-template <class... Types>
-struct variant_size<variant<Types...>> : integral_constant<size_t, sizeof...(Types)> {};
+template <class _Tp>
+constexpr size_t variant_size_v = variant_size<_Tp>::value;
+template <class... _Types>
+struct variant_size<variant<_Types...>> : integral_constant<size_t, sizeof...(_Types)> {};
 
-template <size_t I, class T>
+template <size_t _Ip, class _Tp>
 struct variant_alternative;
-template <size_t I, class T>
-struct variant_alternative<I, const T> {
-  using type = const typename variant_alternative<I, T>::type;
+template <size_t _Ip, class _Tp>
+struct variant_alternative<_Ip, const _Tp> {
+  using type = const typename variant_alternative<_Ip, _Tp>::type;
 };
-template <size_t I, class T>
-struct [[deprecated("variant_alternative<I, volatile T> is deprecated ([depr.variant])")]] variant_alternative<I, volatile T> {
+template <size_t _Ip, class _Tp>
+struct [[deprecated("variant_alternative<I, volatile T> is deprecated ([depr.variant])")]] variant_alternative<_Ip, volatile _Tp> {
   using type [[deprecated("variant_alternative<I, volatile T> is deprecated ([depr.variant])")]] =
-      volatile typename variant_alternative<I, T>::type;
+      volatile typename variant_alternative<_Ip, _Tp>::type;
 };
-template <size_t I, class T>
+template <size_t _Ip, class _Tp>
 struct [[deprecated("variant_alternative<I, const volatile T> is deprecated ([depr.variant])")]]
-    variant_alternative<I, const volatile T> {
+    variant_alternative<_Ip, const volatile _Tp> {
   using type [[deprecated("variant_alternative<I, const volatile T> is deprecated ([depr.variant])")]] =
-      const volatile typename variant_alternative<I, T>::type;
+      const volatile typename variant_alternative<_Ip, _Tp>::type;
 };
-template <size_t I, class T>
-using variant_alternative_t = typename variant_alternative<I, T>::type;
-template <size_t I, class... Types>
-struct variant_alternative<I, variant<Types...>> {
-  static_assert(I < sizeof...(Types), "variant_alternative index out of range");
-  using type = Types...[I];
+template <size_t _Ip, class _Tp>
+using variant_alternative_t = typename variant_alternative<_Ip, _Tp>::type;
+template <size_t _Ip, class... _Types>
+struct variant_alternative<_Ip, variant<_Types...>> {
+  static_assert(_Ip < sizeof...(_Types), "variant_alternative index out of range");
+  using type = _Types...[_Ip];
 };
 
 inline constexpr size_t variant_npos = static_cast<size_t>(-1);
 
 } // namespace std
 
-namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
 
 // ---- index dispatch ---------------------------------------------------------------------------
 // Calls f(integral_constant<size_t, i>{}) for a run-time i < N. Small N uses a compare chain,
 // which both compilers inline (GCC keeps the indirect call through a table); larger N uses a
 // table of function pointers. Both work in constant evaluation.
-inline constexpr std::size_t dispatch_chain_max = 12;
+inline constexpr std::size_t __dispatch_chain_max = 12;
 
-template <std::size_t I, std::size_t N, class R, class F>
-constexpr R dispatch_chain(std::size_t i, F&& f) {
-  if constexpr (I + 1 == N)
-    return static_cast<F&&>(f)(std::integral_constant<std::size_t, I>{});
-  else if (i == I)
-    return static_cast<F&&>(f)(std::integral_constant<std::size_t, I>{});
+template <std::size_t _Ip, std::size_t _Np, class _Rp, class _Fp>
+constexpr _Rp __dispatch_chain(std::size_t i, _Fp&& __f) {
+  if constexpr (_Ip + 1 == _Np)
+    return static_cast<_Fp&&>(__f)(std::integral_constant<std::size_t, _Ip>{});
+  else if (i == _Ip)
+    return static_cast<_Fp&&>(__f)(std::integral_constant<std::size_t, _Ip>{});
   else
-    return ::ycxx::detail::dispatch_chain<I + 1, N, R>(i, static_cast<F&&>(f));
+    return ::__ycxx::__detail::__dispatch_chain<_Ip + 1, _Np, _Rp>(i, static_cast<_Fp&&>(__f));
 }
 
-template <std::size_t N, class F>
-constexpr decltype(auto) dispatch_index(std::size_t i, F&& f) {
-  using R = decltype(static_cast<F&&>(f)(std::integral_constant<std::size_t, 0>{}));
-  if constexpr (N <= dispatch_chain_max)
-    return ::ycxx::detail::dispatch_chain<0, N, R>(i, static_cast<F&&>(f));
+template <std::size_t _Np, class _Fp>
+constexpr decltype(auto) __dispatch_index(std::size_t i, _Fp&& __f) {
+  using _Rp = decltype(static_cast<_Fp&&>(__f)(std::integral_constant<std::size_t, 0>{}));
+  if constexpr (_Np <= __dispatch_chain_max)
+    return ::__ycxx::__detail::__dispatch_chain<0, _Np, _Rp>(i, static_cast<_Fp&&>(__f));
   else
-    return [&]<std::size_t... I>(std::index_sequence<I...>) -> R {
-    static constexpr R (*table[])(F&&) = {+[](F&& g) -> R {
-      return static_cast<F&&>(g)(std::integral_constant<std::size_t, I>{});
+    return [&]<std::size_t... _Ip>(std::index_sequence<_Ip...>) -> _Rp {
+    static constexpr _Rp (*table[])(_Fp&&) = {+[](_Fp&& __g) -> _Rp {
+      return static_cast<_Fp&&>(__g)(std::integral_constant<std::size_t, _Ip>{});
     }...};
-      return table[i](static_cast<F&&>(f));
-    }(std::make_index_sequence<N>{});
+      return table[i](static_cast<_Fp&&>(__f));
+    }(std::make_index_sequence<_Np>{});
 }
 
 // ---- storage ------------------------------------------------------------------------------------
-struct valueless_tag {};
+struct __valueless_tag {};
 
-template <bool TrivialDtor, class... Ts>
-union var_union;
+template <bool _TrivialDtor, class... _Ts>
+union __var_union;
 
-template <bool TD>
-union var_union<TD> {
-  constexpr var_union(valueless_tag) noexcept {}
+template <bool _TD>
+union __var_union<_TD> {
+  constexpr __var_union(__valueless_tag) noexcept {}
 };
 
-template <class T, class... Ts>
-union var_union<true, T, Ts...> {
-  T head;
-  var_union<true, Ts...> tail;
+template <class _Tp, class... _Ts>
+union __var_union<true, _Tp, _Ts...> {
+  _Tp __head;
+  __var_union<true, _Ts...> __tail;
 
-  constexpr var_union(valueless_tag) noexcept : tail(valueless_tag{}) {}
-  template <class... Args>
-  constexpr explicit var_union(std::in_place_index_t<0>, Args&&... args) : head(static_cast<Args&&>(args)...) {}
-  template <std::size_t I, class... Args>
-    requires(I > 0)
-  constexpr explicit var_union(std::in_place_index_t<I>, Args&&... args)
-      : tail(std::in_place_index<I - 1>, static_cast<Args&&>(args)...) {}
+  constexpr __var_union(__valueless_tag) noexcept : __tail(__valueless_tag{}) {}
+  template <class... _Args>
+  constexpr explicit __var_union(std::in_place_index_t<0>, _Args&&... __args) : __head(static_cast<_Args&&>(__args)...) {}
+  template <std::size_t _Ip, class... _Args>
+    requires(_Ip > 0)
+  constexpr explicit __var_union(std::in_place_index_t<_Ip>, _Args&&... __args)
+      : __tail(std::in_place_index<_Ip - 1>, static_cast<_Args&&>(__args)...) {}
 };
 
-template <class T, class... Ts>
-union var_union<false, T, Ts...> {
-  T head;
-  var_union<false, Ts...> tail;
+template <class _Tp, class... _Ts>
+union __var_union<false, _Tp, _Ts...> {
+  _Tp __head;
+  __var_union<false, _Ts...> __tail;
 
-  constexpr var_union(valueless_tag) noexcept : tail(valueless_tag{}) {}
-  template <class... Args>
-  constexpr explicit var_union(std::in_place_index_t<0>, Args&&... args) : head(static_cast<Args&&>(args)...) {}
-  template <std::size_t I, class... Args>
-    requires(I > 0)
-  constexpr explicit var_union(std::in_place_index_t<I>, Args&&... args)
-      : tail(std::in_place_index<I - 1>, static_cast<Args&&>(args)...) {}
-  var_union(const var_union&) = default;
-  var_union(var_union&&) = default;
-  var_union& operator=(const var_union&) = default;
-  var_union& operator=(var_union&&) = default;
-  constexpr ~var_union() {}
+  constexpr __var_union(__valueless_tag) noexcept : __tail(__valueless_tag{}) {}
+  template <class... _Args>
+  constexpr explicit __var_union(std::in_place_index_t<0>, _Args&&... __args) : __head(static_cast<_Args&&>(__args)...) {}
+  template <std::size_t _Ip, class... _Args>
+    requires(_Ip > 0)
+  constexpr explicit __var_union(std::in_place_index_t<_Ip>, _Args&&... __args)
+      : __tail(std::in_place_index<_Ip - 1>, static_cast<_Args&&>(__args)...) {}
+  __var_union(const __var_union&) = default;
+  __var_union(__var_union&&) = default;
+  __var_union& operator=(const __var_union&) = default;
+  __var_union& operator=(__var_union&&) = default;
+  constexpr ~__var_union() {}
 };
 
-template <std::size_t I, class U>
-constexpr auto&& var_raw_get(U&& u) noexcept {
-  if constexpr (I == 0)
-    return static_cast<U&&>(u).head;
+template <std::size_t _Ip, class _Up>
+constexpr auto&& __var_raw_get(_Up&& __u) noexcept {
+  if constexpr (_Ip == 0)
+    return static_cast<_Up&&>(__u).__head;
   else
-    return ::ycxx::detail::var_raw_get<I - 1>(static_cast<U&&>(u).tail);
+    return ::__ycxx::__detail::__var_raw_get<_Ip - 1>(static_cast<_Up&&>(__u).__tail);
 }
 
 // Indices 0..N-1 plus one value for valueless, so N alternatives fit in a type with N+1 values.
-template <std::size_t N>
-using var_index_t = std::conditional_t<(N < 256), unsigned char, std::conditional_t<(N < 65536), unsigned short, unsigned>>;
+template <std::size_t _Np>
+using __var_index_t = std::conditional_t<(_Np < 256), unsigned char, std::conditional_t<(_Np < 65536), unsigned short, unsigned>>;
 
 // ---- converting-constructor alternative selection ([variant.ctor]/14) -----------------------
-template <class Ti>
-void array_init(Ti (&&)[1]);
-template <class Ti, class T>
-concept no_narrowing_into = requires(T&& t) { array_init<Ti>({static_cast<T&&>(t)}); };
+template <class _Ti>
+void __array_init(_Ti (&&)[1]);
+template <class _Ti, class _Tp>
+concept __no_narrowing_into = requires(_Tp&& t) { __array_init<_Ti>({static_cast<_Tp&&>(t)}); };
 
 // The array declaration is tested for a non-class Ti only. A class (or union) element is
 // copy-initialized from t with no narrowing check (narrowing is between arithmetic types), so the
@@ -193,28 +193,28 @@ concept no_narrowing_into = requires(T&& t) { array_init<Ti>({static_cast<T&&>(t
 // decides both. Testing it would also make Clang instantiate the constexpr constructor of Ti that
 // the conversion names (a braced-init-list's elements are potentially constant evaluated), whose
 // body need not be valid for T.
-template <std::size_t I, class Ti>
-struct var_fun {
-  template <class T>
-    requires(std::is_class_v<Ti> || std::is_union_v<Ti> || no_narrowing_into<Ti, T>)
-  static std::integral_constant<std::size_t, I> fun(Ti);
+template <std::size_t _Ip, class _Ti>
+struct __var_fun {
+  template <class _Tp>
+    requires(std::is_class_v<_Ti> || std::is_union_v<_Ti> || __no_narrowing_into<_Ti, _Tp>)
+  static std::integral_constant<std::size_t, _Ip> fun(_Ti);
 };
-template <class Seq, class... Ts>
-struct var_funs;
-template <std::size_t... I, class... Ts>
-struct var_funs<std::index_sequence<I...>, Ts...> : var_fun<I, Ts>... {
-  using var_fun<I, Ts>::fun...;
+template <class _Seq, class... _Ts>
+struct __var_funs;
+template <std::size_t... _Ip, class... _Ts>
+struct __var_funs<std::index_sequence<_Ip...>, _Ts...> : __var_fun<_Ip, _Ts>... {
+  using __var_fun<_Ip, _Ts>::fun...;
 };
-template <class T, class... Ts>
-using var_selected = decltype(var_funs<std::index_sequence_for<Ts...>, Ts...>::template fun<T>(std::declval<T>()));
-template <class T, class Void, class... Ts>
-struct var_select_impl {};
-template <class T, class... Ts>
-struct var_select_impl<T, std::void_t<var_selected<T, Ts...>>, Ts...> {
-  using type = var_selected<T, Ts...>;
+template <class _Tp, class... _Ts>
+using __var_selected = decltype(__var_funs<std::index_sequence_for<_Ts...>, _Ts...>::template fun<_Tp>(std::declval<_Tp>()));
+template <class _Tp, class _Void, class... _Ts>
+struct __var_select_impl {};
+template <class _Tp, class... _Ts>
+struct __var_select_impl<_Tp, std::void_t<__var_selected<_Tp, _Ts...>>, _Ts...> {
+  using type = __var_selected<_Tp, _Ts...>;
 };
-template <class T, class... Ts>
-struct var_select : var_select_impl<T, void, Ts...> {};
+template <class _Tp, class... _Ts>
+struct __var_select : __var_select_impl<_Tp, void, _Ts...> {};
 
 // [variant.ctor]/15.2, then /15.4 (is_constructible_v<Tj, T>), as a class that the converting
 // constructor names in a default template argument. Tj's constructor from T can need that
@@ -222,100 +222,100 @@ struct var_select : var_select_impl<T, void, Ts...> {};
 // llvm.org/PR151328). The nested use then names this class while it is being instantiated, a
 // substitution failure that drops the nested candidate; in a requires-clause the constraint's
 // satisfaction would depend on itself, which is ill-formed.
-template <class V, class Tj, class T, bool = std::is_same_v<std::remove_cvref_t<T>, V>>
-struct var_accepts : std::bool_constant<false> {};
-template <class V, class Tj, class T>
-struct var_accepts<V, Tj, T, false> : std::is_constructible<Tj, T> {};
+template <class _Vp, class _Tj, class _Tp, bool = std::is_same_v<std::remove_cvref_t<_Tp>, _Vp>>
+struct __var_accepts : std::bool_constant<false> {};
+template <class _Vp, class _Tj, class _Tp>
+struct __var_accepts<_Vp, _Tj, _Tp, false> : std::is_constructible<_Tj, _Tp> {};
 
-template <class T, class... Ts>
-consteval std::size_t count_of() {
-  return (std::size_t(0) + ... + std::size_t(std::is_same_v<T, Ts>));
+template <class _Tp, class... _Ts>
+consteval std::size_t __count_of() {
+  return (std::size_t(0) + ... + std::size_t(std::is_same_v<_Tp, _Ts>));
 }
-template <class T, class... Ts>
-consteval std::size_t index_of() {
-  constexpr bool hits[] = {std::is_same_v<T, Ts>..., false};
-  for (std::size_t i = 0; i < sizeof...(Ts); ++i)
-    if (hits[i])
+template <class _Tp, class... _Ts>
+consteval std::size_t __index_of() {
+  constexpr bool __hits[] = {std::is_same_v<_Tp, _Ts>..., false};
+  for (std::size_t i = 0; i < sizeof...(_Ts); ++i)
+    if (__hits[i])
       return i;
-  return sizeof...(Ts);
+  return sizeof...(_Ts);
 }
 
-template <class T>
-inline constexpr bool is_in_place_tag = is_in_place_type<T> || is_in_place_index<T>;
+template <class _Tp>
+inline constexpr bool __is_in_place_tag = __is_in_place_type<_Tp> || __is_in_place_index<_Tp>;
 
-template <class... Ts>
-concept all_trivially_destructible = (std::is_trivially_destructible_v<Ts> && ...);
+template <class... _Ts>
+concept __all_trivially_destructible = (std::is_trivially_destructible_v<_Ts> && ...);
 
 // The one way to reach a variant's storage from outside the class.
-struct variant_access {
-  template <std::size_t I, class V>
-  static constexpr auto&& raw(V&& v) noexcept {
-    return ::ycxx::detail::var_raw_get<I>(static_cast<V&&>(v).u_);
+struct __variant_access {
+  template <std::size_t _Ip, class _Vp>
+  static constexpr auto&& __raw(_Vp&& __v) noexcept {
+    return ::__ycxx::__detail::__var_raw_get<_Ip>(static_cast<_Vp&&>(__v).__u_);
   }
 };
 
-}} // namespace ycxx::detail
+}} // namespace __ycxx::__detail
 
-namespace [[gnu::visibility("hidden")]] std {
+namespace [[__gnu__::__visibility__("hidden")]] std {
 
-template <class... Types>
+template <class... _Types>
 class variant {
-  static_assert(sizeof...(Types) > 0, "variant must have at least one alternative");
-  static_assert(((!is_array_v<Types> && !is_reference_v<Types> && !is_void_v<Types>) && ...),
+  static_assert(sizeof...(_Types) > 0, "variant must have at least one alternative");
+  static_assert(((!is_array_v<_Types> && !is_reference_v<_Types> && !is_void_v<_Types>) && ...),
                 "variant alternatives must be non-array, non-reference, non-void object types");
 
-  static constexpr size_t N = sizeof...(Types);
-  using index_type = ycxx::detail::var_index_t<N>;
-  static constexpr index_type npos_index = static_cast<index_type>(-1);
-  using storage = ycxx::detail::var_union<ycxx::detail::all_trivially_destructible<Types...>, Types...>;
+  static constexpr size_t _Np = sizeof...(_Types);
+  using index_type = __ycxx::__detail::__var_index_t<_Np>;
+  static constexpr index_type __npos_index = static_cast<index_type>(-1);
+  using __storage = __ycxx::__detail::__var_union<__ycxx::__detail::__all_trivially_destructible<_Types...>, _Types...>;
 
-  storage u_;
-  index_type index_;
+  __storage __u_;
+  index_type __index_;
 
-  friend ycxx::detail::variant_access;
+  friend __ycxx::__detail::__variant_access;
 
-  static constexpr bool trivial_copy = (is_trivially_copy_constructible_v<Types> && ...);
-  static constexpr bool trivial_move = (is_trivially_move_constructible_v<Types> && ...);
-  static constexpr bool trivial_copy_assign =
-      ((is_trivially_copy_constructible_v<Types> && is_trivially_copy_assignable_v<Types> &&
-        is_trivially_destructible_v<Types>) &&
+  static constexpr bool __trivial_copy = (is_trivially_copy_constructible_v<_Types> && ...);
+  static constexpr bool __trivial_move = (is_trivially_move_constructible_v<_Types> && ...);
+  static constexpr bool __trivial_copy_assign =
+      ((is_trivially_copy_constructible_v<_Types> && is_trivially_copy_assignable_v<_Types> &&
+        is_trivially_destructible_v<_Types>) &&
        ...);
-  static constexpr bool trivial_move_assign =
-      ((is_trivially_move_constructible_v<Types> && is_trivially_move_assignable_v<Types> &&
-        is_trivially_destructible_v<Types>) &&
+  static constexpr bool __trivial_move_assign =
+      ((is_trivially_move_constructible_v<_Types> && is_trivially_move_assignable_v<_Types> &&
+        is_trivially_destructible_v<_Types>) &&
        ...);
 
   constexpr void destroy() noexcept {
-    if constexpr (!ycxx::detail::all_trivially_destructible<Types...>) {
-      if (index_ != npos_index)
-        ycxx::detail::dispatch_index<N>(index_, [this](auto i) {
-          std::destroy_at(__builtin_addressof(::ycxx::detail::var_raw_get<i>(u_)));
+    if constexpr (!__ycxx::__detail::__all_trivially_destructible<_Types...>) {
+      if (__index_ != __npos_index)
+        __ycxx::__detail::__dispatch_index<_Np>(__index_, [this](auto i) {
+          std::destroy_at(__builtin_addressof(::__ycxx::__detail::__var_raw_get<i>(__u_)));
         });
     }
-    index_ = npos_index;
+    __index_ = __npos_index;
   }
-  template <size_t I, class... Args>
-  constexpr void construct(Args&&... args) {
+  template <size_t _Ip, class... _Args>
+  constexpr void construct(_Args&&... __args) {
     // Precondition: no alternative is active (destroyed or valueless). construct_at replaces the
     // whole union; if the alternative's constructor throws, the guard re-creates a (valueless)
     // union so ~variant never runs ~var_union on an object whose lifetime has ended.
-    struct restore_union {
-      storage* u;
-      bool armed = true;
-      constexpr ~restore_union() {
-        if (armed)
-          std::construct_at(u, ycxx::detail::valueless_tag{});
+    struct __restore_union {
+      __storage* __u;
+      bool __armed = true;
+      constexpr ~__restore_union() {
+        if (__armed)
+          std::construct_at(__u, __ycxx::__detail::__valueless_tag{});
       }
-    } guard{__builtin_addressof(u_)};
-    std::construct_at(__builtin_addressof(u_), in_place_index<I>, static_cast<Args&&>(args)...);
-    guard.armed = false;
-    index_ = static_cast<index_type>(I);
+    } __guard{__builtin_addressof(__u_)};
+    std::construct_at(__builtin_addressof(__u_), in_place_index<_Ip>, static_cast<_Args&&>(__args)...);
+    __guard.__armed = false;
+    __index_ = static_cast<index_type>(_Ip);
   }
-  template <class V>
-  constexpr void construct_from(V&& other) {
-    if (other.index_ != npos_index)
-      ycxx::detail::dispatch_index<N>(other.index_, [&](auto i) {
-        construct<i>(::ycxx::detail::var_raw_get<i>(static_cast<V&&>(other).u_));
+  template <class _Vp>
+  constexpr void __construct_from(_Vp&& other) {
+    if (other.__index_ != __npos_index)
+      __ycxx::__detail::__dispatch_index<_Np>(other.__index_, [&](auto i) {
+        construct<i>(::__ycxx::__detail::__var_raw_get<i>(static_cast<_Vp&&>(other).__u_));
       });
   }
 
@@ -326,281 +326,281 @@ class variant {
   // constructor leaves the variant valueless (/11). Only for a scalar alternative, which has no
   // constructors, is the value computed first (a throwing conversion operator then leaves the old
   // alternative in place); the copy is unobservable.
-  template <size_t I, class... Args>
-  constexpr variant_alternative_t<I, variant>& emplace_impl(Args&&... args) {
-    using Ti = Types...[I];
-    if constexpr (is_scalar_v<Ti> && !is_nothrow_constructible_v<Ti, Args...>) {
-      Ti tmp(static_cast<Args&&>(args)...);
+  template <size_t _Ip, class... _Args>
+  constexpr variant_alternative_t<_Ip, variant>& __emplace_impl(_Args&&... __args) {
+    using _Ti = _Types...[_Ip];
+    if constexpr (is_scalar_v<_Ti> && !is_nothrow_constructible_v<_Ti, _Args...>) {
+      _Ti __tmp(static_cast<_Args&&>(__args)...);
       destroy();
-      construct<I>(static_cast<Ti&&>(tmp));
+      construct<_Ip>(static_cast<_Ti&&>(__tmp));
     } else {
       destroy();
-      construct<I>(static_cast<Args&&>(args)...);
+      construct<_Ip>(static_cast<_Args&&>(__args)...);
     }
-    return ::ycxx::detail::var_raw_get<I>(u_);
+    return ::__ycxx::__detail::__var_raw_get<_Ip>(__u_);
   }
 
 public:
   // ---- [variant.ctor] ----
-  constexpr variant() noexcept(is_nothrow_default_constructible_v<Types...[0]>)
-    requires is_default_constructible_v<Types...[0]>
-      : u_(in_place_index<0>), index_(0) {}
+  constexpr variant() noexcept(is_nothrow_default_constructible_v<_Types...[0]>)
+    requires is_default_constructible_v<_Types...[0]>
+      : __u_(in_place_index<0>), __index_(0) {}
 
   constexpr variant(const variant&)
-    requires((is_copy_constructible_v<Types> && ...) && trivial_copy)
+    requires((is_copy_constructible_v<_Types> && ...) && __trivial_copy)
   = default;
-  constexpr variant(const variant& w) noexcept((is_nothrow_copy_constructible_v<Types> && ...))
-    requires((is_copy_constructible_v<Types> && ...) && !trivial_copy)
-      : u_(ycxx::detail::valueless_tag{}), index_(npos_index) {
-    construct_from(w);
+  constexpr variant(const variant& __w) noexcept((is_nothrow_copy_constructible_v<_Types> && ...))
+    requires((is_copy_constructible_v<_Types> && ...) && !__trivial_copy)
+      : __u_(__ycxx::__detail::__valueless_tag{}), __index_(__npos_index) {
+    __construct_from(__w);
   }
   // "Defined as deleted unless ...": an explicitly deleted overload keeps the class trivially
   // copyable on Clang when copying is unavailable.
   constexpr variant(const variant&)
-    requires(!(is_copy_constructible_v<Types> && ...))
+    requires(!(is_copy_constructible_v<_Types> && ...))
   = delete;
   constexpr variant(variant&&)
-    requires((is_move_constructible_v<Types> && ...) && trivial_move)
+    requires((is_move_constructible_v<_Types> && ...) && __trivial_move)
   = default;
-  constexpr variant(variant&& w) noexcept((is_nothrow_move_constructible_v<Types> && ...))
-    requires((is_move_constructible_v<Types> && ...) && !trivial_move)
-      : u_(ycxx::detail::valueless_tag{}), index_(npos_index) {
-    construct_from(static_cast<variant&&>(w));
+  constexpr variant(variant&& __w) noexcept((is_nothrow_move_constructible_v<_Types> && ...))
+    requires((is_move_constructible_v<_Types> && ...) && !__trivial_move)
+      : __u_(__ycxx::__detail::__valueless_tag{}), __index_(__npos_index) {
+    __construct_from(static_cast<variant&&>(__w));
   }
 
-  template <class T, class J = typename ycxx::detail::var_select<T, Types...>::type,
-            class = enable_if_t<ycxx::detail::var_accepts<variant, Types...[J::value], T>::value>>
-    requires(!ycxx::detail::is_in_place_tag<remove_cvref_t<T>>)
-  constexpr variant(T&& t) noexcept(is_nothrow_constructible_v<Types...[J::value], T>)
-      : u_(in_place_index<J::value>, static_cast<T&&>(t)), index_(J::value) {}
+  template <class _Tp, class _Jp = typename __ycxx::__detail::__var_select<_Tp, _Types...>::type,
+            class = enable_if_t<__ycxx::__detail::__var_accepts<variant, _Types...[_Jp::value], _Tp>::value>>
+    requires(!__ycxx::__detail::__is_in_place_tag<remove_cvref_t<_Tp>>)
+  constexpr variant(_Tp&& t) noexcept(is_nothrow_constructible_v<_Types...[_Jp::value], _Tp>)
+      : __u_(in_place_index<_Jp::value>, static_cast<_Tp&&>(t)), __index_(_Jp::value) {}
 
-  template <class T, class... Args>
-    requires(ycxx::detail::count_of<T, Types...>() == 1) && is_constructible_v<T, Args...>
-  constexpr explicit variant(in_place_type_t<T>, Args&&... args)
-      : u_(in_place_index<ycxx::detail::index_of<T, Types...>()>, static_cast<Args&&>(args)...),
-        index_(ycxx::detail::index_of<T, Types...>()) {}
-  template <class T, class U, class... Args>
-    requires(ycxx::detail::count_of<T, Types...>() == 1) && is_constructible_v<T, initializer_list<U>&, Args...>
-  constexpr explicit variant(in_place_type_t<T>, initializer_list<U> il, Args&&... args)
-      : u_(in_place_index<ycxx::detail::index_of<T, Types...>()>, il, static_cast<Args&&>(args)...),
-        index_(ycxx::detail::index_of<T, Types...>()) {}
-  template <size_t I, class... Args>
-    requires(I < N) && is_constructible_v<Types...[I], Args...>
-  constexpr explicit variant(in_place_index_t<I>, Args&&... args)
-      : u_(in_place_index<I>, static_cast<Args&&>(args)...), index_(I) {}
-  template <size_t I, class U, class... Args>
-    requires(I < N) && is_constructible_v<Types...[I], initializer_list<U>&, Args...>
-  constexpr explicit variant(in_place_index_t<I>, initializer_list<U> il, Args&&... args)
-      : u_(in_place_index<I>, il, static_cast<Args&&>(args)...), index_(I) {}
+  template <class _Tp, class... _Args>
+    requires(__ycxx::__detail::__count_of<_Tp, _Types...>() == 1) && is_constructible_v<_Tp, _Args...>
+  constexpr explicit variant(in_place_type_t<_Tp>, _Args&&... __args)
+      : __u_(in_place_index<__ycxx::__detail::__index_of<_Tp, _Types...>()>, static_cast<_Args&&>(__args)...),
+        __index_(__ycxx::__detail::__index_of<_Tp, _Types...>()) {}
+  template <class _Tp, class _Up, class... _Args>
+    requires(__ycxx::__detail::__count_of<_Tp, _Types...>() == 1) && is_constructible_v<_Tp, initializer_list<_Up>&, _Args...>
+  constexpr explicit variant(in_place_type_t<_Tp>, initializer_list<_Up> il, _Args&&... __args)
+      : __u_(in_place_index<__ycxx::__detail::__index_of<_Tp, _Types...>()>, il, static_cast<_Args&&>(__args)...),
+        __index_(__ycxx::__detail::__index_of<_Tp, _Types...>()) {}
+  template <size_t _Ip, class... _Args>
+    requires(_Ip < _Np) && is_constructible_v<_Types...[_Ip], _Args...>
+  constexpr explicit variant(in_place_index_t<_Ip>, _Args&&... __args)
+      : __u_(in_place_index<_Ip>, static_cast<_Args&&>(__args)...), __index_(_Ip) {}
+  template <size_t _Ip, class _Up, class... _Args>
+    requires(_Ip < _Np) && is_constructible_v<_Types...[_Ip], initializer_list<_Up>&, _Args...>
+  constexpr explicit variant(in_place_index_t<_Ip>, initializer_list<_Up> il, _Args&&... __args)
+      : __u_(in_place_index<_Ip>, il, static_cast<_Args&&>(__args)...), __index_(_Ip) {}
 
   // ---- [variant.dtor] ----
   constexpr ~variant()
-    requires ycxx::detail::all_trivially_destructible<Types...>
+    requires __ycxx::__detail::__all_trivially_destructible<_Types...>
   = default;
   constexpr ~variant() { destroy(); }
 
   // ---- [variant.assign] ----
   constexpr variant& operator=(const variant&)
-    requires((is_copy_constructible_v<Types> && is_copy_assignable_v<Types>) && ...) && trivial_copy_assign
+    requires((is_copy_constructible_v<_Types> && is_copy_assignable_v<_Types>) && ...) && __trivial_copy_assign
   = default;
-  constexpr variant& operator=(const variant& rhs)
-    requires((is_copy_constructible_v<Types> && is_copy_assignable_v<Types>) && ...) && (!trivial_copy_assign)
+  constexpr variant& operator=(const variant& __rhs)
+    requires((is_copy_constructible_v<_Types> && is_copy_assignable_v<_Types>) && ...) && (!__trivial_copy_assign)
   {
-    if (rhs.index_ == npos_index) {
+    if (__rhs.__index_ == __npos_index) {
       destroy();
-    } else if (index_ == rhs.index_) {
-      ycxx::detail::dispatch_index<N>(index_, [&](auto i) {
-        ::ycxx::detail::var_raw_get<i>(u_) = ::ycxx::detail::var_raw_get<i>(rhs.u_);
+    } else if (__index_ == __rhs.__index_) {
+      __ycxx::__detail::__dispatch_index<_Np>(__index_, [&](auto i) {
+        ::__ycxx::__detail::__var_raw_get<i>(__u_) = ::__ycxx::__detail::__var_raw_get<i>(__rhs.__u_);
       });
     } else {
-      ycxx::detail::dispatch_index<N>(rhs.index_, [&](auto j) {
-        using Tj = Types...[j];
-        if constexpr (is_nothrow_copy_constructible_v<Tj> || !is_nothrow_move_constructible_v<Tj>)
-          this->emplace<j>(::ycxx::detail::var_raw_get<j>(rhs.u_));
+      __ycxx::__detail::__dispatch_index<_Np>(__rhs.__index_, [&](auto __j) {
+        using _Tj = _Types...[__j];
+        if constexpr (is_nothrow_copy_constructible_v<_Tj> || !is_nothrow_move_constructible_v<_Tj>)
+          this->emplace<__j>(::__ycxx::__detail::__var_raw_get<__j>(__rhs.__u_));
         else
         {
           // [variant.assign]/2.5 says operator=(variant(rhs)); doing the move directly avoids
           // recursing into this function when variant's move assignment is constrained out.
-          variant tmp(rhs);
-          this->emplace<j>(static_cast<Tj&&>(::ycxx::detail::var_raw_get<j>(tmp.u_)));
+          variant __tmp(__rhs);
+          this->emplace<__j>(static_cast<_Tj&&>(::__ycxx::__detail::__var_raw_get<__j>(__tmp.__u_)));
         }
       });
     }
     return *this;
   }
   constexpr variant& operator=(const variant&)
-    requires(!((is_copy_constructible_v<Types> && is_copy_assignable_v<Types>) && ...))
+    requires(!((is_copy_constructible_v<_Types> && is_copy_assignable_v<_Types>) && ...))
   = delete;
   constexpr variant& operator=(variant&&)
-    requires((is_move_constructible_v<Types> && is_move_assignable_v<Types>) && ...) && trivial_move_assign
+    requires((is_move_constructible_v<_Types> && is_move_assignable_v<_Types>) && ...) && __trivial_move_assign
   = default;
-  constexpr variant& operator=(variant&& rhs) noexcept(((is_nothrow_move_constructible_v<Types> &&
-                                                          is_nothrow_move_assignable_v<Types>) &&
+  constexpr variant& operator=(variant&& __rhs) noexcept(((is_nothrow_move_constructible_v<_Types> &&
+                                                          is_nothrow_move_assignable_v<_Types>) &&
                                                          ...))
-    requires((is_move_constructible_v<Types> && is_move_assignable_v<Types>) && ...) && (!trivial_move_assign)
+    requires((is_move_constructible_v<_Types> && is_move_assignable_v<_Types>) && ...) && (!__trivial_move_assign)
   {
-    if (rhs.index_ == npos_index) {
+    if (__rhs.__index_ == __npos_index) {
       destroy();
-    } else if (index_ == rhs.index_) {
-      ycxx::detail::dispatch_index<N>(index_, [&](auto i) {
-        ::ycxx::detail::var_raw_get<i>(u_) = static_cast<Types...[i]&&>(::ycxx::detail::var_raw_get<i>(rhs.u_));
+    } else if (__index_ == __rhs.__index_) {
+      __ycxx::__detail::__dispatch_index<_Np>(__index_, [&](auto i) {
+        ::__ycxx::__detail::__var_raw_get<i>(__u_) = static_cast<_Types...[i]&&>(::__ycxx::__detail::__var_raw_get<i>(__rhs.__u_));
       });
     } else {
-      ycxx::detail::dispatch_index<N>(rhs.index_, [&](auto j) {
-        this->emplace<j>(static_cast<Types...[j]&&>(::ycxx::detail::var_raw_get<j>(rhs.u_)));
+      __ycxx::__detail::__dispatch_index<_Np>(__rhs.__index_, [&](auto __j) {
+        this->emplace<__j>(static_cast<_Types...[__j]&&>(::__ycxx::__detail::__var_raw_get<__j>(__rhs.__u_)));
       });
     }
     return *this;
   }
 
-  template <class T, class J = ycxx::detail::var_selected<T, Types...>>
-    requires(!is_same_v<remove_cvref_t<T>, variant>) && is_assignable_v<Types...[J::value]&, T> &&
-            is_constructible_v<Types...[J::value], T>
-  constexpr variant& operator=(T&& t) noexcept(is_nothrow_assignable_v<Types...[J::value]&, T> &&
-                                               is_nothrow_constructible_v<Types...[J::value], T>) {
-    constexpr size_t j = J::value;
-    using Tj = Types...[j];
-    if (index_ == j)
-      ::ycxx::detail::var_raw_get<j>(u_) = static_cast<T&&>(t);
-    else if constexpr (is_nothrow_constructible_v<Tj, T> || !is_nothrow_move_constructible_v<Tj>)
-      emplace<j>(static_cast<T&&>(t));
+  template <class _Tp, class _Jp = __ycxx::__detail::__var_selected<_Tp, _Types...>>
+    requires(!is_same_v<remove_cvref_t<_Tp>, variant>) && is_assignable_v<_Types...[_Jp::value]&, _Tp> &&
+            is_constructible_v<_Types...[_Jp::value], _Tp>
+  constexpr variant& operator=(_Tp&& t) noexcept(is_nothrow_assignable_v<_Types...[_Jp::value]&, _Tp> &&
+                                               is_nothrow_constructible_v<_Types...[_Jp::value], _Tp>) {
+    constexpr size_t __j = _Jp::value;
+    using _Tj = _Types...[__j];
+    if (__index_ == __j)
+      ::__ycxx::__detail::__var_raw_get<__j>(__u_) = static_cast<_Tp&&>(t);
+    else if constexpr (is_nothrow_constructible_v<_Tj, _Tp> || !is_nothrow_move_constructible_v<_Tj>)
+      emplace<__j>(static_cast<_Tp&&>(t));
     else
-      emplace<j>(Tj(static_cast<T&&>(t)));
+      emplace<__j>(_Tj(static_cast<_Tp&&>(t)));
     return *this;
   }
 
   // ---- [variant.mod] ----
-  template <class T, class... Args>
-    requires(ycxx::detail::count_of<T, Types...>() == 1) && is_constructible_v<T, Args...>
-  constexpr T& emplace(Args&&... args) {
-    return emplace<ycxx::detail::index_of<T, Types...>()>(static_cast<Args&&>(args)...);
+  template <class _Tp, class... _Args>
+    requires(__ycxx::__detail::__count_of<_Tp, _Types...>() == 1) && is_constructible_v<_Tp, _Args...>
+  constexpr _Tp& emplace(_Args&&... __args) {
+    return emplace<__ycxx::__detail::__index_of<_Tp, _Types...>()>(static_cast<_Args&&>(__args)...);
   }
-  template <class T, class U, class... Args>
-    requires(ycxx::detail::count_of<T, Types...>() == 1) && is_constructible_v<T, initializer_list<U>&, Args...>
-  constexpr T& emplace(initializer_list<U> il, Args&&... args) {
-    return emplace<ycxx::detail::index_of<T, Types...>()>(il, static_cast<Args&&>(args)...);
+  template <class _Tp, class _Up, class... _Args>
+    requires(__ycxx::__detail::__count_of<_Tp, _Types...>() == 1) && is_constructible_v<_Tp, initializer_list<_Up>&, _Args...>
+  constexpr _Tp& emplace(initializer_list<_Up> il, _Args&&... __args) {
+    return emplace<__ycxx::__detail::__index_of<_Tp, _Types...>()>(il, static_cast<_Args&&>(__args)...);
   }
-  template <size_t I, class... Args>
-    requires(I < N) && is_constructible_v<Types...[I], Args...>
-  constexpr variant_alternative_t<I, variant>& emplace(Args&&... args) {
-    return emplace_impl<I>(static_cast<Args&&>(args)...);
+  template <size_t _Ip, class... _Args>
+    requires(_Ip < _Np) && is_constructible_v<_Types...[_Ip], _Args...>
+  constexpr variant_alternative_t<_Ip, variant>& emplace(_Args&&... __args) {
+    return __emplace_impl<_Ip>(static_cast<_Args&&>(__args)...);
   }
 
-  template <size_t I, class U, class... Args>
-    requires(I < N) && is_constructible_v<Types...[I], initializer_list<U>&, Args...>
-  constexpr variant_alternative_t<I, variant>& emplace(initializer_list<U> il, Args&&... args) {
-    return emplace_impl<I>(il, static_cast<Args&&>(args)...);
+  template <size_t _Ip, class _Up, class... _Args>
+    requires(_Ip < _Np) && is_constructible_v<_Types...[_Ip], initializer_list<_Up>&, _Args...>
+  constexpr variant_alternative_t<_Ip, variant>& emplace(initializer_list<_Up> il, _Args&&... __args) {
+    return __emplace_impl<_Ip>(il, static_cast<_Args&&>(__args)...);
   }
 
   // ---- [variant.status] ----
-  constexpr bool valueless_by_exception() const noexcept { return index_ == npos_index; }
-  constexpr size_t index() const noexcept { return index_ == npos_index ? variant_npos : index_; }
+  constexpr bool valueless_by_exception() const noexcept { return __index_ == __npos_index; }
+  constexpr size_t index() const noexcept { return __index_ == __npos_index ? variant_npos : __index_; }
 
   // ---- [variant.swap] ----
-  constexpr void swap(variant& rhs) noexcept(((is_nothrow_move_constructible_v<Types> &&
-                                                is_nothrow_swappable_v<Types>) &&
+  constexpr void swap(variant& __rhs) noexcept(((is_nothrow_move_constructible_v<_Types> &&
+                                                is_nothrow_swappable_v<_Types>) &&
                                                ...)) {
-    static_assert((is_move_constructible_v<Types> && ...), "variant::swap: alternatives must be move constructible");
-    if (index_ == npos_index && rhs.index_ == npos_index)
+    static_assert((is_move_constructible_v<_Types> && ...), "variant::swap: alternatives must be move constructible");
+    if (__index_ == __npos_index && __rhs.__index_ == __npos_index)
       return;
-    if (index_ == rhs.index_) {
-      ycxx::detail::dispatch_index<N>(index_, [&](auto i) {
-        ycxx::detail::swap_adl::do_swap(::ycxx::detail::var_raw_get<i>(u_), ::ycxx::detail::var_raw_get<i>(rhs.u_));
+    if (__index_ == __rhs.__index_) {
+      __ycxx::__detail::__dispatch_index<_Np>(__index_, [&](auto i) {
+        __ycxx::__detail::__swap_adl::__do_swap(::__ycxx::__detail::__var_raw_get<i>(__u_), ::__ycxx::__detail::__var_raw_get<i>(__rhs.__u_));
       });
       return;
     }
-    variant tmp(static_cast<variant&&>(rhs));
-    rhs.destroy();
-    rhs.construct_from(static_cast<variant&&>(*this));
+    variant __tmp(static_cast<variant&&>(__rhs));
+    __rhs.destroy();
+    __rhs.__construct_from(static_cast<variant&&>(*this));
     destroy();
-    construct_from(static_cast<variant&&>(tmp));
+    __construct_from(static_cast<variant&&>(__tmp));
   }
 
   // ---- [variant.visit] member forms ----
-  template <int = 0, class Self, class Visitor>
-  constexpr decltype(auto) visit(this Self&& self, Visitor&& vis);
-  template <class R, class Self, class Visitor>
-  constexpr R visit(this Self&& self, Visitor&& vis);
+  template <int = 0, class _Self, class _Visitor>
+  constexpr decltype(auto) visit(this _Self&& __self, _Visitor&& __vis);
+  template <class _Rp, class _Self, class _Visitor>
+  constexpr _Rp visit(this _Self&& __self, _Visitor&& __vis);
 };
 
 // ---- [variant.get] ----
 
-template <class T, class... Types>
-constexpr bool holds_alternative(const variant<Types...>& v) noexcept {
-  static_assert(ycxx::detail::count_of<T, Types...>() == 1, "holds_alternative: T must occur exactly once");
-  return v.index() == ycxx::detail::index_of<T, Types...>();
+template <class _Tp, class... _Types>
+constexpr bool holds_alternative(const variant<_Types...>& __v) noexcept {
+  static_assert(__ycxx::__detail::__count_of<_Tp, _Types...>() == 1, "holds_alternative: T must occur exactly once");
+  return __v.index() == __ycxx::__detail::__index_of<_Tp, _Types...>();
 }
 
-template <size_t I, class... Types>
-constexpr variant_alternative_t<I, variant<Types...>>& get(variant<Types...>& v) {
-  static_assert(I < sizeof...(Types), "std::get: variant index out of range");
-  if (v.index() != I)
-    ycxx::detail::throw_bad_variant_access();
-  return ycxx::detail::variant_access::raw<I>(v);
+template <size_t _Ip, class... _Types>
+constexpr variant_alternative_t<_Ip, variant<_Types...>>& get(variant<_Types...>& __v) {
+  static_assert(_Ip < sizeof...(_Types), "std::get: variant index out of range");
+  if (__v.index() != _Ip)
+    __ycxx::__detail::__throw_bad_variant_access();
+  return __ycxx::__detail::__variant_access::__raw<_Ip>(__v);
 }
-template <size_t I, class... Types>
-constexpr variant_alternative_t<I, variant<Types...>>&& get(variant<Types...>&& v) {
-  static_assert(I < sizeof...(Types), "std::get: variant index out of range");
-  if (v.index() != I)
-    ycxx::detail::throw_bad_variant_access();
-  return static_cast<variant_alternative_t<I, variant<Types...>>&&>(ycxx::detail::variant_access::raw<I>(v));
+template <size_t _Ip, class... _Types>
+constexpr variant_alternative_t<_Ip, variant<_Types...>>&& get(variant<_Types...>&& __v) {
+  static_assert(_Ip < sizeof...(_Types), "std::get: variant index out of range");
+  if (__v.index() != _Ip)
+    __ycxx::__detail::__throw_bad_variant_access();
+  return static_cast<variant_alternative_t<_Ip, variant<_Types...>>&&>(__ycxx::__detail::__variant_access::__raw<_Ip>(__v));
 }
-template <size_t I, class... Types>
-constexpr const variant_alternative_t<I, variant<Types...>>& get(const variant<Types...>& v) {
-  static_assert(I < sizeof...(Types), "std::get: variant index out of range");
-  if (v.index() != I)
-    ycxx::detail::throw_bad_variant_access();
-  return ycxx::detail::variant_access::raw<I>(v);
+template <size_t _Ip, class... _Types>
+constexpr const variant_alternative_t<_Ip, variant<_Types...>>& get(const variant<_Types...>& __v) {
+  static_assert(_Ip < sizeof...(_Types), "std::get: variant index out of range");
+  if (__v.index() != _Ip)
+    __ycxx::__detail::__throw_bad_variant_access();
+  return __ycxx::__detail::__variant_access::__raw<_Ip>(__v);
 }
-template <size_t I, class... Types>
-constexpr const variant_alternative_t<I, variant<Types...>>&& get(const variant<Types...>&& v) {
-  static_assert(I < sizeof...(Types), "std::get: variant index out of range");
-  if (v.index() != I)
-    ycxx::detail::throw_bad_variant_access();
-  return static_cast<const variant_alternative_t<I, variant<Types...>>&&>(ycxx::detail::variant_access::raw<I>(v));
-}
-
-template <class T, class... Types>
-constexpr T& get(variant<Types...>& v) {
-  static_assert(ycxx::detail::count_of<T, Types...>() == 1, "std::get<T>: T must occur exactly once");
-  return std::get<ycxx::detail::index_of<T, Types...>()>(v);
-}
-template <class T, class... Types>
-constexpr T&& get(variant<Types...>&& v) {
-  static_assert(ycxx::detail::count_of<T, Types...>() == 1, "std::get<T>: T must occur exactly once");
-  return std::get<ycxx::detail::index_of<T, Types...>()>(static_cast<variant<Types...>&&>(v));
-}
-template <class T, class... Types>
-constexpr const T& get(const variant<Types...>& v) {
-  static_assert(ycxx::detail::count_of<T, Types...>() == 1, "std::get<T>: T must occur exactly once");
-  return std::get<ycxx::detail::index_of<T, Types...>()>(v);
-}
-template <class T, class... Types>
-constexpr const T&& get(const variant<Types...>&& v) {
-  static_assert(ycxx::detail::count_of<T, Types...>() == 1, "std::get<T>: T must occur exactly once");
-  return std::get<ycxx::detail::index_of<T, Types...>()>(static_cast<const variant<Types...>&&>(v));
+template <size_t _Ip, class... _Types>
+constexpr const variant_alternative_t<_Ip, variant<_Types...>>&& get(const variant<_Types...>&& __v) {
+  static_assert(_Ip < sizeof...(_Types), "std::get: variant index out of range");
+  if (__v.index() != _Ip)
+    __ycxx::__detail::__throw_bad_variant_access();
+  return static_cast<const variant_alternative_t<_Ip, variant<_Types...>>&&>(__ycxx::__detail::__variant_access::__raw<_Ip>(__v));
 }
 
-template <size_t I, class... Types>
-constexpr add_pointer_t<variant_alternative_t<I, variant<Types...>>> get_if(variant<Types...>* v) noexcept {
-  static_assert(I < sizeof...(Types), "std::get_if: variant index out of range");
-  return v && v->index() == I ? __builtin_addressof(ycxx::detail::variant_access::raw<I>(*v)) : nullptr;
+template <class _Tp, class... _Types>
+constexpr _Tp& get(variant<_Types...>& __v) {
+  static_assert(__ycxx::__detail::__count_of<_Tp, _Types...>() == 1, "std::get<T>: T must occur exactly once");
+  return std::get<__ycxx::__detail::__index_of<_Tp, _Types...>()>(__v);
 }
-template <size_t I, class... Types>
-constexpr add_pointer_t<const variant_alternative_t<I, variant<Types...>>> get_if(
-    const variant<Types...>* v) noexcept {
-  static_assert(I < sizeof...(Types), "std::get_if: variant index out of range");
-  return v && v->index() == I ? __builtin_addressof(ycxx::detail::variant_access::raw<I>(*v)) : nullptr;
+template <class _Tp, class... _Types>
+constexpr _Tp&& get(variant<_Types...>&& __v) {
+  static_assert(__ycxx::__detail::__count_of<_Tp, _Types...>() == 1, "std::get<T>: T must occur exactly once");
+  return std::get<__ycxx::__detail::__index_of<_Tp, _Types...>()>(static_cast<variant<_Types...>&&>(__v));
 }
-template <class T, class... Types>
-constexpr add_pointer_t<T> get_if(variant<Types...>* v) noexcept {
-  static_assert(ycxx::detail::count_of<T, Types...>() == 1, "std::get_if<T>: T must occur exactly once");
-  return std::get_if<ycxx::detail::index_of<T, Types...>()>(v);
+template <class _Tp, class... _Types>
+constexpr const _Tp& get(const variant<_Types...>& __v) {
+  static_assert(__ycxx::__detail::__count_of<_Tp, _Types...>() == 1, "std::get<T>: T must occur exactly once");
+  return std::get<__ycxx::__detail::__index_of<_Tp, _Types...>()>(__v);
 }
-template <class T, class... Types>
-constexpr add_pointer_t<const T> get_if(const variant<Types...>* v) noexcept {
-  static_assert(ycxx::detail::count_of<T, Types...>() == 1, "std::get_if<T>: T must occur exactly once");
-  return std::get_if<ycxx::detail::index_of<T, Types...>()>(v);
+template <class _Tp, class... _Types>
+constexpr const _Tp&& get(const variant<_Types...>&& __v) {
+  static_assert(__ycxx::__detail::__count_of<_Tp, _Types...>() == 1, "std::get<T>: T must occur exactly once");
+  return std::get<__ycxx::__detail::__index_of<_Tp, _Types...>()>(static_cast<const variant<_Types...>&&>(__v));
+}
+
+template <size_t _Ip, class... _Types>
+constexpr add_pointer_t<variant_alternative_t<_Ip, variant<_Types...>>> get_if(variant<_Types...>* __v) noexcept {
+  static_assert(_Ip < sizeof...(_Types), "std::get_if: variant index out of range");
+  return __v && __v->index() == _Ip ? __builtin_addressof(__ycxx::__detail::__variant_access::__raw<_Ip>(*__v)) : nullptr;
+}
+template <size_t _Ip, class... _Types>
+constexpr add_pointer_t<const variant_alternative_t<_Ip, variant<_Types...>>> get_if(
+    const variant<_Types...>* __v) noexcept {
+  static_assert(_Ip < sizeof...(_Types), "std::get_if: variant index out of range");
+  return __v && __v->index() == _Ip ? __builtin_addressof(__ycxx::__detail::__variant_access::__raw<_Ip>(*__v)) : nullptr;
+}
+template <class _Tp, class... _Types>
+constexpr add_pointer_t<_Tp> get_if(variant<_Types...>* __v) noexcept {
+  static_assert(__ycxx::__detail::__count_of<_Tp, _Types...>() == 1, "std::get_if<T>: T must occur exactly once");
+  return std::get_if<__ycxx::__detail::__index_of<_Tp, _Types...>()>(__v);
+}
+template <class _Tp, class... _Types>
+constexpr add_pointer_t<const _Tp> get_if(const variant<_Types...>* __v) noexcept {
+  static_assert(__ycxx::__detail::__count_of<_Tp, _Types...>() == 1, "std::get_if<T>: T must occur exactly once");
+  return std::get_if<__ycxx::__detail::__index_of<_Tp, _Types...>()>(__v);
 }
 
 } // namespace std
@@ -608,251 +608,251 @@ constexpr add_pointer_t<const T> get_if(const variant<Types...>* v) noexcept {
 // =============================================================================================
 // [variant.visit]
 // =============================================================================================
-namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
 
-template <class... Ts>
-constexpr auto&& as_variant(std::variant<Ts...>& v) noexcept {
-  return v;
+template <class... _Ts>
+constexpr auto&& __as_variant(std::variant<_Ts...>& __v) noexcept {
+  return __v;
 }
-template <class... Ts>
-constexpr auto&& as_variant(const std::variant<Ts...>& v) noexcept {
-  return v;
+template <class... _Ts>
+constexpr auto&& __as_variant(const std::variant<_Ts...>& __v) noexcept {
+  return __v;
 }
-template <class... Ts>
-constexpr auto&& as_variant(std::variant<Ts...>&& v) noexcept {
-  return static_cast<std::variant<Ts...>&&>(v);
+template <class... _Ts>
+constexpr auto&& __as_variant(std::variant<_Ts...>&& __v) noexcept {
+  return static_cast<std::variant<_Ts...>&&>(__v);
 }
-template <class... Ts>
-constexpr auto&& as_variant(const std::variant<Ts...>&& v) noexcept {
-  return static_cast<const std::variant<Ts...>&&>(v);
+template <class... _Ts>
+constexpr auto&& __as_variant(const std::variant<_Ts...>&& __v) noexcept {
+  return static_cast<const std::variant<_Ts...>&&>(__v);
 }
-template <class V>
-using as_variant_t = decltype(::ycxx::detail::as_variant(std::declval<V>()));
+template <class _Vp>
+using __as_variant_t = decltype(::__ycxx::__detail::__as_variant(std::declval<_Vp>()));
 
 // GET<m>(v) on an already-validated index.
-template <std::size_t I, class V>
-constexpr decltype(auto) var_unchecked_get(V&& v) noexcept {
-  using Alt = std::variant_alternative_t<I, std::remove_cvref_t<V>>;
-  using Ref = copy_cvref<V&&, Alt>;
-  return static_cast<Ref>(ycxx::detail::variant_access::raw<I>(v));
+template <std::size_t _Ip, class _Vp>
+constexpr decltype(auto) __var_unchecked_get(_Vp&& __v) noexcept {
+  using _Alt = std::variant_alternative_t<_Ip, std::remove_cvref_t<_Vp>>;
+  using _Ref = __copy_cvref<_Vp&&, _Alt>;
+  return static_cast<_Ref>(__ycxx::__detail::__variant_access::__raw<_Ip>(__v));
 }
 
 // Result type of the visitor for the all-zero index pack (the Mandates check compares every
 // other combination against it).
-template <class Vis, class... V>
-using visit_result_t = decltype(::ycxx::detail::invoke(std::declval<Vis>(), ::ycxx::detail::var_unchecked_get<0>(std::declval<V>())...));
+template <class _Vis, class... _Vp>
+using __visit_result_t = decltype(::__ycxx::__detail::invoke(std::declval<_Vis>(), ::__ycxx::__detail::__var_unchecked_get<0>(std::declval<_Vp>())...));
 
-template <class R, bool Exact, class Vis>
-constexpr R visit_finish(Vis&& vis, auto&&... alts) {
+template <class _Rp, bool _Exact, class _Vis>
+constexpr _Rp __visit_finish(_Vis&& __vis, auto&&... __alts) {
   // [variant.visit]/5 Mandates: one type and value category for every combination.
-  static_assert(!Exact || std::is_same_v<decltype(::ycxx::detail::invoke(static_cast<Vis&&>(vis),
-                                                                         static_cast<decltype(alts)&&>(alts)...)),
-                                         R>,
+  static_assert(!_Exact || std::is_same_v<decltype(::__ycxx::__detail::invoke(static_cast<_Vis&&>(__vis),
+                                                                         static_cast<decltype(__alts)&&>(__alts)...)),
+                                         _Rp>,
                 "std::visit: the visitor must return the same type and value category for all alternatives");
-  if constexpr (std::is_void_v<R>)
-    static_cast<void>(::ycxx::detail::invoke(static_cast<Vis&&>(vis), static_cast<decltype(alts)&&>(alts)...));
-  else if constexpr (Exact) {
-    return ::ycxx::detail::invoke(static_cast<Vis&&>(vis), static_cast<decltype(alts)&&>(alts)...);
+  if constexpr (std::is_void_v<_Rp>)
+    static_cast<void>(::__ycxx::__detail::invoke(static_cast<_Vis&&>(__vis), static_cast<decltype(__alts)&&>(__alts)...));
+  else if constexpr (_Exact) {
+    return ::__ycxx::__detail::invoke(static_cast<_Vis&&>(__vis), static_cast<decltype(__alts)&&>(__alts)...);
   } else
-    return ::ycxx::detail::invoke_r<R>(static_cast<Vis&&>(vis), static_cast<decltype(alts)&&>(alts)...);
+    return ::__ycxx::__detail::invoke_r<_Rp>(static_cast<_Vis&&>(__vis), static_cast<decltype(__alts)&&>(__alts)...);
 }
 
-// Bind alternatives left to right. `alts` are the already-selected alternatives.
-template <class R, bool Exact, class Vis, class V, class... Vs>
-constexpr R visit_bind(Vis&& vis, V&& v, Vs&&... vs) {
-  constexpr std::size_t n = std::variant_size_v<std::remove_cvref_t<V>>;
-  return ::ycxx::detail::dispatch_index<n>(v.index(), [&](auto i) -> R {
-    decltype(auto) alt = ::ycxx::detail::var_unchecked_get<i>(static_cast<V&&>(v));
-    if constexpr (sizeof...(Vs) == 0) {
-      return ::ycxx::detail::visit_finish<R, Exact>(static_cast<Vis&&>(vis), static_cast<decltype(alt)&&>(alt));
+// Bind alternatives left to right. `__alts` are the already-selected alternatives.
+template <class _Rp, bool _Exact, class _Vis, class _Vp, class... _Vs>
+constexpr _Rp __visit_bind(_Vis&& __vis, _Vp&& __v, _Vs&&... __vs) {
+  constexpr std::size_t n = std::variant_size_v<std::remove_cvref_t<_Vp>>;
+  return ::__ycxx::__detail::__dispatch_index<n>(__v.index(), [&](auto i) -> _Rp {
+    decltype(auto) __alt = ::__ycxx::__detail::__var_unchecked_get<i>(static_cast<_Vp&&>(__v));
+    if constexpr (sizeof...(_Vs) == 0) {
+      return ::__ycxx::__detail::__visit_finish<_Rp, _Exact>(static_cast<_Vis&&>(__vis), static_cast<decltype(__alt)&&>(__alt));
     } else {
-      // Curry: a visitor that receives the remaining alternatives and prepends `alt`.
-      auto curried = [&](auto&&... rest) -> R {
-        return ::ycxx::detail::visit_finish<R, Exact>(static_cast<Vis&&>(vis), static_cast<decltype(alt)&&>(alt),
-                                      static_cast<decltype(rest)&&>(rest)...);
+      // Curry: a visitor that receives the remaining alternatives and prepends `__alt`.
+      auto __curried = [&](auto&&... __rest) -> _Rp {
+        return ::__ycxx::__detail::__visit_finish<_Rp, _Exact>(static_cast<_Vis&&>(__vis), static_cast<decltype(__alt)&&>(__alt),
+                                      static_cast<decltype(__rest)&&>(__rest)...);
       };
-      return ::ycxx::detail::visit_bind<R, true>(curried, static_cast<Vs&&>(vs)...);
+      return ::__ycxx::__detail::__visit_bind<_Rp, true>(__curried, static_cast<_Vs&&>(__vs)...);
     }
   });
 }
 
-template <bool Exact, class R, class Vis, class... V>
-constexpr R visit_entry(Vis&& vis, V&&... vars) {
-  if ((vars.valueless_by_exception() || ...))
-    throw_bad_variant_access();
-  if constexpr (sizeof...(V) == 0)
-    return ::ycxx::detail::visit_finish<R, Exact>(static_cast<Vis&&>(vis));
+template <bool _Exact, class _Rp, class _Vis, class... _Vp>
+constexpr _Rp __visit_entry(_Vis&& __vis, _Vp&&... __vars) {
+  if ((__vars.valueless_by_exception() || ...))
+    __throw_bad_variant_access();
+  if constexpr (sizeof...(_Vp) == 0)
+    return ::__ycxx::__detail::__visit_finish<_Rp, _Exact>(static_cast<_Vis&&>(__vis));
   else
-    return ::ycxx::detail::visit_bind<R, Exact>(static_cast<Vis&&>(vis), static_cast<V&&>(vars)...);
+    return ::__ycxx::__detail::__visit_bind<_Rp, _Exact>(static_cast<_Vis&&>(__vis), static_cast<_Vp&&>(__vars)...);
 }
 
-}} // namespace ycxx::detail
+}} // namespace __ycxx::__detail
 
-namespace [[gnu::visibility("hidden")]] std {
+namespace [[__gnu__::__visibility__("hidden")]] std {
 
-template <class Visitor, class... Variants>
-  requires(requires { typename ycxx::detail::as_variant_t<Variants>; } && ...)
-constexpr decltype(auto) visit(Visitor&& vis, Variants&&... vars) {
+template <class _Visitor, class... _Variants>
+  requires(requires { typename __ycxx::__detail::__as_variant_t<_Variants>; } && ...)
+constexpr decltype(auto) visit(_Visitor&& __vis, _Variants&&... __vars) {
   // The result type is computed in the body, not the signature: [variant.visit]/5 makes a
   // visitor that is not callable with every alternative a Mandates violation (a hard error),
   // not a reason to drop out of overload resolution.
-  using R = ycxx::detail::visit_result_t<Visitor, ycxx::detail::as_variant_t<Variants>...>;
-  return ycxx::detail::visit_entry<true, R>(static_cast<Visitor&&>(vis),
-                                            ycxx::detail::as_variant(static_cast<Variants&&>(vars))...);
+  using _Rp = __ycxx::__detail::__visit_result_t<_Visitor, __ycxx::__detail::__as_variant_t<_Variants>...>;
+  return __ycxx::__detail::__visit_entry<true, _Rp>(static_cast<_Visitor&&>(__vis),
+                                            __ycxx::__detail::__as_variant(static_cast<_Variants&&>(__vars))...);
 }
-template <class R, class Visitor, class... Variants>
-  requires(requires { typename ycxx::detail::as_variant_t<Variants>; } && ...)
-constexpr R visit(Visitor&& vis, Variants&&... vars) {
-  return ycxx::detail::visit_entry<false, R>(static_cast<Visitor&&>(vis),
-                                             ycxx::detail::as_variant(static_cast<Variants&&>(vars))...);
+template <class _Rp, class _Visitor, class... _Variants>
+  requires(requires { typename __ycxx::__detail::__as_variant_t<_Variants>; } && ...)
+constexpr _Rp visit(_Visitor&& __vis, _Variants&&... __vars) {
+  return __ycxx::__detail::__visit_entry<false, _Rp>(static_cast<_Visitor&&>(__vis),
+                                             __ycxx::__detail::__as_variant(static_cast<_Variants&&>(__vars))...);
 }
 
-template <class... Types>
-template <int, class Self, class Visitor>
-constexpr decltype(auto) variant<Types...>::visit(this Self&& self, Visitor&& vis) {
-  using V = ycxx::detail::copy_cvref<Self&&, variant>;
+template <class... _Types>
+template <int, class _Self, class _Visitor>
+constexpr decltype(auto) variant<_Types...>::visit(this _Self&& __self, _Visitor&& __vis) {
+  using _Vp = __ycxx::__detail::__copy_cvref<_Self&&, variant>;
   // [variant.visit]/9 specifies (V)self: a C-style cast reaches an inaccessible (private) base.
-  return std::visit(static_cast<Visitor&&>(vis), (V)self);
+  return std::visit(static_cast<_Visitor&&>(__vis), (_Vp)__self);
 }
-template <class... Types>
-template <class R, class Self, class Visitor>
-constexpr R variant<Types...>::visit(this Self&& self, Visitor&& vis) {
-  using V = ycxx::detail::copy_cvref<Self&&, variant>;
-  return std::visit<R>(static_cast<Visitor&&>(vis), (V)self);
+template <class... _Types>
+template <class _Rp, class _Self, class _Visitor>
+constexpr _Rp variant<_Types...>::visit(this _Self&& __self, _Visitor&& __vis) {
+  using _Vp = __ycxx::__detail::__copy_cvref<_Self&&, variant>;
+  return std::visit<_Rp>(static_cast<_Visitor&&>(__vis), (_Vp)__self);
 }
 
 // ---- [variant.relops] ----
 
-template <class... Types>
-  requires((requires(const Types& a) {
+template <class... _Types>
+  requires((requires(const _Types& a) {
     { a == a } -> convertible_to<bool>;
   }) && ...)
-constexpr bool operator==(const variant<Types...>& v, const variant<Types...>& w) {
-  if (v.index() != w.index())
+constexpr bool operator==(const variant<_Types...>& __v, const variant<_Types...>& __w) {
+  if (__v.index() != __w.index())
     return false;
-  if (v.valueless_by_exception())
+  if (__v.valueless_by_exception())
     return true;
-  return ycxx::detail::dispatch_index<sizeof...(Types)>(v.index(), [&](auto i) -> bool {
-    return static_cast<bool>(ycxx::detail::variant_access::raw<i>(v) == ycxx::detail::variant_access::raw<i>(w));
+  return __ycxx::__detail::__dispatch_index<sizeof...(_Types)>(__v.index(), [&](auto i) -> bool {
+    return static_cast<bool>(__ycxx::__detail::__variant_access::__raw<i>(__v) == __ycxx::__detail::__variant_access::__raw<i>(__w));
   });
 }
-template <class... Types>
-  requires((requires(const Types& a) {
+template <class... _Types>
+  requires((requires(const _Types& a) {
     { a != a } -> convertible_to<bool>;
   }) && ...)
-constexpr bool operator!=(const variant<Types...>& v, const variant<Types...>& w) {
-  if (v.index() != w.index())
+constexpr bool operator!=(const variant<_Types...>& __v, const variant<_Types...>& __w) {
+  if (__v.index() != __w.index())
     return true;
-  if (v.valueless_by_exception())
+  if (__v.valueless_by_exception())
     return false;
-  return ycxx::detail::dispatch_index<sizeof...(Types)>(v.index(), [&](auto i) -> bool {
-    return static_cast<bool>(ycxx::detail::variant_access::raw<i>(v) != ycxx::detail::variant_access::raw<i>(w));
+  return __ycxx::__detail::__dispatch_index<sizeof...(_Types)>(__v.index(), [&](auto i) -> bool {
+    return static_cast<bool>(__ycxx::__detail::__variant_access::__raw<i>(__v) != __ycxx::__detail::__variant_access::__raw<i>(__w));
   });
 }
-template <class... Types>
-  requires((requires(const Types& a) {
+template <class... _Types>
+  requires((requires(const _Types& a) {
     { a < a } -> convertible_to<bool>;
   }) && ...)
-constexpr bool operator<(const variant<Types...>& v, const variant<Types...>& w) {
-  if (w.valueless_by_exception())
+constexpr bool operator<(const variant<_Types...>& __v, const variant<_Types...>& __w) {
+  if (__w.valueless_by_exception())
     return false;
-  if (v.valueless_by_exception())
+  if (__v.valueless_by_exception())
     return true;
-  if (v.index() < w.index())
+  if (__v.index() < __w.index())
     return true;
-  if (v.index() > w.index())
+  if (__v.index() > __w.index())
     return false;
-  return ycxx::detail::dispatch_index<sizeof...(Types)>(v.index(), [&](auto i) -> bool {
-    return static_cast<bool>(ycxx::detail::variant_access::raw<i>(v) < ycxx::detail::variant_access::raw<i>(w));
+  return __ycxx::__detail::__dispatch_index<sizeof...(_Types)>(__v.index(), [&](auto i) -> bool {
+    return static_cast<bool>(__ycxx::__detail::__variant_access::__raw<i>(__v) < __ycxx::__detail::__variant_access::__raw<i>(__w));
   });
 }
-template <class... Types>
-  requires((requires(const Types& a) {
+template <class... _Types>
+  requires((requires(const _Types& a) {
     { a > a } -> convertible_to<bool>;
   }) && ...)
-constexpr bool operator>(const variant<Types...>& v, const variant<Types...>& w) {
-  if (v.valueless_by_exception())
+constexpr bool operator>(const variant<_Types...>& __v, const variant<_Types...>& __w) {
+  if (__v.valueless_by_exception())
     return false;
-  if (w.valueless_by_exception())
+  if (__w.valueless_by_exception())
     return true;
-  if (v.index() > w.index())
+  if (__v.index() > __w.index())
     return true;
-  if (v.index() < w.index())
+  if (__v.index() < __w.index())
     return false;
-  return ycxx::detail::dispatch_index<sizeof...(Types)>(v.index(), [&](auto i) -> bool {
-    return static_cast<bool>(ycxx::detail::variant_access::raw<i>(v) > ycxx::detail::variant_access::raw<i>(w));
+  return __ycxx::__detail::__dispatch_index<sizeof...(_Types)>(__v.index(), [&](auto i) -> bool {
+    return static_cast<bool>(__ycxx::__detail::__variant_access::__raw<i>(__v) > __ycxx::__detail::__variant_access::__raw<i>(__w));
   });
 }
-template <class... Types>
-  requires((requires(const Types& a) {
+template <class... _Types>
+  requires((requires(const _Types& a) {
     { a <= a } -> convertible_to<bool>;
   }) && ...)
-constexpr bool operator<=(const variant<Types...>& v, const variant<Types...>& w) {
-  if (v.valueless_by_exception())
+constexpr bool operator<=(const variant<_Types...>& __v, const variant<_Types...>& __w) {
+  if (__v.valueless_by_exception())
     return true;
-  if (w.valueless_by_exception())
+  if (__w.valueless_by_exception())
     return false;
-  if (v.index() < w.index())
+  if (__v.index() < __w.index())
     return true;
-  if (v.index() > w.index())
+  if (__v.index() > __w.index())
     return false;
-  return ycxx::detail::dispatch_index<sizeof...(Types)>(v.index(), [&](auto i) -> bool {
-    return static_cast<bool>(ycxx::detail::variant_access::raw<i>(v) <= ycxx::detail::variant_access::raw<i>(w));
+  return __ycxx::__detail::__dispatch_index<sizeof...(_Types)>(__v.index(), [&](auto i) -> bool {
+    return static_cast<bool>(__ycxx::__detail::__variant_access::__raw<i>(__v) <= __ycxx::__detail::__variant_access::__raw<i>(__w));
   });
 }
-template <class... Types>
-  requires((requires(const Types& a) {
+template <class... _Types>
+  requires((requires(const _Types& a) {
     { a >= a } -> convertible_to<bool>;
   }) && ...)
-constexpr bool operator>=(const variant<Types...>& v, const variant<Types...>& w) {
-  if (w.valueless_by_exception())
+constexpr bool operator>=(const variant<_Types...>& __v, const variant<_Types...>& __w) {
+  if (__w.valueless_by_exception())
     return true;
-  if (v.valueless_by_exception())
+  if (__v.valueless_by_exception())
     return false;
-  if (v.index() > w.index())
+  if (__v.index() > __w.index())
     return true;
-  if (v.index() < w.index())
+  if (__v.index() < __w.index())
     return false;
-  return ycxx::detail::dispatch_index<sizeof...(Types)>(v.index(), [&](auto i) -> bool {
-    return static_cast<bool>(ycxx::detail::variant_access::raw<i>(v) >= ycxx::detail::variant_access::raw<i>(w));
+  return __ycxx::__detail::__dispatch_index<sizeof...(_Types)>(__v.index(), [&](auto i) -> bool {
+    return static_cast<bool>(__ycxx::__detail::__variant_access::__raw<i>(__v) >= __ycxx::__detail::__variant_access::__raw<i>(__w));
   });
 }
-template <class... Types>
-  requires(three_way_comparable<Types> && ...)
-constexpr common_comparison_category_t<compare_three_way_result_t<Types>...> operator<=>(const variant<Types...>& v,
-                                                                                        const variant<Types...>& w) {
-  using R = common_comparison_category_t<compare_three_way_result_t<Types>...>;
-  if (v.valueless_by_exception() && w.valueless_by_exception())
+template <class... _Types>
+  requires(three_way_comparable<_Types> && ...)
+constexpr common_comparison_category_t<compare_three_way_result_t<_Types>...> operator<=>(const variant<_Types...>& __v,
+                                                                                        const variant<_Types...>& __w) {
+  using _Rp = common_comparison_category_t<compare_three_way_result_t<_Types>...>;
+  if (__v.valueless_by_exception() && __w.valueless_by_exception())
     return strong_ordering::equal;
-  if (v.valueless_by_exception())
+  if (__v.valueless_by_exception())
     return strong_ordering::less;
-  if (w.valueless_by_exception())
+  if (__w.valueless_by_exception())
     return strong_ordering::greater;
-  if (auto c = v.index() <=> w.index(); c != 0)
+  if (auto c = __v.index() <=> __w.index(); c != 0)
     return c;
-  return ycxx::detail::dispatch_index<sizeof...(Types)>(v.index(), [&](auto i) -> R {
-    return ycxx::detail::variant_access::raw<i>(v) <=> ycxx::detail::variant_access::raw<i>(w);
+  return __ycxx::__detail::__dispatch_index<sizeof...(_Types)>(__v.index(), [&](auto i) -> _Rp {
+    return __ycxx::__detail::__variant_access::__raw<i>(__v) <=> __ycxx::__detail::__variant_access::__raw<i>(__w);
   });
 }
 
 // ---- [variant.specalg] ----
-template <class... Types>
-  requires((is_move_constructible_v<Types> && is_swappable_v<Types>) && ...)
-constexpr void swap(variant<Types...>& v, variant<Types...>& w) noexcept(noexcept(v.swap(w))) {
-  v.swap(w);
+template <class... _Types>
+  requires((is_move_constructible_v<_Types> && is_swappable_v<_Types>) && ...)
+constexpr void swap(variant<_Types...>& __v, variant<_Types...>& __w) noexcept(noexcept(__v.swap(__w))) {
+  __v.swap(__w);
 }
 
 // ---- [variant.hash] ----
-template <class... Types>
-  requires(ycxx::detail::hash_enabled<remove_const_t<Types>> && ...)
-struct hash<variant<Types...>> {
-  size_t operator()(const variant<Types...>& v) const {
-    if (v.valueless_by_exception())
+template <class... _Types>
+  requires(__ycxx::__detail::__hash_enabled<remove_const_t<_Types>> && ...)
+struct hash<variant<_Types...>> {
+  size_t operator()(const variant<_Types...>& __v) const {
+    if (__v.valueless_by_exception())
       return static_cast<size_t>(0x76616c75u);
-    size_t h = ycxx::detail::dispatch_index<sizeof...(Types)>(v.index(), [&](auto i) -> size_t {
-      return hash<remove_const_t<Types...[i]>>{}(ycxx::detail::variant_access::raw<i>(v));
+    size_t h = __ycxx::__detail::__dispatch_index<sizeof...(_Types)>(__v.index(), [&](auto i) -> size_t {
+      return hash<remove_const_t<_Types...[i]>>{}(__ycxx::__detail::__variant_access::__raw<i>(__v));
     });
-    return static_cast<size_t>(ycxx::detail::mum(h ^ ycxx::detail::hash_k1, v.index() ^ ycxx::detail::hash_k2));
+    return static_cast<size_t>(__ycxx::__detail::__mum(h ^ __ycxx::__detail::__hash_k1, __v.index() ^ __ycxx::__detail::__hash_k2));
   }
 };
 

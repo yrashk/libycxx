@@ -7,11 +7,11 @@
 #include "../../runtime/new/hidden.hpp"
 #include "../../runtime/new/allocation_table.hpp"
 
-asm((ycxx::detail::hide_allocation_function("_ZdlPv")));
+asm((__ycxx::__detail::__hide_allocation_function("_ZdlPv")));
 
 // Nothing is ever allocated by the defaults.
 void operator delete(void* p) noexcept {
-  if (auto f = ycxx_allocation_functions.delete_; f != ycxx::detail::own_allocation_functions.delete_)
-    return f(p, 0, 0);
+  if (auto __f = __ycxx_allocation_functions.__delete_; __f != __ycxx::__detail::__own_allocation_functions.__delete_)
+    return __f(p, 0, 0);
   
 }

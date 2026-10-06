@@ -13,11 +13,11 @@
 # library: every switch is 1, so a missing function shows up as a compile error naming it.
 #
 # Switches written (each 1 or 0):
-#   YCXX_C_HAS_STRFROM          <stdlib.h> declares strfromd, strfromf, strfroml (C23 7.24.1.3)
-#   YCXX_C_HAS_MBRTOC8          <uchar.h> declares mbrtoc8 and c8rtomb (C23 7.30.1)
-#   YCXX_C_HAS_TIMESPEC_GETRES  <time.h> declares timespec_getres (C23 7.29.2.7)
+#   _YCXX_C_HAS_STRFROM          <stdlib.h> declares strfromd, strfromf, strfroml (C23 7.24.1.3)
+#   _YCXX_C_HAS_MBRTOC8          <uchar.h> declares mbrtoc8 and c8rtomb (C23 7.30.1)
+#   _YCXX_C_HAS_TIMESPEC_GETRES  <time.h> declares timespec_getres (C23 7.29.2.7)
 # and, when the C library's <stdio.h> lacks _PRINTF_NAN_LEN_MAX (C23 7.23.1):
-#   YCXX_C_PRINTF_NAN_LEN_MAX   the longest output of the C library's printf for a NaN with the
+#   _YCXX_C_PRINTF_NAN_LEN_MAX   the longest output of the C library's printf for a NaN with the
 #                               conversions f F e E g G a A, measured by running a probe (signs,
 #                               payloads, the + and space flags); not written when the probe cannot
 #                               run (cross compilation), and <cstdio> then leaves the macro undefined.
@@ -90,7 +90,7 @@ int main(void) {
       try_run(_ycxx_nan_run _ycxx_nan_compile SOURCES ${probe}
               COMPILE_DEFINITIONS -std=c2x RUN_OUTPUT_VARIABLE _ycxx_nan_len)
       if(_ycxx_nan_compile AND _ycxx_nan_run EQUAL 0 AND _ycxx_nan_len MATCHES "^[0-9]+$")
-        set(nan_line "#define YCXX_C_PRINTF_NAN_LEN_MAX ${_ycxx_nan_len}")
+        set(nan_line "#define _YCXX_C_PRINTF_NAN_LEN_MAX ${_ycxx_nan_len}")
       endif()
     endif()
   endif()
@@ -100,9 +100,9 @@ int main(void) {
 // compiling probes against it. Included by ycxx/config.hpp.
 #pragma once
 
-#define YCXX_C_HAS_STRFROM @strfrom@
-#define YCXX_C_HAS_MBRTOC8 @mbrtoc8@
-#define YCXX_C_HAS_TIMESPEC_GETRES @getres@
+#define _YCXX_C_HAS_STRFROM @strfrom@
+#define _YCXX_C_HAS_MBRTOC8 @mbrtoc8@
+#define _YCXX_C_HAS_TIMESPEC_GETRES @getres@
 @nan_line@
 ]=] @ONLY)
   message(STATUS "libycxx: C library: strfrom* ${strfrom}, mbrtoc8 ${mbrtoc8}, timespec_getres ${getres}; ${nan_line}")

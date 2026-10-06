@@ -3,64 +3,64 @@
 
 #include <ycxx/core/meta_base.hpp>
 
-namespace [[gnu::visibility("hidden")]] std {
+namespace [[__gnu__::__visibility__("hidden")]] std {
 
-template <class T>
-[[nodiscard]] [[gnu::always_inline]] constexpr T&& forward(remove_reference_t<T>& t) noexcept {
-  return static_cast<T&&>(t);
+template <class _Tp>
+[[nodiscard]] [[__gnu__::__always_inline__]] constexpr _Tp&& forward(remove_reference_t<_Tp>& t) noexcept {
+  return static_cast<_Tp&&>(t);
 }
-template <class T>
-[[nodiscard]] [[gnu::always_inline]] constexpr T&& forward(remove_reference_t<T>&& t) noexcept {
-  static_assert(!::ycxx::detail::is_lref_v<T>, "std::forward: cannot forward an rvalue as an lvalue");
-  return static_cast<T&&>(t);
+template <class _Tp>
+[[nodiscard]] [[__gnu__::__always_inline__]] constexpr _Tp&& forward(remove_reference_t<_Tp>&& t) noexcept {
+  static_assert(!::__ycxx::__detail::__is_lref_v<_Tp>, "std::forward: cannot forward an rvalue as an lvalue");
+  return static_cast<_Tp&&>(t);
 }
 
-template <class T>
-[[nodiscard]] [[gnu::always_inline]] constexpr remove_reference_t<T>&& move(T&& t) noexcept {
-  return static_cast<remove_reference_t<T>&&>(t);
+template <class _Tp>
+[[nodiscard]] [[__gnu__::__always_inline__]] constexpr remove_reference_t<_Tp>&& move(_Tp&& t) noexcept {
+  return static_cast<remove_reference_t<_Tp>&&>(t);
 }
 
 } // namespace std
 
-namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
 // [forward]/6: V = OVERRIDE_REF(T&&, COPY_CONST(remove_reference_t<T>, remove_reference_t<U>)).
-template <class T, class U>
-using forward_like_base = std::conditional_t<std::is_const_v<std::remove_reference_t<T>>,
-                                             const std::remove_reference_t<U>, std::remove_reference_t<U>>;
-template <class T, class U>
-using forward_like_t =
-    std::conditional_t<is_lref_v<T&&>, forward_like_base<T, U>&, forward_like_base<T, U>&&>;
-}} // namespace ycxx::detail
+template <class _Tp, class _Up>
+using __forward_like_base = std::conditional_t<std::is_const_v<std::remove_reference_t<_Tp>>,
+                                             const std::remove_reference_t<_Up>, std::remove_reference_t<_Up>>;
+template <class _Tp, class _Up>
+using __forward_like_t =
+    std::conditional_t<__is_lref_v<_Tp&&>, __forward_like_base<_Tp, _Up>&, __forward_like_base<_Tp, _Up>&&>;
+}} // namespace __ycxx::__detail
 
-namespace [[gnu::visibility("hidden")]] std {
+namespace [[__gnu__::__visibility__("hidden")]] std {
 
-template <class T, class U>
-[[nodiscard]] [[gnu::always_inline]] constexpr auto forward_like(U&& x) noexcept
-    -> ::ycxx::detail::forward_like_t<T, U> {
-  return static_cast<::ycxx::detail::forward_like_t<T, U>>(x);
+template <class _Tp, class _Up>
+[[nodiscard]] [[__gnu__::__always_inline__]] constexpr auto forward_like(_Up&& __x) noexcept
+    -> ::__ycxx::__detail::__forward_like_t<_Tp, _Up> {
+  return static_cast<::__ycxx::__detail::__forward_like_t<_Tp, _Up>>(__x);
 }
 
-template <class T>
-[[nodiscard]] [[gnu::always_inline]] constexpr conditional_t<
-    !is_nothrow_constructible_v<T, T&&> && is_constructible_v<T, const T&>, const T&, T&&>
-move_if_noexcept(T& x) noexcept {
-  using R = conditional_t<!is_nothrow_constructible_v<T, T&&> && is_constructible_v<T, const T&>, const T&, T&&>;
-  return static_cast<R>(x);
+template <class _Tp>
+[[nodiscard]] [[__gnu__::__always_inline__]] constexpr conditional_t<
+    !is_nothrow_constructible_v<_Tp, _Tp&&> && is_constructible_v<_Tp, const _Tp&>, const _Tp&, _Tp&&>
+move_if_noexcept(_Tp& __x) noexcept {
+  using _Rp = conditional_t<!is_nothrow_constructible_v<_Tp, _Tp&&> && is_constructible_v<_Tp, const _Tp&>, const _Tp&, _Tp&&>;
+  return static_cast<_Rp>(__x);
 }
 
-template <class T>
-[[nodiscard]] [[gnu::always_inline]] constexpr add_const_t<T>& as_const(T& t) noexcept {
+template <class _Tp>
+[[nodiscard]] [[__gnu__::__always_inline__]] constexpr add_const_t<_Tp>& as_const(_Tp& t) noexcept {
   return t;
 }
-template <class T>
-void as_const(const T&&) = delete;
+template <class _Tp>
+void as_const(const _Tp&&) = delete;
 
-template <class T>
-[[nodiscard]] [[gnu::always_inline]] constexpr T* addressof(T& r) noexcept {
+template <class _Tp>
+[[nodiscard]] [[__gnu__::__always_inline__]] constexpr _Tp* addressof(_Tp& r) noexcept {
   return __builtin_addressof(r);
 }
-template <class T>
-const T* addressof(const T&&) = delete;
+template <class _Tp>
+const _Tp* addressof(const _Tp&&) = delete;
 
 } // namespace std
 

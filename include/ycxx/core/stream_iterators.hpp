@@ -11,75 +11,75 @@
 #include <ycxx/core/iterator_core.hpp>
 #include <ycxx/core/iterator_ops.hpp>
 
-namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
 // The library's extraction and insertion loops (num_get, money_get, ...) reach the buffer behind
 // a stream-buffer iterator through this class, to work on whole runs of characters.
-struct streambuf_iter_access;
-}} // namespace ycxx::detail
+struct __streambuf_iter_access;
+}} // namespace __ycxx::__detail
 
-namespace [[gnu::visibility("hidden")]] std {
+namespace [[__gnu__::__visibility__("hidden")]] std {
 
 // [istream.iterator]
-template <class T, class charT = char, class traits = char_traits<charT>, class Distance = ptrdiff_t>
+template <class _Tp, class __charT = char, class __traits = char_traits<__charT>, class _Distance = ptrdiff_t>
 class istream_iterator {
 public:
   using iterator_category = input_iterator_tag;
-  using value_type = T;
-  using difference_type = Distance;
-  using pointer = const T*;
-  using reference = const T&;
-  using char_type = charT;
-  using traits_type = traits;
-  using istream_type = basic_istream<charT, traits>;
+  using value_type = _Tp;
+  using difference_type = _Distance;
+  using pointer = const _Tp*;
+  using reference = const _Tp&;
+  using char_type = __charT;
+  using traits_type = __traits;
+  using istream_type = basic_istream<__charT, __traits>;
 
-  constexpr istream_iterator() : in_stream_(nullptr), value_() {}
-  constexpr istream_iterator(default_sentinel_t) : in_stream_(nullptr), value_() {}
-  istream_iterator(istream_type& s) : in_stream_(__builtin_addressof(s)), value_() { ++*this; }
-  constexpr istream_iterator(const istream_iterator& x) = default;
+  constexpr istream_iterator() : __in_stream_(nullptr), __value_() {}
+  constexpr istream_iterator(default_sentinel_t) : __in_stream_(nullptr), __value_() {}
+  istream_iterator(istream_type& s) : __in_stream_(__builtin_addressof(s)), __value_() { ++*this; }
+  constexpr istream_iterator(const istream_iterator& __x) = default;
   ~istream_iterator() = default;
   istream_iterator& operator=(const istream_iterator&) = default;
 
-  const T& operator*() const {
-    ycxx::detail::precondition(in_stream_ != nullptr, "std::istream_iterator::operator*: end-of-stream iterator");
-    return value_;
+  const _Tp& operator*() const {
+    __ycxx::__detail::__precondition(__in_stream_ != nullptr, "std::istream_iterator::operator*: end-of-stream iterator");
+    return __value_;
   }
-  const T* operator->() const {
-    ycxx::detail::precondition(in_stream_ != nullptr, "std::istream_iterator::operator->: end-of-stream iterator");
-    return __builtin_addressof(value_);
+  const _Tp* operator->() const {
+    __ycxx::__detail::__precondition(__in_stream_ != nullptr, "std::istream_iterator::operator->: end-of-stream iterator");
+    return __builtin_addressof(__value_);
   }
   istream_iterator& operator++() {
-    ycxx::detail::precondition(in_stream_ != nullptr, "std::istream_iterator::operator++: end-of-stream iterator");
-    if (!(*in_stream_ >> value_))
-      in_stream_ = nullptr;
+    __ycxx::__detail::__precondition(__in_stream_ != nullptr, "std::istream_iterator::operator++: end-of-stream iterator");
+    if (!(*__in_stream_ >> __value_))
+      __in_stream_ = nullptr;
     return *this;
   }
   istream_iterator operator++(int) {
-    istream_iterator tmp = *this;
+    istream_iterator __tmp = *this;
     ++*this;
-    return tmp;
+    return __tmp;
   }
 
-  friend bool operator==(const istream_iterator& i, default_sentinel_t) { return !i.in_stream_; }
+  friend bool operator==(const istream_iterator& i, default_sentinel_t) { return !i.__in_stream_; }
 
 private:
-  template <class T2, class charT2, class traits2, class Distance2>
-  friend bool operator==(const istream_iterator<T2, charT2, traits2, Distance2>& x,
-                         const istream_iterator<T2, charT2, traits2, Distance2>& y);
+  template <class _T2, class __charT2, class __traits2, class _Distance2>
+  friend bool operator==(const istream_iterator<_T2, __charT2, __traits2, _Distance2>& __x,
+                         const istream_iterator<_T2, __charT2, __traits2, _Distance2>& y);
 
-  basic_istream<charT, traits>* in_stream_;
-  T value_;
+  basic_istream<__charT, __traits>* __in_stream_;
+  _Tp __value_;
 };
 
 // [iterator.synopsis] declares the comparison of two iterators as a namespace-scope template
 // (only the default_sentinel_t comparison is a hidden friend), so std::operator== names it.
-template <class T, class charT, class traits, class Distance>
-bool operator==(const istream_iterator<T, charT, traits, Distance>& x,
-                const istream_iterator<T, charT, traits, Distance>& y) {
-  return x.in_stream_ == y.in_stream_;
+template <class _Tp, class __charT, class __traits, class _Distance>
+bool operator==(const istream_iterator<_Tp, __charT, __traits, _Distance>& __x,
+                const istream_iterator<_Tp, __charT, __traits, _Distance>& y) {
+  return __x.__in_stream_ == y.__in_stream_;
 }
 
 // [ostream.iterator]
-template <class T, class charT = char, class traits = char_traits<charT>>
+template <class _Tp, class __charT = char, class __traits = char_traits<__charT>>
 class ostream_iterator {
 public:
   using iterator_category = output_iterator_tag;
@@ -87,20 +87,20 @@ public:
   using difference_type = ptrdiff_t;
   using pointer = void;
   using reference = void;
-  using char_type = charT;
-  using traits_type = traits;
-  using ostream_type = basic_ostream<charT, traits>;
+  using char_type = __charT;
+  using traits_type = __traits;
+  using ostream_type = basic_ostream<__charT, __traits>;
 
-  ostream_iterator(ostream_type& s) : out_stream_(__builtin_addressof(s)), delim_(nullptr) {}
-  ostream_iterator(ostream_type& s, const charT* delimiter) : out_stream_(__builtin_addressof(s)), delim_(delimiter) {}
-  ostream_iterator(const ostream_iterator& x) = default;
+  ostream_iterator(ostream_type& s) : __out_stream_(__builtin_addressof(s)), __delim_(nullptr) {}
+  ostream_iterator(ostream_type& s, const __charT* __delimiter) : __out_stream_(__builtin_addressof(s)), __delim_(__delimiter) {}
+  ostream_iterator(const ostream_iterator& __x) = default;
   ~ostream_iterator() = default;
   ostream_iterator& operator=(const ostream_iterator&) = default;
 
-  ostream_iterator& operator=(const T& value) {
-    *out_stream_ << value;
-    if (delim_)
-      *out_stream_ << delim_;
+  ostream_iterator& operator=(const _Tp& value) {
+    *__out_stream_ << value;
+    if (__delim_)
+      *__out_stream_ << __delim_;
     return *this;
   }
   ostream_iterator& operator*() { return *this; }
@@ -108,73 +108,73 @@ public:
   ostream_iterator& operator++(int) { return *this; }
 
 private:
-  basic_ostream<charT, traits>* out_stream_;
-  const charT* delim_;
+  basic_ostream<__charT, __traits>* __out_stream_;
+  const __charT* __delim_;
 };
 
 // [istreambuf.iterator]. An iterator found at end of stream drops its buffer pointer, so it
 // becomes the end-of-stream value ([istreambuf.iterator.general]/1).
-template <class charT, class traits>
+template <class __charT, class __traits>
 class istreambuf_iterator {
 public:
   using iterator_category = input_iterator_tag;
-  using value_type = charT;
-  using difference_type = typename traits::off_type;
-  using reference = charT;
-  using char_type = charT;
-  using traits_type = traits;
-  using int_type = typename traits::int_type;
-  using streambuf_type = basic_streambuf<charT, traits>;
-  using istream_type = basic_istream<charT, traits>;
+  using value_type = __charT;
+  using difference_type = typename __traits::off_type;
+  using reference = __charT;
+  using char_type = __charT;
+  using traits_type = __traits;
+  using int_type = typename __traits::int_type;
+  using streambuf_type = basic_streambuf<__charT, __traits>;
+  using istream_type = basic_istream<__charT, __traits>;
 
   // [istreambuf.iterator.proxy]: the result of it++.
   class proxy {
     friend istreambuf_iterator;
-    charT keep_;
-    streambuf_type* sbuf_;
-    proxy(charT c, streambuf_type* sbuf) : keep_(c), sbuf_(sbuf) {}
+    __charT __keep_;
+    streambuf_type* __sbuf_;
+    proxy(__charT c, streambuf_type* __sbuf) : __keep_(c), __sbuf_(__sbuf) {}
 
   public:
-    charT operator*() { return keep_; }
+    __charT operator*() { return __keep_; }
   };
-  using pointer = charT*;
+  using pointer = __charT*;
 
-  constexpr istreambuf_iterator() noexcept : sbuf_(nullptr) {}
-  constexpr istreambuf_iterator(default_sentinel_t) noexcept : sbuf_(nullptr) {}
+  constexpr istreambuf_iterator() noexcept : __sbuf_(nullptr) {}
+  constexpr istreambuf_iterator(default_sentinel_t) noexcept : __sbuf_(nullptr) {}
   istreambuf_iterator(const istreambuf_iterator&) noexcept = default;
   ~istreambuf_iterator() = default;
-  istreambuf_iterator(istream_type& s) noexcept : sbuf_(s.rdbuf()) {}
-  istreambuf_iterator(streambuf_type* s) noexcept : sbuf_(s) {}
-  istreambuf_iterator(const proxy& p) noexcept : sbuf_(p.sbuf_) {}
+  istreambuf_iterator(istream_type& s) noexcept : __sbuf_(s.rdbuf()) {}
+  istreambuf_iterator(streambuf_type* s) noexcept : __sbuf_(s) {}
+  istreambuf_iterator(const proxy& p) noexcept : __sbuf_(p.__sbuf_) {}
   istreambuf_iterator& operator=(const istreambuf_iterator&) noexcept = default;
 
-  charT operator*() const { return traits::to_char_type(sbuf_->sgetc()); }
+  __charT operator*() const { return __traits::to_char_type(__sbuf_->sgetc()); }
   istreambuf_iterator& operator++() {
-    sbuf_->sbumpc();
+    __sbuf_->sbumpc();
     return *this;
   }
-  proxy operator++(int) { return proxy(traits::to_char_type(sbuf_->sbumpc()), sbuf_); }
+  proxy operator++(int) { return proxy(__traits::to_char_type(__sbuf_->sbumpc()), __sbuf_); }
 
-  bool equal(const istreambuf_iterator& b) const { return at_end() == b.at_end(); }
-  friend bool operator==(const istreambuf_iterator& i, default_sentinel_t) { return i.at_end(); }
+  bool equal(const istreambuf_iterator& b) const { return __at_end() == b.__at_end(); }
+  friend bool operator==(const istreambuf_iterator& i, default_sentinel_t) { return i.__at_end(); }
 
 private:
-  friend ycxx::detail::streambuf_iter_access;
-  bool at_end() const {
-    if (sbuf_ && traits::eq_int_type(sbuf_->sgetc(), traits::eof()))
-      sbuf_ = nullptr;
-    return sbuf_ == nullptr;
+  friend __ycxx::__detail::__streambuf_iter_access;
+  bool __at_end() const {
+    if (__sbuf_ && __traits::eq_int_type(__sbuf_->sgetc(), __traits::eof()))
+      __sbuf_ = nullptr;
+    return __sbuf_ == nullptr;
   }
-  mutable streambuf_type* sbuf_;
+  mutable streambuf_type* __sbuf_;
 };
 
-template <class charT, class traits>
-bool operator==(const istreambuf_iterator<charT, traits>& a, const istreambuf_iterator<charT, traits>& b) {
+template <class __charT, class __traits>
+bool operator==(const istreambuf_iterator<__charT, __traits>& a, const istreambuf_iterator<__charT, __traits>& b) {
   return a.equal(b);
 }
 
 // [ostreambuf.iterator]
-template <class charT, class traits>
+template <class __charT, class __traits>
 class ostreambuf_iterator {
 public:
   using iterator_category = output_iterator_tag;
@@ -182,31 +182,31 @@ public:
   using difference_type = ptrdiff_t;
   using pointer = void;
   using reference = void;
-  using char_type = charT;
-  using traits_type = traits;
-  using streambuf_type = basic_streambuf<charT, traits>;
-  using ostream_type = basic_ostream<charT, traits>;
+  using char_type = __charT;
+  using traits_type = __traits;
+  using streambuf_type = basic_streambuf<__charT, __traits>;
+  using ostream_type = basic_ostream<__charT, __traits>;
 
-  ostreambuf_iterator(ostream_type& s) noexcept : sbuf_(s.rdbuf()) {
-    ycxx::detail::precondition(sbuf_ != nullptr, "std::ostreambuf_iterator: s.rdbuf() is null");
+  ostreambuf_iterator(ostream_type& s) noexcept : __sbuf_(s.rdbuf()) {
+    __ycxx::__detail::__precondition(__sbuf_ != nullptr, "std::ostreambuf_iterator: s.rdbuf() is null");
   }
-  ostreambuf_iterator(streambuf_type* s) noexcept : sbuf_(s) {
-    ycxx::detail::precondition(s != nullptr, "std::ostreambuf_iterator: null stream buffer");
+  ostreambuf_iterator(streambuf_type* s) noexcept : __sbuf_(s) {
+    __ycxx::__detail::__precondition(s != nullptr, "std::ostreambuf_iterator: null stream buffer");
   }
-  ostreambuf_iterator& operator=(charT c) {
-    if (!failed_ && traits::eq_int_type(sbuf_->sputc(c), traits::eof()))
-      failed_ = true;
+  ostreambuf_iterator& operator=(__charT c) {
+    if (!__failed_ && __traits::eq_int_type(__sbuf_->sputc(c), __traits::eof()))
+      __failed_ = true;
     return *this;
   }
   ostreambuf_iterator& operator*() { return *this; }
   ostreambuf_iterator& operator++() { return *this; }
   ostreambuf_iterator& operator++(int) { return *this; }
-  bool failed() const noexcept { return failed_; }
+  bool failed() const noexcept { return __failed_; }
 
 private:
-  friend ycxx::detail::streambuf_iter_access;
-  streambuf_type* sbuf_;
-  bool failed_ = false;
+  friend __ycxx::__detail::__streambuf_iter_access;
+  streambuf_type* __sbuf_;
+  bool __failed_ = false;
 };
 
 } // namespace std

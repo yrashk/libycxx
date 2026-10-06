@@ -11,12 +11,12 @@
 namespace {
 
 void put(const char* s) noexcept {
-  ycxx_pal_size n = std::strlen(s), done = 0;
+  __ycxx_pal_size n = std::strlen(s), done = 0;
   while (done < n) {
-    ycxx_pal_size w = 0;
-    if (ycxx_pal_write(ycxx_pal_stderr, s + done, n - done, &w) != 0 || w == 0)
+    __ycxx_pal_size __w = 0;
+    if (__ycxx_pal_write(__ycxx_pal_stderr, s + done, n - done, &__w) != 0 || __w == 0)
       return;
-    done += w;
+    done += __w;
   }
 }
 
@@ -48,23 +48,23 @@ const char* mode_name(std::contracts::detection_mode m) noexcept {
 } // namespace
 
 // "contract violation in function F at FILE:LINE: COMMENT" and the classification.
-void std::contracts::invoke_default_contract_violation_handler(const contract_violation& v) {
-  const source_location loc = v.location();
+void std::contracts::invoke_default_contract_violation_handler(const contract_violation& __v) {
+  const source_location __loc = __v.location();
   put("contract violation in function ");
-  put(*loc.function_name() ? loc.function_name() : "<unknown>");
+  put(*__loc.function_name() ? __loc.function_name() : "<unknown>");
   put(" at ");
-  put(*loc.file_name() ? loc.file_name() : "<unknown>");
+  put(*__loc.file_name() ? __loc.file_name() : "<unknown>");
   char line[16] = {};
-  *std::to_chars(line, line + sizeof line - 1, loc.line()).ptr = '\0';
+  *std::to_chars(line, line + sizeof line - 1, __loc.line()).ptr = '\0';
   put(":");
   put(line);
   put(": ");
-  put(v.comment());
+  put(__v.comment());
   put("\n[assertion_kind: ");
-  put(kind_name(v.kind()));
+  put(kind_name(__v.kind()));
   put(", semantic: ");
-  put(semantic_name(v.semantic()));
+  put(semantic_name(__v.semantic()));
   put(", mode: ");
-  put(mode_name(v.detection_mode()));
-  put(v.is_terminating() ? ", terminating: yes]\n" : ", terminating: no]\n");
+  put(mode_name(__v.detection_mode()));
+  put(__v.is_terminating() ? ", terminating: yes]\n" : ", terminating: no]\n");
 }

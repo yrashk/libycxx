@@ -6,7 +6,7 @@
 #include <ycxx/core/cstddef.hpp>
 #include <locale.h>
 
-namespace [[gnu::visibility("hidden")]] std {
+namespace [[__gnu__::__visibility__("hidden")]] std {
 using ::lconv;
 using ::setlocale;
 using ::localeconv;

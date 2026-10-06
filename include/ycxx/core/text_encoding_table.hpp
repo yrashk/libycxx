@@ -4,14 +4,14 @@
 
 #include <ycxx/core/cstdint.hpp>
 
-namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
 
-struct te_name {
+struct __te_name {
   std::int_least32_t mib;
   const char* name;
 };
 
-inline constexpr te_name te_names[882] = {
+inline constexpr __te_name __te_names[882] = {
     {3, "US-ASCII"}, {3, "iso-ir-6"}, {3, "ANSI_X3.4-1968"}, {3, "ANSI_X3.4-1986"}, {3, "ISO_646.irv:1991"}, {3, "ISO646-US"}, {3, "us"}, {3, "IBM367"}, {3, "cp367"}, {3, "csASCII"}, {3, "ASCII"},
     {4, "ISO_8859-1:1987"}, {4, "iso-ir-100"}, {4, "ISO_8859-1"}, {4, "ISO-8859-1"}, {4, "latin1"}, {4, "l1"}, {4, "IBM819"}, {4, "CP819"}, {4, "csISOLatin1"},
     {5, "ISO_8859-2:1987"}, {5, "iso-ir-101"}, {5, "ISO_8859-2"}, {5, "ISO-8859-2"}, {5, "latin2"}, {5, "l2"}, {5, "csISOLatin2"},
@@ -270,12 +270,12 @@ inline constexpr te_name te_names[882] = {
     {2260, "CP50220"}, {2260, "csCP50220"},
 };
 
-struct te_key {
+struct __te_key {
   const char* key;
   std::int_least32_t mib;
 };
 
-inline constexpr te_key te_keys[857] = {
+inline constexpr __te_key __te_keys[857] = {
     {"437", 2011},
     {"850", 2009},
     {"851", 2045},
@@ -1135,4 +1135,4 @@ inline constexpr te_key te_keys[857] = {
     {"yu", 87},
 };
 
-}} // namespace ycxx::detail
+}} // namespace __ycxx::__detail

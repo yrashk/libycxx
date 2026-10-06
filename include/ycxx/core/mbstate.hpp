@@ -6,10 +6,10 @@
 
 #include <ycxx/config.hpp>
 
-namespace [[gnu::visibility("hidden")]] std {
+namespace [[__gnu__::__visibility__("hidden")]] std {
 // An opaque, zero-initialisable object. glibc and musl: 8 bytes, 4-byte alignment; Darwin: 128
 // bytes, 8-byte alignment (cfg::mbstate_size/_align, checked against the C library's when hosted).
 struct mbstate_t {
-  alignas(ycxx::detail::cfg::mbstate_align) unsigned char __state[ycxx::detail::cfg::mbstate_size];
+  alignas(__ycxx::__detail::__cfg::__mbstate_align) unsigned char __state[__ycxx::__detail::__cfg::__mbstate_size];
 };
 } // namespace std

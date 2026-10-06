@@ -23,7 +23,7 @@
 #include <istream>
 #include <ostream>
 
-namespace [[gnu::visibility("hidden")]] std {
+namespace [[__gnu__::__visibility__("hidden")]] std {
 extern istream cin;
 extern ostream cout;
 extern ostream cerr;
@@ -34,11 +34,11 @@ extern wostream wcerr;
 extern wostream wclog;
 } // namespace std
 
-namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
 // [iostream.objects.overview]/5: this translation unit's ios_base::Init object, where the
 // runtime's own cannot be ordered first (cfg::init_priority false: Mach-O); an empty object
 // otherwise. Internal linkage: one per translation unit.
-struct no_ios_init {};
-using tu_ios_init = std::conditional_t<cfg::init_priority, no_ios_init, std::ios_base::Init>;
-[[maybe_unused]] static tu_ios_init ios_init_object;
-}} // namespace ycxx::detail
+struct __no_ios_init {};
+using __tu_ios_init = std::conditional_t<__cfg::__init_priority, __no_ios_init, std::ios_base::Init>;
+[[maybe_unused]] static __tu_ios_init __ios_init_object;
+}} // namespace __ycxx::__detail

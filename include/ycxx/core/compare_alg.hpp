@@ -3,54 +3,54 @@
 
 #include <ycxx/core/compare.hpp>
 
-namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
 
 // ---- IEEE totalOrder key for floating-point values -------------------------------------------
 // Maps a floating-point value to (sign, magnitude-key) such that comparing keys implements
 // IEEE 754 totalOrder (-NaN < -inf < ... < -0 < +0 < ... < +inf < +NaN).
-struct fp_key {
-  bool negative;
-  uint128 magnitude; // exponent and significand bits, as an unsigned integer
+struct __fp_key {
+  bool __negative;
+  __uint128 __magnitude; // exponent and significand bits, as an unsigned integer
 };
 
-struct x87_layout {
-  unsigned long long significand;
-  unsigned short sign_exponent;
+struct __x87_layout {
+  unsigned long long __significand;
+  unsigned short __sign_exponent;
 };
 
-template <class T>
-constexpr fp_key fp_total_key(T x) noexcept {
-  constexpr fp_format_info f = fp_format<T>;
-  if constexpr (__is_same(T, long double) && f.digits == 64) {
-    auto r = __builtin_bit_cast(x87_layout, x);
-    return {static_cast<bool>(r.sign_exponent >> 15),
-            (static_cast<uint128>(r.sign_exponent & 0x7fff) << 64) | r.significand};
+template <class _Tp>
+constexpr __fp_key __fp_total_key(_Tp __x) noexcept {
+  constexpr __fp_format_info __f = __fp_format<_Tp>;
+  if constexpr (__is_same(_Tp, long double) && __f.digits == 64) {
+    auto r = __builtin_bit_cast(__x87_layout, __x);
+    return {static_cast<bool>(r.__sign_exponent >> 15),
+            (static_cast<__uint128>(r.__sign_exponent & 0x7fff) << 64) | r.__significand};
   } else {
-    using U = std::conditional_t<sizeof(T) == 2, unsigned short,
-                                 std::conditional_t<sizeof(T) == 4, unsigned int,
-                                                    std::conditional_t<sizeof(T) == 8, unsigned long long, uint128>>>;
-    constexpr int bits = static_cast<int>(sizeof(T) * __CHAR_BIT__);
-    U u = __builtin_bit_cast(U, x);
-    U sign = U(U(1) << (bits - 1));
-    return {(u & sign) != 0, static_cast<uint128>(u & U(~sign))};
+    using _Up = std::conditional_t<sizeof(_Tp) == 2, unsigned short,
+                                 std::conditional_t<sizeof(_Tp) == 4, unsigned int,
+                                                    std::conditional_t<sizeof(_Tp) == 8, unsigned long long, __uint128>>>;
+    constexpr int bits = static_cast<int>(sizeof(_Tp) * __CHAR_BIT__);
+    _Up __u = __builtin_bit_cast(_Up, __x);
+    _Up sign = _Up(_Up(1) << (bits - 1));
+    return {(__u & sign) != 0, static_cast<__uint128>(__u & _Up(~sign))};
   }
 }
 
-template <class T>
-constexpr std::strong_ordering fp_strong_order(T a, T b) noexcept {
-  fp_key ka = fp_total_key(a), kb = fp_total_key(b);
-  if (ka.negative != kb.negative)
-    return ka.negative ? std::strong_ordering::less : std::strong_ordering::greater;
-  if (ka.magnitude == kb.magnitude)
+template <class _Tp>
+constexpr std::strong_ordering __fp_strong_order(_Tp a, _Tp b) noexcept {
+  __fp_key __ka = __fp_total_key(a), __kb = __fp_total_key(b);
+  if (__ka.__negative != __kb.__negative)
+    return __ka.__negative ? std::strong_ordering::less : std::strong_ordering::greater;
+  if (__ka.__magnitude == __kb.__magnitude)
     return std::strong_ordering::equal;
-  bool less = ka.magnitude < kb.magnitude;
-  return (less != ka.negative) ? std::strong_ordering::less : std::strong_ordering::greater;
+  bool less = __ka.__magnitude < __kb.__magnitude;
+  return (less != __ka.__negative) ? std::strong_ordering::less : std::strong_ordering::greater;
 }
 
-template <class T>
-constexpr std::weak_ordering fp_weak_order(T a, T b) noexcept {
-  bool na = a != a, nb = b != b;
-  if (!na && !nb) { // ordinary comparison; -0 == +0
+template <class _Tp>
+constexpr std::weak_ordering __fp_weak_order(_Tp a, _Tp b) noexcept {
+  bool __na = a != a, __nb = b != b;
+  if (!__na && !__nb) { // ordinary comparison; -0 == +0
     if (a < b)
       return std::weak_ordering::less;
     if (b < a)
@@ -58,11 +58,11 @@ constexpr std::weak_ordering fp_weak_order(T a, T b) noexcept {
     return std::weak_ordering::equivalent;
   }
   // NaNs: all negative NaNs are least, all positive NaNs greatest.
-  auto rank = [](T v, bool nan) { return nan ? (fp_total_key(v).negative ? -1 : 1) : 0; };
-  int ra = rank(a, na), rb = rank(b, nb);
-  if (ra == rb)
+  auto rank = [](_Tp __v, bool nan) { return nan ? (__fp_total_key(__v).__negative ? -1 : 1) : 0; };
+  int __ra = rank(a, __na), __rb = rank(b, __nb);
+  if (__ra == __rb)
     return std::weak_ordering::equivalent;
-  return ra < rb ? std::weak_ordering::less : std::weak_ordering::greater;
+  return __ra < __rb ? std::weak_ordering::less : std::weak_ordering::greater;
 }
 
 // ---- CPOs ----------------------------------------------------------------------------------
@@ -70,215 +70,215 @@ constexpr std::weak_ordering fp_weak_order(T a, T b) noexcept {
 // exactly when that expression is. `choose` names the selected branch (none: the call is
 // ill-formed) and that expression's exception specification; the call operators are constrained
 // on the first and carry the second.
-namespace cmp_cpo {
+namespace __cmp_cpo {
 
 void strong_order() = delete;
 void weak_order() = delete;
 void partial_order() = delete;
 
-template <class E, class F>
-concept same_decayed = __is_same(std::decay_t<E>, std::decay_t<F>);
+template <class _Ep, class _Fp>
+concept __same_decayed = __is_same(std::decay_t<_Ep>, std::decay_t<_Fp>);
 
-template <class E, class F>
-concept adl_strong = requires(E&& e, F&& f) { std::strong_ordering(strong_order(static_cast<E&&>(e), static_cast<F&&>(f))); };
-template <class E, class F>
-concept adl_weak = requires(E&& e, F&& f) { std::weak_ordering(weak_order(static_cast<E&&>(e), static_cast<F&&>(f))); };
-template <class E, class F>
-concept adl_partial = requires(E&& e, F&& f) { std::partial_ordering(partial_order(static_cast<E&&>(e), static_cast<F&&>(f))); };
+template <class _Ep, class _Fp>
+concept __adl_strong = requires(_Ep&& e, _Fp&& __f) { std::strong_ordering(strong_order(static_cast<_Ep&&>(e), static_cast<_Fp&&>(__f))); };
+template <class _Ep, class _Fp>
+concept __adl_weak = requires(_Ep&& e, _Fp&& __f) { std::weak_ordering(weak_order(static_cast<_Ep&&>(e), static_cast<_Fp&&>(__f))); };
+template <class _Ep, class _Fp>
+concept __adl_partial = requires(_Ep&& e, _Fp&& __f) { std::partial_ordering(partial_order(static_cast<_Ep&&>(e), static_cast<_Fp&&>(__f))); };
 
-template <class Cat, class E, class F>
-concept three_way_as = requires(E&& e, F&& f) { Cat(std::compare_three_way()(static_cast<E&&>(e), static_cast<F&&>(f))); };
+template <class _Cat, class _Ep, class _Fp>
+concept __three_way_as = requires(_Ep&& e, _Fp&& __f) { _Cat(std::compare_three_way()(static_cast<_Ep&&>(e), static_cast<_Fp&&>(__f))); };
 
-template <class E>
-concept floating = is_floating_v<std::decay_t<E>>;
+template <class _Ep>
+concept __floating = __is_floating_v<std::decay_t<_Ep>>;
 
-enum class cmp_branch : unsigned char { none, adl, floating, three_way, stronger, operators };
-struct cmp_choice {
-  cmp_branch branch;
+enum class __cmp_branch : unsigned char { none, __adl, __floating, __three_way, __stronger, operators };
+struct __cmp_choice {
+  __cmp_branch __branch;
   bool nothrow;
 };
 
-struct strong_order_fn {
-  template <class E, class F>
-  static consteval cmp_choice choose() {
-    if constexpr (!same_decayed<E, F>)
-      return {cmp_branch::none, false};
-    else if constexpr (adl_strong<E, F>)
-      return {cmp_branch::adl, noexcept(std::strong_ordering(strong_order(std::declval<E>(), std::declval<F>())))};
-    else if constexpr (floating<E>)
-      return {cmp_branch::floating, true};
-    else if constexpr (three_way_as<std::strong_ordering, E, F>)
-      return {cmp_branch::three_way,
-              noexcept(std::strong_ordering(std::compare_three_way()(std::declval<E>(), std::declval<F>())))};
+struct __strong_order_fn {
+  template <class _Ep, class _Fp>
+  static consteval __cmp_choice choose() {
+    if constexpr (!__same_decayed<_Ep, _Fp>)
+      return {__cmp_branch::none, false};
+    else if constexpr (__adl_strong<_Ep, _Fp>)
+      return {__cmp_branch::__adl, noexcept(std::strong_ordering(strong_order(std::declval<_Ep>(), std::declval<_Fp>())))};
+    else if constexpr (__floating<_Ep>)
+      return {__cmp_branch::__floating, true};
+    else if constexpr (__three_way_as<std::strong_ordering, _Ep, _Fp>)
+      return {__cmp_branch::__three_way,
+              noexcept(std::strong_ordering(std::compare_three_way()(std::declval<_Ep>(), std::declval<_Fp>())))};
     else
-      return {cmp_branch::none, false};
+      return {__cmp_branch::none, false};
   }
 
-  template <class E, class F>
-    requires(choose<E, F>().branch != cmp_branch::none)
-  constexpr std::strong_ordering operator()(E&& e, F&& f) const noexcept(choose<E, F>().nothrow) {
-    constexpr cmp_branch b = choose<E, F>().branch;
-    if constexpr (b == cmp_branch::adl)
-      return std::strong_ordering(strong_order(static_cast<E&&>(e), static_cast<F&&>(f)));
-    else if constexpr (b == cmp_branch::floating)
-      return fp_strong_order<std::decay_t<E>>(e, f);
+  template <class _Ep, class _Fp>
+    requires(choose<_Ep, _Fp>().__branch != __cmp_branch::none)
+  constexpr std::strong_ordering operator()(_Ep&& e, _Fp&& __f) const noexcept(choose<_Ep, _Fp>().nothrow) {
+    constexpr __cmp_branch b = choose<_Ep, _Fp>().__branch;
+    if constexpr (b == __cmp_branch::__adl)
+      return std::strong_ordering(strong_order(static_cast<_Ep&&>(e), static_cast<_Fp&&>(__f)));
+    else if constexpr (b == __cmp_branch::__floating)
+      return __fp_strong_order<std::decay_t<_Ep>>(e, __f);
     else
-      return std::strong_ordering(std::compare_three_way()(static_cast<E&&>(e), static_cast<F&&>(f)));
+      return std::strong_ordering(std::compare_three_way()(static_cast<_Ep&&>(e), static_cast<_Fp&&>(__f)));
   }
 };
-inline constexpr strong_order_fn strong_order_obj{};
+inline constexpr __strong_order_fn __strong_order_obj{};
 
-struct weak_order_fn {
-  template <class E, class F>
-  static consteval cmp_choice choose() {
-    if constexpr (!same_decayed<E, F>)
-      return {cmp_branch::none, false};
-    else if constexpr (adl_weak<E, F>)
-      return {cmp_branch::adl, noexcept(std::weak_ordering(weak_order(std::declval<E>(), std::declval<F>())))};
-    else if constexpr (floating<E>)
-      return {cmp_branch::floating, true};
-    else if constexpr (three_way_as<std::weak_ordering, E, F>)
-      return {cmp_branch::three_way,
-              noexcept(std::weak_ordering(std::compare_three_way()(std::declval<E>(), std::declval<F>())))};
-    else if constexpr (requires { std::weak_ordering(strong_order_obj(std::declval<E>(), std::declval<F>())); })
-      return {cmp_branch::stronger, noexcept(std::weak_ordering(strong_order_obj(std::declval<E>(), std::declval<F>())))};
+struct __weak_order_fn {
+  template <class _Ep, class _Fp>
+  static consteval __cmp_choice choose() {
+    if constexpr (!__same_decayed<_Ep, _Fp>)
+      return {__cmp_branch::none, false};
+    else if constexpr (__adl_weak<_Ep, _Fp>)
+      return {__cmp_branch::__adl, noexcept(std::weak_ordering(weak_order(std::declval<_Ep>(), std::declval<_Fp>())))};
+    else if constexpr (__floating<_Ep>)
+      return {__cmp_branch::__floating, true};
+    else if constexpr (__three_way_as<std::weak_ordering, _Ep, _Fp>)
+      return {__cmp_branch::__three_way,
+              noexcept(std::weak_ordering(std::compare_three_way()(std::declval<_Ep>(), std::declval<_Fp>())))};
+    else if constexpr (requires { std::weak_ordering(__strong_order_obj(std::declval<_Ep>(), std::declval<_Fp>())); })
+      return {__cmp_branch::__stronger, noexcept(std::weak_ordering(__strong_order_obj(std::declval<_Ep>(), std::declval<_Fp>())))};
     else
-      return {cmp_branch::none, false};
+      return {__cmp_branch::none, false};
   }
 
-  template <class E, class F>
-    requires(choose<E, F>().branch != cmp_branch::none)
-  constexpr std::weak_ordering operator()(E&& e, F&& f) const noexcept(choose<E, F>().nothrow) {
-    constexpr cmp_branch b = choose<E, F>().branch;
-    if constexpr (b == cmp_branch::adl)
-      return std::weak_ordering(weak_order(static_cast<E&&>(e), static_cast<F&&>(f)));
-    else if constexpr (b == cmp_branch::floating)
-      return fp_weak_order<std::decay_t<E>>(e, f);
-    else if constexpr (b == cmp_branch::three_way)
-      return std::weak_ordering(std::compare_three_way()(static_cast<E&&>(e), static_cast<F&&>(f)));
+  template <class _Ep, class _Fp>
+    requires(choose<_Ep, _Fp>().__branch != __cmp_branch::none)
+  constexpr std::weak_ordering operator()(_Ep&& e, _Fp&& __f) const noexcept(choose<_Ep, _Fp>().nothrow) {
+    constexpr __cmp_branch b = choose<_Ep, _Fp>().__branch;
+    if constexpr (b == __cmp_branch::__adl)
+      return std::weak_ordering(weak_order(static_cast<_Ep&&>(e), static_cast<_Fp&&>(__f)));
+    else if constexpr (b == __cmp_branch::__floating)
+      return __fp_weak_order<std::decay_t<_Ep>>(e, __f);
+    else if constexpr (b == __cmp_branch::__three_way)
+      return std::weak_ordering(std::compare_three_way()(static_cast<_Ep&&>(e), static_cast<_Fp&&>(__f)));
     else
-      return std::weak_ordering(strong_order_obj(static_cast<E&&>(e), static_cast<F&&>(f)));
-  }
-};
-inline constexpr weak_order_fn weak_order_obj{};
-
-struct partial_order_fn {
-  template <class E, class F>
-  static consteval cmp_choice choose() {
-    if constexpr (!same_decayed<E, F>)
-      return {cmp_branch::none, false};
-    else if constexpr (adl_partial<E, F>)
-      return {cmp_branch::adl, noexcept(std::partial_ordering(partial_order(std::declval<E>(), std::declval<F>())))};
-    else if constexpr (three_way_as<std::partial_ordering, E, F>)
-      return {cmp_branch::three_way,
-              noexcept(std::partial_ordering(std::compare_three_way()(std::declval<E>(), std::declval<F>())))};
-    else if constexpr (requires { std::partial_ordering(weak_order_obj(std::declval<E>(), std::declval<F>())); })
-      return {cmp_branch::stronger, noexcept(std::partial_ordering(weak_order_obj(std::declval<E>(), std::declval<F>())))};
-    else
-      return {cmp_branch::none, false};
-  }
-
-  template <class E, class F>
-    requires(choose<E, F>().branch != cmp_branch::none)
-  constexpr std::partial_ordering operator()(E&& e, F&& f) const noexcept(choose<E, F>().nothrow) {
-    constexpr cmp_branch b = choose<E, F>().branch;
-    if constexpr (b == cmp_branch::adl)
-      return std::partial_ordering(partial_order(static_cast<E&&>(e), static_cast<F&&>(f)));
-    else if constexpr (b == cmp_branch::three_way)
-      return std::partial_ordering(std::compare_three_way()(static_cast<E&&>(e), static_cast<F&&>(f)));
-    else
-      return std::partial_ordering(weak_order_obj(static_cast<E&&>(e), static_cast<F&&>(f)));
+      return std::weak_ordering(__strong_order_obj(static_cast<_Ep&&>(e), static_cast<_Fp&&>(__f)));
   }
 };
-inline constexpr partial_order_fn partial_order_obj{};
+inline constexpr __weak_order_fn __weak_order_obj{};
+
+struct __partial_order_fn {
+  template <class _Ep, class _Fp>
+  static consteval __cmp_choice choose() {
+    if constexpr (!__same_decayed<_Ep, _Fp>)
+      return {__cmp_branch::none, false};
+    else if constexpr (__adl_partial<_Ep, _Fp>)
+      return {__cmp_branch::__adl, noexcept(std::partial_ordering(partial_order(std::declval<_Ep>(), std::declval<_Fp>())))};
+    else if constexpr (__three_way_as<std::partial_ordering, _Ep, _Fp>)
+      return {__cmp_branch::__three_way,
+              noexcept(std::partial_ordering(std::compare_three_way()(std::declval<_Ep>(), std::declval<_Fp>())))};
+    else if constexpr (requires { std::partial_ordering(__weak_order_obj(std::declval<_Ep>(), std::declval<_Fp>())); })
+      return {__cmp_branch::__stronger, noexcept(std::partial_ordering(__weak_order_obj(std::declval<_Ep>(), std::declval<_Fp>())))};
+    else
+      return {__cmp_branch::none, false};
+  }
+
+  template <class _Ep, class _Fp>
+    requires(choose<_Ep, _Fp>().__branch != __cmp_branch::none)
+  constexpr std::partial_ordering operator()(_Ep&& e, _Fp&& __f) const noexcept(choose<_Ep, _Fp>().nothrow) {
+    constexpr __cmp_branch b = choose<_Ep, _Fp>().__branch;
+    if constexpr (b == __cmp_branch::__adl)
+      return std::partial_ordering(partial_order(static_cast<_Ep&&>(e), static_cast<_Fp&&>(__f)));
+    else if constexpr (b == __cmp_branch::__three_way)
+      return std::partial_ordering(std::compare_three_way()(static_cast<_Ep&&>(e), static_cast<_Fp&&>(__f)));
+    else
+      return std::partial_ordering(__weak_order_obj(static_cast<_Ep&&>(e), static_cast<_Fp&&>(__f)));
+  }
+};
+inline constexpr __partial_order_fn __partial_order_obj{};
 
 // The fallbacks' operator branches evaluate E and F once each, as the lvalues e and f.
-template <class E, class F>
-concept eq_lt_testable = requires(E&& e, F&& f) {
-  { e == f } -> boolean_testable;
-  { e < f } -> boolean_testable;
+template <class _Ep, class _Fp>
+concept __eq_lt_testable = requires(_Ep&& e, _Fp&& __f) {
+  { e == __f } -> __boolean_testable;
+  { e < __f } -> __boolean_testable;
 };
 
-struct strong_fallback_fn {
-  template <class E, class F>
-  static consteval cmp_choice choose() {
-    if constexpr (!same_decayed<E, F>)
-      return {cmp_branch::none, false};
-    else if constexpr (requires { strong_order_obj(std::declval<E>(), std::declval<F>()); })
-      return {cmp_branch::stronger, noexcept(strong_order_obj(std::declval<E>(), std::declval<F>()))};
-    else if constexpr (eq_lt_testable<E, F>)
-      return {cmp_branch::operators,
-              noexcept(std::declval<E&>() == std::declval<F&>()  ? std::strong_ordering::equal
-                       : std::declval<E&>() < std::declval<F&>() ? std::strong_ordering::less
+struct __strong_fallback_fn {
+  template <class _Ep, class _Fp>
+  static consteval __cmp_choice choose() {
+    if constexpr (!__same_decayed<_Ep, _Fp>)
+      return {__cmp_branch::none, false};
+    else if constexpr (requires { __strong_order_obj(std::declval<_Ep>(), std::declval<_Fp>()); })
+      return {__cmp_branch::__stronger, noexcept(__strong_order_obj(std::declval<_Ep>(), std::declval<_Fp>()))};
+    else if constexpr (__eq_lt_testable<_Ep, _Fp>)
+      return {__cmp_branch::operators,
+              noexcept(std::declval<_Ep&>() == std::declval<_Fp&>()  ? std::strong_ordering::equal
+                       : std::declval<_Ep&>() < std::declval<_Fp&>() ? std::strong_ordering::less
                                                                  : std::strong_ordering::greater)};
     else
-      return {cmp_branch::none, false};
+      return {__cmp_branch::none, false};
   }
 
-  template <class E, class F>
-    requires(choose<E, F>().branch != cmp_branch::none)
-  constexpr std::strong_ordering operator()(E&& e, F&& f) const noexcept(choose<E, F>().nothrow) {
-    if constexpr (choose<E, F>().branch == cmp_branch::stronger)
-      return strong_order_obj(static_cast<E&&>(e), static_cast<F&&>(f));
+  template <class _Ep, class _Fp>
+    requires(choose<_Ep, _Fp>().__branch != __cmp_branch::none)
+  constexpr std::strong_ordering operator()(_Ep&& e, _Fp&& __f) const noexcept(choose<_Ep, _Fp>().nothrow) {
+    if constexpr (choose<_Ep, _Fp>().__branch == __cmp_branch::__stronger)
+      return __strong_order_obj(static_cast<_Ep&&>(e), static_cast<_Fp&&>(__f));
     else
-      return e == f ? std::strong_ordering::equal : e < f ? std::strong_ordering::less : std::strong_ordering::greater;
+      return e == __f ? std::strong_ordering::equal : e < __f ? std::strong_ordering::less : std::strong_ordering::greater;
   }
 };
-struct weak_fallback_fn {
-  template <class E, class F>
-  static consteval cmp_choice choose() {
-    if constexpr (!same_decayed<E, F>)
-      return {cmp_branch::none, false};
-    else if constexpr (requires { weak_order_obj(std::declval<E>(), std::declval<F>()); })
-      return {cmp_branch::stronger, noexcept(weak_order_obj(std::declval<E>(), std::declval<F>()))};
-    else if constexpr (eq_lt_testable<E, F>)
-      return {cmp_branch::operators,
-              noexcept(std::declval<E&>() == std::declval<F&>()  ? std::weak_ordering::equivalent
-                       : std::declval<E&>() < std::declval<F&>() ? std::weak_ordering::less
+struct __weak_fallback_fn {
+  template <class _Ep, class _Fp>
+  static consteval __cmp_choice choose() {
+    if constexpr (!__same_decayed<_Ep, _Fp>)
+      return {__cmp_branch::none, false};
+    else if constexpr (requires { __weak_order_obj(std::declval<_Ep>(), std::declval<_Fp>()); })
+      return {__cmp_branch::__stronger, noexcept(__weak_order_obj(std::declval<_Ep>(), std::declval<_Fp>()))};
+    else if constexpr (__eq_lt_testable<_Ep, _Fp>)
+      return {__cmp_branch::operators,
+              noexcept(std::declval<_Ep&>() == std::declval<_Fp&>()  ? std::weak_ordering::equivalent
+                       : std::declval<_Ep&>() < std::declval<_Fp&>() ? std::weak_ordering::less
                                                                  : std::weak_ordering::greater)};
     else
-      return {cmp_branch::none, false};
+      return {__cmp_branch::none, false};
   }
 
-  template <class E, class F>
-    requires(choose<E, F>().branch != cmp_branch::none)
-  constexpr std::weak_ordering operator()(E&& e, F&& f) const noexcept(choose<E, F>().nothrow) {
-    if constexpr (choose<E, F>().branch == cmp_branch::stronger)
-      return weak_order_obj(static_cast<E&&>(e), static_cast<F&&>(f));
+  template <class _Ep, class _Fp>
+    requires(choose<_Ep, _Fp>().__branch != __cmp_branch::none)
+  constexpr std::weak_ordering operator()(_Ep&& e, _Fp&& __f) const noexcept(choose<_Ep, _Fp>().nothrow) {
+    if constexpr (choose<_Ep, _Fp>().__branch == __cmp_branch::__stronger)
+      return __weak_order_obj(static_cast<_Ep&&>(e), static_cast<_Fp&&>(__f));
     else
-      return e == f ? std::weak_ordering::equivalent : e < f ? std::weak_ordering::less : std::weak_ordering::greater;
+      return e == __f ? std::weak_ordering::equivalent : e < __f ? std::weak_ordering::less : std::weak_ordering::greater;
   }
 };
-struct partial_fallback_fn {
-  template <class E, class F>
-  static consteval cmp_choice choose() {
-    if constexpr (!same_decayed<E, F>)
-      return {cmp_branch::none, false};
-    else if constexpr (requires { partial_order_obj(std::declval<E>(), std::declval<F>()); })
-      return {cmp_branch::stronger, noexcept(partial_order_obj(std::declval<E>(), std::declval<F>()))};
-    else if constexpr (requires(E&& e, F&& f) {
-                         { e == f } -> boolean_testable;
-                         { e < f } -> boolean_testable;
-                         { f < e } -> boolean_testable;
+struct __partial_fallback_fn {
+  template <class _Ep, class _Fp>
+  static consteval __cmp_choice choose() {
+    if constexpr (!__same_decayed<_Ep, _Fp>)
+      return {__cmp_branch::none, false};
+    else if constexpr (requires { __partial_order_obj(std::declval<_Ep>(), std::declval<_Fp>()); })
+      return {__cmp_branch::__stronger, noexcept(__partial_order_obj(std::declval<_Ep>(), std::declval<_Fp>()))};
+    else if constexpr (requires(_Ep&& e, _Fp&& __f) {
+                         { e == __f } -> __boolean_testable;
+                         { e < __f } -> __boolean_testable;
+                         { __f < e } -> __boolean_testable;
                        })
-      return {cmp_branch::operators,
-              noexcept(std::declval<E&>() == std::declval<F&>()  ? std::partial_ordering::equivalent
-                       : std::declval<E&>() < std::declval<F&>() ? std::partial_ordering::less
-                       : std::declval<F&>() < std::declval<E&>() ? std::partial_ordering::greater
+      return {__cmp_branch::operators,
+              noexcept(std::declval<_Ep&>() == std::declval<_Fp&>()  ? std::partial_ordering::equivalent
+                       : std::declval<_Ep&>() < std::declval<_Fp&>() ? std::partial_ordering::less
+                       : std::declval<_Fp&>() < std::declval<_Ep&>() ? std::partial_ordering::greater
                                                                  : std::partial_ordering::unordered)};
     else
-      return {cmp_branch::none, false};
+      return {__cmp_branch::none, false};
   }
 
-  template <class E, class F>
-    requires(choose<E, F>().branch != cmp_branch::none)
-  constexpr std::partial_ordering operator()(E&& e, F&& f) const noexcept(choose<E, F>().nothrow) {
-    if constexpr (choose<E, F>().branch == cmp_branch::stronger)
-      return partial_order_obj(static_cast<E&&>(e), static_cast<F&&>(f));
+  template <class _Ep, class _Fp>
+    requires(choose<_Ep, _Fp>().__branch != __cmp_branch::none)
+  constexpr std::partial_ordering operator()(_Ep&& e, _Fp&& __f) const noexcept(choose<_Ep, _Fp>().nothrow) {
+    if constexpr (choose<_Ep, _Fp>().__branch == __cmp_branch::__stronger)
+      return __partial_order_obj(static_cast<_Ep&&>(e), static_cast<_Fp&&>(__f));
     else
-      return e == f  ? std::partial_ordering::equivalent
-             : e < f ? std::partial_ordering::less
-             : f < e ? std::partial_ordering::greater
+      return e == __f  ? std::partial_ordering::equivalent
+             : e < __f ? std::partial_ordering::less
+             : __f < e ? std::partial_ordering::greater
                      : std::partial_ordering::unordered;
   }
 };
@@ -289,17 +289,17 @@ struct partial_fallback_fn {
 // The implementation-defined total order on types: lexicographic order of the compiler's
 // spelling of a function signature that mentions the type. Same type => same spelling;
 // distinct types visible in one TU => distinct spellings.
-template <class T>
-consteval const char* type_spelling() {
+template <class _Tp>
+consteval const char* __type_spelling() {
   return __PRETTY_FUNCTION__;
 }
-template <class T, class U>
-consteval int type_compare() {
-  if constexpr (__is_same(T, U)) {
+template <class _Tp, class _Up>
+consteval int __type_compare() {
+  if constexpr (__is_same(_Tp, _Up)) {
     return 0;
   } else {
-    const char* a = type_spelling<T>();
-    const char* b = type_spelling<U>();
+    const char* a = __type_spelling<_Tp>();
+    const char* b = __type_spelling<_Up>();
     for (;; ++a, ++b) {
       if (*a != *b)
         return static_cast<unsigned char>(*a) < static_cast<unsigned char>(*b) ? -1 : 1;
@@ -309,29 +309,29 @@ consteval int type_compare() {
   }
 }
 
-}} // namespace ycxx::detail
+}} // namespace __ycxx::__detail
 
-namespace [[gnu::visibility("hidden")]] std {
+namespace [[__gnu__::__visibility__("hidden")]] std {
 
-inline namespace cpo {
-inline constexpr ycxx::detail::cmp_cpo::strong_order_fn strong_order{};
-inline constexpr ycxx::detail::cmp_cpo::weak_order_fn weak_order{};
-inline constexpr ycxx::detail::cmp_cpo::partial_order_fn partial_order{};
-inline constexpr ycxx::detail::cmp_cpo::strong_fallback_fn compare_strong_order_fallback{};
-inline constexpr ycxx::detail::cmp_cpo::weak_fallback_fn compare_weak_order_fallback{};
-inline constexpr ycxx::detail::cmp_cpo::partial_fallback_fn compare_partial_order_fallback{};
+inline namespace __cpo {
+inline constexpr __ycxx::__detail::__cmp_cpo::__strong_order_fn strong_order{};
+inline constexpr __ycxx::__detail::__cmp_cpo::__weak_order_fn weak_order{};
+inline constexpr __ycxx::__detail::__cmp_cpo::__partial_order_fn partial_order{};
+inline constexpr __ycxx::__detail::__cmp_cpo::__strong_fallback_fn compare_strong_order_fallback{};
+inline constexpr __ycxx::__detail::__cmp_cpo::__weak_fallback_fn compare_weak_order_fallback{};
+inline constexpr __ycxx::__detail::__cmp_cpo::__partial_fallback_fn compare_partial_order_fallback{};
 } // namespace cpo
 
-template <class T, class U>
+template <class _Tp, class _Up>
 struct type_order {
-  static constexpr strong_ordering value = ycxx::detail::type_compare<T, U>() < 0    ? strong_ordering::less
-                                           : ycxx::detail::type_compare<T, U>() == 0 ? strong_ordering::equal
+  static constexpr strong_ordering value = __ycxx::__detail::__type_compare<_Tp, _Up>() < 0    ? strong_ordering::less
+                                           : __ycxx::__detail::__type_compare<_Tp, _Up>() == 0 ? strong_ordering::equal
                                                                                      : strong_ordering::greater;
   using value_type = strong_ordering;
   constexpr operator value_type() const noexcept { return value; }
   constexpr value_type operator()() const noexcept { return value; }
 };
-template <class T, class U>
-constexpr strong_ordering type_order_v = type_order<T, U>::value;
+template <class _Tp, class _Up>
+constexpr strong_ordering type_order_v = type_order<_Tp, _Up>::value;
 
 } // namespace std

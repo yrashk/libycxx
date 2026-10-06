@@ -5,32 +5,32 @@
 #include <ycxx/core/cstddef.hpp>
 #include <ycxx/core/version.hpp>
 
-namespace [[gnu::visibility("hidden")]] std {
+namespace [[__gnu__::__visibility__("hidden")]] std {
 
 // Layout {pointer, size} is what both GCC and Clang construct for braced-init-lists.
-template <class E>
+template <class _Ep>
 class initializer_list {
-  const E* first_;
-  size_t size_;
+  const _Ep* __first_;
+  size_t __size_;
 
   // Called by the compiler.
-  constexpr initializer_list(const E* b, size_t n) noexcept : first_(b), size_(n) {}
+  constexpr initializer_list(const _Ep* b, size_t n) noexcept : __first_(b), __size_(n) {}
 
 public:
-  using value_type = E;
-  using reference = const E&;
-  using const_reference = const E&;
+  using value_type = _Ep;
+  using reference = const _Ep&;
+  using const_reference = const _Ep&;
   using size_type = size_t;
-  using iterator = const E*;
-  using const_iterator = const E*;
+  using iterator = const _Ep*;
+  using const_iterator = const _Ep*;
 
-  constexpr initializer_list() noexcept : first_(nullptr), size_(0) {}
+  constexpr initializer_list() noexcept : __first_(nullptr), __size_(0) {}
 
-  constexpr const E* data() const noexcept { return first_; }
-  constexpr size_t size() const noexcept { return size_; }
-  constexpr const E* begin() const noexcept { return first_; }
-  constexpr const E* end() const noexcept { return first_ + size_; }
-  [[nodiscard]] constexpr bool empty() const noexcept { return size_ == 0; }
+  constexpr const _Ep* data() const noexcept { return __first_; }
+  constexpr size_t size() const noexcept { return __size_; }
+  constexpr const _Ep* begin() const noexcept { return __first_; }
+  constexpr const _Ep* end() const noexcept { return __first_ + __size_; }
+  [[nodiscard]] constexpr bool empty() const noexcept { return __size_ == 0; }
 };
 
 } // namespace std

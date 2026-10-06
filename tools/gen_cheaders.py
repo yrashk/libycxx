@@ -9,12 +9,13 @@ import pathlib
 import sys as _sys
 _sys.path.insert(0, str(__import__("pathlib").Path(__file__).resolve().parent))
 from check_visibility import fix as _visibility_fix
+from uglify import uglify_text as _uglify
 
 
 def hidden(text):
     """libycxx's namespaces get hidden visibility (DECISIONS §2), as tools/check_visibility.py
     requires of every header; the generated ones too."""
-    return _visibility_fix(text)[0]
+    return _visibility_fix(_uglify(text))[0]
 
 
 HEADERS = {

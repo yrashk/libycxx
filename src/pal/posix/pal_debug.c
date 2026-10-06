@@ -18,31 +18,31 @@
 #  include <sys/types.h>
 #endif
 
-int ycxx_pal_debugger_present(void) {
+int __ycxx_pal_debugger_present(void) {
 #if defined(__linux__)
   // "TracerPid:\t<pid>" in /proc/self/status: nonzero while a tracer (ptrace) is attached.
-  const int saved = errno;
-  int fd = open("/proc/self/status", O_RDONLY | O_CLOEXEC);
-  if (fd < 0) {
-    errno = saved;
+  const int __saved = errno;
+  int __fd = open("/proc/self/status", O_RDONLY | O_CLOEXEC);
+  if (__fd < 0) {
+    errno = __saved;
     return 0;
   }
-  char buf[4096];
-  size_t len = 0;
+  char __buf[4096];
+  size_t __len = 0;
   for (;;) {
-    ssize_t r = read(fd, buf + len, sizeof buf - 1 - len);
+    ssize_t r = read(__fd, __buf + __len, sizeof __buf - 1 - __len);
     if (r < 0 && errno == EINTR)
       continue;
     if (r <= 0)
       break;
-    len += (size_t)r;
-    if (len == sizeof buf - 1)
+    __len += (size_t)r;
+    if (__len == sizeof __buf - 1)
       break;
   }
-  close(fd);
-  errno = saved;
-  buf[len] = '\0';
-  const char* p = strstr(buf, "TracerPid:");
+  close(__fd);
+  errno = __saved;
+  __buf[__len] = '\0';
+  const char* p = strstr(__buf, "TracerPid:");
   if (!p)
     return 0;
   p += sizeof "TracerPid:" - 1;
@@ -55,9 +55,9 @@ int ycxx_pal_debugger_present(void) {
   struct kinfo_proc info;
   memset(&info, 0, sizeof info);
   size_t size = sizeof info;
-  const int saved = errno;
+  const int __saved = errno;
   const int r = sysctl(mib, 4, &info, &size, NULL, 0);
-  errno = saved;
+  errno = __saved;
   return r == 0 && (info.kp_proc.p_flag & P_TRACED) != 0;
 #else
   return 0;
@@ -66,31 +66,31 @@ int ycxx_pal_debugger_present(void) {
 
 #if defined(__linux__) || defined(__FreeBSD__)
 struct pal_object_query {
-  ElfW(Addr) pc;
+  ElfW(Addr) __pc;
   char* path;
   size_t n;
-  ycxx_pal_handle* bias;
+  __ycxx_pal_handle* __bias;
   int found;
 };
 
 static int pal_object_callback(struct dl_phdr_info* info, size_t size, void* data) {
   (void)size;
-  struct pal_object_query* q = (struct pal_object_query*)data;
+  struct pal_object_query* __q = (struct pal_object_query*)data;
   for (ElfW(Half) i = 0; i < info->dlpi_phnum; ++i) {
     const ElfW(Phdr)* ph = &info->dlpi_phdr[i];
     if (ph->p_type != PT_LOAD)
       continue;
     const ElfW(Addr) start = info->dlpi_addr + ph->p_vaddr;
-    if (q->pc >= start && q->pc - start < ph->p_memsz) {
+    if (__q->__pc >= start && __q->__pc - start < ph->p_memsz) {
       // The executable has an empty name; the first object listed is the executable.
       const char* name = info->dlpi_name && *info->dlpi_name ? info->dlpi_name : "/proc/self/exe";
-      size_t len = strlen(name);
-      if (len >= q->n)
-        len = q->n - 1;
-      memcpy(q->path, name, len);
-      q->path[len] = '\0';
-      *q->bias = (ycxx_pal_handle)info->dlpi_addr;
-      q->found = 1;
+      size_t __len = strlen(name);
+      if (__len >= __q->n)
+        __len = __q->n - 1;
+      memcpy(__q->path, name, __len);
+      __q->path[__len] = '\0';
+      *__q->__bias = (__ycxx_pal_handle)info->dlpi_addr;
+      __q->found = 1;
       return 1;
     }
   }
@@ -98,54 +98,54 @@ static int pal_object_callback(struct dl_phdr_info* info, size_t size, void* dat
 }
 #endif
 
-int ycxx_pal_object_of(ycxx_pal_handle pc, char* path, ycxx_pal_size n, ycxx_pal_handle* bias) {
+int __ycxx_pal_object_of(__ycxx_pal_handle __pc, char* path, __ycxx_pal_size n, __ycxx_pal_handle* __bias) {
   if (n == 0)
     return EINVAL;
 #if defined(__linux__) || defined(__FreeBSD__)
-  struct pal_object_query q = {(ElfW(Addr))pc, path, n, bias, 0};
-  dl_iterate_phdr(pal_object_callback, &q);
-  return q.found ? 0 : ENOENT;
+  struct pal_object_query __q = {(ElfW(Addr))__pc, path, n, __bias, 0};
+  dl_iterate_phdr(pal_object_callback, &__q);
+  return __q.found ? 0 : ENOENT;
 #else
-  (void)pc;
-  (void)bias;
+  (void)__pc;
+  (void)__bias;
   path[0] = '\0';
   return ENOSYS;
 #endif
 }
 
-int ycxx_pal_dynamic_symbol(ycxx_pal_handle pc, const char** name, ycxx_pal_handle* start) {
+int __ycxx_pal_dynamic_symbol(__ycxx_pal_handle __pc, const char** name, __ycxx_pal_handle* start) {
   Dl_info info;
-  if (dladdr((const void*)pc, &info) == 0 || info.dli_sname == NULL)
+  if (dladdr((const void*)__pc, &info) == 0 || info.dli_sname == NULL)
     return ENOENT;
   *name = info.dli_sname;
-  *start = (ycxx_pal_handle)info.dli_saddr;
+  *start = (__ycxx_pal_handle)info.dli_saddr;
   return 0;
 }
 
-int ycxx_pal_map_file(const char* path, const void** data, ycxx_pal_size* size) {
-  const int saved = errno;
-  int fd = open(path, O_RDONLY | O_CLOEXEC);
-  if (fd < 0) {
+int __ycxx_pal_map_file(const char* path, const void** data, __ycxx_pal_size* size) {
+  const int __saved = errno;
+  int __fd = open(path, O_RDONLY | O_CLOEXEC);
+  if (__fd < 0) {
     int e = errno;
-    errno = saved;
+    errno = __saved;
     return e;
   }
-  struct stat st;
+  struct stat __st;
   int r = 0;
-  if (fstat(fd, &st) != 0 || st.st_size <= 0) {
+  if (fstat(__fd, &__st) != 0 || __st.st_size <= 0) {
     r = EINVAL;
   } else {
-    void* p = mmap(NULL, (size_t)st.st_size, PROT_READ, MAP_PRIVATE, fd, 0);
+    void* p = mmap(NULL, (size_t)__st.st_size, PROT_READ, MAP_PRIVATE, __fd, 0);
     if (p == MAP_FAILED) {
       r = errno;
     } else {
       *data = p;
-      *size = (ycxx_pal_size)st.st_size;
+      *size = (__ycxx_pal_size)__st.st_size;
     }
   }
-  close(fd);
-  errno = saved;
+  close(__fd);
+  errno = __saved;
   return r;
 }
 
-void ycxx_pal_unmap_file(const void* data, ycxx_pal_size size) { munmap((void*)data, size); }
+void __ycxx_pal_unmap_file(const void* data, __ycxx_pal_size size) { munmap((void*)data, size); }

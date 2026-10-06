@@ -13,6 +13,7 @@
 // FLAGS: -fPIC
 // UNSUPPORTED-SANITIZER: asan,tsan  the sanitizer runtime's replacement would compete with the test's own
 // SHARED: ../support/linkage/shared_alloc_lib.cpp
+// REQUIRES: exceptions
 #include <atomic>
 #include <cstdio>
 #include <cstdlib>

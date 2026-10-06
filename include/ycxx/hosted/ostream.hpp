@@ -12,121 +12,121 @@
 #include <ycxx/hosted/locale_num.hpp>
 #include <ycxx/hosted/streambuf.hpp>
 
-namespace [[gnu::visibility("hidden")]] ycxx { namespace adl_free {
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __adl_free {
 // The base of basic_syncbuf that the emit_on_flush / noemit_on_flush / flush_emit manipulators
 // see ([ostream.manip]/8 Note 1: the Allocator cannot be deduced). A stream buffer is found to
 // be one through basic_streambuf's tag, so no RTTI is needed.
-template <class charT, class traits>
-class syncbuf_base;
+template <class __charT, class __traits>
+class __syncbuf_base;
 
 // A stream buffer that appends everything written to a string (complex's inserter).
-template <class charT, class traits>
-class string_outbuf final : public std::basic_streambuf<charT, traits> {
+template <class __charT, class __traits>
+class __string_outbuf final : public std::basic_streambuf<__charT, __traits> {
 public:
-  std::basic_string<charT, traits> str;
+  std::basic_string<__charT, __traits> str;
 
 protected:
-  typename traits::int_type overflow(typename traits::int_type c) override {
-    if (!traits::eq_int_type(c, traits::eof()))
-      str.push_back(traits::to_char_type(c));
-    return traits::not_eof(c);
+  typename __traits::int_type overflow(typename __traits::int_type c) override {
+    if (!__traits::eq_int_type(c, __traits::eof()))
+      str.push_back(__traits::to_char_type(c));
+    return __traits::not_eof(c);
   }
-  std::streamsize xsputn(const charT* s, std::streamsize n) override {
+  std::streamsize xsputn(const __charT* s, std::streamsize n) override {
     str.append(s, static_cast<std::size_t>(n));
     return n;
   }
 };
-}} // namespace ycxx::adl_free
+}} // namespace __ycxx::__adl_free
 
-namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
 // The extended floating-point types ([basic.extended.fp]) and their conversion rank relative to
 // a standard floating-point type (every value of F is a value of G).
-template <class F>
-concept is_extended_floating_point = std::is_floating_point_v<F> && !std::is_same_v<F, float> &&
-                                     !std::is_same_v<F, double> && !std::is_same_v<F, long double>;
-template <class F, class G>
-inline constexpr bool fp_rank_le = std::numeric_limits<F>::digits <= std::numeric_limits<G>::digits &&
-                                   std::numeric_limits<F>::max_exponent <= std::numeric_limits<G>::max_exponent &&
-                                   std::numeric_limits<F>::min_exponent >= std::numeric_limits<G>::min_exponent;
+template <class _Fp>
+concept __is_extended_floating_point = std::is_floating_point_v<_Fp> && !std::is_same_v<_Fp, float> &&
+                                     !std::is_same_v<_Fp, double> && !std::is_same_v<_Fp, long double>;
+template <class _Fp, class _Gp>
+inline constexpr bool __fp_rank_le = std::numeric_limits<_Fp>::digits <= std::numeric_limits<_Gp>::digits &&
+                                   std::numeric_limits<_Fp>::max_exponent <= std::numeric_limits<_Gp>::max_exponent &&
+                                   std::numeric_limits<_Fp>::min_exponent >= std::numeric_limits<_Gp>::min_exponent;
 
 // Writes n copies of c to sb; false if one could not be written.
-template <class charT, class traits>
-bool put_fill(std::basic_streambuf<charT, traits>* sb, charT c, std::streamsize n) {
-  charT block[64];
+template <class __charT, class __traits>
+bool __put_fill(std::basic_streambuf<__charT, __traits>* __sb, __charT c, std::streamsize n) {
+  __charT block[64];
   for (std::streamsize i = 0; i < 64 && i < n; ++i)
     block[i] = c;
   while (n > 0) {
     const std::streamsize k = n < 64 ? n : 64;
-    if (sb->sputn(block, k) != k)
+    if (__sb->sputn(block, k) != k)
       return false;
     n -= k;
   }
   return true;
 }
-}} // namespace ycxx::detail
+}} // namespace __ycxx::__detail
 
-namespace [[gnu::visibility("hidden")]] std {
+namespace [[__gnu__::__visibility__("hidden")]] std {
 
-template <class charT, class traits>
-class basic_ostream : virtual public basic_ios<charT, traits> {
+template <class __charT, class __traits>
+class basic_ostream : virtual public basic_ios<__charT, __traits> {
 public:
-  using char_type = charT;
-  using int_type = typename traits::int_type;
-  using pos_type = typename traits::pos_type;
-  using off_type = typename traits::off_type;
-  using traits_type = traits;
+  using char_type = __charT;
+  using int_type = typename __traits::int_type;
+  using pos_type = typename __traits::pos_type;
+  using off_type = typename __traits::off_type;
+  using traits_type = __traits;
 
-  explicit basic_ostream(basic_streambuf<char_type, traits>* sb) { this->init(sb); }
+  explicit basic_ostream(basic_streambuf<char_type, __traits>* __sb) { this->init(__sb); }
   ~basic_ostream() override {}
 
   class sentry;
 
   // [ostream.inserters]
-  basic_ostream& operator<<(basic_ostream& (*pf)(basic_ostream&)) { return pf(*this); }
-  basic_ostream& operator<<(basic_ios<charT, traits>& (*pf)(basic_ios<charT, traits>&)) {
-    pf(*this);
+  basic_ostream& operator<<(basic_ostream& (*__pf)(basic_ostream&)) { return __pf(*this); }
+  basic_ostream& operator<<(basic_ios<__charT, __traits>& (*__pf)(basic_ios<__charT, __traits>&)) {
+    __pf(*this);
     return *this;
   }
-  basic_ostream& operator<<(ios_base& (*pf)(ios_base&)) {
-    pf(*this);
+  basic_ostream& operator<<(ios_base& (*__pf)(ios_base&)) {
+    __pf(*this);
     return *this;
   }
 
   // [ostream.inserters.arithmetic]
-  basic_ostream& operator<<(bool n) { return put_number(n); }
+  basic_ostream& operator<<(bool n) { return __put_number(n); }
   basic_ostream& operator<<(short n) {
     const ios_base::fmtflags base = this->flags() & ios_base::basefield;
-    return put_number(base == ios_base::oct || base == ios_base::hex ? static_cast<long>(static_cast<unsigned short>(n))
+    return __put_number(base == ios_base::oct || base == ios_base::hex ? static_cast<long>(static_cast<unsigned short>(n))
                                                                      : static_cast<long>(n));
   }
-  basic_ostream& operator<<(unsigned short n) { return put_number(static_cast<unsigned long>(n)); }
+  basic_ostream& operator<<(unsigned short n) { return __put_number(static_cast<unsigned long>(n)); }
   basic_ostream& operator<<(int n) {
     const ios_base::fmtflags base = this->flags() & ios_base::basefield;
-    return put_number(base == ios_base::oct || base == ios_base::hex ? static_cast<long>(static_cast<unsigned int>(n))
+    return __put_number(base == ios_base::oct || base == ios_base::hex ? static_cast<long>(static_cast<unsigned int>(n))
                                                                      : static_cast<long>(n));
   }
-  basic_ostream& operator<<(unsigned int n) { return put_number(static_cast<unsigned long>(n)); }
-  basic_ostream& operator<<(long n) { return put_number(n); }
-  basic_ostream& operator<<(unsigned long n) { return put_number(n); }
-  basic_ostream& operator<<(long long n) { return put_number(n); }
-  basic_ostream& operator<<(unsigned long long n) { return put_number(n); }
-  basic_ostream& operator<<(float f) { return put_number(static_cast<double>(f)); }
-  basic_ostream& operator<<(double f) { return put_number(f); }
-  basic_ostream& operator<<(long double f) { return put_number(f); }
+  basic_ostream& operator<<(unsigned int n) { return __put_number(static_cast<unsigned long>(n)); }
+  basic_ostream& operator<<(long n) { return __put_number(n); }
+  basic_ostream& operator<<(unsigned long n) { return __put_number(n); }
+  basic_ostream& operator<<(long long n) { return __put_number(n); }
+  basic_ostream& operator<<(unsigned long long n) { return __put_number(n); }
+  basic_ostream& operator<<(float __f) { return __put_number(static_cast<double>(__f)); }
+  basic_ostream& operator<<(double __f) { return __put_number(__f); }
+  basic_ostream& operator<<(long double __f) { return __put_number(__f); }
   // [ostream.inserters.arithmetic]/5: the extended floating-point types of rank at most that
   // of long double.
-  template <class F>
-    requires ycxx::detail::is_extended_floating_point<F> && ycxx::detail::fp_rank_le<F, long double>
-  basic_ostream& operator<<(F f) {
-    if constexpr (ycxx::detail::fp_rank_le<F, double>)
-      return put_number(static_cast<double>(f));
+  template <class _Fp>
+    requires __ycxx::__detail::__is_extended_floating_point<_Fp> && __ycxx::__detail::__fp_rank_le<_Fp, long double>
+  basic_ostream& operator<<(_Fp __f) {
+    if constexpr (__ycxx::__detail::__fp_rank_le<_Fp, double>)
+      return __put_number(static_cast<double>(__f));
     else
-      return put_number(static_cast<long double>(f));
+      return __put_number(static_cast<long double>(__f));
   }
-  basic_ostream& operator<<(const void* p) { return put_number(p); }
+  basic_ostream& operator<<(const void* p) { return __put_number(p); }
   basic_ostream& operator<<(const volatile void* p) { return *this << const_cast<const void*>(p); }
   basic_ostream& operator<<(nullptr_t) { return *this << "nullptr"; }
-  basic_ostream& operator<<(basic_streambuf<char_type, traits>* sb);
+  basic_ostream& operator<<(basic_streambuf<char_type, __traits>* __sb);
 
   // [ostream.unformatted]
   basic_ostream& put(char_type c);
@@ -135,175 +135,175 @@ public:
 
   // [ostream.seeks]
   pos_type tellp();
-  basic_ostream& seekp(pos_type pos);
-  basic_ostream& seekp(off_type off, ios_base::seekdir dir);
+  basic_ostream& seekp(pos_type __pos);
+  basic_ostream& seekp(off_type __off, ios_base::seekdir __dir);
 
 protected:
   basic_ostream(const basic_ostream&) = delete;
-  basic_ostream(basic_ostream&& rhs) { this->move(rhs); }
+  basic_ostream(basic_ostream&& __rhs) { this->move(__rhs); }
   basic_ostream& operator=(const basic_ostream&) = delete;
-  basic_ostream& operator=(basic_ostream&& rhs) {
-    swap(rhs);
+  basic_ostream& operator=(basic_ostream&& __rhs) {
+    swap(__rhs);
     return *this;
   }
-  void swap(basic_ostream& rhs) { basic_ios<charT, traits>::swap(rhs); }
+  void swap(basic_ostream& __rhs) { basic_ios<__charT, __traits>::swap(__rhs); }
   // Used by basic_iostream, whose basic_istream part initializes the virtual base.
   basic_ostream() {}
 
 private:
-  template <class V>
-  basic_ostream& put_number(V v);
+  template <class _Vp>
+  basic_ostream& __put_number(_Vp __v);
 };
 
 // [ostream.sentry]
-template <class charT, class traits>
-class basic_ostream<charT, traits>::sentry {
-  bool ok_;
-  basic_ostream& os_;
+template <class __charT, class __traits>
+class basic_ostream<__charT, __traits>::sentry {
+  bool __ok_;
+  basic_ostream& __os_;
 
 public:
-  explicit sentry(basic_ostream& os) : ok_(false), os_(os) {
-    if (os.good()) {
-      if (os.tie() != nullptr && os.tie() != __builtin_addressof(os))
-        os.tie()->flush();
-      ok_ = os.good();
+  explicit sentry(basic_ostream& __os) : __ok_(false), __os_(__os) {
+    if (__os.good()) {
+      if (__os.tie() != nullptr && __os.tie() != __builtin_addressof(__os))
+        __os.tie()->flush();
+      __ok_ = __os.good();
     }
   }
   ~sentry() {
-    if ((os_.flags() & ios_base::unitbuf) && std::uncaught_exceptions() == 0 && os_.good()) {
-      if constexpr (ycxx::detail::cfg::exceptions) {
+    if ((__os_.flags() & ios_base::unitbuf) && std::uncaught_exceptions() == 0 && __os_.good()) {
+      if constexpr (__ycxx::__detail::__cfg::exceptions) {
         try {
-          if (os_.rdbuf()->pubsync() == -1)
-            ycxx::detail::ios_access::set_badbit_quietly(os_);
+          if (__os_.rdbuf()->pubsync() == -1)
+            __ycxx::__detail::__ios_access::__set_badbit_quietly(__os_);
         } catch (...) {
-          ycxx::detail::ios_access::set_badbit_quietly(os_);
+          __ycxx::__detail::__ios_access::__set_badbit_quietly(__os_);
         }
       } else {
-        if (os_.rdbuf()->pubsync() == -1)
-          ycxx::detail::ios_access::set_badbit_quietly(os_);
+        if (__os_.rdbuf()->pubsync() == -1)
+          __ycxx::__detail::__ios_access::__set_badbit_quietly(__os_);
       }
     }
   }
-  explicit operator bool() const { return ok_; }
+  explicit operator bool() const { return __ok_; }
   sentry(const sentry&) = delete;
   sentry& operator=(const sentry&) = delete;
 };
 
-template <class charT, class traits>
-template <class V>
-basic_ostream<charT, traits>& basic_ostream<charT, traits>::put_number(V v) {
-  ios_base::iostate err = ios_base::goodbit;
+template <class __charT, class __traits>
+template <class _Vp>
+basic_ostream<__charT, __traits>& basic_ostream<__charT, __traits>::__put_number(_Vp __v) {
+  ios_base::iostate __err = ios_base::goodbit;
   if (sentry ok{*this}) {
-    ycxx::detail::guarded_io(*this, [&] {
-      using It = ostreambuf_iterator<charT, traits>;
-      if (use_facet<num_put<charT, It>>(ycxx::detail::ios_access::locale_of(*this)).put(It(*this), *this, this->fill(), v).failed())
-        err |= ios_base::badbit;
+    __ycxx::__detail::__guarded_io(*this, [&] {
+      using _It = ostreambuf_iterator<__charT, __traits>;
+      if (use_facet<num_put<__charT, _It>>(__ycxx::__detail::__ios_access::__locale_of(*this)).put(_It(*this), *this, this->fill(), __v).failed())
+        __err |= ios_base::badbit;
     });
   }
-  if (err)
-    this->setstate(err);
+  if (__err)
+    this->setstate(__err);
   return *this;
 }
 
-template <class charT, class traits>
-basic_ostream<charT, traits>& basic_ostream<charT, traits>::operator<<(basic_streambuf<char_type, traits>* sb) {
-  ios_base::iostate err = ios_base::goodbit;
+template <class __charT, class __traits>
+basic_ostream<__charT, __traits>& basic_ostream<__charT, __traits>::operator<<(basic_streambuf<char_type, __traits>* __sb) {
+  ios_base::iostate __err = ios_base::goodbit;
   if (sentry ok{*this}) {
-    if (sb == nullptr) {
+    if (__sb == nullptr) {
       this->setstate(ios_base::badbit);
       return *this;
     }
     streamsize n = 0;
-    bool from_source = false; // an exception from sb, rethrown because failbit is in exceptions()
+    bool __from_source = false; // an exception from sb, rethrown because failbit is in exceptions()
     // [ostream.inserters]/9: an exception while getting a character from sb sets failbit and is
     // rethrown only if failbit is in exceptions()
-    auto source = [&](auto get) -> int_type {
-      if constexpr (ycxx::detail::cfg::exceptions) {
+    auto __source = [&](auto get) -> int_type {
+      if constexpr (__ycxx::__detail::__cfg::exceptions) {
         try {
           return get();
         } catch (...) {
-          err |= ios_base::failbit;
+          __err |= ios_base::failbit;
           if (this->exceptions() & ios_base::failbit) {
-            ycxx::detail::ios_access::set_failbit_quietly(*this);
-            from_source = true;
+            __ycxx::__detail::__ios_access::__set_failbit_quietly(*this);
+            __from_source = true;
             throw;
           }
-          return traits::eof();
+          return __traits::eof();
         }
       } else {
         return get();
       }
     };
-    ycxx::detail::guarded_io(
+    __ycxx::__detail::__guarded_io(
         *this,
         [&] {
-          basic_streambuf<charT, traits>* out = this->rdbuf();
+          basic_streambuf<__charT, __traits>* out = this->rdbuf();
           for (;;) {
-            const int_type c = source([&] { return sb->sgetc(); });
-            if (traits::eq_int_type(c, traits::eof()))
+            const int_type c = __source([&] { return __sb->sgetc(); });
+            if (__traits::eq_int_type(c, __traits::eof()))
               return;
-            if (traits::eq_int_type(out->sputc(traits::to_char_type(c)), traits::eof()))
+            if (__traits::eq_int_type(out->sputc(__traits::to_char_type(c)), __traits::eof()))
               return;
             ++n;
-            if (traits::eq_int_type(source([&] { return sb->sbumpc(); }), traits::eof()) && (err & ios_base::failbit))
+            if (__traits::eq_int_type(__source([&] { return __sb->sbumpc(); }), __traits::eof()) && (__err & ios_base::failbit))
               return;
           }
         },
-        from_source);
+        __from_source);
     if (n == 0)
-      err |= ios_base::failbit;
+      __err |= ios_base::failbit;
   }
-  if (err)
-    this->setstate(err);
+  if (__err)
+    this->setstate(__err);
   return *this;
 }
 
-template <class charT, class traits>
-basic_ostream<charT, traits>& basic_ostream<charT, traits>::put(char_type c) {
-  ios_base::iostate err = ios_base::goodbit;
+template <class __charT, class __traits>
+basic_ostream<__charT, __traits>& basic_ostream<__charT, __traits>::put(char_type c) {
+  ios_base::iostate __err = ios_base::goodbit;
   if (sentry ok{*this}) {
-    ycxx::detail::guarded_io(*this, [&] {
-      if (traits::eq_int_type(this->rdbuf()->sputc(c), traits::eof()))
-        err |= ios_base::badbit;
+    __ycxx::__detail::__guarded_io(*this, [&] {
+      if (__traits::eq_int_type(this->rdbuf()->sputc(c), __traits::eof()))
+        __err |= ios_base::badbit;
     });
   }
-  if (err)
-    this->setstate(err);
+  if (__err)
+    this->setstate(__err);
   return *this;
 }
 
-template <class charT, class traits>
-basic_ostream<charT, traits>& basic_ostream<charT, traits>::write(const char_type* s, streamsize n) {
-  ios_base::iostate err = ios_base::goodbit;
+template <class __charT, class __traits>
+basic_ostream<__charT, __traits>& basic_ostream<__charT, __traits>::write(const char_type* s, streamsize n) {
+  ios_base::iostate __err = ios_base::goodbit;
   if (sentry ok{*this}) {
-    ycxx::detail::guarded_io(*this, [&] {
+    __ycxx::__detail::__guarded_io(*this, [&] {
       if (this->rdbuf()->sputn(s, n) != n)
-        err |= ios_base::badbit;
+        __err |= ios_base::badbit;
     });
   }
-  if (err)
-    this->setstate(err);
+  if (__err)
+    this->setstate(__err);
   return *this;
 }
 
-template <class charT, class traits>
-basic_ostream<charT, traits>& basic_ostream<charT, traits>::flush() {
+template <class __charT, class __traits>
+basic_ostream<__charT, __traits>& basic_ostream<__charT, __traits>::flush() {
   if (this->rdbuf() == nullptr)
     return *this;
-  ios_base::iostate err = ios_base::goodbit;
+  ios_base::iostate __err = ios_base::goodbit;
   if (sentry ok{*this}) {
-    ycxx::detail::guarded_io(*this, [&] {
+    __ycxx::__detail::__guarded_io(*this, [&] {
       if (this->rdbuf()->pubsync() == -1)
-        err |= ios_base::badbit;
+        __err |= ios_base::badbit;
     });
   }
-  if (err)
-    this->setstate(err);
+  if (__err)
+    this->setstate(__err);
   return *this;
 }
 
-template <class charT, class traits>
-typename basic_ostream<charT, traits>::pos_type basic_ostream<charT, traits>::tellp() {
+template <class __charT, class __traits>
+typename basic_ostream<__charT, __traits>::pos_type basic_ostream<__charT, __traits>::tellp() {
   // [ostream.seeks]: the seek members are not unformatted output functions, so an exception
   // from the stream buffer propagates without setting badbit (unlike seekg/tellg, [istream.unformatted]).
   sentry ok{*this};
@@ -312,263 +312,263 @@ typename basic_ostream<charT, traits>::pos_type basic_ostream<charT, traits>::te
   return this->rdbuf()->pubseekoff(0, ios_base::cur, ios_base::out);
 }
 
-template <class charT, class traits>
-basic_ostream<charT, traits>& basic_ostream<charT, traits>::seekp(pos_type pos) {
+template <class __charT, class __traits>
+basic_ostream<__charT, __traits>& basic_ostream<__charT, __traits>::seekp(pos_type __pos) {
   sentry ok{*this};
-  if (!this->fail() && this->rdbuf()->pubseekpos(pos, ios_base::out) == pos_type(off_type(-1)))
+  if (!this->fail() && this->rdbuf()->pubseekpos(__pos, ios_base::out) == pos_type(off_type(-1)))
     this->setstate(ios_base::failbit);
   return *this;
 }
 
-template <class charT, class traits>
-basic_ostream<charT, traits>& basic_ostream<charT, traits>::seekp(off_type off, ios_base::seekdir dir) {
+template <class __charT, class __traits>
+basic_ostream<__charT, __traits>& basic_ostream<__charT, __traits>::seekp(off_type __off, ios_base::seekdir __dir) {
   sentry ok{*this};
-  if (!this->fail() && this->rdbuf()->pubseekoff(off, dir, ios_base::out) == pos_type(off_type(-1)))
+  if (!this->fail() && this->rdbuf()->pubseekoff(__off, __dir, ios_base::out) == pos_type(off_type(-1)))
     this->setstate(ios_base::failbit);
   return *this;
 }
 
 } // namespace std
 
-namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
 
 // [ostream.formatted.reqmts]/3: inserts s[0..n) padded to width() with fill(), then width(0);
 // the formatted-output protocol around it (sentry, exceptions).
-template <class charT, class traits>
-std::basic_ostream<charT, traits>& ostream_insert(std::basic_ostream<charT, traits>& os, const charT* s,
+template <class __charT, class __traits>
+std::basic_ostream<__charT, __traits>& __ostream_insert(std::basic_ostream<__charT, __traits>& __os, const __charT* s,
                                                    std::ptrdiff_t n) {
-  std::ios_base::iostate err = std::ios_base::goodbit;
-  if (typename std::basic_ostream<charT, traits>::sentry ok{os}) {
-    ::ycxx::detail::guarded_io(os, [&] {
-      std::basic_streambuf<charT, traits>* sb = os.rdbuf();
-      const std::streamsize w = os.width();
-      const std::streamsize pad = w > n ? w - n : 0;
-      const bool left = (os.flags() & std::ios_base::adjustfield) == std::ios_base::left;
-      if (!left && pad != 0 && !::ycxx::detail::put_fill(sb, os.fill(), pad))
-        err |= std::ios_base::badbit;
-      else if (sb->sputn(s, n) != n)
-        err |= std::ios_base::badbit;
-      else if (left && pad != 0 && !::ycxx::detail::put_fill(sb, os.fill(), pad))
-        err |= std::ios_base::badbit;
-      os.width(0);
+  std::ios_base::iostate __err = std::ios_base::goodbit;
+  if (typename std::basic_ostream<__charT, __traits>::sentry ok{__os}) {
+    ::__ycxx::__detail::__guarded_io(__os, [&] {
+      std::basic_streambuf<__charT, __traits>* __sb = __os.rdbuf();
+      const std::streamsize __w = __os.width();
+      const std::streamsize __pad = __w > n ? __w - n : 0;
+      const bool left = (__os.flags() & std::ios_base::adjustfield) == std::ios_base::left;
+      if (!left && __pad != 0 && !::__ycxx::__detail::__put_fill(__sb, __os.fill(), __pad))
+        __err |= std::ios_base::badbit;
+      else if (__sb->sputn(s, n) != n)
+        __err |= std::ios_base::badbit;
+      else if (left && __pad != 0 && !::__ycxx::__detail::__put_fill(__sb, __os.fill(), __pad))
+        __err |= std::ios_base::badbit;
+      __os.width(0);
     });
   }
-  if (err)
-    os.setstate(err);
-  return os;
+  if (__err)
+    __os.setstate(__err);
+  return __os;
 }
 
 // The same for a char sequence inserted into a stream of another character type, each
 // character widened ([ostream.inserters.character]/4).
-template <class charT, class traits>
-std::basic_ostream<charT, traits>& ostream_insert_widened(std::basic_ostream<charT, traits>& os, const char* s,
+template <class __charT, class __traits>
+std::basic_ostream<__charT, __traits>& __ostream_insert_widened(std::basic_ostream<__charT, __traits>& __os, const char* s,
                                                           std::ptrdiff_t n) {
-  ::ycxx::detail::small_buffer<charT, 128> wide(static_cast<std::size_t>(n));
+  ::__ycxx::__detail::__small_buffer<__charT, 128> __wide(static_cast<std::size_t>(n));
   for (std::ptrdiff_t i = 0; i < n; ++i)
-    wide.get()[i] = os.widen(s[i]);
-  return ::ycxx::detail::ostream_insert(os, wide.get(), n);
+    __wide.get()[i] = __os.widen(s[i]);
+  return ::__ycxx::__detail::__ostream_insert(__os, __wide.get(), n);
 }
 
-}} // namespace ycxx::detail
+}} // namespace __ycxx::__detail
 
-namespace [[gnu::visibility("hidden")]] std {
+namespace [[__gnu__::__visibility__("hidden")]] std {
 
 // [ostream.inserters.character]
-template <class charT, class traits>
-basic_ostream<charT, traits>& operator<<(basic_ostream<charT, traits>& out, charT c) {
-  return ::ycxx::detail::ostream_insert(out, __builtin_addressof(c), 1);
+template <class __charT, class __traits>
+basic_ostream<__charT, __traits>& operator<<(basic_ostream<__charT, __traits>& out, __charT c) {
+  return ::__ycxx::__detail::__ostream_insert(out, __builtin_addressof(c), 1);
 }
-template <class charT, class traits>
-  requires(!is_same_v<charT, char>)
-basic_ostream<charT, traits>& operator<<(basic_ostream<charT, traits>& out, char c) {
-  const charT w = out.widen(c);
-  return ::ycxx::detail::ostream_insert(out, __builtin_addressof(w), 1);
+template <class __charT, class __traits>
+  requires(!is_same_v<__charT, char>)
+basic_ostream<__charT, __traits>& operator<<(basic_ostream<__charT, __traits>& out, char c) {
+  const __charT __w = out.widen(c);
+  return ::__ycxx::__detail::__ostream_insert(out, __builtin_addressof(__w), 1);
 }
-template <class traits>
-basic_ostream<char, traits>& operator<<(basic_ostream<char, traits>& out, char c) {
-  return ::ycxx::detail::ostream_insert(out, __builtin_addressof(c), 1);
+template <class __traits>
+basic_ostream<char, __traits>& operator<<(basic_ostream<char, __traits>& out, char c) {
+  return ::__ycxx::__detail::__ostream_insert(out, __builtin_addressof(c), 1);
 }
-template <class traits>
+template <class __traits>
 [[deprecated("signed char / unsigned char stream insertion is deprecated ([depr.ostream.inserters]); use char")]]
-basic_ostream<char, traits>& operator<<(basic_ostream<char, traits>& out, signed char c) {
+basic_ostream<char, __traits>& operator<<(basic_ostream<char, __traits>& out, signed char c) {
   return out << static_cast<char>(c);
 }
-template <class traits>
+template <class __traits>
 [[deprecated("signed char / unsigned char stream insertion is deprecated ([depr.ostream.inserters]); use char")]]
-basic_ostream<char, traits>& operator<<(basic_ostream<char, traits>& out, unsigned char c) {
+basic_ostream<char, __traits>& operator<<(basic_ostream<char, __traits>& out, unsigned char c) {
   return out << static_cast<char>(c);
 }
-template <class traits>
-basic_ostream<char, traits>& operator<<(basic_ostream<char, traits>&, wchar_t) = delete;
-template <class traits>
-basic_ostream<char, traits>& operator<<(basic_ostream<char, traits>&, char8_t) = delete;
-template <class traits>
-basic_ostream<char, traits>& operator<<(basic_ostream<char, traits>&, char16_t) = delete;
-template <class traits>
-basic_ostream<char, traits>& operator<<(basic_ostream<char, traits>&, char32_t) = delete;
-template <class traits>
-basic_ostream<wchar_t, traits>& operator<<(basic_ostream<wchar_t, traits>&, char8_t) = delete;
-template <class traits>
-basic_ostream<wchar_t, traits>& operator<<(basic_ostream<wchar_t, traits>&, char16_t) = delete;
-template <class traits>
-basic_ostream<wchar_t, traits>& operator<<(basic_ostream<wchar_t, traits>&, char32_t) = delete;
+template <class __traits>
+basic_ostream<char, __traits>& operator<<(basic_ostream<char, __traits>&, wchar_t) = delete;
+template <class __traits>
+basic_ostream<char, __traits>& operator<<(basic_ostream<char, __traits>&, char8_t) = delete;
+template <class __traits>
+basic_ostream<char, __traits>& operator<<(basic_ostream<char, __traits>&, char16_t) = delete;
+template <class __traits>
+basic_ostream<char, __traits>& operator<<(basic_ostream<char, __traits>&, char32_t) = delete;
+template <class __traits>
+basic_ostream<wchar_t, __traits>& operator<<(basic_ostream<wchar_t, __traits>&, char8_t) = delete;
+template <class __traits>
+basic_ostream<wchar_t, __traits>& operator<<(basic_ostream<wchar_t, __traits>&, char16_t) = delete;
+template <class __traits>
+basic_ostream<wchar_t, __traits>& operator<<(basic_ostream<wchar_t, __traits>&, char32_t) = delete;
 
-template <class charT, class traits>
-basic_ostream<charT, traits>& operator<<(basic_ostream<charT, traits>& out, const charT* s) {
-  ycxx::detail::precondition(s != nullptr, "std::operator<<(basic_ostream&, const charT*): null pointer");
-  return ::ycxx::detail::ostream_insert(out, s, static_cast<streamsize>(traits::length(s)));
+template <class __charT, class __traits>
+basic_ostream<__charT, __traits>& operator<<(basic_ostream<__charT, __traits>& out, const __charT* s) {
+  __ycxx::__detail::__precondition(s != nullptr, "std::operator<<(basic_ostream&, const charT*): null pointer");
+  return ::__ycxx::__detail::__ostream_insert(out, s, static_cast<streamsize>(__traits::length(s)));
 }
-template <class charT, class traits>
-  requires(!is_same_v<charT, char>)
-basic_ostream<charT, traits>& operator<<(basic_ostream<charT, traits>& out, const char* s) {
-  ycxx::detail::precondition(s != nullptr, "std::operator<<(basic_ostream&, const char*): null pointer");
-  return ::ycxx::detail::ostream_insert_widened(out, s, static_cast<streamsize>(char_traits<char>::length(s)));
+template <class __charT, class __traits>
+  requires(!is_same_v<__charT, char>)
+basic_ostream<__charT, __traits>& operator<<(basic_ostream<__charT, __traits>& out, const char* s) {
+  __ycxx::__detail::__precondition(s != nullptr, "std::operator<<(basic_ostream&, const char*): null pointer");
+  return ::__ycxx::__detail::__ostream_insert_widened(out, s, static_cast<streamsize>(char_traits<char>::length(s)));
 }
-template <class traits>
-basic_ostream<char, traits>& operator<<(basic_ostream<char, traits>& out, const char* s) {
-  ycxx::detail::precondition(s != nullptr, "std::operator<<(basic_ostream&, const char*): null pointer");
-  return ::ycxx::detail::ostream_insert(out, s, static_cast<streamsize>(traits::length(s)));
+template <class __traits>
+basic_ostream<char, __traits>& operator<<(basic_ostream<char, __traits>& out, const char* s) {
+  __ycxx::__detail::__precondition(s != nullptr, "std::operator<<(basic_ostream&, const char*): null pointer");
+  return ::__ycxx::__detail::__ostream_insert(out, s, static_cast<streamsize>(__traits::length(s)));
 }
-template <class traits>
+template <class __traits>
 [[deprecated("signed char / unsigned char stream insertion is deprecated ([depr.ostream.inserters]); use char")]]
-basic_ostream<char, traits>& operator<<(basic_ostream<char, traits>& out, const signed char* s) {
+basic_ostream<char, __traits>& operator<<(basic_ostream<char, __traits>& out, const signed char* s) {
   return out << reinterpret_cast<const char*>(s);
 }
-template <class traits>
+template <class __traits>
 [[deprecated("signed char / unsigned char stream insertion is deprecated ([depr.ostream.inserters]); use char")]]
-basic_ostream<char, traits>& operator<<(basic_ostream<char, traits>& out, const unsigned char* s) {
+basic_ostream<char, __traits>& operator<<(basic_ostream<char, __traits>& out, const unsigned char* s) {
   return out << reinterpret_cast<const char*>(s);
 }
-template <class traits>
-basic_ostream<char, traits>& operator<<(basic_ostream<char, traits>&, const wchar_t*) = delete;
-template <class traits>
-basic_ostream<char, traits>& operator<<(basic_ostream<char, traits>&, const char8_t*) = delete;
-template <class traits>
-basic_ostream<char, traits>& operator<<(basic_ostream<char, traits>&, const char16_t*) = delete;
-template <class traits>
-basic_ostream<char, traits>& operator<<(basic_ostream<char, traits>&, const char32_t*) = delete;
-template <class traits>
-basic_ostream<wchar_t, traits>& operator<<(basic_ostream<wchar_t, traits>&, const char8_t*) = delete;
-template <class traits>
-basic_ostream<wchar_t, traits>& operator<<(basic_ostream<wchar_t, traits>&, const char16_t*) = delete;
-template <class traits>
-basic_ostream<wchar_t, traits>& operator<<(basic_ostream<wchar_t, traits>&, const char32_t*) = delete;
+template <class __traits>
+basic_ostream<char, __traits>& operator<<(basic_ostream<char, __traits>&, const wchar_t*) = delete;
+template <class __traits>
+basic_ostream<char, __traits>& operator<<(basic_ostream<char, __traits>&, const char8_t*) = delete;
+template <class __traits>
+basic_ostream<char, __traits>& operator<<(basic_ostream<char, __traits>&, const char16_t*) = delete;
+template <class __traits>
+basic_ostream<char, __traits>& operator<<(basic_ostream<char, __traits>&, const char32_t*) = delete;
+template <class __traits>
+basic_ostream<wchar_t, __traits>& operator<<(basic_ostream<wchar_t, __traits>&, const char8_t*) = delete;
+template <class __traits>
+basic_ostream<wchar_t, __traits>& operator<<(basic_ostream<wchar_t, __traits>&, const char16_t*) = delete;
+template <class __traits>
+basic_ostream<wchar_t, __traits>& operator<<(basic_ostream<wchar_t, __traits>&, const char32_t*) = delete;
 
 // [ostream.manip]
-template <class charT, class traits>
-basic_ostream<charT, traits>& endl(basic_ostream<charT, traits>& os) {
-  os.put(os.widen('\n'));
-  os.flush();
-  return os;
+template <class __charT, class __traits>
+basic_ostream<__charT, __traits>& endl(basic_ostream<__charT, __traits>& __os) {
+  __os.put(__os.widen('\n'));
+  __os.flush();
+  return __os;
 }
-template <class charT, class traits>
-basic_ostream<charT, traits>& ends(basic_ostream<charT, traits>& os) {
-  os.put(charT());
-  return os;
+template <class __charT, class __traits>
+basic_ostream<__charT, __traits>& ends(basic_ostream<__charT, __traits>& __os) {
+  __os.put(__charT());
+  return __os;
 }
-template <class charT, class traits>
-basic_ostream<charT, traits>& flush(basic_ostream<charT, traits>& os) {
-  os.flush();
-  return os;
+template <class __charT, class __traits>
+basic_ostream<__charT, __traits>& flush(basic_ostream<__charT, __traits>& __os) {
+  __os.flush();
+  return __os;
 }
-template <class charT, class traits>
-basic_ostream<charT, traits>& emit_on_flush(basic_ostream<charT, traits>& os) {
-  if (auto* buf = ycxx::adl_free::syncbuf_base<charT, traits>::of(os.rdbuf()))
-    buf->set_emit_on_sync(true);
-  return os;
+template <class __charT, class __traits>
+basic_ostream<__charT, __traits>& emit_on_flush(basic_ostream<__charT, __traits>& __os) {
+  if (auto* __buf = __ycxx::__adl_free::__syncbuf_base<__charT, __traits>::__of(__os.rdbuf()))
+    __buf->set_emit_on_sync(true);
+  return __os;
 }
-template <class charT, class traits>
-basic_ostream<charT, traits>& noemit_on_flush(basic_ostream<charT, traits>& os) {
-  if (auto* buf = ycxx::adl_free::syncbuf_base<charT, traits>::of(os.rdbuf()))
-    buf->set_emit_on_sync(false);
-  return os;
+template <class __charT, class __traits>
+basic_ostream<__charT, __traits>& noemit_on_flush(basic_ostream<__charT, __traits>& __os) {
+  if (auto* __buf = __ycxx::__adl_free::__syncbuf_base<__charT, __traits>::__of(__os.rdbuf()))
+    __buf->set_emit_on_sync(false);
+  return __os;
 }
-template <class charT, class traits>
-basic_ostream<charT, traits>& flush_emit(basic_ostream<charT, traits>& os) {
-  os.flush();
-  if (auto* buf = ycxx::adl_free::syncbuf_base<charT, traits>::of(os.rdbuf())) {
-    ios_base::iostate err = ios_base::goodbit;
-    if (typename basic_ostream<charT, traits>::sentry ok{os}) {
-      ycxx::detail::guarded_io(os, [&] {
-        if (!buf->emit())
-          err |= ios_base::badbit;
+template <class __charT, class __traits>
+basic_ostream<__charT, __traits>& flush_emit(basic_ostream<__charT, __traits>& __os) {
+  __os.flush();
+  if (auto* __buf = __ycxx::__adl_free::__syncbuf_base<__charT, __traits>::__of(__os.rdbuf())) {
+    ios_base::iostate __err = ios_base::goodbit;
+    if (typename basic_ostream<__charT, __traits>::sentry ok{__os}) {
+      __ycxx::__detail::__guarded_io(__os, [&] {
+        if (!__buf->emit())
+          __err |= ios_base::badbit;
       });
     }
-    if (err)
-      os.setstate(err);
+    if (__err)
+      __os.setstate(__err);
   }
-  return os;
+  return __os;
 }
 
 // [ostream.rvalue]
-template <class Ostream, class T>
+template <class _Ostream, class _Tp>
   // "publicly and unambiguously derived from ios_base": ios_base itself is not
-  requires derived_from<Ostream, ios_base> && (!is_same_v<remove_cv_t<Ostream>, ios_base>) &&
-           requires(Ostream& os, const T& x) { os << x; }
-Ostream&& operator<<(Ostream&& os, const T& x) {
-  os << x;
-  return static_cast<Ostream&&>(os);
+  requires derived_from<_Ostream, ios_base> && (!is_same_v<remove_cv_t<_Ostream>, ios_base>) &&
+           requires(_Ostream& __os, const _Tp& __x) { __os << __x; }
+_Ostream&& operator<<(_Ostream&& __os, const _Tp& __x) {
+  __os << __x;
+  return static_cast<_Ostream&&>(__os);
 }
 
 // [string.view.io]
-template <class charT, class traits>
-basic_ostream<charT, traits>& operator<<(basic_ostream<charT, traits>& os, basic_string_view<charT, traits> str) {
-  return ::ycxx::detail::ostream_insert(os, str.data(), static_cast<streamsize>(str.size()));
+template <class __charT, class __traits>
+basic_ostream<__charT, __traits>& operator<<(basic_ostream<__charT, __traits>& __os, basic_string_view<__charT, __traits> str) {
+  return ::__ycxx::__detail::__ostream_insert(__os, str.data(), static_cast<streamsize>(str.size()));
 }
 
 // [string.io]
-template <class charT, class traits, class Allocator>
-basic_ostream<charT, traits>& operator<<(basic_ostream<charT, traits>& os,
-                                         const basic_string<charT, traits, Allocator>& str) {
-  return ::ycxx::detail::ostream_insert(os, str.data(), static_cast<streamsize>(str.size()));
+template <class __charT, class __traits, class _Allocator>
+basic_ostream<__charT, __traits>& operator<<(basic_ostream<__charT, __traits>& __os,
+                                         const basic_string<__charT, __traits, _Allocator>& str) {
+  return ::__ycxx::__detail::__ostream_insert(__os, str.data(), static_cast<streamsize>(str.size()));
 }
 
 // [bitset.operators]
-template <size_t N>
+template <size_t _Np>
 class bitset;
-template <class charT, class traits, size_t N>
-basic_ostream<charT, traits>& operator<<(basic_ostream<charT, traits>& os, const bitset<N>& x) {
-  const ctype<charT>& ct = use_facet<ctype<charT>>(ycxx::detail::ios_access::locale_of(os));
-  return os << x.template to_string<charT, traits, allocator<charT>>(ct.widen('0'), ct.widen('1'));
+template <class __charT, class __traits, size_t _Np>
+basic_ostream<__charT, __traits>& operator<<(basic_ostream<__charT, __traits>& __os, const bitset<_Np>& __x) {
+  const ctype<__charT>& __ct = use_facet<ctype<__charT>>(__ycxx::__detail::__ios_access::__locale_of(__os));
+  return __os << __x.template to_string<__charT, __traits, allocator<__charT>>(__ct.widen('0'), __ct.widen('1'));
 }
 
 // [complex.ops]: formatted into a string first, with o's flags, precision and locale (as the
 // draft's basic_ostringstream would), so that o's width applies to the whole number.
-template <class T>
+template <class _Tp>
 class complex;
-template <class T, class charT, class traits>
-basic_ostream<charT, traits>& operator<<(basic_ostream<charT, traits>& o, const complex<T>& x) {
-  ycxx::adl_free::string_outbuf<charT, traits> buf;
-  basic_ostream<charT, traits> s(__builtin_addressof(buf));
-  s.flags(o.flags());
-  s.imbue(o.getloc());
-  s.precision(o.precision());
-  s << s.widen('(') << x.real() << s.widen(',') << x.imag() << s.widen(')');
-  return o << buf.str;
+template <class _Tp, class __charT, class __traits>
+basic_ostream<__charT, __traits>& operator<<(basic_ostream<__charT, __traits>& __o, const complex<_Tp>& __x) {
+  __ycxx::__adl_free::__string_outbuf<__charT, __traits> __buf;
+  basic_ostream<__charT, __traits> s(__builtin_addressof(__buf));
+  s.flags(__o.flags());
+  s.imbue(__o.getloc());
+  s.precision(__o.precision());
+  s << s.widen('(') << __x.real() << s.widen(',') << __x.imag() << s.widen(')');
+  return __o << __buf.str;
 }
 
 } // namespace std
 
-namespace [[gnu::visibility("hidden")]] ycxx { namespace adl_free {
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __adl_free {
 
-template <class charT, class traits>
-class syncbuf_base : public std::basic_streambuf<charT, traits> {
+template <class __charT, class __traits>
+class __syncbuf_base : public std::basic_streambuf<__charT, __traits> {
 public:
   // The syncbuf behind sb, or null.
-  static syncbuf_base* of(std::basic_streambuf<charT, traits>* sb) noexcept {
-    return sb != nullptr && ::ycxx::detail::streambuf_tag_access::is_syncbuf(*sb) ? static_cast<syncbuf_base*>(sb)
+  static __syncbuf_base* __of(std::basic_streambuf<__charT, __traits>* __sb) noexcept {
+    return __sb != nullptr && ::__ycxx::__detail::__streambuf_tag_access::__is_syncbuf(*__sb) ? static_cast<__syncbuf_base*>(__sb)
                                                                                   : nullptr;
   }
-  void set_emit_on_sync(bool b) noexcept { emit_on_sync_ = b; }
+  void set_emit_on_sync(bool b) noexcept { __emit_on_sync_ = b; }
   virtual bool emit() = 0;
 
 protected:
-  syncbuf_base() noexcept { ::ycxx::detail::streambuf_tag_access::set_syncbuf(*this); }
-  syncbuf_base(const syncbuf_base& rhs) : std::basic_streambuf<charT, traits>(rhs), emit_on_sync_(rhs.emit_on_sync_) {
-    ::ycxx::detail::streambuf_tag_access::set_syncbuf(*this);
+  __syncbuf_base() noexcept { ::__ycxx::__detail::__streambuf_tag_access::__set_syncbuf(*this); }
+  __syncbuf_base(const __syncbuf_base& __rhs) : std::basic_streambuf<__charT, __traits>(__rhs), __emit_on_sync_(__rhs.__emit_on_sync_) {
+    ::__ycxx::__detail::__streambuf_tag_access::__set_syncbuf(*this);
   }
-  syncbuf_base& operator=(const syncbuf_base&) = default;
-  bool emit_on_sync_ = false;
+  __syncbuf_base& operator=(const __syncbuf_base&) = default;
+  bool __emit_on_sync_ = false;
 };
 
-}} // namespace ycxx::adl_free
+}} // namespace __ycxx::__adl_free

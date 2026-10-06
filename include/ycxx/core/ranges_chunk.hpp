@@ -6,763 +6,763 @@
 #include <ycxx/core/algo_nonmod.hpp>
 #include <ycxx/core/bind.hpp>
 
-namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
-template <class I>
-constexpr I div_ceil(I num, I denom) {
-  I r = num / denom;
-  if (num % denom)
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+template <class _Ip>
+constexpr _Ip __div_ceil(_Ip num, _Ip __denom) {
+  _Ip r = num / __denom;
+  if (num % __denom)
     ++r;
   return r;
 }
 
-template <class V>
-concept slide_caches_nothing = std::ranges::random_access_range<V> && std::ranges::sized_range<V>;
-template <class V>
-concept slide_caches_last =
-    !slide_caches_nothing<V> && std::ranges::bidirectional_range<V> && std::ranges::common_range<V>;
-template <class V>
-concept slide_caches_first = !slide_caches_nothing<V> && !slide_caches_last<V>;
-}} // namespace ycxx::detail
+template <class _Vp>
+concept __slide_caches_nothing = std::ranges::random_access_range<_Vp> && std::ranges::sized_range<_Vp>;
+template <class _Vp>
+concept __slide_caches_last =
+    !__slide_caches_nothing<_Vp> && std::ranges::bidirectional_range<_Vp> && std::ranges::common_range<_Vp>;
+template <class _Vp>
+concept __slide_caches_first = !__slide_caches_nothing<_Vp> && !__slide_caches_last<_Vp>;
+}} // namespace __ycxx::__detail
 
-namespace [[gnu::visibility("hidden")]] std { namespace ranges {
+namespace [[__gnu__::__visibility__("hidden")]] std { namespace ranges {
 
 // =============================================================================================
 // [range.chunk]
 // =============================================================================================
-template <view V>
-  requires input_range<V>
-class chunk_view : public view_interface<chunk_view<V>> {
-  V base_;
-  range_difference_t<V> n_;
-  range_difference_t<V> remainder_ = 0;
-  ycxx::detail::non_propagating_cache<iterator_t<V>> current_;
+template <view _Vp>
+  requires input_range<_Vp>
+class chunk_view : public view_interface<chunk_view<_Vp>> {
+  _Vp __base_;
+  range_difference_t<_Vp> __n_;
+  range_difference_t<_Vp> __remainder_ = 0;
+  __ycxx::__detail::__non_propagating_cache<iterator_t<_Vp>> __current_;
 
-  class inner_iterator {
+  class __inner_iterator {
     friend chunk_view;
-    chunk_view* parent_;
-    constexpr explicit inner_iterator(chunk_view& parent) noexcept : parent_(__builtin_addressof(parent)) {}
+    chunk_view* __parent_;
+    constexpr explicit __inner_iterator(chunk_view& __parent) noexcept : __parent_(__builtin_addressof(__parent)) {}
 
   public:
     using iterator_concept = input_iterator_tag;
-    using difference_type = range_difference_t<V>;
-    using value_type = range_value_t<V>;
+    using difference_type = range_difference_t<_Vp>;
+    using value_type = range_value_t<_Vp>;
 
-    inner_iterator(inner_iterator&&) = default;
-    inner_iterator& operator=(inner_iterator&&) = default;
+    __inner_iterator(__inner_iterator&&) = default;
+    __inner_iterator& operator=(__inner_iterator&&) = default;
 
-    constexpr const iterator_t<V>& base() const& { return *parent_->current_; }
-    constexpr range_reference_t<V> operator*() const {
-      ::ycxx::detail::precondition(!(*this == default_sentinel), "chunk_view: dereference past the chunk");
-      return **parent_->current_;
+    constexpr const iterator_t<_Vp>& base() const& { return *__parent_->__current_; }
+    constexpr range_reference_t<_Vp> operator*() const {
+      ::__ycxx::__detail::__precondition(!(*this == default_sentinel), "chunk_view: dereference past the chunk");
+      return **__parent_->__current_;
     }
-    constexpr inner_iterator& operator++() {
-      ::ycxx::detail::precondition(!(*this == default_sentinel), "chunk_view: increment past the chunk");
-      ++*parent_->current_;
-      if (*parent_->current_ == ranges::end(parent_->base_))
-        parent_->remainder_ = 0;
+    constexpr __inner_iterator& operator++() {
+      ::__ycxx::__detail::__precondition(!(*this == default_sentinel), "chunk_view: increment past the chunk");
+      ++*__parent_->__current_;
+      if (*__parent_->__current_ == ranges::end(__parent_->__base_))
+        __parent_->__remainder_ = 0;
       else
-        --parent_->remainder_;
+        --__parent_->__remainder_;
       return *this;
     }
     constexpr void operator++(int) { ++*this; }
 
-    friend constexpr bool operator==(const inner_iterator& x, default_sentinel_t) { return x.parent_->remainder_ == 0; }
-    friend constexpr difference_type operator-(default_sentinel_t, const inner_iterator& x)
-      requires sized_sentinel_for<sentinel_t<V>, iterator_t<V>>
+    friend constexpr bool operator==(const __inner_iterator& __x, default_sentinel_t) { return __x.__parent_->__remainder_ == 0; }
+    friend constexpr difference_type operator-(default_sentinel_t, const __inner_iterator& __x)
+      requires sized_sentinel_for<sentinel_t<_Vp>, iterator_t<_Vp>>
     {
-      return ranges::min(x.parent_->remainder_, ranges::end(x.parent_->base_) - *x.parent_->current_);
+      return ranges::min(__x.__parent_->__remainder_, ranges::end(__x.__parent_->__base_) - *__x.__parent_->__current_);
     }
-    friend constexpr difference_type operator-(const inner_iterator& x, default_sentinel_t y)
-      requires sized_sentinel_for<sentinel_t<V>, iterator_t<V>>
+    friend constexpr difference_type operator-(const __inner_iterator& __x, default_sentinel_t y)
+      requires sized_sentinel_for<sentinel_t<_Vp>, iterator_t<_Vp>>
     {
-      return -(y - x);
+      return -(y - __x);
     }
-    friend constexpr range_rvalue_reference_t<V> iter_move(const inner_iterator& i) noexcept(
-        noexcept(ranges::iter_move(*i.parent_->current_))) {
-      return ranges::iter_move(*i.parent_->current_);
+    friend constexpr range_rvalue_reference_t<_Vp> iter_move(const __inner_iterator& i) noexcept(
+        noexcept(ranges::iter_move(*i.__parent_->__current_))) {
+      return ranges::iter_move(*i.__parent_->__current_);
     }
-    friend constexpr void iter_swap(const inner_iterator& x, const inner_iterator& y) noexcept(
-        noexcept(ranges::iter_swap(*x.parent_->current_, *y.parent_->current_)))
-      requires indirectly_swappable<iterator_t<V>>
+    friend constexpr void iter_swap(const __inner_iterator& __x, const __inner_iterator& y) noexcept(
+        noexcept(ranges::iter_swap(*__x.__parent_->__current_, *y.__parent_->__current_)))
+      requires indirectly_swappable<iterator_t<_Vp>>
     {
-      ranges::iter_swap(*x.parent_->current_, *y.parent_->current_);
+      ranges::iter_swap(*__x.__parent_->__current_, *y.__parent_->__current_);
     }
   };
 
-  class outer_iterator {
+  class __outer_iterator {
     friend chunk_view;
-    chunk_view* parent_;
-    constexpr explicit outer_iterator(chunk_view& parent) : parent_(__builtin_addressof(parent)) {}
+    chunk_view* __parent_;
+    constexpr explicit __outer_iterator(chunk_view& __parent) : __parent_(__builtin_addressof(__parent)) {}
 
   public:
     using iterator_concept = input_iterator_tag;
-    using difference_type = range_difference_t<V>;
+    using difference_type = range_difference_t<_Vp>;
 
     struct value_type : view_interface<value_type> {
     private:
-      friend outer_iterator;
-      chunk_view* parent_;
-      constexpr explicit value_type(chunk_view& parent) : parent_(__builtin_addressof(parent)) {}
+      friend __outer_iterator;
+      chunk_view* __parent_;
+      constexpr explicit value_type(chunk_view& __parent) : __parent_(__builtin_addressof(__parent)) {}
 
     public:
-      constexpr inner_iterator begin() const noexcept { return inner_iterator(*parent_); }
+      constexpr __inner_iterator begin() const noexcept { return __inner_iterator(*__parent_); }
       constexpr default_sentinel_t end() const noexcept { return default_sentinel; }
       constexpr auto size() const
-        requires sized_sentinel_for<sentinel_t<V>, iterator_t<V>>
+        requires sized_sentinel_for<sentinel_t<_Vp>, iterator_t<_Vp>>
       {
-        return ::ycxx::detail::to_unsigned_like(
-            ranges::min(parent_->remainder_, ranges::end(parent_->base_) - *parent_->current_));
+        return ::__ycxx::__detail::__to_unsigned_like(
+            ranges::min(__parent_->__remainder_, ranges::end(__parent_->__base_) - *__parent_->__current_));
       }
-      constexpr auto reserve_hint() const noexcept { return ::ycxx::detail::to_unsigned_like(parent_->remainder_); }
+      constexpr auto reserve_hint() const noexcept { return ::__ycxx::__detail::__to_unsigned_like(__parent_->__remainder_); }
     };
 
-    outer_iterator(outer_iterator&&) = default;
-    outer_iterator& operator=(outer_iterator&&) = default;
+    __outer_iterator(__outer_iterator&&) = default;
+    __outer_iterator& operator=(__outer_iterator&&) = default;
 
     constexpr value_type operator*() const {
-      ::ycxx::detail::precondition(!(*this == default_sentinel), "chunk_view: dereference of the end iterator");
-      return value_type(*parent_);
+      ::__ycxx::__detail::__precondition(!(*this == default_sentinel), "chunk_view: dereference of the end iterator");
+      return value_type(*__parent_);
     }
-    constexpr outer_iterator& operator++() {
-      ::ycxx::detail::precondition(!(*this == default_sentinel), "chunk_view: increment of the end iterator");
-      ranges::advance(*parent_->current_, parent_->remainder_, ranges::end(parent_->base_));
-      parent_->remainder_ = parent_->n_;
+    constexpr __outer_iterator& operator++() {
+      ::__ycxx::__detail::__precondition(!(*this == default_sentinel), "chunk_view: increment of the end iterator");
+      ranges::advance(*__parent_->__current_, __parent_->__remainder_, ranges::end(__parent_->__base_));
+      __parent_->__remainder_ = __parent_->__n_;
       return *this;
     }
     constexpr void operator++(int) { ++*this; }
 
-    friend constexpr bool operator==(const outer_iterator& x, default_sentinel_t) {
-      return *x.parent_->current_ == ranges::end(x.parent_->base_) && x.parent_->remainder_ != 0;
+    friend constexpr bool operator==(const __outer_iterator& __x, default_sentinel_t) {
+      return *__x.__parent_->__current_ == ranges::end(__x.__parent_->__base_) && __x.__parent_->__remainder_ != 0;
     }
-    friend constexpr difference_type operator-(default_sentinel_t, const outer_iterator& x)
-      requires sized_sentinel_for<sentinel_t<V>, iterator_t<V>>
+    friend constexpr difference_type operator-(default_sentinel_t, const __outer_iterator& __x)
+      requires sized_sentinel_for<sentinel_t<_Vp>, iterator_t<_Vp>>
     {
-      const auto dist = ranges::end(x.parent_->base_) - *x.parent_->current_;
-      if (dist < x.parent_->remainder_)
-        return dist == 0 ? 0 : 1;
-      return ycxx::detail::div_ceil(dist - x.parent_->remainder_, x.parent_->n_) + 1;
+      const auto __dist = ranges::end(__x.__parent_->__base_) - *__x.__parent_->__current_;
+      if (__dist < __x.__parent_->__remainder_)
+        return __dist == 0 ? 0 : 1;
+      return __ycxx::__detail::__div_ceil(__dist - __x.__parent_->__remainder_, __x.__parent_->__n_) + 1;
     }
-    friend constexpr difference_type operator-(const outer_iterator& x, default_sentinel_t y)
-      requires sized_sentinel_for<sentinel_t<V>, iterator_t<V>>
+    friend constexpr difference_type operator-(const __outer_iterator& __x, default_sentinel_t y)
+      requires sized_sentinel_for<sentinel_t<_Vp>, iterator_t<_Vp>>
     {
-      return -(y - x);
+      return -(y - __x);
     }
   };
 
 public:
-  constexpr explicit chunk_view(V base, range_difference_t<V> n) : base_(std::move(base)), n_(n) {
-    ::ycxx::detail::precondition(n > 0, "chunk_view: the chunk size must be positive");
+  constexpr explicit chunk_view(_Vp base, range_difference_t<_Vp> n) : __base_(std::move(base)), __n_(n) {
+    ::__ycxx::__detail::__precondition(n > 0, "chunk_view: the chunk size must be positive");
   }
 
-  constexpr V base() const&
-    requires copy_constructible<V>
+  constexpr _Vp base() const&
+    requires copy_constructible<_Vp>
   {
-    return base_;
+    return __base_;
   }
-  constexpr V base() && { return std::move(base_); }
+  constexpr _Vp base() && { return std::move(__base_); }
 
-  constexpr outer_iterator begin() {
-    current_.emplace(ranges::begin(base_));
-    remainder_ = n_;
-    return outer_iterator(*this);
+  constexpr __outer_iterator begin() {
+    __current_.emplace(ranges::begin(__base_));
+    __remainder_ = __n_;
+    return __outer_iterator(*this);
   }
   constexpr default_sentinel_t end() const noexcept { return default_sentinel; }
   constexpr auto size()
-    requires sized_range<V>
+    requires sized_range<_Vp>
   {
-    return ::ycxx::detail::to_unsigned_like(ycxx::detail::div_ceil(ranges::distance(base_), n_));
+    return ::__ycxx::__detail::__to_unsigned_like(__ycxx::__detail::__div_ceil(ranges::distance(__base_), __n_));
   }
   constexpr auto size() const
-    requires sized_range<const V>
+    requires sized_range<const _Vp>
   {
-    return ::ycxx::detail::to_unsigned_like(ycxx::detail::div_ceil(ranges::distance(base_), n_));
+    return ::__ycxx::__detail::__to_unsigned_like(__ycxx::__detail::__div_ceil(ranges::distance(__base_), __n_));
   }
   constexpr auto reserve_hint()
-    requires approximately_sized_range<V>
+    requires approximately_sized_range<_Vp>
   {
-    auto s = static_cast<range_difference_t<V>>(ranges::reserve_hint(base_));
-    return ::ycxx::detail::to_unsigned_like(ycxx::detail::div_ceil(s, n_));
+    auto s = static_cast<range_difference_t<_Vp>>(ranges::reserve_hint(__base_));
+    return ::__ycxx::__detail::__to_unsigned_like(__ycxx::__detail::__div_ceil(s, __n_));
   }
   constexpr auto reserve_hint() const
-    requires approximately_sized_range<const V>
+    requires approximately_sized_range<const _Vp>
   {
-    auto s = static_cast<range_difference_t<const V>>(ranges::reserve_hint(base_));
-    return ::ycxx::detail::to_unsigned_like(ycxx::detail::div_ceil(s, n_));
+    auto s = static_cast<range_difference_t<const _Vp>>(ranges::reserve_hint(__base_));
+    return ::__ycxx::__detail::__to_unsigned_like(__ycxx::__detail::__div_ceil(s, __n_));
   }
 };
 
-template <view V>
-  requires forward_range<V>
-class chunk_view<V> : public view_interface<chunk_view<V>> {
-  template <bool Const>
+template <view _Vp>
+  requires forward_range<_Vp>
+class chunk_view<_Vp> : public view_interface<chunk_view<_Vp>> {
+  template <bool _Const>
   class iterator {
     friend chunk_view;
-    friend iterator<!Const>;
-    using Parent = ycxx::detail::maybe_const<Const, chunk_view>;
-    using Base = ycxx::detail::maybe_const<Const, V>;
+    friend iterator<!_Const>;
+    using _Parent = __ycxx::__detail::__maybe_const<_Const, chunk_view>;
+    using _Base = __ycxx::__detail::__maybe_const<_Const, _Vp>;
 
-    iterator_t<Base> current_ = iterator_t<Base>();
-    sentinel_t<Base> end_ = sentinel_t<Base>();
-    range_difference_t<Base> n_ = 0;
-    range_difference_t<Base> missing_ = 0;
+    iterator_t<_Base> __current_ = iterator_t<_Base>();
+    sentinel_t<_Base> __end_ = sentinel_t<_Base>();
+    range_difference_t<_Base> __n_ = 0;
+    range_difference_t<_Base> __missing_ = 0;
 
-    constexpr iterator(Parent* parent, iterator_t<Base> current, range_difference_t<Base> missing = 0)
-        : current_(current), end_(ranges::end(parent->base_)), n_(parent->n_), missing_(missing) {}
+    constexpr iterator(_Parent* __parent, iterator_t<_Base> current, range_difference_t<_Base> __missing = 0)
+        : __current_(current), __end_(ranges::end(__parent->__base_)), __n_(__parent->__n_), __missing_(__missing) {}
 
   public:
     using iterator_category = input_iterator_tag;
     using iterator_concept =
-        conditional_t<random_access_range<Base>, random_access_iterator_tag,
-                      conditional_t<bidirectional_range<Base>, bidirectional_iterator_tag, forward_iterator_tag>>;
-    using value_type = decltype(views::take(subrange(current_, end_), n_));
-    using difference_type = range_difference_t<Base>;
+        conditional_t<random_access_range<_Base>, random_access_iterator_tag,
+                      conditional_t<bidirectional_range<_Base>, bidirectional_iterator_tag, forward_iterator_tag>>;
+    using value_type = decltype(views::take(subrange(__current_, __end_), __n_));
+    using difference_type = range_difference_t<_Base>;
 
     iterator() = default;
-    constexpr iterator(iterator<!Const> i)
-      requires Const && convertible_to<iterator_t<V>, iterator_t<Base>> && convertible_to<sentinel_t<V>, sentinel_t<Base>>
-        : current_(std::move(i.current_)), end_(std::move(i.end_)), n_(i.n_), missing_(i.missing_) {}
+    constexpr iterator(iterator<!_Const> i)
+      requires _Const && convertible_to<iterator_t<_Vp>, iterator_t<_Base>> && convertible_to<sentinel_t<_Vp>, sentinel_t<_Base>>
+        : __current_(std::move(i.__current_)), __end_(std::move(i.__end_)), __n_(i.__n_), __missing_(i.__missing_) {}
 
-    constexpr iterator_t<Base> base() const { return current_; }
+    constexpr iterator_t<_Base> base() const { return __current_; }
     constexpr value_type operator*() const {
-      ::ycxx::detail::precondition(current_ != end_, "chunk_view: dereference of the end iterator");
-      return views::take(subrange(current_, end_), n_);
+      ::__ycxx::__detail::__precondition(__current_ != __end_, "chunk_view: dereference of the end iterator");
+      return views::take(subrange(__current_, __end_), __n_);
     }
     constexpr iterator& operator++() {
-      ::ycxx::detail::precondition(current_ != end_, "chunk_view: increment of the end iterator");
-      missing_ = ranges::advance(current_, n_, end_);
+      ::__ycxx::__detail::__precondition(__current_ != __end_, "chunk_view: increment of the end iterator");
+      __missing_ = ranges::advance(__current_, __n_, __end_);
       return *this;
     }
     constexpr iterator operator++(int) {
-      auto tmp = *this;
+      auto __tmp = *this;
       ++*this;
-      return tmp;
+      return __tmp;
     }
     constexpr iterator& operator--()
-      requires bidirectional_range<Base>
+      requires bidirectional_range<_Base>
     {
-      ranges::advance(current_, missing_ - n_);
-      missing_ = 0;
+      ranges::advance(__current_, __missing_ - __n_);
+      __missing_ = 0;
       return *this;
     }
     constexpr iterator operator--(int)
-      requires bidirectional_range<Base>
+      requires bidirectional_range<_Base>
     {
-      auto tmp = *this;
+      auto __tmp = *this;
       --*this;
-      return tmp;
+      return __tmp;
     }
-    constexpr iterator& operator+=(difference_type x)
-      requires random_access_range<Base>
+    constexpr iterator& operator+=(difference_type __x)
+      requires random_access_range<_Base>
     {
-      if (x > 0) {
-        ::ycxx::detail::precondition(ranges::distance(current_, end_) > n_ * (x - 1),
+      if (__x > 0) {
+        ::__ycxx::__detail::__precondition(ranges::distance(__current_, __end_) > __n_ * (__x - 1),
                                      "chunk_view: advance past the end");
-        ranges::advance(current_, n_ * (x - 1));
-        missing_ = ranges::advance(current_, n_, end_);
-      } else if (x < 0) {
-        ranges::advance(current_, n_ * x + missing_);
-        missing_ = 0;
+        ranges::advance(__current_, __n_ * (__x - 1));
+        __missing_ = ranges::advance(__current_, __n_, __end_);
+      } else if (__x < 0) {
+        ranges::advance(__current_, __n_ * __x + __missing_);
+        __missing_ = 0;
       }
       return *this;
     }
-    constexpr iterator& operator-=(difference_type x)
-      requires random_access_range<Base>
+    constexpr iterator& operator-=(difference_type __x)
+      requires random_access_range<_Base>
     {
-      return *this += -x;
+      return *this += -__x;
     }
     constexpr value_type operator[](difference_type n) const
-      requires random_access_range<Base>
+      requires random_access_range<_Base>
     {
       return *(*this + n);
     }
 
-    friend constexpr bool operator==(const iterator& x, const iterator& y) { return x.current_ == y.current_; }
-    friend constexpr bool operator==(const iterator& x, default_sentinel_t) { return x.current_ == x.end_; }
-    friend constexpr bool operator<(const iterator& x, const iterator& y)
-      requires random_access_range<Base>
+    friend constexpr bool operator==(const iterator& __x, const iterator& y) { return __x.__current_ == y.__current_; }
+    friend constexpr bool operator==(const iterator& __x, default_sentinel_t) { return __x.__current_ == __x.__end_; }
+    friend constexpr bool operator<(const iterator& __x, const iterator& y)
+      requires random_access_range<_Base>
     {
-      return x.current_ < y.current_;
+      return __x.__current_ < y.__current_;
     }
-    friend constexpr bool operator>(const iterator& x, const iterator& y)
-      requires random_access_range<Base>
+    friend constexpr bool operator>(const iterator& __x, const iterator& y)
+      requires random_access_range<_Base>
     {
-      return y < x;
+      return y < __x;
     }
-    friend constexpr bool operator<=(const iterator& x, const iterator& y)
-      requires random_access_range<Base>
+    friend constexpr bool operator<=(const iterator& __x, const iterator& y)
+      requires random_access_range<_Base>
     {
-      return !(y < x);
+      return !(y < __x);
     }
-    friend constexpr bool operator>=(const iterator& x, const iterator& y)
-      requires random_access_range<Base>
+    friend constexpr bool operator>=(const iterator& __x, const iterator& y)
+      requires random_access_range<_Base>
     {
-      return !(x < y);
+      return !(__x < y);
     }
-    friend constexpr auto operator<=>(const iterator& x, const iterator& y)
-      requires random_access_range<Base> && three_way_comparable<iterator_t<Base>>
+    friend constexpr auto operator<=>(const iterator& __x, const iterator& y)
+      requires random_access_range<_Base> && three_way_comparable<iterator_t<_Base>>
     {
-      return x.current_ <=> y.current_;
+      return __x.__current_ <=> y.__current_;
     }
     friend constexpr iterator operator+(const iterator& i, difference_type n)
-      requires random_access_range<Base>
+      requires random_access_range<_Base>
     {
       auto r = i;
       r += n;
       return r;
     }
     friend constexpr iterator operator+(difference_type n, const iterator& i)
-      requires random_access_range<Base>
+      requires random_access_range<_Base>
     {
       auto r = i;
       r += n;
       return r;
     }
     friend constexpr iterator operator-(const iterator& i, difference_type n)
-      requires random_access_range<Base>
+      requires random_access_range<_Base>
     {
       auto r = i;
       r -= n;
       return r;
     }
-    friend constexpr difference_type operator-(const iterator& x, const iterator& y)
-      requires sized_sentinel_for<iterator_t<Base>, iterator_t<Base>>
+    friend constexpr difference_type operator-(const iterator& __x, const iterator& y)
+      requires sized_sentinel_for<iterator_t<_Base>, iterator_t<_Base>>
     {
-      return (x.current_ - y.current_ + x.missing_ - y.missing_) / x.n_;
+      return (__x.__current_ - y.__current_ + __x.__missing_ - y.__missing_) / __x.__n_;
     }
-    friend constexpr difference_type operator-(default_sentinel_t, const iterator& x)
-      requires sized_sentinel_for<sentinel_t<Base>, iterator_t<Base>>
+    friend constexpr difference_type operator-(default_sentinel_t, const iterator& __x)
+      requires sized_sentinel_for<sentinel_t<_Base>, iterator_t<_Base>>
     {
-      return ycxx::detail::div_ceil(x.end_ - x.current_, x.n_);
+      return __ycxx::__detail::__div_ceil(__x.__end_ - __x.__current_, __x.__n_);
     }
-    friend constexpr difference_type operator-(const iterator& x, default_sentinel_t y)
-      requires sized_sentinel_for<sentinel_t<Base>, iterator_t<Base>>
+    friend constexpr difference_type operator-(const iterator& __x, default_sentinel_t y)
+      requires sized_sentinel_for<sentinel_t<_Base>, iterator_t<_Base>>
     {
-      return -(y - x);
+      return -(y - __x);
     }
   };
 
-  V base_;
-  range_difference_t<V> n_;
+  _Vp __base_;
+  range_difference_t<_Vp> __n_;
 
 public:
-  constexpr explicit chunk_view(V base, range_difference_t<V> n) : base_(std::move(base)), n_(n) {
-    ::ycxx::detail::precondition(n > 0, "chunk_view: the chunk size must be positive");
+  constexpr explicit chunk_view(_Vp base, range_difference_t<_Vp> n) : __base_(std::move(base)), __n_(n) {
+    ::__ycxx::__detail::__precondition(n > 0, "chunk_view: the chunk size must be positive");
   }
 
-  constexpr V base() const&
-    requires copy_constructible<V>
+  constexpr _Vp base() const&
+    requires copy_constructible<_Vp>
   {
-    return base_;
+    return __base_;
   }
-  constexpr V base() && { return std::move(base_); }
+  constexpr _Vp base() && { return std::move(__base_); }
 
   constexpr auto begin()
-    requires(!ycxx::detail::simple_view<V>)
+    requires(!__ycxx::__detail::__simple_view<_Vp>)
   {
-    return iterator<false>(this, ranges::begin(base_));
+    return iterator<false>(this, ranges::begin(__base_));
   }
   constexpr auto begin() const
-    requires forward_range<const V>
+    requires forward_range<const _Vp>
   {
-    return iterator<true>(this, ranges::begin(base_));
+    return iterator<true>(this, ranges::begin(__base_));
   }
   constexpr auto end()
-    requires(!ycxx::detail::simple_view<V>)
+    requires(!__ycxx::__detail::__simple_view<_Vp>)
   {
-    if constexpr (common_range<V> && sized_range<V>) {
-      auto missing = (n_ - ranges::distance(base_) % n_) % n_;
-      return iterator<false>(this, ranges::end(base_), missing);
-    } else if constexpr (common_range<V> && !bidirectional_range<V>) {
-      return iterator<false>(this, ranges::end(base_));
+    if constexpr (common_range<_Vp> && sized_range<_Vp>) {
+      auto __missing = (__n_ - ranges::distance(__base_) % __n_) % __n_;
+      return iterator<false>(this, ranges::end(__base_), __missing);
+    } else if constexpr (common_range<_Vp> && !bidirectional_range<_Vp>) {
+      return iterator<false>(this, ranges::end(__base_));
     } else {
       return default_sentinel;
     }
   }
   constexpr auto end() const
-    requires forward_range<const V>
+    requires forward_range<const _Vp>
   {
-    if constexpr (common_range<const V> && sized_range<const V>) {
-      auto missing = (n_ - ranges::distance(base_) % n_) % n_;
-      return iterator<true>(this, ranges::end(base_), missing);
-    } else if constexpr (common_range<const V> && !bidirectional_range<const V>) {
-      return iterator<true>(this, ranges::end(base_));
+    if constexpr (common_range<const _Vp> && sized_range<const _Vp>) {
+      auto __missing = (__n_ - ranges::distance(__base_) % __n_) % __n_;
+      return iterator<true>(this, ranges::end(__base_), __missing);
+    } else if constexpr (common_range<const _Vp> && !bidirectional_range<const _Vp>) {
+      return iterator<true>(this, ranges::end(__base_));
     } else {
       return default_sentinel;
     }
   }
   constexpr auto size()
-    requires sized_range<V>
+    requires sized_range<_Vp>
   {
-    return ::ycxx::detail::to_unsigned_like(ycxx::detail::div_ceil(ranges::distance(base_), n_));
+    return ::__ycxx::__detail::__to_unsigned_like(__ycxx::__detail::__div_ceil(ranges::distance(__base_), __n_));
   }
   constexpr auto size() const
-    requires sized_range<const V>
+    requires sized_range<const _Vp>
   {
-    return ::ycxx::detail::to_unsigned_like(ycxx::detail::div_ceil(ranges::distance(base_), n_));
+    return ::__ycxx::__detail::__to_unsigned_like(__ycxx::__detail::__div_ceil(ranges::distance(__base_), __n_));
   }
   constexpr auto reserve_hint()
-    requires approximately_sized_range<V>
+    requires approximately_sized_range<_Vp>
   {
-    auto s = static_cast<range_difference_t<V>>(ranges::reserve_hint(base_));
-    return ::ycxx::detail::to_unsigned_like(ycxx::detail::div_ceil(s, n_));
+    auto s = static_cast<range_difference_t<_Vp>>(ranges::reserve_hint(__base_));
+    return ::__ycxx::__detail::__to_unsigned_like(__ycxx::__detail::__div_ceil(s, __n_));
   }
   constexpr auto reserve_hint() const
-    requires approximately_sized_range<const V>
+    requires approximately_sized_range<const _Vp>
   {
-    auto s = static_cast<range_difference_t<const V>>(ranges::reserve_hint(base_));
-    return ::ycxx::detail::to_unsigned_like(ycxx::detail::div_ceil(s, n_));
+    auto s = static_cast<range_difference_t<const _Vp>>(ranges::reserve_hint(__base_));
+    return ::__ycxx::__detail::__to_unsigned_like(__ycxx::__detail::__div_ceil(s, __n_));
   }
 };
-template <class R>
-chunk_view(R&&, range_difference_t<R>) -> chunk_view<views::all_t<R>>;
-template <class V>
-constexpr bool enable_borrowed_range<chunk_view<V>> = forward_range<V> && enable_borrowed_range<V>;
+template <class _Rp>
+chunk_view(_Rp&&, range_difference_t<_Rp>) -> chunk_view<views::all_t<_Rp>>;
+template <class _Vp>
+constexpr bool enable_borrowed_range<chunk_view<_Vp>> = forward_range<_Vp> && enable_borrowed_range<_Vp>;
 
 // =============================================================================================
 // [range.slide]
 // =============================================================================================
-template <forward_range V>
-  requires view<V>
-class slide_view : public view_interface<slide_view<V>> {
+template <forward_range _Vp>
+  requires view<_Vp>
+class slide_view : public view_interface<slide_view<_Vp>> {
   class sentinel;
 
-  template <bool Const>
+  template <bool _Const>
   class iterator {
     friend slide_view;
-    friend iterator<!Const>;
+    friend iterator<!_Const>;
     friend sentinel;
-    using Base = ycxx::detail::maybe_const<Const, V>;
-    static constexpr bool has_last = ycxx::detail::slide_caches_first<Base>;
+    using _Base = __ycxx::__detail::__maybe_const<_Const, _Vp>;
+    static constexpr bool __has_last = __ycxx::__detail::__slide_caches_first<_Base>;
 
-    iterator_t<Base> current_ = iterator_t<Base>();
-    [[no_unique_address]] conditional_t<has_last, iterator_t<Base>, ycxx::detail::empty_cache> last_ele_ =
-        conditional_t<has_last, iterator_t<Base>, ycxx::detail::empty_cache>();
-    range_difference_t<Base> n_ = 0;
+    iterator_t<_Base> __current_ = iterator_t<_Base>();
+    [[no_unique_address]] conditional_t<__has_last, iterator_t<_Base>, __ycxx::__detail::__empty_cache> __last_ele_ =
+        conditional_t<__has_last, iterator_t<_Base>, __ycxx::__detail::__empty_cache>();
+    range_difference_t<_Base> __n_ = 0;
 
-    constexpr iterator(iterator_t<Base> current, range_difference_t<Base> n)
-      requires(!ycxx::detail::slide_caches_first<Base>)
-        : current_(current), n_(n) {}
-    constexpr iterator(iterator_t<Base> current, iterator_t<Base> last_ele, range_difference_t<Base> n)
-      requires ycxx::detail::slide_caches_first<Base>
-        : current_(current), last_ele_(last_ele), n_(n) {}
+    constexpr iterator(iterator_t<_Base> current, range_difference_t<_Base> n)
+      requires(!__ycxx::__detail::__slide_caches_first<_Base>)
+        : __current_(current), __n_(n) {}
+    constexpr iterator(iterator_t<_Base> current, iterator_t<_Base> __last_ele, range_difference_t<_Base> n)
+      requires __ycxx::__detail::__slide_caches_first<_Base>
+        : __current_(current), __last_ele_(__last_ele), __n_(n) {}
 
   public:
     using iterator_category = input_iterator_tag;
     using iterator_concept =
-        conditional_t<random_access_range<Base>, random_access_iterator_tag,
-                      conditional_t<bidirectional_range<Base>, bidirectional_iterator_tag, forward_iterator_tag>>;
-    using value_type = decltype(views::counted(current_, n_));
-    using difference_type = range_difference_t<Base>;
+        conditional_t<random_access_range<_Base>, random_access_iterator_tag,
+                      conditional_t<bidirectional_range<_Base>, bidirectional_iterator_tag, forward_iterator_tag>>;
+    using value_type = decltype(views::counted(__current_, __n_));
+    using difference_type = range_difference_t<_Base>;
 
     iterator() = default;
-    constexpr iterator(iterator<!Const> i)
-      requires Const && convertible_to<iterator_t<V>, iterator_t<Base>>
-        : current_(std::move(i.current_)), n_(i.n_) {}
+    constexpr iterator(iterator<!_Const> i)
+      requires _Const && convertible_to<iterator_t<_Vp>, iterator_t<_Base>>
+        : __current_(std::move(i.__current_)), __n_(i.__n_) {}
 
-    constexpr auto operator*() const { return views::counted(current_, n_); }
+    constexpr auto operator*() const { return views::counted(__current_, __n_); }
     constexpr iterator& operator++() {
-      ++current_;
-      if constexpr (has_last)
-        ++last_ele_;
+      ++__current_;
+      if constexpr (__has_last)
+        ++__last_ele_;
       return *this;
     }
     constexpr iterator operator++(int) {
-      auto tmp = *this;
+      auto __tmp = *this;
       ++*this;
-      return tmp;
+      return __tmp;
     }
     constexpr iterator& operator--()
-      requires bidirectional_range<Base>
+      requires bidirectional_range<_Base>
     {
-      --current_;
-      if constexpr (has_last)
-        --last_ele_;
+      --__current_;
+      if constexpr (__has_last)
+        --__last_ele_;
       return *this;
     }
     constexpr iterator operator--(int)
-      requires bidirectional_range<Base>
+      requires bidirectional_range<_Base>
     {
-      auto tmp = *this;
+      auto __tmp = *this;
       --*this;
-      return tmp;
+      return __tmp;
     }
-    constexpr iterator& operator+=(difference_type x)
-      requires random_access_range<Base>
+    constexpr iterator& operator+=(difference_type __x)
+      requires random_access_range<_Base>
     {
-      current_ += x;
-      if constexpr (has_last)
-        last_ele_ += x;
+      __current_ += __x;
+      if constexpr (__has_last)
+        __last_ele_ += __x;
       return *this;
     }
-    constexpr iterator& operator-=(difference_type x)
-      requires random_access_range<Base>
+    constexpr iterator& operator-=(difference_type __x)
+      requires random_access_range<_Base>
     {
-      current_ -= x;
-      if constexpr (has_last)
-        last_ele_ -= x;
+      __current_ -= __x;
+      if constexpr (__has_last)
+        __last_ele_ -= __x;
       return *this;
     }
     constexpr auto operator[](difference_type n) const
-      requires random_access_range<Base>
+      requires random_access_range<_Base>
     {
-      return views::counted(current_ + n, n_);
+      return views::counted(__current_ + n, __n_);
     }
 
-    friend constexpr bool operator==(const iterator& x, const iterator& y) {
-      if constexpr (has_last)
-        return x.last_ele_ == y.last_ele_;
+    friend constexpr bool operator==(const iterator& __x, const iterator& y) {
+      if constexpr (__has_last)
+        return __x.__last_ele_ == y.__last_ele_;
       else
-        return x.current_ == y.current_;
+        return __x.__current_ == y.__current_;
     }
-    friend constexpr bool operator<(const iterator& x, const iterator& y)
-      requires random_access_range<Base>
+    friend constexpr bool operator<(const iterator& __x, const iterator& y)
+      requires random_access_range<_Base>
     {
-      return x.current_ < y.current_;
+      return __x.__current_ < y.__current_;
     }
-    friend constexpr bool operator>(const iterator& x, const iterator& y)
-      requires random_access_range<Base>
+    friend constexpr bool operator>(const iterator& __x, const iterator& y)
+      requires random_access_range<_Base>
     {
-      return y < x;
+      return y < __x;
     }
-    friend constexpr bool operator<=(const iterator& x, const iterator& y)
-      requires random_access_range<Base>
+    friend constexpr bool operator<=(const iterator& __x, const iterator& y)
+      requires random_access_range<_Base>
     {
-      return !(y < x);
+      return !(y < __x);
     }
-    friend constexpr bool operator>=(const iterator& x, const iterator& y)
-      requires random_access_range<Base>
+    friend constexpr bool operator>=(const iterator& __x, const iterator& y)
+      requires random_access_range<_Base>
     {
-      return !(x < y);
+      return !(__x < y);
     }
-    friend constexpr auto operator<=>(const iterator& x, const iterator& y)
-      requires random_access_range<Base> && three_way_comparable<iterator_t<Base>>
+    friend constexpr auto operator<=>(const iterator& __x, const iterator& y)
+      requires random_access_range<_Base> && three_way_comparable<iterator_t<_Base>>
     {
-      return x.current_ <=> y.current_;
+      return __x.__current_ <=> y.__current_;
     }
     friend constexpr iterator operator+(const iterator& i, difference_type n)
-      requires random_access_range<Base>
+      requires random_access_range<_Base>
     {
       auto r = i;
       r += n;
       return r;
     }
     friend constexpr iterator operator+(difference_type n, const iterator& i)
-      requires random_access_range<Base>
+      requires random_access_range<_Base>
     {
       auto r = i;
       r += n;
       return r;
     }
     friend constexpr iterator operator-(const iterator& i, difference_type n)
-      requires random_access_range<Base>
+      requires random_access_range<_Base>
     {
       auto r = i;
       r -= n;
       return r;
     }
-    friend constexpr difference_type operator-(const iterator& x, const iterator& y)
-      requires sized_sentinel_for<iterator_t<Base>, iterator_t<Base>>
+    friend constexpr difference_type operator-(const iterator& __x, const iterator& y)
+      requires sized_sentinel_for<iterator_t<_Base>, iterator_t<_Base>>
     {
-      if constexpr (has_last)
-        return x.last_ele_ - y.last_ele_;
+      if constexpr (__has_last)
+        return __x.__last_ele_ - y.__last_ele_;
       else
-        return x.current_ - y.current_;
+        return __x.__current_ - y.__current_;
     }
   };
 
   class sentinel {
     friend slide_view;
-    sentinel_t<V> end_ = sentinel_t<V>();
-    constexpr explicit sentinel(sentinel_t<V> end) : end_(end) {}
+    sentinel_t<_Vp> __end_ = sentinel_t<_Vp>();
+    constexpr explicit sentinel(sentinel_t<_Vp> end) : __end_(end) {}
 
-    static constexpr const auto& last_of(const iterator<false>& x) { return x.last_ele_; }
+    static constexpr const auto& __last_of(const iterator<false>& __x) { return __x.__last_ele_; }
 
   public:
     sentinel() = default;
-    friend constexpr bool operator==(const iterator<false>& x, const sentinel& y) { return last_of(x) == y.end_; }
-    friend constexpr range_difference_t<V> operator-(const iterator<false>& x, const sentinel& y)
-      requires sized_sentinel_for<sentinel_t<V>, iterator_t<V>>
+    friend constexpr bool operator==(const iterator<false>& __x, const sentinel& y) { return __last_of(__x) == y.__end_; }
+    friend constexpr range_difference_t<_Vp> operator-(const iterator<false>& __x, const sentinel& y)
+      requires sized_sentinel_for<sentinel_t<_Vp>, iterator_t<_Vp>>
     {
-      return last_of(x) - y.end_;
+      return __last_of(__x) - y.__end_;
     }
-    friend constexpr range_difference_t<V> operator-(const sentinel& y, const iterator<false>& x)
-      requires sized_sentinel_for<sentinel_t<V>, iterator_t<V>>
+    friend constexpr range_difference_t<_Vp> operator-(const sentinel& y, const iterator<false>& __x)
+      requires sized_sentinel_for<sentinel_t<_Vp>, iterator_t<_Vp>>
     {
-      return y.end_ - last_of(x);
+      return y.__end_ - __last_of(__x);
     }
   };
 
-  V base_;
-  range_difference_t<V> n_;
-  [[no_unique_address]] ycxx::detail::cache_if<ycxx::detail::slide_caches_first<V> ||
-                                                    ycxx::detail::slide_caches_last<V>,
+  _Vp __base_;
+  range_difference_t<_Vp> __n_;
+  [[no_unique_address]] __ycxx::__detail::__cache_if<__ycxx::__detail::__slide_caches_first<_Vp> ||
+                                                    __ycxx::__detail::__slide_caches_last<_Vp>,
                                                 iterator<false>>
-      cache_;
+      __cache_;
 
-  template <class Self>
-  static constexpr auto size_of(Self& self) {
-    auto sz = ranges::distance(self.base_) - self.n_ + 1;
-    if (sz < 0)
-      sz = 0;
-    return ::ycxx::detail::to_unsigned_like(sz);
+  template <class _Self>
+  static constexpr auto size_of(_Self& __self) {
+    auto __sz = ranges::distance(__self.__base_) - __self.__n_ + 1;
+    if (__sz < 0)
+      __sz = 0;
+    return ::__ycxx::__detail::__to_unsigned_like(__sz);
   }
-  template <class Self>
-  static constexpr auto hint_of(Self& self) {
-    auto sz = static_cast<range_difference_t<decltype((self.base_))>>(ranges::reserve_hint(self.base_)) - self.n_ + 1;
-    if (sz < 0)
-      sz = 0;
-    return ::ycxx::detail::to_unsigned_like(sz);
+  template <class _Self>
+  static constexpr auto __hint_of(_Self& __self) {
+    auto __sz = static_cast<range_difference_t<decltype((__self.__base_))>>(ranges::reserve_hint(__self.__base_)) - __self.__n_ + 1;
+    if (__sz < 0)
+      __sz = 0;
+    return ::__ycxx::__detail::__to_unsigned_like(__sz);
   }
 
 public:
-  constexpr explicit slide_view(V base, range_difference_t<V> n) : base_(std::move(base)), n_(n) {
-    ::ycxx::detail::precondition(n > 0, "slide_view: the window size must be positive");
+  constexpr explicit slide_view(_Vp base, range_difference_t<_Vp> n) : __base_(std::move(base)), __n_(n) {
+    ::__ycxx::__detail::__precondition(n > 0, "slide_view: the window size must be positive");
   }
 
-  constexpr V base() const&
-    requires copy_constructible<V>
+  constexpr _Vp base() const&
+    requires copy_constructible<_Vp>
   {
-    return base_;
+    return __base_;
   }
-  constexpr V base() && { return std::move(base_); }
+  constexpr _Vp base() && { return std::move(__base_); }
 
   constexpr auto begin()
-    requires(!(ycxx::detail::simple_view<V> && ycxx::detail::slide_caches_nothing<const V>))
+    requires(!(__ycxx::__detail::__simple_view<_Vp> && __ycxx::__detail::__slide_caches_nothing<const _Vp>))
   {
-    if constexpr (ycxx::detail::slide_caches_first<V>) {
-      if (!cache_.has_value())
-        cache_.emplace(iterator<false>(ranges::begin(base_), ranges::next(ranges::begin(base_), n_ - 1, ranges::end(base_)),
-                                       n_));
-      return *cache_;
+    if constexpr (__ycxx::__detail::__slide_caches_first<_Vp>) {
+      if (!__cache_.has_value())
+        __cache_.emplace(iterator<false>(ranges::begin(__base_), ranges::next(ranges::begin(__base_), __n_ - 1, ranges::end(__base_)),
+                                       __n_));
+      return *__cache_;
     } else {
-      return iterator<false>(ranges::begin(base_), n_);
+      return iterator<false>(ranges::begin(__base_), __n_);
     }
   }
   constexpr auto begin() const
-    requires ycxx::detail::slide_caches_nothing<const V>
+    requires __ycxx::__detail::__slide_caches_nothing<const _Vp>
   {
-    return iterator<true>(ranges::begin(base_), n_);
+    return iterator<true>(ranges::begin(__base_), __n_);
   }
   constexpr auto end()
-    requires(!(ycxx::detail::simple_view<V> && ycxx::detail::slide_caches_nothing<const V>))
+    requires(!(__ycxx::__detail::__simple_view<_Vp> && __ycxx::__detail::__slide_caches_nothing<const _Vp>))
   {
-    if constexpr (ycxx::detail::slide_caches_nothing<V>) {
-      return iterator<false>(ranges::begin(base_) + range_difference_t<V>(size()), n_);
-    } else if constexpr (ycxx::detail::slide_caches_last<V>) {
-      if (!cache_.has_value())
-        cache_.emplace(iterator<false>(ranges::prev(ranges::end(base_), n_ - 1, ranges::begin(base_)), n_));
-      return *cache_;
-    } else if constexpr (common_range<V>) {
-      return iterator<false>(ranges::end(base_), ranges::end(base_), n_);
+    if constexpr (__ycxx::__detail::__slide_caches_nothing<_Vp>) {
+      return iterator<false>(ranges::begin(__base_) + range_difference_t<_Vp>(size()), __n_);
+    } else if constexpr (__ycxx::__detail::__slide_caches_last<_Vp>) {
+      if (!__cache_.has_value())
+        __cache_.emplace(iterator<false>(ranges::prev(ranges::end(__base_), __n_ - 1, ranges::begin(__base_)), __n_));
+      return *__cache_;
+    } else if constexpr (common_range<_Vp>) {
+      return iterator<false>(ranges::end(__base_), ranges::end(__base_), __n_);
     } else {
-      return sentinel(ranges::end(base_));
+      return sentinel(ranges::end(__base_));
     }
   }
   constexpr auto end() const
-    requires ycxx::detail::slide_caches_nothing<const V>
+    requires __ycxx::__detail::__slide_caches_nothing<const _Vp>
   {
-    return begin() + range_difference_t<const V>(size());
+    return begin() + range_difference_t<const _Vp>(size());
   }
   constexpr auto size()
-    requires sized_range<V>
+    requires sized_range<_Vp>
   {
     return size_of(*this);
   }
   constexpr auto size() const
-    requires sized_range<const V>
+    requires sized_range<const _Vp>
   {
     return size_of(*this);
   }
   constexpr auto reserve_hint()
-    requires approximately_sized_range<V>
+    requires approximately_sized_range<_Vp>
   {
-    return hint_of(*this);
+    return __hint_of(*this);
   }
   constexpr auto reserve_hint() const
-    requires approximately_sized_range<const V>
+    requires approximately_sized_range<const _Vp>
   {
-    return hint_of(*this);
+    return __hint_of(*this);
   }
 };
-template <class R>
-slide_view(R&&, range_difference_t<R>) -> slide_view<views::all_t<R>>;
-template <class V>
-constexpr bool enable_borrowed_range<slide_view<V>> = enable_borrowed_range<V>;
+template <class _Rp>
+slide_view(_Rp&&, range_difference_t<_Rp>) -> slide_view<views::all_t<_Rp>>;
+template <class _Vp>
+constexpr bool enable_borrowed_range<slide_view<_Vp>> = enable_borrowed_range<_Vp>;
 
 // =============================================================================================
 // [range.chunk.by]
 // =============================================================================================
-template <forward_range V, indirect_binary_predicate<iterator_t<V>, iterator_t<V>> Pred>
-  requires view<V> && is_object_v<Pred>
-class chunk_by_view : public view_interface<chunk_by_view<V, Pred>> {
+template <forward_range _Vp, indirect_binary_predicate<iterator_t<_Vp>, iterator_t<_Vp>> _Pred>
+  requires view<_Vp> && is_object_v<_Pred>
+class chunk_by_view : public view_interface<chunk_by_view<_Vp, _Pred>> {
   class iterator {
     friend chunk_by_view;
-    chunk_by_view* parent_ = nullptr;
-    iterator_t<V> current_ = iterator_t<V>();
-    iterator_t<V> next_ = iterator_t<V>();
+    chunk_by_view* __parent_ = nullptr;
+    iterator_t<_Vp> __current_ = iterator_t<_Vp>();
+    iterator_t<_Vp> __next_ = iterator_t<_Vp>();
 
-    constexpr iterator(chunk_by_view& parent, iterator_t<V> current, iterator_t<V> next)
-        : parent_(__builtin_addressof(parent)), current_(current), next_(next) {}
+    constexpr iterator(chunk_by_view& __parent, iterator_t<_Vp> current, iterator_t<_Vp> next)
+        : __parent_(__builtin_addressof(__parent)), __current_(current), __next_(next) {}
 
   public:
-    using value_type = subrange<iterator_t<V>>;
-    using difference_type = range_difference_t<V>;
+    using value_type = subrange<iterator_t<_Vp>>;
+    using difference_type = range_difference_t<_Vp>;
     using iterator_category = input_iterator_tag;
-    using iterator_concept = conditional_t<bidirectional_range<V>, bidirectional_iterator_tag, forward_iterator_tag>;
+    using iterator_concept = conditional_t<bidirectional_range<_Vp>, bidirectional_iterator_tag, forward_iterator_tag>;
 
     iterator() = default;
     constexpr value_type operator*() const {
-      ::ycxx::detail::precondition(current_ != next_, "chunk_by_view: dereference of the end iterator");
-      return subrange(current_, next_);
+      ::__ycxx::__detail::__precondition(__current_ != __next_, "chunk_by_view: dereference of the end iterator");
+      return subrange(__current_, __next_);
     }
     constexpr iterator& operator++() {
-      ::ycxx::detail::precondition(current_ != next_, "chunk_by_view: increment of the end iterator");
-      current_ = next_;
-      next_ = parent_->find_next(current_);
+      ::__ycxx::__detail::__precondition(__current_ != __next_, "chunk_by_view: increment of the end iterator");
+      __current_ = __next_;
+      __next_ = __parent_->__find_next(__current_);
       return *this;
     }
     constexpr iterator operator++(int) {
-      auto tmp = *this;
+      auto __tmp = *this;
       ++*this;
-      return tmp;
+      return __tmp;
     }
     constexpr iterator& operator--()
-      requires bidirectional_range<V>
+      requires bidirectional_range<_Vp>
     {
-      next_ = current_;
-      current_ = parent_->find_prev(next_);
+      __next_ = __current_;
+      __current_ = __parent_->__find_prev(__next_);
       return *this;
     }
     constexpr iterator operator--(int)
-      requires bidirectional_range<V>
+      requires bidirectional_range<_Vp>
     {
-      auto tmp = *this;
+      auto __tmp = *this;
       --*this;
-      return tmp;
+      return __tmp;
     }
-    friend constexpr bool operator==(const iterator& x, const iterator& y) { return x.current_ == y.current_; }
-    friend constexpr bool operator==(const iterator& x, default_sentinel_t) { return x.current_ == x.next_; }
+    friend constexpr bool operator==(const iterator& __x, const iterator& y) { return __x.__current_ == y.__current_; }
+    friend constexpr bool operator==(const iterator& __x, default_sentinel_t) { return __x.__current_ == __x.__next_; }
   };
 
-  V base_ = V();
-  [[no_unique_address]] ycxx::detail::movable_box<Pred> pred_;
-  ycxx::detail::non_propagating_cache<iterator> begin_;
+  _Vp __base_ = _Vp();
+  [[no_unique_address]] __ycxx::__detail::__movable_box<_Pred> __pred_;
+  __ycxx::__detail::__non_propagating_cache<iterator> __begin_;
 
-  constexpr iterator_t<V> find_next(iterator_t<V> current) {
-    ::ycxx::detail::precondition(pred_.has_value(), "chunk_by_view: no predicate");
-    return ranges::next(ranges::adjacent_find(current, ranges::end(base_), std::not_fn(std::ref(*pred_))), 1,
-                        ranges::end(base_));
+  constexpr iterator_t<_Vp> __find_next(iterator_t<_Vp> current) {
+    ::__ycxx::__detail::__precondition(__pred_.has_value(), "chunk_by_view: no predicate");
+    return ranges::next(ranges::adjacent_find(current, ranges::end(__base_), std::not_fn(std::ref(*__pred_))), 1,
+                        ranges::end(__base_));
   }
-  constexpr iterator_t<V> find_prev(iterator_t<V> current)
-    requires bidirectional_range<V>
+  constexpr iterator_t<_Vp> __find_prev(iterator_t<_Vp> current)
+    requires bidirectional_range<_Vp>
   {
-    ::ycxx::detail::precondition(pred_.has_value(), "chunk_by_view: no predicate");
-    const auto first = ranges::begin(base_);
-    ::ycxx::detail::precondition(current != first, "chunk_by_view: decrement of the begin iterator");
+    ::__ycxx::__detail::__precondition(__pred_.has_value(), "chunk_by_view: no predicate");
+    const auto first = ranges::begin(__base_);
+    ::__ycxx::__detail::__precondition(current != first, "chunk_by_view: decrement of the begin iterator");
     auto i = ranges::prev(current);
     while (i != first) {
       auto p = ranges::prev(i);
-      if (!bool(::ycxx::detail::invoke(*pred_, *p, *i)))
+      if (!bool(::__ycxx::__detail::invoke(*__pred_, *p, *i)))
         break;
       i = p;
     }
@@ -771,339 +771,339 @@ class chunk_by_view : public view_interface<chunk_by_view<V, Pred>> {
 
 public:
   chunk_by_view()
-    requires default_initializable<V> && default_initializable<Pred>
+    requires default_initializable<_Vp> && default_initializable<_Pred>
   = default;
-  constexpr explicit chunk_by_view(V base, Pred pred) : base_(std::move(base)), pred_(in_place, std::move(pred)) {}
+  constexpr explicit chunk_by_view(_Vp base, _Pred pred) : __base_(std::move(base)), __pred_(in_place, std::move(pred)) {}
 
-  constexpr V base() const&
-    requires copy_constructible<V>
+  constexpr _Vp base() const&
+    requires copy_constructible<_Vp>
   {
-    return base_;
+    return __base_;
   }
-  constexpr V base() && { return std::move(base_); }
-  constexpr const Pred& pred() const { return *pred_; }
+  constexpr _Vp base() && { return std::move(__base_); }
+  constexpr const _Pred& pred() const { return *__pred_; }
 
   constexpr iterator begin() {
-    ::ycxx::detail::precondition(pred_.has_value(), "chunk_by_view: no predicate");
-    if (!begin_.has_value())
-      begin_.emplace(iterator(*this, ranges::begin(base_), find_next(ranges::begin(base_))));
-    return *begin_;
+    ::__ycxx::__detail::__precondition(__pred_.has_value(), "chunk_by_view: no predicate");
+    if (!__begin_.has_value())
+      __begin_.emplace(iterator(*this, ranges::begin(__base_), __find_next(ranges::begin(__base_))));
+    return *__begin_;
   }
   constexpr auto end() {
-    if constexpr (common_range<V>)
-      return iterator(*this, ranges::end(base_), ranges::end(base_));
+    if constexpr (common_range<_Vp>)
+      return iterator(*this, ranges::end(__base_), ranges::end(__base_));
     else
       return default_sentinel;
   }
 };
-template <class R, class Pred>
-chunk_by_view(R&&, Pred) -> chunk_by_view<views::all_t<R>, Pred>;
+template <class _Rp, class _Pred>
+chunk_by_view(_Rp&&, _Pred) -> chunk_by_view<views::all_t<_Rp>, _Pred>;
 
 // =============================================================================================
 // [range.stride]
 // =============================================================================================
-template <input_range V>
-  requires view<V>
-class stride_view : public view_interface<stride_view<V>> {
-  template <bool Const>
+template <input_range _Vp>
+  requires view<_Vp>
+class stride_view : public view_interface<stride_view<_Vp>> {
+  template <bool _Const>
   static consteval auto category() {
-    using Base = ycxx::detail::maybe_const<Const, V>;
-    if constexpr (!forward_range<Base>) {
+    using _Base = __ycxx::__detail::__maybe_const<_Const, _Vp>;
+    if constexpr (!forward_range<_Base>) {
       return type_identity<void>{};
     } else {
-      using C = ycxx::detail::iter_category_t<iterator_t<Base>>;
-      if constexpr (derived_from<C, random_access_iterator_tag>)
+      using _Cp = __ycxx::__detail::__iter_category_t<iterator_t<_Base>>;
+      if constexpr (derived_from<_Cp, random_access_iterator_tag>)
         return type_identity<random_access_iterator_tag>{};
       else
-        return type_identity<C>{};
+        return type_identity<_Cp>{};
     }
   }
 
-  template <bool Const>
-  class iterator : public ycxx::detail::category_base<typename decltype(category<Const>())::type> {
+  template <bool _Const>
+  class iterator : public __ycxx::__detail::__category_base<typename decltype(category<_Const>())::type> {
     friend stride_view;
-    friend iterator<!Const>;
-    using Parent = ycxx::detail::maybe_const<Const, stride_view>;
-    using Base = ycxx::detail::maybe_const<Const, V>;
+    friend iterator<!_Const>;
+    using _Parent = __ycxx::__detail::__maybe_const<_Const, stride_view>;
+    using _Base = __ycxx::__detail::__maybe_const<_Const, _Vp>;
 
-    iterator_t<Base> current_ = iterator_t<Base>();
-    sentinel_t<Base> end_ = sentinel_t<Base>();
-    range_difference_t<Base> stride_ = 0;
-    range_difference_t<Base> missing_ = 0;
+    iterator_t<_Base> __current_ = iterator_t<_Base>();
+    sentinel_t<_Base> __end_ = sentinel_t<_Base>();
+    range_difference_t<_Base> __stride_ = 0;
+    range_difference_t<_Base> __missing_ = 0;
 
-    constexpr iterator(Parent* parent, iterator_t<Base> current, range_difference_t<Base> missing = 0)
-        : current_(std::move(current)), end_(ranges::end(parent->base_)), stride_(parent->stride_), missing_(missing) {}
+    constexpr iterator(_Parent* __parent, iterator_t<_Base> current, range_difference_t<_Base> __missing = 0)
+        : __current_(std::move(current)), __end_(ranges::end(__parent->__base_)), __stride_(__parent->__stride_), __missing_(__missing) {}
 
   public:
-    using difference_type = range_difference_t<Base>;
-    using value_type = range_value_t<Base>;
-    using iterator_concept = ycxx::detail::range_strength_t<Base>;
+    using difference_type = range_difference_t<_Base>;
+    using value_type = range_value_t<_Base>;
+    using iterator_concept = __ycxx::__detail::__range_strength_t<_Base>;
 
     iterator()
-      requires default_initializable<iterator_t<Base>>
+      requires default_initializable<iterator_t<_Base>>
     = default;
-    constexpr iterator(iterator<!Const> other)
-      requires Const && convertible_to<iterator_t<V>, iterator_t<Base>> && convertible_to<sentinel_t<V>, sentinel_t<Base>>
-        : current_(std::move(other.current_)), end_(std::move(other.end_)), stride_(other.stride_),
-          missing_(other.missing_) {}
+    constexpr iterator(iterator<!_Const> other)
+      requires _Const && convertible_to<iterator_t<_Vp>, iterator_t<_Base>> && convertible_to<sentinel_t<_Vp>, sentinel_t<_Base>>
+        : __current_(std::move(other.__current_)), __end_(std::move(other.__end_)), __stride_(other.__stride_),
+          __missing_(other.__missing_) {}
 
-    constexpr iterator_t<Base> base() && { return std::move(current_); }
-    constexpr const iterator_t<Base>& base() const& noexcept { return current_; }
-    constexpr decltype(auto) operator*() const { return *current_; }
+    constexpr iterator_t<_Base> base() && { return std::move(__current_); }
+    constexpr const iterator_t<_Base>& base() const& noexcept { return __current_; }
+    constexpr decltype(auto) operator*() const { return *__current_; }
     constexpr iterator& operator++() {
-      ::ycxx::detail::precondition(current_ != end_, "stride_view: increment of the end iterator");
-      missing_ = ranges::advance(current_, stride_, end_);
+      ::__ycxx::__detail::__precondition(__current_ != __end_, "stride_view: increment of the end iterator");
+      __missing_ = ranges::advance(__current_, __stride_, __end_);
       return *this;
     }
     constexpr void operator++(int) { ++*this; }
     constexpr iterator operator++(int)
-      requires forward_range<Base>
+      requires forward_range<_Base>
     {
-      auto tmp = *this;
+      auto __tmp = *this;
       ++*this;
-      return tmp;
+      return __tmp;
     }
     constexpr iterator& operator--()
-      requires bidirectional_range<Base>
+      requires bidirectional_range<_Base>
     {
-      ranges::advance(current_, missing_ - stride_);
-      missing_ = 0;
+      ranges::advance(__current_, __missing_ - __stride_);
+      __missing_ = 0;
       return *this;
     }
     constexpr iterator operator--(int)
-      requires bidirectional_range<Base>
+      requires bidirectional_range<_Base>
     {
-      auto tmp = *this;
+      auto __tmp = *this;
       --*this;
-      return tmp;
+      return __tmp;
     }
     constexpr iterator& operator+=(difference_type n)
-      requires random_access_range<Base>
+      requires random_access_range<_Base>
     {
       if (n > 0) {
-        ::ycxx::detail::precondition(ranges::distance(current_, end_) > stride_ * (n - 1),
+        ::__ycxx::__detail::__precondition(ranges::distance(__current_, __end_) > __stride_ * (n - 1),
                                      "stride_view: advance past the end");
-        ranges::advance(current_, stride_ * (n - 1));
-        missing_ = ranges::advance(current_, stride_, end_);
+        ranges::advance(__current_, __stride_ * (n - 1));
+        __missing_ = ranges::advance(__current_, __stride_, __end_);
       } else if (n < 0) {
-        ranges::advance(current_, stride_ * n + missing_);
-        missing_ = 0;
+        ranges::advance(__current_, __stride_ * n + __missing_);
+        __missing_ = 0;
       }
       return *this;
     }
     constexpr iterator& operator-=(difference_type n)
-      requires random_access_range<Base>
+      requires random_access_range<_Base>
     {
       return *this += -n;
     }
     constexpr decltype(auto) operator[](difference_type n) const
-      requires random_access_range<Base>
+      requires random_access_range<_Base>
     {
       return *(*this + n);
     }
 
-    friend constexpr bool operator==(const iterator& x, default_sentinel_t) { return x.current_ == x.end_; }
-    friend constexpr bool operator==(const iterator& x, const iterator& y)
-      requires equality_comparable<iterator_t<Base>>
+    friend constexpr bool operator==(const iterator& __x, default_sentinel_t) { return __x.__current_ == __x.__end_; }
+    friend constexpr bool operator==(const iterator& __x, const iterator& y)
+      requires equality_comparable<iterator_t<_Base>>
     {
-      return x.current_ == y.current_;
+      return __x.__current_ == y.__current_;
     }
-    friend constexpr bool operator<(const iterator& x, const iterator& y)
-      requires random_access_range<Base>
+    friend constexpr bool operator<(const iterator& __x, const iterator& y)
+      requires random_access_range<_Base>
     {
-      return x.current_ < y.current_;
+      return __x.__current_ < y.__current_;
     }
-    friend constexpr bool operator>(const iterator& x, const iterator& y)
-      requires random_access_range<Base>
+    friend constexpr bool operator>(const iterator& __x, const iterator& y)
+      requires random_access_range<_Base>
     {
-      return y < x;
+      return y < __x;
     }
-    friend constexpr bool operator<=(const iterator& x, const iterator& y)
-      requires random_access_range<Base>
+    friend constexpr bool operator<=(const iterator& __x, const iterator& y)
+      requires random_access_range<_Base>
     {
-      return !(y < x);
+      return !(y < __x);
     }
-    friend constexpr bool operator>=(const iterator& x, const iterator& y)
-      requires random_access_range<Base>
+    friend constexpr bool operator>=(const iterator& __x, const iterator& y)
+      requires random_access_range<_Base>
     {
-      return !(x < y);
+      return !(__x < y);
     }
-    friend constexpr auto operator<=>(const iterator& x, const iterator& y)
-      requires random_access_range<Base> && three_way_comparable<iterator_t<Base>>
+    friend constexpr auto operator<=>(const iterator& __x, const iterator& y)
+      requires random_access_range<_Base> && three_way_comparable<iterator_t<_Base>>
     {
-      return x.current_ <=> y.current_;
+      return __x.__current_ <=> y.__current_;
     }
     friend constexpr iterator operator+(const iterator& i, difference_type n)
-      requires random_access_range<Base>
+      requires random_access_range<_Base>
     {
       auto r = i;
       r += n;
       return r;
     }
     friend constexpr iterator operator+(difference_type n, const iterator& i)
-      requires random_access_range<Base>
+      requires random_access_range<_Base>
     {
       auto r = i;
       r += n;
       return r;
     }
     friend constexpr iterator operator-(const iterator& i, difference_type n)
-      requires random_access_range<Base>
+      requires random_access_range<_Base>
     {
       auto r = i;
       r -= n;
       return r;
     }
-    friend constexpr difference_type operator-(const iterator& x, const iterator& y)
-      requires sized_sentinel_for<iterator_t<Base>, iterator_t<Base>>
+    friend constexpr difference_type operator-(const iterator& __x, const iterator& y)
+      requires sized_sentinel_for<iterator_t<_Base>, iterator_t<_Base>>
     {
-      auto n = x.current_ - y.current_;
-      if constexpr (forward_range<Base>)
-        return (n + x.missing_ - y.missing_) / x.stride_;
+      auto n = __x.__current_ - y.__current_;
+      if constexpr (forward_range<_Base>)
+        return (n + __x.__missing_ - y.__missing_) / __x.__stride_;
       else if (n < 0)
-        return -ycxx::detail::div_ceil(-n, x.stride_);
+        return -__ycxx::__detail::__div_ceil(-n, __x.__stride_);
       else
-        return ycxx::detail::div_ceil(n, x.stride_);
+        return __ycxx::__detail::__div_ceil(n, __x.__stride_);
     }
-    friend constexpr difference_type operator-(default_sentinel_t, const iterator& x)
-      requires sized_sentinel_for<sentinel_t<Base>, iterator_t<Base>>
+    friend constexpr difference_type operator-(default_sentinel_t, const iterator& __x)
+      requires sized_sentinel_for<sentinel_t<_Base>, iterator_t<_Base>>
     {
-      return ycxx::detail::div_ceil(x.end_ - x.current_, x.stride_);
+      return __ycxx::__detail::__div_ceil(__x.__end_ - __x.__current_, __x.__stride_);
     }
-    friend constexpr difference_type operator-(const iterator& x, default_sentinel_t y)
-      requires sized_sentinel_for<sentinel_t<Base>, iterator_t<Base>>
+    friend constexpr difference_type operator-(const iterator& __x, default_sentinel_t y)
+      requires sized_sentinel_for<sentinel_t<_Base>, iterator_t<_Base>>
     {
-      return -(y - x);
+      return -(y - __x);
     }
-    friend constexpr range_rvalue_reference_t<Base> iter_move(const iterator& i) noexcept(
-        noexcept(ranges::iter_move(i.current_))) {
-      return ranges::iter_move(i.current_);
+    friend constexpr range_rvalue_reference_t<_Base> iter_move(const iterator& i) noexcept(
+        noexcept(ranges::iter_move(i.__current_))) {
+      return ranges::iter_move(i.__current_);
     }
-    friend constexpr void iter_swap(const iterator& x, const iterator& y) noexcept(
-        noexcept(ranges::iter_swap(x.current_, y.current_)))
-      requires indirectly_swappable<iterator_t<Base>>
+    friend constexpr void iter_swap(const iterator& __x, const iterator& y) noexcept(
+        noexcept(ranges::iter_swap(__x.__current_, y.__current_)))
+      requires indirectly_swappable<iterator_t<_Base>>
     {
-      ranges::iter_swap(x.current_, y.current_);
+      ranges::iter_swap(__x.__current_, y.__current_);
     }
   };
 
-  V base_;
-  range_difference_t<V> stride_;
+  _Vp __base_;
+  range_difference_t<_Vp> __stride_;
 
 public:
-  constexpr explicit stride_view(V base, range_difference_t<V> stride) : base_(std::move(base)), stride_(stride) {
-    ::ycxx::detail::precondition(stride > 0, "stride_view: the stride must be positive");
+  constexpr explicit stride_view(_Vp base, range_difference_t<_Vp> stride) : __base_(std::move(base)), __stride_(stride) {
+    ::__ycxx::__detail::__precondition(stride > 0, "stride_view: the stride must be positive");
   }
 
-  constexpr V base() const&
-    requires copy_constructible<V>
+  constexpr _Vp base() const&
+    requires copy_constructible<_Vp>
   {
-    return base_;
+    return __base_;
   }
-  constexpr V base() && { return std::move(base_); }
-  constexpr range_difference_t<V> stride() const noexcept { return stride_; }
+  constexpr _Vp base() && { return std::move(__base_); }
+  constexpr range_difference_t<_Vp> stride() const noexcept { return __stride_; }
 
   constexpr auto begin()
-    requires(!ycxx::detail::simple_view<V>)
+    requires(!__ycxx::__detail::__simple_view<_Vp>)
   {
-    return iterator<false>(this, ranges::begin(base_));
+    return iterator<false>(this, ranges::begin(__base_));
   }
   constexpr auto begin() const
-    requires range<const V>
+    requires range<const _Vp>
   {
-    return iterator<true>(this, ranges::begin(base_));
+    return iterator<true>(this, ranges::begin(__base_));
   }
   constexpr auto end()
-    requires(!ycxx::detail::simple_view<V>)
+    requires(!__ycxx::__detail::__simple_view<_Vp>)
   {
-    if constexpr (common_range<V> && sized_range<V> && forward_range<V>) {
-      auto missing = (stride_ - ranges::distance(base_) % stride_) % stride_;
-      return iterator<false>(this, ranges::end(base_), missing);
-    } else if constexpr (common_range<V> && !bidirectional_range<V>) {
-      return iterator<false>(this, ranges::end(base_));
+    if constexpr (common_range<_Vp> && sized_range<_Vp> && forward_range<_Vp>) {
+      auto __missing = (__stride_ - ranges::distance(__base_) % __stride_) % __stride_;
+      return iterator<false>(this, ranges::end(__base_), __missing);
+    } else if constexpr (common_range<_Vp> && !bidirectional_range<_Vp>) {
+      return iterator<false>(this, ranges::end(__base_));
     } else {
       return default_sentinel;
     }
   }
   constexpr auto end() const
-    requires range<const V>
+    requires range<const _Vp>
   {
-    if constexpr (common_range<const V> && sized_range<const V> && forward_range<const V>) {
-      auto missing = (stride_ - ranges::distance(base_) % stride_) % stride_;
-      return iterator<true>(this, ranges::end(base_), missing);
-    } else if constexpr (common_range<const V> && !bidirectional_range<const V>) {
-      return iterator<true>(this, ranges::end(base_));
+    if constexpr (common_range<const _Vp> && sized_range<const _Vp> && forward_range<const _Vp>) {
+      auto __missing = (__stride_ - ranges::distance(__base_) % __stride_) % __stride_;
+      return iterator<true>(this, ranges::end(__base_), __missing);
+    } else if constexpr (common_range<const _Vp> && !bidirectional_range<const _Vp>) {
+      return iterator<true>(this, ranges::end(__base_));
     } else {
       return default_sentinel;
     }
   }
   constexpr auto size()
-    requires sized_range<V>
+    requires sized_range<_Vp>
   {
-    return ::ycxx::detail::to_unsigned_like(ycxx::detail::div_ceil(ranges::distance(base_), stride_));
+    return ::__ycxx::__detail::__to_unsigned_like(__ycxx::__detail::__div_ceil(ranges::distance(__base_), __stride_));
   }
   constexpr auto size() const
-    requires sized_range<const V>
+    requires sized_range<const _Vp>
   {
-    return ::ycxx::detail::to_unsigned_like(ycxx::detail::div_ceil(ranges::distance(base_), stride_));
+    return ::__ycxx::__detail::__to_unsigned_like(__ycxx::__detail::__div_ceil(ranges::distance(__base_), __stride_));
   }
   constexpr auto reserve_hint()
-    requires approximately_sized_range<V>
+    requires approximately_sized_range<_Vp>
   {
-    auto s = static_cast<range_difference_t<V>>(ranges::reserve_hint(base_));
-    return ::ycxx::detail::to_unsigned_like(ycxx::detail::div_ceil(s, stride_));
+    auto s = static_cast<range_difference_t<_Vp>>(ranges::reserve_hint(__base_));
+    return ::__ycxx::__detail::__to_unsigned_like(__ycxx::__detail::__div_ceil(s, __stride_));
   }
   constexpr auto reserve_hint() const
-    requires approximately_sized_range<const V>
+    requires approximately_sized_range<const _Vp>
   {
-    auto s = static_cast<range_difference_t<const V>>(ranges::reserve_hint(base_));
-    return ::ycxx::detail::to_unsigned_like(ycxx::detail::div_ceil(s, stride_));
+    auto s = static_cast<range_difference_t<const _Vp>>(ranges::reserve_hint(__base_));
+    return ::__ycxx::__detail::__to_unsigned_like(__ycxx::__detail::__div_ceil(s, __stride_));
   }
 };
-template <class R>
-stride_view(R&&, range_difference_t<R>) -> stride_view<views::all_t<R>>;
-template <class V>
-constexpr bool enable_borrowed_range<stride_view<V>> = enable_borrowed_range<V>;
+template <class _Rp>
+stride_view(_Rp&&, range_difference_t<_Rp>) -> stride_view<views::all_t<_Rp>>;
+template <class _Vp>
+constexpr bool enable_borrowed_range<stride_view<_Vp>> = enable_borrowed_range<_Vp>;
 
 }} // namespace std::ranges
 
-namespace [[gnu::visibility("hidden")]] ycxx { namespace detail::view_fn {
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail::__view_fn {
 // views::X(E, N) is X_view(E, N); views::X(N) binds N.
-template <template <class> class View>
-struct count_fn {
-  template <class E, class N>
-    requires requires { View(std::declval<E>(), std::declval<N>()); }
-  [[nodiscard]] constexpr auto operator()(E&& e, N&& n) const {
-    return View(static_cast<E&&>(e), static_cast<N&&>(n));
+template <template <class> class _View>
+struct __count_fn {
+  template <class _Ep, class _Np>
+    requires requires { _View(std::declval<_Ep>(), std::declval<_Np>()); }
+  [[nodiscard]] constexpr auto operator()(_Ep&& e, _Np&& n) const {
+    return _View(static_cast<_Ep&&>(e), static_cast<_Np&&>(n));
   }
-  template <class N>
-  [[nodiscard]] constexpr auto operator()(N&& n) const
-      noexcept(noexcept(::ycxx::detail::bind_adaptor(*this, static_cast<N&&>(n))))
-    requires requires { ::ycxx::detail::bind_adaptor(*this, static_cast<N&&>(n)); }
+  template <class _Np>
+  [[nodiscard]] constexpr auto operator()(_Np&& n) const
+      noexcept(noexcept(::__ycxx::__detail::__bind_adaptor(*this, static_cast<_Np&&>(n))))
+    requires requires { ::__ycxx::__detail::__bind_adaptor(*this, static_cast<_Np&&>(n)); }
   {
-    return ::ycxx::detail::bind_adaptor(*this, static_cast<N&&>(n));
+    return ::__ycxx::__detail::__bind_adaptor(*this, static_cast<_Np&&>(n));
   }
 };
 
-struct chunk_by_fn {
-  template <class E, class P>
-    requires requires { std::ranges::chunk_by_view(std::declval<E>(), std::declval<P>()); }
-  [[nodiscard]] constexpr auto operator()(E&& e, P&& p) const {
-    return std::ranges::chunk_by_view(static_cast<E&&>(e), static_cast<P&&>(p));
+struct __chunk_by_fn {
+  template <class _Ep, class _Pp>
+    requires requires { std::ranges::chunk_by_view(std::declval<_Ep>(), std::declval<_Pp>()); }
+  [[nodiscard]] constexpr auto operator()(_Ep&& e, _Pp&& p) const {
+    return std::ranges::chunk_by_view(static_cast<_Ep&&>(e), static_cast<_Pp&&>(p));
   }
-  template <class P>
-  [[nodiscard]] constexpr auto operator()(P&& p) const
-      noexcept(noexcept(::ycxx::detail::bind_adaptor(*this, static_cast<P&&>(p))))
-    requires requires { ::ycxx::detail::bind_adaptor(*this, static_cast<P&&>(p)); }
+  template <class _Pp>
+  [[nodiscard]] constexpr auto operator()(_Pp&& p) const
+      noexcept(noexcept(::__ycxx::__detail::__bind_adaptor(*this, static_cast<_Pp&&>(p))))
+    requires requires { ::__ycxx::__detail::__bind_adaptor(*this, static_cast<_Pp&&>(p)); }
   {
-    return ::ycxx::detail::bind_adaptor(*this, static_cast<P&&>(p));
+    return ::__ycxx::__detail::__bind_adaptor(*this, static_cast<_Pp&&>(p));
   }
 };
-}} // namespace ycxx::detail::view_fn
+}} // namespace __ycxx::__detail::__view_fn
 
-namespace [[gnu::visibility("hidden")]] std { namespace ranges::views {
-inline constexpr ycxx::detail::view_fn::count_fn<chunk_view> chunk{};
-inline constexpr ycxx::detail::view_fn::count_fn<slide_view> slide{};
-inline constexpr ycxx::detail::view_fn::chunk_by_fn chunk_by{};
-inline constexpr ycxx::detail::view_fn::count_fn<stride_view> stride{};
+namespace [[__gnu__::__visibility__("hidden")]] std { namespace ranges::views {
+inline constexpr __ycxx::__detail::__view_fn::__count_fn<chunk_view> chunk{};
+inline constexpr __ycxx::__detail::__view_fn::__count_fn<slide_view> slide{};
+inline constexpr __ycxx::__detail::__view_fn::__chunk_by_fn chunk_by{};
+inline constexpr __ycxx::__detail::__view_fn::__count_fn<stride_view> stride{};
 }} // namespace std::ranges::views

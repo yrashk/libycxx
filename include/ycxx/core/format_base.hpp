@@ -5,7 +5,7 @@
 // call are defined here.
 //
 // Output. Every basic_format_context the library creates writes through
-// ycxx::adl_free::fmt_iter<charT>, an output iterator appending to a type-erased buffer
+// __ycxx::__adl_free::__fmt_iter<charT>, an output iterator appending to a type-erased buffer
 // (fmt_buf: an array plus a function pointer that makes room by flushing it to the destination
 // or by growing it), so format_context and wformat_context are one type each
 // ([format.context]/5) and formatting needs no allocation unless the result does.
@@ -34,196 +34,196 @@
 #include <ycxx/core/string_view.hpp>
 #include <ycxx/core/utility_base.hpp>
 
-namespace [[gnu::visibility("hidden")]] std {
+namespace [[__gnu__::__visibility__("hidden")]] std {
 class locale;
 
 // [format.error]
 class format_error : public runtime_error {
 public:
-  constexpr explicit format_error(const string& what_arg) : runtime_error(what_arg) {}
-  constexpr explicit format_error(const char* what_arg) : runtime_error(what_arg) {}
+  constexpr explicit format_error(const string& __what_arg) : runtime_error(__what_arg) {}
+  constexpr explicit format_error(const char* __what_arg) : runtime_error(__what_arg) {}
 };
 
-template <class Context>
+template <class _Context>
 class basic_format_arg;
-template <class Context>
+template <class _Context>
 class basic_format_args;
-template <class charT, class... Args>
+template <class __charT, class... _Args>
 struct basic_format_string;
 
-template <class Out>
+template <class _Out>
 struct format_to_n_result {
-  Out out;
-  iter_difference_t<Out> size;
+  _Out out;
+  iter_difference_t<_Out> size;
 };
 } // namespace std
 
-namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
 
 // Not constexpr: a call during the compile-time check of a format string makes the string
 // ill-formed; the name (or the argument, which the diagnostic shows) says why.
-inline void format_error_in_constant_evaluation(const char*) noexcept {}
-inline void format_string_argument_index_out_of_range() noexcept {}
-inline void format_string_dynamic_argument_has_wrong_type() noexcept {}
+inline void __format_error_in_constant_evaluation(const char*) noexcept {}
+inline void __format_string_argument_index_out_of_range() noexcept {}
+inline void __format_string_dynamic_argument_has_wrong_type() noexcept {}
 
-[[noreturn]] [[gnu::cold]] constexpr void throw_format_error(const char* what) {
+[[noreturn]] [[__gnu__::__cold__]] constexpr void __throw_format_error(const char* what) {
   if consteval {
     // Clang cannot throw during constant evaluation; this shows the message instead.
-    if constexpr (cfg::clang)
-      ::ycxx::detail::format_error_in_constant_evaluation(what);
+    if constexpr (__cfg::__y_clang)
+      ::__ycxx::__detail::__format_error_in_constant_evaluation(what);
   }
-  ::ycxx::detail::raise_with(ycxx_error_format_error, what, [what] { return std::format_error(what); });
+  ::__ycxx::__detail::__raise_with(ycxx_error_format_error, what, [what] { return std::format_error(what); });
 }
 
 // The alternatives of basic_format_arg ([format.arg]/1), in the order of the exposition-only
 // variant.
-enum class fmt_kind : unsigned char {
+enum class __fmt_kind : unsigned char {
   none,
-  boolean,
+  __boolean,
   character,
-  int_,
-  uint_,
-  llong,
-  ullong,
-  float_,
-  double_,
-  ldouble,
-  cstring,
+  __int_,
+  __uint_,
+  __llong,
+  __ullong,
+  __float_,
+  __double_,
+  __ldouble,
+  __cstring,
   string,
   pointer,
   handle
 };
 
-template <class T>
-inline constexpr bool fmt_is_string_view = false;
-template <class C, class Tr>
-inline constexpr bool fmt_is_string_view<std::basic_string_view<C, Tr>> = true;
-template <class T>
-inline constexpr bool fmt_is_string = false;
-template <class C, class Tr, class A>
-inline constexpr bool fmt_is_string<std::basic_string<C, Tr, A>> = true;
+template <class _Tp>
+inline constexpr bool __fmt_is_string_view = false;
+template <class _Cp, class _Tr>
+inline constexpr bool __fmt_is_string_view<std::basic_string_view<_Cp, _Tr>> = true;
+template <class _Tp>
+inline constexpr bool __fmt_is_string = false;
+template <class _Cp, class _Tr, class _Ap>
+inline constexpr bool __fmt_is_string<std::basic_string<_Cp, _Tr, _Ap>> = true;
 
 // The alternative a (cv-unqualified) TD takes in basic_format_arg<Context> with char-type charT
 // ([format.arg]/6).
-template <class TD, class charT>
-consteval fmt_kind fmt_kind_of() {
-  using D = std::decay_t<TD>;
-  if constexpr (__is_same(TD, bool))
-    return fmt_kind::boolean;
-  else if constexpr (__is_same(TD, charT) || (__is_same(TD, char) && __is_same(charT, wchar_t)))
-    return fmt_kind::character;
-  else if constexpr (::ycxx::detail::is_standard_signed_integer<TD> && sizeof(TD) <= sizeof(int))
-    return fmt_kind::int_;
-  else if constexpr (::ycxx::detail::is_standard_unsigned_integer<TD> && sizeof(TD) <= sizeof(unsigned))
-    return fmt_kind::uint_;
-  else if constexpr (::ycxx::detail::is_standard_signed_integer<TD> && sizeof(TD) <= sizeof(long long))
-    return fmt_kind::llong;
-  else if constexpr (::ycxx::detail::is_standard_unsigned_integer<TD> && sizeof(TD) <= sizeof(unsigned long long))
-    return fmt_kind::ullong;
-  else if constexpr (__is_same(TD, float))
-    return fmt_kind::float_;
-  else if constexpr (__is_same(TD, double))
-    return fmt_kind::double_;
-  else if constexpr (__is_same(TD, long double))
-    return fmt_kind::ldouble;
-  else if constexpr ((fmt_is_string_view<TD> || fmt_is_string<TD>) && requires {
-                       requires __is_same(typename TD::value_type, charT);
+template <class _TD, class __charT>
+consteval __fmt_kind __fmt_kind_of() {
+  using _Dp = std::decay_t<_TD>;
+  if constexpr (__is_same(_TD, bool))
+    return __fmt_kind::__boolean;
+  else if constexpr (__is_same(_TD, __charT) || (__is_same(_TD, char) && __is_same(__charT, wchar_t)))
+    return __fmt_kind::character;
+  else if constexpr (::__ycxx::__detail::__is_standard_signed_integer<_TD> && sizeof(_TD) <= sizeof(int))
+    return __fmt_kind::__int_;
+  else if constexpr (::__ycxx::__detail::__is_standard_unsigned_integer<_TD> && sizeof(_TD) <= sizeof(unsigned))
+    return __fmt_kind::__uint_;
+  else if constexpr (::__ycxx::__detail::__is_standard_signed_integer<_TD> && sizeof(_TD) <= sizeof(long long))
+    return __fmt_kind::__llong;
+  else if constexpr (::__ycxx::__detail::__is_standard_unsigned_integer<_TD> && sizeof(_TD) <= sizeof(unsigned long long))
+    return __fmt_kind::__ullong;
+  else if constexpr (__is_same(_TD, float))
+    return __fmt_kind::__float_;
+  else if constexpr (__is_same(_TD, double))
+    return __fmt_kind::__double_;
+  else if constexpr (__is_same(_TD, long double))
+    return __fmt_kind::__ldouble;
+  else if constexpr ((__fmt_is_string_view<_TD> || __fmt_is_string<_TD>) && requires {
+                       requires __is_same(typename _TD::value_type, __charT);
                      })
-    return fmt_kind::string;
-  else if constexpr (__is_same(D, charT*) || __is_same(D, const charT*))
-    return fmt_kind::cstring;
-  else if constexpr (std::is_void_v<std::remove_pointer_t<TD>> || __is_same(TD, decltype(nullptr)))
-    return fmt_kind::pointer;
+    return __fmt_kind::string;
+  else if constexpr (__is_same(_Dp, __charT*) || __is_same(_Dp, const __charT*))
+    return __fmt_kind::__cstring;
+  else if constexpr (std::is_void_v<std::remove_pointer_t<_TD>> || __is_same(_TD, decltype(nullptr)))
+    return __fmt_kind::pointer;
   else
-    return fmt_kind::handle;
+    return __fmt_kind::handle;
 }
 
-struct fmt_access;
+struct __fmt_access;
 
-template <std::size_t N>
-consteval bool fmt_unique(const fmt_kind (&k)[N]) {
-  for (std::size_t i = 0; i != N; ++i)
-    for (std::size_t j = i + 1; j != N; ++j)
-      if (k[i] == k[j])
+template <std::size_t _Np>
+consteval bool __fmt_unique(const __fmt_kind (&k)[_Np]) {
+  for (std::size_t i = 0; i != _Np; ++i)
+    for (std::size_t __j = i + 1; __j != _Np; ++__j)
+      if (k[i] == k[__j])
         return false;
   return true;
 }
 
-}} // namespace ycxx::detail
+}} // namespace __ycxx::__detail
 
-namespace [[gnu::visibility("hidden")]] ycxx { namespace adl_free {
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __adl_free {
 
 // The type-erased output buffer behind fmt_iter: [data_, data_ + size_) holds pending output;
 // make_room_ is called when size_ == cap_ and leaves size_ < cap_ (by flushing the contents to
 // the destination, or by growing the storage). A destination that no longer needs the characters
 // (a counter past its limit) sets discard_; fill then only counts them in discarded_, so a huge
 // width or precision costs no time there.
-template <class charT>
-class fmt_buf {
+template <class __charT>
+class __fmt_buf {
 public:
-  using make_room_fn = void (*)(fmt_buf&);
+  using __make_room_fn = void (*)(__fmt_buf&);
 
-  constexpr fmt_buf(charT* data, std::size_t cap, make_room_fn f) noexcept : data_(data), cap_(cap), make_room_(f) {}
-  fmt_buf(const fmt_buf&) = delete;
-  fmt_buf& operator=(const fmt_buf&) = delete;
+  constexpr __fmt_buf(__charT* data, std::size_t __cap, __make_room_fn __f) noexcept : __data_(data), __cap_(__cap), __make_room_(__f) {}
+  __fmt_buf(const __fmt_buf&) = delete;
+  __fmt_buf& operator=(const __fmt_buf&) = delete;
 
-  constexpr void push_back(charT c) {
-    if (size_ == cap_)
-      make_room_(*this);
-    data_[size_++] = c;
+  constexpr void push_back(__charT c) {
+    if (__size_ == __cap_)
+      __make_room_(*this);
+    __data_[__size_++] = c;
   }
-  constexpr void append(const charT* p, std::size_t n) {
+  constexpr void append(const __charT* p, std::size_t n) {
     while (n != 0) {
-      if (size_ == cap_)
-        make_room_(*this);
-      std::size_t k = cap_ - size_;
+      if (__size_ == __cap_)
+        __make_room_(*this);
+      std::size_t k = __cap_ - __size_;
       if (k > n)
         k = n;
       if consteval {
         for (std::size_t i = 0; i != k; ++i)
-          data_[size_ + i] = p[i];
+          __data_[__size_ + i] = p[i];
       } else {
-        __builtin_memcpy(static_cast<void*>(data_ + size_), static_cast<const void*>(p), k * sizeof(charT));
+        __builtin_memcpy(static_cast<void*>(__data_ + __size_), static_cast<const void*>(p), k * sizeof(__charT));
       }
-      size_ += k;
+      __size_ += k;
       p += k;
       n -= k;
     }
   }
-  constexpr void fill(std::size_t n, charT c) {
-    if (discard_)
+  constexpr void fill(std::size_t n, __charT c) {
+    if (__discard_)
       return discard(n);
     while (n != 0) {
-      if (size_ == cap_)
-        make_room_(*this);
-      std::size_t k = cap_ - size_;
+      if (__size_ == __cap_)
+        __make_room_(*this);
+      std::size_t k = __cap_ - __size_;
       if (k > n)
         k = n;
       for (std::size_t i = 0; i != k; ++i)
-        data_[size_ + i] = c;
-      size_ += k;
+        __data_[__size_ + i] = c;
+      __size_ += k;
       n -= k;
     }
   }
 
   // Counts n characters that are not stored (saturating).
   constexpr void discard(std::size_t n) noexcept {
-    discarded_ = n > static_cast<std::size_t>(-1) - discarded_ ? static_cast<std::size_t>(-1) : discarded_ + n;
+    __discarded_ = n > static_cast<std::size_t>(-1) - __discarded_ ? static_cast<std::size_t>(-1) : __discarded_ + n;
   }
 
-  charT* data_;
-  std::size_t size_ = 0;
-  std::size_t cap_;
-  make_room_fn make_room_;
-  bool discard_ = false;
-  std::size_t discarded_ = 0;
+  __charT* __data_;
+  std::size_t __size_ = 0;
+  std::size_t __cap_;
+  __make_room_fn __make_room_;
+  bool __discard_ = false;
+  std::size_t __discarded_ = 0;
 };
 
 // format_context::iterator ([format.context]/4): appends to a fmt_buf.
-template <class charT>
-class fmt_iter {
-  fmt_buf<charT>* buf_ = nullptr;
-  friend ycxx::detail::fmt_access;
+template <class __charT>
+class __fmt_iter {
+  __fmt_buf<__charT>* __buf_ = nullptr;
+  friend __ycxx::__detail::__fmt_access;
 
 public:
   using iterator_category = std::output_iterator_tag;
@@ -232,121 +232,121 @@ public:
   using pointer = void;
   using reference = void;
 
-  constexpr fmt_iter() noexcept = default;
-  constexpr explicit fmt_iter(fmt_buf<charT>& b) noexcept : buf_(__builtin_addressof(b)) {}
-  constexpr fmt_iter& operator=(const charT& c) {
-    buf_->push_back(c);
+  constexpr __fmt_iter() noexcept = default;
+  constexpr explicit __fmt_iter(__fmt_buf<__charT>& b) noexcept : __buf_(__builtin_addressof(b)) {}
+  constexpr __fmt_iter& operator=(const __charT& c) {
+    __buf_->push_back(c);
     return *this;
   }
-  constexpr fmt_iter& operator*() noexcept { return *this; }
-  constexpr fmt_iter& operator++() noexcept { return *this; }
-  constexpr fmt_iter operator++(int) noexcept { return *this; }
+  constexpr __fmt_iter& operator*() noexcept { return *this; }
+  constexpr __fmt_iter& operator++() noexcept { return *this; }
+  constexpr __fmt_iter operator++(int) noexcept { return *this; }
 };
 
 // dynamic-format-string ([format.syn]): the result of dynamic_format / runtime_format.
-template <class charT>
-struct dynamic_format_string {
+template <class __charT>
+struct __dynamic_format_string {
 private:
-  std::basic_string_view<charT> str_;
-  template <class C, class... Args>
+  std::basic_string_view<__charT> __str_;
+  template <class _Cp, class... _Args>
   friend struct std::basic_format_string;
 
 public:
-  constexpr dynamic_format_string(std::basic_string_view<charT> s) noexcept : str_(s) {}
-  dynamic_format_string(const dynamic_format_string&) = delete;
-  dynamic_format_string& operator=(const dynamic_format_string&) = delete;
+  constexpr __dynamic_format_string(std::basic_string_view<__charT> s) noexcept : __str_(s) {}
+  __dynamic_format_string(const __dynamic_format_string&) = delete;
+  __dynamic_format_string& operator=(const __dynamic_format_string&) = delete;
 };
 
 // format-arg-store ([format.arg.store]).
-template <class Context, class... Args>
-class fmt_arg_store {
-  friend std::basic_format_args<Context>;
-  std::basic_format_arg<Context> args_[sizeof...(Args) == 0 ? 1 : sizeof...(Args)];
+template <class _Context, class... _Args>
+class __fmt_arg_store {
+  friend std::basic_format_args<_Context>;
+  std::basic_format_arg<_Context> __args_[sizeof...(_Args) == 0 ? 1 : sizeof...(_Args)];
 
 public:
-  constexpr explicit fmt_arg_store(Args&... a) noexcept;
+  constexpr explicit __fmt_arg_store(_Args&... a) noexcept;
 };
 
-}} // namespace ycxx::adl_free
+}} // namespace __ycxx::__adl_free
 
-namespace [[gnu::visibility("hidden")]] std {
+namespace [[__gnu__::__visibility__("hidden")]] std {
 
 // [format.parse.ctx]
-template <class charT>
+template <class __charT>
 class basic_format_parse_context {
 public:
-  using char_type = charT;
-  using const_iterator = typename basic_string_view<charT>::const_iterator;
+  using char_type = __charT;
+  using const_iterator = typename basic_string_view<__charT>::const_iterator;
   using iterator = const_iterator;
 
 private:
-  enum indexing : unsigned char { unknown, manual, automatic };
-  iterator begin_;
-  iterator end_;
-  indexing indexing_ = unknown;
-  size_t next_arg_id_ = 0;
-  size_t num_args_ = 0;
+  enum __indexing : unsigned char { unknown, __manual, __automatic };
+  iterator __begin_;
+  iterator __end_;
+  __indexing __indexing_ = unknown;
+  size_t __next_arg_id_ = 0;
+  size_t __num_args_ = 0;
   // While a format string is checked at compile time: the kinds of the arguments.
-  const ycxx::detail::fmt_kind* kinds_ = nullptr;
-  friend ycxx::detail::fmt_access;
+  const __ycxx::__detail::__fmt_kind* __kinds_ = nullptr;
+  friend __ycxx::__detail::__fmt_access;
 
-  constexpr basic_format_parse_context(basic_string_view<charT> fmt, size_t num_args,
-                                       const ycxx::detail::fmt_kind* kinds) noexcept
-      : begin_(fmt.begin()), end_(fmt.end()), num_args_(num_args), kinds_(kinds) {}
+  constexpr basic_format_parse_context(basic_string_view<__charT> __fmt, size_t __num_args,
+                                       const __ycxx::__detail::__fmt_kind* __kinds) noexcept
+      : __begin_(__fmt.begin()), __end_(__fmt.end()), __num_args_(__num_args), __kinds_(__kinds) {}
 
-  template <class T>
-  static consteval ycxx::detail::fmt_kind kind_of() {
-    static_assert(ycxx::detail::is_any_of<T, bool, charT, int, unsigned, long long, unsigned long long, float, double,
-                                          long double, const charT*, basic_string_view<charT>, const void*>,
+  template <class _Tp>
+  static consteval __ycxx::__detail::__fmt_kind __kind_of() {
+    static_assert(__ycxx::__detail::__is_any_of<_Tp, bool, __charT, int, unsigned, long long, unsigned long long, float, double,
+                                          long double, const __charT*, basic_string_view<__charT>, const void*>,
                   "std::basic_format_parse_context::check_dynamic_spec: Ts must be bool, char_type, int, unsigned "
                   "int, long long int, unsigned long long int, float, double, long double, const char_type*, "
                   "basic_string_view<char_type> or const void*");
-    return ycxx::detail::fmt_kind_of<T, charT>();
+    return __ycxx::__detail::__fmt_kind_of<_Tp, __charT>();
   }
 
 public:
-  constexpr explicit basic_format_parse_context(basic_string_view<charT> fmt) noexcept
-      : begin_(fmt.begin()), end_(fmt.end()) {}
+  constexpr explicit basic_format_parse_context(basic_string_view<__charT> __fmt) noexcept
+      : __begin_(__fmt.begin()), __end_(__fmt.end()) {}
   basic_format_parse_context(const basic_format_parse_context&) = delete;
   basic_format_parse_context& operator=(const basic_format_parse_context&) = delete;
 
-  constexpr const_iterator begin() const noexcept { return begin_; }
-  constexpr const_iterator end() const noexcept { return end_; }
-  constexpr void advance_to(const_iterator it) { begin_ = it; }
+  constexpr const_iterator begin() const noexcept { return __begin_; }
+  constexpr const_iterator end() const noexcept { return __end_; }
+  constexpr void advance_to(const_iterator __it) { __begin_ = __it; }
 
   constexpr size_t next_arg_id() {
-    if (indexing_ == manual)
-      ycxx::detail::throw_format_error("std::format: automatic and manual argument indexing are mixed");
-    indexing_ = automatic;
+    if (__indexing_ == __manual)
+      __ycxx::__detail::__throw_format_error("std::format: automatic and manual argument indexing are mixed");
+    __indexing_ = __automatic;
     if consteval {
-      if (next_arg_id_ >= num_args_)
-        ycxx::detail::format_string_argument_index_out_of_range();
+      if (__next_arg_id_ >= __num_args_)
+        __ycxx::__detail::__format_string_argument_index_out_of_range();
     }
-    return next_arg_id_++;
+    return __next_arg_id_++;
   }
   constexpr void check_arg_id(size_t id) {
-    if (indexing_ == automatic)
-      ycxx::detail::throw_format_error("std::format: automatic and manual argument indexing are mixed");
-    indexing_ = manual;
+    if (__indexing_ == __automatic)
+      __ycxx::__detail::__throw_format_error("std::format: automatic and manual argument indexing are mixed");
+    __indexing_ = __manual;
     if consteval {
-      if (id >= num_args_)
-        ycxx::detail::format_string_argument_index_out_of_range();
+      if (id >= __num_args_)
+        __ycxx::__detail::__format_string_argument_index_out_of_range();
     }
   }
-  template <class... Ts>
+  template <class... _Ts>
   constexpr void check_dynamic_spec(size_t id) noexcept {
-    static_assert(sizeof...(Ts) >= 1, "std::basic_format_parse_context::check_dynamic_spec: Ts must not be empty");
-    constexpr ycxx::detail::fmt_kind kinds[] = {kind_of<Ts>()...};
-    static_assert(ycxx::detail::fmt_unique(kinds), "std::basic_format_parse_context::check_dynamic_spec: the types in Ts must be unique");
+    static_assert(sizeof...(_Ts) >= 1, "std::basic_format_parse_context::check_dynamic_spec: Ts must not be empty");
+    constexpr __ycxx::__detail::__fmt_kind __kinds[] = {__kind_of<_Ts>()...};
+    static_assert(__ycxx::__detail::__fmt_unique(__kinds), "std::basic_format_parse_context::check_dynamic_spec: the types in Ts must be unique");
     if consteval {
-      if (id >= num_args_)
-        ycxx::detail::format_string_argument_index_out_of_range();
-      else if (kinds_ != nullptr) {
+      if (id >= __num_args_)
+        __ycxx::__detail::__format_string_argument_index_out_of_range();
+      else if (__kinds_ != nullptr) {
         bool found = false;
-        for (ycxx::detail::fmt_kind k : kinds)
-          found = found || k == kinds_[id];
+        for (__ycxx::__detail::__fmt_kind k : __kinds)
+          found = found || k == __kinds_[id];
         if (!found)
-          ycxx::detail::format_string_dynamic_argument_has_wrong_type();
+          __ycxx::__detail::__format_string_dynamic_argument_has_wrong_type();
       }
     }
   }
@@ -365,283 +365,283 @@ static_assert(__is_same(format_parse_context::iterator, const char*) &&
 
 } // namespace std
 
-namespace [[gnu::visibility("hidden")]] std {
+namespace [[__gnu__::__visibility__("hidden")]] std {
 
 // [format.arg]
-template <class Context>
+template <class _Context>
 class basic_format_arg {
-  using char_type = typename Context::char_type;
+  using char_type = typename _Context::char_type;
 
 public:
   class handle {
-    const void* ptr_;
-    void (*format_)(basic_format_parse_context<char_type>&, Context&, const void*);
+    const void* __ptr_;
+    void (*__format_)(basic_format_parse_context<char_type>&, _Context&, const void*);
     friend class basic_format_arg;
 
-    template <class T>
-      requires(!__is_same(remove_cv_t<T>, handle))
-    constexpr explicit handle(T& val) noexcept : ptr_(__builtin_addressof(val)) {
-      using TD = remove_const_t<T>;
-      using TQ = conditional_t<ycxx::detail::fmt_formattable_with<const TD, Context>, const TD, TD>;
-      static_assert(ycxx::detail::fmt_formattable_with<TQ, Context>,
+    template <class _Tp>
+      requires(!__is_same(remove_cv_t<_Tp>, handle))
+    constexpr explicit handle(_Tp& __val) noexcept : __ptr_(__builtin_addressof(__val)) {
+      using _TD = remove_const_t<_Tp>;
+      using _TQ = conditional_t<__ycxx::__detail::__fmt_formattable_with<const _TD, _Context>, const _TD, _TD>;
+      static_assert(__ycxx::__detail::__fmt_formattable_with<_TQ, _Context>,
                     "std::basic_format_arg::handle: the argument type is not formattable");
-      format_ = [](basic_format_parse_context<char_type>& parse_ctx, Context& format_ctx, const void* ptr) {
-        typename Context::template formatter_type<TD> f;
-        parse_ctx.advance_to(f.parse(parse_ctx));
-        format_ctx.advance_to(f.format(*const_cast<TQ*>(static_cast<const TD*>(ptr)), format_ctx));
+      __format_ = [](basic_format_parse_context<char_type>& __parse_ctx, _Context& __format_ctx, const void* ptr) {
+        typename _Context::template formatter_type<_TD> __f;
+        __parse_ctx.advance_to(__f.parse(__parse_ctx));
+        __format_ctx.advance_to(__f.format(*const_cast<_TQ*>(static_cast<const _TD*>(ptr)), __format_ctx));
       };
     }
 
   public:
-    constexpr void format(basic_format_parse_context<char_type>& parse_ctx, Context& format_ctx) const {
-      format_(parse_ctx, format_ctx, ptr_);
+    constexpr void format(basic_format_parse_context<char_type>& __parse_ctx, _Context& __format_ctx) const {
+      __format_(__parse_ctx, __format_ctx, __ptr_);
     }
   };
 
 private:
-  friend ycxx::detail::fmt_access;
-  template <class C, class... Args>
-  friend class ycxx::adl_free::fmt_arg_store;
+  friend __ycxx::__detail::__fmt_access;
+  template <class _Cp, class... _Args>
+  friend class __ycxx::__adl_free::__fmt_arg_store;
 
   union value {
     monostate none;
     bool b;
     char_type c;
     int i;
-    unsigned u;
-    long long ll;
-    unsigned long long ull;
-    float f;
+    unsigned __u;
+    long long __ll;
+    unsigned long long __ull;
+    float __f;
     double d;
-    long double ld;
+    long double __ld;
     const char_type* s;
     basic_string_view<char_type> sv;
     const void* p;
     handle h;
     constexpr value() noexcept : none() {}
-    constexpr value(bool v) noexcept : b(v) {}
-    constexpr value(char_type v) noexcept : c(v) {}
-    constexpr value(int v) noexcept : i(v) {}
-    constexpr value(unsigned v) noexcept : u(v) {}
-    constexpr value(long long v) noexcept : ll(v) {}
-    constexpr value(unsigned long long v) noexcept : ull(v) {}
-    constexpr value(float v) noexcept : f(v) {}
-    constexpr value(double v) noexcept : d(v) {}
-    constexpr value(long double v) noexcept : ld(v) {}
-    constexpr value(const char_type* v) noexcept : s(v) {}
-    constexpr value(basic_string_view<char_type> v) noexcept : sv(v) {}
-    constexpr value(const void* v) noexcept : p(v) {}
-    constexpr value(handle v) noexcept : h(v) {}
+    constexpr value(bool __v) noexcept : b(__v) {}
+    constexpr value(char_type __v) noexcept : c(__v) {}
+    constexpr value(int __v) noexcept : i(__v) {}
+    constexpr value(unsigned __v) noexcept : __u(__v) {}
+    constexpr value(long long __v) noexcept : __ll(__v) {}
+    constexpr value(unsigned long long __v) noexcept : __ull(__v) {}
+    constexpr value(float __v) noexcept : __f(__v) {}
+    constexpr value(double __v) noexcept : d(__v) {}
+    constexpr value(long double __v) noexcept : __ld(__v) {}
+    constexpr value(const char_type* __v) noexcept : s(__v) {}
+    constexpr value(basic_string_view<char_type> __v) noexcept : sv(__v) {}
+    constexpr value(const void* __v) noexcept : p(__v) {}
+    constexpr value(handle __v) noexcept : h(__v) {}
   };
 
-  ycxx::detail::fmt_kind kind_ = ycxx::detail::fmt_kind::none;
-  value v_;
+  __ycxx::__detail::__fmt_kind __kind_ = __ycxx::__detail::__fmt_kind::none;
+  value __v_;
 
   // [format.arg]/4-6.
-  template <class T>
-  constexpr explicit basic_format_arg(T& v) noexcept;
+  template <class _Tp>
+  constexpr explicit basic_format_arg(_Tp& __v) noexcept;
 
 public:
   constexpr basic_format_arg() noexcept {}
-  constexpr explicit operator bool() const noexcept { return kind_ != ycxx::detail::fmt_kind::none; }
+  constexpr explicit operator bool() const noexcept { return __kind_ != __ycxx::__detail::__fmt_kind::none; }
 
-  template <class Visitor>
-  constexpr decltype(auto) visit(this basic_format_arg arg, Visitor&& vis) {
-    using K = ycxx::detail::fmt_kind;
-    switch (arg.kind_) {
-    case K::boolean: return static_cast<Visitor&&>(vis)(arg.v_.b);
-    case K::character: return static_cast<Visitor&&>(vis)(arg.v_.c);
-    case K::int_: return static_cast<Visitor&&>(vis)(arg.v_.i);
-    case K::uint_: return static_cast<Visitor&&>(vis)(arg.v_.u);
-    case K::llong: return static_cast<Visitor&&>(vis)(arg.v_.ll);
-    case K::ullong: return static_cast<Visitor&&>(vis)(arg.v_.ull);
-    case K::float_: return static_cast<Visitor&&>(vis)(arg.v_.f);
-    case K::double_: return static_cast<Visitor&&>(vis)(arg.v_.d);
-    case K::ldouble: return static_cast<Visitor&&>(vis)(arg.v_.ld);
-    case K::cstring: return static_cast<Visitor&&>(vis)(arg.v_.s);
-    case K::string: return static_cast<Visitor&&>(vis)(arg.v_.sv);
-    case K::pointer: return static_cast<Visitor&&>(vis)(arg.v_.p);
-    case K::handle: return static_cast<Visitor&&>(vis)(arg.v_.h);
-    case K::none: break;
+  template <class _Visitor>
+  constexpr decltype(auto) visit(this basic_format_arg arg, _Visitor&& __vis) {
+    using _Kp = __ycxx::__detail::__fmt_kind;
+    switch (arg.__kind_) {
+    case _Kp::__boolean: return static_cast<_Visitor&&>(__vis)(arg.__v_.b);
+    case _Kp::character: return static_cast<_Visitor&&>(__vis)(arg.__v_.c);
+    case _Kp::__int_: return static_cast<_Visitor&&>(__vis)(arg.__v_.i);
+    case _Kp::__uint_: return static_cast<_Visitor&&>(__vis)(arg.__v_.__u);
+    case _Kp::__llong: return static_cast<_Visitor&&>(__vis)(arg.__v_.__ll);
+    case _Kp::__ullong: return static_cast<_Visitor&&>(__vis)(arg.__v_.__ull);
+    case _Kp::__float_: return static_cast<_Visitor&&>(__vis)(arg.__v_.__f);
+    case _Kp::__double_: return static_cast<_Visitor&&>(__vis)(arg.__v_.d);
+    case _Kp::__ldouble: return static_cast<_Visitor&&>(__vis)(arg.__v_.__ld);
+    case _Kp::__cstring: return static_cast<_Visitor&&>(__vis)(arg.__v_.s);
+    case _Kp::string: return static_cast<_Visitor&&>(__vis)(arg.__v_.sv);
+    case _Kp::pointer: return static_cast<_Visitor&&>(__vis)(arg.__v_.p);
+    case _Kp::handle: return static_cast<_Visitor&&>(__vis)(arg.__v_.h);
+    case _Kp::none: break;
     }
-    return static_cast<Visitor&&>(vis)(arg.v_.none);
+    return static_cast<_Visitor&&>(__vis)(arg.__v_.none);
   }
-  template <class R, class Visitor>
-  constexpr R visit(this basic_format_arg arg, Visitor&& vis) {
-    return arg.visit([&vis](auto& x) -> R {
-      if constexpr (is_void_v<R>)
-        static_cast<void>(static_cast<Visitor&&>(vis)(x));
+  template <class _Rp, class _Visitor>
+  constexpr _Rp visit(this basic_format_arg arg, _Visitor&& __vis) {
+    return arg.visit([&__vis](auto& __x) -> _Rp {
+      if constexpr (is_void_v<_Rp>)
+        static_cast<void>(static_cast<_Visitor&&>(__vis)(__x));
       else
-        return static_cast<Visitor&&>(vis)(x);
+        return static_cast<_Visitor&&>(__vis)(__x);
     });
   }
 };
 
 // [depr.format.arg] (Annex D)
-template <class Visitor, class Context>
+template <class _Visitor, class _Context>
 [[deprecated("visit_format_arg is deprecated ([depr.format.arg]); use basic_format_arg::visit")]]
-decltype(auto) visit_format_arg(Visitor&& vis, basic_format_arg<Context> arg) {
-  return static_cast<basic_format_arg<Context>&&>(arg).visit(static_cast<Visitor&&>(vis));
+decltype(auto) visit_format_arg(_Visitor&& __vis, basic_format_arg<_Context> arg) {
+  return static_cast<basic_format_arg<_Context>&&>(arg).visit(static_cast<_Visitor&&>(__vis));
 }
 
 // [format.args]
-template <class Context>
+template <class _Context>
 class basic_format_args {
-  size_t size_;
-  const basic_format_arg<Context>* data_;
-  friend ycxx::detail::fmt_access;
+  size_t __size_;
+  const basic_format_arg<_Context>* __data_;
+  friend __ycxx::__detail::__fmt_access;
 
 public:
-  template <class... Args>
-  constexpr basic_format_args(const ycxx::adl_free::fmt_arg_store<Context, Args...>& store) noexcept
-      : size_(sizeof...(Args)), data_(store.args_) {}
-  constexpr basic_format_arg<Context> get(size_t i) const noexcept {
-    return i < size_ ? data_[i] : basic_format_arg<Context>();
+  template <class... _Args>
+  constexpr basic_format_args(const __ycxx::__adl_free::__fmt_arg_store<_Context, _Args...>& store) noexcept
+      : __size_(sizeof...(_Args)), __data_(store.__args_) {}
+  constexpr basic_format_arg<_Context> get(size_t i) const noexcept {
+    return i < __size_ ? __data_[i] : basic_format_arg<_Context>();
   }
 };
-template <class Context, class... Args>
-basic_format_args(ycxx::adl_free::fmt_arg_store<Context, Args...>) -> basic_format_args<Context>;
+template <class _Context, class... _Args>
+basic_format_args(__ycxx::__adl_free::__fmt_arg_store<_Context, _Args...>) -> basic_format_args<_Context>;
 
 // [format.context]
-template <class Out, class charT>
+template <class _Out, class __charT>
 class basic_format_context {
-  basic_format_args<basic_format_context> args_;
-  Out out_;
-  const std::locale* loc_; // null: std::locale()
-  friend ycxx::detail::fmt_access;
+  basic_format_args<basic_format_context> __args_;
+  _Out __out_;
+  const std::locale* __loc_; // null: std::locale()
+  friend __ycxx::__detail::__fmt_access;
 
-  constexpr basic_format_context(Out out, basic_format_args<basic_format_context> args, const std::locale* loc)
-      : args_(args), out_(static_cast<Out&&>(out)), loc_(loc) {}
+  constexpr basic_format_context(_Out out, basic_format_args<basic_format_context> __args, const std::locale* __loc)
+      : __args_(__args), __out_(static_cast<_Out&&>(out)), __loc_(__loc) {}
 
 public:
-  using iterator = Out;
-  using char_type = charT;
-  template <class T>
-  using formatter_type = formatter<T, charT>;
+  using iterator = _Out;
+  using char_type = __charT;
+  template <class _Tp>
+  using formatter_type = formatter<_Tp, __charT>;
 
   basic_format_context(const basic_format_context&) = delete;
   basic_format_context& operator=(const basic_format_context&) = delete;
 
-  constexpr basic_format_arg<basic_format_context> arg(size_t id) const noexcept { return args_.get(id); }
+  constexpr basic_format_arg<basic_format_context> arg(size_t id) const noexcept { return __args_.get(id); }
   std::locale locale(); // defined in ycxx/hosted/format_locale.hpp
-  constexpr iterator out() { return static_cast<Out&&>(out_); }
-  constexpr void advance_to(iterator it) { out_ = static_cast<Out&&>(it); }
+  constexpr iterator out() { return static_cast<_Out&&>(__out_); }
+  constexpr void advance_to(iterator __it) { __out_ = static_cast<_Out&&>(__it); }
 };
 
-using format_context = basic_format_context<ycxx::adl_free::fmt_iter<char>, char>;
-using wformat_context = basic_format_context<ycxx::adl_free::fmt_iter<wchar_t>, wchar_t>;
+using format_context = basic_format_context<__ycxx::__adl_free::__fmt_iter<char>, char>;
+using wformat_context = basic_format_context<__ycxx::__adl_free::__fmt_iter<wchar_t>, wchar_t>;
 using format_args = basic_format_args<format_context>;
 using wformat_args = basic_format_args<wformat_context>;
 
 // [format.formattable]
 } // namespace std
 
-namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
-template <class charT>
-using fmt_context = std::basic_format_context<ycxx::adl_free::fmt_iter<charT>, charT>;
-template <class charT>
-using fmt_args = std::basic_format_args<fmt_context<charT>>;
-}} // namespace ycxx::detail
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+template <class __charT>
+using __fmt_context = std::basic_format_context<__ycxx::__adl_free::__fmt_iter<__charT>, __charT>;
+template <class __charT>
+using __fmt_args = std::basic_format_args<__fmt_context<__charT>>;
+}} // namespace __ycxx::__detail
 
-namespace [[gnu::visibility("hidden")]] std {
-template <class Context>
-template <class T>
-constexpr basic_format_arg<Context>::basic_format_arg(T& v) noexcept {
-  static_assert(ycxx::detail::fmt_formattable_with<T, Context>,
+namespace [[__gnu__::__visibility__("hidden")]] std {
+template <class _Context>
+template <class _Tp>
+constexpr basic_format_arg<_Context>::basic_format_arg(_Tp& __v) noexcept {
+  static_assert(__ycxx::__detail::__fmt_formattable_with<_Tp, _Context>,
                 "std::make_format_args: an argument type has no enabled formatter");
-  using TD = remove_const_t<T>;
-  using K = ycxx::detail::fmt_kind;
-  constexpr K k = ycxx::detail::fmt_kind_of<TD, char_type>();
-  kind_ = k;
-  if constexpr (k == K::boolean)
-    v_ = value(static_cast<bool>(v));
-  else if constexpr (k == K::character) {
-    if constexpr (__is_same(TD, char) && __is_same(char_type, wchar_t))
-      v_ = value(static_cast<wchar_t>(static_cast<unsigned char>(v)));
+  using _TD = remove_const_t<_Tp>;
+  using _Kp = __ycxx::__detail::__fmt_kind;
+  constexpr _Kp k = __ycxx::__detail::__fmt_kind_of<_TD, char_type>();
+  __kind_ = k;
+  if constexpr (k == _Kp::__boolean)
+    __v_ = value(static_cast<bool>(__v));
+  else if constexpr (k == _Kp::character) {
+    if constexpr (__is_same(_TD, char) && __is_same(char_type, wchar_t))
+      __v_ = value(static_cast<wchar_t>(static_cast<unsigned char>(__v)));
     else
-      v_ = value(static_cast<char_type>(v));
-  } else if constexpr (k == K::int_)
-    v_ = value(static_cast<int>(v));
-  else if constexpr (k == K::uint_)
-    v_ = value(static_cast<unsigned>(v));
-  else if constexpr (k == K::llong)
-    v_ = value(static_cast<long long>(v));
-  else if constexpr (k == K::ullong)
-    v_ = value(static_cast<unsigned long long>(v));
-  else if constexpr (k == K::float_ || k == K::double_ || k == K::ldouble)
-    v_ = value(v);
-  else if constexpr (k == K::string)
-    v_ = value(basic_string_view<char_type>(v.data(), v.size()));
-  else if constexpr (k == K::cstring)
-    v_ = value(static_cast<const char_type*>(v));
-  else if constexpr (k == K::pointer)
-    v_ = value(static_cast<const void*>(v));
+      __v_ = value(static_cast<char_type>(__v));
+  } else if constexpr (k == _Kp::__int_)
+    __v_ = value(static_cast<int>(__v));
+  else if constexpr (k == _Kp::__uint_)
+    __v_ = value(static_cast<unsigned>(__v));
+  else if constexpr (k == _Kp::__llong)
+    __v_ = value(static_cast<long long>(__v));
+  else if constexpr (k == _Kp::__ullong)
+    __v_ = value(static_cast<unsigned long long>(__v));
+  else if constexpr (k == _Kp::__float_ || k == _Kp::__double_ || k == _Kp::__ldouble)
+    __v_ = value(__v);
+  else if constexpr (k == _Kp::string)
+    __v_ = value(basic_string_view<char_type>(__v.data(), __v.size()));
+  else if constexpr (k == _Kp::__cstring)
+    __v_ = value(static_cast<const char_type*>(__v));
+  else if constexpr (k == _Kp::pointer)
+    __v_ = value(static_cast<const void*>(__v));
   else
-    v_ = value(handle(v));
+    __v_ = value(handle(__v));
 }
 
 // [format.arg.store]
-template <class Context = format_context, class... Args>
-constexpr ycxx::adl_free::fmt_arg_store<Context, Args...> make_format_args(Args&... fmt_args) {
-  return ycxx::adl_free::fmt_arg_store<Context, Args...>(fmt_args...);
+template <class _Context = format_context, class... _Args>
+constexpr __ycxx::__adl_free::__fmt_arg_store<_Context, _Args...> make_format_args(_Args&... __fmt_args) {
+  return __ycxx::__adl_free::__fmt_arg_store<_Context, _Args...>(__fmt_args...);
 }
-template <class... Args>
-constexpr ycxx::adl_free::fmt_arg_store<wformat_context, Args...> make_wformat_args(Args&... args) {
-  return ycxx::adl_free::fmt_arg_store<wformat_context, Args...>(args...);
+template <class... _Args>
+constexpr __ycxx::__adl_free::__fmt_arg_store<wformat_context, _Args...> make_wformat_args(_Args&... __args) {
+  return __ycxx::__adl_free::__fmt_arg_store<wformat_context, _Args...>(__args...);
 }
 } // namespace std
 
-template <class Context, class... Args>
-constexpr ycxx::adl_free::fmt_arg_store<Context, Args...>::fmt_arg_store(Args&... a) noexcept
-    : args_{std::basic_format_arg<Context>(a)...} {}
+template <class _Context, class... _Args>
+constexpr __ycxx::__adl_free::__fmt_arg_store<_Context, _Args...>::__fmt_arg_store(_Args&... a) noexcept
+    : __args_{std::basic_format_arg<_Context>(a)...} {}
 
-namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
 
 // Access to the private members of the formatting classes.
-struct fmt_access {
-  template <class charT>
-  static constexpr std::basic_format_parse_context<charT> parse_context(std::basic_string_view<charT> fmt,
-                                                                        std::size_t num_args, const fmt_kind* kinds) {
-    return std::basic_format_parse_context<charT>(fmt, num_args, kinds);
+struct __fmt_access {
+  template <class __charT>
+  static constexpr std::basic_format_parse_context<__charT> __parse_context(std::basic_string_view<__charT> __fmt,
+                                                                        std::size_t __num_args, const __fmt_kind* __kinds) {
+    return std::basic_format_parse_context<__charT>(__fmt, __num_args, __kinds);
   }
-  template <class charT>
-  static constexpr fmt_context<charT> context(ycxx::adl_free::fmt_buf<charT>& buf, fmt_args<charT> args,
-                                              const std::locale* loc) {
-    return fmt_context<charT>(ycxx::adl_free::fmt_iter<charT>(buf), args, loc);
+  template <class __charT>
+  static constexpr __fmt_context<__charT> __context(__ycxx::__adl_free::__fmt_buf<__charT>& __buf, __fmt_args<__charT> __args,
+                                              const std::locale* __loc) {
+    return __fmt_context<__charT>(__ycxx::__adl_free::__fmt_iter<__charT>(__buf), __args, __loc);
   }
   // A context like ctx (same arguments and locale) writing to buf.
-  template <class charT>
-  static constexpr fmt_context<charT> context_like(const fmt_context<charT>& ctx, ycxx::adl_free::fmt_buf<charT>& buf) {
-    return fmt_context<charT>(ycxx::adl_free::fmt_iter<charT>(buf), ctx.args_, ctx.loc_);
+  template <class __charT>
+  static constexpr __fmt_context<__charT> __context_like(const __fmt_context<__charT>& __ctx, __ycxx::__adl_free::__fmt_buf<__charT>& __buf) {
+    return __fmt_context<__charT>(__ycxx::__adl_free::__fmt_iter<__charT>(__buf), __ctx.__args_, __ctx.__loc_);
   }
-  template <class Out, class charT>
-  static constexpr const std::locale* locale_ptr(const std::basic_format_context<Out, charT>& ctx) {
-    return ctx.loc_;
+  template <class _Out, class __charT>
+  static constexpr const std::locale* __locale_ptr(const std::basic_format_context<_Out, __charT>& __ctx) {
+    return __ctx.__loc_;
   }
-  template <class charT>
-  static constexpr ycxx::adl_free::fmt_buf<charT>& buffer(ycxx::adl_free::fmt_iter<charT> it) {
-    return *it.buf_;
+  template <class __charT>
+  static constexpr __ycxx::__adl_free::__fmt_buf<__charT>& __buffer(__ycxx::__adl_free::__fmt_iter<__charT> __it) {
+    return *__it.__buf_;
   }
-  template <class Context>
-  static constexpr std::size_t size(const std::basic_format_args<Context>& a) {
-    return a.size_;
+  template <class _Context>
+  static constexpr std::size_t size(const std::basic_format_args<_Context>& a) {
+    return a.__size_;
   }
-  template <class Context>
-  static constexpr fmt_kind kind(const std::basic_format_arg<Context>& a) {
-    return a.kind_;
+  template <class _Context>
+  static constexpr __fmt_kind kind(const std::basic_format_arg<_Context>& a) {
+    return a.__kind_;
   }
-  template <class Context>
-  static constexpr const auto& value(const std::basic_format_arg<Context>& a) {
-    return a.v_;
+  template <class _Context>
+  static constexpr const auto& value(const std::basic_format_arg<_Context>& a) {
+    return a.__v_;
   }
 };
 
 // ---- output helpers ---------------------------------------------------------------------------
 
-template <class charT, class Out>
-constexpr Out fmt_put(Out out, const charT* p, std::size_t n) {
-  if constexpr (__is_same(Out, ycxx::adl_free::fmt_iter<charT>)) {
-    fmt_access::buffer(out).append(p, n);
+template <class __charT, class _Out>
+constexpr _Out __fmt_put(_Out out, const __charT* p, std::size_t n) {
+  if constexpr (__is_same(_Out, __ycxx::__adl_free::__fmt_iter<__charT>)) {
+    __fmt_access::__buffer(out).append(p, n);
   } else {
     for (std::size_t i = 0; i != n; ++i) {
       *out = p[i];
@@ -650,10 +650,10 @@ constexpr Out fmt_put(Out out, const charT* p, std::size_t n) {
   }
   return out;
 }
-template <class charT, class Out>
-constexpr Out fmt_put(Out out, charT c) {
-  if constexpr (__is_same(Out, ycxx::adl_free::fmt_iter<charT>)) {
-    fmt_access::buffer(out).push_back(c);
+template <class __charT, class _Out>
+constexpr _Out __fmt_put(_Out out, __charT c) {
+  if constexpr (__is_same(_Out, __ycxx::__adl_free::__fmt_iter<__charT>)) {
+    __fmt_access::__buffer(out).push_back(c);
   } else {
     *out = c;
     ++out;
@@ -661,38 +661,38 @@ constexpr Out fmt_put(Out out, charT c) {
   return out;
 }
 // [p, p + n) of ASCII characters, widened to charT.
-template <class charT, class Out>
-constexpr Out fmt_put_ascii(Out out, const char* p, std::size_t n) {
-  if constexpr (__is_same(charT, char)) {
-    return ::ycxx::detail::fmt_put<char>(static_cast<Out&&>(out), p, n);
+template <class __charT, class _Out>
+constexpr _Out __fmt_put_ascii(_Out out, const char* p, std::size_t n) {
+  if constexpr (__is_same(__charT, char)) {
+    return ::__ycxx::__detail::__fmt_put<char>(static_cast<_Out&&>(out), p, n);
   } else {
     for (std::size_t i = 0; i != n; ++i)
-      out = ::ycxx::detail::fmt_put<charT>(static_cast<Out&&>(out), static_cast<charT>(p[i]));
+      out = ::__ycxx::__detail::__fmt_put<__charT>(static_cast<_Out&&>(out), static_cast<__charT>(p[i]));
     return out;
   }
 }
-template <class charT, class Out>
-constexpr Out fmt_put_n(Out out, std::size_t n, const charT* unit, std::size_t len) {
-  if constexpr (__is_same(Out, ycxx::adl_free::fmt_iter<charT>)) {
-    ycxx::adl_free::fmt_buf<charT>& b = fmt_access::buffer(out);
-    if (len == 1) {
-      b.fill(n, *unit);
+template <class __charT, class _Out>
+constexpr _Out __fmt_put_n(_Out out, std::size_t n, const __charT* __unit, std::size_t __len) {
+  if constexpr (__is_same(_Out, __ycxx::__adl_free::__fmt_iter<__charT>)) {
+    __ycxx::__adl_free::__fmt_buf<__charT>& b = __fmt_access::__buffer(out);
+    if (__len == 1) {
+      b.fill(n, *__unit);
       return out;
     }
-    if (b.discard_) {
-      b.discard(n > static_cast<std::size_t>(-1) / len ? static_cast<std::size_t>(-1) : n * len);
+    if (b.__discard_) {
+      b.discard(n > static_cast<std::size_t>(-1) / __len ? static_cast<std::size_t>(-1) : n * __len);
       return out;
     }
   }
   for (std::size_t i = 0; i != n; ++i)
-    out = ::ycxx::detail::fmt_put<charT>(static_cast<Out&&>(out), unit, len);
+    out = ::__ycxx::__detail::__fmt_put<__charT>(static_cast<_Out&&>(out), __unit, __len);
   return out;
 }
 
 // STATICALLY-WIDEN: the string literal for charT.
-template <class charT>
-constexpr std::basic_string_view<charT> fmt_lit(const char* s, const wchar_t* ws) noexcept {
-  if constexpr (__is_same(charT, char))
+template <class __charT>
+constexpr std::basic_string_view<__charT> __fmt_lit(const char* s, const wchar_t* ws) noexcept {
+  if constexpr (__is_same(__charT, char))
     return s;
   else
     return ws;
@@ -700,252 +700,252 @@ constexpr std::basic_string_view<charT> fmt_lit(const char* s, const wchar_t* ws
 
 // ---- buffers ----------------------------------------------------------------------------------
 
-inline constexpr std::size_t fmt_local_size = 256;
+inline constexpr std::size_t __fmt_local_size = 256;
 
 // Growing storage: a local array first, then the heap. vformat and the formatters that need the
 // width of their output before writing it use this one.
-template <class charT>
-class fmt_dynbuf : public ycxx::adl_free::fmt_buf<charT> {
-  charT local_[fmt_local_size];
-  bool heap_ = false;
+template <class __charT>
+class __fmt_dynbuf : public __ycxx::__adl_free::__fmt_buf<__charT> {
+  __charT __local_[__fmt_local_size];
+  bool __heap_ = false;
 
-  static constexpr void grow(ycxx::adl_free::fmt_buf<charT>& b) {
-    fmt_dynbuf& self = static_cast<fmt_dynbuf&>(b);
-    const std::size_t cap = self.cap_ * 2;
-    charT* p = std::allocator<charT>().allocate(cap);
-    for (std::size_t i = 0; i != self.size_; ++i)
-      p[i] = self.data_[i];
-    if (self.heap_)
-      std::allocator<charT>().deallocate(self.data_, self.cap_);
-    self.data_ = p;
-    self.cap_ = cap;
-    self.heap_ = true;
+  static constexpr void __grow(__ycxx::__adl_free::__fmt_buf<__charT>& b) {
+    __fmt_dynbuf& __self = static_cast<__fmt_dynbuf&>(b);
+    const std::size_t __cap = __self.__cap_ * 2;
+    __charT* p = std::allocator<__charT>().allocate(__cap);
+    for (std::size_t i = 0; i != __self.__size_; ++i)
+      p[i] = __self.__data_[i];
+    if (__self.__heap_)
+      std::allocator<__charT>().deallocate(__self.__data_, __self.__cap_);
+    __self.__data_ = p;
+    __self.__cap_ = __cap;
+    __self.__heap_ = true;
   }
 
 public:
-  constexpr fmt_dynbuf() noexcept : ycxx::adl_free::fmt_buf<charT>(local_, fmt_local_size, &grow) {}
-  constexpr ~fmt_dynbuf() {
-    if (heap_)
-      std::allocator<charT>().deallocate(this->data_, this->cap_);
+  constexpr __fmt_dynbuf() noexcept : __ycxx::__adl_free::__fmt_buf<__charT>(__local_, __fmt_local_size, &__grow) {}
+  constexpr ~__fmt_dynbuf() {
+    if (__heap_)
+      std::allocator<__charT>().deallocate(this->__data_, this->__cap_);
   }
-  constexpr const charT* data() const noexcept { return this->data_; }
-  constexpr std::size_t size() const noexcept { return this->size_; }
-  constexpr std::basic_string_view<charT> view() const noexcept { return {this->data_, this->size_}; }
+  constexpr const __charT* data() const noexcept { return this->__data_; }
+  constexpr std::size_t size() const noexcept { return this->__size_; }
+  constexpr std::basic_string_view<__charT> view() const noexcept { return {this->__data_, this->__size_}; }
 };
 
 // Output to an output iterator, through a local array.
-template <class charT, class Out>
-class fmt_iter_sink : public ycxx::adl_free::fmt_buf<charT> {
-  charT local_[fmt_local_size];
-  Out out_;
+template <class __charT, class _Out>
+class __fmt_iter_sink : public __ycxx::__adl_free::__fmt_buf<__charT> {
+  __charT __local_[__fmt_local_size];
+  _Out __out_;
 
-  static constexpr void flush(ycxx::adl_free::fmt_buf<charT>& b) {
-    fmt_iter_sink& self = static_cast<fmt_iter_sink&>(b);
-    for (std::size_t i = 0; i != self.size_; ++i) {
-      *self.out_ = self.data_[i];
-      ++self.out_;
+  static constexpr void flush(__ycxx::__adl_free::__fmt_buf<__charT>& b) {
+    __fmt_iter_sink& __self = static_cast<__fmt_iter_sink&>(b);
+    for (std::size_t i = 0; i != __self.__size_; ++i) {
+      *__self.__out_ = __self.__data_[i];
+      ++__self.__out_;
     }
-    self.size_ = 0;
+    __self.__size_ = 0;
   }
 
 public:
-  constexpr explicit fmt_iter_sink(Out out) : ycxx::adl_free::fmt_buf<charT>(local_, fmt_local_size, &flush), out_(static_cast<Out&&>(out)) {}
-  constexpr Out finish() {
+  constexpr explicit __fmt_iter_sink(_Out out) : __ycxx::__adl_free::__fmt_buf<__charT>(__local_, __fmt_local_size, &flush), __out_(static_cast<_Out&&>(out)) {}
+  constexpr _Out finish() {
     flush(*this);
-    return static_cast<Out&&>(out_);
+    return static_cast<_Out&&>(__out_);
   }
 };
 
 // Output to [p, ...): written in place, never flushed ([format.functions]/16: the caller
 // provides room for the whole result).
-template <class charT>
-class fmt_ptr_sink : public ycxx::adl_free::fmt_buf<charT> {
-  static constexpr void never(ycxx::adl_free::fmt_buf<charT>&) {}
+template <class __charT>
+class __fmt_ptr_sink : public __ycxx::__adl_free::__fmt_buf<__charT> {
+  static constexpr void __never(__ycxx::__adl_free::__fmt_buf<__charT>&) {}
 
 public:
-  constexpr explicit fmt_ptr_sink(charT* p) noexcept
-      : ycxx::adl_free::fmt_buf<charT>(p, static_cast<std::size_t>(-1) / sizeof(charT) / 2, &never) {}
-  constexpr charT* finish() noexcept { return this->data_ + this->size_; }
+  constexpr explicit __fmt_ptr_sink(__charT* p) noexcept
+      : __ycxx::__adl_free::__fmt_buf<__charT>(p, static_cast<std::size_t>(-1) / sizeof(__charT) / 2, &__never) {}
+  constexpr __charT* finish() noexcept { return this->__data_ + this->__size_; }
 };
 
-// Counts the output (formatted_size), and writes its first `limit` characters to an output
+// Counts the output (formatted_size), and writes its first `__limit` characters to an output
 // iterator (format_to_n).
-template <class charT, class Out>
-class fmt_count_sink : public ycxx::adl_free::fmt_buf<charT> {
-  charT local_[fmt_local_size];
-  std::size_t count_ = 0;
-  std::size_t limit_;
-  Out out_;
+template <class __charT, class _Out>
+class __fmt_count_sink : public __ycxx::__adl_free::__fmt_buf<__charT> {
+  __charT __local_[__fmt_local_size];
+  std::size_t __count_ = 0;
+  std::size_t __limit_;
+  _Out __out_;
 
-  static constexpr void flush(ycxx::adl_free::fmt_buf<charT>& b) {
-    fmt_count_sink& self = static_cast<fmt_count_sink&>(b);
-    if constexpr (!__is_same(Out, decltype(nullptr))) {
-      for (std::size_t i = 0; i != self.size_ && self.count_ + i < self.limit_; ++i) {
-        *self.out_ = self.data_[i];
-        ++self.out_;
+  static constexpr void flush(__ycxx::__adl_free::__fmt_buf<__charT>& b) {
+    __fmt_count_sink& __self = static_cast<__fmt_count_sink&>(b);
+    if constexpr (!__is_same(_Out, decltype(nullptr))) {
+      for (std::size_t i = 0; i != __self.__size_ && __self.__count_ + i < __self.__limit_; ++i) {
+        *__self.__out_ = __self.__data_[i];
+        ++__self.__out_;
       }
     }
-    self.count_ += self.size_;
-    self.size_ = 0;
+    __self.__count_ += __self.__size_;
+    __self.__size_ = 0;
     // Past the limit only the count matters.
-    self.discard_ = self.count_ >= self.limit_;
+    __self.__discard_ = __self.__count_ >= __self.__limit_;
   }
 
 public:
-  constexpr fmt_count_sink(Out out, std::size_t limit)
-      : ycxx::adl_free::fmt_buf<charT>(local_, fmt_local_size, &flush), limit_(limit), out_(static_cast<Out&&>(out)) {
-    this->discard_ = limit == 0;
+  constexpr __fmt_count_sink(_Out out, std::size_t __limit)
+      : __ycxx::__adl_free::__fmt_buf<__charT>(__local_, __fmt_local_size, &flush), __limit_(__limit), __out_(static_cast<_Out&&>(out)) {
+    this->__discard_ = __limit == 0;
   }
   constexpr std::size_t finish() {
     flush(*this);
-    const std::size_t d = this->discarded_;
-    return d > static_cast<std::size_t>(-1) - count_ ? static_cast<std::size_t>(-1) : count_ + d;
+    const std::size_t d = this->__discarded_;
+    return d > static_cast<std::size_t>(-1) - __count_ ? static_cast<std::size_t>(-1) : __count_ + d;
   }
-  constexpr Out& out() noexcept { return out_; }
+  constexpr _Out& out() noexcept { return __out_; }
 };
 
 // ---- the std-format-spec ([format.string.std]) ------------------------------------------------
 
 // fmt_spec and its enumerations are in format_decl.hpp.
 
-template <class charT>
-constexpr bool fmt_is_digit(charT c) noexcept {
-  return c >= charT('0') && c <= charT('9');
+template <class __charT>
+constexpr bool __fmt_is_digit(__charT c) noexcept {
+  return c >= __charT('0') && c <= __charT('9');
 }
 
 // A nonnegative-integer at p (p != e, *p is a digit). The grammar sets no upper bound; a value
 // beyond size_t saturates (no output can be that wide, and no argument has that index).
-template <class charT>
-constexpr const charT* fmt_parse_number(const charT* p, const charT* e, std::size_t& value) {
+template <class __charT>
+constexpr const __charT* __fmt_parse_number(const __charT* p, const __charT* e, std::size_t& value) {
   constexpr std::size_t max = static_cast<std::size_t>(-1);
-  std::size_t v = 0;
-  for (; p != e && ::ycxx::detail::fmt_is_digit(*p); ++p) {
-    const std::size_t d = static_cast<std::size_t>(*p - charT('0'));
-    v = v > (max - d) / 10 ? max : v * 10 + d;
+  std::size_t __v = 0;
+  for (; p != e && ::__ycxx::__detail::__fmt_is_digit(*p); ++p) {
+    const std::size_t d = static_cast<std::size_t>(*p - __charT('0'));
+    __v = __v > (max - d) / 10 ? max : __v * 10 + d;
   }
-  value = v;
+  value = __v;
   return p;
 }
 
 // arg-id ([format.string.general]): 0 or a positive-integer.
-template <class charT>
-constexpr const charT* fmt_parse_arg_id(const charT* p, const charT* e, std::size_t& id) {
-  if (*p == charT('0')) {
+template <class __charT>
+constexpr const __charT* __fmt_parse_arg_id(const __charT* p, const __charT* e, std::size_t& id) {
+  if (*p == __charT('0')) {
     id = 0;
     return p + 1;
   }
-  if (!::ycxx::detail::fmt_is_digit(*p))
-    ::ycxx::detail::throw_format_error("std::format: invalid argument index in the format string");
-  return ::ycxx::detail::fmt_parse_number(p, e, id);
+  if (!::__ycxx::__detail::__fmt_is_digit(*p))
+    ::__ycxx::__detail::__throw_format_error("std::format: invalid argument index in the format string");
+  return ::__ycxx::__detail::__fmt_parse_number(p, e, id);
 }
 
 // { arg-id(opt) } in a width or precision: p points after '{'. Records the argument index.
-template <class charT>
-constexpr const charT* fmt_parse_dynamic(std::basic_format_parse_context<charT>& pc, const charT* p, const charT* e,
+template <class __charT>
+constexpr const __charT* __fmt_parse_dynamic(std::basic_format_parse_context<__charT>& __pc, const __charT* p, const __charT* e,
                                          std::size_t& id) {
   if (p == e)
-    ::ycxx::detail::throw_format_error("std::format: unterminated dynamic width or precision");
-  if (*p == charT('}')) {
-    id = pc.next_arg_id();
+    ::__ycxx::__detail::__throw_format_error("std::format: unterminated dynamic width or precision");
+  if (*p == __charT('}')) {
+    id = __pc.next_arg_id();
   } else {
-    p = ::ycxx::detail::fmt_parse_arg_id(p, e, id);
-    if (p == e || *p != charT('}'))
-      ::ycxx::detail::throw_format_error("std::format: invalid dynamic width or precision");
-    pc.check_arg_id(id);
+    p = ::__ycxx::__detail::__fmt_parse_arg_id(p, e, id);
+    if (p == e || *p != __charT('}'))
+      ::__ycxx::__detail::__throw_format_error("std::format: invalid dynamic width or precision");
+    __pc.check_arg_id(id);
   }
-  pc.check_dynamic_spec_integral(id);
+  __pc.check_dynamic_spec_integral(id);
   return p + 1;
 }
 
-constexpr bool fmt_is_align(char32_t c) noexcept {
+constexpr bool __fmt_is_align(char32_t c) noexcept {
   return c == U'<' || c == U'>' || c == U'^';
 }
-constexpr fmt_align fmt_align_of(char32_t c) noexcept {
-  return c == U'<' ? fmt_align::left : c == U'>' ? fmt_align::right : fmt_align::center;
+constexpr __fmt_align __fmt_align_of(char32_t c) noexcept {
+  return c == U'<' ? __fmt_align::left : c == U'>' ? __fmt_align::right : __fmt_align::__center;
 }
 
-// fill-and-align (opt) at p; `colon_ok` is false for range-fill and tuple-fill.
-template <class charT>
-constexpr const charT* fmt_parse_fill_align(const charT* p, const charT* e, fmt_spec<charT>& s, bool colon_ok = true) {
+// fill-and-align (opt) at p; `__colon_ok` is false for range-fill and tuple-fill.
+template <class __charT>
+constexpr const __charT* __fmt_parse_fill_align(const __charT* p, const __charT* e, __fmt_spec<__charT>& s, bool __colon_ok = true) {
   if (p == e)
     return p;
-  const uni::decoded d = ::ycxx::detail::uni::decode(p, e);
-  if (*p == charT('}') || (!colon_ok && *p == charT(':')))
+  const __uni::__decoded d = ::__ycxx::__detail::__uni::__decode(p, e);
+  if (*p == __charT('}') || (!__colon_ok && *p == __charT(':')))
     return p; // '}' ends the spec; a range-fill or tuple-fill is never ':', which starts the underlying spec
-  if (static_cast<std::size_t>(e - p) > d.len && ::ycxx::detail::fmt_is_align(static_cast<char32_t>(p[d.len]))) {
-    if (!d.ok || *p == charT('{'))
-      ::ycxx::detail::throw_format_error("std::format: invalid fill character");
+  if (static_cast<std::size_t>(e - p) > d.__len && ::__ycxx::__detail::__fmt_is_align(static_cast<char32_t>(p[d.__len]))) {
+    if (!d.ok || *p == __charT('{'))
+      ::__ycxx::__detail::__throw_format_error("std::format: invalid fill character");
     // A decoded scalar value is at most 4 code units; the bound also tells GCC -O3 that the
     // copy stays inside fill (-Wstringop-overflow).
-    const unsigned n = d.len < 4 ? d.len : 4;
+    const unsigned n = d.__len < 4 ? d.__len : 4;
     for (unsigned i = 0; i != n; ++i)
       s.fill[i] = p[i];
-    s.fill_len = static_cast<unsigned char>(n);
-    s.align = ::ycxx::detail::fmt_align_of(static_cast<char32_t>(p[d.len]));
-    return p + d.len + 1;
+    s.__fill_len = static_cast<unsigned char>(n);
+    s.align = ::__ycxx::__detail::__fmt_align_of(static_cast<char32_t>(p[d.__len]));
+    return p + d.__len + 1;
   }
-  if (::ycxx::detail::fmt_is_align(static_cast<char32_t>(*p))) {
-    s.align = ::ycxx::detail::fmt_align_of(static_cast<char32_t>(*p));
+  if (::__ycxx::__detail::__fmt_is_align(static_cast<char32_t>(*p))) {
+    s.align = ::__ycxx::__detail::__fmt_align_of(static_cast<char32_t>(*p));
     return p + 1;
   }
   return p;
 }
 
 // width (opt) at p.
-template <class charT>
-constexpr const charT* fmt_parse_width(std::basic_format_parse_context<charT>& pc, const charT* p, const charT* e,
-                                       fmt_spec<charT>& s) {
-  if (p != e && *p >= charT('1') && *p <= charT('9')) {
-    p = ::ycxx::detail::fmt_parse_number(p, e, s.width);
-    s.width_kind = fmt_dyn::value;
-  } else if (p != e && *p == charT('{')) {
-    p = ::ycxx::detail::fmt_parse_dynamic(pc, p + 1, e, s.width);
-    s.width_kind = fmt_dyn::arg;
+template <class __charT>
+constexpr const __charT* __fmt_parse_width(std::basic_format_parse_context<__charT>& __pc, const __charT* p, const __charT* e,
+                                       __fmt_spec<__charT>& s) {
+  if (p != e && *p >= __charT('1') && *p <= __charT('9')) {
+    p = ::__ycxx::__detail::__fmt_parse_number(p, e, s.width);
+    s.__width_kind = __fmt_dyn::value;
+  } else if (p != e && *p == __charT('{')) {
+    p = ::__ycxx::__detail::__fmt_parse_dynamic(__pc, p + 1, e, s.width);
+    s.__width_kind = __fmt_dyn::arg;
   }
   return p;
 }
 
-template <class charT>
-constexpr bool fmt_spec_end(const charT* p, const charT* e) noexcept {
-  return p == e || *p == charT('}');
+template <class __charT>
+constexpr bool __fmt_spec_end(const __charT* p, const __charT* e) noexcept {
+  return p == e || *p == __charT('}');
 }
 
 // Parses a std-format-spec and checks it against the category ([format.string.std]/5-24).
-template <class charT>
-constexpr const charT* fmt_parse_spec(std::basic_format_parse_context<charT>& pc, fmt_spec<charT>& s, fmt_cat cat) {
-  const charT* p = pc.begin();
-  const charT* const e = pc.end();
-  if (::ycxx::detail::fmt_spec_end(p, e))
+template <class __charT>
+constexpr const __charT* __fmt_parse_spec(std::basic_format_parse_context<__charT>& __pc, __fmt_spec<__charT>& s, __fmt_cat cat) {
+  const __charT* p = __pc.begin();
+  const __charT* const e = __pc.end();
+  if (::__ycxx::__detail::__fmt_spec_end(p, e))
     return p;
-  p = ::ycxx::detail::fmt_parse_fill_align(p, e, s);
+  p = ::__ycxx::__detail::__fmt_parse_fill_align(p, e, s);
   if (p != e) {
-    if (*p == charT('+'))
-      s.sign = fmt_sign::plus, ++p;
-    else if (*p == charT('-'))
-      s.sign = fmt_sign::minus, ++p;
-    else if (*p == charT(' '))
-      s.sign = fmt_sign::space, ++p;
+    if (*p == __charT('+'))
+      s.sign = __fmt_sign::plus, ++p;
+    else if (*p == __charT('-'))
+      s.sign = __fmt_sign::minus, ++p;
+    else if (*p == __charT(' '))
+      s.sign = __fmt_sign::space, ++p;
   }
-  if (p != e && *p == charT('#'))
-    s.alt = true, ++p;
-  if (p != e && *p == charT('0'))
+  if (p != e && *p == __charT('#'))
+    s.__alt = true, ++p;
+  if (p != e && *p == __charT('0'))
     s.zero = true, ++p;
-  p = ::ycxx::detail::fmt_parse_width(pc, p, e, s);
-  if (p != e && *p == charT('.')) {
+  p = ::__ycxx::__detail::__fmt_parse_width(__pc, p, e, s);
+  if (p != e && *p == __charT('.')) {
     ++p;
-    if (p != e && ::ycxx::detail::fmt_is_digit(*p)) {
-      p = ::ycxx::detail::fmt_parse_number(p, e, s.precision);
-      s.prec_kind = fmt_dyn::value;
-    } else if (p != e && *p == charT('{')) {
-      p = ::ycxx::detail::fmt_parse_dynamic(pc, p + 1, e, s.precision);
-      s.prec_kind = fmt_dyn::arg;
+    if (p != e && ::__ycxx::__detail::__fmt_is_digit(*p)) {
+      p = ::__ycxx::__detail::__fmt_parse_number(p, e, s.precision);
+      s.__prec_kind = __fmt_dyn::value;
+    } else if (p != e && *p == __charT('{')) {
+      p = ::__ycxx::__detail::__fmt_parse_dynamic(__pc, p + 1, e, s.precision);
+      s.__prec_kind = __fmt_dyn::arg;
     } else {
-      ::ycxx::detail::throw_format_error("std::format: missing precision after '.'");
+      ::__ycxx::__detail::__throw_format_error("std::format: missing precision after '.'");
     }
   }
-  if (p != e && *p == charT('L'))
-    s.localized = true, ++p;
-  if (p != e && *p != charT('}')) {
+  if (p != e && *p == __charT('L'))
+    s.__localized = true, ++p;
+  if (p != e && *p != __charT('}')) {
     switch (static_cast<char32_t>(*p)) {
     case U'a': case U'A': case U'b': case U'B': case U'c': case U'd': case U'e': case U'E': case U'f':
     case U'F': case U'g': case U'G': case U'o': case U'p': case U'P': case U's': case U'x': case U'X':
@@ -957,43 +957,43 @@ constexpr const charT* fmt_parse_spec(std::basic_format_parse_context<charT>& pc
       break;
     }
   }
-  if (!::ycxx::detail::fmt_spec_end(p, e))
-    ::ycxx::detail::throw_format_error("std::format: invalid format specification");
+  if (!::__ycxx::__detail::__fmt_spec_end(p, e))
+    ::__ycxx::__detail::__throw_format_error("std::format: invalid format specification");
 
   // The type, and which options it admits.
   const char t = s.type;
-  const auto is_one_of = [t](const char* set) {
+  const auto __is_one_of = [t](const char* set) {
     for (; *set != 0; ++set)
       if (*set == t)
         return true;
     return false;
   };
-  bool type_ok = t == 0;
-  bool int_pres = t != 0 && is_one_of("bBdoxX");
+  bool __type_ok = t == 0;
+  bool __int_pres = t != 0 && __is_one_of("bBdoxX");
   switch (cat) {
-  case fmt_cat::integer:
-    type_ok = type_ok || is_one_of("bBcdoxX");
-    int_pres = true; // sign, # and 0 apply to every integer presentation
+  case __fmt_cat::__integer:
+    __type_ok = __type_ok || __is_one_of("bBcdoxX");
+    __int_pres = true; // sign, # and 0 apply to every integer presentation
     break;
-  case fmt_cat::character: type_ok = type_ok || is_one_of("cbBdoxX?"); break;
-  case fmt_cat::boolean: type_ok = type_ok || is_one_of("sbBdoxX"); break;
-  case fmt_cat::floating:
-    type_ok = type_ok || is_one_of("aAeEfFgG");
-    int_pres = true;
+  case __fmt_cat::character: __type_ok = __type_ok || __is_one_of("cbBdoxX?"); break;
+  case __fmt_cat::__boolean: __type_ok = __type_ok || __is_one_of("sbBdoxX"); break;
+  case __fmt_cat::__floating:
+    __type_ok = __type_ok || __is_one_of("aAeEfFgG");
+    __int_pres = true;
     break;
-  case fmt_cat::string: type_ok = type_ok || is_one_of("s?"); break;
-  case fmt_cat::pointer: type_ok = type_ok || is_one_of("pP"); break;
+  case __fmt_cat::string: __type_ok = __type_ok || __is_one_of("s?"); break;
+  case __fmt_cat::pointer: __type_ok = __type_ok || __is_one_of("pP"); break;
   }
-  if (!type_ok)
-    ::ycxx::detail::throw_format_error("std::format: invalid presentation type for the argument");
-  if ((s.sign != fmt_sign::none || s.alt) && !int_pres)
-    ::ycxx::detail::throw_format_error("std::format: the sign and # options need an arithmetic presentation");
-  if (s.zero && !int_pres && cat != fmt_cat::pointer)
-    ::ycxx::detail::throw_format_error("std::format: the 0 option needs an arithmetic or pointer presentation");
-  if (s.prec_kind != fmt_dyn::none && cat != fmt_cat::floating && cat != fmt_cat::string)
-    ::ycxx::detail::throw_format_error("std::format: precision is valid only for floating-point and string types");
-  if (s.localized && (cat == fmt_cat::string || cat == fmt_cat::pointer))
-    ::ycxx::detail::throw_format_error("std::format: the L option is valid only for arithmetic types");
+  if (!__type_ok)
+    ::__ycxx::__detail::__throw_format_error("std::format: invalid presentation type for the argument");
+  if ((s.sign != __fmt_sign::none || s.__alt) && !__int_pres)
+    ::__ycxx::__detail::__throw_format_error("std::format: the sign and # options need an arithmetic presentation");
+  if (s.zero && !__int_pres && cat != __fmt_cat::pointer)
+    ::__ycxx::__detail::__throw_format_error("std::format: the 0 option needs an arithmetic or pointer presentation");
+  if (s.__prec_kind != __fmt_dyn::none && cat != __fmt_cat::__floating && cat != __fmt_cat::string)
+    ::__ycxx::__detail::__throw_format_error("std::format: precision is valid only for floating-point and string types");
+  if (s.__localized && (cat == __fmt_cat::string || cat == __fmt_cat::pointer))
+    ::__ycxx::__detail::__throw_format_error("std::format: the L option is valid only for arithmetic types");
   return p;
 }
 
@@ -1001,50 +1001,50 @@ constexpr const charT* fmt_parse_spec(std::basic_format_parse_context<charT>& pc
 // size (only a negative value is an error); one beyond size_t saturates, like a number written in
 // the format string. A width larger than the output can be is honoured: format then fails to
 // allocate (bad_alloc), while formatted_size and format_to_n only count the padding.
-template <class Context>
-constexpr std::size_t fmt_dynamic_value(const Context& ctx, std::size_t id) {
-  return ctx.arg(id).visit([](auto v) -> std::size_t {
-    using V = decltype(v);
-    if constexpr (__is_same(V, int) || __is_same(V, long long) || __is_same(V, unsigned) ||
-                  __is_same(V, unsigned long long)) {
-      if constexpr (__is_same(V, int) || __is_same(V, long long)) {
-        if (v < 0)
-          ::ycxx::detail::throw_format_error("std::format: negative dynamic width or precision");
+template <class _Context>
+constexpr std::size_t __fmt_dynamic_value(const _Context& __ctx, std::size_t id) {
+  return __ctx.arg(id).visit([](auto __v) -> std::size_t {
+    using _Vp = decltype(__v);
+    if constexpr (__is_same(_Vp, int) || __is_same(_Vp, long long) || __is_same(_Vp, unsigned) ||
+                  __is_same(_Vp, unsigned long long)) {
+      if constexpr (__is_same(_Vp, int) || __is_same(_Vp, long long)) {
+        if (__v < 0)
+          ::__ycxx::__detail::__throw_format_error("std::format: negative dynamic width or precision");
       }
-      if (static_cast<unsigned long long>(v) > static_cast<unsigned long long>(static_cast<std::size_t>(-1)))
+      if (static_cast<unsigned long long>(__v) > static_cast<unsigned long long>(static_cast<std::size_t>(-1)))
         return static_cast<std::size_t>(-1);
-      return static_cast<std::size_t>(v);
+      return static_cast<std::size_t>(__v);
     } else {
-      ::ycxx::detail::throw_format_error("std::format: dynamic width or precision is not an integer");
+      ::__ycxx::__detail::__throw_format_error("std::format: dynamic width or precision is not an integer");
     }
   });
 }
-template <class charT, class Context>
-constexpr std::size_t fmt_width(const fmt_spec<charT>& s, const Context& ctx) {
-  return s.width_kind == fmt_dyn::arg ? ::ycxx::detail::fmt_dynamic_value(ctx, s.width) : s.width;
+template <class __charT, class _Context>
+constexpr std::size_t __fmt_width(const __fmt_spec<__charT>& s, const _Context& __ctx) {
+  return s.__width_kind == __fmt_dyn::arg ? ::__ycxx::__detail::__fmt_dynamic_value(__ctx, s.width) : s.width;
 }
 // -1: no precision; a precision beyond LLONG_MAX is LLONG_MAX.
-template <class charT, class Context>
-constexpr long long fmt_precision(const fmt_spec<charT>& s, const Context& ctx) {
-  if (s.prec_kind == fmt_dyn::none)
+template <class __charT, class _Context>
+constexpr long long __fmt_precision(const __fmt_spec<__charT>& s, const _Context& __ctx) {
+  if (s.__prec_kind == __fmt_dyn::none)
     return -1;
   const std::size_t p =
-      s.prec_kind == fmt_dyn::arg ? ::ycxx::detail::fmt_dynamic_value(ctx, s.precision) : s.precision;
+      s.__prec_kind == __fmt_dyn::arg ? ::__ycxx::__detail::__fmt_dynamic_value(__ctx, s.precision) : s.precision;
   return p > static_cast<std::size_t>(__LONG_LONG_MAX__) ? __LONG_LONG_MAX__ : static_cast<long long>(p);
 }
 
-// Writes [p, p + n), of estimated width `est`, padded to `width` ([format.string.std]/4).
-template <class charT, class Out>
-constexpr Out fmt_write_padded(Out out, const fmt_spec<charT>& s, fmt_align def, std::size_t width, std::size_t est,
-                               const charT* p, std::size_t n) {
-  if (width <= est)
-    return ::ycxx::detail::fmt_put<charT>(static_cast<Out&&>(out), p, n);
-  const std::size_t pad = width - est;
-  const fmt_align a = s.align == fmt_align::none ? def : s.align;
-  const std::size_t before = a == fmt_align::right ? pad : a == fmt_align::center ? pad / 2 : 0;
-  out = ::ycxx::detail::fmt_put_n<charT>(static_cast<Out&&>(out), before, s.fill, s.fill_len);
-  out = ::ycxx::detail::fmt_put<charT>(static_cast<Out&&>(out), p, n);
-  return ::ycxx::detail::fmt_put_n<charT>(static_cast<Out&&>(out), pad - before, s.fill, s.fill_len);
+// Writes [p, p + n), of estimated width `__est`, padded to `width` ([format.string.std]/4).
+template <class __charT, class _Out>
+constexpr _Out __fmt_write_padded(_Out out, const __fmt_spec<__charT>& s, __fmt_align __def, std::size_t width, std::size_t __est,
+                               const __charT* p, std::size_t n) {
+  if (width <= __est)
+    return ::__ycxx::__detail::__fmt_put<__charT>(static_cast<_Out&&>(out), p, n);
+  const std::size_t __pad = width - __est;
+  const __fmt_align a = s.align == __fmt_align::none ? __def : s.align;
+  const std::size_t before = a == __fmt_align::right ? __pad : a == __fmt_align::__center ? __pad / 2 : 0;
+  out = ::__ycxx::__detail::__fmt_put_n<__charT>(static_cast<_Out&&>(out), before, s.fill, s.__fill_len);
+  out = ::__ycxx::__detail::__fmt_put<__charT>(static_cast<_Out&&>(out), p, n);
+  return ::__ycxx::__detail::__fmt_put_n<__charT>(static_cast<_Out&&>(out), __pad - before, s.fill, s.__fill_len);
 }
 
 // ---- numbers -------------------------------------------------------------------------------
@@ -1053,280 +1053,280 @@ constexpr Out fmt_write_padded(Out out, const fmt_spec<charT>& s, fmt_align def,
 // two functions are defined with <format> (ycxx/hosted/format_locale.hpp), as is
 // basic_format_context::locale(), and instantiated for format_context and wformat_context in the
 // hosted runtime (for the headers that include only this one).
-template <class charT>
-struct fmt_numpunct {
+template <class __charT>
+struct __fmt_numpunct {
   std::string grouping;
-  charT thousands_sep;
-  charT decimal_point;
+  __charT thousands_sep;
+  __charT decimal_point;
 };
-template <class charT, class Context>
-fmt_numpunct<charT> fmt_get_numpunct(Context& ctx);
-template <class charT, class Context>
-std::basic_string<charT> fmt_get_boolname(Context& ctx, bool value);
+template <class __charT, class _Context>
+__fmt_numpunct<__charT> __fmt_get_numpunct(_Context& __ctx);
+template <class __charT, class _Context>
+std::basic_string<__charT> __fmt_get_boolname(_Context& __ctx, bool value);
 
 // The size of digit group t (0: the rightmost) of numpunct grouping g, 0 for unlimited.
-constexpr std::size_t fmt_group_size(const std::string& g, std::size_t t) noexcept {
-  if (g.empty())
+constexpr std::size_t __fmt_group_size(const std::string& __g, std::size_t t) noexcept {
+  if (__g.empty())
     return 0;
-  const char c = t < g.size() ? g[t] : g[g.size() - 1];
+  const char c = t < __g.size() ? __g[t] : __g[__g.size() - 1];
   return c <= 0 || c == __SCHAR_MAX__ ? 0 : static_cast<std::size_t>(c);
 }
 
 // The parts of a formatted number: sign, prefix, the integer digits (grouped with L) and the
 // rest (fraction and exponent; its '.' becomes the locale's decimal point with L).
-struct fmt_number {
+struct __fmt_number {
   char sign = 0;
   const char* prefix = "";
-  std::size_t prefix_len = 0;
+  std::size_t __prefix_len = 0;
   const char* digits = nullptr;
-  std::size_t ndigits = 0;
-  const char* rest = nullptr;
-  std::size_t nrest = 0;
-  bool zero_ok = true; // false for infinities and NaNs ([format.string.std]/8)
+  std::size_t __ndigits = 0;
+  const char* __rest = nullptr;
+  std::size_t __nrest = 0;
+  bool __zero_ok = true; // false for infinities and NaNs ([format.string.std]/8)
   // '0's inserted at rest + zeros_at: the digits of a precision beyond fmt_float_prec_cap
-  std::size_t zeros = 0, zeros_at = 0;
+  std::size_t __zeros = 0, __zeros_at = 0;
 };
 
-template <class charT, class Out>
-constexpr Out fmt_write_number(Out out, const fmt_spec<charT>& s, std::size_t width, const fmt_number& n,
-                               const fmt_numpunct<charT>* np) {
+template <class __charT, class _Out>
+constexpr _Out __fmt_write_number(_Out out, const __fmt_spec<__charT>& s, std::size_t width, const __fmt_number& n,
+                               const __fmt_numpunct<__charT>* __np) {
   // Digit groups: group t from the right has size fmt_group_size(t); the leftmost one takes
   // what remains.
-  std::size_t groups = 1, grouped = 0;
-  if (np != nullptr) {
+  std::size_t __groups = 1, __grouped = 0;
+  if (__np != nullptr) {
     for (std::size_t t = 0;; ++t) {
-      const std::size_t sz = ::ycxx::detail::fmt_group_size(np->grouping, t);
-      if (sz == 0 || grouped + sz >= n.ndigits)
+      const std::size_t __sz = ::__ycxx::__detail::__fmt_group_size(__np->grouping, t);
+      if (__sz == 0 || __grouped + __sz >= n.__ndigits)
         break;
-      grouped += sz;
-      ++groups;
+      __grouped += __sz;
+      ++__groups;
     }
   }
-  const std::size_t total = (n.sign != 0) + n.prefix_len + n.ndigits + (groups - 1) + n.nrest + n.zeros;
-  std::size_t zeros = 0, before = 0, after = 0;
-  if (width > total) {
-    if (s.zero && s.align == fmt_align::none && n.zero_ok) {
-      zeros = width - total;
+  const std::size_t __total = (n.sign != 0) + n.__prefix_len + n.__ndigits + (__groups - 1) + n.__nrest + n.__zeros;
+  std::size_t __zeros = 0, before = 0, __after = 0;
+  if (width > __total) {
+    if (s.zero && s.align == __fmt_align::none && n.__zero_ok) {
+      __zeros = width - __total;
     } else {
-      const std::size_t pad = width - total;
-      const fmt_align a = s.align == fmt_align::none ? fmt_align::right : s.align;
-      before = a == fmt_align::right ? pad : a == fmt_align::center ? pad / 2 : 0;
-      after = pad - before;
+      const std::size_t __pad = width - __total;
+      const __fmt_align a = s.align == __fmt_align::none ? __fmt_align::right : s.align;
+      before = a == __fmt_align::right ? __pad : a == __fmt_align::__center ? __pad / 2 : 0;
+      __after = __pad - before;
     }
   }
-  out = ::ycxx::detail::fmt_put_n<charT>(static_cast<Out&&>(out), before, s.fill, s.fill_len);
+  out = ::__ycxx::__detail::__fmt_put_n<__charT>(static_cast<_Out&&>(out), before, s.fill, s.__fill_len);
   if (n.sign != 0)
-    out = ::ycxx::detail::fmt_put<charT>(static_cast<Out&&>(out), static_cast<charT>(n.sign));
-  out = ::ycxx::detail::fmt_put_ascii<charT>(static_cast<Out&&>(out), n.prefix, n.prefix_len);
-  if (zeros != 0) {
-    const charT z = charT('0');
-    out = ::ycxx::detail::fmt_put_n<charT>(static_cast<Out&&>(out), zeros, &z, 1);
+    out = ::__ycxx::__detail::__fmt_put<__charT>(static_cast<_Out&&>(out), static_cast<__charT>(n.sign));
+  out = ::__ycxx::__detail::__fmt_put_ascii<__charT>(static_cast<_Out&&>(out), n.prefix, n.__prefix_len);
+  if (__zeros != 0) {
+    const __charT __z = __charT('0');
+    out = ::__ycxx::__detail::__fmt_put_n<__charT>(static_cast<_Out&&>(out), __zeros, &__z, 1);
   }
-  if (groups == 1) {
-    out = ::ycxx::detail::fmt_put_ascii<charT>(static_cast<Out&&>(out), n.digits, n.ndigits);
+  if (__groups == 1) {
+    out = ::__ycxx::__detail::__fmt_put_ascii<__charT>(static_cast<_Out&&>(out), n.digits, n.__ndigits);
   } else {
     const char* d = n.digits;
-    const std::size_t first = n.ndigits - grouped;
-    out = ::ycxx::detail::fmt_put_ascii<charT>(static_cast<Out&&>(out), d, first);
+    const std::size_t first = n.__ndigits - __grouped;
+    out = ::__ycxx::__detail::__fmt_put_ascii<__charT>(static_cast<_Out&&>(out), d, first);
     d += first;
-    for (std::size_t t = groups - 1; t-- > 0;) {
-      const std::size_t sz = ::ycxx::detail::fmt_group_size(np->grouping, t);
-      out = ::ycxx::detail::fmt_put<charT>(static_cast<Out&&>(out), np->thousands_sep);
-      out = ::ycxx::detail::fmt_put_ascii<charT>(static_cast<Out&&>(out), d, sz);
-      d += sz;
+    for (std::size_t t = __groups - 1; t-- > 0;) {
+      const std::size_t __sz = ::__ycxx::__detail::__fmt_group_size(__np->grouping, t);
+      out = ::__ycxx::__detail::__fmt_put<__charT>(static_cast<_Out&&>(out), __np->thousands_sep);
+      out = ::__ycxx::__detail::__fmt_put_ascii<__charT>(static_cast<_Out&&>(out), d, __sz);
+      d += __sz;
     }
   }
-  auto put_rest = [&](std::size_t from, std::size_t to) {
-    if (np == nullptr)
-      return ::ycxx::detail::fmt_put_ascii<charT>(static_cast<Out&&>(out), n.rest + from, to - from);
+  auto __put_rest = [&](std::size_t from, std::size_t to) {
+    if (__np == nullptr)
+      return ::__ycxx::__detail::__fmt_put_ascii<__charT>(static_cast<_Out&&>(out), n.__rest + from, to - from);
     for (std::size_t i = from; i != to; ++i)
-      out = ::ycxx::detail::fmt_put<charT>(static_cast<Out&&>(out),
-                                           n.rest[i] == '.' ? np->decimal_point : static_cast<charT>(n.rest[i]));
-    return static_cast<Out&&>(out);
+      out = ::__ycxx::__detail::__fmt_put<__charT>(static_cast<_Out&&>(out),
+                                           n.__rest[i] == '.' ? __np->decimal_point : static_cast<__charT>(n.__rest[i]));
+    return static_cast<_Out&&>(out);
   };
-  const std::size_t at = n.zeros_at < n.nrest ? n.zeros_at : n.nrest;
-  out = put_rest(0, at);
-  if (n.zeros != 0) {
-    const charT z = charT('0');
-    out = ::ycxx::detail::fmt_put_n<charT>(static_cast<Out&&>(out), n.zeros, &z, 1);
+  const std::size_t at = n.__zeros_at < n.__nrest ? n.__zeros_at : n.__nrest;
+  out = __put_rest(0, at);
+  if (n.__zeros != 0) {
+    const __charT __z = __charT('0');
+    out = ::__ycxx::__detail::__fmt_put_n<__charT>(static_cast<_Out&&>(out), n.__zeros, &__z, 1);
   }
-  out = put_rest(at, n.nrest);
-  return ::ycxx::detail::fmt_put_n<charT>(static_cast<Out&&>(out), after, s.fill, s.fill_len);
+  out = __put_rest(at, n.__nrest);
+  return ::__ycxx::__detail::__fmt_put_n<__charT>(static_cast<_Out&&>(out), __after, s.fill, s.__fill_len);
 }
 
 // An integer with an integer presentation type (Table 107), U unsigned.
-template <class charT, class U, class Context>
-constexpr typename Context::iterator fmt_write_integer(Context& ctx, U magnitude, bool negative,
-                                                       const fmt_spec<charT>& s) {
-  [[indeterminate]] char buf[sizeof(U) * 8 + 1];
-  char* const end = buf + sizeof(buf);
-  if (s.width_kind == fmt_dyn::none && s.width == 0 && !s.localized && (s.type == 0 || s.type == 'd') &&
-      s.sign == fmt_sign::none) {
+template <class __charT, class _Up, class _Context>
+constexpr typename _Context::iterator __fmt_write_integer(_Context& __ctx, _Up __magnitude, bool __negative,
+                                                       const __fmt_spec<__charT>& s) {
+  [[indeterminate]] char __buf[sizeof(_Up) * 8 + 1];
+  char* const end = __buf + sizeof(__buf);
+  if (s.__width_kind == __fmt_dyn::none && s.width == 0 && !s.__localized && (s.type == 0 || s.type == 'd') &&
+      s.sign == __fmt_sign::none) {
     // The common "{}": the digits and a '-', nothing to pad or group.
-    char* first = ::ycxx::detail::charconv_write_unsigned(end, magnitude, 10);
-    if (negative)
+    char* first = ::__ycxx::__detail::__charconv_write_unsigned(end, __magnitude, 10);
+    if (__negative)
       *--first = '-';
-    return ::ycxx::detail::fmt_put_ascii<charT>(ctx.out(), first, static_cast<std::size_t>(end - first));
+    return ::__ycxx::__detail::__fmt_put_ascii<__charT>(__ctx.out(), first, static_cast<std::size_t>(end - first));
   }
-  const std::size_t width = ::ycxx::detail::fmt_width(s, ctx);
+  const std::size_t width = ::__ycxx::__detail::__fmt_width(s, __ctx);
   unsigned base = 10;
-  fmt_number n;
+  __fmt_number n;
   switch (s.type) {
   case 'b': base = 2, n.prefix = "0b"; break;
   case 'B': base = 2, n.prefix = "0B"; break;
-  case 'o': base = 8, n.prefix = magnitude != 0 ? "0" : ""; break;
+  case 'o': base = 8, n.prefix = __magnitude != 0 ? "0" : ""; break;
   case 'x': base = 16, n.prefix = "0x"; break;
   case 'X': base = 16, n.prefix = "0X"; break;
   default: break;
   }
-  if (s.alt)
-    n.prefix_len = n.prefix[0] == 0 ? 0 : n.prefix[1] == 0 ? 1 : 2;
-  char* const first = ::ycxx::detail::charconv_write_unsigned(end, magnitude, base);
+  if (s.__alt)
+    n.__prefix_len = n.prefix[0] == 0 ? 0 : n.prefix[1] == 0 ? 1 : 2;
+  char* const first = ::__ycxx::__detail::__charconv_write_unsigned(end, __magnitude, base);
   if (s.type == 'X')
-    for (char* q = first; q != end; ++q)
-      if (*q >= 'a' && *q <= 'f')
-        *q = static_cast<char>(*q - 'a' + 'A');
-  n.sign = negative ? '-' : s.sign == fmt_sign::plus ? '+' : s.sign == fmt_sign::space ? ' ' : 0;
+    for (char* __q = first; __q != end; ++__q)
+      if (*__q >= 'a' && *__q <= 'f')
+        *__q = static_cast<char>(*__q - 'a' + 'A');
+  n.sign = __negative ? '-' : s.sign == __fmt_sign::plus ? '+' : s.sign == __fmt_sign::space ? ' ' : 0;
   n.digits = first;
-  n.ndigits = static_cast<std::size_t>(end - first);
-  if (s.localized) {
-    const fmt_numpunct<charT> np = ::ycxx::detail::fmt_get_numpunct<charT>(ctx);
-    return ::ycxx::detail::fmt_write_number<charT>(ctx.out(), s, width, n, &np);
+  n.__ndigits = static_cast<std::size_t>(end - first);
+  if (s.__localized) {
+    const __fmt_numpunct<__charT> __np = ::__ycxx::__detail::__fmt_get_numpunct<__charT>(__ctx);
+    return ::__ycxx::__detail::__fmt_write_number<__charT>(__ctx.out(), s, width, n, &__np);
   }
-  return ::ycxx::detail::fmt_write_number<charT>(ctx.out(), s, width, n, static_cast<const fmt_numpunct<charT>*>(nullptr));
+  return ::__ycxx::__detail::__fmt_write_number<__charT>(__ctx.out(), s, width, n, static_cast<const __fmt_numpunct<__charT>*>(nullptr));
 }
 
 // A character with presentation c (or an integer with type c, after the range check).
-template <class charT, class Context>
-constexpr typename Context::iterator fmt_write_char_value(Context& ctx, charT c, const fmt_spec<charT>& s) {
-  const std::size_t width = ::ycxx::detail::fmt_width(s, ctx);
-  const std::size_t est = width == 0 ? 0 : ::ycxx::detail::uni::width(&c, 1);
-  return ::ycxx::detail::fmt_write_padded<charT>(ctx.out(), s, fmt_align::left, width, est, &c, 1);
+template <class __charT, class _Context>
+constexpr typename _Context::iterator __fmt_write_char_value(_Context& __ctx, __charT c, const __fmt_spec<__charT>& s) {
+  const std::size_t width = ::__ycxx::__detail::__fmt_width(s, __ctx);
+  const std::size_t __est = width == 0 ? 0 : ::__ycxx::__detail::__uni::width(&c, 1);
+  return ::__ycxx::__detail::__fmt_write_padded<__charT>(__ctx.out(), s, __fmt_align::left, width, __est, &c, 1);
 }
 
 // Whether an integer is in the range of charT ([format.string.std] Table 107, type c).
-template <class charT, class T>
-constexpr bool fmt_fits_char(T v) noexcept {
-  using UT = std::make_unsigned_t<T>;
-  using UC = std::make_unsigned_t<charT>;
-  if constexpr (std::is_signed_v<T>) {
-    if (v < 0) {
-      if constexpr (!std::is_signed_v<charT>)
+template <class __charT, class _Tp>
+constexpr bool __fmt_fits_char(_Tp __v) noexcept {
+  using _UT = std::make_unsigned_t<_Tp>;
+  using _UC = std::make_unsigned_t<__charT>;
+  if constexpr (std::is_signed_v<_Tp>) {
+    if (__v < 0) {
+      if constexpr (!std::is_signed_v<__charT>)
         return false;
-      else if constexpr (sizeof(T) <= sizeof(charT))
+      else if constexpr (sizeof(_Tp) <= sizeof(__charT))
         return true;
       else
-        return v >= static_cast<T>(std::numeric_limits<charT>::min());
+        return __v >= static_cast<_Tp>(std::numeric_limits<__charT>::min());
     }
   }
-  const UC m = static_cast<UC>(std::numeric_limits<charT>::max());
-  if constexpr (sizeof(UT) >= sizeof(UC))
-    return static_cast<UT>(v) <= static_cast<UT>(m);
+  const _UC m = static_cast<_UC>(std::numeric_limits<__charT>::max());
+  if constexpr (sizeof(_UT) >= sizeof(_UC))
+    return static_cast<_UT>(__v) <= static_cast<_UT>(m);
   else
-    return static_cast<UC>(static_cast<UT>(v)) <= m;
+    return static_cast<_UC>(static_cast<_UT>(__v)) <= m;
 }
 
-template <class charT, class T, class Context>
-constexpr typename Context::iterator fmt_format_int(Context& ctx, T value, const fmt_spec<charT>& s) {
-  using U = std::make_unsigned_t<T>;
+template <class __charT, class _Tp, class _Context>
+constexpr typename _Context::iterator __fmt_format_int(_Context& __ctx, _Tp value, const __fmt_spec<__charT>& s) {
+  using _Up = std::make_unsigned_t<_Tp>;
   if (s.type == 'c') {
-    if (!::ycxx::detail::fmt_fits_char<charT>(value))
-      ::ycxx::detail::throw_format_error("std::format: the integer is not representable in the character type");
-    return ::ycxx::detail::fmt_write_char_value(ctx, static_cast<charT>(value), s);
+    if (!::__ycxx::__detail::__fmt_fits_char<__charT>(value))
+      ::__ycxx::__detail::__throw_format_error("std::format: the integer is not representable in the character type");
+    return ::__ycxx::__detail::__fmt_write_char_value(__ctx, static_cast<__charT>(value), s);
   }
-  if constexpr (std::is_signed_v<T>) {
-    const bool neg = value < 0;
-    const U mag = neg ? static_cast<U>(U(0) - static_cast<U>(value)) : static_cast<U>(value);
-    return ::ycxx::detail::fmt_write_integer(ctx, mag, neg, s);
+  if constexpr (std::is_signed_v<_Tp>) {
+    const bool __neg = value < 0;
+    const _Up __mag = __neg ? static_cast<_Up>(_Up(0) - static_cast<_Up>(value)) : static_cast<_Up>(value);
+    return ::__ycxx::__detail::__fmt_write_integer(__ctx, __mag, __neg, s);
   } else {
-    return ::ycxx::detail::fmt_write_integer(ctx, static_cast<U>(value), false, s);
+    return ::__ycxx::__detail::__fmt_write_integer(__ctx, static_cast<_Up>(value), false, s);
   }
 }
 
 // ---- characters, strings, bool and pointers ---------------------------------------------------
 
 // The escaped representation of [p, p + n) appended to buf.
-template <class charT>
-constexpr void fmt_escape_to(ycxx::adl_free::fmt_buf<charT>& buf, const charT* p, std::size_t n, bool is_char) {
-  ::ycxx::detail::uni::escape(p, n, is_char, [&buf](const charT* q, std::size_t k) { buf.append(q, k); });
+template <class __charT>
+constexpr void __fmt_escape_to(__ycxx::__adl_free::__fmt_buf<__charT>& __buf, const __charT* p, std::size_t n, bool __is_char) {
+  ::__ycxx::__detail::__uni::__escape(p, n, __is_char, [&__buf](const __charT* __q, std::size_t k) { __buf.append(__q, k); });
 }
 
 // A string with type none, s or ? ([format.string.std]/15, Table 106).
-template <class charT, class Context>
-constexpr typename Context::iterator fmt_write_string(Context& ctx, const charT* p, std::size_t n,
-                                                      const fmt_spec<charT>& s, bool is_char) {
-  const std::size_t width = ::ycxx::detail::fmt_width(s, ctx);
-  const long long prec = ::ycxx::detail::fmt_precision(s, ctx);
+template <class __charT, class _Context>
+constexpr typename _Context::iterator __fmt_write_string(_Context& __ctx, const __charT* p, std::size_t n,
+                                                      const __fmt_spec<__charT>& s, bool __is_char) {
+  const std::size_t width = ::__ycxx::__detail::__fmt_width(s, __ctx);
+  const long long __prec = ::__ycxx::__detail::__fmt_precision(s, __ctx);
   if (s.type == '?') {
-    [[indeterminate]] fmt_dynbuf<charT> esc;
-    ::ycxx::detail::fmt_escape_to(esc, p, n, is_char);
-    const uni::width_result r = ::ycxx::detail::uni::width_prefix(
-        esc.data(), esc.size(), prec < 0 ? static_cast<std::size_t>(-1) : static_cast<std::size_t>(prec));
-    return ::ycxx::detail::fmt_write_padded<charT>(ctx.out(), s, fmt_align::left, width, r.width, esc.data(), r.units);
+    [[indeterminate]] __fmt_dynbuf<__charT> __esc;
+    ::__ycxx::__detail::__fmt_escape_to(__esc, p, n, __is_char);
+    const __uni::__width_result r = ::__ycxx::__detail::__uni::__width_prefix(
+        __esc.data(), __esc.size(), __prec < 0 ? static_cast<std::size_t>(-1) : static_cast<std::size_t>(__prec));
+    return ::__ycxx::__detail::__fmt_write_padded<__charT>(__ctx.out(), s, __fmt_align::left, width, r.width, __esc.data(), r.__units);
   }
-  if (prec < 0 && width == 0)
-    return ::ycxx::detail::fmt_put<charT>(ctx.out(), p, n);
-  const uni::width_result r =
-      ::ycxx::detail::uni::width_prefix(p, n, prec < 0 ? static_cast<std::size_t>(-1) : static_cast<std::size_t>(prec));
-  return ::ycxx::detail::fmt_write_padded<charT>(ctx.out(), s, fmt_align::left, width, r.width, p, r.units);
+  if (__prec < 0 && width == 0)
+    return ::__ycxx::__detail::__fmt_put<__charT>(__ctx.out(), p, n);
+  const __uni::__width_result r =
+      ::__ycxx::__detail::__uni::__width_prefix(p, n, __prec < 0 ? static_cast<std::size_t>(-1) : static_cast<std::size_t>(__prec));
+  return ::__ycxx::__detail::__fmt_write_padded<__charT>(__ctx.out(), s, __fmt_align::left, width, r.width, p, r.__units);
 }
 
-template <class charT, class Context>
-constexpr typename Context::iterator fmt_format_char(Context& ctx, charT c, const fmt_spec<charT>& s) {
+template <class __charT, class _Context>
+constexpr typename _Context::iterator __fmt_format_char(_Context& __ctx, __charT c, const __fmt_spec<__charT>& s) {
   switch (s.type) {
   case 0:
-  case 'c': return ::ycxx::detail::fmt_write_char_value(ctx, c, s);
-  case '?': return ::ycxx::detail::fmt_write_string(ctx, &c, 1, s, true);
+  case 'c': return ::__ycxx::__detail::__fmt_write_char_value(__ctx, c, s);
+  case '?': return ::__ycxx::__detail::__fmt_write_string(__ctx, &c, 1, s, true);
   default:
-    using U = std::make_unsigned_t<charT>;
-    return ::ycxx::detail::fmt_write_integer(ctx, static_cast<U>(c), false, s);
+    using _Up = std::make_unsigned_t<__charT>;
+    return ::__ycxx::__detail::__fmt_write_integer(__ctx, static_cast<_Up>(c), false, s);
   }
 }
 
-template <class charT, class Context>
-constexpr typename Context::iterator fmt_format_bool(Context& ctx, bool b, const fmt_spec<charT>& s) {
+template <class __charT, class _Context>
+constexpr typename _Context::iterator __fmt_format_bool(_Context& __ctx, bool b, const __fmt_spec<__charT>& s) {
   if (s.type != 0 && s.type != 's')
-    return ::ycxx::detail::fmt_write_integer(ctx, static_cast<unsigned char>(b), false, s);
-  const std::size_t width = ::ycxx::detail::fmt_width(s, ctx);
-  if (s.localized) {
-    const std::basic_string<charT> name = ::ycxx::detail::fmt_get_boolname<charT>(ctx, b);
-    const std::size_t est = width == 0 ? 0 : ::ycxx::detail::uni::width(name.data(), name.size());
-    return ::ycxx::detail::fmt_write_padded<charT>(ctx.out(), s, fmt_align::left, width, est, name.data(), name.size());
+    return ::__ycxx::__detail::__fmt_write_integer(__ctx, static_cast<unsigned char>(b), false, s);
+  const std::size_t width = ::__ycxx::__detail::__fmt_width(s, __ctx);
+  if (s.__localized) {
+    const std::basic_string<__charT> name = ::__ycxx::__detail::__fmt_get_boolname<__charT>(__ctx, b);
+    const std::size_t __est = width == 0 ? 0 : ::__ycxx::__detail::__uni::width(name.data(), name.size());
+    return ::__ycxx::__detail::__fmt_write_padded<__charT>(__ctx.out(), s, __fmt_align::left, width, __est, name.data(), name.size());
   }
-  const std::basic_string_view<charT> name =
-      b ? ::ycxx::detail::fmt_lit<charT>("true", L"true") : ::ycxx::detail::fmt_lit<charT>("false", L"false");
-  return ::ycxx::detail::fmt_write_padded<charT>(ctx.out(), s, fmt_align::left, width, name.size(), name.data(),
+  const std::basic_string_view<__charT> name =
+      b ? ::__ycxx::__detail::__fmt_lit<__charT>("true", L"true") : ::__ycxx::__detail::__fmt_lit<__charT>("false", L"false");
+  return ::__ycxx::__detail::__fmt_write_padded<__charT>(__ctx.out(), s, __fmt_align::left, width, name.size(), name.data(),
                                                  name.size());
 }
 
 // Pointers: to_chars(reinterpret_cast<uintptr_t>(value), 16) with a 0x prefix (Table 111). A
 // null pointer is formatted without the cast, so nullptr_t is constexpr-enabled.
-template <class charT, class Context>
-constexpr typename Context::iterator fmt_format_pointer(Context& ctx, const void* p, const fmt_spec<charT>& s) {
-  std::uintptr_t v = 0;
+template <class __charT, class _Context>
+constexpr typename _Context::iterator __fmt_format_pointer(_Context& __ctx, const void* p, const __fmt_spec<__charT>& s) {
+  std::uintptr_t __v = 0;
   if (p != nullptr)
-    v = reinterpret_cast<std::uintptr_t>(p);
-  fmt_spec<charT> t = s;
-  t.alt = true;
+    __v = reinterpret_cast<std::uintptr_t>(p);
+  __fmt_spec<__charT> t = s;
+  t.__alt = true;
   t.type = s.type == 'P' ? 'X' : 'x';
-  return ::ycxx::detail::fmt_write_integer(ctx, v, false, t);
+  return ::__ycxx::__detail::__fmt_write_integer(__ctx, __v, false, t);
 }
 
 // ---- floating point ----------------------------------------------------------------------------
 
 // The number of integer digits of the largest finite T, plus slack.
-template <class T>
-inline constexpr std::size_t fmt_max_int_digits =
-    static_cast<std::size_t>(ycxx::detail::fp_format<T>.max_exp) * 30103 / 100000 + 3;
+template <class _Tp>
+inline constexpr std::size_t __fmt_max_int_digits =
+    static_cast<std::size_t>(__ycxx::__detail::__fp_format<_Tp>.__max_exp) * 30103 / 100000 + 3;
 
 // Heap storage for a floating-point conversion that does not fit in the local buffer.
-struct fmt_heap_chars {
+struct __fmt_heap_chars {
   char* p = nullptr;
   std::size_t n = 0;
-  fmt_heap_chars() = default;
-  fmt_heap_chars(const fmt_heap_chars&) = delete;
-  fmt_heap_chars& operator=(const fmt_heap_chars&) = delete;
-  ~fmt_heap_chars() {
+  __fmt_heap_chars() = default;
+  __fmt_heap_chars(const __fmt_heap_chars&) = delete;
+  __fmt_heap_chars& operator=(const __fmt_heap_chars&) = delete;
+  ~__fmt_heap_chars() {
     if (p != nullptr)
       std::allocator<char>().deallocate(p, n);
   }
@@ -1338,385 +1338,385 @@ struct fmt_heap_chars {
 };
 
 // The exponent of a to_chars scientific result "d.ddde+XX".
-constexpr int fmt_sci_exponent(const char* first, const char* last) noexcept {
+constexpr int __fmt_sci_exponent(const char* first, const char* last) noexcept {
   const char* e = last;
   while (e != first && e[-1] != 'e')
     --e;
-  bool neg = *e == '-';
-  int x = 0;
+  bool __neg = *e == '-';
+  int __x = 0;
   for (++e; e != last; ++e)
-    x = x * 10 + (*e - '0');
-  return neg ? -x : x;
+    __x = __x * 10 + (*e - '0');
+  return __neg ? -__x : __x;
 }
 
 // The largest precision a floating-point conversion is computed with: more than the digits of
 // the exact decimal (or hexadecimal) value of any finite value of the supported types (16,494
 // fractional digits for the smallest binary128 subnormal), so every digit beyond it is a 0 (and
 // the e/f choice of g is the same as with the full precision).
-inline constexpr long long fmt_float_prec_cap = 1 << 15;
+inline constexpr long long __fmt_float_prec_cap = 1 << 15;
 
-template <class charT, class T, class Context>
-typename Context::iterator fmt_format_float(Context& ctx, T value, const fmt_spec<charT>& s) {
-  const std::size_t width = ::ycxx::detail::fmt_width(s, ctx);
-  long long prec = ::ycxx::detail::fmt_precision(s, ctx);
-  std::chars_format f = std::chars_format::general;
-  bool shortest = false;
+template <class __charT, class _Tp, class _Context>
+typename _Context::iterator __fmt_format_float(_Context& __ctx, _Tp value, const __fmt_spec<__charT>& s) {
+  const std::size_t width = ::__ycxx::__detail::__fmt_width(s, __ctx);
+  long long __prec = ::__ycxx::__detail::__fmt_precision(s, __ctx);
+  std::chars_format __f = std::chars_format::general;
+  bool __shortest = false;
   switch (s.type) {
-  case 'a': case 'A': f = std::chars_format::hex; break;
-  case 'e': case 'E': f = std::chars_format::scientific; prec = prec < 0 ? 6 : prec; break;
-  case 'f': case 'F': f = std::chars_format::fixed; prec = prec < 0 ? 6 : prec; break;
-  case 'g': case 'G': f = std::chars_format::general; prec = prec < 0 ? 6 : prec; break;
-  default: shortest = prec < 0; break;
+  case 'a': case 'A': __f = std::chars_format::hex; break;
+  case 'e': case 'E': __f = std::chars_format::scientific; __prec = __prec < 0 ? 6 : __prec; break;
+  case 'f': case 'F': __f = std::chars_format::fixed; __prec = __prec < 0 ? 6 : __prec; break;
+  case 'g': case 'G': __f = std::chars_format::general; __prec = __prec < 0 ? 6 : __prec; break;
+  default: __shortest = __prec < 0; break;
   }
   // A precision beyond the cap: computed with the cap, the remaining zeros appended to the
   // fraction (types a, e, f and #g keep them; g and none would remove them).
-  std::size_t extra_zeros = 0;
-  if (prec > fmt_float_prec_cap) {
-    if (s.type != 0 && ((s.type != 'g' && s.type != 'G') || s.alt))
-      extra_zeros = static_cast<std::size_t>(prec - fmt_float_prec_cap);
-    prec = fmt_float_prec_cap;
+  std::size_t __extra_zeros = 0;
+  if (__prec > __fmt_float_prec_cap) {
+    if (s.type != 0 && ((s.type != 'g' && s.type != 'G') || s.__alt))
+      __extra_zeros = static_cast<std::size_t>(__prec - __fmt_float_prec_cap);
+    __prec = __fmt_float_prec_cap;
   }
-  const std::size_t need =
-      64 + (prec > 0 ? static_cast<std::size_t>(prec) : 0) + (f == std::chars_format::fixed ? fmt_max_int_digits<T> : 0);
-  [[indeterminate]] char local[256];
-  fmt_heap_chars heap;
-  char* const buf = need <= sizeof(local) ? local : heap.get(need);
-  char* const bufend = buf + need - 1; // one spare character for the '.' of the alternate form
+  const std::size_t __need =
+      64 + (__prec > 0 ? static_cast<std::size_t>(__prec) : 0) + (__f == std::chars_format::fixed ? __fmt_max_int_digits<_Tp> : 0);
+  [[indeterminate]] char __y_local[256];
+  __fmt_heap_chars __heap;
+  char* const __buf = __need <= sizeof(__y_local) ? __y_local : __heap.get(__need);
+  char* const __bufend = __buf + __need - 1; // one spare character for the '.' of the alternate form
   std::to_chars_result r;
-  if (shortest) {
-    r = ::ycxx::detail::to_chars_shortest(buf, bufend, value);
-  } else if ((s.type == 'g' || s.type == 'G') && s.alt) {
+  if (__shortest) {
+    r = ::__ycxx::__detail::__to_chars_shortest(__buf, __bufend, value);
+  } else if ((s.type == 'g' || s.type == 'G') && s.__alt) {
     // %#g: trailing zeros are kept ([format.string.std]/7, C 7.23.6.1): P significant digits,
     // fixed notation when the exponent X of the scientific form satisfies P > X >= -4. (Type
     // none with a precision is a to_chars general conversion, not g: its zeros are removed.)
-    const int p = prec == 0 ? 1 : static_cast<int>(prec);
-    r = ::ycxx::detail::to_chars_float(buf, bufend, value, std::chars_format::scientific, p - 1);
-    const char c = *buf == '-' ? buf[1] : buf[0];
+    const int p = __prec == 0 ? 1 : static_cast<int>(__prec);
+    r = ::__ycxx::__detail::__to_chars_float(__buf, __bufend, value, std::chars_format::scientific, p - 1);
+    const char c = *__buf == '-' ? __buf[1] : __buf[0];
     if (c >= '0' && c <= '9') {
-      const int x = ::ycxx::detail::fmt_sci_exponent(buf, r.ptr);
-      if (p > x && x >= -4)
-        r = ::ycxx::detail::to_chars_float(buf, bufend, value, std::chars_format::fixed, p - 1 - x);
+      const int __x = ::__ycxx::__detail::__fmt_sci_exponent(__buf, r.ptr);
+      if (p > __x && __x >= -4)
+        r = ::__ycxx::__detail::__to_chars_float(__buf, __bufend, value, std::chars_format::fixed, p - 1 - __x);
     }
-  } else if (prec < 0) {
-    r = ::ycxx::detail::to_chars_float(buf, bufend, value, f);
+  } else if (__prec < 0) {
+    r = ::__ycxx::__detail::__to_chars_float(__buf, __bufend, value, __f);
   } else {
-    r = ::ycxx::detail::to_chars_float(buf, bufend, value, f, static_cast<int>(prec));
+    r = ::__ycxx::__detail::__to_chars_float(__buf, __bufend, value, __f, static_cast<int>(__prec));
   }
-  char* b = buf;
+  char* b = __buf;
   char* e = r.ptr;
-  fmt_number n;
+  __fmt_number n;
   if (*b == '-') {
     n.sign = '-';
     ++b;
   } else {
-    n.sign = s.sign == fmt_sign::plus ? '+' : s.sign == fmt_sign::space ? ' ' : 0;
+    n.sign = s.sign == __fmt_sign::plus ? '+' : s.sign == __fmt_sign::space ? ' ' : 0;
   }
-  const bool finite = *b >= '0' && *b <= '9';
+  const bool __finite = *b >= '0' && *b <= '9';
   if (s.type == 'A' || s.type == 'E' || s.type == 'F' || s.type == 'G')
-    for (char* q = b; q != e; ++q)
-      if (*q >= 'a' && *q <= 'z')
-        *q = static_cast<char>(*q - 'a' + 'A');
-  if (s.alt && finite) {
+    for (char* __q = b; __q != e; ++__q)
+      if (*__q >= 'a' && *__q <= 'z')
+        *__q = static_cast<char>(*__q - 'a' + 'A');
+  if (s.__alt && __finite) {
     char* dot = b;
     while (dot != e && *dot != '.' && *dot != 'e' && *dot != 'E' && *dot != 'p' && *dot != 'P')
       ++dot;
     if (dot == e || *dot != '.') {
-      for (char* q = e; q != dot; --q)
-        *q = q[-1];
+      for (char* __q = e; __q != dot; --__q)
+        *__q = __q[-1];
       *dot = '.';
       ++e;
     }
   }
-  n.zero_ok = finite;
+  n.__zero_ok = __finite;
   n.digits = b;
   char* d = b;
-  if (finite)
+  if (__finite)
     while (d != e && *d >= '0' && *d <= '9')
       ++d;
   else
     d = e;
-  n.ndigits = static_cast<std::size_t>(d - b);
-  n.rest = d;
-  n.nrest = static_cast<std::size_t>(e - d);
-  if (finite && extra_zeros != 0) {
-    n.zeros = extra_zeros;
-    while (n.zeros_at != n.nrest && d[n.zeros_at] != 'e' && d[n.zeros_at] != 'E' && d[n.zeros_at] != 'p' &&
-           d[n.zeros_at] != 'P')
-      ++n.zeros_at;
+  n.__ndigits = static_cast<std::size_t>(d - b);
+  n.__rest = d;
+  n.__nrest = static_cast<std::size_t>(e - d);
+  if (__finite && __extra_zeros != 0) {
+    n.__zeros = __extra_zeros;
+    while (n.__zeros_at != n.__nrest && d[n.__zeros_at] != 'e' && d[n.__zeros_at] != 'E' && d[n.__zeros_at] != 'p' &&
+           d[n.__zeros_at] != 'P')
+      ++n.__zeros_at;
   }
-  if (s.localized && finite) {
-    const fmt_numpunct<charT> np = ::ycxx::detail::fmt_get_numpunct<charT>(ctx);
-    return ::ycxx::detail::fmt_write_number<charT>(ctx.out(), s, width, n, &np);
+  if (s.__localized && __finite) {
+    const __fmt_numpunct<__charT> __np = ::__ycxx::__detail::__fmt_get_numpunct<__charT>(__ctx);
+    return ::__ycxx::__detail::__fmt_write_number<__charT>(__ctx.out(), s, width, n, &__np);
   }
-  return ::ycxx::detail::fmt_write_number<charT>(ctx.out(), s, width, n, static_cast<const fmt_numpunct<charT>*>(nullptr));
+  return ::__ycxx::__detail::__fmt_write_number<__charT>(__ctx.out(), s, width, n, static_cast<const __fmt_numpunct<__charT>*>(nullptr));
 }
 
 // ---- the replacement-field scanner ([format.string.general]) ------------------------------------
 
 // Calls text(p, n) for literal text and field(id) for each replacement field, with pc at the
 // field's format-spec; field leaves pc at the closing '}'.
-template <class charT, class Text, class Field>
-constexpr void fmt_scan(std::basic_string_view<charT> fmt, std::basic_format_parse_context<charT>& pc, Text&& text,
-                        Field&& field) {
-  const charT* p = fmt.data();
-  const charT* const e = p + fmt.size();
+template <class __charT, class _Text, class _Field>
+constexpr void __fmt_scan(std::basic_string_view<__charT> __fmt, std::basic_format_parse_context<__charT>& __pc, _Text&& __text,
+                        _Field&& field) {
+  const __charT* p = __fmt.data();
+  const __charT* const e = p + __fmt.size();
   while (p != e) {
-    const charT* q = p;
-    while (q != e && *q != charT('{') && *q != charT('}'))
-      ++q;
-    if (q != p)
-      text(p, static_cast<std::size_t>(q - p));
-    if (q == e)
+    const __charT* __q = p;
+    while (__q != e && *__q != __charT('{') && *__q != __charT('}'))
+      ++__q;
+    if (__q != p)
+      __text(p, static_cast<std::size_t>(__q - p));
+    if (__q == e)
       return;
-    if (*q == charT('}')) {
-      if (q + 1 == e || q[1] != charT('}'))
-        ::ycxx::detail::throw_format_error("std::format: unmatched '}' in the format string");
-      text(q, 1);
-      p = q + 2;
+    if (*__q == __charT('}')) {
+      if (__q + 1 == e || __q[1] != __charT('}'))
+        ::__ycxx::__detail::__throw_format_error("std::format: unmatched '}' in the format string");
+      __text(__q, 1);
+      p = __q + 2;
       continue;
     }
-    if (++q == e)
-      ::ycxx::detail::throw_format_error("std::format: unmatched '{' in the format string");
-    if (*q == charT('{')) {
-      text(q, 1);
-      p = q + 1;
+    if (++__q == e)
+      ::__ycxx::__detail::__throw_format_error("std::format: unmatched '{' in the format string");
+    if (*__q == __charT('{')) {
+      __text(__q, 1);
+      p = __q + 1;
       continue;
     }
     std::size_t id;
-    if (*q == charT('}') || *q == charT(':')) {
-      id = pc.next_arg_id();
+    if (*__q == __charT('}') || *__q == __charT(':')) {
+      id = __pc.next_arg_id();
     } else {
-      q = ::ycxx::detail::fmt_parse_arg_id(q, e, id);
-      pc.check_arg_id(id);
+      __q = ::__ycxx::__detail::__fmt_parse_arg_id(__q, e, id);
+      __pc.check_arg_id(id);
     }
-    if (q == e)
-      ::ycxx::detail::throw_format_error("std::format: unmatched '{' in the format string");
-    if (*q == charT(':'))
-      ++q;
-    else if (*q != charT('}'))
-      ::ycxx::detail::throw_format_error("std::format: invalid replacement field");
-    pc.advance_to(q);
+    if (__q == e)
+      ::__ycxx::__detail::__throw_format_error("std::format: unmatched '{' in the format string");
+    if (*__q == __charT(':'))
+      ++__q;
+    else if (*__q != __charT('}'))
+      ::__ycxx::__detail::__throw_format_error("std::format: invalid replacement field");
+    __pc.advance_to(__q);
     field(id);
-    q = pc.begin();
-    if (q == e || *q != charT('}'))
-      ::ycxx::detail::throw_format_error("std::format: unterminated replacement field");
-    p = q + 1;
+    __q = __pc.begin();
+    if (__q == e || *__q != __charT('}'))
+      ::__ycxx::__detail::__throw_format_error("std::format: unterminated replacement field");
+    p = __q + 1;
   }
 }
 
 // Formats one argument of a built-in kind: parses its std-format-spec (unless empty) and
 // writes it.
-template <fmt_cat Cat, class charT, class F>
-constexpr void fmt_builtin(std::basic_format_parse_context<charT>& pc, fmt_context<charT>& ctx, F&& write) {
-  fmt_spec<charT> s;
-  if (pc.begin() != pc.end() && *pc.begin() != charT('}'))
-    pc.advance_to(::ycxx::detail::fmt_parse_spec(pc, s, Cat));
-  ctx.advance_to(write(s));
+template <__fmt_cat _Cat, class __charT, class _Fp>
+constexpr void __fmt_builtin(std::basic_format_parse_context<__charT>& __pc, __fmt_context<__charT>& __ctx, _Fp&& write) {
+  __fmt_spec<__charT> s;
+  if (__pc.begin() != __pc.end() && *__pc.begin() != __charT('}'))
+    __pc.advance_to(::__ycxx::__detail::__fmt_parse_spec(__pc, s, _Cat));
+  __ctx.advance_to(write(s));
 }
 
 // The formatting engine: vformat_to into buf.
-template <class charT>
-constexpr void fmt_vformat(ycxx::adl_free::fmt_buf<charT>& buf, std::basic_string_view<charT> fmt, fmt_args<charT> args,
-                           const std::locale* loc) {
-  auto pc = fmt_access::parse_context<charT>(fmt, fmt_access::size(args), nullptr);
-  auto ctx = fmt_access::context<charT>(buf, args, loc);
-  ::ycxx::detail::fmt_scan(fmt, pc, [&buf](const charT* p, std::size_t n) { buf.append(p, n); },
+template <class __charT>
+constexpr void __fmt_vformat(__ycxx::__adl_free::__fmt_buf<__charT>& __buf, std::basic_string_view<__charT> __fmt, __fmt_args<__charT> __args,
+                           const std::locale* __loc) {
+  auto __pc = __fmt_access::__parse_context<__charT>(__fmt, __fmt_access::size(__args), nullptr);
+  auto __ctx = __fmt_access::__context<__charT>(__buf, __args, __loc);
+  ::__ycxx::__detail::__fmt_scan(__fmt, __pc, [&__buf](const __charT* p, std::size_t n) { __buf.append(p, n); },
                            [&](std::size_t id) {
-    const std::basic_format_arg<fmt_context<charT>> arg = args.get(id);
-    const auto& v = fmt_access::value(arg);
-    switch (fmt_access::kind(arg)) {
-    case fmt_kind::none:
-      ::ycxx::detail::throw_format_error("std::format: argument index out of range");
-    case fmt_kind::boolean:
-      return ::ycxx::detail::fmt_builtin<fmt_cat::boolean>(pc, ctx, [&](const fmt_spec<charT>& s) { return ::ycxx::detail::fmt_format_bool(ctx, v.b, s); });
-    case fmt_kind::character:
-      return ::ycxx::detail::fmt_builtin<fmt_cat::character>(pc, ctx, [&](const fmt_spec<charT>& s) { return ::ycxx::detail::fmt_format_char(ctx, v.c, s); });
-    case fmt_kind::int_:
-      return ::ycxx::detail::fmt_builtin<fmt_cat::integer>(pc, ctx, [&](const fmt_spec<charT>& s) { return ::ycxx::detail::fmt_format_int(ctx, v.i, s); });
-    case fmt_kind::uint_:
-      return ::ycxx::detail::fmt_builtin<fmt_cat::integer>(pc, ctx, [&](const fmt_spec<charT>& s) { return ::ycxx::detail::fmt_format_int(ctx, v.u, s); });
-    case fmt_kind::llong:
-      return ::ycxx::detail::fmt_builtin<fmt_cat::integer>(pc, ctx, [&](const fmt_spec<charT>& s) { return ::ycxx::detail::fmt_format_int(ctx, v.ll, s); });
-    case fmt_kind::ullong:
-      return ::ycxx::detail::fmt_builtin<fmt_cat::integer>(pc, ctx, [&](const fmt_spec<charT>& s) { return ::ycxx::detail::fmt_format_int(ctx, v.ull, s); });
-    case fmt_kind::float_:
-      return ::ycxx::detail::fmt_builtin<fmt_cat::floating>(pc, ctx, [&](const fmt_spec<charT>& s) { return ::ycxx::detail::fmt_format_float(ctx, v.f, s); });
-    case fmt_kind::double_:
-      return ::ycxx::detail::fmt_builtin<fmt_cat::floating>(pc, ctx, [&](const fmt_spec<charT>& s) { return ::ycxx::detail::fmt_format_float(ctx, v.d, s); });
-    case fmt_kind::ldouble:
-      return ::ycxx::detail::fmt_builtin<fmt_cat::floating>(pc, ctx, [&](const fmt_spec<charT>& s) { return ::ycxx::detail::fmt_format_float(ctx, v.ld, s); });
-    case fmt_kind::cstring:
-      return ::ycxx::detail::fmt_builtin<fmt_cat::string>(pc, ctx, [&](const fmt_spec<charT>& s) {
-        return ::ycxx::detail::fmt_write_string(ctx, v.s, std::char_traits<charT>::length(v.s), s);
+    const std::basic_format_arg<__fmt_context<__charT>> arg = __args.get(id);
+    const auto& __v = __fmt_access::value(arg);
+    switch (__fmt_access::kind(arg)) {
+    case __fmt_kind::none:
+      ::__ycxx::__detail::__throw_format_error("std::format: argument index out of range");
+    case __fmt_kind::__boolean:
+      return ::__ycxx::__detail::__fmt_builtin<__fmt_cat::__boolean>(__pc, __ctx, [&](const __fmt_spec<__charT>& s) { return ::__ycxx::__detail::__fmt_format_bool(__ctx, __v.b, s); });
+    case __fmt_kind::character:
+      return ::__ycxx::__detail::__fmt_builtin<__fmt_cat::character>(__pc, __ctx, [&](const __fmt_spec<__charT>& s) { return ::__ycxx::__detail::__fmt_format_char(__ctx, __v.c, s); });
+    case __fmt_kind::__int_:
+      return ::__ycxx::__detail::__fmt_builtin<__fmt_cat::__integer>(__pc, __ctx, [&](const __fmt_spec<__charT>& s) { return ::__ycxx::__detail::__fmt_format_int(__ctx, __v.i, s); });
+    case __fmt_kind::__uint_:
+      return ::__ycxx::__detail::__fmt_builtin<__fmt_cat::__integer>(__pc, __ctx, [&](const __fmt_spec<__charT>& s) { return ::__ycxx::__detail::__fmt_format_int(__ctx, __v.__u, s); });
+    case __fmt_kind::__llong:
+      return ::__ycxx::__detail::__fmt_builtin<__fmt_cat::__integer>(__pc, __ctx, [&](const __fmt_spec<__charT>& s) { return ::__ycxx::__detail::__fmt_format_int(__ctx, __v.__ll, s); });
+    case __fmt_kind::__ullong:
+      return ::__ycxx::__detail::__fmt_builtin<__fmt_cat::__integer>(__pc, __ctx, [&](const __fmt_spec<__charT>& s) { return ::__ycxx::__detail::__fmt_format_int(__ctx, __v.__ull, s); });
+    case __fmt_kind::__float_:
+      return ::__ycxx::__detail::__fmt_builtin<__fmt_cat::__floating>(__pc, __ctx, [&](const __fmt_spec<__charT>& s) { return ::__ycxx::__detail::__fmt_format_float(__ctx, __v.__f, s); });
+    case __fmt_kind::__double_:
+      return ::__ycxx::__detail::__fmt_builtin<__fmt_cat::__floating>(__pc, __ctx, [&](const __fmt_spec<__charT>& s) { return ::__ycxx::__detail::__fmt_format_float(__ctx, __v.d, s); });
+    case __fmt_kind::__ldouble:
+      return ::__ycxx::__detail::__fmt_builtin<__fmt_cat::__floating>(__pc, __ctx, [&](const __fmt_spec<__charT>& s) { return ::__ycxx::__detail::__fmt_format_float(__ctx, __v.__ld, s); });
+    case __fmt_kind::__cstring:
+      return ::__ycxx::__detail::__fmt_builtin<__fmt_cat::string>(__pc, __ctx, [&](const __fmt_spec<__charT>& s) {
+        return ::__ycxx::__detail::__fmt_write_string(__ctx, __v.s, std::char_traits<__charT>::length(__v.s), s);
       });
-    case fmt_kind::string:
-      return ::ycxx::detail::fmt_builtin<fmt_cat::string>(pc, ctx, [&](const fmt_spec<charT>& s) { return ::ycxx::detail::fmt_write_string(ctx, v.sv.data(), v.sv.size(), s); });
-    case fmt_kind::pointer:
-      return ::ycxx::detail::fmt_builtin<fmt_cat::pointer>(pc, ctx, [&](const fmt_spec<charT>& s) { return ::ycxx::detail::fmt_format_pointer(ctx, v.p, s); });
-    case fmt_kind::handle:
-      return v.h.format(pc, ctx);
+    case __fmt_kind::string:
+      return ::__ycxx::__detail::__fmt_builtin<__fmt_cat::string>(__pc, __ctx, [&](const __fmt_spec<__charT>& s) { return ::__ycxx::__detail::__fmt_write_string(__ctx, __v.sv.data(), __v.sv.size(), s); });
+    case __fmt_kind::pointer:
+      return ::__ycxx::__detail::__fmt_builtin<__fmt_cat::pointer>(__pc, __ctx, [&](const __fmt_spec<__charT>& s) { return ::__ycxx::__detail::__fmt_format_pointer(__ctx, __v.p, s); });
+    case __fmt_kind::handle:
+      return __v.h.format(__pc, __ctx);
     }
   });
 }
 
 // The compile-time check of basic_format_string ([format.fmt.string]/3).
-template <class T, class charT>
-constexpr const charT* fmt_check_parse(std::basic_format_parse_context<charT>& pc) {
-  std::formatter<T, charT> f;
-  return f.parse(pc);
+template <class _Tp, class __charT>
+constexpr const __charT* __fmt_check_parse(std::basic_format_parse_context<__charT>& __pc) {
+  std::formatter<_Tp, __charT> __f;
+  return __f.parse(__pc);
 }
-template <class charT, class... Args>
-consteval void fmt_check(std::basic_string_view<charT> fmt) {
-  constexpr bool formattable = (fmt_formattable_with<std::remove_reference_t<Args>, fmt_context<charT>> && ...);
+template <class __charT, class... _Args>
+consteval void __fmt_check(std::basic_string_view<__charT> __fmt) {
+  constexpr bool formattable = (__fmt_formattable_with<std::remove_reference_t<_Args>, __fmt_context<__charT>> && ...);
   static_assert(formattable, "std::format: an argument type has no enabled formatter (std::formattable is false)");
   if constexpr (formattable) {
-    constexpr fmt_kind kinds[] = {::ycxx::detail::fmt_kind_of<std::remove_cvref_t<Args>, charT>()..., fmt_kind::none};
-    using parse_fn = const charT* (*)(std::basic_format_parse_context<charT>&);
-    constexpr parse_fn parsers[] = {&::ycxx::detail::fmt_check_parse<std::remove_cvref_t<Args>, charT>..., nullptr};
-    auto pc = fmt_access::parse_context<charT>(fmt, sizeof...(Args), kinds);
-    ::ycxx::detail::fmt_scan(fmt, pc, [](const charT*, std::size_t) {}, [&](std::size_t id) {
-      if (id >= sizeof...(Args))
-        ::ycxx::detail::format_string_argument_index_out_of_range();
+    constexpr __fmt_kind __kinds[] = {::__ycxx::__detail::__fmt_kind_of<std::remove_cvref_t<_Args>, __charT>()..., __fmt_kind::none};
+    using __parse_fn = const __charT* (*)(std::basic_format_parse_context<__charT>&);
+    constexpr __parse_fn __parsers[] = {&::__ycxx::__detail::__fmt_check_parse<std::remove_cvref_t<_Args>, __charT>..., nullptr};
+    auto __pc = __fmt_access::__parse_context<__charT>(__fmt, sizeof...(_Args), __kinds);
+    ::__ycxx::__detail::__fmt_scan(__fmt, __pc, [](const __charT*, std::size_t) {}, [&](std::size_t id) {
+      if (id >= sizeof...(_Args))
+        ::__ycxx::__detail::__format_string_argument_index_out_of_range();
       else
-        pc.advance_to(parsers[id](pc));
+        __pc.advance_to(__parsers[id](__pc));
     });
   }
 }
 
 // vformat_to for any output iterator.
-template <class charT, class Out>
-constexpr Out fmt_vformat_to(Out out, std::basic_string_view<charT> fmt, fmt_args<charT> args, const std::locale* loc) {
-  if constexpr (__is_same(Out, ycxx::adl_free::fmt_iter<charT>)) {
-    ::ycxx::detail::fmt_vformat(fmt_access::buffer(out), fmt, args, loc);
+template <class __charT, class _Out>
+constexpr _Out __fmt_vformat_to(_Out out, std::basic_string_view<__charT> __fmt, __fmt_args<__charT> __args, const std::locale* __loc) {
+  if constexpr (__is_same(_Out, __ycxx::__adl_free::__fmt_iter<__charT>)) {
+    ::__ycxx::__detail::__fmt_vformat(__fmt_access::__buffer(out), __fmt, __args, __loc);
     return out;
-  } else if constexpr (__is_same(Out, charT*)) {
-    fmt_ptr_sink<charT> sink(out);
-    ::ycxx::detail::fmt_vformat(sink, fmt, args, loc);
-    return sink.finish();
+  } else if constexpr (__is_same(_Out, __charT*)) {
+    __fmt_ptr_sink<__charT> __sink(out);
+    ::__ycxx::__detail::__fmt_vformat(__sink, __fmt, __args, __loc);
+    return __sink.finish();
   } else {
-    [[indeterminate]] fmt_iter_sink<charT, Out> sink(static_cast<Out&&>(out));
-    ::ycxx::detail::fmt_vformat(sink, fmt, args, loc);
-    return sink.finish();
+    [[indeterminate]] __fmt_iter_sink<__charT, _Out> __sink(static_cast<_Out&&>(out));
+    ::__ycxx::__detail::__fmt_vformat(__sink, __fmt, __args, __loc);
+    return __sink.finish();
   }
 }
-template <class charT>
-constexpr std::basic_string<charT> fmt_vformat_string(std::basic_string_view<charT> fmt, fmt_args<charT> args,
-                                                      const std::locale* loc) {
-  [[indeterminate]] fmt_dynbuf<charT> buf;
-  ::ycxx::detail::fmt_vformat(buf, fmt, args, loc);
-  return std::basic_string<charT>(buf.data(), buf.size());
+template <class __charT>
+constexpr std::basic_string<__charT> __fmt_vformat_string(std::basic_string_view<__charT> __fmt, __fmt_args<__charT> __args,
+                                                      const std::locale* __loc) {
+  [[indeterminate]] __fmt_dynbuf<__charT> __buf;
+  ::__ycxx::__detail::__fmt_vformat(__buf, __fmt, __args, __loc);
+  return std::basic_string<__charT>(__buf.data(), __buf.size());
 }
-template <class charT, class Out>
-constexpr std::format_to_n_result<Out> fmt_vformat_to_n(Out out, std::iter_difference_t<Out> n,
-                                                        std::basic_string_view<charT> fmt, fmt_args<charT> args,
-                                                        const std::locale* loc);
-template <class charT>
-constexpr std::size_t fmt_vformatted_size(std::basic_string_view<charT> fmt, fmt_args<charT> args,
-                                          const std::locale* loc) {
-  [[indeterminate]] fmt_count_sink<charT, decltype(nullptr)> sink(nullptr, 0);
-  ::ycxx::detail::fmt_vformat(sink, fmt, args, loc);
-  return sink.finish();
+template <class __charT, class _Out>
+constexpr std::format_to_n_result<_Out> __fmt_vformat_to_n(_Out out, std::iter_difference_t<_Out> n,
+                                                        std::basic_string_view<__charT> __fmt, __fmt_args<__charT> __args,
+                                                        const std::locale* __loc);
+template <class __charT>
+constexpr std::size_t __fmt_vformatted_size(std::basic_string_view<__charT> __fmt, __fmt_args<__charT> __args,
+                                          const std::locale* __loc) {
+  [[indeterminate]] __fmt_count_sink<__charT, decltype(nullptr)> __sink(nullptr, 0);
+  ::__ycxx::__detail::__fmt_vformat(__sink, __fmt, __args, __loc);
+  return __sink.finish();
 }
 
-}} // namespace ycxx::detail
+}} // namespace __ycxx::__detail
 
-namespace [[gnu::visibility("hidden")]] std {
+namespace [[__gnu__::__visibility__("hidden")]] std {
 
 // [format.fmt.string]
-template <class charT, class... Args>
+template <class __charT, class... _Args>
 struct basic_format_string {
 private:
-  basic_string_view<charT> str;
+  basic_string_view<__charT> str;
 
 public:
-  template <class T>
-    requires convertible_to<const T&, basic_string_view<charT>>
-  consteval basic_format_string(const T& s) : str(s) {
-    ycxx::detail::fmt_check<charT, Args...>(str);
+  template <class _Tp>
+    requires convertible_to<const _Tp&, basic_string_view<__charT>>
+  consteval basic_format_string(const _Tp& s) : str(s) {
+    __ycxx::__detail::__fmt_check<__charT, _Args...>(str);
   }
-  constexpr basic_format_string(ycxx::adl_free::dynamic_format_string<charT> s) noexcept : str(s.str_) {}
-  constexpr basic_string_view<charT> get() const noexcept { return str; }
+  constexpr basic_format_string(__ycxx::__adl_free::__dynamic_format_string<__charT> s) noexcept : str(s.__str_) {}
+  constexpr basic_string_view<__charT> get() const noexcept { return str; }
 };
-template <class... Args>
-using format_string = basic_format_string<char, type_identity_t<Args>...>;
-template <class... Args>
-using wformat_string = basic_format_string<wchar_t, type_identity_t<Args>...>;
+template <class... _Args>
+using format_string = basic_format_string<char, type_identity_t<_Args>...>;
+template <class... _Args>
+using wformat_string = basic_format_string<wchar_t, type_identity_t<_Args>...>;
 
-constexpr ycxx::adl_free::dynamic_format_string<char> dynamic_format(string_view fmt) noexcept { return fmt; }
-constexpr ycxx::adl_free::dynamic_format_string<wchar_t> dynamic_format(wstring_view fmt) noexcept { return fmt; }
+constexpr __ycxx::__adl_free::__dynamic_format_string<char> dynamic_format(string_view __fmt) noexcept { return __fmt; }
+constexpr __ycxx::__adl_free::__dynamic_format_string<wchar_t> dynamic_format(wstring_view __fmt) noexcept { return __fmt; }
 // runtime_format: the C++26 name of dynamic_format before P3953.
-constexpr ycxx::adl_free::dynamic_format_string<char> runtime_format(string_view fmt) noexcept { return fmt; }
-constexpr ycxx::adl_free::dynamic_format_string<wchar_t> runtime_format(wstring_view fmt) noexcept { return fmt; }
+constexpr __ycxx::__adl_free::__dynamic_format_string<char> runtime_format(string_view __fmt) noexcept { return __fmt; }
+constexpr __ycxx::__adl_free::__dynamic_format_string<wchar_t> runtime_format(wstring_view __fmt) noexcept { return __fmt; }
 
 // [format.functions]
-constexpr string vformat(string_view fmt, format_args args) {
-  return ycxx::detail::fmt_vformat_string<char>(fmt, args, nullptr);
+constexpr string vformat(string_view __fmt, format_args __args) {
+  return __ycxx::__detail::__fmt_vformat_string<char>(__fmt, __args, nullptr);
 }
-constexpr wstring vformat(wstring_view fmt, wformat_args args) {
-  return ycxx::detail::fmt_vformat_string<wchar_t>(fmt, args, nullptr);
+constexpr wstring vformat(wstring_view __fmt, wformat_args __args) {
+  return __ycxx::__detail::__fmt_vformat_string<wchar_t>(__fmt, __args, nullptr);
 }
-template <class... Args>
-constexpr string format(format_string<Args...> fmt, Args&&... args) {
-  return ycxx::detail::fmt_vformat_string<char>(fmt.get(), make_format_args(args...), nullptr);
+template <class... _Args>
+constexpr string format(format_string<_Args...> __fmt, _Args&&... __args) {
+  return __ycxx::__detail::__fmt_vformat_string<char>(__fmt.get(), make_format_args(__args...), nullptr);
 }
-template <class... Args>
-constexpr wstring format(wformat_string<Args...> fmt, Args&&... args) {
-  return ycxx::detail::fmt_vformat_string<wchar_t>(fmt.get(), make_wformat_args(args...), nullptr);
+template <class... _Args>
+constexpr wstring format(wformat_string<_Args...> __fmt, _Args&&... __args) {
+  return __ycxx::__detail::__fmt_vformat_string<wchar_t>(__fmt.get(), make_wformat_args(__args...), nullptr);
 }
 
-template <class Out>
-  requires output_iterator<Out, const char&>
-constexpr Out vformat_to(Out out, string_view fmt, format_args args) {
-  return ycxx::detail::fmt_vformat_to<char>(static_cast<Out&&>(out), fmt, args, nullptr);
+template <class _Out>
+  requires output_iterator<_Out, const char&>
+constexpr _Out vformat_to(_Out out, string_view __fmt, format_args __args) {
+  return __ycxx::__detail::__fmt_vformat_to<char>(static_cast<_Out&&>(out), __fmt, __args, nullptr);
 }
-template <class Out>
-  requires output_iterator<Out, const wchar_t&>
-constexpr Out vformat_to(Out out, wstring_view fmt, wformat_args args) {
-  return ycxx::detail::fmt_vformat_to<wchar_t>(static_cast<Out&&>(out), fmt, args, nullptr);
+template <class _Out>
+  requires output_iterator<_Out, const wchar_t&>
+constexpr _Out vformat_to(_Out out, wstring_view __fmt, wformat_args __args) {
+  return __ycxx::__detail::__fmt_vformat_to<wchar_t>(static_cast<_Out&&>(out), __fmt, __args, nullptr);
 }
-template <class Out, class... Args>
-  requires output_iterator<Out, const char&>
-constexpr Out format_to(Out out, format_string<Args...> fmt, Args&&... args) {
-  return ycxx::detail::fmt_vformat_to<char>(static_cast<Out&&>(out), fmt.get(), make_format_args(args...), nullptr);
+template <class _Out, class... _Args>
+  requires output_iterator<_Out, const char&>
+constexpr _Out format_to(_Out out, format_string<_Args...> __fmt, _Args&&... __args) {
+  return __ycxx::__detail::__fmt_vformat_to<char>(static_cast<_Out&&>(out), __fmt.get(), make_format_args(__args...), nullptr);
 }
-template <class Out, class... Args>
-  requires output_iterator<Out, const wchar_t&>
-constexpr Out format_to(Out out, wformat_string<Args...> fmt, Args&&... args) {
-  return ycxx::detail::fmt_vformat_to<wchar_t>(static_cast<Out&&>(out), fmt.get(), make_wformat_args(args...),
+template <class _Out, class... _Args>
+  requires output_iterator<_Out, const wchar_t&>
+constexpr _Out format_to(_Out out, wformat_string<_Args...> __fmt, _Args&&... __args) {
+  return __ycxx::__detail::__fmt_vformat_to<wchar_t>(static_cast<_Out&&>(out), __fmt.get(), make_wformat_args(__args...),
                                                nullptr);
 }
 
-template <class Out, class... Args>
-  requires output_iterator<Out, const char&>
-constexpr format_to_n_result<Out> format_to_n(Out out, iter_difference_t<Out> n, format_string<Args...> fmt,
-                                              Args&&... args) {
-  return ycxx::detail::fmt_vformat_to_n<char>(static_cast<Out&&>(out), n, fmt.get(), make_format_args(args...), nullptr);
+template <class _Out, class... _Args>
+  requires output_iterator<_Out, const char&>
+constexpr format_to_n_result<_Out> format_to_n(_Out out, iter_difference_t<_Out> n, format_string<_Args...> __fmt,
+                                              _Args&&... __args) {
+  return __ycxx::__detail::__fmt_vformat_to_n<char>(static_cast<_Out&&>(out), n, __fmt.get(), make_format_args(__args...), nullptr);
 }
-template <class Out, class... Args>
-  requires output_iterator<Out, const wchar_t&>
-constexpr format_to_n_result<Out> format_to_n(Out out, iter_difference_t<Out> n, wformat_string<Args...> fmt,
-                                              Args&&... args) {
-  return ycxx::detail::fmt_vformat_to_n<wchar_t>(static_cast<Out&&>(out), n, fmt.get(), make_wformat_args(args...),
+template <class _Out, class... _Args>
+  requires output_iterator<_Out, const wchar_t&>
+constexpr format_to_n_result<_Out> format_to_n(_Out out, iter_difference_t<_Out> n, wformat_string<_Args...> __fmt,
+                                              _Args&&... __args) {
+  return __ycxx::__detail::__fmt_vformat_to_n<wchar_t>(static_cast<_Out&&>(out), n, __fmt.get(), make_wformat_args(__args...),
                                                  nullptr);
 }
-template <class... Args>
-constexpr size_t formatted_size(format_string<Args...> fmt, Args&&... args) {
-  return ycxx::detail::fmt_vformatted_size<char>(fmt.get(), make_format_args(args...), nullptr);
+template <class... _Args>
+constexpr size_t formatted_size(format_string<_Args...> __fmt, _Args&&... __args) {
+  return __ycxx::__detail::__fmt_vformatted_size<char>(__fmt.get(), make_format_args(__args...), nullptr);
 }
-template <class... Args>
-constexpr size_t formatted_size(wformat_string<Args...> fmt, Args&&... args) {
-  return ycxx::detail::fmt_vformatted_size<wchar_t>(fmt.get(), make_wformat_args(args...), nullptr);
+template <class... _Args>
+constexpr size_t formatted_size(wformat_string<_Args...> __fmt, _Args&&... __args) {
+  return __ycxx::__detail::__fmt_vformatted_size<wchar_t>(__fmt.get(), make_wformat_args(__args...), nullptr);
 }
 
 } // namespace std
 
-template <class charT, class Out>
-constexpr std::format_to_n_result<Out> ycxx::detail::fmt_vformat_to_n(Out out, std::iter_difference_t<Out> n,
-                                                                      std::basic_string_view<charT> fmt,
-                                                                      fmt_args<charT> args, const std::locale* loc) {
-  const std::size_t limit = n < 0 ? 0 : static_cast<std::size_t>(n);
-  [[indeterminate]] fmt_count_sink<charT, Out> sink(static_cast<Out&&>(out), limit);
-  ::ycxx::detail::fmt_vformat(sink, fmt, args, loc);
-  const std::size_t total = sink.finish();
-  return {static_cast<Out&&>(sink.out()), static_cast<std::iter_difference_t<Out>>(total)};
+template <class __charT, class _Out>
+constexpr std::format_to_n_result<_Out> __ycxx::__detail::__fmt_vformat_to_n(_Out out, std::iter_difference_t<_Out> n,
+                                                                      std::basic_string_view<__charT> __fmt,
+                                                                      __fmt_args<__charT> __args, const std::locale* __loc) {
+  const std::size_t __limit = n < 0 ? 0 : static_cast<std::size_t>(n);
+  [[indeterminate]] __fmt_count_sink<__charT, _Out> __sink(static_cast<_Out&&>(out), __limit);
+  ::__ycxx::__detail::__fmt_vformat(__sink, __fmt, __args, __loc);
+  const std::size_t __total = __sink.finish();
+  return {static_cast<_Out&&>(__sink.out()), static_cast<std::iter_difference_t<_Out>>(__total)};
 }

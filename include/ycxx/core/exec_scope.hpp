@@ -14,267 +14,267 @@
 #include <ycxx/core/memory_base.hpp>
 #include <ycxx/core/pair.hpp>
 
-namespace [[gnu::visibility("hidden")]] ycxx { namespace detail { namespace exec {
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail { namespace __exec {
 // A small spin lock (uncontended in practice: every critical section is a few stores).
-struct exec_spin_lock {
-  unsigned word = 0;
+struct __exec_spin_lock {
+  unsigned __word = 0;
   void lock() noexcept {
-    for (int spins = 0; __atomic_exchange_n(&word, 1u, __ATOMIC_ACQUIRE) != 0;)
-      while (__atomic_load_n(&word, __ATOMIC_RELAXED) != 0)
-        if (++spins > 64)
-          ::ycxx_pal_thread_yield();
+    for (int __spins = 0; __atomic_exchange_n(&__word, 1u, __ATOMIC_ACQUIRE) != 0;)
+      while (__atomic_load_n(&__word, __ATOMIC_RELAXED) != 0)
+        if (++__spins > 64)
+          ::__ycxx_pal_thread_yield();
   }
-  void unlock() noexcept { __atomic_store_n(&word, 0u, __ATOMIC_RELEASE); }
+  void unlock() noexcept { __atomic_store_n(&__word, 0u, __ATOMIC_RELEASE); }
 };
-}}} // namespace ycxx::detail::exec
+}}} // namespace __ycxx::__detail::__exec
 
 // ---------------------------------------------------------------------------------------------
 // [exec.scope.concepts]
-namespace [[gnu::visibility("hidden")]] ycxx { namespace adl_free {
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __adl_free {
 // test-sender, test-env ([exec.scope.concepts]/4)
-struct exec_test_sender {
+struct __exec_test_sender {
   using sender_concept = std::execution::sender_tag;
-  template <class Self, class... Env>
-  using ycxx_csigs = std::execution::completion_signatures<std::execution::set_value_t()>;
-  template <class Self, class... Env>
+  template <class _Self, class... _Env>
+  using __ycxx_csigs = std::execution::completion_signatures<std::execution::set_value_t()>;
+  template <class _Self, class... _Env>
   static consteval auto get_completion_signatures() {
     return std::execution::completion_signatures<std::execution::set_value_t()>();
   }
 };
-}} // namespace ycxx::adl_free
+}} // namespace __ycxx::__adl_free
 
-namespace [[gnu::visibility("hidden")]] std { namespace execution {
-template <class Assoc>
-concept scope_association = movable<Assoc> && is_nothrow_move_constructible_v<Assoc> && is_nothrow_move_assignable_v<Assoc> &&
-                            default_initializable<Assoc> && requires(const Assoc assoc) {
-                              { static_cast<bool>(assoc) } noexcept;
-                              { assoc.try_associate() } -> same_as<Assoc>;
+namespace [[__gnu__::__visibility__("hidden")]] std { namespace execution {
+template <class _Assoc>
+concept scope_association = movable<_Assoc> && is_nothrow_move_constructible_v<_Assoc> && is_nothrow_move_assignable_v<_Assoc> &&
+                            default_initializable<_Assoc> && requires(const _Assoc __assoc) {
+                              { static_cast<bool>(__assoc) } noexcept;
+                              { __assoc.try_associate() } -> same_as<_Assoc>;
                             };
-template <class Token>
-concept scope_token = copyable<Token> && requires(const Token token) {
+template <class _Token>
+concept scope_token = copyable<_Token> && requires(const _Token token) {
   { token.try_associate() } -> scope_association;
-  { token.wrap(declval<ycxx::adl_free::exec_test_sender>()) } -> sender_in<env<>>;
+  { token.wrap(declval<__ycxx::__adl_free::__exec_test_sender>()) } -> sender_in<env<>>;
 };
 }} // namespace std::execution
 
 // ---------------------------------------------------------------------------------------------
 // [exec.counting.scopes]
-namespace [[gnu::visibility("hidden")]] ycxx { namespace detail { namespace exec {
-struct scope_join_t {};
-struct scope_access;
-}}} // namespace ycxx::detail::exec
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail { namespace __exec {
+struct __scope_join_t {};
+struct __scope_access;
+}}} // namespace __ycxx::__detail::__exec
 
-namespace [[gnu::visibility("hidden")]] ycxx { namespace adl_free {
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __adl_free {
 // association-t<Scope> ([exec.counting.scopes.general]/5)
-template <class Scope>
-class exec_scope_association {
-  Scope* scope_ = nullptr;
-  friend Scope;
-  friend struct ::ycxx::detail::exec::scope_access;
-  constexpr explicit exec_scope_association(Scope* s) noexcept : scope_(s) {}
+template <class _Scope>
+class __exec_scope_association {
+  _Scope* __scope_ = nullptr;
+  friend _Scope;
+  friend struct ::__ycxx::__detail::__exec::__scope_access;
+  constexpr explicit __exec_scope_association(_Scope* s) noexcept : __scope_(s) {}
 
 public:
-  constexpr exec_scope_association() noexcept = default;
-  exec_scope_association(exec_scope_association&& o) noexcept : scope_(o.scope_) { o.scope_ = nullptr; }
-  exec_scope_association& operator=(exec_scope_association&& o) noexcept {
-    if (this != __builtin_addressof(o)) {
-      if (scope_)
-        scope_->ycxx_disassociate();
-      scope_ = o.scope_;
-      o.scope_ = nullptr;
+  constexpr __exec_scope_association() noexcept = default;
+  __exec_scope_association(__exec_scope_association&& __o) noexcept : __scope_(__o.__scope_) { __o.__scope_ = nullptr; }
+  __exec_scope_association& operator=(__exec_scope_association&& __o) noexcept {
+    if (this != __builtin_addressof(__o)) {
+      if (__scope_)
+        __scope_->__ycxx_disassociate();
+      __scope_ = __o.__scope_;
+      __o.__scope_ = nullptr;
     }
     return *this;
   }
-  ~exec_scope_association() {
-    if (scope_)
-      scope_->ycxx_disassociate();
+  ~__exec_scope_association() {
+    if (__scope_)
+      __scope_->__ycxx_disassociate();
   }
-  explicit operator bool() const noexcept { return scope_ != nullptr; }
-  exec_scope_association try_associate() const noexcept { return scope_ ? scope_->ycxx_try_associate() : exec_scope_association(); }
+  explicit operator bool() const noexcept { return __scope_ != nullptr; }
+  __exec_scope_association try_associate() const noexcept { return __scope_ ? __scope_->__ycxx_try_associate() : __exec_scope_association(); }
 };
 
 // A join operation registered with a scope until its count reaches zero.
-struct exec_join_node {
-  void (*complete)(exec_join_node*) noexcept;
-  exec_join_node* next = nullptr;
+struct __exec_join_node {
+  void (*complete)(__exec_join_node*) noexcept;
+  __exec_join_node* next = nullptr;
 };
 
 // The state machine of [exec.counting.scopes.general]/1 shared by both scopes.
-class exec_counting_scope_core {
+class __exec_counting_scope_core {
 protected:
-  enum : unsigned char { unused, open, closed, open_and_joining, closed_and_joining, unused_and_closed, joined };
-  ::ycxx::detail::exec::exec_spin_lock lock_;
-  unsigned char state_ = unused;
-  std::size_t count_ = 0;
-  exec_join_node* joiners_ = nullptr;
+  enum : unsigned char { __y_unused, open, __closed, __open_and_joining, __closed_and_joining, __unused_and_closed, __joined };
+  ::__ycxx::__detail::__exec::__exec_spin_lock __lock_;
+  unsigned char __state_ = __y_unused;
+  std::size_t __count_ = 0;
+  __exec_join_node* __joiners_ = nullptr;
 
-  bool try_associate_core(std::size_t max) noexcept {
-    lock_.lock();
+  bool __try_associate_core(std::size_t max) noexcept {
+    __lock_.lock();
     bool ok = false;
-    if (count_ != max) {
-      if (state_ == unused) {
-        ++count_;
-        state_ = open;
+    if (__count_ != max) {
+      if (__state_ == __y_unused) {
+        ++__count_;
+        __state_ = open;
         ok = true;
-      } else if (state_ == open || state_ == open_and_joining) {
-        ++count_;
+      } else if (__state_ == open || __state_ == __open_and_joining) {
+        ++__count_;
         ok = true;
       }
     }
-    lock_.unlock();
+    __lock_.unlock();
     return ok;
   }
-  void disassociate_core() noexcept {
-    lock_.lock();
-    exec_join_node* done = nullptr;
-    if (--count_ == 0 && (state_ == open_and_joining || state_ == closed_and_joining)) {
-      state_ = joined;
-      done = joiners_;
-      joiners_ = nullptr;
+  void __disassociate_core() noexcept {
+    __lock_.lock();
+    __exec_join_node* done = nullptr;
+    if (--__count_ == 0 && (__state_ == __open_and_joining || __state_ == __closed_and_joining)) {
+      __state_ = __joined;
+      done = __joiners_;
+      __joiners_ = nullptr;
     }
-    lock_.unlock();
+    __lock_.unlock();
     // complete() may destroy the scope: nothing of *this is touched from here on.
     while (done) {
-      exec_join_node* next = done->next;
+      __exec_join_node* next = done->next;
       done->complete(done);
       done = next;
     }
   }
-  void close_core() noexcept {
-    lock_.lock();
-    if (state_ == unused)
-      state_ = unused_and_closed;
-    else if (state_ == open)
-      state_ = closed;
-    else if (state_ == open_and_joining)
-      state_ = closed_and_joining;
-    lock_.unlock();
+  void __close_core() noexcept {
+    __lock_.lock();
+    if (__state_ == __y_unused)
+      __state_ = __unused_and_closed;
+    else if (__state_ == open)
+      __state_ = __closed;
+    else if (__state_ == __open_and_joining)
+      __state_ = __closed_and_joining;
+    __lock_.unlock();
   }
   // start-join-sender: true if the count is already zero (the join completes inline).
-  bool start_join_core(exec_join_node* n) noexcept {
-    lock_.lock();
-    if (count_ == 0) {
-      state_ = joined;
-      lock_.unlock();
+  bool __start_join_core(__exec_join_node* n) noexcept {
+    __lock_.lock();
+    if (__count_ == 0) {
+      __state_ = __joined;
+      __lock_.unlock();
       return true;
     }
-    if (state_ == open || state_ == open_and_joining || state_ == unused)
-      state_ = open_and_joining;
+    if (__state_ == open || __state_ == __open_and_joining || __state_ == __y_unused)
+      __state_ = __open_and_joining;
     else
-      state_ = closed_and_joining;
-    n->next = joiners_;
-    joiners_ = n;
-    lock_.unlock();
+      __state_ = __closed_and_joining;
+    n->next = __joiners_;
+    __joiners_ = n;
+    __lock_.unlock();
     return false;
   }
-  void check_destroy() noexcept {
-    if (state_ != joined && state_ != unused && state_ != unused_and_closed)
+  void __check_destroy() noexcept {
+    if (__state_ != __joined && __state_ != __y_unused && __state_ != __unused_and_closed)
       std::terminate();
   }
 
 public:
-  exec_counting_scope_core() noexcept = default;
-  exec_counting_scope_core(exec_counting_scope_core&&) = delete;
+  __exec_counting_scope_core() noexcept = default;
+  __exec_counting_scope_core(__exec_counting_scope_core&&) = delete;
 };
-}} // namespace ycxx::adl_free
+}} // namespace __ycxx::__adl_free
 
-namespace [[gnu::visibility("hidden")]] ycxx { namespace detail { namespace exec {
-struct scope_access {
-  template <class Scope>
-  static bool start_join(Scope* s, ::ycxx::adl_free::exec_join_node* n) noexcept {
-    return s->start_join_core(n);
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail { namespace __exec {
+struct __scope_access {
+  template <class _Scope>
+  static bool __start_join(_Scope* s, ::__ycxx::__adl_free::__exec_join_node* n) noexcept {
+    return s->__start_join_core(n);
   }
 };
 
-template <class Scope, class Rcvr>
-struct scope_join_state : ::ycxx::adl_free::exec_join_node {
-  struct rcvr_t {
+template <class _Scope, class _Rcvr>
+struct __scope_join_state : ::__ycxx::__adl_free::__exec_join_node {
+  struct __rcvr_t {
     using receiver_concept = std::execution::receiver_tag;
-    Rcvr& rcvr;
-    void set_value() && noexcept { std::execution::set_value(static_cast<Rcvr&&>(rcvr)); }
-    template <class E>
-    void set_error(E&& e) && noexcept {
-      std::execution::set_error(static_cast<Rcvr&&>(rcvr), static_cast<E&&>(e));
+    _Rcvr& __rcvr;
+    void set_value() && noexcept { std::execution::set_value(static_cast<_Rcvr&&>(__rcvr)); }
+    template <class _Ep>
+    void set_error(_Ep&& e) && noexcept {
+      std::execution::set_error(static_cast<_Rcvr&&>(__rcvr), static_cast<_Ep&&>(e));
     }
-    void set_stopped() && noexcept { std::execution::set_stopped(static_cast<Rcvr&&>(rcvr)); }
-    decltype(auto) get_env() const noexcept { return std::execution::get_env(rcvr); }
+    void set_stopped() && noexcept { std::execution::set_stopped(static_cast<_Rcvr&&>(__rcvr)); }
+    decltype(auto) get_env() const noexcept { return std::execution::get_env(__rcvr); }
   };
-  using sched_sender = decltype(std::execution::schedule(std::execution::get_start_scheduler(std::execution::get_env(std::declval<Rcvr&>()))));
-  using op_t = std::execution::connect_result_t<sched_sender, rcvr_t>;
+  using __sched_sender = decltype(std::execution::schedule(std::execution::get_start_scheduler(std::execution::get_env(std::declval<_Rcvr&>()))));
+  using __op_t = std::execution::connect_result_t<__sched_sender, __rcvr_t>;
 
-  Scope* scope;
-  Rcvr& receiver;
-  op_t op;
+  _Scope* scope;
+  _Rcvr& receiver;
+  __op_t op;
 
-  scope_join_state(Scope* s, Rcvr& r) noexcept(nothrow_callable<std::execution::connect_t, sched_sender, rcvr_t>)
-      : ::ycxx::adl_free::exec_join_node{&run_complete}, scope(s), receiver(r),
-        op(std::execution::connect(std::execution::schedule(std::execution::get_start_scheduler(std::execution::get_env(r))), rcvr_t{r})) {}
-  scope_join_state(scope_join_state&&) = delete;
+  __scope_join_state(_Scope* s, _Rcvr& r) noexcept(__nothrow_callable<std::execution::connect_t, __sched_sender, __rcvr_t>)
+      : ::__ycxx::__adl_free::__exec_join_node{&__run_complete}, scope(s), receiver(r),
+        op(std::execution::connect(std::execution::schedule(std::execution::get_start_scheduler(std::execution::get_env(r))), __rcvr_t{r})) {}
+  __scope_join_state(__scope_join_state&&) = delete;
 
-  static void run_complete(::ycxx::adl_free::exec_join_node* n) noexcept { std::execution::start(static_cast<scope_join_state*>(n)->op); }
-  void complete_inline() noexcept { std::execution::set_value(static_cast<Rcvr&&>(receiver)); }
+  static void __run_complete(::__ycxx::__adl_free::__exec_join_node* n) noexcept { std::execution::start(static_cast<__scope_join_state*>(n)->op); }
+  void __complete_inline() noexcept { std::execution::set_value(static_cast<_Rcvr&&>(receiver)); }
 };
 
-template <class Env>
-struct scope_join_sigs {
-  static auto pick() {
-    if constexpr (requires(const Env& e) { std::execution::schedule(std::execution::get_start_scheduler(e)); })
-      return std::type_identity<sigs_concat_t<std::execution::completion_signatures<set_value_t()>,
-                                              csigs_of_t<decltype(std::execution::schedule(std::execution::get_start_scheduler(std::declval<const Env&>()))), Env>>>{};
+template <class _Env>
+struct __scope_join_sigs {
+  static auto __pick() {
+    if constexpr (requires(const _Env& e) { std::execution::schedule(std::execution::get_start_scheduler(e)); })
+      return std::type_identity<__sigs_concat_t<std::execution::completion_signatures<set_value_t()>,
+                                              __csigs_of_t<decltype(std::execution::schedule(std::execution::get_start_scheduler(std::declval<const _Env&>()))), _Env>>>{};
     else
-      return std::type_identity<invalid_sigs<environment_has_no_start_scheduler, Env>>{};
+      return std::type_identity<__invalid_sigs<__environment_has_no_start_scheduler, _Env>>{};
   }
-  using type = typename decltype(pick())::type;
+  using type = typename decltype(__pick())::type;
 };
 
 template <>
-struct impls_for<scope_join_t> : default_impls {
-  template <class Data>
-  static constexpr auto get_attrs(const Data&) noexcept {
+struct __impls_for<__scope_join_t> : __default_impls {
+  template <class _Data>
+  static constexpr auto __get_attrs(const _Data&) noexcept {
     return std::execution::env<>();
   }
-  template <class Sndr, class Rcvr>
-  static auto get_state(Sndr&& sender, Rcvr& receiver) noexcept(
-      std::is_nothrow_constructible_v<scope_join_state<std::remove_pointer_t<std::decay_t<data_type<Sndr>>>, Rcvr>,
-                                      std::decay_t<data_type<Sndr>>, Rcvr&>) {
-    auto self = sender.template get<1>();
-    return scope_join_state<std::remove_pointer_t<decltype(self)>, Rcvr>(self, receiver);
+  template <class _Sndr, class _Rcvr>
+  static auto __get_state(_Sndr&& sender, _Rcvr& receiver) noexcept(
+      std::is_nothrow_constructible_v<__scope_join_state<std::remove_pointer_t<std::decay_t<__data_type<_Sndr>>>, _Rcvr>,
+                                      std::decay_t<__data_type<_Sndr>>, _Rcvr&>) {
+    auto __self = sender.template get<1>();
+    return __scope_join_state<std::remove_pointer_t<decltype(__self)>, _Rcvr>(__self, receiver);
   }
-  template <class State, class Rcvr>
-  static void start(State& s, Rcvr&) noexcept {
-    if (scope_access::start_join(s.scope, &s))
-      s.complete_inline();
+  template <class _State, class _Rcvr>
+  static void start(_State& s, _Rcvr&) noexcept {
+    if (__scope_access::__start_join(s.scope, &s))
+      s.__complete_inline();
   }
-  template <class Sndr, class... Env>
-  struct sigs {
-    using type = dependent_sigs;
+  template <class _Sndr, class... _Env>
+  struct __sigs {
+    using type = __dependent_sigs;
   };
-  template <class Sndr, class Env>
-  struct sigs<Sndr, Env> {
-    using type = typename scope_join_sigs<Env>::type;
+  template <class _Sndr, class _Env>
+  struct __sigs<_Sndr, _Env> {
+    using type = typename __scope_join_sigs<_Env>::type;
   };
-  template <class Sndr, class... Env>
-  using csigs = typename sigs<Sndr, Env...>::type;
+  template <class _Sndr, class... _Env>
+  using __csigs = typename __sigs<_Sndr, _Env...>::type;
 };
-}}} // namespace ycxx::detail::exec
+}}} // namespace __ycxx::__detail::__exec
 
-namespace [[gnu::visibility("hidden")]] std { namespace execution {
+namespace [[__gnu__::__visibility__("hidden")]] std { namespace execution {
 
-class simple_counting_scope : ycxx::adl_free::exec_counting_scope_core {
-  friend struct ycxx::detail::exec::scope_access;
-  friend class ycxx::adl_free::exec_scope_association<simple_counting_scope>;
-  using assoc_t = ycxx::adl_free::exec_scope_association<simple_counting_scope>;
+class simple_counting_scope : __ycxx::__adl_free::__exec_counting_scope_core {
+  friend struct __ycxx::__detail::__exec::__scope_access;
+  friend class __ycxx::__adl_free::__exec_scope_association<simple_counting_scope>;
+  using __assoc_t = __ycxx::__adl_free::__exec_scope_association<simple_counting_scope>;
 
-  assoc_t ycxx_try_associate() noexcept { return try_associate_core(max_associations) ? assoc_t(this) : assoc_t(); }
-  void ycxx_disassociate() noexcept { disassociate_core(); }
+  __assoc_t __ycxx_try_associate() noexcept { return __try_associate_core(max_associations) ? __assoc_t(this) : __assoc_t(); }
+  void __ycxx_disassociate() noexcept { __disassociate_core(); }
 
 public:
   struct token {
-    template <sender Sender>
-    Sender&& wrap(Sender&& snd) const noexcept {
-      return static_cast<Sender&&>(snd);
+    template <sender _Sender>
+    _Sender&& wrap(_Sender&& __snd) const noexcept {
+      return static_cast<_Sender&&>(__snd);
     }
-    assoc_t try_associate() const noexcept { return scope->ycxx_try_associate(); }
+    __assoc_t try_associate() const noexcept { return scope->__ycxx_try_associate(); }
 
   private:
     friend class simple_counting_scope;
@@ -286,29 +286,29 @@ public:
 
   simple_counting_scope() noexcept = default;
   simple_counting_scope(simple_counting_scope&&) = delete;
-  ~simple_counting_scope() { check_destroy(); }
+  ~simple_counting_scope() { __check_destroy(); }
 
   token get_token() noexcept { return token(this); }
-  void close() noexcept { close_core(); }
+  void close() noexcept { __close_core(); }
   sender auto join() noexcept;
 };
 
-class counting_scope : ycxx::adl_free::exec_counting_scope_core {
-  friend struct ycxx::detail::exec::scope_access;
-  friend class ycxx::adl_free::exec_scope_association<counting_scope>;
-  using assoc_t = ycxx::adl_free::exec_scope_association<counting_scope>;
+class counting_scope : __ycxx::__adl_free::__exec_counting_scope_core {
+  friend struct __ycxx::__detail::__exec::__scope_access;
+  friend class __ycxx::__adl_free::__exec_scope_association<counting_scope>;
+  using __assoc_t = __ycxx::__adl_free::__exec_scope_association<counting_scope>;
 
-  inplace_stop_source s_source;
-  assoc_t ycxx_try_associate() noexcept { return try_associate_core(max_associations) ? assoc_t(this) : assoc_t(); }
-  void ycxx_disassociate() noexcept { disassociate_core(); }
+  inplace_stop_source __s_source;
+  __assoc_t __ycxx_try_associate() noexcept { return __try_associate_core(max_associations) ? __assoc_t(this) : __assoc_t(); }
+  void __ycxx_disassociate() noexcept { __disassociate_core(); }
 
 public:
   struct token {
-    template <sender Sender>
-    sender auto wrap(Sender&& snd) const noexcept(is_nothrow_constructible_v<remove_cvref_t<Sender>, Sender>) {
-      return ycxx::detail::exec::stop_when(static_cast<Sender&&>(snd), scope->s_source.get_token());
+    template <sender _Sender>
+    sender auto wrap(_Sender&& __snd) const noexcept(is_nothrow_constructible_v<remove_cvref_t<_Sender>, _Sender>) {
+      return __ycxx::__detail::__exec::__stop_when(static_cast<_Sender&&>(__snd), scope->__s_source.get_token());
     }
-    assoc_t try_associate() const noexcept { return scope->ycxx_try_associate(); }
+    __assoc_t try_associate() const noexcept { return scope->__ycxx_try_associate(); }
 
   private:
     friend class counting_scope;
@@ -320,218 +320,218 @@ public:
 
   counting_scope() noexcept = default;
   counting_scope(counting_scope&&) = delete;
-  ~counting_scope() { check_destroy(); }
+  ~counting_scope() { __check_destroy(); }
 
   token get_token() noexcept { return token(this); }
-  void close() noexcept { close_core(); }
+  void close() noexcept { __close_core(); }
   sender auto join() noexcept;
-  void request_stop() noexcept { s_source.request_stop(); }
+  void request_stop() noexcept { __s_source.request_stop(); }
 };
 
 // Defined after the classes: the join sender's impls-for needs them complete.
-inline sender auto simple_counting_scope::join() noexcept { return ycxx::detail::exec::make_sender(ycxx::detail::exec::scope_join_t(), this); }
-inline sender auto counting_scope::join() noexcept { return ycxx::detail::exec::make_sender(ycxx::detail::exec::scope_join_t(), this); }
+inline sender auto simple_counting_scope::join() noexcept { return __ycxx::__detail::__exec::__make_sender(__ycxx::__detail::__exec::__scope_join_t(), this); }
+inline sender auto counting_scope::join() noexcept { return __ycxx::__detail::__exec::__make_sender(__ycxx::__detail::__exec::__scope_join_t(), this); }
 
 }} // namespace std::execution
 
 // ---------------------------------------------------------------------------------------------
 // [exec.associate]
-namespace [[gnu::visibility("hidden")]] ycxx { namespace adl_free {
-template <class Token, class Sender>
-struct exec_associate_data {
-  using wrap_sender = std::remove_cvref_t<decltype(std::declval<Token&>().wrap(std::declval<Sender>()))>;
-  using assoc_t = decltype(std::declval<Token&>().try_associate());
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __adl_free {
+template <class _Token, class _Sender>
+struct __exec_associate_data {
+  using __wrap_sender = std::remove_cvref_t<decltype(std::declval<_Token&>().wrap(std::declval<_Sender>()))>;
+  using __assoc_t = decltype(std::declval<_Token&>().try_associate());
   // sender-ref: owns the wrapped sender (destroy_at on destruction).
-  struct sender_ref {
-    wrap_sender* p = nullptr;
-    sender_ref() = default;
-    explicit sender_ref(wrap_sender* q) noexcept : p(q) {}
-    sender_ref(sender_ref&& o) noexcept : p(o.p) { o.p = nullptr; }
-    ~sender_ref() {
+  struct __sender_ref {
+    __wrap_sender* p = nullptr;
+    __sender_ref() = default;
+    explicit __sender_ref(__wrap_sender* __q) noexcept : p(__q) {}
+    __sender_ref(__sender_ref&& __o) noexcept : p(__o.p) { __o.p = nullptr; }
+    ~__sender_ref() {
       if (p)
         std::destroy_at(p);
     }
-    wrap_sender* release() noexcept {
-      wrap_sender* q = p;
+    __wrap_sender* release() noexcept {
+      __wrap_sender* __q = p;
       p = nullptr;
-      return q;
+      return __q;
     }
-    wrap_sender& operator*() const noexcept { return *p; }
+    __wrap_sender& operator*() const noexcept { return *p; }
   };
 
-  explicit exec_associate_data(Token t, Sender&& s)
-      : sndr(t.wrap(static_cast<Sender&&>(s))), assoc([&] {
-          sender_ref guard{__builtin_addressof(sndr)};
+  explicit __exec_associate_data(_Token t, _Sender&& s)
+      : __sndr(t.wrap(static_cast<_Sender&&>(s))), __assoc([&] {
+          __sender_ref __guard{__builtin_addressof(__sndr)};
           auto a = t.try_associate();
           if (a)
-            guard.release();
+            __guard.release();
           return a;
         }()) {}
-  exec_associate_data(const exec_associate_data& other) noexcept(std::is_nothrow_copy_constructible_v<wrap_sender> &&
-                                                                 noexcept(other.assoc.try_associate()))
-    requires std::copy_constructible<wrap_sender>
-      : assoc(other.assoc.try_associate()) {
-    if (assoc)
-      std::construct_at(__builtin_addressof(sndr), other.sndr);
+  __exec_associate_data(const __exec_associate_data& other) noexcept(std::is_nothrow_copy_constructible_v<__wrap_sender> &&
+                                                                 noexcept(other.__assoc.try_associate()))
+    requires std::copy_constructible<__wrap_sender>
+      : __assoc(other.__assoc.try_associate()) {
+    if (__assoc)
+      std::construct_at(__builtin_addressof(__sndr), other.__sndr);
   }
-  exec_associate_data(exec_associate_data&& other) noexcept(std::is_nothrow_move_constructible_v<wrap_sender>)
-      : exec_associate_data(static_cast<exec_associate_data&&>(other).release()) {}
-  ~exec_associate_data() {
-    if (assoc)
-      sndr.~wrap_sender();
+  __exec_associate_data(__exec_associate_data&& other) noexcept(std::is_nothrow_move_constructible_v<__wrap_sender>)
+      : __exec_associate_data(static_cast<__exec_associate_data&&>(other).release()) {}
+  ~__exec_associate_data() {
+    if (__assoc)
+      __sndr.~__wrap_sender();
   }
-  std::pair<assoc_t, sender_ref> release() && noexcept {
-    sender_ref u(assoc ? __builtin_addressof(sndr) : nullptr);
-    return std::pair<assoc_t, sender_ref>(static_cast<assoc_t&&>(assoc), static_cast<sender_ref&&>(u));
+  std::pair<__assoc_t, __sender_ref> release() && noexcept {
+    __sender_ref __u(__assoc ? __builtin_addressof(__sndr) : nullptr);
+    return std::pair<__assoc_t, __sender_ref>(static_cast<__assoc_t&&>(__assoc), static_cast<__sender_ref&&>(__u));
   }
 
 private:
-  explicit exec_associate_data(std::pair<assoc_t, sender_ref> parts) : assoc(static_cast<assoc_t&&>(parts.first)) {
-    if (assoc)
-      std::construct_at(__builtin_addressof(sndr), static_cast<wrap_sender&&>(*parts.second));
+  explicit __exec_associate_data(std::pair<__assoc_t, __sender_ref> __parts) : __assoc(static_cast<__assoc_t&&>(__parts.first)) {
+    if (__assoc)
+      std::construct_at(__builtin_addressof(__sndr), static_cast<__wrap_sender&&>(*__parts.second));
   }
   union {
-    wrap_sender sndr;
+    __wrap_sender __sndr;
   };
-  assoc_t assoc;
+  __assoc_t __assoc;
 };
 
-template <class AD, class Rcvr>
-struct exec_associate_op_state {
-  using assoc_t = typename AD::assoc_t;
-  using sender_ref_t = typename AD::sender_ref;
-  using op_t = std::execution::connect_result_t<typename AD::wrap_sender, Rcvr>;
-  assoc_t assoc;
+template <class _AD, class _Rcvr>
+struct __exec_associate_op_state {
+  using __assoc_t = typename _AD::__assoc_t;
+  using __sender_ref_t = typename _AD::__sender_ref;
+  using __op_t = std::execution::connect_result_t<typename _AD::__wrap_sender, _Rcvr>;
+  __assoc_t __assoc;
   union {
-    Rcvr* rcvr;
-    op_t op;
+    _Rcvr* __rcvr;
+    __op_t op;
   };
-  explicit exec_associate_op_state(std::pair<assoc_t, sender_ref_t> parts, Rcvr& r) : assoc(static_cast<assoc_t&&>(parts.first)) {
-    if (assoc)
-      ::new (static_cast<void*>(__builtin_addressof(op))) op_t(std::execution::connect(static_cast<typename AD::wrap_sender&&>(*parts.second), static_cast<Rcvr&&>(r)));
+  explicit __exec_associate_op_state(std::pair<__assoc_t, __sender_ref_t> __parts, _Rcvr& r) : __assoc(static_cast<__assoc_t&&>(__parts.first)) {
+    if (__assoc)
+      ::new (static_cast<void*>(__builtin_addressof(op))) __op_t(std::execution::connect(static_cast<typename _AD::__wrap_sender&&>(*__parts.second), static_cast<_Rcvr&&>(r)));
     else
-      rcvr = __builtin_addressof(r);
+      __rcvr = __builtin_addressof(r);
   }
-  explicit exec_associate_op_state(AD&& ad, Rcvr& r) : exec_associate_op_state(static_cast<AD&&>(ad).release(), r) {}
-  explicit exec_associate_op_state(const AD& ad, Rcvr& r)
-    requires std::copy_constructible<AD>
-      : exec_associate_op_state(AD(ad).release(), r) {}
-  exec_associate_op_state(exec_associate_op_state&&) = delete;
-  ~exec_associate_op_state() {
-    if (assoc)
-      op.~op_t();
+  explicit __exec_associate_op_state(_AD&& __ad, _Rcvr& r) : __exec_associate_op_state(static_cast<_AD&&>(__ad).release(), r) {}
+  explicit __exec_associate_op_state(const _AD& __ad, _Rcvr& r)
+    requires std::copy_constructible<_AD>
+      : __exec_associate_op_state(_AD(__ad).release(), r) {}
+  __exec_associate_op_state(__exec_associate_op_state&&) = delete;
+  ~__exec_associate_op_state() {
+    if (__assoc)
+      op.~__op_t();
   }
   void run() noexcept {
-    if (assoc)
+    if (__assoc)
       std::execution::start(op);
     else
-      std::execution::set_stopped(static_cast<Rcvr&&>(*rcvr));
+      std::execution::set_stopped(static_cast<_Rcvr&&>(*__rcvr));
   }
 };
-}} // namespace ycxx::adl_free
+}} // namespace __ycxx::__adl_free
 
-namespace [[gnu::visibility("hidden")]] ycxx { namespace detail { namespace exec {
-template <class Token>
-struct bind_scope_token : std::bool_constant<std::execution::scope_token<std::remove_cvref_t<Token>>> {};
-}}} // namespace ycxx::detail::exec
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail { namespace __exec {
+template <class _Token>
+struct __bind_scope_token : std::bool_constant<std::execution::scope_token<std::remove_cvref_t<_Token>>> {};
+}}} // namespace __ycxx::__detail::__exec
 
-namespace [[gnu::visibility("hidden")]] std { namespace execution {
-struct associate_t : ycxx::detail::exec::pipeable_adaptor<associate_t, 1, ycxx::detail::exec::bind_scope_token> {
-  using ycxx::detail::exec::pipeable_adaptor<associate_t, 1, ycxx::detail::exec::bind_scope_token>::operator();
-  template <sender Sndr, class Token>
-    requires scope_token<remove_cvref_t<Token>>
-  auto operator()(Sndr&& sndr, Token&& token) const {
-    return ycxx::detail::exec::make_sender(
-        *this, ycxx::adl_free::exec_associate_data<remove_cvref_t<Token>, Sndr>(static_cast<Token&&>(token), static_cast<Sndr&&>(sndr)));
+namespace [[__gnu__::__visibility__("hidden")]] std { namespace execution {
+struct associate_t : __ycxx::__detail::__exec::__pipeable_adaptor<associate_t, 1, __ycxx::__detail::__exec::__bind_scope_token> {
+  using __ycxx::__detail::__exec::__pipeable_adaptor<associate_t, 1, __ycxx::__detail::__exec::__bind_scope_token>::operator();
+  template <sender _Sndr, class _Token>
+    requires scope_token<remove_cvref_t<_Token>>
+  auto operator()(_Sndr&& __sndr, _Token&& token) const {
+    return __ycxx::__detail::__exec::__make_sender(
+        *this, __ycxx::__adl_free::__exec_associate_data<remove_cvref_t<_Token>, _Sndr>(static_cast<_Token&&>(token), static_cast<_Sndr&&>(__sndr)));
   }
 };
 inline constexpr associate_t associate{};
 }} // namespace std::execution
 
-namespace [[gnu::visibility("hidden")]] ycxx { namespace detail { namespace exec {
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail { namespace __exec {
 template <>
-struct impls_for<std::execution::associate_t> : default_impls {
-  template <class Data>
-  static constexpr auto get_attrs(const Data&) noexcept {
+struct __impls_for<std::execution::associate_t> : __default_impls {
+  template <class _Data>
+  static constexpr auto __get_attrs(const _Data&) noexcept {
     return std::execution::env<>();
   }
-  template <class Sndr, class Rcvr>
-  static auto get_state(Sndr&& sndr, Rcvr& rcvr) noexcept(
-      (std::is_same_v<Sndr, std::remove_cvref_t<Sndr>> || std::is_nothrow_constructible_v<std::remove_cvref_t<Sndr>, Sndr>) &&
-      nothrow_callable<std::execution::connect_t, typename std::remove_cvref_t<data_type<Sndr>>::wrap_sender, Rcvr>) {
-    using AD = std::remove_cvref_t<data_type<Sndr>>;
-    return ::ycxx::adl_free::exec_associate_op_state<AD, Rcvr>(static_cast<Sndr&&>(sndr).template get<1>(), rcvr);
+  template <class _Sndr, class _Rcvr>
+  static auto __get_state(_Sndr&& __sndr, _Rcvr& __rcvr) noexcept(
+      (std::is_same_v<_Sndr, std::remove_cvref_t<_Sndr>> || std::is_nothrow_constructible_v<std::remove_cvref_t<_Sndr>, _Sndr>) &&
+      __nothrow_callable<std::execution::connect_t, typename std::remove_cvref_t<__data_type<_Sndr>>::__wrap_sender, _Rcvr>) {
+    using _AD = std::remove_cvref_t<__data_type<_Sndr>>;
+    return ::__ycxx::__adl_free::__exec_associate_op_state<_AD, _Rcvr>(static_cast<_Sndr&&>(__sndr).template get<1>(), __rcvr);
   }
-  template <class State, class Rcvr>
-  static void start(State& state, Rcvr&) noexcept {
+  template <class _State, class _Rcvr>
+  static void start(_State& state, _Rcvr&) noexcept {
     state.run();
   }
-  template <class Sndr, class... Env>
-  using csigs = sigs_concat_t<csigs_of_t<typename std::remove_cvref_t<data_type<Sndr>>::wrap_sender, fwd_env_t<Env>...>,
+  template <class _Sndr, class... _Env>
+  using __csigs = __sigs_concat_t<__csigs_of_t<typename std::remove_cvref_t<__data_type<_Sndr>>::__wrap_sender, __fwd_env_t<_Env>...>,
                               std::execution::completion_signatures<set_stopped_t()>>;
 };
-}}} // namespace ycxx::detail::exec
+}}} // namespace __ycxx::__detail::__exec
 
 // ---------------------------------------------------------------------------------------------
 // [exec.spawn]
-namespace [[gnu::visibility("hidden")]] ycxx { namespace adl_free {
-struct exec_spawn_state_base {
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __adl_free {
+struct __exec_spawn_state_base {
   virtual void complete() noexcept = 0;
 
 protected:
-  ~exec_spawn_state_base() = default;
+  ~__exec_spawn_state_base() = default;
 };
-struct exec_spawn_receiver {
+struct __exec_spawn_receiver {
   using receiver_concept = std::execution::receiver_tag;
-  exec_spawn_state_base* state;
+  __exec_spawn_state_base* state;
   void set_value() && noexcept { state->complete(); }
   void set_stopped() && noexcept { state->complete(); }
 };
 
-template <class Alloc, class Token, class Sender>
-struct exec_spawn_state final : exec_spawn_state_base {
-  using op_t = std::execution::connect_result_t<Sender, exec_spawn_receiver>;
-  using assoc_t = std::remove_cvref_t<decltype(std::declval<Token&>().try_associate())>;
+template <class _Alloc, class _Token, class _Sender>
+struct __exec_spawn_state final : __exec_spawn_state_base {
+  using __op_t = std::execution::connect_result_t<_Sender, __exec_spawn_receiver>;
+  using __assoc_t = std::remove_cvref_t<decltype(std::declval<_Token&>().try_associate())>;
 
-  exec_spawn_state(Alloc a, Sender&& sndr, Token token)
-      : alloc(static_cast<Alloc&&>(a)), op(std::execution::connect(static_cast<Sender&&>(sndr), exec_spawn_receiver{this})),
-        assoc(token.try_associate()) {}
+  __exec_spawn_state(_Alloc a, _Sender&& __sndr, _Token token)
+      : __alloc(static_cast<_Alloc&&>(a)), op(std::execution::connect(static_cast<_Sender&&>(__sndr), __exec_spawn_receiver{this})),
+        __assoc(token.try_associate()) {}
   void run() noexcept {
-    if (assoc)
+    if (__assoc)
       std::execution::start(op);
     else
       complete();
   }
   void complete() noexcept override {
-    auto a = static_cast<assoc_t&&>(assoc);
-    using traits = typename std::allocator_traits<Alloc>::template rebind_traits<exec_spawn_state>;
-    typename traits::allocator_type al(alloc);
-    traits::destroy(al, this);
-    traits::deallocate(al, this, 1);
+    auto a = static_cast<__assoc_t&&>(__assoc);
+    using __traits = typename std::allocator_traits<_Alloc>::template rebind_traits<__exec_spawn_state>;
+    typename __traits::allocator_type __al(__alloc);
+    __traits::destroy(__al, this);
+    __traits::deallocate(__al, this, 1);
   }
 
 private:
-  Alloc alloc;
-  op_t op;
-  assoc_t assoc;
+  _Alloc __alloc;
+  __op_t op;
+  __assoc_t __assoc;
 };
-}} // namespace ycxx::adl_free
+}} // namespace __ycxx::__adl_free
 
-namespace [[gnu::visibility("hidden")]] ycxx { namespace detail { namespace exec {
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail { namespace __exec {
 // Allocates and constructs a T with an allocator (rebound), destroying and deallocating if the
 // construction throws.
-template <class T, class Alloc, class... Args>
-T* new_with_allocator(const Alloc& alloc, Args&&... args) {
-  using traits = typename std::allocator_traits<Alloc>::template rebind_traits<T>;
-  typename traits::allocator_type al(alloc);
-  T* p = traits::allocate(al, 1);
-  if constexpr (std::is_nothrow_constructible_v<T, Args...> || !cfg::exceptions) {
-    traits::construct(al, p, static_cast<Args&&>(args)...);
+template <class _Tp, class _Alloc, class... _Args>
+_Tp* __new_with_allocator(const _Alloc& __alloc, _Args&&... __args) {
+  using __traits = typename std::allocator_traits<_Alloc>::template rebind_traits<_Tp>;
+  typename __traits::allocator_type __al(__alloc);
+  _Tp* p = __traits::allocate(__al, 1);
+  if constexpr (std::is_nothrow_constructible_v<_Tp, _Args...> || !__cfg::exceptions) {
+    __traits::construct(__al, p, static_cast<_Args&&>(__args)...);
   } else {
     try {
-      traits::construct(al, p, static_cast<Args&&>(args)...);
+      __traits::construct(__al, p, static_cast<_Args&&>(__args)...);
     } catch (...) {
-      traits::deallocate(al, p, 1);
+      __traits::deallocate(__al, p, 1);
       throw;
     }
   }
@@ -540,32 +540,32 @@ T* new_with_allocator(const Alloc& alloc, Args&&... args) {
 
 // The allocator and environment of spawn and spawn_future ([exec.spawn]/9, [exec.spawn.future]/19),
 // passed to f(alloc, senv).
-template <class NewSender, class Env, class F>
-decltype(auto) with_spawn_allocator(const NewSender& new_sender, Env&& env, F&& f) {
+template <class _NewSender, class _Env, class _Fp>
+decltype(auto) __with_spawn_allocator(const _NewSender& __new_sender, _Env&& env, _Fp&& __f) {
   if constexpr (requires { std::get_allocator(env); })
-    return static_cast<F&&>(f)(std::get_allocator(env), static_cast<Env&&>(env));
-  else if constexpr (requires { std::get_allocator(std::execution::get_env(new_sender)); }) {
-    auto alloc = std::get_allocator(std::execution::get_env(new_sender));
-    return static_cast<F&&>(f)(alloc, ::ycxx::detail::exec::join_env(std::execution::prop(std::get_allocator, alloc), static_cast<Env&&>(env)));
+    return static_cast<_Fp&&>(__f)(std::get_allocator(env), static_cast<_Env&&>(env));
+  else if constexpr (requires { std::get_allocator(std::execution::get_env(__new_sender)); }) {
+    auto __alloc = std::get_allocator(std::execution::get_env(__new_sender));
+    return static_cast<_Fp&&>(__f)(__alloc, ::__ycxx::__detail::__exec::__join_env(std::execution::prop(std::get_allocator, __alloc), static_cast<_Env&&>(env)));
   } else
-    return static_cast<F&&>(f)(std::allocator<void>(), static_cast<Env&&>(env));
+    return static_cast<_Fp&&>(__f)(std::allocator<void>(), static_cast<_Env&&>(env));
 }
-}}} // namespace ycxx::detail::exec
+}}} // namespace __ycxx::__detail::__exec
 
-namespace [[gnu::visibility("hidden")]] std { namespace execution {
+namespace [[__gnu__::__visibility__("hidden")]] std { namespace execution {
 struct spawn_t {
-  template <sender Sndr, class Token, class Env = env<>>
-    requires scope_token<remove_cvref_t<Token>> && ycxx::detail::exec::queryable<remove_cvref_t<Env>>
-  void operator()(Sndr&& sndr, Token&& token, Env&& env = {}) const {
-    using T = remove_cvref_t<Token>;
-    T tok(static_cast<Token&&>(token));
-    auto&& new_sender = tok.wrap(static_cast<Sndr&&>(sndr));
-    ycxx::detail::exec::with_spawn_allocator(new_sender, static_cast<Env&&>(env), [&](auto alloc, auto&& senv) {
-      using S = decltype(write_env(static_cast<decltype(new_sender)&&>(new_sender), static_cast<decltype(senv)&&>(senv)));
-      using State = ycxx::adl_free::exec_spawn_state<decltype(alloc), T, S>;
-      auto* o = ycxx::detail::exec::new_with_allocator<State>(
-          alloc, alloc, write_env(static_cast<decltype(new_sender)&&>(new_sender), static_cast<decltype(senv)&&>(senv)), tok);
-      o->run();
+  template <sender _Sndr, class _Token, class _Env = env<>>
+    requires scope_token<remove_cvref_t<_Token>> && __ycxx::__detail::__exec::__queryable<remove_cvref_t<_Env>>
+  void operator()(_Sndr&& __sndr, _Token&& token, _Env&& env = {}) const {
+    using _Tp = remove_cvref_t<_Token>;
+    _Tp __tok(static_cast<_Token&&>(token));
+    auto&& __new_sender = __tok.wrap(static_cast<_Sndr&&>(__sndr));
+    __ycxx::__detail::__exec::__with_spawn_allocator(__new_sender, static_cast<_Env&&>(env), [&](auto __alloc, auto&& __senv) {
+      using _Sp = decltype(write_env(static_cast<decltype(__new_sender)&&>(__new_sender), static_cast<decltype(__senv)&&>(__senv)));
+      using _State = __ycxx::__adl_free::__exec_spawn_state<decltype(__alloc), _Tp, _Sp>;
+      auto* __o = __ycxx::__detail::__exec::__new_with_allocator<_State>(
+          __alloc, __alloc, write_env(static_cast<decltype(__new_sender)&&>(__new_sender), static_cast<decltype(__senv)&&>(__senv)), __tok);
+      __o->run();
     });
   }
 };
@@ -574,56 +574,56 @@ inline constexpr spawn_t spawn{};
 
 // ---------------------------------------------------------------------------------------------
 // [exec.spawn.future]
-namespace [[gnu::visibility("hidden")]] ycxx { namespace adl_free {
-struct exec_try_cancelable {
-  virtual void try_cancel() noexcept = 0;
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __adl_free {
+struct __exec_try_cancelable {
+  virtual void __try_cancel() noexcept = 0;
 
 protected:
-  ~exec_try_cancelable() = default;
+  ~__exec_try_cancelable() = default;
 };
 
-template <class Completions>
-struct exec_spawn_future_state_base;
-template <class... Sigs>
-struct exec_spawn_future_state_base<std::execution::completion_signatures<Sigs...>> : exec_try_cancelable {
-  using variant_t = std::conditional_t<
-      (::ycxx::detail::exec::nothrow_decay_copy_sig<Sigs> && ...),
-      ::ycxx::detail::exec::apply_unique_t<std::variant, std::monostate, std::tuple<std::execution::set_stopped_t>,
-                                           typename ::ycxx::detail::exec::as_tuple_of_sig<Sigs>::type...>,
-      ::ycxx::detail::exec::apply_unique_t<std::variant, std::monostate, std::tuple<std::execution::set_stopped_t>,
+template <class _Completions>
+struct __exec_spawn_future_state_base;
+template <class... _Sigs>
+struct __exec_spawn_future_state_base<std::execution::completion_signatures<_Sigs...>> : __exec_try_cancelable {
+  using __variant_t = std::conditional_t<
+      (::__ycxx::__detail::__exec::__nothrow_decay_copy_sig<_Sigs> && ...),
+      ::__ycxx::__detail::__exec::__apply_unique_t<std::variant, std::monostate, std::tuple<std::execution::set_stopped_t>,
+                                           typename ::__ycxx::__detail::__exec::__as_tuple_of_sig<_Sigs>::type...>,
+      ::__ycxx::__detail::__exec::__apply_unique_t<std::variant, std::monostate, std::tuple<std::execution::set_stopped_t>,
                                            std::tuple<std::execution::set_error_t, std::exception_ptr>,
-                                           typename ::ycxx::detail::exec::as_tuple_of_sig<Sigs>::type...>>;
-  variant_t result;
+                                           typename ::__ycxx::__detail::__exec::__as_tuple_of_sig<_Sigs>::type...>>;
+  __variant_t result;
   virtual void complete() noexcept = 0;
 
 protected:
-  ~exec_spawn_future_state_base() = default;
+  ~__exec_spawn_future_state_base() = default;
 };
 
-template <class Completions>
-struct exec_spawn_future_receiver {
+template <class _Completions>
+struct __exec_spawn_future_receiver {
   using receiver_concept = std::execution::receiver_tag;
-  exec_spawn_future_state_base<Completions>* state;
-  template <class... T>
-  void set_value(T&&... t) && noexcept {
-    set_complete<std::execution::set_value_t>(static_cast<T&&>(t)...);
+  __exec_spawn_future_state_base<_Completions>* state;
+  template <class... _Tp>
+  void set_value(_Tp&&... t) && noexcept {
+    __set_complete<std::execution::set_value_t>(static_cast<_Tp&&>(t)...);
   }
-  template <class E>
-  void set_error(E&& e) && noexcept {
-    set_complete<std::execution::set_error_t>(static_cast<E&&>(e));
+  template <class _Ep>
+  void set_error(_Ep&& e) && noexcept {
+    __set_complete<std::execution::set_error_t>(static_cast<_Ep&&>(e));
   }
-  void set_stopped() && noexcept { set_complete<std::execution::set_stopped_t>(); }
+  void set_stopped() && noexcept { __set_complete<std::execution::set_stopped_t>(); }
 
 private:
-  template <class CPO, class... T>
-  void set_complete(T&&... t) noexcept {
-    constexpr bool nothrow = (std::is_nothrow_constructible_v<std::decay_t<T>, T> && ...);
-    using tuple_t = ::ycxx::detail::exec::decayed_tuple<CPO, T...>;
-    if constexpr (nothrow || !::ycxx::detail::cfg::exceptions) {
-      state->result.template emplace<tuple_t>(CPO{}, static_cast<T&&>(t)...);
+  template <class _CPO, class... _Tp>
+  void __set_complete(_Tp&&... t) noexcept {
+    constexpr bool nothrow = (std::is_nothrow_constructible_v<std::decay_t<_Tp>, _Tp> && ...);
+    using __tuple_t = ::__ycxx::__detail::__exec::__decayed_tuple<_CPO, _Tp...>;
+    if constexpr (nothrow || !::__ycxx::__detail::__cfg::exceptions) {
+      state->result.template emplace<__tuple_t>(_CPO{}, static_cast<_Tp&&>(t)...);
     } else {
       try {
-        state->result.template emplace<tuple_t>(CPO{}, static_cast<T&&>(t)...);
+        state->result.template emplace<__tuple_t>(_CPO{}, static_cast<_Tp&&>(t)...);
       } catch (...) {
         state->result.template emplace<std::tuple<std::execution::set_error_t, std::exception_ptr>>(std::execution::set_error_t{},
                                                                                                   std::current_exception());
@@ -632,280 +632,280 @@ private:
     state->complete();
   }
 };
-}} // namespace ycxx::adl_free
+}} // namespace __ycxx::__adl_free
 
-namespace [[gnu::visibility("hidden")]] ycxx { namespace detail { namespace exec {
-template <class Sender, class Env>
-using future_spawned_sender =
-    decltype(std::execution::write_env(::ycxx::detail::exec::stop_when(std::declval<Sender>(), std::declval<std::inplace_stop_token>()),
-                                       std::declval<Env>()));
-}}} // namespace ycxx::detail::exec
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail { namespace __exec {
+template <class _Sender, class _Env>
+using __future_spawned_sender =
+    decltype(std::execution::write_env(::__ycxx::__detail::__exec::__stop_when(std::declval<_Sender>(), std::declval<std::inplace_stop_token>()),
+                                       std::declval<_Env>()));
+}}} // namespace __ycxx::__detail::__exec
 
-namespace [[gnu::visibility("hidden")]] ycxx { namespace adl_free {
-template <class Alloc, class Token, class Sender, class Env>
-struct exec_spawn_future_state final
-    : exec_spawn_future_state_base<std::execution::completion_signatures_of_t<::ycxx::detail::exec::future_spawned_sender<Sender, Env>,
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __adl_free {
+template <class _Alloc, class _Token, class _Sender, class _Env>
+struct __exec_spawn_future_state final
+    : __exec_spawn_future_state_base<std::execution::completion_signatures_of_t<::__ycxx::__detail::__exec::__future_spawned_sender<_Sender, _Env>,
                                                                               std::execution::env<>>> {
-  using sigs_t = std::execution::completion_signatures_of_t<::ycxx::detail::exec::future_spawned_sender<Sender, Env>, std::execution::env<>>;
-  using base_t = exec_spawn_future_state_base<sigs_t>;
-  using receiver_t = exec_spawn_future_receiver<sigs_t>;
-  using op_t = std::execution::connect_result_t<::ycxx::detail::exec::future_spawned_sender<Sender, Env>, receiver_t>;
+  using __sigs_t = std::execution::completion_signatures_of_t<::__ycxx::__detail::__exec::__future_spawned_sender<_Sender, _Env>, std::execution::env<>>;
+  using __base_t = __exec_spawn_future_state_base<__sigs_t>;
+  using __receiver_t = __exec_spawn_future_receiver<__sigs_t>;
+  using __op_t = std::execution::connect_result_t<::__ycxx::__detail::__exec::__future_spawned_sender<_Sender, _Env>, __receiver_t>;
 
-  exec_spawn_future_state(Alloc a, Sender&& sndr, Token token, Env env)
-      : alloc(static_cast<Alloc&&>(a)),
+  __exec_spawn_future_state(_Alloc a, _Sender&& __sndr, _Token token, _Env env)
+      : __alloc(static_cast<_Alloc&&>(a)),
         op(std::execution::connect(
-            std::execution::write_env(::ycxx::detail::exec::stop_when(static_cast<Sender&&>(sndr), ssource.get_token()), static_cast<Env&&>(env)),
-            receiver_t{this})),
-        assoc(token.try_associate()) {
-    if (assoc)
+            std::execution::write_env(::__ycxx::__detail::__exec::__stop_when(static_cast<_Sender&&>(__sndr), __ssource.get_token()), static_cast<_Env&&>(env)),
+            __receiver_t{this})),
+        __assoc(token.try_associate()) {
+    if (__assoc)
       std::execution::start(op);
     else
-      std::execution::set_stopped(receiver_t{this});
+      std::execution::set_stopped(__receiver_t{this});
   }
 
   // A registered receiver (the future operation's), type-erased.
-  struct registration {
-    void* rcvr = nullptr;
-    void (*deliver)(void*, typename base_t::variant_t&) noexcept = nullptr;
-    void (*stopped)(void*) noexcept = nullptr;
+  struct __registration {
+    void* __rcvr = nullptr;
+    void (*__deliver)(void*, typename __base_t::__variant_t&) noexcept = nullptr;
+    void (*__stopped)(void*) noexcept = nullptr;
   };
 
   // complete ([exec.spawn.future]/10)
   void complete() noexcept override {
-    lock_.lock();
-    flags_ |= completed;
-    const unsigned f = flags_;
-    lock_.unlock();
-    if (f & abandoned)
-      doom();
-    else if ((f & consumed) && !(f & cancelled)) {
-      reg_.deliver(reg_.rcvr, this->result);
-      doom();
-    } else if (f & consumed)
-      doom(); // the receiver was completed with set_stopped by try-set-stopped
+    __lock_.lock();
+    __flags_ |= __completed;
+    const unsigned __f = __flags_;
+    __lock_.unlock();
+    if (__f & __abandoned)
+      __doom();
+    else if ((__f & __consumed) && !(__f & __cancelled)) {
+      __reg_.__deliver(__reg_.__rcvr, this->result);
+      __doom();
+    } else if (__f & __consumed)
+      __doom(); // the receiver was completed with set_stopped by try-set-stopped
   }
   // consume ([exec.spawn.future]/11)
-  template <class Rcvr>
-  void consume(Rcvr& rcvr) noexcept {
-    lock_.lock();
-    flags_ |= consumed;
-    const unsigned f = flags_;
-    if (!(f & (completed | cancelled)))
-      reg_ = {__builtin_addressof(rcvr), &deliver_to<Rcvr>, &stopped_to<Rcvr>};
-    lock_.unlock();
-    if (f & completed) {
-      deliver_to<Rcvr>(__builtin_addressof(rcvr), this->result);
-      doom();
-    } else if (f & cancelled) {
-      std::execution::set_stopped(static_cast<Rcvr&&>(rcvr)); // complete() destroys the state later
+  template <class _Rcvr>
+  void consume(_Rcvr& __rcvr) noexcept {
+    __lock_.lock();
+    __flags_ |= __consumed;
+    const unsigned __f = __flags_;
+    if (!(__f & (__completed | __cancelled)))
+      __reg_ = {__builtin_addressof(__rcvr), &__deliver_to<_Rcvr>, &__stopped_to<_Rcvr>};
+    __lock_.unlock();
+    if (__f & __completed) {
+      __deliver_to<_Rcvr>(__builtin_addressof(__rcvr), this->result);
+      __doom();
+    } else if (__f & __cancelled) {
+      std::execution::set_stopped(static_cast<_Rcvr&&>(__rcvr)); // complete() destroys the state later
     }
   }
   // try-cancel and try-set-stopped ([exec.spawn.future]/8, /12). The state is pinned meanwhile:
   // the request can complete the spawned operation, whose complete() (or a racing consume) would
   // otherwise destroy the state under this call.
-  void try_cancel() noexcept override {
-    lock_.lock();
-    ++pins_;
-    lock_.unlock();
-    ssource.request_stop();
-    try_set_stopped();
-    lock_.lock();
-    const bool last = --pins_ == 0 && doomed_;
-    lock_.unlock();
+  void __try_cancel() noexcept override {
+    __lock_.lock();
+    ++__pins_;
+    __lock_.unlock();
+    __ssource.request_stop();
+    __try_set_stopped();
+    __lock_.lock();
+    const bool last = --__pins_ == 0 && __doomed_;
+    __lock_.unlock();
     if (last)
       destroy();
   }
-  void try_set_stopped() noexcept {
-    lock_.lock();
-    const unsigned before = flags_;
-    flags_ |= cancelled;
-    registration r = reg_;
-    lock_.unlock();
-    if ((before & consumed) && !(before & completed))
-      r.stopped(r.rcvr);
+  void __try_set_stopped() noexcept {
+    __lock_.lock();
+    const unsigned before = __flags_;
+    __flags_ |= __cancelled;
+    __registration r = __reg_;
+    __lock_.unlock();
+    if ((before & __consumed) && !(before & __completed))
+      r.__stopped(r.__rcvr);
   }
   // abandon ([exec.spawn.future]/13)
   void abandon() noexcept {
-    lock_.lock();
-    const bool done = (flags_ & completed) != 0;
-    lock_.unlock();
+    __lock_.lock();
+    const bool done = (__flags_ & __completed) != 0;
+    __lock_.unlock();
     if (done) {
-      doom();
+      __doom();
       return;
     }
-    ssource.request_stop();
-    lock_.lock();
-    flags_ |= abandoned;
-    const bool done2 = (flags_ & completed) != 0;
-    lock_.unlock();
-    if (done2)
-      doom();
+    __ssource.request_stop();
+    __lock_.lock();
+    __flags_ |= __abandoned;
+    const bool __done2 = (__flags_ & __completed) != 0;
+    __lock_.unlock();
+    if (__done2)
+      __doom();
   }
 
 private:
-  using assoc_t = std::remove_cvref_t<decltype(std::declval<Token&>().try_associate())>;
-  enum : unsigned { completed = 1, consumed = 2, cancelled = 4, abandoned = 8 };
+  using __assoc_t = std::remove_cvref_t<decltype(std::declval<_Token&>().try_associate())>;
+  enum : unsigned { __completed = 1, __consumed = 2, __cancelled = 4, __abandoned = 8 };
 
-  template <class Rcvr>
-  static void deliver_to(void* p, typename base_t::variant_t& result) noexcept {
-    Rcvr& rcvr = *static_cast<Rcvr*>(p);
+  template <class _Rcvr>
+  static void __deliver_to(void* p, typename __base_t::__variant_t& result) noexcept {
+    _Rcvr& __rcvr = *static_cast<_Rcvr*>(p);
     std::visit(
-        [&rcvr](auto& tuple) noexcept {
+        [&__rcvr](auto& tuple) noexcept {
           if constexpr (!std::is_same_v<std::remove_cvref_t<decltype(tuple)>, std::monostate>) {
-            std::apply([&rcvr](auto cpo, auto&... vals) noexcept { cpo(static_cast<Rcvr&&>(rcvr), static_cast<std::remove_reference_t<decltype(vals)>&&>(vals)...); },
+            std::apply([&__rcvr](auto __cpo, auto&... __vals) noexcept { __cpo(static_cast<_Rcvr&&>(__rcvr), static_cast<std::remove_reference_t<decltype(__vals)>&&>(__vals)...); },
                        tuple);
           }
         },
         result);
   }
-  template <class Rcvr>
-  static void stopped_to(void* p) noexcept {
-    std::execution::set_stopped(static_cast<Rcvr&&>(*static_cast<Rcvr*>(p)));
+  template <class _Rcvr>
+  static void __stopped_to(void* p) noexcept {
+    std::execution::set_stopped(static_cast<_Rcvr&&>(*static_cast<_Rcvr*>(p)));
   }
   // Destroys the state, or leaves that to the try_cancel that pins it.
-  void doom() noexcept {
-    lock_.lock();
-    doomed_ = true;
-    const bool now = pins_ == 0;
-    lock_.unlock();
+  void __doom() noexcept {
+    __lock_.lock();
+    __doomed_ = true;
+    const bool now = __pins_ == 0;
+    __lock_.unlock();
     if (now)
       destroy();
   }
   void destroy() noexcept {
-    auto associated = static_cast<assoc_t&&>(assoc);
-    using traits = typename std::allocator_traits<Alloc>::template rebind_traits<exec_spawn_future_state>;
-    typename traits::allocator_type al(static_cast<Alloc&&>(alloc));
-    traits::destroy(al, this);
-    traits::deallocate(al, this, 1);
+    auto __associated = static_cast<__assoc_t&&>(__assoc);
+    using __traits = typename std::allocator_traits<_Alloc>::template rebind_traits<__exec_spawn_future_state>;
+    typename __traits::allocator_type __al(static_cast<_Alloc&&>(__alloc));
+    __traits::destroy(__al, this);
+    __traits::deallocate(__al, this, 1);
   }
 
-  Alloc alloc;
-  std::inplace_stop_source ssource;
-  op_t op;
-  assoc_t assoc;
-  ::ycxx::detail::exec::exec_spin_lock lock_;
-  unsigned flags_ = 0;
-  unsigned pins_ = 0;
-  bool doomed_ = false;
-  registration reg_;
+  _Alloc __alloc;
+  std::inplace_stop_source __ssource;
+  __op_t op;
+  __assoc_t __assoc;
+  ::__ycxx::__detail::__exec::__exec_spin_lock __lock_;
+  unsigned __flags_ = 0;
+  unsigned __pins_ = 0;
+  bool __doomed_ = false;
+  __registration __reg_;
 };
 
 // The owner of a spawn-future-state: destroying it abandons the state ([exec.spawn.future]/20.2).
-template <class State>
-struct exec_future_state_ptr {
-  using ycxx_sigs = typename State::sigs_t;
-  State* p = nullptr;
-  exec_future_state_ptr() = default;
-  explicit exec_future_state_ptr(State* q) noexcept : p(q) {}
-  exec_future_state_ptr(exec_future_state_ptr&& o) noexcept : p(o.p) { o.p = nullptr; }
-  exec_future_state_ptr& operator=(exec_future_state_ptr&& o) noexcept {
-    if (this != __builtin_addressof(o)) {
+template <class _State>
+struct __exec_future_state_ptr {
+  using __ycxx_sigs = typename _State::__sigs_t;
+  _State* p = nullptr;
+  __exec_future_state_ptr() = default;
+  explicit __exec_future_state_ptr(_State* __q) noexcept : p(__q) {}
+  __exec_future_state_ptr(__exec_future_state_ptr&& __o) noexcept : p(__o.p) { __o.p = nullptr; }
+  __exec_future_state_ptr& operator=(__exec_future_state_ptr&& __o) noexcept {
+    if (this != __builtin_addressof(__o)) {
       reset();
-      p = o.p;
-      o.p = nullptr;
+      p = __o.p;
+      __o.p = nullptr;
     }
     return *this;
   }
-  ~exec_future_state_ptr() { reset(); }
+  ~__exec_future_state_ptr() { reset(); }
   void reset() noexcept {
-    if (State* q = p) {
+    if (_State* __q = p) {
       p = nullptr;
-      q->abandon();
+      __q->abandon();
     }
   }
-  State* get() const noexcept { return p; }
-  State* release() noexcept {
-    State* q = p;
+  _State* get() const noexcept { return p; }
+  _State* release() noexcept {
+    _State* __q = p;
     p = nullptr;
-    return q;
+    return __q;
   }
 };
 
 // future-operation ([exec.spawn.future]/15)
-template <class StatePtr, class Rcvr>
-struct exec_future_operation {
-  struct callback {
-    exec_try_cancelable* state;
-    void operator()() noexcept { state->try_cancel(); }
+template <class _StatePtr, class _Rcvr>
+struct __exec_future_operation {
+  struct __y_callback {
+    __exec_try_cancelable* state;
+    void operator()() noexcept { state->__try_cancel(); }
   };
-  using stop_token_t = std::stop_token_of_t<std::execution::env_of_t<Rcvr>>;
-  using stop_callback_t = std::stop_callback_for_t<stop_token_t, callback>;
-  struct rcvr_t {
+  using __stop_token_t = std::stop_token_of_t<std::execution::env_of_t<_Rcvr>>;
+  using __stop_callback_t = std::stop_callback_for_t<__stop_token_t, __y_callback>;
+  struct __rcvr_t {
     using receiver_concept = std::execution::receiver_tag;
-    exec_future_operation* op;
-    template <class... T>
-    void set_value(T&&... ts) && noexcept {
-      op->template set_complete<std::execution::set_value_t>(static_cast<T&&>(ts)...);
+    __exec_future_operation* op;
+    template <class... _Tp>
+    void set_value(_Tp&&... __ts) && noexcept {
+      op->template __set_complete<std::execution::set_value_t>(static_cast<_Tp&&>(__ts)...);
     }
-    template <class E>
-    void set_error(E&& e) && noexcept {
-      op->template set_complete<std::execution::set_error_t>(static_cast<E&&>(e));
+    template <class _Ep>
+    void set_error(_Ep&& e) && noexcept {
+      op->template __set_complete<std::execution::set_error_t>(static_cast<_Ep&&>(e));
     }
-    void set_stopped() && noexcept { op->template set_complete<std::execution::set_stopped_t>(); }
-    std::execution::env_of_t<Rcvr> get_env() const noexcept { return std::execution::get_env(op->rcvr); }
+    void set_stopped() && noexcept { op->template __set_complete<std::execution::set_stopped_t>(); }
+    std::execution::env_of_t<_Rcvr> get_env() const noexcept { return std::execution::get_env(op->__rcvr); }
   };
 
-  Rcvr rcvr;
-  StatePtr state;
-  rcvr_t inner;
-  std::optional<stop_callback_t> stopCallback;
+  _Rcvr __rcvr;
+  _StatePtr state;
+  __rcvr_t __inner;
+  std::optional<__stop_callback_t> __stopCallback;
 
-  exec_future_operation(StatePtr s, Rcvr r) noexcept
-      : rcvr(static_cast<Rcvr&&>(r)), state(static_cast<StatePtr&&>(s)), inner{this} {}
-  exec_future_operation(exec_future_operation&&) = delete;
+  __exec_future_operation(_StatePtr s, _Rcvr r) noexcept
+      : __rcvr(static_cast<_Rcvr&&>(r)), state(static_cast<_StatePtr&&>(s)), __inner{this} {}
+  __exec_future_operation(__exec_future_operation&&) = delete;
 
   void run() & noexcept {
-    stopCallback.emplace(std::get_stop_token(std::execution::get_env(rcvr)), callback{state.get()});
-    state.release()->consume(inner);
+    __stopCallback.emplace(std::get_stop_token(std::execution::get_env(__rcvr)), __y_callback{state.get()});
+    state.release()->consume(__inner);
   }
-  template <class CPO, class... T>
-  void set_complete(T&&... ts) noexcept {
-    stopCallback.reset();
-    CPO{}(static_cast<Rcvr&&>(rcvr), static_cast<T&&>(ts)...);
+  template <class _CPO, class... _Tp>
+  void __set_complete(_Tp&&... __ts) noexcept {
+    __stopCallback.reset();
+    _CPO{}(static_cast<_Rcvr&&>(__rcvr), static_cast<_Tp&&>(__ts)...);
   }
 };
-}} // namespace ycxx::adl_free
+}} // namespace __ycxx::__adl_free
 
-namespace [[gnu::visibility("hidden")]] std { namespace execution {
+namespace [[__gnu__::__visibility__("hidden")]] std { namespace execution {
 struct spawn_future_t {
-  template <sender Sndr, class Token, class Env = env<>>
-    requires scope_token<remove_cvref_t<Token>> && ycxx::detail::exec::queryable<remove_cvref_t<Env>>
-  auto operator()(Sndr&& sndr, Token&& token, Env&& env = {}) const {
-    using T = remove_cvref_t<Token>;
-    T tok(static_cast<Token&&>(token));
-    auto&& new_sender = tok.wrap(static_cast<Sndr&&>(sndr));
-    return ycxx::detail::exec::with_spawn_allocator(new_sender, static_cast<Env&&>(env), [&](auto alloc, auto&& senv) {
-      using NS = decltype(new_sender);
-      using SE = remove_cvref_t<decltype(senv)>;
-      using State = ycxx::adl_free::exec_spawn_future_state<decltype(alloc), T, NS, SE>;
-      auto* s = ycxx::detail::exec::new_with_allocator<State>(alloc, alloc, static_cast<NS&&>(new_sender), tok,
-                                                              SE(static_cast<decltype(senv)&&>(senv)));
-      return ycxx::detail::exec::make_sender(*this, ycxx::adl_free::exec_future_state_ptr<State>(s));
+  template <sender _Sndr, class _Token, class _Env = env<>>
+    requires scope_token<remove_cvref_t<_Token>> && __ycxx::__detail::__exec::__queryable<remove_cvref_t<_Env>>
+  auto operator()(_Sndr&& __sndr, _Token&& token, _Env&& env = {}) const {
+    using _Tp = remove_cvref_t<_Token>;
+    _Tp __tok(static_cast<_Token&&>(token));
+    auto&& __new_sender = __tok.wrap(static_cast<_Sndr&&>(__sndr));
+    return __ycxx::__detail::__exec::__with_spawn_allocator(__new_sender, static_cast<_Env&&>(env), [&](auto __alloc, auto&& __senv) {
+      using _NS = decltype(__new_sender);
+      using _SE = remove_cvref_t<decltype(__senv)>;
+      using _State = __ycxx::__adl_free::__exec_spawn_future_state<decltype(__alloc), _Tp, _NS, _SE>;
+      auto* s = __ycxx::__detail::__exec::__new_with_allocator<_State>(__alloc, __alloc, static_cast<_NS&&>(__new_sender), __tok,
+                                                              _SE(static_cast<decltype(__senv)&&>(__senv)));
+      return __ycxx::__detail::__exec::__make_sender(*this, __ycxx::__adl_free::__exec_future_state_ptr<_State>(s));
     });
   }
 };
 inline constexpr spawn_future_t spawn_future{};
 }} // namespace std::execution
 
-namespace [[gnu::visibility("hidden")]] ycxx { namespace detail { namespace exec {
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail { namespace __exec {
 template <>
-struct impls_for<std::execution::spawn_future_t> : default_impls {
-  template <class Data>
-  static constexpr auto get_attrs(const Data&) noexcept {
+struct __impls_for<std::execution::spawn_future_t> : __default_impls {
+  template <class _Data>
+  static constexpr auto __get_attrs(const _Data&) noexcept {
     return std::execution::env<>();
   }
-  template <class Sndr, class Rcvr>
-  static auto get_state(Sndr&& sndr, Rcvr& rcvr) noexcept {
-    using state_ptr = std::remove_cvref_t<data_type<Sndr>>;
-    return ::ycxx::adl_free::exec_future_operation<state_ptr, Rcvr>(static_cast<Sndr&&>(sndr).template get<1>(), static_cast<Rcvr&&>(rcvr));
+  template <class _Sndr, class _Rcvr>
+  static auto __get_state(_Sndr&& __sndr, _Rcvr& __rcvr) noexcept {
+    using __state_ptr = std::remove_cvref_t<__data_type<_Sndr>>;
+    return ::__ycxx::__adl_free::__exec_future_operation<__state_ptr, _Rcvr>(static_cast<_Sndr&&>(__sndr).template get<1>(), static_cast<_Rcvr&&>(__rcvr));
   }
-  template <class State, class Rcvr>
-  static void start(State& state, Rcvr&) noexcept {
+  template <class _State, class _Rcvr>
+  static void start(_State& state, _Rcvr&) noexcept {
     state.run();
   }
-  template <class Sndr, class... Env>
-  using csigs = sigs_concat_t<sigs_map_t<typename std::remove_cvref_t<data_type<Sndr>>::ycxx_sigs, decayed_sig_t>,
+  template <class _Sndr, class... _Env>
+  using __csigs = __sigs_concat_t<__sigs_map_t<typename std::remove_cvref_t<__data_type<_Sndr>>::__ycxx_sigs, __decayed_sig_t>,
                               std::execution::completion_signatures<set_stopped_t()>,
-                              std::conditional_t<nothrow_decay_copy_sigs<typename std::remove_cvref_t<data_type<Sndr>>::ycxx_sigs>, no_sigs, eptr_sigs>>;
+                              std::conditional_t<__nothrow_decay_copy_sigs<typename std::remove_cvref_t<__data_type<_Sndr>>::__ycxx_sigs>, __no_sigs, __eptr_sigs>>;
 };
-}}} // namespace ycxx::detail::exec
+}}} // namespace __ycxx::__detail::__exec

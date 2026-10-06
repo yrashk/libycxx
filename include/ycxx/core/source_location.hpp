@@ -3,7 +3,7 @@
 
 #include <ycxx/config.hpp>
 
-namespace [[gnu::visibility("hidden")]] std {
+namespace [[__gnu__::__visibility__("hidden")]] std {
 
 namespace contracts {
 class contract_violation;
@@ -20,28 +20,28 @@ private:
     unsigned _M_line;
     unsigned _M_column;
   };
-  const __impl* impl_ = nullptr;
+  const __impl* __impl_ = nullptr;
 
   // contract_violation::location(): the data a compiler-built violation object points to.
   friend class contracts::contract_violation;
-  static constexpr source_location from_builtin(const void* p) noexcept {
+  static constexpr source_location __from_builtin(const void* p) noexcept {
     source_location s;
-    s.impl_ = static_cast<const __impl*>(p);
+    s.__impl_ = static_cast<const __impl*>(p);
     return s;
   }
 
 public:
   static consteval source_location current(const void* p = __builtin_source_location()) noexcept {
     source_location s;
-    s.impl_ = static_cast<const __impl*>(p);
+    s.__impl_ = static_cast<const __impl*>(p);
     return s;
   }
   constexpr source_location() noexcept = default;
 
-  constexpr unsigned line() const noexcept { return impl_ ? impl_->_M_line : 0u; }
-  constexpr unsigned column() const noexcept { return impl_ ? impl_->_M_column : 0u; }
-  constexpr const char* file_name() const noexcept { return impl_ ? impl_->_M_file_name : ""; }
-  constexpr const char* function_name() const noexcept { return impl_ ? impl_->_M_function_name : ""; }
+  constexpr unsigned line() const noexcept { return __impl_ ? __impl_->_M_line : 0u; }
+  constexpr unsigned column() const noexcept { return __impl_ ? __impl_->_M_column : 0u; }
+  constexpr const char* file_name() const noexcept { return __impl_ ? __impl_->_M_file_name : ""; }
+  constexpr const char* function_name() const noexcept { return __impl_ ? __impl_->_M_function_name : ""; }
 };
 
 } // namespace std

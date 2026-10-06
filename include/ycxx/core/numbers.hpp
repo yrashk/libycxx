@@ -6,75 +6,75 @@
 #include <ycxx/core/math_constants.hpp>
 #include <ycxx/core/meta_base.hpp>
 
-namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
-template <class T>
-consteval T numbers_primary() {
-  static_assert(ycxx::detail::always_false<T>,
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+template <class _Tp>
+consteval _Tp __numbers_primary() {
+  static_assert(__ycxx::__detail::__always_false<_Tp>,
                 "[math.constants]/3: the primary template of a mathematical constant variable template is "
                 "instantiated (T is not a floating-point type)");
-  return T();
+  return _Tp();
 }
-template <class T>
-consteval T numbers_value(math_constant c) {
-  return ycxx::detail::math_constant_value<std::remove_cv_t<T>>(c);
+template <class _Tp>
+consteval _Tp __numbers_value(__math_constant c) {
+  return __ycxx::__detail::__math_constant_value<std::remove_cv_t<_Tp>>(c);
 }
-}} // namespace ycxx::detail
+}} // namespace __ycxx::__detail
 
-namespace [[gnu::visibility("hidden")]] std { namespace numbers {
+namespace [[__gnu__::__visibility__("hidden")]] std { namespace numbers {
 
-template <class T>
-inline constexpr T e_v = ycxx::detail::numbers_primary<T>();
-template <class T>
-inline constexpr T log2e_v = ycxx::detail::numbers_primary<T>();
-template <class T>
-inline constexpr T log10e_v = ycxx::detail::numbers_primary<T>();
-template <class T>
-inline constexpr T pi_v = ycxx::detail::numbers_primary<T>();
-template <class T>
-inline constexpr T inv_pi_v = ycxx::detail::numbers_primary<T>();
-template <class T>
-inline constexpr T inv_sqrtpi_v = ycxx::detail::numbers_primary<T>();
-template <class T>
-inline constexpr T ln2_v = ycxx::detail::numbers_primary<T>();
-template <class T>
-inline constexpr T ln10_v = ycxx::detail::numbers_primary<T>();
-template <class T>
-inline constexpr T sqrt2_v = ycxx::detail::numbers_primary<T>();
-template <class T>
-inline constexpr T sqrt3_v = ycxx::detail::numbers_primary<T>();
-template <class T>
-inline constexpr T inv_sqrt3_v = ycxx::detail::numbers_primary<T>();
-template <class T>
-inline constexpr T egamma_v = ycxx::detail::numbers_primary<T>();
-template <class T>
-inline constexpr T phi_v = ycxx::detail::numbers_primary<T>();
+template <class _Tp>
+inline constexpr _Tp e_v = __ycxx::__detail::__numbers_primary<_Tp>();
+template <class _Tp>
+inline constexpr _Tp log2e_v = __ycxx::__detail::__numbers_primary<_Tp>();
+template <class _Tp>
+inline constexpr _Tp log10e_v = __ycxx::__detail::__numbers_primary<_Tp>();
+template <class _Tp>
+inline constexpr _Tp pi_v = __ycxx::__detail::__numbers_primary<_Tp>();
+template <class _Tp>
+inline constexpr _Tp inv_pi_v = __ycxx::__detail::__numbers_primary<_Tp>();
+template <class _Tp>
+inline constexpr _Tp inv_sqrtpi_v = __ycxx::__detail::__numbers_primary<_Tp>();
+template <class _Tp>
+inline constexpr _Tp ln2_v = __ycxx::__detail::__numbers_primary<_Tp>();
+template <class _Tp>
+inline constexpr _Tp ln10_v = __ycxx::__detail::__numbers_primary<_Tp>();
+template <class _Tp>
+inline constexpr _Tp sqrt2_v = __ycxx::__detail::__numbers_primary<_Tp>();
+template <class _Tp>
+inline constexpr _Tp sqrt3_v = __ycxx::__detail::__numbers_primary<_Tp>();
+template <class _Tp>
+inline constexpr _Tp inv_sqrt3_v = __ycxx::__detail::__numbers_primary<_Tp>();
+template <class _Tp>
+inline constexpr _Tp egamma_v = __ycxx::__detail::__numbers_primary<_Tp>();
+template <class _Tp>
+inline constexpr _Tp phi_v = __ycxx::__detail::__numbers_primary<_Tp>();
 
-template <floating_point T>
-inline constexpr T e_v<T> = ycxx::detail::numbers_value<T>(ycxx::detail::math_constant::e);
-template <floating_point T>
-inline constexpr T log2e_v<T> = ycxx::detail::numbers_value<T>(ycxx::detail::math_constant::log2e);
-template <floating_point T>
-inline constexpr T log10e_v<T> = ycxx::detail::numbers_value<T>(ycxx::detail::math_constant::log10e);
-template <floating_point T>
-inline constexpr T pi_v<T> = ycxx::detail::numbers_value<T>(ycxx::detail::math_constant::pi);
-template <floating_point T>
-inline constexpr T inv_pi_v<T> = ycxx::detail::numbers_value<T>(ycxx::detail::math_constant::inv_pi);
-template <floating_point T>
-inline constexpr T inv_sqrtpi_v<T> = ycxx::detail::numbers_value<T>(ycxx::detail::math_constant::inv_sqrtpi);
-template <floating_point T>
-inline constexpr T ln2_v<T> = ycxx::detail::numbers_value<T>(ycxx::detail::math_constant::ln2);
-template <floating_point T>
-inline constexpr T ln10_v<T> = ycxx::detail::numbers_value<T>(ycxx::detail::math_constant::ln10);
-template <floating_point T>
-inline constexpr T sqrt2_v<T> = ycxx::detail::numbers_value<T>(ycxx::detail::math_constant::sqrt2);
-template <floating_point T>
-inline constexpr T sqrt3_v<T> = ycxx::detail::numbers_value<T>(ycxx::detail::math_constant::sqrt3);
-template <floating_point T>
-inline constexpr T inv_sqrt3_v<T> = ycxx::detail::numbers_value<T>(ycxx::detail::math_constant::inv_sqrt3);
-template <floating_point T>
-inline constexpr T egamma_v<T> = ycxx::detail::numbers_value<T>(ycxx::detail::math_constant::egamma);
-template <floating_point T>
-inline constexpr T phi_v<T> = ycxx::detail::numbers_value<T>(ycxx::detail::math_constant::phi);
+template <floating_point _Tp>
+inline constexpr _Tp e_v<_Tp> = __ycxx::__detail::__numbers_value<_Tp>(__ycxx::__detail::__math_constant::e);
+template <floating_point _Tp>
+inline constexpr _Tp log2e_v<_Tp> = __ycxx::__detail::__numbers_value<_Tp>(__ycxx::__detail::__math_constant::log2e);
+template <floating_point _Tp>
+inline constexpr _Tp log10e_v<_Tp> = __ycxx::__detail::__numbers_value<_Tp>(__ycxx::__detail::__math_constant::log10e);
+template <floating_point _Tp>
+inline constexpr _Tp pi_v<_Tp> = __ycxx::__detail::__numbers_value<_Tp>(__ycxx::__detail::__math_constant::pi);
+template <floating_point _Tp>
+inline constexpr _Tp inv_pi_v<_Tp> = __ycxx::__detail::__numbers_value<_Tp>(__ycxx::__detail::__math_constant::inv_pi);
+template <floating_point _Tp>
+inline constexpr _Tp inv_sqrtpi_v<_Tp> = __ycxx::__detail::__numbers_value<_Tp>(__ycxx::__detail::__math_constant::inv_sqrtpi);
+template <floating_point _Tp>
+inline constexpr _Tp ln2_v<_Tp> = __ycxx::__detail::__numbers_value<_Tp>(__ycxx::__detail::__math_constant::ln2);
+template <floating_point _Tp>
+inline constexpr _Tp ln10_v<_Tp> = __ycxx::__detail::__numbers_value<_Tp>(__ycxx::__detail::__math_constant::ln10);
+template <floating_point _Tp>
+inline constexpr _Tp sqrt2_v<_Tp> = __ycxx::__detail::__numbers_value<_Tp>(__ycxx::__detail::__math_constant::sqrt2);
+template <floating_point _Tp>
+inline constexpr _Tp sqrt3_v<_Tp> = __ycxx::__detail::__numbers_value<_Tp>(__ycxx::__detail::__math_constant::sqrt3);
+template <floating_point _Tp>
+inline constexpr _Tp inv_sqrt3_v<_Tp> = __ycxx::__detail::__numbers_value<_Tp>(__ycxx::__detail::__math_constant::inv_sqrt3);
+template <floating_point _Tp>
+inline constexpr _Tp egamma_v<_Tp> = __ycxx::__detail::__numbers_value<_Tp>(__ycxx::__detail::__math_constant::egamma);
+template <floating_point _Tp>
+inline constexpr _Tp phi_v<_Tp> = __ycxx::__detail::__numbers_value<_Tp>(__ycxx::__detail::__math_constant::phi);
 
 inline constexpr double e = e_v<double>;
 inline constexpr double log2e = log2e_v<double>;

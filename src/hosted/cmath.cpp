@@ -5,19 +5,19 @@
 #include <cfenv>
 #include <cmath>
 
-namespace [[gnu::visibility("hidden")]] ycxx { namespace detail::cm {
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail::__cm {
 
-ycxx::detail::fpm::fp_rint_mode current_rounding() noexcept {
+__ycxx::__detail::__fpm::__fp_rint_mode __current_rounding() noexcept {
   switch (std::fegetround()) {
   case FE_DOWNWARD:
-    return ycxx::detail::fpm::fp_rint_mode::floor;
+    return __ycxx::__detail::__fpm::__fp_rint_mode::floor;
   case FE_UPWARD:
-    return ycxx::detail::fpm::fp_rint_mode::ceil;
+    return __ycxx::__detail::__fpm::__fp_rint_mode::ceil;
   case FE_TOWARDZERO:
-    return ycxx::detail::fpm::fp_rint_mode::trunc;
+    return __ycxx::__detail::__fpm::__fp_rint_mode::trunc;
   default:
-    return ycxx::detail::fpm::fp_rint_mode::half_even;
+    return __ycxx::__detail::__fpm::__fp_rint_mode::__half_even;
   }
 }
 
-}} // namespace ycxx::detail::cm
+}} // namespace __ycxx::__detail::__cm

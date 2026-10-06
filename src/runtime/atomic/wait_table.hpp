@@ -4,7 +4,7 @@
 
 #include <ycxx/core/cstdint.hpp>
 
-namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
-// The version counter of the slot of `addr`; stores the slot's waiter count in `waiters`.
-std::uint32_t* atomic_wait_entry(const volatile void* addr, std::uint32_t*& waiters) noexcept;
-}} // namespace ycxx::detail
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+// The version counter of the slot of `__addr`; stores the slot's waiter count in `__waiters`.
+std::uint32_t* __atomic_wait_entry(const volatile void* __addr, std::uint32_t*& __waiters) noexcept;
+}} // namespace __ycxx::__detail

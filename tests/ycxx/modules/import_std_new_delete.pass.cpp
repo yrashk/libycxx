@@ -2,6 +2,7 @@
 // placement forms included, and a program can still replace the replaceable ones
 // ([replacement.functions]).
 // MODULES: std
+// REQUIRES: exceptions
 import std;
 #include "module_check.hpp"
 

@@ -4,15 +4,15 @@
 #include <ycxx/config.hpp>
 #include <ycxx/core/version.hpp>
 #include <ycxx/core/cstddef.hpp>
-#if YCXX_HOSTED
+#if _YCXX_HOSTED
 // The C library's declarations of the functions libycxx declares itself (constexpr, noexcept, or
 // the const-correct pairs) are renamed while its header is read, so that libycxx's can take the
 // names in the global namespace ([support.c.headers.other]/1; DECISIONS §3).
-#  define memchr ycxx_c_memchr
-#  define strchr ycxx_c_strchr
-#  define strpbrk ycxx_c_strpbrk
-#  define strrchr ycxx_c_strrchr
-#  define strstr ycxx_c_strstr
+#  define memchr __ycxx_c_memchr
+#  define strchr __ycxx_c_strchr
+#  define strpbrk __ycxx_c_strpbrk
+#  define strrchr __ycxx_c_strrchr
+#  define strstr __ycxx_c_strstr
 #  include_next <string.h>
 #  undef memchr
 #  undef strchr
@@ -27,8 +27,8 @@
 #  define __STDC_VERSION_STRING_H__ 202311L
 #endif
 
-#if YCXX_HOSTED
-namespace [[gnu::visibility("hidden")]] std {
+#if _YCXX_HOSTED
+namespace [[__gnu__::__visibility__("hidden")]] std {
 using ::memcpy;
 using ::memccpy;
 using ::memmove;
@@ -57,16 +57,16 @@ inline const void* memchr(const void* s, int c, size_t n) noexcept { return __bu
 inline void* memchr(void* s, int c, size_t n) noexcept { return __builtin_memchr(s, c, n); }
 inline const char* strchr(const char* s, int c) noexcept { return __builtin_strchr(s, c); }
 inline char* strchr(char* s, int c) noexcept { return __builtin_strchr(s, c); }
-inline const char* strpbrk(const char* s1, const char* s2) noexcept { return __builtin_strpbrk(s1, s2); }
-inline char* strpbrk(char* s1, const char* s2) noexcept { return __builtin_strpbrk(s1, s2); }
+inline const char* strpbrk(const char* __s1, const char* __s2) noexcept { return __builtin_strpbrk(__s1, __s2); }
+inline char* strpbrk(char* __s1, const char* __s2) noexcept { return __builtin_strpbrk(__s1, __s2); }
 inline const char* strrchr(const char* s, int c) noexcept { return __builtin_strrchr(s, c); }
 inline char* strrchr(char* s, int c) noexcept { return __builtin_strrchr(s, c); }
-inline const char* strstr(const char* s1, const char* s2) noexcept { return __builtin_strstr(s1, s2); }
-inline char* strstr(char* s1, const char* s2) noexcept { return __builtin_strstr(s1, s2); }
+inline const char* strstr(const char* __s1, const char* __s2) noexcept { return __builtin_strstr(__s1, __s2); }
+inline char* strstr(char* __s1, const char* __s2) noexcept { return __builtin_strstr(__s1, __s2); }
 } // namespace std
 #endif
 
-namespace [[gnu::visibility("hidden")]] std {
+namespace [[__gnu__::__visibility__("hidden")]] std {
 // memset_explicit (C23 7.26.6.2): memset whose stores are kept even when the object is never read
 // again: the empty asm statement claims to read all memory through s. A template, as <cmath>'s
 // functions are, so a C library's ::memset_explicit wins unqualified calls.
@@ -79,7 +79,7 @@ inline void* memset_explicit(void* s, int c, size_t n) noexcept {
 } // namespace std
 
 // The renamed C functions' names in the global namespace, now naming libycxx's own.
-#if YCXX_HOSTED
+#if _YCXX_HOSTED
 using std::memchr;
 using std::strchr;
 using std::strpbrk;

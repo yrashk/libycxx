@@ -16,6 +16,8 @@ Output tables (namespace ycxx::detail):
             checks that no two encodings share a key.
 """
 import csv, pathlib, sys
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
+from uglify import uglify_text  # noqa: E402  (the headers spell reserved names, DECISIONS §2)
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 SRC = ROOT / 'tools' / 'data' / 'iana-character-sets.csv'
@@ -87,7 +89,7 @@ def main():
     for k in sorted(keys):
         lines.append(f'    {{"{k}", {keys[k]}}},')
     lines += ['};', '', '} // namespace ycxx::detail', '']
-    OUT.write_text('\n'.join(lines))
+    OUT.write_text(uglify_text('\n'.join(lines)))
     print(f'{OUT.relative_to(ROOT)}: {len(groups)} encodings, {len(keys)} names')
 
 

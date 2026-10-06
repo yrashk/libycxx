@@ -242,9 +242,10 @@ tooling.
   fixed by running it again. The header generators (tools/gen_*.py) keep plain-name templates
   and pass their output through it. `tools/uglify.py --check` (policy stage of `tools/test`, so
   `tools/check-all`) fails when a header spells a non-reserved name the standard does not
-  declare. `tests/ycxx/conformance/nasty_macros*` define the 5875 identifiers the headers used
+  declare. `tests/ycxx/conformance/nasty_macros*` define the 5877 identifiers the headers used
   before the renaming as macros expanding to invalid tokens, then include every public header,
-  together, one by one, and after `import std;`. The draft's index is a snapshot
+  together, one by one, and after `import std;`; every name a later run renames in include/
+  joins that list (`tools/data/uglify/nasty-macros.txt`) and the tests. The draft's index is a snapshot
   (`tools/uglify.py --fetch-index` refreshes it). After a merge:
   `python3 tools/uglify.py && python3 tools/gen_std_module.py && python3 tools/uglify.py --check`.
 

@@ -58,7 +58,9 @@ int main() {
   // locale(other, one, cats): named iff both are
   CHECK(std::locale(l, std::locale(fr), std::locale::time).name() != "*");
   CHECK(std::locale(l, unnamed, std::locale::time).name() == "*");
-  CHECK(std::locale(l, unnamed, std::locale::none).name() == "*"); // also with no category
+  // [locale.cons]/15 (LWG 3676): with none, the name is other's
+  CHECK(std::locale(l, unnamed, std::locale::none).name() == l.name());
+  CHECK(std::locale(unnamed, l, std::locale::none).name() == "*");
 
   // a facet of the composite comes from its own name
   std::locale both(std::locale(de), fr, std::locale::ctype);

@@ -14,7 +14,11 @@ namespaces, helpers and macros) as a reserved identifier. This tool finds and re
                                     and the nasty-macros tests are regenerated (--gen-tests)
     tools/uglify.py --check         fail (exit 1) if include/ or src/'s headers declare or use
                                     an identifier that is neither reserved, standard, nor
-                                    listed as user-facing (tools/check-all, policy stage)
+                                    listed as user-facing, or if a name the draft's library code
+                                    spells for programs (tools/data/uglify/draft-names.txt,
+                                    tools/gen_draft_names.py) is renamed and allowed.txt's
+                                    [draft-internal] does not say why (tools/check-all, policy
+                                    stage)
     tools/uglify.py --list          print those identifiers with a count and a first location
     tools/uglify.py --map           print the renaming (old new) of the identifiers --list prints
     tools/uglify.py --stats         count include/'s identifiers by class
@@ -38,6 +42,9 @@ What is allowed (never renamed):
     handler, ...);
   - [platform]: names libycxx's sources take from the C library or the operating system that
     no standard header declares.
+allowed.txt's [draft-internal] section is not allowed: it lists the names of draft-names.txt that
+programs never spell (exposition-only members the draft does not set in italics, ...), which
+stay renamed; --check fails on any other name of draft-names.txt that is renamed.
 
 The renaming (DECISIONS §2) depends only on the spelling:
   - `ycxx` -> `__ycxx`, `detail` -> `__detail`, any lowercase-initial name x -> `__x`

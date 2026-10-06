@@ -10,22 +10,31 @@ of library names misses it) unless allowed.txt's [standard] section keeps it or 
 [draft-internal] section says why programs never spell it.
 
 Which identifiers count. The library's clauses ([library] to [exec], and Annex D) are read, but
-not their examples (a program's own names), nor Annex C or the other annexes. In their code
-(code blocks, item declarations, and inline code for the second kind below), an identifier is
-listed when it is
+not their examples and notes (a program's own names), nor Annex C or the other annexes. In their
+code (code blocks, item declarations, and the code in sentences and tables for the second and
+third kinds below), an identifier is listed when it is
   - a name declared at namespace or class scope: the declarator-id of a declaration (followed by
     `(`, `;`, `=`, `{`, `[`, `,` or `:` outside parentheses and template argument lists), the
-    name a `using` alias, a class, a concept, an enumeration or an enumerator declares; or
-  - a name used as a member or a qualified name: after `.`, `->` or `::` (`Rcvr::make_receiver_for`,
-    `env.query(...)`, the designators of an aggregate, `remove_cvref_t<Sndr>::sender_concept`).
+    name a `using` alias, a class, a concept, an enumeration or an enumerator declares; also in
+    a class whose name is in italics (`insert-return-type`'s `inserted` and `node`);
+  - a name used as a member or a qualified name: after `.`, `->`, `::` or `::template`
+    (`Rcvr::make_receiver_for`, `Environment::template env_type<...>`, `env.query(...)`, the
+    designators of an aggregate, `remove_cvref_t<Sndr>::sender_concept`); or
+  - the code alone in the first cell of a table's row (the enumerators of `path::format`).
 Not listed: what the draft sets in italics (exposition-only names and placeholders, which eel.is
-renders as <i>), the declarations followed by a comment `// exposition only` and the members of a
-class whose name is in italics, function parameters and template parameters (inside parentheses
-or template argument lists), and the names declared in a block (locals of the exposition's code,
-requires-expressions' parameters). eel.is marks template argument lists (<span
-class='anglebracket'>), so they are told apart from `<` and `>` operators.
+renders as <i>; a hyphenated name that lost its italics too), a declaration with a comment
+`// exposition only` after it or on the line before it, a capital letter with digits (a
+placeholder: `T`, `X`, `E2`), function parameters and template parameters (inside parentheses or
+template argument lists), and the names declared in a block (a function's body, a lambda, a
+requires-expression). A code block of an item's description (its Effects' code), or one whose
+top level has statements, is a body; at the top level of another code block outside a
+namespace only a declaration that starts with a word such as `template`, `using`, `struct` or
+`constexpr` counts. eel.is marks the angle brackets of template argument lists (<span
+class='anglebracket'>), so they are told apart from the `<` and `>` operators; it separates the
+tokens of inline code with zero-width spaces, and links subclause references, which are not
+code.
 """
-import argparse, html, pathlib, re, sys, urllib.request
+import argparse, pathlib, re, sys, urllib.request
 from html.parser import HTMLParser
 
 HERE = pathlib.Path(__file__).resolve().parent
@@ -34,7 +43,6 @@ URL = "https://eel.is/c++draft/full"
 
 ITALIC, EXPOS, LT, GT = "\x01", "\x02", "\x03", "\x04"   # markers in the extracted code
 CODE = {"codeblock": "code", "itemdeclcode": "decl", "texttt": "inline"}
-
 
 
 class _Extract(HTMLParser):

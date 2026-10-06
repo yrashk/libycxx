@@ -1088,8 +1088,7 @@ levels: 29.7 s -> 0.01 s; libstdc++ 8.6 s). Remaining above 1.5x: deque push at 
 - libstdc++ suite, still failing (tests/libstdcxx/TRIAGE.md, "Whole suite with the DejaGnu
   default"; every other failure is fixed, skipped or an expected compiler failure): the
   template-parameter name `C` vs. a user macro (bitset/cons/string_view{,_wide}.cc, DECISIONS §2);
-  `__cpp_lib_constexpr_exceptions` (P3068 is incomplete: `current_exception`, `nested_exception`,
-  `uncaught_exceptions` are not constexpr; Clang cannot throw in constant evaluation); the wide
+  the wide
   standard streams write bytes through the codecvt instead of C wide I/O, so `wcout` leaves
   `stdout` byte-oriented ([iostream.objects.overview]/6; objects/wchar_t/{9662,12048-2,12048-4}.cc);
   locale facets (not changed in that round, the named-locale branch owns them): `money_get`
@@ -1123,5 +1122,7 @@ levels: 29.7 s -> 0.01 s; libstdc++ 8.6 s). Remaining above 1.5x: deque push at 
   also keep out-of-line destructors), and the library's
   `throw_out_of_range`/`throw_length_error`/... throw them during constant evaluation, so on GCC
   `std::string("ab").at(5)` can be caught in a constant expression. `__cpp_lib_constexpr_exceptions`
-  is still undefined: Clang 23 cannot throw during constant evaluation. On GCC `make_exception_ptr`,
+  is defined on GCC and undefined on Clang 23, which cannot throw during constant evaluation;
+  `current_exception`, `uncaught_exceptions` and the `nested_exception` facilities are not
+  constexpr in the draft (P3818; DECISIONS §4). On GCC `make_exception_ptr`,
   `rethrow_exception` and `exception_ptr_cast` work there too (DECISIONS §4). (`format_error` is constexpr.)

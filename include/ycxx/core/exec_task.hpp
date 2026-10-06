@@ -562,8 +562,16 @@ public:
         return get_stop_token(get_env(__rcvr));
       } else {
         if (!__source.has_value()) {
-          __source.emplace();
           auto __tok = get_stop_token(get_env(__rcvr));
+          // /5.2: the source's stop_possible() is the receiver token's. A source type with a
+          // no-state constructor (stop_source) can have it false; inplace_stop_source cannot.
+          if constexpr (is_constructible_v<stop_source_type, nostopstate_t>) {
+            if (!__tok.stop_possible()) {
+              __source.emplace(nostopstate);
+              return __source->get_token();
+            }
+          }
+          __source.emplace();
           if constexpr (!unstoppable_token<__rcvr_token_t>)
             __source_link.emplace(__tok, __ycxx::__detail::__exec::__task_stop_forward<stop_source_type>{&*__source});
         }

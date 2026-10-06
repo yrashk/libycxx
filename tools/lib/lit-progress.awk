@@ -1,6 +1,6 @@
 # libycxx test scripts: turns lit's output (run with -a: every test's output) into a live,
 # traceable display. POSIX awk (gawk, mawk, BSD awk). Variables (-v):
-#   tty=1          also keep a status line (counts, elapsed time, ETA) redrawn under the results
+#   tty=1          also keep a status line (counts, elapsed time, ETA, threads) redrawn under the results
 #   quiet=1        list only the tests that did not pass (plus progress every 10% without a tty)
 #   verbose=1      print every test's whole transcript, passing ones included
 #   details=N      print the transcript of the first N failures (default 10; the log has all)
@@ -24,10 +24,11 @@ function counts(   s) {
   if (nskip) s = s "  " yellow s_skip " " nskip reset
   return s
 }
-function head_of(n, tot,   el, eta) {
+function head_of(n, tot,   el, eta, thr) {
   el = now() - t0
   eta = (n > 0 && n < tot) ? "  ETA " dur(int(el * (tot - n) / n)) : ""
-  return sprintf("[" sprintf("%%%dd", length(tot "")) "/%d %3d%%  %s%s]", n, tot, int(100 * n / tot), dur(el), eta)
+  thr = workers > 0 ? sprintf("  %d %s", workers, (workers == 1 ? "thread" : "threads")) : ""
+  return sprintf("[" sprintf("%%%dd", length(tot "")) "/%d %3d%%  %s%s%s]", n, tot, int(100 * n / tot), dur(el), eta, thr)
 }
 function status() {
   if (!tty || total == 0) return
@@ -106,7 +107,7 @@ function end_test(   sym, col, i, limit, label) {
 
 BEGIN {
   if (details == "") details = 10
-  t0 = now(); decile = 0; drawn = 0; pending = 0; inlist = 0; total = 0; done = 0
+  t0 = now(); workers = 0; decile = 0; drawn = 0; pending = 0; inlist = 0; total = 0; done = 0
   npass = nfail = nskip = 0
 }
 
@@ -133,7 +134,12 @@ pending { test_line($0); next }
   clear_status()
   line = $0
   if (line ~ /^\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*$/) next
-  if (line ~ /^-- Testing: /) { printf "  %s%s%s\n", dim, line, reset; next }
+  if (line ~ /^-- Testing: /) {
+    # "-- Testing: N tests, J workers --": the number of tests run in parallel, shown in the
+    # progress head.
+    if (match(line, /[0-9]+ workers?/)) workers = substr(line, RSTART, RLENGTH) + 0
+    printf "  %s%s%s\n", dim, line, reset; next
+  }
   if (line ~ /^(Failed|Unexpectedly Passed|Unresolved|Timed Out) Tests \([0-9]+\):$/) {
     inlist = 1; printf "\n  %s%s%s\n", red bold, line, reset; next
   }

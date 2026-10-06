@@ -7,9 +7,9 @@
 #include <ycxx/core/math_abs.hpp>
 #include <ycxx/core/c_bsearch.hpp>
 #if YCXX_HOSTED
-// The C library's declarations of the functions libycxx defines itself (constexpr, or the
-// const-correct bsearch pair) are renamed while its header is read, so that <stdlib.h>/<inttypes.h>
-// can place libycxx's in the global namespace ([support.c.headers.other]/1; DECISIONS §3).
+// The C library's declarations of the functions libycxx declares itself (constexpr, noexcept, or
+// the const-correct pairs) are renamed while its header is read, so that libycxx's can take the
+// names in the global namespace ([support.c.headers.other]/1; DECISIONS §3).
 #  define abs ycxx_c_abs
 #  define labs ycxx_c_labs
 #  define llabs ycxx_c_llabs
@@ -17,6 +17,8 @@
 #  define ldiv ycxx_c_ldiv
 #  define lldiv ycxx_c_lldiv
 #  define bsearch ycxx_c_bsearch
+#  define atexit ycxx_c_atexit
+#  define at_quick_exit ycxx_c_at_quick_exit
 #  include_next <stdlib.h>
 #  undef abs
 #  undef labs
@@ -25,11 +27,18 @@
 #  undef ldiv
 #  undef lldiv
 #  undef bsearch
+#  undef atexit
+#  undef at_quick_exit
 #else
 #  include <ycxx/core/c_stdlib.hpp>
 #endif
 
 #if YCXX_HOSTED
+// atexit, at_quick_exit: noexcept ([support.start.term]), whether or not the C library's
+// declarations say so; theirs are renamed while its header is read (C_RENAMED). One declaration
+// serves both handler linkages (the compilers do not distinguish them in function types).
+extern "C" int atexit(void (*func)(void)) noexcept;
+extern "C" int at_quick_exit(void (*func)(void)) noexcept;
 // strfromd/strfromf/strfroml (C23 7.24.1.3) for C libraries without them, in the hosted runtime
 // (src/hosted/strfrom.cpp): snprintf with the format checked and rebuilt.
 namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
@@ -164,4 +173,6 @@ using std::div;
 using std::ldiv;
 using std::lldiv;
 using std::bsearch;
+using std::atexit;
+using std::at_quick_exit;
 #endif

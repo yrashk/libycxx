@@ -3,7 +3,7 @@
 #include <system_error>
 #include <ycxx/pal.h>
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 
 namespace {
 [[noreturn]] void random_device_error(int e, const char* what) {

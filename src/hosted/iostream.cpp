@@ -315,7 +315,7 @@ bool synced = true;  // sync_with_stdio state
 } // namespace
 
 // The objects, as storage; <iostream> declares them with their stream types.
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 alignas(istream) unsigned char cin[sizeof(istream)];
 alignas(ostream) unsigned char cout[sizeof(ostream)];
 alignas(ostream) unsigned char cerr[sizeof(ostream)];
@@ -368,7 +368,7 @@ void flush_objects() {
 
 } // namespace
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 
 ios_base::Init::Init() {
   static const bool constructed = construct_objects();

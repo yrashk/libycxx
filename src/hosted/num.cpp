@@ -123,7 +123,7 @@ size_t format_float(char* buf, size_t cap, F v, std::ios_base::fmtflags flags, s
 
 } // namespace
 
-namespace ycxx::detail {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 
 size_t num_put_integer(char* buf, unsigned long long v, bool neg, bool is_signed, std::ios_base::fmtflags flags,
                        size_t* pad) noexcept {
@@ -217,7 +217,7 @@ num_parse num_get_integer(const char* s, size_t n, int base, unsigned long long*
   return overflow ? num_parse::overflow : num_parse::ok;
 }
 
-} // namespace ycxx::detail
+}} // namespace ycxx::detail
 
 namespace {
 
@@ -300,7 +300,7 @@ ycxx::detail::num_parse parse_float(const char* s, size_t n, F* v) noexcept {
 
 } // namespace
 
-namespace ycxx::detail {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 
 num_parse num_get_float(const char* field, size_t n, float* v) noexcept { return parse_float(field, n, v); }
 num_parse num_get_float(const char* field, size_t n, double* v) noexcept { return parse_float(field, n, v); }
@@ -321,4 +321,4 @@ bool num_grouping_ok(const std::string& grouping, const unsigned* groups, size_t
   return true;
 }
 
-} // namespace ycxx::detail
+}} // namespace ycxx::detail

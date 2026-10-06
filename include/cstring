@@ -5,7 +5,20 @@
 #include <ycxx/core/version.hpp>
 #include <ycxx/core/cstddef.hpp>
 #if YCXX_HOSTED
+// The C library's declarations of the functions libycxx declares itself (constexpr, noexcept, or
+// the const-correct pairs) are renamed while its header is read, so that libycxx's can take the
+// names in the global namespace ([support.c.headers.other]/1; DECISIONS §3).
+#  define memchr ycxx_c_memchr
+#  define strchr ycxx_c_strchr
+#  define strpbrk ycxx_c_strpbrk
+#  define strrchr ycxx_c_strrchr
+#  define strstr ycxx_c_strstr
 #  include_next <string.h>
+#  undef memchr
+#  undef strchr
+#  undef strpbrk
+#  undef strrchr
+#  undef strstr
 #else
 #  include <ycxx/core/c_string.hpp>
 #endif
@@ -30,17 +43,26 @@ using ::strcmp;
 using ::strcoll;
 using ::strncmp;
 using ::strxfrm;
-using ::memchr;
-using ::strchr;
 using ::strcspn;
-using ::strpbrk;
-using ::strrchr;
 using ::strspn;
-using ::strstr;
 using ::strtok;
 using ::memset;
 using ::strerror;
 using ::strlen;
+
+// [cstring.syn]: the const-correct pairs of memchr, strchr, strpbrk, strrchr and strstr
+// ([library.c]/2). The C library's declarations are renamed while its header is read (C_RENAMED),
+// so these are the only ones on every C library; the compilers' builtins call the C functions.
+inline const void* memchr(const void* s, int c, size_t n) noexcept { return __builtin_memchr(s, c, n); }
+inline void* memchr(void* s, int c, size_t n) noexcept { return __builtin_memchr(s, c, n); }
+inline const char* strchr(const char* s, int c) noexcept { return __builtin_strchr(s, c); }
+inline char* strchr(char* s, int c) noexcept { return __builtin_strchr(s, c); }
+inline const char* strpbrk(const char* s1, const char* s2) noexcept { return __builtin_strpbrk(s1, s2); }
+inline char* strpbrk(char* s1, const char* s2) noexcept { return __builtin_strpbrk(s1, s2); }
+inline const char* strrchr(const char* s, int c) noexcept { return __builtin_strrchr(s, c); }
+inline char* strrchr(char* s, int c) noexcept { return __builtin_strrchr(s, c); }
+inline const char* strstr(const char* s1, const char* s2) noexcept { return __builtin_strstr(s1, s2); }
+inline char* strstr(char* s1, const char* s2) noexcept { return __builtin_strstr(s1, s2); }
 } // namespace std
 #endif
 
@@ -55,3 +77,12 @@ inline void* memset_explicit(void* s, int c, size_t n) noexcept {
   return s;
 }
 } // namespace std
+
+// The renamed C functions' names in the global namespace, now naming libycxx's own.
+#if YCXX_HOSTED
+using std::memchr;
+using std::strchr;
+using std::strpbrk;
+using std::strrchr;
+using std::strstr;
+#endif

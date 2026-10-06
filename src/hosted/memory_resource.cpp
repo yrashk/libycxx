@@ -9,7 +9,7 @@
 #include <ycxx/core/single_threaded.hpp>
 #include <ycxx/pal.h>
 
-namespace ycxx::detail {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 
 // Lives at the start of a free pool block.
 struct pool_free_block {
@@ -197,7 +197,7 @@ struct lock_guard {
 };
 } // namespace
 
-} // namespace ycxx::detail
+}} // namespace ycxx::detail
 
 // ---- memory_resource and the global resources ([mem.res.global]) -------------------------------
 
@@ -249,7 +249,7 @@ constinit std::pmr::memory_resource* default_resource = &new_delete_storage.obje
 
 } // namespace
 
-namespace std::pmr {
+namespace [[gnu::visibility("hidden")]] std { namespace pmr {
 
 memory_resource::~memory_resource() = default;
 
@@ -375,4 +375,4 @@ void monotonic_buffer_resource::do_deallocate(void*, size_t, size_t) {}
 
 bool monotonic_buffer_resource::do_is_equal(const memory_resource& other) const noexcept { return this == &other; }
 
-} // namespace std::pmr
+}} // namespace std::pmr

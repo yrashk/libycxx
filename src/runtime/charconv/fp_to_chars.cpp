@@ -16,7 +16,7 @@
 // default rounding mode. %a works on the bits directly.
 #include "fp_common.hpp"
 
-namespace ycxx::detail::fpconv {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail::fpconv {
 namespace {
 
 // ---- shortest digits ---------------------------------------------------------------------------
@@ -711,7 +711,7 @@ std::to_chars_result to_chars_impl(char* first, char* last, fp_raw bits, int fmt
 }
 
 } // namespace
-} // namespace ycxx::detail::fpconv
+}} // namespace ycxx::detail::fpconv
 
 std::to_chars_result ycxx::detail::fp_to_chars(char* first, char* last, fp_kind kind, fp_raw bits, int fmt,
                                                int precision) noexcept {

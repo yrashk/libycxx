@@ -10,7 +10,7 @@
 #include <exception>
 #include <typeinfo>
 
-namespace ycxx::abi {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace abi {
 
 // "XXXXC++\0" ([ABI-EH] 2.4.3), with the vendor string "YCXX". The last byte distinguishes a
 // dependent exception (a rethrown exception_ptr, which refers to a primary exception's object).
@@ -93,7 +93,7 @@ exception_header* retain_primary(exception_header* h) noexcept;
 // terminate handler sees it as the current exception ([except.handle]/9).
 [[noreturn]] void terminate_for(_Unwind_Exception* ue) noexcept;
 
-} // namespace ycxx::abi
+}} // namespace ycxx::abi
 
 // [ABI-EH] entry points defined by the runtime and used across its translation units.
 extern "C" {

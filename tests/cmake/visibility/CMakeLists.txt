@@ -5,8 +5,10 @@
 #   host    program built with the toolchain's C++ library, linked with `other` and `mine`
 #   catcher program built with libycxx, catching the exceptions of `thrower`, a shared library
 #           built with libycxx (prints "caught 15 uncaught 0 0")
-# Each of `other` and `mine` throws and catches exceptions and asks std::current_exception; both
-# programs print "mine 3 other 3" when each library uses its own runtime. Before libycxx hid its
+# Each of `other` and `mine` throws and catches exceptions, asks std::current_exception, and makes
+# an allocation fail (its own new_handler, its own bad_alloc); both programs print "mine 7 other 7"
+# when each library uses its own runtime, allocation functions included (libycxx's defaults are
+# shared among libycxx images only, through the allocation table). Before libycxx hid its
 # symbols, the exported definitions of one library bound the other's references on ELF (and
 # Apple's libc++abi took over libycxx's weak definitions on Darwin).
 cmake_minimum_required(VERSION 3.28)

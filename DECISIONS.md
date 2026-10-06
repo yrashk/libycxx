@@ -59,7 +59,18 @@ variable templates. The preprocessor is used only where the language cannot do t
    `constexpr`. It always diagnoses a violation during constant evaluation, and checks at run
    time when `YCXX_HARDENED=1` (via `cfg::hardened`).
 
-8. **Keep looking for replacements.** Every remaining preprocessor use is technical debt. When a
+8. **Facts about the target are discovered, not written down.** What a C library, an assembler
+   or a compiler's code generation provides is never encoded as knowledge about a platform
+   (`#if defined(__APPLE__)` for "has no strfromd", a hand-made list of symbols). A fact the
+   preprocessor can see is tested where it is used: a macro (`#ifndef _PRINTF_NAN_LEN_MAX`,
+   `!defined(PRIb8)`) or a header (`__has_include_next(<uchar.h>)`). Anything else is found
+   when libycxx is configured, by CMake probes compiled against the real toolchain on every
+   target, and handed to the code as generated files: `cmake/ycxx-c-library.cmake` writes the
+   C library's `YCXX_C_HAS_*` switches to `<ycxx/generated/c_library.hpp>` (included by
+   `config.hpp` when found; without it a C23 C library is assumed, so a gap is a compile error
+   naming the function), and the fundamental type_info probe (`CMakeLists.txt`) writes the
+   symbols `src/abi/rtti.cpp` hides (§2). Each probe is documented where it is defined.
+9. **Keep looking for replacements.** Every remaining preprocessor use is technical debt. When a
    new language feature or an in-language probe can replace one, replace it.
 
 Rationale: `if constexpr` branches are type-checked, so both configurations stay compilable.
@@ -80,7 +91,8 @@ tooling.
   (`::ycxx::detail::f(...)`), so a user function with the same name in an argument's namespace is
   never picked up. Trait structs (`iterator_traits`, `pointer_traits`, `common_reference`) may
   still derive from `ycxx::detail` helpers, because they are never function arguments.
-- **libycxx's symbols have hidden visibility: a program or shared object exports none of them.**
+- **libycxx's symbols have hidden visibility: a program or shared object exports none of them**
+  (one table excepted, below).
   Another C++ library in the same process must neither take over libycxx's definitions nor be
   taken over by them. On Darwin, libSystem loads Apple's libc++ and libc++abi into every process,
   and dyld coalesces each exported weak definition with a non-weak one of the same name in any
@@ -105,27 +117,68 @@ tooling.
     declares at global scope or includes: the C library's functions (a hidden reference cannot
     bind to a shared libc), the replaceable functions; every header would have to keep its
     C-library includes outside the region.
-  - **Archives.** `libycxx.a`, `libycxx-abi.a` (and the freestanding runtime archive) are built
-    with `-fvisibility=hidden`. Users need no flag to get hidden symbols, but GCC warns
+  - **Archives.** The sources of `libycxx.a`, `libycxx-abi.a` (and the freestanding runtime
+    archive) say what is hidden themselves, as the headers do: every file-scope opening of `std`,
+    `ycxx` and `__cxxabiv1` in `src/` carries the attribute (`tools/check_visibility.py` covers
+    `src/` too), and what they define outside those namespaces carries
+    `[[gnu::visibility("hidden")]]` on its declaration: the ABI entry points (`__cxa_*`,
+    `__dynamic_cast`, `__gxx_personality_v0`), the PAL (`ycxx/pal.h`), the replaceable hooks'
+    defaults (`handle_contract_violation`, `ycxx_error_handler`) and the runtime's markers. No
+    `-fvisibility=hidden`: a flag changes what a declaration means without the source saying so
+    (it would also narrow the allocation table's declaration, which must stay default), and a
+    build of the sources by other means gets the same result. Only `ycxx_allocation_functions`
+    is exported (checked: `nm` of both archives, both compilers). Users need no flag to get
+    hidden symbols, but GCC warns
     (`-Wattributes`) about each program class with a member or base of a library class type: it
     gives such a class the lower visibility and says so. The warning says nothing about the
     program, so the CMake package (`ycxx::headers`) and `tools/ycxx-cxx` pass `-Wno-attributes`
-    to GCC; other build systems add it themselves (STATUS, known limitations). What the compilers keep default despite the
-    flag is hidden with assembler directives (`asm((constant-expression))`, `.hidden` on ELF,
-    `.private_extern` on Mach-O): the default replaceable allocation functions (both compilers
-    declare them implicitly; a visibility attribute conflicts with that declaration), GCC's
-    seven predeclared `__cxa_*` entry points (GCC ignores an attribute on them with a warning),
-    and, on ELF, the fundamental type_info objects GCC emits.
+    to GCC; other build systems add it themselves (STATUS, known limitations). What the compilers
+    keep default despite an attribute is hidden with assembler directives (`asm((constant-expression))`, `.hidden` on ELF,
+    `.private_extern` on Mach-O): GCC's seven predeclared `__cxa_*` entry points (GCC ignores an attribute on them with a warning),
+    and the fundamental type_info objects GCC emits with `__fundamental_type_info`'s key function.
+    Which of those exist depends on the target (AArch64 adds `__bf16`, `__mfp8` and the SVE types),
+    so their list is not written down: CMake compiles a probe defining that key function with the
+    runtime's flags at configure time, lists its `_ZTI`/`_ZTS` symbols with `nm`, and generates
+    `abi/fundamental_type_infos.hpp` in the build tree, which `src/abi/rtti.cpp` turns into
+    `.hidden`/`.private_extern` directives.
   - **Default visibility** stays only for what is not libycxx's to hide: the C library
     functions `ycxx/core/c_stdlib.hpp` declares by assembler name, and a program's own
     definitions. That includes a program's replacement `operator new`: it is linked instead of
     the archive member holding the hidden default ([replacement.functions]), and is exported as
-    the program's other functions are. libycxx's defaults are hidden on every target (as
-    Clang's `-fvisibility-global-new-delete=force-hidden`, added for libFuzzer's private libc++ and
-    Fuchsia, https://reviews.llvm.org/D53787): on Darwin they are not patched
-    into the shared cache, so system code keeps libc++abi's allocation functions; on ELF a
-    shared library built with libstdc++ keeps its own. Both use `malloc`/`free`, so memory
-    passed between the two still pairs.
+    the program's other functions are (the nothrow forms are declared
+    `[[gnu::visibility("default")]]` in `<new>` so that a replacement of them is too: a function
+    otherwise takes the hidden visibility of its parameter type `std::nothrow_t`).
+  - **The allocation table.** libycxx's default allocation functions are hidden (assembler
+    directives, `src/runtime/new/hidden.hpp`), so they never take over, and are never taken
+    over by, another runtime's (Apple's libc++abi, libstdc++). Yet the images of a process that
+    link libycxx must share one set: an object built in a shared library and destroyed in the
+    program is allocated by one image and freed by the other, which pairs only while both reach
+    the same functions (a program that replaces `operator delete`, AddressSanitizer's
+    alloc-dealloc-mismatch). Each image therefore holds `ycxx_allocation_functions`
+    (`src/runtime/new/allocation_table.{hpp,cpp}`), a weak, exported, constant-initialized table
+    under a name only libycxx uses, whose entries call that image's `::operator new` ...
+    `::operator delete[]` (thunks with `size_t`/`void*` signatures). The dynamic linker binds
+    every image to the first image's table: the program's, which the CMake package and
+    `tools/ycxx-cxx` keep in it (`-u` of a hidden anchor in the table's archive member, since a
+    libycxx shared library on the link line would satisfy `-u` of the table itself, and
+    `--export-dynamic-symbol` where the linker has it; both probed, `cmake/ycxx-link.cmake`); in a host that does not link libycxx, the first
+    libycxx library's. Each default first looks up its entry and forwards when the entry is not
+    its own image's; otherwise it is the process's default. So a program's replacement serves
+    every libycxx image ([replacement.functions]/2), objects cross libycxx images, and libycxx
+    and another runtime keep their own allocation functions, `new_handler` and `bad_alloc`
+    (`tests/cmake/visibility`: "mine 7 other 7", with libycxx's library in a libycxx program
+    and in a host built with the toolchain's library). The cost: one indirect call per
+    allocation in a shared library, one comparison in the program. A program's own replacement
+    is exported and also serves the other runtime's code, the platform's ordinary rule for a
+    program that replaces `operator new`. Rejected: libycxx's defaults with default visibility
+    (as libstdc++ and libc++): on Darwin dyld coalesces them with libc++abi's by name, taking
+    each from the first image in load order that defines it (observed, macOS 26), so a libycxx
+    program's default served Apple's libc++ (whose failure then threw libycxx's `bad_alloc` into
+    code built with libc++abi), and a libycxx shared library in a host without libycxx got
+    libc++abi's `operator new` (libc++abi's `bad_alloc`, foreign to libycxx's runtime, and
+    libycxx's `new_handler` never called); ELF interposition does the same when libycxx and
+    libstdc++ meet. Per-image hidden defaults without the table (libycxx before 2026-10-05)
+    could not serve a program's replacement to its shared libraries.
   - **The ABI runtime is per image.** `__cxa_*`, `__gxx_personality_v0`, the `__cxxabiv1`
     type_info classes and their vtables, `std::type_info` and the classes the compiler looks
     up (`std::initializer_list`, `std::align_val_t`, `std::bad_alloc`, the comparison
@@ -147,9 +200,7 @@ tooling.
     for every class of a program, outside libycxx's namespaces, that has a member or base of a
     libycxx class type: GCC has no way to hide a class's members, type_info and vtable without
     hiding the class's type (Clang's `type_visibility` attribute), and hidden class types are
-    what keeps the exception classes from being coalesced on Darwin. Clang does not warn. GCC
-    on Darwin keeps the fundamental type_info objects default (directives for types a target
-    lacks are not portable to Mach-O); benign, as libc++abi exports the same objects.
+    what keeps the exception classes from being coalesced on Darwin. Clang does not warn.
   Tested by `tests/ycxx/linkage/no_exported_library_symbols` and `tests/cmake/run.sh` (exports
   of the example programs; `tests/cmake/visibility`, libycxx and libstdc++ in one process).
 - Template parameters and locals use plain names (`T`, `first`), not reserved `_Ugly` names.
@@ -268,14 +319,21 @@ tooling.
   global namespace). In C++, `<stdlib.h>`, `<inttypes.h>`, `<string.h>` and `<wchar.h>` include
   `<cstdlib>`, `<cinttypes>`, `<cstring>`, `<cwchar>` and add the names those declare themselves (`using std::abs;`,
   `div`, the const-correct `bsearch` pair, `memalignment`, `free_sized`, `imaxabs`,
-  `memset_explicit`, the const-correct `wcschr` pairs, ...); in C they are the C library's (`#include_next`), as `<math.h>` is.
+  `memset_explicit`, the const-correct `strchr` and `wcschr` pairs, ...); `<time.h>` and `<uchar.h>`
+  likewise wrap `<ctime>` and `<cuchar>`; in C they are the C library's (`#include_next`), as `<math.h>` is.
   `<complex.h>` and `<tgmath.h>` include `<complex>` (and `<cmath>`) in C++ and never the C
   library's, whose `complex`/`I` and type-generic macros would break C++ code. The `<cname>`
   headers read the C library's header with `#include_next`. A C function that is an exact match
   for one of libycxx's (`int abs(int)`, `div_t div(int, int)`, `labs`, `ldiv`, `imaxabs`, ...)
   would win overload resolution against libycxx's constexpr templates, cannot be redeclared
-  constexpr, and C's `bsearch` conflicts with the const pair; so `<cstdlib>` and `<cinttypes>`
-  rename those C declarations while they read the C library's header (`#define abs ycxx_c_abs`,
+  constexpr, and C's `bsearch` conflicts with the const pair. The same holds for the searching
+  functions whose C declaration is `char* strchr(const char*, int)` (`memchr`, `strchr`,
+  `strpbrk`, `strrchr`, `strstr`, and the wide `wcschr`, `wcspbrk`, `wcsrchr`, `wcsstr`,
+  `wmemchr`): [cstring.syn] and [cwchar.syn] replace it with a const/non-const pair, which
+  cannot coexist with it; and for `atexit`/`at_quick_exit`, which [support.start.term] declares
+  noexcept. So `<cstdlib>`, `<cinttypes>`, `<cstring>` and `<cwchar>` rename those C
+  declarations on every C library (glibc's own C++ pairs too, so nothing depends on which C
+  library it is) while they read the C library's header (`#define abs ycxx_c_abs`,
   `#include_next`, `#undef`; the renamed declarations are never used) and then place
   libycxx's functions under the C names in the global namespace, so code that calls `::abs` or an
   unqualified `abs` after `<cstdlib>` keeps working. This is preprocessor use the language cannot
@@ -296,12 +354,16 @@ tooling.
   layout must equal the C library's. `config.hpp` names the family once (`YCXX_TARGET_DARWIN`
   for the macros, which must be literals usable in `#if`; `cfg::darwin` for everything else):
   the Linux values (glibc, musl; also the bare-metal default) or Darwin's (BSD errno numbers,
-  `FP_NAN` 1 .. `FP_SUBNORMAL` 5, a 128-byte `mbstate_t` for the freestanding definition). `errc` gives each value as
+  `FP_NAN` 1 .. `FP_SUBNORMAL` 5, a 128-byte `mbstate_t` for the freestanding definition). (These
+  are freestanding values that core must spell out without the C library's headers, each checked
+  against them; what a hosted wrapper needs to know about the C library is probed instead, §1
+  rule 8.) `errc` gives each value as
   `errno_number(Linux, Darwin)`; the freestanding macro lists are checked against `errc`, and
   every value against the C library's headers wherever those are included (`<system_error>`,
   `<cwchar>`, `<cuchar>`, `src/hosted/cmath_check.cpp`). Where the C library lacks a C23 function
-  of a wrapper (Darwin: `strfromd/f/l`, `mbrtoc8`/`c8rtomb`, and the whole of `<uchar.h>` on
-  older SDKs), a `YCXX_C_HAS_*` switch replaces the using-declaration with libycxx's own,
+  of a wrapper (`strfromd/f/l`, `mbrtoc8`/`c8rtomb`, `timespec_getres`, or the whole of
+  `<uchar.h>`; found by `cmake/ycxx-c-library.cmake`, §1 rule 8), a `YCXX_C_HAS_*` switch replaces
+  the using-declaration with libycxx's own,
   defined in the hosted runtime (`src/hosted/strfrom.cpp`, `src/hosted/uchar.cpp`, built on every
   platform). `strfrom*` are templates (as `free_sized` is), so a C library that gains them wins
   unqualified calls; the `<cuchar>` fallbacks are plain functions, as the C library's would be.

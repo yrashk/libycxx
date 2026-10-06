@@ -9,7 +9,7 @@
 #include <exception>
 #include <typeinfo>
 
-namespace ycxx::abi {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace abi {
 
 // Exception handler matching ([except.handle]/3), used by the personality routine and by
 // exception_ptr_cast.
@@ -24,7 +24,7 @@ namespace ycxx::abi {
 bool catch_matches(const std::type_info* handler, const std::type_info* thrown, void** obj) noexcept;
 
 // Assembler text built during constant evaluation, for `asm((...))`: the directives that hide the
-// symbols GCC gives default visibility despite -fvisibility=hidden (DECISIONS §2).
+// symbols GCC gives default visibility despite a visibility attribute (DECISIONS §2).
 struct asm_text {
   char text[16384]{};
   std::size_t length = 0;
@@ -36,4 +36,4 @@ struct asm_text {
   constexpr std::size_t size() const noexcept { return length; }
 };
 
-} // namespace ycxx::abi
+}} // namespace ycxx::abi

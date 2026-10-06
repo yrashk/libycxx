@@ -6,7 +6,7 @@
 #include <ycxx/core/cstddef.hpp>
 #include <ycxx/core/char_traits.hpp>
 #if YCXX_C_HAS_UCHAR_H
-#  include <uchar.h>
+#  include_next <uchar.h>
 #else
 #  include <ycxx/hosted/c_wchar.hpp>
 #endif

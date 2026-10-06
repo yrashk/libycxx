@@ -23,6 +23,7 @@
 //   [thread.thread.this], [basic.stc.thread]: an inline thread_local variable is one object per
 //     thread in all TUs.
 // FLAGS: -pthread
+// XFAIL: clang-darwin  Clang emits the TLS init function of a hidden inline thread_local as a strong symbol on Mach-O (STATUS)
 // FILES: ../support/linkage/odr_tu2.cpp
 //   (relative to the per-test temporary directory build/lit-*/linkage/<name>.XXXX)
 #include <cstring>

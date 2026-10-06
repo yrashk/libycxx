@@ -1,6 +1,6 @@
 // libycxx hosted runtime: the <cuchar> functions (C23 7.30.1) for C libraries that lack them:
-// mbrtoc8/c8rtomb where YCXX_C_HAS_MBRTOC8 is 0 (Darwin), the char16_t and char32_t ones too where
-// the C library has no <uchar.h> (YCXX_C_HAS_UCHAR_H 0; older macOS SDKs). <cuchar> then declares
+// mbrtoc8/c8rtomb where YCXX_C_HAS_MBRTOC8 is 0 (cmake/ycxx-c-library.cmake), the char16_t and
+// char32_t ones too where the C library has no <uchar.h> (YCXX_C_HAS_UCHAR_H 0). <cuchar> then declares
 // the std:: functions as calls of these; elsewhere they are unused, but built everywhere so that
 // every platform compiles them.
 //

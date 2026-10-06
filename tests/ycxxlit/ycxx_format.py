@@ -21,7 +21,9 @@ Optional directives:
                                           limit, a draft defect, a feature not implemented yet. The
                                           test is unchanged and reports XFAIL with the reason, or
                                           XPASS (a failure of the run) once it passes.
-                                          (XFAIL-COMPILER: gcc|clang is the older spelling.)
+                                          (XFAIL-COMPILER: gcc|clang is the older spelling.) A
+                                          suffix -linux or -darwin (`clang-darwin`) limits it to
+                                          that OS (the OS feature of REQUIRES)
   // COUNTERPART: libcxx:<path> libstdcxx:<path> [...]   the external tests, skipped there as
                                           tied to that library's internals, extensions or modes,
                                           whose standard subject this test covers (paths relative
@@ -59,7 +61,7 @@ FLAGS = re.compile(r'^//\s*FLAGS:(.*)$', re.M)
 FILES = re.compile(r'^//\s*FILES:(.*)$', re.M)
 ARCHIVE = re.compile(r'^//\s*ARCHIVE:(.*)$', re.M)
 SHARED = re.compile(r'^//\s*SHARED:(.*)$', re.M)
-XFAIL = re.compile(r'^//\s*XFAIL(?:-COMPILER)?:\s*(gcc|clang|any)\b(.*)$', re.M)
+XFAIL = re.compile(r'^//\s*XFAIL(?:-COMPILER)?:\s*(gcc|clang|any)(?:-(linux|darwin))?\b(.*)$', re.M)
 UNSUPPORTED_SAN = re.compile(r'^//\s*UNSUPPORTED-SANITIZER:\s*([\w,]+)(.*)$', re.M)
 EXPECT_ERROR = re.compile(r'^//\s*EXPECT-ERROR(?:-(GCC|CLANG))?:\s*(.*?)\s*$', re.M)
 REQUIRES = re.compile(r'^//\s*REQUIRES:(.*)$', re.M)
@@ -100,9 +102,10 @@ class YcxxFormat(lit.formats.FileBasedTest):
                 return lit.Test.Result(lit.Test.UNSUPPORTED, f'REQUIRES:{m.group(1)} (features of this run: '
                                        f'{", ".join(sorted(self.features))})')
         result = self.run(test)
-        xf = [m for m in XFAIL.finditer(src) if m.group(1) in (self.compiler, 'any')]
+        xf = [m for m in XFAIL.finditer(src)
+              if m.group(1) in (self.compiler, 'any') and m.group(2) in (None, *self.features)]
         if xf:
-            why = '; '.join(m.group(2).strip() for m in xf)
+            why = '; '.join(m.group(3).strip() for m in xf)
             if result.code == lit.Test.PASS:
                 result.code = lit.Test.XPASS
                 result.output = (result.output or '') + f'\nexpected to fail ({why}), but passed\n'

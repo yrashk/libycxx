@@ -16,7 +16,7 @@ extern "C" [[gnu::weak]] const char ycxx_fs_default_new_align;
 extern "C" [[gnu::weak]] const char ycxx_default_new_array;
 extern "C" [[gnu::weak]] const char ycxx_default_new_array_align;
 
-namespace ycxx::detail {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 // A template, so that under -fno-exceptions the discarded try/catch is never instantiated.
 template <class F>
 void* try_or_null(bool heapless_default, F f) noexcept {
@@ -32,4 +32,4 @@ void* try_or_null(bool heapless_default, F f) noexcept {
     return f();
   }
 }
-} // namespace ycxx::detail
+}} // namespace ycxx::detail

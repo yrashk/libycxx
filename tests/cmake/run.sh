@@ -64,17 +64,16 @@ links_toolchain_cxx() {
 # library_exports FILE: prints the symbols of libycxx that FILE (a program or shared library whose
 # own code defines only extern "C" functions) exports: every mangled C++ name, and the ABI
 # runtime's and the platform layer's C names. ELF: the dynamic symbol table. Darwin: the exported
-# symbols, and the weak-definition binds dyld would coalesce with another image's (dyld_info);
-# there GCC's fundamental type_info objects keep default visibility, and are tolerated (benign:
-# libc++abi exports the same objects).
+# symbols, and the weak-definition binds dyld would coalesce with another image's (dyld_info).
+# libycxx's default allocation functions are counted too: the images share them through the
+# allocation table, not by exporting them (DECISIONS §2).
 library_exports() {
   if [ "$(uname -s)" = Darwin ]; then
     { nm -gU "$1" | awk '{ print $NF }'
       if command -v dyld_info >/dev/null; then
         dyld_info -fixups "$1" | grep 'weak-def-coalesce' | awk '{ print $NF }' | sed 's|.*/||'
       fi; } | sed 's/^_//' |
-      grep -E '^(_Z|__cxa_|__gxx_personality|__dynamic_cast|ycxx_pal_)' |
-      grep -vE '^_ZT[IS](P|PK)?([a-z]|D[A-Za-z][A-Za-z0-9_]*)$' || :
+      grep -E '^(_Z|__cxa_|__gxx_personality|__dynamic_cast|ycxx_pal_)' || :
   else
     nm -D --defined-only "$1" | awk '{ print $NF }' |
       grep -E '^(_Z|__cxa_|__gxx_personality|__dynamic_cast|ycxx_pal_)' || :
@@ -193,8 +192,8 @@ for c in $compilers; do
   if x cmake -S "$repo/tests/cmake/visibility" -B "$b" $gen -DCMAKE_PREFIX_PATH="$d/prefix" &&
      x cmake --build "$b"; then
     for p in prog host; do
-      if run_pair "$b/$p" "$log" "mine 3 other 3"; then ok $c "visibility: $p: each library uses its own runtime"
-      else bad $c "visibility: $p: wrong exception handling (see $log)"; fi
+      if run_pair "$b/$p" "$log" "mine 7 other 7"; then ok $c "visibility: $p: each library uses its own runtime"
+      else bad $c "visibility: $p: a library used the other's runtime (exceptions or allocation; see $log)"; fi
     done
     if run_pair "$b/catcher" "$log" "caught 15 uncaught 0 0"; then
       ok $c "visibility: catcher: catches a libycxx shared library's exceptions"

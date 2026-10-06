@@ -73,9 +73,9 @@ config.available_features = features
 base_flags = ['-I' + support, '-D_LIBCPP_DISABLE_DEPRECATION_WARNINGS', '-fno-diagnostics-color',
               '-Wno-deprecated-declarations', '-Wno-unused-command-line-argument'] if compiler == 'clang' else \
              ['-I' + support, '-fdiagnostics-color=never', '-Wno-deprecated-declarations']
-if sanitizer:
-    base_flags += ['-fsanitize=' + ','.join({'asan': 'address', 'ubsan': 'undefined', 'tsan': 'thread'}[s]
-                                            for s in sanitizer.split(',')), '-fno-sanitize-recover=all', '-g']
+from ycxxlit import sanitizers
+sanitizer_list = sanitizers.parse(sanitizer)
+base_flags += sanitizers.compile_flags(sanitizer_list)
 if libdir:
     base_flags = ['--libdir=' + libdir] + base_flags
 
@@ -84,5 +84,8 @@ sys.path.insert(0, os.path.join(repo, 'tests'))
 from ycxxlit.libcxx_format import LibcxxFormat
 # Journaled: every finished test's result is kept even if the run is stopped (Ctrl-C).
 from ycxxlit.journal import Journaled
+# A sanitizer run: each program runs with the sanitizers' options (TSAN_OPTIONS: this suite's
+# tests/libcxx/tsan.supp, each suppression with its reason; tests/ycxxlit/sanitizers.py).
 config.test_format = Journaled(LibcxxFormat(wrapper, compiler, base_flags, config.available_features,
-                                            os.path.join(repo, 'tests', 'libcxx', 'skip.txt')))
+                                            os.path.join(repo, 'tests', 'libcxx', 'skip.txt'), sanitizer_list,
+                                            sanitizers.run_env(sanitizer_list, os.path.join(repo, 'tests', 'libcxx'))))

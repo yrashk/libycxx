@@ -528,11 +528,16 @@ until every failure of `TRIAGE.md` is fixed, skipped or marked (Gaps, item 1).
 
 ### Sanitizers
 
-`tools/test -s asan,ubsan` (or `SANITIZER=asan,ubsan tools/run-conformance ...`) adds
-`-fsanitize=... -fno-sanitize-recover=all -g` to the tests, and `tsan` with a library built with
-`-fsanitize=thread` (`YCXX_LIBDIR=build/clang-tsan`). Lit features `asan`/`ubsan` are set for the
-libc++ suite. Nightly CI runs the own suite with Clang under ASan+UBSan, where every failure
-fails the job (a test that cannot run under a sanitizer says so in the test). Checked: `tools/test -c clang -s asan,ubsan -f optional ycxx`,
+`tools/test -s asan,ubsan` (or `SANITIZER=asan,ubsan tools/run-conformance ...`; also `tsan`) adds
+`-fsanitize=... -fno-sanitize-recover=all -g` to the tests and links them with libycxx built with
+the same sanitizers, `build/<cc>-<sanitizers>`, which `tools/run-conformance` configures
+(`-DYCXX_SANITIZE=...`) and builds itself: a sanitizer sees only instrumented code, and with an
+uninstrumented library ThreadSanitizer reported every hand-off through libycxx's own futex
+mutexes, thread-pool queue and reference counts (DECISIONS §6.8, which also covers the sanitizer
+runtimes' allocation functions and static-local guards). Lit features `asan`/`ubsan`/`tsan` are
+set for the libc++ suite. Nightly CI runs the own suite with Clang under ASan+UBSan and under
+TSan, where every failure fails the job (a test that cannot run under a sanitizer says so in the
+test; TSan's false positives are suppressed in `tests/ycxx/tsan.supp`, each with its reason). Checked: `tools/test -c clang -s asan,ubsan -f optional ycxx`,
 37 passed.
 
 Others: libc++ has `--param use_sanitizer=` (`Address`, `HWAddress`, `Undefined`, `Memory`,
@@ -572,7 +577,7 @@ compiles every test with `-DYCXX_HARDENED=1` and enables the death tests of
 `-fno-exceptions`/`-fno-rtti` there remove the `exceptions`/`rtti` features, which the 430 tests
 that throw or catch require. Each configuration has its own exec root, logs and reports
 (`ycxx-<cc>-hardened`, `ycxx-<cc>-<name>`), and fails on every FAIL like the default run. Nightly CI runs hardened, `-fno-exceptions` and `-O2`
-on both compilers (Gaps, items 3 and 6: done, except `-fno-rtti` and TSan).
+on both compilers, and the own suite under TSan (Gaps, items 3 and 6: done, except `-fno-rtti`).
 
 ### Reference runs against another library
 
@@ -633,7 +638,7 @@ script compiles each with `-DLIBCPP_OSS_FUZZ` and the fuzzing engine, using
 | Own tests | spec-only author; `.pass`/`.compile.pass`/`.compile.fail`, diagnostic regexes, death tests | rich kinds incl. `.verify.cpp`, `.sh.cpp`, `.gen.cpp` [libcxx-testing] | DejaGnu `dg-*` with message matching [libstdcxx-test] | `tests/std`, `tests/tr1` [msvc-readme] |
 | External suites | libc++'s and libstdc++'s, run only, fetched and pinned | can run against libstdc++ [libcxx-stdlib-libstdcxx-cfg] | not confirmed | libc++'s, from its llvm-project checkout [msvc-readme] |
 | Known failures | none: FAIL fails CI; skip lists with category and reason, `XFAIL` with reason in own tests, `xfail.txt` with reason for external suites | `XFAIL`/`UNSUPPORTED` in tests [libcxx-testing] | `xfail` selectors in tests [libstdcxx-test] | `expected_results.txt` by cause, per configuration [msvc-expected] |
-| Configurations | 2 compilers x 2 OSes; ASan+UBSan (Clang); hardened, `-fno-exceptions`, `-O2` (Linux, nightly); TSan manual | hardening modes, no-exceptions, no-rtti, sanitizers, std modes, modules [libcxx-caches, libcxx-params] | `-std` list, debug mode, board flags [libstdcxx-test] | matrix files [msvc-matrix] |
+| Configurations | 2 compilers x 2 OSes; ASan+UBSan (Clang); hardened, `-fno-exceptions`, `-O2`, TSan (Linux, nightly) | hardening modes, no-exceptions, no-rtti, sanitizers, std modes, modules [libcxx-caches, libcxx-params] | `-std` list, debug mode, board flags [libstdcxx-test] | matrix files [msvc-matrix] |
 | Reference runs | own suite against libstdc++ | suite against libstdc++ [libcxx-stdlib-libstdcxx-cfg] | not confirmed | not confirmed |
 | Reports | per-test transcripts, HTML/Markdown, provenance | lit output | `.sum`/`.log` [libstdcxx-test] | lit output [msvc-readme] |
 | Fuzzing | none | OSS-Fuzz [libcxx-oss-fuzz] | not confirmed | not confirmed |
@@ -645,7 +650,7 @@ runs; external suites never vendored, pinned and fetched; no list of known failu
 fails CI and every skip or expected failure carries its reason into the output, with XPASS
 failing the run; reports that show the evidence for passing tests.
 
-**What others do better.** Configuration coverage (no-rtti, TSan, MSan as standing configurations;
+**What others do better.** Configuration coverage (no-rtti, MSan as standing configurations;
 hardening has one mode, not libc++'s four); diagnostic matching as a test kind of its own (libycxx
 matches only where a test states a regex); feature-based test constraints beyond `REQUIRES`;
 sharding;
@@ -707,9 +712,10 @@ says what was done.
    **Done, in part:** lit param `cxxflags=` with `config=<name>` (`tools/test --cxxflags=...
    --config-name=...`, `YCXX_CXXFLAGS`/`YCXX_CONFIG_NAME`; the name defaults to one made from the
    flags), and a nightly `linux-configurations` job matrix in `full.yml`: hardened,
-   `-fno-exceptions` and `-O2` on both compilers, each failing on every FAIL. No `-O0`
+   `-fno-exceptions` and `-O2` on both compilers, each failing on every FAIL, and the own suite
+   under TSan (Clang, with libycxx instrumented: `build/clang-tsan`). No `-O0`
    job: the default own-suite run is already unoptimized. Not yet: `-fno-rtti` (tests that use
-   `typeid`/`dynamic_cast` would need `REQUIRES: rtti`) and TSan.
+   `typeid`/`dynamic_cast` would need `REQUIRES: rtti`).
 7. **Fuzz targets that are also tests.** Write libFuzzer entry points for `<regex>`, format strings,
    `from_chars`, `<chrono>` parsing, the demangler and TZif parsing as `.pass.cpp` files that replay
    a small corpus in the normal suite and build as fuzzers with `-fsanitize=fuzzer` under a

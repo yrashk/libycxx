@@ -4,13 +4,14 @@
 // initialization and destruction happen per thread; threads running concurrently each see
 // their own object.
 // FLAGS: -pthread
+#include <atomic>
 #include <pthread.h>
 #include <sched.h>
 #include "check.hpp"
 
 static pthread_mutex_t mu = PTHREAD_MUTEX_INITIALIZER;
 static int live = 0, max_live = 0, dtors = 0;
-static volatile int arrived = 0;
+static std::atomic<int> arrived{0};  // also read without the mutex, by the spinning threads
 
 struct Counter {
   int hits = 0;

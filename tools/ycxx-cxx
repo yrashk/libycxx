@@ -1,8 +1,11 @@
 #!/bin/sh
 # Compile and link against libycxx.
-#   ycxx-cxx gcc|clang [--std-modules[=DIR]] [compiler args...]
+#   ycxx-cxx gcc|clang [--libdir=DIR] [--std-modules[=DIR]] [compiler args...]
 # Links build/<compiler>/libycxx.a and libycxx's own ABI runtime (build/<compiler>/libycxx-abi.a);
 # stack unwinding comes from the toolchain's libgcc_s.
+# --libdir=DIR: the build of libycxx to use instead (its archives, generated headers and link
+# options), e.g. an instrumented one, build/<compiler>-tsan (DECISIONS §6.8); $YCXX_LIBDIR
+# does the same.
 # --std-modules[=DIR]: `import std;` and `import std.compat;` use the modules tools/ycxx-modules
 # built in DIR (default build/<compiler>/modules), and a link includes their objects.
 here=$(cd "$(dirname "$0")/.." && pwd)
@@ -15,10 +18,11 @@ case $which in
   *) echo "usage: ycxx-cxx gcc|clang args..." >&2; exit 2 ;;
 esac
 # --std-modules[=DIR]: the flags tools/ycxx-modules recorded, and its archive when linking.
-modules=
+modules= libdir=${YCXX_LIBDIR:-$here/build/$which}
 for a in "$@"; do
   shift
   case $a in
+    --libdir=*) libdir=${a#--libdir=} ;;
     --std-modules) modules=$here/build/$which/modules ;;
     --std-modules=*) modules=${a#--std-modules=} ;;
     *) set -- "$@" "$a" ;;
@@ -69,9 +73,6 @@ else
     extra="--gcc-install-dir=$gcc_install_dir"
   fi
 fi
-# $YCXX_LIBDIR: the directory of the archives (default build/<compiler>; for instance a build
-# configured with -fsanitize=thread).
-libdir=${YCXX_LIBDIR:-$here/build/$which}
 abi="$libdir/libycxx-abi.a"
 link=1
 for a in "$@"; do case $a in -c|-S|-E|-fsyntax-only|-M|-MM|--precompile) link=0 ;; esac; done
@@ -79,6 +80,16 @@ if [ $link = 1 ]; then
   # The allocation table's link options, as the build found them (cmake/ycxx-link.cmake).
   table_opts=
   [ -f "$libdir/ycxx-link-options" ] && table_opts=$(cat "$libdir/ycxx-link-options")
+  # ThreadSanitizer with Clang: no sanitizer C++ runtime. Clang links ThreadSanitizer's C++ part
+  # (libclang_rt.tsan_cxx) whole, and it holds only strong definitions of the global allocation
+  # functions: a program's replacement would be a second definition, and libycxx's defaults
+  # (new_handler, bad_alloc) would be bypassed. Race detection does not need them: libycxx's
+  # allocation functions call malloc, which the sanitizer intercepts (DECISIONS §6.8).
+  if [ $which = clang ]; then
+    for a in "$@"; do
+      case $a in -fsanitize=*thread*) table_opts="$table_opts -fno-sanitize-link-c++-runtime"; break ;; esac
+    done
+  fi
   exec $cxx $extra -std=c++26 -nostdinc++ -isystem "$here/include" -isystem "$libdir/generated/include" $modules_flags "$@" \
     -nostdlib++ $table_opts $modules_lib $group_begin "$libdir/libycxx.a" "$abi" $group_end -lm $static_libgcc
 else

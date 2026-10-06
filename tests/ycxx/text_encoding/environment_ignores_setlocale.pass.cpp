@@ -18,6 +18,10 @@
 #include <thread>
 #include <langinfo.h>
 #include <locale.h>
+// POSIX declares nl_langinfo_l in <langinfo.h>; Darwin's libc declares it in <xlocale.h> only.
+#if __has_include(<xlocale.h>)
+#include <xlocale.h>
+#endif
 #include "child_process.hpp"
 #include "check.hpp"
 

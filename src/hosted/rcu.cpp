@@ -54,7 +54,7 @@
 #include <ycxx/hosted/thread_support.hpp>
 #include <ycxx/pal.h>
 
-namespace ycxx::detail {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 namespace {
 
 using epoch_t = unsigned long long;
@@ -101,11 +101,12 @@ void readers_changed() noexcept {
 }
 
 // At thread end (after its thread_local objects are destroyed): gives the record back. A thread
-// that ends inside a region ends the region.
-void release_record(void*) noexcept {
-  reader_record* r = record;
-  record = nullptr;
-  depth = 0;
+// that ends inside a region ends the region. The record comes as the argument: the hook runs among
+// the thread's key destructors, where the thread's own thread_local storage may already be gone
+// (POSIX leaves their order unspecified; on Darwin a thread_local read there is fresh storage,
+// zero again, with both native and emulated TLS), so it reads and writes no thread_local.
+void release_record(void* arg) noexcept {
+  reader_record* r = static_cast<reader_record*>(arg);
   __atomic_store_n(&r->start, epoch_t(0), __ATOMIC_SEQ_CST);
   readers_changed();
   __atomic_store_n(&r->owned, 0, __ATOMIC_RELEASE);
@@ -137,7 +138,7 @@ void release_record(void*) noexcept {
   record = r;
   // If the hook cannot be registered the record stays owned after the thread ends: its start is
   // 0 then, so it holds nothing back; it is only never reused.
-  static_cast<void>(::ycxx_pal_at_thread_end(&release_record, nullptr));
+  static_cast<void>(::ycxx_pal_at_thread_end(&release_record, r));
   return r;
 }
 
@@ -274,4 +275,4 @@ void rcu_schedule(rcu_node* n) noexcept {
   evaluate_if_due();
 }
 
-} // namespace ycxx::detail
+}} // namespace ycxx::detail

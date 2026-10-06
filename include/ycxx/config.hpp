@@ -185,35 +185,31 @@
 #else
 #  define YCXX_TARGET_DARWIN 0
 #endif
-// C23's strfromd/strfromf/strfroml (<cstdlib>): glibc has them (2.25 and later), Darwin's
-// libSystem does not. Where the C library lacks them, <cstdlib> declares libycxx's own (the
-// hosted runtime, src/hosted/strfrom.cpp) instead of `using ::strfromd;`, which would not parse.
-#if defined(__APPLE__)
-#  define YCXX_C_HAS_STRFROM 0
-#else
+// What the C library provides, where the preprocessor cannot see it: <ycxx/generated/c_library.hpp>,
+// generated in the build tree by cmake/ycxx-c-library.cmake from probes compiled against the C
+// library. YCXX_C_HAS_STRFROM: <stdlib.h> has C23's strfromd/f/l; YCXX_C_HAS_MBRTOC8: <uchar.h>
+// has mbrtoc8/c8rtomb; YCXX_C_HAS_TIMESPEC_GETRES: <time.h> has timespec_getres. Where one is 0
+// the wrapper declares libycxx's own (src/hosted/strfrom.cpp, uchar.cpp, ctime.cpp). Without the
+// file (the headers used without a configured build) a C23 C library is assumed.
+#if __has_include(<ycxx/generated/c_library.hpp>)
+#  include <ycxx/generated/c_library.hpp>
+#endif
+#ifndef YCXX_C_HAS_STRFROM
 #  define YCXX_C_HAS_STRFROM 1
 #endif
-// <cuchar>: whether the C library has <uchar.h> (older macOS SDKs do not), and in it C23's
-// mbrtoc8/c8rtomb (glibc 2.36 and later; not Darwin's libSystem, whose <uchar.h>, where present,
-// has the char16_t and char32_t functions only). Where they are missing, <cuchar> declares
-// libycxx's own (src/hosted/uchar.cpp).
-#if __has_include(<uchar.h>)
+#ifndef YCXX_C_HAS_MBRTOC8
+#  define YCXX_C_HAS_MBRTOC8 1
+#endif
+#ifndef YCXX_C_HAS_TIMESPEC_GETRES
+#  define YCXX_C_HAS_TIMESPEC_GETRES 1
+#endif
+// <cuchar>: whether the C library has <uchar.h> (libycxx's own <uchar.h> is skipped: the search
+// continues after libycxx's include directory, which holds this file's directory). Where it is
+// missing, <cuchar> declares libycxx's own functions (src/hosted/uchar.cpp).
+#if __has_include_next(<uchar.h>)
 #  define YCXX_C_HAS_UCHAR_H 1
 #else
 #  define YCXX_C_HAS_UCHAR_H 0
-#endif
-#if YCXX_C_HAS_UCHAR_H && !defined(__APPLE__)
-#  define YCXX_C_HAS_MBRTOC8 1
-#else
-#  define YCXX_C_HAS_MBRTOC8 0
-#endif
-// <ctime>: C23's timespec_getres (glibc 2.36 and later; not Darwin's libSystem). Where it is
-// missing, <ctime> declares libycxx's own (src/hosted/ctime.cpp). timegm, gmtime_r and
-// localtime_r are in both C libraries.
-#if defined(__APPLE__)
-#  define YCXX_C_HAS_TIMESPEC_GETRES 0
-#else
-#  define YCXX_C_HAS_TIMESPEC_GETRES 1
 #endif
 // Initialization priorities (init_priority) order static initializers across object files only
 // in ELF (.init_array.NNNNN sections, sorted by the linker). Mach-O has one __mod_init_func list
@@ -306,6 +302,13 @@ inline constexpr bool exceptions = YCXX_HAS_EXCEPTIONS;
 inline constexpr bool rtti = YCXX_HAS_RTTI;
 // Whether exception_ptr can hold an exception during constant evaluation (YCXX_HAS_CONSTEXPR_EXCEPTION_PTR).
 inline constexpr bool constexpr_exception_ptr = YCXX_HAS_CONSTEXPR_EXCEPTION_PTR && YCXX_HAS_EXCEPTIONS;
+// Whether a constant evaluation can throw and catch exceptions (P3068, __cpp_constexpr_exceptions;
+// GCC 16 can, Clang 23 cannot: a throw there ends the constant evaluation).
+#if defined(__cpp_constexpr_exceptions) && defined(__cpp_exceptions)
+inline constexpr bool constexpr_exceptions = true;
+#else
+inline constexpr bool constexpr_exceptions = false;
+#endif
 inline constexpr bool hosted = YCXX_HOSTED;
 inline constexpr bool hardened = YCXX_HARDENED;
 inline constexpr bool reflection = YCXX_HAS_REFLECTION;

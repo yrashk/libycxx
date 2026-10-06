@@ -82,6 +82,53 @@ Without CMake, `tools/ycxx-cxx gcc|clang <args>` compiles and links against the 
 
 `docs/CUSTOM_STDLIB.md`: building, using and testing a custom standard library, compared with libc++, libstdc++ and the MSVC STL.
 
+## Modules: `import std;` and `import std.compat;`
+
+libycxx provides the standard library modules ([std.modules]) for Clang 23 and GCC 16
+(`-fmodules`): `std` exports every declaration in namespace `std` of the importable library
+headers and the C++ headers for C library facilities, and the global `operator new`/`delete`;
+`std.compat` also exports the C library's names in the global namespace (`::printf`, `::size_t`,
+`<stdbit.h>`, `<stdckdint.h>`). No macro is exported (`assert`, `errno`, `EOF`, `INT_MAX`,
+`__cpp_lib_*`: #include `<cassert>`, `<version>`, ... for those). The interface units are
+`modules/std.cppm` and `modules/std.compat.cppm`, generated from the headers by
+`tools/gen_std_module.py` (DECISIONS §16). A module's compiled interface is only valid with the
+compiler options it was built with, so libycxx ships the sources and each project builds them.
+
+From CMake (>= 3.28, a Ninja generator; Clang needs `clang-scan-deps`, which LLVM installs next
+to `clang++`):
+
+```cmake
+find_package(libycxx CONFIG REQUIRED)        # or add_subdirectory / FetchContent
+add_executable(app main.cpp)                  # main.cpp: import std;
+target_link_libraries(app PRIVATE ycxx::modules)   # brings ycxx::ycxx
+```
+
+CMake compiles the interfaces with the project's flags and links `libycxx-modules.a` (the
+modules' initializers). `ycxx::modules` exists when libycxx was configured with a Ninja generator
+(`-DYCXX_MODULES=ON|OFF` decides explicitly). `examples/modules` is a complete project. CMake's
+own `CMAKE_CXX_MODULE_STD` (CMake >= 3.30) is not supported: it would build the toolchain's C++
+library's module, not libycxx's.
+
+Without CMake, build the modules once per compiler and set of flags, then compile and link with
+`--std-modules`:
+
+```sh
+tools/ycxx-modules clang                          # -> build/clang/modules (BMIs, libycxx-modules.a)
+tools/ycxx-cxx clang --std-modules hello.cpp -o hello
+tools/ycxx-modules gcc -o build/gcc/modules-O2 -O2     # other flags: another directory
+tools/ycxx-cxx gcc --std-modules=build/gcc/modules-O2 -O2 hello.cpp -o hello
+```
+
+With a compiler directly: Clang needs `-fmodule-file=std=<dir>/std.pcm` (and
+`-fmodule-file=std.compat=<dir>/std.compat.pcm`), GCC `-fmodules -fmodule-mapper=<dir>/module.map`
+(the file `tools/ycxx-modules` writes), plus `<dir>/libycxx-modules.a` when linking, on top of
+the flags `tools/ycxx-cxx` passes for any libycxx program (`-std=c++26 -nostdinc++ -isystem
+include`, `-nostdlib++` and the archives).
+
+Limitations: GCC 16 cannot mix `#include` of a standard header and `import std;` in one
+translation unit (its own module bugs; STATUS.md, known compiler gaps); different translation
+units of one program may freely use either. Clang 23 handles both orders. Only Linux is tested.
+
 ## Tests
 
 One driver runs everything. It prints each command before running it, then live progress
@@ -157,6 +204,10 @@ transcript names each regex that did not match, so a test cannot pass on an unre
 `// REQUIRES: <features>` runs a test only when a boolean expression of lit features holds (else
 it is UNSUPPORTED): `gcc`, `clang`, `linux`, `darwin`, `asan`, `ubsan`, `tsan`, `hardened`,
 `exceptions`, `rtti`. Tests that throw or catch say `// REQUIRES: exceptions`.
+`// MODULES: std` (or `std.compat`) compiles a test that imports the standard library modules
+(`tests/ycxx/modules`): they are built for the compiler and the test's flags (cached under the
+run's build directory) and passed with `--std-modules`; UNSUPPORTED with the compiler's reason
+when it cannot build a module at all. libc++'s `MODULE_DEPENDENCIES:` works the same way.
 `// EXPECT-TERMINATE[: <regex>]` makes a `*.pass.cpp` a death test: the program must be killed by
 SIGABRT, SIGTRAP or SIGILL. `tests/ycxx/precondition` holds such tests, one per hardened
 precondition ([structure.specifications]/3.5: `vector::operator[]` out of range, `front()` of an
@@ -194,7 +245,10 @@ for one of three reasons, each handled where it is decided:
 
 A libc++ test that cannot apply in one configuration only, such as a permission-error test when
 the run is as root (CI's Linux containers), is listed in `tests/libcxx/unsupported.txt` with the
-lit feature naming that configuration (`root`), and reported UNSUPPORTED only there.
+lit feature naming that configuration (`root`), and reported UNSUPPORTED only there. A libstdc++
+test that relies on one compiler's implementation-defined behaviour or extensions (GCC's
+`source_location` columns or predefined macros, an optional `std::float32_t`) is listed the same
+way in `tests/libstdcxx/unsupported.txt`, with that compiler's name.
 
 CI (`.github/workflows/ci.yml`), on every push, runs `tools/test policy build freestanding cmake
 ycxx` on Linux (the `gcc:16` container, Clang 23 from apt.llvm.org) and macOS (Apple Silicon,

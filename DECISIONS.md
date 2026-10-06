@@ -59,7 +59,18 @@ variable templates. The preprocessor is used only where the language cannot do t
    `constexpr`. It always diagnoses a violation during constant evaluation, and checks at run
    time when `YCXX_HARDENED=1` (via `cfg::hardened`).
 
-8. **Keep looking for replacements.** Every remaining preprocessor use is technical debt. When a
+8. **Facts about the target are discovered, not written down.** What a C library, an assembler
+   or a compiler's code generation provides is never encoded as knowledge about a platform
+   (`#if defined(__APPLE__)` for "has no strfromd", a hand-made list of symbols). A fact the
+   preprocessor can see is tested where it is used: a macro (`#ifndef _PRINTF_NAN_LEN_MAX`,
+   `!defined(PRIb8)`) or a header (`__has_include_next(<uchar.h>)`). Anything else is found
+   when libycxx is configured, by CMake probes compiled against the real toolchain on every
+   target, and handed to the code as generated files: `cmake/ycxx-c-library.cmake` writes the
+   C library's `YCXX_C_HAS_*` switches to `<ycxx/generated/c_library.hpp>` (included by
+   `config.hpp` when found; without it a C23 C library is assumed, so a gap is a compile error
+   naming the function), and the fundamental type_info probe (`CMakeLists.txt`) writes the
+   symbols `src/abi/rtti.cpp` hides (§2). Each probe is documented where it is defined.
+9. **Keep looking for replacements.** Every remaining preprocessor use is technical debt. When a
    new language feature or an in-language probe can replace one, replace it.
 
 Rationale: `if constexpr` branches are type-checked, so both configurations stay compilable.
@@ -80,7 +91,8 @@ tooling.
   (`::ycxx::detail::f(...)`), so a user function with the same name in an argument's namespace is
   never picked up. Trait structs (`iterator_traits`, `pointer_traits`, `common_reference`) may
   still derive from `ycxx::detail` helpers, because they are never function arguments.
-- **libycxx's symbols have hidden visibility: a program or shared object exports none of them.**
+- **libycxx's symbols have hidden visibility: a program or shared object exports none of them**
+  (one table excepted, below).
   Another C++ library in the same process must neither take over libycxx's definitions nor be
   taken over by them. On Darwin, libSystem loads Apple's libc++ and libc++abi into every process,
   and dyld coalesces each exported weak definition with a non-weak one of the same name in any
@@ -105,27 +117,68 @@ tooling.
     declares at global scope or includes: the C library's functions (a hidden reference cannot
     bind to a shared libc), the replaceable functions; every header would have to keep its
     C-library includes outside the region.
-  - **Archives.** `libycxx.a`, `libycxx-abi.a` (and the freestanding runtime archive) are built
-    with `-fvisibility=hidden`. Users need no flag to get hidden symbols, but GCC warns
+  - **Archives.** The sources of `libycxx.a`, `libycxx-abi.a` (and the freestanding runtime
+    archive) say what is hidden themselves, as the headers do: every file-scope opening of `std`,
+    `ycxx` and `__cxxabiv1` in `src/` carries the attribute (`tools/check_visibility.py` covers
+    `src/` too), and what they define outside those namespaces carries
+    `[[gnu::visibility("hidden")]]` on its declaration: the ABI entry points (`__cxa_*`,
+    `__dynamic_cast`, `__gxx_personality_v0`), the PAL (`ycxx/pal.h`), the replaceable hooks'
+    defaults (`handle_contract_violation`, `ycxx_error_handler`) and the runtime's markers. No
+    `-fvisibility=hidden`: a flag changes what a declaration means without the source saying so
+    (it would also narrow the allocation table's declaration, which must stay default), and a
+    build of the sources by other means gets the same result. Only `ycxx_allocation_functions`
+    is exported (checked: `nm` of both archives, both compilers). Users need no flag to get
+    hidden symbols, but GCC warns
     (`-Wattributes`) about each program class with a member or base of a library class type: it
     gives such a class the lower visibility and says so. The warning says nothing about the
     program, so the CMake package (`ycxx::headers`) and `tools/ycxx-cxx` pass `-Wno-attributes`
-    to GCC; other build systems add it themselves (STATUS, known limitations). What the compilers keep default despite the
-    flag is hidden with assembler directives (`asm((constant-expression))`, `.hidden` on ELF,
-    `.private_extern` on Mach-O): the default replaceable allocation functions (both compilers
-    declare them implicitly; a visibility attribute conflicts with that declaration), GCC's
-    seven predeclared `__cxa_*` entry points (GCC ignores an attribute on them with a warning),
-    and, on ELF, the fundamental type_info objects GCC emits.
+    to GCC; other build systems add it themselves (STATUS, known limitations). What the compilers
+    keep default despite an attribute is hidden with assembler directives (`asm((constant-expression))`, `.hidden` on ELF,
+    `.private_extern` on Mach-O): GCC's seven predeclared `__cxa_*` entry points (GCC ignores an attribute on them with a warning),
+    and the fundamental type_info objects GCC emits with `__fundamental_type_info`'s key function.
+    Which of those exist depends on the target (AArch64 adds `__bf16`, `__mfp8` and the SVE types),
+    so their list is not written down: CMake compiles a probe defining that key function with the
+    runtime's flags at configure time, lists its `_ZTI`/`_ZTS` symbols with `nm`, and generates
+    `abi/fundamental_type_infos.hpp` in the build tree, which `src/abi/rtti.cpp` turns into
+    `.hidden`/`.private_extern` directives.
   - **Default visibility** stays only for what is not libycxx's to hide: the C library
     functions `ycxx/core/c_stdlib.hpp` declares by assembler name, and a program's own
     definitions. That includes a program's replacement `operator new`: it is linked instead of
     the archive member holding the hidden default ([replacement.functions]), and is exported as
-    the program's other functions are. libycxx's defaults are hidden on every target (as
-    Clang's `-fvisibility-global-new-delete=force-hidden`, added for libFuzzer's private libc++ and
-    Fuchsia, https://reviews.llvm.org/D53787): on Darwin they are not patched
-    into the shared cache, so system code keeps libc++abi's allocation functions; on ELF a
-    shared library built with libstdc++ keeps its own. Both use `malloc`/`free`, so memory
-    passed between the two still pairs.
+    the program's other functions are (the nothrow forms are declared
+    `[[gnu::visibility("default")]]` in `<new>` so that a replacement of them is too: a function
+    otherwise takes the hidden visibility of its parameter type `std::nothrow_t`).
+  - **The allocation table.** libycxx's default allocation functions are hidden (assembler
+    directives, `src/runtime/new/hidden.hpp`), so they never take over, and are never taken
+    over by, another runtime's (Apple's libc++abi, libstdc++). Yet the images of a process that
+    link libycxx must share one set: an object built in a shared library and destroyed in the
+    program is allocated by one image and freed by the other, which pairs only while both reach
+    the same functions (a program that replaces `operator delete`, AddressSanitizer's
+    alloc-dealloc-mismatch). Each image therefore holds `ycxx_allocation_functions`
+    (`src/runtime/new/allocation_table.{hpp,cpp}`), a weak, exported, constant-initialized table
+    under a name only libycxx uses, whose entries call that image's `::operator new` ...
+    `::operator delete[]` (thunks with `size_t`/`void*` signatures). The dynamic linker binds
+    every image to the first image's table: the program's, which the CMake package and
+    `tools/ycxx-cxx` keep in it (`-u` of a hidden anchor in the table's archive member, since a
+    libycxx shared library on the link line would satisfy `-u` of the table itself, and
+    `--export-dynamic-symbol` where the linker has it; both probed, `cmake/ycxx-link.cmake`); in a host that does not link libycxx, the first
+    libycxx library's. Each default first looks up its entry and forwards when the entry is not
+    its own image's; otherwise it is the process's default. So a program's replacement serves
+    every libycxx image ([replacement.functions]/2), objects cross libycxx images, and libycxx
+    and another runtime keep their own allocation functions, `new_handler` and `bad_alloc`
+    (`tests/cmake/visibility`: "mine 7 other 7", with libycxx's library in a libycxx program
+    and in a host built with the toolchain's library). The cost: one indirect call per
+    allocation in a shared library, one comparison in the program. A program's own replacement
+    is exported and also serves the other runtime's code, the platform's ordinary rule for a
+    program that replaces `operator new`. Rejected: libycxx's defaults with default visibility
+    (as libstdc++ and libc++): on Darwin dyld coalesces them with libc++abi's by name, taking
+    each from the first image in load order that defines it (observed, macOS 26), so a libycxx
+    program's default served Apple's libc++ (whose failure then threw libycxx's `bad_alloc` into
+    code built with libc++abi), and a libycxx shared library in a host without libycxx got
+    libc++abi's `operator new` (libc++abi's `bad_alloc`, foreign to libycxx's runtime, and
+    libycxx's `new_handler` never called); ELF interposition does the same when libycxx and
+    libstdc++ meet. Per-image hidden defaults without the table (libycxx before 2026-10-05)
+    could not serve a program's replacement to its shared libraries.
   - **The ABI runtime is per image.** `__cxa_*`, `__gxx_personality_v0`, the `__cxxabiv1`
     type_info classes and their vtables, `std::type_info` and the classes the compiler looks
     up (`std::initializer_list`, `std::align_val_t`, `std::bad_alloc`, the comparison
@@ -147,9 +200,7 @@ tooling.
     for every class of a program, outside libycxx's namespaces, that has a member or base of a
     libycxx class type: GCC has no way to hide a class's members, type_info and vtable without
     hiding the class's type (Clang's `type_visibility` attribute), and hidden class types are
-    what keeps the exception classes from being coalesced on Darwin. Clang does not warn. GCC
-    on Darwin keeps the fundamental type_info objects default (directives for types a target
-    lacks are not portable to Mach-O); benign, as libc++abi exports the same objects.
+    what keeps the exception classes from being coalesced on Darwin. Clang does not warn.
   Tested by `tests/ycxx/linkage/no_exported_library_symbols` and `tests/cmake/run.sh` (exports
   of the example programs; `tests/cmake/visibility`, libycxx and libstdc++ in one process).
 - Template parameters and locals use plain names (`T`, `first`), not reserved `_Ugly` names.
@@ -268,14 +319,21 @@ tooling.
   global namespace). In C++, `<stdlib.h>`, `<inttypes.h>`, `<string.h>` and `<wchar.h>` include
   `<cstdlib>`, `<cinttypes>`, `<cstring>`, `<cwchar>` and add the names those declare themselves (`using std::abs;`,
   `div`, the const-correct `bsearch` pair, `memalignment`, `free_sized`, `imaxabs`,
-  `memset_explicit`, the const-correct `wcschr` pairs, ...); in C they are the C library's (`#include_next`), as `<math.h>` is.
+  `memset_explicit`, the const-correct `strchr` and `wcschr` pairs, ...); `<time.h>` and `<uchar.h>`
+  likewise wrap `<ctime>` and `<cuchar>`; in C they are the C library's (`#include_next`), as `<math.h>` is.
   `<complex.h>` and `<tgmath.h>` include `<complex>` (and `<cmath>`) in C++ and never the C
   library's, whose `complex`/`I` and type-generic macros would break C++ code. The `<cname>`
   headers read the C library's header with `#include_next`. A C function that is an exact match
   for one of libycxx's (`int abs(int)`, `div_t div(int, int)`, `labs`, `ldiv`, `imaxabs`, ...)
   would win overload resolution against libycxx's constexpr templates, cannot be redeclared
-  constexpr, and C's `bsearch` conflicts with the const pair; so `<cstdlib>` and `<cinttypes>`
-  rename those C declarations while they read the C library's header (`#define abs ycxx_c_abs`,
+  constexpr, and C's `bsearch` conflicts with the const pair. The same holds for the searching
+  functions whose C declaration is `char* strchr(const char*, int)` (`memchr`, `strchr`,
+  `strpbrk`, `strrchr`, `strstr`, and the wide `wcschr`, `wcspbrk`, `wcsrchr`, `wcsstr`,
+  `wmemchr`): [cstring.syn] and [cwchar.syn] replace it with a const/non-const pair, which
+  cannot coexist with it; and for `atexit`/`at_quick_exit`, which [support.start.term] declares
+  noexcept. So `<cstdlib>`, `<cinttypes>`, `<cstring>` and `<cwchar>` rename those C
+  declarations on every C library (glibc's own C++ pairs too, so nothing depends on which C
+  library it is) while they read the C library's header (`#define abs ycxx_c_abs`,
   `#include_next`, `#undef`; the renamed declarations are never used) and then place
   libycxx's functions under the C names in the global namespace, so code that calls `::abs` or an
   unqualified `abs` after `<cstdlib>` keeps working. This is preprocessor use the language cannot
@@ -296,12 +354,16 @@ tooling.
   layout must equal the C library's. `config.hpp` names the family once (`YCXX_TARGET_DARWIN`
   for the macros, which must be literals usable in `#if`; `cfg::darwin` for everything else):
   the Linux values (glibc, musl; also the bare-metal default) or Darwin's (BSD errno numbers,
-  `FP_NAN` 1 .. `FP_SUBNORMAL` 5, a 128-byte `mbstate_t` for the freestanding definition). `errc` gives each value as
+  `FP_NAN` 1 .. `FP_SUBNORMAL` 5, a 128-byte `mbstate_t` for the freestanding definition). (These
+  are freestanding values that core must spell out without the C library's headers, each checked
+  against them; what a hosted wrapper needs to know about the C library is probed instead, §1
+  rule 8.) `errc` gives each value as
   `errno_number(Linux, Darwin)`; the freestanding macro lists are checked against `errc`, and
   every value against the C library's headers wherever those are included (`<system_error>`,
   `<cwchar>`, `<cuchar>`, `src/hosted/cmath_check.cpp`). Where the C library lacks a C23 function
-  of a wrapper (Darwin: `strfromd/f/l`, `mbrtoc8`/`c8rtomb`, and the whole of `<uchar.h>` on
-  older SDKs), a `YCXX_C_HAS_*` switch replaces the using-declaration with libycxx's own,
+  of a wrapper (`strfromd/f/l`, `mbrtoc8`/`c8rtomb`, `timespec_getres`, or the whole of
+  `<uchar.h>`; found by `cmake/ycxx-c-library.cmake`, §1 rule 8), a `YCXX_C_HAS_*` switch replaces
+  the using-declaration with libycxx's own,
   defined in the hosted runtime (`src/hosted/strfrom.cpp`, `src/hosted/uchar.cpp`, built on every
   platform). `strfrom*` are templates (as `free_sized` is), so a C library that gains them wins
   unqualified calls; the `<cuchar>` fallbacks are plain functions, as the C library's would be.
@@ -349,6 +411,14 @@ tooling.
   SDK's headers, but the interface libSystem's `os_unfair_lock` and Apple's own libc++ use since
   macOS 10.12; the public `os_sync_wait_on_address` needs macOS 14.4 and is not usable from GCC,
   which has no `__builtin_available`), with relative timeouts in microseconds.
+- **`<stop_token>` is core.** Its stop state needs only atomics and three PAL hooks: the address
+  wait (through `<atomic>`'s tables), `ycxx_pal_thread_self` (a callback deregistered while
+  `request_stop` runs it: on the requesting thread it is not waited for) and
+  `ycxx_pal_thread_yield` (the list lock's backoff). The freestanding runtime archive defaults to
+  one thread of execution (identity 1, yield does nothing); a freestanding program with threads
+  supplies its own, as for the wait. `stop_source`'s shared state uses the replaceable
+  `operator new`, as the function wrappers do. Core so that `<execution>`'s senders, which use
+  `inplace_stop_source`, are freestanding-capable.
 - **`<rcu>` and `<hazard_pointer>` are hosted, with their state in the runtime.** One RCU domain
   with epochs: a global counter advances with every retire and every `rcu_synchronize`; each
   thread that enters a region owns a reader record (released at thread end) where its outermost
@@ -1018,3 +1088,160 @@ under the same name. Otherwise it gets one alias template in `config.hpp`.
   `numpunct<char>` facets by address and then skip the virtual calls (atoms are the characters
   themselves, '.' and no grouping); fields are accumulated in place. The stream's locale is used
   in place (`ios_access::locale_of`) rather than through a `getloc()` copy.
+
+## 16. The standard library modules (`std`, `std.compat`)
+
+- **Interface units that only re-export.** `modules/std.cppm` and `modules/std.compat.cppm` are
+  module interface units whose global module fragment includes the headers (std: every importable
+  C++ library header and C++ header for C library facilities; std.compat: the `<name.h>` headers,
+  `<stdbit.h>`, `<stdckdint.h>`) and whose purview is only `export namespace std { using std::x;
+  ... }` (std.compat: `export import std;` and `export { using ::printf; ... }`). Every entity
+  therefore stays attached to the global module, as when it is #included, so `import std;` and
+  `#include <vector>` name the same entities in one program ([std.modules]/4-5), across
+  translation units and, on Clang, within one. Nothing of `ycxx::` and none of the C library's
+  global names are exported by std (they stay reachable, as instantiations need them, but not
+  visible); no macro can be exported ([module.import]/7). The global `operator new`/`delete`
+  are exported by std ([std.modules]/2). Rejected: defining the library in the module purview
+  (one source of truth with the headers would need a header per declaration's attachment, and
+  mixing `#include` and `import` would give entities two attachments).
+- **The export lists are generated, never edited.** `tools/gen_std_module.py` reads them from
+  the headers through the compilers: Clang's AST dump of one translation unit including every
+  header gives every declaration in namespace std and its standard nested namespaces (classes,
+  enumerations and unscoped enumerators, functions and operators, variables, aliases, concepts,
+  templates, the C wrappers' using-declarations; not specializations, deduction guides or
+  reserved names); a GCC probe that walks namespace std with reflection (`members_of`,
+  `source_location_of`) adds what Clang cannot see. Declarations inside an `#if YCXX_HAS_<X>`
+  region of a header (`<meta>` with `-freflection`, `std::is_structural`, the `<stdfloat>`
+  aliases) are exported under the same `#if` (rule 4 of §1: a using-declaration of a name that is
+  not declared is an error, and no language construct tests for a name). A nested namespace of
+  std that is neither one the draft names (STD_NAMESPACES) nor inline stops the generator.
+  std.compat's global names are those that the C headers declare in std and that the `<name.h>`
+  headers declare globally, minus [support.c.headers.other]/1's exclusions, plus `<stdbit.h>`'s
+  and `<stdckdint.h>`'s. The output is sorted; `tools/gen_std_module.py --check` (policy stage of
+  `tools/test`, so `tools/check-all`) fails while it differs from the committed files. It also
+  writes `include/bits/stdc++.h` (below). Generated on Linux: std.compat depends on the C
+  library's headers, so the check is skipped elsewhere.
+- **Inline namespaces are redeclared, the implementation's too.** The customization point
+  objects live in `std::ranges::cpo` (and `std::cpo`), inline namespaces, so that the hidden
+  friends `iter_move`/`iter_swap` of the views' iterators can be declared in `std::ranges`. A
+  using-declaration of `std::ranges::iter_move` placed in `std::ranges` itself would conflict
+  with those friends, and GCC 16 rejects an instantiation in the importer ("redeclared as
+  different kind of entity"); the module redeclares `inline namespace cpo` and exports the
+  objects there. The cost: the name `std::ranges::cpo` is visible to an importer (Clang 23 shows
+  it to importers in any case).
+- **Hidden visibility (§2).** The compilers emit each module's initializer (`_ZGIW3std`,
+  `_ZGIW3stdW6compat`) with default visibility whatever `-fvisibility` says; the module hides it
+  with an assembler directive (`asm((ycxx::detail::hide_symbol(...)))`,
+  `ycxx/core/hidden_symbol.hpp`). Everything else the importer instantiates is declared hidden by
+  the headers. Tested by `tests/ycxx/modules/no_exported_library_symbols` and `tests/cmake/run.sh`.
+- **Delivery.** A BMI is valid only with the options it was built with, so libycxx ships
+  sources and object code, never BMIs: the CMake package's `ycxx::modules` is a `FILE_SET
+  CXX_MODULES` (CMake >= 3.28, Ninja; the importing project builds the BMIs) plus
+  `libycxx-modules.a` (the initializers); `tools/ycxx-modules gcc|clang [-o DIR] [flags]` builds
+  BMIs and the archive for given flags, and `tools/ycxx-cxx --std-modules[=DIR]` uses them. The
+  own suite's `// MODULES:` directive and libc++'s `MODULE_DEPENDENCIES:` build them per compiler
+  and flags (`tests/ycxxlit/stdmodules.py`, cached by the state of the sources). CMake's
+  `CMAKE_CXX_MODULE_STD` (`import std` without naming a target) needs CMake >= 3.30 and is not
+  supported: it would build the toolchain's own library's module.
+- **GCC needs `<bits/stdc++.h>`.** With `-fmodules`, GCC 16 looks that header up on the include
+  path for every `#include` of a standard header, to translate the `#include` into an import of
+  its header unit when one was built; without it the `#include` is a fatal error. libycxx's
+  (generated) includes every header, so a header unit built from it replaces any of them.
+
+## 17. Senders and receivers (`<execution>`, [exec])
+
+- **Layering.** Everything is core (`ycxx/core/exec_*.hpp`, included by `<execution>`), so the
+  senders are freestanding-capable: `<stop_token>` moved to core for them (§3). The one hosted
+  part is parallel_scheduler's default backend, a thread pool (`src/hosted/parallel_scheduler.cpp`),
+  reached through the replaceable `query_parallel_scheduler_backend`, alone in its archive member
+  (`src/hosted/parallel_scheduler_query.cpp`) like the replaceable allocation functions; a
+  program's definition replaces it (own test `execution/exec_parallel_replace`).
+  `__cpp_lib_parallel_scheduler` is defined only when hosted.
+- **The exposition-only machinery is real code.** basic-sender is an aggregate of indexed leaves
+  with a member `get<I>` and `tuple_size`/`tuple_element`, so `auto&& [tag, data, ...children] =
+  sndr` works, as [exec.snd.expos]/45 requires. A leaf has `[[no_unique_address]]` only for
+  an empty movable type: initializing a potentially-overlapping subobject from a prvalue is not a
+  guaranteed elision, and operation states cannot be moved. `impls-for<Tag>` holds static
+  member functions instead of the draft's lambdas, plus `csigs<Sndr, Env...>` (below).
+  `tag_of_t` recognises tuple-like senders (every library sender); an aggregate of another
+  shape is not recognised (detecting a structured binding of an arbitrary aggregate needs
+  reflection).
+- **Completion signatures are computed as types.** Every library sender has a member alias
+  template `ycxx_csigs<Self, Env...>` naming its `completion_signatures`, or one of two error
+  types: `dependent_sigs` (no environment and the signatures need one) or
+  `invalid_sigs<problem, info...>` (what the draft reports by throwing from
+  `get_completion_signatures`; the problem type's name, e.g.
+  `function_not_invocable_with_these_arguments`, shows in diagnostics). The adaptors combine their
+  children's results without constant evaluation. The public consteval
+  `get_completion_signatures<Sndr, Env...>()` returns the specialization or throws
+  `dependent_sender_error` or an exception derived from `std::exception`
+  ([exec.getcomplsigs]/3); Clang 23 cannot throw during constant evaluation, so there the throw
+  makes the call non-constant, which is all `sender_in` observes. A sender that is not the
+  library's is asked through its static member function: when that is not a constant
+  expression, GCC (`cfg::constexpr_exceptions`, new in `config.hpp`) catches to tell
+  `dependent_sender_error` from other errors; on Clang it is dependent when no environment was
+  given, else invalid. `is-constant<get_completion_signatures<...>()>` is written
+  `typename constant<...>`: a concept-id whose argument is not a constant is still satisfied
+  (the parameter mapping of `true` is empty).
+- **make-sender's Mandates are a static_assert**: `then(just(string()), [](int){...})` is a
+  compile-time error naming the problem, not a sender without completions.
+- **No allocation in the common paths.** The operation states are built in place (connect results
+  in leaves, let's second operation and continues_on's state through guaranteed elision; let's
+  operation variant is a small union of operation states with an index, as `variant::emplace`
+  cannot construct from emplace-from without a move); run_loop and the thread pool queue
+  operation states intrusively (the pool's items live in the proxies' preallocated backend
+  storage, 128 bytes). Allocating: a task's coroutine frame (with its allocator), connect of an
+  awaitable that is not a sender (a coroutine frame), spawn/spawn_future's state (with the
+  allocator of [exec.spawn]/9), and task_scheduler, which holds its backend through
+  allocate_shared on every construction (a task constructs one at each start; the recommended
+  practice of [exec.task.scheduler]/4, avoiding it for small schedulers, is not followed yet).
+- **Concurrency.** when_all's count and disposition, the counting scopes' state and spawn_future's
+  hand-over between complete/consume/try-set-stopped/abandon are small `__atomic` words or spin
+  locks around a few stores; completions run outside the locks. run_loop blocks in the PAL's
+  address wait.
+- **Draft questions, and what libycxx does** (the draft is the working draft of 2026-10):
+  - `sync_wait`/`sync_wait_with_variant` dispatch on `COMPL-DOMAIN(set_value_t, sndr, env)`
+    rather than `get_completion_domain<set_value_t>(get_env(sndr), env)`, which is ill-formed
+    for a sender without completion-domain attributes (every user sender).
+  - `sync_wait_with_variant` returns `optional<value_types_of_t<Sndr, sync-wait-env>>` of the
+    given sender; [exec.sync.wait.var]/1 names the into_variant sender's, whose value is a variant
+    of tuples of that.
+  - basic-state's state is computed from the stored receiver; the draft's mem-initializer names
+    the constructor parameter, already moved from.
+  - let-state's receiver cannot be a member of let-state: let-state's operation variant holds
+    the operation connected to it. The receiver is keyed by let-state's parameters instead.
+  - `let-cpo.transform_sender(s, es...)` and `affine.transform_sender(sndr, ev)` take no tag;
+    libycxx lowers them on `set_value_t`, as the other adaptors.
+  - The parallel scheduler's and task_scheduler's domains do not require `sender_in<Sndr, Env>`
+    of the bulk sender: computing it transforms the sender with the same domain (endless
+    recursion).
+  - bulk_chunked's check-types tests f with bulk_unchunked's arity; libycxx tests
+    `f(b, e, args...)`.
+  - spawn_future's try-set-stopped ([exec.spawn.future]/12.1) would destroy the state while its
+    operation runs; the state is destroyed when that operation completes instead. Its
+    try-cancel requests a stop that can complete that operation, whose complete-then-destroy
+    would free the state under try-cancel: try-cancel pins the state, and the last of the two
+    destroys it.
+  - `inline_scheduler::schedule()` is const and the scheduler answers
+    `get_forward_progress_guarantee` (weakly_parallel): without them it does not model scheduler
+    (`scheduler<const inline_scheduler&>`, and the query the concept requires).
+  - run_loop's operation does not evaluate set_stopped when the receiver's token is
+    unstoppable: its completion signatures are then `set_value_t()` alone ([exec.run.loop.types]/6).
+  - stopped_as_optional, starts_on and affine compute their signatures before their
+    transformation too (the draft gives default-impls', i.e. the child's).
+  - The member type form `using completion_signatures = ...` of [exec.cmplsig]'s example is
+    accepted; [exec.getcomplsigs] lists only the member function.
+  - parallel_scheduler's schedule sender can complete with an error (the backend's proxy has
+    set_error), so it is not an infallible-scheduler, and `task_scheduler(parallel_scheduler)`
+    is ill-formed ([exec.task.scheduler]/2).
+  - continues_on is also pipeable (`sndr | continues_on(sch)`, as in P2300);
+    [exec.continues.on] calls it a customization point object.
+  - `split` and `ensure_started` are not in the draft (P3682 removed them); not provided.
+- **Attributes.** An adaptor reports a completion scheduler or domain only where its semantics
+  determine it ([exec.snd.general]/3-4): a single-child adaptor maps each of its completion tags
+  to the child completions whose agents complete it (then: value from value; error from error and
+  value), a scheduler for a single source, the COMMON-DOMAIN otherwise; when_all and let report
+  none (COMPL-DOMAIN then falls back to indeterminate_domain<>, default_domain's transformations).
+- **noexcept.** Where the draft gives a noexcept-specifier it is used as written; the sender
+  factories and adaptors are noexcept when their decay-copies are (a strengthening
+  [res.on.exception.handling] allows; make-sender has none in the draft).

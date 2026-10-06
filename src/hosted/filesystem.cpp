@@ -196,7 +196,7 @@ DIR* open_dir_fd(int fd) noexcept {
 } // namespace
 
 // ---- [fs.class.path] ----
-namespace std::filesystem {
+namespace [[gnu::visibility("hidden")]] std { namespace filesystem {
 
 path& path::operator/=(const path& p) {
   if (p.is_absolute()) { // [fs.path.append]/2
@@ -425,7 +425,7 @@ filesystem_error::filesystem_error(const string& what_arg, const path& p1, const
       data_(error_data(system_error::what(), __builtin_addressof(p1), __builtin_addressof(p2))) {}
 filesystem_error::~filesystem_error() = default;
 
-} // namespace std::filesystem
+}} // namespace std::filesystem
 
 // [fs.path.construct]/6
 std::string ycxx::detail::fs_native_through_locale(const char* first, const char* last, const std::locale& loc) {
@@ -462,7 +462,7 @@ std::string ycxx::detail::fs_native_through_locale(const char* first, const char
 }
 
 // ---- directory iteration ----
-namespace ycxx::detail {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 
 struct fs_dir_state {
   DIR* dir = nullptr;
@@ -564,9 +564,9 @@ struct fs_rec_state {
   }
 };
 
-} // namespace ycxx::detail
+}} // namespace ycxx::detail
 
-namespace std::filesystem {
+namespace [[gnu::visibility("hidden")]] std { namespace filesystem {
 
 void directory_iterator::open(const path& p, directory_options options, error_code& ec) {
   ec.clear();
@@ -1522,4 +1522,4 @@ path weakly_canonical(const path& p_in, error_code& ec) {
   return r.lexically_normal();
 }
 
-} // namespace std::filesystem
+}} // namespace std::filesystem

@@ -19,7 +19,10 @@
 #   8. Linux, Clang: the example programs link the C runtime startup files and libgcc of GCC 16's
 #      installation ($YCXX_GXX), which the package passes with --gcc-install-dir (link map);
 #   9. the freestanding runtime archive is installed, exported as ycxx::freestanding, and links
-#      the freestanding smoke program (tests/freestanding) with no C library.
+#      the freestanding smoke program (tests/freestanding) with no C library;
+#  10. the standard library modules: ycxx::modules is installed (libycxx-modules.a, the interface
+#      units as a CXX_MODULES file set) and examples/modules (`import std.compat;`) builds and runs
+#      from the installed package and with add_subdirectory, exporting none of libycxx's symbols.
 #
 #   tests/cmake/run.sh [gcc] [clang]        (default: both)
 # Compilers come from the YCXX_* variables (tools/toolchain/activate.*), else g++-16 /
@@ -64,17 +67,16 @@ links_toolchain_cxx() {
 # library_exports FILE: prints the symbols of libycxx that FILE (a program or shared library whose
 # own code defines only extern "C" functions) exports: every mangled C++ name, and the ABI
 # runtime's and the platform layer's C names. ELF: the dynamic symbol table. Darwin: the exported
-# symbols, and the weak-definition binds dyld would coalesce with another image's (dyld_info);
-# there GCC's fundamental type_info objects keep default visibility, and are tolerated (benign:
-# libc++abi exports the same objects).
+# symbols, and the weak-definition binds dyld would coalesce with another image's (dyld_info).
+# libycxx's default allocation functions are counted too: the images share them through the
+# allocation table, not by exporting them (DECISIONS §2).
 library_exports() {
   if [ "$(uname -s)" = Darwin ]; then
     { nm -gU "$1" | awk '{ print $NF }'
       if command -v dyld_info >/dev/null; then
         dyld_info -fixups "$1" | grep 'weak-def-coalesce' | awk '{ print $NF }' | sed 's|.*/||'
       fi; } | sed 's/^_//' |
-      grep -E '^(_Z|__cxa_|__gxx_personality|__dynamic_cast|ycxx_pal_)' |
-      grep -vE '^_ZT[IS](P|PK)?([a-z]|D[A-Za-z][A-Za-z0-9_]*)$' || :
+      grep -E '^(_Z|__cxa_|__gxx_personality|__dynamic_cast|ycxx_pal_)' || :
   else
     nm -D --defined-only "$1" | awk '{ print $NF }' |
       grep -E '^(_Z|__cxa_|__gxx_personality|__dynamic_cast|ycxx_pal_)' || :
@@ -188,13 +190,37 @@ for c in $compilers; do
     fi
   done
 
+  # 10. the standard library modules (ycxx::modules, a CXX_MODULES file set): examples/modules
+  # imports std.compat, from the installed package and with libycxx built in the project; the
+  # program must run, use no toolchain C++ library and export nothing of libycxx (the module
+  # initializers included).
+  for f in lib/libycxx-modules.a share/libycxx/modules/std.cppm share/libycxx/modules/std.compat.cppm; do
+    [ -e "$d/prefix/$f" ] || bad $c "modules: installed file missing: $f"
+  done
+  for how in find_package add_subdirectory; do
+    b=$d/modules-$how
+    src=
+    [ $how = add_subdirectory ] && src=-DLIBYCXX_SOURCE_DIR=$repo
+    if x cmake -S "$repo/examples/modules" -B "$b" $gen -DCMAKE_PREFIX_PATH="$d/prefix" $src &&
+       x cmake --build "$b"; then
+      if run_demo "$b/demo_modules" "$log"; then ok $c "modules ($how): import std.compat; build and run"
+      else bad $c "modules ($how): the program failed (see $log)"; fi
+      if links_toolchain_cxx "$b/demo_modules"; then
+        bad $c "modules ($how): links the toolchain's C++ library"
+      fi
+      check_exports $c "modules ($how)" "$b/demo_modules"
+    else
+      bad $c "modules ($how): configure/build (see $log)"
+    fi
+  done
+
   # 7. libycxx and the toolchain's C++ library in one process
   b=$d/visibility
   if x cmake -S "$repo/tests/cmake/visibility" -B "$b" $gen -DCMAKE_PREFIX_PATH="$d/prefix" &&
      x cmake --build "$b"; then
     for p in prog host; do
-      if run_pair "$b/$p" "$log" "mine 3 other 3"; then ok $c "visibility: $p: each library uses its own runtime"
-      else bad $c "visibility: $p: wrong exception handling (see $log)"; fi
+      if run_pair "$b/$p" "$log" "mine 7 other 7"; then ok $c "visibility: $p: each library uses its own runtime"
+      else bad $c "visibility: $p: a library used the other's runtime (exceptions or allocation; see $log)"; fi
     done
     if run_pair "$b/catcher" "$log" "caught 15 uncaught 0 0"; then
       ok $c "visibility: catcher: catches a libycxx shared library's exceptions"

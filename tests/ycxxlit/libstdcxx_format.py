@@ -1,7 +1,7 @@
 """lit test format for the libstdc++ testsuite (DejaGnu-style directives), run against libycxx.
 
 Only the subset of DejaGnu that matters for conformance is interpreted:
-  dg-do compile|run|link [{ target SEL }] [{ xfail SEL }]
+  dg-do compile|run|link [{ target SEL }] [{ xfail SEL }]   (default without dg-do: run)
   dg-options / dg-additional-options      (language-mode flags are normalised to C++26)
   dg-require-effective-target NAME
   dg-require-namedlocale NAME             (the C library has it and libycxx accepts it:
@@ -15,7 +15,7 @@ implementation-specific.
 import os, re, shutil, tempfile
 import lit.formats, lit.Test
 from ycxxlit import transcript
-from ycxxlit.skips import load_skips, match_skip, load_xfails, apply_xfail
+from ycxxlit.skips import load_skips, match_skip, load_unsupported, match_unsupported, load_xfails, apply_xfail
 from ycxxlit import counterparts
 from ycxxlit import locales
 
@@ -124,6 +124,60 @@ def braced(s):
     return out
 
 
+# libstdc++ extensions a test may use directly. The testsuite's own helper namespace __gnu_test
+# (util/testsuite_*.h, on the include path with the harness shims of tests/libstdcxx/shim) is not
+# one: its helpers are test code, and those that still need an extension are listed in skip.txt.
+EXT_HEADER = re.compile(r'#\s*include\s*<(ext|bits|tr1|tr2|backward|debug|parallel|profile)/')
+DEBUG_HELPER = re.compile(r'#\s*include\s*<debug/(unordered_)?checks\.h>')
+EXT_NAMESPACE = re.compile(r'\b__gnu_(cxx|debug|pbds|parallel|profile)\b')
+
+
+def extension_use(src):
+    """Why a test is about a libstdc++ extension (an extension or internal header, or an
+    extension namespace), or None."""
+    if DEBUG_HELPER.search(src):
+        return 'includes the testsuite\'s debug-mode checks (debug/checks.h, debug/unordered_checks.h: _GLIBCXX_DEBUG and <debug/...> containers)'
+    m = EXT_HEADER.search(src)
+    if m:
+        return f'includes <{m.group(1)}/...>, a libstdc++ extension or internal header'
+    m = EXT_NAMESPACE.search(src)
+    if m:
+        return f'uses the libstdc++ extension namespace {m.group(0)}'
+    return None
+
+
+def build_support_lib(wrapper, compiler, flags, tests_root, repo, out_dir):
+    """Builds libtestc++.a, the testsuite's support library (DejaGnu links every test with it):
+    the out-of-line definitions of the helpers' counters, check_construct_destroy, the locale
+    wrappers, ... (tests/libstdcxx/support/*.cc and the testsuite's util/testsuite_allocator.cc).
+    Rebuilt when an input (or the libycxx archive) is newer. Returns its path; raises on error."""
+    import glob, subprocess
+    sources = sorted(glob.glob(os.path.join(repo, 'tests', 'libstdcxx', 'support', '*.cc')))
+    sources.append(os.path.join(tests_root, 'util', 'testsuite_allocator.cc'))
+    archive = os.path.join(out_dir, 'libtestc++.a')
+    inputs = sources + glob.glob(os.path.join(tests_root, 'util', '*.h')) + \
+        glob.glob(os.path.join(repo, 'tests', 'libstdcxx', 'shim', '**', '*'), recursive=True) + \
+        [os.path.join(repo, 'build', compiler, 'libycxx.a'), wrapper]
+    newest = max((os.path.getmtime(p) for p in inputs if os.path.isfile(p)), default=0)
+    if os.path.exists(archive) and os.path.getmtime(archive) >= newest:
+        return archive
+    os.makedirs(out_dir, exist_ok=True)
+    objs = []
+    for src in sources:
+        obj = os.path.join(out_dir, 'testc++-' + os.path.basename(src) + '.o')
+        cmd = [wrapper, compiler, '-c', src, '-o', obj] + flags
+        p = subprocess.run(cmd, capture_output=True, text=True, errors='replace')
+        if p.returncode != 0:
+            raise RuntimeError(f'building the libstdc++ testsuite support library failed:\n$ {" ".join(cmd)}\n{p.stdout}{p.stderr}')
+        objs.append(obj)
+    tmp = archive + '.tmp'
+    if os.path.exists(tmp):
+        os.remove(tmp)
+    subprocess.run(['ar', 'rcs', tmp] + objs, check=True)
+    os.replace(tmp, archive)
+    return archive
+
+
 def selector_of(args, key):
     for i, a in enumerate(args):
         if a.startswith('{') and a[1:].lstrip().startswith(key):
@@ -132,11 +186,15 @@ def selector_of(args, key):
 
 
 class LibstdcxxFormat(lit.formats.FileBasedTest):
-    def __init__(self, wrapper, compiler, base_flags, skip_file, locale_probe=None):
+    def __init__(self, wrapper, compiler, base_flags, skip_file, locale_probe=None, support_lib=None):
         self.wrapper, self.compiler, self.base_flags = wrapper, compiler, base_flags
         self.locale_probe = locale_probe  # locales.build_probe
+        self.support_lib = support_lib  # libtestc++.a (build_support_lib), linked into every program
         self.skips = load_skips(os.path.join(os.path.dirname(os.path.dirname(skip_file)), 'common', 'skip.txt'), skip_file)
         self.xfails = load_xfails(os.path.join(os.path.dirname(skip_file), 'xfail.txt'))
+        # Tests that do not apply with one compiler only (tests/libstdcxx/unsupported.txt; the
+        # features are the compiler's name, as for libc++'s list).
+        self.unsupported = load_unsupported(os.path.join(os.path.dirname(skip_file), 'unsupported.txt'))
         self.counterparts = counterparts.Index(os.path.join(os.path.dirname(os.path.dirname(skip_file)), 'ycxx'))
 
     def execute(self, test, lit_config):
@@ -151,15 +209,18 @@ class LibstdcxxFormat(lit.formats.FileBasedTest):
         why = match_skip(self.skips, rel, src)
         if why:
             return lit.Test.Result(lit.Test.UNSUPPORTED, why)
-        if re.search(r'#\s*include\s*<(ext|bits|tr1|tr2|backward|debug|parallel|profile)/', src) or '__gnu_' in src:  # extension
-            return lit.Test.Result(lit.Test.UNSUPPORTED, 'skipped (extension): uses libstdc++ extensions')
+        why = extension_use(src)
+        if why:
+            return lit.Test.Result(lit.Test.UNSUPPORTED, f'skipped (extension): {why}')
+        why = match_unsupported(self.unsupported, rel, {self.compiler})
+        if why:
+            return lit.Test.Result(lit.Test.UNSUPPORTED, why)
 
         action, expect_fail_run, flags, errors = 'run', False, list(self.base_flags), False
         xfail_run_if = []
         # libstdc++'s hardened mode, requested in the source itself, maps to ours.
         if re.search(r'^\s*#\s*define\s+_GLIBCXX_ASSERTIONS\b', src, re.M):
             flags.append('-DYCXX_HARDENED=1')
-        saw_do = False
         for line in src.splitlines():
             m = DG.search(line)
             if not m:
@@ -167,7 +228,6 @@ class LibstdcxxFormat(lit.formats.FileBasedTest):
             kind, rest = m.group(1), m.group(2)
             args = braced(rest)
             if kind == 'do':
-                saw_do = True
                 action = args[0] if args else 'run'
                 tsel = selector_of(args, 'target')
                 xsel = selector_of(args, 'xfail')
@@ -261,8 +321,8 @@ class LibstdcxxFormat(lit.formats.FileBasedTest):
             elif kind == 'add-options':
                 if args and args[0] == 'libatomic':
                     pass  # libycxx's atomics need no libatomic
-        if not saw_do:
-            action = 'compile'
+        # Without dg-do the test runs: libstdc++'s DejaGnu setup (testsuite lib/libstdc++.exp: dg-do-what-default run)
+        # makes "run" the default action, as it is here (action starts as 'run').
         for sel, incl, excl in xfail_run_if:
             if eval_selector(sel) and option_sets_match(incl, flags) and not option_sets_match(excl, flags):
                 expect_fail_run = True
@@ -314,7 +374,8 @@ class LibstdcxxFormat(lit.formats.FileBasedTest):
             rc, out = self.compile(['-fsyntax-only', path] + flags, tmp)
             return lit.Test.Result(lit.Test.PASS if rc == 0 else lit.Test.FAIL, out)
         exe = os.path.join(tmp, 't.exe')
-        rc, out = self.compile([path, '-o', exe] + flags, tmp)
+        support = [self.support_lib] if self.support_lib else []
+        rc, out = self.compile([path] + support + ['-o', exe] + flags, tmp)
         if rc != 0:
             return lit.Test.Result(lit.Test.FAIL, 'COMPILE FAILED\n' + out)
         if action == 'link':

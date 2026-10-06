@@ -76,7 +76,10 @@ void check(T v) {
 
 int main() {
   using L = std::numeric_limits<long double>;
-  const long double lds[] = {1.0L, -1.0L, 0.0L, 0.1L, 1234567.875L, -3.0e-4000L, 1.5e4000L,
+  // A tiny negative and a huge value near the ends of long double's exponent range, whatever its
+  // format (ISO C 5.2.4.2.2 guarantees only LDBL_MAX_10_EXP >= 37; where long double is double,
+  // literals such as 1.5e4000L would be infinity and -3.0e-4000L negative zero).
+  const long double lds[] = {1.0L, -1.0L, 0.0L, 0.1L, 1234567.875L, -3 * L::min(), L::max() / 3,
                              L::max(), L::min(), L::denorm_min(), L::epsilon()};
   for (long double v : lds) check(v);
   using D = std::numeric_limits<double>;

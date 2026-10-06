@@ -33,7 +33,7 @@ constinit wait_entry waits[table_size] = {};
 
 } // namespace
 
-namespace ycxx::detail {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 
 void atomic_lock(const volatile void* addr) noexcept {
   ycxx_pal_u32* s = &locks[slot_of(addr)].state;
@@ -96,4 +96,4 @@ std::uint32_t* atomic_wait_entry(const volatile void* addr, std::uint32_t*& wait
   return &e.version;
 }
 
-} // namespace ycxx::detail
+}} // namespace ycxx::detail

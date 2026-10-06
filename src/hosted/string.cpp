@@ -57,7 +57,7 @@ std::wstring widen(const std::string& s) {
 
 } // namespace
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 
 int stoi(const string& str, size_t* idx, int base) {
   return convert<int>("std::stoi", str.c_str(), idx, [base](const char* s, char** e) { return std::strtol(s, e, base); });

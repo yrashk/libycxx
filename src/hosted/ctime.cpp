@@ -1,5 +1,5 @@
 // libycxx hosted runtime: timespec_getres (C23 7.29.2.7) for C libraries that lack it
-// (YCXX_C_HAS_TIMESPEC_GETRES 0 in config.hpp: Darwin). <ctime> then declares
+// (YCXX_C_HAS_TIMESPEC_GETRES 0: cmake/ycxx-c-library.cmake found none). <ctime> then declares
 // std::timespec_getres as a call of this; elsewhere it is unused, but built everywhere so that
 // every platform compiles it.
 //

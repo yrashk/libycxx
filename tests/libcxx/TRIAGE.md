@@ -64,8 +64,7 @@ by the named-locale gating of the merged named-locale work.)
   locale's grouping changed it ([thread.thread.id]/9); chrono `%j %U %W %V %G %g` on a date that
   is not `ok()` ([time.format]/3; the same fix came with the merged named-locale branch).
 - **(a) still failing** (large features): `__cpp_lib_senders` (execution.version,
-  version.version: senders/receivers, [exec]); `import std;`/`import std.compat;` (modules/std,
-  std.compat, Clang; [std.modules]); the C++ `<wchar.h>` and `<stddef.h>` wrappers (Clang:
+  version.version: senders/receivers, [exec]); the C++ `<wchar.h>` and `<stddef.h>` wrappers (Clang:
   depr.c.headers/wchar_h, stddef_h, strings/c.strings/cwchar_include_order1/2;
   [support.c.headers.other]/1).
 - **(b) skipped** (skip.txt): 29 version.compile tests on older-draft values (divergence); EOF/WEOF
@@ -187,7 +186,8 @@ char_traits, string-stream, syncstream and format.arg test passes on both compil
   libc++ 23 expects older values, or names no longer in the draft
   (`__cpp_lib_span_at`, merged into `__cpp_lib_span`; `__cpp_lib_generate_random`;
   `__cpp_lib_default_template_type_for_algorithm_values`) (C). Undefined because the feature is
-  not implemented (B, must stay undefined): `__cpp_lib_senders`, `__cpp_lib_modules`; on Clang
+  not implemented (B, must stay undefined): `__cpp_lib_senders` (`__cpp_lib_modules` is defined
+  since the modules round, below); on Clang
   also the D builtins of type_traits.version. (`__cpp_lib_boyer_moore_searcher` was in this list
   until the searchers were merged the same day; it is now defined, 201603L.)
 - **(D)** tuple.cnstr/PR31384 (GCC) and convert_const_move (Clang): compiler bugs listed in STATUS.
@@ -301,7 +301,7 @@ second cause: `ranges/range.access/end.pass` (C first, then the A `decay_copy` n
 | **Done** (see the filesystem/mdspan/valarray/searchers re-triage below): `boyer_moore_searcher`, `boyer_moore_horspool_searcher` (and `__cpp_lib_boyer_moore_searcher`) | [func.search.bm], [func.search.bmh] | func.search/func.search.bm/* (5), func.search.bmh/* (5): pass |
 | C++ wrapper `<wchar.h>` (const-correct `wcschr`/`wcsstr`… as global names). (`<stdlib.h>`, `<complex.h>`, `<tgmath.h>`: **Done**, depr/depr.c.headers/{stdlib_h, complex_h, tgmath_h} pass) | [support.c.headers.other]/1 | Clang: depr/depr.c.headers/wchar_h.compile, strings/c.strings/cwchar_include_order{1,2}.compile.verify |
 | senders/receivers in `<execution>` (`__cpp_lib_senders`, `counting_scope`, `parallel_scheduler`, `task`) | [exec] | support.limits.general/execution.version.compile |
-| standard library modules `import std;` / `import std.compat;` (`__cpp_lib_modules`) | [std.modules] | modules/std.pass, modules/std.compat.pass (Clang) |
+| **Done** (modules round: DECISIONS §16): standard library modules `import std;` / `import std.compat;` (`__cpp_lib_modules`) | [std.modules] | modules/std.pass, modules/std.compat.pass: pass (Clang; UNSUPPORTED on GCC by the tests themselves) |
 | Not exercised by the suite, found by the `<version>` audit: `<stdbit.h>`, `<stdckdint.h>` (`__cpp_lib_stdbit_h`, `__cpp_lib_stdckdint_h` 202603), `pointer_tag_pair`, `__cpp_lib_view_interface` 202606, `__cpp_lib_start_lifetime` 202603, the `__cpp_lib_hardened_*` macros (YCXX_HARDENED exists, the macros are not defined), `__cpp_lib_freestanding_{cstdlib,functional,memory,execution}`, `__cpp_lib_constexpr_exceptions` (known: Clang 23) | [version.syn] | none |
 
 ## (C) Not applicable to the current draft or to libycxx

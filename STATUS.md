@@ -288,10 +288,14 @@ Ported:
   `FP_SUBNORMAL` (1-5), `FP_ILOGBNAN` (INT_MIN), `math_errhandling` (MATH_ERREXCEPT: that libm
   never sets errno; `cmath_check.cpp` compares the C library's only when it is a constant),
   `mbstate_t` (128 bytes, aligned to 8). The hosted checks against the C headers remain.
-- C23 functions libSystem lacks, provided by the hosted runtime: `strfromd/f/l`
-  (`src/hosted/strfrom.cpp`, on snprintf), `mbrtoc8`/`c8rtomb`, and the four char16_t/char32_t
-  conversions where the SDK has no `<uchar.h>` (`src/hosted/uchar.cpp`, on mbrtowc/wcrtomb),
-  `timespec_getres` (`src/hosted/ctime.cpp`, TIME_UTC only, on clock_getres).
+- C23 functions libSystem lacks (found by `cmake/ycxx-c-library.cmake`, not assumed), provided by
+  the hosted runtime: `strfromd/f/l` (`src/hosted/strfrom.cpp`, on snprintf), `mbrtoc8`/`c8rtomb`,
+  and the four char16_t/char32_t conversions (the SDK has no `<uchar.h>`; `src/hosted/uchar.cpp`,
+  on mbrtowc/wcrtomb; libycxx's `<uchar.h>` places them in the global namespace),
+  `timespec_getres` (`src/hosted/ctime.cpp`, TIME_UTC only, on clock_getres; global through
+  libycxx's `<time.h>`). `_PRINTF_NAN_LEN_MAX` is the probe's measurement of libSystem's printf
+  (3: it prints every NaN as `nan`). `atexit`/`at_quick_exit` are redeclared noexcept, and the
+  const-correct `strchr` ... `wmemchr` pairs are libycxx's at global scope too.
 - Static initialization: Mach-O has no init priorities, so `<iostream>` defines an
   `ios_base::Init` per translation unit there (DECISIONS §7); checked on Linux by building with
   `-U__ELF__`.
@@ -324,17 +328,23 @@ dyld coalesces exported weak definitions across images, a non-weak one winning: 
 libycxx's header-emitted definitions (`std::current_exception`, and with GCC the exception
 classes' type_info and members) to libc++'s, and patched libycxx's `operator delete` into the
 shared cache. Fixed by hidden visibility (DECISIONS §2): nothing of libycxx is exported, so no
-weak-definition binds remain except, with GCC, the fundamental type_info objects (benign: same
-objects in libc++abi). Expected in CI: `exception`, `except`, `rtti`, `future` pass on both
+weak-definition binds remain. GCC's fundamental type_info objects are hidden too (the list comes
+from a configure-time probe of the compiler): on aarch64-apple-darwin GCC 16.2 emits 300 such
+symbols, 150 of which (the SVE, `__bf16`, `__mfp8`, decimal and `_FloatN` forms) Apple's libc++abi
+does not export, so tolerating them as "libc++abi's objects" was wrong. Expected in CI: `exception`, `except`, `rtti`, `future` pass on both
 compilers apart from the documented `except/handler_pointer_reference{,_exact}` (both) and
 `handler_array_decay`, `handler_function_pointer` (GCC) handler limitation;
 `linkage/no_exported_library_symbols` passes;
 `tests/cmake/run.sh` (not in CI) shows no exports and "mine 3 other 3" with Apple's libc++.
 
 Unverified or known gaps on macOS:
-- Darwin's C library predates C23 in places libycxx forwards to it: whether its printf/scanf
-  have `%b` and its `strto*` the `0b` prefix is probed by `cinttypes/functions_macros` (a note
-  when missing); its `iswctype` with `wctype("...")` may disagree with the `isw*` functions
+- Darwin's C library predates C23 in places libycxx forwards to it: its printf has neither `%b`
+  nor `%B` (macOS 26: `snprintf("%b", 5u)` gives "b"), so own test `cstdio/c23_conversions` fails
+  there (a C library gap: libycxx's `<cstdio>` is the C library's printf) and `PRIBN` stay
+  undefined ([cinttypes.syn]/2); whether its scanf has `%b` and its `strto*` the `0b` prefix is
+  probed by `cinttypes/functions_macros` (a note when missing); its `strftime` `%z` gives the
+  local offset for a `gmtime` result (own test `ctime/c23_functions` passes only with `TZ=UTC`,
+  as in CI); its `iswctype` with `wctype("...")` may disagree with the `isw*` functions
   beyond ASCII under "C.UTF-8" (`cwctype/classification` notes the C library's disagreements).
 - `<stacktrace>`: frames are captured (libSystem's `_Unwind_Backtrace`), but only `dladdr`
   names them (exported symbols only) and there are no file names or lines: the runtime reads ELF
@@ -402,6 +412,17 @@ a defect in a test.
   test 29_atomics/atomic_ref/ctor) treat the explicit constructor as a candidate and find the call
   ambiguous ([over.match.list]).
 
+- Clang 23.1 (also Apple clang 21) on Darwin: an `inline thread_local` variable with dynamic
+  initialization and hidden visibility (from `-fvisibility=hidden` or from its type's visibility,
+  so every such variable of a libycxx class type, DECISIONS §2) gets its TLS init function
+  `_ZTH<name>` as a strong private external symbol: the IR has a `linkonce_odr hidden alias` to the
+  TU's `__tls_init`, which the Mach-O backend emits without the weak bit (with default visibility
+  it is a local symbol; ELF targets emit it weak). Two TUs defining the variable fail to link with
+  "duplicate symbol 'thread-local initialization routine for ...'". GCC 16.2 (weak `_ZTH`) links.
+  Repro without libycxx: `s.h`: `struct S { S(); int v; }; inline thread_local S t;`; `a.cpp`:
+  `#include "s.h"` `S::S() : v(1) {} int* f() { return &t.v; }`; `b.cpp`: `#include "s.h"`
+  `int* f(); int main() { return f() != &t.v; }`; `clang++ -fvisibility=hidden a.cpp b.cpp`.
+  Own test `linkage/odr_inline_entities` is XFAIL on Clang on Darwin (`XFAIL: clang-darwin`).
 - Clang 23.1: the type_info name string of a class with internal linkage is emitted without the
   leading `*` (GCC emits `*N12_GLOBAL__N_1...`) that tells the Itanium runtime to compare
   type_info objects by address, so same-named unnamed-namespace classes of different translation
@@ -498,7 +519,12 @@ compilers; `visit_format_arg.pass.cpp` needs `EOF` from `constexpr_char_traits.h
   {2, 9}, is unique and fails it). libycxx constructs submdspan results without that check (the
   other preconditions are still checked in hardened builds); a draft defect to report.
 - Hidden visibility (DECISIONS §2): a program or shared library exports none of libycxx's
-  symbols. **GCC warns** (`-Wattributes`: "'S' declared with greater visibility than the type of
+  symbols; its images share their default allocation functions through the allocation table
+  `ycxx_allocation_functions` (DECISIONS §2), kept in a program by link options the CMake
+  package and `tools/ycxx-cxx` add (`-u`, and `--export-dynamic-symbol` on ELF); other build
+  systems add them themselves (`<build>/ycxx-link-options` lists them). Without them, a program
+  that references no default allocation function lacks the table, and its replacements do not
+  reach the libycxx shared libraries it loads. **GCC warns** (`-Wattributes`: "'S' declared with greater visibility than the type of
   its field" / "than its base") for every program class outside libycxx's namespaces with a
   member or base of a library class type (`struct S { std::string s; };`, a class derived from
   `std::runtime_error`); GCC has no way to hide a class's members and type_info without hiding
@@ -653,6 +679,10 @@ compilers; `visit_format_arg.pass.cpp` needs `EOF` from `constexpr_char_traits.h
   destroy/121024.cc fails on GCC (PR c++/102284, marked dg-xfail-if, which the harness ignores).
 - `FLT_ROUNDS` is the constant 1 with GCC (no `__builtin_flt_rounds`), as in GCC's own
   `<float.h>`; it does not follow `fesetround`. Clang reports the current mode.
+- The searching functions (`strchr` ... `wmemchr`) are libycxx's const/non-const pairs in both
+  namespaces on every C library: the C library's declarations are renamed while its header is
+  read (DECISIONS §3), so a C header read before libycxx's (bypassing its include directory)
+  leaves the C signature in place.
 - `std::any` allocates large values with a plain new-expression, honouring a class-specific
   `operator new`. A type that deletes it cannot be stored (libstdc++ any/83658 relies on this).
 - Freestanding programs built with GCC link libgcc (helpers such as `__popcountdi2`).

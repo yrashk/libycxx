@@ -10,7 +10,7 @@
 #include <cstddef>
 #include <typeinfo>
 
-namespace __cxxabiv1 {
+namespace [[gnu::visibility("hidden")]] __cxxabiv1 {
 
 class __fundamental_type_info : public std::type_info {
 public:
@@ -122,7 +122,7 @@ public:
 
 } // namespace __cxxabiv1
 
-namespace ycxx::abi {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace abi {
 
 // Which ABI class a type_info object is (its dynamic type, read through typeid).
 enum class rtti_kind : unsigned char {
@@ -290,4 +290,4 @@ struct base_search {
 
 base_search find_bases(const subobject& root, const __cxxabiv1::__class_type_info& target);
 
-} // namespace ycxx::abi
+}} // namespace ycxx::abi

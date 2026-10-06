@@ -55,8 +55,11 @@ abi="$libdir/libycxx-abi.a"
 link=1
 for a in "$@"; do case $a in -c|-S|-E|-fsyntax-only|-M|-MM) link=0 ;; esac; done
 if [ $link = 1 ]; then
-  exec $cxx $extra -std=c++26 -nostdinc++ -isystem "$here/include" "$@" \
-    -nostdlib++ $group_begin "$libdir/libycxx.a" "$abi" $group_end -lm $static_libgcc
+  # The allocation table's link options, as the build found them (cmake/ycxx-link.cmake).
+  table_opts=
+  [ -f "$libdir/ycxx-link-options" ] && table_opts=$(cat "$libdir/ycxx-link-options")
+  exec $cxx $extra -std=c++26 -nostdinc++ -isystem "$here/include" -isystem "$libdir/generated/include" "$@" \
+    -nostdlib++ $table_opts $group_begin "$libdir/libycxx.a" "$abi" $group_end -lm $static_libgcc
 else
-  exec $cxx $extra -std=c++26 -nostdinc++ -isystem "$here/include" "$@"
+  exec $cxx $extra -std=c++26 -nostdinc++ -isystem "$here/include" -isystem "$libdir/generated/include" "$@"
 fi

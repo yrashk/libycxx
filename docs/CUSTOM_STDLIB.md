@@ -27,8 +27,14 @@ rather than against itself. It assumes familiarity with `README.md`, `DECISIONS.
    toolchain's runtime (`libsupc++`, `libc++abi`).
 3. **Build static archives with hidden visibility**, so that a program or shared object exports
    nothing of the library. Hide what the compiler keeps default (predeclared ABI entry points),
-   except the replaceable allocation functions: keep those default, so that one replacement (the
-   program's, or a sanitizer's) serves every image and objects can change owner between images.
+   including the default allocation functions; let the images that link the library share those
+   through a table under a name of the library's own, so that one replacement (the program's, or
+   a sanitizer's) serves every such image and objects can change owner between them, while
+   another C++ runtime in the process keeps its own.
+   **Discover target facts, do not write them down**: what the C library declares, which
+   type_info objects the compiler emits, and the like are tested by the preprocessor where it can
+   see them (`#ifndef`, `__has_include_next`) and otherwise probed against the real toolchain
+   when the library is configured, the answers generated into the build tree.
 4. **Select the library with the generic driver flags**: `-nostdinc++` plus `-isystem <headers>`,
    and `-nostdlib++` plus the archives and their system dependencies. Do not rely on `-stdlib=`.
 5. **Deliver the same flags three ways**, generated from one place where possible: a CMake package
@@ -124,12 +130,17 @@ baseline check, an inline ABI namespace) only once ABI stability is promised.
 ### Visibility
 
 libycxx hides everything (DECISIONS §2): every file-scope opening of `std` and `ycxx` is
-`namespace [[gnu::visibility("hidden")]] std {` (enforced by `tools/check_visibility.py`), the
-archives are built with `-fvisibility=hidden`, and what the compilers keep default is hidden with
-assembler directives: GCC's predeclared `__cxa_*` entry points, and on ELF GCC's fundamental
-type_info objects. The replaceable allocation functions keep the default visibility the compilers
-give them (decided 2026-10-05, after the sanitizer runs below showed objects allocated in one image
-and freed in another; earlier libycxx hid them too, with the same directives).
+`namespace [[gnu::visibility("hidden")]] std {` in the headers and the runtime's sources alike
+(enforced by `tools/check_visibility.py`), the runtime's C-linkage entry points carry
+`[[gnu::visibility("hidden")]]` on their declarations (no `-fvisibility=hidden`: the sources say
+what is hidden, whoever builds them), and what the compilers keep default is hidden with
+assembler directives: GCC's predeclared `__cxa_*` entry points, and GCC's fundamental type_info
+objects. Which fundamental type_info objects a compiler emits depends on the target (GCC 16.2 for
+aarch64-apple-darwin emits 300 symbols, with the SVE, `__bf16` and `__mfp8` types; 150 of them are
+not in Apple's libc++abi), so the list is not written down: CMake compiles a probe defining
+`__fundamental_type_info`'s key function at configure time and lists its symbols with `nm`
+(DECISIONS §2). The default allocation functions are hidden as well, and shared among the images
+that link libycxx through an allocation table (Replacement allocation functions, below).
 
 Others: libc++ offers `LIBCXX_HERMETIC_STATIC_LIBRARY`, "Do not export any symbols from the static
 libc++ library" [libcxx-vendor]. Clang has `-fvisibility-global-new-delete=` (`force-default`,
@@ -141,7 +152,31 @@ platforms deliberately keeps the allocation functions default because "elf visib
 require that linkers use the least visible form when merging" and Chromium's own allocator must
 intercept allocations from other shared libraries [chromium-libcxx-gn]. Checked here: GCC 16.2 does
 not accept `-fvisibility-global-new-delete=` (`unrecognized command-line option`), which is why
-libycxx uses assembler directives instead.
+libycxx hides its defaults with assembler directives.
+
+### Facts about the target
+
+A library that forwards to the C library, or hides what a compiler emits, depends on facts about
+the target. libycxx does not encode them as knowledge about a platform (DECISIONS §1, rule 8):
+
+- What the preprocessor can see is tested where it is used: `#ifndef _PRINTF_NAN_LEN_MAX`,
+  `!defined(PRIb8)`, `__has_include_next(<uchar.h>)` (the `_next` form skips the library's own
+  `<uchar.h>`).
+- The rest is probed when the library is configured, against the real toolchain, on every target:
+  `cmake/ycxx-c-library.cmake` compiles C probes against the C library (does `<stdlib.h>` declare
+  `strfromd`, `<uchar.h>` `mbrtoc8`, `<time.h>` `timespec_getres`; and, by running a probe, the
+  longest NaN its `printf` writes) and writes `<ycxx/generated/c_library.hpp>` into the build tree,
+  which `ycxx/config.hpp` includes when it is found (`__has_include`; without it a C23 C library is
+  assumed, so a gap is a compile error naming the function). The fundamental type_info probe
+  (Visibility, above) writes the symbols the ABI runtime hides.
+- Where the C library's declaration is wrong for C++ ([cstring.syn]'s const/non-const `strchr`
+  pairs, [support.start.term]'s `noexcept` `atexit`), the wrapper renames the C library's
+  declaration while reading its header and declares the C++ one itself, on every C library, so
+  nothing depends on which C library it is (DECISIONS §3).
+
+Checked on macOS 26 (arm64, GCC 16.2 and Clang 23.1): the probes find no `strfrom*`, `mbrtoc8`,
+`timespec_getres` or `<uchar.h>`, and measure `_PRINTF_NAN_LEN_MAX` as 3 (every NaN prints as
+`nan`).
 
 ## 4. Using
 
@@ -248,8 +283,14 @@ provisioning step; it is not a feature others document.
 On Darwin the archives are linked into the executable and bound there (two-level namespace);
 Apple's linker searches archives repeatedly, so no group is needed; Clang's Apple arm64 ABI marks
 type_info objects that may be duplicated across images by setting bit 63 of the name pointer,
-which the runtime clears (DECISIONS §4, STATUS "macOS"). STATUS says that nothing of the macOS port
-had run on macOS when it was written; CI runs a `macos` job. Not checked here.
+which the runtime clears (DECISIONS §4, STATUS "macOS"). Checked on macOS 26 arm64 with Homebrew
+GCC 16.2 and Clang 23.1 (`tools/test policy build cmake ycxx`): the platform-specific findings were
+GCC's target-dependent fundamental type_info objects (above), C library gaps (above; also no `%b`
+in `printf`, a C library gap the library cannot fill), `$TMPDIR` behind a symbolic link
+(`/var` -> `/private/var`: a path under `PATH_MAX` can still fail with `ENAMETOOLONG` once resolved),
+and a Clang code generation bug on Mach-O: the TLS initialization function of an
+`inline thread_local` variable with hidden visibility is emitted as a strong symbol, so two
+translation units defining the variable fail to link (STATUS, with a repro without the library).
 
 ## 5. Coexisting with another C++ runtime in the process
 
@@ -287,8 +328,8 @@ runtimes. What is not shared is documented: each image has its own `uncaught_exc
 error categories and default memory resources (but one set of allocation functions, see below). `tests/cmake/run.sh`
 checks it: a program and a shared library built with libycxx, each in one process with a shared
 library built with the toolchain's library ("mine 3 other 3"), a program catching a libycxx shared
-library's exceptions ("caught 15 uncaught 0 0"), and no exported libycxx symbol in any image (all
-passed with both compilers; ELF only here).
+library's exceptions ("caught 15 uncaught 0 0"), and no exported libycxx symbol in any image other
+than the allocation table (all passed with both compilers, on Linux and on macOS 26).
 
 Compared with the alternatives: an ABI namespace alone keeps names apart but still exports them
 (and their weak definitions coalesce within one library's own copies); `-Bsymbolic` and version
@@ -303,10 +344,30 @@ The global allocation functions are the one part of the library an image must sh
 others: a `std::string` built in a shared library and destroyed in the program is allocated by
 one image's `operator new` and freed by the other's `operator delete`. With per-image (hidden)
 defaults that pairs only while both reach `malloc`/`free`; it breaks when the program replaces
-`operator delete`, and AddressSanitizer reports it as `alloc-dealloc-mismatch`. libycxx therefore
-gives its default allocation functions default visibility, as libstdc++ and libc++ do, and as
-Chromium keeps them on ELF so that its allocator sees every image's allocations
-[chromium-libcxx-gn].
+`operator delete`, and AddressSanitizer reports it as `alloc-dealloc-mismatch`. The usual answer
+is to export the defaults, as libstdc++ and libc++ do, and as Chromium keeps them on ELF so that its
+allocator sees every image's allocations [chromium-libcxx-gn]; libycxx did so briefly.
+
+Exporting the defaults has a cost where another C++ runtime shares the process. On Darwin, dyld
+takes each allocation function from the first image in load order that defines it (observed with
+`DYLD_PRINT_BINDINGS` on macOS 26), coalescing with libc++abi's by name: a libycxx program's default
+then served Apple's libc++, whose allocation failure threw libycxx's `bad_alloc` into code built
+with libc++abi; and a libycxx shared library in a host without libycxx (a C program, a plugin host
+built with Apple's libc++) got libc++abi's `operator new`, with libc++abi's `bad_alloc` (foreign to
+libycxx's runtime) and libycxx's `new_handler` never called. ELF interposition does the same when
+libycxx and libstdc++ meet. libycxx therefore keeps its defaults hidden and lets its own images
+share them through `ycxx_allocation_functions`, a weak, exported table of function pointers under a
+name no other runtime defines: the dynamic linker binds every image to the first image's table
+(the program's, kept there by link options the package adds), whose entries call that image's
+`operator new` and friends, the program's replacements included; each default forwards to the
+process's entry when it is another image's (DECISIONS §2). Checked on macOS 26 with both
+compilers: a program's replacement serves its libycxx shared libraries
+(`linkage/shared_library_replaced_new`), objects cross images under AddressSanitizer
+(`linkage/shared_library_allocation_exchange`), and a libycxx shared library and one built with
+Apple's libc++ each keep their own allocation functions, `new_handler` and `bad_alloc`, in a
+libycxx program and in a program built with Apple's libc++ (`tests/cmake/visibility`, "mine 7
+other 7"; the exported defaults gave "other 3"). A program's own replacement is exported and serves
+the other runtime too, the platform's ordinary rule.
 
 
 The library's default `operator new`/`delete` live in their own archive members, so a program's
@@ -317,7 +378,9 @@ second replacement: AddressSanitizer's run-time library "replaces the malloc and
 `tools/ycxx-cxx clang -fsanitize=address`, the linker map shows `operator new(unsigned long)` taken
 from `libclang_rt.asan_cxx-x86_64.a(asan_new_delete.cpp.o)`, not from `libycxx.a`; the program
 runs. libycxx's own suite marks the tests this changes (`new/*` forwarding and new_handler tests,
-`linkage/*` export tests) `// UNSUPPORTED-SANITIZER: asan` with the reason. GCC 16.2 here has no
+`linkage/*` export and replacement tests) `// UNSUPPORTED-SANITIZER: asan` with the reason; the
+tests that exchange objects between images (`linkage/shared_library_exceptions`,
+`linkage/shared_library_allocation_exchange`) run under ASan, clean on macOS 26 with both compilers. GCC 16.2 here has no
 ASan runtime (`cannot find -lasan`), so sanitizer runs are Clang-only (STATUS).
 
 The rule that follows: test allocation-function behaviour without sanitizers, and mark, not
@@ -334,7 +397,9 @@ implementation; a failing test is a library bug until the draft shows otherwise,
 never weakened (DECISIONS §6). The lit format (`tests/ycxxlit/ycxx_format.py`) knows
 `*.pass.cpp` (compile, link, run), `*.compile.pass.cpp` (must compile) and `*.compile.fail.cpp`
 (must not compile, for a reason other than a missing header), with directives `FLAGS`, `FILES`,
-`ARCHIVE`, `SHARED` (multi-image tests), `UNSUPPORTED-SANITIZER`, `XFAIL-COMPILER`,
+`ARCHIVE`, `SHARED` (multi-image tests), `UNSUPPORTED-SANITIZER`,
+`XFAIL: gcc|clang|any[-linux|-darwin] <reason>` (`XFAIL-COMPILER` accepted; the OS suffix limits the
+mark to that OS, for a compiler bug of one object format),
 `EXPECT-ERROR[-GCC|-CLANG]: <regex>` (a compile-fail test's diagnostics must match),
 `REQUIRES: <features>` (lit features `gcc`, `clang`, `linux`, `darwin`, `asan`, `ubsan`, `tsan`,
 `hardened`, `exceptions`, `rtti`) and `EXPECT-TERMINATE` (a death test: killed by SIGABRT,
@@ -442,9 +507,10 @@ run's output, not only in the file.
 At this commit CI fails where tests fail: the own suite's expected failures are each marked in the
 test with the STATUS cause (`char_traits/eof`, draft defect; `except/handler_pointer_reference*`,
 Itanium ABI; two `except/handler_*` and `exception/exception_ptr_constexpr` and
-`contracts/observe` on GCC 16; `execution/senders_basic`, not implemented yet), and four tests
+`contracts/observe` on GCC 16; `execution/senders_basic`, not implemented yet), and three tests
 still FAIL as libycxx divergences being fixed (`cstddef/stddef_global{,_reverse}`,
-`cwchar/mbstate_global`, `cwchar/wchar_h_global_names` on Clang). The full external runs fail
+`cwchar/mbstate_global`; `cwchar/wchar_h_global_names` now passes on both compilers with the
+library's own `<wchar.h>`). The full external runs fail
 until every failure of `TRIAGE.md` is fixed, skipped or marked (Gaps, item 1).
 
 ### Sanitizers

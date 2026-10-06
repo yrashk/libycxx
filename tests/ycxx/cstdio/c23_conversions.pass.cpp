@@ -12,6 +12,7 @@
 //     number of characters that can be output by the printf family for a NaN" with the
 //     conversions f, F, e, E, g, G, a, A (no n-char-sequence in this check: none is printed for
 //     the plain quiet NaN).
+// XFAIL: any-darwin  Darwin's printf has no C23 b conversion (snprintf("%b", 5u) writes "b"); <cstdio> is the C library's (STATUS, macOS)
 #include <cstdint>
 #include <cstdio>
 #include <cstring>

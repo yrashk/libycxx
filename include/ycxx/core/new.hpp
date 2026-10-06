@@ -37,27 +37,31 @@ inline constexpr size_t hardware_constructive_interference_size = 64;
 
 // Replaceable allocation functions. Defaults: the hosted runtime (via the PAL) or
 // libycxx-freestanding.a (no heap); one function per archive member, so a program may replace
-// any subset (src/runtime/new).
+// any subset (src/runtime/new). libycxx's defaults are hidden and shared among the images that link
+// libycxx through the allocation table (DECISIONS §2); a program's replacement is exported, as
+// its other functions are: the compilers' implicit declarations give the forms they predeclare
+// default visibility, and the nothrow forms say so explicitly, since a function otherwise takes
+// the (hidden) visibility of its parameter type std::nothrow_t.
 [[nodiscard]] void* operator new(std::size_t size);
 [[nodiscard]] void* operator new(std::size_t size, std::align_val_t alignment);
-[[nodiscard]] void* operator new(std::size_t size, const std::nothrow_t&) noexcept;
-[[nodiscard]] void* operator new(std::size_t size, std::align_val_t alignment, const std::nothrow_t&) noexcept;
+[[gnu::visibility("default")]] [[nodiscard]] void* operator new(std::size_t size, const std::nothrow_t&) noexcept;
+[[gnu::visibility("default")]] [[nodiscard]] void* operator new(std::size_t size, std::align_val_t alignment, const std::nothrow_t&) noexcept;
 void operator delete(void* ptr) noexcept;
 void operator delete(void* ptr, std::size_t size) noexcept;
 void operator delete(void* ptr, std::align_val_t alignment) noexcept;
 void operator delete(void* ptr, std::size_t size, std::align_val_t alignment) noexcept;
-void operator delete(void* ptr, const std::nothrow_t&) noexcept;
-void operator delete(void* ptr, std::align_val_t alignment, const std::nothrow_t&) noexcept;
+[[gnu::visibility("default")]] void operator delete(void* ptr, const std::nothrow_t&) noexcept;
+[[gnu::visibility("default")]] void operator delete(void* ptr, std::align_val_t alignment, const std::nothrow_t&) noexcept;
 [[nodiscard]] void* operator new[](std::size_t size);
 [[nodiscard]] void* operator new[](std::size_t size, std::align_val_t alignment);
-[[nodiscard]] void* operator new[](std::size_t size, const std::nothrow_t&) noexcept;
-[[nodiscard]] void* operator new[](std::size_t size, std::align_val_t alignment, const std::nothrow_t&) noexcept;
+[[gnu::visibility("default")]] [[nodiscard]] void* operator new[](std::size_t size, const std::nothrow_t&) noexcept;
+[[gnu::visibility("default")]] [[nodiscard]] void* operator new[](std::size_t size, std::align_val_t alignment, const std::nothrow_t&) noexcept;
 void operator delete[](void* ptr) noexcept;
 void operator delete[](void* ptr, std::size_t size) noexcept;
 void operator delete[](void* ptr, std::align_val_t alignment) noexcept;
 void operator delete[](void* ptr, std::size_t size, std::align_val_t alignment) noexcept;
-void operator delete[](void* ptr, const std::nothrow_t&) noexcept;
-void operator delete[](void* ptr, std::align_val_t alignment, const std::nothrow_t&) noexcept;
+[[gnu::visibility("default")]] void operator delete[](void* ptr, const std::nothrow_t&) noexcept;
+[[gnu::visibility("default")]] void operator delete[](void* ptr, std::align_val_t alignment, const std::nothrow_t&) noexcept;
 
 
 // Non-allocating forms (constexpr since C++26). Not replaceable and defined here, so hidden like

@@ -5,7 +5,7 @@
 #include <string>
 #include <ycxx/core/error.hpp>
 
-namespace ycxx::detail {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 
 namespace {
 // Block layout: [refcount (size_t)] [characters ... '\0']. The text pointer points at the
@@ -50,12 +50,12 @@ void message_release(const char* text) noexcept {
   }
 }
 
-} // namespace ycxx::detail
+}} // namespace ycxx::detail
 
 // This file is built with YCXX_EXCEPTION_KEY_FUNCTIONS (CMakeLists.txt), so the classes declare
 // their destructors out of line here, and this translation unit, built with RTTI, emits their
 // vtables for programs whose other translation units are built without RTTI (stdexcept.hpp).
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 logic_error::~logic_error() {}
 runtime_error::~runtime_error() {}
 domain_error::~domain_error() {}

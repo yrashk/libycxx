@@ -4,7 +4,7 @@
 #include <ycxx/config.hpp>
 #include <ycxx/core/version.hpp>
 #include <ycxx/core/cstddef.hpp>
-#include <time.h>
+#include_next <time.h>
 
 #ifndef __STDC_VERSION_TIME_H__
 #  define __STDC_VERSION_TIME_H__ 202311L
@@ -12,8 +12,11 @@
 
 // [depr.ctime] (Annex D; also deprecated in C23): the C library's declarations, redeclared
 // [[deprecated]] (decltype keeps their exact type, noexcept included); std:: names them below.
+// extern "C": <time.h> includes this header inside extern "C++".
+extern "C" {
 [[deprecated("asctime is deprecated ([depr.ctime]); use strftime or std::format")]] decltype(::asctime) asctime;
 [[deprecated("ctime is deprecated ([depr.ctime]); use strftime or std::format")]] decltype(::ctime) ctime;
+}
 
 // timespec_getres (C23 7.29.2.7) for C libraries without it, in the hosted runtime
 // (src/hosted/ctime.cpp): the resolution of TIME_UTC, from clock_getres(CLOCK_REALTIME).

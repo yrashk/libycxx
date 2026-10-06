@@ -4,7 +4,7 @@
 
 #include <exception>
 
-namespace ycxx::abi {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace abi {
 
 void exception_ptr_retain(void* object) noexcept { retain_primary(header_of_object(object)); }
 
@@ -51,4 +51,4 @@ const void* exception_object_as(void* object, const std::type_info& handler) noe
   return adjusted;
 }
 
-} // namespace ycxx::abi
+}} // namespace ycxx::abi

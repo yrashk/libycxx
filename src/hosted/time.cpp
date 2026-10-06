@@ -213,7 +213,7 @@ void format(out& o, const std::tm* t, char spec, char mod) {
 
 } // namespace
 
-namespace ycxx::detail {
+namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 
 size_t time_put_c(char* buf, size_t cap, const std::tm* t, char format, char modifier) noexcept {
   out o{buf, cap};
@@ -231,4 +231,4 @@ size_t time_put_c(char* buf, size_t cap, const std::tm* t, char format, char mod
   return o.len;
 }
 
-} // namespace ycxx::detail
+}} // namespace ycxx::detail

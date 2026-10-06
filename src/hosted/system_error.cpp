@@ -2,7 +2,7 @@
 #include <system_error>
 #include <ycxx/pal.h>
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 
 error_category::~error_category() {}
 
@@ -96,7 +96,7 @@ std::string compose(const char* what_arg, std::size_t n, const std::error_code& 
 
 } // namespace
 
-namespace std {
+namespace [[gnu::visibility("hidden")]] std {
 
 const error_category& generic_category() noexcept { return generic_object.object; }
 const error_category& system_category() noexcept { return system_object.object; }

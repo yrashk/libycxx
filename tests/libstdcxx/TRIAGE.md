@@ -703,6 +703,16 @@ global_locale_objects/14071.cc (glibc's twelve-category name), time_put/put/char
 byname facet's own names, not the stream locale's). The other three left at the time,
 objects/wchar_t/{9662,12048-2,12048-4}.cc, were fixed on the wide-streams branch (see above).
 
+**Whole-suite run of 2026-10-06 (after the hosted-layers and sanitizer merges):** four failures
+per compiler outside the directories above, none a libycxx bug, each checked to pass with the
+non-standard part removed; skipped with their reasons: 28_regex/iterators/regex_iterator/wchar_t/
+string_02.cc and regex_token_iterator/wchar_t/wstring_02.cc (`std::setlocale`/`LC_ALL` with only
+`<regex>`; they run since en_US.UTF-8 is generated), std/text_encoding/members.cc (bad ids and
+out-of-range alias iterators, libstdc++ extensions; GCC's `__GNUC_EXECUTION_CHARSET_NAME`; runs
+since en_US.ISO8859-1 and fr_FR.ISO8859-15 are generated), std/time/freestanding.cc (`clock_cast`
+under `-ffreestanding`: since the hosted-layers change, a555b7e, freestanding `<chrono>` stops at
+the clocks; `<chrono>` is not in [compliance] Table 27).
+
 ## Skipped tests without a counterpart
 
 Tests skipped (or UNSUPPORTED) as tied to the other library's internals, extensions or modes whose subject the draft does not specify, so libycxx's own suite has no test for it: the trace reports them as "no libycxx counterpart". Patterns are anchored regexes (like skip.txt); the linked ones carry `// COUNTERPART:` in tests/ycxx (tests/ycxxlit/counterparts.py).

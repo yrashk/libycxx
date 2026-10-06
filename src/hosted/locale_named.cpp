@@ -19,6 +19,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <string>
+#include <typeinfo>
 #include <ycxx/hosted/memory_resource.hpp> // __ycxx::__detail::__pal_lock
 #include "locale_named.hpp"
 
@@ -1023,3 +1024,39 @@ void messages_byname<wchar_t>::do_close(catalog c) const {
 }
 
 } // namespace std
+
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+
+// regex_traits::transform_primary ([re.traits]/7): the primary sort key when the facet is exactly
+// a collate_byname and the form of its keys is known. glibc's strxfrm_l/wcsxfrm_l key of a locale
+// with collation rules is the weights of each level in turn, each level ended by the value 1
+// (glibc's string/strxfrm_l.c); the primary key is the weights before the first 1. A locale without rules ("C", or every
+// locale of musl) gives a copy of the string, which has no separator: every character is then its
+// own equivalence class, and the full key is the primary one too, which the caller uses when this
+// returns false. Darwin's key form is not documented: false there as well.
+template <class __charT>
+static bool primary_key(const std::collate<__charT>& f, const __charT* __low, const __charT* __high,
+                        std::basic_string<__charT>& out) {
+  if constexpr (__cfg::__darwin)
+    return false;
+  if (typeid(f) != typeid(std::collate_byname<__charT>))
+    return false;
+  const __charT a[1] = {__charT('a')};
+  if (f.transform(a, a + 1).find(__charT(1)) == std::basic_string<__charT>::npos)
+    return false;
+  out = f.transform(__low, __high);
+  const std::size_t __end = out.find(__charT(1));
+  if (__end != std::basic_string<__charT>::npos)
+    out.resize(__end);
+  return true;
+}
+
+bool __regex_primary_key(const std::collate<char>& f, const char* __low, const char* __high, std::string& out) {
+  return primary_key(f, __low, __high, out);
+}
+bool __regex_primary_key(const std::collate<wchar_t>& f, const wchar_t* __low, const wchar_t* __high,
+                         std::wstring& out) {
+  return primary_key(f, __low, __high, out);
+}
+
+}} // namespace __ycxx::__detail

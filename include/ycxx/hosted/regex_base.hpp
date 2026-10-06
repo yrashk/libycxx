@@ -122,6 +122,11 @@ unsigned __regex_class_by_name(const char* name, std::size_t n, bool icase) noex
 // The character a single character or a POSIX collating-symbol name ("period", "NUL", ...)
 // stands for, or -1.
 int __regex_collate_by_name(const char* name, std::size_t n) noexcept;
+// src/hosted/locale_named.cpp: the primary sort key of [__low, __high) into out, if __f is a
+// collate_byname whose key form is known ([re.traits]/7); false otherwise.
+bool __regex_primary_key(const std::collate<char>& __f, const char* __low, const char* __high, std::string& out);
+bool __regex_primary_key(const std::collate<wchar_t>& __f, const wchar_t* __low, const wchar_t* __high,
+                         std::wstring& out);
 // The fixed message of regex_error(code).
 const char* __regex_error_message(int code) noexcept;
 
@@ -156,14 +161,23 @@ struct regex_traits {
     string_type s(first, last);
     return __col_->transform(s.data(), s.data() + s.size());
   }
-  // [re.traits]/7 returns an empty key unless the facet is a collate_byname whose key form is
-  // known. The collate facets of every locale libycxx provides (collate and collate_byname alike)
-  // compare code points one by one, as the POSIX locale does, so their sort keys have no
-  // secondary weights and the whole key is the primary key: every character is its own
-  // equivalence class ([[=a=]] matches 'a' only).
+  // [re.traits]/7: the primary key when the facet is a collate_byname whose key form is known
+  // (the C library's multi-level keys on glibc: [[=a=]] matches 'á' in cs_CZ). Otherwise
+  // [re.traits]/7 returns an empty key, which makes every [[=x=]] invalid; libycxx returns the
+  // whole key instead (STATUS.md, regex): the collate facet of the classic locale, and a
+  // collate_byname whose keys have one level, compare code points one by one, so their whole key
+  // is the primary key and every character is its own equivalence class.
   template <class _ForwardIterator>
   string_type transform_primary(_ForwardIterator first, _ForwardIterator last) const {
-    return transform(first, last);
+    if constexpr (is_same_v<__charT, char> || is_same_v<__charT, wchar_t>) {
+      const string_type s(first, last);
+      string_type __key;
+      if (::__ycxx::__detail::__regex_primary_key(*__col_, s.data(), s.data() + s.size(), __key))
+        return __key;
+      return __col_->transform(s.data(), s.data() + s.size());
+    } else {
+      return transform(first, last);
+    }
   }
   template <class _ForwardIterator>
   string_type lookup_collatename(_ForwardIterator first, _ForwardIterator last) const {

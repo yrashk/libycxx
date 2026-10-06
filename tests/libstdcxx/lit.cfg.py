@@ -29,9 +29,9 @@ flags = ['-I' + os.path.join(tests_root, 'util'), '-I' + os.path.join(repo, 'tes
          # _GLIBCXX_USE_CXX11_ABI=1; 64 tests branch on it (e.g. ios_base::failure deriving from
          # system_error), and the new-ABI branch is the one that describes the standard.
          '-D_GLIBCXX_USE_CXX11_ABI=1', '-w', '-fdiagnostics-color=never' if compiler == 'gcc' else '-fno-diagnostics-color']
-if sanitizer:
-    flags += ['-fsanitize=' + ','.join({'asan': 'address', 'ubsan': 'undefined', 'tsan': 'thread'}[s] for s in sanitizer.split(',')),
-              '-fno-sanitize-recover=all', '-g']
+from ycxxlit import sanitizers
+sanitizer_list = sanitizers.parse(sanitizer)
+flags += sanitizers.compile_flags(sanitizer_list)
 if libdir:
     flags = ['--libdir=' + libdir] + flags
 wrapper = os.path.join(repo, 'tools', 'ycxx-cxx')
@@ -43,6 +43,9 @@ from ycxxlit import locales
 locale_probe = locales.build_probe(wrapper, compiler, config.test_exec_root)
 # Journaled: every finished test's result is kept even if the run is stopped (Ctrl-C).
 from ycxxlit.journal import Journaled
+# A sanitizer run: each program runs with the sanitizers' options (TSAN_OPTIONS: this suite's
+# tests/libstdcxx/tsan.supp, each suppression with its reason; tests/ycxxlit/sanitizers.py).
 config.test_format = Journaled(LibstdcxxFormat(wrapper, compiler, flags,
                                                os.path.join(repo, 'tests', 'libstdcxx', 'skip.txt'), locale_probe,
-                                               support_lib))
+                                               support_lib, sanitizer_list,
+                                               sanitizers.run_env(sanitizer_list, os.path.join(repo, 'tests', 'libstdcxx'))))

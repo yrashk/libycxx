@@ -378,7 +378,8 @@ if(YCXX_SANITIZE)
   target_link_options(ycxx_ycxx INTERFACE -fsanitize=${YCXX_SANITIZE})
   # Clang links ThreadSanitizer's C++ part whole: strong global allocation functions that would
   # bypass libycxx's (and clash with a program's replacement); malloc stays intercepted
-  # (tools/ycxx-cxx does the same).
+  # (tools/ycxx-cxx does the same). GCC's libtsan.so defines them too; the link options of
+  # cmake/ycxx-link.cmake link libycxx's ahead of it.
   if(YCXX_SANITIZE MATCHES "thread")
     target_link_options(ycxx_ycxx INTERFACE $<$<CXX_COMPILER_ID:Clang>:-fno-sanitize-link-c++-runtime>)
   endif()
@@ -386,7 +387,7 @@ endif()
 # The allocation table stays in every program and is visible to the shared libraries it loads
 # (cmake/ycxx-link.cmake; DECISIONS §2).
 include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/ycxx-link.cmake)
-ycxx_link_options(_ycxx_table_link_options)
+ycxx_link_options(_ycxx_table_link_options "${YCXX_NEW_SOURCES}")
 target_link_options(ycxx_ycxx INTERFACE ${_ycxx_table_link_options})
 # Linux: Clang takes the C runtime startup files and libgcc (the unwinder libycxx's ABI runtime
 # uses) from a GCC installation, by default the newest one in the system's standard places, which

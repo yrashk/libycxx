@@ -16,10 +16,17 @@
 # (__USER_LABEL_PREFIX__, read from a compiled object, so cross compilation works), and whether the
 # linker accepts --export-dynamic-symbol (check_linker_flag). The result, a list for
 # target_link_options, is also written to <build>/ycxx-link-options for tools/ycxx-cxx.
+#
+# A ThreadSanitizer build (YCXX_SANITIZE with thread) also names the anchor of every default
+# allocation function as undefined (-u __ycxx_allocation_anchor_<file name>, one per source file
+# given in `sources`), so that libycxx's defaults are linked into the program ahead of the
+# sanitizer runtime's: GCC links the shared libtsan.so, which defines them, before the program's
+# objects, and its definitions would otherwise satisfy every reference (src/runtime/new/hidden.hpp;
+# DECISIONS §6.8). The defaults are weak, so a program's replacement still wins.
 
 include(CheckLinkerFlag)
 
-function(ycxx_link_options out_var)
+function(ycxx_link_options out_var sources)
   set(dir ${CMAKE_CURRENT_BINARY_DIR}/link_probe)
   file(WRITE ${dir}/prefix.c [=[
 #define YCXX_STR2(x) #x
@@ -39,6 +46,20 @@ const char ycxx_label_prefix[] = "YCXX_LABEL_PREFIX[" YCXX_STR(__USER_LABEL_PREF
   set(prefix "${CMAKE_MATCH_1}")
 
   set(options "LINKER:-u,${prefix}__ycxx_allocation_table_anchor")
+  if(YCXX_SANITIZE MATCHES "thread")
+    foreach(src IN LISTS sources)
+      get_filename_component(name ${src} NAME_WE)
+      if(name STREQUAL "allocation_table")
+        continue()
+      endif()
+      # Each file must define its anchor, or the link fails naming it: checked here, at configure time.
+      file(STRINGS ${src} defines REGEX "__ycxx_allocation_anchor_${name} = ")
+      if(NOT defines)
+        message(FATAL_ERROR "libycxx: ${src} does not define __ycxx_allocation_anchor_${name} (src/runtime/new/hidden.hpp)")
+      endif()
+      list(APPEND options "LINKER:-u,${prefix}__ycxx_allocation_anchor_${name}")
+    endforeach()
+  endif()
   check_linker_flag(CXX "LINKER:--export-dynamic-symbol=__ycxx_allocation_functions" has_export_dynamic_symbol)
   if(has_export_dynamic_symbol)
     list(APPEND options "LINKER:--export-dynamic-symbol=__ycxx_allocation_functions")

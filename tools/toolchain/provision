@@ -3,7 +3,8 @@
 # Linux and macOS.
 #
 #   tools/toolchain/provision [--prefix DIR] [--gcc-only | --clang-only] [--detect-only]
-#                             [--use-brew] [--no-system] [--jobs N] [--force]
+#                             [--use-brew] [--no-system] [--with-sanitizers] [--gcc-source DIR]
+#                             [--jobs N] [--force]
 #
 # For each compiler it uses, in order:
 #   1. an earlier installation under the prefix (default ~/.local/share/ycxx/toolchains,
@@ -16,6 +17,13 @@
 #      With --use-brew (macOS or Linux with Homebrew) it runs `brew install gcc llvm lld`
 #      instead, so Homebrew owns the compilers.
 # --detect-only never downloads or builds; --force reinstalls under the prefix.
+# --with-sanitizers: the GCC must have its sanitizer runtimes (libasan, libubsan, libtsan; Linux),
+#   which some builds lack (configured with --disable-libsanitizer): a GCC found without them is
+#   passed over, and a GCC built here is configured with --enable-libsanitizer. (A GCC built here
+#   has them anyway on targets libsanitizer supports; the option makes a missing one an error.)
+# --gcc-source DIR: build GCC from this unpacked release source instead of downloading it (its
+#   prerequisites, GMP, MPFR, MPC and ISL, are fetched into it only if missing). The build
+#   happens outside it, in the prefix.
 # The versions can be overridden with YCXX_GCC_VERSION / YCXX_LLVM_VERSION.
 #
 # It writes <prefix>/toolchains.env (KEY=value lines, absolute paths), which
@@ -37,6 +45,8 @@ detect_only=0
 force=0
 use_brew=0
 no_system=0
+with_sanitizers=0
+gcc_source=
 jobs=$(getconf _NPROCESSORS_ONLN 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 4)
 
 while [ $# -gt 0 ]; do
@@ -49,9 +59,12 @@ while [ $# -gt 0 ]; do
     --force) force=1 ;;
     --use-brew) use_brew=1 ;;
     --no-system) no_system=1 ;;
+    --with-sanitizers) with_sanitizers=1 ;;
+    --gcc-source) gcc_source=$2; shift ;;
+    --gcc-source=*) gcc_source=${1#--gcc-source=} ;;
     --jobs) jobs=$2; shift ;;
     --jobs=*) jobs=${1#--jobs=} ;;
-    -h|--help) sed -n '2,26p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
+    -h|--help) sed -n '2,30p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
     *) echo "provision: unknown option $1" >&2; exit 2 ;;
   esac
   shift
@@ -93,19 +106,36 @@ brew_prefix() { command -v brew >/dev/null 2>&1 && brew --prefix "$1" 2>/dev/nul
 # ---------------------------------------------------------------------------------------------
 gcc_bin=
 gxx_name=g++
+# has_sanitizers <g++>: the compiler finds its sanitizer runtimes (-print-file-name answers the
+# bare name for a library it does not have). Only asked with --with-sanitizers.
+has_sanitizers() {
+  [ $with_sanitizers = 1 ] || return 0
+  ext=so; [ "$os" = Darwin ] && ext=dylib
+  for lib in asan ubsan tsan; do
+    [ "$("$1" -print-file-name=lib$lib.$ext)" != "lib$lib.$ext" ] || return 1
+  done
+}
+# gcc_usable <g++>: the version, and the sanitizer runtimes when asked for.
+gcc_usable() {
+  gcc_ok "$(version_of "$1")" || return 1
+  has_sanitizers "$1" && return 0
+  say "passing over $1: no sanitizer runtimes (--with-sanitizers)"
+  return 1
+}
 find_gcc() {
   gcc_bin=
-  if [ $force = 0 ] && [ -x "$prefix/gcc-$GCC_VERSION/bin/g++" ]; then
+  if [ $force = 0 ] && [ -x "$prefix/gcc-$GCC_VERSION/bin/g++" ] &&
+     gcc_usable "$prefix/gcc-$GCC_VERSION/bin/g++"; then
     gcc_bin=$prefix/gcc-$GCC_VERSION/bin; gxx_name=g++; return 0
   fi
   [ $force = 1 ] || [ $no_system = 1 ] && return 1
   for cxx in "g++-$GCC_MAJOR" g++; do
     p=$(command -v "$cxx" 2>/dev/null) || continue
     # Apple's g++ is Clang in disguise; its version does not match anyway.
-    if gcc_ok "$(version_of "$p")"; then gcc_bin=$(dirname "$p"); gxx_name=$cxx; return 0; fi
+    if gcc_usable "$p"; then gcc_bin=$(dirname "$p"); gxx_name=$cxx; return 0; fi
   done
   bp=$(brew_prefix gcc) || bp=
-  if [ -n "$bp" ] && [ -x "$bp/bin/g++-$GCC_MAJOR" ] && gcc_ok "$(version_of "$bp/bin/g++-$GCC_MAJOR")"; then
+  if [ -n "$bp" ] && [ -x "$bp/bin/g++-$GCC_MAJOR" ] && gcc_usable "$bp/bin/g++-$GCC_MAJOR"; then
     gcc_bin=$bp/bin; gxx_name=g++-$GCC_MAJOR; return 0
   fi
   return 1
@@ -121,33 +151,51 @@ install_gcc() {
   src=$prefix/src/gcc-$GCC_VERSION
   dest=$prefix/gcc-$GCC_VERSION
   mkdir -p "$prefix/src"
-  if [ ! -d "$src" ]; then
+  if [ -n "$gcc_source" ]; then
+    [ -x "$gcc_source/configure" ] || die "--gcc-source $gcc_source: no GCC source there"
+    src=$(cd "$gcc_source" && pwd)
+  elif [ ! -d "$src" ]; then
     say "downloading GCC $GCC_VERSION source"
-    fetch "https://ftp.gnu.org/gnu/gcc/gcc-$GCC_VERSION/gcc-$GCC_VERSION.tar.xz" "$prefix/src/gcc.tar.xz"
+    # The GNU site, then GCC's own release directory (a mirror of it), should one be unreachable.
+    for url in "https://ftp.gnu.org/gnu/gcc/gcc-$GCC_VERSION/gcc-$GCC_VERSION.tar.xz" \
+               "https://gcc.gnu.org/pub/gcc/releases/gcc-$GCC_VERSION/gcc-$GCC_VERSION.tar.xz"; do
+      fetch "$url" "$prefix/src/gcc.tar.xz" && break
+      rm -f "$prefix/src/gcc.tar.xz"
+    done
+    [ -f "$prefix/src/gcc.tar.xz" ] || die "could not download the GCC $GCC_VERSION source"
     tar -xJf "$prefix/src/gcc.tar.xz" -C "$prefix/src"
     rm -f "$prefix/src/gcc.tar.xz"
   fi
-  say "fetching GCC prerequisites (GMP, MPFR, MPC, ISL)"
-  (cd "$src" && ./contrib/download_prerequisites >/dev/null)
+  if [ -d "$src/gmp" ] && [ -d "$src/mpfr" ] && [ -d "$src/mpc" ]; then
+    say "GCC prerequisites (GMP, MPFR, MPC) already in $src"
+  else
+    say "fetching GCC prerequisites (GMP, MPFR, MPC, ISL)"
+    (cd "$src" && ./contrib/download_prerequisites >/dev/null)
+  fi
   build=$prefix/src/gcc-build
   rm -rf "$build"
   mkdir -p "$build"
   extra=
   # macOS: the C library and headers live in the SDK.
   [ -n "$sdk" ] && extra="--with-sysroot=$sdk --with-native-system-header-dir=/usr/include"
+  [ $with_sanitizers = 1 ] && extra="$extra --enable-libsanitizer"
   say "configuring and building GCC $GCC_VERSION with $jobs jobs (this takes a while)"
+  # The compiler itself without debug information (CFLAGS/CXXFLAGS -O2: GCC's default adds -g,
+  # which makes the build tree about 4.5 GB instead of under 2), installed stripped; the target
+  # libraries keep their own flags.
   # shellcheck disable=SC2086
   (cd "$build" &&
-   "$src/configure" --prefix="$dest" --enable-languages=c,c++ --disable-multilib \
+   CFLAGS=-O2 CXXFLAGS=-O2 "$src/configure" --prefix="$dest" --enable-languages=c,c++ --disable-multilib \
      --disable-bootstrap --disable-nls $extra >"$build/configure.log" 2>&1 &&
    make -j"$jobs" >"$build/make.log" 2>&1 &&
-   make install >"$build/install.log" 2>&1) || {
+   make install-strip >"$build/install.log" 2>&1) || {
     [ "$os" = Darwin ] && say "on macOS, 'provision --use-brew' installs Homebrew's GCC instead"
     die "GCC build failed; see the logs in $build"
   }
   rm -rf "$build"
   gcc_bin=$dest/bin
   gxx_name=g++
+  has_sanitizers "$gcc_bin/g++" || die "GCC $GCC_VERSION was built without its sanitizer runtimes (--with-sanitizers)"
 }
 
 # ---------------------------------------------------------------------------------------------

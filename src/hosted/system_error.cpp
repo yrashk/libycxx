@@ -46,8 +46,10 @@ bool is_posix_errno(int ev) noexcept {
       errc::too_many_links, errc::too_many_symbolic_link_levels, errc::value_too_large,
       errc::wrong_protocol_type,
       // [depr.cerrno]: no_message_available, no_stream_resources, not_a_stream, stream_timeout
-      // (deprecated enumerators, named by their errno values).
-      errc(ENODATA), errc(ENOSR), errc(ENOSTR), errc(ETIME),
+      // (deprecated enumerators, named by their errno values: core's, so that this also builds
+      // without the C library's <errno.h>, DECISIONS §18).
+      errc(ycxx::detail::errno_enodata), errc(ycxx::detail::errno_enosr), errc(ycxx::detail::errno_enostr),
+      errc(ycxx::detail::errno_etime),
   };
   for (errc e : posix)
     if (static_cast<int>(e) == ev)

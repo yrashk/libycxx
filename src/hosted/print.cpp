@@ -32,6 +32,12 @@ void vprint_file(std::FILE* stream, std::string_view fmt, std::format_args args,
   format_to_file(stream, fmt, args, newline);
 }
 
+// Standard output is C's stdout ([print.fun]/3: print(fmt, args) is print(stdout, fmt, args)).
+// Without a C library, src/hosted/print_console.cpp defines these instead (DECISIONS §18).
+void vprint_stdout(std::string_view fmt, std::format_args args, bool newline) {
+  format_to_file(stdout, fmt, args, newline);
+}
+
 void vprint_ostream(std::ostream& os, std::string_view fmt, std::format_args args, bool newline) {
   std::ios_base::iostate err = std::ios_base::goodbit;
   if (std::ostream::sentry ok{os}) {

@@ -48,11 +48,13 @@ enum ycxx_error_kind : int {
   ycxx_error_ambiguous_local_time,
 };
 
-// Weak default: a strong definition anywhere in the program replaces it. Hosted builds report
-// the message through the PAL and abort; freestanding builds trap. (The PAL call sits in a
-// discarded `if constexpr` branch when freestanding, so no PAL symbol is referenced.)
+// Weak default: a strong definition anywhere in the program replaces it. Builds with the PAL's
+// 'abort' layer (every hosted build, and a freestanding one whose integrator provides that layer,
+// DECISIONS §18) report the message through the PAL and abort; other freestanding builds trap.
+// (The PAL call sits in a discarded `if constexpr` branch otherwise, so no PAL symbol is
+// referenced.)
 [[noreturn, gnu::weak, gnu::cold, gnu::noinline, gnu::visibility("hidden")]] void ycxx_error_handler(ycxx_error_kind, const char* what) noexcept {
-  if constexpr (ycxx::detail::cfg::hosted)
+  if constexpr (ycxx::detail::cfg::layer::abort)
     ycxx_pal_abort(what);
   else
     __builtin_trap();

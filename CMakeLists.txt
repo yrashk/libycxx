@@ -19,6 +19,14 @@ set(YCXX_CXX_STANDARD_FLAG "-std=c++26" CACHE STRING
 option(YCXX_FREESTANDING_RUNTIME
        "Also build (and install) libycxx-freestanding.a, the runtime of freestanding programs (ycxx::freestanding)" OFF)
 option(YCXX_ALLOW_UNSUPPORTED_COMPILER "Do not stop on compilers other than GCC >= 16.2 / Clang >= 23" OFF)
+# The platform layer and the hosted layers (DECISIONS §18, cmake/ycxx-hosted-layers.cmake): posix
+# provides every layer (src/pal/posix); none provides none, and the integrator's providers supply
+# the layers named in YCXX_HOSTED_LAYERS (examples/hosted-layers).
+set(YCXX_PAL "posix" CACHE STRING
+    "Platform layer: posix (every hosted layer, from src/pal/posix) or none (the integrator provides the layers of YCXX_HOSTED_LAYERS)")
+set_property(CACHE YCXX_PAL PROPERTY STRINGS posix none)
+set(YCXX_HOSTED_LAYERS "" CACHE STRING
+    "YCXX_PAL=none: the hosted layers the integrator provides (abort memory console clock threads random files environment debug clib; abort is implied)")
 
 if(NOT YCXX_ALLOW_UNSUPPORTED_COMPILER)
   if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
@@ -57,11 +65,50 @@ target_compile_options(ycxx_headers INTERFACE $<$<COMPILE_LANGUAGE:CXX>:-nostdin
 target_compile_options(ycxx_headers INTERFACE
   $<$<AND:$<COMPILE_LANGUAGE:CXX>,$<CXX_COMPILER_ID:GNU>>:-Wno-attributes>)
 
+# The hosted layers (cmake/ycxx-hosted-layers.cmake): _ycxx_layers is the selected set; with
+# YCXX_PAL=none, <ycxx/generated/hosted_layers.hpp> records it for ycxx/config.hpp.
+include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/ycxx-hosted-layers.cmake)
+ycxx_hosted_layers_select(_ycxx_layers)
+set(YCXX_GENERATED_INCLUDE ${CMAKE_CURRENT_BINARY_DIR}/generated/include)
+set_property(GLOBAL PROPERTY YCXX_PAL_SELECTED ${YCXX_PAL})
+set_property(GLOBAL PROPERTY YCXX_HOSTED_LAYERS_SELECTED ${_ycxx_layers})
+set_property(GLOBAL PROPERTY YCXX_PAL_INCLUDE_DIR ${YCXX_INCLUDE})
+if(YCXX_PAL STREQUAL "none")
+  ycxx_hosted_layers_header(${YCXX_GENERATED_INCLUDE}/ycxx/generated/hosted_layers.hpp ${_ycxx_layers})
+  foreach(_l IN LISTS _ycxx_layers)
+    string(TOUPPER "${_l}" _u)
+    # YCXX_PAL_<LAYER>_PROVIDER: attached once ycxx::ycxx exists (the end of this directory).
+    if(YCXX_PAL_${_u}_PROVIDER)
+      cmake_language(DEFER CALL ycxx_add_hosted_layer ${_l} PROVIDER ${YCXX_PAL_${_u}_PROVIDER})
+    endif()
+  endforeach()
+  cmake_language(DEFER DIRECTORY ${CMAKE_SOURCE_DIR} CALL _ycxx_report_hosted_layers)
+  list(JOIN _ycxx_layers " " _l)
+  message(STATUS "libycxx: YCXX_PAL=none, hosted layers: ${_l}")
+else()
+  file(REMOVE ${YCXX_GENERATED_INCLUDE}/ycxx/generated/hosted_layers.hpp)
+endif()
+# Without the C library ('clib' absent), libycxx and its programs are compiled freestanding
+# (DECISIONS §18): no C library headers, the compiler's own header directory for <stddef.h>
+# (DECISIONS §3). C++ only: a provider written in C may use whatever C library it has.
+if(NOT "clib" IN_LIST _ycxx_layers)
+  set(_ycxx_clib OFF)
+  execute_process(COMMAND ${CMAKE_CXX_COMPILER} -print-file-name=include
+                  OUTPUT_VARIABLE _ycxx_compiler_include OUTPUT_STRIP_TRAILING_WHITESPACE)
+  target_compile_options(ycxx_headers INTERFACE
+    "$<$<COMPILE_LANGUAGE:CXX>:-ffreestanding;-nostdinc;SHELL:-isystem ${_ycxx_compiler_include}>")
+else()
+  set(_ycxx_clib ON)
+endif()
+
 # What the C library provides (cmake/ycxx-c-library.cmake): <ycxx/generated/c_library.hpp> in the build
 # tree, read by ycxx/config.hpp; installed with the headers.
 include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/ycxx-c-library.cmake)
-set(YCXX_GENERATED_INCLUDE ${CMAKE_CURRENT_BINARY_DIR}/generated/include)
-ycxx_c_library_probe(${YCXX_GENERATED_INCLUDE}/ycxx/generated/c_library.hpp)
+if(_ycxx_clib)
+  ycxx_c_library_probe(${YCXX_GENERATED_INCLUDE}/ycxx/generated/c_library.hpp)
+else()
+  file(REMOVE ${YCXX_GENERATED_INCLUDE}/ycxx/generated/c_library.hpp)
+endif()
 target_include_directories(ycxx_headers SYSTEM INTERFACE $<BUILD_INTERFACE:${YCXX_GENERATED_INCLUDE}>)
 
 set(_ycxx_warnings -Wall -Wextra $<$<BOOL:${YCXX_WERROR}>:-Werror>)
@@ -86,21 +133,32 @@ file(GLOB YCXX_ATOMIC_SOURCES CONFIGURE_DEPENDS src/runtime/atomic/*.cpp)
 file(GLOB YCXX_DEBUGGING_SOURCES CONFIGURE_DEPENDS src/runtime/debugging/*.cpp)
 # <contracts>: the replaceable default ::handle_contract_violation (also freestanding).
 file(GLOB YCXX_CONTRACTS_SOURCES CONFIGURE_DEPENDS src/runtime/contracts/*.cpp)
-add_library(ycxx STATIC
+# The hosted sources by what they need (DECISIONS §18). YCXX_PAL=posix builds all of them with
+# src/pal/posix; YCXX_PAL=none builds those of the selected layers, and fallbacks for three absent
+# ones.
+# Need neither the C library nor a particular layer (a use of a feature whose layer is absent
+# fails to link, naming the missing primitive).
+set(YCXX_RUNTIME_SOURCES
   ${YCXX_NEW_SOURCES}
   ${YCXX_CHARCONV_SOURCES}
   ${YCXX_ATOMIC_SOURCES}
   ${YCXX_DEBUGGING_SOURCES}
   ${YCXX_CONTRACTS_SOURCES}
   src/hosted/contracts.cpp
+  src/hosted/stdexcept.cpp
+  src/hosted/memory_resource.cpp
+  src/hosted/system_error.cpp
+  src/hosted/random.cpp)
+# The 'threads' layer (with the C library: thread.cpp uses <cfenv>).
+set(YCXX_THREADS_SOURCES
   src/hosted/thread.cpp
   src/hosted/parallel_scheduler.cpp
   src/hosted/parallel_scheduler_query.cpp
   src/hosted/future.cpp
   src/hosted/rcu.cpp
-  src/hosted/hazard_pointer.cpp
-  src/hosted/stdexcept.cpp
-  src/hosted/memory_resource.cpp
+  src/hosted/hazard_pointer.cpp)
+# The C library ('clib').
+set(YCXX_CLIB_SOURCES
   src/hosted/string.cpp
   src/hosted/ctime.cpp
   src/hosted/strfrom.cpp
@@ -108,30 +166,66 @@ add_library(ycxx STATIC
   src/hosted/cmath.cpp
   src/hosted/cmath_check.cpp
   src/hosted/syncstream.cpp
-  src/hosted/system_error.cpp
   src/hosted/text_encoding.cpp
-  src/hosted/stacktrace.cpp
-  src/hosted/demangle.cpp
-  src/hosted/random.cpp
   src/hosted/regex.cpp
   # iostreams and localization
-  src/hosted/fstream.cpp
   src/hosted/ios.cpp
   src/hosted/iostream.cpp
   src/hosted/locale.cpp
   src/hosted/num.cpp
   src/hosted/time.cpp
-  src/hosted/tzdb.cpp
   src/hosted/chrono.cpp
   # formatting
   src/hosted/format.cpp
-  src/hosted/print.cpp
-  # file systems
-  src/hosted/filesystem.cpp
-  src/pal/posix/pal.c
-  src/pal/posix/pal_debug.c
-  src/pal/posix/pal_encoding.c
-)
+  src/hosted/print.cpp)
+# The 'debug' layer (with the C library).
+set(YCXX_DEBUG_SOURCES src/hosted/stacktrace.cpp src/hosted/demangle.cpp)
+# Files: C stdio's (src/hosted/fstream.cpp) or the 'files' layer's (fstream_pal.cpp).
+set(YCXX_STDIO_FILE_SOURCES src/hosted/fstream.cpp)
+# POSIX only: they call POSIX directly (DECISIONS §8).
+set(YCXX_POSIX_SOURCES src/hosted/tzdb.cpp src/hosted/filesystem.cpp)
+if(YCXX_PAL STREQUAL "posix")
+  set(YCXX_LIBRARY_SOURCES ${YCXX_RUNTIME_SOURCES} ${YCXX_THREADS_SOURCES} ${YCXX_CLIB_SOURCES}
+      ${YCXX_DEBUG_SOURCES} ${YCXX_STDIO_FILE_SOURCES} ${YCXX_POSIX_SOURCES}
+      src/pal/posix/pal.c
+      src/pal/posix/pal_debug.c
+      src/pal/posix/pal_encoding.c)
+else()
+  set(YCXX_LIBRARY_SOURCES ${YCXX_RUNTIME_SOURCES})
+  if(_ycxx_clib)
+    list(APPEND YCXX_LIBRARY_SOURCES ${YCXX_CLIB_SOURCES})
+    if("files" IN_LIST _ycxx_layers)
+      list(APPEND YCXX_LIBRARY_SOURCES src/hosted/fstream_pal.cpp)
+    else()
+      list(APPEND YCXX_LIBRARY_SOURCES ${YCXX_STDIO_FILE_SOURCES})
+    endif()
+  else()
+    # Without the C library: <format>'s L option with the classic locale's values; standard
+    # output through the console layer.
+    list(APPEND YCXX_LIBRARY_SOURCES src/hosted/format_classic.cpp)
+    if("console" IN_LIST _ycxx_layers)
+      list(APPEND YCXX_LIBRARY_SOURCES src/hosted/print_console.cpp)
+    endif()
+  endif()
+  if("threads" IN_LIST _ycxx_layers)
+    list(APPEND YCXX_LIBRARY_SOURCES ${YCXX_THREADS_SOURCES})
+  else()
+    # One thread of execution (ycxx/pal.h: the fallbacks).
+    list(APPEND YCXX_LIBRARY_SOURCES
+      src/freestanding/pal/wait.cpp src/freestanding/pal/wake_all.cpp src/freestanding/pal/wake_one.cpp
+      src/freestanding/pal/thread_self.cpp src/freestanding/pal/thread_yield.cpp
+      src/freestanding/pal/single_threaded.cpp src/pal/fallback/thread_atexit.cpp)
+  endif()
+  if("debug" IN_LIST _ycxx_layers)
+    list(APPEND YCXX_LIBRARY_SOURCES ${YCXX_DEBUG_SOURCES})
+  else()
+    list(APPEND YCXX_LIBRARY_SOURCES src/freestanding/pal/debugger_present.cpp)
+  endif()
+  if(NOT "environment" IN_LIST _ycxx_layers)
+    list(APPEND YCXX_LIBRARY_SOURCES src/pal/fallback/error_message.cpp src/pal/fallback/environment_encoding.cpp)
+  endif()
+endif()
+add_library(ycxx STATIC ${YCXX_LIBRARY_SOURCES})
 set_target_properties(ycxx PROPERTIES EXPORT_NAME core)
 target_link_libraries(ycxx PRIVATE ycxx_headers)
 target_compile_options(ycxx PRIVATE
@@ -237,7 +331,7 @@ set_target_properties(ycxx_ycxx PROPERTIES EXPORT_NAME ycxx)
 target_link_libraries(ycxx_ycxx INTERFACE ycxx_headers ycxx)
 # <cmath> calls the C library's math functions at run time; libm is separate from libc on
 # glibc and musl (on Darwin it is part of libSystem).
-if(NOT APPLE)
+if(NOT APPLE AND _ycxx_clib)
   target_link_libraries(ycxx_ycxx INTERFACE m)
 endif()
 # -shared-libgcc: one unwinder per process. glibc's pthread_exit/pthread_cancel unwind through
@@ -328,7 +422,7 @@ endif()
 # (installed package: per importing configuration), and libycxx-modules.a holds their object
 # code (the module initializers). C++20 module support in CMake needs CMake >= 3.28 and a Ninja
 # generator (Clang: clang-scan-deps next to the compiler; GCC >= 14). DECISIONS §16.
-if(CMAKE_GENERATOR MATCHES "Ninja")
+if(CMAKE_GENERATOR MATCHES "Ninja" AND YCXX_PAL STREQUAL "posix")
   set(_ycxx_modules_default ON)
 else()
   set(_ycxx_modules_default OFF)
@@ -383,11 +477,13 @@ if(YCXX_INSTALL)
   endif()
   install(EXPORT libycxxTargets NAMESPACE ycxx:: DESTINATION ${YCXX_CMAKE_DIR}
           CXX_MODULES_DIRECTORY cxx-modules)
+  list(JOIN _ycxx_layers ";" YCXX_SELECTED_HOSTED_LAYERS)
   configure_package_config_file(cmake/libycxxConfig.cmake.in
     ${CMAKE_CURRENT_BINARY_DIR}/libycxxConfig.cmake INSTALL_DESTINATION ${YCXX_CMAKE_DIR})
   write_basic_package_version_file(${CMAKE_CURRENT_BINARY_DIR}/libycxxConfigVersion.cmake
     COMPATIBILITY SameMinorVersion)
   install(FILES ${CMAKE_CURRENT_BINARY_DIR}/libycxxConfig.cmake
                 ${CMAKE_CURRENT_BINARY_DIR}/libycxxConfigVersion.cmake
+                cmake/ycxx-hosted-layers.cmake
           DESTINATION ${YCXX_CMAKE_DIR})
 endif()

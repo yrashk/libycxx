@@ -8,6 +8,9 @@ binary functions get (V, V), (D, V), (V, D); ternary ones every mix of V and D b
 
 import itertools
 import os
+import sys
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from uglify import uglify_text  # noqa: E402  (the headers spell reserved names, DECISIONS §2)
 
 LIMIT = 120
 OUT = os.path.join(os.path.dirname(__file__), "..", "include", "ycxx", "core", "simd_math.hpp")
@@ -214,4 +217,4 @@ for n in USING_ALG + USING_MATH + USING_BIT + USING_COMPLEX:
 w("} // namespace std")
 
 with open(OUT, "w") as f:
-    f.write("\n".join(out) + "\n")
+    f.write(uglify_text("\n".join(out) + "\n"))

@@ -50,6 +50,9 @@ struct ycxx_allocation_functions_t {
 // visibility of all its references, so one hidden declaration would keep the table inside each
 // image.
 extern "C" [[gnu::visibility("default")]] const ycxx_allocation_functions_t ycxx_allocation_functions;
+// What the link options name as undefined to pull the table's member into a program
+// (allocation_table.cpp, cmake/ycxx-link.cmake).
+extern "C" [[gnu::visibility("hidden")]] const char ycxx_allocation_table_anchor;
 
 namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 // This image's own table, the one its `ycxx_allocation_functions` definition holds; an entry of

@@ -431,14 +431,18 @@ def checked_files():
     return include_files() + [p for p in src_files() if p.suffix in (".hpp", ".h")]
 
 
-# Files in other languages that spell libycxx's C-linkage symbols or macros: only the words of
-# the rename map that match these patterns are renamed in them.
-TEXT_FILES = {
-    "CMakeLists.txt": r"\bYCXX_[A-Z0-9_]+\b",
-    "cmake/ycxx-c-library.cmake": r"\bYCXX_C_[A-Z0-9_]+\b",
-    "cmake/ycxx-link.cmake": r"\bycxx_allocation_\w+\b",
-    "tools/ycxx-cxx": r"\bycxx_allocation_\w+\b",
-}
+# Files in other languages that spell libycxx's symbols, macros or C++ code: their `ycxx_x` and
+# `YCXX_X` words that the map renames are renamed, and so is the C++ in CMake's bracket arguments
+# (the probes, the generated headers).
+TEXT_FILES = ["CMakeLists.txt", "cmake/ycxx-c-library.cmake", "cmake/ycxx-link.cmake", "tools/ycxx-cxx"]
+_WORDS = re.compile(r"\b(?:ycxx|YCXX)_\w+\b")
+_CMAKE_BRACKET = re.compile(r"\[(=*)\[(.*?)\]\1\]", re.S)
+
+
+def rename_text(text, renamer, cmake):
+    if cmake:
+        text = _CMAKE_BRACKET.sub(lambda m: f"[{m.group(1)}[{renamer.source(m.group(2))}]{m.group(1)}]", text)
+    return _WORDS.sub(lambda m: renamer.map(m.group()), text)
 
 
 def rename_tree(names, verbose=True):
@@ -462,12 +466,12 @@ def rename_tree(names, verbose=True):
     renamed = set(headers.renamed) | set(src_headers.renamed) | names.recorded
     sources = Renamer(names, protect=names.src_platform, only=renamed)
     run(sources, [p for p in src_files() if p.suffix not in (".hpp", ".h")])
-    for rel, pat in TEXT_FILES.items():
+    for rel in TEXT_FILES:
         p = REPO / rel
         if not p.exists():
             continue
         text = p.read_text()
-        new = re.sub(pat, lambda m: sources.map(m.group()) if m.group() in renamed else m.group(), text)
+        new = rename_text(text, sources, p.suffix == ".cmake" or p.name == "CMakeLists.txt")
         if new != text:
             p.write_text(new)
             changed += 1

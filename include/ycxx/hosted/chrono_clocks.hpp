@@ -4,12 +4,18 @@
 // All three count nanoseconds in a long long. system_clock is the realtime clock (Unix time),
 // steady_clock the monotonic clock, high_resolution_clock a distinct steady clock whose
 // time_point is steady_clock's. file_clock has system_clock's epoch.
+//
+// The clocks need only the 'clock' hosted layer's ycxx_pal_clock_now, so they are also available
+// to programs compiled freestanding with that layer (DECISIONS §18); to_time_t and from_time_t,
+// whose time_t is the C library's, only with a C library.
 #pragma once
 
 #include <ycxx/config.hpp>
 #include <ycxx/core/chrono_base.hpp>
 #include <ycxx/pal.h>
-#include <time.h>
+#if YCXX_HOSTED
+#  include <time.h>
+#endif
 
 namespace [[gnu::visibility("hidden")]] ycxx { namespace detail {
 // The current value of a PAL clock in nanoseconds.
@@ -33,6 +39,7 @@ public:
   static time_point now() noexcept {
     return time_point(duration(ycxx::detail::pal_clock_ns(ycxx_pal_clock_realtime)));
   }
+#if YCXX_HOSTED
   // Truncated toward negative infinity to whole seconds.
   static ::time_t to_time_t(const time_point& t) noexcept {
     return static_cast<::time_t>(chrono::floor<seconds>(t.time_since_epoch()).count());
@@ -40,6 +47,7 @@ public:
   static time_point from_time_t(::time_t t) noexcept {
     return time_point(chrono::duration_cast<duration>(seconds(static_cast<seconds::rep>(t))));
   }
+#endif
 };
 
 class steady_clock {

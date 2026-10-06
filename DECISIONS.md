@@ -1232,3 +1232,104 @@ under the same name. Otherwise it gets one alias template in `config.hpp`.
 - **noexcept.** Where the draft gives a noexcept-specifier it is used as written; the sender
   factories and adaptors are noexcept when their decay-copies are (a strengthening
   [res.on.exception.handling] allows; make-sender has none in the draft).
+
+## 18. Hosted layers: a hosted library without every OS primitive
+
+"Hosted" does not have to mean "every OS primitive". The hosted library is split into **layers
+of support**. Each layer is a small set of C-linkage primitives of `ycxx/pal.h` (the platform
+layer, §3) plus the library features those primitives enable. The integrator chooses the layers
+and supplies their primitives through **providers**: their own code, in their own targets. A
+program then gets exactly the hosted features it has primitives for: containers, strings,
+exceptions and `std::print` over a heap and a serial port, with no OS, no C library and no file
+system (`examples/hosted-layers`). Using a feature whose layer is absent fails when the program is
+built, never silently at run time.
+
+**The layers.** The primitives are those of `ycxx/pal.h`, which groups them by layer.
+
+| Layer | Primitives a provider defines | Enables | Absent |
+|---|---|---|---|
+| `abort` (always) | `ycxx_pal_abort(msg)`; `ycxx_pal_write` to `ycxx_pal_stderr` | `terminate` and its report, uncaught exceptions, `ycxx_error_handler`'s default (`-fno-exceptions`, hardened checks), contract violations, pure virtual calls | not allowed: the ABI runtime needs it |
+| `memory` | `ycxx_pal_allocate`, `ycxx_pal_deallocate` | the default `operator new`/`delete` (all forms), so the containers, `string`, `function`, `any`, `shared_ptr`, `new_delete_resource`; exception objects | link error naming `ycxx_pal_allocate` (a program that replaces the allocation functions and throws nothing needs no provider) |
+| `console` | `ycxx_pal_write` to `ycxx_pal_stdout`, `ycxx_pal_read` from `ycxx_pal_stdin`, `ycxx_pal_is_terminal` | `std::print`/`println`/`vprint_*` to standard output without a C library (with `clib` they write to C's `stdout`) | `print(fmt, ...)` fails to compile (a static_assert naming the layer); `println()` fails to link |
+| `clock` | `ycxx_pal_clock_now` | `system_clock`, `steady_clock`, `high_resolution_clock` | link error naming `ycxx_pal_clock_now` |
+| `threads` | `ycxx_pal_wait`/`_wake_one`/`_wake_all`/`_wait_until`, `ycxx_pal_thread_*`, `ycxx_pal_sleep_until`, `ycxx_pal_hardware_concurrency`, `ycxx_pal_single_threaded`, `ycxx_pal_thread_atexit`, `ycxx_pal_at_thread_end` | `thread`, `jthread`, `this_thread::sleep_*`, timed waits, `<future>`, `<rcu>`, `<hazard_pointer>`, `parallel_scheduler`; blocking `atomic::wait` and lock contention | one thread of execution: libycxx's single-thread fallbacks (address waits return at once, thread identity 1, `thread_local` destructors registered with `__cxa_atexit`); `thread`/`jthread` fail to compile (static_assert), the rest fails to link naming its primitive |
+| `random` | `ycxx_pal_random_open`/`_read`/`_close`, `ycxx_pal_random` | `random_device` | link error naming `ycxx_pal_random_open` |
+| `files` | `ycxx_pal_file_open`/`_close`/`_read`/`_write`/`_seek`/`_flush` | `basic_filebuf` and the file streams, over the provider's storage | with `clib`: files are C stdio's `FILE` (`src/hosted/fstream.cpp`, as with `posix`); without: no file streams (iostreams need `clib`) |
+| `environment` | `ycxx_pal_error_message`, `ycxx_pal_environment_encoding` | the messages of `generic_category()`/`system_category()`, `text_encoding::environment()` | fallbacks: the message "error N"; an unknown environment encoding |
+| `debug` | `ycxx_pal_debugger_present`, `ycxx_pal_object_of`, `ycxx_pal_dynamic_symbol`, `ycxx_pal_map_file`/`_unmap_file` | `is_debugger_present`, `<stacktrace>` | `is_debugger_present()` is false (fallback); `<stacktrace>`'s runtime is not built |
+| `clib` | the C library itself, its headers and functions (the toolchain's: glibc, musl, newlib, ...) | the C library headers (`<cstdio>`, ...), iostreams and locales, `print(FILE*, ...)`, the C-library parts of `<string>` (`sto*`, floating-point `to_string`), `<cmath>`'s out-of-line functions, `<regex>`, `<syncstream>`, chrono I/O; `threads` and `debug` need it too (their headers use `<ctime>`) | the program and libycxx are compiled freestanding (below); the headers that need the C library stop with an `#error` naming the layer |
+| `filesystem`, `tzdb` | none yet: `src/hosted/filesystem.cpp` and `tzdb.cpp` call POSIX directly (§8) | `<filesystem>`, the time zone database | built with `YCXX_PAL=posix` only |
+
+`abort` and `console` share `ycxx_pal_write`: a provider of `abort` alone must accept
+`ycxx_pal_stderr` (and may discard what it gets, if the target has nowhere to show it); the
+console adds the standard output and input. `ycxx_pal_exit` is not used by the library.
+
+**What "absent" means, and why.** A layer's library code is built whenever the configuration can
+compile it (whether `clib` is present decides that). A layer's primitives are defined by its
+provider when the layer is selected and by nobody otherwise, so:
+
+- a feature whose only primitives are the layer's fails to **link**, and the linker names the
+  missing primitive (`undefined reference to 'ycxx_pal_clock_now'`), which the table above maps
+  to its layer;
+- a template entry point checks first and fails to **compile** with a message naming the layer:
+  `std::thread`'s and `std::jthread`'s constructors, `std::print`/`println` to standard output.
+  The checks read `ycxx::detail::cfg::layer::<name>`, which `config.hpp` derives from the
+  generated `<ycxx/generated/hosted_layers.hpp>` (`YCXX_LAYER_*` switches, §1 rule 8; the file
+  exists only in `YCXX_PAL=none` builds, and without it every layer is present when hosted and
+  none freestanding, as before);
+- a header that cannot be compiled without the C library stops with `#error "... needs the C
+  library (the 'clib' hosted layer) ..."` when compiled freestanding, instead of failing inside
+  the C library's missing header (`<thread>`, `<mutex>`, `<fstream>`, `<iostream>`, ...). This is
+  §1 rule 4's case of code that cannot be parsed, tested with the `YCXX_HOSTED` switch;
+- three layers have **fallbacks**, because the library itself needs their primitives in programs
+  that never use the layer's feature, and because the fallback states the truth for such a
+  program rather than hiding a failure: without `threads` there is one thread of execution (the
+  freestanding runtime's defaults, `src/freestanding/pal`, and
+  `src/pal/fallback/thread_atexit.cpp`); without `environment` a system error's message is its
+  number; without `debug` no debugger is attached. CMake builds a fallback only when its layer is
+  absent, so it never competes with a provider at link time (no weak symbols, no archive-order
+  games).
+
+Rejected: weak default definitions of every primitive (a missing provider would show up at run
+time, as a failed allocation or lost output); one archive per layer (static linking already takes
+only the archive members a program uses, and the order of the archives would become the
+integrator's problem); throwing "not supported" at run time.
+
+**The C library is a layer too.** libycxx's headers already have two modes (§3): hosted, reading
+the C library's headers (`#include_next`), and freestanding (`YCXX_HOSTED` 0, `-ffreestanding`),
+where the C library headers with freestanding parts fall back to core. Without `clib`, libycxx and
+every program using it are compiled freestanding (`ycxx::headers` adds `-ffreestanding -nostdinc`
+and the compiler's own header directory, for C++ only: a provider written in C may use whatever C
+library it has), while the selected layers keep their hosted features. What makes that work:
+`<print>` declares its `FILE*` overloads only with the C library and writes standard output
+through `ycxx::detail::vprint_stdout` (C's `stdout` with `clib`, `src/hosted/print.cpp`, as before;
+the console otherwise, `src/hosted/print_console.cpp`); `<chrono>`'s clocks and calendar are
+freestanding-capable (time zones and I/O need the C library); the `L` option of `<format>` uses
+the classic locale's punctuation (`src/hosted/format_classic.cpp`: without `clib` there is only
+the classic locale); `ycxx_error_handler`'s default reports through `ycxx_pal_abort` whenever the
+`abort` layer exists, not only when hosted. The environment still provides what the compilers
+call (`memcpy`, `memmove`, `memset`, `memcmp`, as for every freestanding program), the program's
+start (static constructors) and `__cxa_atexit`, and what its unwinder needs when exceptions are
+used (`examples/hosted-layers/README.md` lists what GCC's `libgcc_eh` needs on bare metal).
+
+**CMake.** `YCXX_PAL` selects the platform layer: `posix` (the default: every layer, the
+primitives from `src/pal/posix`, the library built exactly as before) or `none` (no platform
+layer: the integrator provides the selected layers):
+
+```cmake
+set(YCXX_PAL none)
+set(YCXX_HOSTED_LAYERS memory console clock)   # 'abort' is implied
+add_subdirectory(libycxx)
+ycxx_add_hosted_layer(memory  PROVIDER my_heap)  # a target that defines the layer's primitives
+ycxx_add_hosted_layer(console SOURCES uart.c)    # or sources, made into a target
+target_link_libraries(app PRIVATE ycxx::ycxx)    # brings the providers
+```
+
+`YCXX_PAL_<LAYER>_PROVIDER=<target>` cache variables do the same as `ycxx_add_hosted_layer` from
+the command line. The layer set is fixed when libycxx is configured (it selects sources and writes
+`hosted_layers.hpp`); providers can be attached afterwards, and `ycxx_add_hosted_layer` refuses a
+layer that was not selected, saying how to select it. At the end of the configuration libycxx
+lists each selected layer with its provider, or says that the program must define the layer's
+primitives itself (allowed: they may live in the program's own targets).
+`YCXX_HOSTED_LAYERS` is validated: unknown names, `threads` or `debug` without `clib`, and
+`YCXX_FREESTANDING_RUNTIME` (an option of `posix` builds) are configuration errors.

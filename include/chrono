@@ -12,6 +12,11 @@
 #include <ycxx/core/chrono_base.hpp>
 #include <ycxx/core/chrono_cal.hpp>
 #include <ycxx/hosted/chrono_clocks.hpp>
-#include <ycxx/hosted/chrono_tz.hpp>
-#include <ycxx/hosted/chrono_io.hpp>
-#include <ycxx/hosted/chrono_parse.hpp>
+// Compiled freestanding (a program with the 'clock' hosted layer but no C library, DECISIONS
+// §18): the durations, time points, calendar and clocks; the time zones, leap seconds, I/O and
+// parsing need the C library.
+#if YCXX_HOSTED
+#  include <ycxx/hosted/chrono_tz.hpp>
+#  include <ycxx/hosted/chrono_io.hpp>
+#  include <ycxx/hosted/chrono_parse.hpp>
+#endif

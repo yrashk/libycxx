@@ -320,7 +320,8 @@ class Renamer:
     def comment(self, text):
         def ticked(m):
             span = m.group(1)
-            if _PATHLIKE.search(span) or "[[" in span or "__attribute__" in span:
+            if _PATHLIKE.search(span) or "[[" in span or "__attribute__" in span or span.startswith("."):
+                # (a span that starts with '.' is an assembler directive: `.hidden`)
                 return m.group()
             return "`" + self.code(span) + "`"
 

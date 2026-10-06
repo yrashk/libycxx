@@ -35,7 +35,7 @@ __pointer_to_member_type_info::~__pointer_to_member_type_info() {}
 // GCC gives the fundamental type_info objects default visibility whatever -fvisibility says.
 // Exported from a program or shared object, they would be the ones another
 // C++ runtime in the process binds its own references to (DECISIONS §2), so they are hidden with
-// assembler directives (`.__y_hidden` on ELF, `.__private_extern` on Mach-O). Which ones the compiler
+// assembler directives (`.hidden` on ELF, `.private_extern` on Mach-O). Which ones the compiler
 // emits depends on the target (AArch64 adds __bf16, __mfp8 and the SVE types), so the list is
 // the compiler's own: the build compiles a probe defining this key function and lists its
 // type_info symbols (CMakeLists.txt, generated fundamental_type_infos.hpp, assembler names).

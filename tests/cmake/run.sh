@@ -19,7 +19,10 @@
 #   8. Linux, Clang: the example programs link the C runtime startup files and libgcc of GCC 16's
 #      installation ($YCXX_GXX), which the package passes with --gcc-install-dir (link map);
 #   9. the freestanding runtime archive is installed, exported as ycxx::freestanding, and links
-#      the freestanding smoke program (tests/freestanding) with no C library.
+#      the freestanding smoke program (tests/freestanding) with no C library;
+#  10. the standard library modules: ycxx::modules is installed (libycxx-modules.a, the interface
+#      units as a CXX_MODULES file set) and examples/modules (`import std.compat;`) builds and runs
+#      from the installed package and with add_subdirectory, exporting none of libycxx's symbols.
 #
 #   tests/cmake/run.sh [gcc] [clang]        (default: both)
 # Compilers come from the YCXX_* variables (tools/toolchain/activate.*), else g++-16 /
@@ -184,6 +187,30 @@ for c in $compilers; do
       check_exports $c "$ex" "$b/demo"
     else
       bad $c "$ex: configure/build (see $log)"
+    fi
+  done
+
+  # 10. the standard library modules (ycxx::modules, a CXX_MODULES file set): examples/modules
+  # imports std.compat, from the installed package and with libycxx built in the project; the
+  # program must run, use no toolchain C++ library and export nothing of libycxx (the module
+  # initializers included).
+  for f in lib/libycxx-modules.a share/libycxx/modules/std.cppm share/libycxx/modules/std.compat.cppm; do
+    [ -e "$d/prefix/$f" ] || bad $c "modules: installed file missing: $f"
+  done
+  for how in find_package add_subdirectory; do
+    b=$d/modules-$how
+    src=
+    [ $how = add_subdirectory ] && src=-DLIBYCXX_SOURCE_DIR=$repo
+    if x cmake -S "$repo/examples/modules" -B "$b" $gen -DCMAKE_PREFIX_PATH="$d/prefix" $src &&
+       x cmake --build "$b"; then
+      if run_demo "$b/demo_modules" "$log"; then ok $c "modules ($how): import std.compat; build and run"
+      else bad $c "modules ($how): the program failed (see $log)"; fi
+      if links_toolchain_cxx "$b/demo_modules"; then
+        bad $c "modules ($how): links the toolchain's C++ library"
+      fi
+      check_exports $c "modules ($how)" "$b/demo_modules"
+    else
+      bad $c "modules ($how): configure/build (see $log)"
     fi
   done
 

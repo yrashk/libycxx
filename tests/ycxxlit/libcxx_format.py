@@ -1,12 +1,15 @@
 """lit test format for libc++'s conformance tests (libcxx/test/std), run against libycxx."""
 import os, re, shutil, tempfile
 import lit.formats, lit.Test, lit.TestRunner
-from ycxxlit import locales, transcript
+from ycxxlit import locales, stdmodules, transcript
 from ycxxlit.skips import load_skips, match_skip, load_unsupported, match_unsupported, load_xfails, apply_xfail
 from ycxxlit import counterparts
 
 COND_FLAGS = re.compile(r'//\s*ADDITIONAL_COMPILE_FLAGS(?:\(([^)]*)\))?:(.*)')
 FILE_DEPS = re.compile(r'//\s*FILE_DEPENDENCIES:(.*)')
+# The standard library modules a test imports (std, std.compat): libycxx's, built for the test's
+# flags by tests/ycxxlit/stdmodules.py.
+MODULE_DEPS = re.compile(r'//\s*MODULE_DEPENDENCIES:(.*)')
 
 
 def run_environment():
@@ -60,7 +63,7 @@ class LibcxxFormat(lit.formats.FileBasedTest):
 
         src = open(path, encoding='utf-8', errors='replace').read()
         flags = list(self.base_flags)
-        deps = []
+        deps, modules = [], []
         for line in src.splitlines():
             m = COND_FLAGS.search(line)
             if m and (m.group(1) is None or m.group(1).strip() in self.features):
@@ -68,6 +71,20 @@ class LibcxxFormat(lit.formats.FileBasedTest):
             m = FILE_DEPS.search(line)
             if m:
                 deps += [d for d in re.split(r"[,\s]+", m.group(1)) if d]  # "a.dat, b.dat"
+            m = MODULE_DEPS.search(line)
+            if m:
+                modules += m.group(1).split()
+        if modules:
+            unknown = [n for n in modules if n not in ('std', 'std.compat')]
+            if unknown:
+                return lit.Test.Result(lit.Test.FAIL, 'MODULE_DEPENDENCIES: unknown module(s) ' + ' '.join(unknown))
+            status, mdir, out = stdmodules.ensure(os.path.dirname(os.path.dirname(os.path.abspath(self.wrapper))),
+                                                  self.compiler, flags, test.suite.exec_root)
+            if status == 'unsupported':
+                return lit.Test.Result(lit.Test.UNSUPPORTED, out)
+            if status == 'fail':
+                return lit.Test.Result(lit.Test.FAIL, 'building the standard library modules failed\n' + out)
+            flags = ['--std-modules=' + mdir] + flags
 
         exec_dir = os.path.join(test.suite.exec_root, *test.path_in_suite[:-1])
         os.makedirs(exec_dir, exist_ok=True)

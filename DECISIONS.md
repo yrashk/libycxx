@@ -1038,3 +1038,62 @@ under the same name. Otherwise it gets one alias template in `config.hpp`.
   `numpunct<char>` facets by address and then skip the virtual calls (atoms are the characters
   themselves, '.' and no grouping); fields are accumulated in place. The stream's locale is used
   in place (`ios_access::locale_of`) rather than through a `getloc()` copy.
+
+## 16. The standard library modules (`std`, `std.compat`)
+
+- **Interface units that only re-export.** `modules/std.cppm` and `modules/std.compat.cppm` are
+  module interface units whose global module fragment includes the headers (std: every importable
+  C++ library header and C++ header for C library facilities; std.compat: the `<name.h>` headers,
+  `<stdbit.h>`, `<stdckdint.h>`) and whose purview is only `export namespace std { using std::x;
+  ... }` (std.compat: `export import std;` and `export { using ::printf; ... }`). Every entity
+  therefore stays attached to the global module, as when it is #included, so `import std;` and
+  `#include <vector>` name the same entities in one program ([std.modules]/4-5), across
+  translation units and, on Clang, within one. Nothing of `ycxx::` and none of the C library's
+  global names are exported by std (they stay reachable, as instantiations need them, but not
+  visible); no macro can be exported ([module.import]/7). The global `operator new`/`delete`
+  are exported by std ([std.modules]/2). Rejected: defining the library in the module purview
+  (one source of truth with the headers would need a header per declaration's attachment, and
+  mixing `#include` and `import` would give entities two attachments).
+- **The export lists are generated, never edited.** `tools/gen_std_module.py` reads them from
+  the headers through the compilers: Clang's AST dump of one translation unit including every
+  header gives every declaration in namespace std and its standard nested namespaces (classes,
+  enumerations and unscoped enumerators, functions and operators, variables, aliases, concepts,
+  templates, the C wrappers' using-declarations; not specializations, deduction guides or
+  reserved names); a GCC probe that walks namespace std with reflection (`members_of`,
+  `source_location_of`) adds what Clang cannot see. Declarations inside an `#if YCXX_HAS_<X>`
+  region of a header (`<meta>` with `-freflection`, `std::is_structural`, the `<stdfloat>`
+  aliases) are exported under the same `#if` (rule 4 of §1: a using-declaration of a name that is
+  not declared is an error, and no language construct tests for a name). A nested namespace of
+  std that is neither one the draft names (STD_NAMESPACES) nor inline stops the generator.
+  std.compat's global names are those that the C headers declare in std and that the `<name.h>`
+  headers declare globally, minus [support.c.headers.other]/1's exclusions, plus `<stdbit.h>`'s
+  and `<stdckdint.h>`'s. The output is sorted; `tools/gen_std_module.py --check` (policy stage of
+  `tools/test`, so `tools/check-all`) fails while it differs from the committed files. It also
+  writes `include/bits/stdc++.h` (below). Generated on Linux: std.compat depends on the C
+  library's headers, so the check is skipped elsewhere.
+- **Inline namespaces are redeclared, the implementation's too.** The customization point
+  objects live in `std::ranges::cpo` (and `std::cpo`), inline namespaces, so that the hidden
+  friends `iter_move`/`iter_swap` of the views' iterators can be declared in `std::ranges`. A
+  using-declaration of `std::ranges::iter_move` placed in `std::ranges` itself would conflict
+  with those friends, and GCC 16 rejects an instantiation in the importer ("redeclared as
+  different kind of entity"); the module redeclares `inline namespace cpo` and exports the
+  objects there. The cost: the name `std::ranges::cpo` is visible to an importer (Clang 23 shows
+  it to importers in any case).
+- **Hidden visibility (§2).** The compilers emit each module's initializer (`_ZGIW3std`,
+  `_ZGIW3stdW6compat`) with default visibility whatever `-fvisibility` says; the module hides it
+  with an assembler directive (`asm((ycxx::detail::hide_symbol(...)))`,
+  `ycxx/core/hidden_symbol.hpp`). Everything else the importer instantiates is declared hidden by
+  the headers. Tested by `tests/ycxx/modules/no_exported_library_symbols` and `tests/cmake/run.sh`.
+- **Delivery.** A BMI is valid only with the options it was built with, so libycxx ships
+  sources and object code, never BMIs: the CMake package's `ycxx::modules` is a `FILE_SET
+  CXX_MODULES` (CMake >= 3.28, Ninja; the importing project builds the BMIs) plus
+  `libycxx-modules.a` (the initializers); `tools/ycxx-modules gcc|clang [-o DIR] [flags]` builds
+  BMIs and the archive for given flags, and `tools/ycxx-cxx --std-modules[=DIR]` uses them. The
+  own suite's `// MODULES:` directive and libc++'s `MODULE_DEPENDENCIES:` build them per compiler
+  and flags (`tests/ycxxlit/stdmodules.py`, cached by the state of the sources). CMake's
+  `CMAKE_CXX_MODULE_STD` (`import std` without naming a target) needs CMake >= 3.30 and is not
+  supported: it would build the toolchain's own library's module.
+- **GCC needs `<bits/stdc++.h>`.** With `-fmodules`, GCC 16 looks that header up on the include
+  path for every `#include` of a standard header, to translate the `#include` into an import of
+  its header unit when one was built; without it the `#include` is a fatal error. libycxx's
+  (generated) includes every header, so a header unit built from it replaces any of them.

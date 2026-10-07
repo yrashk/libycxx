@@ -248,7 +248,7 @@ when parsing, `fractional_width` of ratio<1, 2^62>, `hh_mm_ss` layout, an error 
 - Part 2, [containers] [iterators] [ranges] [algorithms] [strings] (2026-10-07, draft
   `c7015b48`): 6164 declared entities, 5803 with a presence check and 3935 with a shape check,
   all passing on GCC 16.2 and Clang 23.1 (25470 generated checks, `tools/spec_audit/run_probes.py
-  --part part2`, plus 66 hand-written constexpr/semantic checks). Found and fixed: 4 feature-test
+  --part part2`, plus 86 hand-written constexpr/semantic checks). Found and fixed: 4 feature-test
   macros (`__cpp_lib_view_interface`, `__cpp_lib_hardened_{common_iterator,counted_iterator,
   view_interface}`), 13 unchecked Hardened preconditions of `common_iterator` and
   `counted_iterator`; shuffle and sample with a generator wider than 64 bits (infinite recursion).

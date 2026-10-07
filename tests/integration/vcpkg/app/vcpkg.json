@@ -1,0 +1,5 @@
+{
+  "name": "ycxx-vcpkg-app",
+  "version": "1.0",
+  "dependencies": [ "ycxx-sample" ]
+}

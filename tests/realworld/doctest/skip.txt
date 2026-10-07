@@ -1,0 +1,3 @@
+# CTest tests that do not run against libycxx, as "<test regex> | <category> | <reason>
+# [| <conditions>]" (tools/lib/realworld.py; the regex matches the whole test name).
+executable_dll_and_plugin(_junit|_xml)? | libycxx-limitation | doctest's runner (in libimplementation.so) catches the exception a test case of the dlopen'ed plugin throws with catch (...), and calls the exception translators registered by the executable, which rethrow it with "throw;": the executable's ABI runtime has no exception being handled, so std::terminate. Each image that links libycxx has its own ABI runtime, and current_exception() and "throw;" see only the handlers of their own image (DECISIONS §2; STATUS, known limitations)

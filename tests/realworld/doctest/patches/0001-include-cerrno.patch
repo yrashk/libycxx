@@ -1,0 +1,28 @@
+Category: transitive-include. doctest's implementation uses errno without including <cerrno>
+(libstdc++ and libc++ declare it through <system_error>, which <mutex> includes there). Adds the
+include.
+
+diff --git a/doctest/doctest.h b/doctest/doctest.h
+index 0b36cca..1b2e624 100644
+--- a/doctest/doctest.h
++++ b/doctest/doctest.h
+@@ -3948,6 +3948,7 @@ DOCTEST_SUPPRESS_PRIVATE_WARNINGS_PUSH
+ #include <stdexcept>
+ #include <cfloat>
+ #include <cctype>
++#include <cerrno>
+ #include <cstdint>
+ #include <string>
+ 
+diff --git a/doctest/parts/private/prelude.h b/doctest/parts/private/prelude.h
+index 31d8bee..51b63ab 100644
+--- a/doctest/parts/private/prelude.h
++++ b/doctest/parts/private/prelude.h
+@@ -46,6 +46,7 @@ DOCTEST_SUPPRESS_PRIVATE_WARNINGS_PUSH
+ #include <stdexcept>
+ #include <cfloat>
+ #include <cctype>
++#include <cerrno>
+ #include <cstdint>
+ #include <string>
+ 

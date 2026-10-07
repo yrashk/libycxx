@@ -71,6 +71,9 @@
 #define __cpp_lib_smart_ptr_owner_equality 202306L
 #define __cpp_lib_constexpr_memory 202506L
 #define __cpp_lib_out_ptr 202311L
+// __cpp_lib_pointer_tag_pair (202606L, P3125 "constexpr pointer tagging") is not defined:
+// pointer_tag_pair is implemented, but neither GCC 16 nor Clang 23 can store a non-zero tag in a
+// pointer during constant evaluation, which [ptrtag.pair.cons]/2 requires (DECISIONS §9).
 #define __cpp_lib_indirect 202502L
 #define __cpp_lib_polymorphic 202502L
 #define __cpp_lib_parallel_algorithm 202506L

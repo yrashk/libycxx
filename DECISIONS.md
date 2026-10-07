@@ -489,6 +489,30 @@ tooling.
   SDK's headers, but the interface libSystem's `os_unfair_lock` and Apple's own libc++ use since
   macOS 10.12; the public `os_sync_wait_on_address` needs macOS 14.4 and is not usable from GCC,
   which has no `__builtin_available`), with relative timeouts in microseconds.
+- **The thread-end actions run for the thread that ends the program too.** The `*_at_thread_exit`
+  results ([futures.promise]/23, /26, [futures.task.members]) and `notify_all_at_thread_exit`
+  ([thread.condition.nonmember]/2-3) act "when the current thread exits, after all objects with
+  thread storage duration associated with the current thread have been destroyed". A thread that
+  calls `exit` (returning from `main` does, [basic.start.main]/5) destroys its thread_local
+  objects as part of `exit` ([support.start.term]/9.1, [basic.start.term]/2), and only then are
+  static objects destroyed and the `atexit` functions called: that is where its actions belong,
+  so a static `future`, condition variable or mutex sees them done before it is destroyed.
+  `quick_exit`, `_Exit` and `abort` destroy no thread_local objects and run none; threads still
+  running when the program ends never exit and run none. A pthread key destructor (the previous
+  design) runs only when a thread ends on its own, so the actions of the thread calling `exit`
+  never ran. Now the POSIX PAL keeps a thread's list in a thread_local pointer and runs it from a
+  thread_local destructor of its own, the *sentinel*, registered (`__cxa_thread_atexit_impl`, Darwin's
+  `_tlv_atexit`) before the thread's first thread_local destructor or first action: the C library
+  runs a thread's thread_local destructors in reverse order of registration, also those registered
+  while they run, both when the thread ends and in `exit` (glibc's `__call_tls_dtors`, Darwin's
+  `_tlv_exit`, both before the static destructors), so the sentinel runs after every other
+  thread_local destructor of the thread. Every libycxx thread_local destructor is registered
+  through `ycxx_pal_thread_atexit` (the ABI's `__cxa_thread_atexit`), which arms the sentinel first.
+  An action registering another action (or constructing a thread_local) while the list runs is
+  run too: the list is drained, and a new registration re-arms the sentinel. Where a destructor
+  cannot be registered (a C library without `__cxa_thread_atexit_impl`) the list falls back to the
+  pthread key, as before. The `ycxx_pal_at_thread_end` contract (`pal.h`) says so for other
+  providers of the `threads` layer.
 - **`<stop_token>` is core.** Its stop state needs only atomics and three PAL hooks: the address
   wait (through `<atomic>`'s tables), `ycxx_pal_thread_self` (a callback deregistered while
   `request_stop` runs it: on the requesting thread it is not waited for) and
@@ -505,7 +529,25 @@ tooling.
   or holds a later epoch, so only regions that began before the retire hold it back (the proof
   is in `src/hosted/rcu.cpp`). Evaluations run by `rcu_barrier`, or by an outermost unlock or a
   retire outside any region once 1000 are queued, one batch at a time; `rcu_barrier` inside a
-  region evaluates what was retired before the region began. Rejected: two phase counters
+  region evaluates what was retired before the region began. **`rcu_barrier` in the two
+  situations [saferecl.rcu.domain.func]/4 cannot satisfy** (it has no precondition and no
+  exception): (1) Inside a region R, an evaluation scheduled after R began can only be evaluated
+  after R ends ([saferecl.rcu.general]/5), so if its scheduling happens before the call the
+  barrier must block for ever. For the caller's own retires (sequenced before the call) libycxx
+  does exactly that, and checks it as a hardened precondition, as it does for `rcu_synchronize`
+  inside a region (the draft's Effects block for ever there too): a certain self-deadlock
+  becomes a diagnosed termination with `YCXX_HARDENED`. Both checks are in `<rcu>` (a runtime
+  query, then `precondition`), since the runtime itself is not built with `YCXX_HARDENED`
+  (`rcu_synchronize`'s check used to be in the runtime, where it was never active). Another thread's retire after R began is
+  taken as not happening before the call (the barrier cannot tell whether other synchronization
+  ordered it), so it is not waited for. (2) Inside a scheduled evaluation E, /4 would have the
+  barrier wait for E itself, whose evaluation includes the call: impossible (a draft defect,
+  STATUS). libycxx's barrier there evaluates the rest of the batch E belongs to, then waits for
+  the readers and evaluates the queue up to its bound like any barrier, keeping the evaluation
+  lock (other barriers must not see E's batch as done while it runs): when it returns, everything
+  scheduled before the call has been evaluated except the evaluations in progress on the calling
+  thread. (Before, it returned at once.) Rejected: releasing the evaluation lock while waiting
+  (a barrier on another thread would then return before E finished). Rejected: two phase counters
   flipped by `rcu_synchronize` (the previous design), which cannot tell a region that began
   before a retire from one that began after it, so a barrier inside a region waited for itself.
   The cost is a third word in `rcu_obj_base` (the node's epoch: a barrier inside a region must
@@ -1013,6 +1055,57 @@ under the same name. Otherwise it gets one alias template in `config.hpp`.
   binary search, so the class is usable in constant expressions. `locale::encoding()` of "C" is
   US-ASCII (the POSIX portable character set), although the classic `codecvt<wchar_t, char>`
   converts UTF-8 (§7).
+- **`pointer_tag_pair` ([ptrtag]) keeps the tag in the pointer's low bits; in constant
+  evaluation only the tag 0 can be stored.** Core (`ycxx/core/ptrtag.hpp`, freestanding, from
+  `<memory>`). The one member is the tagged pointer itself, of `tagged_pointer_type` (cv `void*`),
+  so the class is trivially copyable with the size and alignment of `Ptr` ([ptrtag.pair.general]/3)
+  and `tagged_pointer()`/`from_tagged()` are plain copies. At run time the tag is or-ed into the
+  low `bits_requested` bits of the pointer's address (`uintptr_t` round trip: GCC and Clang keep
+  the value of an integer-pointer round trip, which is what [ptrtag.bits]/2's remark needs), and
+  `pointer()`/`tag()` mask them apart, so any `DP` whose `bits_requested` covers the tag and the
+  alignment decodes the same `tp` ([ptrtag.pair.tagops]/2). Implementation-defined:
+  `max_pointer_bits_available` is the pointer width minus 1 (63 on LP64): only alignment bits are
+  used, and a `size_t` alignment has at most that many trailing zeros, so the limit adds nothing
+  to `pointer_bits_available(a)` = `min(countr_zero(a), max)` (the draft's note; P3125 suggests a
+  page-size limit for segmented architectures, which libycxx's targets are not).
+  **Constant evaluation.** Neither GCC 16.2 nor Clang 23.1 can put bits into a pointer during
+  constant evaluation (verified: `reinterpret_cast` to and from integers, `bit_cast` of a pointer,
+  arithmetic outside the object or on a null pointer, a `void*` cast to `char*` of a non-char
+  object and reading the other member of a pointer/integer union are all rejected; Clang's
+  `__builtin_align_down` only aligns). P3125 relies on new builtins; its fallback, a hidden object
+  holding pointer and tag, would need a constant-evaluation allocation, which a trivially
+  destructible type can never free. Keeping pointer and tag apart under `if consteval` is not
+  possible either: the layout is one `sizeof(Ptr)` object in both worlds (an object built in
+  constant evaluation is used at run time). So in constant evaluation the member holds the
+  untagged pointer (`static_cast` to cv `void*` and back, which C++26 allows for the object's own
+  type) and every constexpr member works as long as the tag is 0: the default constructor, the
+  constructors and `from_overaligned` with tag 0 (or `TagT()`), `pointer()`, `tag()`, `swap`, the
+  comparisons, `get`. A non-zero tag during constant evaluation is diagnosed ("needs compiler
+  support") although the preconditions hold, which [ptrtag.pair.cons]/2 and
+  [ptrtag.pair.overalign]/1 ("Constant When: Preconditions are met") do not allow: that part is
+  compiler-blocked, the tests XFAIL it, and `__cpp_lib_pointer_tag_pair` stays undefined (as
+  `__cpp_lib_constexpr_exceptions` on Clang and `__cpp_lib_start_lifetime` on GCC: the macro
+  announces P3125, "constexpr pointer tagging", whose constexpr support is the point).
+  **Preconditions.** With `YCXX_HARDENED` (and always in constant evaluation) the constructors
+  check `tag-bit-width(t) <= bits_requested` and that the low bits are free (a misaligned `p`, or
+  for `from_overaligned` a `p` not aligned to `PromisedAlignment`, [ptrtag.pair.overalign]/2.2);
+  "`p` is not past the end of an object" cannot be checked. In constant evaluation the
+  alignment of `from_overaligned`'s pointer is checked on Clang (`__builtin_is_aligned`); GCC has
+  no such builtin, so there an unverifiable promise is accepted (it cannot matter: only the tag 0
+  is stored then). **Comparisons** follow [ptrtag.pair.comp]/1, /3 (`pointer()` first, then
+  `tag()`, through synth-three-way); at run time, when the tag's `<=>`/`==` is the built-in one
+  (an integer tag, or an enumeration without a user-declared operator, found by a call of
+  `operator<=>(t, t)` / `operator==(t, t)` that only user-declared functions can satisfy), the two
+  tagged words are compared directly (/2, /4: the address bits are above the tag bits, so the
+  order is the same). **Draft defects**, each resolved by the evident intent (STATUS, "Draft issues
+  noticed"): [ptrtag.bits]/2's `tagged_pointer_pair` and `tp.tagged()` are `pointer_tag_pair` and
+  `tagged_pointer()`; [ptrtag.pair.tagops]/2-3's `ptr`/`tag` are `pointer()`/`tag()` of `*this`
+  and `pointer_tag_type` is `pointer_tag_pair`; the deduction guide `pointer_tag_pair(Ptr*, TagT)`
+  names `bits-available<element-of<Ptr>>`, and `element-of<int>` (`pointer_traits<int>`) does not
+  exist, so the guide could never be used: libycxx uses `bits-available<Ptr>` (the pointee's
+  alignment, as the class's default argument does for `Ptr*`); the guide `pointer_tag_pair(Ptr*)`
+  has no one-argument constructor to go with it: it is declared as written and deduces, and the
+  initialization then fails (no constructor is invented).
 - **`generator` nests without a stack of handles**: the promises of recursively yielded
   generators link to their parent and the root, and transfers between them are symmetric, so
   recursion depth costs no stack and no allocation besides the frames.

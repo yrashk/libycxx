@@ -49,10 +49,10 @@ and by the probes).
 | check | GCC 16.2 | Clang 23.1 |
 |---|---|---|
 | headers (192 checks: the 94 + 21 + 29 of Tables 24, 25, 47; the 48 of Table 27 freestanding) | 192 / 192 | 192 / 192 |
-| [version.syn] macros (313) | 306 right; 3 open (P1-01: `pointer_tag_pair`; P1-07: 2 hardened iterator macros), 4 compiler-blocked (P1-09) | 304 right; 3 open (P1-01, P1-07), 6 compiler-blocked (P1-09) |
-| entities declared (2029 names; overloads counted once) / probed by name | 1988 probed: 1969 present, 19 missing (P1-01) | 1988 probed: 1707 present, 19 missing (P1-01), 262 compiler-blocked (`<meta>`, `is_structural`) |
-| freestanding items probed (1317) | 1299 present, 18 missing (P1-01) | 1297 present, 18 missing (P1-01), 2 compiler-blocked |
-| shape probes (18 files) | 18 pass | 17 pass, 1 unsupported (reflection) |
+| [version.syn] macros (313) | 306 right; 2 open (P1-07: 2 hardened iterator macros), 5 compiler-blocked (P1-01: `__cpp_lib_pointer_tag_pair`; P1-09) | 304 right; 2 open (P1-07), 7 compiler-blocked (P1-01, P1-09) |
+| entities declared (2029 names; overloads counted once) / probed by name | 1988 probed: 1988 present (19 added by the P1-01 fix) | 1988 probed: 1726 present, 262 compiler-blocked (`<meta>`, `is_structural`) |
+| freestanding items probed (1317) | 1317 present | 1315 present, 2 compiler-blocked |
+| shape probes (20 files) | 19 pass, 1 expected failure (P1-01's constexpr part) | 18 pass, 1 unsupported (reflection), 1 expected failure (P1-01) |
 
 Before this audit 7 more macros were missing or wrong (P1-04, P1-05, P1-06, P1-08) and 8 more
 names were missing (P1-02, P1-03); they are fixed (below).
@@ -98,8 +98,8 @@ hosted and freestanding (`fs`: freestanding items probed); shape probe files; ga
 
 | subclause | declared | probed (fs) | missing GCC | missing Clang | shape probes | gaps |
 |---|---|---|---|---|---|---|
-| [memory] | 133 | 133 (96) | 7 (the [ptrtag] names of `<memory>`'s synopsis) | 7 | memory.cpp | P1-01; P1-02 fixed |
-| [ptrtag] | 12 | 12 (11) | 12 | 12 | none (nothing to probe) | P1-01 |
+| [memory] | 133 | 133 (96) | 0 (the 7 [ptrtag] names of `<memory>`'s synopsis were missing before the P1-01 fix) | 0 | memory.cpp, ptrtag.cpp | P1-01, P1-02 fixed |
+| [ptrtag] | 12 | 12 (11) | 0 (12 before the P1-01 fix) | 0 | ptrtag.cpp, ptrtag.pair.cons.cpp (expected failure: constexpr non-zero tag) | P1-01 fixed but its constexpr part (6) |
 | [smartptr] | 69 | 63 (25) | 0 | 0 | memory.cpp | P1-06 fixed |
 | [mem.composite.types] | 21 | 21 | 0 | 0 | memory.cpp | P1-02 fixed |
 | [mem.res] | 54 | 51 | 0 | 0 | mem.res.cpp | |
@@ -148,18 +148,24 @@ The 8 SI prefixes beyond 10^18 (quecto ... quetta) are probed only where `intmax
 Classes: (1) missing entity, (2) wrong shape, (3) missing or wrong behaviour, (4) feature macro,
 (5) intentional (STATUS/DECISIONS), (6) blocked by the compiler, (7) draft defect.
 
-- **P1-01 (1, 6) [ptrtag]: `pointer_tag_pair` is not implemented.** Missing: `max_pointer_bits_available`,
-  `pointer_bits_available` ([ptrtag.bits]), class template `pointer_tag_pair` with its deduction
-  guides ([ptrtag.pair.general]), its `tuple_size`/`tuple_element` specializations and `get`
-  ([memory.syn], [ptrtag.pair.get]), and `__cpp_lib_pointer_tag_pair` (202606L, freestanding).
-  STATUS lists it under "Known limitations" (`<memory>`: "no `pointer_tag_pair`"), not as a
-  deliberate omission. Effort: the run-time part (tag in the low alignment bits, `tagged_pointer`
-  / `from_tagged`, comparisons, tuple protocol; freestanding) is about a day with tests. The
-  constructors, `from_overaligned`, `pointer()`, `tag()`, `swap` and the comparisons are constexpr
-  with "Constant When: preconditions are met" ([ptrtag.pair.cons]/2, [ptrtag.pair.overalign]/1):
-  in constant evaluation a tag has to live in the pointer's unused bits of a `sizeof(Ptr)` object,
-  which neither GCC 16.2 nor Clang 23.1 can evaluate (no pointer-tagging builtin; Clang's
-  `__builtin_align_down` cannot set bits). A conforming constexpr part is blocked on the compilers.
+- **P1-01 (1, 6) [ptrtag]: `pointer_tag_pair` was not implemented.** Missing were
+  `max_pointer_bits_available`, `pointer_bits_available` ([ptrtag.bits]), class template
+  `pointer_tag_pair` with its deduction guides ([ptrtag.pair.general]), its
+  `tuple_size`/`tuple_element` specializations and `get` ([memory.syn], [ptrtag.pair.get]), and
+  `__cpp_lib_pointer_tag_pair` (202606L, freestanding). **Fixed** (`ycxx/core/ptrtag.hpp`,
+  freestanding, DECISIONS §9): everything at run time, and in constant evaluation everything with
+  the tag 0. **Still open, class 6:** the constructors and `from_overaligned` are constexpr with
+  "Constant When: preconditions are met" ([ptrtag.pair.cons]/2, [ptrtag.pair.overalign]/1), so a
+  non-zero tag must be storable during constant evaluation, in the unused bits of a
+  `sizeof(Ptr)` object; neither GCC 16.2 nor Clang 23.1 can set bits of a pointer there (checked:
+  `reinterpret_cast`, `bit_cast` of a pointer, arithmetic outside the object or on null, a `char*`
+  view of a non-char object, the other member of a pointer/integer union; Clang's
+  `__builtin_align_down` only aligns), P3125's fallback of a hidden object needs an allocation a
+  trivially destructible type can never free, and the layout cannot differ under `if consteval`.
+  So `__cpp_lib_pointer_tag_pair` stays undefined (as `__cpp_lib_constexpr_exceptions` on Clang,
+  `__cpp_lib_start_lifetime` on GCC). Tests `tests/ycxx/ptrtag/` (the constexpr part XFAIL),
+  `precondition/ptrtag_*`; probes `ptrtag.cpp`, `ptrtag.pair.cons.cpp` (GAP); `data/expected.tsv`
+  now expects only the macro.
 - **P1-02 (1) [memory.syn]: `pmr::indirect` and `pmr::polymorphic` were missing.** Fixed
   (968fb44, std module c881689); test `indirect/pmr_aliases.pass.cpp`.
 - **P1-03 (2) [meta.type.synop]: `is_applicable`, `is_nothrow_applicable`, `apply_result`
@@ -225,7 +231,10 @@ TODO/FIXME markers in `include/` or `src/`.
   `ptr` and `tag`, defined nowhere (meant: `pointer()` and `tag()` of `*this`).
 - [ptrtag.pair.general]: the deduction guide `pointer_tag_pair(Ptr*) -> pointer_tag_pair<Ptr*>`
   has no constructor taking a pointer alone (the constructors take `(U* p, tag_type t)`), so a
-  deduction through it always fails overload resolution afterwards.
+  deduction through it always fails overload resolution afterwards. The other guide,
+  `pointer_tag_pair(Ptr*, TagT) -> pointer_tag_pair<Ptr*, bits-available<element-of<Ptr>>, TagT>`,
+  applies element-of to the pointee (`pointer_traits<int>::element_type` does not exist), so it
+  is never usable as written; meant: `bits-available<Ptr>`. Resolutions: DECISIONS §9.
 
 ## Part 2: containers, iterators, ranges, algorithms, strings
 
@@ -1103,8 +1112,8 @@ Classes: (1) missing entity, (2) wrong shape, (3) missing or wrong behaviour, (4
 | G3 | 3 | `{:L}` chrono formatting with a non-classic `time_put` writes `%c %x %X` through `strftime` of a C `tm`, and the duration count is grouped from `numpunct` without calling a replaced `num_put`. | [time.format]/2-3 | **Fixed** (`ee9b9ea`; DECISIONS §14 "The L option and the facets"): the count of `{:L}` without chrono-specs goes through the locale's `num_put` ([time.format]/7, [time.duration.io]/1); every locale-dependent specifier is one `time_put::put(..., spec, mod)` call of the locale's facet (it was already; the `tm` it gets is the facet's input, not a gap). Tests: `tests/ycxx/chrono/format_L_user_facets.pass.cpp`, `format_L_named_time_put.pass.cpp` |
 | G4 | 3 | `<regex>` POSIX grammars (basic, extended, awk, grep, egrep): with back-references, or bounded repetitions beyond 256 copies / 65536 nodes, the matcher backtracks exhaustively and reports subexpressions in first-found order, not by the POSIX leftmost-longest rule for subexpressions. | [re.synopt]/1 (basic, extended, awk, grep: "shall be that used by ... in POSIX"; POSIX's subexpression rule) | STATUS `<regex>`; large (a POSIX subexpression-rule matcher: a week) |
 | G5 | 3 | `<regex>`: multi-character collating elements (`[[.ch.]]`) are not supported (no C library locale defines them), and `regex_traits::transform_primary` returns the full sort key where it cannot find the primary one, where [re.traits]/7 would return an empty key. | [re.traits]/6-7 | STATUS `<regex>`; small (the empty-key choice) / blocked by the C library (collating elements) |
-| G6 | 3 | `rcu_barrier()` called from inside a scheduled evaluation returns without waiting (waiting would deadlock), and inside a read-side region it does not wait for objects retired after the region began. | [saferecl.rcu.domain.func]/4 | STATUS concurrency; the draft gives no exception for these cases: a draft question as much as a gap |
-| G7 | 3 | `notify_all_at_thread_exit` and the `*_at_thread_exit` results ([futures.promise], [futures.task.members]) never run for the thread that ends the process. | [thread.condition.nonmember] (`notify_all_at_thread_exit`), [futures.promise], [futures.task.members] (the `at_thread_exit` members) | STATUS concurrency; medium (run them from the exit path of the main thread) |
+| G6 | 3 | `rcu_barrier()` called from inside a scheduled evaluation returned without waiting, and inside a read-side region it did not wait for objects retired after the region began. **Fixed**: inside an evaluation it evaluates the rest of its batch and the queue (all scheduled before the call but the evaluations in progress on its thread, which /4 cannot have: draft defect, STATUS); inside a region, after the caller's own retire there, it blocks for ever as /4 with [saferecl.rcu.general]/5 requires (a hardened precondition; another thread's later retire is taken as not happening before the call). | [saferecl.rcu.domain.func]/4 | DECISIONS §3; `rcu/barrier_in_evaluation`, `rcu/barrier_in_region_own_retire`, `precondition/rcu_barrier_in_region_own_retire` |
+| G7 | 3 | `notify_all_at_thread_exit` and the `*_at_thread_exit` results ([futures.promise], [futures.task.members]) never ran for the thread that ends the process. **Fixed**: they run in `exit` (and a return from `main`) after the thread's thread_local destructors, before the static destructors and atexit functions; not on `quick_exit`. | [thread.condition.nonmember]/2-3, [futures.promise]/23, /26, [futures.task.members], [support.start.term]/9.1, [basic.start.term]/2 | DECISIONS §3; `future/at_thread_exit_by_{main_return,exit,thread_exit,quick_exit}` |
 | G9 | 3 | `<filesystem>`: no root-names (`//host` is not special), ill-formed UTF-8 converts to U+FFFD, `permissions(..., nofollow)` on a link fails with ENOTSUP on Linux. | [fs.path.generic]/root-name (implementation-defined), [fs.op.permissions] | STATUS `<filesystem>`; root-names are implementation-defined (POSIX has none): (5) in effect; the others follow the OS |
 | G10 | 3 | `tzdb`: zone data from the zoneinfo directory only; `remote_version`/`reload_tzdb` do not download; `sys_info::save` is derived (TZif has only an is-DST flag). | [time.zone.db.remote] (the remote source is implementation-defined), [time.zone.info.sys]/save | STATUS `<chrono>`; save: small heuristic already; no further work planned |
 

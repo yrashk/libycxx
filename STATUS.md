@@ -247,9 +247,10 @@ when parsing, `fractional_width` of ratio<1, 2^62>, `hh_mm_ss` layout, an error 
 ## Spec coverage audit (docs/SPEC_COVERAGE.md)
 - Part 1 ([library] tables and [version.syn], [support], [concepts], [diagnostics], [mem], [meta],
   [utilities]; 2026-10-07; `tools/spec_audit/part1/run.py`): 2029 declared names (1988 probed by
-  name), 313 macros, 192 header checks, 18 shape probes, on GCC 16.2 and Clang 23.1. Open: `[ptrtag]`
-  (`pointer_tag_pair`, 19 names and its macro; the constexpr part is blocked on the compilers),
-  the rest is
+  name), 313 macros, 192 header checks, 20 shape probes (18 at the audit), on GCC 16.2 and Clang 23.1. `[ptrtag]`
+  (P1-01) is implemented since (19 names, probes `ptrtag.cpp`, `ptrtag.pair.cons.cpp`); only its
+  constexpr part with non-zero tags is compiler-blocked, so `__cpp_lib_pointer_tag_pair` stays
+  undefined. The rest is
   compiler-blocked (reflection, contracts, `is_structural`, ... on Clang; `is_within_lifetime` on
   GCC). Fixed: `pmr::indirect`/`pmr::polymorphic`, `is_applicable` & co. in `<type_traits>`, and
   7 feature-test macros.
@@ -272,8 +273,10 @@ when parsing, `fractional_width` of ratio<1, 2^62>, `hh_mm_ss` layout, an error 
   `store_*` of non-lock-free atomics (`f222ebf`), `stop_token`/`stop_source::operator==` as
   members (`9446019`), constant-evaluated `compare_exchange` of `long double` on Clang (`370b7e3`).
   Open: `__cpp_lib_constexpr_exceptions` on Clang (compiler gap) and the documented behaviour
-  limitations listed there (locale-dependent `chrono::parse`, POSIX regex subexpressions,
-  `rcu_barrier` inside evaluations, `*_at_thread_exit` for the exiting main thread, ...).
+  limitations listed there (locale-dependent `chrono::parse`, POSIX regex subexpressions, ...).
+  Fixed since: G6 (`rcu_barrier` inside a scheduled evaluation evaluates what was scheduled
+  before it; after a retire in the caller's own region it blocks, a hardened precondition) and G7
+  (the `*_at_thread_exit` actions of the thread that calls `exit` or returns from `main`).
 
 ## Own-suite configurations (runs of 2026-10-05, 2438 tests)
 `tools/test --hardened` / `--cxxflags=... --config-name=...` (README, Own tests); the nightly
@@ -559,6 +562,13 @@ libstdc++ 16 lacks, GCC/Clang differences, C-header gaps and ABI limits. No fail
 a defect in a test.
 
 ## Known compiler gaps and bugs
+- Neither GCC 16.2 nor Clang 23.1 can set bits of a pointer during constant evaluation (no
+  pointer-tagging builtin; `reinterpret_cast`, `bit_cast` of pointers, arithmetic outside an
+  object or on a null pointer, and reading the other member of a pointer/integer union are all
+  rejected; Clang's `__builtin_align_down` only aligns). So `pointer_tag_pair` stores only the tag
+  0 in constant evaluation ([ptrtag.pair.cons]/2: "Constant When: Preconditions are met"), and
+  `__cpp_lib_pointer_tag_pair` is not defined (DECISIONS §9; `ptrtag/constexpr_nonzero_tag`
+  XFAIL, audit P1-01).
 - GCC 16.2 at `-O1 -std=c++26` (not `-O0`, not C++23, not Clang) miscompiles magic_enum's
   `enum_flags_contains` for a string naming a flag twice; reproduced with libstdc++
   (`tests/realworld/magic_enum/repro/gcc16_cxx26_O1_flags.cpp`); XFAIL in the real-world run.
@@ -958,7 +968,9 @@ compilers; `visit_format_arg.pass.cpp` needs `EOF` from `constexpr_char_traits.h
   `codecvt_unicode.h` expects `partial` with from_next before it instead; `money_get` with
   frac_digits() > 0 accepts a value without a decimal point as the digits that appear ("1056"),
   but a decimal point must be followed by exactly frac_digits() digits.
-- `<memory>`: no `pointer_tag_pair`. `atomic<shared_ptr<T>>` / `atomic<weak_ptr<T>>` are
+- `<memory>`: `pointer_tag_pair` cannot store a non-zero tag during constant evaluation (Known
+  compiler gaps), so `__cpp_lib_pointer_tag_pair` is not defined; at run time it is complete.
+  `atomic<shared_ptr<T>>` / `atomic<weak_ptr<T>>` are
   lock-based (the striped lock table of `<atomic>`); the execution-policy overloads of the
   specialized algorithms run sequentially. shared_ptr reference counts are plain while the
   process has one thread (DECISIONS §15), atomic otherwise. get_deleter identifies
@@ -1314,12 +1326,16 @@ compilers; `visit_format_arg.pass.cpp` needs `EOF` from `constexpr_char_traits.h
   one waiter when another waiter has registered but not yet blocked (a permitted spurious wakeup;
   libc++ `condvar/notify_one.pass` assumes none and can fail rarely); atomic wait slots are shared
   between addresses, so notify wakes every waiter of the slot; no `native_handle` for mutexes and
-  condition variables; `notify_all_at_thread_exit` and the `*_at_thread_exit` results never run
-  for the thread that ends the process; RCU has one domain, and `rcu_barrier` called from inside
-  a scheduled evaluation returns without waiting (waiting would deadlock); `rcu_barrier` inside
-  a region does not wait for objects retired after the region began (they cannot be reclaimed
-  before it ends) and runs the deleters it evaluates inside that region (such a deleter must not
-  call `rcu_synchronize`); retired hazard-pointer
+  condition variables; the `*_at_thread_exit` actions run for a thread that calls `exit` (or
+  returns from `main`) after its thread_local destructors, through the C library's thread_local
+  destructor list (tested on Linux; on Darwin `_tlv_exit` is relied on to run before the static
+  destructors), never on `quick_exit`/`_Exit`/`abort`; RCU has one domain; `rcu_barrier` called
+  from inside a scheduled evaluation evaluates everything scheduled before it except the
+  evaluations in progress on its own thread (the draft asks for those too, see Draft issues);
+  `rcu_barrier` inside a region does not wait for objects another thread retired after the region
+  began (taken as not happening before the call), blocks for ever after the caller's own retire
+  in the region (as /4 requires; a hardened precondition), and runs the deleters it evaluates
+  inside that region (such a deleter must not call `rcu_synchronize`); retired hazard-pointer
   and RCU objects still pending at exit are not reclaimed. `atomic<T>` for a non-default-
   constructible T has a constrained (not mandated) default constructor. The deprecated atomics
   features are provided, declared [[deprecated]] (Annex D).
@@ -1388,6 +1404,24 @@ Wording problems found while writing the spec-derived tests (tests/ycxx), not ye
 - [exec.snd.expos]/43: `basic-sender::get_env()` returns `impls-for<Tag>::get-attrs(data,
   child...)`, but neither `default-impls` nor any `impls-for` specialization declares `get-attrs`
   any more: the name is used once in the draft and defined nowhere (part 3, D2).
+- [ptrtag.bits]/2 names `tagged_pointer_pair` and `tp.tagged()`: the class is `pointer_tag_pair`
+  and the member `tagged_pointer()`.
+- [ptrtag.pair.tagops]/2 uses `ptr` and `tag`, defined nowhere (meant: `pointer()` and `tag()`
+  of `*this`); /3 twice names `pointer_tag_type` (meant: `pointer_tag_pair`).
+- [ptrtag.pair.general]: the deduction guide `pointer_tag_pair(Ptr*) -> pointer_tag_pair<Ptr*>`
+  has no constructor taking a pointer alone, so an initialization deduced through it always
+  fails; libycxx declares it as written and adds no constructor
+  (`ptrtag/deduction_one_argument.compile.fail`). The guide `pointer_tag_pair(Ptr*, TagT) ->
+  pointer_tag_pair<Ptr*, bits-available<element-of<Ptr>>, TagT>` applies element-of to the
+  pointee type (`pointer_traits<int>` has no `element_type`), so it can never be used; libycxx
+  uses `bits-available<Ptr>`, the pointee's alignment (DECISIONS §9).
+- [saferecl.rcu.domain.func]/4: `rcu_barrier` "blocks until E has been evaluated" for every E
+  scheduled by an evaluation that happens before the call, with no exception for a call made
+  from inside a scheduled evaluation: E is then also that evaluation itself (and those that
+  called it), whose evaluation cannot complete before the call returns. libycxx evaluates
+  everything else and returns. Inside a region, /4 with [saferecl.rcu.general]/5 makes the
+  barrier block for ever after the caller retired something in the region (as `rcu_synchronize`
+  inside a region, /2); no precondition says so (libycxx checks it as a hardened one).
 
 ## Performance
 `bench/` (manual, not in CI; DECISIONS §15) times the hot paths against libstdc++ on both

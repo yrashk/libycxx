@@ -1,0 +1,49 @@
+Category: pre-c++26. dump_raw_tape inserts an unsigned char into an ostream, which C++26
+deprecates ([depr.ostream.inserters]: equivalent to inserting static_cast<char>(c)); libycxx
+marks the inserter [[deprecated]], and the quickstart tests compile with -Werror. Inserts
+static_cast<char>(type), the same output.
+
+diff --git a/include/simdjson/dom/document-inl.h b/include/simdjson/dom/document-inl.h
+index a3b8e58..dfea976 100644
+--- a/include/simdjson/dom/document-inl.h
++++ b/include/simdjson/dom/document-inl.h
+@@ -71,7 +71,7 @@ inline bool document::dump_raw_tape(std::ostream &os) const noexcept {
+   size_t tape_idx = 0;
+   uint64_t tape_val = tape[tape_idx];
+   uint8_t type = uint8_t(tape_val >> 56);
+-  os << tape_idx << " : " << type;
++  os << tape_idx << " : " << static_cast<char>(type);
+   tape_idx++;
+   size_t how_many = 0;
+   if (type == 'r') {
+@@ -166,7 +166,7 @@ inline bool document::dump_raw_tape(std::ostream &os) const noexcept {
+   tape_val = tape[tape_idx];
+   payload = tape_val & internal::JSON_VALUE_MASK;
+   type = uint8_t(tape_val >> 56);
+-  os << tape_idx << " : " << type << "\t// pointing to " << payload
++  os << tape_idx << " : " << static_cast<char>(type) << "\t// pointing to " << payload
+      << " (start root)\n";
+   return true;
+ }
+diff --git a/singleheader/simdjson.h b/singleheader/simdjson.h
+index d7256e5..f18ede6 100644
+--- a/singleheader/simdjson.h
++++ b/singleheader/simdjson.h
+@@ -11374,7 +11374,7 @@ inline bool document::dump_raw_tape(std::ostream &os) const noexcept {
+   size_t tape_idx = 0;
+   uint64_t tape_val = tape[tape_idx];
+   uint8_t type = uint8_t(tape_val >> 56);
+-  os << tape_idx << " : " << type;
++  os << tape_idx << " : " << static_cast<char>(type);
+   tape_idx++;
+   size_t how_many = 0;
+   if (type == 'r') {
+@@ -11469,7 +11469,7 @@ inline bool document::dump_raw_tape(std::ostream &os) const noexcept {
+   tape_val = tape[tape_idx];
+   payload = tape_val & internal::JSON_VALUE_MASK;
+   type = uint8_t(tape_val >> 56);
+-  os << tape_idx << " : " << type << "\t// pointing to " << payload
++  os << tape_idx << " : " << static_cast<char>(type) << "\t// pointing to " << payload
+      << " (start root)\n";
+   return true;
+ }

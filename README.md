@@ -104,6 +104,18 @@ The design is DECISIONS §18.
 Without CMake, `tools/ycxx-cxx gcc|clang <args>` compiles and links against the libycxx built in
 `build/<compiler>`.
 
+### Transitive includes: `YCXX_NO_TRANSITIVE_INCLUDES`
+
+Which other headers a standard header includes is unspecified ([res.on.headers]/1), yet much code
+uses `std::min` after including only `<string>`, or `errno` after `<mutex>`, because libstdc++ and
+libc++ happen to provide them. By default libycxx's headers provide the same: each public header
+also includes the headers that both libraries provide with it (measured by compiling against
+them, `tools/probe_transitive.py`), plus a few that real-world code is known to rely on; the list
+is `tools/data/transitive-includes.txt`. Define `YCXX_NO_TRANSITIVE_INCLUDES` (on the command line:
+`-DYCXX_NO_TRANSITIVE_INCLUDES`, any value) and each header includes only what the draft and the
+implementation need: faster to compile, and a check that a program includes what it uses. The
+design is DECISIONS §19.
+
 `docs/CUSTOM_STDLIB.md`: building, using and testing a custom standard library, compared with libc++, libstdc++ and the MSVC STL.
 
 ## Modules: `import std;` and `import std.compat;`
@@ -261,6 +273,7 @@ name gets the suffix):
 ```sh
 tools/test --hardened -c gcc ycxx                     # -DYCXX_HARDENED=1: ycxx-gcc-hardened
 tools/test --cxxflags=-fno-exceptions --config-name=noexcept ycxx   # ycxx-<cc>-noexcept
+tools/test --cxxflags=-DYCXX_NO_TRANSITIVE_INCLUDES --config-name=strict-includes ycxx   # no transitive includes
 YCXX_HARDENED=1 tools/run-conformance ycxx clang precondition       # the same, directly
 YCXX_CXXFLAGS=-O2 YCXX_CONFIG_NAME=O2 tools/run-conformance ycxx gcc
 ```
@@ -310,7 +323,8 @@ Homebrew's GCC 16, the provisioned Clang 23), plus a sample of the external suit
 both compilers on both platforms, the own suite under ASan+UBSan (Clang), all three suites under
 ThreadSanitizer on both compilers (libycxx instrumented too; a job of its own on the bare runner,
 with GCC 16.2 built with libsanitizer by `tools/toolchain/provision` and cached), and the own
-suite on both compilers hardened, with `-fno-exceptions` and with `-O2`. Every job uploads its reports as an
+suite on both compilers hardened, with `-fno-exceptions`, with `-O2` and without transitive
+includes (`-DYCXX_NO_TRANSITIVE_INCLUDES`). Every job uploads its reports as an
 artifact.
 Tests that need a named locale (libstdc++'s `dg-require-namedlocale`, libc++'s `locale.<name>`
 features) run when the C library has it (`tests/ycxxlit/locales.py`); `tools/ci/gen-locales`

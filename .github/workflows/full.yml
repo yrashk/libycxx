@@ -3,7 +3,7 @@ name: full
 # The long runs, nightly and on demand (Actions > full > Run workflow): libc++'s and libstdc++'s
 # whole suites on both compilers, on Linux and macOS, the own suite under ASan+UBSan and under
 # ThreadSanitizer (each with libycxx instrumented too), and the own suite hardened, with
-# -fno-exceptions and with -O2.
+# -fno-exceptions, with -O2 and without transitive includes (-DYCXX_NO_TRANSITIVE_INCLUDES).
 # Any test reported FAIL (or XPASS) fails its job: there are no lists of known failures. A test
 # that cannot pass for a reason outside the test and the library (a compiler bug) is an expected
 # failure with its reason (the suite's xfail.txt, or // XFAIL in an own test); one that does not
@@ -149,7 +149,9 @@ jobs:
   # The own suite in other library and compiler configurations. hardened: the library's
   # run-time precondition checks, and the death tests of tests/ycxx/precondition; noexcept:
   # -fno-exceptions (the tests that throw or catch are UNSUPPORTED: REQUIRES: exceptions); O2:
-  # optimized. (The default run, in ci.yml, is unoptimized: no separate -O0 job.)
+  # optimized; strict-includes: -DYCXX_NO_TRANSITIVE_INCLUDES, every header without its
+  # transitive includes (DECISIONS §19). (The default run, in ci.yml, is unoptimized: no
+  # separate -O0 job.)
   linux-configurations:
     runs-on: ubuntu-24.04
     container: gcc:16
@@ -162,6 +164,7 @@ jobs:
           - { name: hardened, args: --hardened }
           - { name: noexcept, args: --cxxflags=-fno-exceptions --config-name=noexcept }
           - { name: O2, args: --cxxflags=-O2 --config-name=O2 }
+          - { name: strict-includes, args: --cxxflags=-DYCXX_NO_TRANSITIVE_INCLUDES --config-name=strict-includes }
     steps:
       - uses: actions/checkout@v4
       - name: Toolchains

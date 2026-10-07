@@ -296,7 +296,7 @@ def classify(toks, cls):
             pre = [t.text for t in body[:j] if t.text not in ('explicit',)]
             if close < len(body) and body[close].text == '->' and not pre:
                 return 'deduction-guide', name
-            if cls and name == cls[-1] and not [t for t in pre if t not in SPECIFIERS]:
+            if cls and name == re.split(r'[<]', cls[-1])[0].split('::')[-1] and not [t for t in pre if t not in SPECIFIERS]:
                 return 'constructor', name
             if not pre and not cls:
                 return 'function', name

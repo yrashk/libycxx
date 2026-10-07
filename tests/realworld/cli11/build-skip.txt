@@ -1,0 +1,3 @@
+# Build outputs that cannot be built against libycxx, as "<output regex> | <category> | <reason>
+# [| <conditions>]" (tools/lib/realworld.py). The tests that need them are in skip.txt.
+tests/CMakeFiles/TransformTest\.dir/TransformTest\.cpp\.o | compiler-bug | GCC 16.2 crashes at -O1 (internal compiler error in cxx_eval_indirect_ref, constexpr.cc:7530) while trying to constant-initialize a static array of aggregates whose initializer makes a temporary std::u8string and then constructs a std::string with the default allocator argument: the std::string constructor's default argument is evaluated as the u8string's allocator<char8_t> temporary. Reproducer: repro/gcc16_ice_default_allocator.cpp (tools/ycxx-cxx gcc -O1 -c) | gcc

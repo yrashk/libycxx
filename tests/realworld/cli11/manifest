@@ -1,0 +1,8 @@
+# CLI11: command line parser. Strings, containers, iostreams, exceptions, <filesystem>, <charconv>.
+# Tests with Catch2.
+url = https://github.com/CLIUtils/CLI11.git
+ref = v2.7.2
+commit = cbd58a3696887b34c70949aef21a71735a0c2ad5
+exercises = strings, containers, iostreams, exceptions, filesystem
+deps = catch2
+configure = -DCLI11_BUILD_TESTS=ON -DCLI11_BUILD_EXAMPLES=ON -DCLI11_BUILD_DOCS=OFF

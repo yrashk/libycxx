@@ -263,6 +263,8 @@ class Rewriter:
                     out.append(n)
                 elif n == 'std':
                     out.append('std')
+                elif n == getattr(self, 'cls_name', None) and self.inst and nxt != '<':
+                    out.append(self.inst)          # the injected-class-name
                 elif n in self.members and self.inst:
                     out.append(self.inst + '::' + n)
                 elif nxt == '::' and n in ('ranges', 'views', 'execution', 'chrono', 'this_thread', 'pmr', 'filesystem'):

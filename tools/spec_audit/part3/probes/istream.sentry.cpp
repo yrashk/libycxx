@@ -6,8 +6,8 @@
 #define SPEC_PROBE_print
 #include "../probe_support.hpp"
 namespace p0 { using namespace std; struct D : std::basic_istream<char, char_traits<char>> { using std::basic_istream<char, char_traits<char>>::sentry; }; } // istream.sentry#1 presence
-namespace p1 { using namespace std; template<class Z> concept c = requires { ::new std::basic_istream<char, char_traits<char>>::sentry(spec_probe::dv<spec_probe::dep<Z, basic_istream&>>(), spec_probe::dv<spec_probe::dep<Z, bool>>()); }; static_assert(c<void>); } // istream.sentry#2 ctor
-namespace p2 { using namespace std; template<class Z> concept c = requires { ::new std::basic_istream<char, char_traits<char>>::sentry(spec_probe::dv<spec_probe::dep<Z, basic_istream&>>()); }; static_assert(c<void>); } // istream.sentry#3 ctor (defaults) explicit
+namespace p1 { using namespace std; template<class Z> concept c = requires { ::new std::basic_istream<char, char_traits<char>>::sentry(spec_probe::dv<spec_probe::dep<Z, std::basic_istream<char, char_traits<char>>&>>(), spec_probe::dv<spec_probe::dep<Z, bool>>()); }; static_assert(c<void>); } // istream.sentry#2 ctor
+namespace p2 { using namespace std; template<class Z> concept c = requires { ::new std::basic_istream<char, char_traits<char>>::sentry(spec_probe::dv<spec_probe::dep<Z, std::basic_istream<char, char_traits<char>>&>>()); }; static_assert(c<void>); } // istream.sentry#3 ctor (defaults) explicit
 namespace p3 { using namespace std; static_assert(std::is_nothrow_destructible_v<std::basic_istream<char, char_traits<char>>::sentry>); } // istream.sentry#4 destructor
 namespace p4 { using namespace std; template<class Z> concept c = requires { static_cast<bool>(spec_probe::dv<spec_probe::dep<Z, const std::basic_istream<char, char_traits<char>>::sentry&>>()); }; static_assert(c<void>); } // istream.sentry#5 call
 namespace p5 { using namespace std; static_assert(!std::is_convertible_v<const std::basic_istream<char, char_traits<char>>::sentry&, bool>); } // istream.sentry#6 explicit

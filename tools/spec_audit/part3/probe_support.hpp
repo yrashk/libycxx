@@ -33,6 +33,7 @@ namespace spec_probe {
     friend std::ostream& operator<<(std::ostream& o, const streamable&) { return o; }
     friend std::istream& operator>>(std::istream& i, streamable&) { return i; }
   };
+  using streamable_ref = streamable&;
 }
 #endif
 

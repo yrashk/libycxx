@@ -16,6 +16,7 @@
 #include <ycxx/core/swap.hpp>
 #include <ycxx/core/utility_base.hpp>
 #include <ycxx/core/error.hpp>
+#include <ycxx/core/memory_resource_fwd.hpp>
 
 namespace [[__gnu__::__visibility__("hidden")]] std {
 template <class _Tp, class _Allocator>
@@ -337,5 +338,10 @@ struct hash<indirect<_Tp, _Allocator>> {
     return i.valueless_after_move() ? size_t(0) : hash<_Tp>()(*i);
   }
 };
+
+namespace pmr {
+template <class _Tp>
+using indirect = std::indirect<_Tp, polymorphic_allocator<_Tp>>;
+} // namespace pmr
 
 } // namespace std

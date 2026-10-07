@@ -1,0 +1,9 @@
+# Abseil: Google's C++ common libraries (strings, containers, synchronization, time, status,
+# random), with GoogleTest.
+url = https://github.com/abseil/abseil-cpp.git
+ref = 20260817.0
+commit = 2065f4ded0558c6f89fee67c8e5228feb4eb960e
+exercises = strings, containers, threads, chrono, random, templates
+deps = googletest
+configure = -DABSL_BUILD_TESTING=ON -DABSL_USE_EXTERNAL_GOOGLETEST=ON -DABSL_FIND_GOOGLETEST=ON -DABSL_PROPAGATE_CXX_STD=ON
+timeout = 900

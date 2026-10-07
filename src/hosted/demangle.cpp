@@ -459,6 +459,15 @@ public:
     return true;
   }
 
+  // A <type> on its own (5.1.5), as type_info::name() gives it ("i", "PKc", "St13runtime_error").
+  bool parse_type(string& out) {
+    const node* t = type();
+    if (!t || __p_ != __end_)
+      return false;
+    t->print(out);
+    return true;
+  }
+
 private:
   const char* __p_;
   const char* __end_;
@@ -1654,6 +1663,17 @@ private:
 };
 
 } // namespace
+
+bool __ycxx::__detail::__demangle_type(const char* __mangled, std::string& out) {
+  if (__mangled == nullptr || *__mangled == '\0')
+    return false;
+  parser __ps(__mangled, __mangled + std::strlen(__mangled));
+  std::string s;
+  if (!__ps.parse_type(s) || over(s))
+    return false;
+  out = static_cast<std::string&&>(s);
+  return true;
+}
 
 bool __ycxx::__detail::__demangle(const char* __mangled, std::string& out) {
   if (__mangled == nullptr || std::strncmp(__mangled, "_Z", 2) != 0)

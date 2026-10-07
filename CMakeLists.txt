@@ -159,6 +159,9 @@ set(YCXX_THREADS_SOURCES
   src/hosted/hazard_pointer.cpp)
 # The C library ('clib').
 set(YCXX_CLIB_SOURCES
+  # the demangler, for <stacktrace> and <cxxabi.h>'s abi::__cxa_demangle (malloc'd results)
+  src/hosted/demangle.cpp
+  src/hosted/cxa_demangle.cpp
   src/hosted/string.cpp
   src/hosted/ctime.cpp
   src/hosted/strfrom.cpp
@@ -180,7 +183,7 @@ set(YCXX_CLIB_SOURCES
   src/hosted/format.cpp
   src/hosted/print.cpp)
 # The 'debug' layer (with the C library).
-set(YCXX_DEBUG_SOURCES src/hosted/stacktrace.cpp src/hosted/demangle.cpp)
+set(YCXX_DEBUG_SOURCES src/hosted/stacktrace.cpp)
 # Files: C stdio's (src/hosted/fstream.cpp) or the 'files' layer's (fstream_pal.cpp).
 set(YCXX_STDIO_FILE_SOURCES src/hosted/fstream.cpp)
 # POSIX only: they call POSIX directly (DECISIONS §8).

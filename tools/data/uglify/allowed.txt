@@ -118,3 +118,9 @@ re:YCXX_PAL_[A-Z0-9_]+_PROVIDER
 # and the headers spell as names of their own too: kept in src/ only, renamed in include/.
 exception_class                                                            # _Unwind_Exception (<unwind.h>)
 link unlink truncate                                                       # POSIX <unistd.h>
+
+[file include/cxxabi.h]
+# <cxxabi.h>, not a standard header: the Itanium C++ ABI's run-time interface (3.4), whose
+# namespace alias programs spell. Kept in that header only: a program that #defines `abi` and
+# includes a standard header is still served ([macro.names]/1).
+abi

@@ -1476,8 +1476,12 @@ under the same name. Otherwise it gets one alias template in `config.hpp`.
     without an environment where the scheduler cannot ([exec.get.compl.sched]/5.2). With an
     environment the two agree ([exec.sched]/6). When `schedule(sch)` can throw, the scheduler is
     asked instead (a query is noexcept);
-  - starts_on ([exec.starts.on]/4): its let_value form; the child is asked in the environment
-    that form gives it (the start scheduler of continues_on(just(), sch), [exec.let]/2);
+  - starts_on ([exec.starts.on]/4): its let_value form. The child is the sender the let function
+    returns, so, as for let, only its domains count, asked in the environment that form gives it
+    (the start scheduler of continues_on(just(), sch), [exec.let]/2), plus the schedule sender's
+    error and stopped completions. A scheduler for the child's completions would come from
+    inline-attrs' `get_scheduler(env)`, which that environment does not set (it sets
+    `get_start_scheduler`; STATUS "Draft issues noticed"), so it would name the receiver's;
   - on, affine: given an environment, the continues_on sender their transformation
     produces ([exec.on]/6, [exec.affine]/5), whose scheduler comes from the environment
     (get_start_scheduler) or the child (on(sndr, sch, closure)); none without one. affine of a

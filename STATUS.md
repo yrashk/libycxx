@@ -842,8 +842,9 @@ compilers; `visit_format_arg.pass.cpp` needs `EOF` from `constexpr_char_traits.h
 - Floating-point `<charconv>` for `long double`/`float128_t` works on stack-allocated big integers
   (no heap, so it stays freestanding): parsing needs about 21 KB of stack (two 38,500-bit numbers
   and an 11,566-digit buffer, exact for any input length), `%g` with a large precision about 20 KB.
-- Not yet provided: `<cxxabi.h>` (`abi::__cxa_demangle`, `__cxa_vec_*`,
-  `abi::__forced_unwind`). Hierarchy walks (handler matching, `dynamic_cast`) remember up to 64
+- `<cxxabi.h>` (not a standard header) declares `abi::__cxa_demangle` (Itanium C++ ABI 3.4:
+  symbols and type names, over the runtime's demangler) and `abi::__cxa_current_exception_type`;
+  not yet provided: `__cxa_vec_*`, `abi::__forced_unwind`. Hierarchy walks (handler matching, `dynamic_cast`) remember up to 64
   visited virtual bases; a hierarchy with more falls back to walking repeated paths again.
 - The default terminate handler prints the thrown type's mangled name (no demangler yet).
 - `any` without RTTI identifies types by the address of a per-type table, so `any_cast` across a

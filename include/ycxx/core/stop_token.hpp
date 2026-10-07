@@ -219,7 +219,9 @@ public:
   [[nodiscard]] bool stop_possible() const noexcept {
     return __state_ && (__state_->state.stop_requested() || __atomic_load_n(&__state_->__sources, __ATOMIC_ACQUIRE) != 0);
   }
-  [[nodiscard]] friend bool operator==(const stop_token& a, const stop_token& b) noexcept { return a.__state_ == b.__state_; }
+  // [stoptoken.general] declares a defaulted member without const, which [class.compare.default]/1
+  // does not allow (a draft defect, STATUS); the const member is what it means.
+  [[nodiscard]] bool operator==(const stop_token&) const noexcept = default;
   friend void swap(stop_token& a, stop_token& b) noexcept { a.swap(b); }
 };
 
@@ -261,9 +263,8 @@ public:
   [[nodiscard]] bool stop_possible() const noexcept { return __state_ != nullptr; }
   [[nodiscard]] bool stop_requested() const noexcept { return __state_ && __state_->state.stop_requested(); }
   bool request_stop() noexcept { return __state_ && __state_->state.request_stop(); }
-  [[nodiscard]] friend bool operator==(const stop_source& a, const stop_source& b) noexcept {
-    return a.__state_ == b.__state_;
-  }
+  // [stopsource.general]: a defaulted member, as for stop_token.
+  [[nodiscard]] bool operator==(const stop_source&) const noexcept = default;
   friend void swap(stop_source& a, stop_source& b) noexcept { a.swap(b); }
 };
 

@@ -1,0 +1,4 @@
+# CTest tests that do not run against libycxx, as "<test regex> | <category> | <reason>
+# [| <conditions>]" (tools/lib/realworld.py; the regex matches the whole test name).
+SetTest | project-bug | NotInSetIgnoreCasePointer allocates its std::set with new and never deletes it, which LeakSanitizer reports at exit | asan
+TransformTest | project-bug | EnumCheckedDefaultTransformCallback gives a shared_ptr<CLI::App> a callback that captures the same shared_ptr: the cycle is never freed, which LeakSanitizer reports at exit | asan

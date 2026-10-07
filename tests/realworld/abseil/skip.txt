@@ -1,0 +1,3 @@
+# CTest tests that do not run against libycxx, as "<test regex> | <category> | <reason>
+# [| <conditions>]" (tools/lib/realworld.py; the regex matches the whole test name).
+absl_inlined_vector_exception_safety_test | project-bug | when an element copy throws in the copy constructor, Storage::InitFrom has stored the new allocation but not yet its is-allocated bit, so ~Storage does not free it (despite its comment), which LeakSanitizer reports at exit | asan

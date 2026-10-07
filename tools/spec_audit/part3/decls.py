@@ -287,7 +287,7 @@ def _seq(toks, i, scope, heads, access, out, expos_lines, lone, end_at_brace=Fal
                 if kind == "class":
                     key = cur[0] if cur[0] in ("class", "struct", "union") else next(x for x in cur if x in ("class", "struct", "union"))
                     acc = "private" if key == "class" else "public"
-                    sc = scope + [("class", d.name, d.info.get("args"), d)]
+                    sc = scope + [("class", q, None, None) for q in d.info.get("qual", [])] + [("class", d.name, d.info.get("args"), d)]
                     i = _seq(toks, i + 1, sc, heads + cur_heads, acc, out, expos_lines, lone)
                 else:
                     j = match_close(toks, i, "{", "}")
@@ -363,6 +363,11 @@ def _class_name(d):
     k += 1
     while k < len(c) and c[k] in ("class", "struct"):
         k += 1
+    qual = []
+    while k + 2 < len(c) and c[k + 1] == "::" and re.match(r"[A-Za-z_]", c[k + 2]):
+        qual.append(str(c[k]))
+        k += 2
+    d.info["qual"] = qual
     name = c[k] if k < len(c) else ""
     d.name = str(name)
     rest = c[k + 1:]
@@ -537,7 +542,7 @@ def _fun_or_var(d, c):
             d.info["pre"] = c[:i]
             _fun_rest(d, c, j)
             return
-        if t in ("decltype", "noexcept", "alignas", "sizeof", "requires") and i + 1 < n and c[i + 1] == "(":
+        if t in ("decltype", "noexcept", "alignas", "sizeof", "requires", "explicit") and i + 1 < n and c[i + 1] == "(":
             i = match_close(c, i + 1, "(", ")")
             continue
         if t == "<" and i > 0 and (re.match(r"\w", c[i - 1]) or is_italic(c[i - 1]) or c[i - 1] == ">"):
@@ -620,7 +625,14 @@ def _fun_rest(d, c, i):
     params = [] if not ptoks or ptoks == ["void"] else split_top(ptoks)
     d.info["params"] = [parse_param(p) for p in params]
     rest = c[j:]
-    pre = d.info["pre"]
+    pre = list(d.info["pre"])
+    d.info["explicit_cond"] = False
+    if "explicit" in pre:
+        k = pre.index("explicit")
+        if k + 1 < len(pre) and pre[k + 1] == "(":
+            e = match_close(pre, k + 1, "(", ")")
+            pre = pre[:k] + pre[e:]
+            d.info["explicit_cond"] = True
     d.info["specs"] = [x for x in pre if x in SPECIFIERS]
     d.info["ret"] = [x for x in pre if x not in SPECIFIERS]
     quals, k = [], 0

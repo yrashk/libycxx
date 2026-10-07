@@ -3,6 +3,7 @@
 #include <type_traits>
 #include <utility>
 #include <concepts>
+#include <iosfwd>
 
 namespace spec_probe {
   // A type that depends on Z, so that a requires-expression over it is checked when its

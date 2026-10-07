@@ -285,7 +285,7 @@ def arg_text(p, env):
 
 
 def placeholder_envs(toks, env):
-    names = sorted({D.italic_text(t) for t in toks if D.is_italic(t) and D.italic_text(t) in PLACEHOLDERS})
+    names = sorted({D.italic_text(t) for t in toks if D.is_italic(t) and D.italic_text(t) in PLACEHOLDERS and D.italic_text(t) not in env})
     if not names:
         return [(env, "")]
     out = [(dict(env), "")]

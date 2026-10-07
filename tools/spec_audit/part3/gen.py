@@ -162,7 +162,7 @@ class Gen:
                     # member types of the class (and of the enclosing classes)
                     mem = dict(ctx.members)
                     path = tuple(c[1] for c in d.classes[:k + 1])
-                    for nm in self.members.get((d.ns, path), {}):
+                    for nm in self.inherited_members(d.ns, path):
                         mem[nm] = t + "::" + nm
                     c3 = Ctx(env, mem, cdecl.name, t)
                     new.append((c3, t, cdecl, (label + " " + label2).strip()))
@@ -190,6 +190,33 @@ class Gen:
             envs = nenv
         return envs
 
+    def inherited_members(self, ns, path, seen=None):
+        """The member type names of a class and of its base classes (by name)."""
+        seen = seen or set()
+        if (ns, path) in seen:
+            return {}
+        seen.add((ns, path))
+        out = dict(self.members.get((ns, path), {}))
+        for cdecl in self.classes.get((ns, path), [])[:1]:
+            for b in D.split_top(cdecl.info.get("bases") or []):
+                names = [str(x) for x in b if re.match(r"[A-Za-z_]\w*$", x) and x not in ("public", "virtual", "protected", "private")]
+                if names:
+                    for k, v in self.inherited_members(ns, (names[0],), seen).items():
+                        out.setdefault(k, v)
+        return out
+
+    def macros(self, data):
+        """The macros a header synopsis defines: #define NAME."""
+        hdrs = INV.section_headers(data)
+        for s in data["sections"]:
+            if s["id"] not in hdrs:
+                continue
+            for kind, text in s["regions"]:
+                for m in re.finditer(r"(?m)^[ \t]*#define\s+([A-Za-z_]\w*)", text):
+                    d = D.Decl([], [], [("ns", "", False)], "public", False, None)
+                    d.sec, d.header, d.name, d.kind = s["id"], hdrs[s["id"]], m.group(1), "macro"
+                    self.add(d, "macro", "#" + m.group(1), ent=m.group(1))
+
     # ---- emit -------------------------------------------------------------------------------
     def add(self, d, what, code, ent=None):
         self.nsec[d.sec] = self.nsec.get(d.sec, 0) + 1
@@ -205,7 +232,7 @@ class Gen:
         for d in self.ents:
             if d.expos or not d.name and d.kind not in ("classdef",):
                 continue
-            if any(c[3] is not None and c[3].expos for c in d.classes):
+            if any(c[3] is None or c[3].expos for c in d.classes):
                 continue
             if d.access == "private":
                 continue
@@ -339,7 +366,7 @@ class Gen:
             if D.is_italic(e):
                 continue
             if d.info.get("scoped"):
-                self.add(d, f"enumerator {e}", f"static_assert(spec_probe::same<decltype({q}::{e}), const {q}>);", ent=f"{q}::{e}")
+                self.add(d, f"enumerator {e}", f"static_assert(spec_probe::same<decltype({q}::{e}), {q}>);", ent=f"{q}::{e}")
             else:
                 self.add(d, f"enumerator {e}", f"static_assert(spec_probe::same<decltype({scope_unscoped}::{e}), {q}>);", ent=f"{q}::{e}")
 
@@ -665,6 +692,10 @@ def write(gen, outdir, inline_ns):
             cid, _, header, ent, what, decl, code, ns = c
             if not code:
                 continue
+            if code.startswith("#"):
+                macro = code[1:]
+                lines += [f"#ifndef {macro}", f"static_assert(false, \"{macro}\"); // {cid} {what}", "#endif"]
+                continue
             uses = " ".join(f"using namespace {n};" for n in namespaces_for(ns) if n)
             lines.append(f"namespace p{k} {{ {uses} {code} }} // {cid} {what}")
         (outdir / f"{sec}.cpp").write_text("\n".join(lines) + "\n")
@@ -679,6 +710,7 @@ def main():
     ents = INV.entities(data)
     g = Gen(ents)
     g.run()
+    g.macros(data)
     write(g, pathlib.Path(a.out), None)
     with open(HERE / "checks.tsv", "w") as f:
         f.write("# id\tsubclause\theader\tentity\tcheck\tdeclaration\n")

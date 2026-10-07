@@ -35,6 +35,8 @@ def synopsis_blocks(sec):
     for kind, text in sec["regions"]:
         if kind != "code":
             continue
+        # `#include <ostream>` and the macros' `#define`s before the namespace
+        text = re.sub(r"(?m)^[ \t]*#.*$", "", text)
         t = text.lstrip()
         if re.match(r"(export\s+)?(inline\s+)?namespace\b", t):
             yield text
@@ -73,6 +75,26 @@ def entities(data):
                 if any(c[3] is not None and (c[3].expos or c[1].startswith(D.IT0)) for c in d.classes):
                     d.expos = True
                 out.append(d)
+    # `enum class text_encoding::id`, `class locale::facet` defined outside their class: the
+    # enclosing class's definition fills in the scope
+    prim = {}
+    for d in out:
+        if d.kind == "classdef" and not d.info.get("args"):
+            path = tuple(c[1] for c in d.classes) + (d.name,)
+            prim.setdefault((d.ns, path), d)
+    for d in out:
+        q = d.info.get("qual") if d.kind in ("classdef", "enumdef") else None
+        if q:
+            d.scope = d.scope + [("class", n, None, None) for n in q]
+        if any(s[0] == "class" and s[3] is None for s in d.scope):
+            new, path = [], ()
+            for s in d.scope:
+                if s[0] == "class":
+                    path = path + (s[1],)
+                    if s[3] is None:
+                        s = ("class", s[1], None, prim.get((d.ns, path)))
+                new.append(s)
+            d.scope = new
     return out
 
 

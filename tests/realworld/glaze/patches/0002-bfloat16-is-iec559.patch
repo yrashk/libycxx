@@ -1,0 +1,24 @@
+Category: implementation-specific. The vendored fast_float asserts
+numeric_limits<std::bfloat16_t>::is_iec559. Whether bfloat16 adheres to ISO/IEC 60559 is not
+settled by the draft: [numeric.limits.members]/53 Note 1 says is_iec559 is true for float16_t,
+float32_t, float64_t and float128_t, and leaves bfloat16_t out ([basic.extended.fp]/6: ISO/IEC
+60559 names no such format); GCC predefines __BFLT16_IS_IEC_60559__ as 0. libycxx answers false,
+libstdc++ true. The assertion only restates the parsing code's assumption about the bit layout,
+which the other static_assert checks; removed.
+
+diff --git a/include/glaze/util/fast_float.hpp b/include/glaze/util/fast_float.hpp
+index 16464f0..6f4bb86 100644
+--- a/include/glaze/util/fast_float.hpp
++++ b/include/glaze/util/fast_float.hpp
+@@ -1327,9 +1327,8 @@ static_assert(
+ static_assert(
+     std::is_same<binary_format<std::bfloat16_t>::equiv_uint, uint16_t>::value,
+     "equiv_uint should be uint16_t for std::bfloat16_t");
+-static_assert(
+-    std::numeric_limits<std::bfloat16_t>::is_iec559,
+-    "std::bfloat16_t must fulfill the requirements of IEC 559 (IEEE 754)");
++// is_iec559 is implementation-defined for std::bfloat16_t: [numeric.limits.members]/53 Note 1
++// names float16_t to float128_t only.
+ #endif // __STDCPP_BFLOAT16_T__
+ 
+ constexpr chars_format operator~(chars_format rhs) noexcept {

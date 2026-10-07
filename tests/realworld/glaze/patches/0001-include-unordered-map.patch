@@ -1,0 +1,28 @@
+Category: transitive-include. read_directory.hpp and write_directory.hpp use std::unordered_map
+without including <unordered_map> (libstdc++ declares it through <functional>, for the searchers
+of [func.search]). Adds the include.
+
+diff --git a/include/glaze/file/read_directory.hpp b/include/glaze/file/read_directory.hpp
+index f527d01..1ffcecd 100644
+--- a/include/glaze/file/read_directory.hpp
++++ b/include/glaze/file/read_directory.hpp
+@@ -4,6 +4,7 @@
+ #pragma once
+ 
+ #include <filesystem>
++#include <unordered_map>
+ 
+ #include "glaze/core/read.hpp"
+ #include "glaze/file/file_ops.hpp"
+diff --git a/include/glaze/file/write_directory.hpp b/include/glaze/file/write_directory.hpp
+index ecd0886..0e74ba3 100644
+--- a/include/glaze/file/write_directory.hpp
++++ b/include/glaze/file/write_directory.hpp
+@@ -4,6 +4,7 @@
+ #pragma once
+ 
+ #include <filesystem>
++#include <unordered_map>
+ 
+ #include "glaze/core/write.hpp"
+ #include "glaze/file/file_ops.hpp"

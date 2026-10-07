@@ -1,0 +1,8 @@
+# Google Benchmark: chrono, threads, std::regex (filters), iostreams, locales of the console
+# reporter. Tests with GoogleTest.
+url = https://github.com/google/benchmark.git
+ref = v1.9.5
+commit = 192ef10025eb2c4cdd392bc502f0c852196baa48
+exercises = regex, chrono, threads, iostreams
+deps = googletest
+configure = -DBENCHMARK_ENABLE_TESTING=ON -DBENCHMARK_USE_BUNDLED_GTEST=OFF -DBENCHMARK_DOWNLOAD_DEPENDENCIES=OFF -DBENCHMARK_ENABLE_WERROR=OFF

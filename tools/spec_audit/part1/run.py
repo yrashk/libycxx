@@ -78,6 +78,85 @@ def check_headers(cc, libroot, pool):
     return len(rows), fails
 
 
+def header_flags(cc, header):
+    """<meta> needs GCC's -freflection (DECISIONS §13); Clang 23 has no reflection."""
+    return ["-freflection"] if header == "meta" and cc == "gcc" else []
+
+
+# Entities the synopsis declares only under a condition (#if in the synopsis).
+CONDITIONAL = {f"std::{t}": f"defined(__STDCPP_{t.upper()[:-2]}_T__)"
+               for t in ("float16_t", "float32_t", "float64_t", "float128_t", "bfloat16_t")}
+# [ratio.syn]/1: the SI prefixes beyond 10^18 exist only where intmax_t represents their constants.
+CONDITIONAL.update({f"std::{p}": "__INTMAX_WIDTH__ > 64"
+                    for p in ("quecto", "ronto", "yocto", "zepto", "zetta", "yotta", "ronna", "quetta")})
+
+
+def name_probe(scope, name, kind, samples):
+    """One line of C++ that names the entity, or (None, why) when it cannot be named so."""
+    if kind == "macro":
+        return f"#ifndef {name}", None
+    if kind.endswith("-private"):
+        return None, "private member (not nameable by a program)"
+    if name.startswith("operator ") and name != "operator bool":
+        return None, "conversion function to a type that depends on the template's parameters"
+    if kind.startswith("member"):
+        sample = samples.get(scope)
+        if sample is None:
+            return None, "no sample specialization in data/samples.tsv"
+        if sample == "-":
+            return None, "not probed by name (data/samples.tsv)"
+        return f"struct P : {sample} {{ using {sample}::{name}; }};", None
+    if kind == "enumerator":
+        return f"using {scope}::{name};", None
+    q = f"{scope}::{name}" if scope else f"::{name}"
+    return f"using {q};", None
+
+
+def check_names(cc, libroot, pool):
+    rows = load("entities.tsv")
+    samples = {r[0]: r[1] for r in load("samples.tsv")}
+    by_header, unprobed = {}, []
+    for sec, header, scope, name, kind in rows:
+        line, why = name_probe(scope, name, kind, samples)
+        if line is None:
+            unprobed.append((sec, header, scope, name, why))
+            continue
+        by_header.setdefault(header, []).append((sec, scope, name, line))
+    jobs, lines_of = {}, {}
+    for header, ents in by_header.items():
+        src, where = [f"#include <{header}>"], {}
+        for n, (sec, scope, name, line) in enumerate(ents):
+            if line.startswith("#ifndef"):
+                src += [line, "#error missing macro", "#endif"]
+                where[len(src) - 1] = (sec, scope, name)    # the #error line
+            else:
+                cond = CONDITIONAL.get(f"{scope}::{name}")
+                if cond:
+                    src.append(f"#if {cond}")
+                src.append(f"namespace probe_{n} {{ {line} }}")
+                where[len(src)] = (sec, scope, name)
+                if cond:
+                    src.append("#endif")
+        lines_of[header] = where
+        limit = "-ferror-limit=0" if cc == "clang" else "-fmax-errors=0"
+        jobs[header] = pool.submit(run, base(cc, libroot) + header_flags(cc, header)
+                                   + ["-x", "c++", "-", "-fsyntax-only", limit], "\n".join(src) + "\n")
+    fails = []
+    for header, f in jobs.items():
+        rc, out = f.result()
+        if not rc:
+            continue
+        where = lines_of[header]
+        bad = {int(m.group(1)) for m in re.finditer(r"^<stdin>:(\d+):\d+: (?:fatal )?error", out, re.M)
+               if int(m.group(1)) in where}
+        if not bad:
+            fails.append(f"names <{header}>: does not compile\n{out[:1500]}")
+        for ln in sorted(bad):
+            sec, scope, name = where[ln]
+            fails.append(f"name {scope + '::' if scope else ''}{name} <{header}> [{sec}]: not declared")
+    return sum(len(v) for v in by_header.values()), fails, unprobed
+
+
 HARDENED = ["-DYCXX_HARDENED=1"]
 
 
@@ -153,6 +232,7 @@ def main():
     ap.add_argument("-j", "--jobs", type=int, default=2)
     ap.add_argument("-v", "--verbose", action="store_true")
     ap.add_argument("--skip-tables", action="store_true", help="only the probes")
+    ap.add_argument("--tables-only", action="store_true", help="only the header, version and name checks")
     ap.add_argument("probes", nargs="*", help="probe files or stable names (default: all)")
     a = ap.parse_args()
     ccs = a.compiler or ["gcc", "clang"]
@@ -164,8 +244,12 @@ def main():
     with concurrent.futures.ThreadPoolExecutor(a.jobs) as pool:
         for cc in ccs:
             if not a.skip_tables and not a.probes:
-                for what, fn in (("headers", check_headers), ("version", check_version)):
-                    n, fails = fn(cc, a.libdir_root, pool)
+                for what, fn in (("headers", check_headers), ("version", check_version), ("names", check_names)):
+                    res = fn(cc, a.libdir_root, pool)
+                    n, fails = res[0], res[1]
+                    if what == "names" and a.verbose:
+                        for u in res[2]:
+                            print(f"  UNPROBED {u[2]}::{u[3]} [{u[0]}]: {u[4]}")
                     xf = [(f, expected(cc, f)) for f in fails]
                     real = [f for f, e in xf if not e]
                     print(f"{cc} {what}: {n} checked, {len(real)} failed, {len(fails) - len(real)} expected failures")
@@ -175,6 +259,8 @@ def main():
                         elif a.verbose:
                             print(f"  XFAIL {f}  [{e}]")
                     bad += len(real)
+            if a.tables_only:
+                continue
             futs = {p: pool.submit(check_probe, cc, a.libdir_root, p) for p in probes}
             counts = {}
             for p, f in futs.items():

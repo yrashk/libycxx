@@ -217,7 +217,6 @@ cstdint.syn	cstdint	std	int8_t	alias
 cstdint.syn	cstdint	std	int16_t	alias
 cstdint.syn	cstdint	std	int32_t	alias
 cstdint.syn	cstdint	std	int64_t	alias
-cstdint.syn	cstdint	std	_t	variable
 cstdint.syn	cstdint	std	int_fast8_t	alias
 cstdint.syn	cstdint	std	int_fast16_t	alias
 cstdint.syn	cstdint	std	int_fast32_t	alias
@@ -243,12 +242,6 @@ cstdint.syn	cstdint	std	uint_least64_t	alias
 cstdint.syn	cstdint	std	uintmax_t	alias
 cstdint.syn	cstdint	std	uintptr_t	alias
 cstdint.syn	cstdint		__STDC_VERSION_STDINT_H__	macro
-cstdint.syn	cstdint		INT	macro
-cstdint.syn	cstdint		UINT	macro
-cstdint.syn	cstdint		INT_FAST	macro
-cstdint.syn	cstdint		UINT_FAST	macro
-cstdint.syn	cstdint		INT_LEAST	macro
-cstdint.syn	cstdint		UINT_LEAST	macro
 cstdint.syn	cstdint		INTMAX_MIN	macro
 cstdint.syn	cstdint		INTMAX_MAX	macro
 cstdint.syn	cstdint		UINTMAX_MAX	macro
@@ -275,7 +268,6 @@ cstdint.syn	cstdint		WINT_MAX	macro
 cstdint.syn	cstdint		WINT_WIDTH	macro
 cstdint.syn	cstdint		INTMAX_C	macro
 cstdint.syn	cstdint		UINTMAX_C	macro
-stdfloat.syn	stdfloat	std	defined	function
 stdfloat.syn	stdfloat	std	float16_t	alias
 stdfloat.syn	stdfloat	std	float32_t	alias
 stdfloat.syn	stdfloat	std	float64_t	alias
@@ -430,7 +422,6 @@ coroutine.syn	coroutine	std	noop_coroutine_handle	alias
 coroutine.syn	coroutine	std	noop_coroutine	function
 coroutine.syn	coroutine	std	suspend_never	class
 coroutine.syn	coroutine	std	suspend_always	class
-coroutine.traits.primary	coroutine	std	promise_type	alias
 coroutine.handle.general	coroutine	std::coroutine_handle<void>	operator=	member-function
 coroutine.handle.general	coroutine	std::coroutine_handle<void>	address	member-function
 coroutine.handle.general	coroutine	std::coroutine_handle<void>	from_address	member-function
@@ -1969,7 +1960,6 @@ range.cmp	functional	std::ranges::less	operator()	member-function
 range.cmp	functional	std::ranges::less	is_transparent	member-type
 range.cmp	functional	std::ranges::greater_equal	operator()	member-function
 range.cmp	functional	std::ranges::greater_equal	is_transparent	member-type
-func.bind.place	functional	std	_1	variable
 func.wrap.badcall	functional	std::bad_function_call	what	member-function
 func.wrap.func.general	functional	std::function<R (ArgTypes ...)>	result_type	member-type
 func.wrap.func.general	functional	std::function<R (ArgTypes ...)>	operator=	member-function
@@ -2021,20 +2011,20 @@ bit.syn	bit	std	endian	class
 bit.syn	bit	std::endian	little	enumerator
 bit.syn	bit	std::endian	big	enumerator
 bit.syn	bit	std::endian	native	enumerator
-stdbit.h.syn	stdbit.h	std	stdc_leading_zeros	function
-stdbit.h.syn	stdbit.h	std	stdc_leading_ones	function
-stdbit.h.syn	stdbit.h	std	stdc_trailing_zeros	function
-stdbit.h.syn	stdbit.h	std	stdc_trailing_ones	function
-stdbit.h.syn	stdbit.h	std	stdc_first_leading_zero	function
-stdbit.h.syn	stdbit.h	std	stdc_first_leading_one	function
-stdbit.h.syn	stdbit.h	std	stdc_first_trailing_zero	function
-stdbit.h.syn	stdbit.h	std	stdc_first_trailing_one	function
-stdbit.h.syn	stdbit.h	std	stdc_count_zeros	function
-stdbit.h.syn	stdbit.h	std	stdc_count_ones	function
-stdbit.h.syn	stdbit.h	std	stdc_has_single_bit	function
-stdbit.h.syn	stdbit.h	std	stdc_bit_width	function
-stdbit.h.syn	stdbit.h	std	stdc_bit_floor	function
-stdbit.h.syn	stdbit.h	std	stdc_bit_ceil	function
+stdbit.h.syn	stdbit.h		stdc_leading_zeros	function
+stdbit.h.syn	stdbit.h		stdc_leading_ones	function
+stdbit.h.syn	stdbit.h		stdc_trailing_zeros	function
+stdbit.h.syn	stdbit.h		stdc_trailing_ones	function
+stdbit.h.syn	stdbit.h		stdc_first_leading_zero	function
+stdbit.h.syn	stdbit.h		stdc_first_leading_one	function
+stdbit.h.syn	stdbit.h		stdc_first_trailing_zero	function
+stdbit.h.syn	stdbit.h		stdc_first_trailing_one	function
+stdbit.h.syn	stdbit.h		stdc_count_zeros	function
+stdbit.h.syn	stdbit.h		stdc_count_ones	function
+stdbit.h.syn	stdbit.h		stdc_has_single_bit	function
+stdbit.h.syn	stdbit.h		stdc_bit_width	function
+stdbit.h.syn	stdbit.h		stdc_bit_floor	function
+stdbit.h.syn	stdbit.h		stdc_bit_ceil	function
 stdbit.h.syn	stdbit.h		__STDC_VERSION_STDBIT_H__	macro
 stdbit.h.syn	stdbit.h		__STDC_ENDIAN_BIG__	macro
 stdbit.h.syn	stdbit.h		__STDC_ENDIAN_LITTLE__	macro

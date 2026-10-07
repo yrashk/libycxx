@@ -1,0 +1,8 @@
+# oneTBB: threading building blocks: threads, atomics, condition variables, allocators,
+# exceptions across threads.
+url = https://github.com/uxlfoundation/oneTBB.git
+ref = v2023.1.0
+commit = 3046c8b0c29df995980003ea24f4d78c80ec0c8d
+exercises = threads, atomics, allocators, exceptions
+configure = -DTBB_TEST=ON -DTBB_STRICT=OFF -DTBB_EXAMPLES=OFF
+timeout = 900

@@ -1,8 +1,10 @@
 Category: implementation-specific. "member function pointer opt-in write produces function
-signature" expects GCC's name of std::string as libstdc++ spells it
-(std::__cxx11::basic_string<char>); with another C++ library the name is that library's (here
-std::basic_string<char, std::char_traits<char>, std::allocator<char> >). For GCC with a library
-other than libstdc++ the test checks the signature's own part, as it does for MSVC.
+signature" expects the compiler's name of std::string as libstdc++ spells it under GCC
+(std::__cxx11::basic_string<char>) and Clang (std::basic_string<char>), or as libc++ spells it
+(std::string, from its preferred_name attributes); with another C++ library the name is that
+library's (here std::basic_string<char, std::char_traits<char>, std::allocator<char>>). With a
+library other than libstdc++ and libc++ the test checks the signature's own part, as it does for
+MSVC.
 
 diff --git a/tests/json_test/json_test.cpp b/tests/json_test/json_test.cpp
 index b2e5ccc..3a3d8a3 100644
@@ -12,8 +14,8 @@ index b2e5ccc..3a3d8a3 100644
            R"({"name":"test_item","description":"std::__cxx11::basic_string<char> (MemberFunctionThing::*)() const"})") ||
           (buffer == R"({"name":"test_item","description":"std::basic_string<char> (MemberFunctionThing::*)() const"})");
        expect(pass) << buffer;
-+#elif defined(__GNUC__) && !defined(__clang__) && !defined(__GLIBCXX__)
-+      // Another C++ library: its own spelling of std::string in GCC's type names
++#elif !defined(_MSC_VER) && !defined(__GLIBCXX__) && !defined(_LIBCPP_VERSION)
++      // Another C++ library: its own spelling of std::string in the compiler's type names
 +      expect(buffer.find("(MemberFunctionThing::*)() const") != std::string::npos) << buffer;
  #elif defined(__GNUC__) && !defined(__clang__)
  #if defined(_GLIBCXX_USE_CXX11_ABI) && _GLIBCXX_USE_CXX11_ABI == 0

@@ -2,10 +2,15 @@
 #include "bench.hpp"
 
 #include <deque>
+#include <flat_map>
+#include <flat_set>
 #include <list>
 #include <map>
+#include <queue>
+#include <set>
 #include <string>
 #include <unordered_map>
+#include <unordered_set>
 #include <vector>
 
 namespace {
@@ -111,6 +116,31 @@ int main(int argc, char** argv) {
     bench::sink(s);
   });
 
+  bench::run("queue<int> push+pop (BFS-like)", N, [] {
+    std::queue<int> q;
+    long s = 0;
+    for (int i = 0; i < N; ++i) {
+      q.push(i);
+      q.push(i + 1);
+      s += q.front();
+      q.pop();
+    }
+    bench::sink(s);
+  });
+  bench::run("priority_queue<int> push+pop", N, [] {
+    std::priority_queue<int> q;
+    bench::rng r;
+    long s = 0;
+    for (int i = 0; i < N; ++i) {
+      q.push(static_cast<int>(r() >> 40));
+      if (i & 1) {
+        s += q.top();
+        q.pop();
+      }
+    }
+    bench::sink(s);
+  });
+
   {
     std::vector<int> src = random_ints(N);
     std::list<int> l;
@@ -177,6 +207,46 @@ int main(int argc, char** argv) {
       for (int i = 0; i < N; ++i) ++x[i & 1023];
       bench::sink(x.size());
     });
+    bench::run("unordered_map<int>.iterate", static_cast<double>(u.size()), [&] {
+      long s = 0;
+      for (auto& [k, v] : u) s += v;
+      bench::sink(s);
+    });
+    bench::run("unordered_set<int>.insert", N, [&] {
+      std::unordered_set<int> x;
+      for (int k : keys) x.insert(k);
+      bench::sink(x.size());
+    });
+    std::unordered_set<int> us(keys.begin(), keys.end());
+    bench::run("unordered_set<int>.contains hit", N, [&] {
+      long s = 0;
+      for (int k : keys) s += us.contains(k);
+      bench::sink(s);
+    });
+    bench::run("set<int>.insert", N, [&] {
+      std::set<int> x;
+      for (int k : keys) x.insert(k);
+      bench::sink(x.size());
+    });
+    std::flat_map<int, int> fm;
+    for (int k : keys) fm.try_emplace(k, k);
+    bench::run("flat_map<int>.find", N, [&] {
+      long s = 0;
+      for (int k : keys) s += fm.find(k)->second;
+      bench::sink(s);
+    });
+    bench::run("flat_map<int>.insert sorted range", N, [&] {
+      std::vector<std::pair<int, int>> v;
+      v.reserve(N);
+      for (int i = 0; i < N; ++i) v.emplace_back(i, i);
+      std::flat_map<int, int> x(std::sorted_unique, v.begin(), v.end());
+      bench::sink(x.size());
+    });
+    bench::run("flat_set<int>.insert (random, 1e4)", 10000, [&] {
+      std::flat_set<int> x;
+      for (int i = 0; i < 10000; ++i) x.insert(keys[i]);
+      bench::sink(x.size());
+    });
   }
   {
     std::vector<std::string> keys = random_keys(N);
@@ -202,6 +272,16 @@ int main(int argc, char** argv) {
     bench::run("unordered_map<string>.find", N, [&] {
       long s = 0;
       for (auto& k : keys) s += u.find(k)->second;
+      bench::sink(s);
+    });
+    bench::run("unordered_map<string>.find miss", N, [&] {
+      long s = 0;
+      std::string probe;
+      for (auto& k : keys) {
+        probe = k;
+        probe[0] = 'K';
+        s += u.find(probe) == u.end();
+      }
       bench::sink(s);
     });
     bench::run("unordered_map<string>.insert+erase", N, [&] {

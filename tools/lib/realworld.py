@@ -153,7 +153,7 @@ def read_list(path):
     """skip.txt / xfail.txt / build-skip.txt: "<name regex> | <category> | <reason> [| <conditions>]"
     per line. The regex must match the whole name (a CTest test, or a build output); the entry
     applies only where every condition holds (gcc, clang, linux, darwin, asan, ubsan, tsan, and
-    no-ipv6 where the host cannot open an IPv6 socket)."""
+    no-ipv6 where the host cannot open an IPv6 socket), and none of the ones written !name."""
     out = []
     if not os.path.isfile(path):
         return out
@@ -168,8 +168,11 @@ def read_list(path):
                 raise SystemExit(f'{path}:{n}: expected "<regex> | <category> | <reason> [| <conditions>]"')
             if parts[1] not in CATEGORIES:
                 raise SystemExit(f'{path}:{n}: unknown category "{parts[1]}" ({", ".join(sorted(CATEGORIES))})')
-            if len(parts) == 4 and not set(parts[3].split()) <= cond:
-                continue
+            if len(parts) == 4:
+                want = parts[3].split()
+                if not ({c for c in want if not c.startswith('!')} <= cond and
+                        not {c[1:] for c in want if c.startswith('!')} & cond):
+                    continue
             out.append({'re': re.compile(parts[0]), 'pattern': parts[0], 'category': parts[1],
                         'reason': parts[2], 'line': n, 'used': False})
     return out

@@ -1419,7 +1419,12 @@ under the same name. Otherwise it gets one alias template in `config.hpp`.
   segments are `nl_langinfo_l(ERA)`: POSIX separates them with `;`; glibc returns them separated
   by NULs with their count in `_NL_TIME_ERA_NUM_ENTRIES`, which CMake detects
   (`_YCXX_C_HAS_ERA_NUM_ENTRIES`, cmake/ycxx-c-library.cmake); a segment that does not have the
-  POSIX form ends the list. Names compare through `ctype<charT>::tolower` (so a multibyte
+  POSIX form ends the list. Both are kept only where the C library uses them: an era when
+  `strftime_l("%EC")` at its start date writes its name, an era format when `strftime_l` writes
+  `%Ec`/`%Ex`/`%EX` with it on two probe dates (a C library may hold the items yet ignore the E
+  modifier, as POSIX allows; Darwin's may); otherwise the E forms read as the unmodified ones
+  (POSIX strftime: where the alternative form does not exist, the unmodified conversion is
+  used). Names compare through `ctype<charT>::tolower` (so a multibyte
   UTF-8 name in a char stream compares its non-ASCII bytes exactly; a wchar_t stream folds them).
   Rejected: parsing every locale-dependent flag through `tg.get` (the `tm` loses `%S` fractions,
   `%Z`, week numbers and eras), and reading the C library's tables in the header (named locales

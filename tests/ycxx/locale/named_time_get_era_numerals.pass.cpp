@@ -8,7 +8,10 @@
 // %OI %Om %OM %OS %OU %Ow %OW %Oy "using the locale's alternative numeric symbols".
 // The input is the C library's strftime output for the same locale (ja_JP: eras such as 令和
 // and 平成 with "元年" for an era's first year, and 〇 一 二 ... as digits); where the C library
-// has no eras or digits for the locale, the plain forms, which must read back as well.
+// has no eras or digits for the locale, the plain forms, which must read back as well (POSIX:
+// where the alternative representation is not available, the unmodified one is used). Whether
+// it has them is asked of the C library at run time (strftime's %EC against %C, %Ec against
+// %c), never assumed from glibc's data; de_DE (no eras, no digits anywhere) checks that case.
 #include <time.h>
 #include <wchar.h>
 #include <iterator>
@@ -29,6 +32,15 @@ static std::tm get(const std::locale& loc, const std::basic_string<C>& in, const
   std::use_facet<std::time_get<C>>(loc).get(std::istreambuf_iterator<C>(is), std::istreambuf_iterator<C>(), is, err, &t,
                                             fmt.data(), fmt.data() + fmt.size());
   return t;
+}
+// A zone for strftime's %Z (de_DE's %c shows it), where the C library's tm has the BSD members
+// (glibc and Darwin do); without one %Z may be empty, and nothing would be there to read.
+template <class TM>
+static void set_utc(TM& t) {
+  if constexpr (requires { t.tm_zone; t.tm_gmtoff; }) {
+    t.tm_zone = const_cast<decltype(t.tm_zone)>("UTC");
+    t.tm_gmtoff = 0;
+  }
 }
 static std::string c_ftime(const char* name, const char* fmt, const std::tm& t) {
   return in_c_locale(name, [&] {
@@ -60,7 +72,31 @@ static void check_locale(const char* name) {
     t.tm_hour = 13;
     t.tm_min = 4;
     t.tm_sec = 5;
+    t.tm_isdst = 0;
+    set_utc(t);
+    {
+      // the weekday and day of the year, which %c may show: from the C library
+      std::tm n = t;
+      n.tm_hour = 12;
+      timegm(&n);
+      set_utc(t);
+      t.tm_wday = n.tm_wday;
+      t.tm_yday = n.tm_yday;
+    }
     std::ios_base::iostate err;
+    if (c_ftime(name, "%EC", t) == c_ftime(name, "%C", t)) {
+      // no era for this date in the C library: the E forms are the unmodified ones
+      CHECK(c_ftime(name, "%EY", t) == c_ftime(name, "%Y", t));
+    }
+    if (c_ftime(name, "%Ec", t) == c_ftime(name, "%c", t)) {
+      // %Ec reads what %c reads
+      const std::tm a = get(loc, c_ftime(name, "%c", t), std::string("%Ec"), err);
+      CHECK(!(err & std::ios_base::failbit));
+      std::ios_base::iostate err2;
+      const std::tm b = get(loc, c_ftime(name, "%c", t), std::string("%c"), err2);
+      CHECK(!(err2 & std::ios_base::failbit) && a.tm_year == b.tm_year && a.tm_mon == b.tm_mon && a.tm_mday == b.tm_mday &&
+            a.tm_hour == b.tm_hour && a.tm_min == b.tm_min && a.tm_sec == b.tm_sec);
+    }
     for (const char* f : {"%EY", "%EC%Ey", "%Ey %EC", "%Ex"}) {
       const std::tm r = get(loc, c_ftime(name, f, t), std::string(f), err);
       CHECK(!(err & std::ios_base::failbit) && r.tm_year == t.tm_year);
@@ -108,7 +144,7 @@ static void check_locale(const char* name) {
 
 int main() {
   check_locale(require_locale("ja_JP.UTF-8"));
-  for (const char* other : {"my_MM.UTF-8", "zh_TW.UTF-8", "ja_JP.eucJP"})
+  for (const char* other : {"de_DE.UTF-8", "my_MM.UTF-8", "zh_TW.UTF-8", "ja_JP.eucJP"})
     if (c_has_locale(other))
       check_locale(other);
   return 0;

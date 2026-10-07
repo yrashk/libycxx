@@ -639,9 +639,22 @@ compilers; `visit_format_arg.pass.cpp` needs `EOF` from `constexpr_char_traits.h
   member or base of a library class type (`struct S { std::string s; };`, a class derived from
   `std::runtime_error`); GCC has no way to hide a class's members and type_info without hiding
   its type. The CMake package and `tools/ycxx-cxx` pass `-Wno-attributes` to GCC; other build
-  systems add it themselves. Clang does not warn. Images that each link
+  systems add it themselves. Clang does not warn. **GCC also hides every function of a program
+  whose signature names a library type** (a parameter, the return type, a pointer to one:
+  `std::string f(const char*)`, `void g(const std::string&)`), unless the function is declared
+  `[[gnu::visibility("default")]]` itself: GCC constrains a declaration's visibility by its
+  type's, and Clang does not (checked with GCC 16.2 and Clang 23.1, also with a plain
+  `namespace [[gnu::visibility("hidden")]] N { struct X {}; }`). So a C++ shared library built
+  with GCC against libycxx exports only what it marks for export, as if built with
+  `-fvisibility=hidden`; libraries that do (export macros, as GoogleTest's `GTEST_API_`, doctest's
+  `DOCTEST_INTERFACE`, {fmt}'s `FMT_API`) work, and a program or test that calls a shared
+  library's unmarked internals does not link (real-world projects: GoogleTest's
+  `gtest_dll_test_`). Images that each link
   libycxx have separate runtimes: exceptions cross between them, but `uncaught_exceptions()` in
-  one does not count the other's exception while it unwinds through its frames, and each has its
+  one does not count the other's exception while it unwinds through its frames, a handler's
+  `throw;` or `std::current_exception()` in another image than the handler's sees no exception
+  (`std::terminate`: doctest's exception translators, registered by a program and called by the
+  runner in its shared library, real-world projects), and each has its
   own `generic_category()`/`system_category()` objects, so an `error_code` made in one compares
   unequal to an `errc` or category of the other (`value()` and `category().name()` agree).
   The same holds for the other library singletons (`locate_zone` results, the default memory

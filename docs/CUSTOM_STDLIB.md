@@ -603,6 +603,66 @@ implementation to catch tests that encode a misreading. libc++ supports the same
 (running its suite against libstdc++) [libcxx-stdlib-libstdcxx-cfg]. Keep the reference runs
 manual or nightly; they produce triage work, not a gate.
 
+### Real-world projects
+
+A conformance suite checks what the standard says; real projects check what programs do. libycxx
+builds open-source projects with their own test suites against itself (`tools/realworld`, the
+`realworld` stage of `tools/test`; nightly in `full.yml`). Each project is a manifest,
+`tests/realworld/<name>/manifest`: the git URL and the pinned commit (with its release tag), the
+CMake options that build its tests, its dependencies (other projects, built and installed first
+with libycxx: a test framework is never the system's), repositories its build would download, and
+the CMake version it needs. Beside it: `patches/` (each patch starts with its category and
+reason; patched is only the project's own non-standard code, never something to hide a libycxx
+bug), `skip.txt` (CTest tests that do not apply, `<regex> | <category> | <reason> [| <conditions>]`,
+reported UNSUPPORTED), `xfail.txt` (expected failures; an XPASS fails the run) and
+`build-skip.txt` (build outputs that cannot be built, with the same fields). An entry that matches
+nothing is reported as a failure, so the lists cannot go stale.
+
+How a project is built against libycxx: a generated toolchain file names a two-line C++ compiler,
+`build/realworld/<config>/bin/c++`, that runs `tools/ycxx-cxx <cc> --libdir=<build>`. That is
+robust where flags in `CMAKE_CXX_FLAGS` are not: a project that resets its flags, its
+`try_compile` checks, its nested CMake projects and its FetchContent dependencies all get libycxx's
+include directory, `-nostdinc++`, `-nostdlib++` and archives. libycxx is C++26 only, so a
+project's `-std=c++NN` (`gnu++NN`) becomes `-std=c++26` (`gnu++26`); projects are built with
+`-O1 -g1` and assertions on.
+
+The harness then proves that the build is libycxx's, for every project and configuration, and
+fails the project otherwise (`tools/lib/realworld.py`, LINKAGE):
+
+- every C++ translation unit in `compile_commands.json` has a record of the command
+  `tools/ycxx-cxx` ran for its object (`$YCXX_CXX_LOG`), with `-nostdinc++`,
+  `-isystem <libycxx>/include` and an effective `-std=c++26`, and no `-stdlib=` or include
+  directory of libstdc++ or libc++;
+- the headers the compiler reported for every object (`ninja -t deps`) include none of
+  libstdc++'s or libc++'s (`.../include/c++/...`, `.../c++/v1/...`);
+- no executable or shared library needs `libstdc++`/`libc++` (`readelf -d`, `otool -L`) or
+  holds one of their symbols, defined or undefined (`std::__cxx11`, `__gnu_cxx::`, any
+  `std::__` name, which libycxx never uses, `std::__1`, `GLIBCXX_`/`CXXABI_` versions); static
+  archives are checked for the symbols;
+- every image linked by the C++ driver defines `__ycxx_allocation_functions`, the exported
+  allocation table that only libycxx's runtime defines (DECISIONS §2) and that `tools/ycxx-cxx`'s
+  link options keep in every image;
+- every CTest test runs one of the checked executables (or names the tool or script it runs).
+
+A self-test runs first: `tests/realworld/selftest`, built with the toolchain's own C++ library,
+must be rejected on all five counts, and the same program built against libycxx accepted.
+
+`tools/realworld [-c gcc|clang] [-s asan|tsan|...] [project...]` writes
+`build/test-logs/realworld-<config>.{html,md,tsv}` in the suites' report format (every project's
+build with its steps and logs, its linkage evidence, every test with its output) and
+`.summary.md`, one line per project; STATUS.md ("Real-world projects") records the results.
+Sanitizer runs link the instrumented libycxx (`build/<cc>-<sanitizers>`), as the suites do.
+
+What the projects found is mostly not about the standard: code that relies on the headers
+libstdc++ and libc++ include from one another (`errno` after `<string>` or `<mutex>`,
+`std::abort` after `<memory>`, `std::ostream` after `<string>`, `isspace` after `<iostream>`),
+on their extensions (`std::char_traits<std::byte>`), or on older language rules than C++26
+(`std::optional` became a range). STATUS.md lists them, with the libycxx bugs found.
+
+Others: libc++ and libstdc++ rely on the distributions that build thousands of packages with them;
+Chromium builds itself with its own libc++ [chromium-cxx-gni]. A replacement library has no such
+users yet, so it has to bring the projects itself.
+
 ### Reports
 
 Every lit format records each command a test ran, with exit status, duration and output, for

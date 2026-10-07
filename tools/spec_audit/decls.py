@@ -127,6 +127,14 @@ def _skip_template_args(toks, i):
     return i
 
 
+def _strip_targs(s):
+    while True:
+        t = re.sub(r'<[^<>]*>', '', s)
+        if t == s:
+            return s
+        s = t
+
+
 def decls_join(toks):
     return join(toks)
 
@@ -248,6 +256,8 @@ def classify(toks, cls):
         return 'alias', [t.text for t in body if t.kind == 'id'][-1]
     # a function, a deduction guide or a variable: the declarator-id before the first top-level (
     p = top_level_index(body, '(')
+    while p > 0 and body[p - 1].text in ('decltype', 'noexcept', 'sizeof', 'alignas', 'explicit', 'alignof'):
+        p = top_level_index(body, '(', _skip_balanced(body, p, '(', ')'))
     eq = top_level_index(body, '=')
     if 'operator' in texts:
         k = texts.index('operator')
@@ -293,10 +303,13 @@ def classify(toks, cls):
                 return 'function', 'operator ' + name
             # deduction guide: Name(params) -> ...;  (no return type before the name)
             close = _skip_balanced(body, p, '(', ')')
-            pre = [t.text for t in body[:j] if t.text not in ('explicit',)]
+            pre = [t.text for t in body[:j]]
+            if 'explicit' in pre and '(' in pre:
+                pre = pre[:pre.index('explicit')] + pre[pre.index(')') + 1:]
+            pre = [t for t in pre if t != 'explicit']
             if close < len(body) and body[close].text == '->' and not pre:
                 return 'deduction-guide', name
-            if cls and name == re.split(r'[<]', cls[-1])[0].split('::')[-1] and not [t for t in pre if t not in SPECIFIERS]:
+            if cls and name == _strip_targs(cls[-1]).split('::')[-1].strip('@') and not [t for t in pre if t not in SPECIFIERS]:
                 return 'constructor', name
             if not pre and not cls:
                 return 'function', name

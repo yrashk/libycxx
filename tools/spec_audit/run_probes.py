@@ -38,6 +38,8 @@ def compile_probe(cc, path, libdir):
                '-fno-exceptions', '-fno-rtti', '-fsyntax-only', path]
     else:
         cmd = [os.path.join(ROOT, 'tools', 'ycxx-cxx'), cc, f'--libdir={libdir}', '-fsyntax-only', path]
+        if '.hardened.' in os.path.basename(path):
+            cmd.append('-DYCXX_HARDENED=1')
     cmd.append('-fmax-errors=0' if cc == 'gcc' else '-ferror-limit=0')
     if cc == 'clang':
         cmd.append('-fno-color-diagnostics')
@@ -145,7 +147,7 @@ def main():
                     failed.setdefault(mk[ln], msgs[0])
                 else:
                     unattributed.append((cc, p, f'line {ln}: ' + msgs[0]))
-            for ln, (eid, asp) in mk.items():
+            for eid, asp in dict.fromkeys(mk.values()):
                 checks += 1
                 key = None
                 for k in ((eid, asp, cc), (eid, asp, 'any')):

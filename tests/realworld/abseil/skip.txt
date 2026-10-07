@@ -1,3 +1,4 @@
 # CTest tests that do not run against libycxx, as "<test regex> | <category> | <reason>
 # [| <conditions>]" (tools/lib/realworld.py; the regex matches the whole test name).
 absl_inlined_vector_exception_safety_test | project-bug | when an element copy throws in the copy constructor, Storage::InitFrom has stored the new allocation but not yet its is-allocated bit, so ~Storage does not free it (despite its comment), which LeakSanitizer reports at exit | asan
+absl_failure_signal_handler_test | project-bug | the test's failure writer (WriteToErrorFile) calls fwrite and fflush on a FILE inside the fatal-signal handler, which are not async-signal-safe ([support.signal]); ThreadSanitizer reports the malloc that allocates the stream buffer (signal-unsafe call inside of a signal) | tsan

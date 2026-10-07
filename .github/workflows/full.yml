@@ -179,6 +179,37 @@ jobs:
             build/test-logs/*.tsv
             build/test-logs/*.log
 
+  # Real-world projects (tests/realworld) built against libycxx and tested with their own suites,
+  # with the proof that every translation unit, object and image is libycxx's
+  # (tools/realworld, the realworld stage of tools/test): any build, linkage or test failure fails
+  # the job; a test that does not apply is skipped with its category and reason (skip.txt), and a
+  # project's own non-standard code is patched with its reason (patches/).
+  linux-realworld:
+    runs-on: ubuntu-24.04
+    container: gcc:16
+    timeout-minutes: 300
+    strategy:
+      fail-fast: false
+      matrix:
+        compiler: [gcc, clang]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Toolchains
+        uses: ./.github/actions/setup-linux
+      - name: Real-world projects, ${{ matrix.compiler }} (tools/test; fetches the projects)
+        run: tools/test -j4 -c ${{ matrix.compiler }} build realworld
+      - name: Test reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: full-linux-realworld-${{ matrix.compiler }}
+          path: |
+            build/test-logs/*.html
+            build/test-logs/*.md
+            build/test-logs/*.tsv
+            build/test-logs/realworld-*/**/*.log
+            build/test-logs/realworld-*/**/*.txt
+
   macos-suites:
     runs-on: macos-15
     timeout-minutes: 340

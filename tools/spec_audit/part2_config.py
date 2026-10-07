@@ -367,11 +367,19 @@ for _k, _c in CLASSES.items():
 SECTION_SUBST = {
     'string.syn': {'charT': 'char', 'traits': 'std::char_traits<char>', 'Allocator': 'std::allocator<char>'},
     'string.view.synop': {'charT': 'char', 'traits': 'std::char_traits<char>'},
-    'vector.syn': {'Allocator': 'std::allocator<bool>'},
     'vector.bool.pspc': {'Allocator': 'std::allocator<bool>'},
-    'syn': {'T': 'std::vector<int>', 'V': V, 'Pred': 'p2::AnyFn', 'F': 'p2::AnyFn', 'Pattern': 'std::ranges::single_view<int>'},
-    'iterator.synopsis': {'T': 'int*', 'U': 'const int*'},
+    'common.iterator': {'S': 'std::unreachable_sentinel_t', 'I': 'int*'},
+    'syn': {'T': V, 'K': 'std::ranges::subrange_kind::sized', 'Args': [], 'V': V, 'Pred': 'p2::AnyFn', 'F': 'p2::AnyFn', 'Pattern': 'std::ranges::single_view<int>'},
+    'iterator.synopsis': {'T': 'int*', 'U': 'const int*', 'S': 'std::unreachable_sentinel_t'},
 }
+
+# template arguments for the declarations that match a pattern
+SPEC_SUBST_RE = [
+    (r'vector<bool, Allocator>', {'Allocator': 'std::allocator<bool>'}),
+    (r'template<template<class\.\.\.> class C', {'C': 'std::vector'}),
+    (r'enable_borrowed_range<common_view<T>>', {'T': 'p2::NCV'}),
+    (r'enable_borrowed_range<elements_view<T, N>>', {'T': 'p2::TV', 'N': '0'}),
+]
 
 SPEC_SUBST = {
     # common_view's guide needs a range that is not common
@@ -394,6 +402,7 @@ SKIP_TEXT = [
     (r'mapping\(const layout_(right|left)::mapping<OtherExtents>&\)', 'Constraints: rank() <= 1, not met by the rank-2 instantiation'),
     (r'span\(const array<T, N>& arr\)', 'Constraints: const T convertible to element_type, not met by span<int>'),
     (r'operator PairLike', 'conversion template'),
+    (r'mapping\(const Layout(Right|Left)PaddedMapping&\)', 'Constraints: rank() <= 1, not met by the rank-2 instantiation'),
 ]
 
 

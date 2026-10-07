@@ -1172,11 +1172,11 @@ class __re_posix_bt_sub {
     const unsigned char __fl = _P_.__nflags[static_cast<std::size_t>(n)];
     if ((__fl & __prog::__nf_commit) != 0 &&
         (__x.kind == __re_kind::concat || __x.kind == __re_kind::__alt || (__x.kind == __re_kind::repeat && !__single_rep(__x)))) {
-      const bool __pure = (__fl & __prog::__nf_pure) != 0;
-      if (__pure && __failed(n, p, e))
+      const bool __y_pure = (__fl & __prog::__nf_pure) != 0;
+      if (__y_pure && __failed(n, p, e))
         return false;
       const std::size_t __mark = __choices_.size();
-      if (__pure)
+      if (__y_pure)
         __push_choice(__c_memo, n, 0, p, e);
       next = __push(__g_cut, 0, static_cast<std::ptrdiff_t>(__mark), 0, 0, next);
     }

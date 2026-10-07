@@ -1350,6 +1350,34 @@ Wording problems found while writing the spec-derived tests (tests/ycxx), not ye
   can never complete with a value; libycxx (and, presumably, the intent) leaves it out.
 
 ## Performance
+`bench/` times the hot paths against libstdc++ on both compilers and against libc++ with Clang;
+`bench/RESULTS.md` has the full tables and every hypothesis tried. `bench/check` (nightly in
+`full.yml`, DECISIONS §15) fails on a regression of a ratio to libstdc++ beyond 30% that repeats
+in two confirmation runs; `bench/baseline.json` holds the ratios.
+
+Second pass (2026-10-07), largest changes (libycxx / libstdc++, GCC / Clang; libycxx / libc++):
+
+| benchmark | before | after | vs libc++ before -> after |
+|---|---|---|---|
+| sort 1e6 int (random / sorted) | 1.05 / 1.05, 1.05 / 1.01 | 0.44 / 0.40, 0.09 / 0.15 | 2.45 -> 0.95, 8.9 -> 1.3 |
+| stable_sort 1e6 int | 1.11 / 0.97 | 0.12 / 0.11 | 4.1 -> 0.38 |
+| deque push_back / both ends + pop | 1.45 / 1.66, 1.56 / 1.70 | 0.65 / 0.66, 0.78 / 0.88 | 2.4 -> 0.88, 1.8 -> 0.98 |
+| getline from istringstream / file | 4.5 / 4.5, 6.7 / 4.5 | 0.65 / 1.1, 0.85 / 1.3 | 2.8 -> 0.73, 2.6 -> 0.64 |
+| from_chars double | 2.45 / 1.88 | 1.20 / 1.0-1.1 | 1.20 -> 0.6 |
+| to_chars double fixed .6 | 1.44 / 1.36 | 0.35 / 0.52 | 1.47 -> 0.50 |
+| dynamic_cast to intermediate (Ir) | 58M / 147M | 23M / 43M | 37M (libc++) |
+| condition_variable / atomic notify, no waiter | 2.9 / 3.2, 7.4 / 7.8 | 0.16 / 0.21, 0.33 / 0.33 | 3.2 -> 0.18, 2.3 -> 0.11 |
+| string SSO construct / copy | 0.60 / 1.26, 1.11 / 1.41 | 0.41 / 0.66, 0.37 / 0.75 | 0.98 -> 0.69, 1.54 -> 1.35 |
+| find int / mismatch bytes / search bytes | 1.0, -, 1.3 | 0.6-0.7, 0.19, 0.05 | 1.9 -> 1.1, 4.7 -> 0.9, 1.2 -> 0.03 |
+| hash<string> 12 chars (GCC) | 1.93 | 0.70 | 1.27 -> 1.03 |
+
+Still slower than one of them (see RESULTS.md for the reasons): dynamic_cast across virtual bases
+and cross casts (1.0-1.3x libstdc++, 1.5-1.9x libc++), map<string>.find (1.8x libc++ on Clang),
+vector<string> push_back and copy (1.6-1.9x libc++, whose string is trivially relocatable),
+regex construction (2.3x libc++), to_chars shortest and integers (1.3-1.7x libc++, Clang),
+string operator+ on GCC (store forwarding), mutex ping-pong between threads (1.5-2x).
+
+### First pass (2026-10-06)
 `bench/` (manual, not in CI; DECISIONS §15) times the hot paths against libstdc++ on both
 compilers; `bench/RESULTS.md` has the full tables. Before this pass 31 of 104 benchmark rows were
 more than 1.5x slower than libstdc++ on at least one compiler; afterwards (on a noisy shared
@@ -1396,7 +1424,7 @@ levels: 29.7 s -> 0.01 s; libstdc++ 8.6 s). Remaining above 1.5x: deque push at 
   `<stddef.h>` wrappers exist since the own-suite fixes.)
 - Next (Phase 5): full libc++/libstdc++ sweeps with triage (tests/libcxx/TRIAGE.md,
   tests/libstdcxx/TRIAGE.md), fixing the libycxx bugs they find; then a whole-library review
-  (performance pass done, see Performance).
+  (performance passes done, see Performance).
 - libstdc++ triage (A) fixed (outcomes in tests/libstdcxx/TRIAGE.md): `<compare>` CPO noexcept
   and `compare_three_way`'s constraint (LWG 3530); `less<>` & co. no longer take a rewritten
   `operator<=>` for a built-in pointer comparison; `std::ignore` from `<utility>`; `<bitset>`

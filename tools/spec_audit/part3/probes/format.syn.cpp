@@ -65,9 +65,10 @@ namespace p58 { using namespace std; static_assert(spec_probe::same<decltype(std
 namespace p59 { using namespace std; using T = decltype(std::format_kind<std::span<int>>); } // format.syn#60 var exists  (exposition-only or unspecified: unspecified)
 namespace p60 { using namespace std; using std::range_formatter; } // format.syn#61 presence
 namespace p61 { using namespace std; static_assert(std::is_default_constructible_v<std::formatter<std::span<int>,char>>); } // format.syn#62 specialization enabled
-namespace p62 { using namespace std; using std::basic_format_arg; } // format.syn#63 presence
-namespace p63 { using namespace std; template<class Z> concept c = requires { std::make_format_args(spec_probe::dv<spec_probe::dep<Z, int&>>()); }; static_assert(c<void>); } // format.syn#64 call
-namespace p64 { using namespace std; static_assert([]() consteval { auto a0 = spec_probe::sample<int&>(); (void)(std::make_format_args(a0)); return true; }()); } // format.syn#65 constexpr
-namespace p65 { using namespace std; template<class Z> concept c = requires { std::make_wformat_args(spec_probe::dv<spec_probe::dep<Z, int&>>()); }; static_assert(c<void>); } // format.syn#66 call
-namespace p66 { using namespace std; static_assert([]() consteval { auto a0 = spec_probe::sample<int&>(); (void)(std::make_wformat_args(a0)); return true; }()); } // format.syn#67 constexpr
-namespace p67 { using namespace std; using std::format_error; } // format.syn#68 presence
+namespace p62 { using namespace std; static_assert(!std::enable_nonlocking_formatter_optimization<std::span<int>>); } // format.syn#63 value false
+namespace p63 { using namespace std; using std::basic_format_arg; } // format.syn#64 presence
+namespace p64 { using namespace std; template<class Z> concept c = requires { std::make_format_args(spec_probe::dv<spec_probe::dep<Z, int&>>()); }; static_assert(c<void>); } // format.syn#65 call
+namespace p65 { using namespace std; static_assert([]() consteval { auto a0 = spec_probe::sample<int&>(); (void)(std::make_format_args(a0)); return true; }()); } // format.syn#66 constexpr
+namespace p66 { using namespace std; template<class Z> concept c = requires { std::make_wformat_args(spec_probe::dv<spec_probe::dep<Z, int&>>()); }; static_assert(c<void>); } // format.syn#67 call
+namespace p67 { using namespace std; static_assert([]() consteval { auto a0 = spec_probe::sample<int&>(); (void)(std::make_wformat_args(a0)); return true; }()); } // format.syn#68 constexpr
+namespace p68 { using namespace std; using std::format_error; } // format.syn#69 presence

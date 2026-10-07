@@ -220,6 +220,8 @@ BY_AREA = [
 ]
 
 BY_NAME = {
+    "BiIter": "const char*", "FST": "char_traits<char>", "FSA": "allocator<char>",
+    "Parsable": "chrono::sys_seconds", "Alloc": "allocator<char>",
     "charT": "char", "CharT": "char", "traits": "char_traits<char>", "Allocator": "allocator<char>",
     "SAlloc": "allocator<char>", "ST": "char_traits<char>", "SA": "allocator<char>",
     "T": "int", "U": "int", "R": "int",
@@ -257,15 +259,16 @@ PLACEHOLDERS = {
                       "char32_t", "wchar_t"],
     "floating-point-type": ["float", "double", "long double"],
     "extended-floating-point-type": [],
+    "pointer-type": ["int*"],
 }
 
 
 # Declarations the draft makes optional or implementation-defined: (subclause, name) -> why.
-# Single checks whose sample cannot be right (ID -> why); their numbers stay taken.
-SKIP_IDS = {
-    "re.syn#46": "regex_search(const basic_string&, match_results<string::const_iterator, Allocator>&, ...): as re.syn#29",
-    "re.syn#29": "regex_match(const basic_string&, match_results<string::const_iterator, Allocator>&, ...): the "
-                 "area's Allocator sample is allocator<sub_match<const char*>>",
+# Declarations whose sample cannot be right: (subclause, text in the declaration), why.
+SKIP_DECLS = {
+    ("re.syn", "match_results<typename basic_string<charT, ST, SA>::const_iterator"):
+        "the string overloads of regex_match/regex_search take match_results<string::const_iterator, "
+        "Allocator>; the area's Allocator sample is allocator<sub_match<const char*>>",
 }
 
 SKIP = {

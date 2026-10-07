@@ -181,6 +181,8 @@ class Gen:
     def __init__(self, ents):
         self.ents = ents
         self.nsec = {}
+        self.inventory = []   # [decl id, subclause, header, entity, kind, checks, note, declaration]
+        self.decl_id = None
         self.freestanding = set()   # IDs of the checks of freestanding declarations
         # headers whose synopsis is all freestanding (`// all freestanding`)
         syn = collections.defaultdict(set)
@@ -369,8 +371,7 @@ class Gen:
 
     # ---- emit -------------------------------------------------------------------------------
     def add(self, d, what, code, ent=None):
-        if f"{d.sec}#{self.nsec.get(d.sec, 0) + 1}" in SMP.SKIP_IDS:
-            self.nsec[d.sec] = self.nsec.get(d.sec, 0) + 1   # keep the numbering
+        if any(d.sec == sec and sub in d.text() for sec, sub in SMP.SKIP_DECLS):
             return
         self.nsec[d.sec] = self.nsec.get(d.sec, 0) + 1
         cid = f"{d.sec}#{self.nsec[d.sec]}"
@@ -378,7 +379,8 @@ class Gen:
         fs = d.fs or next((c[3].fs for c in reversed(d.classes) if c[3] is not None and c[3].fs), None)
         if fs is None and d.header in self.fs_headers:
             fs = "freestanding"
-        self.checks.append((cid, d.sec, d.header, ent, what, d.text().replace("\t", " "), code, d.ns))
+        self.checks.append((cid, d.sec, d.header, ent, what, d.text().replace("\t", " "), code, d.ns,
+                            self.decl_id if self.decl_id is not None else ""))
         if fs == "freestanding":
             self.freestanding.add(cid)
 
@@ -396,15 +398,27 @@ class Gen:
                 continue
             if d.kind in ("empty", "static_assert", "using-directive", "using-enum", "friend-class"):
                 continue
+            self.decl_id = len(self.inventory)
+            entry = [self.decl_id, d.sec, d.header or "", self.entity(d), d.kind, 0, "", d.text().replace("\t", " ")]
+            self.inventory.append(entry)
             if (d.sec, d.name) in SMP.SKIP or d.fs == "optional":
+                entry[6] = "not probed: " + (SMP.SKIP.get((d.sec, d.name)) or "optional ([version.syn] comment // optional)")
                 continue
             CUR["ns"] = d.ns
+            before = len(self.checks)
             try:
                 if (d.sec, d.name) in SMP.PRESENCE_ONLY:
                     raise Unprobeable("signature not probed")
                 getattr(self, "do_" + d.kind.replace("-", "_"))(d)
             except Unprobeable as e:
+                entry[6] = "presence only: " + str(e)
                 self.presence(d, str(e))
+            entry[5] = len(self.checks) - before
+            if entry[5] and all(c[4].startswith("presence") for c in self.checks[before:]) and not entry[6]:
+                entry[6] = "presence only: " + self.checks[before][4]
+            if not entry[5] and not entry[6]:
+                entry[6] = "not probed (no sample, or a hidden friend whose signature is exposition-only)"
+        self.decl_id = None
 
     def presence(self, d, why=""):
         """A name-only check."""
@@ -498,7 +512,18 @@ class Gen:
                     self.add(d, f"var exists {label} ({e})".strip(), f"using T = decltype({selft}::{d.name});")
             return
         if d.info.get("args"):
-            # a partial specialization of a variable template: checked through the primary
+            # a specialization of a variable template: its value, when the draft gives it
+            # (`enable_view<filesystem::directory_iterator> = true`); a partial one with a sample
+            init = [str(x) for x in d.info.get("init", [])]
+            if init[:1] == ["="] and init[1:] in (["true"], ["false"]) and not d.heads[-1:] or \
+                    init[:1] == ["="] and init[1:] in (["true"], ["false"]):
+                for env, label in (SMP.heads_env(d.heads, d) if d.heads and d.heads[-1] else [({}, "")]):
+                    try:
+                        a = subst(d.info["args"], Ctx(env))
+                    except Unprobeable:
+                        continue
+                    neg = "" if init[1] == "true" else "!"
+                    self.add(d, f"value {init[1]} {label}".strip(), f"static_assert({neg}{d.ns}::{d.name}{a});")
             return
         if d.heads:
             for env, label in SMP.heads_env(d.heads, d):
@@ -554,8 +579,8 @@ class Gen:
     def do_classdecl(self, d):
         args = d.info.get("args")
         if args is None:
-            if not d.classes:
-                self.presence(d)
+            # (a nested class: `using C::name;` in a class derived from the sample)
+            self.presence(d)
             return
         self.specialization(d, args)
 
@@ -937,7 +962,7 @@ def write(gen, outdir, inline_ns, only=None):
             lines.append("#define SPEC_PROBE_" + re.sub(r'\W', '_', h))
         lines.append('#include "' + ('../' * (len(outdir.relative_to(HERE).parts))) + 'probe_support.hpp"')
         for k, c in enumerate(cs):
-            cid, _, header, ent, what, decl, code, ns = c
+            cid, _, header, ent, what, decl, code, ns = c[:8]
             if not code:
                 continue
             code = code.replace(PACK, "")
@@ -972,9 +997,13 @@ def main():
     # the freestanding declarations, compiled with -ffreestanding (run.py --freestanding)
     write(g, pathlib.Path(a.out) / "freestanding", None, g.freestanding)
     with open(HERE / "checks.tsv", "w") as f:
-        f.write("# id\tsubclause\theader\tentity\tcheck\tdeclaration\n")
+        f.write("# id\tsubclause\theader\tentity\tcheck\tdeclaration\tdecl (inventory.tsv)\t[freestanding]\n")
         for c in g.checks:
-            f.write("\t".join(c[:6]) + ("\tfreestanding" if c[0] in g.freestanding else "") + "\n")
+            f.write("\t".join(c[:6]) + "\t" + str(c[8]) + ("\tfreestanding" if c[0] in g.freestanding else "") + "\n")
+    with open(HERE / "inventory.tsv", "w") as f:
+        f.write("# decl\tsubclause\theader\tentity\tkind\tchecks\tnote\tdeclaration\n")
+        for e in g.inventory:
+            f.write("\t".join(str(x) for x in e) + "\n")
     print(f"{len(g.checks)} checks in {len({c[1] for c in g.checks})} files")
 
 

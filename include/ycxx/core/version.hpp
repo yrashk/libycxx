@@ -394,6 +394,8 @@
 #  define __cpp_lib_hardened_valarray 202502L
 #  define __cpp_lib_hardened_shared_ptr_array 202506L
 #  define __cpp_lib_hardened_basic_stacktrace 202506L
+#  define __cpp_lib_hardened_common_iterator 202506L
+#  define __cpp_lib_hardened_counted_iterator 202506L
 #  define __cpp_lib_hardened_view_interface 202506L
 #endif
 

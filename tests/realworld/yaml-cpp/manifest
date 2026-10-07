@@ -5,3 +5,6 @@ ref = 0.8.0
 commit = f7320141120f720aecc4c32be25586e7da9eb978
 exercises = iostreams, locale, containers, exceptions
 configure = -DYAML_CPP_BUILD_TESTS=ON -DYAML_CPP_BUILD_TOOLS=OFF -DYAML_CPP_FORMAT_SOURCE=OFF
+# The vendored GoogleTest 1.11 builds with -Werror, and Clang 22+ warns about its char8_t to
+# char32_t conversions (-Wcharacter-conversion), with any C++ library.
+configure.clang = -DYAML_CPP_BUILD_TESTS=ON -DYAML_CPP_BUILD_TOOLS=OFF -DYAML_CPP_FORMAT_SOURCE=OFF -DCMAKE_CXX_FLAGS=-Wno-character-conversion

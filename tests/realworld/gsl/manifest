@@ -6,4 +6,4 @@ exercises = span, contracts, exceptions, iterators
 deps = googletest
 # Its tests find GoogleTest with pkg-config and use only the libraries it names, relying on the
 # headers being in a default include directory: libycxx's build of GoogleTest is in the prefix.
-configure = -DGSL_TEST=ON -DGSL_CXX_STANDARD=20 -DCMAKE_CXX_FLAGS=-I@PREFIX@/include
+configure = -DGSL_TEST=ON -DGSL_CXX_STANDARD=20 -DCMAKE_CXX_FLAGS=-isystem@PREFIX@/include

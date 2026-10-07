@@ -2,15 +2,20 @@
 """Spec-coverage probes, Part 1: [library], [support], [concepts], [diagnostics], [mem], [meta],
 [utilities] (docs/SPEC_COVERAGE.md, "Part 1").
 
-    tools/spec_audit/part1/run.py [-c gcc|clang]... [--libdir-root DIR] [-j N] [-v] [probe...]
+    tools/spec_audit/part1/run.py [-c gcc|clang]... [--libdir-root DIR] [-j N] [-v]
+                                  [--tables-only | --skip-tables] [--summary FILE] [probe...]
 
 Compile-only checks against libycxx's headers, on each compiler:
-  headers   every header of Tables 24, 25 ([headers]) and 47 ([support.c.headers]) compiles; of Table 27
-            ([compliance]) compiles with -ffreestanding -fno-exceptions -fno-rtti
+  headers   every header of Tables 24, 25 ([headers]) and 47 ([support.c.headers]) compiles, and
+            every header of Table 27 ([compliance]) with -ffreestanding -fno-exceptions -fno-rtti
   version   every macro of [version.syn] (data/version.tsv) has the draft's value in <version> and
             in each header the synopsis says it is "also in"; a freestanding one also in a
             freestanding <version>; the hardened ones of /3 with -DYCXX_HARDENED=1 (and not
             without it). The two "see below" macros must be defined (any value)
+  names     every entity of data/entities.tsv (inventory.py) is declared by its header: a
+            using-declaration per namespace-scope name, a derived class's using-declaration per
+            member (on the specialization data/samples.tsv gives), #ifndef per macro; the
+            freestanding items ([freestanding.item]) again with the freestanding flags
   probes    each probes/<stable.name>.cpp compiles with -fsyntax-only (static_asserts and
             requires-expressions check presence, shape, constexpr, noexcept and constraints).
             `// FREESTANDING` also compiles it with -ffreestanding -fno-exceptions -fno-rtti;
@@ -18,11 +23,12 @@ Compile-only checks against libycxx's headers, on each compiler:
             `// GAP: gcc|clang|any <id> <reason>` marks an expected failure that the gap list of
             docs/SPEC_COVERAGE.md describes (a probe that then passes is reported as XPASS)
 data/version.tsv and data/headers.tsv come from the draft (draft_tables.py); data/expected.tsv
-lists the known failures of the header and version checks (compiler, regex over the failure, gap
-id of docs/SPEC_COVERAGE.md, reason), reported as XFAIL. Exit status 0 iff nothing failed unexpectedly.
+lists the known failures of the header, version and name checks (compiler, regex over the
+failure, gap id of docs/SPEC_COVERAGE.md, reason), reported as XFAIL; an expectation that nothing
+matched is reported as STALE. Exit status 0 iff nothing failed unexpectedly.
 Compilers: $YCXX_GXX / $YCXX_CLANGXX, else g++-16 / clang++-23 (as tools/ycxx-cxx).
 """
-import argparse, concurrent.futures, os, pathlib, re, subprocess, sys, tempfile
+import argparse, concurrent.futures, os, pathlib, re, subprocess, sys
 
 HERE = pathlib.Path(__file__).resolve().parent
 REPO = HERE.parents[2]

@@ -612,10 +612,10 @@ bool load_time(const char* name, __ycxx::__detail::__time_data<__charT>& d) {
       const char* __fmt = ::nl_langinfo_l(e.item, __loc);
       if (__fmt == nullptr || *__fmt == '\0')
         continue;
-      bool __used = true;
+      bool __y_used = true;
       for (const std::tm& t : __probe)
-        __used = __used && ftime(__loc, e.conv, t) == ftime(__loc, __fmt, t);
-      if (__used)
+        __y_used = __y_used && ftime(__loc, e.conv, t) == ftime(__loc, __fmt, t);
+      if (__y_used)
         *e.out = __convert(__loc, __fmt, __charT());
     }
   }

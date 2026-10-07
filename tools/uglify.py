@@ -777,7 +777,7 @@ def main():
         for p in stale:
             print(f"{p}: out of date (tools/uglify.py --gen-tests)", file=sys.stderr)
         draft = draft_problems(names, checked_files()) if a.check else []
-        draft += c_library_macro_problems(checked_files()) if a.check else []
+        draft += c_library_macro_problems(include_files() + src_files()) if a.check else []
         for msg in draft:
             print(msg, file=sys.stderr)
         return 1 if a.check and (found or stale or draft) else 0

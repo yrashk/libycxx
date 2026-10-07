@@ -1,0 +1,89 @@
+Categories: transitive-include and implementation-specific. 1. The amalgamated
+singleheader/simdjson.h calls std::isspace without <cctype>, basictests.cpp POSIX newlocale
+without <locale.h>, and the perfdiff benchmark exit without <cstdlib> (libstdc++ declares them
+through <string> and <iostream>); adds the includes. 2. The vendored fast_float
+(include/simdjson/internal/fast_float.h and the amalgamation) asserts
+numeric_limits<std::bfloat16_t>::is_iec559: whether bfloat16 adheres to ISO/IEC 60559 is not
+settled by the draft ([numeric.limits.members]/53 Note 1 names float16_t to float128_t only;
+[basic.extended.fp]/6: ISO/IEC 60559 names no such format; GCC predefines __BFLT16_IS_IEC_60559__
+as 0); libycxx answers false, libstdc++ true. The assertion only restates the parser's assumption
+about the bit layout, which another static_assert checks; removed.
+
+diff --git a/benchmark/dom/perfdiff.cpp b/benchmark/dom/perfdiff.cpp
+index be842be..075799f 100644
+--- a/benchmark/dom/perfdiff.cpp
++++ b/benchmark/dom/perfdiff.cpp
+@@ -1,4 +1,5 @@
+ #include <cstdio>
++#include <cstdlib>
+ #include <iostream>
+ #include <memory>
+ #include <stdexcept>
+diff --git a/include/simdjson/internal/fast_float.h b/include/simdjson/internal/fast_float.h
+index 54b84e4..df1adc2 100644
+--- a/include/simdjson/internal/fast_float.h
++++ b/include/simdjson/internal/fast_float.h
+@@ -1573,9 +1573,8 @@ static_assert(
+ static_assert(
+     std::is_same<binary_format<std::bfloat16_t>::equiv_uint, uint16_t>::value,
+     "equiv_uint should be uint16_t for std::bfloat16_t");
+-static_assert(
+-    std::numeric_limits<std::bfloat16_t>::is_iec559,
+-    "std::bfloat16_t must fulfill the requirements of IEC 559 (IEEE 754)");
++// is_iec559 is implementation-defined for std::bfloat16_t: [numeric.limits.members]/53 Note 1
++// names float16_t to float128_t only.
+ #endif // __STDCPP_BFLOAT16_T__
+ 
+ constexpr chars_format operator~(chars_format rhs) noexcept {
+diff --git a/singleheader/simdjson.cpp b/singleheader/simdjson.cpp
+index 81cd2fa..27e21c7 100644
+--- a/singleheader/simdjson.cpp
++++ b/singleheader/simdjson.cpp
+@@ -6318,9 +6318,8 @@ static_assert(
+ static_assert(
+     std::is_same<binary_format<std::bfloat16_t>::equiv_uint, uint16_t>::value,
+     "equiv_uint should be uint16_t for std::bfloat16_t");
+-static_assert(
+-    std::numeric_limits<std::bfloat16_t>::is_iec559,
+-    "std::bfloat16_t must fulfill the requirements of IEC 559 (IEEE 754)");
++// is_iec559 is implementation-defined for std::bfloat16_t: [numeric.limits.members]/53 Note 1
++// names float16_t to float128_t only.
+ #endif // __STDCPP_BFLOAT16_T__
+ 
+ constexpr chars_format operator~(chars_format rhs) noexcept {
+diff --git a/singleheader/simdjson.h b/singleheader/simdjson.h
+index 0818b46..d7256e5 100644
+--- a/singleheader/simdjson.h
++++ b/singleheader/simdjson.h
+@@ -43,6 +43,7 @@
+ #define SIMDJSON_COMMON_DEFS_H
+ 
+ #include <cassert>
++#include <cctype>
+ /* including simdjson/compiler_check.h: #include "simdjson/compiler_check.h" */
+ /* begin file simdjson/compiler_check.h */
+ #ifndef SIMDJSON_COMPILER_CHECK_H
+@@ -240872,9 +240873,8 @@ static_assert(
+ static_assert(
+     std::is_same<binary_format<std::bfloat16_t>::equiv_uint, uint16_t>::value,
+     "equiv_uint should be uint16_t for std::bfloat16_t");
+-static_assert(
+-    std::numeric_limits<std::bfloat16_t>::is_iec559,
+-    "std::bfloat16_t must fulfill the requirements of IEC 559 (IEEE 754)");
++// is_iec559 is implementation-defined for std::bfloat16_t: [numeric.limits.members]/53 Note 1
++// names float16_t to float128_t only.
+ #endif // __STDCPP_BFLOAT16_T__
+ 
+ constexpr chars_format operator~(chars_format rhs) noexcept {
+diff --git a/tests/dom/basictests.cpp b/tests/dom/basictests.cpp
+index 81daaf3..8279970 100644
+--- a/tests/dom/basictests.cpp
++++ b/tests/dom/basictests.cpp
+@@ -3,6 +3,7 @@
+ #include <cstdlib>
+ #include <cstring>
+ #include <iostream>
++#include <locale.h>
+ #include <string>
+ #include <vector>
+ #include <cmath>

@@ -1,0 +1,17 @@
+Category: project-bug. With TBB_SANITIZE=thread, oneTBB adds -Wno-tsan, a GCC-only warning
+option, to the sanitizer flags and then checks them with check_cxx_compiler_flag, which Clang's
+"unknown warning option" fails: the configuration stops. Adds -Wno-tsan for GCC only.
+
+diff --git a/cmake/sanitize.cmake b/cmake/sanitize.cmake
+index 79f9bca..592d491 100644
+--- a/cmake/sanitize.cmake
++++ b/cmake/sanitize.cmake
+@@ -23,7 +23,7 @@ endif()
+ 
+ set(TBB_SANITIZE_OPTION -fsanitize=${TBB_SANITIZE})
+ 
+-if (TBB_SANITIZE MATCHES "thread")
++if (TBB_SANITIZE MATCHES "thread" AND CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+     set(TBB_SANITIZE_OPTION "${TBB_SANITIZE_OPTION} -Wno-tsan")
+ endif()
+ 

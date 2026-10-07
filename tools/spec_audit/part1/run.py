@@ -199,8 +199,12 @@ def expected(cc, failure):
     class, reason), or None."""
     for row in load("expected.tsv"):
         if row[0] in (cc, "any") and re.search(row[1], failure):
+            USED.add((cc, row[1]))
             return f"{row[2]}: {row[3]}"
     return None
+
+
+USED = set()   # (compiler, regex) of the expected failures that occurred
 
 
 DIRECTIVE = lambda key: re.compile(rf"^//\s*{key}:(.*)$", re.M)
@@ -276,6 +280,12 @@ def main():
                 if status in ("FAIL", "XPASS"):
                     bad += 1
             print(f"{cc} probes: " + ", ".join(f"{k} {v}" for k, v in sorted(counts.items())))
+    if not a.probes and not a.skip_tables:
+        for row in load("expected.tsv"):
+            ccs_ = ccs if row[0] == "any" else [row[0]] if row[0] in ccs else []
+            if ccs_ and not any((c, row[1]) in USED for c in ccs_):
+                print(f"  STALE expectation ({row[0]}): {row[1]}  [{row[2]}]: nothing failed this way")
+                bad += 1
     return 1 if bad else 0
 
 

@@ -1,24 +1,37 @@
 #!/usr/bin/env python3
-"""Build and run libycxx's benchmarks against libycxx and against the toolchain's libstdc++.
+"""Build and run libycxx's benchmarks against libycxx, libstdc++ and libc++.
 
-    bench/run [--cc gcc,clang] [--md] [--samples N] [--only prog,...] [filter ...]
+    bench/run [--cc gcc,clang] [--libs ycxx,libstdc++,libc++] [--opt O2] [--runs R]
+              [--samples N] [--only prog,...] [--md] [--json FILE] [filter ...]
 
-Every bench/*.cpp is compiled with -O2 -DNDEBUG twice per compiler: with tools/ycxx-cxx
-(linking the Release library in build/<cc>-release, which this script builds or updates) and with
-tools/ref-cxx (libstdc++). Both programs run in turn and the table shows ns/op for each and the
-ratio libycxx/libstdc++ (above 1: libycxx is slower). Benchmarks are manual; nothing in CI runs
-them. Filters are substrings of benchmark names, passed to the programs.
+Every bench/*.cpp is compiled with -O2 -DNDEBUG (--opt picks another level) once per compiler and
+library: with tools/ycxx-cxx (linking the Release library in build/<cc>-release, which this script
+builds or updates), with tools/ref-cxx (libstdc++), and with the compiler's -stdlib=libc++ (Clang
+only; a libc++ with headers must be installed, e.g. Debian's libc++-23-dev; it is skipped when
+absent). The programs of one compiler run in turn, R times (--runs, interleaved, so slow drifts of
+a shared machine hit every library alike); each run prints the median of N samples per benchmark
+(bench/bench.hpp), and a benchmark's time is the median of its R runs.
+
+The table shows ns/op per library and the ratios libycxx/libstdc++ and libycxx/libc++ (above 1:
+libycxx is slower). --json writes everything, every run included, for bench/compare (the CI
+regression check, DECISIONS §15). Filters are substrings of benchmark names, passed to the
+programs.
 """
 import argparse
+import json
 import os
+import platform
+import shutil
+import statistics
 import subprocess
 import sys
+import time
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 BENCH = ROOT / "bench"
 COMPILERS = {"gcc": ("gcc-16", "g++-16"), "clang": ("clang-23", "clang++-23")}
-FLAGS = ["-O2", "-DNDEBUG"]
+LIBS = ("ycxx", "libstdc++", "libc++")
 
 
 def sh(cmd, **kw):
@@ -28,16 +41,40 @@ def sh(cmd, **kw):
     return r
 
 
-def build_library(cc):
-    d = ROOT / "build" / f"{cc}-release"
+def compilers(cc):
     c, cxx = COMPILERS[cc]
     c = os.environ.get("YCXX_GCC" if cc == "gcc" else "YCXX_CLANG", c)
     cxx = os.environ.get("YCXX_GXX" if cc == "gcc" else "YCXX_CLANGXX", cxx)
+    return c, cxx
+
+
+def build_library(cc, jobs):
+    d = ROOT / "build" / f"{cc}-release"
+    c, cxx = compilers(cc)
     if not (d / "build.ninja").exists():
         sh(["cmake", "-S", ROOT, "-B", d, "-G", "Ninja", f"-DCMAKE_C_COMPILER={c}",
             f"-DCMAKE_CXX_COMPILER={cxx}", "-DCMAKE_BUILD_TYPE=Release"], stdout=subprocess.DEVNULL)
-    sh(["ninja", "-C", d], stdout=subprocess.DEVNULL)
+    sh(["ninja", "-C", d, f"-j{jobs}"], stdout=subprocess.DEVNULL)
     return d
+
+
+def compile_cmd(cc, lib, flags, src, exe):
+    if lib == "ycxx":
+        return [ROOT / "tools" / "ycxx-cxx", cc, *flags, src, "-o", exe]
+    if lib == "libstdc++":
+        return [ROOT / "tools" / "ref-cxx", cc, *flags, src, "-o", exe]
+    _, cxx = compilers(cc)  # libc++: Clang's -stdlib=libc++
+    return [cxx, "-std=c++26", "-stdlib=libc++", *flags, src, "-o", exe]
+
+
+def have_libcxx(cc, out):
+    if cc != "clang":
+        return False
+    probe = out / "libcxx-probe.cpp"
+    probe.write_text("#include <version>\n#ifndef _LIBCPP_VERSION\n#error not libc++\n#endif\nint main() {}\n")
+    r = subprocess.run(compile_cmd(cc, "libc++", [], probe, out / "libcxx-probe"),
+                       capture_output=True)
+    return r.returncode == 0
 
 
 def run_program(exe, filters, env):
@@ -52,81 +89,142 @@ def run_program(exe, filters, env):
     return res
 
 
+def ratio(a, b):
+    return a / b if a and b and b > 0 else None
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--cc", default="gcc,clang")
+    ap.add_argument("--libs", default=",".join(LIBS))
+    ap.add_argument("--opt", default="O2", help="optimization level of the benchmarks (O2, O3)")
     ap.add_argument("--md", action="store_true", help="print a Markdown table")
+    ap.add_argument("--json", help="write the results (every run) to this file")
     ap.add_argument("--samples", type=int, default=9)
+    ap.add_argument("--runs", type=int, default=1, help="runs of every program (median taken)")
+    ap.add_argument("-j", "--jobs", type=int, default=4)
     ap.add_argument("--only", default="", help="comma-separated program names (bench/<name>.cpp)")
     ap.add_argument("filters", nargs="*")
     a = ap.parse_args()
     ccs = [c for c in a.cc.split(",") if c]
+    want = [l for l in a.libs.split(",") if l]
     progs = sorted(p.stem for p in BENCH.glob("*.cpp"))
     if a.only:
         progs = [p for p in progs if p in a.only.split(",")]
     env = dict(os.environ, BENCH_SAMPLES=str(a.samples))
+    flags = [f"-{a.opt}", "-DNDEBUG"]
 
-    results = {}  # (prog, name) -> {cc: (ycxx, std)}
+    # (cc, prog, name) -> lib -> [ns per run]
+    results = {}
     order = []
+    libs_of = {}
     for cc in ccs:
-        libdir = build_library(cc)
-        out = ROOT / "build" / "bench" / cc
+        libdir = build_library(cc, a.jobs) if "ycxx" in want else None
+        out = ROOT / "build" / "bench" / f"{cc}-{a.opt}"
         out.mkdir(parents=True, exist_ok=True)
+        libs = [l for l in want if l != "libc++" or have_libcxx(cc, out)]
+        libs_of[cc] = libs
         for prog in progs:
             src = BENCH / f"{prog}.cpp"
             exes = {}
-            for lib, tool in (("ycxx", "ycxx-cxx"), ("std", "ref-cxx")):
+            for lib in libs:
                 exe = out / f"{prog}-{lib}"
-                if not exe.exists() or exe.stat().st_mtime < max(
-                        src.stat().st_mtime, (BENCH / "bench.hpp").stat().st_mtime,
-                        *(f.stat().st_mtime for f in libdir.glob("*.a") if lib == "ycxx")):
+                deps = [src.stat().st_mtime, (BENCH / "bench.hpp").stat().st_mtime]
+                if lib == "ycxx":
+                    deps += [f.stat().st_mtime for f in libdir.glob("*.a")]
+                    deps += [f.stat().st_mtime for f in (ROOT / "include").rglob("*") if f.is_file()]
+                if not exe.exists() or exe.stat().st_mtime < max(deps):
                     print(f"[{cc}] building {prog} ({lib})", file=sys.stderr)
-                    sh([ROOT / "tools" / tool, cc, *FLAGS, src, "-o", exe],
-                       env=dict(os.environ, YCXX_LIBDIR=str(libdir)))
+                    sh(compile_cmd(cc, lib, flags, src, exe),
+                       env=dict(os.environ, YCXX_LIBDIR=str(libdir or "")))
                 exes[lib] = exe
-            print(f"[{cc}] running {prog}", file=sys.stderr)
-            ry = run_program(exes["ycxx"], a.filters, env)
-            rs = run_program(exes["std"], a.filters, env)
-            for name, t in ry.items():
-                key = (prog, name)
-                if key not in results:
-                    results[key] = {}
-                    order.append(key)
-                results[key][cc] = (t, rs.get(name, float("nan")))
+            for r in range(a.runs):
+                print(f"[{cc}] running {prog} ({r + 1}/{a.runs})", file=sys.stderr)
+                for lib in libs:
+                    for name, t in run_program(exes[lib], a.filters, env).items():
+                        key = (cc, prog, name)
+                        if key not in results:
+                            results[key] = {}
+                            order.append(key)
+                        results[key].setdefault(lib, []).append(t)
 
-    def ratio(p):
-        y, s = p
-        return y / s if s > 0 else float("nan")
+    def med(key, lib):
+        v = results[key].get(lib)
+        return statistics.median(v) if v else None
+
+    if a.json:
+        doc = {
+            "schema": 1,
+            "date": time.strftime("%Y-%m-%dT%H:%M:%S%z"),
+            "commit": subprocess.run(["git", "-C", ROOT, "rev-parse", "--short", "HEAD"],
+                                     capture_output=True, text=True).stdout.strip(),
+            "host": platform.node(), "machine": platform.machine(), "opt": a.opt,
+            "samples": a.samples, "runs": a.runs, "libs": libs_of,
+            "results": [
+                {"cc": cc, "prog": prog, "name": name,
+                 "ns": {lib: med((cc, prog, name), lib) for lib in results[(cc, prog, name)]},
+                 "runs": results[(cc, prog, name)]}
+                for (cc, prog, name) in order],
+        }
+        Path(a.json).write_text(json.dumps(doc, indent=1) + "\n")
+
+    benches = []
+    for key in order:
+        b = (key[1], key[2])
+        if b not in benches:
+            benches.append(b)
+
+    def cells(cc, b):
+        key = (cc, *b)
+        if key not in results:
+            return None
+        y, s, c = med(key, "ycxx"), med(key, "libstdc++"), med(key, "libc++")
+        return y, s, c, ratio(y, s), ratio(y, c)
+
+    def fmt(x, bold):
+        if x is None:
+            return ""
+        return f"**{x:.2f}**" if bold and x > 1.5 else f"{x:.2f}"
 
     if a.md:
-        head = "| benchmark | " + " | ".join(
-            f"{cc} libycxx ns | {cc} libstdc++ ns | {cc} ratio" for cc in ccs) + " |"
+        head, rule = "| benchmark |", "|---|"
+        for cc in ccs:
+            head += f" {cc} libycxx | {cc} libstdc++ | {cc} ratio |"
+            rule += "---:|---:|---:|"
+            if "libc++" in libs_of[cc]:
+                head += f" {cc} libc++ | {cc} ratio libc++ |"
+                rule += "---:|---:|"
         print(head)
-        print("|---|" + "---:|" * (3 * len(ccs)))
-        for key in order:
-            cells = []
+        print(rule)
+        for b in benches:
+            row = f"| {b[0]}: {b[1]} |"
             for cc in ccs:
-                if cc in results[key]:
-                    y, s = results[key][cc]
-                    r = ratio((y, s))
-                    mark = "**" if r > 1.5 else ""
-                    cells += [f"{y:.2f}", f"{s:.2f}", f"{mark}{r:.2f}{mark}"]
-                else:
-                    cells += ["", "", ""]
-            print(f"| {key[0]}: {key[1]} | " + " | ".join(cells) + " |")
+                c = cells(cc, b) or (None,) * 5
+                row += f" {fmt(c[0], False)} | {fmt(c[1], False)} | {fmt(c[3], True)} |"
+                if "libc++" in libs_of[cc]:
+                    row += f" {fmt(c[2], False)} | {fmt(c[4], True)} |"
+            print(row)
     else:
-        w = max(len(f"{p}: {n}") for p, n in order) if order else 10
-        print(f"{'benchmark':<{w}}" + "".join(
-            f" | {cc + ' ycxx':>11} {cc + ' std':>11} {'ratio':>6}" for cc in ccs))
-        for key in order:
-            line = f"{key[0] + ': ' + key[1]:<{w}}"
+        w = max(len(f"{p}: {n}") for p, n in benches) if benches else 10
+        head = f"{'benchmark':<{w}}"
+        for cc in ccs:
+            head += f" | {cc + ' ycxx':>11} {'libstdc++':>10} {'ratio':>6}"
+            if "libc++" in libs_of[cc]:
+                head += f" {'libc++':>10} {'ratio':>6}"
+        print(head)
+        for b in benches:
+            line = f"{b[0] + ': ' + b[1]:<{w}}"
             for cc in ccs:
-                if cc in results[key]:
-                    y, s = results[key][cc]
-                    r = ratio((y, s))
-                    line += f" | {y:11.2f} {s:11.2f} {r:5.2f}{'!' if r > 1.5 else ' '}"
-                else:
-                    line += " | " + " " * 30
+                c = cells(cc, b)
+                withc = "libc++" in libs_of[cc]
+                if c is None:
+                    line += " | " + " " * (30 + (18 if withc else 0))
+                    continue
+                f = lambda x, n: f"{x:{n}.2f}" if x is not None else " " * n
+                mark = lambda r: "!" if r is not None and r > 1.5 else " "
+                line += f" | {f(c[0], 11)} {f(c[1], 10)} {f(c[3], 5)}{mark(c[3])}"
+                if withc:
+                    line += f" {f(c[2], 10)} {f(c[4], 5)}{mark(c[4])}"
             print(line)
 
 

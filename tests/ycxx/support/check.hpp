@@ -12,3 +12,15 @@ extern "C" void abort(); // no [[noreturn]]: clang rejects it after <stdlib.h>'s
       abort();                                                                                       \
     }                                                                                                \
   } while (0)
+
+// CHECK_SAY((cond), "printf format", args...): CHECK, and on failure also prints the message
+// (the inputs a failure on another platform needs to be understood).
+#define CHECK_SAY(cond, ...)                                                                         \
+  do {                                                                                               \
+    if (!(cond)) {                                                                                   \
+      dprintf(2, "%s:%d: CHECK failed: %s\n  ", __FILE__, __LINE__, #cond);                           \
+      dprintf(2, __VA_ARGS__);                                                                       \
+      dprintf(2, "\n");                                                                              \
+      abort();                                                                                       \
+    }                                                                                                \
+  } while (0)

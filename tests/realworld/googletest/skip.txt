@@ -1,0 +1,2 @@
+# CTest tests that do not run against libycxx, as "<test regex> | <category> | <reason>
+# [| <conditions>]" (tools/lib/realworld.py; the regex matches the whole test name).

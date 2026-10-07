@@ -1,0 +1,3 @@
+# Build outputs that cannot be built against libycxx, as "<output regex> | <category> | <reason>
+# [| <conditions>]" (tools/lib/realworld.py). The tests that need them are in skip.txt.
+googletest/gtest_dll_test_ | libycxx-limitation | links gtest_all_test.cc against the shared libgtest_dll.so and calls GoogleTest internals that GTEST_API_ does not export (testing::internal::StreamingListener::UrlEncode returns std::string). GCC gives every function whose signature names a hidden type hidden visibility, and libycxx's types are hidden (DECISIONS §2; STATUS, known limitations), so the shared library exports only what is marked for export, as with -fvisibility=hidden. Clang does not constrain functions by their types' visibility. | gcc

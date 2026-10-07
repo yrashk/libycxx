@@ -9,8 +9,9 @@ and compiler) and the known gaps (tools/spec_audit/<part>/gaps.tsv), and prints 
 per clause: for each subclause, the entities declared; those with a presence check (declared, in
 its header, freestanding, callable or constructible, the macro defined) and how many pass on both
 compilers; those with a shape check (member type, return type, noexcept, implicit or explicit,
-deleted, deduction guide, specialization value, defaulted arguments) and how many pass; the known
-gaps by class (1-7, docs/SPEC_COVERAGE.md); and the probe files.
+deleted, deduction guide, specialization value, defaulted arguments) and how many pass; the gaps
+by class (1-7, docs/SPEC_COVERAGE.md): open ones (gaps.tsv) and those the audit found and fixed
+or found documented (found.tsv); and the probe files.
 """
 import argparse, collections, os
 
@@ -68,6 +69,16 @@ def main():
             r['sok'] += not (bad & (asp - PRESENCE))
         for g in gaps.get(i, ()):
             r['gap' + g] += 1
+    # the gaps the audit found, fixed or not (found.tsv: row subclause, class, status, reference, what)
+    found = collections.defaultdict(collections.Counter)
+    fp = os.path.join(HERE, a.part, 'found.tsv')
+    if os.path.exists(fp):
+        with open(fp, encoding='utf-8') as f:
+            for line in f:
+                if line.startswith('#') or not line.strip():
+                    continue
+                c = line.rstrip('\n').split('\t')
+                found[c[0]][(c[1], c[2])] += 1
     tot = collections.Counter()
     by_clause = collections.OrderedDict()
     for (clause, sec), r in rows.items():
@@ -84,7 +95,9 @@ def main():
             else:
                 ps = [p for p in probes if p.split('.cpp')[0].replace('.header', '').replace('.freestanding', '') == sec]
                 links = ', '.join(f'[{p}](../tools/spec_audit/{a.part}/probes/{p})' for p in ps)
-            g = ', '.join(f'({k[3:]}) {v}' for k, v in sorted(r.items()) if k.startswith('gap')) or '-'
+            g = [f'({k[3:]}) {v} open' for k, v in sorted(r.items()) if k.startswith('gap')]
+            g += [f'({c}) {v} {st}' for (c, st), v in sorted(found.get(sec, {}).items())]
+            g = ', '.join(g) or '-'
             print(f"| [{sec}] | {r['n']} | {r['pchk']} / {r['pok']} | {r['schk']} / {r['sok']} | {g} | {links} |")
             ctot.update(r)
         print(f"| **total** | {ctot['n']} | {ctot['pchk']} / {ctot['pok']} | {ctot['schk']} / {ctot['sok']} | | |")

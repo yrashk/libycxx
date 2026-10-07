@@ -8,6 +8,9 @@
 # does the same.
 # --std-modules[=DIR]: `import std;` and `import std.compat;` use the modules tools/ycxx-modules
 # built in DIR (default build/<compiler>/modules), and a link includes their objects.
+# $YCXX_CXX_LOG=DIR: also record each command this runs in DIR, one file per invocation (the
+# working directory, then every argument, each ended by a NUL byte): the evidence tools/realworld
+# checks that every translation unit and link of a project went through libycxx.
 here=$(cd "$(dirname "$0")/.." && pwd)
 which=$1; shift
 # Compilers: $YCXX_GXX / $YCXX_CLANGXX (set by tools/toolchain/activate.*), else g++-16 / clang++-23.
@@ -92,8 +95,13 @@ if [ $link = 1 ]; then
       case $a in -fsanitize=*thread*) table_opts="$table_opts -fno-sanitize-link-c++-runtime"; break ;; esac
     done
   fi
-  exec $cxx $extra -std=c++26 -nostdinc++ -isystem "$here/include" -isystem "$libdir/generated/include" $modules_flags "$@" \
+  set -- $cxx $extra -std=c++26 -nostdinc++ -isystem "$here/include" -isystem "$libdir/generated/include" $modules_flags "$@" \
     -nostdlib++ $table_opts $modules_lib $group_begin "$libdir/libycxx.a" "$abi" $group_end -lm $static_libgcc
 else
-  exec $cxx $extra -std=c++26 -nostdinc++ -isystem "$here/include" -isystem "$libdir/generated/include" $modules_flags "$@"
+  set -- $cxx $extra -std=c++26 -nostdinc++ -isystem "$here/include" -isystem "$libdir/generated/include" $modules_flags "$@"
 fi
+if [ -n "${YCXX_CXX_LOG:-}" ]; then
+  log=$(mktemp "$YCXX_CXX_LOG/cmd.XXXXXXXX") || exit 1
+  { printf '%s\0' "$PWD"; printf '%s\0' "$@"; } >"$log"
+fi
+exec "$@"

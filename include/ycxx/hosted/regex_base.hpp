@@ -127,6 +127,10 @@ int __regex_collate_by_name(const char* name, std::size_t n) noexcept;
 bool __regex_primary_key(const std::collate<char>& __f, const char* __low, const char* __high, std::string& out);
 bool __regex_primary_key(const std::collate<wchar_t>& __f, const wchar_t* __low, const wchar_t* __high,
                          std::wstring& out);
+// Whether [s, s + n) (n > 1) is a multi-character collating element of the locale of __f, a
+// collate_byname (the C library's regcomp is asked under that locale); false otherwise.
+bool __regex_collating_element(const std::collate<char>& __f, const char* s, std::size_t n);
+bool __regex_collating_element(const std::collate<wchar_t>& __f, const wchar_t* s, std::size_t n);
 // The fixed message of regex_error(code).
 const char* __regex_error_message(int code) noexcept;
 
@@ -161,12 +165,12 @@ struct regex_traits {
     string_type s(first, last);
     return __col_->transform(s.data(), s.data() + s.size());
   }
-  // [re.traits]/7: the primary key when the facet is a collate_byname whose key form is known
-  // (the C library's multi-level keys on glibc: [[=a=]] matches 'á' in cs_CZ). Otherwise
-  // [re.traits]/7 returns an empty key, which makes every [[=x=]] invalid; libycxx returns the
-  // whole key instead (STATUS.md, regex): the collate facet of the classic locale, and a
-  // collate_byname whose keys have one level, compare code points one by one, so their whole key
-  // is the primary key and every character is its own equivalence class.
+  // [re.traits]/7: the primary key when the facet is exactly a collate_byname whose key form is
+  // known (glibc's multi-level keys: [[=a=]] matches 'á' in cs_CZ; keys that copy the string, of
+  // a locale without collation rules: the whole key); otherwise an empty string, which makes
+  // [[=x=]] invalid ([re.grammar]/10). Deliberate divergence (DECISIONS §3): the classic locale's
+  // own collate facet also gives its whole key (code point order, each character its own class),
+  // so [[=a=]] works in the default locale as with libc++ and libstdc++.
   template <class _ForwardIterator>
   string_type transform_primary(_ForwardIterator first, _ForwardIterator last) const {
     if constexpr (is_same_v<__charT, char> || is_same_v<__charT, wchar_t>) {
@@ -174,28 +178,48 @@ struct regex_traits {
       string_type __key;
       if (::__ycxx::__detail::__regex_primary_key(*__col_, s.data(), s.data() + s.size(), __key))
         return __key;
-      return __col_->transform(s.data(), s.data() + s.size());
     } else {
-      return transform(first, last);
+      (void)first;
+      (void)last;
     }
+    return string_type();
   }
+  // [re.traits]/8: one character; a POSIX collating-symbol name ("period", "NUL", ...); or a
+  // multi-character collating element of a collate_byname locale (the C library's).
   template <class _ForwardIterator>
   string_type lookup_collatename(_ForwardIterator first, _ForwardIterator last) const {
-    char __buf[32];
-    size_t n = 0;
-    for (; first != last; ++first) {
-      if (n == sizeof __buf)
-        return string_type();
-      const __charT c = *first;
-      const char __nc = __ct_->narrow(c, '\0');
+    const string_type s(first, last);
+    if (s.empty())
+      return s;
+    // A name the ctype facet narrows to ASCII is read as narrowed (as lookup_classname reads
+    // class names): one such character is the element it narrows to; another single character
+    // is itself.
+    if (s.size() == 1) {
+      const char __nc = __ct_->narrow(s[0], '\0');
       if (__nc == '\0' || static_cast<unsigned char>(__nc) > 127)
-        return string_type();
-      __buf[n++] = __nc;
+        return s;
+      return string_type(1, __ct_->widen(__nc));
     }
-    if (n == 1)
-      return string_type(1, __ct_->widen(__buf[0]));
-    const int code = ::__ycxx::__detail::__regex_collate_by_name(__buf, n);
-    return code < 0 ? string_type() : string_type(1, __ct_->widen(static_cast<char>(code)));
+    if (s.size() <= 32) {
+      char __buf[32];
+      size_t n = 0;
+      for (const __charT c : s) {
+        const char __nc = __ct_->narrow(c, '\0');
+        if (__nc == '\0' || static_cast<unsigned char>(__nc) > 127)
+          break;
+        __buf[n++] = __nc;
+      }
+      if (n == s.size()) {
+        const int code = ::__ycxx::__detail::__regex_collate_by_name(__buf, n);
+        if (code >= 0)
+          return string_type(1, __ct_->widen(static_cast<char>(code)));
+      }
+    }
+    if constexpr (is_same_v<__charT, char> || is_same_v<__charT, wchar_t>) {
+      if (::__ycxx::__detail::__regex_collating_element(*__col_, s.data(), s.size()))
+        return s;
+    }
+    return string_type();
   }
   template <class _ForwardIterator>
   char_class_type lookup_classname(_ForwardIterator first, _ForwardIterator last, bool icase = false) const {

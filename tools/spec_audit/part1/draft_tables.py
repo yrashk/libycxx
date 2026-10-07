@@ -9,8 +9,9 @@ reads https://eel.is/c++draft/full (or a saved copy of it) and writes, next to t
                      says freestanding, "hardened" for the macros of /3 that only a hardened
                      implementation defines (else "-"), and the headers it is "also in"
                      (space-separated)
-  data/headers.tsv   the headers of Tables 24 and 25 ([headers]) and of Table 27 ([compliance]):
-                     header, table ("cpp", "cpp.c", "fs")
+  data/headers.tsv   the headers of Tables 24 and 25 ([headers]), of Table 27 ([compliance]) and the
+                     C headers of [support.c.headers] (Table 47):
+                     header, table ("cpp", "cpp.c", "fs", "c")
 The first line of each file records the revision of github.com/Eelis/draft it came from.
 Re-run it when the draft changes, then tools/spec_audit/part1/run.py.
 """
@@ -69,7 +70,7 @@ def main():
     (HERE / "data" / "version.tsv").write_text("".join(out))
 
     out = [head]
-    for label, kind in (("headers.cpp", "cpp"), ("headers.cpp.c", "cpp.c")):
+    for label, kind in (("headers.cpp", "cpp"), ("headers.cpp.c", "cpp.c"), ("c.headers", "c")):
         for cell in table(page, label):
             for h in re.findall(r"<([\w.]+)>", cell):
                 out.append(f"{h}\t{kind}\n")

@@ -5,7 +5,7 @@
     tools/spec_audit/part1/run.py [-c gcc|clang]... [--libdir-root DIR] [-j N] [-v] [probe...]
 
 Compile-only checks against libycxx's headers, on each compiler:
-  headers   every header of Tables 24 and 25 ([headers]) compiles; every header of Table 27
+  headers   every header of Tables 24, 25 ([headers]) and 47 ([support.c.headers]) compiles; of Table 27
             ([compliance]) compiles with -ffreestanding -fno-exceptions -fno-rtti
   version   every macro of [version.syn] (data/version.tsv) has the draft's value in <version> and
             in each header the synopsis says it is "also in"; a freestanding one also in a

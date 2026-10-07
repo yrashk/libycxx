@@ -12,6 +12,11 @@
 // the replacements of other locales to the literal encoding, which the locale cannot read).
 // An era and a year within it combine ("%EC%Ey": year n of the era); %Ey without %EC is %y
 // (POSIX strptime: "the offset from %EC", and %Oy "with the alternative digits").
+// What the C library provides is found at run time, never assumed from glibc's data: a locale
+// (or a C library, such as Darwin's) without eras writes %Ec as %c, %EY as %Y and so on (POSIX
+// strftime: where the alternative representation is not available, the unmodified one is used),
+// and those must then read as the unmodified forms. de_DE, which has no eras or digits in any C
+// library, checks that case everywhere.
 #include <time.h>
 #include <wchar.h>
 #include <chrono>
@@ -74,6 +79,19 @@ static void check_locale(const char* name) {
   for (const year_month_day ymd : dates) {
     const sys_seconds tp = sys_days(ymd) + 13h + 4min + 5s;
     const std::tm t = tm_of(ymd, 13h, 4min, 5s);
+    // the C library's own view of this date: an era name, or none (%EC is %C)
+    const bool era_here = c_ftime(name, "%EC", t) != c_ftime(name, "%C", t);
+    if (!era_here) {
+      // no era: %EY, %Ec, %Ex, %EX are the unmodified forms, and read as them
+      CHECK(c_ftime(name, "%EY", t) == c_ftime(name, "%Y", t));
+      CHECK(c_ftime(name, "%Ex", t) == c_ftime(name, "%x", t));
+    }
+    if (c_ftime(name, "%Ec", t) == c_ftime(name, "%c", t) && utf8) {
+      // %Ec as %c: the same text reads the same with either
+      const std::string c = std::format(loc, "{:L%c}", tp);
+      sys_seconds a{}, b{};
+      CHECK(parses(loc, c, "%Ec", a) && parses(loc, c, "%c", b) && a == tp && b == tp);
+    }
     // %EY: the full alternative year
     for (const std::string& s : {c_ftime(name, "%EY", t), fmt("{:L%EY}", c_ftime(name, "%EY", t), tp)}) {
       year y{};
@@ -113,8 +131,10 @@ static void check_locale(const char* name) {
       }
       sys_seconds got{};
       CHECK(parses(loc, c_wftime(name, L"%Y %Om %Oe %OH %OM %OS", t), L"%Y %Om %Oe %OH %OM %OS", got) && got == tp);
+      // %p: a locale without AM/PM strings (de_DE) writes none, and then 13:00 reads as 01:00
       seconds twelve{};
-      CHECK(parses(loc, c_ftime(name, "%OI %p", t), "%OI %p", twelve) && twelve == 13h);
+      const bool ampm = !c_ftime(name, "%p", t).empty();
+      CHECK(parses(loc, c_ftime(name, "%OI %p", t), "%OI %p", twelve) && twelve == (ampm ? 13h : 1h));
       year_month_day d{};
       CHECK(parses(loc, c_ftime(name, "%Y %OU %Ow", t), "%Y %OU %Ow", d) && d == ymd);
       d = {};
@@ -148,7 +168,7 @@ static void check_locale(const char* name) {
 
 int main() {
   check_locale(require_locale("ja_JP.UTF-8"));
-  for (const char* other : {"my_MM.UTF-8", "zh_TW.UTF-8", "ja_JP.eucJP"})
+  for (const char* other : {"de_DE.UTF-8", "my_MM.UTF-8", "zh_TW.UTF-8", "ja_JP.eucJP"})
     if (c_has_locale(other))
       check_locale(other);
   return 0;

@@ -29,10 +29,12 @@ compile alone is "n/a"). Results go to tools/data/transitive-probe/<lib>.txt, on
     <H>: <item> <item> ...        the items that compile after including only H
     <H>: n/a                      H itself does not compile with this library
 
-and a line `# n/a items: ...` for the items the library lacks. tools/gen_transitive_includes.py
+and a line `# n/a items: ...` for the items the library lacks. A run is resumable: each result is
+appended to tools/data/transitive-probe/partial/<lib>.tsv as it comes, and a later run reuses it
+(the file is removed once <lib>.txt is written). tools/gen_transitive_includes.py
 reads the libstdc++ and libc++ files to propose and check tools/data/transitive-includes.txt.
 """
-import argparse, concurrent.futures, os, pathlib, subprocess, sys, tempfile, time
+import argparse, concurrent.futures, hashlib, os, pathlib, subprocess, sys, tempfile, threading, time
 
 HERE = pathlib.Path(__file__).resolve().parent
 REPO = HERE.parent
@@ -91,13 +93,65 @@ def compiles(cmd, text, tmp):
         os.unlink(path)
 
 
-def probe(lib, headers, items, jobs, progress=True):
+class Cache:
+    """Results already obtained, so an interrupted run resumes (tools/data/transitive-probe/
+    partial/<lib>.tsv, appended as each compile finishes; removed once <lib>.txt is written).
+    Keyed by a hash of the command and the source, so a changed item or compiler is re-run."""
+
+    def __init__(self, path):
+        self.path, self.known = path, {}
+        if path and path.exists():
+            for line in path.read_text().splitlines():
+                parts = line.split()
+                if len(parts) == 2 and parts[1] in "01":
+                    self.known[parts[0]] = parts[1] == "1"
+        self.f = None
+        if path:
+            path.parent.mkdir(parents=True, exist_ok=True)
+            self.f = open(path, "a")
+        self.lock = threading.Lock()
+        self.salt = ""
+
+    def key(self, cmd, text):
+        return hashlib.sha1(("\0".join(cmd) + "\0" + self.salt + "\0" + text).encode()).hexdigest()[:20]
+
+    def run(self, cmd, text, tmp):
+        k = self.key(cmd, text)
+        if k in self.known:
+            return self.known[k]
+        r = compiles(cmd, text, tmp)
+        with self.lock:
+            self.known[k] = r
+            if self.f:
+                self.f.write(f"{k} {int(r)}\n")
+                self.f.flush()
+        return r
+
+    def close(self, remove=False):
+        if self.f:
+            self.f.close()
+            if remove:
+                self.path.unlink()
+
+
+def include_digest():
+    """libycxx's headers enter the cache key of the ycxx probes: changed headers are re-probed."""
+    h = hashlib.sha1()
+    for f in sorted((YCXX_ROOT / "include").rglob("*")):
+        if f.is_file():
+            h.update(f.as_posix().encode() + b"\0" + f.read_bytes())
+    return h.hexdigest()[:16]
+
+
+def probe(lib, headers, items, jobs, cache, progress=True):
     cmd = compilers(lib)
+    if lib.startswith("ycxx"):
+        cache.salt = include_digest()
     with tempfile.TemporaryDirectory(prefix=f"ycxx-probe-{lib}-") as tmp, \
             concurrent.futures.ThreadPoolExecutor(jobs) as pool:
         # Controls.
-        ctl_items = {i: pool.submit(compiles, cmd, f"#include <{g}>\n{s}\n", tmp) for i, g, s in items}
-        ctl_heads = {h: pool.submit(compiles, cmd, f"#include <{h}>\n", tmp) for h in headers}
+        ctl_items = {i: pool.submit(cache.run, cmd, f"#include <{g}>\n{s}\n", tmp) for i, g, s in items}
+        ctl_heads = {h: pool.submit(cache.run, cmd, f"#include <{h}>\n", tmp) for h in headers}
         na_items = {i for i, f in ctl_items.items() if not f.result()}
         na_heads = {h for h, f in ctl_heads.items() if not f.result()}
         jobsl = {}
@@ -107,7 +161,7 @@ def probe(lib, headers, items, jobs, progress=True):
             for i, g, s in items:
                 if g == h or i in na_items:
                     continue
-                jobsl[(h, i)] = pool.submit(compiles, cmd, f"#include <{h}>\n{s}\n", tmp)
+                jobsl[(h, i)] = pool.submit(cache.run, cmd, f"#include <{h}>\n{s}\n", tmp)
         done, total, t0 = 0, len(jobsl), time.time()
         res = {}
         for k, f in jobsl.items():
@@ -116,10 +170,7 @@ def probe(lib, headers, items, jobs, progress=True):
             if progress and (done % 200 == 0 or done == total):
                 el = time.time() - t0
                 eta = el / done * (total - done)
-                print(f"\r{lib}: {done}/{total} pairs, {el:.0f}s, eta {eta:.0f}s", end="",
-                      file=sys.stderr, flush=True)
-        if progress:
-            print(file=sys.stderr)
+                print(f"{lib}: {done}/{total} pairs, {el:.0f}s, eta {eta:.0f}s", file=sys.stderr, flush=True)
     return na_items, na_heads, res
 
 
@@ -161,7 +212,8 @@ def main():
     if a.items:
         items = [it for it in items if it[0] in a.items.split(",")]
     for lib in a.lib or ["libstdc++", "libc++"]:
-        na_items, na_heads, res = probe(lib, headers, items, a.jobs)
+        cache = Cache(None if partial else DATA / "partial" / f"{lib}.tsv")
+        na_items, na_heads, res = probe(lib, headers, items, a.jobs, cache)
         if partial:
             for h in headers:
                 got = "n/a" if h in na_heads else " ".join(i for i, g, s in items if res.get((h, i)))
@@ -170,6 +222,7 @@ def main():
                 print(f"{lib} n/a items: {' '.join(sorted(na_items))}")
         else:
             write(lib, headers, items, na_items, na_heads, res, compilers(lib))
+        cache.close(remove=not partial)
 
 
 if __name__ == "__main__":

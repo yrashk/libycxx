@@ -1,0 +1,121 @@
+Categories: transitive-include, implementation-specific, pre-c++26.
+1. src/tbb/misc.h uses cpu_set_t without <sched.h>, and two tests call pthread_key_create without
+<pthread.h> (libstdc++ includes <pthread.h>, hence <sched.h>, from <thread>, <mutex> and
+<atomic>); dynamic_link.cpp and the tests' utils_concurrency_limit.h use POSIX's PATH_MAX without
+<limits.h> (libstdc++'s <climits> includes the C library's <limits.h>, which has POSIX's macros
+too; libycxx's <climits> defines the C standard's macros only); the vendored doctest uses errno
+without <cerrno> (declared through <system_error> by libstdc++ and libc++). Adds the includes.
+2. detail/_config.h detects std::uncaught_exceptions by the library's vendor macros (__GLIBCXX__,
+_LIBCPP_VERSION) and otherwise calls std::uncaught_exception, removed in C++20 (P0619). Also uses
+uncaught_exceptions with another library that defines __cpp_lib_uncaught_exceptions.
+3. tbbmalloc is linked with the C compiler, so as not to depend on a C++ runtime, assuming that
+what it uses of the C++ library (std::this_thread::yield, the -fno-exceptions error path) is all
+inline in the headers. libycxx implements those in its static archive (the platform layer,
+DECISIONS §18): links tbbmalloc with the C++ compiler, which adds libycxx's archives statically,
+so tbbmalloc still needs no shared C++ runtime.
+
+diff --git a/include/oneapi/tbb/detail/_config.h b/include/oneapi/tbb/detail/_config.h
+index 3b43c1d..22e01ae 100644
+--- a/include/oneapi/tbb/detail/_config.h
++++ b/include/oneapi/tbb/detail/_config.h
+@@ -340,7 +340,8 @@
+ #endif
+ 
+ #define __TBB_CPP17_UNCAUGHT_EXCEPTIONS_PRESENT             (_MSC_VER >= 1900 || __GLIBCXX__ && __cpp_lib_uncaught_exceptions \
+-                                                            || _LIBCPP_VERSION >= 3700 && (!__TBB_MACOS_TARGET_VERSION || __TBB_MACOS_TARGET_VERSION >= 101200))
++                                                            || _LIBCPP_VERSION >= 3700 && (!__TBB_MACOS_TARGET_VERSION || __TBB_MACOS_TARGET_VERSION >= 101200) \
++                                                            || !__GLIBCXX__ && !_LIBCPP_VERSION && __cpp_lib_uncaught_exceptions)
+ 
+ #define __TBB_TSX_INTRINSICS_PRESENT (__RTM__ || __INTEL_COMPILER || (_MSC_VER>=1700 && (__TBB_x86_64 || __TBB_x86_32)))
+ 
+diff --git a/src/tbb/dynamic_link.cpp b/src/tbb/dynamic_link.cpp
+index 868bb96..049bf73 100644
+--- a/src/tbb/dynamic_link.cpp
++++ b/src/tbb/dynamic_link.cpp
+@@ -32,6 +32,7 @@
+ 
+ #include <cstdarg>          // va_list etc.
+ #include <cstring>          // strrchr, memset
++#include <limits.h>         // PATH_MAX (POSIX)
+ 
+ #if _WIN32
+     // Unify system calls
+diff --git a/src/tbb/misc.h b/src/tbb/misc.h
+index 3c90c91..dfac539 100644
+--- a/src/tbb/misc.h
++++ b/src/tbb/misc.h
+@@ -32,6 +32,9 @@
+ #endif
+ 
+ #include <atomic>
++#if __linux__
++#include <sched.h> // cpu_set_t
++#endif
+ 
+ // Does the operating system have a system call to pin a thread to a set of OS processors?
+ #define __TBB_OS_AFFINITY_SYSCALL_PRESENT ((__linux__ && !__ANDROID__) || (__FreeBSD_version >= 701000))
+diff --git a/src/tbbmalloc/CMakeLists.txt b/src/tbbmalloc/CMakeLists.txt
+index b3fdf34..637d6ab 100644
+--- a/src/tbbmalloc/CMakeLists.txt
++++ b/src/tbbmalloc/CMakeLists.txt
+@@ -75,7 +75,7 @@ set_target_properties(tbbmalloc PROPERTIES
+     DEFINE_SYMBOL ""
+     VERSION ${TBBMALLOC_BINARY_VERSION}.${TBB_BINARY_MINOR_VERSION}
+     SOVERSION ${TBBMALLOC_BINARY_VERSION}
+-    LINKER_LANGUAGE C
++    LINKER_LANGUAGE CXX
+ )
+ 
+ tbb_handle_ipo(tbbmalloc)
+diff --git a/test/common/doctest.h b/test/common/doctest.h
+index 7079b1c..542cb91 100644
+--- a/test/common/doctest.h
++++ b/test/common/doctest.h
+@@ -3245,6 +3245,7 @@ DOCTEST_MAKE_STD_HEADERS_CLEAN_FROM_WARNINGS_ON_WALL_BEGIN
+ #include <csignal>
+ #include <cfloat>
+ #include <cctype>
++#include <cerrno>
+ #include <cstdint>
+ #include <string>
+ 
+diff --git a/test/common/tls_limit.h b/test/common/tls_limit.h
+index 694753d..bb4373c 100644
+--- a/test/common/tls_limit.h
++++ b/test/common/tls_limit.h
+@@ -18,6 +18,9 @@
+ #define __TBB_test_common_tls_limit_H_
+ 
+ #include "config.h"
++#if !(_WIN32 || _WIN64)
++#include <pthread.h> // pthread_key_create
++#endif
+ 
+ class LimitTLSKeysTo {
+ #if _WIN32 || _WIN64
+diff --git a/test/common/utils_concurrency_limit.h b/test/common/utils_concurrency_limit.h
+index c19b11e..cd0019e 100644
+--- a/test/common/utils_concurrency_limit.h
++++ b/test/common/utils_concurrency_limit.h
+@@ -26,6 +26,7 @@
+ #include "oneapi/tbb/enumerable_thread_specific.h"
+ 
+ #include <cstddef>
++#include <limits.h>
+ #include <vector>
+ #include <algorithm>
+ #include <memory>
+diff --git a/test/tbbmalloc/test_malloc_init_shutdown.cpp b/test/tbbmalloc/test_malloc_init_shutdown.cpp
+index d205cb7..b3b818b 100644
+--- a/test/tbbmalloc/test_malloc_init_shutdown.cpp
++++ b/test/tbbmalloc/test_malloc_init_shutdown.cpp
+@@ -22,6 +22,9 @@
+ #include "oneapi/tbb/detail/_utils.h"
+ #include "tbb/scalable_allocator.h"
+ #include <thread>
++#if !(_WIN32 || _WIN64)
++#include <pthread.h> // pthread_key_create
++#endif
+ 
+ static constexpr std::size_t MaxTasks = 16;
+ std::atomic<std::size_t> FinishedTasks;

@@ -1,0 +1,3 @@
+# Build outputs that cannot be built against libycxx, as "<output regex> | <category> | <reason>
+# [| <conditions>]" (tools/lib/realworld.py). The tests that need them are in skip.txt.
+test/CMakeFiles/test_openmp\.dir/.*\.o | compiler-bug | GCC 16.2's own <omp.h> includes libstdc++'s internal <bits/new_throw.h> in C++ (for std::__throw_bad_alloc), so no OpenMP program can be built with GCC 16 and another C++ library (reproducer: "#include <omp.h>" with g++-16 -nostdinc++ -fopenmp and any C++ library's include directory) | gcc

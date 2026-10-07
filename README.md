@@ -310,7 +310,9 @@ Homebrew's GCC 16, the provisioned Clang 23), plus a sample of the external suit
 both compilers on both platforms, the own suite under ASan+UBSan (Clang), all three suites under
 ThreadSanitizer on both compilers (libycxx instrumented too; a job of its own on the bare runner,
 with GCC 16.2 built with libsanitizer by `tools/toolchain/provision` and cached), and the own
-suite on both compilers hardened, with `-fno-exceptions` and with `-O2`. Every job uploads its reports as an
+suite on both compilers hardened, with `-fno-exceptions` and with `-O2`, and the benchmarks of `bench/`
+against their stored baseline of ratios to libstdc++ (`bench/check`: a FAIL is a regression that
+repeated in two confirmation runs; DECISIONS §15). Every job uploads its reports as an
 artifact.
 Tests that need a named locale (libstdc++'s `dg-require-namedlocale`, libc++'s `locale.<name>`
 features) run when the C library has it (`tests/ycxxlit/locales.py`); `tools/ci/gen-locales`

@@ -397,6 +397,11 @@ def prelude(sec):
     return PRELUDE.format(sec=sec, includes=inc)
 
 
+# the headers whose feature-test macros this part checks ([version.syn])
+MACRO_HEADERS = {'algorithm', 'array', 'deque', 'flat_map', 'flat_set', 'forward_list', 'generator', 'hive',
+                 'inplace_vector', 'iterator', 'list', 'map', 'mdspan', 'numeric', 'queue', 'ranges', 'set', 'span',
+                 'stack', 'string', 'string_view', 'unordered_map', 'unordered_set', 'vector', 'cstring'}
+
 FREESTANDING_HEADERS = {'array', 'inplace_vector', 'span', 'mdspan', 'iterator', 'ranges', 'algorithm', 'numeric',
                         'string_view', 'string', 'cstring', 'memory'}
 

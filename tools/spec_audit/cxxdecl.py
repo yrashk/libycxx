@@ -27,7 +27,13 @@ class Param:
         self.pack = any(t.text == '...' for t in body)
         body = [t for t in body if t.text != '...']
         self.name = None
-        if len(body) >= 2 and body[-1].kind in ('id', 'expo') and body[-1].text not in KEYWORDS and \
+        # a declarator in parentheses: T (&a)[N]
+        for k in range(len(body) - 3):
+            if body[k].text == '(' and body[k + 1].text in ('&', '&&', '*') and body[k + 2].kind == 'id' and body[k + 3].text == ')':
+                self.name = body[k + 2].text
+                body = body[:k + 2] + body[k + 3:]
+                break
+        if self.name is None and len(body) >= 2 and body[-1].kind in ('id', 'expo') and body[-1].text not in KEYWORDS and \
                 body[-2].text not in ('::', 'const', 'volatile', 'class', 'typename', 'struct', 'unsigned', 'signed', 'long', 'short') \
                 and not (len(body) == 2 and body[0].text in ('const',)):
             self.name = body[-1].text
@@ -139,7 +145,13 @@ def parse(d):
         f.name_start = k
         f.operator = True
     else:
-        p = decls.top_level_index(body, '(')
+        p = -1
+        q = 0
+        while True:
+            p = decls.top_level_index(body, '(', q)
+            if p <= 0 or body[p - 1].text not in ('decltype', 'noexcept', 'sizeof', 'alignas', 'explicit', 'requires', 'alignof'):
+                break
+            q = decls._skip_balanced(body, p, '(', ')')
         if p < 0:
             return None
         k = p - 1
@@ -250,6 +262,10 @@ class Rewriter:
                 key = '@' + t.text + '@'
                 if key in self.subst:
                     out.append(self._sub(self.subst[key], pack_index))
+                    if i + 1 < len(toks) and toks[i + 1].text == '<':
+                        # a nested class template (`@iterator@<Const>`): the instantiation stands for it
+                        i = decls._skip_template_args(toks, i + 1)
+                        continue
                 elif t.text in self.expo:
                     out.append(self.expo[t.text])
                 else:
@@ -257,7 +273,9 @@ class Rewriter:
             elif t.kind == 'id' and prev != '::' and prev != '.':
                 n = t.text
                 nxt = toks[i + 1].text if i + 1 < len(toks) else ''
-                if n in self.subst:
+                if n in getattr(self, 'params', {}):
+                    out.append(self.params[n])
+                elif n in self.subst:
                     out.append(self._sub(self.subst[n], pack_index))
                 elif n in KEYWORDS or n in ('size_t', 'ptrdiff_t') and False:
                     out.append(n)
@@ -267,6 +285,8 @@ class Rewriter:
                     out.append(self.inst)          # the injected-class-name
                 elif n in self.members and self.inst:
                     out.append(self.inst + '::' + n)
+                elif n in getattr(self, 'outer_members', ()) and getattr(self, 'outer_inst', None):
+                    out.append(self.outer_inst + '::' + n)
                 elif nxt == '::' and n in ('ranges', 'views', 'execution', 'chrono', 'this_thread', 'pmr', 'filesystem'):
                     out.append('std::' + n)
                 elif n in self.lookup:
@@ -288,6 +308,14 @@ class Rewriter:
     def _sub(self, v, pack_index):
         if isinstance(v, list):
             if pack_index is None:
-                return ', '.join(v)
-            return v[pack_index]
+                return ', '.join(self._wrap(x) for x in v)
+            return self._wrap(v[pack_index])
+        return self._wrap(v)
+
+    @staticmethod
+    def _wrap(v):
+        # `const T&` with T = int* is `int* const&`, and `R&&` with R = vector<int>& is
+        # `vector<int>&`: spelled through type_identity_t, the declarator applies to the type
+        if '&' in v or '*' in v:
+            return f'std::type_identity_t<{v}>'
         return v

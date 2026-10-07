@@ -29,7 +29,7 @@ SECTION_HEADER = {
 # a name each header the synopses #include declares (to check that the #include is there)
 HEADER_REPRESENTATIVE = {
     'compare': 'std::strong_ordering', 'initializer_list': 'std::initializer_list<int>',
-    'iterator': 'std::reverse_iterator<int*>', 'concepts': 'std::integral<int>',
+    'iterator': 'std::reverse_iterator<int*>', 'concepts': 'expr:std::integral<int>',
 }
 
 # exposition-only alias templates the prelude defines, as the draft does
@@ -127,14 +127,18 @@ def _views():
     def add(name, args, sect_args=None, **subst):
         """A view class, its iterator and its sentinel (in a non-common instantiation)."""
         inst = f'std::ranges::{name}<{args}>'
-        c[name] = _view(inst, **subst)
-        c[f'{name}<{_params[name]}>::@iterator@'] = _view(f'std::ranges::iterator_t<{inst}>', **subst)
+        it = f'std::ranges::iterator_t<{inst}>'
+        c[name] = _view(inst, **dict(subst, **{'@iterator@': it}))
+        c[f'{name}<{_params[name]}>::@iterator@'] = _view(it, **dict(subst, **{'@iterator@': it}))
         if sect_args is not None:
-            s2 = dict(subst)
-            s2.setdefault('V', NCV)
-            s2['V'] = NCV if 'V' not in subst else subst['V']
             ninst = f'std::ranges::{name}<{sect_args}>'
-            c[f'{name}<{_params[name]}>::@sentinel@'] = _view(f'std::ranges::sentinel_t<{ninst}>', **dict(s2, V=NCV))
+            nv = {'p2::VV': 'p2::NCVV', 'p2::TV': 'p2::NCTV'}.get(subst.get('V', V), NCV)
+            s2 = dict(subst, V=nv)
+            if 'Views' in s2:
+                s2['Views'] = [NCV, NCV]
+            s2['@iterator@'] = f'std::ranges::iterator_t<{ninst}>'
+            s2['@sentinel@'] = f'std::ranges::sentinel_t<{ninst}>'
+            c[f'{name}<{_params[name]}>::@sentinel@'] = _view(s2['@sentinel@'], **s2)
     _params = {
         'iota_view': 'W, Bound', 'repeat_view': 'T, Bound', 'basic_istream_view': 'Val, CharT, Traits',
         'filter_view': 'V, Pred', 'transform_view': 'V, F', 'take_view': 'V', 'take_while_view': 'V, Pred',
@@ -225,20 +229,25 @@ def _containers():
              'InputIterator': 'std::pair<int, p2::M>*', 'R': 'std::vector<std::pair<int, p2::M>>', 'Args': ['int', 'int'],
              'M': 'int', 'K': 'long', 'P': 'std::pair<int, p2::M>', 'Predicate': 'p2::AnyFn', 'C2': 'std::greater<>'}
     for n in ('map', 'multimap'):
-        c[n] = {'inst': f'std::{n}<int, p2::M, std::less<>>', 'subst': dict(assoc), 'guide_subst': {'InputIterator': 'std::pair<int, p2::M>*', 'Key': 'int', 'T': 'p2::M'}}
+        c[n] = {'inst': f'std::{n}<int, p2::M, std::less<>>', 'subst': dict(assoc),
+                'guide_subst': {'Compare': 'std::less<int>', 'Allocator': 'std::allocator<std::pair<const int, p2::M>>',
+                                'R': 'std::vector<std::pair<int, p2::M>>'}}
         c[f'{n}::value_compare'] = {'inst': f'std::{n}<int, p2::M, std::less<>>::value_compare', 'subst': dict(assoc)}
     sets = {'Key': 'int', 'Compare': 'std::less<>', 'Allocator': 'std::allocator<int>', 'InputIterator': 'int*',
             'R': 'std::vector<int>', 'Args': ['int'], 'K': 'long', 'Predicate': 'p2::AnyFn', 'C2': 'std::greater<>'}
     for n in ('set', 'multiset'):
-        c[n] = {'inst': f'std::{n}<int, std::less<>>', 'subst': dict(sets)}
+        c[n] = {'inst': f'std::{n}<int, std::less<>>', 'subst': dict(sets), 'guide_subst': {'Compare': 'std::less<int>'}}
     uassoc = dict(assoc, Hash='p2::THash', Pred='std::equal_to<>', H2='std::hash<int>', P2='std::equal_to<int>')
     del uassoc['Compare']
     for n in ('unordered_map', 'unordered_multimap'):
-        c[n] = {'inst': f'std::{n}<int, p2::M, p2::THash, std::equal_to<>>', 'subst': dict(uassoc)}
+        c[n] = {'inst': f'std::{n}<int, p2::M, p2::THash, std::equal_to<>>', 'subst': dict(uassoc),
+                'guide_subst': {'Hash': 'std::hash<int>', 'Pred': 'std::equal_to<int>',
+                                'Allocator': 'std::allocator<std::pair<const int, p2::M>>'}}
     usets = dict(sets, Hash='p2::THash', Pred='std::equal_to<>', H2='std::hash<int>', P2='std::equal_to<int>')
     del usets['Compare']
     for n in ('unordered_set', 'unordered_multiset'):
-        c[n] = {'inst': f'std::{n}<int, p2::THash, std::equal_to<>>', 'subst': dict(usets)}
+        c[n] = {'inst': f'std::{n}<int, p2::THash, std::equal_to<>>', 'subst': dict(usets),
+                'guide_subst': {'Hash': 'std::hash<int>', 'Pred': 'std::equal_to<int>'}}
     ad = {'T': 'int', 'Container': 'std::deque<int>', 'InputIterator': 'int*', 'R': 'std::vector<int>', 'Alloc': 'std::allocator<int>',
           'Args': ['int']}
     c['queue'] = {'inst': 'std::queue<int>', 'subst': dict(ad)}
@@ -299,7 +308,7 @@ def _iterators():
     c['reverse_iterator'] = {'inst': 'std::reverse_iterator<int*>', 'subst': it}
     c['move_iterator'] = {'inst': 'std::move_iterator<int*>', 'subst': it}
     c['move_sentinel'] = {'inst': 'std::move_sentinel<int*>', 'subst': it}
-    c['basic_const_iterator'] = {'inst': 'std::basic_const_iterator<int*>', 'subst': dict(it, Other='int*')}
+    c['basic_const_iterator'] = {'inst': 'std::basic_const_iterator<int*>', 'subst': dict(it, Other='int*', T='int*')}
     c['common_iterator'] = {'inst': 'std::common_iterator<int*, std::unreachable_sentinel_t>',
                             'subst': dict(it, S='std::unreachable_sentinel_t', S2='std::unreachable_sentinel_t')}
     c['counted_iterator'] = {'inst': 'std::counted_iterator<int*>', 'subst': it}
@@ -317,6 +326,17 @@ def _iterators():
                 'in_found_result': 'int*', 'in_value_result': 'int*, int', 'out_value_result': 'int*, int'}[n]
         c[n] = {'inst': f'std::ranges::{n}<{args}>', 'subst': {'I': 'int*', 'I1': 'int*', 'I2': 'int*', 'O': 'int*', 'O1': 'int*',
                                                                 'O2': 'int*', 'F': 'p2::AnyFn', 'T': 'int'}}
+    ci = {'I': 'int*', 'S': 'std::unreachable_sentinel_t', 'T': 'int'}
+    c['incrementable_traits<T*>'] = {'inst': 'std::incrementable_traits<int*>', 'subst': ci}
+    c['iterator_traits<T*>'] = {'inst': 'std::iterator_traits<int*>', 'subst': ci}
+    c['iterator_traits<common_iterator<I, S>>'] = {'inst': 'std::iterator_traits<std::common_iterator<int*, std::unreachable_sentinel_t>>', 'subst': ci}
+    c['incrementable_traits<common_iterator<I, S>>'] = {'inst': 'std::incrementable_traits<std::common_iterator<int*, std::unreachable_sentinel_t>>', 'subst': ci}
+    c['iterator_traits<counted_iterator<I>>'] = {'inst': 'std::iterator_traits<std::counted_iterator<int*>>', 'subst': ci}
+    sr = {'I': 'int*', 'S': 'int*', 'K': 'std::ranges::subrange_kind::sized'}
+    for k in ('0', '1'):
+        for cv in ('', 'const '):
+            c[f'tuple_element<{k}, {cv}ranges::subrange<I, S, K>>'] = {'inst': f'std::tuple_element<{k}, {cv}std::ranges::subrange<int*>>', 'subst': sr}
+    c['formatter<T, charT>'] = {'inst': 'std::formatter<std::vector<bool>::reference, char>', 'subst': {'charT': 'char', 'T': 'std::vector<bool>::reference'}}
     for ch in ('char', 'char8_t', 'char16_t', 'char32_t', 'wchar_t'):
         c[f'char_traits<{ch}>'] = {'inst': f'std::char_traits<{ch}>', 'subst': {}}
     sv = {'charT': 'char', 'traits': 'std::char_traits<char>', 'It': 'const char*', 'End': 'const char*', 'R': 'std::vector<char>&'}
@@ -331,6 +351,13 @@ CLASSES = {}
 CLASSES.update(_containers())
 CLASSES.update(_iterators())
 CLASSES.update(_views())
+for _k, _c in CLASSES.items():
+    # an exposition-only nested class names itself (`const @iterator@& x`): its instantiation
+    _m = re.search(r'::(@[\w-]+@)$', _k)
+    if _m:
+        _c['subst'].setdefault(_m.group(1), _c['inst'])
+        if _m.group(1) == '@sentinel@':
+            _c['subst'].setdefault('@iterator@', _c['inst'].replace('sentinel_t<', 'iterator_t<'))
 
 # template arguments for one declaration (its text, whitespace collapsed)
 SPEC_SUBST = {}
@@ -342,6 +369,8 @@ def skip(sec, d):
         return 'exposition-only member'
     if any(c.startswith('@') and '::' not in c for c in d.cls):
         return 'member of an exposition-only class'
+    if 'present only' in d.comment:
+        return 'present only under a condition (' + ' '.join(d.comment.replace('//', ' ').split()) + ')'
     return None
 
 
@@ -366,6 +395,8 @@ namespace p2 {{
     using is_transparent = void;
     std::size_t operator()(long) const noexcept;
   }};
+  // a declval whose type depends on D: a deleted function's use in a template is a substitution failure
+  template<class D, class T> std::add_rvalue_reference_t<T> dv() noexcept;
   struct ResizeOp {{ std::size_t operator()(char*, std::size_t n) const {{ return n; }} }};
   struct Sent {{ friend constexpr bool operator==(const int*, Sent) noexcept {{ return false; }} }};
   struct SentV {{ friend constexpr bool operator==(const std::vector<int>*, SentV) noexcept {{ return false; }} }};
@@ -441,12 +472,12 @@ def header_probes(g, ents, outdir):
                  (hdr in FREESTANDING_HEADERS and 'hosted' not in note and 'freestanding-deleted' not in note
                   and sec not in ('iterator.synopsis', 'string.syn', 'cstring.syn'))
             if fs and hdr in FREESTANDING_HEADERS:
-                fs_lines.append(f'{line.replace("_h", "_f")} // @{i} freestanding')
+                fs_lines.append(f'{line.replace(i + "_h", i + "_f")} // @{i} freestanding')
         for (hh, inc_id, inc, rep) in [(h, a, b, c) for h, l in g.header_includes.items() for (a, b, c) in l if h == hdr]:
-            if rep.endswith('>') or '<' in rep:
-                lines.append(f'namespace {inc_id}_h {{ using t = {rep}; }} // @{inc_id} include')
+            if rep.startswith('expr:'):
+                lines.append(f'static_assert({rep[5:]}); // @{inc_id} include')
             else:
-                lines.append(f'namespace {inc_id}_h {{ using t = decltype({rep}); }} // @{inc_id} include')
+                lines.append(f'namespace {inc_id}_h {{ using t = {rep}; }} // @{inc_id} include')
         head = (f'// Generated by tools/spec_audit/gen_probes.py; do not edit. Names of [{sec}] with only <{hdr}> included.\n'
                 f'#include <{hdr}>\n')
         with open(os.path.join(outdir, sec + '.header.cpp'), 'w', encoding='utf-8') as o:

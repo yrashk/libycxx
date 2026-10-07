@@ -10488,3 +10488,150 @@ stdatomic.h.syn#10	stdatomic.h.syn	stdatomic.h	ATOMIC_LONG_LOCK_FREE	macro
 stdatomic.h.syn#11	stdatomic.h.syn	stdatomic.h	ATOMIC_LLONG_LOCK_FREE	macro	
 stdatomic.h.syn#12	stdatomic.h.syn	stdatomic.h	ATOMIC_POINTER_LOCK_FREE	macro	
 stdatomic.h.syn#13	stdatomic.h.syn	stdatomic.h	ATOMIC_FLAG_INIT	macro	
+version.syn@version#1	version.syn@version	version	__cpp_lib_atomic_flag_test	macro value 201907L		freestanding
+version.syn@atomic#1	version.syn@atomic	atomic	__cpp_lib_atomic_flag_test	macro value 201907L		freestanding
+version.syn@version#2	version.syn@version	version	__cpp_lib_atomic_float	macro value 201711L		freestanding
+version.syn@atomic#2	version.syn@atomic	atomic	__cpp_lib_atomic_float	macro value 201711L		freestanding
+version.syn@version#3	version.syn@version	version	__cpp_lib_atomic_is_always_lock_free	macro value 201603L		freestanding
+version.syn@atomic#3	version.syn@atomic	atomic	__cpp_lib_atomic_is_always_lock_free	macro value 201603L		freestanding
+version.syn@version#4	version.syn@version	version	__cpp_lib_atomic_lock_free_type_aliases	macro value 201907L	
+version.syn@atomic#4	version.syn@atomic	atomic	__cpp_lib_atomic_lock_free_type_aliases	macro value 201907L		freestanding
+version.syn@version#5	version.syn@version	version	__cpp_lib_atomic_min_max	macro value 202506L		freestanding
+version.syn@atomic#5	version.syn@atomic	atomic	__cpp_lib_atomic_min_max	macro value 202506L		freestanding
+version.syn@version#6	version.syn@version	version	__cpp_lib_atomic_reductions	macro value 202506L		freestanding
+version.syn@atomic#6	version.syn@atomic	atomic	__cpp_lib_atomic_reductions	macro value 202506L		freestanding
+version.syn@version#7	version.syn@version	version	__cpp_lib_atomic_ref	macro value 202603L		freestanding
+version.syn@atomic#7	version.syn@atomic	atomic	__cpp_lib_atomic_ref	macro value 202603L		freestanding
+version.syn@version#8	version.syn@version	version	__cpp_lib_atomic_value_initialization	macro value 201911L		freestanding
+version.syn@atomic#8	version.syn@atomic	atomic	__cpp_lib_atomic_value_initialization	macro value 201911L		freestanding
+version.syn@version#9	version.syn@version	version	__cpp_lib_atomic_wait	macro value 201907L		freestanding
+version.syn@atomic#9	version.syn@atomic	atomic	__cpp_lib_atomic_wait	macro value 201907L		freestanding
+version.syn@version#10	version.syn@version	version	__cpp_lib_barrier	macro value 202302L	
+version.syn@barrier#1	version.syn@barrier	barrier	__cpp_lib_barrier	macro value 202302L	
+version.syn@version#11	version.syn@version	version	__cpp_lib_char8_t	macro value 201907L		freestanding
+version.syn@atomic#10	version.syn@atomic	atomic	__cpp_lib_char8_t	macro value 201907L		freestanding
+version.syn@filesystem#1	version.syn@filesystem	filesystem	__cpp_lib_char8_t	macro value 201907L	
+version.syn@iosfwd#1	version.syn@iosfwd	iosfwd	__cpp_lib_char8_t	macro value 201907L	
+version.syn@istream#1	version.syn@istream	istream	__cpp_lib_char8_t	macro value 201907L	
+version.syn@locale#1	version.syn@locale	locale	__cpp_lib_char8_t	macro value 201907L	
+version.syn@ostream#1	version.syn@ostream	ostream	__cpp_lib_char8_t	macro value 201907L	
+version.syn@version#12	version.syn@version	version	__cpp_lib_chrono	macro value 202306L	
+version.syn@chrono#1	version.syn@chrono	chrono	__cpp_lib_chrono	macro value 202306L	
+version.syn@version#13	version.syn@version	version	__cpp_lib_chrono_udls	macro value 201304L	
+version.syn@chrono#2	version.syn@chrono	chrono	__cpp_lib_chrono_udls	macro value 201304L	
+version.syn@version#14	version.syn@version	version	__cpp_lib_complex_udls	macro value 201309L	
+version.syn@complex#1	version.syn@complex	complex	__cpp_lib_complex_udls	macro value 201309L	
+version.syn@version#15	version.syn@version	version	__cpp_lib_constexpr_atomic	macro value 202411L	
+version.syn@atomic#11	version.syn@atomic	atomic	__cpp_lib_constexpr_atomic	macro value 202411L		freestanding
+version.syn@version#16	version.syn@version	version	__cpp_lib_constexpr_charconv	macro value 202207L		freestanding
+version.syn@charconv#1	version.syn@charconv	charconv	__cpp_lib_constexpr_charconv	macro value 202207L		freestanding
+version.syn@version#17	version.syn@version	version	__cpp_lib_constexpr_cmath	macro value 202306L	
+version.syn@cmath#1	version.syn@cmath	cmath	__cpp_lib_constexpr_cmath	macro value 202306L	
+version.syn@version#18	version.syn@version	version	__cpp_lib_constexpr_complex	macro value 202306L	
+version.syn@complex#2	version.syn@complex	complex	__cpp_lib_constexpr_complex	macro value 202306L	
+version.syn@version#19	version.syn@version	version	__cpp_lib_constexpr_exceptions	macro value 202502L	
+version.syn@format#1	version.syn@format	format	__cpp_lib_constexpr_exceptions	macro value 202502L	
+version.syn@version#20	version.syn@version	version	__cpp_lib_constexpr_format	macro value 202511L	
+version.syn@format#2	version.syn@format	format	__cpp_lib_constexpr_format	macro value 202511L	
+version.syn@version#21	version.syn@version	version	__cpp_lib_counting_scope	macro value 202506L	
+version.syn@execution#1	version.syn@execution	execution	__cpp_lib_counting_scope	macro value 202506L	
+version.syn@version#22	version.syn@version	version	__cpp_lib_execution	macro value 201902L	
+version.syn@execution#2	version.syn@execution	execution	__cpp_lib_execution	macro value 201902L	
+version.syn@version#23	version.syn@version	version	__cpp_lib_filesystem	macro value 201703L	
+version.syn@filesystem#2	version.syn@filesystem	filesystem	__cpp_lib_filesystem	macro value 201703L	
+version.syn@version#24	version.syn@version	version	__cpp_lib_format	macro value 202603L	
+version.syn@format#3	version.syn@format	format	__cpp_lib_format	macro value 202603L	
+version.syn@version#25	version.syn@version	version	__cpp_lib_format_path	macro value 202506L	
+version.syn@filesystem#3	version.syn@filesystem	filesystem	__cpp_lib_format_path	macro value 202506L	
+version.syn@version#26	version.syn@version	version	__cpp_lib_format_ranges	macro value 202207L	
+version.syn@format#4	version.syn@format	format	__cpp_lib_format_ranges	macro value 202207L	
+version.syn@version#27	version.syn@version	version	__cpp_lib_format_uchar	macro value 202311L	
+version.syn@format#5	version.syn@format	format	__cpp_lib_format_uchar	macro value 202311L	
+version.syn@version#28	version.syn@version	version	__cpp_lib_formatters	macro value 202302L	
+version.syn@thread#1	version.syn@thread	thread	__cpp_lib_formatters	macro value 202302L	
+version.syn@version#29	version.syn@version	version	__cpp_lib_freestanding_charconv	macro value 202306L		freestanding
+version.syn@charconv#2	version.syn@charconv	charconv	__cpp_lib_freestanding_charconv	macro value 202306L		freestanding
+version.syn@version#30	version.syn@version	version	__cpp_lib_freestanding_cstdlib	macro value 202306L		freestanding
+version.syn@cmath#2	version.syn@cmath	cmath	__cpp_lib_freestanding_cstdlib	macro value 202306L		freestanding
+version.syn@version#31	version.syn@version	version	__cpp_lib_freestanding_cwchar	macro value 202306L		freestanding
+version.syn@cwchar#1	version.syn@cwchar	cwchar	__cpp_lib_freestanding_cwchar	macro value 202306L		freestanding
+version.syn@version#32	version.syn@version	version	__cpp_lib_freestanding_execution	macro value 202502L		freestanding
+version.syn@execution#3	version.syn@execution	execution	__cpp_lib_freestanding_execution	macro value 202502L		freestanding
+version.syn@version#33	version.syn@version	version	__cpp_lib_freestanding_random	macro value 202502L		freestanding
+version.syn@random#1	version.syn@random	random	__cpp_lib_freestanding_random	macro value 202502L	
+version.syn@version#34	version.syn@version	version	__cpp_lib_fstream_native_handle	macro value 202306L	
+version.syn@fstream#1	version.syn@fstream	fstream	__cpp_lib_fstream_native_handle	macro value 202306L	
+version.syn@version#35	version.syn@version	version	__cpp_lib_hazard_pointer	macro value 202606L	
+version.syn@hazard_pointer#1	version.syn@hazard_pointer	hazard_pointer	__cpp_lib_hazard_pointer	macro value 202606L	
+version.syn@version#36	version.syn@version	version	__cpp_lib_hypot	macro value 201603L	
+version.syn@cmath#3	version.syn@cmath	cmath	__cpp_lib_hypot	macro value 201603L	
+version.syn@version#37	version.syn@version	version	__cpp_lib_interpolate	macro value 201902L	
+version.syn@cmath#4	version.syn@cmath	cmath	__cpp_lib_interpolate	macro value 201902L	
+version.syn@version#38	version.syn@version	version	__cpp_lib_ios_noreplace	macro value 202207L	
+version.syn@ios#1	version.syn@ios	ios	__cpp_lib_ios_noreplace	macro value 202207L	
+version.syn@version#39	version.syn@version	version	__cpp_lib_jthread	macro value 201911L	
+version.syn@stop_token#1	version.syn@stop_token	stop_token	__cpp_lib_jthread	macro value 201911L	
+version.syn@thread#2	version.syn@thread	thread	__cpp_lib_jthread	macro value 201911L	
+version.syn@version#40	version.syn@version	version	__cpp_lib_latch	macro value 201907L	
+version.syn@latch#1	version.syn@latch	latch	__cpp_lib_latch	macro value 201907L	
+version.syn@version#41	version.syn@version	version	__cpp_lib_linalg	macro value 202511L	
+version.syn@linalg#1	version.syn@linalg	linalg	__cpp_lib_linalg	macro value 202511L	
+version.syn@version#42	version.syn@version	version	__cpp_lib_math_constants	macro value 201907L	
+version.syn@numbers#1	version.syn@numbers	numbers	__cpp_lib_math_constants	macro value 201907L	
+version.syn@version#43	version.syn@version	version	__cpp_lib_math_special_functions	macro value 201603L	
+version.syn@cmath#5	version.syn@cmath	cmath	__cpp_lib_math_special_functions	macro value 201603L	
+version.syn@version#44	version.syn@version	version	__cpp_lib_nonmember_container_access	macro value 201411L		freestanding
+version.syn@regex#1	version.syn@regex	regex	__cpp_lib_nonmember_container_access	macro value 201411L	
+version.syn@version#45	version.syn@version	version	__cpp_lib_parallel_scheduler	macro value 202506L	
+version.syn@execution#4	version.syn@execution	execution	__cpp_lib_parallel_scheduler	macro value 202506L	
+version.syn@version#46	version.syn@version	version	__cpp_lib_philox_engine	macro value 202406L	
+version.syn@random#2	version.syn@random	random	__cpp_lib_philox_engine	macro value 202406L	
+version.syn@version#47	version.syn@version	version	__cpp_lib_print	macro value 202406L	
+version.syn@print#1	version.syn@print	print	__cpp_lib_print	macro value 202406L	
+version.syn@ostream#2	version.syn@ostream	ostream	__cpp_lib_print	macro value 202406L	
+version.syn@version#48	version.syn@version	version	__cpp_lib_quoted_string_io	macro value 201304L	
+version.syn@iomanip#1	version.syn@iomanip	iomanip	__cpp_lib_quoted_string_io	macro value 201304L	
+version.syn@version#49	version.syn@version	version	__cpp_lib_ranges_generate_random	macro value 202403L	
+version.syn@random#3	version.syn@random	random	__cpp_lib_ranges_generate_random	macro value 202403L	
+version.syn@version#50	version.syn@version	version	__cpp_lib_rcu	macro value 202306L	
+version.syn@rcu#1	version.syn@rcu	rcu	__cpp_lib_rcu	macro value 202306L	
+version.syn@version#51	version.syn@version	version	__cpp_lib_scoped_lock	macro value 201703L	
+version.syn@mutex#1	version.syn@mutex	mutex	__cpp_lib_scoped_lock	macro value 201703L	
+version.syn@version#52	version.syn@version	version	__cpp_lib_semaphore	macro value 201907L	
+version.syn@semaphore#1	version.syn@semaphore	semaphore	__cpp_lib_semaphore	macro value 201907L	
+version.syn@version#53	version.syn@version	version	__cpp_lib_senders	macro value 202506L	
+version.syn@execution#5	version.syn@execution	execution	__cpp_lib_senders	macro value 202506L	
+version.syn@version#54	version.syn@version	version	__cpp_lib_shared_mutex	macro value 201505L	
+version.syn@shared_mutex#1	version.syn@shared_mutex	shared_mutex	__cpp_lib_shared_mutex	macro value 201505L	
+version.syn@version#55	version.syn@version	version	__cpp_lib_shared_timed_mutex	macro value 201402L	
+version.syn@shared_mutex#2	version.syn@shared_mutex	shared_mutex	__cpp_lib_shared_timed_mutex	macro value 201402L	
+version.syn@version#56	version.syn@version	version	__cpp_lib_simd	macro value 202606L	
+version.syn@simd#1	version.syn@simd	simd	__cpp_lib_simd	macro value 202606L	
+version.syn@version#57	version.syn@version	version	__cpp_lib_simd_bitops	macro value 202607L	
+version.syn@simd#2	version.syn@simd	simd	__cpp_lib_simd_bitops	macro value 202607L	
+version.syn@version#58	version.syn@version	version	__cpp_lib_simd_complex	macro value 202502L	
+version.syn@simd#3	version.syn@simd	simd	__cpp_lib_simd_complex	macro value 202502L	
+version.syn@version#59	version.syn@version	version	__cpp_lib_simd_permutations	macro value 202506L	
+version.syn@simd#4	version.syn@simd	simd	__cpp_lib_simd_permutations	macro value 202506L	
+version.syn@version#60	version.syn@version	version	__cpp_lib_spanstream	macro value 202106L	
+version.syn@iosfwd#2	version.syn@iosfwd	iosfwd	__cpp_lib_spanstream	macro value 202106L	
+version.syn@spanstream#1	version.syn@spanstream	spanstream	__cpp_lib_spanstream	macro value 202106L	
+version.syn@version#61	version.syn@version	version	__cpp_lib_sstream_from_string_view	macro value 202306L	
+version.syn@sstream#1	version.syn@sstream	sstream	__cpp_lib_sstream_from_string_view	macro value 202306L	
+version.syn@version#62	version.syn@version	version	__cpp_lib_stdatomic_h	macro value 202011L	
+version.syn@stdatomic.h#1	version.syn@stdatomic.h	stdatomic.h	__cpp_lib_stdatomic_h	macro value 202011L	
+version.syn@version#63	version.syn@version	version	__cpp_lib_stdckdint_h	macro value 202603L	
+version.syn@stdckdint.h#1	version.syn@stdckdint.h	stdckdint.h	__cpp_lib_stdckdint_h	macro value 202603L	
+version.syn@version#64	version.syn@version	version	__cpp_lib_syncbuf	macro value 201803L	
+version.syn@iosfwd#3	version.syn@iosfwd	iosfwd	__cpp_lib_syncbuf	macro value 201803L	
+version.syn@syncstream#1	version.syn@syncstream	syncstream	__cpp_lib_syncbuf	macro value 201803L	
+version.syn@version#65	version.syn@version	version	__cpp_lib_task	macro value 202506L	
+version.syn@execution#6	version.syn@execution	execution	__cpp_lib_task	macro value 202506L	
+version.syn@version#66	version.syn@version	version	__cpp_lib_text_encoding	macro value 202306L	
+version.syn@text_encoding#1	version.syn@text_encoding	text_encoding	__cpp_lib_text_encoding	macro value 202306L	
+version.syn@version#67	version.syn@version	version	__cpp_lib_thread_attributes	macro value 202606L	
+version.syn@thread#3	version.syn@thread	thread	__cpp_lib_thread_attributes	macro value 202606L	
+version.syn@version#68	version.syn@version	version	__cpp_lib_to_chars	macro value 202606L	
+version.syn@charconv#3	version.syn@charconv	charconv	__cpp_lib_to_chars	macro value 202606L	
+version.syn@version#69	version.syn@version	version	__cpp_lib_valarray	macro value 202511L	
+version.syn@valarray#1	version.syn@valarray	valarray	__cpp_lib_valarray	macro value 202511L	

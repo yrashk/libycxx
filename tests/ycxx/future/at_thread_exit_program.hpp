@@ -36,6 +36,10 @@ inline std::future<long> ft;
 inline bool tls_saw_ready = false; // a thread_local destructor saw an action done
 inline int tls_destroyed = 0;
 inline bool checked = false;
+// Never destroyed (no promise is abandoned); globals, so that a leak checker sees them reachable.
+inline std::promise<int>* pv;
+inline std::promise<void>* pe;
+inline std::packaged_task<long(long)>* task;
 
 inline bool ready(auto& f) { return f.wait_for(std::chrono::seconds(0)) == std::future_status::ready; }
 
@@ -105,13 +109,13 @@ inline void register_actions() {
   static_cast<void>(&before);
   // The promises and the task live on the heap, never destroyed: the shared states stay alive
   // through the futures, and no promise is abandoned at the end of a scope.
-  auto* pv = new std::promise<int>;
+  pv = new std::promise<int>;
   fv = pv->get_future();
   pv->set_value_at_thread_exit(42);
-  auto* pe = new std::promise<void>;
+  pe = new std::promise<void>;
   fe = pe->get_future();
   pe->set_exception_at_thread_exit(std::make_exception_ptr(7));
-  auto* task = new std::packaged_task<long(long)>([](long x) { return x + 1; });
+  task = new std::packaged_task<long(long)>([](long x) { return x + 1; });
   ft = task->get_future();
   task->make_ready_at_thread_exit(10);
   std::unique_lock lk(m);

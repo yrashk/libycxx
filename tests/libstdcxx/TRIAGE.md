@@ -819,7 +819,6 @@ Tests skipped (or UNSUPPORTED) as tied to the other library's internals, extensi
 | `20_util/(optional\|unique_ptr/hash\|variant)/(hash_)?abi.cc` | the size of a hash specialization (and of classes deriving from several) is libstdc++'s ABI, not specified |
 | `20_util/optional/hash_abi.cc` | the size of hash<optional<T>> is libstdc++'s ABI, not specified |
 | `28_regex/basic_regex/84110.cc` | whether a NUL character in a POSIX-grammar pattern is an error: no rule of [re.synopt] or [re.grammar] makes it one |
-| `28_regex/traits/(char\|wchar_t)/transform_primary.cc` | [re.traits]/7 gives an empty key for a facet that is not a collate_byname; libycxx deliberately returns the full key (STATUS.md, regex) and libstdc++ a case-folded one, so no own test asserts either |
 | `30_threads/(mutex\|recursive_mutex\|timed_mutex\|recursive_timed_mutex\|condition_variable)/(native_handle/1\|requirements/typedefs).cc` | native_handle_type and native_handle() are implementation-defined ([thread.req.native]) |
 | `17_intro/headers/c\+\+1998/49745.cc` | includes every C++98 header, <strstream> (removed in C++26, P2867) among them |
 | `18_support/headers/c(iso646\|stdalign\|stdbool)/macros.cc` | <ciso646>, <cstdalign> and <cstdbool> were removed in C++20 (P0619) |

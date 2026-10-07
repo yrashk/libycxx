@@ -568,6 +568,58 @@ tooling.
   the POSIX rule from the tree (each subpattern, left to right, the longest that still lets the
   match complete), so leftmost-longest needs no exhaustive search.
 
+- **POSIX matching with back-references: two phases** ([re.synopt]/1 basic, extended, awk, grep,
+  egrep; [re.alg.match], [re.alg.search]; IEEE Std 1003.1 XBD 9.1, 9.3.6 and regexec()). A POSIX
+  program that cannot run on the NFA (back-references; bounded repetitions beyond 256 copies or
+  65536 expanded nodes; a non-matching list holding a multi-character collating element) is
+  matched in two phases:
+  1. *The match.* The backtracker explores every path from each start position in turn and keeps
+     the longest end (leftmost-longest); it stops early at a path reaching the end of the input.
+  2. *The subexpressions.* POSIX's rule is a lexicographic order: "each subpattern, from left to
+     right, shall match the longest possible string" (XBD 9.1), a subpattern's length being
+     decided before what is inside it. A second, guided search over the syntax tree with the
+     match's span fixed decides each node's end *on entry*: a concatenation tries its first
+     element's end from the largest down, then that element's inside, then the next element's
+     end; an alternation tries its alternatives in order (the first that fits the span, as the
+     NFA resolver does); a repetition tries each iteration's end from the largest down. The
+     first complete path in this order is the POSIX answer. It backtracks on an explicit stack
+     with continuations (no recursion over the input); length bounds per node prune the ends;
+     a node no back-reference outside it refers to commits to its first way of matching a span
+     (what follows cannot depend on its inside), and a node without back-references remembers
+     the spans it cannot match.
+  Rules shared by both phases, from XBD 9.3.6: a back-reference to a subexpression that did not
+  participate fails ("\(a\)*\1" does not match "a"); a repeated subexpression reports, and is
+  referred to by, its last iteration, and the subexpressions inside an iteration are reset at its
+  start ("\(a\(b\)*\)*\2" does not match "abab"); an iteration matches the empty string only
+  when it is needed for the minimum count or is the only iteration ("\(a*\)*" against "bc":
+  \1 is the empty string at 0).
+  Limits (implementation-defined; regex_error): phase 1 keeps the backtracker's step budget
+  (error_complexity beyond 2*10^7 + 32 x (input reached) x (program size) steps) and frame
+  budget (error_stack beyond 2^22 frames); phase 2 has the same step budget over the match and
+  its node count, and error_stack beyond 2^22 pending goals or choice points. Patterns without
+  back-references that fit the NFA keep the NFA path unchanged.
+
+- **Collating elements and primary keys** ([re.traits]/7-8, [re.grammar]/8, /10, /14.3; XBD
+  9.3.5). `transform_primary` returns the primary key for a `collate_byname` facet (exact type)
+  whose key form is known: glibc's multi-level keys (the weights before the first level
+  separator), or keys that are a copy of the string (a locale without collation rules: every
+  character its own class, the whole key is primary). *Deliberate divergence:* for the classic
+  locale's own facet (exactly `collate<charT>`) it returns the whole key too (code point order,
+  each character its own class), where the letter of [re.traits]/7 gives an empty string and so
+  makes every `[=x=]` invalid in the default locale ([re.grammar]/10): portable code uses
+  `[[=a=]]` there, and libc++ and libstdc++ both accept it (STATUS "Deliberate divergences",
+  "Draft issues noticed"). Other facets (a user's collate, Darwin's undocumented keys) give an
+  empty string and `[=x=]` is invalid (error_collate). `lookup_collatename` accepts one character, the POSIX collating-symbol
+  names, and, for a `collate_byname` locale, a multi-character collating element of that
+  locale: the C library's own `regcomp` is asked, under that locale (`uselocale`), whether
+  `[[.xy.]]` is valid (cs_CZ defines "ch"; glibc exposes no other public interface to the
+  elements). In a bracket expression a multi-character element is an alternative of its own:
+  a matching list matches it as one element (2 or more characters, tried before the single
+  characters); a non-matching list does not match where one of its listed elements begins
+  (XBD 9.3.5 leaves both unspecified). A range end that is a multi-character element is valid
+  only with `collate` (its sort key bounds the range). With `[=x=]`, a multi-character `x` adds
+  itself and the characters of its primary class.
+
 ## 4. Error handling
 
 - Every library "throw" goes through one of two hooks in `ycxx/core/error.hpp`. Both take an

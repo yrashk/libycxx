@@ -30,6 +30,8 @@ struct __re_node {
   __re_kind kind = __re_kind::empty;
   bool __greedy = true;
   bool __tail = false;      // POSIX expansion: a repetition that follows an iteration of its own
+  bool __reset = false;     // POSIX expansion: a later copy of a repeated atom (its groups, [group_lo,
+                            // group_hi), restart: they report the last iteration)
   __charT __ch{};
   int __val = 0;            // set index; group or back-reference number
   int min = 0, max = 0;   // repeat; max < 0: unbounded
@@ -72,6 +74,8 @@ struct __re_set {
   std::vector<string_type> __coll_lo, __coll_hi;  // collate: sort keys of the range ends
   __class_type __classes{};
   std::vector<__class_type> __neg_classes;        // \D, \S, \W inside brackets
+  std::vector<string_type> __multi;               // multi-character collating elements (the
+                                                // translator turns them into alternatives)
   std::vector<string_type> __equivs;            // primary sort keys
   unsigned char __cache[32] = {};               // membership of the code units below 256
   unsigned char __range_fold[32] = {};          // icase: the case-folded code units below 256 of
@@ -109,6 +113,8 @@ struct __re_program {
   bool posix = false;   // leftmost-longest
   bool __nfa = false;     // compiled for the NFA simulation (POSIX without back-references)
   bool __has_backref = false;
+  bool __needs_bt = false; // POSIX: a lookahead (a non-matching list with a multi-character
+                           // collating element) keeps the program off the NFA
   bool __memo = false;    // the backtracker may remember failed (pc, position) pairs
   int __groups = 0;       // capturing groups (also counted under nosubs, for back-references)
   std::vector<__re_inst<__charT>> code;
@@ -119,6 +125,16 @@ struct __re_program {
   int __root = -1;
   std::vector<int> __node_begin, __node_end;
   std::vector<std::vector<int>> __eps_pred;
+  // POSIX backtracking programs (the subexpression search of regex_engine.hpp): per node of the
+  // unexpanded tree, the shortest and longest string it can match (-1: unbounded), its flags,
+  // and for a concatenation the bounds of each suffix of its elements (at suf_off[n] + i: the
+  // elements i...; one past the last is 0).
+  static constexpr unsigned char __nf_commit = 1; // no back-reference outside refers to a group inside
+  static constexpr unsigned char __nf_pure = 2;   // no back-reference inside
+  std::vector<std::ptrdiff_t> __nmin, __nmax;
+  std::vector<unsigned char> __nflags;
+  std::vector<int> __suf_off;
+  std::vector<std::ptrdiff_t> __suf_min, __suf_max;
   // memo: the dense index of each pc where a failed (pc, position) pair is remembered, or -1.
   std::vector<int> __memo_index;
   int __memo_points = 0;
@@ -358,10 +374,11 @@ class __re_compiler {
 
   // ---- bracket expressions --------------------------------------------------------------------
   struct __class_atom {
-    enum { __chr, __cls, __neg_cls, __equiv } kind = __chr;
+    enum { __chr, __cls, __neg_cls, __equiv, __multi } kind = __chr;
     __charT c{};
     __class_type m{};
     string_type key;
+    string_type str; // __multi, and __equiv of a multi-character element: the element
   };
   // [:name:], [.name.] or [=name=], at "[" followed by one of ":.=".
   __class_atom __bracket_special() {
@@ -386,15 +403,21 @@ class __re_compiler {
     if (name.empty())
       fail(std::regex_constants::error_collate);
     if (__delim == static_cast<__charT>('.')) {
-      if (name.size() != 1)
-        fail(std::regex_constants::error_collate);
-      a.c = name[0];
+      if (name.size() == 1) {
+        a.c = name[0];
+      } else { // a multi-character collating element ([re.traits]/8, XBD 9.3.5)
+        a.kind = __class_atom::__multi;
+        a.str = static_cast<string_type&&>(name);
+      }
       return a;
     }
+    // [re.grammar]/10: invalid if the primary key is empty.
     a.kind = __class_atom::__equiv;
     a.key = __tr_.transform_primary(name.begin(), name.end());
     if (a.key.empty())
       fail(std::regex_constants::error_collate);
+    if (name.size() > 1)
+      a.str = static_cast<string_type&&>(name);
     return a;
   }
   void __add_atom(__set_type& s, __class_atom& a) {
@@ -410,18 +433,31 @@ class __re_compiler {
       break;
     case __class_atom::__equiv:
       s.__equivs.push_back(static_cast<string_type&&>(a.key));
+      if (!a.str.empty())
+        s.__multi.push_back(static_cast<string_type&&>(a.str));
+      break;
+    case __class_atom::__multi:
+      s.__multi.push_back(static_cast<string_type&&>(a.str));
       break;
     }
   }
+  // The sort key of a range end ([re.grammar]/14.2): its translated character, or the whole
+  // multi-character element.
+  string_type __range_key(const __class_atom& a) const {
+    if (a.kind == __class_atom::__multi)
+      return __tr_.transform(a.str.begin(), a.str.end());
+    const __charT k[1] = {__tr_.translate(a.c)};
+    return __tr_.transform(k, k + 1);
+  }
   void __add_range(__set_type& s, const __class_atom& a, const __class_atom& b) {
-    if (a.kind != __class_atom::__chr || b.kind != __class_atom::__chr)
-      fail(std::regex_constants::error_range);
+    const bool __multi_end = a.kind == __class_atom::__multi || b.kind == __class_atom::__multi;
+    if ((a.kind != __class_atom::__chr && a.kind != __class_atom::__multi) ||
+        (b.kind != __class_atom::__chr && b.kind != __class_atom::__multi) || (__multi_end && !_P_.collate))
+      fail(std::regex_constants::error_range); // a multi-character end has a sort key, no code
     string_type __lo, __hi;
     if (_P_.collate) {
-      const __charT __ka[1] = {__tr_.translate(a.c)};
-      const __charT __kb[1] = {__tr_.translate(b.c)};
-      __lo = __tr_.transform(__ka, __ka + 1);
-      __hi = __tr_.transform(__kb, __kb + 1);
+      __lo = __range_key(a);
+      __hi = __range_key(b);
       if (__hi < __lo)
         fail(std::regex_constants::error_range);
     } else {
@@ -522,7 +558,37 @@ class __re_compiler {
         __add_atom(s, a);
       }
     }
-    return __new_set(static_cast<__set_type&&>(s));
+    if (s.__multi.empty())
+      return __new_set(static_cast<__set_type&&>(s));
+    // Multi-character collating elements: each is an alternative of its own, longest first.
+    std::vector<string_type> __elems = static_cast<std::vector<string_type>&&>(s.__multi);
+    s.__multi.clear();
+    for (std::size_t i = 1; i < __elems.size(); ++i) // insertion sort: longest first, stable
+      for (std::size_t __j = i; __j > 0 && __elems[__j - 1].size() < __elems[__j].size(); --__j) {
+        string_type __tmp = static_cast<string_type&&>(__elems[__j]);
+        __elems[__j] = static_cast<string_type&&>(__elems[__j - 1]);
+        __elems[__j - 1] = static_cast<string_type&&>(__tmp);
+      }
+    const bool __neg = s.negate;
+    std::vector<int> __alts;
+    for (const string_type& __e : __elems) {
+      std::vector<int> __lits;
+      for (__charT c : __e)
+        __lits.push_back(literal(c));
+      __alts.push_back(list(__re_kind::concat, __lits));
+    }
+    const int __single = __new_set(static_cast<__set_type&&>(s));
+    if (!__neg) { // a matching list: one of the elements, or one character of the set
+      __alts.push_back(__single);
+      return list(__re_kind::__alt, __alts);
+    }
+    // A non-matching list: one character of the set, where none of the elements begins.
+    node __x;
+    __x.kind = __re_kind::__nlook;
+    __x.__kids.push_back(list(__re_kind::__alt, __alts));
+    std::vector<int> __seq{add(static_cast<node&&>(__x)), __single};
+    _P_.__needs_bt = true;
+    return list(__re_kind::concat, __seq);
   }
 
   // ---- ECMAScript ---------------------------------------------------------------------------
@@ -1005,6 +1071,17 @@ class __re_compiler {
       k = __clone(k);
     return add(static_cast<node&&>(__x));
   }
+  // A copy of the body of repetition r that is not its first iteration.
+  int __copy(int __body, const node& r) {
+    const int c = __clone(__body);
+    node& __y = __nodes_[static_cast<std::size_t>(c)];
+    if (r.__group_hi > r.__group_lo) {
+      __y.__reset = true;
+      __y.__group_lo = r.__group_lo;
+      __y.__group_hi = r.__group_hi;
+    }
+    return c;
+  }
   // Rewrites every repetition into x?, x* and concatenations (nfa programs).
   int expand(int n) {
     const std::size_t __nk = __nodes_[static_cast<std::size_t>(n)].__kids.size();
@@ -1034,7 +1111,7 @@ class __re_compiler {
     };
     std::vector<int> seq;
     for (int i = 0; i < __x.min; ++i)
-      seq.push_back(i == 0 ? __body : __clone(__body));
+      seq.push_back(i == 0 ? __body : __copy(__body, __x));
     if (__x.max < 0) {
       seq.push_back(__opt(__x.min == 0 ? __body : __clone(__body), -1, __x.min > 0));
     } else if (__x.max > __x.min) { // x{0,3} is (x(x(x)?)?)?
@@ -1046,6 +1123,139 @@ class __re_compiler {
       seq.push_back(__tail);
     }
     return list(__re_kind::concat, seq);
+  }
+
+  // POSIX backtracking programs: the per-node facts the subexpression search uses (re_program).
+  static std::ptrdiff_t __len_add(std::ptrdiff_t a, std::ptrdiff_t b) {
+    constexpr std::ptrdiff_t __cap = std::ptrdiff_t(1) << 40;
+    if (a < 0 || b < 0)
+      return -1;
+    return a + b > __cap ? __cap : a + b;
+  }
+  static std::ptrdiff_t __len_mul(std::ptrdiff_t a, std::ptrdiff_t __k) { // k < 0: unbounded
+    constexpr std::ptrdiff_t __cap = std::ptrdiff_t(1) << 40;
+    if (a == 0 || __k == 0)
+      return 0;
+    if (a < 0 || __k < 0)
+      return -1;
+    return a > __cap / __k ? __cap : a * __k;
+  }
+  struct __an_state {
+    std::vector<int> __pre, __post, __glo, __ghi;
+    std::vector<std::ptrdiff_t> __gmax; // per group: the longest string its node matches
+    int __maxref[10];                  // per back-reference number: the last preorder index
+    int __counter = 0;
+  };
+  void __an_visit(int n, __an_state& __st) {
+    using __prog = __re_program<__charT, __traits>;
+    auto& _Pp = _P_;
+    const auto __un = static_cast<std::size_t>(n);
+    __st.__pre[__un] = __st.__counter++;
+    const node& __x = __nodes_[__un];
+    std::ptrdiff_t __mn = 0, __mx = 0;
+    bool __pure = true;
+    int __glo = 1 << 30, __ghi = -1;
+    for (int k : __x.__kids) {
+      __an_visit(k, __st);
+      const auto __uk = static_cast<std::size_t>(k);
+      __pure = __pure && (_Pp.__nflags[__uk] & __prog::__nf_pure) != 0;
+      if (__st.__glo[__uk] < __glo)
+        __glo = __st.__glo[__uk];
+      if (__st.__ghi[__uk] > __ghi)
+        __ghi = __st.__ghi[__uk];
+    }
+    switch (__x.kind) {
+    case __re_kind::__chr:
+    case __re_kind::any:
+    case __re_kind::set:
+      __mn = __mx = 1;
+      break;
+    case __re_kind::__backref:
+      __pure = false;
+      __mx = __st.__gmax[static_cast<std::size_t>(__x.__val)];
+      if (__x.__val < 10 && __st.__pre[__un] > __st.__maxref[__x.__val])
+        __st.__maxref[__x.__val] = __st.__pre[__un];
+      break;
+    case __re_kind::__group: {
+      const auto __uk = static_cast<std::size_t>(__x.__kids[0]);
+      __mn = _Pp.__nmin[__uk];
+      __mx = _Pp.__nmax[__uk];
+      __st.__gmax[static_cast<std::size_t>(__x.__val)] = __mx;
+      if (__x.__val < __glo)
+        __glo = __x.__val;
+      if (__x.__val + 1 > __ghi)
+        __ghi = __x.__val + 1;
+      break;
+    }
+    case __re_kind::concat: {
+      const std::size_t m = __x.__kids.size();
+      _Pp.__suf_off[__un] = static_cast<int>(_Pp.__suf_min.size());
+      _Pp.__suf_min.resize(_Pp.__suf_min.size() + m + 1, 0);
+      _Pp.__suf_max.resize(_Pp.__suf_max.size() + m + 1, 0);
+      const auto __o = static_cast<std::size_t>(_Pp.__suf_off[__un]);
+      for (std::size_t i = m; i-- > 0;) {
+        const auto __uk = static_cast<std::size_t>(__x.__kids[i]);
+        _Pp.__suf_min[__o + i] = __len_add(_Pp.__suf_min[__o + i + 1], _Pp.__nmin[__uk]);
+        _Pp.__suf_max[__o + i] = __len_add(_Pp.__suf_max[__o + i + 1], _Pp.__nmax[__uk]);
+      }
+      __mn = _Pp.__suf_min[__o];
+      __mx = _Pp.__suf_max[__o];
+      break;
+    }
+    case __re_kind::__alt:
+      __mn = -1;
+      for (int k : __x.__kids) {
+        const auto __uk = static_cast<std::size_t>(k);
+        if (__mn < 0 || _Pp.__nmin[__uk] < __mn)
+          __mn = _Pp.__nmin[__uk];
+        if (__mx >= 0 && (_Pp.__nmax[__uk] < 0 || _Pp.__nmax[__uk] > __mx))
+          __mx = _Pp.__nmax[__uk];
+      }
+      break;
+    case __re_kind::repeat: {
+      const auto __uk = static_cast<std::size_t>(__x.__kids[0]);
+      __mn = __len_mul(_Pp.__nmin[__uk], __x.min);
+      __mx = __x.max == 0 ? 0 : __len_mul(_Pp.__nmax[__uk], __x.max);
+      break;
+    }
+    default: // empty, assertions, lookahead: zero-width
+      break;
+    }
+    _Pp.__nmin[__un] = __mn;
+    _Pp.__nmax[__un] = __mx;
+    __st.__glo[__un] = __glo;
+    __st.__ghi[__un] = __ghi;
+    __st.__post[__un] = __st.__counter - 1;
+    if (__pure)
+      _Pp.__nflags[__un] |= __prog::__nf_pure;
+  }
+  void __analyze(int __root) {
+    using __prog = __re_program<__charT, __traits>;
+    auto& _Pp = _P_;
+    const std::size_t __nn = __nodes_.size();
+    _Pp.__nmin.assign(__nn, 0);
+    _Pp.__nmax.assign(__nn, 0);
+    _Pp.__nflags.assign(__nn, 0);
+    _Pp.__suf_off.assign(__nn, -1);
+    __an_state __st;
+    __st.__pre.assign(__nn, 0);
+    __st.__post.assign(__nn, 0);
+    __st.__glo.assign(__nn, 1 << 30);
+    __st.__ghi.assign(__nn, -1);
+    __st.__gmax.assign(static_cast<std::size_t>(_Pp.__groups) + 1, -1);
+    for (int& r : __st.__maxref)
+      r = -1;
+    __an_visit(__root, __st);
+    // A node commits to its first way of matching a span unless a back-reference after it refers
+    // to a group inside it (POSIX back-references are \1 to \9 and follow their group).
+    for (std::size_t n = 0; n < __nn; ++n) {
+      bool __ok = true;
+      for (int __g = __st.__glo[n] < 1 ? 1 : __st.__glo[n]; __ok && __g < __st.__ghi[n] && __g < 10; ++__g)
+        if (__st.__maxref[__g] > __st.__post[n])
+          __ok = false;
+      if (__ok)
+        _Pp.__nflags[n] |= __prog::__nf_commit;
+    }
   }
 
   int emit(__re_op op, int a = 0, bool __flag = false) {
@@ -1063,7 +1273,7 @@ class __re_compiler {
 
   void __gen(int n) {
     const node __x = __nodes_[static_cast<std::size_t>(n)]; // gen never adds nodes, but keep a copy
-    if (_P_.__nfa)
+    if (_P_.posix)
       _P_.__node_begin[static_cast<std::size_t>(n)] = __pc();
     switch (__x.kind) {
     case __re_kind::empty:
@@ -1129,7 +1339,7 @@ class __re_compiler {
       __gen_repeat(__x);
       break;
     }
-    if (_P_.__nfa)
+    if (_P_.posix)
       _P_.__node_end[static_cast<std::size_t>(n)] = __pc();
   }
   void __gen_repeat(const node& __x) {
@@ -1351,16 +1561,20 @@ public:
       fail(__rc::error_backref);
     if (_Pp.__has_backref)
       _Pp.__memo = false;
-    _Pp.__nfa = _Pp.posix && !_Pp.__has_backref && __expanded_size(__root) <= __max_expanded;
+    _Pp.__nfa = _Pp.posix && !_Pp.__has_backref && !_Pp.__needs_bt && __expanded_size(__root) <= __max_expanded;
     if (_Pp.__nfa) {
       __root = expand(__root);
+      _Pp.__memo = false;
+    }
+    if (_Pp.posix) {
       _Pp.__node_begin.assign(__nodes_.size(), 0);
       _Pp.__node_end.assign(__nodes_.size(), 0);
-      _Pp.__memo = false;
     }
     __gen(__root);
     emit(__re_op::__match);
-    if (_Pp.__nfa) {
+    if (_Pp.posix) {
+      if (!_Pp.__nfa)
+        __analyze(__root);
       _Pp.__nodes = static_cast<std::vector<node>&&>(__nodes_);
       _Pp.__root = __root;
     }

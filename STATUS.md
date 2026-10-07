@@ -63,7 +63,7 @@ reports count both per category. All such libc++ tests are linked or triaged; of
 | input.output + localization (iostreams, `<locale>`) | 583/855 | 590/855 | no (hosted) | was 39; 213 of the failures need `<filesystem>`, `<codecvt>` (removed), `<format>`/`<print>`, `<mutex>`/`<chrono>` or `EOF` from `constexpr_char_traits.h`; rest under Known limitations |
 | atomics + thread (incl. futures, stop tokens, latch/barrier/semaphore) | 449/453 | 449/453 | `<atomic>` yes (runtime archive); the rest hosted | was 16; rest: `<format>` for thread::id (4) |
 | input.output + localization (iostreams, `<locale>`, `<filesystem>`) | 668/855 | 668/855 | no (hosted) | was 583 (Clang) / 590 (GCC) before `<filesystem>`; most failures need `<chrono>`, `<codecvt>` (removed), `<format>`/`<print>`, `<mutex>`/`<thread>` or `EOF` from `constexpr_char_traits.h`; rest under Known limitations |
-| re (`<regex>`) | 163/164 | 163/164 | no (hosted) | was 12; 5 skipped (draft divergences, see tests/libcxx/skip.txt); rest: `EOF` from `constexpr_char_traits.h` |
+| re (`<regex>`) | 171/171 | 171/171 | no (hosted) | was 12; 6 skipped or unsupported (draft divergences, see tests/libcxx/skip.txt) |
 
 Whole-suite baseline (clang, before iterators/tuple/array/optional): 976 pass / ~8,000 run.
 
@@ -207,10 +207,14 @@ regex_match/regex_search/regex_replace with every match_flag_type, regex_iterato
 regex_token_iterator. ECMAScript backtracks on an explicit stack (ECMA-262 capture and empty-
 iteration rules; failure memo for programs without back-references, so `(a|b)*c` and `(a*)*b`
 are linear); the POSIX grammars find the leftmost-longest match with an NFA simulation and assign
-subexpressions by the POSIX left-to-right longest rule. Own suite regex/: 8/8 on both compilers,
-clean under ASan (Clang). libc++ std/re 12 -> 163/164 (+5 skipped; the failure needs `EOF` from
-`constexpr_char_traits.h`); libstdc++ 28_regex 0 -> 103/104 (+6 skipped; the failure needs
-`bits/move.h`; 61 others need `__gnu_test` helpers); both compilers. Checked against V8 on 63,000
+subexpressions by the POSIX left-to-right longest rule; with back-references (or counted
+repetitions too large for the NFA) the backtracker finds the leftmost-longest match and a guided
+search assigns the subexpressions by the same rule (DECISIONS §3). Multi-character collating
+elements of named locales (`[[.ch.]]`, from the C library's regcomp); `transform_primary` per
+[re.traits]/7 except for the classic locale (its whole key: a deliberate divergence). Own suite regex/: 32/32 on both compilers,
+clean under ASan (Clang). Runs of 2026-10-07 (both compilers): libc++ std/re 171 pass / 6
+skipped of 177; libstdc++ 28_regex 115 pass / 56 unsupported of 171 (most unsupported need
+`__gnu_test` helpers). Checked against V8 on 63,000
 random ECMAScript patterns (with and without icase): identical results.
 <meta> (reflection; GCC 16 with `-freflection` only, DECISIONS §13): every [meta.syn] entity.
 The metafunctions are GCC's own (declared without definitions); the library defines `info`,
@@ -275,14 +279,16 @@ when parsing, `fractional_width` of ratio<1, 2^62>, `hh_mm_ss` layout, an error 
   members (`9446019`), constant-evaluated `compare_exchange` of `long double` on Clang (`370b7e3`).
   Fixed since (gap fixes): G2 `chrono::parse` in the stream's locale (names, `%c %x %X %r %p`,
   eras and alternative digits, a program's `time_get`; `331fde9` `8b7d190` `735d0a0`), G3 `{:L}`
-  through the locale's `num_put` (`ee9b9ea`), and G8, the completion schedulers and domains of
-  when_all, let and the other adaptors (`5a1705c`; 2 behaviour probes, `exec.when.all#1`,
-  `exec.let#1`, so 6367 declarations and 13237 checks).
-  Open: `__cpp_lib_constexpr_exceptions` on Clang (compiler gap) and the documented behaviour
-  limitations listed there (POSIX regex subexpressions, ...).
-  Fixed since: G6 (`rcu_barrier` inside a scheduled evaluation evaluates what was scheduled
-  before it; after a retire in the caller's own region it blocks, a hardened precondition) and G7
-  (the `*_at_thread_exit` actions of the thread that calls `exit` or returns from `main`).
+  through the locale's `num_put` (`ee9b9ea`), G4 (POSIX regex subexpressions with back-references
+  and large counted repetitions) and G5 (multi-character collating elements; `transform_primary`
+  per [re.traits]/7 but for the classic locale, a deliberate divergence; `3919455`, `a161e22`),
+  G6 (`rcu_barrier` inside a scheduled evaluation evaluates what was scheduled before it; after a
+  retire in the caller's own region it blocks, a hardened precondition), G7 (the
+  `*_at_thread_exit` actions of the thread that calls `exit` or returns from `main`) and G8, the
+  completion schedulers and domains of when_all, let and the other adaptors (`5a1705c`; 2
+  behaviour probes, `exec.when.all#1`, `exec.let#1`, so 6367 declarations and 13237 checks).
+  Open: `__cpp_lib_constexpr_exceptions` on Clang (compiler gap), G9/G10 (implementation-defined
+  `<filesystem>` root names and tzdb source; none planned).
 
 ## Own-suite configurations (runs of 2026-10-05, 2438 tests)
 `tools/test --hardened` / `--cxxflags=... --config-name=...` (README, Own tests); the nightly
@@ -762,6 +768,13 @@ compilers; `visit_format_arg.pass.cpp` needs `EOF` from `constexpr_char_traits.h
   `match_prev_avail`, `^` matches at `first` only in multiline mode after a line terminator (the
   previous character exists, so `first` is not the beginning of the input), which keeps
   regex_iterator from matching `^a` at every position. Details in `tests/libcxx/skip.txt`.
+- `<regex>` `regex_traits::transform_primary` with the classic locale's collate facet returns the
+  whole sort key (a copy of the string: code point order, each character its own equivalence
+  class) where the letter of [re.traits]/7 returns an empty string (the facet is `collate<charT>`,
+  not a `collate_byname`), which would make every `[[=x=]]` invalid in the default locale
+  ([re.grammar]/10). Portable code relies on `[[=a=]]` working there, and libc++ and libstdc++
+  both make it work; see "Draft issues noticed" and DECISIONS §3. Facets whose key form is unknown
+  (a user's own collate, Darwin's collate_byname) still give an empty key.
 - `num_put::do_put(bool)` with `boolalpha` pads the name to `width()` (and resets the width) as
   the other conversions do; [facet.num.put.virtuals]/6 read literally inserts the name unpadded.
   libc++ and libstdc++ pad, and their tests expect it. Likewise a character-sequence inserter
@@ -936,17 +949,26 @@ compilers; `visit_format_arg.pass.cpp` needs `EOF` from `constexpr_char_traits.h
   `error_complexity` beyond a step budget that grows with the input (reached by exponential
   patterns with back-references, or with counted loops `(..){m,n}` or nullable-body loops with
   min 1 that the failure memo does not cover). POSIX patterns with back-references, or whose
-  bounded repetitions expand beyond 256 copies or 65536 nodes, backtrack exhaustively (longest
-  match; subexpressions in first-found order rather than by the POSIX rule). A combination of
+  bounded repetitions expand beyond 256 copies or 65536 nodes, backtrack exhaustively for the
+  leftmost-longest match (exponential in the worst case: the step budget above), then assign the
+  subexpressions by the POSIX rule with a guided search over the match (DECISIONS §3; the same
+  step budget over the match length and the tree size, error_stack beyond 2^22 pending goals or
+  choice points). A combination of
   several grammar flags throws `regex_error(error_complexity)` (error_type has no code for it).
   Groups nested more than 1000 deep throw `regex_error(error_space)` (the translator and the
   matchers recurse over the tree).
-  Multi-character collating elements (`[[.ch.]]`) are not supported (no locale defines them).
-  regex_traits::transform_primary returns the primary key of a named locale's collate_byname
-  where the C library's key form is known (glibc's multi-level keys: `[[=a=]]` matches `A` and
-  `á`), and the full sort key otherwise (the classic locale's collate facet, a locale whose keys
-  have one level, Darwin), where [re.traits]/7 would return an empty key, making every `[[=x=]]`
-  invalid.
+  regex_traits::transform_primary: the primary key of a collate_byname whose key form is known
+  (glibc's multi-level keys: `[[=a=]]` matches `A` and `á`; keys that copy the string), the whole
+  key of the classic locale's collate facet (a deliberate divergence from [re.traits]/7, see
+  "Deliberate divergences": `[[=a=]]` matches only `a` there), and an empty string otherwise (a
+  user's collate facet, Darwin's collate_byname), which makes `[[=x=]]` invalid (error_collate,
+  [re.grammar]/10). Multi-character
+  collating elements (`[[.ch.]]`) are those of a named locale's collate_byname, as the C
+  library's `regcomp` accepts them (glibc's cs_CZ: "ch", "Ch", "CH"; the classic locale has
+  none); in a bracket expression they match as one element, and a non-matching list does not
+  match where a listed one begins (XBD 9.3.5 leaves both unspecified). A list cannot name the
+  elements of an equivalence class that are multi-character (only the class's own name is
+  added: `[[=ch=]]` matches "ch", not "CH"): the C library does not enumerate them.
 - Iostreams/locale: named locales are the C library's (DECISIONS §7): a name the C library
   lacks throws `runtime_error`, and tests that need one are UNSUPPORTED (`tests/ycxxlit/locales.py`;
   `tools/ci/gen-locales` generates the suites' names on glibc). Where the draft leaves a choice,
@@ -1356,6 +1378,12 @@ compilers; `visit_format_arg.pass.cpp` needs `EOF` from `constexpr_char_traits.h
 
 ## Draft issues noticed
 Wording problems found while writing the spec-derived tests (tests/ycxx), not yet reported:
+- [re.traits]/7 with [re.grammar]/10: `transform_primary` returns a key only for a facet whose
+  dynamic type is exactly `collate_byname<charT>`; the classic locale's facet is `collate<charT>`,
+  so with the default (global, classic) locale every `[[=x=]]` is invalid, although the "C"
+  locale's collation (code point order, one character per class) is fully known. libc++'s and
+  libstdc++'s tests (and implementations) treat `[[=a=]]` as valid there, portable code relies on
+  it, and libycxx deliberately does the same (STATUS "Deliberate divergences", DECISIONS §3).
 - [set.symmetric.difference]/4.2: the returned `{last1, last2, result + N}` applies "if N is
   equal to M+K", but K is defined nowhere in the paragraph (M is; the count of the second
   range's copied elements is meant).

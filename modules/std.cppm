@@ -1273,6 +1273,7 @@ export namespace std {
   using std::max;
   using std::max_align_t;
   using std::max_element;
+  using std::max_pointer_bits_available;
   using std::mblen;
   using std::mbrlen;
   using std::mbrtoc16;
@@ -1468,6 +1469,8 @@ export namespace std {
   using std::piecewise_construct_t;
   using std::piecewise_linear_distribution;
   using std::plus;
+  using std::pointer_bits_available;
+  using std::pointer_tag_pair;
   using std::pointer_traits;
   using std::poisson_distribution;
   using std::polar;

@@ -1,0 +1,19 @@
+Category: pre-c++26. The ToStringOptional tests expect Catch's StringMaker for std::optional ("{
+}" for an empty one), which catch_tostring.hpp itself leaves out when
+__cpp_lib_optional_range_support is defined: since C++26 std::optional is a range
+([optional.iterators], P3168), and stringify takes Catch's range formatting ("{  }"). The tests
+are left out under the same condition.
+
+diff --git a/tests/SelfTest/UsageTests/ToStringOptional.tests.cpp b/tests/SelfTest/UsageTests/ToStringOptional.tests.cpp
+index 3671771..4bf54b5 100644
+--- a/tests/SelfTest/UsageTests/ToStringOptional.tests.cpp
++++ b/tests/SelfTest/UsageTests/ToStringOptional.tests.cpp
+@@ -9,7 +9,7 @@
+ #define CATCH_CONFIG_ENABLE_OPTIONAL_STRINGMAKER
+ #include <catch2/catch_test_macros.hpp>
+ 
+-#if defined(CATCH_CONFIG_CPP17_OPTIONAL)
++#if defined(CATCH_CONFIG_CPP17_OPTIONAL) && !defined(__cpp_lib_optional_range_support) // as catch_tostring.hpp
+ 
+ TEST_CASE( "std::optional<int> -> toString", "[toString][optional][approvals]" ) {
+     using type = std::optional<int>;

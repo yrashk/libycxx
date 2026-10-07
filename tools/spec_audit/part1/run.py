@@ -116,7 +116,7 @@ def check_names(cc, libroot, pool, freestanding=False):
     rows = load("entities.tsv")
     samples = {r[0]: r[1] for r in load("samples.tsv")}
     by_header, unprobed = {}, []
-    for sec, header, scope, name, kind, fs in rows:
+    for sec, header, scope, name, kind, fs, group in rows:
         if freestanding and fs != "freestanding":
             continue
         line, why = name_probe(scope, name, kind, samples)
@@ -156,7 +156,34 @@ def check_names(cc, libroot, pool, freestanding=False):
         for ln in sorted(bad):
             sec, scope, name = where[ln]
             fails.append(f"name {scope + '::' if scope else ''}{name} <{header}>{note} [{sec}]: not declared")
+            MISSING.add((cc, freestanding, sec, scope, name))
     return sum(len(v) for v in by_header.values()), fails, unprobed
+
+
+MISSING = set()   # (compiler, freestanding, subclause, scope, name) of the entities not found
+
+
+def summary(path, ccs):
+    """Per group of entities.tsv: declared, probed by name, and not found per compiler (hosted and
+    freestanding), as TSV for docs/SPEC_COVERAGE.md."""
+    samples = {r[0]: r[1] for r in load("samples.tsv")}
+    groups = {}
+    for sec, header, scope, name, kind, fs, group in load("entities.tsv"):
+        g = groups.setdefault(group, {"declared": 0, "probed": 0, "fs": 0, **{f"{c}{f}": 0 for c in ccs for f in ("", "-fs")}})
+        g["declared"] += 1
+        line, _ = name_probe(scope, name, kind, samples)
+        if line is None:
+            continue
+        g["probed"] += 1
+        g["fs"] += fs == "freestanding"
+        for c in ccs:
+            g[c] += (c, False, sec, scope, name) in MISSING
+            g[c + "-fs"] += fs == "freestanding" and (c, True, sec, scope, name) in MISSING
+    cols = ["declared", "probed", "fs"] + [f"{c}{f}" for c in ccs for f in ("", "-fs")]
+    with open(path, "w") as f:
+        f.write("group\t" + "\t".join(cols) + "\n")
+        for gname, g in groups.items():
+            f.write(gname + "\t" + "\t".join(str(g[c]) for c in cols) + "\n")
 
 
 HARDENED = ["-DYCXX_HARDENED=1"]
@@ -238,6 +265,7 @@ def main():
     ap.add_argument("-j", "--jobs", type=int, default=2)
     ap.add_argument("-v", "--verbose", action="store_true")
     ap.add_argument("--skip-tables", action="store_true", help="only the probes")
+    ap.add_argument("--summary", help="write per-subclause counts of the name checks (TSV) to this file")
     ap.add_argument("--tables-only", action="store_true", help="only the header, version and name checks")
     ap.add_argument("probes", nargs="*", help="probe files or stable names (default: all)")
     a = ap.parse_args()
@@ -280,6 +308,8 @@ def main():
                 if status in ("FAIL", "XPASS"):
                     bad += 1
             print(f"{cc} probes: " + ", ".join(f"{k} {v}" for k, v in sorted(counts.items())))
+    if a.summary:
+        summary(a.summary, ccs)
     if not a.probes and not a.skip_tables:
         for row in load("expected.tsv"):
             ccs_ = ccs if row[0] == "any" else [row[0]] if row[0] in ccs else []

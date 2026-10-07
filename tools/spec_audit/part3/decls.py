@@ -624,6 +624,8 @@ def _fun_rest(d, c, i):
     ptoks = c[i + 1:j - 1]
     params = [] if not ptoks or ptoks == ["void"] else split_top(ptoks)
     d.info["params"] = [parse_param(p) for p in params]
+    d.info["varargs"] = any(not p["type"] for p in d.info["params"])
+    d.info["params"] = [p for p in d.info["params"] if p["type"]]
     rest = c[j:]
     pre = list(d.info["pre"])
     d.info["explicit_cond"] = False

@@ -46,7 +46,7 @@ def ren(toks):
     out = []
     prev = ""
     for t in toks:
-        t = str(t)
+        t = str(t).replace("\x06", "")
         if out and (re.match(r"\w", t) and re.search(r"\w$", prev)):
             out.append(" ")
         elif out and prev == ">" and t == ">":
@@ -66,7 +66,24 @@ class Ctx:
         self.selfname, self.selftype = selfname, selftype
 
 
+PACK = "\x06"
+NS_NAMES = set()     # (namespace, name) declared at namespace scope by the synopses
+CUR = {"ns": "std"}  # the namespace of the declaration being probed
+
+
+def qualify(t):
+    """A name the synopses declare in a namespace nested in std (chrono, pmr, execution, ...),
+    seen from the declaration's namespace: its qualified name."""
+    parts = CUR["ns"].split("::")
+    for k in range(len(parts), 1, -1):
+        ns = "::".join(parts[:k])
+        if (ns, t) in NS_NAMES:
+            return ns + "::" + t
+    return None
+
+
 def subst(toks, ctx, allow_italic=()):
+    pack_seen = False
     out = []
     n = len(toks)
     i = 0
@@ -91,7 +108,11 @@ def subst(toks, ctx, allow_italic=()):
             raise Unprobeable(f"exposition-only or unspecified: {name}")
         if IDENT.match(t) and prev not in ("::", ".", "->"):
             if t in ctx.env:
-                out.append(ctx.env[t])
+                v = ctx.env[t]
+                if v.startswith(PACK):
+                    pack_seen = True
+                    v = v[1:]
+                out.append(v)
                 i += 1
                 continue
             if t == ctx.selfname and not (i + 1 < n and toks[i + 1] == "<"):
@@ -102,6 +123,17 @@ def subst(toks, ctx, allow_italic=()):
                 out.append(ctx.members[t])
                 i += 1
                 continue
+            q = qualify(t)
+            if q:
+                out.append(q)
+                i += 1
+                continue
+        if t == "...":
+            if pack_seen:
+                i += 1
+                continue
+        if t in (",", "(", "<"):
+            pack_seen = False
         if t in ("auto", "decltype"):
             raise Unprobeable("deduced type")
         out.append(t)
@@ -126,6 +158,8 @@ class Gen:
                 path = tuple(c[1] for c in d.classes) + (d.name,)
                 self.classes[(d.ns, path)].append(d)
         for d in ents:
+            if not d.classes and d.name and not d.expos:
+                NS_NAMES.add((d.ns, d.name))
             if d.classes:
                 path = tuple(c[1] for c in d.classes)
                 if d.kind in ("alias", "classdef", "classdecl", "enumdef", "enumdecl") and d.name:
@@ -212,10 +246,16 @@ class Gen:
             if s["id"] not in hdrs:
                 continue
             for kind, text in s["regions"]:
-                for m in re.finditer(r"(?m)^[ \t]*#define\s+([A-Za-z_]\w*)", text):
-                    d = D.Decl([], [], [("ns", "", False)], "public", False, None)
-                    d.sec, d.header, d.name, d.kind = s["id"], hdrs[s["id"]], m.group(1), "macro"
-                    self.add(d, "macro", "#" + m.group(1), ent=m.group(1))
+                for m in re.finditer(r"(?m)^[ \t]*#define\s+([A-Za-z_]\w*)(\x01N\x02)?(.*)$", text):
+                    if "\x04optional" in m.group(3):
+                        continue
+                    names = [m.group(1) + n for n in ("8", "16", "32", "64")] if m.group(2) else [m.group(1)]
+                    for nm in names:
+                        if (s["id"], nm) in SMP.SKIP:
+                            continue
+                        d = D.Decl([], [], [("ns", "", False)], "public", False, None)
+                        d.sec, d.header, d.name, d.kind = s["id"], hdrs[s["id"]], nm, "macro"
+                        self.add(d, "macro", "#" + nm, ent=nm)
 
     # ---- emit -------------------------------------------------------------------------------
     def add(self, d, what, code, ent=None):
@@ -238,6 +278,9 @@ class Gen:
                 continue
             if d.kind in ("empty", "static_assert", "using-directive", "using-enum", "friend-class"):
                 continue
+            if (d.sec, d.name) in SMP.SKIP or d.fs == "optional":
+                continue
+            CUR["ns"] = d.ns
             try:
                 getattr(self, "do_" + d.kind.replace("-", "_"))(d)
             except Unprobeable as e:
@@ -281,10 +324,20 @@ class Gen:
 
     def do_alias(self, d):
         if d.classes:
+            cls = d.classes[-1][3]
+            own = d.heads[len(cls.heads):] if cls else []
             for ctx, selft, cdecl, label in self.class_samples(d):
+                targs = ""
+                if own:
+                    envs = SMP.params_env(own[-1], d, ctx.env)
+                    if not envs:
+                        continue
+                    ctx = Ctx(envs[0][0], ctx.members, ctx.selfname, ctx.selftype)
+                    targs = "<" + ", ".join(SMP.arg_text(p, ctx.env) for p in own[-1]) + ">"
                 try:
                     tgt = subst(d.info["target"], ctx)
-                    self.add(d, f"type {label}".strip(), f"static_assert(spec_probe::same<{selft}::{d.name}, {tgt}>);")
+                    tm = "template " if targs else ""
+                    self.add(d, f"type {label}".strip(), f"static_assert(spec_probe::same<typename {selft}::{tm}{d.name}{targs}, {tgt}>);")
                 except Unprobeable as e:
                     self.add(d, f"type exists {label} ({e})".strip(), f"using T = {selft}::{d.name};")
             return
@@ -445,6 +498,8 @@ class Gen:
                      f"template<class Z> concept c = requires {{ requires spec_probe::same<decltype({call}), {res}>; }}; static_assert(c<void>);")
 
     def arg(self, p, ctx, z=True):
+        if p["pack"] and len(p["type"]) == 1 and p["type"][0] in ctx.env and ctx.env[p["type"][0]] in (PACK, ""):
+            return ""
         t = subst(p["type"], ctx)
         if p["pack"]:
             # a pack: the sample pack is one element (or none for an empty sample)
@@ -469,12 +524,12 @@ class Gen:
         full = []
         for p in params:
             full.append((p, self.arg(p, ctx)))
-        out = [[a for p, a in full]]
+        out = [[a for p, a in full if a]]
         k = len(params)
         while k > 0 and params[k - 1]["default"] is not None:
             k -= 1
         if k < len(params):
-            out.append([a for p, a in full[:k]])
+            out.append([a for p, a in full[:k] if a])
         return out
 
     def ret_check(self, d, ctx):
@@ -577,6 +632,16 @@ class Gen:
                     cv = " ".join(q for q in quals if q in ("const", "volatile"))
                     ref = "&&" if "&&" in quals else "&"
                     objt = f"{cv + ' ' if cv else ''}{selft}{ref}"
+                    ps = d.info["params"]
+                    if ps and ps[0]["type"] and ps[0]["type"][0] == "this":
+                        try:
+                            objt = subst(ps[0]["type"][1:], ctx)
+                        except Unprobeable:
+                            continue
+                        if not objt.endswith("&"):
+                            objt += "&&"
+                        d.info = dict(d.info)
+                        d.info["params"] = ps[1:]
                     protected = d.access == "protected"
                     if protected:
                         if cdecl.info.get("final"):
@@ -687,6 +752,8 @@ def write(gen, outdir, inline_ns):
                  "// One check per line (see gen.py); the runner maps diagnostics to the check IDs below."]
         for h in headers:
             lines.append(f"#include <{h}>")
+        for h in headers:
+            lines.append("#define SPEC_PROBE_" + re.sub(r'\W', '_', h))
         lines.append('#include "../probe_support.hpp"')
         for k, c in enumerate(cs):
             cid, _, header, ent, what, decl, code, ns = c

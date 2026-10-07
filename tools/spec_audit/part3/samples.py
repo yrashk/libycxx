@@ -76,6 +76,13 @@ CLASS = {
 
 # Samples by template-parameter name, per area (prefix of the stable name).
 BY_AREA = [
+    ("thread.thread", {"T": "char"}),
+    ("thread.jthread", {"T": "char"}),
+    ("format.fmt.string", {"T": "const char*"}),
+    ("depr.tuple", {"T": "tuple<int>"}),
+    ("depr.variant", {"T": "variant<int>"}),
+    ("depr.meta", {"Types": "int"}),
+    ("atomics.ref", {"U": "=integral-type|floating-point-type|T"}),
     ("complex", {"T": "double", "X": "double"}),
     ("cmplx", {"T": "double", "X": "double"}),
     ("atomics", {"T": "int", "U": "int"}),
@@ -89,8 +96,8 @@ BY_AREA = [
     ("gslice", {"T": "double"}),
     ("slice", {"T": "double"}),
     ("numbers", {"T": "double"}),
-    ("future", {"R": "int", "Allocator": "allocator<int>", "F": "int(*)()", "T": "int"}),
-    ("futures", {"R": "int", "Allocator": "allocator<int>", "F": "int(*)()", "T": "int"}),
+    ("future", {"R": "int", "Allocator": "allocator<int>", "F": "spec_probe::fn_int", "T": "int"}),
+    ("futures", {"R": "int", "Allocator": "allocator<int>", "F": "spec_probe::fn_int", "T": "int"}),
     ("shared.lock", {"Mutex": "shared_mutex"}),
     ("thread.lock.shared", {"Mutex": "shared_mutex"}),
     ("thread.sharedtimedmutex", {"Mutex": "shared_mutex"}),
@@ -161,7 +168,7 @@ BY_NAME = {
     "SAlloc": "allocator<char>", "ST": "char_traits<char>", "SA": "allocator<char>",
     "T": "int", "U": "int", "R": "int",
     "RealType": "double", "IntType": "int", "UIntType": "uint_fast32_t",
-    "URBG": "mt19937", "Engine": "mt19937", "Sseq": "seed_seq", "UnaryOperation": "double(*)(double)",
+    "URBG": "mt19937", "Engine": "mt19937", "Sseq": "seed_seq", "UnaryOperation": "spec_probe::fn_dd",
     "InputIteratorB": "const double*", "InputIteratorW": "const double*", "RandomAccessIterator": "unsigned*",
     "BidirectionalIterator": "const char*", "ForwardIterator": "const char*", "OutputIter": "char*",
     "OutputIterator": "char*", "InputIterator": "const char*",
@@ -170,19 +177,19 @@ BY_NAME = {
     "Period": "ratio<1>", "Period1": "ratio<1>", "Period2": "milli", "Clock": "chrono::system_clock",
     "Clock1": "chrono::system_clock", "Clock2": "chrono::system_clock", "DestClock": "chrono::utc_clock",
     "SourceClock": "chrono::system_clock", "TimeZonePtr": "const chrono::time_zone*",
-    "Mutex": "mutex", "Lock": "unique_lock<mutex>", "Predicate": "bool(*)()", "L1": "mutex", "L2": "mutex",
-    "Callable": "void(*)()", "Callback": "void(*)()", "CallbackFn": "spec_probe::callback",
+    "Mutex": "mutex", "Lock": "unique_lock<mutex>", "Predicate": "spec_probe::pred", "L1": "mutex", "L2": "mutex",
+    "Callable": "spec_probe::fn", "Callback": "spec_probe::fn", "CallbackFn": "spec_probe::callback",
     "Initializer": "spec_probe::callback", "CompletionFunction": "spec_probe::completion",
     "Context": "format_context", "FormatContext": "format_context", "ParseContext": "format_parse_context",
     "Out": "char*", "Facet": "ctype<char>", "stateT": "mbstate_t", "state": "mbstate_t",
-    "Istream": "istream", "Ostream": "ostream", "ROS": "std::string_view", "F": "void(*)()",
+    "Istream": "istream", "Ostream": "ostream", "ROS": "std::string_view", "F": "spec_probe::fn",
     "moneyT": "long double", "Visitor": "spec_probe::visitor",
 }
 # Value parameters by name.
 VALUES = {"I": "0", "N": "4", "w": "32", "International": "false", "Intl": "false", "least_max_value": "4",
           "Bytes": "4", "Len": "8", "Align": "8", "cnt": "4"}
 # Packs: their sample (text of the arguments; "" for an empty pack).
-PACKS = {"Args": "int", "ArgTypes": "int", "MutexTypes": "mutex", "L3": "", "Flags": "", "Ts": "int",
+PACKS = {"Args": "int", "ArgTypes": "int", "MutexTypes": "mutex", "L3": "mutex", "Flags": "", "Ts": "int",
          "Env": "", "Envs": "", "Domains": "", "Child": "", "T": "int", "Types": "int", "Abis": "",
          "Other": "", "consts": "", "Fns": ""}
 
@@ -197,6 +204,16 @@ PLACEHOLDERS = {
 }
 
 
+# Declarations the draft makes optional or implementation-defined: (subclause, name) -> why.
+SKIP = {
+    ("cmath.syn", "FP_FAST_FMA"): "C23 7.12/7: optionally defined (fma is fast)",
+    ("cmath.syn", "FP_FAST_FMAF"): "C23 7.12/7: optionally defined",
+    ("cmath.syn", "FP_FAST_FMAL"): "C23 7.12/7: optionally defined",
+    ("cinttypes.syn", "abs"): "[cinttypes.syn]/2: declared only if intmax_t is an extended integer type",
+    ("cinttypes.syn", "div"): "[cinttypes.syn]/2: declared only if intmax_t is an extended integer type",
+}
+
+
 def area_table(sec):
     out = {}
     for prefix, tab in BY_AREA:
@@ -208,8 +225,11 @@ def area_table(sec):
 
 def sample_for(p, sec):
     if p.pack:
+        tab = area_table(sec)
+        if p.name in tab:
+            return "\x06" + tab[p.name]
         if p.name in PACKS:
-            return PACKS[p.name]
+            return "\x06" + PACKS[p.name]
         return None
     if p.kind == "value":
         if p.name in VALUES:
@@ -226,7 +246,7 @@ def sample_for(p, sec):
         return None
     tab = area_table(sec)
     if p.name in tab:
-        return tab[p.name]
+        return tab[p.name]   # "=a|b" names other samples (resolved in params_env)
     if p.name in BY_NAME:
         return BY_NAME[p.name]
     return None
@@ -263,6 +283,8 @@ def params_env(params, decl, env):
         if p.name is None:
             continue
         v = sample_for(p, decl.sec)
+        if v is not None and v.startswith("="):
+            v = next((env[k] for k in v[1:].split("|") if k in env), None)
         if v is None:
             if p.default is not None and not p.pack:
                 try:
@@ -281,7 +303,7 @@ def heads_env(heads, decl):
 
 
 def arg_text(p, env):
-    return env.get(p.name, "")
+    return env.get(p.name, "").replace("\x06", "")
 
 
 def placeholder_envs(toks, env):

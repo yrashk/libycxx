@@ -4234,7 +4234,7 @@ time.zone.overview#7	time.zone.overview	chrono	std::chrono::time_zone::to_sys	ca
 time.zone.overview#8	time.zone.overview	chrono	std::chrono::time_zone::to_sys	call ret	sys_time<common_type_t<Duration, seconds>>to_sys(const local_time<Duration>&tp, choose z)const
 time.zone.overview#9	time.zone.overview	chrono	std::chrono::time_zone::to_local	call ret	local_time<common_type_t<Duration, seconds>>to_local(const sys_time<Duration>&tp)const
 time.zone.zonedtraits#1	time.zone.zonedtraits	chrono	std::chrono::zoned_traits	presence	struct zoned_traits
-time.zone.zonedtraits#2	time.zone.zonedtraits	chrono	std::chrono::zoned_traits<const time_zone*>	specialization complete	struct zoned_traits<const time_zone*>
+time.zone.zonedtraits#2	time.zone.zonedtraits	chrono	std::chrono::zoned_traits<const std::chrono::time_zone*>	specialization complete	struct zoned_traits<const time_zone*>
 time.zone.zonedtraits#3	time.zone.zonedtraits	chrono	std::chrono::zoned_traits::default_zone	call ret	static const time_zone*default_zone()
 time.zone.zonedtraits#4	time.zone.zonedtraits	chrono	std::chrono::zoned_traits::locate_zone	call ret	static const time_zone*locate_zone(string_view name)
 time.zone.zonedtime.overview#1	time.zone.zonedtime.overview	chrono	std::chrono::zoned_time	presence	class zoned_time
@@ -5645,8 +5645,6 @@ cinttypes.syn#4	cinttypes.syn	cinttypes	std::strtoimax	call ret	intmax_t strtoim
 cinttypes.syn#5	cinttypes.syn	cinttypes	std::strtoumax	call ret	uintmax_t strtoumax(const char*nptr, char**endptr, int base)
 cinttypes.syn#6	cinttypes.syn	cinttypes	std::wcstoimax	call ret	intmax_t wcstoimax(const wchar_t*nptr, wchar_t**endptr, int base)
 cinttypes.syn#7	cinttypes.syn	cinttypes	std::wcstoumax	call ret	uintmax_t wcstoumax(const wchar_t*nptr, wchar_t**endptr, int base)
-cinttypes.syn#8	cinttypes.syn	cinttypes	std::abs	call ret	constexpr intmax_t abs(intmax_t)
-cinttypes.syn#9	cinttypes.syn	cinttypes	std::div	call ret	constexpr imaxdiv_t div(intmax_t, intmax_t)
 thread.stoptoken.syn#1	thread.stoptoken.syn	stop_token	std::stoppable_token	presence	concept stoppable_token = ⟨see below⟩
 thread.stoptoken.syn#2	thread.stoptoken.syn	stop_token	std::unstoppable_token	presence	concept unstoppable_token = ⟨see below⟩
 thread.stoptoken.syn#3	thread.stoptoken.syn	stop_token	std::stop_token	presence	class stop_token
@@ -9310,60 +9308,60 @@ atomics.types.pointer#88	atomics.types.pointer	atomic	std::atomic::notify_one	ca
 atomics.types.pointer#89	atomics.types.pointer	atomic	std::atomic::notify_one	call ret noexcept	constexpr void notify_one()noexcept
 atomics.types.pointer#90	atomics.types.pointer	atomic	std::atomic::notify_all	call ret noexcept	void notify_all()volatile noexcept
 atomics.types.pointer#91	atomics.types.pointer	atomic	std::atomic::notify_all	call ret noexcept	constexpr void notify_all()noexcept
-util.smartptr.atomic.shared#1	util.smartptr.atomic.shared	atomic	std::atomic<shared_ptr<int> >	specialization complete	struct atomic<shared_ptr<T>>
-util.smartptr.atomic.shared#2	util.smartptr.atomic.shared	atomic	std::atomic::value_type	type	using value_type = shared_ptr<T>
-util.smartptr.atomic.shared#3	util.smartptr.atomic.shared	atomic	std::atomic::is_always_lock_free	var	static constexpr bool is_always_lock_free = ⟨implementation-defined⟩
-util.smartptr.atomic.shared#4	util.smartptr.atomic.shared	atomic	std::atomic::is_lock_free	call ret noexcept	bool is_lock_free()const noexcept
-util.smartptr.atomic.shared#5	util.smartptr.atomic.shared	atomic	std::atomic::atomic	ctor noexcept	constexpr atomic()noexcept
-util.smartptr.atomic.shared#6	util.smartptr.atomic.shared	atomic	std::atomic::atomic	ctor noexcept	constexpr atomic(nullptr_t)noexcept:atomic()
-util.smartptr.atomic.shared#7	util.smartptr.atomic.shared	atomic	std::atomic::atomic	ctor noexcept	constexpr atomic(shared_ptr<T>desired)noexcept
-util.smartptr.atomic.shared#8	util.smartptr.atomic.shared	atomic	std::atomic::atomic	deleted ctor	atomic(const atomic&) = delete
-util.smartptr.atomic.shared#9	util.smartptr.atomic.shared	atomic	std::atomic::operator=	deleted call	void operator = (const atomic&) = delete
-util.smartptr.atomic.shared#10	util.smartptr.atomic.shared	atomic	std::atomic::load	call ret noexcept	constexpr shared_ptr<T>load(memory_order order = memory_order::seq_cst)const noexcept
-util.smartptr.atomic.shared#11	util.smartptr.atomic.shared	atomic	std::atomic::load	call (defaults) noexcept	constexpr shared_ptr<T>load(memory_order order = memory_order::seq_cst)const noexcept
-util.smartptr.atomic.shared#12	util.smartptr.atomic.shared	atomic	std::atomic::operator shared_ptr<T>	call noexcept	constexpr operator shared_ptr<T>()const noexcept
-util.smartptr.atomic.shared#13	util.smartptr.atomic.shared	atomic	std::atomic::store	call ret noexcept	constexpr void store(shared_ptr<T>desired, memory_order order = memory_order::seq_cst)noexcept
-util.smartptr.atomic.shared#14	util.smartptr.atomic.shared	atomic	std::atomic::store	call (defaults) noexcept	constexpr void store(shared_ptr<T>desired, memory_order order = memory_order::seq_cst)noexcept
-util.smartptr.atomic.shared#15	util.smartptr.atomic.shared	atomic	std::atomic::operator=	call ret noexcept	constexpr void operator = (shared_ptr<T>desired)noexcept
-util.smartptr.atomic.shared#16	util.smartptr.atomic.shared	atomic	std::atomic::operator=	call ret noexcept	constexpr void operator = (nullptr_t)noexcept
-util.smartptr.atomic.shared#17	util.smartptr.atomic.shared	atomic	std::atomic::exchange	call ret noexcept	constexpr shared_ptr<T>exchange(shared_ptr<T>desired, memory_order order = memory_order::seq_cst)noexcept
-util.smartptr.atomic.shared#18	util.smartptr.atomic.shared	atomic	std::atomic::exchange	call (defaults) noexcept	constexpr shared_ptr<T>exchange(shared_ptr<T>desired, memory_order order = memory_order::seq_cst)noexcept
-util.smartptr.atomic.shared#19	util.smartptr.atomic.shared	atomic	std::atomic::compare_exchange_weak	call ret noexcept	constexpr bool compare_exchange_weak(shared_ptr<T>&expected, shared_ptr<T>desired, memory_order success, memory_order failure)noexcept
-util.smartptr.atomic.shared#20	util.smartptr.atomic.shared	atomic	std::atomic::compare_exchange_strong	call ret noexcept	constexpr bool compare_exchange_strong(shared_ptr<T>&expected, shared_ptr<T>desired, memory_order success, memory_order failure)noexcept
-util.smartptr.atomic.shared#21	util.smartptr.atomic.shared	atomic	std::atomic::compare_exchange_weak	call ret noexcept	constexpr bool compare_exchange_weak(shared_ptr<T>&expected, shared_ptr<T>desired, memory_order order = memory_order::seq_cst)noexcept
-util.smartptr.atomic.shared#22	util.smartptr.atomic.shared	atomic	std::atomic::compare_exchange_weak	call (defaults) noexcept	constexpr bool compare_exchange_weak(shared_ptr<T>&expected, shared_ptr<T>desired, memory_order order = memory_order::seq_cst)noexcept
-util.smartptr.atomic.shared#23	util.smartptr.atomic.shared	atomic	std::atomic::compare_exchange_strong	call ret noexcept	constexpr bool compare_exchange_strong(shared_ptr<T>&expected, shared_ptr<T>desired, memory_order order = memory_order::seq_cst)noexcept
-util.smartptr.atomic.shared#24	util.smartptr.atomic.shared	atomic	std::atomic::compare_exchange_strong	call (defaults) noexcept	constexpr bool compare_exchange_strong(shared_ptr<T>&expected, shared_ptr<T>desired, memory_order order = memory_order::seq_cst)noexcept
-util.smartptr.atomic.shared#25	util.smartptr.atomic.shared	atomic	std::atomic::wait	call ret noexcept	constexpr void wait(shared_ptr<T>old, memory_order order = memory_order::seq_cst)const noexcept
-util.smartptr.atomic.shared#26	util.smartptr.atomic.shared	atomic	std::atomic::wait	call (defaults) noexcept	constexpr void wait(shared_ptr<T>old, memory_order order = memory_order::seq_cst)const noexcept
-util.smartptr.atomic.shared#27	util.smartptr.atomic.shared	atomic	std::atomic::notify_one	call ret noexcept	constexpr void notify_one()noexcept
-util.smartptr.atomic.shared#28	util.smartptr.atomic.shared	atomic	std::atomic::notify_all	call ret noexcept	constexpr void notify_all()noexcept
-util.smartptr.atomic.weak#1	util.smartptr.atomic.weak	atomic	std::atomic<weak_ptr<int> >	specialization complete	struct atomic<weak_ptr<T>>
-util.smartptr.atomic.weak#2	util.smartptr.atomic.weak	atomic	std::atomic::value_type	type	using value_type = weak_ptr<T>
-util.smartptr.atomic.weak#3	util.smartptr.atomic.weak	atomic	std::atomic::is_always_lock_free	var	static constexpr bool is_always_lock_free = ⟨implementation-defined⟩
-util.smartptr.atomic.weak#4	util.smartptr.atomic.weak	atomic	std::atomic::is_lock_free	call ret noexcept	bool is_lock_free()const noexcept
-util.smartptr.atomic.weak#5	util.smartptr.atomic.weak	atomic	std::atomic::atomic	ctor noexcept	constexpr atomic()noexcept
-util.smartptr.atomic.weak#6	util.smartptr.atomic.weak	atomic	std::atomic::atomic	ctor noexcept	constexpr atomic(weak_ptr<T>desired)noexcept
-util.smartptr.atomic.weak#7	util.smartptr.atomic.weak	atomic	std::atomic::atomic	deleted ctor	atomic(const atomic&) = delete
-util.smartptr.atomic.weak#8	util.smartptr.atomic.weak	atomic	std::atomic::operator=	deleted call	void operator = (const atomic&) = delete
-util.smartptr.atomic.weak#9	util.smartptr.atomic.weak	atomic	std::atomic::load	call ret noexcept	constexpr weak_ptr<T>load(memory_order order = memory_order::seq_cst)const noexcept
-util.smartptr.atomic.weak#10	util.smartptr.atomic.weak	atomic	std::atomic::load	call (defaults) noexcept	constexpr weak_ptr<T>load(memory_order order = memory_order::seq_cst)const noexcept
-util.smartptr.atomic.weak#11	util.smartptr.atomic.weak	atomic	std::atomic::operator weak_ptr<T>	call noexcept	constexpr operator weak_ptr<T>()const noexcept
-util.smartptr.atomic.weak#12	util.smartptr.atomic.weak	atomic	std::atomic::store	call ret noexcept	constexpr void store(weak_ptr<T>desired, memory_order order = memory_order::seq_cst)noexcept
-util.smartptr.atomic.weak#13	util.smartptr.atomic.weak	atomic	std::atomic::store	call (defaults) noexcept	constexpr void store(weak_ptr<T>desired, memory_order order = memory_order::seq_cst)noexcept
-util.smartptr.atomic.weak#14	util.smartptr.atomic.weak	atomic	std::atomic::operator=	call ret noexcept	constexpr void operator = (weak_ptr<T>desired)noexcept
-util.smartptr.atomic.weak#15	util.smartptr.atomic.weak	atomic	std::atomic::exchange	call ret noexcept	constexpr weak_ptr<T>exchange(weak_ptr<T>desired, memory_order order = memory_order::seq_cst)noexcept
-util.smartptr.atomic.weak#16	util.smartptr.atomic.weak	atomic	std::atomic::exchange	call (defaults) noexcept	constexpr weak_ptr<T>exchange(weak_ptr<T>desired, memory_order order = memory_order::seq_cst)noexcept
-util.smartptr.atomic.weak#17	util.smartptr.atomic.weak	atomic	std::atomic::compare_exchange_weak	call ret noexcept	constexpr bool compare_exchange_weak(weak_ptr<T>&expected, weak_ptr<T>desired, memory_order success, memory_order failure)noexcept
-util.smartptr.atomic.weak#18	util.smartptr.atomic.weak	atomic	std::atomic::compare_exchange_strong	call ret noexcept	constexpr bool compare_exchange_strong(weak_ptr<T>&expected, weak_ptr<T>desired, memory_order success, memory_order failure)noexcept
-util.smartptr.atomic.weak#19	util.smartptr.atomic.weak	atomic	std::atomic::compare_exchange_weak	call ret noexcept	constexpr bool compare_exchange_weak(weak_ptr<T>&expected, weak_ptr<T>desired, memory_order order = memory_order::seq_cst)noexcept
-util.smartptr.atomic.weak#20	util.smartptr.atomic.weak	atomic	std::atomic::compare_exchange_weak	call (defaults) noexcept	constexpr bool compare_exchange_weak(weak_ptr<T>&expected, weak_ptr<T>desired, memory_order order = memory_order::seq_cst)noexcept
-util.smartptr.atomic.weak#21	util.smartptr.atomic.weak	atomic	std::atomic::compare_exchange_strong	call ret noexcept	constexpr bool compare_exchange_strong(weak_ptr<T>&expected, weak_ptr<T>desired, memory_order order = memory_order::seq_cst)noexcept
-util.smartptr.atomic.weak#22	util.smartptr.atomic.weak	atomic	std::atomic::compare_exchange_strong	call (defaults) noexcept	constexpr bool compare_exchange_strong(weak_ptr<T>&expected, weak_ptr<T>desired, memory_order order = memory_order::seq_cst)noexcept
-util.smartptr.atomic.weak#23	util.smartptr.atomic.weak	atomic	std::atomic::wait	call ret noexcept	constexpr void wait(weak_ptr<T>old, memory_order order = memory_order::seq_cst)const noexcept
-util.smartptr.atomic.weak#24	util.smartptr.atomic.weak	atomic	std::atomic::wait	call (defaults) noexcept	constexpr void wait(weak_ptr<T>old, memory_order order = memory_order::seq_cst)const noexcept
-util.smartptr.atomic.weak#25	util.smartptr.atomic.weak	atomic	std::atomic::notify_one	call ret noexcept	constexpr void notify_one()noexcept
-util.smartptr.atomic.weak#26	util.smartptr.atomic.weak	atomic	std::atomic::notify_all	call ret noexcept	constexpr void notify_all()noexcept
+util.smartptr.atomic.shared#1	util.smartptr.atomic.shared	memory	std::atomic<shared_ptr<int> >	specialization complete	struct atomic<shared_ptr<T>>
+util.smartptr.atomic.shared#2	util.smartptr.atomic.shared	memory	std::atomic::value_type	type	using value_type = shared_ptr<T>
+util.smartptr.atomic.shared#3	util.smartptr.atomic.shared	memory	std::atomic::is_always_lock_free	var	static constexpr bool is_always_lock_free = ⟨implementation-defined⟩
+util.smartptr.atomic.shared#4	util.smartptr.atomic.shared	memory	std::atomic::is_lock_free	call ret noexcept	bool is_lock_free()const noexcept
+util.smartptr.atomic.shared#5	util.smartptr.atomic.shared	memory	std::atomic::atomic	ctor noexcept	constexpr atomic()noexcept
+util.smartptr.atomic.shared#6	util.smartptr.atomic.shared	memory	std::atomic::atomic	ctor noexcept	constexpr atomic(nullptr_t)noexcept:atomic()
+util.smartptr.atomic.shared#7	util.smartptr.atomic.shared	memory	std::atomic::atomic	ctor noexcept	constexpr atomic(shared_ptr<T>desired)noexcept
+util.smartptr.atomic.shared#8	util.smartptr.atomic.shared	memory	std::atomic::atomic	deleted ctor	atomic(const atomic&) = delete
+util.smartptr.atomic.shared#9	util.smartptr.atomic.shared	memory	std::atomic::operator=	deleted call	void operator = (const atomic&) = delete
+util.smartptr.atomic.shared#10	util.smartptr.atomic.shared	memory	std::atomic::load	call ret noexcept	constexpr shared_ptr<T>load(memory_order order = memory_order::seq_cst)const noexcept
+util.smartptr.atomic.shared#11	util.smartptr.atomic.shared	memory	std::atomic::load	call (defaults) noexcept	constexpr shared_ptr<T>load(memory_order order = memory_order::seq_cst)const noexcept
+util.smartptr.atomic.shared#12	util.smartptr.atomic.shared	memory	std::atomic::operator shared_ptr<T>	call noexcept	constexpr operator shared_ptr<T>()const noexcept
+util.smartptr.atomic.shared#13	util.smartptr.atomic.shared	memory	std::atomic::store	call ret noexcept	constexpr void store(shared_ptr<T>desired, memory_order order = memory_order::seq_cst)noexcept
+util.smartptr.atomic.shared#14	util.smartptr.atomic.shared	memory	std::atomic::store	call (defaults) noexcept	constexpr void store(shared_ptr<T>desired, memory_order order = memory_order::seq_cst)noexcept
+util.smartptr.atomic.shared#15	util.smartptr.atomic.shared	memory	std::atomic::operator=	call ret noexcept	constexpr void operator = (shared_ptr<T>desired)noexcept
+util.smartptr.atomic.shared#16	util.smartptr.atomic.shared	memory	std::atomic::operator=	call ret noexcept	constexpr void operator = (nullptr_t)noexcept
+util.smartptr.atomic.shared#17	util.smartptr.atomic.shared	memory	std::atomic::exchange	call ret noexcept	constexpr shared_ptr<T>exchange(shared_ptr<T>desired, memory_order order = memory_order::seq_cst)noexcept
+util.smartptr.atomic.shared#18	util.smartptr.atomic.shared	memory	std::atomic::exchange	call (defaults) noexcept	constexpr shared_ptr<T>exchange(shared_ptr<T>desired, memory_order order = memory_order::seq_cst)noexcept
+util.smartptr.atomic.shared#19	util.smartptr.atomic.shared	memory	std::atomic::compare_exchange_weak	call ret noexcept	constexpr bool compare_exchange_weak(shared_ptr<T>&expected, shared_ptr<T>desired, memory_order success, memory_order failure)noexcept
+util.smartptr.atomic.shared#20	util.smartptr.atomic.shared	memory	std::atomic::compare_exchange_strong	call ret noexcept	constexpr bool compare_exchange_strong(shared_ptr<T>&expected, shared_ptr<T>desired, memory_order success, memory_order failure)noexcept
+util.smartptr.atomic.shared#21	util.smartptr.atomic.shared	memory	std::atomic::compare_exchange_weak	call ret noexcept	constexpr bool compare_exchange_weak(shared_ptr<T>&expected, shared_ptr<T>desired, memory_order order = memory_order::seq_cst)noexcept
+util.smartptr.atomic.shared#22	util.smartptr.atomic.shared	memory	std::atomic::compare_exchange_weak	call (defaults) noexcept	constexpr bool compare_exchange_weak(shared_ptr<T>&expected, shared_ptr<T>desired, memory_order order = memory_order::seq_cst)noexcept
+util.smartptr.atomic.shared#23	util.smartptr.atomic.shared	memory	std::atomic::compare_exchange_strong	call ret noexcept	constexpr bool compare_exchange_strong(shared_ptr<T>&expected, shared_ptr<T>desired, memory_order order = memory_order::seq_cst)noexcept
+util.smartptr.atomic.shared#24	util.smartptr.atomic.shared	memory	std::atomic::compare_exchange_strong	call (defaults) noexcept	constexpr bool compare_exchange_strong(shared_ptr<T>&expected, shared_ptr<T>desired, memory_order order = memory_order::seq_cst)noexcept
+util.smartptr.atomic.shared#25	util.smartptr.atomic.shared	memory	std::atomic::wait	call ret noexcept	constexpr void wait(shared_ptr<T>old, memory_order order = memory_order::seq_cst)const noexcept
+util.smartptr.atomic.shared#26	util.smartptr.atomic.shared	memory	std::atomic::wait	call (defaults) noexcept	constexpr void wait(shared_ptr<T>old, memory_order order = memory_order::seq_cst)const noexcept
+util.smartptr.atomic.shared#27	util.smartptr.atomic.shared	memory	std::atomic::notify_one	call ret noexcept	constexpr void notify_one()noexcept
+util.smartptr.atomic.shared#28	util.smartptr.atomic.shared	memory	std::atomic::notify_all	call ret noexcept	constexpr void notify_all()noexcept
+util.smartptr.atomic.weak#1	util.smartptr.atomic.weak	memory	std::atomic<weak_ptr<int> >	specialization complete	struct atomic<weak_ptr<T>>
+util.smartptr.atomic.weak#2	util.smartptr.atomic.weak	memory	std::atomic::value_type	type	using value_type = weak_ptr<T>
+util.smartptr.atomic.weak#3	util.smartptr.atomic.weak	memory	std::atomic::is_always_lock_free	var	static constexpr bool is_always_lock_free = ⟨implementation-defined⟩
+util.smartptr.atomic.weak#4	util.smartptr.atomic.weak	memory	std::atomic::is_lock_free	call ret noexcept	bool is_lock_free()const noexcept
+util.smartptr.atomic.weak#5	util.smartptr.atomic.weak	memory	std::atomic::atomic	ctor noexcept	constexpr atomic()noexcept
+util.smartptr.atomic.weak#6	util.smartptr.atomic.weak	memory	std::atomic::atomic	ctor noexcept	constexpr atomic(weak_ptr<T>desired)noexcept
+util.smartptr.atomic.weak#7	util.smartptr.atomic.weak	memory	std::atomic::atomic	deleted ctor	atomic(const atomic&) = delete
+util.smartptr.atomic.weak#8	util.smartptr.atomic.weak	memory	std::atomic::operator=	deleted call	void operator = (const atomic&) = delete
+util.smartptr.atomic.weak#9	util.smartptr.atomic.weak	memory	std::atomic::load	call ret noexcept	constexpr weak_ptr<T>load(memory_order order = memory_order::seq_cst)const noexcept
+util.smartptr.atomic.weak#10	util.smartptr.atomic.weak	memory	std::atomic::load	call (defaults) noexcept	constexpr weak_ptr<T>load(memory_order order = memory_order::seq_cst)const noexcept
+util.smartptr.atomic.weak#11	util.smartptr.atomic.weak	memory	std::atomic::operator weak_ptr<T>	call noexcept	constexpr operator weak_ptr<T>()const noexcept
+util.smartptr.atomic.weak#12	util.smartptr.atomic.weak	memory	std::atomic::store	call ret noexcept	constexpr void store(weak_ptr<T>desired, memory_order order = memory_order::seq_cst)noexcept
+util.smartptr.atomic.weak#13	util.smartptr.atomic.weak	memory	std::atomic::store	call (defaults) noexcept	constexpr void store(weak_ptr<T>desired, memory_order order = memory_order::seq_cst)noexcept
+util.smartptr.atomic.weak#14	util.smartptr.atomic.weak	memory	std::atomic::operator=	call ret noexcept	constexpr void operator = (weak_ptr<T>desired)noexcept
+util.smartptr.atomic.weak#15	util.smartptr.atomic.weak	memory	std::atomic::exchange	call ret noexcept	constexpr weak_ptr<T>exchange(weak_ptr<T>desired, memory_order order = memory_order::seq_cst)noexcept
+util.smartptr.atomic.weak#16	util.smartptr.atomic.weak	memory	std::atomic::exchange	call (defaults) noexcept	constexpr weak_ptr<T>exchange(weak_ptr<T>desired, memory_order order = memory_order::seq_cst)noexcept
+util.smartptr.atomic.weak#17	util.smartptr.atomic.weak	memory	std::atomic::compare_exchange_weak	call ret noexcept	constexpr bool compare_exchange_weak(weak_ptr<T>&expected, weak_ptr<T>desired, memory_order success, memory_order failure)noexcept
+util.smartptr.atomic.weak#18	util.smartptr.atomic.weak	memory	std::atomic::compare_exchange_strong	call ret noexcept	constexpr bool compare_exchange_strong(weak_ptr<T>&expected, weak_ptr<T>desired, memory_order success, memory_order failure)noexcept
+util.smartptr.atomic.weak#19	util.smartptr.atomic.weak	memory	std::atomic::compare_exchange_weak	call ret noexcept	constexpr bool compare_exchange_weak(weak_ptr<T>&expected, weak_ptr<T>desired, memory_order order = memory_order::seq_cst)noexcept
+util.smartptr.atomic.weak#20	util.smartptr.atomic.weak	memory	std::atomic::compare_exchange_weak	call (defaults) noexcept	constexpr bool compare_exchange_weak(weak_ptr<T>&expected, weak_ptr<T>desired, memory_order order = memory_order::seq_cst)noexcept
+util.smartptr.atomic.weak#21	util.smartptr.atomic.weak	memory	std::atomic::compare_exchange_strong	call ret noexcept	constexpr bool compare_exchange_strong(weak_ptr<T>&expected, weak_ptr<T>desired, memory_order order = memory_order::seq_cst)noexcept
+util.smartptr.atomic.weak#22	util.smartptr.atomic.weak	memory	std::atomic::compare_exchange_strong	call (defaults) noexcept	constexpr bool compare_exchange_strong(weak_ptr<T>&expected, weak_ptr<T>desired, memory_order order = memory_order::seq_cst)noexcept
+util.smartptr.atomic.weak#23	util.smartptr.atomic.weak	memory	std::atomic::wait	call ret noexcept	constexpr void wait(weak_ptr<T>old, memory_order order = memory_order::seq_cst)const noexcept
+util.smartptr.atomic.weak#24	util.smartptr.atomic.weak	memory	std::atomic::wait	call (defaults) noexcept	constexpr void wait(weak_ptr<T>old, memory_order order = memory_order::seq_cst)const noexcept
+util.smartptr.atomic.weak#25	util.smartptr.atomic.weak	memory	std::atomic::notify_one	call ret noexcept	constexpr void notify_one()noexcept
+util.smartptr.atomic.weak#26	util.smartptr.atomic.weak	memory	std::atomic::notify_all	call ret noexcept	constexpr void notify_all()noexcept
 atomics.flag#1	atomics.flag	atomic	std::atomic_flag	presence	struct atomic_flag
 atomics.flag#2	atomics.flag	atomic	std::atomic_flag::atomic_flag	ctor noexcept	constexpr atomic_flag()noexcept
 atomics.flag#3	atomics.flag	atomic	std::atomic_flag::atomic_flag	deleted ctor	atomic_flag(const atomic_flag&) = delete
@@ -10019,55 +10017,55 @@ exec.parschedrepl.recvproxy#2	exec.parschedrepl.recvproxy	execution	std::executi
 exec.parschedrepl.recvproxy#3	exec.parschedrepl.recvproxy	execution	std::execution::parallel_scheduler_replacement::receiver_proxy::set_error	call ret noexcept	virtual void set_error(exception_ptr)noexcept = 0
 exec.parschedrepl.recvproxy#4	exec.parschedrepl.recvproxy	execution	std::execution::parallel_scheduler_replacement::receiver_proxy::set_stopped	call ret noexcept	virtual void set_stopped()noexcept = 0
 exec.parschedrepl.recvproxy#5	exec.parschedrepl.recvproxy	execution	std::execution::parallel_scheduler_replacement::bulk_item_receiver_proxy	presence	struct bulk_item_receiver_proxy:receiver_proxy
-exec.parschedrepl.recvproxy#6	exec.parschedrepl.recvproxy	execution	std::execution::parallel_scheduler_replacement::bulk_item_receiver_proxy	base receiver_proxy	struct bulk_item_receiver_proxy:receiver_proxy
+exec.parschedrepl.recvproxy#6	exec.parschedrepl.recvproxy	execution	std::execution::parallel_scheduler_replacement::bulk_item_receiver_proxy	base std::execution::parallel_scheduler_replacement::receiver_proxy	struct bulk_item_receiver_proxy:receiver_proxy
 exec.parschedrepl.recvproxy#7	exec.parschedrepl.recvproxy	execution	std::execution::parallel_scheduler_replacement::bulk_item_receiver_proxy::execute	call ret noexcept	virtual void execute(size_t, size_t)noexcept = 0
 exec.parschedrepl.psb#1	exec.parschedrepl.psb	execution	std::execution::parallel_scheduler_replacement::parallel_scheduler_backend	presence	struct parallel_scheduler_backend
 exec.parschedrepl.psb#2	exec.parschedrepl.psb	execution	std::execution::parallel_scheduler_replacement::parallel_scheduler_backend::~parallel_scheduler_backend	destructor virtual	virtual~parallel_scheduler_backend() = default
 exec.parschedrepl.psb#3	exec.parschedrepl.psb	execution	std::execution::parallel_scheduler_replacement::parallel_scheduler_backend::schedule	call ret noexcept	virtual void schedule(receiver_proxy&, span<byte>)noexcept = 0
 exec.parschedrepl.psb#4	exec.parschedrepl.psb	execution	std::execution::parallel_scheduler_replacement::parallel_scheduler_backend::schedule_bulk_chunked	call ret noexcept	virtual void schedule_bulk_chunked(size_t, bulk_item_receiver_proxy&, span<byte>)noexcept = 0
 exec.parschedrepl.psb#5	exec.parschedrepl.psb	execution	std::execution::parallel_scheduler_replacement::parallel_scheduler_backend::schedule_bulk_unchunked	call ret noexcept	virtual void schedule_bulk_unchunked(size_t, bulk_item_receiver_proxy&, span<byte>)noexcept = 0
-depr.numeric.limits.has.denorm#1	depr.numeric.limits.has.denorm	execution	std::float_denorm_style	enum	enum float_denorm_style
-depr.numeric.limits.has.denorm#2	depr.numeric.limits.has.denorm	execution	std::float_denorm_style::denorm_indeterminate	enumerator denorm_indeterminate	enum float_denorm_style
-depr.numeric.limits.has.denorm#3	depr.numeric.limits.has.denorm	execution	std::float_denorm_style::denorm_absent	enumerator denorm_absent	enum float_denorm_style
-depr.numeric.limits.has.denorm#4	depr.numeric.limits.has.denorm	execution	std::float_denorm_style::denorm_present	enumerator denorm_present	enum float_denorm_style
-depr.meta.types#1	depr.meta.types	execution	std::is_trivial	presence	struct is_trivial
-depr.meta.types#2	depr.meta.types	execution	std::is_trivial_v	var	constexpr bool is_trivial_v = is_trivial<T>::value
-depr.meta.types#3	depr.meta.types	execution	std::is_pod	presence	struct is_pod
-depr.meta.types#4	depr.meta.types	execution	std::is_pod_v	var	constexpr bool is_pod_v = is_pod<T>::value
-depr.meta.types#5	depr.meta.types	execution	std::aligned_storage	presence	struct aligned_storage
-depr.meta.types#6	depr.meta.types	execution	std::aligned_storage_t	type	using aligned_storage_t = aligned_storage<Len, Align>::type
-depr.meta.types#7	depr.meta.types	execution	std::aligned_union	presence	struct aligned_union
-depr.meta.types#8	depr.meta.types	execution	std::aligned_union_t	type	using aligned_union_t = aligned_union<Len, Types...>::type
-depr.relops#1	depr.relops	execution	std::rel_ops::operator!=	call ret	bool operator!=(const T&, const T&)
-depr.relops#2	depr.relops	execution	std::rel_ops::operator>	call ret	bool operator>(const T&, const T&)
-depr.relops#3	depr.relops	execution	std::rel_ops::operator<=	call ret	bool operator< = (const T&, const T&)
-depr.relops#4	depr.relops	execution	std::rel_ops::operator>=	call ret	bool operator> = (const T&, const T&)
-depr.tuple#1	depr.tuple	complex	std::tuple_size<volatile int>	specialization complete	struct tuple_size<volatile T>
-depr.tuple#2	depr.tuple	complex	std::tuple_size<const volatile int>	specialization complete	struct tuple_size<const volatile T>
-depr.tuple#3	depr.tuple	complex	std::tuple_element<0,volatile int>	specialization complete	struct tuple_element<I, volatile T>
-depr.tuple#4	depr.tuple	complex	std::tuple_element<0,const volatile int>	specialization complete	struct tuple_element<I, const volatile T>
-depr.variant#1	depr.variant	execution	std::variant_size<volatile int>	specialization complete	struct variant_size<volatile T>
-depr.variant#2	depr.variant	execution	std::variant_size<const volatile int>	specialization complete	struct variant_size<const volatile T>
-depr.variant#3	depr.variant	execution	std::variant_alternative<0,volatile int>	specialization complete	struct variant_alternative<I, volatile T>
-depr.variant#4	depr.variant	execution	std::variant_alternative<0,const volatile int>	specialization complete	struct variant_alternative<I, const volatile T>
-depr.vector.bool.swap#1	depr.vector.bool.swap	execution	std::vector<bool,allocator<char>>	specialization complete	class vector<bool, Allocator>
-depr.vector.bool.swap#2	depr.vector.bool.swap	execution	std::vector::swap	call ret noexcept	static constexpr void swap(reference x, reference y)noexcept
-depr.iterator#1	depr.iterator	execution	std::iterator	presence	struct iterator
-depr.iterator#2	depr.iterator	execution	std::iterator::iterator_category	type	using iterator_category = Category
-depr.iterator#3	depr.iterator	execution	std::iterator::value_type	type	using value_type = T
-depr.iterator#4	depr.iterator	execution	std::iterator::difference_type	type	using difference_type = Distance
-depr.iterator#5	depr.iterator	execution	std::iterator::pointer	type	using pointer = Pointer
-depr.iterator#6	depr.iterator	execution	std::iterator::reference	type	using reference = Reference
-depr.move.iter.elem#1	depr.move.iter.elem	execution	std::move_iterator	presence	class move_iterator
-depr.move.iter.elem#2	depr.move.iter.elem	execution	std::move_iterator::operator->	call ret	constexpr pointer operator->()const
+depr.numeric.limits.has.denorm#1	depr.numeric.limits.has.denorm	limits	std::float_denorm_style	enum	enum float_denorm_style
+depr.numeric.limits.has.denorm#2	depr.numeric.limits.has.denorm	limits	std::float_denorm_style::denorm_indeterminate	enumerator denorm_indeterminate	enum float_denorm_style
+depr.numeric.limits.has.denorm#3	depr.numeric.limits.has.denorm	limits	std::float_denorm_style::denorm_absent	enumerator denorm_absent	enum float_denorm_style
+depr.numeric.limits.has.denorm#4	depr.numeric.limits.has.denorm	limits	std::float_denorm_style::denorm_present	enumerator denorm_present	enum float_denorm_style
+depr.meta.types#1	depr.meta.types	type_traits	std::is_trivial	presence	struct is_trivial
+depr.meta.types#2	depr.meta.types	type_traits	std::is_trivial_v	var	constexpr bool is_trivial_v = is_trivial<T>::value
+depr.meta.types#3	depr.meta.types	type_traits	std::is_pod	presence	struct is_pod
+depr.meta.types#4	depr.meta.types	type_traits	std::is_pod_v	var	constexpr bool is_pod_v = is_pod<T>::value
+depr.meta.types#5	depr.meta.types	type_traits	std::aligned_storage	presence	struct aligned_storage
+depr.meta.types#6	depr.meta.types	type_traits	std::aligned_storage_t	type	using aligned_storage_t = aligned_storage<Len, Align>::type
+depr.meta.types#7	depr.meta.types	type_traits	std::aligned_union	presence	struct aligned_union
+depr.meta.types#8	depr.meta.types	type_traits	std::aligned_union_t	type	using aligned_union_t = aligned_union<Len, Types...>::type
+depr.relops#1	depr.relops	utility	std::rel_ops::operator!=	call ret	bool operator!=(const T&, const T&)
+depr.relops#2	depr.relops	utility	std::rel_ops::operator>	call ret	bool operator>(const T&, const T&)
+depr.relops#3	depr.relops	utility	std::rel_ops::operator<=	call ret	bool operator< = (const T&, const T&)
+depr.relops#4	depr.relops	utility	std::rel_ops::operator>=	call ret	bool operator> = (const T&, const T&)
+depr.tuple#1	depr.tuple	tuple	std::tuple_size<volatile tuple<int>>	specialization complete	struct tuple_size<volatile T>
+depr.tuple#2	depr.tuple	tuple	std::tuple_size<const volatile tuple<int>>	specialization complete	struct tuple_size<const volatile T>
+depr.tuple#3	depr.tuple	tuple	std::tuple_element<0,volatile tuple<int>>	specialization complete	struct tuple_element<I, volatile T>
+depr.tuple#4	depr.tuple	tuple	std::tuple_element<0,const volatile tuple<int>>	specialization complete	struct tuple_element<I, const volatile T>
+depr.variant#1	depr.variant	variant	std::variant_size<volatile variant<int>>	specialization complete	struct variant_size<volatile T>
+depr.variant#2	depr.variant	variant	std::variant_size<const volatile variant<int>>	specialization complete	struct variant_size<const volatile T>
+depr.variant#3	depr.variant	variant	std::variant_alternative<0,volatile variant<int>>	specialization complete	struct variant_alternative<I, volatile T>
+depr.variant#4	depr.variant	variant	std::variant_alternative<0,const volatile variant<int>>	specialization complete	struct variant_alternative<I, const volatile T>
+depr.vector.bool.swap#1	depr.vector.bool.swap	vector	std::vector<bool,allocator<char>>	specialization complete	class vector<bool, Allocator>
+depr.vector.bool.swap#2	depr.vector.bool.swap	vector	std::vector::swap	call ret noexcept	static constexpr void swap(reference x, reference y)noexcept
+depr.iterator#1	depr.iterator	iterator	std::iterator	presence	struct iterator
+depr.iterator#2	depr.iterator	iterator	std::iterator::iterator_category	type	using iterator_category = Category
+depr.iterator#3	depr.iterator	iterator	std::iterator::value_type	type	using value_type = T
+depr.iterator#4	depr.iterator	iterator	std::iterator::difference_type	type	using difference_type = Distance
+depr.iterator#5	depr.iterator	iterator	std::iterator::pointer	type	using pointer = Pointer
+depr.iterator#6	depr.iterator	iterator	std::iterator::reference	type	using reference = Reference
+depr.move.iter.elem#1	depr.move.iter.elem	iterator	std::move_iterator	presence	class move_iterator
+depr.move.iter.elem#2	depr.move.iter.elem	iterator	std::move_iterator::operator->	call ret	constexpr pointer operator->()const
 depr.format.syn#1	depr.format.syn	format	std::visit_format_arg	call	decltype(auto)visit_format_arg(Visitor&&vis, basic_format_arg<Context>arg)
 depr.fs.path.obs#1	depr.fs.path.obs	filesystem	std::filesystem::path	presence	class path
 depr.fs.path.obs#2	depr.fs.path.obs	filesystem	std::filesystem::path::string	call ret	std::string string()const
 depr.fs.path.obs#3	depr.fs.path.obs	filesystem	std::filesystem::path::generic_string	call ret	std::string generic_string()const
-depr.atomics.general#1	depr.atomics.general	format	std::atomic_init	call ret noexcept	void atomic_init(volatile atomic<T>*, typename atomic<T>::value_type)noexcept
-depr.atomics.general#2	depr.atomics.general	format	std::atomic_init	call ret noexcept	void atomic_init(atomic<T>*, typename atomic<T>::value_type)noexcept
-depr.atomics.general#3	depr.atomics.general	format	std::kill_dependency	call ret noexcept	constexpr T kill_dependency(T y)noexcept
-depr.atomics.general#4	depr.atomics.general	format	std::memory_order_consume	var	inline constexpr memory_order memory_order_consume = memory_order::consume
+depr.atomics.general#1	depr.atomics.general	atomic	std::atomic_init	call ret noexcept	void atomic_init(volatile atomic<T>*, typename atomic<T>::value_type)noexcept
+depr.atomics.general#2	depr.atomics.general	atomic	std::atomic_init	call ret noexcept	void atomic_init(atomic<T>*, typename atomic<T>::value_type)noexcept
+depr.atomics.general#3	depr.atomics.general	atomic	std::kill_dependency	call ret noexcept	constexpr T kill_dependency(T y)noexcept
+depr.atomics.general#4	depr.atomics.general	atomic	std::memory_order_consume	var	inline constexpr memory_order memory_order_consume = memory_order::consume
 clocale.syn#4	clocale.syn	clocale	NULL	macro	
 clocale.syn#5	clocale.syn	clocale	LC_ALL	macro	
 clocale.syn#6	clocale.syn	clocale	LC_COLLATE	macro	
@@ -10084,16 +10082,7 @@ cwchar.syn#73	cwchar.syn	cwchar	WEOF	macro
 cwchar.syn#74	cwchar.syn	cwchar	WCHAR_WIDTH	macro	
 cuchar.syn#9	cuchar.syn	cuchar	__STDC_VERSION_UCHAR_H__	macro	
 cfenv.syn#14	cfenv.syn	cfenv	FE_ALL_EXCEPT	macro	
-cfenv.syn#15	cfenv.syn	cfenv	FE_DIVBYZERO	macro	
-cfenv.syn#16	cfenv.syn	cfenv	FE_INEXACT	macro	
-cfenv.syn#17	cfenv.syn	cfenv	FE_INVALID	macro	
-cfenv.syn#18	cfenv.syn	cfenv	FE_OVERFLOW	macro	
-cfenv.syn#19	cfenv.syn	cfenv	FE_UNDERFLOW	macro	
-cfenv.syn#20	cfenv.syn	cfenv	FE_DOWNWARD	macro	
-cfenv.syn#21	cfenv.syn	cfenv	FE_TONEAREST	macro	
-cfenv.syn#22	cfenv.syn	cfenv	FE_TOWARDZERO	macro	
-cfenv.syn#23	cfenv.syn	cfenv	FE_UPWARD	macro	
-cfenv.syn#24	cfenv.syn	cfenv	FE_DFL_ENV	macro	
+cfenv.syn#15	cfenv.syn	cfenv	FE_DFL_ENV	macro	
 cmath.syn#461	cmath.syn	cmath	HUGE_VAL	macro	
 cmath.syn#462	cmath.syn	cmath	HUGE_VALF	macro	
 cmath.syn#463	cmath.syn	cmath	HUGE_VALL	macro	
@@ -10104,22 +10093,16 @@ cmath.syn#467	cmath.syn	cmath	FP_NAN	macro
 cmath.syn#468	cmath.syn	cmath	FP_NORMAL	macro	
 cmath.syn#469	cmath.syn	cmath	FP_SUBNORMAL	macro	
 cmath.syn#470	cmath.syn	cmath	FP_ZERO	macro	
-cmath.syn#471	cmath.syn	cmath	FP_FAST_FMA	macro	
-cmath.syn#472	cmath.syn	cmath	FP_FAST_FMAF	macro	
-cmath.syn#473	cmath.syn	cmath	FP_FAST_FMAL	macro	
-cmath.syn#474	cmath.syn	cmath	FP_ILOGB0	macro	
-cmath.syn#475	cmath.syn	cmath	FP_ILOGBNAN	macro	
-cmath.syn#476	cmath.syn	cmath	MATH_ERRNO	macro	
-cmath.syn#477	cmath.syn	cmath	MATH_ERREXCEPT	macro	
-cmath.syn#478	cmath.syn	cmath	math_errhandling	macro	
+cmath.syn#471	cmath.syn	cmath	FP_ILOGB0	macro	
+cmath.syn#472	cmath.syn	cmath	FP_ILOGBNAN	macro	
+cmath.syn#473	cmath.syn	cmath	MATH_ERRNO	macro	
+cmath.syn#474	cmath.syn	cmath	MATH_ERREXCEPT	macro	
+cmath.syn#475	cmath.syn	cmath	math_errhandling	macro	
 stdckdint.h.syn#1	stdckdint.h.syn	stdckdint.h	__STDC_VERSION_STDCKDINT_H__	macro	
 ctime.syn#18	ctime.syn	ctime	__STDC_VERSION_TIME_H__	macro	
 ctime.syn#19	ctime.syn	ctime	NULL	macro	
 ctime.syn#20	ctime.syn	ctime	CLOCKS_PER_SEC	macro	
 ctime.syn#21	ctime.syn	ctime	TIME_UTC	macro	
-ctime.syn#22	ctime.syn	ctime	TIME_MONOTONIC	macro	
-ctime.syn#23	ctime.syn	ctime	TIME_ACTIVE	macro	
-ctime.syn#24	ctime.syn	ctime	TIME_THREAD_ACTIVE	macro	
 cstdio.syn#49	cstdio.syn	cstdio	__STDC_VERSION_STDIO_H__	macro	
 cstdio.syn#50	cstdio.syn	cstdio	NULL	macro	
 cstdio.syn#51	cstdio.syn	cstdio	_IOFBF	macro	
@@ -10138,77 +10121,203 @@ cstdio.syn#63	cstdio.syn	cstdio	TMP_MAX	macro
 cstdio.syn#64	cstdio.syn	cstdio	stderr	macro	
 cstdio.syn#65	cstdio.syn	cstdio	stdin	macro	
 cstdio.syn#66	cstdio.syn	cstdio	stdout	macro	
-cinttypes.syn#10	cinttypes.syn	cinttypes	__STDC_VERSION_INTTYPES_H__	macro	
-cinttypes.syn#11	cinttypes.syn	cinttypes	PRId	macro	
-cinttypes.syn#12	cinttypes.syn	cinttypes	PRIi	macro	
-cinttypes.syn#13	cinttypes.syn	cinttypes	PRIo	macro	
-cinttypes.syn#14	cinttypes.syn	cinttypes	PRIu	macro	
-cinttypes.syn#15	cinttypes.syn	cinttypes	PRIx	macro	
-cinttypes.syn#16	cinttypes.syn	cinttypes	PRIX	macro	
-cinttypes.syn#17	cinttypes.syn	cinttypes	PRIb	macro	
-cinttypes.syn#18	cinttypes.syn	cinttypes	PRIB	macro	
-cinttypes.syn#19	cinttypes.syn	cinttypes	SCNd	macro	
-cinttypes.syn#20	cinttypes.syn	cinttypes	SCNi	macro	
-cinttypes.syn#21	cinttypes.syn	cinttypes	SCNo	macro	
-cinttypes.syn#22	cinttypes.syn	cinttypes	SCNu	macro	
-cinttypes.syn#23	cinttypes.syn	cinttypes	SCNx	macro	
-cinttypes.syn#24	cinttypes.syn	cinttypes	SCNb	macro	
-cinttypes.syn#25	cinttypes.syn	cinttypes	PRIdLEAST	macro	
-cinttypes.syn#26	cinttypes.syn	cinttypes	PRIiLEAST	macro	
-cinttypes.syn#27	cinttypes.syn	cinttypes	PRIoLEAST	macro	
-cinttypes.syn#28	cinttypes.syn	cinttypes	PRIuLEAST	macro	
-cinttypes.syn#29	cinttypes.syn	cinttypes	PRIxLEAST	macro	
-cinttypes.syn#30	cinttypes.syn	cinttypes	PRIXLEAST	macro	
-cinttypes.syn#31	cinttypes.syn	cinttypes	PRIbLEAST	macro	
-cinttypes.syn#32	cinttypes.syn	cinttypes	PRIBLEAST	macro	
-cinttypes.syn#33	cinttypes.syn	cinttypes	SCNdLEAST	macro	
-cinttypes.syn#34	cinttypes.syn	cinttypes	SCNiLEAST	macro	
-cinttypes.syn#35	cinttypes.syn	cinttypes	SCNoLEAST	macro	
-cinttypes.syn#36	cinttypes.syn	cinttypes	SCNuLEAST	macro	
-cinttypes.syn#37	cinttypes.syn	cinttypes	SCNxLEAST	macro	
-cinttypes.syn#38	cinttypes.syn	cinttypes	SCNbLEAST	macro	
-cinttypes.syn#39	cinttypes.syn	cinttypes	PRIdFAST	macro	
-cinttypes.syn#40	cinttypes.syn	cinttypes	PRIiFAST	macro	
-cinttypes.syn#41	cinttypes.syn	cinttypes	PRIoFAST	macro	
-cinttypes.syn#42	cinttypes.syn	cinttypes	PRIuFAST	macro	
-cinttypes.syn#43	cinttypes.syn	cinttypes	PRIxFAST	macro	
-cinttypes.syn#44	cinttypes.syn	cinttypes	PRIXFAST	macro	
-cinttypes.syn#45	cinttypes.syn	cinttypes	PRIbFAST	macro	
-cinttypes.syn#46	cinttypes.syn	cinttypes	PRIBFAST	macro	
-cinttypes.syn#47	cinttypes.syn	cinttypes	SCNdFAST	macro	
-cinttypes.syn#48	cinttypes.syn	cinttypes	SCNiFAST	macro	
-cinttypes.syn#49	cinttypes.syn	cinttypes	SCNoFAST	macro	
-cinttypes.syn#50	cinttypes.syn	cinttypes	SCNuFAST	macro	
-cinttypes.syn#51	cinttypes.syn	cinttypes	SCNxFAST	macro	
-cinttypes.syn#52	cinttypes.syn	cinttypes	SCNbFAST	macro	
-cinttypes.syn#53	cinttypes.syn	cinttypes	PRIdMAX	macro	
-cinttypes.syn#54	cinttypes.syn	cinttypes	PRIiMAX	macro	
-cinttypes.syn#55	cinttypes.syn	cinttypes	PRIoMAX	macro	
-cinttypes.syn#56	cinttypes.syn	cinttypes	PRIuMAX	macro	
-cinttypes.syn#57	cinttypes.syn	cinttypes	PRIxMAX	macro	
-cinttypes.syn#58	cinttypes.syn	cinttypes	PRIXMAX	macro	
-cinttypes.syn#59	cinttypes.syn	cinttypes	PRIbMAX	macro	
-cinttypes.syn#60	cinttypes.syn	cinttypes	PRIBMAX	macro	
-cinttypes.syn#61	cinttypes.syn	cinttypes	SCNdMAX	macro	
-cinttypes.syn#62	cinttypes.syn	cinttypes	SCNiMAX	macro	
-cinttypes.syn#63	cinttypes.syn	cinttypes	SCNoMAX	macro	
-cinttypes.syn#64	cinttypes.syn	cinttypes	SCNuMAX	macro	
-cinttypes.syn#65	cinttypes.syn	cinttypes	SCNxMAX	macro	
-cinttypes.syn#66	cinttypes.syn	cinttypes	SCNbMAX	macro	
-cinttypes.syn#67	cinttypes.syn	cinttypes	PRIdPTR	macro	
-cinttypes.syn#68	cinttypes.syn	cinttypes	PRIiPTR	macro	
-cinttypes.syn#69	cinttypes.syn	cinttypes	PRIoPTR	macro	
-cinttypes.syn#70	cinttypes.syn	cinttypes	PRIuPTR	macro	
-cinttypes.syn#71	cinttypes.syn	cinttypes	PRIxPTR	macro	
-cinttypes.syn#72	cinttypes.syn	cinttypes	PRIXPTR	macro	
-cinttypes.syn#73	cinttypes.syn	cinttypes	PRIbPTR	macro	
-cinttypes.syn#74	cinttypes.syn	cinttypes	PRIBPTR	macro	
-cinttypes.syn#75	cinttypes.syn	cinttypes	SCNdPTR	macro	
-cinttypes.syn#76	cinttypes.syn	cinttypes	SCNiPTR	macro	
-cinttypes.syn#77	cinttypes.syn	cinttypes	SCNoPTR	macro	
-cinttypes.syn#78	cinttypes.syn	cinttypes	SCNuPTR	macro	
-cinttypes.syn#79	cinttypes.syn	cinttypes	SCNxPTR	macro	
-cinttypes.syn#80	cinttypes.syn	cinttypes	SCNbPTR	macro	
+cinttypes.syn#8	cinttypes.syn	cinttypes	__STDC_VERSION_INTTYPES_H__	macro	
+cinttypes.syn#9	cinttypes.syn	cinttypes	PRId8	macro	
+cinttypes.syn#10	cinttypes.syn	cinttypes	PRId16	macro	
+cinttypes.syn#11	cinttypes.syn	cinttypes	PRId32	macro	
+cinttypes.syn#12	cinttypes.syn	cinttypes	PRId64	macro	
+cinttypes.syn#13	cinttypes.syn	cinttypes	PRIi8	macro	
+cinttypes.syn#14	cinttypes.syn	cinttypes	PRIi16	macro	
+cinttypes.syn#15	cinttypes.syn	cinttypes	PRIi32	macro	
+cinttypes.syn#16	cinttypes.syn	cinttypes	PRIi64	macro	
+cinttypes.syn#17	cinttypes.syn	cinttypes	PRIo8	macro	
+cinttypes.syn#18	cinttypes.syn	cinttypes	PRIo16	macro	
+cinttypes.syn#19	cinttypes.syn	cinttypes	PRIo32	macro	
+cinttypes.syn#20	cinttypes.syn	cinttypes	PRIo64	macro	
+cinttypes.syn#21	cinttypes.syn	cinttypes	PRIu8	macro	
+cinttypes.syn#22	cinttypes.syn	cinttypes	PRIu16	macro	
+cinttypes.syn#23	cinttypes.syn	cinttypes	PRIu32	macro	
+cinttypes.syn#24	cinttypes.syn	cinttypes	PRIu64	macro	
+cinttypes.syn#25	cinttypes.syn	cinttypes	PRIx8	macro	
+cinttypes.syn#26	cinttypes.syn	cinttypes	PRIx16	macro	
+cinttypes.syn#27	cinttypes.syn	cinttypes	PRIx32	macro	
+cinttypes.syn#28	cinttypes.syn	cinttypes	PRIx64	macro	
+cinttypes.syn#29	cinttypes.syn	cinttypes	PRIX8	macro	
+cinttypes.syn#30	cinttypes.syn	cinttypes	PRIX16	macro	
+cinttypes.syn#31	cinttypes.syn	cinttypes	PRIX32	macro	
+cinttypes.syn#32	cinttypes.syn	cinttypes	PRIX64	macro	
+cinttypes.syn#33	cinttypes.syn	cinttypes	PRIb8	macro	
+cinttypes.syn#34	cinttypes.syn	cinttypes	PRIb16	macro	
+cinttypes.syn#35	cinttypes.syn	cinttypes	PRIb32	macro	
+cinttypes.syn#36	cinttypes.syn	cinttypes	PRIb64	macro	
+cinttypes.syn#37	cinttypes.syn	cinttypes	PRIB8	macro	
+cinttypes.syn#38	cinttypes.syn	cinttypes	PRIB16	macro	
+cinttypes.syn#39	cinttypes.syn	cinttypes	PRIB32	macro	
+cinttypes.syn#40	cinttypes.syn	cinttypes	PRIB64	macro	
+cinttypes.syn#41	cinttypes.syn	cinttypes	SCNd8	macro	
+cinttypes.syn#42	cinttypes.syn	cinttypes	SCNd16	macro	
+cinttypes.syn#43	cinttypes.syn	cinttypes	SCNd32	macro	
+cinttypes.syn#44	cinttypes.syn	cinttypes	SCNd64	macro	
+cinttypes.syn#45	cinttypes.syn	cinttypes	SCNi8	macro	
+cinttypes.syn#46	cinttypes.syn	cinttypes	SCNi16	macro	
+cinttypes.syn#47	cinttypes.syn	cinttypes	SCNi32	macro	
+cinttypes.syn#48	cinttypes.syn	cinttypes	SCNi64	macro	
+cinttypes.syn#49	cinttypes.syn	cinttypes	SCNo8	macro	
+cinttypes.syn#50	cinttypes.syn	cinttypes	SCNo16	macro	
+cinttypes.syn#51	cinttypes.syn	cinttypes	SCNo32	macro	
+cinttypes.syn#52	cinttypes.syn	cinttypes	SCNo64	macro	
+cinttypes.syn#53	cinttypes.syn	cinttypes	SCNu8	macro	
+cinttypes.syn#54	cinttypes.syn	cinttypes	SCNu16	macro	
+cinttypes.syn#55	cinttypes.syn	cinttypes	SCNu32	macro	
+cinttypes.syn#56	cinttypes.syn	cinttypes	SCNu64	macro	
+cinttypes.syn#57	cinttypes.syn	cinttypes	SCNx8	macro	
+cinttypes.syn#58	cinttypes.syn	cinttypes	SCNx16	macro	
+cinttypes.syn#59	cinttypes.syn	cinttypes	SCNx32	macro	
+cinttypes.syn#60	cinttypes.syn	cinttypes	SCNx64	macro	
+cinttypes.syn#61	cinttypes.syn	cinttypes	SCNb8	macro	
+cinttypes.syn#62	cinttypes.syn	cinttypes	SCNb16	macro	
+cinttypes.syn#63	cinttypes.syn	cinttypes	SCNb32	macro	
+cinttypes.syn#64	cinttypes.syn	cinttypes	SCNb64	macro	
+cinttypes.syn#65	cinttypes.syn	cinttypes	PRIdLEAST8	macro	
+cinttypes.syn#66	cinttypes.syn	cinttypes	PRIdLEAST16	macro	
+cinttypes.syn#67	cinttypes.syn	cinttypes	PRIdLEAST32	macro	
+cinttypes.syn#68	cinttypes.syn	cinttypes	PRIdLEAST64	macro	
+cinttypes.syn#69	cinttypes.syn	cinttypes	PRIiLEAST8	macro	
+cinttypes.syn#70	cinttypes.syn	cinttypes	PRIiLEAST16	macro	
+cinttypes.syn#71	cinttypes.syn	cinttypes	PRIiLEAST32	macro	
+cinttypes.syn#72	cinttypes.syn	cinttypes	PRIiLEAST64	macro	
+cinttypes.syn#73	cinttypes.syn	cinttypes	PRIoLEAST8	macro	
+cinttypes.syn#74	cinttypes.syn	cinttypes	PRIoLEAST16	macro	
+cinttypes.syn#75	cinttypes.syn	cinttypes	PRIoLEAST32	macro	
+cinttypes.syn#76	cinttypes.syn	cinttypes	PRIoLEAST64	macro	
+cinttypes.syn#77	cinttypes.syn	cinttypes	PRIuLEAST8	macro	
+cinttypes.syn#78	cinttypes.syn	cinttypes	PRIuLEAST16	macro	
+cinttypes.syn#79	cinttypes.syn	cinttypes	PRIuLEAST32	macro	
+cinttypes.syn#80	cinttypes.syn	cinttypes	PRIuLEAST64	macro	
+cinttypes.syn#81	cinttypes.syn	cinttypes	PRIxLEAST8	macro	
+cinttypes.syn#82	cinttypes.syn	cinttypes	PRIxLEAST16	macro	
+cinttypes.syn#83	cinttypes.syn	cinttypes	PRIxLEAST32	macro	
+cinttypes.syn#84	cinttypes.syn	cinttypes	PRIxLEAST64	macro	
+cinttypes.syn#85	cinttypes.syn	cinttypes	PRIXLEAST8	macro	
+cinttypes.syn#86	cinttypes.syn	cinttypes	PRIXLEAST16	macro	
+cinttypes.syn#87	cinttypes.syn	cinttypes	PRIXLEAST32	macro	
+cinttypes.syn#88	cinttypes.syn	cinttypes	PRIXLEAST64	macro	
+cinttypes.syn#89	cinttypes.syn	cinttypes	PRIbLEAST8	macro	
+cinttypes.syn#90	cinttypes.syn	cinttypes	PRIbLEAST16	macro	
+cinttypes.syn#91	cinttypes.syn	cinttypes	PRIbLEAST32	macro	
+cinttypes.syn#92	cinttypes.syn	cinttypes	PRIbLEAST64	macro	
+cinttypes.syn#93	cinttypes.syn	cinttypes	PRIBLEAST8	macro	
+cinttypes.syn#94	cinttypes.syn	cinttypes	PRIBLEAST16	macro	
+cinttypes.syn#95	cinttypes.syn	cinttypes	PRIBLEAST32	macro	
+cinttypes.syn#96	cinttypes.syn	cinttypes	PRIBLEAST64	macro	
+cinttypes.syn#97	cinttypes.syn	cinttypes	SCNdLEAST8	macro	
+cinttypes.syn#98	cinttypes.syn	cinttypes	SCNdLEAST16	macro	
+cinttypes.syn#99	cinttypes.syn	cinttypes	SCNdLEAST32	macro	
+cinttypes.syn#100	cinttypes.syn	cinttypes	SCNdLEAST64	macro	
+cinttypes.syn#101	cinttypes.syn	cinttypes	SCNiLEAST8	macro	
+cinttypes.syn#102	cinttypes.syn	cinttypes	SCNiLEAST16	macro	
+cinttypes.syn#103	cinttypes.syn	cinttypes	SCNiLEAST32	macro	
+cinttypes.syn#104	cinttypes.syn	cinttypes	SCNiLEAST64	macro	
+cinttypes.syn#105	cinttypes.syn	cinttypes	SCNoLEAST8	macro	
+cinttypes.syn#106	cinttypes.syn	cinttypes	SCNoLEAST16	macro	
+cinttypes.syn#107	cinttypes.syn	cinttypes	SCNoLEAST32	macro	
+cinttypes.syn#108	cinttypes.syn	cinttypes	SCNoLEAST64	macro	
+cinttypes.syn#109	cinttypes.syn	cinttypes	SCNuLEAST8	macro	
+cinttypes.syn#110	cinttypes.syn	cinttypes	SCNuLEAST16	macro	
+cinttypes.syn#111	cinttypes.syn	cinttypes	SCNuLEAST32	macro	
+cinttypes.syn#112	cinttypes.syn	cinttypes	SCNuLEAST64	macro	
+cinttypes.syn#113	cinttypes.syn	cinttypes	SCNxLEAST8	macro	
+cinttypes.syn#114	cinttypes.syn	cinttypes	SCNxLEAST16	macro	
+cinttypes.syn#115	cinttypes.syn	cinttypes	SCNxLEAST32	macro	
+cinttypes.syn#116	cinttypes.syn	cinttypes	SCNxLEAST64	macro	
+cinttypes.syn#117	cinttypes.syn	cinttypes	SCNbLEAST8	macro	
+cinttypes.syn#118	cinttypes.syn	cinttypes	SCNbLEAST16	macro	
+cinttypes.syn#119	cinttypes.syn	cinttypes	SCNbLEAST32	macro	
+cinttypes.syn#120	cinttypes.syn	cinttypes	SCNbLEAST64	macro	
+cinttypes.syn#121	cinttypes.syn	cinttypes	PRIdFAST8	macro	
+cinttypes.syn#122	cinttypes.syn	cinttypes	PRIdFAST16	macro	
+cinttypes.syn#123	cinttypes.syn	cinttypes	PRIdFAST32	macro	
+cinttypes.syn#124	cinttypes.syn	cinttypes	PRIdFAST64	macro	
+cinttypes.syn#125	cinttypes.syn	cinttypes	PRIiFAST8	macro	
+cinttypes.syn#126	cinttypes.syn	cinttypes	PRIiFAST16	macro	
+cinttypes.syn#127	cinttypes.syn	cinttypes	PRIiFAST32	macro	
+cinttypes.syn#128	cinttypes.syn	cinttypes	PRIiFAST64	macro	
+cinttypes.syn#129	cinttypes.syn	cinttypes	PRIoFAST8	macro	
+cinttypes.syn#130	cinttypes.syn	cinttypes	PRIoFAST16	macro	
+cinttypes.syn#131	cinttypes.syn	cinttypes	PRIoFAST32	macro	
+cinttypes.syn#132	cinttypes.syn	cinttypes	PRIoFAST64	macro	
+cinttypes.syn#133	cinttypes.syn	cinttypes	PRIuFAST8	macro	
+cinttypes.syn#134	cinttypes.syn	cinttypes	PRIuFAST16	macro	
+cinttypes.syn#135	cinttypes.syn	cinttypes	PRIuFAST32	macro	
+cinttypes.syn#136	cinttypes.syn	cinttypes	PRIuFAST64	macro	
+cinttypes.syn#137	cinttypes.syn	cinttypes	PRIxFAST8	macro	
+cinttypes.syn#138	cinttypes.syn	cinttypes	PRIxFAST16	macro	
+cinttypes.syn#139	cinttypes.syn	cinttypes	PRIxFAST32	macro	
+cinttypes.syn#140	cinttypes.syn	cinttypes	PRIxFAST64	macro	
+cinttypes.syn#141	cinttypes.syn	cinttypes	PRIXFAST8	macro	
+cinttypes.syn#142	cinttypes.syn	cinttypes	PRIXFAST16	macro	
+cinttypes.syn#143	cinttypes.syn	cinttypes	PRIXFAST32	macro	
+cinttypes.syn#144	cinttypes.syn	cinttypes	PRIXFAST64	macro	
+cinttypes.syn#145	cinttypes.syn	cinttypes	PRIbFAST8	macro	
+cinttypes.syn#146	cinttypes.syn	cinttypes	PRIbFAST16	macro	
+cinttypes.syn#147	cinttypes.syn	cinttypes	PRIbFAST32	macro	
+cinttypes.syn#148	cinttypes.syn	cinttypes	PRIbFAST64	macro	
+cinttypes.syn#149	cinttypes.syn	cinttypes	PRIBFAST8	macro	
+cinttypes.syn#150	cinttypes.syn	cinttypes	PRIBFAST16	macro	
+cinttypes.syn#151	cinttypes.syn	cinttypes	PRIBFAST32	macro	
+cinttypes.syn#152	cinttypes.syn	cinttypes	PRIBFAST64	macro	
+cinttypes.syn#153	cinttypes.syn	cinttypes	SCNdFAST8	macro	
+cinttypes.syn#154	cinttypes.syn	cinttypes	SCNdFAST16	macro	
+cinttypes.syn#155	cinttypes.syn	cinttypes	SCNdFAST32	macro	
+cinttypes.syn#156	cinttypes.syn	cinttypes	SCNdFAST64	macro	
+cinttypes.syn#157	cinttypes.syn	cinttypes	SCNiFAST8	macro	
+cinttypes.syn#158	cinttypes.syn	cinttypes	SCNiFAST16	macro	
+cinttypes.syn#159	cinttypes.syn	cinttypes	SCNiFAST32	macro	
+cinttypes.syn#160	cinttypes.syn	cinttypes	SCNiFAST64	macro	
+cinttypes.syn#161	cinttypes.syn	cinttypes	SCNoFAST8	macro	
+cinttypes.syn#162	cinttypes.syn	cinttypes	SCNoFAST16	macro	
+cinttypes.syn#163	cinttypes.syn	cinttypes	SCNoFAST32	macro	
+cinttypes.syn#164	cinttypes.syn	cinttypes	SCNoFAST64	macro	
+cinttypes.syn#165	cinttypes.syn	cinttypes	SCNuFAST8	macro	
+cinttypes.syn#166	cinttypes.syn	cinttypes	SCNuFAST16	macro	
+cinttypes.syn#167	cinttypes.syn	cinttypes	SCNuFAST32	macro	
+cinttypes.syn#168	cinttypes.syn	cinttypes	SCNuFAST64	macro	
+cinttypes.syn#169	cinttypes.syn	cinttypes	SCNxFAST8	macro	
+cinttypes.syn#170	cinttypes.syn	cinttypes	SCNxFAST16	macro	
+cinttypes.syn#171	cinttypes.syn	cinttypes	SCNxFAST32	macro	
+cinttypes.syn#172	cinttypes.syn	cinttypes	SCNxFAST64	macro	
+cinttypes.syn#173	cinttypes.syn	cinttypes	SCNbFAST8	macro	
+cinttypes.syn#174	cinttypes.syn	cinttypes	SCNbFAST16	macro	
+cinttypes.syn#175	cinttypes.syn	cinttypes	SCNbFAST32	macro	
+cinttypes.syn#176	cinttypes.syn	cinttypes	SCNbFAST64	macro	
+cinttypes.syn#177	cinttypes.syn	cinttypes	PRIdMAX	macro	
+cinttypes.syn#178	cinttypes.syn	cinttypes	PRIiMAX	macro	
+cinttypes.syn#179	cinttypes.syn	cinttypes	PRIoMAX	macro	
+cinttypes.syn#180	cinttypes.syn	cinttypes	PRIuMAX	macro	
+cinttypes.syn#181	cinttypes.syn	cinttypes	PRIxMAX	macro	
+cinttypes.syn#182	cinttypes.syn	cinttypes	PRIXMAX	macro	
+cinttypes.syn#183	cinttypes.syn	cinttypes	PRIbMAX	macro	
+cinttypes.syn#184	cinttypes.syn	cinttypes	PRIBMAX	macro	
+cinttypes.syn#185	cinttypes.syn	cinttypes	SCNdMAX	macro	
+cinttypes.syn#186	cinttypes.syn	cinttypes	SCNiMAX	macro	
+cinttypes.syn#187	cinttypes.syn	cinttypes	SCNoMAX	macro	
+cinttypes.syn#188	cinttypes.syn	cinttypes	SCNuMAX	macro	
+cinttypes.syn#189	cinttypes.syn	cinttypes	SCNxMAX	macro	
+cinttypes.syn#190	cinttypes.syn	cinttypes	SCNbMAX	macro	
+cinttypes.syn#191	cinttypes.syn	cinttypes	PRIdPTR	macro	
+cinttypes.syn#192	cinttypes.syn	cinttypes	PRIiPTR	macro	
+cinttypes.syn#193	cinttypes.syn	cinttypes	PRIoPTR	macro	
+cinttypes.syn#194	cinttypes.syn	cinttypes	PRIuPTR	macro	
+cinttypes.syn#195	cinttypes.syn	cinttypes	PRIxPTR	macro	
+cinttypes.syn#196	cinttypes.syn	cinttypes	PRIXPTR	macro	
+cinttypes.syn#197	cinttypes.syn	cinttypes	PRIbPTR	macro	
+cinttypes.syn#198	cinttypes.syn	cinttypes	PRIBPTR	macro	
+cinttypes.syn#199	cinttypes.syn	cinttypes	SCNdPTR	macro	
+cinttypes.syn#200	cinttypes.syn	cinttypes	SCNiPTR	macro	
+cinttypes.syn#201	cinttypes.syn	cinttypes	SCNoPTR	macro	
+cinttypes.syn#202	cinttypes.syn	cinttypes	SCNuPTR	macro	
+cinttypes.syn#203	cinttypes.syn	cinttypes	SCNxPTR	macro	
+cinttypes.syn#204	cinttypes.syn	cinttypes	SCNbPTR	macro	
 atomics.syn#1	atomics.syn	atomic	ATOMIC_BOOL_LOCK_FREE	macro	
 atomics.syn#2	atomics.syn	atomic	ATOMIC_CHAR_LOCK_FREE	macro	
 atomics.syn#3	atomics.syn	atomic	ATOMIC_CHAR8_T_LOCK_FREE	macro	

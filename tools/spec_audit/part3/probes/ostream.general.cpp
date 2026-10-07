@@ -2,14 +2,16 @@
 // One check per line (see gen.py); the runner maps diagnostics to the check IDs below.
 #include <ostream>
 #include <regex>
+#define SPEC_PROBE_ostream
+#define SPEC_PROBE_regex
 #include "../probe_support.hpp"
 namespace p0 { using namespace std; using std::basic_ostream; } // ostream.general#1 presence
 namespace p1 { using namespace std; static_assert(std::is_base_of_v<basic_ios<char,char_traits<char>>, std::basic_ostream<char, char_traits<char>>> && std::is_convertible_v<std::basic_ostream<char, char_traits<char>>*, basic_ios<char,char_traits<char>>*>); } // ostream.general#2 base basic_ios<char,char_traits<char>>
-namespace p2 { using namespace std; static_assert(spec_probe::same<std::basic_ostream<char, char_traits<char>>::char_type, char>); } // ostream.general#3 type
-namespace p3 { using namespace std; static_assert(spec_probe::same<std::basic_ostream<char, char_traits<char>>::int_type, char_traits<char>::int_type>); } // ostream.general#4 type
-namespace p4 { using namespace std; static_assert(spec_probe::same<std::basic_ostream<char, char_traits<char>>::pos_type, char_traits<char>::pos_type>); } // ostream.general#5 type
-namespace p5 { using namespace std; static_assert(spec_probe::same<std::basic_ostream<char, char_traits<char>>::off_type, char_traits<char>::off_type>); } // ostream.general#6 type
-namespace p6 { using namespace std; static_assert(spec_probe::same<std::basic_ostream<char, char_traits<char>>::traits_type, char_traits<char>>); } // ostream.general#7 type
+namespace p2 { using namespace std; static_assert(spec_probe::same<typename std::basic_ostream<char, char_traits<char>>::char_type, char>); } // ostream.general#3 type
+namespace p3 { using namespace std; static_assert(spec_probe::same<typename std::basic_ostream<char, char_traits<char>>::int_type, char_traits<char>::int_type>); } // ostream.general#4 type
+namespace p4 { using namespace std; static_assert(spec_probe::same<typename std::basic_ostream<char, char_traits<char>>::pos_type, char_traits<char>::pos_type>); } // ostream.general#5 type
+namespace p5 { using namespace std; static_assert(spec_probe::same<typename std::basic_ostream<char, char_traits<char>>::off_type, char_traits<char>::off_type>); } // ostream.general#6 type
+namespace p6 { using namespace std; static_assert(spec_probe::same<typename std::basic_ostream<char, char_traits<char>>::traits_type, char_traits<char>>); } // ostream.general#7 type
 namespace p7 { using namespace std; static_assert(std::is_constructible_v<std::basic_ostream<char, char_traits<char>>, basic_streambuf<std::basic_ostream<char, char_traits<char>>::char_type,char_traits<char>>*> && !std::is_convertible_v<basic_streambuf<std::basic_ostream<char, char_traits<char>>::char_type,char_traits<char>>*, std::basic_ostream<char, char_traits<char>>>); } // ostream.general#8 ctor explicit
 namespace p8 { using namespace std; static_assert(std::is_nothrow_destructible_v<std::basic_ostream<char, char_traits<char>>> && std::has_virtual_destructor_v<std::basic_ostream<char, char_traits<char>>>); } // ostream.general#9 destructor virtual
 namespace p9 { using namespace std; template<class Z> concept c = requires { { spec_probe::dv<spec_probe::dep<Z, std::basic_ostream<char, char_traits<char>>&>>().operator<<(spec_probe::dv<spec_probe::dep<Z, std::basic_ostream<char, char_traits<char>>&(*pf)(std::basic_ostream<char, char_traits<char>>&)>>()) } -> spec_probe::same<std::basic_ostream<char, char_traits<char>>&>; }; static_assert(c<void>); } // ostream.general#10 call ret

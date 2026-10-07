@@ -14,6 +14,17 @@ import decls as D
 HERE = pathlib.Path(__file__).parent
 
 
+# Subclauses whose header the nearest synopsis does not give.
+HEADER_OF = [
+    ("depr.atomics", "atomic"), ("depr.iterator", "iterator"), ("depr.move.iter", "iterator"),
+    ("depr.tuple", "tuple"), ("depr.variant", "variant"), ("depr.vector.bool", "vector"),
+    ("depr.meta.types", "type_traits"), ("depr.relops", "utility"), ("depr.locale", "locale"),
+    ("depr.ctime", "ctime"), ("depr.fs", "filesystem"), ("depr.istream", "istream"),
+    ("depr.ostream", "ostream"), ("depr.numeric.limits", "limits"), ("depr.cerrno", "cerrno"),
+    ("depr.c.macros", "cfloat"), ("depr.format", "format"), ("util.smartptr.atomic", "memory"),
+]
+
+
 def load(path):
     data = json.loads(pathlib.Path(path).read_text(encoding="utf-8"))
     return data
@@ -70,7 +81,7 @@ def entities(data):
                 else:
                     h = next((c for c in cands if c != "iosfwd"), cands[0])
                 d.sec = s["id"]
-                d.header = h
+                d.header = next((hh for pre, hh in HEADER_OF if s["id"].startswith(pre)), h)
                 # members of an exposition-only class are exposition-only
                 if any(c[3] is not None and (c[3].expos or c[1].startswith(D.IT0)) for c in d.classes):
                     d.expos = True

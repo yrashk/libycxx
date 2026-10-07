@@ -1,0 +1,26 @@
+Category: pre-c++26. StdOptionalEmptyOptConsistency passes an empty std::optional<int> to
+default_val, which formats it with CLI11's to_string: since C++26 std::optional is a range
+([optional.iterators], P3168), so it is formatted as a container ("{}"), which does not convert
+back to an optional<int>. The same with libstdc++ in C++26 mode (__cpp_lib_optional_range_support
+is 202406L there too). The test case is left out when optional is a range.
+
+diff --git a/tests/OptionalTest.cpp b/tests/OptionalTest.cpp
+index 84e475c..9df9039 100644
+--- a/tests/OptionalTest.cpp
++++ b/tests/OptionalTest.cpp
+@@ -99,6 +99,7 @@ TEST_CASE_METHOD(TApp, "StdOptionalNulloptDefaultValConsistency", "[optional]")
+     CHECK_FALSE(opt_string.has_value());
+ }
+ 
++#if !defined(__cpp_lib_optional_range_support)  // C++26: std::optional is a range
+ TEST_CASE_METHOD(TApp, "StdOptionalEmptyOptConsistency", "[optional]") {
+     std::optional<int> opt_int;
+     app.add_option("-a", opt_int)->default_val(opt_int);
+@@ -116,6 +117,7 @@ TEST_CASE_METHOD(TApp, "StdOptionalEmptyOptConsistency", "[optional]") {
+     CHECK_FALSE(opt_int.has_value());
+     CHECK_FALSE(opt_string.has_value());
+ }
++#endif
+ 
+ TEST_CASE_METHOD(TApp, "StdOptionalVectorEmptyDirect", "[optional]") {
+     std::optional<std::vector<int>> opt;

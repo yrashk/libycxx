@@ -1,3 +1,9 @@
+// GCC 16.2 at -O1: internal compiler error in cxx_eval_indirect_ref (cp/constexpr.cc:7530).
+// g++-16 -std=c++26 -nostdinc++ -O1 -c gcc16_ice_default_allocator_standalone.cpp (compiles at
+// -O0 and with Clang). libycxx's <string> before the workaround (__alloc_copy in
+// include/ycxx/core/container_base.hpp), preprocessed and reduced from CLI11's TransformTest:
+// GCC constant-folds a static array of aggregates and binds a basic_string's default allocator
+// argument to another string type's allocator temporary, then crashes reading it.
 namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
 namespace __cfg {
 inline constexpr bool __hosted = 1;

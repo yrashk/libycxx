@@ -1,4 +1,47 @@
-# Benchmark results: libycxx vs libstdc++
+# Benchmark results: libycxx vs libstdc++ and libc++
+
+## Performance pass 2 (2026-10-07): against libstdc++ and libc++
+
+`bench/run` now builds each program against libycxx, libstdc++ and (Clang) libc++ 23.1 (Debian's
+`libc++-23-dev`, the build of the same LLVM release as the compiler), runs them R times
+interleaved and reports medians; `bench/check` compares the ratios to libstdc++ with
+`bench/baseline.json` (nightly, `full.yml`). Ratios below are libycxx / reference (below 1:
+libycxx is faster). The machine was shared with other jobs (load 10 to 17 on 4 CPUs for most of
+the day), so wall-clock rows move by ±30% or more between runs; every change was also judged with
+callgrind instruction counts and, for the hot loops, by reading libycxx's generated assembly.
+
+### Hypotheses tried, kept and not kept
+
+| area | hypothesis | change | result |
+|---|---|---|---|
+| deque ends | the end address is recomputed from start/size per push, the block allocation path is inlined (GCC) or emplace_back not inlined at all (Clang), max_size() checked per push | head_/tail_ address caches, end_ index instead of size_, out-of-line grow paths that do not take the arguments, no max_size() check on the fast path | kept: push_back 1.45/1.66 -> 0.65/0.66 (GCC/Clang vs libstdc++), Clang vs libc++ 2.36 -> 0.88; both+pop 1.56/1.70 -> 0.78/0.88 |
+| deque (first try) | an out-of-line slow path taking the arguments by reference | — | not kept as is: the loop variable had to live in memory on Clang |
+| deque (second try) | caches with size_ kept | — | not kept: still three stores per pop; replaced size_ by end_ |
+| sort | Hoare partitioning mispredicts half the comparisons on random scalars; no pattern detection | pdqsort with BlockQuicksort's branchless partition for contiguous scalars | kept: random 1e6 ints 1.05 -> 0.40..0.44, sorted 1.05 -> 0.09..0.15, vs libc++ 2.45 -> 0.95, 8.9 -> 1.26 |
+| stable_sort ints | stability of equal integers is unobservable; radix needs no comparisons | LSD radix through a buffer for n >= 512 (std orders), pdqsort otherwise | kept: 1.11/0.97 -> 0.12/0.11; vs libc++ 4.14 -> 0.38 |
+| string copies | a short string's copy calls memcpy with a variable size; the copy constructor pays its allocation path's register saves | whole 16-byte buffer copy, two overlapping fixed-size copies from a pointer, allocation paths out of line, exact-size operator+ | kept: SSO construct 0.41/0.66 (Ir 116M -> 44M on GCC), copy SSO 0.37/0.75 |
+| string operator+ (GCC) | — | — | partly: 2.3x fewer instructions than libstdc++, but the 16-byte copy right after byte stores stalls on store forwarding (1.3x wall clock) |
+| from_chars double | the general Eisel-Lemire (192-bit product, generic rounding) and scanner run for every number | 19-digit short scanner and a one-64x64-product Eisel-Lemire for binary32/64, exact paths otherwise | kept: 2.45/1.88 -> 1.20/1.01..1.14; vs libc++ 1.20 -> 0.6 |
+| from_chars tie test | the tie test's branch is on the (unpredictable) rounding bit | one rarely taken branch | kept: GCC 31 -> 22 ns |
+| dynamic_cast | kind_of built a 9-entry table per call; Clang's unnamed-namespace names cost a strcmp per comparison | inline kind tests, sole type_infos by address, address-only first pass on the chain | kept: to intermediate Ir 147M -> 43M (Clang), 58M -> 23M (GCC); failure 164M -> 46M |
+| dynamic_cast (try) | matchers without the address pass | — | not kept: slower for successful casts (67M vs 43M Ir) |
+| to_chars shortest | GCC copies the 128-bit significand record with a 16-byte load after two 8-byte stores (store-forwarding stall, 26% of samples) | binary32/64 plain form decoded in registers | kept: GCC 1.69 -> 0.97 |
+| to_chars set_digits | trailing zeros 8/4/2/1 at a time and digits written in place | — | not kept: 1770M -> 1782M Ir |
+| to_chars %.Pf | the exact decimal expansion with big integers for every value | m * 10^P in 128 bits, quotient and remainder (P <= 18, 64-bit quotient) | kept: 1.44/1.36 -> 0.35/0.52; vs libc++ 1.47 -> 0.50 |
+| find/equal/mismatch | early-exit loops are not vectorized | 256-byte blocks without an early exit; memcmp for equal on integers | kept: find int 0.72/0.58 (libc++ 1.89 -> 1.08), mismatch bytes 0.19, equal int 0.97/0.89 |
+| search bytes | restarts a comparison at every position | memchr + memcmp | kept: 0.05/0.04 |
+| getline | one sgetc/snextc/push_back per character | append buffered runs found with traits::find | kept: istringstream 4.48 -> 0.65 (GCC), file 6.67 -> 0.85; vs libc++ 2.8 -> 0.73 |
+| condition_variable | notify always did a locked increment | return when no waiter is registered | kept: 2.9/3.2 -> 0.16/0.21 |
+| atomic notify | a seq_cst fence per notify | no fence while single-threaded | kept: 7.4 -> 0.33; a fetch_add(0) instead of fence + load was not faster (14 vs 10.6 ns), not kept |
+| vector emplace_back | the inlined reallocation made Clang refuse to inline emplace_back in larger callers (one call per element in flat_map's range constructor) | reallocation out of line; scalar arguments by value | kept (flat_map construction Clang 2.85 -> 1.16); trade-off: a local vector filled in a loop keeps its end pointer in memory on Clang |
+| flat_map range insert | geometric growth of both containers | reserve + emplace_back for std::vector containers | kept: GCC 2.26 -> 1.1..1.9, Clang 2.85 -> 1.16 |
+| hash<string> | 8-byte words read byte by byte (GCC does not merge them) | fixed-size loads at run time | kept: GCC 1.93 -> 0.70 (12 chars), 2.44 -> 1.11 (200 chars) |
+| accumulate int (Clang 1.5x) | — | none | the function's code is the same simple loop; the difference is placement in the benchmark |
+| move strings 1e5 | — | new benchmark | dominated by page faults of fresh 3 MB vectors (libc++ moved between 6 and 21 ns between runs); "move-assign strings (no allocation)" measures the moves |
+| shared_ptr copy+destroy, queue push/pop on GCC | — | none | instruction counts within 1.1x of libstdc++ (queue: Clang beats both); the wall-clock ratios moved between 0.97 and 2.4 between runs |
+
+
+## Performance pass 1 (2026-10-06): against libstdc++
 
 Produced by `bench/run --md` (see `bench/run` and DECISIONS §15). Each benchmark is the median
 of 9 samples of at least ~10 ms; numbers are ns per operation. The ratio is libycxx / libstdc++
@@ -14,7 +57,7 @@ so single rows move by up to ±40% between runs (e.g. `unique int`, `vector.empl
 Changes were therefore also checked with `valgrind --tool=callgrind` instruction counts (table
 below), and suspicious rows were re-run.
 
-## Before / after (ratio libycxx / libstdc++)
+### Before / after (ratio libycxx / libstdc++)
 
 "Before" is commit f929087 (the harness alone), "after" the end of this work. Rows renamed or
 redefined after the baseline run (`equal int`, `unique int`, `vector.emplace_back`) have no
@@ -135,7 +178,7 @@ comparable before value.
 | text: regex construct | **1.56** | 0.70 | 1.24 | 0.58 |
 | text: regex_match short | 0.36 | 0.35 | 0.24 | 0.24 |
 
-## Instruction counts (callgrind, whole small programs; lower is better)
+### Instruction counts (callgrind, whole small programs; lower is better)
 
 | program | before | after | libstdc++ |
 |---|---:|---:|---:|
@@ -150,7 +193,7 @@ comparable before value.
 | 6M deque push_back/front (GCC) | 112M | 94M | 69M |
 | 18 stacked virtual diamonds: 1000 throws + 3000 casts (wall clock) | 29.7 s | 0.01 s | 8.6 s |
 
-## Remaining ratios above 1.5
+### Remaining ratios above 1.5
 
 - `deque` push at either end (1.5-2.3x): the end position is recomputed from the start index and
   size (division/modulo by the block size and a map lookup) on every push.
@@ -162,7 +205,7 @@ comparable before value.
   to `strcmp` past the long common `N12_GLOBAL__N_1` prefix.
 - `string.operator+ small` on GCC (1.2-1.7x, noisy; 1.0 on Clang).
 
-## Full results (after)
+### Full results (after)
 
 | benchmark | gcc libycxx ns | gcc libstdc++ ns | gcc ratio | clang libycxx ns | clang libstdc++ ns | clang ratio |
 |---|---:|---:|---:|---:|---:|---:|

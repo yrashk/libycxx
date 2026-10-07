@@ -152,7 +152,8 @@ CATEGORIES = {'libycxx-limitation', 'extension', 'implementation-specific', 'tra
 def read_list(path):
     """skip.txt / xfail.txt / build-skip.txt: "<name regex> | <category> | <reason> [| <conditions>]"
     per line. The regex must match the whole name (a CTest test, or a build output); the entry
-    applies only where every condition holds (gcc, clang, linux, darwin, asan, ubsan, tsan)."""
+    applies only where every condition holds (gcc, clang, linux, darwin, asan, ubsan, tsan, and
+    no-ipv6 where the host cannot open an IPv6 socket)."""
     out = []
     if not os.path.isfile(path):
         return out
@@ -467,9 +468,14 @@ def cmd_linkage(repo, libdir, build, cmdlog, out_base, expect_violations=False):
     if tus is None:
         problem('compile', f'no compile_commands.json in {build}')
     else:
-        bad = []
+        bad, unbuilt = [], 0
         for t in tus:
             argv = compiles.get(t['output'])
+            if argv is None and t['output'] and not os.path.exists(t['output']):
+                # Never compiled: a target outside the build (EXCLUDE_FROM_ALL), or a test that
+                # must not compile and was not tried; nothing of it is in the build.
+                unbuilt += 1
+                continue
             if argv is None:
                 bad.append(f'{t["file"]}: not compiled by tools/ycxx-cxx (compiler {t["compiler"]}, output {t["output"]})')
                 continue
@@ -479,9 +485,10 @@ def cmd_linkage(repo, libdir, build, cmdlog, out_base, expect_violations=False):
         if bad:
             problem('compile', f'{len(bad)} of {len(tus)} C++ translation units not compiled against libycxx:\n  ' +
                     '\n  '.join(bad[:20]) + ('\n  ...' if len(bad) > 20 else ''))
-        report.append(f'compile commands: {len(tus) - len(bad)} of {len(tus)} C++ translation units of '
+        report.append(f'compile commands: {len(tus) - len(bad) - unbuilt} of {len(tus)} C++ translation units of '
                       f'compile_commands.json compiled by tools/ycxx-cxx with -nostdinc++ -isystem {include} '
-                      f'-std=c++26 and no other C++ library\'s include directory')
+                      f'-std=c++26 and no other C++ library\'s include directory' +
+                      (f'; {unbuilt} not built (outside the build, no object)' if unbuilt else ''))
 
     # 2. Headers the compiler reported.
     deps = ninja_deps(build)

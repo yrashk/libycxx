@@ -333,7 +333,6 @@ project() {
   if [ "$install" = install ]; then
     pstep install $cmake_cmd --install "$b" || { unset YCXX_CXX_LOG; return 1; }
   fi
-  unset YCXX_CXX_LOG
   # From here on the report judges: a failed test, selection or linkage proof is a failure of
   # the run, but the project built, so the projects that depend on it still build.
   if [ "$role" = test ] && [ "$(get test ctest)" = ctest ]; then
@@ -349,6 +348,8 @@ project() {
       *) pstep test ctest_run "$b" "$pres/junit.xml" "$timeout" "$@" || : ;;
     esac
   fi
+  # (YCXX_CXX_LOG stays set for the tests: some compile programs, those that must not compile.)
+  unset YCXX_CXX_LOG
   [ "${ui_interrupted}" = 1 ] && return 1
   pstep linkage python3 "$rw" linkage "$repo" "$libdir" "$b" "$b/.ycxx-cmds" "$pres/linkage" || :
   if [ $clean = 1 ] && [ "$install" != install ]; then rm -rf "$b"; fi
@@ -363,6 +364,10 @@ for c in $compilers; do
   res=$logs/realworld-$cfg
   # What skip.txt's conditions and the manifests' key.<condition> values test.
   YCXX_RW_CONDITIONS="$c $(uname -s | tr 'A-Z' 'a-z') $(echo "$sanitizer" | tr , ' ')"
+  # no-ipv6: the host cannot open an IPv6 socket (containers without IPv6), which tests that
+  # listen on [::] need.
+  python3 -c 'import socket; socket.socket(socket.AF_INET6).close()' 2>/dev/null ||
+    YCXX_RW_CONDITIONS="$YCXX_RW_CONDITIONS no-ipv6"
   export YCXX_RW_CONDITIONS
   rm -rf "$res"
   mkdir -p "$res"

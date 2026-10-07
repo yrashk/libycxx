@@ -577,16 +577,16 @@ class __re_compiler {
         __lits.push_back(literal(c));
       __alts.push_back(list(__re_kind::concat, __lits));
     }
-    const int __single = __new_set(static_cast<__set_type&&>(s));
+    const int __y_single = __new_set(static_cast<__set_type&&>(s));
     if (!__neg) { // a matching list: one of the elements, or one character of the set
-      __alts.push_back(__single);
+      __alts.push_back(__y_single);
       return list(__re_kind::__alt, __alts);
     }
     // A non-matching list: one character of the set, where none of the elements begins.
     node __x;
     __x.kind = __re_kind::__nlook;
     __x.__kids.push_back(list(__re_kind::__alt, __alts));
-    std::vector<int> __seq{add(static_cast<node&&>(__x)), __single};
+    std::vector<int> __seq{add(static_cast<node&&>(__x)), __y_single};
     _P_.__needs_bt = true;
     return list(__re_kind::concat, __seq);
   }
@@ -1153,12 +1153,12 @@ class __re_compiler {
     __st.__pre[__un] = __st.__counter++;
     const node& __x = __nodes_[__un];
     std::ptrdiff_t __mn = 0, __mx = 0;
-    bool __pure = true;
+    bool __y_pure = true;
     int __glo = 1 << 30, __ghi = -1;
     for (int k : __x.__kids) {
       __an_visit(k, __st);
       const auto __uk = static_cast<std::size_t>(k);
-      __pure = __pure && (_Pp.__nflags[__uk] & __prog::__nf_pure) != 0;
+      __y_pure = __y_pure && (_Pp.__nflags[__uk] & __prog::__nf_pure) != 0;
       if (__st.__glo[__uk] < __glo)
         __glo = __st.__glo[__uk];
       if (__st.__ghi[__uk] > __ghi)
@@ -1171,7 +1171,7 @@ class __re_compiler {
       __mn = __mx = 1;
       break;
     case __re_kind::__backref:
-      __pure = false;
+      __y_pure = false;
       __mx = __st.__gmax[static_cast<std::size_t>(__x.__val)];
       if (__x.__val < 10 && __st.__pre[__un] > __st.__maxref[__x.__val])
         __st.__maxref[__x.__val] = __st.__pre[__un];
@@ -1226,7 +1226,7 @@ class __re_compiler {
     __st.__glo[__un] = __glo;
     __st.__ghi[__un] = __ghi;
     __st.__post[__un] = __st.__counter - 1;
-    if (__pure)
+    if (__y_pure)
       _Pp.__nflags[__un] |= __prog::__nf_pure;
   }
   void __analyze(int __root) {

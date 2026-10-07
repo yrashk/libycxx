@@ -81,3 +81,8 @@ static_assert(std::is_convertible_v<std::noop_coroutine_handle, std::coroutine_h
 // [cstdlib.syn] freestanding parts
 static_assert(std::abs(-3) == 3 && std::abs(-3L) == 3 && std::div(7, 2).quot == 3 && std::lldiv(7, 2).rem == 1);
 static_assert(std::is_same_v<decltype(std::memalignment(nullptr)), std::size_t>);
+// [cstdarg.syn]: va_start(V, ...) takes the va_list alone (C23); __STDC_VERSION_STDARG_H__
+#include <cstdarg>
+static_assert(__STDC_VERSION_STDARG_H__ == 202311L);
+int va_one(...) { std::va_list ap; va_start(ap); int x = va_arg(ap, int); va_end(ap); return x; }
+int va_two(int n, ...) { std::va_list ap; va_start(ap, n); std::va_list c; va_copy(c, ap); int x = va_arg(c, int); va_end(c); va_end(ap); return x; }

@@ -233,6 +233,14 @@
 #if _YCXX_HAS_CONTRACTS
 #  define __cpp_lib_contracts 202502L
 #endif
+// [version.syn]/5: the default ::handle_contract_violation is alone in its archive member of the
+// runtime, so a program's definition replaces it ([basic.contract.handler]/3). Without the
+// compiler's contracts nothing calls a handler: 0.
+#if _YCXX_HAS_CONTRACTS
+#  define __cpp_lib_replaceable_contract_violation_handler 202603L
+#else
+#  define __cpp_lib_replaceable_contract_violation_handler 0
+#endif
 // <meta>: reflection is the compiler's (GCC 16 with -freflection; not Clang 23)
 #if _YCXX_HAS_REFLECTION
 #  define __cpp_lib_reflection 202603L

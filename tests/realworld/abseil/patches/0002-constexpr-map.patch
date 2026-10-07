@@ -1,0 +1,19 @@
+Category: pre-c++26. constexpr_testing_test asserts that constructing a std::map cannot be
+constant-evaluated; C++26 made std::map constexpr (P3372, [map.overview],
+__cpp_lib_constexpr_map), so with a C++26 library the assertion is false. Keeps it for libraries
+without the feature.
+
+diff --git a/absl/meta/internal/constexpr_testing_test.cc b/absl/meta/internal/constexpr_testing_test.cc
+index 50c8c53..7be24fa 100644
+--- a/absl/meta/internal/constexpr_testing_test.cc
++++ b/absl/meta/internal/constexpr_testing_test.cc
+@@ -34,7 +34,9 @@ TEST(ConstexprTesting, Basic) {
+   static int nonconst_global;
+   EXPECT_FALSE(HasConstexprEvaluation([] { return nonconst_global; }));
+   EXPECT_FALSE(HasConstexprEvaluation([] { std::abort(); }));
++#if !defined(__cpp_lib_constexpr_map)  // C++26 (P3372): std::map is constexpr
+   EXPECT_FALSE(HasConstexprEvaluation([] { return std::map<int, int>(); }));
++#endif
+ }
+ 
+ }  // namespace

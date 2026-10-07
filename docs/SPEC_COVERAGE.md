@@ -47,7 +47,7 @@ Working draft at github.com/Eelis/draft revision `c7015b485cc3db8efaa9dfb9ff0809
   and the Effects of the C++26 additions (`views::indices`, `concat`, `cache_latest`,
   `as_input`, `reserve_hint`, `ranges::to`, `find_last`, `fold_*`, `submdspan` with
   `extent_slice`/`range_slice`, `inplace_vector` `try_`/`unchecked_`, `flat_map::insert_range`,
-  `subview`, ...), as constant expressions: 66 checks.
+  `subview`, ...), as constant expressions: 86 checks.
 - **Semantic review.** The Effects, Returns, Throws and Hardened preconditions paragraphs of the
   C++26 additions, and every Hardened preconditions paragraph of the five clauses (52), against
   the implementation; `include/` and `src/` have no TODO, FIXME or "not implemented" marker.

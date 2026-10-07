@@ -1,0 +1,20 @@
+Category: pre-c++26. The vendored doctest includes <ciso646> with Clang (to see whether the
+library is libc++), a header C++20 removed ([diff.cpp17.library]; libycxx provides no removed
+header). Includes <version> where there is one, as later doctest releases do.
+
+diff --git a/tests/thirdparty/doctest/doctest.h b/tests/thirdparty/doctest/doctest.h
+index 82764ea..366b7ad 100644
+--- a/tests/thirdparty/doctest/doctest.h
++++ b/tests/thirdparty/doctest/doctest.h
+@@ -496,7 +496,11 @@ DOCTEST_GCC_SUPPRESS_WARNING_POP
+ // https://github.com/doctest/doctest/issues/126
+ // https://github.com/doctest/doctest/issues/356
+ #if DOCTEST_CLANG
++#if __has_include(<version>)
++#include <version>
++#else
+ #include <ciso646>
++#endif
+ #endif // clang
+ 
+ #ifdef _LIBCPP_VERSION

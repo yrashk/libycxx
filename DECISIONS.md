@@ -1894,5 +1894,24 @@ own header is "n/a" for that library, and so is a header that does not compile a
 - libycxx itself is probed the same way in both modes (`--lib ycxx`, `--lib ycxx-strict`): in the
   default mode every baseline and added item compiles.
 
+**The data (2026-10-07).** 115 C++ headers H, 181 probe items (115 primary). Pairs that compile
+after `#include <H>` alone: libstdc++ 4652 of 19364 item pairs, libc++ 3164 of 16770 (libc++ lacks
+`<generator>`, `<inplace_vector>`, `<stacktrace>`, ...; neither has `<hive>`, `<rcu>`,
+`<hazard_pointer>`, `<linalg>`). By primary item, H provides G: libstdc++ 2041 pairs, libc++ 1338,
+**both 1066** (the baseline); libycxx before this section provided 734 of those 1066. Most
+common in the baseline: `<type_traits>` (70 headers), `<concepts>` (65), `<compare>` (61),
+`<limits>` (57), `<initializer_list>` (52), `<cstddef>` (49), `<utility>` (46), `<algorithm>`
+(44), `<tuple>` (40), `<stdexcept>` (37), `<cctype>`, `<cwchar>`, `<cstdint>` (36 each), `<iosfwd>`
+(32), `<cstdio>` (28), `<cerrno>` (25). Excluded as heavy for every H: `<chrono>`, `<execution>`,
+`<filesystem>`, `<format>`, `<locale>`, `<meta>`, `<regex>` (0.6-1.9 s each to compile alone with
+libycxx; e.g. both libraries provide `<chrono>`'s durations with `<mutex>`, but libycxx's
+`<chrono>` is one header with the calendar, time zones and formatting). Added for the projects
+and suites (either library provides them): `<cstdlib>` and `<cerrno>` with `<string>`,
+`<cstdlib>` with `<memory>`, `<memory>` with `<deque>` and `<map>`, `<sstream>` with
+`<syncstream>`, `<span>` with `<format>`, `<initializer_list>` with `<memory_resource>`, `<string>`
+with `<ranges>`, `<streambuf>` with `<iterator>`, and `<cstdio>` where the character traits
+provided `EOF` before (`ycxx/core/char_traits.hpp` no longer includes `<cstdio>`, so the strict
+mode has no `EOF` with `<string>`). The result: 976 includes in 76 headers' blocks.
+
 `tools/probe_transitive.py && tools/gen_transitive_includes.py --propose` refreshes the probe
 (for new library releases or items) and prints the baseline pairs the data file lacks.

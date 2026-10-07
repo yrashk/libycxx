@@ -171,7 +171,7 @@ def scoped_decls(text, default_ns="std"):
             if op and op[0] not in ("(",) and not any(x in (";", "{", "}") for x in op):
                 if not "".join(raw[:-1]).count("::"):
                     emit(sname, opname,
-                                "function" if sk == "ns" else "member-function"))
+                                "function" if sk == "ns" else "member-function")
             continue
         if not g._IDENT.match(t) or t in g.KEYWORDS or g._PLACEHOLDER.match(t):
             continue
@@ -179,17 +179,17 @@ def scoped_decls(text, default_ns="std"):
             continue
         if sk == "enum":
             if nxt in (",", "}", "=", ""):
-                emit(sname, t, "enumerator"))
+                emit(sname, t, "enumerator")
             continue
         if prev in ("using", "concept", "namespace"):
             if nxt in ("=", "{", ";"):
                 if prev != "namespace":
                     kind = "concept" if prev == "concept" else "alias"
-                    emit(sname, t, kind if sk == "ns" else "member-type"))
+                    emit(sname, t, kind if sk == "ns" else "member-type")
             continue
         if prev in g._CLASS_KEYS or prev == "enum":
             if nxt in ("{", ":", ";", "final"):
-                emit(sname, t, ("enum" if prev == "enum" else "class") if sk == "ns" else "member-type"))
+                emit(sname, t, ("enum" if prev == "enum" else "class") if sk == "ns" else "member-type")
             elif nxt == g.LT:
                 pass   # a specialization of a template declared elsewhere
             continue
@@ -214,7 +214,7 @@ def scoped_decls(text, default_ns="std"):
             kind = "variable"
         if sk == "class":
             kind = {"alias": "member-type", "function": "member-function"}.get(kind, "member-variable")
-        emit(sname, t, kind))
+        emit(sname, t, kind)
     return out
 
 

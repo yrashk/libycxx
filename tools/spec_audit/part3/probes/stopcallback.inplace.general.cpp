@@ -5,7 +5,7 @@
 #include "../probe_support.hpp"
 namespace p0 { using namespace std; using std::inplace_stop_callback; } // stopcallback.inplace.general#1 presence
 namespace p1 { using namespace std; static_assert(spec_probe::same<typename std::inplace_stop_callback<spec_probe::callback>::callback_type, spec_probe::callback>); } // stopcallback.inplace.general#2 type
-namespace p2 { using namespace std; static_assert(std::is_constructible_v<std::inplace_stop_callback<spec_probe::callback>, inplace_stop_token, spec_probe::callback&&>); } // stopcallback.inplace.general#3 ctor
+namespace p2 { using namespace std; template<class Z> concept c = requires { ::new std::inplace_stop_callback<spec_probe::callback>(spec_probe::dv<spec_probe::dep<Z, inplace_stop_token>>(), spec_probe::dv<spec_probe::dep<Z, spec_probe::callback&&>>()); }; static_assert(c<void>); } // stopcallback.inplace.general#3 ctor
 namespace p3 { using namespace std; static_assert(std::is_nothrow_destructible_v<std::inplace_stop_callback<spec_probe::callback>>); } // stopcallback.inplace.general#4 destructor
 namespace p4 { using namespace std; static_assert(!std::is_constructible_v<std::inplace_stop_callback<spec_probe::callback>, std::inplace_stop_callback<spec_probe::callback>&&>); } // stopcallback.inplace.general#5 deleted ctor
 namespace p5 { using namespace std; static_assert(!std::is_constructible_v<std::inplace_stop_callback<spec_probe::callback>, const std::inplace_stop_callback<spec_probe::callback>&>); } // stopcallback.inplace.general#6 deleted ctor

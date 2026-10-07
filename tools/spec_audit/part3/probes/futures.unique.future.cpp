@@ -4,8 +4,8 @@
 #define SPEC_PROBE_future
 #include "../probe_support.hpp"
 namespace p0 { using namespace std; using std::future; } // futures.unique.future#1 presence
-namespace p1 { using namespace std; static_assert(std::is_constructible_v<std::future<int>> && std::is_nothrow_constructible_v<std::future<int>>); } // futures.unique.future#2 ctor noexcept
-namespace p2 { using namespace std; static_assert(std::is_constructible_v<std::future<int>, std::future<int>&&> && std::is_nothrow_constructible_v<std::future<int>, std::future<int>&&> && std::is_convertible_v<std::future<int>&&, std::future<int>>); } // futures.unique.future#3 ctor noexcept
+namespace p1 { using namespace std; template<class Z> concept c = requires { ::new std::future<int>(); } && std::is_nothrow_constructible_v<std::future<int>>; static_assert(c<void>); } // futures.unique.future#2 ctor noexcept
+namespace p2 { using namespace std; template<class Z> concept c = requires { ::new std::future<int>(spec_probe::dv<spec_probe::dep<Z, std::future<int>&&>>()); } && std::is_nothrow_constructible_v<std::future<int>, std::future<int>&&> && std::is_convertible_v<std::future<int>&&, std::future<int>>; static_assert(c<void>); } // futures.unique.future#3 ctor noexcept
 namespace p3 { using namespace std; static_assert(!std::is_constructible_v<std::future<int>, const std::future<int>&>); } // futures.unique.future#4 deleted ctor
 namespace p4 { using namespace std; static_assert(std::is_nothrow_destructible_v<std::future<int>>); } // futures.unique.future#5 destructor
 namespace p5 { using namespace std; template<class Z> concept c = !requires { spec_probe::dv<spec_probe::dep<Z, std::future<int>&>>().operator=(spec_probe::dv<spec_probe::dep<Z, const std::future<int>&>>()); }; static_assert(c<void>); } // futures.unique.future#6 deleted call

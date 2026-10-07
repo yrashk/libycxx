@@ -8,11 +8,11 @@ namespace p1 { using namespace std; using std::recursive_mutex; } // mutex.syn#2
 namespace p2 { using namespace std; using std::timed_mutex; } // mutex.syn#3 presence
 namespace p3 { using namespace std; using std::recursive_timed_mutex; } // mutex.syn#4 presence
 namespace p4 { using namespace std; using std::defer_lock_t; } // mutex.syn#5 presence
-namespace p5 { using namespace std; static_assert(std::is_constructible_v<std::defer_lock_t>); } // mutex.syn#6 ctor
+namespace p5 { using namespace std; template<class Z> concept c = requires { ::new std::defer_lock_t(); }; static_assert(c<void>); } // mutex.syn#6 ctor
 namespace p6 { using namespace std; using std::try_to_lock_t; } // mutex.syn#7 presence
-namespace p7 { using namespace std; static_assert(std::is_constructible_v<std::try_to_lock_t>); } // mutex.syn#8 ctor
+namespace p7 { using namespace std; template<class Z> concept c = requires { ::new std::try_to_lock_t(); }; static_assert(c<void>); } // mutex.syn#8 ctor
 namespace p8 { using namespace std; using std::adopt_lock_t; } // mutex.syn#9 presence
-namespace p9 { using namespace std; static_assert(std::is_constructible_v<std::adopt_lock_t>); } // mutex.syn#10 ctor
+namespace p9 { using namespace std; template<class Z> concept c = requires { ::new std::adopt_lock_t(); }; static_assert(c<void>); } // mutex.syn#10 ctor
 namespace p10 { using namespace std; static_assert(spec_probe::same<decltype(std::defer_lock), const defer_lock_t>); } // mutex.syn#11 var
 namespace p11 { using namespace std; static_assert(spec_probe::same<decltype(std::try_to_lock), const try_to_lock_t>); } // mutex.syn#12 var
 namespace p12 { using namespace std; static_assert(spec_probe::same<decltype(std::adopt_lock), const adopt_lock_t>); } // mutex.syn#13 var

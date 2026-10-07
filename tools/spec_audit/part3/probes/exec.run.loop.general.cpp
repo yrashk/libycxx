@@ -4,7 +4,7 @@
 #define SPEC_PROBE_execution
 #include "../probe_support.hpp"
 namespace p0 { using namespace std; using namespace std::execution; using std::execution::run_loop; } // exec.run.loop.general#1 presence
-namespace p1 { using namespace std; using namespace std::execution; static_assert(std::is_constructible_v<std::execution::run_loop> && std::is_nothrow_constructible_v<std::execution::run_loop>); } // exec.run.loop.general#2 ctor noexcept
+namespace p1 { using namespace std; using namespace std::execution; template<class Z> concept c = requires { ::new std::execution::run_loop(); } && std::is_nothrow_constructible_v<std::execution::run_loop>; static_assert(c<void>); } // exec.run.loop.general#2 ctor noexcept
 namespace p2 { using namespace std; using namespace std::execution; static_assert(!std::is_constructible_v<std::execution::run_loop, std::execution::run_loop&&>); } // exec.run.loop.general#3 deleted ctor
 namespace p3 { using namespace std; using namespace std::execution; static_assert(std::is_nothrow_destructible_v<std::execution::run_loop>); } // exec.run.loop.general#4 destructor
 namespace p4 { using namespace std; using namespace std::execution; template<class Z> concept c = requires { spec_probe::dv<spec_probe::dep<Z, std::execution::run_loop&>>().get_scheduler(); requires noexcept(spec_probe::dv<spec_probe::dep<Z, std::execution::run_loop&>>().get_scheduler()); }; static_assert(c<void>); } // exec.run.loop.general#5 call noexcept

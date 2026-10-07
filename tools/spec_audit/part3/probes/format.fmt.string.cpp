@@ -4,5 +4,5 @@
 #define SPEC_PROBE_format
 #include "../probe_support.hpp"
 namespace p0 { using namespace std; using std::basic_format_string; } // format.fmt.string#1 presence
-namespace p1 { using namespace std; static_assert(std::is_constructible_v<std::basic_format_string<char, int>, const const char*&> && std::is_convertible_v<const const char*&, std::basic_format_string<char, int>>); } // format.fmt.string#2 ctor
+namespace p1 { using namespace std; template<class Z> concept c = requires { ::new std::basic_format_string<char, int>(spec_probe::dv<spec_probe::dep<Z, const std::string_view&>>()); } && std::is_convertible_v<const std::string_view&, std::basic_format_string<char, int>>; static_assert(c<void>); } // format.fmt.string#2 ctor
 namespace p3 { using namespace std; template<class Z> concept c = requires { { spec_probe::dv<spec_probe::dep<Z, const std::basic_format_string<char, int>&>>().get() } -> spec_probe::same<basic_string_view<char>>; requires noexcept(spec_probe::dv<spec_probe::dep<Z, const std::basic_format_string<char, int>&>>().get()); }; static_assert(c<void>); } // format.fmt.string#4 call ret noexcept

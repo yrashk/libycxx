@@ -5,8 +5,8 @@
 #include "../probe_support.hpp"
 namespace p0 { using namespace std; using std::lock_guard; } // thread.lock.guard#1 presence
 namespace p1 { using namespace std; static_assert(spec_probe::same<typename std::lock_guard<mutex>::mutex_type, mutex>); } // thread.lock.guard#2 type
-namespace p2 { using namespace std; static_assert(std::is_constructible_v<std::lock_guard<mutex>, std::lock_guard<mutex>::mutex_type&> && !std::is_convertible_v<std::lock_guard<mutex>::mutex_type&, std::lock_guard<mutex>>); } // thread.lock.guard#3 ctor explicit
-namespace p3 { using namespace std; static_assert(std::is_constructible_v<std::lock_guard<mutex>, std::lock_guard<mutex>::mutex_type&, adopt_lock_t>); } // thread.lock.guard#4 ctor
+namespace p2 { using namespace std; template<class Z> concept c = requires { ::new std::lock_guard<mutex>(spec_probe::dv<spec_probe::dep<Z, typename std::lock_guard<mutex>::mutex_type&>>()); } && !std::is_convertible_v<typename std::lock_guard<mutex>::mutex_type&, std::lock_guard<mutex>>; static_assert(c<void>); } // thread.lock.guard#3 ctor explicit
+namespace p3 { using namespace std; template<class Z> concept c = requires { ::new std::lock_guard<mutex>(spec_probe::dv<spec_probe::dep<Z, typename std::lock_guard<mutex>::mutex_type&>>(), spec_probe::dv<spec_probe::dep<Z, adopt_lock_t>>()); }; static_assert(c<void>); } // thread.lock.guard#4 ctor
 namespace p4 { using namespace std; static_assert(std::is_nothrow_destructible_v<std::lock_guard<mutex>>); } // thread.lock.guard#5 destructor
 namespace p5 { using namespace std; static_assert(!std::is_constructible_v<std::lock_guard<mutex>, const std::lock_guard<mutex>&>); } // thread.lock.guard#6 deleted ctor
 namespace p6 { using namespace std; template<class Z> concept c = !requires { spec_probe::dv<spec_probe::dep<Z, std::lock_guard<mutex>&>>().operator=(spec_probe::dv<spec_probe::dep<Z, const std::lock_guard<mutex>&>>()); }; static_assert(c<void>); } // thread.lock.guard#7 deleted call

@@ -4,10 +4,10 @@
 #define SPEC_PROBE_format
 #include "../probe_support.hpp"
 namespace p0 { using namespace std; using std::basic_format_arg; } // format.arg#1 presence
-namespace p1 { using namespace std; static_assert(std::is_constructible_v<std::basic_format_arg<format_context>> && std::is_nothrow_constructible_v<std::basic_format_arg<format_context>>); } // format.arg#2 ctor noexcept
+namespace p1 { using namespace std; template<class Z> concept c = requires { ::new std::basic_format_arg<format_context>(); } && std::is_nothrow_constructible_v<std::basic_format_arg<format_context>>; static_assert(c<void>); } // format.arg#2 ctor noexcept
 namespace p2 { using namespace std; template<class Z> concept c = requires { static_cast<bool>(spec_probe::dv<spec_probe::dep<Z, const std::basic_format_arg<format_context>&>>()); requires noexcept(static_cast<bool>(spec_probe::dv<spec_probe::dep<Z, const std::basic_format_arg<format_context>&>>())); }; static_assert(c<void>); } // format.arg#3 call noexcept
 namespace p3 { using namespace std; static_assert(!std::is_convertible_v<const std::basic_format_arg<format_context>&, bool>); } // format.arg#4 explicit
 namespace p4 { using namespace std; template<class Z> concept c = requires { spec_probe::dv<spec_probe::dep<Z, std::basic_format_arg<format_context>&&>>().visit(spec_probe::dv<spec_probe::dep<Z, spec_probe::visitor&&>>()); }; static_assert(c<void>); } // format.arg#5 call
 namespace p5 { using namespace std; template<class Z> concept c = requires { { spec_probe::dv<spec_probe::dep<Z, std::basic_format_arg<format_context>&&>>().template visit<std::span<int>>(spec_probe::dv<spec_probe::dep<Z, spec_probe::visitor&&>>()) } -> spec_probe::same<std::span<int>>; }; static_assert(c<void>); } // format.arg#6 call ret
-namespace p6 { using namespace std; template<class Z> concept c = requires { sizeof(spec_probe::dep<Z, std::basic_format_arg<format_context>>); }; static_assert(c<void>); } // format.arg#7 specialization complete
-namespace p7 { using namespace std; struct D : std::basic_format_arg<format_context> { using std::basic_format_arg<format_context>::format; }; } // format.arg#8 presence (exposition-only or unspecified: char-type)
+namespace p6 { using namespace std; struct D : std::basic_format_arg<format_context> { using std::basic_format_arg<format_context>::handle; }; } // format.arg#7 presence
+namespace p7 { using namespace std; struct D : std::basic_format_arg<format_context>::handle { using std::basic_format_arg<format_context>::handle::format; }; } // format.arg#8 presence (exposition-only or unspecified: char-type)

@@ -4,4 +4,4 @@
 #define SPEC_PROBE_thread
 #include "../probe_support.hpp"
 namespace p0 { using namespace std; struct D : std::thread { using std::thread::stack_size_hint; }; } // thread.attributes.size#1 presence
-namespace p1 { using namespace std; static_assert(std::is_constructible_v<std::thread::stack_size_hint, size_t> && std::is_nothrow_constructible_v<std::thread::stack_size_hint, size_t> && !std::is_convertible_v<size_t, std::thread::stack_size_hint>); } // thread.attributes.size#2 ctor noexcept explicit
+namespace p1 { using namespace std; template<class Z> concept c = requires { ::new std::thread::stack_size_hint(spec_probe::dv<spec_probe::dep<Z, size_t>>()); } && std::is_nothrow_constructible_v<std::thread::stack_size_hint, size_t> && !std::is_convertible_v<size_t, std::thread::stack_size_hint>; static_assert(c<void>); } // thread.attributes.size#2 ctor noexcept explicit

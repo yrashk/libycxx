@@ -4,7 +4,7 @@
 #define SPEC_PROBE_shared_mutex
 #include "../probe_support.hpp"
 namespace p0 { using namespace std; using std::shared_mutex; } // thread.sharedmutex.class#1 presence
-namespace p1 { using namespace std; static_assert(std::is_constructible_v<std::shared_mutex>); } // thread.sharedmutex.class#2 ctor
+namespace p1 { using namespace std; template<class Z> concept c = requires { ::new std::shared_mutex(); }; static_assert(c<void>); } // thread.sharedmutex.class#2 ctor
 namespace p2 { using namespace std; static_assert(std::is_nothrow_destructible_v<std::shared_mutex>); } // thread.sharedmutex.class#3 destructor
 namespace p3 { using namespace std; static_assert(!std::is_constructible_v<std::shared_mutex, const std::shared_mutex&>); } // thread.sharedmutex.class#4 deleted ctor
 namespace p4 { using namespace std; template<class Z> concept c = !requires { spec_probe::dv<spec_probe::dep<Z, std::shared_mutex&>>().operator=(spec_probe::dv<spec_probe::dep<Z, const std::shared_mutex&>>()); }; static_assert(c<void>); } // thread.sharedmutex.class#5 deleted call
@@ -14,5 +14,3 @@ namespace p7 { using namespace std; template<class Z> concept c = requires { { s
 namespace p8 { using namespace std; template<class Z> concept c = requires { { spec_probe::dv<spec_probe::dep<Z, std::shared_mutex&>>().lock_shared() } -> spec_probe::same<void>; }; static_assert(c<void>); } // thread.sharedmutex.class#9 call ret
 namespace p9 { using namespace std; template<class Z> concept c = requires { { spec_probe::dv<spec_probe::dep<Z, std::shared_mutex&>>().try_lock_shared() } -> spec_probe::same<bool>; }; static_assert(c<void>); } // thread.sharedmutex.class#10 call ret
 namespace p10 { using namespace std; template<class Z> concept c = requires { { spec_probe::dv<spec_probe::dep<Z, std::shared_mutex&>>().unlock_shared() } -> spec_probe::same<void>; }; static_assert(c<void>); } // thread.sharedmutex.class#11 call ret
-namespace p11 { using namespace std; using T = std::shared_mutex::native_handle_type; } // thread.sharedmutex.class#12 type exists  (exposition-only or unspecified: implementation-defined)
-namespace p12 { using namespace std; template<class Z> concept c = requires { { spec_probe::dv<spec_probe::dep<Z, std::shared_mutex&>>().native_handle() } -> spec_probe::same<std::shared_mutex::native_handle_type>; }; static_assert(c<void>); } // thread.sharedmutex.class#13 call ret

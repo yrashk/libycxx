@@ -5,10 +5,10 @@
 #include "../probe_support.hpp"
 namespace p0 { using namespace std; using std::complex; } // complex#1 presence
 namespace p1 { using namespace std; static_assert(spec_probe::same<typename std::complex<double>::value_type, double>); } // complex#2 type
-namespace p2 { using namespace std; static_assert(std::is_constructible_v<std::complex<double>, const double&, const double&>); } // complex#3 ctor
-namespace p3 { using namespace std; static_assert(std::is_constructible_v<std::complex<double>>); } // complex#4 ctor (defaults)
-namespace p4 { using namespace std; static_assert(std::is_constructible_v<std::complex<double>, const std::complex<double>&> && std::is_convertible_v<const std::complex<double>&, std::complex<double>>); } // complex#5 ctor
-namespace p5 { using namespace std; static_assert(std::is_constructible_v<std::complex<double>, const complex<double>&>); } // complex#6 ctor
+namespace p2 { using namespace std; template<class Z> concept c = requires { ::new std::complex<double>(spec_probe::dv<spec_probe::dep<Z, const double&>>(), spec_probe::dv<spec_probe::dep<Z, const double&>>()); }; static_assert(c<void>); } // complex#3 ctor
+namespace p3 { using namespace std; template<class Z> concept c = requires { ::new std::complex<double>(); }; static_assert(c<void>); } // complex#4 ctor (defaults)
+namespace p4 { using namespace std; template<class Z> concept c = requires { ::new std::complex<double>(spec_probe::dv<spec_probe::dep<Z, const std::complex<double>&>>()); } && std::is_convertible_v<const std::complex<double>&, std::complex<double>>; static_assert(c<void>); } // complex#5 ctor
+namespace p5 { using namespace std; template<class Z> concept c = requires { ::new std::complex<double>(spec_probe::dv<spec_probe::dep<Z, const complex<double>&>>()); }; static_assert(c<void>); } // complex#6 ctor
 namespace p6 { using namespace std; template<class Z> concept c = requires { { spec_probe::dv<spec_probe::dep<Z, const std::complex<double>&>>().real() } -> spec_probe::same<double>; }; static_assert(c<void>); } // complex#7 call ret
 namespace p7 { using namespace std; template<class Z> concept c = requires { { spec_probe::dv<spec_probe::dep<Z, std::complex<double>&>>().real(spec_probe::dv<spec_probe::dep<Z, double>>()) } -> spec_probe::same<void>; }; static_assert(c<void>); } // complex#8 call ret
 namespace p8 { using namespace std; template<class Z> concept c = requires { { spec_probe::dv<spec_probe::dep<Z, const std::complex<double>&>>().imag() } -> spec_probe::same<double>; }; static_assert(c<void>); } // complex#9 call ret

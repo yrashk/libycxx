@@ -4,7 +4,7 @@
 #define SPEC_PROBE_ios
 #include "../probe_support.hpp"
 namespace p0 { using namespace std; struct D : std::ios_base { using std::ios_base::Init; }; } // ios.init#1 presence
-namespace p1 { using namespace std; static_assert(std::is_constructible_v<std::ios_base::Init>); } // ios.init#2 ctor
-namespace p2 { using namespace std; static_assert(std::is_constructible_v<std::ios_base::Init, const std::ios_base::Init&> && std::is_convertible_v<const std::ios_base::Init&, std::ios_base::Init>); } // ios.init#3 ctor
+namespace p1 { using namespace std; template<class Z> concept c = requires { ::new std::ios_base::Init(); }; static_assert(c<void>); } // ios.init#2 ctor
+namespace p2 { using namespace std; template<class Z> concept c = requires { ::new std::ios_base::Init(spec_probe::dv<spec_probe::dep<Z, const std::ios_base::Init&>>()); } && std::is_convertible_v<const std::ios_base::Init&, std::ios_base::Init>; static_assert(c<void>); } // ios.init#3 ctor
 namespace p3 { using namespace std; static_assert(std::is_nothrow_destructible_v<std::ios_base::Init>); } // ios.init#4 destructor
 namespace p4 { using namespace std; template<class Z> concept c = requires { { spec_probe::dv<spec_probe::dep<Z, std::ios_base::Init&>>().operator=(spec_probe::dv<spec_probe::dep<Z, const std::ios_base::Init&>>()) } -> spec_probe::same<std::ios_base::Init&>; }; static_assert(c<void>); } // ios.init#5 call ret

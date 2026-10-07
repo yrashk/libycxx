@@ -885,8 +885,8 @@ format.arg#3	format.arg	format	std::basic_format_arg::operator bool	call noexcep
 format.arg#4	format.arg	format	std::basic_format_arg::operator bool	explicit	constexpr explicit operator bool()const noexcept
 format.arg#5	format.arg	format	std::basic_format_arg::visit	call	constexpr decltype(auto)visit(this basic_format_arg arg, Visitor&&vis)
 format.arg#6	format.arg	format	std::basic_format_arg::visit	call ret	constexpr R visit(this basic_format_arg arg, Visitor&&vis)
-format.arg#7	format.arg	format	std::basic_format_arg<format_context>	specialization complete	class basic_format_arg<Context>::handle
-format.arg#8	format.arg	format	std::basic_format_arg::format	presence (exposition-only or unspecified: char-type)	constexpr void format(basic_format_parse_context<⟨char-type⟩>&, Context&ctx)const
+format.arg#7	format.arg	format	std::basic_format_arg::handle	presence	class basic_format_arg<Context>::handle
+format.arg#8	format.arg	format	std::basic_format_arg::handle::format	presence (exposition-only or unspecified: char-type)	constexpr void format(basic_format_parse_context<⟨char-type⟩>&, Context&ctx)const
 format.args#1	format.args	format	std::basic_format_args	presence	class basic_format_args
 format.args#2	format.args	format	std::basic_format_args::basic_format_args	constructor exists  (exposition-only or unspecified: format-arg-store)	constexpr basic_format_args(const ⟨format-arg-store⟩<Context, Args...>&store)noexcept
 format.args#3	format.args	format	std::basic_format_args::get	call ret noexcept	constexpr basic_format_arg<Context>get(size_t i)const noexcept
@@ -3560,7 +3560,7 @@ time.syn#19	time.syn	chrono	std::chrono::operator<	call ret	constexpr bool opera
 time.syn#20	time.syn	chrono	std::chrono::operator>	call ret	constexpr bool operator>(const duration<Rep1, Period1>&lhs, const duration<Rep2, Period2>&rhs)
 time.syn#21	time.syn	chrono	std::chrono::operator<=	call ret	constexpr bool operator< = (const duration<Rep1, Period1>&lhs, const duration<Rep2, Period2>&rhs)
 time.syn#22	time.syn	chrono	std::chrono::operator>=	call ret	constexpr bool operator> = (const duration<Rep1, Period1>&lhs, const duration<Rep2, Period2>&rhs)
-time.syn#23	time.syn	chrono	std::chrono::)	var	requires ⟨see below⟩ constexpr auto operator< = >(const duration<Rep1, Period1>&lhs, const duration<Rep2, Period2>&rhs)
+time.syn#23	time.syn	chrono	std::chrono::operator<=>	call	requires ⟨see below⟩ constexpr auto operator<=>(const duration<Rep1, Period1>&lhs, const duration<Rep2, Period2>&rhs)
 time.syn#24	time.syn	chrono	std::chrono::duration_cast	call ret	constexpr ToDuration duration_cast(const duration<Rep, Period>&d)
 time.syn#25	time.syn	chrono	std::chrono::floor	call ret	constexpr ToDuration floor(const duration<Rep, Period>&d)
 time.syn#26	time.syn	chrono	std::chrono::ceil	call ret	constexpr ToDuration ceil(const duration<Rep, Period>&d)
@@ -3587,7 +3587,7 @@ time.syn#46	time.syn	chrono	std::chrono::operator<	call ret	constexpr bool opera
 time.syn#47	time.syn	chrono	std::chrono::operator>	call ret	constexpr bool operator>(const time_point<Clock, Duration1>&lhs, const time_point<Clock, Duration2>&rhs)
 time.syn#48	time.syn	chrono	std::chrono::operator<=	call ret	constexpr bool operator< = (const time_point<Clock, Duration1>&lhs, const time_point<Clock, Duration2>&rhs)
 time.syn#49	time.syn	chrono	std::chrono::operator>=	call ret	constexpr bool operator> = (const time_point<Clock, Duration1>&lhs, const time_point<Clock, Duration2>&rhs)
-time.syn#50	time.syn	chrono	std::chrono::operator<=>	call	constexpr auto operator< = >(const time_point<Clock, Duration1>&lhs, const time_point<Clock, Duration2>&rhs)
+time.syn#50	time.syn	chrono	std::chrono::operator<=>	call	constexpr auto operator<=>(const time_point<Clock, Duration1>&lhs, const time_point<Clock, Duration2>&rhs)
 time.syn#51	time.syn	chrono	std::chrono::time_point_cast	call ret	constexpr time_point<Clock, ToDuration>time_point_cast(const time_point<Clock, Duration>&t)
 time.syn#52	time.syn	chrono	std::chrono::floor	call ret	constexpr time_point<Clock, ToDuration>floor(const time_point<Clock, Duration>&tp)
 time.syn#53	time.syn	chrono	std::chrono::ceil	call ret	constexpr time_point<Clock, ToDuration>ceil(const time_point<Clock, Duration>&tp)
@@ -3640,7 +3640,7 @@ time.syn#99	time.syn	chrono	std::chrono::clock_cast	call	auto clock_cast(const t
 time.syn#100	time.syn	chrono	std::chrono::last_spec	presence	struct last_spec
 time.syn#101	time.syn	chrono	std::chrono::day	presence	class day
 time.syn#102	time.syn	chrono	std::chrono::operator==	call ret noexcept	constexpr bool operator==(const day&x, const day&y)noexcept
-time.syn#103	time.syn	chrono	std::chrono::operator<=>	call ret noexcept	constexpr strong_ordering operator< = >(const day&x, const day&y)noexcept
+time.syn#103	time.syn	chrono	std::chrono::operator<=>	call ret noexcept	constexpr strong_ordering operator<=>(const day&x, const day&y)noexcept
 time.syn#104	time.syn	chrono	std::chrono::operator+	call ret noexcept	constexpr day operator+(const day&x, const days&y)noexcept
 time.syn#105	time.syn	chrono	std::chrono::operator+	call ret noexcept	constexpr day operator+(const days&x, const day&y)noexcept
 time.syn#106	time.syn	chrono	std::chrono::operator-	call ret noexcept	constexpr day operator-(const day&x, const days&y)noexcept
@@ -3650,7 +3650,7 @@ time.syn#109	time.syn	chrono	std::chrono::from_stream	call ret	basic_istream<cha
 time.syn#110	time.syn	chrono	std::chrono::from_stream	call (defaults)	basic_istream<charT, traits>&from_stream(basic_istream<charT, traits>&is, const charT*fmt, day&d, basic_string<charT, traits, Alloc>*abbrev = nullptr, minutes*offset = nullptr)
 time.syn#111	time.syn	chrono	std::chrono::month	presence	class month
 time.syn#112	time.syn	chrono	std::chrono::operator==	call ret noexcept	constexpr bool operator==(const month&x, const month&y)noexcept
-time.syn#113	time.syn	chrono	std::chrono::operator<=>	call ret noexcept	constexpr strong_ordering operator< = >(const month&x, const month&y)noexcept
+time.syn#113	time.syn	chrono	std::chrono::operator<=>	call ret noexcept	constexpr strong_ordering operator<=>(const month&x, const month&y)noexcept
 time.syn#114	time.syn	chrono	std::chrono::operator+	call ret noexcept	constexpr month operator+(const month&x, const months&y)noexcept
 time.syn#115	time.syn	chrono	std::chrono::operator+	call ret noexcept	constexpr month operator+(const months&x, const month&y)noexcept
 time.syn#116	time.syn	chrono	std::chrono::operator-	call ret noexcept	constexpr month operator-(const month&x, const months&y)noexcept
@@ -3660,7 +3660,7 @@ time.syn#119	time.syn	chrono	std::chrono::from_stream	call ret	basic_istream<cha
 time.syn#120	time.syn	chrono	std::chrono::from_stream	call (defaults)	basic_istream<charT, traits>&from_stream(basic_istream<charT, traits>&is, const charT*fmt, month&m, basic_string<charT, traits, Alloc>*abbrev = nullptr, minutes*offset = nullptr)
 time.syn#121	time.syn	chrono	std::chrono::year	presence	class year
 time.syn#122	time.syn	chrono	std::chrono::operator==	call ret noexcept	constexpr bool operator==(const year&x, const year&y)noexcept
-time.syn#123	time.syn	chrono	std::chrono::operator<=>	call ret noexcept	constexpr strong_ordering operator< = >(const year&x, const year&y)noexcept
+time.syn#123	time.syn	chrono	std::chrono::operator<=>	call ret noexcept	constexpr strong_ordering operator<=>(const year&x, const year&y)noexcept
 time.syn#124	time.syn	chrono	std::chrono::operator+	call ret noexcept	constexpr year operator+(const year&x, const years&y)noexcept
 time.syn#125	time.syn	chrono	std::chrono::operator+	call ret noexcept	constexpr year operator+(const years&x, const year&y)noexcept
 time.syn#126	time.syn	chrono	std::chrono::operator-	call ret noexcept	constexpr year operator-(const year&x, const years&y)noexcept
@@ -3685,13 +3685,13 @@ time.syn#144	time.syn	chrono	std::chrono::operator==	call ret noexcept	constexpr
 time.syn#145	time.syn	chrono	std::chrono::operator<<	call ret	basic_ostream<charT, traits>&operator<<(basic_ostream<charT, traits>&os, const weekday_last&wdl)
 time.syn#146	time.syn	chrono	std::chrono::month_day	presence	class month_day
 time.syn#147	time.syn	chrono	std::chrono::operator==	call ret noexcept	constexpr bool operator==(const month_day&x, const month_day&y)noexcept
-time.syn#148	time.syn	chrono	std::chrono::operator<=>	call ret noexcept	constexpr strong_ordering operator< = >(const month_day&x, const month_day&y)noexcept
+time.syn#148	time.syn	chrono	std::chrono::operator<=>	call ret noexcept	constexpr strong_ordering operator<=>(const month_day&x, const month_day&y)noexcept
 time.syn#149	time.syn	chrono	std::chrono::operator<<	call ret	basic_ostream<charT, traits>&operator<<(basic_ostream<charT, traits>&os, const month_day&md)
 time.syn#150	time.syn	chrono	std::chrono::from_stream	call ret	basic_istream<charT, traits>&from_stream(basic_istream<charT, traits>&is, const charT*fmt, month_day&md, basic_string<charT, traits, Alloc>*abbrev = nullptr, minutes*offset = nullptr)
 time.syn#151	time.syn	chrono	std::chrono::from_stream	call (defaults)	basic_istream<charT, traits>&from_stream(basic_istream<charT, traits>&is, const charT*fmt, month_day&md, basic_string<charT, traits, Alloc>*abbrev = nullptr, minutes*offset = nullptr)
 time.syn#152	time.syn	chrono	std::chrono::month_day_last	presence	class month_day_last
 time.syn#153	time.syn	chrono	std::chrono::operator==	call ret noexcept	constexpr bool operator==(const month_day_last&x, const month_day_last&y)noexcept
-time.syn#154	time.syn	chrono	std::chrono::operator<=>	call ret noexcept	constexpr strong_ordering operator< = >(const month_day_last&x, const month_day_last&y)noexcept
+time.syn#154	time.syn	chrono	std::chrono::operator<=>	call ret noexcept	constexpr strong_ordering operator<=>(const month_day_last&x, const month_day_last&y)noexcept
 time.syn#155	time.syn	chrono	std::chrono::operator<<	call ret	basic_ostream<charT, traits>&operator<<(basic_ostream<charT, traits>&os, const month_day_last&mdl)
 time.syn#156	time.syn	chrono	std::chrono::month_weekday	presence	class month_weekday
 time.syn#157	time.syn	chrono	std::chrono::operator==	call ret noexcept	constexpr bool operator==(const month_weekday&x, const month_weekday&y)noexcept
@@ -3701,7 +3701,7 @@ time.syn#160	time.syn	chrono	std::chrono::operator==	call ret noexcept	constexpr
 time.syn#161	time.syn	chrono	std::chrono::operator<<	call ret	basic_ostream<charT, traits>&operator<<(basic_ostream<charT, traits>&os, const month_weekday_last&mwdl)
 time.syn#162	time.syn	chrono	std::chrono::year_month	presence	class year_month
 time.syn#163	time.syn	chrono	std::chrono::operator==	call ret noexcept	constexpr bool operator==(const year_month&x, const year_month&y)noexcept
-time.syn#164	time.syn	chrono	std::chrono::operator<=>	call ret noexcept	constexpr strong_ordering operator< = >(const year_month&x, const year_month&y)noexcept
+time.syn#164	time.syn	chrono	std::chrono::operator<=>	call ret noexcept	constexpr strong_ordering operator<=>(const year_month&x, const year_month&y)noexcept
 time.syn#165	time.syn	chrono	std::chrono::operator+	call ret noexcept	constexpr year_month operator+(const year_month&ym, const months&dm)noexcept
 time.syn#166	time.syn	chrono	std::chrono::operator+	call ret noexcept	constexpr year_month operator+(const months&dm, const year_month&ym)noexcept
 time.syn#167	time.syn	chrono	std::chrono::operator-	call ret noexcept	constexpr year_month operator-(const year_month&ym, const months&dm)noexcept
@@ -3714,7 +3714,7 @@ time.syn#173	time.syn	chrono	std::chrono::from_stream	call ret	basic_istream<cha
 time.syn#174	time.syn	chrono	std::chrono::from_stream	call (defaults)	basic_istream<charT, traits>&from_stream(basic_istream<charT, traits>&is, const charT*fmt, year_month&ym, basic_string<charT, traits, Alloc>*abbrev = nullptr, minutes*offset = nullptr)
 time.syn#175	time.syn	chrono	std::chrono::year_month_day	presence	class year_month_day
 time.syn#176	time.syn	chrono	std::chrono::operator==	call ret noexcept	constexpr bool operator==(const year_month_day&x, const year_month_day&y)noexcept
-time.syn#177	time.syn	chrono	std::chrono::operator<=>	call ret noexcept	constexpr strong_ordering operator< = >(const year_month_day&x, const year_month_day&y)noexcept
+time.syn#177	time.syn	chrono	std::chrono::operator<=>	call ret noexcept	constexpr strong_ordering operator<=>(const year_month_day&x, const year_month_day&y)noexcept
 time.syn#178	time.syn	chrono	std::chrono::operator+	call ret noexcept	constexpr year_month_day operator+(const year_month_day&ymd, const months&dm)noexcept
 time.syn#179	time.syn	chrono	std::chrono::operator+	call ret noexcept	constexpr year_month_day operator+(const months&dm, const year_month_day&ymd)noexcept
 time.syn#180	time.syn	chrono	std::chrono::operator+	call ret noexcept	constexpr year_month_day operator+(const year_month_day&ymd, const years&dy)noexcept
@@ -3726,7 +3726,7 @@ time.syn#185	time.syn	chrono	std::chrono::from_stream	call ret	basic_istream<cha
 time.syn#186	time.syn	chrono	std::chrono::from_stream	call (defaults)	basic_istream<charT, traits>&from_stream(basic_istream<charT, traits>&is, const charT*fmt, year_month_day&ymd, basic_string<charT, traits, Alloc>*abbrev = nullptr, minutes*offset = nullptr)
 time.syn#187	time.syn	chrono	std::chrono::year_month_day_last	presence	class year_month_day_last
 time.syn#188	time.syn	chrono	std::chrono::operator==	call ret noexcept	constexpr bool operator==(const year_month_day_last&x, const year_month_day_last&y)noexcept
-time.syn#189	time.syn	chrono	std::chrono::operator<=>	call ret noexcept	constexpr strong_ordering operator< = >(const year_month_day_last&x, const year_month_day_last&y)noexcept
+time.syn#189	time.syn	chrono	std::chrono::operator<=>	call ret noexcept	constexpr strong_ordering operator<=>(const year_month_day_last&x, const year_month_day_last&y)noexcept
 time.syn#190	time.syn	chrono	std::chrono::operator+	call ret noexcept	constexpr year_month_day_last operator+(const year_month_day_last&ymdl, const months&dm)noexcept
 time.syn#191	time.syn	chrono	std::chrono::operator+	call ret noexcept	constexpr year_month_day_last operator+(const months&dm, const year_month_day_last&ymdl)noexcept
 time.syn#192	time.syn	chrono	std::chrono::operator+	call ret noexcept	constexpr year_month_day_last operator+(const year_month_day_last&ymdl, const years&dy)noexcept
@@ -3817,7 +3817,7 @@ time.syn#276	time.syn	chrono	std::chrono::choose::earliest	enumerator earliest	e
 time.syn#277	time.syn	chrono	std::chrono::choose::latest	enumerator latest	enum class choose
 time.syn#278	time.syn	chrono	std::chrono::time_zone	presence	class time_zone
 time.syn#279	time.syn	chrono	std::chrono::operator==	call ret noexcept	bool operator==(const time_zone&x, const time_zone&y)noexcept
-time.syn#280	time.syn	chrono	std::chrono::operator<=>	call ret noexcept	strong_ordering operator< = >(const time_zone&x, const time_zone&y)noexcept
+time.syn#280	time.syn	chrono	std::chrono::operator<=>	call ret noexcept	strong_ordering operator<=>(const time_zone&x, const time_zone&y)noexcept
 time.syn#281	time.syn	chrono	std::chrono::zoned_traits	presence	struct zoned_traits
 time.syn#282	time.syn	chrono	std::chrono::zoned_time	presence	class zoned_time
 time.syn#283	time.syn	chrono	std::chrono::zoned_seconds	type	using zoned_seconds = zoned_time<seconds>
@@ -3825,7 +3825,7 @@ time.syn#284	time.syn	chrono	std::chrono::operator==	call ret	bool operator==(co
 time.syn#285	time.syn	chrono	std::chrono::operator<<	call ret	basic_ostream<charT, traits>&operator<<(basic_ostream<charT, traits>&os, const zoned_time<Duration, TimeZonePtr>&t)
 time.syn#286	time.syn	chrono	std::chrono::leap_second	presence	class leap_second
 time.syn#287	time.syn	chrono	std::chrono::operator==	call ret	constexpr bool operator==(const leap_second&x, const leap_second&y)
-time.syn#288	time.syn	chrono	std::chrono::operator<=>	call ret	constexpr strong_ordering operator< = >(const leap_second&x, const leap_second&y)
+time.syn#288	time.syn	chrono	std::chrono::operator<=>	call ret	constexpr strong_ordering operator<=>(const leap_second&x, const leap_second&y)
 time.syn#289	time.syn	chrono	std::chrono::operator==	call ret	constexpr bool operator==(const leap_second&x, const sys_time<Duration>&y)
 time.syn#290	time.syn	chrono	std::chrono::operator<	call ret	constexpr bool operator<(const leap_second&x, const sys_time<Duration>&y)
 time.syn#291	time.syn	chrono	std::chrono::operator<	call ret	constexpr bool operator<(const sys_time<Duration>&x, const leap_second&y)
@@ -3835,10 +3835,10 @@ time.syn#294	time.syn	chrono	std::chrono::operator<=	call ret	constexpr bool ope
 time.syn#295	time.syn	chrono	std::chrono::operator<=	call ret	constexpr bool operator< = (const sys_time<Duration>&x, const leap_second&y)
 time.syn#296	time.syn	chrono	std::chrono::operator>=	call ret	constexpr bool operator> = (const leap_second&x, const sys_time<Duration>&y)
 time.syn#297	time.syn	chrono	std::chrono::operator>=	call ret	constexpr bool operator> = (const sys_time<Duration>&x, const leap_second&y)
-time.syn#298	time.syn	chrono	std::chrono::operator<=>	call	requires three_way_comparable_with<sys_seconds, sys_time<Duration>>constexpr auto operator< = >(const leap_second&x, const sys_time<Duration>&y)
+time.syn#298	time.syn	chrono	std::chrono::operator<=>	call	requires three_way_comparable_with<sys_seconds, sys_time<Duration>>constexpr auto operator<=>(const leap_second&x, const sys_time<Duration>&y)
 time.syn#299	time.syn	chrono	std::chrono::time_zone_link	presence	class time_zone_link
 time.syn#300	time.syn	chrono	std::chrono::operator==	call ret	bool operator==(const time_zone_link&x, const time_zone_link&y)
-time.syn#301	time.syn	chrono	std::chrono::operator<=>	call ret	strong_ordering operator< = >(const time_zone_link&x, const time_zone_link&y)
+time.syn#301	time.syn	chrono	std::chrono::operator<=>	call ret	strong_ordering operator<=>(const time_zone_link&x, const time_zone_link&y)
 time.syn#302	time.syn	chrono	std::chrono::local_time_format	call	⟨local-time-format-t⟩<Duration>local_time_format(local_time<Duration>time, const string*abbrev = nullptr, const seconds*offset_sec = nullptr)
 time.syn#303	time.syn	chrono	std::chrono::local_time_format	call (defaults)	⟨local-time-format-t⟩<Duration>local_time_format(local_time<Duration>time, const string*abbrev = nullptr, const seconds*offset_sec = nullptr)
 time.syn#304	time.syn	chrono	std::formatter<chrono::duration<long long,ratio<1>>,char>	specialization enabled	struct formatter<chrono::duration<Rep, Period>, charT>
@@ -4686,14 +4686,14 @@ istream.general#49	istream.general	istream	std::basic_istream::operator=	call re
 istream.general#50	istream.general	istream	std::basic_istream::swap	call ret	void swap(basic_istream&rhs)
 istream.general#51	istream.general	complex	std::operator>>	call ret	basic_istream<charT, traits>&operator>>(basic_istream<charT, traits>&, charT&)
 istream.general#52	istream.general	complex	std::operator>>	call ret	basic_istream<charT, traits>&operator>>(basic_istream<charT, traits>&, charT(&)[N])
-istream.sentry#1	istream.sentry	istream	std::basic_istream<char,char_traits<char>>	specialization complete	class basic_istream<charT, traits>::sentry
-istream.sentry#2	istream.sentry	istream	std::basic_istream::sentry	call	explicit sentry(basic_istream&is, bool noskipws = false)
-istream.sentry#3	istream.sentry	istream	std::basic_istream::sentry	call (defaults)	explicit sentry(basic_istream&is, bool noskipws = false)
-istream.sentry#4	istream.sentry	istream	std::basic_istream::~sentry	destructor	~sentry()
-istream.sentry#5	istream.sentry	istream	std::basic_istream::operator bool	call	explicit operator bool()const
-istream.sentry#6	istream.sentry	istream	std::basic_istream::operator bool	explicit	explicit operator bool()const
-istream.sentry#7	istream.sentry	istream	std::basic_istream::sentry	deleted call	sentry(const sentry&) = delete
-istream.sentry#8	istream.sentry	istream	std::basic_istream::operator=	deleted call	sentry&operator = (const sentry&) = delete
+istream.sentry#1	istream.sentry	print	std::basic_istream::sentry	presence	class basic_istream<charT, traits>::sentry
+istream.sentry#2	istream.sentry	istream	std::basic_istream::sentry::sentry	ctor	explicit sentry(basic_istream&is, bool noskipws = false)
+istream.sentry#3	istream.sentry	istream	std::basic_istream::sentry::sentry	ctor (defaults) explicit	explicit sentry(basic_istream&is, bool noskipws = false)
+istream.sentry#4	istream.sentry	istream	std::basic_istream::sentry::~sentry	destructor	~sentry()
+istream.sentry#5	istream.sentry	istream	std::basic_istream::sentry::operator bool	call	explicit operator bool()const
+istream.sentry#6	istream.sentry	istream	std::basic_istream::sentry::operator bool	explicit	explicit operator bool()const
+istream.sentry#7	istream.sentry	istream	std::basic_istream::sentry::sentry	deleted ctor	sentry(const sentry&) = delete
+istream.sentry#8	istream.sentry	istream	std::basic_istream::sentry::operator=	deleted call	sentry&operator = (const sentry&) = delete
 iostreamclass.general#1	iostreamclass.general	istream	std::basic_iostream	presence	class basic_iostream:public basic_istream<charT, traits>, public basic_ostream<charT, traits>
 iostreamclass.general#2	iostreamclass.general	istream	std::basic_iostream	base basic_istream<char,char_traits<char>>	class basic_iostream:public basic_istream<charT, traits>, public basic_ostream<charT, traits>
 iostreamclass.general#3	iostreamclass.general	istream	std::basic_iostream	base basic_ostream<char,char_traits<char>>	class basic_iostream:public basic_istream<charT, traits>, public basic_ostream<charT, traits>
@@ -4764,13 +4764,13 @@ ostream.general#54	ostream.general	regex	std::operator<<	deleted call	basic_ostr
 ostream.general#55	ostream.general	regex	std::operator<<	deleted call	basic_ostream<wchar_t, traits>&operator<<(basic_ostream<wchar_t, traits>&, const char8_t*) = delete
 ostream.general#56	ostream.general	regex	std::operator<<	deleted call	basic_ostream<wchar_t, traits>&operator<<(basic_ostream<wchar_t, traits>&, const char16_t*) = delete
 ostream.general#57	ostream.general	regex	std::operator<<	deleted call	basic_ostream<wchar_t, traits>&operator<<(basic_ostream<wchar_t, traits>&, const char32_t*) = delete
-ostream.sentry#1	ostream.sentry	ostream	std::basic_ostream<char,char_traits<char>>	specialization complete	class basic_ostream<charT, traits>::sentry
-ostream.sentry#2	ostream.sentry	ostream	std::basic_ostream::sentry	call	explicit sentry(basic_ostream&os)
-ostream.sentry#3	ostream.sentry	ostream	std::basic_ostream::~sentry	destructor	~sentry()
-ostream.sentry#4	ostream.sentry	ostream	std::basic_ostream::operator bool	call	explicit operator bool()const
-ostream.sentry#5	ostream.sentry	ostream	std::basic_ostream::operator bool	explicit	explicit operator bool()const
-ostream.sentry#6	ostream.sentry	ostream	std::basic_ostream::sentry	deleted call	sentry(const sentry&) = delete
-ostream.sentry#7	ostream.sentry	ostream	std::basic_ostream::operator=	deleted call	sentry&operator = (const sentry&) = delete
+ostream.sentry#1	ostream.sentry	print	std::basic_ostream::sentry	presence	class basic_ostream<charT, traits>::sentry
+ostream.sentry#2	ostream.sentry	ostream	std::basic_ostream::sentry::sentry	ctor explicit	explicit sentry(basic_ostream&os)
+ostream.sentry#3	ostream.sentry	ostream	std::basic_ostream::sentry::~sentry	destructor	~sentry()
+ostream.sentry#4	ostream.sentry	ostream	std::basic_ostream::sentry::operator bool	call	explicit operator bool()const
+ostream.sentry#5	ostream.sentry	ostream	std::basic_ostream::sentry::operator bool	explicit	explicit operator bool()const
+ostream.sentry#6	ostream.sentry	ostream	std::basic_ostream::sentry::sentry	deleted ctor	sentry(const sentry&) = delete
+ostream.sentry#7	ostream.sentry	ostream	std::basic_ostream::sentry::operator=	deleted call	sentry&operator = (const sentry&) = delete
 sstream.syn#1	sstream.syn	sstream	std::basic_stringbuf	presence	class basic_stringbuf
 sstream.syn#2	sstream.syn	sstream	std::swap	call ret	void swap(basic_stringbuf<charT, traits, Allocator>&x, basic_stringbuf<charT, traits, Allocator>&y)noexcept(noexcept(x.swap(y)))
 sstream.syn#3	sstream.syn	sstream	std::stringbuf	type	using stringbuf = basic_stringbuf<char>
@@ -5416,7 +5416,7 @@ fs.class.path.general#44	fs.class.path.general	filesystem	std::filesystem::path:
 fs.class.path.general#45	fs.class.path.general	filesystem	std::filesystem::path::replace_extension	call (defaults)	path&replace_extension(const path&replacement = path())
 fs.class.path.general#46	fs.class.path.general	filesystem	std::filesystem::path::swap	call ret noexcept	void swap(path&rhs)noexcept
 fs.class.path.general#47	fs.class.path.general	filesystem	std::filesystem::path::operator==	call ret noexcept	friend bool operator==(const path&lhs, const path&rhs)noexcept
-fs.class.path.general#48	fs.class.path.general	filesystem	std::filesystem::path::operator<=>	call ret noexcept	friend strong_ordering operator< = >(const path&lhs, const path&rhs)noexcept
+fs.class.path.general#48	fs.class.path.general	filesystem	std::filesystem::path::operator<=>	call ret noexcept	friend strong_ordering operator<=>(const path&lhs, const path&rhs)noexcept
 fs.class.path.general#49	fs.class.path.general	filesystem	std::filesystem::path::operator/	call ret	friend path operator/(const path&lhs, const path&rhs)
 fs.class.path.general#50	fs.class.path.general	filesystem	std::filesystem::path::native	call ret noexcept	const string_type&native()const noexcept
 fs.class.path.general#51	fs.class.path.general	filesystem	std::filesystem::path::c_str	call ret noexcept	const value_type*c_str()const noexcept
@@ -5540,7 +5540,7 @@ fs.class.directory.entry.general#43	fs.class.directory.entry.general	filesystem	
 fs.class.directory.entry.general#44	fs.class.directory.entry.general	filesystem	std::filesystem::directory_entry::symlink_status	call ret	file_status symlink_status()const
 fs.class.directory.entry.general#45	fs.class.directory.entry.general	filesystem	std::filesystem::directory_entry::symlink_status	call ret noexcept	file_status symlink_status(error_code&ec)const noexcept
 fs.class.directory.entry.general#46	fs.class.directory.entry.general	filesystem	std::filesystem::directory_entry::operator==	call ret noexcept	bool operator==(const directory_entry&rhs)const noexcept
-fs.class.directory.entry.general#47	fs.class.directory.entry.general	filesystem	std::filesystem::directory_entry::operator<=>	call ret noexcept	strong_ordering operator< = >(const directory_entry&rhs)const noexcept
+fs.class.directory.entry.general#47	fs.class.directory.entry.general	filesystem	std::filesystem::directory_entry::operator<=>	call ret noexcept	strong_ordering operator<=>(const directory_entry&rhs)const noexcept
 fs.class.directory.entry.general#48	fs.class.directory.entry.general	filesystem	std::filesystem::directory_entry::operator<<	call ret	friend basic_ostream<charT, traits>&operator<<(basic_ostream<charT, traits>&os, const directory_entry&d)
 fs.class.directory.iterator.general#1	fs.class.directory.iterator.general	filesystem	std::filesystem::directory_iterator	presence	class directory_iterator
 fs.class.directory.iterator.general#2	fs.class.directory.iterator.general	filesystem	std::filesystem::directory_iterator::iterator_category	type	using iterator_category = input_iterator_tag
@@ -5724,8 +5724,8 @@ thread.syn#5	thread.syn	thread	std::this_thread::yield	call ret noexcept	void yi
 thread.syn#6	thread.syn	thread	std::this_thread::sleep_until	call ret	void sleep_until(const chrono::time_point<Clock, Duration>&abs_time)
 thread.syn#7	thread.syn	thread	std::this_thread::sleep_for	call ret	void sleep_for(const chrono::duration<Rep, Period>&rel_time)
 thread.thread.class.general#1	thread.thread.class.general	thread	std::thread	presence	class thread
-thread.thread.class.general#2	thread.thread.class.general	thread	std::thread::name_hint	call ret	name_hint(const T*)->name_hint<T>
-thread.thread.class.general#3	thread.thread.class.general	thread	std::thread::name_hint	call ret	name_hint(basic_string<T>)->name_hint<T>
+thread.thread.class.general#2	thread.thread.class.general	thread	std::thread::name_hint	deduction guide	name_hint(const T*)->name_hint<T>
+thread.thread.class.general#3	thread.thread.class.general	thread	std::thread::name_hint	deduction guide	name_hint(basic_string<T>)->name_hint<T>
 thread.thread.class.general#4	thread.thread.class.general	thread	std::thread::native_handle_type	type exists  (exposition-only or unspecified: implementation-defined)	using native_handle_type = ⟨implementation-defined⟩
 thread.thread.class.general#5	thread.thread.class.general	thread	std::thread::thread	ctor noexcept	thread()noexcept
 thread.thread.class.general#6	thread.thread.class.general	thread	std::thread::thread	ctor explicit	explicit thread(Args&&...args)
@@ -5747,7 +5747,7 @@ thread.attributes.size#2	thread.attributes.size	thread	std::thread::stack_size_h
 thread.thread.id#1	thread.thread.id	thread	std::thread::id	presence	class thread::id
 thread.thread.id#2	thread.thread.id	thread	std::thread::id::id	ctor noexcept	id()noexcept
 thread.thread.id#3	thread.thread.id	regex	std::operator==	call ret noexcept	bool operator==(thread::id x, thread::id y)noexcept
-thread.thread.id#4	thread.thread.id	regex	std::operator<=>	call ret noexcept	strong_ordering operator< = >(thread::id x, thread::id y)noexcept
+thread.thread.id#4	thread.thread.id	regex	std::operator<=>	call ret noexcept	strong_ordering operator<=>(thread::id x, thread::id y)noexcept
 thread.thread.id#5	thread.thread.id	regex	std::operator<<	call ret	basic_ostream<charT, traits>&operator<<(basic_ostream<charT, traits>&out, thread::id id)
 thread.thread.id#6	thread.thread.id	format	std::formatter<thread::id,char>	specialization enabled	struct formatter<thread::id, charT>
 thread.thread.id#7	thread.thread.id	text_encoding	std::hash	presence	struct hash
@@ -9420,8 +9420,6 @@ thread.mutex.class#5	thread.mutex.class	mutex	std::mutex::operator=	deleted call
 thread.mutex.class#6	thread.mutex.class	mutex	std::mutex::lock	call ret	void lock()
 thread.mutex.class#7	thread.mutex.class	mutex	std::mutex::try_lock	call ret	bool try_lock()
 thread.mutex.class#8	thread.mutex.class	mutex	std::mutex::unlock	call ret	void unlock()
-thread.mutex.class#9	thread.mutex.class	mutex	std::mutex::native_handle_type	type exists  (exposition-only or unspecified: implementation-defined)	using native_handle_type = ⟨implementation-defined⟩
-thread.mutex.class#10	thread.mutex.class	mutex	std::mutex::native_handle	call ret	native_handle_type native_handle()
 thread.mutex.recursive#1	thread.mutex.recursive	mutex	std::recursive_mutex	presence	class recursive_mutex
 thread.mutex.recursive#2	thread.mutex.recursive	mutex	std::recursive_mutex::recursive_mutex	ctor	recursive_mutex()
 thread.mutex.recursive#3	thread.mutex.recursive	mutex	std::recursive_mutex::~recursive_mutex	destructor	~recursive_mutex()
@@ -9430,8 +9428,6 @@ thread.mutex.recursive#5	thread.mutex.recursive	mutex	std::recursive_mutex::oper
 thread.mutex.recursive#6	thread.mutex.recursive	mutex	std::recursive_mutex::lock	call ret	void lock()
 thread.mutex.recursive#7	thread.mutex.recursive	mutex	std::recursive_mutex::try_lock	call ret noexcept	bool try_lock()noexcept
 thread.mutex.recursive#8	thread.mutex.recursive	mutex	std::recursive_mutex::unlock	call ret	void unlock()
-thread.mutex.recursive#9	thread.mutex.recursive	mutex	std::recursive_mutex::native_handle_type	type exists  (exposition-only or unspecified: implementation-defined)	using native_handle_type = ⟨implementation-defined⟩
-thread.mutex.recursive#10	thread.mutex.recursive	mutex	std::recursive_mutex::native_handle	call ret	native_handle_type native_handle()
 thread.timedmutex.class#1	thread.timedmutex.class	mutex	std::timed_mutex	presence	class timed_mutex
 thread.timedmutex.class#2	thread.timedmutex.class	mutex	std::timed_mutex::timed_mutex	ctor	timed_mutex()
 thread.timedmutex.class#3	thread.timedmutex.class	mutex	std::timed_mutex::~timed_mutex	destructor	~timed_mutex()
@@ -9442,8 +9438,6 @@ thread.timedmutex.class#7	thread.timedmutex.class	mutex	std::timed_mutex::try_lo
 thread.timedmutex.class#8	thread.timedmutex.class	mutex	std::timed_mutex::try_lock_for	call ret	bool try_lock_for(const chrono::duration<Rep, Period>&rel_time)
 thread.timedmutex.class#9	thread.timedmutex.class	mutex	std::timed_mutex::try_lock_until	call ret	bool try_lock_until(const chrono::time_point<Clock, Duration>&abs_time)
 thread.timedmutex.class#10	thread.timedmutex.class	mutex	std::timed_mutex::unlock	call ret	void unlock()
-thread.timedmutex.class#11	thread.timedmutex.class	mutex	std::timed_mutex::native_handle_type	type exists  (exposition-only or unspecified: implementation-defined)	using native_handle_type = ⟨implementation-defined⟩
-thread.timedmutex.class#12	thread.timedmutex.class	mutex	std::timed_mutex::native_handle	call ret	native_handle_type native_handle()
 thread.timedmutex.recursive#1	thread.timedmutex.recursive	mutex	std::recursive_timed_mutex	presence	class recursive_timed_mutex
 thread.timedmutex.recursive#2	thread.timedmutex.recursive	mutex	std::recursive_timed_mutex::recursive_timed_mutex	ctor	recursive_timed_mutex()
 thread.timedmutex.recursive#3	thread.timedmutex.recursive	mutex	std::recursive_timed_mutex::~recursive_timed_mutex	destructor	~recursive_timed_mutex()
@@ -9454,8 +9448,6 @@ thread.timedmutex.recursive#7	thread.timedmutex.recursive	mutex	std::recursive_t
 thread.timedmutex.recursive#8	thread.timedmutex.recursive	mutex	std::recursive_timed_mutex::try_lock_for	call ret	bool try_lock_for(const chrono::duration<Rep, Period>&rel_time)
 thread.timedmutex.recursive#9	thread.timedmutex.recursive	mutex	std::recursive_timed_mutex::try_lock_until	call ret	bool try_lock_until(const chrono::time_point<Clock, Duration>&abs_time)
 thread.timedmutex.recursive#10	thread.timedmutex.recursive	mutex	std::recursive_timed_mutex::unlock	call ret	void unlock()
-thread.timedmutex.recursive#11	thread.timedmutex.recursive	mutex	std::recursive_timed_mutex::native_handle_type	type exists  (exposition-only or unspecified: implementation-defined)	using native_handle_type = ⟨implementation-defined⟩
-thread.timedmutex.recursive#12	thread.timedmutex.recursive	mutex	std::recursive_timed_mutex::native_handle	call ret	native_handle_type native_handle()
 thread.sharedmutex.class#1	thread.sharedmutex.class	shared_mutex	std::shared_mutex	presence	class shared_mutex
 thread.sharedmutex.class#2	thread.sharedmutex.class	shared_mutex	std::shared_mutex::shared_mutex	ctor	shared_mutex()
 thread.sharedmutex.class#3	thread.sharedmutex.class	shared_mutex	std::shared_mutex::~shared_mutex	destructor	~shared_mutex()
@@ -9467,8 +9459,6 @@ thread.sharedmutex.class#8	thread.sharedmutex.class	shared_mutex	std::shared_mut
 thread.sharedmutex.class#9	thread.sharedmutex.class	shared_mutex	std::shared_mutex::lock_shared	call ret	void lock_shared()
 thread.sharedmutex.class#10	thread.sharedmutex.class	shared_mutex	std::shared_mutex::try_lock_shared	call ret	bool try_lock_shared()
 thread.sharedmutex.class#11	thread.sharedmutex.class	shared_mutex	std::shared_mutex::unlock_shared	call ret	void unlock_shared()
-thread.sharedmutex.class#12	thread.sharedmutex.class	shared_mutex	std::shared_mutex::native_handle_type	type exists  (exposition-only or unspecified: implementation-defined)	using native_handle_type = ⟨implementation-defined⟩
-thread.sharedmutex.class#13	thread.sharedmutex.class	shared_mutex	std::shared_mutex::native_handle	call ret	native_handle_type native_handle()
 thread.sharedtimedmutex.class#1	thread.sharedtimedmutex.class	shared_mutex	std::shared_timed_mutex	presence	class shared_timed_mutex
 thread.sharedtimedmutex.class#2	thread.sharedtimedmutex.class	shared_mutex	std::shared_timed_mutex::shared_timed_mutex	ctor	shared_timed_mutex()
 thread.sharedtimedmutex.class#3	thread.sharedtimedmutex.class	shared_mutex	std::shared_timed_mutex::~shared_timed_mutex	destructor	~shared_timed_mutex()
@@ -9577,8 +9567,6 @@ thread.condition.condvar#10	thread.condition.condvar	condition_variable	std::con
 thread.condition.condvar#11	thread.condition.condvar	condition_variable	std::condition_variable::wait_until	call ret	bool wait_until(unique_lock<mutex>&lock, chrono::time_point<Clock, Duration>abs_time, Predicate pred)
 thread.condition.condvar#12	thread.condition.condvar	condition_variable	std::condition_variable::wait_for	call ret	cv_status wait_for(unique_lock<mutex>&lock, chrono::duration<Rep, Period>rel_time)
 thread.condition.condvar#13	thread.condition.condvar	condition_variable	std::condition_variable::wait_for	call ret	bool wait_for(unique_lock<mutex>&lock, chrono::duration<Rep, Period>rel_time, Predicate pred)
-thread.condition.condvar#14	thread.condition.condvar	condition_variable	std::condition_variable::native_handle_type	type exists  (exposition-only or unspecified: implementation-defined)	using native_handle_type = ⟨implementation-defined⟩
-thread.condition.condvar#15	thread.condition.condvar	condition_variable	std::condition_variable::native_handle	call ret	native_handle_type native_handle()
 thread.condition.condvarany.general#1	thread.condition.condvarany.general	condition_variable	std::condition_variable_any	presence	class condition_variable_any
 thread.condition.condvarany.general#2	thread.condition.condvarany.general	condition_variable	std::condition_variable_any::condition_variable_any	ctor	condition_variable_any()
 thread.condition.condvarany.general#3	thread.condition.condvarany.general	condition_variable	std::condition_variable_any::~condition_variable_any	destructor	~condition_variable_any()
@@ -9972,20 +9960,20 @@ task.class#7	task.class	execution	std::execution::task::error_types	type exists 
 task.class#8	task.class	execution	std::execution::task::task	ctor noexcept	task(task&&)noexcept
 task.class#9	task.class	execution	std::execution::task::~task	destructor	~task()
 task.class#10	task.class	execution	std::execution::task::connect	call	⟨state⟩<Rcvr>connect(Rcvr&&rcvr)&&
-task.promise#1	task.promise	execution	std::execution::task<int,spec_probe::task_env>	specialization complete	class task<T, Environment>::promise_type
-task.promise#2	task.promise	execution	std::execution::task::get_return_object	call ret noexcept	task get_return_object()noexcept
-task.promise#3	task.promise	execution	std::execution::task::initial_suspend	call ret noexcept	static constexpr suspend_always initial_suspend()noexcept
-task.promise#4	task.promise	execution	std::execution::task::final_suspend	call noexcept	auto final_suspend()noexcept
-task.promise#5	task.promise	execution	std::execution::task::unhandled_exception	call ret	void unhandled_exception()
-task.promise#6	task.promise	execution	std::execution::task::unhandled_stopped	call ret noexcept	coroutine_handle<>unhandled_stopped()noexcept
-task.promise#7	task.promise	execution	std::execution::task::return_void	call ret	void return_void()
-task.promise#8	task.promise	execution	std::execution::task::return_value	call ret	void return_value(V&&value)
-task.promise#9	task.promise	execution	std::execution::task::yield_value	call	⟨unspecified⟩ yield_value(with_error<E>error)
-task.promise#10	task.promise	execution	std::execution::task::await_transform	call	auto await_transform(Sender&&sndr)
-task.promise#11	task.promise	execution	std::execution::task::get_env	call noexcept	⟨unspecified⟩ get_env()const noexcept
-task.promise#12	task.promise	execution	std::execution::task::operator new	call ret	void*operator new(size_t size)
-task.promise#13	task.promise	execution	std::execution::task::operator new	call ret	void*operator new(size_t size, allocator_arg_t, Alloc alloc, Args&&...)
-task.promise#14	task.promise	execution	std::execution::task::operator delete	call ret noexcept	void operator delete(void*pointer, size_t size)noexcept
+task.promise#1	task.promise	execution	std::execution::task::promise_type	presence	class task<T, Environment>::promise_type
+task.promise#2	task.promise	execution	std::execution::task::promise_type::get_return_object	call ret noexcept	task get_return_object()noexcept
+task.promise#3	task.promise	execution	std::execution::task::promise_type::initial_suspend	call ret noexcept	static constexpr suspend_always initial_suspend()noexcept
+task.promise#4	task.promise	execution	std::execution::task::promise_type::final_suspend	call noexcept	auto final_suspend()noexcept
+task.promise#5	task.promise	execution	std::execution::task::promise_type::unhandled_exception	call ret	void unhandled_exception()
+task.promise#6	task.promise	execution	std::execution::task::promise_type::unhandled_stopped	call ret noexcept	coroutine_handle<>unhandled_stopped()noexcept
+task.promise#7	task.promise	execution	std::execution::task::promise_type::return_void	call ret	void return_void()
+task.promise#8	task.promise	execution	std::execution::task::promise_type::return_value	call ret	void return_value(V&&value)
+task.promise#9	task.promise	execution	std::execution::task::promise_type::yield_value	call	⟨unspecified⟩ yield_value(with_error<E>error)
+task.promise#10	task.promise	execution	std::execution::task::promise_type::await_transform	call	auto await_transform(Sender&&sndr)
+task.promise#11	task.promise	execution	std::execution::task::promise_type::get_env	call noexcept	⟨unspecified⟩ get_env()const noexcept
+task.promise#12	task.promise	execution	std::execution::task::promise_type::operator new	call ret	void*operator new(size_t size)
+task.promise#13	task.promise	execution	std::execution::task::promise_type::operator new	call ret	void*operator new(size_t size, allocator_arg_t, Alloc alloc, Args&&...)
+task.promise#14	task.promise	execution	std::execution::task::promise_type::operator delete	call ret noexcept	void operator delete(void*pointer, size_t size)noexcept
 exec.scope.concepts#1	exec.scope.concepts	execution	std::execution::scope_association	presence	concept scope_association = movable<Assoc>&&is_nothrow_move_constructible_v<Assoc>&&is_nothrow_move_assignable_v<Assoc>&&default_initializable<Assoc>&&requires(const Assoc assoc){{static_cast<bool>(assoc)}noexcept;{assoc.try_associate()}->same_as<Assoc>;}
 exec.scope.concepts#2	exec.scope.concepts	execution	std::execution::scope_token	presence	concept scope_token = copyable<Token>&&requires(const Token token){{token.try_associate()}->scope_association;{token.wrap(declval<⟨test-sender⟩>())}->sender_in<⟨test-env⟩>;}
 exec.scope.simple.counting.general#1	exec.scope.simple.counting.general	execution	std::execution::simple_counting_scope	presence	class simple_counting_scope
@@ -10048,7 +10036,7 @@ depr.variant#1	depr.variant	variant	std::variant_size<volatile variant<int>>	spe
 depr.variant#2	depr.variant	variant	std::variant_size<const volatile variant<int>>	specialization complete	struct variant_size<const volatile T>
 depr.variant#3	depr.variant	variant	std::variant_alternative<0,volatile variant<int>>	specialization complete	struct variant_alternative<I, volatile T>
 depr.variant#4	depr.variant	variant	std::variant_alternative<0,const volatile variant<int>>	specialization complete	struct variant_alternative<I, const volatile T>
-depr.vector.bool.swap#1	depr.vector.bool.swap	vector	std::vector<bool,allocator<char>>	specialization complete	class vector<bool, Allocator>
+depr.vector.bool.swap#1	depr.vector.bool.swap	vector	std::vector<bool,allocator<bool>>	specialization complete	class vector<bool, Allocator>
 depr.vector.bool.swap#2	depr.vector.bool.swap	vector	std::vector::swap	call ret noexcept	static constexpr void swap(reference x, reference y)noexcept
 depr.iterator#1	depr.iterator	iterator	std::iterator	presence	struct iterator
 depr.iterator#2	depr.iterator	iterator	std::iterator::iterator_category	type	using iterator_category = Category

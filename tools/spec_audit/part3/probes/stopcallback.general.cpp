@@ -5,8 +5,8 @@
 #include "../probe_support.hpp"
 namespace p0 { using namespace std; using std::stop_callback; } // stopcallback.general#1 presence
 namespace p1 { using namespace std; static_assert(spec_probe::same<typename std::stop_callback<spec_probe::callback>::callback_type, spec_probe::callback>); } // stopcallback.general#2 type
-namespace p2 { using namespace std; static_assert(std::is_constructible_v<std::stop_callback<spec_probe::callback>, const stop_token&, spec_probe::callback&&>); } // stopcallback.general#3 ctor
-namespace p3 { using namespace std; static_assert(std::is_constructible_v<std::stop_callback<spec_probe::callback>, stop_token&&, spec_probe::callback&&>); } // stopcallback.general#4 ctor
+namespace p2 { using namespace std; template<class Z> concept c = requires { ::new std::stop_callback<spec_probe::callback>(spec_probe::dv<spec_probe::dep<Z, const stop_token&>>(), spec_probe::dv<spec_probe::dep<Z, spec_probe::callback&&>>()); }; static_assert(c<void>); } // stopcallback.general#3 ctor
+namespace p3 { using namespace std; template<class Z> concept c = requires { ::new std::stop_callback<spec_probe::callback>(spec_probe::dv<spec_probe::dep<Z, stop_token&&>>(), spec_probe::dv<spec_probe::dep<Z, spec_probe::callback&&>>()); }; static_assert(c<void>); } // stopcallback.general#4 ctor
 namespace p4 { using namespace std; static_assert(std::is_nothrow_destructible_v<std::stop_callback<spec_probe::callback>>); } // stopcallback.general#5 destructor
 namespace p5 { using namespace std; static_assert(!std::is_constructible_v<std::stop_callback<spec_probe::callback>, const std::stop_callback<spec_probe::callback>&>); } // stopcallback.general#6 deleted ctor
 namespace p6 { using namespace std; static_assert(!std::is_constructible_v<std::stop_callback<spec_probe::callback>, std::stop_callback<spec_probe::callback>&&>); } // stopcallback.general#7 deleted ctor

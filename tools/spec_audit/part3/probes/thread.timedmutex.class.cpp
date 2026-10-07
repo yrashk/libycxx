@@ -4,7 +4,7 @@
 #define SPEC_PROBE_mutex
 #include "../probe_support.hpp"
 namespace p0 { using namespace std; using std::timed_mutex; } // thread.timedmutex.class#1 presence
-namespace p1 { using namespace std; static_assert(std::is_constructible_v<std::timed_mutex>); } // thread.timedmutex.class#2 ctor
+namespace p1 { using namespace std; template<class Z> concept c = requires { ::new std::timed_mutex(); }; static_assert(c<void>); } // thread.timedmutex.class#2 ctor
 namespace p2 { using namespace std; static_assert(std::is_nothrow_destructible_v<std::timed_mutex>); } // thread.timedmutex.class#3 destructor
 namespace p3 { using namespace std; static_assert(!std::is_constructible_v<std::timed_mutex, const std::timed_mutex&>); } // thread.timedmutex.class#4 deleted ctor
 namespace p4 { using namespace std; template<class Z> concept c = !requires { spec_probe::dv<spec_probe::dep<Z, std::timed_mutex&>>().operator=(spec_probe::dv<spec_probe::dep<Z, const std::timed_mutex&>>()); }; static_assert(c<void>); } // thread.timedmutex.class#5 deleted call
@@ -13,5 +13,3 @@ namespace p6 { using namespace std; template<class Z> concept c = requires { { s
 namespace p7 { using namespace std; template<class Z> concept c = requires { { spec_probe::dv<spec_probe::dep<Z, std::timed_mutex&>>().try_lock_for(spec_probe::dv<spec_probe::dep<Z, const chrono::duration<long long,ratio<1>>&>>()) } -> spec_probe::same<bool>; }; static_assert(c<void>); } // thread.timedmutex.class#8 call ret
 namespace p8 { using namespace std; template<class Z> concept c = requires { { spec_probe::dv<spec_probe::dep<Z, std::timed_mutex&>>().try_lock_until(spec_probe::dv<spec_probe::dep<Z, const chrono::time_point<chrono::system_clock,chrono::seconds>&>>()) } -> spec_probe::same<bool>; }; static_assert(c<void>); } // thread.timedmutex.class#9 call ret
 namespace p9 { using namespace std; template<class Z> concept c = requires { { spec_probe::dv<spec_probe::dep<Z, std::timed_mutex&>>().unlock() } -> spec_probe::same<void>; }; static_assert(c<void>); } // thread.timedmutex.class#10 call ret
-namespace p10 { using namespace std; using T = std::timed_mutex::native_handle_type; } // thread.timedmutex.class#11 type exists  (exposition-only or unspecified: implementation-defined)
-namespace p11 { using namespace std; template<class Z> concept c = requires { { spec_probe::dv<spec_probe::dep<Z, std::timed_mutex&>>().native_handle() } -> spec_probe::same<std::timed_mutex::native_handle_type>; }; static_assert(c<void>); } // thread.timedmutex.class#12 call ret

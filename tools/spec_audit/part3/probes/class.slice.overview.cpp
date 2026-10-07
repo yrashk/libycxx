@@ -4,9 +4,9 @@
 #define SPEC_PROBE_valarray
 #include "../probe_support.hpp"
 namespace p0 { using namespace std; using std::slice; } // class.slice.overview#1 presence
-namespace p1 { using namespace std; static_assert(std::is_constructible_v<std::slice>); } // class.slice.overview#2 ctor
-namespace p2 { using namespace std; static_assert(std::is_constructible_v<std::slice, size_t, size_t, size_t>); } // class.slice.overview#3 ctor
-namespace p3 { using namespace std; static_assert(std::is_constructible_v<std::slice, const std::slice&> && std::is_convertible_v<const std::slice&, std::slice>); } // class.slice.overview#4 ctor
+namespace p1 { using namespace std; template<class Z> concept c = requires { ::new std::slice(); }; static_assert(c<void>); } // class.slice.overview#2 ctor
+namespace p2 { using namespace std; template<class Z> concept c = requires { ::new std::slice(spec_probe::dv<spec_probe::dep<Z, size_t>>(), spec_probe::dv<spec_probe::dep<Z, size_t>>(), spec_probe::dv<spec_probe::dep<Z, size_t>>()); }; static_assert(c<void>); } // class.slice.overview#3 ctor
+namespace p3 { using namespace std; template<class Z> concept c = requires { ::new std::slice(spec_probe::dv<spec_probe::dep<Z, const std::slice&>>()); } && std::is_convertible_v<const std::slice&, std::slice>; static_assert(c<void>); } // class.slice.overview#4 ctor
 namespace p4 { using namespace std; template<class Z> concept c = requires { { spec_probe::dv<spec_probe::dep<Z, const std::slice&>>().start() } -> spec_probe::same<size_t>; }; static_assert(c<void>); } // class.slice.overview#5 call ret
 namespace p5 { using namespace std; template<class Z> concept c = requires { { spec_probe::dv<spec_probe::dep<Z, const std::slice&>>().size() } -> spec_probe::same<size_t>; }; static_assert(c<void>); } // class.slice.overview#6 call ret
 namespace p6 { using namespace std; template<class Z> concept c = requires { { spec_probe::dv<spec_probe::dep<Z, const std::slice&>>().stride() } -> spec_probe::same<size_t>; }; static_assert(c<void>); } // class.slice.overview#7 call ret

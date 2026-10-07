@@ -19,10 +19,26 @@ namespace spec_probe {
   using fn_int = int (*)();
   using pred = bool (*)();
   using fn_dd = double (*)(double);
+  using fn_ii = int (*)(int);
   struct callback { void operator()() noexcept {} };
   struct completion { void operator()() noexcept {} };
   struct visitor { template<class T> void operator()(T&&) const {} };
 }
+
+#if defined(SPEC_PROBE_istream) || defined(SPEC_PROBE_ostream)
+namespace spec_probe {
+  // only non-template, lvalue-stream operators: an rvalue stream reaches [istream.rvalue] and
+  // [ostream.rvalue]
+  struct streamable {
+    friend std::ostream& operator<<(std::ostream& o, const streamable&) { return o; }
+    friend std::istream& operator>>(std::istream& i, streamable&) { return i; }
+  };
+}
+#endif
+
+#if defined(SPEC_PROBE_fstream)
+#include <filesystem>   // to spell filesystem::path::value_type
+#endif
 
 #if defined(SPEC_PROBE_format)
 #include <span>

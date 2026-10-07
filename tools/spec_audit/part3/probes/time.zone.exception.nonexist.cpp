@@ -5,4 +5,4 @@
 #include "../probe_support.hpp"
 namespace p0 { using namespace std; using namespace std::chrono; using std::chrono::nonexistent_local_time; } // time.zone.exception.nonexist#1 presence
 namespace p1 { using namespace std; using namespace std::chrono; static_assert(std::is_base_of_v<runtime_error, std::chrono::nonexistent_local_time> && std::is_convertible_v<std::chrono::nonexistent_local_time*, runtime_error*>); } // time.zone.exception.nonexist#2 base runtime_error
-namespace p2 { using namespace std; using namespace std::chrono; static_assert(std::is_constructible_v<std::chrono::nonexistent_local_time, const std::chrono::local_time<chrono::seconds>&, const std::chrono::local_info&>); } // time.zone.exception.nonexist#3 ctor
+namespace p2 { using namespace std; using namespace std::chrono; template<class Z> concept c = requires { ::new std::chrono::nonexistent_local_time(spec_probe::dv<spec_probe::dep<Z, const std::chrono::local_time<chrono::seconds>&>>(), spec_probe::dv<spec_probe::dep<Z, const std::chrono::local_info&>>()); }; static_assert(c<void>); } // time.zone.exception.nonexist#3 ctor

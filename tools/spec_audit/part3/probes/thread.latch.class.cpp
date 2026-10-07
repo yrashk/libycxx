@@ -5,7 +5,7 @@
 #include "../probe_support.hpp"
 namespace p0 { using namespace std; using std::latch; } // thread.latch.class#1 presence
 namespace p1 { using namespace std; template<class Z> concept c = requires { { std::latch::max() } -> spec_probe::same<ptrdiff_t>; requires noexcept(std::latch::max()); }; static_assert(c<void>); } // thread.latch.class#2 call ret noexcept
-namespace p2 { using namespace std; static_assert(std::is_constructible_v<std::latch, ptrdiff_t> && !std::is_convertible_v<ptrdiff_t, std::latch>); } // thread.latch.class#3 ctor explicit
+namespace p2 { using namespace std; template<class Z> concept c = requires { ::new std::latch(spec_probe::dv<spec_probe::dep<Z, ptrdiff_t>>()); } && !std::is_convertible_v<ptrdiff_t, std::latch>; static_assert(c<void>); } // thread.latch.class#3 ctor explicit
 namespace p3 { using namespace std; static_assert(std::is_nothrow_destructible_v<std::latch>); } // thread.latch.class#4 destructor
 namespace p4 { using namespace std; static_assert(!std::is_constructible_v<std::latch, const std::latch&>); } // thread.latch.class#5 deleted ctor
 namespace p5 { using namespace std; template<class Z> concept c = !requires { spec_probe::dv<spec_probe::dep<Z, std::latch&>>().operator=(spec_probe::dv<spec_probe::dep<Z, const std::latch&>>()); }; static_assert(c<void>); } // thread.latch.class#6 deleted call

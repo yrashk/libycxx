@@ -5,7 +5,7 @@
 #include "../probe_support.hpp"
 namespace p0 { using namespace std; using std::counting_semaphore; } // thread.sema.cnt#1 presence
 namespace p1 { using namespace std; template<class Z> concept c = requires { { std::counting_semaphore<4>::max() } -> spec_probe::same<ptrdiff_t>; requires noexcept(std::counting_semaphore<4>::max()); }; static_assert(c<void>); } // thread.sema.cnt#2 call ret noexcept
-namespace p2 { using namespace std; static_assert(std::is_constructible_v<std::counting_semaphore<4>, ptrdiff_t> && !std::is_convertible_v<ptrdiff_t, std::counting_semaphore<4>>); } // thread.sema.cnt#3 ctor explicit
+namespace p2 { using namespace std; template<class Z> concept c = requires { ::new std::counting_semaphore<4>(spec_probe::dv<spec_probe::dep<Z, ptrdiff_t>>()); } && !std::is_convertible_v<ptrdiff_t, std::counting_semaphore<4>>; static_assert(c<void>); } // thread.sema.cnt#3 ctor explicit
 namespace p3 { using namespace std; static_assert(std::is_nothrow_destructible_v<std::counting_semaphore<4>>); } // thread.sema.cnt#4 destructor
 namespace p4 { using namespace std; static_assert(!std::is_constructible_v<std::counting_semaphore<4>, const std::counting_semaphore<4>&>); } // thread.sema.cnt#5 deleted ctor
 namespace p5 { using namespace std; template<class Z> concept c = !requires { spec_probe::dv<spec_probe::dep<Z, std::counting_semaphore<4>&>>().operator=(spec_probe::dv<spec_probe::dep<Z, const std::counting_semaphore<4>&>>()); }; static_assert(c<void>); } // thread.sema.cnt#6 deleted call

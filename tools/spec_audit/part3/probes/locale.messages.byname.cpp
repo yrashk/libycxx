@@ -7,7 +7,7 @@ namespace p0 { using namespace std; using std::messages_byname; } // locale.mess
 namespace p1 { using namespace std; static_assert(std::is_base_of_v<messages<char>, std::messages_byname<char>> && std::is_convertible_v<std::messages_byname<char>*, messages<char>*>); } // locale.messages.byname#2 base messages<char>
 namespace p2 { using namespace std; static_assert(spec_probe::same<typename std::messages_byname<char>::catalog, messages_base::catalog>); } // locale.messages.byname#3 type
 namespace p3 { using namespace std; static_assert(spec_probe::same<typename std::messages_byname<char>::string_type, basic_string<char>>); } // locale.messages.byname#4 type
-namespace p4 { using namespace std; static_assert(std::is_constructible_v<std::messages_byname<char>, const char*, size_t>); } // locale.messages.byname#5 ctor
-namespace p5 { using namespace std; static_assert(std::is_constructible_v<std::messages_byname<char>, const char*>); } // locale.messages.byname#6 ctor (defaults) explicit
-namespace p6 { using namespace std; static_assert(std::is_constructible_v<std::messages_byname<char>, const string&, size_t>); } // locale.messages.byname#7 ctor
-namespace p7 { using namespace std; static_assert(std::is_constructible_v<std::messages_byname<char>, const string&>); } // locale.messages.byname#8 ctor (defaults) explicit
+namespace p4 { using namespace std; template<class Z> concept c = requires { ::new std::messages_byname<char>(spec_probe::dv<spec_probe::dep<Z, const char*>>(), spec_probe::dv<spec_probe::dep<Z, size_t>>()); }; static_assert(c<void>); } // locale.messages.byname#5 ctor
+namespace p5 { using namespace std; template<class Z> concept c = requires { ::new std::messages_byname<char>(spec_probe::dv<spec_probe::dep<Z, const char*>>()); }; static_assert(c<void>); } // locale.messages.byname#6 ctor (defaults) explicit
+namespace p6 { using namespace std; template<class Z> concept c = requires { ::new std::messages_byname<char>(spec_probe::dv<spec_probe::dep<Z, const string&>>(), spec_probe::dv<spec_probe::dep<Z, size_t>>()); }; static_assert(c<void>); } // locale.messages.byname#7 ctor
+namespace p7 { using namespace std; template<class Z> concept c = requires { ::new std::messages_byname<char>(spec_probe::dv<spec_probe::dep<Z, const string&>>()); }; static_assert(c<void>); } // locale.messages.byname#8 ctor (defaults) explicit

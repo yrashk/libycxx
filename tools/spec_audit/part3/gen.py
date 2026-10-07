@@ -667,6 +667,44 @@ class Gen:
                 parts.append(f"requires noexcept({expr});")
             self.add(d, what + (" ret" if rt is not None and vi == 0 else "") + (" noexcept" if d.info["noexcept"] is True else ""),
                      f"template<class Z> concept c = requires {{ {' '.join(parts)} }}; static_assert(c<void>);")
+        if not d.info["deleted"] and ({"constexpr", "consteval"} & set(d.info["specs"])):
+            self.constexpr_check(d, ctx, callee_fn, targs, label)
+
+    def constexpr_check(self, d, ctx, callee_fn, targs, label):
+        """A constexpr (consteval) function can be called in a constant expression: with sample
+        arguments (1 for an arithmetic type, value-initialized otherwise; spec_probe::sample) and
+        a sample object. Not for pointer parameters, volatile or protected members."""
+        obj = getattr(self, "_obj", None)
+        if obj == "protected" or "volatile" in d.info["quals"] or (d.sec, d.name) in SMP.NO_CONSTEXPR_PROBE:
+            return
+        decls, args = [], []
+        for k, p in enumerate(d.info["params"]):
+            try:
+                t = subst(p["type"], ctx)
+            except Unprobeable:
+                return
+            if "*" in t or p["pack"] and not t:
+                return
+            if p["pack"] and any(str(x) in ctx.env and ctx.env[str(x)] in (PACK, "") for x in p["type"]):
+                continue
+            base = t[:-2] if t.endswith("&&") else t
+            decls.append(f"auto a{k} = spec_probe::sample<{base}>();")
+            args.append(f"static_cast<{t}>(a{k})" if t.endswith("&&") else f"a{k}")
+        expr = callee_fn(args, targs)
+        if obj:
+            objt = obj[len("spec_probe::dv<spec_probe::dep<Z, "):-len(">>()")]
+            cls = objt.rstrip("&").replace("const ", "", 1) if objt.startswith("const ") else objt.rstrip("&")
+            if cls.startswith("std::atomic_ref<"):
+                # no default constructor: refer to a local object
+                decls.insert(0, f"typename {cls}::value_type v = spec_probe::sample<typename {cls}::value_type>(); {cls} o(v);")
+            else:
+                decls.insert(0, f"auto o = spec_probe::sample<{cls}>();")
+            ref = "static_cast<" + objt + ">(o)"
+            expr = expr.replace(obj, ref)
+        if "spec_probe::dv<" in expr:
+            return
+        self.add(d, "constexpr" + (f" {label}" if label else ""),
+                 f"static_assert([]() consteval {{ {' '.join(decls)} (void)({expr}); return true; }}());")
 
     def free_function(self, d):
         own = d.heads[-1] if d.heads and not d.classes else []
@@ -748,7 +786,9 @@ class Gen:
                             return f"{obj}.B::{tk}{name}{targs}({', '.join(args)})"
                         return f"{obj}.{tk}{name}{targs}({', '.join(args)})"
                     before = len(self.checks)
+                    self._obj = "protected" if protected else (None if static else obj)
                     self.call_checks(d, ctx, callee, lab, own, env2)
+                    self._obj = None
                     if protected:
                         # wrap: the concept inside a class derived from the sample
                         for k in range(before, len(self.checks)):

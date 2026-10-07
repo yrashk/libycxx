@@ -168,40 +168,42 @@ namespace p161 { using namespace std; template<class Z> concept c = requires { {
 namespace p162 { using namespace std; template<class Z> concept c = requires { { std::atomic_flag_notify_all(spec_probe::dv<spec_probe::dep<Z, volatile atomic_flag*>>()) } -> spec_probe::same<void>; requires noexcept(std::atomic_flag_notify_all(spec_probe::dv<spec_probe::dep<Z, volatile atomic_flag*>>())); }; static_assert(c<void>); } // atomics.syn#163 call ret noexcept
 namespace p163 { using namespace std; template<class Z> concept c = requires { { std::atomic_flag_notify_all(spec_probe::dv<spec_probe::dep<Z, atomic_flag*>>()) } -> spec_probe::same<void>; requires noexcept(std::atomic_flag_notify_all(spec_probe::dv<spec_probe::dep<Z, atomic_flag*>>())); }; static_assert(c<void>); } // atomics.syn#164 call ret noexcept
 namespace p164 { using namespace std; template<class Z> concept c = requires { { std::atomic_thread_fence(spec_probe::dv<spec_probe::dep<Z, memory_order>>()) } -> spec_probe::same<void>; requires noexcept(std::atomic_thread_fence(spec_probe::dv<spec_probe::dep<Z, memory_order>>())); }; static_assert(c<void>); } // atomics.syn#165 call ret noexcept
-namespace p165 { using namespace std; template<class Z> concept c = requires { { std::atomic_signal_fence(spec_probe::dv<spec_probe::dep<Z, memory_order>>()) } -> spec_probe::same<void>; requires noexcept(std::atomic_signal_fence(spec_probe::dv<spec_probe::dep<Z, memory_order>>())); }; static_assert(c<void>); } // atomics.syn#166 call ret noexcept
+namespace p165 { using namespace std; static_assert([]() consteval { auto a0 = spec_probe::sample<memory_order>(); (void)(std::atomic_thread_fence(a0)); return true; }()); } // atomics.syn#166 constexpr
+namespace p166 { using namespace std; template<class Z> concept c = requires { { std::atomic_signal_fence(spec_probe::dv<spec_probe::dep<Z, memory_order>>()) } -> spec_probe::same<void>; requires noexcept(std::atomic_signal_fence(spec_probe::dv<spec_probe::dep<Z, memory_order>>())); }; static_assert(c<void>); } // atomics.syn#167 call ret noexcept
+namespace p167 { using namespace std; static_assert([]() consteval { auto a0 = spec_probe::sample<memory_order>(); (void)(std::atomic_signal_fence(a0)); return true; }()); } // atomics.syn#168 constexpr
 #ifndef ATOMIC_BOOL_LOCK_FREE
-static_assert(false, "ATOMIC_BOOL_LOCK_FREE"); // atomics.syn#167 macro
+static_assert(false, "ATOMIC_BOOL_LOCK_FREE"); // atomics.syn#169 macro
 #endif
 #ifndef ATOMIC_CHAR_LOCK_FREE
-static_assert(false, "ATOMIC_CHAR_LOCK_FREE"); // atomics.syn#168 macro
+static_assert(false, "ATOMIC_CHAR_LOCK_FREE"); // atomics.syn#170 macro
 #endif
 #ifndef ATOMIC_CHAR8_T_LOCK_FREE
-static_assert(false, "ATOMIC_CHAR8_T_LOCK_FREE"); // atomics.syn#169 macro
+static_assert(false, "ATOMIC_CHAR8_T_LOCK_FREE"); // atomics.syn#171 macro
 #endif
 #ifndef ATOMIC_CHAR16_T_LOCK_FREE
-static_assert(false, "ATOMIC_CHAR16_T_LOCK_FREE"); // atomics.syn#170 macro
+static_assert(false, "ATOMIC_CHAR16_T_LOCK_FREE"); // atomics.syn#172 macro
 #endif
 #ifndef ATOMIC_CHAR32_T_LOCK_FREE
-static_assert(false, "ATOMIC_CHAR32_T_LOCK_FREE"); // atomics.syn#171 macro
+static_assert(false, "ATOMIC_CHAR32_T_LOCK_FREE"); // atomics.syn#173 macro
 #endif
 #ifndef ATOMIC_WCHAR_T_LOCK_FREE
-static_assert(false, "ATOMIC_WCHAR_T_LOCK_FREE"); // atomics.syn#172 macro
+static_assert(false, "ATOMIC_WCHAR_T_LOCK_FREE"); // atomics.syn#174 macro
 #endif
 #ifndef ATOMIC_SHORT_LOCK_FREE
-static_assert(false, "ATOMIC_SHORT_LOCK_FREE"); // atomics.syn#173 macro
+static_assert(false, "ATOMIC_SHORT_LOCK_FREE"); // atomics.syn#175 macro
 #endif
 #ifndef ATOMIC_INT_LOCK_FREE
-static_assert(false, "ATOMIC_INT_LOCK_FREE"); // atomics.syn#174 macro
+static_assert(false, "ATOMIC_INT_LOCK_FREE"); // atomics.syn#176 macro
 #endif
 #ifndef ATOMIC_LONG_LOCK_FREE
-static_assert(false, "ATOMIC_LONG_LOCK_FREE"); // atomics.syn#175 macro
+static_assert(false, "ATOMIC_LONG_LOCK_FREE"); // atomics.syn#177 macro
 #endif
 #ifndef ATOMIC_LLONG_LOCK_FREE
-static_assert(false, "ATOMIC_LLONG_LOCK_FREE"); // atomics.syn#176 macro
+static_assert(false, "ATOMIC_LLONG_LOCK_FREE"); // atomics.syn#178 macro
 #endif
 #ifndef ATOMIC_POINTER_LOCK_FREE
-static_assert(false, "ATOMIC_POINTER_LOCK_FREE"); // atomics.syn#177 macro
+static_assert(false, "ATOMIC_POINTER_LOCK_FREE"); // atomics.syn#179 macro
 #endif
 #ifndef ATOMIC_FLAG_INIT
-static_assert(false, "ATOMIC_FLAG_INIT"); // atomics.syn#178 macro
+static_assert(false, "ATOMIC_FLAG_INIT"); // atomics.syn#180 macro
 #endif

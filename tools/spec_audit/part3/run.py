@@ -45,7 +45,9 @@ def compile_freestanding(cc, path):
     return p.returncode, p.stdout
 
 
-def analyse(path, rc, out):
+def analyse(path, rc, out, groups=None):
+    """The failed checks of one probe file: {id: first message}; `groups` collects, per check,
+    the diagnostics that follow a mention of its line."""
     ids = check_ids(path)
     failed = {}
     name = re.escape(path.name)
@@ -59,12 +61,41 @@ def analyse(path, rc, out):
                 if ln in ids:
                     msg = m.group(2).strip()
                     failed.setdefault(ids[ln], msg)
+                    current = ids[ln]
+            if current is not None and groups is not None:
+                groups.setdefault(current, []).append(line)
         if not failed:
             # a fatal error before any check (a missing header): every check fails
             first = next((l for l in out.splitlines() if "error" in l), out[:200])
             for i in ids.values():
                 failed[i] = "file: " + first.strip()
     return ids, failed
+
+
+# A constexpr check (gen.py constexpr_check) fails for the library only when the probed function
+# itself is not usable in constant evaluation; an evaluation that fails inside it for the sample
+# arguments (a pole error, a precondition, arithmetic on a null pointer) leaves it undecided.
+NON_CONSTEXPR = re.compile(r"non-.?constexpr.? function|never produces a constant expression|"
+                           r"not usable in a constant expression|consteval function .* is not a constant expression")
+
+
+def load_checks():
+    checks = {}
+    for line in (HERE / "checks.tsv").read_text().splitlines()[1:]:
+        p = line.split("\t")
+        checks[p[0]] = p
+    return checks
+
+
+def constexpr_status(check, group):
+    """FAIL when a non-constexpr function named like the probed one was called, else UNDECIDED."""
+    short = re.sub(r"<.*", "", check[3].split("::")[-1]) if check else ""
+    text = "\n".join(group)
+    for m in NON_CONSTEXPR.finditer(text):
+        line = text[m.start():text.find("\n", m.start())]
+        if short and re.search(r"\b" + re.escape(short) + r"\b", line):
+            return "FAIL"
+    return "UNDECIDED"
 
 
 def load_gaps():
@@ -102,20 +133,29 @@ def main():
     for cc in ccs:
         libdir = str(pathlib.Path(a.libdir_root) / cc) if a.libdir_root else None
         results = {}
+        undecided = set()
+        checks = load_checks()
         with concurrent.futures.ThreadPoolExecutor(a.jobs) as ex:
             futs = {ex.submit(compile_freestanding if f.parent.name == "freestanding" else compile_one, cc, f,
                               *([] if f.parent.name == "freestanding" else [libdir])): f for f in files}
             for fut in concurrent.futures.as_completed(futs):
                 f = futs[fut]
                 rc, out = fut.result()
-                ids, failed = analyse(f, rc, out)
+                groups = {}
+                ids, failed = analyse(f, rc, out, groups)
                 pre = "fs:" if f.parent.name == "freestanding" else ""
                 for i in ids.values():
                     results[pre + i] = failed.get(i)
+                    c = checks.get(i)
+                    if failed.get(i) and c and c[4].startswith("constexpr") and \
+                            constexpr_status(c, groups.get(i, [])) == "UNDECIDED":
+                        undecided.add(pre + i)
                 if a.verbose and failed:
                     print(out)
         unexpected, xpass, known = [], [], 0
         for i, msg in sorted(results.items()):
+            if i in undecided:
+                continue
             g = gaps.get(i)
             g = g if g and applies(g, cc) else None
             if msg and not g:
@@ -126,11 +166,13 @@ def main():
                 xpass.append(i)
         with open(HERE / f"results-{cc}.tsv", "w") as out:
             for i, msg in sorted(results.items()):
-                out.write(f"{i}\t{'FAIL' if msg else 'pass'}\t{msg or ''}\n")
+                st = "UNDECIDED" if i in undecided else "FAIL" if msg else "pass"
+                out.write(f"{i}\t{st}\t{msg or ''}\n")
         total = len(results)
-        nfail = sum(1 for m in results.values() if m)
-        print(f"{cc}: {total} checks, {total - nfail} pass, {nfail} fail ({known} known gaps, "
-              f"{len(unexpected)} unexpected, {len(xpass)} XPASS)")
+        nfail = sum(1 for i, m in results.items() if m and i not in undecided)
+        print(f"{cc}: {total} checks, {total - nfail - len(undecided)} pass, {nfail} fail ({known} known gaps, "
+              f"{len(unexpected)} unexpected, {len(xpass)} XPASS), {len(undecided)} constexpr checks undecided "
+              f"(the sample arguments violate a precondition)")
         for i, msg in unexpected:
             print(f"  FAIL {i}: {msg[:200]}")
         for i in xpass:

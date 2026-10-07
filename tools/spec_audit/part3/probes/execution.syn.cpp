@@ -65,96 +65,98 @@ namespace p58 { using namespace std; using namespace std::execution; using std::
 namespace p59 { using namespace std; using namespace std::execution; static_assert(spec_probe::same<decltype(std::execution::sends_stopped<spec_probe::sndr, execution::env<>>), const bool>); } // execution.syn#60 var
 namespace p60 { using namespace std; using namespace std::execution; using T = std::execution::tag_of_t<spec_probe::sndr>; } // execution.syn#61 type exists  (exposition-only or unspecified: see below)
 namespace p61 { using namespace std; using namespace std::execution; template<class Z> concept c = requires { std::execution::transform_sender(spec_probe::dv<spec_probe::dep<Z, spec_probe::sndr&&>>(), spec_probe::dv<spec_probe::dep<Z, const execution::env<>&>>()); }; static_assert(c<void>); } // execution.syn#62 call
-namespace p62 { using namespace std; using namespace std::execution; template<class Z> concept c = requires { std::execution::apply_sender(spec_probe::dv<spec_probe::dep<Z, execution::default_domain>>(), spec_probe::dv<spec_probe::dep<Z, this_thread::sync_wait_t>>(), spec_probe::dv<spec_probe::dep<Z, spec_probe::sndr&&>>()); }; static_assert(c<void>); } // execution.syn#63 call
-namespace p63 { using namespace std; using namespace std::execution; template<class Z> concept c = requires { std::execution::get_completion_signatures<spec_probe::sndr>(); }; static_assert(c<void>); } // execution.syn#64 call
-namespace p64 { using namespace std; using namespace std::execution; using T = std::execution::completion_signatures_of_t<spec_probe::sndr, execution::env<>>; } // execution.syn#65 type exists  (deduced type)
-namespace p65 { using namespace std; using namespace std::execution; using std::execution::connect_t; } // execution.syn#66 presence
-namespace p66 { using namespace std; using namespace std::execution; static_assert(spec_probe::same<decltype(std::execution::connect), const std::execution::connect_t>); } // execution.syn#67 var
-namespace p67 { using namespace std; using namespace std::execution; using T = std::execution::connect_result_t<spec_probe::sndr, spec_probe::rcvr>; } // execution.syn#68 type exists  (deduced type)
-namespace p68 { using namespace std; using namespace std::execution; using std::execution::just_t; } // execution.syn#69 presence
-namespace p69 { using namespace std; using namespace std::execution; using std::execution::just_error_t; } // execution.syn#70 presence
-namespace p70 { using namespace std; using namespace std::execution; using std::execution::just_stopped_t; } // execution.syn#71 presence
-namespace p71 { using namespace std; using namespace std::execution; using std::execution::schedule_t; } // execution.syn#72 presence
-namespace p72 { using namespace std; using namespace std::execution; static_assert(spec_probe::same<decltype(std::execution::just), const std::execution::just_t>); } // execution.syn#73 var
-namespace p73 { using namespace std; using namespace std::execution; static_assert(spec_probe::same<decltype(std::execution::just_error), const std::execution::just_error_t>); } // execution.syn#74 var
-namespace p74 { using namespace std; using namespace std::execution; static_assert(spec_probe::same<decltype(std::execution::just_stopped), const std::execution::just_stopped_t>); } // execution.syn#75 var
-namespace p75 { using namespace std; using namespace std::execution; static_assert(spec_probe::same<decltype(std::execution::schedule), const std::execution::schedule_t>); } // execution.syn#76 var
-namespace p76 { using namespace std; using namespace std::execution; using T = decltype(std::execution::read_env); } // execution.syn#77 var exists (exposition-only or unspecified: unspecified)
-namespace p77 { using namespace std; using namespace std::execution; using T = std::execution::schedule_result_t<execution::inline_scheduler>; } // execution.syn#78 type exists  (deduced type)
-namespace p78 { using namespace std; using namespace std::execution; using std::execution::sender_adaptor_closure; } // execution.syn#79 presence
-namespace p79 { using namespace std; using namespace std::execution; using std::execution::starts_on_t; } // execution.syn#80 presence
-namespace p80 { using namespace std; using namespace std::execution; using std::execution::continues_on_t; } // execution.syn#81 presence
-namespace p81 { using namespace std; using namespace std::execution; using std::execution::on_t; } // execution.syn#82 presence
-namespace p82 { using namespace std; using namespace std::execution; using std::execution::schedule_from_t; } // execution.syn#83 presence
-namespace p83 { using namespace std; using namespace std::execution; using std::execution::then_t; } // execution.syn#84 presence
-namespace p84 { using namespace std; using namespace std::execution; using std::execution::upon_error_t; } // execution.syn#85 presence
-namespace p85 { using namespace std; using namespace std::execution; using std::execution::upon_stopped_t; } // execution.syn#86 presence
-namespace p86 { using namespace std; using namespace std::execution; using std::execution::let_value_t; } // execution.syn#87 presence
-namespace p87 { using namespace std; using namespace std::execution; using std::execution::let_error_t; } // execution.syn#88 presence
-namespace p88 { using namespace std; using namespace std::execution; using std::execution::let_stopped_t; } // execution.syn#89 presence
-namespace p89 { using namespace std; using namespace std::execution; using std::execution::bulk_t; } // execution.syn#90 presence
-namespace p90 { using namespace std; using namespace std::execution; using std::execution::bulk_chunked_t; } // execution.syn#91 presence
-namespace p91 { using namespace std; using namespace std::execution; using std::execution::bulk_unchunked_t; } // execution.syn#92 presence
-namespace p92 { using namespace std; using namespace std::execution; using std::execution::when_all_t; } // execution.syn#93 presence
-namespace p93 { using namespace std; using namespace std::execution; using std::execution::when_all_with_variant_t; } // execution.syn#94 presence
-namespace p94 { using namespace std; using namespace std::execution; using std::execution::into_variant_t; } // execution.syn#95 presence
-namespace p95 { using namespace std; using namespace std::execution; using std::execution::stopped_as_optional_t; } // execution.syn#96 presence
-namespace p96 { using namespace std; using namespace std::execution; using std::execution::stopped_as_error_t; } // execution.syn#97 presence
-namespace p97 { using namespace std; using namespace std::execution; using std::execution::associate_t; } // execution.syn#98 presence
-namespace p98 { using namespace std; using namespace std::execution; using std::execution::spawn_future_t; } // execution.syn#99 presence
-namespace p99 { using namespace std; using namespace std::execution; using T = decltype(std::execution::write_env); } // execution.syn#100 var exists (exposition-only or unspecified: unspecified)
-namespace p100 { using namespace std; using namespace std::execution; using T = decltype(std::execution::unstoppable); } // execution.syn#101 var exists (exposition-only or unspecified: unspecified)
-namespace p101 { using namespace std; using namespace std::execution; static_assert(spec_probe::same<decltype(std::execution::starts_on), const std::execution::starts_on_t>); } // execution.syn#102 var
-namespace p102 { using namespace std; using namespace std::execution; static_assert(spec_probe::same<decltype(std::execution::continues_on), const std::execution::continues_on_t>); } // execution.syn#103 var
-namespace p103 { using namespace std; using namespace std::execution; static_assert(spec_probe::same<decltype(std::execution::on), const std::execution::on_t>); } // execution.syn#104 var
-namespace p104 { using namespace std; using namespace std::execution; static_assert(spec_probe::same<decltype(std::execution::schedule_from), const std::execution::schedule_from_t>); } // execution.syn#105 var
-namespace p105 { using namespace std; using namespace std::execution; static_assert(spec_probe::same<decltype(std::execution::then), const std::execution::then_t>); } // execution.syn#106 var
-namespace p106 { using namespace std; using namespace std::execution; static_assert(spec_probe::same<decltype(std::execution::upon_error), const std::execution::upon_error_t>); } // execution.syn#107 var
-namespace p107 { using namespace std; using namespace std::execution; static_assert(spec_probe::same<decltype(std::execution::upon_stopped), const std::execution::upon_stopped_t>); } // execution.syn#108 var
-namespace p108 { using namespace std; using namespace std::execution; static_assert(spec_probe::same<decltype(std::execution::let_value), const std::execution::let_value_t>); } // execution.syn#109 var
-namespace p109 { using namespace std; using namespace std::execution; static_assert(spec_probe::same<decltype(std::execution::let_error), const std::execution::let_error_t>); } // execution.syn#110 var
-namespace p110 { using namespace std; using namespace std::execution; static_assert(spec_probe::same<decltype(std::execution::let_stopped), const std::execution::let_stopped_t>); } // execution.syn#111 var
-namespace p111 { using namespace std; using namespace std::execution; static_assert(spec_probe::same<decltype(std::execution::bulk), const std::execution::bulk_t>); } // execution.syn#112 var
-namespace p112 { using namespace std; using namespace std::execution; static_assert(spec_probe::same<decltype(std::execution::bulk_chunked), const std::execution::bulk_chunked_t>); } // execution.syn#113 var
-namespace p113 { using namespace std; using namespace std::execution; static_assert(spec_probe::same<decltype(std::execution::bulk_unchunked), const std::execution::bulk_unchunked_t>); } // execution.syn#114 var
-namespace p114 { using namespace std; using namespace std::execution; static_assert(spec_probe::same<decltype(std::execution::when_all), const std::execution::when_all_t>); } // execution.syn#115 var
-namespace p115 { using namespace std; using namespace std::execution; static_assert(spec_probe::same<decltype(std::execution::when_all_with_variant), const std::execution::when_all_with_variant_t>); } // execution.syn#116 var
-namespace p116 { using namespace std; using namespace std::execution; static_assert(spec_probe::same<decltype(std::execution::into_variant), const std::execution::into_variant_t>); } // execution.syn#117 var
-namespace p117 { using namespace std; using namespace std::execution; static_assert(spec_probe::same<decltype(std::execution::stopped_as_optional), const std::execution::stopped_as_optional_t>); } // execution.syn#118 var
-namespace p118 { using namespace std; using namespace std::execution; static_assert(spec_probe::same<decltype(std::execution::stopped_as_error), const std::execution::stopped_as_error_t>); } // execution.syn#119 var
-namespace p119 { using namespace std; using namespace std::execution; static_assert(spec_probe::same<decltype(std::execution::associate), const std::execution::associate_t>); } // execution.syn#120 var
-namespace p120 { using namespace std; using namespace std::execution; static_assert(spec_probe::same<decltype(std::execution::spawn_future), const std::execution::spawn_future_t>); } // execution.syn#121 var
-namespace p121 { using namespace std; using namespace std::this_thread; using std::this_thread::sync_wait_t; } // execution.syn#122 presence
-namespace p122 { using namespace std; using namespace std::this_thread; using std::this_thread::sync_wait_with_variant_t; } // execution.syn#123 presence
-namespace p123 { using namespace std; using namespace std::this_thread; static_assert(spec_probe::same<decltype(std::this_thread::sync_wait), const std::this_thread::sync_wait_t>); } // execution.syn#124 var
-namespace p124 { using namespace std; using namespace std::this_thread; static_assert(spec_probe::same<decltype(std::this_thread::sync_wait_with_variant), const std::this_thread::sync_wait_with_variant_t>); } // execution.syn#125 var
-namespace p125 { using namespace std; using namespace std::execution; using std::execution::spawn_t; } // execution.syn#126 presence
-namespace p126 { using namespace std; using namespace std::execution; static_assert(spec_probe::same<decltype(std::execution::spawn), const std::execution::spawn_t>); } // execution.syn#127 var
-namespace p127 { using namespace std; using namespace std::execution; using std::execution::completion_signatures; } // execution.syn#128 presence
-namespace p128 { using namespace std; using namespace std::execution; using std::execution::dependent_sender_error; } // execution.syn#129 presence
-namespace p129 { using namespace std; using namespace std::execution; static_assert(std::is_base_of_v<exception, std::execution::dependent_sender_error> && std::is_convertible_v<std::execution::dependent_sender_error*, exception*>); } // execution.syn#130 base exception
-namespace p130 { using namespace std; using namespace std::execution; using std::execution::prop; } // execution.syn#131 presence
-namespace p131 { using namespace std; using namespace std::execution; using std::execution::env; } // execution.syn#132 presence
-namespace p132 { using namespace std; using namespace std::execution; using std::execution::run_loop; } // execution.syn#133 presence
-namespace p133 { using namespace std; using namespace std::execution; using std::execution::as_awaitable_t; } // execution.syn#134 presence
-namespace p134 { using namespace std; using namespace std::execution; static_assert(spec_probe::same<decltype(std::execution::as_awaitable), const std::execution::as_awaitable_t>); } // execution.syn#135 var
-namespace p135 { using namespace std; using namespace std::execution; using std::execution::with_awaitable_senders; } // execution.syn#136 presence
-namespace p136 { using namespace std; using namespace std::execution; using std::execution::affine_t; } // execution.syn#137 presence
-namespace p137 { using namespace std; using namespace std::execution; static_assert(spec_probe::same<decltype(std::execution::affine), const std::execution::affine_t>); } // execution.syn#138 var
-namespace p138 { using namespace std; using namespace std::execution; using std::execution::inline_scheduler; } // execution.syn#139 presence
-namespace p139 { using namespace std; using namespace std::execution; using std::execution::task_scheduler; } // execution.syn#140 presence
-namespace p140 { using namespace std; using namespace std::execution; using std::execution::with_error; } // execution.syn#141 presence
-namespace p141 { using namespace std; using namespace std::execution; static_assert(spec_probe::same<typename std::execution::with_error<int>::type, remove_cvref_t<int>>); } // execution.syn#142 type
-namespace p142 { using namespace std; using namespace std::execution; static_assert(spec_probe::same<decltype(std::execution::with_error<int>::error), typename std::execution::with_error<int>::type>); } // execution.syn#143 var
-namespace p143 { using namespace std; using namespace std::execution; template<class Z> concept c = requires { requires spec_probe::same<decltype(std::execution::with_error(spec_probe::dv<spec_probe::dep<Z, int>>())), std::execution::with_error<int>>; }; static_assert(c<void>); } // execution.syn#144 deduction guide
-namespace p144 { using namespace std; using namespace std::execution; using std::execution::task; } // execution.syn#145 presence
-namespace p145 { using namespace std; using namespace std::execution; using std::execution::scope_association; } // execution.syn#146 presence
-namespace p146 { using namespace std; using namespace std::execution; using std::execution::scope_token; } // execution.syn#147 presence
-namespace p147 { using namespace std; using namespace std::execution; using std::execution::simple_counting_scope; } // execution.syn#148 presence
-namespace p148 { using namespace std; using namespace std::execution; using std::execution::counting_scope; } // execution.syn#149 presence
-namespace p149 { using namespace std; using namespace std::execution; using std::execution::parallel_scheduler; } // execution.syn#150 presence
-namespace p150 { using namespace std; using namespace std::execution; template<class Z> concept c = requires { { std::execution::get_parallel_scheduler() } -> spec_probe::same<std::execution::parallel_scheduler>; }; static_assert(c<void>); } // execution.syn#151 call ret
-namespace p151 { using namespace std; using namespace std::execution; using namespace std::execution::parallel_scheduler_replacement; using std::execution::parallel_scheduler_replacement::receiver_proxy; } // execution.syn#152 presence
-namespace p152 { using namespace std; using namespace std::execution; using namespace std::execution::parallel_scheduler_replacement; using std::execution::parallel_scheduler_replacement::bulk_item_receiver_proxy; } // execution.syn#153 presence
-namespace p153 { using namespace std; using namespace std::execution; using namespace std::execution::parallel_scheduler_replacement; using std::execution::parallel_scheduler_replacement::parallel_scheduler_backend; } // execution.syn#154 presence
-namespace p154 { using namespace std; using namespace std::execution; using namespace std::execution::parallel_scheduler_replacement; template<class Z> concept c = requires { { std::execution::parallel_scheduler_replacement::query_parallel_scheduler_backend() } -> spec_probe::same<shared_ptr<std::execution::parallel_scheduler_replacement::parallel_scheduler_backend>>; }; static_assert(c<void>); } // execution.syn#155 call ret
+namespace p62 { using namespace std; using namespace std::execution; static_assert([]() consteval { auto a0 = spec_probe::sample<spec_probe::sndr>(); auto a1 = spec_probe::sample<const execution::env<>&>(); (void)(std::execution::transform_sender(static_cast<spec_probe::sndr&&>(a0), a1)); return true; }()); } // execution.syn#63 constexpr
+namespace p63 { using namespace std; using namespace std::execution; template<class Z> concept c = requires { std::execution::apply_sender(spec_probe::dv<spec_probe::dep<Z, execution::default_domain>>(), spec_probe::dv<spec_probe::dep<Z, this_thread::sync_wait_t>>(), spec_probe::dv<spec_probe::dep<Z, spec_probe::sndr&&>>()); }; static_assert(c<void>); } // execution.syn#64 call
+namespace p64 { using namespace std; using namespace std::execution; template<class Z> concept c = requires { std::execution::get_completion_signatures<spec_probe::sndr>(); }; static_assert(c<void>); } // execution.syn#65 call
+namespace p65 { using namespace std; using namespace std::execution; static_assert([]() consteval {  (void)(std::execution::get_completion_signatures<spec_probe::sndr>()); return true; }()); } // execution.syn#66 constexpr
+namespace p66 { using namespace std; using namespace std::execution; using T = std::execution::completion_signatures_of_t<spec_probe::sndr, execution::env<>>; } // execution.syn#67 type exists  (deduced type)
+namespace p67 { using namespace std; using namespace std::execution; using std::execution::connect_t; } // execution.syn#68 presence
+namespace p68 { using namespace std; using namespace std::execution; static_assert(spec_probe::same<decltype(std::execution::connect), const std::execution::connect_t>); } // execution.syn#69 var
+namespace p69 { using namespace std; using namespace std::execution; using T = std::execution::connect_result_t<spec_probe::sndr, spec_probe::rcvr>; } // execution.syn#70 type exists  (deduced type)
+namespace p70 { using namespace std; using namespace std::execution; using std::execution::just_t; } // execution.syn#71 presence
+namespace p71 { using namespace std; using namespace std::execution; using std::execution::just_error_t; } // execution.syn#72 presence
+namespace p72 { using namespace std; using namespace std::execution; using std::execution::just_stopped_t; } // execution.syn#73 presence
+namespace p73 { using namespace std; using namespace std::execution; using std::execution::schedule_t; } // execution.syn#74 presence
+namespace p74 { using namespace std; using namespace std::execution; static_assert(spec_probe::same<decltype(std::execution::just), const std::execution::just_t>); } // execution.syn#75 var
+namespace p75 { using namespace std; using namespace std::execution; static_assert(spec_probe::same<decltype(std::execution::just_error), const std::execution::just_error_t>); } // execution.syn#76 var
+namespace p76 { using namespace std; using namespace std::execution; static_assert(spec_probe::same<decltype(std::execution::just_stopped), const std::execution::just_stopped_t>); } // execution.syn#77 var
+namespace p77 { using namespace std; using namespace std::execution; static_assert(spec_probe::same<decltype(std::execution::schedule), const std::execution::schedule_t>); } // execution.syn#78 var
+namespace p78 { using namespace std; using namespace std::execution; using T = decltype(std::execution::read_env); } // execution.syn#79 var exists (exposition-only or unspecified: unspecified)
+namespace p79 { using namespace std; using namespace std::execution; using T = std::execution::schedule_result_t<execution::inline_scheduler>; } // execution.syn#80 type exists  (deduced type)
+namespace p80 { using namespace std; using namespace std::execution; using std::execution::sender_adaptor_closure; } // execution.syn#81 presence
+namespace p81 { using namespace std; using namespace std::execution; using std::execution::starts_on_t; } // execution.syn#82 presence
+namespace p82 { using namespace std; using namespace std::execution; using std::execution::continues_on_t; } // execution.syn#83 presence
+namespace p83 { using namespace std; using namespace std::execution; using std::execution::on_t; } // execution.syn#84 presence
+namespace p84 { using namespace std; using namespace std::execution; using std::execution::schedule_from_t; } // execution.syn#85 presence
+namespace p85 { using namespace std; using namespace std::execution; using std::execution::then_t; } // execution.syn#86 presence
+namespace p86 { using namespace std; using namespace std::execution; using std::execution::upon_error_t; } // execution.syn#87 presence
+namespace p87 { using namespace std; using namespace std::execution; using std::execution::upon_stopped_t; } // execution.syn#88 presence
+namespace p88 { using namespace std; using namespace std::execution; using std::execution::let_value_t; } // execution.syn#89 presence
+namespace p89 { using namespace std; using namespace std::execution; using std::execution::let_error_t; } // execution.syn#90 presence
+namespace p90 { using namespace std; using namespace std::execution; using std::execution::let_stopped_t; } // execution.syn#91 presence
+namespace p91 { using namespace std; using namespace std::execution; using std::execution::bulk_t; } // execution.syn#92 presence
+namespace p92 { using namespace std; using namespace std::execution; using std::execution::bulk_chunked_t; } // execution.syn#93 presence
+namespace p93 { using namespace std; using namespace std::execution; using std::execution::bulk_unchunked_t; } // execution.syn#94 presence
+namespace p94 { using namespace std; using namespace std::execution; using std::execution::when_all_t; } // execution.syn#95 presence
+namespace p95 { using namespace std; using namespace std::execution; using std::execution::when_all_with_variant_t; } // execution.syn#96 presence
+namespace p96 { using namespace std; using namespace std::execution; using std::execution::into_variant_t; } // execution.syn#97 presence
+namespace p97 { using namespace std; using namespace std::execution; using std::execution::stopped_as_optional_t; } // execution.syn#98 presence
+namespace p98 { using namespace std; using namespace std::execution; using std::execution::stopped_as_error_t; } // execution.syn#99 presence
+namespace p99 { using namespace std; using namespace std::execution; using std::execution::associate_t; } // execution.syn#100 presence
+namespace p100 { using namespace std; using namespace std::execution; using std::execution::spawn_future_t; } // execution.syn#101 presence
+namespace p101 { using namespace std; using namespace std::execution; using T = decltype(std::execution::write_env); } // execution.syn#102 var exists (exposition-only or unspecified: unspecified)
+namespace p102 { using namespace std; using namespace std::execution; using T = decltype(std::execution::unstoppable); } // execution.syn#103 var exists (exposition-only or unspecified: unspecified)
+namespace p103 { using namespace std; using namespace std::execution; static_assert(spec_probe::same<decltype(std::execution::starts_on), const std::execution::starts_on_t>); } // execution.syn#104 var
+namespace p104 { using namespace std; using namespace std::execution; static_assert(spec_probe::same<decltype(std::execution::continues_on), const std::execution::continues_on_t>); } // execution.syn#105 var
+namespace p105 { using namespace std; using namespace std::execution; static_assert(spec_probe::same<decltype(std::execution::on), const std::execution::on_t>); } // execution.syn#106 var
+namespace p106 { using namespace std; using namespace std::execution; static_assert(spec_probe::same<decltype(std::execution::schedule_from), const std::execution::schedule_from_t>); } // execution.syn#107 var
+namespace p107 { using namespace std; using namespace std::execution; static_assert(spec_probe::same<decltype(std::execution::then), const std::execution::then_t>); } // execution.syn#108 var
+namespace p108 { using namespace std; using namespace std::execution; static_assert(spec_probe::same<decltype(std::execution::upon_error), const std::execution::upon_error_t>); } // execution.syn#109 var
+namespace p109 { using namespace std; using namespace std::execution; static_assert(spec_probe::same<decltype(std::execution::upon_stopped), const std::execution::upon_stopped_t>); } // execution.syn#110 var
+namespace p110 { using namespace std; using namespace std::execution; static_assert(spec_probe::same<decltype(std::execution::let_value), const std::execution::let_value_t>); } // execution.syn#111 var
+namespace p111 { using namespace std; using namespace std::execution; static_assert(spec_probe::same<decltype(std::execution::let_error), const std::execution::let_error_t>); } // execution.syn#112 var
+namespace p112 { using namespace std; using namespace std::execution; static_assert(spec_probe::same<decltype(std::execution::let_stopped), const std::execution::let_stopped_t>); } // execution.syn#113 var
+namespace p113 { using namespace std; using namespace std::execution; static_assert(spec_probe::same<decltype(std::execution::bulk), const std::execution::bulk_t>); } // execution.syn#114 var
+namespace p114 { using namespace std; using namespace std::execution; static_assert(spec_probe::same<decltype(std::execution::bulk_chunked), const std::execution::bulk_chunked_t>); } // execution.syn#115 var
+namespace p115 { using namespace std; using namespace std::execution; static_assert(spec_probe::same<decltype(std::execution::bulk_unchunked), const std::execution::bulk_unchunked_t>); } // execution.syn#116 var
+namespace p116 { using namespace std; using namespace std::execution; static_assert(spec_probe::same<decltype(std::execution::when_all), const std::execution::when_all_t>); } // execution.syn#117 var
+namespace p117 { using namespace std; using namespace std::execution; static_assert(spec_probe::same<decltype(std::execution::when_all_with_variant), const std::execution::when_all_with_variant_t>); } // execution.syn#118 var
+namespace p118 { using namespace std; using namespace std::execution; static_assert(spec_probe::same<decltype(std::execution::into_variant), const std::execution::into_variant_t>); } // execution.syn#119 var
+namespace p119 { using namespace std; using namespace std::execution; static_assert(spec_probe::same<decltype(std::execution::stopped_as_optional), const std::execution::stopped_as_optional_t>); } // execution.syn#120 var
+namespace p120 { using namespace std; using namespace std::execution; static_assert(spec_probe::same<decltype(std::execution::stopped_as_error), const std::execution::stopped_as_error_t>); } // execution.syn#121 var
+namespace p121 { using namespace std; using namespace std::execution; static_assert(spec_probe::same<decltype(std::execution::associate), const std::execution::associate_t>); } // execution.syn#122 var
+namespace p122 { using namespace std; using namespace std::execution; static_assert(spec_probe::same<decltype(std::execution::spawn_future), const std::execution::spawn_future_t>); } // execution.syn#123 var
+namespace p123 { using namespace std; using namespace std::this_thread; using std::this_thread::sync_wait_t; } // execution.syn#124 presence
+namespace p124 { using namespace std; using namespace std::this_thread; using std::this_thread::sync_wait_with_variant_t; } // execution.syn#125 presence
+namespace p125 { using namespace std; using namespace std::this_thread; static_assert(spec_probe::same<decltype(std::this_thread::sync_wait), const std::this_thread::sync_wait_t>); } // execution.syn#126 var
+namespace p126 { using namespace std; using namespace std::this_thread; static_assert(spec_probe::same<decltype(std::this_thread::sync_wait_with_variant), const std::this_thread::sync_wait_with_variant_t>); } // execution.syn#127 var
+namespace p127 { using namespace std; using namespace std::execution; using std::execution::spawn_t; } // execution.syn#128 presence
+namespace p128 { using namespace std; using namespace std::execution; static_assert(spec_probe::same<decltype(std::execution::spawn), const std::execution::spawn_t>); } // execution.syn#129 var
+namespace p129 { using namespace std; using namespace std::execution; using std::execution::completion_signatures; } // execution.syn#130 presence
+namespace p130 { using namespace std; using namespace std::execution; using std::execution::dependent_sender_error; } // execution.syn#131 presence
+namespace p131 { using namespace std; using namespace std::execution; static_assert(std::is_base_of_v<exception, std::execution::dependent_sender_error> && std::is_convertible_v<std::execution::dependent_sender_error*, exception*>); } // execution.syn#132 base exception
+namespace p132 { using namespace std; using namespace std::execution; using std::execution::prop; } // execution.syn#133 presence
+namespace p133 { using namespace std; using namespace std::execution; using std::execution::env; } // execution.syn#134 presence
+namespace p134 { using namespace std; using namespace std::execution; using std::execution::run_loop; } // execution.syn#135 presence
+namespace p135 { using namespace std; using namespace std::execution; using std::execution::as_awaitable_t; } // execution.syn#136 presence
+namespace p136 { using namespace std; using namespace std::execution; static_assert(spec_probe::same<decltype(std::execution::as_awaitable), const std::execution::as_awaitable_t>); } // execution.syn#137 var
+namespace p137 { using namespace std; using namespace std::execution; using std::execution::with_awaitable_senders; } // execution.syn#138 presence
+namespace p138 { using namespace std; using namespace std::execution; using std::execution::affine_t; } // execution.syn#139 presence
+namespace p139 { using namespace std; using namespace std::execution; static_assert(spec_probe::same<decltype(std::execution::affine), const std::execution::affine_t>); } // execution.syn#140 var
+namespace p140 { using namespace std; using namespace std::execution; using std::execution::inline_scheduler; } // execution.syn#141 presence
+namespace p141 { using namespace std; using namespace std::execution; using std::execution::task_scheduler; } // execution.syn#142 presence
+namespace p142 { using namespace std; using namespace std::execution; using std::execution::with_error; } // execution.syn#143 presence
+namespace p143 { using namespace std; using namespace std::execution; static_assert(spec_probe::same<typename std::execution::with_error<int>::type, remove_cvref_t<int>>); } // execution.syn#144 type
+namespace p144 { using namespace std; using namespace std::execution; static_assert(spec_probe::same<decltype(std::execution::with_error<int>::error), typename std::execution::with_error<int>::type>); } // execution.syn#145 var
+namespace p145 { using namespace std; using namespace std::execution; template<class Z> concept c = requires { requires spec_probe::same<decltype(std::execution::with_error(spec_probe::dv<spec_probe::dep<Z, int>>())), std::execution::with_error<int>>; }; static_assert(c<void>); } // execution.syn#146 deduction guide
+namespace p146 { using namespace std; using namespace std::execution; using std::execution::task; } // execution.syn#147 presence
+namespace p147 { using namespace std; using namespace std::execution; using std::execution::scope_association; } // execution.syn#148 presence
+namespace p148 { using namespace std; using namespace std::execution; using std::execution::scope_token; } // execution.syn#149 presence
+namespace p149 { using namespace std; using namespace std::execution; using std::execution::simple_counting_scope; } // execution.syn#150 presence
+namespace p150 { using namespace std; using namespace std::execution; using std::execution::counting_scope; } // execution.syn#151 presence
+namespace p151 { using namespace std; using namespace std::execution; using std::execution::parallel_scheduler; } // execution.syn#152 presence
+namespace p152 { using namespace std; using namespace std::execution; template<class Z> concept c = requires { { std::execution::get_parallel_scheduler() } -> spec_probe::same<std::execution::parallel_scheduler>; }; static_assert(c<void>); } // execution.syn#153 call ret
+namespace p153 { using namespace std; using namespace std::execution; using namespace std::execution::parallel_scheduler_replacement; using std::execution::parallel_scheduler_replacement::receiver_proxy; } // execution.syn#154 presence
+namespace p154 { using namespace std; using namespace std::execution; using namespace std::execution::parallel_scheduler_replacement; using std::execution::parallel_scheduler_replacement::bulk_item_receiver_proxy; } // execution.syn#155 presence
+namespace p155 { using namespace std; using namespace std::execution; using namespace std::execution::parallel_scheduler_replacement; using std::execution::parallel_scheduler_replacement::parallel_scheduler_backend; } // execution.syn#156 presence
+namespace p156 { using namespace std; using namespace std::execution; using namespace std::execution::parallel_scheduler_replacement; template<class Z> concept c = requires { { std::execution::parallel_scheduler_replacement::query_parallel_scheduler_backend() } -> spec_probe::same<shared_ptr<std::execution::parallel_scheduler_replacement::parallel_scheduler_backend>>; }; static_assert(c<void>); } // execution.syn#157 call ret

@@ -13,7 +13,9 @@
 // rcu_synchronize advances the epoch and waits likewise. Evaluations run by rcu_barrier, and by
 // the outermost unlock or a retire outside any region once the queue has grown past a bound,
 // one batch at a time under the domain's evaluation lock. rcu_barrier inside a region evaluates
-// what was scheduled before the region began, which the region itself does not hold back.
+// what was scheduled before the region began, which the region itself does not hold back, and
+// blocks for ever if the calling thread retired something since; inside a scheduled evaluation
+// it evaluates everything scheduled before it but the evaluations in progress on its thread.
 #pragma once
 
 #include <ycxx/config.hpp>
@@ -42,6 +44,11 @@ void __rcu_lock() noexcept;
 void __rcu_unlock() noexcept;
 void rcu_synchronize() noexcept;
 void rcu_barrier() noexcept;
+// True when rcu_barrier() would never return: the calling thread is inside a region and retired
+// something since it began ([saferecl.rcu.domain.func]/4, [saferecl.rcu.general]/5).
+bool __rcu_barrier_would_block() noexcept;
+// True inside a region of RCU protection (where rcu_synchronize would never return).
+bool __rcu_inside_region() noexcept;
 // Queues n (its rcu_run_ is set); may evaluate queued evaluations.
 void __rcu_schedule(__rcu_node* n) noexcept;
 
@@ -95,8 +102,23 @@ inline rcu_domain& rcu_default_domain() noexcept {
   return __domain;
 }
 
-inline void rcu_synchronize(rcu_domain& = rcu_default_domain()) noexcept { __ycxx::__detail::rcu_synchronize(); }
-inline void rcu_barrier(rcu_domain& = rcu_default_domain()) noexcept { __ycxx::__detail::rcu_barrier(); }
+// rcu_synchronize inside a region waits for that region's end (/2): for ever. With YCXX_HARDENED
+// that is reported instead.
+inline void rcu_synchronize(rcu_domain& = rcu_default_domain()) noexcept {
+  if constexpr (__ycxx::__detail::__cfg::__hardened)
+    __ycxx::__detail::__precondition(!__ycxx::__detail::__rcu_inside_region(),
+                                     "rcu_synchronize: called inside a region of RCU protection");
+  __ycxx::__detail::rcu_synchronize();
+}
+// rcu_barrier inside a region after a retire of the same thread in it blocks for ever (/4 with
+// [saferecl.rcu.general]/5); with YCXX_HARDENED that is reported instead (DECISIONS §3).
+inline void rcu_barrier(rcu_domain& = rcu_default_domain()) noexcept {
+  if constexpr (__ycxx::__detail::__cfg::__hardened)
+    __ycxx::__detail::__precondition(!__ycxx::__detail::__rcu_barrier_would_block(),
+                                     "rcu_barrier: called inside a region of RCU protection after retiring an "
+                                     "object in it (it would wait for the region's end for ever)");
+  __ycxx::__detail::rcu_barrier();
+}
 
 // [saferecl.rcu.base]
 template <class _Tp, class _Dp = default_delete<_Tp>>

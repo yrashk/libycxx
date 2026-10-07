@@ -2,3 +2,5 @@
 # [| <conditions>]" (tools/lib/realworld.py; the regex matches the whole test name).
 lib_test | libycxx-limitation | loads test_lib.so with dlopen and looks up its entry point glz_iface with dlsym; glz_iface is extern "C" but returns glz::iface_fn, a std::shared_ptr type, and nothing marks it for export on Linux (DLL_EXPORT is empty there), so GCC gives it the hidden visibility of libycxx's types (STATUS, known limitations) and dlsym finds nothing (std::bad_function_call) | gcc
 asio_repe | environment | its server listens on an IPv6 socket ([::]), which a host without IPv6 cannot open ("Address family not supported by protocol") | no-ipv6
+inplace_vector_test(_noexceptions)? | compiler-bug | its program is not built with Clang (build-skip.txt: Clang 23 rejects returning *opt for a temporary std::optional<T&>) | clang
+(msgpack|cbor)_test | project-bug | its program is not built with Clang (build-skip.txt: std::vector of an incomplete type referenced before the type is complete, [vector.overview]/4) | clang

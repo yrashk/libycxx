@@ -1248,7 +1248,7 @@ namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
 // regex_traits::transform_primary ([re.traits]/7): the primary sort key when the facet is exactly
 // a collate_byname and the form of its keys is known. glibc's strxfrm_l/wcsxfrm_l key of a locale
 // with collation rules is the weights of each level in turn, each level ended by the value 1
-// (glibc's string/strxfrm_l.c); the primary key is the weights before the first 1. A locale
+// (as observed from strxfrm_l's output); the primary key is the weights before the first 1. A locale
 // without rules ("C", or every locale of musl) gives a copy of the string: every character is
 // then its own equivalence class, and the whole key is the primary one. Darwin's key form is not
 // documented: false there (an empty key, [re.traits]/7).

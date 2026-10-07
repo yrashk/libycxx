@@ -14,8 +14,12 @@
 //   one written as a collating symbol ("[[.ch.]]" where the locale defines "ch").
 // The named locale: cs_CZ.ISO8859-2 (glibc defines the collating elements "ch", "Ch" and "CH";
 // "ch" collates after "h", before "i"); the wide part uses the same locale's wide facets.
+// Darwin: the key form of its strxfrm_l is not known to libycxx, so a collate_byname's primary
+//   key is empty there ([re.traits]/7) and [=a=] in cs_CZ is invalid; whether the locale has the
+//   element "ch" is asked of the C library's own regcomp.
 // REQUIRES: exceptions
 // COUNTERPART: libstdcxx:28_regex/traits/(char|wchar_t)/transform_primary\.cc
+#include <regex.h>
 #include <locale>
 #include <regex>
 #include <string>
@@ -75,26 +79,59 @@ int main() {
     CHECK(std::regex_match("-", std::regex("[[.hyphen.]]", rc::basic)));
   }
 
-  const std::locale cz(require_locale("cs_CZ.ISO8859-2"));
+  const char* cz_name = require_locale("cs_CZ.ISO8859-2");
+  const std::locale cz(cz_name);
+  // the C library's view: does cs_CZ have the collating element "ch"?
+  const bool c_ch = in_c_locale(cz_name, [] {
+    regex_t r;
+    const bool ok = regcomp(&r, "[[.ch.]]", 0) == 0;
+    if (ok)
+      regfree(&r);
+    return ok;
+  });
+#ifdef __APPLE__
+  constexpr bool primary = false;
+#else
+  constexpr bool primary = true;
+  CHECK(c_ch); // glibc's cs_CZ defines it
+#endif
   // A collate_byname: primary keys, the element "ch".
   {
     std::regex_traits<char> t;
     t.imbue(cz);
     const std::string a = "a", A = "A", aacute = "\xE1", b = "b", ch = "ch", CH = "CH", cx = "cx";
-    CHECK(!t.transform_primary(a.begin(), a.end()).empty());
-    CHECK(t.transform_primary(a.begin(), a.end()) == t.transform_primary(A.begin(), A.end()));
-    CHECK(t.transform_primary(a.begin(), a.end()) == t.transform_primary(aacute.begin(), aacute.end()));
-    CHECK(t.transform_primary(a.begin(), a.end()) != t.transform_primary(b.begin(), b.end()));
-    CHECK(t.lookup_collatename(ch.begin(), ch.end()) == "ch");
-    CHECK(t.lookup_collatename(CH.begin(), CH.end()) == "CH");
+    CHECK(t.transform_primary(a.begin(), a.end()).empty() == !primary);
+    if (primary) {
+      CHECK(t.transform_primary(a.begin(), a.end()) == t.transform_primary(A.begin(), A.end()));
+      CHECK(t.transform_primary(a.begin(), a.end()) == t.transform_primary(aacute.begin(), aacute.end()));
+      CHECK(t.transform_primary(a.begin(), a.end()) != t.transform_primary(b.begin(), b.end()));
+    }
+    CHECK(t.lookup_collatename(ch.begin(), ch.end()) == (c_ch ? "ch" : ""));
+    if (c_ch)
+      CHECK(t.lookup_collatename(CH.begin(), CH.end()) == "CH");
     CHECK(t.lookup_collatename(cx.begin(), cx.end()).empty());
     std::regex_traits<wchar_t> w;
     w.imbue(cz);
     const std::wstring wch = L"ch", wcx = L"cx";
-    CHECK(w.lookup_collatename(wch.begin(), wch.end()) == L"ch");
+    CHECK(w.lookup_collatename(wch.begin(), wch.end()) == (c_ch ? L"ch" : L""));
     CHECK(w.lookup_collatename(wcx.begin(), wcx.end()).empty());
   }
   for (auto g : {rc::ECMAScript, rc::basic, rc::extended, rc::awk, rc::grep, rc::egrep}) {
+    // [=a=]: the primary class (a, A, á, ...); invalid without a primary key.
+    if (primary) {
+      const std::regex eq = imbued<std::regex>(cz, std::string("[[=a=]]*"), g);
+      CHECK(std::regex_match("aA\xE1\xC1", eq));
+      CHECK(!std::regex_match("b", eq));
+    } else {
+      try {
+        (void)imbued<std::regex>(cz, std::string("[[=a=]]"), g);
+        CHECK(false);
+      } catch (const std::regex_error& e) {
+        CHECK(e.code() == rc::error_collate);
+      }
+    }
+    if (!c_ch)
+      continue;
     // A matching list matches the element as one collating element.
     const std::regex r = imbued<std::regex>(cz, std::string("[[.ch.]a]"), g);
     CHECK(std::regex_match("ch", r));
@@ -112,12 +149,9 @@ int main() {
     CHECK(std::regex_match("xhh", neg));
     CHECK(!std::regex_match("chh", neg));
     CHECK(!std::regex_match("a", neg));
-    // [=a=]: the primary class (a, A, á, ...).
-    const std::regex eq = imbued<std::regex>(cz, std::string("[[=a=]]*"), g);
-    CHECK(std::regex_match("aA\xE1\xC1", eq));
-    CHECK(!std::regex_match("b", eq));
     // [=ch=]: the element itself.
-    CHECK(std::regex_match("ch", imbued<std::regex>(cz, std::string("[[=ch=]]"), g)));
+    if (primary)
+      CHECK(std::regex_match("ch", imbued<std::regex>(cz, std::string("[[=ch=]]"), g)));
     // A multi-character range end needs collate (it has a sort key, no code point).
     try {
       (void)imbued<std::regex>(cz, std::string("[[.ch.]-i]"), g);
@@ -131,7 +165,7 @@ int main() {
     CHECK(!std::regex_match("c", range));
   }
   // Leftmost-longest with the element (POSIX): [[.ch.]c] at "ch" takes both characters.
-  {
+  if (c_ch) {
     std::smatch m;
     const std::string s = "xch";
     CHECK(std::regex_search(s, m, imbued<std::regex>(cz, std::string("[[.ch.]c]"), rc::extended)));
@@ -140,7 +174,7 @@ int main() {
     CHECK(m.position(0) == 2 && m.length(0) == 1 && m.str(1) == "h"); // not at "ch"'s 'c'
   }
   // Wide.
-  {
+  if (c_ch) {
     const std::wregex r = imbued<std::wregex>(cz, std::wstring(L"[[.ch.]a]+"), rc::extended);
     CHECK(std::regex_match(L"chach", r));
     CHECK(!std::regex_match(L"chc", r));

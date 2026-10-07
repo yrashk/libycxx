@@ -17,7 +17,7 @@ import argparse, collections, concurrent.futures, os, re, subprocess, sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(os.path.dirname(HERE))
-MARK = re.compile(r'//\s*@(E\d+)\s+(\w+)\s*$')
+MARK = re.compile(r'//\s*@([EM]\d+)\s+(\w+)\s*$')
 LOC = re.compile(r'^(?P<file>[^:\s][^:]*):(?P<line>\d+):(?:\d+:)?\s*(?P<what>.*)$')
 
 
@@ -127,8 +127,13 @@ def main():
     if a.failed_from:
         a.only = (a.only or []) + sorted({l.split()[2].rstrip(':') for l in open(a.failed_from) if l.startswith('FAIL:')})
     ccs = a.compiler or ['gcc', 'clang']
-    pdir = os.path.join(HERE, a.part, 'probes')
-    probes = sorted(os.path.join(pdir, f) for f in os.listdir(pdir) if f.endswith('.cpp') and (not a.only or any(o in f for o in a.only)))
+    # generated probes (probes/) and hand-written ones (manual/, check ids M<n>)
+    probes = []
+    for sub in ('probes', 'manual'):
+        pdir = os.path.join(HERE, a.part, sub)
+        if os.path.isdir(pdir):
+            probes += sorted(os.path.join(pdir, f) for f in os.listdir(pdir)
+                             if f.endswith('.cpp') and (not a.only or any(o in f for o in a.only)))
     gaps = load_gaps(a.part)
     jobs = [(cc, p) for cc in ccs for p in probes]
     results = []      # (cc, probe, id, aspect, status, message)

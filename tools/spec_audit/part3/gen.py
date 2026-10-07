@@ -188,7 +188,16 @@ class Gen:
             cdecl = sc[3]
             new = []
             for ctx, outer, _, label in alts:
-                for env, label2 in self.instantiations(cdecl, ctx):
+                over = SMP.MEMBER_CLASS.get((d.sec, d.name)) if k == len(d.classes) - 1 else None
+                insts = self.instantiations(cdecl, ctx)
+                if over and insts:
+                    own = cdecl.heads[len(cdecl.classes[-1][3].heads) if cdecl.classes else 0:]
+                    env0 = dict(insts[0][0])
+                    for p, v in zip(own[-1] if own else [], over):
+                        if p.name:
+                            env0[p.name] = v
+                    insts = [(env0, "")]
+                for env, label2 in insts:
                     base = (outer + "::" if outer else (d.ns + "::")) + cdecl.name
                     c2 = Ctx(env)
                     if cdecl.info.get("args"):
@@ -301,12 +310,16 @@ class Gen:
                 continue
             CUR["ns"] = d.ns
             try:
+                if (d.sec, d.name) in SMP.PRESENCE_ONLY:
+                    raise Unprobeable("signature not probed")
                 getattr(self, "do_" + d.kind.replace("-", "_"))(d)
             except Unprobeable as e:
                 self.presence(d, str(e))
 
     def presence(self, d, why=""):
         """A name-only check."""
+        if d.classes and "friend" in (d.info.get("specs") or []):
+            return   # a hidden friend is no member: not probed
         if d.classes:
             for ctx, selft, cdecl, label in self.class_samples(d)[:1]:
                 if cdecl.info.get("final"):
@@ -525,7 +538,7 @@ class Gen:
                      f"template<class Z> concept c = requires {{ requires spec_probe::same<decltype({call}), {res}>; }}; static_assert(c<void>);")
 
     def arg(self, p, ctx, z=True):
-        if p["pack"] and len(p["type"]) == 1 and p["type"][0] in ctx.env and ctx.env[p["type"][0]] in (PACK, ""):
+        if p["pack"] and any(str(x) in ctx.env and ctx.env[str(x)] in (PACK, "") for x in p["type"]):
             return ""
         t = subst(p["type"], ctx)
         if p["pack"]:

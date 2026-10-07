@@ -55,6 +55,7 @@ namespace spec_probe { struct hp_node : std::hazard_pointer_obj_base<hp_node> {}
 
 #if defined(SPEC_PROBE_linalg)
 #include <mdspan>
+#include <execution>   // the policies of the ExecutionPolicy overloads
 namespace spec_probe {
   using mat = std::mdspan<double, std::dextents<std::size_t, 2>>;
   using vec = std::mdspan<double, std::dextents<std::size_t, 1>>;
@@ -65,6 +66,7 @@ namespace spec_probe {
 namespace spec_probe {
   struct idxmap { template<class I> constexpr int operator()(I i) const { return 0; } };
   struct generator { template<class I> constexpr float operator()(I) const { return 0; } };
+  struct mask_generator { template<class I> constexpr bool operator()(I) const { return false; } };
 }
 #endif
 
@@ -72,7 +74,7 @@ namespace spec_probe {
 namespace spec_probe {
   using sndr = decltype(std::execution::just(1));
   struct rcvr {
-    using receiver_concept = std::execution::receiver_t;
+    using receiver_concept = std::execution::receiver_tag;
     template<class... A> void set_value(A&&...) && noexcept {}
     template<class E> void set_error(E&&) && noexcept {}
     void set_stopped() && noexcept {}
@@ -84,5 +86,6 @@ namespace spec_probe {
   struct task_env {};
   struct query_env {};
   struct derived_env {};
+  struct promise : std::execution::with_awaitable_senders<promise> {};
 }
 #endif

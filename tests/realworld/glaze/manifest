@@ -1,0 +1,11 @@
+# glaze: JSON/BEVE serialization with compile-time reflection of aggregates: C++23, heavy
+# constexpr and template metaprogramming, std::expected, ranges, <charconv>, <bit>, threads.
+# Tests with boost-ext/ut (openalgz/ut), fetched by its own CMake.
+url = https://github.com/stephenberry/glaze.git
+ref = v9.0.0
+commit = d78832c82289c61a9315bfbc35332cec9f4e93ca
+exercises = templates, constexpr, expected, ranges, charconv, threads
+# glaze needs CMake 3.31 or later.
+cmake = 4.1.2
+configure = -Dglaze_DEVELOPER_MODE=ON -Dglaze_BUILD_EXAMPLES=OFF -Dglaze_ENABLE_FUZZING=OFF
+timeout = 900

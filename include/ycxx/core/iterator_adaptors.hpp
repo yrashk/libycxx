@@ -888,10 +888,14 @@ public:
   constexpr _Ip base() && { return static_cast<_Ip&&>(__current_); }
   constexpr iter_difference_t<_Ip> count() const noexcept { return __length_; }
 
-  constexpr decltype(auto) operator*() { return *__current_; }
+  constexpr decltype(auto) operator*() {
+    __ycxx::__detail::__precondition(__length_ > 0, "counted_iterator: dereferencing the end");
+    return *__current_;
+  }
   constexpr decltype(auto) operator*() const
     requires __ycxx::__detail::__dereferenceable<const _Ip>
   {
+    __ycxx::__detail::__precondition(__length_ > 0, "counted_iterator: dereferencing the end");
     return *__current_;
   }
   constexpr auto operator->() const noexcept
@@ -901,6 +905,7 @@ public:
   }
 
   constexpr counted_iterator& operator++() {
+    __ycxx::__detail::__precondition(__length_ > 0, "counted_iterator: incrementing past the end");
     ++__current_;
     --__length_;
     return *this;
@@ -911,6 +916,7 @@ public:
       ++*this;
       return __tmp;
     } else {
+      __ycxx::__detail::__precondition(__length_ > 0, "counted_iterator: incrementing past the end");
       --__length_;
       if constexpr (__ycxx::__detail::__cfg::exceptions) {
         try {
@@ -951,6 +957,7 @@ public:
   constexpr counted_iterator& operator+=(iter_difference_t<_Ip> n)
     requires random_access_iterator<_Ip>
   {
+    __ycxx::__detail::__precondition(n <= __length_, "counted_iterator: advancing past the end");
     __current_ += n;
     __length_ -= n;
     return *this;
@@ -973,6 +980,7 @@ public:
   constexpr counted_iterator& operator-=(iter_difference_t<_Ip> n)
     requires random_access_iterator<_Ip>
   {
+    __ycxx::__detail::__precondition(-n <= __length_, "counted_iterator: advancing past the end");
     __current_ -= n;
     __length_ += n;
     return *this;
@@ -980,6 +988,7 @@ public:
   constexpr decltype(auto) operator[](iter_difference_t<_Ip> n) const
     requires random_access_iterator<_Ip>
   {
+    __ycxx::__detail::__precondition(n < __length_, "counted_iterator: subscript past the end");
     return __current_[n];
   }
 
@@ -997,11 +1006,13 @@ public:
       noexcept(ranges::iter_move(i.__current_)))
     requires input_iterator<_Ip>
   {
+    __ycxx::__detail::__precondition(i.__length_ > 0, "counted_iterator: iter_move of the end");
     return ranges::iter_move(i.__current_);
   }
   template <indirectly_swappable<_Ip> _I2>
   friend constexpr void iter_swap(const counted_iterator& __x, const counted_iterator<_I2>& y) noexcept(
       noexcept(ranges::iter_swap(__x.__current_, y.__current_))) {
+    __ycxx::__detail::__precondition(__x.__length_ > 0 && y.__length_ > 0, "counted_iterator: iter_swap of the end");
     ranges::iter_swap(__x.__current_, y.__current_);
   }
 };

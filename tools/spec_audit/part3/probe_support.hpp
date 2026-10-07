@@ -22,6 +22,14 @@ namespace spec_probe {
   using pred = bool (*)();
   using fn_dd = double (*)(double);
   using fn_ii = int (*)(int);
+  // a sample value for a constexpr call: 0.5 for a floating-point type, 1 for another arithmetic
+  // type, value-initialized otherwise
+  template<class T> constexpr std::remove_cvref_t<T> sample() {
+    using U = std::remove_cvref_t<T>;
+    if constexpr (std::is_floating_point_v<U>) return U(0.5);
+    else if constexpr (std::is_arithmetic_v<U> && !std::is_same_v<U, bool>) return U(1);
+    else return U{};
+  }
   struct callback { void operator()() noexcept {} };
   struct completion { void operator()() noexcept {} };
   struct visitor { template<class T> void operator()(T&&) const {} };

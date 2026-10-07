@@ -93,6 +93,13 @@ for _f in ("byteswap", "bit_ceil", "bit_floor", "has_single_bit", "shl", "shr", 
                               "V1": "std::simd::vec<unsigned>", "S": "std::simd::vec<unsigned>"}
 FUNC[("exec.domain.default", "apply_sender")] = {"Tag": "this_thread::sync_wait_t", "Args": "\x06"}
 FUNC[("execution.syn", "apply_sender")] = {"Tag": "this_thread::sync_wait_t", "Args": "\x06"}
+# constexpr functions whose sample arguments violate a precondition: (subclause, name).
+NO_CONSTEXPR_PROBE = {
+    # the probe's Tag (sync_wait_t) has a non-constexpr apply_sender: default_domain::apply_sender
+    # is constexpr, the call it makes is not
+    ("exec.domain.default", "apply_sender"), ("execution.syn", "apply_sender"),
+}
+
 # Declarations probed for presence only: the signature needs more than a sample can give.
 PRESENCE_ONLY = {("simd.syn", "chunk"), ("simd.syn", "cat"), ("simd.mask.overview", "to_bitset")}
 

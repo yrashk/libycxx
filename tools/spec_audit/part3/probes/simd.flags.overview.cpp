@@ -5,3 +5,4 @@
 #include "../probe_support.hpp"
 namespace p0 { using namespace std; using namespace std::simd; using std::simd::flags; } // simd.flags.overview#1 presence
 namespace p1 { using namespace std; using namespace std::simd; template<class Z> concept c = requires { (spec_probe::dv<spec_probe::dep<Z, std::simd::flags<>>>() | spec_probe::dv<spec_probe::dep<Z, std::simd::flags<>>>()); }; static_assert(c<void>); } // simd.flags.overview#2 call
+namespace p2 { using namespace std; using namespace std::simd; static_assert([]() consteval { auto a0 = spec_probe::sample<std::simd::flags<>>(); (void)((|a0)); return true; }()); } // simd.flags.overview#3 constexpr

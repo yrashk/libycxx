@@ -1,0 +1,9 @@
+# {fmt}: the formatting library std::format came from (an implementation of a standard facility:
+# its implementation sources are not read, DECISIONS clean room; its tests, with the GoogleTest
+# copy it vendors, and its build files are). Strings, <charconv>-like conversion, locales,
+# chrono formatting, iostreams, ranges and heavy templates.
+url = https://github.com/fmtlib/fmt.git
+ref = 12.2.0
+commit = 1be298e1bd68957e4cd352e1f676f00e07dcfb57
+exercises = strings, locale, chrono, iostreams, ranges, templates
+configure = -DFMT_TEST=ON -DFMT_DOC=OFF

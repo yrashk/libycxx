@@ -24,6 +24,22 @@ sys.path.insert(0, str(HERE.parents[1]))
 import gen_draft_names as g  # noqa: E402
 
 # [library] declares no entities of its own (its code is exposition: bitmask types, ...).
+FS, HOSTED = "\x05", "\x06"   # markers: a comment saying freestanding / hosted
+
+
+class Extract(g._Extract):
+    """gen_draft_names' extractor, keeping the comments that say freestanding (freestanding,
+    freestanding-deleted, partially/mostly/all freestanding) or hosted as FS / HOSTED markers
+    ([freestanding.item]/4)."""
+    def handle_data(self, d):
+        if self.code and self.comment and self.cur is not None:
+            if "freestanding" in d:
+                self.cur.append(FS)
+            elif re.search(r"\bhosted\b", d):
+                self.cur.append(HOSTED)
+        super().handle_data(d)
+
+
 CLAUSES = ("support", "concepts", "diagnostics", "mem", "meta", "utilities")
 # The subclauses whose declarations belong to a synopsis outside their own subclause.
 HEADER_OF = {"smartptr": "memory", "ptrtag": "memory", "mem.composite.types": "memory",
@@ -48,7 +64,7 @@ def sections(page):
     return out
 
 
-def scoped_decls(text, default_ns="std"):
+def scoped_decls(text, default_ns="std", with_status=False):
     """(scope, name, kind) of the declarations of one code block."""
     text = g._HYPHENATED.sub(g.ITALIC, text)
     # a placeholder spliced into a name (int<i>N</i>_t) is one italic name
@@ -76,14 +92,51 @@ def scoped_decls(text, default_ns="std"):
     scope = [("ns", default_ns)]
     paren, angle, head, raw = [0], [0], [], []
     access = ["public"]   # per scope: the access of a class's members so far
+    status = {}           # index into out -> "fs" / "hosted" (the comment after its declaration)
+    starts = [0, 0]       # where in out the previous and the current declaration begin
+    header_default = ""   # a comment before the first declaration: the synopsis's
+
+    def spec(j):
+        """The specifiers of the declaration whose declarator-id is at token j: constexpr or
+        consteval (in its head), noexcept (unconditional or conditional), deleted, explicit."""
+        out = set(x for x in raw if x in ("constexpr", "consteval", "explicit", "static", "virtual"))
+        d = 0
+        while j < n:
+            x = sig[j][0]
+            if x in ("(", "[") or x == g.LT:
+                d += 1
+            elif x in (")", "]") or x == g.GT:
+                d -= 1
+            elif d == 0 and x in (";", "{", "}"):
+                break
+            elif d == 0 and x == "noexcept":
+                cond = j + 1 < n and sig[j + 1][0] == "("
+                out.add("noexcept(...)" if cond and not (j + 2 < n and sig[j + 2][0] == "true") else "noexcept")
+            elif d == 0 and x == "delete" and sig[j - 1][0] == "=":
+                out.add("deleted")
+            j += 1
+        return " ".join(sorted(out))
 
     def emit(sc, name, kind):
-        out.append((sc, name, kind if access[-1] == "public" else kind + "-" + access[-1]))
+        out.append((sc, name, kind if access[-1] == "public" else kind + "-" + access[-1], spec(i - 1)))
+
     expos = False
     n = len(sig)
     i = 0
     while i < n:
         t, ln = sig[i]
+        if t in (FS, HOSTED):
+            st = "fs" if t == FS else "hosted"
+            if not out and not raw and i == 0:
+                header_default = st
+            else:
+                for k in range(starts[1], len(out)):   # the declaration it follows
+                    status.setdefault(k, st)
+            sig.pop(i)
+            n -= 1
+            continue
+        if not raw:
+            starts = [starts[1], len(out)]
         prev = sig[i - 1][0] if i else ""
         nxt = sig[i + 1][0] if i + 1 < n else ""
         if not raw:
@@ -224,7 +277,10 @@ def scoped_decls(text, default_ns="std"):
         if sk == "class":
             kind = {"alias": "member-type", "function": "member-function"}.get(kind, "member-variable")
         emit(sname, t, kind)
-    return out
+    if not with_status:
+        return out
+    res = [(a, b, c, status.get(k, "")) for k, (a, b, c, _) in enumerate(out)]
+    return ([("", "", "header-default", header_default)] if header_default else []) + res
 
 
 def main():
@@ -248,30 +304,55 @@ def main():
         if not header_of[s]:
             sub = next((x for x, nn, _ in secs if nn == two), "")
             header_of[s] = HEADER_OF.get(sub, "")
-    p = g._Extract()
+    p = Extract()
     p.feed(page)
-    rows, seen = [], set()
+    rows, seen, hdr_fs = [], set(), {}
     for sec, kind, text in p.regions:
         if kind != "code" or clause_of.get(sec) not in CLAUSES or sec in NOT_DECLS:
             continue
         hdr = header_of.get(sec, "")
         dns = DEFAULT_NS.get(sec) or ("std::meta" if sec.startswith("meta.reflection") else
                                       "" if hdr == "new" or hdr.endswith(".h") else "std")
-        for scope, name, k in scoped_decls(text, dns):
+        decls = scoped_decls(text, dns, with_status=True)
+        if decls and decls[0][2] == "header-default":
+            hdr_fs.setdefault(hdr, decls[0][3])
+            decls = decls[1:]
+        for scope, name, k, st in decls:
             key = (header_of.get(sec, ""), scope, name, k)
             if key in seen:
                 continue
             seen.add(key)
-            rows.append((sec, header_of.get(sec, ""), scope, name, k))
+            rows.append([sec, header_of.get(sec, ""), scope, name, k, st])
         for m in re.finditer(r"^\s*#\s*define\s+(\w+)(?=[\s(]|$)", text, re.M):
             key = (header_of.get(sec, ""), "", m.group(1), "macro")
             if key not in seen and not m.group(1).startswith("__cpp_lib"):
                 seen.add(key)
-                rows.append((sec, header_of.get(sec, ""), "", m.group(1), "macro"))
+                fsm = re.search(r"#\s*define\s+" + m.group(1) + r"\b[^\n]*" + FS, text)
+                rows.append([sec, header_of.get(sec, ""), "", m.group(1), "macro", "fs" if fsm else ""])
+    # [freestanding.item]/4-5: a declaration is freestanding if its comment says so, or if its
+    # synopsis begins with a comment saying freestanding and it is not followed by `hosted`; a
+    # member of a freestanding class is freestanding unless it says hosted.
+    fs_class = {}
+    for r in rows:
+        if r[4] in ("class", "enum") and r[2] in ("std", "std::pmr", "std::meta", "std::ranges", "std::contracts"):
+            st = r[5] or ("fs" if hdr_fs.get(r[1]) == "fs" else "")
+            if st == "fs":
+                fs_class[r[2] + "::" + r[3]] = True
+    for r in rows:
+        st = r[5]
+        if st == "hosted":
+            r[5] = "hosted"
+        elif st == "fs":
+            r[5] = "freestanding"
+        elif r[4].startswith("member") or r[4] == "enumerator":
+            base = re.sub(r"<.*$", "", r[2])
+            r[5] = "freestanding" if fs_class.get(base) or fs_class.get(re.sub(r"::[^:]*$", "", base)) else ""
+        else:
+            r[5] = "freestanding" if hdr_fs.get(r[1]) == "fs" else ""
     rev = g.revision(page)
     (HERE / "data" / "entities.tsv").write_text(
         f"# from {g.URL}, revision {rev} of github.com/Eelis/draft; generated by inventory.py\n"
-        "# subclause\theader\tscope\tname\tkind\n"
+        "# subclause\theader\tscope\tname\tkind\tfreestanding ([freestanding.item]) or hosted or empty\n"
         + "".join("\t".join(r) + "\n" for r in rows))
     print(f"{len(rows)} entities (revision {rev})")
 

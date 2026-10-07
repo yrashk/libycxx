@@ -49,7 +49,7 @@ def run(cmd, src=None):
 
 
 def macros(cc, libroot, header, extra=()):
-    rc, out = run(base(cc, libroot) + list(extra) + ["-x", "c++", "-", "-E", "-dM"], f"#include <{header}>\n")
+    rc, out = run(base(cc, libroot) + header_flags(cc, header) + list(extra) + ["-x", "c++", "-", "-E", "-dM"], f"#include <{header}>\n")
     if rc:
         return None, out
     return {m.group(1): m.group(2) for m in re.finditer(r"^#define (__cpp_lib_\w+) (\S+)", out, re.M)}, out
@@ -112,11 +112,13 @@ def name_probe(scope, name, kind, samples):
     return f"using {q};", None
 
 
-def check_names(cc, libroot, pool):
+def check_names(cc, libroot, pool, freestanding=False):
     rows = load("entities.tsv")
     samples = {r[0]: r[1] for r in load("samples.tsv")}
     by_header, unprobed = {}, []
-    for sec, header, scope, name, kind in rows:
+    for sec, header, scope, name, kind, fs in rows:
+        if freestanding and fs != "freestanding":
+            continue
         line, why = name_probe(scope, name, kind, samples)
         if line is None:
             unprobed.append((sec, header, scope, name, why))
@@ -139,9 +141,9 @@ def check_names(cc, libroot, pool):
                     src.append("#endif")
         lines_of[header] = where
         limit = "-ferror-limit=0" if cc == "clang" else "-fmax-errors=0"
-        jobs[header] = pool.submit(run, base(cc, libroot) + header_flags(cc, header)
+        jobs[header] = pool.submit(run, base(cc, libroot) + header_flags(cc, header) + (FS_FLAGS if freestanding else [])
                                    + ["-x", "c++", "-", "-fsyntax-only", limit], "\n".join(src) + "\n")
-    fails = []
+    fails, note = [], " freestanding" if freestanding else ""
     for header, f in jobs.items():
         rc, out = f.result()
         if not rc:
@@ -150,10 +152,10 @@ def check_names(cc, libroot, pool):
         bad = {int(m.group(1)) for m in re.finditer(r"^<stdin>:(\d+):\d+: (?:fatal )?error", out, re.M)
                if int(m.group(1)) in where}
         if not bad:
-            fails.append(f"names <{header}>: does not compile\n{out[:1500]}")
+            fails.append(f"names <{header}>{note}: does not compile\n{out[:1500]}")
         for ln in sorted(bad):
             sec, scope, name = where[ln]
-            fails.append(f"name {scope + '::' if scope else ''}{name} <{header}> [{sec}]: not declared")
+            fails.append(f"name {scope + '::' if scope else ''}{name} <{header}>{note} [{sec}]: not declared")
     return sum(len(v) for v in by_header.values()), fails, unprobed
 
 
@@ -244,10 +246,11 @@ def main():
     with concurrent.futures.ThreadPoolExecutor(a.jobs) as pool:
         for cc in ccs:
             if not a.skip_tables and not a.probes:
-                for what, fn in (("headers", check_headers), ("version", check_version), ("names", check_names)):
+                for what, fn in (("headers", check_headers), ("version", check_version), ("names", check_names),
+                                 ("freestanding names", lambda *x: check_names(*x, freestanding=True))):
                     res = fn(cc, a.libdir_root, pool)
                     n, fails = res[0], res[1]
-                    if what == "names" and a.verbose:
+                    if what == "names" and a.verbose:  # (the freestanding ones are a subset)
                         for u in res[2]:
                             print(f"  UNPROBED {u[2]}::{u[3]} [{u[0]}]: {u[4]}")
                     xf = [(f, expected(cc, f)) for f in fails]

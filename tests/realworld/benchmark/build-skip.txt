@@ -1,0 +1,3 @@
+# Build outputs that cannot be built against libycxx, as "<output regex> | <category> | <reason>
+# [| <conditions>]" (tools/lib/realworld.py). The tests that need them are in skip.txt.
+test/CMakeFiles/cxx11_test\.dir/.*\.o | pre-c++26 | checks that it is compiled as C++11 (#error otherwise); libycxx is C++26 only, so every translation unit is compiled as C++26

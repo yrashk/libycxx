@@ -1,0 +1,5 @@
+{
+  "name": "ycxx-package-manager-example",
+  "version": "1.0",
+  "dependencies": [ "fmt" ]
+}

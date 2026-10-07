@@ -131,3 +131,7 @@ namespace p124 { using namespace std; using namespace std::filesystem; template<
 namespace p125 { using namespace std; static_assert(std::is_default_constructible_v<std::formatter<filesystem::path,char>>); } // fs.filesystem.syn#126 specialization enabled
 namespace p126 { using namespace std; using std::hash; } // fs.filesystem.syn#127 presence
 namespace p127 { using namespace std; static_assert(std::is_default_constructible_v<std::hash<filesystem::path>>); } // fs.filesystem.syn#128 specialization enabled
+namespace p128 { using namespace std; using namespace std::ranges; static_assert(std::ranges::enable_borrowed_range<filesystem::directory_iterator>); } // fs.filesystem.syn#129 value true
+namespace p129 { using namespace std; using namespace std::ranges; static_assert(std::ranges::enable_borrowed_range<filesystem::recursive_directory_iterator>); } // fs.filesystem.syn#130 value true
+namespace p130 { using namespace std; using namespace std::ranges; static_assert(std::ranges::enable_view<filesystem::directory_iterator>); } // fs.filesystem.syn#131 value true
+namespace p131 { using namespace std; using namespace std::ranges; static_assert(std::ranges::enable_view<filesystem::recursive_directory_iterator>); } // fs.filesystem.syn#132 value true

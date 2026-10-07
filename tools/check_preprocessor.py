@@ -37,7 +37,8 @@ TINC = re.compile(r"^#(  |    )include <([^<>]+)>$")
 
 def check_transitive_block(rel, lines, errors):
     """The one sanctioned use of _YCXX_TRANSITIVE_INCLUDES (DECISIONS §19)."""
-    uses = [n for n, line in enumerate(lines) if TRANSITIVE in line or "YCXX_NO_TRANSITIVE_INCLUDES" in line]
+    uses = [n for n, line in enumerate(lines) if not line.lstrip().startswith("//")
+            and (TRANSITIVE in line or "YCXX_NO_TRANSITIVE_INCLUDES" in line)]
     if not uses:
         return
     if rel.startswith("ycxx/") or "/" in rel:

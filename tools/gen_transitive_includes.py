@@ -227,6 +227,8 @@ def feature_tests(inc, items):
 
 def expected_text(h, gs):
     text = (INCLUDE / h).read_text()
+    if not gs and not BLOCK_RE.search(text):
+        return text
     body = BLOCK_RE.sub("", text).rstrip("\n") + "\n"
     if gs:
         body += "\n" + block(gs)

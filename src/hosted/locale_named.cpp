@@ -1037,9 +1037,16 @@ namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
 // without rules ("C", or every locale of musl) gives a copy of the string: every character is
 // then its own equivalence class, and the whole key is the primary one. Darwin's key form is not
 // documented: false there (an empty key, [re.traits]/7).
+// Deliberate divergence (DECISIONS §3, STATUS): the classic locale's own collate facet (exactly
+// collate<charT>, not a collate_byname) gives its whole key, a copy of the string in code point
+// order, so [[=a=]] is valid in the default locale as portable code expects (libc++, libstdc++).
 template <class __charT>
 static bool primary_key(const std::collate<__charT>& __f, const __charT* __low, const __charT* __high,
                         std::basic_string<__charT>& out) {
+  if (typeid(__f) == typeid(std::collate<__charT>)) {
+    out = __f.transform(__low, __high);
+    return true;
+  }
   if constexpr (__cfg::__darwin)
     return false;
   if (typeid(__f) != typeid(std::collate_byname<__charT>))

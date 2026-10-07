@@ -4,7 +4,7 @@
 //   (and '_' is in the class of "w"); /15-17: imbue(loc) makes getloc() == loc and returns the
 //   global locale at construction (no earlier imbue) or the previous argument; /18: getloc();
 //   /7: transform_primary is the primary key for a collate_byname whose key form is known (else
-//   an empty string), and
+//   an empty string; the classic locale's whole key, a deliberate divergence), and
 //   [re.grammar]/14.3 matches [[=a=]] by it.
 // [re.regex.locale]/1: basic_regex::imbue returns the traits' imbue result, and afterwards the
 //   regex does not match any character sequence (until it is assigned a new pattern).
@@ -130,9 +130,10 @@ int main() {
         CHECK(e.code() == std::regex_constants::error_collate);
       }
     }
-    // the classic locale's collate facet is not a collate_byname: an empty key
+    // the classic locale's collate facet is not a collate_byname: [re.traits]/7 says an empty
+    // key; libycxx gives its whole key (deliberate divergence, DECISIONS §3)
     std::regex_traits<wchar_t> c;
-    CHECK(c.transform_primary(a.begin(), a.end()).empty());
+    CHECK(c.transform_primary(a.begin(), a.end()) == c.transform(a.begin(), a.end()));
   }
   // the global locale at construction
   {

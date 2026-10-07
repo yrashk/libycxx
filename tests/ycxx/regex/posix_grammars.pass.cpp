@@ -7,7 +7,6 @@
 //  - awk: ERE plus the escapes \" \/ \ddd (octal) and \n \t etc.
 //  - grep / egrep: BRE / ERE with newline separating alternatives.
 // REQUIRES: exceptions
-// COUNTERPART: libcxx:re/re.alg/re.alg.(match|search)/(awk|basic|extended).pass.cpp
 #include <regex>
 #include <string>
 #include "check.hpp"

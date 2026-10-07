@@ -4,4 +4,6 @@ url = https://github.com/google/googletest.git
 ref = v1.18.0
 commit = 063de7e9578f82b369302001269680b4b1553359
 exercises = test framework: iostreams, regex, exceptions, RTTI, threads, templates
-configure = -Dgtest_build_tests=ON -Dgmock_build_tests=ON
+# GoogleTest uses <cxxabi.h> (to print type names) only when it recognises libstdc++ or libc++
+# (gtest-port.h: __GLIBCXX__, _LIBCPP_VERSION); GTEST_HAS_CXXABI_H_ is its documented override.
+configure = -Dgtest_build_tests=ON -Dgmock_build_tests=ON -DCMAKE_CXX_FLAGS=-DGTEST_HAS_CXXABI_H_=1

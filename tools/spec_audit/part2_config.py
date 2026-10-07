@@ -67,9 +67,12 @@ def default_targ(tp, f):
         return None
     if tp.pack:
         return {'Args': ['int'], 'Rs': ['std::vector<int>&'], 'Views': [V, V], 'Ts': ['int'],
-                'OtherIndexTypes': ['std::size_t', 'std::size_t'], 'Extents': ['std::dynamic_extent'],
+                'OtherIndexTypes': ['std::size_t', 'std::size_t'], 'Extents': ['std::dynamic_extent', 'std::dynamic_extent'],
                 'SliceSpecifiers': ['std::full_extent_t', 'std::full_extent_t'], 'U': ['int'],
                 'Fs': ['p2::AnyFn'], 'Vs': [V]}.get(n)
+    kind = ' '.join(t.text for t in tp.kind)
+    if tp.is_type and re.search(r'predicate|relation|invocable|strict_weak_order|equivalence|indirectly_unary|copy_constructible F', kind):
+        return 'p2::AnyFn'
     if not tp.is_type:
         k = ' '.join(t.text for t in tp.kind)
         if 'bool' in k:
@@ -360,7 +363,38 @@ for _k, _c in CLASSES.items():
             _c['subst'].setdefault('@iterator@', _c['inst'].replace('sentinel_t<', 'iterator_t<'))
 
 # template arguments for one declaration (its text, whitespace collapsed)
-SPEC_SUBST = {}
+# template arguments for the declarations of one subclause
+SECTION_SUBST = {
+    'string.syn': {'charT': 'char', 'traits': 'std::char_traits<char>', 'Allocator': 'std::allocator<char>'},
+    'string.view.synop': {'charT': 'char', 'traits': 'std::char_traits<char>'},
+    'vector.syn': {'Allocator': 'std::allocator<bool>'},
+    'vector.bool.pspc': {'Allocator': 'std::allocator<bool>'},
+    'syn': {'T': 'std::vector<int>', 'V': V, 'Pred': 'p2::AnyFn', 'F': 'p2::AnyFn', 'Pattern': 'std::ranges::single_view<int>'},
+    'iterator.synopsis': {'T': 'int*', 'U': 'const int*'},
+}
+
+SPEC_SUBST = {
+    # common_view's guide needs a range that is not common
+    'template<class R> common_view(R && ) -> common_view<views::all_t<R>>': {'R': 'p2::NCV'},
+    'template<class R> explicit join_view(R && ) -> join_view<views::all_t<R>>': {'R': 'std::vector<std::vector<int>>&'},
+    'template<class R, class P> join_with_view(R && , P && ) -> join_with_view<views::all_t<R>, views::all_t<P>>':
+        {'R': 'std::vector<std::vector<int>>&', 'P': 'std::ranges::single_view<int>'},
+    'template<input_range R> join_with_view(R && , range_value_t<range_reference_t<R>>) -> join_with_view<views::all_t<R>, single_view<range_value_t<range_reference_t<R>>>>':
+        {'R': 'std::vector<std::vector<int>>&'},
+}
+
+
+# declarations whose Constraints: (not a requires-clause) the probes' instantiation does not meet,
+# or that need arguments a probe cannot spell: no check, with the reason
+SKIP_TEXT = [
+    (r'\(initializer_list<pair<Key, T>>', 'deduction guide from an initializer_list: CTAD from a braced list only'),
+    (r'\(initializer_list<Key>', 'deduction guide from an initializer_list: CTAD from a braced list only'),
+    (r'\(initializer_list<T>', 'deduction guide from an initializer_list: CTAD from a braced list only'),
+    (r'yield_value\(ranges::elements_of<', 'needs a nested generator or range argument of a matching kind'),
+    (r'mapping\(const layout_(right|left)::mapping<OtherExtents>&\)', 'Constraints: rank() <= 1, not met by the rank-2 instantiation'),
+    (r'span\(const array<T, N>& arr\)', 'Constraints: const T convertible to element_type, not met by span<int>'),
+    (r'operator PairLike', 'conversion template'),
+]
 
 
 def skip(sec, d):
@@ -369,6 +403,10 @@ def skip(sec, d):
         return 'exposition-only member'
     if any(c.startswith('@') and '::' not in c for c in d.cls):
         return 'member of an exposition-only class'
+    t = ' '.join(d.text.split())
+    for pat, why in SKIP_TEXT:
+        if re.search(pat, t):
+            return why
     if 'present only' in d.comment:
         return 'present only under a condition (' + ' '.join(d.comment.replace('//', ' ').split()) + ')'
     return None

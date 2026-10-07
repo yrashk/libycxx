@@ -54,6 +54,7 @@ def tokenize(text):
 class Decl:
     cls_decls = ()
     has_body = False
+    access = 'public'
 
     def __init__(self, ns, cls, toks, comment):
         self.ns = ns              # e.g. 'std::ranges'
@@ -303,10 +304,14 @@ def classify(toks, cls):
                 return 'function', 'operator ' + name
             # deduction guide: Name(params) -> ...;  (no return type before the name)
             close = _skip_balanced(body, p, '(', ')')
-            pre = [t.text for t in body[:j]]
-            if 'explicit' in pre and '(' in pre:
-                pre = pre[:pre.index('explicit')] + pre[pre.index(')') + 1:]
-            pre = [t for t in pre if t != 'explicit']
+            pre, k = [], 0
+            while k < j:
+                if body[k].text == 'explicit' and k + 1 < j and body[k + 1].text == '(':
+                    k = _skip_balanced(body, k + 1, '(', ')')
+                    continue
+                if body[k].text != 'explicit':
+                    pre.append(body[k].text)
+                k += 1
             if close < len(body) and body[close].text == '->' and not pre:
                 return 'deduction-guide', name
             if cls and name == _strip_targs(cls[-1]).split('::')[-1].strip('@') and not [t for t in pre if t not in SPECIFIERS]:
@@ -384,6 +389,7 @@ def class_head(d):
 
 def _parse(toks, i, end, ns, cls, out, cls_decls=None):
     cls_decls = list(cls_decls or [])
+    access = 'public'
     cur = []
     notes = []
     while i < end:
@@ -399,11 +405,14 @@ def _parse(toks, i, end, ns, cls, out, cls_decls=None):
         if t.text == '}' and not cur:
             return i + 1
         if t.text in ('public', 'private', 'protected') and i + 1 < end and toks[i + 1].text == ':' and not cur:
+            access = t.text
             i += 2
             continue
         if t.text == ';':
             if cur:
                 d = Decl('::'.join(ns), list(cls), cur, ' '.join(notes + [_comment_after(toks, i + 1, end)]).strip())
+                d.access = access
+                d.cls_decls = list(cls_decls)
                 out.append(d)
             cur = []
             notes = []
@@ -423,6 +432,8 @@ def _parse(toks, i, end, ns, cls, out, cls_decls=None):
                 continue
             if texts and texts[0] in ('class', 'struct', 'union') and '=' not in texts and '(' not in texts[:3]:
                 d = Decl('::'.join(ns), list(cls), cur, _comment_after(toks, i + 1, end))
+                d.access = access
+                d.cls_decls = list(cls_decls)
                 out.append(d)
                 i = _parse(toks, i + 1, end, ns, cls + [class_head(d)], out, cls_decls + [d])
                 # the class definition ends with ';' (possibly after declarators)
@@ -437,6 +448,27 @@ def _parse(toks, i, end, ns, cls, out, cls_decls=None):
                 i = j
                 continue
             # a function body, or a brace initializer / requires-expression / lambda
+            # a requires-expression's braces (`requires requires (T t) { ... }`), not a body: its
+            # `requires` follows another `requires` or an operator
+            r = len(cur) - 1 if cur and cur[-1].text == 'requires' else -1
+            if cur and cur[-1].text == ')':
+                depth, k = 0, len(cur) - 1
+                while k >= 0:
+                    if cur[k].text == ')':
+                        depth += 1
+                    elif cur[k].text == '(':
+                        depth -= 1
+                        if depth == 0:
+                            break
+                    k -= 1
+                if k >= 1 and cur[k - 1].text == 'requires':
+                    r = k - 1
+            req_expr = r >= 1 and cur[r - 1].text in ('requires', '&&', '||', '(', '!', ',', '=')
+            if req_expr:
+                j = _skip_balanced(toks, i, '{', '}')
+                cur = cur + toks[i:j]
+                i = j
+                continue
             is_func = top_level_index(body, '(') >= 0 and 'concept' not in texts and \
                 (top_level_index(body, '=') < 0 or top_level_index(body, '(') < top_level_index(body, '=')
                  or body[top_level_index(body, '=') - 1].text == 'operator')
@@ -444,6 +476,8 @@ def _parse(toks, i, end, ns, cls, out, cls_decls=None):
             if is_func:
                 d = Decl('::'.join(ns), list(cls), cur, _comment_after(toks, j, end))
                 d.has_body = True
+                d.access = access
+                d.cls_decls = list(cls_decls)
                 out.append(d)
                 cur = []
                 i = j

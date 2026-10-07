@@ -169,11 +169,20 @@ fetch() {
   if [ "$f_sub" = yes ]; then
     git -C "$f_dir" submodule update --init --recursive --depth 1
   fi
+  f_n=0
   for f_p in "$f_patches"/*.patch; do
     [ -f "$f_p" ] || continue
     echo "applying $f_p"
     git -C "$f_dir" apply --whitespace=nowarn "$f_p"
+    f_n=$((f_n + 1))
   done
+  # Committed in the local clone, so that what the project's tests clone from it (json's
+  # FetchContent tests take its HEAD) is the patched source too.
+  if [ $f_n -gt 0 ]; then
+    git -C "$f_dir" add -A
+    git -C "$f_dir" -c user.name=tools/realworld -c user.email=realworld@localhost -c commit.gpgsign=false \
+      commit -q -m "tools/realworld: $f_n patches of tests/realworld"
+  fi
   echo "$f_stamp" >"$f_dir/.git/ycxx-stamp"
   echo "$f_dir: $(git -C "$f_dir" rev-parse HEAD)"
 }
@@ -313,10 +322,12 @@ project() {
   YCXX_CXX_LOG=$b/.ycxx-cmds
   export YCXX_CXX_LOG
   eval "set -- $(get configure '')"
+  # RelWithDebInfo with -O1 -g1 and without -DNDEBUG: optimized, with the projects' assertions,
+  # and without the developer settings some projects tie to Debug (-Werror).
   pstep configure $cmake_cmd -S "$src/$(get source_dir .)" -B "$b" -G Ninja -DCMAKE_TOOLCHAIN_FILE="$cfgdir/toolchain.cmake" \
-    -DCMAKE_BUILD_TYPE="$(get build_type Debug)" "-DCMAKE_C_FLAGS_DEBUG=-O1 -g1" "-DCMAKE_CXX_FLAGS_DEBUG=-O1 -g1" \
+    -DCMAKE_BUILD_TYPE=RelWithDebInfo "-DCMAKE_C_FLAGS_RELWITHDEBINFO=-O1 -g1" "-DCMAKE_CXX_FLAGS_RELWITHDEBINFO=-O1 -g1" \
     -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DCMAKE_INSTALL_PREFIX="$cfgdir/prefix" -DCMAKE_PREFIX_PATH="$cfgdir/prefix" \
-    -DCMAKE_FIND_PACKAGE_PREFER_CONFIG=ON "$@" || { unset YCXX_CXX_LOG; return 1; }
+    "$@" || { unset YCXX_CXX_LOG; return 1; }
   eval "set -- $(get targets '')"
   pstep build build_project "$b" "$@" || { unset YCXX_CXX_LOG; return 1; }
   if [ "$install" = install ]; then

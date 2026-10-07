@@ -64,8 +64,8 @@ Working draft at github.com/Eelis/draft revision `c7015b485cc3db8efaa9dfb9ff0809
 | | GCC 16.2 | Clang 23.1 |
 |---|---|---|
 | Probe checks (254 files: 25470 checks over both compilers) | 12735 pass / 0 fail | 12735 pass / 0 fail |
-| Found and fixed | 4 feature-test macros (4), 13 Hardened preconditions (3) | same |
-| Open | one documented limitation (3), one documented choice (5), three draft defects (7) | same |
+| Found and fixed | 4 feature-test macros (4), 13 Hardened preconditions (3), shuffle/sample with a wide generator (3) | same |
+| Open | one documented choice (5), three draft defects (7) | same |
 
 6164 entities: 5803 with a presence check, all passing on both compilers; 3935 with a shape check,
 all passing. Not checked (361): their requires-clause names an exposition-only concept (80), a
@@ -275,7 +275,7 @@ defect), from the gap list below; probe files. Rows are the subclauses that decl
 
 | Subclause | Declared | Presence checked / pass | Shape checked / pass | Gaps by class | Probes |
 |---|---|---|---|---|---|
-| [algorithm.syn] | 641 | 631 / 631 | 556 / 556 | (3) 1 documented, (5) 1 documented, (7) 1 documented | [algorithm.syn.cpp](../tools/spec_audit/part2/probes/algorithm.syn.cpp), [algorithm.syn.freestanding.cpp](../tools/spec_audit/part2/probes/algorithm.syn.freestanding.cpp), [algorithm.syn.header.cpp](../tools/spec_audit/part2/probes/algorithm.syn.header.cpp) |
+| [algorithm.syn] | 641 | 631 / 631 | 556 / 556 | (3) 1 fixed, (5) 1 documented, (7) 1 documented | [algorithm.syn.cpp](../tools/spec_audit/part2/probes/algorithm.syn.cpp), [algorithm.syn.freestanding.cpp](../tools/spec_audit/part2/probes/algorithm.syn.freestanding.cpp), [algorithm.syn.header.cpp](../tools/spec_audit/part2/probes/algorithm.syn.header.cpp) |
 | [results] | 47 | 29 / 29 | 0 / 0 | - | [results.cpp](../tools/spec_audit/part2/probes/results.cpp) |
 | [numeric.ops.overview] | 51 | 51 / 51 | 48 / 48 | - | [numeric.ops.overview.cpp](../tools/spec_audit/part2/probes/numeric.ops.overview.cpp), [numeric.ops.overview.freestanding.cpp](../tools/spec_audit/part2/probes/numeric.ops.overview.freestanding.cpp), [numeric.ops.overview.header.cpp](../tools/spec_audit/part2/probes/numeric.ops.overview.header.cpp) |
 | **total** | 739 | 711 / 711 | 604 / 604 | | |
@@ -328,16 +328,18 @@ Fixed on this branch (each with a test that cites the paragraph):
    (8).
 4. **(4)** `__cpp_lib_hardened_view_interface` (202506L) was not defined by the hardened build,
    although `front`/`back` check `!empty()` ([view.interface.members]/1, /3).
+5. **(3)** `shuffle` and `sample` ([alg.random.shuffle], [alg.random.sample]) truncated the
+   generator's range `max() - min()` to 64 bits ([rand.req.urng] allows any unsigned integer
+   result_type), so a generator with an `unsigned __int128` result and a range of 2^65 + 1 values
+   recursed without end (STATUS listed it as "assume the generator's results fit in 64 bits").
+   Such a generator is now first reduced to uniform 64-bit values by rejection. Test:
+   `algorithm/shuffle_sample_wide_generator.pass.cpp`.
 
 Open, documented in STATUS.md (not fixed here):
 
-5. **(5)** The std:: and ranges:: ExecutionPolicy overloads, and those of the specialized memory
+6. **(5)** The std:: and ranges:: ExecutionPolicy overloads, and those of the specialized memory
    algorithms, run sequentially (STATUS, `<algorithm>`/`<numeric>`/`<execution>` and `<memory>`
    entries). [algorithms.parallel.exec] permits it; nothing observable is required.
-6. **(3)** `shuffle` and `sample` assume a generator's results fit in 64 bits ([alg.random.shuffle],
-   [alg.random.sample]; STATUS, known limitations): a `uniform_random_bit_generator` whose
-   `result_type` is wider (`unsigned __int128`) would be used wrongly. Effort: about 2 hours (draw
-   the uniform integer from as many results as the range needs, as [rand.dist.uni.int] engines do).
 7. **(7)** [set.difference]/4.3.1: for the parallel ranges:: overload with a complete output, the
    second iterator is `first2 + B`, "B the number of skipped elements in [first2, last2)"; the
    skipped elements need not be a prefix (r1 = {1, 5}, r2 = {3, 5}: only 5 is skipped, so B = 1

@@ -18,7 +18,7 @@ counted.iterator	3	fixed	[counted.iter.nav]/15	operator-=: -n <= length not chec
 counted.iterator	3	fixed	[counted.iter.cust]/1	iter_move: i.length > 0 not checked
 counted.iterator	3	fixed	[counted.iter.cust]/3	iter_swap: x.length > 0 and y.length > 0 not checked
 algorithm.syn	5	documented	[algorithms.parallel.exec]	the std:: and ranges:: ExecutionPolicy overloads run sequentially (STATUS, <algorithm>/<numeric>/<execution>); nothing observable is required
-algorithm.syn	3	documented	[alg.random.shuffle], [alg.random.sample]	shuffle and sample assume a generator's results fit in 64 bits (STATUS, known limitations)
+algorithm.syn	3	fixed	[alg.random.shuffle], [alg.random.sample]	shuffle and sample truncated a generator's range to 64 bits: a wider range (unsigned __int128 result) recursed without end
 algorithm.syn	7	documented	[set.difference]/4.3.1	"the number of skipped elements" of the second range is not a position: skipped elements need not be a prefix (STATUS, known limitations)
 mdspan.sub.map.result	7	documented	[mdspan.sub.map.common]/6	the layout_stride result's strides need not meet [mdspan.layout.stride.cons]/4.3 although the layout is unique (STATUS, known limitations)
 char.traits.specializations.char16.t	7	documented	[char.traits.require], [char.traits.specializations.char16.t]	eof() must differ from every char16_t value; none exists (STATUS, known limitations; own test char_traits/eof fails by design)

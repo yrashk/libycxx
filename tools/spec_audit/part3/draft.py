@@ -108,6 +108,8 @@ class Extract(HTMLParser):
                         txt = "".join(self.comment_text)
                         if re.match(r"\s*(//|/\*)\s*(for\s+)?exposition[ -]only", txt, re.I):
                             self.cur.append(EXPOS)
+                        elif re.search(r"\boptional\b", txt):
+                            self.cur.append("\x04optional\x05")
                         elif re.search(r"freestanding", txt):
                             self.cur.append("\x04" + ("freestanding-deleted" if "deleted" in txt else "freestanding") + "\x05")
                         self.comment_text = []

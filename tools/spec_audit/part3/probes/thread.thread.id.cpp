@@ -4,6 +4,10 @@
 #include <regex>
 #include <text_encoding>
 #include <thread>
+#define SPEC_PROBE_format
+#define SPEC_PROBE_regex
+#define SPEC_PROBE_text_encoding
+#define SPEC_PROBE_thread
 #include "../probe_support.hpp"
 namespace p0 { using namespace std; struct D : std::thread { using std::thread::id; }; } // thread.thread.id#1 presence
 namespace p1 { using namespace std; static_assert(std::is_constructible_v<std::thread::id> && std::is_nothrow_constructible_v<std::thread::id>); } // thread.thread.id#2 ctor noexcept

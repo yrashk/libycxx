@@ -250,9 +250,9 @@ when parsing, `fractional_width` of ratio<1, 2^62>, `hh_mm_ss` layout, an error 
   all passing on GCC 16.2 and Clang 23.1 (25470 generated checks, `tools/spec_audit/run_probes.py
   --part part2`, plus 66 hand-written constexpr/semantic checks). Found and fixed: 4 feature-test
   macros (`__cpp_lib_view_interface`, `__cpp_lib_hardened_{common_iterator,counted_iterator,
-  view_interface}`) and 13 unchecked Hardened preconditions of `common_iterator` and
-  `counted_iterator`. Open: the 64-bit generator limit of shuffle/sample (known limitations)
-  and three draft defects.
+  view_interface}`), 13 unchecked Hardened preconditions of `common_iterator` and
+  `counted_iterator`; shuffle and sample with a generator wider than 64 bits (infinite recursion).
+  Open: three draft defects.
 
 ## Own-suite configurations (runs of 2026-10-05, 2438 tests)
 `tools/test --hardened` / `--cxxflags=... --config-name=...` (README, Own tests); the nightly
@@ -1241,7 +1241,8 @@ compilers; `visit_format_arg.pass.cpp` needs `EOF` from `constexpr_char_traits.h
     when elements of the second range lie between later elements of the first.
 - `std::is_permutation` enforces its Mandates (same value type); libc++'s sort/heap tests call
   it with `MoveOnly*` and `int*` and fail to compile for that reason (12 tests).
-- shuffle/sample assume the generator's results fit in 64 bits.
+- shuffle/sample draw their indices as 64-bit values; a generator with a wider range (an
+  `unsigned __int128` result_type) is first reduced to uniform 64-bit values by rejection.
 
 - `<memory_resource>`: synchronized_pool_resource is the unsynchronized pool behind one lock
   (no thread-specific pools). Pool block sizes are powers of two from 8 bytes to 64 KiB (the

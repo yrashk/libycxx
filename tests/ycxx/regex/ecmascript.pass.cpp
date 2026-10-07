@@ -4,6 +4,7 @@
 // boundaries \b \B, greedy and non-greedy quantifiers * + ? {n} {n,} {n,m}, grouping,
 // non-capturing groups (?:), lookahead (?=) (?!), backreferences \n, escapes \t \n \xhh \uhhhh
 // \0 and \cX, and the dot.
+// COUNTERPART: libcxx:re/re.alg/re.alg.match/ecma.pass.cpp
 #include <regex>
 #include <string>
 #include "check.hpp"

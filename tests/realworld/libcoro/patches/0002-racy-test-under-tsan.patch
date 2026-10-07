@@ -1,0 +1,19 @@
+Category: project-bug. "thread_pool::schedule(task) manually resume returned task" checks
+task.is_ready() (coroutine_handle::done()) on the main thread while a pool thread resumes the
+task, ordered only by sleep_for: a data race ([intro.races]), which ThreadSanitizer reports.
+Skips that test case under ThreadSanitizer.
+
+diff --git a/test/test_thread_pool.cpp b/test/test_thread_pool.cpp
+index b48a054..31e3e0c 100644
+--- a/test/test_thread_pool.cpp
++++ b/test/test_thread_pool.cpp
+@@ -275,6 +275,9 @@ TEST_CASE("thread_pool::schedule(task)", "[thread_pool]")
+ 
+ TEST_CASE("thread_pool::schedule(task) manually resume returned task", "[thread_pool]")
+ {
++#if defined(__SANITIZE_THREAD__) || (defined(__has_feature) && __has_feature(thread_sanitizer))
++    SKIP("reads task.is_ready() while the pool thread resumes the task, ordered only by sleep_for");
++#endif
+     auto tp = coro::thread_pool::make_unique(coro::thread_pool::options{.thread_count = 1});
+ 
+     auto long_task = []() -> coro::task<bool>

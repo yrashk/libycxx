@@ -6,3 +6,7 @@ commit = 3046c8b0c29df995980003ea24f4d78c80ec0c8d
 exercises = threads, atomics, allocators, exceptions
 configure = -DTBB_TEST=ON -DTBB_STRICT=OFF -DTBB_EXAMPLES=OFF
 timeout = 900
+# Under ThreadSanitizer, oneTBB's own TSan configuration (as upstream runs it): no ITT
+# instrumentation in tbbmalloc, whose lock-free code TSan otherwise reports, and no malloc proxy,
+# which would replace the sanitizer's malloc.
+configure.tsan = -DTBB_TEST=ON -DTBB_STRICT=OFF -DTBB_EXAMPLES=OFF -DTBB_SANITIZE=thread

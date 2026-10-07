@@ -6,7 +6,8 @@
 // converted in the name's own encoding), shared by every facet built from it, reference-counted
 // (the facets hold the references), freed with the last of them. What the facets read from it is
 // computed once: the ctype<char> table and case mappings when the LC_CTYPE entry is opened, the
-// numpunct, moneypunct and time_get data when such a facet is constructed. Nothing here changes
+// numpunct, moneypunct and time_get data (names, formats, eras, alternative digits) when such a
+// facet is constructed. Nothing here changes
 // the global C locale or another thread's: a C function without a _l form runs with the locale
 // installed for the calling thread only (uselocale), and the thread's own locale is restored
 // before returning, also when an exception passes.
@@ -17,8 +18,10 @@
 #include <locale>
 #include <climits>
 #include <cstdlib>
+#include <cstdint>
 #include <cstring>
 #include <string>
+#include <string_view>
 #include <typeinfo>
 #include <ycxx/hosted/memory_resource.hpp> // __ycxx::__detail::__pal_lock
 #include "locale_named.hpp"
@@ -412,6 +415,141 @@ std::time_base::dateorder order_of(const char* __fmt) noexcept {
   return std::time_base::no_order;
 }
 
+// A date "[-]yyyy/mm/dd" of an era segment, as a comparable number (yyyy * 10000 + mm * 100 + dd);
+// its year in y.
+bool era_date(std::string_view s, long long& __key, long long& y) noexcept {
+  bool __neg = false;
+  if (!s.empty() && (s[0] == '-' || s[0] == '+')) {
+    __neg = s[0] == '-';
+    s.remove_prefix(1);
+  }
+  long long __part[3] = {0, 0, 0};
+  int k = 0, digits = 0;
+  for (char c : s) {
+    if (c == '/' && k < 2 && digits != 0) {
+      ++k;
+      digits = 0;
+    } else if (c >= '0' && c <= '9' && digits < 9) {
+      __part[k] = __part[k] * 10 + (c - '0');
+      ++digits;
+    } else {
+      return false;
+    }
+  }
+  if (k != 2 || digits == 0 || __part[1] < 1 || __part[1] > 12 || __part[2] < 1 || __part[2] > 31)
+    return false;
+  y = __neg ? -__part[0] : __part[0];
+  __key = y * 10000 + __part[1] * 100 + __part[2];
+  return true;
+}
+
+// One era segment "direction:offset:start_date:end_date:era_name:era_format" (POSIX, LC_TIME
+// era); false (d unchanged) when s does not have that form.
+template <class __charT>
+bool add_era(locale_t __loc, std::string_view s, __ycxx::__detail::__time_data<__charT>& d) {
+  std::string_view f[6];
+  for (int k = 0; k < 5; ++k) {
+    const std::size_t c = s.find(':');
+    if (c == std::string_view::npos)
+      return false;
+    f[k] = s.substr(0, c);
+    s.remove_prefix(c + 1);
+  }
+  f[5] = s;
+  if (f[0].size() != 1 || (f[0][0] != '+' && f[0][0] != '-') || f[1].empty() || f[4].empty())
+    return false;
+  long long __offset = 0;
+  for (char c : f[1]) {
+    if (c < '0' || c > '9' || __offset > 1'000'000)
+      return false;
+    __offset = __offset * 10 + (c - '0');
+  }
+  long long __start_key, __start_year, __end_key, __end_year;
+  if (!era_date(f[2], __start_key, __start_year))
+    return false;
+  bool __later; // the end date follows the start date
+  if (f[3] == "+*")
+    __later = true;
+  else if (f[3] == "-*")
+    __later = false;
+  else if (era_date(f[3], __end_key, __end_year))
+    __later = __end_key >= __start_key;
+  else
+    return false;
+  if (d.__neras == static_cast<int>(sizeof d.__eras / sizeof d.__eras[0]))
+    return false;
+  // '+': the numbers grow from the start date towards the end date; '-': they shrink
+  const int __step = (f[0][0] == '+') == __later ? 1 : -1;
+  const std::string __name(f[4]), __fmt(f[5]);
+  const std::basic_string<__charT> __n = __convert(__loc, __name.c_str(), __charT());
+  const std::basic_string<__charT> __ft = __convert(__loc, __fmt.c_str(), __charT());
+  __ycxx::__detail::__time_era& e = d.__eras[d.__neras++];
+  e = {__start_year, __offset, __step, d.__era_text.size(), __n.size(), d.__era_text.size() + __n.size(), __ft.size()};
+  d.__era_text += __n;
+  d.__era_text += __ft;
+  return true;
+}
+
+// The eras of LC_TIME (nl_langinfo ERA). POSIX gives the segments separated by ';'; glibc
+// separates them by NULs and gives their count as the item _NL_TIME_ERA_NUM_ENTRIES
+// (_YCXX_C_HAS_ERA_NUM_ENTRIES, found by cmake/ycxx-c-library.cmake).
+template <class __charT>
+void load_eras(locale_t __loc, __ycxx::__detail::__time_data<__charT>& d) {
+  const char* p = ::nl_langinfo_l(ERA, __loc);
+  if (p == nullptr || *p == '\0')
+    return;
+#if _YCXX_C_HAS_ERA_NUM_ENTRIES
+  const auto __count = reinterpret_cast<std::uintptr_t>(::nl_langinfo_l(_NL_TIME_ERA_NUM_ENTRIES, __loc));
+  if (__count != 0) {
+    for (std::uintptr_t k = 0; k < __count && k < 64; ++k) {
+      const std::string_view s(p);
+      if (!add_era(__loc, s, d))
+        return;
+      p += s.size() + 1;
+    }
+    return;
+  }
+#endif
+  std::string_view s(p);
+  while (!s.empty()) {
+    const std::size_t __semi = s.find(';');
+    if (!add_era(__loc, s.substr(0, __semi), d) || __semi == std::string_view::npos)
+      return;
+    s.remove_prefix(__semi + 1);
+  }
+}
+
+// The alternative digits of 0-99, as the C library writes them: strftime_l("%Oy") of the years
+// 1900-1999 (so how the C library stores ALT_DIGITS does not matter). None when every one is the
+// decimal form.
+template <class __charT>
+void load_alt_digits(locale_t __loc, __ycxx::__detail::__time_data<__charT>& d) {
+  std::basic_string<__charT> __text;
+  unsigned short __pos[101];
+  bool __own = false;
+  for (int k = 0; k < 100; ++k) {
+    std::tm t{};
+    t.tm_year = k;
+    t.tm_mday = 1;
+    char __buf[64];
+    const std::size_t n = ::strftime_l(__buf, sizeof __buf, "%Oy", &t, __loc);
+    __buf[n < sizeof __buf ? n : 0] = '\0';
+    const char __dec[3] = {static_cast<char>('0' + k / 10), static_cast<char>('0' + k % 10), '\0'};
+    if (n == 0 || std::strcmp(__buf, __dec) != 0)
+      __own = true;
+    __pos[k] = static_cast<unsigned short>(__text.size());
+    __text += __convert(__loc, __buf, __charT());
+    if (__text.size() > 60000)
+      return;
+  }
+  if (!__own)
+    return;
+  __pos[100] = static_cast<unsigned short>(__text.size());
+  d.__alt_text = static_cast<std::basic_string<__charT>&&>(__text);
+  for (int k = 0; k <= 100; ++k)
+    d.__alt_pos[k] = __pos[k];
+}
+
 template <class __charT>
 bool load_time(const char* name, __ycxx::__detail::__time_data<__charT>& d) {
   named_ref h{__ycxx::__detail::__named_open(name, std::locale::time, "std::time_get_byname")};
@@ -431,6 +569,11 @@ bool load_time(const char* name, __ycxx::__detail::__time_data<__charT>& d) {
   d.__t_fmt = __convert(__loc, ::nl_langinfo_l(T_FMT, __loc), __charT());
   d.__t_fmt_ampm = __convert(__loc, ::nl_langinfo_l(T_FMT_AMPM, __loc), __charT());
   d.__order = order_of(__x);
+  d.__era_d_t_fmt = __convert(__loc, ::nl_langinfo_l(ERA_D_T_FMT, __loc), __charT());
+  d.__era_d_fmt = __convert(__loc, ::nl_langinfo_l(ERA_D_FMT, __loc), __charT());
+  d.__era_t_fmt = __convert(__loc, ::nl_langinfo_l(ERA_T_FMT, __loc), __charT());
+  load_eras(__loc, d);
+  load_alt_digits(__loc, d);
   return true;
 }
 

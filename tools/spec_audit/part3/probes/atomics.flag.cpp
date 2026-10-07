@@ -4,7 +4,7 @@
 #define SPEC_PROBE_atomic
 #include "../probe_support.hpp"
 namespace p0 { using namespace std; using std::atomic_flag; } // atomics.flag#1 presence
-namespace p1 { using namespace std; static_assert(std::is_constructible_v<std::atomic_flag> && std::is_nothrow_constructible_v<std::atomic_flag>); } // atomics.flag#2 ctor noexcept
+namespace p1 { using namespace std; template<class Z> concept c = requires { ::new std::atomic_flag(); } && std::is_nothrow_constructible_v<std::atomic_flag>; static_assert(c<void>); } // atomics.flag#2 ctor noexcept
 namespace p2 { using namespace std; static_assert(!std::is_constructible_v<std::atomic_flag, const std::atomic_flag&>); } // atomics.flag#3 deleted ctor
 namespace p3 { using namespace std; template<class Z> concept c = !requires { spec_probe::dv<spec_probe::dep<Z, std::atomic_flag&>>().operator=(spec_probe::dv<spec_probe::dep<Z, const std::atomic_flag&>>()); }; static_assert(c<void>); } // atomics.flag#4 deleted call
 namespace p4 { using namespace std; template<class Z> concept c = !requires { spec_probe::dv<spec_probe::dep<Z, volatile std::atomic_flag&>>().operator=(spec_probe::dv<spec_probe::dep<Z, const std::atomic_flag&>>()); }; static_assert(c<void>); } // atomics.flag#5 deleted call

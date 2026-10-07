@@ -4,12 +4,10 @@
 #define SPEC_PROBE_mutex
 #include "../probe_support.hpp"
 namespace p0 { using namespace std; using std::recursive_mutex; } // thread.mutex.recursive#1 presence
-namespace p1 { using namespace std; static_assert(std::is_constructible_v<std::recursive_mutex>); } // thread.mutex.recursive#2 ctor
+namespace p1 { using namespace std; template<class Z> concept c = requires { ::new std::recursive_mutex(); }; static_assert(c<void>); } // thread.mutex.recursive#2 ctor
 namespace p2 { using namespace std; static_assert(std::is_nothrow_destructible_v<std::recursive_mutex>); } // thread.mutex.recursive#3 destructor
 namespace p3 { using namespace std; static_assert(!std::is_constructible_v<std::recursive_mutex, const std::recursive_mutex&>); } // thread.mutex.recursive#4 deleted ctor
 namespace p4 { using namespace std; template<class Z> concept c = !requires { spec_probe::dv<spec_probe::dep<Z, std::recursive_mutex&>>().operator=(spec_probe::dv<spec_probe::dep<Z, const std::recursive_mutex&>>()); }; static_assert(c<void>); } // thread.mutex.recursive#5 deleted call
 namespace p5 { using namespace std; template<class Z> concept c = requires { { spec_probe::dv<spec_probe::dep<Z, std::recursive_mutex&>>().lock() } -> spec_probe::same<void>; }; static_assert(c<void>); } // thread.mutex.recursive#6 call ret
 namespace p6 { using namespace std; template<class Z> concept c = requires { { spec_probe::dv<spec_probe::dep<Z, std::recursive_mutex&>>().try_lock() } -> spec_probe::same<bool>; requires noexcept(spec_probe::dv<spec_probe::dep<Z, std::recursive_mutex&>>().try_lock()); }; static_assert(c<void>); } // thread.mutex.recursive#7 call ret noexcept
 namespace p7 { using namespace std; template<class Z> concept c = requires { { spec_probe::dv<spec_probe::dep<Z, std::recursive_mutex&>>().unlock() } -> spec_probe::same<void>; }; static_assert(c<void>); } // thread.mutex.recursive#8 call ret
-namespace p8 { using namespace std; using T = std::recursive_mutex::native_handle_type; } // thread.mutex.recursive#9 type exists  (exposition-only or unspecified: implementation-defined)
-namespace p9 { using namespace std; template<class Z> concept c = requires { { spec_probe::dv<spec_probe::dep<Z, std::recursive_mutex&>>().native_handle() } -> spec_probe::same<std::recursive_mutex::native_handle_type>; }; static_assert(c<void>); } // thread.mutex.recursive#10 call ret

@@ -4,5 +4,5 @@
 #define SPEC_PROBE_execution
 #include "../probe_support.hpp"
 namespace p0 { using namespace std; using namespace std::execution; using std::execution::indeterminate_domain; } // exec.domain.indeterminate#1 presence
-namespace p1 { using namespace std; using namespace std::execution; static_assert(std::is_constructible_v<std::execution::indeterminate_domain<>>); } // exec.domain.indeterminate#2 ctor
-namespace p3 { using namespace std; using namespace std::execution; template<class Z> concept c = requires { std::execution::indeterminate_domain<>::transform_sender(spec_probe::dv<spec_probe::dep<Z, execution::set_value_t>>(), spec_probe::dv<spec_probe::dep<Z, spec_probe::sndr&&>>(), spec_probe::dv<spec_probe::dep<Z, const execution::env<>&>>()); }; static_assert(c<void>); } // exec.domain.indeterminate#4 call
+namespace p1 { using namespace std; using namespace std::execution; template<class Z> concept c = requires { ::new std::execution::indeterminate_domain<>(); }; static_assert(c<void>); } // exec.domain.indeterminate#2 ctor
+namespace p3 { using namespace std; using namespace std::execution; template<class Z> concept c = requires { std::execution::indeterminate_domain<>::transform_sender(spec_probe::dv<spec_probe::dep<Z, execution::set_value_t>>(), spec_probe::dv<spec_probe::dep<Z, spec_probe::sndr&&>>(), spec_probe::dv<spec_probe::dep<Z, const execution::env<>&>>()); }; static_assert(c<void>); } // exec.domain.indeterminate#4 call

@@ -5,9 +5,9 @@
 #include "../probe_support.hpp"
 namespace p0 { using namespace std; using std::seed_seq; } // rand.util.seedseq#1 presence
 namespace p1 { using namespace std; static_assert(spec_probe::same<typename std::seed_seq::result_type, uint_least32_t>); } // rand.util.seedseq#2 type
-namespace p2 { using namespace std; static_assert(std::is_constructible_v<std::seed_seq> && std::is_nothrow_constructible_v<std::seed_seq>); } // rand.util.seedseq#3 ctor noexcept
-namespace p3 { using namespace std; static_assert(std::is_constructible_v<std::seed_seq, initializer_list<double>> && std::is_convertible_v<initializer_list<double>, std::seed_seq>); } // rand.util.seedseq#4 ctor
-namespace p4 { using namespace std; static_assert(std::is_constructible_v<std::seed_seq, const double*, const double*>); } // rand.util.seedseq#5 ctor
+namespace p2 { using namespace std; template<class Z> concept c = requires { ::new std::seed_seq(); } && std::is_nothrow_constructible_v<std::seed_seq>; static_assert(c<void>); } // rand.util.seedseq#3 ctor noexcept
+namespace p3 { using namespace std; template<class Z> concept c = requires { ::new std::seed_seq(spec_probe::dv<spec_probe::dep<Z, initializer_list<int>>>()); } && std::is_convertible_v<initializer_list<int>, std::seed_seq>; static_assert(c<void>); } // rand.util.seedseq#4 ctor
+namespace p4 { using namespace std; template<class Z> concept c = requires { ::new std::seed_seq(spec_probe::dv<spec_probe::dep<Z, const double*>>(), spec_probe::dv<spec_probe::dep<Z, const double*>>()); }; static_assert(c<void>); } // rand.util.seedseq#5 ctor
 namespace p5 { using namespace std; template<class Z> concept c = requires { { spec_probe::dv<spec_probe::dep<Z, std::seed_seq&>>().generate(spec_probe::dv<spec_probe::dep<Z, unsigned*>>(), spec_probe::dv<spec_probe::dep<Z, unsigned*>>()) } -> spec_probe::same<void>; }; static_assert(c<void>); } // rand.util.seedseq#6 call ret
 namespace p6 { using namespace std; template<class Z> concept c = requires { { spec_probe::dv<spec_probe::dep<Z, const std::seed_seq&>>().size() } -> spec_probe::same<size_t>; requires noexcept(spec_probe::dv<spec_probe::dep<Z, const std::seed_seq&>>().size()); }; static_assert(c<void>); } // rand.util.seedseq#7 call ret noexcept
 namespace p7 { using namespace std; template<class Z> concept c = requires { { spec_probe::dv<spec_probe::dep<Z, const std::seed_seq&>>().param(spec_probe::dv<spec_probe::dep<Z, char*>>()) } -> spec_probe::same<void>; }; static_assert(c<void>); } // rand.util.seedseq#8 call ret

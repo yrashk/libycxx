@@ -8,7 +8,7 @@ namespace p1 { using namespace std; using std::unstoppable_token; } // thread.st
 namespace p2 { using namespace std; using std::stop_token; } // thread.stoptoken.syn#3 presence
 namespace p3 { using namespace std; using std::stop_source; } // thread.stoptoken.syn#4 presence
 namespace p4 { using namespace std; using std::nostopstate_t; } // thread.stoptoken.syn#5 presence
-namespace p5 { using namespace std; static_assert(std::is_constructible_v<std::nostopstate_t>); } // thread.stoptoken.syn#6 ctor
+namespace p5 { using namespace std; template<class Z> concept c = requires { ::new std::nostopstate_t(); }; static_assert(c<void>); } // thread.stoptoken.syn#6 ctor
 namespace p6 { using namespace std; static_assert(spec_probe::same<decltype(std::nostopstate), const nostopstate_t>); } // thread.stoptoken.syn#7 var
 namespace p7 { using namespace std; using std::stop_callback; } // thread.stoptoken.syn#8 presence
 namespace p8 { using namespace std; using std::never_stop_token; } // thread.stoptoken.syn#9 presence

@@ -145,7 +145,7 @@ namespace p138 { using namespace std; using namespace std::execution; using std:
 namespace p139 { using namespace std; using namespace std::execution; using std::execution::task_scheduler; } // execution.syn#140 presence
 namespace p140 { using namespace std; using namespace std::execution; using std::execution::with_error; } // execution.syn#141 presence
 namespace p141 { using namespace std; using namespace std::execution; static_assert(spec_probe::same<typename std::execution::with_error<int>::type, remove_cvref_t<int>>); } // execution.syn#142 type
-namespace p142 { using namespace std; using namespace std::execution; static_assert(spec_probe::same<decltype(std::execution::with_error<int>::error), std::execution::with_error<int>::type>); } // execution.syn#143 var
+namespace p142 { using namespace std; using namespace std::execution; static_assert(spec_probe::same<decltype(std::execution::with_error<int>::error), typename std::execution::with_error<int>::type>); } // execution.syn#143 var
 namespace p143 { using namespace std; using namespace std::execution; template<class Z> concept c = requires { requires spec_probe::same<decltype(std::execution::with_error(spec_probe::dv<spec_probe::dep<Z, int>>())), std::execution::with_error<int>>; }; static_assert(c<void>); } // execution.syn#144 deduction guide
 namespace p144 { using namespace std; using namespace std::execution; using std::execution::task; } // execution.syn#145 presence
 namespace p145 { using namespace std; using namespace std::execution; using std::execution::scope_association; } // execution.syn#146 presence

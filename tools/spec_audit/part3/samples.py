@@ -72,13 +72,29 @@ CLASS = {
     "negative_binomial_distribution": ["int"], "poisson_distribution": ["int"], "discrete_distribution": ["int"],
     "simple_counting_scope": None,
     "basic_spanbuf": ["char", "char_traits<char>"],
+    "basic_regex": ["char", "regex_traits<char>"],
 }
 
 # Samples by template-parameter name, per area (prefix of the stable name).
 BY_AREA = [
+    ("istream.syn", {"T": "spec_probe::streamable&", "Istream": "istream"}),
+    ("ostream.syn", {"T": "spec_probe::streamable", "Ostream": "ostream"}),
+    ("re", {"Allocator": "allocator<sub_match<const char*>>"}),
+    ("depr.vector.bool", {"Allocator": "allocator<bool>"}),
+    ("rand.util.seedseq", {"T": "int"}),
+    ("saferecl.hp", {"T": "spec_probe::hp_node", "D": "default_delete<spec_probe::hp_node>"}),
+    ("hazard", {"T": "spec_probe::hp_node", "D": "default_delete<spec_probe::hp_node>"}),
+    ("ifstream", {"T": "filesystem::path"}), ("ofstream", {"T": "filesystem::path"}),
+    ("fstream", {"T": "filesystem::path"}), ("filebuf", {"T": "filesystem::path"}),
+    ("stringbuf", {"T": "std::string_view"}), ("istringstream", {"T": "std::string_view"}),
+    ("ostringstream", {"T": "std::string_view"}), ("stringstream", {"T": "std::string_view"}),
+    ("time.duration", {"Period2": "ratio<60>"}),
+    ("time.point", {"Duration2": "chrono::minutes"}),
+    ("time.zone.zonedtime", {"Duration2": "chrono::minutes"}),
+    ("locale.ctype.general", {"charT": "wchar_t"}),
     ("thread.thread", {"T": "char"}),
     ("thread.jthread", {"T": "char"}),
-    ("format.fmt.string", {"T": "const char*"}),
+    ("format.fmt.string", {"T": "std::string_view"}),
     ("depr.tuple", {"T": "tuple<int>"}),
     ("depr.variant", {"T": "variant<int>"}),
     ("depr.meta", {"Types": "int"}),
@@ -96,8 +112,8 @@ BY_AREA = [
     ("gslice", {"T": "double"}),
     ("slice", {"T": "double"}),
     ("numbers", {"T": "double"}),
-    ("future", {"R": "int", "Allocator": "allocator<int>", "F": "spec_probe::fn_int", "T": "int"}),
-    ("futures", {"R": "int", "Allocator": "allocator<int>", "F": "spec_probe::fn_int", "T": "int"}),
+    ("future", {"R": "int", "Allocator": "allocator<int>", "F": "spec_probe::fn_ii", "T": "int"}),
+    ("futures", {"R": "int", "Allocator": "allocator<int>", "F": "spec_probe::fn_ii", "T": "int"}),
     ("shared.lock", {"Mutex": "shared_mutex"}),
     ("thread.lock.shared", {"Mutex": "shared_mutex"}),
     ("thread.sharedtimedmutex", {"Mutex": "shared_mutex"}),
@@ -206,6 +222,15 @@ PLACEHOLDERS = {
 
 # Declarations the draft makes optional or implementation-defined: (subclause, name) -> why.
 SKIP = {
+    # [thread.req.native]/1: the presence of native_handle_type and native_handle is
+    # implementation-defined (STATUS: no native_handle for mutexes and condition variables)
+    ("thread.mutex.class", "native_handle_type"): "", ("thread.mutex.class", "native_handle"): "",
+    ("thread.mutex.recursive", "native_handle_type"): "", ("thread.mutex.recursive", "native_handle"): "",
+    ("thread.timedmutex.class", "native_handle_type"): "", ("thread.timedmutex.class", "native_handle"): "",
+    ("thread.timedmutex.recursive", "native_handle_type"): "", ("thread.timedmutex.recursive", "native_handle"): "",
+    ("thread.sharedmutex.class", "native_handle_type"): "", ("thread.sharedmutex.class", "native_handle"): "",
+    ("thread.sharedtimedmutex.class", "native_handle_type"): "", ("thread.sharedtimedmutex.class", "native_handle"): "",
+    ("thread.condition.condvar", "native_handle_type"): "", ("thread.condition.condvar", "native_handle"): "",
     ("cmath.syn", "FP_FAST_FMA"): "C23 7.12/7: optionally defined (fma is fast)",
     ("cmath.syn", "FP_FAST_FMAF"): "C23 7.12/7: optionally defined",
     ("cmath.syn", "FP_FAST_FMAL"): "C23 7.12/7: optionally defined",
@@ -263,7 +288,11 @@ def params_env(params, decl, env):
         vals = CLASS[cls_name]
         if vals is None:
             return []
-        for p, v in zip([p for p in params], vals + [None] * len(params)):
+        vals = list(vals)
+        for k, p in enumerate(params):
+            v = vals[k] if k < len(vals) else None
+            if p.pack:
+                v = "\x06" + ", ".join(vals[k:])
             if p.name is None:
                 continue
             if v is None:

@@ -4,4 +4,4 @@
 #define SPEC_PROBE_chrono
 #include "../probe_support.hpp"
 namespace p0 { using namespace std; using namespace std::chrono; using std::chrono::last_spec; } // time.cal.last#1 presence
-namespace p1 { using namespace std; using namespace std::chrono; static_assert(std::is_constructible_v<std::chrono::last_spec>); } // time.cal.last#2 ctor
+namespace p1 { using namespace std; using namespace std::chrono; template<class Z> concept c = requires { ::new std::chrono::last_spec(); }; static_assert(c<void>); } // time.cal.last#2 ctor

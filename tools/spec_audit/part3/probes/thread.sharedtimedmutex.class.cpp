@@ -4,7 +4,7 @@
 #define SPEC_PROBE_shared_mutex
 #include "../probe_support.hpp"
 namespace p0 { using namespace std; using std::shared_timed_mutex; } // thread.sharedtimedmutex.class#1 presence
-namespace p1 { using namespace std; static_assert(std::is_constructible_v<std::shared_timed_mutex>); } // thread.sharedtimedmutex.class#2 ctor
+namespace p1 { using namespace std; template<class Z> concept c = requires { ::new std::shared_timed_mutex(); }; static_assert(c<void>); } // thread.sharedtimedmutex.class#2 ctor
 namespace p2 { using namespace std; static_assert(std::is_nothrow_destructible_v<std::shared_timed_mutex>); } // thread.sharedtimedmutex.class#3 destructor
 namespace p3 { using namespace std; static_assert(!std::is_constructible_v<std::shared_timed_mutex, const std::shared_timed_mutex&>); } // thread.sharedtimedmutex.class#4 deleted ctor
 namespace p4 { using namespace std; template<class Z> concept c = !requires { spec_probe::dv<spec_probe::dep<Z, std::shared_timed_mutex&>>().operator=(spec_probe::dv<spec_probe::dep<Z, const std::shared_timed_mutex&>>()); }; static_assert(c<void>); } // thread.sharedtimedmutex.class#5 deleted call

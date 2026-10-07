@@ -4,7 +4,7 @@
 #define SPEC_PROBE_stop_token
 #include "../probe_support.hpp"
 namespace p0 { using namespace std; using std::inplace_stop_source; } // stopsource.inplace.general#1 presence
-namespace p1 { using namespace std; static_assert(std::is_constructible_v<std::inplace_stop_source> && std::is_nothrow_constructible_v<std::inplace_stop_source>); } // stopsource.inplace.general#2 ctor noexcept
+namespace p1 { using namespace std; template<class Z> concept c = requires { ::new std::inplace_stop_source(); } && std::is_nothrow_constructible_v<std::inplace_stop_source>; static_assert(c<void>); } // stopsource.inplace.general#2 ctor noexcept
 namespace p2 { using namespace std; static_assert(!std::is_constructible_v<std::inplace_stop_source, std::inplace_stop_source&&>); } // stopsource.inplace.general#3 deleted ctor
 namespace p3 { using namespace std; static_assert(!std::is_constructible_v<std::inplace_stop_source, const std::inplace_stop_source&>); } // stopsource.inplace.general#4 deleted ctor
 namespace p4 { using namespace std; template<class Z> concept c = !requires { spec_probe::dv<spec_probe::dep<Z, std::inplace_stop_source&>>().operator=(spec_probe::dv<spec_probe::dep<Z, std::inplace_stop_source&&>>()); }; static_assert(c<void>); } // stopsource.inplace.general#5 deleted call

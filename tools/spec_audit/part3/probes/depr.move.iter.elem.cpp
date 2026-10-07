@@ -4,4 +4,4 @@
 #define SPEC_PROBE_iterator
 #include "../probe_support.hpp"
 namespace p0 { using namespace std; using std::move_iterator; } // depr.move.iter.elem#1 presence
-namespace p1 { using namespace std; template<class Z> concept c = requires { { spec_probe::dv<spec_probe::dep<Z, const std::move_iterator<int*>&>>().operator->() } -> spec_probe::same<pointer>; }; static_assert(c<void>); } // depr.move.iter.elem#2 call ret
+namespace p1 { using namespace std; template<class Z> concept c = requires { { spec_probe::dv<spec_probe::dep<Z, const std::move_iterator<int*>&>>().operator->() } -> spec_probe::same<typename std::move_iterator<int*>::pointer>; }; static_assert(c<void>); } // depr.move.iter.elem#2 call ret

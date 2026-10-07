@@ -8,7 +8,7 @@ import re
 
 IT0, IT1, EXPOS = "\x01", "\x02", "\x03"
 
-_TOK = re.compile(r"\n|\x01[^\x02]*\x02|\x03|\x04[^\x05]*\x05|[A-Za-z_]\w*|::|->|\.\.\.|==|!=|\+\+|--|&&|\|\||"
+_TOK = re.compile(r"\n|\x01[^\x02]*\x02|\x03|\x04[^\x05]*\x05|[A-Za-z_]\w*|<=>|::|->|\.\.\.|==|!=|\+\+|--|&&|\|\||"
                   r"\+=|-=|\*=|/=|%=|&=|\|=|\^=|\.?\d[\w.']*|\"(?:\\.|[^\"\\\n])*\"|'(?:\\.|[^'\\\n])*'|\S")
 
 
@@ -364,9 +364,15 @@ def _class_name(d):
     while k < len(c) and c[k] in ("class", "struct"):
         k += 1
     qual = []
-    while k + 2 < len(c) and c[k + 1] == "::" and re.match(r"[A-Za-z_]", c[k + 2]):
-        qual.append(str(c[k]))
-        k += 2
+    while True:
+        j = k + 1
+        if j < len(c) and c[j] == "<":
+            j = match_angle(c, j)
+        if j + 1 < len(c) and c[j] == "::" and re.match(r"[A-Za-z_]", c[j + 1]):
+            qual.append(str(c[k]))
+            k = j + 1
+            continue
+        break
     d.info["qual"] = qual
     name = c[k] if k < len(c) else ""
     d.name = str(name)
@@ -408,9 +414,10 @@ def _requires_split(c):
             if c[i] == "(":
                 i = match_close(c, i, "(", ")")
             else:
-                # name, possibly qualified, with template args
-                while i < len(c) and (re.match(r"[\w:]", c[i]) or is_italic(c[i]) or c[i] == "::"):
-                    i += 1
+                # one name, possibly qualified, with template args
+                i += 1
+                while i + 1 < len(c) and c[i] == "::":
+                    i += 2
                 if i < len(c) and c[i] == "<":
                     i = match_angle(c, i)
             if i < len(c) and c[i] in ("&&", "||"):
@@ -588,7 +595,12 @@ def _fun_or_var(d, c):
     if "{" in c[:k]:
         k = min(k, c.index("{"))
     decl = c[:k]
+    extents = []
     while decl and decl[-1] in ("]",):
+        b0 = len(decl) - 1
+        while b0 >= 0 and decl[b0] != "[":
+            b0 -= 1
+        extents = decl[b0:] + extents
         # array
         b = len(decl) - 1
         while b >= 0 and decl[b] != "[":
@@ -596,7 +608,7 @@ def _fun_or_var(d, c):
         decl = decl[:b]
     d.kind = "variable"
     d.name = str(decl[-1]) if decl else ""
-    d.info["type"] = [x for x in decl[:-1] if x not in SPECIFIERS]
+    d.info["type"] = [x for x in decl[:-1] if x not in SPECIFIERS] + extents
     d.info["specs"] = [x for x in decl[:-1] if x in SPECIFIERS]
     d.info["init"] = c[k:]
     d.expos = d.expos or (bool(decl) and is_italic(decl[-1]))
@@ -680,12 +692,23 @@ def _fun_rest(d, c, i):
     d.info["defaulted"] = rest[k:k + 2] == ["=", "default"]
     d.info["pure"] = rest[k:k + 2] == ["=", "0"]
     # deduction guide: no return type, a trailing return type, and a class-template name
-    if d.info["trailing"] is not None and not d.info["ret"] and not d.scope_is_class():
+    if d.info["trailing"] is not None and not d.info["ret"] and (not d.scope_is_class() or d.name != d.scope[-1][1]):
         d.kind = "guide"
 
 
 def parse_param(p):
     p = list(p)
+    for k in range(len(p) - 3):
+        if p[k] == "(" and p[k + 1] in ("*", "&", "&&") and re.match(r"[A-Za-z_]\w*$", p[k + 2]) and p[k + 3] == ")":
+            del p[k + 2]
+            break
+    else:
+        # a parameter of function type: `T func(T)` is `T (*)(T)`
+        if len(p) >= 4 and p[-1] == ")" and "=" not in p:
+            o = next((k for k in range(1, len(p)) if p[k] == "(" and re.match(r"[A-Za-z_]\w*$", p[k - 1])
+                      and p[k - 1] not in KEYWORD_TYPES and k >= 2), None)
+            if o is not None and match_close(p, o, "(", ")") == len(p):
+                p = p[:o - 1] + ["(", "*", ")"] + p[o:]
     default = None
     # a default argument: top-level `=`
     depth = 0

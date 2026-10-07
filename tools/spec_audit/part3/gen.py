@@ -160,6 +160,8 @@ class Gen:
         for d in ents:
             if not d.classes and d.name and not d.expos:
                 NS_NAMES.add((d.ns, d.name))
+        NS_NAMES.update({("std::pmr", "string"), ("std::pmr", "wstring")})
+        for d in ents:
             if d.classes:
                 path = tuple(c[1] for c in d.classes)
                 if d.kind in ("alias", "classdef", "classdecl", "enumdef", "enumdecl") and d.name:
@@ -196,8 +198,12 @@ class Gen:
                     # member types of the class (and of the enclosing classes)
                     mem = dict(ctx.members)
                     path = tuple(c[1] for c in d.classes[:k + 1])
-                    for nm in self.inherited_members(d.ns, path):
-                        mem[nm] = t + "::" + nm
+                    known = self.inherited_members(d.ns, path)
+                    if not known:
+                        known = dict.fromkeys(("pointer", "reference", "const_reference", "value_type", "size_type",
+                                               "difference_type", "iterator", "const_iterator", "allocator_type"))
+                    for nm in known:
+                        mem[nm] = "typename " + t + "::" + nm
                     c3 = Ctx(env, mem, cdecl.name, t)
                     new.append((c3, t, cdecl, (label + " " + label2).strip()))
             alts = new
@@ -484,8 +490,15 @@ class Gen:
 
     def do_guide(self, d):
         params = d.info["params"]
+        mem = {}
+        if d.classes:
+            alts = self.class_samples(d)
+            if not alts:
+                return
+            mem = alts[0][0].members
+            mem[d.name] = alts[0][1] + "::" + d.name
         for env, label in SMP.heads_env(d.heads, d) if d.heads else [({}, "")]:
-            ctx = Ctx(env)
+            ctx = Ctx(env, mem)
             try:
                 args = [self.arg(p, ctx) for p in params]
                 res = subst(d.info["trailing"], ctx)
@@ -493,7 +506,8 @@ class Gen:
                 continue
             if args is None:
                 continue
-            call = f"{d.ns}::{d.name}({', '.join(a for a in args if a)})"
+            path = "".join(c[1] + "::" for c in d.classes)
+            call = f"{d.ns}::{path}{d.name}({', '.join(a for a in args if a)})"
             self.add(d, f"deduction guide {label}".strip(),
                      f"template<class Z> concept c = requires {{ requires spec_probe::same<decltype({call}), {res}>; }}; static_assert(c<void>);")
 
@@ -661,6 +675,8 @@ class Gen:
                             q = "D" if protected else selft
                             return f"{q}::{name}{(' template ' + '') if False else ''}{targs}({', '.join(args)})"
                         tk = "template " if targs else ""
+                        if protected:
+                            return f"{obj}.{selft}::{tk}{name}{targs}({', '.join(args)})"
                         return f"{obj}.{tk}{name}{targs}({', '.join(args)})"
                     before = len(self.checks)
                     self.call_checks(d, ctx, callee, lab, own, env2)
@@ -707,7 +723,9 @@ class Gen:
                             if vi == 0:
                                 self.add(d, "deleted " + what, f"static_assert(!std::is_constructible_v<{targs}>);")
                             continue
-                        conds = [f"std::is_constructible_v<{targs}>"]
+                        # a new-expression: constructible whatever the destructor's access (facets)
+                        newx = f"::new {selft}({', '.join(f'spec_probe::dv<spec_probe::dep<Z, {t}>>()' for t in ts)})"
+                        conds = [f"requires {{ {newx}; }}"]
                         if d.info["noexcept"] is True:
                             conds.append(f"std::is_nothrow_constructible_v<{targs}>")
                         expl = "explicit" in d.info["specs"]
@@ -717,7 +735,7 @@ class Gen:
                             elif not any(str(x) == "explicit" for x in d.toks2):
                                 conds.append(f"std::is_convertible_v<{ts[0]}, {selft}>")
                         self.add(d, what + (" noexcept" if d.info["noexcept"] is True else "") + (" explicit" if expl and len(ts) == 1 else ""),
-                                 f"static_assert({' && '.join(conds)});")
+                                 f"template<class Z> concept c = {' && '.join(conds)}; static_assert(c<void>);")
 
     def destructor(self, d):
         if d.access != "public":
@@ -759,6 +777,7 @@ def write(gen, outdir, inline_ns):
             cid, _, header, ent, what, decl, code, ns = c
             if not code:
                 continue
+            code = code.replace(PACK, "")
             if code.startswith("#"):
                 macro = code[1:]
                 lines += [f"#ifndef {macro}", f"static_assert(false, \"{macro}\"); // {cid} {what}", "#endif"]

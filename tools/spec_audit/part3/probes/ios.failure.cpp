@@ -5,7 +5,7 @@
 #include "../probe_support.hpp"
 namespace p0 { using namespace std; struct D : std::ios_base { using std::ios_base::failure; }; } // ios.failure#1 presence
 namespace p1 { using namespace std; static_assert(std::is_base_of_v<system_error, std::ios_base::failure> && std::is_convertible_v<std::ios_base::failure*, system_error*>); } // ios.failure#2 base system_error
-namespace p2 { using namespace std; static_assert(std::is_constructible_v<std::ios_base::failure, const string&, const error_code&>); } // ios.failure#3 ctor
-namespace p3 { using namespace std; static_assert(std::is_constructible_v<std::ios_base::failure, const string&>); } // ios.failure#4 ctor (defaults) explicit
-namespace p4 { using namespace std; static_assert(std::is_constructible_v<std::ios_base::failure, const char*, const error_code&>); } // ios.failure#5 ctor
-namespace p5 { using namespace std; static_assert(std::is_constructible_v<std::ios_base::failure, const char*>); } // ios.failure#6 ctor (defaults) explicit
+namespace p2 { using namespace std; template<class Z> concept c = requires { ::new std::ios_base::failure(spec_probe::dv<spec_probe::dep<Z, const string&>>(), spec_probe::dv<spec_probe::dep<Z, const error_code&>>()); }; static_assert(c<void>); } // ios.failure#3 ctor
+namespace p3 { using namespace std; template<class Z> concept c = requires { ::new std::ios_base::failure(spec_probe::dv<spec_probe::dep<Z, const string&>>()); }; static_assert(c<void>); } // ios.failure#4 ctor (defaults) explicit
+namespace p4 { using namespace std; template<class Z> concept c = requires { ::new std::ios_base::failure(spec_probe::dv<spec_probe::dep<Z, const char*>>(), spec_probe::dv<spec_probe::dep<Z, const error_code&>>()); }; static_assert(c<void>); } // ios.failure#5 ctor
+namespace p5 { using namespace std; template<class Z> concept c = requires { ::new std::ios_base::failure(spec_probe::dv<spec_probe::dep<Z, const char*>>()); }; static_assert(c<void>); } // ios.failure#6 ctor (defaults) explicit

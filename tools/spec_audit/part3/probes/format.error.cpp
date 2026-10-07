@@ -5,5 +5,5 @@
 #include "../probe_support.hpp"
 namespace p0 { using namespace std; using std::format_error; } // format.error#1 presence
 namespace p1 { using namespace std; static_assert(std::is_base_of_v<runtime_error, std::format_error> && std::is_convertible_v<std::format_error*, runtime_error*>); } // format.error#2 base runtime_error
-namespace p2 { using namespace std; static_assert(std::is_constructible_v<std::format_error, const string&> && !std::is_convertible_v<const string&, std::format_error>); } // format.error#3 ctor explicit
-namespace p3 { using namespace std; static_assert(std::is_constructible_v<std::format_error, const char*> && !std::is_convertible_v<const char*, std::format_error>); } // format.error#4 ctor explicit
+namespace p2 { using namespace std; template<class Z> concept c = requires { ::new std::format_error(spec_probe::dv<spec_probe::dep<Z, const string&>>()); } && !std::is_convertible_v<const string&, std::format_error>; static_assert(c<void>); } // format.error#3 ctor explicit
+namespace p3 { using namespace std; template<class Z> concept c = requires { ::new std::format_error(spec_probe::dv<spec_probe::dep<Z, const char*>>()); } && !std::is_convertible_v<const char*, std::format_error>; static_assert(c<void>); } // format.error#4 ctor explicit

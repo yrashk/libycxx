@@ -4,4 +4,4 @@
 #define SPEC_PROBE_locale
 #include "../probe_support.hpp"
 namespace p0 { using namespace std; struct D : std::locale { using std::locale::facet; }; } // locale.facet#1 presence
-namespace p1 { using namespace std; struct D : std::locale::facet { template<class Z> static constexpr bool c = !requires { spec_probe::dv<spec_probe::dep<Z, D&>>().operator=(spec_probe::dv<spec_probe::dep<Z, const std::locale::facet&>>()); }; }; static_assert(D::c<void>); } // locale.facet#2 deleted call
+namespace p1 { using namespace std; struct D : std::locale::facet { template<class Z> static constexpr bool c = !requires { spec_probe::dv<spec_probe::dep<Z, D&>>().std::locale::facet::operator=(spec_probe::dv<spec_probe::dep<Z, const std::locale::facet&>>()); }; }; static_assert(D::c<void>); } // locale.facet#2 deleted call

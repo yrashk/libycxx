@@ -4,6 +4,6 @@
 #define SPEC_PROBE_mutex
 #include "../probe_support.hpp"
 namespace p0 { using namespace std; using std::once_flag; } // thread.once.onceflag#1 presence
-namespace p1 { using namespace std; static_assert(std::is_constructible_v<std::once_flag> && std::is_nothrow_constructible_v<std::once_flag>); } // thread.once.onceflag#2 ctor noexcept
+namespace p1 { using namespace std; template<class Z> concept c = requires { ::new std::once_flag(); } && std::is_nothrow_constructible_v<std::once_flag>; static_assert(c<void>); } // thread.once.onceflag#2 ctor noexcept
 namespace p2 { using namespace std; static_assert(!std::is_constructible_v<std::once_flag, const std::once_flag&>); } // thread.once.onceflag#3 deleted ctor
 namespace p3 { using namespace std; template<class Z> concept c = !requires { spec_probe::dv<spec_probe::dep<Z, std::once_flag&>>().operator=(spec_probe::dv<spec_probe::dep<Z, const std::once_flag&>>()); }; static_assert(c<void>); } // thread.once.onceflag#4 deleted call

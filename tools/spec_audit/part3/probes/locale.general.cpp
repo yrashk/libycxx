@@ -5,22 +5,22 @@
 #include "../probe_support.hpp"
 namespace p0 { using namespace std; using std::locale; } // locale.general#1 presence
 namespace p1 { using namespace std; static_assert(spec_probe::same<typename std::locale::category, int>); } // locale.general#2 type
-namespace p2 { using namespace std; static_assert(spec_probe::same<decltype(std::locale::none), const std::locale::category>); } // locale.general#3 var
-namespace p3 { using namespace std; static_assert(spec_probe::same<decltype(std::locale::collate), const std::locale::category>); } // locale.general#4 var
-namespace p4 { using namespace std; static_assert(spec_probe::same<decltype(std::locale::ctype), const std::locale::category>); } // locale.general#5 var
-namespace p5 { using namespace std; static_assert(spec_probe::same<decltype(std::locale::monetary), const std::locale::category>); } // locale.general#6 var
-namespace p6 { using namespace std; static_assert(spec_probe::same<decltype(std::locale::numeric), const std::locale::category>); } // locale.general#7 var
-namespace p7 { using namespace std; static_assert(spec_probe::same<decltype(std::locale::time), const std::locale::category>); } // locale.general#8 var
-namespace p8 { using namespace std; static_assert(spec_probe::same<decltype(std::locale::messages), const std::locale::category>); } // locale.general#9 var
-namespace p9 { using namespace std; static_assert(spec_probe::same<decltype(std::locale::all), const std::locale::category>); } // locale.general#10 var
-namespace p10 { using namespace std; static_assert(std::is_constructible_v<std::locale> && std::is_nothrow_constructible_v<std::locale>); } // locale.general#11 ctor noexcept
-namespace p11 { using namespace std; static_assert(std::is_constructible_v<std::locale, const std::locale&> && std::is_nothrow_constructible_v<std::locale, const std::locale&> && std::is_convertible_v<const std::locale&, std::locale>); } // locale.general#12 ctor noexcept
-namespace p12 { using namespace std; static_assert(std::is_constructible_v<std::locale, const char*> && !std::is_convertible_v<const char*, std::locale>); } // locale.general#13 ctor explicit
-namespace p13 { using namespace std; static_assert(std::is_constructible_v<std::locale, const string&> && !std::is_convertible_v<const string&, std::locale>); } // locale.general#14 ctor explicit
-namespace p14 { using namespace std; static_assert(std::is_constructible_v<std::locale, const std::locale&, const char*, std::locale::category>); } // locale.general#15 ctor
-namespace p15 { using namespace std; static_assert(std::is_constructible_v<std::locale, const std::locale&, const string&, std::locale::category>); } // locale.general#16 ctor
-namespace p16 { using namespace std; static_assert(std::is_constructible_v<std::locale, const std::locale&, ctype<char>*>); } // locale.general#17 ctor
-namespace p17 { using namespace std; static_assert(std::is_constructible_v<std::locale, const std::locale&, const std::locale&, std::locale::category>); } // locale.general#18 ctor
+namespace p2 { using namespace std; static_assert(spec_probe::same<decltype(std::locale::none), const typename std::locale::category>); } // locale.general#3 var
+namespace p3 { using namespace std; static_assert(spec_probe::same<decltype(std::locale::collate), const typename std::locale::category>); } // locale.general#4 var
+namespace p4 { using namespace std; static_assert(spec_probe::same<decltype(std::locale::ctype), const typename std::locale::category>); } // locale.general#5 var
+namespace p5 { using namespace std; static_assert(spec_probe::same<decltype(std::locale::monetary), const typename std::locale::category>); } // locale.general#6 var
+namespace p6 { using namespace std; static_assert(spec_probe::same<decltype(std::locale::numeric), const typename std::locale::category>); } // locale.general#7 var
+namespace p7 { using namespace std; static_assert(spec_probe::same<decltype(std::locale::time), const typename std::locale::category>); } // locale.general#8 var
+namespace p8 { using namespace std; static_assert(spec_probe::same<decltype(std::locale::messages), const typename std::locale::category>); } // locale.general#9 var
+namespace p9 { using namespace std; static_assert(spec_probe::same<decltype(std::locale::all), const typename std::locale::category>); } // locale.general#10 var
+namespace p10 { using namespace std; template<class Z> concept c = requires { ::new std::locale(); } && std::is_nothrow_constructible_v<std::locale>; static_assert(c<void>); } // locale.general#11 ctor noexcept
+namespace p11 { using namespace std; template<class Z> concept c = requires { ::new std::locale(spec_probe::dv<spec_probe::dep<Z, const std::locale&>>()); } && std::is_nothrow_constructible_v<std::locale, const std::locale&> && std::is_convertible_v<const std::locale&, std::locale>; static_assert(c<void>); } // locale.general#12 ctor noexcept
+namespace p12 { using namespace std; template<class Z> concept c = requires { ::new std::locale(spec_probe::dv<spec_probe::dep<Z, const char*>>()); } && !std::is_convertible_v<const char*, std::locale>; static_assert(c<void>); } // locale.general#13 ctor explicit
+namespace p13 { using namespace std; template<class Z> concept c = requires { ::new std::locale(spec_probe::dv<spec_probe::dep<Z, const string&>>()); } && !std::is_convertible_v<const string&, std::locale>; static_assert(c<void>); } // locale.general#14 ctor explicit
+namespace p14 { using namespace std; template<class Z> concept c = requires { ::new std::locale(spec_probe::dv<spec_probe::dep<Z, const std::locale&>>(), spec_probe::dv<spec_probe::dep<Z, const char*>>(), spec_probe::dv<spec_probe::dep<Z, typename std::locale::category>>()); }; static_assert(c<void>); } // locale.general#15 ctor
+namespace p15 { using namespace std; template<class Z> concept c = requires { ::new std::locale(spec_probe::dv<spec_probe::dep<Z, const std::locale&>>(), spec_probe::dv<spec_probe::dep<Z, const string&>>(), spec_probe::dv<spec_probe::dep<Z, typename std::locale::category>>()); }; static_assert(c<void>); } // locale.general#16 ctor
+namespace p16 { using namespace std; template<class Z> concept c = requires { ::new std::locale(spec_probe::dv<spec_probe::dep<Z, const std::locale&>>(), spec_probe::dv<spec_probe::dep<Z, ctype<char>*>>()); }; static_assert(c<void>); } // locale.general#17 ctor
+namespace p17 { using namespace std; template<class Z> concept c = requires { ::new std::locale(spec_probe::dv<spec_probe::dep<Z, const std::locale&>>(), spec_probe::dv<spec_probe::dep<Z, const std::locale&>>(), spec_probe::dv<spec_probe::dep<Z, typename std::locale::category>>()); }; static_assert(c<void>); } // locale.general#18 ctor
 namespace p18 { using namespace std; static_assert(std::is_nothrow_destructible_v<std::locale>); } // locale.general#19 destructor
 namespace p19 { using namespace std; template<class Z> concept c = requires { { spec_probe::dv<spec_probe::dep<Z, std::locale&>>().operator=(spec_probe::dv<spec_probe::dep<Z, const std::locale&>>()) } -> spec_probe::same<const std::locale&>; requires noexcept(spec_probe::dv<spec_probe::dep<Z, std::locale&>>().operator=(spec_probe::dv<spec_probe::dep<Z, const std::locale&>>())); }; static_assert(c<void>); } // locale.general#20 call ret noexcept
 namespace p20 { using namespace std; template<class Z> concept c = requires { { spec_probe::dv<spec_probe::dep<Z, const std::locale&>>().template combine<ctype<char>>(spec_probe::dv<spec_probe::dep<Z, const std::locale&>>()) } -> spec_probe::same<std::locale>; }; static_assert(c<void>); } // locale.general#21 call ret

@@ -4,9 +4,9 @@
 #define SPEC_PROBE_future
 #include "../probe_support.hpp"
 namespace p0 { using namespace std; using std::promise; } // futures.promise#1 presence
-namespace p1 { using namespace std; static_assert(std::is_constructible_v<std::promise<int>>); } // futures.promise#2 ctor
-namespace p2 { using namespace std; static_assert(std::is_constructible_v<std::promise<int>, allocator_arg_t, const allocator<int>&>); } // futures.promise#3 ctor
-namespace p3 { using namespace std; static_assert(std::is_constructible_v<std::promise<int>, std::promise<int>&&> && std::is_nothrow_constructible_v<std::promise<int>, std::promise<int>&&> && std::is_convertible_v<std::promise<int>&&, std::promise<int>>); } // futures.promise#4 ctor noexcept
+namespace p1 { using namespace std; template<class Z> concept c = requires { ::new std::promise<int>(); }; static_assert(c<void>); } // futures.promise#2 ctor
+namespace p2 { using namespace std; template<class Z> concept c = requires { ::new std::promise<int>(spec_probe::dv<spec_probe::dep<Z, allocator_arg_t>>(), spec_probe::dv<spec_probe::dep<Z, const allocator<int>&>>()); }; static_assert(c<void>); } // futures.promise#3 ctor
+namespace p3 { using namespace std; template<class Z> concept c = requires { ::new std::promise<int>(spec_probe::dv<spec_probe::dep<Z, std::promise<int>&&>>()); } && std::is_nothrow_constructible_v<std::promise<int>, std::promise<int>&&> && std::is_convertible_v<std::promise<int>&&, std::promise<int>>; static_assert(c<void>); } // futures.promise#4 ctor noexcept
 namespace p4 { using namespace std; static_assert(!std::is_constructible_v<std::promise<int>, const std::promise<int>&>); } // futures.promise#5 deleted ctor
 namespace p5 { using namespace std; static_assert(std::is_nothrow_destructible_v<std::promise<int>>); } // futures.promise#6 destructor
 namespace p6 { using namespace std; template<class Z> concept c = requires { { spec_probe::dv<spec_probe::dep<Z, std::promise<int>&>>().operator=(spec_probe::dv<spec_probe::dep<Z, std::promise<int>&&>>()) } -> spec_probe::same<std::promise<int>&>; requires noexcept(spec_probe::dv<spec_probe::dep<Z, std::promise<int>&>>().operator=(spec_probe::dv<spec_probe::dep<Z, std::promise<int>&&>>())); }; static_assert(c<void>); } // futures.promise#7 call ret noexcept

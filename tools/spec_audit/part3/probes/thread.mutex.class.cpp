@@ -4,12 +4,10 @@
 #define SPEC_PROBE_mutex
 #include "../probe_support.hpp"
 namespace p0 { using namespace std; using std::mutex; } // thread.mutex.class#1 presence
-namespace p1 { using namespace std; static_assert(std::is_constructible_v<std::mutex> && std::is_nothrow_constructible_v<std::mutex>); } // thread.mutex.class#2 ctor noexcept
+namespace p1 { using namespace std; template<class Z> concept c = requires { ::new std::mutex(); } && std::is_nothrow_constructible_v<std::mutex>; static_assert(c<void>); } // thread.mutex.class#2 ctor noexcept
 namespace p2 { using namespace std; static_assert(std::is_nothrow_destructible_v<std::mutex>); } // thread.mutex.class#3 destructor
 namespace p3 { using namespace std; static_assert(!std::is_constructible_v<std::mutex, const std::mutex&>); } // thread.mutex.class#4 deleted ctor
 namespace p4 { using namespace std; template<class Z> concept c = !requires { spec_probe::dv<spec_probe::dep<Z, std::mutex&>>().operator=(spec_probe::dv<spec_probe::dep<Z, const std::mutex&>>()); }; static_assert(c<void>); } // thread.mutex.class#5 deleted call
 namespace p5 { using namespace std; template<class Z> concept c = requires { { spec_probe::dv<spec_probe::dep<Z, std::mutex&>>().lock() } -> spec_probe::same<void>; }; static_assert(c<void>); } // thread.mutex.class#6 call ret
 namespace p6 { using namespace std; template<class Z> concept c = requires { { spec_probe::dv<spec_probe::dep<Z, std::mutex&>>().try_lock() } -> spec_probe::same<bool>; }; static_assert(c<void>); } // thread.mutex.class#7 call ret
 namespace p7 { using namespace std; template<class Z> concept c = requires { { spec_probe::dv<spec_probe::dep<Z, std::mutex&>>().unlock() } -> spec_probe::same<void>; }; static_assert(c<void>); } // thread.mutex.class#8 call ret
-namespace p8 { using namespace std; using T = std::mutex::native_handle_type; } // thread.mutex.class#9 type exists  (exposition-only or unspecified: implementation-defined)
-namespace p9 { using namespace std; template<class Z> concept c = requires { { spec_probe::dv<spec_probe::dep<Z, std::mutex&>>().native_handle() } -> spec_probe::same<std::mutex::native_handle_type>; }; static_assert(c<void>); } // thread.mutex.class#10 call ret

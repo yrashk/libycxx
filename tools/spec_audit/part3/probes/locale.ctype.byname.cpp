@@ -6,7 +6,7 @@
 namespace p0 { using namespace std; using std::ctype_byname; } // locale.ctype.byname#1 presence
 namespace p1 { using namespace std; static_assert(std::is_base_of_v<ctype<char>, std::ctype_byname<char>> && std::is_convertible_v<std::ctype_byname<char>*, ctype<char>*>); } // locale.ctype.byname#2 base ctype<char>
 namespace p2 { using namespace std; static_assert(spec_probe::same<typename std::ctype_byname<char>::mask, ctype<char>::mask>); } // locale.ctype.byname#3 type
-namespace p3 { using namespace std; static_assert(std::is_constructible_v<std::ctype_byname<char>, const char*, size_t>); } // locale.ctype.byname#4 ctor
-namespace p4 { using namespace std; static_assert(std::is_constructible_v<std::ctype_byname<char>, const char*>); } // locale.ctype.byname#5 ctor (defaults) explicit
-namespace p5 { using namespace std; static_assert(std::is_constructible_v<std::ctype_byname<char>, const string&, size_t>); } // locale.ctype.byname#6 ctor
-namespace p6 { using namespace std; static_assert(std::is_constructible_v<std::ctype_byname<char>, const string&>); } // locale.ctype.byname#7 ctor (defaults) explicit
+namespace p3 { using namespace std; template<class Z> concept c = requires { ::new std::ctype_byname<char>(spec_probe::dv<spec_probe::dep<Z, const char*>>(), spec_probe::dv<spec_probe::dep<Z, size_t>>()); }; static_assert(c<void>); } // locale.ctype.byname#4 ctor
+namespace p4 { using namespace std; template<class Z> concept c = requires { ::new std::ctype_byname<char>(spec_probe::dv<spec_probe::dep<Z, const char*>>()); }; static_assert(c<void>); } // locale.ctype.byname#5 ctor (defaults) explicit
+namespace p5 { using namespace std; template<class Z> concept c = requires { ::new std::ctype_byname<char>(spec_probe::dv<spec_probe::dep<Z, const string&>>(), spec_probe::dv<spec_probe::dep<Z, size_t>>()); }; static_assert(c<void>); } // locale.ctype.byname#6 ctor
+namespace p6 { using namespace std; template<class Z> concept c = requires { ::new std::ctype_byname<char>(spec_probe::dv<spec_probe::dep<Z, const string&>>()); }; static_assert(c<void>); } // locale.ctype.byname#7 ctor (defaults) explicit

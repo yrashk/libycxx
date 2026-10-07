@@ -397,7 +397,11 @@ Ported:
   Mach-O assembler names in the freestanding `<cstdlib>`. Guards: Apple arm64 code tests bit 0 of
   the guard's first byte, which `__cxa_guard_release` sets. `thread_local` destructors: Clang
   calls `_tlv_atexit` itself; GCC (emulated TLS) calls `__cxa_thread_atexit`, which the PAL maps
-  to `_tlv_atexit`.
+  to `_tlv_atexit`. The thread-end actions' sentinel is therefore registered before a thread's
+  initial function runs and, for the main thread, in an initializer (DECISIONS §3): with Clang,
+  a `pthread_create` thread or the program's own static initialization that constructs a
+  thread_local before its first `*_at_thread_exit` call sees that object destroyed after the
+  actions. Simulated on Linux by the `*_tlv_bypass` tests.
 - PAL: `nl_langinfo_l` from `<xlocale.h>`; address waits on `__ulock_wait`/`__ulock_wake` (they
   were a 50 µs poll); malloc's 16-byte alignment; `is_debugger_present` from sysctl's P_TRACED.
 - `std::float128_t` `<cmath>` (GCC): Darwin's libm has no `*f128` functions
@@ -1364,8 +1368,9 @@ compilers; `visit_format_arg.pass.cpp` needs `EOF` from `constexpr_char_traits.h
   between addresses, so notify wakes every waiter of the slot; no `native_handle` for mutexes and
   condition variables; the `*_at_thread_exit` actions run for a thread that calls `exit` (or
   returns from `main`) after its thread_local destructors, through the C library's thread_local
-  destructor list (tested on Linux; on Darwin `_tlv_exit` is relied on to run before the static
-  destructors), never on `quick_exit`/`_Exit`/`abort`; RCU has one domain; `rcu_barrier` called
+  destructor list (tested on Linux, also with every thread_local registered past libycxx as
+  Clang does on Darwin; on Darwin `_tlv_exit` is relied on to run before the static destructors
+  and `_tlv_atexit`'s list to run last-in first-out), never on `quick_exit`/`_Exit`/`abort`; RCU has one domain; `rcu_barrier` called
   from inside a scheduled evaluation evaluates everything scheduled before it except the
   evaluations in progress on its own thread (the draft asks for those too, see Draft issues);
   `rcu_barrier` inside a region does not wait for objects another thread retired after the region

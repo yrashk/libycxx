@@ -245,6 +245,14 @@ leaves open (8: `%OS` without fraction, LWG 4118 character reps, file_clock's ep
 when parsing, `fractional_width` of ratio<1, 2^62>, `hh_mm_ss` layout, an error message).
 
 ## Spec coverage audit (docs/SPEC_COVERAGE.md)
+- Part 1 ([library] tables and [version.syn], [support], [concepts], [diagnostics], [mem], [meta],
+  [utilities]; 2026-10-07; `tools/spec_audit/part1/run.py`): 2029 declared names (1988 probed by
+  name), 313 macros, 192 header checks, 18 shape probes, on GCC 16.2 and Clang 23.1. Open: `[ptrtag]`
+  (`pointer_tag_pair`, 19 names and its macro; the constexpr part is blocked on the compilers),
+  the rest is
+  compiler-blocked (reflection, contracts, `is_structural`, ... on Clang; `is_within_lifetime` on
+  GCC). Fixed: `pmr::indirect`/`pmr::polymorphic`, `is_applicable` & co. in `<type_traits>`, and
+  7 feature-test macros.
 - Part 2, [containers] [iterators] [ranges] [algorithms] [strings] (2026-10-07, draft
   `c7015b48`): 6164 declared entities, 5803 with a presence check and 3935 with a shape check,
   all passing on GCC 16.2 and Clang 23.1 (25470 generated checks, `tools/spec_audit/run_probes.py
@@ -253,6 +261,19 @@ when parsing, `fractional_width` of ratio<1, 2^62>, `hh_mm_ss` layout, an error 
   view_interface}`), 13 unchecked Hardened preconditions of `common_iterator` and
   `counted_iterator`; shuffle and sample with a generator wider than 64 bits (infinite recursion).
   Open: three draft defects.
+- Part 3 ([text], [numerics], [time], [input.output], [thread], [exec], Annex D): `docs/SPEC_COVERAGE.md` (part 3); probes and their generator in `tools/spec_audit/part3/`
+  (`run.py` re-runs them; draft revision `c7015b485cc3`). 6365 declarations of the synopses: 6245
+  present with the specified shape (signature, return type, noexcept, constraints, explicit,
+  bases, values) on both compilers, 686 of them probed by name only (exposition-only types in the
+  signature), 120 not probed; 2410 constexpr calls, none failing because a function is not
+  constexpr (184 GCC / 185 Clang undecided for their sample values); 513 macro checks (the
+  [version.syn] values of these headers, the synopses' macros, Annex D, [zombie.names]), with the
+  freestanding declarations also compiled with `-ffreestanding`. Fixed by the audit: volatile
+  `store_*` of non-lock-free atomics (`f222ebf`), `stop_token`/`stop_source::operator==` as
+  members (`9446019`), constant-evaluated `compare_exchange` of `long double` on Clang (`370b7e3`).
+  Open: `__cpp_lib_constexpr_exceptions` on Clang (compiler gap) and the documented behaviour
+  limitations listed there (locale-dependent `chrono::parse`, POSIX regex subexpressions,
+  `rcu_barrier` inside evaluations, `*_at_thread_exit` for the exiting main thread, ...).
 
 ## Own-suite configurations (runs of 2026-10-05, 2438 tests)
 `tools/test --hardened` / `--cxxflags=... --config-name=...` (README, Own tests); the nightly
@@ -1360,6 +1381,13 @@ Wording problems found while writing the spec-derived tests (tests/ycxx), not ye
   `tuple<>` because some child has no value completion (/13). By [exec.snd.expos]/47 that makes
   `set_value_t()` a completion signature of, e.g., `when_all(just(1), just_stopped())`, which
   can never complete with a value; libycxx (and, presumably, the intent) leaves it out.
+- [stoptoken.general]/1, [stopsource.general]/1: `bool operator==(const stop_token& rhs)
+  noexcept = default;` is a defaulted comparison member without `const`, which
+  [class.compare.default]/1 does not allow (GCC 16 and Clang 23 reject it); libycxx declares the
+  `const` member (spec-coverage audit, part 3, D1).
+- [exec.snd.expos]/43: `basic-sender::get_env()` returns `impls-for<Tag>::get-attrs(data,
+  child...)`, but neither `default-impls` nor any `impls-for` specialization declares `get-attrs`
+  any more: the name is used once in the draft and defined nowhere (part 3, D2).
 
 ## Performance
 `bench/` (manual, not in CI; DECISIONS §15) times the hot paths against libstdc++ on both
@@ -1386,16 +1414,6 @@ Stacked virtual diamonds no longer make handler matching and `dynamic_cast` expo
 levels: 29.7 s -> 0.01 s; libstdc++ 8.6 s). Remaining above 1.5x: deque push at the ends,
 `from_chars(double)`, `to_chars` fixed with precision, Clang `dynamic_cast` across virtual bases
 (anonymous-namespace type names have no `*` marker), GCC `string + "x" + string`.
-
-## Spec coverage audit (docs/SPEC_COVERAGE.md)
-- Part 1 ([library] tables and [version.syn], [support], [concepts], [diagnostics], [mem], [meta],
-  [utilities]; 2026-10-07; `tools/spec_audit/part1/run.py`): 2029 declared names (1988 probed by
-  name), 313 macros, 192 header checks, 18 shape probes, on GCC 16.2 and Clang 23.1. Open: `[ptrtag]`
-  (`pointer_tag_pair`, 19 names and its macro; the constexpr part is blocked on the compilers),
-  the hardened preconditions of `counted_iterator`/`common_iterator` (2 macros); the rest is
-  compiler-blocked (reflection, contracts, `is_structural`, ... on Clang; `is_within_lifetime` on
-  GCC). Fixed: `pmr::indirect`/`pmr::polymorphic`, `is_applicable` & co. in `<type_traits>`, and
-  7 feature-test macros.
 
 ## Open issues / next
 - Every header of the C++26 library is provided (Phases 1-4 complete; `<meta>` needs GCC's

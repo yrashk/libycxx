@@ -389,6 +389,28 @@ def symbols(path, kind):
     return raw, dem
 
 
+_SAN_SYMBOLS = None
+
+
+def sanitizer_runtime_symbols():
+    """The C++ names the sanitizer runtimes define. Clang links them statically into every image,
+    a C program's too, so they do not make an image a C++ one (GCC's runtimes are shared)."""
+    global _SAN_SYMBOLS
+    if _SAN_SYMBOLS is None:
+        _SAN_SYMBOLS = set()
+        cond = conditions()
+        if 'clang' in cond and cond & {'asan', 'tsan', 'ubsan'}:
+            cxx = shlex.split(os.environ.get('YCXX_CLANGXX', 'clang++-23'))
+            d = run(cxx + ['-print-runtime-dir']).strip()
+            for a in sorted(glob.glob(os.path.join(d, 'libclang_rt.*.a'))):
+                if re.search(r'san|ubsan|interception', os.path.basename(a)):
+                    for line in run(['nm', '--defined-only', a]).splitlines():
+                        f = line.split()
+                        if len(f) == 3 and f[2].startswith(('_Z', '__Z')):
+                            _SAN_SYMBOLS.add(f[2])
+    return _SAN_SYMBOLS
+
+
 def defines_marker(path):
     """'exported' when the image exports libycxx's allocation table, 'local' when it defines it but
     a version script or export list keeps it local (libtbb.so's), else ''."""
@@ -416,7 +438,8 @@ def check_image(path, kind, linked_by_driver):
     if bad:
         probs.append(f'{len(bad)} symbols of libstdc++ or libc++, e.g. ' + '; '.join(bad[:3]))
     ev['ycxx_symbols'] = sum(1 for l in dem.splitlines() if '__ycxx::' in l)
-    ev['cxx_symbols'] = len(re.findall(r'\s_?_Z', raw))
+    san = sanitizer_runtime_symbols()
+    ev['cxx_symbols'] = sum(1 for m in re.finditer(r'\s(_?_Z[^\s@]*)', raw) if m.group(1) not in san)
     if kind != 'archive':
         has = defines_marker(path)
         ev['marker'] = has

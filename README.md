@@ -193,7 +193,7 @@ tools/test realworld                  # real-world projects with their own tests
 `tools/test`) builds open-source C++ projects against libycxx and runs their own test suites:
 GoogleTest, Catch2, doctest, nlohmann/json, {fmt}, spdlog (with `std::format`), CLI11,
 magic_enum, glaze, simdjson, Taskflow, EnTT, Google Benchmark, Microsoft GSL, oneTBB, range-v3,
-libcoro and yaml-cpp, each pinned to a release (`tests/realworld/<name>/manifest`). It fetches
+libcoro, yaml-cpp and Abseil, each pinned to a release (`tests/realworld/<name>/manifest`). It fetches
 them (into `build/realworld/src`), builds them with a C++ compiler that is `tools/ycxx-cxx`,
 runs their CTest suites, and proves for every project that it was built against libycxx and
 nothing else: every translation unit's recorded command, every object's headers, every image's

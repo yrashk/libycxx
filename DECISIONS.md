@@ -529,7 +529,25 @@ tooling.
   or holds a later epoch, so only regions that began before the retire hold it back (the proof
   is in `src/hosted/rcu.cpp`). Evaluations run by `rcu_barrier`, or by an outermost unlock or a
   retire outside any region once 1000 are queued, one batch at a time; `rcu_barrier` inside a
-  region evaluates what was retired before the region began. Rejected: two phase counters
+  region evaluates what was retired before the region began. **`rcu_barrier` in the two
+  situations [saferecl.rcu.domain.func]/4 cannot satisfy** (it has no precondition and no
+  exception): (1) Inside a region R, an evaluation scheduled after R began can only be evaluated
+  after R ends ([saferecl.rcu.general]/5), so if its scheduling happens before the call the
+  barrier must block for ever. For the caller's own retires (sequenced before the call) libycxx
+  does exactly that, and checks it as a hardened precondition, as it does for `rcu_synchronize`
+  inside a region (the draft's Effects block for ever there too): a certain self-deadlock
+  becomes a diagnosed termination with `YCXX_HARDENED`. Both checks are in `<rcu>` (a runtime
+  query, then `precondition`), since the runtime itself is not built with `YCXX_HARDENED`
+  (`rcu_synchronize`'s check used to be in the runtime, where it was never active). Another thread's retire after R began is
+  taken as not happening before the call (the barrier cannot tell whether other synchronization
+  ordered it), so it is not waited for. (2) Inside a scheduled evaluation E, /4 would have the
+  barrier wait for E itself, whose evaluation includes the call: impossible (a draft defect,
+  STATUS). libycxx's barrier there evaluates the rest of the batch E belongs to, then waits for
+  the readers and evaluates the queue up to its bound like any barrier, keeping the evaluation
+  lock (other barriers must not see E's batch as done while it runs): when it returns, everything
+  scheduled before the call has been evaluated except the evaluations in progress on the calling
+  thread. (Before, it returned at once.) Rejected: releasing the evaluation lock while waiting
+  (a barrier on another thread would then return before E finished). Rejected: two phase counters
   flipped by `rcu_synchronize` (the previous design), which cannot tell a region that began
   before a retire from one that began after it, so a barrier inside a region waited for itself.
   The cost is a third word in `rcu_obj_base` (the node's epoch: a barrier inside a region must

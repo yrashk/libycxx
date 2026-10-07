@@ -184,7 +184,24 @@ tools/test all                        # also the CMake package test and the libc
 tools/test -c clang -f format ycxx    # one compiler, one directory of the own suite
 tools/test --help                     # stages and options (-j, -s asan, --fail-fast, -v, -q)
 tools/check-all                       # the fast gate: tools/test --fail-fast policy build freestanding
+tools/test realworld                  # real-world projects with their own tests (not a default stage)
 ```
+
+### Real-world projects
+
+`tools/realworld [-c gcc|clang] [-s asan|tsan] [project...]` (the `realworld` stage of
+`tools/test`) builds open-source C++ projects against libycxx and runs their own test suites:
+GoogleTest, Catch2, doctest, nlohmann/json, {fmt}, spdlog (with `std::format`), CLI11,
+magic_enum, glaze, simdjson, Taskflow, EnTT, Google Benchmark, Microsoft GSL, oneTBB, range-v3,
+libcoro and yaml-cpp, each pinned to a release (`tests/realworld/<name>/manifest`). It fetches
+them (into `build/realworld/src`), builds them with a C++ compiler that is `tools/ycxx-cxx`,
+runs their CTest suites, and proves for every project that it was built against libycxx and
+nothing else: every translation unit's recorded command, every object's headers, every image's
+needed libraries and symbols, and libycxx's allocation table in every image (a self-test checks
+that a build with the toolchain's own library is rejected). Patches of the projects' own
+non-standard code and skipped tests carry their category and reason. Reports:
+`build/test-logs/realworld-<cc>.html`; method: `docs/CUSTOM_STDLIB.md` ("Real-world projects");
+results: STATUS.md.
 
 The stages can also be run directly:
 

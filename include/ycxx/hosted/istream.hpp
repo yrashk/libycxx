@@ -731,11 +731,38 @@ basic_istream<__charT, __traits>& getline(basic_istream<__charT, __traits>& is, 
     __ycxx::__detail::__guarded_io(is, [&] {
       str.erase();
       basic_streambuf<__charT, __traits>* __sb = is.rdbuf();
-      for (typename __traits::int_type c = __sb->sgetc();; c = __sb->snextc()) {
+      using __area = __ycxx::__detail::__streambuf_get_area;
+      for (;;) {
+        __charT* const __g = __area::__next(*__sb);
+        __charT* const e = __area::__end(*__sb);
+        bool __one = false; // one character at a time, near max_size()
+        if (__g < e) {
+          // A run of buffered characters: find the delimiter (traits::find, memchr for char)
+          // and append what precedes it at once.
+          const __charT* d = __traits::find(__g, static_cast<size_t>(e - __g), __delim);
+          const size_t n = static_cast<size_t>((d ? d : e) - __g);
+          if (n < str.max_size() - str.size()) {
+            str.append(__g, n);
+            any = any || n != 0;
+            if (d) {
+              __area::__advance_to(*__sb, __g + n + 1); // the delimiter is extracted, not stored
+              any = true;
+              break;
+            }
+            __area::__advance_to(*__sb, e);
+            continue;
+          }
+          __one = true;
+        }
+        // No buffered character (or a string about to reach max_size()): one at a time through
+        // the virtual functions; underflow may fill the get area, or the buffer may have none.
+        typename __traits::int_type c = __sb->sgetc();
         if (__traits::eq_int_type(c, __traits::eof())) {
           __err |= ios_base::eofbit;
           break;
         }
+        if (!__one && __area::__next(*__sb) < __area::__end(*__sb))
+          continue; // the get area was filled: take the fast path
         if (__traits::eq(__traits::to_char_type(c), __delim)) {
           __sb->sbumpc();
           any = true;
@@ -747,6 +774,7 @@ basic_istream<__charT, __traits>& getline(basic_istream<__charT, __traits>& is, 
         }
         str.push_back(__traits::to_char_type(c));
         any = true;
+        __sb->sbumpc();
       }
     });
   }

@@ -16,6 +16,22 @@ struct __streambuf_tag_access {
     __sb.__is_syncbuf_ = true;
   }
 };
+// The get area, for extractors that consume a run of buffered characters at once.
+struct __streambuf_get_area {
+  template <class __charT, class __traits>
+  static __charT* __next(const std::basic_streambuf<__charT, __traits>& __sb) noexcept {
+    return __sb.__gnext_;
+  }
+  template <class __charT, class __traits>
+  static __charT* __end(const std::basic_streambuf<__charT, __traits>& __sb) noexcept {
+    return __sb.__gend_;
+  }
+  // Consumes the characters before p (in the get area).
+  template <class __charT, class __traits>
+  static void __advance_to(std::basic_streambuf<__charT, __traits>& __sb, __charT* p) noexcept {
+    __sb.__gnext_ = p;
+  }
+};
 }} // namespace __ycxx::__detail
 
 namespace [[__gnu__::__visibility__("hidden")]] std {
@@ -209,6 +225,7 @@ private:
   locale __loc_;
   bool __is_syncbuf_ = false;
   friend __ycxx::__detail::__streambuf_tag_access;
+  friend __ycxx::__detail::__streambuf_get_area;
 };
 
 } // namespace std

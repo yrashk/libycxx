@@ -1,0 +1,7 @@
+# CTest tests that do not run against libycxx, as "<test regex> | <category> | <reason>
+# [| <conditions>]" (tools/lib/realworld.py; the regex matches the whole test name).
+range\.v3\.test\.bug1633 | implementation-specific | not built (build-skip.txt): relies on recognising libstdc++'s and libc++'s std::iterator_traits primary template
+range\.v3\.test\.alg\.find | pre-c++26 | not built (build-skip.txt): compares two arrays of char, removed in C++26 (P2865)
+range\.v3\.test\.view\.map | pre-c++26 | not built (build-skip.txt): compares two arrays of char, removed in C++26 (P2865)
+range\.v3\.test\.view\.span | implementation-specific | not built (build-skip.txt): range-v3 recognises contiguous std iterators only for libstdc++, libc++ and the MSVC STL
+range\.v3\.test\.view\.tokenize | pre-c++26 | not built (build-skip.txt): expects regex_token_iterator to be a forward iterator ([re.tokiter.general]: input)

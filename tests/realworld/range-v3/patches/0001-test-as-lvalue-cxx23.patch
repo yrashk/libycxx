@@ -1,0 +1,18 @@
+Category: pre-c++26. The tests' as_lvalue(T&& t) returns t as T&: since C++23 (P2266,
+[expr.prim.id.unqual]/4: an implicitly movable entity in a return statement is an xvalue) that no
+longer binds to T&. libycxx is C++26 only, so the tests are built as C++26. Returns
+static_cast<T&>(t), the C++20 meaning.
+
+diff --git a/test/test_utils.hpp b/test/test_utils.hpp
+index d1efdc8..6706c5c 100644
+--- a/test/test_utils.hpp
++++ b/test/test_utils.hpp
+@@ -141,7 +141,7 @@ constexpr void has_cardinality(Rng &&)
+ template<typename T>
+ constexpr T & as_lvalue(T && t)
+ {
+-    return t;
++    return static_cast<T &>(t); // C++23 (P2266): "return t;" names an xvalue here
+ }
+ 
+ // A simple, light-weight, non-owning reference to a type-erased function.

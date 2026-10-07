@@ -1482,7 +1482,7 @@ under the same name. Otherwise it gets one alias template in `config.hpp`.
     produces ([exec.on]/6, [exec.affine]/5), whose scheduler comes from the environment
     (get_start_scheduler) or the child (on(sndr, sch, closure)); none without one. affine of a
     sender with an `affine()` member reports the child's;
-  - associate ([exec.associate]/10): domains only, the wrapped sender's, and for stopped also
+  - associate ([exec.associate]/11): domains only, the wrapped sender's, and for stopped also
     the starting agent's (`get_domain(env)`: a failed association completes inline). No
     scheduler and no forwarding: the wrapped sender is destroyed when the association fails;
   - read_env ([exec.read.env]/3): inline-attrs for set_value, and for set_error when the query

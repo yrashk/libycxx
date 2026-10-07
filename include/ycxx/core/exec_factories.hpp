@@ -96,12 +96,29 @@ struct __read_env_sigs {
   using type = typename decltype(__pick())::type;
 };
 
+// read_env completes inline ([exec.read.env]/3): with its value, or with the exception of a
+// query that throws (TRY-SET-VALUE); inline-attrs for the tags it has in the environment.
+template <class _Qp>
+struct __read_env_attrs {
+  template <class _Tp, class _Env>
+    requires(__sigs_count<_Tp, typename __read_env_sigs<_Qp, _Env>::type> != 0) &&
+            requires(const __inline_attrs<_Tp>& __a, const _Env& env) { __a.query(std::execution::get_completion_scheduler<_Tp>, env); }
+  constexpr auto query(std::execution::get_completion_scheduler_t<_Tp> __q, const _Env& env) const noexcept {
+    return __inline_attrs<_Tp>().query(__q, env);
+  }
+  template <class _Tp, class _Env>
+    requires(__sigs_count<_Tp, typename __read_env_sigs<_Qp, _Env>::type> != 0)
+  constexpr auto query(std::execution::get_completion_domain_t<_Tp> __q, const _Env& env) const noexcept {
+    return __inline_attrs<_Tp>().query(__q, env);
+  }
+};
+
 template <>
 struct __impls_for<__read_env_t> : __default_impls {
   static constexpr bool __ycxx_completes_inline = true;
   template <class _Data>
   static constexpr auto __get_attrs(const _Data&) noexcept {
-    return __inline_attrs<std::execution::set_value_t>();
+    return __read_env_attrs<_Data>();
   }
   template <class _Qp, class _Rcvr>
   static constexpr void start(_Qp query, _Rcvr& __rcvr) noexcept {

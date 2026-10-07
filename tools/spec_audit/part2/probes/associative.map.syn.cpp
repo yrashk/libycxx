@@ -81,10 +81,22 @@ namespace p2 {
     std::pair<const typename std::ranges::range_value_t<R>::first_type, typename std::ranges::range_value_t<R>::second_type>;
 }
 namespace E712 { using std::map; } // @E712 name
-namespace E715 { using std::swap; } // @E715 name
-namespace E716 { using std::erase_if; } // @E716 name
+namespace E713 { using t = decltype(std::operator==(std::declval<const std::map<int,int,std::less<int>,std::allocator<std::pair<const int, int>>>&>(), std::declval<const std::map<int,int,std::less<int>,std::allocator<std::pair<const int, int>>>&>())); } // @E713 call
+static_assert(std::is_same_v<E713::t, bool>); // @E713 ret
+namespace E714 { using t = decltype(std::operator<=>(std::declval<const std::map<int,int,std::less<int>,std::allocator<std::pair<const int, int>>>&>(), std::declval<const std::map<int,int,std::less<int>,std::allocator<std::pair<const int, int>>>&>())); } // @E714 call
+namespace E715 { using t = decltype(std::swap(std::declval<std::map<int,int,std::less<int>,std::allocator<std::pair<const int, int>>>&>(), std::declval<std::map<int,int,std::less<int>,std::allocator<std::pair<const int, int>>>&>())); } // @E715 call
+static_assert(std::is_same_v<E715::t, void>); // @E715 ret
+static_assert(!(noexcept(std::declval<std::map<int,int,std::less<int>,std::allocator<std::pair<const int, int>>>&>().swap(std::declval<std::map<int,int,std::less<int>,std::allocator<std::pair<const int, int>>>&>()))) || noexcept(std::swap(std::declval<std::map<int,int,std::less<int>,std::allocator<std::pair<const int, int>>>&>(), std::declval<std::map<int,int,std::less<int>,std::allocator<std::pair<const int, int>>>&>()))); // @E715 noexcept
+namespace E716 { using t = decltype(std::erase_if(std::declval<std::map<int,int,std::less<int>,std::allocator<std::pair<const int, int>>>&>(), std::declval<p2::AnyFn>())); } // @E716 call
+static_assert(std::is_same_v<E716::t, std::map<int,int,std::less<int>,std::allocator<std::pair<const int, int>>>::size_type>); // @E716 ret
 namespace E717 { using std::multimap; } // @E717 name
-namespace E720 { using std::swap; } // @E720 name
-namespace E721 { using std::erase_if; } // @E721 name
+namespace E718 { using t = decltype(std::operator==(std::declval<const std::multimap<int,int,std::less<int>,std::allocator<std::pair<const int, int>>>&>(), std::declval<const std::multimap<int,int,std::less<int>,std::allocator<std::pair<const int, int>>>&>())); } // @E718 call
+static_assert(std::is_same_v<E718::t, bool>); // @E718 ret
+namespace E719 { using t = decltype(std::operator<=>(std::declval<const std::multimap<int,int,std::less<int>,std::allocator<std::pair<const int, int>>>&>(), std::declval<const std::multimap<int,int,std::less<int>,std::allocator<std::pair<const int, int>>>&>())); } // @E719 call
+namespace E720 { using t = decltype(std::swap(std::declval<std::multimap<int,int,std::less<int>,std::allocator<std::pair<const int, int>>>&>(), std::declval<std::multimap<int,int,std::less<int>,std::allocator<std::pair<const int, int>>>&>())); } // @E720 call
+static_assert(std::is_same_v<E720::t, void>); // @E720 ret
+static_assert(!(noexcept(std::declval<std::multimap<int,int,std::less<int>,std::allocator<std::pair<const int, int>>>&>().swap(std::declval<std::multimap<int,int,std::less<int>,std::allocator<std::pair<const int, int>>>&>()))) || noexcept(std::swap(std::declval<std::multimap<int,int,std::less<int>,std::allocator<std::pair<const int, int>>>&>(), std::declval<std::multimap<int,int,std::less<int>,std::allocator<std::pair<const int, int>>>&>()))); // @E720 noexcept
+namespace E721 { using t = decltype(std::erase_if(std::declval<std::multimap<int,int,std::less<int>,std::allocator<std::pair<const int, int>>>&>(), std::declval<p2::AnyFn>())); } // @E721 call
+static_assert(std::is_same_v<E721::t, std::multimap<int,int,std::less<int>,std::allocator<std::pair<const int, int>>>::size_type>); // @E721 ret
 namespace E722 { using std::pmr::map; } // @E722 name
 namespace E723 { using std::pmr::multimap; } // @E723 name

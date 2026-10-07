@@ -82,9 +82,19 @@ namespace p2 {
 }
 namespace E1191 { using std::unordered_map; } // @E1191 name
 namespace E1192 { using std::unordered_multimap; } // @E1192 name
-namespace E1195 { using std::swap; } // @E1195 name
-namespace E1196 { using std::swap; } // @E1196 name
-namespace E1197 { using std::erase_if; } // @E1197 name
-namespace E1198 { using std::erase_if; } // @E1198 name
+namespace E1193 { using t = decltype(std::operator==(std::declval<const std::unordered_map<int,int,std::hash<int>,std::equal_to<int>,std::allocator<std::pair<const int, int>>>&>(), std::declval<const std::unordered_map<int,int,std::hash<int>,std::equal_to<int>,std::allocator<std::pair<const int, int>>>&>())); } // @E1193 call
+static_assert(std::is_same_v<E1193::t, bool>); // @E1193 ret
+namespace E1194 { using t = decltype(std::operator==(std::declval<const std::unordered_multimap<int,int,std::hash<int>,std::equal_to<int>,std::allocator<std::pair<const int, int>>>&>(), std::declval<const std::unordered_multimap<int,int,std::hash<int>,std::equal_to<int>,std::allocator<std::pair<const int, int>>>&>())); } // @E1194 call
+static_assert(std::is_same_v<E1194::t, bool>); // @E1194 ret
+namespace E1195 { using t = decltype(std::swap(std::declval<std::unordered_map<int,int,std::hash<int>,std::equal_to<int>,std::allocator<std::pair<const int, int>>>&>(), std::declval<std::unordered_map<int,int,std::hash<int>,std::equal_to<int>,std::allocator<std::pair<const int, int>>>&>())); } // @E1195 call
+static_assert(std::is_same_v<E1195::t, void>); // @E1195 ret
+static_assert(!(noexcept(std::declval<std::unordered_map<int,int,std::hash<int>,std::equal_to<int>,std::allocator<std::pair<const int, int>>>&>().swap(std::declval<std::unordered_map<int,int,std::hash<int>,std::equal_to<int>,std::allocator<std::pair<const int, int>>>&>()))) || noexcept(std::swap(std::declval<std::unordered_map<int,int,std::hash<int>,std::equal_to<int>,std::allocator<std::pair<const int, int>>>&>(), std::declval<std::unordered_map<int,int,std::hash<int>,std::equal_to<int>,std::allocator<std::pair<const int, int>>>&>()))); // @E1195 noexcept
+namespace E1196 { using t = decltype(std::swap(std::declval<std::unordered_multimap<int,int,std::hash<int>,std::equal_to<int>,std::allocator<std::pair<const int, int>>>&>(), std::declval<std::unordered_multimap<int,int,std::hash<int>,std::equal_to<int>,std::allocator<std::pair<const int, int>>>&>())); } // @E1196 call
+static_assert(std::is_same_v<E1196::t, void>); // @E1196 ret
+static_assert(!(noexcept(std::declval<std::unordered_multimap<int,int,std::hash<int>,std::equal_to<int>,std::allocator<std::pair<const int, int>>>&>().swap(std::declval<std::unordered_multimap<int,int,std::hash<int>,std::equal_to<int>,std::allocator<std::pair<const int, int>>>&>()))) || noexcept(std::swap(std::declval<std::unordered_multimap<int,int,std::hash<int>,std::equal_to<int>,std::allocator<std::pair<const int, int>>>&>(), std::declval<std::unordered_multimap<int,int,std::hash<int>,std::equal_to<int>,std::allocator<std::pair<const int, int>>>&>()))); // @E1196 noexcept
+namespace E1197 { using t = decltype(std::erase_if(std::declval<std::unordered_map<int,int,std::hash<int>,std::equal_to<int>,std::allocator<std::pair<const int, int>>>&>(), std::declval<p2::AnyFn>())); } // @E1197 call
+static_assert(std::is_same_v<E1197::t, std::unordered_map<int,int,std::hash<int>,std::equal_to<int>,std::allocator<std::pair<const int, int>>>::size_type>); // @E1197 ret
+namespace E1198 { using t = decltype(std::erase_if(std::declval<std::unordered_multimap<int,int,std::hash<int>,std::equal_to<int>,std::allocator<std::pair<const int, int>>>&>(), std::declval<p2::AnyFn>())); } // @E1198 call
+static_assert(std::is_same_v<E1198::t, std::unordered_multimap<int,int,std::hash<int>,std::equal_to<int>,std::allocator<std::pair<const int, int>>>::size_type>); // @E1198 ret
 namespace E1199 { using std::pmr::unordered_map; } // @E1199 name
 namespace E1200 { using std::pmr::unordered_multimap; } // @E1200 name

@@ -26,7 +26,7 @@ static_assert(std::ranges::enable_borrowed_range<std::optional<int&>>);
 static_assert(std::format_kind<O> == std::range_format::disabled);
 // [optional.ctor], [optional.assign], [optional.mod] constexpr
 static_assert([] { O o; o.emplace(4); O p = o; p.reset(); p = 5; p.swap(o); return *o == 5 && *p == 4; }());
-static_assert(noexcept(O().reset()) && noexcept(O().has_value()) && noexcept(*O()) && noexcept(O().operator->()) == noexcept(O().operator->()));
+static_assert(noexcept(std::declval<O&>().reset()) && noexcept(std::declval<O&>().has_value()) && noexcept(*std::declval<O&>()) && noexcept(std::declval<O&>().operator->()));
 static_assert(noexcept(static_cast<bool>(O())));
 // [optional.observe]: value_or's U defaults to remove_cv_t<T>
 static_assert(O().value_or({}) == 0);
@@ -42,7 +42,7 @@ static_assert(eq<O, long> && eq<O, std::nullopt_t> && lt<O, O>);
 static_assert(std::is_same_v<decltype(O() <=> O()), std::strong_ordering>);
 static_assert(std::is_same_v<decltype(O() <=> 1.0), std::partial_ordering>);
 static_assert(std::is_same_v<decltype(O() <=> std::nullopt), std::strong_ordering>);
-static_assert(noexcept(O() == std::nullopt));
+static_assert(noexcept(std::declval<const O&>() == std::nullopt));
 // [optional.nullopt]: no default constructor, not an aggregate initializable from {}
 static_assert(!std::is_default_constructible_v<std::nullopt_t> && std::is_trivially_copyable_v<std::nullopt_t>);
 template <class T>
@@ -51,7 +51,7 @@ static_assert(!from_braces<std::nullopt_t>);
 // [optional.optional.ref]
 using R = std::optional<int&>;
 static_assert(std::is_trivially_copyable_v<R> && sizeof(R) == sizeof(int*));
-static_assert(std::is_same_v<R::value_type, int> || std::is_same_v<R::value_type, int&>);
+static_assert(std::is_same_v<R::value_type, int>);
 static_assert([] { int i = 1, j = 2; R r = i; r = j; *r = 5; return j == 5 && i == 1 && r.has_value(); }());
 static_assert(!std::is_constructible_v<std::optional<const int&>, int&&>);   // no dangling temporary
 static_assert(std::is_same_v<decltype(std::declval<R>().transform([](int& x) -> int& { return x; })), R>);

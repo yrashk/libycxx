@@ -7,7 +7,8 @@
 // option the "C" locale's names and decimal point are built in; with it, the locale-dependent
 // conversions (%a %A %b %B %c %p %r %x %X and the E/O-modified ones) go through the formatting
 // locale's time_put facet (a call into the hosted runtime, src/hosted/chrono.cpp) unless that is
-// the classic locale's facet, and %S and the counts of durations take the locale's numpunct.
+// the classic locale's facet, %S takes the locale's decimal point and the counts of durations
+// its num_put.
 // Without chrono-specs a value is formatted as its stream inserter would write it
 // ([time.format]/7). The stream inserters write the same text with the stream's
 // locale, so they need no <sstream>.
@@ -420,10 +421,49 @@ struct __chrono_c_tm {
 // Appends what loc's time_put<charT> writes for %<mod><spec> of t.
 void __chrono_put_localized(std::string& out, const std::locale& __loc, const __chrono_c_tm& t, char __spec, char __mod);
 void __chrono_put_localized(std::wstring& out, const std::locale& __loc, const __chrono_c_tm& t, char __spec, char __mod);
-// Whether loc's time_put<charT> is the classic locale's facet (every supported named locale,
-// "C", "POSIX", "C.UTF-8", shares it), whose conventions are the "C" locale's.
+// Whether loc's time_put<charT> is the classic locale's facet (that of "C", "POSIX" and
+// "C.UTF-8"; a named locale has its time_put_byname), whose conventions are the "C" locale's.
 bool __chrono_classic_time_put(const std::locale& __loc, char);
 bool __chrono_classic_time_put(const std::locale& __loc, wchar_t);
+// Whether loc's num_put<charT> is the classic locale's facet (every named locale shares it,
+// DECISIONS §7): its stage 2 is then computed from numpunct here, without a stream.
+bool __chrono_classic_num_put(const std::locale& __loc, char);
+bool __chrono_classic_num_put(const std::locale& __loc, wchar_t);
+// Appends what `s << v` writes to a stream s imbued with loc, with its default flags and the
+// given precision: loc's num_put<charT> (a program's own) called for the count of a duration.
+void __chrono_put_count(std::string& out, const std::locale& __loc, long __v, int precision);
+void __chrono_put_count(std::string& out, const std::locale& __loc, unsigned long __v, int precision);
+void __chrono_put_count(std::string& out, const std::locale& __loc, long long __v, int precision);
+void __chrono_put_count(std::string& out, const std::locale& __loc, unsigned long long __v, int precision);
+void __chrono_put_count(std::string& out, const std::locale& __loc, double __v, int precision);
+void __chrono_put_count(std::string& out, const std::locale& __loc, long double __v, int precision);
+void __chrono_put_count(std::wstring& out, const std::locale& __loc, long __v, int precision);
+void __chrono_put_count(std::wstring& out, const std::locale& __loc, unsigned long __v, int precision);
+void __chrono_put_count(std::wstring& out, const std::locale& __loc, long long __v, int precision);
+void __chrono_put_count(std::wstring& out, const std::locale& __loc, unsigned long long __v, int precision);
+void __chrono_put_count(std::wstring& out, const std::locale& __loc, double __v, int precision);
+void __chrono_put_count(std::wstring& out, const std::locale& __loc, long double __v, int precision);
+// The argument `s << c` passes to num_put::put for a count c ([ostream.inserters.arithmetic]/1:
+// short and int as long, unsigned short and unsigned int as unsigned long, float as double).
+// Character and extended integer reps keep their number (as the formatter writes them).
+template <class _Rep>
+constexpr auto __chrono_put_arg(_Rep c) noexcept {
+  if constexpr (std::is_same_v<_Rep, long double>)
+    return c;
+  else if constexpr (std::is_floating_point_v<_Rep>)
+    return static_cast<double>(c);
+  else if constexpr (std::is_same_v<_Rep, long long> || std::is_same_v<_Rep, unsigned long long> ||
+                     std::is_same_v<_Rep, unsigned long>)
+    return c;
+  else if constexpr (std::is_unsigned_v<_Rep> && sizeof(_Rep) <= sizeof(unsigned long))
+    return static_cast<unsigned long>(c);
+  else if constexpr (sizeof(_Rep) <= sizeof(long))
+    return static_cast<long>(c);
+  else if constexpr (std::is_unsigned_v<_Rep>)
+    return static_cast<unsigned long long>(c);
+  else
+    return static_cast<long long>(c);
+}
 
 inline constexpr const char* __chrono_weekday_names[7] = {"Sunday",   "Monday", "Tuesday", "Wednesday",
                                                         "Thursday", "Friday", "Saturday"};
@@ -434,8 +474,9 @@ inline constexpr const char* __chrono_month_names[12] = {"January", "February", 
 // ---- writing ----------------------------------------------------------------------------------
 
 // [time.format]/2: the formatting locale is the "C" locale without the L option. With it, the
-// locale's numpunct gives %S its decimal point and the counts of the default duration format
-// their digit grouping, and its time_put writes the locale-dependent conversions (names, %c %x
+// locale's numpunct gives %S its decimal point, its num_put writes the counts of the default
+// duration format (stage 2 computed here from numpunct for the classic num_put), and its
+// time_put writes the locale-dependent conversions (names, %c %x
 // %X %r %p and the E/O forms), unless it is the classic facet: the "C" locale's conventions are
 // then built in (as without L). That keeps "{:L...}" with the "C" locale identical to "{:...}"
 // also where a C tm cannot carry the value (hours of a duration beyond 23, years before 1 or
@@ -855,10 +896,22 @@ typename _Context::iterator __chrono_emit(const __chrono_spec<__charT>& s, _Cont
 
 template <class __charT, class _Rep, class _Period>
 void __chrono_default(__chrono_out<__charT>& __o, const std::chrono::duration<_Rep, _Period>& d, long long precision = -1) {
-  // As `ostringstream s; s << d.count() << __units-suffix` with the formatting locale.
+  // As `ostringstream s; s << d.count() << __units-suffix` with the formatting locale
+  // ([time.format]/7, [time.duration.io]/1): a num_put of the locale's own is called.
+  const _Rep c = d.count();
+  const __chrono_suffix_text<__charT> s = ::__ycxx::__detail::__chrono_suffix<_Period, __charT>();
+  if constexpr (std::is_arithmetic_v<_Rep>) {
+    if (__o.__loc != nullptr && !::__ycxx::__detail::__chrono_classic_num_put(*__o.__loc, __charT())) {
+      std::basic_string<__charT> __text;
+      ::__ycxx::__detail::__chrono_put_count(__text, *__o.__loc, ::__ycxx::__detail::__chrono_put_arg(c),
+                                             precision < 0 ? 6 : static_cast<int>(precision < 100 ? precision : 100));
+      __o.b.append(__text.data(), __text.size());
+      __o.b.append(s.__text, s.__len);
+      return;
+    }
+  }
   char __buf[128];
   std::to_chars_result r;
-  const _Rep c = d.count();
   if constexpr (std::chrono::treat_as_floating_point_v<_Rep>)
     r = std::to_chars(__buf, __buf + sizeof __buf, c, std::chars_format::general,
                       precision < 0 ? 6 : static_cast<int>(precision < 100 ? precision : 100));
@@ -867,7 +920,6 @@ void __chrono_default(__chrono_out<__charT>& __o, const std::chrono::duration<_R
   else
     r = std::to_chars(__buf, __buf + sizeof __buf, static_cast<unsigned long long>(c));
   __o.count(__buf, r.ptr);
-  const __chrono_suffix_text<__charT> s = ::__ycxx::__detail::__chrono_suffix<_Period, __charT>();
   __o.b.append(s.__text, s.__len);
 }
 

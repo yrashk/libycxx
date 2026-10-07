@@ -430,6 +430,10 @@ inline constexpr unsigned long __default_new_alignment = __STDCPP_DEFAULT_NEW_AL
 namespace __y_builtin {
 template <class _Tp>
 concept __has_is_within_lifetime = requires(const _Tp* p) { __builtin_is_within_lifetime(p); };
+// Clang's __builtin_is_aligned: also usable during constant evaluation (pointer_tag_pair's
+// from_overaligned checks its promise with it there).
+template <class _Tp>
+concept __has_is_aligned = requires(const _Tp* p) { __builtin_is_aligned(p, 1); };
 template <class _S1, class _S2, class _M1, class _M2>
 concept __has_is_corresponding_member =
     requires(_M1 _S1::* a, _M2 _S2::* b) { __builtin_is_corresponding_member(a, b); };

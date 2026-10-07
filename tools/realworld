@@ -1,0 +1,405 @@
+#!/bin/sh
+# Real-world C++ projects built and tested against libycxx: each project's own test suite, and the
+# proof that every part of it was built against libycxx, not the toolchain's C++ library.
+#
+#   tools/realworld [options] [project...]
+#
+# The projects are tests/realworld/<name>/manifest (default: all of them; a project's
+# dependencies are built first and installed for it). For each compiler, and each project:
+#   fetch      the pinned commit of the project's git repository, into build/realworld/src/<name>
+#              ($YCXX_REALWORLD_SRC), with the project's patches (tests/realworld/<name>/patches)
+#   configure  CMake with a toolchain file whose C++ compiler is tools/ycxx-cxx (libycxx's headers,
+#              -nostdinc++, C++26: a -std=c++NN of the project becomes -std=c++26; libycxx's
+#              archives and runtime, -nostdlib++), the C compiler the plain one;
+#              build/realworld/<config>/<name>
+#   build      ninja (-j)
+#   install    into build/realworld/<config>/prefix, when another project needs it
+#   test       ctest (-j), every test but those tests/realworld/<name>/skip.txt names (each with
+#              its category and reason); tests/realworld/<name>/xfail.txt lists expected failures
+#   linkage    the proof that the build is libycxx's (tools/lib/realworld.py, LINKAGE): every C++
+#              translation unit compiled by tools/ycxx-cxx with -nostdinc++ and libycxx's include
+#              directory, no header of libstdc++ or libc++ in any object's dependencies, no
+#              libstdc++/libc++ among the images' needed libraries or symbols, and libycxx's
+#              allocation table, a symbol only libycxx defines, in every image linked
+# Before the projects, a self-test builds a small program with the toolchain's own C++ library
+# and checks that the linkage proof rejects it on every count (and accepts the same program
+# built against libycxx).
+#
+# Options:
+#   -c, --compiler gcc|clang   only this compiler (repeatable; default both)
+#   -s, --sanitizer LIST       build the projects with these sanitizers (asan, ubsan, tsan) and
+#                              link them with libycxx built with the same ones
+#                              (build/<cc>-<sanitizers>, configured and built on first use)
+#   -j, --jobs N               parallel jobs for ninja and ctest (default 4)
+#   --clean                    remove each project's build tree once it is tested (the logs and
+#                              the report stay)
+#   --fresh                    configure each project's build tree from scratch
+#   -l, --list                 list the projects and exit
+#   -v, --verbose              stream every command's output
+#   -h, --help
+#
+# Writes build/test-logs/realworld-<cc>[-<sanitizers>].{html,md,tsv} (every project's build with
+# its steps, its linkage proof, and every test with its output, in the style of the suites'
+# reports), .summary.md (one line per project), and each step's log under
+# build/test-logs/realworld-<cc>[-<sanitizers>]/<project>/. Exit status 1 when anything failed:
+# a build, a linkage proof or a test (a test that does not apply is skipped with its reason in
+# skip.txt; there are no lists of known failures).
+#
+# Ctrl-C stops the run gracefully: the step running is cut short, the rest is not run, and the
+# report is written with what ran. Exit status 130.
+set -eu
+repo=$(cd "$(dirname "$0")/.." && pwd)
+cd "$repo"
+. "$repo/tools/lib/ui.sh"
+. "$repo/tools/lib/env.sh"
+
+usage() { sed -n '2,/^set -eu/p' "$0" | sed '$d' | sed 's/^# \{0,1\}//'; }
+
+compilers= sanitizer= jobs=4 clean=0 fresh=0 list=0 projects=
+while [ $# -gt 0 ]; do
+  case $1 in
+    -c|--compiler) compilers="$compilers $2"; shift ;;
+    -s|--sanitizer) sanitizer=$2; shift ;;
+    -j|--jobs) jobs=$2; shift ;;
+    -j*) jobs=${1#-j} ;;
+    --clean) clean=1 ;;
+    --fresh) fresh=1 ;;
+    -l|--list) list=1 ;;
+    -v|--verbose) YCXX_VERBOSE=1; export YCXX_VERBOSE ;;
+    -h|--help) usage; exit 0 ;;
+    -*) echo "tools/realworld: unknown option '$1' (tools/realworld --help)" >&2; exit 2 ;;
+    *) projects="$projects $1" ;;
+  esac
+  shift
+done
+compilers=${compilers:-gcc clang}
+for c in $compilers; do
+  case $c in gcc|clang) ;; *) echo "tools/realworld: unknown compiler '$c'" >&2; exit 2 ;; esac
+done
+rw=$repo/tools/lib/realworld.py
+plan=$(python3 "$rw" plan "$repo" $projects) || exit 2
+
+if [ $list = 1 ]; then
+  echo "$plan" | while read -r name role _; do
+    m=$repo/tests/realworld/$name/manifest
+    printf '%-14s %-12s %s%s\n' "$name" "$(python3 "$rw" get "$m" ref)" "$(python3 "$rw" get "$m" exercises '')" \
+      "$([ "$role" = dep ] && echo ' (dependency)')"
+  done
+  exit 0
+fi
+
+ycxx_env_load
+SANITIZER=$sanitizer
+export SANITIZER
+ycxx_run_config || exit 2
+san_flags=
+for s in $(echo "$sanitizer" | tr , ' '); do
+  case $s in
+    asan) f=address ;; ubsan) f=undefined ;; tsan) f=thread ;;
+    *) echo "tools/realworld: unknown sanitizer '$s' (asan, ubsan, tsan)" >&2; exit 2 ;;
+  esac
+  san_flags=${san_flags:+$san_flags,}$f
+done
+# The sanitizers' options for the tests: a report fails the test.
+UBSAN_OPTIONS=${UBSAN_OPTIONS:-print_stacktrace=1:halt_on_error=1}
+TSAN_OPTIONS=${TSAN_OPTIONS:-halt_on_error=1:second_deadlock_stack=1}
+export UBSAN_OPTIONS TSAN_OPTIONS
+src_root=${YCXX_REALWORLD_SRC:-$repo/build/realworld/src}
+base_pkg_config_path=${PKG_CONFIG_PATH:-}
+logs=$repo/build/test-logs
+mkdir -p "$logs" "$src_root"
+ui_catch_interrupt
+failed=0
+t_start=$(date +%s)
+
+cxx_of() { if [ "$1" = gcc ]; then echo "${YCXX_GXX:-g++-16}"; else echo "${YCXX_CLANGXX:-clang++-23}"; fi; }
+cc_of() { if [ "$1" = gcc ]; then echo "${YCXX_GCC:-gcc-16}"; else echo "${YCXX_CLANG:-clang-23}"; fi; }
+get() { python3 "$rw" get "$manifest" "$@"; }
+
+# pstep STEP CMD...: one step of the current project, its output in $pres/STEP.log, recorded in
+# $pres/steps.tsv (step, status, seconds, log, command) for the report.
+pstep() {
+  ps_step=$1
+  shift
+  ps_log=$pres/$ps_step.log
+  ps_t0=$(date +%s)
+  if ui_step "$name: $ps_step" "$ps_log" "$@"; then ps_st=ok
+  elif [ "${ui_interrupted}" = 1 ]; then ps_st=interrupted
+  else ps_st=FAIL; fi
+  printf '%s\t%s\t%s\t%s\t%s\n' "$ps_step" "$ps_st" $(($(date +%s) - ps_t0)) "$ps_log" "$(ui_quote "$@")" >>"$pres/steps.tsv"
+  [ $ps_st = ok ]
+}
+
+# note STEP STATUS TEXT: a step that ran no command (a dependency that failed, say).
+note() {
+  printf '%s\n' "$3" >"$pres/$1.log"
+  printf '%s\t%s\t0\t%s\t%s\n' "$1" "$2" "$pres/$1.log" "(not run)" >>"$pres/steps.tsv"
+  if [ "$2" = ok ]; then ui_skip "$name: $1" "$3"; else ui_fail "$name: $1" "$3"; fi
+}
+
+# fetch_all: the project's sources and its extra_sources (other repositories its build would
+# download, "name url commit; ...", fetched next to it as <name>+<extra name>).
+fetch_all() {
+  fetch "$src" "$(get url)" "$(get commit)" "$(get submodules no)" "$pdir/patches" || return 1
+  get extra_sources '' | tr ';' '\n' | while read -r x_name x_url x_commit; do
+    [ -n "$x_name" ] || continue
+    fetch "$src+$x_name" "$x_url" "$x_commit" no /nonexistent || exit 1
+  done
+}
+
+# fetch DIR URL COMMIT SUBMODULES PATCHDIR: the pinned commit, with the project's patches applied.
+# Done once per commit and set of patches (a stamp in .git), so that a rerun rebuilds nothing.
+fetch() {
+  f_dir=$1 f_url=$2 f_commit=$3 f_sub=$4 f_patches=$5
+  f_stamp="$f_commit $(cat "$f_patches"/*.patch 2>/dev/null | cksum)"
+  if [ -f "$f_dir/.git/ycxx-stamp" ] && [ "$(cat "$f_dir/.git/ycxx-stamp")" = "$f_stamp" ]; then
+    echo "$f_dir: at $f_commit with the patches applied"
+    return 0
+  fi
+  if [ ! -d "$f_dir/.git" ]; then
+    git init -q "$f_dir"
+    git -C "$f_dir" remote add origin "$f_url"
+  fi
+  if ! git -C "$f_dir" cat-file -e "$f_commit^{commit}" 2>/dev/null; then
+    git -C "$f_dir" fetch --depth 1 origin "$f_commit"
+  fi
+  rm -f "$f_dir/.git/ycxx-stamp"
+  git -C "$f_dir" checkout -q -f --detach "$f_commit"
+  git -C "$f_dir" clean -q -ffdx
+  if [ "$f_sub" = yes ]; then
+    git -C "$f_dir" submodule update --init --recursive --depth 1
+  fi
+  for f_p in "$f_patches"/*.patch; do
+    [ -f "$f_p" ] || continue
+    echo "applying $f_p"
+    git -C "$f_dir" apply --whitespace=nowarn "$f_p"
+  done
+  echo "$f_stamp" >"$f_dir/.git/ycxx-stamp"
+  echo "$f_dir: $(git -C "$f_dir" rev-parse HEAD)"
+}
+
+# build_project BUILD [TARGETS...]: ninja, going on past failures (-k 0); when something failed,
+# it must be only outputs that build-skip.txt names (each with its category and reason).
+build_project() {
+  b_b=$1
+  shift
+  ninja -C "$b_b" -j"$jobs" -k 0 "$@" && return 0
+  [ "${ui_interrupted}" = 1 ] && return 1
+  echo
+  python3 "$rw" build-check "$pres/build.log" "$pdir" "$pres/build-skips.json"
+}
+
+# ctest_run BUILD JUNIT TIMEOUT [CTEST ARGS...]
+ctest_run() {
+  c_b=$1 c_j=$2 c_t=$3
+  shift 3
+  rm -f "$c_j"
+  $ctest_cmd --test-dir "$c_b" -j"$jobs" --timeout "$c_t" --output-junit "$c_j" --no-tests=error "$@"
+}
+
+# The configuration: the toolchain file and the C++ compiler the projects build with.
+setup_config() {
+  cfgdir=$repo/build/realworld/$cfg
+  mkdir -p "$cfgdir/bin"
+  cxx=$(cxx_of "$c")
+  san_opts=
+  [ -n "$san_flags" ] && san_opts="-fsanitize=$san_flags -fno-omit-frame-pointer -fno-sanitize-recover=all"
+  cat >"$cfgdir/bin/c++" <<EOF
+#!/bin/sh
+# Written by tools/realworld: the C++ compiler of the real-world projects ($cfg).
+# tools/ycxx-cxx with libycxx's build $libdir: libycxx's headers (-nostdinc++), C++26, libycxx's
+# archives and runtime (-nostdlib++). libycxx is C++26 only: a -std=c++NN (gnu++NN) of a project
+# becomes -std=c++26 (gnu++26).
+for a in "\$@"; do
+  shift
+  case \$a in
+    -std=c++*) a=-std=c++26 ;;
+    -std=gnu++*) a=-std=gnu++26 ;;
+  esac
+  set -- "\$@" "\$a"
+done
+exec '$repo/tools/ycxx-cxx' $c '--libdir=$libdir' $san_opts "\$@"
+EOF
+  chmod +x "$cfgdir/bin/c++"
+  cflags=$san_opts
+  if [ "$c" = clang ] && [ "$(uname -s)" != Darwin ]; then
+    gid=${YCXX_GCC_INSTALL_DIR:-$(dirname "$($(cxx_of gcc) -print-libgcc-file-name)")}
+    cflags="--gcc-install-dir=$gid $cflags"
+  fi
+  cat >"$cfgdir/toolchain.cmake" <<EOF
+# Written by tools/realworld: the real-world projects' toolchain ($cfg). The C++ compiler is
+# libycxx's (bin/c++, tools/ycxx-cxx); the C compiler the plain one.
+set(CMAKE_C_COMPILER "$(cc_of "$c")")
+set(CMAKE_CXX_COMPILER "$cfgdir/bin/c++")
+set(CMAKE_C_FLAGS_INIT "$cflags")
+EOF
+}
+
+# The library: build/<cc>, or for a sanitizer run build/<cc>-<sanitizers>, configured on first use
+# (as tools/run-conformance does) and brought up to date.
+setup_library() {
+  libdir=$repo/build/$c${san_flags:+-$(echo "$sanitizer" | tr , -)}
+  if [ ! -f "$libdir/build.ninja" ]; then
+    ui_step "configure ${libdir#"$repo/"}" "$res/library-configure.log" \
+      cmake -S "$repo" -B "$libdir" -G Ninja -DCMAKE_C_COMPILER="$(cc_of "$c")" -DCMAKE_CXX_COMPILER="$(cxx_of "$c")" \
+        -DCMAKE_BUILD_TYPE=RelWithDebInfo ${san_flags:+-DYCXX_SANITIZE=$san_flags} || return 1
+  fi
+  ui_step "library up to date (${libdir#"$repo/"})" "$res/library-build.log" ninja -C "$libdir" -j"$jobs"
+}
+
+# The self-test of the linkage proof: tests/realworld/selftest built with the toolchain's own C++
+# library must be rejected on every count, and built against libycxx accepted.
+selftest() {
+  st_dir=$cfgdir/selftest
+  rm -rf "$st_dir"
+  mkdir -p "$st_dir/ycxx/.ycxx-cmds" "$st_dir/other/.ycxx-cmds"
+  st_out=$res/selftest.txt
+  st_ok=1
+  {
+    echo "== against libycxx (the toolchain file of the projects): accepted"
+    if YCXX_CXX_LOG=$st_dir/ycxx/.ycxx-cmds cmake -S "$repo/tests/realworld/selftest" -B "$st_dir/ycxx" -G Ninja \
+         -DCMAKE_TOOLCHAIN_FILE="$cfgdir/toolchain.cmake" -DCMAKE_EXPORT_COMPILE_COMMANDS=ON >/dev/null &&
+       YCXX_CXX_LOG=$st_dir/ycxx/.ycxx-cmds ninja -C "$st_dir/ycxx" >/dev/null &&
+       python3 "$rw" linkage "$repo" "$libdir" "$st_dir/ycxx" "$st_dir/ycxx/.ycxx-cmds" "$st_dir/ycxx-linkage"; then :
+    else st_ok=0; echo "the libycxx build was not accepted"; fi
+    echo
+    echo "== against the toolchain's C++ library ($cxx): rejected on every count"
+    st_flags=
+    [ "$c" = clang ] && [ "$(uname -s)" != Darwin ] && st_flags=$cflags
+    if cmake -S "$repo/tests/realworld/selftest" -B "$st_dir/other" -G Ninja -DCMAKE_CXX_COMPILER="$cxx" "-DCMAKE_CXX_FLAGS=$st_flags" -DCMAKE_EXPORT_COMPILE_COMMANDS=ON >/dev/null &&
+       ninja -C "$st_dir/other" >/dev/null &&
+       python3 "$rw" linkage "$repo" "$libdir" "$st_dir/other" "$st_dir/other/.ycxx-cmds" "$st_dir/other-linkage" \
+         --expect-violations; then :
+    else st_ok=0; fi
+    echo
+    if [ $st_ok = 1 ]; then echo "SELF-TEST PASSED"; else echo "SELF-TEST FAILED"; fi
+  } >"$st_out" 2>&1
+  if [ $st_ok = 1 ]; then ui_ok "linkage proof self-test" "(rejects libstdc++/libc++ builds; $st_out)"
+  else ui_fail "linkage proof self-test" "($st_out)"; ui_show_log "$st_out" "self-test"; return 1; fi
+}
+
+# One project, in the current configuration.
+project() {
+  name=$1 role=$2 install=$3
+  manifest=$repo/tests/realworld/$name/manifest
+  pdir=$repo/tests/realworld/$name
+  pres=$res/$name
+  rm -rf "$pres"
+  mkdir -p "$pres"
+  b=$cfgdir/$name
+  src=$src_root/$name
+  ui_section "$name $(get ref) ($cfg)${role:+, $role}"
+  for d in $(get deps ''); do
+    case " $broken_deps " in *" $d "*)
+      note deps FAIL "dependency $d failed to build"
+      return 1 ;;
+    esac
+  done
+  YCXX_RW_SRC=$src
+  export YCXX_RW_SRC
+  # A project that needs a newer CMake than the system's names its version (cmake = x.y.z): that
+  # CMake and its CTest run through uvx (pip's cmake package).
+  cmake_v=$(get cmake '')
+  if [ -n "$cmake_v" ]; then
+    cmake_cmd="uvx --quiet --from cmake==$cmake_v cmake" ctest_cmd="uvx --quiet --from cmake==$cmake_v ctest"
+  else
+    cmake_cmd=cmake ctest_cmd=ctest
+  fi
+  YCXX_RW_CTEST=$ctest_cmd
+  export YCXX_RW_CTEST
+  pstep fetch fetch_all || return 1
+  [ $fresh = 1 ] && rm -rf "$b"
+  mkdir -p "$b/.ycxx-cmds"
+  YCXX_CXX_LOG=$b/.ycxx-cmds
+  export YCXX_CXX_LOG
+  eval "set -- $(get configure '')"
+  pstep configure $cmake_cmd -S "$src/$(get source_dir .)" -B "$b" -G Ninja -DCMAKE_TOOLCHAIN_FILE="$cfgdir/toolchain.cmake" \
+    -DCMAKE_BUILD_TYPE="$(get build_type Debug)" "-DCMAKE_C_FLAGS_DEBUG=-O1 -g1" "-DCMAKE_CXX_FLAGS_DEBUG=-O1 -g1" \
+    -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DCMAKE_INSTALL_PREFIX="$cfgdir/prefix" -DCMAKE_PREFIX_PATH="$cfgdir/prefix" \
+    -DCMAKE_FIND_PACKAGE_PREFER_CONFIG=ON "$@" || { unset YCXX_CXX_LOG; return 1; }
+  eval "set -- $(get targets '')"
+  pstep build build_project "$b" "$@" || { unset YCXX_CXX_LOG; return 1; }
+  if [ "$install" = install ]; then
+    pstep install $cmake_cmd --install "$b" || { unset YCXX_CXX_LOG; return 1; }
+  fi
+  unset YCXX_CXX_LOG
+  st=0
+  if [ "$role" = test ] && [ "$(get test ctest)" = ctest ]; then
+    sel=$(python3 "$rw" select "$b" "$pdir" "$pres" 2>"$pres/select.err") || st=1
+    cat "$pres/select.err" >&2
+    timeout=$(get timeout 600)
+    [ -n "$san_flags" ] && timeout=$((timeout * 3))
+    eval "set -- $(get ctest_args '')"
+    [ -f "$pres/ctest-I.txt" ] && set -- -I "$pres/ctest-I.txt" "$@"
+    ui_info "$name: tests" "$(echo "$sel" | sed 's/^\([0-9]*\) \([0-9]*\)$/\1 to run, \2 skipped (skip.txt)/')"
+    case $sel in
+      0\ *) ui_skip "$name: test" "(every test skipped)" ;;
+      *) pstep test ctest_run "$b" "$pres/junit.xml" "$timeout" "$@" || st=1 ;;
+    esac
+  fi
+  [ "${ui_interrupted}" = 1 ] && return 1
+  pstep linkage python3 "$rw" linkage "$repo" "$libdir" "$b" "$b/.ycxx-cmds" "$pres/linkage" || st=1
+  if [ $clean = 1 ] && [ "$install" != install ]; then rm -rf "$b"; fi
+  return $st
+}
+
+ui_title "libycxx real-world projects: $(echo "$plan" | awk '{print $1}' | tr '\n' ' ')"
+ui_info "platform" "$(uname -s) $(uname -m)"
+ui_info "sources" "$src_root"
+for c in $compilers; do
+  cfg=$c${ycxx_run_suffix}
+  res=$logs/realworld-$cfg
+  # What skip.txt's conditions and the manifests' key.<condition> values test.
+  YCXX_RW_CONDITIONS="$c $(uname -s | tr 'A-Z' 'a-z') $(echo "$sanitizer" | tr , ' ')"
+  export YCXX_RW_CONDITIONS
+  rm -rf "$res"
+  mkdir -p "$res"
+  echo "$plan" >"$res/order.txt"
+  c_start=$(date +%s)
+  ui_section "$cfg: libycxx and the toolchain"
+  ui_info "$c" "$(cxx_of "$c"): $($(cxx_of "$c") --version 2>/dev/null | head -n 1)"
+  if ! setup_library; then
+    failed=1
+    [ "${ui_interrupted}" = 1 ] && break
+    continue
+  fi
+  setup_config
+  # The projects' dependencies, installed in the configuration's prefix, for find_package and
+  # pkg-config.
+  YCXX_RW_PREFIX=$cfgdir/prefix
+  PKG_CONFIG_PATH=$cfgdir/prefix/lib/pkgconfig:$cfgdir/prefix/share/pkgconfig${base_pkg_config_path:+:$base_pkg_config_path}
+  export YCXX_RW_PREFIX PKG_CONFIG_PATH
+  ui_info "C++ compiler" "$cfgdir/bin/c++ (tools/ycxx-cxx $c --libdir=${libdir#"$repo/"}${san_flags:+ -fsanitize=$san_flags})"
+  selftest || failed=1
+  broken_deps=
+  # One "name:role:install" word per project (a loop in this shell, which keeps the Ctrl-C trap).
+  for entry in $(echo "$plan" | tr ' ' ':'); do
+    [ "${ui_interrupted}" = 1 ] && break
+    p_name=${entry%%:*} p_install=${entry##*:}
+    p_role=${entry#*:}
+    p_role=${p_role%%:*}
+    if ! project "$p_name" "$p_role" "$p_install"; then
+      failed=1
+      broken_deps="$broken_deps $p_name"
+    fi
+  done
+  echo $(($(date +%s) - c_start)) >"$res/elapsed"
+  ui_section "$cfg: report"
+  commit=$(git -C "$repo" rev-parse --short=12 HEAD 2>/dev/null || echo unknown)
+  dirty=$(git -C "$repo" status --porcelain 2>/dev/null | wc -l | tr -d ' ')
+  [ "$dirty" = 0 ] || commit="$commit (+$dirty uncommitted changes)"
+  python3 "$rw" report "$repo" "$res" "$res" suite=realworld "compiler=$c" \
+    "compiler version=$($(cxx_of "$c") --version 2>/dev/null | head -n 1)" \
+    "library=libycxx, ${libdir#"$repo/"}${san_flags:+ (-fsanitize=$san_flags)}" "sanitizer=${sanitizer:-none}" \
+    "configuration=$cfg" "commit=$commit" "host=$(uname -srm)" \
+    "command=tools/realworld -c $c${sanitizer:+ -s $sanitizer} $(echo $projects)" \
+    "logs=$res" || failed=1
+  [ -f "$res.html" ] && ui_info "report" "$res.html (as Markdown: $res.md; summary: $res.summary.md)"
+  [ "${ui_interrupted}" = 1 ] && break
+done
+
+el=$(ui_duration $(($(date +%s) - t_start)))
+echo
+if [ "${ui_interrupted}" = 1 ]; then ui_warn "interrupted (Ctrl-C)" "after $el; the reports keep what ran"; exit 130
+elif [ $failed = 0 ]; then ui_ok "real-world projects: everything passed" "($el)"
+else ui_fail "real-world projects: failures" "($el)"; exit 1; fi

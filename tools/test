@@ -4,7 +4,7 @@
 #
 #   tools/test [options] [stage...]
 #
-# Stages (default: policy build freestanding ycxx; "all": every stage):
+# Stages (default: policy build freestanding ycxx; "all": every stage but realworld):
 #   policy        preprocessor, include-layering, namespace-visibility and shell-portability
 #                 checks (tools/check_*.py), the headers' reserved names (tools/uglify.py --check)
 #                 and the std modules' export lists (tools/gen_std_module.py --check)
@@ -18,12 +18,15 @@
 #                 commands it ran and their output, and .tsv, one line per test)
 #   libcxx        libc++'s test suite, run only ($LIBCXX_TESTS; tools/fetch-suites gets it)
 #   libstdcxx     libstdc++'s test suite, run only ($LIBSTDCXX_TESTS; tools/fetch-suites gets it)
+#   realworld     open-source projects built against libycxx and tested with their own test suites,
+#                 with the proof that they were built against libycxx (tools/realworld; fetches
+#                 the projects; writes build/test-logs/realworld-<cc>.html)
 #
 # Options:
 #   -c, --compiler gcc|clang   only this compiler (repeatable; default both)
 #   -f, --filter DIR           suite stages: only tests under DIR (repeatable)
 #   -j, --jobs N               parallel jobs for ninja and lit
-#   -s, --sanitizer LIST       suite stages: build tests with -fsanitize (asan, ubsan, tsan) and
+#   -s, --sanitizer LIST       suite and realworld stages: build tests with -fsanitize (asan, ubsan, tsan) and
 #                              link them with libycxx built with the same sanitizers
 #                              (build/<cc>-<sanitizers>, configured and built on first use)
 #   --hardened                 own suite: compile the tests with -DYCXX_HARDENED=1 (the library's
@@ -80,7 +83,7 @@ while [ $# -gt 0 ]; do
     --no-fetch) YCXX_NO_FETCH=1 ;;
     -h|--help) usage; exit 0 ;;
     all) stages="policy build freestanding cmake ycxx libcxx libstdcxx" ;;
-    policy|build|freestanding|cmake|ycxx|libcxx|libstdcxx) stages="$stages $1" ;;
+    policy|build|freestanding|cmake|ycxx|libcxx|libstdcxx|realworld) stages="$stages $1" ;;
     *) echo "tools/test: unknown option or stage '$1' (tools/test --help)" >&2; exit 2 ;;
   esac
   shift
@@ -277,6 +280,18 @@ for stage in $stages; do
       ;;
     cmake)
       direct "CMake package and toolchain file" cmake "" tests/cmake/run.sh $compilers || :
+      ;;
+    realworld)
+      for c in $compilers; do
+        label="real-world projects, $c${sanitizer:+, $sanitizer}"
+        ! not_run "$label" || continue
+        case " $broken " in *" $c "*)
+          ui_section "$label"; ui_skip "$label" "(the $c build failed)"
+          record skip "$label" "(the $c build failed)"; continue ;;
+        esac
+        direct "$label" "" "$logs/realworld-$c${ycxx_run_suffix}.html" \
+          tools/realworld -c $c ${sanitizer:+-s $sanitizer} ${jobs:+-j $jobs} || :
+      done
       ;;
     ycxx|libcxx|libstdcxx)
       for c in $compilers; do

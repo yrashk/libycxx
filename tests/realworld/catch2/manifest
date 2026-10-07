@@ -3,4 +3,6 @@ url = https://github.com/catchorg/Catch2.git
 ref = v3.16.0
 commit = 317ac1ed4c0bb6e6b91eafc817e05c488feffcb3
 exercises = test framework: iostreams, strings, chrono, exceptions, random
-configure = -DCATCH_DEVELOPMENT_BUILD=ON -DCATCH_BUILD_TESTING=ON -DCATCH_BUILD_EXAMPLES=OFF -DCATCH_BUILD_EXTRA_TESTS=OFF -DCATCH_ENABLE_WERROR=OFF
+# Thread-safe assertions: spdlog's tests assert from several threads, a data race in Catch2's
+# default configuration (ThreadSanitizer: Catch::Detail::g_lastKnownLineInfo).
+configure = -DCATCH_CONFIG_THREAD_SAFE_ASSERTIONS=ON -DCATCH_DEVELOPMENT_BUILD=ON -DCATCH_BUILD_TESTING=ON -DCATCH_BUILD_EXAMPLES=OFF -DCATCH_BUILD_EXTRA_TESTS=OFF -DCATCH_ENABLE_WERROR=OFF

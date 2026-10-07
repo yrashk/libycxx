@@ -43,8 +43,8 @@ static_assert([] { std::array a{1, 2, 1, 3}; auto r = std::ranges::find_last(a, 
 static_assert([] { std::array a{1, 2, 3}; std::array b{2, 3}; return std::ranges::contains_subrange(a, b) && std::ranges::ends_with(a, b) && std::ranges::starts_with(a, std::array{1}); }()); // @M116 semantics
 static_assert([] { std::array a{1, 2, 3}; auto r = std::ranges::fold_left_first_with_iter(a, std::plus{}); return r.in == a.end() && r.value == 6; }()); // @M117 semantics
 static_assert([] { std::array a{1, 2, 3}; return std::ranges::fold_right(a, 0, std::minus{}) == 2; }()); // @M118 semantics
-// [span.cons] the initializer_list constructor (P2447), [span.elem] at
-static_assert([] { auto f = [](std::span<const int> s) { return s.size() == 3 && s.at(1) == 2; }; return f({1, 2, 3}); }()); // @M119 semantics
+// [span.elem] at, [span.sub] subspan
+static_assert([] { int a[] = {1, 2, 3}; std::span<const int> s(a); return s.at(1) == 2 && s.subspan<1, 1>()[0] == 2; }()); // @M119 semantics
 // [inplace.vector.modifiers] try_ and unchecked_ forms
 static_assert([] { std::inplace_vector<int, 2> v; v.try_emplace_back(1); v.try_push_back(2); auto r = v.try_push_back(3); return v.size() == 2 && !r && v.back() == 2; }()); // @M120 semantics
 // [flat.map.modifiers] insert_range with sorted_unique, [flat.map.access]

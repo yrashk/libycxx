@@ -13,6 +13,7 @@
 // The named locale: cs_CZ.ISO8859-2 (glibc defines the collating elements "ch", "Ch" and "CH";
 // "ch" collates after "h", before "i"); the wide part uses the same locale's wide facets.
 // REQUIRES: exceptions
+// COUNTERPART: libcxx:re/re\.traits/transform_primary\.pass\.cpp libstdcxx:28_regex/traits/(char|wchar_t)/transform_primary\.cc
 #include <locale>
 #include <regex>
 #include <string>

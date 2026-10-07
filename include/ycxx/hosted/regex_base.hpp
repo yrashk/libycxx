@@ -187,8 +187,17 @@ struct regex_traits {
   template <class _ForwardIterator>
   string_type lookup_collatename(_ForwardIterator first, _ForwardIterator last) const {
     const string_type s(first, last);
-    if (s.size() <= 1)
+    if (s.empty())
       return s;
+    // A name the ctype facet narrows to ASCII is read as narrowed (as lookup_classname reads
+    // class names): one such character is the element it narrows to; another single character
+    // is itself.
+    if (s.size() == 1) {
+      const char __nc = __ct_->narrow(s[0], '\0');
+      if (__nc == '\0' || static_cast<unsigned char>(__nc) > 127)
+        return s;
+      return string_type(1, __ct_->widen(__nc));
+    }
     if (s.size() <= 32) {
       char __buf[32];
       size_t n = 0;

@@ -447,7 +447,7 @@ struct decimal_scan {
 // Returns false (and nothing is stored) for anything else, which parse_decimal then handles.
 template <kind _Kp>
 bool parse_decimal_short(const char* p, const char* last, bool __negative, int __fmt, __fp_raw& out,
-                         std::from_chars_result& res) {
+                         std::from_chars_result& __res) {
   __y_u64 __w = 0;
   int __nd = 0;     // digits read
   int __nfrac = 0;  // of which after the point
@@ -495,7 +495,7 @@ bool parse_decimal_short(const char* p, const char* last, bool __negative, int _
   if (e10 < __pow10_min || e10 > __pow10_max ||
       !__ycxx::__detail::__fpconv::eisel_lemire_fast<_Kp>(__w, static_cast<int>(e10), __negative, out))
     return false;
-  res = {p, std::errc{}};
+  __res = {p, std::errc{}};
   return true;
 }
 
@@ -503,9 +503,9 @@ template <kind _Kp>
 std::from_chars_result parse_decimal(const char* first, const char* p, const char* last, bool __negative, int __fmt,
                                      __fp_raw& out) {
   if constexpr (_Kp == kind::__binary64 || _Kp == kind::__binary32) {
-    std::from_chars_result res;
-    if (__ycxx::__detail::__fpconv::parse_decimal_short<_Kp>(p, last, __negative, __fmt, out, res))
-      return res;
+    std::from_chars_result __res;
+    if (__ycxx::__detail::__fpconv::parse_decimal_short<_Kp>(p, last, __negative, __fmt, out, __res))
+      return __res;
   }
   const char* const start = p;
   decimal_scan d{p, last};

@@ -1,0 +1,77 @@
+#!/bin/sh
+# ycxx-c++: the C++ compiler of a libycxx build or installation (generated from cmake/ycxx-c++.in
+# when libycxx is configured; installed as <prefix>/bin/ycxx-c++). Use it as the project's C++
+# compiler (CXX=ycxx-c++, CMAKE_CXX_COMPILER, Meson's cpp): it runs @YCXX_W_FAMILY@ (@YCXX_W_CXX@)
+# with libycxx's headers in place of the toolchain's (-nostdinc++ -isystem <include>, C++26), and
+# links libycxx's archives and ABI runtime in place of libstdc++/libc++ (-nostdlib++), with the
+# allocation table's link options (cmake/ycxx-link.cmake) and the platform's specifics, as
+# tools/ycxx-cxx does for the source tree (keep the two consistent).
+#
+# libycxx is C++26 only: an older -std=c++NN (gnu++NN) of the project becomes -std=c++26
+# (gnu++26). docs/BUILDING_PROJECTS.md is the guide.
+# $YCXX_CXX: run this compiler instead (it must be the same compiler libycxx was built with).
+here=$(cd "$(dirname "$0")" && pwd)
+@YCXX_W_LOCATE@
+cxx=${YCXX_CXX:-'@YCXX_W_CXX@'}
+family=@YCXX_W_FAMILY@
+
+extra=
+# Hidden visibility (DECISIONS §2): GCC's -Wattributes warning about program classes with a member
+# or base of a library class type says nothing about the program.
+[ $family = gcc ] && extra=-Wno-attributes
+# Linux, Clang: the C runtime startup files and libgcc come from GCC 16's installation.
+gcc_install_dir='@YCXX_W_GCC_INSTALL_DIR@'
+[ $family = clang ] && [ -n "$gcc_install_dir" ] && extra="--gcc-install-dir=$gcc_install_dir"
+
+# Queries of the compiler itself (version, search directories, target): nothing to add.
+query=1
+[ $# = 0 ] && query=0
+for a in "$@"; do
+  case $a in
+    --version|-dumpversion|-dumpfullversion|-dumpmachine|-print-*|--print-*) ;;
+    *) query=0; break ;;
+  esac
+done
+[ $query = 1 ] && exec $cxx $extra "$@"
+
+# The language standard: C++26 at least.
+for a in "$@"; do
+  shift
+  case $a in
+    -std=c++98|-std=c++03|-std=c++0x|-std=c++11|-std=c++1y|-std=c++14|-std=c++1z|-std=c++17|-std=c++2a|-std=c++20|-std=c++2b|-std=c++23)
+      a=-std=c++26 ;;
+    -std=gnu++98|-std=gnu++03|-std=gnu++0x|-std=gnu++11|-std=gnu++1y|-std=gnu++14|-std=gnu++1z|-std=gnu++17|-std=gnu++2a|-std=gnu++20|-std=gnu++2b|-std=gnu++23)
+      a=-std=gnu++26 ;;
+  esac
+  set -- "$@" "$a"
+done
+
+if [ "$(uname -s)" = Darwin ]; then
+  # Apple's linker searches archives repeatedly by itself; unwinding is libSystem's.
+  group_begin= group_end= libgcc=
+  [ $family = gcc ] && libgcc=-static-libgcc
+  # Apple's SDK has no libatomic, and libycxx's <atomic> needs none: drop -latomic when the
+  # compiler cannot find one.
+  case " $* " in
+    *" -latomic "*)
+      if [ "$($cxx -print-file-name=libatomic.dylib)" = libatomic.dylib ] &&
+         [ "$($cxx -print-file-name=libatomic.a)" = libatomic.a ]; then
+        for a in "$@"; do
+          shift
+          [ "$a" = -latomic ] || set -- "$@" "$a"
+        done
+      fi ;;
+  esac
+else
+  # One unwinder per process (glibc's pthread_exit/pthread_cancel unwind through libgcc_s.so),
+  # and GCC 16's libgcc_s at run time, not an older system copy.
+  group_begin=-Wl,--start-group group_end=-Wl,--end-group libgcc='@YCXX_W_LIBGCC@'
+fi
+
+link=1
+for a in "$@"; do case $a in -c|-S|-E|-fsyntax-only|-M|-MM|--precompile) link=0 ;; esac; done
+if [ $link = 1 ]; then
+  exec $cxx $extra -std=c++26 -nostdinc++ @YCXX_W_INCLUDES@ "$@" \
+    -nostdlib++ @YCXX_W_LINK_OPTIONS@ $group_begin "$libdir/libycxx.a" "$libdir/libycxx-abi.a" $group_end -lm $libgcc
+fi
+exec $cxx $extra -std=c++26 -nostdinc++ @YCXX_W_INCLUDES@ "$@"

@@ -1,0 +1,9 @@
+# Conan 2: lets compiler.libcxx=libycxx (packages built against libycxx get their own package
+# IDs, never mixed with libstdc++/libc++ ones) and Clang 23. Copy or merge into
+# $CONAN_HOME/settings_user.yml (docs/BUILDING_PROJECTS.md, "Package managers").
+compiler:
+  gcc:
+    libcxx: [libycxx]
+  clang:
+    version: ["23"]
+    libcxx: [libycxx]

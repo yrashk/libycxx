@@ -320,7 +320,7 @@ type.index	typeindex	std::type_index	operator>=	member-function
 type.index	typeindex	std::type_index	operator<=>	member-function
 type.index	typeindex	std::type_index	hash_code	member-function
 type.index	typeindex	std::type_index	name	member-function
-type.index	typeindex	std::type_index	target	member-variable
+type.index	typeindex	std::type_index	target	member-variable-private
 source.location.syn	source_location	std	source_location	class
 support.srcloc.class.general	source_location	std::source_location	current	member-function
 support.srcloc.class.general	source_location	std::source_location	operator=	member-function
@@ -328,7 +328,7 @@ support.srcloc.class.general	source_location	std::source_location	line	member-fu
 support.srcloc.class.general	source_location	std::source_location	column	member-function
 support.srcloc.class.general	source_location	std::source_location	file_name	member-function
 support.srcloc.class.general	source_location	std::source_location	function_name	member-function
-support.srcloc.class.general	source_location	std::source_location	line_	member-variable
+support.srcloc.class.general	source_location	std::source_location	line_	member-variable-private
 exception.syn	exception	std	exception	class
 exception.syn	exception	std	bad_exception	class
 exception.syn	exception	std	nested_exception	class
@@ -439,7 +439,7 @@ coroutine.handle.general	coroutine	std::coroutine_handle<void>	done	member-funct
 coroutine.handle.general	coroutine	std::coroutine_handle<void>	operator()	member-function
 coroutine.handle.general	coroutine	std::coroutine_handle<void>	resume	member-function
 coroutine.handle.general	coroutine	std::coroutine_handle<void>	destroy	member-function
-coroutine.handle.general	coroutine	std::coroutine_handle<void>	ptr	member-variable
+coroutine.handle.general	coroutine	std::coroutine_handle<void>	ptr	member-variable-private
 coroutine.handle.general	coroutine	std::coroutine_handle	from_promise	member-function
 coroutine.handle.general	coroutine	std::coroutine_handle	operator=	member-function
 coroutine.handle.general	coroutine	std::coroutine_handle	address	member-function
@@ -451,7 +451,7 @@ coroutine.handle.general	coroutine	std::coroutine_handle	operator()	member-funct
 coroutine.handle.general	coroutine	std::coroutine_handle	resume	member-function
 coroutine.handle.general	coroutine	std::coroutine_handle	destroy	member-function
 coroutine.handle.general	coroutine	std::coroutine_handle	promise	member-function
-coroutine.handle.general	coroutine	std::coroutine_handle	ptr	member-variable
+coroutine.handle.general	coroutine	std::coroutine_handle	ptr	member-variable-private
 coroutine.handle.noop.general	coroutine	std::coroutine_handle<noop_coroutine_promise>	operator coroutine_handle < >	member-function
 coroutine.handle.noop.general	coroutine	std::coroutine_handle<noop_coroutine_promise>	operator bool	member-function
 coroutine.handle.noop.general	coroutine	std::coroutine_handle<noop_coroutine_promise>	done	member-function
@@ -974,15 +974,15 @@ util.smartptr.owner.hash	memory	std::owner_hash	operator()	member-function
 util.smartptr.owner.hash	memory	std::owner_hash	is_transparent	member-type
 util.smartptr.owner.equal	memory	std::owner_equal	operator()	member-function
 util.smartptr.owner.equal	memory	std::owner_equal	is_transparent	member-type
-util.smartptr.enab	memory	std::enable_shared_from_this	operator=	member-function
+util.smartptr.enab	memory	std::enable_shared_from_this	operator=	member-function-protected
 util.smartptr.enab	memory	std::enable_shared_from_this	shared_from_this	member-function
 util.smartptr.enab	memory	std::enable_shared_from_this	weak_from_this	member-function
 out.ptr.t	memory	std::out_ptr_t	operator Pointer *	member-function
 out.ptr.t	memory	std::out_ptr_t	operator void * *	member-function
-out.ptr.t	memory	std::out_ptr_t	s	member-variable
+out.ptr.t	memory	std::out_ptr_t	s	member-variable-private
 inout.ptr.t	memory	std::inout_ptr_t	operator Pointer *	member-function
 inout.ptr.t	memory	std::inout_ptr_t	operator void * *	member-function
-inout.ptr.t	memory	std::inout_ptr_t	s	member-variable
+inout.ptr.t	memory	std::inout_ptr_t	s	member-variable-private
 indirect.syn	memory	std::indirect	value_type	member-type
 indirect.syn	memory	std::indirect	allocator_type	member-type
 indirect.syn	memory	std::indirect	pointer	member-type
@@ -1019,9 +1019,9 @@ mem.res.class.general	memory_resource	std::pmr::memory_resource	operator=	member
 mem.res.class.general	memory_resource	std::pmr::memory_resource	allocate	member-function
 mem.res.class.general	memory_resource	std::pmr::memory_resource	deallocate	member-function
 mem.res.class.general	memory_resource	std::pmr::memory_resource	is_equal	member-function
-mem.res.class.general	memory_resource	std::pmr::memory_resource	do_allocate	member-function
-mem.res.class.general	memory_resource	std::pmr::memory_resource	do_deallocate	member-function
-mem.res.class.general	memory_resource	std::pmr::memory_resource	do_is_equal	member-function
+mem.res.class.general	memory_resource	std::pmr::memory_resource	do_allocate	member-function-private
+mem.res.class.general	memory_resource	std::pmr::memory_resource	do_deallocate	member-function-private
+mem.res.class.general	memory_resource	std::pmr::memory_resource	do_is_equal	member-function-private
 mem.poly.allocator.class.general	memory_resource	std::pmr::polymorphic_allocator	value_type	member-type
 mem.poly.allocator.class.general	memory_resource	std::pmr::polymorphic_allocator	operator=	member-function
 mem.poly.allocator.class.general	memory_resource	std::pmr::polymorphic_allocator	allocate	member-function
@@ -1042,25 +1042,25 @@ mem.res.pool.overview	memory_resource	std::pmr::synchronized_pool_resource	opera
 mem.res.pool.overview	memory_resource	std::pmr::synchronized_pool_resource	release	member-function
 mem.res.pool.overview	memory_resource	std::pmr::synchronized_pool_resource	upstream_resource	member-function
 mem.res.pool.overview	memory_resource	std::pmr::synchronized_pool_resource	options	member-function
-mem.res.pool.overview	memory_resource	std::pmr::synchronized_pool_resource	do_allocate	member-function
-mem.res.pool.overview	memory_resource	std::pmr::synchronized_pool_resource	do_deallocate	member-function
-mem.res.pool.overview	memory_resource	std::pmr::synchronized_pool_resource	do_is_equal	member-function
+mem.res.pool.overview	memory_resource	std::pmr::synchronized_pool_resource	do_allocate	member-function-protected
+mem.res.pool.overview	memory_resource	std::pmr::synchronized_pool_resource	do_deallocate	member-function-protected
+mem.res.pool.overview	memory_resource	std::pmr::synchronized_pool_resource	do_is_equal	member-function-protected
 mem.res.pool.overview	memory_resource	std::pmr::unsynchronized_pool_resource	operator=	member-function
 mem.res.pool.overview	memory_resource	std::pmr::unsynchronized_pool_resource	release	member-function
 mem.res.pool.overview	memory_resource	std::pmr::unsynchronized_pool_resource	upstream_resource	member-function
 mem.res.pool.overview	memory_resource	std::pmr::unsynchronized_pool_resource	options	member-function
-mem.res.pool.overview	memory_resource	std::pmr::unsynchronized_pool_resource	do_allocate	member-function
-mem.res.pool.overview	memory_resource	std::pmr::unsynchronized_pool_resource	do_deallocate	member-function
-mem.res.pool.overview	memory_resource	std::pmr::unsynchronized_pool_resource	do_is_equal	member-function
+mem.res.pool.overview	memory_resource	std::pmr::unsynchronized_pool_resource	do_allocate	member-function-protected
+mem.res.pool.overview	memory_resource	std::pmr::unsynchronized_pool_resource	do_deallocate	member-function-protected
+mem.res.pool.overview	memory_resource	std::pmr::unsynchronized_pool_resource	do_is_equal	member-function-protected
 mem.res.monotonic.buffer.general	memory_resource	std::pmr::monotonic_buffer_resource	operator=	member-function
 mem.res.monotonic.buffer.general	memory_resource	std::pmr::monotonic_buffer_resource	release	member-function
 mem.res.monotonic.buffer.general	memory_resource	std::pmr::monotonic_buffer_resource	upstream_resource	member-function
-mem.res.monotonic.buffer.general	memory_resource	std::pmr::monotonic_buffer_resource	do_allocate	member-function
-mem.res.monotonic.buffer.general	memory_resource	std::pmr::monotonic_buffer_resource	do_deallocate	member-function
-mem.res.monotonic.buffer.general	memory_resource	std::pmr::monotonic_buffer_resource	do_is_equal	member-function
+mem.res.monotonic.buffer.general	memory_resource	std::pmr::monotonic_buffer_resource	do_allocate	member-function-protected
+mem.res.monotonic.buffer.general	memory_resource	std::pmr::monotonic_buffer_resource	do_deallocate	member-function-protected
+mem.res.monotonic.buffer.general	memory_resource	std::pmr::monotonic_buffer_resource	do_is_equal	member-function-protected
 allocator.adaptor.syn	scoped_allocator	std	scoped_allocator_adaptor	class
 allocator.adaptor.syn	scoped_allocator	std	operator==	function
-allocator.adaptor.syn	scoped_allocator	std::scoped_allocator_adaptor	OuterTraits	member-type
+allocator.adaptor.syn	scoped_allocator	std::scoped_allocator_adaptor	OuterTraits	member-type-private
 allocator.adaptor.syn	scoped_allocator	std::scoped_allocator_adaptor	outer_allocator_type	member-type
 allocator.adaptor.syn	scoped_allocator	std::scoped_allocator_adaptor	inner_allocator_type	member-type
 allocator.adaptor.syn	scoped_allocator	std::scoped_allocator_adaptor	value_type	member-type
@@ -1823,7 +1823,7 @@ expected.un.general	expected	std::unexpected	swap	member-function
 expected.un.general	expected	std	unexpected	function
 expected.bad	expected	std::bad_expected_access	what	member-function
 expected.bad	expected	std::bad_expected_access	error	member-function
-expected.bad.void	expected	std::bad_expected_access<void>	operator=	member-function
+expected.bad.void	expected	std::bad_expected_access<void>	operator=	member-function-protected
 expected.bad.void	expected	std::bad_expected_access<void>	what	member-function
 expected.object.general	expected	std::expected	value_type	member-type
 expected.object.general	expected	std::expected	error_type	member-type
@@ -1993,11 +1993,11 @@ func.wrap.ref.class	functional	std::function_ref<R (ArgTypes ...)cv noexcept (?)
 func.wrap.ref.class	functional	std::function_ref<R (ArgTypes ...)cv noexcept (?)>	operator()	member-function
 func.wrap.ref.class	functional	std	function_ref	function
 func.search.default	functional	std::default_searcher	operator()	member-function
-func.search.default	functional	std::default_searcher	pat_first_	member-variable
+func.search.default	functional	std::default_searcher	pat_first_	member-variable-private
 func.search.bm	functional	std::boyer_moore_searcher	operator()	member-function
-func.search.bm	functional	std::boyer_moore_searcher	pat_first_	member-variable
+func.search.bm	functional	std::boyer_moore_searcher	pat_first_	member-variable-private
 func.search.bmh	functional	std::boyer_moore_horspool_searcher	operator()	member-function
-func.search.bmh	functional	std::boyer_moore_horspool_searcher	pat_first_	member-variable
+func.search.bmh	functional	std::boyer_moore_horspool_searcher	pat_first_	member-variable-private
 bit.syn	bit	std	bit_cast	function
 bit.syn	bit	std	byteswap	function
 bit.syn	bit	std	has_single_bit	function

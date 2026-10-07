@@ -655,10 +655,10 @@ template <kind _Kp>
 bool plain_uses_fixed(const __decoded& __v) {
   constexpr format __f = __fmt_of<_Kp>;
   constexpr __u128 upper = [] {
-    __u128 u = 1;
+    __u128 __u = 1;
     for (int i = 0; i < __ycxx::__detail::__fpconv::__floor_log10_pow2(__f.p + 1); ++i)
-      u *= 10;
-    return u;
+      __u *= 10;
+    return __u;
   }();
   bool at_least_low = __v.e >= 0 || (-__v.e < 128 && __v.m * 10000 >= (__u128(1) << -__v.e));
   bool below_high;
@@ -712,10 +712,10 @@ bool plain_shortest_normal(char* first, char* last, __y_u64 bits, std::to_chars_
     return false;
   // plain_uses_fixed: 10^-4 <= value < 10^U.
   constexpr __u128 upper = [] {
-    __u128 u = 1;
+    __u128 __u = 1;
     for (int i = 0; i < __ycxx::__detail::__fpconv::__floor_log10_pow2(__f.p + 1); ++i)
-      u *= 10;
-    return u;
+      __u *= 10;
+    return __u;
   }();
   const bool at_least_low = e >= 0 || (-e < 128 && static_cast<__u128>(m) * 10000 >= (__u128(1) << -e));
   const bool below_high = e >= 0 ? (__ycxx::__detail::__fpconv::__bit_length(m) + e <= 120 && (static_cast<__u128>(m) << e) < upper)
@@ -782,20 +782,20 @@ bool fixed_precision_small(char* first, char* last, __y_u64 bits, int precision,
     r = __ycxx::__detail::__fpconv::__too_large(last);
     return true;
   }
-  char* o = first;
+  char* __o = first;
   if (__negative)
-    *o++ = '-';
+    *__o++ = '-';
   const int __int_len = __nd - __frac_in_q;
-  __builtin_memcpy(o, p, static_cast<std::size_t>(__int_len));
-  o += __int_len;
+  __builtin_memcpy(__o, p, static_cast<std::size_t>(__int_len));
+  __o += __int_len;
   if (precision > 0) {
-    *o++ = '.';
-    __builtin_memcpy(o, p + __int_len, static_cast<std::size_t>(__frac_in_q));
-    o += __frac_in_q;
+    *__o++ = '.';
+    __builtin_memcpy(__o, p + __int_len, static_cast<std::size_t>(__frac_in_q));
+    __o += __frac_in_q;
     for (int i = 0; i < __zeros; ++i)
-      *o++ = '0';
+      *__o++ = '0';
   }
-  r = {o, std::errc{}};
+  r = {__o, std::errc{}};
   return true;
 }
 

@@ -429,20 +429,20 @@ constexpr void __swap_offsets(_Ip first, _Ip last, const unsigned char* __ol, co
   using _Dp = std::iter_difference_t<_Ip>;
   if (__swaps) {
     for (int i = 0; i < n; ++i) {
-      _Ip l = first + _Dp(__ol[i]);
+      _Ip __l = first + _Dp(__ol[i]);
       _Ip r = last - _Dp(__or[i]);
-      _Ops::iter_swap(l, r);
+      _Ops::iter_swap(__l, r);
     }
   } else if (n > 0) {
-    _Ip l = first + _Dp(__ol[0]);
+    _Ip __l = first + _Dp(__ol[0]);
     _Ip r = last - _Dp(__or[0]);
-    std::iter_value_t<_Ip> __tmp(_Ops::iter_move(l));
-    *l = _Ops::iter_move(r);
+    std::iter_value_t<_Ip> __tmp(_Ops::iter_move(__l));
+    *__l = _Ops::iter_move(r);
     for (int i = 1; i < n; ++i) {
-      l = first + _Dp(__ol[i]);
-      *r = _Ops::iter_move(l);
+      __l = first + _Dp(__ol[i]);
+      *r = _Ops::iter_move(__l);
       r = last - _Dp(__or[i]);
-      *l = _Ops::iter_move(r);
+      *__l = _Ops::iter_move(r);
     }
     *r = std::move(__tmp);
   }
@@ -479,18 +479,18 @@ constexpr std::pair<_Ip, bool> __partition_right_branchless(_Ip __begin, _Ip __e
     while (last - first > 2 * _Bk) {
       if (__numl == 0) {
         __startl = 0;
-        _Ip it = first;
-        for (int i = 0; i < _Bk; ++i, ++it) {
+        _Ip __it = first;
+        for (int i = 0; i < _Bk; ++i, ++__it) {
           __offl[__numl] = static_cast<unsigned char>(i);
-          __numl += !less(*it, __pivot);
+          __numl += !less(*__it, __pivot);
         }
       }
       if (__numr == 0) {
         __startr = 0;
-        _Ip it = last;
+        _Ip __it = last;
         for (int i = 0; i < _Bk;) {
           __offr[__numr] = static_cast<unsigned char>(++i);
-          __numr += less(*--it, __pivot);
+          __numr += less(*--__it, __pivot);
         }
       }
       const int n = __numl < __numr ? __numl : __numr;
@@ -519,18 +519,18 @@ constexpr std::pair<_Ip, bool> __partition_right_branchless(_Ip __begin, _Ip __e
     }
     if (__unknown != 0 && __numl == 0) {
       __startl = 0;
-      _Ip it = first;
-      for (int i = 0; i < __sizel; ++i, ++it) {
+      _Ip __it = first;
+      for (int i = 0; i < __sizel; ++i, ++__it) {
         __offl[__numl] = static_cast<unsigned char>(i);
-        __numl += !less(*it, __pivot);
+        __numl += !less(*__it, __pivot);
       }
     }
     if (__unknown != 0 && __numr == 0) {
       __startr = 0;
-      _Ip it = last;
+      _Ip __it = last;
       for (int i = 0; i < __sizer;) {
         __offr[__numr] = static_cast<unsigned char>(++i);
-        __numr += less(*--it, __pivot);
+        __numr += less(*--__it, __pivot);
       }
     }
     const int n = __numl < __numr ? __numl : __numr;
@@ -546,9 +546,9 @@ constexpr std::pair<_Ip, bool> __partition_right_branchless(_Ip __begin, _Ip __e
     // One side's leftovers go to the far end of what remains unknown.
     if (__numl != 0) {
       while (__numl-- != 0) {
-        _Ip l = first + _Dp(__offl[__startl + __numl]);
+        _Ip __l = first + _Dp(__offl[__startl + __numl]);
         --last;
-        _Ops::iter_swap(l, last);
+        _Ops::iter_swap(__l, last);
       }
       first = last;
     }
@@ -651,25 +651,25 @@ constexpr void __pdqsort_loop(_Ip __begin, _Ip __end, _Cp less, int __bad_allowe
       // Break patterns: swap a few elements of each side with ones a quarter further in.
       auto __exchange = [](_Ip a, _Ip b) { _Ops::iter_swap(a, b); };
       if (__lsize >= __pdq_insertion_threshold) {
-        const _Dp q = __lsize / 4;
-        __exchange(__begin, __begin + q);
-        __exchange(__pos - _Dp(1), __pos - q);
+        const _Dp __q = __lsize / 4;
+        __exchange(__begin, __begin + __q);
+        __exchange(__pos - _Dp(1), __pos - __q);
         if (__lsize > __pdq_ninther_threshold) {
-          __exchange(__begin + _Dp(1), __begin + (q + 1));
-          __exchange(__begin + _Dp(2), __begin + (q + 2));
-          __exchange(__pos - _Dp(2), __pos - (q + 1));
-          __exchange(__pos - _Dp(3), __pos - (q + 2));
+          __exchange(__begin + _Dp(1), __begin + (__q + 1));
+          __exchange(__begin + _Dp(2), __begin + (__q + 2));
+          __exchange(__pos - _Dp(2), __pos - (__q + 1));
+          __exchange(__pos - _Dp(3), __pos - (__q + 2));
         }
       }
       if (__rsize >= __pdq_insertion_threshold) {
-        const _Dp q = __rsize / 4;
-        __exchange(__pos + _Dp(1), __pos + (q + 1));
-        __exchange(__end - _Dp(1), __end - q);
+        const _Dp __q = __rsize / 4;
+        __exchange(__pos + _Dp(1), __pos + (__q + 1));
+        __exchange(__end - _Dp(1), __end - __q);
         if (__rsize > __pdq_ninther_threshold) {
-          __exchange(__pos + _Dp(2), __pos + (q + 2));
-          __exchange(__pos + _Dp(3), __pos + (q + 3));
-          __exchange(__end - _Dp(2), __end - (q + 1));
-          __exchange(__end - _Dp(3), __end - (q + 2));
+          __exchange(__pos + _Dp(2), __pos + (__q + 2));
+          __exchange(__pos + _Dp(3), __pos + (__q + 3));
+          __exchange(__end - _Dp(2), __end - (__q + 1));
+          __exchange(__end - _Dp(3), __end - (__q + 2));
         }
       }
     } else if (__part.second && ::__ycxx::__detail::__partial_insertion_sort<_Ops>(__begin, __pos, less) &&
@@ -1034,11 +1034,11 @@ void __radix_sort(_Tp* a, std::size_t n, _Tp* b) noexcept {
   constexpr int _Kp = sizeof(_Tp);
   constexpr _Up __flip = std::is_signed_v<_Tp> ? static_cast<_Up>(_Up(1) << (8 * _Kp - 1)) : _Up(0);
   // The key's unsigned order is the wanted order of the values.
-  auto key = [](_Tp x) noexcept {
-    _Up u = static_cast<_Up>(static_cast<_Up>(x) ^ __flip);
+  auto key = [](_Tp __x) noexcept {
+    _Up __u = static_cast<_Up>(static_cast<_Up>(__x) ^ __flip);
     if constexpr (_Desc)
-      u = static_cast<_Up>(~u);
-    return u;
+      __u = static_cast<_Up>(~__u);
+    return __u;
   };
   std::size_t __cnt[_Kp][256] = {};
   for (std::size_t i = 0; i != n; ++i) {
@@ -1053,14 +1053,14 @@ void __radix_sort(_Tp* a, std::size_t n, _Tp* b) noexcept {
     if (c[(key(a[0]) >> (8 * d)) & 0xff] == n)
       continue; // every element has the same digit here
     std::size_t __sum = 0;
-    for (int v = 0; v < 256; ++v) {
-      const std::size_t __here = c[v];
-      c[v] = __sum;
+    for (int __v = 0; __v < 256; ++__v) {
+      const std::size_t __here = c[__v];
+      c[__v] = __sum;
       __sum += __here;
     }
     for (std::size_t i = 0; i != n; ++i) {
-      const _Tp x = __src[i];
-      __dst[c[(key(x) >> (8 * d)) & 0xff]++] = x;
+      const _Tp __x = __src[i];
+      __dst[c[(key(__x) >> (8 * d)) & 0xff]++] = __x;
     }
     _Tp* t = __src;
     __src = __dst;

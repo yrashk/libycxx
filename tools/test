@@ -7,7 +7,8 @@
 # Stages (default: policy build freestanding ycxx; "all": every stage but realworld):
 #   policy        preprocessor, include-layering, namespace-visibility and shell-portability
 #                 checks (tools/check_*.py), the headers' reserved names (tools/uglify.py --check)
-#                 and the std modules' export lists (tools/gen_std_module.py --check)
+#                 the std modules' export lists (tools/gen_std_module.py --check) and the
+#                 transitive includes (tools/gen_transitive_includes.py --check)
 #   build         the library for each compiler, RelWithDebInfo (build/<cc>, what the suites
 #                 link) and Release (build/<cc>-release, -O3, as CMake consumers build it)
 #   freestanding  every core header with -ffreestanding -nostdinc, bare-metal smoke link
@@ -252,6 +253,9 @@ for stage in $stages; do
       ui_section "Policy checks"
       step "preprocessor policy" policy-preprocessor python3 tools/check_preprocessor.py || :
       step "include layering" policy-includes python3 tools/check_includes.py || :
+      # The transitive-include blocks and tests match tools/data/transitive-includes.txt, which
+      # matches the probe results; no include cycle through them (DECISIONS §19).
+      step "transitive includes" policy-transitive-includes python3 tools/gen_transitive_includes.py --check || :
       step "hidden visibility of the library namespaces" policy-visibility python3 tools/check_visibility.py || :
       step "shell portability (bash 3.2, dash)" policy-shell python3 tools/check_shell.py || :
       # [macro.names]: the headers spell no name a program may #define (DECISIONS §2).

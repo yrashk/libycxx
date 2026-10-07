@@ -584,8 +584,34 @@ bool load_time(const char* name, __ycxx::__detail::__time_data<__charT>& d) {
       ABDAY_4, ABDAY_5, ABDAY_6, ABDAY_7, MON_1,  MON_2,   MON_3,   MON_4,   MON_5,   MON_6,
       MON_7,  MON_8,  MON_9,  MON_10, MON_11,  MON_12,  ABMON_1, ABMON_2, ABMON_3, ABMON_4,
       ABMON_5, ABMON_6, ABMON_7, ABMON_8, ABMON_9, ABMON_10, ABMON_11, ABMON_12, AM_STR, PM_STR};
-  for (int i = 0; i < 40; ++i)
-    d.__names[i] = __convert(__loc, ::nl_langinfo_l(items[i], __loc), __charT());
+  // The names, and what strftime_l writes for them where that differs, each without its
+  // surrounding white space: Darwin's ja_JP, for one, writes %b as " 6" (ABMON_6: "6月"); the
+  // white space before a name is the format's (a white-space character of the format reads it)
+  // or skipped before the name is read.
+  auto __trim = [](std::basic_string<__charT> __n) {
+    auto __white = [](__charT c) { return c == __charT(' ') || c == __charT('\t'); };
+    std::size_t __b = 0, __e = __n.size();
+    while (__b < __e && __white(__n[__b]))
+      ++__b;
+    while (__e > __b && __white(__n[__e - 1]))
+      --__e;
+    return __n.substr(__b, __e - __b);
+  };
+  for (int i = 0; i < 40; ++i) {
+    d.__names[i] = __trim(__convert(__loc, ::nl_langinfo_l(items[i], __loc), __charT()));
+    std::tm t{};
+    const char* __conv = "%p";
+    if (i < 14)
+      t.tm_wday = i % 7, __conv = i < 7 ? "%A" : "%a";
+    else if (i < 38)
+      t.tm_mon = (i - 14) % 12, __conv = i < 26 ? "%B" : "%b";
+    else
+      t.tm_hour = i == 38 ? 1 : 13;
+    t.tm_mday = 1;
+    std::basic_string<__charT> __w = __trim(__convert(__loc, ftime(__loc, __conv, t).c_str(), __charT()));
+    if (__w != d.__names[i])
+      d.__written[i] = static_cast<std::basic_string<__charT>&&>(__w);
+  }
   d.__d_t_fmt = __convert(__loc, ::nl_langinfo_l(D_T_FMT, __loc), __charT());
   const char* __x = ::nl_langinfo_l(D_FMT, __loc);
   d.__d_fmt = __convert(__loc, __x, __charT());

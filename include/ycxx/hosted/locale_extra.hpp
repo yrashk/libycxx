@@ -93,6 +93,9 @@ template <class __charT>
 struct __time_data {
   // weekdays (full Sunday-Saturday, then abbreviated), months (full, then abbreviated), AM, PM
   std::basic_string<__charT> __names[14 + 24 + 2];
+  // the same as strftime_l writes them (%A %a %B %b %p), where that differs from the names above
+  // (empty where it does not): Darwin's ja_JP, for one, writes %b as " 6" for an ABMON_6 of "6月"
+  std::basic_string<__charT> __written[14 + 24 + 2];
   std::basic_string<__charT> __d_t_fmt, __d_fmt, __t_fmt, __t_fmt_ampm; // %c, %x, %X, %r
   std::basic_string<__charT> __era_d_t_fmt, __era_d_fmt, __era_t_fmt;    // %Ec, %Ex, %EX (empty: none)
   std::time_base::dateorder __order = std::time_base::mdy;      // from the order of %x's fields
@@ -551,7 +554,7 @@ protected:
     int __v;
     ios_base::iostate e = ios_base::goodbit;
     if (__named_ != nullptr)
-      s = __match_name(s, end, __f, e, __named_->__names, 14, __v);
+      s = __match_name(s, end, __f, e, __named_->__names, __named_->__written, 14, __v);
     else
       s = __match_name(s, end, __f, e, __ycxx::__detail::__c_weekday_names, 14, __v);
     if (!(e & ios_base::failbit))
@@ -563,7 +566,7 @@ protected:
     int __v;
     ios_base::iostate e = ios_base::goodbit;
     if (__named_ != nullptr)
-      s = __match_name(s, end, __f, e, __named_->__names + 14, 24, __v);
+      s = __match_name(s, end, __f, e, __named_->__names + 14, __named_->__written + 14, 24, __v);
     else
       s = __match_name(s, end, __f, e, __ycxx::__detail::__c_month_names, 24, __v);
     if (!(e & ios_base::failbit))
@@ -900,7 +903,7 @@ private:
       // a locale without AM/PM strings (most 24-hour locales) has nothing to read
       if (__named_->__names[38].empty() && __named_->__names[39].empty())
         return s;
-      s = __match_name(s, end, __f, __err, __named_->__names + 38, 2, __v);
+      s = __match_name(s, end, __f, __err, __named_->__names + 38, __named_->__written + 38, 2, __v);
     } else {
       s = __match_name(s, end, __f, __err, __names, 2, __v);
     }
@@ -953,19 +956,24 @@ private:
       __err |= ios_base::failbit;
     return s;
   }
-  // The same for a named locale's names, compared through the stream's ctype<charT>::tolower;
-  // an empty name never matches.
+  // The same for a named locale's names and their written forms (n of each; name k or written k
+  // is index k), compared through the stream's ctype<charT>::tolower, after the white space
+  // before the name (both are stored without theirs); an empty string never matches.
   static iter_type __match_name(iter_type s, iter_type end, ios_base& __f, ios_base::iostate& __err,
-                              const basic_string<__charT>* __names, int n, int& __which) {
+                              const basic_string<__charT>* __names, const basic_string<__charT>* __written, int n,
+                              int& __which) {
     const ctype<__charT>& __ct = use_facet<ctype<__charT>>(__f.getloc());
-    bool __alive[24];
-    for (int k = 0; k < n; ++k)
-      __alive[k] = !__names[k].empty();
+    while (s != end && __ct.is(ctype_base::space, *s))
+      ++s;
+    auto __str = [&](int k) -> const basic_string<__charT>& { return k < n ? __names[k] : __written[k - n]; };
+    bool __alive[48];
+    for (int k = 0; k < 2 * n; ++k)
+      __alive[k] = !__str(k).empty();
     size_t i = 0;
     for (;;) {
       bool __more = false;
-      for (int k = 0; k < n; ++k)
-        __more = __more || (__alive[k] && i < __names[k].size());
+      for (int k = 0; k < 2 * n; ++k)
+        __more = __more || (__alive[k] && i < __str(k).size());
       if (!__more)
         break;
       if (s == end) {
@@ -974,21 +982,21 @@ private:
       }
       const __charT c = __ct.tolower(*s);
       bool any = false;
-      for (int k = 0; k < n; ++k)
-        any = any || (__alive[k] && i < __names[k].size() && __ct.tolower(__names[k][i]) == c);
+      for (int k = 0; k < 2 * n; ++k)
+        any = any || (__alive[k] && i < __str(k).size() && __ct.tolower(__str(k)[i]) == c);
       if (!any)
         break;
-      for (int k = 0; k < n; ++k)
-        __alive[k] = __alive[k] && i < __names[k].size() && __ct.tolower(__names[k][i]) == c;
+      for (int k = 0; k < 2 * n; ++k)
+        __alive[k] = __alive[k] && i < __str(k).size() && __ct.tolower(__str(k)[i]) == c;
       ++s;
       ++i;
     }
     if (s == end)
       __err |= ios_base::eofbit;
     __which = -1;
-    for (int k = 0; k < n; ++k)
-      if (__alive[k] && __names[k].size() == i && i != 0) {
-        __which = k;
+    for (int k = 0; k < 2 * n; ++k)
+      if (__alive[k] && __str(k).size() == i && i != 0) {
+        __which = k % n;
         break;
       }
     if (__which < 0)

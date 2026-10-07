@@ -197,9 +197,28 @@ constexpr std::pair<_Ip, _Ip> __shift_right_impl(_Ip first, _Sp last, std::iter_
 template <class _Gp>
 unsigned long long __uniform_upto(_Gp& __g, unsigned long long n) {
   using _Rp = std::remove_cvref_t<decltype(__g())>;
-  constexpr unsigned long long __gmin = static_cast<unsigned long long>(std::remove_reference_t<_Gp>::min());
-  constexpr unsigned long long range = static_cast<unsigned long long>(std::remove_reference_t<_Gp>::max()) - __gmin;
-  auto __draw = [&__g] { return static_cast<unsigned long long>(static_cast<_Rp>(__g())) - __gmin; };
+  using _Gr = std::remove_reference_t<_Gp>;
+  // A generator whose range exceeds 64 bits (result_type unsigned __int128) is first reduced to
+  // uniform 64-bit values: g() - min() is accepted below the largest multiple of 2^64 that fits
+  // in its range, and its low 64 bits are used.
+  constexpr bool __wide = static_cast<_Rp>(_Gr::max() - _Gr::min()) > static_cast<_Rp>(~0ull);
+  constexpr unsigned long long __gmin = __wide ? 0 : static_cast<unsigned long long>(_Gr::min());
+  constexpr unsigned long long range = __wide ? ~0ull : static_cast<unsigned long long>(_Gr::max()) - __gmin;
+  auto __draw = [&__g] {
+    if constexpr (__wide) {
+      constexpr _Rp __wrange = static_cast<_Rp>(_Gr::max() - _Gr::min());
+      constexpr _Rp __b64 = static_cast<_Rp>(~0ull) + 1;
+      // the accepted values [0, __wlimit]: all of them when the range is a multiple of 2^64
+      constexpr _Rp __wlimit = __wrange % __b64 == __b64 - 1 ? __wrange : __wrange / __b64 * __b64 - 1;
+      for (;;) {
+        _Rp __v = static_cast<_Rp>(static_cast<_Rp>(__g()) - _Gr::min());
+        if (__v <= __wlimit)
+          return static_cast<unsigned long long>(__v);
+      }
+    } else {
+      return static_cast<unsigned long long>(static_cast<_Rp>(__g())) - __gmin;
+    }
+  };
   if (n == range)
     return __draw();
   if (n < range) {

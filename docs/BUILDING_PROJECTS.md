@@ -285,8 +285,8 @@ The errors of step 2 sort into the categories of [Common errors](#common-errors-
 | `<libycxx>/cmake/ycxx-toolchain.cmake` (source tree) | finds or provisions GCC 16.2 / Clang 23.1 and makes them the project's compilers; for building libycxx itself, and for projects that use `find_package(libycxx)` | the toolchain's own library, unless the project links `ycxx::ycxx` |
 | `<prefix>/lib/cmake/libycxx/toolchain.cmake` (installed; `build/<cc>/toolchain.cmake` in a build tree) | makes `ycxx-c++` and `ycxx-cc` the project's compilers | libycxx, for everything the project compiles |
 
-Checked: `examples`-style project with `CMAKE_CXX_STANDARD 17` configured with
-`cmake/ycxx-toolchain.cmake` alone compiles with `g++-16 -std=gnu++17` and the program needs
+Checked: a project with `CMAKE_CXX_STANDARD 17` configured with `cmake/ycxx-toolchain.cmake`
+alone compiles with `g++-16 -std=gnu++17` (no `-nostdinc++`), and its program needs
 `libstdc++.so.6`.
 
 ### Recommended: the installed toolchain file

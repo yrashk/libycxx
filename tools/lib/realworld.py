@@ -430,7 +430,11 @@ def check_image(path, kind, linked_by_driver):
 def find_images(build):
     out = []
     for root, dirs, files in os.walk(build):
-        dirs[:] = [d for d in dirs if d not in ('.git', '.ycxx-cmds') and not d.endswith('-subbuild')]
+        # CMakeFiles/<version>/ holds CMake's compiler identification and ABI probes, not the
+        # project's images: the C probes are built by the C compiler, and with a sanitizer its
+        # static runtime gives them C++ symbols.
+        dirs[:] = [d for d in dirs if d not in ('.git', '.ycxx-cmds') and not d.endswith('-subbuild')
+                   and not (os.path.basename(root) == 'CMakeFiles' and re.fullmatch(r'\d+\.\d+\.\d+\S*', d))]
         for f in files:
             p = os.path.join(root, f)
             if os.path.islink(p) or f.endswith(('.o', '.obj')):

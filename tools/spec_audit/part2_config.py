@@ -515,8 +515,9 @@ def header_probes(g, ents, outdir):
                 line = f'namespace {i}_h {{ using {q}; }}'
             lines.append(f'{line} // @{i} header')
             note = d.comment
-            fs = ('freestanding' in note and 'freestanding-deleted' not in note) or \
-                 (hdr in FREESTANDING_HEADERS and 'hosted' not in note and 'freestanding-deleted' not in note
+            # a freestanding-deleted function is declared too, deleted or not ([freestanding.item]/3)
+            fs = 'freestanding' in note or \
+                 (hdr in FREESTANDING_HEADERS and 'hosted' not in note
                   and sec not in ('iterator.synopsis', 'string.syn', 'cstring.syn'))
             if fs and hdr in FREESTANDING_HEADERS:
                 fs_lines.append(f'{line.replace(i + "_h", i + "_f")} // @{i} freestanding')

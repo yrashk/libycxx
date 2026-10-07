@@ -1,6 +1,6 @@
-// [support.arith.types], [numeric.limits.general]/? : <stdfloat>'s extended floating-point types
+// [support.arith.types], [numeric.limits.general]/4: <stdfloat>'s extended floating-point types
 // exist where the implementation defines __STDCPP_<T>_T__, and numeric_limits is specialized for
-// every arithmetic type ([numeric.limits.general]/5 "for each arithmetic type"), which includes
+// every arithmetic type ("for each arithmetic type"), which includes
 // the extended floating-point types ([basic.fundamental]).
 // FREESTANDING
 #include <stdfloat>

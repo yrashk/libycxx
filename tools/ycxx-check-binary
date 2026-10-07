@@ -1,0 +1,121 @@
+#!/usr/bin/env python3
+"""ycxx-check-binary: is a program or library built against libycxx, and nothing else?
+
+    ycxx-check-binary [-q] PATH...
+
+PATH: an executable, a shared library, a static archive or an object file; a directory is
+searched for executables, shared libraries and archives (a build tree, an install prefix).
+For each one it checks (tools/lib/ycxx_linkage.py, the checks tools/realworld's linkage proof
+makes of every real-world project):
+  - no libstdc++ or libc++ among the needed libraries (readelf -d / otool -L);
+  - no libstdc++ or libc++ symbol, defined or undefined (std::__cxx11, __gnu_cxx::, std::__1,
+    any other std::__ name, GLIBCXX_/CXXABI_ symbol versions): an object or archive compiled
+    with the toolchain's headers has them;
+  - an executable or shared library with C++ code defines __ycxx_allocation_functions, the
+    allocation table only libycxx's runtime defines (DECISIONS §2) and that its link options keep
+    in every image linked against it.
+Prints one line per file (-q: only the problems) and exits 1 when any file fails, 2 on a usage
+error. ELF (binutils' readelf and nm) and Mach-O (otool, nm). Installed as
+<prefix>/bin/ycxx-check-binary; docs/BUILDING_PROJECTS.md, "Is my binary using libycxx?".
+"""
+import os, sys
+
+here = os.path.dirname(os.path.abspath(__file__))
+for d in (os.path.join(here, 'lib'), os.path.join(here, '..', 'share', 'libycxx', 'python')):
+    if os.path.isfile(os.path.join(d, 'ycxx_linkage.py')):
+        sys.path.insert(0, d)
+        break
+import ycxx_linkage as L  # noqa: E402
+
+
+def object_kind(path):
+    """'object' for a relocatable object file (ELF ET_REL, Mach-O MH_OBJECT), else None."""
+    try:
+        with open(path, 'rb') as f:
+            head = f.read(20)
+    except OSError:
+        return None
+    if head[:4] == b'\x7fELF':
+        et = int.from_bytes(head[16:18], 'little' if head[5] == 1 else 'big')
+        return 'object' if et == 1 else None
+    if int.from_bytes(head[:4], 'little') in (0xfeedfacf, 0xfeedface):
+        return 'object' if int.from_bytes(head[12:16], 'little') == 1 else None
+    return None
+
+
+LABEL = {'ok': 'OK  ', 'c': 'C   ', 'fail': 'FAIL'}
+
+
+def check(path):
+    """(verdict, text): verdict 'ok', 'c' (no C++ code) or 'fail'."""
+    kind = L.image_kind(path)
+    if kind is None and path.endswith('.a'):
+        kind = 'archive'
+    shown = kind
+    if kind is None and object_kind(path):
+        kind, shown = 'archive', 'object'   # symbols only, as for an archive
+    if kind is None:
+        return 'fail', 'not an executable, shared library, archive or object file'
+    probs, ev = L.check_image(path, kind, linked_by_driver=False)
+    if kind == 'archive':
+        if probs:
+            return 'fail', f'{shown}: ' + '; '.join(probs)
+        if not ev['cxx_symbols']:
+            return 'c', f'{shown}: no C++ symbols'
+        return 'ok', f'{shown}: no libstdc++/libc++ symbol ({ev["cxx_symbols"]} C++ symbols)'
+    needed = ', '.join(os.path.basename(n) for n in ev.get('needed', [])) or 'none'
+    if not ev['marker']:
+        if ev['cxx_symbols']:
+            probs = [p for p in probs if 'not linked by' not in p]
+            probs.append(f'C++ code but no {L.MARKER}: not linked against libycxx')
+        elif not probs:
+            return 'c', f'{shown}: no C++ code (needs {needed})'
+    if probs:
+        return 'fail', f'{shown}: ' + '; '.join(probs)
+    return 'ok', f'{shown}: libycxx (allocation table {ev["marker"]}; needs {needed})'
+
+
+def main(argv):
+    quiet = False
+    paths = []
+    for a in argv:
+        if a in ('-h', '--help'):
+            print(__doc__.strip())
+            return 0
+        if a == '-q':
+            quiet = True
+        elif a.startswith('-'):
+            print(f'ycxx-check-binary: unknown option {a}', file=sys.stderr)
+            return 2
+        else:
+            paths.append(a)
+    if not paths:
+        print('usage: ycxx-check-binary [-q] PATH... (--help)', file=sys.stderr)
+        return 2
+    files = []
+    for p in paths:
+        if os.path.isdir(p):
+            found = [f for f, _ in L.find_images(p)]
+            if not found:
+                print(f'{p}: no executable, shared library or archive found', file=sys.stderr)
+                return 2
+            files += found
+        elif os.path.exists(p):
+            files.append(p)
+        else:
+            print(f'ycxx-check-binary: {p}: no such file', file=sys.stderr)
+            return 2
+    failed = 0
+    for f in files:
+        verdict, text = check(f)
+        if verdict == 'fail':
+            failed += 1
+        if verdict == 'fail' or not quiet:
+            print(f'{LABEL[verdict]} {f}: {text}')
+    if len(files) > 1 or failed:
+        print(f'{len(files)} checked, {failed} not built against libycxx alone')
+    return 1 if failed else 0
+
+
+if __name__ == '__main__':
+    sys.exit(main(sys.argv[1:]))

@@ -434,6 +434,15 @@ if(YCXX_GCC_INSTALL_DIR)
     $<BUILD_INTERFACE:$<$<AND:$<LINK_LANGUAGE:CXX>,$<CXX_COMPILER_ID:Clang>>:--gcc-install-dir=${YCXX_GCC_INSTALL_DIR}>>)
 endif()
 
+# ---- For projects that know nothing about libycxx (docs/BUILDING_PROJECTS.md) ----
+# bin/ycxx-c++ and bin/ycxx-cc (the compilers), toolchain.cmake, libycxx.pc (pkg-config) and
+# meson-native.ini, in the build tree and installed (cmake/ycxx-consumer.cmake).
+include(GNUInstallDirs)
+include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/ycxx-consumer.cmake)
+if(YCXX_PAL STREQUAL "posix")
+  ycxx_consumer_files("${_ycxx_table_link_options}")
+endif()
+
 # ---- ycxx::freestanding (libycxx-freestanding.a, YCXX_FREESTANDING_RUNTIME): what a freestanding
 # program links instead of ycxx::ycxx (DECISIONS §3): the default replaceable allocation functions
 # (no heap: the plain forms fail through the error handler, the nothrow forms return null; a

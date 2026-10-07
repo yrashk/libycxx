@@ -605,6 +605,13 @@
 #  error "__cpp_lib_variant != 202306L"
 #endif
 
+// [version.syn]/2: view_interface::at ([view.interface.general]/1, [view.interface.members]/5-6)
+#if !defined(__cpp_lib_view_interface)
+#  error "__cpp_lib_view_interface is not defined"
+#elif __cpp_lib_view_interface != 202606L
+#  error "__cpp_lib_view_interface != 202606L"
+#endif
+
 #if !defined(__cpp_lib_void_t)
 #  error "__cpp_lib_void_t is not defined"
 #elif __cpp_lib_void_t != 201411L

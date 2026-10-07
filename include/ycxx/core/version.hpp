@@ -253,6 +253,7 @@
 #define __cpp_lib_ranges_stride 202207L
 #define __cpp_lib_ranges_to_container 202202L
 #define __cpp_lib_ranges_zip 202110L
+#define __cpp_lib_view_interface 202606L
 #define __cpp_lib_robust_nonmodifying_seq_ops 201304L
 #define __cpp_lib_sample 201603L
 #define __cpp_lib_saturation_arithmetic 202603L

@@ -427,6 +427,17 @@ libstdc++ 16 lacks, GCC/Clang differences, C-header gaps and ABI limits. No fail
 a defect in a test.
 
 ## Known compiler gaps and bugs
+- GCC 16.2 at -O1 and above: an internal compiler error in `cxx_eval_indirect_ref`
+  (constexpr.cc:7530) when it constant-folds an array of aggregates whose members are containers
+  of different allocator types built with the default allocator argument
+  (`struct { std::string in; std::vector<std::string> out; } a[] = {{"", {""}}};`, the shape of
+  table-driven tests: Abseil's `str_split_test`, CLI11's `TransformTest`). GCC binds the default
+  argument to the other member's allocator temporary and crashes reading it. Worked around:
+  `vector`, `vector<bool>`, `deque` and `basic_string` copy an empty, trivially copyable
+  allocator by value-initializing it (`__alloc_copy`, the same value without the read), and
+  `vector`'s initializer-list constructor is two overloads. Reproducer without the workaround:
+  `tests/realworld/cli11/repro/gcc16_ice_default_allocator_standalone.cpp`; own test
+  `vector/aggregate_array_default_allocator` (-O1).
 - GCC 16.2, modules (`-fmodules`): one translation unit cannot both #include a standard header
   and `import std;`. Importing after an #include of some of the headers fails to read the module
   ("failed to read compiled module cluster N: Bad file data"; reduced: a module whose global

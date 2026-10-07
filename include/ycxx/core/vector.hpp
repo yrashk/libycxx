@@ -395,12 +395,12 @@ private:
   struct __with_alloc {
     explicit __with_alloc() = default;
   };
-  constexpr vector(__with_alloc, const _Allocator& a) : __alloc_(a) {}
+  constexpr vector(__with_alloc, const _Allocator& a) : __alloc_(__ycxx::__detail::__alloc_copy(a)) {}
 
 public:
   // ---- [vector.cons] ----
   constexpr vector() noexcept(is_nothrow_default_constructible_v<_Allocator>) : vector(_Allocator()) {}
-  constexpr explicit vector(const _Allocator& a) noexcept : __alloc_(a) {}
+  constexpr explicit vector(const _Allocator& a) noexcept : __alloc_(__ycxx::__detail::__alloc_copy(a)) {}
   constexpr explicit vector(size_type n, const _Allocator& a = _Allocator()) : vector(__with_alloc{}, a) { __init_n(n); }
   constexpr vector(__ycxx::__detail::__alloc_size_t<_Allocator> n, const _Tp& value, const _Allocator& a = _Allocator())
       : vector(__with_alloc{}, a) {
@@ -449,7 +449,7 @@ public:
   // initializers (vector<vector<vector<int>>>{{{1}}}) when the allocator is copied from the
   // default argument. Equivalent: the default argument is a value-initialized Allocator.
   constexpr vector(initializer_list<_Tp> il) : __alloc_() { __init_counted(il.begin(), il.end(), il.size()); }
-  constexpr vector(initializer_list<_Tp> il, const _Allocator& a) : __alloc_(a) {
+  constexpr vector(initializer_list<_Tp> il, const _Allocator& a) : __alloc_(__ycxx::__detail::__alloc_copy(a)) {
     __init_counted(il.begin(), il.end(), il.size());
   }
 

@@ -733,7 +733,8 @@ bool plain_shortest_normal(char* first, char* last, __y_u64 bits, std::to_chars_
 // %.Pf of a finite binary32 or binary64 value m * 2^e with P <= 18, in 128-bit integers: for
 // e < 0, m * 10^P < 2^113 is exact, its quotient by 2^-e is the digits and the remainder decides
 // the rounding (half to even, as fixed_precision); for e >= 0 the value is the integer m * 2^e
-// (< 2^128 for e <= 74) followed by P zeros. Returns false for the cases left to fixed_precision.
+// (< 2^128 for e <= 74) followed by P zeros. The digits are printed from 64 bits. Returns false
+// for the cases left to fixed_precision (also a q of 2^64 or more).
 inline constexpr __u128 __pow10_small[19] = {1ull, 10ull, 100ull, 1000ull, 10000ull, 100000ull, 1000000ull, 10000000ull,
                                              100000000ull, 1000000000ull, 10000000000ull, 100000000000ull,
                                              1000000000000ull, 10000000000000ull, 100000000000000ull,
@@ -770,9 +771,13 @@ bool fixed_precision_small(char* first, char* last, __y_u64 bits, int precision,
     if (rem > __half || (rem == __half && (__q & 1) != 0))
       ++__q;
   }
+  // Digits from a 64-bit integer only: a 128-bit division would need a runtime helper the
+  // freestanding runtime does not link (__udivti3).
+  if ((__q >> 64) != 0)
+    return false;
   char __buf[48];
   char* const end = __buf + sizeof __buf;
-  char* p = __ycxx::__detail::__charconv_write_unsigned(end, __q, 10);
+  char* p = __ycxx::__detail::__charconv_write_unsigned(end, static_cast<__y_u64>(__q), 10);
   const int __frac_in_q = precision - __zeros; // the last digits of q are fraction digits
   while (end - p < __frac_in_q + 1)
     *--p = '0'; // "0.00..." for a value below 1

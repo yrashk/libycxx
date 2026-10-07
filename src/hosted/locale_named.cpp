@@ -443,8 +443,18 @@ bool era_date(std::string_view s, long long& __key, long long& y) noexcept {
   return true;
 }
 
+// strftime_l of fmt for t (empty when the result does not fit or is empty).
+std::string ftime(locale_t __loc, const char* __fmt, const std::tm& t) {
+  char __buf[512];
+  const std::size_t n = ::strftime_l(__buf, sizeof __buf, __fmt, &t, __loc);
+  return std::string(__buf, n);
+}
+
 // One era segment "direction:offset:start_date:end_date:era_name:era_format" (POSIX, LC_TIME
-// era); false (d unchanged) when s does not have that form.
+// era); false (d unchanged) when s does not have that form. A well-formed segment the C library
+// does not use (its strftime_l("%EC") at the era's start date is not the era's name: a C library
+// that has the data but ignores the E modifier) is skipped, so parsing never expects an era the
+// library's own formatting does not write.
 template <class __charT>
 bool add_era(locale_t __loc, std::string_view s, __ycxx::__detail::__time_data<__charT>& d) {
   std::string_view __f[6];
@@ -467,6 +477,18 @@ bool add_era(locale_t __loc, std::string_view s, __ycxx::__detail::__time_data<_
   long long __start_key, __start_year, __end_key, __end_year;
   if (!era_date(__f[2], __start_key, __start_year))
     return false;
+  if (__start_year < -100000 || __start_year > 100000)
+    return true; // skipped
+  {
+    std::tm t{};
+    t.tm_year = static_cast<int>(__start_year - 1900);
+    const long long __md = (__start_key - __start_year * 10000);
+    t.tm_mon = static_cast<int>(__md / 100) - 1;
+    t.tm_mday = static_cast<int>(__md % 100);
+    t.tm_hour = 12;
+    if (ftime(__loc, "%EC", t) != __f[4])
+      return true; // skipped
+  }
   bool __later; // the end date follows the start date
   if (__f[3] == "+*")
     __later = true;
@@ -569,9 +591,33 @@ bool load_time(const char* name, __ycxx::__detail::__time_data<__charT>& d) {
   d.__t_fmt = __convert(__loc, ::nl_langinfo_l(T_FMT, __loc), __charT());
   d.__t_fmt_ampm = __convert(__loc, ::nl_langinfo_l(T_FMT_AMPM, __loc), __charT());
   d.__order = order_of(__x);
-  d.__era_d_t_fmt = __convert(__loc, ::nl_langinfo_l(ERA_D_T_FMT, __loc), __charT());
-  d.__era_d_fmt = __convert(__loc, ::nl_langinfo_l(ERA_D_FMT, __loc), __charT());
-  d.__era_t_fmt = __convert(__loc, ::nl_langinfo_l(ERA_T_FMT, __loc), __charT());
+  // The era formats, where the C library writes %Ec, %Ex and %EX with them (checked on two
+  // dates; POSIX: where the alternative representation is not available, the unmodified one is
+  // used, and an empty format falls back to %c, %x and %X below). Darwin's libc, for one, may
+  // ignore the E modifier whatever these items hold.
+  {
+    std::tm __probe[2]{};
+    __probe[0].tm_year = 2026 - 1900, __probe[0].tm_mon = 9, __probe[0].tm_mday = 7, __probe[0].tm_hour = 13;
+    __probe[0].tm_min = 4, __probe[0].tm_sec = 5, __probe[0].tm_wday = 3, __probe[0].tm_yday = 279;
+    __probe[1].tm_year = 1989 - 1900, __probe[1].tm_mon = 0, __probe[1].tm_mday = 7, __probe[1].tm_hour = 1;
+    __probe[1].tm_min = 2, __probe[1].tm_sec = 3, __probe[1].tm_wday = 6, __probe[1].tm_yday = 6;
+    const struct {
+      nl_item item;
+      const char* conv;
+      std::basic_string<__charT>* out;
+    } __era_fmts[3] = {{ERA_D_T_FMT, "%Ec", &d.__era_d_t_fmt}, {ERA_D_FMT, "%Ex", &d.__era_d_fmt},
+                       {ERA_T_FMT, "%EX", &d.__era_t_fmt}};
+    for (const auto& e : __era_fmts) {
+      const char* __fmt = ::nl_langinfo_l(e.item, __loc);
+      if (__fmt == nullptr || *__fmt == '\0')
+        continue;
+      bool __used = true;
+      for (const std::tm& t : __probe)
+        __used = __used && ftime(__loc, e.conv, t) == ftime(__loc, __fmt, t);
+      if (__used)
+        *e.out = __convert(__loc, __fmt, __charT());
+    }
+  }
   load_eras(__loc, d);
   load_alt_digits(__loc, d);
   return true;

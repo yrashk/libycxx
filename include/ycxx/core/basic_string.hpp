@@ -162,13 +162,46 @@ private:
 
   // Initialisation of a freshly constructed object (no storage owned yet).
   constexpr void __init_copy(const __charT* s, size_type n) {
-    if (n <= __sso_cap) {
-      __activate_buf();
-    } else {
-      __check_length(n, "std::basic_string: length exceeds max_size()");
-      block b = __allocate_block(__alloc_, n);
-      __set_long(b.p, b.__cap);
+    if (n > __sso_cap) {
+      __init_copy_long(s, n);
+      return;
     }
+    __activate_buf();
+    __copy_to_buf(s, n);
+    __traits::assign(__ptr_[n], __charT());
+    __size_ = n;
+  }
+  // Copies n <= sso_cap characters into buf_. At run time with the standard traits: two
+  // fixed-size, possibly overlapping copies of the first and last bytes (a word, a half-word or
+  // single bytes), instead of a variable-length memcpy; only [s, s + n) is read.
+  constexpr void __copy_to_buf(const __charT* s, size_type n) noexcept {
+    if constexpr (is_same_v<__traits, char_traits<__charT>>) {
+      if !consteval {
+        unsigned char* d = reinterpret_cast<unsigned char*>(__buf_);
+        const unsigned char* __src = reinterpret_cast<const unsigned char*>(s);
+        const size_t __nb = n * sizeof(__charT);
+        if (__nb >= 8) {
+          __builtin_memcpy(d, __src, 8);
+          __builtin_memcpy(d + __nb - 8, __src + __nb - 8, 8);
+        } else if (__nb >= 4) {
+          __builtin_memcpy(d, __src, 4);
+          __builtin_memcpy(d + __nb - 4, __src + __nb - 4, 4);
+        } else if (__nb != 0) {
+          d[0] = __src[0];
+          d[__nb / 2] = __src[__nb / 2];
+          d[__nb - 1] = __src[__nb - 1];
+        }
+        return;
+      }
+    }
+    __traits::copy(__buf_, s, n);
+  }
+  // The allocating part, out of line: callers keep their short path free of the call's
+  // register saves.
+  [[__gnu__::__noinline__]] constexpr void __init_copy_long(const __charT* s, size_type n) {
+    __check_length(n, "std::basic_string: length exceeds max_size()");
+    block b = __allocate_block(__alloc_, n);
+    __set_long(b.p, b.__cap);
     __traits::copy(__ptr_, s, n);
     __traits::assign(__ptr_[n], __charT());
     __size_ = n;
@@ -185,19 +218,36 @@ private:
     __traits::assign(__ptr_[n], __charT());
     __size_ = n;
   }
+  // Makes *this (owning nothing) a copy of the short string o. At run time with the standard
+  // traits the whole inline buffer is copied, a fixed-size copy the compiler makes with one or two
+  // moves instead of a call; the bytes past o's terminator are copied as they are (memcpy copies
+  // the object representation, indeterminate bytes included: [basic.indet] does not apply).
+  constexpr void __copy_short(const basic_string& __o) noexcept {
+    if constexpr (is_same_v<__traits, char_traits<__charT>>) {
+      if !consteval {
+        __ptr_ = __buf_;
+        __builtin_memcpy(__buf_, __o.__buf_, sizeof(__buf_));
+        __size_ = __o.__size_;
+        return;
+      }
+    }
+    __activate_buf();
+    __traits::copy(__buf_, __o.__buf_, __o.__size_ + 1);
+    __size_ = __o.__size_;
+  }
   // Takes over o's characters (and storage, if long); o becomes empty. *this owns nothing.
   constexpr void take(basic_string& __o) noexcept {
     if (__o.__is_long()) {
       __set_long(__o.__ptr_, __o.__cap_);
       __size_ = __o.__size_;
     } else {
-      __activate_buf();
-      __traits::copy(__buf_, __o.__buf_, __o.__size_ + 1);
-      __size_ = __o.__size_;
+      __copy_short(__o);
     }
     __o.__set_short_empty();
   }
 
+  // push_back's reallocation, out of line.
+  [[__gnu__::__noinline__]] constexpr void __grow_by_one() { __reallocate(__grow_cap(__size_ + 1)); }
   // Moves the characters into a new block of capacity at least c (>= size_).
   constexpr void __reallocate(size_type c) {
     block b = __allocate_block(__alloc_, c);
@@ -344,19 +394,38 @@ private:
       !is_volatile_v<remove_reference_t<ranges::range_reference_t<_Rp>>>;
 
 public:
+  // lhs + rhs for operator+ (the operands are not *this's: nothing aliases the new string), in
+  // storage of the exact size, with one copy of each operand.
+  static constexpr basic_string __concat(const _Allocator& a, const __charT* __l, size_type __nl, const __charT* r,
+                                         size_type __nr) {
+    basic_string s(a);
+    if (__nr > s.max_size() || __nl > s.max_size() - __nr)
+      __ycxx::__detail::__throw_length_error("std::operator+: length exceeds max_size()");
+    const size_type n = __nl + __nr;
+    if (n > __sso_cap) {
+      block b = __allocate_block(s.__alloc_, n);
+      s.__set_long(b.p, b.__cap);
+    }
+    __traits::copy(s.__ptr_, __l, __nl);
+    __traits::copy(s.__ptr_ + __nl, r, __nr);
+    __traits::assign(s.__ptr_[n], __charT());
+    s.__size_ = n;
+    return s;
+  }
+
   // ---- [string.cons] ----
   constexpr basic_string() noexcept(noexcept(_Allocator())) : basic_string(_Allocator()) {}
   constexpr explicit basic_string(const _Allocator& a) noexcept : __ptr_(nullptr), __size_(0), __alloc_(__ycxx::__detail::__alloc_copy(a)) {
     __set_short_empty();
   }
   constexpr basic_string(const basic_string& str)
-      : __ptr_(nullptr), __size_(0), __alloc_(__alloc_traits::select_on_container_copy_construction(str.__alloc_)) {
-    __init_copy(str.__ptr_, str.__size_);
+      : __alloc_(__alloc_traits::select_on_container_copy_construction(str.__alloc_)) {
+    if (str.__is_long()) [[unlikely]]
+      __init_copy(str.__ptr_, str.__size_); // short again if it fits
+    else
+      __copy_short(str);
   }
-  constexpr basic_string(basic_string&& str) noexcept
-      : __ptr_(nullptr), __size_(0), __alloc_(static_cast<_Allocator&&>(str.__alloc_)) {
-    take(str);
-  }
+  constexpr basic_string(basic_string&& str) noexcept : __alloc_(static_cast<_Allocator&&>(str.__alloc_)) { take(str); }
   constexpr basic_string(const basic_string& str, size_type __pos, const _Allocator& a = _Allocator())
       : basic_string(str, __pos, npos, a) {}
   constexpr basic_string(const basic_string& str, size_type __pos, size_type n, const _Allocator& a = _Allocator())
@@ -685,8 +754,8 @@ public:
   constexpr basic_string& append(initializer_list<__charT> il) { return append(il.begin(), il.size()); }
   constexpr void push_back(__charT c) {
     const size_type n = __size_;
-    if (n == __cap())
-      __reallocate(__grow_cap(n + 1));
+    if (n == __cap()) [[unlikely]]
+      __grow_by_one();
     // Through locals: a store of a char could alias ptr_ and size_ and force their reload.
     __charT* const p = __ptr_;
     __traits::assign(p[n], c);
@@ -1159,13 +1228,7 @@ namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
 template <class _Sp>
 constexpr _Sp __string_concat(const typename _Sp::allocator_type& a, const typename _Sp::value_type* __l,
                           typename _Sp::size_type __nl, const typename _Sp::value_type* r, typename _Sp::size_type __nr) {
-  _Sp s(a);
-  if (__nr > s.max_size() || __nl > s.max_size() - __nr)
-    ::__ycxx::__detail::__throw_length_error("std::operator+: length exceeds max_size()");
-  s.reserve(__nl + __nr);
-  s.append(__l, __nl);
-  s.append(r, __nr);
-  return s;
+  return _Sp::__concat(a, __l, __nl, r, __nr);
 }
 template <class _Sp>
 constexpr typename _Sp::allocator_type __copy_alloc(const _Sp& s) {

@@ -992,14 +992,107 @@ constexpr void __stable_sort_adaptive(_Ip first, _Ip last, std::iter_difference_
   ::__ycxx::__detail::__merge_adaptive<_Ops>(first, __mid, last, __half, __len - __half, less, __buf, __cap);
 }
 
+// ---- stable_sort of integers ---------------------------------------------------------------
+// Integers ordered by one of the standard comparison objects: equivalent elements are equal
+// values, so the order among them cannot be observed and stable_sort may use any sort. Large
+// ranges get an LSD radix sort (a counting pass per byte, skipping bytes that all elements share)
+// through a buffer of n elements, smaller ones (or without the buffer) pdqsort; both stay within
+// [stable.sort]/5's N log N comparisons (radix sort makes none).
+
+// 1: the comparator orders T ascending, -1: descending, 0: neither or unknown.
+template <class _Cp, class _Tp>
+inline constexpr int __std_order = 0;
+template <class _Tp>
+inline constexpr int __std_order<__pred_ref<std::less<void>>, _Tp> = 1;
+template <class _Tp>
+inline constexpr int __std_order<__pred_ref<std::less<_Tp>>, _Tp> = 1;
+template <class _Tp>
+inline constexpr int __std_order<__pred_ref<std::ranges::less>, _Tp> = 1;
+template <class _Tp>
+inline constexpr int __std_order<__pred_ref<std::greater<void>>, _Tp> = -1;
+template <class _Tp>
+inline constexpr int __std_order<__pred_ref<std::greater<_Tp>>, _Tp> = -1;
+template <class _Tp>
+inline constexpr int __std_order<__pred_ref<std::ranges::greater>, _Tp> = -1;
+template <class _Tp>
+inline constexpr int __std_order<__proj_comp<std::ranges::less, std::identity>, _Tp> = 1;
+template <class _Tp>
+inline constexpr int __std_order<__proj_comp<std::ranges::greater, std::identity>, _Tp> = -1;
+
+template <class _Ip, class _Cp>
+concept __radix_sortable = std::contiguous_iterator<_Ip> && std::is_integral_v<std::iter_value_t<_Ip>> &&
+                           !std::is_same_v<std::iter_value_t<_Ip>, bool> &&
+                           std::is_same_v<std::iter_reference_t<_Ip>, std::iter_value_t<_Ip>&> &&
+                           __std_order<_Cp, std::iter_value_t<_Ip>> != 0;
+
+inline constexpr std::ptrdiff_t __radix_threshold = 512;
+
+// Sorts a[0, n) ascending (descending with _Desc), using b[0, n) as scratch.
+template <bool _Desc, class _Tp>
+void __radix_sort(_Tp* a, std::size_t n, _Tp* b) noexcept {
+  using _Up = std::make_unsigned_t<_Tp>;
+  constexpr int _Kp = sizeof(_Tp);
+  constexpr _Up __flip = std::is_signed_v<_Tp> ? static_cast<_Up>(_Up(1) << (8 * _Kp - 1)) : _Up(0);
+  // The key's unsigned order is the wanted order of the values.
+  auto key = [](_Tp x) noexcept {
+    _Up u = static_cast<_Up>(static_cast<_Up>(x) ^ __flip);
+    if constexpr (_Desc)
+      u = static_cast<_Up>(~u);
+    return u;
+  };
+  std::size_t __cnt[_Kp][256] = {};
+  for (std::size_t i = 0; i != n; ++i) {
+    const _Up k = key(a[i]);
+    for (int d = 0; d < _Kp; ++d)
+      ++__cnt[d][(k >> (8 * d)) & 0xff];
+  }
+  _Tp* __src = a;
+  _Tp* __dst = b;
+  for (int d = 0; d < _Kp; ++d) {
+    std::size_t* c = __cnt[d];
+    if (c[(key(a[0]) >> (8 * d)) & 0xff] == n)
+      continue; // every element has the same digit here
+    std::size_t __sum = 0;
+    for (int v = 0; v < 256; ++v) {
+      const std::size_t __here = c[v];
+      c[v] = __sum;
+      __sum += __here;
+    }
+    for (std::size_t i = 0; i != n; ++i) {
+      const _Tp x = __src[i];
+      __dst[c[(key(x) >> (8 * d)) & 0xff]++] = x;
+    }
+    _Tp* t = __src;
+    __src = __dst;
+    __dst = t;
+  }
+  if (__src != a)
+    for (std::size_t i = 0; i != n; ++i)
+      a[i] = __src[i];
+}
+
 template <class _Ops, class _Ip, class _Cp>
 constexpr void __stable_sort_impl(_Ip first, _Ip last, _Cp less) {
   auto __len = last - first;
+  using _Tp = std::iter_value_t<_Ip>;
+  if constexpr (::__ycxx::__detail::__radix_sortable<_Ip, _Cp>) {
+    if !consteval {
+      if (__len >= __radix_threshold) {
+        __temp_buffer<_Tp> __buf(__len);
+        if (__buf.capacity() == __len) {
+          ::__ycxx::__detail::__radix_sort<(__std_order<_Cp, _Tp> < 0)>(std::to_address(first), static_cast<std::size_t>(__len),
+                                                                     __buf.data());
+          return;
+        }
+      }
+    }
+    ::__ycxx::__detail::__sort_impl<_Ops>(first, last, less);
+    return;
+  }
   if (__len <= __insertion_sort_threshold) {
     ::__ycxx::__detail::__binary_insertion_sort<_Ops>(first, last, less);
     return;
   }
-  using _Tp = std::iter_value_t<_Ip>;
   __temp_buffer<_Tp> __buf((__len + 1) / 2);
   ::__ycxx::__detail::__stable_sort_adaptive<_Ops>(first, last, __len, less, __buf.data(), __buf.capacity());
 }

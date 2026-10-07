@@ -4,6 +4,7 @@
 // process's own time zone, which the C library's strftime would otherwise write).
 #include <chrono>
 #include <format>
+#include <langinfo.h>
 #include <locale>
 #include <string>
 #include "check.hpp"
@@ -17,11 +18,15 @@ static bool has_time(const std::string& s, const char* h12, const char* h24) {
 }
 
 int main() {
-  const std::locale loc(require_locale("en_US.UTF-8"));
+  const char* name = require_locale("en_US.UTF-8");
+  const std::locale loc(name);
+  // Whether the locale's %c shows a zone at all: glibc's en_US has %Z, Darwin's has none. Without
+  // one, what is checked is that no zone appears.
+  const bool zoned = in_c_locale(name, [] { return std::string(nl_langinfo(D_T_FMT)).find("%Z") != std::string::npos; });
   const sys_seconds st = sys_days(2025y / March / 19) + 15h;
   std::string s = std::format(loc, "{:L%c}", st);
   CHECK(has_time(s, "03:00:00 PM", "15:00:00"));
-  CHECK(s.find("UTC") != std::string::npos);
+  CHECK((s.find("UTC") != std::string::npos) == zoned);
 
   const local_seconds lt = local_days(2025y / March / 19) + 11h;
   s = std::format(loc, "{:L%c}", lt);
@@ -31,6 +36,6 @@ int main() {
   const std::string abbrev = "XYZ";
   const seconds off = 2h;
   s = std::format(loc, "{:L%c}", local_time_format(lt, &abbrev, &off));
-  CHECK(s.find("XYZ") != std::string::npos);
+  CHECK((s.find("XYZ") != std::string::npos) == zoned);
   CHECK(s.find("UTC") == std::string::npos);
 }

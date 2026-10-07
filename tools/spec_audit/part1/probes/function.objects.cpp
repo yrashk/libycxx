@@ -91,3 +91,9 @@ static_assert(std::is_default_constructible_v<std::hash<int>> && noexcept(std::h
 struct NoHash {};
 static_assert(!std::is_default_constructible_v<std::hash<NoHash>> && !std::is_invocable_v<std::hash<NoHash>, NoHash>);
 static_assert(std::is_default_constructible_v<std::hash<std::nullptr_t>>);
+// [refwrap.comparisons] (P2944): == and <=> are constrained
+struct NoEqRW {};
+template <class A, class B>
+concept rw_eq = requires(const A& a, const B& b) { a == b; };
+static_assert(!rw_eq<std::reference_wrapper<NoEqRW>, std::reference_wrapper<NoEqRW>> && rw_eq<std::reference_wrapper<int>, int>);
+static_assert(rw_eq<std::reference_wrapper<int>, std::reference_wrapper<const int>>);

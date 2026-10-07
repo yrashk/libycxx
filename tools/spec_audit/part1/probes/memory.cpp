@@ -95,3 +95,9 @@ struct Der : Base { constexpr int f() const override { return 2; } };
 static_assert([] { std::polymorphic<Base> p(std::in_place_type<Der>); std::polymorphic<Base> q = p; return q->f() == 2; }());
 static_assert(noexcept(std::declval<std::polymorphic<Base>&>().valueless_after_move()));
 static_assert(std::is_default_constructible_v<std::hash<std::indirect<int>>>);
+// [unique.ptr.single.observers]/1: operator* is noexcept(noexcept(*declval<pointer>())); [util.smartptr.shared.cast]: the rvalue casts
+struct ThrowingPtr { int* p; int& operator*() const; ThrowingPtr(std::nullptr_t = nullptr); explicit operator bool() const; friend bool operator==(ThrowingPtr, ThrowingPtr); };
+struct TPDeleter { using pointer = ThrowingPtr; void operator()(ThrowingPtr) const; };
+static_assert(!noexcept(*std::declval<std::unique_ptr<int, TPDeleter>&>()) && noexcept(*std::declval<std::unique_ptr<int>&>()));
+static_assert(std::is_same_v<decltype(std::static_pointer_cast<const int>(std::declval<std::shared_ptr<int>&&>())), std::shared_ptr<const int>>);
+static_assert(noexcept(std::const_pointer_cast<int>(std::declval<std::shared_ptr<const int>&&>())));

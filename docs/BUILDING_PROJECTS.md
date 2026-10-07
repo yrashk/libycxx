@@ -67,6 +67,7 @@ installation has what a project that knows nothing about libycxx needs
 |---|---|
 | `bin/ycxx-c++` | The C++ compiler: runs the compiler libycxx was built with, adding libycxx's headers (`-nostdinc++ -isystem <prefix>/include/libycxx`), `-std=c++26` (an older `-std=` is raised, below) and, when linking, `-nostdlib++`, libycxx's archives and the [link options](#linker-details) |
 | `bin/ycxx-cc` | The matching C compiler (with Clang on Linux, GCC 16's installation for the startup files) |
+| `bin/ycxx-clang-scan-deps` | Clang builds only: the compiler's `clang-scan-deps`, where CMake looks for it next to `ycxx-c++` (module scanning of C++20 targets) |
 | `bin/ycxx-check-binary` | [Is a binary built against libycxx alone?](#is-my-binary-using-libycxx) |
 | `lib/cmake/libycxx/toolchain.cmake` | CMake toolchain file naming `ycxx-c++` and `ycxx-cc` |
 | `lib/pkgconfig/libycxx.pc` | Compile and link flags for the plain compiler (`g++-16`, `clang++-23`) |
@@ -312,7 +313,7 @@ Unix Makefiles) and with real projects ([Verification](#verification)):
 | Shared libraries, RPATH | work; see [Shared libraries](#shared-libraries). On Linux the wrapper adds `-Wl,-rpath,<GCC 16's lib64>` (its `libgcc_s.so.1`); `cmake --install` keeps it next to the project's own `INSTALL_RPATH` (`$ORIGIN/../lib:/opt/gcc-16/lib64`) |
 | `install(EXPORT)` and a consumer with `find_package` | work (the consumer is configured with the same toolchain file) |
 | Ninja, Unix Makefiles | both |
-| C++20 module scanning (CMake 3.28+, a target at C++20 or later, Ninja) | with Clang, CMake runs `clang-scan-deps`, which it looks for next to the compiler: the toolchain file of a Clang build names the compiler's own (`CMAKE_CXX_COMPILER_CLANG_SCAN_DEPS`). It reads the command as written, without the wrapper's flags, which is enough to find module imports; for `import std;` use `ycxx::modules` ([Modules](#modules-import-std)) |
+| C++20 module scanning (CMake 3.28+, a target at C++20 or later, Ninja) | with Clang, CMake runs `clang-scan-deps`, which it looks for next to the compiler: the toolchain file of a Clang build names the compiler's own (`CMAKE_CXX_COMPILER_CLANG_SCAN_DEPS`), and `bin/ycxx-clang-scan-deps` is where CMake finds it without the toolchain file (`CC`/`CXX`). It reads the command as written, without the wrapper's flags, which is enough to find module imports; for `import std;` use `ycxx::modules` ([Modules](#modules-import-std)) |
 | `CMAKE_EXPORT_COMPILE_COMMANDS` | the commands name `ycxx-c++`: see [IDEs](#ides-compile_commandsjson-and-clangd) |
 | `CMAKE_CXX_COMPILER_LAUNCHER=ccache`, `target_precompile_headers` | work |
 

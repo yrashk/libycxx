@@ -1,7 +1,8 @@
-// DECISIONS §19: with YCXX_NO_TRANSITIVE_INCLUDES, <vector> does not provide <string>; by default
-// it does (../vector.compile.pass.cpp), as libstdc++ and libc++ both do.
-// EXPECT-ERROR-GCC: .string. in namespace .std. does not name a type|.string. is not a member of .std.
-// EXPECT-ERROR-CLANG: no (type|member) named 'string' in namespace 'std'
+// DECISIONS §19: with YCXX_NO_TRANSITIVE_INCLUDES, <vector> does not provide <string> (std::string
+// may be declared, it is not defined); by default it is (../vector.compile.pass.cpp), as libstdc++
+// and libc++ both provide it.
+// EXPECT-ERROR-GCC: .std::string s. has incomplete type|.string. in namespace .std. does not name a type
+// EXPECT-ERROR-CLANG: variable has incomplete type 'std::string'|no (type|member) named 'string' in namespace 'std'
 #define YCXX_NO_TRANSITIVE_INCLUDES
 #include <vector>
 

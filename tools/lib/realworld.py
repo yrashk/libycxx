@@ -208,7 +208,11 @@ def ctest_tests(build):
     r = subprocess.run(ctest + ['--test-dir', build, '--show-only=json-v1'], capture_output=True, text=True)
     if r.returncode != 0:
         raise SystemExit(f'ctest --show-only failed in {build}:\n{r.stderr}')
-    return json.loads(r.stdout).get('tests', [])
+    # CTest prints "Could not find executable ..." on standard output for a test whose program
+    # was not built (build-skip.txt) before the JSON document.
+    out = r.stdout
+    start = out.find('\n{') + 1 if not out.startswith('{') else 0
+    return json.JSONDecoder().raw_decode(out[start:])[0].get('tests', [])
 
 
 def cmd_select(build, pdir, out):
@@ -385,11 +389,15 @@ def symbols(path, kind):
 
 
 def defines_marker(path):
+    """'exported' when the image exports libycxx's allocation table, 'local' when it defines it but
+    a version script or export list keeps it local (libtbb.so's), else ''."""
     if DARWIN:
-        out = run(['nm', '-gU', path])
-        return re.search(r'\s_' + MARKER + r'$', out, re.M) is not None
-    out = run(['nm', '-D', '--defined-only', path])
-    return re.search(r'\s' + MARKER + r'$', out, re.M) is not None
+        if re.search(r'\s_' + MARKER + r'$', run(['nm', '-gU', path]), re.M):
+            return 'exported'
+        return 'local' if re.search(r'\s[a-zA-Z]\s_' + MARKER + r'$', run(['nm', '-U', path]), re.M) else ''
+    if re.search(r'\s' + MARKER + r'$', run(['nm', '-D', '--defined-only', path]), re.M):
+        return 'exported'
+    return 'local' if re.search(r'\s' + MARKER + r'$', run(['nm', '--defined-only', path]), re.M) else ''
 
 
 def check_image(path, kind, linked_by_driver):
@@ -504,13 +512,15 @@ def cmd_linkage(repo, libdir, build, cmdlog, out_base, expect_violations=False):
             p, k = futs[fut]
             results[p] = (k,) + fut.result()
     n = {'exe': 0, 'shared': 0, 'archive': 0}
-    marked, nlinked, cimages = 0, 0, 0
+    marked, nlinked, cimages, local = 0, 0, 0, []
     for p in sorted(results):
         k, probs, ev = results[p]
         n[k] += 1
         if k != 'archive':
             if ev.get('marker'):
                 marked += 1
+            if ev.get('marker') == 'local':
+                local.append(os.path.relpath(p, build))
             if os.path.normpath(p) in links:
                 nlinked += 1
             elif not ev['cxx_symbols']:
@@ -524,10 +534,14 @@ def cmd_linkage(repo, libdir, build, cmdlog, out_base, expect_violations=False):
                   f'none needs libstdc++/libc++ or has their symbols' if not (kinds & {'needed', 'symbols', 'marker'})
                   else f'images: {n["exe"]} executables, {n["shared"]} shared libraries, {n["archive"]} archives: '
                   'problems below')
+    if local:
+        report.append(f'  ({len(local)} of them keep the table local, by their version script or export list: '
+                      f'{", ".join(local[:5])}{" ..." if len(local) > 5 else ""}; such a library uses its own '
+                      'default allocation functions)')
     for p in sample:
         k, probs, ev = results[p]
         report.append(f'  e.g. {os.path.relpath(p, build)}: needs {", ".join(ev.get("needed", [])) or "nothing"}; '
-                      f'defines {MARKER}: {"yes" if ev.get("marker") else "no"}; {ev["ycxx_symbols"]} symbols of '
+                      f'defines {MARKER}: {ev.get("marker") or "no"}; {ev["ycxx_symbols"]} symbols of '
                       f'libycxx (__ycxx::)')
 
     # 4. Test executables.

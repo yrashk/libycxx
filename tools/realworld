@@ -151,7 +151,7 @@ fetch_all() {
 # Done once per commit and set of patches (a stamp in .git), so that a rerun rebuilds nothing.
 fetch() {
   f_dir=$1 f_url=$2 f_commit=$3 f_sub=$4 f_patches=$5
-  f_stamp="$f_commit $(cat "$f_patches"/*.patch 2>/dev/null | cksum)"
+  f_stamp="v2 $f_commit $(cat "$f_patches"/*.patch 2>/dev/null | cksum)"
   if [ -f "$f_dir/.git/ycxx-stamp" ] && [ "$(cat "$f_dir/.git/ycxx-stamp")" = "$f_stamp" ]; then
     echo "$f_dir: at $f_commit with the patches applied"
     return 0
@@ -334,10 +334,11 @@ project() {
     pstep install $cmake_cmd --install "$b" || { unset YCXX_CXX_LOG; return 1; }
   fi
   unset YCXX_CXX_LOG
-  st=0
+  # From here on the report judges: a failed test, selection or linkage proof is a failure of
+  # the run, but the project built, so the projects that depend on it still build.
   if [ "$role" = test ] && [ "$(get test ctest)" = ctest ]; then
-    sel=$(python3 "$rw" select "$b" "$pdir" "$pres" 2>"$pres/select.err") || st=1
-    cat "$pres/select.err" >&2
+    pstep select python3 "$rw" select "$b" "$pdir" "$pres" || :
+    sel=$(tail -n 1 "$pres/select.log")
     timeout=$(get timeout 600)
     [ -n "$san_flags" ] && timeout=$((timeout * 3))
     eval "set -- $(get ctest_args '')"
@@ -345,13 +346,13 @@ project() {
     ui_info "$name: tests" "$(echo "$sel" | sed 's/^\([0-9]*\) \([0-9]*\)$/\1 to run, \2 skipped (skip.txt)/')"
     case $sel in
       0\ *) ui_skip "$name: test" "(every test skipped)" ;;
-      *) pstep test ctest_run "$b" "$pres/junit.xml" "$timeout" "$@" || st=1 ;;
+      *) pstep test ctest_run "$b" "$pres/junit.xml" "$timeout" "$@" || : ;;
     esac
   fi
   [ "${ui_interrupted}" = 1 ] && return 1
-  pstep linkage python3 "$rw" linkage "$repo" "$libdir" "$b" "$b/.ycxx-cmds" "$pres/linkage" || st=1
+  pstep linkage python3 "$rw" linkage "$repo" "$libdir" "$b" "$b/.ycxx-cmds" "$pres/linkage" || :
   if [ $clean = 1 ] && [ "$install" != install ]; then rm -rf "$b"; fi
-  return $st
+  return 0
 }
 
 ui_title "libycxx real-world projects: $(echo "$plan" | awk '{print $1}' | tr '\n' ' ')"

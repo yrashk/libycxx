@@ -244,6 +244,16 @@ without their headers (`<sstream>`, `printf`, `int64_t`: 4), and libstdc++ choic
 leaves open (8: `%OS` without fraction, LWG 4118 character reps, file_clock's epoch, rounding
 when parsing, `fractional_width` of ratio<1, 2^62>, `hh_mm_ss` layout, an error message).
 
+## Spec coverage audit (docs/SPEC_COVERAGE.md)
+- Part 2, [containers] [iterators] [ranges] [algorithms] [strings] (2026-10-07, draft
+  `c7015b48`): 6164 declared entities, 5803 with a presence check and 3935 with a shape check,
+  all passing on GCC 16.2 and Clang 23.1 (25470 generated checks, `tools/spec_audit/run_probes.py
+  --part part2`, plus 86 hand-written constexpr/semantic checks). Found and fixed: 4 feature-test
+  macros (`__cpp_lib_view_interface`, `__cpp_lib_hardened_{common_iterator,counted_iterator,
+  view_interface}`), 13 unchecked Hardened preconditions of `common_iterator` and
+  `counted_iterator`; shuffle and sample with a generator wider than 64 bits (infinite recursion).
+  Open: three draft defects.
+
 ## Own-suite configurations (runs of 2026-10-05, 2438 tests)
 `tools/test --hardened` / `--cxxflags=... --config-name=...` (README, Own tests); the nightly
 `full.yml` runs them, and any failure fails the job. The hardened and noexcept rows predate the
@@ -1013,8 +1023,9 @@ compilers; `visit_format_arg.pass.cpp` needs `EOF` from `constexpr_char_traits.h
 - `<vector>`: `pmr::vector` names the
   forward-declared `polymorphic_allocator` until `<memory_resource>` exists. No AddressSanitizer
   container annotations (libc++'s asan tests check them: 16 libc++ tests fail under ASan for that
-  reason only). Not provided: the pre-C++26 `static vector<bool>::swap(reference, reference)` and
-  libstdc++'s `vector<bool>::insert(pos)` / mismatched-allocator extensions. vector<bool> shifts on
+  reason only). The static `vector<bool>::swap(reference, reference)` is provided, deprecated
+  ([depr.vector.bool.swap], "Annex D"). Not provided: libstdc++'s `vector<bool>::insert(pos)` /
+  mismatched-allocator extensions. vector<bool> shifts on
   insert/erase bit by bit. shrink_to_fit swallows an allocation failure (a non-binding request).
   Strengthened noexcept: `vector(vector&&, const Allocator&)` when the allocator is always equal;
   inplace_vector's copy operations when T's are. fill, find and count (std:: and ranges::, a
@@ -1230,7 +1241,8 @@ compilers; `visit_format_arg.pass.cpp` needs `EOF` from `constexpr_char_traits.h
     when elements of the second range lie between later elements of the first.
 - `std::is_permutation` enforces its Mandates (same value type); libc++'s sort/heap tests call
   it with `MoveOnly*` and `int*` and fail to compile for that reason (12 tests).
-- shuffle/sample assume the generator's results fit in 64 bits.
+- shuffle/sample draw their indices as 64-bit values; a generator with a wider range (an
+  `unsigned __int128` result_type) is first reduced to uniform 64-bit values by rejection.
 
 - `<memory_resource>`: synchronized_pool_resource is the unsynchronized pool behind one lock
   (no thread-specific pools). Pool block sizes are powers of two from 8 bytes to 64 KiB (the

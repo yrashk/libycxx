@@ -1,0 +1,181 @@
+#!/usr/bin/env python3
+"""Performance regression check: libycxx's benchmarks against a stored baseline of ratios.
+
+    bench/check [--cc gcc,clang] [--baseline bench/baseline.json] [--runs 5] [--confirm 2]
+                [--json-out FILE] [--md FILE]
+    bench/check --compare CURRENT.json [--baseline ...]      compare an existing bench/run --json
+    bench/check --update [--from RUN.json] [--cc ...]         write the baseline (see below)
+
+What is compared is the ratio libycxx / libstdc++ of each benchmark *in the same run* on the same
+machine (bench/run builds every program against both), not absolute times: a ratio does not
+depend on the machine's speed or load as long as both programs run under the same conditions,
+which bench/run arranges by running them in turn, R times interleaved, and taking medians.
+
+A benchmark regresses when its ratio exceeds the baseline's by more than the tolerance: relative
+(--tolerance, default 0.30, i.e. 30%) and absolute (--abs-tolerance, default 0.10) together, so
+that tiny ratios do not trip on noise; the baseline may set a benchmark's own relative tolerance
+("tolerance": {"<cc>: <prog>: <name>": 0.5}). A regression must repeat: every suspect is measured
+again --confirm times (default 2, only the suspects, each time --runs runs), and only a benchmark
+that regresses in the first run and in every confirmation is reported, as
+
+    FAIL <cc>: <prog>: <name>: ratio 1.52 > baseline 1.04 (+30%, +0.10); confirmations 1.49 1.55
+
+and the exit status is 1. A suspect that does not repeat is reported as "noise", the check passes.
+Benchmarks that are new (not in the baseline) are listed and do not fail; benchmarks of the
+baseline that no longer exist are listed too.
+
+Updating the baseline after an intended change (a deliberate trade-off, a new benchmark, a new
+machine for CI): run `bench/check --update` (it runs the benchmarks with --runs and writes
+bench/baseline.json), or `bench/check --update --from build/bench/check.json` to take the ratios
+of a run already made (e.g. the JSON artifact of the CI job), review the diff of
+bench/baseline.json, and commit it with the reason in the message. An improvement never fails the
+check; updating the baseline after one tightens it.
+"""
+import argparse
+import json
+import subprocess
+import sys
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parent.parent
+RUN = ROOT / "bench" / "run"
+DEFAULT_BASELINE = ROOT / "bench" / "baseline.json"
+
+
+def key_of(r):
+    return f"{r['cc']}: {r['prog']}: {r['name']}"
+
+
+def ratios(doc):
+    out = {}
+    for r in doc["results"]:
+        y, s = r["ns"].get("ycxx"), r["ns"].get("libstdc++")
+        if y and s and s > 0:
+            out[key_of(r)] = y / s
+    return out
+
+
+def run_bench(ccs, runs, samples, opt, filters, only, out):
+    cmd = [sys.executable, str(RUN), "--cc", ",".join(ccs), "--libs", "ycxx,libstdc++", "--runs", str(runs),
+           "--samples", str(samples), "--opt", opt, "--json", str(out)]
+    if only:
+        cmd += ["--only", ",".join(sorted(only))]
+    cmd += filters
+    print("+ " + " ".join(cmd), file=sys.stderr, flush=True)
+    r = subprocess.run(cmd, stdout=subprocess.DEVNULL)
+    if r.returncode:
+        sys.exit(f"bench/check: bench/run failed ({r.returncode})")
+    return json.loads(Path(out).read_text())
+
+
+def limit(base, key, tol, abs_tol, per):
+    t = per.get(key, tol)
+    return max(base * (1 + t), base + abs_tol), t
+
+
+def main():
+    ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    ap.add_argument("--cc", default="gcc,clang")
+    ap.add_argument("--baseline", default=str(DEFAULT_BASELINE))
+    ap.add_argument("--runs", type=int, default=5)
+    ap.add_argument("--samples", type=int, default=9)
+    ap.add_argument("--opt", default="O2")
+    ap.add_argument("--confirm", type=int, default=2)
+    ap.add_argument("--tolerance", type=float, default=0.30)
+    ap.add_argument("--abs-tolerance", type=float, default=0.10)
+    ap.add_argument("--compare", help="compare this bench/run --json file (no confirmation runs)")
+    ap.add_argument("--update", action="store_true", help="write the baseline")
+    ap.add_argument("--from", dest="from_", help="with --update: take the ratios of this JSON run")
+    ap.add_argument("--json-out", default=str(ROOT / "build" / "bench" / "check.json"))
+    ap.add_argument("--md", help="also write the comparison as a Markdown table to this file")
+    a = ap.parse_args()
+    ccs = [c for c in a.cc.split(",") if c]
+    Path(a.json_out).parent.mkdir(parents=True, exist_ok=True)
+
+    if a.update:
+        doc = json.loads(Path(a.from_).read_text()) if a.from_ else run_bench(
+            ccs, a.runs, a.samples, a.opt, [], None, a.json_out)
+        old = {}
+        if Path(a.baseline).exists():
+            old = json.loads(Path(a.baseline).read_text())
+        base = {
+            "schema": 1,
+            "about": "ratios libycxx/libstdc++ per benchmark (bench/check; DECISIONS §15)",
+            "date": doc.get("date"), "commit": doc.get("commit"), "host": doc.get("host"),
+            "opt": doc.get("opt"), "runs": doc.get("runs"),
+            "tolerance": old.get("tolerance", {}),
+            "ratios": {k: round(v, 4) for k, v in sorted(ratios(doc).items())},
+        }
+        Path(a.baseline).write_text(json.dumps(base, indent=1) + "\n")
+        print(f"bench/check: wrote {len(base['ratios'])} ratios to {a.baseline}")
+        return 0
+
+    base = json.loads(Path(a.baseline).read_text())
+    bratios, per = base["ratios"], base.get("tolerance", {})
+    bratios = {k: v for k, v in bratios.items() if k.split(":", 1)[0] in ccs}
+    doc = json.loads(Path(a.compare).read_text()) if a.compare else run_bench(
+        ccs, a.runs, a.samples, a.opt, [], None, a.json_out)
+    cur = ratios(doc)
+
+    suspects = {}
+    for k, r in cur.items():
+        if k in bratios:
+            lim, _ = limit(bratios[k], k, a.tolerance, a.abs_tolerance, per)
+            if r > lim:
+                suspects[k] = [r]
+    new = sorted(set(cur) - set(bratios))
+    gone = sorted(set(bratios) - set(cur))
+
+    # Confirm the suspects: run only their programs, filtered to their names.
+    if suspects and not a.compare:
+        for i in range(a.confirm):
+            by_cc = {}
+            for k in suspects:
+                cc, prog, name = k.split(": ", 2)
+                by_cc.setdefault(cc, (set(), set()))
+                by_cc[cc][0].add(prog)
+                by_cc[cc][1].add(name)
+            for cc, (progs, names) in by_cc.items():
+                d = run_bench([cc], a.runs, a.samples, a.opt, sorted(names), progs,
+                              Path(a.json_out).with_suffix(f".confirm{i + 1}-{cc}.json"))
+                rr = ratios(d)
+                for k in suspects:
+                    if k.startswith(cc + ": "):
+                        suspects[k].append(rr.get(k, float("nan")))
+
+    failed, noise = [], []
+    for k, rs in sorted(suspects.items()):
+        lim, t = limit(bratios[k], k, a.tolerance, a.abs_tolerance, per)
+        confirmed = all(r > lim for r in rs)  # NaN (benchmark vanished) does not confirm
+        msg = (f"{k}: ratio {rs[0]:.2f} > baseline {bratios[k]:.2f} (+{t:.0%}, +{a.abs_tolerance:.2f})"
+               + (f"; confirmations {' '.join(f'{r:.2f}' for r in rs[1:])}" if len(rs) > 1 else ""))
+        (failed if confirmed else noise).append(msg)
+
+    if a.md:
+        lines = ["| benchmark | baseline | now | change |", "|---|---:|---:|---:|"]
+        for k in sorted(cur):
+            if k in bratios:
+                ch = cur[k] / bratios[k] - 1
+                mark = " **FAIL**" if any(m.startswith(k + ":") for m in failed) else ""
+                lines.append(f"| {k} | {bratios[k]:.2f} | {cur[k]:.2f} | {ch:+.0%}{mark} |")
+        Path(a.md).write_text("\n".join(lines) + "\n")
+
+    print(f"bench/check: {len(cur)} benchmarks, baseline {base.get('commit')} ({base.get('date')}); "
+          f"{len(suspects)} suspect(s), {len(failed)} confirmed")
+    for m in noise:
+        print(f"  noise (did not repeat): {m}")
+    for k in new:
+        print(f"  new (not in the baseline): {k}: ratio {cur[k]:.2f}")
+    for k in gone:
+        print(f"  missing (in the baseline only): {k}")
+    for m in failed:
+        print(f"FAIL {m}")
+    if failed:
+        print("A regression of libycxx relative to libstdc++. If it is intended, update the baseline:"
+              " bench/check --update (see bench/check --help).")
+        return 1
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

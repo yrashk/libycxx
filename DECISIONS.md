@@ -1232,12 +1232,22 @@ under the same name. Otherwise it gets one alias template in `config.hpp`.
 
 ## 15. Performance
 
-- **Benchmarks are manual** (`bench/`, `bench/run`; never in CI). Each program uses only the
-  standard library and is built twice per compiler at `-O2`, against libycxx's Release archives
-  (`build/<cc>-release`) and against libstdc++ (`tools/ref-cxx`); the table shows the ratio
-  libycxx / libstdc++. Results and the machine are recorded in `bench/RESULTS.md`. Wall-clock
-  numbers on a shared machine are noisy: changes are judged with `valgrind --tool=callgrind`
-  instruction counts as well.
+- **Benchmarks** (`bench/`, `bench/run`). Each program uses only the standard library and is
+  built per compiler at `-O2` (`--opt O3`), against libycxx's Release archives
+  (`build/<cc>-release`), against libstdc++ (`tools/ref-cxx`) and, with Clang, against libc++
+  when one is installed (`-stdlib=libc++`); the programs run in turn, `--runs` times interleaved,
+  and the table shows the ratios libycxx / libstdc++ and libycxx / libc++ (`--json` writes every
+  run). Results and the machine are recorded in `bench/RESULTS.md`. Wall-clock numbers on a
+  shared machine are noisy: changes are judged with `valgrind --tool=callgrind` instruction
+  counts as well (and `perf record -e cpu-clock` where perf works).
+- **Regression check in CI** (`bench/check`, nightly in `full.yml`, one job per compiler). What
+  is stored (`bench/baseline.json`) and compared is each benchmark's ratio libycxx / libstdc++ in
+  the same run, which does not depend on the machine's speed; absolute times are never compared.
+  A benchmark fails when its ratio exceeds the baseline by more than 30% and 0.10 (a benchmark
+  may have its own tolerance in the baseline), in the run and again in 2 confirmation runs of the
+  suspects; a suspect that does not repeat is reported as noise. An intended slowdown, a new
+  benchmark or a new CI machine updates the baseline: `bench/check --update` (or `--from` the
+  JSON artifact of a CI run), reviewed and committed with the reason.
 - **Single-threaded fast paths.** The PAL exports `ycxx_pal_single_threaded`, a pointer to a flag
   that is nonzero only while the process certainly has one thread (POSIX/glibc:
   `__libc_single_threaded`; freestanding default and other C libraries: a constant zero, i.e.

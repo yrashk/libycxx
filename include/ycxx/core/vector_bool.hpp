@@ -445,12 +445,12 @@ private:
   struct __with_alloc {
     explicit __with_alloc() = default;
   };
-  constexpr vector(__with_alloc, const _Allocator& a) : __alloc_(a) {}
+  constexpr vector(__with_alloc, const _Allocator& a) : __alloc_(__ycxx::__detail::__alloc_copy(a)) {}
 
 public:
   // ---- construct/copy/destroy ----
   constexpr vector() noexcept(is_nothrow_default_constructible_v<_Allocator>) : vector(_Allocator()) {}
-  constexpr explicit vector(const _Allocator& a) noexcept : __alloc_(a) {}
+  constexpr explicit vector(const _Allocator& a) noexcept : __alloc_(__ycxx::__detail::__alloc_copy(a)) {}
   constexpr explicit vector(size_type n, const _Allocator& a = _Allocator()) : vector(n, false, a) {}
   constexpr vector(size_type n, const bool& value, const _Allocator& a = _Allocator()) : vector(__with_alloc{}, a) {
     if (n != 0) {

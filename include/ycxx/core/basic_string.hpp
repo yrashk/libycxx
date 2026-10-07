@@ -346,7 +346,7 @@ private:
 public:
   // ---- [string.cons] ----
   constexpr basic_string() noexcept(noexcept(_Allocator())) : basic_string(_Allocator()) {}
-  constexpr explicit basic_string(const _Allocator& a) noexcept : __ptr_(nullptr), __size_(0), __alloc_(a) {
+  constexpr explicit basic_string(const _Allocator& a) noexcept : __ptr_(nullptr), __size_(0), __alloc_(__ycxx::__detail::__alloc_copy(a)) {
     __set_short_empty();
   }
   constexpr basic_string(const basic_string& str)
@@ -360,7 +360,7 @@ public:
   constexpr basic_string(const basic_string& str, size_type __pos, const _Allocator& a = _Allocator())
       : basic_string(str, __pos, npos, a) {}
   constexpr basic_string(const basic_string& str, size_type __pos, size_type n, const _Allocator& a = _Allocator())
-      : __ptr_(nullptr), __size_(0), __alloc_(a) {
+      : __ptr_(nullptr), __size_(0), __alloc_(__ycxx::__detail::__alloc_copy(a)) {
     str.__check_pos(__pos, "std::basic_string: pos > str.size()");
     __init_copy(str.__ptr_ + __pos, str.clamp(__pos, n));
   }
@@ -383,31 +383,31 @@ public:
   template <class _Tp>
     requires is_convertible_v<const _Tp&, basic_string_view<__charT, __traits>>
   constexpr basic_string(const _Tp& t, __ycxx::__detail::__alloc_size_t<_Allocator> __pos, __ycxx::__detail::__alloc_size_t<_Allocator> n, const _Allocator& a = _Allocator())
-      : __ptr_(nullptr), __size_(0), __alloc_(a) {
+      : __ptr_(nullptr), __size_(0), __alloc_(__ycxx::__detail::__alloc_copy(a)) {
     const __sv_type sv = __sv_type(t).substr(__pos, n);
     __init_copy(sv.data(), sv.size());
   }
   template <class _Tp>
     requires __sv_like<_Tp>
-  constexpr explicit basic_string(const _Tp& t, const _Allocator& a = _Allocator()) : __ptr_(nullptr), __size_(0), __alloc_(a) {
+  constexpr explicit basic_string(const _Tp& t, const _Allocator& a = _Allocator()) : __ptr_(nullptr), __size_(0), __alloc_(__ycxx::__detail::__alloc_copy(a)) {
     const __sv_type sv = t;
     __init_copy(sv.data(), sv.size());
   }
   constexpr basic_string(const __charT* s, __ycxx::__detail::__alloc_size_t<_Allocator> n, const _Allocator& a = _Allocator())
-      : __ptr_(nullptr), __size_(0), __alloc_(a) {
+      : __ptr_(nullptr), __size_(0), __alloc_(__ycxx::__detail::__alloc_copy(a)) {
     __ycxx::__detail::__precondition(s != nullptr || n == 0, "std::basic_string: null pointer with nonzero length");
     __init_copy(s, n);
   }
   constexpr basic_string(const __charT* s, const _Allocator& a = _Allocator())
     requires __ycxx::__detail::__qualifies_as_allocator<_Allocator>
-      : __ptr_(nullptr), __size_(0), __alloc_(a) {
+      : __ptr_(nullptr), __size_(0), __alloc_(__ycxx::__detail::__alloc_copy(a)) {
     __ycxx::__detail::__precondition(s != nullptr, "std::basic_string: null pointer");
     __init_copy(s, __traits::length(s));
   }
   basic_string(nullptr_t) = delete;
   constexpr basic_string(__ycxx::__detail::__alloc_size_t<_Allocator> n, __charT c, const _Allocator& a = _Allocator())
     requires __ycxx::__detail::__qualifies_as_allocator<_Allocator>
-      : __ptr_(nullptr), __size_(0), __alloc_(a) {
+      : __ptr_(nullptr), __size_(0), __alloc_(__ycxx::__detail::__alloc_copy(a)) {
     __init_fill(n, c);
   }
   template <class _InputIterator>
@@ -423,13 +423,13 @@ public:
       __append_elements(ranges::begin(__rg), ranges::end(__rg));
   }
   constexpr basic_string(initializer_list<__charT> il, const _Allocator& a = _Allocator())
-      : __ptr_(nullptr), __size_(0), __alloc_(a) {
+      : __ptr_(nullptr), __size_(0), __alloc_(__ycxx::__detail::__alloc_copy(a)) {
     __init_copy(il.begin(), il.size());
   }
-  constexpr basic_string(const basic_string& str, const _Allocator& a) : __ptr_(nullptr), __size_(0), __alloc_(a) {
+  constexpr basic_string(const basic_string& str, const _Allocator& a) : __ptr_(nullptr), __size_(0), __alloc_(__ycxx::__detail::__alloc_copy(a)) {
     __init_copy(str.__ptr_, str.__size_);
   }
-  constexpr basic_string(basic_string&& str, const _Allocator& a) : __ptr_(nullptr), __size_(0), __alloc_(a) {
+  constexpr basic_string(basic_string&& str, const _Allocator& a) : __ptr_(nullptr), __size_(0), __alloc_(__ycxx::__detail::__alloc_copy(a)) {
     if (__always_equal || __alloc_ == str.__alloc_)
       take(str);
     else

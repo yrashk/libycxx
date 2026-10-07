@@ -31,6 +31,23 @@ concept __qualifies_as_input_iterator = !std::is_integral_v<_Ip> && requires {
   typename std::iterator_traits<_Ip>::iterator_category;
 } && std::is_convertible_v<typename std::iterator_traits<_Ip>::iterator_category, std::input_iterator_tag>;
 
+// A copy of the allocator a container is constructed with. An empty allocator whose copy and
+// default constructors are trivial has no state to copy, so the copy is value-initialized
+// instead, which is the same value, without reading a. GCC 16 crashes (ICE in
+// cxx_eval_indirect_ref) when it constant-folds an array of aggregates whose members are
+// containers of different allocator types constructed with the default allocator argument
+// (struct { std::string in; std::vector<std::string> out; } a[] = {{"", {""}}};): the
+// default argument it binds is the other member's allocator temporary, and reading it through
+// the reference crashes.
+template <class _Ap>
+constexpr _Ap __alloc_copy(const _Ap& __a) noexcept {
+  if constexpr (std::is_empty_v<_Ap> && std::is_trivially_copy_constructible_v<_Ap> &&
+                std::is_trivially_default_constructible_v<_Ap>)
+    return _Ap();
+  else
+    return __a;
+}
+
 // [container.intro.reqmts]
 template <class _Rp, class _Tp>
 concept __container_compatible_range =

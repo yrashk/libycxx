@@ -567,7 +567,7 @@ private:
 public:
   // ---- [deque.cons] ----
   constexpr deque() noexcept(is_nothrow_default_constructible_v<_Allocator>) : deque(_Allocator()) {}
-  constexpr explicit deque(const _Allocator& a) noexcept : __alloc_(a) {}
+  constexpr explicit deque(const _Allocator& a) noexcept : __alloc_(__ycxx::__detail::__alloc_copy(a)) {}
   constexpr explicit deque(size_type n, const _Allocator& a = _Allocator()) : deque(a) {
     __append_n(n, [this](_Tp* p) { __alloc_traits::construct(__alloc_, p); });
   }

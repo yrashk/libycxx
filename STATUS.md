@@ -658,7 +658,9 @@ compilers; `visit_format_arg.pass.cpp` needs `EOF` from `constexpr_char_traits.h
   own `generic_category()`/`system_category()` objects, so an `error_code` made in one compares
   unequal to an `errc` or category of the other (`value()` and `category().name()` agree).
   The same holds for the other library singletons (`locate_zone` results, the default memory
-  resources), and a program's replacement `operator new`/`delete` replaces the program's own:
+  resources) and handlers: `std::set_terminate` and `std::set_new_handler` in the program do not
+  reach a shared library's `std::terminate` or `std::get_new_handler()` (real-world projects:
+  oneTBB's `terminate_on_exception` test and `libtbbmalloc_proxy.so`'s `operator new`), and a program's replacement `operator new`/`delete` replaces the program's own:
   allocations made inside a shared library that links libycxx use that library's copy (both reach
   `malloc`/`free`, so objects may still be deleted in the other image).
 - C library wrappers: `std::free_sized`/`free_aligned_sized` call `free` (glibc 2.39 has neither);

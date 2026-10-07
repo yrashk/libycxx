@@ -117,6 +117,7 @@ def has_italic(toks):
 class Gen:
     def __init__(self, ents):
         self.ents = ents
+        self.nsec = {}
         self.checks = []          # (id, sec, header, entity, what, decl, code, ns)
         self.classes = collections.defaultdict(list)   # (ns, path) -> [classdef Decl]
         self.members = collections.defaultdict(dict)   # (ns, path) -> {name: kind}
@@ -191,7 +192,8 @@ class Gen:
 
     # ---- emit -------------------------------------------------------------------------------
     def add(self, d, what, code, ent=None):
-        cid = f"{d.sec}#{len([c for c in self.checks if c[1] == d.sec]) + 1}"
+        self.nsec[d.sec] = self.nsec.get(d.sec, 0) + 1
+        cid = f"{d.sec}#{self.nsec[d.sec]}"
         ent = ent or self.entity(d)
         self.checks.append((cid, d.sec, d.header, ent, what, d.text().replace("\t", " "), code, d.ns))
 
@@ -557,7 +559,7 @@ class Gen:
                     name = d.name
 
                     def callee(args, targs, name=name, obj=obj, static=static, selft=selft, protected=protected):
-                        if name.startswith("operator "):
+                        if "conv_type" in d.info:
                             # conversion function
                             t = subst(d.info["conv_type"], ctx)
                             return f"static_cast<{t}>({obj})"
@@ -578,7 +580,7 @@ class Gen:
                             code = code.replace(" static_assert(c<void>);", "")
                             c[6] = f"struct D : {selft} {{ {code} }}; static_assert(D::c<void>);"
                             self.checks[k] = tuple(c)
-                    if d.name.startswith("operator ") and "explicit" in d.info["specs"]:
+                    if "conv_type" in d.info and "explicit" in d.info["specs"]:
                         try:
                             t = subst(d.info["conv_type"], ctx)
                             self.add(d, f"explicit {lab}".strip(), f"static_assert(!std::is_convertible_v<{objt}, {t}>);")

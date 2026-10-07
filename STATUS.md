@@ -1291,6 +1291,21 @@ compilers; `visit_format_arg.pass.cpp` needs `EOF` from `constexpr_char_traits.h
   constructible T has a constrained (not mandated) default constructor. The deprecated atomics
   features are provided, declared [[deprecated]] (Annex D).
 
+## Spec coverage audit, part 3 ([text], [numerics], [time], [input.output], [thread], [exec], Annex D)
+`docs/SPEC_COVERAGE.md` (part 3); probes and their generator in `tools/spec_audit/part3/`
+(`run.py` re-runs them; draft revision `c7015b485cc3`). 6365 declarations of the synopses: 6245
+present with the specified shape (signature, return type, noexcept, constraints, explicit,
+bases, values) on both compilers, 686 of them probed by name only (exposition-only types in the
+signature), 120 not probed; 2410 constexpr calls, none failing because a function is not
+constexpr (184 GCC / 185 Clang undecided for their sample values); 513 macro checks (the
+[version.syn] values of these headers, the synopses' macros, Annex D, [zombie.names]), with the
+freestanding declarations also compiled with `-ffreestanding`. Fixed by the audit: volatile
+`store_*` of non-lock-free atomics (`f222ebf`), `stop_token`/`stop_source::operator==` as
+members (`9446019`), constant-evaluated `compare_exchange` of `long double` on Clang (`370b7e3`).
+Open: `__cpp_lib_constexpr_exceptions` on Clang (compiler gap) and the documented behaviour
+limitations listed there (locale-dependent `chrono::parse`, POSIX regex subexpressions,
+`rcu_barrier` inside evaluations, `*_at_thread_exit` for the exiting main thread, ...).
+
 ## Draft issues noticed
 Wording problems found while writing the spec-derived tests (tests/ycxx), not yet reported:
 - [set.symmetric.difference]/4.2: the returned `{last1, last2, result + N}` applies "if N is
@@ -1348,6 +1363,13 @@ Wording problems found while writing the spec-derived tests (tests/ycxx), not ye
   `tuple<>` because some child has no value completion (/13). By [exec.snd.expos]/47 that makes
   `set_value_t()` a completion signature of, e.g., `when_all(just(1), just_stopped())`, which
   can never complete with a value; libycxx (and, presumably, the intent) leaves it out.
+- [stoptoken.general]/1, [stopsource.general]/1: `bool operator==(const stop_token& rhs)
+  noexcept = default;` is a defaulted comparison member without `const`, which
+  [class.compare.default]/1 does not allow (GCC 16 and Clang 23 reject it); libycxx declares the
+  `const` member (spec-coverage audit, part 3, D1).
+- [exec.snd.expos]/43: `basic-sender::get_env()` returns `impls-for<Tag>::get-attrs(data,
+  child...)`, but neither `default-impls` nor any `impls-for` specialization declares `get-attrs`
+  any more: the name is used once in the draft and defined nowhere (part 3, D2).
 
 ## Performance
 `bench/` (manual, not in CI; DECISIONS §15) times the hot paths against libstdc++ on both

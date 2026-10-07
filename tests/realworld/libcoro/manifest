@@ -1,0 +1,8 @@
+# libcoro: C++20 coroutines: task, generator, thread pool, latch, mutex, semaphore, ring buffer;
+# epoll I/O scheduler. Networking and TLS features off (no c-ares or OpenSSL). Tests with Catch2
+# (vendored).
+url = https://github.com/jbaldwin/libcoro.git
+ref = v0.16.0
+commit = 0161911f260a7507ac1dd4aa26da2e2c092fb550
+exercises = coroutines, threads, atomics, chrono
+configure = -DLIBCORO_BUILD_TESTS=ON -DLIBCORO_BUILD_EXAMPLES=OFF -DLIBCORO_FEATURE_NETWORKING=OFF -DLIBCORO_FEATURE_TLS=OFF

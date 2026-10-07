@@ -61,13 +61,22 @@ class TParam:
         eq = decls.top_level_index(toks, '=')
         self.default = toks[eq + 1:] if eq >= 0 else None
         body = toks[:eq] if eq >= 0 else toks
-        self.pack = any(t.text == '...' for t in body)
+        # a template parameter pack: `...` outside the parameter list of a template template parameter
+        depth = 0
+        self.pack = False
+        for t in body:
+            if t.text == '<':
+                depth += 1
+            elif t.text == '>':
+                depth -= 1
+            elif t.text == '...' and depth == 0:
+                self.pack = True
         ids = [t for t in body if t.kind in ('id', 'expo') and t.text != '...']
         self.name = ids[-1].text if ids and len(body) > 1 else None
         self.kind = body[:-1] if self.name else body
-        self.is_type = bool(body) and (body[0].text in ('class', 'typename') or
-                                       (len(body) >= 2 and body[-2].kind in ('id', 'expo', 'op') and body[0].text not in ('size_t', 'bool', 'int', 'subrange_kind', 'auto', 'char', 'ptrdiff_t'))
-                                       and not body[0].text in ('size_t', 'bool', 'int', 'subrange_kind', 'auto', 'ptrdiff_t', 'char'))
+        values = {'size_t', 'bool', 'int', 'subrange_kind', 'auto', 'char', 'ptrdiff_t', 'unsigned', 'long'}
+        self.is_type = bool(body) and not any(t.text in values for t in self.kind) and \
+            (body[0].text in ('class', 'typename', 'template') or len(body) >= 2)
 
     def __repr__(self):
         return f'TParam({self.name!r}, pack={self.pack})'

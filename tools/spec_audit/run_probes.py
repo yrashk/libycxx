@@ -38,7 +38,7 @@ def compile_probe(cc, path, libdir):
                '-fno-exceptions', '-fno-rtti', '-fsyntax-only', path]
         # -nostdinc drops the compiler's own headers too; core needs its <stddef.h>
         inc = subprocess.run([cxx, '-print-file-name=include'], capture_output=True, text=True).stdout.strip()
-        cmd[1:1] = ['-isystem', inc]
+        cmd[-1:-1] = ['-isystem', inc]   # after include/: its <stddef.h> include_next's the compiler's
     else:
         cmd = [os.path.join(ROOT, 'tools', 'ycxx-cxx'), cc, f'--libdir={libdir}', '-fsyntax-only', path]
         if '.hardened.' in os.path.basename(path):

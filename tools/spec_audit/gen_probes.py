@@ -77,6 +77,15 @@ class Gen:
         self.n += 1
         return f'E{self.n}'
 
+    def spec_subst(self, d):
+        t = ' '.join(d.text.split())
+        out = {}
+        for pat, sub in getattr(self.cfg, 'SPEC_SUBST_RE', []):
+            if re.search(pat, t):
+                out.update(sub)
+        out.update(self.cfg.SPEC_SUBST.get(t, {}))
+        return out
+
     # -- class configuration -------------------------------------------------------------------
     def class_cfg(self, sec, d):
         path = '::'.join(d.cls)
@@ -99,8 +108,10 @@ class Gen:
     # -- generation ----------------------------------------------------------------------------
     def run(self, outdir):
         by_sec = {}
+        self.sec_clause = {'version.syn': 'support'}
         for clause, sec, d in self.ents:
             by_sec.setdefault(sec, []).append(d)
+            self.sec_clause.setdefault(sec, clause)
         os.makedirs(outdir, exist_ok=True)
         for f in os.listdir(outdir):
             if f.endswith('.cpp'):
@@ -168,7 +179,7 @@ class Gen:
         base_subst.update(self.cfg.SECTION_SUBST.get(sec, {}))
         if cfg:
             base_subst.update(cfg.get('subst', {}))
-        base_subst.update(self.cfg.SPEC_SUBST.get(' '.join(d.text.split()), {}))
+        base_subst.update(self.spec_subst(d))
         rw = cxxdecl.Rewriter(base_subst, members, inst, lookup, self.cfg.EXPO, d.ns)
         if d.cls:
             rw.cls_name = decls._strip_targs(d.cls[-1]).split('::')[-1].strip('@')
@@ -273,6 +284,9 @@ class Gen:
         return lines
 
     def class_spec(self, sec, d, rw, cfg):
+        if '::' in decls._strip_targs(decls.class_head(d)):
+            self.record(sec, d, [], 'no check: a nested class template defined outside its class (its members are checked)')
+            return []
         f_heads = cxxdecl.template_heads(d.toks)
         body = decls.strip_template_heads(d.toks)
         # struct name<args>
@@ -291,7 +305,7 @@ class Gen:
                     v = self.cfg.default_targ(tp, None)
                     if v is not None:
                         subst[tp.name] = v
-        subst.update(self.cfg.SPEC_SUBST.get(' '.join(d.text.split()), {}))
+        subst.update(self.spec_subst(d))
         rw2 = cxxdecl.Rewriter(subst, rw.members, rw.inst, rw.lookup, rw.expo, rw.ns)
         try:
             t = rw2.type([x for x in name])
@@ -332,7 +346,7 @@ class Gen:
                     v = self.cfg.default_targ(tp, None)
                     if v is not None:
                         subst[tp.name] = v
-        subst.update(self.cfg.SPEC_SUBST.get(' '.join(d.text.split()), {}))
+        subst.update(self.spec_subst(d))
         rw2 = cxxdecl.Rewriter(subst, rw.members, rw.inst, rw.lookup, rw.expo, rw.ns)
         try:
             v = rw2.type(lhs[start:])
@@ -439,11 +453,15 @@ class Gen:
             # call selects depends on the instantiation, so only that the call works is checked
             ret = cond = None
         constraint = None
+        if f.requires and rw.subst.get('Const') == 'false' and re.match(r'^\(?\s*Const\s*(&&|\)|$)', decls.join(f.requires)):
+            return self.presence_only(sec, d, f, cfg, 'only for Const = true')
         if f.requires:
             try:
                 constraint = rw.type(f.requires)
             except Unresolved:
                 return self.presence_only(sec, d, f, cfg, 'requires-clause not spelled')
+            if ret is not None and re.search(r'(iterator|sentinel)_t<const ', ret):
+                ret = None      # formed only where the requires-clause holds
         i = self.record(sec, d, ['call'])
         m = self.min_params(f)
         e2 = None
@@ -551,6 +569,9 @@ class Gen:
             i = self.record(sec, d, ['name'], 'defaulted: only declared')
             return [f'static_assert(requires {{ sizeof({inst}); }}); // @{i} name']
         constraint = None
+        if f.requires and rw.subst.get('Const') == 'false' and re.match(r'^\(?\s*Const\s*(&&|\)|$)', decls.join(f.requires)):
+            self.record(sec, d, [], 'no check: only for Const = true')
+            return []
         if f.requires:
             try:
                 constraint = rw.type(f.requires)
@@ -596,10 +617,10 @@ class Gen:
         subst.update(self.cfg.SECTION_SUBST.get(sec, {}))
         subst.update(cfg.get('subst', {}))
         subst.update(cfg.get('guide_subst', {}))
-        subst.update(self.cfg.SPEC_SUBST.get(' '.join(d.text.split()), {}))
+        subst.update(self.spec_subst(d))
         rw2 = cxxdecl.Rewriter(subst, set(), None, rw.lookup, rw.expo, rw.ns)
         rw2.subst = self.subst_for(f, rw2.subst)
-        rw2.subst.update(self.cfg.SPEC_SUBST.get(' '.join(d.text.split()), {}))
+        rw2.subst.update(self.spec_subst(d))
         try:
             args, types = self.args_of(f, rw2)
             want = rw2.type(f.trailing)
@@ -683,9 +704,9 @@ def main():
     if a.version_json:
         version_probes(g, cfg, json.load(open(a.version_json, encoding='utf-8')), outdir)
     with open(os.path.join(HERE, a.part, 'entities.tsv'), 'w', encoding='utf-8') as o:
-        o.write('# id\tsubclause\tkind\tentity\tdeclaration\tdraft comment\tchecks\tnote\n')
+        o.write('# id\tsubclause\tkind\tentity\tdeclaration\tdraft comment\tchecks\tnote\tclause\n')
         for r in g.rows:
-            o.write('\t'.join(r) + '\n')
+            o.write('\t'.join(r + [g.sec_clause.get(r[1], '')]) + '\n')
     print(len(g.rows), 'entities,', sum(1 for r in g.rows if r[6]), 'checked')
 
 

@@ -27,6 +27,7 @@
 #include <langinfo.h>
 #include <locale.h>
 #include <nl_types.h>
+#include <regex.h> // regcomp: a locale's multi-character collating elements
 #include <time.h>
 #include <wchar.h>
 #include <wctype.h>
@@ -1032,10 +1033,10 @@ namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
 // regex_traits::transform_primary ([re.traits]/7): the primary sort key when the facet is exactly
 // a collate_byname and the form of its keys is known. glibc's strxfrm_l/wcsxfrm_l key of a locale
 // with collation rules is the weights of each level in turn, each level ended by the value 1
-// (glibc's string/strxfrm_l.c); the primary key is the weights before the first 1. A locale without rules ("C", or every
-// locale of musl) gives a copy of the string, which has no separator: every character is then its
-// own equivalence class, and the full key is the primary one too, which the caller uses when this
-// returns false. Darwin's key form is not documented: false there as well.
+// (glibc's string/strxfrm_l.c); the primary key is the weights before the first 1. A locale
+// without rules ("C", or every locale of musl) gives a copy of the string: every character is
+// then its own equivalence class, and the whole key is the primary one. Darwin's key form is not
+// documented: false there (an empty key, [re.traits]/7).
 template <class __charT>
 static bool primary_key(const std::collate<__charT>& __f, const __charT* __low, const __charT* __high,
                         std::basic_string<__charT>& out) {
@@ -1043,13 +1044,17 @@ static bool primary_key(const std::collate<__charT>& __f, const __charT* __low, 
     return false;
   if (typeid(__f) != typeid(std::collate_byname<__charT>))
     return false;
-  const __charT a[1] = {__charT('a')};
-  if (__f.transform(a, a + 1).find(__charT(1)) == std::basic_string<__charT>::npos)
-    return false;
+  const __charT a[2] = {__charT('a'), __charT('B')};
+  const std::basic_string<__charT> __probe = __f.transform(a, a + 2);
+  const bool __copy = __probe == std::basic_string<__charT>(a, a + 2);
+  if (!__copy && __probe.find(__charT(1)) == std::basic_string<__charT>::npos)
+    return false; // neither form
   out = __f.transform(__low, __high);
-  const std::size_t __end = out.find(__charT(1));
-  if (__end != std::basic_string<__charT>::npos)
-    out.resize(__end);
+  if (!__copy) {
+    const std::size_t __end = out.find(__charT(1));
+    if (__end != std::basic_string<__charT>::npos)
+      out.resize(__end);
+  }
   return true;
 }
 
@@ -1059,6 +1064,61 @@ bool __regex_primary_key(const std::collate<char>& __f, const char* __low, const
 bool __regex_primary_key(const std::collate<wchar_t>& __f, const wchar_t* __low, const wchar_t* __high,
                          std::wstring& out) {
   return primary_key(__f, __low, __high, out);
+}
+
+struct __collate_access {
+  template <class __charT>
+  static const __named_locale* named(const std::collate<__charT>& __f) {
+    if (typeid(__f) != typeid(std::collate_byname<__charT>))
+      return nullptr;
+    return static_cast<const std::collate_byname<__charT>&>(__f).__named_;
+  }
+};
+
+// regex_traits::lookup_collatename ([re.traits]/8): the C library has no interface listing a
+// locale's multi-character collating elements (glibc's cs_CZ has "ch"), but its regcomp knows
+// them: "[[.xy.]]" compiles under the locale (LC_COLLATE and LC_CTYPE of its name) iff xy is one.
+// The classic names have none.
+static bool collating_element(const __named_locale* h, const char* s, std::size_t n, const wchar_t* ws) {
+  if (h == nullptr || n < 2 || n > 64)
+    return false;
+  const locale_t __loc = ::newlocale(LC_CTYPE_MASK | LC_COLLATE_MASK, h->name.c_str(), static_cast<locale_t>(0));
+  if (__loc == static_cast<locale_t>(0))
+    return false;
+  bool ok = true;
+  int __rc = -1;
+  {
+    thread_locale in(__loc);
+    std::string __pat = "[[.";
+    for (std::size_t i = 0; ok && i < n; ++i) {
+      if (ws == nullptr) {
+        ok = s[i] != '\0';
+        __pat.push_back(s[i]);
+      } else {
+        char mb[MB_LEN_MAX];
+        std::mbstate_t __st{};
+        const std::size_t k = ws[i] == L'\0' ? mb_error : ::wcrtomb(mb, ws[i], &__st);
+        ok = k != mb_error;
+        if (ok)
+          __pat.append(mb, k);
+      }
+    }
+    __pat += ".]]";
+    if (ok) {
+      regex_t __re;
+      __rc = ::regcomp(&__re, __pat.c_str(), 0);
+      if (__rc == 0)
+        ::regfree(&__re);
+    }
+  }
+  ::freelocale(__loc);
+  return ok && __rc == 0;
+}
+bool __regex_collating_element(const std::collate<char>& __f, const char* s, std::size_t n) {
+  return collating_element(__collate_access::named(__f), s, n, nullptr);
+}
+bool __regex_collating_element(const std::collate<wchar_t>& __f, const wchar_t* s, std::size_t n) {
+  return collating_element(__collate_access::named(__f), nullptr, n, s);
 }
 
 }} // namespace __ycxx::__detail

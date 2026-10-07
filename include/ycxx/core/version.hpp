@@ -245,6 +245,7 @@
 #  define __cpp_lib_define_static 202506L
 #endif
 #define __cpp_lib_ranges_cache_latest 202411L
+#define __cpp_lib_view_interface 202606L
 #define __cpp_lib_ranges_cartesian_product 202207L
 #define __cpp_lib_ranges_chunk 202202L
 #define __cpp_lib_ranges_chunk_by 202202L

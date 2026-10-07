@@ -991,6 +991,13 @@ def main():
     g = Gen(ents)
     g.run()
     g.macros(data)
+    for sec, hdr, ns, ent, what, code in SMP.EXTRA:
+        d = D.Decl([], [], [("ns", n, False) for n in ns.split("::") if n], "public", False, None)
+        d.sec, d.header, d.name, d.kind = sec, hdr, ent.split("::")[-1], "extra"
+        g.decl_id = len(g.inventory)
+        g.inventory.append([g.decl_id, sec, hdr, ent, "item declaration", 1, "", ent])
+        g.add(d, what, code, ent=ent)
+        g.decl_id = None
     g.feature_macros(data)
     g.zombie_names(data)
     write(g, pathlib.Path(a.out), None)

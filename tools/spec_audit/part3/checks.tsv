@@ -12994,6 +12994,21 @@ depr.cerrno#2	depr.cerrno	cerrno	ENOSR	macro
 depr.cerrno#3	depr.cerrno	cerrno	ENOSTR	macro		
 depr.cerrno#4	depr.cerrno	cerrno	ETIME	macro		
 depr.atomics.general#6	depr.atomics.general	atomic	ATOMIC_VAR_INIT	macro			freestanding
+c.mb.wcs#1	c.mb.wcs	cstdlib	std::mblen	call ret		6351
+c.mb.wcs#2	c.mb.wcs	cstdlib	std::mbtowc	call ret		6352
+c.mb.wcs#3	c.mb.wcs	cstdlib	std::wctomb	call ret		6353
+c.mb.wcs#4	c.mb.wcs	cstdlib	std::mbstowcs	call ret		6354
+c.mb.wcs#5	c.mb.wcs	cstdlib	std::wcstombs	call ret		6355
+c.math.rand#1	c.math.rand	cstdlib	std::rand	call ret		6356
+c.math.rand#2	c.math.rand	cstdlib	std::srand	call ret		6357
+numerics.c.ckdint#1	numerics.c.ckdint	stdckdint.h	ckd_add	call ret		6358
+numerics.c.ckdint#2	numerics.c.ckdint	stdckdint.h	ckd_sub	call ret		6359
+numerics.c.ckdint#3	numerics.c.ckdint	stdckdint.h	ckd_mul	call ret		6360
+numerics.c.ckdint#4	numerics.c.ckdint	stdckdint.h	ckd_add	constexpr		6361
+time.clock.utc.nonmembers#1	time.clock.utc.nonmembers	chrono	std::chrono::leap_second_info::is_leap_second	var		6362
+time.clock.utc.nonmembers#2	time.clock.utc.nonmembers	chrono	std::chrono::leap_second_info::elapsed	var		6363
+futures.task.members#1	futures.task.members	future	std::packaged_task::make_ready_at_thread_exit	call ret		6364
+depr.fs.path.factory#1	depr.fs.path.factory	filesystem	std::filesystem::u8path	presence		6365
 version.syn@version#1	version.syn@version	version	__cpp_lib_atomic_flag_test	macro value 201907L			freestanding
 version.syn@atomic#1	version.syn@atomic	atomic	__cpp_lib_atomic_flag_test	macro value 201907L			freestanding
 version.syn@version#2	version.syn@version	version	__cpp_lib_atomic_float	macro value 201711L			freestanding

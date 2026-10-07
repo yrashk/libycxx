@@ -264,6 +264,43 @@ PLACEHOLDERS = {
 
 
 # Declarations the draft makes optional or implementation-defined: (subclause, name) -> why.
+# Item declarations that no synopsis of these clauses repeats (the headers' synopses are in
+# other clauses, or the declaration is only in its subclause): (subclause, header, namespace,
+# entity, check, code). Found by comparing the item declarations with inventory.tsv.
+_C = "template<class Z> concept c = requires {{ {} }}; static_assert(c<void>);"
+_dv = "spec_probe::dv<spec_probe::dep<Z, {}>>()"
+EXTRA = [
+    ("c.mb.wcs", "cstdlib", "std", "std::mblen", "call ret",
+     _C.format("{ std::mblen(%s, %s) } -> spec_probe::same<int>;" % (_dv.format("const char*"), _dv.format("size_t")))),
+    ("c.mb.wcs", "cstdlib", "std", "std::mbtowc", "call ret",
+     _C.format("{ std::mbtowc(%s, %s, %s) } -> spec_probe::same<int>;" % (_dv.format("wchar_t*"), _dv.format("const char*"), _dv.format("size_t")))),
+    ("c.mb.wcs", "cstdlib", "std", "std::wctomb", "call ret",
+     _C.format("{ std::wctomb(%s, %s) } -> spec_probe::same<int>;" % (_dv.format("char*"), _dv.format("wchar_t")))),
+    ("c.mb.wcs", "cstdlib", "std", "std::mbstowcs", "call ret",
+     _C.format("{ std::mbstowcs(%s, %s, %s) } -> spec_probe::same<size_t>;" % (_dv.format("wchar_t*"), _dv.format("const char*"), _dv.format("size_t")))),
+    ("c.mb.wcs", "cstdlib", "std", "std::wcstombs", "call ret",
+     _C.format("{ std::wcstombs(%s, %s, %s) } -> spec_probe::same<size_t>;" % (_dv.format("char*"), _dv.format("const wchar_t*"), _dv.format("size_t")))),
+    ("c.math.rand", "cstdlib", "std", "std::rand", "call ret", _C.format("{ std::rand() } -> spec_probe::same<int>;")),
+    ("c.math.rand", "cstdlib", "std", "std::srand", "call ret",
+     _C.format("{ std::srand(%s) } -> spec_probe::same<void>;" % _dv.format("unsigned"))),
+    ("numerics.c.ckdint", "stdckdint.h", "", "ckd_add", "call ret",
+     _C.format("{ ckd_add(%s, %s, %s) } -> spec_probe::same<bool>;" % (_dv.format("int*"), _dv.format("long"), _dv.format("unsigned char")))),
+    ("numerics.c.ckdint", "stdckdint.h", "", "ckd_sub", "call ret",
+     _C.format("{ ckd_sub(%s, %s, %s) } -> spec_probe::same<bool>;" % (_dv.format("long long*"), _dv.format("int"), _dv.format("int")))),
+    ("numerics.c.ckdint", "stdckdint.h", "", "ckd_mul", "call ret",
+     _C.format("{ ckd_mul(%s, %s, %s) } -> spec_probe::same<bool>;" % (_dv.format("unsigned*"), _dv.format("int"), _dv.format("short")))),
+    ("numerics.c.ckdint", "stdckdint.h", "", "ckd_add", "constexpr",
+     "static_assert([] { int r = 0; return !ckd_add(&r, 2, 3) && r == 5 && ckd_add(&r, 2147483647, 1); }());"),
+    ("time.clock.utc.nonmembers", "chrono", "std::chrono", "std::chrono::leap_second_info::is_leap_second", "var",
+     "static_assert(spec_probe::same<decltype(std::chrono::leap_second_info::is_leap_second), bool>);"),
+    ("time.clock.utc.nonmembers", "chrono", "std::chrono", "std::chrono::leap_second_info::elapsed", "var",
+     "static_assert(spec_probe::same<decltype(std::chrono::leap_second_info::elapsed), std::chrono::seconds>);"),
+    ("futures.task.members", "future", "std", "std::packaged_task::make_ready_at_thread_exit", "call ret",
+     _C.format("{ %s.make_ready_at_thread_exit(%s) } -> spec_probe::same<void>;" % (_dv.format("std::packaged_task<int(int)>&"), _dv.format("int")))),
+    ("depr.fs.path.factory", "filesystem", "std::filesystem", "std::filesystem::u8path", "presence",
+     "using std::filesystem::u8path;"),
+]
+
 # Declarations whose sample cannot be right: (subclause, text in the declaration), why.
 SKIP_DECLS = {
     ("re.syn", "match_results<typename basic_string<charT, ST, SA>::const_iterator"):

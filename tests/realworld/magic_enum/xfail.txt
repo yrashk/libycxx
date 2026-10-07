@@ -1,0 +1,4 @@
+# CTest tests expected to fail for a cause outside the project's test and libycxx, as
+# "<test regex> | <category> | <reason> [| <conditions>]" (tools/lib/realworld.py). An expected
+# failure that passes (XPASS) fails the run: the entry goes when the cause does.
+test_flags-cpp(17|20|23) | compiler-bug | GCC 16.2 at -O1 in C++26 mode makes enum_flags_cast and enum_flags_contains reject "GREEN|RED|RED" (a flag named twice); the same with libstdc++ (g++-16 -std=c++26 -O1), not at -O0, not with -std=c++23, not with Clang 23; no undefined behaviour found by UBSan. Reproducer: repro/gcc16_cxx26_O1_flags.cpp (with magic_enum's include directory) | gcc

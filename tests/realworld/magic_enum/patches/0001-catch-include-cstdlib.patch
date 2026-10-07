@@ -1,0 +1,15 @@
+Category: transitive-include. The vendored Catch2 v2 (catch.hpp) calls std::abort without
+including <cstdlib> (libstdc++ and libc++ declare it through <string>/<memory>). Adds the include.
+
+diff --git a/test/3rdparty/Catch2/include/catch2/catch.hpp b/test/3rdparty/Catch2/include/catch2/catch.hpp
+index 9b309bd..756880b 100644
+--- a/test/3rdparty/Catch2/include/catch2/catch.hpp
++++ b/test/3rdparty/Catch2/include/catch2/catch.hpp
+@@ -597,6 +597,7 @@ namespace Catch {
+ #include <string>
+ #include <iosfwd>
+ #include <cassert>
++#include <cstdlib>
+ 
+ namespace Catch {
+ 

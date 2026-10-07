@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
-"""Shell portability check for libycxx's POSIX sh scripts (tools/, tests/cmake/).
+"""Shell portability check for libycxx's POSIX sh scripts (tools/, tests/cmake/, tests/integration/,
+cmake/*.in).
 
 Flags a parameter expansion written without braces and directly followed by a non-ASCII
 character ("$ui_dim│"): bash 3.2, macOS's /bin/sh, reads the bytes of a multibyte character in a
@@ -13,7 +14,7 @@ BAD = re.compile(r'\$[A-Za-z_][A-Za-z0-9_]*[^\x00-\x7f]')
 
 
 def scripts():
-    for d in ('tools', 'tools/lib', 'tools/toolchain', 'tests/cmake', 'bench'):
+    for d in ('tools', 'tools/lib', 'tools/toolchain', 'tests/cmake', 'tests/integration', 'cmake', 'bench'):
         full = os.path.join(repo, d)
         if not os.path.isdir(full):
             continue

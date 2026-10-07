@@ -1,0 +1,8 @@
+# Taskflow: task-parallel programming: threads, atomics, condition variables, futures, work
+# stealing. Tests with a vendored doctest.
+url = https://github.com/taskflow/taskflow.git
+ref = v4.1.0
+commit = 45366fe5bc4f2f8ec9aa590b40c504e296886865
+exercises = threads, atomics, futures, containers
+configure = -DTF_BUILD_TESTS=ON -DTF_BUILD_EXAMPLES=OFF
+timeout = 900

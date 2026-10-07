@@ -1,0 +1,16 @@
+Category: transitive-include. The vendored doctest uses errno without including <cerrno>
+(libstdc++ and libc++ declare it through <system_error>, which <mutex> includes there). Adds the
+include.
+
+diff --git a/3rd-party/doctest/doctest.h b/3rd-party/doctest/doctest.h
+index e68e44e..44a2240 100644
+--- a/3rd-party/doctest/doctest.h
++++ b/3rd-party/doctest/doctest.h
+@@ -2931,6 +2931,7 @@ DOCTEST_MAKE_STD_HEADERS_CLEAN_FROM_WARNINGS_ON_WALL_BEGIN
+ #include <csignal>
+ #include <cfloat>
+ #include <cctype>
++#include <cerrno>
+ #include <cstdint>
+ 
+ #ifdef DOCTEST_PLATFORM_MAC

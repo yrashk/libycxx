@@ -5,8 +5,11 @@
 // century, ISO year, month, day, day of the year, week numbers, weekday, time of day, offset,
 // abbreviation); each from_stream then builds its value from the fields, or sets failbit when a
 // flag refers to information its type cannot represent ([time.parse]/16), when the input does
-// not match, or when the fields do not determine a valid value ([time.parse]/17). Names (%a %b
-// %p) and the representations %c %x %X %r are those of the "C" locale; white space is
+// not match, or when the fields do not determine a valid value ([time.parse]/17). The
+// locale-dependent flags of Table 134 (names, %p, %c %x %X %r and the E and O forms) read the
+// stream locale's time_get facet: built in for the classic facet (the "C" locale), the named
+// data of a time_get_byname (its formats are expanded here; its names, %p and %EY are its own
+// get calls), or one get call each for a program's own facet (DECISIONS §14). White space is
 // classified by the stream's ctype facet and the decimal point of %S is '.' or the stream
 // locale's. The manipulators returned by parse are neither copyable nor movable and extract
 // only as rvalues, so they cannot outlive the full-expression that holds the format string.
@@ -18,6 +21,7 @@
 #include <ycxx/core/iosfwd.hpp>
 #include <ycxx/hosted/chrono_io.hpp>
 #include <ycxx/hosted/chrono_tz.hpp>
+#include <ycxx/hosted/locale_extra.hpp>
 
 namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
 
@@ -42,6 +46,8 @@ struct __chrono_parsed {
     __has_S = 1u << 16,
     __has_z = 1u << 17,
     __has_Z = 1u << 18,
+    __has_EC = 1u << 19, // an era (%EC)
+    __has_Ey = 1u << 20, // a year of the era (%Ey)
   };
   unsigned __have = 0;
   long long _Yp = 0, _Cp = 0, y = 0, _Gp = 0, __g = 0, m = 0, d = 0, __j = 0, _Up = 0, _Wp = 0, _Vp = 0, __wd = 0;
@@ -49,6 +55,9 @@ struct __chrono_parsed {
   unsigned long long __sub = 0; // fractional seconds in units of 10^-digits
   bool __pm = false;
   long long offset = 0; // minutes
+  // the era of %EC: year n of it is __era_start + __era_step * (n - __era_offset); %Ey's n
+  long long __era_start = 0, __era_offset = 0, __ey = 0;
+  int __era_step = 1;
   bool any(unsigned __f) const noexcept { return (__have & __f) != 0; }
 };
 
@@ -56,14 +65,26 @@ constexpr bool __chrono_ieq(char a, char b) noexcept {
   return (a >= 'A' && a <= 'Z' ? a + 32 : a) == (b >= 'A' && b <= 'Z' ? b + 32 : b);
 }
 
+// A tm member the stream's time_get did not set (negative and a multiple of 12, so %I and %p
+// combine in either order: [locale.time.get.virtuals]).
+inline constexpr int __chrono_tm_unset = -1200000;
+
 // The scanner: reads is (through its streambuf) as fmt directs.
 template <class __charT, class __traits>
 class __chrono_scanner {
   using int_type = typename __traits::int_type;
+  using _Iter = std::istreambuf_iterator<__charT, __traits>;
+  using _TimeGet = std::time_get<__charT, _Iter>;
   std::basic_streambuf<__charT, __traits>* __sb_;
+  std::basic_istream<__charT, __traits>& __is_;
   const std::ctype<__charT>& __ct_;
   __charT __point_;
   bool __eof_ = false;
+  // The stream locale's time_get, unless it has none or the classic one (null: the "C"
+  // locale's conventions, built in), and that facet's named-locale data (null: a program's own).
+  const _TimeGet* __tg_ = nullptr;
+  const __time_data<__charT>* __td_ = nullptr;
+  int __depth_ = 0; // inside a locale's format (%c, %x, ...)
 
 public:
   __chrono_parsed r;
@@ -72,8 +93,18 @@ public:
   unsigned digits; // the fractional digits of %S
 
   __chrono_scanner(std::basic_istream<__charT, __traits>& is, unsigned __inf, unsigned __dig)
-      : __sb_(is.rdbuf()), __ct_(std::use_facet<std::ctype<__charT>>(is.getloc())),
-        __point_(std::use_facet<std::numpunct<__charT>>(is.getloc()).decimal_point()), info(__inf), digits(__dig) {}
+      : __sb_(is.rdbuf()), __is_(is), __ct_(std::use_facet<std::ctype<__charT>>(is.getloc())),
+        __point_(std::use_facet<std::numpunct<__charT>>(is.getloc()).decimal_point()), info(__inf), digits(__dig) {
+    const std::locale __loc = is.getloc();
+    if (std::has_facet<_TimeGet>(__loc)) {
+      const _TimeGet& __tg = std::use_facet<_TimeGet>(__loc);
+      const std::locale __classic = std::locale::classic();
+      if (!std::has_facet<_TimeGet>(__classic) || &std::use_facet<_TimeGet>(__classic) != &__tg) {
+        __tg_ = &__tg;
+        __td_ = __time_get_access::__data(__tg);
+      }
+    }
+  }
 
   bool __at_eof() const noexcept { return __eof_; }
 
@@ -242,6 +273,224 @@ private:
     return true;
   }
 
+  // ---- the stream locale's conventions (tg_ non-null) ----
+
+  // One conversion of the facet, on a tm whose members are all __chrono_tm_unset first.
+  bool __facet_get(char __spec, char __mod, std::tm& t) {
+    t = std::tm{};
+    t.tm_sec = t.tm_min = t.tm_hour = t.tm_mday = t.tm_mon = t.tm_year = t.tm_wday = t.tm_yday = __chrono_tm_unset;
+    typename std::basic_istream<__charT, __traits>::iostate __err = std::basic_istream<__charT, __traits>::goodbit;
+    __tg_->get(_Iter(__sb_), _Iter(), __is_, __err, &t, __spec, __mod);
+    if ((__err & std::basic_istream<__charT, __traits>::eofbit) != 0)
+      __eof_ = true;
+    return (__err & std::basic_istream<__charT, __traits>::failbit) == 0;
+  }
+  // Records what the facet set of the fields of a composite conversion (%c %x %X %r): a field
+  // the type cannot represent fails ([time.parse]/16), except the weekday and the day of the
+  // year that a date implies.
+  bool __record(const std::tm& t) {
+    using _Pp = __chrono_parsed;
+    constexpr int u = __chrono_tm_unset;
+    auto __put = [&](int __v, long long& __field, unsigned __bit, unsigned what) {
+      if (__v == u)
+        return true;
+      if (!__need(what))
+        return false;
+      __field = __v;
+      r.__have |= __bit;
+      return true;
+    };
+    if (!__put(t.tm_year == u ? u : t.tm_year + 1900, r._Yp, _Pp::__has_Y, __ci_year) ||
+        !__put(t.tm_mon == u ? u : t.tm_mon + 1, r.m, _Pp::__has_m, __ci_month) ||
+        !__put(t.tm_mday, r.d, _Pp::__has_d, __ci_day) || !__put(t.tm_hour, r._Hp, _Pp::__has_H, __ci_time) ||
+        !__put(t.tm_min, r._Mp, _Pp::__has_M, __ci_time) || !__put(t.tm_sec, r._Sp, _Pp::__has_S, __ci_time))
+      return false;
+    if (t.tm_sec != u)
+      r.__sub = 0;
+    if (t.tm_wday != u && __need(__ci_weekday) && t.tm_wday >= 0 && t.tm_wday <= 6) {
+      r.__wd = t.tm_wday;
+      r.__have |= _Pp::__has_wd;
+    }
+    return true;
+  }
+  // A number in the locale's alternative digits or in ASCII digits (at most n of these).
+  bool __alt_number(int n, long long& __v) {
+    bool ok, __eof;
+    __time_read_alt(_Iter(__sb_), _Iter(), __ct_, __td_, n, __v, ok, __eof);
+    if (__eof)
+      __eof_ = true;
+    return ok;
+  }
+  // A locale's format (fallback: the "C" locale's, when the locale has none).
+  bool __locale_format(const std::basic_string<__charT>& __fmt, const char* __fallback) {
+    if (__fmt.empty())
+      return pattern(__fallback);
+    if (__depth_ == 4) // a format naming itself
+      return false;
+    ++__depth_;
+    const bool ok = run(__fmt.c_str());
+    --__depth_;
+    return ok;
+  }
+  // The locale-dependent flags: 1 parsed, 0 failed, -1 not one of them (the plain flag).
+  int __localized(char __f, char __mod, int n) {
+    using _Pp = __chrono_parsed;
+    constexpr int u = __chrono_tm_unset;
+    std::tm t;
+    auto __one = [&](char __spec, char __m, int std::tm::* __member, long long& __field, unsigned __bit, unsigned what,
+                     int __add) -> int {
+      if (!__need(what) || !__facet_get(__spec, __m, t))
+        return 0;
+      if (t.*__member != u) {
+        __field = t.*__member + __add;
+        r.__have |= __bit;
+      }
+      return 1;
+    };
+    switch (__f) {
+    case 'a':
+    case 'A': return __one(__f, 0, &std::tm::tm_wday, r.__wd, _Pp::__has_wd, __ci_weekday, 0);
+    case 'b':
+    case 'B':
+    case 'h': return __one(__f, 0, &std::tm::tm_mon, r.m, _Pp::__has_m, __ci_month, 1);
+    case 'p':
+      if (!__need(__ci_time) || !__facet_get('p', 0, t))
+        return 0;
+      if (t.tm_hour != u) { // a locale without AM/PM strings reads none
+        r.__pm = t.tm_hour >= 12;
+        r.__have |= _Pp::__has_p;
+      }
+      return 1;
+    case 'c':
+    case 'x':
+    case 'X':
+    case 'r': {
+      if ((__f == 'c' && !__need(__ci_full_date | __ci_time)) || ((__f == 'X' || __f == 'r') && !__need(__ci_time)))
+        return 0;
+      const bool __e = __mod == 'E';
+      if (__td_ != nullptr) {
+        const __time_data<__charT>& d = *__td_;
+        switch (__f) {
+        case 'c':
+          return __locale_format(__e && !d.__era_d_t_fmt.empty() ? d.__era_d_t_fmt : d.__d_t_fmt,
+                                 "%a %b %e %H:%M:%S %Y");
+        case 'x': return __locale_format(__e && !d.__era_d_fmt.empty() ? d.__era_d_fmt : d.__d_fmt, "%m/%d/%y");
+        case 'X': return __locale_format(__e && !d.__era_t_fmt.empty() ? d.__era_t_fmt : d.__t_fmt, "%H:%M:%S");
+        default: return __locale_format(d.__t_fmt_ampm, "%I:%M:%S %p");
+        }
+      }
+      return __facet_get(__f, __e ? 'E' : 0, t) && __record(t);
+    }
+    default: break;
+    }
+    const bool __eras = __td_ != nullptr && __td_->__neras != 0;
+    if (__mod == 'E') {
+      switch (__f) {
+      case 'C':
+        if (__eras) {
+          if (!__need(__ci_year))
+            return 0;
+          int __k;
+          bool __eof;
+          __time_match(_Iter(__sb_), _Iter(), __ct_, __td_->__neras,
+                       [d = __td_](int k, std::size_t& __len) { return d->__era_name(k, __len); }, __k, __eof);
+          if (__eof)
+            __eof_ = true;
+          if (__k < 0)
+            return 0;
+          const __time_era& e = __td_->__eras[__k];
+          r.__era_start = e.__start_year;
+          r.__era_offset = e.__offset;
+          r.__era_step = e.__step;
+          r.__have |= _Pp::__has_EC;
+          return 1;
+        }
+        return -1;
+      case 'y':
+        if (__eras) {
+          if (!__need(__ci_year) || !__alt_number(n < 0 ? 6 : n, r.__ey))
+            return 0;
+          r.__have |= _Pp::__has_Ey;
+          return 1;
+        }
+        if (__td_ == nullptr) { // a program's facet: as it reads %Ey
+          if (!__need(__ci_year) || !__facet_get('y', 'E', t))
+            return 0;
+          if (t.tm_year != u) {
+            r.y = ((t.tm_year + 1900) % 100 + 100) % 100;
+            r.__have |= _Pp::__has_y;
+          }
+          return 1;
+        }
+        return -1;
+      case 'Y':
+        if (__eras || __td_ == nullptr)
+          return __one('Y', 'E', &std::tm::tm_year, r._Yp, _Pp::__has_Y, __ci_year, 1900);
+        return -1;
+      default: return -1;
+      }
+    }
+    if (__mod != 'O')
+      return -1;
+    if (__td_ == nullptr) { // a program's facet: the O forms a tm can hold
+      switch (__f) {
+      case 'd':
+      case 'e': return __one(__f, 'O', &std::tm::tm_mday, r.d, _Pp::__has_d, __ci_day, 0);
+      case 'H': return __one('H', 'O', &std::tm::tm_hour, r._Hp, _Pp::__has_H, __ci_time, 0);
+      case 'I': {
+        const int __res = __one('I', 'O', &std::tm::tm_hour, r._Ip, _Pp::__has_I, __ci_time, 0);
+        if (__res == 1 && r.any(_Pp::__has_I) && r._Ip % 12 == 0)
+          r._Ip = 12;
+        return __res;
+      }
+      case 'm': return __one('m', 'O', &std::tm::tm_mon, r.m, _Pp::__has_m, __ci_month, 1);
+      case 'M': return __one('M', 'O', &std::tm::tm_min, r._Mp, _Pp::__has_M, __ci_time, 0);
+      case 'S': {
+        r.__sub = 0;
+        return __one('S', 'O', &std::tm::tm_sec, r._Sp, _Pp::__has_S, __ci_time, 0);
+      }
+      case 'w': return __one('w', 'O', &std::tm::tm_wday, r.__wd, _Pp::__has_wd, __ci_weekday, 0);
+      case 'y': {
+        const int __res = __one('y', 'O', &std::tm::tm_year, r.y, _Pp::__has_y, __ci_year, 1900);
+        r.y = (r.y % 100 + 100) % 100;
+        return __res;
+      }
+      default: return -1;
+      }
+    }
+    // a named locale: its alternative digits, or ASCII ones
+    long long* __field = nullptr;
+    unsigned __bit = 0, what = 0;
+    int __dflt = 2;
+    long long __lo = 0, __hi = 99;
+    switch (__f) {
+    case 'C': __field = &r._Cp, __bit = _Pp::__has_C, what = __ci_year; break;
+    case 'e':
+      while (__is_space(peek()))
+        __bump();
+      [[fallthrough]];
+    case 'd': __field = &r.d, __bit = _Pp::__has_d, what = __ci_day; break;
+    case 'H': __field = &r._Hp, __bit = _Pp::__has_H, what = __ci_time; break;
+    case 'I': __field = &r._Ip, __bit = _Pp::__has_I, what = __ci_time; break;
+    case 'm': __field = &r.m, __bit = _Pp::__has_m, what = __ci_month; break;
+    case 'M': __field = &r._Mp, __bit = _Pp::__has_M, what = __ci_time; break;
+    case 'S': __field = &r._Sp, __bit = _Pp::__has_S, what = __ci_time; r.__sub = 0; break;
+    case 'U': __field = &r._Up, __bit = _Pp::__has_U, what = __ci_date; break;
+    case 'W': __field = &r._Wp, __bit = _Pp::__has_W, what = __ci_date; break;
+    case 'V': __field = &r._Vp, __bit = _Pp::__has_V, what = __ci_date; break;
+    case 'u': __field = &r.__wd, __bit = _Pp::__has_wd, what = __ci_weekday, __dflt = 1, __lo = 1, __hi = 7; break;
+    case 'w': __field = &r.__wd, __bit = _Pp::__has_wd, what = __ci_weekday, __dflt = 1, __hi = 6; break;
+    case 'y': __field = &r.y, __bit = _Pp::__has_y, what = __ci_year; break;
+    default: return -1;
+    }
+    long long __v;
+    if (!__need(what) || !__alt_number(n < 0 ? __dflt : n, __v) || __v < __lo || __v > __hi)
+      return 0;
+    *__field = __f == 'u' ? __v % 7 : __v;
+    r.__have |= __bit;
+    return 1;
+  }
+
   // Runs the NTBS pattern of a composite flag; a width n applies to its first field.
   bool pattern(const char* p, int n = -1) {
     for (; *p != 0; ++p) {
@@ -274,11 +523,20 @@ public:
       r.__have |= __bit;
       return true;
     };
-    if (__mod == 'E' && !(__f == 'c' || __f == 'C' || __f == 'x' || __f == 'X' || __f == 'y' || __f == 'Y' || __f == 'z'))
+    // Table 134's E and O forms; a locale's own format may use others (%OC), read as the
+    // locale's alternative digits or as the plain flag
+    if (__depth_ == 0 && __mod == 'E' &&
+        !(__f == 'c' || __f == 'C' || __f == 'x' || __f == 'X' || __f == 'y' || __f == 'Y' || __f == 'z'))
       return false;
-    if (__mod == 'O' && !(__f == 'd' || __f == 'e' || __f == 'H' || __f == 'I' || __f == 'm' || __f == 'M' || __f == 'S' ||
-                        __f == 'u' || __f == 'U' || __f == 'V' || __f == 'w' || __f == 'W' || __f == 'y' || __f == 'z'))
+    if (__depth_ == 0 && __mod == 'O' &&
+        !(__f == 'd' || __f == 'e' || __f == 'H' || __f == 'I' || __f == 'm' || __f == 'M' || __f == 'S' || __f == 'u' ||
+          __f == 'U' || __f == 'V' || __f == 'w' || __f == 'W' || __f == 'y' || __f == 'z'))
       return false;
+    if (__tg_ != nullptr && __f != 'z') {
+      const int __res = __localized(__f, __mod, n);
+      if (__res >= 0)
+        return __res == 1;
+    }
     switch (__f) {
     case 'a':
     case 'A':
@@ -428,6 +686,12 @@ constexpr bool __chrono_year_of(const __chrono_parsed& r, long long& y) noexcept
   using _Pp = __chrono_parsed;
   if (r.any(_Pp::__has_Y)) {
     y = r._Yp;
+  } else if (r.any(_Pp::__has_EC) && r.any(_Pp::__has_Ey)) {
+    y = r.__era_start + r.__era_step * (r.__ey - r.__era_offset);
+  } else if (r.any(_Pp::__has_Ey) && !r.any(_Pp::__has_C | _Pp::__has_y)) { // %Ey without an era: as %y
+    if (r.__ey > 99)
+      return false;
+    y = r.__ey >= 69 ? 1900 + r.__ey : 2000 + r.__ey;
   } else if (r.any(_Pp::__has_C | _Pp::__has_y)) {
     if (r.any(_Pp::__has_y) && (r.y < 0 || r.y > 99))
       return false;

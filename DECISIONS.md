@@ -22,7 +22,7 @@ variable templates. The preprocessor is used only where the language cannot do t
    defines are:
    - those the standard mandates (`NULL`, `offsetof`, `INT_MAX`, `INT32_C`, `__cpp_lib_*`,
      `assert`, `errno`, ...), and
-   - the `YCXX_*` switches in `config.hpp` (user-settable `YCXX_HARDENED`; parse-level
+   - the `YCXX_*` switches in `config.hpp` (user-settable `YCXX_HARDENED` and `YCXX_NO_TRANSITIVE_INCLUDES`, §19; parse-level
      `YCXX_HAS_*` switches).
 4. **`#if` outside `config.hpp` only when the code cannot be parsed or declared otherwise.**
    Examples: a declaration that needs a builtin only one compiler has
@@ -228,7 +228,7 @@ tooling.
   Not renamed: the names the standard library declares (the draft's index of library names,
   the names the std and std.compat modules export, and `tools/data/uglify/allowed.txt`'s
   [standard] section for those the index misses: `npos`, `failbit`, `param_type`, struct tm's
-  members, `INT8_C` ...), and libycxx's documented user-facing names: `YCXX_HARDENED`, and the
+  members, `INT8_C` ...), and libycxx's documented user-facing names: `YCXX_HARDENED`, `YCXX_NO_TRANSITIVE_INCLUDES` (§19), and the
   `-fno-exceptions` hook `ycxx_error_handler`, `ycxx_error_kind` and its `ycxx_error_*`
   enumerators (§4), and the hosted layers' interface that integrators implement (§18): the
   primitives `ycxx_pal_*` with `YCXX_PAL_NOEXCEPT`/`YCXX_PAL_NORETURN` of `<ycxx/pal.h>`, and the

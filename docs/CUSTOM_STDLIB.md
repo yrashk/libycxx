@@ -587,8 +587,19 @@ compiles every test with `-DYCXX_HARDENED=1` and enables the death tests of
 --config-name=...`, `YCXX_CXXFLAGS`/`YCXX_CONFIG_NAME`) appends flags to every test, and
 `-fno-exceptions`/`-fno-rtti` there remove the `exceptions`/`rtti` features, which the 430 tests
 that throw or catch require. Each configuration has its own exec root, logs and reports
-(`ycxx-<cc>-hardened`, `ycxx-<cc>-<name>`), and fails on every FAIL like the default run. Nightly CI runs hardened, `-fno-exceptions` and `-O2`
-on both compilers, and all three suites under TSan (Gaps, items 3 and 6: done, except `-fno-rtti`).
+(`ycxx-<cc>-hardened`, `ycxx-<cc>-<name>`), and fails on every FAIL like the default run. Nightly CI runs hardened, `-fno-exceptions`, `-O2`
+and strict includes on both compilers, and all three suites under TSan (Gaps, items 3 and 6: done, except `-fno-rtti`).
+
+Which headers a header includes is a configuration too. libc++ removes transitive includes in
+newer language modes and offers `_LIBCPP_REMOVE_TRANSITIVE_INCLUDES` to drop them early; libycxx
+has `YCXX_NO_TRANSITIVE_INCLUDES` (DECISIONS §19), documented and user-facing like
+`YCXX_HARDENED`: by default each public header also includes what both libstdc++ and libc++
+provide with it (a black-box compile probe, `tools/probe_transitive.py`; the list,
+`tools/data/transitive-includes.txt`, is applied by `tools/gen_transitive_includes.py`), and with
+the macro defined only what the draft and the implementation need. The own suite runs in both
+modes (`tools/test --cxxflags=-DYCXX_NO_TRANSITIVE_INCLUDES --config-name=strict-includes ycxx`,
+nightly), and `tests/ycxx/transitive_includes` checks both: the listed names compile by default,
+a sample of them does not in the strict mode.
 
 ### Reference runs against another library
 

@@ -530,3 +530,14 @@ struct allocator_traits {
 };
 
 } // namespace std
+
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+// Whether allocator_traits<A>::construct(a, p, args...) cannot throw: a container may then make
+// room first and construct afterwards, with no rollback of the room it made.
+template <class _Alloc, class _Tp, class... _Args>
+inline constexpr bool __alloc_nothrow_construct = std::is_nothrow_constructible_v<_Tp, _Args...>;
+template <class _Alloc, class _Tp, class... _Args>
+  requires requires(_Alloc& __a, _Tp* __p, _Args&&... __args) { __a.construct(__p, static_cast<_Args&&>(__args)...); }
+inline constexpr bool __alloc_nothrow_construct<_Alloc, _Tp, _Args...> =
+    noexcept(std::declval<_Alloc&>().construct(static_cast<_Tp*>(nullptr), std::declval<_Args>()...));
+}} // namespace __ycxx::__detail

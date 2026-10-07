@@ -81,12 +81,278 @@ namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
 
 // LC_TIME of a named locale as time_get_byname reads it (nl_langinfo_l; strings converted to
 // charT through the name's LC_CTYPE).
+// One era of the locale (a POSIX ERA segment "direction:offset:start:end:name:format"): the year
+// numbered n in it is the Gregorian year __start_year + __step * (n - __offset); its name and
+// its full-year format (%EY) are [pos, pos + len) of __time_data::__era_text.
+struct __time_era {
+  long long __start_year, __offset;
+  int __step; // +1: the era's numbers grow with the Gregorian years; -1: they grow backwards
+  std::size_t __name_pos, __name_len, __fmt_pos, __fmt_len;
+};
 template <class __charT>
 struct __time_data {
   // weekdays (full Sunday-Saturday, then abbreviated), months (full, then abbreviated), AM, PM
   std::basic_string<__charT> __names[14 + 24 + 2];
   std::basic_string<__charT> __d_t_fmt, __d_fmt, __t_fmt, __t_fmt_ampm; // %c, %x, %X, %r
+  std::basic_string<__charT> __era_d_t_fmt, __era_d_fmt, __era_t_fmt;    // %Ec, %Ex, %EX (empty: none)
   std::time_base::dateorder __order = std::time_base::mdy;      // from the order of %x's fields
+  // the eras (ERA), at most 32
+  __time_era __eras[32];
+  int __neras = 0;
+  std::basic_string<__charT> __era_text;
+  // the alternative digits of 0-99 (the O forms): [__alt_pos[k], __alt_pos[k + 1]) of __alt_text;
+  // none when __alt_text is empty
+  std::basic_string<__charT> __alt_text;
+  unsigned short __alt_pos[101] = {};
+
+  bool __has_alt() const noexcept { return !__alt_text.empty(); }
+  const __charT* __era_name(int k, std::size_t& __len) const noexcept {
+    __len = __eras[k].__name_len;
+    return __era_text.data() + __eras[k].__name_pos;
+  }
+};
+
+// The longest case-insensitive match (ctype<charT>::tolower) among n <= 128 strings, given by
+// get(k, len) -> pointer; an empty string never matches. Reads characters only while some string
+// can still be extended. which: the index matched, else -1. eof: the end was reached.
+template <class __charT, class _It, class _Get>
+_It __time_match(_It s, _It end, const std::ctype<__charT>& __ct, int n, _Get get, int& __which, bool& __eof) {
+  bool __alive[128];
+  const __charT* __str[128];
+  std::size_t __lens[128];
+  for (int k = 0; k < n; ++k) {
+    __str[k] = get(k, __lens[k]);
+    __alive[k] = __lens[k] != 0;
+  }
+  __which = -1;
+  __eof = false;
+  std::size_t i = 0;
+  for (;;) {
+    for (int k = 0; k < n; ++k) // the longest complete match so far
+      if (__alive[k] && __lens[k] == i && i != 0)
+        __which = k;
+    bool __more = false;
+    for (int k = 0; k < n; ++k)
+      __more = __more || (__alive[k] && i < __lens[k]);
+    if (!__more)
+      break;
+    if (s == end) {
+      __eof = true;
+      break;
+    }
+    const __charT c = __ct.tolower(*s);
+    bool any = false;
+    for (int k = 0; k < n; ++k)
+      any = any || (__alive[k] && i < __lens[k] && __ct.tolower(__str[k][i]) == c);
+    if (!any)
+      break;
+    for (int k = 0; k < n; ++k)
+      __alive[k] = __alive[k] && i < __lens[k] && __ct.tolower(__str[k][i]) == c;
+    ++s;
+    ++i;
+  }
+  // a shorter complete match followed by characters of a longer one that failed: the
+  // characters read are gone (an input iterator), so only a match of everything read counts
+  if (__which >= 0 && __lens[__which] != i)
+    __which = -1;
+  return s;
+}
+
+// A number in the locale's alternative digits (the longest match among those of 0-99), or in
+// ASCII digits (at most __max_digits); ok false when neither starts here.
+template <class __charT, class _It>
+_It __time_read_alt(_It s, _It end, const std::ctype<__charT>& __ct, const __time_data<__charT>* d, int __max_digits,
+                    long long& __v, bool& ok, bool& __eof) {
+  ok = false;
+  __eof = false;
+  __v = 0;
+  if (s == end) {
+    __eof = true;
+    return s;
+  }
+  const char c = __ct.narrow(*s, 0);
+  if (c >= '0' && c <= '9') {
+    int n = 0;
+    for (; n < __max_digits; ++n) {
+      if (s == end) {
+        __eof = true;
+        break;
+      }
+      const char __d = __ct.narrow(*s, 0);
+      if (__d < '0' || __d > '9')
+        break;
+      __v = __v * 10 + (__d - '0');
+      ++s;
+    }
+    ok = n != 0;
+    return s;
+  }
+  if (d == nullptr || !d->__has_alt())
+    return s;
+  int __which;
+  s = ::__ycxx::__detail::__time_match(s, end, __ct, 100,
+                                       [d](int k, std::size_t& __len) {
+                                         __len = static_cast<std::size_t>(d->__alt_pos[k + 1] - d->__alt_pos[k]);
+                                         return d->__alt_text.data() + d->__alt_pos[k];
+                                       },
+                                       __which, __eof);
+  ok = __which >= 0;
+  __v = __which;
+  return s;
+}
+
+// %EY: a full year in one of the eras' formats (their %EC, %Ey and %Y conversions and literal
+// characters), matched against all eras at once without going back. ok false when none matches.
+template <class __charT, class _It>
+_It __time_read_era_year(_It s, _It end, const std::ctype<__charT>& __ct, const __time_data<__charT>& d, long long& year,
+                         bool& ok, bool& __eof) {
+  struct __cand {
+    std::size_t i;     // position in the format
+    long long __name;  // position in the era's name while inside %EC, else -1
+    long long __num;   // the number read for %Ey (-1: none) or for %Y
+    bool __full;       // the number is %Y's
+    bool __alive;
+  } __c[32];
+  const int n = d.__neras;
+  const __charT* const __text = d.__era_text.data();
+  for (int k = 0; k < n; ++k)
+    __c[k] = {0, -1, -1, false, d.__eras[k].__fmt_len != 0};
+  ok = false;
+  __eof = false;
+  int __done = -1;
+  auto __fmt = [&](int k) { return __text + d.__eras[k].__fmt_pos; };
+  for (;;) {
+    // normalize: enter and leave %EC, find the candidates that are complete
+    int __want_num = 0, __want_char = 0;
+    for (int k = 0; k < n; ++k) {
+      __cand& c = __c[k];
+      if (!c.__alive)
+        continue;
+      const __time_era& e = d.__eras[k];
+      const __charT* f = __fmt(k);
+      for (;;) {
+        if (c.__name >= 0 && static_cast<std::size_t>(c.__name) == e.__name_len) {
+          c.__name = -1;
+          c.i += 3;
+          continue;
+        }
+        if (c.__name < 0 && c.i + 2 < e.__fmt_len && __ct.narrow(f[c.i], 0) == '%' &&
+            __ct.narrow(f[c.i + 1], 0) == 'E' && __ct.narrow(f[c.i + 2], 0) == 'C') {
+          c.__name = 0;
+          continue;
+        }
+        break;
+      }
+      if (c.__name < 0 && c.i == e.__fmt_len) {
+        __done = k; // complete here
+        c.__alive = false;
+        continue;
+      }
+      if (c.__name < 0 && __ct.narrow(f[c.i], 0) == '%') {
+        const bool __ey = c.i + 2 < e.__fmt_len && __ct.narrow(f[c.i + 1], 0) == 'E' && __ct.narrow(f[c.i + 2], 0) == 'y';
+        const bool __y = c.i + 1 < e.__fmt_len && __ct.narrow(f[c.i + 1], 0) == 'Y';
+        if (!__ey && !__y) {
+          c.__alive = false; // a conversion an era format does not use
+          continue;
+        }
+        ++__want_num;
+      } else {
+        ++__want_char;
+      }
+    }
+    if (__want_num + __want_char == 0)
+      break;
+    if (s == end) {
+      __eof = true;
+      break;
+    }
+    const char __a = __ct.narrow(*s, 0);
+    bool __num_here = __want_num != 0 && ((__a >= '0' && __a <= '9') || __a == '-' || d.__has_alt());
+    if (__num_here && __want_char != 0) {
+      // a character some candidate expects literally decides against a number
+      const __charT __lc = __ct.tolower(*s);
+      for (int k = 0; k < n && __num_here; ++k) {
+        const __cand& c = __c[k];
+        if (!c.__alive)
+          continue;
+        const __charT* f = __fmt(k);
+        const bool __lit = c.__name >= 0 || __ct.narrow(f[c.i], 0) != '%';
+        const __charT __e = c.__name >= 0 ? __text[d.__eras[k].__name_pos + static_cast<std::size_t>(c.__name)] : f[c.i];
+        if (__lit && __ct.tolower(__e) == __lc)
+          __num_here = false;
+      }
+    }
+    if (__num_here) {
+      bool __neg = false;
+      if (__a == '-') {
+        __neg = true;
+        ++s;
+      }
+      long long __v;
+      bool __nok, __e2;
+      s = ::__ycxx::__detail::__time_read_alt(s, end, __ct, &d, 6, __v, __nok, __e2);
+      if (__neg)
+        __v = -__v;
+      for (int k = 0; k < n; ++k) {
+        __cand& c = __c[k];
+        if (!c.__alive)
+          continue;
+        const __charT* f = __fmt(k);
+        const bool __lit = c.__name >= 0 || __ct.narrow(f[c.i], 0) != '%';
+        if (__lit || !__nok) {
+          c.__alive = false;
+          continue;
+        }
+        c.__full = __ct.narrow(f[c.i + 1], 0) == 'Y';
+        if (!c.__full && __neg)
+          c.__alive = false;
+        c.__num = __v;
+        c.i += c.__full ? 2 : 3;
+      }
+      __done = -1; // a completion before the number no longer covers everything read
+      __eof = __eof || __e2;
+      continue; // the candidates now complete are found by the next normalization
+    }
+    const __charT __lc = __ct.tolower(*s);
+    bool any = false;
+    for (int k = 0; k < n; ++k) {
+      __cand& c = __c[k];
+      if (!c.__alive)
+        continue;
+      const __charT* f = __fmt(k);
+      const bool __lit = c.__name >= 0 || __ct.narrow(f[c.i], 0) != '%';
+      const __charT __e = c.__name >= 0 ? __text[d.__eras[k].__name_pos + static_cast<std::size_t>(c.__name)] : f[c.i];
+      if (!__lit || __ct.tolower(__e) != __lc) {
+        c.__alive = false;
+        continue;
+      }
+      any = true;
+      if (c.__name >= 0)
+        ++c.__name;
+      else
+        ++c.i;
+    }
+    if (!any)
+      break;
+    ++s;
+    __done = -1;
+  }
+  if (__done >= 0) {
+    const __cand& c = __c[__done];
+    const __time_era& e = d.__eras[__done];
+    year = c.__full ? c.__num : e.__start_year + e.__step * ((c.__num < 0 ? e.__offset : c.__num) - e.__offset);
+    ok = true;
+  }
+  return s;
+}
+
+// The named data of a time_get facet (null: the classic conventions or a program's own facet
+// not derived from time_get_byname); for the chrono parser.
+struct __time_get_access {
+  template <class _Facet>
+  static auto __data(const _Facet& __f) noexcept {
+    return __f.__named_;
+  }
 };
 // Fills d for the locale `name`; false (d untouched) for the names with classic semantics.
 bool __named_time_data(const char* name, __time_data<char>& d);
@@ -141,6 +407,10 @@ public:
     bool __have_year = false, __have_mon = false, __have_mday = false, __have_wday = false, __have_yday = false;
     int __week = 0;
     char __week_kind = 0; // 'U' (weeks from the first Sunday) or 'W' (from the first Monday)
+    // %EC and %Ey of a locale with eras: the era and the year within it (-1: not given)
+    int __era = -1;
+    long long __era_year = -1;
+    const bool __eras = __named_ != nullptr && __named_->__neras != 0;
     while (__fmt != __fmtend && __err == ios_base::goodbit) {
       if (s == end) {
         __err = ios_base::eofbit | ios_base::failbit;
@@ -162,14 +432,29 @@ public:
           }
           __spec = __ct.narrow(*p, 0);
         }
+        const bool __era_part = __eras && __mod == 'E' && (__spec == 'C' || __spec == 'y');
         if (__spec == 'U' || __spec == 'W') {
           // read here (as do_get would) to keep the week number for the date below
-          s = __read_ranged(s, end, __f, __err, 2, 0, 53, __week);
+          s = __read_field(__mod == 'O' && __named_ != nullptr && __named_->__has_alt(), s, end, __f, __err, 2, 0, 53,
+                           __week);
           __week_kind = __spec;
+        } else if (__era_part) {
+          // read here: the era and its year combine below
+          bool __eof = false, ok = false;
+          if (__spec == 'C') {
+            s = __match_era(s, end, __ct, __era, __eof);
+            ok = __era >= 0;
+          } else {
+            s = ::__ycxx::__detail::__time_read_alt(s, end, __ct, __named_, 6, __era_year, ok, __eof);
+          }
+          if (__eof)
+            __err |= ios_base::eofbit;
+          if (!ok)
+            __err |= ios_base::failbit;
         } else {
           s = do_get(s, end, __f, __err, t, __spec, __mod);
         }
-        if (!(__err & ios_base::failbit)) {
+        if (!(__err & ios_base::failbit) && !__era_part) {
           if (__spec == 'C')
             __century = (t->tm_year + 1900) / 100;
           else if (__spec == 'y')
@@ -197,6 +482,21 @@ public:
       } else {
         __err = ios_base::failbit;
       }
+    }
+    if (!(__err & ios_base::failbit) && (__era >= 0 || __era_year >= 0)) {
+      long long y;
+      if (__era >= 0) {
+        const __ycxx::__detail::__time_era& e = __named_->__eras[__era];
+        y = e.__start_year + e.__step * ((__era_year >= 0 ? __era_year : e.__offset) - e.__offset);
+      } else { // a year of an unnamed era: as %y
+        y = __era_year + (__era_year < 69 ? 2000 : 1900);
+        if (__era_year > 99)
+          __err |= ios_base::failbit;
+      }
+      if (y - 1900 < -__INT_MAX__ || y - 1900 > __INT_MAX__)
+        __err |= ios_base::failbit;
+      else
+        t->tm_year = static_cast<int>(y - 1900);
     }
     if (!(__err & ios_base::failbit)) {
       if (__century >= 0 && __year_in_century >= 0)
@@ -301,13 +601,16 @@ protected:
     }
     tm r = *t; // assigned to *t only on success
     int __v = 0;
-    // a named locale's %c, %x, %X and %r are its own formats
+    // a named locale's %c, %x, %X and %r are its own formats; %Ec, %Ex and %EX its era formats
+    // where it has them
     if (__named_ != nullptr) {
-      const basic_string<__charT>* __own = format == 'c'   ? &__named_->__d_t_fmt
-                                       : format == 'x' ? &__named_->__d_fmt
-                                       : format == 'X' ? &__named_->__t_fmt
-                                       : format == 'r' ? &__named_->__t_fmt_ampm
-                                                       : nullptr;
+      const bool __e = __modifier == 'E';
+      const basic_string<__charT>* __own =
+          format == 'c'   ? (__e && !__named_->__era_d_t_fmt.empty() ? &__named_->__era_d_t_fmt : &__named_->__d_t_fmt)
+          : format == 'x' ? (__e && !__named_->__era_d_fmt.empty() ? &__named_->__era_d_fmt : &__named_->__d_fmt)
+          : format == 'X' ? (__e && !__named_->__era_t_fmt.empty() ? &__named_->__era_t_fmt : &__named_->__t_fmt)
+          : format == 'r' ? &__named_->__t_fmt_ampm
+                          : nullptr;
       if (__own != nullptr && !__own->empty()) {
         s = __parse_format(s, end, __f, __err, &r, *__own);
         if (!(__err & ios_base::failbit))
@@ -315,6 +618,35 @@ protected:
         return s;
       }
     }
+    // %EC, %Ey and %EY of a locale with eras (strptime's): an era name (the year is the era's
+    // first), a year of an unnamed era (as %y), a full era year (an era's format)
+    if (__modifier == 'E' && __named_ != nullptr && __named_->__neras != 0 &&
+        (format == 'C' || format == 'y' || format == 'Y')) {
+      const ctype<__charT>& __ct = use_facet<ctype<__charT>>(__f.getloc());
+      bool ok = false, __eof = false;
+      long long y = 0;
+      if (format == 'Y') {
+        s = ::__ycxx::__detail::__time_read_era_year(s, end, __ct, *__named_, y, ok, __eof);
+      } else if (format == 'C') {
+        int __k;
+        s = __match_era(s, end, __ct, __k, __eof);
+        if ((ok = __k >= 0))
+          y = __named_->__eras[__k].__start_year;
+      } else {
+        s = ::__ycxx::__detail::__time_read_alt(s, end, __ct, __named_, 2, y, ok, __eof);
+        ok = ok && y <= 99;
+        y += y < 69 ? 2000 : 1900;
+      }
+      if (__eof)
+        __err |= ios_base::eofbit;
+      if (!ok || y - 1900 < -__INT_MAX__ || y - 1900 > __INT_MAX__)
+        __err |= ios_base::failbit;
+      else
+        t->tm_year = static_cast<int>(y - 1900);
+      return s;
+    }
+    // the O forms read the locale's alternative digits too
+    const bool __alt = __modifier == 'O' && __named_ != nullptr && __named_->__has_alt();
     switch (format) {
     case 'a':
     case 'A':
@@ -336,7 +668,7 @@ protected:
     case 'd':
     case 'e':
       s = __skip_space(s, end, __f, __err);
-      s = __read_ranged(s, end, __f, __err, 2, 1, 31, r.tm_mday);
+      s = __read_field(__alt, s, end, __f, __err, 2, 1, 31, r.tm_mday);
       break;
     case 'D':
     case 'x':
@@ -346,25 +678,25 @@ protected:
       s = parse(s, end, __f, __err, &r, "%Y-%m-%d");
       break;
     case 'H':
-      s = __read_ranged(s, end, __f, __err, 2, 0, 23, r.tm_hour);
+      s = __read_field(__alt, s, end, __f, __err, 2, 0, 23, r.tm_hour);
       break;
     case 'I':
-      s = __read_ranged(s, end, __f, __err, 2, 1, 12, __v);
+      s = __read_field(__alt, s, end, __f, __err, 2, 1, 12, __v);
       if (!(__err & ios_base::failbit))
         r.tm_hour = __v % 12 + (r.tm_hour >= 12 ? 12 : 0);
       break;
     case 'j':
-      s = __read_ranged(s, end, __f, __err, 3, 1, 366, __v);
+      s = __read_field(__alt, s, end, __f, __err, 3, 1, 366, __v);
       if (!(__err & ios_base::failbit))
         r.tm_yday = __v - 1;
       break;
     case 'm':
-      s = __read_ranged(s, end, __f, __err, 2, 1, 12, __v);
+      s = __read_field(__alt, s, end, __f, __err, 2, 1, 12, __v);
       if (!(__err & ios_base::failbit))
         r.tm_mon = __v - 1;
       break;
     case 'M':
-      s = __read_ranged(s, end, __f, __err, 2, 0, 59, r.tm_min);
+      s = __read_field(__alt, s, end, __f, __err, 2, 0, 59, r.tm_min);
       break;
     case 'n':
     case 't':
@@ -380,27 +712,27 @@ protected:
       s = parse(s, end, __f, __err, &r, "%H:%M");
       break;
     case 'S':
-      s = __read_ranged(s, end, __f, __err, 2, 0, 60, r.tm_sec);
+      s = __read_field(__alt, s, end, __f, __err, 2, 0, 60, r.tm_sec);
       break;
     case 'T':
     case 'X':
       s = parse(s, end, __f, __err, &r, "%H:%M:%S");
       break;
     case 'u':
-      s = __read_ranged(s, end, __f, __err, 1, 1, 7, __v);
+      s = __read_field(__alt, s, end, __f, __err, 1, 1, 7, __v);
       if (!(__err & ios_base::failbit))
         r.tm_wday = __v % 7;
       break;
     case 'U':
     case 'W':
     case 'V':
-      s = __read_ranged(s, end, __f, __err, 2, 0, 53, __v);
+      s = __read_field(__alt, s, end, __f, __err, 2, 0, 53, __v);
       break;
     case 'w':
-      s = __read_ranged(s, end, __f, __err, 1, 0, 6, r.tm_wday);
+      s = __read_field(__alt, s, end, __f, __err, 1, 0, 6, r.tm_wday);
       break;
     case 'y':
-      s = __read_ranged(s, end, __f, __err, 2, 0, 99, __v);
+      s = __read_field(__alt, s, end, __f, __err, 2, 0, 99, __v);
       if (!(__err & ios_base::failbit))
         r.tm_year = __v < 69 ? __v + 100 : __v;
       break;
@@ -437,8 +769,37 @@ protected:
 private:
   template <class, class>
   friend class time_get_byname;
+  friend struct ::__ycxx::__detail::__time_get_access;
   // A named locale's names and formats (time_get_byname's; null: the "C" locale's).
   const __ycxx::__detail::__time_data<__charT>* __named_ = nullptr;
+
+  // An era name of the named locale (k: its era, else -1).
+  iter_type __match_era(iter_type s, iter_type end, const ctype<__charT>& __ct, int& __k, bool& __eof) const {
+    const __ycxx::__detail::__time_data<__charT>* d = __named_;
+    return ::__ycxx::__detail::__time_match(s, end, __ct, d->__neras,
+                                            [d](int k, size_t& __len) { return d->__era_name(k, __len); }, __k, __eof);
+  }
+  // A number field: with alt (an O form in a locale with alternative digits), also one of those.
+  iter_type __read_field(bool __alt, iter_type s, iter_type end, ios_base& __f, ios_base::iostate& __err, int __max_digits,
+                         int __lo, int __hi, int& out) const {
+    if (__alt && s != end) {
+      const ctype<__charT>& __ct = use_facet<ctype<__charT>>(__f.getloc());
+      const char c = __ct.narrow(*s, 0);
+      if (c < '0' || c > '9') {
+        long long __v;
+        bool ok, __eof;
+        s = ::__ycxx::__detail::__time_read_alt(s, end, __ct, __named_, __max_digits, __v, ok, __eof);
+        if (__eof)
+          __err |= ios_base::eofbit;
+        if (!ok || __v < __lo || __v > __hi)
+          __err |= ios_base::failbit;
+        else
+          out = static_cast<int>(__v);
+        return s;
+      }
+    }
+    return __read_ranged(s, end, __f, __err, __max_digits, __lo, __hi, out);
+  }
 
   // Parses a named locale's format with get() (its conversions with do_get).
   iter_type __parse_format(iter_type s, iter_type end, ios_base& __f, ios_base::iostate& __err, tm* t,

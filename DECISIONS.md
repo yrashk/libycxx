@@ -831,7 +831,9 @@ under the same name. Otherwise it gets one alias template in `config.hpp`.
     [locale.money.get.virtuals]/2), sign position 0 gives the sign string `"()"`, and
     `curr_symbol()` is `currency_symbol`/`int_curr_symbol` unchanged (libstdc++'s choice;
     libc++ moves the space into the symbol). time_get reads the locale's day, month and AM/PM
-    names and its `%c %x %X %r` formats (`D_T_FMT` & co.); `get_date` reads the `%x` format;
+    names and its `%c %x %X %r` formats (`D_T_FMT` & co.), its eras (`ERA`; `%EC %Ey %EY`) and
+    era formats (`%Ec %Ex %EX`) and its alternative digits (every O form, `%OC` included: the
+    locales' own formats use it); `get_date` reads the `%x` format;
     `date_order()` is the order of `%x`'s fields. `codecvt::encoding()` is 1 for single-byte
     encodings, else 0 (a state-dependent encoding is not detected: the only probe, `mbtowc(0, 0,
     0)`, resets a state shared by all threads). messages opens catalogs with `catopen`
@@ -1254,10 +1256,10 @@ under the same name. Otherwise it gets one alias template in `config.hpp`.
     the scanner itself flag by flag, so their fields, `%S` fractions and a `%Z` inside them are
     recorded as if written in the format; `%EC` matches an era name and `%Ey` a year within it
     (year = the era's start year +/- (`%Ey` - its offset), POSIX `ERA` segments; without `%EC`,
-    `%Ey` is `%y`); `%OU %OW %OV %Ou` read the locale's alternative digits. Everything else
-    that depends on the locale (names, `%p`, `%EY`, the other O forms) is one call of
-    `tg.get(..., spec, mod)` on a `tm`, so a program's facet derived from `time_get_byname` is
-    still called for those.
+    `%Ey` is `%y`); every O form reads the locale's alternative digits or ASCII digits (also
+    `%OC`, which glibc's my_MM uses in its `%x`). The names, `%p` and `%EY` are one call of
+    `tg.get(..., spec, mod)` each on a `tm`, so a program's facet derived from
+    `time_get_byname` is still called for those.
   - *Any other facet* (a program's, derived from `time_get`): every locale-dependent flag,
     `%c %x %X %r` included, is one call of `tg.get(..., spec, mod)`; the fields it set are found
     by filling the `tm` with a sentinel first (-1200000: negative and a multiple of 12, so `%I`

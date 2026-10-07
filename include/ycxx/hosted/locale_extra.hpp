@@ -229,15 +229,15 @@ _It __time_read_era_year(_It s, _It end, const std::ctype<__charT>& __ct, const 
       if (!c.__alive)
         continue;
       const __time_era& e = d.__eras[k];
-      const __charT* f = __fmt(k);
+      const __charT* __f = __fmt(k);
       for (;;) {
         if (c.__name >= 0 && static_cast<std::size_t>(c.__name) == e.__name_len) {
           c.__name = -1;
           c.i += 3;
           continue;
         }
-        if (c.__name < 0 && c.i + 2 < e.__fmt_len && __ct.narrow(f[c.i], 0) == '%' &&
-            __ct.narrow(f[c.i + 1], 0) == 'E' && __ct.narrow(f[c.i + 2], 0) == 'C') {
+        if (c.__name < 0 && c.i + 2 < e.__fmt_len && __ct.narrow(__f[c.i], 0) == '%' &&
+            __ct.narrow(__f[c.i + 1], 0) == 'E' && __ct.narrow(__f[c.i + 2], 0) == 'C') {
           c.__name = 0;
           continue;
         }
@@ -248,9 +248,9 @@ _It __time_read_era_year(_It s, _It end, const std::ctype<__charT>& __ct, const 
         c.__alive = false;
         continue;
       }
-      if (c.__name < 0 && __ct.narrow(f[c.i], 0) == '%') {
-        const bool __ey = c.i + 2 < e.__fmt_len && __ct.narrow(f[c.i + 1], 0) == 'E' && __ct.narrow(f[c.i + 2], 0) == 'y';
-        const bool __y = c.i + 1 < e.__fmt_len && __ct.narrow(f[c.i + 1], 0) == 'Y';
+      if (c.__name < 0 && __ct.narrow(__f[c.i], 0) == '%') {
+        const bool __ey = c.i + 2 < e.__fmt_len && __ct.narrow(__f[c.i + 1], 0) == 'E' && __ct.narrow(__f[c.i + 2], 0) == 'y';
+        const bool __y = c.i + 1 < e.__fmt_len && __ct.narrow(__f[c.i + 1], 0) == 'Y';
         if (!__ey && !__y) {
           c.__alive = false; // a conversion an era format does not use
           continue;
@@ -275,9 +275,9 @@ _It __time_read_era_year(_It s, _It end, const std::ctype<__charT>& __ct, const 
         const __cand& c = __c[k];
         if (!c.__alive)
           continue;
-        const __charT* f = __fmt(k);
-        const bool __lit = c.__name >= 0 || __ct.narrow(f[c.i], 0) != '%';
-        const __charT __e = c.__name >= 0 ? __text[d.__eras[k].__name_pos + static_cast<std::size_t>(c.__name)] : f[c.i];
+        const __charT* __f = __fmt(k);
+        const bool __lit = c.__name >= 0 || __ct.narrow(__f[c.i], 0) != '%';
+        const __charT __e = c.__name >= 0 ? __text[d.__eras[k].__name_pos + static_cast<std::size_t>(c.__name)] : __f[c.i];
         if (__lit && __ct.tolower(__e) == __lc)
           __num_here = false;
       }
@@ -297,13 +297,13 @@ _It __time_read_era_year(_It s, _It end, const std::ctype<__charT>& __ct, const 
         __cand& c = __c[k];
         if (!c.__alive)
           continue;
-        const __charT* f = __fmt(k);
-        const bool __lit = c.__name >= 0 || __ct.narrow(f[c.i], 0) != '%';
+        const __charT* __f = __fmt(k);
+        const bool __lit = c.__name >= 0 || __ct.narrow(__f[c.i], 0) != '%';
         if (__lit || !__nok) {
           c.__alive = false;
           continue;
         }
-        c.__full = __ct.narrow(f[c.i + 1], 0) == 'Y';
+        c.__full = __ct.narrow(__f[c.i + 1], 0) == 'Y';
         if (!c.__full && __neg)
           c.__alive = false;
         c.__num = __v;
@@ -319,9 +319,9 @@ _It __time_read_era_year(_It s, _It end, const std::ctype<__charT>& __ct, const 
       __cand& c = __c[k];
       if (!c.__alive)
         continue;
-      const __charT* f = __fmt(k);
-      const bool __lit = c.__name >= 0 || __ct.narrow(f[c.i], 0) != '%';
-      const __charT __e = c.__name >= 0 ? __text[d.__eras[k].__name_pos + static_cast<std::size_t>(c.__name)] : f[c.i];
+      const __charT* __f = __fmt(k);
+      const bool __lit = c.__name >= 0 || __ct.narrow(__f[c.i], 0) != '%';
+      const __charT __e = c.__name >= 0 ? __text[d.__eras[k].__name_pos + static_cast<std::size_t>(c.__name)] : __f[c.i];
       if (!__lit || __ct.tolower(__e) != __lc) {
         c.__alive = false;
         continue;

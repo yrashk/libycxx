@@ -447,40 +447,40 @@ bool era_date(std::string_view s, long long& __key, long long& y) noexcept {
 // era); false (d unchanged) when s does not have that form.
 template <class __charT>
 bool add_era(locale_t __loc, std::string_view s, __ycxx::__detail::__time_data<__charT>& d) {
-  std::string_view f[6];
+  std::string_view __f[6];
   for (int k = 0; k < 5; ++k) {
     const std::size_t c = s.find(':');
     if (c == std::string_view::npos)
       return false;
-    f[k] = s.substr(0, c);
+    __f[k] = s.substr(0, c);
     s.remove_prefix(c + 1);
   }
-  f[5] = s;
-  if (f[0].size() != 1 || (f[0][0] != '+' && f[0][0] != '-') || f[1].empty() || f[4].empty())
+  __f[5] = s;
+  if (__f[0].size() != 1 || (__f[0][0] != '+' && __f[0][0] != '-') || __f[1].empty() || __f[4].empty())
     return false;
   long long __offset = 0;
-  for (char c : f[1]) {
+  for (char c : __f[1]) {
     if (c < '0' || c > '9' || __offset > 1'000'000)
       return false;
     __offset = __offset * 10 + (c - '0');
   }
   long long __start_key, __start_year, __end_key, __end_year;
-  if (!era_date(f[2], __start_key, __start_year))
+  if (!era_date(__f[2], __start_key, __start_year))
     return false;
   bool __later; // the end date follows the start date
-  if (f[3] == "+*")
+  if (__f[3] == "+*")
     __later = true;
-  else if (f[3] == "-*")
+  else if (__f[3] == "-*")
     __later = false;
-  else if (era_date(f[3], __end_key, __end_year))
+  else if (era_date(__f[3], __end_key, __end_year))
     __later = __end_key >= __start_key;
   else
     return false;
   if (d.__neras == static_cast<int>(sizeof d.__eras / sizeof d.__eras[0]))
     return false;
   // '+': the numbers grow from the start date towards the end date; '-': they shrink
-  const int __step = (f[0][0] == '+') == __later ? 1 : -1;
-  const std::string __name(f[4]), __fmt(f[5]);
+  const int __step = (__f[0][0] == '+') == __later ? 1 : -1;
+  const std::string __name(__f[4]), __fmt(__f[5]);
   const std::basic_string<__charT> __n = __convert(__loc, __name.c_str(), __charT());
   const std::basic_string<__charT> __ft = __convert(__loc, __fmt.c_str(), __charT());
   __ycxx::__detail::__time_era& e = d.__eras[d.__neras++];

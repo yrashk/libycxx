@@ -1,0 +1,3 @@
+# CTest tests that do not run against libycxx, as "<test regex> | <category> | <reason>
+# [| <conditions>]" (tools/lib/realworld.py; the regex matches the whole test name).
+TransformTest | compiler-bug | its program is not built with GCC (build-skip.txt: an internal compiler error of GCC 16.2 at -O1) | gcc

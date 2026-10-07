@@ -282,6 +282,7 @@ void __check_locale_name(const char* name, const char* what);
 // facets read from it, computed when it is opened).
 struct __named_locale;
 struct __named_tag {};
+struct __collate_access; // src/hosted/locale_named.cpp: a collate_byname's C library locale
 // The C library's locale `name` for category cat (one std::locale::category bit). name may be ""
 // (the environment's, [locale.cons]/4) or a composite name (its part for cat). Returns null for
 // the names with the classic semantics ("C", "POSIX", "C.UTF-8"); throws runtime_error, naming
@@ -1068,6 +1069,7 @@ protected:
   long do_hash(const char* __low, const char* __high) const override;
 
 private:
+  friend struct ::__ycxx::__detail::__collate_access;
   __ycxx::__detail::__named_locale* __named_;
 };
 template <>
@@ -1085,6 +1087,7 @@ protected:
   long do_hash(const wchar_t* __low, const wchar_t* __high) const override;
 
 private:
+  friend struct ::__ycxx::__detail::__collate_access;
   __ycxx::__detail::__named_locale* __named_;
 };
 

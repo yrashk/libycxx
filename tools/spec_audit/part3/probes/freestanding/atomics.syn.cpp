@@ -2,7 +2,7 @@
 // One check per line (see gen.py); the runner maps diagnostics to the check IDs below.
 #include <atomic>
 #define SPEC_PROBE_atomic
-#include "../probe_support.hpp"
+#include "../../probe_support.hpp"
 namespace p0 { using namespace std; using std::memory_order; } // atomics.syn#1 presence
 namespace p1 { using namespace std; static_assert(spec_probe::same<decltype(std::memory_order_relaxed), const memory_order>); } // atomics.syn#2 var
 namespace p2 { using namespace std; static_assert(spec_probe::same<decltype(std::memory_order_acquire), const memory_order>); } // atomics.syn#3 var

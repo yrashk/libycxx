@@ -254,6 +254,13 @@ PLACEHOLDERS = {
 
 
 # Declarations the draft makes optional or implementation-defined: (subclause, name) -> why.
+# Single checks whose sample cannot be right (ID -> why); their numbers stay taken.
+SKIP_IDS = {
+    "re.syn#46": "regex_search(const basic_string&, match_results<string::const_iterator, Allocator>&, ...): as re.syn#29",
+    "re.syn#29": "regex_match(const basic_string&, match_results<string::const_iterator, Allocator>&, ...): the "
+                 "area's Allocator sample is allocator<sub_match<const char*>>",
+}
+
 SKIP = {
     ("exec.snd.concepts", "catch"): "not a declaration (code of a consteval function body)",
     ("task.promise", "return_void"): "declared only when T is void ([task.promise]/1); the sample is task<int>",

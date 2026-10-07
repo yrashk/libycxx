@@ -213,7 +213,13 @@ def parse(text):
     lone = {ln for ln in expos_lines if first_on_line[ln] == EXPOS}
     toks_noexp = [t for t in toks]
     out = []
-    _seq(toks_noexp, 0, [], [], "public", out, expos_lines, lone)
+    # `// all freestanding` before the namespace: every declaration of the block
+    whole = toks and toks[0] == "\x04freestanding\x05"
+    _seq(toks_noexp, 1 if whole else 0, [], [], "public", out, expos_lines, lone)
+    if whole:
+        for d in out:
+            if d.fs is None:
+                d.fs = "freestanding"
     return out
 
 
@@ -648,7 +654,7 @@ def _fun_rest(d, c, i):
             pre = pre[:k] + pre[e:]
             d.info["explicit_cond"] = True
     d.info["specs"] = [x for x in pre if x in SPECIFIERS]
-    d.info["ret"] = [x for x in pre if x not in SPECIFIERS]
+    d.info["ret"] = [x for x in pre if x not in SPECIFIERS and not x.startswith('"')]   # extern "C"
     quals, k = [], 0
     while k < len(rest) and rest[k] in ("const", "volatile", "&", "&&"):
         quals.append(str(rest[k]))

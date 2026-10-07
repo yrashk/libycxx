@@ -9,6 +9,7 @@
 #pragma once
 
 #include <ycxx/config.hpp>
+#include <ycxx/core/version.hpp>
 #include <ycxx/core/bit.hpp>
 
 #define __STDC_VERSION_STDBIT_H__ 202311L

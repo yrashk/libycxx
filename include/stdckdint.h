@@ -9,6 +9,7 @@
 #pragma once
 
 #include <ycxx/config.hpp>
+#include <ycxx/core/version.hpp>
 #include <ycxx/core/type_traits.hpp>
 
 #define __STDC_VERSION_STDCKDINT_H__ 202311L

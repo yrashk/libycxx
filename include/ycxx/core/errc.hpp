@@ -13,8 +13,8 @@
 
 namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
 // The errno number of one meaning: Linux's or Darwin's.
-consteval int __errno_number(int __linux_value, int __darwin_value) noexcept {
-  return __cfg::__darwin ? __darwin_value : __linux_value;
+consteval int __errno_number(int __linux_value, int __y_darwin_value) noexcept {
+  return __cfg::__darwin ? __y_darwin_value : __linux_value;
 }
 // The values of the [depr.cerrno] enumerators, by name (naming the deprecated enumerators in the
 // library's own checks would warn).

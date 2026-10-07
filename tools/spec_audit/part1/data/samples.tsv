@@ -1,0 +1,107 @@
+# The class type whose members the name probes look up, for each class scope of entities.tsv
+# (a class template gets a specialization; "-" means the scope is not probed by name, with why).
+# scope	sample	[note]
+std::allocation_result	std::allocation_result<int*>
+std::allocator	std::allocator<int>
+std::allocator_traits	std::allocator_traits<std::allocator<int>>
+std::any	std::any
+std::bad_alloc	std::bad_alloc
+std::bad_any_cast	std::bad_any_cast
+std::bad_array_new_length	std::bad_array_new_length
+std::bad_cast	std::bad_cast
+std::bad_exception	std::bad_exception
+std::bad_expected_access	std::bad_expected_access<int>
+std::bad_expected_access<void>	std::bad_expected_access<void>
+std::bad_function_call	std::bad_function_call
+std::bad_optional_access	std::bad_optional_access
+std::bad_typeid	std::bad_typeid
+std::bad_variant_access	std::bad_variant_access
+std::bad_weak_ptr	std::bad_weak_ptr
+std::basic_common_reference<pair <T1, T2>, pair <U1, U2>, TQual, UQual>	std::basic_common_reference<std::pair<int, int>, std::pair<long, long>, std::type_identity_t, std::type_identity_t>
+std::basic_stacktrace	std::stacktrace
+std::bitset	std::bitset<8>
+std::bitset::reference	std::bitset<8>::reference
+std::boyer_moore_horspool_searcher	std::boyer_moore_horspool_searcher<const char*>
+std::boyer_moore_searcher	std::boyer_moore_searcher<const char*>
+std::common_comparison_category	std::common_comparison_category<std::strong_ordering>
+std::common_type<pair <T1, T2>, pair <U1, U2>>	std::common_type<std::pair<int, int>, std::pair<long, long>>
+std::compare_three_way	std::compare_three_way
+std::constant_wrapper	std::constant_wrapper<1>
+std::contracts::contract_violation	-	not derivable: its constructors are implementation-only; members checked in probes/support.contract.cpp
+std::copyable_function<R (ArgTypes ...)cv ?noexcept (?)>	std::copyable_function<int(int) const noexcept>
+std::coroutine_handle	std::coroutine_handle<int>
+std::coroutine_handle<noop_coroutine_promise>	std::coroutine_handle<std::noop_coroutine_promise>
+std::coroutine_handle<void>	std::coroutine_handle<void>
+std::default_delete	std::default_delete<int>
+std::default_delete<T []>	std::default_delete<int[]>
+std::default_searcher	std::default_searcher<const char*>
+std::enable_shared_from_this	std::enable_shared_from_this<int>
+std::error_category	std::error_category
+std::error_code	std::error_code
+std::error_condition	std::error_condition
+std::exception	std::exception
+std::expected	std::expected<int, long>
+std::expected<T, E>	std::expected<void, long>
+std::formatter<error_code, charT>	std::formatter<std::error_code, char>
+std::function<R (ArgTypes ...)>	std::function<int(int)>
+std::function_ref<R (ArgTypes ...)cv noexcept (?)>	std::function_ref<int(int) const noexcept>
+std::indirect	std::indirect<int>
+std::initializer_list	std::initializer_list<int>
+std::inout_ptr_t	std::inout_ptr_t<int*, int**>
+std::integer_sequence	std::integer_sequence<int>
+std::integral_constant	std::integral_constant<int, 1>
+std::meta::access_context	std::meta::access_context
+std::meta::data_member_options	std::meta::data_member_options
+std::meta::exception	-	GCC 16 makes a class derived from it consteval-only; members checked in probes/meta.reflection.exception.cpp
+std::move_only_function<R (ArgTypes ...)cv ?noexcept (?)>	std::move_only_function<int(int) const noexcept>
+std::nested_exception	std::nested_exception
+std::numeric_limits	std::numeric_limits<int>
+std::numeric_limits<bool>	std::numeric_limits<bool>
+std::optional	std::optional<int>
+std::optional<T &>	std::optional<int&>
+std::out_ptr_t	std::out_ptr_t<int*, int**>
+std::owner_equal	std::owner_equal
+std::owner_hash	std::owner_hash
+std::owner_less<shared_ptr <T>>	std::owner_less<std::shared_ptr<int>>
+std::owner_less<void>	std::owner_less<void>
+std::owner_less<weak_ptr <T>>	std::owner_less<std::weak_ptr<int>>
+std::pair	std::pair<int, long>
+std::partial_ordering	std::partial_ordering
+std::pmr::memory_resource	std::pmr::memory_resource
+std::pmr::monotonic_buffer_resource	std::pmr::monotonic_buffer_resource
+std::pmr::polymorphic_allocator	std::pmr::polymorphic_allocator<int>
+std::pmr::pool_options	std::pmr::pool_options
+std::pmr::synchronized_pool_resource	std::pmr::synchronized_pool_resource
+std::pmr::unsynchronized_pool_resource	std::pmr::unsynchronized_pool_resource
+std::pointer_tag_pair	std::pointer_tag_pair<int*, 1>
+std::pointer_traits<T *>	std::pointer_traits<int*>
+std::polymorphic	std::polymorphic<int>
+std::ranges::equal_to	std::ranges::equal_to
+std::ranges::greater	std::ranges::greater
+std::ranges::greater_equal	std::ranges::greater_equal
+std::ranges::less	std::ranges::less
+std::ranges::not_equal_to	std::ranges::not_equal_to
+std::ratio	std::ratio<1, 2>
+std::reference_wrapper	std::reference_wrapper<int>
+std::scoped_allocator_adaptor	std::scoped_allocator_adaptor<std::allocator<int>>
+std::scoped_allocator_adaptor::rebind	std::scoped_allocator_adaptor<std::allocator<int>>::rebind<long>
+std::shared_ptr	std::shared_ptr<int>
+std::source_location	std::source_location
+std::stacktrace_entry	std::stacktrace_entry
+std::strong_ordering	std::strong_ordering
+std::suspend_always	std::suspend_always
+std::suspend_never	std::suspend_never
+std::system_error	std::system_error
+std::tuple	std::tuple<int, long>
+std::tuple_element<0, const pointer_tag_pair <Ptr, BitsRequested, TagT>>	std::tuple_element<0, const std::pointer_tag_pair<int*, 1>>
+std::tuple_element<0, pointer_tag_pair <Ptr, BitsRequested, TagT>>	std::tuple_element<0, std::pointer_tag_pair<int*, 1>>
+std::tuple_element<1, const pointer_tag_pair <Ptr, BitsRequested, TagT>>	std::tuple_element<1, const std::pointer_tag_pair<int*, 1>>
+std::tuple_element<1, pointer_tag_pair <Ptr, BitsRequested, TagT>>	std::tuple_element<1, std::pointer_tag_pair<int*, 1>>
+std::type_index	std::type_index
+std::type_info	std::type_info
+std::unexpected	std::unexpected<int>
+std::unique_ptr	std::unique_ptr<int>
+std::unique_ptr<T [], D>	std::unique_ptr<int[]>
+std::variant	std::variant<int, long>
+std::weak_ordering	std::weak_ordering
+std::weak_ptr	std::weak_ptr<int>

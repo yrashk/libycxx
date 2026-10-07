@@ -31,7 +31,10 @@
 #      links with no undefined symbol at the higher-half address. Booting it in QEMU (limine/run.sh)
 #      needs qemu-system-x86_64, xorriso and Limine's binary release: run with YCXX_TEST_QEMU=1
 #      (fetches Limine when missing), or automatically when the tools are installed and Limine is
-#      already in build/limine-v11.4.1-binary.
+#      already in build/limine-v11.4.1-binary;
+#  12. building projects that know nothing about libycxx against the installed prefix
+#      (tests/integration/run.sh, docs/BUILDING_PROJECTS.md): the toolchain file, CC/CXX, make with
+#      ycxx-c++ and with pkg-config, a moved installation, activate.sh --use, Meson, autotools.
 #
 #   tests/cmake/run.sh [gcc] [clang]        (default: both)
 # Compilers come from the YCXX_* variables (tools/toolchain/activate.*), else g++-16 /
@@ -239,6 +242,10 @@ for c in $compilers; do
   else
     bad $c "visibility: configure/build (see $log)"
   fi
+
+  # 12. projects that know nothing about libycxx, built against the installed prefix
+  ui_section "Building existing projects with $c (tests/integration)"
+  sh "$repo/tests/integration/run.sh" $c "$d/prefix" "$d/integration" || fail=1
 done
 
 # 11. the hosted layers: Example A (host program, own providers), its absent-layer programs, and

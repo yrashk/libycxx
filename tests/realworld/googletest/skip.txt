@@ -1,2 +1,4 @@
 # CTest tests that do not run against libycxx, as "<test regex> | <category> | <reason>
 # [| <conditions>]" (tools/lib/realworld.py; the regex matches the whole test name).
+gmock-spec-builders_test|gmock_no_rtti_test | environment | AllowLeakTest.CanBeCalledAfterOnCall leaks a mock object on purpose (Mock::AllowLeak), which LeakSanitizer reports at exit | asan
+googletest-death-test-test | environment | ExitStatusPredicateTest.KilledBySignal raises SIGSEGV in a child and expects to be killed by it; AddressSanitizer's SIGSEGV handler turns the signal into an exit with status 1 | asan

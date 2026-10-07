@@ -1,0 +1,105 @@
+# The transitive includes of libycxx's public C++ headers (DECISIONS §19), applied by
+# tools/gen_transitive_includes.py (which writes the block at the end of each header and checks
+# this file against the probe results in tools/data/transitive-probe/).
+#
+#   <H>: <G> <G> ...          baseline: libstdc++ and libc++ both provide each <G>'s primary probe
+#                             item after including only <H> (tools/probe_transitive.py)
+#   <H>: <G> | <item> <why>   added: <item>, a probe item of <G>, is relied on (a real-world
+#                             project, an external suite's test); libstdc++ or libc++ provides it
+#                             after <H>
+#   <H>: -<G> | <why>         a baseline pair not provided, with the reason
+#   *: -<G> ... | <why>       the same for every <H>
+#
+# A header of the hosted layer (tools/headers.py HOSTED) is included only under _YCXX_HOSTED.
+# Refresh: tools/probe_transitive.py, then tools/gen_transitive_includes.py --propose.
+
+*: -chrono -execution -filesystem -format -locale -meta -regex | heavy (each 0.6-1.9 s to compile alone, DECISIONS §19); no project or suite test relies on getting them transitively
+
+algorithm: bit compare concepts cstddef limits new optional type_traits utility
+any: initializer_list type_traits typeinfo
+array: algorithm cctype concepts cstddef cwchar limits stdexcept type_traits utility
+atomic: compare concepts cstddef cstdint type_traits
+barrier: compare concepts cstdint limits memory type_traits
+bit: type_traits
+bitset: algorithm bit cctype compare concepts cstddef cstdio cwchar initializer_list limits stdexcept string_view tuple type_traits utility
+charconv: cerrno concepts cstddef type_traits
+chrono: algorithm array bit cctype cerrno charconv clocale concepts cstddef cstdint cstdio cstdlib ctime cwchar cwctype initializer_list ios iosfwd istream iterator limits memory optional ostream ratio sstream stdexcept streambuf string string_view system_error text_encoding tuple type_traits typeinfo utility
+cmath: limits type_traits
+compare: concepts type_traits
+complex: algorithm bit cctype cerrno charconv clocale cmath compare concepts cstddef cstdint cstdio cstdlib cwchar cwctype initializer_list ios iosfwd istream limits ostream sstream stdexcept streambuf string string_view system_error text_encoding tuple type_traits typeinfo utility
+concepts: type_traits
+condition_variable: algorithm atomic cerrno compare concepts cstddef cstdint ctime initializer_list iosfwd limits memory mutex ratio stop_token type_traits typeinfo utility
+coroutine: compare concepts type_traits
+deque: algorithm cctype concepts cstddef cwchar limits stdexcept tuple type_traits utility
+deque: memory | memory:std::unique_ptr libc++ concept.equalitycomparable/equality_comparable_with.compile.pass.cpp
+exception: typeinfo
+execution: type_traits
+execution: cstdio | cstdio:EOF provided with the character traits before §19 (ycxx/core/char_traits.hpp)
+expected: concepts initializer_list type_traits
+filesystem: algorithm bit cctype cerrno clocale concepts cstddef cstdint cstdio ctime cwchar cwctype initializer_list iomanip ios iosfwd iterator limits memory ratio stdexcept string string_view system_error text_encoding tuple type_traits typeinfo utility
+flat_map: algorithm cctype concepts cstddef cstdint cwchar limits new optional stdexcept tuple type_traits utility vector
+flat_set: algorithm cctype concepts cstddef cwchar limits new optional stdexcept tuple type_traits utility vector
+format: algorithm array bit cctype cerrno charconv clocale concepts cstddef cstdint cstdio cstdlib cwchar cwctype initializer_list iosfwd iterator limits optional stdexcept string string_view text_encoding tuple type_traits typeinfo utility
+format: span | span:std::span libstdc++ std/format/pr121765.cc
+forward_list: algorithm concepts cstddef limits tuple type_traits utility
+fstream: algorithm bit cctype cerrno charconv clocale compare concepts cstddef cstdint cstdlib cwchar cwctype initializer_list ios iosfwd iterator limits stdexcept streambuf string string_view system_error text_encoding tuple type_traits typeinfo utility
+functional: algorithm array cctype compare concepts cstddef cwchar initializer_list iosfwd limits stdexcept tuple type_traits typeinfo unordered_map utility
+future: algorithm cctype cerrno charconv compare concepts condition_variable cstddef cstdint cstdio ctime cwchar cwctype exception initializer_list iosfwd limits memory mutex ratio stdexcept string string_view system_error thread tuple type_traits typeinfo utility
+generator: cstdio | cstdio:EOF provided with the character traits before §19 (ycxx/core/char_traits.hpp)
+iomanip: algorithm bit cctype cerrno clocale compare concepts cstddef cstdint cstdio cstdlib cwchar cwctype initializer_list ios iosfwd limits stdexcept string string_view system_error text_encoding tuple type_traits typeinfo utility
+ios: algorithm bit cctype cerrno clocale compare concepts cstddef cstdint cstdio cstdlib cwchar cwctype initializer_list limits stdexcept string string_view system_error text_encoding tuple type_traits typeinfo utility
+iostream: algorithm array bit cctype cerrno charconv clocale compare concepts cstddef cstdint cstdio cstdlib cwchar cwctype initializer_list iosfwd iterator limits optional stdexcept string string_view system_error text_encoding tuple type_traits typeinfo utility
+istream: algorithm bit cctype cerrno charconv clocale compare concepts cstddef cstdint cstdio cstdlib cwchar cwctype initializer_list iosfwd limits stdexcept string string_view system_error text_encoding tuple type_traits typeinfo utility
+iterator: algorithm cctype cstddef cstdint cstdio cwchar initializer_list iosfwd limits type_traits utility
+iterator: streambuf | streambuf:std::streambuf libc++ stream.iterators/*/types.pass.cpp name std::streambuf after <iterator>
+latch: compare concepts type_traits
+list: algorithm concepts cstddef limits tuple type_traits utility
+locale: algorithm bit cctype cerrno charconv clocale compare concepts cstddef cstdint cstdio cstdlib cwchar cwctype initializer_list ios iosfwd iterator limits stdexcept streambuf string string_view system_error text_encoding tuple type_traits typeinfo utility
+map: algorithm cctype concepts cstddef cwchar limits stdexcept tuple type_traits utility
+map: memory | memory:std::unique_ptr libc++ concept.equalitycomparable/equality_comparable_with.compile.pass.cpp
+mdspan: algorithm array cctype compare concepts cstddef cwchar initializer_list limits span stdexcept type_traits utility
+memory: algorithm concepts cstddef cstdint initializer_list iosfwd limits new tuple type_traits typeinfo utility
+memory: cstdio | cstdio:EOF provided with the character traits before §19 (ycxx/core/char_traits.hpp)
+memory: cstdlib | cstdlib:std::abort Catch2 v2 (magic_enum) calls std::abort after <memory>
+memory_resource: cerrno compare concepts cstddef cstdint ctime limits mutex ratio tuple type_traits
+memory_resource: initializer_list | initializer_list:range-for libstdc++ 20_util/(un)synchronized_pool_resource/118681.cc
+mutex: cerrno compare concepts cstdint ctime limits ratio tuple type_traits
+numeric: concepts initializer_list limits type_traits
+optional: concepts initializer_list limits type_traits
+ostream: algorithm array bit cctype cerrno charconv clocale compare concepts cstddef cstdint cstdio cstdlib cwchar cwctype initializer_list iosfwd iterator limits optional stdexcept string string_view system_error text_encoding tuple type_traits typeinfo utility
+print: algorithm array bit cctype cerrno charconv clocale compare concepts cstddef cstdint cstdio cstdlib cwchar cwctype initializer_list iosfwd iterator limits optional stdexcept string string_view text_encoding tuple type_traits typeinfo utility
+queue: algorithm cctype concepts cstddef cstdint cstdio cwchar deque iosfwd iterator limits stdexcept string string_view tuple type_traits utility
+random: algorithm cctype cmath compare concepts cstddef cstdint cstdio cwchar iosfwd iterator limits numeric stdexcept string string_view tuple type_traits utility vector
+ranges: algorithm array cctype concepts cstddef cstdint cstdio cwchar iosfwd limits optional span stdexcept tuple type_traits utility variant
+ranges: string | string:std::string libstdc++ std/ranges/adaptors/93978.cc
+ratio: cstdint
+regex: algorithm bit cctype clocale concepts cstddef cstdint cstdio cstdlib cwchar cwctype deque iosfwd iterator limits memory stdexcept string_view text_encoding tuple type_traits typeinfo utility vector
+scoped_allocator: compare concepts limits tuple type_traits utility
+semaphore: cerrno compare concepts cstdint ctime limits ratio type_traits
+set: algorithm concepts cstddef limits tuple type_traits utility
+shared_mutex: cerrno compare concepts cstdint ctime limits mutex ratio type_traits
+simd: cstdio | cstdio:EOF provided with the character traits before §19 (ycxx/core/char_traits.hpp)
+span: concepts cstddef initializer_list limits stdexcept type_traits
+spanstream: cstdio | cstdio:EOF provided with the character traits before §19 (ycxx/core/char_traits.hpp)
+sstream: algorithm bit cctype cerrno charconv clocale compare concepts cstddef cstdint cstdio cstdlib cwchar cwctype initializer_list ios iosfwd limits stdexcept streambuf string_view system_error text_encoding tuple type_traits typeinfo utility
+stack: algorithm cctype concepts cstddef cstdint cwchar deque iterator limits stdexcept tuple type_traits utility
+stacktrace: cstdio | cstdio:EOF provided with the character traits before §19 (ycxx/core/char_traits.hpp)
+stop_token: atomic cerrno compare concepts cstdint ctime iosfwd limits ratio type_traits
+streambuf: algorithm bit cctype cerrno clocale compare concepts cstddef cstdint cstdio cstdlib cwchar initializer_list iosfwd limits stdexcept string string_view system_error text_encoding tuple type_traits typeinfo utility
+string: algorithm cctype concepts cstddef cstdio cwchar iosfwd limits stdexcept string_view tuple type_traits utility
+string: cstdlib | cstdlib:std::abort Catch2 (catch2, libcoro and magic_enum vendor it) calls std::abort after <string>
+string: cerrno | cerrno:errno spdlog (os-inl.h) and libstdc++ 21_strings/basic_string/numeric_conversions/char/errno.cc use errno after <string>
+string_view: algorithm cctype concepts cstddef cstdio cwchar initializer_list iosfwd limits stdexcept type_traits utility
+syncstream: algorithm array bit cctype cerrno charconv clocale compare concepts cstddef cstdint cstdio cstdlib ctime cwchar cwctype initializer_list ios iosfwd iterator limits mutex optional ratio stdexcept streambuf string string_view system_error text_encoding tuple type_traits typeinfo utility
+syncstream: sstream | sstream:std::stringbuf libstdc++ 27_io/basic_ostream/emit/1.cc
+system_error: algorithm cctype cerrno concepts cstddef cstdio cwchar initializer_list iosfwd limits stdexcept string string_view tuple type_traits utility
+text_encoding: algorithm bit cctype compare concepts cstddef cstdint cstdio cwchar initializer_list iosfwd limits stdexcept string_view type_traits utility
+thread: algorithm array atomic bit cctype cerrno charconv clocale concepts cstddef cstdint cstdio cstdlib ctime cwchar cwctype initializer_list iosfwd iterator limits memory ratio stdexcept stop_token string string_view text_encoding tuple type_traits typeinfo utility
+tuple: concepts limits type_traits
+typeindex: concepts type_traits
+unordered_map: algorithm concepts cstddef limits stdexcept tuple type_traits utility
+unordered_set: algorithm concepts cstddef limits tuple type_traits utility
+utility: compare concepts type_traits
+valarray: algorithm bit cmath compare concepts cstddef initializer_list limits type_traits utility
+variant: concepts initializer_list type_traits
+vector: algorithm cctype concepts cstddef cstdio cwchar iosfwd limits stdexcept string string_view tuple type_traits utility

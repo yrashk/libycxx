@@ -162,6 +162,8 @@ set(YCXX_CLIB_SOURCES
   # the demangler, for <stacktrace> and <cxxabi.h>'s abi::__cxa_demangle (malloc'd results)
   src/hosted/demangle.cpp
   src/hosted/cxa_demangle.cpp
+  # the string inserters, extractors and getline for char and wchar_t ([string.io])
+  src/hosted/string_io.cpp
   src/hosted/string.cpp
   src/hosted/ctime.cpp
   src/hosted/strfrom.cpp

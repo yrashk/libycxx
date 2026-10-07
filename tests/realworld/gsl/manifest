@@ -3,7 +3,7 @@ url = https://github.com/microsoft/GSL.git
 ref = v5.0.1
 commit = fbd20b8e8c52cba04dbc869cc9068a7800a5665d
 exercises = span, contracts, exceptions, iterators
-deps = googletest
-# Its tests find GoogleTest with pkg-config and use only the libraries it names, relying on the
-# headers being in a default include directory: libycxx's build of GoogleTest is in the prefix.
-configure = -DGSL_TEST=ON -DGSL_CXX_STANDARD=20 -DCMAKE_CXX_FLAGS=-isystem@PREFIX@/include
+# Its tests take GoogleTest from pkg-config when there is one (and then only its libraries, not
+# its include directory), else they clone GoogleTest v1.14.0 and build it inside the project
+# like the rest: no pkg-config here.
+configure = -DGSL_TEST=ON -DGSL_CXX_STANDARD=20 -DPKG_CONFIG_EXECUTABLE=/nonexistent

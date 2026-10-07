@@ -388,6 +388,7 @@
 #  define __cpp_lib_hardened_valarray 202502L
 #  define __cpp_lib_hardened_common_iterator 202506L
 #  define __cpp_lib_hardened_counted_iterator 202506L
+#  define __cpp_lib_hardened_view_interface 202506L
 #endif
 
 // <ratio> <numbers> <cmath> <complex> <valarray>

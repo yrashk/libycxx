@@ -312,6 +312,7 @@ Unix Makefiles) and with real projects ([Verification](#verification)):
 | Shared libraries, RPATH | work; see [Shared libraries](#shared-libraries). On Linux the wrapper adds `-Wl,-rpath,<GCC 16's lib64>` (its `libgcc_s.so.1`); `cmake --install` keeps it next to the project's own `INSTALL_RPATH` (`$ORIGIN/../lib:/opt/gcc-16/lib64`) |
 | `install(EXPORT)` and a consumer with `find_package` | work (the consumer is configured with the same toolchain file) |
 | Ninja, Unix Makefiles | both |
+| C++20 module scanning (CMake 3.28+, a target at C++20 or later, Ninja) | with Clang, CMake runs `clang-scan-deps`, which it looks for next to the compiler: the toolchain file of a Clang build names the compiler's own (`CMAKE_CXX_COMPILER_CLANG_SCAN_DEPS`). It reads the command as written, without the wrapper's flags, which is enough to find module imports; for `import std;` use `ycxx::modules` ([Modules](#modules-import-std)) |
 | `CMAKE_EXPORT_COMPILE_COMMANDS` | the commands name `ycxx-c++`: see [IDEs](#ides-compile_commandsjson-and-clangd) |
 | `CMAKE_CXX_COMPILER_LAUNCHER=ccache`, `target_precompile_headers` | work |
 
@@ -749,8 +750,8 @@ By hand (commands as in the sections above):
 
 | Project | How | GCC | Clang |
 |---|---|---|---|
-| {fmt} 12.2.0, `FMT_TEST=ON` | installed toolchain file only | see below | see below |
-| GoogleTest v1.18.0 installed to a prefix, then EnTT v4.0.0 (`ENTT_FIND_GTEST_PACKAGE=ON`) | toolchain file, `CMAKE_PREFIX_PATH` | see below | see below |
+| {fmt} 12.2.0, `FMT_TEST=ON` | installed toolchain file only | 21/21 tests pass; 26 binaries OK | 21/21 pass; 26 binaries OK |
+| GoogleTest v1.18.0 installed to a prefix, then EnTT v4.0.0 (`ENTT_FIND_GTEST_PACKAGE=ON`, `GTest_DIR` found in the prefix) | toolchain file, `CMAKE_PREFIX_PATH` | 15/15 tests pass; 19 binaries OK | 15/15 pass; 19 binaries OK (after the toolchain file learned to name `clang-scan-deps`: EnTT is C++20 and was scanned) |
 | toml++ v3.4.0, Meson tests | Meson native file, `CXXFLAGS="-include cstdlib"` | 9/9 test runs pass | 9/9 pass |
 | {fmt} 12.2.0 from ConanCenter + `examples/package-managers/app` | Conan profile `ycxx` | builds, runs, `ycxx-check-binary` OK | not run |
 | local overlay port + app | vcpkg triplet `x64-linux-ycxx` | builds, runs, OK | not run |

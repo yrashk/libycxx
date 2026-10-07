@@ -120,6 +120,21 @@ include=$prefix/${YCXX_INSTALL_INCLUDEDIR} libdir=$prefix/${CMAKE_INSTALL_LIBDIR
 # try_compile checks and the FetchContent projects it builds. ExternalProject builds need it passed
 # on (-DCMAKE_TOOLCHAIN_FILE=${CMAKE_TOOLCHAIN_FILE}).
 ]=])
+  # Clang: CMake scans C++20 sources for module dependencies with clang-scan-deps, which it looks
+  # for next to the compiler; ycxx-c++ has none next to it, so name the compiler's own. (It sees
+  # the command line as written, without the wrapper's flags: enough to find module imports.)
+  set(scan "")
+  if(family STREQUAL "clang")
+    get_filename_component(cxx_dir "${CMAKE_CXX_COMPILER}" DIRECTORY)
+    get_filename_component(cxx_real "${CMAKE_CXX_COMPILER}" REALPATH)
+    get_filename_component(cxx_real_dir "${cxx_real}" DIRECTORY)
+    string(REGEX MATCH "^[0-9]+" clang_major "${CMAKE_CXX_COMPILER_VERSION}")
+    find_program(scan_deps NAMES clang-scan-deps-${clang_major} clang-scan-deps
+                 HINTS "${cxx_dir}" "${cxx_real_dir}" NO_CACHE)
+    if(scan_deps)
+      set(scan "set(CMAKE_CXX_COMPILER_CLANG_SCAN_DEPS \"${scan_deps}\" CACHE FILEPATH \"clang-scan-deps of libycxx's Clang\")\n")
+    endif()
+  endif()
   set(osx "")
   if(APPLE AND CMAKE_OSX_SYSROOT)
     set(osx "if(NOT CMAKE_OSX_SYSROOT)\n  set(CMAKE_OSX_SYSROOT \"${CMAKE_OSX_SYSROOT}\")\nendif()\n")
@@ -127,13 +142,13 @@ include=$prefix/${YCXX_INSTALL_INCLUDEDIR} libdir=$prefix/${CMAKE_INSTALL_LIBDIR
   file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/toolchain.cmake "${toolchain_head}
 set(CMAKE_CXX_COMPILER \"${CMAKE_CURRENT_BINARY_DIR}/bin/ycxx-c++\")
 set(CMAKE_C_COMPILER \"${CMAKE_CURRENT_BINARY_DIR}/bin/ycxx-cc\")
-${osx}")
+${scan}${osx}")
   file(WRITE ${stage}/toolchain.cmake "${toolchain_head}
 get_filename_component(_ycxx_prefix \"\${CMAKE_CURRENT_LIST_DIR}/${cmake_to_prefix}\" ABSOLUTE)
 set(CMAKE_CXX_COMPILER \"\${_ycxx_prefix}/${CMAKE_INSTALL_BINDIR}/ycxx-c++\")
 set(CMAKE_C_COMPILER \"\${_ycxx_prefix}/${CMAKE_INSTALL_BINDIR}/ycxx-cc\")
 unset(_ycxx_prefix)
-${osx}")
+${scan}${osx}")
 
   # pkg-config, for the plain compiler (CXX=${CMAKE_CXX_COMPILER}).
   if(APPLE)

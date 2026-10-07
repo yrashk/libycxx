@@ -565,9 +565,9 @@ class __re_compiler {
     s.__multi.clear();
     for (std::size_t i = 1; i < __elems.size(); ++i) // insertion sort: longest first, stable
       for (std::size_t __j = i; __j > 0 && __elems[__j - 1].size() < __elems[__j].size(); --__j) {
-        string_type __t = static_cast<string_type&&>(__elems[__j]);
+        string_type __tmp = static_cast<string_type&&>(__elems[__j]);
         __elems[__j] = static_cast<string_type&&>(__elems[__j - 1]);
-        __elems[__j - 1] = static_cast<string_type&&>(__t);
+        __elems[__j - 1] = static_cast<string_type&&>(__tmp);
       }
     const bool __neg = s.negate;
     std::vector<int> __alts;

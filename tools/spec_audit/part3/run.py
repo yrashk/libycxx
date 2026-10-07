@@ -34,6 +34,17 @@ def compile_one(cc, path, libdir):
     return p.returncode, p.stdout
 
 
+def compile_freestanding(cc, path):
+    """As tools/check_freestanding.sh compiles a core header: no C library, no hosted headers."""
+    cxx = os.environ.get("YCXX_GXX", "g++-16") if cc == "gcc" else os.environ.get("YCXX_CLANGXX", "clang++-23")
+    inc = subprocess.run([cxx, "-print-file-name=include"], capture_output=True, text=True).stdout.strip()
+    cmd = [cxx, "-std=c++26", "-ffreestanding", "-nostdinc", "-nostdinc++", "-isystem", str(REPO / "include"),
+           "-isystem", inc, "-fno-exceptions", "-fno-rtti", "-fsyntax-only", "-w",
+           "-fmax-errors=0" if cc == "gcc" else "-ferror-limit=0", str(path)]
+    p = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, errors="replace")
+    return p.returncode, p.stdout
+
+
 def analyse(path, rc, out):
     ids = check_ids(path)
     failed = {}
@@ -82,7 +93,8 @@ def main():
     ap.add_argument("-v", "--verbose", action="store_true")
     a = ap.parse_args()
     ccs = a.compiler or ["gcc", "clang"]
-    files = sorted((HERE / "probes").glob("*.cpp"))
+    # hosted probes, then the freestanding declarations' probes (their IDs prefixed with fs:)
+    files = sorted((HERE / "probes").glob("*.cpp")) + sorted((HERE / "probes" / "freestanding").glob("*.cpp"))
     if a.filter:
         files = [f for f in files if any(s in f.name for s in a.filter)]
     gaps = load_gaps()
@@ -91,13 +103,15 @@ def main():
         libdir = str(pathlib.Path(a.libdir_root) / cc) if a.libdir_root else None
         results = {}
         with concurrent.futures.ThreadPoolExecutor(a.jobs) as ex:
-            futs = {ex.submit(compile_one, cc, f, libdir): f for f in files}
+            futs = {ex.submit(compile_freestanding if f.parent.name == "freestanding" else compile_one, cc, f,
+                              *([] if f.parent.name == "freestanding" else [libdir])): f for f in files}
             for fut in concurrent.futures.as_completed(futs):
                 f = futs[fut]
                 rc, out = fut.result()
                 ids, failed = analyse(f, rc, out)
+                pre = "fs:" if f.parent.name == "freestanding" else ""
                 for i in ids.values():
-                    results[i] = failed.get(i)
+                    results[pre + i] = failed.get(i)
                 if a.verbose and failed:
                     print(out)
         unexpected, xpass, known = [], [], 0

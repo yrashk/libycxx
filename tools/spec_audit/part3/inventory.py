@@ -48,7 +48,8 @@ def synopsis_blocks(sec):
             continue
         # `#include <ostream>` and the macros' `#define`s before the namespace
         text = re.sub(r"(?m)^[ \t]*#.*$", "", text)
-        t = text.lstrip()
+        # (`// all freestanding` before the namespace is a marker, decls.parse reads it)
+        t = re.sub(r"^\x04[^\x05]*\x05", "", text.lstrip()).lstrip()
         if re.match(r"(export\s+)?(inline\s+)?namespace\b", t):
             yield text
 

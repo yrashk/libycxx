@@ -5,7 +5,9 @@
 #include <type_traits>
 #include <utility>
 #include <concepts>
+#if __STDC_HOSTED__
 #include <iosfwd>
+#endif
 
 namespace spec_probe {
   // A type that depends on Z, so that a requires-expression over it is checked when its
@@ -25,7 +27,7 @@ namespace spec_probe {
   struct visitor { template<class T> void operator()(T&&) const {} };
 }
 
-#if defined(SPEC_PROBE_istream) || defined(SPEC_PROBE_ostream)
+#if __STDC_HOSTED__ && (defined(SPEC_PROBE_istream) || defined(SPEC_PROBE_ostream))
 namespace spec_probe {
   // only non-template, lvalue-stream operators: an rvalue stream reaches [istream.rvalue] and
   // [ostream.rvalue]

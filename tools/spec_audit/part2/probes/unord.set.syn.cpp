@@ -82,9 +82,19 @@ namespace p2 {
 }
 namespace E1465 { using std::unordered_set; } // @E1465 name
 namespace E1466 { using std::unordered_multiset; } // @E1466 name
-namespace E1469 { using std::swap; } // @E1469 name
-namespace E1470 { using std::swap; } // @E1470 name
-namespace E1471 { using std::erase_if; } // @E1471 name
-namespace E1472 { using std::erase_if; } // @E1472 name
+namespace E1467 { using t = decltype(std::operator==(std::declval<const std::unordered_set<int,std::hash<int>,std::equal_to<int>,std::allocator<int>>&>(), std::declval<const std::unordered_set<int,std::hash<int>,std::equal_to<int>,std::allocator<int>>&>())); } // @E1467 call
+static_assert(std::is_same_v<E1467::t, bool>); // @E1467 ret
+namespace E1468 { using t = decltype(std::operator==(std::declval<const std::unordered_multiset<int,std::hash<int>,std::equal_to<int>,std::allocator<int>>&>(), std::declval<const std::unordered_multiset<int,std::hash<int>,std::equal_to<int>,std::allocator<int>>&>())); } // @E1468 call
+static_assert(std::is_same_v<E1468::t, bool>); // @E1468 ret
+namespace E1469 { using t = decltype(std::swap(std::declval<std::unordered_set<int,std::hash<int>,std::equal_to<int>,std::allocator<int>>&>(), std::declval<std::unordered_set<int,std::hash<int>,std::equal_to<int>,std::allocator<int>>&>())); } // @E1469 call
+static_assert(std::is_same_v<E1469::t, void>); // @E1469 ret
+static_assert(!(noexcept(std::declval<std::unordered_set<int,std::hash<int>,std::equal_to<int>,std::allocator<int>>&>().swap(std::declval<std::unordered_set<int,std::hash<int>,std::equal_to<int>,std::allocator<int>>&>()))) || noexcept(std::swap(std::declval<std::unordered_set<int,std::hash<int>,std::equal_to<int>,std::allocator<int>>&>(), std::declval<std::unordered_set<int,std::hash<int>,std::equal_to<int>,std::allocator<int>>&>()))); // @E1469 noexcept
+namespace E1470 { using t = decltype(std::swap(std::declval<std::unordered_multiset<int,std::hash<int>,std::equal_to<int>,std::allocator<int>>&>(), std::declval<std::unordered_multiset<int,std::hash<int>,std::equal_to<int>,std::allocator<int>>&>())); } // @E1470 call
+static_assert(std::is_same_v<E1470::t, void>); // @E1470 ret
+static_assert(!(noexcept(std::declval<std::unordered_multiset<int,std::hash<int>,std::equal_to<int>,std::allocator<int>>&>().swap(std::declval<std::unordered_multiset<int,std::hash<int>,std::equal_to<int>,std::allocator<int>>&>()))) || noexcept(std::swap(std::declval<std::unordered_multiset<int,std::hash<int>,std::equal_to<int>,std::allocator<int>>&>(), std::declval<std::unordered_multiset<int,std::hash<int>,std::equal_to<int>,std::allocator<int>>&>()))); // @E1470 noexcept
+namespace E1471 { using t = decltype(std::erase_if(std::declval<std::unordered_set<int,std::hash<int>,std::equal_to<int>,std::allocator<int>>&>(), std::declval<p2::AnyFn>())); } // @E1471 call
+static_assert(std::is_same_v<E1471::t, std::unordered_set<int,std::hash<int>,std::equal_to<int>,std::allocator<int>>::size_type>); // @E1471 ret
+namespace E1472 { using t = decltype(std::erase_if(std::declval<std::unordered_multiset<int,std::hash<int>,std::equal_to<int>,std::allocator<int>>&>(), std::declval<p2::AnyFn>())); } // @E1472 call
+static_assert(std::is_same_v<E1472::t, std::unordered_multiset<int,std::hash<int>,std::equal_to<int>,std::allocator<int>>::size_type>); // @E1472 ret
 namespace E1473 { using std::pmr::unordered_set; } // @E1473 name
 namespace E1474 { using std::pmr::unordered_multiset; } // @E1474 name

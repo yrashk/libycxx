@@ -81,10 +81,22 @@ namespace p2 {
     std::pair<const typename std::ranges::range_value_t<R>::first_type, typename std::ranges::range_value_t<R>::second_type>;
 }
 namespace E968 { using std::set; } // @E968 name
-namespace E971 { using std::swap; } // @E971 name
-namespace E972 { using std::erase_if; } // @E972 name
+namespace E969 { using t = decltype(std::operator==(std::declval<const std::set<int,std::less<int>,std::allocator<int>>&>(), std::declval<const std::set<int,std::less<int>,std::allocator<int>>&>())); } // @E969 call
+static_assert(std::is_same_v<E969::t, bool>); // @E969 ret
+namespace E970 { using t = decltype(std::operator<=>(std::declval<const std::set<int,std::less<int>,std::allocator<int>>&>(), std::declval<const std::set<int,std::less<int>,std::allocator<int>>&>())); } // @E970 call
+namespace E971 { using t = decltype(std::swap(std::declval<std::set<int,std::less<int>,std::allocator<int>>&>(), std::declval<std::set<int,std::less<int>,std::allocator<int>>&>())); } // @E971 call
+static_assert(std::is_same_v<E971::t, void>); // @E971 ret
+static_assert(!(noexcept(std::declval<std::set<int,std::less<int>,std::allocator<int>>&>().swap(std::declval<std::set<int,std::less<int>,std::allocator<int>>&>()))) || noexcept(std::swap(std::declval<std::set<int,std::less<int>,std::allocator<int>>&>(), std::declval<std::set<int,std::less<int>,std::allocator<int>>&>()))); // @E971 noexcept
+namespace E972 { using t = decltype(std::erase_if(std::declval<std::set<int,std::less<int>,std::allocator<int>>&>(), std::declval<p2::AnyFn>())); } // @E972 call
+static_assert(std::is_same_v<E972::t, std::set<int,std::less<int>,std::allocator<int>>::size_type>); // @E972 ret
 namespace E973 { using std::multiset; } // @E973 name
-namespace E976 { using std::swap; } // @E976 name
-namespace E977 { using std::erase_if; } // @E977 name
+namespace E974 { using t = decltype(std::operator==(std::declval<const std::multiset<int,std::less<int>,std::allocator<int>>&>(), std::declval<const std::multiset<int,std::less<int>,std::allocator<int>>&>())); } // @E974 call
+static_assert(std::is_same_v<E974::t, bool>); // @E974 ret
+namespace E975 { using t = decltype(std::operator<=>(std::declval<const std::multiset<int,std::less<int>,std::allocator<int>>&>(), std::declval<const std::multiset<int,std::less<int>,std::allocator<int>>&>())); } // @E975 call
+namespace E976 { using t = decltype(std::swap(std::declval<std::multiset<int,std::less<int>,std::allocator<int>>&>(), std::declval<std::multiset<int,std::less<int>,std::allocator<int>>&>())); } // @E976 call
+static_assert(std::is_same_v<E976::t, void>); // @E976 ret
+static_assert(!(noexcept(std::declval<std::multiset<int,std::less<int>,std::allocator<int>>&>().swap(std::declval<std::multiset<int,std::less<int>,std::allocator<int>>&>()))) || noexcept(std::swap(std::declval<std::multiset<int,std::less<int>,std::allocator<int>>&>(), std::declval<std::multiset<int,std::less<int>,std::allocator<int>>&>()))); // @E976 noexcept
+namespace E977 { using t = decltype(std::erase_if(std::declval<std::multiset<int,std::less<int>,std::allocator<int>>&>(), std::declval<p2::AnyFn>())); } // @E977 call
+static_assert(std::is_same_v<E977::t, std::multiset<int,std::less<int>,std::allocator<int>>::size_type>); // @E977 ret
 namespace E978 { using std::pmr::set; } // @E978 name
 namespace E979 { using std::pmr::multiset; } // @E979 name

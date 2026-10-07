@@ -84,9 +84,13 @@ namespace E2165 { using std::flat_set; } // @E2165 name
 namespace E2166 { using std::sorted_unique_t; } // @E2166 name
 static_assert(requires { sizeof(std::sorted_unique_t); }); // @E2167 name
 namespace E2168 { using std::sorted_unique; } // @E2168 name
-namespace E2170 { using std::erase_if; } // @E2170 name
+static_assert(sizeof(std::uses_allocator<std::flat_set<int,std::less<int>,std::vector<int>>,std::allocator<int>>) > 0); // @E2169 spec
+namespace E2170 { using t = decltype(std::erase_if(std::declval<std::flat_set<int,std::less<int>,std::vector<int>>&>(), std::declval<p2::AnyFn>())); } // @E2170 call
+static_assert(std::is_same_v<E2170::t, std::flat_set<int,std::less<int>,std::vector<int>>::size_type>); // @E2170 ret
 namespace E2171 { using std::flat_multiset; } // @E2171 name
 namespace E2172 { using std::sorted_equivalent_t; } // @E2172 name
 static_assert(requires { sizeof(std::sorted_equivalent_t); }); // @E2173 name
 namespace E2174 { using std::sorted_equivalent; } // @E2174 name
-namespace E2176 { using std::erase_if; } // @E2176 name
+static_assert(sizeof(std::uses_allocator<std::flat_multiset<int,std::less<int>,std::vector<int>>,std::allocator<int>>) > 0); // @E2175 spec
+namespace E2176 { using t = decltype(std::erase_if(std::declval<std::flat_multiset<int,std::less<int>,std::vector<int>>&>(), std::declval<p2::AnyFn>())); } // @E2176 call
+static_assert(std::is_same_v<E2176::t, std::flat_multiset<int,std::less<int>,std::vector<int>>::size_type>); // @E2176 ret

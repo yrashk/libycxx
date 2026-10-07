@@ -84,9 +84,13 @@ namespace E1863 { using std::flat_map; } // @E1863 name
 namespace E1864 { using std::sorted_unique_t; } // @E1864 name
 static_assert(requires { sizeof(std::sorted_unique_t); }); // @E1865 name
 namespace E1866 { using std::sorted_unique; } // @E1866 name
-namespace E1868 { using std::erase_if; } // @E1868 name
+static_assert(sizeof(std::uses_allocator<std::flat_map<int,int,std::less<int>,std::vector<int>,std::vector<int>>,std::allocator<int>>) > 0); // @E1867 spec
+namespace E1868 { using t = decltype(std::erase_if(std::declval<std::flat_map<int,int,std::less<int>,std::vector<int>,std::vector<int>>&>(), std::declval<p2::AnyFn>())); } // @E1868 call
+static_assert(std::is_same_v<E1868::t, std::flat_map<int,int,std::less<int>,std::vector<int>,std::vector<int>>::size_type>); // @E1868 ret
 namespace E1869 { using std::flat_multimap; } // @E1869 name
 namespace E1870 { using std::sorted_equivalent_t; } // @E1870 name
 static_assert(requires { sizeof(std::sorted_equivalent_t); }); // @E1871 name
 namespace E1872 { using std::sorted_equivalent; } // @E1872 name
-namespace E1874 { using std::erase_if; } // @E1874 name
+static_assert(sizeof(std::uses_allocator<std::flat_multimap<int,int,std::less<int>,std::vector<int>,std::vector<int>>,std::allocator<int>>) > 0); // @E1873 spec
+namespace E1874 { using t = decltype(std::erase_if(std::declval<std::flat_multimap<int,int,std::less<int>,std::vector<int>,std::vector<int>>&>(), std::declval<p2::AnyFn>())); } // @E1874 call
+static_assert(std::is_same_v<E1874::t, std::flat_multimap<int,int,std::less<int>,std::vector<int>,std::vector<int>>::size_type>); // @E1874 ret

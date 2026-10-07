@@ -164,10 +164,17 @@ def main():
                 known += 1
             elif not msg and g:
                 xpass.append(i)
+        lines = {}
+        if a.filter and (HERE / f"results-{cc}.tsv").exists():
+            # a filtered run updates the results of the last full run
+            done = {("fs:" if f.parent.name == "freestanding" else "") + f.stem for f in files}
+            lines = {l.split("\t")[0]: l for l in (HERE / f"results-{cc}.tsv").read_text().splitlines()
+                     if l.split("\t")[0].split("#")[0] not in done}
+        for i, msg in results.items():
+            st = "UNDECIDED" if i in undecided else "FAIL" if msg else "pass"
+            lines[i] = f"{i}\t{st}\t{msg or ''}"
         with open(HERE / f"results-{cc}.tsv", "w") as out:
-            for i, msg in sorted(results.items()):
-                st = "UNDECIDED" if i in undecided else "FAIL" if msg else "pass"
-                out.write(f"{i}\t{st}\t{msg or ''}\n")
+            out.write("".join(lines[i] + "\n" for i in sorted(lines)))
         total = len(results)
         nfail = sum(1 for i, m in results.items() if m and i not in undecided)
         print(f"{cc}: {total} checks, {total - nfail - len(undecided)} pass, {nfail} fail ({known} known gaps, "

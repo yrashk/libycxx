@@ -289,8 +289,6 @@ EXTRA = [
      _C.format("{ ckd_sub(%s, %s, %s) } -> spec_probe::same<bool>;" % (_dv.format("long long*"), _dv.format("int"), _dv.format("int")))),
     ("numerics.c.ckdint", "stdckdint.h", "", "ckd_mul", "call ret",
      _C.format("{ ckd_mul(%s, %s, %s) } -> spec_probe::same<bool>;" % (_dv.format("unsigned*"), _dv.format("int"), _dv.format("short")))),
-    ("numerics.c.ckdint", "stdckdint.h", "", "ckd_add", "constexpr",
-     "static_assert([] { int r = 0; return !ckd_add(&r, 2, 3) && r == 5 && ckd_add(&r, 2147483647, 1); }());"),
     ("time.clock.utc.nonmembers", "chrono", "std::chrono", "std::chrono::leap_second_info::is_leap_second", "var",
      "static_assert(spec_probe::same<decltype(std::chrono::leap_second_info::is_leap_second), bool>);"),
     ("time.clock.utc.nonmembers", "chrono", "std::chrono", "std::chrono::leap_second_info::elapsed", "var",

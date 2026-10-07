@@ -489,6 +489,30 @@ tooling.
   SDK's headers, but the interface libSystem's `os_unfair_lock` and Apple's own libc++ use since
   macOS 10.12; the public `os_sync_wait_on_address` needs macOS 14.4 and is not usable from GCC,
   which has no `__builtin_available`), with relative timeouts in microseconds.
+- **The thread-end actions run for the thread that ends the program too.** The `*_at_thread_exit`
+  results ([futures.promise]/23, /26, [futures.task.members]) and `notify_all_at_thread_exit`
+  ([thread.condition.nonmember]/2-3) act "when the current thread exits, after all objects with
+  thread storage duration associated with the current thread have been destroyed". A thread that
+  calls `exit` (returning from `main` does, [basic.start.main]/5) destroys its thread_local
+  objects as part of `exit` ([support.start.term]/9.1, [basic.start.term]/2), and only then are
+  static objects destroyed and the `atexit` functions called: that is where its actions belong,
+  so a static `future`, condition variable or mutex sees them done before it is destroyed.
+  `quick_exit`, `_Exit` and `abort` destroy no thread_local objects and run none; threads still
+  running when the program ends never exit and run none. A pthread key destructor (the previous
+  design) runs only when a thread ends on its own, so the actions of the thread calling `exit`
+  never ran. Now the POSIX PAL keeps a thread's list in a thread_local pointer and runs it from a
+  thread_local destructor of its own, the *sentinel*, registered (`__cxa_thread_atexit_impl`, Darwin's
+  `_tlv_atexit`) before the thread's first thread_local destructor or first action: the C library
+  runs a thread's thread_local destructors in reverse order of registration, also those registered
+  while they run, both when the thread ends and in `exit` (glibc's `__call_tls_dtors`, Darwin's
+  `_tlv_exit`, both before the static destructors), so the sentinel runs after every other
+  thread_local destructor of the thread. Every libycxx thread_local destructor is registered
+  through `ycxx_pal_thread_atexit` (the ABI's `__cxa_thread_atexit`), which arms the sentinel first.
+  An action registering another action (or constructing a thread_local) while the list runs is
+  run too: the list is drained, and a new registration re-arms the sentinel. Where a destructor
+  cannot be registered (a C library without `__cxa_thread_atexit_impl`) the list falls back to the
+  pthread key, as before. The `ycxx_pal_at_thread_end` contract (`pal.h`) says so for other
+  providers of the `threads` layer.
 - **`<stop_token>` is core.** Its stop state needs only atomics and three PAL hooks: the address
   wait (through `<atomic>`'s tables), `ycxx_pal_thread_self` (a callback deregistered while
   `request_stop` runs it: on the requesting thread it is not waited for) and

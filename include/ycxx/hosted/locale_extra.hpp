@@ -589,9 +589,10 @@ protected:
       __err |= ios_base::failbit;
       return s;
     }
+    // POSIX's O forms, and %OC, which locales use in their formats (glibc's my_MM: "%OC%Oy")
     if (__modifier == 'O' && !(format == 'd' || format == 'e' || format == 'H' || format == 'I' || format == 'm' ||
                              format == 'M' || format == 'S' || format == 'U' || format == 'w' || format == 'W' ||
-                             format == 'y')) {
+                             format == 'y' || format == 'C')) {
       __err |= ios_base::failbit;
       return s;
     }
@@ -661,7 +662,10 @@ protected:
       s = parse(s, end, __f, __err, &r, "%a %b %e %H:%M:%S %Y");
       break;
     case 'C':
-      s = __read_number(s, end, __f, __err, 2, __v);
+      if (__alt)
+        s = __read_field(true, s, end, __f, __err, 2, 0, 99, __v);
+      else
+        s = __read_number(s, end, __f, __err, 2, __v);
       if (!(__err & ios_base::failbit))
         r.tm_year = __v * 100 - 1900 + (r.tm_year + 1900) % 100;
       break;

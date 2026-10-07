@@ -1,0 +1,79 @@
+Category: transitive-include. Catch2 uses names whose headers it does not include, which
+libstdc++ and libc++ declare through other headers:
+std::abort (<cstdlib>) after <memory>/<sstream>/<string>; errno (<cerrno>) after
+<cstdlib>/<iomanip>; isspace/isdigit in the global namespace (<cctype>) after <ostream>/<stack>;
+std::equal (<algorithm>) after <vector>; std::ostream (<iosfwd>) after <string>. Adds the
+includes.
+
+diff --git a/src/catch2/catch_message.cpp b/src/catch2/catch_message.cpp
+index 3a83e34..16f2524 100644
+--- a/src/catch2/catch_message.cpp
++++ b/src/catch2/catch_message.cpp
+@@ -11,6 +11,7 @@
+ #include <catch2/internal/catch_move_and_forward.hpp>
+ 
+ #include <cassert>
++#include <cctype>
+ #include <stack>
+ 
+ namespace Catch {
+diff --git a/src/catch2/catch_session.cpp b/src/catch2/catch_session.cpp
+index bf14d23..158acff 100644
+--- a/src/catch2/catch_session.cpp
++++ b/src/catch2/catch_session.cpp
+@@ -27,6 +27,7 @@
+ #include <catch2/internal/catch_istream.hpp>
+ 
+ #include <cassert>
++#include <cerrno>
+ #include <cstdio>
+ #include <cstdlib>
+ #include <exception>
+diff --git a/src/catch2/internal/catch_clara.hpp b/src/catch2/internal/catch_clara.hpp
+index 85874a1..a53501b 100644
+--- a/src/catch2/internal/catch_clara.hpp
++++ b/src/catch2/internal/catch_clara.hpp
+@@ -35,6 +35,7 @@
+ #include <catch2/internal/catch_void_type.hpp>
+ 
+ #include <cassert>
++#include <cstdlib>
+ #include <memory>
+ #include <ostream>
+ #include <sstream>
+diff --git a/src/catch2/internal/catch_string_manip.cpp b/src/catch2/internal/catch_string_manip.cpp
+index 6898378..f95b05c 100644
+--- a/src/catch2/internal/catch_string_manip.cpp
++++ b/src/catch2/internal/catch_string_manip.cpp
+@@ -10,6 +10,7 @@
+ #include <catch2/internal/catch_stringref.hpp>
+ 
+ #include <ostream>
++#include <algorithm>
+ #include <cstring>
+ #include <cctype>
+ #include <vector>
+diff --git a/src/catch2/internal/catch_textflow.cpp b/src/catch2/internal/catch_textflow.cpp
+index 0646b10..e379bf5 100644
+--- a/src/catch2/internal/catch_textflow.cpp
++++ b/src/catch2/internal/catch_textflow.cpp
+@@ -8,6 +8,7 @@
+ #include <catch2/internal/catch_textflow.hpp>
+ 
+ #include <algorithm>
++#include <cctype>
+ #include <cstring>
+ #include <ostream>
+ 
+diff --git a/src/catch2/internal/catch_textflow.hpp b/src/catch2/internal/catch_textflow.hpp
+index 2d9d78a..e1a0e2c 100644
+--- a/src/catch2/internal/catch_textflow.hpp
++++ b/src/catch2/internal/catch_textflow.hpp
+@@ -12,6 +12,7 @@
+ #include <catch2/internal/catch_move_and_forward.hpp>
+ 
+ #include <cassert>
++#include <iosfwd>
+ #include <string>
+ #include <vector>
+ 

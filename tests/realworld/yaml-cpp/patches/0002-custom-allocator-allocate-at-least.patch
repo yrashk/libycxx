@@ -1,0 +1,24 @@
+Category: project-bug. node_test's CustomAllocator derives from std::allocator<T> and replaces
+allocate (malloc) and deallocate (free) but not allocate_at_least (C++23), so it inherits
+std::allocator's, which allocates with operator new. allocator_traits::allocate_at_least calls
+a.allocate_at_least(n) when that is well-formed ([allocator.traits.members]/3), and libycxx's
+containers allocate through it: memory from operator new reached free (AddressSanitizer:
+alloc-dealloc-mismatch). Adds the allocator's own allocate_at_least.
+
+diff --git a/test/node/node_test.cpp b/test/node/node_test.cpp
+index 5f41ef2..bba7916 100644
+--- a/test/node/node_test.cpp
++++ b/test/node/node_test.cpp
+@@ -35,6 +35,12 @@ class CustomAllocator : public std::allocator<T> {
+       return static_cast<pointer>(malloc(num * sizeof(T)));
+     }
+     void deallocate(pointer p, size_type /*num*/) { free(p); }
++#if defined(__cpp_lib_allocate_at_least)
++    // Hide std::allocator<T>::allocate_at_least, which would allocate with operator new.
++    std::allocation_result<pointer, size_type> allocate_at_least(size_type num) {
++      return {allocate(num), num};
++    }
++#endif
+ };
+ 
+ template <class T> using CustomVector = std::vector<T,CustomAllocator<T>>;

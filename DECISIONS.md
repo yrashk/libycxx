@@ -1011,6 +1011,57 @@ under the same name. Otherwise it gets one alias template in `config.hpp`.
   binary search, so the class is usable in constant expressions. `locale::encoding()` of "C" is
   US-ASCII (the POSIX portable character set), although the classic `codecvt<wchar_t, char>`
   converts UTF-8 (§7).
+- **`pointer_tag_pair` ([ptrtag]) keeps the tag in the pointer's low bits; in constant
+  evaluation only the tag 0 can be stored.** Core (`ycxx/core/ptrtag.hpp`, freestanding, from
+  `<memory>`). The one member is the tagged pointer itself, of `tagged_pointer_type` (cv `void*`),
+  so the class is trivially copyable with the size and alignment of `Ptr` ([ptrtag.pair.general]/3)
+  and `tagged_pointer()`/`from_tagged()` are plain copies. At run time the tag is or-ed into the
+  low `bits_requested` bits of the pointer's address (`uintptr_t` round trip: GCC and Clang keep
+  the value of an integer-pointer round trip, which is what [ptrtag.bits]/2's remark needs), and
+  `pointer()`/`tag()` mask them apart, so any `DP` whose `bits_requested` covers the tag and the
+  alignment decodes the same `tp` ([ptrtag.pair.tagops]/2). Implementation-defined:
+  `max_pointer_bits_available` is the pointer width minus 1 (63 on LP64): only alignment bits are
+  used, and a `size_t` alignment has at most that many trailing zeros, so the limit adds nothing
+  to `pointer_bits_available(a)` = `min(countr_zero(a), max)` (the draft's note; P3125 suggests a
+  page-size limit for segmented architectures, which libycxx's targets are not).
+  **Constant evaluation.** Neither GCC 16.2 nor Clang 23.1 can put bits into a pointer during
+  constant evaluation (verified: `reinterpret_cast` to and from integers, `bit_cast` of a pointer,
+  arithmetic outside the object or on a null pointer, a `void*` cast to `char*` of a non-char
+  object and reading the other member of a pointer/integer union are all rejected; Clang's
+  `__builtin_align_down` only aligns). P3125 relies on new builtins; its fallback, a hidden object
+  holding pointer and tag, would need a constant-evaluation allocation, which a trivially
+  destructible type can never free. Keeping pointer and tag apart under `if consteval` is not
+  possible either: the layout is one `sizeof(Ptr)` object in both worlds (an object built in
+  constant evaluation is used at run time). So in constant evaluation the member holds the
+  untagged pointer (`static_cast` to cv `void*` and back, which C++26 allows for the object's own
+  type) and every constexpr member works as long as the tag is 0: the default constructor, the
+  constructors and `from_overaligned` with tag 0 (or `TagT()`), `pointer()`, `tag()`, `swap`, the
+  comparisons, `get`. A non-zero tag during constant evaluation is diagnosed ("needs compiler
+  support") although the preconditions hold, which [ptrtag.pair.cons]/2 and
+  [ptrtag.pair.overalign]/1 ("Constant When: Preconditions are met") do not allow: that part is
+  compiler-blocked, the tests XFAIL it, and `__cpp_lib_pointer_tag_pair` stays undefined (as
+  `__cpp_lib_constexpr_exceptions` on Clang and `__cpp_lib_start_lifetime` on GCC: the macro
+  announces P3125, "constexpr pointer tagging", whose constexpr support is the point).
+  **Preconditions.** With `YCXX_HARDENED` (and always in constant evaluation) the constructors
+  check `tag-bit-width(t) <= bits_requested` and that the low bits are free (a misaligned `p`, or
+  for `from_overaligned` a `p` not aligned to `PromisedAlignment`, [ptrtag.pair.overalign]/2.2);
+  "`p` is not past the end of an object" cannot be checked. In constant evaluation the
+  alignment of `from_overaligned`'s pointer is checked on Clang (`__builtin_is_aligned`); GCC has
+  no such builtin, so there an unverifiable promise is accepted (it cannot matter: only the tag 0
+  is stored then). **Comparisons** follow [ptrtag.pair.comp]/1, /3 (`pointer()` first, then
+  `tag()`, through synth-three-way); at run time, when the tag's `<=>`/`==` is the built-in one
+  (an integer tag, or an enumeration without a user-declared operator, found by a call of
+  `operator<=>(t, t)` / `operator==(t, t)` that only user-declared functions can satisfy), the two
+  tagged words are compared directly (/2, /4: the address bits are above the tag bits, so the
+  order is the same). **Draft defects**, each resolved by the evident intent (STATUS, "Draft issues
+  noticed"): [ptrtag.bits]/2's `tagged_pointer_pair` and `tp.tagged()` are `pointer_tag_pair` and
+  `tagged_pointer()`; [ptrtag.pair.tagops]/2-3's `ptr`/`tag` are `pointer()`/`tag()` of `*this`
+  and `pointer_tag_type` is `pointer_tag_pair`; the deduction guide `pointer_tag_pair(Ptr*, TagT)`
+  names `bits-available<element-of<Ptr>>`, and `element-of<int>` (`pointer_traits<int>`) does not
+  exist, so the guide could never be used: libycxx uses `bits-available<Ptr>` (the pointee's
+  alignment, as the class's default argument does for `Ptr*`); the guide `pointer_tag_pair(Ptr*)`
+  has no one-argument constructor to go with it: it is declared as written and deduces, and the
+  initialization then fails (no constructor is invented).
 - **`generator` nests without a stack of handles**: the promises of recursively yielded
   generators link to their parent and the root, and transfers between them are symmetric, so
   recursion depth costs no stack and no allocation besides the frames.

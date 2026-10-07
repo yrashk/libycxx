@@ -767,6 +767,85 @@ GOOD = {'PASS', 'XFAIL'}
 SKIP = {'UNSUPPORTED'}
 
 
+def console_style():
+    """(colour, unicode) for the terminal, decided as tools/lib/ui.sh decides: YCXX_COLOR=always|never|auto
+    (tools/test passes always or never to the commands it runs), NO_COLOR, a terminal or GitHub
+    Actions; box-drawing characters when the locale is UTF-8."""
+    mode = os.environ.get('YCXX_COLOR', 'auto')
+    if mode == 'always':
+        colour = True
+    elif mode == 'never':
+        colour = False
+    else:
+        colour = not os.environ.get('NO_COLOR') and (sys.stdout.isatty() or os.environ.get('GITHUB_ACTIONS') == 'true'
+                                                    or bool(os.environ.get('FORCE_COLOR')))
+    # tools/realworld passes ui.sh's choice (YCXX_UNICODE): Python's own locale coercion (PEP 538) would
+    # make a C locale look like UTF-8 here.
+    if os.environ.get('YCXX_UNICODE') in ('0', '1'):
+        return colour, os.environ['YCXX_UNICODE'] == '1'
+    loc = os.environ.get('LC_ALL') or os.environ.get('LC_CTYPE') or os.environ.get('LANG') or ''
+    return colour, 'utf-8' in loc.lower() or 'utf8' in loc.lower()
+
+
+def console_table(infos):
+    """The summary as a table for the terminal: box-drawn (UTF-8) or ASCII, coloured when colour is on,
+    numbers right-aligned, a totals row. The Markdown summary (.summary.md) stays as it is."""
+    colour, uni = console_style()
+    sgr = (lambda code, t: f'\033[{code}m{t}\033[0m') if colour else (lambda code, t: t)
+    head = ['project', 'ref', 'build', 'linkage', 'passed', 'skipped', 'failed', 'proof']
+    right = {4, 5, 6}
+    rows, tot = [], [0, 0, 0]
+    for i in infos:
+        c = i['counts']
+        passed = c.get('PASS', 0) + c.get('XFAIL', 0)
+        skipped = c.get('UNSUPPORTED', 0)
+        failed = sum(v for k, v in c.items() if k not in GOOD | SKIP)
+        tot = [tot[0] + passed, tot[1] + skipped, tot[2] + failed]
+        pr = i.get('proof', {})
+        proof = f'{pr.get("tus", 0)} TUs, {pr.get("linked", 0)} images, {pr.get("marked", 0)} marked' if pr else ''
+        rows.append([i['name'], i['ref'], i['build'], i['linkage'], str(passed), str(skipped), str(failed), proof])
+
+    def style(col, text, row):
+        if col in (2, 3):
+            return sgr('32', text) if text == 'ok' else sgr('1;31', text)
+        if col == 4:
+            return sgr('32', text) if text != '0' else sgr('2', text)
+        if col == 5:
+            return sgr('33', text) if text != '0' else sgr('2', text)
+        if col == 6:
+            return sgr('1;31', text) if text != '0' else sgr('2', text)
+        if col == 0:
+            return sgr('1', text)
+        if col == 7:
+            return sgr('2', text)
+        return text
+
+    total = ['total', '', '', '', str(tot[0]), str(tot[1]), str(tot[2]), f'{len(rows)} project' + ('' if len(rows) == 1 else 's')]
+    widths = [max(len(r[k]) for r in [head, total] + rows) for k in range(len(head))]
+    if uni:
+        h, v, tl, tm, tr, ml, mm, mr, bl, bm, br = '─', '│', '┌', '┬', '┐', '├', '┼', '┤', '└', '┴', '┘'
+    else:
+        h, v, tl, tm, tr, ml, mm, mr, bl, bm, br = '-', '|', '+', '+', '+', '+', '+', '+', '+', '+', '+'
+
+    def rule(left, mid, rgt):
+        return sgr('2', left + mid.join(h * (w + 2) for w in widths) + rgt)
+
+    def line(cells, styler):
+        out = []
+        for k, (cell, w) in enumerate(zip(cells, widths)):
+            pad = ' ' * (w - len(cell))
+            text = styler(k, cell)
+            out.append(' ' + (pad + text if k in right else text + pad) + ' ')
+        bar = sgr('2', v)
+        return bar + bar.join(out) + bar
+
+    out = [rule(tl, tm, tr), line(head, lambda k, t: sgr('1', t)), rule(ml, mm, mr)]
+    out += [line(r, lambda k, t, r=r: style(k, t, r)) for r in rows]
+    out += [rule(ml, mm, mr), line(total, lambda k, t: style(k, t, total) if k in (4, 5, 6) else sgr('1', t)),
+            rule(bl, bm, br)]
+    return '\n'.join('  ' + l for l in out)
+
+
 def cmd_report(repo, results_dir, out_base, meta):
     tests, infos = [], []
     order_file = os.path.join(results_dir, 'order.txt')
@@ -814,7 +893,7 @@ def cmd_report(repo, results_dir, out_base, meta):
                      f'{failed} | {proof} |')
     with open(out_base + '.summary.md', 'w', encoding='utf-8') as f:
         f.write('\n'.join(lines) + '\n')
-    print('\n'.join(lines[2:]))
+    print(console_table(infos))
     args = [sys.executable, os.path.join(HERE, 'test_report.py'), out_base + '.json', out_base]
     args += [f'{k}={v}' for k, v in meta.items()]
     subprocess.run(args, check=False)

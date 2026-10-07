@@ -64,6 +64,7 @@ class Ctx:
         self.env = dict(env)               # identifier -> replacement text
         self.members = members or {}       # member type name -> qualified text
         self.selfname, self.selftype = selfname, selftype
+        self.injected = {}                 # enclosing classes' injected-class-names
 
 
 PACK = "\x06"
@@ -119,6 +120,10 @@ def subst(toks, ctx, allow_italic=()):
                 out.append(ctx.selftype)
                 i += 1
                 continue
+            if t in ctx.injected and not (i + 1 < n and toks[i + 1] == "<"):
+                out.append(ctx.injected[t])
+                i += 1
+                continue
             if t in ctx.members:
                 out.append(ctx.members[t])
                 i += 1
@@ -140,6 +145,11 @@ def subst(toks, ctx, allow_italic=()):
         i += 1
     s = ren(out)
     return s
+
+
+def inj(new, old):
+    new.injected = old.injected
+    return new
 
 
 def has_italic(toks):
@@ -205,6 +215,9 @@ class Gen:
                     for nm in known:
                         mem[nm] = "typename " + t + "::" + nm
                     c3 = Ctx(env, mem, cdecl.name, t)
+                    c3.injected = dict(ctx.injected)
+                    if ctx.selfname:
+                        c3.injected[ctx.selfname] = ctx.selftype
                     new.append((c3, t, cdecl, (label + " " + label2).strip()))
             alts = new
         return alts
@@ -610,9 +623,9 @@ class Gen:
             alts = [(Ctx({}), None, None, "")]
         for ctx0, selft, cdecl, label0 in alts:
             for env, label in (SMP.params_env(own, d, ctx0.env) if own else [(dict(ctx0.env), "")]):
-                ctx = Ctx(env, ctx0.members, ctx0.selfname, ctx0.selftype)
+                ctx = inj(Ctx(env, ctx0.members, ctx0.selfname, ctx0.selftype), ctx0)
                 for env2, label2 in (SMP.placeholder_envs(d.toks2, env) if has_italic(d.toks2) else [(env, "")]):
-                    ctx2 = Ctx(env2, ctx.members, ctx.selfname, ctx.selftype)
+                    ctx2 = inj(Ctx(env2, ctx.members, ctx.selfname, ctx.selftype), ctx)
                     lab = " ".join(x for x in (label0, label, label2) if x)
                     friend = "friend" in d.info["specs"]
                     name = d.name
@@ -641,7 +654,7 @@ class Gen:
         for ctx0, selft, cdecl, label0 in self.class_samples(d):
             for env, label in (SMP.params_env(own, d, ctx0.env) if own else [(dict(ctx0.env), "")]):
                 for env2, label2 in (SMP.placeholder_envs(d.toks2, env) if has_italic(d.toks2) else [(env, "")]):
-                    ctx = Ctx(env2, ctx0.members, ctx0.selfname, ctx0.selftype)
+                    ctx = inj(Ctx(env2, ctx0.members, ctx0.selfname, ctx0.selftype), ctx0)
                     lab = " ".join(x for x in (label0, label, label2) if x)
                     cv = " ".join(q for q in quals if q in ("const", "volatile"))
                     ref = "&&" if "&&" in quals else "&"
@@ -704,7 +717,7 @@ class Gen:
         for ctx0, selft, cdecl, label0 in self.class_samples(d):
             for env, label in (SMP.params_env(own, d, ctx0.env) if own else [(dict(ctx0.env), "")]):
                 for env2, label2 in (SMP.placeholder_envs(d.toks2, env) if has_italic(d.toks2) else [(env, "")]):
-                    ctx = Ctx(env2, ctx0.members, ctx0.selfname, ctx0.selftype)
+                    ctx = inj(Ctx(env2, ctx0.members, ctx0.selfname, ctx0.selftype), ctx0)
                     lab = " ".join(x for x in (label0, label, label2) if x)
                     params = d.info["params"]
                     try:

@@ -77,9 +77,10 @@ CLASS = {
 
 # Samples by template-parameter name, per area (prefix of the stable name).
 BY_AREA = [
-    ("istream.syn", {"T": "spec_probe::streamable&", "Istream": "istream"}),
+    ("istream.syn", {"T": "spec_probe::streamable_ref", "Istream": "istream"}),
     ("ostream.syn", {"T": "spec_probe::streamable", "Ostream": "ostream"}),
-    ("re", {"Allocator": "allocator<sub_match<const char*>>"}),
+    ("re", {"Allocator": "allocator<sub_match<const char*>>", "traits": "regex_traits<char>"}),
+    ("thread.stoptoken.syn", {"T": "stop_token"}),
     ("depr.vector.bool", {"Allocator": "allocator<bool>"}),
     ("rand.util.seedseq", {"T": "int"}),
     ("saferecl.hp", {"T": "spec_probe::hp_node", "D": "default_delete<spec_probe::hp_node>"}),

@@ -15,4 +15,4 @@ namespace p8 { using namespace std; using std::never_stop_token; } // thread.sto
 namespace p9 { using namespace std; using std::inplace_stop_token; } // thread.stoptoken.syn#10 presence
 namespace p10 { using namespace std; using std::inplace_stop_source; } // thread.stoptoken.syn#11 presence
 namespace p11 { using namespace std; using std::inplace_stop_callback; } // thread.stoptoken.syn#12 presence
-namespace p12 { using namespace std; static_assert(spec_probe::same<std::stop_callback_for_t<int, spec_probe::callback>, int::template callback_type<spec_probe::callback>>); } // thread.stoptoken.syn#13 type
+namespace p12 { using namespace std; static_assert(spec_probe::same<std::stop_callback_for_t<stop_token, spec_probe::callback>, stop_token::template callback_type<spec_probe::callback>>); } // thread.stoptoken.syn#13 type

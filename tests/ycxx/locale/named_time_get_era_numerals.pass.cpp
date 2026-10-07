@@ -12,6 +12,7 @@
 // where the alternative representation is not available, the unmodified one is used). Whether
 // it has them is asked of the C library at run time (strftime's %EC against %C, %Ec against
 // %c), never assumed from glibc's data; de_DE (no eras, no digits anywhere) checks that case.
+#include <langinfo.h>
 #include <time.h>
 #include <wchar.h>
 #include <iterator>
@@ -90,10 +91,15 @@ static void check_locale(const char* name) {
     }
     if (c_ftime(name, "%Ec", t) == c_ftime(name, "%c", t)) {
       // %Ec reads what %c reads
-      const std::tm a = get(loc, c_ftime(name, "%c", t), std::string("%Ec"), err);
-      CHECK(!(err & std::ios_base::failbit));
+      const std::string text = c_ftime(name, "%c", t);
+      const std::string d_t_fmt = in_c_locale(name, [] { return std::string(nl_langinfo(D_T_FMT)); });
+      const std::string era_d_t_fmt = in_c_locale(name, [] { return std::string(nl_langinfo(ERA_D_T_FMT)); });
+      const std::tm a = get(loc, text, std::string("%Ec"), err);
       std::ios_base::iostate err2;
-      const std::tm b = get(loc, c_ftime(name, "%c", t), std::string("%c"), err2);
+      const std::tm b = get(loc, text, std::string("%c"), err2);
+      CHECK_SAY(!(err & std::ios_base::failbit), "locale %s, D_T_FMT \"%s\", ERA_D_T_FMT \"%s\", text \"%s\"; %%c %s",
+                name, d_t_fmt.c_str(), era_d_t_fmt.c_str(), text.c_str(),
+                (err2 & std::ios_base::failbit) ? "failed too" : "read it");
       CHECK(!(err2 & std::ios_base::failbit) && a.tm_year == b.tm_year && a.tm_mon == b.tm_mon && a.tm_mday == b.tm_mday &&
             a.tm_hour == b.tm_hour && a.tm_min == b.tm_min && a.tm_sec == b.tm_sec);
     }

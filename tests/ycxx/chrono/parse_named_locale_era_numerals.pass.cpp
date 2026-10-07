@@ -17,6 +17,7 @@
 // strftime: where the alternative representation is not available, the unmodified one is used),
 // and those must then read as the unmodified forms. de_DE, which has no eras or digits in any C
 // library, checks that case everywhere.
+#include <langinfo.h>
 #include <time.h>
 #include <wchar.h>
 #include <chrono>
@@ -90,7 +91,13 @@ static void check_locale(const char* name) {
       // %Ec as %c: the same text reads the same with either
       const std::string c = std::format(loc, "{:L%c}", tp);
       sys_seconds a{}, b{};
-      CHECK(parses(loc, c, "%Ec", a) && parses(loc, c, "%c", b) && a == tp && b == tp);
+      const std::string d_t_fmt = in_c_locale(name, [] { return std::string(nl_langinfo(D_T_FMT)); });
+      const std::string era_d_t_fmt = in_c_locale(name, [] { return std::string(nl_langinfo(ERA_D_T_FMT)); });
+      const bool ea = parses(loc, c, "%Ec", a), cb = parses(loc, c, "%c", b);
+      CHECK_SAY((ea && cb && a == tp && b == tp),
+                "locale %s, D_T_FMT \"%s\", ERA_D_T_FMT \"%s\", text \"%s\"; %%Ec %s, %%c %s", name, d_t_fmt.c_str(),
+                era_d_t_fmt.c_str(), c.c_str(), ea ? (a == tp ? "ok" : "wrong value") : "failed",
+                cb ? (b == tp ? "ok" : "wrong value") : "failed");
     }
     // %EY: the full alternative year
     for (const std::string& s : {c_ftime(name, "%EY", t), fmt("{:L%EY}", c_ftime(name, "%EY", t), tp)}) {

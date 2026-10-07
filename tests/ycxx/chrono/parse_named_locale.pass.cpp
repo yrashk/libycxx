@@ -113,10 +113,13 @@ static void check_locale(const char* name) {
   {
     const std::string s = std::format(loc, "{:L%c}", tp);
     sys_seconds got{};
-    CHECK(parses(loc, s, "%c", got) && got == tp);
+    const std::string d_t_fmt = c_langinfo(name, D_T_FMT);
+    CHECK_SAY((parses(loc, s, "%c", got) && got == tp), "locale %s, D_T_FMT \"%s\", text \"%s\"", name,
+              d_t_fmt.c_str(), s.c_str());
     std::string abbrev;
     got = {};
-    CHECK(parses(loc, s, "%c", got, abbrev) && got == tp);
+    CHECK_SAY((parses(loc, s, "%c", got, abbrev) && got == tp), "locale %s, D_T_FMT \"%s\", text \"%s\"", name,
+              d_t_fmt.c_str(), s.c_str());
     const std::wstring w = std::format(loc, L"{:L%c}", tp);
     got = {};
     CHECK(parses(loc, w, L"%c", got) && got == tp);

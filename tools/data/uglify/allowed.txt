@@ -105,6 +105,7 @@ limits                          # a slip in the draft's markup: "max()numeric.li
 [user]
 # libycxx's documented user-facing names (README, DECISIONS §1, §4).
 YCXX_HARDENED                                                              # -DYCXX_HARDENED=1
+YCXX_NO_TRANSITIVE_INCLUDES                                                # strict includes (DECISIONS §19)
 ycxx_error_handler ycxx_error_kind                                         # -fno-exceptions hook
 re:ycxx_error_[a-z_]+                                                      # ycxx_error_kind's enumerators
 re:ycxx_pal_[a-z0-9_]+                                                     # the hosted layers' primitives,

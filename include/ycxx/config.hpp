@@ -28,6 +28,14 @@
 #ifndef YCXX_HARDENED // 1: check library preconditions at run time
 #  define YCXX_HARDENED 0
 #endif
+// YCXX_NO_TRANSITIVE_INCLUDES (defined, with any value or none): each public header includes only
+// what the draft and the implementation need, without the transitive includes programs commonly
+// rely on (the block at the end of each header, DECISIONS §19). Tested only here, with defined().
+#ifdef YCXX_NO_TRANSITIVE_INCLUDES
+#  define _YCXX_TRANSITIVE_INCLUDES 0
+#else
+#  define _YCXX_TRANSITIVE_INCLUDES 1
+#endif
 
 // ---------------------------------------------------------------------------------------------
 // Parse-level switches. Use with #if only where the code cannot be written otherwise.

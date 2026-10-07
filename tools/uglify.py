@@ -233,6 +233,9 @@ class Names:
         self.src_platform = set(allowed.pop("src-platform", []))
         # [draft-internal]: names of draft-names.txt that programs never spell, renamed all the same.
         self.draft_internal = set(allowed.pop("draft-internal", []))
+        # [file <path>]: names one non-standard header declares for programs (<cxxabi.h>'s `abi`),
+        # kept in that file only; everywhere else they are renamed as usual.
+        self.file_names = {k[5:].strip(): set(allowed.pop(k)) for k in list(allowed) if k.startswith("file ")}
         # draft-names.txt: the names the draft's library code spells for programs (with the
         # subclause), which must not be renamed unless [draft-internal] says why.
         self.draft = {}
@@ -489,7 +492,11 @@ def rename_tree(names, verbose=True):
                 p.write_text(new)
                 changed += 1
     headers = Renamer(names)
-    run(headers, include_files())
+    run(headers, [p for p in include_files() if p.relative_to(REPO).as_posix() not in names.file_names])
+    for rel, kept in names.file_names.items():
+        own = Renamer(names, protect=kept)
+        run(own, [REPO / rel])
+        headers.renamed.update(own.renamed)
     src_headers = Renamer(names, protect=names.src_platform)
     run(src_headers, [p for p in src_files() if p.suffix in (".hpp", ".h")])
     renamed = set(headers.renamed) | set(src_headers.renamed) | names.recorded
@@ -535,7 +542,8 @@ def survey(names, files):
     for p in files:
         text = p.read_text()
         line = 1
-        protect = names.src_platform if p.is_relative_to(REPO / "src") else ()
+        protect = names.src_platform if p.is_relative_to(REPO / "src") else \
+            names.file_names.get(p.relative_to(REPO).as_posix(), ())
         for k, t in lex(text):
             if k == "ident" and t not in protect and names.kind(t) is None:
                 c, where = found.get(t, (0, None))

@@ -419,6 +419,107 @@ Unverified or known gaps on macOS:
 - Linking: CMake repeats the cyclic archive pair `libycxx.a`/`libycxx-abi.a`; Xcode 15's linker
   warns about duplicate libraries (harmless).
 
+## Real-world projects (runs of 2026-10-07)
+`tools/realworld` (stage `realworld` of `tools/test`; nightly in `full.yml`) builds 19 open-source
+projects with GCC 16.2 and Clang 23.1 against libycxx and runs their own test suites; the method,
+and how the linkage is proved, are in docs/CUSTOM_STDLIB.md ("Real-world projects"). Every project
+below built and passed its tests with both compilers, and every one passed the linkage proof: all
+C++ translation units compiled by `tools/ycxx-cxx` with `-nostdinc++` and libycxx's include
+directory, no libstdc++/libc++ header in any object's dependencies, no image needing
+libstdc++/libc++ or holding one of their symbols, and every image defining libycxx's
+`__ycxx_allocation_functions`. The self-test that builds the same program with the toolchain's own
+library is rejected on all counts. Test counts are CTest tests (passed / skipped); a CTest test
+may be a whole suite (spdlog, libcoro, yaml-cpp: one binary each; taskflow: one per doctest case).
+
+| project | ref | GCC | Clang | tests passed / skipped, GCC | Clang | notes |
+|---|---|---|---|---:|---:|---|
+| googletest | v1.18.0 | ok | ok | 63 / 1 | 63 / 0 | `GTEST_HAS_CXXABI_H_` set (it detects `<cxxabi.h>` by vendor macros); with GCC `gtest_dll_test_` not built (hidden visibility, per-image runtime) |
+| Abseil | 20260817.0 | ok | ok | 242 / 0 | 242 / 0 | 2 patches (`std::min`'s header; `std::map` is constexpr in C++26); found the `assert` message bug and the GCC ICE |
+| benchmark | v1.9.5 | ok | ok | 83 / 2 | 83 / 2 | 1 patch (includes); `cxx11_test` asserts C++11 (pre-c++26) |
+| Catch2 | v3.16.0 | ok | ok | 81 / 0 | 81 / 0 | 2 patches (includes; `optional` is a range); thread-safe assertions on |
+| CLI11 | v2.7.2 | ok | ok | 82 / 0 | 82 / 0 | 1 patch (`optional` is a range); found the GCC ICE |
+| doctest | v2.5.3 | ok | ok | 191 / 3 | 191 / 3 | 1 patch (`<cerrno>`); the DLL/plugin tests rethrow across images (libycxx limitation); found the string I/O link bug |
+| EnTT | v4.0.0 | ok | ok | 15 / 0 | 15 / 0 | |
+| {fmt} | 12.2.0 | ok | ok | 21 / 0 | 21 / 0 | found the missing `<cxxabi.h>` |
+| glaze | v9.0.0 | ok | ok | 145 / 2 | 140 / 9 | CMake 4.1 (uvx); 4 patches (includes; `bfloat16` IEC 559; libstdc++/libc++ type-name spellings); `asio_repe` needs IPv6; GCC: `lib_test` (hidden `extern "C"` entry point); Clang: `inplace_vector_test` (Clang 23 bug), `msgpack`/`cbor` tests (incomplete type in `std::vector`, the project's) |
+| GSL | v5.0.1 | ok | ok | 15 / 0 | 15 / 0 | Clang 23's lifetime-safety suggestions off (its `-Weverything -Werror`) |
+| nlohmann/json | v3.12.0 | ok | ok | 101 / 0 | 101 / 0 | 2 patches (includes and `__GLIBCXX__`-guarded byte traits; `<ciso646>`) |
+| libcoro | v0.16.0 | ok | ok | 1 / 0 | 1 / 0 | one CTest test runs the whole suite; 2 patches (includes; a racy test case under TSan) |
+| magic_enum | v0.9.8 | ok | ok | 12 + 3 XFAIL / 0 | 15 / 0 | 1 patch (`<cstdlib>`); GCC 16 miscompiles `test_flags` at `-O1 -std=c++26` (XFAIL) |
+| oneTBB | v2023.1.0 | ok | ok | 141 / 3 | 141 / 1 | 3 patches (portability, a per-image terminate handler, its TSan flags with Clang); `test_malloc_new_handler` (per-image new handler); GCC: `test_openmp` (GCC's `<omp.h>` includes libstdc++) |
+| range-v3 | 0.12.0 | ok | ok | 234 / 10 | 236 / 6 | 1 patch (C++23 `as_lvalue`); 5 tests not built: libstdc++/libc++ internals recognised (2), pre-C++26 rules (3; 2 of them GCC only) |
+| simdjson | v5.0.2 | ok | ok | 153 / 0 | 153 / 0 | 3 patches (includes; amalgamation, benchmarks, `bfloat16`; deprecated `unsigned char` insertion) |
+| spdlog | v1.17.0 | ok | ok | 1 / 0 | 1 / 0 | `std::format` back end; one CTest test runs the whole suite; 1 patch (`<cerrno>`) |
+| Taskflow | v4.1.0 | ok | ok | 2909 / 0 | 2909 / 0 | 1 patch (doctest's `<cerrno>`) |
+| yaml-cpp | 0.8.0 | ok | ok | 1 / 0 | 1 / 0 | one CTest test runs the whole suite; 2 patches (includes; its test allocator's `allocate_at_least`) |
+
+Under AddressSanitizer (+LeakSanitizer, Clang, all 19 projects) everything passes with 10 more
+skips, all traced to the projects (stacks in the run's logs): leaks on purpose or by mistake
+(gmock `AllowLeak`, CLI11 `SetTest` and a `shared_ptr` cycle in `TransformTest`, Abseil
+`InlinedVector` losing its allocation when an element copy throws), wrong deallocation sizes
+(oneTBB node handles), deliberate over-reads (simdjson's unpadded input), a signal the sanitizer
+intercepts (googletest's `KilledBySignal`), and a test allocator that inherits
+`std::allocator::allocate_at_least` while replacing `allocate` with `malloc` (yaml-cpp, patched).
+Under ThreadSanitizer (Clang: spdlog, taskflow, oneTBB in its own TSan configuration, libcoro,
+Abseil) everything passes; found were Catch2 assertions from several threads (spdlog; Catch2 is
+now built with thread-safe assertions), a test that checks `coroutine_handle::done()` across
+threads ordered by `sleep_for` (libcoro, patched), stdio in a signal handler and a race in
+Abseil's `LowLevelAlloc` that the same test shows with libstdc++ (both skipped under TSan).
+Nothing in libycxx was reported by either sanitizer.
+
+What the projects found in libycxx (each fixed with an own test):
+- `<cxxabi.h>` was missing (`abi::__cxa_demangle`, used by googletest, fmt and others to name
+  types); added with the Itanium ABI's `__cxa_demangle` (`rtti/cxa_demangle`).
+- The string inserters, extractors and `getline` were not defined out of line for `char` and
+  `wchar_t`, so a program that declared them through `<string>` alone and called them from a
+  translation unit that never instantiated them failed to link (doctest with Clang;
+  `string/string_io_declaring_headers_only`).
+- A failed `assert` cut its diagnostic at 512 bytes, so after a long function name the asserted
+  expression was lost ([assertions.assert]/2.3; Abseil's death tests;
+  `cassert/assert_long_function_name`).
+- A GCC 16 crash (Known compiler gaps) on arrays of aggregates holding containers, as in
+  table-driven tests (Abseil, CLI11), is now worked around in the containers.
+
+What the projects needed from themselves (patches, each with its category and reason in
+`tests/realworld/<name>/patches/`) is mostly not about the standard:
+- headers that libstdc++ and libc++ include from one another: `errno`/`E*` after `<string>`,
+  `<system_error>` or `<mutex>` (doctest, in four projects, json, Catch2, spdlog, benchmark,
+  simdjson), `std::abort`/`exit` after `<string>` or `<memory>`, `isspace`/`isdigit`/`tolower`
+  after `<string>`, `<iostream>` or `<locale>`, `std::ostream` after `<string>`, `std::min`/
+  `std::copy`/`std::equal` after `<vector>`, `<string>`, `<string_view>` or `<cstring>`,
+  `unordered_map` after `<functional>`, `PATH_MAX` after `<climits>`, pthread and `sched_*` after
+  `<thread>` or `<atomic>`;
+- rules older than C++26: `std::optional` is a range (Catch2, CLI11 printers), `<ciso646>` is
+  gone (json's doctest), `unsigned char` stream insertion is deprecated (simdjson), `std::map` is
+  constexpr (Abseil), `==` between arrays removed (range-v3, skipped);
+- recognising the library by its macros or its internals: `__GLIBCXX__` (json's byte traits,
+  glaze), `GTEST_HAS_CXXABI_H_`, oneTBB's `uncaught_exceptions` detection, range-v3's
+  `iterator_traits` and contiguous-iterator detection (skipped), type names as libstdc++ or
+  libc++ spell them (glaze);
+- `bfloat16_t` assumed IEC 559 (glaze, simdjson; the draft's Note excludes it, libycxx reports
+  `is_iec559 == false`).
+
+Limitations of libycxx's design that tests met (Known limitations, below): each image that
+links libycxx has its own runtime state, so a terminate or new handler, `throw;` and
+`current_exception` do not cross shared libraries (doctest's DLL/plugin tests, oneTBB's
+new-handler test, googletest's `gtest_dll_test_` with GCC), and GCC hides an `extern "C"`
+function whose signature names a library type unless the project marks it for export (glaze
+`lib_test` with GCC).
+
+Compiler bugs met, with reproducers in the project's `repro/`: GCC 16's crash in
+`cxx_eval_indirect_ref` (worked around, Known compiler gaps); GCC 16 miscompiling magic_enum's
+`test_flags` at `-O1 -std=c++26` (XFAIL, GCC only); Clang 23 rejecting `return *opt;` for a
+temporary `std::optional<T&>` as dangling (glaze `inplace_vector_test`, Clang only); GCC 16's
+`<omp.h>` including libstdc++'s internal `<bits/new_throw.h>` (oneTBB `test_openmp`, GCC only).
+
+Tried and not kept: toml++ (its tests build with Meson only; its CMake builds examples) and
+mp-units (not pursued after a first look at its Conan-oriented test setup).
+
+Runtimes (this host, -j4): GCC about 60 minutes for all 19 (glaze 10-18 minutes of build, Abseil
+7, oneTBB 9 plus 3 of tests), Clang about 65; ASan about 90 minutes, TSan about 45 for its five
+projects. With `--clean` (each project's build tree removed after its run), the peak is the largest
+build tree, glaze's 2.7 GB, plus the 0.4 GB of sources and the installed dependencies.
+
 ## Reference runs against libstdc++
 `YCXX_STDLIB=libstdcxx tools/run-conformance ycxx gcc|clang` runs the own suite against GCC 16's
 libstdc++. `tests/ycxx/REFERENCE.md` lists every failure: libstdc++ bugs (e.g. `variant::swap`
@@ -427,6 +528,15 @@ libstdc++ 16 lacks, GCC/Clang differences, C-header gaps and ABI limits. No fail
 a defect in a test.
 
 ## Known compiler gaps and bugs
+- GCC 16.2 at `-O1 -std=c++26` (not `-O0`, not C++23, not Clang) miscompiles magic_enum's
+  `enum_flags_contains` for a string naming a flag twice; reproduced with libstdc++
+  (`tests/realworld/magic_enum/repro/gcc16_cxx26_O1_flags.cpp`); XFAIL in the real-world run.
+- Clang 23 rejects `return *opt;` where `opt` is a temporary `std::optional<int&>` ("returning
+  reference to local temporary object"), though the reference names the referred-to object, not
+  the optional; the same with libstdc++ (`tests/realworld/glaze/repro/clang23_optional_ref_dangling.cpp`;
+  glaze's `inplace_vector_test` is not built with Clang).
+- GCC 16.2's `<omp.h>` includes libstdc++'s internal `<bits/new_throw.h>`, so OpenMP code cannot
+  include it with another C++ library (oneTBB's `test_openmp` is not built with GCC).
 - GCC 16.2 at -O1 and above: an internal compiler error in `cxx_eval_indirect_ref`
   (constexpr.cc:7530) when it constant-folds an array of aggregates whose members are containers
   of different allocator types built with the default allocator argument

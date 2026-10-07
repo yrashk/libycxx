@@ -137,9 +137,12 @@ typedef __UINT32_TYPE__ ycxx_pal_u32;
 /* Registers f(obj) to run when the calling thread exits (thread_local destructors); dso is the
    registering object's __dso_handle. Returns 0 on success. */
 [[__gnu__::__visibility__("hidden")]] int ycxx_pal_thread_atexit(void (*__f)(void*), void* __obj, void* __dso) YCXX_PAL_NOEXCEPT;
-/* Registers f(arg) to run when the calling thread ends, after its thread_local objects are
-   destroyed (std::notify_all_at_thread_exit, promise::set_value_at_thread_exit). Not run for the
-   thread that ends the process. Returns 0 on success. */
+/* Registers f(arg) to run when the calling thread exits, after all its thread_local objects are
+   destroyed (std::notify_all_at_thread_exit, promise::set_value_at_thread_exit): when its initial
+   function returns, and when it calls exit() (returning from main does), there before the objects
+   with static storage duration are destroyed and the atexit functions run. Not run by
+   quick_exit(), _Exit() or abort(), nor for threads still running when the program ends. An
+   f may register another action, which then runs too. Returns 0 on success. */
 [[__gnu__::__visibility__("hidden")]] int ycxx_pal_at_thread_end(void (*__f)(void*), void* arg) YCXX_PAL_NOEXCEPT;
 
 /* ---- error messages (layer 'environment'; the fallback without it: "error N") ------------ */

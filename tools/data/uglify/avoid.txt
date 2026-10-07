@@ -59,3 +59,21 @@ _Complex _Imaginary _Bool _Atomic _Noreturn _Alignas _Alignof _Static_assert _Th
 _Generic _BitInt _Decimal32 _Decimal64 _Decimal128 _Float16 _Float32 _Float64 _Float128
 _Float32x _Float64x _Float128x _Nonnull _Nullable _Null_unspecified _Nullable_result _Pragma
 _Accum _Fract _Sat _Countof _Lengthof _Clang
+
+[c-library-macros]
+# Macros the C libraries' public headers define with reserved lowercase spellings: Darwin's
+# <sys/cdefs.h> and <ptrcheck.h> (included by most of its headers; __pure broke the macOS build,
+# __single expands to nothing there), and glibc's <sys/cdefs.h>.
+__pure __pure2 __dead __dead2 __unused __used __cold __exported __hidden __deprecated
+__deprecated_msg __unavailable __printflike __printf0like __scanflike __osloglike __format_arg
+__strong __weak __result_use_check __abortlike __header_always_inline __header_inline
+__alloc_size __alloc_align __disable_tail_calls __not_tail_called __kpi_deprecated __improbable
+__probable __offsetof __containerof __swift_unavailable __counted_by __sized_by __ended_by
+__single __indexable __bidi_indexable __unsafe_indexable __null_terminated __terminated_by
+__enum_decl __enum_closed_decl __options_decl __options_closed_decl __restrict_arr __wur
+__nonnull __returns_nonnull __attr_access __attr_access_none __attr_dealloc __always_inline
+__extern_inline __extern_always_inline __errordecl __warndecl __flexarr __fortify_function
+__attribute_pure__ __attribute_const__ __attribute_malloc__ __attribute_noinline__
+__attribute_deprecated__ __attribute_artificial__ __glibc_likely __glibc_unlikely __P __CONCAT
+__STRING __BEGIN_DECLS __END_DECLS
+re:__(darwin|glibc|unsafe_forge|ptrcheck)_\w*

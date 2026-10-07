@@ -345,34 +345,45 @@ void ycxx_pal_sleep_until(int clock, ycxx_pal_i64 __sec, ycxx_pal_i64 __nsec) {
 #endif
 }
 
+/* The C library's registration of a thread_local destructor: f(obj) runs when the calling thread
+   ends, and when it calls exit() (before the static destructors), in reverse order of
+   registration, a destructor registered while they run included. */
 #if defined(__APPLE__)
-/* libSystem's registration function for thread_local destructors. */
+/* libSystem's (run by the thread's end and by exit()'s _tlv_exit). */
 extern void _tlv_atexit(void (*)(void*), void*);
 
-int ycxx_pal_thread_atexit(void (*__f)(void*), void* __obj, void* __dso) {
+static int pal_register_thread_dtor(void (*__f)(void*), void* __obj, void* __dso) {
   (void)__dso;
   _tlv_atexit(__f, __obj);
   return 0;
 }
 #else
-/* glibc's registration function for thread_local destructors; other C libraries may lack it. */
+/* glibc's (run by the thread's end and by exit()'s __call_tls_dtors); other C libraries may lack
+   it. dso keeps the registering object loaded while the destructor is pending. */
 extern int __cxa_thread_atexit_impl(void (*)(void*), void*, void*) __attribute__((__weak__));
 
-int ycxx_pal_thread_atexit(void (*__f)(void*), void* __obj, void* __dso) {
+static int pal_register_thread_dtor(void (*__f)(void*), void* __obj, void* __dso) {
   if (__cxa_thread_atexit_impl)
     return __cxa_thread_atexit_impl(__f, __obj, __dso);
   return -1;
 }
 #endif
 
-/* The thread-end list: a pthread key whose destructor runs the calling thread's entries. POSIX
-   key destructors run after the C++ thread_local destructors (glibc: __call_tls_dtors comes
-   first; macOS: the TLV destructors run from the first key destructor round). */
+/* The thread-end list (std::notify_all_at_thread_exit, the *_at_thread_exit results, RCU's
+   reader records): run after every thread_local destructor of the thread, when it ends and when it
+   calls exit() (DECISIONS §3). The list is a thread_local pointer, run by the "sentinel", a
+   thread_local destructor of the PAL's own registered before the thread's first other one (by
+   ycxx_pal_thread_atexit, through which libycxx registers every thread_local destructor, or by
+   the first ycxx_pal_at_thread_end): destructors run in reverse order of registration, so the
+   sentinel comes last. Where no destructor can be registered, a pthread key destructor runs the
+   list instead (after the C++ thread_local destructors; never for a thread calling exit()). */
 struct pal_end_entry {
   void (*__f)(void*);
   void* arg;
   struct pal_end_entry* next;
 };
+static _Thread_local struct pal_end_entry* pal_end_list; /* with the sentinel */
+static _Thread_local int pal_end_armed;                  /* 0: no sentinel pending, 1: pending, 2: cannot */
 static pthread_key_t pal_end_key;
 static pthread_once_t pal_end_once = PTHREAD_ONCE_INIT;
 static int pal_end_key_ok;
@@ -387,17 +398,51 @@ static void pal_run_end_list(void* p) {
   }
 }
 
+/* The sentinel. An action may register another action or construct a thread_local: the list is
+   drained, and such a registration arms a new sentinel (which then finds the list empty, or what
+   a destructor run after this one added). */
+static void pal_end_sentinel(void* __unused_arg) {
+  (void)__unused_arg;
+  pal_end_armed = 0;
+  struct pal_end_entry* e;
+  while ((e = pal_end_list) != NULL) {
+    pal_end_list = e->next;
+    e->__f(e->arg);
+    free(e);
+  }
+}
+
+/* Registers the sentinel unless it is pending. The dso is this object's (the sentinel's address):
+   its code must stay loaded until the sentinel has run. */
+static void pal_arm_end_sentinel(void) {
+  if (pal_end_armed == 0)
+    pal_end_armed = pal_register_thread_dtor(&pal_end_sentinel, NULL, (void*)&pal_end_sentinel) == 0 ? 1 : 2;
+}
+
+int ycxx_pal_thread_atexit(void (*__f)(void*), void* __obj, void* __dso) {
+  pal_arm_end_sentinel();
+  return pal_register_thread_dtor(__f, __obj, __dso);
+}
+
 static void pal_make_end_key(void) { pal_end_key_ok = pthread_key_create(&pal_end_key, pal_run_end_list) == 0; }
 
 int ycxx_pal_at_thread_end(void (*__f)(void*), void* arg) {
-  pthread_once(&pal_end_once, pal_make_end_key);
-  if (!pal_end_key_ok)
-    return EAGAIN;
+  pal_arm_end_sentinel();
   struct pal_end_entry* e = (struct pal_end_entry*)malloc(sizeof *e);
   if (!e)
     return ENOMEM;
   e->__f = __f;
   e->arg = arg;
+  if (pal_end_armed == 1) {
+    e->next = pal_end_list;
+    pal_end_list = e;
+    return 0;
+  }
+  pthread_once(&pal_end_once, pal_make_end_key);
+  if (!pal_end_key_ok) {
+    free(e);
+    return EAGAIN;
+  }
   e->next = (struct pal_end_entry*)pthread_getspecific(pal_end_key);
   int r = pthread_setspecific(pal_end_key, e);
   if (r != 0)

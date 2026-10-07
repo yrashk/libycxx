@@ -247,6 +247,11 @@ tools/ycxx-cxx gcc   -O2 examples/demo.cpp -o demo-gcc   && ./demo-gcc     # lib
 tools/ycxx-cxx clang -O2 examples/demo.cpp -o demo-clang && ./demo-clang   # libycxx example: ok
 ```
 
+An installation has the same wrapper as `<prefix>/bin/ycxx-c++` (generated from
+`cmake/ycxx-c++.in` for the compiler libycxx was built with, relocatable, raising an older
+`-std=` to C++26), with a toolchain file naming it, `libycxx.pc` and a Meson native file:
+`docs/BUILDING_PROJECTS.md` covers using them with existing projects.
+
 Others: the MSVC STL generates `set_environment.bat`, which puts the built `inc` and `lib`
 directories first in `INCLUDE`, `LIB` and `PATH` [msvc-readme]; libc++ provides
 `libcxx/utils/libcxx-lit` as a test wrapper but documents the raw flags for users [libcxx-testing,

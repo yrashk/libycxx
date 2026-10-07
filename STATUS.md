@@ -63,7 +63,7 @@ reports count both per category. All such libc++ tests are linked or triaged; of
 | input.output + localization (iostreams, `<locale>`) | 583/855 | 590/855 | no (hosted) | was 39; 213 of the failures need `<filesystem>`, `<codecvt>` (removed), `<format>`/`<print>`, `<mutex>`/`<chrono>` or `EOF` from `constexpr_char_traits.h`; rest under Known limitations |
 | atomics + thread (incl. futures, stop tokens, latch/barrier/semaphore) | 449/453 | 449/453 | `<atomic>` yes (runtime archive); the rest hosted | was 16; rest: `<format>` for thread::id (4) |
 | input.output + localization (iostreams, `<locale>`, `<filesystem>`) | 668/855 | 668/855 | no (hosted) | was 583 (Clang) / 590 (GCC) before `<filesystem>`; most failures need `<chrono>`, `<codecvt>` (removed), `<format>`/`<print>`, `<mutex>`/`<thread>` or `EOF` from `constexpr_char_traits.h`; rest under Known limitations |
-| re (`<regex>`) | 163/164 | 163/164 | no (hosted) | was 12; 5 skipped (draft divergences, see tests/libcxx/skip.txt); rest: `EOF` from `constexpr_char_traits.h` |
+| re (`<regex>`) | 171/171 | 171/171 | no (hosted) | was 12; 6 skipped or unsupported (draft divergences, see tests/libcxx/skip.txt) |
 
 Whole-suite baseline (clang, before iterators/tuple/array/optional): 976 pass / ~8,000 run.
 
@@ -207,10 +207,14 @@ regex_match/regex_search/regex_replace with every match_flag_type, regex_iterato
 regex_token_iterator. ECMAScript backtracks on an explicit stack (ECMA-262 capture and empty-
 iteration rules; failure memo for programs without back-references, so `(a|b)*c` and `(a*)*b`
 are linear); the POSIX grammars find the leftmost-longest match with an NFA simulation and assign
-subexpressions by the POSIX left-to-right longest rule. Own suite regex/: 8/8 on both compilers,
-clean under ASan (Clang). libc++ std/re 12 -> 163/164 (+5 skipped; the failure needs `EOF` from
-`constexpr_char_traits.h`); libstdc++ 28_regex 0 -> 103/104 (+6 skipped; the failure needs
-`bits/move.h`; 61 others need `__gnu_test` helpers); both compilers. Checked against V8 on 63,000
+subexpressions by the POSIX left-to-right longest rule; with back-references (or counted
+repetitions too large for the NFA) the backtracker finds the leftmost-longest match and a guided
+search assigns the subexpressions by the same rule (DECISIONS §3). Multi-character collating
+elements of named locales (`[[.ch.]]`, from the C library's regcomp); `transform_primary` per
+[re.traits]/7 except for the classic locale (its whole key: a deliberate divergence). Own suite regex/: 32/32 on both compilers,
+clean under ASan (Clang). Runs of 2026-10-07 (both compilers): libc++ std/re 171 pass / 6
+skipped of 177; libstdc++ 28_regex 115 pass / 56 unsupported of 171 (most unsupported need
+`__gnu_test` helpers). Checked against V8 on 63,000
 random ECMAScript patterns (with and without icase): identical results.
 <meta> (reflection; GCC 16 with `-freflection` only, DECISIONS §13): every [meta.syn] entity.
 The metafunctions are GCC's own (declared without definitions); the library defines `info`,
@@ -234,7 +238,8 @@ from leapseconds / leap-seconds.list / built-in IERS table), `time_zone`, `zoned
 chrono-format-spec, E/O, L through `time_put`; `%j %U %W %V %G %g` of a calendar value that is
 not a valid date throw `format_error`), `local_time_format`, every stream inserter, and
 `parse`/`from_stream` for every parsable type with every flag. `__cpp_lib_chrono` 202306L,
-`__cpp_lib_chrono_udls` 201304L. Own suite chrono/ 26 -> 66/66, plus print/print_every_kind and
+`__cpp_lib_chrono_udls` 201304L. Parsing reads the stream's locale (names, representations,
+eras, alternative digits). Own suite chrono/ 26 -> 66/66 (and 5 tests of the gap fixes G2/G3), plus print/print_every_kind and
 format/nonlocking_formatter_optimization (both compilers; clean under ASan and UBSan, Clang).
 libc++ std/time 128 -> 377/386 (GCC), 128 -> 378/386 (Clang); the rest construct `leap_second`
 or `time_zone_link` through libc++'s private test helpers. libstdc++ std/time +
@@ -243,6 +248,47 @@ other 19: `ext/typelist.h` or `std::__format` internals (7), names expected from
 without their headers (`<sstream>`, `printf`, `int64_t`: 4), and libstdc++ choices the draft
 leaves open (8: `%OS` without fraction, LWG 4118 character reps, file_clock's epoch, rounding
 when parsing, `fractional_width` of ratio<1, 2^62>, `hh_mm_ss` layout, an error message).
+
+## Spec coverage audit (docs/SPEC_COVERAGE.md)
+- Part 1 ([library] tables and [version.syn], [support], [concepts], [diagnostics], [mem], [meta],
+  [utilities]; 2026-10-07; `tools/spec_audit/part1/run.py`): 2029 declared names (1988 probed by
+  name), 313 macros, 192 header checks, 20 shape probes (18 at the audit), on GCC 16.2 and Clang 23.1. `[ptrtag]`
+  (P1-01) is implemented since (19 names, probes `ptrtag.cpp`, `ptrtag.pair.cons.cpp`); only its
+  constexpr part with non-zero tags is compiler-blocked, so `__cpp_lib_pointer_tag_pair` stays
+  undefined. The rest is
+  compiler-blocked (reflection, contracts, `is_structural`, ... on Clang; `is_within_lifetime` on
+  GCC). Fixed: `pmr::indirect`/`pmr::polymorphic`, `is_applicable` & co. in `<type_traits>`, and
+  7 feature-test macros.
+- Part 2, [containers] [iterators] [ranges] [algorithms] [strings] (2026-10-07, draft
+  `c7015b48`): 6164 declared entities, 5803 with a presence check and 3935 with a shape check,
+  all passing on GCC 16.2 and Clang 23.1 (25470 generated checks, `tools/spec_audit/run_probes.py
+  --part part2`, plus 86 hand-written constexpr/semantic checks). Found and fixed: 4 feature-test
+  macros (`__cpp_lib_view_interface`, `__cpp_lib_hardened_{common_iterator,counted_iterator,
+  view_interface}`), 13 unchecked Hardened preconditions of `common_iterator` and
+  `counted_iterator`; shuffle and sample with a generator wider than 64 bits (infinite recursion).
+  Open: three draft defects.
+- Part 3 ([text], [numerics], [time], [input.output], [thread], [exec], Annex D): `docs/SPEC_COVERAGE.md` (part 3); probes and their generator in `tools/spec_audit/part3/`
+  (`run.py` re-runs them; draft revision `c7015b485cc3`). 6367 declarations of the synopses: 6247
+  present with the specified shape (signature, return type, noexcept, constraints, explicit,
+  bases, values) on both compilers, 686 of them probed by name only (exposition-only types in the
+  signature), 120 not probed; 2410 constexpr calls, none failing because a function is not
+  constexpr (184 GCC / 185 Clang undecided for their sample values); 513 macro checks (the
+  [version.syn] values of these headers, the synopses' macros, Annex D, [zombie.names]), with the
+  freestanding declarations also compiled with `-ffreestanding`. Fixed by the audit: volatile
+  `store_*` of non-lock-free atomics (`f222ebf`), `stop_token`/`stop_source::operator==` as
+  members (`9446019`), constant-evaluated `compare_exchange` of `long double` on Clang (`370b7e3`).
+  Fixed since (gap fixes): G2 `chrono::parse` in the stream's locale (names, `%c %x %X %r %p`,
+  eras and alternative digits, a program's `time_get`; `331fde9` `8b7d190` `735d0a0`), G3 `{:L}`
+  through the locale's `num_put` (`ee9b9ea`), G4 (POSIX regex subexpressions with back-references
+  and large counted repetitions) and G5 (multi-character collating elements; `transform_primary`
+  per [re.traits]/7 but for the classic locale, a deliberate divergence; `3919455`, `a161e22`),
+  G6 (`rcu_barrier` inside a scheduled evaluation evaluates what was scheduled before it; after a
+  retire in the caller's own region it blocks, a hardened precondition), G7 (the
+  `*_at_thread_exit` actions of the thread that calls `exit` or returns from `main`) and G8, the
+  completion schedulers and domains of when_all, let and the other adaptors (`5a1705c`; 2
+  behaviour probes, `exec.when.all#1`, `exec.let#1`, so 6367 declarations and 13237 checks).
+  Open: `__cpp_lib_constexpr_exceptions` on Clang (compiler gap), G9/G10 (implementation-defined
+  `<filesystem>` root names and tzdb source; none planned).
 
 ## Own-suite configurations (runs of 2026-10-05, 2438 tests)
 `tools/test --hardened` / `--cxxflags=... --config-name=...` (README, Own tests); the nightly
@@ -528,6 +574,13 @@ libstdc++ 16 lacks, GCC/Clang differences, C-header gaps and ABI limits. No fail
 a defect in a test.
 
 ## Known compiler gaps and bugs
+- Neither GCC 16.2 nor Clang 23.1 can set bits of a pointer during constant evaluation (no
+  pointer-tagging builtin; `reinterpret_cast`, `bit_cast` of pointers, arithmetic outside an
+  object or on a null pointer, and reading the other member of a pointer/integer union are all
+  rejected; Clang's `__builtin_align_down` only aligns). So `pointer_tag_pair` stores only the tag
+  0 in constant evaluation ([ptrtag.pair.cons]/2: "Constant When: Preconditions are met"), and
+  `__cpp_lib_pointer_tag_pair` is not defined (DECISIONS §9; `ptrtag/constexpr_nonzero_tag`
+  XFAIL, audit P1-01).
 - GCC 16.2 at `-O1 -std=c++26` (not `-O0`, not C++23, not Clang) miscompiles magic_enum's
   `enum_flags_contains` for a string naming a flag twice; reproduced with libstdc++
   (`tests/realworld/magic_enum/repro/gcc16_cxx26_O1_flags.cpp`); XFAIL in the real-world run.
@@ -715,6 +768,13 @@ compilers; `visit_format_arg.pass.cpp` needs `EOF` from `constexpr_char_traits.h
   `match_prev_avail`, `^` matches at `first` only in multiline mode after a line terminator (the
   previous character exists, so `first` is not the beginning of the input), which keeps
   regex_iterator from matching `^a` at every position. Details in `tests/libcxx/skip.txt`.
+- `<regex>` `regex_traits::transform_primary` with the classic locale's collate facet returns the
+  whole sort key (a copy of the string: code point order, each character its own equivalence
+  class) where the letter of [re.traits]/7 returns an empty string (the facet is `collate<charT>`,
+  not a `collate_byname`), which would make every `[[=x=]]` invalid in the default locale
+  ([re.grammar]/10). Portable code relies on `[[=a=]]` working there, and libc++ and libstdc++
+  both make it work; see "Draft issues noticed" and DECISIONS §3. Facets whose key form is unknown
+  (a user's own collate, Darwin's collate_byname) still give an empty key.
 - `num_put::do_put(bool)` with `boolalpha` pads the name to `width()` (and resets the width) as
   the other conversions do; [facet.num.put.virtuals]/6 read literally inserts the name unpadded.
   libc++ and libstdc++ pad, and their tests expect it. Likewise a character-sequence inserter
@@ -833,12 +893,17 @@ compilers; `visit_format_arg.pass.cpp` needs `EOF` from `constexpr_char_traits.h
   need the range formatter of `<format>`), and a program that checks `formattable` before including
   `<format>` and again after it is ill-formed, no diagnostic required ([temp.constr.atomic]/3:
   GCC reports the changed satisfaction value, Clang keeps the first answer).
-- `<chrono>`: names, `%c %x %X %r` and `%p` in parsing are the "C" locale's (the stream's
-  `time_get` is not consulted); with L, a locale whose `time_put` is not the classic facet writes
-  `%c %x %X` etc. from a C `tm` (so its `%Y` there is `strftime`'s, unpadded, and the hours of a
-  duration are passed as is up to INT_MAX), while the classic facet's conventions are built in
-  (`{:L%c}` equals `{:%c}` for the "C" locale); the duration count of `{:L}` is grouped from the
-  locale's `numpunct` (a replaced `num_put` is not called); `%OS` without L keeps the fraction like `%S` (libc++'s reading;
+- `<chrono>`: parsing reads the stream locale's `time_get` (DECISIONS §14): a named locale's
+  `%c %x %X %r` are expanded and parsed field by field, its names, `%p` and `%EY` are its facet's;
+  a program's own `time_get` (not derived from `time_get_byname`) is called once per
+  locale-dependent flag, and then `%EC` reads as `%C` and `%OU %OW %OV %Ou` as plain numbers (a
+  `tm` cannot hold them), and `%S` fractions and a `%Z` inside its `%c` are not read; a char
+  stream compares names through `ctype<char>::tolower`, so a multibyte name's non-ASCII
+  letters must match in case (wchar_t folds them). With L, a locale whose `time_put` is not the
+  classic facet writes `%c %x %X` etc. from a C `tm` (so its `%Y` there is `strftime`'s,
+  unpadded, and the hours of a duration are passed as is up to INT_MAX), while the classic
+  facet's conventions are built in (`{:L%c}` equals `{:%c}` for the "C" locale); the duration
+  count of `{:L}` goes through the locale's `num_put` (as `os << d` does); `%OS` without L keeps the fraction like `%S` (libc++'s reading;
   libstdc++'s tests expect whole seconds); `hh_mm_ss` of a period whose denominator needs more
   than 18 decimal digits has `fractional_width` 6 per [time.hms.members]/1 (libstdc++ gives 18 for
   ratio<1, 2^62>); `duration` inserters print character reps as the stream does (LWG 4118 is not
@@ -884,17 +949,26 @@ compilers; `visit_format_arg.pass.cpp` needs `EOF` from `constexpr_char_traits.h
   `error_complexity` beyond a step budget that grows with the input (reached by exponential
   patterns with back-references, or with counted loops `(..){m,n}` or nullable-body loops with
   min 1 that the failure memo does not cover). POSIX patterns with back-references, or whose
-  bounded repetitions expand beyond 256 copies or 65536 nodes, backtrack exhaustively (longest
-  match; subexpressions in first-found order rather than by the POSIX rule). A combination of
+  bounded repetitions expand beyond 256 copies or 65536 nodes, backtrack exhaustively for the
+  leftmost-longest match (exponential in the worst case: the step budget above), then assign the
+  subexpressions by the POSIX rule with a guided search over the match (DECISIONS §3; the same
+  step budget over the match length and the tree size, error_stack beyond 2^22 pending goals or
+  choice points). A combination of
   several grammar flags throws `regex_error(error_complexity)` (error_type has no code for it).
   Groups nested more than 1000 deep throw `regex_error(error_space)` (the translator and the
   matchers recurse over the tree).
-  Multi-character collating elements (`[[.ch.]]`) are not supported (no locale defines them).
-  regex_traits::transform_primary returns the primary key of a named locale's collate_byname
-  where the C library's key form is known (glibc's multi-level keys: `[[=a=]]` matches `A` and
-  `á`), and the full sort key otherwise (the classic locale's collate facet, a locale whose keys
-  have one level, Darwin), where [re.traits]/7 would return an empty key, making every `[[=x=]]`
-  invalid.
+  regex_traits::transform_primary: the primary key of a collate_byname whose key form is known
+  (glibc's multi-level keys: `[[=a=]]` matches `A` and `á`; keys that copy the string), the whole
+  key of the classic locale's collate facet (a deliberate divergence from [re.traits]/7, see
+  "Deliberate divergences": `[[=a=]]` matches only `a` there), and an empty string otherwise (a
+  user's collate facet, Darwin's collate_byname), which makes `[[=x=]]` invalid (error_collate,
+  [re.grammar]/10). Multi-character
+  collating elements (`[[.ch.]]`) are those of a named locale's collate_byname, as the C
+  library's `regcomp` accepts them (glibc's cs_CZ: "ch", "Ch", "CH"; the classic locale has
+  none); in a bracket expression they match as one element, and a non-matching list does not
+  match where a listed one begins (XBD 9.3.5 leaves both unspecified). A list cannot name the
+  elements of an equivalence class that are multi-character (only the class's own name is
+  added: `[[=ch=]]` matches "ch", not "CH"): the C library does not enumerate them.
 - Iostreams/locale: named locales are the C library's (DECISIONS §7): a name the C library
   lacks throws `runtime_error`, and tests that need one are UNSUPPORTED (`tests/ycxxlit/locales.py`;
   `tools/ci/gen-locales` generates the suites' names on glibc). Where the draft leaves a choice,
@@ -902,7 +976,7 @@ compilers; `visit_format_arg.pass.cpp` needs `EOF` from `constexpr_char_traits.h
   patterns keep the C library's `curr_symbol` and put the separating space in the pattern
   (libstdc++'s choice); `money_put` without `showbase` then writes that space; a numpunct
   separator that is not one char (fr_FR.UTF-8's U+202F) is `' '` for char; `time_get` of a named
-  locale reads its `%x`/`%c`/`%X`/`%r` formats strictly (no libc++-style separator leniency);
+  locale reads its `%x`/`%c`/`%X`/`%r` formats strictly (no libc++-style separator leniency); it reads the locale's eras (`%EC %Ey %EY %Ec %Ex %EX`) and alternative digits (the O forms, `%OC` too);
   the base `time_get`/`time_put` facets are the "C" locale's whatever the stream's locale (only
   the `_byname` facets read a named locale; libstdc++'s base facets consult the stream's);
   the classic `moneypunct::negative_sign()` is "-" (libstdc++'s tests expect the C locale's "");
@@ -927,7 +1001,9 @@ compilers; `visit_format_arg.pass.cpp` needs `EOF` from `constexpr_char_traits.h
   `codecvt_unicode.h` expects `partial` with from_next before it instead; `money_get` with
   frac_digits() > 0 accepts a value without a decimal point as the digits that appear ("1056"),
   but a decimal point must be followed by exactly frac_digits() digits.
-- `<memory>`: no `pointer_tag_pair`. `atomic<shared_ptr<T>>` / `atomic<weak_ptr<T>>` are
+- `<memory>`: `pointer_tag_pair` cannot store a non-zero tag during constant evaluation (Known
+  compiler gaps), so `__cpp_lib_pointer_tag_pair` is not defined; at run time it is complete.
+  `atomic<shared_ptr<T>>` / `atomic<weak_ptr<T>>` are
   lock-based (the striped lock table of `<atomic>`); the execution-policy overloads of the
   specialized algorithms run sequentially. shared_ptr reference counts are plain while the
   process has one thread (DECISIONS §15), atomic otherwise. get_deleter identifies
@@ -1013,8 +1089,9 @@ compilers; `visit_format_arg.pass.cpp` needs `EOF` from `constexpr_char_traits.h
 - `<vector>`: `pmr::vector` names the
   forward-declared `polymorphic_allocator` until `<memory_resource>` exists. No AddressSanitizer
   container annotations (libc++'s asan tests check them: 16 libc++ tests fail under ASan for that
-  reason only). Not provided: the pre-C++26 `static vector<bool>::swap(reference, reference)` and
-  libstdc++'s `vector<bool>::insert(pos)` / mismatched-allocator extensions. vector<bool> shifts on
+  reason only). The static `vector<bool>::swap(reference, reference)` is provided, deprecated
+  ([depr.vector.bool.swap], "Annex D"). Not provided: libstdc++'s `vector<bool>::insert(pos)` /
+  mismatched-allocator extensions. vector<bool> shifts on
   insert/erase bit by bit. shrink_to_fit swallows an allocation failure (a non-binding request).
   Strengthened noexcept: `vector(vector&&, const Allocator&)` when the allocator is always equal;
   inplace_vector's copy operations when T's are. fill, find and count (std:: and ranges::, a
@@ -1198,8 +1275,11 @@ compilers; `visit_format_arg.pass.cpp` needs `EOF` from `constexpr_char_traits.h
   (hosted). Own suite execution: every test passes on both compilers, also under ASan+UBSan and
   (the threaded ones) TSan. Known limitations: `split`/`ensure_started` are not in the draft
   (P3682) and not provided; `tag_of_t` recognises tuple-like senders only; task_scheduler
-  allocates its backend at every construction; when_all and let report no completion
-  scheduler/domain; the draft questions of DECISIONS §17.
+  allocates its backend at every construction; spawn_future's sender reports no completion
+  domain (the spawned sender's type is erased; a parent's COMPL-DOMAIN makes it
+  `indeterminate_domain<>`); the draft questions of DECISIONS §17. Every adaptor reports its
+  completion domain and scheduler per tag as [exec.snd.general]/3-4 describe them (DECISIONS §17,
+  "Attributes"; spec-coverage audit G8).
 - `boyer_moore_searcher`/`boyer_moore_horspool_searcher` (`ycxx/core/searcher.hpp`): bad-character
   table (a 256-entry array for byte-sized integers compared with `equal_to`, otherwise a hash table of
   the pattern's equivalence classes that calls pred only on equal hash values), plus the good-suffix
@@ -1230,7 +1310,8 @@ compilers; `visit_format_arg.pass.cpp` needs `EOF` from `constexpr_char_traits.h
     when elements of the second range lie between later elements of the first.
 - `std::is_permutation` enforces its Mandates (same value type); libc++'s sort/heap tests call
   it with `MoveOnly*` and `int*` and fail to compile for that reason (12 tests).
-- shuffle/sample assume the generator's results fit in 64 bits.
+- shuffle/sample draw their indices as 64-bit values; a generator with a wider range (an
+  `unsigned __int128` result_type) is first reduced to uniform 64-bit values by rejection.
 
 - `<memory_resource>`: synchronized_pool_resource is the unsynchronized pool behind one lock
   (no thread-specific pools). Pool block sizes are powers of two from 8 bytes to 64 KiB (the
@@ -1281,18 +1362,28 @@ compilers; `visit_format_arg.pass.cpp` needs `EOF` from `constexpr_char_traits.h
   one waiter when another waiter has registered but not yet blocked (a permitted spurious wakeup;
   libc++ `condvar/notify_one.pass` assumes none and can fail rarely); atomic wait slots are shared
   between addresses, so notify wakes every waiter of the slot; no `native_handle` for mutexes and
-  condition variables; `notify_all_at_thread_exit` and the `*_at_thread_exit` results never run
-  for the thread that ends the process; RCU has one domain, and `rcu_barrier` called from inside
-  a scheduled evaluation returns without waiting (waiting would deadlock); `rcu_barrier` inside
-  a region does not wait for objects retired after the region began (they cannot be reclaimed
-  before it ends) and runs the deleters it evaluates inside that region (such a deleter must not
-  call `rcu_synchronize`); retired hazard-pointer
+  condition variables; the `*_at_thread_exit` actions run for a thread that calls `exit` (or
+  returns from `main`) after its thread_local destructors, through the C library's thread_local
+  destructor list (tested on Linux; on Darwin `_tlv_exit` is relied on to run before the static
+  destructors), never on `quick_exit`/`_Exit`/`abort`; RCU has one domain; `rcu_barrier` called
+  from inside a scheduled evaluation evaluates everything scheduled before it except the
+  evaluations in progress on its own thread (the draft asks for those too, see Draft issues);
+  `rcu_barrier` inside a region does not wait for objects another thread retired after the region
+  began (taken as not happening before the call), blocks for ever after the caller's own retire
+  in the region (as /4 requires; a hardened precondition), and runs the deleters it evaluates
+  inside that region (such a deleter must not call `rcu_synchronize`); retired hazard-pointer
   and RCU objects still pending at exit are not reclaimed. `atomic<T>` for a non-default-
   constructible T has a constrained (not mandated) default constructor. The deprecated atomics
   features are provided, declared [[deprecated]] (Annex D).
 
 ## Draft issues noticed
 Wording problems found while writing the spec-derived tests (tests/ycxx), not yet reported:
+- [re.traits]/7 with [re.grammar]/10: `transform_primary` returns a key only for a facet whose
+  dynamic type is exactly `collate_byname<charT>`; the classic locale's facet is `collate<charT>`,
+  so with the default (global, classic) locale every `[[=x=]]` is invalid, although the "C"
+  locale's collation (code point order, one character per class) is fully known. libc++'s and
+  libstdc++'s tests (and implementations) treat `[[=a=]]` as valid there, portable code relies on
+  it, and libycxx deliberately does the same (STATUS "Deliberate divergences", DECISIONS §3).
 - [set.symmetric.difference]/4.2: the returned `{last1, last2, result + N}` applies "if N is
   equal to M+K", but K is defined nowhere in the paragraph (M is; the count of the second
   range's copied elements is meant).
@@ -1342,12 +1433,52 @@ Wording problems found while writing the spec-derived tests (tests/ycxx), not ye
   domain, though [exec.snd.general]/3 gives every sender with completions of a tag one (e.g.
   `then(schedule(sch), f)`), and [exec.sched]/6 requires the schedule sender's to match the
   scheduler's (`default_domain` given an environment). libycxx's run_loop schedule sender answers
-  `default_domain` itself.
+  `default_domain` itself. The adaptors that transfer to a scheduler (continues_on, starts_on, on,
+  affine) take the agents of their completions from the schedule sender's attributes, per tag (as
+  [exec.run.loop.types]/5 makes run_loop's answer without an environment), and from the
+  scheduler's own queries only when `schedule` can throw (DECISIONS §17).
 - [exec.when.all]/15.1: the value completion `set_value(rcvr, values...)` is evaluated (not
   under `if constexpr`) whenever the disposition is `started`, also when `values_tuple` is
   `tuple<>` because some child has no value completion (/13). By [exec.snd.expos]/47 that makes
   `set_value_t()` a completion signature of, e.g., `when_all(just(1), just_stopped())`, which
   can never complete with a value; libycxx (and, presumably, the intent) leaves it out.
+- [stoptoken.general]/1, [stopsource.general]/1: `bool operator==(const stop_token& rhs)
+  noexcept = default;` is a defaulted comparison member without `const`, which
+  [class.compare.default]/1 does not allow (GCC 16 and Clang 23 reject it); libycxx declares the
+  `const` member (spec-coverage audit, part 3, D1).
+- [exec.snd.expos]/43: `basic-sender::get_env()` returns `impls-for<Tag>::get-attrs(data,
+  child...)`, but neither `default-impls` nor any `impls-for` specialization declares `get-attrs`
+  any more: the name is used once in the draft and defined nowhere (part 3, D2). P3826R5 struck
+  every `get-attrs` and gave the attributes in [exec.adapt.general]/3.2-3.3 (FWD-ENV of a single
+  child's, else env<>) and [exec.snd.general]/3-4 (completion domain and scheduler per tag); the
+  call in /43 is a leftover. libycxx reads /43 as those attributes (DECISIONS §17, "Attributes";
+  own tests `execution/completion_attributes_adaptors`, `completion_attributes_when_all_let`,
+  `domain_dispatch_through_adaptors`).
+- [exec.snd.expos]/60-61 and /10, [exec.let]/2: inline-attrs (just, read_env, inline_scheduler)
+  reports `get_scheduler(env)` as the completion scheduler, but the environment let gives the
+  sender its function returns (SCHED-ENV) names only `get_start_scheduler` (and the scheduler's
+  `get_domain`, when it has one). So, e.g., starts_on(sch, just()), whose let_value form starts
+  just() on sch, would report the receiver's `get_scheduler` as its value completion scheduler,
+  and an outer domain where sch has none. libycxx follows the wording for the factories; let and
+  starts_on report only domains for the sender a let function returns (DECISIONS §17).
+- [ptrtag.bits]/2 names `tagged_pointer_pair` and `tp.tagged()`: the class is `pointer_tag_pair`
+  and the member `tagged_pointer()`.
+- [ptrtag.pair.tagops]/2 uses `ptr` and `tag`, defined nowhere (meant: `pointer()` and `tag()`
+  of `*this`); /3 twice names `pointer_tag_type` (meant: `pointer_tag_pair`).
+- [ptrtag.pair.general]: the deduction guide `pointer_tag_pair(Ptr*) -> pointer_tag_pair<Ptr*>`
+  has no constructor taking a pointer alone, so an initialization deduced through it always
+  fails; libycxx declares it as written and adds no constructor
+  (`ptrtag/deduction_one_argument.compile.fail`). The guide `pointer_tag_pair(Ptr*, TagT) ->
+  pointer_tag_pair<Ptr*, bits-available<element-of<Ptr>>, TagT>` applies element-of to the
+  pointee type (`pointer_traits<int>` has no `element_type`), so it can never be used; libycxx
+  uses `bits-available<Ptr>`, the pointee's alignment (DECISIONS §9).
+- [saferecl.rcu.domain.func]/4: `rcu_barrier` "blocks until E has been evaluated" for every E
+  scheduled by an evaluation that happens before the call, with no exception for a call made
+  from inside a scheduled evaluation: E is then also that evaluation itself (and those that
+  called it), whose evaluation cannot complete before the call returns. libycxx evaluates
+  everything else and returns. Inside a region, /4 with [saferecl.rcu.general]/5 makes the
+  barrier block for ever after the caller retired something in the region (as `rcu_synchronize`
+  inside a region, /2); no precondition says so (libycxx checks it as a hardened one).
 
 ## Performance
 `bench/` (manual, not in CI; DECISIONS §15) times the hot paths against libstdc++ on both

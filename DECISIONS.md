@@ -489,6 +489,30 @@ tooling.
   SDK's headers, but the interface libSystem's `os_unfair_lock` and Apple's own libc++ use since
   macOS 10.12; the public `os_sync_wait_on_address` needs macOS 14.4 and is not usable from GCC,
   which has no `__builtin_available`), with relative timeouts in microseconds.
+- **The thread-end actions run for the thread that ends the program too.** The `*_at_thread_exit`
+  results ([futures.promise]/23, /26, [futures.task.members]) and `notify_all_at_thread_exit`
+  ([thread.condition.nonmember]/2-3) act "when the current thread exits, after all objects with
+  thread storage duration associated with the current thread have been destroyed". A thread that
+  calls `exit` (returning from `main` does, [basic.start.main]/5) destroys its thread_local
+  objects as part of `exit` ([support.start.term]/9.1, [basic.start.term]/2), and only then are
+  static objects destroyed and the `atexit` functions called: that is where its actions belong,
+  so a static `future`, condition variable or mutex sees them done before it is destroyed.
+  `quick_exit`, `_Exit` and `abort` destroy no thread_local objects and run none; threads still
+  running when the program ends never exit and run none. A pthread key destructor (the previous
+  design) runs only when a thread ends on its own, so the actions of the thread calling `exit`
+  never ran. Now the POSIX PAL keeps a thread's list in a thread_local pointer and runs it from a
+  thread_local destructor of its own, the *sentinel*, registered (`__cxa_thread_atexit_impl`, Darwin's
+  `_tlv_atexit`) before the thread's first thread_local destructor or first action: the C library
+  runs a thread's thread_local destructors in reverse order of registration, also those registered
+  while they run, both when the thread ends and in `exit` (glibc's `__call_tls_dtors`, Darwin's
+  `_tlv_exit`, both before the static destructors), so the sentinel runs after every other
+  thread_local destructor of the thread. Every libycxx thread_local destructor is registered
+  through `ycxx_pal_thread_atexit` (the ABI's `__cxa_thread_atexit`), which arms the sentinel first.
+  An action registering another action (or constructing a thread_local) while the list runs is
+  run too: the list is drained, and a new registration re-arms the sentinel. Where a destructor
+  cannot be registered (a C library without `__cxa_thread_atexit_impl`) the list falls back to the
+  pthread key, as before. The `ycxx_pal_at_thread_end` contract (`pal.h`) says so for other
+  providers of the `threads` layer.
 - **`<stop_token>` is core.** Its stop state needs only atomics and three PAL hooks: the address
   wait (through `<atomic>`'s tables), `ycxx_pal_thread_self` (a callback deregistered while
   `request_stop` runs it: on the requesting thread it is not waited for) and
@@ -505,7 +529,25 @@ tooling.
   or holds a later epoch, so only regions that began before the retire hold it back (the proof
   is in `src/hosted/rcu.cpp`). Evaluations run by `rcu_barrier`, or by an outermost unlock or a
   retire outside any region once 1000 are queued, one batch at a time; `rcu_barrier` inside a
-  region evaluates what was retired before the region began. Rejected: two phase counters
+  region evaluates what was retired before the region began. **`rcu_barrier` in the two
+  situations [saferecl.rcu.domain.func]/4 cannot satisfy** (it has no precondition and no
+  exception): (1) Inside a region R, an evaluation scheduled after R began can only be evaluated
+  after R ends ([saferecl.rcu.general]/5), so if its scheduling happens before the call the
+  barrier must block for ever. For the caller's own retires (sequenced before the call) libycxx
+  does exactly that, and checks it as a hardened precondition, as it does for `rcu_synchronize`
+  inside a region (the draft's Effects block for ever there too): a certain self-deadlock
+  becomes a diagnosed termination with `YCXX_HARDENED`. Both checks are in `<rcu>` (a runtime
+  query, then `precondition`), since the runtime itself is not built with `YCXX_HARDENED`
+  (`rcu_synchronize`'s check used to be in the runtime, where it was never active). Another thread's retire after R began is
+  taken as not happening before the call (the barrier cannot tell whether other synchronization
+  ordered it), so it is not waited for. (2) Inside a scheduled evaluation E, /4 would have the
+  barrier wait for E itself, whose evaluation includes the call: impossible (a draft defect,
+  STATUS). libycxx's barrier there evaluates the rest of the batch E belongs to, then waits for
+  the readers and evaluates the queue up to its bound like any barrier, keeping the evaluation
+  lock (other barriers must not see E's batch as done while it runs): when it returns, everything
+  scheduled before the call has been evaluated except the evaluations in progress on the calling
+  thread. (Before, it returned at once.) Rejected: releasing the evaluation lock while waiting
+  (a barrier on another thread would then return before E finished). Rejected: two phase counters
   flipped by `rcu_synchronize` (the previous design), which cannot tell a region that began
   before a retire from one that began after it, so a barrier inside a region waited for itself.
   The cost is a third word in `rcu_obj_base` (the node's epoch: a barrier inside a region must
@@ -525,6 +567,58 @@ tooling.
   simulation finds the leftmost-longest match, and the subexpressions are assigned afterwards by
   the POSIX rule from the tree (each subpattern, left to right, the longest that still lets the
   match complete), so leftmost-longest needs no exhaustive search.
+
+- **POSIX matching with back-references: two phases** ([re.synopt]/1 basic, extended, awk, grep,
+  egrep; [re.alg.match], [re.alg.search]; IEEE Std 1003.1 XBD 9.1, 9.3.6 and regexec()). A POSIX
+  program that cannot run on the NFA (back-references; bounded repetitions beyond 256 copies or
+  65536 expanded nodes; a non-matching list holding a multi-character collating element) is
+  matched in two phases:
+  1. *The match.* The backtracker explores every path from each start position in turn and keeps
+     the longest end (leftmost-longest); it stops early at a path reaching the end of the input.
+  2. *The subexpressions.* POSIX's rule is a lexicographic order: "each subpattern, from left to
+     right, shall match the longest possible string" (XBD 9.1), a subpattern's length being
+     decided before what is inside it. A second, guided search over the syntax tree with the
+     match's span fixed decides each node's end *on entry*: a concatenation tries its first
+     element's end from the largest down, then that element's inside, then the next element's
+     end; an alternation tries its alternatives in order (the first that fits the span, as the
+     NFA resolver does); a repetition tries each iteration's end from the largest down. The
+     first complete path in this order is the POSIX answer. It backtracks on an explicit stack
+     with continuations (no recursion over the input); length bounds per node prune the ends;
+     a node no back-reference outside it refers to commits to its first way of matching a span
+     (what follows cannot depend on its inside), and a node without back-references remembers
+     the spans it cannot match.
+  Rules shared by both phases, from XBD 9.3.6: a back-reference to a subexpression that did not
+  participate fails ("\(a\)*\1" does not match "a"); a repeated subexpression reports, and is
+  referred to by, its last iteration, and the subexpressions inside an iteration are reset at its
+  start ("\(a\(b\)*\)*\2" does not match "abab"); an iteration matches the empty string only
+  when it is needed for the minimum count or is the only iteration ("\(a*\)*" against "bc":
+  \1 is the empty string at 0).
+  Limits (implementation-defined; regex_error): phase 1 keeps the backtracker's step budget
+  (error_complexity beyond 2*10^7 + 32 x (input reached) x (program size) steps) and frame
+  budget (error_stack beyond 2^22 frames); phase 2 has the same step budget over the match and
+  its node count, and error_stack beyond 2^22 pending goals or choice points. Patterns without
+  back-references that fit the NFA keep the NFA path unchanged.
+
+- **Collating elements and primary keys** ([re.traits]/7-8, [re.grammar]/8, /10, /14.3; XBD
+  9.3.5). `transform_primary` returns the primary key for a `collate_byname` facet (exact type)
+  whose key form is known: glibc's multi-level keys (the weights before the first level
+  separator), or keys that are a copy of the string (a locale without collation rules: every
+  character its own class, the whole key is primary). *Deliberate divergence:* for the classic
+  locale's own facet (exactly `collate<charT>`) it returns the whole key too (code point order,
+  each character its own class), where the letter of [re.traits]/7 gives an empty string and so
+  makes every `[=x=]` invalid in the default locale ([re.grammar]/10): portable code uses
+  `[[=a=]]` there, and libc++ and libstdc++ both accept it (STATUS "Deliberate divergences",
+  "Draft issues noticed"). Other facets (a user's collate, Darwin's undocumented keys) give an
+  empty string and `[=x=]` is invalid (error_collate). `lookup_collatename` accepts one character, the POSIX collating-symbol
+  names, and, for a `collate_byname` locale, a multi-character collating element of that
+  locale: the C library's own `regcomp` is asked, under that locale (`uselocale`), whether
+  `[[.xy.]]` is valid (cs_CZ defines "ch"; glibc exposes no other public interface to the
+  elements). In a bracket expression a multi-character element is an alternative of its own:
+  a matching list matches it as one element (2 or more characters, tried before the single
+  characters); a non-matching list does not match where one of its listed elements begins
+  (XBD 9.3.5 leaves both unspecified). A range end that is a multi-character element is valid
+  only with `collate` (its sort key bounds the range). With `[=x=]`, a multi-character `x` adds
+  itself and the characters of its primary class.
 
 ## 4. Error handling
 
@@ -831,7 +925,9 @@ under the same name. Otherwise it gets one alias template in `config.hpp`.
     [locale.money.get.virtuals]/2), sign position 0 gives the sign string `"()"`, and
     `curr_symbol()` is `currency_symbol`/`int_curr_symbol` unchanged (libstdc++'s choice;
     libc++ moves the space into the symbol). time_get reads the locale's day, month and AM/PM
-    names and its `%c %x %X %r` formats (`D_T_FMT` & co.); `get_date` reads the `%x` format;
+    names and its `%c %x %X %r` formats (`D_T_FMT` & co.), its eras (`ERA`; `%EC %Ey %EY`) and
+    era formats (`%Ec %Ex %EX`) and its alternative digits (every O form, `%OC` included: the
+    locales' own formats use it); `get_date` reads the `%x` format;
     `date_order()` is the order of `%x`'s fields. `codecvt::encoding()` is 1 for single-byte
     encodings, else 0 (a state-dependent encoding is not detected: the only probe, `mbtowc(0, 0,
     0)`, resets a state shared by all threads). messages opens catalogs with `catopen`
@@ -1011,6 +1107,57 @@ under the same name. Otherwise it gets one alias template in `config.hpp`.
   binary search, so the class is usable in constant expressions. `locale::encoding()` of "C" is
   US-ASCII (the POSIX portable character set), although the classic `codecvt<wchar_t, char>`
   converts UTF-8 (§7).
+- **`pointer_tag_pair` ([ptrtag]) keeps the tag in the pointer's low bits; in constant
+  evaluation only the tag 0 can be stored.** Core (`ycxx/core/ptrtag.hpp`, freestanding, from
+  `<memory>`). The one member is the tagged pointer itself, of `tagged_pointer_type` (cv `void*`),
+  so the class is trivially copyable with the size and alignment of `Ptr` ([ptrtag.pair.general]/3)
+  and `tagged_pointer()`/`from_tagged()` are plain copies. At run time the tag is or-ed into the
+  low `bits_requested` bits of the pointer's address (`uintptr_t` round trip: GCC and Clang keep
+  the value of an integer-pointer round trip, which is what [ptrtag.bits]/2's remark needs), and
+  `pointer()`/`tag()` mask them apart, so any `DP` whose `bits_requested` covers the tag and the
+  alignment decodes the same `tp` ([ptrtag.pair.tagops]/2). Implementation-defined:
+  `max_pointer_bits_available` is the pointer width minus 1 (63 on LP64): only alignment bits are
+  used, and a `size_t` alignment has at most that many trailing zeros, so the limit adds nothing
+  to `pointer_bits_available(a)` = `min(countr_zero(a), max)` (the draft's note; P3125 suggests a
+  page-size limit for segmented architectures, which libycxx's targets are not).
+  **Constant evaluation.** Neither GCC 16.2 nor Clang 23.1 can put bits into a pointer during
+  constant evaluation (verified: `reinterpret_cast` to and from integers, `bit_cast` of a pointer,
+  arithmetic outside the object or on a null pointer, a `void*` cast to `char*` of a non-char
+  object and reading the other member of a pointer/integer union are all rejected; Clang's
+  `__builtin_align_down` only aligns). P3125 relies on new builtins; its fallback, a hidden object
+  holding pointer and tag, would need a constant-evaluation allocation, which a trivially
+  destructible type can never free. Keeping pointer and tag apart under `if consteval` is not
+  possible either: the layout is one `sizeof(Ptr)` object in both worlds (an object built in
+  constant evaluation is used at run time). So in constant evaluation the member holds the
+  untagged pointer (`static_cast` to cv `void*` and back, which C++26 allows for the object's own
+  type) and every constexpr member works as long as the tag is 0: the default constructor, the
+  constructors and `from_overaligned` with tag 0 (or `TagT()`), `pointer()`, `tag()`, `swap`, the
+  comparisons, `get`. A non-zero tag during constant evaluation is diagnosed ("needs compiler
+  support") although the preconditions hold, which [ptrtag.pair.cons]/2 and
+  [ptrtag.pair.overalign]/1 ("Constant When: Preconditions are met") do not allow: that part is
+  compiler-blocked, the tests XFAIL it, and `__cpp_lib_pointer_tag_pair` stays undefined (as
+  `__cpp_lib_constexpr_exceptions` on Clang and `__cpp_lib_start_lifetime` on GCC: the macro
+  announces P3125, "constexpr pointer tagging", whose constexpr support is the point).
+  **Preconditions.** With `YCXX_HARDENED` (and always in constant evaluation) the constructors
+  check `tag-bit-width(t) <= bits_requested` and that the low bits are free (a misaligned `p`, or
+  for `from_overaligned` a `p` not aligned to `PromisedAlignment`, [ptrtag.pair.overalign]/2.2);
+  "`p` is not past the end of an object" cannot be checked. In constant evaluation the
+  alignment of `from_overaligned`'s pointer is checked on Clang (`__builtin_is_aligned`); GCC has
+  no such builtin, so there an unverifiable promise is accepted (it cannot matter: only the tag 0
+  is stored then). **Comparisons** follow [ptrtag.pair.comp]/1, /3 (`pointer()` first, then
+  `tag()`, through synth-three-way); at run time, when the tag's `<=>`/`==` is the built-in one
+  (an integer tag, or an enumeration without a user-declared operator, found by a call of
+  `operator<=>(t, t)` / `operator==(t, t)` that only user-declared functions can satisfy), the two
+  tagged words are compared directly (/2, /4: the address bits are above the tag bits, so the
+  order is the same). **Draft defects**, each resolved by the evident intent (STATUS, "Draft issues
+  noticed"): [ptrtag.bits]/2's `tagged_pointer_pair` and `tp.tagged()` are `pointer_tag_pair` and
+  `tagged_pointer()`; [ptrtag.pair.tagops]/2-3's `ptr`/`tag` are `pointer()`/`tag()` of `*this`
+  and `pointer_tag_type` is `pointer_tag_pair`; the deduction guide `pointer_tag_pair(Ptr*, TagT)`
+  names `bits-available<element-of<Ptr>>`, and `element-of<int>` (`pointer_traits<int>`) does not
+  exist, so the guide could never be used: libycxx uses `bits-available<Ptr>` (the pointee's
+  alignment, as the class's default argument does for `Ptr*`); the guide `pointer_tag_pair(Ptr*)`
+  has no one-argument constructor to go with it: it is declared as written and deduces, and the
+  initialization then fails (no constructor is invented).
 - **`generator` nests without a stack of handles**: the promises of recursively yielded
   generators link to their parent and the root, and transfers between them are symmetric, so
   recursion depth costs no stack and no allocation besides the frames.
@@ -1207,9 +1354,9 @@ under the same name. Otherwise it gets one alias template in `config.hpp`.
   `local_time_format` without abbreviation) by `format`. Without `L` the "C" locale's names are
   built in; with it the locale-dependent conversions (`%a %A %b %B %c %p %r %x %X` and the E/O
   forms) go through the formatting locale's `time_put` (runtime: `src/hosted/chrono.cpp`), `%S`
-  takes its decimal point and a duration's count without chrono-specs its digit grouping
-  (`numpunct`, as `os << d` would). When that `time_put` is the classic locale's facet (which every
-  supported named locale shares), its conventions are the "C" locale's and the built-in forms are
+  takes its decimal point and a duration's count without chrono-specs goes through its `num_put`
+  (as `os << d` would; next item). When that `time_put` is the classic locale's facet (that of
+  "C", "POSIX" and "C.UTF-8"; a named locale has its `time_put_byname`), its conventions are the "C" locale's and the built-in forms are
   used, so `{:L...}` with the "C" locale equals `{:...}` ([time.format]/2) even where a C `tm`
   cannot carry the value (a duration's hours beyond 23; years outside 1-9999, which `%Y` pads to
   four digits and `strftime` does not). A `time_put` of the locale's own gets a `tm` with the
@@ -1223,9 +1370,65 @@ under the same name. Otherwise it gets one alias template in `config.hpp`.
   the literal encoding is Unicode. The stream inserters write the same text (no `<sstream>`
   dependency: the duration inserter formats the count through a private stream on a string
   buffer). `time_point`'s default constructor is `noexcept` (a strengthening).
-- **Parsing** reads the stream buffer directly after an unformatted-input sentry. Names (`%a %b %p`)
-  and `%c %x %X %r` are the "C" locale's; white space is the stream's `ctype`; `%S`'s decimal point
-  is `.` or the stream locale's. A width counts digits only (a sign does not count). The fields
+- **The L option and the facets** ([time.format]/2-3, /7). The wording names no facet for the
+  locale-dependent specifiers ("the locale's abbreviated weekday name", "the locale's alternative
+  representation"); the locale's `time_put<charT>` is the facet that defines them
+  ([locale.time.put]: the locale's strftime conversions), so every one of them (`%a %A %b %B %h
+  %c %p %r %x %X` and each E/O form) is written by `use_facet<time_put<charT>>(loc).put(..., spec,
+  mod)`: a program's own time_put, derived from `time_put` or `time_put_byname`, sees every such
+  call. The numbers of the other specifiers are "decimal numbers" with no locale in the wording;
+  only `%S`'s decimal point is "localized according to the locale" (`numpunct::decimal_point`).
+  Without chrono-specs, /7 formats "as if by streaming ... to basic_ostringstream<charT> os with the
+  formatting locale imbued", and a duration's inserter ([time.duration.io]/1) is `s << d.count()`:
+  the count goes through the locale's `num_put<charT>` with the stream's default flags (precision
+  6, or the format's precision for a floating-point rep), as the `operator<<` overload of the rep
+  would call it (`short`/`int` as `long`, `float` as `double`, ...). When that `num_put` is the
+  classic object (every named locale shares it, §7) its stage 2 is computed in the header from
+  `numpunct` (the same text, no stream); a program's own `num_put` is called through the hosted
+  runtime (`src/hosted/chrono.cpp`, char and wchar_t). Character reps keep the number form.
+- **Parsing** reads the stream buffer directly after an unformatted-input sentry. White space is
+  the stream's `ctype`; `%S`'s decimal point is `.` or the stream locale's. Table 134's
+  locale-dependent flags ("the locale's full or abbreviated case-insensitive weekday name",
+  "the locale's date and time representation", "the locale's alternative representation", ...)
+  read the stream's locale: its `time_get<charT, istreambuf_iterator<charT, traits>>` facet `tg`,
+  the facet whose virtuals are the locale's strptime conversions ([locale.time.get.virtuals]/11).
+  [time.parse] itself names no facet. Three cases, decided once per `from_stream`:
+  - *No such facet, or the classic locale's object*: the "C" locale's names and `%c %x %X %r`
+    are built in (as before; no virtual call), and E/O forms read as the plain ones.
+  - *A `time_get_byname` of a named locale* (its data from §7: names, AM/PM, `D_T_FMT` & co., and
+    now `ERA`, `ERA_D_T_FMT`, `ERA_D_FMT`, `ERA_T_FMT` and the alternative digits): `%c %x %X %r`
+    and `%Ec %Ex %EX` expand to the locale's format (the E one when the locale has it), parsed by
+    the scanner itself flag by flag, so their fields, `%S` fractions and a `%Z` inside them are
+    recorded as if written in the format; `%EC` matches an era name and `%Ey` a year within it
+    (year = the era's start year +/- (`%Ey` - its offset), POSIX `ERA` segments; without `%EC`,
+    `%Ey` is `%y`); every O form reads the locale's alternative digits or ASCII digits (also
+    `%OC`, which glibc's my_MM uses in its `%x`). The names, `%p` and `%EY` are one call of
+    `tg.get(..., spec, mod)` each on a `tm`, so a program's facet derived from
+    `time_get_byname` is still called for those.
+  - *Any other facet* (a program's, derived from `time_get`): every locale-dependent flag,
+    `%c %x %X %r` included, is one call of `tg.get(..., spec, mod)`; the fields it set are found
+    by filling the `tm` with a sentinel first (-1200000: negative and a multiple of 12, so `%I`
+    and `%p` combine in either order). `%EC` reads as `%C` and `%OU %OW %OV %Ou` as the plain
+    forms (no `tm` member holds them).
+  `time_get_byname` gains what this needs, as strptime does: `%Ec %Ex %EX` read the era formats
+  (else the plain ones), `%EC` an era name, `%Ey` a year of that era within one `get(fmt)` call,
+  `%EY` a full era year (the era formats, matched in parallel without backtracking), and every O
+  form the locale's alternative digits (longest match) or ASCII digits. Alternative digits come
+  from the locale itself: `strftime_l("%Oy")` of the years 1900-1999, kept only when they differ
+  from the decimal forms (no knowledge of how a C library lays out `ALT_DIGITS`). The era
+  segments are `nl_langinfo_l(ERA)`: POSIX separates them with `;`; glibc returns them separated
+  by NULs with their count in `_NL_TIME_ERA_NUM_ENTRIES`, which CMake detects
+  (`_YCXX_C_HAS_ERA_NUM_ENTRIES`, cmake/ycxx-c-library.cmake); a segment that does not have the
+  POSIX form ends the list. Both are kept only where the C library uses them: an era when
+  `strftime_l("%EC")` at its start date writes its name, an era format when `strftime_l` writes
+  `%Ec`/`%Ex`/`%EX` with it on two probe dates (a C library may hold the items yet ignore the E
+  modifier, as POSIX allows; Darwin's may); otherwise the E forms read as the unmodified ones
+  (POSIX strftime: where the alternative form does not exist, the unmodified conversion is
+  used). Names compare through `ctype<charT>::tolower` (so a multibyte
+  UTF-8 name in a char stream compares its non-ASCII bytes exactly; a wchar_t stream folds them).
+  Rejected: parsing every locale-dependent flag through `tg.get` (the `tm` loses `%S` fractions,
+  `%Z`, week numbers and eras), and reading the C library's tables in the header (named locales
+  would be read twice; a program's facet would be ignored). A width counts digits only (a sign does not count). The fields
   must agree (a weekday with a date, `%H` with `%I`/`%p`); a date comes from y/m/d, y + `%j`, an ISO
   week date or y + `%U`/`%W` + weekday. A duration parsed with a finer field than it can hold is
   truncated (`duration_cast`). For `utc_time`, a seconds field of 60 names the leap second.
@@ -1426,12 +1629,81 @@ under the same name. Otherwise it gets one alias template in `config.hpp`.
   - continues_on is also pipeable (`sndr | continues_on(sch)`, as in P2300);
     [exec.continues.on] calls it a customization point object.
   - `split` and `ensure_started` are not in the draft (P3682 removed them); not provided.
-- **Attributes.** An adaptor reports a completion scheduler or domain only where its semantics
-  determine it ([exec.snd.general]/3-4): a single-child adaptor maps each of its completion tags
-  to the child completions whose agents complete it (then: value from value; error from error and
-  value), a scheduler for a single source, the COMMON-DOMAIN otherwise; when_all reports its
-  children's COMMON-DOMAIN (tests/ycxx/execution/sync_wait_customization); let reports none
-  (COMPL-DOMAIN then falls back to indeterminate_domain<>, default_domain's transformations).
+- **Attributes (the draft's undefined get-attrs, D2).** [exec.snd.expos]/43 has
+  `basic-sender::get_env()` return `impls-for<Tag>::get-attrs(data, child...)`, but nothing
+  defines `get-attrs`: P3826R5 (the paper that introduced `get_completion_domain`,
+  `indeterminate_domain` and completion domains per tag) struck `default-impls::get-attrs` and
+  every specialization's (schedule_from's, when_all's), and moved what they said into
+  [exec.adapt.general]/3.2-3.3 and [exec.snd.general]/3-4. The call in /43 is a leftover.
+  libycxx reads /43 as "the attributes those paragraphs give":
+  - an adaptor with one child has the child's forwarding queries (FWD-ENV, /3.2), one with
+    several children none (env<>, /3.3);
+  - for each completion tag T, `get_completion_domain<T>` and `get_completion_scheduler<T>` follow
+    [exec.snd.general]/3-4 from the agents the adaptor's semantics put T completions on. libycxx
+    lists those agents as *sources*: a child's completions of some tag, the completions of the
+    schedule sender of a scheduler the adaptor transfers to, or a domain known only as a type
+    (the sender a let function returns, which exists only once the child completes);
+  - the domain is the COMMON-DOMAIN of the sources' domains. Given an environment, a source that
+    reports none counts as `indeterminate_domain<>` (COMPL-DOMAIN, [exec.snd.expos]/9; the
+    common type of `indeterminate_domain<>` and D is D), as P3826 §5.6 computes when_all's;
+    without one, every source must report a domain;
+  - the scheduler is reported only for a single source that reports one ("can determine", /4);
+    nothing tells two equal-typed schedulers apart at compile time;
+  - an adaptor without completions of tag T, or whose signatures are invalid in the environment,
+    reports neither for T (/3: ill-formed; [exec.get.compl.domain]/3 and [exec.get.compl.sched]/6
+    make the program asking ill-formed). Which child completions occur is read from the children's
+    signatures in the environment; without an environment a dependent child leaves the adaptor
+    silent ("cannot determine").
+
+  Per adaptor (the default implementations; each a source list per tag):
+  - then, upon_error, upon_stopped, bulk, bulk_chunked, bulk_unchunked, into_variant,
+    stopped_as_optional, stopped_as_error: each child completion maps to the tags the adaptor turns
+    it into, an exception included (then(sndr, f): error from sndr's errors, and from its values
+    when f can throw: [exec.snd.general] Examples 1-2). write_env and unstoppable: identity, the
+    child asked in its receiver's environment (the written env joined to the forwarded one).
+    schedule_from: the child's attributes;
+  - when_all, when_all_with_variant ([exec.when.all]/15-17): value from every child's value
+    completion. The operation completes on the agent of the last child to complete, so error from
+    every child's errors and the values whose decay-copy can throw, and from every completion of a
+    child when another child can fail; stopped likewise. The children are asked in
+    `when-all-env`. when_all_with_variant is when_all of into_variant of each child;
+  - let_value, let_error, let_stopped ([exec.let]/10, /16): the child's other completions pass
+    through; error also from the child's set-cpo completions when decay-copying the datums,
+    calling f or connecting can throw; and for each set-cpo signature, the completion domain of the
+    sender f returns, in the environment the let-state gives it (JOIN-ENV(let-env(sndr, env),
+    FWD-ENV(env)), [exec.let]/9): only given an environment;
+  - continues_on ([exec.continues.on]/9-12): every completion arrives through the schedule
+    sender's value completion (the child's result, or the exception of its decay-copy), plus
+    the schedule sender's own error and stopped completions. The schedule sender, not the
+    scheduler, is asked: it is what runs, and [exec.run.loop.types]/5 makes run_loop's answer
+    without an environment where the scheduler cannot ([exec.get.compl.sched]/5.2). With an
+    environment the two agree ([exec.sched]/6). When `schedule(sch)` can throw, the scheduler is
+    asked instead (a query is noexcept);
+  - starts_on ([exec.starts.on]/4): its let_value form. The child is the sender the let function
+    returns, so, as for let, only its domains count, asked in the environment that form gives it
+    (the start scheduler of continues_on(just(), sch), [exec.let]/2), plus the schedule sender's
+    error and stopped completions. A scheduler for the child's completions would come from
+    inline-attrs' `get_scheduler(env)`, which that environment does not set (it sets
+    `get_start_scheduler`; STATUS "Draft issues noticed"), so it would name the receiver's;
+  - on, affine: given an environment, the continues_on sender their transformation
+    produces ([exec.on]/6, [exec.affine]/5), whose scheduler comes from the environment
+    (get_start_scheduler) or the child (on(sndr, sch, closure)); none without one. affine of a
+    sender with an `affine()` member reports the child's;
+  - associate ([exec.associate]/11): domains only, the wrapped sender's, and for stopped also
+    the starting agent's (`get_domain(env)`: a failed association completes inline). No
+    scheduler and no forwarding: the wrapped sender is destroyed when the association fails;
+  - read_env ([exec.read.env]/3): inline-attrs for set_value, and for set_error when the query
+    can throw (TRY-SET-VALUE);
+  - spawn_future: none. The state erases the spawned sender's type; a parent's COMPL-DOMAIN
+    makes that `indeterminate_domain<>`, which is what is known.
+
+  The draft's three-way disagreement about schedulers ([exec.sched]/6,
+  [exec.get.compl.sched]/5.2, [exec.get.compl.domain]/2.3; STATUS "Draft issues noticed") is
+  settled the same way throughout: a schedule sender's attributes say where its completions run,
+  per tag, and the adaptors use them. A scheduler's own queries are those of [exec.get.compl.sched]
+  /5 as written. Tests: tests/ycxx/execution/completion_attributes_adaptors,
+  completion_attributes_when_all_let, domain_dispatch_through_adaptors,
+  sync_wait_customization.
 - **noexcept.** Where the draft gives a noexcept-specifier it is used as written; the sender
   factories and adaptors are noexcept when their decay-copies are (a strengthening
   [res.on.exception.handling] allows; make-sender has none in the draft).

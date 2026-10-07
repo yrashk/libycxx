@@ -888,10 +888,14 @@ public:
   constexpr _Ip base() && { return static_cast<_Ip&&>(__current_); }
   constexpr iter_difference_t<_Ip> count() const noexcept { return __length_; }
 
-  constexpr decltype(auto) operator*() { return *__current_; }
+  constexpr decltype(auto) operator*() {
+    __ycxx::__detail::__precondition(__length_ > 0, "counted_iterator: dereferencing the end");
+    return *__current_;
+  }
   constexpr decltype(auto) operator*() const
     requires __ycxx::__detail::__dereferenceable<const _Ip>
   {
+    __ycxx::__detail::__precondition(__length_ > 0, "counted_iterator: dereferencing the end");
     return *__current_;
   }
   constexpr auto operator->() const noexcept
@@ -901,6 +905,7 @@ public:
   }
 
   constexpr counted_iterator& operator++() {
+    __ycxx::__detail::__precondition(__length_ > 0, "counted_iterator: incrementing past the end");
     ++__current_;
     --__length_;
     return *this;
@@ -911,6 +916,7 @@ public:
       ++*this;
       return __tmp;
     } else {
+      __ycxx::__detail::__precondition(__length_ > 0, "counted_iterator: incrementing past the end");
       --__length_;
       if constexpr (__ycxx::__detail::__cfg::exceptions) {
         try {
@@ -951,6 +957,7 @@ public:
   constexpr counted_iterator& operator+=(iter_difference_t<_Ip> n)
     requires random_access_iterator<_Ip>
   {
+    __ycxx::__detail::__precondition(n <= __length_, "counted_iterator: advancing past the end");
     __current_ += n;
     __length_ -= n;
     return *this;
@@ -973,6 +980,7 @@ public:
   constexpr counted_iterator& operator-=(iter_difference_t<_Ip> n)
     requires random_access_iterator<_Ip>
   {
+    __ycxx::__detail::__precondition(-n <= __length_, "counted_iterator: advancing past the end");
     __current_ -= n;
     __length_ += n;
     return *this;
@@ -980,6 +988,7 @@ public:
   constexpr decltype(auto) operator[](iter_difference_t<_Ip> n) const
     requires random_access_iterator<_Ip>
   {
+    __ycxx::__detail::__precondition(n < __length_, "counted_iterator: subscript past the end");
     return __current_[n];
   }
 
@@ -997,11 +1006,13 @@ public:
       noexcept(ranges::iter_move(i.__current_)))
     requires input_iterator<_Ip>
   {
+    __ycxx::__detail::__precondition(i.__length_ > 0, "counted_iterator: iter_move of the end");
     return ranges::iter_move(i.__current_);
   }
   template <indirectly_swappable<_Ip> _I2>
   friend constexpr void iter_swap(const counted_iterator& __x, const counted_iterator<_I2>& y) noexcept(
       noexcept(ranges::iter_swap(__x.__current_, y.__current_))) {
+    __ycxx::__detail::__precondition(__x.__length_ > 0 && y.__length_ > 0, "counted_iterator: iter_swap of the end");
     ranges::iter_swap(__x.__current_, y.__current_);
   }
 };
@@ -1081,6 +1092,7 @@ public:
   template <class _I2, class _S2>
     requires convertible_to<const _I2&, _Ip> && convertible_to<const _S2&, _Sp>
   constexpr common_iterator(const common_iterator<_I2, _S2>& __x) : __index_(__x.__index_) {
+    __ycxx::__detail::__precondition(__x.__index_ != 2, "common_iterator: converting a valueless iterator");
     if (__x.__index_ == 0)
       std::construct_at(__builtin_addressof(__it_), __x.__it_);
     else
@@ -1103,6 +1115,7 @@ public:
     requires convertible_to<const _I2&, _Ip> && convertible_to<const _S2&, _Sp> && assignable_from<_Ip&, const _I2&> &&
              assignable_from<_Sp&, const _S2&>
   constexpr common_iterator& operator=(const common_iterator<_I2, _S2>& __x) {
+    __ycxx::__detail::__precondition(__x.__index_ != 2, "common_iterator: assigning a valueless iterator");
     if (__index_ == __x.__index_) {
       if (__index_ == 0)
         __it_ = __x.__it_;
@@ -1207,6 +1220,7 @@ public:
   template <class _I2, sentinel_for<_Ip> _S2>
     requires sentinel_for<_Sp, _I2>
   friend constexpr bool operator==(const common_iterator& __x, const common_iterator<_I2, _S2>& y) {
+    __ycxx::__detail::__precondition(__x.__index_ != 2 && y.__index_ != 2, "common_iterator: comparing a valueless iterator");
     if (__x.__index_ == y.__index_) {
       if constexpr (equality_comparable_with<_Ip, _I2>) {
         if (__x.__index_ == 0)
@@ -1220,6 +1234,7 @@ public:
   template <sized_sentinel_for<_Ip> _I2, sized_sentinel_for<_Ip> _S2>
     requires sized_sentinel_for<_Sp, _I2>
   friend constexpr iter_difference_t<_I2> operator-(const common_iterator& __x, const common_iterator<_I2, _S2>& y) {
+    __ycxx::__detail::__precondition(__x.__index_ != 2 && y.__index_ != 2, "common_iterator: subtracting a valueless iterator");
     if (__x.__index_ == 1 && y.__index_ == 1)
       return 0;
     if (__x.__index_ == 0 && y.__index_ == 0)
@@ -1230,11 +1245,13 @@ public:
   friend constexpr decltype(auto) iter_move(const common_iterator& i) noexcept(noexcept(ranges::iter_move(declval<const _Ip&>())))
     requires input_iterator<_Ip>
   {
+    __ycxx::__detail::__precondition(i.__index_ == 0, "common_iterator: iter_move of a sentinel");
     return ranges::iter_move(i.__it_);
   }
   template <indirectly_swappable<_Ip> _I2, class _S2>
   friend constexpr void iter_swap(const common_iterator& __x, const common_iterator<_I2, _S2>& y) noexcept(
       noexcept(ranges::iter_swap(declval<const _Ip&>(), declval<const _I2&>()))) {
+    __ycxx::__detail::__precondition(__x.__index_ == 0 && y.__index_ == 0, "common_iterator: iter_swap of a sentinel");
     ranges::iter_swap(__x.__it_, y.__it_);
   }
 };

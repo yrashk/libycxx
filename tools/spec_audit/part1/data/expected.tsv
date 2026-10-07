@@ -1,0 +1,9 @@
+# Known failures of the header, version and name checks of run.py: each is a gap of
+# docs/SPEC_COVERAGE.md, Part 1. Columns: compiler (gcc, clang, any), Python regex searched in
+# the failure's text, gap id (and class), reason.
+any	^__cpp_lib_pointer_tag_pair:	P1-01 (6)	[ptrtag] is implemented, but a non-zero tag cannot be stored during constant evaluation (no compiler can set bits of a pointer there), so the macro stays undefined (DECISIONS §9)
+gcc	^__cpp_lib_(reflection|define_static): not defined by <(version|version freestanding)>	P1-09 (6)	GCC: needs -freflection (the probe passes it for <meta> only)
+clang	^__cpp_lib_(reflection|define_static|contracts|constexpr_exceptions|is_structural|is_pointer_interconvertible):	P1-09 (6)	Clang 23: no reflection, contracts, constant-evaluation throws, __builtin_is_structural, __builtin_is_pointer_interconvertible_with_class (STATUS, known compiler gaps)
+gcc	^__cpp_lib_(is_within_lifetime|start_lifetime):	P1-09 (6)	GCC 16: no __builtin_is_within_lifetime (STATUS, known compiler gaps)
+clang	<meta>|std::meta::|std::is_structural	P1-09 (6)	Clang 23: no reflection, no __builtin_is_structural
+any	^__cpp_lib_hardened_(common|counted)_iterator:	P1-07 (3, 4)	[common.iter.*]/[counted.iter.*] hardened preconditions are checked only in part

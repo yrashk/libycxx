@@ -731,6 +731,23 @@ def fetch_index():
     print(f"{out.relative_to(REPO)}: {len(names)} names")
 
 
+def c_library_macro_problems(paths):
+    """Spellings the C libraries' headers define as macros ([c-library-macros] of avoid.txt), used
+    as identifiers in libycxx's code: the macro would replace them (Darwin's __pure, __single)."""
+    sec = _read_list(DATA / "avoid.txt").get("c-library-macros", [])
+    words = {w for w in sec if not w.startswith("re:")}
+    pats = [re.compile(w[3:] + r"\Z") for w in sec if w.startswith("re:")]
+    strip = re.compile(r'//[^\n]*|/\*.*?\*/|"(?:\\.|[^"\\\n])*"' + r"|'(?:\\.|[^'\\\n])*'", re.S)
+    out = []
+    for p in paths:
+        code = strip.sub(" ", p.read_text())
+        bad = sorted({w for w in re.findall(r"\b__\w+\b", code) if w in words or any(r.match(w) for r in pats)})
+        for w in bad:
+            out.append(f"{p.relative_to(REPO)}: {w} is a macro of a C library's headers "
+                       "(tools/data/uglify/avoid.txt [c-library-macros]); spell it __y_" + w.lstrip("_"))
+    return out
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     g = ap.add_mutually_exclusive_group()
@@ -768,6 +785,7 @@ def main():
         for p in stale:
             print(f"{p}: out of date (tools/uglify.py --gen-tests)", file=sys.stderr)
         draft = draft_problems(names, checked_files()) if a.check else []
+        draft += c_library_macro_problems(include_files() + src_files()) if a.check else []
         for msg in draft:
             print(msg, file=sys.stderr)
         return 1 if a.check and (found or stale or draft) else 0

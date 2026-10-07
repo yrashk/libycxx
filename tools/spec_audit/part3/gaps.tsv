@@ -1,0 +1,8 @@
+# Known gaps among the part-3 probes (docs/SPEC_COVERAGE.md, part 3): a failing check listed here
+# is reported as a known gap, not a failure; a listed check that passes is an XPASS (remove it).
+# Columns (tab-separated): check ID (fs: prefix for the freestanding probes), class, compiler
+# (gcc, clang or any), reason with the draft reference.
+# Classes: 1 missing entity, 2 wrong shape, 3 behaviour, 4 feature macro, 5 intentional (STATUS or
+# DECISIONS cited), 6 compiler gap, 7 draft defect.
+version.syn@version#19	6	clang	__cpp_lib_constexpr_exceptions ([version.syn]): Clang 23 cannot throw during constant evaluation (P3068; STATUS, known compiler gaps), so the macro is defined on GCC only
+version.syn@format#1	6	clang	__cpp_lib_constexpr_exceptions in <format>: as version.syn@version#19

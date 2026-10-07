@@ -62,6 +62,7 @@ rebind_traits                                                              # all
 store_xor                                                                  # atomic_ref, atomic
 underlying                                                                 # range_formatter
 yielded                                                                    # generator
+pointer_type tag_type bits_requested                                       # pointer_tag_pair
 c r                                                                        # linalg::setup_givens_rotation_result
 # Names a program provides that the core language looks up (draft-names.txt reads only the
 # library's clauses): a coroutine promise's get_return_object_on_allocation_failure

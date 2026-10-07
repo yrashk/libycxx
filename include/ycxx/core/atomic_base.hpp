@@ -196,16 +196,22 @@ bool __atomic_same_value(const _Vp& a, const _Vp& b) noexcept {
 }
 
 // Equality of value representations during constant evaluation (the padding bits of a value
-// are indeterminate there, so a padded type cannot be compared).
+// are indeterminate there, so a padded type cannot be compared). The x87 80-bit format (64
+// significand digits, integer bit explicit) keeps its value in the first 10 bytes of its 12 or
+// 16; the bytes after them are padding and are not read ([atomics.ref.float],
+// [atomics.types.float]: compare_exchange of a long double in constant evaluation).
 template <class _Vp>
 struct __atomic_bytes {
   unsigned char b[sizeof(_Vp)];
 };
 template <class _Vp>
+inline constexpr std::size_t __atomic_value_bytes =
+    std::is_floating_point_v<_Vp> && __fp_format<std::remove_cv_t<_Vp>>.digits == 64 && sizeof(_Vp) > 10 ? 10 : sizeof(_Vp);
+template <class _Vp>
 constexpr bool __atomic_const_same(const _Vp& a, const _Vp& b) noexcept {
   const auto __x = __builtin_bit_cast(__atomic_bytes<_Vp>, a);
   const auto y = __builtin_bit_cast(__atomic_bytes<_Vp>, b);
-  for (std::size_t i = 0; i != sizeof(_Vp); ++i)
+  for (std::size_t i = 0; i != __atomic_value_bytes<_Vp>; ++i)
     if (__x.b[i] != y.b[i])
       return false;
   return true;

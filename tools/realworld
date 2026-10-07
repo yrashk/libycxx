@@ -405,6 +405,9 @@ for c in $compilers; do
   commit=$(git -C "$repo" rev-parse --short=12 HEAD 2>/dev/null || echo unknown)
   dirty=$(git -C "$repo" status --porcelain 2>/dev/null | wc -l | tr -d ' ')
   [ "$dirty" = 0 ] || commit="$commit (+$dirty uncommitted changes)"
+  # The summary table on the terminal: the same colour and symbols as the rest of the output.
+  YCXX_COLOR=$([ -n "${ui_reset}" ] && echo always || echo never) \
+  YCXX_UNICODE=$([ "${ui_sym_ok}" = '+' ] && echo 0 || echo 1) \
   python3 "$rw" report "$repo" "$res" "$res" suite=realworld "compiler=$c" \
     "compiler version=$($(cxx_of "$c") --version 2>/dev/null | head -n 1)" \
     "library=libycxx, ${libdir#"$repo/"}${san_flags:+ (-fsanitize=$san_flags)}" "sanitizer=${sanitizer:-none}" \

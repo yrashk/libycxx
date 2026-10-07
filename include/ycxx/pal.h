@@ -142,7 +142,13 @@ typedef __UINT32_TYPE__ ycxx_pal_u32;
    function returns, and when it calls exit() (returning from main does), there before the objects
    with static storage duration are destroyed and the atexit functions run. Not run by
    quick_exit(), _Exit() or abort(), nor for threads still running when the program ends. An
-   f may register another action, which then runs too. Returns 0 on success. */
+   f may register another action, which then runs too. Returns 0 on success.
+   "All" includes the thread_local objects whose destructors the compiler registers without
+   ycxx_pal_thread_atexit (Clang on Darwin calls _tlv_atexit itself) and those constructed before
+   the first action. A provider that runs the actions from a destructor of the same C library
+   list must register it before any of them: the POSIX PAL does so before the initial function of
+   a thread ycxx_pal_thread_create starts, for the main thread in an initializer, and otherwise
+   at a thread's first ycxx_pal_thread_atexit or ycxx_pal_at_thread_end (DECISIONS §3). */
 [[__gnu__::__visibility__("hidden")]] int ycxx_pal_at_thread_end(void (*__f)(void*), void* arg) YCXX_PAL_NOEXCEPT;
 
 /* ---- error messages (layer 'environment'; the fallback without it: "error N") ------------ */

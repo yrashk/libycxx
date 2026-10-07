@@ -29,9 +29,11 @@ namespace tlv_bypass {
 struct witness {
   ~witness() {}
 };
-inline thread_local witness w;
 struct self_check {
   self_check() {
+    // At block scope: a namespace-scope thread_local's first use would also construct the test's
+    // own namespace-scope thread_local objects on this (the main) thread.
+    thread_local witness w;
     static_cast<void>(&w);
     if (__atomic_load_n(&registrations, __ATOMIC_RELAXED) == 0) {
       std::fputs("FAIL: tlv_bypass.hpp: thread_local destructors still reach __cxa_thread_atexit "

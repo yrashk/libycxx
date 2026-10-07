@@ -1479,12 +1479,81 @@ under the same name. Otherwise it gets one alias template in `config.hpp`.
   - continues_on is also pipeable (`sndr | continues_on(sch)`, as in P2300);
     [exec.continues.on] calls it a customization point object.
   - `split` and `ensure_started` are not in the draft (P3682 removed them); not provided.
-- **Attributes.** An adaptor reports a completion scheduler or domain only where its semantics
-  determine it ([exec.snd.general]/3-4): a single-child adaptor maps each of its completion tags
-  to the child completions whose agents complete it (then: value from value; error from error and
-  value), a scheduler for a single source, the COMMON-DOMAIN otherwise; when_all reports its
-  children's COMMON-DOMAIN (tests/ycxx/execution/sync_wait_customization); let reports none
-  (COMPL-DOMAIN then falls back to indeterminate_domain<>, default_domain's transformations).
+- **Attributes (the draft's undefined get-attrs, D2).** [exec.snd.expos]/43 has
+  `basic-sender::get_env()` return `impls-for<Tag>::get-attrs(data, child...)`, but nothing
+  defines `get-attrs`: P3826R5 (the paper that introduced `get_completion_domain`,
+  `indeterminate_domain` and completion domains per tag) struck `default-impls::get-attrs` and
+  every specialization's (schedule_from's, when_all's), and moved what they said into
+  [exec.adapt.general]/3.2-3.3 and [exec.snd.general]/3-4. The call in /43 is a leftover.
+  libycxx reads /43 as "the attributes those paragraphs give":
+  - an adaptor with one child has the child's forwarding queries (FWD-ENV, /3.2), one with
+    several children none (env<>, /3.3);
+  - for each completion tag T, `get_completion_domain<T>` and `get_completion_scheduler<T>` follow
+    [exec.snd.general]/3-4 from the agents the adaptor's semantics put T completions on. libycxx
+    lists those agents as *sources*: a child's completions of some tag, the completions of the
+    schedule sender of a scheduler the adaptor transfers to, or a domain known only as a type
+    (the sender a let function returns, which exists only once the child completes);
+  - the domain is the COMMON-DOMAIN of the sources' domains. Given an environment, a source that
+    reports none counts as `indeterminate_domain<>` (COMPL-DOMAIN, [exec.snd.expos]/9; the
+    common type of `indeterminate_domain<>` and D is D), as P3826 §5.6 computes when_all's;
+    without one, every source must report a domain;
+  - the scheduler is reported only for a single source that reports one ("can determine", /4);
+    nothing tells two equal-typed schedulers apart at compile time;
+  - an adaptor without completions of tag T, or whose signatures are invalid in the environment,
+    reports neither for T (/3: ill-formed; [exec.get.compl.domain]/3 and [exec.get.compl.sched]/6
+    make the program asking ill-formed). Which child completions occur is read from the children's
+    signatures in the environment; without an environment a dependent child leaves the adaptor
+    silent ("cannot determine").
+
+  Per adaptor (the default implementations; each a source list per tag):
+  - then, upon_error, upon_stopped, bulk, bulk_chunked, bulk_unchunked, into_variant,
+    stopped_as_optional, stopped_as_error: each child completion maps to the tags the adaptor turns
+    it into, an exception included (then(sndr, f): error from sndr's errors, and from its values
+    when f can throw: [exec.snd.general] Examples 1-2). write_env and unstoppable: identity, the
+    child asked in its receiver's environment (the written env joined to the forwarded one).
+    schedule_from: the child's attributes;
+  - when_all, when_all_with_variant ([exec.when.all]/15-17): value from every child's value
+    completion. The operation completes on the agent of the last child to complete, so error from
+    every child's errors and the values whose decay-copy can throw, and from every completion of a
+    child when another child can fail; stopped likewise. The children are asked in
+    `when-all-env`. when_all_with_variant is when_all of into_variant of each child;
+  - let_value, let_error, let_stopped ([exec.let]/10, /16): the child's other completions pass
+    through; error also from the child's set-cpo completions when decay-copying the datums,
+    calling f or connecting can throw; and for each set-cpo signature, the completion domain of the
+    sender f returns, in the environment the let-state gives it (JOIN-ENV(let-env(sndr, env),
+    FWD-ENV(env)), [exec.let]/9): only given an environment;
+  - continues_on ([exec.continues.on]/9-12): every completion arrives through the schedule
+    sender's value completion (the child's result, or the exception of its decay-copy), plus
+    the schedule sender's own error and stopped completions. The schedule sender, not the
+    scheduler, is asked: it is what runs, and [exec.run.loop.types]/5 makes run_loop's answer
+    without an environment where the scheduler cannot ([exec.get.compl.sched]/5.2). With an
+    environment the two agree ([exec.sched]/6). When `schedule(sch)` can throw, the scheduler is
+    asked instead (a query is noexcept);
+  - starts_on ([exec.starts.on]/4): its let_value form. The child is the sender the let function
+    returns, so, as for let, only its domains count, asked in the environment that form gives it
+    (the start scheduler of continues_on(just(), sch), [exec.let]/2), plus the schedule sender's
+    error and stopped completions. A scheduler for the child's completions would come from
+    inline-attrs' `get_scheduler(env)`, which that environment does not set (it sets
+    `get_start_scheduler`; STATUS "Draft issues noticed"), so it would name the receiver's;
+  - on, affine: given an environment, the continues_on sender their transformation
+    produces ([exec.on]/6, [exec.affine]/5), whose scheduler comes from the environment
+    (get_start_scheduler) or the child (on(sndr, sch, closure)); none without one. affine of a
+    sender with an `affine()` member reports the child's;
+  - associate ([exec.associate]/11): domains only, the wrapped sender's, and for stopped also
+    the starting agent's (`get_domain(env)`: a failed association completes inline). No
+    scheduler and no forwarding: the wrapped sender is destroyed when the association fails;
+  - read_env ([exec.read.env]/3): inline-attrs for set_value, and for set_error when the query
+    can throw (TRY-SET-VALUE);
+  - spawn_future: none. The state erases the spawned sender's type; a parent's COMPL-DOMAIN
+    makes that `indeterminate_domain<>`, which is what is known.
+
+  The draft's three-way disagreement about schedulers ([exec.sched]/6,
+  [exec.get.compl.sched]/5.2, [exec.get.compl.domain]/2.3; STATUS "Draft issues noticed") is
+  settled the same way throughout: a schedule sender's attributes say where its completions run,
+  per tag, and the adaptors use them. A scheduler's own queries are those of [exec.get.compl.sched]
+  /5 as written. Tests: tests/ycxx/execution/completion_attributes_adaptors,
+  completion_attributes_when_all_let, domain_dispatch_through_adaptors,
+  sync_wait_customization.
 - **noexcept.** Where the draft gives a noexcept-specifier it is used as written; the sender
   factories and adaptors are noexcept when their decay-copies are (a strengthening
   [res.on.exception.handling] allows; make-sender has none in the draft).

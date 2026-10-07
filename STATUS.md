@@ -263,7 +263,7 @@ when parsing, `fractional_width` of ratio<1, 2^62>, `hh_mm_ss` layout, an error 
   `counted_iterator`; shuffle and sample with a generator wider than 64 bits (infinite recursion).
   Open: three draft defects.
 - Part 3 ([text], [numerics], [time], [input.output], [thread], [exec], Annex D): `docs/SPEC_COVERAGE.md` (part 3); probes and their generator in `tools/spec_audit/part3/`
-  (`run.py` re-runs them; draft revision `c7015b485cc3`). 6365 declarations of the synopses: 6245
+  (`run.py` re-runs them; draft revision `c7015b485cc3`). 6367 declarations of the synopses: 6247
   present with the specified shape (signature, return type, noexcept, constraints, explicit,
   bases, values) on both compilers, 686 of them probed by name only (exposition-only types in the
   signature), 120 not probed; 2410 constexpr calls, none failing because a function is not
@@ -272,9 +272,11 @@ when parsing, `fractional_width` of ratio<1, 2^62>, `hh_mm_ss` layout, an error 
   freestanding declarations also compiled with `-ffreestanding`. Fixed by the audit: volatile
   `store_*` of non-lock-free atomics (`f222ebf`), `stop_token`/`stop_source::operator==` as
   members (`9446019`), constant-evaluated `compare_exchange` of `long double` on Clang (`370b7e3`).
-  Fixed since (gap fixes, 2 of the 10 open gaps): G2 `chrono::parse` in the stream's locale
-  (names, `%c %x %X %r %p`, eras and alternative digits, a program's `time_get`; `331fde9`
-  `8b7d190` `735d0a0`) and G3 `{:L}` through the locale's `num_put` (`ee9b9ea`); 6 new tests.
+  Fixed since (gap fixes): G2 `chrono::parse` in the stream's locale (names, `%c %x %X %r %p`,
+  eras and alternative digits, a program's `time_get`; `331fde9` `8b7d190` `735d0a0`), G3 `{:L}`
+  through the locale's `num_put` (`ee9b9ea`), and G8, the completion schedulers and domains of
+  when_all, let and the other adaptors (`5a1705c`; 2 behaviour probes, `exec.when.all#1`,
+  `exec.let#1`, so 6367 declarations and 13237 checks).
   Open: `__cpp_lib_constexpr_exceptions` on Clang (compiler gap) and the documented behaviour
   limitations listed there (POSIX regex subexpressions,
   `rcu_barrier` inside evaluations, `*_at_thread_exit` for the exiting main thread, ...).
@@ -1239,8 +1241,11 @@ compilers; `visit_format_arg.pass.cpp` needs `EOF` from `constexpr_char_traits.h
   (hosted). Own suite execution: every test passes on both compilers, also under ASan+UBSan and
   (the threaded ones) TSan. Known limitations: `split`/`ensure_started` are not in the draft
   (P3682) and not provided; `tag_of_t` recognises tuple-like senders only; task_scheduler
-  allocates its backend at every construction; when_all and let report no completion
-  scheduler/domain; the draft questions of DECISIONS §17.
+  allocates its backend at every construction; spawn_future's sender reports no completion
+  domain (the spawned sender's type is erased; a parent's COMPL-DOMAIN makes it
+  `indeterminate_domain<>`); the draft questions of DECISIONS §17. Every adaptor reports its
+  completion domain and scheduler per tag as [exec.snd.general]/3-4 describe them (DECISIONS §17,
+  "Attributes"; spec-coverage audit G8).
 - `boyer_moore_searcher`/`boyer_moore_horspool_searcher` (`ycxx/core/searcher.hpp`): bad-character
   table (a 256-entry array for byte-sized integers compared with `equal_to`, otherwise a hash table of
   the pattern's equivalence classes that calls pred only on equal hash values), plus the good-suffix
@@ -1384,7 +1389,10 @@ Wording problems found while writing the spec-derived tests (tests/ycxx), not ye
   domain, though [exec.snd.general]/3 gives every sender with completions of a tag one (e.g.
   `then(schedule(sch), f)`), and [exec.sched]/6 requires the schedule sender's to match the
   scheduler's (`default_domain` given an environment). libycxx's run_loop schedule sender answers
-  `default_domain` itself.
+  `default_domain` itself. The adaptors that transfer to a scheduler (continues_on, starts_on, on,
+  affine) take the agents of their completions from the schedule sender's attributes, per tag (as
+  [exec.run.loop.types]/5 makes run_loop's answer without an environment), and from the
+  scheduler's own queries only when `schedule` can throw (DECISIONS §17).
 - [exec.when.all]/15.1: the value completion `set_value(rcvr, values...)` is evaluated (not
   under `if constexpr`) whenever the disposition is `started`, also when `values_tuple` is
   `tuple<>` because some child has no value completion (/13). By [exec.snd.expos]/47 that makes
@@ -1396,7 +1404,19 @@ Wording problems found while writing the spec-derived tests (tests/ycxx), not ye
   `const` member (spec-coverage audit, part 3, D1).
 - [exec.snd.expos]/43: `basic-sender::get_env()` returns `impls-for<Tag>::get-attrs(data,
   child...)`, but neither `default-impls` nor any `impls-for` specialization declares `get-attrs`
-  any more: the name is used once in the draft and defined nowhere (part 3, D2).
+  any more: the name is used once in the draft and defined nowhere (part 3, D2). P3826R5 struck
+  every `get-attrs` and gave the attributes in [exec.adapt.general]/3.2-3.3 (FWD-ENV of a single
+  child's, else env<>) and [exec.snd.general]/3-4 (completion domain and scheduler per tag); the
+  call in /43 is a leftover. libycxx reads /43 as those attributes (DECISIONS §17, "Attributes";
+  own tests `execution/completion_attributes_adaptors`, `completion_attributes_when_all_let`,
+  `domain_dispatch_through_adaptors`).
+- [exec.snd.expos]/60-61 and /10, [exec.let]/2: inline-attrs (just, read_env, inline_scheduler)
+  reports `get_scheduler(env)` as the completion scheduler, but the environment let gives the
+  sender its function returns (SCHED-ENV) names only `get_start_scheduler` (and the scheduler's
+  `get_domain`, when it has one). So, e.g., starts_on(sch, just()), whose let_value form starts
+  just() on sch, would report the receiver's `get_scheduler` as its value completion scheduler,
+  and an outer domain where sch has none. libycxx follows the wording for the factories; let and
+  starts_on report only domains for the sender a let function returns (DECISIONS §17).
 
 ## Performance
 `bench/` (manual, not in CI; DECISIONS §15) times the hot paths against libstdc++ on both

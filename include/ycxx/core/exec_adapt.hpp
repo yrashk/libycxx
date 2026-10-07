@@ -8,11 +8,21 @@
 #include <ycxx/core/optional.hpp>
 
 // ---------------------------------------------------------------------------------------------
-// The attributes of an adaptor with one child ([exec.adapt.general]/3.2, [exec.snd.general]/3-4):
-// the child's forwarding queries, and for each completion tag T the completion scheduler and
-// domain derived from the child completions (tags Srcs<T>) whose agents complete the adaptor's
-// T operations. A scheduler is reported only for a single source; a domain is the
-// COMMON-DOMAIN of the sources'.
+// The attributes of the adaptors (DECISIONS §17, "Attributes"): the get-attrs of
+// [exec.snd.expos]/43 that the draft no longer defines, read as [exec.adapt.general]/3.2-3.3
+// with the completion queries of [exec.snd.general]/3-4.
+//
+// An adaptor's attributes hold a policy: the children's attributes (and what else the queries
+// need), and for each completion tag T and environment, the list of sources of the agents that
+// evaluate its T completions:
+//   __src_child<I, S>  child I's completions with tag S, the child asked in the environment its
+//                      receiver has (__child_env_t);
+//   __src_sched<S>     the S completions of the schedule sender of the scheduler the adaptor
+//                      transfers to (__sched_t, __sched);
+//   __src_dom<D>       agents of domain D, whose scheduler is not known;
+// or __no_attr: the adaptor has no T completion, or it cannot tell.
+// The domain is the COMMON-DOMAIN of the sources' (COMPL-DOMAIN: indeterminate_domain<> for a
+// source without one, given an environment); the scheduler is that of a single source.
 namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail { namespace __exec {
 template <class _Qp>
 inline constexpr bool __is_completion_query = false;
@@ -21,64 +31,208 @@ inline constexpr bool __is_completion_query<std::execution::get_completion_sched
 template <class _Tp>
 inline constexpr bool __is_completion_query<std::execution::get_completion_domain_t<_Tp>> = true;
 
-template <class _VS, class _ES, class _SS, class _Tp>
-using __attr_sources_t = std::conditional_t<std::is_same_v<_Tp, std::execution::set_value_t>, _VS,
-                                          std::conditional_t<std::is_same_v<_Tp, std::execution::set_error_t>, _ES, _SS>>;
-
-template <class _Ap, class _Srcs, class... _Envs>
-struct __sources_domain {};
-template <class _Ap, class... _Srcs, class... _Envs>
-  requires(sizeof...(_Srcs) != 0 && (!std::is_void_v<__compl_domain_t<_Srcs, _Ap, _Envs...>> && ...))
-struct __sources_domain<_Ap, __tlist<_Srcs...>, _Envs...> {
-  using type = __common_domain_t<__compl_domain_t<_Srcs, _Ap, _Envs...>...>;
-};
-
-template <class _Srcs>
-struct __single_source {};
+template <std::size_t _Ip, class _Sp>
+struct __src_child {};
 template <class _Sp>
-struct __single_source<__tlist<_Sp>> {
-  using type = _Sp;
-};
-template <class _Srcs>
-using __single_source_t = typename __single_source<_Srcs>::type;
+struct __src_sched {};
+template <class _Dp>
+struct __src_dom {};
+struct __no_attr {};
 
-using __values_only = __tlist<std::execution::set_value_t>;
-using __errors_only = __tlist<std::execution::set_error_t>;
-using __stopped_only = __tlist<std::execution::set_stopped_t>;
+template <bool _Bp, class _Src>
+using __src_if = std::conditional_t<_Bp, __tlist<_Src>, __tlist<>>;
+template <class... _Lists>
+using __srcs_t = typename __tlist_concat<__tlist<>, _Lists...>::type;
+
+// The completion signatures of a library sender itself, before any transformation (computing
+// them through transform_sender would ask the attributes again).
+template <class _Sndr, class... _Envs>
+using __own_csigs_t = typename __impls_for<typename _Sndr::__ycxx_tag>::template __csigs<_Sndr, _Envs...>;
+
+// Whether a sender with signatures CS can have completions with tag T: not when CS is invalid,
+// or known without one.
+template <class _CS, class _Tp>
+concept __attr_has_tag = !__is_invalid_sigs<_CS> && (!__is_csigs<_CS> || __sigs_count<_Tp, _CS> != 0);
+
+// Whether a signature of CS with tag S is mapped by F to a signature with tag T.
+template <class _CS, template <class> class _Fp, class _Sp, class _Tp>
+inline constexpr bool __sig_maps = false;
+template <class... _Sigs, template <class> class _Fp, class _Sp, class _Tp>
+inline constexpr bool __sig_maps<std::execution::completion_signatures<_Sigs...>, _Fp, _Sp, _Tp> =
+    ((std::is_same_v<typename __sig_tag<_Sigs>::type, _Sp> && __sigs_count<_Tp, _Fp<_Sigs>> != 0) || ...);
+
+// The sources of an adaptor with one child (index 0) whose completions it maps signature by
+// signature through F (the map its completion signatures are computed with).
+template <class _Tp, class _OwnCS, class _CSc, template <class> class _Fp>
+struct __map_sources {
+  using type = __no_attr;
+};
+template <class _Tp, class _OwnCS, class _CSc, template <class> class _Fp>
+  requires __attr_has_tag<_OwnCS, _Tp> && __is_csigs<_CSc>
+struct __map_sources<_Tp, _OwnCS, _CSc, _Fp> {
+  using type = __srcs_t<__src_if<__sig_maps<_CSc, _Fp, std::execution::set_value_t, _Tp>, __src_child<0, std::execution::set_value_t>>,
+                        __src_if<__sig_maps<_CSc, _Fp, std::execution::set_error_t, _Tp>, __src_child<0, std::execution::set_error_t>>,
+                        __src_if<__sig_maps<_CSc, _Fp, std::execution::set_stopped_t, _Tp>, __src_child<0, std::execution::set_stopped_t>>>;
+};
+
+// The domain of a source, void when there is none.
+template <class _Dp>
+using __or_indeterminate = std::conditional_t<std::is_void_v<_Dp>, std::execution::indeterminate_domain<>, _Dp>;
+template <class _Pol, class _Src, class... _Envs>
+struct __src_domain_of;
+template <class _Pol, std::size_t _Ip, class _Sp>
+struct __src_domain_of<_Pol, __src_child<_Ip, _Sp>> {
+  using type = __compl_domain_t<_Sp, typename _Pol::template __child_attrs_t<_Ip>>;
+};
+template <class _Pol, std::size_t _Ip, class _Sp, class _Env>
+struct __src_domain_of<_Pol, __src_child<_Ip, _Sp>, _Env> {
+  using type = __or_indeterminate<__compl_domain_t<_Sp, typename _Pol::template __child_attrs_t<_Ip>, typename _Pol::template __child_env_t<_Ip, _Env>>>;
+};
+template <class _Sch>
+using __sched_attrs_t = std::remove_cvref_t<decltype(std::execution::get_env(std::execution::schedule(std::declval<_Sch&>())))>;
+template <class _Pol, class _Sp>
+struct __src_domain_of<_Pol, __src_sched<_Sp>> {
+  using type = __compl_domain_t<_Sp, __sched_attrs_t<typename _Pol::template __sched_t<>>>;
+};
+template <class _Pol, class _Sp, class _Env>
+struct __src_domain_of<_Pol, __src_sched<_Sp>, _Env> {
+  using type = __or_indeterminate<__compl_domain_t<_Sp, __sched_attrs_t<typename _Pol::template __sched_t<_Env>>, __fwd_env_t<const _Env&>>>;
+};
+template <class _Pol, class _Dp, class... _Envs>
+struct __src_domain_of<_Pol, __src_dom<_Dp>, _Envs...> {
+  using type = _Dp;
+};
+template <class _Pol, class _Src, class... _Envs>
+using __src_domain_t = typename __src_domain_of<_Pol, _Src, _Envs...>::type;
+
+template <class _Pol, class _Srcs, class... _Envs>
+struct __attr_domain_of {};
+template <class _Pol, class... _Srcs, class... _Envs>
+  requires(sizeof...(_Srcs) + sizeof...(_Envs) != 0) && (!std::is_void_v<__src_domain_t<_Pol, _Srcs, _Envs...>> && ...)
+struct __attr_domain_of<_Pol, __tlist<_Srcs...>, _Envs...> {
+  using type = __common_domain_t<__src_domain_t<_Pol, _Srcs, _Envs...>...>;
+};
+
+template <class _Pol, class _Tp, class... _Envs>
+using __attr_sources_t = typename _Pol::template __sources<_Tp, _Envs...>;
+
+// The completion scheduler of a single source.
+template <class _Pol, class _Srcs, class... _Envs>
+struct __attr_sched {
+  static constexpr bool __ok = false;
+};
+template <class _Pol, std::size_t _Ip, class _Sp, class... _Envs>
+struct __attr_sched<_Pol, __tlist<__src_child<_Ip, _Sp>>, _Envs...> {
+  static constexpr bool __ok =
+      requires(const typename _Pol::template __child_attrs_t<_Ip>& __a, const typename _Pol::template __child_env_t<_Ip, _Envs>&... __ce) {
+        std::execution::get_completion_scheduler<_Sp>(__a, __ce...);
+      };
+  static constexpr auto __get(const _Pol& __pol, const _Envs&... __envs) noexcept {
+    return __pol.template __with_child_env<_Ip>(
+        [&](const auto&... __ce) noexcept { return std::execution::get_completion_scheduler<_Sp>(__pol.template __child_attrs<_Ip>(), __ce...); }, __envs...);
+  }
+};
+template <class _Pol, class _Sp, class... _Envs>
+struct __attr_sched<_Pol, __tlist<__src_sched<_Sp>>, _Envs...> {
+  using _Sch = typename _Pol::template __sched_t<_Envs...>;
+  // The schedule sender's attributes; the scheduler's own when schedule can throw (equal by
+  // [exec.sched]/6, and a query does not throw).
+  static constexpr bool __via_sender = noexcept(std::execution::schedule(std::declval<_Sch&>()));
+  static constexpr bool __ok = [] {
+    if constexpr (__via_sender)
+      return requires(const __sched_attrs_t<_Sch>& __a, const __fwd_env_t<const _Envs&>&... __ce) {
+        std::execution::get_completion_scheduler<_Sp>(__a, __ce...);
+      };
+    else
+      return requires(const _Sch& __s, const __fwd_env_t<const _Envs&>&... __ce) { std::execution::get_completion_scheduler<_Sp>(__s, __ce...); };
+  }();
+  static constexpr auto __get(const _Pol& __pol, const _Envs&... __envs) noexcept {
+    _Sch __sch = __pol.__sched(__envs...);
+    if constexpr (__via_sender)
+      return std::execution::get_completion_scheduler<_Sp>(std::execution::get_env(std::execution::schedule(__sch)),
+                                                           ::__ycxx::__detail::__exec::__fwd_env(__envs)...);
+    else
+      return std::execution::get_completion_scheduler<_Sp>(__sch, ::__ycxx::__detail::__exec::__fwd_env(__envs)...);
+  }
+};
+
+// Policy storage for an adaptor whose child's attributes are those of [exec.adapt.general]/3.2,
+// the child asked in FWD-ENV(env).
+template <class _Ap>
+struct __pol_child {
+  _Ap __ycxx_child;
+  constexpr const std::remove_cvref_t<_Ap>& __fwd() const noexcept { return __ycxx_child; }
+  template <std::size_t>
+  constexpr const std::remove_cvref_t<_Ap>& __child_attrs() const noexcept {
+    return __ycxx_child;
+  }
+  template <std::size_t>
+  using __child_attrs_t = std::remove_cvref_t<_Ap>;
+  template <std::size_t, class _Env>
+  using __child_env_t = __fwd_env_t<const _Env&>;
+  template <std::size_t, class _Fn, class... _Envs>
+  static constexpr auto __with_child_env(_Fn __fn, const _Envs&... __envs) noexcept {
+    return __fn(::__ycxx::__detail::__exec::__fwd_env(__envs)...);
+  }
+};
+
+// An adaptor with one child, mapped through Map::__f (DECISIONS §17).
+template <class _Base, class _Sndr, class _Child, class _Map>
+struct __pol_map : _Base {
+  template <class _Tp, class... _Envs>
+  using __sources = typename __map_sources<_Tp, __own_csigs_t<_Sndr, _Envs...>,
+                                           __csigs_of_t<_Child, typename _Base::template __child_env_t<0, _Envs>...>, _Map::template __f>::type;
+};
+template <class _Sig>
+struct __identity_sig_map_impl {
+  using type = std::execution::completion_signatures<_Sig>;
+};
+struct __identity_sig_map {
+  template <class _Sig>
+  using __f = typename __identity_sig_map_impl<_Sig>::type;
+};
 }}} // namespace __ycxx::__detail::__exec
 
 namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __adl_free {
-template <class _Ap, class _VS, class _ES, class _SS>
-struct __exec_mapped_attrs {
-  _Ap __ycxx_attrs;
+template <class _Pol>
+struct __exec_compl_attrs {
+  _Pol __ycxx_pol;
 
+  // The child's forwarding queries ([exec.adapt.general]/3.2), for an adaptor with one child.
   template <::__ycxx::__detail::__exec::__forwarding_query_c _Qp, class... _As>
-    requires(!::__ycxx::__detail::__exec::__is_completion_query<_Qp>) && ::__ycxx::__detail::__exec::__has_query<std::remove_cvref_t<_Ap>, _Qp, _As...>
-  constexpr decltype(auto) query(_Qp __q, _As&&... __as) const
-      noexcept(noexcept(::__ycxx::__detail::__exec::__as_const_ref(__ycxx_attrs).query(__q, static_cast<_As&&>(__as)...))) {
-    return ::__ycxx::__detail::__exec::__as_const_ref(__ycxx_attrs).query(__q, static_cast<_As&&>(__as)...);
-  }
-  template <class _Tp, class... _Envs, class _Sp = ::__ycxx::__detail::__exec::__single_source_t<::__ycxx::__detail::__exec::__attr_sources_t<_VS, _ES, _SS, _Tp>>>
-    requires requires(const std::remove_cvref_t<_Ap>& a, const _Envs&... e) { std::execution::get_completion_scheduler_t<_Sp>{}(a, e...); }
-  constexpr auto query(std::execution::get_completion_scheduler_t<_Tp>, const _Envs&... __envs) const noexcept {
-    return std::execution::get_completion_scheduler_t<_Sp>{}(::__ycxx::__detail::__exec::__as_const_ref(__ycxx_attrs), __envs...);
+    requires(!::__ycxx::__detail::__exec::__is_completion_query<_Qp>) &&
+            requires(const _Pol& __p, _Qp __q, _As&&... __as) { __p.__fwd().query(__q, static_cast<_As&&>(__as)...); }
+  constexpr decltype(auto) query(_Qp __q, _As&&... __as) const noexcept(noexcept(__ycxx_pol.__fwd().query(__q, static_cast<_As&&>(__as)...))) {
+    return __ycxx_pol.__fwd().query(__q, static_cast<_As&&>(__as)...);
   }
   template <class _Tp, class... _Envs>
-    requires requires {
-      typename ::__ycxx::__detail::__exec::__sources_domain<std::remove_cvref_t<_Ap>, ::__ycxx::__detail::__exec::__attr_sources_t<_VS, _ES, _SS, _Tp>, _Envs...>::type;
-    }
+    requires ::__ycxx::__detail::__exec::__completion_tag<_Tp> && (sizeof...(_Envs) <= 1) &&
+             requires {
+               typename ::__ycxx::__detail::__exec::__attr_domain_of<_Pol, ::__ycxx::__detail::__exec::__attr_sources_t<_Pol, _Tp, _Envs...>, _Envs...>::type;
+             }
   constexpr auto query(std::execution::get_completion_domain_t<_Tp>, const _Envs&...) const noexcept {
-    return typename ::__ycxx::__detail::__exec::__sources_domain<std::remove_cvref_t<_Ap>, ::__ycxx::__detail::__exec::__attr_sources_t<_VS, _ES, _SS, _Tp>,
-                                                         _Envs...>::type();
+    return typename ::__ycxx::__detail::__exec::__attr_domain_of<_Pol, ::__ycxx::__detail::__exec::__attr_sources_t<_Pol, _Tp, _Envs...>, _Envs...>::type();
+  }
+  template <class _Tp, class... _Envs>
+    requires ::__ycxx::__detail::__exec::__completion_tag<_Tp> && (sizeof...(_Envs) <= 1) &&
+             ::__ycxx::__detail::__exec::__attr_sched<_Pol, ::__ycxx::__detail::__exec::__attr_sources_t<_Pol, _Tp, _Envs...>, _Envs...>::__ok
+  constexpr auto query(std::execution::get_completion_scheduler_t<_Tp>, const _Envs&... __envs) const noexcept {
+    return ::__ycxx::__detail::__exec::__attr_sched<_Pol, ::__ycxx::__detail::__exec::__attr_sources_t<_Pol, _Tp, _Envs...>, _Envs...>::__get(__ycxx_pol,
+                                                                                                                                            __envs...);
   }
 };
 }} // namespace __ycxx::__adl_free
 
 namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail { namespace __exec {
-template <class _VS, class _ES, class _SS, class _Child>
-constexpr auto __mapped_attrs(const _Child& __child) noexcept {
+template <class _Pol>
+using __compl_attrs_t = ::__ycxx::__adl_free::__exec_compl_attrs<_Pol>;
+
+// The attributes of make-sender(tag, data, child) for an adaptor mapped through Map.
+template <class _Map, class _Tag, class _Data, class _Child>
+constexpr auto __map_attrs(const _Data&, const _Child& __child) noexcept {
   using _Ap = __env_member_t<decltype(std::execution::get_env(__child))>;
-  return ::__ycxx::__adl_free::__exec_mapped_attrs<_Ap, _VS, _ES, _SS>{std::execution::get_env(__child)};
+  using _Pol = __pol_map<__pol_child<_Ap>, __basic_sender_t<_Tag, _Data, _Child>, _Child, _Map>;
+  return __compl_attrs_t<_Pol>{_Pol{{std::execution::get_env(__child)}}};
 }
 
 // An environment's stand-in receiver: what connect is asked about when only the environment is
@@ -137,6 +291,25 @@ struct __impls_for<__write_env_t> : __default_impls {
   }
   template <class _Sndr, class... _Env>
   using __csigs = __csigs_of_t<__child_type<_Sndr>, __join_env_t<const std::decay_t<__data_type<_Sndr>>&, __fwd_env_t<_Env>>...>;
+  // The child's attributes, its completions asked in its receiver's environment (the written
+  // one joined to the forwarded one). The environment is copied when that cannot throw, else
+  // referred to (valid while the sender is).
+  template <class _Ap, class _Data>
+  struct __pol_base : __pol_child<_Ap> {
+    std::conditional_t<std::is_nothrow_copy_constructible_v<_Data>, _Data, const _Data&> __ycxx_data;
+    template <std::size_t, class _Env>
+    using __child_env_t = __join_env_t<const _Data&, __fwd_env_t<const _Env&>>;
+    template <std::size_t, class _Fn, class... _Envs>
+    constexpr auto __with_child_env(_Fn __fn, const _Envs&... __envs) const noexcept {
+      return __fn(::__ycxx::__detail::__exec::__join_env(__as_const_ref(__ycxx_data), ::__ycxx::__detail::__exec::__fwd_env(__envs))...);
+    }
+  };
+  template <class _Data, class _Child>
+  static constexpr auto __get_attrs(const _Data& data, const _Child& __child) noexcept {
+    using _Ap = __env_member_t<decltype(std::execution::get_env(__child))>;
+    using _Pol = __pol_map<__pol_base<_Ap, _Data>, __basic_sender_t<__write_env_t, _Data, _Child>, _Child, __identity_sig_map>;
+    return __compl_attrs_t<_Pol>{_Pol{{{std::execution::get_env(__child)}, data}}};
+  }
 };
 
 struct __unstoppable_t {
@@ -193,11 +366,13 @@ struct __then_sig_map {
   using __f = typename apply<_Sig>::type;
 };
 
-template <class _SetTag, class _VS, class _ES, class _SS>
+template <class _AdTag, class _SetTag>
 struct __then_impls : __default_impls {
+  // [exec.snd.general] Examples 1-2: the SetTag completions of the child complete the value
+  // completions, and the error ones too when f can throw.
   template <class _Data, class _Child>
-  static constexpr auto __get_attrs(const _Data&, const _Child& __child) noexcept {
-    return ::__ycxx::__detail::__exec::__mapped_attrs<_VS, _ES, _SS>(__child);
+  static constexpr auto __get_attrs(const _Data& data, const _Child& __child) noexcept {
+    return ::__ycxx::__detail::__exec::__map_attrs<__then_sig_map<_SetTag, _Data>, _AdTag>(data, __child);
   }
   template <class _Index, class _Fn, class _Rcvr, class _Tag, class... _Args>
     requires(!std::is_same_v<_Tag, _SetTag> && __callable<_Tag, _Rcvr, _Args...>) ||
@@ -240,13 +415,11 @@ using std::execution::set_error_t;
 using std::execution::set_stopped_t;
 using std::execution::set_value_t;
 template <>
-struct __impls_for<std::execution::then_t> : __then_impls<set_value_t, __values_only, __tlist<set_error_t, set_value_t>, __stopped_only> {};
+struct __impls_for<std::execution::then_t> : __then_impls<std::execution::then_t, set_value_t> {};
 template <>
-struct __impls_for<std::execution::upon_error_t>
-    : __then_impls<set_error_t, __tlist<set_value_t, set_error_t>, __errors_only, __stopped_only> {};
+struct __impls_for<std::execution::upon_error_t> : __then_impls<std::execution::upon_error_t, set_error_t> {};
 template <>
-struct __impls_for<std::execution::upon_stopped_t>
-    : __then_impls<set_stopped_t, __tlist<set_value_t, set_stopped_t>, __tlist<set_error_t, set_stopped_t>, __tlist<>> {};
+struct __impls_for<std::execution::upon_stopped_t> : __then_impls<std::execution::upon_stopped_t, set_stopped_t> {};
 }}} // namespace __ycxx::__detail::__exec
 
 // ---------------------------------------------------------------------------------------------
@@ -288,9 +461,24 @@ inline constexpr into_variant_t into_variant{};
 namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail { namespace __exec {
 template <>
 struct __impls_for<std::execution::into_variant_t> : __default_impls {
+  // [exec.into.variant]/5: a value completion becomes the value completion, or an error one
+  // when decay-copying the datums throws.
+  struct __attr_map {
+    template <class _Sig>
+    struct apply {
+      using type = std::execution::completion_signatures<_Sig>;
+    };
+    template <class... _Ts>
+    struct apply<set_value_t(_Ts...)> {
+      using type = __sigs_concat_t<std::execution::completion_signatures<set_value_t()>,
+                                   std::conditional_t<__nothrow_decay_copy_sig<set_value_t(_Ts...)>, __no_sigs, __eptr_sigs>>;
+    };
+    template <class _Sig>
+    using __f = typename apply<_Sig>::type;
+  };
   template <class _Data, class _Child>
-  static constexpr auto __get_attrs(const _Data&, const _Child& __child) noexcept {
-    return ::__ycxx::__detail::__exec::__mapped_attrs<__values_only, __tlist<set_error_t, set_value_t>, __stopped_only>(__child);
+  static constexpr auto __get_attrs(const _Data& data, const _Child& __child) noexcept {
+    return ::__ycxx::__detail::__exec::__map_attrs<__attr_map, std::execution::into_variant_t>(data, __child);
   }
   template <class _Sndr, class _Rcvr>
   static constexpr auto __get_state(_Sndr&&, _Rcvr&) noexcept {
@@ -532,23 +720,87 @@ struct __let_sigs {
 };
 
 template <class _Cpo>
-struct __let_impls_base : __default_impls {
-  template <class _Data, class... _Child>
-  static constexpr auto __get_attrs(const _Data&, const _Child&...) noexcept {
-    return std::execution::env<>();
-  }
+struct __let_impls_base : __default_impls {};
+
+// The sources of let-cpo(sndr, f)'s T completions ([exec.let]/10, /16; DECISIONS §17): the
+// child's completions other than set-cpo pass through; its set-cpo completions are also error
+// completions when decay-copying the datums, calling f or connecting can throw; and the
+// completions of the sender f returns, asked in receiver2's environment ([exec.let]/9), only
+// as a domain (the sender does not exist yet). Without an environment, only a child without
+// set-cpo completions is understood.
+template <class _Tp, class _Cpo, class _Child, class _Fn, class _OwnCS, class _CSc, class... _Envs>
+struct __let_sources {
+  using type = __no_attr;
+};
+template <class _Tp, class _Cpo, class _Child, class _Fn, class _OwnCS, class _CSc>
+  requires __attr_has_tag<_OwnCS, _Tp> && __is_csigs<_CSc> && (__sigs_count<_Cpo, _CSc> == 0)
+struct __let_sources<_Tp, _Cpo, _Child, _Fn, _OwnCS, _CSc> {
+  using type = __src_if<!std::is_same_v<_Tp, _Cpo> && __sigs_count<_Tp, _CSc> != 0, __src_child<0, _Tp>>;
+};
+template <class _Tp, class _Cpo, class _Child, class _Fn, class _OwnCS, class _CSc, class _Env>
+  requires __attr_has_tag<_OwnCS, _Tp> && __is_csigs<_CSc>
+struct __let_sources<_Tp, _Cpo, _Child, _Fn, _OwnCS, _CSc, _Env> {
+  using _Env2 = __join_env_t<const __let_env_t<_Cpo, _Child, _Env>&, __fwd_env_t<_Env>>;
+  template <class _Args>
+  struct __per;
+  template <class... _Ts>
+  struct __per<__tlist<_Ts...>> {
+    using _S2 = std::invoke_result_t<_Fn, std::decay_t<_Ts>&...>;
+    using _CS2 = __csigs_of_t<_S2, _Env2>;
+    static constexpr bool __ok = __is_csigs<_CS2>;
+    static constexpr bool __nothrow = (std::is_nothrow_constructible_v<std::decay_t<_Ts>, _Ts> && ...) &&
+                                      std::is_nothrow_invocable_v<_Fn, std::decay_t<_Ts>&...> &&
+                                      ::__ycxx::__detail::__exec::__nothrow_connect_in<_S2, _Env2>();
+    using __srcs = __src_if<__sigs_count<_Tp, _CS2> != 0, __src_dom<__compl_domain_of_t<_Tp, _S2, _Env2>>>;
+  };
+  template <class _Lists>
+  struct __all;
+  template <class... _Lists>
+  struct __all<__tlist<_Lists...>> {
+    static auto __pick() {
+      if constexpr (!(__per<_Lists>::__ok && ...))
+        return std::type_identity<__no_attr>{};
+      else
+        return std::type_identity<__srcs_t<
+            __src_if<!std::is_same_v<_Tp, _Cpo> && __sigs_count<_Tp, _CSc> != 0, __src_child<0, _Tp>>,
+            __src_if<std::is_same_v<_Tp, std::execution::set_error_t> && !(__per<_Lists>::__nothrow && ...), __src_child<0, _Cpo>>,
+            typename __per<_Lists>::__srcs...>>{};
+    }
+    using type = typename decltype(__pick())::type;
+  };
+  using type = typename __all<__sigs_args_t<_Cpo, _CSc>>::type;
+};
+
+template <class _Ap, class _Sndr, class _Cpo, class _Child, class _Fn>
+struct __pol_let : __pol_child<_Ap> {
+  template <class _Tp, class... _Envs>
+  using __sources = typename __let_sources<_Tp, _Cpo, _Child, _Fn, __own_csigs_t<_Sndr, _Envs...>, __csigs_of_t<_Child, __fwd_env_t<const _Envs&>...>,
+                                           _Envs...>::type;
 };
 
 // The let_value/let_error/let_stopped senders before their transformation into let-tag senders
 // (which happens when they are connected).
-template <class _Cpo>
+template <class _Cpo, class _AdTag>
 struct __let_cpo_impls : __let_impls_base<_Cpo> {
+  template <class _Data, class _Child>
+  static constexpr auto __get_attrs(const _Data&, const _Child& __child) noexcept {
+    using _Ap = __env_member_t<decltype(std::execution::get_env(__child))>;
+    using _Pol = __pol_let<_Ap, __basic_sender_t<_AdTag, _Data, _Child>, _Cpo, _Child, _Data>;
+    return __compl_attrs_t<_Pol>{_Pol{{std::execution::get_env(__child)}}};
+  }
   template <class _Sndr, class... _Env>
   using __csigs = typename __let_sigs<_Cpo, __child_type<_Sndr>, std::remove_cvref_t<__data_type<_Sndr>>, _Env...>::type;
 };
 
 template <class _Cpo>
 struct __impls_for<__let_tag<_Cpo>> : __let_impls_base<_Cpo> {
+  // The attributes of the let-cpo sender it was made from.
+  template <class _Child, class _Fn>
+  static constexpr auto __get_attrs(const ::__ycxx::__adl_free::__exec_let_data<_Child, _Fn>& data) noexcept {
+    using _Ap = __env_member_t<decltype(std::execution::get_env(data.__sndr))>;
+    using _Pol = __pol_let<_Ap, __basic_sender_t<__let_tag<_Cpo>, ::__ycxx::__adl_free::__exec_let_data<_Child, _Fn>>, _Cpo, _Child, _Fn>;
+    return __compl_attrs_t<_Pol>{_Pol{{std::execution::get_env(data.__sndr)}}};
+  }
   template <class _Sndr, class _Rcvr>
   static constexpr auto __get_state(_Sndr&& __sndr, _Rcvr& __rcvr) {
     using __data_t = std::remove_cvref_t<__data_type<_Sndr>>;
@@ -598,11 +850,11 @@ inline constexpr let_stopped_t let_stopped{};
 
 namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail { namespace __exec {
 template <>
-struct __impls_for<std::execution::let_value_t> : __let_cpo_impls<set_value_t> {};
+struct __impls_for<std::execution::let_value_t> : __let_cpo_impls<set_value_t, std::execution::let_value_t> {};
 template <>
-struct __impls_for<std::execution::let_error_t> : __let_cpo_impls<set_error_t> {};
+struct __impls_for<std::execution::let_error_t> : __let_cpo_impls<set_error_t, std::execution::let_error_t> {};
 template <>
-struct __impls_for<std::execution::let_stopped_t> : __let_cpo_impls<set_stopped_t> {};
+struct __impls_for<std::execution::let_stopped_t> : __let_cpo_impls<set_stopped_t, std::execution::let_stopped_t> {};
 }}} // namespace __ycxx::__detail::__exec
 
 // ---------------------------------------------------------------------------------------------
@@ -711,18 +963,46 @@ inline constexpr stopped_as_error_t stopped_as_error{};
 namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail { namespace __exec {
 template <>
 struct __impls_for<std::execution::stopped_as_optional_t> : __default_impls {
+  // [exec.stopped.opt]/4: values and stopped become values; constructing the optional can
+  // throw on the value agent.
+  struct __attr_map {
+    template <class _Sig>
+    struct apply {
+      using type = std::execution::completion_signatures<_Sig>;
+    };
+    template <class... _Ts>
+    struct apply<set_value_t(_Ts...)> {
+      static auto __pick() {
+        if constexpr (requires { typename __optional_value<__tlist<_Ts...>>::type; })
+          return std::type_identity<__sigs_concat_t<std::execution::completion_signatures<set_value_t()>,
+                                                    std::conditional_t<__nothrow_optional_from<typename __optional_value<__tlist<_Ts...>>::type, __tlist<_Ts...>>,
+                                                                       __no_sigs, __eptr_sigs>>>{};
+        else
+          return std::type_identity<__no_sigs>{};
+      }
+      using type = typename decltype(__pick())::type;
+    };
+    template <class _Sig>
+    using __f = std::conditional_t<std::is_same_v<_Sig, set_stopped_t()>, std::execution::completion_signatures<set_value_t()>, typename apply<_Sig>::type>;
+  };
   template <class _Data, class _Child>
-  static constexpr auto __get_attrs(const _Data&, const _Child& __child) noexcept {
-    return ::__ycxx::__detail::__exec::__mapped_attrs<__tlist<set_value_t, set_stopped_t>, __errors_only, __tlist<>>(__child);
+  static constexpr auto __get_attrs(const _Data& data, const _Child& __child) noexcept {
+    return ::__ycxx::__detail::__exec::__map_attrs<__attr_map, std::execution::stopped_as_optional_t>(data, __child);
   }
   template <class _Sndr, class... _Env>
   using __csigs = typename __stopped_as_optional_sigs<__child_sigs_t<_Sndr, _Env...>>::type;
 };
 template <>
 struct __impls_for<std::execution::stopped_as_error_t> : __default_impls {
+  // [exec.stopped.err]/3: stopped becomes an error, on the agent that stopped.
+  struct __attr_map {
+    template <class _Sig>
+    using __f = std::conditional_t<std::is_same_v<_Sig, set_stopped_t()>, std::execution::completion_signatures<set_error_t(std::exception_ptr)>,
+                                   std::execution::completion_signatures<_Sig>>;
+  };
   template <class _Data, class _Child>
-  static constexpr auto __get_attrs(const _Data&, const _Child& __child) noexcept {
-    return ::__ycxx::__detail::__exec::__mapped_attrs<__values_only, __tlist<set_error_t, set_stopped_t>, __tlist<>>(__child);
+  static constexpr auto __get_attrs(const _Data& data, const _Child& __child) noexcept {
+    return ::__ycxx::__detail::__exec::__map_attrs<__attr_map, std::execution::stopped_as_error_t>(data, __child);
   }
   template <class _Sndr, class... _Env>
   using __csigs = typename __stopped_as_error_sigs<std::decay_t<__data_type<_Sndr>>, __child_sigs_t<_Sndr, _Env...>>::type;
@@ -774,11 +1054,14 @@ struct __bulk_data_types<::__ycxx::__adl_free::__exec_product<_Is, _Pp, _Shape, 
   using __func = _Func;
 };
 
-template <bool _Chunked>
+template <class _AdTag, bool _Chunked>
 struct __bulk_impls : __default_impls {
+  // [exec.bulk]/7: f runs on the agent of the child's value completion (an exception it throws
+  // is the error completion there).
   template <class _Data, class _Child>
-  static constexpr auto __get_attrs(const _Data&, const _Child& __child) noexcept {
-    return ::__ycxx::__detail::__exec::__mapped_attrs<__values_only, __tlist<set_error_t, set_value_t>, __stopped_only>(__child);
+  static constexpr auto __get_attrs(const _Data& data, const _Child& __child) noexcept {
+    return ::__ycxx::__detail::__exec::__map_attrs<__bulk_sig_map<_Chunked, typename __bulk_data_types<_Data>::__func, typename __bulk_data_types<_Data>::__shape>,
+                                                   _AdTag>(data, __child);
   }
   template <class _Index, class _State, class _Rcvr, class _Tag, class... _Args>
     requires(!std::is_same_v<_Tag, set_value_t>) ||
@@ -853,9 +1136,9 @@ inline constexpr bulk_unchunked_t bulk_unchunked{};
 
 namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail { namespace __exec {
 template <>
-struct __impls_for<std::execution::bulk_t> : __bulk_impls<false> {};
+struct __impls_for<std::execution::bulk_t> : __bulk_impls<std::execution::bulk_t, false> {};
 template <>
-struct __impls_for<std::execution::bulk_chunked_t> : __bulk_impls<true> {};
+struct __impls_for<std::execution::bulk_chunked_t> : __bulk_impls<std::execution::bulk_chunked_t, true> {};
 template <>
-struct __impls_for<std::execution::bulk_unchunked_t> : __bulk_impls<false> {};
+struct __impls_for<std::execution::bulk_unchunked_t> : __bulk_impls<std::execution::bulk_unchunked_t, false> {};
 }}} // namespace __ycxx::__detail::__exec

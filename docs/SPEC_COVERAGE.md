@@ -606,7 +606,7 @@ probed here with `<memory>`.
    `cache/regions.json`: every subclause of these clauses with its code blocks and item
    declarations (italics, "exposition only" and "freestanding"/"optional" comments kept as markers).
 2. `gen.py` parses every synopsis code block (`decls.py`: namespaces, classes, template heads,
-   access, declarations) into `inventory.tsv` (6351 declarations of the synopses, plus 14 item declarations no synopsis of these clauses repeats, `samples.EXTRA`) and writes one probe file per
+   access, declarations) into `inventory.tsv` (6351 declarations of the synopses, plus 14 item declarations no synopsis of these clauses repeats and 2 behaviour probes of the fixed gap G8, `samples.EXTRA`) and writes one probe file per
    subclause, `probes/<stable.name>.cpp` (the freestanding declarations again in
    `probes/freestanding/`), with `checks.tsv` listing every check. Each check is one line:
    a concept over a dummy type, so a failure is a false `static_assert` on its own line.
@@ -666,11 +666,11 @@ a sample is adjusted (`FUNC`, `MEMBER_CLASS`, `CONSTRAINED`), skipped (`SKIP`, `
 | [time] Time | 744 | 739 | 739 | 81 | 5 | 4/4 | 1085 | 0 | 0 | 86/86 |
 | [input.output] Input/output | 1262 | 1248 | 1248 | 75 | 14 | 215/215 | 1579 | 0 | 0 | 1/1 |
 | [thread] Concurrency support | 1122 | 1095 | 1095 | 93 | 27 | 25/25 | 5682 | 0 | 0 | 14/14 |
-| [exec] Execution control | 273 | 260 | 260 | 113 | 13 | 0/0 | 274 | 0 | 0 | 0/0 |
+| [exec] Execution control | 275 | 262 | 262 | 113 | 13 | 0/0 | 276 | 0 | 0 | 0/0 |
 | Annex D [depr] | 40 | 40 | 40 | 7 | 0 | 10/10 | 56 | 0 | 0 | 1/1 |
 | [version.syn] feature-test macros of these headers | 0 | 0 | 0 | 0 | 0 | 145/147 | 147 | 0 | 2 | 0/0 |
 | [zombie.names] | 0 | 0 | 0 | 0 | 0 | 79/79 | 79 | 0 | 0 | 0/0 |
-| **Total** | 6365 | 6245 | 6245 | 686 | 120 | 511/513 | 13235 | 0 | 2 | 184/185 |
+| **Total** | 6367 | 6247 | 6247 | 686 | 120 | 511/513 | 13237 | 0 | 2 | 184/185 |
 
 <details><summary>[text] Text processing: 55 subclauses</summary>
 
@@ -970,7 +970,7 @@ a sample is adjusted (`FUNC`, `MEMBER_CLASS`, `CONSTRAINED`), skipped (`SKIP`, `
 
 </details>
 
-<details><summary>[exec] Execution control: 24 subclauses</summary>
+<details><summary>[exec] Execution control: 26 subclauses</summary>
 
 | Subclause | Decls | Present | Shape | Presence only | Not probed | Checks (freestanding) | Fail GCC/Clang | Probes |
 |---|---|---|---|---|---|---|---|---|
@@ -998,6 +998,8 @@ a sample is adjusted (`FUNC`, `MEMBER_CLASS`, `CONSTRAINED`), skipped (`SKIP`, `
 | [exec.snd.concepts] 33.9.3 | 5 | 4 | 4 | 3 | 1 | 4 | 0/0 | [probe](../tools/spec_audit/part3/probes/exec.snd.concepts.cpp) |
 | [exec.domain.indeterminate] 33.9.5 | 4 | 4 | 4 | 1 | 0 | 5 | 0/0 | [probe](../tools/spec_audit/part3/probes/exec.domain.indeterminate.cpp) |
 | [exec.domain.default] 33.9.6 | 3 | 3 | 3 | 1 | 0 | 4 | 0/0 | [probe](../tools/spec_audit/part3/probes/exec.domain.default.cpp) |
+| [exec.let] 33.9.12.10 | 1 | 1 | 1 | 0 | 0 | 1 | 0/0 | [probe](../tools/spec_audit/part3/probes/exec.let.cpp) |
+| [exec.when.all] 33.9.12.12 | 1 | 1 | 1 | 0 | 0 | 1 | 0/0 | [probe](../tools/spec_audit/part3/probes/exec.when.all.cpp) |
 
 </details>
 
@@ -1090,6 +1092,7 @@ Classes: (1) missing entity, (2) wrong shape, (3) missing or wrong behaviour, (4
 | F1 | 1 | `volatile atomic<T>::store_add` ... `store_fminimum_num` (19 members across the integral, floating-point and pointer specializations) existed only for always-lock-free `T`: `volatile atomic<long double>{}.store_add(1)` did not compile. They are now the deprecated overloads for `!is_always_lock_free`, like the other volatile members. | [atomics.types.int]/1, [atomics.types.float]/1, [atomics.types.pointer]/1, [depr.atomics.volatile]/1 | `f222ebf`; `tests/ycxx/atomic/volatile_store_ops_any_type.pass.cpp`, `tests/ycxx/depr/vol_store_add_big.compile.fail.cpp` |
 | F2 | 2 | `stop_token::operator==` and `stop_source::operator==` were hidden friends; the draft declares defaulted members (`t.operator==(u)` did not compile). | [stoptoken.general]/1, [stopsource.general]/1 (see D1) | `9446019`; `tests/ycxx/stop_token/equality_member.pass.cpp` |
 | F3 | 3 | Constant-evaluated `compare_exchange_weak/strong` of `atomic<long double>` and `atomic_ref<long double>` was not a constant expression on Clang: the value representations were compared over all 16 bytes, six of which are x87 padding (indeterminate in constant evaluation). | [atomics.types.float]/1, [atomics.ref.float]/1 (constexpr, P3309), [atomics.types.operations]/23 | `370b7e3`; `tests/ycxx/atomic/constexpr_cas_long_double.pass.cpp` |
+| G8 | 3 | `when_all`/`when_all_with_variant` and the `let_*` adaptors reported no completion scheduler or domain in their attributes (and the other adaptors reported them only for some tags). Every adaptor now reports, per completion tag, the COMMON-DOMAIN of the agents its semantics put those completions on, and the scheduler of a single source (DECISIONS §17, "Attributes"), D2 read as P3826R5 intended. | [exec.snd.general]/3-4, [exec.adapt.general]/3.2-3.3, [exec.when.all]/15-17, [exec.let]/2, /9-10, [exec.continues.on]/9-12 (D2) | `5a1705c`; `tests/ycxx/execution/completion_attributes_when_all_let.pass.cpp`, `completion_attributes_adaptors.pass.cpp`, `domain_dispatch_through_adaptors.pass.cpp`; probes `exec.when.all#1`, `exec.let#1` |
 
 **Open** (not fixed here):
 
@@ -1102,7 +1105,6 @@ Classes: (1) missing entity, (2) wrong shape, (3) missing or wrong behaviour, (4
 | G5 | 3 | `<regex>`: multi-character collating elements (`[[.ch.]]`) are not supported (no C library locale defines them), and `regex_traits::transform_primary` returns the full sort key where it cannot find the primary one, where [re.traits]/7 would return an empty key. | [re.traits]/6-7 | STATUS `<regex>`; small (the empty-key choice) / blocked by the C library (collating elements) |
 | G6 | 3 | `rcu_barrier()` called from inside a scheduled evaluation returns without waiting (waiting would deadlock), and inside a read-side region it does not wait for objects retired after the region began. | [saferecl.rcu.domain.func]/4 | STATUS concurrency; the draft gives no exception for these cases: a draft question as much as a gap |
 | G7 | 3 | `notify_all_at_thread_exit` and the `*_at_thread_exit` results ([futures.promise], [futures.task.members]) never run for the thread that ends the process. | [thread.condition.nonmember] (`notify_all_at_thread_exit`), [futures.promise], [futures.task.members] (the `at_thread_exit` members) | STATUS concurrency; medium (run them from the exit path of the main thread) |
-| G8 | 3 | `when_all`/`when_all_with_variant` and the `let_*` adaptors report no completion scheduler or domain in their attributes. | [exec.when.all], [exec.let] (but see D2: the draft's get-attrs is undefined) | STATUS `<execution>`; decide after D2 |
 | G9 | 3 | `<filesystem>`: no root-names (`//host` is not special), ill-formed UTF-8 converts to U+FFFD, `permissions(..., nofollow)` on a link fails with ENOTSUP on Linux. | [fs.path.generic]/root-name (implementation-defined), [fs.op.permissions] | STATUS `<filesystem>`; root-names are implementation-defined (POSIX has none): (5) in effect; the others follow the OS |
 | G10 | 3 | `tzdb`: zone data from the zoneinfo directory only; `remote_version`/`reload_tzdb` do not download; `sys_info::save` is derived (TZif has only an is-DST flag). | [time.zone.db.remote] (the remote source is implementation-defined), [time.zone.info.sys]/save | STATUS `<chrono>`; save: small heuristic already; no further work planned |
 
@@ -1129,7 +1131,12 @@ are not declared.
 - **D2** [exec.snd.expos]/43: `basic-sender::get_env()` returns
   `impls-for<Tag>::get-attrs(data, child...)`, but `default-impls` no longer declares `get-attrs`
   and no `impls-for` specialization defines it: `get-attrs` is used once in the whole draft and
-  defined nowhere, so the attributes of every library sender are unspecified.
+  defined nowhere, so the attributes of every library sender are unspecified. P3826R5 struck
+  every `get-attrs` and moved their content to [exec.adapt.general]/3.2-3.3 and
+  [exec.snd.general]/3-4; libycxx reads /43 that way (G8, DECISIONS §17). Found while fixing
+  G8: inline-attrs ([exec.snd.expos]/60) answers `get_scheduler(env)`, but the environment
+  [exec.let]/2 gives a let function's sender sets `get_start_scheduler` (STATUS "Draft issues
+  noticed").
 - Already in STATUS "Draft issues noticed" and in these clauses: [linalg.algs.reqs]/1.1
   (`is_execution_policy` of a reference type), [exec.task.scheduler] (`ts-domain`'s
   `transform_sender` with and without the tag), [simd.bit]/15 (`shl`/`shr` Constraints),

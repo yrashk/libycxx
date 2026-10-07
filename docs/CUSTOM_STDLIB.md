@@ -614,7 +614,7 @@ with libycxx: a test framework is never the system's), repositories its build wo
 the CMake version it needs. Beside it: `patches/` (each patch starts with its category and
 reason; patched is only the project's own non-standard code, never something to hide a libycxx
 bug), `skip.txt` (CTest tests that do not apply, `<regex> | <category> | <reason> [| <conditions>]`,
-reported UNSUPPORTED), `xfail.txt` (expected failures; an XPASS fails the run) and
+with conditions such as `clang asan` or `gcc !tsan`; reported UNSUPPORTED), `xfail.txt` (expected failures; an XPASS fails the run) and
 `build-skip.txt` (build outputs that cannot be built, with the same fields). An entry that matches
 nothing is reported as a failure, so the lists cannot go stale.
 
@@ -683,7 +683,7 @@ per-test results natively.
 | When | libycxx | Others |
 |---|---|---|
 | Every push / PR | `ci.yml`: `tools/test policy build freestanding cmake ycxx`, failing on every FAIL and XPASS, on Linux (gcc:16 container, Clang 23 from apt.llvm.org) and macOS 15 arm64; a sample of both external suites on Linux | libc++: CI configurations defined in `libcxx/utils/ci/Dockerfile` and run by `libcxx/utils/ci/run-buildbot`, reproducible locally with `run-buildbot-container` [libcxx-testing] |
-| Nightly / on demand | `full.yml`: both external suites, both compilers, Linux and macOS (one job per suite and compiler, up to 300-340 minutes), the own suite with ASan+UBSan, and the own suite hardened, with `-fno-exceptions` and with `-O2` (both compilers, Linux); no job tolerates a FAIL | libc++: continuous fuzzing on OSS-Fuzz (`libcxx/utils/ci/oss-fuzz.sh`) [libcxx-oss-fuzz] |
+| Nightly / on demand | `full.yml`: both external suites, both compilers, Linux and macOS (one job per suite and compiler, up to 300-340 minutes), the own suite with ASan+UBSan, the own suite hardened, with `-fno-exceptions` and with `-O2` (both compilers, Linux), and the real-world projects (`tools/test realworld`, both compilers, Linux); no job tolerates a FAIL | libc++: continuous fuzzing on OSS-Fuzz (`libcxx/utils/ci/oss-fuzz.sh`) [libcxx-oss-fuzz] |
 
 lit can split a run into shards (`--num-shards M --run-shard N`, or `LIT_NUM_SHARDS`), "for
 parallel execution on separate machines" [lit]; libycxx's nightly jobs do not shard (Gaps, item 5).

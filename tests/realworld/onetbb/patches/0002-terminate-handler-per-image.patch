@@ -1,0 +1,21 @@
+Category: libycxx-limitation. The test case "terminate_on_exception: enabled" installs a
+terminate handler with std::set_terminate in the test program and expects libtbb.so's call of
+std::terminate to reach it, which needs one C++ runtime shared by the program and libtbb.so; the
+test already leaves itself out for MSVC's statically linked runtime ("The test cannot work
+correctly with statically linked runtime"). Each image that links libycxx has its own ABI runtime
+and terminate handler (DECISIONS §2; STATUS, known limitations): the guard also requires a
+shared runtime (libstdc++, libc++ or MSVC's).
+
+diff --git a/test/conformance/conformance_global_control.cpp b/test/conformance/conformance_global_control.cpp
+index 250fda9..db273fd 100644
+--- a/test/conformance/conformance_global_control.cpp
++++ b/test/conformance/conformance_global_control.cpp
+@@ -374,7 +374,7 @@ TEST_CASE("Test worker threads remain inactive in enforced serial execution mode
+ 
+ // The test cannot work correctly with statically linked runtime.
+ // TODO: investigate a failure in debug with MSVC
+-#if (!_MSC_VER || (defined(_DLL) && !defined(_DEBUG))) && !EMSCRIPTEN
++#if (!_MSC_VER || (defined(_DLL) && !defined(_DEBUG))) && !EMSCRIPTEN && (_MSC_VER || __GLIBCXX__ || _LIBCPP_VERSION) // a C++ runtime shared by the program and libtbb
+ #include <csetjmp>
+ 
+ // Overall, the test case is not safe because the dtors might not be called during long jump.

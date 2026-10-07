@@ -1,0 +1,7 @@
+# magic_enum: static reflection of enums by parsing __PRETTY_FUNCTION__: heavy constexpr and
+# template metaprogramming, string_view, optional, array. Tests with a vendored Catch2.
+url = https://github.com/Neargye/magic_enum.git
+ref = v0.9.8
+commit = 1384769c66bd16ec9bb1353f45fe8ec8ccc12dbd
+exercises = constexpr, string_view, templates, iostreams
+configure = -DMAGIC_ENUM_OPT_BUILD_TESTS=ON -DMAGIC_ENUM_OPT_BUILD_EXAMPLES=ON

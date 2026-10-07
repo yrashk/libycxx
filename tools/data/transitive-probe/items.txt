@@ -1,0 +1,187 @@
+# Probe items of tools/probe_transitive.py: `<G>:<name> | <snippet>`. The snippet uses <name>
+# as a program would; it must compile after `#include <G>` (the control). The first item of a
+# header G is its primary item, the representative name that stands for "H provides <G>";
+# the others are names programs are known to rely on (the real-world projects' patches, the
+# external suites' F-category tests; DECISIONS §19). Items prefixed `posix/` are POSIX names of
+# the C library's headers, recorded for information only.
+algorithm:std::min | int probe() { return std::min(1, 2); }
+algorithm:std::copy | void probe(int* p, int* q) { std::copy(p, p + 1, q); }
+algorithm:std::equal | bool probe(int* p, int* q) { return std::equal(p, p + 1, q); }
+algorithm:std::sort | void probe(int* p) { std::sort(p, p + 2); }
+algorithm:std::count | long probe(int* p) { return std::count(p, p + 2, 1); }
+algorithm:std::fill | void probe(int* p) { std::fill(p, p + 2, 1); }
+algorithm:std::ranges::sort | void probe(int* p) { std::ranges::sort(p, p + 2); }
+any:std::any | std::any probe() { return 1; }
+array:std::array | std::array<int, 2> probe() { return {}; }
+atomic:std::atomic | std::atomic<int> probe_v{0};
+barrier:std::barrier | void probe() { std::barrier<> b(1); }
+bit:std::popcount | int probe() { return std::popcount(1u); }
+bit:std::bit_cast | unsigned probe() { return std::bit_cast<unsigned>(1.0f); }
+bitset:std::bitset | std::bitset<8> probe_v;
+cassert:assert | void probe(int x) { assert(x); }
+cctype:std::isspace | int probe() { return std::isspace(' '); }
+cctype:::isspace | int probe() { return ::isspace(' ') + isdigit('1'); }
+cerrno:errno | int probe() { return errno; }
+cerrno:ERANGE | int probe() { return ERANGE + EINVAL; }
+cfenv:std::fegetround | int probe() { return std::fegetround(); }
+cfloat:DBL_MAX | double probe() { return DBL_MAX; }
+charconv:std::to_chars | void probe(char* b) { auto r = std::to_chars(b, b + 8, 1); (void)r; }
+charconv:std::from_chars | void probe(const char* b, int& v) { auto r = std::from_chars(b, b + 8, v); (void)r; }
+chrono:std::chrono::duration | std::chrono::seconds probe() { return std::chrono::seconds(1); }
+chrono:std::chrono::steady_clock | auto probe() { return std::chrono::steady_clock::now(); }
+cinttypes:std::imaxabs | std::intmax_t probe() { return std::imaxabs(-1); }
+cinttypes:PRId64 | const char* probe() { return "%" PRId64; }
+climits:INT_MAX | int probe() { return INT_MAX; }
+posix/limits.h:PATH_MAX | int probe() { return PATH_MAX; }
+clocale:std::setlocale | const char* probe() { return std::setlocale(LC_ALL, nullptr); }
+clocale:::setlocale | const char* probe() { return ::setlocale(LC_ALL, nullptr); }
+posix/locale.h:newlocale | void* probe() { return (void*)&newlocale; }
+cmath:std::sqrt | double probe() { return std::sqrt(2.0); }
+cmath:::sqrt | double probe() { return ::sqrt(2.0) + HUGE_VAL; }
+compare:std::strong_ordering | std::strong_ordering probe() { return std::strong_ordering::equal; }
+complex:std::complex | std::complex<double> probe_v;
+concepts:std::same_as | static_assert(std::same_as<int, int>);
+condition_variable:std::condition_variable | void probe() { std::condition_variable cv; }
+contracts:std::contracts::contract_violation | void probe(const std::contracts::contract_violation& v) { (void)v.location(); }
+coroutine:std::coroutine_handle | std::coroutine_handle<> probe_v;
+csetjmp:std::jmp_buf | std::jmp_buf probe_v;
+csignal:std::sig_atomic_t | volatile std::sig_atomic_t probe_v = SIGINT;
+cstdarg:std::va_list | void probe(int n, ...) { std::va_list ap; va_start(ap, n); va_end(ap); }
+cstddef:std::byte | std::byte probe_v{};
+cstddef:::size_t | ::size_t probe_v = 0;
+cstdint:std::uint32_t | std::uint32_t probe_v = 0;
+cstdint:::uint32_t | ::uint32_t probe_v = 0; ::int64_t probe_w = 0;
+cstdio:std::printf | int probe() { return std::printf(""); }
+cstdio:EOF | int probe() { return EOF; }
+cstdio:std::FILE | std::FILE* probe_v = nullptr;
+cstdlib:std::abort | void probe() { std::abort(); }
+cstdlib:std::malloc | void* probe() { return std::malloc(1); }
+cstdlib:std::strtol | long probe(const char* s) { return std::strtol(s, nullptr, 10); }
+cstdlib:::abort | void probe() { ::abort(); }
+cstring:std::strlen | std::size_t probe() { return std::strlen(""); }
+cstring:std::memcpy | void probe(void* p, const void* q) { std::memcpy(p, q, 1); }
+cstring:::strlen | ::size_t probe() { return ::strlen(""); }
+ctime:std::time | std::time_t probe() { return std::time(nullptr); }
+ctime:std::tm | std::tm probe_v{};
+cuchar:std::mbrtoc16 | std::size_t probe(char16_t* c, const char* s, std::mbstate_t* st) { return std::mbrtoc16(c, s, 1, st); }
+cwchar:std::wcslen | std::size_t probe() { return std::wcslen(L""); }
+cwchar:WEOF | std::wint_t probe() { return WEOF; }
+cwchar:std::mbstate_t | std::mbstate_t probe_v{};
+cwchar:::mbstate_t | ::mbstate_t probe_v{};
+cwctype:std::iswspace | int probe() { return std::iswspace(L' '); }
+debugging:std::is_debugger_present | bool probe() { return std::is_debugger_present(); }
+deque:std::deque | std::deque<int> probe_v;
+exception:std::exception_ptr | std::exception_ptr probe_v;
+exception:std::terminate | void probe() { std::terminate(); }
+execution:std::execution::seq | const auto& probe_v = std::execution::seq;
+expected:std::expected | std::expected<int, int> probe_v;
+filesystem:std::filesystem::path | std::filesystem::path probe_v;
+flat_map:std::flat_map | std::flat_map<int, int> probe_v;
+flat_set:std::flat_set | std::flat_set<int> probe_v;
+format:std::format | auto probe() { return std::format("{}", 1); }
+format:std::formatter | std::formatter<int> probe_v;
+forward_list:std::forward_list | std::forward_list<int> probe_v;
+fstream:std::ifstream | void probe() { std::ifstream f; }
+functional:std::function | std::function<void()> probe_v;
+functional:std::hash | std::size_t probe() { return std::hash<int>{}(1); }
+functional:std::less | bool probe() { return std::less<>{}(1, 2); }
+functional:std::invoke | int probe(int (*f)()) { return std::invoke(f); }
+functional:std::reference_wrapper | std::reference_wrapper<int> probe(int& i) { return std::ref(i); }
+future:std::future | std::future<int> probe_v;
+generator:std::generator | std::generator<int> probe();
+hazard_pointer:std::hazard_pointer | std::hazard_pointer probe();
+hive:std::hive | std::hive<int> probe_v;
+initializer_list:std::initializer_list | std::initializer_list<int> probe_v;
+initializer_list:range-for | int probe() { int s = 0; for (int i : {1, 2}) s += i; return s; }
+inplace_vector:std::inplace_vector | std::inplace_vector<int, 2> probe_v;
+iomanip:std::setw | void probe() { auto m = std::setw(2); (void)m; }
+ios:std::ios_base | std::ios_base::fmtflags probe_v = std::ios_base::dec;
+iosfwd:std::ostream | std::ostream* probe_v = nullptr;
+iosfwd:std::istream | std::istream* probe_v = nullptr;
+iostream:std::cout | void probe() { std::cout << 1; }
+istream:std::istream | void probe(std::istream& i) { int x; i >> x; }
+iterator:std::back_inserter | struct probe_c { using value_type = int; void push_back(int); }; void probe(probe_c& c) { auto it = std::back_inserter(c); *it = 1; }
+iterator:std::reverse_iterator | std::reverse_iterator<int*> probe_v;
+iterator:std::next | int* probe(int* p) { return std::next(p); }
+iterator:std::istreambuf_iterator | std::istreambuf_iterator<char> probe_v;
+iterator:std::ostream_iterator | std::ostream_iterator<int>* probe_v = nullptr;
+latch:std::latch | void probe() { std::latch l(1); }
+limits:std::numeric_limits | int probe() { return std::numeric_limits<int>::max(); }
+linalg:std::linalg::scaled | void probe(std::mdspan<double, std::dextents<int, 1>> x) { auto s = std::linalg::scaled(2.0, x); (void)s; }
+list:std::list | std::list<int> probe_v;
+locale:std::locale | std::locale probe_v;
+locale:std::use_facet | const std::ctype<char>& probe() { return std::use_facet<std::ctype<char>>(std::locale()); }
+map:std::map | std::map<int, int> probe_v;
+mdspan:std::mdspan | std::mdspan<int, std::dextents<int, 1>> probe_v;
+memory:std::unique_ptr | std::unique_ptr<int> probe_v;
+memory:std::shared_ptr | std::shared_ptr<int> probe_v;
+memory:std::allocator | std::allocator<int> probe_v;
+memory:std::addressof | int* probe(int& i) { return std::addressof(i); }
+memory_resource:std::pmr::memory_resource | std::pmr::memory_resource* probe() { return std::pmr::get_default_resource(); }
+meta:std::meta::info | std::meta::info probe_v = ^^int;
+mutex:std::mutex | std::mutex probe_v;
+mutex:std::lock_guard | void probe(std::mutex& m) { std::lock_guard<std::mutex> g(m); }
+mutex:std::unique_lock | std::unique_lock<std::mutex> probe_v;
+new:std::nothrow | int* probe() { return new (std::nothrow) int; }
+new:std::launder | int* probe(int* p) { return std::launder(p); }
+numbers:std::numbers::pi | double probe_v = std::numbers::pi;
+numeric:std::accumulate | int probe(int* p) { return std::accumulate(p, p + 2, 0); }
+numeric:std::iota | void probe(int* p) { std::iota(p, p + 2, 0); }
+numeric:std::gcd | int probe() { return std::gcd(4, 6); }
+optional:std::optional | std::optional<int> probe_v;
+ostream:std::ostream | void probe(std::ostream& o) { o << 1; }
+ostream:std::endl | void probe(std::ostream& o) { o << std::endl; }
+print:std::println | void probe() { std::println("{}", 1); }
+queue:std::queue | std::queue<int> probe_v;
+queue:std::priority_queue | std::priority_queue<int> probe_v;
+random:std::mt19937 | std::mt19937 probe_v;
+ranges:std::views::iota | auto probe() { return std::views::iota(0, 3); }
+ranges:std::ranges::range | static_assert(std::ranges::range<int(&)[2]>);
+ratio:std::ratio | using probe_t = std::ratio<1, 2>; static_assert(probe_t::num == 1);
+rcu:std::rcu_synchronize | void probe() { std::rcu_synchronize(); }
+regex:std::regex | std::regex probe_v;
+scoped_allocator:std::scoped_allocator_adaptor | template <class T> struct probe_a { using value_type = T; T* allocate(decltype(sizeof 0)); void deallocate(T*, decltype(sizeof 0)); }; std::scoped_allocator_adaptor<probe_a<int>> probe_v;
+semaphore:std::binary_semaphore | void probe() { std::binary_semaphore s(1); }
+set:std::set | std::set<int> probe_v;
+shared_mutex:std::shared_mutex | std::shared_mutex probe_v;
+simd:std::simd::vec | std::simd::vec<float> probe_v;
+source_location:std::source_location | std::source_location probe() { return std::source_location::current(); }
+span:std::span | std::span<int> probe_v;
+spanstream:std::ispanstream | void probe(std::span<char> s) { std::ispanstream i(s); }
+sstream:std::ostringstream | void probe() { std::ostringstream os; }
+sstream:std::stringbuf | void probe() { std::stringbuf b; }
+stack:std::stack | std::stack<int> probe_v;
+stacktrace:std::stacktrace | std::stacktrace probe();
+stdexcept:std::runtime_error | void probe() { throw std::runtime_error("x"); }
+stdexcept:std::out_of_range | void probe() { throw std::out_of_range("x"); }
+stdfloat:std::float64_t | std::float64_t probe_v = 1.0f64;
+stop_token:std::stop_token | std::stop_token probe_v;
+streambuf:std::streambuf | struct probe_t : std::streambuf {}; probe_t probe_v;
+string:std::string | std::string probe_v;
+string:std::to_string | auto probe() { return std::to_string(1); }
+string_view:std::string_view | std::string_view probe_v;
+syncstream:std::syncbuf | void probe() { std::syncbuf b; }
+system_error:std::error_code | std::error_code probe_v;
+system_error:std::errc | std::errc probe_v = std::errc::invalid_argument;
+system_error:std::system_error | void probe() { throw std::system_error(std::error_code()); }
+text_encoding:std::text_encoding | std::text_encoding probe_v;
+thread:std::thread | std::thread probe_v;
+thread:std::this_thread::yield | void probe() { std::this_thread::yield(); }
+tuple:std::tuple | std::tuple<int> probe_v;
+tuple:std::tie | void probe(int& a, int& b) { std::tie(a, b) = std::make_tuple(1, 2); }
+type_traits:std::is_same_v | static_assert(std::is_same_v<int, int>);
+type_traits:std::decay_t | std::decay_t<const int&> probe_v = 0;
+typeindex:std::type_index | std::type_index probe() { return std::type_index(typeid(int)); }
+typeinfo:std::type_info | const std::type_info& probe() { return typeid(int); }
+unordered_map:std::unordered_map | std::unordered_map<int, int> probe_v;
+unordered_set:std::unordered_set | std::unordered_set<int> probe_v;
+utility:std::pair | std::pair<int, int> probe_v;
+utility:std::move | int probe(int& i) { return std::move(i); }
+utility:std::swap | void probe(int& a, int& b) { std::swap(a, b); }
+utility:std::declval | using probe_t = decltype(std::declval<int>());
+utility:std::exchange | int probe(int& i) { return std::exchange(i, 1); }
+valarray:std::valarray | std::valarray<int> probe_v;
+variant:std::variant | std::variant<int> probe_v;
+vector:std::vector | std::vector<int> probe_v;
+posix/pthread.h:pthread_create | void* probe() { return (void*)&pthread_create; }
+posix/sched.h:cpu_set_t | cpu_set_t probe_v;

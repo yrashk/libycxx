@@ -7,3 +7,6 @@ exercises = span, contracts, exceptions, iterators
 # its include directory), else they clone GoogleTest v1.14.0 and build it inside the project
 # like the rest: no pkg-config here.
 configure = -DGSL_TEST=ON -DGSL_CXX_STANDARD=20 -DPKG_CONFIG_EXECUTABLE=/nonexistent
+# Its tests build with -Weverything -Werror under Clang, and Clang 23 has new lifetime-safety
+# suggestion warnings that GSL v5.0.1's own code triggers (with any C++ library).
+configure.clang = -DGSL_TEST=ON -DGSL_CXX_STANDARD=20 -DPKG_CONFIG_EXECUTABLE=/nonexistent "-DCMAKE_CXX_FLAGS=-Wno-lifetime-safety-intra-tu-suggestions -Wno-lifetime-safety-intra-tu-constructor-suggestions"

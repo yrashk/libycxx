@@ -641,7 +641,8 @@ compilers; `visit_format_arg.pass.cpp` needs `EOF` from `constexpr_char_traits.h
   its type. The CMake package and `tools/ycxx-cxx` pass `-Wno-attributes` to GCC; other build
   systems add it themselves. Clang does not warn. **GCC also hides every function of a program
   whose signature names a library type** (a parameter, the return type, a pointer to one:
-  `std::string f(const char*)`, `void g(const std::string&)`), unless the function is declared
+  `std::string f(const char*)`, `void g(const std::string&)`, also `extern "C"` functions: a
+  plugin's entry point that returns a `std::shared_ptr`), unless the function is declared
   `[[gnu::visibility("default")]]` itself: GCC constrains a declaration's visibility by its
   type's, and Clang does not (checked with GCC 16.2 and Clang 23.1, also with a plain
   `namespace [[gnu::visibility("hidden")]] N { struct X {}; }`). So a C++ shared library built

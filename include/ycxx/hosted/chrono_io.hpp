@@ -429,7 +429,7 @@ bool __chrono_classic_time_put(const std::locale& __loc, wchar_t);
 // DECISIONS §7): its stage 2 is then computed from numpunct here, without a stream.
 bool __chrono_classic_num_put(const std::locale& __loc, char);
 bool __chrono_classic_num_put(const std::locale& __loc, wchar_t);
-// Appends what `s << v` writes to a stream s imbued with loc, with its default flags and the
+// Appends what `s << __v` writes to a stream s imbued with loc, with its default flags and the
 // given precision: loc's num_put<charT> (a program's own) called for the count of a duration.
 void __chrono_put_count(std::string& out, const std::locale& __loc, long __v, int precision);
 void __chrono_put_count(std::string& out, const std::locale& __loc, unsigned long __v, int precision);

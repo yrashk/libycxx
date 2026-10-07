@@ -234,7 +234,8 @@ from leapseconds / leap-seconds.list / built-in IERS table), `time_zone`, `zoned
 chrono-format-spec, E/O, L through `time_put`; `%j %U %W %V %G %g` of a calendar value that is
 not a valid date throw `format_error`), `local_time_format`, every stream inserter, and
 `parse`/`from_stream` for every parsable type with every flag. `__cpp_lib_chrono` 202306L,
-`__cpp_lib_chrono_udls` 201304L. Own suite chrono/ 26 -> 66/66, plus print/print_every_kind and
+`__cpp_lib_chrono_udls` 201304L. Parsing reads the stream's locale (names, representations,
+eras, alternative digits). Own suite chrono/ 26 -> 66/66 (and 5 tests of the gap fixes G2/G3), plus print/print_every_kind and
 format/nonlocking_formatter_optimization (both compilers; clean under ASan and UBSan, Clang).
 libc++ std/time 128 -> 377/386 (GCC), 128 -> 378/386 (Clang); the rest construct `leap_second`
 or `time_zone_link` through libc++'s private test helpers. libstdc++ std/time +
@@ -271,8 +272,11 @@ when parsing, `fractional_width` of ratio<1, 2^62>, `hh_mm_ss` layout, an error 
   freestanding declarations also compiled with `-ffreestanding`. Fixed by the audit: volatile
   `store_*` of non-lock-free atomics (`f222ebf`), `stop_token`/`stop_source::operator==` as
   members (`9446019`), constant-evaluated `compare_exchange` of `long double` on Clang (`370b7e3`).
+  Fixed since (gap fixes, 2 of the 10 open gaps): G2 `chrono::parse` in the stream's locale
+  (names, `%c %x %X %r %p`, eras and alternative digits, a program's `time_get`; `331fde9`
+  `8b7d190` `735d0a0`) and G3 `{:L}` through the locale's `num_put` (`ee9b9ea`); 6 new tests.
   Open: `__cpp_lib_constexpr_exceptions` on Clang (compiler gap) and the documented behaviour
-  limitations listed there (locale-dependent `chrono::parse`, POSIX regex subexpressions,
+  limitations listed there (POSIX regex subexpressions,
   `rcu_barrier` inside evaluations, `*_at_thread_exit` for the exiting main thread, ...).
 
 ## Own-suite configurations (runs of 2026-10-05, 2438 tests)
@@ -864,12 +868,17 @@ compilers; `visit_format_arg.pass.cpp` needs `EOF` from `constexpr_char_traits.h
   need the range formatter of `<format>`), and a program that checks `formattable` before including
   `<format>` and again after it is ill-formed, no diagnostic required ([temp.constr.atomic]/3:
   GCC reports the changed satisfaction value, Clang keeps the first answer).
-- `<chrono>`: names, `%c %x %X %r` and `%p` in parsing are the "C" locale's (the stream's
-  `time_get` is not consulted); with L, a locale whose `time_put` is not the classic facet writes
-  `%c %x %X` etc. from a C `tm` (so its `%Y` there is `strftime`'s, unpadded, and the hours of a
-  duration are passed as is up to INT_MAX), while the classic facet's conventions are built in
-  (`{:L%c}` equals `{:%c}` for the "C" locale); the duration count of `{:L}` is grouped from the
-  locale's `numpunct` (a replaced `num_put` is not called); `%OS` without L keeps the fraction like `%S` (libc++'s reading;
+- `<chrono>`: parsing reads the stream locale's `time_get` (DECISIONS §14): a named locale's
+  `%c %x %X %r` are expanded and parsed field by field, its names, `%p` and `%EY` are its facet's;
+  a program's own `time_get` (not derived from `time_get_byname`) is called once per
+  locale-dependent flag, and then `%EC` reads as `%C` and `%OU %OW %OV %Ou` as plain numbers (a
+  `tm` cannot hold them), and `%S` fractions and a `%Z` inside its `%c` are not read; a char
+  stream compares names through `ctype<char>::tolower`, so a multibyte name's non-ASCII
+  letters must match in case (wchar_t folds them). With L, a locale whose `time_put` is not the
+  classic facet writes `%c %x %X` etc. from a C `tm` (so its `%Y` there is `strftime`'s,
+  unpadded, and the hours of a duration are passed as is up to INT_MAX), while the classic
+  facet's conventions are built in (`{:L%c}` equals `{:%c}` for the "C" locale); the duration
+  count of `{:L}` goes through the locale's `num_put` (as `os << d` does); `%OS` without L keeps the fraction like `%S` (libc++'s reading;
   libstdc++'s tests expect whole seconds); `hh_mm_ss` of a period whose denominator needs more
   than 18 decimal digits has `fractional_width` 6 per [time.hms.members]/1 (libstdc++ gives 18 for
   ratio<1, 2^62>); `duration` inserters print character reps as the stream does (LWG 4118 is not
@@ -933,7 +942,7 @@ compilers; `visit_format_arg.pass.cpp` needs `EOF` from `constexpr_char_traits.h
   patterns keep the C library's `curr_symbol` and put the separating space in the pattern
   (libstdc++'s choice); `money_put` without `showbase` then writes that space; a numpunct
   separator that is not one char (fr_FR.UTF-8's U+202F) is `' '` for char; `time_get` of a named
-  locale reads its `%x`/`%c`/`%X`/`%r` formats strictly (no libc++-style separator leniency);
+  locale reads its `%x`/`%c`/`%X`/`%r` formats strictly (no libc++-style separator leniency); it reads the locale's eras (`%EC %Ey %EY %Ec %Ex %EX`) and alternative digits (the O forms, `%OC` too);
   the base `time_get`/`time_put` facets are the "C" locale's whatever the stream's locale (only
   the `_byname` facets read a named locale; libstdc++'s base facets consult the stream's);
   the classic `moneypunct::negative_sign()` is "-" (libstdc++'s tests expect the C locale's "");

@@ -290,9 +290,9 @@ private:
   // year that a date implies.
   bool __record(const std::tm& t) {
     using _Pp = __chrono_parsed;
-    constexpr int u = __chrono_tm_unset;
+    constexpr int __u = __chrono_tm_unset;
     auto __put = [&](int __v, long long& __field, unsigned __bit, unsigned what) {
-      if (__v == u)
+      if (__v == __u)
         return true;
       if (!__need(what))
         return false;
@@ -300,14 +300,14 @@ private:
       r.__have |= __bit;
       return true;
     };
-    if (!__put(t.tm_year == u ? u : t.tm_year + 1900, r._Yp, _Pp::__has_Y, __ci_year) ||
-        !__put(t.tm_mon == u ? u : t.tm_mon + 1, r.m, _Pp::__has_m, __ci_month) ||
+    if (!__put(t.tm_year == __u ? __u : t.tm_year + 1900, r._Yp, _Pp::__has_Y, __ci_year) ||
+        !__put(t.tm_mon == __u ? __u : t.tm_mon + 1, r.m, _Pp::__has_m, __ci_month) ||
         !__put(t.tm_mday, r.d, _Pp::__has_d, __ci_day) || !__put(t.tm_hour, r._Hp, _Pp::__has_H, __ci_time) ||
         !__put(t.tm_min, r._Mp, _Pp::__has_M, __ci_time) || !__put(t.tm_sec, r._Sp, _Pp::__has_S, __ci_time))
       return false;
-    if (t.tm_sec != u)
+    if (t.tm_sec != __u)
       r.__sub = 0;
-    if (t.tm_wday != u && __need(__ci_weekday) && t.tm_wday >= 0 && t.tm_wday <= 6) {
+    if (t.tm_wday != __u && __need(__ci_weekday) && t.tm_wday >= 0 && t.tm_wday <= 6) {
       r.__wd = t.tm_wday;
       r.__have |= _Pp::__has_wd;
     }
@@ -335,13 +335,13 @@ private:
   // The locale-dependent flags: 1 parsed, 0 failed, -1 not one of them (the plain flag).
   int __localized(char __f, char __mod, int n) {
     using _Pp = __chrono_parsed;
-    constexpr int u = __chrono_tm_unset;
+    constexpr int __u = __chrono_tm_unset;
     std::tm t;
     auto __one = [&](char __spec, char __m, int std::tm::* __member, long long& __field, unsigned __bit, unsigned what,
                      int __add) -> int {
       if (!__need(what) || !__facet_get(__spec, __m, t))
         return 0;
-      if (t.*__member != u) {
+      if (t.*__member != __u) {
         __field = t.*__member + __add;
         r.__have |= __bit;
       }
@@ -356,7 +356,7 @@ private:
     case 'p':
       if (!__need(__ci_time) || !__facet_get('p', 0, t))
         return 0;
-      if (t.tm_hour != u) { // a locale without AM/PM strings reads none
+      if (t.tm_hour != __u) { // a locale without AM/PM strings reads none
         r.__pm = t.tm_hour >= 12;
         r.__have |= _Pp::__has_p;
       }
@@ -416,7 +416,7 @@ private:
         if (__td_ == nullptr) { // a program's facet: as it reads %Ey
           if (!__need(__ci_year) || !__facet_get('y', 'E', t))
             return 0;
-          if (t.tm_year != u) {
+          if (t.tm_year != __u) {
             r.y = ((t.tm_year + 1900) % 100 + 100) % 100;
             r.__have |= _Pp::__has_y;
           }

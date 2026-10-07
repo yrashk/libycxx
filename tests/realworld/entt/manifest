@@ -4,5 +4,8 @@ url = https://github.com/skypjack/entt.git
 ref = v4.0.0
 commit = 85c6bba014049b5de8fad49d25424df2f1f6a8c1
 exercises = templates, allocators, containers, type erasure
-deps = googletest
-configure = -DENTT_BUILD_TESTING=ON -DENTT_FIND_GTEST_PACKAGE=ON
+# Its tests take GoogleTest with FetchContent at "main" (or find_package, which its CMake then
+# uses through the old FindGTest name GTest::Main): FetchContent gets a clone of the release the
+# googletest project pins instead, built inside the project like the rest.
+extra_sources = googletest https://github.com/google/googletest.git 063de7e9578f82b369302001269680b4b1553359
+configure = -DENTT_BUILD_TESTING=ON -DENTT_FIND_GTEST_PACKAGE=OFF -DFETCHCONTENT_SOURCE_DIR_GOOGLETEST=@SRC:googletest@

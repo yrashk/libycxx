@@ -1,0 +1,7 @@
+# doctest: the test framework, with its own tests (examples whose output is compared with
+# reference files).
+url = https://github.com/doctest/doctest.git
+ref = v2.5.3
+commit = 2d0a9359a60c51affe2a9bebb1be1dca47868151
+exercises = test framework: iostreams, exceptions, strings, threads
+configure = -DDOCTEST_WITH_TESTS=ON

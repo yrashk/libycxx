@@ -221,6 +221,11 @@ inline constexpr int __fp_value_bytes = __fp_kind_of<_Tp>() == __fp_kind::__x87_
 
 template <class _Tp>
 __fp_raw __fp_to_raw(_Tp value) noexcept {
+  // binary32/64 on a little-endian target: the value is the low word (a plain bit cast).
+  if constexpr (std::endian::native == std::endian::little && sizeof(_Tp) == 8 && __fp_value_bytes<_Tp> == 8)
+    return {__builtin_bit_cast(unsigned long long, value), 0};
+  else if constexpr (std::endian::native == std::endian::little && sizeof(_Tp) == 4 && __fp_value_bytes<_Tp> == 4)
+    return {__builtin_bit_cast(unsigned int, value), 0};
   struct bytes {
     unsigned char b[sizeof(_Tp)];
   };
@@ -238,6 +243,10 @@ __fp_raw __fp_to_raw(_Tp value) noexcept {
 }
 template <class _Tp>
 _Tp __fp_from_raw(__fp_raw r) noexcept {
+  if constexpr (std::endian::native == std::endian::little && sizeof(_Tp) == 8 && __fp_value_bytes<_Tp> == 8)
+    return __builtin_bit_cast(_Tp, r.__lo);
+  else if constexpr (std::endian::native == std::endian::little && sizeof(_Tp) == 4 && __fp_value_bytes<_Tp> == 4)
+    return __builtin_bit_cast(_Tp, static_cast<unsigned int>(r.__lo));
   struct bytes {
     unsigned char b[sizeof(_Tp)];
   };

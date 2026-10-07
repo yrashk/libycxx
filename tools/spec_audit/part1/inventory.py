@@ -31,6 +31,11 @@ HEADER_OF = {"smartptr": "memory", "ptrtag": "memory", "mem.composite.types": "m
              "concepts.compare": "concepts", "concepts.object": "concepts",
              "concepts.callable": "concepts"}
 
+# Code blocks at the top level that declare in another namespace than their header's.
+DEFAULT_NS = {"func.bind.place": "std::placeholders"}
+# Code blocks that are not declarations of the library (a description's code).
+NOT_DECLS = {"coroutine.traits.primary"}
+
 
 def sections(page):
     """[(id, number, title)] in document order."""
@@ -46,6 +51,10 @@ def sections(page):
 def scoped_decls(text, default_ns="std"):
     """(scope, name, kind) of the declarations of one code block."""
     text = g._HYPHENATED.sub(g.ITALIC, text)
+    # a placeholder spliced into a name (int<i>N</i>_t) is one italic name
+    text = re.sub(g.ITALIC + r"\w+", g.ITALIC, text)
+    # preprocessor lines (#if defined(...), #define) are not declarations; keep the line count
+    text = re.sub(r"^[ \t]*#.*$", "", text, flags=re.M)
     sig, expos_line, line, seen = [], set(), 0, False
     for t in g._TOK.findall(text):
         if t == "\n":
@@ -243,17 +252,18 @@ def main():
     p.feed(page)
     rows, seen = [], set()
     for sec, kind, text in p.regions:
-        if kind != "code" or clause_of.get(sec) not in CLAUSES:
+        if kind != "code" or clause_of.get(sec) not in CLAUSES or sec in NOT_DECLS:
             continue
-        dns = ("std::meta" if sec.startswith("meta.reflection") else
-               "" if header_of.get(sec) == "new" else "std")
+        hdr = header_of.get(sec, "")
+        dns = DEFAULT_NS.get(sec) or ("std::meta" if sec.startswith("meta.reflection") else
+                                      "" if hdr == "new" or hdr.endswith(".h") else "std")
         for scope, name, k in scoped_decls(text, dns):
             key = (header_of.get(sec, ""), scope, name, k)
             if key in seen:
                 continue
             seen.add(key)
             rows.append((sec, header_of.get(sec, ""), scope, name, k))
-        for m in re.finditer(r"^\s*#\s*define\s+(\w+)", text, re.M):
+        for m in re.finditer(r"^\s*#\s*define\s+(\w+)(?=[\s(]|$)", text, re.M):
             key = (header_of.get(sec, ""), "", m.group(1), "macro")
             if key not in seen and not m.group(1).startswith("__cpp_lib"):
                 seen.add(key)

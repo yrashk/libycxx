@@ -1,0 +1,25 @@
+# Conan 2 host profile: packages built against libycxx (docs/BUILDING_PROJECTS.md, "Package
+# managers"). Needs examples/package-managers/conan/settings_user.yml in $CONAN_HOME, and
+# YCXX_PREFIX naming a libycxx installation (cmake --install), built with GCC; for Clang, use
+# compiler=clang, compiler.version=23 and a prefix built with Clang.
+#   YCXX_PREFIX=/opt/libycxx conan install . -pr:h ./ycxx -pr:b default --build=missing
+{% set prefix = os.getenv("YCXX_PREFIX") %}
+include(default)
+
+[settings]
+compiler=gcc
+compiler.version=16
+compiler.libcxx=libycxx
+# libycxx is C++26 only; ycxx-c++ raises any -std= to C++26. 26 here needs CMake >= 3.30 in
+# the recipes' builds (CMake 3.28 knows no C++26 flag), so 23 is the portable choice.
+compiler.cppstd=23
+
+[conf]
+# CMake-based recipes: libycxx's toolchain file, whose compilers add libycxx to everything.
+tools.cmake.cmaketoolchain:user_toolchain=["{{ prefix }}/lib/cmake/libycxx/toolchain.cmake"]
+# Other recipes (Meson, autotools, make): the same compilers.
+tools.build:compiler_executables={"c": "{{ prefix }}/bin/ycxx-cc", "cpp": "{{ prefix }}/bin/ycxx-c++"}
+
+[buildenv]
+CC={{ prefix }}/bin/ycxx-cc
+CXX={{ prefix }}/bin/ycxx-c++

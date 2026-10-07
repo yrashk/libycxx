@@ -449,11 +449,39 @@ inline constexpr associate_t associate{};
 }} // namespace std::execution
 
 namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail { namespace __exec {
+// associate's attributes ([exec.associate]/11; DECISIONS §17): the domains of the wrapped
+// sender's completions, and for stopped also the starting agent's (a failed association
+// completes inline). No scheduler, no forwarded queries: the wrapped sender is gone when the
+// association failed.
+template <class _Tp, class _OwnCS, class _Wp, class... _Envs>
+struct __associate_sources {
+  using type = __no_attr;
+};
+template <class _Tp, class _OwnCS, class _Wp>
+  requires __attr_has_tag<_OwnCS, _Tp> && __is_csigs<__csigs_of_t<_Wp>> && (!std::is_same_v<_Tp, set_stopped_t>)
+struct __associate_sources<_Tp, _OwnCS, _Wp> {
+  using type = __src_if<__sigs_count<_Tp, __csigs_of_t<_Wp>> != 0,
+                        __src_dom<__compl_domain_t<_Tp, std::remove_cvref_t<std::execution::env_of_t<const _Wp&>>>>>;
+};
+template <class _Tp, class _OwnCS, class _Wp, class _Env>
+  requires __attr_has_tag<_OwnCS, _Tp> && __is_csigs<__csigs_of_t<_Wp, __fwd_env_t<const _Env&>>>
+struct __associate_sources<_Tp, _OwnCS, _Wp, _Env> {
+  using type = __srcs_t<__src_if<__sigs_count<_Tp, __csigs_of_t<_Wp, __fwd_env_t<const _Env&>>> != 0,
+                                 __src_dom<__compl_domain_of_t<_Tp, const _Wp&, __fwd_env_t<const _Env&>>>>,
+                        __src_if<std::is_same_v<_Tp, set_stopped_t>, __src_dom<decltype(std::execution::get_domain(std::declval<const _Env&>()))>>>;
+};
+template <class _Sndr, class _Wp>
+struct __pol_associate {
+  template <class _Tp, class... _Envs>
+  using __sources = typename __associate_sources<_Tp, __own_csigs_t<_Sndr, _Envs...>, _Wp, _Envs...>::type;
+};
+
 template <>
 struct __impls_for<std::execution::associate_t> : __default_impls {
   template <class _Data>
   static constexpr auto __get_attrs(const _Data&) noexcept {
-    return std::execution::env<>();
+    using _Pol = __pol_associate<__basic_sender_t<std::execution::associate_t, _Data>, typename _Data::__wrap_sender>;
+    return __compl_attrs_t<_Pol>{};
   }
   template <class _Sndr, class _Rcvr>
   static auto __get_state(_Sndr&& __sndr, _Rcvr& __rcvr) noexcept(

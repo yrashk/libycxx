@@ -16,6 +16,10 @@
 #   _YCXX_C_HAS_STRFROM          <stdlib.h> declares strfromd, strfromf, strfroml (C23 7.24.1.3)
 #   _YCXX_C_HAS_MBRTOC8          <uchar.h> declares mbrtoc8 and c8rtomb (C23 7.30.1)
 #   _YCXX_C_HAS_TIMESPEC_GETRES  <time.h> declares timespec_getres (C23 7.29.2.7)
+#   _YCXX_C_HAS_ERA_NUM_ENTRIES  <langinfo.h> has the item _NL_TIME_ERA_NUM_ENTRIES: nl_langinfo's
+#                               ERA then lists the era segments separated by NULs, and this item
+#                               gives their count (glibc); otherwise ERA is POSIX's
+#                               semicolon-separated string (src/hosted/locale_named.cpp)
 # and, when the C library's <stdio.h> lacks _PRINTF_NAN_LEN_MAX (C23 7.23.1):
 #   _YCXX_C_PRINTF_NAN_LEN_MAX   the longest output of the C library's printf for a NaN with the
 #                               conversions f F e E g G a A, measured by running a probe (signs,
@@ -26,6 +30,7 @@
 # #ifndef _PRINTF_NAN_LEN_MAX, __has_include_next(<uchar.h>)).
 
 include(CheckSymbolExists)
+include(CheckCSourceCompiles)
 
 function(ycxx_c_library_probe out_file)
   set(CMAKE_REQUIRED_QUIET ON)
@@ -38,6 +43,11 @@ function(ycxx_c_library_probe out_file)
   check_symbol_exists(c8rtomb uchar.h _ycxx_c8rtomb)
   check_symbol_exists(timespec_getres time.h _ycxx_timespec_getres)
   check_symbol_exists(_PRINTF_NAN_LEN_MAX stdio.h _ycxx_has_printf_nan_len_max)
+  # an enumerator, not a macro or an object: compiled, not looked up
+  check_c_source_compiles([=[
+#include <langinfo.h>
+int main(void) { nl_item i = _NL_TIME_ERA_NUM_ENTRIES; return (int)i == 0; }
+]=] _ycxx_era_num_entries)
 
   set(strfrom 0)
   if(_ycxx_strfromd AND _ycxx_strfromf AND _ycxx_strfroml)
@@ -50,6 +60,10 @@ function(ycxx_c_library_probe out_file)
   set(getres 0)
   if(_ycxx_timespec_getres)
     set(getres 1)
+  endif()
+  set(era_num 0)
+  if(_ycxx_era_num_entries)
+    set(era_num 1)
   endif()
 
   set(nan_line "// _PRINTF_NAN_LEN_MAX: the C library defines it.")
@@ -103,7 +117,8 @@ int main(void) {
 #define _YCXX_C_HAS_STRFROM @strfrom@
 #define _YCXX_C_HAS_MBRTOC8 @mbrtoc8@
 #define _YCXX_C_HAS_TIMESPEC_GETRES @getres@
+#define _YCXX_C_HAS_ERA_NUM_ENTRIES @era_num@
 @nan_line@
 ]=] @ONLY)
-  message(STATUS "libycxx: C library: strfrom* ${strfrom}, mbrtoc8 ${mbrtoc8}, timespec_getres ${getres}; ${nan_line}")
+  message(STATUS "libycxx: C library: strfrom* ${strfrom}, mbrtoc8 ${mbrtoc8}, timespec_getres ${getres}, era count item ${era_num}; ${nan_line}")
 endfunction()

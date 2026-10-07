@@ -115,28 +115,54 @@ struct __exec_continues_on_state {
 }} // namespace __ycxx::__adl_free
 
 namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail { namespace __exec {
-template <class _Sch>
-struct __continues_on_attrs {
-  _Sch __sch;
-  template <class... _Envs>
-  constexpr auto query(std::execution::get_completion_scheduler_t<set_value_t>, const _Envs&... __envs) const noexcept {
-    if constexpr (sizeof...(_Envs) != 0)
-      return std::execution::get_completion_scheduler<set_value_t>(__sch, __envs...);
-    else
-      return __sch;
+// The sources of the T completions of a continues_on sender TS that transfers to a scheduler of
+// type Sch ([exec.continues.on]/9-12; DECISIONS §17): each completion of the child arrives
+// through the value completion of the schedule sender (an exception from decay-copying the
+// child's datums too), and the schedule sender's own error and stopped completions.
+template <class _Tp, class _TS, class _Sch, class... _Envs>
+struct __via_sched_sources {
+  using type = __no_attr;
+};
+template <class _Tp, class _TS, class _Sch, class... _Envs>
+  requires(!std::is_void_v<_TS>) && __attr_has_tag<__own_csigs_t<_TS, _Envs...>, _Tp>
+struct __via_sched_sources<_Tp, _TS, _Sch, _Envs...> {
+  static auto __pick() {
+    if constexpr (std::is_same_v<_Tp, set_value_t>) {
+      return std::type_identity<__tlist<__src_sched<set_value_t>>>{};
+    } else {
+      using _CSc = __csigs_of_t<std::decay_t<__child_type<_TS>>, __fwd_env_t<const _Envs&>...>;
+      using _CSs = __csigs_of_t<std::execution::schedule_result_t<_Sch&>, __fwd_env_t<const _Envs&>...>;
+      if constexpr (!__is_csigs<_CSc> || !__is_csigs<_CSs>)
+        return std::type_identity<__no_attr>{};
+      else
+        return std::type_identity<__srcs_t<
+            __src_if<__sigs_count<_Tp, _CSc> != 0 || (std::is_same_v<_Tp, set_error_t> && !__nothrow_decay_copy_sigs<_CSc>), __src_sched<set_value_t>>,
+            __src_if<__sigs_count<_Tp, _CSs> != 0, __src_sched<_Tp>>>>{};
+    }
   }
+  using type = typename decltype(__pick())::type;
+};
+
+template <class _Ap, class _Sch, class _Sndr>
+struct __pol_continues_on : __pol_child<_Ap> {
+  _Sch __ycxx_sch;
   template <class... _Envs>
-    requires requires(const _Sch& s, const _Envs&... e) { std::execution::get_completion_domain<set_value_t>(s, e...); }
-  constexpr auto query(std::execution::get_completion_domain_t<set_value_t>, const _Envs&... __envs) const noexcept {
-    return std::execution::get_completion_domain<set_value_t>(__sch, __envs...);
+  using __sched_t = _Sch;
+  template <class... _Envs>
+  constexpr _Sch __sched(const _Envs&...) const noexcept {
+    return __ycxx_sch;
   }
+  template <class _Tp, class... _Envs>
+  using __sources = typename __via_sched_sources<_Tp, _Sndr, _Sch, _Envs...>::type;
 };
 
 template <>
 struct __impls_for<std::execution::continues_on_t> : __default_impls {
   template <class _Sch, class _Child>
-  static constexpr auto __get_attrs(const _Sch& __sch, const _Child&) noexcept {
-    return __continues_on_attrs<_Sch>{__sch};
+  static constexpr auto __get_attrs(const _Sch& __sch, const _Child& __child) noexcept {
+    using _Ap = __env_member_t<decltype(std::execution::get_env(__child))>;
+    using _Pol = __pol_continues_on<_Ap, _Sch, __basic_sender_t<std::execution::continues_on_t, _Sch, _Child>>;
+    return __compl_attrs_t<_Pol>{_Pol{{std::execution::get_env(__child)}, __sch}};
   }
   template <class _Sndr, class _Rcvr>
     requires std::execution::sender_in<__child_type<_Sndr>, __fwd_env_t<std::execution::env_of_t<_Rcvr>>>
@@ -200,8 +226,62 @@ inline constexpr starts_on_t starts_on{};
 }} // namespace std::execution
 
 namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail { namespace __exec {
+// starts_on(sch, sndr) as its let_value form ([exec.starts.on]/4): the domains of sndr's
+// completions, sndr asked in the environment the let-state gives it (the start scheduler of
+// continues_on(just(), sch), [exec.let]/2, /9; as for let, a domain only), and the schedule
+// sender's error and stopped completions; moving or connecting sndr can throw on the
+// scheduler's agent.
+template <class _Ap, class _Sch, class _Child>
+struct __pol_starts_on : __pol_child<_Ap> {
+  _Sch __ycxx_sch;
+  using _Cont = decltype(std::execution::continues_on(std::execution::just(), std::declval<const _Sch&>()));
+  template <class _Env>
+  using __sndr_env_t = __join_env_t<const __let_env_t<set_value_t, _Cont, _Env>&, __fwd_env_t<_Env>>;
+  template <class... _Envs>
+  using __sched_t = _Sch;
+  template <class... _Envs>
+  constexpr _Sch __sched(const _Envs&...) const noexcept {
+    return __ycxx_sch;
+  }
+};
+template <class _Tp, class _Pol, class _Sndr, class _Child, class _Sch, class... _Envs>
+struct __starts_on_sources {
+  using type = __no_attr;
+};
+template <class _Tp, class _Pol, class _Sndr, class _Child, class _Sch, class _Env>
+  requires __attr_has_tag<__own_csigs_t<_Sndr, _Env>, _Tp>
+struct __starts_on_sources<_Tp, _Pol, _Sndr, _Child, _Sch, _Env> {
+  using _CE = typename _Pol::template __sndr_env_t<_Env>;
+  using _CSc = __csigs_of_t<_Child, _CE>;
+  using _CSs = __csigs_of_t<std::execution::schedule_result_t<_Sch&>, __fwd_env_t<const _Env&>>;
+  static auto __pick() {
+    if constexpr (!__is_csigs<_CSc> || !__is_csigs<_CSs>)
+      return std::type_identity<__no_attr>{};
+    else
+      return std::type_identity<__srcs_t<
+          __src_if<__sigs_count<_Tp, _CSc> != 0, __src_dom<__compl_domain_of_t<_Tp, _Child, _CE>>>,
+          __src_if<!std::is_same_v<_Tp, set_value_t> && __sigs_count<_Tp, _CSs> != 0, __src_sched<_Tp>>,
+          __src_if<std::is_same_v<_Tp, set_error_t> &&
+                       !(std::is_nothrow_move_constructible_v<_Child> && ::__ycxx::__detail::__exec::__nothrow_connect_in<_Child, _CE>()),
+                   __src_sched<set_value_t>>>>{};
+  }
+  using type = typename decltype(__pick())::type;
+};
+template <class _Ap, class _Sch, class _Child>
+struct __pol_starts_on_full : __pol_starts_on<_Ap, _Sch, _Child> {
+  template <class _Tp, class... _Envs>
+  using __sources = typename __starts_on_sources<_Tp, __pol_starts_on<_Ap, _Sch, _Child>,
+                                                 __basic_sender_t<std::execution::starts_on_t, _Sch, _Child>, _Child, _Sch, _Envs...>::type;
+};
+
 template <>
 struct __impls_for<std::execution::starts_on_t> : __default_impls {
+  template <class _Sch, class _Child>
+  static constexpr auto __get_attrs(const _Sch& __sch, const _Child& __child) noexcept {
+    using _Ap = __env_member_t<decltype(std::execution::get_env(__child))>;
+    using _Pol = __pol_starts_on_full<_Ap, _Sch, _Child>;
+    return __compl_attrs_t<_Pol>{_Pol{{{std::execution::get_env(__child)}, __sch}}};
+  }
   template <class _Sndr, class... _Env>
   using __csigs = __sigs_concat_t<__child_sigs_t<_Sndr, _Env...>, typename __schedule_non_value_sigs<std::decay_t<__data_type<_Sndr>>, _Env...>::type>;
 };
@@ -249,8 +329,51 @@ inline constexpr on_t on{};
 namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail { namespace __exec {
 // on's completions depend on the scheduler the receiver's environment names; it is always
 // transformed (to continues_on/starts_on) before it is connected.
+// on's attributes: those of the continues_on sender its transformation produces in the
+// environment ([exec.on]/6), which transfers to the scheduler the environment names
+// (get_start_scheduler) or to the child's value completion scheduler; none without an
+// environment.
+template <class _Sndr, class... _Envs>
+struct __on_lowered {
+  using type = void;
+  using __sch = void;
+};
+template <class _Sndr, class _Env>
+concept __on_has_orig_sched =
+    (std::execution::scheduler<std::decay_t<__data_type<_Sndr>>> && requires(const _Env& env) { std::execution::get_start_scheduler(env); }) ||
+    (!std::execution::scheduler<std::decay_t<__data_type<_Sndr>>> &&
+     requires(const _Env& env) { std::execution::get_completion_scheduler<set_value_t>(std::execution::get_env(std::declval<__child_type<_Sndr>>()), env); });
+template <class _Sndr, class _Env>
+  requires __on_has_orig_sched<_Sndr, _Env>
+struct __on_lowered<_Sndr, _Env> {
+  using type = decltype(std::execution::on_t::transform_sender(set_value_t(), std::declval<_Sndr>(), std::declval<const _Env&>()));
+  using __sch = std::decay_t<__data_type<type>>;
+};
+template <class _Ap, class _Data, class _Child>
+struct __pol_on : __pol_child<_Ap> {
+  using _Sndr = __basic_sender_t<std::execution::on_t, _Data, _Child>;
+  template <class... _Envs>
+  using __sched_t = typename __on_lowered<_Sndr, _Envs...>::__sch;
+  template <class _Env>
+  constexpr auto __sched(const _Env& env) const noexcept {
+    if constexpr (std::execution::scheduler<_Data>)
+      return ::__ycxx::__detail::__exec::__call_with_default(std::execution::get_start_scheduler, ::__ycxx::__adl_free::__exec_not_a_scheduler(), env);
+    else
+      return ::__ycxx::__detail::__exec::__call_with_default(std::execution::get_completion_scheduler<set_value_t>,
+                                                             ::__ycxx::__adl_free::__exec_not_a_scheduler(), this->__fwd(), env);
+  }
+  template <class _Tp, class... _Envs>
+  using __sources = typename __via_sched_sources<_Tp, typename __on_lowered<_Sndr, _Envs...>::type, __sched_t<_Envs...>, _Envs...>::type;
+};
+
 template <>
 struct __impls_for<std::execution::on_t> : __default_impls {
+  template <class _Data, class _Child>
+  static constexpr auto __get_attrs(const _Data&, const _Child& __child) noexcept {
+    using _Ap = __env_member_t<decltype(std::execution::get_env(__child))>;
+    using _Pol = __pol_on<_Ap, _Data, _Child>;
+    return __compl_attrs_t<_Pol>{_Pol{{std::execution::get_env(__child)}}};
+  }
   template <class _Sndr, class... _Env>
   struct __sigs {
     using type = __dependent_sigs;
@@ -348,8 +471,45 @@ inline constexpr affine_t affine{};
 }} // namespace std::execution
 
 namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail { namespace __exec {
+// affine's attributes: given an environment, those of continues_on(sndr,
+// UNSTOPPABLE-SCHEDULER(get_start_scheduler(env))) ([exec.affine]/5, /7); a child with an
+// affine() member keeps its own.
+template <class _Sndr, class... _Envs>
+struct __affine_lowered {
+  using type = void;
+  using __sch = void;
+};
+template <class _Sndr, class _Env>
+  requires requires { std::execution::affine_t::transform_sender(set_value_t(), std::declval<_Sndr>(), std::declval<const _Env&>()); }
+struct __affine_lowered<_Sndr, _Env> {
+  using type = decltype(std::execution::affine_t::transform_sender(set_value_t(), std::declval<_Sndr>(), std::declval<const _Env&>()));
+  using __sch = std::decay_t<__data_type<type>>;
+};
+template <class _Ap, class _Data, class _Child>
+struct __pol_affine : __pol_child<_Ap> {
+  using _Sndr = __basic_sender_t<std::execution::affine_t, _Data, _Child>;
+  template <class... _Envs>
+  using __sched_t = typename __affine_lowered<_Sndr, _Envs...>::__sch;
+  template <class _Env>
+  constexpr auto __sched(const _Env& env) const noexcept {
+    return __sched_t<_Env>{std::execution::get_start_scheduler(env)};
+  }
+  template <class _Tp, class... _Envs>
+  using __sources = typename __via_sched_sources<_Tp, typename __affine_lowered<_Sndr, _Envs...>::type, __sched_t<_Envs...>, _Envs...>::type;
+};
+
 template <>
 struct __impls_for<std::execution::affine_t> : __default_impls {
+  template <class _Data, class _Child>
+  static constexpr decltype(auto) __get_attrs(const _Data& data, const _Child& __child) noexcept {
+    if constexpr (__has_affine_member<_Child>) {
+      return __default_impls::__get_attrs(data, __child);
+    } else {
+      using _Ap = __env_member_t<decltype(std::execution::get_env(__child))>;
+      using _Pol = __pol_affine<_Ap, _Data, _Child>;
+      return __compl_attrs_t<_Pol>{_Pol{{std::execution::get_env(__child)}}};
+    }
+  }
   template <class _Sndr, class... _Env>
   using __csigs = typename __affine_sigs<_Sndr, _Env...>::type;
 };
@@ -548,8 +708,85 @@ struct __when_all_make_state {
   }
 };
 
+// The sources of when_all's T completions ([exec.when.all]/15-17; DECISIONS §17). The last
+// child to complete completes the operation, on its agent: value from every child's value
+// completion; error from every child's errors, from its values when decay-copying them can
+// throw (TRY-EMPLACE-VALUE), and from every completion of a child when another child can fail;
+// stopped from every child's stopped completions, and from the value completions of a child
+// when another child can stop (an error completion makes the disposition error).
+template <class _CS>
+inline constexpr bool __values_nothrow_copy = true;
+template <class... _Sigs>
+inline constexpr bool __values_nothrow_copy<std::execution::completion_signatures<_Sigs...>> =
+    ((!std::is_same_v<typename __sig_tag<_Sigs>::type, set_value_t> || __nothrow_decay_copy_sig<_Sigs>) && ...);
+
+template <class _Tp, class _OwnCS, class _Children, class _Is, class... _Envs>
+struct __when_all_sources {
+  using type = __no_attr;
+};
+template <class _Tp, class _OwnCS, class... _Cs, std::size_t... _Is, class... _Envs>
+  requires __attr_has_tag<_OwnCS, _Tp> && (__is_csigs<__csigs_of_t<_Cs, __when_all_env_t<const _Envs&>...>> && ...)
+struct __when_all_sources<_Tp, _OwnCS, __tlist<_Cs...>, std::index_sequence<_Is...>, _Envs...> {
+  template <class _Cc>
+  using _CS = __csigs_of_t<_Cc, __when_all_env_t<const _Envs&>...>;
+  static constexpr bool __copy_throws[] = {!__values_nothrow_copy<_CS<_Cs>>...};
+  static constexpr bool __can_fail[] = {(__sigs_count<set_error_t, _CS<_Cs>> != 0 || !__values_nothrow_copy<_CS<_Cs>>)...};
+  static constexpr bool __can_stop[] = {(__sigs_count<set_stopped_t, _CS<_Cs>> != 0)...};
+  static constexpr bool __another(const bool (&__a)[sizeof...(_Cs)], std::size_t __i) noexcept {
+    for (std::size_t __j = 0; __j != sizeof...(_Cs); ++__j)
+      if (__j != __i && __a[__j])
+        return true;
+    return false;
+  }
+  template <std::size_t _Ip, class _Cc, class _Sp>
+  static constexpr bool __use = __sigs_count<_Sp, _CS<_Cc>> != 0 &&
+                                (std::is_same_v<_Tp, set_value_t>   ? std::is_same_v<_Sp, set_value_t>
+                                 : std::is_same_v<_Tp, set_error_t> ? (std::is_same_v<_Sp, set_error_t> ||
+                                                                       (std::is_same_v<_Sp, set_value_t> && __copy_throws[_Ip]) ||
+                                                                       __another(__can_fail, _Ip))
+                                                                    : (std::is_same_v<_Sp, set_stopped_t> ||
+                                                                       (std::is_same_v<_Sp, set_value_t> && __another(__can_stop, _Ip))));
+  using type = __srcs_t<__srcs_t<__src_if<__use<_Is, _Cs, set_value_t>, __src_child<_Is, set_value_t>>,
+                                 __src_if<__use<_Is, _Cs, set_error_t>, __src_child<_Is, set_error_t>>,
+                                 __src_if<__use<_Is, _Cs, set_stopped_t>, __src_child<_Is, set_stopped_t>>>...>;
+};
+
+// The children's attributes; each child asked in when-all-env ([exec.when.all]/5-6, /10).
+// Children are sender types, Ap their attributes (into_variant's for when_all_with_variant).
+template <class _Sndr, class _Children, class... _Ap>
+struct __pol_when_all {
+  std::tuple<_Ap...> __ycxx_children;
+  constexpr decltype(auto) __fwd() const noexcept
+    requires(sizeof...(_Ap) == 1)
+  {
+    return __as_const_ref(std::get<0>(__ycxx_children));
+  }
+  template <std::size_t _Ip>
+  constexpr decltype(auto) __child_attrs() const noexcept {
+    return __as_const_ref(std::get<_Ip>(__ycxx_children));
+  }
+  template <std::size_t _Ip>
+  using __child_attrs_t = std::remove_cvref_t<_Ap...[_Ip]>;
+  template <std::size_t, class _Env>
+  using __child_env_t = __when_all_env_t<const _Env&>;
+  template <std::size_t, class _Fn, class... _Envs>
+  static constexpr auto __with_child_env(_Fn __fn, const _Envs&... __envs) noexcept {
+    std::inplace_stop_source __src;
+    return __fn(::__ycxx::__detail::__exec::__make_when_all_env(__src, __envs)...);
+  }
+  template <class _Tp, class... _Envs>
+  using __sources =
+      typename __when_all_sources<_Tp, __own_csigs_t<_Sndr, _Envs...>, _Children, std::index_sequence_for<_Ap...>, _Envs...>::type;
+};
+
 template <>
 struct __impls_for<std::execution::when_all_t> : __default_impls {
+  template <class _Data, class... _Child>
+  static constexpr auto __get_attrs(const _Data&, const _Child&... __child) noexcept {
+    using _Pol = __pol_when_all<__basic_sender_t<std::execution::when_all_t, _Data, _Child...>, __tlist<_Child...>,
+                                __env_member_t<decltype(std::execution::get_env(__child))>...>;
+    return __compl_attrs_t<_Pol>{_Pol{{std::execution::get_env(__child)...}}};
+  }
   template <class _Index, class _State, class _Rcvr>
   static constexpr auto get_env(_Index, _State& state, const _Rcvr& __rcvr) noexcept {
     return ::__ycxx::__detail::__exec::__make_when_all_env(state.__stop_src, std::execution::get_env(__rcvr));
@@ -613,6 +850,15 @@ struct __impls_for<std::execution::when_all_t> : __default_impls {
 
 template <>
 struct __impls_for<std::execution::when_all_with_variant_t> : __default_impls {
+  // when_all of into_variant of each child ([exec.when.all]/1, /19).
+  template <class _Data, class... _Child>
+  static constexpr auto __get_attrs(const _Data&, const _Child&... __child) noexcept {
+    using _Pol = __pol_when_all<
+        __basic_sender_t<std::execution::when_all_with_variant_t, _Data, _Child...>,
+        __tlist<__basic_sender_t<std::execution::into_variant_t, __empty_data, _Child>...>,
+        decltype(__impls_for<std::execution::into_variant_t>::__get_attrs(__empty_data(), __child))...>;
+    return __compl_attrs_t<_Pol>{_Pol{{__impls_for<std::execution::into_variant_t>::__get_attrs(__empty_data(), __child)...}}};
+  }
   template <class _Sndr, class _Is, class... _Env>
   struct __sigs;
   template <class _Sndr, std::size_t... _Is, class... _Env>

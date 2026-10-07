@@ -6,7 +6,8 @@
 // converted in the name's own encoding), shared by every facet built from it, reference-counted
 // (the facets hold the references), freed with the last of them. What the facets read from it is
 // computed once: the ctype<char> table and case mappings when the LC_CTYPE entry is opened, the
-// numpunct, moneypunct and time_get data when such a facet is constructed. Nothing here changes
+// numpunct, moneypunct and time_get data (names, formats, eras, alternative digits) when such a
+// facet is constructed. Nothing here changes
 // the global C locale or another thread's: a C function without a _l form runs with the locale
 // installed for the calling thread only (uselocale), and the thread's own locale is restored
 // before returning, also when an exception passes.
@@ -17,8 +18,10 @@
 #include <locale>
 #include <climits>
 #include <cstdlib>
+#include <cstdint>
 #include <cstring>
 #include <string>
+#include <string_view>
 #include <typeinfo>
 #include <ycxx/hosted/memory_resource.hpp> // __ycxx::__detail::__pal_lock
 #include "locale_named.hpp"
@@ -27,6 +30,7 @@
 #include <langinfo.h>
 #include <locale.h>
 #include <nl_types.h>
+#include <regex.h> // regcomp: a locale's multi-character collating elements
 #include <time.h>
 #include <wchar.h>
 #include <wctype.h>
@@ -412,6 +416,163 @@ std::time_base::dateorder order_of(const char* __fmt) noexcept {
   return std::time_base::no_order;
 }
 
+// A date "[-]yyyy/mm/dd" of an era segment, as a comparable number (yyyy * 10000 + mm * 100 + dd);
+// its year in y.
+bool era_date(std::string_view s, long long& __key, long long& y) noexcept {
+  bool __neg = false;
+  if (!s.empty() && (s[0] == '-' || s[0] == '+')) {
+    __neg = s[0] == '-';
+    s.remove_prefix(1);
+  }
+  long long __part[3] = {0, 0, 0};
+  int k = 0, digits = 0;
+  for (char c : s) {
+    if (c == '/' && k < 2 && digits != 0) {
+      ++k;
+      digits = 0;
+    } else if (c >= '0' && c <= '9' && digits < 9) {
+      __part[k] = __part[k] * 10 + (c - '0');
+      ++digits;
+    } else {
+      return false;
+    }
+  }
+  if (k != 2 || digits == 0 || __part[1] < 1 || __part[1] > 12 || __part[2] < 1 || __part[2] > 31)
+    return false;
+  y = __neg ? -__part[0] : __part[0];
+  __key = y * 10000 + __part[1] * 100 + __part[2];
+  return true;
+}
+
+// strftime_l of fmt for t (empty when the result does not fit or is empty).
+std::string ftime(locale_t __loc, const char* __fmt, const std::tm& t) {
+  char __buf[512];
+  const std::size_t n = ::strftime_l(__buf, sizeof __buf, __fmt, &t, __loc);
+  return std::string(__buf, n);
+}
+
+// One era segment "direction:offset:start_date:end_date:era_name:era_format" (POSIX, LC_TIME
+// era); false (d unchanged) when s does not have that form. A well-formed segment the C library
+// does not use (its strftime_l("%EC") at the era's start date is not the era's name: a C library
+// that has the data but ignores the E modifier) is skipped, so parsing never expects an era the
+// library's own formatting does not write.
+template <class __charT>
+bool add_era(locale_t __loc, std::string_view s, __ycxx::__detail::__time_data<__charT>& d) {
+  std::string_view __f[6];
+  for (int k = 0; k < 5; ++k) {
+    const std::size_t c = s.find(':');
+    if (c == std::string_view::npos)
+      return false;
+    __f[k] = s.substr(0, c);
+    s.remove_prefix(c + 1);
+  }
+  __f[5] = s;
+  if (__f[0].size() != 1 || (__f[0][0] != '+' && __f[0][0] != '-') || __f[1].empty() || __f[4].empty())
+    return false;
+  long long __offset = 0;
+  for (char c : __f[1]) {
+    if (c < '0' || c > '9' || __offset > 1'000'000)
+      return false;
+    __offset = __offset * 10 + (c - '0');
+  }
+  long long __start_key, __start_year, __end_key, __end_year;
+  if (!era_date(__f[2], __start_key, __start_year))
+    return false;
+  if (__start_year < -100000 || __start_year > 100000)
+    return true; // skipped
+  {
+    std::tm t{};
+    t.tm_year = static_cast<int>(__start_year - 1900);
+    const long long __md = (__start_key - __start_year * 10000);
+    t.tm_mon = static_cast<int>(__md / 100) - 1;
+    t.tm_mday = static_cast<int>(__md % 100);
+    t.tm_hour = 12;
+    if (ftime(__loc, "%EC", t) != __f[4])
+      return true; // skipped
+  }
+  bool __later; // the end date follows the start date
+  if (__f[3] == "+*")
+    __later = true;
+  else if (__f[3] == "-*")
+    __later = false;
+  else if (era_date(__f[3], __end_key, __end_year))
+    __later = __end_key >= __start_key;
+  else
+    return false;
+  if (d.__neras == static_cast<int>(sizeof d.__eras / sizeof d.__eras[0]))
+    return false;
+  // '+': the numbers grow from the start date towards the end date; '-': they shrink
+  const int __step = (__f[0][0] == '+') == __later ? 1 : -1;
+  const std::string __name(__f[4]), __fmt(__f[5]);
+  const std::basic_string<__charT> __n = __convert(__loc, __name.c_str(), __charT());
+  const std::basic_string<__charT> __ft = __convert(__loc, __fmt.c_str(), __charT());
+  __ycxx::__detail::__time_era& e = d.__eras[d.__neras++];
+  e = {__start_year, __offset, __step, d.__era_text.size(), __n.size(), d.__era_text.size() + __n.size(), __ft.size()};
+  d.__era_text += __n;
+  d.__era_text += __ft;
+  return true;
+}
+
+// The eras of LC_TIME (nl_langinfo ERA). POSIX gives the segments separated by ';'; glibc
+// separates them by NULs and gives their count as the item _NL_TIME_ERA_NUM_ENTRIES
+// (_YCXX_C_HAS_ERA_NUM_ENTRIES, found by cmake/ycxx-c-library.cmake).
+template <class __charT>
+void load_eras(locale_t __loc, __ycxx::__detail::__time_data<__charT>& d) {
+  const char* p = ::nl_langinfo_l(ERA, __loc);
+  if (p == nullptr || *p == '\0')
+    return;
+#if _YCXX_C_HAS_ERA_NUM_ENTRIES
+  const auto __count = reinterpret_cast<std::uintptr_t>(::nl_langinfo_l(_NL_TIME_ERA_NUM_ENTRIES, __loc));
+  if (__count != 0) {
+    for (std::uintptr_t k = 0; k < __count && k < 64; ++k) {
+      const std::string_view s(p);
+      if (!add_era(__loc, s, d))
+        return;
+      p += s.size() + 1;
+    }
+    return;
+  }
+#endif
+  std::string_view s(p);
+  while (!s.empty()) {
+    const std::size_t __semi = s.find(';');
+    if (!add_era(__loc, s.substr(0, __semi), d) || __semi == std::string_view::npos)
+      return;
+    s.remove_prefix(__semi + 1);
+  }
+}
+
+// The alternative digits of 0-99, as the C library writes them: strftime_l("%Oy") of the years
+// 1900-1999 (so how the C library stores ALT_DIGITS does not matter). None when every one is the
+// decimal form.
+template <class __charT>
+void load_alt_digits(locale_t __loc, __ycxx::__detail::__time_data<__charT>& d) {
+  std::basic_string<__charT> __text;
+  unsigned short __pos[101];
+  bool __own = false;
+  for (int k = 0; k < 100; ++k) {
+    std::tm t{};
+    t.tm_year = k;
+    t.tm_mday = 1;
+    char __buf[64];
+    const std::size_t n = ::strftime_l(__buf, sizeof __buf, "%Oy", &t, __loc);
+    __buf[n < sizeof __buf ? n : 0] = '\0';
+    const char __dec[3] = {static_cast<char>('0' + k / 10), static_cast<char>('0' + k % 10), '\0'};
+    if (n == 0 || std::strcmp(__buf, __dec) != 0)
+      __own = true;
+    __pos[k] = static_cast<unsigned short>(__text.size());
+    __text += __convert(__loc, __buf, __charT());
+    if (__text.size() > 60000)
+      return;
+  }
+  if (!__own)
+    return;
+  __pos[100] = static_cast<unsigned short>(__text.size());
+  d.__alt_text = static_cast<std::basic_string<__charT>&&>(__text);
+  for (int k = 0; k <= 100; ++k)
+    d.__alt_pos[k] = __pos[k];
+}
+
 template <class __charT>
 bool load_time(const char* name, __ycxx::__detail::__time_data<__charT>& d) {
   named_ref h{__ycxx::__detail::__named_open(name, std::locale::time, "std::time_get_byname")};
@@ -431,6 +592,35 @@ bool load_time(const char* name, __ycxx::__detail::__time_data<__charT>& d) {
   d.__t_fmt = __convert(__loc, ::nl_langinfo_l(T_FMT, __loc), __charT());
   d.__t_fmt_ampm = __convert(__loc, ::nl_langinfo_l(T_FMT_AMPM, __loc), __charT());
   d.__order = order_of(__x);
+  // The era formats, where the C library writes %Ec, %Ex and %EX with them (checked on two
+  // dates; POSIX: where the alternative representation is not available, the unmodified one is
+  // used, and an empty format falls back to %c, %x and %X below). Darwin's libc, for one, may
+  // ignore the E modifier whatever these items hold.
+  {
+    std::tm __probe[2]{};
+    __probe[0].tm_year = 2026 - 1900, __probe[0].tm_mon = 9, __probe[0].tm_mday = 7, __probe[0].tm_hour = 13;
+    __probe[0].tm_min = 4, __probe[0].tm_sec = 5, __probe[0].tm_wday = 3, __probe[0].tm_yday = 279;
+    __probe[1].tm_year = 1989 - 1900, __probe[1].tm_mon = 0, __probe[1].tm_mday = 7, __probe[1].tm_hour = 1;
+    __probe[1].tm_min = 2, __probe[1].tm_sec = 3, __probe[1].tm_wday = 6, __probe[1].tm_yday = 6;
+    const struct {
+      nl_item item;
+      const char* conv;
+      std::basic_string<__charT>* out;
+    } __era_fmts[3] = {{ERA_D_T_FMT, "%Ec", &d.__era_d_t_fmt}, {ERA_D_FMT, "%Ex", &d.__era_d_fmt},
+                       {ERA_T_FMT, "%EX", &d.__era_t_fmt}};
+    for (const auto& e : __era_fmts) {
+      const char* __fmt = ::nl_langinfo_l(e.item, __loc);
+      if (__fmt == nullptr || *__fmt == '\0')
+        continue;
+      bool __y_used = true;
+      for (const std::tm& t : __probe)
+        __y_used = __y_used && ftime(__loc, e.conv, t) == ftime(__loc, __fmt, t);
+      if (__y_used)
+        *e.out = __convert(__loc, __fmt, __charT());
+    }
+  }
+  load_eras(__loc, d);
+  load_alt_digits(__loc, d);
   return true;
 }
 
@@ -1032,24 +1222,35 @@ namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
 // regex_traits::transform_primary ([re.traits]/7): the primary sort key when the facet is exactly
 // a collate_byname and the form of its keys is known. glibc's strxfrm_l/wcsxfrm_l key of a locale
 // with collation rules is the weights of each level in turn, each level ended by the value 1
-// (glibc's string/strxfrm_l.c); the primary key is the weights before the first 1. A locale without rules ("C", or every
-// locale of musl) gives a copy of the string, which has no separator: every character is then its
-// own equivalence class, and the full key is the primary one too, which the caller uses when this
-// returns false. Darwin's key form is not documented: false there as well.
+// (glibc's string/strxfrm_l.c); the primary key is the weights before the first 1. A locale
+// without rules ("C", or every locale of musl) gives a copy of the string: every character is
+// then its own equivalence class, and the whole key is the primary one. Darwin's key form is not
+// documented: false there (an empty key, [re.traits]/7).
+// Deliberate divergence (DECISIONS §3, STATUS): the classic locale's own collate facet (exactly
+// collate<charT>, not a collate_byname) gives its whole key, a copy of the string in code point
+// order, so [[=a=]] is valid in the default locale as portable code expects (libc++, libstdc++).
 template <class __charT>
 static bool primary_key(const std::collate<__charT>& __f, const __charT* __low, const __charT* __high,
                         std::basic_string<__charT>& out) {
+  if (typeid(__f) == typeid(std::collate<__charT>)) {
+    out = __f.transform(__low, __high);
+    return true;
+  }
   if constexpr (__cfg::__darwin)
     return false;
   if (typeid(__f) != typeid(std::collate_byname<__charT>))
     return false;
-  const __charT a[1] = {__charT('a')};
-  if (__f.transform(a, a + 1).find(__charT(1)) == std::basic_string<__charT>::npos)
-    return false;
+  const __charT a[2] = {__charT('a'), __charT('B')};
+  const std::basic_string<__charT> __probe = __f.transform(a, a + 2);
+  const bool __copy = __probe == std::basic_string<__charT>(a, a + 2);
+  if (!__copy && __probe.find(__charT(1)) == std::basic_string<__charT>::npos)
+    return false; // neither form
   out = __f.transform(__low, __high);
-  const std::size_t __end = out.find(__charT(1));
-  if (__end != std::basic_string<__charT>::npos)
-    out.resize(__end);
+  if (!__copy) {
+    const std::size_t __end = out.find(__charT(1));
+    if (__end != std::basic_string<__charT>::npos)
+      out.resize(__end);
+  }
   return true;
 }
 
@@ -1059,6 +1260,61 @@ bool __regex_primary_key(const std::collate<char>& __f, const char* __low, const
 bool __regex_primary_key(const std::collate<wchar_t>& __f, const wchar_t* __low, const wchar_t* __high,
                          std::wstring& out) {
   return primary_key(__f, __low, __high, out);
+}
+
+struct __collate_access {
+  template <class __charT>
+  static const __named_locale* named(const std::collate<__charT>& __f) {
+    if (typeid(__f) != typeid(std::collate_byname<__charT>))
+      return nullptr;
+    return static_cast<const std::collate_byname<__charT>&>(__f).__named_;
+  }
+};
+
+// regex_traits::lookup_collatename ([re.traits]/8): the C library has no interface listing a
+// locale's multi-character collating elements (glibc's cs_CZ has "ch"), but its regcomp knows
+// them: "[[.xy.]]" compiles under the locale (LC_COLLATE and LC_CTYPE of its name) iff xy is one.
+// The classic names have none.
+static bool collating_element(const __named_locale* h, const char* s, std::size_t n, const wchar_t* ws) {
+  if (h == nullptr || n < 2 || n > 64)
+    return false;
+  const locale_t __loc = ::newlocale(LC_CTYPE_MASK | LC_COLLATE_MASK, h->name.c_str(), static_cast<locale_t>(0));
+  if (__loc == static_cast<locale_t>(0))
+    return false;
+  bool ok = true;
+  int __rc = -1;
+  {
+    thread_locale in(__loc);
+    std::string __pat = "[[.";
+    for (std::size_t i = 0; ok && i < n; ++i) {
+      if (ws == nullptr) {
+        ok = s[i] != '\0';
+        __pat.push_back(s[i]);
+      } else {
+        char mb[MB_LEN_MAX];
+        std::mbstate_t __st{};
+        const std::size_t k = ws[i] == L'\0' ? mb_error : ::wcrtomb(mb, ws[i], &__st);
+        ok = k != mb_error;
+        if (ok)
+          __pat.append(mb, k);
+      }
+    }
+    __pat += ".]]";
+    if (ok) {
+      regex_t __re;
+      __rc = ::regcomp(&__re, __pat.c_str(), 0);
+      if (__rc == 0)
+        ::regfree(&__re);
+    }
+  }
+  ::freelocale(__loc);
+  return ok && __rc == 0;
+}
+bool __regex_collating_element(const std::collate<char>& __f, const char* s, std::size_t n) {
+  return collating_element(__collate_access::named(__f), s, n, nullptr);
+}
+bool __regex_collating_element(const std::collate<wchar_t>& __f, const wchar_t* s, std::size_t n) {
+  return collating_element(__collate_access::named(__f), nullptr, n, s);
 }
 
 }} // namespace __ycxx::__detail

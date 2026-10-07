@@ -14,6 +14,11 @@
 #      from the LLVM release tarball; GCC built from source, which takes a while).
 # Otherwise a missing or unsupported compiler stops the configuration.
 # YCXX_GCC_VERSION / YCXX_LLVM_VERSION select other versions.
+#
+# This file selects the compilers; it does not make a project use libycxx. A project that links
+# ycxx::ycxx (find_package(libycxx)) does; any other project is built against libycxx with the
+# toolchain file of a libycxx build or installation, <prefix>/lib/cmake/libycxx/toolchain.cmake
+# (docs/BUILDING_PROJECTS.md).
 include_guard(GLOBAL)
 
 set(YCXX_COMPILER "gcc" CACHE STRING "Compiler family for libycxx: gcc or clang")

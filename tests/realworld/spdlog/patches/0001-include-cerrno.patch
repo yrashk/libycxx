@@ -1,0 +1,28 @@
+Category: transitive-include. daily_file_sink.h and os-inl.h use errno without including <cerrno>
+(libstdc++ and libc++ declare it through <string> and <system_error>, which <mutex> includes
+there). Adds the includes.
+
+diff --git a/include/spdlog/details/os-inl.h b/include/spdlog/details/os-inl.h
+index 92dfe12..e2763a7 100644
+--- a/include/spdlog/details/os-inl.h
++++ b/include/spdlog/details/os-inl.h
+@@ -11,6 +11,7 @@
+ 
+ #include <algorithm>
+ #include <array>
++#include <cerrno>
+ #include <chrono>
+ #include <cstdio>
+ #include <cstdlib>
+diff --git a/include/spdlog/sinks/daily_file_sink.h b/include/spdlog/sinks/daily_file_sink.h
+index 615c9f7..32c4d51 100644
+--- a/include/spdlog/sinks/daily_file_sink.h
++++ b/include/spdlog/sinks/daily_file_sink.h
+@@ -14,6 +14,7 @@
+ #include <spdlog/sinks/base_sink.h>
+ 
+ #include <chrono>
++#include <cerrno>
+ #include <cstdio>
+ #include <iomanip>
+ #include <mutex>

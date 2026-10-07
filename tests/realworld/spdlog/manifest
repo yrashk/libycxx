@@ -1,0 +1,8 @@
+# spdlog with std::format (SPDLOG_USE_STD_FORMAT) instead of its bundled fmt: logging with
+# threads, mutexes, condition variables, chrono, files, std::format. Tests with Catch2.
+url = https://github.com/gabime/spdlog.git
+ref = v1.17.0
+commit = 79524ddd08a4ec981b7fea76afd08ee05f83755d
+exercises = std::format, threads, chrono, filesystem, iostreams
+deps = catch2
+configure = -DSPDLOG_BUILD_TESTS=ON -DSPDLOG_BUILD_EXAMPLE=OFF -DSPDLOG_USE_STD_FORMAT=ON

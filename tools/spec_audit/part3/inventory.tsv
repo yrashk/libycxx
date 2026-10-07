@@ -6350,3 +6350,18 @@
 6348	depr.atomics.general	atomic	std::atomic_init	function	1		void atomic_init(atomic<T>*, typename atomic<T>::value_type)noexcept
 6349	depr.atomics.general	atomic	std::kill_dependency	function	2		constexpr T kill_dependency(T y)noexcept
 6350	depr.atomics.general	atomic	std::memory_order_consume	variable	1		inline constexpr memory_order memory_order_consume = memory_order::consume
+6351	c.mb.wcs	cstdlib	std::mblen	item declaration	1		std::mblen
+6352	c.mb.wcs	cstdlib	std::mbtowc	item declaration	1		std::mbtowc
+6353	c.mb.wcs	cstdlib	std::wctomb	item declaration	1		std::wctomb
+6354	c.mb.wcs	cstdlib	std::mbstowcs	item declaration	1		std::mbstowcs
+6355	c.mb.wcs	cstdlib	std::wcstombs	item declaration	1		std::wcstombs
+6356	c.math.rand	cstdlib	std::rand	item declaration	1		std::rand
+6357	c.math.rand	cstdlib	std::srand	item declaration	1		std::srand
+6358	numerics.c.ckdint	stdckdint.h	ckd_add	item declaration	1		ckd_add
+6359	numerics.c.ckdint	stdckdint.h	ckd_sub	item declaration	1		ckd_sub
+6360	numerics.c.ckdint	stdckdint.h	ckd_mul	item declaration	1		ckd_mul
+6361	numerics.c.ckdint	stdckdint.h	ckd_add	item declaration	1		ckd_add
+6362	time.clock.utc.nonmembers	chrono	std::chrono::leap_second_info::is_leap_second	item declaration	1		std::chrono::leap_second_info::is_leap_second
+6363	time.clock.utc.nonmembers	chrono	std::chrono::leap_second_info::elapsed	item declaration	1		std::chrono::leap_second_info::elapsed
+6364	futures.task.members	future	std::packaged_task::make_ready_at_thread_exit	item declaration	1		std::packaged_task::make_ready_at_thread_exit
+6365	depr.fs.path.factory	filesystem	std::filesystem::u8path	item declaration	1		std::filesystem::u8path

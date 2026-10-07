@@ -3,6 +3,7 @@
 // that locale (wcrtomb / mbrtowc); encoding() and max_length() follow MB_CUR_MAX ([locale.codecvt.
 // virtuals]/7-12); a character that does not fit is partial, an invalid sequence an error, and an
 // incomplete sequence at the end of the input partial with from_next before it (/2-4).
+#include <climits>
 #include <cstring>
 #include <locale>
 #include <stdlib.h>
@@ -58,12 +59,25 @@ int main() {
   const char* utf8 = require_locale("de_DE.UTF-8");
   const char* latin9 = require_locale("fr_FR.ISO8859-15");
   round_trip(utf8, L"Grüße € 中\U0001F600");
-  round_trip(latin9, L"déjà € œ");
+
+  // The ISO-8859-15 checks spell characters as Unicode wchar_t values, which a non-UTF-8 locale's
+  // wchar_t is only where the C library makes every wchar_t Unicode (__STDC_ISO_10646__: glibc).
+  // Darwin's wchar_t in such a locale is the locale's own code (the euro sign is 0xA4 there, and
+  // U+20AC is not a character of it), so there the C library itself rejects these strings, and the
+  // facet, which converts as the C library does, rightly too.
+  const bool latin9_unicode = in_c_locale(latin9, [] {
+    char b[MB_LEN_MAX];
+    mbstate_t s{};
+    return wcrtomb(b, L'\u20ac', &s) == 1 && static_cast<unsigned char>(b[0]) == 0xa4;
+  });
+  if (latin9_unicode) {
+    round_trip(latin9, L"déjà € œ");
+  }
 
   // ISO-8859-15: the euro sign is the byte A4, and a character outside it is an error
   const std::locale loc9(latin9);
   const CV& l9 = std::use_facet<CV>(loc9);
-  {
+  if (latin9_unicode) {
     const wchar_t in[] = L"a€b中c";
     char out[8];
     std::mbstate_t st{};

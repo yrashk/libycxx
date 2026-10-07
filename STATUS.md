@@ -1375,6 +1375,16 @@ levels: 29.7 s -> 0.01 s; libstdc++ 8.6 s). Remaining above 1.5x: deque push at 
 `from_chars(double)`, `to_chars` fixed with precision, Clang `dynamic_cast` across virtual bases
 (anonymous-namespace type names have no `*` marker), GCC `string + "x" + string`.
 
+## Spec coverage audit (docs/SPEC_COVERAGE.md)
+- Part 1 ([library] tables and [version.syn], [support], [concepts], [diagnostics], [mem], [meta],
+  [utilities]; 2026-10-07; `tools/spec_audit/part1/run.py`): 2029 declared names (1988 probed by
+  name), 313 macros, 192 header checks, 18 shape probes, on GCC 16.2 and Clang 23.1. Open: `[ptrtag]`
+  (`pointer_tag_pair`, 19 names and its macro; the constexpr part is blocked on the compilers),
+  the hardened preconditions of `counted_iterator`/`common_iterator` (2 macros); the rest is
+  compiler-blocked (reflection, contracts, `is_structural`, ... on Clang; `is_within_lifetime` on
+  GCC). Fixed: `pmr::indirect`/`pmr::polymorphic`, `is_applicable` & co. in `<type_traits>`, and
+  7 feature-test macros.
+
 ## Open issues / next
 - Every header of the C++26 library is provided (Phases 1-4 complete; `<meta>` needs GCC's
   `-freflection`, `<contracts>` GCC's `-fcontracts`). Own suite: no failures on either compiler (configurations above); the expected

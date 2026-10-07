@@ -10,6 +10,7 @@
 // and 平成 with "元年" for an era's first year, and 〇 一 二 ... as digits); where the C library
 // has no eras or digits for the locale, the plain forms, which must read back as well.
 #include <time.h>
+#include <wchar.h>
 #include <iterator>
 #include <locale>
 #include <sstream>

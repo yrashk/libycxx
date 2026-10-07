@@ -13,6 +13,7 @@
 // An era and a year within it combine ("%EC%Ey": year n of the era); %Ey without %EC is %y
 // (POSIX strptime: "the offset from %EC", and %Oy "with the alternative digits").
 #include <time.h>
+#include <wchar.h>
 #include <chrono>
 #include <format>
 #include <locale>

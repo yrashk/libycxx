@@ -8,6 +8,4 @@ exercises = string_view, containers, exceptions, iostreams
 # downloads (the competition benchmarks and the tools' cxxopts go), and the two it always needs
 # from git clones of the same commits.
 extra_sources = counters https://github.com/lemire/counters.git d5a84ca84a24edb14e0fd7c98c57131b535aee58; simdjson-data https://github.com/simdjson/simdjson-data.git 351949906abde446f0314bf79606fb5d884f5be7
-# Its tests build with -Werror: C++26 deprecates the signed/unsigned char inserters it uses
-# ([depr.ostream.inserters]), which libycxx marks [[deprecated]].
-configure = -DCMAKE_CXX_FLAGS=-Wno-error=deprecated-declarations -DSIMDJSON_DEVELOPER_MODE=ON -DSIMDJSON_ENABLE_THREADS=ON -DSIMDJSON_ALLOW_DOWNLOADS=OFF -DCPM_counters_SOURCE=@SRC:counters@ -DCPM_simdjson-data_SOURCE=@SRC:simdjson-data@
+configure = -DSIMDJSON_DEVELOPER_MODE=ON -DSIMDJSON_ENABLE_THREADS=ON -DSIMDJSON_ALLOW_DOWNLOADS=OFF -DCPM_counters_SOURCE=@SRC:counters@ -DCPM_simdjson-data_SOURCE=@SRC:simdjson-data@

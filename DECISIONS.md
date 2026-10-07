@@ -558,12 +558,16 @@ tooling.
   back-references that fit the NFA keep the NFA path unchanged.
 
 - **Collating elements and primary keys** ([re.traits]/7-8, [re.grammar]/8, /10, /14.3; XBD
-  9.3.5). `transform_primary` returns the primary key only for a `collate_byname` facet (exact
-  type) whose key form is known: glibc's multi-level keys (the weights before the first level
+  9.3.5). `transform_primary` returns the primary key for a `collate_byname` facet (exact type)
+  whose key form is known: glibc's multi-level keys (the weights before the first level
   separator), or keys that are a copy of the string (a locale without collation rules: every
-  character its own class, the whole key is primary). Otherwise, the classic locale's `collate`
-  included, it returns an empty string, which makes every `[=x=]` invalid (error_collate) as
-  [re.grammar]/10 says. `lookup_collatename` accepts one character, the POSIX collating-symbol
+  character its own class, the whole key is primary). *Deliberate divergence:* for the classic
+  locale's own facet (exactly `collate<charT>`) it returns the whole key too (code point order,
+  each character its own class), where the letter of [re.traits]/7 gives an empty string and so
+  makes every `[=x=]` invalid in the default locale ([re.grammar]/10): portable code uses
+  `[[=a=]]` there, and libc++ and libstdc++ both accept it (STATUS "Deliberate divergences",
+  "Draft issues noticed"). Other facets (a user's collate, Darwin's undocumented keys) give an
+  empty string and `[=x=]` is invalid (error_collate). `lookup_collatename` accepts one character, the POSIX collating-symbol
   names, and, for a `collate_byname` locale, a multi-character collating element of that
   locale: the C library's own `regcomp` is asked, under that locale (`uselocale`), whether
   `[[.xy.]]` is valid (cs_CZ defines "ch"; glibc exposes no other public interface to the

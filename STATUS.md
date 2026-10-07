@@ -63,7 +63,7 @@ reports count both per category. All such libc++ tests are linked or triaged; of
 | input.output + localization (iostreams, `<locale>`) | 583/855 | 590/855 | no (hosted) | was 39; 213 of the failures need `<filesystem>`, `<codecvt>` (removed), `<format>`/`<print>`, `<mutex>`/`<chrono>` or `EOF` from `constexpr_char_traits.h`; rest under Known limitations |
 | atomics + thread (incl. futures, stop tokens, latch/barrier/semaphore) | 449/453 | 449/453 | `<atomic>` yes (runtime archive); the rest hosted | was 16; rest: `<format>` for thread::id (4) |
 | input.output + localization (iostreams, `<locale>`, `<filesystem>`) | 668/855 | 668/855 | no (hosted) | was 583 (Clang) / 590 (GCC) before `<filesystem>`; most failures need `<chrono>`, `<codecvt>` (removed), `<format>`/`<print>`, `<mutex>`/`<thread>` or `EOF` from `constexpr_char_traits.h`; rest under Known limitations |
-| re (`<regex>`) | 163/163 | 163/163 | no (hosted) | was 12; 14 skipped or unsupported (draft divergences, among them the 8 that use `[=m=]` in the classic locale, [re.traits]/7; see tests/libcxx/skip.txt) |
+| re (`<regex>`) | 171/171 | 171/171 | no (hosted) | was 12; 6 skipped or unsupported (draft divergences, see tests/libcxx/skip.txt) |
 
 Whole-suite baseline (clang, before iterators/tuple/array/optional): 976 pass / ~8,000 run.
 
@@ -211,11 +211,10 @@ subexpressions by the POSIX left-to-right longest rule; with back-references (or
 repetitions too large for the NFA) the backtracker finds the leftmost-longest match and a guided
 search assigns the subexpressions by the same rule (DECISIONS §3). Multi-character collating
 elements of named locales (`[[.ch.]]`, from the C library's regcomp); `transform_primary` per
-[re.traits]/7 (empty for the classic locale). Own suite regex/: 32/32 on both compilers,
-clean under ASan (Clang). Runs of 2026-10-07 (both compilers): libc++ std/re 163 pass / 14
-skipped of 177 (171 / 6 before the [re.traits]/7 fix: the 8 skipped since use `[=m=]` in the
-classic locale, tests/libcxx/skip.txt); libstdc++ 28_regex 115 pass / 56 unsupported of 171
-(unchanged; most unsupported need `__gnu_test` helpers). Checked against V8 on 63,000
+[re.traits]/7 except for the classic locale (its whole key: a deliberate divergence). Own suite regex/: 32/32 on both compilers,
+clean under ASan (Clang). Runs of 2026-10-07 (both compilers): libc++ std/re 171 pass / 6
+skipped of 177; libstdc++ 28_regex 115 pass / 56 unsupported of 171 (most unsupported need
+`__gnu_test` helpers). Checked against V8 on 63,000
 random ECMAScript patterns (with and without icase): identical results.
 <meta> (reflection; GCC 16 with `-freflection` only, DECISIONS §13): every [meta.syn] entity.
 The metafunctions are GCC's own (declared without definitions); the library defines `info`,
@@ -278,7 +277,7 @@ when parsing, `fractional_width` of ratio<1, 2^62>, `hh_mm_ss` layout, an error 
   members (`9446019`), constant-evaluated `compare_exchange` of `long double` on Clang (`370b7e3`).
   Fixed since: G4 (POSIX regex subexpressions with back-references and large counted
   repetitions) and G5 (multi-character collating elements; `transform_primary` per
-  [re.traits]/7), `3919455`.
+  [re.traits]/7 but for the classic locale, a deliberate divergence), `3919455`.
   Open: `__cpp_lib_constexpr_exceptions` on Clang (compiler gap) and the documented behaviour
   limitations listed there (locale-dependent `chrono::parse`,
   `rcu_barrier` inside evaluations, `*_at_thread_exit` for the exiting main thread, ...).
@@ -754,6 +753,13 @@ compilers; `visit_format_arg.pass.cpp` needs `EOF` from `constexpr_char_traits.h
   `match_prev_avail`, `^` matches at `first` only in multiline mode after a line terminator (the
   previous character exists, so `first` is not the beginning of the input), which keeps
   regex_iterator from matching `^a` at every position. Details in `tests/libcxx/skip.txt`.
+- `<regex>` `regex_traits::transform_primary` with the classic locale's collate facet returns the
+  whole sort key (a copy of the string: code point order, each character its own equivalence
+  class) where the letter of [re.traits]/7 returns an empty string (the facet is `collate<charT>`,
+  not a `collate_byname`), which would make every `[[=x=]]` invalid in the default locale
+  ([re.grammar]/10). Portable code relies on `[[=a=]]` working there, and libc++ and libstdc++
+  both make it work; see "Draft issues noticed" and DECISIONS §3. Facets whose key form is unknown
+  (a user's own collate, Darwin's collate_byname) still give an empty key.
 - `num_put::do_put(bool)` with `boolalpha` pads the name to `width()` (and resets the width) as
   the other conversions do; [facet.num.put.virtuals]/6 read literally inserts the name unpadded.
   libc++ and libstdc++ pad, and their tests expect it. Likewise a character-sequence inserter
@@ -931,11 +937,12 @@ compilers; `visit_format_arg.pass.cpp` needs `EOF` from `constexpr_char_traits.h
   several grammar flags throws `regex_error(error_complexity)` (error_type has no code for it).
   Groups nested more than 1000 deep throw `regex_error(error_space)` (the translator and the
   matchers recurse over the tree).
-  regex_traits::transform_primary follows [re.traits]/7: the primary key of a collate_byname
-  whose key form is known (glibc's multi-level keys: `[[=a=]]` matches `A` and `á`; keys that copy
-  the string), an empty string otherwise (the classic locale's collate facet, Darwin), so
-  `[[=x=]]` is invalid (error_collate) in the default locale ([re.grammar]/10; libc++'s and
-  libstdc++'s tests expect it valid: skipped, see "Draft issues noticed"). Multi-character
+  regex_traits::transform_primary: the primary key of a collate_byname whose key form is known
+  (glibc's multi-level keys: `[[=a=]]` matches `A` and `á`; keys that copy the string), the whole
+  key of the classic locale's collate facet (a deliberate divergence from [re.traits]/7, see
+  "Deliberate divergences": `[[=a=]]` matches only `a` there), and an empty string otherwise (a
+  user's collate facet, Darwin's collate_byname), which makes `[[=x=]]` invalid (error_collate,
+  [re.grammar]/10). Multi-character
   collating elements (`[[.ch.]]`) are those of a named locale's collate_byname, as the C
   library's `regcomp` accepts them (glibc's cs_CZ: "ch", "Ch", "CH"; the classic locale has
   none); in a bracket expression they match as one element, and a non-matching list does not
@@ -1346,7 +1353,8 @@ Wording problems found while writing the spec-derived tests (tests/ycxx), not ye
   dynamic type is exactly `collate_byname<charT>`; the classic locale's facet is `collate<charT>`,
   so with the default (global, classic) locale every `[[=x=]]` is invalid, although the "C"
   locale's collation (code point order, one character per class) is fully known. libc++'s and
-  libstdc++'s tests (and implementations) treat `[[=a=]]` as valid there.
+  libstdc++'s tests (and implementations) treat `[[=a=]]` as valid there, portable code relies on
+  it, and libycxx deliberately does the same (STATUS "Deliberate divergences", DECISIONS §3).
 - [set.symmetric.difference]/4.2: the returned `{last1, last2, result + N}` applies "if N is
   equal to M+K", but K is defined nowhere in the paragraph (M is; the count of the second
   range's copied elements is meant).

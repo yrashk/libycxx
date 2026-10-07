@@ -167,8 +167,10 @@ struct regex_traits {
   }
   // [re.traits]/7: the primary key when the facet is exactly a collate_byname whose key form is
   // known (glibc's multi-level keys: [[=a=]] matches 'á' in cs_CZ; keys that copy the string, of
-  // a locale without collation rules: the whole key); otherwise an empty string, the classic
-  // locale's collate facet included, which makes [[=x=]] invalid ([re.grammar]/10).
+  // a locale without collation rules: the whole key); otherwise an empty string, which makes
+  // [[=x=]] invalid ([re.grammar]/10). Deliberate divergence (DECISIONS §3): the classic locale's
+  // own collate facet also gives its whole key (code point order, each character its own class),
+  // so [[=a=]] works in the default locale as with libc++ and libstdc++.
   template <class _ForwardIterator>
   string_type transform_primary(_ForwardIterator first, _ForwardIterator last) const {
     if constexpr (is_same_v<__charT, char> || is_same_v<__charT, wchar_t>) {

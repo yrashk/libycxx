@@ -1,7 +1,9 @@
 // Collating elements and primary equivalence classes.
 // [re.traits]/7: transform_primary returns the primary sort key if the collate facet is exactly a
-//   collate_byname whose key form is known, "otherwise returns an empty string" (the classic
-//   locale's collate<charT> is not a collate_byname).
+//   collate_byname whose key form is known, "otherwise returns an empty string". libycxx's
+//   deliberate divergence (DECISIONS §3, STATUS): the classic locale's collate<charT> also gives
+//   its whole key (code point order, each character its own class), so [[=a=]] is valid in the
+//   default locale, as with libc++ and libstdc++.
 // [re.traits]/8: lookup_collatename returns the characters of the collating element named by
 //   [first, last), or an empty string if that is not a valid collating element.
 // [re.grammar]/8: [.name.] is invalid if lookup_collatename returns an empty string; /10: [=name=]
@@ -13,7 +15,7 @@
 // The named locale: cs_CZ.ISO8859-2 (glibc defines the collating elements "ch", "Ch" and "CH";
 // "ch" collates after "h", before "i"); the wide part uses the same locale's wide facets.
 // REQUIRES: exceptions
-// COUNTERPART: libcxx:re/re\.traits/transform_primary\.pass\.cpp libstdcxx:28_regex/traits/(char|wchar_t)/transform_primary\.cc
+// COUNTERPART: libstdcxx:28_regex/traits/(char|wchar_t)/transform_primary\.cc
 #include <locale>
 #include <regex>
 #include <string>
@@ -45,24 +47,29 @@ R imbued(const std::locale& loc, const S& pat, rc::syntax_option_type f) {
 } // namespace
 
 int main() {
-  // The classic locale: no primary keys, no multi-character elements.
+  // The classic locale: each character its own primary class, no multi-character elements.
   {
     std::regex_traits<char> t;
-    const std::string a = "a", ab = "ab", ch = "ch", period = "period";
-    CHECK(t.transform_primary(a.begin(), a.end()).empty());
-    CHECK(t.transform_primary(ab.begin(), ab.end()).empty());
+    const std::string a = "a", A = "A", ab = "ab", ch = "ch", period = "period";
+    CHECK(!t.transform_primary(a.begin(), a.end()).empty());
+    CHECK(t.transform_primary(a.begin(), a.end()) == t.transform(a.begin(), a.end()));
+    CHECK(t.transform_primary(a.begin(), a.end()) != t.transform_primary(A.begin(), A.end()));
+    CHECK(t.transform_primary(ab.begin(), ab.end()) == t.transform(ab.begin(), ab.end()));
     CHECK(t.lookup_collatename(a.begin(), a.end()) == "a");
     CHECK(t.lookup_collatename(ch.begin(), ch.end()).empty());
     CHECK(t.lookup_collatename(period.begin(), period.end()) == ".");
     std::regex_traits<wchar_t> w;
     const std::wstring wa = L"a", wch = L"ch", whyphen = L"hyphen";
-    CHECK(w.transform_primary(wa.begin(), wa.end()).empty());
+    CHECK(w.transform_primary(wa.begin(), wa.end()) == w.transform(wa.begin(), wa.end()));
     CHECK(w.lookup_collatename(wch.begin(), wch.end()).empty());
     CHECK(w.lookup_collatename(whyphen.begin(), whyphen.end()) == L"-");
-    // [=a=] is invalid ([re.grammar]/10), in every grammar.
+    // [=a=] is the class of 'a' alone; [.ch.] is invalid ([re.grammar]/8), in every grammar.
     for (auto g : {rc::ECMAScript, rc::basic, rc::extended, rc::awk, rc::grep, rc::egrep}) {
-      CHECK(throws_code<std::regex>("[[=a=]]", g, rc::error_collate));
-      CHECK(throws_code<std::wregex>(L"[[=a=]]", g, rc::error_collate));
+      CHECK(std::regex_match("a", std::regex("[[=a=]]", g)));
+      CHECK(!std::regex_match("A", std::regex("[[=a=]]", g)));
+      CHECK(std::regex_match(L"m", std::wregex(L"[a[=m=]z]", g)));
+      CHECK(!std::regex_match(L"M", std::wregex(L"[a[=m=]z]", g)));
+      CHECK(throws_code<std::regex>("[[=ch=]]", g, rc::error_collate));
       CHECK(throws_code<std::regex>("[[.ch.]]", g, rc::error_collate));
     }
     CHECK(std::regex_match("-", std::regex("[[.hyphen.]]", rc::basic)));

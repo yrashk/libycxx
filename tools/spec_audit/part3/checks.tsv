@@ -3069,12 +3069,12 @@ simd.syn#105	simd.syn	simd	std::simd::partial_scatter_to	call ret	requires range
 simd.syn#106	simd.syn	simd	std::simd::partial_scatter_to	call (defaults)	requires ranges::sized_range<R>constexpr void partial_scatter_to(const V&v, R&&out, const I&indices, flags<Flags...>f = {})
 simd.syn#107	simd.syn	simd	std::simd::partial_scatter_to	call ret	requires ranges::sized_range<R>constexpr void partial_scatter_to(const V&v, R&&out, const typename I::mask_type&mask, const I&indices, flags<Flags...>f = {})
 simd.syn#108	simd.syn	simd	std::simd::partial_scatter_to	call (defaults)	requires ranges::sized_range<R>constexpr void partial_scatter_to(const V&v, R&&out, const typename I::mask_type&mask, const I&indices, flags<Flags...>f = {})
-simd.syn#109	simd.syn	simd	std::simd::chunk	call noexcept	constexpr auto chunk(const basic_vec<typename T::value_type, Abi>&x)noexcept
-simd.syn#110	simd.syn	simd	std::simd::chunk	presence (exposition-only or unspecified: mask-element-size)	constexpr auto chunk(const basic_mask<⟨mask-element-size⟩<T>, Abi>&x)noexcept
-simd.syn#111	simd.syn	simd	std::simd::chunk	call noexcept	constexpr auto chunk(const basic_vec<T, Abi>&x)noexcept
-simd.syn#112	simd.syn	simd	std::simd::chunk	call noexcept	constexpr auto chunk(const basic_mask<Bytes, Abi>&x)noexcept
-simd.syn#113	simd.syn	simd	std::simd::cat	call ret noexcept	constexpr resize_t<(basic_vec<T, Abis>::size()+...), basic_vec<T, Abis...[0]>>cat(const basic_vec<T, Abis>&...)noexcept
-simd.syn#114	simd.syn	simd	std::simd::cat	call ret noexcept	constexpr resize_t<(basic_mask<Bytes, Abis>::size()+...), basic_mask<Bytes, Abis...[0]>>cat(const basic_mask<Bytes, Abis>&...)noexcept
+simd.syn#109	simd.syn	simd	std::simd::chunk	presence (signature not probed)	constexpr auto chunk(const basic_vec<typename T::value_type, Abi>&x)noexcept
+simd.syn#110	simd.syn	simd	std::simd::chunk	presence (signature not probed)	constexpr auto chunk(const basic_mask<⟨mask-element-size⟩<T>, Abi>&x)noexcept
+simd.syn#111	simd.syn	simd	std::simd::chunk	presence (signature not probed)	constexpr auto chunk(const basic_vec<T, Abi>&x)noexcept
+simd.syn#112	simd.syn	simd	std::simd::chunk	presence (signature not probed)	constexpr auto chunk(const basic_mask<Bytes, Abi>&x)noexcept
+simd.syn#113	simd.syn	simd	std::simd::cat	presence (signature not probed)	constexpr resize_t<(basic_vec<T, Abis>::size()+...), basic_vec<T, Abis...[0]>>cat(const basic_vec<T, Abis>&...)noexcept
+simd.syn#114	simd.syn	simd	std::simd::cat	presence (signature not probed)	constexpr resize_t<(basic_mask<Bytes, Abis>::size()+...), basic_mask<Bytes, Abis...[0]>>cat(const basic_mask<Bytes, Abis>&...)noexcept
 simd.syn#115	simd.syn	simd	std::simd::iota	var	constexpr T iota = ⟨see below⟩
 simd.syn#116	simd.syn	simd	std::simd::min	call ret noexcept	constexpr basic_vec<T, Abi>min(const basic_vec<T, Abi>&a, const basic_vec<T, Abi>&b)noexcept
 simd.syn#117	simd.syn	simd	std::simd::max	call ret noexcept	constexpr basic_vec<T, Abi>max(const basic_vec<T, Abi>&a, const basic_vec<T, Abi>&b)noexcept
@@ -3479,26 +3479,22 @@ simd.overview#42	simd.overview	simd	std::simd::basic_vec::operator|	call ret noe
 simd.overview#43	simd.overview	simd	std::simd::basic_vec::operator^	call ret noexcept	friend constexpr basic_vec operator^(const basic_vec&, const basic_vec&)noexcept
 simd.overview#44	simd.overview	simd	std::simd::basic_vec::operator<<	call ret noexcept	friend constexpr basic_vec operator<<(const basic_vec&, const basic_vec&)noexcept
 simd.overview#45	simd.overview	simd	std::simd::basic_vec::operator>>	call ret noexcept	friend constexpr basic_vec operator>>(const basic_vec&, const basic_vec&)noexcept
-simd.overview#46	simd.overview	simd	std::simd::basic_vec::operator<<	presence (exposition-only or unspecified: simd-size-type)	friend constexpr basic_vec operator<<(const basic_vec&, ⟨simd-size-type⟩)noexcept
-simd.overview#47	simd.overview	simd	std::simd::basic_vec::operator>>	presence (exposition-only or unspecified: simd-size-type)	friend constexpr basic_vec operator>>(const basic_vec&, ⟨simd-size-type⟩)noexcept
-simd.overview#48	simd.overview	simd	std::simd::basic_vec::operator+=	call ret noexcept	friend constexpr basic_vec&operator+=(basic_vec&, const basic_vec&)noexcept
-simd.overview#49	simd.overview	simd	std::simd::basic_vec::operator-=	call ret noexcept	friend constexpr basic_vec&operator-=(basic_vec&, const basic_vec&)noexcept
-simd.overview#50	simd.overview	simd	std::simd::basic_vec::operator*=	call ret noexcept	friend constexpr basic_vec&operator*=(basic_vec&, const basic_vec&)noexcept
-simd.overview#51	simd.overview	simd	std::simd::basic_vec::operator/=	call ret noexcept	friend constexpr basic_vec&operator/=(basic_vec&, const basic_vec&)noexcept
-simd.overview#52	simd.overview	simd	std::simd::basic_vec::operator%=	call ret noexcept	friend constexpr basic_vec&operator%=(basic_vec&, const basic_vec&)noexcept
-simd.overview#53	simd.overview	simd	std::simd::basic_vec::operator&=	call ret noexcept	friend constexpr basic_vec&operator&=(basic_vec&, const basic_vec&)noexcept
-simd.overview#54	simd.overview	simd	std::simd::basic_vec::operator|=	call ret noexcept	friend constexpr basic_vec&operator|=(basic_vec&, const basic_vec&)noexcept
-simd.overview#55	simd.overview	simd	std::simd::basic_vec::operator^=	call ret noexcept	friend constexpr basic_vec&operator^=(basic_vec&, const basic_vec&)noexcept
-simd.overview#56	simd.overview	simd	std::simd::basic_vec::operator<<=	call ret noexcept	friend constexpr basic_vec&operator<< = (basic_vec&, const basic_vec&)noexcept
-simd.overview#57	simd.overview	simd	std::simd::basic_vec::operator>>=	call ret noexcept	friend constexpr basic_vec&operator>> = (basic_vec&, const basic_vec&)noexcept
-simd.overview#58	simd.overview	simd	std::simd::basic_vec::operator<<=	presence (exposition-only or unspecified: simd-size-type)	friend constexpr basic_vec&operator<< = (basic_vec&, ⟨simd-size-type⟩)noexcept
-simd.overview#59	simd.overview	simd	std::simd::basic_vec::operator>>=	presence (exposition-only or unspecified: simd-size-type)	friend constexpr basic_vec&operator>> = (basic_vec&, ⟨simd-size-type⟩)noexcept
-simd.overview#60	simd.overview	simd	std::simd::basic_vec::operator==	call ret noexcept	friend constexpr mask_type operator==(const basic_vec&, const basic_vec&)noexcept
-simd.overview#61	simd.overview	simd	std::simd::basic_vec::operator!=	call ret noexcept	friend constexpr mask_type operator!=(const basic_vec&, const basic_vec&)noexcept
-simd.overview#62	simd.overview	simd	std::simd::basic_vec::operator>=	call ret noexcept	friend constexpr mask_type operator> = (const basic_vec&, const basic_vec&)noexcept
-simd.overview#63	simd.overview	simd	std::simd::basic_vec::operator<=	call ret noexcept	friend constexpr mask_type operator< = (const basic_vec&, const basic_vec&)noexcept
-simd.overview#64	simd.overview	simd	std::simd::basic_vec::operator>	call ret noexcept	friend constexpr mask_type operator>(const basic_vec&, const basic_vec&)noexcept
-simd.overview#65	simd.overview	simd	std::simd::basic_vec::operator<	call ret noexcept	friend constexpr mask_type operator<(const basic_vec&, const basic_vec&)noexcept
+simd.overview#46	simd.overview	simd	std::simd::basic_vec::operator+=	call ret noexcept	friend constexpr basic_vec&operator+=(basic_vec&, const basic_vec&)noexcept
+simd.overview#47	simd.overview	simd	std::simd::basic_vec::operator-=	call ret noexcept	friend constexpr basic_vec&operator-=(basic_vec&, const basic_vec&)noexcept
+simd.overview#48	simd.overview	simd	std::simd::basic_vec::operator*=	call ret noexcept	friend constexpr basic_vec&operator*=(basic_vec&, const basic_vec&)noexcept
+simd.overview#49	simd.overview	simd	std::simd::basic_vec::operator/=	call ret noexcept	friend constexpr basic_vec&operator/=(basic_vec&, const basic_vec&)noexcept
+simd.overview#50	simd.overview	simd	std::simd::basic_vec::operator%=	call ret noexcept	friend constexpr basic_vec&operator%=(basic_vec&, const basic_vec&)noexcept
+simd.overview#51	simd.overview	simd	std::simd::basic_vec::operator&=	call ret noexcept	friend constexpr basic_vec&operator&=(basic_vec&, const basic_vec&)noexcept
+simd.overview#52	simd.overview	simd	std::simd::basic_vec::operator|=	call ret noexcept	friend constexpr basic_vec&operator|=(basic_vec&, const basic_vec&)noexcept
+simd.overview#53	simd.overview	simd	std::simd::basic_vec::operator^=	call ret noexcept	friend constexpr basic_vec&operator^=(basic_vec&, const basic_vec&)noexcept
+simd.overview#54	simd.overview	simd	std::simd::basic_vec::operator<<=	call ret noexcept	friend constexpr basic_vec&operator<< = (basic_vec&, const basic_vec&)noexcept
+simd.overview#55	simd.overview	simd	std::simd::basic_vec::operator>>=	call ret noexcept	friend constexpr basic_vec&operator>> = (basic_vec&, const basic_vec&)noexcept
+simd.overview#56	simd.overview	simd	std::simd::basic_vec::operator==	call ret noexcept	friend constexpr mask_type operator==(const basic_vec&, const basic_vec&)noexcept
+simd.overview#57	simd.overview	simd	std::simd::basic_vec::operator!=	call ret noexcept	friend constexpr mask_type operator!=(const basic_vec&, const basic_vec&)noexcept
+simd.overview#58	simd.overview	simd	std::simd::basic_vec::operator>=	call ret noexcept	friend constexpr mask_type operator> = (const basic_vec&, const basic_vec&)noexcept
+simd.overview#59	simd.overview	simd	std::simd::basic_vec::operator<=	call ret noexcept	friend constexpr mask_type operator< = (const basic_vec&, const basic_vec&)noexcept
+simd.overview#60	simd.overview	simd	std::simd::basic_vec::operator>	call ret noexcept	friend constexpr mask_type operator>(const basic_vec&, const basic_vec&)noexcept
+simd.overview#61	simd.overview	simd	std::simd::basic_vec::operator<	call ret noexcept	friend constexpr mask_type operator<(const basic_vec&, const basic_vec&)noexcept
 simd.mask.overview#1	simd.mask.overview	simd	std::simd::basic_mask	presence	class basic_mask
 simd.mask.overview#2	simd.mask.overview	simd	std::simd::basic_mask::value_type	type	using value_type = bool
 simd.mask.overview#3	simd.mask.overview	simd	std::simd::basic_mask::abi_type	type	using abi_type = Abi
@@ -3522,7 +3518,7 @@ simd.mask.overview#20	simd.mask.overview	simd	std::simd::basic_mask::operator!	c
 simd.mask.overview#21	simd.mask.overview	simd	std::simd::basic_mask::operator+	call noexcept	constexpr ⟨see below⟩ operator+()const noexcept
 simd.mask.overview#22	simd.mask.overview	simd	std::simd::basic_mask::operator-	call noexcept	constexpr ⟨see below⟩ operator-()const noexcept
 simd.mask.overview#23	simd.mask.overview	simd	std::simd::basic_mask::operator~	call noexcept	constexpr ⟨see below⟩ operator~()const noexcept
-simd.mask.overview#24	simd.mask.overview	simd	std::simd::basic_mask::to_bitset	call ret noexcept	constexpr bitset<size()>to_bitset()const noexcept
+simd.mask.overview#24	simd.mask.overview	simd	std::simd::basic_mask::to_bitset	presence (signature not probed)	constexpr bitset<size()>to_bitset()const noexcept
 simd.mask.overview#25	simd.mask.overview	simd	std::simd::basic_mask::to_ullong	call ret	constexpr unsigned long long to_ullong()const
 simd.mask.overview#26	simd.mask.overview	simd	std::simd::basic_mask::operator&&	call ret noexcept	friend constexpr basic_mask operator&&(const basic_mask&, const basic_mask&)noexcept
 simd.mask.overview#27	simd.mask.overview	simd	std::simd::basic_mask::operator||	call ret noexcept	friend constexpr basic_mask operator||(const basic_mask&, const basic_mask&)noexcept
@@ -9909,10 +9905,9 @@ exec.recv.concepts#1	exec.recv.concepts	execution	std::execution::receiver	prese
 exec.recv.concepts#2	exec.recv.concepts	execution	std::execution::inlinable_receiver	presence	concept inlinable_receiver = receiver<Rcvr>&&requires(ChildOp*child){{remove_cvref_t<Rcvr>::make_receiver_for(child)}noexcept->same_as<remove_cvref_t<Rcvr>>;}
 exec.opstate.general#1	exec.opstate.general	execution	std::execution::operation_state	presence	concept operation_state = derived_from<typename O::operation_state_concept, operation_state_tag>&&requires(O&o){start(o);}
 exec.snd.concepts#1	exec.snd.concepts	execution	std::execution::enable_sender	var	inline constexpr bool enable_sender = ⟨enable-sender⟩<Sndr>
-exec.snd.concepts#2	exec.snd.concepts	execution	std::execution::catch	call	catch(dependent_sender_error&)
-exec.snd.concepts#3	exec.snd.concepts	execution	std::execution::sender	presence	concept sender = enable_sender<remove_cvref_t<Sndr>>&&requires(const remove_cvref_t<Sndr>&sndr){{get_env(sndr)}->⟨queryable⟩;}&&move_constructible<remove_cvref_t<Sndr>>&&constructible_from<remove_cvref_t<Sndr>, Sndr>
-exec.snd.concepts#4	exec.snd.concepts	execution	std::execution::sender_in	presence	concept sender_in = sender<Sndr>&&(sizeof...(Env)< = 1)&&(⟨queryable⟩<Env>&&...)&&⟨is-constant⟩<get_completion_signatures<Sndr, Env...>()>
-exec.snd.concepts#5	exec.snd.concepts	execution	std::execution::dependent_sender	presence	concept dependent_sender = sender<Sndr>&&bool_constant<⟨is-dependent-sender-helper⟩<Sndr>()>::value
+exec.snd.concepts#2	exec.snd.concepts	execution	std::execution::sender	presence	concept sender = enable_sender<remove_cvref_t<Sndr>>&&requires(const remove_cvref_t<Sndr>&sndr){{get_env(sndr)}->⟨queryable⟩;}&&move_constructible<remove_cvref_t<Sndr>>&&constructible_from<remove_cvref_t<Sndr>, Sndr>
+exec.snd.concepts#3	exec.snd.concepts	execution	std::execution::sender_in	presence	concept sender_in = sender<Sndr>&&(sizeof...(Env)< = 1)&&(⟨queryable⟩<Env>&&...)&&⟨is-constant⟩<get_completion_signatures<Sndr, Env...>()>
+exec.snd.concepts#4	exec.snd.concepts	execution	std::execution::dependent_sender	presence	concept dependent_sender = sender<Sndr>&&bool_constant<⟨is-dependent-sender-helper⟩<Sndr>()>::value
 exec.domain.indeterminate#1	exec.domain.indeterminate	execution	std::execution::indeterminate_domain	presence	struct indeterminate_domain
 exec.domain.indeterminate#2	exec.domain.indeterminate	execution	std::execution::indeterminate_domain::indeterminate_domain	ctor	indeterminate_domain() = default
 exec.domain.indeterminate#3	exec.domain.indeterminate	execution	std::execution::indeterminate_domain::indeterminate_domain	constructor exists  (deduced type)	constexpr indeterminate_domain(auto&&)noexcept
@@ -9966,14 +9961,12 @@ task.promise#3	task.promise	execution	std::execution::task::promise_type::initia
 task.promise#4	task.promise	execution	std::execution::task::promise_type::final_suspend	call noexcept	auto final_suspend()noexcept
 task.promise#5	task.promise	execution	std::execution::task::promise_type::unhandled_exception	call ret	void unhandled_exception()
 task.promise#6	task.promise	execution	std::execution::task::promise_type::unhandled_stopped	call ret noexcept	coroutine_handle<>unhandled_stopped()noexcept
-task.promise#7	task.promise	execution	std::execution::task::promise_type::return_void	call ret	void return_void()
-task.promise#8	task.promise	execution	std::execution::task::promise_type::return_value	call ret	void return_value(V&&value)
-task.promise#9	task.promise	execution	std::execution::task::promise_type::yield_value	call	⟨unspecified⟩ yield_value(with_error<E>error)
-task.promise#10	task.promise	execution	std::execution::task::promise_type::await_transform	call	auto await_transform(Sender&&sndr)
-task.promise#11	task.promise	execution	std::execution::task::promise_type::get_env	call noexcept	⟨unspecified⟩ get_env()const noexcept
-task.promise#12	task.promise	execution	std::execution::task::promise_type::operator new	call ret	void*operator new(size_t size)
-task.promise#13	task.promise	execution	std::execution::task::promise_type::operator new	call ret	void*operator new(size_t size, allocator_arg_t, Alloc alloc, Args&&...)
-task.promise#14	task.promise	execution	std::execution::task::promise_type::operator delete	call ret noexcept	void operator delete(void*pointer, size_t size)noexcept
+task.promise#7	task.promise	execution	std::execution::task::promise_type::return_value	call ret	void return_value(V&&value)
+task.promise#8	task.promise	execution	std::execution::task::promise_type::await_transform	call	auto await_transform(Sender&&sndr)
+task.promise#9	task.promise	execution	std::execution::task::promise_type::get_env	call noexcept	⟨unspecified⟩ get_env()const noexcept
+task.promise#10	task.promise	execution	std::execution::task::promise_type::operator new	call ret	void*operator new(size_t size)
+task.promise#11	task.promise	execution	std::execution::task::promise_type::operator new	call ret	void*operator new(size_t size, allocator_arg_t, Alloc alloc, Args&&...)
+task.promise#12	task.promise	execution	std::execution::task::promise_type::operator delete	call ret noexcept	void operator delete(void*pointer, size_t size)noexcept
 exec.scope.concepts#1	exec.scope.concepts	execution	std::execution::scope_association	presence	concept scope_association = movable<Assoc>&&is_nothrow_move_constructible_v<Assoc>&&is_nothrow_move_assignable_v<Assoc>&&default_initializable<Assoc>&&requires(const Assoc assoc){{static_cast<bool>(assoc)}noexcept;{assoc.try_associate()}->same_as<Assoc>;}
 exec.scope.concepts#2	exec.scope.concepts	execution	std::execution::scope_token	presence	concept scope_token = copyable<Token>&&requires(const Token token){{token.try_associate()}->scope_association;{token.wrap(declval<⟨test-sender⟩>())}->sender_in<⟨test-env⟩>;}
 exec.scope.simple.counting.general#1	exec.scope.simple.counting.general	execution	std::execution::simple_counting_scope	presence	class simple_counting_scope

@@ -4,5 +4,5 @@
 #define SPEC_PROBE_execution
 #include "../probe_support.hpp"
 namespace p0 { using namespace std; using namespace std::execution; using std::execution::env; } // exec.env#1 presence
-namespace p1 { using namespace std; using namespace std::execution; template<class Z> concept c = requires { spec_probe::dv<spec_probe::dep<Z, const std::execution::env<spec_probe::query_env>&>>().query(spec_probe::dv<spec_probe::dep<Z, execution::get_allocator_t>>(), spec_probe::dv<spec_probe::dep<Z, int&&>>()); }; static_assert(c<void>); } // exec.env#2 call
-namespace p2 { using namespace std; using namespace std::execution; template<class Z> concept c = requires { requires spec_probe::same<decltype(std::execution::env()), std::execution::env<unwrap_reference_t<> >>; }; static_assert(c<void>); } // exec.env#3 deduction guide
+namespace p1 { using namespace std; using namespace std::execution; template<class Z> concept c = requires { spec_probe::dv<spec_probe::dep<Z, const std::execution::env<prop<get_allocator_t, allocator<int>>>&>>().query(spec_probe::dv<spec_probe::dep<Z, get_allocator_t>>(), spec_probe::dv<spec_probe::dep<Z, int&&>>()); }; static_assert(c<void>); } // exec.env#2 call
+namespace p2 { using namespace std; using namespace std::execution; template<class Z> concept c = requires { requires spec_probe::same<decltype(std::execution::env(spec_probe::dv<spec_probe::dep<Z, spec_probe::query_env>>())), std::execution::env<unwrap_reference_t<spec_probe::query_env> >>; }; static_assert(c<void>); } // exec.env#3 deduction guide

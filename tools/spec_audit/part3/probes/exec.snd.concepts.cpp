@@ -4,7 +4,6 @@
 #define SPEC_PROBE_execution
 #include "../probe_support.hpp"
 namespace p0 { using namespace std; using namespace std::execution; static_assert(spec_probe::same<decltype(std::execution::enable_sender<spec_probe::sndr>), const bool>); } // exec.snd.concepts#1 var
-namespace p1 { using namespace std; using namespace std::execution; template<class Z> concept c = requires { std::execution::catch(spec_probe::dv<spec_probe::dep<Z, std::execution::dependent_sender_error&>>()); }; static_assert(c<void>); } // exec.snd.concepts#2 call
-namespace p2 { using namespace std; using namespace std::execution; using std::execution::sender; } // exec.snd.concepts#3 presence
-namespace p3 { using namespace std; using namespace std::execution; using std::execution::sender_in; } // exec.snd.concepts#4 presence
-namespace p4 { using namespace std; using namespace std::execution; using std::execution::dependent_sender; } // exec.snd.concepts#5 presence
+namespace p1 { using namespace std; using namespace std::execution; using std::execution::sender; } // exec.snd.concepts#2 presence
+namespace p2 { using namespace std; using namespace std::execution; using std::execution::sender_in; } // exec.snd.concepts#3 presence
+namespace p3 { using namespace std; using namespace std::execution; using std::execution::dependent_sender; } // exec.snd.concepts#4 presence

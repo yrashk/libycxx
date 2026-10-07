@@ -56,7 +56,7 @@ CLASS = {
     "moneypunct": ["char", "false"], "moneypunct_byname": ["char", "false"],
     "basic_istream_view": None,
     "with_awaitable_senders": ["spec_probe::promise"],
-    "env": ["spec_probe::query_env"],
+    "env": ["prop<get_allocator_t, allocator<int>>"],
     "prop": ["get_allocator_t", "allocator<int>"],
     "task": ["int", "spec_probe::task_env"],
     "fpos": ["mbstate_t"],
@@ -75,8 +75,38 @@ CLASS = {
     "basic_regex": ["char", "regex_traits<char>"],
 }
 
+# Samples by a template parameter's type-constraint (exposition-only concepts without italics).
+CONSTRAINED = {
+    "contiguous_iterator": "const float*", "sized_sentinel_for<I>": "const float*",
+    "simd-integral": "std::simd::vec<unsigned>", "simd-complex": "std::simd::vec<complex<float>>",
+    "math-floating-point": "std::simd::vec<float>", "simd-vec-type": "std::simd::vec<float>",
+    "simd-mask-type": "std::simd::mask<float>", "simd-floating-point": "std::simd::vec<float>",
+    "ranges::contiguous_range": "std::span<float, 4>", "same_as<bitset<size()>>": "bitset<4>", "signed_integral": "int", "unsigned_integral": "unsigned",
+}
+
+# Functions whose Constraints the area's samples do not meet: (subclause, name) -> samples.
+FUNC = {}
+for _f in ("byteswap", "bit_ceil", "bit_floor", "has_single_bit", "shl", "shr", "rotl", "rotr", "bit_width",
+           "countl_zero", "countl_one", "countr_zero", "countr_one", "popcount", "bit_compress", "bit_expand",
+           "bit_reverse", "bit_repeat"):
+    FUNC[("simd.syn", _f)] = {"V": "std::simd::vec<unsigned>", "V0": "std::simd::vec<unsigned>",
+                              "V1": "std::simd::vec<unsigned>", "S": "std::simd::vec<unsigned>"}
+FUNC[("exec.domain.default", "apply_sender")] = {"Tag": "this_thread::sync_wait_t", "Args": "\x06"}
+FUNC[("execution.syn", "apply_sender")] = {"Tag": "this_thread::sync_wait_t", "Args": "\x06"}
+# Declarations probed for presence only: the signature needs more than a sample can give.
+PRESENCE_ONLY = {("simd.syn", "chunk"), ("simd.syn", "cat"), ("simd.mask.overview", "to_bitset")}
+
+# A member whose Constraints the class's sample does not meet: the class arguments to use.
+MEMBER_CLASS = {}
+for _op in ("operator~", "operator%", "operator&", "operator|", "operator^", "operator<<", "operator>>",
+            "operator%=", "operator&=", "operator|=", "operator^=", "operator<<=", "operator>>="):
+    MEMBER_CLASS[("simd.overview", _op)] = ["int", "std::simd::vec<int>::abi_type"]
+for _m in ("real", "imag"):
+    MEMBER_CLASS[("simd.overview", _m)] = ["complex<float>", "std::simd::vec<complex<float>>::abi_type"]
+
 # Samples by template-parameter name, per area (prefix of the stable name).
 BY_AREA = [
+    ("exec.env", {"Envs": "spec_probe::query_env"}),
     ("istream.syn", {"T": "spec_probe::streamable_ref", "Istream": "istream"}),
     ("ostream.syn", {"T": "spec_probe::streamable", "Ostream": "ostream"}),
     ("re", {"Allocator": "allocator<sub_match<const char*>>", "traits": "regex_traits<char>"}),
@@ -121,10 +151,12 @@ BY_AREA = [
     ("rand", {"InputIterator": "const double*", "T": "double"}),
     ("re", {"InputIterator": "const char*"}),
     ("format", {"T": "int", "Out": "char*", "R": "std::span<int>"}),
-    ("simd", {"T": "float", "V": "std::simd::vec<float>", "U": "float", "I": "const float*", "R": "std::span<float, 4>",
+    ("simd.mask", {"G": "spec_probe::mask_generator", "T": "unsigned"}),
+    ("simd", {"T": "float", "V": "std::simd::vec<float>", "U": "float", "I": "std::simd::vec<int>", "R": "std::span<float, 4>",
               "S": "const float*", "M": "std::simd::mask<float>", "Abi": "std::simd::vec<float>::abi_type",
-              "Bytes": "4", "N": "4", "UAbi": "std::simd::vec<float>::abi_type", "VX": "std::simd::vec<int>",
+              "Bytes": "4", "N": "4", "UAbi": "std::simd::rebind_t<double, std::simd::mask<float>>::abi_type", "VX": "std::simd::vec<int>",
               "VS": "std::simd::vec<int>", "V0": "std::simd::vec<float>", "V1": "std::simd::vec<float>",
+              "UBytes": "8",
               "IdxMap": "spec_probe::idxmap", "G": "spec_probe::generator", "BinaryOperation": "plus<>"}),
     ("linalg", {"InMat": "spec_probe::mat", "InMat1": "spec_probe::mat", "InMat2": "spec_probe::mat",
                 "InMat3": "spec_probe::mat", "OutMat": "spec_probe::mat", "InOutMat": "spec_probe::mat",
@@ -135,7 +167,7 @@ BY_AREA = [
                 "OutObj": "spec_probe::vec", "InOutObj": "spec_probe::vec", "InOutObj1": "spec_probe::vec",
                 "InOutObj2": "spec_probe::vec", "Scalar": "double", "Real": "double", "ScalingFactor": "double",
                 "Triangle": "linalg::upper_triangle_t", "DiagonalStorage": "linalg::explicit_diagonal_t",
-                "ExecutionPolicy": "const execution::sequenced_policy&", "Extents": "dextents<size_t, 2>",
+                "ExecutionPolicy": "execution::sequenced_policy", "Extents": "dextents<size_t, 2>",
                 "Layout": "layout_right", "NestedAccessor": "default_accessor<double>",
                 "OtherNestedAccessor": "default_accessor<double>", "StorageOrder": "linalg::column_major_t",
                 "ElementType": "double", "Accessor": "default_accessor<double>", "T": "double",
@@ -144,12 +176,12 @@ BY_AREA = [
     ("exec", {"Sndr": "spec_probe::sndr", "Sender": "spec_probe::sndr", "Rcvr": "spec_probe::rcvr",
               "Env": "execution::env<>", "Sch": "execution::inline_scheduler", "Tag": "execution::set_value_t",
               "Token": "spec_probe::scope_token", "T": "int", "Promise": "spec_probe::promise",
-              "QueryTag": "execution::get_allocator_t", "E": "int", "Scope": "execution::counting_scope",
+              "QueryTag": "get_allocator_t", "E": "int", "Scope": "execution::counting_scope",
               "Data": "int", "Alloc": "allocator<int>", "Environment": "spec_probe::task_env", "V": "int"}),
     ("execution", {"Sndr": "spec_probe::sndr", "Sender": "spec_probe::sndr", "Rcvr": "spec_probe::rcvr",
                    "Env": "execution::env<>", "Sch": "execution::inline_scheduler", "Tag": "execution::set_value_t",
                    "Token": "spec_probe::scope_token", "T": "int", "Promise": "spec_probe::promise",
-                   "QueryTag": "execution::get_allocator_t", "E": "int", "CPO": "execution::set_value_t",
+                   "QueryTag": "get_allocator_t", "E": "int", "CPO": "execution::set_value_t",
                    "ValueType": "int", "Domain": "execution::default_domain", "D": "spec_probe::derived_env"}),
     ("task", {"T": "int", "Environment": "spec_probe::task_env", "Alloc": "allocator<int>", "E": "int",
               "Sndr": "spec_probe::sndr", "Sender": "spec_probe::sndr", "Rcvr": "spec_probe::rcvr",
@@ -223,6 +255,9 @@ PLACEHOLDERS = {
 
 # Declarations the draft makes optional or implementation-defined: (subclause, name) -> why.
 SKIP = {
+    ("exec.snd.concepts", "catch"): "not a declaration (code of a consteval function body)",
+    ("task.promise", "return_void"): "declared only when T is void ([task.promise]/1); the sample is task<int>",
+    ("task.promise", "yield_value"): "the with_error argument needs an error type of the environment's error_types",
     # [thread.req.native]/1: the presence of native_handle_type and native_handle is
     # implementation-defined (STATUS: no native_handle for mutexes and condition variables)
     ("thread.mutex.class", "native_handle_type"): "", ("thread.mutex.class", "native_handle"): "",
@@ -258,6 +293,9 @@ def sample_for(p, sec):
             return "\x06" + PACKS[p.name]
         return None
     if p.kind == "value":
+        tab = area_table(sec)
+        if p.name in tab:
+            return tab[p.name]
         if p.name in VALUES:
             return VALUES[p.name]
         t = D.render(p.type) if p.type else ""
@@ -270,6 +308,10 @@ def sample_for(p, sec):
         return None
     if p.kind == "template":
         return None
+    if p.constraint:
+        c = D.render(p.constraint).replace("⟨", "").replace("⟩", "")
+        if c in CONSTRAINED:
+            return CONSTRAINED[c]
     tab = area_table(sec)
     if p.name in tab:
         return tab[p.name]   # "=a|b" names other samples (resolved in params_env)
@@ -312,7 +354,7 @@ def params_env(params, decl, env):
     for p in params:
         if p.name is None:
             continue
-        v = sample_for(p, decl.sec)
+        v = FUNC.get((decl.sec, decl.name), {}).get(p.name) or sample_for(p, decl.sec)
         if v is not None and v.startswith("="):
             v = next((env[k] for k in v[1:].split("|") if k in env), None)
         if v is None:

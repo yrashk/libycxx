@@ -167,6 +167,7 @@ class Gen:
             if d.sec.endswith(".syn") and d.kind not in ("empty",) and not d.expos:
                 syn[d.header].add(d.fs)
         self.fs_headers = {h for h, f in syn.items() if f == {"freestanding"}}
+        self.fs_partial = {h for h, f in syn.items() if "freestanding" in f}
         self.checks = []          # (id, sec, header, entity, what, decl, code, ns)
         self.classes = collections.defaultdict(list)   # (ns, path) -> [classdef Decl]
         self.members = collections.defaultdict(dict)   # (ns, path) -> {name: kind}
@@ -278,7 +279,7 @@ class Gen:
         """The macros a header synopsis defines: #define NAME."""
         hdrs = INV.section_headers(data)
         for s in data["sections"]:
-            if s["id"] not in hdrs:
+            if s["id"] not in hdrs or s["id"] == "version.syn":
                 continue
             for kind, text in s["regions"]:
                 for m in re.finditer(r"(?m)^[ \t]*#define\s+([A-Za-z_]\w*)(\x01N\x02)?(.*)$", text):
@@ -291,6 +292,29 @@ class Gen:
                         d = D.Decl([], [], [("ns", "", False)], "public", False, None)
                         d.sec, d.header, d.name, d.kind = s["id"], hdrs[s["id"]], nm, "macro"
                         self.add(d, "macro", "#" + nm, ent=nm)
+
+    def feature_macros(self, data):
+        """[version.syn]: each __cpp_lib macro that one of these clauses' headers also defines has
+        the specified value in <version> and in each of those headers (freestanding too, where
+        its comment says so)."""
+        hdrs = INV.section_headers(data)
+        mine = {h for sid, h in hdrs.items() if sid != "version.syn"}
+        text = "".join(t for s in data["sections"] if s["id"] == "version.syn" for k, t in s["regions"])
+        for m in re.finditer(r"#define\s+(__cpp_lib_\w+)\s+(\d+L)\s*(\x04[^\x05]*\x05)?", text):
+            name, value, comment = m.group(1), m.group(2), m.group(3) or ""
+            also = re.findall(r"<([\w./]+)>", comment)
+            ours = [h for h in also if h in mine]
+            if not ours:
+                continue
+            if name.startswith("__cpp_lib_hardened_"):
+                continue   # [version.syn]/3: hardened implementations only (YCXX_HARDENED=1)
+            fs = "freestanding" in comment
+            for h in ["version"] + ours:
+                # in freestanding: <version> and the headers with freestanding declarations
+                hfs = fs and (h == "version" or h in self.fs_partial)
+                d = D.Decl([], [], [("ns", "", False)], "public", False, "freestanding" if hfs else None)
+                d.sec, d.header, d.name, d.kind = f"version.syn@{h}", h, name, "macro"
+                self.add(d, f"macro value {value}", f"#if:!defined({name}) || ({name}) != {value}", ent=name)
 
     # ---- emit -------------------------------------------------------------------------------
     def add(self, d, what, code, ent=None):
@@ -824,6 +848,9 @@ def write(gen, outdir, inline_ns, only=None):
             if not code:
                 continue
             code = code.replace(PACK, "")
+            if code.startswith("#if:"):
+                lines += ["#if " + code[4:], f"static_assert(false, \"{ent}\"); // {cid} {what}", "#endif"]
+                continue
             if code.startswith("#"):
                 macro = code[1:]
                 lines += [f"#ifndef {macro}", f"static_assert(false, \"{macro}\"); // {cid} {what}", "#endif"]
@@ -843,6 +870,7 @@ def main():
     g = Gen(ents)
     g.run()
     g.macros(data)
+    g.feature_macros(data)
     write(g, pathlib.Path(a.out), None)
     # the freestanding declarations, compiled with -ffreestanding (run.py --freestanding)
     write(g, pathlib.Path(a.out) / "freestanding", None, g.freestanding)

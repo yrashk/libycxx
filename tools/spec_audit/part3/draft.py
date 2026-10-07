@@ -14,7 +14,8 @@ marker \\x03. Other comments are dropped.
 import argparse, json, pathlib, re, sys
 from html.parser import HTMLParser
 
-ROOTS = ("text", "numerics", "time", "input.output", "thread", "exec", "depr", "zombie.names")
+ROOTS = ("text", "numerics", "time", "input.output", "thread", "exec", "depr", "zombie.names",
+         "version.syn")   # the feature-test macros of these clauses' headers
 IT0, IT1, EXPOS = "\x01", "\x02", "\x03"
 
 
@@ -106,7 +107,9 @@ class Extract(HTMLParser):
                     self.comment -= 1
                     if self.comment == 0 and self.cur is not None:
                         txt = "".join(self.comment_text)
-                        if re.match(r"\s*(//|/\*)\s*(for\s+)?exposition[ -]only", txt, re.I):
+                        if self.cur_sec == "version.syn":
+                            self.cur.append("" + txt + "")   # `// freestanding, also in <atomic>`
+                        elif re.match(r"\s*(//|/\*)\s*(for\s+)?exposition[ -]only", txt, re.I):
                             self.cur.append(EXPOS)
                         elif re.search(r"\boptional\b", txt):
                             self.cur.append("\x04optional\x05")

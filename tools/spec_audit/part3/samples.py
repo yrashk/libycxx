@@ -297,6 +297,13 @@ EXTRA = [
      _C.format("{ %s.make_ready_at_thread_exit(%s) } -> spec_probe::same<void>;" % (_dv.format("std::packaged_task<int(int)>&"), _dv.format("int")))),
     ("depr.fs.path.factory", "filesystem", "std::filesystem", "std::filesystem::u8path", "presence",
      "using std::filesystem::u8path;"),
+    # Behaviour probes for gaps fixed after the audit (docs/SPEC_COVERAGE.md part 3, G8): the value
+    # completion domain of when_all and let_value is their children's / the returned sender's
+    # ([exec.snd.general]/3, [exec.when.all]/15, [exec.let]/10).
+    ("exec.when.all", "execution", "std::execution", "std::execution::when_all", "attrs completion domain",
+     'struct d_ {}; struct s_ { using sender_concept = sender_tag; template <class, class...> static consteval auto get_completion_signatures() { return completion_signatures<set_value_t(int)>(); } struct a_ { template <class... E> d_ query(get_completion_domain_t<set_value_t>, const E&...) const noexcept { return {}; } }; a_ get_env() const noexcept { return {}; } }; static_assert(spec_probe::same<decltype(get_completion_domain<set_value_t>(get_env(when_all(s_(), s_())), env<>())), d_>);'),
+    ("exec.let", "execution", "std::execution", "std::execution::let_value", "attrs completion domain",
+     'struct d_ {}; struct s_ { using sender_concept = sender_tag; template <class, class...> static consteval auto get_completion_signatures() { return completion_signatures<set_value_t(int)>(); } struct a_ { template <class... E> d_ query(get_completion_domain_t<set_value_t>, const E&...) const noexcept { return {}; } }; a_ get_env() const noexcept { return {}; } }; static_assert(spec_probe::same<decltype(get_completion_domain<set_value_t>(get_env(let_value(just(), [] { return s_(); })), env<>())), d_>);'),
 ]
 
 # Declarations whose sample cannot be right: (subclause, text in the declaration), why.

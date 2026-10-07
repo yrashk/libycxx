@@ -43,12 +43,24 @@
 // Evaluation. Waiting for readers happens with no lock held; evaluations then run under
 // evaluation_m, one batch at a time: the batch is detached from the queue (the prefix of
 // epochs <= e) and evaluated in the same critical section, so a thread that holds evaluation_m
-// knows that every entry no longer queued has been evaluated. A barrier therefore waits for the
-// readers to pass its bound, takes evaluation_m (which also waits for a batch another thread
-// took earlier) and evaluates the queued prefix. Outside a region the bound is the last queued
-// epoch; inside one it is the region's start - 1, i.e. the entries retired before the region
-// began. An entry retired after the caller's region began cannot be evaluated before the region
-// ends ([saferecl.rcu.general]/5), so a barrier inside the region does not wait for it.
+// knows that every entry no longer queued has been evaluated (or is being evaluated by this very
+// thread, below). A barrier therefore waits for the readers to pass its bound, takes evaluation_m
+// (which also waits for a batch another thread took earlier) and evaluates the queued prefix.
+// Outside a region the bound is the last queued epoch; inside one it is the region's start - 1,
+// i.e. the entries retired before the region began. An entry retired after the caller's region
+// began cannot be evaluated before the region ends ([saferecl.rcu.general]/5): one the caller
+// retired itself is sequenced before the barrier, which [saferecl.rcu.domain.func]/4 then
+// requires to block for ever (the bound includes it, and the caller's own record never lets the
+// wait end; a hardened precondition check reports it, as for rcu_synchronize); one another
+// thread retired is taken as not happening before the call, and not waited for.
+//
+// A barrier inside a scheduled evaluation (this thread holds evaluation_m and runs a batch) first
+// evaluates the rest of that batch, then waits for the readers to pass its bound and evaluates
+// the queued prefix, all without releasing evaluation_m: everything scheduled before the call
+// is evaluated when it returns, except the evaluations in progress on this thread (the caller,
+// and the ones whose barriers called it), which cannot finish before it returns (a draft
+// defect: /4 asks for them too). Its batch is the shared `__batch` list, so the evaluation that
+// called it finds the list empty afterwards and nothing runs twice.
 #include <new>
 #include <ycxx/hosted/rcu.hpp>
 #include <ycxx/hosted/thread_support.hpp>
@@ -86,6 +98,8 @@ ycxx_pal_u32 queued = 0;            // atomic (written under queue_m)
 constinit thread_local unsigned depth = 0;               // the nesting depth of this thread's regions
 constinit thread_local reader_record* __record = nullptr;  // this thread's record, once it has one
 constinit thread_local bool evaluating = false;          // this thread runs a batch of evaluations
+constinit thread_local epoch_t own_retired = 0;          // the epoch of this thread's last retire
+__rcu_node* __batch = nullptr; // the batch being evaluated, detached from the queue (under evaluation_m)
 
 bool try_own(reader_record* r) noexcept {
   ycxx_pal_u32 free = 0;
@@ -101,10 +115,11 @@ void readers_changed() noexcept {
 }
 
 // At thread end (after its thread_local objects are destroyed): gives the record back. A thread
-// that ends inside a region ends the region. The record comes as the argument: the hook runs among
-// the thread's key destructors, where the thread's own thread_local storage may already be gone
-// (POSIX leaves their order unspecified; on Darwin a thread_local read there is fresh storage,
-// zero again, with both native and emulated TLS), so it reads and writes no thread_local.
+// that ends inside a region ends the region. The record comes as the argument: the hook may run
+// among the thread's key destructors (the PAL's fallback), where the thread's own thread_local
+// storage may already be gone (POSIX leaves their order unspecified; on Darwin a thread_local
+// read there is fresh storage, zero again, with both native and emulated TLS), so it reads and
+// writes no thread_local.
 void release_record(void* arg) noexcept {
   reader_record* r = static_cast<reader_record*>(arg);
   __atomic_store_n(&r->start, epoch_t(0), __ATOMIC_SEQ_CST);
@@ -173,23 +188,40 @@ void wait_for_readers(epoch_t e) noexcept {
   __atomic_fetch_sub(&waiting, 1, __ATOMIC_RELAXED);
 }
 
+// Evaluates `__batch` to its end (evaluation_m held). An evaluation may call rcu_barrier, which
+// continues with the same list.
+void run_batch() noexcept {
+  const bool __outer = evaluating;
+  evaluating = true;
+  while (__batch) {
+    __rcu_node* __x = __batch;
+    __batch = __x->__rcu_next_;
+    __x->__rcu_run_(__x);
+  }
+  evaluating = __outer;
+}
+
 // Evaluates the queued entries of epoch <= e, after waiting for the readers to pass e, and after
-// any batch another thread has taken.
+// any batch another thread has taken. Called from inside an evaluation (`evaluating`: this thread
+// holds evaluation_m), it first finishes this thread's batch and waits with the lock held.
 void evaluate_through(epoch_t e) noexcept {
+  const bool __nested = evaluating;
+  if (__nested)
+    run_batch();
   queue_m.lock();
   const bool any = queue_head && queue_head->__rcu_epoch_ <= e;
   queue_m.unlock();
   if (any)
     wait_for_readers(e);
-  evaluation_m.lock();
+  if (!__nested)
+    evaluation_m.lock();
   queue_m.lock();
-  __rcu_node* list = nullptr;
   if (queue_head && queue_head->__rcu_epoch_ <= e) {
     __rcu_node* last = queue_head;
     ycxx_pal_u32 n = 1;
     for (; last->__rcu_next_ && last->__rcu_next_->__rcu_epoch_ <= e; ++n)
       last = last->__rcu_next_;
-    list = queue_head;
+    __batch = queue_head;
     queue_head = last->__rcu_next_;
     last->__rcu_next_ = nullptr;
     if (!queue_head)
@@ -197,14 +229,9 @@ void evaluate_through(epoch_t e) noexcept {
     __atomic_store_n(&queued, __atomic_load_n(&queued, __ATOMIC_RELAXED) - n, __ATOMIC_RELAXED);
   }
   queue_m.unlock();
-  evaluating = true;
-  while (list) {
-    __rcu_node* __x = list;
-    list = __x->__rcu_next_;
-    __x->__rcu_run_(__x);
-  }
-  evaluating = false;
-  evaluation_m.unlock();
+  run_batch();
+  if (!__nested)
+    evaluation_m.unlock();
 }
 
 // The epoch of the last queued entry (0 when the queue is empty).
@@ -250,17 +277,30 @@ void __rcu_unlock() noexcept {
   evaluate_if_due();
 }
 
+bool __rcu_inside_region() noexcept { return depth != 0; }
+
 void rcu_synchronize() noexcept {
-  ::__ycxx::__detail::__precondition(depth == 0, "rcu_synchronize: called inside a region of RCU protection");
+  // (std::rcu_synchronize checks depth == 0 as a hardened precondition first: the header's
+  // check, since the runtime is not built with YCXX_HARDENED.)
   wait_for_readers(__atomic_fetch_add(&epoch, 1, __ATOMIC_SEQ_CST));
 }
 
 void rcu_barrier() noexcept {
-  if (evaluating) // from a scheduled evaluation: what this thread's batch holds is being evaluated
+  if (depth == 0) {
+    evaluate_through(last_queued());
     return;
+  }
   // Inside a region: what was retired before the region began (start - 1); the region's own
-  // start never holds that back.
-  evaluate_through(depth == 0 ? last_queued() : __atomic_load_n(&__record->start, __ATOMIC_RELAXED) - 1);
+  // start never holds that back. What this thread retired since then the region holds back
+  // until it ends, and the barrier must wait for it ([saferecl.rcu.domain.func]/4,
+  // [saferecl.rcu.general]/5): it never returns then.
+  // (std::rcu_barrier checks that as a hardened precondition first, __rcu_barrier_would_block.)
+  const epoch_t start = __atomic_load_n(&__record->start, __ATOMIC_RELAXED);
+  evaluate_through(own_retired < start ? start - 1 : own_retired);
+}
+
+bool __rcu_barrier_would_block() noexcept {
+  return depth != 0 && own_retired >= __atomic_load_n(&__record->start, __ATOMIC_RELAXED);
 }
 
 void __rcu_schedule(__rcu_node* n) noexcept {
@@ -268,6 +308,7 @@ void __rcu_schedule(__rcu_node* n) noexcept {
   queue_m.lock();
   n->__rcu_epoch_ = __atomic_fetch_add(&epoch, 1, __ATOMIC_SEQ_CST);
   queue_last = n->__rcu_epoch_;
+  own_retired = n->__rcu_epoch_;
   *queue_tail = n;
   queue_tail = &n->__rcu_next_;
   __atomic_store_n(&queued, __atomic_load_n(&queued, __ATOMIC_RELAXED) + 1, __ATOMIC_RELAXED);

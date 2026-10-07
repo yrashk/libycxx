@@ -30,8 +30,29 @@ sys.path.insert(0, str(pathlib.Path(__file__).parent))
 import decls as D
 import inventory as INV
 import samples as SMP
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[2]))   # tools/headers.py
 
 HERE = pathlib.Path(__file__).parent
+
+
+# [zombie.names] Tables 38-41 (the names the draft lists; checked against the draft's text by
+# gen.py --check-zombies)
+ZOMBIE_STD = """auto_ptr auto_ptr_ref binary_function binary_negate bind1st bind2nd binder1st binder2nd
+codecvt_mode codecvt_utf16 codecvt_utf8 codecvt_utf8_utf16 const_mem_fun1_ref_t const_mem_fun1_t
+const_mem_fun_ref_t const_mem_fun_t consume_header declare_no_pointers declare_reachable generate_header
+get_pointer_safety get_temporary_buffer get_unexpected gets is_literal_type is_literal_type_v istrstream
+little_endian mem_fun1_ref_t mem_fun1_t mem_fun_ref_t mem_fun_ref mem_fun_t mem_fun not1 not2 ostrstream
+pointer_safety pointer_to_binary_function pointer_to_unary_function ptr_fun random_shuffle
+raw_storage_iterator result_of result_of_t return_temporary_buffer set_unexpected strstream strstreambuf
+unary_function unary_negate uncaught_exception undeclare_no_pointers undeclare_reachable
+unexpected_handler wbuffer_convert wstring_convert""".split()
+ZOMBIE_MACROS = """argument_type first_argument_type io_state op open_mode preferred second_argument_type seek_dir
+strict converted freeze from_bytes pcount stossc to_bytes""".split()
+ZOMBIE_HEADERS = "ccomplex ciso646 codecvt cstdalign cstdbool ctgmath strstream".split()
+
+
+# A macro of a subclause that names another header ([depr.c.macros]: <stdbool.h>).
+MACRO_HEADER = {"__bool_true_false_are_defined": "stdbool.h"}
 
 
 class Unprobeable(Exception):
@@ -278,6 +299,12 @@ class Gen:
     def macros(self, data):
         """The macros a header synopsis defines: #define NAME."""
         hdrs = INV.section_headers(data)
+        # Annex D's macros: the header of the subclause (INV.HEADER_OF)
+        for s in data["sections"]:
+            if s["id"].startswith("depr.") and s["id"] != "depr.atomics.types.operations":
+                h = next((hh for pre, hh in INV.HEADER_OF if s["id"].startswith(pre)), None)
+                if h and any("#define" in t for k, t in s["regions"]):
+                    hdrs[s["id"]] = h
         for s in data["sections"]:
             if s["id"] not in hdrs or s["id"] == "version.syn":
                 continue
@@ -290,7 +317,7 @@ class Gen:
                         if (s["id"], nm) in SMP.SKIP:
                             continue
                         d = D.Decl([], [], [("ns", "", False)], "public", False, None)
-                        d.sec, d.header, d.name, d.kind = s["id"], hdrs[s["id"]], nm, "macro"
+                        d.sec, d.header, d.name, d.kind = s["id"], MACRO_HEADER.get(nm, hdrs[s["id"]]), nm, "macro"
                         self.add(d, "macro", "#" + nm, ent=nm)
 
     def feature_macros(self, data):
@@ -315,6 +342,30 @@ class Gen:
                 d = D.Decl([], [], [("ns", "", False)], "public", False, "freestanding" if hfs else None)
                 d.sec, d.header, d.name, d.kind = f"version.syn@{h}", h, name, "macro"
                 self.add(d, f"macro value {value}", f"#if:!defined({name}) || ({name}) != {value}", ent=name)
+
+    def zombie_names(self, data):
+        """[zombie.names]: with every header included, no zombie name of Table 38 is declared in
+        std, none of Tables 39-40 is a macro, and the zombie headers of Table 41 do not exist.
+        (Reserved names: an implementation may declare them; libycxx does not, STATUS "Deliberate
+        omissions".) The tables are read from the draft's text."""
+        sec = next((s for s in data["sections"] if s["id"] == "zombie.names"), None)
+        if sec is None:
+            return
+        import headers as H
+        names = ZOMBIE_STD
+        def mk(kind, name, what, code):
+            d = D.Decl([], [], [("ns", "", False)], "public", False, None)
+            d.sec, d.header, d.name, d.kind = "zombie.names", "", name, kind
+            self.add(d, what, code, ent=name)
+        for n in names:
+            mk("zombie", n, "not declared in std",
+               f"#zombie:namespace zombie_{n} {{ struct {n}; }} namespace zp_{n} {{ using namespace std; using namespace zombie_{n}; using t = {n}*; }}")
+        for n in ZOMBIE_MACROS:
+            mk("zombie", n, "not a macro", f"#if:defined({n})")
+        for h in ZOMBIE_HEADERS:
+            mk("zombie", h, "header absent", f"#if:__has_include(<{h}>)")
+        self.zombie_headers = [h for h in dict.fromkeys(H.CORE + H.FREESTANDING_SUBSET + H.HOSTED)
+                               if h not in ("meta", "contracts")]
 
     # ---- emit -------------------------------------------------------------------------------
     def add(self, d, what, code, ent=None):
@@ -876,6 +927,8 @@ def write(gen, outdir, inline_ns, only=None):
             by_sec.setdefault(c[1], []).append(c)
     for sec, cs in by_sec.items():
         headers = sorted({c[2] for c in cs if c[2]})
+        if sec == "zombie.names":
+            headers = gen.zombie_headers
         lines = [f"// Spec-audit probes for [{sec}], generated by tools/spec_audit/part3/gen.py; do not edit.",
                  "// One check per line (see gen.py); the runner maps diagnostics to the check IDs below."]
         for h in headers:
@@ -888,6 +941,9 @@ def write(gen, outdir, inline_ns, only=None):
             if not code:
                 continue
             code = code.replace(PACK, "")
+            if code.startswith("#zombie:"):
+                lines.append(f"{code[8:]} // {cid} {what}")
+                continue
             if code.startswith("#if:"):
                 lines += ["#if " + code[4:], f"static_assert(false, \"{ent}\"); // {cid} {what}", "#endif"]
                 continue
@@ -911,6 +967,7 @@ def main():
     g.run()
     g.macros(data)
     g.feature_macros(data)
+    g.zombie_names(data)
     write(g, pathlib.Path(a.out), None)
     # the freestanding declarations, compiled with -ffreestanding (run.py --freestanding)
     write(g, pathlib.Path(a.out) / "freestanding", None, g.freestanding)

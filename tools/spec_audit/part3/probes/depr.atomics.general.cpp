@@ -8,3 +8,6 @@ namespace p1 { using namespace std; template<class Z> concept c = requires { { s
 namespace p2 { using namespace std; template<class Z> concept c = requires { { std::kill_dependency(spec_probe::dv<spec_probe::dep<Z, int>>()) } -> spec_probe::same<int>; requires noexcept(std::kill_dependency(spec_probe::dv<spec_probe::dep<Z, int>>())); }; static_assert(c<void>); } // depr.atomics.general#3 call ret noexcept
 namespace p3 { using namespace std; static_assert([]() consteval { auto a0 = spec_probe::sample<int>(); (void)(std::kill_dependency(a0)); return true; }()); } // depr.atomics.general#4 constexpr
 namespace p4 { using namespace std; static_assert(spec_probe::same<decltype(std::memory_order_consume), const memory_order>); } // depr.atomics.general#5 var
+#ifndef ATOMIC_VAR_INIT
+static_assert(false, "ATOMIC_VAR_INIT"); // depr.atomics.general#6 macro
+#endif

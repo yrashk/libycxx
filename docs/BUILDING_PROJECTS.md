@@ -760,6 +760,7 @@ By hand (commands as in the sections above):
 | ccache, `target_precompile_headers` | toolchain file | second build all hits; PCH OK | PCH OK |
 | clangd 22.1 `--check` | `ycxx::ycxx` database (GCC build) / wrapper database with the `.clangd` above (Clang build) | 0 errors | 0 errors |
 | ASan+UBSan with the uninstrumented libycxx | `ycxx-c++ -fsanitize=address,undefined` | | heap overflow reported |
+| `tests/integration/cmake-project` against libycxx built with `-DYCXX_SANITIZE=thread` | that installation's toolchain file, `-fsanitize=thread` | | runs clean; a racy program's race is reported |
 | `-DYCXX_HARDENED=1` | `ycxx-c++` | | `vector::operator[]` out of range aborts (134) |
 | Meson reading `CC`/`CXX` (no native file) | `meson-project` | | builds, `ycxx-check-binary` OK |
 

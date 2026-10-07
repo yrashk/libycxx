@@ -1207,9 +1207,9 @@ under the same name. Otherwise it gets one alias template in `config.hpp`.
   `local_time_format` without abbreviation) by `format`. Without `L` the "C" locale's names are
   built in; with it the locale-dependent conversions (`%a %A %b %B %c %p %r %x %X` and the E/O
   forms) go through the formatting locale's `time_put` (runtime: `src/hosted/chrono.cpp`), `%S`
-  takes its decimal point and a duration's count without chrono-specs its digit grouping
-  (`numpunct`, as `os << d` would). When that `time_put` is the classic locale's facet (which every
-  supported named locale shares), its conventions are the "C" locale's and the built-in forms are
+  takes its decimal point and a duration's count without chrono-specs goes through its `num_put`
+  (as `os << d` would; next item). When that `time_put` is the classic locale's facet (that of
+  "C", "POSIX" and "C.UTF-8"; a named locale has its `time_put_byname`), its conventions are the "C" locale's and the built-in forms are
   used, so `{:L...}` with the "C" locale equals `{:...}` ([time.format]/2) even where a C `tm`
   cannot carry the value (a duration's hours beyond 23; years outside 1-9999, which `%Y` pads to
   four digits and `strftime` does not). A `time_put` of the locale's own gets a `tm` with the
@@ -1223,9 +1223,60 @@ under the same name. Otherwise it gets one alias template in `config.hpp`.
   the literal encoding is Unicode. The stream inserters write the same text (no `<sstream>`
   dependency: the duration inserter formats the count through a private stream on a string
   buffer). `time_point`'s default constructor is `noexcept` (a strengthening).
-- **Parsing** reads the stream buffer directly after an unformatted-input sentry. Names (`%a %b %p`)
-  and `%c %x %X %r` are the "C" locale's; white space is the stream's `ctype`; `%S`'s decimal point
-  is `.` or the stream locale's. A width counts digits only (a sign does not count). The fields
+- **The L option and the facets** ([time.format]/2-3, /7). The wording names no facet for the
+  locale-dependent specifiers ("the locale's abbreviated weekday name", "the locale's alternative
+  representation"); the locale's `time_put<charT>` is the facet that defines them
+  ([locale.time.put]: the locale's strftime conversions), so every one of them (`%a %A %b %B %h
+  %c %p %r %x %X` and each E/O form) is written by `use_facet<time_put<charT>>(loc).put(..., spec,
+  mod)`: a program's own time_put, derived from `time_put` or `time_put_byname`, sees every such
+  call. The numbers of the other specifiers are "decimal numbers" with no locale in the wording;
+  only `%S`'s decimal point is "localized according to the locale" (`numpunct::decimal_point`).
+  Without chrono-specs, /7 formats "as if by streaming ... to basic_ostringstream<charT> os with the
+  formatting locale imbued", and a duration's inserter ([time.duration.io]/1) is `s << d.count()`:
+  the count goes through the locale's `num_put<charT>` with the stream's default flags (precision
+  6, or the format's precision for a floating-point rep), as the `operator<<` overload of the rep
+  would call it (`short`/`int` as `long`, `float` as `double`, ...). When that `num_put` is the
+  classic object (every named locale shares it, §7) its stage 2 is computed in the header from
+  `numpunct` (the same text, no stream); a program's own `num_put` is called through the hosted
+  runtime (`src/hosted/chrono.cpp`, char and wchar_t). Character reps keep the number form.
+- **Parsing** reads the stream buffer directly after an unformatted-input sentry. White space is
+  the stream's `ctype`; `%S`'s decimal point is `.` or the stream locale's. Table 134's
+  locale-dependent flags ("the locale's full or abbreviated case-insensitive weekday name",
+  "the locale's date and time representation", "the locale's alternative representation", ...)
+  read the stream's locale: its `time_get<charT, istreambuf_iterator<charT, traits>>` facet `tg`,
+  the facet whose virtuals are the locale's strptime conversions ([locale.time.get.virtuals]/11).
+  [time.parse] itself names no facet. Three cases, decided once per `from_stream`:
+  - *No such facet, or the classic locale's object*: the "C" locale's names and `%c %x %X %r`
+    are built in (as before; no virtual call), and E/O forms read as the plain ones.
+  - *A `time_get_byname` of a named locale* (its data from §7: names, AM/PM, `D_T_FMT` & co., and
+    now `ERA`, `ERA_D_T_FMT`, `ERA_D_FMT`, `ERA_T_FMT` and the alternative digits): `%c %x %X %r`
+    and `%Ec %Ex %EX` expand to the locale's format (the E one when the locale has it), parsed by
+    the scanner itself flag by flag, so their fields, `%S` fractions and a `%Z` inside them are
+    recorded as if written in the format; `%EC` matches an era name and `%Ey` a year within it
+    (year = the era's start year +/- (`%Ey` - its offset), POSIX `ERA` segments; without `%EC`,
+    `%Ey` is `%y`); `%OU %OW %OV %Ou` read the locale's alternative digits. Everything else
+    that depends on the locale (names, `%p`, `%EY`, the other O forms) is one call of
+    `tg.get(..., spec, mod)` on a `tm`, so a program's facet derived from `time_get_byname` is
+    still called for those.
+  - *Any other facet* (a program's, derived from `time_get`): every locale-dependent flag,
+    `%c %x %X %r` included, is one call of `tg.get(..., spec, mod)`; the fields it set are found
+    by filling the `tm` with a sentinel first (-1200000: negative and a multiple of 12, so `%I`
+    and `%p` combine in either order). `%EC` reads as `%C` and `%OU %OW %OV %Ou` as the plain
+    forms (no `tm` member holds them).
+  `time_get_byname` gains what this needs, as strptime does: `%Ec %Ex %EX` read the era formats
+  (else the plain ones), `%EC` an era name, `%Ey` a year of that era within one `get(fmt)` call,
+  `%EY` a full era year (the era formats, matched in parallel without backtracking), and every O
+  form the locale's alternative digits (longest match) or ASCII digits. Alternative digits come
+  from the locale itself: `strftime_l("%Oy")` of the years 1900-1999, kept only when they differ
+  from the decimal forms (no knowledge of how a C library lays out `ALT_DIGITS`). The era
+  segments are `nl_langinfo_l(ERA)`: POSIX separates them with `;`; glibc returns them separated
+  by NULs with their count in `_NL_TIME_ERA_NUM_ENTRIES`, which CMake detects
+  (`_YCXX_C_HAS_ERA_NUM_ENTRIES`, cmake/ycxx-c-library.cmake); a segment that does not have the
+  POSIX form ends the list. Names compare through `ctype<charT>::tolower` (so a multibyte
+  UTF-8 name in a char stream compares its non-ASCII bytes exactly; a wchar_t stream folds them).
+  Rejected: parsing every locale-dependent flag through `tg.get` (the `tm` loses `%S` fractions,
+  `%Z`, week numbers and eras), and reading the C library's tables in the header (named locales
+  would be read twice; a program's facet would be ignored). A width counts digits only (a sign does not count). The fields
   must agree (a weekday with a date, `%H` with `%I`/`%p`); a date comes from y/m/d, y + `%j`, an ISO
   week date or y + `%U`/`%W` + weekday. A duration parsed with a finer field than it can hold is
   truncated (`duration_cast`). For `utc_time`, a seconds field of 60 names the leap second.

@@ -1,0 +1,8 @@
+# EnTT: entity-component-system: heavy template metaprogramming, type erasure (its own any),
+# containers, allocators, hashing. Tests with GoogleTest.
+url = https://github.com/skypjack/entt.git
+ref = v4.0.0
+commit = 85c6bba014049b5de8fad49d25424df2f1f6a8c1
+exercises = templates, allocators, containers, type erasure
+deps = googletest
+configure = -DENTT_BUILD_TESTING=ON -DENTT_FIND_GTEST_PACKAGE=ON

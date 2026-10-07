@@ -57,17 +57,18 @@ namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __abi {
 
 using namespace __cxxabiv1;
 
-__rtti_kind __kind_of(const std::type_info& t) noexcept {
+__rtti_kind __kind_of_any(const std::type_info& t) noexcept {
   // The dynamic type of a type_info object is one of the ABI classes. Their type_info objects
   // are normally this runtime's, so addresses are compared first. Every image linking libycxx
   // has its own hidden copy of the runtime (DECISIONS §2), so a type_info object emitted in
   // another such image (an exception thrown there) is an instance of that copy's classes: then
   // the names are compared.
   const std::type_info* d = &typeid(t);
-  const struct {
+  struct __kind_entry {
     const std::type_info* type;
     __rtti_kind kind;
-  } __kinds[] = {
+  };
+  static constexpr __kind_entry __kinds[] = {
       {&typeid(__si_class_type_info), __rtti_kind::__class_si},
       {&typeid(__vmi_class_type_info), __rtti_kind::__class_vmi},
       {&typeid(__class_type_info), __rtti_kind::__class_plain},

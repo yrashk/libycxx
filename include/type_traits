@@ -4,5 +4,6 @@
 #include <ycxx/config.hpp>
 #include <ycxx/core/type_traits.hpp>
 #include <ycxx/core/type_traits_depr.hpp>
+#include <ycxx/core/tuple_like.hpp>  // is_applicable, is_nothrow_applicable, apply_result ([meta.type.synop])
 #include <ycxx/core/version.hpp>
 

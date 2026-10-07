@@ -1,0 +1,28 @@
+Category: transitive-include. binary.h uses std::copy without <algorithm> (libstdc++ and libc++
+declare it through <vector>/<string>), ostream_wrapper.h std::ostream without <iosfwd> (declared
+through <string>). Adds the includes.
+
+diff --git a/include/yaml-cpp/binary.h b/include/yaml-cpp/binary.h
+index 1050dae..5398121 100644
+--- a/include/yaml-cpp/binary.h
++++ b/include/yaml-cpp/binary.h
+@@ -8,6 +8,7 @@
+ #endif
+ 
+ #include <string>
++#include <algorithm>
+ #include <vector>
+ 
+ #include "yaml-cpp/dll.h"
+diff --git a/include/yaml-cpp/ostream_wrapper.h b/include/yaml-cpp/ostream_wrapper.h
+index cf89741..b5eee6c 100644
+--- a/include/yaml-cpp/ostream_wrapper.h
++++ b/include/yaml-cpp/ostream_wrapper.h
+@@ -8,6 +8,7 @@
+ #endif
+ 
+ #include <string>
++#include <iosfwd>
+ #include <vector>
+ 
+ #include "yaml-cpp/dll.h"

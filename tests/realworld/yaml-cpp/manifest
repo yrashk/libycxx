@@ -1,0 +1,7 @@
+# yaml-cpp: YAML parser and emitter: iostreams, stringstreams, locales, containers, exceptions.
+# Tests with its vendored GoogleTest.
+url = https://github.com/jbeder/yaml-cpp.git
+ref = 0.8.0
+commit = f7320141120f720aecc4c32be25586e7da9eb978
+exercises = iostreams, locale, containers, exceptions
+configure = -DYAML_CPP_BUILD_TESTS=ON -DYAML_CPP_BUILD_TOOLS=OFF -DYAML_CPP_FORMAT_SOURCE=OFF

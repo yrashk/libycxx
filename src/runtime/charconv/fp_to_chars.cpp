@@ -654,9 +654,12 @@ std::to_chars_result general_shortest(char* first, char* last, const __decoded& 
 template <kind _Kp>
 bool plain_uses_fixed(const __decoded& __v) {
   constexpr format __f = __fmt_of<_Kp>;
-  __u128 upper = 1;
-  for (int i = 0; i < __ycxx::__detail::__fpconv::__floor_log10_pow2(__f.p + 1); ++i)
-    upper *= 10;
+  constexpr __u128 upper = [] {
+    __u128 u = 1;
+    for (int i = 0; i < __ycxx::__detail::__fpconv::__floor_log10_pow2(__f.p + 1); ++i)
+      u *= 10;
+    return u;
+  }();
   bool at_least_low = __v.e >= 0 || (-__v.e < 128 && __v.m * 10000 >= (__u128(1) << -__v.e));
   bool below_high;
   if (__v.e >= 0)
@@ -690,8 +693,122 @@ std::to_chars_result __to_chars_shortest(char* first, char* last, const __decode
   return __ycxx::__detail::__fpconv::general_shortest<_Kp>(first, last, __v, s);
 }
 
+// to_chars(first, last, value) of a normal binary32 or binary64 value, the common case, on 64-bit
+// integers in registers: the same decisions as __to_chars_shortest with __fmt == 0, without the
+// general __decoded (whose 128-bit significand GCC stores in halves and copies whole, a store-
+// forwarding stall). Returns false for the cases left to the general path.
+template <kind _Kp>
+bool plain_shortest_normal(char* first, char* last, __y_u64 bits, std::to_chars_result& r) {
+  constexpr format __f = __fmt_of<_Kp>;
+  const int __fb = __f.p - 1;
+  const bool __negative = ((bits >> (__fb + __f.__exp_bits)) & 1) != 0;
+  const int __bexp = static_cast<int>((bits >> __fb) & ((1u << __f.__exp_bits) - 1));
+  if (__bexp == 0 || __bexp == (1 << __f.__exp_bits) - 1)
+    return false;
+  const __y_u64 m = (bits & ((__y_u64(1) << __fb) - 1)) | (__y_u64(1) << __fb);
+  const int e = __bexp - __f.__emax - __fb;
+  digits s;
+  if (!__ycxx::__detail::__fpconv::schubfach<_Kp>(m, e, s))
+    return false;
+  // plain_uses_fixed: 10^-4 <= value < 10^U.
+  constexpr __u128 upper = [] {
+    __u128 u = 1;
+    for (int i = 0; i < __ycxx::__detail::__fpconv::__floor_log10_pow2(__f.p + 1); ++i)
+      u *= 10;
+    return u;
+  }();
+  const bool at_least_low = e >= 0 || (-e < 128 && static_cast<__u128>(m) * 10000 >= (__u128(1) << -e));
+  const bool below_high = e >= 0 ? (__ycxx::__detail::__fpconv::__bit_length(m) + e <= 120 && (static_cast<__u128>(m) << e) < upper)
+                                 : (-e >= 64 || (m >> -e) < upper);
+  if (!(at_least_low && below_high)) {
+    r = __ycxx::__detail::__fpconv::layout_scientific(first, last, __negative, s.d, s.n, s.__x);
+    return true;
+  }
+  if (e >= 1)
+    return false; // an integer with a spacing of 2 or more: fixed_shortest's exact digits
+  r = __ycxx::__detail::__fpconv::layout_fixed(first, last, __negative, s.d, s.n, s.__x);
+  return true;
+}
+
+// %.Pf of a finite binary32 or binary64 value m * 2^e with P <= 18, in 128-bit integers: for
+// e < 0, m * 10^P < 2^113 is exact, its quotient by 2^-e is the digits and the remainder decides
+// the rounding (half to even, as fixed_precision); for e >= 0 the value is the integer m * 2^e
+// (< 2^128 for e <= 74) followed by P zeros. Returns false for the cases left to fixed_precision.
+inline constexpr __u128 __pow10_small[19] = {1ull, 10ull, 100ull, 1000ull, 10000ull, 100000ull, 1000000ull, 10000000ull,
+                                             100000000ull, 1000000000ull, 10000000000ull, 100000000000ull,
+                                             1000000000000ull, 10000000000000ull, 100000000000000ull,
+                                             1000000000000000ull, 10000000000000000ull, 100000000000000000ull,
+                                             1000000000000000000ull};
+template <kind _Kp>
+bool fixed_precision_small(char* first, char* last, __y_u64 bits, int precision, std::to_chars_result& r) {
+  constexpr format __f = __fmt_of<_Kp>;
+  const int __fb = __f.p - 1;
+  if (precision > 18)
+    return false;
+  const bool __negative = ((bits >> (__fb + __f.__exp_bits)) & 1) != 0;
+  const int __bexp = static_cast<int>((bits >> __fb) & ((1u << __f.__exp_bits) - 1));
+  if (__bexp == (1 << __f.__exp_bits) - 1)
+    return false;
+  const __y_u64 field = bits & ((__y_u64(1) << __fb) - 1);
+  const __y_u64 m = __bexp == 0 ? field : field | (__y_u64(1) << __fb);
+  const int e = __bexp == 0 ? __f.__qmin() : __bexp - __f.__emax - __fb;
+  __u128 __q;
+  int __zeros = 0; // fraction digits that are zeros after q's digits (e >= 0)
+  if (e >= 0) {
+    if (e > 74)
+      return false;
+    __q = static_cast<__u128>(m) << e;
+    __zeros = precision;
+  } else {
+    const int s = -e;
+    if (s >= 128)
+      return false;
+    const __u128 __prod = static_cast<__u128>(m) * __pow10_small[precision];
+    __q = __prod >> s;
+    const __u128 rem = __prod & ((__u128(1) << s) - 1);
+    const __u128 __half = __u128(1) << (s - 1);
+    if (rem > __half || (rem == __half && (__q & 1) != 0))
+      ++__q;
+  }
+  char __buf[48];
+  char* const end = __buf + sizeof __buf;
+  char* p = __ycxx::__detail::__charconv_write_unsigned(end, __q, 10);
+  const int __frac_in_q = precision - __zeros; // the last digits of q are fraction digits
+  while (end - p < __frac_in_q + 1)
+    *--p = '0'; // "0.00..." for a value below 1
+  const int __nd = static_cast<int>(end - p);
+  const long long __len = (__negative ? 1 : 0) + __nd + __zeros + (precision > 0 ? 1 : 0);
+  if (__len > last - first) {
+    r = __ycxx::__detail::__fpconv::__too_large(last);
+    return true;
+  }
+  char* o = first;
+  if (__negative)
+    *o++ = '-';
+  const int __int_len = __nd - __frac_in_q;
+  __builtin_memcpy(o, p, static_cast<std::size_t>(__int_len));
+  o += __int_len;
+  if (precision > 0) {
+    *o++ = '.';
+    __builtin_memcpy(o, p + __int_len, static_cast<std::size_t>(__frac_in_q));
+    o += __frac_in_q;
+    for (int i = 0; i < __zeros; ++i)
+      *o++ = '0';
+  }
+  r = {o, std::errc{}};
+  return true;
+}
+
 template <kind _Kp>
 std::to_chars_result to_chars_impl(char* first, char* last, __fp_raw bits, int __fmt, int precision) {
+  if constexpr (_Kp == kind::__binary64 || _Kp == kind::__binary32) {
+    std::to_chars_result r;
+    if (precision < 0 && __fmt == 0 && __ycxx::__detail::__fpconv::plain_shortest_normal<_Kp>(first, last, bits.__lo, r))
+      return r;
+    if (precision >= 0 && static_cast<std::chars_format>(__fmt) == std::chars_format::fixed &&
+        __ycxx::__detail::__fpconv::fixed_precision_small<_Kp>(first, last, bits.__lo, precision, r))
+      return r;
+  }
   const __decoded __v = __ycxx::__detail::__fpconv::__decode<_Kp>(bits);
   std::to_chars_result r;
   if (__ycxx::__detail::__fpconv::__write_special(first, last, __v, r))

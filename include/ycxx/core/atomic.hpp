@@ -845,12 +845,28 @@ struct atomic<_Tp> : __ycxx::__adl_free::__atomic_base<_Tp> {
     ::__ycxx::__detail::__atomic_check_store(__o);
     (void)::__ycxx::__detail::__atomic_fetch_int<::__ycxx::__detail::__atomic_int_op::add, _Tp>(__builtin_addressof(this->__v_), a, __o);
   }
+  [[deprecated("a volatile atomic operation on a type that is not always lock-free is deprecated "
+               "([depr.atomics.volatile])")]]
+  void store_add(_Tp a, memory_order __o = memory_order::seq_cst) volatile noexcept
+    requires(!::__ycxx::__detail::__atomic_lock_free<_Tp>)
+  {
+    ::__ycxx::__detail::__atomic_check_store(__o);
+    (void)::__ycxx::__detail::__atomic_fetch_int<::__ycxx::__detail::__atomic_int_op::add, _Tp>(__builtin_addressof(this->__v_), a, __o);
+  }
   constexpr void store_add(_Tp a, memory_order __o = memory_order::seq_cst) noexcept {
     ::__ycxx::__detail::__atomic_check_store(__o);
     (void)::__ycxx::__detail::__atomic_fetch_int<::__ycxx::__detail::__atomic_int_op::add, _Tp>(__builtin_addressof(this->__v_), a, __o);
   }
   void store_sub(_Tp a, memory_order __o = memory_order::seq_cst) volatile noexcept
     requires(::__ycxx::__detail::__atomic_lock_free<_Tp>)
+  {
+    ::__ycxx::__detail::__atomic_check_store(__o);
+    (void)::__ycxx::__detail::__atomic_fetch_int<::__ycxx::__detail::__atomic_int_op::__sub, _Tp>(__builtin_addressof(this->__v_), a, __o);
+  }
+  [[deprecated("a volatile atomic operation on a type that is not always lock-free is deprecated "
+               "([depr.atomics.volatile])")]]
+  void store_sub(_Tp a, memory_order __o = memory_order::seq_cst) volatile noexcept
+    requires(!::__ycxx::__detail::__atomic_lock_free<_Tp>)
   {
     ::__ycxx::__detail::__atomic_check_store(__o);
     (void)::__ycxx::__detail::__atomic_fetch_int<::__ycxx::__detail::__atomic_int_op::__sub, _Tp>(__builtin_addressof(this->__v_), a, __o);
@@ -865,12 +881,28 @@ struct atomic<_Tp> : __ycxx::__adl_free::__atomic_base<_Tp> {
     ::__ycxx::__detail::__atomic_check_store(__o);
     (void)::__ycxx::__detail::__atomic_fetch_int<::__ycxx::__detail::__atomic_int_op::__and_, _Tp>(__builtin_addressof(this->__v_), a, __o);
   }
+  [[deprecated("a volatile atomic operation on a type that is not always lock-free is deprecated "
+               "([depr.atomics.volatile])")]]
+  void store_and(_Tp a, memory_order __o = memory_order::seq_cst) volatile noexcept
+    requires(!::__ycxx::__detail::__atomic_lock_free<_Tp>)
+  {
+    ::__ycxx::__detail::__atomic_check_store(__o);
+    (void)::__ycxx::__detail::__atomic_fetch_int<::__ycxx::__detail::__atomic_int_op::__and_, _Tp>(__builtin_addressof(this->__v_), a, __o);
+  }
   constexpr void store_and(_Tp a, memory_order __o = memory_order::seq_cst) noexcept {
     ::__ycxx::__detail::__atomic_check_store(__o);
     (void)::__ycxx::__detail::__atomic_fetch_int<::__ycxx::__detail::__atomic_int_op::__and_, _Tp>(__builtin_addressof(this->__v_), a, __o);
   }
   void store_or(_Tp a, memory_order __o = memory_order::seq_cst) volatile noexcept
     requires(::__ycxx::__detail::__atomic_lock_free<_Tp>)
+  {
+    ::__ycxx::__detail::__atomic_check_store(__o);
+    (void)::__ycxx::__detail::__atomic_fetch_int<::__ycxx::__detail::__atomic_int_op::__or_, _Tp>(__builtin_addressof(this->__v_), a, __o);
+  }
+  [[deprecated("a volatile atomic operation on a type that is not always lock-free is deprecated "
+               "([depr.atomics.volatile])")]]
+  void store_or(_Tp a, memory_order __o = memory_order::seq_cst) volatile noexcept
+    requires(!::__ycxx::__detail::__atomic_lock_free<_Tp>)
   {
     ::__ycxx::__detail::__atomic_check_store(__o);
     (void)::__ycxx::__detail::__atomic_fetch_int<::__ycxx::__detail::__atomic_int_op::__or_, _Tp>(__builtin_addressof(this->__v_), a, __o);
@@ -885,6 +917,14 @@ struct atomic<_Tp> : __ycxx::__adl_free::__atomic_base<_Tp> {
     ::__ycxx::__detail::__atomic_check_store(__o);
     (void)::__ycxx::__detail::__atomic_fetch_int<::__ycxx::__detail::__atomic_int_op::__xor_, _Tp>(__builtin_addressof(this->__v_), a, __o);
   }
+  [[deprecated("a volatile atomic operation on a type that is not always lock-free is deprecated "
+               "([depr.atomics.volatile])")]]
+  void store_xor(_Tp a, memory_order __o = memory_order::seq_cst) volatile noexcept
+    requires(!::__ycxx::__detail::__atomic_lock_free<_Tp>)
+  {
+    ::__ycxx::__detail::__atomic_check_store(__o);
+    (void)::__ycxx::__detail::__atomic_fetch_int<::__ycxx::__detail::__atomic_int_op::__xor_, _Tp>(__builtin_addressof(this->__v_), a, __o);
+  }
   constexpr void store_xor(_Tp a, memory_order __o = memory_order::seq_cst) noexcept {
     ::__ycxx::__detail::__atomic_check_store(__o);
     (void)::__ycxx::__detail::__atomic_fetch_int<::__ycxx::__detail::__atomic_int_op::__xor_, _Tp>(__builtin_addressof(this->__v_), a, __o);
@@ -895,12 +935,28 @@ struct atomic<_Tp> : __ycxx::__adl_free::__atomic_base<_Tp> {
     ::__ycxx::__detail::__atomic_check_store(__o);
     (void)::__ycxx::__detail::atomic_fetch_max<_Tp>(__builtin_addressof(this->__v_), a, __o);
   }
+  [[deprecated("a volatile atomic operation on a type that is not always lock-free is deprecated "
+               "([depr.atomics.volatile])")]]
+  void store_max(_Tp a, memory_order __o = memory_order::seq_cst) volatile noexcept
+    requires(!::__ycxx::__detail::__atomic_lock_free<_Tp>)
+  {
+    ::__ycxx::__detail::__atomic_check_store(__o);
+    (void)::__ycxx::__detail::atomic_fetch_max<_Tp>(__builtin_addressof(this->__v_), a, __o);
+  }
   constexpr void store_max(_Tp a, memory_order __o = memory_order::seq_cst) noexcept {
     ::__ycxx::__detail::__atomic_check_store(__o);
     (void)::__ycxx::__detail::atomic_fetch_max<_Tp>(__builtin_addressof(this->__v_), a, __o);
   }
   void store_min(_Tp a, memory_order __o = memory_order::seq_cst) volatile noexcept
     requires(::__ycxx::__detail::__atomic_lock_free<_Tp>)
+  {
+    ::__ycxx::__detail::__atomic_check_store(__o);
+    (void)::__ycxx::__detail::atomic_fetch_min<_Tp>(__builtin_addressof(this->__v_), a, __o);
+  }
+  [[deprecated("a volatile atomic operation on a type that is not always lock-free is deprecated "
+               "([depr.atomics.volatile])")]]
+  void store_min(_Tp a, memory_order __o = memory_order::seq_cst) volatile noexcept
+    requires(!::__ycxx::__detail::__atomic_lock_free<_Tp>)
   {
     ::__ycxx::__detail::__atomic_check_store(__o);
     (void)::__ycxx::__detail::atomic_fetch_min<_Tp>(__builtin_addressof(this->__v_), a, __o);
@@ -1084,12 +1140,28 @@ struct atomic<_Tp> : __ycxx::__adl_free::__atomic_base<_Tp> {
     ::__ycxx::__detail::__atomic_check_store(__o);
     (void)::__ycxx::__detail::__atomic_fetch_fp<::__ycxx::__detail::__atomic_fp_op::add, _Tp>(__builtin_addressof(this->__v_), a, __o);
   }
+  [[deprecated("a volatile atomic operation on a type that is not always lock-free is deprecated "
+               "([depr.atomics.volatile])")]]
+  void store_add(_Tp a, memory_order __o = memory_order::seq_cst) volatile noexcept
+    requires(!::__ycxx::__detail::__atomic_lock_free<_Tp>)
+  {
+    ::__ycxx::__detail::__atomic_check_store(__o);
+    (void)::__ycxx::__detail::__atomic_fetch_fp<::__ycxx::__detail::__atomic_fp_op::add, _Tp>(__builtin_addressof(this->__v_), a, __o);
+  }
   constexpr void store_add(_Tp a, memory_order __o = memory_order::seq_cst) noexcept {
     ::__ycxx::__detail::__atomic_check_store(__o);
     (void)::__ycxx::__detail::__atomic_fetch_fp<::__ycxx::__detail::__atomic_fp_op::add, _Tp>(__builtin_addressof(this->__v_), a, __o);
   }
   void store_sub(_Tp a, memory_order __o = memory_order::seq_cst) volatile noexcept
     requires(::__ycxx::__detail::__atomic_lock_free<_Tp>)
+  {
+    ::__ycxx::__detail::__atomic_check_store(__o);
+    (void)::__ycxx::__detail::__atomic_fetch_fp<::__ycxx::__detail::__atomic_fp_op::__sub, _Tp>(__builtin_addressof(this->__v_), a, __o);
+  }
+  [[deprecated("a volatile atomic operation on a type that is not always lock-free is deprecated "
+               "([depr.atomics.volatile])")]]
+  void store_sub(_Tp a, memory_order __o = memory_order::seq_cst) volatile noexcept
+    requires(!::__ycxx::__detail::__atomic_lock_free<_Tp>)
   {
     ::__ycxx::__detail::__atomic_check_store(__o);
     (void)::__ycxx::__detail::__atomic_fetch_fp<::__ycxx::__detail::__atomic_fp_op::__sub, _Tp>(__builtin_addressof(this->__v_), a, __o);
@@ -1104,12 +1176,28 @@ struct atomic<_Tp> : __ycxx::__adl_free::__atomic_base<_Tp> {
     ::__ycxx::__detail::__atomic_check_store(__o);
     (void)::__ycxx::__detail::__atomic_fetch_fp<::__ycxx::__detail::__atomic_fp_op::__maximum_num, _Tp>(__builtin_addressof(this->__v_), a, __o);
   }
+  [[deprecated("a volatile atomic operation on a type that is not always lock-free is deprecated "
+               "([depr.atomics.volatile])")]]
+  void store_max(_Tp a, memory_order __o = memory_order::seq_cst) volatile noexcept
+    requires(!::__ycxx::__detail::__atomic_lock_free<_Tp>)
+  {
+    ::__ycxx::__detail::__atomic_check_store(__o);
+    (void)::__ycxx::__detail::__atomic_fetch_fp<::__ycxx::__detail::__atomic_fp_op::__maximum_num, _Tp>(__builtin_addressof(this->__v_), a, __o);
+  }
   constexpr void store_max(_Tp a, memory_order __o = memory_order::seq_cst) noexcept {
     ::__ycxx::__detail::__atomic_check_store(__o);
     (void)::__ycxx::__detail::__atomic_fetch_fp<::__ycxx::__detail::__atomic_fp_op::__maximum_num, _Tp>(__builtin_addressof(this->__v_), a, __o);
   }
   void store_min(_Tp a, memory_order __o = memory_order::seq_cst) volatile noexcept
     requires(::__ycxx::__detail::__atomic_lock_free<_Tp>)
+  {
+    ::__ycxx::__detail::__atomic_check_store(__o);
+    (void)::__ycxx::__detail::__atomic_fetch_fp<::__ycxx::__detail::__atomic_fp_op::__minimum_num, _Tp>(__builtin_addressof(this->__v_), a, __o);
+  }
+  [[deprecated("a volatile atomic operation on a type that is not always lock-free is deprecated "
+               "([depr.atomics.volatile])")]]
+  void store_min(_Tp a, memory_order __o = memory_order::seq_cst) volatile noexcept
+    requires(!::__ycxx::__detail::__atomic_lock_free<_Tp>)
   {
     ::__ycxx::__detail::__atomic_check_store(__o);
     (void)::__ycxx::__detail::__atomic_fetch_fp<::__ycxx::__detail::__atomic_fp_op::__minimum_num, _Tp>(__builtin_addressof(this->__v_), a, __o);
@@ -1124,12 +1212,28 @@ struct atomic<_Tp> : __ycxx::__adl_free::__atomic_base<_Tp> {
     ::__ycxx::__detail::__atomic_check_store(__o);
     (void)::__ycxx::__detail::__atomic_fetch_fp<::__ycxx::__detail::__atomic_fp_op::__maximum, _Tp>(__builtin_addressof(this->__v_), a, __o);
   }
+  [[deprecated("a volatile atomic operation on a type that is not always lock-free is deprecated "
+               "([depr.atomics.volatile])")]]
+  void store_fmaximum(_Tp a, memory_order __o = memory_order::seq_cst) volatile noexcept
+    requires(!::__ycxx::__detail::__atomic_lock_free<_Tp>)
+  {
+    ::__ycxx::__detail::__atomic_check_store(__o);
+    (void)::__ycxx::__detail::__atomic_fetch_fp<::__ycxx::__detail::__atomic_fp_op::__maximum, _Tp>(__builtin_addressof(this->__v_), a, __o);
+  }
   constexpr void store_fmaximum(_Tp a, memory_order __o = memory_order::seq_cst) noexcept {
     ::__ycxx::__detail::__atomic_check_store(__o);
     (void)::__ycxx::__detail::__atomic_fetch_fp<::__ycxx::__detail::__atomic_fp_op::__maximum, _Tp>(__builtin_addressof(this->__v_), a, __o);
   }
   void store_fminimum(_Tp a, memory_order __o = memory_order::seq_cst) volatile noexcept
     requires(::__ycxx::__detail::__atomic_lock_free<_Tp>)
+  {
+    ::__ycxx::__detail::__atomic_check_store(__o);
+    (void)::__ycxx::__detail::__atomic_fetch_fp<::__ycxx::__detail::__atomic_fp_op::__minimum, _Tp>(__builtin_addressof(this->__v_), a, __o);
+  }
+  [[deprecated("a volatile atomic operation on a type that is not always lock-free is deprecated "
+               "([depr.atomics.volatile])")]]
+  void store_fminimum(_Tp a, memory_order __o = memory_order::seq_cst) volatile noexcept
+    requires(!::__ycxx::__detail::__atomic_lock_free<_Tp>)
   {
     ::__ycxx::__detail::__atomic_check_store(__o);
     (void)::__ycxx::__detail::__atomic_fetch_fp<::__ycxx::__detail::__atomic_fp_op::__minimum, _Tp>(__builtin_addressof(this->__v_), a, __o);
@@ -1144,12 +1248,28 @@ struct atomic<_Tp> : __ycxx::__adl_free::__atomic_base<_Tp> {
     ::__ycxx::__detail::__atomic_check_store(__o);
     (void)::__ycxx::__detail::__atomic_fetch_fp<::__ycxx::__detail::__atomic_fp_op::__maximum_num, _Tp>(__builtin_addressof(this->__v_), a, __o);
   }
+  [[deprecated("a volatile atomic operation on a type that is not always lock-free is deprecated "
+               "([depr.atomics.volatile])")]]
+  void store_fmaximum_num(_Tp a, memory_order __o = memory_order::seq_cst) volatile noexcept
+    requires(!::__ycxx::__detail::__atomic_lock_free<_Tp>)
+  {
+    ::__ycxx::__detail::__atomic_check_store(__o);
+    (void)::__ycxx::__detail::__atomic_fetch_fp<::__ycxx::__detail::__atomic_fp_op::__maximum_num, _Tp>(__builtin_addressof(this->__v_), a, __o);
+  }
   constexpr void store_fmaximum_num(_Tp a, memory_order __o = memory_order::seq_cst) noexcept {
     ::__ycxx::__detail::__atomic_check_store(__o);
     (void)::__ycxx::__detail::__atomic_fetch_fp<::__ycxx::__detail::__atomic_fp_op::__maximum_num, _Tp>(__builtin_addressof(this->__v_), a, __o);
   }
   void store_fminimum_num(_Tp a, memory_order __o = memory_order::seq_cst) volatile noexcept
     requires(::__ycxx::__detail::__atomic_lock_free<_Tp>)
+  {
+    ::__ycxx::__detail::__atomic_check_store(__o);
+    (void)::__ycxx::__detail::__atomic_fetch_fp<::__ycxx::__detail::__atomic_fp_op::__minimum_num, _Tp>(__builtin_addressof(this->__v_), a, __o);
+  }
+  [[deprecated("a volatile atomic operation on a type that is not always lock-free is deprecated "
+               "([depr.atomics.volatile])")]]
+  void store_fminimum_num(_Tp a, memory_order __o = memory_order::seq_cst) volatile noexcept
+    requires(!::__ycxx::__detail::__atomic_lock_free<_Tp>)
   {
     ::__ycxx::__detail::__atomic_check_store(__o);
     (void)::__ycxx::__detail::__atomic_fetch_fp<::__ycxx::__detail::__atomic_fp_op::__minimum_num, _Tp>(__builtin_addressof(this->__v_), a, __o);
@@ -1233,12 +1353,28 @@ struct atomic<_Tp*> : __ycxx::__adl_free::__atomic_base<_Tp*> {
     ::__ycxx::__detail::__atomic_check_store(__o);
     (void)::__ycxx::__detail::__atomic_fetch_ptr<_Tp*>(__builtin_addressof(this->__v_), a, __o);
   }
+  [[deprecated("a volatile atomic operation on a type that is not always lock-free is deprecated "
+               "([depr.atomics.volatile])")]]
+  void store_add(ptrdiff_t a, memory_order __o = memory_order::seq_cst) volatile noexcept
+    requires(!::__ycxx::__detail::__atomic_lock_free<_Tp*>)
+  {
+    ::__ycxx::__detail::__atomic_check_store(__o);
+    (void)::__ycxx::__detail::__atomic_fetch_ptr<_Tp*>(__builtin_addressof(this->__v_), a, __o);
+  }
   constexpr void store_add(ptrdiff_t a, memory_order __o = memory_order::seq_cst) noexcept {
     ::__ycxx::__detail::__atomic_check_store(__o);
     (void)::__ycxx::__detail::__atomic_fetch_ptr<_Tp*>(__builtin_addressof(this->__v_), a, __o);
   }
   void store_sub(ptrdiff_t a, memory_order __o = memory_order::seq_cst) volatile noexcept
     requires(::__ycxx::__detail::__atomic_lock_free<_Tp*>)
+  {
+    ::__ycxx::__detail::__atomic_check_store(__o);
+    (void)::__ycxx::__detail::__atomic_fetch_ptr<_Tp*>(__builtin_addressof(this->__v_), -a, __o);
+  }
+  [[deprecated("a volatile atomic operation on a type that is not always lock-free is deprecated "
+               "([depr.atomics.volatile])")]]
+  void store_sub(ptrdiff_t a, memory_order __o = memory_order::seq_cst) volatile noexcept
+    requires(!::__ycxx::__detail::__atomic_lock_free<_Tp*>)
   {
     ::__ycxx::__detail::__atomic_check_store(__o);
     (void)::__ycxx::__detail::__atomic_fetch_ptr<_Tp*>(__builtin_addressof(this->__v_), -a, __o);
@@ -1253,12 +1389,28 @@ struct atomic<_Tp*> : __ycxx::__adl_free::__atomic_base<_Tp*> {
     ::__ycxx::__detail::__atomic_check_store(__o);
     (void)::__ycxx::__detail::atomic_fetch_max<_Tp*>(__builtin_addressof(this->__v_), a, __o);
   }
+  [[deprecated("a volatile atomic operation on a type that is not always lock-free is deprecated "
+               "([depr.atomics.volatile])")]]
+  void store_max(_Tp* a, memory_order __o = memory_order::seq_cst) volatile noexcept
+    requires(!::__ycxx::__detail::__atomic_lock_free<_Tp*>)
+  {
+    ::__ycxx::__detail::__atomic_check_store(__o);
+    (void)::__ycxx::__detail::atomic_fetch_max<_Tp*>(__builtin_addressof(this->__v_), a, __o);
+  }
   constexpr void store_max(_Tp* a, memory_order __o = memory_order::seq_cst) noexcept {
     ::__ycxx::__detail::__atomic_check_store(__o);
     (void)::__ycxx::__detail::atomic_fetch_max<_Tp*>(__builtin_addressof(this->__v_), a, __o);
   }
   void store_min(_Tp* a, memory_order __o = memory_order::seq_cst) volatile noexcept
     requires(::__ycxx::__detail::__atomic_lock_free<_Tp*>)
+  {
+    ::__ycxx::__detail::__atomic_check_store(__o);
+    (void)::__ycxx::__detail::atomic_fetch_min<_Tp*>(__builtin_addressof(this->__v_), a, __o);
+  }
+  [[deprecated("a volatile atomic operation on a type that is not always lock-free is deprecated "
+               "([depr.atomics.volatile])")]]
+  void store_min(_Tp* a, memory_order __o = memory_order::seq_cst) volatile noexcept
+    requires(!::__ycxx::__detail::__atomic_lock_free<_Tp*>)
   {
     ::__ycxx::__detail::__atomic_check_store(__o);
     (void)::__ycxx::__detail::atomic_fetch_min<_Tp*>(__builtin_addressof(this->__v_), a, __o);

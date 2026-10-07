@@ -24,8 +24,18 @@ class Param:
         eq = decls.top_level_index(toks, '=')
         self.default = toks[eq + 1:] if eq >= 0 else None
         body = toks[:eq] if eq >= 0 else toks
-        self.pack = any(t.text == '...' for t in body)
-        body = [t for t in body if t.text != '...']
+        # a function parameter pack: `...` outside template argument lists
+        depth = 0
+        self.pack = False
+        for k, t in enumerate(body):
+            if t.text == '<' and k and body[k - 1].kind in ('id', 'expo'):
+                depth += 1
+            elif t.text == '>' and depth:
+                depth -= 1
+            elif t.text == '...' and depth == 0:
+                self.pack = True
+        if self.pack:
+            body = [t for t in body if t.text != '...']
         self.name = None
         # a declarator in parentheses: T (&a)[N]
         for k in range(len(body) - 3):
@@ -101,6 +111,19 @@ def template_heads(toks):
     return heads
 
 
+def head_requires(toks):
+    """The requires-clauses after the template parameter lists in front of a declaration."""
+    out = []
+    i = 0
+    while i < len(toks) and toks[i].text == 'template' and i + 1 < len(toks) and toks[i + 1].text == '<':
+        i = decls._skip_template_args(toks, i + 1)
+        if i < len(toks) and toks[i].text == 'requires':
+            j = decls._skip_requires(toks, i + 1)
+            out.append(toks[i + 1:j])
+            i = j
+    return out
+
+
 class Func:
     pass
 
@@ -111,6 +134,7 @@ def parse(d):
     f = Func()
     f.decl = d
     f.tparams = [p for h in template_heads(toks) for p in h]
+    f.head_requires = head_requires(toks)
     body = decls.strip_template_heads(toks)
     if body and body[0].text == 'friend':
         body = body[1:]
@@ -219,8 +243,10 @@ def parse(d):
             j = end
             continue
         elif t == 'requires':
-            f.requires = rest[j + 1:]
-            break
+            e = decls._skip_requires(rest, j + 1)
+            f.requires = rest[j + 1:e]
+            j = e
+            continue
         elif t == '=':
             if j + 1 < len(rest):
                 f.deleted = rest[j + 1].text == 'delete'
@@ -229,6 +255,14 @@ def parse(d):
         elif t == ':':
             break           # a constructor's mem-initializer list
         j += 1
+    # every requires-clause: of the template heads and the trailing one, conjoined
+    if f.head_requires:
+        both = []
+        for r in f.head_requires + ([f.requires] if f.requires else []):
+            if both:
+                both.append(decls.Tok('op', '&&', 0))
+            both += [decls.Tok('op', '(', 0)] + list(r) + [decls.Tok('op', ')', 0)]
+        f.requires = both
     return f
 
 
@@ -253,6 +287,8 @@ class Rewriter:
         self.ns = ns
 
     def type(self, toks, pack_index=None):
+        if pack_index is None and any(t.text == '...' for t in toks):
+            raise Unresolved('pack expansion')
         out = []
         i = 0
         while i < len(toks):
@@ -261,7 +297,11 @@ class Rewriter:
             if t.kind == 'expo':
                 key = '@' + t.text + '@'
                 if key in self.subst:
-                    out.append(self._sub(self.subst[key], pack_index))
+                    v = self._sub(self.subst[key], pack_index)
+                    if i + 3 < len(toks) and toks[i + 1].text == '<' and toks[i + 2].text == 'true' and \
+                            re.match(r'std::ranges::(iterator|sentinel)_t<', v):
+                        v = re.sub(r'^(std::ranges::(?:iterator|sentinel)_t<)', r'\1const ', v)
+                    out.append(v)
                     if i + 1 < len(toks) and toks[i + 1].text == '<':
                         # a nested class template (`@iterator@<Const>`): the instantiation stands for it
                         i = decls._skip_template_args(toks, i + 1)
@@ -270,7 +310,11 @@ class Rewriter:
                     out.append(self.expo[t.text])
                 else:
                     raise Unresolved(t.text)
-            elif t.kind == 'id' and prev != '::' and prev != '.':
+            elif t.kind == 'id' and (prev == '.' or prev == '->') and not (i + 1 < len(toks) and toks[i + 1].text == '('):
+                raise Unresolved('.' + t.text)    # an exposition-only data member
+            elif t.kind == 'id' and (prev == '.' or prev == '->'):
+                out.append(t.text)
+            elif t.kind == 'id' and prev not in ('::', '.', '->') and not (prev == 'template' and i >= 2 and toks[i - 2].text == '::'):
                 n = t.text
                 nxt = toks[i + 1].text if i + 1 < len(toks) else ''
                 if n in getattr(self, 'params', {}):
@@ -283,7 +327,11 @@ class Rewriter:
                     out.append('std')
                 elif n == getattr(self, 'cls_name', None) and self.inst and nxt != '<':
                     out.append(self.inst)          # the injected-class-name
-                elif n in self.members and self.inst:
+                elif n == getattr(self, 'cls_name', None) and nxt == '<' and getattr(self, 'tmpl', None):
+                    out.append(self.tmpl)          # the class template, given arguments
+                elif n == getattr(self, 'outer_name', None) and getattr(self, 'outer_inst', None) and nxt != '<':
+                    out.append(self.outer_inst)
+                elif n in self.members and self.inst and not (nxt == '<' and n in self.lookup):
                     out.append(self.inst + '::' + n)
                 elif n in getattr(self, 'outer_members', ()) and getattr(self, 'outer_inst', None):
                     out.append(self.outer_inst + '::' + n)
@@ -308,6 +356,8 @@ class Rewriter:
     def _sub(self, v, pack_index):
         if isinstance(v, list):
             if pack_index is None:
+                if len(v) != 1:
+                    raise Unresolved('pack expansion')
                 return ', '.join(self._wrap(x) for x in v)
             return self._wrap(v[pack_index])
         return self._wrap(v)

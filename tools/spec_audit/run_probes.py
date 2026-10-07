@@ -36,6 +36,9 @@ def compile_probe(cc, path, libdir):
         cxx = os.environ.get('YCXX_GXX', 'g++-16') if cc == 'gcc' else os.environ.get('YCXX_CLANGXX', 'clang++-23')
         cmd = [cxx, '-std=c++26', '-ffreestanding', '-nostdinc', '-nostdinc++', '-isystem', os.path.join(ROOT, 'include'),
                '-fno-exceptions', '-fno-rtti', '-fsyntax-only', path]
+        # -nostdinc drops the compiler's own headers too; core needs its <stddef.h>
+        inc = subprocess.run([cxx, '-print-file-name=include'], capture_output=True, text=True).stdout.strip()
+        cmd[1:1] = ['-isystem', inc]
     else:
         cmd = [os.path.join(ROOT, 'tools', 'ycxx-cxx'), cc, f'--libdir={libdir}', '-fsyntax-only', path]
         if '.hardened.' in os.path.basename(path):
@@ -116,13 +119,16 @@ def main():
     ap.add_argument('--part', required=True)
     ap.add_argument('-c', '--compiler', action='append')
     ap.add_argument('-j', '--jobs', type=int, default=2)
-    ap.add_argument('--only')
+    ap.add_argument('--only', action='append', help='only the probes whose file name contains this (repeatable)')
     ap.add_argument('--show', action='store_true', help='print each failure with its first diagnostic')
     ap.add_argument('--libdir-root', default=os.environ.get('YCXX_BUILD', os.path.join(ROOT, 'build')))
+    ap.add_argument('--failed-from', help='only the probes that a previous run printed as FAIL (its output file)')
     a = ap.parse_args()
+    if a.failed_from:
+        a.only = (a.only or []) + sorted({l.split()[2].rstrip(':') for l in open(a.failed_from) if l.startswith('FAIL:')})
     ccs = a.compiler or ['gcc', 'clang']
     pdir = os.path.join(HERE, a.part, 'probes')
-    probes = sorted(os.path.join(pdir, f) for f in os.listdir(pdir) if f.endswith('.cpp') and (not a.only or a.only in f))
+    probes = sorted(os.path.join(pdir, f) for f in os.listdir(pdir) if f.endswith('.cpp') and (not a.only or any(o in f for o in a.only)))
     gaps = load_gaps(a.part)
     jobs = [(cc, p) for cc in ccs for p in probes]
     results = []      # (cc, probe, id, aspect, status, message)

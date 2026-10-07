@@ -52,6 +52,12 @@ class Gen:
             elif d.name and d.kind not in ('pp', 'deduction-guide', 'class-spec', 'variable-spec'):
                 self.ns_names.setdefault(d.ns, set()).add(d.name.split('<')[0])
         self.std_names = draft_names()
+        self.siblings = {}
+        for clause, sec, d in ents:
+            if d.kind.endswith('function'):
+                f = cxxdecl.parse(d)
+                if f:
+                    self.siblings.setdefault((d.ns, tuple(d.cls), f.name), []).append(d)
 
     # -- name lookup ---------------------------------------------------------------------------
     def lookup_for(self, ns):
@@ -159,12 +165,21 @@ class Gen:
         members = self.members.get((d.ns, '::'.join(d.cls)), set()) | set(cfg.get('members', ())) if cfg else set()
         inst = cfg['inst'] if cfg else None
         base_subst = dict(self.cfg.NS_SUBST.get(d.ns, {}))
+        base_subst.update(self.cfg.SECTION_SUBST.get(sec, {}))
         if cfg:
             base_subst.update(cfg.get('subst', {}))
+        base_subst.update(self.cfg.SPEC_SUBST.get(' '.join(d.text.split()), {}))
         rw = cxxdecl.Rewriter(base_subst, members, inst, lookup, self.cfg.EXPO, d.ns)
         if d.cls:
             rw.cls_name = decls._strip_targs(d.cls[-1]).split('::')[-1].strip('@')
             members.discard(rw.cls_name)
+            if inst.endswith('>') and not re.search(r'(iterator_t|sentinel_t|range_value_t)<', inst):
+                rw.tmpl = cfg.get('tmpl') or re.sub(r'<.*>$', '', inst)
+            elif cfg.get('tmpl'):
+                rw.tmpl = cfg['tmpl']
+            names = decls._strip_targs('::'.join(d.cls)).split('::')
+            if len(names) > 1:
+                rw.outer_name = names[-2].strip('@')
             parent = '::'.join(d.cls[:-1]) if len(d.cls) > 1 else (d.cls[-1].rsplit('::', 1)[0] if '::' in d.cls[-1] else '')
             if parent:
                 rw.outer_members = set()
@@ -185,6 +200,11 @@ class Gen:
             f = cxxdecl.parse(d)
             if f is None:
                 self.record(sec, d, [], 'no check: not parsed')
+                return []
+            if d.access != 'public' and not friend:
+                if k == 'function' and d.access == 'protected':
+                    return self.presence_only(sec, d, f, cfg, 'protected member')
+                self.record(sec, d, [], f'no check: {d.access} member')
                 return []
             if k == 'constructor':
                 return self.ctor(sec, d, f, cfg, rw)
@@ -227,6 +247,8 @@ class Gen:
         if len(body) < 4 or body[2].text != '=':
             return []
         rhs = body[3:]
+        if any(t.text == '...' for t in rhs):
+            return []      # a pack expansion
         try:
             want = rw.type(rhs)
         except Unresolved:
@@ -260,6 +282,7 @@ class Gen:
             name.append(body[j])
             j += 1
         subst = dict(self.cfg.NS_SUBST.get(d.ns, {}))
+        subst.update(self.cfg.SECTION_SUBST.get(sec, {}))
         if cfg:
             subst.update(cfg.get('subst', {}))
         for h in f_heads:
@@ -302,6 +325,7 @@ class Gen:
         while start >= 2 and lhs[start - 1].text == '::':
             start -= 2
         subst = dict(self.cfg.NS_SUBST.get(d.ns, {}))
+        subst.update(self.cfg.SECTION_SUBST.get(sec, {}))
         for h in cxxdecl.template_heads(d.toks):
             for tp in h:
                 if tp.name and tp.name not in subst:
@@ -318,7 +342,17 @@ class Gen:
             return []
         if not v.startswith('std::'):
             v = d.ns + '::' + v
+        guard = ''
+        reqs = cxxdecl.head_requires([t for t in d.toks if t.kind != 'comment'])
+        if reqs:
+            try:
+                guard = ' && '.join('(' + rw2.type(r) + ')' for r in reqs)
+            except Unresolved as e:
+                self.record(sec, d, [], f'no check: requires-clause {e}')
+                return []
         i = self.record(sec, d, ['spec'])
+        if guard:
+            return [f'static_assert(!({guard}) || {v} == {val}); // @{i} spec']
         return [f'static_assert({v} == {val}); // @{i} spec']
 
     # functions --------------------------------------------------------------------------------
@@ -391,9 +425,7 @@ class Gen:
             # in a template, so that the deleted function's use is a substitution failure
             dexpr = expr.replace('std::declval<', 'p2::dv<D, ')
             return [f'template<class D> concept {i}_ok = requires {{ {dexpr}; }}; static_assert(!{i}_ok<void>); // @{i} deleted']
-        aspects = ['call']
         expr = self.call_expr(d, f, cfg, rw, targs, args, friend, static)
-        lines_after = []
         ret = None
         rtoks = f.trailing if f.trailing is not None else [t for t in f.ret if t.text not in cxxdecl.SPECIFIERS and t.text != 'typename']
         if rtoks and not any(t.text in ('auto', 'decltype') for t in rtoks) and not any(t.kind == 'expo' and t.text not in self.cfg.EXPO and '@' + t.text + '@' not in rw.subst for t in rtoks):
@@ -401,26 +433,64 @@ class Gen:
                 ret = rw.type(rtoks)
             except Unresolved:
                 ret = None
-        i = self.record(sec, d, aspects)
-        lines = [f'namespace {i} {{ using t = decltype({expr}); }} // @{i} call']
-        if ret is not None:
-            self.rows[-1][6] += ',ret'
-            lines.append(f'static_assert(std::is_same_v<{i}::t, {ret}>); // @{i} ret')
         cond = self.noexcept_cond(f, rw)
-        if cond is not None:
-            self.rows[-1][6] += ',noexcept'
-            lines.append(f'static_assert(!({cond}) || noexcept({expr})); // @{i} noexcept')
-        # with the defaulted parameters left out
+        if self.constrained_sibling(d, f):
+            # an unconstrained overload beside a constrained one of the same name: which one a
+            # call selects depends on the instantiation, so only that the call works is checked
+            ret = cond = None
+        constraint = None
+        if f.requires:
+            try:
+                constraint = rw.type(f.requires)
+            except Unresolved:
+                return self.presence_only(sec, d, f, cfg, 'requires-clause not spelled')
+        i = self.record(sec, d, ['call'])
         m = self.min_params(f)
+        e2 = None
         if m < len(f.params) and not any(p.pack for p in f.params):
             try:
                 a2, _ = self.args_of(f, rw, m)
                 e2 = self.call_expr(d, f, cfg, rw, targs, a2, friend, static)
-                self.rows[-1][6] += ',defaults'
-                lines.append(f'namespace {i} {{ using t2 = decltype({e2}); }} // @{i} defaults')
             except Unresolved:
-                pass
+                e2 = None
+        if constraint is not None:
+            # checked only where the instantiation satisfies the requires-clause
+            dx = expr.replace('std::declval<', 'p2::dv<D, ')
+            lines = [f'template<class D> concept {i}_call = requires {{ {dx}; }}; '
+                     f'static_assert(!({constraint}) || {i}_call<void>); // @{i} call']
+            self.rows[-1][7] = 'checked where the requires-clause holds'
+            if ret is not None:
+                self.rows[-1][6] += ',ret'
+                lines.append(f'template<class D> concept {i}_ret = requires {{ {{ {dx} }} -> std::same_as<{ret}>; }}; '
+                             f'static_assert(!({constraint}) || {i}_ret<void>); // @{i} ret')
+            if cond is not None:
+                self.rows[-1][6] += ',noexcept'
+                lines.append(f'template<class D> concept {i}_nx = requires {{ requires noexcept({dx}); }}; '
+                             f'static_assert(!({constraint}) || !({cond}) || {i}_nx<void>); // @{i} noexcept')
+            return lines
+        lines = [f'namespace {i} {{ using t = decltype({expr}); }} // @{i} call']
+        if ret is not None:
+            self.rows[-1][6] += ',ret'
+            lines.append(f'static_assert(std::is_same_v<{i}::t, {ret}>); // @{i} ret')
+        if cond is not None:
+            self.rows[-1][6] += ',noexcept'
+            lines.append(f'static_assert(!({cond}) || noexcept({expr})); // @{i} noexcept')
+        if e2 is not None:
+            self.rows[-1][6] += ',defaults'
+            lines.append(f'namespace {i} {{ using t2 = decltype({e2}); }} // @{i} defaults')
         return lines
+
+    def constrained_sibling(self, d, f):
+        """True when f has no requires-clause and an overload of the same name and arity does."""
+        if f.requires:
+            return False
+        for d2 in self.siblings.get((d.ns, tuple(d.cls), f.name), ()):
+            if d2 is d:
+                continue
+            f2 = cxxdecl.parse(d2)
+            if f2 and f2.requires and len(f2.params) == len(f.params):
+                return True
+        return False
 
     def noexcept_cond(self, f, rw):
         if f.noexcept is True:
@@ -476,8 +546,22 @@ class Gen:
         if f.deleted:
             i = self.record(sec, d, ['deleted'])
             return [f'static_assert(!std::is_constructible_v<{", ".join([inst] + types)}>); // @{i} deleted']
+        if f.defaulted:
+            # a defaulted constructor is deleted when a member's is: depends on the instantiation
+            i = self.record(sec, d, ['name'], 'defaulted: only declared')
+            return [f'static_assert(requires {{ sizeof({inst}); }}); // @{i} name']
+        constraint = None
+        if f.requires:
+            try:
+                constraint = rw.type(f.requires)
+            except Unresolved:
+                self.record(sec, d, [], 'no check: requires-clause not spelled')
+                return []
         i = self.record(sec, d, ['call'])
         tl = ', '.join([inst] + types)
+        if constraint is not None:
+            self.rows[-1][7] = 'checked where the requires-clause holds'
+            return [f'static_assert(!({constraint}) || std::is_constructible_v<{tl}>); // @{i} call']
         lines = [f'static_assert(std::is_constructible_v<{tl}>); // @{i} call']
         cond = self.noexcept_cond(f, rw)
         if cond is not None:
@@ -509,6 +593,7 @@ class Gen:
     def guide(self, sec, d, f, rw):
         cfg = self.cfg.CLASSES.get(f.name) or {}
         subst = dict(self.cfg.NS_SUBST.get(d.ns, {}))
+        subst.update(self.cfg.SECTION_SUBST.get(sec, {}))
         subst.update(cfg.get('subst', {}))
         subst.update(cfg.get('guide_subst', {}))
         subst.update(self.cfg.SPEC_SUBST.get(' '.join(d.text.split()), {}))

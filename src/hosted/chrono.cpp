@@ -1,6 +1,7 @@
 // libycxx hosted runtime: the locale-dependent conversions of the chrono formatters
 // ([time.format]/2-3 with the L option): the formatting locale's time_put facet writes them,
-// converted to UTF-8 from a named locale's own encoding (to_utf8).
+// converted to UTF-8 from a named locale's own encoding (to_utf8); and the count of a duration
+// formatted with L and no chrono-specs, through the locale's num_put ([time.format]/7).
 #include <chrono>
 #include <ctime>
 #include <iterator>
@@ -121,4 +122,65 @@ bool __ycxx::__detail::__chrono_classic_time_put(const std::locale& __loc, char)
 bool __ycxx::__detail::__chrono_classic_time_put(const std::locale& __loc, wchar_t) {
   return &std::use_facet<std::time_put<wchar_t>>(__loc) ==
          &std::use_facet<std::time_put<wchar_t>>(std::locale::classic());
+}
+
+bool __ycxx::__detail::__chrono_classic_num_put(const std::locale& __loc, char) {
+  return &std::use_facet<std::num_put<char>>(__loc) == &std::use_facet<std::num_put<char>>(std::locale::classic());
+}
+bool __ycxx::__detail::__chrono_classic_num_put(const std::locale& __loc, wchar_t) {
+  return &std::use_facet<std::num_put<wchar_t>>(__loc) ==
+         &std::use_facet<std::num_put<wchar_t>>(std::locale::classic());
+}
+
+namespace {
+// [time.duration.io]/1 as [time.format]/7 uses it: s.imbue(loc); s << count, with the default
+// flags and fill, and the format's precision (6 without one).
+template <class __charT, class _Tp>
+void put_count(std::basic_string<__charT>& out, const std::locale& __loc, _Tp __v, int precision) {
+  std::basic_ostringstream<__charT> __os;
+  __os.imbue(__loc);
+  __os.precision(precision);
+  __os << __v;
+  out += __os.str();
+}
+} // namespace
+
+void __ycxx::__detail::__chrono_put_count(std::string& out, const std::locale& __loc, long __v, int precision) {
+  put_count(out, __loc, __v, precision);
+}
+void __ycxx::__detail::__chrono_put_count(std::string& out, const std::locale& __loc, unsigned long __v, int precision) {
+  put_count(out, __loc, __v, precision);
+}
+void __ycxx::__detail::__chrono_put_count(std::string& out, const std::locale& __loc, long long __v, int precision) {
+  put_count(out, __loc, __v, precision);
+}
+void __ycxx::__detail::__chrono_put_count(std::string& out, const std::locale& __loc, unsigned long long __v,
+                                          int precision) {
+  put_count(out, __loc, __v, precision);
+}
+void __ycxx::__detail::__chrono_put_count(std::string& out, const std::locale& __loc, double __v, int precision) {
+  put_count(out, __loc, __v, precision);
+}
+void __ycxx::__detail::__chrono_put_count(std::string& out, const std::locale& __loc, long double __v, int precision) {
+  put_count(out, __loc, __v, precision);
+}
+void __ycxx::__detail::__chrono_put_count(std::wstring& out, const std::locale& __loc, long __v, int precision) {
+  put_count(out, __loc, __v, precision);
+}
+void __ycxx::__detail::__chrono_put_count(std::wstring& out, const std::locale& __loc, unsigned long __v, int precision) {
+  put_count(out, __loc, __v, precision);
+}
+void __ycxx::__detail::__chrono_put_count(std::wstring& out, const std::locale& __loc, long long __v, int precision) {
+  put_count(out, __loc, __v, precision);
+}
+void __ycxx::__detail::__chrono_put_count(std::wstring& out, const std::locale& __loc, unsigned long long __v,
+                                          int precision) {
+  put_count(out, __loc, __v, precision);
+}
+void __ycxx::__detail::__chrono_put_count(std::wstring& out, const std::locale& __loc, double __v, int precision) {
+  put_count(out, __loc, __v, precision);
+}
+void __ycxx::__detail::__chrono_put_count(std::wstring& out, const std::locale& __loc, long double __v,
+                                          int precision) {
+  put_count(out, __loc, __v, precision);
 }

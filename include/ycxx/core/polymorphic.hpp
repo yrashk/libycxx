@@ -283,4 +283,9 @@ public:
   }
 };
 
+namespace pmr {
+template <class _Tp>
+using polymorphic = std::polymorphic<_Tp, polymorphic_allocator<_Tp>>;
+} // namespace pmr
+
 } // namespace std

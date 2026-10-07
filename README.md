@@ -23,7 +23,9 @@ ycxx-unload                                   # restore the previous environment
 Activation exports `YCXX_GCC`, `YCXX_GXX`, `YCXX_CLANG`, `YCXX_CLANGXX`, `YCXX_LLD`,
 `YCXX_LLVM_AR`, `YCXX_GCC_INSTALL_DIR` and `YCXX_ROOT` (on macOS also `SDKROOT`), and puts the
 compilers and `tools/` on `PATH`. The repository's tools use these variables, falling back to
-`g++-16` / `clang++-23`.
+`g++-16` / `clang++-23`. Activation sets no `CXX`: the compilers on `PATH` use their own C++
+library. `--use gcc|clang|<prefix>` also points `CXX`, `CC`, `CMAKE_TOOLCHAIN_FILE` and
+`PKG_CONFIG_PATH` at a libycxx build or installation (below, "Building existing projects").
 
 ### From CMake alone
 
@@ -37,6 +39,29 @@ cmake -S . -B build -DCMAKE_TOOLCHAIN_FILE=<libycxx>/cmake/ycxx-toolchain.cmake 
 It only downloads or builds a compiler when asked with `-DYCXX_PROVISION=ON`; otherwise a
 missing or unsupported compiler stops the configuration with instructions.
 `-DYCXX_GCC_VERSION=` / `-DYCXX_LLVM_VERSION=` select other versions.
+
+This file selects the compilers only: a project configured with it alone still uses the
+toolchain's C++ library, unless it links `ycxx::ycxx` (below).
+
+## Building existing projects against libycxx
+
+**`docs/BUILDING_PROJECTS.md`** is the guide: which projects qualify, CMake, Meson, make,
+autotools, Bazel, Conan and vcpkg, and how to check the result. In short, an installation
+(`cmake --install`) has what a project that knows nothing about libycxx needs:
+
+```sh
+cmake -S proj -B build -DCMAKE_TOOLCHAIN_FILE=<prefix>/lib/cmake/libycxx/toolchain.cmake   # CMake
+make CXX=<prefix>/bin/ycxx-c++ CC=<prefix>/bin/ycxx-cc                                    # make, autotools
+meson setup build --native-file <prefix>/share/libycxx/meson-native.ini                   # Meson
+pkg-config --cflags --libs libycxx                                                         # the plain compiler's flags
+source tools/toolchain/activate.sh --use <prefix>       # exports CXX, CC, CMAKE_TOOLCHAIN_FILE, PKG_CONFIG_PATH
+<prefix>/bin/ycxx-check-binary build                    # built against libycxx and nothing else?
+```
+
+`ycxx-c++` is the compiler libycxx was built with plus libycxx's headers, C++26 (an older `-std=`
+is raised) and libycxx's archives; the build tree has the same files (`build/<cc>/bin/ycxx-c++`,
+`build/<cc>/toolchain.cmake`, ...). `tests/integration/run.sh` builds sample projects each of
+these ways.
 
 ## Using libycxx from CMake
 

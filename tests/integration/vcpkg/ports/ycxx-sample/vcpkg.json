@@ -1,0 +1,5 @@
+{
+  "name": "ycxx-sample",
+  "version": "1.0",
+  "dependencies": [ { "name": "vcpkg-cmake", "host": true } ]
+}

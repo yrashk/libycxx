@@ -69,9 +69,11 @@
 #define __cpp_lib_shared_ptr_weak_type 201606L
 #define __cpp_lib_enable_shared_from_this 201603L
 #define __cpp_lib_smart_ptr_owner_equality 202306L
-#define __cpp_lib_hardened_shared_ptr_array 202506L
 #define __cpp_lib_constexpr_memory 202506L
 #define __cpp_lib_out_ptr 202311L
+// __cpp_lib_pointer_tag_pair (202606L, P3125 "constexpr pointer tagging") is not defined:
+// pointer_tag_pair is implemented, but neither GCC 16 nor Clang 23 can store a non-zero tag in a
+// pointer during constant evaluation, which [ptrtag.pair.cons]/2 requires (DECISIONS §9).
 #define __cpp_lib_indirect 202502L
 #define __cpp_lib_polymorphic 202502L
 #define __cpp_lib_parallel_algorithm 202506L
@@ -225,7 +227,6 @@
 // <stacktrace>, <thread> formatters
 #define __cpp_lib_formatters 202302L
 #define __cpp_lib_stacktrace 202011L
-#define __cpp_lib_hardened_basic_stacktrace 202506L
 // The modules std and std.compat ([std.modules]): modules/std.cppm, modules/std.compat.cppm,
 // built by the CMake package (__ycxx::__modules) or tools/ycxx-modules (DECISIONS §16).
 #define __cpp_lib_modules 202207L
@@ -233,12 +234,21 @@
 #if _YCXX_HAS_CONTRACTS
 #  define __cpp_lib_contracts 202502L
 #endif
+// [version.syn]/5: the default ::handle_contract_violation is alone in its archive member of the
+// runtime, so a program's definition replaces it ([basic.contract.handler]/3). Without the
+// compiler's contracts nothing calls a handler: 0.
+#if _YCXX_HAS_CONTRACTS
+#  define __cpp_lib_replaceable_contract_violation_handler 202603L
+#else
+#  define __cpp_lib_replaceable_contract_violation_handler 0
+#endif
 // <meta>: reflection is the compiler's (GCC 16 with -freflection; not Clang 23)
 #if _YCXX_HAS_REFLECTION
 #  define __cpp_lib_reflection 202603L
 #  define __cpp_lib_define_static 202506L
 #endif
 #define __cpp_lib_ranges_cache_latest 202411L
+#define __cpp_lib_view_interface 202606L
 #define __cpp_lib_ranges_cartesian_product 202207L
 #define __cpp_lib_ranges_chunk 202202L
 #define __cpp_lib_ranges_chunk_by 202202L
@@ -385,6 +395,11 @@
 #  define __cpp_lib_hardened_vector 202502L
 #  define __cpp_lib_hardened_inplace_vector 202502L
 #  define __cpp_lib_hardened_valarray 202502L
+#  define __cpp_lib_hardened_shared_ptr_array 202506L
+#  define __cpp_lib_hardened_basic_stacktrace 202506L
+#  define __cpp_lib_hardened_common_iterator 202506L
+#  define __cpp_lib_hardened_counted_iterator 202506L
+#  define __cpp_lib_hardened_view_interface 202506L
 #endif
 
 // <ratio> <numbers> <cmath> <complex> <valarray>

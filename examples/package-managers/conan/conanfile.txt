@@ -1,0 +1,7 @@
+# conan install examples/package-managers/conan --output-folder=<build> -pr:h examples/package-managers/conan/ycxx -pr:b default --build=missing
+[requires]
+fmt/12.2.0
+
+[generators]
+CMakeDeps
+CMakeToolchain

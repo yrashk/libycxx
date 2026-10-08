@@ -11,3 +11,11 @@
       std::abort();                                                                                  \
     }                                                                                                \
   } while (0)
+
+// unelided(p): as check.hpp's (the result of a new-expression whose allocation must not be
+// omitted).
+template <class T>
+inline T* unelided(T* p) noexcept {
+  asm volatile("" : "+r"(p));
+  return p;
+}

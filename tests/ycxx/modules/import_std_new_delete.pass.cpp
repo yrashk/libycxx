@@ -6,9 +6,13 @@
 import std;
 #include "module_check.hpp"
 
-int allocations = 0;
+// The state the replaced allocation functions share with main is volatile: GCC assumes by
+// default (-fassume-sane-operators-new-delete) that the replaceable global allocation and
+// deallocation functions neither read nor change what their callers see, which a replacement
+// may ([replacement.functions]); volatile accesses are made as written.
+volatile int allocations = 0;
 void* operator new(std::size_t n) {
-  ++allocations;
+  allocations = allocations + 1;
   if (void* p = std::malloc(n ? n : 1))
     return p;
   throw std::bad_alloc();
@@ -38,7 +42,7 @@ int main() {
   CHECK(w->v == 3 && reinterpret_cast<std::uintptr_t>(w) % 64 == 0);
   delete w;
   int before = allocations;
-  delete new int(1);
+  delete unelided(new int(1));
   CHECK(allocations == before + 1);
   CHECK(std::launder(placed) == placed);
   return 0;

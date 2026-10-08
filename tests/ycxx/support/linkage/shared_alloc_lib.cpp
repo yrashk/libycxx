@@ -10,18 +10,26 @@ namespace {
 struct alignas(64) Over {
   char c[64];
 };
+// The result of a new-expression through an empty asm statement, so that the compiler cannot omit
+// the allocation ([expr.new]/14; both compilers do at -O2): the calls are what the test counts
+// (check.hpp's unelided).
+template <class T>
+T* unelided(T* p) noexcept {
+  asm volatile("" : "+r"(p));
+  return p;
+}
 } // namespace
 
 void lib_allocate_and_free() {
-  delete new int(1);                      // operator new(size_t), operator delete(void*[, size_t])
-  delete[] new int[3]{};                  // operator new[], operator delete[]
-  delete new Over;                        // the align_val_t forms
-  delete[] new Over[2];
-  int* p = new (std::nothrow) int(2);     // nothrow forms
+  delete unelided(new int(1));            // operator new(size_t), operator delete(void*[, size_t])
+  delete[] unelided(new int[3]{});        // operator new[], operator delete[]
+  delete unelided(new Over);              // the align_val_t forms
+  delete[] unelided(new Over[2]);
+  int* p = unelided(new (std::nothrow) int(2)); // nothrow forms
   ::operator delete(p, std::nothrow);
-  int* a = new (std::nothrow) int[2];
+  int* a = unelided(new (std::nothrow) int[2]);
   ::operator delete[](a, std::nothrow);
-  Over* o = new (std::nothrow) Over;
+  Over* o = unelided(new (std::nothrow) Over);
   ::operator delete(o, std::align_val_t(alignof(Over)), std::nothrow);
 }
 

@@ -257,6 +257,16 @@ class LibstdcxxFormat(lit.formats.FileBasedTest):
         if why:
             return lit.Test.Result(lit.Test.UNSUPPORTED, why)
 
+        # testsuite_hooks.h's ISO_8859(part, x) names "x.ISO8859-<part>", with "@euro" for part 15
+        # except on the BSDs (on Darwin too, which has no such names). A test opens what it names,
+        # itself or in the tests it includes (wrapped_locale.cc includes 1.cc, 2.cc, ...), whatever
+        # its dg-require-namedlocale says (get_money/char/1.cc requires de_DE.ISO8859-1 and opens
+        # de_DE.ISO8859-15@euro): without that locale it cannot run.
+        for part, lt in sorted(set(re.findall(r'\bISO_8859\s*\(\s*(\d+)\s*,\s*(\w+)\s*\)',
+                                              with_local_includes(path, src)))):
+            why = locales.usable(f'{lt}.ISO8859-{part}' + ('@euro' if part == '15' else ''), self.locale_probe)
+            if why:
+                return lit.Test.Result(lit.Test.UNSUPPORTED, why)
         action, expect_fail_run, flags, errors = 'run', False, list(self.base_flags), False
         xfail_run_if = []
         # libstdc++'s hardened mode, requested in the source itself, maps to ours.
@@ -330,13 +340,6 @@ class LibstdcxxFormat(lit.formats.FileBasedTest):
             elif kind == 'require-namedlocale':
                 name = (args[0] if args else rest).strip().strip('"').strip()
                 why = locales.usable(name, self.locale_probe)
-                # testsuite_hooks.h's ISO_8859(15, x) is "x.ISO8859-15@euro" except on the BSDs
-                # (on Darwin too, which has no such name): a test requiring x.ISO8859-15 opens
-                # that name when it uses the macro, itself or in the tests it includes
-                # (wrapped_locale.cc includes 1.cc, 2.cc, ...)
-                if not why and name.endswith('.ISO8859-15') and re.search(r'\bISO_8859\s*\(\s*15\b',
-                                                                          with_local_includes(path, src)):
-                    why = locales.usable(name + '@euro', self.locale_probe)
                 if why:
                     return lit.Test.Result(lit.Test.UNSUPPORTED, why)
             elif kind.startswith('require-'):

@@ -159,6 +159,11 @@ _Tp hermite(unsigned n, _Tp __x) noexcept {
   _Wp __h0 = 1, __h1 = 2 * __wx;
   for (unsigned k = 1; k < n; ++k) {
     const _Wp __h2 = 2 * __wx * __h1 - 2 * _Wp(k) * __h0;
+    // Overflow (where the working type is the result's own, as double on Arm Darwin): the next
+    // step would be inf - inf. |x| is then far beyond the zeros, where H_n has the sign of x^n
+    // and grows with n.
+    if (__builtin_isinf(__h2))
+      return (__x < _Tp(0) && n % 2 == 1) ? -__builtin_huge_valf() : __builtin_huge_valf();
     __h0 = __h1;
     __h1 = __h2;
   }

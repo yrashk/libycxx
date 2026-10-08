@@ -22,10 +22,21 @@ from ycxxlit import locales
 STD = 26
 DG = re.compile(r'\{\s*dg-([a-z-]+)\s*(.*)\}\s*$')
 
-# Effective targets we satisfy (besides c++NN selectors).
+# The target triplet DejaGnu matches target selectors (x86_64-*-*, *-*-linux*, *-*-darwin*)
+# against: this machine's, as GCC names it.
+def _triplet():
+    import platform
+    machine = {'arm64': 'aarch64', 'amd64': 'x86_64'}.get(platform.machine().lower(), platform.machine().lower())
+    if platform.system() == 'Darwin':
+        return f'{machine}-apple-darwin{platform.release().split(".")[0]}'
+    return f'{machine}-pc-linux-gnu'
+
+
+TRIPLET = _triplet()
+# Effective targets we satisfy (besides c++NN selectors and the triplet).
 EFFECTIVE = {'hosted', 'cxx11_abi', 'gthreads', 'threads', 'pthread', 'std_allocator_new', 'tls',
              'tls_native', 'cstdint', 'string_conversions', 'c99_math', 'random_device',
-             'x86_64-*-*', '*-*-linux*', 'linux', 'native', 'lp64', 'exceptions', 'rtti',
+             'native', 'lp64', 'exceptions', 'rtti',
              'atomic_wait', 'net_ts_ip', 'fenv', 'little_endian', 'ieee_floats', 'size32plus',
              # <atomic> needs no libatomic (DECISIONS: lock-based atomics in the runtime archive).
              'libatomic_available'}
@@ -59,13 +70,21 @@ def eval_selector(sel):
             return STD >= n
         if t in ('*-*-*', 'native'):
             return True
+        if t.count('-') >= 2:  # a triplet pattern
+            import fnmatch
+            return fnmatch.fnmatchcase(TRIPLET, t)
+        if t == 'linux':
+            return TRIPLET.endswith('-linux-gnu')
         return t in EFFECTIVE
 
     def expr():
         nonlocal pos
         v = term()
-        while pos < len(toks) and toks[pos] in ('||', '&&'):
-            op = toks[pos]; pos += 1
+        while pos < len(toks) and toks[pos] != '}':
+            # A list of selectors without an operator ("*-*-linux* *-*-gnu*") is any of them.
+            op = '||'
+            if toks[pos] in ('||', '&&'):
+                op = toks[pos]; pos += 1
             r = term()
             v = (v or r) if op == '||' else (v and r)
         return v
@@ -185,6 +204,18 @@ def selector_of(args, key):
     return None
 
 
+
+def with_local_includes(path, src):
+    """src followed by the sources of the files it includes with "..." from its own directory
+    (one level: the wrapped_*.cc tests include the numbered tests of their directory)."""
+    parts = [src]
+    d = os.path.dirname(path)
+    for inc in re.findall(r'^\s*#\s*include\s+"([^"]+)"', src, re.M):
+        f = os.path.join(d, inc)
+        if os.path.isfile(f):
+            parts.append(open(f, encoding='utf-8', errors='replace').read())
+    return '\n'.join(parts)
+
 class LibstdcxxFormat(lit.formats.FileBasedTest):
     def __init__(self, wrapper, compiler, base_flags, skip_file, locale_probe=None, support_lib=None,
                  sanitizer_list=(), run_env=None):
@@ -296,9 +327,12 @@ class LibstdcxxFormat(lit.formats.FileBasedTest):
             elif kind == 'require-namedlocale':
                 name = (args[0] if args else rest).strip().strip('"').strip()
                 why = locales.usable(name, self.locale_probe)
-                # testsuite_hooks.h's ISO_8859(15, x) is "x.ISO8859-15@euro" on glibc: a test
-                # requiring x.ISO8859-15 opens that name when it uses the macro
-                if not why and name.endswith('.ISO8859-15') and re.search(r'\bISO_8859\s*\(\s*15\b', src):
+                # testsuite_hooks.h's ISO_8859(15, x) is "x.ISO8859-15@euro" except on the BSDs
+                # (on Darwin too, which has no such name): a test requiring x.ISO8859-15 opens
+                # that name when it uses the macro, itself or in the tests it includes
+                # (wrapped_locale.cc includes 1.cc, 2.cc, ...)
+                if not why and name.endswith('.ISO8859-15') and re.search(r'\bISO_8859\s*\(\s*15\b',
+                                                                          with_local_includes(path, src)):
                     why = locales.usable(name + '@euro', self.locale_probe)
                 if why:
                     return lit.Test.Result(lit.Test.UNSUPPORTED, why)

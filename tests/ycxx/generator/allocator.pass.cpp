@@ -62,33 +62,36 @@ struct DefaultAlloc {
   friend bool operator==(const DefaultAlloc&, const DefaultAlloc<U>&) noexcept { return true; }
 };
 
+// The coroutines are not inlined: a compiler may omit the allocation of a coroutine state whose
+// lifetime it can see ([dcl.fct.def.coroutine]/9: "may need to allocate"; Clang does at -O2 once
+// the ramp is inlined), and these tests count the allocations.
 // Allocator void: the allocator after allocator_arg is used.
-std::generator<int> any_alloc(std::allocator_arg_t, StatAlloc<char>, int n) {
+[[gnu::noinline]] std::generator<int> any_alloc(std::allocator_arg_t, StatAlloc<char>, int n) {
   for (int i = 0; i < n; ++i) co_yield i;
 }
 // Allocator given: the allocator argument converts to it.
-std::generator<int, void, StatAlloc<int>> fixed_alloc(std::allocator_arg_t, const StatAlloc<long>&, int n) {
+[[gnu::noinline]] std::generator<int, void, StatAlloc<int>> fixed_alloc(std::allocator_arg_t, const StatAlloc<long>&, int n) {
   for (int i = 0; i < n; ++i) co_yield i;
 }
 // Allocator given and default-constructible: no allocator argument needed.
-std::generator<int, void, DefaultAlloc<int>> default_alloc(int n) {
+[[gnu::noinline]] std::generator<int, void, DefaultAlloc<int>> default_alloc(int n) {
   for (int i = 0; i < n; ++i) co_yield i;
 }
 
 struct Obj {
   int base;
-  std::generator<int> member(std::allocator_arg_t, StatAlloc<int>, int n) const {
+  [[gnu::noinline]] std::generator<int> member(std::allocator_arg_t, StatAlloc<int>, int n) const {
     for (int i = 0; i < n; ++i) co_yield base + i;
   }
 };
 
-std::pmr::generator<int> pmr_gen(std::allocator_arg_t, std::pmr::polymorphic_allocator<> a, int n) {
+[[gnu::noinline]] std::pmr::generator<int> pmr_gen(std::allocator_arg_t, std::pmr::polymorphic_allocator<> a, int n) {
   for (int i = 0; i < n; ++i) co_yield i;
   (void)a;
 }
 
 // Nested generators with their own allocators.
-std::generator<int> nested(std::allocator_arg_t, StatAlloc<int> a) {
+[[gnu::noinline]] std::generator<int> nested(std::allocator_arg_t, StatAlloc<int> a) {
   co_yield std::ranges::elements_of(any_alloc(std::allocator_arg, StatAlloc<char>(a), 2));
   co_yield 9;
 }

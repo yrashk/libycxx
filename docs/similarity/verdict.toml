@@ -13,10 +13,10 @@ lede = """libycxx is compared with libstdc++, libc++ and the MSVC STL, and those
 in 43 library areas and on whole-library fingerprints, against a positive control of known \
 derived code. Regenerated from pinned sources on every build of this site."""
 
-verdict = """No evidence of copied code. On every metric, libycxx is about as similar to each established \
-library as those libraries are to each other, and far less similar than the positive control (known \
-derived code) is to its origin. Its similarity is spread across all three libraries rather than \
-concentrated on one. libycxx's higher JPlag scores largely disappear when surface style is normalised \
+verdict = """No evidence of copied code. On every metric libycxx is far less similar to each established library \
+than the positive control (known derived code) is to its origin. On the k-gram metrics it is about as \
+similar to them as they are to each other; on JPlag it is higher, most of all against libc++ and the \
+MSVC STL. Its findings are spread across all three libraries rather than concentrated on one. Those higher JPlag scores largely disappear when surface style is normalised \
 ({norm_range} times the established pairs over all areas); restricted to C++20-era components as well, a \
 residual of about {era_norm_residual} times remains, spread across libstdc++ and libc++ rather than \
 concentrated on one library ([style control](style.html)).

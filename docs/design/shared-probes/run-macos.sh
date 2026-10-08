@@ -179,8 +179,13 @@ case " $parts " in *" 3 "*)
     cxx=$(cxx_of $cc) c=$(cc_of $cc)
     sh=$work/y1-shared/build/$cc st=$work/y1-static/build/$cc so=$work/so-$cc
     rm -rf "$so"; mkdir -p "$so/ns"
-    libgcc=
-    [ $cc = gcc ] && libgcc=-static-libgcc
+    libgcc= unexport=
+    # GCC: -static-libgcc puts libgcc's emulated-TLS runtime in the dylib, whose two entry points
+    # are weak exports (dyld could coalesce them with another GCC image's, mixing one image's
+    # state with another's entry points). Each image keeps its own: they are not exported
+    # (DECISIONS §20, step 4: the exported-symbols list).
+    [ $cc = gcc ] && libgcc=-static-libgcc &&
+      unexport="-Wl,-unexported_symbol,___emutls_get_address -Wl,-unexported_symbol,___emutls_register_common"
     python3 "$here/nonshared/gen_forward.py" "$so/ns"
     run $c -O2 -fPIC -fexceptions -c "$so/ns/export.c" -o "$so/export.o"
     # tools/ycxx-cxx --libdir: Mach-O has no linker scripts; ld64 reads a file by its contents, so
@@ -200,7 +205,7 @@ case " $parts " in *" 3 "*)
     linked=0
     if run $cxx -dynamiclib -o "$so/libycxx.0.1.dylib" -install_name "$so/libycxx.0.1.dylib" \
          -compatibility_version 0.1 -current_version 0.1.0 "$so/export.o" \
-         -Wl,-force_load,"$sh/libycxx.a" "$so"/abi/*.o -nostdlib++ $libgcc; then
+         -Wl,-force_load,"$sh/libycxx.a" "$so"/abi/*.o -nostdlib++ $libgcc $unexport; then
       ok "[$cc] link libycxx.0.1.dylib"; linked=1
     else
       bad "[$cc] link libycxx.0.1.dylib (the checks that need it fail too)"
@@ -270,12 +275,26 @@ case " $parts " in *" 3 "*)
       out=$("$d/host2-$o" 2>&1); [ "$out" = "mine 31 other 31" ] && ok "[$cc/$o] $o program + both libraries (libycxx first): $out" ||
         bad "[$cc/$o] $o program + both libraries (libycxx first): $out"
       run ${APPLE_CC:-/usr/bin/clang} -O2 "$here/coexist/dl.c" -o "$d/dl"
+      # The control: the other library alone in the C host, no libycxx in the process. A
+      # libstdc++ dylib scores 27 there: its operator new/delete imports are weak-def-coalesce,
+      # so dyld binds them to Apple's libc++abi (which libSystem loads), whose new_handler runs and
+      # whose bad_alloc libstdc++'s handler does not catch (§2's Darwin hazard, on libstdc++
+      # itself). libycxx's presence must then leave the other side's score as the control has it.
+      control=$(DL_MODE=global "$d/dl" "$d/libother-$o.dylib" 2>&1 | sed -n 's/.*other \([-0-9]*\)$/\1/p')
+      if [ "$control" != 31 ]; then
+        info "[$cc/$o] control: libother-$o.dylib alone in a C host scores $control, without libycxx (for libstdc++: its operator new binds to Apple's libc++abi by weak-definition coalescing)"
+      fi
       for mode in global local; do
         for order in "libmine.dylib libother-$o.dylib" "libother-$o.dylib libmine.dylib"; do
           set -- $order
           out=$(DL_MODE=$mode "$d/dl" "$d/$1" "$d/$2" 2>&1)
-          [ "$out" = "mine 31 other 31" ] && ok "[$cc/$o] dlopen $1 then $2 ($mode): $out" ||
-            bad "[$cc/$o] dlopen $1 then $2 ($mode): $out"
+          if [ "$out" = "mine 31 other 31" ]; then
+            ok "[$cc/$o] dlopen $1 then $2 ($mode): $out"
+          elif [ "$out" = "mine 31 other $control" ]; then
+            ok "[$cc/$o] dlopen $1 then $2 ($mode): $out (the other side scores as in its control, without libycxx)"
+          else
+            bad "[$cc/$o] dlopen $1 then $2 ($mode): $out (control: other $control)"
+          fi
         done
       done
     done

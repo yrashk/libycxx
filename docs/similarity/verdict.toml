@@ -2,7 +2,8 @@
 # it is shown only while every threshold below holds for the build's numbers, otherwise the page
 # shows `needs_review` and the list of crossed thresholds instead (docs/similarity/METHOD.md,
 # "The verdict and its thresholds"). Text only in libycxx's terms: nothing quoted from the other
-# implementations (the policy leak check enforces it).
+# implementations (the policy leak check enforces it). Placeholders in braces are filled from the
+# build's numbers (tools/similarity/lib/render.py, style_numbers); the wording stays as written.
 
 lede = """libycxx is compared with libstdc++, libc++ and the MSVC STL, and those three with each other, \
 in 43 library areas and on whole-library fingerprints, against a positive control of known \
@@ -11,8 +12,10 @@ derived code. Regenerated from pinned sources on every build of this site."""
 verdict = """No evidence of copied code. On every metric, libycxx is about as similar to each established \
 library as those libraries are to each other, and far less similar than the positive control (known \
 derived code) is to its origin. Its similarity is spread across all three libraries rather than \
-concentrated on one. Its higher JPlag scores against libc++ and the MSVC STL disappear when \
-surface style (qualification and specifiers) is normalised for every library alike ([style control](style.html)).
+concentrated on one. libycxx's higher JPlag scores largely disappear when surface style is normalised \
+({norm_range} times the established pairs over all areas); restricted to C++20-era components as well, a \
+residual of about {era_norm_residual} times remains, spread across libstdc++ and libc++ rather than \
+concentrated on one library ([style control](style.html)).
 
 The longer token matches are code the standard specifies, data from registries and ABIs, or published \
 algorithms. Comment text, which copying usually carries along, is almost entirely distinct. The curated \
@@ -36,7 +39,12 @@ fetch the pinned sources at build time."""
 jplag_median_ratio = 2.0
 structural_median_ratio = 1.25
 lexical_median_ratio = 1.25
+# Style control (METHOD.md, "Style control"). The limits are the values measured when the control was
+# added (0.92 over all areas normalised; 1.28 with era restriction as well, with a gap of 0.15 between
+# the largest and the second-largest ratio) plus a margin, so that the sentence above stays true.
 style_norm_jplag_median_ratio = 1.0
+style_era_norm_jplag_median_ratio = 1.35
+style_era_norm_max_gap = 0.25
 positive_control_separation = true
 max_unreviewed = 0
 no_significant = true

@@ -174,9 +174,11 @@ Measured when the control was added:
 - **Kokkos is a weak control.** Even libc++'s derived mdspan scores only moderately against it, as
   both have changed a great deal since.
 
-The style page states these conclusions only while the numbers support them
-(`docs/similarity/style.toml`, `conclusion_condition`). The overview's verdict states that the JPlag
-elevation disappears under normalisation only while that holds (`verdict.toml`).
+The overview's verdict states both results: the JPlag elevation largely disappears under
+normalisation, and a residual of about 1.1 to 1.3 times remains in the C++20-era components, spread
+across libstdc++ and libc++. The numbers in those sentences are filled in from each build. The verdict
+and the style page's conclusion are shown only while the three style thresholds below hold; if any is
+crossed, a "needs review" banner replaces them.
 
 ## Triage, findings and dispositions
 
@@ -247,7 +249,14 @@ replaces it:
 - libycxx's JPlag upper quartile with each library stays below the positive control's lower
   quartile;
 - with style normalisation (see Style control), libycxx's JPlag median with each library is at most
-  the largest established-pair median;
+  the largest established-pair median over all areas (`style_norm_jplag_median_ratio`, 1.0);
+- with style normalisation and the C++20-era areas only, it is at most 1.35 times that median
+  (`style_era_norm_jplag_median_ratio`), and the largest of the three ratios exceeds the second
+  largest by at most 0.25 (`style_era_norm_max_gap`), so the residual is spread across libraries
+  rather than concentrated on one.
+
+  These three values are the ones measured when the control was added (0.92, 1.28 and a gap of 0.15)
+  plus a margin, stated as such in `verdict.toml`;
 - no curated finding is *significant*;
 - nothing is unreviewed;
 - no finding is stale.

@@ -193,12 +193,7 @@ def evaluate(d, ps, j, items, matches, findings) -> list[str]:
             if s and bmax and s["median"] / bmax > lim:
                 crossed.append(f"{label}: libycxx–{SHORT[o]} median {s['median']:.3f} is more than {lim}× the "
                                f"largest median of the established-library pairs ({bmax:.3f})")
-    lim = t.get("style_norm_jplag_median_ratio")
-    if lim is not None and d.get("jplag_sn"):
-        for o, v in elevation(style_stats(d)["norm"]["jplag"]).items():
-            if v is not None and v > lim:
-                crossed.append(f"JPlag, style-normalised: libycxx–{SHORT[o]} median is {v:.2f}× the largest "
-                               f"established-pair median (limit {lim}×)")
+    crossed += style_crossed(d, t)
     pc = ps["jplag"][("llvm", "llvm03")]
     if t.get("positive_control_separation") and pc:
         for o in ("gnu", "llvm", "msvc"):
@@ -442,7 +437,8 @@ def render_index(d, meta, j, findings, matches, items, ps, crossed, roots):
         h.append('<div class="banner warn"><h3>Needs review</h3><p>' + md_inline(v.get("needs_review", "")) +
                  "</p><ul class=\"compact\">" + "".join(f"<li>{esc(c)}</li>" for c in crossed) + "</ul></div>")
     else:
-        h.append('<div class="banner"><h3>Verdict</h3>' + "".join(f"<p>{md_inline(p)}</p>" for p in
+        sv = style_numbers(d) if d.get("jplag_sn") else {}
+        h.append('<div class="banner"><h3>Verdict</h3>' + "".join(f"<p>{md_inline(fill(p, sv))}</p>" for p in
                                                                  v.get("verdict", "").strip().split("\n\n")) +
                  '<p class="tiny">' + md_inline(v.get("verdict_condition", "")) + "</p></div>")
     jp = ps["jplag"]
@@ -461,11 +457,11 @@ def render_index(d, meta, j, findings, matches, items, ps, crossed, roots):
              f'<div><b>{n_find.get("significant", 0)} · {n_find.get("notable", 0)} · {unrev}</b><span>significant · '
              f'notable · unreviewed</span><small>curated findings and uncovered results</small></div></div>')
     if d.get("jplag_sn"):
-        el = elevation(style_stats(d)["norm"]["jplag"])
+        sv = style_numbers(d)
         h.append('<p class="note">Style control: with qualification and specifiers normalised for every library, '
-                 'libycxx\'s JPlag medians are ' + ", ".join(f"{fmt(v, 2)}×" for v in el.values()) +
-                 ' the largest established-pair median (libstdc++, libc++, MSVC STL; <a href="style.html">style '
-                 'control</a>).</p>')
+                 f'libycxx\'s JPlag medians are {sv["norm_range"]}× the largest established-pair median over all '
+                 f'areas; restricted to C++20-era components as well, about {sv["era_norm_residual"]}× '
+                 '(<a href="style.html">style control</a>).</p>')
     h.append('<h3>All four libraries, every pair</h3><p>The analysis is symmetric: libstdc++, libc++ and the MSVC '
              'STL are compared with each other exactly as libycxx is compared with them. Each cell is the median '
              'over the library areas of the JPlag similarity (<a href="matrix.html">all three metrics, quartiles, '
@@ -774,6 +770,45 @@ def style_stats(d):
     return out
 
 
+def style_numbers(d):
+    """Numbers the committed style sentences quote ({placeholders} in verdict.toml and style.toml)."""
+    ss = style_stats(d)
+    n = [v for v in elevation(ss["norm"]["jplag"]).values() if v is not None]
+    en = [v for v in elevation(ss["era_norm"]["jplag"]).values() if v is not None]
+    era = elevation(ss["era"]["jplag"])
+    res = [v for v in en if v > 1.0] or en
+    return {"norm_range": f"{min(n):.2f}–{max(n):.2f}" if n else "–",
+            "era_norm_residual": f"{min(res):.1f}–{max(res):.1f}" if res else "–",
+            "era_llvm": f"{era['llvm']:.2f}" if era.get("llvm") else "–",
+            "_norm": n, "_era_norm": en}
+
+
+def style_crossed(d, t) -> list[str]:
+    """The style-control thresholds of verdict.toml that this build crosses."""
+    if not d.get("jplag_sn"):
+        return []
+    sn = style_numbers(d)
+    out = []
+    lim = t.get("style_norm_jplag_median_ratio")
+    if lim is not None and any(v > lim for v in sn["_norm"]):
+        out.append(f"JPlag, style-normalised, all areas: libycxx's largest ratio to the established pairs is "
+                   f"{max(sn['_norm']):.2f}× (limit {lim}×)")
+    lim = t.get("style_era_norm_jplag_median_ratio")
+    if lim is not None and any(v > lim for v in sn["_era_norm"]):
+        out.append(f"JPlag, style-normalised, C++20-era areas: largest ratio {max(sn['_era_norm']):.2f}× "
+                   f"(limit {lim}×)")
+    gap = t.get("style_era_norm_max_gap")
+    en = sorted(sn["_era_norm"], reverse=True)
+    if gap is not None and len(en) >= 2 and en[0] - en[1] > gap:
+        out.append(f"JPlag, style-normalised, C++20-era areas: the largest ratio exceeds the second by "
+                   f"{en[0] - en[1]:.2f} (limit {gap}), so the residual is concentrated on one library")
+    return out
+
+
+def fill(text: str, values: dict) -> str:
+    return re.sub(r"\{(\w+)\}", lambda m: str(values.get(m.group(1), m.group(0))), text)
+
+
 def elevation(st):
     """libycxx's median with each library over the largest median of the established pairs."""
     base = [st[p]["median"] for p in (("gnu", "llvm"), ("gnu", "msvc"), ("llvm", "msvc")) if st.get(p)]
@@ -793,14 +828,13 @@ def render_style(d, meta, j, findings, matches, items, ps, crossed, roots):
     h = ['<p class="label">Similarity analysis · style control</p>', "<h1>Style control</h1>",
          f'<p class="lede">{md_inline(sj.get("lede", ""))}</p>']
     concl = sj.get("conclusion", "")
-    lim = sj.get("conclusion_condition", {}).get("norm_jplag_ratio")
-    el = elevation(ss["norm"]["jplag"])
-    if lim is not None and any(v is not None and v > lim for v in el.values()):
-        h.append('<div class="banner warn"><h3>Needs review</h3><p>The conclusion written for this page assumed '
-                 f'libycxx\'s style-normalised JPlag medians stay at most {lim}× the largest established-pair median; '
-                 'this build\'s are ' + ", ".join(f"{fmt(v, 2)}× with {esc(SHORT[o])}" for o, v in el.items()) +
-                 '. Read the tables without it until docs/similarity/style.toml is reviewed.</p></div>')
+    sc = style_crossed(d, j["verdict"].get("thresholds", {}))
+    if sc:
+        h.append('<div class="banner warn"><h3>Needs review</h3><p>The conclusion written for this page no longer '
+                 'matches this build\'s numbers:</p><ul class="compact">' + "".join(f"<li>{esc(c)}</li>" for c in sc) +
+                 '</ul><p>Read the tables without it until docs/similarity/style.toml is reviewed.</p></div>')
         concl = ""
+    concl = fill(concl, style_numbers(d))
     if concl:
         h.append('<div class="banner"><h3>What the controls show</h3>' + "".join(
             f"<p>{md_inline(p)}</p>" for p in concl.strip().split("\n\n")) + "</div>")

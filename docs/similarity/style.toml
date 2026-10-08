@@ -1,6 +1,6 @@
 # The style control (libycxx.org/similarity/style.html; docs/similarity/METHOD.md, "Style control").
 # Committed text; the numbers are computed on every build. The conclusion below was written for the
-# numbers at the time and is shown only while `conclusion_condition` holds; otherwise the page says
+# numbers at the time and is shown only while verdict.toml's style thresholds hold; otherwise the page says
 # the numbers have moved and the conclusion needs review.
 
 lede = """libycxx's JPlag medians with libc++ and the MSVC STL are higher than the established libraries' medians \
@@ -32,14 +32,14 @@ norm_note = """Matrices over all areas with style normalisation, applied identic
 control_note = """One table per component: every pair of the libraries that implement it, raw and style-normalised. \
 libc++ with Kokkos is a derived pair."""
 
-conclusion = """**Style explains the JPlag elevation; the independent implementations do not reproduce it.** \
-With style normalised, libycxx's JPlag medians are at or below the largest median of the established \
-pairs (0.67 to 0.92 times it): removing these tokens raises the established pairs much more than \
-libycxx's (libstdc++ with libc++ from 0.065 to 0.143, libycxx with libc++ from 0.122 to 0.132), so \
-the established libraries' differences from each other lie largely in this surface layer. Restricting \
-to C++20-era areas removes the elevation against the MSVC STL but not against libc++ (about 1.6 times). \
-Applying both controls at once leaves libycxx at 0.8 to 1.3 times the largest established pair, \
-highest with libstdc++.
+conclusion = """**Style explains most of the JPlag elevation; a residual remains in the C++20-era components; the \
+independent implementations do not reproduce it.** libycxx's higher JPlag scores largely disappear when \
+surface style is normalised ({norm_range} times the largest established-pair median over all areas): \
+removing these tokens raises the established pairs much more than libycxx's, so the established \
+libraries' differences from each other lie largely in this surface layer. Restricted to C++20-era \
+components as well, a residual of about {era_norm_residual} times remains, spread across libstdc++ and \
+libc++ rather than concentrated on one library. Era restriction alone removes the elevation against the \
+MSVC STL but not against libc++ ({era_llvm} times).
 
 The Beman and Kokkos implementations score lower against every library than the libraries score against \
 each other. Independent modern code by itself therefore does not reach libycxx's level. The libraries \
@@ -49,7 +49,5 @@ great deal since. The identifier-preserving k-gram metric stays within the estab
 under every condition except era plus normalisation, where libycxx is slightly above it (up to 1.2 \
 times on both k-gram metrics)."""
 
-# The conclusion is shown while, for JPlag with style normalisation, libycxx's median with each
-# library is at most this multiple of the largest established-pair median.
-[conclusion_condition]
-norm_jplag_ratio = 1.0
+# The conclusion is shown while the style-control thresholds in verdict.toml hold (the same ones
+# that condition the overview's sentence); placeholders in braces are filled from the build's numbers.

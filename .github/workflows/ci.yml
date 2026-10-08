@@ -43,6 +43,7 @@ jobs:
             build/test-logs/*.html
             build/test-logs/*.md
             build/cmake-test/*.log
+            build/quickstart-test/*/log.txt
             build/test-logs/*.tsv
             build/test-logs/*.log
           if-no-files-found: ignore
@@ -99,6 +100,7 @@ jobs:
             build/test-logs/*.tsv
             build/test-logs/*.log
             build/cmake-test/*.log
+            build/quickstart-test/*/log.txt
             build/cmake-test/*/log.txt
             build/diag/*.txt
             build/diag/*.map

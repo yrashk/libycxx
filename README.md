@@ -5,6 +5,26 @@ Itanium C++ ABI runtime. It is layered: a freestanding core, a hosted layer, and
 platform abstraction layer (PAL). See `STATUS.md` for what is implemented and `DECISIONS.md`
 for the design rules.
 
+## Quick start
+
+From an empty directory to `import std;` with libycxx, with only git, CMake (3.28 or later),
+Ninja, curl and the host's C toolchain installed (the Xcode Command Line Tools on macOS,
+`build-essential` on Linux):
+
+```sh
+mkdir hello && cd hello
+curl -fsSL --remote-name-all https://raw.githubusercontent.com/yrashk/libycxx/main/examples/quickstart/{CMakeLists.txt,hello.cpp}
+cmake -B build -G Ninja
+cmake --build build
+./build/hello
+```
+
+The project (`examples/quickstart`) fetches libycxx with FetchContent and uses its toolchain file,
+which finds Clang 23 or downloads it into `~/.local/share/ycxx/toolchains` (`-DYCXX_COMPILER=gcc`
+for GCC 16). **`examples/quickstart/README.md`** explains each step, the first run's time and the
+options. `tests/quickstart/run.sh` runs these commands as written on every CI run (`cmake` stage)
+and, nightly, with Clang downloaded into an empty cache on Linux and macOS.
+
 ## Toolchains
 
 Linux and macOS. `tools/toolchain/provision` finds GCC 16.2 and Clang 23.1 (with lld) or

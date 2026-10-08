@@ -1,0 +1,141 @@
+#!/usr/bin/env python3
+"""Writes the website's code samples from the files they show, so that the site shows exactly
+what is tested (examples/quickstart, run literally by tests/quickstart/run.sh).
+
+In site/index.html, a marker comment names the source of the <pre><code> block right after it:
+
+    <!-- snippet: examples/quickstart/hello.cpp --><pre><code class="lang-cpp">...</code></pre>
+    <!-- snippet: examples/quickstart/README.md#1 --><pre><code class="lang-sh">...</code></pre>
+
+A path names a whole file; PATH.md#N the Nth ```sh block of a Markdown file. The block's content
+is replaced by the source, HTML-escaped and highlighted with the site's classes (t-k keyword,
+t-f function or command, t-s string, t-c comment, t-a option, t-v variable).
+
+    tools/gen-site-snippets            rewrite site/index.html
+    tools/gen-site-snippets --check    exit 1 if site/index.html is out of date (the policy stage)
+
+Both also check that README.md's quick start shows the quickstart's commands verbatim.
+"""
+import html, os, re, sys
+
+repo = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+SITE = os.path.join(repo, 'site', 'index.html')
+BLOCK = re.compile(r'(<!-- snippet: (\S+) -->)<pre><code class="lang-(\w+)">(.*?)</code></pre>', re.S)
+
+CPP_KEYWORDS = {'import', 'export', 'module', 'int', 'auto', 'return', 'const', 'constexpr', 'for',
+                'if', 'else', 'void', 'char', 'bool', 'struct', 'class', 'template', 'using',
+                'namespace', 'true', 'false'}
+CMAKE_KEYWORDS = {'VERSION', 'CXX', 'C', 'LANGUAGES', 'CONFIG', 'REQUIRED', 'PRIVATE', 'PUBLIC',
+                  'INTERFACE', 'CACHE', 'STRING', 'BOOL', 'PATH', 'ON', 'OFF', 'TRUE', 'FALSE',
+                  'GIT_REPOSITORY', 'GIT_TAG', 'GIT_SHALLOW', 'SOURCE_SUBDIR', 'EXCLUDE_FROM_ALL'}
+
+
+def span(cls, text):
+    return f'<span class="t-{cls}">{html.escape(text, quote=False)}</span>'
+
+
+def tokens(line, rules):
+    """Highlights LINE with RULES, a list of (regex, class or function) tried at each position;
+    unmatched characters are escaped as they are."""
+    out, i = [], 0
+    while i < len(line):
+        for rx, cls in rules:
+            m = rx.match(line, i)
+            if m and m.end() > i:
+                out.append(cls(m) if callable(cls) else span(cls, m.group(0)))
+                i = m.end()
+                break
+        else:
+            out.append(html.escape(line[i], quote=False))
+            i += 1
+    return ''.join(out)
+
+
+def cpp(text):
+    word = lambda m: span('k', m.group(0)) if m.group(0) in CPP_KEYWORDS else html.escape(m.group(0))
+    rules = [(re.compile(r'"(?:[^"\\]|\\.)*"'), 's'), (re.compile(r'//.*'), 'c'),
+             (re.compile(r'[A-Za-z_]\w*(?=\()'), 'f'), (re.compile(r'[A-Za-z_]\w*'), word)]
+    return '\n'.join(tokens(l, rules) for l in text.split('\n'))
+
+
+def cmake(text):
+    word = lambda m: span('k', m.group(0)) if m.group(0) in CMAKE_KEYWORDS else html.escape(m.group(0))
+    rules = [(re.compile(r'"(?:[^"\\]|\\.)*"'), 's'), (re.compile(r'#.*'), 'c'),
+             (re.compile(r'\$\{[^}]*\}'), 'v'), (re.compile(r'[A-Za-z_]\w*(?=\()'), 'f'),
+             (re.compile(r'[A-Za-z_][\w.:+-]*'), word)]
+    return '\n'.join(tokens(l, rules) for l in text.split('\n'))
+
+
+def sh(text):
+    out = []
+    for l in text.split('\n'):
+        command = [True]  # the next word is a command name
+
+        def word(m):
+            w = m.group(0)
+            if command[0]:
+                command[0] = False
+                return span('f', w)
+            return span('a', w) if w.startswith('-') else html.escape(w, quote=False)
+
+        def sep(m):
+            command[0] = True
+            return html.escape(m.group(0), quote=False)
+        rules = [(re.compile(r'(?:^|(?<=\s))#.*'), 'c'), (re.compile(r'&&|\|\||[|;]'), sep),
+                 (re.compile(r'\$\w+|\$\{[^}]*\}'), 'v'), (re.compile(r"'[^']*'|\"[^\"]*\""), 's'),
+                 (re.compile(r'[^\s&|;$\'"]+'), word)]
+        out.append(tokens(l, rules))
+    return '\n'.join(out)
+
+
+def source(spec):
+    path, _, n = spec.partition('#')
+    with open(os.path.join(repo, path), encoding='utf-8') as f:
+        text = f.read()
+    if n:
+        blocks = re.findall(r'^```sh\n(.*?)^```$', text, re.S | re.M)
+        if len(blocks) < int(n):
+            sys.exit(f'gen-site-snippets: {path} has no ```sh block {n}')
+        text = blocks[int(n) - 1]
+    return text.rstrip('\n')
+
+
+def render(page):
+    def repl(m):
+        marker, spec, lang = m.group(1), m.group(2), m.group(3)
+        hl = {'cpp': cpp, 'cmake': cmake, 'sh': sh}.get(lang)
+        if hl is None:
+            sys.exit(f'gen-site-snippets: no highlighter for lang-{lang} ({spec})')
+        return f'{marker}<pre><code class="lang-{lang}">{hl(source(spec))}</code></pre>'
+    return BLOCK.sub(repl, page)
+
+
+def main():
+    check = sys.argv[1:] == ['--check']
+    if sys.argv[1:] not in ([], ['--check']):
+        sys.exit(__doc__)
+    with open(SITE, encoding='utf-8') as f:
+        page = f.read()
+    if not BLOCK.search(page):
+        sys.exit('gen-site-snippets: no snippet markers in site/index.html')
+    new = render(page)
+    readme_ok = True
+    with open(os.path.join(repo, 'README.md'), encoding='utf-8') as f:
+        if '```sh\n' + source('examples/quickstart/README.md#1') + '\n```' not in f.read():
+            print("README.md: its quick start differs from examples/quickstart/README.md's commands")
+            readme_ok = False
+    if check:
+        if not readme_ok:
+            sys.exit(1)
+        if new != page:
+            print('site/index.html: code samples differ from their sources; run tools/gen-site-snippets')
+            sys.exit(1)
+        print(f'site/index.html: {len(BLOCK.findall(page))} code samples match their sources')
+        return
+    if new != page:
+        with open(SITE, 'w', encoding='utf-8') as f:
+            f.write(new)
+    print(f'site/index.html: {len(BLOCK.findall(page))} code samples written')
+
+
+main()

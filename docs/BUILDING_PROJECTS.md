@@ -49,6 +49,10 @@ macOS code paths are those of `tools/ycxx-cxx`, which CI exercises there.
 
 ## Getting libycxx
 
+A new project written for libycxx needs no installation: `examples/quickstart` fetches libycxx with
+FetchContent and its toolchain file provides the compiler (the README's quick start). This guide
+is about projects that know nothing about libycxx, which are built against an installation.
+
 Build and install it once per compiler (an installation is for the compiler it was built with):
 
 ```sh

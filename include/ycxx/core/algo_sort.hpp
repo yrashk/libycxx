@@ -480,7 +480,7 @@ constexpr std::pair<_Ip, bool> __partition_right_branchless(_Ip __begin, _Ip __e
       if (__numl == 0) {
         __startl = 0;
         _Ip __it = first;
-        for (int i = 0; i < _Bk; ++i, ++__it) {
+        for (int i = 0; i < _Bk; ++i, (void)++__it) {
           __offl[__numl] = static_cast<unsigned char>(i);
           __numl += !less(*__it, __pivot);
         }
@@ -520,7 +520,7 @@ constexpr std::pair<_Ip, bool> __partition_right_branchless(_Ip __begin, _Ip __e
     if (__unknown != 0 && __numl == 0) {
       __startl = 0;
       _Ip __it = first;
-      for (int i = 0; i < __sizel; ++i, ++__it) {
+      for (int i = 0; i < __sizel; ++i, (void)++__it) {
         __offl[__numl] = static_cast<unsigned char>(i);
         __numl += !less(*__it, __pivot);
       }

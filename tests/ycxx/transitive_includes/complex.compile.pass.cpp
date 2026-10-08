@@ -72,7 +72,7 @@ namespace probe_22 { // sstream:std::ostringstream
 void probe() { std::ostringstream os; }
 }
 namespace probe_23 { // stdexcept:std::runtime_error
-void probe() { throw std::runtime_error("x"); }
+std::runtime_error probe() { return std::runtime_error("x"); }
 }
 namespace probe_24 { // streambuf:std::streambuf
 struct probe_t : std::streambuf {}; probe_t probe_v;

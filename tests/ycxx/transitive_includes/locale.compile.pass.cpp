@@ -63,7 +63,7 @@ namespace probe_19 { // limits:std::numeric_limits
 int probe() { return std::numeric_limits<int>::max(); }
 }
 namespace probe_20 { // stdexcept:std::runtime_error
-void probe() { throw std::runtime_error("x"); }
+std::runtime_error probe() { return std::runtime_error("x"); }
 }
 namespace probe_21 { // streambuf:std::streambuf
 struct probe_t : std::streambuf {}; probe_t probe_v;

@@ -36,7 +36,7 @@ namespace probe_10 { // span:std::span
 std::span<int> probe_v;
 }
 namespace probe_11 { // stdexcept:std::runtime_error
-void probe() { throw std::runtime_error("x"); }
+std::runtime_error probe() { return std::runtime_error("x"); }
 }
 namespace probe_12 { // type_traits:std::is_same_v
 static_assert(std::is_same_v<int, int>);

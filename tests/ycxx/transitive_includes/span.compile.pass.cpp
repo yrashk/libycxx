@@ -18,7 +18,7 @@ namespace probe_4 { // limits:std::numeric_limits
 int probe() { return std::numeric_limits<int>::max(); }
 }
 namespace probe_5 { // stdexcept:std::runtime_error
-void probe() { throw std::runtime_error("x"); }
+std::runtime_error probe() { return std::runtime_error("x"); }
 }
 namespace probe_6 { // type_traits:std::is_same_v
 static_assert(std::is_same_v<int, int>);

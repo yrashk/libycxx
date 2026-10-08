@@ -1,0 +1,42 @@
+name: pages
+
+# Publishes site/ (libycxx.org) to GitHub Pages. Runs only for the main branch: on a push to
+# main that changes the site, or by hand (workflow_dispatch) with main selected. A dispatch on
+# any other branch is skipped by the job's condition.
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'site/**'
+      - '.github/workflows/pages.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/configure-pages@v5
+
+      # site/ is static HTML and CSS: no build step. The prototypes stay published under
+      # /prototypes/ until one is chosen.
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+      - id: deployment
+        uses: actions/deploy-pages@v4

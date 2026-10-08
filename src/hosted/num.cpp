@@ -33,6 +33,26 @@ struct __sink {
   }
 };
 
+// Whether the C library's printf writes a sign before a NaN: '-' for one with its sign bit set
+// ("%f"), '+' with the + flag ("%+f"). Stage 1 converts "as if by" printf
+// ([facet.num.put.virtuals]); glibc writes both signs, Darwin's printf neither ("nan"; libc++'s
+// put_long_double test asks the C library the same way).
+struct __nan_signs {
+  bool __minus, __plus;
+};
+const __nan_signs& nan_signs() {
+  static const __nan_signs s = [] {
+    char __b[16];
+    __nan_signs r{};
+    std::snprintf(__b, sizeof __b, "%f", -__builtin_nan(""));
+    r.__minus = __b[0] == '-';
+    std::snprintf(__b, sizeof __b, "%+f", __builtin_nan(""));
+    r.__plus = __b[0] == '+';
+    return r;
+  }();
+  return s;
+}
+
 // Writes v with to_chars in format fmt and precision prec (< 0: none) into s.
 template <class _Fp>
 std::string __chars(_Fp __v, std::chars_format __fmt, int __prec) {
@@ -75,10 +95,13 @@ size_t format_float(char* __buf, size_t __cap, _Fp __v, std::ios_base::fmtflags 
   const bool upper = (flags & _Bp::uppercase) != 0, showpos = (flags & _Bp::showpos) != 0,
              showpoint = (flags & _Bp::showpoint) != 0;
   __sink out{__buf, __cap};
-  if (__builtin_signbit(__v))
-    out.put('-');
-  else if (showpos)
+  const bool __nan = __builtin_isnan(__v);
+  if (__builtin_signbit(__v)) {
+    if (!__nan || nan_signs().__minus)
+      out.put('-');
+  } else if (showpos && (!__nan || nan_signs().__plus)) {
     out.put('+');
+  }
   *__pad = out.__len;
   const _Fp a = __builtin_signbit(__v) ? -__v : __v;
   std::string __body;

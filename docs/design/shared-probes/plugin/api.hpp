@@ -14,7 +14,7 @@ PLUGIN_API std::vector<std::string>* plugin_make(const std::string& seed, int n)
 PLUGIN_API std::size_t plugin_consume(std::vector<std::string>* v);   // deletes v
 PLUGIN_API void plugin_throw(const std::string& what);
 PLUGIN_API int plugin_uncaught();
-// Runtime state the host and the plugin share only when both use libycxx.so's runtime (design §5):
+// Runtime state the host and the plugin share only when both use libycxx.so's runtime (DECISIONS §20.6):
 PLUGIN_API bool plugin_sees_current_exception();   // std::current_exception() != nullptr
 PLUGIN_API void* plugin_terminate_handler();        // std::get_terminate()
 PLUGIN_API void plugin_rethrow();                   // throw; (called inside the host's handler)

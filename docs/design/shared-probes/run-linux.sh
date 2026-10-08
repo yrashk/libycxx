@@ -1,5 +1,5 @@
 #!/bin/sh
-# The Linux feasibility probes of the shared-library design (docs/design/shared-library.md, "Probes").
+# The Linux feasibility probes of the shared-library design (DECISIONS §20, "Probes").
 #
 #   docs/design/shared-probes/run-linux.sh [gcc] [clang]      (default: both)
 #
@@ -8,15 +8,15 @@
 # Clang (clang++ -stdlib=libc++). Builds with -j2 ($PROBE_JOBS).
 #
 # 1. Trees. Two copies of the repository's HEAD: plain-std.patch splits off the blocks that stay in
-#    plain `std` (design §4), then transform.py opens `std { inline namespace __y1 {` everywhere else:
+#    plain `std` (DECISIONS §20.5), then transform.py opens `std { inline namespace __y1 {`
+#    everywhere else:
 #      y1-static   hidden, as today (DECISIONS §2)
 #      y1-shared   default visibility on the std and __ycxx blocks (the ABI entry points, __cxxabiv1,
 #                  the PAL and the plain-std blocks stay hidden)
 #    and builds libycxx's archives from each, per compiler.
-# 2. libycxx.so.0: y1-shared's archives linked whole (-soname libycxx.so.0). The probes' "nonshared"
-#    part of each image (design §5: what stays per image, hidden) is y1-static's archives, linked
-#    after libycxx.so so that only what libycxx.so does not export comes from them. A libdir for
-#    tools/ycxx-cxx holds libycxx.a as a GNU ld linker script, GROUP(libycxx.so.0 <archives>).
+# 2. libycxx.so.0: y1-shared's archives linked whole (-soname libycxx.so.0), and
+#    libycxx_nonshared.a, the part every image links itself, hidden (DECISIONS §20.6). A libdir for
+#    tools/ycxx-cxx holds libycxx.a as a GNU ld linker script, GROUP(libycxx.so.0 <archive>).
 # 3. known/: the compiler-known entities, against y1-static and against y1-shared + libycxx.so.
 # 4. coexist/: a shared-mode libycxx library (mine) and a library built with the toolchain's own
 #    (other: libstdc++, or libc++) in one process, each throwing, catching, allocating and using

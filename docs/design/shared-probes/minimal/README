@@ -2,4 +2,4 @@ Standalone probes, no libycxx needed: each declares one entity the way the share
 would (inside `std`'s inline namespace `__y1`) and uses it the way the compiler needs it. With
 -DPLAIN the entity is in plain `std` instead (the control). run-minimal.sh compiles, links and
 runs each in both forms with every compiler given and prints whether the inline-namespace form
-works. Expected results (Linux, GCC 16.2 and Clang 23.1): see docs/design/shared-library.md §4.
+works. Expected results (Linux, GCC 16.2 and Clang 23.1): see DECISIONS §20.5.

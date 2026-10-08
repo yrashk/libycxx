@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Probe-only source transformation (docs/design/shared-library.md): rewrites a COPY of libycxx's
+"""Probe-only source transformation (DECISIONS §20): rewrites a COPY of libycxx's
 include/ and src/ so that every file-scope `std` block opens the inline ABI namespace, and sets the
 visibility of the `std` and `__ycxx` blocks for a static or a shared build.
 
@@ -11,7 +11,7 @@ visibility of the `std` and `__ycxx` blocks for a static or a shared build.
 
 An opening whose line ends with `// y1:plain` (plain-std.patch adds those) stays in plain `std`
 too.  --plain FILE lists `path:line` openings (relative to TREE, the line of the original opening) that
-stay in plain `std` (the entities the compilers name there, docs/design/shared-library.md §4);
+stay in plain `std` (the entities the compilers name there, DECISIONS §20.5);
 those blocks keep hidden visibility in both modes.  Never run on the repository itself: the real
 change is written by hand (implementation plan, step 2).
 """
@@ -27,7 +27,7 @@ OPEN = re.compile(r'^namespace \[\[__gnu__::__visibility__\("hidden"\)\]\] (std|
 
 
 # In shared mode, the per-image allocation machinery (the default allocation functions, their
-# thunks and the allocation table, design §5) keeps its __ycxx declarations hidden: every image
+# thunks and the allocation table, DECISIONS §20.6) keeps its __ycxx declarations hidden: every image
 # has its own copy, which must never be exported or bound to another image's.
 PER_IMAGE = ("src/runtime/new/", "src/hosted/new/", "src/freestanding/new/")
 

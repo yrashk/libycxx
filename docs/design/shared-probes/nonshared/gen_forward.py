@@ -2,7 +2,7 @@
 """Writes, from entry_points.txt, forward.c (the per-image forwarders, hidden, under the names the
 compilers call) and export.c (linked into libycxx.so: exports each hidden entry point as
 __ycxx_abi_<name>). Probe only: in the design the runtime defines its implementations under the
-__ycxx_abi_ names itself, so there is one hop, not two (design §5)."""
+__ycxx_abi_ names itself, so there is one hop, not two (DECISIONS §20.6)."""
 import pathlib, sys
 here = pathlib.Path(__file__).resolve().parent
 out = pathlib.Path(sys.argv[1])

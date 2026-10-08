@@ -1,5 +1,5 @@
 #!/bin/sh
-# run-known.sh TREE [gcc|clang ...]: the compiler-known entities probe (docs/design/shared-library.md,
+# run-known.sh TREE [gcc|clang ...]: the compiler-known entities probe (DECISIONS §20,
 # "What must stay plain std"). Compiles, links and runs each known/*.cpp against TREE (the
 # repository, or a tree transform.py rewrote; TREE/build/<compiler> holds its libycxx build) and
 # lists the plain-std symbols (`std::` but not `std::__y1::`) each object refers to or defines.

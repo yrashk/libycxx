@@ -1,0 +1,69 @@
+/* libycxx.org: the cppreference.com pages hosted in cppref/ (shown in the API reference's
+   pane), restyled with the site's tokens. Builds on site.css. The class names are
+   cppreference.com's (MediaWiki templates and GeSHi highlighting). */
+
+body.cppref{font-size:15.5px;line-height:1.55}
+.cppref-notice{margin:0;max-width:none;padding:9px 20px;font:12.5px/1.45 var(--sans);color:var(--muted);background:var(--surface);border-bottom:1px solid var(--rule)}
+.cppref-notice a{color:var(--accent)}
+.cppref-article{padding:22px 24px 48px;max-width:980px}
+.cppref-article h1{font:700 26px/1.2 var(--mono);letter-spacing:-.01em;margin:0 0 16px;overflow-wrap:anywhere}
+.cppref-article h2,.cppref-article h3{font:700 19px/1.3 var(--sans);margin:28px 0 10px;padding-bottom:6px;border-bottom:1px solid var(--rule)}
+.cppref-article h3{font-size:16.5px;border-bottom:0;padding-bottom:0}
+.cppref-article h4,.cppref-article h5{font:650 15px/1.3 var(--sans);margin:20px 0 8px}
+.cppref-article p{max-width:none;margin:0 0 12px}
+.cppref-article ul,.cppref-article ol{padding-left:1.3em;margin:0 0 12px}
+.cppref-article dl{margin:0 0 12px}
+.cppref-article dd{margin-left:1.2em}
+.cppref-article a.new,.cppref-article .mw-headline a{color:inherit}
+.cppref-article code,.cppref-article tt,.cppref-article kbd{font:.92em/1.4 var(--mono);background:var(--surface);border:1px solid var(--rule);border-radius:4px;padding:.05em .3em;white-space:normal}
+.cppref-article pre{font:13.5px/1.55 var(--mono);background:var(--code-bg);border:1px solid var(--rule);border-radius:10px;padding:12px 14px;overflow-x:auto;margin:0 0 14px}
+.cppref-article pre code{border:0;background:none;padding:0}
+.cppref-article .t-dcl-begin pre,.cppref-article .t-dcl pre,.cppref-article table pre{border:0;background:none;padding:0;margin:0}
+
+/* tables: declarations (t-dcl), member lists (t-dsc), parameters (t-par), revisions */
+.cppref-article table{border-collapse:collapse;margin:0 0 16px;font-size:14px;max-width:100%}
+.cppref-article td,.cppref-article th{padding:6px 10px;vertical-align:top;text-align:left}
+.cppref-article .t-dcl-begin,.cppref-article .t-dsc-begin,.cppref-article .wikitable,.cppref-article .t-rev-begin{width:100%;border:1px solid var(--rule);border-radius:10px;border-collapse:separate;border-spacing:0;overflow:hidden;display:table}
+.cppref-article .t-dcl-begin{background:var(--code-bg)}
+.cppref-article .t-dcl-begin td,.cppref-article .t-dsc-begin td,.cppref-article .wikitable td,.cppref-article .wikitable th{border-bottom:1px solid var(--rule)}
+.cppref-article .t-dcl-begin tr:last-child td,.cppref-article .t-dsc-begin tr:last-child td,.cppref-article .wikitable tr:last-child td{border-bottom:0}
+.cppref-article table.t-dcl-begin{border-collapse:collapse;display:table}
+.cppref-article .t-dcl-begin td{border-bottom:0;padding:5px 12px}
+.cppref-article .t-dcl-begin tbody.t-dcl-rev,.cppref-article .t-dcl-begin tbody+tbody tr.t-dcl:first-child td{border-top:1px solid var(--rule)}
+.cppref-article .t-dcl td:first-child{width:100%;font:13.5px/1.55 var(--mono)}
+.cppref-article .t-dcl p{margin:0}
+.cppref-article .t-dcl td+td{white-space:nowrap;color:var(--faint);font:12px/1.6 var(--mono);text-align:right}
+.cppref-article .t-dcl-rev-aux td{padding:0 12px;height:0}
+.cppref-article .t-dcl-rev-aux td[rowspan]{vertical-align:middle;font:600 12.5px/1 var(--mono);color:var(--accent);white-space:nowrap}
+.cppref-article .t-dsc-header td,.cppref-article .t-dcl-header td{background:var(--surface);font-size:13px;color:var(--muted)}
+.cppref-article .t-dsc-header code,.cppref-article .t-dcl-header code{font-size:12.5px}
+.cppref-article .t-dsc td:first-child{width:36%;font-family:var(--mono);font-size:13.5px}
+.cppref-article .t-dsc-member-div{display:flex;flex-direction:column;gap:2px}
+.cppref-article .t-mark,.cppref-article .t-mark-rev{font:12px/1.4 var(--mono);color:var(--faint)}
+.cppref-article .t-since-cxx26,.cppref-article .t-since-cxx23{color:var(--accent)}
+.cppref-article .t-sep,.cppref-article .t-dcl-sep td{height:0;padding:0}
+.cppref-article .t-li1,.cppref-article .t-li2,.cppref-article .t-li3{display:block;margin-left:0}
+.cppref-article .t-li2{margin-left:1.2em}
+.cppref-article .t-li3{margin-left:2.4em}
+.cppref-article .t-v{font:12.5px var(--mono);color:var(--faint)}
+.cppref-article .t-par-begin td{border-bottom:1px solid var(--rule)}
+.cppref-article .t-example .t-example-live-link{display:none}
+.cppref-article .toc,.cppref-article #toc{display:none}
+.cppref-article .mw-geshi{font-family:var(--mono)}
+.cppref-article .t-lines>span{display:block}
+
+/* GeSHi highlighting, mapped to the site's code tokens */
+.cppref-article .kw1,.cppref-article .kw2,.cppref-article .kw3,.cppref-article .kw4,.cppref-article .kw5{color:var(--code-k)}
+.cppref-article .kw6,.cppref-article .kw7,.cppref-article .kw8,.cppref-article .kw9,.cppref-article .kw10,.cppref-article .kw11{color:var(--code-v)}
+.cppref-article .co1,.cppref-article .co2,.cppref-article .coMULTI{color:var(--code-c);font-style:italic}
+.cppref-article .st0,.cppref-article .es0,.cppref-article .es1,.cppref-article .nu0,.cppref-article .nu6,.cppref-article .nu8,.cppref-article .nu12,.cppref-article .nu16{color:var(--code-s)}
+.cppref-article .me1,.cppref-article .me2{color:var(--code-f)}
+.cppref-article .br0,.cppref-article .sy1,.cppref-article .sy2,.cppref-article .sy3,.cppref-article .sy4{color:var(--muted)}
+
+@media (max-width:640px){
+  .cppref-article{padding:16px 14px 40px}
+  .cppref-notice{padding:8px 14px}
+  .cppref-article h1{font-size:21px}
+  .cppref-article table{display:block;overflow-x:auto}
+  .cppref-article .t-dsc td:first-child{width:auto}
+}

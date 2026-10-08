@@ -11,57 +11,9 @@
 <meta property="og:url" content="https://libycxx.org/">
 <link rel="canonical" href="https://libycxx.org/">
 <link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%2032%2032%22%3E%3Crect%20width%3D%2232%22%20height%3D%2232%22%20rx%3D%227%22%20fill%3D%22%231d5fd1%22/%3E%3Ctext%20x%3D%2216%22%20y%3D%2222.5%22%20font-family%3D%22Georgia%2Cserif%22%20font-size%3D%2220%22%20font-weight%3D%22700%22%20text-anchor%3D%22middle%22%20fill%3D%22%23fff%22%3Ey%3C/text%3E%3C/svg%3E">
+<link rel="stylesheet" href="assets/site.css">
 <style>
-
-@font-face{font-family:"Anaheim";font-style:normal;font-weight:400 800;font-display:swap;
-  src:url(fonts/anaheim-latin-wght-normal.woff2) format("woff2-variations"),url(fonts/anaheim-latin-wght-normal.woff2) format("woff2");
-  unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
-@font-face{font-family:"Lekton";font-style:normal;font-weight:400;font-display:swap;src:url(fonts/lekton-latin-400-normal.woff2) format("woff2");
-  unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
-@font-face{font-family:"Lekton";font-style:normal;font-weight:700;font-display:swap;src:url(fonts/lekton-latin-700-normal.woff2) format("woff2");
-  unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
-:root{
-  --bg:#ffffff; --fg:#14171c; --muted:#4a525d; --faint:#737b86; --rule:#e4e7eb; --surface:#f6f7f9;
-  --accent:#1d5fd1; --accent-soft:#eaf1fd; --side:#fafbfc; --ok:#1a7f45;
-  --code-bg:#f6f7f9; --code-k:#1d5fd1; --code-s:#2f7a4b; --code-c:#8a929c; --code-f:#14171c; --code-v:#8a4baf;
-  --sans:"Anaheim",ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif; --mono:"Lekton",ui-monospace,"SF Mono",SFMono-Regular,Menlo,"Cascadia Mono","JetBrains Mono",Consolas,"Liberation Mono",monospace;
-}
-@media (prefers-color-scheme:dark){:root{
-  --bg:#0f1215; --fg:#e6e9ed; --muted:#aab2bc; --faint:#808993; --rule:#252a30; --surface:#161a1f;
-  --accent:#6aa5ff; --accent-soft:#14233a; --side:#12161a; --ok:#5fd08e;
-  --code-bg:#161a1f; --code-k:#6aa5ff; --code-s:#8fd0a5; --code-c:#6c757f; --code-f:#e6e9ed; --code-v:#d0a6f0;
-}}
-*,*::before,*::after{box-sizing:border-box}
-html{-webkit-text-size-adjust:100%;scroll-padding-top:24px}
-body{margin:0;background:var(--bg);color:var(--fg);font:17.5px/1.6 var(--sans);-webkit-font-smoothing:antialiased}
-a{color:var(--accent);text-decoration:none}
-a:hover{text-decoration:underline;text-underline-offset:.2em}
-code{white-space:nowrap;font:.92em/1 var(--mono);background:var(--surface);border:1px solid var(--rule);padding:.08em .3em;border-radius:4px;-webkit-box-decoration-break:clone;box-decoration-break:clone}
-
-.layout{display:grid;grid-template-columns:272px minmax(0,1fr);min-height:100vh;background:linear-gradient(to right,var(--side) 271px,var(--rule) 271px,var(--rule) 272px,var(--bg) 272px)}
-.side{position:sticky;top:0;height:100vh;overflow-y:auto;padding:28px 24px;display:flex;flex-direction:column;gap:28px}
-.brand{display:flex;align-items:center;gap:10px;color:var(--fg);font:700 19px/1 var(--sans);letter-spacing:-.01em}
-.brand:hover{text-decoration:none}
-.brand i{display:inline-grid;place-items:center;width:28px;height:28px;border-radius:6px;background:var(--accent);color:#fff;font:700 16px/1 Georgia,serif;font-style:normal}
-.badges{display:flex;flex-wrap:wrap;gap:6px;margin-top:-12px}
-.badge{font:500 11.5px/1 var(--mono);color:var(--muted);border:1px solid var(--rule);border-radius:999px;padding:5px 9px;background:var(--bg)}
-.toc{list-style:none;margin:0;padding:0;font-size:14.5px}
-.toc li a{display:flex;gap:12px;align-items:baseline;color:var(--muted);padding:7px 10px;border-radius:6px;border-left:2px solid transparent}
-.toc li a span{font:12px/1 var(--mono);color:var(--faint)}
-.toc li a:hover{text-decoration:none;color:var(--fg);background:var(--surface)}
-.toc li a.on{color:var(--fg);background:var(--accent-soft);border-left-color:var(--accent)}
-.toc li a.on span{color:var(--accent)}
-.side-foot{margin-top:auto;font-size:13.5px;display:flex;flex-direction:column;gap:6px}
-.side-foot a{color:var(--muted)}
-.side-foot a:hover{color:var(--fg)}
-.gh-btn{display:inline-flex;align-items:center;gap:8px;justify-content:center;border:1px solid var(--rule);border-radius:8px;padding:9px 12px;color:var(--fg)!important;background:var(--bg);font-weight:600;margin-bottom:8px}
-.gh-btn:hover{text-decoration:none;border-color:var(--faint)}
-
-main{padding:56px 64px 80px;max-width:1000px}
-.label{font:600 12px/1 var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--accent);margin:0 0 16px}
-h1{text-wrap:balance;font:700 clamp(32px,4.2vw,46px)/1.1 var(--sans);letter-spacing:-.025em;margin:0 0 18px}
-.lede{font-size:18.5px;line-height:1.6;color:var(--muted);max-width:44em;margin:0 0 32px}
-
+/* The home page's own rules; the shared design is assets/site.css. */
 .sheet{display:grid;grid-template-columns:minmax(0,1fr);border:1px solid var(--rule);border-radius:10px;overflow:hidden;margin:0 0 20px}
 .sheet .cell{padding:24px}
 .sheet .cell+.cell{border-top:1px solid var(--rule);background:var(--surface)}
@@ -74,59 +26,31 @@ h1{text-wrap:balance;font:700 clamp(32px,4.2vw,46px)/1.1 var(--sans);letter-spac
 .sheet figure.code figcaption{padding:0}
 .sheet figure.code+figure.code{margin-top:16px;padding-top:16px;border-top:1px dashed var(--rule)}
 .sheet figure.code{overflow:visible}
-
 .stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));border:1px solid var(--rule);border-radius:10px;overflow:hidden;margin:0 0 8px}
 .stats div{padding:18px 20px}
 .stats div+div{border-left:1px solid var(--rule)}
 .stats b{display:block;font:700 26px/1.15 var(--sans);letter-spacing:-.02em;font-variant-numeric:tabular-nums}
 .stats span{display:block;font:600 11.5px/1.3 var(--mono);text-transform:uppercase;letter-spacing:.06em;color:var(--accent);margin-top:6px}
 .stats small{display:block;font-size:13px;line-height:1.45;color:var(--muted);margin-top:6px}
-
 section{padding-top:72px}
 .sec-head{display:flex;align-items:baseline;gap:14px;padding-bottom:14px;border-bottom:1px solid var(--rule);margin-bottom:24px}
 .sec-head .no{font:600 13px/1 var(--mono);color:var(--accent)}
-h2{text-wrap:balance;font:700 28px/1.2 var(--sans);letter-spacing:-.02em;margin:0}
-h3{font:650 18px/1.35 var(--sans);margin:40px 0 10px;letter-spacing:-.005em}
-h4{font:650 15px/1.35 var(--sans);margin:0 0 6px}
-p{margin:0 0 16px;max-width:46em}
 .lead{font-size:18px;color:var(--fg);margin-bottom:24px}
-.note{font-size:14px;color:var(--muted)}
-
-.facts{margin:24px 0 0;display:grid;grid-template-columns:minmax(0,1fr);font-size:14.5px}
-.facts div{display:grid;grid-template-columns:120px 1fr;gap:12px;padding:9px 0;border-bottom:1px solid var(--rule)}
-.facts div:last-child{border-bottom:0}
-.facts dt{font:500 11.5px/1.9 var(--mono);text-transform:uppercase;letter-spacing:.06em;color:var(--faint)}
-.facts dd{margin:0}
 #overview .facts{display:none}
 section .facts{border:1px solid var(--rule);border-radius:10px;padding:4px 20px;grid-template-columns:1fr 1fr;column-gap:32px}
 section .facts div:nth-last-child(2){border-bottom:0}
-
 .areas,.limits{list-style:none;padding:0;margin:0 0 24px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));border:1px solid var(--rule);border-radius:10px;overflow:hidden}
 .areas li,.limits li{padding:18px 20px;border-bottom:1px solid var(--rule)}
 .areas li:nth-child(odd),.limits li:nth-child(odd){border-right:1px solid var(--rule)}
 .areas li:nth-last-child(-n+2),.limits li:nth-last-child(-n+2){border-bottom:0}
 .areas p,.limits p{font-size:14.5px;color:var(--muted);margin:0}
 .limits h4::before{content:"—";color:var(--accent);margin-right:8px}
-
 .principles{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
 .principles article{border:1px solid var(--rule);border-radius:10px;padding:20px 22px;background:var(--bg)}
 .principles h3{margin:0 0 8px;font-size:16px}
 .principles p{font-size:14.5px;color:var(--muted);margin:0}
-ul.compact{margin:0 0 16px;padding-left:1.2em;max-width:46em}
-ul.compact li{margin-bottom:8px}
-ul.compact li::marker{color:var(--accent)}
-
-.table-wrap{overflow-x:auto;margin:18px 0 20px;border:1px solid var(--rule);border-radius:10px}
-table.data{width:100%;border-collapse:collapse;font-size:14px;font-variant-numeric:tabular-nums}
-table.data caption{caption-side:top;text-align:left;font:500 12px/1.4 var(--mono);color:var(--faint);padding:12px 16px;border-bottom:1px solid var(--rule);background:var(--surface)}
-table.data th{text-align:left;font:600 11.5px/1.2 var(--mono);text-transform:uppercase;letter-spacing:.05em;color:var(--muted);padding:10px 16px;border-bottom:1px solid var(--rule)}
-table.data td{padding:9px 16px;border-bottom:1px solid var(--rule);vertical-align:top}
-table.data tr:last-child td{border-bottom:0}
-table.data .num{text-align:right;font-family:var(--mono);font-size:13px;white-space:nowrap}
-table.data td b{color:var(--accent)}
 table.projects td:nth-child(2){font:12.5px/1.6 var(--mono);color:var(--muted)}
 table.projects tbody tr:nth-child(even){background:var(--surface)}
-sup{font-size:.7em;line-height:0}
 table.matrix{font-size:13.5px}
 table.matrix th[scope=row]{text-align:left;font:600 14px/1.35 var(--sans);text-transform:none;letter-spacing:0;color:var(--fg);border-bottom:1px solid var(--rule);padding:10px 16px;vertical-align:top;background:var(--surface);min-width:190px}
 table.matrix td{line-height:1.45}
@@ -135,45 +59,11 @@ table.matrix th.grp{text-align:left;border-bottom:1px solid var(--rule);color:va
 table.matrix thead th small{text-transform:none;letter-spacing:0;font-family:var(--sans)}
 table.matrix td small,table.matrix th small{display:block;font-size:12px;color:var(--muted);font-weight:400;margin-top:3px}
 table.matrix code{font-size:.85em}
-.ok{color:var(--ok);font-weight:700}
 .no,.muted{color:var(--faint)}
 ol.footnotes{list-style:none;padding:0;margin:8px 0 0;font-size:13px;color:var(--muted);max-width:52em}
 ol.footnotes li{margin:0 0 6px}
 ol.footnotes sup{color:var(--accent);font-weight:700;margin-right:4px}
-
-figure.code{margin:16px 0 20px;background:var(--code-bg);border:1px solid var(--rule);border-radius:10px;overflow:hidden}
-figure.code figcaption{font:500 11.5px/1 var(--mono);color:var(--faint);padding:12px 16px 0}
-figure.code pre{margin:0;padding:10px 16px 14px;overflow-x:auto;font:14.5px/1.6 var(--mono)}
-figure.code code{white-space:pre;background:none;border:0;padding:0;font:inherit}
-
-.t-k{color:var(--code-k)}
-.t-s,.t-n{color:var(--code-s)}
-.t-c{color:var(--code-c);font-style:italic}
-.t-p{color:var(--code-k)}
-.t-f{color:var(--code-f)}
-.t-v,.t-a{color:var(--code-v)}
-
-
-.mobile-bar{display:none}
-footer{margin-top:80px;padding-top:20px;border-top:1px solid var(--rule);font-size:13.5px;color:var(--muted);display:flex;flex-wrap:wrap;gap:6px 18px}
-footer a{color:var(--muted)}
-
-@media (max-width:1100px){
-  main{padding:48px 40px 72px}
-}
 @media (max-width:860px){
-  .layout{grid-template-columns:minmax(0,1fr);background:var(--bg)}
-  .side{display:none}
-  .mobile-bar{display:flex;position:sticky;top:0;z-index:5;align-items:center;justify-content:space-between;
-    background:var(--side);border-bottom:1px solid var(--rule);padding:12px 16px}
-  .mobile-bar details{position:relative}
-  .mobile-bar summary{list-style:none;cursor:pointer;font:600 13px/1 var(--mono);color:var(--muted);border:1px solid var(--rule);border-radius:8px;padding:8px 12px;background:var(--bg)}
-  .mobile-bar summary::-webkit-details-marker{display:none}
-  .mobile-bar details[open] .toc{position:absolute;right:0;top:calc(100% + 8px);width:240px;background:var(--bg);border:1px solid var(--rule);border-radius:10px;padding:6px;box-shadow:0 12px 32px rgba(0,0,0,.12)}
-  .mobile-bar .toc{display:none}
-  .mobile-bar details[open] .toc{display:block}
-  main{padding:32px 16px 56px}
-  .lede{font-size:17px}
   .stats{grid-template-columns:1fr 1fr}
   .stats div:nth-child(3){border-left:0}
   .stats div:nth-child(n+3){border-top:1px solid var(--rule)}
@@ -182,32 +72,27 @@ footer a{color:var(--muted)}
   .areas li:nth-last-child(2),.limits li:nth-last-child(2){border-bottom:1px solid var(--rule)}
   section .facts{grid-template-columns:1fr}
   section .facts div:nth-last-child(2){border-bottom:1px solid var(--rule)}
-  .facts div{grid-template-columns:96px minmax(0,1fr)}
   .sheet .facts{grid-template-columns:minmax(0,1fr)}
   .sheet .facts div:nth-last-child(2){border-bottom:1px solid var(--rule)}
-  table.data th,table.data td{padding-left:12px;padding-right:12px}
   table.matrix{min-width:640px}
   table.matrix th[scope=row]{min-width:150px}
   .sheet .cell{padding:18px 16px}
   section{padding-top:56px}
-  h2{font-size:24px}
-  figure.code pre{font-size:12.5px}
 }
-
 </style>
 <link rel="preload" href="fonts/anaheim-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="fonts/lekton-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin>
 </head>
 <body>
-<div class="mobile-bar"><a class="brand" href="#"><i>y</i>libycxx</a><details><summary>Contents</summary><ul class="toc"><li><a href="#overview"><span>01</span>What it is</a></li><li><a href="#coverage"><span>02</span>What is implemented</a></li><li><a href="#approach"><span>03</span>How it is built</a></li><li><a href="#testing"><span>04</span>How it is tested</a></li><li><a href="#matrix"><span>05</span>Platform and compiler matrix</a></li><li><a href="#start"><span>06</span>Getting started</a></li><li><a href="#status"><span>07</span>Status and limitations</a></li><li><a href="https://github.com/yrashk/libycxx"><span>↗</span>GitHub</a></li></ul></details></div>
+<div class="mobile-bar"><a class="brand" href="#"><i>y</i>libycxx</a><details><summary>Contents</summary><ul class="toc"><li><a href="#overview"><span>01</span>What it is</a></li><li><a href="#coverage"><span>02</span>What is implemented</a></li><li><a href="#approach"><span>03</span>How it is built</a></li><li><a href="#testing"><span>04</span>How it is tested</a></li><li><a href="#matrix"><span>05</span>Platform and compiler matrix</a></li><li><a href="#start"><span>06</span>Getting started</a></li><li><a href="#status"><span>07</span>Status and limitations</a></li><li><a href="api/index.html"><span>API</span>API reference</a></li><li><a href="https://github.com/yrashk/libycxx"><span>↗</span>GitHub</a></li></ul></details></div>
 <div class="layout">
 <aside class="side" aria-label="Contents">
 <a class="brand" href="#"><i>y</i>libycxx</a>
 <div class="badges"><span class="badge">v0.1.0</span><span class="badge">C++26</span><span class="badge">GCC &amp; Clang</span><span class="badge">Linux &amp; macOS</span></div>
-<nav><ul class="toc"><li><a href="#overview"><span>01</span>What it is</a></li><li><a href="#coverage"><span>02</span>What is implemented</a></li><li><a href="#approach"><span>03</span>How it is built</a></li><li><a href="#testing"><span>04</span>How it is tested</a></li><li><a href="#matrix"><span>05</span>Platform and compiler matrix</a></li><li><a href="#start"><span>06</span>Getting started</a></li><li><a href="#status"><span>07</span>Status and limitations</a></li></ul></nav>
+<nav><ul class="toc"><li><a href="#overview"><span>01</span>What it is</a></li><li><a href="#coverage"><span>02</span>What is implemented</a></li><li><a href="#approach"><span>03</span>How it is built</a></li><li><a href="#testing"><span>04</span>How it is tested</a></li><li><a href="#matrix"><span>05</span>Platform and compiler matrix</a></li><li><a href="#start"><span>06</span>Getting started</a></li><li><a href="#status"><span>07</span>Status and limitations</a></li><li><a href="api/index.html"><span>API</span>API reference</a></li></ul></nav>
 <div class="side-foot">
 <a class="gh-btn" href="https://github.com/yrashk/libycxx"><svg class="gh" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>yrashk/libycxx</a>
-<a href="https://github.com/yrashk/libycxx/blob/HEAD/README.md">README</a><a href="https://github.com/yrashk/libycxx/blob/HEAD/STATUS.md">Status</a><a href="https://github.com/yrashk/libycxx/blob/HEAD/DECISIONS.md">Design decisions</a><a href="https://github.com/yrashk/libycxx/blob/HEAD/docs/BUILDING_PROJECTS.md">Building projects</a><a href="https://github.com/yrashk/libycxx/blob/HEAD/docs/SPEC_COVERAGE.md">Spec coverage</a><a href="https://github.com/yrashk/libycxx/blob/HEAD/docs/CUSTOM_STDLIB.md">Custom standard library</a>
+<a href="api/index.html">API reference</a><a href="https://github.com/yrashk/libycxx/blob/HEAD/README.md">README</a><a href="https://github.com/yrashk/libycxx/blob/HEAD/STATUS.md">Status</a><a href="https://github.com/yrashk/libycxx/blob/HEAD/DECISIONS.md">Design decisions</a><a href="https://github.com/yrashk/libycxx/blob/HEAD/docs/BUILDING_PROJECTS.md">Building projects</a><a href="https://github.com/yrashk/libycxx/blob/HEAD/docs/SPEC_COVERAGE.md">Spec coverage</a><a href="https://github.com/yrashk/libycxx/blob/HEAD/docs/CUSTOM_STDLIB.md">Custom standard library</a>
 </div>
 </aside>
 <main>
@@ -610,7 +495,7 @@ defects noticed along the way, and what comes next.</p>
 <script>
 // Highlight the section in view in the sidebar (progressive enhancement only).
 (function () {
-  var links = document.querySelectorAll('.side .toc a');
+  var links = document.querySelectorAll('.side .toc a[href^="#"]');
   if (!('IntersectionObserver' in window) || !links.length) return;
   var byId = {};
   links.forEach(function (a) { byId[a.getAttribute('href').slice(1)] = a; });

@@ -1,0 +1,48 @@
+{{!--
+    libycxx: the part of a declarator before the name, written the way the standard writes it:
+    `const T&` (cv-qualifiers before a named type, not after) and `Args&&...` (the pack
+    expansion once, after the declarator, not also after the pattern's type).
+    Parameters: as MrDocs's type/declarator-prefix; in-pattern: inside a pack's pattern.
+--}}
+{{#if pointeeType~}}
+    {{~>type/declarator-prefix pointeeType link-components-impl=link-components-impl in-pattern=(or in-pattern isPackExpansion)~}}
+    {{#if (contains (arr "array" "function") pointeeType.kind)~}}
+        (
+    {{~/if~}}
+{{~/if~}}
+{{#if elementType~}}
+    {{~>type/declarator-prefix elementType link-components-impl=link-components-impl in-pattern=(or in-pattern isPackExpansion)~}}
+{{/if~}}
+{{#if returnType~}}
+    {{~>type/declarator-prefix returnType link-components-impl=link-components-impl~}}
+{{/if~}}
+{{#if (eq kind "named")~}}
+    {{#if isConst}}const {{/if}}{{#if isVolatile}}volatile {{/if~}}
+    {{>type/name-info name link-components-impl=link-components-impl }}
+{{~else if (eq kind "auto")~}}
+    {{#if isConst}}const {{/if}}{{#if isVolatile}}volatile {{/if~}}
+    {{#if constraint~}}
+        {{>type/name-info constraint link-components-impl=link-components-impl }} {{/if~}}
+    {{keyword~}}
+{{~else~}}
+{{#if isConst~}}
+    {{ str ' ' }}const
+{{~/if~}}
+{{#if isVolatile~}}
+    {{ str ' ' }}volatile
+{{~/if~}}
+{{~/if~}}
+{{#if (eq kind "lvalue-reference")~}}
+    &
+{{~ else if (eq kind "rvalue-reference") ~}}
+    &&
+{{~ else if (eq kind "pointer")~}}
+    *
+{{~ else if (eq kind "member-pointer")~}}
+    {{>type/declarator parentType link-components-impl=link-components-impl}}::*
+{{~ else if (eq kind "decltype")~}}
+    decltype({{operand}})
+{{~/if~}}
+{{#if (and isPackExpansion (not in-pattern))~}}
+    {{ str "..." }}
+{{~/if}}

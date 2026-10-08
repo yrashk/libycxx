@@ -2740,5 +2740,31 @@ da858a15). It answered the design's questions about Darwin:
     compatibility version 0.1.0).
 11. **A shared-mode program exports 3 symbols (1 weak), a plugin 8 (1 weak).**
 
+**The final macOS run** (`run-macos.sh 3` at `shared-lib-design` 5b36c843, a fresh work
+directory, same machine and toolchains): **97 passed, 0 failed.**
+- **The GCC dylib** exports 1,440 symbols, all `std::__y1`, `__ycxx`, `__ycxx_abi_*` or the
+  table. Its 740 weak exports are all `std::__y1`, `__ycxx` or the table. The emulated-TLS entry
+  points are now non-external.
+- **The Clang dylib** exports 795 symbols, 56 of them weak, all allowed.
+- **The libstdc++ control** scores 27 alone (INFO). All four `dlopen()` cases pass with "mine
+  31 other 27".
+- **Everything else passes unchanged:** both modes, the known probes, the seven libc++
+  arrangements, the three linked libstdc++ arrangements, and the host/plugin matrix
+  ("shared-state 15" only between a shared host and a shared plugin).
+- **Exports of the probe programs** (INFO):
+
+  | Image | Exports | Weak | `std::__y1` |
+  |---|---:|---:|---:|
+  | Clang program, either mode | 3 | 1 | |
+  | GCC static-mode program | 5 | 3 | |
+  | GCC shared-mode program | 23 | 21 | 20 |
+  | GCC shared plugin | 31 | | 23 |
+
+  The weak `std::__y1` exports of a shared-mode program are intended. They are the vague-linkage
+  instantiations it emitted, with default visibility, and dyld coalesces them with the
+  dylib's, which gives one definition per process: the same thing ELF's dynamic linker does by
+  interposition. They can never meet another library's definitions, because no other library uses
+  `std::__y1`. The probes keep counting them as INFO.
+
 Not covered by the script: `ld-prime`'s handling of wildcard `-exported_symbols_list` patterns.
 Step 4 checks that when it adds the list.

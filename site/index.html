@@ -194,7 +194,7 @@ and the alternatives that were rejected.</p>
 
 <article>
 <h3>Hidden namespaces and reserved names</h3>
-<p>Public declarations live in <code>std</code>; internals use reserved names in hidden namespaces. Argument-dependent lookup stays out of implementation details, and hidden visibility isolates runtime symbols.</p>
+<p>Public declarations live in the inline namespace <code>std::__y1</code> of <code>std</code>, except the few the compilers name in <code>std</code> itself; internals use reserved names in hidden namespaces. Argument-dependent lookup stays out of implementation details, and hidden visibility isolates runtime symbols.</p>
 </article>
 
 <article>

@@ -1,5 +1,18 @@
 # libycxx status
 
+## ABI change: the inline namespace std::__y1 (2026-10-08)
+
+Every standard entity is now declared in the inline namespace `std::__y1` (DECISIONS §20.4),
+except those the compilers or the platform name in plain `std` (`align_val_t`,
+`destroying_delete_t`, `nothrow_t`/`nothrow`, `initializer_list`, `byte`, `terminate`,
+`std::meta`; §20.5). Every mangled name of the library therefore changed (`St12out_of_range` is
+now `NSt4__y112out_of_rangeE`), and the ABI runtime's entry points are implemented under
+`__ycxx_abi_*` names with the Itanium names as forwarders (§20.6). **Rebuild everything built
+against an older libycxx; libycxx 0.x has no ABI promise.** Objects built against the old names fail to link
+("undefined reference"), they do not misbehave. Debuggers, `nm -C`, the terminate handler and
+`<stacktrace>` show `std::__y1::`, and GCC's diagnostics name it too. This prepares the shared
+library (§20, steps 4-10, pending).
+
 ## Toolchain
 | Compiler | Version | Notes |
 |---|---|---|

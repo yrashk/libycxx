@@ -152,8 +152,8 @@ supported.
 
 ### ABI: every C++ dependency must be built against libycxx
 
-libycxx's types have their own layouts and names (no `std::__cxx11`, no `std::__1`), its own
-exception runtime and its own allocation functions. Code compiled against libstdc++ or libc++
+libycxx's types have their own layouts and names (`std::__y1::string`, not `std::__cxx11` or
+`std::__1`; DECISIONS §20.4), its own exception runtime and its own allocation functions. Code compiled against libstdc++ or libc++
 cannot be linked with code compiled against libycxx in one image: the mangled names differ, so
 the link fails (an undefined reference to `f(std::string)` that the library defines as
 `f(std::__cxx11::basic_string<...>)`), and where it does not fail the objects disagree on
@@ -662,7 +662,8 @@ tools/ycxx-check-binary build                                                   
 For each executable, shared library, archive or object (a directory is searched), it checks what
 `tools/realworld` proves for every real-world project (`tools/lib/ycxx_linkage.py`): no
 libstdc++/libc++ among the needed libraries; no libstdc++/libc++ symbol, defined or undefined
-(`std::__cxx11`, `__gnu_cxx::`, `std::__1`, any other `std::__` name, `GLIBCXX_`/`CXXABI_`
+(`std::__cxx11`, `__gnu_cxx::`, `std::__1`, any other `std::__` name but libycxx's own
+`std::__y1`, `GLIBCXX_`/`CXXABI_`
 versions), which an object compiled with the toolchain's headers has; and, for executables and
 shared libraries with C++ code, libycxx's allocation table. One line per file, exit status 1 if
 any fails:
@@ -683,8 +684,11 @@ libycxx is at version 0.1.0 (`find_package(libycxx 0.1)`, `libycxx.pc`'s `Versio
 stable ABI: the layouts of library types and the archives' contents change between commits.
 Rebuild everything (dependencies included) when libycxx changes, keep one installation per
 compiler (GCC and Clang builds are separate prefixes), and do not mix objects compiled against
-two libycxx versions. Shipped binaries are self-contained (static libycxx); they need only the C
-library, `libm` and `libgcc_s`.
+two libycxx versions. Since 2026-10-08 the standard entities are in the inline namespace
+`std::__y1` (DECISIONS §20.4): every mangled name changed then, so objects built against an
+earlier libycxx fail to link with "undefined reference" errors and must be rebuilt. Shipped
+binaries are self-contained (static libycxx); they need only the C library, `libm` and
+`libgcc_s`.
 
 ### CI recipes
 

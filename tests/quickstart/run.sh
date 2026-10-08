@@ -37,12 +37,12 @@ for a in "$@"; do
 done
 if [ $provision = 1 ]; then
   [ -z "$compilers" ] || [ "$compilers" = " clang" ] || { echo "--provision: Clang only" >&2; exit 2; }
-  compilers=clang variant=provision
+  compilers=clang variant=provision what="Clang downloaded into an empty cache"
 else
   # The compilers tests/cmake/run.sh uses (YCXX_GXX, YCXX_GCC_INSTALL_DIR, ...); --provision runs
   # in a newcomer's environment instead.
   ycxx_env_load
-  compilers=${compilers:-gcc clang} variant=installed
+  compilers=${compilers:-gcc clang} variant=installed what="compiler already installed"
 fi
 fail=0
 ok() { ui_ok "[$1] $2"; }
@@ -66,7 +66,7 @@ if ! grep -qF "$configure -DYCXX_COMPILER=gcc" "$readme"; then
 fi
 
 for c in $compilers; do
-  ui_section "Quickstart commands with $c ($variant compiler; examples/quickstart/README.md)"
+  ui_section "Quickstart commands with $c, $what (examples/quickstart/README.md)"
   d=$work/$variant-$c
   rm -rf "$d"
   mkdir -p "$d/run"

@@ -3,8 +3,9 @@ name: full
 # The long runs, nightly and on demand (Actions > full > Run workflow): libc++'s and libstdc++'s
 # whole suites on both compilers, on Linux and macOS, the own suite under ASan+UBSan and under
 # ThreadSanitizer (each with libycxx instrumented too), and the own suite hardened, with
-# -fno-exceptions, with -O2 and without transitive includes (-DYCXX_NO_TRANSITIVE_INCLUDES); and
-# the benchmarks against their baseline (bench/check).
+# -fno-exceptions, with -O2 and without transitive includes (-DYCXX_NO_TRANSITIVE_INCLUDES);
+# the benchmarks against their baseline (bench/check); and the quickstart's commands on bare
+# runners, with Clang downloaded (tests/quickstart/run.sh --provision).
 # Any test reported FAIL (or XPASS) fails its job: there are no lists of known failures. A test
 # that cannot pass for a reason outside the test and the library (a compiler bug) is an expected
 # failure with its reason (the suite's xfail.txt, or // XFAIL in an own test); one that does not
@@ -271,3 +272,30 @@ jobs:
             build/test-logs/*.md
             build/test-logs/*.tsv
             build/test-logs/*.log
+
+  # The quickstart as a newcomer runs it (examples/quickstart/README.md, the website's first
+  # sample): on a bare runner with only git, CMake, Ninja, curl and the system's C toolchain, the
+  # documented commands run literally against this commit, with Clang 23 downloaded into an empty
+  # toolchain cache by cmake/ycxx-toolchain.cmake (tests/quickstart/run.sh --provision).
+  quickstart:
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, macos-15]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Ninja (the runner has git, CMake, curl and the C toolchain)
+        run: |
+          if [ "$(uname -s)" = Darwin ]; then brew install ninja; else sudo apt-get update && sudo apt-get install -y ninja-build; fi
+          cmake --version | head -n 1
+      - name: Quickstart commands, Clang 23 downloaded into an empty cache (tests/quickstart/run.sh --provision)
+        run: tests/quickstart/run.sh --provision
+      - name: Log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: full-quickstart-${{ matrix.os }}
+          path: build/quickstart-test/*/log.txt
+          if-no-files-found: ignore

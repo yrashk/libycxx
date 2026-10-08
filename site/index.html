@@ -216,21 +216,38 @@ footer a{color:var(--muted)}
 <p class="lede">libycxx is a new implementation of the whole C++26 standard library for the latest GCC and Clang, with its own Itanium C++ ABI runtime. It is written from the working draft, not from anyone else’s code, and tested against the standard rather than against itself.</p>
 <div class="sheet">
 <div class="cell"><dl class="facts"><div><dt>Standard</dt><dd>C++26 (the current working draft), C++26 only</dd></div><div><dt>Compilers</dt><dd>the latest GCC and Clang (<a href="#matrix">matrix</a>)</dd></div><div><dt>Platforms</dt><dd>Linux and macOS; bare-metal targets freestanding (<a href="#matrix">matrix</a>)</dd></div><div><dt>Layers</dt><dd>freestanding core · hosted library · platform abstraction layer</dd></div><div><dt>ABI runtime</dt><dd>its own: exceptions, RTTI, <code>dynamic_cast</code>, guards</dd></div><div><dt>Modules</dt><dd><code>import std;</code> and <code>import std.compat;</code></dd></div><div><dt>Version</dt><dd>0.1.0 — no stable ABI yet</dd></div><div><dt>Source</dt><dd><a href="https://github.com/yrashk/libycxx">github.com/yrashk/libycxx</a></dd></div></dl></div>
-<div class="cell"><figure class="code"><figcaption>hello.cpp</figcaption><pre><code class="lang-cpp"><span class="t-k">import</span> std;
+<div class="cell"><figure class="code"><figcaption>hello.cpp</figcaption><!-- snippet: examples/quickstart/hello.cpp --><pre><code class="lang-cpp"><span class="t-k">import</span> std;
 
 <span class="t-k">int</span> <span class="t-f">main</span>() {
   std::vector&lt;std::string&gt; words{<span class="t-s">"modules"</span>, <span class="t-s">"import"</span>, <span class="t-s">"std"</span>};
   std::ranges::<span class="t-f">sort</span>(words);
   <span class="t-c">// prints ["import", "modules", "std"]</span>
   std::<span class="t-f">println</span>(<span class="t-s">"{}"</span>, words);
-}</code></pre></figure><figure class="code"><figcaption>CMakeLists.txt</figcaption><pre><code class="lang-cmake"><span class="t-f">cmake_minimum_required</span>(VERSION 3.28)
-<span class="t-f">project</span>(hello CXX)
-<span class="t-f">find_package</span>(libycxx CONFIG REQUIRED)
+}</code></pre></figure><figure class="code"><figcaption>CMakeLists.txt</figcaption><!-- snippet: examples/quickstart/CMakeLists.txt --><pre><code class="lang-cmake"><span class="t-f">cmake_minimum_required</span>(<span class="t-k">VERSION</span> 3.28)
+
+<span class="t-c"># libycxx is fetched before project(): its toolchain file chooses the compiler,</span>
+<span class="t-c"># Clang 23 by default, and downloads it into a cache when it is missing.</span>
+<span class="t-f">include</span>(FetchContent)
+<span class="t-f">FetchContent_Declare</span>(libycxx
+  <span class="t-k">GIT_REPOSITORY</span> https://github.com/yrashk/libycxx
+  <span class="t-k">GIT_TAG</span> main          <span class="t-c"># no release yet; a release tag will go here</span>
+  <span class="t-k">GIT_SHALLOW</span> <span class="t-k">TRUE</span>
+  <span class="t-k">SOURCE_SUBDIR</span> cmake)  <span class="t-c"># no CMakeLists.txt there: fetched now, added below</span>
+<span class="t-f">FetchContent_MakeAvailable</span>(libycxx)
+<span class="t-f">set</span>(YCXX_COMPILER clang <span class="t-k">CACHE</span> <span class="t-k">STRING</span> <span class="t-s">"clang or gcc"</span>)
+<span class="t-f">set</span>(YCXX_PROVISION <span class="t-k">ON</span> <span class="t-k">CACHE</span> <span class="t-k">BOOL</span> <span class="t-s">"Install the compiler when it is missing"</span>)
+<span class="t-f">set</span>(CMAKE_TOOLCHAIN_FILE <span class="t-v">${libycxx_SOURCE_DIR}</span>/cmake/ycxx-toolchain.cmake)
+
+<span class="t-f">project</span>(hello <span class="t-k">CXX</span>)
+<span class="t-f">add_subdirectory</span>(<span class="t-v">${libycxx_SOURCE_DIR}</span> <span class="t-v">${libycxx_BINARY_DIR}</span> <span class="t-k">EXCLUDE_FROM_ALL</span>)
+
 <span class="t-f">add_executable</span>(hello hello.cpp)
-<span class="t-c"># import std; with libycxx's modules (brings ycxx::ycxx)</span>
-<span class="t-f">target_link_libraries</span>(hello PRIVATE ycxx::modules)</code></pre></figure><figure class="code"><figcaption>shell</figcaption><pre><code class="lang-sh"><span class="t-f">cmake</span> <span class="t-a">-S</span> . <span class="t-a">-B</span> build <span class="t-a">-G</span> Ninja \
-  <span class="t-a">-DCMAKE_CXX_COMPILER</span>=clang++-23 <span class="t-a">-DCMAKE_PREFIX_PATH</span>=/opt/libycxx
-<span class="t-f">cmake</span> <span class="t-a">--build</span> build &amp;&amp; ./build/hello</code></pre><p class="note">An existing project that knows nothing about libycxx: pass <code>-DCMAKE_TOOLCHAIN_FILE=/opt/libycxx/lib/cmake/libycxx/toolchain.cmake</code> (<a href="#start">Getting started</a>).</p></figure></div>
+<span class="t-c"># import std; from libycxx's modules (brings ycxx::ycxx)</span>
+<span class="t-f">target_link_libraries</span>(hello <span class="t-k">PRIVATE</span> ycxx::modules)</code></pre></figure><figure class="code"><figcaption>shell: from an empty directory</figcaption><!-- snippet: examples/quickstart/README.md#1 --><pre><code class="lang-sh"><span class="t-f">mkdir</span> hello &amp;&amp; <span class="t-f">cd</span> hello
+<span class="t-f">curl</span> <span class="t-a">-fsSL</span> <span class="t-a">--remote-name-all</span> https://raw.githubusercontent.com/yrashk/libycxx/main/examples/quickstart/{CMakeLists.txt,hello.cpp}
+<span class="t-f">cmake</span> <span class="t-a">-B</span> build <span class="t-a">-G</span> Ninja
+<span class="t-f">cmake</span> <span class="t-a">--build</span> build
+<span class="t-f">./build/hello</span></code></pre><p class="note">Needs only git, CMake&nbsp;3.28+, Ninja, curl and the host’s C toolchain: Clang&nbsp;23 is downloaded when missing. These exact commands run in CI (<a href="#start">Getting started</a>).</p></figure></div>
 </div>
 <div class="stats"><div><b>C++26</b><span>every header</span><small>the C++26 library, freestanding and hosted</small></div><div><b>2,824</b><span>own tests</span><small>spec-derived, all passing in CI on Linux and macOS</small></div><div><b>17,098</b><span>external tests</span><small>libc++ and libstdc++ suites, run unmodified</small></div><div><b>19</b><span>real-world projects</span><small>built and tested against libycxx, linkage proved</small></div></div>
 <section id="overview">
@@ -511,47 +528,68 @@ less is said in words.</p>
 </section><section id="start">
 <div class="sec-head"><span class="no">06</span><h2>Getting started</h2></div>
 
-<p class="lead">Build libycxx once per compiler, install it, and point a project at the
-installation. <a href="https://github.com/yrashk/libycxx/blob/HEAD/docs/BUILDING_PROJECTS.md">docs/BUILDING_PROJECTS.md</a> covers CMake, Meson, make, autotools, Bazel,
-Conan and vcpkg.</p>
+<p class="lead">From an empty directory to <code>import std;</code> with libycxx, on Linux or
+macOS. You need git, CMake&nbsp;3.28 or later, Ninja, curl and the host’s C toolchain (the Xcode
+Command Line Tools on macOS, <code>build-essential</code> or its equivalent on Linux). Nothing
+else has to be installed first.</p>
 
-<h3>1. Toolchains</h3>
-<p><code>tools/toolchain/provision</code> finds GCC&nbsp;16.2 and Clang&nbsp;23.1 or installs
-them; activation puts them on <code>PATH</code>.</p>
-<figure class="code"><figcaption>shell</figcaption><pre><code class="lang-sh"><span class="t-f">git</span> clone https://github.com/yrashk/libycxx &amp;&amp; <span class="t-f">cd</span> libycxx
-<span class="t-c"># finds GCC 16.2 and Clang 23.1, or downloads/builds what is missing</span>
-<span class="t-f">source</span> tools/toolchain/activate.sh <span class="t-a">--provision</span></code></pre></figure>
+<figure class="code"><figcaption>shell</figcaption><!-- snippet: examples/quickstart/README.md#1 --><pre><code class="lang-sh"><span class="t-f">mkdir</span> hello &amp;&amp; <span class="t-f">cd</span> hello
+<span class="t-f">curl</span> <span class="t-a">-fsSL</span> <span class="t-a">--remote-name-all</span> https://raw.githubusercontent.com/yrashk/libycxx/main/examples/quickstart/{CMakeLists.txt,hello.cpp}
+<span class="t-f">cmake</span> <span class="t-a">-B</span> build <span class="t-a">-G</span> Ninja
+<span class="t-f">cmake</span> <span class="t-a">--build</span> build
+<span class="t-f">./build/hello</span></code></pre></figure>
+<p>It prints <code>["import", "modules", "std"]</code>. The two files it downloads are the
+<code>hello.cpp</code> and <code>CMakeLists.txt</code> at the top of this page, from
+<a href="https://github.com/yrashk/libycxx/tree/HEAD/examples/quickstart">examples/quickstart</a>.</p>
 
-<h3>2. Build and install</h3>
-<figure class="code"><figcaption>shell</figcaption><pre><code class="lang-sh"><span class="t-f">cmake</span> <span class="t-a">-S</span> . <span class="t-a">-B</span> build/gcc <span class="t-a">-G</span> Ninja \
-<span class="t-f">      -DCMAKE_C_COMPILER</span>=<span class="t-v">$YCXX_GCC</span> <span class="t-a">-DCMAKE_CXX_COMPILER=$YCXX_GXX</span>
-<span class="t-f">cmake</span> <span class="t-a">--build</span> build/gcc
-<span class="t-f">cmake</span> <span class="t-a">--install</span> build/gcc <span class="t-a">--prefix</span> /opt/libycxx-gcc</code></pre></figure>
+<h3>What the commands do</h3>
+<ul class="compact">
+<li><b>Fetch libycxx.</b> Before <code>project()</code>, <code>CMakeLists.txt</code> gets libycxx
+with FetchContent (a shallow clone of <code>main</code>; a release tag will replace it) and
+selects its toolchain file, <code>cmake/ycxx-toolchain.cmake</code>.</li>
+<li><b>Provision Clang&nbsp;23.</b> The toolchain file looks for Clang&nbsp;23.1 in its cache
+(<code>~/.local/share/ycxx/toolchains</code>), then on <code>PATH</code> and in Homebrew. When
+there is none, it downloads LLVM’s 23.1.2 release (about 2&nbsp;GB; Linux x86_64 and arm64, macOS
+on Apple silicon) into the cache, where every later project finds it.</li>
+<li><b>Build the <code>std</code> modules.</b> <code>cmake --build</code> compiles what
+<code>hello</code> needs from libycxx: <code>libycxx.a</code>, its ABI runtime, and the
+<code>std</code> and <code>std.compat</code> modules with the project’s own flags.</li>
+<li><b>Build and run hello.</b> It links libycxx and its runtime, not libstdc++ or libc++.</li>
+</ul>
+<p>The first run downloads Clang (a minute or two on a fast connection) and then builds for about
+20 seconds (Linux x86_64, 2 jobs). Later runs, and other projects, reuse the downloaded Clang.</p>
+<p>These commands are tested as written: <code>tests/quickstart/run.sh</code> runs them from an
+empty directory against the commit under test and checks the output, with both compilers on
+every CI run (the <code>cmake</code> stage of <code>tools/test</code>, Linux and macOS), and with
+Clang downloaded into an empty cache every night (the <code>quickstart</code> job of the
+<code>full</code> workflow, Linux and macOS).</p>
 
-<h3>3. Use it</h3>
-<p>A project of your own links <code>ycxx::ycxx</code>, which compiles against libycxx’s
-headers and links its archives and ABI runtime instead of libstdc++ or libc++:</p>
-<figure class="code"><figcaption>CMake</figcaption><pre><code class="lang-cmake"><span class="t-f">find_package</span>(libycxx <span class="t-k">CONFIG</span> <span class="t-k">REQUIRED</span>)
-<span class="t-f">add_executable</span>(app main.cpp)
-<span class="t-c"># ycxx::modules instead, for import std;</span>
-<span class="t-f">target_link_libraries</span>(app <span class="t-k">PRIVATE</span> ycxx::ycxx)</code></pre></figure>
-<p>An existing project that knows nothing about libycxx is built with the installed toolchain
-file, the compiler wrappers, a Meson native file, or pkg-config (with
-<code>PKG_CONFIG_PATH</code> set to the installation’s <code>lib/pkgconfig</code>):</p>
-<figure class="code"><figcaption>shell</figcaption><pre><code class="lang-sh"><span class="t-f">P</span>=/opt/libycxx-gcc
-<span class="t-f">cmake</span> <span class="t-a">-S</span> proj <span class="t-a">-B</span> build <span class="t-a">-DCMAKE_TOOLCHAIN_FILE=$P/lib/cmake/libycxx/toolchain.cmake</span>
-<span class="t-f">make</span> CXX=<span class="t-v">$P</span>/bin/ycxx-c++ CC=<span class="t-v">$P</span>/bin/ycxx-cc
-<span class="t-f">meson</span> setup build <span class="t-a">--native-file</span> <span class="t-v">$P</span>/share/libycxx/meson-native.ini
-<span class="t-f">g</span>++-16 $(pkg-config <span class="t-a">--cflags</span> libycxx) main.cpp $(pkg-config <span class="t-a">--libs</span> libycxx)</code></pre></figure>
-<p><code>ycxx-c++</code> is the compiler libycxx was built with, plus its headers, C++26 and
-its archives. Each C++ dependency must be built from source the same way: libycxx has its own
-ABI, so a distribution’s prebuilt C++ libraries cannot be linked in. C libraries are fine.</p>
+<h3>GCC instead of Clang</h3>
+<figure class="code"><figcaption>shell</figcaption><!-- snippet: examples/quickstart/README.md#2 --><pre><code class="lang-sh"><span class="t-f">cmake</span> <span class="t-a">-B</span> build <span class="t-a">-G</span> Ninja <span class="t-a">-DYCXX_COMPILER=gcc</span></code></pre></figure>
+<p>This uses GCC&nbsp;16.2 when it is installed (<code>g++-16</code>, Homebrew’s <code>gcc</code>).
+Without one, it builds GCC from source into the cache, once, which takes about an hour on four
+cores; on macOS, <code>brew install gcc</code> first is quicker.</p>
 
-<h3>4. Check the result</h3>
-<figure class="code"><figcaption>shell</figcaption><pre><code class="lang-sh"><span class="t-c"># was everything built against libycxx, and nothing else?</span>
-<span class="t-f">/opt/libycxx-gcc/bin/ycxx-check-binary</span> build
-<span class="t-c"># libycxx's own gate: policy checks, builds, freestanding, own suite</span>
-<span class="t-f">tools/test</span></code></pre></figure>
+<h3>Other ways in</h3>
+<ul class="compact">
+<li><b>An installed libycxx.</b> Build and install it once per compiler (configured with the
+same toolchain file, which finds or downloads the compiler; README,
+<a href="https://github.com/yrashk/libycxx/blob/HEAD/README.md#using-libycxx-from-cmake">Using libycxx from CMake</a>).
+A project then uses <code>find_package(libycxx CONFIG REQUIRED)</code> and links
+<code>ycxx::modules</code> or <code>ycxx::ycxx</code>.</li>
+<li><b>An existing project that knows nothing about libycxx.</b> Configure it with the
+installation’s toolchain file (<code>lib/cmake/libycxx/toolchain.cmake</code>) as
+<code>CMAKE_TOOLCHAIN_FILE</code>, and every
+target, <code>try_compile</code> and FetchContent dependency is built against libycxx.</li>
+<li><b>Without CMake.</b> The installation’s compiler wrappers
+(<code>make CXX=/opt/libycxx/bin/ycxx-c++</code>), a Meson native file, or
+<code>pkg-config libycxx</code>; <code>ycxx-check-binary</code> then checks that a build used
+libycxx and nothing else.</li>
+</ul>
+<p>Each C++ dependency must be built from source the same way: libycxx has its own ABI, so a
+distribution’s prebuilt C++ libraries cannot be linked in. C libraries are fine.
+<a href="https://github.com/yrashk/libycxx/blob/HEAD/docs/BUILDING_PROJECTS.md">docs/BUILDING_PROJECTS.md</a>
+covers CMake, Meson, make, autotools, Bazel, Conan and vcpkg.</p>
 
 </section><section id="status">
 <div class="sec-head"><span class="no">07</span><h2>Status and limitations</h2></div>

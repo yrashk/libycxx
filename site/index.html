@@ -549,15 +549,17 @@ with FetchContent (a shallow clone of <code>main</code>; a release tag will repl
 selects its toolchain file, <code>cmake/ycxx-toolchain.cmake</code>.</li>
 <li><b>Provision Clang&nbsp;23.</b> The toolchain file looks for Clang&nbsp;23.1 in its cache
 (<code>~/.local/share/ycxx/toolchains</code>), then on <code>PATH</code> and in Homebrew. When
-there is none, it downloads LLVM’s 23.1.2 release (about 2&nbsp;GB; Linux x86_64 and arm64, macOS
+there is none, it downloads LLVM’s 23.1.2 release (a 2&nbsp;GB download; Linux x86_64 and arm64, macOS
 on Apple silicon) into the cache, where every later project finds it.</li>
 <li><b>Build the <code>std</code> modules.</b> <code>cmake --build</code> compiles what
 <code>hello</code> needs from libycxx: <code>libycxx.a</code>, its ABI runtime, and the
 <code>std</code> and <code>std.compat</code> modules with the project’s own flags.</li>
 <li><b>Build and run hello.</b> It links libycxx and its runtime, not libstdc++ or libc++.</li>
 </ul>
-<p>The first run downloads Clang (a minute or two on a fast connection) and then builds for about
-20 seconds (Linux x86_64, 2 jobs). Later runs, and other projects, reuse the downloaded Clang.</p>
+<p>The first run took 3&nbsp;minutes on a Linux x86_64 test machine with a fast connection:
+15&nbsp;seconds to download Clang, 2.5&nbsp;minutes to extract it (0.8&nbsp;GB of the release is
+kept), 20&nbsp;seconds to build with 2 jobs. Later runs, and other projects, reuse the downloaded
+Clang.</p>
 <p>These commands are tested as written: <code>tests/quickstart/run.sh</code> runs them from an
 empty directory against the commit under test and checks the output, with both compilers on
 every CI run (the <code>cmake</code> stage of <code>tools/test</code>, Linux and macOS), and with

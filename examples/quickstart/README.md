@@ -23,15 +23,16 @@ and [`hello.cpp`](hello.cpp) in this directory.
    libycxx with FetchContent (a shallow git clone of `main`) and selects libycxx's toolchain file,
    `cmake/ycxx-toolchain.cmake`. That file looks for Clang 23.1: in its toolchain cache
    (`~/.local/share/ycxx/toolchains`, or `$YCXX_TOOLCHAINS`), then `clang++-23`, `clang++` and
-   Homebrew's `llvm` keg. When there is none, it downloads LLVM's 23.1.2 release (about 2 GB;
+   Homebrew's `llvm` keg. When there is none, it downloads LLVM's 23.1.2 release (a 2 GB download;
    Linux x86_64 and arm64, macOS on Apple silicon) into the cache, where later projects and
    `tools/toolchain/provision` find it.
 3. `cmake --build build` builds what `hello` needs from libycxx (`libycxx.a`, its ABI runtime and
    the `std` and `std.compat` modules, compiled with the project's flags), then `hello`.
 4. `./build/hello` runs it. It links no libstdc++ or libc++.
 
-The first run downloads Clang (a minute or two on a fast connection) and then builds for
-about 20 seconds (Linux x86_64, 2 jobs). Later runs and other projects reuse the downloaded Clang.
+The first run took 3 minutes on a Linux x86_64 test machine with a fast connection: 15 seconds
+to download Clang, 2.5 minutes to extract it (0.8 GB of the release is kept), 20 seconds to build
+with 2 jobs. Later runs, and other projects, reuse the downloaded Clang.
 
 ## GCC instead of Clang
 

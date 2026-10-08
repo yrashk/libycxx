@@ -24,9 +24,10 @@ runs:
     # ThreadSanitizer maps its shadow memory at fixed addresses, which the 32 bits of mmap
     # randomization of recent kernels (the runners' 6.x) can collide with ("FATAL:
     # ThreadSanitizer: unexpected memory mapping"); 28 bits is the long-standing default.
+    # /proc/sys/vm/mmap_rnd_bits is readable by root only (mode 0600): read it with sudo too.
     - shell: bash
       run: |
-        bits=$(sysctl -n vm.mmap_rnd_bits)
+        bits=$(sudo sysctl -n vm.mmap_rnd_bits)
         echo "vm.mmap_rnd_bits=$bits"
         if [ "$bits" -gt 28 ]; then sudo sysctl -w vm.mmap_rnd_bits=28; fi
     - shell: bash

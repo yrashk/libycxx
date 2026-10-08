@@ -368,11 +368,11 @@ template <class _ForwardIterator1, class _ForwardIterator2, class _BinaryPredica
       const auto* p = h;
       const auto* const __last_start = h + (__n1 - __n2);
       while (p <= __last_start) {
-        const void* c = __builtin_memchr(p, static_cast<unsigned char>(__nd[0]), static_cast<size_t>(__last_start - p + 1));
+        const void* c = ::__ycxx::__detail::__rt_memchr(p, static_cast<unsigned char>(__nd[0]), static_cast<size_t>(__last_start - p + 1));
         if (c == nullptr)
           break;
         p = static_cast<decltype(p)>(c);
-        if (__builtin_memcmp(p + 1, __nd + 1, static_cast<size_t>(__n2 - 1)) == 0)
+        if (::__ycxx::__detail::__rt_memcmp(p + 1, __nd + 1, static_cast<size_t>(__n2 - 1)) == 0)
           return __first1 + (p - h);
         ++p;
       }

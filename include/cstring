@@ -27,6 +27,16 @@
 #  define __STDC_VERSION_STRING_H__ 202311L
 #endif
 
+#if _YCXX_HOSTED && _YCXX_TARGET_DARWIN
+// strdup, strndup, memccpy (C23 7.26.2.2, 7.26.2.6, 7.26.2.7; [cstring.syn]): Darwin's
+// <string.h> declares them only without a strict POSIX feature-test macro (_XOPEN_SOURCE 600
+// hides strndup, _POSIX_C_SOURCE 199506L all three), as for timegm (<ctime>). The C library's
+// declarations.
+extern "C" char* strdup(const char* s);
+extern "C" char* strndup(const char* s, __SIZE_TYPE__ n);
+extern "C" void* memccpy(void* __s1, const void* __s2, int c, __SIZE_TYPE__ n);
+#endif
+
 #if _YCXX_HOSTED
 namespace [[__gnu__::__visibility__("hidden")]] std {
 using ::memcpy;

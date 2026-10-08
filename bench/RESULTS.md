@@ -41,7 +41,7 @@ callgrind instruction counts and, for the hot loops, by reading libycxx's genera
 | shared_ptr copy+destroy, queue push/pop on GCC | — | none | instruction counts within 1.1x of libstdc++ (queue: Clang beats both); the wall-clock ratios moved between 0.97 and 2.4 between runs |
 
 
-### Full results, end of pass 2 (commit 906c1f8, -O2, median of 3 interleaved runs)
+### Full results, end of pass 2 (commit 230111a, -O2, median of 3 interleaved runs)
 
 One run on the shared machine (load 8 to 10 on 4 CPUs): single rows move by up to ±50% between runs (e.g. accumulate int on Clang read 0.89 and 1.49 within minutes); the per-change numbers above are medians of several runs and callgrind counts. This run is also `bench/baseline.json`.
 
@@ -225,7 +225,7 @@ below), and suspicious rows were re-run.
 
 ### Before / after (ratio libycxx / libstdc++)
 
-"Before" is commit f929087 (the harness alone), "after" the end of this work. Rows renamed or
+"Before" is commit c649c71 (the harness alone), "after" the end of this work. Rows renamed or
 redefined after the baseline run (`equal int`, `unique int`, `vector.emplace_back`) have no
 comparable before value.
 

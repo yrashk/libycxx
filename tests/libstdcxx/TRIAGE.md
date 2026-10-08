@@ -1,6 +1,6 @@
 # libstdc++ testsuite: full-suite triage
 
-Run of 2026-10-04 against commit `12ff176` (after `ninja -C build/gcc && ninja -C build/clang`):
+Run of 2026-10-04 against commit `0bbdeba` (after `ninja -C build/gcc && ninja -C build/clang`):
 `tools/run-conformance libstdcxx gcc|clang -- -j8 -sv` over the whole GCC 16.2 testsuite
 (`/opt/src/libstdcxx-testsuite`, the directories `lit.cfg.py` does not exclude). Every failure was
 read (compiler diagnostics and test source) and put in one category:
@@ -31,7 +31,7 @@ GCC 4754 pass / **182** fail / 3619 unsupported, Clang 4715 / **221** / 3619.
 ## Re-run of 2026-10-05 (after the (A) fixes and the harness fixes)
 
 Whole testsuite again on both compilers (`tools/run-conformance libstdcxx gcc|clang -- -j8 -sv`,
-library at `7e6a93f` (no library change after it), harness as fixed below). Every failure was compared with the per-test
+library at `088e60c` (no library change after it), harness as fixed below). Every failure was compared with the per-test
 categories of the first run: **no new failure** on either compiler (no test that passed or was
 unsupported before fails now, including after `_GLIBCXX_USE_CXX11_ABI=1`).
 
@@ -401,7 +401,7 @@ Clang 23: no `__builtin_is_structural` (20_util/is_structural/requirements/{type
 
 ## Re-triage: tests that need a named locale or file I/O (2026-10-05)
 
-`ce0ef1b` made the harness run the tests with `dg-require-namedlocale` (when the C library has the
+`f112821` made the harness run the tests with `dg-require-namedlocale` (when the C library has the
 locale) and `dg-require-fileio`. Directories `22_locale 27_io 21_strings std/format std/time`,
 `tools/run-conformance libstdcxx gcc|clang <dirs> -- -j4`. Newly failing tests (identical on both
 compilers):
@@ -425,7 +425,7 @@ compilers):
   std/time/{day,month,month_day,month_day_last,month_weekday,month_weekday_last,weekday,
   weekday_indexed,weekday_last,year,year_month,year_month_day,year_month_day_last,
   year_month_weekday,year_month_weekday_last}/io.cc and std/time/format/{localized,pr117085,
-  pr117214}.cc. **Harness (`aee577b`):** `dg-require-namedlocale NAME` is satisfied only when the C
+  pr117214}.cc. **Harness (`10e7921`):** `dg-require-namedlocale NAME` is satisfied only when the C
   library has NAME and libycxx accepts it (`tests/ycxxlit/locales.py` runs a probe program built
   from the library under test); otherwise the test is UNSUPPORTED with the reason "needs the named
   locale NAME: libycxx accepts only ...". The tests run again as soon as libycxx accepts the
@@ -545,7 +545,7 @@ Left failing (both compilers unless noted):
 
 ## Whole suite with the DejaGnu default (2026-10-06)
 
-`18a25bd` made a test without `dg-do` run, as libstdc++'s DejaGnu driver does (its default action
+`f66d862` made a test without `dg-do` run, as libstdc++'s DejaGnu driver does (its default action
 is `run`); until then the harness only compiled the 1,723 such tests (27_io 746, 22_locale 474,
 ...), so their PASS checked nothing at run time. Whole testsuite on both compilers
 (`tools/run-conformance libstdcxx gcc|clang -- -j4`, this machine has no extra locales enabled
@@ -710,7 +710,7 @@ string_02.cc and regex_token_iterator/wchar_t/wstring_02.cc (`std::setlocale`/`L
 `<regex>`; they run since en_US.UTF-8 is generated), std/text_encoding/members.cc (bad ids and
 out-of-range alias iterators, libstdc++ extensions; GCC's `__GNUC_EXECUTION_CHARSET_NAME`; runs
 since en_US.ISO8859-1 and fr_FR.ISO8859-15 are generated), std/time/freestanding.cc (`clock_cast`
-under `-ffreestanding`: since the hosted-layers change, a555b7e, freestanding `<chrono>` stops at
+under `-ffreestanding`: since the hosted-layers change, 8c24b02, freestanding `<chrono>` stops at
 the clocks; `<chrono>` is not in [compliance] Table 27).
 
 ## Skipped tests without a counterpart

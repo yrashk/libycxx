@@ -13,8 +13,8 @@ Conformance oracles (run only, never edited): libc++ tests from `llvmorg-23.1.2`
 ## Conformance summary (full runs of 2026-10-05)
 | Suite | GCC 16.2 | Clang 23.1 |
 |---|---|---|
-| Own suite `tests/ycxx` (2146 tests, `65e7235`) | 2131 pass / 10 fail / 5 xfail | 2124 pass / 6 fail / 16 xfail |
-| libc++ `libcxx/test/std` (8543 tests, `7e6a93f`) | 7494 pass / 211 fail (209 + 2 unresolved: compile timeouts under load) / 836 unsupported (was 7439 / 532 raw) | 7495 pass / 215 fail / 832 unsupported (was 7440 / 536 raw) |
+| Own suite `tests/ycxx` (2146 tests, `3171eb2`) | 2131 pass / 10 fail / 5 xfail | 2124 pass / 6 fail / 16 xfail |
+| libc++ `libcxx/test/std` (8543 tests, `088e60c`) | 7494 pass / 211 fail (209 + 2 unresolved: compile timeouts under load) / 836 unsupported (was 7439 / 532 raw) | 7495 pass / 215 fail / 832 unsupported (was 7440 / 536 raw) |
 | libstdc++ testsuite (8555 tests; 2026-10-06, testsuite helpers and tests without `dg-do` running) | 6206 pass / 13 fail / 1 xfail / 2335 unsupported (was 4823 / 141 on 2026-10-05) | 6161 pass / 13 fail / 37 xfail / 2344 unsupported (projected from the full run with the final lists; was 4786 / 175) |
 | Own suite against libstdc++ (reference, `tests/ycxx/REFERENCE.md`) | 1754 pass / 387 fail / 5 xfail | 1718 pass / 412 fail / 16 xfail |
 
@@ -277,17 +277,17 @@ when parsing, `fractional_width` of ratio<1, 2^62>, `hh_mm_ss` layout, an error 
   constexpr (184 GCC / 185 Clang undecided for their sample values); 513 macro checks (the
   [version.syn] values of these headers, the synopses' macros, Annex D, [zombie.names]), with the
   freestanding declarations also compiled with `-ffreestanding`. Fixed by the audit: volatile
-  `store_*` of non-lock-free atomics (`f222ebf`), `stop_token`/`stop_source::operator==` as
-  members (`9446019`), constant-evaluated `compare_exchange` of `long double` on Clang (`370b7e3`).
+  `store_*` of non-lock-free atomics (`ac5c18a`), `stop_token`/`stop_source::operator==` as
+  members (`a4a84d6`), constant-evaluated `compare_exchange` of `long double` on Clang (`ab14937`).
   Fixed since (gap fixes): G2 `chrono::parse` in the stream's locale (names, `%c %x %X %r %p`,
-  eras and alternative digits, a program's `time_get`; `331fde9` `8b7d190` `735d0a0`), G3 `{:L}`
-  through the locale's `num_put` (`ee9b9ea`), G4 (POSIX regex subexpressions with back-references
+  eras and alternative digits, a program's `time_get`; `f648b48` `04a0668` `7988528`), G3 `{:L}`
+  through the locale's `num_put` (`eeb9d56`), G4 (POSIX regex subexpressions with back-references
   and large counted repetitions) and G5 (multi-character collating elements; `transform_primary`
-  per [re.traits]/7 but for the classic locale, a deliberate divergence; `3919455`, `a161e22`),
+  per [re.traits]/7 but for the classic locale, a deliberate divergence; `15fed2e`, `8717356`),
   G6 (`rcu_barrier` inside a scheduled evaluation evaluates what was scheduled before it; after a
   retire in the caller's own region it blocks, a hardened precondition), G7 (the
   `*_at_thread_exit` actions of the thread that calls `exit` or returns from `main`) and G8, the
-  completion schedulers and domains of when_all, let and the other adaptors (`5a1705c`; 2
+  completion schedulers and domains of when_all, let and the other adaptors (`25ce008`; 2
   behaviour probes, `exec.when.all#1`, `exec.let#1`, so 6367 declarations and 13237 checks).
   Open: `__cpp_lib_constexpr_exceptions` on Clang (compiler gap), G9/G10 (implementation-defined
   `<filesystem>` root names and tzdb source; none planned).

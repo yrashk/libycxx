@@ -21,7 +21,7 @@ import sys
 import zipfile
 from pathlib import Path
 
-from areas import AREAS
+from common import area_set
 from common import area_files, impls_for_area, read
 from kgram import positive_control_files
 from lexer import blank_noncode
@@ -66,7 +66,7 @@ def run_area(area: str, work: Path, jar: Path, language: str, min_tokens: int) -
     for old in result_base.parent.glob(area + ".jplag*"):
         old.unlink()
     cmd = [
-        "java", "-XX:ActiveProcessorCount=2", "-Xmx3g", "-jar", str(jar), "-l", language, "-t", str(min_tokens), "-M", "RUN",
+        "java", f"-XX:ActiveProcessorCount={os.environ.get('SIM_JOBS', '2')}", "-Xmx3g", "-jar", str(jar), "-l", language, "-t", str(min_tokens), "-M", "RUN",
         "-r", str(result_base), "--overwrite", "--cluster-skip", "-n", "-1", "--csv-export", "-p", SUFFIX,
         str(stage_dir),
     ]
@@ -109,8 +109,8 @@ def run_area(area: str, work: Path, jar: Path, language: str, min_tokens: int) -
 
 def main():
     work, jar, language, min_tokens = Path(sys.argv[1]), Path(sys.argv[2]), sys.argv[3], int(sys.argv[4])
-    areas = sys.argv[5:] or list(AREAS)
-    outdir = work / "jplag"
+    areas = sys.argv[5:] or list(area_set())
+    outdir = work / os.environ.get("SIM_OUTNAME", "jplag")
     outdir.mkdir(parents=True, exist_ok=True)
     for area in areas:
         if len(impls_for_area(area)) < 2:

@@ -27,7 +27,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from areas import AREAS  # noqa: E402
+from areas import AREAS, CONTROL_AREAS, ERA_AREAS, STYLE_AREAS  # noqa: E402
 
 HERE = Path(__file__).resolve().parent.parent
 REPO = HERE.parent.parent
@@ -36,9 +36,10 @@ SOURCES = json.loads((HERE / "sources.json").read_text())
 
 LIBS = ["ycxx", "gnu", "llvm", "msvc", "llvm03"]
 NAMES = {"ycxx": "libycxx", "gnu": "libstdc++", "llvm": "libc++", "msvc": "MSVC STL", "llvm03": "libc++ C++03 fork",
-         "cxxrt": "libcxxrt", "all": "all three"}
+         "cxxrt": "libcxxrt", "all": "all three", "kokkos": "Kokkos mdspan", "beman": "Beman project"}
 SHORT = {"ycxx": "libycxx", "gnu": "libstdc++", "llvm": "libc++", "msvc": "MSVC STL", "llvm03": "C++03 fork",
-         "cxxrt": "libcxxrt"}
+         "cxxrt": "libcxxrt", "kokkos": "Kokkos", "beman": "Beman"}
+ALL_LIBS = LIBS + ["kokkos", "beman"]
 LICENCE = {"gnu": SOURCES["libstdcxx"]["licence"], "llvm": SOURCES["libcxx"]["licence"],
            "llvm03": SOURCES["libcxx03"]["licence"], "msvc": SOURCES["msvcstl"]["licence"],
            "cxxrt": SOURCES["libcxxrt"]["licence"]}
@@ -51,9 +52,10 @@ METRICS = [("jplag", "JPlag average similarity", "JPlag 6.2.0, C/C++ scanner, mi
            ("lexical", "k-gram Dice, lexical", "identifiers kept with conventions normalised, k = 10")]
 GROUP = {"ycxx": "c1", "base": "c2", "pc": "c3", "pcx": "c4"}
 NAV = [("index.html", "01", "Overview"), ("matrix.html", "02", "Cross-library matrix"),
-       ("fingerprints.html", "03", "Fingerprints"), ("tuning.html", "04", "Tuning and design"),
-       ("findings.html", "05", "Findings and excerpts"), ("fingerprint-items.html", "06", "Fingerprint items"),
-       ("method.html", "07", "Method")]
+       ("style.html", "03", "Style control"),
+       ("fingerprints.html", "04", "Fingerprints"), ("tuning.html", "05", "Tuning and design"),
+       ("findings.html", "06", "Findings and excerpts"), ("fingerprint-items.html", "07", "Fingerprint items"),
+       ("method.html", "08", "Method")]
 
 
 def esc(s) -> str:
@@ -61,7 +63,9 @@ def esc(s) -> str:
 
 
 def key(a, b):
-    return tuple(sorted((a, b), key=LIBS.index if a in LIBS and b in LIBS else str))
+    if a in ALL_LIBS and b in ALL_LIBS:
+        return tuple(sorted((a, b), key=ALL_LIBS.index))
+    return tuple(sorted((a, b), key=str))
 
 
 def pairs():
@@ -118,17 +122,30 @@ def load(work: Path) -> dict:
     for f in sorted((work / "kgram").glob("*.json")):
         j = json.loads(f.read_text())
         d["kgram"][j["structural"]["area"]] = {m: {key(p["a"], p["b"]): p for p in j[m]["pairs"]} for m in j}
+    for suffix in ("sa", "sn", "sasn"):
+        jd, kd = work / f"jplag_{suffix}", work / f"kgram_{suffix}"
+        d[f"jplag_{suffix}"] = {}
+        for f in sorted(jd.glob("*.json")) if jd.exists() else []:
+            j = json.loads(f.read_text())
+            d[f"jplag_{suffix}"][j["area"]] = {key(p["a"], p["b"]): p for p in j["pairs"]}
+        d[f"kgram_{suffix}"] = {}
+        for f in sorted(kd.glob("*.json")) if kd.exists() else []:
+            j = json.loads(f.read_text())
+            d[f"kgram_{suffix}"][j["structural"]["area"]] = {m: {key(p["a"], p["b"]): p for p in j[m]["pairs"]}
+                                                             for m in j}
     d["fp"] = json.loads((work / "fingerprints.json").read_text())
     d["ann"] = json.loads((work / "annotated.json").read_text())
     d["tuning"] = json.loads((work / "tuning.json").read_text())
     return d
 
 
-def metric_values(d, metric):
-    """pair -> [(area, value)], every area where the pair was compared."""
+def metric_values(d, metric, suffix="", areas=None):
+    """pair -> [(area, value)], every area where the pair was compared. suffix selects the style
+    control's runs ("sa": era and control areas, "sn": style-normalised, "sasn": both)."""
     out = defaultdict(list)
-    for area in AREAS:
-        src = d["jplag"].get(area) if metric == "jplag" else (d["kgram"].get(area) or {}).get(metric)
+    jk, kk = ("jplag_" + suffix, "kgram_" + suffix) if suffix else ("jplag", "kgram")
+    for area in (areas if areas is not None else AREAS):
+        src = d[jk].get(area) if metric == "jplag" else (d[kk].get(area) or {}).get(metric)
         if not src:
             continue
         for (a, b) in pairs():
@@ -176,6 +193,12 @@ def evaluate(d, ps, j, items, matches, findings) -> list[str]:
             if s and bmax and s["median"] / bmax > lim:
                 crossed.append(f"{label}: libycxx–{SHORT[o]} median {s['median']:.3f} is more than {lim}× the "
                                f"largest median of the established-library pairs ({bmax:.3f})")
+    lim = t.get("style_norm_jplag_median_ratio")
+    if lim is not None and d.get("jplag_sn"):
+        for o, v in elevation(style_stats(d)["norm"]["jplag"]).items():
+            if v is not None and v > lim:
+                crossed.append(f"JPlag, style-normalised: libycxx–{SHORT[o]} median is {v:.2f}× the largest "
+                               f"established-pair median (limit {lim}×)")
     pc = ps["jplag"][("llvm", "llvm03")]
     if t.get("positive_control_separation") and pc:
         for o in ("gnu", "llvm", "msvc"):
@@ -390,6 +413,8 @@ def build(work: Path, out: Path) -> dict:
     page(out, "index.html", "Overview", render_index(**ctx), meta,
          "How similar libycxx is to libstdc++, libc++ and the MSVC STL, and how similar those are to each other.")
     page(out, "matrix.html", "Cross-library matrix", render_matrix(**ctx), meta)
+    if d.get("jplag_sa") or d.get("kgram_sa"):
+        page(out, "style.html", "Style control", render_style(**ctx), meta)
     page(out, "fingerprints.html", "Fingerprints", render_fingerprints(**ctx), meta)
     page(out, "fingerprint-items.html", "Fingerprint items", render_items(**ctx), meta)
     page(out, "tuning.html", "Tuning constants and design choices", render_tuning(**ctx), meta)
@@ -435,6 +460,12 @@ def render_index(d, meta, j, findings, matches, items, ps, crossed, roots):
              f'C++03 fork</small></div>'
              f'<div><b>{n_find.get("significant", 0)} · {n_find.get("notable", 0)} · {unrev}</b><span>significant · '
              f'notable · unreviewed</span><small>curated findings and uncovered results</small></div></div>')
+    if d.get("jplag_sn"):
+        el = elevation(style_stats(d)["norm"]["jplag"])
+        h.append('<p class="note">Style control: with qualification and specifiers normalised for every library, '
+                 'libycxx\'s JPlag medians are ' + ", ".join(f"{fmt(v, 2)}×" for v in el.values()) +
+                 ' the largest established-pair median (libstdc++, libc++, MSVC STL; <a href="style.html">style '
+                 'control</a>).</p>')
     h.append('<h3>All four libraries, every pair</h3><p>The analysis is symmetric: libstdc++, libc++ and the MSVC '
              'STL are compared with each other exactly as libycxx is compared with them. Each cell is the median '
              'over the library areas of the JPlag similarity (<a href="matrix.html">all three metrics, quartiles, '
@@ -728,6 +759,107 @@ def render_findings(d, meta, j, findings, matches, items, ps, crossed, roots):
                  f'<tr><td><code>{esc(a)}</code></td><td><span class="sev sev-{esc(b)}">{esc(b)}</span></td><td><b>'
                  f'{esc(c)}</b><div class="tiny">{md_inline(t)}</div></td><td class="num">{n}</td></tr>'
                  for a, b, c, t, n in rows) + "</tbody></table></div>")
+    return "\n".join(h)
+
+
+def style_stats(d):
+    """condition -> metric -> pair -> stats over areas (charconv left out where present)."""
+    conds = {"all": ("", None), "era": ("sa", ERA_AREAS), "norm": ("sn", None), "era_norm": ("sasn", ERA_AREAS)}
+    out = {}
+    for c, (suf, areas) in conds.items():
+        out[c] = {}
+        for m, _, _ in METRICS:
+            mv = metric_values(d, m, suf, areas)
+            out[c][m] = {p: stats([v for a, v in mv.get(p, []) if a not in SHARED_ANCESTRY]) for p in pairs()}
+    return out
+
+
+def elevation(st):
+    """libycxx's median with each library over the largest median of the established pairs."""
+    base = [st[p]["median"] for p in (("gnu", "llvm"), ("gnu", "msvc"), ("llvm", "msvc")) if st.get(p)]
+    if not base:
+        return {}
+    b = max(base)
+    return {o: (st[("ycxx", o)]["median"] / b if st.get(("ycxx", o)) and b else None) for o in ("gnu", "llvm", "msvc")}
+
+
+COND_LABEL = {"all": "all areas", "era": "C++20-era areas", "norm": "all areas, style-normalised",
+              "era_norm": "C++20-era areas, style-normalised"}
+
+
+def render_style(d, meta, j, findings, matches, items, ps, crossed, roots):
+    sj = j.get("style", {})
+    ss = style_stats(d)
+    h = ['<p class="label">Similarity analysis · style control</p>', "<h1>Style control</h1>",
+         f'<p class="lede">{md_inline(sj.get("lede", ""))}</p>']
+    concl = sj.get("conclusion", "")
+    lim = sj.get("conclusion_condition", {}).get("norm_jplag_ratio")
+    el = elevation(ss["norm"]["jplag"])
+    if lim is not None and any(v is not None and v > lim for v in el.values()):
+        h.append('<div class="banner warn"><h3>Needs review</h3><p>The conclusion written for this page assumed '
+                 f'libycxx\'s style-normalised JPlag medians stay at most {lim}× the largest established-pair median; '
+                 'this build\'s are ' + ", ".join(f"{fmt(v, 2)}× with {esc(SHORT[o])}" for o, v in el.items()) +
+                 '. Read the tables without it until docs/similarity/style.toml is reviewed.</p></div>')
+        concl = ""
+    if concl:
+        h.append('<div class="banner"><h3>What the controls show</h3>' + "".join(
+            f"<p>{md_inline(p)}</p>" for p in concl.strip().split("\n\n")) + "</div>")
+    for p in sj.get("logic", "").strip().split("\n\n"):
+        if p:
+            h.append(f"<p>{md_inline(p)}</p>")
+    # 1. before and after, every pair, every metric
+    h.append('<h2 style="margin-top:48px">Every pair, before and after</h2><p class="note">Median over areas. '
+             '"Elevation" is libycxx\'s median with that library divided by the largest median among the three '
+             'established pairs under the same condition.</p>')
+    for m, label, note in METRICS:
+        h.append(f"<h3>{esc(label)}</h3>")
+        h.append('<div class="table-wrap"><table class="data"><thead><tr><th>Pair</th>' + "".join(
+            f'<th class="num">{esc(COND_LABEL[c])}</th>' for c in COND_LABEL) + "</tr></thead><tbody>")
+        for p in pairs():
+            cells = []
+            for c in COND_LABEL:
+                st = ss[c][m].get(p)
+                cells.append(f'<td class="num">{fmt(st["median"]) if st else "–"}'
+                             f'{"<div class=tiny>" + str(st["n"]) + " areas</div>" if st else ""}</td>')
+            h.append(f"<tr><td>{esc(pname(*p))}</td>" + "".join(cells) + "</tr>")
+        for o in ("gnu", "llvm", "msvc"):
+            h.append(f'<tr><td><b>elevation, libycxx – {esc(SHORT[o])}</b></td>' + "".join(
+                f'<td class="num"><b>{fmt(elevation(ss[c][m]).get(o), 2)}×</b></td>' for c in COND_LABEL) + "</tr>")
+        h.append("</tbody></table></div>")
+    # 2. matrices
+    h.append('<h2 style="margin-top:48px">Era-restricted areas</h2><p>' + md_inline(sj.get("era_note", "")) +
+             '</p><p class="tiny">Areas: ' + esc(", ".join(a[4:] for a in ERA_AREAS)) + ".</p>")
+    for m, label, _ in METRICS:
+        h.append(f"<h3>{esc(label)} · {esc(COND_LABEL['era'])}</h3>" + sym_matrix(ss["era"][m]))
+    h.append('<h2 style="margin-top:48px">Style normalisation</h2><p>' + md_inline(sj.get("norm_note", "")) + "</p>")
+    for m, label, _ in METRICS:
+        h.append(f"<h3>{esc(label)} · {esc(COND_LABEL['norm'])}</h3>" + sym_matrix(ss["norm"][m]))
+    # 3. independent controls
+    h.append('<h2 style="margin-top:48px">Independent modern implementations</h2><p>' +
+             md_inline(sj.get("control_note", "")) + "</p>")
+    for area in CONTROL_AREAS:
+        libs = [x for x in ALL_LIBS if STYLE_AREAS[area].get(x)]
+        h.append(f"<h3>{esc(area[4:])}</h3>")
+        for cond, suf in (("raw", "sa"), ("style-normalised", "sasn")):
+            rows = []
+            for m, label, _ in METRICS:
+                src = d["jplag_" + suf].get(area) if m == "jplag" else (d["kgram_" + suf].get(area) or {}).get(m)
+                if not src:
+                    continue
+                rows.append((label, src))
+            if not rows:
+                continue
+            h.append(f'<div class="table-wrap"><table class="data mx"><thead><tr><th>Pair ({esc(cond)})</th>' +
+                     "".join(f"<th>{esc(l)}</th>" for l, _ in rows) + "</tr></thead><tbody>")
+            for a, b in combinations(libs, 2):
+                k = key(a, b)
+                vals = []
+                for _, src in rows:
+                    p = src.get(k)
+                    vals.append(fmt(p["avg"] if "avg" in p else p["dice"]) if p else "–")
+                h.append(f'<tr><th scope="row">{esc(SHORT[a])} – {esc(SHORT[b])}</th>' +
+                         "".join(f'<td class="num">{v}</td>' for v in vals) + "</tr>")
+            h.append("</tbody></table></div>")
     return "\n".join(h)
 
 

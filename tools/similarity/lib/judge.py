@@ -32,7 +32,7 @@ DOCS = Path(__file__).resolve().parents[3] / "docs" / "similarity"
 
 def load_judgments(docs: Path = DOCS) -> dict:
     out = {}
-    for name in ("findings", "verdict", "tuning", "fingerprints"):
+    for name in ("findings", "verdict", "tuning", "fingerprints", "style"):
         p = docs / f"{name}.toml"
         out[name] = tomllib.loads(p.read_text()) if p.exists() else {}
     return out

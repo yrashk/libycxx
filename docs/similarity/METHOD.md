@@ -123,6 +123,61 @@ STL, positive control). Medians and quartiles are taken over the areas, with cha
 because the three established libraries share Ryu code there. The pages show the established
 libraries' pairs with the same prominence as libycxx's.
 
+## Style control
+
+libycxx's JPlag medians with libc++ and the MSVC STL are higher than the established libraries' medians
+with each other (about 1.7 and 1.5 times the largest of them), while the identifier-preserving
+k-gram metric shows little elevation. The style control asks whether that is shared modern idiom
+and surface style rather than shared content. It runs on every build, applies the same rules to
+every pair, and is shown at [libycxx.org/similarity/style.html](https://libycxx.org/similarity/style.html).
+
+1. **Era-restricted areas.** Re-measure every pair on components that every library wrote fresh for
+   C++20 or later, restricted to those files: ranges, mdspan, flat containers, format, expected,
+   span, concepts and comparisons, bit, stop_token and generator (`STYLE_AREAS` in
+   `tools/similarity/lib/areas.py`). Left out for shared lineage or forced content:
+   - charconv (Ryu);
+   - the parallel algorithms (PSTL);
+   - text_encoding (IANA data).
+2. **Style normalisation.** Re-measure every area with the style layer removed from every library
+   alike (`SIM_STYLE=1` in `tools/similarity/lib/lexer.py`):
+   - the specifiers constexpr, consteval, constinit, inline and explicit;
+   - noexcept and its condition;
+   - typename, and class in a template-parameter list;
+   - every qualification (namespace and class qualifiers, a leading `::`, `this->`).
+3. **Independent modern implementations.** These are pinned in `sources.json` with their licences:
+   - the Beman project's optional and inplace_vector (Apache 2.0 with LLVM Exceptions);
+   - the Kokkos mdspan reference implementation (Apache 2.0 with LLVM Exceptions).
+
+   Their similarity to the libraries is the "same idiom, different author" baseline. libc++'s mdspan
+   derives from the Kokkos implementation (its files carry the Kokkos header), so that pair is a
+   derived pair, not an independent one. Agents implementing libycxx must not read these sources
+   either.
+
+### Result
+
+Measured when the control was added:
+
+- **Style normalisation removes the JPlag elevation.** libycxx's medians become 0.67 to 0.92 times
+  the largest established-pair median. The normalisation raises the established pairs far more than
+  libycxx's: libstdc++ with libc++ goes from 0.065 to 0.143, while libycxx with libc++ goes from
+  0.122 to 0.132. Much of what separated the established libraries on JPlag was this surface layer.
+- **Era restriction alone** removes the elevation against the MSVC STL (0.99 times) but not against
+  libc++ (1.57 times).
+- **Both controls together** leave libycxx at 0.78 to 1.28 times the largest established pair,
+  highest with libstdc++.
+- **The identifier-preserving k-gram metric** stays within the established pairs' range, except
+  with both controls together, where libycxx is up to 1.18 times on both k-gram metrics.
+- **The independent modern implementations do not explain the elevation.** They score lower against
+  every library than the libraries score against each other. Independent modern code alone does not
+  reach the libraries' level of mutual similarity, because the libraries share standard-shaped
+  structure that these implementations organise differently.
+- **Kokkos is a weak control.** Even libc++'s derived mdspan scores only moderately against it, as
+  both have changed a great deal since.
+
+The style page states these conclusions only while the numbers support them
+(`docs/similarity/style.toml`, `conclusion_condition`). The overview's verdict states that the JPlag
+elevation disappears under normalisation only while that holds (`verdict.toml`).
+
 ## Triage, findings and dispositions
 
 Every JPlag match of at least 40 tokens, and every lexical run of at least 25 tokens or
@@ -191,6 +246,8 @@ replaces it:
   - lexical k-gram: 1.25;
 - libycxx's JPlag upper quartile with each library stays below the positive control's lower
   quartile;
+- with style normalisation (see Style control), libycxx's JPlag median with each library is at most
+  the largest established-pair median;
 - no curated finding is *significant*;
 - nothing is unreviewed;
 - no finding is stale.

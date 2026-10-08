@@ -27,7 +27,7 @@ from collections import defaultdict
 from itertools import combinations
 from pathlib import Path
 
-from areas import AREAS
+from common import area_set
 from common import area_files, impls_for_area, read, roots
 from lexer import code_tokens, lex, lexical, structural
 
@@ -151,7 +151,7 @@ POSITIVE_CONTROL_PREFIX = ("libcxx/include/", "libcxx/include/__cxx03/")
 def positive_control_files(area: str):
     """libc++'s frozen C++03 fork (copied from libc++ in 2024, then evolved separately):
     a known derived pair that shows what derivation scores look like."""
-    globs = AREAS[area].get("llvm", [])
+    globs = area_set()[area].get("llvm", [])
     out = {}
     base = roots()["llvm"]
     pre, rep = POSITIVE_CONTROL_PREFIX
@@ -167,8 +167,8 @@ def positive_control_files(area: str):
 
 def main():
     work = Path(sys.argv[1])
-    areas = sys.argv[2:] or list(AREAS)
-    outdir = work / "kgram"
+    areas = sys.argv[2:] or list(area_set())
+    outdir = work / (os.environ.get("SIM_OUTNAME", "jplag").replace("jplag", "kgram"))
     outdir.mkdir(parents=True, exist_ok=True)
     for area in areas:
         impls = impls_for_area(area)

@@ -18,6 +18,8 @@ IMPL_NAMES = {
     "msvc": "MSVC STL",
     "cxxrt": "libcxxrt",
     "llvm03": "libc++ C++03 fork",
+    "kokkos": "Kokkos mdspan",
+    "beman": "Beman project",
 }
 
 FOREIGN = ["gnu", "llvm", "msvc"]
@@ -31,6 +33,8 @@ CORPUS = {
     "msvc": ["stl/inc/**/*", "stl/src/**/*"],
     "cxxrt": ["src/**/*"],
     "llvm03": ["libcxx/include/__cxx03/**/*"],
+    "kokkos": ["include/mdspan/*.hpp", "include/experimental/**/*.hpp"],
+    "beman": ["optional/include/**/*.hpp", "inplace_vector/include/**/*.hpp"],
 }
 
 # Directories / files never compared (frozen duplicates, generated tables of
@@ -446,3 +450,75 @@ AREAS = {
                  "stl/inc/ratio", "stl/inc/limits", "stl/inc/numeric", "stl/inc/source_location"],
     },
 }
+
+
+# ---------------------------------------------------------------------------------------------
+# The style control (docs/similarity/METHOD.md, "Style control"). Kept apart from AREAS so the
+# main matrices are unchanged.
+#
+# era_*: components every library wrote fresh for C++20 or later, restricted to those files.
+#   Left out for shared lineage or forced content: charconv (Ryu), parallel algorithms (PSTL),
+#   text_encoding (IANA registry data). mdspan is kept, but libc++'s mdspan comes from the Kokkos
+#   reference implementation (its files carry the Kokkos header), which the control below shows.
+# ctl_*: the same components compared with independent modern implementations outside the
+#   standard libraries: the Kokkos mdspan reference implementation (the origin of libc++'s, so
+#   libc++ with Kokkos is a derived pair) and the Beman project's optional and inplace_vector.
+STYLE_AREAS = {
+    "era_ranges": AREAS["ranges"],
+    "era_mdspan": AREAS["mdspan"],
+    "era_flat": AREAS["flat_containers"],
+    "era_format": AREAS["format_print"],
+    "era_expected": {
+        "ycxx": ["include/ycxx/core/expected.hpp"],
+        "gnu": ["include/std/expected"],
+        "llvm": ["libcxx/include/__expected/*"],
+        "msvc": ["stl/inc/expected"],
+    },
+    "era_span": {
+        "ycxx": ["include/ycxx/core/span.hpp"],
+        "gnu": ["include/std/span"],
+        "llvm": ["libcxx/include/span"],
+        "msvc": ["stl/inc/span"],
+    },
+    "era_concepts_compare": {
+        "ycxx": ["include/ycxx/core/concepts.hpp", "include/ycxx/core/compare.hpp", "include/ycxx/core/compare_alg.hpp"],
+        "gnu": ["include/std/concepts", "libsupc++/compare"],
+        "llvm": ["libcxx/include/__concepts/*", "libcxx/include/__compare/*"],
+        "msvc": ["stl/inc/concepts", "stl/inc/compare"],
+    },
+    "era_bit": {
+        "ycxx": ["include/ycxx/core/bit.hpp"],
+        "gnu": ["include/std/bit"],
+        "llvm": ["libcxx/include/__bit/*"],
+        "msvc": ["stl/inc/bit", "stl/inc/__msvc_bit_utils.hpp"],
+    },
+    "era_stop_token": {
+        "ycxx": ["include/ycxx/core/stop_token.hpp"],
+        "gnu": ["include/std/stop_token"],
+        "llvm": ["libcxx/include/__stop_token/*"],
+        "msvc": ["stl/inc/stop_token"],
+    },
+    "era_generator": {
+        "ycxx": ["include/ycxx/core/generator.hpp"],
+        "gnu": ["include/std/generator"],
+        "msvc": ["stl/inc/generator"],
+    },
+    "ctl_mdspan": dict(AREAS["mdspan"], kokkos=[
+        "include/mdspan/mdspan.hpp", "include/experimental/__p0009_bits/*.hpp",
+        "include/experimental/__p2630_bits/*.hpp", "include/experimental/__p2642_bits/*.hpp",
+        "include/experimental/__p2389_bits/*.hpp"]),
+    "ctl_optional": {
+        "ycxx": ["include/ycxx/core/optional.hpp"],
+        "gnu": ["include/std/optional"],
+        "llvm": ["libcxx/include/optional"],
+        "msvc": ["stl/inc/optional"],
+        "beman": ["optional/include/beman/optional/optional.hpp"],
+    },
+    "ctl_inplace_vector": {
+        "ycxx": ["include/ycxx/core/inplace_vector.hpp"],
+        "gnu": ["include/std/inplace_vector"],
+        "beman": ["inplace_vector/include/beman/inplace_vector/inplace_vector.hpp"],
+    },
+}
+ERA_AREAS = [a for a in STYLE_AREAS if a.startswith("era_")]
+CONTROL_AREAS = [a for a in STYLE_AREAS if a.startswith("ctl_")]

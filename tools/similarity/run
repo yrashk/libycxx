@@ -68,7 +68,8 @@ def main():
         import fetch  # noqa: E402
         r = step("fetch pinned sources", fetch.fetch_all, cache, args.gcc_tarball)
         roots = {"ycxx": str(REPO), "gnu": str(r["gnu"]), "gnu_extra": str(r["gnu_extra"]), "llvm": str(r["llvm"]),
-                 "llvm03": str(r["llvm"]), "msvc": str(r["msvc"]), "cxxrt": str(r["cxxrt"])}
+                 "llvm03": str(r["llvm"]), "msvc": str(r["msvc"]), "cxxrt": str(r["cxxrt"]),
+                 "kokkos": str(r["kokkos"]), "beman": str(r["beman"])}
         os.environ["SIM_ROOTS"] = json.dumps(roots)
         env = dict(os.environ)
         if args.refresh_vocab:
@@ -86,6 +87,14 @@ def main():
         if not args.skip_jplag:
             step("JPlag per area", py, "jplag_run.py", work, r["jplag"], "c", 12, env=env)
         step("k-gram comparison per area", py, "kgram.py", work, env=env)
+        # The style control (docs/similarity/METHOD.md, "Style control"): era and control areas,
+        # then everything again with style normalisation.
+        for name, extra in (("sa", {"SIM_AREASET": "style"}), ("sn", {"SIM_STYLE": "1"}),
+                            ("sasn", {"SIM_AREASET": "style", "SIM_STYLE": "1"})):
+            e = dict(env, SIM_OUTNAME=f"jplag_{name}", **extra)
+            if not args.skip_jplag:
+                step(f"style control {name}: JPlag", py, "jplag_run.py", work, r["jplag"], "c", 12, env=e)
+            step(f"style control {name}: k-gram", py, "kgram.py", work, env=e)
         import fingerprints  # noqa: E402
         step("fingerprints", fingerprints.main, work)
         step("triage of long matches", py, "annotate.py", work, 40, env=env)

@@ -175,6 +175,19 @@ def is_reserved(name: str) -> bool:
     return name.startswith("__") or bool(re.match(r"^_[A-Z]", name))
 
 
+# The style control (docs/similarity/METHOD.md): with SIM_STYLE=1 the normalisation also drops
+# what is style rather than content, for every library alike: the specifiers constexpr,
+# consteval, constinit, inline and explicit, noexcept with its condition, typename (and class in a
+# template-parameter position), and every qualification (a name followed by ::, a leading ::, and
+# this->).
+STYLE_DROP = frozenset({"constexpr", "consteval", "constinit", "inline", "explicit", "typename"})
+
+
+def _style() -> bool:
+    import os
+    return os.environ.get("SIM_STYLE") == "1"
+
+
 def _noise_mask(toks: list[Tok]) -> list[bool]:
     """True for tokens removed by normalisation: comments, directives, configuration macros
     (with their parenthesised arguments), attribute-specifiers [[...]] and __attribute__((...)).
@@ -222,6 +235,38 @@ def _noise_mask(toks: list[Tok]) -> list[bool]:
                     drop[k] = True
                 i = j
         i += 1
+    if _style():
+        for i, t in enumerate(toks):
+            if drop[i]:
+                continue
+            if t.kind == "kw" and t.text in STYLE_DROP:
+                drop[i] = True
+            elif t.kind == "kw" and t.text == "class" and i > 0 and toks[i - 1].text in ("<", ","):
+                drop[i] = True
+            elif t.kind == "kw" and t.text == "noexcept":
+                drop[i] = True
+                if i + 1 < n and toks[i + 1].text == "(":
+                    for k in range(i + 1, skip_group(i + 1, "(", ")") + 1):
+                        drop[k] = True
+            elif t.text == "::":
+                drop[i] = True
+                if i > 0 and toks[i - 1].kind == "id":
+                    drop[i - 1] = True
+                elif i > 0 and toks[i - 1].text == ">":
+                    # Qualifier ending in a template argument list: drop it back to its name.
+                    depth, k = 0, i - 1
+                    while k >= 0:
+                        depth += toks[k].text == ">"
+                        depth += 2 * (toks[k].text == ">>")
+                        depth -= toks[k].text == "<"
+                        if depth <= 0:
+                            break
+                        k -= 1
+                    if k > 0 and toks[k - 1].kind == "id":
+                        for m in range(k - 1, i):
+                            drop[m] = True
+            elif t.kind == "kw" and t.text == "this" and i + 1 < n and toks[i + 1].text == "->":
+                drop[i] = drop[i + 1] = True
     return drop
 
 

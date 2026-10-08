@@ -7,7 +7,7 @@ import json
 import os
 from pathlib import Path
 
-from areas import AREAS, CORPUS, EXCLUDE, SOURCE_SUFFIXES
+from areas import AREAS, CORPUS, EXCLUDE, SOURCE_SUFFIXES, STYLE_AREAS
 
 
 @functools.cache
@@ -53,8 +53,13 @@ def files_for(impl: str, globs: tuple[str, ...]) -> list[tuple[str, Path]]:
     return sorted(seen.items())
 
 
+def area_set() -> dict:
+    """The areas compared: the main ones, or the style control's (SIM_AREASET=style)."""
+    return STYLE_AREAS if os.environ.get("SIM_AREASET") == "style" else AREAS
+
+
 def area_files(area: str, impl: str) -> list[tuple[str, Path]]:
-    return files_for(impl, tuple(AREAS[area].get(impl, [])))
+    return files_for(impl, tuple(area_set()[area].get(impl, [])))
 
 
 def corpus_files(impl: str) -> list[tuple[str, Path]]:
@@ -67,4 +72,5 @@ def read(path: Path) -> str:
 
 
 def impls_for_area(area: str) -> list[str]:
-    return [i for i in ("ycxx", "gnu", "llvm", "msvc", "cxxrt") if AREAS[area].get(i) and area_files(area, i)]
+    return [i for i in ("ycxx", "gnu", "llvm", "msvc", "cxxrt", "kokkos", "beman")
+            if area_set()[area].get(i) and i in roots() and area_files(area, i)]

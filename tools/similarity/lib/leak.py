@@ -97,7 +97,8 @@ def full(files, cache: Path) -> list[str]:
     import fetch  # noqa: E402
     r = fetch.fetch_all(cache)
     roots = {"ycxx": str(REPO), "gnu": str(r["gnu"]), "gnu_extra": str(r["gnu_extra"]), "llvm": str(r["llvm"]),
-             "llvm03": str(r["llvm"]), "msvc": str(r["msvc"]), "cxxrt": str(r["cxxrt"])}
+             "llvm03": str(r["llvm"]), "msvc": str(r["msvc"]), "cxxrt": str(r["cxxrt"]),
+                 "kokkos": str(r["kokkos"]), "beman": str(r["beman"])}
     os.environ["SIM_ROOTS"] = json.dumps(roots)
     from common import corpus_files, read  # noqa: E402
     windows = {}
@@ -113,7 +114,7 @@ def full(files, cache: Path) -> list[str]:
                 continue
             windows.setdefault(hash(tuple(w)), (p, lines[i], w))
     problems = []
-    for lib in ("gnu", "llvm", "msvc", "cxxrt", "llvm03"):
+    for lib in ("gnu", "llvm", "msvc", "cxxrt", "llvm03", "kokkos", "beman"):
         for disp, path in corpus_files(lib):
             toks = [t.text for t in code_tokens(lex(read(path)))]
             for i in range(len(toks) - WINDOW + 1):
@@ -148,7 +149,7 @@ def refresh_vocab(work: Path) -> None:
     from common import corpus_files, read  # noqa: E402
     from lexer import lex as _lex
     hs = set()
-    for lib in ("gnu", "llvm", "msvc", "cxxrt", "llvm03"):
+    for lib in ("gnu", "llvm", "msvc", "cxxrt", "llvm03", "kokkos", "beman"):
         for _, path in corpus_files(lib):
             for t in _lex(read(path)):
                 if t.kind == "id" and is_reserved(t.text) and not BUILTIN_RE.match(t.text) and t.text not in ALLOWED:

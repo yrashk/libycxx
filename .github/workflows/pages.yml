@@ -73,7 +73,9 @@ jobs:
       - name: Similarity analysis
         id: similarity
         continue-on-error: true
-        timeout-minutes: 12
+        timeout-minutes: 15
+        env:
+          SIM_JOBS: '4'
         run: python3 tools/similarity/run
 
       - name: Similarity report unavailable

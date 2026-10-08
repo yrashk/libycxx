@@ -6,8 +6,14 @@
     "url": "https://ftp.gnu.org/gnu/gcc/gcc-16.2.0/gcc-16.2.0.tar.xz",
     "sha256": "e6738e29597f733270731aa90600f37ffdc045079dfc27ec7e8192cc81085c3e",
     "top": "gcc-16.2.0",
-    "extract": ["libstdc++-v3/include", "libstdc++-v3/src", "libstdc++-v3/libsupc++", "libstdc++-v3/config",
-                "libiberty/cp-demangle.c", "libiberty/cp-demangle.h"],
+    "extract": [
+      "libstdc++-v3/include",
+      "libstdc++-v3/src",
+      "libstdc++-v3/libsupc++",
+      "libstdc++-v3/config",
+      "libiberty/cp-demangle.c",
+      "libiberty/cp-demangle.h"
+    ],
     "licence": "GNU GPL v3 with the GCC Runtime Library Exception (libiberty's demangler: GPL v2 or later with a linking exception, as stated in the file)"
   },
   "libcxx": {
@@ -16,7 +22,12 @@
     "repo": "https://github.com/llvm/llvm-project.git",
     "ref": "llvmorg-23.1.2",
     "commit": "85ac560262434c9ccfc0c183ec22d4138ed647fb",
-    "paths": ["libcxx/include", "libcxx/src", "libcxxabi/include", "libcxxabi/src"],
+    "paths": [
+      "libcxx/include",
+      "libcxx/src",
+      "libcxxabi/include",
+      "libcxxabi/src"
+    ],
     "licence": "Apache License 2.0 with LLVM Exceptions"
   },
   "libcxx03": {
@@ -30,7 +41,10 @@
     "version": "microsoft/STL main of 2026-10-06",
     "repo": "https://github.com/microsoft/STL.git",
     "commit": "da52dc0fcadbd83690cfd1ed32408d2847439493",
-    "paths": ["stl/inc", "stl/src"],
+    "paths": [
+      "stl/inc",
+      "stl/src"
+    ],
     "licence": "Apache License 2.0 with LLVM Exceptions"
   },
   "libcxxrt": {
@@ -38,7 +52,9 @@
     "version": "libcxxrt master of 2025-02-25",
     "repo": "https://github.com/libcxxrt/libcxxrt.git",
     "commit": "a6f71cbc3a1e1b8b9df241e081fa0ffdcde96249",
-    "paths": ["src"],
+    "paths": [
+      "src"
+    ],
     "licence": "BSD 2-clause"
   },
   "draft": {
@@ -46,8 +62,43 @@
     "version": "cplusplus/draft of 2026-10-04",
     "repo": "https://github.com/cplusplus/draft.git",
     "commit": "4d8e364814c9b8ea4ce8d719ad87942ed4c63e24",
-    "paths": ["source"],
+    "paths": [
+      "source"
+    ],
     "licence": "used only to build the standard's vocabulary; nothing is shown"
+  },
+  "kokkos_mdspan": {
+    "name": "Kokkos mdspan reference implementation",
+    "version": "kokkos/mdspan main of 2026-10-07",
+    "repo": "https://github.com/kokkos/mdspan.git",
+    "commit": "c8290f0f1977135450cef6cd460dcd925b23a38f",
+    "paths": [
+      "include"
+    ],
+    "licence": "Apache License 2.0 with LLVM Exceptions",
+    "role": "style control: an independent modern implementation of mdspan; libc++'s mdspan derives from it (its files carry the Kokkos header), so that pair is derived, not independent"
+  },
+  "beman_optional": {
+    "name": "Beman project optional",
+    "version": "bemanproject/optional main of 2026-08-07",
+    "repo": "https://github.com/bemanproject/optional.git",
+    "commit": "b239e587c3ecd9ae9a3bd01f6318d825241afefe",
+    "paths": [
+      "include"
+    ],
+    "licence": "Apache License 2.0 with LLVM Exceptions",
+    "role": "style control: an independent C++23 implementation of optional"
+  },
+  "beman_inplace_vector": {
+    "name": "Beman project inplace_vector",
+    "version": "bemanproject/inplace_vector main of 2026-09-17",
+    "repo": "https://github.com/bemanproject/inplace_vector.git",
+    "commit": "c7fe76da307f0d6fda5023b2d2ebef7e3f7b18d1",
+    "paths": [
+      "include"
+    ],
+    "licence": "Apache License 2.0 with LLVM Exceptions",
+    "role": "style control: an independent C++26 implementation of inplace_vector"
   },
   "jplag": {
     "name": "JPlag",

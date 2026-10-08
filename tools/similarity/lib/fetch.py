@@ -98,7 +98,9 @@ def fetch_all(cache: Path, gcc_tarball: str | None = None) -> dict[str, Path]:
         if not gcc_tarball:
             tar.unlink()
         _stamp(gdir, g)
-    for key, sub in (("libcxx", "llvm"), ("msvcstl", "msvc"), ("libcxxrt", "libcxxrt"), ("draft", "draft")):
+    for key, sub in (("libcxx", "llvm"), ("msvcstl", "msvc"), ("libcxxrt", "libcxxrt"), ("draft", "draft"),
+                     ("kokkos_mdspan", "kokkos"), ("beman_optional", "beman/optional"),
+                     ("beman_inplace_vector", "beman/inplace_vector")):
         pin = SOURCES[key]
         d = cache / sub
         if not _stamp_ok(d, pin):
@@ -117,5 +119,7 @@ def fetch_all(cache: Path, gcc_tarball: str | None = None) -> dict[str, Path]:
         "msvc": cache / "msvc",
         "cxxrt": cache / "libcxxrt",
         "draft": cache / "draft" / "source",
+        "kokkos": cache / "kokkos",
+        "beman": cache / "beman",
         "jplag": jar,
     }

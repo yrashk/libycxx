@@ -11,7 +11,8 @@ derived code. Regenerated from pinned sources on every build of this site."""
 verdict = """No evidence of copied code. On every metric, libycxx is about as similar to each established \
 library as those libraries are to each other, and far less similar than the positive control (known \
 derived code) is to its origin. Its similarity is spread across all three libraries rather than \
-concentrated on one.
+concentrated on one. Its higher JPlag scores against libc++ and the MSVC STL disappear when \
+surface style (qualification and specifiers) is normalised for every library alike ([style control](style.html)).
 
 The longer token matches are code the standard specifies, data from registries and ABIs, or published \
 algorithms. Comment text, which copying usually carries along, is almost entirely distinct. The curated \
@@ -35,6 +36,7 @@ fetch the pinned sources at build time."""
 jplag_median_ratio = 2.0
 structural_median_ratio = 1.25
 lexical_median_ratio = 1.25
+style_norm_jplag_median_ratio = 1.0
 positive_control_separation = true
 max_unreviewed = 0
 no_significant = true

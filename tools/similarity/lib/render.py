@@ -357,7 +357,10 @@ def excerpt(roots: dict, impl: str, file: str, a: int, b: int, ctx: int = 1, max
         lic = ""
     else:
         cap = f"{esc(NAMES[impl])} {esc(file)} {a}–{b}"
-        lic = f'<div class="lic">Excerpt from {esc(ORIGIN[impl])}, {esc(LICENCE[impl])}. Quoted for analysis.</div>'
+        lic_text = LICENCE[impl]
+        if impl == "gnu":
+            lic_text = (lic_text.split(" (")[1].rstrip(")") if file.startswith("libiberty/") else lic_text.split(" (")[0])
+        lic = f'<div class="lic">Excerpt from {esc(ORIGIN[impl])}, {esc(lic_text)}. Quoted for analysis.</div>'
     return f'<figure class="excerpt"><figcaption>{cap}</figcaption><pre>{esc(body)}</pre>{lic}</figure>'
 
 
@@ -498,7 +501,8 @@ def render_matrix(d, meta, j, findings, matches, items, ps, crossed, roots):
          'known derived code) compared pairwise in 43 library areas. The established libraries are compared with each '
          'other exactly as libycxx is compared with them.</p>',
          '<p class="note">Medians and quartiles leave out charconv (marked †), where the three established libraries '
-         'share Ryu code. The C++03 fork exists only for the areas libc++ had in 2024.</p>', CHART_VARS]
+         'share Ryu code; in the distribution plots they are still drawn (the far-right points of the established pairs). '
+         'The C++03 fork exists only for the areas libc++ had in 2024. Hover a point for its area.</p>', CHART_VARS]
     for m, label, note in METRICS:
         mv = metric_values(d, m)
         h.append(f'<h2 id="{m}" style="margin-top:48px">{esc(label)}</h2><p class="note">{esc(note)}. Cell: median '
@@ -622,8 +626,10 @@ def render_tuning(d, meta, j, findings, matches, items, ps, crossed, roots):
          'extractor cannot read says so. The libycxx column, the row labels and the notes are committed in '
          'docs/similarity/tuning.toml. Source lines quoted here: ' +
          "; ".join(f"{esc(NAMES[k])}: {esc(LICENCE[k])}" for k in ("gnu", "llvm", "msvc")) + ".</p>"]
-    h.append('<div class="table-wrap"><table class="data"><thead><tr><th>Decision</th><th>libycxx</th><th>libstdc++'
-             '</th><th>libc++</th><th>MSVC STL</th><th>Forced or arbitrary</th></tr></thead><tbody>')
+    h.append('<div class="table-wrap"><table class="data tune"><colgroup><col class="c-dec"><col class="c-y">'
+             '<col class="c-o"><col class="c-o"><col class="c-o"><col class="c-n"></colgroup><thead><tr><th>Decision</th>'
+             '<th>libycxx</th><th>libstdc++</th><th>libc++</th><th>MSVC STL</th><th>Forced or arbitrary</th></tr>'
+             '</thead><tbody>')
     for row in tj.get("row", []):
         rid = row["id"]
         cells = tun.get(rid, {})

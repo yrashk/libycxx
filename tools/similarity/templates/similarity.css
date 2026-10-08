@@ -52,3 +52,10 @@ pre.src{margin:6px 0 0;font:12px/1.45 var(--mono);background:var(--code-bg);bord
   .kpis div:nth-child(n+3){border-top:1px solid var(--rule)}
   .side-by-side{grid-template-columns:minmax(0,1fr)}
 }
+main{max-width:1240px}
+table.mx td,table.mx th{padding:8px 10px}
+table.heat th,table.heat td{padding:7px 8px;font-size:12.5px}
+.cell-strong small{color:#e6ecf8!important}
+table.tune{table-layout:fixed;min-width:960px}
+table.tune col.c-dec{width:12%}table.tune col.c-y{width:18%}table.tune col.c-o{width:18%}table.tune col.c-n{width:16%}
+table.tune pre.src{max-width:none;white-space:pre-wrap;word-break:break-all;max-height:11em;overflow:auto}

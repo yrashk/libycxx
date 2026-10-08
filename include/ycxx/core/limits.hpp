@@ -174,6 +174,14 @@ struct __fp_limits : __limits_base {
   static constexpr std::float_denorm_style has_denorm = std::denorm_present;
   [[deprecated("has_denorm_loss is deprecated ([depr.numeric.limits.has.denorm])")]]
   static constexpr bool has_denorm_loss = false;
+  // [numeric.limits.members]: "true if tinyness is detected before rounding". Arm's floating
+  // point (AArch64 and AArch32, and their software formats) detects it before rounding; x86 and
+  // the others libycxx targets detect it after rounding.
+#if defined(__aarch64__) || defined(__arm__)
+  static constexpr bool tinyness_before = true;
+#else
+  static constexpr bool tinyness_before = false;
+#endif
 
   static constexpr _Tp(min)() noexcept { return __pow2<_Tp>(__fmt.__min_exp - 1); }
   static constexpr _Tp(max)() noexcept {

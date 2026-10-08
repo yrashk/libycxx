@@ -323,7 +323,7 @@ nightly TSan job runs both compilers.
 | default (the `precondition/` death tests UNSUPPORTED; 2457 tests, 2026-10-06, with `<execution>`'s senders) | 2391 pass / 0 fail / 12 xfail / 54 unsupported | 2384 pass / 0 fail / 19 xfail / 54 unsupported |
 | hardened (`-DYCXX_HARDENED=1`) | 2425 pass / 0 fail / 13 xfail | 2418 pass / 0 fail / 20 xfail |
 | noexcept (`-fno-exceptions`; tests `REQUIRES: exceptions` UNSUPPORTED) | 1941 pass / 0 fail / 7 xfail / 490 unsupported | 1941 pass / 0 fail / 7 xfail / 490 unsupported |
-| strict includes (`-DYCXX_NO_TRANSITIVE_INCLUDES`, DECISIONS §19; 2026-10-08, 2943 tests) | 2846 pass / 0 fail / 15 xfail / 69 unsupported | 2821 pass / 0 fail / 40 xfail / 69 unsupported |
+| strict includes (`-DYCXX_NO_TRANSITIVE_INCLUDES`, DECISIONS §19; 2026-10-08, 2930 tests) | 2846 pass / 0 fail / 15 xfail / 69 unsupported | 2821 pass / 0 fail / 40 xfail / 69 unsupported |
 
 Every expected failure carries its reason in the test (`// XFAIL:` for causes outside the library
 and the test, `// XFAIL-COMPILER:` for a missing compiler feature): the draft defect

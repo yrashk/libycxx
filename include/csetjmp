@@ -10,6 +10,13 @@
 #  define __STDC_VERSION_SETJMP_H__ 202311L
 #endif
 
+// [csetjmp.syn]: setjmp is a macro. C leaves it unspecified whether setjmp is a macro or
+// an identifier with external linkage (C23 7.13), and Darwin's <setjmp.h> declares only the
+// function: the macro then names it.
+#ifndef setjmp
+#  define setjmp(env) setjmp(env)
+#endif
+
 namespace [[__gnu__::__visibility__("hidden")]] std {
 using ::jmp_buf;
 using ::longjmp;

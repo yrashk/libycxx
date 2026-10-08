@@ -1,13 +1,21 @@
 name: pages
 
 # Publishes site/ (libycxx.org) to GitHub Pages. Runs only for the main branch: on a push to
-# main that changes the site, or by hand (workflow_dispatch) with main selected. A dispatch on
-# any other branch is skipped by the job's condition.
+# main that changes the site or what the API reference is generated from (the headers, the std
+# module's export list, tools/gen-apidocs and its templates), or by hand (workflow_dispatch)
+# with main selected. A dispatch on any other branch is skipped by the job's condition.
+# The API reference (site/api/) and the cppreference pages it shows (site/cppref/) are not in
+# the repository: tools/gen-apidocs generates them here, with the pinned MrDocs release and
+# cppreference.com offline archive (both checked against their SHA-256).
 on:
   push:
     branches: [main]
     paths:
       - 'site/**'
+      - 'include/**'
+      - 'modules/std.cppm'
+      - 'tools/gen-apidocs'
+      - 'tools/apidocs/**'
       - '.github/workflows/pages.yml'
   workflow_dispatch:
 
@@ -32,7 +40,17 @@ jobs:
 
       - uses: actions/configure-pages@v5
 
-      # site/ is static HTML, CSS and self-hosted fonts: no build step.
+      # The downloads tools/gen-apidocs pins (MrDocs, the cppreference.com archive).
+      - uses: actions/cache@v4
+        with:
+          path: build/apidocs/cache
+          key: apidocs-downloads-${{ hashFiles('tools/gen-apidocs') }}
+
+      # site/ is static HTML, CSS and self-hosted fonts, plus the generated API reference
+      # (site/api/) and cppreference pages (site/cppref/).
+      - name: Generate the API reference
+        run: python3 tools/gen-apidocs --install -j 4
+
       - uses: actions/upload-pages-artifact@v3
         with:
           path: site

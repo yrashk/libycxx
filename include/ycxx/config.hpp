@@ -392,6 +392,14 @@ inline constexpr bool __integer_division_traps = true;
 #else
 inline constexpr bool __integer_division_traps = false;
 #endif
+// Floating-point tininess is detected before rounding (numeric_limits<T>::tinyness_before): Arm's
+// floating point (AArch64, AArch32, and their software formats) does; x86 and the others detect it
+// after rounding.
+#if defined(__aarch64__) || defined(__arm__)
+inline constexpr bool __tinyness_before_rounding = true;
+#else
+inline constexpr bool __tinyness_before_rounding = false;
+#endif
 // The processor family, for the few run-time functions that need an instruction of their own
 // (std::breakpoint).
 enum class __cpu_family { __x86, __aarch64, __y_arm, __y_riscv, other };

@@ -20,6 +20,7 @@
 #include <ycxx/core/bit_iter_algos.hpp>
 #include <ycxx/core/pair.hpp>
 #include <ycxx/core/swap.hpp>
+#include <ycxx/core/mem_builtins.hpp>
 #include <initializer_list>
 
 namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
@@ -284,7 +285,7 @@ constexpr void __find_byte(_Ip& first, const _Sp& last, const _Tp& value) noexce
     return;
   }
   const _Ep* p = ::__ycxx::__detail::__raw_address(first);
-  const void* r = __builtin_memchr(static_cast<const void*>(p), static_cast<unsigned char>(e), static_cast<std::size_t>(n));
+  const void* r = ::__ycxx::__detail::__rt_memchr(static_cast<const void*>(p), static_cast<unsigned char>(e), static_cast<std::size_t>(n));
   first += r ? static_cast<const _Ep*>(r) - p : n;
 }
 

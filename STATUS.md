@@ -605,6 +605,16 @@ a defect in a test.
   `vector`'s initializer-list constructor is two overloads. Reproducer without the workaround:
   `tests/realworld/cli11/repro/gcc16_ice_default_allocator_standalone.cpp`; own test
   `vector/aggregate_array_default_allocator` (-O1).
+- GCC 16.2, at every optimization level: the constant evaluation of `__builtin_memchr`,
+  `__builtin_memcmp`, `__builtin_strchr` and `__builtin_strcmp` on a pointer into a string
+  literal at an offset counts the offset twice (`__builtin_memchr("abcabcab" + 3, 'c', 5)` is
+  the literal + 8; `__builtin_strlen` is right; reproduced without libycxx). GCC also folds the
+  `if !consteval` branch of a constexpr function called with constant arguments outside a
+  manifestly constant-evaluated context, so `string_view("abcabcab").find('c', 3)` was 8 at run
+  time (the nightly's -O2 job, `string_view/find`). Worked around: `char_traits<char>::find` and
+  `compare` and the byte `find` of the algorithms call the builtins through non-constexpr inline
+  functions (`ycxx/core/mem_builtins.hpp`), which the constant evaluator does not fold; own test
+  `string_view/find_folded_offset`.
 - GCC 16.2, modules (`-fmodules`): one translation unit cannot both #include a standard header
   and `import std;`. Importing after an #include of some of the headers fails to read the module
   ("failed to read compiled module cluster N: Bad file data"; reduced: a module whose global

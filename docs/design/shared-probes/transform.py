@@ -26,10 +26,11 @@ DEFAULT = '[[__gnu__::__visibility__("default")]]'
 OPEN = re.compile(r'^namespace \[\[__gnu__::__visibility__\("hidden"\)\]\] (std|__ycxx)\b')
 
 
-# In shared mode, the per-image allocation machinery (the default allocation functions, their
-# thunks and the allocation table, DECISIONS §20.6) keeps its __ycxx declarations hidden: every image
-# has its own copy, which must never be exported or bound to another image's.
-PER_IMAGE = ("src/runtime/new/", "src/hosted/new/", "src/freestanding/new/")
+# In shared mode, the per-image parts (DECISIONS §20.6) keep their __ycxx declarations hidden:
+# the allocation machinery (the default allocation functions, their thunks and the allocation
+# table) and the _Float16 type_info objects Clang does not emit itself (rtti_float16.cpp). Every
+# image has its own copy, which must never be exported or bound to another image's.
+PER_IMAGE = ("src/runtime/new/", "src/hosted/new/", "src/freestanding/new/", "src/abi/rtti_float16.cpp")
 
 
 def transform(text, mode, plain_lines, per_image=False):

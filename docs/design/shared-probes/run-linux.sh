@@ -14,9 +14,9 @@
 #      y1-shared   default visibility on the std and __ycxx blocks (the ABI entry points, __cxxabiv1,
 #                  the PAL and the plain-std blocks stay hidden)
 #    and builds libycxx's archives from each, per compiler.
-# 2. libycxx.so.0: y1-shared's archives linked whole (-soname libycxx.so.0), and
+# 2. libycxx.so.0.1: y1-shared's archives linked whole (-soname libycxx.so.0.1), and
 #    libycxx_nonshared.a, the part every image links itself, hidden (DECISIONS §20.6). A libdir for
-#    tools/ycxx-cxx holds libycxx.a as a GNU ld linker script, GROUP(libycxx.so.0 <archive>).
+#    tools/ycxx-cxx holds libycxx.a as a GNU ld linker script, GROUP(libycxx.so.0.1 <archive>).
 # 3. known/: the compiler-known entities, against y1-static and against y1-shared + libycxx.so.
 # 4. coexist/: a shared-mode libycxx library (mine) and a library built with the toolchain's own
 #    (other: libstdc++, or libc++) in one process, each throwing, catching, allocating and using
@@ -66,13 +66,13 @@ for m in static shared; do
   done
 done
 
-# ---- 2. libycxx.so.0, the per-image archive and the libdirs ----
-# PROBE_VARIANT=nonshared (default): the design's split (§5). libycxx.so.0 holds the one ABI runtime
+# ---- 2. libycxx.so.0.1, the per-image archive and the libdirs ----
+# PROBE_VARIANT=nonshared (default): the design's split (§5). libycxx.so.0.1 holds the one ABI runtime
 # and exports its entry points as __ycxx_abi_<name> (nonshared/export.c here); libycxx_nonshared.a gives
 # each image hidden forwarders under the names the compilers call (nonshared/forward.c), the
 # __cxxabiv1 vtables and fundamental type_info objects (nonshared/rtti.cpp), std::nothrow, and
 # the default allocation functions with the allocation table (y1-shared's archive members, whose
-# own declarations transform.py keeps hidden: per image, as today). PROBE_VARIANT=perimage: each image links y1-static's whole runtime after libycxx.so.0
+# own declarations transform.py keeps hidden: per image, as today). PROBE_VARIANT=perimage: each image links y1-static's whole runtime after libycxx.so.0.1
 # instead, so its ABI runtime is its own (the model of DECISIONS §2 kept for the ABI part).
 variant=${PROBE_VARIANT:-nonshared}
 for cc in $compilers; do
@@ -86,28 +86,29 @@ for cc in $compilers; do
   if [ $variant = nonshared ]; then
     run $cc_c -O2 -fPIC -funwind-tables -c "$so/ns/export.c" -o "$so/export.o" && exports=$so/export.o
   fi
-  run $cxx $extra -shared -o "$so/libycxx.so.0" -Wl,-soname,libycxx.so.0 $exports \
+  run $cxx $extra -shared -o "$so/libycxx.so.0.1" -Wl,-soname,libycxx.so.0.1 $exports \
     -Wl,--whole-archive "$sh/libycxx.a" "$sh/libycxx-abi.a" -Wl,--no-whole-archive -nostdlib++ -lm -shared-libgcc &&
-    ln -sf libycxx.so.0 "$so/libycxx.so" && ok "[$cc] link libycxx.so.0 ($variant)" || bad "[$cc] link libycxx.so.0 ($variant)"
+    ln -sf libycxx.so.0.1 "$so/libycxx.so" && ok "[$cc] link libycxx.so.0.1 ($variant)" || bad "[$cc] link libycxx.so.0.1 ($variant)"
   # libycxx_nonshared.a
   (cd "$so/ns" && ar x "$sh/libycxx.a" $(ar t "$sh/libycxx.a" | grep -E '^(new|delete)[a-z_]*\.cpp\.o$|^allocation_table\.cpp\.o$')) &&
+    (cd "$so/ns" && ar x "$sh/libycxx-abi.a" rtti_float16.cpp.o) &&
   run $cc_c -O2 -fPIC -funwind-tables -c "$so/ns/forward.c" -o "$so/ns/forward.o" &&
   run "$work/y1-shared/tools/ycxx-cxx" $cc --libdir="$sh" -O2 -fPIC -frtti -I"$work/y1-shared/src/abi" -I"$sh/generated" \
     -c "$here/nonshared/rtti.cpp" -o "$so/ns/rtti.o" &&
   run ar rcs "$so/libycxx_nonshared.a" "$so"/ns/*.o && ok "[$cc] build libycxx_nonshared.a" || bad "[$cc] build libycxx_nonshared.a"
   # tools/ycxx-cxx --libdir: libycxx.a is a linker script, as glibc's libc.so is.
   if [ $variant = nonshared ]; then
-    printf 'GROUP(%s %s)\n' "$so/libycxx.so.0" "$so/libycxx_nonshared.a" >"$so/libycxx.a"
+    printf 'GROUP(%s %s)\n' "$so/libycxx.so.0.1" "$so/libycxx_nonshared.a" >"$so/libycxx.a"
   else
-    printf 'GROUP(%s %s %s)\n' "$so/libycxx.so.0" "$st/libycxx-abi.a" "$st/libycxx.a" >"$so/libycxx.a"
+    printf 'GROUP(%s %s %s)\n' "$so/libycxx.so.0.1" "$st/libycxx-abi.a" "$st/libycxx.a" >"$so/libycxx.a"
   fi
   printf '/* empty: libycxx.a names everything */\n' >"$so/libycxx-abi.a"
   ln -s "$sh/generated" "$so/generated"
   cp "$sh/ycxx-link-options" "$so/ycxx-link-options"
-  n=$(nm -D --defined-only "$so/libycxx.so.0" | wc -l)
-  foreign=$(nm -D --defined-only "$so/libycxx.so.0" | awk '{print $NF}' | grep -vE 'St4__y1|6__ycxx|^__ycxx_allocation_functions$|^__ycxx_abi_' | tr '\n' ' ')
-  [ -z "$foreign" ] && ok "[$cc] libycxx.so.0 exports $n symbols, all std::__y1, __ycxx, __ycxx_abi_* or the allocation table" ||
-    bad "[$cc] libycxx.so.0 also exports: $foreign"
+  n=$(nm -D --defined-only "$so/libycxx.so.0.1" | wc -l)
+  foreign=$(nm -D --defined-only "$so/libycxx.so.0.1" | awk '{print $NF}' | grep -vE 'St4__y1|6__ycxx|^__ycxx_allocation_functions$|^__ycxx_abi_' | tr '\n' ' ')
+  [ -z "$foreign" ] && ok "[$cc] libycxx.so.0.1 exports $n symbols, all std::__y1, __ycxx, __ycxx_abi_* or the allocation table" ||
+    bad "[$cc] libycxx.so.0.1 also exports: $foreign"
 done
 export LD_LIBRARY_PATH="$work/so-gcc:$work/so-clang${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
 

@@ -2042,7 +2042,7 @@ their link options are worked out (20.12).
 |---|---|---|
 | `libycxx.a`, `libycxx-abi.a` | as today (hidden, PIC), with the inline namespace | not used |
 | `libycxx.so.0.1.0` (ELF) | | the library and the ABI runtime (`libycxx-abi` is folded in): `std::__y1`, `__ycxx`, `__ycxx_abi_*`, the allocation table exported; soname `libycxx.so.0.1` |
-| `libycxx.so` (ELF, development link) | | a GNU ld linker script, `GROUP ( libycxx.so.0.1 libycxx_nonshared.a )`, so that `-lycxx` gives both (glibc's `libc.so` does the same; probed with lld and bfd) |
+| `libycxx.so` (ELF, development link) | | a GNU ld linker script, `GROUP ( libycxx.so.0.1 libycxx_nonshared.a )`, so that `-lycxx` gives both (glibc's `libc.so` does the same; probed with GNU ld and lld) |
 | `libycxx.0.1.dylib` (Mach-O) | | install name `@rpath/libycxx.0.1.dylib`, `-compatibility_version 0.1 -current_version 0.1.0`; consumers name `libycxx_nonshared.a` explicitly (no linker scripts on Mach-O) |
 | `libycxx_nonshared.a` | | the per-image part, all hidden (20.6) |
 | `libycxx-freestanding.a` | unchanged, static only | |
@@ -2178,14 +2178,14 @@ its `-Wno-attributes`.
   the library is unchanged: code in `std::__y1` finds the plain-std entities through the
   enclosing namespace. Qualified names (`std::move`, `::std::terminate`) find both kinds.
   Argument-dependent lookup finds both too: an inline namespace and its enclosing namespace are
-  associated with each other ([basic.lookup.argdep]/3), so `std::byte`'s operators would be
+  associated with each other ([namespace.def.general]/6, [basic.lookup.argdep]/4), so `std::byte`'s operators would be
   found even if they stayed in `__y1`.
 - **Forward declarations.** Every declaration of a standard entity must be in the same namespace
   as its definition. Within the library `check_visibility.py` enforces this through the
   allowlist, and the compilers enforce the rest: a `std::__y1::X` and a `std::X` make every use
   of `X` ambiguous.
   - Programs may specialize standard templates (`template <> struct std::hash<T>`,
-    `std::formatter`, `std::tuple_size`) as before. [namespace.def]/7 lets a member of an
+    `std::formatter`, `std::tuple_size`) as before. [namespace.def.general]/6 lets a member of an
     inline namespace be specialized as if it were a member of the enclosing one (probed:
     `tuple_protocol`, and the own suite's hash and formatter tests).
   - Programs that forward-declare standard entities themselves (`namespace std { template <class>
@@ -2210,9 +2210,9 @@ its `-Wno-attributes`.
   - `check_includes.py`: unchanged.
   - `gen_std_module.py --check`: regenerated once.
 - **Diagnostics and names that change.**
-  - GCC prints the inline namespace in diagnostics (`std::__y1::span<int, 4>`). Two own tests
-    match GCC's diagnostic text and must accept the new spelling: `ptrtag/deduction_one_argument`
-    and `span/ctor_array_size_mismatch`.
+  - GCC prints the inline namespace in diagnostics (`std::__y1::span<int, 4>`). Three own tests
+    match GCC's diagnostic text and must accept the new spelling: `ptrtag/deduction_one_argument`,
+    `span/ctor_array_size_mismatch` and `transitive_includes/strict/vector_string`.
   - `type_info::name()` demangles to `std::__y1::runtime_error`, which affects
     `rtti/cxa_demangle`, the terminate handler's message and `<stacktrace>`. The demangler could
     leave out `::__y1` when it prints, as a readability choice (20.12, question 7).
@@ -2297,7 +2297,7 @@ deliberately go into `__y1` and not into the plain list.
   aliases of them.
 - Every image that links `libycxx.so`, including programs, other shared libraries and plugins,
   links `libycxx_nonshared.a`, which is entirely hidden:
-  - forwarders under the names the compilers call: the 23 `__cxa_*` entry points of
+  - forwarders under the names the compilers call: the 22 `__cxa_*` entry points of
     `src/abi`, `__gxx_personality_v0`, `__dynamic_cast` and `std::terminate`. Also the three PAL
     functions that headers or allocation defaults call (`ycxx_pal_abort`,
     `ycxx_pal_allocate`, `ycxx_pal_deallocate`), forwarding to exported `__ycxx_abi_pal_*`. A
@@ -2434,8 +2434,8 @@ program's static copy and `libycxx.so`'s. They behave as two static images do to
   6. Sanitizer builds of the shared library (`libclang_rt`/`libtsan` define the allocation
      functions; the shared library's link options must keep libycxx's own, as
      `cmake/ycxx-link.cmake` does for programs): deferred, static only at first.
-  7. The `libycxx.so` linker script assumes GNU ld or lld (mold also accepts `GROUP`). Other
-     linkers use the explicit pair, as on Mach-O.
+  7. The `libycxx.so` linker script assumes a linker that reads GNU ld scripts (GNU ld and lld
+     were probed; mold and others were not). Other linkers use the explicit pair, as on Mach-O.
 
 ### 20.9 Testing plan
 
@@ -2581,4 +2581,43 @@ library's build.
 **Questions only the macOS run answers** (`docs/design/shared-probes/run-macos.sh`; parts 1 and
 2 need no library build).
 
-@@MACOS@@
+1. **Do the compilers on macOS need the same plain-std set?** Part 1 runs `minimal/` with Clang
+   23, Homebrew GCC 16 and Apple's clang. The compilers' behaviour should not depend on the
+   object format, but GCC's Darwin port and Apple's clang are different builds. One case is
+   only an observation: Apple's clang has no C++26 reflection.
+2. **Is a plain-std name with default visibility still coalesced with libc++abi's?** This is the
+   control of part 2 (`darwin/coalesce.cpp` variant 1: `std::current_exception` and
+   `typeid(std::exception)` emitted weak and exported by a program linked with `-lc++`). If it
+   is coalesced, §2's hazard is reproduced on this macOS. If it is not, the hazard depends on
+   something the probe lacks, and the other answers of part 2 prove less.
+3. **Is the same name in `std::__y1` left alone?** (variant 2, the shared mode's exports). This
+   is the central Darwin claim of 20.6.
+4. **Is a hidden plain-std name left alone?** (variant 3, the plain-std entities in every mode).
+5. **Does dyld coalesce two images' exported weak `std::__y1` definitions with each other when
+   they are loaded with `RTLD_LOCAL`** (`darwin/weakshare`, reported as INFO)? On ELF it does
+   not: two objects. If dyld does coalesce them, shared mode on Darwin gives one object per
+   process even across `RTLD_LOCAL` plugins; if it does not, plugins behave as on ELF. Either
+   answer is acceptable, and the design records it.
+6. **Does `libycxx.0.1.dylib` export only `std::__y1`, `__ycxx`, `__ycxx_abi_*` and the table, and
+   are all its weak exports `std::__y1`/`__ycxx`?** This is part 3, linked with `-force_load`
+   and no export list. It shows what an `-exported_symbols_list` must keep.
+7. **Do the forwarders of `libycxx_nonshared.a` work under Darwin's unwinder?** The question
+   covers compact unwind on arm64, the personality reached through each image's GOT entry,
+   `__cxa_throw` through a forwarder, and GCC with `-static-libgcc` and emulated TLS. The
+   compiler-known battery in shared mode answers it with both compilers.
+8. **Does an exception cross `libycxx.0.1.dylib`, a plugin and the program with Clang's arm64
+   non-unique type_info names (bit 63, §4)?** The plugin probes answer it ("plugin 15",
+   "shared-state 15" between two shared-mode images).
+9. **Does a shared-mode library coexist with Apple's libc++** in a libycxx program, in a libc++
+   program (both link orders) and in a C host `dlopen()`ing both (both orders,
+   `RTLD_GLOBAL`/`RTLD_LOCAL`)? With GCC, the same is checked against Homebrew's libstdc++
+   ("mine 31 other 31").
+10. **Do the install name, the compatibility version and `@rpath` behave as 20.2 assumes?** A
+    program linked against `@rpath/libycxx.0.1.dylib` loads it, and `otool -L` shows the versions.
+11. **How many symbols does a shared-mode program export on Mach-O, and how many of them are
+    weak?** Mach-O executables export their globals, unlike ELF ones, so a shared-mode program's
+    `std::__y1` instantiations are visible to dyld's coalescing. This is reported as INFO, so
+    that its interplay with `libycxx.0.1.dylib`'s own weak definitions (question 5) is on record.
+
+Not covered by the script: `ld-prime`'s handling of wildcard `-exported_symbols_list` patterns.
+Step 4 checks that when it adds the list.

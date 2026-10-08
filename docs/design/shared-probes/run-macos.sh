@@ -6,26 +6,52 @@
 #   docs/design/shared-probes/run-macos.sh 1 2        only parts 1 and 2 (3 builds libycxx twice
 #                                                     per compiler, a few minutes each)
 #
+# Needs: python3, git, patch; part 3 also cmake and ninja. No network.
 # Compilers: $YCXX_CLANGXX (Clang 23) and $YCXX_GXX (Homebrew GCC 16), as tools/toolchain/activate.sh
-# sets them; a missing one is skipped. Apple's libc++ is reached through $APPLE_CXX (default
+# sets them, else read from the toolchains.env that tools/toolchain/provision wrote, else
+# clang++-23 / g++-16 on PATH; a missing one is skipped (Apple's clang is always used for part 2). Apple's libc++ is reached through $APPLE_CXX (default
 # /usr/bin/clang++, Apple's clang with the SDK's libc++). Work directory: $PROBE_WORK (default: a new
 # directory under $TMPDIR). Builds use -j2 ($PROBE_JOBS).
 #
-#   1  minimal/: which entities the compilers need in plain std (as on Linux).
-#   2  darwin/: dyld's weak-definition coalescing against Apple's libc++abi, for a plain-std name
-#      with default visibility (the hazard of DECISIONS §2, reproduced as a control), the same name
-#      in std::__y1 (shared mode) and in plain std hidden (the design's plain-std entities); and
-#      coalescing among two images exporting the same std::__y1 inline variable.
-#   3  the whole library: run-linux.sh's steps 1-6 with Mach-O's tools: transformed trees,
-#      libycxx.0.dylib (install name, compatibility version), libycxx_nonshared.a, the
-#      compiler-known probes in both modes, coexistence with Apple's libc++ (and Homebrew's
-#      libstdc++ when GCC is there) in one process, plugins across modes, and what the images export.
+# What each check answers (the questions of DECISIONS §20.12, "Questions only the macOS run answers"):
+#   1  minimal/: which entities the compilers need in plain std (as on Linux). One line per probe
+#      and compiler; PASS = the plain-std control works, and the line shows what the std::__y1
+#      form does (question 1).
+#   2  darwin/: dyld's weak-definition coalescing against Apple's libc++abi, for
+#        "control: plain std, default visibility"   the hazard of DECISIONS §2 reproduced (question 2;
+#                                                   INFO if it does not reproduce)
+#        "std::__y1, default visibility"            shared mode's exports are left alone (question 3)
+#        "plain std, hidden"                        the plain-std entities are left alone (question 4)
+#        "inline variable, two dylibs"              coalescing among libycxx images (question 5, INFO)
+#   3  the whole library: run-linux.sh's steps 1-6 with Mach-O's tools, per compiler:
+#        "build static/shared tree"                 the transformed sources build on Darwin
+#        "libycxx.0.1.dylib exports ..."            only std::__y1, __ycxx, __ycxx_abi_*, the table;
+#                                                   weak exports only std::__y1/__ycxx (question 6)
+#        "@rpath/libycxx.0.1.dylib"                 install name and versions (question 10)
+#        "static|shared <probe>: run: ok"           compiler-known battery; in shared mode through the
+#                                                   nonshared forwarders and Darwin's unwinder (question 7)
+#        "<x> program + <y> library: mine 31 other 31", "dlopen ..."
+#                                                   coexistence with Apple's libc++ / Homebrew's
+#                                                   libstdc++, all load orders (question 9)
+#        "<mode> host + <mode> plugin: plugin 15 shared-state N"
+#                                                   string/vector/exception exchange across modes;
+#                                                   one runtime only for shared+shared (question 8)
+#        INFO export counts of plugins and programs (question 11)
 #
 # Output: one line per check, "PASS", "FAIL" or "INFO" (an observation the design records either
 # way), then a summary. Please send the whole output (and $PROBE_WORK/run.log when something fails).
 set -u
 here=$(cd "$(dirname "$0")" && pwd)
 repo=$(cd "$here/../../.." && pwd)
+# The compilers: the variables tools/toolchain/activate.sh exports when it was sourced; else the
+# same toolchains.env it reads (tools/lib/env.sh, POSIX sh); else g++-16 / clang++-23 on PATH
+# (Homebrew's bin directories added).
+. "$repo/tools/lib/env.sh"
+ycxx_env_load
+for d in /opt/homebrew/bin /usr/local/bin; do
+  case ":$PATH:" in *":$d:"*) ;; *) [ -d "$d" ] && PATH=$PATH:$d ;; esac
+done
+export PATH
 parts=${*:-1 2 3}
 work=${PROBE_WORK:-$(mktemp -d "${TMPDIR:-/tmp}/ycxx-shared-macos.XXXXXX")}
 jobs=${PROBE_JOBS:-2}
@@ -50,13 +76,32 @@ cc_of() {
   esac
 }
 echo "work directory: $work (commands and output: $log)"
+case " $parts " in *" 3 "*)
+  missing=
+  for tool in cmake ninja python3 patch git ar nm; do has $tool || missing="$missing $tool"; done
+  [ -n "$compilers" ] || missing="$missing clang++-23/g++-16"
+  if [ -n "$missing" ]; then
+    bad "part 3 skipped: needs$missing (tools/toolchain/activate.sh; Homebrew: brew install cmake ninja)"
+    parts=$(echo " $parts " | sed 's/ 3 / /')
+  fi ;;
+esac
 echo "macOS $(sw_vers -productVersion 2>/dev/null) $(uname -m); Apple clang: $($apple --version 2>/dev/null | head -1)"
 for cc in $compilers; do echo "$cc: $($(cxx_of $cc) --version | head -1)"; done
 case " $parts " in *" 1 "*)
   echo "== 1. minimal plain-std probes"
   list=
   for cc in $compilers; do list="$list $(cxx_of $cc)"; done
-  PROBE_OUT=$work/minimal sh "$here/minimal/run-minimal.sh" $list "$apple" | while IFS= read -r line; do info "$line"; done
+  # PASS: the plain-std control builds and runs; the line also shows what the std::__y1 form does
+  # (Linux: align_val_t fails on both, destroying_delete_t, initializer_list, byte and meta on GCC,
+  # terminate on Clang; DECISIONS §20.5). A different std::__y1 result is reported as INFO.
+  PROBE_OUT=$work/minimal sh "$here/minimal/run-minimal.sh" $list "$apple" >"$work/minimal.txt" 2>&1
+  while IFS= read -r line; do
+    case $line in
+      *"not found"*) info "$line" ;;
+      *PLAIN=ok*) ok "$line" ;;
+      *) bad "$line" ;;
+    esac
+  done <"$work/minimal.txt"
   ;;
 esac
 
@@ -140,40 +185,41 @@ case " $parts " in *" 3 "*)
     run $c -O2 -fPIC -c "$so/ns/export.c" -o "$so/export.o"
     # The shared library: install name and versions as the design proposes (absolute here, so that
     # the probes need no rpath; @rpath is checked below).
-    if run $cxx -dynamiclib -o "$so/libycxx.0.dylib" -install_name "$so/libycxx.0.dylib" \
+    if run $cxx -dynamiclib -o "$so/libycxx.0.1.dylib" -install_name "$so/libycxx.0.1.dylib" \
          -compatibility_version 0.1 -current_version 0.1.0 "$so/export.o" \
          -Wl,-force_load,"$sh/libycxx.a" -Wl,-force_load,"$sh/libycxx-abi.a" -nostdlib++ $libgcc; then
-      ok "[$cc] link libycxx.0.dylib"
+      ok "[$cc] link libycxx.0.1.dylib"
     else
-      bad "[$cc] link libycxx.0.dylib"; continue
+      bad "[$cc] link libycxx.0.1.dylib"; continue
     fi
-    (cd "$so/ns" && ar x "$sh/libycxx.a" $(ar t "$sh/libycxx.a" | grep -E '^(new|delete)[a-z_]*\.cpp\.o$|^allocation_table\.cpp\.o$'))
+    (cd "$so/ns" && ar x "$sh/libycxx.a" $(ar t "$sh/libycxx.a" | grep -E '^(new|delete)[a-z_]*\.cpp\.o$|^allocation_table\.cpp\.o$')) &&
+    (cd "$so/ns" && ar x "$sh/libycxx-abi.a" rtti_float16.cpp.o)
     run $c -O2 -fPIC -c "$so/ns/forward.c" -o "$so/ns/forward.o" &&
       run "$work/y1-shared/tools/ycxx-cxx" $cc --libdir="$sh" -O2 -fPIC -frtti -I"$work/y1-shared/src/abi" \
         -I"$sh/generated" -c "$here/nonshared/rtti.cpp" -o "$so/ns/rtti.o" &&
       run ar rcs "$so/libycxx_nonshared.a" "$so"/ns/*.o && ok "[$cc] build libycxx_nonshared.a" || bad "[$cc] build libycxx_nonshared.a"
     # tools/ycxx-cxx --libdir: Mach-O has no linker scripts; ld64 reads a file by its contents, so
     # libycxx.a may be the dylib itself and libycxx-abi.a the per-image archive.
-    ln -sf "$so/libycxx.0.dylib" "$so/libycxx.a"
+    ln -sf "$so/libycxx.0.1.dylib" "$so/libycxx.a"
     ln -sf "$so/libycxx_nonshared.a" "$so/libycxx-abi.a"
     ln -sf "$sh/generated" "$so/generated"
     cp "$sh/ycxx-link-options" "$so/ycxx-link-options"
-    n=$(nm -gU "$so/libycxx.0.dylib" | wc -l | tr -d ' ')
-    foreign=$(nm -gU "$so/libycxx.0.dylib" | awk '{print $NF}' | grep -vE 'St4__y1|6__ycxx|^___ycxx_allocation_functions$|^___ycxx_abi_' | tr '\n' ' ')
-    [ -z "$foreign" ] && ok "[$cc] libycxx.0.dylib exports $n symbols, all std::__y1, __ycxx, __ycxx_abi_* or the allocation table" ||
-      bad "[$cc] libycxx.0.dylib also exports: $foreign"
-    weak=$(nm -m "$so/libycxx.0.dylib" | grep -c 'weak external' | tr -d ' ')
-    weakforeign=$(nm -m "$so/libycxx.0.dylib" | grep 'weak external' | awk '{print $NF}' | grep -vE 'St4__y1|6__ycxx' | tr '\n' ' ')
-    [ -z "$weakforeign" ] && ok "[$cc] libycxx.0.dylib's $weak weak exports are all std::__y1 or __ycxx" ||
-      bad "[$cc] libycxx.0.dylib exports weak definitions outside std::__y1: $weakforeign"
+    n=$(nm -gU "$so/libycxx.0.1.dylib" | wc -l | tr -d ' ')
+    foreign=$(nm -gU "$so/libycxx.0.1.dylib" | awk '{print $NF}' | grep -vE 'St4__y1|6__ycxx|^___ycxx_allocation_functions$|^___ycxx_abi_' | tr '\n' ' ')
+    [ -z "$foreign" ] && ok "[$cc] libycxx.0.1.dylib exports $n symbols, all std::__y1, __ycxx, __ycxx_abi_* or the allocation table" ||
+      bad "[$cc] libycxx.0.1.dylib also exports: $foreign"
+    weak=$(nm -m "$so/libycxx.0.1.dylib" | grep -c 'weak external' | tr -d ' ')
+    weakforeign=$(nm -m "$so/libycxx.0.1.dylib" | grep 'weak external' | awk '{print $NF}' | grep -vE 'St4__y1|6__ycxx' | tr '\n' ' ')
+    [ -z "$weakforeign" ] && ok "[$cc] libycxx.0.1.dylib's $weak weak exports are all std::__y1 or __ycxx" ||
+      bad "[$cc] libycxx.0.1.dylib exports weak definitions outside std::__y1: $weakforeign"
     # @rpath and the compatibility version: a program linked against an @rpath install name.
-    cp "$so/libycxx.0.dylib" "$so/rp.dylib" && run install_name_tool -id @rpath/libycxx.0.dylib "$so/rp.dylib"
-    mkdir -p "$so/rpath" && cp "$so/rp.dylib" "$so/rpath/libycxx.0.dylib"
+    cp "$so/libycxx.0.1.dylib" "$so/rp.dylib" && run install_name_tool -id @rpath/libycxx.0.1.dylib "$so/rp.dylib"
+    mkdir -p "$so/rpath" && cp "$so/rp.dylib" "$so/rpath/libycxx.0.1.dylib"
     printf 'int main() { return 0; }\n' >"$so/rp.c"
-    if run $c "$so/rp.c" -o "$so/rp" "$so/rpath/libycxx.0.dylib" -Wl,-rpath,"$so/rpath" && "$so/rp"; then
-      ok "[$cc] a program linked against @rpath/libycxx.0.dylib loads it ($(otool -L "$so/rp" | grep libycxx | sed 's/^[[:space:]]*//'))"
+    if run $c "$so/rp.c" -o "$so/rp" "$so/rpath/libycxx.0.1.dylib" -Wl,-rpath,"$so/rpath" && "$so/rp"; then
+      ok "[$cc] a program linked against @rpath/libycxx.0.1.dylib loads it ($(otool -L "$so/rp" | grep libycxx | sed 's/^[[:space:]]*//'))"
     else
-      bad "[$cc] @rpath/libycxx.0.dylib"
+      bad "[$cc] @rpath/libycxx.0.1.dylib"
     fi
   done
   export DYLD_LIBRARY_PATH="$work/so-clang:$work/so-gcc${DYLD_LIBRARY_PATH:+:$DYLD_LIBRARY_PATH}"

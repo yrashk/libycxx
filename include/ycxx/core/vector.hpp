@@ -661,7 +661,7 @@ public:
 
   // ---- [vector.modifiers] ----
   template <class... _Args>
-  constexpr reference emplace_back(_Args&&... __args) {
+  [[__gnu__::__always_inline__]] constexpr reference emplace_back(_Args&&... __args) {
     if (__last_ != __cap_) {
       __alloc_traits::construct(__alloc_, __last_, static_cast<_Args&&>(__args)...);
       ++__last_;

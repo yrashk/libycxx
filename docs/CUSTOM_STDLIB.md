@@ -688,7 +688,7 @@ per-test results natively.
 | When | libycxx | Others |
 |---|---|---|
 | Every push / PR | `ci.yml`: `tools/test policy build freestanding cmake ycxx`, failing on every FAIL and XPASS, on Linux (gcc:16 container, Clang 23 from apt.llvm.org) and macOS 15 arm64; a sample of both external suites on Linux | libc++: CI configurations defined in `libcxx/utils/ci/Dockerfile` and run by `libcxx/utils/ci/run-buildbot`, reproducible locally with `run-buildbot-container` [libcxx-testing] |
-| Nightly / on demand | `full.yml`: both external suites, both compilers, Linux and macOS (one job per suite and compiler, up to 300-340 minutes), the own suite with ASan+UBSan, the own suite hardened, with `-fno-exceptions` and with `-O2` (both compilers, Linux), and the real-world projects (`tools/test realworld`, both compilers, Linux); no job tolerates a FAIL | libc++: continuous fuzzing on OSS-Fuzz (`libcxx/utils/ci/oss-fuzz.sh`) [libcxx-oss-fuzz] |
+| Nightly / on demand | `full.yml`: both external suites, both compilers, Linux and macOS (one job per suite and compiler, up to 300-340 minutes), the own suite with ASan+UBSan, the own suite hardened, with `-fno-exceptions` and with `-O2` (both compilers, Linux), the real-world projects (`tools/test realworld`, both compilers, Linux), and the benchmarks against their baseline of ratios to libstdc++ (`bench/check`, both compilers, Linux); no job tolerates a FAIL | libc++: continuous fuzzing on OSS-Fuzz (`libcxx/utils/ci/oss-fuzz.sh`) [libcxx-oss-fuzz] |
 
 lit can split a run into shards (`--num-shards M --run-shard N`, or `LIT_NUM_SHARDS`), "for
 parallel execution on separate machines" [lit]; libycxx's nightly jobs do not shard (Gaps, item 5).

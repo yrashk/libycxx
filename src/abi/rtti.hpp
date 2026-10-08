@@ -138,7 +138,20 @@ enum class __rtti_kind : unsigned char {
   unknown,
 };
 
-__rtti_kind __kind_of(const std::type_info& t) noexcept;
+__rtti_kind __kind_of_any(const std::type_info& t) noexcept;
+// The class kinds a hierarchy walk meets on every step are tested inline, by the address of the
+// type_info object's own type_info (this runtime's ABI classes); the rest, and type_info objects
+// of another image's runtime copy, go to __kind_of_any.
+inline __rtti_kind __kind_of(const std::type_info& t) noexcept {
+  const std::type_info* d = &typeid(t);
+  if (d == &typeid(__cxxabiv1::__si_class_type_info))
+    return __rtti_kind::__class_si;
+  if (d == &typeid(__cxxabiv1::__vmi_class_type_info))
+    return __rtti_kind::__class_vmi;
+  if (d == &typeid(__cxxabiv1::__class_type_info))
+    return __rtti_kind::__class_plain;
+  return __kind_of_any(t);
+}
 
 // std::type_info::operator== with the name comparison written out: the runtime compares types on
 // every step of a dynamic_cast or handler search, mostly types that differ within their first
@@ -156,16 +169,59 @@ inline bool __same_type(const std::type_info& a, const std::type_info& b) noexce
     return false;
   if (__x == y)
     return true;
-  // Most names differ within a few characters; a long common prefix (a nested or
-  // anonymous-namespace name, which Clang does not mark with '*') goes to the C library's strcmp.
+  // Most names differ within a few characters; a long common prefix (a nested name) goes to the
+  // C library's strcmp.
+  const char* const __x0 = __x;
   for (int i = 0; i < 8; ++i, ++__x, ++y) {
     if (*__x != *y)
       return false;
     if (*__x == '\0')
       return true;
   }
+  // A name that begins in an unnamed namespace ([namespace.unnamed]) is a type of one
+  // translation unit, with internal linkage ([basic.link]/4), so it has one type_info object: two
+  // objects are two types. GCC marks such names with '*'; Clang does not, and their common
+  // prefix "N12_GLOBAL__N_1" would otherwise cost a strcmp per comparison.
+  // Inline: x0 holds at least 9 characters, so its first 8 are one word; the other 7 are compared
+  // until the first difference, at the latest x0's terminator.
+  unsigned long long __head, __want;
+  __builtin_memcpy(&__head, __x0, 8);
+  __builtin_memcpy(&__want, "N12_GLOB", 8);
+  if (__head == __want) {
+    const char* const __tail = "AL__N_1";
+    int i = 0;
+    while (i < 7 && __x0[8 + i] == __tail[i])
+      ++i;
+    if (i == 7)
+      return false;
+  }
   return __builtin_strcmp(__x, y) == 0;
 }
+
+// Whether a type_info object is the only one of its type, so that any other object is another
+// type: its name is marked '*' (GCC: internal linkage), or begins in an unnamed namespace
+// (Clang does not mark those; see same_type).
+inline bool __sole_type_info(const std::type_info& a) noexcept {
+  const char* __x = __ycxx::__detail::__rtti_name(a.*__type_info_name::name);
+  if (*__x == '*')
+    return true;
+  const char* const __anon = "N12_GLOBAL__N_1";
+  int i = 0;
+  while (i < 15 && __x[i] == __anon[i])
+    ++i;
+  return i == 15;
+}
+
+// same_type(t, type) against one type many times (a hierarchy walk): when that type_info is the
+// sole one of its type, addresses decide.
+struct __type_matcher {
+  const std::type_info* type;
+  bool __by_address;
+  explicit __type_matcher(const std::type_info& t) noexcept : type(&t), __by_address(__sole_type_info(t)) {}
+  bool __matches(const std::type_info& t) const noexcept {
+    return &t == type || (!__by_address && __same_type(t, *type));
+  }
+};
 
 inline bool is_class(__rtti_kind k) noexcept {
   return k == __rtti_kind::__class_plain || k == __rtti_kind::__class_si || k == __rtti_kind::__class_vmi;

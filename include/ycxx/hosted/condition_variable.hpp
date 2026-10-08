@@ -43,15 +43,23 @@ public:
       ::ycxx_pal_thread_yield();
   }
 
+  // Without registered waiters a notification does nothing, not even the read-modify-write of
+  // seq_: a thread blocked in wait registered itself (waiters_) before releasing the mutex it
+  // waits with, so a notifier whose predicate change is ordered after that release by the mutex
+  // ([thread.condition.condvar]: the waiter checks the predicate holding it) sees the
+  // registration; one that sees none has nobody to wake ([thread.condition]/2: notify unblocks
+  // the threads blocked in a wait).
   void notify_one() noexcept {
+    if (__atomic_load_n(&__waiters_, __ATOMIC_SEQ_CST) == 0)
+      return;
     __atomic_fetch_add(&__seq_, 1, __ATOMIC_SEQ_CST);
-    if (__atomic_load_n(&__waiters_, __ATOMIC_SEQ_CST) != 0)
-      ::ycxx_pal_wake_one(&__seq_);
+    ::ycxx_pal_wake_one(&__seq_);
   }
   void notify_all() noexcept {
+    if (__atomic_load_n(&__waiters_, __ATOMIC_SEQ_CST) == 0)
+      return;
     __atomic_fetch_add(&__seq_, 1, __ATOMIC_SEQ_CST);
-    if (__atomic_load_n(&__waiters_, __ATOMIC_SEQ_CST) != 0)
-      ::ycxx_pal_wake_all(&__seq_);
+    ::ycxx_pal_wake_all(&__seq_);
   }
 
   // m is held; it is released while blocked and held again on return.

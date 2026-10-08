@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <cstdint>
 #include <numeric>
+#include <ranges>
 #include <string>
 #include <vector>
 
@@ -66,6 +67,15 @@ int main(int argc, char** argv) {
     std::move(a.begin(), a.end(), b.begin());
     bench::sink(b[0]);
   });
+  {
+    // The moves alone: the strings go back and forth between two vectors made once.
+    std::vector<std::string> a(strs.begin(), strs.begin() + M / 10), b(M / 10);
+    bench::run("move-assign strings 1e5 (no allocation)", M / 5, [&] {
+      std::move(a.begin(), a.end(), b.begin());
+      std::move(b.begin(), b.end(), a.begin());
+      bench::sink(a[0]);
+    });
+  }
   bench::run("fill int", M, [&] { std::fill(dst.begin(), dst.end(), bench::opaque(3)); bench::sink(dst[5]); });
   bench::run("fill byte", M, [&] { std::fill(bytes.begin(), bytes.end(), bench::opaque<unsigned char>(1)); bench::sink(bytes[5]); });
   std::vector<int> small2 = small;
@@ -77,6 +87,34 @@ int main(int argc, char** argv) {
     long s = 0;
     for (int i = 0; i < M; ++i) s += std::lower_bound(small.begin(), small.end(), static_cast<int>((i * 7919LL) % M)) - small.begin();
     bench::sink(s);
+  });
+  {
+    std::vector<unsigned char> hay(M);
+    bench::rng r;
+    for (auto& c : hay) c = static_cast<unsigned char>('a' + r() % 16);
+    const unsigned char needle[] = {'q', 'r', 's', 't', 'u'};
+    bench::run("search bytes (5-byte needle, miss)", M, [&] {
+      bench::sink(std::search(hay.begin(), hay.end(), std::begin(needle), std::end(needle)));
+    });
+    std::vector<unsigned char> hay2 = hay;
+    hay2.back() ^= 1;
+    bench::run("mismatch bytes", M, [&] { bench::sink(std::mismatch(hay.begin(), hay.end(), hay2.begin()).first); });
+    bench::run("equal bytes", M, [&] { bench::sink(std::equal(hay.begin(), hay.end(), hay2.begin())); });
+  }
+  bench::run("ranges filter|transform sum", M, [&] {
+    long s = 0;
+    for (int x : small | std::views::filter([](int v) { return v % 3 != 0; }) | std::views::transform([](int v) { return v * 2; }))
+      s += x;
+    bench::sink(s);
+  });
+  bench::run_prepared("remove_if int", M, reset, [&] {
+    bench::sink(std::remove_if(w.begin(), w.end(), [](int x) { return x & 1; }));
+  });
+  bench::run_prepared("partition int", M, reset, [&] {
+    bench::sink(std::partition(w.begin(), w.end(), [](int x) { return x & 1; }));
+  });
+  bench::run_prepared("rotate int", M, reset, [&] {
+    bench::sink(std::rotate(w.begin(), w.begin() + M / 3, w.end()));
   });
   std::vector<int> u;
   bench::run_prepared("unique int", M, [&] {

@@ -25,6 +25,7 @@
 # 5. plugin/: a host dlopen()s a plugin, exchanging std::string/std::vector and an exception, for
 #    every pair of modes (static/shared host x static/shared plugin).
 # 6. Exports: what libycxx.so and the probe images export.
+# 7. With PROBE_BASELINE=1: the costs (measure/), against an untransformed copy built the same way.
 # Prints PASS/FAIL per check and a summary; exit status 1 when any check failed.
 set -u
 here=$(cd "$(dirname "$0")" && pwd)
@@ -84,7 +85,7 @@ for cc in $compilers; do
   python3 "$here/nonshared/gen_forward.py" "$so/ns"
   exports=
   if [ $variant = nonshared ]; then
-    run $cc_c -O2 -fPIC -funwind-tables -c "$so/ns/export.c" -o "$so/export.o" && exports=$so/export.o
+    run $cc_c -O2 -fPIC -fexceptions -c "$so/ns/export.c" -o "$so/export.o" && exports=$so/export.o
   fi
   run $cxx $extra -shared -o "$so/libycxx.so.0.1" -Wl,-soname,libycxx.so.0.1 $exports \
     -Wl,--whole-archive "$sh/libycxx.a" "$sh/libycxx-abi.a" -Wl,--no-whole-archive -nostdlib++ -lm -shared-libgcc &&
@@ -92,7 +93,7 @@ for cc in $compilers; do
   # libycxx_nonshared.a
   (cd "$so/ns" && ar x "$sh/libycxx.a" $(ar t "$sh/libycxx.a" | grep -E '^(new|delete)[a-z_]*\.cpp\.o$|^allocation_table\.cpp\.o$')) &&
     (cd "$so/ns" && ar x "$sh/libycxx-abi.a" rtti_float16.cpp.o) &&
-  run $cc_c -O2 -fPIC -funwind-tables -c "$so/ns/forward.c" -o "$so/ns/forward.o" &&
+  run $cc_c -O2 -fPIC -fexceptions -c "$so/ns/forward.c" -o "$so/ns/forward.o" &&
   run "$work/y1-shared/tools/ycxx-cxx" $cc --libdir="$sh" -O2 -fPIC -frtti -I"$work/y1-shared/src/abi" -I"$sh/generated" \
     -c "$here/nonshared/rtti.cpp" -o "$so/ns/rtti.o" &&
   run ar rcs "$so/libycxx_nonshared.a" "$so"/ns/*.o && ok "[$cc] build libycxx_nonshared.a" || bad "[$cc] build libycxx_nonshared.a"
@@ -210,6 +211,28 @@ for cc in $compilers; do
     echo "[$cc] $m plugin exports $(nm -D --defined-only "$d/plugin-$m.so" | wc -l) symbols, $(nm -D --defined-only "$d/plugin-$m.so" | grep -c 'St4__y1') of them std::__y1"
   done
 done
+
+# ---- 7. costs (PROBE_BASELINE=1): an untransformed copy, y0, built the same way; sizes and
+# compile time of measure/sample.cpp, and measure/rtti_bench.cpp in the three configurations ----
+if [ "${PROBE_BASELINE:-0}" = 1 ]; then
+  t=$work/y0
+  if [ ! -d "$t" ]; then
+    mkdir -p "$t" && git -C "$repo" archive HEAD include src modules cmake tools CMakeLists.txt | tar -x -C "$t"
+  fi
+  for cc in $compilers; do
+    case $cc in gcc) cxx=$gxx cc_c=${YCXX_GCC:-gcc-16} ;; clang) cxx=$clangxx cc_c=${YCXX_CLANG:-clang-23} ;; esac
+    [ -f "$t/build/$cc/libycxx.a" ] || { run cmake -S "$t" -B "$t/build/$cc" -G Ninja -DCMAKE_BUILD_TYPE=Release \
+      -DCMAKE_CXX_COMPILER=$(command -v $cxx) -DCMAKE_C_COMPILER=$(command -v $cc_c) -DYCXX_MODULES=OFF \
+      -DYCXX_WERROR=OFF -DYCXX_INSTALL=OFF && run ninja -C "$t/build/$cc" -j"$jobs"; }
+  done
+  PROBE_OUT=$work/measure sh "$here/measure/measure.sh" "$t" "$work/y1-static" | while IFS= read -r l; do echo "INFO $l"; done
+  for cc in $compilers; do
+    run "$t/tools/ycxx-cxx" $cc -O2 "$here/measure/rtti_bench.cpp" -o "$work/rb-y0-$cc"
+    run "$work/y1-static/tools/ycxx-cxx" $cc -O2 "$here/measure/rtti_bench.cpp" -o "$work/rb-static-$cc"
+    run "$work/y1-shared/tools/ycxx-cxx" $cc --libdir="$work/so-$cc" -O2 "$here/measure/rtti_bench.cpp" -o "$work/rb-shared-$cc"
+    for v in y0 static shared; do echo "INFO [$cc] rtti_bench $v: $("$work/rb-$v-$cc")"; done
+  done
+fi
 
 echo "passed $pass, failed $fail (log: $log)"
 [ $fail = 0 ]

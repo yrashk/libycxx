@@ -182,7 +182,7 @@ case " $parts " in *" 3 "*)
     libgcc=
     [ $cc = gcc ] && libgcc=-static-libgcc
     python3 "$here/nonshared/gen_forward.py" "$so/ns"
-    run $c -O2 -fPIC -c "$so/ns/export.c" -o "$so/export.o"
+    run $c -O2 -fPIC -fexceptions -c "$so/ns/export.c" -o "$so/export.o"
     # The shared library: install name and versions as the design proposes (absolute here, so that
     # the probes need no rpath; @rpath is checked below).
     if run $cxx -dynamiclib -o "$so/libycxx.0.1.dylib" -install_name "$so/libycxx.0.1.dylib" \
@@ -194,7 +194,7 @@ case " $parts " in *" 3 "*)
     fi
     (cd "$so/ns" && ar x "$sh/libycxx.a" $(ar t "$sh/libycxx.a" | grep -E '^(new|delete)[a-z_]*\.cpp\.o$|^allocation_table\.cpp\.o$')) &&
     (cd "$so/ns" && ar x "$sh/libycxx-abi.a" rtti_float16.cpp.o)
-    run $c -O2 -fPIC -c "$so/ns/forward.c" -o "$so/ns/forward.o" &&
+    run $c -O2 -fPIC -fexceptions -c "$so/ns/forward.c" -o "$so/ns/forward.o" &&
       run "$work/y1-shared/tools/ycxx-cxx" $cc --libdir="$sh" -O2 -fPIC -frtti -I"$work/y1-shared/src/abi" \
         -I"$sh/generated" -c "$here/nonshared/rtti.cpp" -o "$so/ns/rtti.o" &&
       run ar rcs "$so/libycxx_nonshared.a" "$so"/ns/*.o && ok "[$cc] build libycxx_nonshared.a" || bad "[$cc] build libycxx_nonshared.a"

@@ -2131,7 +2131,9 @@ Every namespace opening then reads
     `include/` declares.
 - *The export list.* The attributes decide what is exported. The list is a safety net that the
   build generates from one pattern file, `src/export.txt`:
-  - on ELF, a version script: `YCXX_0.1 { global: _ZNSt4__y1*; _ZNKSt4__y1*; _ZT[VISTC]NSt4__y1*; _ZGVNSt4__y1*; _ZZNSt4__y1*; _ZTHNSt4__y1*; _ZTWNSt4__y1*; _ZN6__ycxx*; ...; __ycxx_abi_*; __ycxx_allocation_functions; local: *; };`;
+  - on ELF, a version script: `YCXX_0.1 { global: _ZNSt4__y1*; _ZNKSt4__y1*; _ZT[VISTC]NSt4__y1*;
+    _ZGVNSt4__y1*; _ZZNSt4__y1*; _ZTHNSt4__y1*; _ZTWNSt4__y1*; _ZN6__ycxx*; ...; __ycxx_abi_*;
+    __ycxx_allocation_functions; local: *; };`;
   - on Mach-O, the same patterns with the `_` prefix in an `-exported_symbols_list` file.
 
   A test compares the dynamic symbol table with the default-visibility symbols of the objects.
@@ -2139,11 +2141,16 @@ Every namespace opening then reads
   (20.9). The version node also gives every export an ELF symbol version. Our names never clash
   with other runtimes' names anyway, but `local: *` keeps anything that is not libycxx's own,
   such as GCC's predeclared `__cxa_*`, from being exported even if an attribute is lost.
+  The probes hit such a case: with Clang, the first shared build exported `_ZTIDF16_`,
+  `_ZTIPDF16_` and `_ZTIPKDF16_`. These are the `_Float16` type_info objects that
+  `src/abi/rtti_float16.cpp` defines by assembler name inside a `__ycxx` block, which became
+  default. They belong to the per-image part, hidden, next to the other fundamental type_info
+  objects.
 - **`tools/check_visibility.py` new rules.**
-  - `include/`: every file-scope `std` opening is either
-    `namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {`
-    (closed by `}}`), or a plain-std opening `namespace [[__gnu__::__visibility__("hidden")]] std {`.
-    A plain-std block may declare only the names listed in `tools/data/plain-std.txt`.
+  - `include/`: every file-scope `std` opening is either `namespace
+    [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {` (closed by `}}`),
+    or a plain-std opening `namespace [[__gnu__::__visibility__("hidden")]] std {`. A plain-std
+    block may declare only the names listed in `tools/data/plain-std.txt`.
   - `__ycxx` blocks in `include/` carry `_YCXX_VISIBILITY`, and `__cxxabiv1` blocks carry
     `"hidden"`.
   - `src/` follows the same rules. In addition a block may carry `"hidden"` when it declares
@@ -2154,15 +2161,15 @@ Every namespace opening then reads
   - `--fix` performs the one-time conversion. `docs/design/shared-probes/transform.py` is its
     prototype: it brace-matches with `check_visibility.scan_braces`.
 
-**GCC's `-Wattributes` warning and its hiding of functions disappear in shared mode.** Library
-types have default visibility there, so a program class with a `std::string` member no longer
-"has greater visibility than its field", and a function whose signature names a library type
-keeps its own visibility. Probed with GCC 16.2: a struct with a `std::string` member and a class
-derived from `std::runtime_error` give two warnings in static mode and none in shared mode. In
-static mode `std::string k(const std::string&)` is `HIDDEN`; in shared mode it is `DEFAULT`. A
-GCC-built plugin exports all seven of its unmarked functions in shared mode. In static mode it
-exports only the four whose signatures name no library type (4 of 7). Static mode keeps both behaviours and
-its `-Wno-attributes`.
+**GCC's `-Wattributes` warning and its hiding of functions disappear in shared mode.** Library types
+have default visibility there, so a program class with a `std::string` member no longer "has greater
+visibility than its field", and a function whose signature names a library type keeps its own
+visibility. Probed with GCC 16.2: a struct with a `std::string` member and a class derived from
+`std::runtime_error` give two warnings in static mode and none in shared mode. In static mode
+`std::string k(const std::string&)` is `HIDDEN`; in shared mode it is `DEFAULT`. A GCC-built plugin
+exports all seven of its unmarked functions in shared mode. In static mode it exports only the four
+whose signatures name no library type (4 of 7). Static mode keeps both behaviours and its
+`-Wno-attributes`.
 
 ### 20.4 The inline ABI namespace
 
@@ -2173,13 +2180,13 @@ its `-Wno-attributes`.
   digit is the ABI generation, independent of release numbers. It changes only with a deliberate
   ABI epoch, while the soname tracks the 0.x releases (20.7).
 - **Every header's `std` opening becomes `std { inline namespace __y1 {`**, with the attribute of
-  20.3, and its closing becomes `}}`. That is 500 openings in 234 files under `include/` and
-  `src/`, a mechanical change done with `check_visibility.py --fix`. Unqualified lookup inside
-  the library is unchanged: code in `std::__y1` finds the plain-std entities through the
-  enclosing namespace. Qualified names (`std::move`, `::std::terminate`) find both kinds.
-  Argument-dependent lookup finds both too: an inline namespace and its enclosing namespace are
-  associated with each other ([namespace.def.general]/6, [basic.lookup.argdep]/4), so `std::byte`'s operators would be
-  found even if they stayed in `__y1`.
+  20.3, and its closing becomes `}}`. That is 500 openings in 234 files under `include/` and `src/`,
+  a mechanical change done with `check_visibility.py --fix`. Unqualified lookup inside the library
+  is unchanged: code in `std::__y1` finds the plain-std entities through the enclosing namespace.
+  Qualified names (`std::move`, `::std::terminate`) find both kinds. Argument-dependent lookup finds
+  both too: an inline namespace and its enclosing namespace are associated with each other
+  ([namespace.def.general]/6, [basic.lookup.argdep]/4), so `std::byte`'s operators would be found
+  even if they stayed in `__y1`.
 - **Forward declarations.** Every declaration of a standard entity must be in the same namespace
   as its definition. Within the library `check_visibility.py` enforces this through the
   allowlist, and the compilers enforce the rest: a `std::__y1::X` and a `std::X` make every use
@@ -2297,20 +2304,28 @@ deliberately go into `__y1` and not into the plain list.
   aliases of them.
 - Every image that links `libycxx.so`, including programs, other shared libraries and plugins,
   links `libycxx_nonshared.a`, which is entirely hidden:
-  - forwarders under the names the compilers call: the 22 `__cxa_*` entry points of
-    `src/abi`, `__gxx_personality_v0`, `__dynamic_cast` and `std::terminate`. Also the three PAL
-    functions that headers or allocation defaults call (`ycxx_pal_abort`,
-    `ycxx_pal_allocate`, `ycxx_pal_deallocate`), forwarding to exported `__ycxx_abi_pal_*`. A
-    forwarder is one tail call. The personality routine's forwarder runs once per frame per
-    unwinding phase. Probed: 20.11;
+  - forwarders under the names the compilers call: the 22 `__cxa_*` entry points of `src/abi`,
+    `__gxx_personality_v0`, `__dynamic_cast` and `std::terminate`. Also the PAL functions that
+    inline code calls by name, forwarding to exported `__ycxx_abi_<name>`. The probes found 14:
+    `ycxx_pal_abort` (the default error handler), `ycxx_pal_allocate` and `ycxx_pal_deallocate` (the
+    allocation defaults), and in the headers the clock, wait, wake, sleep, yield and thread
+    functions of `<chrono>`, `<atomic>`, `<mutex>`, `<condition_variable>`, `<thread>`,
+    `<stop_token>` and the execution headers. The PAL stays hidden: its names are §18's interface
+    for integrators, and pal.h does not change. The build generates the list from the headers, and a
+    link test of every public header in shared mode keeps it complete. A forwarder is one tail call.
+    The personality routine's forwarder runs once per frame per unwinding phase. Probed: 20.11;
   - the vtables and type_info objects of the ten `__cxxabiv1` classes, and the fundamental types'
     type_info objects. Every type_info object the compiler emits points at the vtables by their
     Itanium names, and those names are exported by libstdc++ and libc++abi too, so the copies
     must stay per image. The runtime in `libycxx.so` already classifies a type_info object whose
     ABI class is another image's by that class's name (§2). In shared mode that is the common
-    case, so its cost is measured (20.11). Should it matter, each image's copy can register its
-    vtable addresses with the runtime from an initializer, falling back to names before that
-    runs;
+    case, and it costs: in the probe a `dynamic_cast` across a virtual base takes 108 ns
+    instead of 36 ns, and a throw/catch 1.2 µs instead of 0.8 µs (20.11). Callgrind shows why:
+    `__kind_of_any` and its `strcmp` calls take half of the benchmark's instructions, while the
+    forwarders do not appear. Each image's
+    copy therefore registers its ten vtable addresses with the runtime from an initializer, and
+    the runtime falls back to names only before that runs (step 10, a condition for shipping
+    the shared mode);
   - `std::nothrow`;
   - the default allocation functions (one per archive member, replaceable, §3) and the allocation
     table. This is §2's mechanism, unchanged: the table binds every libycxx image of the process
@@ -2396,22 +2411,30 @@ program's static copy and `libycxx.so`'s. They behave as two static images do to
 ### 20.8 Migration and costs
 
 - **Static users' mangled names change** with step 2 of the plan: `St12out_of_range` becomes
-  `NSt4__y112out_of_rangeE`, `Ss` becomes `NSt4__y112basic_stringIcNS_11char_traitsIcEENS_9allocatorIcEEEE`.
-  Everything built against libycxx must be rebuilt, which is already the rule (no stable ABI,
-  docs/BUILDING_PROJECTS.md). Prebuilt objects of an older libycxx fail to link with
-  "undefined reference" errors rather than misbehaving. Debuggers, `nm -C` and the terminate
-  handler show `std::__y1::`.
+  `NSt4__y112out_of_rangeE`, `Ss` becomes
+  `NSt4__y112basic_stringIcNS_11char_traitsIcEENS_9allocatorIcEEEE`. Everything built against
+  libycxx must be rebuilt, which is already the rule (no stable ABI, docs/BUILDING_PROJECTS.md).
+  Prebuilt objects of an older libycxx fail to link with "undefined reference" errors rather than
+  misbehaving. Debuggers, `nm -C` and the terminate handler show `std::__y1::`.
 - **Compile time and size** (measured with `docs/design/shared-probes/measure`, 20.11). Mangled
   names grow, mostly because the Itanium abbreviations `Sa`, `Sb`, `Ss`, `Si`, `So`, `Sd`
   apply only to `::std` (as for libc++). The effect shows in symbol tables, string tables and
-  debug info, not in code. Compile time does not change measurably.
+  debug info, not in code. For a sample program that uses containers, strings, streams and
+  formatting:
+  - `.strtab` is 14% larger;
+  - the debug information of its object is 12% (GCC) and 17% (Clang) larger;
+  - the object is 2-3% larger;
+  - the stripped program is the same size (Clang) or 0.4% larger (GCC);
+  - compile time does not change measurably (4.03 s / 4.03 s with GCC, 2.03 s / 2.02 s with
+    Clang, best of 3).
 - **Shared mode at run time.**
   - Calls into the library go through the PLT/GOT, the normal cost of a shared library.
     `libycxx.so` is linked with `-Bsymbolic-functions`: its replaceable functions are hidden
     anyway, and its internal calls then bind locally.
   - Throw, catch and personality calls take one forwarder hop each.
   - Type_info classification in the runtime takes the by-name path for every image's types
-    (measured, 20.11).
+    until the registration of step 10 exists: `dynamic_cast` is 3 times slower and throw/catch
+    1.5 times slower in the probe (20.11).
   - Rejected: `-fvisibility-inlines-hidden`. The local statics of inline functions must be one
     object per process.
 - **GCC's warning and function hiding** (STATUS, known limitations) disappear in shared mode
@@ -2531,11 +2554,13 @@ mechanical).
 8. **(S) The allocation table's ABI version check** (20.6). Test: a version-skewed plugin in
    `tests/cmake/visibility`.
 9. **(S) `tools/check_abi.py`** in report-only mode with checked-in `.abilist` files (20.7).
-10. **(S, if 20.11's numbers ask for it) The registered `__cxxabiv1` vtables** (20.6), so that
-    cross-image classification avoids string comparisons.
+10. **(S) The registered `__cxxabiv1` vtables** (20.6), so that cross-image classification
+    avoids string comparisons. 20.11's numbers ask for it (`dynamic_cast` 3 times slower in
+    shared mode without it). It belongs with step 4: the shared mode does not ship before
+    `rtti_bench` is within 10% of static mode.
 
 Steps 1-3 are useful without the shared library: they give one mangling everywhere. Steps 4-6
-deliver it. Steps 7-10 are follow-ups.
+and 10 deliver it. Steps 7-9 are follow-ups.
 
 ### 20.11 Probes and results
 
@@ -2556,7 +2581,58 @@ library's build.
 
 **Results, Linux x86_64, GCC 16.2 and Clang 23.1, libc++ 23** (`run-linux.sh`, 2026-10-08):
 
-@@RESULTS@@
+- **Headers.** All 115 public C++ headers compile alone with both compilers in both modes. Only
+  the `align_val_t` block of `<new>` is in plain `std` at that stage; the full plain list of
+  20.5 is needed once the library is built and the battery runs.
+- **The library builds** in both modes with both compilers: 78 targets with the plain-std patch
+  (8 files) and the mechanical rewrite (232 files in static mode, 291 in shared mode, where the
+  `__ycxx` blocks change too).
+- **The own suite, static mode with the inline namespace** (`tools/run-conformance ycxx`, -j2):
+  - GCC: 2866 passed, 16 expected failures, 69 unsupported and 4 failed, against 2870 passed
+    before. The 4 failures are text expectations: three diagnostics that GCC now prints as
+    `std::__y1::...` and `rtti/cxa_demangle`, which expects `std::runtime_error`.
+  - Clang: 2844 passed, 41 expected failures and 1 failed (`rtti/cxa_demangle`), against 2845
+    passed before. Clang leaves the inline namespace out of its diagnostics.
+- **The compiler-known battery** (`known/`, 16 probes): all pass with both compilers, in static
+  mode and in shared mode through `libycxx.so` and the forwarders. GCC-only probes (contracts,
+  reflection, constant-evaluated exceptions) and Clang-only ones (P2719, `-Wdangling-gsl`) run
+  on their compiler. `import std;` works in both modes.
+- **`minimal/`**: the table of 20.5, reproduced without the library.
+- **`libycxx.so.0.1`**:
+  - 1.8 MB with 1479 exports (GCC), 1.4 MB with 1585 exports (Clang);
+  - every export is `std::__y1`, `__ycxx`, `__ycxx_abi_*` or the allocation table, once
+    `rtti_float16.cpp` is per image (20.3);
+  - `libycxx_nonshared.a` is 149 KB (GCC) and 95 KB (Clang), most of it the 20 allocation
+    functions.
+
+  Linking through the `libycxx.so` linker script works with GNU ld and with lld.
+- **Coexistence** (`coexist/`, 7 configurations per library pair): every configuration prints
+  "mine 31 other 31". The pairs are a shared-mode libycxx library with a libstdc++ library (GCC
+  and Clang builds), and with a libc++ library (Clang).
+- **Plugins** (`plugin/`, both compilers):
+  - All four combinations of static and shared host with static and shared plugin exchange
+    `std::vector<std::string>` both ways and catch the plugin's `std::runtime_error` ("plugin 15").
+  - Runtime state is shared exactly when both are shared-mode: "shared-state 15" for shared and
+    shared, "shared-state 0" otherwise. The bits are `current_exception`, `throw;` across the
+    images, `get_terminate` and `uncaught_exceptions` during unwinding.
+  - Without its export attribute, a GCC static-mode plugin exports 4 of its 7 functions (those
+    whose signatures name no library type), and a shared-mode one exports all 7.
+  - A shared-mode plugin exports the `std::__y1` instantiations it emitted (26-27 symbols).
+- **A per-image ABI runtime next to a shared library fails.** The first probe variant linked a
+  static copy of the runtime into each image in front of `libycxx.so`
+  (`PROBE_VARIANT=perimage`). The images then caught exceptions with their own copy while the
+  header-inline `current_exception` read `libycxx.so`'s, which saw none ("mine 30"). That is
+  why the shared mode needs the forwarders of 20.6, not two runtimes.
+- **Costs** (`PROBE_BASELINE=1`, against an untransformed copy built the same way): see 20.8
+  for the sizes. `rtti_bench`:
+
+  | | GCC `dynamic_cast` / throw-catch | Clang `dynamic_cast` / throw-catch |
+  |---|---|---|
+  | before | 35-40 ns / 0.80 µs | 48-54 ns / 0.82 µs |
+  | static mode, `__y1` | 35-38 ns / 0.79 µs | 47-48 ns / 0.80 µs |
+  | shared mode | 106-110 ns / 1.2 µs | 143-153 ns / 1.3 µs |
+
+  The shared-mode cost is the by-name classification of 20.6, which step 10 removes.
 
 ### 20.12 Open questions
 

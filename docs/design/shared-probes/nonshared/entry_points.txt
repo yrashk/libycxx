@@ -1,6 +1,6 @@
 # The ABI runtime's entry points that code compiled against libycxx calls by name (nm of the
 # runtime archive, src/abi): in shared mode each image gets a hidden forwarder (forward.c) to the
-# one implementation in libycxx.so, exported there as __ycxx_abi_<name> (link option --defsym in
+# one implementation in libycxx.so, exported there as __ycxx_abi_<name> (export.c in
 # this probe). name return-kind (v: void, p: pointer, i: int, n: noreturn)
 __cxa_allocate_exception p
 __cxa_free_exception v
@@ -30,3 +30,17 @@ _ZSt9terminatev n
 ycxx_pal_abort n
 ycxx_pal_allocate p
 ycxx_pal_deallocate v
+# The PAL functions the headers call themselves (inline code: clocks, waits, threads): every
+# function of include/ outside pal.h that names one (grep). The implementation generates this
+# list from the headers.
+ycxx_pal_clock_now i
+ycxx_pal_hardware_concurrency i
+ycxx_pal_sleep_until v
+ycxx_pal_thread_detach i
+ycxx_pal_thread_join i
+ycxx_pal_thread_self p
+ycxx_pal_thread_yield v
+ycxx_pal_wait v
+ycxx_pal_wait_until i
+ycxx_pal_wake_all v
+ycxx_pal_wake_one v

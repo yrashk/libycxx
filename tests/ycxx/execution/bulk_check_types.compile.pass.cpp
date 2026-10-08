@@ -7,6 +7,7 @@
 // by make-sender's Mandates ([exec.snd.expos]/24.4) already.
 // /2: bulk-algo(sndr, policy, shape, f) is ill-formed unless sndr is a sender, policy an
 // execution policy (after remove_cvref), shape integral and f copy_constructible.
+// REQUIRES: exceptions
 #include <exception>
 #include <execution>
 #include <memory>

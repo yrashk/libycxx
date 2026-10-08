@@ -3,6 +3,9 @@
 // declaration of an overrider shall have one too. An override of do_encoding without noexcept
 // is therefore ill-formed.
 // EXPECT-ERROR: looser exception specification|exception specification of overriding function is more lax
+// Clang does not check exception specifications at all with -fno-exceptions (the dialect is
+// outside the draft), so the rule is tested where exceptions are enabled.
+// REQUIRES: exceptions
 #include <locale>
 
 struct bad : std::codecvt<wchar_t, char, std::mbstate_t> {

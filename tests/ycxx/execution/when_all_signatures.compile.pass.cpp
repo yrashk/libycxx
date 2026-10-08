@@ -10,6 +10,7 @@
 //     when_all_with_variant.transform_sender(set_value, sndr, env) is
 //     when_all(into_variant(child)...), and is ill-formed for any other sender; children with
 //     several value completions are accepted.
+// REQUIRES: exceptions
 #include <execution>
 #include <memory>
 #include <string>

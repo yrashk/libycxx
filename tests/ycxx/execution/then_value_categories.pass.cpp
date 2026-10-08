@@ -7,6 +7,7 @@
 //     reference to an object is sent as that lvalue (set_value_t(int&), the same object), a
 //     prvalue as set_value_t(T), and a void result as set_value_t();
 //   /5: upon_error's f must accept every error type of the child; each gives a value completion.
+// REQUIRES: exceptions
 #include <execution>
 #include <exception>
 #include <string>

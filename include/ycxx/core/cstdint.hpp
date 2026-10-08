@@ -3,7 +3,7 @@
 
 #include <ycxx/config.hpp>
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 using int8_t = __INT8_TYPE__;
 using int16_t = __INT16_TYPE__;
 using int32_t = __INT32_TYPE__;
@@ -45,7 +45,7 @@ using intmax_t = __INTMAX_TYPE__;
 using uintmax_t = __UINTMAX_TYPE__;
 using intptr_t = __INTPTR_TYPE__;
 using uintptr_t = __UINTPTR_TYPE__;
-} // namespace std
+}} // namespace std
 
 // The same names in the global namespace (as every C++ library's <cstdint> provides them; whether
 // they are is unspecified, [headers]/5). Typedefs, not using-declarations, so that the C

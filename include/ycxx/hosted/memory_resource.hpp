@@ -21,7 +21,7 @@
 #include <ycxx/core/cstdint.hpp>
 #include <ycxx/core/memory_resource.hpp>
 
-namespace [[__gnu__::__visibility__("hidden")]] std { namespace pmr {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 { namespace pmr {
 
 // [mem.res.pool.options]
 struct pool_options {
@@ -29,9 +29,9 @@ struct pool_options {
   size_t largest_required_pool_block = 0;
 };
 
-}} // namespace std::pmr
+}}} // namespace std::pmr
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 
 struct __pool_free_block;
 struct __pool_chunk_footer;
@@ -85,7 +85,7 @@ struct __pal_lock {
 
 }} // namespace __ycxx::__detail
 
-namespace [[__gnu__::__visibility__("hidden")]] std { namespace pmr {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 { namespace pmr {
 
 // [mem.res.pool.overview]
 class synchronized_pool_resource : public memory_resource {
@@ -174,4 +174,4 @@ private:
   size_t __initial_next_size_;
 };
 
-}} // namespace std::pmr
+}}} // namespace std::pmr

@@ -13,7 +13,7 @@
 #include <ycxx/config.hpp>
 #include <ycxx/core/cmath_fp.hpp>
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail::__fpm {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail::__fpm {
 
 // ---- NaN handling ----------------------------------------------------------------------------
 template <class _Tp>

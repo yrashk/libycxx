@@ -21,7 +21,7 @@
 #include <ycxx/core/sorted_tags.hpp>
 #include <ycxx/core/swap.hpp>
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 
 // The element at index i of a random-access container.
 template <class _Cp>

@@ -4,7 +4,7 @@
 #include <ycxx/core/type_traits.hpp>
 #include <ycxx/core/compare.hpp>
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 template <class _Tp, class _Up>
 concept same_as = __ycxx::__detail::__same_as_<_Tp, _Up>;
@@ -62,10 +62,10 @@ concept copy_constructible = move_constructible<_Tp> && constructible_from<_Tp, 
                              constructible_from<_Tp, const _Tp&> && convertible_to<const _Tp&, _Tp> &&
                              constructible_from<_Tp, const _Tp> && convertible_to<const _Tp, _Tp>;
 
-} // namespace std
+}} // namespace std
 
 // ranges::swap customization point object
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail::__swap_cpo {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail::__swap_cpo {
 
 template <class _Tp>
 void swap(_Tp&, _Tp&) = delete;
@@ -103,13 +103,13 @@ struct __fn {
 };
 }} // namespace __ycxx::__detail::__swap_cpo
 
-namespace [[__gnu__::__visibility__("hidden")]] std { namespace ranges {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 { namespace ranges {
 inline namespace __cpo {
 inline constexpr __ycxx::__detail::__swap_cpo::__fn swap{};
 }
-}} // namespace std::ranges
+}}} // namespace std::ranges
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 template <class _Tp>
 concept swappable = requires(_Tp& a, _Tp& b) { ranges::swap(a, b); };
@@ -165,5 +165,5 @@ concept equivalence_relation = relation<_Rp, _Tp, _Up>;
 template <class _Rp, class _Tp, class _Up>
 concept strict_weak_order = relation<_Rp, _Tp, _Up>;
 
-} // namespace std
+}} // namespace std
 

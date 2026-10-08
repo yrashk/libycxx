@@ -17,7 +17,9 @@ typedef decltype(sizeof(0)) size_t;
 typedef decltype(static_cast<int*>(nullptr) - static_cast<int*>(nullptr)) ptrdiff_t;
 typedef decltype(nullptr) nullptr_t;
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+// In plain std (DECISIONS §20.5): GCC lets std::byte alias any object ([basic.lval]/11.3) only
+// under that name; in an inline namespace it would compile and then miscompile.
+namespace [[__gnu__::__visibility__("hidden")]] std { // plain std (DECISIONS §20.5)
 using ::size_t;
 using ::ptrdiff_t;
 using ::nullptr_t;

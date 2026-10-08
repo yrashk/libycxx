@@ -22,7 +22,7 @@
 
 // Defined by the ABI runtime (src/abi/exception_ptr.cpp). `__object` is a primary exception's
 // thrown object.
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __abi {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __abi {
 void __exception_ptr_retain(void* __object) noexcept;
 void __exception_ptr_release(void* __object) noexcept;
 // The currently handled exception's primary object with a new reference, or null.
@@ -45,7 +45,7 @@ extern "C" [[noreturn]] void __cxa_throw(void* __thrown, void* __tinfo, void (*d
 
 // The constant-evaluation half of exception_ptr (see above). The helpers are called inside
 // `if consteval` only; without the builtins they are never reached with a non-null pointer.
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail::__cx_eh {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail::__cx_eh {
 constexpr void __adjust_ref([[maybe_unused]] void* __object, [[maybe_unused]] int n) noexcept {
 #if _YCXX_HAS_CONSTEXPR_EXCEPTION_PTR
   if consteval {
@@ -63,7 +63,7 @@ constexpr void __adjust_ref([[maybe_unused]] void* __object, [[maybe_unused]] in
 }
 }} // namespace __ycxx::__detail::__cx_eh
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 class exception_ptr;
 exception_ptr current_exception() noexcept;
@@ -241,9 +241,9 @@ public:
   exception_ptr nested_ptr() const noexcept { return __nested_; }
 };
 
-} // namespace std
+}} // namespace std
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __adl_free {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __adl_free {
 // The exception type throw_with_nested throws for a class U.
 template <class _Up>
 struct __nested_wrapper : _Up, std::nested_exception {
@@ -252,7 +252,7 @@ struct __nested_wrapper : _Up, std::nested_exception {
 };
 }} // namespace __ycxx::__adl_free
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 template <class _Tp>
 [[noreturn]] void throw_with_nested(_Tp&& t) {
@@ -278,4 +278,4 @@ void rethrow_if_nested(const _Ep& e) {
   }
 }
 
-} // namespace std
+}} // namespace std

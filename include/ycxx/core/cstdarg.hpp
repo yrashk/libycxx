@@ -14,9 +14,9 @@
 
 // Also in the global namespace, as the C header (which other headers may include) declares it.
 typedef __builtin_va_list va_list;
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 using ::va_list;
-} // namespace std
+}} // namespace std
 
 #undef va_start
 #undef va_arg

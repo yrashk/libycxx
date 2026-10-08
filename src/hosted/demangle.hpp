@@ -4,7 +4,7 @@
 
 #include <string>
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 
 // The demangled form of a mangled name ("_Z..."), in the style of the toolchains' c++filt
 // ("ns::f<int>(char const*) const"); a clone suffix (".cold", ".isra.0", ...) is shown as

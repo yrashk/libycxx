@@ -22,12 +22,12 @@
 #include <ycxx/core/memory_resource_fwd.hpp>
 #include <ycxx/core/ranges_to.hpp>
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 template <class _Ref, class _Val = void, class _Allocator = void>
 class generator;
-}
+}}
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 
 // The part of a generator's promise that depends only on its yielded type, so that generators
 // with different value or allocator types but the same yielded type can be nested.
@@ -152,7 +152,7 @@ inline constexpr bool __gen_allocator_ok<void> = true;
 
 }} // namespace __ycxx::__detail
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 template <class _Ref, class _Val, class _Allocator>
 class generator : public ranges::view_interface<generator<_Ref, _Val, _Allocator>> {
@@ -344,4 +344,4 @@ template <class _Ref, class _Val = void>
 using generator = std::generator<_Ref, _Val, polymorphic_allocator<>>;
 }
 
-} // namespace std
+}} // namespace std

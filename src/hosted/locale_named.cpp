@@ -71,7 +71,7 @@ constexpr std::size_t mb_incomplete = static_cast<std::size_t>(-2);
 
 } // namespace
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 
 struct __named_locale {
   std::size_t __refs; // under cache_lock
@@ -843,7 +843,7 @@ int open_catalog(const __named_locale* h, const std::string& __fn) {
 
 } // namespace
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 
 __named_locale* __named_open(const char* name, int cat, const char* what) {
   if (name == nullptr)
@@ -969,7 +969,7 @@ std::string __named_codeset(const char* name) {
 
 }} // namespace __ycxx::__detail
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 // ---- ctype_byname<wchar_t> -----------------------------------------------------------------------
 
@@ -1288,9 +1288,9 @@ void messages_byname<wchar_t>::do_close(catalog c) const {
     ::catclose(d);
 }
 
-} // namespace std
+}} // namespace std
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 
 // regex_traits::transform_primary ([re.traits]/7): the primary sort key when the facet is exactly
 // a collate_byname and the form of its keys is known. glibc's strxfrm_l/wcsxfrm_l key of a locale

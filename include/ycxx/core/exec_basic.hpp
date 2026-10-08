@@ -14,7 +14,7 @@
 // ---------------------------------------------------------------------------------------------
 // product-type ([exec.snd.expos]/17): an aggregate of leaves, tuple-like through member get, so
 // that structured bindings work (basic-sender derives from it).
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __adl_free {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __adl_free {
 // [[no_unique_address]] only for empty movable types: initializing a potentially-overlapping
 // subobject from a prvalue is not a guaranteed elision, and operation states cannot be moved.
 template <std::size_t _Ip, class _Tp, bool = std::is_empty_v<_Tp> && std::is_move_constructible_v<_Tp>>
@@ -44,7 +44,7 @@ struct __exec_product<std::index_sequence<_Is...>, _Ts...> : __exec_leaf<_Is, _T
 };
 }} // namespace __ycxx::__adl_free
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail { namespace __exec {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail { namespace __exec {
 template <class... _Ts>
 using __product_t = ::__ycxx::__adl_free::__exec_product<std::index_sequence_for<_Ts...>, _Ts...>;
 
@@ -61,18 +61,18 @@ constexpr __product_t<std::decay_t<_Ts>...> __make_product(_Ts&&... __ts) noexce
 }
 }}} // namespace __ycxx::__detail::__exec
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 template <class _Is, class... _Ts>
 struct tuple_size<__ycxx::__adl_free::__exec_product<_Is, _Ts...>> : integral_constant<size_t, sizeof...(_Ts)> {};
 template <size_t _Ip, class _Is, class... _Ts>
 struct tuple_element<_Ip, __ycxx::__adl_free::__exec_product<_Is, _Ts...>> {
   using type = _Ts...[_Ip];
 };
-} // namespace std
+}} // namespace std
 
 // ---------------------------------------------------------------------------------------------
 // impls-for, basic-sender and friends.
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail { namespace __exec {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail { namespace __exec {
 
 template <class _Tag>
 struct __impls_for;
@@ -162,7 +162,7 @@ using __basic_env_type = decltype(__impls_of<_Sndr>::get_env(_Index(), std::decl
 
 }}} // namespace __ycxx::__detail::__exec
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __adl_free {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __adl_free {
 
 // basic-state ([exec.snd.expos]/27)
 template <class _Sndr, class _Rcvr>
@@ -216,7 +216,7 @@ struct __exec_basic_receiver {
 
 }} // namespace __ycxx::__adl_free
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail { namespace __exec {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail { namespace __exec {
 // connect-all ([exec.snd.expos]/30)
 template <class _Sndr, class _Rcvr, std::size_t _Ip>
 using __child_receiver = ::__ycxx::__adl_free::__exec_basic_receiver<_Sndr, _Rcvr, std::integral_constant<std::size_t, _Ip>>;
@@ -240,7 +240,7 @@ constexpr auto __connect_all(::__ycxx::__adl_free::__exec_basic_state<_Sndr, _Rc
 }
 }}} // namespace __ycxx::__detail::__exec
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __adl_free {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __adl_free {
 
 // basic-operation ([exec.snd.expos]/33)
 template <class _Sndr, class _Rcvr>
@@ -305,16 +305,16 @@ struct __exec_basic_sender : __exec_product<std::index_sequence_for<_Tag, _Data,
 
 }} // namespace __ycxx::__adl_free
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 template <class _Tag, class _Data, class... _Child>
 struct tuple_size<__ycxx::__adl_free::__exec_basic_sender<_Tag, _Data, _Child...>> : integral_constant<size_t, sizeof...(_Child) + 2> {};
 template <size_t _Ip, class _Tag, class _Data, class... _Child>
 struct tuple_element<_Ip, __ycxx::__adl_free::__exec_basic_sender<_Tag, _Data, _Child...>> {
   using type = tuple_element_t<_Ip, __ycxx::__adl_free::__exec_product<index_sequence_for<_Tag, _Data, _Child...>, _Tag, _Data, _Child...>>;
 };
-} // namespace std
+}} // namespace std
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail { namespace __exec {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail { namespace __exec {
 
 template <class _Tag, class _Data, class... _Child>
 using __basic_sender_t = ::__ycxx::__adl_free::__exec_basic_sender<_Tag, _Data, _Child...>;
@@ -386,7 +386,7 @@ __emplace_from(_Fun) -> __emplace_from<_Fun>;
 
 }}} // namespace __ycxx::__detail::__exec
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __adl_free {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __adl_free {
 // A variant of operation states (which cannot be moved): emplace constructs the alternative from
 // the prvalue a function returns (guaranteed elision, which emplace-from cannot give through
 // variant::emplace's direct-initialization). Index 0 is the empty state.
@@ -427,7 +427,7 @@ public:
 };
 }} // namespace __ycxx::__adl_free
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail { namespace __exec {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail { namespace __exec {
 
 // query-with-default(tag, env, value) ([exec.snd.expos]/11)
 template <class _Tag, class _Env, class _Default>
@@ -496,7 +496,7 @@ __overload_set(_Fns...) -> __overload_set<_Fns...>;
 
 }}} // namespace __ycxx::__detail::__exec
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __adl_free {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __adl_free {
 // not-a-sender ([exec.snd.expos]/51): its completion signatures are an error.
 struct __exec_not_a_sender {
   using sender_concept = std::execution::sender_tag;
@@ -516,12 +516,12 @@ struct __exec_not_a_scheduler {
 
 // ---------------------------------------------------------------------------------------------
 // Sender adaptor closure objects ([exec.adapt.obj]).
-namespace [[__gnu__::__visibility__("hidden")]] std { namespace execution {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 { namespace execution {
 template <__ycxx::__detail::__exec::__class_type _Dp>
 struct sender_adaptor_closure {};
-}} // namespace std::execution
+}}} // namespace std::execution
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail { namespace __exec {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail { namespace __exec {
 template <class _Dp>
 void __closure_base_probe(const std::execution::sender_adaptor_closure<_Dp>&);
 // A pipeable sender adaptor closure object ([exec.adapt.obj]/2): derived from exactly one
@@ -532,7 +532,7 @@ concept __pipeable_closure = requires(const std::remove_cvref_t<_Tp>& t) { ::__y
                            (!std::execution::sender<std::remove_cvref_t<_Tp>>);
 }}} // namespace __ycxx::__detail::__exec
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __adl_free {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __adl_free {
 // c | d: a perfect forwarding call wrapper calling d2(c2(arg)).
 template <class _Cp, class _Dp>
 struct __exec_composed_closure : std::execution::sender_adaptor_closure<__exec_composed_closure<_Cp, _Dp>> {
@@ -566,14 +566,14 @@ struct __exec_bound_closure : std::execution::sender_adaptor_closure<__exec_boun
 };
 }} // namespace __ycxx::__adl_free
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail { namespace __exec {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail { namespace __exec {
 template <class _Adaptor, class... _Args>
 constexpr auto __bind_closure(_Adaptor __adaptor, _Args&&... __args) {
   return ::__ycxx::__adl_free::__exec_bound_closure<_Adaptor, std::decay_t<_Args>...>{{}, __adaptor, {{static_cast<_Args&&>(__args)}...}};
 }
 }}} // namespace __ycxx::__detail::__exec
 
-namespace [[__gnu__::__visibility__("hidden")]] std { namespace execution {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 { namespace execution {
 template <class _Sndr, class _Closure>
   requires sender<_Sndr> && __ycxx::__detail::__exec::__pipeable_closure<_Closure> && __ycxx::__detail::__exec::__callable<_Closure, _Sndr>
 constexpr decltype(auto) operator|(_Sndr&& __sndr, _Closure&& c) noexcept(__ycxx::__detail::__exec::__nothrow_callable<_Closure, _Sndr>) {
@@ -585,4 +585,4 @@ template <class _Cp, class _Dp>
 constexpr auto operator|(_Cp&& c, _Dp&& d) noexcept(is_nothrow_constructible_v<decay_t<_Cp>, _Cp> && is_nothrow_constructible_v<decay_t<_Dp>, _Dp>) {
   return __ycxx::__adl_free::__exec_composed_closure<decay_t<_Cp>, decay_t<_Dp>>{{}, static_cast<_Dp&&>(d), static_cast<_Cp&&>(c)};
 }
-}} // namespace std::execution
+}}} // namespace std::execution

@@ -5,19 +5,19 @@
 
 #include <ycxx/core/format_decl.hpp>
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __adl_free {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __adl_free {
 template <class _Word>
 class __bit_ref;
 }} // namespace __ycxx::__adl_free
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 template <class _Tp>
 inline constexpr bool __fmt_is_bit_ref = false;
 template <class _Word>
 inline constexpr bool __fmt_is_bit_ref<__ycxx::__adl_free::__bit_ref<_Word>> = true;
 }} // namespace __ycxx::__detail
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 template <class _Tp, class __charT>
   requires __ycxx::__detail::__fmt_is_bit_ref<_Tp>
@@ -39,4 +39,4 @@ public:
 template <class _Word>
 inline constexpr bool enable_nonlocking_formatter_optimization<__ycxx::__adl_free::__bit_ref<_Word>> = true;
 
-} // namespace std
+}} // namespace std

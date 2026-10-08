@@ -12,7 +12,7 @@
 #include <ycxx/hosted/mutex.hpp>
 #include <ycxx/hosted/thread_support.hpp>
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 
 class __shared_futex_mutex {
   static constexpr unsigned __write_entered = 1u << 31;
@@ -115,7 +115,7 @@ public:
 
 }} // namespace __ycxx::__detail
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 // [thread.sharedmutex.class]
 class shared_mutex {
@@ -271,4 +271,4 @@ void swap(shared_lock<_Mutex>& __x, shared_lock<_Mutex>& y) noexcept {
   __x.swap(y);
 }
 
-} // namespace std
+}} // namespace std

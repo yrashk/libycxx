@@ -27,7 +27,7 @@
 #include <ycxx/core/string_view.hpp>
 #include <ycxx/core/swap.hpp>
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 template <class __charT, class __traits = char_traits<__charT>, class _Allocator = allocator<__charT>>
 class basic_string;
@@ -1224,9 +1224,9 @@ basic_string(basic_string_view<__charT, __traits>, typename basic_string<__charT
              typename basic_string<__charT, __traits, _Allocator>::size_type, const _Allocator& = _Allocator())
     -> basic_string<__charT, __traits, _Allocator>;
 
-} // namespace std
+}} // namespace std
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 
 // lhs + rhs as a new string with allocator a ([string.op.plus]: a copy of one operand, then an
 // append or insert), sized once.
@@ -1242,7 +1242,7 @@ constexpr typename _Sp::allocator_type __copy_alloc(const _Sp& s) {
 
 }} // namespace __ycxx::__detail
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 // ---- [string.op.plus] ----
 template <class __charT, class __traits, class _Allocator>
@@ -1418,10 +1418,10 @@ using u32string = basic_string<char32_t>;
 using wstring = basic_string<wchar_t>;
 } // namespace pmr
 
-} // namespace std
+}} // namespace std
 
 // ---- [basic.string.hash] ----
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __adl_free {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __adl_free {
 // hash<S>()(s) == hash<SV>()(SV(s)) for the five standard string types.
 template <class _Sp>
 struct __string_hash {
@@ -1432,7 +1432,7 @@ struct __string_hash {
 };
 }} // namespace __ycxx::__adl_free
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 template <class _Ap>
 struct hash<basic_string<char, char_traits<char>, _Ap>>
@@ -1461,10 +1461,10 @@ constexpr wstring operator""s(const wchar_t* str, size_t __len) { return wstring
 } // namespace string_literals
 } // namespace literals
 
-} // namespace std
+}} // namespace std
 
 // ---- [string.conversions] ----
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 
 // format("{}", v) for an integer: decimal digits, a leading '-' for negative values.
 template <class __charT, class _Tp>
@@ -1513,7 +1513,7 @@ constexpr std::basic_string<__charT> __integer_to_string(_Tp __v) {
 
 }} // namespace __ycxx::__detail
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 // Defined in the hosted runtime (src/hosted/string.cpp): they call the C library.
 int stoi(const string& str, size_t* __idx = nullptr, int base = 10);
@@ -1570,7 +1570,7 @@ basic_istream<__charT, __traits>& getline(basic_istream<__charT, __traits>& is, 
 template <class __charT, class __traits, class _Allocator>
 basic_istream<__charT, __traits>& getline(basic_istream<__charT, __traits>&& is, basic_string<__charT, __traits, _Allocator>& str);
 
-} // namespace std
+}} // namespace std
 
 // The <stdexcept> constructors taking `const string&`, now that string is complete.
 #include <ycxx/core/stdexcept_string.hpp>

@@ -16,7 +16,7 @@
 #  define _PRINTF_NAN_LEN_MAX _YCXX_C_PRINTF_NAN_LEN_MAX
 #endif
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 using ::FILE;
 using ::fpos_t;
 using ::remove;
@@ -64,4 +64,4 @@ using ::clearerr;
 using ::feof;
 using ::ferror;
 using ::perror;
-} // namespace std
+}} // namespace std

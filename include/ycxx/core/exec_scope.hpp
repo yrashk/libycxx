@@ -14,7 +14,7 @@
 #include <ycxx/core/memory_base.hpp>
 #include <ycxx/core/pair.hpp>
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail { namespace __exec {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail { namespace __exec {
 // A small spin lock (uncontended in practice: every critical section is a few stores).
 struct __exec_spin_lock {
   unsigned __word = 0;
@@ -30,7 +30,7 @@ struct __exec_spin_lock {
 
 // ---------------------------------------------------------------------------------------------
 // [exec.scope.concepts]
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __adl_free {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __adl_free {
 // test-sender, test-env ([exec.scope.concepts]/4)
 struct __exec_test_sender {
   using sender_concept = std::execution::sender_tag;
@@ -43,7 +43,7 @@ struct __exec_test_sender {
 };
 }} // namespace __ycxx::__adl_free
 
-namespace [[__gnu__::__visibility__("hidden")]] std { namespace execution {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 { namespace execution {
 template <class _Assoc>
 concept scope_association = movable<_Assoc> && is_nothrow_move_constructible_v<_Assoc> && is_nothrow_move_assignable_v<_Assoc> &&
                             default_initializable<_Assoc> && requires(const _Assoc __assoc) {
@@ -55,16 +55,16 @@ concept scope_token = copyable<_Token> && requires(const _Token token) {
   { token.try_associate() } -> scope_association;
   { token.wrap(declval<__ycxx::__adl_free::__exec_test_sender>()) } -> sender_in<env<>>;
 };
-}} // namespace std::execution
+}}} // namespace std::execution
 
 // ---------------------------------------------------------------------------------------------
 // [exec.counting.scopes]
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail { namespace __exec {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail { namespace __exec {
 struct __scope_join_t {};
 struct __scope_access;
 }}} // namespace __ycxx::__detail::__exec
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __adl_free {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __adl_free {
 // association-t<Scope> ([exec.counting.scopes.general]/5)
 template <class _Scope>
 class __exec_scope_association {
@@ -178,7 +178,7 @@ public:
 };
 }} // namespace __ycxx::__adl_free
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail { namespace __exec {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail { namespace __exec {
 struct __scope_access {
   template <class _Scope>
   static bool __start_join(_Scope* s, ::__ycxx::__adl_free::__exec_join_node* n) noexcept {
@@ -258,7 +258,7 @@ struct __impls_for<__scope_join_t> : __default_impls {
 };
 }}} // namespace __ycxx::__detail::__exec
 
-namespace [[__gnu__::__visibility__("hidden")]] std { namespace execution {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 { namespace execution {
 
 class simple_counting_scope : __ycxx::__adl_free::__exec_counting_scope_core {
   friend struct __ycxx::__detail::__exec::__scope_access;
@@ -332,11 +332,11 @@ public:
 inline sender auto simple_counting_scope::join() noexcept { return __ycxx::__detail::__exec::__make_sender(__ycxx::__detail::__exec::__scope_join_t(), this); }
 inline sender auto counting_scope::join() noexcept { return __ycxx::__detail::__exec::__make_sender(__ycxx::__detail::__exec::__scope_join_t(), this); }
 
-}} // namespace std::execution
+}}} // namespace std::execution
 
 // ---------------------------------------------------------------------------------------------
 // [exec.associate]
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __adl_free {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __adl_free {
 template <class _Token, class _Sender>
 struct __exec_associate_data {
   using __wrap_sender = std::remove_cvref_t<decltype(std::declval<_Token&>().wrap(std::declval<_Sender>()))>;
@@ -430,12 +430,12 @@ struct __exec_associate_op_state {
 };
 }} // namespace __ycxx::__adl_free
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail { namespace __exec {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail { namespace __exec {
 template <class _Token>
 struct __bind_scope_token : std::bool_constant<std::execution::scope_token<std::remove_cvref_t<_Token>>> {};
 }}} // namespace __ycxx::__detail::__exec
 
-namespace [[__gnu__::__visibility__("hidden")]] std { namespace execution {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 { namespace execution {
 struct associate_t : __ycxx::__detail::__exec::__pipeable_adaptor<associate_t, 1, __ycxx::__detail::__exec::__bind_scope_token> {
   using __ycxx::__detail::__exec::__pipeable_adaptor<associate_t, 1, __ycxx::__detail::__exec::__bind_scope_token>::operator();
   template <sender _Sndr, class _Token>
@@ -446,9 +446,9 @@ struct associate_t : __ycxx::__detail::__exec::__pipeable_adaptor<associate_t, 1
   }
 };
 inline constexpr associate_t associate{};
-}} // namespace std::execution
+}}} // namespace std::execution
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail { namespace __exec {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail { namespace __exec {
 // associate's attributes ([exec.associate]/11; DECISIONS §17): the domains of the wrapped
 // sender's completions, and for stopped also the starting agent's (a failed association
 // completes inline). No scheduler, no forwarded queries: the wrapped sender is gone when the
@@ -502,7 +502,7 @@ struct __impls_for<std::execution::associate_t> : __default_impls {
 
 // ---------------------------------------------------------------------------------------------
 // [exec.spawn]
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __adl_free {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __adl_free {
 struct __exec_spawn_state_base {
   virtual void complete() noexcept = 0;
 
@@ -545,7 +545,7 @@ private:
 };
 }} // namespace __ycxx::__adl_free
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail { namespace __exec {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail { namespace __exec {
 // Allocates and constructs a T with an allocator (rebound), destroying and deallocating if the
 // construction throws.
 template <class _Tp, class _Alloc, class... _Args>
@@ -580,7 +580,7 @@ decltype(auto) __with_spawn_allocator(const _NewSender& __new_sender, _Env&& env
 }
 }}} // namespace __ycxx::__detail::__exec
 
-namespace [[__gnu__::__visibility__("hidden")]] std { namespace execution {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 { namespace execution {
 struct spawn_t {
   template <sender _Sndr, class _Token, class _Env = env<>>
     requires scope_token<remove_cvref_t<_Token>> && __ycxx::__detail::__exec::__queryable<remove_cvref_t<_Env>>
@@ -598,11 +598,11 @@ struct spawn_t {
   }
 };
 inline constexpr spawn_t spawn{};
-}} // namespace std::execution
+}}} // namespace std::execution
 
 // ---------------------------------------------------------------------------------------------
 // [exec.spawn.future]
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __adl_free {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __adl_free {
 struct __exec_try_cancelable {
   virtual void __try_cancel() noexcept = 0;
 
@@ -662,14 +662,14 @@ private:
 };
 }} // namespace __ycxx::__adl_free
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail { namespace __exec {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail { namespace __exec {
 template <class _Sender, class _Env>
 using __future_spawned_sender =
     decltype(std::execution::write_env(::__ycxx::__detail::__exec::__stop_when(std::declval<_Sender>(), std::declval<std::inplace_stop_token>()),
                                        std::declval<_Env>()));
 }}} // namespace __ycxx::__detail::__exec
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __adl_free {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __adl_free {
 template <class _Alloc, class _Token, class _Sender, class _Env>
 struct __exec_spawn_future_state final
     : __exec_spawn_future_state_base<std::execution::completion_signatures_of_t<::__ycxx::__detail::__exec::__future_spawned_sender<_Sender, _Env>,
@@ -894,7 +894,7 @@ struct __exec_future_operation {
 };
 }} // namespace __ycxx::__adl_free
 
-namespace [[__gnu__::__visibility__("hidden")]] std { namespace execution {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 { namespace execution {
 struct spawn_future_t {
   template <sender _Sndr, class _Token, class _Env = env<>>
     requires scope_token<remove_cvref_t<_Token>> && __ycxx::__detail::__exec::__queryable<remove_cvref_t<_Env>>
@@ -913,9 +913,9 @@ struct spawn_future_t {
   }
 };
 inline constexpr spawn_future_t spawn_future{};
-}} // namespace std::execution
+}}} // namespace std::execution
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail { namespace __exec {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail { namespace __exec {
 template <>
 struct __impls_for<std::execution::spawn_future_t> : __default_impls {
   template <class _Data>

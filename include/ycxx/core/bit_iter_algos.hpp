@@ -4,7 +4,7 @@
 // and algo_nonmod.hpp use it when the value is a bool and there is no projection.
 #pragma once
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 
 template <class _Ip>
 struct __bit_algos {

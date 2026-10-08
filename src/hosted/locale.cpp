@@ -19,7 +19,7 @@
 #include <ycxx/hosted/memory_resource.hpp> // __ycxx::__detail::__pal_lock
 #include "locale_named.hpp"
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 
 struct __locale_impl {
   std::size_t __refs; // atomic
@@ -485,7 +485,7 @@ struct lock_guard {
 
 } // namespace
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 locale::facet::~facet() {}
 
@@ -652,7 +652,7 @@ ctype<char>::~ctype() {
     delete[] __table_;
 }
 
-} // namespace std
+}} // namespace std
 
 // ---- codecvt ----------------------------------------------------------------------------------
 
@@ -918,7 +918,7 @@ int utf8_length(const _Ep* from, const _Ep* end, std::size_t max, int units_per_
 
 } // namespace
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 // codecvt<char, char, mbstate_t>: the degenerate conversion.
 locale::id codecvt<char, char, mbstate_t>::id;
@@ -1085,9 +1085,9 @@ int codecvt<char16_t, char, mbstate_t>::do_length(mbstate_t&, const char* from, 
 }
 int codecvt<char16_t, char, mbstate_t>::do_max_length() const noexcept { return 4; }
 
-} // namespace std
+}} // namespace std
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 
 void __check_locale_name(const char* name, const char* what) {
   split_name __parts;

@@ -6,7 +6,7 @@
 #include <ycxx/core/functional_base.hpp>
 #include <ycxx/core/memory_base.hpp>
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 // [std.iterator.tags]
 struct input_iterator_tag {};
@@ -43,9 +43,9 @@ struct incrementable_traits<_Tp> {
 template <class _Tp>
 struct iterator_traits;
 
-} // namespace std
+}} // namespace std
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 // Detects that iterator_traits<I> names the primary template. The marker is private, so it is
 // not part of the public interface, and it is not reachable through a user specialization that
 // derives from another iterator_traits (private members are not accessible via the derived class).
@@ -79,7 +79,7 @@ template <class _Tp>
 concept __has_member_element_type = requires { typename _Tp::element_type; };
 }} // namespace __ycxx::__detail
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 template <class _Ip>
 using iter_difference_t =
@@ -118,12 +118,12 @@ using iter_value_t =
 template <__ycxx::__detail::__dereferenceable _Tp>
 using iter_reference_t = decltype(*declval<_Tp&>());
 
-} // namespace std
+}} // namespace std
 
 // ---------------------------------------------------------------------------------------------
 // [iterator.traits]
 // ---------------------------------------------------------------------------------------------
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 
 template <class _Ip>
 concept __cpp17_iterator = requires(_Ip i) {
@@ -259,7 +259,7 @@ struct __iterator_traits_impl<_Ip> {
 
 }} // namespace __ycxx::__detail
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 template <class _Ip>
 struct iterator_traits : __ycxx::__detail::__iterator_traits_impl<_Ip> {
@@ -279,12 +279,12 @@ struct iterator_traits<_Tp*> {
   using reference = _Tp&;
 };
 
-} // namespace std
+}} // namespace std
 
 // ---------------------------------------------------------------------------------------------
 // [iterator.cust.move], [iterator.cust.swap]
 // ---------------------------------------------------------------------------------------------
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail::__iter_move_cpo {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail::__iter_move_cpo {
 
 void iter_move() = delete;
 
@@ -334,13 +334,13 @@ struct __fn {
 
 }} // namespace __ycxx::__detail::__iter_move_cpo
 
-namespace [[__gnu__::__visibility__("hidden")]] std { namespace ranges {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 { namespace ranges {
 inline namespace __cpo {
 inline constexpr __ycxx::__detail::__iter_move_cpo::__fn iter_move{};
 }
-}} // namespace std::ranges
+}}} // namespace std::ranges
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 template <__ycxx::__detail::__dereferenceable _Tp>
   requires requires(_Tp& t) {
@@ -349,9 +349,9 @@ template <__ycxx::__detail::__dereferenceable _Tp>
 using iter_rvalue_reference_t = decltype(ranges::iter_move(declval<_Tp&>()));
 
 // [iterator.concept.readable]
-} // namespace std
+}} // namespace std
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 template <class _In>
 concept __indirectly_readable_impl =
     requires(const _In in) {
@@ -365,7 +365,7 @@ concept __indirectly_readable_impl =
     std::common_reference_with<std::iter_rvalue_reference_t<_In>&&, const std::iter_value_t<_In>&>;
 }} // namespace __ycxx::__detail
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 template <class _In>
 concept indirectly_readable = __ycxx::__detail::__indirectly_readable_impl<remove_cvref_t<_In>>;
@@ -382,9 +382,9 @@ concept indirectly_writable = requires(_Out&& __o, _Tp&& t) {
   const_cast<const iter_reference_t<_Out>&&>(*static_cast<_Out&&>(__o)) = static_cast<_Tp&&>(t);
 };
 
-} // namespace std
+}} // namespace std
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 // is-integer-like / is-signed-integer-like: libycxx's only integer-class type is int128 where
 // the compiler provides it (treated as an integer type by the language anyway).
 template <class _Tp>
@@ -393,7 +393,7 @@ template <class _Tp>
 concept __signed_integer_like = __integer_like<_Tp> && std::signed_integral<_Tp>;
 }} // namespace __ycxx::__detail
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 // [iterator.concept.winc]
 template <class _Ip>
@@ -428,9 +428,9 @@ concept sized_sentinel_for =
       { i - s } -> same_as<iter_difference_t<_Ip>>;
     };
 
-} // namespace std
+}} // namespace std
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 // ITER_TRAITS(I) / ITER_CONCEPT(I)
 template <class _Ip>
 using __iter_traits = std::conditional_t<__is_primary_iterator_traits<_Ip>, _Ip, std::iterator_traits<_Ip>>;
@@ -451,7 +451,7 @@ template <class _Ip>
 using __iter_concept = typename decltype(__iter_concept_impl<_Ip>())::type;
 }} // namespace __ycxx::__detail
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 template <class _Ip>
 concept input_iterator = input_or_output_iterator<_Ip> && indirectly_readable<_Ip> &&
@@ -495,9 +495,9 @@ concept contiguous_iterator =
       { std::to_address(i) } -> same_as<add_pointer_t<iter_reference_t<_Ip>>>;
     };
 
-} // namespace std
+}} // namespace std
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __adl_free {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __adl_free {
 // projected-impl ([projected]): projected<I, Proj> is the nested class `type`. A nested class
 // is not a template specialization, so ADL on it neither instantiates I or Proj nor sees
 // __ycxx::__detail. It records I and Proj (reserved member names) so that indirect-value-t can see
@@ -524,7 +524,7 @@ struct __projected_impl<_Ip, _Proj> {
 };
 }} // namespace __ycxx::__adl_free
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 template <class _Tp>
 concept __is_projected = requires {
   typename _Tp::__projected_iter;
@@ -543,7 +543,7 @@ template <class _Tp>
 using __indirect_value_t = typename __indirect_value<_Tp>::type;
 }} // namespace __ycxx::__detail
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 // [indirectcallable.indirectinvocable]
 template <class _Fp, class _Ip>
@@ -615,9 +615,9 @@ concept indirectly_copyable_storable =
     constructible_from<iter_value_t<_In>, iter_reference_t<_In>> &&
     assignable_from<iter_value_t<_In>&, iter_reference_t<_In>>;
 
-} // namespace std
+}} // namespace std
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 // iter-exchange-move ([iterator.cust.swap]). Outside the CPO's namespace, which must declare
 // nothing ADL could find on the iter_swap object.
 template <class _Xp, class _Yp>
@@ -629,7 +629,7 @@ constexpr std::iter_value_t<_Xp> __iter_exchange_move(_Xp&& __x, _Yp&& y) noexce
 }
 }} // namespace __ycxx::__detail
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail::__iter_swap_cpo {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail::__iter_swap_cpo {
 
 template <class _I1, class _I2>
 void iter_swap(_I1, _I2) = delete;
@@ -671,13 +671,13 @@ struct __fn {
 
 }} // namespace __ycxx::__detail::__iter_swap_cpo
 
-namespace [[__gnu__::__visibility__("hidden")]] std { namespace ranges {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 { namespace ranges {
 inline namespace __cpo {
 inline constexpr __ycxx::__detail::__iter_swap_cpo::__fn iter_swap{};
 }
-}} // namespace std::ranges
+}}} // namespace std::ranges
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 template <class _I1, class _I2 = _I1>
 concept indirectly_swappable = indirectly_readable<_I1> && indirectly_readable<_I2> && requires(const _I1 __i1, const _I2 __i2) {
@@ -701,4 +701,4 @@ concept mergeable = input_iterator<_I1> && input_iterator<_I2> && weakly_increme
 template <class _Ip, class _Rp = ranges::less, class _Pp = identity>
 concept sortable = permutable<_Ip> && indirect_strict_weak_order<_Rp, projected<_Ip, _Pp>>;
 
-} // namespace std
+}} // namespace std

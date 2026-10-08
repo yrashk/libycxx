@@ -6,6 +6,8 @@
 #include <exception>
 #include <ycxx/pal.h>
 
+#include "entry.hpp"
+
 namespace {
 
 // The 64-bit guard object: its first byte is the "initialization complete" flag that compiled
@@ -52,7 +54,7 @@ extern "C" {
 // Returns 1 when the caller must run the initialization (then __cxa_guard_release or
 // __cxa_guard_abort follows), 0 when it is already complete. A thread that finds another one
 // initializing blocks until that completes or aborts ([stmt.dcl]/3).
-[[__gnu__::__visibility__("hidden")]] int __cxa_guard_acquire(std::int64_t* __g) {
+int __ycxx_abi_guard_acquire(std::int64_t* __g) {
   const guard_view __v = view(__g);
   for (;;) {
     if (__atomic_load_n(__v.done, __ATOMIC_ACQUIRE))
@@ -76,14 +78,14 @@ extern "C" {
   }
 }
 
-[[__gnu__::__visibility__("hidden")]] void __cxa_guard_release(std::int64_t* __g) noexcept {
+void __ycxx_abi_guard_release(std::int64_t* __g) noexcept {
   const guard_view __v = view(__g);
   pop_initializing();
   __atomic_store_n(__v.done, 1, __ATOMIC_RELEASE);
   end_guard(__v.state);
 }
 
-[[__gnu__::__visibility__("hidden")]] void __cxa_guard_abort(std::int64_t* __g) noexcept {
+void __ycxx_abi_guard_abort(std::int64_t* __g) noexcept {
   pop_initializing();
   end_guard(view(__g).state);
 }

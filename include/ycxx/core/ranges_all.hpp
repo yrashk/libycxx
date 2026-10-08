@@ -4,7 +4,7 @@
 #include <ycxx/core/ranges_subrange.hpp>
 #include <ycxx/core/ranges_adaptor.hpp>
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 // FUN of [range.ref.view]: non-template functions, so binding through two equally good
 // conversion functions is ambiguous (function-template partial ordering would prefer R&).
 template <class _Rp>
@@ -14,7 +14,7 @@ struct __ref_view_fun {
 };
 }} // namespace __ycxx::__detail
 
-namespace [[__gnu__::__visibility__("hidden")]] std { namespace ranges {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 { namespace ranges {
 
 template <range _Rp>
   requires is_object_v<_Rp>
@@ -129,9 +129,9 @@ public:
 template <class _Tp>
 constexpr bool enable_borrowed_range<owning_view<_Tp>> = enable_borrowed_range<_Tp>;
 
-}} // namespace std::ranges
+}}} // namespace std::ranges
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail::__range_all {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail::__range_all {
 struct __fn : std::ranges::range_adaptor_closure<__fn> {
   template <class _Rp>
   static consteval bool nothrow() {
@@ -154,12 +154,12 @@ struct __fn : std::ranges::range_adaptor_closure<__fn> {
 };
 }} // namespace __ycxx::__detail::__range_all
 
-namespace [[__gnu__::__visibility__("hidden")]] std { namespace ranges::views {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 { namespace ranges::views {
 inline constexpr __ycxx::__detail::__range_all::__fn all{};
 template <viewable_range _Rp>
 using all_t = decltype(all(declval<_Rp>()));
-}} // namespace std::ranges::views
+}}} // namespace std::ranges::views
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 namespace views = ranges::views;
-} // namespace std
+}} // namespace std

@@ -8,7 +8,7 @@
 // for the integer and mixed arguments of [cmath.syn]/3.
 #pragma once
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 template <class _Tp = float>
   requires __ycxx::__detail::__fp_is<_Tp, float>
@@ -5273,4 +5273,4 @@ long double sph_neumannl(unsigned n, long double __x) noexcept {
   return __ycxx::__detail::__sf::sph_neumann<_Tp>(n, static_cast<_Tp>(__x));
 }
 
-} // namespace std
+}} // namespace std

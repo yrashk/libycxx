@@ -12,7 +12,7 @@
 #include <ycxx/hosted/locale_num.hpp>
 #include <ycxx/hosted/streambuf.hpp>
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __adl_free {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __adl_free {
 // The base of basic_syncbuf that the emit_on_flush / noemit_on_flush / flush_emit manipulators
 // see ([ostream.manip]/8 Note 1: the Allocator cannot be deduced). A stream buffer is found to
 // be one through basic_streambuf's tag, so no RTTI is needed.
@@ -38,7 +38,7 @@ protected:
 };
 }} // namespace __ycxx::__adl_free
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 // The extended floating-point types ([basic.extended.fp]) and their conversion rank relative to
 // a standard floating-point type (every value of F is a value of G).
 template <class _Fp>
@@ -65,7 +65,7 @@ bool __put_fill(std::basic_streambuf<__charT, __traits>* __sb, __charT c, std::s
 }
 }} // namespace __ycxx::__detail
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 template <class __charT, class __traits>
 class basic_ostream : virtual public basic_ios<__charT, __traits> {
@@ -328,9 +328,9 @@ basic_ostream<__charT, __traits>& basic_ostream<__charT, __traits>::seekp(off_ty
   return *this;
 }
 
-} // namespace std
+}} // namespace std
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 
 // [ostream.formatted.reqmts]/3: inserts s[0..n) padded to width() with fill(), then width(0);
 // the formatted-output protocol around it (sentry, exceptions).
@@ -371,7 +371,7 @@ std::basic_ostream<__charT, __traits>& __ostream_insert_widened(std::basic_ostre
 
 }} // namespace __ycxx::__detail
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 // [ostream.inserters.character]
 template <class __charT, class __traits>
@@ -547,9 +547,9 @@ basic_ostream<__charT, __traits>& operator<<(basic_ostream<__charT, __traits>& _
   return __o << __buf.str;
 }
 
-} // namespace std
+}} // namespace std
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __adl_free {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __adl_free {
 
 template <class __charT, class __traits>
 class __syncbuf_base : public std::basic_streambuf<__charT, __traits> {

@@ -3,8 +3,8 @@
 // so a program's definition is linked instead of this one.
 #include <execution>
 
-namespace [[__gnu__::__visibility__("hidden")]] std { namespace execution { namespace parallel_scheduler_replacement {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 { namespace execution { namespace parallel_scheduler_replacement {
 shared_ptr<parallel_scheduler_backend> query_parallel_scheduler_backend() {
   return __ycxx::__detail::__exec::__default_parallel_scheduler_backend();
 }
-}}} // namespace std::execution::parallel_scheduler_replacement
+}}}} // namespace std::execution::parallel_scheduler_replacement

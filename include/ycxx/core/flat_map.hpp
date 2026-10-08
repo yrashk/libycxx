@@ -22,14 +22,14 @@
 #include <ycxx/core/tuple.hpp>
 #include <ycxx/core/vector.hpp>
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 template <class _Cp>
 inline constexpr bool __is_std_vector = false;
 template <class _Tp, class _Ap>
 inline constexpr bool __is_std_vector<std::vector<_Tp, _Ap>> = true;
 }} // namespace __ycxx::__detail
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __adl_free {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __adl_free {
 
 template <class _KC, class _MC, bool _Const>
 class __flat_map_iter {
@@ -547,7 +547,7 @@ private:
 
 }} // namespace __ycxx::__adl_free
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 template <class _Key, class _Tp, class _Compare = less<_Key>, class _KeyContainer = vector<_Key>,
           class _MappedContainer = vector<_Tp>>
@@ -1361,4 +1361,4 @@ erase_if(flat_multimap<_Key, _Tp, _Compare, _KeyContainer, _MappedContainer>& c,
   return n;
 }
 
-} // namespace std
+}} // namespace std

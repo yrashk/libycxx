@@ -23,7 +23,7 @@
 #include <ycxx/core/mem_builtins.hpp>
 #include <initializer_list>
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 
 // ---- iterator strength of the std:: forms --------------------------------------------------
 // [algorithms.requirements]/4 (P2408): an iterator that models the C++20 concept may be used
@@ -616,7 +616,7 @@ concept comparison_category = !std::is_void_v<std::common_comparison_category_t<
 // =============================================================================================
 // std:: forms
 // =============================================================================================
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 // [alg.min.max]
 template <class _Tp>
@@ -919,12 +919,12 @@ template <class _InputIterator1, class _InputIterator2>
   return std::lexicographical_compare_three_way(__b1, __e1, __b2, __e2, compare_three_way());
 }
 
-} // namespace std
+}} // namespace std
 
 // =============================================================================================
 // std::ranges:: forms
 // =============================================================================================
-namespace [[__gnu__::__visibility__("hidden")]] std { namespace ranges {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 { namespace ranges {
 
 template <class _Ip, class _Op>
 using copy_result = in_out_result<_Ip, _Op>;
@@ -947,9 +947,9 @@ using minmax_result = min_max_result<_Tp>;
 template <class _Ip>
 using minmax_element_result = min_max_result<_Ip>;
 
-}} // namespace std::ranges
+}}} // namespace std::ranges
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail::__ranges_algo {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail::__ranges_algo {
 
 using std::ranges::borrowed_iterator_t;
 using std::ranges::iterator_t;
@@ -1409,7 +1409,7 @@ struct __lexicographical_compare_fn {
 
 }} // namespace __ycxx::__detail::__ranges_algo
 
-namespace [[__gnu__::__visibility__("hidden")]] std { namespace ranges {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 { namespace ranges {
 inline constexpr __ycxx::__adl_free::__ranges_par_algo<__ycxx::__detail::__ranges_algo::__min_fn, __ycxx::__detail::par::kind::min> min{};
 inline constexpr __ycxx::__adl_free::__ranges_par_algo<__ycxx::__detail::__ranges_algo::__max_fn, __ycxx::__detail::par::kind::max> max{};
 inline constexpr __ycxx::__adl_free::__ranges_par_algo<__ycxx::__detail::__ranges_algo::__minmax_fn, __ycxx::__detail::par::kind::minmax> minmax{};
@@ -1432,4 +1432,4 @@ inline constexpr __ycxx::__adl_free::__ranges_par_algo<__ycxx::__detail::__range
 inline constexpr __ycxx::__adl_free::__ranges_par_algo<__ycxx::__detail::__ranges_algo::__mismatch_fn, __ycxx::__detail::par::kind::mismatch> mismatch{};
 inline constexpr __ycxx::__adl_free::__ranges_par_algo<__ycxx::__detail::__ranges_algo::__equal_fn, __ycxx::__detail::par::kind::equal> equal{};
 inline constexpr __ycxx::__adl_free::__ranges_par_algo<__ycxx::__detail::__ranges_algo::__lexicographical_compare_fn, __ycxx::__detail::par::kind::lexicographical_compare> lexicographical_compare{};
-}} // namespace std::ranges
+}}} // namespace std::ranges

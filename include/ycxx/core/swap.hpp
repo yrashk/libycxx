@@ -4,7 +4,7 @@
 #include <ycxx/core/meta_base.hpp>
 #include <ycxx/core/move.hpp>
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 template <class _Tp>
   requires(is_constructible_v<_Tp, _Tp &&> && is_assignable_v<_Tp&, _Tp &&>)
@@ -14,21 +14,21 @@ constexpr void swap(_Tp& a, _Tp& b) noexcept(is_nothrow_constructible_v<_Tp, _Tp
   b = static_cast<_Tp&&>(__tmp);
 }
 
-} // namespace std
+}} // namespace std
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 // Defined below, once both swap overloads are visible (needed for multidimensional arrays).
 template <class _Tp>
 struct __swappable_elem;
 }} // namespace __ycxx::__detail
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 template <class _Tp, size_t _Np>
   requires __ycxx::__detail::__swappable_elem<_Tp>::value
 constexpr void swap(_Tp (&a)[_Np], _Tp (&b)[_Np]) noexcept(__ycxx::__detail::__swappable_elem<_Tp>::nothrow);
-} // namespace std
+}} // namespace std
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail::__swap_adl {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail::__swap_adl {
 using std::swap;
 
 template <class _Tp, class _Up>
@@ -50,7 +50,7 @@ constexpr void __do_swap(_Tp&& t, _Up&& __u) noexcept(noexcept(swap(static_cast<
 }
 }} // namespace __ycxx::__detail::__swap_adl
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 template <class _Tp>
 struct __swappable_elem {
   static constexpr bool value = __swap_adl::__swappable_with_<_Tp&, _Tp&>;
@@ -58,7 +58,7 @@ struct __swappable_elem {
 };
 }} // namespace __ycxx::__detail
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 template <class _Tp, class _Up>
 struct is_swappable_with : bool_constant<__ycxx::__detail::__swap_adl::__swappable_with_<_Tp, _Up>> {};
@@ -90,5 +90,5 @@ constexpr void swap(_Tp (&a)[_Np], _Tp (&b)[_Np]) noexcept(__ycxx::__detail::__s
     __ycxx::__detail::__swap_adl::__do_swap(a[i], b[i]);
 }
 
-} // namespace std
+}} // namespace std
 

@@ -10,12 +10,12 @@
 #include <ycxx/core/memory_base.hpp>
 #include <ycxx/core/tuple.hpp>
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 template <class _OuterAlloc, class... _InnerAllocs>
 class scoped_allocator_adaptor;
-} // namespace std
+}} // namespace std
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 
 struct __no_inner_allocator {};
 
@@ -41,7 +41,7 @@ struct __scoped_select_tag {};
 
 }} // namespace __ycxx::__detail
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 template <class _OuterAlloc, class... _InnerAllocs>
 class scoped_allocator_adaptor : public _OuterAlloc {
@@ -170,4 +170,4 @@ bool operator==(const scoped_allocator_adaptor<_OuterA1, _InnerAllocs...>& a,
     return a.outer_allocator() == b.outer_allocator() && a.inner_allocator() == b.inner_allocator();
 }
 
-} // namespace std
+}} // namespace std

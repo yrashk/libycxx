@@ -5,7 +5,7 @@
 #include <string>
 #include <ycxx/core/error.hpp>
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 
 namespace {
 // Block layout: [refcount (size_t)] [characters ... '\0']. The text pointer points at the
@@ -55,7 +55,7 @@ void __message_release(const char* __text) noexcept {
 // This file is built with _YCXX_EXCEPTION_KEY_FUNCTIONS (CMakeLists.txt), so the classes declare
 // their destructors out of line here, and this translation unit, built with RTTI, emits their
 // vtables for programs whose other translation units are built without RTTI (stdexcept.hpp).
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 logic_error::~logic_error() {}
 runtime_error::~runtime_error() {}
 domain_error::~domain_error() {}
@@ -65,4 +65,4 @@ out_of_range::~out_of_range() {}
 range_error::~range_error() {}
 overflow_error::~overflow_error() {}
 underflow_error::~underflow_error() {}
-} // namespace std
+}} // namespace std

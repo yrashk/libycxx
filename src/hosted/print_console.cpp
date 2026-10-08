@@ -8,7 +8,7 @@
 #include <system_error>
 #include <ycxx/pal.h>
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 
 namespace {
 
@@ -37,11 +37,11 @@ void __vprint_stdout(std::string_view __fmt, std::format_args __args, bool __new
 
 }} // namespace __ycxx::__detail
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 // A console needs no native Unicode API: the UTF-8 goes out unchanged ([print.fun]/10.1).
 void vprint_unicode(string_view __fmt, format_args __args) { __ycxx::__detail::__vprint_stdout(__fmt, __args, false); }
 void vprint_nonunicode(string_view __fmt, format_args __args) { __ycxx::__detail::__vprint_stdout(__fmt, __args, false); }
 void println() { __ycxx::__detail::write_stdout("\n", 1); }
 
-} // namespace std
+}} // namespace std

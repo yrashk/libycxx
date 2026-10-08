@@ -20,7 +20,7 @@
 #endif
 
 #if _YCXX_TARGET_DARWIN && !defined(PRIb8)
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 static_assert(__is_any_of<std::uint8_t, unsigned char> && __is_any_of<std::uint16_t, unsigned short> &&
               __is_any_of<std::uint32_t, unsigned> && __is_any_of<std::uint64_t, unsigned long long> &&
               __is_any_of<std::uintptr_t, unsigned long>);
@@ -59,7 +59,7 @@ static_assert(__is_any_of<std::uint_least64_t, std::uint64_t> && __is_any_of<std
 #  define SCNbPTR "lb"
 #endif
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 using ::imaxdiv_t;
 using ::strtoimax;
 using ::strtoumax;
@@ -80,7 +80,7 @@ constexpr imaxdiv_t imaxdiv(intmax_t __numer, intmax_t __denom) noexcept {
   r.rem = __numer % __denom;
   return r;
 }
-} // namespace std
+}} // namespace std
 
 // The renamed C functions' names in the global namespace, now naming libycxx's own.
 using std::imaxabs;

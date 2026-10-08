@@ -7,7 +7,7 @@
 // floor(x / 25)); its leading 128 bits are the entry, because 2^1024 exceeds 5^342 * 2^128.
 #include "fp_common.hpp"
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail::__fpconv {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail::__fpconv {
 void table_check_failed(); // not constexpr and never defined: reaching it fails table generation
 namespace {
 

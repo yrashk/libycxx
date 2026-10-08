@@ -11,14 +11,14 @@
 #include <ycxx/core/range_access.hpp>
 #include <ycxx/core/ranges_base.hpp>
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 template <class __charT, class __traits = char_traits<__charT>>
 class basic_string_view;
 
-} // namespace std
+}} // namespace std
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 // [string.view.cons]/12.5: d.operator ::std::basic_string_view<charT, traits>() is not valid.
 template <class _Dp, class __charT, class __traits>
 concept __has_string_view_conversion =
@@ -36,7 +36,7 @@ struct __sv_comparison_category<__traits> {
 };
 }} // namespace __ycxx::__detail
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 template <class __charT, class __traits>
 class basic_string_view {
@@ -427,4 +427,4 @@ constexpr wstring_view operator""sv(const wchar_t* str, size_t __len) noexcept {
 template <class __charT, class __traits>
 basic_ostream<__charT, __traits>& operator<<(basic_ostream<__charT, __traits>& __os, basic_string_view<__charT, __traits> str);
 
-} // namespace std
+}} // namespace std

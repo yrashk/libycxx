@@ -14,11 +14,11 @@
 #include <ycxx/hosted/iosfwd.hpp>
 #include <ycxx/hosted/locale_base.hpp>
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 struct __ios_access;
 }} // namespace __ycxx::__detail
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 using streamsize = ptrdiff_t;
 
@@ -272,9 +272,9 @@ public:
   Init& operator=(const Init&) = default;
 };
 
-} // namespace std
+}} // namespace std
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 
 struct __ios_access {
   // Sets badbit without throwing failure (the exception rule of the I/O functions).
@@ -323,7 +323,7 @@ void __guarded_io(_Ios& s, _Fp&& __body) {
 
 }} // namespace __ycxx::__detail
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 // [ios]
 template <class __charT, class __traits>
@@ -563,4 +563,4 @@ inline ios_base& defaultfloat(ios_base& str) {
   return str;
 }
 
-} // namespace std
+}} // namespace std

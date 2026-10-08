@@ -11,7 +11,7 @@
 #include <ycxx/core/rb_tree.hpp>
 #include <ycxx/core/tuple.hpp>
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 template <class _Key, class _Tp, class _Compare = less<_Key>, class _Allocator = allocator<pair<const _Key, _Tp>>>
 class map;
@@ -594,4 +594,4 @@ template <class _Key, class _Tp, class _Compare = less<_Key>>
 using multimap = std::multimap<_Key, _Tp, _Compare, polymorphic_allocator<pair<const _Key, _Tp>>>;
 } // namespace pmr
 
-} // namespace std
+}} // namespace std

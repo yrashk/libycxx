@@ -14,7 +14,7 @@
 #include <ycxx/core/cstddef.hpp>
 #include <ycxx/core/meta_base.hpp>
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail::c_str {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail::c_str {
 // The elements as their unsigned type, as the C comparison functions compare them ("unsigned
 // char" for the byte functions; wchar_t values compare as wchar_t).
 template <class _Cp>
@@ -135,7 +135,7 @@ constexpr _Cp* __tok(_Cp* s, const _Cp* __sep, _Cp** save) noexcept {
 }
 }} // namespace __ycxx::__detail::c_str
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 // ---- <cstring> ----
 template <class = void>
@@ -343,4 +343,4 @@ inline wchar_t* wmemset(wchar_t* s, wchar_t c, size_t n) noexcept {
   return s;
 }
 
-} // namespace std
+}} // namespace std

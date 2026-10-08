@@ -4,7 +4,7 @@
 
 #include <ycxx/config.hpp>
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail::__fpm::__bi {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail { namespace __fpm { namespace __bi {
 
 template <bool>
 struct __fold_probe {};
@@ -674,4 +674,4 @@ concept __folds_pow = requires { typename __fold_probe<(__bi::pow<_Cp>(_Cp(0.5),
 template <class _Cp>
 concept __folds_atan2 = requires { typename __fold_probe<(__bi::atan2<_Cp>(_Cp(0.5), _Cp(0.25)) == __bi::atan2<_Cp>(_Cp(0.5), _Cp(0.25)))>; };
 
-}} // namespace __ycxx::__detail::__fpm::__bi
+}}}} // namespace __ycxx::__detail::__fpm::__bi

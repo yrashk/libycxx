@@ -34,7 +34,7 @@
 #include <ycxx/core/string_view.hpp>
 #include <ycxx/core/utility_base.hpp>
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 class locale;
 
 // [format.error]
@@ -56,9 +56,9 @@ struct format_to_n_result {
   _Out out;
   iter_difference_t<_Out> size;
 };
-} // namespace std
+}} // namespace std
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 
 // Not constexpr: a call during the compile-time check of a format string makes the string
 // ill-formed; the name (or the argument, which the diagnostic shows) says why.
@@ -151,7 +151,7 @@ consteval bool __fmt_unique(const __fmt_kind (&k)[_Np]) {
 
 }} // namespace __ycxx::__detail
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __adl_free {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __adl_free {
 
 // The type-erased output buffer behind fmt_iter: [data_, data_ + size_) holds pending output;
 // make_room_ is called when size_ == cap_ and leaves size_ < cap_ (by flushing the contents to
@@ -269,7 +269,7 @@ public:
 
 }} // namespace __ycxx::__adl_free
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 // [format.parse.ctx]
 template <class __charT>
@@ -363,9 +363,9 @@ using wformat_parse_context = basic_format_parse_context<wchar_t>;
 static_assert(__is_same(format_parse_context::iterator, const char*) &&
               __is_same(wformat_parse_context::iterator, const wchar_t*));
 
-} // namespace std
+}} // namespace std
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 // [format.arg]
 template <class _Context>
@@ -534,16 +534,16 @@ using format_args = basic_format_args<format_context>;
 using wformat_args = basic_format_args<wformat_context>;
 
 // [format.formattable]
-} // namespace std
+}} // namespace std
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 template <class __charT>
 using __fmt_context = std::basic_format_context<__ycxx::__adl_free::__fmt_iter<__charT>, __charT>;
 template <class __charT>
 using __fmt_args = std::basic_format_args<__fmt_context<__charT>>;
 }} // namespace __ycxx::__detail
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 template <class _Context>
 template <class _Tp>
 constexpr basic_format_arg<_Context>::basic_format_arg(_Tp& __v) noexcept {
@@ -589,13 +589,13 @@ template <class... _Args>
 constexpr __ycxx::__adl_free::__fmt_arg_store<wformat_context, _Args...> make_wformat_args(_Args&... __args) {
   return __ycxx::__adl_free::__fmt_arg_store<wformat_context, _Args...>(__args...);
 }
-} // namespace std
+}} // namespace std
 
 template <class _Context, class... _Args>
 constexpr __ycxx::__adl_free::__fmt_arg_store<_Context, _Args...>::__fmt_arg_store(_Args&... a) noexcept
     : __args_{std::basic_format_arg<_Context>(a)...} {}
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 
 // Access to the private members of the formatting classes.
 struct __fmt_access {
@@ -1620,7 +1620,7 @@ constexpr std::size_t __fmt_vformatted_size(std::basic_string_view<__charT> __fm
 
 }} // namespace __ycxx::__detail
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 // [format.fmt.string]
 template <class __charT, class... _Args>
@@ -1708,7 +1708,7 @@ constexpr size_t formatted_size(wformat_string<_Args...> __fmt, _Args&&... __arg
   return __ycxx::__detail::__fmt_vformatted_size<wchar_t>(__fmt.get(), make_wformat_args(__args...), nullptr);
 }
 
-} // namespace std
+}} // namespace std
 
 template <class __charT, class _Out>
 constexpr std::format_to_n_result<_Out> __ycxx::__detail::__fmt_vformat_to_n(_Out out, std::iter_difference_t<_Out> n,

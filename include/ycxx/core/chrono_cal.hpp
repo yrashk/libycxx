@@ -12,7 +12,7 @@
 #include <ycxx/core/chrono_base.hpp>
 #include <ycxx/core/compare.hpp>
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 
 // Floored division and modulo.
 constexpr long long __chrono_floor_div(long long a, long long b) noexcept {
@@ -95,7 +95,7 @@ consteval std::intmax_t __pow10(unsigned n) {
 
 }} // namespace __ycxx::__detail
 
-namespace [[__gnu__::__visibility__("hidden")]] std { namespace chrono {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 { namespace chrono {
 
 // [time.cal.last]
 struct last_spec {
@@ -449,15 +449,15 @@ constexpr bool operator==(const month_weekday_last& __x, const month_weekday_las
 
 // [time.cal.ym]
 class year_month;
-}} // namespace std::chrono
+}}} // namespace std::chrono
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 // ym + n months, or ym - n months with `__subtract`, without signed overflow for any n.
 constexpr std::chrono::year_month __add_months(const std::chrono::year_month& __ym, long long n,
                                              bool __subtract = false) noexcept;
 }} // namespace __ycxx::__detail
 
-namespace [[__gnu__::__visibility__("hidden")]] std { namespace chrono {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 { namespace chrono {
 class year_month {
   chrono::year __y_;
   chrono::month __m_;
@@ -489,7 +489,7 @@ constexpr strong_ordering operator<=>(const year_month& __x, const year_month& y
     return c;
   return __x.month() <=> y.month();
 }
-}} // namespace std::chrono
+}}} // namespace std::chrono
 
 constexpr std::chrono::year_month __ycxx::__detail::__add_months(const std::chrono::year_month& __ym, long long n,
                                                           bool __subtract) noexcept {
@@ -505,7 +505,7 @@ constexpr std::chrono::year_month __ycxx::__detail::__add_months(const std::chro
           std::chrono::month(static_cast<unsigned>(::__ycxx::__detail::__chrono_modulo(m, 12) + 1))};
 }
 
-namespace [[__gnu__::__visibility__("hidden")]] std { namespace chrono {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 { namespace chrono {
 template <class = void>
 constexpr year_month operator+(const year_month& __ym, const months& __dm) noexcept {
   return ::__ycxx::__detail::__add_months(__ym, __dm.count());
@@ -1017,9 +1017,9 @@ constexpr hours make24(const hours& h, bool is_pm) noexcept {
   return h == hours(12) ? hours(0) : h;
 }
 
-}} // namespace std::chrono
+}}} // namespace std::chrono
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 inline namespace literals {
 inline namespace chrono_literals {
 // [time.cal.day.nonmembers], [time.cal.year.nonmembers]
@@ -1113,4 +1113,4 @@ struct hash<chrono::year_month_weekday_last> {
   }
 };
 
-} // namespace std
+}} // namespace std

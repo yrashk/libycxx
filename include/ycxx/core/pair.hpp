@@ -3,7 +3,7 @@
 
 #include <ycxx/core/utility_base.hpp>
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 
 template <class _Tp>
 void __implicit_default_init_test(const _Tp&);
@@ -37,7 +37,7 @@ using __pair_like_get_t = decltype(get<_Ip>(static_cast<_Pp (*)()>(nullptr)()));
 
 }} // namespace __ycxx::__detail
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 template <class _T1, class _T2>
 struct pair {
@@ -341,4 +341,4 @@ constexpr const _Tp&& get(const pair<_T1, _T2>&& p) noexcept {
   return get<std::is_same_v<_Tp, _T1> ? 0 : 1>(static_cast<const pair<_T1, _T2>&&>(p));
 }
 
-} // namespace std
+}} // namespace std

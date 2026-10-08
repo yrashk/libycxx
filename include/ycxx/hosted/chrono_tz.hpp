@@ -26,7 +26,7 @@
 #include <ycxx/core/vector.hpp>
 #include <ycxx/hosted/chrono_clocks.hpp>
 
-namespace [[__gnu__::__visibility__("hidden")]] std { namespace chrono {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 { namespace chrono {
 class utc_clock;
 class tai_clock;
 class gps_clock;
@@ -47,9 +47,9 @@ class time_zone_link;
 class leap_second;
 struct tzdb;
 class tzdb_list;
-}} // namespace std::chrono
+}}} // namespace std::chrono
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 // The tag of the library's own constructors of time_zone, time_zone_link, leap_second, tzdb_list.
 struct __tz_ctor_tag {
   explicit __tz_ctor_tag() = default;
@@ -93,7 +93,7 @@ const std::chrono::tzdb* __tzdb_erase_after(std::chrono::tzdb_list& list, const 
 }
 }} // namespace __ycxx::__detail
 
-namespace [[__gnu__::__visibility__("hidden")]] std { namespace chrono {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 { namespace chrono {
 
 // [time.zone.leap]
 class leap_second {
@@ -292,16 +292,16 @@ struct tzdb {
   }
 };
 
-}} // namespace std::chrono
+}}} // namespace std::chrono
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 struct __tzdb_node {
   std::chrono::tzdb __db;
   __tzdb_node* next;
 };
 }} // namespace __ycxx::__detail
 
-namespace [[__gnu__::__visibility__("hidden")]] std { namespace chrono {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 { namespace chrono {
 
 // [time.zone.db.list]: a list the runtime pushes onto (reload_tzdb) and that is never destroyed.
 class tzdb_list {
@@ -529,9 +529,9 @@ struct clock_time_conversion<system_clock, utc_clock> {
   }
 };
 
-}} // namespace std::chrono
+}}} // namespace std::chrono
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 template <class _Tp, class _Clock>
 inline constexpr bool __is_time_point_of = false;
 // T, as a type that depends on U: names looked up in it are looked up at the member template's
@@ -544,7 +544,7 @@ template <class _Clock, class _Duration>
 inline constexpr bool __is_time_point_of<std::chrono::time_point<_Clock, _Duration>, _Clock> = true;
 }} // namespace __ycxx::__detail
 
-namespace [[__gnu__::__visibility__("hidden")]] std { namespace chrono {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 { namespace chrono {
 
 // [time.clock.cast.sys]
 template <class _SourceClock>
@@ -598,9 +598,9 @@ struct clock_time_conversion<_DestClock, utc_clock> {
   }
 };
 
-}} // namespace std::chrono
+}}} // namespace std::chrono
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 // The conversion expressions of [time.clock.cast.fn]/1, (1.1) to (1.5).
 template <class _Dp, class _Sp, class _Tp>
 concept __clock_cast_1 = requires(const _Tp& t) { std::chrono::clock_time_conversion<_Dp, _Sp>{}(t); };
@@ -628,7 +628,7 @@ concept __clock_cast_5 = requires(const _Tp& t) {
 };
 }} // namespace __ycxx::__detail
 
-namespace [[__gnu__::__visibility__("hidden")]] std { namespace chrono {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 { namespace chrono {
 
 // [time.clock.cast.fn]: the expression with the fewest conversion calls; it must be unique.
 template <class _DestClock, class _SourceClock, class _Duration>
@@ -674,9 +674,9 @@ struct zoned_traits<const time_zone*> {
   static const time_zone* locate_zone(string_view name) { return chrono::locate_zone(name); }
 };
 
-}} // namespace std::chrono
+}}} // namespace std::chrono
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 template <class _Traits>
 concept __zt_has_default = requires { _Traits::default_zone(); };
 template <class _Traits, class _TimeZonePtr>
@@ -698,7 +698,7 @@ using __zt_representation = std::conditional_t<std::is_convertible_v<_Tp, std::s
                                              std::remove_cvref_t<_Tp>>;
 }} // namespace __ycxx::__detail
 
-namespace [[__gnu__::__visibility__("hidden")]] std { namespace chrono {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 { namespace chrono {
 
 // [time.zone.zonedtime]
 template <class _Duration, class _TimeZonePtr = const time_zone*>
@@ -809,9 +809,9 @@ bool operator==(const zoned_time<_Duration1, _TimeZonePtr>& __x, const zoned_tim
   return __x.get_time_zone() == y.get_time_zone() && __x.get_sys_time() == y.get_sys_time();
 }
 
-}} // namespace std::chrono
+}}} // namespace std::chrono
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 // [time.hash]/4-5
 template <class _Duration, class _TimeZonePtr>
   requires __ycxx::__detail::__hash_enabled<_Duration> && __ycxx::__detail::__hash_enabled<_TimeZonePtr>
@@ -829,4 +829,4 @@ struct hash<chrono::leap_second> {
     return hash<chrono::seconds::rep>{}(__l.date().time_since_epoch().count());
   }
 };
-} // namespace std
+}} // namespace std

@@ -5,7 +5,7 @@
 #include <ycxx/core/cstddef.hpp>
 #include <ycxx/core/meta_base.hpp>
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 // default-alignment ([depr.meta.types]/11): an object type of size s has an alignment that
 // divides s, so the most stringent one for size <= Len is the largest power of two <= Len,
 // capped at the fundamental alignment.
@@ -24,7 +24,7 @@ inline constexpr std::size_t __max_size_v = [] {
 }();
 }} // namespace __ycxx::__detail
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 template <class _Tp>
 struct [[deprecated("is_trivial is deprecated ([depr.meta.types]); use is_trivially_copyable and "
@@ -66,4 +66,4 @@ template <size_t _Len, class... _Types>
 using aligned_union_t [[deprecated("aligned_union_t is deprecated ([depr.meta.types])")]] =
     typename aligned_union<_Len, _Types...>::type;
 
-} // namespace std
+}} // namespace std

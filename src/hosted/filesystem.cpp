@@ -196,7 +196,7 @@ DIR* open_dir_fd(int __fd) noexcept {
 } // namespace
 
 // ---- [fs.class.path] ----
-namespace [[__gnu__::__visibility__("hidden")]] std { namespace filesystem {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 { namespace filesystem {
 
 path& path::operator/=(const path& p) {
   if (p.is_absolute()) { // [fs.path.append]/2
@@ -425,7 +425,7 @@ filesystem_error::filesystem_error(const string& __what_arg, const path& __p1, c
       __data_(error_data(system_error::what(), __builtin_addressof(__p1), __builtin_addressof(__p2))) {}
 filesystem_error::~filesystem_error() = default;
 
-}} // namespace std::filesystem
+}}} // namespace std::filesystem
 
 // [fs.path.construct]/6
 std::string __ycxx::__detail::__fs_native_through_locale(const char* first, const char* last, const std::locale& __loc) {
@@ -462,7 +462,7 @@ std::string __ycxx::__detail::__fs_native_through_locale(const char* first, cons
 }
 
 // ---- directory iteration ----
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 
 struct __fs_dir_state {
   DIR* __dir = nullptr;
@@ -566,7 +566,7 @@ struct __fs_rec_state {
 
 }} // namespace __ycxx::__detail
 
-namespace [[__gnu__::__visibility__("hidden")]] std { namespace filesystem {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 { namespace filesystem {
 
 void directory_iterator::open(const path& p, directory_options options, error_code& ec) {
   ec.clear();
@@ -1522,4 +1522,4 @@ path weakly_canonical(const path& p_in, error_code& ec) {
   return r.lexically_normal();
 }
 
-}} // namespace std::filesystem
+}}} // namespace std::filesystem

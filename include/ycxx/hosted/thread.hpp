@@ -23,7 +23,7 @@
 #include <ycxx/hosted/thread_support.hpp>
 #include <ycxx/pal.h>
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 
 // Whether the program has the 'threads' hosted layer (DECISIONS §18); dependent, so that only
 // constructing a thread fails without it.
@@ -73,7 +73,7 @@ struct __thread_state {
 
 }} // namespace __ycxx::__detail
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 class jthread;
 
@@ -171,9 +171,9 @@ public:
 
 inline void swap(thread& __x, thread& y) noexcept { __x.swap(y); }
 
-} // namespace std
+}} // namespace std
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 
 template <class _Tp>
 inline constexpr bool __is_thread_attribute = false;
@@ -298,7 +298,7 @@ struct __thread_access {
 
 }} // namespace __ycxx::__detail
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 template <class... _Args>
   requires(sizeof...(_Args) > 0) && (!is_same_v<remove_cvref_t<tuple_element_t<0, tuple<_Args...>>>, thread>)
@@ -403,4 +403,4 @@ void sleep_for(const chrono::duration<_Rep, _Period>& __rel_time) {
 
 } // namespace this_thread
 
-} // namespace std
+}} // namespace std

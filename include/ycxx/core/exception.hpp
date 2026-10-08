@@ -3,7 +3,7 @@
 
 #include <ycxx/core/exception_base.hpp>
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 class bad_exception : public exception {
 public:
@@ -21,7 +21,15 @@ public:
 using terminate_handler = void (*)();
 terminate_handler get_terminate() noexcept;
 terminate_handler set_terminate(terminate_handler __f) noexcept;
+}} // namespace std
+
+// In plain std (DECISIONS §20.5): Clang's __clang_call_terminate calls std::terminate by its
+// mangled name, _ZSt9terminatev.
+namespace [[__gnu__::__visibility__("hidden")]] std { // plain std (DECISIONS §20.5)
 [[noreturn]] void terminate() noexcept;
+} // namespace std
+
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 int uncaught_exceptions() noexcept;
 
-} // namespace std
+}} // namespace std

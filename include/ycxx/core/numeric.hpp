@@ -8,7 +8,7 @@
 #include <ycxx/core/limits.hpp>
 #include <ycxx/core/utility_base.hpp>
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 // accumulate of a contiguous range of integers into an integer at least as wide: each step is
 // init = T(init + x) in the common type C, which is arithmetic modulo 2^width (conversions to an
 // integer type are modular, [conv.integral]/3; a signed overflow would be undefined), so the
@@ -40,7 +40,7 @@ _Tp __int_accumulate_impl(_Ip first, _Ip last, _Tp init) noexcept {
 }
 }} // namespace __ycxx::__detail
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 // [accumulate]
 template <class _InputIterator, class _Tp>
@@ -242,9 +242,9 @@ template <class _Op, class _Tp>
 using iota_result = out_value_result<_Op, _Tp>;
 } // namespace ranges
 
-} // namespace std
+}} // namespace std
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail::__ranges_algo {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail::__ranges_algo {
 struct __iota_fn {
   template <std::input_or_output_iterator _Op, std::sentinel_for<_Op> _Sp, std::weakly_incrementable _Tp>
     requires std::indirectly_writable<_Op, const _Tp&>
@@ -262,11 +262,11 @@ struct __iota_fn {
 };
 }} // namespace __ycxx::__detail::__ranges_algo
 
-namespace [[__gnu__::__visibility__("hidden")]] std { namespace ranges {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 { namespace ranges {
 inline constexpr __ycxx::__detail::__ranges_algo::__iota_fn iota{};
-}} // namespace std::ranges
+}}} // namespace std::ranges
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 
 template <class _Tp>
 concept __gcd_integer = std::is_integral_v<_Tp> && !std::is_same_v<std::remove_cv_t<_Tp>, bool>;
@@ -301,7 +301,7 @@ concept __midpoint_arithmetic = std::is_arithmetic_v<_Tp> && !std::is_same_v<std
 
 }} // namespace __ycxx::__detail
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 // [numeric.ops.gcd], [numeric.ops.lcm]
 // Both are noexcept (a strengthening): a violated precondition is undefined, not an exception.
@@ -421,4 +421,4 @@ constexpr _Rp saturating_cast(_Tp __x) noexcept {
   return static_cast<_Rp>(__x);
 }
 
-} // namespace std
+}} // namespace std

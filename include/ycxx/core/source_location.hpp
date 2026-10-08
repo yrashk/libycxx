@@ -3,7 +3,7 @@
 
 #include <ycxx/config.hpp>
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 namespace contracts {
 class contract_violation;
@@ -44,4 +44,4 @@ public:
   constexpr const char* function_name() const noexcept { return __impl_ ? __impl_->_M_function_name : ""; }
 };
 
-} // namespace std
+}} // namespace std

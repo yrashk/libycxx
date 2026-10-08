@@ -17,7 +17,7 @@
 #include <ycxx/core/memory_base.hpp>
 #include <ycxx/core/uninitialized.hpp>
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 template <class _Tp>
 class valarray;
 class slice;
@@ -30,9 +30,9 @@ template <class _Tp>
 class mask_array;
 template <class _Tp>
 class indirect_array;
-} // namespace std
+}} // namespace std
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 
 // The operations, as function objects (the result is converted to T, or to bool for the
 // comparisons, by the caller).
@@ -337,7 +337,7 @@ struct __va_access;
 
 }} // namespace __ycxx::__detail
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 // ---- slice ([class.slice]) ---------------------------------------------------------------------
 class slice {
@@ -620,9 +620,9 @@ private:
 template <class _Tp, size_t __cnt>
 valarray(const _Tp (&)[__cnt], size_t) -> valarray<_Tp>;
 
-} // namespace std
+}} // namespace std
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 
 struct __va_access {
   template <class _Rp, class _Fp>
@@ -668,7 +668,7 @@ inline std::valarray<std::size_t> __va_mask_indices(const std::valarray<bool>& m
 
 }} // namespace __ycxx::__detail
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 // ---- gslice ([class.gslice]) ---------------------------------------------------------------------
 class gslice {
@@ -731,9 +731,9 @@ private:
   size_t __start_, __size_, __stride_;
 };
 
-} // namespace std
+}} // namespace std
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __adl_free {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __adl_free {
 // The common part of gslice_array, mask_array and indirect_array: base[idx[i]].
 template <class _Tp>
 class __valarray_indexed {
@@ -776,7 +776,7 @@ protected:
 };
 }} // namespace __ycxx::__adl_free
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 template <class _Tp>
 class gslice_array : public __ycxx::__adl_free::__valarray_indexed<_Tp> {
@@ -931,10 +931,10 @@ void swap(valarray<_Tp>& __x, valarray<_Tp>& y) noexcept {
   __x.swap(y);
 }
 
-} // namespace std
+}} // namespace std
 
 // ---- [valarray.binary], [valarray.comparison], [valarray.transcend] ----------------------------------
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 template <class _Rp, class _Tp, class _Op_>
 std::valarray<_Rp> __va_binary(const std::valarray<_Tp>& __x, const std::valarray<_Tp>& y, _Op_ op) {
   __ycxx::__detail::__precondition(__x.size() == y.size(), "std::valarray binary operator: sizes differ");
@@ -959,7 +959,7 @@ std::valarray<_Tp> __va_map(const std::valarray<_Tp>& __x, _Fp __f) {
 }
 }} // namespace __ycxx::__detail
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 template <class _Tp>
 valarray<_Tp> operator*(const valarray<_Tp>& __x, const valarray<_Tp>& y) {
@@ -1260,4 +1260,4 @@ valarray<_Tp> pow(const typename valarray<_Tp>::value_type& __x, const valarray<
   return __ycxx::__detail::__va_binary_right<_Tp>(__x, y, __ycxx::__detail::__va_math::__f_pow{});
 }
 
-} // namespace std
+}} // namespace std

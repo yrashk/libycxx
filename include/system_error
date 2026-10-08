@@ -17,7 +17,7 @@
 #if _YCXX_HOSTED
 #  include <cerrno> // EOWNERDEAD... even where <errno.h> hides them (ycxx/core/cerrno_macros.hpp)
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 // [system.error.syn]/1: each errc enumerator equals the <cerrno> macro of the same meaning.
 // Core spells the values out for each C library family (it cannot include <errno.h>); check
 // them against this C library.

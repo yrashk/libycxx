@@ -10,7 +10,7 @@
 #include <ycxx/core/span.hpp>
 #include <ycxx/core/string_view.hpp>
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 // (is_span, is_optional and is_subrange come from span.hpp, optional.hpp and pair.hpp.)
 template <class _Tp>
 inline constexpr bool __is_string_view = false;
@@ -32,7 +32,7 @@ inline constexpr bool __subrange_stores_size<std::ranges::subrange<_Ip, _Sp, _Kp
     _Kp == std::ranges::subrange_kind::sized && !std::sized_sentinel_for<_Sp, _Ip>;
 }} // namespace __ycxx::__detail
 
-namespace [[__gnu__::__visibility__("hidden")]] std { namespace ranges {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 { namespace ranges {
 
 // =============================================================================================
 // [range.as.rvalue]
@@ -1349,12 +1349,12 @@ as_input_view(_Rp&&) -> as_input_view<views::all_t<_Rp>>;
 template <class _Vp>
 constexpr bool enable_borrowed_range<as_input_view<_Vp>> = enable_borrowed_range<_Vp>;
 
-}} // namespace std::ranges
+}}} // namespace std::ranges
 
 // =============================================================================================
 // The adaptor objects
 // =============================================================================================
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail::__view_fn {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail::__view_fn {
 
 struct __as_rvalue_fn : std::ranges::range_adaptor_closure<__as_rvalue_fn> {
   template <class _Ep>
@@ -1702,7 +1702,7 @@ struct __as_input_fn : std::ranges::range_adaptor_closure<__as_input_fn> {
 
 }} // namespace __ycxx::__detail::__view_fn
 
-namespace [[__gnu__::__visibility__("hidden")]] std { namespace ranges::views {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 { namespace ranges::views {
 inline constexpr __ycxx::__detail::__view_fn::__as_rvalue_fn as_rvalue{};
 inline constexpr __ycxx::__detail::__view_fn::__filter_fn filter{};
 inline constexpr __ycxx::__detail::__view_fn::__transform_fn transform{};
@@ -1716,4 +1716,4 @@ inline constexpr __ycxx::__detail::__view_fn::__reverse_fn reverse{};
 inline constexpr __ycxx::__detail::__view_fn::__as_const_fn as_const{};
 inline constexpr __ycxx::__detail::__view_fn::__cache_latest_fn cache_latest{};
 inline constexpr __ycxx::__detail::__view_fn::__as_input_fn as_input{};
-}} // namespace std::ranges::views
+}}} // namespace std::ranges::views

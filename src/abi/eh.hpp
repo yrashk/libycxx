@@ -10,7 +10,9 @@
 #include <exception>
 #include <typeinfo>
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __abi {
+#include "entry.hpp" // the runtime's entry points, used across its translation units
+
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __abi {
 
 // "XXXXC++\0" ([ABI-EH] 2.4.3), with the vendor string "YCXX". The last byte distinguishes a
 // dependent exception (a rethrown exception_ptr, which refers to a primary exception's object).
@@ -94,11 +96,3 @@ __exception_header* __retain_primary(__exception_header* h) noexcept;
 [[noreturn]] void __terminate_for(_Unwind_Exception* __ue) noexcept;
 
 }} // namespace __ycxx::__abi
-
-// [ABI-EH] entry points defined by the runtime and used across its translation units.
-extern "C" {
-void* __cxa_begin_catch(void* __unwind_exception) noexcept;
-void __cxa_end_catch();
-void* __cxa_allocate_exception(std::size_t __thrown_size) noexcept;
-void __cxa_free_exception(void* __thrown_exception) noexcept;
-}

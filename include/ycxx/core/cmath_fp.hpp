@@ -17,7 +17,7 @@
 #include <ycxx/core/bit.hpp>
 #include <ycxx/core/meta_base.hpp>
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail::__fpm {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail::__fpm {
 
 using __y_u64 = unsigned long long;
 

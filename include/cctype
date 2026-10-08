@@ -6,7 +6,7 @@
 #include <ycxx/core/cstddef.hpp>
 #include <ctype.h>
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 using ::isalnum;
 using ::isalpha;
 using ::isblank;
@@ -21,4 +21,4 @@ using ::isupper;
 using ::isxdigit;
 using ::tolower;
 using ::toupper;
-} // namespace std
+}} // namespace std

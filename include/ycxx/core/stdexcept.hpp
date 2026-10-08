@@ -22,7 +22,7 @@
 #include <ycxx/core/cstddef.hpp>
 #include <ycxx/core/exception_base.hpp>
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 template <class _CharT>
 struct char_traits;
 template <class _Tp>
@@ -30,9 +30,9 @@ class allocator;
 template <class _CharT, class _Traits, class _Alloc>
 class basic_string;
 using string = basic_string<char, char_traits<char>, allocator<char>>;
-} // namespace std
+}} // namespace std
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 
 // The run-time representation, defined in the hosted runtime. message_create returns the text
 // of a new block holding a copy of [s, s + n) and a terminating null, with one reference.
@@ -94,7 +94,7 @@ public:
 
 }} // namespace __ycxx::__detail
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 class logic_error : public exception {
   __ycxx::__detail::__shared_message __msg_;
@@ -201,4 +201,4 @@ public:
 #endif
 };
 
-} // namespace std
+}} // namespace std

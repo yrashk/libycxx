@@ -3,7 +3,7 @@
 #include <system_error>
 #include <ycxx/pal.h>
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 namespace {
 [[noreturn]] void random_device_error(int e, const char* what) {
@@ -35,4 +35,4 @@ random_device::result_type random_device::operator()() {
 // Every source is the operating system's cryptographic generator: full entropy per bit.
 double random_device::entropy() const noexcept { return numeric_limits<result_type>::digits; }
 
-} // namespace std
+}} // namespace std

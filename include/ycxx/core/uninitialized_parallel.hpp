@@ -7,7 +7,7 @@
 #include <ycxx/core/execution_policy.hpp>
 #include <ycxx/core/uninitialized.hpp>
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 template <class _ExecutionPolicy, class _NoThrowForwardIterator>
   requires __ycxx::__detail::__execution_policy<_ExecutionPolicy>
@@ -93,4 +93,4 @@ _NoThrowForwardIterator destroy_n(_ExecutionPolicy&&, _NoThrowForwardIterator fi
   return std::destroy_n(first, n);
 }
 
-} // namespace std
+}} // namespace std

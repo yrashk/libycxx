@@ -6,7 +6,7 @@
 #include <ycxx/core/error.hpp>
 
 // [new.syn]: the object std::nothrow (hosted builds get it from the ABI runtime).
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__("hidden")]] std { // plain std (DECISIONS §20.5)
 extern const nothrow_t nothrow;
 const nothrow_t nothrow{};
 } // namespace std

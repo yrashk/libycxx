@@ -14,7 +14,7 @@
 #include <ycxx/core/random_base.hpp>
 #include <ycxx/core/vector.hpp>
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 
 // The cumulative sums of `__mass`, normalized so that the last entry with a positive mass, and every
 // entry after it, is exactly 1 (so that a uniform value in [0, 1) never selects a trailing
@@ -62,7 +62,7 @@ concept __rand_input_iter = requires { typename std::iterator_traits<_It>::value
 
 }} // namespace __ycxx::__detail
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 // ---- [rand.dist.samp.discrete] --------------------------------------------------------------------
 template <class _IntType = int>
@@ -577,4 +577,4 @@ private:
   param_type __p_;
 };
 
-} // namespace std
+}} // namespace std

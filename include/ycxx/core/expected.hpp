@@ -15,15 +15,15 @@
 #include <ycxx/core/exception_base.hpp>
 #include <initializer_list>
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 // ---- [expected.unexpected] ----
 template <class _Ep>
 class unexpected;
 
-} // namespace std
+}} // namespace std
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 template <class _Tp>
 inline constexpr bool __is_unexpected = false;
 template <class _Ep>
@@ -41,7 +41,7 @@ concept __eq_to_bool = requires(const _Ap& a, const _Bp& b) { requires std::is_c
 constexpr bool __implicit_bool(bool b) noexcept { return b; }
 }} // namespace __ycxx::__detail
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 template <class _Ep>
 class unexpected {
@@ -135,9 +135,9 @@ inline constexpr unexpect_t unexpect{};
 template <class _Tp, class _Ep>
 class expected;
 
-} // namespace std
+}} // namespace std
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 
 template <class _Tp>
 inline constexpr bool __is_expected = false;
@@ -244,7 +244,7 @@ concept __expected_void_converts_from = !(std::is_same_v<_Tp, _Up> && std::is_sa
 // Base classes of std types live in __ycxx::__adl_free, a namespace that declares no functions:
 // a base's namespace is an associated namespace for ADL ([basic.lookup.argdep]/3), so a
 // __ycxx::__detail base would expose every internal function to lookup on the std type.
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __adl_free {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __adl_free {
 // Common machinery of expected<T, E> and expected<void, E>: storage, lifetime, assignment.
 template <class _Tp, class _Ep>
 class __expected_base {
@@ -388,7 +388,7 @@ public:
 
 }} // namespace __ycxx::__adl_free
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 // =============================================================================================
 // [expected.expected]
@@ -1226,4 +1226,4 @@ private:
   }
 };
 
-} // namespace std
+}} // namespace std

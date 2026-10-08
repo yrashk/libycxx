@@ -7,7 +7,7 @@
 #include <ycxx/core/error.hpp>
 #include <ycxx/core/hash.hpp>
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 // [utility.exchange]
 template <class _Tp, class _Up = _Tp>
@@ -19,14 +19,14 @@ constexpr _Tp exchange(_Tp& __obj, _Up&& __new_val) noexcept(std::is_nothrow_con
 }
 
 // [utility.intcmp]
-} // namespace std
+}} // namespace std
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 template <class _Tp>
 concept __cmp_integer = __is_signed_or_unsigned_integer<_Tp>;
 }} // namespace __ycxx::__detail
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 template <__ycxx::__detail::__cmp_integer _Tp, __ycxx::__detail::__cmp_integer _Up>
 constexpr bool cmp_equal(_Tp t, _Up __u) noexcept {
@@ -63,9 +63,9 @@ constexpr bool cmp_greater_equal(_Tp t, _Up __u) noexcept {
   return !cmp_less(t, __u);
 }
 
-} // namespace std
+}} // namespace std
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 template <class _Tp>
 consteval _Tp __int_min() {
   if constexpr (is_signed_v<_Tp>)
@@ -82,7 +82,7 @@ consteval _Tp __int_max() {
 }
 }} // namespace __ycxx::__detail
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 template <class _Rp, class _Tp>
   requires __ycxx::__detail::__cmp_integer<_Rp> && __ycxx::__detail::__cmp_integer<_Tp>
@@ -154,9 +154,9 @@ struct monostate {};
 constexpr bool operator==(monostate, monostate) noexcept { return true; }
 constexpr strong_ordering operator<=>(monostate, monostate) noexcept { return strong_ordering::equal; }
 
-} // namespace std
+}} // namespace std
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 
 template <class _Tp>
 inline constexpr bool __is_in_place_type = false;

@@ -10,7 +10,7 @@
 #include <ycxx/core/cstdint.hpp>
 #include <ycxx/core/meta_base.hpp>
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 
 consteval std::intmax_t __ratio_abs(std::intmax_t __x) { return __x < 0 ? -__x : __x; }
 consteval std::intmax_t __ratio_gcd(std::intmax_t a, std::intmax_t b) {
@@ -95,7 +95,7 @@ struct __ratio_check {
 
 }} // namespace __ycxx::__detail
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 template <intmax_t _Np, intmax_t _Dp = 1>
 class ratio {
@@ -110,9 +110,9 @@ public:
   using type = ratio<num, den>;
 };
 
-} // namespace std
+}} // namespace std
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 
 template <std::intmax_t _Np, std::intmax_t _Dp>
 inline constexpr bool __is_ratio<std::ratio<_Np, _Dp>> = true;
@@ -151,7 +151,7 @@ consteval int __ratio_compare_of() {
 
 }} // namespace __ycxx::__detail
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 // [ratio.arithmetic]
 template <class _R1, class _R2>
@@ -209,4 +209,4 @@ using tera = ratio<1'000'000'000'000, 1>;
 using peta = ratio<1'000'000'000'000'000, 1>;
 using exa = ratio<1'000'000'000'000'000'000, 1>;
 
-} // namespace std
+}} // namespace std

@@ -5,7 +5,7 @@
 #include <cfenv>
 #include <cmath>
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail::__cm {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail::__cm {
 
 __ycxx::__detail::__fpm::__fp_rint_mode __current_rounding() noexcept {
   switch (std::fegetround()) {

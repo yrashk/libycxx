@@ -15,7 +15,7 @@
 #include <ycxx/core/memory_base.hpp>
 #include <ycxx/core/string_view.hpp>
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 template <class __charT, class __traits, class _Allocator>
 class basic_string;
@@ -325,4 +325,4 @@ struct hash<bitset<_Np>> {
   [[nodiscard]] size_t operator()(const bitset<_Np>& b) const noexcept { return b.hash_value(); }
 };
 
-} // namespace std
+}} // namespace std

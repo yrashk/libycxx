@@ -5,7 +5,7 @@
 #include <ycxx/core/execution_policy.hpp>
 #include <ycxx/core/numeric.hpp>
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 template <class _ExecutionPolicy, class _ForwardIterator>
   requires __ycxx::__detail::__execution_policy<_ExecutionPolicy>
@@ -133,4 +133,4 @@ _ForwardIterator2 adjacent_difference(_ExecutionPolicy&& __exec, _ForwardIterato
   return std::adjacent_difference(static_cast<_ExecutionPolicy&&>(__exec), first, last, result, minus<>());
 }
 
-} // namespace std
+}} // namespace std

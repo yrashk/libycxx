@@ -6,7 +6,7 @@
 #include <ycxx/core/tuple.hpp>
 #include <ycxx/core/char_traits.hpp>
 
-namespace [[__gnu__::__visibility__("hidden")]] std { namespace ranges {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 { namespace ranges {
 
 // [range.empty]
 template <class _Tp>
@@ -59,9 +59,9 @@ public:
 template <class _Tp>
 single_view(_Tp) -> single_view<_Tp>;
 
-}} // namespace std::ranges
+}}} // namespace std::ranges
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 
 // ---- [range.iota.view] -------------------------------------------------------------------------
 // IOTA-DIFF-T(W): a signed type wider than an integral W; int128 serves the 64-bit types (and
@@ -124,7 +124,7 @@ struct __iota_category<_Wp> {
 
 }} // namespace __ycxx::__detail
 
-namespace [[__gnu__::__visibility__("hidden")]] std { namespace ranges {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 { namespace ranges {
 
 template <weakly_incrementable _Wp, semiregular _Bound = unreachable_sentinel_t>
   requires __ycxx::__detail::__weakly_equality_comparable_with<_Wp, _Bound> && copyable<_Wp>
@@ -360,9 +360,9 @@ iota_view(_Wp, _Bound) -> iota_view<_Wp, _Bound>;
 template <class _Wp, class _Bound>
 constexpr bool enable_borrowed_range<iota_view<_Wp, _Bound>> = true;
 
-}} // namespace std::ranges
+}}} // namespace std::ranges
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 
 // ---- [range.repeat.view] -----------------------------------------------------------------------
 template <class _Tp>
@@ -377,7 +377,7 @@ inline constexpr bool __is_iota_view<std::ranges::iota_view<_Wp, _Bp>> = true;
 
 }} // namespace __ycxx::__detail
 
-namespace [[__gnu__::__visibility__("hidden")]] std { namespace ranges {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 { namespace ranges {
 
 template <move_constructible _Tp, semiregular _Bound = unreachable_sentinel_t>
   requires(is_object_v<_Tp> && same_as<_Tp, remove_cv_t<_Tp>> &&
@@ -505,9 +505,9 @@ public:
 template <class _Tp, class _Bound = unreachable_sentinel_t>
 repeat_view(_Tp, _Bound = _Bound()) -> repeat_view<_Tp, _Bound>;
 
-}} // namespace std::ranges
+}}} // namespace std::ranges
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 
 template <class _Tp>
 inline constexpr bool __is_repeat_view = false;
@@ -576,27 +576,27 @@ struct __repeat_fn {
 } // namespace view_fn
 }} // namespace __ycxx::__detail
 
-namespace [[__gnu__::__visibility__("hidden")]] std { namespace ranges::views {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 { namespace ranges::views {
 inline constexpr __ycxx::__detail::__view_fn::__single_fn single{};
 inline constexpr __ycxx::__detail::__view_fn::__iota_fn iota{};
 inline constexpr __ycxx::__detail::__view_fn::__indices_fn indices{};
 inline constexpr __ycxx::__detail::__view_fn::__repeat_fn repeat{};
-}} // namespace std::ranges::views
+}}} // namespace std::ranges::views
 
 // ---- [range.istream] ---------------------------------------------------------------------------
 // The view needs only the stream's interface: basic_istream is declared here (without default
 // arguments, which <istream>/<iosfwd> supply) and must be complete where the view is used.
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 template <class _CharT, class _Traits>
 class basic_istream;
-} // namespace std
+}} // namespace std
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 template <class _Val, class _CharT, class _Traits>
 concept __stream_extractable = requires(std::basic_istream<_CharT, _Traits>& is, _Val& t) { is >> t; };
 }} // namespace __ycxx::__detail
 
-namespace [[__gnu__::__visibility__("hidden")]] std { namespace ranges {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 { namespace ranges {
 
 template <movable _Val, class _CharT, class _Traits = char_traits<_CharT>>
   requires default_initializable<_Val> && __ycxx::__detail::__stream_extractable<_Val, _CharT, _Traits>
@@ -642,9 +642,9 @@ using istream_view = basic_istream_view<_Val, char>;
 template <class _Val>
 using wistream_view = basic_istream_view<_Val, wchar_t>;
 
-}} // namespace std::ranges
+}}} // namespace std::ranges
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail::__view_fn {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail::__view_fn {
 template <class _Tp>
 struct __istream_fn {
   template <class _Ep>
@@ -664,7 +664,7 @@ struct __istream_fn {
 };
 }} // namespace __ycxx::__detail::__view_fn
 
-namespace [[__gnu__::__visibility__("hidden")]] std { namespace ranges::views {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 { namespace ranges::views {
 template <class _Tp>
 constexpr __ycxx::__detail::__view_fn::__istream_fn<_Tp> istream{};
-}} // namespace std::ranges::views
+}}} // namespace std::ranges::views

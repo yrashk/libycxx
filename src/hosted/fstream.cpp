@@ -41,7 +41,7 @@ std::FILE* __file(void* __f) noexcept { return static_cast<std::FILE*>(__f); }
 
 } // namespace
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 
 void* __file_open(const char* name, std::ios_base::openmode __mode) noexcept {
   const char* m = stdio_mode(__mode);

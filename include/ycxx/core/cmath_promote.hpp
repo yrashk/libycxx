@@ -8,7 +8,7 @@
 #include <ycxx/core/meta_base.hpp>
 #include <ycxx/core/prim_traits.hpp>
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 
 template <class _Tp>
 inline constexpr int __fp_std_index = -1;

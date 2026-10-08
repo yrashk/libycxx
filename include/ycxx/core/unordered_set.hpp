@@ -6,7 +6,7 @@
 
 #include <ycxx/core/hash_table.hpp>
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 template <class _Key, class _Hash = hash<_Key>, class _Pred = equal_to<_Key>, class _Allocator = allocator<_Key>>
 class unordered_set;
@@ -442,4 +442,4 @@ template <class _Key, class _Hash = hash<_Key>, class _Pred = equal_to<_Key>>
 using unordered_multiset = std::unordered_multiset<_Key, _Hash, _Pred, polymorphic_allocator<_Key>>;
 } // namespace pmr
 
-} // namespace std
+}} // namespace std

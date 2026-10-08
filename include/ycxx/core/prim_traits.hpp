@@ -6,7 +6,7 @@
 
 #include <ycxx/config.hpp>
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 
 template <class _Tp, class... _Us>
 inline constexpr bool __is_any_of = (__is_same(_Tp, _Us) || ...);

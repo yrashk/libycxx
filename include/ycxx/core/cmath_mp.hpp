@@ -22,7 +22,7 @@
 #include <ycxx/core/cmath_tables.hpp>
 #include <ycxx/core/math_constants.hpp>
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail::__fpm {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail::__fpm {
 
 // ---- mpf<N> -------------------------------------------------------------------------------------
 // value = (neg ? -1 : 1) * m * 2^exp, with m normalised (bit 64N - 1 set) or zero.

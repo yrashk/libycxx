@@ -10,7 +10,7 @@
 #include <ycxx/core/container_base.hpp>
 #include <ycxx/core/memory_base.hpp>
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 
 // The first parameter of the from_range_t constructors is a template parameter checked by
 // this concept first: otherwise overload resolution for an unrelated call (vector(it, it))

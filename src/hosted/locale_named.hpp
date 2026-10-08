@@ -5,7 +5,7 @@
 #include <locale>
 #include <string>
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 
 // The six categories, in the order of the composite names: LC_COLLATE, LC_CTYPE, LC_MONETARY,
 // LC_NUMERIC, LC_TIME, LC_MESSAGES (index = the bit of std::locale::category, from collate).

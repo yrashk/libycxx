@@ -6,7 +6,8 @@ tools/ycxx-check-binary share:
   - no libstdc++ or libc++ among an executable's or shared library's needed libraries
     (readelf -d / otool -L);
   - no libstdc++ or libc++ symbol, defined or undefined (std::__cxx11, __gnu_cxx::, std::__1, any
-    other std::__ name, which libycxx never uses; GLIBCXX_/CXXABI_ symbol versions);
+    other std::__ name but libycxx's own inline ABI namespace std::__y1, DECISIONS §20.4;
+    GLIBCXX_/CXXABI_ symbol versions);
   - the executable or shared library defines __ycxx_allocation_functions, the exported allocation
     table only libycxx's runtime defines (DECISIONS §2), which libycxx's link options keep in every
     image linked against it.
@@ -16,7 +17,7 @@ import glob, os, re, shlex, subprocess, sys
 
 FORBIDDEN_DIR = re.compile(r'/include/c\+\+/|/c\+\+/v1(/|$)|/libstdc\+\+|/libc\+\+')
 FORBIDDEN_LIB = re.compile(r'^(libstdc\+\+|libc\+\+|libc\+\+abi|libsupc\+\+)[.-]|/(libstdc\+\+|libc\+\+|libc\+\+abi)[.-]')
-FORBIDDEN_DEMANGLED = re.compile(r'std::__|__gnu_cxx::|__gnu_debug::')
+FORBIDDEN_DEMANGLED = re.compile(r'std::__(?!y1::)|__gnu_cxx::|__gnu_debug::')
 FORBIDDEN_MANGLED = re.compile(r'_ZN?K?St(7__cxx11|3__1|8__detail)|@@?(GLIBCXX|CXXABI)_')
 MARKER = '__ycxx_allocation_functions'
 DARWIN = sys.platform == 'darwin'

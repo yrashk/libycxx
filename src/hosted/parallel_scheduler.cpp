@@ -14,7 +14,7 @@
 #include <thread>
 #include <vector>
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail { namespace __exec {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail { namespace __exec {
 namespace {
 namespace psr = std::execution::parallel_scheduler_replacement;
 

@@ -22,7 +22,7 @@
 #include <ycxx/core/numbers.hpp>
 #include <ycxx/core/random_base.hpp>
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 
 // A standard normal variate by the polar method, discarding the second value.
 template <class _Real, class _Gp>
@@ -195,7 +195,7 @@ private:
 
 }} // namespace __ycxx::__detail
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 // ---- [rand.dist.uni.int] --------------------------------------------------------------------------
 template <class _IntType = int>
@@ -1449,4 +1449,4 @@ private:
   normal_distribution<_RealType> __nd_;
 };
 
-} // namespace std
+}} // namespace std

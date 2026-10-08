@@ -11,7 +11,7 @@
 #include <ycxx/core/container_base.hpp>
 #include <ycxx/hosted/istream.hpp>
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 template <class __charT, class __traits, class _Allocator>
 class basic_stringbuf : public basic_streambuf<__charT, __traits> {
@@ -627,4 +627,4 @@ void swap(basic_stringstream<__charT, __traits, _Allocator>& __x, basic_stringst
   __x.swap(y);
 }
 
-} // namespace std
+}} // namespace std

@@ -19,7 +19,7 @@
 #  include <cstdio>
 #endif
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 #if _YCXX_HOSTED
 // Formats into a buffer, appends a newline if `__newline`, and writes the result to stream.
 void __vprint_file(std::FILE* stream, std::string_view __fmt, std::format_args __args, bool __newline);
@@ -33,7 +33,7 @@ template <class... _Args>
 inline constexpr bool __has_stdout = __cfg::__hosted || __cfg::__layer::__console;
 }} // namespace __ycxx::__detail
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 #if _YCXX_HOSTED
 void vprint_unicode(FILE* stream, string_view __fmt, format_args __args);
@@ -77,4 +77,4 @@ void println(FILE* stream);
 #endif
 void println();
 
-} // namespace std
+}} // namespace std

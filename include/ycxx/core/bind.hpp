@@ -12,7 +12,7 @@
 #include <ycxx/core/invoke.hpp>
 #include <ycxx/core/tuple.hpp>
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 // f is a null (member) pointer: the Mandates of the NTTP forms.
 template <auto __f>
 consteval bool __is_null_pointer_constant() {
@@ -23,7 +23,7 @@ consteval bool __is_null_pointer_constant() {
 }
 }} // namespace __ycxx::__detail
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __adl_free {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __adl_free {
 
 // The wrappers' state entities are direct-non-list-initialized ([func.not.fn]/1.3,
 // [func.bind.partial]/1.3, [func.bind.bind]/1.3), so they have a tagged constructor rather than
@@ -132,7 +132,7 @@ struct __mem_fn_wrapper {
 
 }} // namespace __ycxx::__adl_free
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 // ---- [func.not.fn] ----
 // Each factory checks its Mandates first and constructs only when they hold, so a violation
@@ -213,9 +213,9 @@ struct is_placeholder : integral_constant<int, 0> {};
 template <class _Tp>
 constexpr int is_placeholder_v = is_placeholder<_Tp>::value;
 
-} // namespace std
+}} // namespace std
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __adl_free {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __adl_free {
 
 template <int _Jp>
 struct __placeholder {
@@ -226,7 +226,7 @@ struct __placeholder {
 
 }} // namespace __ycxx::__adl_free
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 
 // The J-th argument, forwarded. (A function, not u...[J] in place: GCC evaluates a pack index
 // in a discarded branch, and fails when the pack is empty.)
@@ -252,7 +252,7 @@ constexpr decltype(auto) __bind_value(_CvTD __td, _Up&&... __u) {
 
 }} // namespace __ycxx::__detail
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __adl_free {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __adl_free {
 
 // The type V_i of a bound argument ([func.bind.bind]/7), for a wrapper of constness `__cv` (CvTD
 // is cv TD&) called with arguments U&&...
@@ -367,7 +367,7 @@ struct __binder {
 
 }} // namespace __ycxx::__adl_free
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 template <class _Rp, class _FD, class... _TD>
 struct is_bind_expression<__ycxx::__adl_free::__binder<_Rp, _FD, _TD...>> : true_type {};
@@ -415,4 +415,4 @@ constexpr auto bind(_Fp&& __f, _BoundArgs&&... __bound_args) {
                                                                         static_cast<_BoundArgs&&>(__bound_args)...);
 }
 
-} // namespace std
+}} // namespace std

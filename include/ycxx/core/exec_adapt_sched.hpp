@@ -5,14 +5,14 @@
 
 #include <ycxx/core/exec_adapt.hpp>
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail { namespace __exec {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail { namespace __exec {
 template <class _Sch>
 struct __bind_scheduler : std::bool_constant<std::execution::scheduler<_Sch>> {};
 }}} // namespace __ycxx::__detail::__exec
 
 // ---------------------------------------------------------------------------------------------
 // [exec.schedule.from], [exec.continues.on]
-namespace [[__gnu__::__visibility__("hidden")]] std { namespace execution {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 { namespace execution {
 struct schedule_from_t {
   template <sender _Sndr>
   constexpr auto operator()(_Sndr&& __sndr) const noexcept(is_nothrow_constructible_v<decay_t<_Sndr>, _Sndr>) {
@@ -21,9 +21,9 @@ struct schedule_from_t {
 };
 inline constexpr schedule_from_t schedule_from{};
 struct continues_on_t;
-}} // namespace std::execution
+}}} // namespace std::execution
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail { namespace __exec {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail { namespace __exec {
 
 // The completion signatures of schedule(sch) other than its value completion.
 template <class _Sch, class... _Env>
@@ -69,7 +69,7 @@ struct __continues_on_variant<std::execution::completion_signatures<_Sigs...>> {
 };
 }}} // namespace __ycxx::__detail::__exec
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __adl_free {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __adl_free {
 // The state of continues_on ([exec.continues.on]/5): the child's result, kept until the schedule
 // operation completes.
 template <class _Sch, class _Child, class _Rcvr>
@@ -114,7 +114,7 @@ struct __exec_continues_on_state {
 };
 }} // namespace __ycxx::__adl_free
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail { namespace __exec {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail { namespace __exec {
 // The sources of the T completions of a continues_on sender TS that transfers to a scheduler of
 // type Sch ([exec.continues.on]/9-12; DECISIONS §17): each completion of the child arrives
 // through the value completion of the schedule sender (an exception from decay-copying the
@@ -193,7 +193,7 @@ struct __impls_for<std::execution::continues_on_t> : __default_impls {
 };
 }}} // namespace __ycxx::__detail::__exec
 
-namespace [[__gnu__::__visibility__("hidden")]] std { namespace execution {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 { namespace execution {
 struct continues_on_t : __ycxx::__detail::__exec::__pipeable_adaptor<continues_on_t, 1, __ycxx::__detail::__exec::__bind_scheduler> {
   using __ycxx::__detail::__exec::__pipeable_adaptor<continues_on_t, 1, __ycxx::__detail::__exec::__bind_scheduler>::operator();
   template <sender _Sndr, scheduler _Sch>
@@ -202,11 +202,11 @@ struct continues_on_t : __ycxx::__detail::__exec::__pipeable_adaptor<continues_o
   }
 };
 inline constexpr continues_on_t continues_on{};
-}} // namespace std::execution
+}}} // namespace std::execution
 
 // ---------------------------------------------------------------------------------------------
 // [exec.starts.on], [exec.on]
-namespace [[__gnu__::__visibility__("hidden")]] std { namespace execution {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 { namespace execution {
 struct starts_on_t {
   template <scheduler _Sch, sender _Sndr>
   constexpr auto operator()(_Sch&& __sch, _Sndr&& __sndr) const {
@@ -223,9 +223,9 @@ struct starts_on_t {
   }
 };
 inline constexpr starts_on_t starts_on{};
-}} // namespace std::execution
+}}} // namespace std::execution
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail { namespace __exec {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail { namespace __exec {
 // starts_on(sch, sndr) as its let_value form ([exec.starts.on]/4): the domains of sndr's
 // completions, sndr asked in the environment the let-state gives it (the start scheduler of
 // continues_on(just(), sch), [exec.let]/2, /9; as for let, a domain only), and the schedule
@@ -287,7 +287,7 @@ struct __impls_for<std::execution::starts_on_t> : __default_impls {
 };
 }}} // namespace __ycxx::__detail::__exec
 
-namespace [[__gnu__::__visibility__("hidden")]] std { namespace execution {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 { namespace execution {
 struct on_t {
   template <scheduler _Sch, sender _Sndr>
     requires(!__ycxx::__detail::__exec::__pipeable_closure<_Sndr>)
@@ -324,9 +324,9 @@ struct on_t {
   }
 };
 inline constexpr on_t on{};
-}} // namespace std::execution
+}}} // namespace std::execution
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail { namespace __exec {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail { namespace __exec {
 // on's completions depend on the scheduler the receiver's environment names; it is always
 // transformed (to continues_on/starts_on) before it is connected.
 // on's attributes: those of the continues_on sender its transformation produces in the
@@ -389,7 +389,7 @@ struct __impls_for<std::execution::on_t> : __default_impls {
 
 // ---------------------------------------------------------------------------------------------
 // [exec.affine]
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __adl_free {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __adl_free {
 // UNSTOPPABLE-SCHEDULER(sch) ([exec.affine]/4)
 template <class _Sch>
 struct __exec_unstoppable_scheduler {
@@ -409,7 +409,7 @@ struct __exec_unstoppable_scheduler {
 };
 }} // namespace __ycxx::__adl_free
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail { namespace __exec {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail { namespace __exec {
 // infallible-scheduler<Sch, Env> ([exec.sched]/8)
 template <class _Sch, class _Env>
 concept __infallible_scheduler =
@@ -443,7 +443,7 @@ struct __affine_sigs {
 
 }}} // namespace __ycxx::__detail::__exec
 
-namespace [[__gnu__::__visibility__("hidden")]] std { namespace execution {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 { namespace execution {
 struct affine_t : sender_adaptor_closure<affine_t> {
   template <sender _Sndr>
   constexpr auto operator()(_Sndr&& __sndr) const {
@@ -468,9 +468,9 @@ struct affine_t : sender_adaptor_closure<affine_t> {
   }
 };
 inline constexpr affine_t affine{};
-}} // namespace std::execution
+}}} // namespace std::execution
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail { namespace __exec {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail { namespace __exec {
 // affine's attributes: given an environment, those of continues_on(sndr,
 // UNSTOPPABLE-SCHEDULER(get_start_scheduler(env))) ([exec.affine]/5, /7); a child with an
 // affine() member keeps its own.
@@ -517,7 +517,7 @@ struct __impls_for<std::execution::affine_t> : __default_impls {
 
 // ---------------------------------------------------------------------------------------------
 // [exec.when.all]
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __adl_free {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __adl_free {
 // make-when-all-env(stop_src, env) ([exec.when.all]/5)
 template <class _Env>
 struct __exec_when_all_env {
@@ -539,7 +539,7 @@ struct __exec_on_stop_request {
 struct __exec_none_such {};
 }} // namespace __ycxx::__adl_free
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail { namespace __exec {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail { namespace __exec {
 template <class _Env>
 constexpr auto __make_when_all_env(std::inplace_stop_source& __stop_src, _Env&& env) noexcept {
   return ::__ycxx::__adl_free::__exec_when_all_env<__env_member_t<_Env>>{&__stop_src, static_cast<_Env&&>(env)};
@@ -641,7 +641,7 @@ struct __when_all_types {
 };
 }}} // namespace __ycxx::__detail::__exec
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __adl_free {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __adl_free {
 template <class _Rcvr, class... _Children>
 struct __exec_when_all_state {
   using __types = ::__ycxx::__detail::__exec::__when_all_types<_Rcvr, _Children...>;
@@ -694,12 +694,12 @@ struct __exec_when_all_state {
 };
 }} // namespace __ycxx::__adl_free
 
-namespace [[__gnu__::__visibility__("hidden")]] std { namespace execution {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 { namespace execution {
 struct when_all_t;
 struct when_all_with_variant_t;
-}} // namespace std::execution
+}}} // namespace std::execution
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail { namespace __exec {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail { namespace __exec {
 template <class _Rcvr>
 struct __when_all_make_state {
   template <class _Tag, class _Data, class... _Children>
@@ -873,7 +873,7 @@ struct __impls_for<std::execution::when_all_with_variant_t> : __default_impls {
 };
 }}} // namespace __ycxx::__detail::__exec
 
-namespace [[__gnu__::__visibility__("hidden")]] std { namespace execution {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 { namespace execution {
 struct when_all_t {
   template <sender... _Sndrs>
     requires(sizeof...(_Sndrs) != 0)
@@ -898,11 +898,11 @@ struct when_all_with_variant_t {
   }
 };
 inline constexpr when_all_with_variant_t when_all_with_variant{};
-}} // namespace std::execution
+}}} // namespace std::execution
 
 // ---------------------------------------------------------------------------------------------
 // stop-when(sndr, token) ([exec.stop.when])
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __adl_free {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __adl_free {
 // stoken-t: stop requested when either token's is, callbacks run on either's stop request.
 template <class _T1, class _T2>
 struct __exec_either_stop_token {
@@ -981,7 +981,7 @@ struct __exec_stop_when_sender {
 };
 }} // namespace __ycxx::__adl_free
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail { namespace __exec {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail { namespace __exec {
 template <std::execution::sender _Sndr, std::stoppable_token _Token>
 constexpr auto __stop_when(_Sndr&& __sndr, _Token token) {
   if constexpr (std::unstoppable_token<_Token>)

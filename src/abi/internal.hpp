@@ -9,7 +9,7 @@
 #include <exception>
 #include <typeinfo>
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __abi {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __abi {
 
 // Exception handler matching ([except.handle]/3), used by the personality routine and by
 // exception_ptr_cast.

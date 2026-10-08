@@ -16,7 +16,7 @@
 #include <ycxx/core/sequence_support.hpp>
 #include <ycxx/core/swap.hpp>
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 template <class _Tp, class _Allocator>
 class vector;
@@ -411,4 +411,4 @@ constexpr void swap(priority_queue<_Tp, _Container, _Compare>& __x,
   __x.swap(y);
 }
 
-} // namespace std
+}} // namespace std

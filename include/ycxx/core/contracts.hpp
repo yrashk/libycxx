@@ -16,7 +16,7 @@
 
 #include <ycxx/core/source_location.hpp>
 
-namespace [[__gnu__::__visibility__("hidden")]] std { namespace contracts {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 { namespace contracts {
 
 enum class assertion_kind : unsigned short { pre = 1, post = 2, assert = 3 };
 enum class evaluation_semantic : unsigned short { ignore = 1, observe = 2, enforce = 3, quick_enforce = 4 };
@@ -49,4 +49,4 @@ public:
 
 void invoke_default_contract_violation_handler(const contract_violation& __v);
 
-}} // namespace std::contracts
+}}} // namespace std::contracts

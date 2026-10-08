@@ -9,7 +9,7 @@
 
 #include <ycxx/hosted/ostream.hpp>
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 template <class __charT, class __traits>
 class basic_istream : virtual public basic_ios<__charT, __traits> {
@@ -857,4 +857,4 @@ basic_istream<__charT, __traits>& operator>>(basic_istream<__charT, __traits>& i
   return is;
 }
 
-} // namespace std
+}} // namespace std

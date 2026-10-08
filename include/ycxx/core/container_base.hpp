@@ -7,7 +7,7 @@
 #include <ycxx/core/range_access.hpp>
 #include <ycxx/core/ranges_base.hpp>
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 
 // [container.reqmts]: a type qualifies as an allocator if A::value_type is a type and
 // declval<A&>().allocate(size_t{}) is well-formed.
@@ -57,7 +57,7 @@ concept __container_compatible_range =
 
 }} // namespace __ycxx::__detail
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __adl_free {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __adl_free {
 
 // The iterator of a contiguous container: a wrapped T* (T possibly const). Owner makes the
 // iterators of different containers distinct types; Diff is the container's difference_type.

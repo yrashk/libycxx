@@ -40,7 +40,7 @@ int at_quick_exit(void (*__func)()) noexcept __asm__("at_quick_exit");
 #endif
 }} // namespace __ycxx::__detail::__c_rt
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 struct div_t {
   int quot;
   int rem;
@@ -115,4 +115,4 @@ void qsort(void* base, size_t __nmemb, size_t size, int (*__compar)(const void*,
     __sift_down(0, end);
   }
 }
-} // namespace std
+}} // namespace std

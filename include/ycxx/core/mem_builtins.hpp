@@ -13,7 +13,7 @@
 
 #include <ycxx/core/cstddef.hpp>
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 
 [[__gnu__::__always_inline__]] inline const void* __rt_memchr(const void* __s, int __c,
                                                                std::size_t __n) noexcept {

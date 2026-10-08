@@ -16,7 +16,7 @@
 #include <string>
 #include <string_view>
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 template basic_ostream<char>& operator<<(basic_ostream<char>&, const string&);
 template basic_ostream<wchar_t>& operator<<(basic_ostream<wchar_t>&, const wstring&);
@@ -35,4 +35,4 @@ template basic_istream<wchar_t>& getline(basic_istream<wchar_t>&&, wstring&, wch
 template basic_istream<wchar_t>& getline(basic_istream<wchar_t>&, wstring&);
 template basic_istream<wchar_t>& getline(basic_istream<wchar_t>&&, wstring&);
 
-} // namespace std
+}} // namespace std

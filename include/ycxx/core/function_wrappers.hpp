@@ -25,7 +25,7 @@
 #include <ycxx/core/typeinfo.hpp>
 #include <ycxx/core/utility_base.hpp>
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 // ---- [func.wrap.badcall] ----
 class bad_function_call : public exception {
@@ -46,15 +46,15 @@ class copyable_function;
 template <class...>
 class function_ref;
 
-} // namespace std
+}} // namespace std
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 [[noreturn]] [[__gnu__::__cold__]] inline void __throw_bad_function_call() {
   ::__ycxx::__detail::__raise_with(ycxx_error_bad_function_call, "std::bad_function_call", [] { return std::bad_function_call(); });
 }
 }} // namespace __ycxx::__detail
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail::__fw {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail::__fw {
 
 enum class kind : unsigned char { function, __move_only, copyable };
 // The cv/ref qualifiers of the call operator. `function` is invoked as FD& from a const call
@@ -348,7 +348,7 @@ inline constexpr bool __is_constant_wrapper<std::constant_wrapper<_Xp, _Tp>> = t
 
 }} // namespace __ycxx::__detail::__fw
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __adl_free {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __adl_free {
 
 // The owning wrappers. Self is the derived std:: class.
 template <class _Self, ::__ycxx::__detail::__fw::kind _Kp, ::__ycxx::__detail::__fw::__quals _Qp, bool _Np, class _Rp, class... _Ap>
@@ -788,7 +788,7 @@ public:
 
 }} // namespace __ycxx::__adl_free
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 // ---- [func.wrap.func] ----
 template <class _Rp, class... _Ap>
@@ -996,4 +996,4 @@ template <auto c, class _Fp, class _Tp>
   requires requires { typename ::__ycxx::__detail::__fw::__fref_bound_sig<_Fp, _Tp>::type; }
 function_ref(constant_wrapper<c, _Fp>, _Tp&&) -> function_ref<typename ::__ycxx::__detail::__fw::__fref_bound_sig<_Fp, _Tp>::type>;
 
-} // namespace std
+}} // namespace std

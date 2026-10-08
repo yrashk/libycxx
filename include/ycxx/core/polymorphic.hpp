@@ -11,7 +11,7 @@
 
 #include <ycxx/core/indirect.hpp>
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 
 template <class _Tp, class _Ap>
 struct __poly_block {
@@ -69,7 +69,7 @@ struct __poly_block_for final : __poly_block<_Tp, _Ap> {
 
 }} // namespace __ycxx::__detail
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 template <class _Tp, class _Allocator = allocator<_Tp>>
 class polymorphic {
@@ -288,4 +288,4 @@ template <class _Tp>
 using polymorphic = std::polymorphic<_Tp, polymorphic_allocator<_Tp>>;
 } // namespace pmr
 
-} // namespace std
+}} // namespace std

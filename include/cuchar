@@ -19,7 +19,7 @@
 // (src/hosted/uchar.cpp). state_size is the size of the mbstate_t object at ps (null: an
 // internal one): the C library's mbrtowc/wcrtomb state occupies its start, the code units still
 // to deliver or to complete a character its last 16 bytes.
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 __SIZE_TYPE__ __c_mbrtoc8(char8_t* __pc8, const char* s, __SIZE_TYPE__ n, void* __ps, __SIZE_TYPE__ state_size) noexcept;
 __SIZE_TYPE__ __c_c8rtomb(char* s, char8_t __c8, void* __ps, __SIZE_TYPE__ state_size) noexcept;
 __SIZE_TYPE__ __c_mbrtoc16(char16_t* __pc16, const char* s, __SIZE_TYPE__ n, void* __ps, __SIZE_TYPE__ state_size) noexcept;
@@ -28,7 +28,7 @@ __SIZE_TYPE__ __c_mbrtoc32(char32_t* __pc32, const char* s, __SIZE_TYPE__ n, voi
 __SIZE_TYPE__ __c_c32rtomb(char* s, char32_t __c32, void* __ps, __SIZE_TYPE__ state_size) noexcept;
 }} // namespace __ycxx::__detail
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 #if _YCXX_C_HAS_UCHAR_H
 using ::mbrtoc16;
 using ::c16rtomb;
@@ -63,4 +63,4 @@ inline size_t c8rtomb(char* s, char8_t __c8, mbstate_t* __ps) noexcept {
   return __ycxx::__detail::__c_c8rtomb(s, __c8, __ps, sizeof(mbstate_t));
 }
 #endif
-} // namespace std
+}} // namespace std

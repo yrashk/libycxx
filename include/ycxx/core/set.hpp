@@ -9,7 +9,7 @@
 #include <ycxx/core/memory_resource_fwd.hpp>
 #include <ycxx/core/rb_tree.hpp>
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 template <class _Key, class _Compare = less<_Key>, class _Allocator = allocator<_Key>>
 class set;
@@ -420,4 +420,4 @@ template <class _Key, class _Compare = less<_Key>>
 using multiset = std::multiset<_Key, _Compare, polymorphic_allocator<_Key>>;
 } // namespace pmr
 
-} // namespace std
+}} // namespace std

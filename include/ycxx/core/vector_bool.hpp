@@ -15,7 +15,7 @@
 #include <ycxx/core/hash.hpp>
 #include <ycxx/core/vector.hpp>
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __adl_free {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __adl_free {
 
 template <class _Word, class _Diff, bool _Const>
 class __bit_iter;
@@ -167,7 +167,7 @@ public:
 
 }} // namespace __ycxx::__adl_free
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 // fill, find and count over vector<bool>'s bits a word at a time (bit_iter_algos.hpp). Each
 // visits the words from first's to last's, the bits [lo, hi) of each; last's word is read only
 // when it has bits in the range (it may be one past the storage).
@@ -217,7 +217,7 @@ struct __bit_algos<__ycxx::__adl_free::__bit_iter<_Word, _Diff, _Const>> {
 };
 }} // namespace __ycxx::__detail
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 template <class _Allocator>
 class vector<bool, _Allocator> {
@@ -860,4 +860,4 @@ struct hash<vector<bool, _Allocator>> {
   }
 };
 
-} // namespace std
+}} // namespace std

@@ -43,7 +43,7 @@
 #include <ycxx/core/tuple.hpp>
 #include <ycxx/core/utility_base.hpp>
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 
 struct __hash_table_access;
 
@@ -106,7 +106,7 @@ concept __unord_pred_arg = !__qualifies_as_allocator<_Pp>;
 
 }} // namespace __ycxx::__detail
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __adl_free {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __adl_free {
 
 template <class _Key, class _Value, class _Hash, class _Pred, class _Alloc, bool _Multi>
 class __hash_table;
@@ -1227,7 +1227,7 @@ protected:
 
 }} // namespace __ycxx::__adl_free
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 
 // Lets the non-member operator== and erase_if use the table's internals.
 struct __hash_table_access {

@@ -4,7 +4,7 @@
 #include <ycxx/config.hpp>
 #include <ycxx/core/version.hpp>
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 #if _YCXX_HAS_FLOAT16_T
 using float16_t = __ycxx::__detail::__float16;
 #endif
@@ -20,4 +20,4 @@ using float128_t = __ycxx::__detail::__y_float128;
 #if _YCXX_HAS_BFLOAT16_T
 using bfloat16_t = __ycxx::__detail::__bfloat16;
 #endif
-} // namespace std
+}} // namespace std

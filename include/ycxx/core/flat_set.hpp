@@ -18,7 +18,7 @@
 #include <ycxx/core/tuple.hpp>
 #include <ycxx/core/vector.hpp>
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __adl_free {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __adl_free {
 
 // The members flat_set (Multi false) and flat_multiset share.
 template <class _Key, class _Compare, class _KC, bool _Multi>
@@ -385,7 +385,7 @@ private:
 
 }} // namespace __ycxx::__adl_free
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 template <class _Key, class _Compare = less<_Key>, class _KeyContainer = vector<_Key>>
 class flat_set : public __ycxx::__adl_free::__flat_set_base<_Key, _Compare, _KeyContainer, false> {
@@ -961,4 +961,4 @@ erase_if(flat_multiset<_Key, _Compare, _KeyContainer>& c, _Predicate pred) {
   return static_cast<typename flat_multiset<_Key, _Compare, _KeyContainer>::size_type>(n);
 }
 
-} // namespace std
+}} // namespace std

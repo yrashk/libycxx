@@ -6,7 +6,7 @@
 #include <ycxx/core/memory_base.hpp>
 #include <ycxx/core/cstddef.hpp>
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 
 template <class _Container>
 constexpr bool __reservable_container =
@@ -89,7 +89,7 @@ consteval auto __to_deduce() {
 
 }} // namespace __ycxx::__detail
 
-namespace [[__gnu__::__visibility__("hidden")]] std { namespace ranges {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 { namespace ranges {
 
 template <class _Cp, input_range _Rp, class... _Args>
   requires(!view<_Cp>)
@@ -136,9 +136,9 @@ constexpr auto to(_Rp&& r, _Args&&... __args) {
     return ranges::to<_Tp>(static_cast<_Rp&&>(r), static_cast<_Args&&>(__args)...);
 }
 
-}} // namespace std::ranges
+}}} // namespace std::ranges
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 template <class _Cp>
 struct __to_fn {
   template <class _Rp, class... _Args>
@@ -157,7 +157,7 @@ struct __to_template_fn {
 };
 }} // namespace __ycxx::__detail
 
-namespace [[__gnu__::__visibility__("hidden")]] std { namespace ranges {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 { namespace ranges {
 
 template <class _Cp, class... _Args>
   requires(!view<_Cp>)
@@ -183,4 +183,4 @@ struct elements_of {
 template <class _Rp, class _Allocator = allocator<byte>>
 elements_of(_Rp&&, _Allocator = _Allocator()) -> elements_of<_Rp&&, _Allocator>;
 
-}} // namespace std::ranges
+}}} // namespace std::ranges

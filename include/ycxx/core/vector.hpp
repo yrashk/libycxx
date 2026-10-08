@@ -26,7 +26,7 @@
 #include <ycxx/core/swap.hpp>
 #include <ycxx/core/utility_base.hpp>
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 template <class _Tp, class _Allocator = allocator<_Tp>>
 class vector;
@@ -931,4 +931,4 @@ template <class _Tp>
 using vector = std::vector<_Tp, polymorphic_allocator<_Tp>>;
 } // namespace pmr
 
-} // namespace std
+}} // namespace std

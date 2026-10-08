@@ -40,7 +40,7 @@
 #undef islessgreater
 #undef isunordered
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 // FLT_EVAL_METHOD 0: float/double; 1: double/double; 2: long double/long double.
 using float_t = conditional_t<__ycxx::__detail::__cfg::__flt_eval_method == 1, double,
                               conditional_t<__ycxx::__detail::__cfg::__flt_eval_method == 2, long double, float>>;
@@ -59,6 +59,6 @@ template <class = void>
 long double nanl(const char* __tagp) noexcept {
   return __builtin_nanl(__tagp);
 }
-} // namespace std
+}} // namespace std
 
 #include <ycxx/core/cmath_std.hpp>

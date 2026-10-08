@@ -11,13 +11,13 @@
 #include <ycxx/core/iterator_core.hpp>
 #include <ycxx/core/iterator_ops.hpp>
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 // The library's extraction and insertion loops (num_get, money_get, ...) reach the buffer behind
 // a stream-buffer iterator through this class, to work on whole runs of characters.
 struct __streambuf_iter_access;
 }} // namespace __ycxx::__detail
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 // [istream.iterator]
 template <class _Tp, class __charT = char, class __traits = char_traits<__charT>, class _Distance = ptrdiff_t>
@@ -209,4 +209,4 @@ private:
   bool __failed_ = false;
 };
 
-} // namespace std
+}} // namespace std

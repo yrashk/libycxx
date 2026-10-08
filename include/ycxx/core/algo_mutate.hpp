@@ -6,7 +6,7 @@
 #include <ycxx/core/algo_base.hpp>
 #include <ycxx/core/urbg.hpp>
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 
 template <class _Ops, class _Ip, class _Sp, class _Pp>
 constexpr _Ip __remove_if_impl(_Ip first, _Sp last, _Pp pred) {
@@ -247,7 +247,7 @@ unsigned long long __uniform_upto(_Gp& __g, unsigned long long n) {
 // =============================================================================================
 // std:: forms
 // =============================================================================================
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 // [alg.transform]
 template <class _InputIterator, class _OutputIterator, class _UnaryOperation>
@@ -442,12 +442,12 @@ constexpr _ForwardIterator shift_right(_ForwardIterator first, _ForwardIterator 
   return ::__ycxx::__detail::__shift_right_impl<__ycxx::__detail::__classic_ops>(first, last, n).first;
 }
 
-} // namespace std
+}} // namespace std
 
 // =============================================================================================
 // std::ranges:: forms
 // =============================================================================================
-namespace [[__gnu__::__visibility__("hidden")]] std { namespace ranges {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 { namespace ranges {
 template <class _Ip, class _Op>
 using unary_transform_result = in_out_result<_Ip, _Op>;
 template <class _I1, class _I2, class _Op>
@@ -467,9 +467,9 @@ using reverse_copy_result = in_out_result<_Ip, _Op>;
 template <class _Ip, class _Op>
 using rotate_copy_result = in_out_result<_Ip, _Op>;
 // reverse_copy_truncated_result, rotate_copy_truncated_result: algo_ranges_parallel.hpp.
-}} // namespace std::ranges
+}}} // namespace std::ranges
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail::__ranges_algo {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail::__ranges_algo {
 
 using std::ranges::borrowed_iterator_t;
 using std::ranges::borrowed_subrange_t;
@@ -900,7 +900,7 @@ struct __shuffle_fn {
 
 }} // namespace __ycxx::__detail::__ranges_algo
 
-namespace [[__gnu__::__visibility__("hidden")]] std { namespace ranges {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 { namespace ranges {
 inline constexpr __ycxx::__adl_free::__ranges_par_algo<__ycxx::__detail::__ranges_algo::__transform_fn, __ycxx::__detail::par::kind::transform> transform{};
 inline constexpr __ycxx::__adl_free::__ranges_par_algo<__ycxx::__detail::__ranges_algo::__replace_fn, __ycxx::__detail::par::kind::replace> replace{};
 inline constexpr __ycxx::__adl_free::__ranges_par_algo<__ycxx::__detail::__ranges_algo::__replace_if_fn, __ycxx::__detail::par::kind::replace_if> replace_if{};
@@ -922,4 +922,4 @@ inline constexpr __ycxx::__adl_free::__ranges_par_algo<__ycxx::__detail::__range
 inline constexpr __ycxx::__adl_free::__ranges_par_algo<__ycxx::__detail::__ranges_algo::__shift_right_fn, __ycxx::__detail::par::kind::shift_right> shift_right{};
 inline constexpr __ycxx::__detail::__ranges_algo::__sample_fn sample{};
 inline constexpr __ycxx::__detail::__ranges_algo::__shuffle_fn shuffle{};
-}} // namespace std::ranges
+}}} // namespace std::ranges

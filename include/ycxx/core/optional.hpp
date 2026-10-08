@@ -12,7 +12,7 @@
 #include <ycxx/core/format_kind.hpp>
 #include <initializer_list>
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 // [optional.nullopt]: not default constructible, not an aggregate initialisable from {}.
 struct nullopt_t {
@@ -36,22 +36,22 @@ public:
   constexpr const char* what() const noexcept override { return "bad optional access"; }
 };
 
-} // namespace std
+}} // namespace std
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 [[noreturn]] [[__gnu__::__cold__]] constexpr void __throw_bad_optional_access() {
   ::__ycxx::__detail::__raise_with(ycxx_error_bad_optional_access, "std::bad_optional_access", [] { return std::bad_optional_access(); });
 }
 }} // namespace __ycxx::__detail
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 template <class _Tp>
 class optional;
 
-} // namespace std
+}} // namespace std
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 
 template <class _Tp>
 inline constexpr bool __is_optional = false;
@@ -121,7 +121,7 @@ union __optional_storage {
 
 }} // namespace __ycxx::__detail
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 template <class _Tp>
 class optional {
@@ -485,12 +485,12 @@ optional(_Tp) -> optional<_Tp>;
 // =============================================================================================
 // optional<T&> ([optional.optional.ref])
 // =============================================================================================
-} // namespace std
+}} // namespace std
 
 // Base classes of std types live in __ycxx::__adl_free, a namespace that declares no functions:
 // a base's namespace is an associated namespace for ADL ([basic.lookup.argdep]/3), so a
 // __ycxx::__detail base would expose every internal function to lookup on the std type.
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __adl_free {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __adl_free {
 // [optional.optional.ref.general]: optional<T&>::iterator exists only for object types other
 // than arrays of unknown bound.
 template <class _Tp>
@@ -502,7 +502,7 @@ struct __optional_ref_iterator<_Tp> {
 };
 }} // namespace __ycxx::__adl_free
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 template <class _Tp>
 class optional<_Tp&> : public __ycxx::__adl_free::__optional_ref_iterator<_Tp> {
   static_assert(__ycxx::__detail::__valid_optional_type<_Tp&>,
@@ -884,4 +884,4 @@ struct hash<optional<_Tp>> {
   }
 };
 
-} // namespace std
+}} // namespace std

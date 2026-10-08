@@ -57,7 +57,7 @@ __slot* find_slot(const void* key) noexcept {
 
 } // namespace
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 
 void* __syncbuf_lock(const void* key) noexcept {
   __slot* s;

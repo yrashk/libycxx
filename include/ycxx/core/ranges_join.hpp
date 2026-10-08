@@ -6,7 +6,7 @@
 #include <ycxx/core/algo_nonmod.hpp>
 #include <ycxx/core/variant.hpp>
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 
 // Calls f(integral_constant<size_t, I>{}) for the I in [0, N) equal to i.
 template <std::size_t _Np, class _Fp>
@@ -81,7 +81,7 @@ concept __tiny_range = std::ranges::sized_range<_Rp> &&
 
 }} // namespace __ycxx::__detail
 
-namespace [[__gnu__::__visibility__("hidden")]] std { namespace ranges {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 { namespace ranges {
 
 // =============================================================================================
 // [range.join]
@@ -1392,12 +1392,12 @@ public:
 template <class... _Rp>
 concat_view(_Rp&&...) -> concat_view<views::all_t<_Rp>...>;
 
-}} // namespace std::ranges
+}}} // namespace std::ranges
 
 // =============================================================================================
 // The adaptor objects
 // =============================================================================================
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail::__view_fn {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail::__view_fn {
 
 struct __join_fn : std::ranges::range_adaptor_closure<__join_fn> {
   template <class _Ep>
@@ -1439,10 +1439,10 @@ struct __concat_fn {
 
 }} // namespace __ycxx::__detail::__view_fn
 
-namespace [[__gnu__::__visibility__("hidden")]] std { namespace ranges::views {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 { namespace ranges::views {
 inline constexpr __ycxx::__detail::__view_fn::__join_fn join{};
 inline constexpr __ycxx::__detail::__view_fn::__pattern_fn<join_with_view> join_with{};
 inline constexpr __ycxx::__detail::__view_fn::__pattern_fn<lazy_split_view> lazy_split{};
 inline constexpr __ycxx::__detail::__view_fn::__pattern_fn<split_view> split{};
 inline constexpr __ycxx::__detail::__view_fn::__concat_fn concat{};
-}} // namespace std::ranges::views
+}}} // namespace std::ranges::views

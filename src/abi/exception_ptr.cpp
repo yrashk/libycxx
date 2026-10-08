@@ -4,7 +4,7 @@
 
 #include <exception>
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __abi {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __abi {
 
 void __exception_ptr_retain(void* __object) noexcept { __retain_primary(__header_of_object(__object)); }
 
@@ -17,7 +17,7 @@ void* __current_exception_object() noexcept {
   if (!__is_native(h->__unwind_header.exception_class)) {
     // A foreign exception cannot be referred to: [propagation]/9 lets the result refer to a
     // bad_exception instead.
-    void* __obj = __cxa_allocate_exception(sizeof(std::bad_exception));
+    void* __obj = __ycxx_abi_allocate_exception(sizeof(std::bad_exception));
     ::new (__obj) std::bad_exception();
     __exception_header* b = __header_of_object(__obj);
     b->__exception_type = const_cast<std::type_info*>(&typeid(std::bad_exception));
@@ -35,7 +35,7 @@ void* __current_exception_object() noexcept {
 // is what __cxa_throw would record; the unwind fields are set if it is ever rethrown (as a
 // dependent exception, rethrow_primary).
 void* __exception_object_create(std::size_t size, const std::type_info* type, void (*destroy)(void*)) noexcept {
-  void* __obj = __cxa_allocate_exception(size);
+  void* __obj = __ycxx_abi_allocate_exception(size);
   __exception_header* h = __header_of_object(__obj);
   h->__exception_type = const_cast<std::type_info*>(type);
   h->__exception_destructor = destroy;

@@ -3,7 +3,7 @@
 
 #include <ycxx/core/error.hpp>
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 
 constexpr unsigned __text_length(const char* s) noexcept {
   unsigned n = 0;

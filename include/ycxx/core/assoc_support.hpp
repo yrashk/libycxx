@@ -7,7 +7,7 @@
 #include <ycxx/core/pair.hpp>
 #include <ycxx/core/sequence_support.hpp>
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 
 template <class _Compare>
 concept __transparent_compare = requires { typename _Compare::is_transparent; };

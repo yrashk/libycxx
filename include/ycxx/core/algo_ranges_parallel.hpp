@@ -23,16 +23,16 @@
 #include <ycxx/core/functional_base.hpp>
 #include <ycxx/core/invoke.hpp>
 
-namespace [[__gnu__::__visibility__("hidden")]] std { namespace ranges {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 { namespace ranges {
 template <class _Ip, class _Op>
 using reverse_copy_truncated_result = in_in_out_result<_Ip, _Ip, _Op>;
 template <class _Ip, class _Op>
 using rotate_copy_truncated_result = in_in_out_result<_Ip, _Ip, _Op>;
 template <class _I1, class _I2, class _Op>
 using set_difference_truncated_result = in_in_out_result<_I1, _I2, _Op>;
-}} // namespace std::ranges
+}}} // namespace std::ranges
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail::par {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail::par {
 
 enum class kind {
   // forwarding to the overload without the policy
@@ -195,7 +195,7 @@ constexpr std::ranges::in_in_out_result<_I1, _I2, _Op> __set_op_bounded(_I1 __fi
 
 }} // namespace __ycxx::__detail::par
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __adl_free {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __adl_free {
 
 // The type of a ranges:: algorithm object with parallel overloads: specialized for each kind.
 template <class _Fn, __ycxx::__detail::par::kind _Kp>
@@ -203,7 +203,7 @@ struct __ranges_par_algo;
 
 }} // namespace __ycxx::__adl_free
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __adl_free {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __adl_free {
 
 using __ycxx::__detail::par::__sized_random_access_range;
 namespace par = __ycxx::__detail::par;

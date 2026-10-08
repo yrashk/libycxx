@@ -4,7 +4,7 @@
 #include <ycxx/core/type_traits.hpp>
 #include <ycxx/core/error.hpp>
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 // Unsigned integer types, plus unsigned _BitInt(N) where the compiler has it (extension).
 template <class _Tp>
 concept __bit_unsigned =
@@ -17,7 +17,7 @@ template <class _Tp>
 constexpr _Tp __byteswap_std(_Tp value) noexcept;
 }} // namespace __ycxx::__detail
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 enum class endian { little = __ORDER_LITTLE_ENDIAN__, big = __ORDER_BIG_ENDIAN__, native = __BYTE_ORDER__ };
 
@@ -44,9 +44,9 @@ template <class _Tp>
     return __ycxx::__detail::__byteswap_std(value);
   }
 }
-} // namespace std
+}} // namespace std
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 template <class _Tp>
 constexpr _Tp __byteswap_std(_Tp value) noexcept {
   using _Up = std::make_unsigned_t<std::conditional_t<__is_same(__remove_cv(_Tp), bool), unsigned char, _Tp>>;
@@ -67,7 +67,7 @@ constexpr _Tp __byteswap_std(_Tp value) noexcept {
 }
 }} // namespace __ycxx::__detail
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 // [bit.count]
 template <__ycxx::__detail::__bit_unsigned _Tp>
 [[nodiscard]] constexpr int countl_zero(_Tp __x) noexcept {
@@ -139,9 +139,9 @@ template <__ycxx::__detail::__bit_unsigned _Tp>
   return static_cast<_Tp>((__x >> r) | (__x << (n - r)));
 }
 
-} // namespace std
+}} // namespace std
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 // x * 2^s and x * 2^-s rounded toward negative infinity, modulo 2^N, for any shift amount.
 // One return statement each: constant evaluation counts statements, and shl/shr are cheap enough
 // to be called in long constant-evaluated loops.
@@ -173,7 +173,7 @@ constexpr unsigned long long __magnitude(_Sp s) noexcept {
 }
 }} // namespace __ycxx::__detail
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 // [bit.shift]
 template <__ycxx::__detail::__bit_integer _Tp, __ycxx::__detail::__bit_integer _Sp>
@@ -261,4 +261,4 @@ template <__ycxx::__detail::__bit_unsigned _Tp>
   return static_cast<_Tp>(__x & __m0);
 }
 
-} // namespace std
+}} // namespace std

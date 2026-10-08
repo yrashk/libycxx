@@ -35,12 +35,12 @@
 #include <ycxx/hosted/file_clock.hpp>
 #include <ycxx/hosted/iomanip.hpp>
 
-namespace [[__gnu__::__visibility__("hidden")]] std { namespace filesystem {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 { namespace filesystem {
 class path;
 class directory_entry;
-}} // namespace std::filesystem
+}}} // namespace std::filesystem
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 
 // [fs.req]/1: the encoded character types.
 template <class _Cp>
@@ -288,7 +288,7 @@ std::basic_string<_EcharT, __traits, _Allocator> __fs_convert_out(const std::str
 
 }} // namespace __ycxx::__detail
 
-namespace [[__gnu__::__visibility__("hidden")]] std { namespace filesystem {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 { namespace filesystem {
 
 // [fs.class.path]
 class path {
@@ -607,9 +607,9 @@ path u8path(_InputIterator first, _InputIterator last) {
   return path(first, last);
 }
 
-}} // namespace std::filesystem
+}}} // namespace std::filesystem
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 // The shared state of a filesystem_error: copies of an exception share it, so copying never
 // allocates.
 struct __fs_error_data {
@@ -618,7 +618,7 @@ struct __fs_error_data {
 };
 }} // namespace __ycxx::__detail
 
-namespace [[__gnu__::__visibility__("hidden")]] std { namespace filesystem {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 { namespace filesystem {
 
 // [fs.class.filesystem.error]. The constructors and the destructor (the key function) are in the
 // hosted runtime. what() is "filesystem error: " followed by system_error::what() and the
@@ -706,16 +706,16 @@ enum class directory_options : unsigned char {
   skip_permission_denied = 2,
 };
 
-}} // namespace std::filesystem
+}}} // namespace std::filesystem
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 template <class _Ep>
 concept __fs_bitmask = std::is_same_v<_Ep, std::filesystem::copy_options> || std::is_same_v<_Ep, std::filesystem::perms> ||
                      std::is_same_v<_Ep, std::filesystem::perm_options> ||
                      std::is_same_v<_Ep, std::filesystem::directory_options>;
 }} // namespace __ycxx::__detail
 
-namespace [[__gnu__::__visibility__("hidden")]] std { namespace filesystem {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 { namespace filesystem {
 
 // [bitmask.types]: the operators of the four bitmask types.
 template <__ycxx::__detail::__fs_bitmask _Ep>
@@ -781,9 +781,9 @@ struct space_info {
 
 using file_time_type = chrono::time_point<chrono::file_clock>;
 
-}} // namespace std::filesystem
+}}} // namespace std::filesystem
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 
 [[noreturn, __gnu__::__cold__]] inline void __fs_raise(const char* what, std::error_code ec) {
   ::__ycxx::__detail::__raise_with(ycxx_error_filesystem_error, what,
@@ -834,7 +834,7 @@ struct __fs_postfix_entry;
 
 }} // namespace __ycxx::__detail
 
-namespace [[__gnu__::__visibility__("hidden")]] std { namespace filesystem {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 { namespace filesystem {
 
 // [fs.op.funcs]: the error_code forms (hosted runtime).
 path absolute(const path& p, error_code& ec);
@@ -1429,9 +1429,9 @@ inline bool directory_entry::is_other(error_code& ec) const noexcept { return fi
 // of a file that does not exist is left in ec.
 inline bool directory_entry::exists(error_code& ec) const noexcept { return filesystem::exists(status(ec)); }
 
-}} // namespace std::filesystem
+}}} // namespace std::filesystem
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 // What directory_iterator::operator++(int) returns: the entry the iterator designated.
 struct __fs_postfix_entry {
   std::filesystem::directory_entry __entry;
@@ -1440,7 +1440,7 @@ struct __fs_postfix_entry {
 };
 }} // namespace __ycxx::__detail
 
-namespace [[__gnu__::__visibility__("hidden")]] std { namespace filesystem {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 { namespace filesystem {
 inline __ycxx::__detail::__fs_postfix_entry directory_iterator::operator++(int) {
   __ycxx::__detail::__fs_postfix_entry r{**this};
   ++*this;
@@ -1451,9 +1451,9 @@ inline __ycxx::__detail::__fs_postfix_entry recursive_directory_iterator::operat
   ++*this;
   return r;
 }
-}} // namespace std::filesystem
+}}} // namespace std::filesystem
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 // [fs.path.hash]
 template <>
@@ -1461,9 +1461,9 @@ struct hash<filesystem::path> {
   size_t operator()(const filesystem::path& p) const noexcept { return filesystem::hash_value(p); }
 };
 
-} // namespace std
+}} // namespace std
 
-namespace [[__gnu__::__visibility__("hidden")]] std { namespace ranges {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 { namespace ranges {
 template <>
 inline constexpr bool enable_borrowed_range<filesystem::directory_iterator> = true;
 template <>
@@ -1472,4 +1472,4 @@ template <>
 inline constexpr bool enable_view<filesystem::directory_iterator> = true;
 template <>
 inline constexpr bool enable_view<filesystem::recursive_directory_iterator> = true;
-}} // namespace std::ranges
+}}} // namespace std::ranges

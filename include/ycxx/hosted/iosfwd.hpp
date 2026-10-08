@@ -10,7 +10,7 @@
 #include <ycxx/core/char_traits.hpp>
 #include <ycxx/core/iosfwd.hpp>
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 template <class _Tp>
 class allocator;
@@ -109,4 +109,4 @@ using wosyncstream = basic_osyncstream<wchar_t>;
 
 // fpos and the streampos aliases are declared with char_traits (core).
 
-} // namespace std
+}} // namespace std

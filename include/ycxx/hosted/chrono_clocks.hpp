@@ -17,7 +17,7 @@
 #  include <time.h>
 #endif
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 // The current value of a PAL clock in nanoseconds.
 inline long long __pal_clock_ns(int clock) noexcept {
   ycxx_pal_i64 __sec = 0, __nsec = 0;
@@ -26,7 +26,7 @@ inline long long __pal_clock_ns(int clock) noexcept {
 }
 }} // namespace __ycxx::__detail
 
-namespace [[__gnu__::__visibility__("hidden")]] std { namespace chrono {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 { namespace chrono {
 
 class system_clock {
 public:
@@ -74,9 +74,9 @@ public:
   static time_point now() noexcept { return steady_clock::now(); }
 };
 
-}} // namespace std::chrono
+}}} // namespace std::chrono
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __adl_free {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __adl_free {
 class file_clock {
 public:
   using rep = long long;

@@ -7,7 +7,7 @@
 
 #include <ycxx/core/hash_table.hpp>
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 template <class _Key, class _Tp, class _Hash = hash<_Key>, class _Pred = equal_to<_Key>,
           class _Allocator = allocator<pair<const _Key, _Tp>>>
@@ -624,4 +624,4 @@ template <class _Key, class _Tp, class _Hash = hash<_Key>, class _Pred = equal_t
 using unordered_multimap = std::unordered_multimap<_Key, _Tp, _Hash, _Pred, polymorphic_allocator<pair<const _Key, _Tp>>>;
 } // namespace pmr
 
-} // namespace std
+}} // namespace std

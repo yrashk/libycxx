@@ -1,4 +1,5 @@
 // libycxx ABI runtime: __dynamic_cast (Itanium C++ ABI §2.9.7, [expr.dynamic.cast]/9).
+#include "entry.hpp"
 #include "rtti.hpp"
 
 using namespace __cxxabiv1;
@@ -129,8 +130,11 @@ struct cast_walk {
 //       dst; -3 src is a public base of dst several times, never virtually. Only the first
 //       form is used, for a fast path; every result is otherwise computed from the RTTI.
 // Returns the dst object, or nullptr when the run-time check fails.
-extern "C" [[__gnu__::__visibility__("hidden")]] void* __dynamic_cast(const void* __sub, const __class_type_info* __src, const __class_type_info* __dst,
-                                std::ptrdiff_t src2dst_offset) {
+// (__dynamic_cast itself is src/abi/entry/cxa_dynamic_cast.cpp's forwarder, DECISIONS §20.6.)
+extern "C" void* __ycxx_abi_dynamic_cast(const void* __sub, const void* __src_type, const void* __dst_type,
+                                         std::ptrdiff_t src2dst_offset) {
+  const auto* __src = static_cast<const __class_type_info*>(__src_type);
+  const auto* __dst = static_cast<const __class_type_info*>(__dst_type);
   // §2.9.4: vtable entry -2 is the offset from this virtual pointer to the top of the object,
   // entry -1 the type_info of that object. During construction or destruction the virtual
   // pointer names a construction vtable, whose entries describe the class under construction

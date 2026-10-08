@@ -21,11 +21,11 @@
 #include <ycxx/hosted/iosfwd.hpp>
 #include <ycxx/hosted/regex_engine.hpp>
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 struct __regex_access;
 }} // namespace __ycxx::__detail
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 // [re.regex]
 template <class __charT, class __traits = regex_traits<__charT>>
@@ -197,15 +197,15 @@ using wcsub_match = sub_match<const wchar_t*>;
 using ssub_match = sub_match<string::const_iterator>;
 using wssub_match = sub_match<wstring::const_iterator>;
 
-} // namespace std
+}} // namespace std
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 // SM-CAT(I) of [re.submatch.op]
 template <class _BiIter>
 using __regex_sm_cat_t = std::compare_three_way_result_t<std::basic_string<typename std::iterator_traits<_BiIter>::value_type>>;
 }} // namespace __ycxx::__detail
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 // [re.submatch.op]
 
@@ -467,9 +467,9 @@ using smatch = match_results<string::const_iterator>;
 using wsmatch = match_results<wstring::const_iterator>;
 } // namespace pmr
 
-} // namespace std
+}} // namespace std
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 
 struct __regex_access {
   // Matches e against [first, last) (whole: regex_match) and fills m; positions count from base.
@@ -513,7 +513,7 @@ struct __regex_access {
 
 }} // namespace __ycxx::__detail
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 // [re.alg.match]
 template <class _BidirectionalIterator, class _Allocator, class __charT, class __traits>
@@ -845,9 +845,9 @@ using wcregex_token_iterator = regex_token_iterator<const wchar_t*>;
 using sregex_token_iterator = regex_token_iterator<string::const_iterator>;
 using wsregex_token_iterator = regex_token_iterator<wstring::const_iterator>;
 
-} // namespace std
+}} // namespace std
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 // [re.alg.replace]/1
 template <class _OutputIterator, class _BidirectionalIterator, class __traits, class __charT>
 _OutputIterator __re_replace(_OutputIterator out, _BidirectionalIterator first, _BidirectionalIterator last,
@@ -881,7 +881,7 @@ _OutputIterator __re_replace(_OutputIterator out, _BidirectionalIterator first, 
 }
 }} // namespace __ycxx::__detail
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 // [re.alg.replace]
 template <class _OutputIterator, class _BidirectionalIterator, class __traits, class __charT, class _ST, class _SA>
@@ -928,4 +928,4 @@ basic_string<__charT> regex_replace(const __charT* s, const basic_regex<__charT,
   return result;
 }
 
-} // namespace std
+}} // namespace std

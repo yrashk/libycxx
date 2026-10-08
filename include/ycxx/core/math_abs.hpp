@@ -10,7 +10,7 @@
 #include <ycxx/core/cmath_promote.hpp>
 #include <ycxx/core/prim_traits.hpp>
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 // [c.math.abs]/3: an unsigned type that integral promotion does not turn into int.
 template <class _Tp>
 concept __abs_unsigned_unpromotable = is_integral_v<_Tp> && is_unsigned_v<_Tp> && !(sizeof(_Tp) < sizeof(int));
@@ -19,7 +19,7 @@ template <class _Tp>
 concept __abs_int128 = is_integral_v<_Tp> && __is_same(_Tp, __y_int128);
 }} // namespace __ycxx::__detail
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 template <class = void>
 constexpr int abs(int __j) noexcept {
@@ -96,4 +96,4 @@ constexpr long long llabs(long long __j) noexcept {
   return __j < 0 ? -__j : __j;
 }
 
-} // namespace std
+}} // namespace std

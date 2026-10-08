@@ -17,7 +17,7 @@
 #include <ycxx/hosted/thread_support.hpp>
 #include <ycxx/pal.h>
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 
 // A futex mutex that can also be owned recursively by one thread.
 class __recursive_futex_mutex {
@@ -92,7 +92,7 @@ bool __timed_try_lock_until(_Mp& m, const std::chrono::time_point<_Clock, _Durat
 
 }} // namespace __ycxx::__detail
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 // [thread.mutex.class]
 class mutex {
@@ -337,9 +337,9 @@ void swap(unique_lock<_Mutex>& __x, unique_lock<_Mutex>& y) noexcept {
   __x.swap(y);
 }
 
-} // namespace std
+}} // namespace std
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 
 // The lockables of lock/try_lock behind type-erased thunks, so they can be indexed at run time.
 // lock() is used only by std::lock (`_Lock`): std::try_lock needs only try_lock and unlock
@@ -423,7 +423,7 @@ void __lock_all(_Lp&... __l) {
 
 }} // namespace __ycxx::__detail
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 template <class _L1, class _L2, class... _L3>
 int try_lock(_L1& __l1, _L2& __l2, _L3&... __l3) {
@@ -476,4 +476,4 @@ void call_once(once_flag& __flag, _Callable&& __func, _Args&&... __args) {
   }
 }
 
-} // namespace std
+}} // namespace std

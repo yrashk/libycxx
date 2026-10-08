@@ -15,15 +15,15 @@
 
 // ---------------------------------------------------------------------------------------------
 // [exec.task.scheduler]
-namespace [[__gnu__::__visibility__("hidden")]] std { namespace execution {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 { namespace execution {
 class task_scheduler;
-}} // namespace std::execution
+}}} // namespace std::execution
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail { namespace __exec {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail { namespace __exec {
 struct __ts_access;
 }}} // namespace __ycxx::__detail::__exec
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __adl_free {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __adl_free {
 // What task_scheduler needs of its backend beyond parallel_scheduler_backend.
 struct __exec_ts_backend_base : std::execution::parallel_scheduler_replacement::parallel_scheduler_backend {
   virtual const void* __ycxx_type() const noexcept = 0;
@@ -98,7 +98,7 @@ struct __exec_wrap_rcvr {
 };
 }} // namespace __ycxx::__adl_free
 
-namespace [[__gnu__::__visibility__("hidden")]] std { namespace execution {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 { namespace execution {
 
 class task_scheduler {
   class __ts_domain;
@@ -136,9 +136,9 @@ public:
   __ts_domain query(get_completion_domain_t<set_value_t>, const _Envs&...) const noexcept;
 };
 
-}} // namespace std::execution
+}}} // namespace std::execution
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail { namespace __exec {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail { namespace __exec {
 struct __ts_access {
   static const auto& __backend(const std::execution::task_scheduler& s) noexcept { return s.__sch_; }
 };
@@ -196,7 +196,7 @@ struct __ts_bulk_fn {
 };
 }}} // namespace __ycxx::__detail::__exec
 
-namespace [[__gnu__::__visibility__("hidden")]] std { namespace execution {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 { namespace execution {
 
 template <scheduler _Sch>
 class task_scheduler::__backend_for : public __ycxx::__adl_free::__exec_ts_backend_base {
@@ -271,9 +271,9 @@ task_scheduler::__ts_domain task_scheduler::query(get_completion_domain_t<set_va
   return {};
 }
 
-}} // namespace std::execution
+}}} // namespace std::execution
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __adl_free {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __adl_free {
 // ts-sndr ([exec.task.scheduler]/13)
 struct __exec_ts_sender {
   using sender_concept = std::execution::sender_tag;
@@ -305,7 +305,7 @@ struct __exec_ts_sender {
 };
 }} // namespace __ycxx::__adl_free
 
-namespace [[__gnu__::__visibility__("hidden")]] std { namespace execution {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 { namespace execution {
 inline auto task_scheduler::schedule() const noexcept { return __ycxx::__adl_free::__exec_ts_sender{*this}; }
 
 template <class _Ep>
@@ -315,11 +315,11 @@ struct with_error {
 };
 template <class _Ep>
 with_error(_Ep) -> with_error<_Ep>;
-}} // namespace std::execution
+}}} // namespace std::execution
 
 // ---------------------------------------------------------------------------------------------
 // [exec.task]
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail { namespace __exec {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail { namespace __exec {
 template <class _Env>
 struct __task_types {
   static auto __alloc() {
@@ -466,7 +466,7 @@ struct __task_promise_return<void, _StateBase> {
 };
 }}} // namespace __ycxx::__detail::__exec
 
-namespace [[__gnu__::__visibility__("hidden")]] std { namespace execution {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 { namespace execution {
 
 template <class _Tp = void, class _Environment = env<>>
 class task {
@@ -712,4 +712,4 @@ public:
   void operator delete(void* pointer, size_t size) noexcept { __ycxx::__detail::__exec::__task_frame_deallocate(pointer, size); }
 };
 
-}} // namespace std::execution
+}}} // namespace std::execution

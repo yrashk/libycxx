@@ -13,7 +13,7 @@
 #include <ycxx/core/span.hpp>
 #include <ycxx/core/urbg.hpp>
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail::__ranges_algo {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail::__ranges_algo {
 
 struct __generate_random_fn {
 private:
@@ -103,6 +103,6 @@ public:
 
 }} // namespace __ycxx::__detail::__ranges_algo
 
-namespace [[__gnu__::__visibility__("hidden")]] std { namespace ranges {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 { namespace ranges {
 inline constexpr __ycxx::__detail::__ranges_algo::__generate_random_fn generate_random{};
-}} // namespace std::ranges
+}}} // namespace std::ranges

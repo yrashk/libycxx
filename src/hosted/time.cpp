@@ -213,7 +213,7 @@ void format(out& __o, const std::tm* t, char __spec, char __mod) {
 
 } // namespace
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 
 size_t __time_put_c(char* __buf, size_t __cap, const std::tm* t, char format, char __modifier) noexcept {
   out __o{__buf, __cap};

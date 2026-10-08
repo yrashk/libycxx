@@ -17,7 +17,7 @@
 #  define setjmp(env) setjmp(env)
 #endif
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 using ::jmp_buf;
 using ::longjmp;
-} // namespace std
+}} // namespace std

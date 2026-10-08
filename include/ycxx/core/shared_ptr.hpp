@@ -26,7 +26,7 @@
 #include <ycxx/core/exception_base.hpp>
 #include <ycxx/core/single_threaded.hpp>
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 // [util.smartptr.weak.bad]
 class bad_weak_ptr : public exception {
@@ -45,9 +45,9 @@ class weak_ptr;
 template <class _Tp>
 class enable_shared_from_this;
 
-} // namespace std
+}} // namespace std
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 
 [[noreturn]] [[__gnu__::__cold__]] constexpr void __throw_bad_weak_ptr() {
   ::__ycxx::__detail::__raise_with(ycxx_error_bad_weak_ptr, "std::bad_weak_ptr", [] { return std::bad_weak_ptr(); });
@@ -507,7 +507,7 @@ struct __sp_access;
 
 }} // namespace __ycxx::__detail
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 // [util.smartptr.shared]
 template <class _Tp>
@@ -759,9 +759,9 @@ shared_ptr(weak_ptr<_Tp>) -> shared_ptr<_Tp>;
 template <class _Tp, class _Dp>
 shared_ptr(unique_ptr<_Tp, _Dp>) -> shared_ptr<_Tp>;
 
-} // namespace std
+}} // namespace std
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 
 struct __sp_access {
   // A shared_ptr taking over one already-counted reference to ctrl.
@@ -789,7 +789,7 @@ struct __sp_access {
 
 }} // namespace __ycxx::__detail
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 // [util.smartptr.weak]
 template <class _Tp>
@@ -954,9 +954,9 @@ public:
   constexpr weak_ptr<const _Tp> weak_from_this() const noexcept { return __weak_this_; }
 };
 
-} // namespace std
+}} // namespace std
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 
 // [util.smartptr.shared.create]: the object form. A is the allocator the caller passed
 // (std::allocator for make_shared); ViaAlloc selects allocator construct/destroy.
@@ -989,7 +989,7 @@ constexpr std::shared_ptr<_Tp> __sp_make_array(const _Ap& a, std::size_t n, cons
 
 }} // namespace __ycxx::__detail
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 // [util.smartptr.shared.create]
 template <class _Tp, class... _Args>
@@ -1234,4 +1234,4 @@ basic_ostream<_Ep, _Tp>& operator<<(basic_ostream<_Ep, _Tp>& __os, const shared_
   return __os;
 }
 
-} // namespace std
+}} // namespace std

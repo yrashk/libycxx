@@ -1,10 +1,10 @@
 // libycxx ABI runtime: type_info objects for _Float16 (mangled DF16_) and pointers to it.
 //
-// §2.9.2 places the type_info objects of the fundamental types in the runtime. rtti.cpp gets
+// §2.9.2 places the type_info objects of the fundamental types in the runtime. rtti_classes.cpp gets
 // them from the compiler (see __fundamental_type_info's destructor there), but Clang 23.1 omits
 // _Float16 from that list although its code references _ZTIDF16_, _ZTIPDF16_ and _ZTIPKDF16_.
 // They are defined here by hand. GCC 16.2 emits the same three objects as weak COMDAT
-// definitions in rtti.cpp; when both end up linked, these strong definitions take precedence,
+// definitions in rtti_classes.cpp; when both end up linked, these strong definitions take precedence,
 // which is harmless since they are identical.
 //
 // std::type_info's constructor is not constexpr, so objects of the ABI classes could not be

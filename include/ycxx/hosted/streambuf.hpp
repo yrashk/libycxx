@@ -3,7 +3,7 @@
 
 #include <ycxx/hosted/ios.hpp>
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 // basic_syncbuf's base marks itself in its basic_streambuf part, so the emit_on_flush family of
 // manipulators can recognize one without RTTI.
 struct __streambuf_tag_access {
@@ -34,7 +34,7 @@ struct __streambuf_get_area {
 };
 }} // namespace __ycxx::__detail
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 template <class __charT, class __traits>
 class basic_streambuf {
@@ -228,4 +228,4 @@ private:
   friend __ycxx::__detail::__streambuf_get_area;
 };
 
-} // namespace std
+}} // namespace std

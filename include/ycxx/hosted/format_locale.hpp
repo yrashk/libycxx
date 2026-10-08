@@ -13,7 +13,7 @@ std::locale std::basic_format_context<_Out, __charT>::locale() {
   return __loc != nullptr ? *__loc : std::locale();
 }
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 // Without a C library (DECISIONS §18: YCXX_PAL=none without 'clib') the classic locale is the only
 // one, and its numpunct values ([facet.numpunct.virtuals]) are used directly: the locale runtime
 // is not built there.
@@ -53,7 +53,7 @@ extern template std::wstring __fmt_get_boolname<wchar_t, __fmt_context<wchar_t>>
 extern template std::locale std::format_context::locale();
 extern template std::locale std::wformat_context::locale();
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 template <class... _Args>
 string format(const locale& __loc, format_string<_Args...> __fmt, _Args&&... __args) {
@@ -117,4 +117,4 @@ size_t formatted_size(const locale& __loc, wformat_string<_Args...> __fmt, _Args
   return __ycxx::__detail::__fmt_vformatted_size<wchar_t>(__fmt.get(), make_wformat_args(__args...), __builtin_addressof(__loc));
 }
 
-} // namespace std
+}} // namespace std

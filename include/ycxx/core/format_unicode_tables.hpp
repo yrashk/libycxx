@@ -3,7 +3,7 @@
 // (DerivedCoreProperties.txt 18.0.0, DerivedGeneralCategory.txt 18.0.0, EastAsianWidth.txt 18.0.0, GraphemeBreakProperty.txt 18.0.0); do not edit.
 #pragma once
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail::__uni {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail::__uni {
 
 inline constexpr char __ucd_version[] = "18.0.0";
 

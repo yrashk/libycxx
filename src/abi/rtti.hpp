@@ -3,7 +3,7 @@
 //
 // The compilers emit type_info objects whose vtable pointers name the vtables of these classes
 // (_ZTVN10__cxxabiv1...E); the vtables, and the type_info objects of the fundamental types, are
-// emitted by rtti.cpp, which defines every class's key function (its destructor). The data
+// emitted by rtti_classes.cpp, which defines every class's key function (its destructor). The data
 // members are laid out exactly as §2.9.4 specifies; the member functions are ours alone.
 #pragma once
 
@@ -122,7 +122,7 @@ public:
 
 } // namespace __cxxabiv1
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __abi {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __abi {
 
 // Which ABI class a type_info object is (its dynamic type, read through typeid).
 enum class __rtti_kind : unsigned char {

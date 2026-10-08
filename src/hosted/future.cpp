@@ -33,6 +33,6 @@ constinit immortal future_object;
 
 } // namespace
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 const error_category& future_category() noexcept { return future_object.__object; }
-} // namespace std
+}} // namespace std

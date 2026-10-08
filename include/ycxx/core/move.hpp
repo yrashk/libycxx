@@ -3,7 +3,7 @@
 
 #include <ycxx/core/meta_base.hpp>
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 template <class _Tp>
 [[nodiscard]] [[__gnu__::__always_inline__]] constexpr _Tp&& forward(remove_reference_t<_Tp>& t) noexcept {
@@ -20,9 +20,9 @@ template <class _Tp>
   return static_cast<remove_reference_t<_Tp>&&>(t);
 }
 
-} // namespace std
+}} // namespace std
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 // [forward]/6: V = OVERRIDE_REF(T&&, COPY_CONST(remove_reference_t<T>, remove_reference_t<U>)).
 template <class _Tp, class _Up>
 using __forward_like_base = std::conditional_t<std::is_const_v<std::remove_reference_t<_Tp>>,
@@ -32,7 +32,7 @@ using __forward_like_t =
     std::conditional_t<__is_lref_v<_Tp&&>, __forward_like_base<_Tp, _Up>&, __forward_like_base<_Tp, _Up>&&>;
 }} // namespace __ycxx::__detail
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 template <class _Tp, class _Up>
 [[nodiscard]] [[__gnu__::__always_inline__]] constexpr auto forward_like(_Up&& __x) noexcept
@@ -62,6 +62,6 @@ template <class _Tp>
 template <class _Tp>
 const _Tp* addressof(const _Tp&&) = delete;
 
-} // namespace std
+}} // namespace std
 
 

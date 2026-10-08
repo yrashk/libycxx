@@ -8,7 +8,7 @@
 
 #include <charconv>
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail::__fpconv {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail::__fpconv {
 
 using __y_u32 = unsigned int;
 using __y_u64 = unsigned long long;

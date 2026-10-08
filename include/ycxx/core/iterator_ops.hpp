@@ -3,7 +3,7 @@
 
 #include <ycxx/core/range_access.hpp>
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 // [iterator.operations]
 template <class _InputIt, class _Distance>
@@ -60,9 +60,9 @@ struct unreachable_sentinel_t {
 };
 inline constexpr unreachable_sentinel_t unreachable_sentinel{};
 
-} // namespace std
+}} // namespace std
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail::__iter_ops {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail::__iter_ops {
 
 struct __advance_fn {
   template <std::input_or_output_iterator _Ip>
@@ -187,9 +187,9 @@ struct __prev_fn {
 
 }} // namespace __ycxx::__detail::__iter_ops
 
-namespace [[__gnu__::__visibility__("hidden")]] std { namespace ranges {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 { namespace ranges {
 inline constexpr __ycxx::__detail::__iter_ops::__advance_fn advance{};
 inline constexpr __ycxx::__detail::__iter_ops::__distance_fn distance{};
 inline constexpr __ycxx::__detail::__iter_ops::__next_fn next{};
 inline constexpr __ycxx::__detail::__iter_ops::__prev_fn prev{};
-}} // namespace std::ranges
+}}} // namespace std::ranges

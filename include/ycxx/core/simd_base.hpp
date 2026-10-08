@@ -30,7 +30,7 @@
 #include <ycxx/core/span.hpp>
 #include <ycxx/core/type_traits.hpp>
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __adl_free {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __adl_free {
 // The ABI tags (see above). R, the register width the layout is built for, is part of the type,
 // so translation units built for different widths do not share a type with two layouts; only the
 // tags of this translation unit's width are enabled.
@@ -45,7 +45,7 @@ template <std::size_t _Np>
 struct __simd_overaligned_flag {};
 }} // namespace __ycxx::__adl_free
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 template <class _Fp>
 inline constexpr bool __simd_is_flag = false;
 template <>
@@ -56,15 +56,15 @@ template <std::size_t _Np>
 inline constexpr bool __simd_is_flag<__ycxx::__adl_free::__simd_overaligned_flag<_Np>> = true;
 }} // namespace __ycxx::__detail
 
-namespace [[__gnu__::__visibility__("hidden")]] std { namespace simd {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 { namespace simd {
 template <class... _Flags>
   requires(__ycxx::__detail::__simd_is_flag<_Flags> && ...)
 struct flags;
 template <size_t _Bytes, class _Abi>
 class basic_mask;
-}} // namespace std::simd
+}}} // namespace std::simd
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 
 // simd-size-type
 using __simd_size_t = int;
@@ -440,7 +440,7 @@ struct __simd_access {
 
 }} // namespace __ycxx::__detail
 
-namespace [[__gnu__::__visibility__("hidden")]] std { namespace simd {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 { namespace simd {
 
 // [simd.flags.overview]
 template <class... _Flags>
@@ -459,9 +459,9 @@ template <size_t _Np>
   requires(std::has_single_bit(_Np))
 inline constexpr flags<__ycxx::__adl_free::__simd_overaligned_flag<_Np>> flag_overaligned{};
 
-}} // namespace std::simd
+}}} // namespace std::simd
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __adl_free {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __adl_free {
 
 // [simd.iterator]: simd-iterator<V>, a random-access iterator over the elements of a basic_vec or
 // basic_mask, yielding prvalues.

@@ -3,7 +3,7 @@
 
 #include <ycxx/core/concepts.hpp>
 
-namespace [[__gnu__::__visibility__("hidden")]] std { namespace ranges {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 { namespace ranges {
 
 template <class _Ip, class _Fp>
 struct in_fun_result {
@@ -160,4 +160,4 @@ struct out_value_result {
   }
 };
 
-}} // namespace std::ranges
+}}} // namespace std::ranges

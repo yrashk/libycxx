@@ -7,7 +7,7 @@
 
 #include <ycxx/config.hpp>
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 
 struct __asm_text {
   char __text[128]{};

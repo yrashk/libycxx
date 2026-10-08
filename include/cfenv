@@ -6,7 +6,7 @@
 #include <ycxx/core/cstddef.hpp>
 #include <fenv.h>
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 using ::fenv_t;
 using ::fexcept_t;
 using ::feclearexcept;
@@ -20,4 +20,4 @@ using ::fegetenv;
 using ::feholdexcept;
 using ::fesetenv;
 using ::feupdateenv;
-} // namespace std
+}} // namespace std

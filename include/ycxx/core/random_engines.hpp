@@ -15,7 +15,7 @@
 #include <ycxx/core/random_base.hpp>
 #include <ycxx/core/vector.hpp>
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 // ---- [rand.util.seedseq] ------------------------------------------------------------------------
 class seed_seq {
@@ -1018,4 +1018,4 @@ using philox4x64 = philox_engine<uint_fast64_t, 64, 4, 10, 0xCA5A826395121157, 0
 // choice.
 using default_random_engine = mt19937;
 
-} // namespace std
+}} // namespace std

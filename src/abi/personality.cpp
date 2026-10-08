@@ -18,7 +18,7 @@
 #include "eh.hpp"
 #include "internal.hpp"
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __abi {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __abi {
 namespace {
 
 enum : unsigned char {
@@ -338,8 +338,9 @@ _Unwind_Reason_Code install(_Unwind_Context* __ctx, _Unwind_Exception* __ue, std
 
 using namespace __ycxx::__abi;
 
-extern "C" [[__gnu__::__visibility__("hidden")]] _Unwind_Reason_Code __gxx_personality_v0(int version, _Unwind_Action actions, std::uint64_t __cls,
-                                                    _Unwind_Exception* __ue, _Unwind_Context* __ctx) {
+// (__gxx_personality_v0 itself is src/abi/entry/cxa_personality.cpp's forwarder, DECISIONS §20.6.)
+extern "C" _Unwind_Reason_Code __ycxx_abi_personality(int version, _Unwind_Action actions, std::uint64_t __cls,
+                                                      _Unwind_Exception* __ue, _Unwind_Context* __ctx) {
   if (version != 1 || !__ue || !__ctx)
     return _URC_FATAL_PHASE1_ERROR;
   const bool native = __is_native(__cls);

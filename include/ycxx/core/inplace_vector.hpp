@@ -30,7 +30,7 @@
 #include <ycxx/core/swap.hpp>
 #include <ycxx/core/utility_base.hpp>
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 
 // Probe: can construct_at begin the lifetime of one element of an array that is a union
 // member with no active member, during constant evaluation (P3074)?
@@ -66,7 +66,7 @@ using __iv_size_t = std::conditional_t<
 
 }} // namespace __ycxx::__detail
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __adl_free {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __adl_free {
 
 template <class _Tp, std::size_t _Np, bool = (_Np == 0)>
 struct __iv_storage;
@@ -219,7 +219,7 @@ struct __iv_storage<_Tp, _Np, false> {
 
 }} // namespace __ycxx::__adl_free
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 template <class _Tp, size_t _Np>
 class inplace_vector : __ycxx::__adl_free::__iv_storage<_Tp, _Np> {
@@ -688,4 +688,4 @@ constexpr typename inplace_vector<_Tp, _Np>::size_type erase(inplace_vector<_Tp,
   return std::erase_if(c, [&value](const _Tp& e) { return static_cast<bool>(e == value); });
 }
 
-} // namespace std
+}} // namespace std

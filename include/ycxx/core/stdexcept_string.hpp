@@ -7,7 +7,7 @@
 #include <ycxx/core/basic_string.hpp>
 #include <ycxx/core/stdexcept.hpp>
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 constexpr logic_error::logic_error(const string& __what_arg) : __msg_(__what_arg.c_str(), __what_arg.size()) {}
 constexpr runtime_error::runtime_error(const string& __what_arg) : __msg_(__what_arg.c_str(), __what_arg.size()) {}
@@ -19,4 +19,4 @@ constexpr range_error::range_error(const string& __what_arg) : runtime_error(__w
 constexpr overflow_error::overflow_error(const string& __what_arg) : runtime_error(__what_arg) {}
 constexpr underflow_error::underflow_error(const string& __what_arg) : runtime_error(__what_arg) {}
 
-} // namespace std
+}} // namespace std

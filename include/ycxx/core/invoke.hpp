@@ -4,12 +4,12 @@
 #include <ycxx/core/meta_base.hpp>
 #include <ycxx/core/move.hpp>
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 template <class _Tp>
 class reference_wrapper;
-} // namespace std
+}} // namespace std
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 
 template <class _Tp>
 inline constexpr bool __is_reference_wrapper = false;
@@ -162,7 +162,7 @@ template <class _Rp, class _Fp, class... _Args>
 
 }} // namespace __ycxx::__detail
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 template <class _Fp, class... _Args>
 struct invoke_result {};
@@ -206,5 +206,5 @@ constexpr _Rp invoke_r(_Fp&& __f, _Args&&... __args) noexcept(is_nothrow_invocab
   return __ycxx::__detail::invoke_r<_Rp>(static_cast<decltype(__f)&&>(__f), static_cast<decltype(__args)&&>(__args)...);
 }
 
-} // namespace std
+}} // namespace std
 

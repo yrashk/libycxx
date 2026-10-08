@@ -10,7 +10,7 @@
 // ---------------------------------------------------------------------------------------------
 // [pointer.traits]
 // ---------------------------------------------------------------------------------------------
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 
 // First template argument of a template specialization, and rebinding of it.
 template <class _Tp>
@@ -73,7 +73,7 @@ struct __pointer_traits_base<_Ptr> {
 
 }} // namespace __ycxx::__detail
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 template <class _Ptr>
 struct pointer_traits : __ycxx::__detail::__pointer_traits_base<_Ptr> {};
@@ -195,15 +195,15 @@ const volatile _Tp* start_lifetime_as_array(const volatile void* p, size_t n) no
 }
 
 // [specialized.construct], [specialized.destroy]
-} // namespace std
+}} // namespace std
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 template <class _Tp, class... _Args>
 concept __construct_at_ok =
     !std::is_unbounded_array_v<_Tp> && requires(void* p, _Args&&... __args) { ::new (p) _Tp(static_cast<_Args&&>(__args)...); };
 }} // namespace __ycxx::__detail
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 template <class _Tp, class... _Args>
   requires __ycxx::__detail::__construct_at_ok<_Tp, _Args...>
@@ -243,9 +243,9 @@ constexpr _ForwardIt destroy_n(_ForwardIt first, _Size n) {
   return first;
 }
 
-} // namespace std
+}} // namespace std
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 namespace __construct_at_ns {
 struct __fn {
   template <class _Tp, class... _Args>
@@ -267,12 +267,12 @@ struct __fn {
 } // namespace destroy_at_ns
 }} // namespace __ycxx::__detail
 
-namespace [[__gnu__::__visibility__("hidden")]] std { namespace ranges {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 { namespace ranges {
 inline constexpr __ycxx::__detail::__construct_at_ns::__fn construct_at{};
 inline constexpr __ycxx::__detail::__destroy_at_ns::__fn destroy_at{};
-}} // namespace std::ranges
+}}} // namespace std::ranges
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 // [allocator.tag]
 struct allocator_arg_t {
@@ -350,12 +350,12 @@ public:
   }
 };
 
-} // namespace std
+}} // namespace std
 
 // ---------------------------------------------------------------------------------------------
 // [allocator.traits]
 // ---------------------------------------------------------------------------------------------
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 
 template <class _Ap, class _Default>
 struct __alloc_pointer {
@@ -464,7 +464,7 @@ struct __alloc_rebind<_Ap, _Tp> {
 
 }} // namespace __ycxx::__detail
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 template <class _Alloc>
 struct allocator_traits {
@@ -529,9 +529,9 @@ struct allocator_traits {
   }
 };
 
-} // namespace std
+}} // namespace std
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 // Whether allocator_traits<A>::construct(a, p, args...) cannot throw: a container may then make
 // room first and construct afterwards, with no rollback of the room it made.
 template <class _Alloc, class _Tp, class... _Args>

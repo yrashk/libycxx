@@ -3,7 +3,7 @@
 #include <new>
 #include <ycxx/hosted/hazard_pointer.hpp>
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 namespace {
 
 __hp_record* records = nullptr;        // atomic; push-only

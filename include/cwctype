@@ -7,7 +7,7 @@
 #include <ycxx/core/char_traits.hpp>
 #include <wctype.h>
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 using ::wctrans_t;
 using ::wctype_t;
 using ::iswalnum;
@@ -28,4 +28,4 @@ using ::towlower;
 using ::towupper;
 using ::wctrans;
 using ::wctype;
-} // namespace std
+}} // namespace std

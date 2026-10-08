@@ -16,7 +16,7 @@
 #  include <ycxx/core/mbstate.hpp>
 #endif
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 using wint_t = __WINT_TYPE__;
 
@@ -32,11 +32,11 @@ using u32streampos = fpos<mbstate_t>;
 template <class __charT>
 struct char_traits; // only the specializations below are defined
 
-} // namespace std
+}} // namespace std
 
 // In __ycxx::__adl_free (DECISIONS §2): char_traits<C> is a template argument of basic_string_view,
 // so this base's namespace is an associated namespace for ADL on every string view.
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __adl_free {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __adl_free {
 
 // The operations shared by all five specializations. CharT is the character type, IntT its
 // int_type, U the type whose built-in < defines lt() (unsigned char for char).
@@ -134,7 +134,7 @@ struct __char_traits_base {
 
 }} // namespace __ycxx::__adl_free
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 // [char.traits.specializations]. eof() values: EOF (-1) for char; for the others a value that is
 // not a valid code unit / code point (all bits set), and WEOF for wchar_t.
@@ -151,4 +151,4 @@ struct char_traits<char32_t>
 template <>
 struct char_traits<wchar_t> : __ycxx::__adl_free::__char_traits_base<wchar_t, wint_t, wchar_t, static_cast<wint_t>(-1)> {};
 
-} // namespace std
+}} // namespace std

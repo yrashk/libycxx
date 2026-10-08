@@ -44,7 +44,7 @@ ycxx_pal_handle handle(void* __f) noexcept { return reinterpret_cast<ycxx_pal_ha
 
 } // namespace
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 
 void* __file_open(const char* name, std::ios_base::openmode __mode) noexcept {
   const int flags = file_flags(__mode);

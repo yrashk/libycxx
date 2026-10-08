@@ -21,7 +21,7 @@
 
 #include <ycxx/hosted/regex_compile.hpp>
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 
 template <class _It>
 struct __re_cap {

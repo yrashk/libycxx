@@ -16,10 +16,11 @@
 
 #include "demangle.hpp"
 
-namespace [[__gnu__::__visibility__("hidden")]] __cxxabiv1 {
-extern "C" {
+#include "../abi/entry.hpp"
 
-char* __cxa_demangle(const char* __mangled_name, char* __output_buffer, std::size_t* __length, int* __status) {
+// abi::__cxa_demangle itself is src/hosted/cxa_demangle_entry.cpp's forwarder (DECISIONS §20.6).
+extern "C" char* __ycxx_abi_demangle(const char* __mangled_name, char* __output_buffer, std::size_t* __length,
+                                     int* __status) {
   int __st = 0;
   char* __result = nullptr;
   if (__mangled_name == nullptr || (__output_buffer != nullptr && __length == nullptr)) {
@@ -55,6 +56,3 @@ char* __cxa_demangle(const char* __mangled_name, char* __output_buffer, std::siz
     *__status = __st;
   return __result;
 }
-
-} // extern "C"
-} // namespace __cxxabiv1

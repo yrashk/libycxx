@@ -15,7 +15,7 @@
 #include <ycxx/core/new.hpp>
 #include <ycxx/core/error.hpp>
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 // [unique.ptr.dltr.dflt]
 template <class _Tp>
@@ -48,9 +48,9 @@ struct default_delete<_Tp[]> {
   }
 };
 
-} // namespace std
+}} // namespace std
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 
 // unique_ptr<T, D>::pointer ([unique.ptr.single.general]/4).
 template <class _Tp, class _Dp>
@@ -77,7 +77,7 @@ concept __uptr_array_ptr = std::is_same_v<_Up, _Pointer> ||
 
 }} // namespace __ycxx::__detail
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 // [unique.ptr.single]
 template <class _Tp, class _Dp = default_delete<_Tp>>
@@ -427,4 +427,4 @@ basic_ostream<_Ep, _Tp>& operator<<(basic_ostream<_Ep, _Tp>& __os, const unique_
   return __os;
 }
 
-} // namespace std
+}} // namespace std

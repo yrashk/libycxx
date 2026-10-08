@@ -14,7 +14,7 @@
 #include <ycxx/core/cstdint.hpp>
 #include <ycxx/core/type_traits.hpp>
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 
 template <class _Vp>
 concept __atomic_integral = is_integral_v<_Vp> && !std::is_same_v<_Vp, bool>;
@@ -73,7 +73,7 @@ constexpr _Vp __atomic_ptr_add(_Vp p, std::ptrdiff_t n) noexcept {
 
 }} // namespace __ycxx::__detail
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __adl_free {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __adl_free {
 
 // The storage and the operations every atomic<T> has.
 template <class _Tp>
@@ -354,7 +354,7 @@ struct __atomic_ref_base {
 
 }} // namespace __ycxx::__adl_free
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 // ---- [atomics.ref.generic] ---------------------------------------------------------------------
 // The constructors every atomic_ref has; `_Base` is the specialization's base class.
@@ -2230,4 +2230,4 @@ void atomic_init(atomic<_Tp>* __object, typename atomic<_Tp>::value_type __desir
   __object->store(__desired, memory_order::relaxed);
 }
 
-} // namespace std
+}} // namespace std

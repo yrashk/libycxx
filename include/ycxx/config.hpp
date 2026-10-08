@@ -36,6 +36,31 @@
 #else
 #  define _YCXX_TRANSITIVE_INCLUDES 1
 #endif
+// YCXX_SHARED (1: shared mode, 0: static mode; DECISIONS §20): whether this translation unit is
+// built for libycxx's shared library or its static archives. The default is the installation's
+// (<ycxx/generated/linkage.hpp>, written by the build when it has a shared library only), else
+// static. Every image is built in one mode; the images of a process may differ.
+#ifndef YCXX_SHARED
+#  if __has_include(<ycxx/generated/linkage.hpp>)
+#    include <ycxx/generated/linkage.hpp>
+#  endif
+#  ifdef _YCXX_DEFAULT_SHARED
+#    define YCXX_SHARED _YCXX_DEFAULT_SHARED
+#  else
+#    define YCXX_SHARED 0
+#  endif
+#endif
+// The visibility of every block of the library's namespaces (`namespace
+// [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {`, DECISIONS §2,
+// §20.3): hidden in static mode, exported from the shared library in shared mode. A macro because
+// the attribute takes only a string literal (§1 rule 3's one exception; tools/check_preprocessor.py
+// allows it only as that attribute's argument).
+#if YCXX_SHARED
+#  error "YCXX_SHARED: this libycxx has no shared library yet (DECISIONS §20.10, step 4)"
+#  define _YCXX_VISIBILITY "default"
+#else
+#  define _YCXX_VISIBILITY "hidden"
+#endif
 
 // ---------------------------------------------------------------------------------------------
 // Parse-level switches. Use with #if only where the code cannot be written otherwise.
@@ -339,7 +364,7 @@
 #  define _YCXX_FAST16_IS_LONG 0
 #endif
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 
 namespace __cfg {
 #if defined(__clang__)
@@ -395,6 +420,8 @@ inline constexpr bool __debug = _YCXX_LAYER_DEBUG;
 inline constexpr bool filesystem = _YCXX_LAYER_FILESYSTEM;
 } // namespace layer
 inline constexpr bool __hardened = YCXX_HARDENED;
+// Shared mode (YCXX_SHARED, DECISIONS §20).
+inline constexpr bool __shared = YCXX_SHARED;
 inline constexpr bool __reflection = _YCXX_HAS_REFLECTION;
 #if defined(__SIZEOF_INT128__)
 inline constexpr bool __has_int128 = true;

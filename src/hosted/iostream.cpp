@@ -380,7 +380,7 @@ bool synced = true;  // sync_with_stdio state
 } // namespace
 
 // The objects, as storage; <iostream> declares them with their stream types.
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 alignas(istream) unsigned char cin[sizeof(istream)];
 alignas(ostream) unsigned char cout[sizeof(ostream)];
 alignas(ostream) unsigned char cerr[sizeof(ostream)];
@@ -389,7 +389,7 @@ alignas(wistream) unsigned char wcin[sizeof(wistream)];
 alignas(wostream) unsigned char wcout[sizeof(wostream)];
 alignas(wostream) unsigned char wcerr[sizeof(wostream)];
 alignas(wostream) unsigned char wclog[sizeof(wostream)];
-} // namespace std
+}} // namespace std
 
 namespace {
 
@@ -433,7 +433,7 @@ void flush_objects() {
 
 } // namespace
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 ios_base::Init::Init() {
   static const bool constructed = construct_objects();
@@ -456,7 +456,7 @@ bool ios_base::sync_with_stdio(bool sync) {
   return __old;
 }
 
-} // namespace std
+}} // namespace std
 
 namespace {
 #if _YCXX_HAS_INIT_PRIORITY

@@ -1,0 +1,26 @@
+# tools/check_visibility.py's data (DECISIONS §2, §20).
+
+[plain-std]
+# The names a plain-std block may declare (`namespace [[__gnu__::__visibility__("hidden")]] std {
+# // plain std (DECISIONS §20.5)`): what the compilers or the platform name in ::std itself rather
+# than in the inline ABI namespace std::__y1. Each is hidden in every mode. Found by experiment
+# (docs/design/shared-probes on the shared-lib-design branch; tests/ycxx/conformance/abi_namespace).
+align_val_t                     # both compilers predeclare it (the implicit allocation functions)
+destroying_delete_t             # GCC recognises a destroying operator delete only by it
+destroying_delete               # its tag object, kept with it
+nothrow_t nothrow               # the replaceable functions' mangled names (_ZnwmRKSt9nothrow_t), which
+                                # sanitizers intercept and src/runtime/new hides by name
+initializer_list                # GCC deduces from braced lists only to it
+byte to_integer operator        # GCC's may-alias rule for std::byte; its operators, with it
+size_t ptrdiff_t nullptr_t max_align_t  # <cstddef>'s using-declarations, in std::byte's block
+terminate                       # Clang's __clang_call_terminate calls _ZSt9terminatev by name
+meta                            # GCC (-freflection) predeclares namespace std::meta
+
+[per-image]
+# Sources whose __ycxx blocks stay hidden in every mode: each image that links libycxx has its own
+# copy (DECISIONS §20.6): the default allocation functions, their thunks and the allocation table,
+# and the _Float16 type_info objects that Clang does not emit itself.
+src/runtime/new/
+src/hosted/new/
+src/freestanding/new/
+src/abi/rtti_float16.cpp

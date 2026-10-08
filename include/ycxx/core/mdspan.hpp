@@ -6,7 +6,7 @@
 #include <ycxx/core/execution_policy.hpp>
 #include <ycxx/core/mdspan_layout.hpp>
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 
 // Visits every multidimensional index of e in row-major order: f(i0, ..., i_{rank-1}) with
 // index_type arguments.
@@ -46,7 +46,7 @@ concept __md_standard_mapping =
 
 }} // namespace __ycxx::__detail
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 template <class _ElementType, class _Extents, class _LayoutPolicy = layout_right,
           class _AccessorPolicy = default_accessor<_ElementType>>
@@ -284,9 +284,9 @@ mdspan(typename _AccessorType::data_handle_type, const _MappingType&,
        const _AccessorType&) -> mdspan<typename _AccessorType::element_type, typename _MappingType::extents_type,
                                       typename _MappingType::layout_type, _AccessorType>;
 
-} // namespace std
+}} // namespace std
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 
 template <class _Ep, class _Xp, class _Lp, class _Ap>
 inline constexpr bool __md_is_mdspan<std::mdspan<_Ep, _Xp, _Lp, _Ap>> = true;
@@ -306,7 +306,7 @@ concept __md_fillable = __md_is_mdspan<_Dst> && std::is_assignable_v<typename _D
 
 }} // namespace __ycxx::__detail
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 // [mdspan.copy]
 template <class _Src, class _Dst>
@@ -333,6 +333,6 @@ void fill(_ExecutionPolicy&&, const _Dst& __dst, const _Tp& value) noexcept {
   std::fill(__dst, value);
 }
 
-} // namespace std
+}} // namespace std
 
 #include <ycxx/core/mdspan_sub.hpp>

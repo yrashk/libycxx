@@ -67,6 +67,8 @@ COMPAT_HEADERS = [h[1:] + ".h" for h in C_HEADERS] + ["stdbit.h", "stdckdint.h"]
 # The namespaces nested in std that the draft names (std::views is an alias of
 # std::ranges::views). Any other nested namespace of std must be inline (the implementation's
 # std::ranges::__cpo); it is redeclared inline in the module.
+# The inline namespace that holds the standard entities (DECISIONS §20.4); transparent here.
+ABI_NAMESPACE = "__y1"
 STD_NAMESPACES = {
     "chrono", "chrono_literals", "complex_literals", "contracts", "execution", "filesystem", "linalg",
     "literals", "meta", "numbers", "parallel_scheduler_replacement", "placeholders", "pmr", "ranges",
@@ -272,6 +274,12 @@ def parse_clang_dump(text):
             if ns is root and name != "std":
                 stack.append((depth, None, "skip"))
                 continue
+            if ns.parent is root and name == ABI_NAMESPACE:
+                # The inline ABI namespace std::__y1 (DECISIONS §20.4) is transparent: its members
+                # are exported as std's, and the module never names it.
+                namespaces[addr] = ns
+                stack.append((depth, ns, "ns"))
+                continue
             child = ns.child(name, " inline " in f" {remainder} ")
             namespaces[addr] = child
             stack.append((depth, child, "ns"))
@@ -344,11 +352,17 @@ PROBE = r"""
 #include <string>
 // The headers come first (-include). One line per named member: its qualified name, the file of
 // its declaration (empty when it is the previous line's) and the line.
+constexpr std::string_view ABI_NAMESPACE = "__y1";
 consteval void walk(std::meta::info ns, const std::string& prefix, std::string& out, std::string_view& file) {
   for (auto m : std::meta::members_of(ns, std::meta::access_context::unchecked())) {
     if (!std::meta::has_identifier(m))
       continue;
     std::string_view name = std::meta::identifier_of(m);
+    if (prefix.empty() && name == ABI_NAMESPACE && std::meta::is_namespace(m)) {
+      // The inline ABI namespace std::__y1 (DECISIONS §20.4) is transparent: its members are std's.
+      walk(m, prefix, out, file);
+      continue;
+    }
     auto where = std::meta::source_location_of(m);
     std::string_view f = where.file_name();
     out.append(prefix).append(name).append("\t").append(f == file ? std::string_view() : f).append("\t");

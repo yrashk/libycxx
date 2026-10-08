@@ -5,14 +5,14 @@
 #include <ycxx/core/iterator_core.hpp>
 #include <ycxx/core/memory_base.hpp>
 
-namespace [[__gnu__::__visibility__("hidden")]] std { namespace ranges {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 { namespace ranges {
 template <class _Tp>
 constexpr bool enable_borrowed_range = false;
 template <class _Tp>
 constexpr bool disable_sized_range = false;
-}} // namespace std::ranges
+}}} // namespace std::ranges
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 // Helpers of the range-access CPOs. They live here, not in the CPOs' namespaces, and are always
 // called qualified: a CPO object's namespace is an associated namespace of its type, so it must
 // declare nothing ADL could find, and an unqualified call could reach a user's decay_copy.
@@ -28,7 +28,7 @@ constexpr auto __to_unsigned_like(_Tp t) noexcept {
 }
 }} // namespace __ycxx::__detail
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail::__range_access {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail::__range_access {
 
 template <class _Tp>
 concept __class_or_enum = std::is_class_v<std::remove_cvref_t<_Tp>> || std::is_union_v<std::remove_cvref_t<_Tp>> ||
@@ -82,15 +82,15 @@ struct __fn {
 
 }} // namespace __ycxx::__detail::__range_access
 
-namespace [[__gnu__::__visibility__("hidden")]] std { namespace ranges {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 { namespace ranges {
 inline namespace __cpo {
 inline constexpr __ycxx::__detail::__range_access::__begin_ns::__fn begin{};
 }
 template <class _Tp>
 using iterator_t = decltype(ranges::begin(std::declval<_Tp&>()));
-}} // namespace std::ranges
+}}} // namespace std::ranges
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail::__range_access {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail::__range_access {
 
 // ---- end ----
 namespace __end_ns {
@@ -134,7 +134,7 @@ struct __fn {
 
 }} // namespace __ycxx::__detail::__range_access
 
-namespace [[__gnu__::__visibility__("hidden")]] std { namespace ranges {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 { namespace ranges {
 inline namespace __cpo {
 inline constexpr __ycxx::__detail::__range_access::__end_ns::__fn end{};
 }
@@ -160,9 +160,9 @@ using range_rvalue_reference_t = iter_rvalue_reference_t<iterator_t<_Rp>>;
 template <range _Rp>
 using range_common_reference_t = iter_common_reference_t<iterator_t<_Rp>>;
 
-}} // namespace std::ranges
+}}} // namespace std::ranges
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail::__range_access {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail::__range_access {
 
 template <class _Tp>
 concept __integer_like_ = __integer_like<_Tp>;
@@ -216,13 +216,13 @@ struct __fn {
 
 }} // namespace __ycxx::__detail::__range_access
 
-namespace [[__gnu__::__visibility__("hidden")]] std { namespace ranges {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 { namespace ranges {
 inline namespace __cpo {
 inline constexpr __ycxx::__detail::__range_access::__size_ns::__fn size{};
 }
-}} // namespace std::ranges
+}}} // namespace std::ranges
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail::__range_access {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail::__range_access {
 
 // ---- ssize ----
 namespace __ssize_ns {
@@ -339,7 +339,7 @@ struct __fn {
 
 }} // namespace __ycxx::__detail::__range_access
 
-namespace [[__gnu__::__visibility__("hidden")]] std { namespace ranges {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 { namespace ranges {
 inline namespace __cpo {
 inline constexpr __ycxx::__detail::__range_access::__ssize_ns::__fn ssize{};
 inline constexpr __ycxx::__detail::__range_access::__empty_ns::__fn empty{};
@@ -371,12 +371,12 @@ concept contiguous_range = random_access_range<_Tp> && contiguous_iterator<itera
 template <class _Tp>
 concept common_range = range<_Tp> && same_as<iterator_t<_Tp>, sentinel_t<_Tp>>;
 
-}} // namespace std::ranges
+}}} // namespace std::ranges
 
 // ---------------------------------------------------------------------------------------------
 // [iterator.range] std::begin & co.
 // ---------------------------------------------------------------------------------------------
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 template <class _Cp>
 constexpr auto begin(_Cp& c) noexcept(noexcept(c.begin())) -> decltype(c.begin()) {
@@ -448,4 +448,4 @@ constexpr _Tp* data(_Tp (&a)[_Np]) noexcept {
 }
 // initializer_list overloads of empty/data are provided generically through il.empty()/il.data().
 
-} // namespace std
+}} // namespace std

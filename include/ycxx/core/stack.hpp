@@ -11,7 +11,7 @@
 #include <ycxx/core/sequence_support.hpp>
 #include <ycxx/core/swap.hpp>
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 template <class _Tp, class _Container = deque<_Tp>>
 class stack {
@@ -162,4 +162,4 @@ constexpr void swap(stack<_Tp, _Container>& __x, stack<_Tp, _Container>& y) noex
   __x.swap(y);
 }
 
-} // namespace std
+}} // namespace std

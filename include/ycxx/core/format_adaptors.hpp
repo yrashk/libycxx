@@ -8,7 +8,7 @@
 #include <ycxx/core/format_decl.hpp>
 #include <ycxx/core/range_access.hpp>
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 template <class _Tp, class _Container>
 class stack;
 template <class _Tp, class _Container>
@@ -20,9 +20,9 @@ template <range _Rp>
   requires is_object_v<_Rp>
 class ref_view;
 } // namespace ranges
-} // namespace std
+}} // namespace std
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 template <class _Rp, class __charT>
 concept __fmt_const_formattable_range =
     std::ranges::input_range<const _Rp> && std::formattable<std::ranges::range_reference_t<const _Rp>, __charT>;
@@ -30,7 +30,7 @@ template <class _Rp, class __charT>
 using __fmt_maybe_const = std::conditional_t<__fmt_const_formattable_range<_Rp, __charT>, const _Rp, _Rp>;
 }} // namespace __ycxx::__detail
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __adl_free {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __adl_free {
 
 template <class __charT, class _Adaptor, class _Container>
 class __fmt_adaptor_formatter {
@@ -57,7 +57,7 @@ public:
 
 }} // namespace __ycxx::__adl_free
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 template <class __charT, class _Tp, formattable<__charT> _Container>
 struct formatter<stack<_Tp, _Container>, __charT>
@@ -75,4 +75,4 @@ inline constexpr bool enable_nonlocking_formatter_optimization<queue<_Tp, _Conta
 template <class _Tp, class _Container, class _Compare>
 inline constexpr bool enable_nonlocking_formatter_optimization<priority_queue<_Tp, _Container, _Compare>> = false;
 
-} // namespace std
+}} // namespace std

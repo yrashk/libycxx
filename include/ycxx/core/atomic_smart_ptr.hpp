@@ -11,7 +11,7 @@
 #include <ycxx/core/atomic.hpp>
 #include <ycxx/core/shared_ptr.hpp>
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 
 // Holds the striped lock of an atomic smart pointer (no-op during constant evaluation).
 class __sp_atomic_guard {
@@ -36,7 +36,7 @@ public:
 
 }} // namespace __ycxx::__detail
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __adl_free {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __adl_free {
 
 // The base of atomic<shared_ptr<T>> and atomic<weak_ptr<T>>; P is shared_ptr<T> or weak_ptr<T>.
 template <class _Pp>
@@ -127,7 +127,7 @@ public:
 
 }} // namespace __ycxx::__adl_free
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 // [util.smartptr.atomic.shared]
 template <class _Tp>
@@ -157,4 +157,4 @@ struct atomic<weak_ptr<_Tp>> : __ycxx::__adl_free::__sp_atomic<weak_ptr<_Tp>> {
   constexpr void operator=(weak_ptr<_Tp> __desired) noexcept { this->store(static_cast<weak_ptr<_Tp>&&>(__desired)); }
 };
 
-} // namespace std
+}} // namespace std

@@ -34,7 +34,7 @@ constinit wait_entry waits[table_size] = {};
 
 } // namespace
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 
 void __atomic_lock(const volatile void* __addr) noexcept {
   ycxx_pal_u32* s = &locks[slot_of(__addr)].state;

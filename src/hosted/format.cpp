@@ -4,7 +4,7 @@
 #include <format>
 #include <locale>
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 
 template __fmt_numpunct<char> __fmt_get_numpunct<char, __fmt_context<char>>(__fmt_context<char>&);
 template __fmt_numpunct<wchar_t> __fmt_get_numpunct<wchar_t, __fmt_context<wchar_t>>(__fmt_context<wchar_t>&);

@@ -68,7 +68,7 @@ bool __grow(_Tp*& array, std::size_t& size, std::size_t __idx) noexcept {
 
 } // namespace
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 const error_category& iostream_category() noexcept { return iostream_object.__object; }
 
@@ -237,9 +237,9 @@ void ios_base::__storage_failed() {
     ::__ycxx::__detail::__raise_ios_failure("std::ios_base::iword/pword: cannot allocate the storage");
 }
 
-} // namespace std
+}} // namespace std
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 
 void __throw_ios_failure(const char* what) { throw std::ios_base::failure(what); }
 

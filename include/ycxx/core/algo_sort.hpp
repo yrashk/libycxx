@@ -13,7 +13,7 @@
 #include <ycxx/core/algo_mutate.hpp>
 #include <ycxx/core/new.hpp>
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 
 // ---- temporary buffer --------------------------------------------------------------------
 // Uninitialized storage for up to `capacity` objects of type T. At run time it comes from
@@ -1226,7 +1226,7 @@ constexpr bool __prev_permutation_impl(_Ip first, _Ip last, _Cp less) {
 // =============================================================================================
 // std:: forms
 // =============================================================================================
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 // [sort], [stable.sort], [partial.sort], [partial.sort.copy], [is.sorted]
 template <class _RandomAccessIterator, class _Compare>
@@ -1541,12 +1541,12 @@ constexpr bool prev_permutation(_BidirectionalIterator first, _BidirectionalIter
   return std::prev_permutation(first, last, less<>{});
 }
 
-} // namespace std
+}} // namespace std
 
 // =============================================================================================
 // std::ranges:: forms
 // =============================================================================================
-namespace [[__gnu__::__visibility__("hidden")]] std { namespace ranges {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 { namespace ranges {
 template <class _I1, class _I2>
 using partial_sort_copy_result = in_out_result<_I1, _I2>;
 template <class _Ip, class _O1, class _O2>
@@ -1565,9 +1565,9 @@ template <class _Ip>
 using next_permutation_result = in_found_result<_Ip>;
 template <class _Ip>
 using prev_permutation_result = in_found_result<_Ip>;
-}} // namespace std::ranges
+}}} // namespace std::ranges
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail::__ranges_algo {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail::__ranges_algo {
 
 using std::ranges::borrowed_iterator_t;
 using std::ranges::borrowed_subrange_t;
@@ -2110,7 +2110,7 @@ struct __permutation_fn {
 
 }} // namespace __ycxx::__detail::__ranges_algo
 
-namespace [[__gnu__::__visibility__("hidden")]] std { namespace ranges {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 { namespace ranges {
 inline constexpr __ycxx::__adl_free::__ranges_par_algo<__ycxx::__detail::__ranges_algo::__sort_fn, __ycxx::__detail::par::kind::sort> sort{};
 inline constexpr __ycxx::__adl_free::__ranges_par_algo<__ycxx::__detail::__ranges_algo::__stable_sort_fn, __ycxx::__detail::par::kind::stable_sort> stable_sort{};
 inline constexpr __ycxx::__adl_free::__ranges_par_algo<__ycxx::__detail::__ranges_algo::__partial_sort_fn, __ycxx::__detail::par::kind::partial_sort> partial_sort{};
@@ -2142,4 +2142,4 @@ inline constexpr __ycxx::__adl_free::__ranges_par_algo<__ycxx::__detail::__range
 inline constexpr __ycxx::__adl_free::__ranges_par_algo<__ycxx::__detail::__ranges_algo::__is_heap_until_fn, __ycxx::__detail::par::kind::is_heap_until> is_heap_until{};
 inline constexpr __ycxx::__detail::__ranges_algo::__permutation_fn<true> next_permutation{};
 inline constexpr __ycxx::__detail::__ranges_algo::__permutation_fn<false> prev_permutation{};
-}} // namespace std::ranges
+}}} // namespace std::ranges

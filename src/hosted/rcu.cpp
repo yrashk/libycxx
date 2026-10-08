@@ -66,7 +66,7 @@
 #include <ycxx/hosted/thread_support.hpp>
 #include <ycxx/pal.h>
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 namespace {
 
 using epoch_t = unsigned long long;

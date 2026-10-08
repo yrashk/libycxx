@@ -3,7 +3,7 @@
 
 #include <ycxx/core/type_traits.hpp>
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 
 // The "unspecified type" that the comparison category operators accept: only the literal 0.
 struct __literal_zero {
@@ -19,7 +19,7 @@ enum class __ord_value : signed char { less = -1, equivalent = 0, greater = 1, u
 
 }} // namespace __ycxx::__detail
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 class partial_ordering {
   using _Vp = __ycxx::__detail::__ord_value;
@@ -132,9 +132,9 @@ constexpr bool is_lteq(partial_ordering __cmp) noexcept { return __cmp <= 0; }
 constexpr bool is_gt(partial_ordering __cmp) noexcept { return __cmp > 0; }
 constexpr bool is_gteq(partial_ordering __cmp) noexcept { return __cmp >= 0; }
 
-} // namespace std
+}} // namespace std
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 // 0 = partial, 1 = weak, 2 = strong, -1 = not a comparison category
 template <class _Tp>
 inline constexpr int __cmp_cat_rank = -1;
@@ -169,7 +169,7 @@ struct __cmp_cat_of<2> {
 };
 }} // namespace __ycxx::__detail
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 template <class... _Ts>
 struct common_comparison_category {
@@ -178,12 +178,12 @@ struct common_comparison_category {
 template <class... _Ts>
 using common_comparison_category_t = typename common_comparison_category<_Ts...>::type;
 
-} // namespace std
+}} // namespace std
 
 // ---------------------------------------------------------------------------------------------
 // Concepts needed by three_way_comparable (subset of <concepts>, defined here to avoid a cycle).
 // ---------------------------------------------------------------------------------------------
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 
 template <class _Tp>
 concept __boolean_testable_impl = __is_convertible(_Tp, bool);
@@ -244,7 +244,7 @@ concept __comparison_common_type_with = __comparison_common_type_with_impl<__rem
 
 }} // namespace __ycxx::__detail
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 template <class _Tp, class _Cat = partial_ordering>
 concept three_way_comparable =
@@ -275,9 +275,9 @@ struct compare_three_way_result<_Tp, _Up> {
 template <class _Tp, class _Up = _Tp>
 using compare_three_way_result_t = typename compare_three_way_result<_Tp, _Up>::type;
 
-} // namespace std
+}} // namespace std
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 // Neither operand has class or enumeration type, so an operator expression on them is always
 // the built-in one ([over.match.oper]/1). Checked first: looking for operator functions by
 // ADL would complete the classes that pointer operands point to.
@@ -304,7 +304,7 @@ concept __y_builtin_ptr_three_way =
     (__no_class_operand<_Tp, _Up> || !__user_three_way_candidate<_Tp, _Up>);
 }} // namespace __ycxx::__detail
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 struct compare_three_way {
   template <class _Tp, class _Up>
@@ -334,5 +334,5 @@ struct compare_three_way {
   using is_transparent = void;
 };
 
-} // namespace std
+}} // namespace std
 

@@ -12,7 +12,7 @@
 #include <ycxx/core/mdspan.hpp>
 #include <ycxx/core/tuple.hpp>
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 // [mdspan.sub.range.slices]
 template <class _OffsetType, class _ExtentType, class _StrideType>
@@ -63,9 +63,9 @@ struct full_extent_t {
 };
 inline constexpr full_extent_t full_extent{};
 
-} // namespace std
+}} // namespace std
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 
 template <class _Tp>
 inline constexpr bool __md_is_extent_slice = false;
@@ -544,7 +544,7 @@ constexpr auto __md_submdspan_mapping(const _Mp& m, const _Sl&... __slices) {
 
 }} // namespace __ycxx::__detail
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 // [mdspan.sub.map.left] ... [mdspan.sub.map.rightpad]
 template <class _Extents>
@@ -607,9 +607,9 @@ constexpr auto subextents(const extents<_IndexType, _Extents...>& __src, _SliceS
   }(index_sequence_for<_SliceSpecifiers...>());
 }
 
-} // namespace std
+}} // namespace std
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail::__md_adl {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail::__md_adl {
 // sliceable-mapping ([mdspan.sub.map.sliceable]/6): submdspan_mapping found by argument-dependent
 // lookup only (no declaration of that name is visible from here).
 template <class _LM, std::size_t... _Ip>
@@ -628,7 +628,7 @@ constexpr auto __call_submdspan_mapping(const _LM& __lm, const _Sl&... __slices)
 }
 }} // namespace __ycxx::__detail::__md_adl
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 // [mdspan.sub.sub]
 template <class _ElementType, class _Extents, class _LayoutPolicy, class _AccessorPolicy, class... _SliceSpecifiers>
@@ -646,4 +646,4 @@ constexpr auto submdspan(const mdspan<_ElementType, _Extents, _LayoutPolicy, _Ac
   }(index_sequence_for<_SliceSpecifiers...>());
 }
 
-} // namespace std
+}} // namespace std

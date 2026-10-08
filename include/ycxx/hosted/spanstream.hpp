@@ -5,7 +5,7 @@
 #include <ycxx/core/span.hpp>
 #include <ycxx/hosted/istream.hpp>
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 template <class __charT, class __traits>
 class basic_spanbuf : public basic_streambuf<__charT, __traits> {
@@ -283,4 +283,4 @@ void swap(basic_spanstream<__charT, __traits>& __x, basic_spanstream<__charT, __
   __x.swap(y);
 }
 
-} // namespace std
+}} // namespace std

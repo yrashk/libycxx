@@ -5,7 +5,9 @@
 #include <ycxx/core/cstddef.hpp>
 #include <ycxx/core/version.hpp>
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+// In plain std (DECISIONS §20.5): GCC deduces `auto` from a braced list, and a range-for over one,
+// only with ::std::initializer_list.
+namespace [[__gnu__::__visibility__("hidden")]] std { // plain std (DECISIONS §20.5)
 
 // Layout {pointer, size} is what both GCC and Clang construct for braced-init-lists.
 template <class _Ep>

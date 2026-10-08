@@ -24,7 +24,7 @@
 #include <ycxx/hosted/chrono_tz.hpp>
 #include <ycxx/hosted/format_locale.hpp>
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __adl_free {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __adl_free {
 // [time.format]: local-time-format-t.
 template <class _Duration>
 struct __local_time_format_t {
@@ -34,16 +34,16 @@ struct __local_time_format_t {
 };
 }} // namespace __ycxx::__adl_free
 
-namespace [[__gnu__::__visibility__("hidden")]] std { namespace chrono {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 { namespace chrono {
 template <class _Duration>
 __ycxx::__adl_free::__local_time_format_t<_Duration> local_time_format(local_time<_Duration> time,
                                                                 const string* abbrev = nullptr,
                                                                 const seconds* __offset_sec = nullptr) {
   return {time, abbrev, __offset_sec};
 }
-}} // namespace std::chrono
+}}} // namespace std::chrono
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 
 // ---- the fields of a value ------------------------------------------------------------------
 
@@ -1457,7 +1457,7 @@ void __chrono_append(std::string& s, const _Tp& __v) {
 
 }} // namespace __ycxx::__detail
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 // [time.format]: the formatters.
 template <class _Rep, class _Period, __ycxx::__detail::__fmt_char __charT>
@@ -1587,9 +1587,9 @@ inline constexpr bool enable_nonlocking_formatter_optimization<chrono::sys_info>
 template <>
 inline constexpr bool enable_nonlocking_formatter_optimization<chrono::local_info> = true;
 
-} // namespace std
+}} // namespace std
 
-namespace [[__gnu__::__visibility__("hidden")]] std { namespace chrono {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 { namespace chrono {
 
 // [time.duration.io]/1
 template <class __charT, class __traits, class _Rep, class _Period>
@@ -1779,4 +1779,4 @@ ambiguous_local_time::ambiguous_local_time(const local_time<_Duration>& __tp, co
         return s;
       }()) {}
 
-}} // namespace std::chrono
+}}} // namespace std::chrono

@@ -1,12 +1,13 @@
 // libycxx ABI runtime: throwing and catching ([ABI-EH] 2.4-2.5), the per-thread exception
 // state, terminate, and the exception-object lifetime shared with exception_ptr.
 #include "eh.hpp"
+#include "entry.hpp"
 #include "internal.hpp"
 
 #include <new>
 #include <ycxx/pal.h>
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __abi {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __abi {
 namespace {
 
 // ---- Layout ----
@@ -178,7 +179,7 @@ void release_at_handler_exit(__exception_header* h) {
 }
 
 [[noreturn]] void __terminate_for(_Unwind_Exception* __ue) noexcept {
-  __cxa_begin_catch(__ue);
+  __ycxx_abi_begin_catch(__ue);
   std::terminate();
 }
 
@@ -212,42 +213,24 @@ void release_at_handler_exit(__exception_header* h) {
 
 using namespace __ycxx::__abi;
 
-// The runtime's entry points are declared hidden (DECISIONS §2), but GCC declares the entry points
-// that its exception-handling code calls itself, with default visibility, and keeps that
-// visibility for their definitions (a visibility attribute here is ignored, with a warning). An
-// assembler directive hides them, so that a shared object built with libycxx never exports half of
-// its runtime: with the rest hidden, a process holding another runtime (libstdc++'s) would bind
-// these names to one runtime and the others to the other. Clang already hides them.
-namespace {
-consteval __asm_text hide_compiler_declared_entry_points() {
-  __asm_text a;
-  for (const char* name : {"__cxa_allocate_exception", "__cxa_free_exception", "__cxa_throw", "__cxa_begin_catch",
-                           "__cxa_end_catch", "__cxa_call_unexpected", "__cxa_call_terminate"}) {
-    // Mach-O symbols carry the C prefix '_'.
-    a.append(__ycxx::__detail::__cfg::__darwin ? ".private_extern _" : ".hidden ");
-    a.append(name);
-    a.append("\n");
-  }
-  return a;
-}
-} // namespace
-asm((hide_compiler_declared_entry_points()));
+// The entry points under the runtime's own names (entry.hpp, DECISIONS §20.6); the ABI's names
+// (__cxa_throw, ...) are src/abi/entry/cxa_exception.cpp's forwarders.
 
 extern "C" {
 
-[[__gnu__::__visibility__("hidden")]] __eh_globals* __cxa_get_globals() noexcept { return __globals(); }
-[[__gnu__::__visibility__("hidden")]] __eh_globals* __cxa_get_globals_fast() noexcept { return __globals(); }
+void* __ycxx_abi_get_globals() noexcept { return __globals(); }
+void* __ycxx_abi_get_globals_fast() noexcept { return __globals(); }
 
-void* __cxa_allocate_exception(std::size_t __thrown_size) noexcept {
+void* __ycxx_abi_allocate_exception(std::size_t __thrown_size) noexcept {
   __exception_header* h = allocate_header(__thrown_size);
   h->__reference_count = 1;
   return h + 1;
 }
 
-void __cxa_free_exception(void* __thrown) noexcept { free_header(__header_of_object(__thrown)); }
+void __ycxx_abi_free_exception(void* __thrown) noexcept { free_header(__header_of_object(__thrown)); }
 
 // (GCC predeclares __cxa_throw with a void* type_info parameter.)
-[[noreturn]] void __cxa_throw(void* __thrown, void* __tinfo, void (*__dest)(void*)) {
+[[noreturn]] void __ycxx_abi_throw(void* __thrown, void* __tinfo, void (*__dest)(void*)) {
   __exception_header* h = __header_of_object(__thrown);
   h->__exception_type = static_cast<std::type_info*>(__tinfo);
   h->__exception_destructor = __dest;
@@ -255,14 +238,14 @@ void __cxa_free_exception(void* __thrown) noexcept { free_header(__header_of_obj
   raise(h);
 }
 
-[[__gnu__::__visibility__("hidden")]] void* __cxa_get_exception_ptr(void* __ue) noexcept {
+void* __ycxx_abi_get_exception_ptr(void* __ue) noexcept {
   _Unwind_Exception* __u = static_cast<_Unwind_Exception*>(__ue);
   if (!__is_native(__u->exception_class))
     return __u + 1;
   return __header_of_unwind(__u)->__adjusted_ptr;
 }
 
-void* __cxa_begin_catch(void* __ue) noexcept {
+void* __ycxx_abi_begin_catch(void* __ue) noexcept {
   _Unwind_Exception* __u = static_cast<_Unwind_Exception*>(__ue);
   __eh_globals* __g = __globals();
   __exception_header* h = __header_of_unwind(__u);
@@ -285,7 +268,7 @@ void* __cxa_begin_catch(void* __ue) noexcept {
   return h->__adjusted_ptr;
 }
 
-void __cxa_end_catch() {
+void __ycxx_abi_end_catch() {
   __eh_globals* __g = __globals();
   __exception_header* h = __g->__caught_exceptions;
   if (!h)
@@ -305,7 +288,7 @@ void __cxa_end_catch() {
   }
 }
 
-[[noreturn, __gnu__::__visibility__("hidden")]] void __cxa_rethrow() {
+[[noreturn]] void __ycxx_abi_rethrow() {
   __eh_globals* __g = __globals();
   __exception_header* h = __g->__caught_exceptions;
   if (!h)
@@ -327,7 +310,7 @@ void __cxa_end_catch() {
   __terminate_for(&h->__unwind_header);
 }
 
-[[__gnu__::__visibility__("hidden")]] std::type_info* __cxa_current_exception_type() noexcept {
+std::type_info* __ycxx_abi_current_exception_type() noexcept {
   __exception_header* h = __globals()->__caught_exceptions;
   if (!h || !__is_native(h->__unwind_header.exception_class))
     return nullptr;
@@ -336,16 +319,21 @@ void __cxa_end_catch() {
 
 // Landing pads that must terminate: GCC calls this for a violated exception specification
 // (C++26 has only noexcept, which GCC encodes as a gap in the call-site table instead).
-[[noreturn]] void __cxa_call_unexpected(void* __ue) noexcept { __terminate_for(static_cast<_Unwind_Exception*>(__ue)); }
-[[noreturn]] void __cxa_call_terminate(void* __ue) noexcept {
+[[noreturn]] void __ycxx_abi_call_unexpected(void* __ue) noexcept { __terminate_for(static_cast<_Unwind_Exception*>(__ue)); }
+[[noreturn]] void __ycxx_abi_call_terminate(void* __ue) noexcept {
   if (__ue)
-    __cxa_begin_catch(__ue);
-  std::terminate();
+    __ycxx_abi_begin_catch(__ue);
+  __ycxx_abi_terminate();
+}
+
+// std::terminate ([except.terminate]); std::terminate itself is src/abi/entry/cxa_exception.cpp's.
+[[noreturn]] void __ycxx_abi_terminate() noexcept {
+  __ycxx::__abi::call_terminate_handler(std::get_terminate());
 }
 
 } // extern "C"
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 // [set.terminate]/2 leaves open whether null designates the default handler; here it does.
 terminate_handler set_terminate(terminate_handler __f) noexcept {
@@ -355,8 +343,7 @@ terminate_handler set_terminate(terminate_handler __f) noexcept {
 terminate_handler get_terminate() noexcept {
   return __atomic_load_n(&__ycxx::__abi::terminate_handler_v, __ATOMIC_ACQUIRE);
 }
-[[noreturn]] void terminate() noexcept { __ycxx::__abi::call_terminate_handler(get_terminate()); }
 
 int uncaught_exceptions() noexcept { return static_cast<int>(__ycxx::__abi::__globals()->uncaught_exceptions); }
 
-} // namespace std
+}} // namespace std

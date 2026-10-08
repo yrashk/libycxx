@@ -11,11 +11,11 @@
 #include <ycxx/core/exception.hpp>
 #include <ycxx/core/optional.hpp>
 
-namespace [[__gnu__::__visibility__("hidden")]] std { namespace execution {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 { namespace execution {
 class run_loop;
-}} // namespace std::execution
+}}} // namespace std::execution
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __adl_free {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __adl_free {
 struct __exec_run_loop_opstate_base {
   void (*execute)(__exec_run_loop_opstate_base*) noexcept;
   std::execution::run_loop* __loop;
@@ -27,7 +27,7 @@ class __exec_run_loop_scheduler;
 class __exec_run_loop_sender;
 }} // namespace __ycxx::__adl_free
 
-namespace [[__gnu__::__visibility__("hidden")]] std { namespace execution {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 { namespace execution {
 
 class run_loop {
   template <class>
@@ -115,9 +115,9 @@ public:
   }
 };
 
-}} // namespace std::execution
+}}} // namespace std::execution
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __adl_free {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __adl_free {
 
 template <class _Rcvr>
 struct __exec_run_loop_opstate : private __exec_run_loop_opstate_base {
@@ -203,18 +203,18 @@ inline __exec_run_loop_sender __exec_run_loop_scheduler::schedule() const noexce
 
 }} // namespace __ycxx::__adl_free
 
-namespace [[__gnu__::__visibility__("hidden")]] std { namespace execution {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 { namespace execution {
 inline __ycxx::__adl_free::__exec_run_loop_scheduler run_loop::get_scheduler() noexcept { return __ycxx::__adl_free::__exec_run_loop_scheduler(this); }
-}} // namespace std::execution
+}}} // namespace std::execution
 
 // ---------------------------------------------------------------------------------------------
 // [exec.sync.wait], [exec.sync.wait.var]
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 class error_code;
 class system_error;
-} // namespace std
+}} // namespace std
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail { namespace __exec {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail { namespace __exec {
 // AS-EXCEPT-PTR(err) ([exec.general]/8)
 template <class _Err>
 std::exception_ptr __as_except_ptr(_Err&& __err) noexcept {
@@ -229,7 +229,7 @@ std::exception_ptr __as_except_ptr(_Err&& __err) noexcept {
 }
 }}} // namespace __ycxx::__detail::__exec
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __adl_free {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __adl_free {
 struct __exec_sync_wait_env {
   std::execution::run_loop* __loop;
   auto query(std::execution::get_scheduler_t) const noexcept { return __loop->get_scheduler(); }
@@ -238,7 +238,7 @@ struct __exec_sync_wait_env {
 };
 }} // namespace __ycxx::__adl_free
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail { namespace __exec {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail { namespace __exec {
 using __sync_wait_env = ::__ycxx::__adl_free::__exec_sync_wait_env;
 template <std::execution::sender_in<__sync_wait_env> _Sndr>
 using __sync_wait_result_type =
@@ -254,7 +254,7 @@ struct __sync_wait_state {
 };
 }}} // namespace __ycxx::__detail::__exec
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __adl_free {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __adl_free {
 template <class _Sndr>
 struct __exec_sync_wait_receiver {
   using receiver_concept = std::execution::receiver_tag;
@@ -283,7 +283,7 @@ struct __exec_sync_wait_receiver {
 };
 }} // namespace __ycxx::__adl_free
 
-namespace [[__gnu__::__visibility__("hidden")]] std { namespace this_thread {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 { namespace this_thread {
 
 struct sync_wait_t {
   template <execution::sender _Sndr>
@@ -339,4 +339,4 @@ struct sync_wait_with_variant_t {
 inline constexpr sync_wait_t sync_wait{};
 inline constexpr sync_wait_with_variant_t sync_wait_with_variant{};
 
-}} // namespace std::this_thread
+}}} // namespace std::this_thread

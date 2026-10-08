@@ -23,7 +23,7 @@
 #include <ycxx/hosted/chrono_tz.hpp>
 #include <ycxx/hosted/locale_extra.hpp>
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 
 struct __chrono_parsed {
   enum : unsigned {
@@ -844,7 +844,7 @@ constexpr bool __chrono_point_of(const __chrono_parsed& r, _Duration& out, bool 
 
 }} // namespace __ycxx::__detail
 
-namespace [[__gnu__::__visibility__("hidden")]] std { namespace chrono {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 { namespace chrono {
 
 // [time.duration.io]/3
 template <class __charT, class __traits, class _Rep, class _Period, class _Alloc = allocator<__charT>>
@@ -1075,9 +1075,9 @@ basic_istream<__charT, __traits>& from_stream(basic_istream<__charT, __traits>& 
                                           });
 }
 
-}} // namespace std::chrono
+}}} // namespace std::chrono
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __adl_free {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __adl_free {
 
 // [time.parse]: the manipulator; `_Mode` 0: (fmt, tp), 1: + abbrev, 2: + offset, 3: + both.
 template <int _Mode, class __charT, class __traits, class _Alloc, class _Parsable>
@@ -1110,13 +1110,13 @@ public:
 
 }} // namespace __ycxx::__adl_free
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 template <class __charT, class __traits, class _Parsable, class... _Extra>
 concept __chrono_parsable = requires(std::basic_istream<__charT, __traits>& is, const __charT* __fmt, _Parsable& __tp,
                                    _Extra... __extra) { from_stream(is, __fmt, __tp, __extra...); };
 }} // namespace __ycxx::__detail
 
-namespace [[__gnu__::__visibility__("hidden")]] std { namespace chrono {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 { namespace chrono {
 
 template <class __charT, class _Parsable>
   requires __ycxx::__detail::__chrono_parsable<__charT, char_traits<__charT>, _Parsable>
@@ -1167,4 +1167,4 @@ auto parse(const basic_string<__charT, __traits, _Alloc>& __fmt, _Parsable& __tp
       __fmt.c_str(), __tp, __builtin_addressof(abbrev), __builtin_addressof(offset));
 }
 
-}} // namespace std::chrono
+}}} // namespace std::chrono

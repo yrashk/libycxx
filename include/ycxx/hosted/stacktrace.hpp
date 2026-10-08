@@ -24,11 +24,11 @@
 #include <ycxx/core/memory_resource.hpp>
 #include <ycxx/core/vector.hpp>
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 class stacktrace_entry;
-}
+}}
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 
 // src/hosted/stacktrace.cpp. Writes to buf the addresses of at most n frames of the calling
 // thread's stack, starting with the frame whose return address is ra (the caller of
@@ -43,7 +43,7 @@ std::uint_least32_t __stacktrace_line(std::uintptr_t __pc);
 
 }} // namespace __ycxx::__detail
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 // [stacktrace.entry]
 class stacktrace_entry {
@@ -273,4 +273,4 @@ struct hash<basic_stacktrace<_Allocator>> {
   }
 };
 
-} // namespace std
+}} // namespace std

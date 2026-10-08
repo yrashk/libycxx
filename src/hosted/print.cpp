@@ -5,7 +5,7 @@
 #include <system_error>
 #include <cerrno>
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 
 namespace {
 
@@ -62,7 +62,7 @@ void __vprint_ostream(std::ostream& __os, std::string_view __fmt, std::format_ar
 
 }} // namespace __ycxx::__detail
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 void vprint_unicode(FILE* stream, string_view __fmt, format_args __args) {
   __ycxx::__detail::format_to_file(stream, __fmt, __args, false);
@@ -99,4 +99,4 @@ void println(ostream& __os) {
   __ycxx::__detail::__vprint_ostream(__os, "\n", format_args(make_format_args()), false);
 }
 
-} // namespace std
+}} // namespace std

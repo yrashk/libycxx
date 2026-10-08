@@ -3,7 +3,7 @@
 
 #include <ycxx/core/meta_base.hpp>
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 // [intseq]
 template <class _Tp, _Tp... _Ip>
@@ -21,4 +21,4 @@ using make_index_sequence = make_integer_sequence<size_t, _Np>;
 template <class... _Tp>
 using index_sequence_for = make_index_sequence<sizeof...(_Tp)>;
 
-} // namespace std
+}} // namespace std

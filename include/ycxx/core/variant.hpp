@@ -17,7 +17,7 @@
 #include <ycxx/core/swap.hpp>
 #include <initializer_list>
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 class bad_variant_access : public exception {
 public:
@@ -28,15 +28,15 @@ public:
   constexpr const char* what() const noexcept override { return "bad variant access"; }
 };
 
-} // namespace std
+}} // namespace std
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 [[noreturn]] [[__gnu__::__cold__]] constexpr void __throw_bad_variant_access() {
   ::__ycxx::__detail::__raise_with(ycxx_error_bad_variant_access, "std::bad_variant_access", [] { return std::bad_variant_access(); });
 }
 }} // namespace __ycxx::__detail
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 template <class... _Types>
 class variant;
@@ -90,9 +90,9 @@ struct variant_alternative<_Ip, variant<_Types...>> {
 
 inline constexpr size_t variant_npos = static_cast<size_t>(-1);
 
-} // namespace std
+}} // namespace std
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 
 // ---- index dispatch ---------------------------------------------------------------------------
 // Calls f(integral_constant<size_t, i>{}) for a run-time i < N. Small N uses a compare chain,
@@ -256,7 +256,7 @@ struct __variant_access {
 
 }} // namespace __ycxx::__detail
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 template <class... _Types>
 class variant {
@@ -603,12 +603,12 @@ constexpr add_pointer_t<const _Tp> get_if(const variant<_Types...>* __v) noexcep
   return std::get_if<__ycxx::__detail::__index_of<_Tp, _Types...>()>(__v);
 }
 
-} // namespace std
+}} // namespace std
 
 // =============================================================================================
 // [variant.visit]
 // =============================================================================================
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 
 template <class... _Ts>
 constexpr auto&& __as_variant(std::variant<_Ts...>& __v) noexcept {
@@ -688,7 +688,7 @@ constexpr _Rp __visit_entry(_Vis&& __vis, _Vp&&... __vars) {
 
 }} // namespace __ycxx::__detail
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 template <class _Visitor, class... _Variants>
   requires(requires { typename __ycxx::__detail::__as_variant_t<_Variants>; } && ...)
@@ -856,4 +856,4 @@ struct hash<variant<_Types...>> {
   }
 };
 
-} // namespace std
+}} // namespace std

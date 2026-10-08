@@ -470,7 +470,7 @@
 #  endif
 #endif
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 consteval bool __errno_macros_match_errc() {
   using std::errc;
   const struct {

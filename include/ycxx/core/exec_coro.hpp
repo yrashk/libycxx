@@ -4,7 +4,7 @@
 
 #include <ycxx/core/exec_run_loop.hpp>
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __adl_free {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __adl_free {
 // The environment of awaitable-receiver ([exec.as.awaitable]/4.4): the promise's, forwarding
 // queries only.
 template <class _Promise>
@@ -73,7 +73,7 @@ public:
 };
 }} // namespace __ycxx::__adl_free
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail { namespace __exec {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail { namespace __exec {
 // adapt-for-await-completion(s) ([exec.as.awaitable]/8)
 template <class _Sp>
 constexpr decltype(auto) __adapt_for_await_completion(_Sp&& s) {
@@ -117,7 +117,7 @@ concept __as_awaitable_via_sender_awaitable =
     __as_awaitable_sender<_Expr, _Promise> && __awaitable_sender<__awaitable_sender_t<_Expr, _Promise>, _Promise>;
 }}} // namespace __ycxx::__detail::__exec
 
-namespace [[__gnu__::__visibility__("hidden")]] std { namespace execution {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 { namespace execution {
 
 // [exec.as.awaitable]
 struct as_awaitable_t {
@@ -175,4 +175,4 @@ private:
   coroutine_handle<> (*__stopped_handler_)(void*) noexcept = &__default_unhandled_stopped;
 };
 
-}} // namespace std::execution
+}}} // namespace std::execution

@@ -20,7 +20,7 @@
 #include <ycxx/core/cstddef.hpp>
 #include <ycxx/core/type_traits.hpp>
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 template <class _CharT>
 struct char_traits;
 template <class _Tp>
@@ -46,9 +46,9 @@ class basic_format_context;
 // [format.formatter.locking]
 template <class _Tp>
 inline constexpr bool enable_nonlocking_formatter_optimization = false;
-} // namespace std
+}} // namespace std
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __adl_free {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __adl_free {
 // format_context::iterator (format_base.hpp).
 template <class __charT>
 class __fmt_iter;
@@ -61,7 +61,7 @@ struct __fmt_disabled {
 };
 }} // namespace __ycxx::__adl_free
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 
 template <class __charT>
 concept __fmt_char = __is_same(__charT, char) || __is_same(__charT, wchar_t);
@@ -124,16 +124,16 @@ typename _Context::iterator __fmt_format_float(_Context& __ctx, _Tp value, const
 
 }} // namespace __ycxx::__detail
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 // [format.formattable]
 template <class _Tp, class __charT>
 concept formattable =
     __ycxx::__detail::__fmt_formattable_with<remove_reference_t<_Tp>, basic_format_context<__ycxx::__adl_free::__fmt_iter<__charT>, __charT>>;
-} // namespace std
+}} // namespace std
 
 // ---- the formatter specializations of [format.formatter.spec] -----------------------------------
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __adl_free {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __adl_free {
 
 // The formatters interpreting a std-format-spec.
 template <class __charT, __ycxx::__detail::__fmt_cat _Cat>
@@ -161,7 +161,7 @@ protected:
 
 }} // namespace __ycxx::__adl_free
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 // /2.1: characters.
 template <__ycxx::__detail::__fmt_char __charT>
@@ -314,4 +314,4 @@ inline constexpr bool enable_nonlocking_formatter_optimization<void*> = true;
 template <>
 inline constexpr bool enable_nonlocking_formatter_optimization<const void*> = true;
 
-} // namespace std
+}} // namespace std

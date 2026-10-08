@@ -6,7 +6,7 @@
 #include <ycxx/core/compare.hpp>
 #include <ycxx/core/utility_base.hpp>
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 // Converts any pointer-ish operand to an integer so that pointer comparisons form a strict
 // total order even across unrelated objects ([comparisons.general]/2).
 template <class _Tp>
@@ -78,7 +78,7 @@ constexpr bool __total_less(const _Tp& a, const _Up& b) {
 }
 }} // namespace __ycxx::__detail
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 // ---- arithmetic --------------------------------------------------------------------------------
 template <class _Tp = void>
@@ -433,16 +433,16 @@ struct less_equal {
 } // namespace ranges
 
 // ---- [refwrap] -------------------------------------------------------------------------------
-} // namespace std
+}} // namespace std
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 template <class _Tp>
 void __refwrap_fun(_Tp&) noexcept;
 template <class _Tp>
 void __refwrap_fun(_Tp&&) = delete;
 }} // namespace __ycxx::__detail
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 template <class _Tp>
 class reference_wrapper {
@@ -536,9 +536,9 @@ template <class _Tp>
 void cref(const _Tp&&) = delete;
 
 // common_reference with reference_wrapper ([refwrap.common.ref])
-} // namespace std
+}} // namespace std
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 template <class _Tp>
 inline constexpr bool __is_ref_wrapper_v = false;
 template <class _Tp>
@@ -550,7 +550,7 @@ concept __ref_wrap_common_reference_exists_with =
     std::convertible_to<_RQ, std::common_reference_t<typename _Rp::type&, _TQ>>;
 }} // namespace __ycxx::__detail
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 template <class _Rp, class _Tp, template <class> class _RQual, template <class> class _TQual>
   requires(__ycxx::__detail::__ref_wrap_common_reference_exists_with<_Rp, _Tp, _RQual<_Rp>, _TQual<_Tp>> &&
@@ -565,4 +565,4 @@ struct basic_common_reference<_Tp, _Rp, _TQual, _RQual> {
   using type = common_reference_t<typename _Rp::type&, _TQual<_Tp>>;
 };
 
-} // namespace std
+}} // namespace std

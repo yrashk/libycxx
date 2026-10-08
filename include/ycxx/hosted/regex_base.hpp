@@ -16,7 +16,7 @@
 #include <ycxx/core/error.hpp>
 #include <ycxx/hosted/locale_base.hpp>
 
-namespace [[__gnu__::__visibility__("hidden")]] std { namespace regex_constants {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 { namespace regex_constants {
 
 // [re.synopt]
 enum syntax_option_type : unsigned {};
@@ -93,9 +93,9 @@ inline constexpr error_type error_badrepeat = error_type(11);
 inline constexpr error_type error_complexity = error_type(12);
 inline constexpr error_type error_stack = error_type(13);
 
-}} // namespace std::regex_constants
+}}} // namespace std::regex_constants
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 // [re.badexp]. The constructor (what() is a fixed message per code) and the destructor (the key
 // function) are in the hosted runtime.
@@ -112,9 +112,9 @@ public:
   const char* what() const noexcept override { return runtime_error::what(); }
 };
 
-} // namespace std
+}} // namespace std
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 
 // src/hosted/regex.cpp. The names are ASCII, already narrowed; class names lower-cased.
 // The class mask of a name of Table 121 (0 if unknown); icase maps lower and upper to alpha.
@@ -144,7 +144,7 @@ inline constexpr unsigned __regex_word_bit = 1u << 16;
 
 }} // namespace __ycxx::__detail
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 // [re.traits]
 template <class __charT>
@@ -274,4 +274,4 @@ private:
   const collate<__charT>* __col_ = nullptr;
 };
 
-} // namespace std
+}} // namespace std

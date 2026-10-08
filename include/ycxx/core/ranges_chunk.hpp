@@ -6,7 +6,7 @@
 #include <ycxx/core/algo_nonmod.hpp>
 #include <ycxx/core/bind.hpp>
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 template <class _Ip>
 constexpr _Ip __div_ceil(_Ip num, _Ip __denom) {
   _Ip r = num / __denom;
@@ -24,7 +24,7 @@ template <class _Vp>
 concept __slide_caches_first = !__slide_caches_nothing<_Vp> && !__slide_caches_last<_Vp>;
 }} // namespace __ycxx::__detail
 
-namespace [[__gnu__::__visibility__("hidden")]] std { namespace ranges {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 { namespace ranges {
 
 // =============================================================================================
 // [range.chunk]
@@ -1065,9 +1065,9 @@ stride_view(_Rp&&, range_difference_t<_Rp>) -> stride_view<views::all_t<_Rp>>;
 template <class _Vp>
 constexpr bool enable_borrowed_range<stride_view<_Vp>> = enable_borrowed_range<_Vp>;
 
-}} // namespace std::ranges
+}}} // namespace std::ranges
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail::__view_fn {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail::__view_fn {
 // views::X(E, N) is X_view(E, N); views::X(N) binds N.
 template <template <class> class _View>
 struct __count_fn {
@@ -1101,9 +1101,9 @@ struct __chunk_by_fn {
 };
 }} // namespace __ycxx::__detail::__view_fn
 
-namespace [[__gnu__::__visibility__("hidden")]] std { namespace ranges::views {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 { namespace ranges::views {
 inline constexpr __ycxx::__detail::__view_fn::__count_fn<chunk_view> chunk{};
 inline constexpr __ycxx::__detail::__view_fn::__count_fn<slide_view> slide{};
 inline constexpr __ycxx::__detail::__view_fn::__chunk_by_fn chunk_by{};
 inline constexpr __ycxx::__detail::__view_fn::__count_fn<stride_view> stride{};
-}} // namespace std::ranges::views
+}}} // namespace std::ranges::views

@@ -17,7 +17,7 @@
 #include <ycxx/core/algo_results.hpp>
 #include <ycxx/core/execution_policy.hpp>
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 
 // [special.mem.concepts]
 template <class _Ip>
@@ -77,7 +77,7 @@ __uninit_guard(_Ip, _Ip*) -> __uninit_guard<_Ip>;
 
 }} // namespace __ycxx::__detail
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 // [uninitialized.construct.default]
 template <class _NoThrowForwardIterator>
@@ -190,12 +190,12 @@ constexpr _NoThrowForwardIterator uninitialized_fill_n(_NoThrowForwardIterator f
   return cur;
 }
 
-} // namespace std
+}} // namespace std
 
 // ---------------------------------------------------------------------------------------------
 // std::ranges forms
 // ---------------------------------------------------------------------------------------------
-namespace [[__gnu__::__visibility__("hidden")]] std { namespace ranges {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 { namespace ranges {
 template <class _Ip, class _Op>
 using uninitialized_copy_result = in_out_result<_Ip, _Op>;
 template <class _Ip, class _Op>
@@ -204,9 +204,9 @@ template <class _Ip, class _Op>
 using uninitialized_move_result = in_out_result<_Ip, _Op>;
 template <class _Ip, class _Op>
 using uninitialized_move_n_result = in_out_result<_Ip, _Op>;
-}} // namespace std::ranges
+}}} // namespace std::ranges
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail::__uninit_fn {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail::__uninit_fn {
 
 using std::iter_difference_t;
 using std::iter_value_t;
@@ -503,7 +503,7 @@ struct destroy_n {
 
 }} // namespace __ycxx::__detail::__uninit_fn
 
-namespace [[__gnu__::__visibility__("hidden")]] std { namespace ranges {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 { namespace ranges {
 inline constexpr __ycxx::__detail::__uninit_fn::__default_construct uninitialized_default_construct{};
 inline constexpr __ycxx::__detail::__uninit_fn::__default_construct_n uninitialized_default_construct_n{};
 inline constexpr __ycxx::__detail::__uninit_fn::__value_construct uninitialized_value_construct{};
@@ -516,4 +516,4 @@ inline constexpr __ycxx::__detail::__uninit_fn::fill uninitialized_fill{};
 inline constexpr __ycxx::__detail::__uninit_fn::fill_n uninitialized_fill_n{};
 inline constexpr __ycxx::__detail::__uninit_fn::destroy destroy{};
 inline constexpr __ycxx::__detail::__uninit_fn::destroy_n destroy_n{};
-}} // namespace std::ranges
+}}} // namespace std::ranges

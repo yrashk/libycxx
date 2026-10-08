@@ -38,7 +38,7 @@ extern "C" void* memccpy(void* __s1, const void* __s2, int c, __SIZE_TYPE__ n);
 #endif
 
 #if _YCXX_HOSTED
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 using ::memcpy;
 using ::memccpy;
 using ::memmove;
@@ -73,10 +73,10 @@ inline const char* strrchr(const char* s, int c) noexcept { return __builtin_str
 inline char* strrchr(char* s, int c) noexcept { return __builtin_strrchr(s, c); }
 inline const char* strstr(const char* __s1, const char* __s2) noexcept { return __builtin_strstr(__s1, __s2); }
 inline char* strstr(char* __s1, const char* __s2) noexcept { return __builtin_strstr(__s1, __s2); }
-} // namespace std
+}} // namespace std
 #endif
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 // memset_explicit (C23 7.26.6.2): memset whose stores are kept even when the object is never read
 // again: the empty asm statement claims to read all memory through s. A template, as <cmath>'s
 // functions are, so a C library's ::memset_explicit wins unqualified calls.
@@ -86,7 +86,7 @@ inline void* memset_explicit(void* s, int c, size_t n) noexcept {
   asm volatile("" : : "r"(s) : "memory");
   return s;
 }
-} // namespace std
+}} // namespace std
 
 // The renamed C functions' names in the global namespace, now naming libycxx's own.
 #if _YCXX_HOSTED

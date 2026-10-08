@@ -8,7 +8,7 @@
 #include <ycxx/core/format_unicode.hpp>
 #include <ycxx/hosted/stacktrace.hpp>
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 template <>
 struct formatter<stacktrace_entry> {
@@ -55,4 +55,4 @@ inline constexpr bool enable_nonlocking_formatter_optimization<stacktrace_entry>
 template <class _Allocator>
 inline constexpr bool enable_nonlocking_formatter_optimization<basic_stacktrace<_Allocator>> = true;
 
-} // namespace std
+}} // namespace std

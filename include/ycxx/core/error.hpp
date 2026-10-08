@@ -62,7 +62,7 @@ enum ycxx_error_kind : int {
 
 } // extern "C"
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 
 [[noreturn]] [[__gnu__::__cold__]] inline void __assertion_failed(const char* __msg) noexcept {
    ::ycxx_error_handler(ycxx_error_assertion, __msg);

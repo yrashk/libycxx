@@ -13,7 +13,7 @@
 #include <ycxx/hosted/ios.hpp>
 #include <ycxx/hosted/streambuf.hpp> // the default iterators work on stream buffers
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 
 // ---- out of line (src/hosted/num.cpp) ---------------------------------------------------------
 
@@ -173,7 +173,7 @@ public:
 
 }} // namespace __ycxx::__detail
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 // [locale.num.get]
 template <class __charT, class _InputIterator>
@@ -702,4 +702,4 @@ private:
 template <class __charT, class _OutputIterator>
 locale::id num_put<__charT, _OutputIterator>::id;
 
-} // namespace std
+}} // namespace std

@@ -6,7 +6,7 @@
 #include <ycxx/hosted/istream.hpp>
 #include <ycxx/hosted/locale_extra.hpp>
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 
 template <class _Tp>
 inline constexpr bool __is_basic_string = false;
@@ -201,7 +201,7 @@ struct __quoted_inout {
 
 }} // namespace __ycxx::__detail
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 // [std.manip]
 inline __ycxx::__detail::__ios_manip<__ycxx::__detail::__resetiosflags_fn> resetiosflags(ios_base::fmtflags mask) {
@@ -259,4 +259,4 @@ __ycxx::__detail::__quoted_out<__charT, __traits> quoted(basic_string_view<__cha
   return {s.data(), s.size(), __delim, __escape};
 }
 
-} // namespace std
+}} // namespace std

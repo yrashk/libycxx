@@ -13,7 +13,7 @@
 #include <ctime>
 #include <ycxx/hosted/locale_num.hpp>
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 
 // time_put stage: the characters strftime produces for "%<modifier><format>" in the "C"
 // locale (src/hosted/time.cpp). Writes at most cap characters; returns the full length.
@@ -67,7 +67,7 @@ constexpr void __complete_date(std::tm& t, bool __wday, bool __yday) noexcept {
 
 }} // namespace __ycxx::__detail
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 // ---- [locale.time.get] ------------------------------------------------------------------------
 class time_base {
@@ -75,9 +75,9 @@ public:
   enum dateorder { no_order, dmy, mdy, ymd, ydm };
 };
 
-} // namespace std
+}} // namespace std
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 
 // LC_TIME of a named locale as time_get_byname reads it (nl_langinfo_l; strings converted to
 // charT through the name's LC_CTYPE).
@@ -370,7 +370,7 @@ std::size_t __named_strftime(const __named_locale* h, wchar_t* __buf, std::size_
 
 }} // namespace __ycxx::__detail
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 template <class __charT, class _InputIterator>
 class time_get : public locale::facet, public time_base {
@@ -1178,9 +1178,9 @@ locale::id moneypunct<__charT, _International>::id;
 template <class __charT, bool _International>
 const bool moneypunct<__charT, _International>::intl;
 
-} // namespace std
+}} // namespace std
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 
 // LC_MONETARY of a named locale as moneypunct_byname reads it; initialized to the values of the
 // base moneypunct.
@@ -1202,7 +1202,7 @@ void __named_money_data(const char* name, bool intl, __money_data<wchar_t>& d);
 
 }} // namespace __ycxx::__detail
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 // [locale.moneypunct.byname]: for char and wchar_t, the C library's LC_MONETARY of the name, read
 // once, here. The patterns follow POSIX's p_cs_precedes, p_sep_by_space and p_sign_posn (n_ for
@@ -1675,4 +1675,4 @@ private:
   __ycxx::__detail::__named_locale* __named_;
 };
 
-} // namespace std
+}} // namespace std

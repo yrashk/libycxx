@@ -5,7 +5,7 @@
 #include <ycxx/core/invoke.hpp>
 #include <ycxx/core/integer_sequence.hpp>
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 template <class _Tp>
 struct tuple_size;
@@ -65,9 +65,9 @@ struct array;
 template <class _Tp>
 class complex;
 
-} // namespace std
+}} // namespace std
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 
 // Makes `get<_Ip>(__x)` parse as a template-id inside __ycxx::__detail so that argument-dependent
 // lookup finds the std::get overloads of every tuple-like type. Never selected.
@@ -100,7 +100,7 @@ concept __pair_like = __tuple_like<_Tp> && std::tuple_size_v<__remove_cvref(_Tp)
 // [meta.rel] is_applicable / is_nothrow_applicable, [meta.trans.other] apply_result
 // ELEMS-OF(Tuple) is get<I>(declval<Tuple>())... (found by ADL).
 // ---------------------------------------------------------------------------------------------
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 template <class _Fn, class _Tuple, std::size_t... _Ip>
 consteval bool __applicable_impl(std::index_sequence<_Ip...>*) {
   return requires { ::__ycxx::__detail::invoke(std::declval<_Fn>(), get<_Ip>(std::declval<_Tuple>())...); };
@@ -134,7 +134,7 @@ consteval bool is_nothrow_applicable_v() {
 }
 }} // namespace __ycxx::__detail
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 template <class _Fn, class _Tuple>
 struct is_applicable : bool_constant<__ycxx::__detail::is_applicable_v<_Fn, _Tuple>()> {};
 template <class _Fn, class _Tuple>
@@ -154,4 +154,4 @@ struct apply_result<_Fn, _Tuple> {
 };
 template <class _Fn, class _Tuple>
 using apply_result_t = typename apply_result<_Fn, _Tuple>::type;
-} // namespace std
+}} // namespace std

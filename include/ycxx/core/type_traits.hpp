@@ -6,7 +6,7 @@
 #include <ycxx/core/invoke.hpp>
 #include <ycxx/core/swap.hpp>
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 // ---------------------------------------------------------------------------------------------
 // [meta.unary.prop]
@@ -224,9 +224,9 @@ constexpr bool is_corresponding_member(_M1 _S1::* __m1, _M2 _S2::* __m2) noexcep
 // ---------------------------------------------------------------------------------------------
 // [meta.trans.sign]
 // ---------------------------------------------------------------------------------------------
-} // namespace std
+}} // namespace std
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 template <class _Tp>
 struct __sign_pair; // {signed, unsigned} for each standard integer type
 template <class _Sp, class _Up>
@@ -278,7 +278,7 @@ template <class _Tp>
 concept __sign_changeable = (is_integral_v<_Tp> && !__is_same(__remove_cv(_Tp), bool)) || __is_enum(_Tp);
 }} // namespace __ycxx::__detail
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 template <class _Tp>
 struct make_signed {};
 template <class _Tp>
@@ -376,12 +376,12 @@ struct negation : bool_constant<!bool(_Bp::value)> {};
 template <class _Bp>
 inline constexpr bool negation_v = !bool(_Bp::value);
 
-} // namespace std
+}} // namespace std
 
 // ---------------------------------------------------------------------------------------------
 // common_type
 // ---------------------------------------------------------------------------------------------
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 
 template <class _Xp, class _Yp>
 using __cond_res = decltype(false ? std::declval<_Xp (&)()>()() : std::declval<_Yp (&)()>()());
@@ -407,7 +407,7 @@ struct __common_type_decayed<_D1, _D2> {
 
 }} // namespace __ycxx::__detail
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 template <class... _Tp>
 struct common_type {};
@@ -432,9 +432,9 @@ using common_type_t = typename common_type<_Tp...>::type;
 template <class _Tp, class _Up, template <class> class _TQual, template <class> class _UQual>
 struct basic_common_reference {};
 
-} // namespace std
+}} // namespace std
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 
 template <class _Ap>
 struct __xref {
@@ -513,7 +513,7 @@ struct __common_reference2<_T1, _T2> {
 
 }} // namespace __ycxx::__detail
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 template <class... _Tp>
 struct common_reference {};
@@ -550,5 +550,5 @@ consteval bool is_within_lifetime(const _Tp* p) noexcept {
     return __builtin_constant_p(static_cast<const volatile _Up*>(p) == p);
 }
 
-} // namespace std
+}} // namespace std
 

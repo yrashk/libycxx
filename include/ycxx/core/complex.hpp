@@ -18,7 +18,7 @@
 #include <ycxx/core/math_constants.hpp>
 #include <ycxx/core/tuple_like.hpp>
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 
 // [complex.members]/3: complex<T>(const complex<X>&) is implicit iff the floating-point
 // conversion rank of T is at least that of X (subranks do not matter).
@@ -37,7 +37,7 @@ consteval bool __complex_rank_ge() {
 
 }} // namespace __ycxx::__detail
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 template <class _Tp>
 class complex {
@@ -126,9 +126,9 @@ private:
   _Tp __im_;
 };
 
-} // namespace std
+}} // namespace std
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail::__cx {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail::__cx {
 
 template <class _Tp>
 constexpr bool isnan(_Tp __x) noexcept {
@@ -441,7 +441,7 @@ constexpr __cpair<_Tp> div(_Tp a, _Tp b, _Tp c, _Tp d) noexcept {
 
 }} // namespace __ycxx::__detail::__cx
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 template <class _Tp>
 template <class _Xp>
@@ -612,10 +612,10 @@ constexpr complex<__ycxx::__detail::__cmath_promote_t<_Ap>> proj(_Ap __x) {
   return std::proj(complex<_Tp>(static_cast<_Tp>(__x)));
 }
 
-} // namespace std
+}} // namespace std
 
 // ---- transcendental functions ([complex.transcendentals]) ------------------------------------------
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail::__cx {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail::__cx {
 
 template <class _Tp>
 using _Cp = std::complex<_Tp>;
@@ -859,7 +859,7 @@ constexpr _Cp<_Tp> catanh(_Tp __x, _Tp y) noexcept {
 
 }} // namespace __ycxx::__detail::__cx
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 template <class _Tp>
 constexpr complex<_Tp> acos(const complex<_Tp>& __x) {
@@ -936,9 +936,9 @@ constexpr complex<_Tp> tanh(const complex<_Tp>& __x) {
   return __ycxx::__detail::__cx::__ctanh(__x.real(), __x.imag());
 }
 
-} // namespace std
+}} // namespace std
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail::__cx {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail::__cx {
 // [complex.transcendentals]/20: exp(y * log(x)), literally, so pow(0, 0) (implementation-defined)
 // is exp(0 * log(0)), a NaN.
 template <class _Tp>
@@ -950,7 +950,7 @@ template <class _T1, class _T2>
 using __pow_common_t = std::common_type_t<_T1, std::conditional_t<is_integral_v<_T2>, double, _T2>>;
 }} // namespace __ycxx::__detail::__cx
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 // [complex.transcendentals]/20 and [cmplx.over]/3 in one set of templates.
 template <class _Tp, class _Up>
@@ -1038,4 +1038,4 @@ basic_istream<__charT, __traits>& operator>>(basic_istream<__charT, __traits>& i
 template <class _Tp, class __charT, class __traits>
 basic_ostream<__charT, __traits>& operator<<(basic_ostream<__charT, __traits>& __o, const complex<_Tp>& __x);
 
-} // namespace std
+}} // namespace std

@@ -11,7 +11,7 @@
 
 #include <ycxx/config.hpp>
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 // The errno number of one meaning: Linux's or Darwin's.
 consteval int __errno_number(int __linux_value, int __y_darwin_value) noexcept {
   return __cfg::__darwin ? __y_darwin_value : __linux_value;
@@ -24,7 +24,7 @@ inline constexpr int __errno_enostr = __errno_number(60, 99); // ENOSTR
 inline constexpr int __errno_etime = __errno_number(62, 101); // ETIME
 }} // namespace __ycxx::__detail
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 // Each value is errno_number(Linux, Darwin); the comment names the <cerrno> macro.
 enum class errc {
   address_family_not_supported = __ycxx::__detail::__errno_number(97, 47), // EAFNOSUPPORT
@@ -107,4 +107,4 @@ enum class errc {
   not_a_stream [[deprecated("errc::not_a_stream (ENOSTR) is deprecated ([depr.cerrno])")]] = __ycxx::__detail::__errno_enostr,
   stream_timeout [[deprecated("errc::stream_timeout (ETIME) is deprecated ([depr.cerrno])")]] = __ycxx::__detail::__errno_etime,
 };
-} // namespace std
+}} // namespace std

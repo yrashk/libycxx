@@ -4,7 +4,7 @@
 
 #include <ycxx/core/exec_basic.hpp>
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail { namespace __exec {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail { namespace __exec {
 
 // impls-for<just-cpo> ([exec.just]/2)
 template <class _SetTag>
@@ -30,13 +30,13 @@ struct __just_impls : __default_impls {
 
 }}} // namespace __ycxx::__detail::__exec
 
-namespace [[__gnu__::__visibility__("hidden")]] std { namespace execution {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 { namespace execution {
 struct just_t;
 struct just_error_t;
 struct just_stopped_t;
-}} // namespace std::execution
+}}} // namespace std::execution
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail { namespace __exec {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail { namespace __exec {
 template <>
 struct __impls_for<std::execution::just_t> : __just_impls<std::execution::set_value_t> {};
 template <>
@@ -45,7 +45,7 @@ template <>
 struct __impls_for<std::execution::just_stopped_t> : __just_impls<std::execution::set_stopped_t> {};
 }}} // namespace __ycxx::__detail::__exec
 
-namespace [[__gnu__::__visibility__("hidden")]] std { namespace execution {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 { namespace execution {
 
 // [exec.just]
 struct just_t {
@@ -69,9 +69,9 @@ inline constexpr just_t just{};
 inline constexpr just_error_t just_error{};
 inline constexpr just_stopped_t just_stopped{};
 
-}} // namespace std::execution
+}}} // namespace std::execution
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail { namespace __exec {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail { namespace __exec {
 // [exec.read.env]
 struct __read_env_t {
   template <class _Qp>
@@ -139,13 +139,13 @@ struct __impls_for<__read_env_t> : __default_impls {
 };
 }}} // namespace __ycxx::__detail::__exec
 
-namespace [[__gnu__::__visibility__("hidden")]] std { namespace execution {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 { namespace execution {
 inline constexpr __ycxx::__detail::__exec::__read_env_t read_env{};
-}} // namespace std::execution
+}}} // namespace std::execution
 
 // ---------------------------------------------------------------------------------------------
 // [exec.inline.scheduler]
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __adl_free {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __adl_free {
 template <class _Rcvr>
 struct __exec_inline_state {
   using operation_state_concept = std::execution::operation_state_tag;
@@ -170,7 +170,7 @@ struct __exec_inline_sender {
 };
 }} // namespace __ycxx::__adl_free
 
-namespace [[__gnu__::__visibility__("hidden")]] std { namespace execution {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 { namespace execution {
 class inline_scheduler {
 public:
   using scheduler_concept = scheduler_tag;
@@ -189,9 +189,9 @@ public:
     return forward_progress_guarantee::weakly_parallel;
   }
 };
-}} // namespace std::execution
+}}} // namespace std::execution
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __adl_free {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __adl_free {
 // The schedule sender's attributes answer as the scheduler does ([exec.sched]/6): the scheduler's
 // queries are inline-attrs' ([exec.inline.scheduler]/1), and where those have no answer (an
 // environment without get_scheduler) the scheduler is its own completion scheduler

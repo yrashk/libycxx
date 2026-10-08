@@ -7,14 +7,14 @@
 #include <ycxx/core/iosfwd.hpp>
 #include <ycxx/hosted/thread.hpp>
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 // The decimal digits of id's representation, written backwards ending at end.
 inline char* __thread_id_chars(char* end, std::thread::id id) noexcept {
   return ::__ycxx::__detail::__charconv_write_unsigned(end, static_cast<unsigned long long>(__thread_access::__handle_of(id)), 10);
 }
 }} // namespace __ycxx::__detail
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 // [thread.thread.id]/9: "Inserts the text representation for charT of id", the one formatter uses,
 // as a character sequence: the stream's basefield, showpos... and its locale's numpunct do not
@@ -64,4 +64,4 @@ public:
 template <>
 inline constexpr bool enable_nonlocking_formatter_optimization<thread::id> = true;
 
-} // namespace std
+}} // namespace std

@@ -14,7 +14,7 @@
 
 #define __STDC_VERSION_STDCKDINT_H__ 202311L
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 template <class _T1, class _T2, class _T3>
 consteval bool __ckd_mandates() {
   static_assert(__is_signed_or_unsigned_integer<_T1> && __is_signed_or_unsigned_integer<_T2> &&

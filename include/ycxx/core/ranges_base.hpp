@@ -4,7 +4,7 @@
 
 #include <ycxx/core/concepts.hpp>
 
-namespace [[__gnu__::__visibility__("hidden")]] std { namespace ranges {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 { namespace ranges {
 
 struct view_base {};
 
@@ -12,9 +12,9 @@ template <class _Dp>
   requires is_class_v<_Dp> && same_as<_Dp, remove_cv_t<_Dp>>
 class view_interface;
 
-}} // namespace std::ranges
+}}} // namespace std::ranges
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 // is-derived-from-view-interface: a class (possibly cv-qualified) with exactly one public base
 // view_interface<U>; deduction from a pointer fails for an ambiguous or inaccessible base.
 template <class _Tp>
@@ -27,15 +27,15 @@ concept __derived_from_view_interface =
     requires(_Tp* p) { []<class _Up>(const volatile std::ranges::view_interface<_Up>*) {}(p); };
 }} // namespace __ycxx::__detail
 
-namespace [[__gnu__::__visibility__("hidden")]] std { namespace ranges {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 { namespace ranges {
 template <class _Tp>
 constexpr bool enable_view = derived_from<_Tp, view_base> || __ycxx::__detail::__derived_from_view_interface<_Tp>;
-}} // namespace std::ranges
+}}} // namespace std::ranges
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 // [ranges.syn]: the tag of the containers' range constructors.
 struct from_range_t {
   explicit from_range_t() = default;
 };
 inline constexpr from_range_t from_range{};
-} // namespace std
+}} // namespace std

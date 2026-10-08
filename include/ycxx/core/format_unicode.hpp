@@ -12,7 +12,7 @@
 #include <ycxx/core/cstddef.hpp>
 #include <ycxx/core/format_unicode_tables.hpp>
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail::__uni {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail::__uni {
 
 // The encoding form of charT's literals: 8, 16 or 32 (UTF-8/16/32), 0 for anything else.
 consteval int __literal_encoding_char() {

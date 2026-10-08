@@ -2,11 +2,11 @@
 #include <system_error>
 #include <ycxx/pal.h>
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 error_category::~error_category() {}
 
-} // namespace std
+}} // namespace std
 
 namespace {
 
@@ -98,7 +98,7 @@ std::string compose(const char* __what_arg, std::size_t n, const std::error_code
 
 } // namespace
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 const error_category& generic_category() noexcept { return generic_object.__object; }
 const error_category& system_category() noexcept { return system_object.__object; }
@@ -115,4 +115,4 @@ system_error::system_error(int __ev, const error_category& __ecat, const char* _
 system_error::system_error(int __ev, const error_category& __ecat) : system_error(error_code(__ev, __ecat)) {}
 system_error::~system_error() {}
 
-} // namespace std
+}} // namespace std

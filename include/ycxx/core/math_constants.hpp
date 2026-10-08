@@ -5,7 +5,7 @@
 
 #include <ycxx/config.hpp>
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 
 // value = 0.m[0]m[1]m[2] (binary, top bit set) * 2^(exp + 1), truncated to 192 bits. The
 // constants are irrational, so the truncated tail is never zero (rounding needs no sticky bit).

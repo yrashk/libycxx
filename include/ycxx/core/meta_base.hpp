@@ -6,7 +6,7 @@
 #include <ycxx/core/cstddef.hpp>
 #include <ycxx/core/prim_traits.hpp>
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 template <class _Tp, _Tp __v>
 struct integral_constant {
@@ -318,9 +318,9 @@ constexpr bool is_constant_evaluated() noexcept {
   }
 }
 
-} // namespace std
+}} // namespace std
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 
 template <class _Tp>
 inline constexpr bool __always_false = false;

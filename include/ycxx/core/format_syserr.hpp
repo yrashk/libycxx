@@ -4,7 +4,7 @@
 #include <ycxx/core/format_base.hpp>
 #include <ycxx/core/system_error.hpp>
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 // ec.message() in charT's encoding: UTF-8 with each maximal ill-formed subsequence replaced by
 // U+FFFD for char ([syserr.fmt]/5.1), and UTF-32 (or UTF-16), decoded the same way, for wchar_t.
 template <class __charT>
@@ -40,7 +40,7 @@ std::basic_string<__charT> __fmt_error_message(const std::string& m) {
 }
 }} // namespace __ycxx::__detail
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 template <__ycxx::__detail::__fmt_char __charT>
 struct formatter<error_code, __charT> {
@@ -90,4 +90,4 @@ public:
 template <>
 inline constexpr bool enable_nonlocking_formatter_optimization<error_code> = true;
 
-} // namespace std
+}} // namespace std

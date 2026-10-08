@@ -35,12 +35,16 @@
 #include <ycxx/core/variant.hpp>
 #include <ycxx/core/vector.hpp>
 
-namespace [[__gnu__::__visibility__("hidden")]] std { namespace meta {
+// GCC predeclares namespace std::meta (-freflection) and evaluates the metafunctions declared in
+// it: std::meta stays in plain std (DECISIONS §20.5).
+namespace [[__gnu__::__visibility__("hidden")]] std { // plain std (DECISIONS §20.5)
+namespace meta {
 using info = decltype(^^::);
 class exception;
-}} // namespace std::meta
+} // namespace meta
+} // namespace std
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail::meta {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail::meta {
 
 // The ordinary literal encoding is UTF-8 ([meta.reflection.exception] transcodes between it and
 // UTF-8). Otherwise only ASCII is taken to be shared by both.
@@ -80,7 +84,7 @@ consteval std::size_t __static_array_extent() {
 
 }} // namespace __ycxx::__detail::meta
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __adl_free {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __adl_free {
 // meta::exception holds reflections, so (in GCC 16) every member function of it must be
 // consteval; what() is constexpr and virtual, so it lives in this base, which holds no
 // reflection, and meta::exception inherits it as its final overrider.
@@ -98,7 +102,7 @@ public:
 };
 }} // namespace __ycxx::__adl_free
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 // [meta.string.literal]
 consteval bool is_string_literal(const char* p) { return __builtin_is_string_literal(p); }
@@ -107,6 +111,9 @@ consteval bool is_string_literal(const char8_t* p) { return __builtin_is_string_
 consteval bool is_string_literal(const char16_t* p) { return __builtin_is_string_literal(p); }
 consteval bool is_string_literal(const char32_t* p) { return __builtin_is_string_literal(p); }
 
+}} // namespace std
+
+namespace [[__gnu__::__visibility__("hidden")]] std { // plain std (DECISIONS §20.5)
 namespace meta {
 
 // [meta.reflection.exception]
@@ -555,6 +562,9 @@ consteval access_context access_context::via(info __cls) const {
 }
 
 } // namespace meta
+} // namespace std
+
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 // [meta.define.static]
 template <ranges::input_range _Rp>
@@ -582,9 +592,9 @@ consteval const remove_cvref_t<_Tp>* define_static_object(_Tp&& t) {
     return std::define_static_array(span(__builtin_addressof(t), 1)).data();
 }
 
-} // namespace std
+}} // namespace std
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail::meta {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail::meta {
 consteval void raise(std::string_view what, std::meta::info from, std::source_location where) {
   ::__ycxx::__detail::__raise_with(ycxx_error_logic_error, "std::meta::exception",
                              [&] { return std::meta::exception(what, from, where); });

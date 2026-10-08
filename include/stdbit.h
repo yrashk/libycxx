@@ -17,7 +17,7 @@
 #define __STDC_ENDIAN_BIG__ __ORDER_BIG_ENDIAN__
 #define __STDC_ENDIAN_NATIVE__ __BYTE_ORDER__
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail::__stdbit {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail::__stdbit {
 template <class _Tp>
 inline void __mandates() noexcept {
   static_assert(::__ycxx::__detail::__bit_unsigned<_Tp>, "<stdbit.h>: Mandates: T is an unsigned integer type");

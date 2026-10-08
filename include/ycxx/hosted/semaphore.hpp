@@ -11,7 +11,7 @@
 #include <ycxx/hosted/chrono_clocks.hpp>
 #include <ycxx/hosted/thread_support.hpp>
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 template <ptrdiff_t _LeastMaxValue = __PTRDIFF_MAX__>
 class counting_semaphore {
@@ -69,4 +69,4 @@ public:
 
 using binary_semaphore = counting_semaphore<1>;
 
-} // namespace std
+}} // namespace std

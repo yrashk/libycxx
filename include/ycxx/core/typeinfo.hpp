@@ -5,7 +5,7 @@
 #include <ycxx/core/cstddef.hpp>
 #include <ycxx/core/exception_base.hpp>
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 // A type_info's name pointer as the compiler stored it, made readable: Clang's Apple arm64 C++ ABI
 // sets bit 63 for a type_info that may exist in several linked images (cfg::rtti_non_unique_bit;
 // such type_infos must compare by name, which libycxx does for every name not marked '*').
@@ -17,7 +17,7 @@ inline const char* __rtti_name(const char* __stored) noexcept {
 }
 }} // namespace __ycxx::__detail
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 class type_info {
 public:
@@ -92,9 +92,9 @@ public:
   constexpr const char* what() const noexcept override { return "std::bad_typeid"; }
 };
 
-} // namespace std
+}} // namespace std
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 
 // &typeid(T), or nullptr without RTTI. typeid cannot even be parsed under -fno-rtti (not in a
 // discarded branch, not in an uninstantiated template), so this is the one place that spells

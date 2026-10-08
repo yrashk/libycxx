@@ -57,7 +57,7 @@ std::wstring widen(const std::string& s) {
 
 } // namespace
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 int stoi(const string& str, size_t* __idx, int base) {
   return __convert<int>("std::stoi", str.c_str(), __idx, [base](const char* s, char** e) { return std::strtol(s, e, base); });
@@ -125,4 +125,4 @@ wstring to_wstring(float __val) { return widen(fp_to_string(__val)); }
 wstring to_wstring(double __val) { return widen(fp_to_string(__val)); }
 wstring to_wstring(long double __val) { return widen(fp_to_string(__val)); }
 
-} // namespace std
+}} // namespace std

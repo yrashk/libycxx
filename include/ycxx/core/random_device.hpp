@@ -11,7 +11,7 @@
 #include <ycxx/core/limits.hpp>
 #include <ycxx/pal.h>
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 class random_device {
 public:
@@ -38,4 +38,4 @@ private:
   result_type __buffer_[__buffer_size];
 };
 
-} // namespace std
+}} // namespace std

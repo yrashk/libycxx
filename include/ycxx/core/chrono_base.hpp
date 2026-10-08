@@ -18,14 +18,14 @@
 #include <ycxx/core/ratio.hpp>
 #include <ycxx/core/type_traits.hpp>
 
-namespace [[__gnu__::__visibility__("hidden")]] std { namespace chrono {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 { namespace chrono {
 template <class _Rep, class _Period = ratio<1>>
 class duration;
 template <class _Clock, class _Duration = typename _Clock::duration>
 class time_point;
-}} // namespace std::chrono
+}}} // namespace std::chrono
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 
 template <class _Tp>
 inline constexpr bool __is_duration = false;
@@ -51,7 +51,7 @@ using __ratio_gcd_t = std::ratio<__static_gcd<_P1::num, _P2::num>, (_P1::den / _
 
 }} // namespace __ycxx::__detail
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 // [time.traits.specializations]
 template <class _Rep1, class _Period1, class _Rep2, class _Period2>
@@ -66,9 +66,9 @@ struct common_type<chrono::time_point<_Clock, _Duration1>, chrono::time_point<_C
   using type = chrono::time_point<_Clock, common_type_t<_Duration1, _Duration2>>;
 };
 
-} // namespace std
+}} // namespace std
 
-namespace [[__gnu__::__visibility__("hidden")]] std { namespace chrono {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 { namespace chrono {
 
 // [time.traits.is.fp]
 template <class _Rep>
@@ -458,20 +458,20 @@ using local_time = time_point<local_t, _Duration>;
 using local_seconds = local_time<seconds>;
 using local_days = local_time<days>;
 
-}} // namespace std::chrono
+}}} // namespace std::chrono
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __adl_free {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __adl_free {
 // [time.clock.file]: the type std::chrono::file_clock denotes (defined with the other clocks).
 class file_clock;
 }} // namespace __ycxx::__adl_free
 
-namespace [[__gnu__::__visibility__("hidden")]] std { namespace chrono {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 { namespace chrono {
 using file_clock = __ycxx::__adl_free::file_clock;
 template <class _Duration>
 using file_time = time_point<file_clock, _Duration>;
-}} // namespace std::chrono
+}}} // namespace std::chrono
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 // Diagnoses an integer duration literal that overflows its type ([time.duration.literals]/3):
 // not constexpr, so reaching it in the immediate literal operators is ill-formed.
 inline void __duration_literal_overflows() noexcept {}
@@ -483,7 +483,7 @@ consteval _Dp __duration_literal(unsigned long long __v) {
 }
 }} // namespace __ycxx::__detail
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 inline namespace literals {
 inline namespace chrono_literals {
 // [time.duration.literals]
@@ -542,4 +542,4 @@ struct hash<chrono::time_point<_Clock, _Duration>> {
   }
 };
 
-} // namespace std
+}} // namespace std

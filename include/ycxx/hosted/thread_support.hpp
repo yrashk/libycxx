@@ -17,7 +17,7 @@
 #include <ycxx/hosted/chrono_clocks.hpp>
 #include <ycxx/pal.h>
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 
 // ---- the hosted runtime (src/hosted/thread.cpp) ------------------------------------------------
 // Throws system_error(error_code(ev, generic_category()), what).

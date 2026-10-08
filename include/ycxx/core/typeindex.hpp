@@ -6,7 +6,7 @@
 #include <ycxx/core/hash.hpp>
 #include <ycxx/core/typeinfo.hpp>
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 class type_index {
   const type_info* __target_;
@@ -36,4 +36,4 @@ struct hash<type_index> {
   size_t operator()(const type_index& index) const noexcept { return index.hash_code(); }
 };
 
-} // namespace std
+}} // namespace std

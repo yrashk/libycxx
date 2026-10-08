@@ -4,7 +4,7 @@
 
 #include <ycxx/core/cstddef.hpp>
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 template <class _Category, class _Tp, class _Distance = ptrdiff_t, class _Pointer = _Tp*, class _Reference = _Tp&>
 struct [[deprecated("std::iterator is deprecated ([depr.iterator]); declare the member types directly")]] iterator {
@@ -15,4 +15,4 @@ struct [[deprecated("std::iterator is deprecated ([depr.iterator]); declare the 
   using reference = _Reference;
 };
 
-} // namespace std
+}} // namespace std

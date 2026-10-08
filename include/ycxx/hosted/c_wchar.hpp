@@ -29,9 +29,9 @@ static_assert(sizeof(::mbstate_t) == __ycxx::__detail::__cfg::__mbstate_size &&
                   alignof(::mbstate_t) == __ycxx::__detail::__cfg::__mbstate_align,
               "libycxx: cfg::mbstate_size/_align do not match this C library's ::mbstate_t");
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 using ::mbstate_t;
-} // namespace std
+}} // namespace std
 
 // An assembler name is the object-file symbol verbatim: Mach-O prefixes C symbols with '_'.
 // The functions are the C library's: default visibility (DECISIONS §2).

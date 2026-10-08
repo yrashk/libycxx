@@ -17,7 +17,7 @@
 #include <ycxx/core/type_traits.hpp>
 #include <ycxx/pal.h>
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __adl_free {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __adl_free {
 // A registered callback (the base of stop_callback and inplace_stop_callback). invoke runs it.
 struct __stop_callback_node {
   __stop_callback_node* next = nullptr;
@@ -28,7 +28,7 @@ struct __stop_callback_node {
 };
 }} // namespace __ycxx::__adl_free
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 using __adl_free::__stop_callback_node;
 
 class __stop_state {
@@ -149,7 +149,7 @@ struct __check_type_alias_exists;
 
 }} // namespace __ycxx::__detail
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 class stop_token;
 class stop_source;
@@ -434,4 +434,4 @@ public:
 template <class _CallbackFn>
 inplace_stop_callback(inplace_stop_token, _CallbackFn) -> inplace_stop_callback<_CallbackFn>;
 
-} // namespace std
+}} // namespace std

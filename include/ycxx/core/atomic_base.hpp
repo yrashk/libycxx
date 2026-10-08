@@ -31,7 +31,7 @@
 #include <ycxx/core/error.hpp>
 #include <ycxx/core/type_traits.hpp>
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 // [atomics.order]; consume is [depr.atomics.order].
 enum class memory_order : int { relaxed = 0, consume [[deprecated("memory_order::consume is deprecated ([depr.atomics.order]); use acquire")]] = 1, acquire = 2, release = 3, acq_rel = 4, seq_cst = 5 };
@@ -49,9 +49,9 @@ template <class _Tp>
   return y;
 }
 
-} // namespace std
+}} // namespace std
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 
 // ---- the runtime archive (src/runtime/atomic) ----------------------------------------------
 // The lock that guards the lock-based atomic object at `__addr`.

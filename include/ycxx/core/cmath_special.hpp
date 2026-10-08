@@ -24,7 +24,7 @@
 #include <ycxx/core/cmath_tables.hpp>
 #include <ycxx/core/math_constants.hpp>
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail::__sf {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail::__sf {
 
 template <class _Tp>
 consteval auto __work_of() {

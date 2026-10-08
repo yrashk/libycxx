@@ -27,12 +27,12 @@
 #include <ycxx/core/swap.hpp>
 #include <ycxx/core/utility_base.hpp>
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 template <class _Tp, class _Allocator>
 class list;
-}
+}}
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 
 struct __list_node_base {
   __list_node_base* prev;
@@ -51,7 +51,7 @@ struct __list_node : __list_node_base {
 
 }} // namespace __ycxx::__detail
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __adl_free {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __adl_free {
 
 // T is the element type, possibly const.
 template <class _Tp, class _Diff>
@@ -107,7 +107,7 @@ public:
 
 }} // namespace __ycxx::__adl_free
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 template <class _Tp, class _Allocator = allocator<_Tp>>
 class list;
@@ -790,4 +790,4 @@ template <class _Tp>
 using list = std::list<_Tp, polymorphic_allocator<_Tp>>;
 } // namespace pmr
 
-} // namespace std
+}} // namespace std

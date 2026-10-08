@@ -22,7 +22,7 @@
 #include <ycxx/hosted/thread_support.hpp>
 #include <ycxx/pal.h>
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 
 class __futex_condvar {
   ycxx_pal_u32 __seq_ = 0;
@@ -89,7 +89,7 @@ void __at_thread_exit(void (*__f)(void*), void* arg);
 
 }} // namespace __ycxx::__detail
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 enum class cv_status { no_timeout, timeout };
 
@@ -305,4 +305,4 @@ public:
   }
 };
 
-} // namespace std
+}} // namespace std

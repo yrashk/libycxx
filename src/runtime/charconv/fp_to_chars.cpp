@@ -16,7 +16,7 @@
 // default rounding mode. %a works on the bits directly.
 #include "fp_common.hpp"
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail::__fpconv {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail::__fpconv {
 namespace {
 
 // ---- shortest digits ---------------------------------------------------------------------------

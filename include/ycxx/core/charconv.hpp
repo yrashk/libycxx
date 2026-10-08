@@ -12,7 +12,7 @@
 #include <ycxx/core/type_traits.hpp>
 #include <ycxx/core/bit.hpp>
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 // [charconv.syn]: a bitmask type ([bitmask.types]).
 enum class chars_format { scientific = 1, fixed = 2, hex = 4, general = fixed | scientific };
@@ -47,9 +47,9 @@ struct from_chars_result {
   constexpr explicit operator bool() const noexcept { return ec == errc{}; }
 };
 
-} // namespace std
+}} // namespace std
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 
 // ---- integers ([charconv.to.chars]/4-6, [charconv.from.chars]/2-4) ---------------------------
 
@@ -316,7 +316,7 @@ concept __charconv_int128 = __is_any_of<_Tp, __y_int128, __uint128>;
 
 }} // namespace __ycxx::__detail
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 // [charconv.to.chars]: integers. One overload per type, as the synopsis specifies.
 constexpr to_chars_result to_chars(char* first, char* last, char value, int base = 10) {
@@ -460,4 +460,4 @@ from_chars_result from_chars(const char* first, const char* last, _Tp& value,
   return __ycxx::__detail::__from_chars_float(first, last, value, __fmt);
 }
 
-} // namespace std
+}} // namespace std

@@ -41,7 +41,12 @@ int main() {
   CHECK(demangled(typeid(outer::inner::widget).name()) == "outer::inner::widget");
   CHECK(demangled(typeid(outer::inner::box<long>).name()) == "outer::inner::box<long>");
   CHECK(demangled(typeid(void (*)(int)).name()) == "void (*)(int)");
-  CHECK(demangled(typeid(std::runtime_error).name()) == "std::runtime_error");
+  // The standard classes may live in an inline namespace of std (libycxx: std::__y1, DECISIONS
+  // §20.4), which the mangled name, and so the demangled one, carries.
+  {
+    std::string r = demangled(typeid(std::runtime_error).name());
+    CHECK(r == "std::runtime_error" || (r.starts_with("std::") && r.ends_with("::runtime_error")));
+  }
   // A function's symbol.
   CHECK(demangled("_ZN5outer5inner1fEi") == "outer::inner::f(int)");
 

@@ -15,7 +15,7 @@
 #include <ycxx/core/utility_base.hpp>
 #include <ycxx/core/error.hpp>
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 // [ptrtag.bits]/1: only the bits an alignment leaves zero are used, and a size_t alignment has
 // at most (width - 1) trailing zeros, so the limit is the pointer width minus 1.
@@ -29,9 +29,9 @@ constexpr unsigned pointer_bits_available(size_t alignment) {
   return __n < max_pointer_bits_available ? __n : max_pointer_bits_available;
 }
 
-} // namespace std
+}} // namespace std
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 
 using __ptrtag_word = __UINTPTR_TYPE__;
 
@@ -97,7 +97,7 @@ inline void __pointer_tag_pair_cannot_store_a_nonzero_tag_during_constant_evalua
 
 }} // namespace __ycxx::__detail
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 template <class _Ptr, unsigned _BitsRequested = __ycxx::__detail::__bits_available<__ycxx::__detail::__element_of<_Ptr>>,
           class _TagT = unsigned>
@@ -275,4 +275,4 @@ get(pointer_tag_pair<_Ptr, _BitsRequested, _TagT> p) noexcept {
     return p.tag();
 }
 
-} // namespace std
+}} // namespace std

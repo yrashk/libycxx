@@ -31,7 +31,7 @@
 #include <ycxx/core/stream_iterators.hpp>
 #include <ycxx/core/typeinfo.hpp>
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 struct __locale_impl; // src/hosted/locale.cpp
 struct __locale_access;
 // Selects locale's private constructor from a locale_impl*: without it, a null pointer constant
@@ -39,7 +39,7 @@ struct __locale_access;
 struct __locale_impl_tag {};
 }} // namespace __ycxx::__detail
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 class locale;
 struct text_encoding; // <text_encoding>; <locale> includes it
@@ -211,9 +211,9 @@ public:
   static constexpr mask graph = alnum | punct;
 };
 
-} // namespace std
+}} // namespace std
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 
 // The "C" classification of the 128 ASCII characters.
 consteval auto __make_ascii_masks() {
@@ -304,7 +304,7 @@ void __named_numpunct(const char* name, wchar_t& __point, wchar_t& __sep, std::s
 
 }} // namespace __ycxx::__detail
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 // [locale.ctype]
 template <class __charT>
@@ -1156,4 +1156,4 @@ __charT tolower(__charT c, const locale& __loc) {
   return use_facet<ctype<__charT>>(__loc).tolower(c);
 }
 
-} // namespace std
+}} // namespace std

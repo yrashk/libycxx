@@ -9,16 +9,16 @@
 #include <ycxx/core/invoke.hpp>
 #include <ycxx/core/type_traits.hpp>
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 // COMPILER-BUG(gcc): when X is substituted by a dependent expression (as in the cw-operators'
 // return types), GCC 16 computes the default `decltype(_Xp)` from that expression, so
 // `_Lp::value ->* _Rp::value` yields constant_wrapper<9, const int>. An auto non-type parameter never
 // has a cv-qualified or reference type, so remove_cvref_t changes nothing on a correct compiler.
 template <auto _Xp, class = remove_cvref_t<decltype(_Xp)>>
 struct constant_wrapper;
-} // namespace std
+}} // namespace std
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 
 // constexpr-param
 template <class _Tp>
@@ -57,7 +57,7 @@ consteval bool __cw_subscript_noexcept() {
 
 }} // namespace __ycxx::__detail
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __adl_free {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __adl_free {
 
 struct __cw_operators {
   // unary operators
@@ -235,7 +235,7 @@ struct __cw_operators {
 
 }} // namespace __ycxx::__adl_free
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 template <auto _Xp, class _Tp>
 struct constant_wrapper : ::__ycxx::__adl_free::__cw_operators {
@@ -277,4 +277,4 @@ struct constant_wrapper : ::__ycxx::__adl_free::__cw_operators {
 template <auto _Xp>
 constexpr auto cw = constant_wrapper<_Xp>{};
 
-} // namespace std
+}} // namespace std

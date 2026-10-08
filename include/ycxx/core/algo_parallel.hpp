@@ -12,7 +12,7 @@
 #include <ycxx/core/algo_mutate.hpp>
 #include <ycxx/core/algo_sort.hpp>
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 template <class _ExecutionPolicy, class _ForwardIterator, class _Predicate>
   requires __ycxx::__detail::__execution_policy<_ExecutionPolicy>
@@ -698,4 +698,4 @@ bool lexicographical_compare(_ExecutionPolicy&&, _ForwardIterator1 __first1, _Fo
   return std::lexicographical_compare(__first1, __last1, __first2, __last2, comp);
 }
 
-} // namespace std
+}} // namespace std

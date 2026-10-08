@@ -9,15 +9,15 @@
 #include <ycxx/core/bind.hpp>
 #include <ycxx/core/memory_base.hpp>
 
-namespace [[__gnu__::__visibility__("hidden")]] std { namespace ranges {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 { namespace ranges {
 // [range.adaptor.object]/2: a class derived from range_adaptor_closure<D> (and not a range) is a
 // range adaptor closure object type. The pipe operators below are found through this base.
 template <class _Dp>
   requires is_class_v<_Dp> && same_as<_Dp, remove_cv_t<_Dp>>
 class range_adaptor_closure {};
-}} // namespace std::ranges
+}}} // namespace std::ranges
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 
 template <bool _Const, class _Tp>
 using __maybe_const = std::conditional_t<_Const, const _Tp, _Tp>;
@@ -49,7 +49,7 @@ using __iter_category_t = typename std::iterator_traits<_Ip>::iterator_category;
 
 }} // namespace __ycxx::__detail
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __adl_free {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __adl_free {
 
 // C | D ([range.adaptor.object]/1): a perfect forwarding call wrapper with call pattern d(c(arg)).
 template <class _Cp, class _Dp>
@@ -95,7 +95,7 @@ struct __adaptor_closure : __partial_wrapper<false, _Adaptor, _Bound...>,
 
 }} // namespace __ycxx::__adl_free
 
-namespace [[__gnu__::__visibility__("hidden")]] std { namespace ranges {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 { namespace ranges {
 
 // R | C is C(R); C | D composes. Declared in std::ranges, an associated namespace of every
 // closure type through its range_adaptor_closure base.
@@ -115,9 +115,9 @@ constexpr auto operator|(_Cp&& c, _Dp&& d) noexcept(is_nothrow_constructible_v<d
                                                               static_cast<_Dp&&>(d));
 }
 
-}} // namespace std::ranges
+}}} // namespace std::ranges
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 
 // adaptor(args...): the closure binding args (decayed copies) after the range argument.
 template <class _Adaptor, class... _Args>
@@ -393,7 +393,7 @@ using __cache_if = typename __cache_select<_Present, _Tp>::type;
 
 }} // namespace __ycxx::__detail
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __adl_free {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __adl_free {
 // Bases that give a view's iterator its iterator_category member, or none ("not always present").
 struct __no_iterator_category {};
 template <class _Tag>
@@ -402,7 +402,7 @@ struct __with_iterator_category {
 };
 }} // namespace __ycxx::__adl_free
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 
 // Tag is void: no iterator_category member.
 template <class _Tag>

@@ -10,7 +10,7 @@
 #include <ycxx/core/memory_base.hpp>
 #include <ycxx/core/integer_sequence.hpp>
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 
 template <class _Tp, class _Up>
 concept __different_from_ = !__is_same(std::remove_cvref_t<_Tp>, std::remove_cvref_t<_Up>);
@@ -191,7 +191,7 @@ concept __tuple_from = __tuple_from_tuple<_TT, _Src> || __tuple_from_other<_TT, 
 
 }} // namespace __ycxx::__detail
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 template <class... _Types>
 class tuple {
@@ -616,9 +616,9 @@ constexpr const tuple_element_t<_Ip, tuple<_Types...>>&& get(const tuple<_Types.
   return static_cast<const tuple_element_t<_Ip, tuple<_Types...>>&&>(std::get<_Ip>(t));
 }
 
-} // namespace std
+}} // namespace std
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 template <class _Tp, class... _Types>
 consteval std::size_t type_index() {
   constexpr bool __hits[] = {__is_same(_Tp, _Types)..., false};
@@ -632,7 +632,7 @@ consteval std::size_t type_index() {
 }
 }} // namespace __ycxx::__detail
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 template <class _Tp, class... _Types>
   requires(__ycxx::__detail::type_index<_Tp, _Types...>() < sizeof...(_Types))
@@ -669,9 +669,9 @@ constexpr tuple<_TTypes&...> tie(_TTypes&... t) noexcept {
   return tuple<_TTypes&...>(t...);
 }
 
-} // namespace std
+}} // namespace std
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 // tuple_cat: (outer, inner) index pairs for the flattened element list.
 template <class... _Tuples>
 struct __cat_plan {
@@ -702,7 +702,7 @@ constexpr auto __tuple_cat_impl(_FwdTuple&& __fwd, std::index_sequence<_Kp...>) 
 }
 }} // namespace __ycxx::__detail
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 template <__ycxx::__detail::__tuple_like... _Tuples>
 constexpr auto tuple_cat(_Tuples&&... __tpls) {
@@ -720,9 +720,9 @@ constexpr apply_result_t<_Fp, _Tuple> apply(_Fp&& __f, _Tuple&& t) noexcept(is_n
   }(__ycxx::__detail::__tuple_indices<_Tuple>{});
 }
 
-} // namespace std
+}} // namespace std
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 template <class _Tp, class _Tuple>
 consteval bool __make_from_tuple_dangles() {
   if constexpr (std::tuple_size_v<std::remove_reference_t<_Tuple>> == 1)
@@ -732,7 +732,7 @@ consteval bool __make_from_tuple_dangles() {
 }
 }} // namespace __ycxx::__detail
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 template <class _Tp, __ycxx::__detail::__tuple_like _Tuple>
 constexpr _Tp make_from_tuple(_Tuple&& t) {
   static_assert(!__ycxx::__detail::__make_from_tuple_dangles<_Tp, _Tuple>(),
@@ -745,9 +745,9 @@ constexpr _Tp make_from_tuple(_Tuple&& t) {
 }
 
 // ---- [tuple.rel] ----
-} // namespace std
+}} // namespace std
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 template <class _Tp, class _Up, std::size_t... _Ip>
 consteval bool __tuple_eq_ok(std::index_sequence<_Ip...>*) {
   return (requires(const _Tp& t, const _Up& __u) {
@@ -766,7 +766,7 @@ template <class _Tp, class _Up>
 using __tuple_cmp_result = decltype(__tuple_cmp_cat<_Tp, _Up>(static_cast<__tuple_indices<_Tp>*>(nullptr)));
 }} // namespace __ycxx::__detail
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 template <class... _TTypes, class... _UTypes>
   requires __ycxx::__detail::__tuple_eq_comparable<tuple<_TTypes...>, tuple<_UTypes...>>
@@ -823,9 +823,9 @@ constexpr void swap(const tuple<_Types...>& __x, const tuple<_Types...>& y) noex
 }
 
 // ---- [tuple.common.ref] ----
-} // namespace std
+}} // namespace std
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 template <class _TT, class _UT, template <class> class _TQ, template <class> class _UQ, class _Seq>
 struct __tuple_common_ref;
 template <class _TT, class _UT, template <class> class _TQ, template <class> class _UQ, std::size_t... _Ip>
@@ -848,7 +848,7 @@ concept __tuple_common_candidates =
     __is_same(_UT, std::decay_t<_UT>) && std::tuple_size_v<_TT> == std::tuple_size_v<_UT>;
 }} // namespace __ycxx::__detail
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 template <__ycxx::__detail::__tuple_like _TTuple, __ycxx::__detail::__tuple_like _UTuple, template <class> class _TQual,
           template <class> class _UQual>
   requires __ycxx::__detail::__tuple_common_candidates<_TTuple, _UTuple> &&
@@ -861,12 +861,12 @@ template <__ycxx::__detail::__tuple_like _TTuple, __ycxx::__detail::__tuple_like
            requires { typename __ycxx::__detail::__tuple_common_type<_TTuple, _UTuple, __ycxx::__detail::__tuple_indices<_TTuple>>::type; }
 struct common_type<_TTuple, _UTuple>
     : __ycxx::__detail::__tuple_common_type<_TTuple, _UTuple, __ycxx::__detail::__tuple_indices<_TTuple>> {};
-} // namespace std
+}} // namespace std
 
 // =============================================================================================
 // [allocator.uses.construction]
 // =============================================================================================
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 template <class _Tp, class _Alloc, class... _Args>
   requires(!__ycxx::__detail::__is_pair_v<remove_cv_t<_Tp>>)
@@ -935,14 +935,14 @@ constexpr auto uses_allocator_construction_args(const _Alloc& __alloc, _Pp&& p) 
                                                   std::forward_as_tuple(get<1>(static_cast<_Pp&&>(p))));
 }
 
-} // namespace std
+}} // namespace std
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 template <class _Tp, class _Alloc, class... _Args>
 constexpr _Tp make_obj_using_allocator(const _Alloc& __alloc, _Args&&... __args);
-} // namespace std
+}} // namespace std
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 // pair-convert: a type convertible to any pair, for the final uses_allocator_construction_args
 // overload ([allocator.uses.construction]/17).
 template <class _Tp, class _Alloc, class _Up>
@@ -967,7 +967,7 @@ template <class _Up>
 concept __pair_fun_callable = requires(_Up&& __u) { __pair_fun(static_cast<_Up&&>(__u)); };
 }} // namespace __ycxx::__detail
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 template <class _Tp, class _Alloc, class _Up>
   requires __ycxx::__detail::__is_pair_v<remove_cv_t<_Tp>> &&
            (__ycxx::__detail::__is_subrange<remove_cvref_t<_Up>> ||
@@ -1002,9 +1002,9 @@ constexpr _Tp* uninitialized_construct_using_allocator(_Tp* p, const _Alloc& __a
       std::uses_allocator_construction_args<_Tp>(__alloc, static_cast<_Args&&>(__args)...));
 }
 
-} // namespace std
+}} // namespace std
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 template <class _Tp, class _Alloc, class... _Args>
 constexpr _Tp __make_using_alloc(const _Alloc& a, _Args&&... __args) {
   if constexpr (std::is_reference_v<_Tp>)

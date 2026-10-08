@@ -18,7 +18,7 @@
 #include <ycxx/core/type_traits.hpp>
 #include <ycxx/core/urbg.hpp>
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 
 using __rand_u64 = unsigned long long;
 
@@ -337,7 +337,7 @@ _Real __rand_canonical_wide(_Gp& __g) {
 
 }} // namespace __ycxx::__detail
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 template <class _RealType, size_t digits, class _URBG>
 _RealType generate_canonical(_URBG& __g) {
@@ -432,9 +432,9 @@ _RealType generate_canonical(_URBG& __g) {
   }
 }
 
-} // namespace std
+}} // namespace std
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 
 // A uniform value in [0, 1) with all the digits of Real; and in (0, 1) and (0, 1].
 template <class _Real, class _Gp>

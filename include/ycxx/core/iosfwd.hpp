@@ -12,7 +12,7 @@
 
 #include <ycxx/core/char_traits.hpp>
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 template <class __charT, class __traits>
 class basic_ios;
@@ -30,4 +30,4 @@ class istreambuf_iterator;
 template <class __charT, class __traits = char_traits<__charT>>
 class ostreambuf_iterator;
 
-} // namespace std
+}} // namespace std

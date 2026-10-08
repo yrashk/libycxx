@@ -18,12 +18,12 @@
 #include <ycxx/core/error.hpp>
 #include <ycxx/core/memory_resource_fwd.hpp>
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 template <class _Tp, class _Allocator>
 class indirect;
-}
+}}
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 
 template <class _Tp>
 inline constexpr bool __is_indirect = false;
@@ -42,7 +42,7 @@ concept __complete_type = requires { sizeof(_Tp); };
 
 }} // namespace __ycxx::__detail
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 template <class _Tp, class _Allocator = allocator<_Tp>>
 class indirect {
@@ -344,4 +344,4 @@ template <class _Tp>
 using indirect = std::indirect<_Tp, polymorphic_allocator<_Tp>>;
 } // namespace pmr
 
-} // namespace std
+}} // namespace std

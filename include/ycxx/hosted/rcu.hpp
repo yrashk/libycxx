@@ -22,7 +22,7 @@
 #include <ycxx/core/type_traits.hpp>
 #include <ycxx/core/unique_ptr.hpp>
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __adl_free {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __adl_free {
 // A scheduled evaluation (the base of every rcu_obj_base, and of rcu_retire's records).
 struct __rcu_node {
   __rcu_node* __rcu_next_;
@@ -31,12 +31,12 @@ struct __rcu_node {
 };
 }} // namespace __ycxx::__adl_free
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 class rcu_domain;
 rcu_domain& rcu_default_domain() noexcept;
-} // namespace std
+}} // namespace std
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 using __adl_free::__rcu_node;
 
 // ---- the hosted runtime (src/hosted/rcu.cpp) ---------------------------------------------------
@@ -77,7 +77,7 @@ struct __rcu_retired final : __rcu_node {
 
 }} // namespace __ycxx::__detail
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 // [saferecl.rcu.domain]
 class rcu_domain {
@@ -159,4 +159,4 @@ void rcu_retire(_Tp* p, _Dp d = _Dp(), rcu_domain& = rcu_default_domain()) {
   __ycxx::__detail::__rcu_schedule(new __ycxx::__detail::__rcu_retired<_Tp, _Dp>(p, static_cast<_Dp&&>(d)));
 }
 
-} // namespace std
+}} // namespace std

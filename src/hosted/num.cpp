@@ -146,7 +146,7 @@ size_t format_float(char* __buf, size_t __cap, _Fp __v, std::ios_base::fmtflags 
 
 } // namespace
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 
 size_t __num_put_integer(char* __buf, unsigned long long __v, bool __neg, bool is_signed, std::ios_base::fmtflags flags,
                        size_t* __pad) noexcept {
@@ -323,7 +323,7 @@ __ycxx::__detail::__num_parse parse_float(const char* s, size_t n, _Fp* __v) noe
 
 } // namespace
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 
 __num_parse __num_get_float(const char* field, size_t n, float* __v) noexcept { return parse_float(field, n, __v); }
 __num_parse __num_get_float(const char* field, size_t n, double* __v) noexcept { return parse_float(field, n, __v); }

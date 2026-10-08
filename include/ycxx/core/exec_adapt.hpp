@@ -23,7 +23,7 @@
 // or __no_attr: the adaptor has no T completion, or it cannot tell.
 // The domain is the COMMON-DOMAIN of the sources' (COMPL-DOMAIN: indeterminate_domain<> for a
 // source without one, given an environment); the scheduler is that of a single source.
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail { namespace __exec {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail { namespace __exec {
 template <class _Qp>
 inline constexpr bool __is_completion_query = false;
 template <class _Tp>
@@ -193,7 +193,7 @@ struct __identity_sig_map {
 };
 }}} // namespace __ycxx::__detail::__exec
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __adl_free {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __adl_free {
 template <class _Pol>
 struct __exec_compl_attrs {
   _Pol __ycxx_pol;
@@ -223,7 +223,7 @@ struct __exec_compl_attrs {
 };
 }} // namespace __ycxx::__adl_free
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail { namespace __exec {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail { namespace __exec {
 template <class _Pol>
 using __compl_attrs_t = ::__ycxx::__adl_free::__exec_compl_attrs<_Pol>;
 
@@ -242,7 +242,7 @@ constexpr auto __map_attrs(const _Data&, const _Child& __child) noexcept {
 // call the receiver: GCC at -O2 emits them, so the members are defined (never called).
 }}} // namespace __ycxx::__detail::__exec
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __adl_free {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __adl_free {
 template <class _Env>
 struct __exec_probe_receiver {
   using receiver_concept = std::execution::receiver_tag;
@@ -255,7 +255,7 @@ struct __exec_probe_receiver {
 };
 }} // namespace __ycxx::__adl_free
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail { namespace __exec {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail { namespace __exec {
 // Whether connecting _Sp to a receiver with environment _Env is noexcept. A sender without
 // completion signatures in _Env is not connected at all (connect would be ill-formed, as a hard
 // error), so the caller can report the invalid signatures instead.
@@ -272,7 +272,7 @@ consteval bool __nothrow_connect_in() {
 
 // ---------------------------------------------------------------------------------------------
 // [exec.write.env], [exec.unstoppable]
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail { namespace __exec {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail { namespace __exec {
 struct __write_env_t {
   template <class _Sndr, class _Env>
     requires std::execution::sender<_Sndr> && __queryable<std::decay_t<_Env>>
@@ -324,14 +324,14 @@ struct __unstoppable_t {
 };
 }}} // namespace __ycxx::__detail::__exec
 
-namespace [[__gnu__::__visibility__("hidden")]] std { namespace execution {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 { namespace execution {
 inline constexpr __ycxx::__detail::__exec::__write_env_t write_env{};
 inline constexpr __ycxx::__detail::__exec::__unstoppable_t unstoppable{};
-}} // namespace std::execution
+}}} // namespace std::execution
 
 // ---------------------------------------------------------------------------------------------
 // [exec.then]
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail { namespace __exec {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail { namespace __exec {
 // The pipeable forms of a sender adaptor object taking a sender and N more arguments
 // ([exec.adapt.obj]/5): adaptor(args...) binds args when Bindable<Args...> (the adaptor's
 // requirements on them) holds.
@@ -404,16 +404,16 @@ struct __then_adaptor : __pipeable_adaptor<_Self, 1, __bind_movable_value> {
 };
 }}} // namespace __ycxx::__detail::__exec
 
-namespace [[__gnu__::__visibility__("hidden")]] std { namespace execution {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 { namespace execution {
 struct then_t : __ycxx::__detail::__exec::__then_adaptor<then_t> {};
 struct upon_error_t : __ycxx::__detail::__exec::__then_adaptor<upon_error_t> {};
 struct upon_stopped_t : __ycxx::__detail::__exec::__then_adaptor<upon_stopped_t> {};
 inline constexpr then_t then{};
 inline constexpr upon_error_t upon_error{};
 inline constexpr upon_stopped_t upon_stopped{};
-}} // namespace std::execution
+}}} // namespace std::execution
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail { namespace __exec {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail { namespace __exec {
 using std::execution::set_error_t;
 using std::execution::set_stopped_t;
 using std::execution::set_value_t;
@@ -427,7 +427,7 @@ struct __impls_for<std::execution::upon_stopped_t> : __then_impls<std::execution
 
 // ---------------------------------------------------------------------------------------------
 // [exec.into.variant]
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail { namespace __exec {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail { namespace __exec {
 template <class _CS>
 struct __into_variant_sigs {
   using type = _CS;
@@ -451,7 +451,7 @@ struct __into_variant_sigs<std::execution::completion_signatures<_Sigs...>> {
 
 }}} // namespace __ycxx::__detail::__exec
 
-namespace [[__gnu__::__visibility__("hidden")]] std { namespace execution {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 { namespace execution {
 struct into_variant_t : sender_adaptor_closure<into_variant_t> {
   template <sender _Sndr>
   constexpr auto operator()(_Sndr&& __sndr) const noexcept(is_nothrow_constructible_v<decay_t<_Sndr>, _Sndr>) {
@@ -459,9 +459,9 @@ struct into_variant_t : sender_adaptor_closure<into_variant_t> {
   }
 };
 inline constexpr into_variant_t into_variant{};
-}} // namespace std::execution
+}}} // namespace std::execution
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail { namespace __exec {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail { namespace __exec {
 template <>
 struct __impls_for<std::execution::into_variant_t> : __default_impls {
   // [exec.into.variant]/5: a value completion becomes the value completion, or an error one
@@ -505,7 +505,7 @@ struct __impls_for<std::execution::into_variant_t> : __default_impls {
 
 // ---------------------------------------------------------------------------------------------
 // [exec.let]
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __adl_free {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __adl_free {
 // SCHED-ENV(sch) ([exec.snd.expos]/10)
 template <class _Sch>
 struct __exec_sched_env {
@@ -525,7 +525,7 @@ struct __exec_let_data {
 };
 }} // namespace __ycxx::__adl_free
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail { namespace __exec {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail { namespace __exec {
 // let-env(sndr, env) ([exec.let]/2)
 template <class _SetTag, class _Sndr, class _Env>
 constexpr auto __let_env(const _Sndr& __sndr, const _Env& env) noexcept {
@@ -543,7 +543,7 @@ template <class _SetTag, class _Sndr, class _Env>
 using __let_env_t = decltype(::__ycxx::__detail::__exec::__let_env<_SetTag>(std::declval<const std::remove_cvref_t<_Sndr>&>(), std::declval<const _Env&>()));
 }}} // namespace __ycxx::__detail::__exec
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __adl_free {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __adl_free {
 // receiver2 ([exec.let]/8)
 template <class _Rcvr, class _Env>
 struct __exec_let_receiver2 {
@@ -570,7 +570,7 @@ template <class _State>
 struct __exec_let_receiver;
 }} // namespace __ycxx::__adl_free
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail { namespace __exec {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail { namespace __exec {
 template <class _Cpo, class _Sndr, class _Fn, class _Rcvr>
 struct __let_state_key {};
 
@@ -603,7 +603,7 @@ struct __let_types {
 };
 }}} // namespace __ycxx::__detail::__exec
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __adl_free {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __adl_free {
 // let-state ([exec.let]/10)
 template <class _Cpo, class _Sndr, class _Fn, class _Rcvr>
 struct __exec_let_state {
@@ -676,7 +676,7 @@ struct __exec_let_receiver<::__ycxx::__detail::__exec::__let_state_key<_Cpo, _Sn
 };
 }} // namespace __ycxx::__adl_free
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail { namespace __exec {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail { namespace __exec {
 // let-tag
 template <class _Cpo>
 struct __let_tag {};
@@ -842,16 +842,16 @@ struct __let_adaptor : __pipeable_adaptor<_Self, 1, __bind_movable_value> {
 };
 }}} // namespace __ycxx::__detail::__exec
 
-namespace [[__gnu__::__visibility__("hidden")]] std { namespace execution {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 { namespace execution {
 struct let_value_t : __ycxx::__detail::__exec::__let_adaptor<let_value_t, set_value_t> {};
 struct let_error_t : __ycxx::__detail::__exec::__let_adaptor<let_error_t, set_error_t> {};
 struct let_stopped_t : __ycxx::__detail::__exec::__let_adaptor<let_stopped_t, set_stopped_t> {};
 inline constexpr let_value_t let_value{};
 inline constexpr let_error_t let_error{};
 inline constexpr let_stopped_t let_stopped{};
-}} // namespace std::execution
+}}} // namespace std::execution
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail { namespace __exec {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail { namespace __exec {
 template <>
 struct __impls_for<std::execution::let_value_t> : __let_cpo_impls<set_value_t, std::execution::let_value_t> {};
 template <>
@@ -862,7 +862,7 @@ struct __impls_for<std::execution::let_stopped_t> : __let_cpo_impls<set_stopped_
 
 // ---------------------------------------------------------------------------------------------
 // [exec.stopped.opt], [exec.stopped.err]
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail { namespace __exec {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail { namespace __exec {
 template <class _CS>
 struct __stopped_as_optional_sigs {
   using type = _CS;
@@ -918,7 +918,7 @@ struct __stopped_as_error_sigs<_Ep, std::execution::completion_signatures<_Sigs.
 };
 }}} // namespace __ycxx::__detail::__exec
 
-namespace [[__gnu__::__visibility__("hidden")]] std { namespace execution {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 { namespace execution {
 struct stopped_as_optional_t : sender_adaptor_closure<stopped_as_optional_t> {
   template <sender _Sndr>
   constexpr auto operator()(_Sndr&& __sndr) const noexcept(is_nothrow_constructible_v<decay_t<_Sndr>, _Sndr>) {
@@ -961,9 +961,9 @@ struct stopped_as_error_t : __ycxx::__detail::__exec::__pipeable_adaptor<stopped
 };
 inline constexpr stopped_as_optional_t stopped_as_optional{};
 inline constexpr stopped_as_error_t stopped_as_error{};
-}} // namespace std::execution
+}}} // namespace std::execution
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail { namespace __exec {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail { namespace __exec {
 template <>
 struct __impls_for<std::execution::stopped_as_optional_t> : __default_impls {
   // [exec.stopped.opt]/4: values and stopped become values; constructing the optional can
@@ -1014,7 +1014,7 @@ struct __impls_for<std::execution::stopped_as_error_t> : __default_impls {
 
 // ---------------------------------------------------------------------------------------------
 // [exec.bulk]
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail { namespace __exec {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail { namespace __exec {
 template <bool _Chunked, class _Fp, class _Shape>
 struct __bulk_sig_map {
   template <class _Sig>
@@ -1117,7 +1117,7 @@ struct __bulk_adaptor : __pipeable_adaptor<_Self, 3, __bind_bulk> {
 };
 }}} // namespace __ycxx::__detail::__exec
 
-namespace [[__gnu__::__visibility__("hidden")]] std { namespace execution {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 { namespace execution {
 struct bulk_chunked_t : __ycxx::__detail::__exec::__bulk_adaptor<bulk_chunked_t> {};
 struct bulk_unchunked_t : __ycxx::__detail::__exec::__bulk_adaptor<bulk_unchunked_t> {};
 struct bulk_t : __ycxx::__detail::__exec::__bulk_adaptor<bulk_t> {
@@ -1135,9 +1135,9 @@ struct bulk_t : __ycxx::__detail::__exec::__bulk_adaptor<bulk_t> {
 inline constexpr bulk_t bulk{};
 inline constexpr bulk_chunked_t bulk_chunked{};
 inline constexpr bulk_unchunked_t bulk_unchunked{};
-}} // namespace std::execution
+}}} // namespace std::execution
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail { namespace __exec {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail { namespace __exec {
 template <>
 struct __impls_for<std::execution::bulk_t> : __bulk_impls<std::execution::bulk_t, false> {};
 template <>

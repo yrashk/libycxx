@@ -27,11 +27,11 @@ extern "C" time_t timegm(tm* __timeptr);
 
 // timespec_getres (C23 7.29.2.7) for C libraries without it, in the hosted runtime
 // (src/hosted/ctime.cpp): the resolution of TIME_UTC, from clock_getres(CLOCK_REALTIME).
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 int __c_timespec_getres(::timespec* __ts, int base) noexcept;
 }} // namespace __ycxx::__detail
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 using ::clock_t;
 using ::time_t;
 using ::tm;
@@ -60,4 +60,4 @@ inline int timespec_getres(timespec* __ts, int base) noexcept {
   return __ycxx::__detail::__c_timespec_getres(__ts, base);
 }
 #endif
-} // namespace std
+}} // namespace std

@@ -10,7 +10,7 @@
 #include <ycxx/core/ranges_all.hpp>
 #include <ycxx/core/tuple.hpp>
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 template <class _Fp>
 constexpr void __fmt_set_debug(_Fp& __f) {
   if constexpr (requires { __f.set_debug_format(); })
@@ -18,7 +18,7 @@ constexpr void __fmt_set_debug(_Fp& __f) {
 }
 }} // namespace __ycxx::__detail
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 // [format.range.formatter]
 template <class _Tp, class __charT = char>
@@ -145,9 +145,9 @@ public:
   }
 };
 
-} // namespace std
+}} // namespace std
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __adl_free {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __adl_free {
 
 // range-default-formatter ([format.range.fmtdef], [format.range.fmtmap], [format.range.fmtset],
 // [format.range.fmtstr]).
@@ -330,7 +330,7 @@ public:
 
 }} // namespace __ycxx::__adl_free
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 // [format.range.fmtmap], [format.range.fmtset], [format.range.fmtstr]
 // (format_kind<R> is only asked of cv-unqualified non-reference types: its primary template must
@@ -356,4 +356,4 @@ inline constexpr bool enable_nonlocking_formatter_optimization<pair<_T1, _T2>> =
     enable_nonlocking_formatter_optimization<remove_cvref_t<_T1>> &&
     enable_nonlocking_formatter_optimization<remove_cvref_t<_T2>>;
 
-} // namespace std
+}} // namespace std

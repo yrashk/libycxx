@@ -41,7 +41,7 @@ namespace [[__gnu__::__visibility__("hidden")]] __cxxabiv1 {
 extern "C" [[__gnu__::__visibility__("hidden")]] std::type_info* __cxa_current_exception_type() noexcept;
 }
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 
 bool __handling_foreign_exception() noexcept { return __cxxabiv1::__cxa_current_exception_type() == nullptr; }
 

@@ -55,7 +55,7 @@ constexpr name_entry collate_names[] = {
 
 } // namespace
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 
 unsigned __regex_class_by_name(const char* name, std::size_t n, bool icase) noexcept {
   for (const name_entry& e : class_names) {
@@ -98,10 +98,10 @@ const char* __regex_error_message(int code) noexcept {
 
 }} // namespace __ycxx::__detail
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 regex_error::regex_error(regex_constants::error_type __ecode)
     : runtime_error(::__ycxx::__detail::__regex_error_message(__ecode)), __code_(__ecode) {}
 regex_error::~regex_error() {}
 
-} // namespace std
+}} // namespace std

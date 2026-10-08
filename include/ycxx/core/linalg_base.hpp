@@ -7,7 +7,7 @@
 #include <ycxx/core/execution_policy.hpp>
 #include <ycxx/core/mdspan.hpp>
 
-namespace [[__gnu__::__visibility__("hidden")]] std { namespace linalg {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 { namespace linalg {
 
 // [linalg.tags.order]
 struct column_major_t {
@@ -149,14 +149,14 @@ public:
   };
 };
 
-}} // namespace std::linalg
+}}} // namespace std::linalg
 
 // ---------------------------------------------------------------------------------------------
 // [linalg.helpers]: abs-if-needed, conj-if-needed, real-if-needed, imag-if-needed. The
 // unqualified calls are made here, next to deleted templates that hide nothing but stop the
 // lookup from reaching std:: functions for arithmetic arguments ([linalg.general]/6).
 // ---------------------------------------------------------------------------------------------
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail::__la_adl {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail::__la_adl {
 
 template <class _Up>
 _Up abs(_Up) = delete;
@@ -209,7 +209,7 @@ constexpr auto __imag_if_needed(const _Tp& e) {
 
 }} // namespace __ycxx::__detail::__la_adl
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 
 // [linalg.helpers.concepts]
 template <class _Tp>
@@ -315,7 +315,7 @@ inline constexpr bool __la_triangle_matches =
 
 }} // namespace __ycxx::__detail
 
-namespace [[__gnu__::__visibility__("hidden")]] std { namespace linalg {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 { namespace linalg {
 
 // ---------------------------------------------------------------------------------------------
 // [linalg.scaled]
@@ -396,16 +396,16 @@ private:
   _NestedAccessor __nested_accessor_{};
 };
 
-}} // namespace std::linalg
+}}} // namespace std::linalg
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 template <class _Tp>
 inline constexpr bool __la_is_conjugated_accessor = false;
 template <class _Ap>
 inline constexpr bool __la_is_conjugated_accessor<std::linalg::conjugated_accessor<_Ap>> = true;
 }} // namespace __ycxx::__detail
 
-namespace [[__gnu__::__visibility__("hidden")]] std { namespace linalg {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 { namespace linalg {
 
 template <class _ElementType, class _Extents, class _Layout, class _Accessor>
 constexpr auto conjugated(mdspan<_ElementType, _Extents, _Layout, _Accessor> a) {
@@ -425,9 +425,9 @@ constexpr auto conjugated(mdspan<_ElementType, _Extents, _Layout, _Accessor> a) 
 // ---------------------------------------------------------------------------------------------
 // [linalg.transp]
 // ---------------------------------------------------------------------------------------------
-}} // namespace std::linalg
+}}} // namespace std::linalg
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 // transpose-extents ([linalg.transp.helpers])
 template <class _IndexType, std::size_t _E0, std::size_t _E1>
 constexpr std::extents<_IndexType, _E1, _E0> __la_transpose_extents(const std::extents<_IndexType, _E0, _E1>& in) {
@@ -437,7 +437,7 @@ template <class _Ep>
 using __la_transpose_extents_t = decltype(::__ycxx::__detail::__la_transpose_extents(std::declval<_Ep>()));
 }} // namespace __ycxx::__detail
 
-namespace [[__gnu__::__visibility__("hidden")]] std { namespace linalg {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 { namespace linalg {
 
 template <class _Layout>
 class layout_transpose {
@@ -494,9 +494,9 @@ public:
   };
 };
 
-}} // namespace std::linalg
+}}} // namespace std::linalg
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 
 template <class _Tp>
 inline constexpr bool __la_is_layout_transpose = false;
@@ -551,7 +551,7 @@ struct __la_transposed_layout<std::linalg::layout_transpose<_NestedLayout>> {
 
 }} // namespace __ycxx::__detail
 
-namespace [[__gnu__::__visibility__("hidden")]] std { namespace linalg {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 { namespace linalg {
 
 template <class _ElementType, class _Extents, class _Layout, class _Accessor>
 constexpr auto transposed(mdspan<_ElementType, _Extents, _Layout, _Accessor> a) {
@@ -582,4 +582,4 @@ constexpr auto conjugate_transposed(mdspan<_ElementType, _Extents, _Layout, _Acc
   return std::linalg::conjugated(std::linalg::transposed(a));
 }
 
-}} // namespace std::linalg
+}}} // namespace std::linalg

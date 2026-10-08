@@ -13,7 +13,7 @@
 // Hexadecimal significands are exact up to 120 bits, plus a sticky bit.
 #include "fp_common.hpp"
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail::__fpconv {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail::__fpconv {
 namespace {
 
 bool __is_digit(char c) { return c >= '0' && c <= '9'; }

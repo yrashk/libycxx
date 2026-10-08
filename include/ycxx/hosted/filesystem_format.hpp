@@ -6,7 +6,7 @@
 #include <ycxx/core/format_base.hpp>
 #include <ycxx/hosted/filesystem.hpp>
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 template <__ycxx::__detail::__fmt_char __charT>
 struct formatter<filesystem::path, __charT> {
@@ -44,4 +44,4 @@ public:
 template <>
 inline constexpr bool enable_nonlocking_formatter_optimization<filesystem::path> = true;
 
-} // namespace std
+}} // namespace std

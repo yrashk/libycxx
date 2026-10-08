@@ -37,7 +37,7 @@
 #include <ycxx/core/swap.hpp>
 #include <ycxx/core/utility_base.hpp>
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 struct hive_limits {
   size_t min;
@@ -48,9 +48,9 @@ struct hive_limits {
 template <class _Tp, class _Allocator>
 class hive;
 
-} // namespace std
+}} // namespace std
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 
 using __hive_index = std::uint16_t;
 inline constexpr __hive_index __hive_none = 0xffff; // no slot (a free list's end)
@@ -88,7 +88,7 @@ struct __hive_group {
 
 }} // namespace __ycxx::__detail
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __adl_free {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __adl_free {
 
 // T is the element type, possibly const.
 template <class _Tp, class _Diff>
@@ -169,7 +169,7 @@ public:
 
 }} // namespace __ycxx::__adl_free
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 template <class _Tp, class _Allocator = allocator<_Tp>>
 class hive;
@@ -979,4 +979,4 @@ template <class _Tp>
 using hive = std::hive<_Tp, polymorphic_allocator<_Tp>>;
 } // namespace pmr
 
-} // namespace std
+}} // namespace std

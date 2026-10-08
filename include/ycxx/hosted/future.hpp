@@ -28,7 +28,7 @@
 #include <ycxx/hosted/mutex.hpp>
 #include <ycxx/hosted/thread.hpp>
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 enum class future_errc { future_already_retrieved = 1, promise_already_satisfied = 2, no_state = 3, broken_promise = 4 };
 
@@ -77,9 +77,9 @@ class promise;
 template <class>
 class packaged_task;
 
-} // namespace std
+}} // namespace std
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 
 [[noreturn]] [[__gnu__::__cold__]] inline void __throw_future_error(std::future_errc e) {
   ::__ycxx::__detail::__raise_with(ycxx_error_future_error, "std::future_error", [e] { return std::future_error(e); });
@@ -520,7 +520,7 @@ struct __future_access {
 
 }} // namespace __ycxx::__detail
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 // [futures.promise]
 template <class _Rp>
@@ -939,4 +939,4 @@ template <class _Fp, class... _Args>
   return std::async(launch::async | launch::deferred, static_cast<_Fp&&>(__f), static_cast<_Args&&>(__args)...);
 }
 
-} // namespace std
+}} // namespace std

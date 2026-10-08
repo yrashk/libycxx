@@ -9,7 +9,7 @@
 #include <ycxx/core/tuple.hpp>
 #include <ycxx/core/shared_ptr.hpp>
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 
 // POINTER_OF(T) and POINTER_OF_OR(T, U) ([memory.syn]/2-3). pointer_of_or<T, void> is void when
 // POINTER_OF(T) is not valid.
@@ -50,7 +50,7 @@ constexpr void __out_ptr_store(_Smart& s, _Pointer& p, _Tuple& a, std::index_seq
 
 }} // namespace __ycxx::__detail
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 // [out.ptr.t]
 template <class _Smart, class _Pointer, class... _Args>
@@ -149,4 +149,4 @@ constexpr auto inout_ptr(_Smart& s, _Args&&... __args) {
   return inout_ptr_t<_Smart, _Pp, _Args&&...>(s, static_cast<_Args&&>(__args)...);
 }
 
-} // namespace std
+}} // namespace std

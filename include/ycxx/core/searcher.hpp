@@ -28,7 +28,7 @@
 #include <ycxx/core/hash.hpp>
 #include <ycxx/core/iterator_core.hpp>
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 
 // A heap array owned by its holder, copied deeply. It has no move operations: a moved-from
 // searcher must still search, so moving one copies its tables.
@@ -146,7 +146,7 @@ public:
 
 }} // namespace __ycxx::__detail
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 template <class _ForwardIterator1, class _BinaryPredicate = equal_to<>>
 class default_searcher {
@@ -303,4 +303,4 @@ public:
   }
 };
 
-} // namespace std
+}} // namespace std

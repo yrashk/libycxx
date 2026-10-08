@@ -7,7 +7,7 @@
 #include <new>
 #include <typeinfo>
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 exception::~exception() {}
 bad_alloc::~bad_alloc() {}
@@ -16,4 +16,4 @@ bad_exception::~bad_exception() {}
 bad_cast::~bad_cast() {}
 bad_typeid::~bad_typeid() {}
 
-} // namespace std
+}} // namespace std

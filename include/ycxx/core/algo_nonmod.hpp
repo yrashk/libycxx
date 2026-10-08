@@ -7,7 +7,7 @@
 #include <ycxx/core/algo_base.hpp>
 #include <ycxx/core/optional.hpp>
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 
 template <class _Ip, class _Sp, class _Pp>
 constexpr std::iter_difference_t<_Ip> __count_if_impl(_Ip first, _Sp last, _Pp pred) {
@@ -235,7 +235,7 @@ concept __indirectly_binary_right_foldable = __indirectly_binary_left_foldable<_
 // =============================================================================================
 // std:: forms
 // =============================================================================================
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 // [alg.all.of], [alg.any.of], [alg.none.of]
 template <class _InputIterator, class _Predicate>
@@ -406,12 +406,12 @@ template <class _ForwardIterator, class _Size, class _Tp = typename iterator_tra
   return std::search_n(first, last, count, value, equal_to<>{});
 }
 
-} // namespace std
+}} // namespace std
 
 // =============================================================================================
 // std::ranges:: forms
 // =============================================================================================
-namespace [[__gnu__::__visibility__("hidden")]] std { namespace ranges {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 { namespace ranges {
 template <class _Ip, class _Fp>
 using for_each_result = in_fun_result<_Ip, _Fp>;
 template <class _Ip, class _Fp>
@@ -420,9 +420,9 @@ template <class _Ip, class _Tp>
 using fold_left_with_iter_result = in_value_result<_Ip, _Tp>;
 template <class _Ip, class _Tp>
 using fold_left_first_with_iter_result = in_value_result<_Ip, _Tp>;
-}} // namespace std::ranges
+}}} // namespace std::ranges
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail::__ranges_algo {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail::__ranges_algo {
 
 using std::ranges::borrowed_iterator_t;
 using std::ranges::borrowed_subrange_t;
@@ -531,7 +531,7 @@ struct __for_each_n_fn {
 
 }} // namespace __ycxx::__detail::__ranges_algo
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 // [alg.find.last]
 template <class _Ip, class _Sp, class _Pp>
 constexpr std::ranges::subrange<_Ip> __find_last_impl(_Ip first, _Sp last, _Pp pred) {
@@ -558,7 +558,7 @@ constexpr std::ranges::subrange<_Ip> __find_last_impl(_Ip first, _Sp last, _Pp p
 }
 }} // namespace __ycxx::__detail
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail::__ranges_algo {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail::__ranges_algo {
 
 struct __find_last_fn {
   template <std::forward_iterator _Ip, std::sentinel_for<_Ip> _Sp, class _Proj = std::identity,
@@ -824,7 +824,7 @@ struct __ends_with_fn {
 
 }} // namespace __ycxx::__detail::__ranges_algo
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 // [alg.fold]
 template <class _Ip, class _Sp, class _Tp, class _Fp>
 constexpr auto __fold_left_impl(_Ip first, _Sp last, _Tp init, _Fp& __f) {
@@ -871,7 +871,7 @@ constexpr auto __fold_right_last_impl(_Ip first, _Sp last, _Fp& __f) {
 
 }} // namespace __ycxx::__detail
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail::__ranges_algo {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail::__ranges_algo {
 
 struct __fold_left_with_iter_fn {
   template <std::input_iterator _Ip, std::sentinel_for<_Ip> _Sp, class _Tp = std::iter_value_t<_Ip>,
@@ -958,7 +958,7 @@ struct __fold_right_last_fn {
 
 }} // namespace __ycxx::__detail::__ranges_algo
 
-namespace [[__gnu__::__visibility__("hidden")]] std { namespace ranges {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 { namespace ranges {
 inline constexpr __ycxx::__adl_free::__ranges_par_algo<__ycxx::__detail::__ranges_algo::__all_of_fn, __ycxx::__detail::par::kind::all_of> all_of{};
 inline constexpr __ycxx::__adl_free::__ranges_par_algo<__ycxx::__detail::__ranges_algo::__any_of_fn, __ycxx::__detail::par::kind::any_of> any_of{};
 inline constexpr __ycxx::__adl_free::__ranges_par_algo<__ycxx::__detail::__ranges_algo::__none_of_fn, __ycxx::__detail::par::kind::none_of> none_of{};
@@ -985,4 +985,4 @@ inline constexpr __ycxx::__detail::__ranges_algo::__fold_right_fn fold_right{};
 inline constexpr __ycxx::__detail::__ranges_algo::__fold_right_last_fn fold_right_last{};
 inline constexpr __ycxx::__detail::__ranges_algo::__fold_left_with_iter_fn fold_left_with_iter{};
 inline constexpr __ycxx::__detail::__ranges_algo::__fold_left_first_with_iter_fn fold_left_first_with_iter{};
-}} // namespace std::ranges
+}}} // namespace std::ranges

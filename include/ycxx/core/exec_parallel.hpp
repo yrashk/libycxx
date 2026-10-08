@@ -18,7 +18,7 @@
 #include <ycxx/core/shared_ptr.hpp>
 #include <ycxx/core/span.hpp>
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail { namespace __exec {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail { namespace __exec {
 template <class _Tp>
 inline constexpr char __type_key = 0;
 struct __proxy_query {
@@ -30,7 +30,7 @@ struct __proxy_query {
 inline constexpr std::size_t __backend_storage_size = 128;
 }}} // namespace __ycxx::__detail::__exec
 
-namespace [[__gnu__::__visibility__("hidden")]] std { namespace execution { namespace parallel_scheduler_replacement {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 { namespace execution { namespace parallel_scheduler_replacement {
 
 struct receiver_proxy {
 protected:
@@ -66,14 +66,14 @@ struct parallel_scheduler_backend {
 // Replaceable ([exec.parschedrepl.query]); the default is in the hosted runtime.
 shared_ptr<parallel_scheduler_backend> query_parallel_scheduler_backend();
 
-}}} // namespace std::execution::parallel_scheduler_replacement
+}}}} // namespace std::execution::parallel_scheduler_replacement
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail { namespace __exec {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail { namespace __exec {
 // The default backend, a thread pool (hosted runtime, src/hosted/parallel_scheduler.cpp).
 std::shared_ptr<std::execution::parallel_scheduler_replacement::parallel_scheduler_backend> __default_parallel_scheduler_backend();
 }}} // namespace __ycxx::__detail::__exec
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __adl_free {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __adl_free {
 // The stop token a proxy reports for a receiver whose token is Token.
 template <class _Token>
 struct __exec_proxy_stop {
@@ -164,18 +164,18 @@ struct __exec_par_sched_op {
 };
 }} // namespace __ycxx::__adl_free
 
-namespace [[__gnu__::__visibility__("hidden")]] std { namespace execution {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 { namespace execution {
 class parallel_scheduler;
 parallel_scheduler get_parallel_scheduler();
-}} // namespace std::execution
+}}} // namespace std::execution
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __adl_free {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __adl_free {
 // parallel-scheduler-domain ([exec.par.scheduler]/8)
 struct __exec_par_domain;
 struct __exec_par_sched_sender;
 }} // namespace __ycxx::__adl_free
 
-namespace [[__gnu__::__visibility__("hidden")]] std { namespace execution {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 { namespace execution {
 
 class parallel_scheduler {
   using __backend_t = parallel_scheduler_replacement::parallel_scheduler_backend;
@@ -206,9 +206,9 @@ inline parallel_scheduler get_parallel_scheduler() {
   return parallel_scheduler(static_cast<shared_ptr<parallel_scheduler_replacement::parallel_scheduler_backend>&&>(__eb));
 }
 
-}} // namespace std::execution
+}}} // namespace std::execution
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __adl_free {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __adl_free {
 
 struct __exec_par_sched_sender {
   using sender_concept = std::execution::sender_tag;
@@ -430,11 +430,11 @@ __exec_par_domain __exec_par_sched_sender::__attrs::query(std::execution::get_co
 }
 }} // namespace __ycxx::__adl_free
 
-namespace [[__gnu__::__visibility__("hidden")]] std { namespace execution {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 { namespace execution {
 inline __ycxx::__adl_free::__exec_par_sched_sender parallel_scheduler::schedule() const noexcept { return {*this, __backend_}; }
 inline __ycxx::__adl_free::__exec_par_domain parallel_scheduler::query(get_domain_t) const noexcept { return {}; }
 template <class... _Envs>
 __ycxx::__adl_free::__exec_par_domain parallel_scheduler::query(get_completion_domain_t<set_value_t>, const _Envs&...) const noexcept {
   return {};
 }
-}} // namespace std::execution
+}}} // namespace std::execution

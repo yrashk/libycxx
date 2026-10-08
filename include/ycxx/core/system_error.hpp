@@ -23,7 +23,7 @@
 #include <ycxx/core/stdexcept.hpp>
 #include <ycxx/core/type_traits.hpp>
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 class error_category;
 class error_code;
@@ -44,9 +44,9 @@ constexpr bool is_error_code_enum_v = is_error_code_enum<_Tp>::value;
 template <class _Tp>
 constexpr bool is_error_condition_enum_v = is_error_condition_enum<_Tp>::value;
 
-} // namespace std
+}} // namespace std
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail::__syserr_adl {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail::__syserr_adl {
 // [contents]/3: make_error_code and make_error_condition are found by argument-dependent lookup
 // only. These zero-argument declarations hide every outer declaration from ordinary lookup and
 // are never viable themselves.
@@ -63,7 +63,7 @@ constexpr auto __condition_of(_Ep e) -> decltype(make_error_condition(e)) {
 }
 }} // namespace __ycxx::__detail::__syserr_adl
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 class error_category {
 public:
@@ -233,4 +233,4 @@ public:
   const char* what() const noexcept override { return runtime_error::what(); }
 };
 
-} // namespace std
+}} // namespace std

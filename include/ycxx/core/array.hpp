@@ -7,7 +7,7 @@
 #include <ycxx/core/error.hpp>
 #include <initializer_list>
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 // Storage for array<T, 0>: no elements, but alignof(T) and data() support.
 template <class _Tp>
 struct alignas(_Tp) __empty_array_storage {};
@@ -26,7 +26,7 @@ struct __array_storage<_Tp, 0> {
 };
 }} // namespace __ycxx::__detail
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 template <class _Tp, size_t _Np>
 struct array {
@@ -194,4 +194,4 @@ constexpr const _Tp&& get(const array<_Tp, _Np>&& a) noexcept {
   return static_cast<const _Tp&&>(a.__elems[_Ip]);
 }
 
-} // namespace std
+}} // namespace std

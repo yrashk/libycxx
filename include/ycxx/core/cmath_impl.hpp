@@ -20,7 +20,7 @@
 #include <ycxx/core/cmath_mp.hpp>
 #include <ycxx/core/cmath_promote.hpp>
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail::__cm {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail::__cm {
 
 template <class _Tp>
 consteval auto __carrier_of() {

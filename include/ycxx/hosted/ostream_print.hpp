@@ -7,13 +7,13 @@
 #include <ycxx/core/format_base.hpp>
 #include <ycxx/hosted/ostream.hpp>
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 // [ostream.formatted.print]/4: a formatted output function writing vformat(os.getloc(), fmt,
 // args), followed by a newline if `__newline`.
 void __vprint_ostream(std::ostream& __os, std::string_view __fmt, std::format_args __args, bool __newline);
 }} // namespace __ycxx::__detail
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 void vprint_unicode(ostream& __os, string_view __fmt, format_args __args);
 void vprint_nonunicode(ostream& __os, string_view __fmt, format_args __args);
@@ -28,4 +28,4 @@ void println(ostream& __os, format_string<_Args...> __fmt, _Args&&... __args) {
 }
 void println(ostream& __os);
 
-} // namespace std
+}} // namespace std

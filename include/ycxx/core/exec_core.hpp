@@ -33,7 +33,7 @@
 
 // ---------------------------------------------------------------------------------------------
 // Type lists and small metafunctions.
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail { namespace __exec {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail { namespace __exec {
 
 template <class... _Ts>
 struct __tlist {};
@@ -147,7 +147,7 @@ using __decayed_typeof = std::decay_t<decltype(_Cpo)>;
 
 // ---------------------------------------------------------------------------------------------
 // Completion functions, start, and the concept tags ([exec.recv], [exec.opstate]).
-namespace [[__gnu__::__visibility__("hidden")]] std { namespace execution {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 { namespace execution {
 
 struct scheduler_tag {};
 struct receiver_tag {};
@@ -213,9 +213,9 @@ inline constexpr start_t start{};
 template <class _Op>
 concept operation_state = derived_from<typename _Op::operation_state_concept, operation_state_tag> && requires(_Op& __o) { start(__o); };
 
-}} // namespace std::execution
+}}} // namespace std::execution
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail { namespace __exec {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail { namespace __exec {
 template <class _Tag>
 concept __completion_tag =
     std::same_as<_Tag, std::execution::set_value_t> || std::same_as<_Tag, std::execution::set_error_t> ||
@@ -224,7 +224,7 @@ concept __completion_tag =
 
 // ---------------------------------------------------------------------------------------------
 // Queries ([exec.queries]) and queryable utilities ([exec.envs]).
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 // [exec.fwd.env]
 struct forwarding_query_t {
@@ -241,9 +241,9 @@ struct forwarding_query_t {
 };
 inline constexpr forwarding_query_t forwarding_query{};
 
-} // namespace std
+}} // namespace std
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail { namespace __exec {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail { namespace __exec {
 // forwarding-query ([execution.syn]): forwarding_query(T{}) is true.
 template <class _Qp>
 concept __forwarding_query_c = requires { requires std::forwarding_query_t{}(_Qp{}); };
@@ -273,7 +273,7 @@ template <class _Env>
 struct __hide_sched_env;
 }}} // namespace __ycxx::__detail::__exec
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 // [exec.get.allocator]
 struct get_allocator_t {
@@ -307,9 +307,9 @@ inline constexpr get_stop_token_t get_stop_token{};
 template <class _Tp>
 using stop_token_of_t = remove_cvref_t<decltype(get_stop_token(declval<_Tp>()))>;
 
-} // namespace std
+}} // namespace std
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __adl_free {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __adl_free {
 template <std::size_t _Ip, class _Ep>
 struct __exec_env_leaf {
   [[no_unique_address]] _Ep __ycxx_env;
@@ -323,7 +323,7 @@ struct __exec_env_storage<std::index_sequence<_Is...>, _Es...> : __exec_env_leaf
 struct __exec_not_assignable {};
 }} // namespace __ycxx::__adl_free
 
-namespace [[__gnu__::__visibility__("hidden")]] std { namespace execution {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 { namespace execution {
 
 // [exec.prop]
 template <class _QueryTag, class _ValueType>
@@ -389,9 +389,9 @@ inline constexpr get_env_t get_env{};
 template <class _Tp>
 using env_of_t = decltype(get_env(declval<_Tp>()));
 
-}} // namespace std::execution
+}}} // namespace std::execution
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __adl_free {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __adl_free {
 // FWD-ENV(env) ([exec.snd.expos]/4): the forwarding queries of env. E is the environment type,
 // or a const lvalue reference to it when the argument was an lvalue.
 template <class _Ep>
@@ -425,7 +425,7 @@ struct __exec_join_env {
 };
 }} // namespace __ycxx::__adl_free
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail { namespace __exec {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail { namespace __exec {
 // An environment argument kept by reference when it is an lvalue, by value otherwise.
 template <class _Ep>
 using __env_member_t = std::conditional_t<std::is_lvalue_reference_v<_Ep>, const std::remove_reference_t<_Ep>&, std::remove_cvref_t<_Ep>>;
@@ -448,7 +448,7 @@ using __join_env_t = decltype(::__ycxx::__detail::__exec::__join_env(std::declva
 
 // ---------------------------------------------------------------------------------------------
 // Awaitable helpers ([exec.awaitable]).
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail { namespace __exec {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail { namespace __exec {
 
 template <class _Tp>
 inline constexpr bool __is_coroutine_handle = false;
@@ -517,7 +517,7 @@ concept __has_as_awaitable = requires(_Tp&& t, _Promise& p) {
 
 }}} // namespace __ycxx::__detail::__exec
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __adl_free {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __adl_free {
 template <class _Derived>
 struct __exec_with_await_transform {
   template <class _Tp>
@@ -545,7 +545,7 @@ struct __exec_env_promise : __exec_with_await_transform<__exec_env_promise<_Env>
 
 // ---------------------------------------------------------------------------------------------
 // The sender concept, schedule and schedulers ([exec.snd.concepts], [exec.schedule], [exec.sched]).
-namespace [[__gnu__::__visibility__("hidden")]] std { namespace execution {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 { namespace execution {
 
 template <class _Sndr>
 inline constexpr bool enable_sender =
@@ -570,9 +570,9 @@ inline constexpr schedule_t schedule{};
 
 enum class forward_progress_guarantee { concurrent, parallel, weakly_parallel };
 
-}} // namespace std::execution
+}}} // namespace std::execution
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail { namespace __exec {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail { namespace __exec {
 // The scheduler concept without its get_forward_progress_guarantee requirement, which that query
 // itself requires of its argument.
 template <class _Sch>
@@ -582,7 +582,7 @@ concept __scheduler_base = std::derived_from<typename std::remove_cvref_t<_Sch>:
                          } && std::equality_comparable<std::remove_cvref_t<_Sch>> && std::copyable<std::remove_cvref_t<_Sch>>;
 }}} // namespace __ycxx::__detail::__exec
 
-namespace [[__gnu__::__visibility__("hidden")]] std { namespace execution {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 { namespace execution {
 
 // [exec.get.fwd.progress]
 struct get_forward_progress_guarantee_t {
@@ -618,9 +618,9 @@ struct default_domain;
 template <class... _Domains>
 struct indeterminate_domain;
 
-}} // namespace std::execution
+}}} // namespace std::execution
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail { namespace __exec {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail { namespace __exec {
 // RECURSE-QUERY(sch, envs...) ([exec.get.compl.sched]/4).
 template <class _Sch, class... _Envs>
 constexpr auto __recurse_query(_Sch __sch, const _Envs&... __envs) noexcept {
@@ -650,7 +650,7 @@ concept __completion_scheduler_via_query =
     };
 }}} // namespace __ycxx::__detail::__exec
 
-namespace [[__gnu__::__visibility__("hidden")]] std { namespace execution {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 { namespace execution {
 
 template <class _CPO>
 struct get_completion_scheduler_t {
@@ -673,9 +673,9 @@ struct get_completion_scheduler_t {
 template <class _CPO>
 constexpr get_completion_scheduler_t<_CPO> get_completion_scheduler{};
 
-}} // namespace std::execution
+}}} // namespace std::execution
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail { namespace __exec {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail { namespace __exec {
 // The D of get_completion_domain<Tag>(attrs, envs...) ([exec.get.compl.domain]/2); void when
 // that expression is ill-formed.
 template <class _Tag, class _Ap, class... _Envs>
@@ -705,7 +705,7 @@ template <class _Tag, class _Ap, class... _Envs>
 using __compl_domain_t = typename __compl_domain<_Tag, _Ap, _Envs...>::type;
 }}} // namespace __ycxx::__detail::__exec
 
-namespace [[__gnu__::__visibility__("hidden")]] std { namespace execution {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 { namespace execution {
 
 // [exec.get.compl.domain]
 template <class _CPO>
@@ -802,9 +802,9 @@ struct get_await_completion_adaptor_t {
 };
 inline constexpr get_await_completion_adaptor_t get_await_completion_adaptor{};
 
-}} // namespace std::execution
+}}} // namespace std::execution
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail { namespace __exec {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail { namespace __exec {
 template <class _Env>
 struct __hide_sched_env {
   const _Env& env;
@@ -856,7 +856,7 @@ using __compl_domain_of_t = std::conditional_t<
 
 // ---------------------------------------------------------------------------------------------
 // Completion signatures ([exec.cmplsig]).
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail { namespace __exec {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail { namespace __exec {
 template <class _Fn>
 inline constexpr bool __is_completion_signature = false;
 template <class... _Vs>
@@ -878,7 +878,7 @@ struct __sig_tag<_Tag(_As...)> {
 };
 }}} // namespace __ycxx::__detail::__exec
 
-namespace [[__gnu__::__visibility__("hidden")]] std { namespace execution {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 { namespace execution {
 
 template <__ycxx::__detail::__exec::__completion_signature... _Fns>
 struct completion_signatures {
@@ -897,9 +897,9 @@ struct dependent_sender_error : exception {
   constexpr const char* what() const noexcept override { return "std::execution::dependent_sender_error"; }
 };
 
-}} // namespace std::execution
+}}} // namespace std::execution
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail { namespace __exec {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail { namespace __exec {
 
 template <class _Tp>
 inline constexpr bool __is_csigs = false;
@@ -1077,7 +1077,7 @@ using __set_value_sig_t = typename __set_value_sig<_Tp>::type;
 // ---------------------------------------------------------------------------------------------
 // Domains, transform_sender, apply_sender ([exec.domain.indeterminate], [exec.domain.default],
 // [exec.snd.transform], [exec.snd.apply]); tag_of_t ([exec.snd.concepts]/6).
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail { namespace __exec {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail { namespace __exec {
 // tag_of_t: the type of the first element of a tuple-like sender with at least two elements
 // (the library's senders). Aggregates of other forms are not recognised (DECISIONS).
 template <class _Sndr>
@@ -1094,7 +1094,7 @@ struct __tag_of<_Sndr> {
 };
 }}} // namespace __ycxx::__detail::__exec
 
-namespace [[__gnu__::__visibility__("hidden")]] std { namespace execution {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 { namespace execution {
 
 template <sender _Sndr>
 using tag_of_t = typename __ycxx::__detail::__exec::__tag_of<_Sndr>::type;
@@ -1151,9 +1151,9 @@ private:
   }();
 };
 
-}} // namespace std::execution
+}}} // namespace std::execution
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 // [exec.domain.indeterminate]/4
 template <class... _Ds, class... _Es>
 struct common_type<execution::indeterminate_domain<_Ds...>, execution::indeterminate_domain<_Es...>> {
@@ -1167,9 +1167,9 @@ template <class _Dp, class... _Ds>
 struct common_type<_Dp, execution::indeterminate_domain<_Ds...>> {
   using type = conditional_t<sizeof...(_Ds) == 0, _Dp, __ycxx::__detail::__exec::__apply_unique_t<execution::indeterminate_domain, _Ds..., _Dp>>;
 };
-} // namespace std
+}} // namespace std
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail { namespace __exec {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail { namespace __exec {
 // transformed-sndr(dom, tag, s) and transform-recurse ([exec.snd.transform]/3). Its exception
 // specification is that of the transform_sender it calls: the domain's, else default_domain's.
 template <class _Dom, class _Tag, class _Sndr, class _Env>
@@ -1220,7 +1220,7 @@ consteval bool __transform_recurse_nothrow() {
 }
 }}} // namespace __ycxx::__detail::__exec
 
-namespace [[__gnu__::__visibility__("hidden")]] std { namespace execution {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 { namespace execution {
 
 // [exec.snd.transform]
 template <sender _Sndr, __ycxx::__detail::__exec::__queryable _Env>
@@ -1236,9 +1236,9 @@ constexpr decltype(auto) transform_sender(_Sndr&& __sndr, const _Env& env) noexc
                            __transform_recurse(__completion_domain_for<_Sndr, _Env>(), set_value_t(), static_cast<_Sndr&&>(__sndr), env), env);
 }
 
-}} // namespace std::execution
+}}} // namespace std::execution
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail { namespace __exec {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail { namespace __exec {
 template <class _Domain, class _Tag, class _Sndr, class... _Args>
 consteval bool __apply_nothrow() {
   if constexpr (requires { std::declval<_Domain&>().apply_sender(_Tag(), std::declval<_Sndr>(), std::declval<_Args>()...); })
@@ -1255,7 +1255,7 @@ constexpr decltype(auto) __apply_dispatch(_Domain __dom, _Tag, _Sndr&& __sndr, _
 }
 }}} // namespace __ycxx::__detail::__exec
 
-namespace [[__gnu__::__visibility__("hidden")]] std { namespace execution {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 { namespace execution {
 template <class _Domain, class _Tag, sender _Sndr, class... _Args>
   requires requires(_Domain __dom, _Sndr&& __sndr, _Args&&... __args) {
     __dom.apply_sender(_Tag(), static_cast<_Sndr&&>(__sndr), static_cast<_Args&&>(__args)...);
@@ -1266,11 +1266,11 @@ constexpr decltype(auto) apply_sender(_Domain __dom, _Tag, _Sndr&& __sndr, _Args
     __ycxx::__detail::__exec::__apply_nothrow<_Domain, _Tag, _Sndr, _Args...>()) {
   return __ycxx::__detail::__exec::__apply_dispatch(__dom, _Tag(), static_cast<_Sndr&&>(__sndr), static_cast<_Args&&>(__args)...);
 }
-}} // namespace std::execution
+}}} // namespace std::execution
 
 // ---------------------------------------------------------------------------------------------
 // get_completion_signatures ([exec.getcomplsigs]) and the concepts built on it.
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail { namespace __exec {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail { namespace __exec {
 
 // The exception get_completion_signatures throws for an invalid sender (the "unspecified-
 // exception" of [exec.snd.general]/6 and the "except" of [exec.getcomplsigs]/1).
@@ -1406,7 +1406,7 @@ using __csigs_of_t = typename __csigs_of_impl<_Sndr, _Env...>::type;
 
 }}} // namespace __ycxx::__detail::__exec
 
-namespace [[__gnu__::__visibility__("hidden")]] std { namespace execution {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 { namespace execution {
 
 template <class _Sndr, class... _Env>
   requires(sizeof...(_Env) <= 1)
@@ -1438,9 +1438,9 @@ template <class _Sndr, class _Env = env<>>
   requires sender_in<_Sndr, _Env>
 constexpr bool sends_stopped = __ycxx::__detail::__exec::__sigs_count<set_stopped_t, completion_signatures_of_t<_Sndr, _Env>> != 0;
 
-}} // namespace std::execution
+}}} // namespace std::execution
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail { namespace __exec {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail { namespace __exec {
 // single-sender-value-type<Sndr, Env...> ([execution.syn]/2): from the value completions' argument
 // lists, decay_t<T> for one completion with one datum, void for none or one without datums,
 // decayed-tuple<Ts...> for one with several, and nothing otherwise.
@@ -1498,7 +1498,7 @@ concept __sender_of = __sender_in_of_impl<_Sndr, std::execution::set_value_t(_Va
 
 // ---------------------------------------------------------------------------------------------
 // Receiver concepts ([exec.recv.concepts]).
-namespace [[__gnu__::__visibility__("hidden")]] std { namespace execution {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 { namespace execution {
 
 template <class _Rcvr>
 concept receiver = derived_from<typename remove_cvref_t<_Rcvr>::receiver_concept, receiver_tag> &&
@@ -1512,9 +1512,9 @@ concept inlinable_receiver = receiver<_Rcvr> && requires(_ChildOp* __child) {
   { remove_cvref_t<_Rcvr>::make_receiver_for(__child) } noexcept -> same_as<remove_cvref_t<_Rcvr>>;
 };
 
-}} // namespace std::execution
+}}} // namespace std::execution
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail { namespace __exec {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail { namespace __exec {
 template <class _Rcvr, class _Sig>
 inline constexpr bool __valid_completion_for = false;
 template <class _Rcvr, class _Tag, class... _As>
@@ -1529,7 +1529,7 @@ concept __receiver_of = std::execution::receiver<_Rcvr> && __has_completions<_Rc
 
 // ---------------------------------------------------------------------------------------------
 // connect ([exec.connect]).
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __adl_free {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __adl_free {
 template <class _DS, class _DR>
 struct __exec_connect_awaitable_promise;
 
@@ -1576,7 +1576,7 @@ struct __exec_suspend_complete {
 };
 }} // namespace __ycxx::__adl_free
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail { namespace __exec {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail { namespace __exec {
 template <class _Fun, class... _Ts>
 auto __suspend_complete(_Fun fun, _Ts&&... __as) noexcept {
   auto __fn = [&, fun]() noexcept { fun(static_cast<_Ts&&>(__as)...); };
@@ -1638,7 +1638,7 @@ concept __connect_via_awaitable = requires(_Sndr&& s, _Rcvr&& r) {
 };
 }}} // namespace __ycxx::__detail::__exec
 
-namespace [[__gnu__::__visibility__("hidden")]] std { namespace execution {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 { namespace execution {
 
 struct connect_t {
   template <class _Sndr, class _Rcvr>
@@ -1672,9 +1672,9 @@ inline constexpr connect_t connect{};
 template <class _Sndr, class _Rcvr>
 using connect_result_t = decltype(connect(declval<_Sndr>(), declval<_Rcvr>()));
 
-}} // namespace std::execution
+}}} // namespace std::execution
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail { namespace __exec {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail { namespace __exec {
 // sender-to ([exec.snd.concepts])
 template <class _Sndr, class _Rcvr>
 concept __sender_to = std::execution::sender_in<_Sndr, std::execution::env_of_t<_Rcvr>> &&

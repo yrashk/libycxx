@@ -10,7 +10,7 @@
 // =============================================================================================
 // reverse_iterator
 // =============================================================================================
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 template <class _It>
 consteval auto __reverse_category() {
   using _Cp = typename std::iterator_traits<_It>::iterator_category;
@@ -21,7 +21,7 @@ consteval auto __reverse_category() {
 }
 }} // namespace __ycxx::__detail
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 template <class _Iterator>
 class reverse_iterator {
@@ -281,9 +281,9 @@ constexpr insert_iterator<_Container> inserter(_Container& __x, ranges::iterator
 template <indirectly_readable _It>
 using iter_const_reference_t = common_reference_t<const iter_value_t<_It>&&, iter_reference_t<_It>>;
 
-} // namespace std
+}} // namespace std
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 template <class _It>
 concept __constant_iterator = std::input_iterator<_It> && std::same_as<std::iter_const_reference_t<_It>, std::iter_reference_t<_It>>;
 template <std::indirectly_readable _It>
@@ -308,7 +308,7 @@ consteval auto __const_iter_concept() {
 // Base classes of std types live in __ycxx::__adl_free, a namespace that declares no functions:
 // a base's namespace is an associated namespace for ADL ([basic.lookup.argdep]/3), so a
 // __ycxx::__detail base would expose every internal function to lookup on the std type.
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __adl_free {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __adl_free {
 template <class _Ip>
 struct __const_iter_category {};
 template <std::forward_iterator _Ip>
@@ -317,14 +317,14 @@ struct __const_iter_category<_Ip> {
 };
 }} // namespace __ycxx::__adl_free
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 template <input_iterator _Iter>
 class basic_const_iterator;
 
-} // namespace std
+}} // namespace std
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 template <class _Tp>
 inline constexpr bool __is_basic_const_iterator = false;
 template <class _Ip>
@@ -342,7 +342,7 @@ template <class _Iter, class _Ip>
 concept __const_iter_less_with = requires(const _Iter& __it, const _Ip& i) { __it < i; };
 }} // namespace __ycxx::__detail
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 template <input_iterator _Iter>
 class basic_const_iterator : public __ycxx::__adl_free::__const_iter_category<_Iter> {
@@ -587,9 +587,9 @@ struct common_type<basic_const_iterator<_Tp>, basic_const_iterator<_Up>> {
 template <input_iterator _Ip>
 using const_iterator = conditional_t<__ycxx::__detail::__constant_iterator<_Ip>, _Ip, basic_const_iterator<_Ip>>;
 
-} // namespace std
+}} // namespace std
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 template <class _Sp>
 struct __const_sentinel_impl {
   using type = _Sp;
@@ -600,7 +600,7 @@ struct __const_sentinel_impl<_Sp> {
 };
 }} // namespace __ycxx::__detail
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 template <semiregular _Sp>
 using const_sentinel = typename __ycxx::__detail::__const_sentinel_impl<_Sp>::type;
@@ -636,9 +636,9 @@ public:
   constexpr _Sp base() const { return __last_; }
 };
 
-} // namespace std
+}} // namespace std
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 template <class _Ip>
 consteval auto __move_iter_concept() {
   if constexpr (std::random_access_iterator<_Ip>)
@@ -655,7 +655,7 @@ consteval auto __move_iter_concept() {
 // Base classes of std types live in __ycxx::__adl_free, a namespace that declares no functions:
 // a base's namespace is an associated namespace for ADL ([basic.lookup.argdep]/3), so a
 // __ycxx::__detail base would expose every internal function to lookup on the std type.
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __adl_free {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __adl_free {
 template <class _Ip>
 struct __move_iter_category {};
 template <class _Ip>
@@ -668,7 +668,7 @@ struct __move_iter_category<_Ip> {
 };
 }} // namespace __ycxx::__adl_free
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 template <class _Iterator>
 class move_iterator : public __ycxx::__adl_free::__move_iter_category<_Iterator> {
@@ -823,12 +823,12 @@ constexpr bool disable_sized_sentinel_for<move_iterator<_I1>, move_iterator<_I2>
 // =============================================================================================
 // counted_iterator
 // =============================================================================================
-} // namespace std
+}} // namespace std
 
 // Base classes of std types live in __ycxx::__adl_free, a namespace that declares no functions:
 // a base's namespace is an associated namespace for ADL ([basic.lookup.argdep]/3), so a
 // __ycxx::__detail base would expose every internal function to lookup on the std type.
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __adl_free {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __adl_free {
 template <class _Ip>
 struct __counted_value_type {};
 template <std::indirectly_readable _Ip>
@@ -851,7 +851,7 @@ struct __counted_category<_Ip> {
 };
 }} // namespace __ycxx::__adl_free
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 template <input_or_output_iterator _Ip>
 class counted_iterator : public __ycxx::__adl_free::__counted_value_type<_Ip>,
@@ -1026,9 +1026,9 @@ struct iterator_traits<counted_iterator<_Ip>> : iterator_traits<_Ip> {
 // =============================================================================================
 // common_iterator
 // =============================================================================================
-} // namespace std
+}} // namespace std
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 // [common.iter.nav]/5: the second condition of it++'s first form. A concept, so that
 // iter_value_t<I> is formed only for a readable I (its conjuncts are checked in order).
 template <class _Ip>
@@ -1037,7 +1037,7 @@ concept __common_iter_postfix_proxy = std::indirectly_readable<_Ip> &&
                                     std::move_constructible<std::iter_value_t<_Ip>>;
 }} // namespace __ycxx::__detail
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 template <input_or_output_iterator _Ip, sentinel_for<_Ip> _Sp>
   requires(!same_as<_Ip, _Sp> && copyable<_Ip>)
@@ -1261,9 +1261,9 @@ struct incrementable_traits<common_iterator<_Ip, _Sp>> {
   using difference_type = iter_difference_t<_Ip>;
 };
 
-} // namespace std
+}} // namespace std
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 template <class _Ip, class _Sp>
 consteval auto __common_iter_pointer() {
   if constexpr (requires(const std::common_iterator<_Ip, _Sp>& a) { a.operator->(); })
@@ -1273,7 +1273,7 @@ consteval auto __common_iter_pointer() {
 }
 }} // namespace __ycxx::__detail
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 template <input_iterator _Ip, class _Sp>
 struct iterator_traits<common_iterator<_Ip, _Sp>> {
   using iterator_concept = conditional_t<forward_iterator<_Ip>, forward_iterator_tag, input_iterator_tag>;
@@ -1293,12 +1293,12 @@ struct iterator_traits<common_iterator<_Ip, _Sp>> {
   using reference = iter_reference_t<_Ip>;
 };
 
-} // namespace std
+}} // namespace std
 
 // =============================================================================================
 // range access CPOs that need adaptors
 // =============================================================================================
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail::__range_access {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail::__range_access {
 
 namespace __rbegin_ns {
 void rbegin() = delete; // hides outer declarations: the call below uses argument-dependent lookup only
@@ -1339,13 +1339,13 @@ struct __fn {
 } // namespace rbegin_ns
 }} // namespace __ycxx::__detail::__range_access
 
-namespace [[__gnu__::__visibility__("hidden")]] std { namespace ranges {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 { namespace ranges {
 inline namespace __cpo {
 inline constexpr __ycxx::__detail::__range_access::__rbegin_ns::__fn rbegin{};
 }
-}} // namespace std::ranges
+}}} // namespace std::ranges
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail::__range_access {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail::__range_access {
 namespace __rend_ns {
 void rend() = delete; // hides outer declarations: the call below uses argument-dependent lookup only
 template <class _Tp>
@@ -1381,16 +1381,16 @@ struct __fn {
 
 }} // namespace __ycxx::__detail::__range_access
 
-namespace [[__gnu__::__visibility__("hidden")]] std { namespace ranges {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 { namespace ranges {
 inline namespace __cpo {
 inline constexpr __ycxx::__detail::__range_access::__rend_ns::__fn rend{};
 } // namespace cpo
 
 template <class _Tp>
 concept constant_range = input_range<_Tp> && __ycxx::__detail::__constant_iterator<iterator_t<_Tp>>;
-}} // namespace std::ranges
+}}} // namespace std::ranges
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail::__range_access {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail::__range_access {
 
 template <std::ranges::input_range _Rp>
 constexpr auto& __possibly_const_range(_Rp& r) noexcept {
@@ -1466,7 +1466,7 @@ struct __fn {
 
 }} // namespace __ycxx::__detail::__range_access
 
-namespace [[__gnu__::__visibility__("hidden")]] std { namespace ranges {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 { namespace ranges {
 inline namespace __cpo {
 inline constexpr __ycxx::__detail::__range_access::__cbegin_ns::__fn cbegin{};
 inline constexpr __ycxx::__detail::__range_access::__cend_ns::__fn cend{};
@@ -1481,9 +1481,9 @@ template <range _Rp>
 using const_sentinel_t = decltype(ranges::cend(declval<_Rp&>()));
 template <range _Rp>
 using range_const_reference_t = iter_const_reference_t<iterator_t<_Rp>>;
-}} // namespace std::ranges
+}}} // namespace std::ranges
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 template <class _Cp>
 constexpr auto rbegin(_Cp& c) noexcept(noexcept(c.rbegin())) -> decltype(c.rbegin()) {
   return c.rbegin();
@@ -1524,4 +1524,4 @@ template <class _Cp>
 constexpr auto crend(const _Cp& c) noexcept(noexcept(std::rend(c))) -> decltype(std::rend(c)) {
   return std::rend(c);
 }
-} // namespace std
+}} // namespace std

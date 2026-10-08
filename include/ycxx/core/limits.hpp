@@ -7,7 +7,7 @@
 
 #include <ycxx/core/type_traits.hpp>
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 enum float_round_style {
   round_indeterminate = -1,
@@ -24,9 +24,9 @@ enum [[deprecated("float_denorm_style is deprecated ([depr.numeric.limits.has.de
   denorm_present [[deprecated("denorm_present is deprecated ([depr.numeric.limits.has.denorm])")]] = 1
 };
 
-} // namespace std
+}} // namespace std
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 
 // floor(e * log10(2)) for |e| < 2^31 (log10(2) is irrational, so no product is an integer).
 consteval int __floor_log10_pow2(int e) {
@@ -218,7 +218,7 @@ consteval auto __select_limits() {
 
 }} // namespace __ycxx::__detail
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 template <class _Tp>
 class numeric_limits : public decltype(__ycxx::__detail::__select_limits<_Tp>()) {};
@@ -230,4 +230,4 @@ class numeric_limits<volatile _Tp> : public numeric_limits<_Tp> {};
 template <class _Tp>
 class numeric_limits<const volatile _Tp> : public numeric_limits<_Tp> {};
 
-} // namespace std
+}} // namespace std

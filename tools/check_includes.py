@@ -45,7 +45,8 @@ def freestanding_includes(text):
 # Configuration the build generates (only _YCXX_* switches: cmake/ycxx-c-library.cmake, and the hosted
 # layers of a YCXX_PAL=none build, cmake/ycxx-hosted-layers.cmake), included by config.hpp when it
 # exists.
-GENERATED_CONFIG = {"ycxx/generated/c_library.hpp", "ycxx/generated/hosted_layers.hpp"}
+GENERATED_CONFIG = {"ycxx/generated/c_library.hpp", "ycxx/generated/hosted_layers.hpp",
+                    "ycxx/generated/linkage.hpp"}
 
 def allowed(name):
     return (name in CORE or name in ABI or name in FREESTANDING_SUBSET or name == "ycxx/config.hpp"

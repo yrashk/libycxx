@@ -5,7 +5,11 @@
 #include <ycxx/core/exception_base.hpp>
 #include <ycxx/core/error.hpp>
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+// Named in plain std by the compilers (DECISIONS §20.5): both predeclare std::align_val_t with the
+// implicit global allocation functions, and GCC recognises a destroying operator delete only by
+// std::destroying_delete_t. std::nothrow_t stays with them, so that the replaceable functions keep
+// the platform's mangled names (_ZnwmRKSt9nothrow_t, _ZnwmSt11align_val_t).
+namespace [[__gnu__::__visibility__("hidden")]] std { // plain std (DECISIONS §20.5)
 
 struct destroying_delete_t {
   explicit destroying_delete_t() = default;
@@ -19,6 +23,9 @@ struct nothrow_t {
 };
 // [new.syn]: declared extern. Defined by the ABI runtime (hosted) or libycxx-freestanding.a.
 extern const nothrow_t nothrow;
+} // namespace std
+
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 using new_handler = void (*)();
 new_handler get_new_handler() noexcept;
@@ -33,7 +40,7 @@ template <class _Tp>
 inline constexpr size_t hardware_destructive_interference_size = 64;
 inline constexpr size_t hardware_constructive_interference_size = 64;
 
-} // namespace std
+}} // namespace std
 
 // Replaceable allocation functions. Defaults: the hosted runtime (via the PAL) or
 // libycxx-freestanding.a (no heap); one function per archive member, so a program may replace

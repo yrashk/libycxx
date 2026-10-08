@@ -19,7 +19,7 @@
 
 #include <ycxx/config.hpp>
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 class exception {
 public:
@@ -60,4 +60,4 @@ public:
   constexpr const char* what() const noexcept override { return "std::bad_array_new_length"; }
 };
 
-} // namespace std
+}} // namespace std

@@ -23,7 +23,7 @@
 #include <istream>
 #include <ostream>
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 extern istream cin;
 extern ostream cout;
 extern ostream cerr;
@@ -32,9 +32,9 @@ extern wistream wcin;
 extern wostream wcout;
 extern wostream wcerr;
 extern wostream wclog;
-} // namespace std
+}} // namespace std
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 // [iostream.objects.overview]/5: this translation unit's ios_base::Init object, where the
 // runtime's own cannot be ordered first (cfg::init_priority false: Mach-O); an empty object
 // otherwise. Internal linkage: one per translation unit.

@@ -11,12 +11,12 @@
 #include <ycxx/core/span.hpp>
 #include <ycxx/core/utility_base.hpp>
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 template <class _IndexType, size_t... _Extents>
 class extents;
-} // namespace std
+}} // namespace std
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 
 // True when a precondition that costs a loop is worth evaluating.
 // Tags layout_stride::mapping's constructor for submdspan results (mdspan_layout.hpp).
@@ -174,7 +174,7 @@ struct __md_dyn_store<_Ip, 0> {};
 
 }} // namespace __ycxx::__detail
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 template <class _IndexType, size_t... _Extents>
 class extents {
@@ -338,9 +338,9 @@ template <class... _Integrals>
   requires(is_convertible_v<_Integrals, size_t> && ...)
 explicit extents(_Integrals...) -> extents<size_t, __ycxx::__detail::__maybe_static_ext<_Integrals>...>;
 
-} // namespace std
+}} // namespace std
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 
 template <class _IndexType, class _Seq>
 struct __md_dextents;
@@ -351,7 +351,7 @@ struct __md_dextents<_IndexType, std::index_sequence<_Ip...>> {
 
 }} // namespace __ycxx::__detail
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 // [mdspan.extents.dextents], [mdspan.extents.dims]
 template <class _IndexType, size_t _Rank>
@@ -359,9 +359,9 @@ using dextents = typename __ycxx::__detail::__md_dextents<_IndexType, make_index
 template <size_t _Rank, class _IndexType = size_t>
 using dims = dextents<_IndexType, _Rank>;
 
-} // namespace std
+}} // namespace std
 
-namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 
 // fwd-prod-of-extents(i) and rev-prod-of-extents(i) ([mdspan.extents.expo]/5-8).
 template <class _Ep>

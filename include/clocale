@@ -6,8 +6,8 @@
 #include <ycxx/core/cstddef.hpp>
 #include <locale.h>
 
-namespace [[__gnu__::__visibility__("hidden")]] std {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 using ::lconv;
 using ::setlocale;
 using ::localeconv;
-} // namespace std
+}} // namespace std

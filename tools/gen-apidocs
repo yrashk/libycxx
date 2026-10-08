@@ -187,12 +187,59 @@ def prepare(work, mrdocs, headers, exported, a):
               .replace('@ADDONS@', str(addons))
               .replace('@JOBS@', str(a.jobs))
               .replace('@INCLUDE_SYMBOLS@\n', include))
-    for gen_name in ('html',):
+    for gen_name in ('html', 'xml'):
         d = work / f'cfg-{gen_name}'
         d.mkdir()
         (d / 'mrdocs.yml').write_text(cfg.replace('@GENERATOR@', gen_name)
                                          .replace('@OUTPUT@', str(work / f'out-{gen_name}')))
+    (work / 'mrdocs.yml.base').write_text(cfg)
     return work
+
+
+def function_objects(work):
+    """The std variables whose type is libycxx's (customization point objects, algorithm
+    function objects, range adaptor objects): {qualified name: type}, from the XML corpus."""
+    import xml.etree.ElementTree as ET
+    found = {}
+
+    def walk(e, scope):
+        for c in e:
+            if c.tag == 'template':
+                walk(c, scope)
+                continue
+            name = c.get('name')
+            if c.tag == 'namespace':
+                walk(c, scope + [name] if name else scope)
+            elif c.tag in ('class', 'struct', 'union'):
+                walk(c, scope + [name])
+            elif c.tag == 'variable':
+                t = c.find('type')
+                if t is not None and (t.get('name') or '').startswith('__ycxx::'):
+                    found['::'.join(scope + [name])] = t.get('name')
+    walk(ET.parse(work / 'out-xml' / 'reference.xml').getroot(), [])
+    return found
+
+
+def prepare_call_operators(work, fobjs):
+    """A second MrDocs run over the classes of those objects' types, for their call operators,
+    which the reference shows as the objects' call signatures (as the draft declares
+    ranges::sort as function templates)."""
+    names = set()
+    for ty in fobjs.values():
+        for m in re.finditer(r'__ycxx::[\w:]+', ty):
+            names.add(m.group(0))
+        # A class template's partial specializations match no literal pattern in MrDocs 0.8.0:
+        # take the template's namespace whole.
+        head = ty.split('<', 1)[0]
+        if '<' in ty and head.startswith('__ycxx::'):
+            names.add(head.rsplit('::', 1)[0] + '::**')
+    cfg = (work / 'mrdocs.yml.base').read_text()
+    a = cfg.index('include-symbols:')
+    b = cfg.index('overloads: true')
+    cfg = (cfg[:a] + 'include-symbols:\n' + ''.join(f"  - '{n}'\n" for n in sorted(names)) + '\n' + cfg[b:])
+    d = work / 'cfg-fo'
+    d.mkdir()
+    (d / 'mrdocs.yml').write_text(cfg.replace('@GENERATOR@', 'html').replace('@OUTPUT@', str(work / 'out-fo')))
 
 
 def run_mrdocs(mrdocs, work, gen_name):
@@ -230,6 +277,10 @@ def main():
         headers = [h for h in headers if h in a.headers.split(',')]
     work = prepare(BUILD / 'work', mrdocs, headers, exported, a)
     run_mrdocs(mrdocs, work, 'html')
+    run_mrdocs(mrdocs, work, 'xml')
+    fobjs = function_objects(work)
+    prepare_call_operators(work, fobjs)
+    run_mrdocs(mrdocs, work, 'fo')
 
     import render
     cppref = None
@@ -238,7 +289,7 @@ def main():
         archive = fetch(CPPREF_URL, BUILD / 'cache' / pathlib.Path(CPPREF_URL).name, CPPREF_SHA256)
         cppref = cppref_mod.Archive(archive, BUILD / 'cache' / f'cppreference-{CPPREF_VERSION}', CPPREF_VERSION, CPPREF_URL)
     render.render(work, pathlib.Path(a.out), json.loads((APIDOCS / 'draft-map.json').read_text()),
-                  cppref, pathlib.Path(a.cppref_out), headers, exported=exported)
+                  cppref, pathlib.Path(a.cppref_out), headers, exported=exported, fobjs=fobjs)
 
 
 if __name__ == '__main__':

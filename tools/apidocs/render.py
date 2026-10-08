@@ -44,7 +44,7 @@ def plain_name(m):
     if whole in KEEP_RESERVED or whole.startswith('__ycxx') or whole in ('_Exit',):
         return whole
     name = m.group(1) or m.group(2)
-    return {'Tp': 'T', 'Up': 'U', 'Ip': 'I', 'Sp': 'S', 'Rp': 'R', 'Fp': 'F', 'Vp': 'V', 'Np': 'N',
+    return {'Ep_': 'ExecutionPolicy', 'Tp': 'T', 'Up': 'U', 'Ip': 'I', 'Sp': 'S', 'Rp': 'R', 'Fp': 'F', 'Vp': 'V', 'Np': 'N',
             'Ep': 'E', 'Op': 'O', 'Ap': 'A', 'Bp': 'B', 'Cp': 'C', 'Dp': 'D', 'Gp': 'G', 'Kp': 'K',
             'Pp': 'P', 'Xp': 'X', 'Yp': 'Y', 'Tp1': 'T1', 'Tp2': 'T2', 'Up1': 'U1', 'Up2': 'U2',
             'Ip1': 'I1', 'Ip2': 'I2', 'Sp1': 'S1', 'Sp2': 'S2', 'Rp1': 'R1', 'Rp2': 'R2',
@@ -518,7 +518,91 @@ def public_pages(pages, exported):
     return keep, gone
 
 
-def render(work, out, draft, cppref, cppref_out, headers, repo=None, exported=None):
+def _top_args(ty):
+    """'X<A, B<C>>' -> ('X', ['A', 'B<C>'])."""
+    i = ty.find('<')
+    if i < 0:
+        return ty, []
+    head, inner, depth, cur, args = ty[:i], ty[i + 1:ty.rfind('>')], 0, '', []
+    for ch in inner:
+        if ch == '<':
+            depth += 1
+        elif ch == '>':
+            depth -= 1
+        if ch == ',' and depth == 0:
+            args.append(cur.strip())
+            cur = ''
+        else:
+            cur += ch
+    if cur.strip():
+        args.append(cur.strip())
+    return head, args
+
+
+def call_signatures(fo_dir, fobjs):
+    """{object: [declaration markup]}: the call operators of each function object's type
+    (MrDocs's second run, over libycxx's classes), renamed to the object's name."""
+    if not fobjs or not fo_dir.exists():
+        return {}
+    ops = collections.defaultdict(list)          # class (as MrDocs names it) -> code blocks
+    grouped = set()
+    for p in sorted(fo_dir.rglob('*.html')):
+        text = p.read_text(encoding='utf-8')
+        m = _ARTICLE.search(text)
+        if not m or not html.unescape(m.group(2)).endswith('::operator()'):
+            continue
+        cls = html.unescape(m.group(2))[:-len('::operator()')]
+        kind = m.group(1)
+        blocks = re.findall(r'<pre class="cpp"><code>(.*?)</code></pre>', text, re.S)
+        if kind == 'overloads':
+            ops[cls] = blocks
+            grouped.add(cls)
+        elif cls not in grouped:
+            ops[cls].extend(blocks)
+    by_bare = collections.defaultdict(list)
+    for cls in ops:
+        by_bare[_bare(cls)].append(cls)
+
+    def find(name, args=()):
+        cands = by_bare.get(_bare(name), [])
+        if len(cands) > 1 and args:
+            last = re.split(r'::|\.', args[-1])[-1]
+            fit = [c for c in cands if re.split(r'::|\.', _top_args(c)[1][-1] if _top_args(c)[1] else '')[-1] == last]
+            if fit:
+                return fit[0]
+        prim = [c for c in cands if '<' not in c]
+        return (prim or cands or [None])[0]
+
+    out = {}
+    for q, ty in fobjs.items():
+        head, args = _top_args(ty)
+        found = [find(a) for a in args if a.startswith('__ycxx::')] + [find(head, args)]
+        name = q.rsplit('::', 1)[-1]
+        decls, seen = [], set()
+        for cls in found:
+            for b in ops.get(cls, []) if cls else []:
+                b = re.sub(r'</?a\b[^>]*>', '', b)
+                b = re.sub(r'operator\(\)\(', name + '(', b, count=1)
+                b = re.sub(r'\) const(?=[ ;\n]|$)', ')', b, count=1)
+                key = re.sub(r'\s+', ' ', b)
+                if key not in seen:
+                    seen.add(key)
+                    decls.append(b)
+        if decls:
+            out[q] = decls
+    return out
+
+
+def calls_section(name, decls):
+    items = ''.join(f'<li class="ovl-item" id="call-{i}"><div class="ovl-code"><pre class="cpp"><code>{d}</code></pre></div>'
+                    f'<span class="ovl-n" aria-label="call signature {i}">({i})</span></li>' for i, d in enumerate(decls, 1))
+    return ('<section class="ref-sec syn" aria-labelledby="sec-calls"><h2 id="sec-calls">Call signatures</h2>'
+            f'<p class="note sec-note"><code>{html.escape(name)}</code> is a function object; these are its call operators as libycxx '
+            'declares them, written as the functions the draft declares.</p>'
+            f'<ol class="ovl">{items}</ol></section>')
+
+
+def render(work, out, draft, cppref, cppref_out, headers, repo=None, exported=None, fobjs=None):
     repo = repo or pathlib.Path(__file__).resolve().parents[2]
     src = work / 'out-html'
     pages, gone = public_pages(load_pages(src), exported)
@@ -558,6 +642,7 @@ def render(work, out, draft, cppref, cppref_out, headers, repo=None, exported=No
             return m.group(0)
         return re.sub(r'href="([^"]+)"', fix, text)
 
+    calls = call_signatures(work / 'out-fo', fobjs)
     if out.exists():
         shutil.rmtree(out)
     out.mkdir(parents=True)
@@ -570,6 +655,11 @@ def render(work, out, draft, cppref, cppref_out, headers, repo=None, exported=No
             text = re.sub(r'<a href="#ycxx-gone">(.*?)</a>', r'\1', text, flags=re.S)
             text = re.sub(r'<section class="ref-sec" aria-labelledby="[^"]*">\s*<h2[^>]*>[^<]*</h2>\s*<div class="table-wrap"><table class="data members">\s*<thead>.*?</thead>\s*<tbody>\s*</tbody></table></div>\s*</section>', '', text, flags=re.S)
         text = text.replace('<!--ycxx:facts-->', facts(pg, cpp_map.get(pg.q), draft))
+        if pg.q in calls and pg.kind == 'variable':
+            i = text.find('</section>', text.find('id="sec-syn"'))
+            if i >= 0:
+                i += len('</section>')
+                text = text[:i] + '\n' + calls_section(pg.q.rsplit('::', 1)[-1], calls[pg.q]) + text[i:]
         text = clean_visible(highlight_page(text))
         text = fill(text, depth, pg.header or '')
         dst = out / pg.rel
@@ -608,7 +698,7 @@ def render(work, out, draft, cppref, cppref_out, headers, repo=None, exported=No
             body.append(f'<div><dt>cppreference</dt><dd><a class="cppref-link" href="https://en.cppreference.com/w/{hp["p"]}" target="_blank" rel="noopener" '
                         f'data-cppref="{hp["p"]}" data-hosted="{1 if hp.get("h") else 0}" data-exact="1" data-title="&lt;{h}&gt;">&lt;{h}&gt; <span aria-hidden="true">↗</span></a></dd></div>')
         body.append(f'<div><dt>Entities</dt><dd>{len(items)} at namespace scope</dd></div></dl></header>')
-        body.append(entity_list(items, 2) if items else '<p class="note">This header declares macros only, or only what other headers declare as well.</p>')
+        body.append(entity_list(items, 1) if items else '<p class="note">This header declares macros only, or only what other headers declare as well.</p>')
         body.append('</article>')
         text = set_title(head, f'<{h}>') + '\n'.join(body) + tail
         (out / 'headers' / f'{h}.html').write_text(clean_visible(fill(text, 1, h)), encoding='utf-8')

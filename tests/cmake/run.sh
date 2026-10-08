@@ -34,7 +34,9 @@
 #      already in build/limine-v11.4.1-binary;
 #  12. building projects that know nothing about libycxx against the installed prefix
 #      (tests/integration/run.sh, docs/BUILDING_PROJECTS.md): the toolchain file, CC/CXX, make with
-#      ycxx-c++ and with pkg-config, a moved installation, activate.sh --use, Meson, autotools.
+#      ycxx-c++ and with pkg-config, a moved installation, activate.sh --use, Meson, autotools;
+#  13. the whole of libycxx.a and libycxx-abi.a links into one shared library (--whole-archive,
+#      -force_load): no duplicate definitions among the archives' members.
 #
 #   tests/cmake/run.sh [gcc] [clang]        (default: both)
 # Compilers come from the YCXX_* variables (tools/toolchain/activate.*), else g++-16 /
@@ -137,6 +139,23 @@ for c in $compilers; do
     ok $c "build and install"
   else
     bad $c "build and install (see $log)"; continue
+  fi
+  # 13. every member of the archives in one image: a shared library linked with the whole of
+  # libycxx.a and libycxx-abi.a (--whole-archive, Darwin's -force_load) must not meet a duplicate
+  # definition, which a static link, pulling only the members it needs, would not show (the
+  # _Float16 type_info objects of GCC on Darwin, CMakeLists.txt).
+  if [ "$(uname -s)" = Darwin ]; then
+    whole="-dynamiclib -Wl,-force_load,$d/prefix/lib/libycxx.a -Wl,-force_load,$d/prefix/lib/libycxx-abi.a"
+    [ $c = gcc ] && whole="$whole -static-libgcc"
+  else
+    whole="-shared -Wl,--whole-archive $d/prefix/lib/libycxx.a $d/prefix/lib/libycxx-abi.a -Wl,--no-whole-archive -lm -shared-libgcc"
+  fi
+  gid=
+  [ $c = clang ] && [ "$(uname -s)" = Linux ] && gid="--gcc-install-dir=$(dirname "$(${YCXX_GXX:-g++-16} -print-libgcc-file-name)")"
+  if x $cxx $gid -nostdlib++ $whole -o "$d/whole-archive.so"; then
+    ok $c "every archive member in one image (whole-archive link): no duplicate definitions"
+  else
+    bad $c "whole-archive link of libycxx.a and libycxx-abi.a fails (see $log)"
   fi
   for f in lib/libycxx.a lib/libycxx-abi.a include/libycxx/functional include/libycxx/ycxx/config.hpp \
            lib/cmake/libycxx/libycxxConfig.cmake lib/cmake/libycxx/libycxxConfigVersion.cmake \

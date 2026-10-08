@@ -39,8 +39,10 @@ concept __qualifies_as_input_iterator = !std::is_integral_v<_Ip> && requires {
 // (struct { std::string in; std::vector<std::string> out; } a[] = {{"", {""}}};): the
 // default argument it binds is the other member's allocator temporary, and reading it through
 // the reference crashes.
+// noexcept only when the copy is: a (non-conforming) throwing allocator copy propagates from the
+// constructors that are not noexcept themselves (libc++'s vector ctor_exceptions tests).
 template <class _Ap>
-constexpr _Ap __alloc_copy(const _Ap& __a) noexcept {
+constexpr _Ap __alloc_copy(const _Ap& __a) noexcept(std::is_nothrow_copy_constructible_v<_Ap>) {
   if constexpr (std::is_empty_v<_Ap> && std::is_trivially_copy_constructible_v<_Ap> &&
                 std::is_trivially_default_constructible_v<_Ap>)
     return _Ap();

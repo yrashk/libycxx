@@ -67,6 +67,8 @@ h1{text-wrap:balance;font:700 clamp(32px,4.2vw,46px)/1.1 var(--sans);letter-spac
 .sheet .cell+.cell{border-top:1px solid var(--rule);background:var(--surface)}
 .sheet figure.code{margin:0;border:0;background:transparent}
 .sheet figure.code pre{padding:6px 0 0;font-size:14px}
+.sheet figure.code .note{margin:8px 0 0;font-size:13.5px}
+.sheet figure.code .note code{overflow-wrap:anywhere;word-break:break-all;white-space:normal}
 .sheet .facts{margin:0;grid-template-columns:repeat(2,minmax(0,1fr));column-gap:40px}
 .sheet .facts div:nth-last-child(-n+2){border-bottom:0}
 .sheet figure.code figcaption{padding:0}
@@ -140,7 +142,7 @@ ol.footnotes li{margin:0 0 6px}
 ol.footnotes sup{color:var(--accent);font-weight:700;margin-right:4px}
 
 figure.code{margin:16px 0 20px;background:var(--code-bg);border:1px solid var(--rule);border-radius:10px;overflow:hidden}
-figure.code figcaption{font:500 11.5px/1 var(--mono);color:var(--faint);padding:12px 16px 0;text-transform:lowercase}
+figure.code figcaption{font:500 11.5px/1 var(--mono);color:var(--faint);padding:12px 16px 0}
 figure.code pre{margin:0;padding:10px 16px 14px;overflow-x:auto;font:14.5px/1.6 var(--mono)}
 figure.code code{white-space:pre;background:none;border:0;padding:0;font:inherit}
 
@@ -221,9 +223,14 @@ footer a{color:var(--muted)}
   std::ranges::<span class="t-f">sort</span>(words);
   <span class="t-c">// prints ["import", "modules", "std"]</span>
   std::<span class="t-f">println</span>(<span class="t-s">"{}"</span>, words);
-}</code></pre></figure><figure class="code"><figcaption>shell</figcaption><pre><code class="lang-sh"><span class="t-c"># build the std modules once per compiler and set of flags</span>
-<span class="t-f">tools/ycxx-modules</span> clang
-<span class="t-f">tools/ycxx-cxx</span> clang <span class="t-a">--std-modules</span> hello.cpp <span class="t-a">-o</span> hello</code></pre></figure></div>
+}</code></pre></figure><figure class="code"><figcaption>CMakeLists.txt</figcaption><pre><code class="lang-cmake"><span class="t-f">cmake_minimum_required</span>(VERSION 3.28)
+<span class="t-f">project</span>(hello CXX)
+<span class="t-f">find_package</span>(libycxx CONFIG REQUIRED)
+<span class="t-f">add_executable</span>(hello hello.cpp)
+<span class="t-c"># import std; with libycxx's modules (brings ycxx::ycxx)</span>
+<span class="t-f">target_link_libraries</span>(hello PRIVATE ycxx::modules)</code></pre></figure><figure class="code"><figcaption>shell</figcaption><pre><code class="lang-sh"><span class="t-f">cmake</span> <span class="t-a">-S</span> . <span class="t-a">-B</span> build <span class="t-a">-G</span> Ninja \
+  <span class="t-a">-DCMAKE_CXX_COMPILER</span>=clang++-23 <span class="t-a">-DCMAKE_PREFIX_PATH</span>=/opt/libycxx
+<span class="t-f">cmake</span> <span class="t-a">--build</span> build &amp;&amp; ./build/hello</code></pre><p class="note">An existing project that knows nothing about libycxx: pass <code>-DCMAKE_TOOLCHAIN_FILE=/opt/libycxx/lib/cmake/libycxx/toolchain.cmake</code> (<a href="#start">Getting started</a>).</p></figure></div>
 </div>
 <div class="stats"><div><b>C++26</b><span>every header</span><small>the C++26 library, freestanding and hosted</small></div><div><b>2,824</b><span>own tests</span><small>spec-derived, all passing in CI on Linux and macOS</small></div><div><b>17,098</b><span>external tests</span><small>libc++ and libstdc++ suites, run unmodified</small></div><div><b>19</b><span>real-world projects</span><small>built and tested against libycxx, linkage proved</small></div></div>
 <section id="overview">

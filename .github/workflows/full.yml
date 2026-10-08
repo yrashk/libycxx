@@ -3,7 +3,7 @@ name: full
 # The long runs, nightly and on demand (Actions > full > Run workflow): libc++'s and libstdc++'s
 # whole suites on both compilers, on Linux and macOS, the own suite under ASan+UBSan and under
 # ThreadSanitizer (each with libycxx instrumented too), and the own suite hardened, with
-# -fno-exceptions and with -O2.
+# -fno-exceptions and with -O2; and the benchmarks against their baseline (bench/check).
 # Any test reported FAIL (or XPASS) fails its job: there are no lists of known failures. A test
 # that cannot pass for a reason outside the test and the library (a compiler bug) is an expected
 # failure with its reason (the suite's xfail.txt, or // XFAIL in an own test); one that does not
@@ -209,6 +209,35 @@ jobs:
             build/test-logs/*.tsv
             build/test-logs/realworld-*/**/*.log
             build/test-logs/realworld-*/**/*.txt
+
+  # Performance regressions (bench/check, DECISIONS §15): every benchmark of bench/ built against
+  # libycxx and libstdc++ with both compilers; the ratio libycxx/libstdc++ of each, the median of
+  # 5 interleaved runs, is compared with bench/baseline.json. A benchmark fails only when it is
+  # more than 30% (and 0.10) above its baseline ratio in the run and in 2 confirmation runs of the
+  # suspects; it is then printed as FAIL and fails the job. An intended change updates the
+  # baseline (bench/check --help). One compiler per job, so the two do not share the machine.
+  linux-bench:
+    runs-on: ubuntu-24.04
+    container: gcc:16
+    timeout-minutes: 120
+    strategy:
+      fail-fast: false
+      matrix:
+        compiler: [gcc, clang]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Toolchains
+        uses: ./.github/actions/setup-linux
+      - name: Benchmarks against the baseline, ${{ matrix.compiler }} (bench/check)
+        run: bench/check --cc ${{ matrix.compiler }} --md build/bench/check.md
+      - name: Results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: full-linux-bench-${{ matrix.compiler }}
+          path: |
+            build/bench/check*.json
+            build/bench/check.md
 
   macos-suites:
     runs-on: macos-15

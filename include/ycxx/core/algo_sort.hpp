@@ -2,7 +2,8 @@
 // stable_sort, partial_sort, nth_element, binary search, partitions, merge, set operations,
 // heap operations and permutations, in both the std:: and the std::ranges:: forms.
 //
-// sort and nth_element are introsort / introselect (median-of-three or ninther pivots, Hoare
+// sort is pattern-defeating quicksort (below, with branchless block partitioning for contiguous
+// ranges of scalars); nth_element is introselect (median-of-three or ninther pivots, Hoare
 // partitioning, heapsort when the recursion gets too deep). stable_sort, stable_partition and
 // inplace_merge use a temporary buffer (operator new(nothrow) at run time, std::allocator in
 // constant evaluation) and fall back to in-place rotation-based algorithms when none is had.
@@ -324,31 +325,371 @@ constexpr void __heap_sort(_Ip first, _Ip last, _Cp less) {
 
 inline constexpr int __insertion_sort_threshold = 16;
 
-// depth: partitioning rounds left before switching to heapsort, shared by the whole recursion
-// (2 floor(log2 N) at the top), so the worst case stays O(N log N).
+// ---- sort: pattern-defeating quicksort --------------------------------------------------------
+// O. R. L. Peters, "Pattern-defeating Quicksort" (arXiv:2106.05123), with the branchless block
+// partitioning of S. Edelkamp and A. Weiss, "BlockQuicksort: Avoiding Branch Mispredictions in
+// Quicksort" (ESA 2016, JEA 2019) for contiguous ranges of scalars:
+//   - median of three, or Tukey's ninther above 128 elements, as the pivot;
+//   - a partition that swapped nothing (sorted or nearly sorted input) is followed by an
+//     insertion sort that gives up after 8 moves, so sorted runs cost O(n);
+//   - when the element left of the range equals the pivot (it is a previous pivot, not greater
+//     than anything in the range), the elements equal to it are split off at once, so many
+//     duplicates cost O(n log k) for k distinct values;
+//   - a partition leaving fewer than 1/8 on one side swaps a few elements to break patterns,
+//     and after log2(n) such partitions the range is heapsorted: O(n log n) comparisons in the
+//     worst case ([sort]/5).
+inline constexpr std::ptrdiff_t __pdq_insertion_threshold = 24;
+inline constexpr std::ptrdiff_t __pdq_ninther_threshold = 128;
+inline constexpr std::ptrdiff_t __pdq_partial_insertion_limit = 8;
+inline constexpr int __pdq_block = 64;
+
+// Insertion sort of [first, last) whose element before first is not greater than any of them
+// (a previous pivot), so the inner loop needs no bound check.
 template <class _Ops, class _Ip, class _Cp>
-constexpr void __introsort_loop(_Ip first, _Ip last, int depth, _Cp less) {
-  while (last - first > __insertion_sort_threshold) {
-    if (depth-- == 0) {
-      ::__ycxx::__detail::__heap_sort<_Ops>(first, last, less);
-      return;
+constexpr void __unguarded_insertion_sort(_Ip first, _Ip last, _Cp less) {
+  if (first == last)
+    return;
+  for (_Ip i = first + ::__ycxx::__detail::__diff_one<_Ip>; i != last; ++i) {
+    _Ip __j = i;
+    _Ip k = i - ::__ycxx::__detail::__diff_one<_Ip>;
+    if (!less(*__j, *k))
+      continue;
+    std::iter_value_t<_Ip> __tmp(_Ops::iter_move(__j));
+    do {
+      *__j = _Ops::iter_move(k);
+      __j = k;
+      --k;
+    } while (less(__tmp, *k));
+    *__j = std::move(__tmp);
+  }
+}
+
+// Insertion sort that gives up after moving elements __pdq_partial_insertion_limit places in
+// all; returns whether [first, last) is sorted.
+template <class _Ops, class _Ip, class _Cp>
+constexpr bool __partial_insertion_sort(_Ip first, _Ip last, _Cp less) {
+  if (first == last)
+    return true;
+  std::iter_difference_t<_Ip> __moved = 0;
+  for (_Ip i = first + ::__ycxx::__detail::__diff_one<_Ip>; i != last; ++i) {
+    if (__moved > __pdq_partial_insertion_limit)
+      return false;
+    _Ip __j = i;
+    _Ip k = i - ::__ycxx::__detail::__diff_one<_Ip>;
+    if (!less(*__j, *k))
+      continue;
+    std::iter_value_t<_Ip> __tmp(_Ops::iter_move(__j));
+    do {
+      *__j = _Ops::iter_move(k);
+      __j = k;
+    } while (__j != first && less(__tmp, *--k));
+    *__j = std::move(__tmp);
+    __moved += i - __j;
+  }
+  return true;
+}
+
+// Partitions [first, last) around the pivot *first: returns the pivot's final position p
+// (every element left of it less than the pivot, every element right of it not less) and
+// whether nothing had to be swapped. The pivot choice left an element not less than the pivot
+// in (first, last), which bounds the first scan.
+template <class _Ops, class _Ip, class _Cp>
+constexpr std::pair<_Ip, bool> __partition_right(_Ip __begin, _Ip __end, _Cp less) {
+  std::iter_value_t<_Ip> __pivot(_Ops::iter_move(__begin));
+  _Ip first = __begin;
+  _Ip last = __end;
+  while (less(*++first, __pivot)) {
+  }
+  if (first - ::__ycxx::__detail::__diff_one<_Ip> == __begin) {
+    while (first < last && !less(*--last, __pivot)) {
     }
-    _Ip __cut = ::__ycxx::__detail::__partition_pivot<_Ops>(first, last, less);
-    // Recurse into the smaller part, iterate on the larger: O(log N) stack.
-    if (__cut - first < last - __cut) {
-      ::__ycxx::__detail::__introsort_loop<_Ops>(first, __cut, depth, less);
-      first = __cut;
-    } else {
-      ::__ycxx::__detail::__introsort_loop<_Ops>(__cut, last, depth, less);
-      last = __cut;
+  } else {
+    while (!less(*--last, __pivot)) {
     }
   }
-  ::__ycxx::__detail::__insertion_sort<_Ops>(first, last, less);
+  const bool __already = !(first < last);
+  while (first < last) {
+    _Ops::iter_swap(first, last);
+    while (less(*++first, __pivot)) {
+    }
+    while (!less(*--last, __pivot)) {
+    }
+  }
+  _Ip __pos = first - ::__ycxx::__detail::__diff_one<_Ip>;
+  *__begin = _Ops::iter_move(__pos);
+  *__pos = std::move(__pivot);
+  return {__pos, __already};
 }
+
+// Swaps the misplaced elements at first + ol[i] and last - or[i], i < n: as a cycle of moves
+// (one temporary) or, when both sides have the same count, as swaps (which keeps descending
+// input linear).
+template <class _Ops, class _Ip>
+constexpr void __swap_offsets(_Ip first, _Ip last, const unsigned char* __ol, const unsigned char* __or, int n, bool __swaps) {
+  using _Dp = std::iter_difference_t<_Ip>;
+  if (__swaps) {
+    for (int i = 0; i < n; ++i) {
+      _Ip __l = first + _Dp(__ol[i]);
+      _Ip r = last - _Dp(__or[i]);
+      _Ops::iter_swap(__l, r);
+    }
+  } else if (n > 0) {
+    _Ip __l = first + _Dp(__ol[0]);
+    _Ip r = last - _Dp(__or[0]);
+    std::iter_value_t<_Ip> __tmp(_Ops::iter_move(__l));
+    *__l = _Ops::iter_move(r);
+    for (int i = 1; i < n; ++i) {
+      __l = first + _Dp(__ol[i]);
+      *r = _Ops::iter_move(__l);
+      r = last - _Dp(__or[i]);
+      *__l = _Ops::iter_move(r);
+    }
+    *r = std::move(__tmp);
+  }
+}
+
+// __partition_right with branchless block partitioning: the scans record the offsets of the
+// misplaced elements of a block of each side in byte arrays without branching on the
+// comparisons, then the recorded elements are exchanged.
+template <class _Ops, class _Ip, class _Cp>
+constexpr std::pair<_Ip, bool> __partition_right_branchless(_Ip __begin, _Ip __end, _Cp less) {
+  using _Dp = std::iter_difference_t<_Ip>;
+  constexpr int _Bk = __pdq_block;
+  std::iter_value_t<_Ip> __pivot(_Ops::iter_move(__begin));
+  _Ip first = __begin;
+  _Ip last = __end;
+  while (less(*++first, __pivot)) {
+  }
+  if (first - ::__ycxx::__detail::__diff_one<_Ip> == __begin) {
+    while (first < last && !less(*--last, __pivot)) {
+    }
+  } else {
+    while (!less(*--last, __pivot)) {
+    }
+  }
+  const bool __already = !(first < last);
+  if (!__already) {
+    _Ops::iter_swap(first, last);
+    ++first;
+    // [first, last) is unpartitioned; [__begin + 1, first) is less than the pivot and
+    // [last, __end) is not.
+    [[indeterminate]] unsigned char __offl[_Bk];
+    [[indeterminate]] unsigned char __offr[_Bk];
+    int __numl = 0, __numr = 0, __startl = 0, __startr = 0;
+    while (last - first > 2 * _Bk) {
+      if (__numl == 0) {
+        __startl = 0;
+        _Ip __it = first;
+        for (int i = 0; i < _Bk; ++i, ++__it) {
+          __offl[__numl] = static_cast<unsigned char>(i);
+          __numl += !less(*__it, __pivot);
+        }
+      }
+      if (__numr == 0) {
+        __startr = 0;
+        _Ip __it = last;
+        for (int i = 0; i < _Bk;) {
+          __offr[__numr] = static_cast<unsigned char>(++i);
+          __numr += less(*--__it, __pivot);
+        }
+      }
+      const int n = __numl < __numr ? __numl : __numr;
+      ::__ycxx::__detail::__swap_offsets<_Ops>(first, last, __offl + __startl, __offr + __startr, n, __numl == __numr);
+      __numl -= n;
+      __numr -= n;
+      __startl += n;
+      __startr += n;
+      if (__numl == 0)
+        first += _Dp(_Bk);
+      if (__numr == 0)
+        last -= _Dp(_Bk);
+    }
+    // At most two blocks are left, one of which may still hold recorded offsets.
+    int __sizel = 0, __sizer = 0;
+    const int __unknown = static_cast<int>(last - first) - ((__numr != 0 || __numl != 0) ? _Bk : 0);
+    if (__numr != 0) {
+      __sizel = __unknown;
+      __sizer = _Bk;
+    } else if (__numl != 0) {
+      __sizel = _Bk;
+      __sizer = __unknown;
+    } else {
+      __sizel = __unknown / 2;
+      __sizer = __unknown - __sizel;
+    }
+    if (__unknown != 0 && __numl == 0) {
+      __startl = 0;
+      _Ip __it = first;
+      for (int i = 0; i < __sizel; ++i, ++__it) {
+        __offl[__numl] = static_cast<unsigned char>(i);
+        __numl += !less(*__it, __pivot);
+      }
+    }
+    if (__unknown != 0 && __numr == 0) {
+      __startr = 0;
+      _Ip __it = last;
+      for (int i = 0; i < __sizer;) {
+        __offr[__numr] = static_cast<unsigned char>(++i);
+        __numr += less(*--__it, __pivot);
+      }
+    }
+    const int n = __numl < __numr ? __numl : __numr;
+    ::__ycxx::__detail::__swap_offsets<_Ops>(first, last, __offl + __startl, __offr + __startr, n, __numl == __numr);
+    __numl -= n;
+    __numr -= n;
+    __startl += n;
+    __startr += n;
+    if (__numl == 0)
+      first += _Dp(__sizel);
+    if (__numr == 0)
+      last -= _Dp(__sizer);
+    // One side's leftovers go to the far end of what remains unknown.
+    if (__numl != 0) {
+      while (__numl-- != 0) {
+        _Ip __l = first + _Dp(__offl[__startl + __numl]);
+        --last;
+        _Ops::iter_swap(__l, last);
+      }
+      first = last;
+    }
+    if (__numr != 0) {
+      while (__numr-- != 0) {
+        _Ip r = last - _Dp(__offr[__startr + __numr]);
+        _Ops::iter_swap(r, first);
+        ++first;
+      }
+      last = first;
+    }
+  }
+  _Ip __pos = first - ::__ycxx::__detail::__diff_one<_Ip>;
+  *__begin = _Ops::iter_move(__pos);
+  *__pos = std::move(__pivot);
+  return {__pos, __already};
+}
+
+// Partitions [first, last) around the pivot *first with the elements equal to it on the left;
+// returns the pivot's final position. Used when the pivot equals the element before first, a
+// previous pivot not greater than anything here: everything left of the result equals it.
+template <class _Ops, class _Ip, class _Cp>
+constexpr _Ip __partition_left(_Ip __begin, _Ip __end, _Cp less) {
+  std::iter_value_t<_Ip> __pivot(_Ops::iter_move(__begin));
+  _Ip first = __begin;
+  _Ip last = __end;
+  while (less(__pivot, *--last)) {
+  }
+  if (last + ::__ycxx::__detail::__diff_one<_Ip> == __end) {
+    while (first < last && !less(__pivot, *++first)) {
+    }
+  } else {
+    while (!less(__pivot, *++first)) {
+    }
+  }
+  while (first < last) {
+    _Ops::iter_swap(first, last);
+    while (less(__pivot, *--last)) {
+    }
+    while (!less(__pivot, *++first)) {
+    }
+  }
+  _Ip __pos = last;
+  *__begin = _Ops::iter_move(__pos);
+  *__pos = std::move(__pivot);
+  return __pos;
+}
+
+// Contiguous ranges of scalars (arithmetic, enumeration, pointer) take the branchless
+// partition: their comparisons are cheap and their moves are copies.
+template <class _Ip>
+concept __pdq_branchless = std::contiguous_iterator<_Ip> && std::is_scalar_v<std::iter_value_t<_Ip>>;
+
+template <class _Ops, bool _Branchless, class _Ip, class _Cp>
+constexpr void __pdqsort_loop(_Ip __begin, _Ip __end, _Cp less, int __bad_allowed, bool __leftmost) {
+  using _Dp = std::iter_difference_t<_Ip>;
+  for (;;) {
+    const _Dp __size = __end - __begin;
+    if (__size < __pdq_insertion_threshold) {
+      if (__leftmost)
+        ::__ycxx::__detail::__insertion_sort<_Ops>(__begin, __end, less);
+      else
+        ::__ycxx::__detail::__unguarded_insertion_sort<_Ops>(__begin, __end, less);
+      return;
+    }
+    // The pivot goes to *begin; the median of three leaves an element not less than it at
+    // end - 1 and one not greater at begin + s2 (the ninther: at begin + s2 + 1 and
+    // begin + s2 - 1), which bound the partitions' first scans.
+    const _Dp __s2 = __size / 2;
+    if (__size > __pdq_ninther_threshold) {
+      ::__ycxx::__detail::__sort3<_Ops>(__begin, __begin + __s2, __end - _Dp(1), less);
+      ::__ycxx::__detail::__sort3<_Ops>(__begin + _Dp(1), __begin + (__s2 - 1), __end - _Dp(2), less);
+      ::__ycxx::__detail::__sort3<_Ops>(__begin + _Dp(2), __begin + (__s2 + 1), __end - _Dp(3), less);
+      ::__ycxx::__detail::__sort3<_Ops>(__begin + (__s2 - 1), __begin + __s2, __begin + (__s2 + 1), less);
+      _Ip __m = __begin + __s2;
+      _Ops::iter_swap(__begin, __m);
+    } else {
+      ::__ycxx::__detail::__sort3<_Ops>(__begin + __s2, __begin, __end - _Dp(1), less);
+    }
+    // The element before the range is a previous pivot, not greater than the pivot; if it is
+    // not less either, they are equal and so is everything that partition_left puts left.
+    if (!__leftmost && !less(*(__begin - _Dp(1)), *__begin)) {
+      __begin = ::__ycxx::__detail::__partition_left<_Ops>(__begin, __end, less) + _Dp(1);
+      continue;
+    }
+    std::pair<_Ip, bool> __part = [&] {
+      if constexpr (_Branchless)
+        return ::__ycxx::__detail::__partition_right_branchless<_Ops>(__begin, __end, less);
+      else
+        return ::__ycxx::__detail::__partition_right<_Ops>(__begin, __end, less);
+    }();
+    _Ip __pos = __part.first;
+    const _Dp __lsize = __pos - __begin;
+    const _Dp __rsize = __end - (__pos + _Dp(1));
+    if (__lsize < __size / 8 || __rsize < __size / 8) {
+      if (--__bad_allowed == 0) {
+        ::__ycxx::__detail::__heap_sort<_Ops>(__begin, __end, less);
+        return;
+      }
+      // Break patterns: swap a few elements of each side with ones a quarter further in.
+      auto __exchange = [](_Ip a, _Ip b) { _Ops::iter_swap(a, b); };
+      if (__lsize >= __pdq_insertion_threshold) {
+        const _Dp __q = __lsize / 4;
+        __exchange(__begin, __begin + __q);
+        __exchange(__pos - _Dp(1), __pos - __q);
+        if (__lsize > __pdq_ninther_threshold) {
+          __exchange(__begin + _Dp(1), __begin + (__q + 1));
+          __exchange(__begin + _Dp(2), __begin + (__q + 2));
+          __exchange(__pos - _Dp(2), __pos - (__q + 1));
+          __exchange(__pos - _Dp(3), __pos - (__q + 2));
+        }
+      }
+      if (__rsize >= __pdq_insertion_threshold) {
+        const _Dp __q = __rsize / 4;
+        __exchange(__pos + _Dp(1), __pos + (__q + 1));
+        __exchange(__end - _Dp(1), __end - __q);
+        if (__rsize > __pdq_ninther_threshold) {
+          __exchange(__pos + _Dp(2), __pos + (__q + 2));
+          __exchange(__pos + _Dp(3), __pos + (__q + 3));
+          __exchange(__end - _Dp(2), __end - (__q + 1));
+          __exchange(__end - _Dp(3), __end - (__q + 2));
+        }
+      }
+    } else if (__part.second && ::__ycxx::__detail::__partial_insertion_sort<_Ops>(__begin, __pos, less) &&
+               ::__ycxx::__detail::__partial_insertion_sort<_Ops>(__pos + _Dp(1), __end, less)) {
+      return; // nothing was swapped and both sides were (nearly) sorted
+    }
+    // Recurse into the left side, iterate on the right one.
+    ::__ycxx::__detail::__pdqsort_loop<_Ops, _Branchless>(__begin, __pos, less, __bad_allowed, __leftmost);
+    __begin = __pos + _Dp(1);
+    __leftmost = false;
+  }
+}
+
 template <class _Ops, class _Ip, class _Cp>
 constexpr void __sort_impl(_Ip first, _Ip last, _Cp less) {
-  int depth = 2 * ::__ycxx::__detail::__floor_log2(static_cast<unsigned long long>(last - first));
-  ::__ycxx::__detail::__introsort_loop<_Ops>(first, last, depth, less);
+  const auto n = last - first;
+  if (n < 2)
+    return;
+  ::__ycxx::__detail::__pdqsort_loop<_Ops, __pdq_branchless<_Ip>>(
+      first, last, less, ::__ycxx::__detail::__floor_log2(static_cast<unsigned long long>(n)), true);
 }
 
 // Sorts [first, last) so that [first, middle) holds the smallest elements in order.
@@ -651,14 +992,107 @@ constexpr void __stable_sort_adaptive(_Ip first, _Ip last, std::iter_difference_
   ::__ycxx::__detail::__merge_adaptive<_Ops>(first, __mid, last, __half, __len - __half, less, __buf, __cap);
 }
 
+// ---- stable_sort of integers ---------------------------------------------------------------
+// Integers ordered by one of the standard comparison objects: equivalent elements are equal
+// values, so the order among them cannot be observed and stable_sort may use any sort. Large
+// ranges get an LSD radix sort (a counting pass per byte, skipping bytes that all elements share)
+// through a buffer of n elements, smaller ones (or without the buffer) pdqsort; both stay within
+// [stable.sort]/5's N log N comparisons (radix sort makes none).
+
+// 1: the comparator orders T ascending, -1: descending, 0: neither or unknown.
+template <class _Cp, class _Tp>
+inline constexpr int __std_order = 0;
+template <class _Tp>
+inline constexpr int __std_order<__pred_ref<std::less<void>>, _Tp> = 1;
+template <class _Tp>
+inline constexpr int __std_order<__pred_ref<std::less<_Tp>>, _Tp> = 1;
+template <class _Tp>
+inline constexpr int __std_order<__pred_ref<std::ranges::less>, _Tp> = 1;
+template <class _Tp>
+inline constexpr int __std_order<__pred_ref<std::greater<void>>, _Tp> = -1;
+template <class _Tp>
+inline constexpr int __std_order<__pred_ref<std::greater<_Tp>>, _Tp> = -1;
+template <class _Tp>
+inline constexpr int __std_order<__pred_ref<std::ranges::greater>, _Tp> = -1;
+template <class _Tp>
+inline constexpr int __std_order<__proj_comp<std::ranges::less, std::identity>, _Tp> = 1;
+template <class _Tp>
+inline constexpr int __std_order<__proj_comp<std::ranges::greater, std::identity>, _Tp> = -1;
+
+template <class _Ip, class _Cp>
+concept __radix_sortable = std::contiguous_iterator<_Ip> && std::is_integral_v<std::iter_value_t<_Ip>> &&
+                           !std::is_same_v<std::iter_value_t<_Ip>, bool> &&
+                           std::is_same_v<std::iter_reference_t<_Ip>, std::iter_value_t<_Ip>&> &&
+                           __std_order<_Cp, std::iter_value_t<_Ip>> != 0;
+
+inline constexpr std::ptrdiff_t __radix_threshold = 512;
+
+// Sorts a[0, n) ascending (descending with _Desc), using b[0, n) as scratch.
+template <bool _Desc, class _Tp>
+void __radix_sort(_Tp* a, std::size_t n, _Tp* b) noexcept {
+  using _Up = std::make_unsigned_t<_Tp>;
+  constexpr int _Kp = sizeof(_Tp);
+  constexpr _Up __flip = std::is_signed_v<_Tp> ? static_cast<_Up>(_Up(1) << (8 * _Kp - 1)) : _Up(0);
+  // The key's unsigned order is the wanted order of the values.
+  auto key = [](_Tp __x) noexcept {
+    _Up __u = static_cast<_Up>(static_cast<_Up>(__x) ^ __flip);
+    if constexpr (_Desc)
+      __u = static_cast<_Up>(~__u);
+    return __u;
+  };
+  std::size_t __cnt[_Kp][256] = {};
+  for (std::size_t i = 0; i != n; ++i) {
+    const _Up k = key(a[i]);
+    for (int d = 0; d < _Kp; ++d)
+      ++__cnt[d][(k >> (8 * d)) & 0xff];
+  }
+  _Tp* __src = a;
+  _Tp* __dst = b;
+  for (int d = 0; d < _Kp; ++d) {
+    std::size_t* c = __cnt[d];
+    if (c[(key(a[0]) >> (8 * d)) & 0xff] == n)
+      continue; // every element has the same digit here
+    std::size_t __sum = 0;
+    for (int __v = 0; __v < 256; ++__v) {
+      const std::size_t __here = c[__v];
+      c[__v] = __sum;
+      __sum += __here;
+    }
+    for (std::size_t i = 0; i != n; ++i) {
+      const _Tp __x = __src[i];
+      __dst[c[(key(__x) >> (8 * d)) & 0xff]++] = __x;
+    }
+    _Tp* t = __src;
+    __src = __dst;
+    __dst = t;
+  }
+  if (__src != a)
+    for (std::size_t i = 0; i != n; ++i)
+      a[i] = __src[i];
+}
+
 template <class _Ops, class _Ip, class _Cp>
 constexpr void __stable_sort_impl(_Ip first, _Ip last, _Cp less) {
   auto __len = last - first;
+  using _Tp = std::iter_value_t<_Ip>;
+  if constexpr (::__ycxx::__detail::__radix_sortable<_Ip, _Cp>) {
+    if !consteval {
+      if (__len >= __radix_threshold) {
+        __temp_buffer<_Tp> __buf(__len);
+        if (__buf.capacity() == __len) {
+          ::__ycxx::__detail::__radix_sort<(__std_order<_Cp, _Tp> < 0)>(std::to_address(first), static_cast<std::size_t>(__len),
+                                                                     __buf.data());
+          return;
+        }
+      }
+    }
+    ::__ycxx::__detail::__sort_impl<_Ops>(first, last, less);
+    return;
+  }
   if (__len <= __insertion_sort_threshold) {
     ::__ycxx::__detail::__binary_insertion_sort<_Ops>(first, last, less);
     return;
   }
-  using _Tp = std::iter_value_t<_Ip>;
   __temp_buffer<_Tp> __buf((__len + 1) / 2);
   ::__ycxx::__detail::__stable_sort_adaptive<_Ops>(first, last, __len, less, __buf.data(), __buf.capacity());
 }

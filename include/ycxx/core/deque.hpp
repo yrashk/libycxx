@@ -2,7 +2,8 @@
 //
 // Representation: a map (an array of mcap_ block pointers, allocated through the allocator
 // rebound to T*) and blocks of B elements each. Elements are numbered by an absolute index:
-// element i lives at abs = start_ + i, in block map_[abs / B] at offset abs % B. Map slots
+// element i lives at abs = start_ + i (i < end_ - start_), in block map_[abs / B] at offset
+// abs % B; head_ and tail_ cache the addresses of the ends (below). Map slots
 // that hold no block are null. Invariants, whenever map_ is non-null:
 //   - the allocated blocks are exactly the slots holding elements, or, for an empty deque,
 //     the single slot start_ / B;
@@ -183,7 +184,13 @@ private:
   _Tp** __map_ = nullptr;
   size_type __mcap_ = 0;
   size_type __start_ = 0; // absolute index of the first element
-  size_type __size_ = 0;
+  size_type __end_ = 0;   // absolute index one past the last element
+  // Caches of the ends, kept whenever map_ is non-null: head_ is the address of element 0 (of
+  // slot start_ for an empty deque), tail_ one past the address of the last element (head_ for an
+  // empty deque; it may be the end of the last block). Blocks never move, so recentering the map
+  // leaves them valid; every other change of start_ or end_ updates them (sync_ends).
+  _Tp* __head_ = nullptr;
+  _Tp* __tail_ = nullptr;
   [[no_unique_address]] _Allocator __alloc_;
 
   // ---- storage ----
@@ -203,11 +210,17 @@ private:
     __map_traits::deallocate(__ma, __ycxx::__detail::__to_alloc_pointer<typename __map_traits::pointer>(m), n);
   }
 
+  constexpr size_type __count() const noexcept { return __end_ - __start_; }
   constexpr size_type __first_slot() const noexcept { return __start_ / _Bp; }
   // One past the last slot holding a block (map_ non-null).
-  constexpr size_type __end_block() const noexcept { return __size_ == 0 ? __start_ / _Bp + 1 : (__start_ + __size_ - 1) / _Bp + 1; }
+  constexpr size_type __end_block() const noexcept { return __count() == 0 ? __start_ / _Bp + 1 : (__end_ - 1) / _Bp + 1; }
   constexpr _Tp* __ptr_at(size_type abs) const noexcept { return __map_[abs / _Bp] + abs % _Bp; }
   constexpr _Tp* __elem(size_type i) const noexcept { return __ptr_at(__start_ + i); }
+  // Recomputes head_ and tail_ from start_ and end_ (map_ non-null).
+  constexpr void __sync_ends() noexcept {
+    __head_ = __ptr_at(__start_);
+    __tail_ = __count() == 0 ? __head_ : __ptr_at(__end_ - 1) + 1;
+  }
 
   constexpr iterator __iter_at(size_type i) const noexcept {
     if (!__map_)
@@ -227,7 +240,8 @@ private:
     __map_ = m;
     __mcap_ = __cap;
     __start_ = __cap / 2 * _Bp + __off;
-    __size_ = 0;
+    __end_ = __start_;
+    __sync_ends();
   }
 
   // Makes room in the map for nf more blocks before the first one and nb after the last one
@@ -255,6 +269,7 @@ private:
         }
       }
       __start_ = __start_ - __lo * _Bp + __nlo * _Bp;
+      __end_ = __end_ - __lo * _Bp + __nlo * _Bp;
       return;
     }
     const size_type __ncap = __mcap_ + (__mcap_ > __need ? __mcap_ : __need);
@@ -266,6 +281,7 @@ private:
     __map_ = m;
     __mcap_ = __ncap;
     __start_ = __start_ - __lo * _Bp + __nlo * _Bp;
+    __end_ = __end_ - __lo * _Bp + __nlo * _Bp;
   }
 
   // Frees blocks allocated after the last needed one (rollback of reserve_back).
@@ -292,11 +308,11 @@ private:
     if (!__map_)
       __init_storage(0);
     const size_type __have = __end_block();
-    const size_type __need = (__start_ + __size_ + n + _Bp - 1) / _Bp;
+    const size_type __need = (__end_ + n + _Bp - 1) / _Bp;
     if (__need <= __have)
       return;
     __reserve_map(0, __need - __have);
-    const size_type __lo = __end_block(), __hi = (__start_ + __size_ + n + _Bp - 1) / _Bp;
+    const size_type __lo = __end_block(), __hi = (__end_ + n + _Bp - 1) / _Bp;
     __ycxx::__detail::__rollback __rb{[this] { __trim_back(); }};
     for (size_type s = __lo; s < __hi; ++s)
       __map_[s] = __alloc_block();
@@ -319,55 +335,57 @@ private:
   }
 
   constexpr void __check_grow(size_type n) const {
-    if (n > max_size() - __size_)
+    if (n > max_size() - __count())
       __ycxx::__detail::__throw_length_error("std::deque: size would exceed max_size()");
   }
 
   // Constructs an element after the last one; a slot must have been reserved.
   template <class... _Args>
   constexpr void __construct_back(_Args&&... __args) {
-    __alloc_traits::construct(__alloc_, __ptr_at(__start_ + __size_), static_cast<_Args&&>(__args)...);
-    ++__size_;
+    __alloc_traits::construct(__alloc_, __ptr_at(__end_), static_cast<_Args&&>(__args)...);
+    ++__end_;
+    __sync_ends();
   }
   // Constructs an element before the first one; a slot must have been reserved.
   template <class... _Args>
   constexpr void __construct_front(_Args&&... __args) {
     __alloc_traits::construct(__alloc_, __ptr_at(__start_ - 1), static_cast<_Args&&>(__args)...);
     --__start_;
-    ++__size_;
+    __sync_ends();
   }
 
-  // Destroys the first n (< size_) elements and frees the blocks they leave empty.
+  // Destroys the first n (< size()) elements and frees the blocks they leave empty.
   constexpr void __drop_front(size_type n) noexcept {
     for (size_type i = 0; i < n; ++i)
       __alloc_traits::destroy(__alloc_, __elem(i));
     const size_type __lo = __first_slot();
     __start_ += n;
-    __size_ -= n;
+    __sync_ends();
     for (size_type s = __lo; s < __first_slot(); ++s) {
       __free_block(__map_[s]);
       __map_[s] = nullptr;
     }
   }
-  // Destroys the last n (< size_) elements and frees the blocks they leave empty.
+  // Destroys the last n (< size()) elements and frees the blocks they leave empty.
   constexpr void __drop_back(size_type n) noexcept {
-    for (size_type i = __size_ - n; i < __size_; ++i)
+    for (size_type i = __count() - n; i < __count(); ++i)
       __alloc_traits::destroy(__alloc_, __elem(i));
     const size_type __hi = __end_block();
-    __size_ -= n;
+    __end_ -= n;
+    __sync_ends();
     for (size_type s = __end_block(); s < __hi; ++s) {
       __free_block(__map_[s]);
       __map_[s] = nullptr;
     }
   }
   constexpr void __erase_front(size_type n) noexcept {
-    if (n == __size_)
+    if (n == __count())
       clear();
     else
       __drop_front(n);
   }
   constexpr void __erase_back(size_type n) noexcept {
-    if (n == __size_)
+    if (n == __count())
       clear();
     else
       __drop_back(n);
@@ -381,16 +399,20 @@ private:
     __free_block(__map_[__first_slot()]);
     __free_map(__map_, __mcap_);
     __map_ = nullptr;
-    __mcap_ = __start_ = __size_ = 0;
+    __mcap_ = __start_ = __end_ = 0;
+    __head_ = __tail_ = nullptr;
   }
   // Takes over o's storage; *this owns none.
   constexpr void take(deque& __o) noexcept {
     __map_ = __o.__map_;
     __mcap_ = __o.__mcap_;
     __start_ = __o.__start_;
-    __size_ = __o.__size_;
+    __end_ = __o.__end_;
+    __head_ = __o.__head_;
+    __tail_ = __o.__tail_;
     __o.__map_ = nullptr;
-    __o.__mcap_ = __o.__start_ = __o.__size_ = 0;
+    __o.__mcap_ = __o.__start_ = __o.__end_ = 0;
+    __o.__head_ = __o.__tail_ = nullptr;
   }
 
   // Appends n elements, the i-th constructed by make(slot); strong.
@@ -400,17 +422,18 @@ private:
       return;
     __check_grow(n);
     __reserve_back(n);
-    const size_type __old = __size_;
+    const size_type __old = __count();
     __ycxx::__detail::__rollback __rb{[&] {
-      if (__size_ != __old)
-        __erase_back(__size_ - __old);
+      if (__count() != __old)
+        __erase_back(__count() - __old);
       __trim_back();
     }};
     for (size_type i = 0; i < n; ++i) {
-      __make(__ptr_at(__start_ + __size_));
-      ++__size_;
+      __make(__ptr_at(__end_));
+      ++__end_;
     }
     __rb.release();
+    __sync_ends();
   }
   // Appends [first, last); strong.
   template <class _It, class _Sent>
@@ -419,10 +442,10 @@ private:
       const auto d = ranges::distance(first, last);
       __append_counted(static_cast<_It&&>(first), static_cast<size_type>(d));
     } else {
-      const size_type __old = __size_;
+      const size_type __old = __count();
       __ycxx::__detail::__rollback __rb{[&] {
-        if (__size_ != __old)
-          __erase_back(__size_ - __old);
+        if (__count() != __old)
+          __erase_back(__count() - __old);
         __trim_back();
       }};
       for (; first != last; ++first)
@@ -492,7 +515,7 @@ private:
     }
     __rb.release();
     __start_ = base;
-    __size_ += n;
+    __sync_ends();
   }
 
   // Rotates [f, l) so that *m comes first. Its temporaries are elements too: built and
@@ -504,25 +527,25 @@ private:
   // Inserts [first, last) at index k: at the closer end, then rotated into place.
   template <class _It, class _Sent>
   constexpr iterator __insert_elems(size_type k, _It first, _Sent last) {
-    const size_type __s0 = __size_;
+    const size_type __s0 = __count();
     if (k >= __s0 - k) {
       __append_elems(static_cast<_It&&>(first), static_cast<_Sent&&>(last));
       if (k != __s0)
         __rotate_(begin() + static_cast<difference_type>(k), begin() + static_cast<difference_type>(__s0), end());
     } else {
       __prepend_elems(static_cast<_It&&>(first), static_cast<_Sent&&>(last));
-      const auto n = static_cast<difference_type>(__size_ - __s0);
+      const auto n = static_cast<difference_type>(__count() - __s0);
       if (k != 0)
         __rotate_(begin(), begin() + n, begin() + n + static_cast<difference_type>(k));
     }
     return begin() + static_cast<difference_type>(k);
   }
 
-  // Inserts n copies of v (not an element of *this) at index k, 0 < k < size_, shifting the
+  // Inserts n copies of v (not an element of *this) at index k, 0 < k < size(), shifting the
   // shorter side.
   constexpr void __insert_fill_middle(size_type k, size_type n, const _Tp& __v) {
     __check_grow(n);
-    const size_type __s0 = __size_;
+    const size_type __s0 = __count();
     if (k >= __s0 - k) {
       __reserve_back(n);
       __ycxx::__detail::__rollback __rb{[this] { __trim_back(); }};
@@ -584,16 +607,16 @@ public:
     append_range(static_cast<_Rp&&>(__rg));
   }
   constexpr deque(const deque& __x) : deque(__alloc_traits::select_on_container_copy_construction(__x.__alloc_)) {
-    __append_counted(__x.begin(), __x.__size_);
+    __append_counted(__x.begin(), __x.__count());
   }
   constexpr deque(deque&& __x) noexcept(is_nothrow_move_constructible_v<_Allocator>) : __alloc_(static_cast<_Allocator&&>(__x.__alloc_)) { take(__x); }
-  constexpr deque(const deque& __x, const type_identity_t<_Allocator>& a) : deque(a) { __append_counted(__x.begin(), __x.__size_); }
+  constexpr deque(const deque& __x, const type_identity_t<_Allocator>& a) : deque(a) { __append_counted(__x.begin(), __x.__count()); }
   // noexcept when the allocators always compare equal (an extension: nothing is allocated).
   constexpr deque(deque&& __x, const type_identity_t<_Allocator>& a) noexcept(__always_equal) : deque(a) {
     if (__always_equal || __alloc_ == __x.__alloc_)
       take(__x);
     else
-      __append_counted(std::make_move_iterator(__x.begin()), __x.__size_);
+      __append_counted(std::make_move_iterator(__x.begin()), __x.__count());
   }
   constexpr deque(initializer_list<_Tp> il, const _Allocator& a = _Allocator()) : deque(a) {
     __append_counted(il.begin(), il.size());
@@ -645,12 +668,12 @@ public:
     __assign_elems(ranges::begin(__rg), ranges::end(__rg));
   }
   constexpr void assign(size_type n, const _Tp& t) {
-    const size_type m = n < __size_ ? n : __size_;
+    const size_type m = n < __count() ? n : __count();
     std::fill_n(begin(), m, t);
-    if (n > __size_)
-      __append_n(n - __size_, [&](_Tp* p) { __alloc_traits::construct(__alloc_, p, t); });
-    else if (n < __size_)
-      __erase_back(__size_ - n);
+    if (n > __count())
+      __append_n(n - __count(), [&](_Tp* p) { __alloc_traits::construct(__alloc_, p, t); });
+    else if (n < __count())
+      __erase_back(__count() - n);
   }
   constexpr void assign(initializer_list<_Tp> il) { assign(il.begin(), il.end()); }
   constexpr allocator_type get_allocator() const noexcept { return __alloc_; }
@@ -672,8 +695,8 @@ public:
   // ---- iterators ----
   constexpr iterator begin() noexcept { return __iter_at(0); }
   constexpr const_iterator begin() const noexcept { return __iter_at(0); }
-  constexpr iterator end() noexcept { return __iter_at(__size_); }
-  constexpr const_iterator end() const noexcept { return __iter_at(__size_); }
+  constexpr iterator end() noexcept { return __iter_at(__count()); }
+  constexpr const_iterator end() const noexcept { return __iter_at(__count()); }
   constexpr reverse_iterator rbegin() noexcept { return reverse_iterator(end()); }
   constexpr const_reverse_iterator rbegin() const noexcept { return const_reverse_iterator(end()); }
   constexpr reverse_iterator rend() noexcept { return reverse_iterator(begin()); }
@@ -684,29 +707,29 @@ public:
   constexpr const_reverse_iterator crend() const noexcept { return rend(); }
 
   // ---- [deque.capacity] ----
-  [[nodiscard]] constexpr bool empty() const noexcept { return __size_ == 0; }
-  constexpr size_type size() const noexcept { return __size_; }
+  [[nodiscard]] constexpr bool empty() const noexcept { return __count() == 0; }
+  constexpr size_type size() const noexcept { return __count(); }
   constexpr size_type max_size() const noexcept {
     const size_type a = __alloc_traits::max_size(__alloc_);
     const auto d = static_cast<size_type>(numeric_limits<difference_type>::max());
     return a < d ? a : d;
   }
   constexpr void resize(size_type __sz) {
-    if (__sz < __size_)
-      __erase_back(__size_ - __sz);
+    if (__sz < __count())
+      __erase_back(__count() - __sz);
     else
-      __append_n(__sz - __size_, [this](_Tp* p) { __alloc_traits::construct(__alloc_, p); });
+      __append_n(__sz - __count(), [this](_Tp* p) { __alloc_traits::construct(__alloc_, p); });
   }
   constexpr void resize(size_type __sz, const _Tp& c) {
-    if (__sz < __size_)
-      __erase_back(__size_ - __sz);
+    if (__sz < __count())
+      __erase_back(__count() - __sz);
     else
-      __append_n(__sz - __size_, [&](_Tp* p) { __alloc_traits::construct(__alloc_, p, c); });
+      __append_n(__sz - __count(), [&](_Tp* p) { __alloc_traits::construct(__alloc_, p, c); });
   }
   constexpr void shrink_to_fit() {
     if (!__map_)
       return;
-    if (__size_ == 0) {
+    if (__count() == 0) {
       __release_all();
       return;
     }
@@ -720,55 +743,104 @@ public:
     __map_ = m;
     __mcap_ = __y_used + 1;
     __start_ -= __lo * _Bp;
+    __end_ -= __lo * _Bp;
   }
 
   // ---- element access ----
   constexpr reference operator[](size_type n) {
-    __ycxx::__detail::__precondition(n < __size_, "std::deque::operator[]: index out of range");
+    __ycxx::__detail::__precondition(n < __count(), "std::deque::operator[]: index out of range");
     return *__elem(n);
   }
   constexpr const_reference operator[](size_type n) const {
-    __ycxx::__detail::__precondition(n < __size_, "std::deque::operator[]: index out of range");
+    __ycxx::__detail::__precondition(n < __count(), "std::deque::operator[]: index out of range");
     return *__elem(n);
   }
   constexpr reference at(size_type n) {
-    if (n >= __size_)
+    if (n >= __count())
       __ycxx::__detail::__throw_out_of_range("std::deque::at: index out of range");
     return *__elem(n);
   }
   constexpr const_reference at(size_type n) const {
-    if (n >= __size_)
+    if (n >= __count())
       __ycxx::__detail::__throw_out_of_range("std::deque::at: index out of range");
     return *__elem(n);
   }
   constexpr reference front() {
-    __ycxx::__detail::__precondition(__size_ != 0, "std::deque::front: empty deque");
-    return *__elem(0);
+    __ycxx::__detail::__precondition(__count() != 0, "std::deque::front: empty deque");
+    return *__head_;
   }
   constexpr const_reference front() const {
-    __ycxx::__detail::__precondition(__size_ != 0, "std::deque::front: empty deque");
-    return *__elem(0);
+    __ycxx::__detail::__precondition(__count() != 0, "std::deque::front: empty deque");
+    return *__head_;
   }
   constexpr reference back() {
-    __ycxx::__detail::__precondition(__size_ != 0, "std::deque::back: empty deque");
-    return *__elem(__size_ - 1);
+    __ycxx::__detail::__precondition(__count() != 0, "std::deque::back: empty deque");
+    return __tail_[-1];
   }
   constexpr const_reference back() const {
-    __ycxx::__detail::__precondition(__size_ != 0, "std::deque::back: empty deque");
-    return *__elem(__size_ - 1);
+    __ycxx::__detail::__precondition(__count() != 0, "std::deque::back: empty deque");
+    return __tail_[-1];
   }
 
   // ---- [deque.modifiers] ----
+  // The ends' fast paths are small enough to inline everywhere: allocating a block is out of
+  // line. A deque without storage has start_ == end_ == 0, so the offset tests below send it to
+  // the slow path without a test of map_. No max_size() check on the fast path: a
+  // free slot in an allocated block means size() + 1 elements fit in memory, so size() + 1 <=
+  // allocator max_size(); and size() + 1 <= the number of allocated slots, at most
+  // PTRDIFF_MAX for any object representation ([deque.overview] max_size).
+  // When the construction cannot throw, the slow path only makes room (without the arguments, so
+  // that they need not live in memory) and the construction stays inline.
   template <class... _Args>
   constexpr reference emplace_front(_Args&&... __args) {
-    if (__map_ != nullptr && __start_ % _Bp != 0) { // room in the first block
-      __check_grow(1);
-      _Tp* const p = __ptr_at(__start_ - 1);
-      __alloc_traits::construct(__alloc_, p, static_cast<_Args&&>(__args)...);
-      --__start_;
-      ++__size_;
-      return *p;
+    if (__start_ % _Bp == 0) [[unlikely]] { // no room in the first block
+      if constexpr (!__nothrow_construct<_Args...>)
+        return __emplace_front_slow(static_cast<_Args&&>(__args)...);
+      else
+        __grow_front();
     }
+    _Tp* const p = __head_ - 1;
+    __alloc_traits::construct(__alloc_, p, static_cast<_Args&&>(__args)...);
+    __head_ = p;
+    --__start_;
+    return *p;
+  }
+  template <class... _Args>
+  constexpr reference emplace_back(_Args&&... __args) {
+    if (__end_ % _Bp == 0) [[unlikely]] { // no room in the last block
+      if constexpr (!__nothrow_construct<_Args...>)
+        return __emplace_back_slow(static_cast<_Args&&>(__args)...);
+      else
+        __grow_back();
+    }
+    _Tp* const p = __tail_;
+    __alloc_traits::construct(__alloc_, p, static_cast<_Args&&>(__args)...);
+    __tail_ = p + 1;
+    ++__end_;
+    return *p;
+  }
+
+private:
+  template <class... _Args>
+  static constexpr bool __nothrow_construct = __ycxx::__detail::__alloc_nothrow_construct<_Allocator, _Tp, _Args...>;
+
+  // Makes room for one element before the first one / after the last one (strong), and points
+  // head_ / tail_ just past / at that slot, for the construction that follows and cannot throw
+  // (the caches are exact again once it is counted). An empty deque's tail_ moves with head_.
+  [[__gnu__::__noinline__]] constexpr void __grow_front() {
+    __check_grow(1);
+    __reserve_front(1);
+    __head_ = __ptr_at(__start_ - 1) + 1;
+    if (__count() == 0)
+      __tail_ = __head_;
+  }
+  [[__gnu__::__noinline__]] constexpr void __grow_back() {
+    __check_grow(1);
+    __reserve_back(1);
+    __tail_ = __ptr_at(__end_);
+  }
+  template <class... _Args>
+  [[__gnu__::__noinline__]] constexpr reference __emplace_front_slow(_Args&&... __args) {
     __check_grow(1);
     __reserve_front(1);
     __ycxx::__detail::__rollback __rb{[this] { __trim_front(); }};
@@ -777,21 +849,16 @@ public:
     return *__elem(0);
   }
   template <class... _Args>
-  constexpr reference emplace_back(_Args&&... __args) {
-    if (__map_ != nullptr && (__size_ == 0 || (__start_ + __size_) % _Bp != 0)) { // room in the last block
-      __check_grow(1);
-      _Tp* const p = __ptr_at(__start_ + __size_);
-      __alloc_traits::construct(__alloc_, p, static_cast<_Args&&>(__args)...);
-      ++__size_;
-      return *p;
-    }
+  [[__gnu__::__noinline__]] constexpr reference __emplace_back_slow(_Args&&... __args) {
     __check_grow(1);
     __reserve_back(1);
     __ycxx::__detail::__rollback __rb{[this] { __trim_back(); }};
     __construct_back(static_cast<_Args&&>(__args)...);
     __rb.release();
-    return *__elem(__size_ - 1);
+    return *__elem(__count() - 1);
   }
+
+public:
   template <class... _Args>
   constexpr iterator emplace(const_iterator position, _Args&&... __args) {
     const auto k = static_cast<size_type>(position - cbegin());
@@ -799,21 +866,21 @@ public:
       emplace_front(static_cast<_Args&&>(__args)...);
       return begin();
     }
-    if (k == __size_) {
+    if (k == __count()) {
       emplace_back(static_cast<_Args&&>(__args)...);
       return end() - 1;
     }
     // The arguments may refer to elements that are about to move.
     __ycxx::__detail::__alloc_temp<_Tp, _Allocator> t(__alloc_, static_cast<_Args&&>(__args)...);
     const auto __dk = static_cast<difference_type>(k);
-    if (k < __size_ - k) {
+    if (k < __count() - k) {
       emplace_front(static_cast<_Tp&&>(*__elem(0)));
       const iterator b = begin();
       std::move(b + 2, b + __dk + 1, b + 1);
     } else {
-      emplace_back(static_cast<_Tp&&>(*__elem(__size_ - 1)));
+      emplace_back(static_cast<_Tp&&>(*__elem(__count() - 1)));
       const iterator b = begin();
-      std::move_backward(b + __dk, b + static_cast<difference_type>(__size_ - 2), b + static_cast<difference_type>(__size_ - 1));
+      std::move_backward(b + __dk, b + static_cast<difference_type>(__count() - 2), b + static_cast<difference_type>(__count() - 1));
     }
     *__elem(k) = static_cast<_Tp&&>(t.__v);
     return begin() + __dk;
@@ -843,7 +910,7 @@ public:
     const auto k = static_cast<size_type>(position - cbegin());
     if (n == 0)
       return begin() + static_cast<difference_type>(k);
-    if (k == __size_) {
+    if (k == __count()) {
       __append_n(n, [&](_Tp* p) { __alloc_traits::construct(__alloc_, p, __x); });
     } else if (k == 0) {
       __check_grow(n);
@@ -874,7 +941,7 @@ public:
     const auto k = static_cast<size_type>(position - cbegin());
     if constexpr (ranges::sized_range<_Rp> && !ranges::forward_range<_Rp>) {
       // A sized single-pass range: insert its elements at the closer end by count.
-      const size_type __s0 = __size_;
+      const size_type __s0 = __count();
       const auto n = static_cast<size_type>(ranges::size(__rg));
       if (k >= __s0 - k) {
         __append_counted(ranges::begin(__rg), n);
@@ -894,25 +961,33 @@ public:
     return insert(position, il.begin(), il.end());
   }
 
+  // An element that leaves its block non-empty is popped inline (also the last element: the
+  // empty deque then keeps its block with start_ inside it); emptying a block is out of line.
   constexpr void pop_front() {
-    __ycxx::__detail::__precondition(__size_ != 0, "std::deque::pop_front: empty deque");
-    if (__size_ > 1 && (__start_ + 1) % _Bp != 0) { // the first block keeps elements
-      __alloc_traits::destroy(__alloc_, __elem(0));
+    __ycxx::__detail::__precondition(__count() != 0, "std::deque::pop_front: empty deque");
+    if ((__start_ + 1) % _Bp != 0) [[__likely__]] { // the first block keeps its slot start_ + 1
+      __alloc_traits::destroy(__alloc_, __head_);
+      ++__head_;
       ++__start_;
-      --__size_;
       return;
     }
-    __erase_front(1);
+    __pop_front_slow();
   }
   constexpr void pop_back() {
-    __ycxx::__detail::__precondition(__size_ != 0, "std::deque::pop_back: empty deque");
-    if (__size_ > 1 && (__start_ + __size_ - 1) % _Bp != 0) { // the last block keeps elements
-      __alloc_traits::destroy(__alloc_, __elem(__size_ - 1));
-      --__size_;
+    __ycxx::__detail::__precondition(__count() != 0, "std::deque::pop_back: empty deque");
+    if ((__end_ - 1) % _Bp != 0) [[__likely__]] { // the last block keeps elements (or start_)
+      __alloc_traits::destroy(__alloc_, --__tail_);
+      --__end_;
       return;
     }
-    __erase_back(1);
+    __pop_back_slow();
   }
+
+private:
+  [[__gnu__::__noinline__]] constexpr void __pop_front_slow() noexcept { __erase_front(1); }
+  [[__gnu__::__noinline__]] constexpr void __pop_back_slow() noexcept { __erase_back(1); }
+
+public:
   constexpr iterator erase(const_iterator position) { return erase(position, position + 1); }
   constexpr iterator erase(const_iterator first, const_iterator last) {
     const auto k = static_cast<size_type>(first - cbegin());
@@ -921,7 +996,7 @@ public:
       return begin() + static_cast<difference_type>(k);
     const iterator b = begin();
     const auto __dk = static_cast<difference_type>(k), __dn = static_cast<difference_type>(n);
-    if (k < __size_ - k - n) {
+    if (k < __count() - k - n) {
       std::move_backward(b, b + __dk, b + __dk + __dn);
       __erase_front(n);
     } else {
@@ -939,21 +1014,27 @@ public:
       __ycxx::__detail::__precondition(__always_equal || __alloc_ == __x.__alloc_,
                                  "std::deque::swap: unequal allocators that do not propagate");
     _Tp** m = __map_;
-    const size_type c = __mcap_, s = __start_, n = __size_;
+    const size_type c = __mcap_, s = __start_, n = __end_;
+    _Tp* const h = __head_;
+    _Tp* const t = __tail_;
     __map_ = __x.__map_;
     __mcap_ = __x.__mcap_;
     __start_ = __x.__start_;
-    __size_ = __x.__size_;
+    __end_ = __x.__end_;
+    __head_ = __x.__head_;
+    __tail_ = __x.__tail_;
     __x.__map_ = m;
     __x.__mcap_ = c;
     __x.__start_ = s;
-    __x.__size_ = n;
+    __x.__end_ = n;
+    __x.__head_ = h;
+    __x.__tail_ = t;
   }
   // Destroys every element; keeps one block (the first) and the map.
   constexpr void clear() noexcept {
     if (!__map_)
       return;
-    for (size_type i = 0; i < __size_; ++i)
+    for (size_type i = 0; i < __count(); ++i)
       __alloc_traits::destroy(__alloc_, __elem(i));
     const size_type __lo = __first_slot(), __hi = __end_block();
     for (size_type s = __lo + 1; s < __hi; ++s) {
@@ -961,7 +1042,8 @@ public:
       __map_[s] = nullptr;
     }
     __start_ = __lo * _Bp + _Bp / 2;
-    __size_ = 0;
+    __end_ = __start_;
+    __sync_ends();
   }
 };
 

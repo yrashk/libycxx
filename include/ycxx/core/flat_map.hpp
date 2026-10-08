@@ -22,6 +22,13 @@
 #include <ycxx/core/tuple.hpp>
 #include <ycxx/core/vector.hpp>
 
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+template <class _Cp>
+inline constexpr bool __is_std_vector = false;
+template <class _Tp, class _Ap>
+inline constexpr bool __is_std_vector<std::vector<_Tp, _Ap>> = true;
+}} // namespace __ycxx::__detail
+
 namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __adl_free {
 
 template <class _KC, class _MC, bool _Const>
@@ -290,15 +297,28 @@ protected:
     __sort_from(0);
     __g.release();
   }
-  // [flat.map.modifiers]/6, /11: appends each element, then sorts the new rows in.
+  // [flat.map.modifiers]/6, /11: appends each element, then sorts the new rows in. When both
+  // containers are std::vector, which cannot observe it, the room for a forward range is reserved
+  // first and the appends are emplace_back (insert at end() for a vector).
   template <class _It, class _Sent>
   constexpr void __insert_elems(_It first, _Sent last) {
     const size_type __old = size();
     auto __g = __guard();
+    constexpr bool __vectors = ::__ycxx::__detail::__is_std_vector<_KC> && ::__ycxx::__detail::__is_std_vector<_MC>;
+    if constexpr (__vectors && std::forward_iterator<_It> && std::sized_sentinel_for<_Sent, _It>) {
+      const auto n = static_cast<size_type>(last - first);
+      __c_.keys.reserve(__old + n);
+      __c_.values.reserve(__old + n);
+    }
     for (; first != last; ++first) {
       value_type value = *first;
-      __c_.keys.insert(__c_.keys.end(), static_cast<key_type&&>(value.first));
-      __c_.values.insert(__c_.values.end(), static_cast<mapped_type&&>(value.second));
+      if constexpr (__vectors) {
+        __c_.keys.emplace_back(static_cast<key_type&&>(value.first));
+        __c_.values.emplace_back(static_cast<mapped_type&&>(value.second));
+      } else {
+        __c_.keys.insert(__c_.keys.end(), static_cast<key_type&&>(value.first));
+        __c_.values.insert(__c_.values.end(), static_cast<mapped_type&&>(value.second));
+      }
     }
     __sort_from(__old);
     __g.release();

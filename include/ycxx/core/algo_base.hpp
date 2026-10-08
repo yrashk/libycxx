@@ -289,6 +289,96 @@ constexpr void __find_byte(_Ip& first, const _Sp& last, const _Tp& value) noexce
   first += r ? static_cast<const _Ep*>(r) - p : n;
 }
 
+// find over a contiguous range of wider integers (2, 4 or 8 bytes) for an integral value: blocks
+// of 256 bytes are tested with a loop without an early exit, which the compilers vectorize, and
+// only a block that holds a match is scanned element by element. The value is converted as in
+// find_byte: an element equals the value exactly when it equals e = E(value) and e == value.
+template <class _Ip, class _Sp, class _Tp>
+concept __wide_find_args =
+    std::contiguous_iterator<_Ip> && std::sized_sentinel_for<_Sp, _Ip> &&
+    std::is_integral_v<std::remove_cvref_t<std::iter_reference_t<_Ip>>> &&
+    !std::is_same_v<std::remove_cvref_t<std::iter_reference_t<_Ip>>, bool> &&
+    (sizeof(std::remove_cvref_t<std::iter_reference_t<_Ip>>) == 2 || sizeof(std::remove_cvref_t<std::iter_reference_t<_Ip>>) == 4 ||
+     sizeof(std::remove_cvref_t<std::iter_reference_t<_Ip>>) == 8) &&
+    std::is_lvalue_reference_v<std::iter_reference_t<_Ip>> &&
+    !std::is_volatile_v<std::remove_reference_t<std::iter_reference_t<_Ip>>> && std::is_integral_v<_Tp> &&
+    !std::is_same_v<_Tp, bool>;
+
+template <class _Ip, class _Sp, class _Tp>
+constexpr void __find_wide(_Ip& first, const _Sp& last, const _Tp& value) noexcept {
+  using _Ep = std::remove_cvref_t<std::iter_reference_t<_Ip>>;
+  const auto n = last - first;
+  if (n <= 0)
+    return;
+  const _Ep e = static_cast<_Ep>(value);
+  if (!(e == value)) {
+    first += n;
+    return;
+  }
+  const _Ep* const p = ::__ycxx::__detail::__raw_address(first);
+  constexpr std::ptrdiff_t _Bk = 256 / sizeof(_Ep);
+  std::ptrdiff_t i = 0;
+  for (; n - i >= _Bk; i += _Bk) {
+    bool __any = false;
+    for (std::ptrdiff_t __j = 0; __j < _Bk; ++__j)
+      __any |= p[i + __j] == e;
+    if (__any)
+      break;
+  }
+  for (; i < n && !(p[i] == e); ++i) {
+  }
+  first += i;
+}
+
+// equal over two contiguous ranges of the same integral (or pointer) type, compared with ==:
+// equal values are equal object representations for these types ([basic.fundamental]: no padding
+// bits in the integral types the library supports; pointers compare equal when they represent the
+// same address), so the ranges are equal exactly when their bytes are: memcmp.
+template <class _Pp, class _Vp>
+concept __plain_equal_pred = std::same_as<_Pp, std::equal_to<void>> || std::same_as<_Pp, std::equal_to<_Vp>> ||
+                             std::same_as<_Pp, std::ranges::equal_to>;
+template <class _I1, class _I2, class _Pp>
+concept __memcmp_equal_args =
+    std::contiguous_iterator<_I1> && std::contiguous_iterator<_I2> &&
+    std::same_as<std::iter_value_t<_I1>, std::iter_value_t<_I2>> &&
+    (std::is_integral_v<std::iter_value_t<_I1>> || std::is_pointer_v<std::iter_value_t<_I1>>) &&
+    std::is_lvalue_reference_v<std::iter_reference_t<_I1>> && std::is_lvalue_reference_v<std::iter_reference_t<_I2>> &&
+    !std::is_volatile_v<std::remove_reference_t<std::iter_reference_t<_I1>>> &&
+    !std::is_volatile_v<std::remove_reference_t<std::iter_reference_t<_I2>>> &&
+    __plain_equal_pred<_Pp, std::iter_value_t<_I1>>;
+
+// The first index i < n where the two contiguous ranges differ (n if none): blocks of 256 bytes
+// are tested without an early exit (vectorized), then the block that differs is scanned.
+template <class _I1, class _I2>
+std::iter_difference_t<_I1> __block_mismatch(_I1 __first1, std::iter_difference_t<_I1> n, _I2 __first2) noexcept {
+  using _Vp = std::iter_value_t<_I1>;
+  const _Vp* const a = ::__ycxx::__detail::__raw_address(__first1);
+  const _Vp* const b = ::__ycxx::__detail::__raw_address(__first2);
+  constexpr std::ptrdiff_t _Bk = 256 / sizeof(_Vp) > 0 ? 256 / sizeof(_Vp) : 1;
+  std::ptrdiff_t i = 0;
+  for (; n - i >= _Bk; i += _Bk) {
+    bool __diff = false;
+    for (std::ptrdiff_t __j = 0; __j < _Bk; ++__j)
+      __diff |= a[i + __j] != b[i + __j];
+    if (__diff)
+      break;
+  }
+  for (; i < n && a[i] == b[i]; ++i) {
+  }
+  return i;
+}
+
+template <class _I1, class _I2>
+bool __memcmp_equal(_I1 __first1, std::iter_difference_t<_I1> n, _I2 __first2) noexcept {
+  if (n <= 0)
+    return true;
+  // void* operands: an element type's associated classes stay out of the call (ADL would
+  // instantiate them, and Holder<Incomplete>* elements must work).
+  const void* const a = ::__ycxx::__detail::__raw_address(__first1);
+  const void* const b = ::__ycxx::__detail::__raw_address(__first2);
+  return __builtin_memcmp(a, b, static_cast<std::size_t>(n) * sizeof(std::iter_value_t<_I1>)) == 0;
+}
+
 // ---- min / max -------------------------------------------------------------------------------
 template <class _Ip, class _Sp, class _Cp>
 constexpr _Ip __min_element_impl(_Ip first, _Sp last, _Cp less) {
@@ -710,11 +800,17 @@ template <class _InputIterator, class _Tp = typename iterator_traits<_InputItera
   if constexpr (__ycxx::__detail::__bit_algo_args<_InputIterator, _InputIterator, _Tp>) {
     return __ycxx::__detail::__bit_algos<_InputIterator>::find(first, last, value);
   } else {
-    if constexpr (__ycxx::__detail::__memchr_find_args<_InputIterator, _InputIterator, _Tp>)
+    if constexpr (__ycxx::__detail::__memchr_find_args<_InputIterator, _InputIterator, _Tp>) {
       if !consteval {
         ::__ycxx::__detail::__find_byte(first, last, value);
         return first;
       }
+    } else if constexpr (__ycxx::__detail::__wide_find_args<_InputIterator, _InputIterator, _Tp>) {
+      if !consteval {
+        ::__ycxx::__detail::__find_wide(first, last, value);
+        return first;
+      }
+    }
     return ::__ycxx::__detail::__find_if_impl(first, last, ::__ycxx::__detail::__equals_value_plain<_Tp>{value});
   }
 }
@@ -731,6 +827,11 @@ template <class _InputIterator, class _Predicate>
 template <class _InputIterator1, class _InputIterator2, class _BinaryPredicate>
 [[nodiscard]] constexpr pair<_InputIterator1, _InputIterator2> mismatch(_InputIterator1 __first1, _InputIterator1 __last1,
                                                                       _InputIterator2 __first2, _BinaryPredicate pred) {
+  if constexpr (__ycxx::__detail::__memcmp_equal_args<_InputIterator1, _InputIterator2, _BinaryPredicate>)
+    if !consteval {
+      const auto i = ::__ycxx::__detail::__block_mismatch(__first1, __last1 - __first1, __first2);
+      return {__first1 + i, __first2 + static_cast<iter_difference_t<_InputIterator2>>(i)};
+    }
   return ::__ycxx::__detail::__mismatch3_impl(__first1, __last1, __first2, ::__ycxx::__detail::__ref_pred(pred));
 }
 template <class _InputIterator1, class _InputIterator2>
@@ -742,6 +843,13 @@ template <class _InputIterator1, class _InputIterator2, class _BinaryPredicate>
 [[nodiscard]] constexpr pair<_InputIterator1, _InputIterator2> mismatch(_InputIterator1 __first1, _InputIterator1 __last1,
                                                                       _InputIterator2 __first2, _InputIterator2 __last2,
                                                                       _BinaryPredicate pred) {
+  if constexpr (__ycxx::__detail::__memcmp_equal_args<_InputIterator1, _InputIterator2, _BinaryPredicate>)
+    if !consteval {
+      const auto __n1 = __last1 - __first1;
+      const auto __n2 = static_cast<iter_difference_t<_InputIterator1>>(__last2 - __first2);
+      const auto i = ::__ycxx::__detail::__block_mismatch(__first1, __n1 < __n2 ? __n1 : __n2, __first2);
+      return {__first1 + i, __first2 + static_cast<iter_difference_t<_InputIterator2>>(i)};
+    }
   return ::__ycxx::__detail::__mismatch_impl(__first1, __last1, __first2, __last2, ::__ycxx::__detail::__ref_pred(pred));
 }
 template <class _InputIterator1, class _InputIterator2>
@@ -754,6 +862,10 @@ template <class _InputIterator1, class _InputIterator2>
 template <class _InputIterator1, class _InputIterator2, class _BinaryPredicate>
 [[nodiscard]] constexpr bool equal(_InputIterator1 __first1, _InputIterator1 __last1, _InputIterator2 __first2,
                                    _BinaryPredicate pred) {
+  if constexpr (__ycxx::__detail::__memcmp_equal_args<_InputIterator1, _InputIterator2, _BinaryPredicate>)
+    if !consteval {
+      return ::__ycxx::__detail::__memcmp_equal(__first1, __last1 - __first1, __first2);
+    }
   return ::__ycxx::__detail::__mismatch3_impl(__first1, __last1, __first2, ::__ycxx::__detail::__ref_pred(pred)).first == __last1;
 }
 template <class _InputIterator1, class _InputIterator2>
@@ -763,6 +875,11 @@ template <class _InputIterator1, class _InputIterator2>
 template <class _InputIterator1, class _InputIterator2, class _BinaryPredicate>
 [[nodiscard]] constexpr bool equal(_InputIterator1 __first1, _InputIterator1 __last1, _InputIterator2 __first2,
                                    _InputIterator2 __last2, _BinaryPredicate pred) {
+  if constexpr (__ycxx::__detail::__memcmp_equal_args<_InputIterator1, _InputIterator2, _BinaryPredicate>)
+    if !consteval {
+      return __last1 - __first1 == __last2 - __first2 &&
+             ::__ycxx::__detail::__memcmp_equal(__first1, __last1 - __first1, __first2);
+    }
   return ::__ycxx::__detail::__equal_impl(__first1, __last1, __first2, __last2, ::__ycxx::__detail::__ref_pred(pred));
 }
 template <class _InputIterator1, class _InputIterator2>

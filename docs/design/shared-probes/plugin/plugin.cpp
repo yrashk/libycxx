@@ -17,3 +17,6 @@ std::size_t plugin_consume(std::vector<std::string>* v) {
 }
 void plugin_throw(const std::string& what) { throw std::runtime_error(what); }
 int plugin_uncaught() { return std::uncaught_exceptions(); }
+bool plugin_sees_current_exception() { return std::current_exception() != nullptr; }
+void* plugin_terminate_handler() { return reinterpret_cast<void*>(std::get_terminate()); }
+void plugin_rethrow() { throw; }

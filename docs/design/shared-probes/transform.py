@@ -26,7 +26,13 @@ DEFAULT = '[[__gnu__::__visibility__("default")]]'
 OPEN = re.compile(r'^namespace \[\[__gnu__::__visibility__\("hidden"\)\]\] (std|__ycxx)\b')
 
 
-def transform(text, mode, plain_lines):
+# In shared mode, the per-image allocation machinery (the default allocation functions, their
+# thunks and the allocation table, design §5) keeps its __ycxx declarations hidden: every image
+# has its own copy, which must never be exported or bound to another image's.
+PER_IMAGE = ("src/runtime/new/", "src/hosted/new/", "src/freestanding/new/")
+
+
+def transform(text, mode, plain_lines, per_image=False):
     starts = {}  # offset of the opening's '{' -> (line start, line number, name)
     pos = 0
     for n, line in enumerate(text.splitlines(keepends=True), 1):
@@ -48,7 +54,7 @@ def transform(text, mode, plain_lines):
             continue
         line_start, n, name, name_end = starts[o]
         plain = n in plain_lines or text[line_start:text.index("\n", line_start)].rstrip().endswith("// y1:plain")
-        vis = DEFAULT if mode == "shared" and not plain else HIDDEN
+        vis = DEFAULT if mode == "shared" and not plain and not (per_image and name == "__ycxx") else HIDDEN
         head = f"namespace {vis} {name} {{"
         if name == "std" and not plain:
             head += " inline namespace __y1 {"
@@ -77,7 +83,7 @@ def main():
                 continue
             rel = p.relative_to(tree).as_posix()
             text = p.read_text()
-            new = transform(text, mode, plain.get(rel, set()))
+            new = transform(text, mode, plain.get(rel, set()), rel.startswith(PER_IMAGE))
             if new != text:
                 p.write_text(new)
                 count += 1

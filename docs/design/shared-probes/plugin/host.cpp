@@ -1,10 +1,13 @@
 // The host: dlopen()s the plugin (argv[1]), exchanges std::string/std::vector both ways and catches
-// the plugin's exception as std::runtime_error. Prints "plugin 15".
+// the plugin's exception as std::runtime_error. Prints "plugin 15 shared-state N": N has a bit for
+// each piece of runtime state the plugin sees as the host does (15: one runtime per process;
+// expected only when both use libycxx.so).
 #include "api.hpp"
 #include <cstdio>
 #include <dlfcn.h>
 #include <exception>
 #include <stdexcept>
+#include <cstdlib>
 int main(int argc, char** argv) {
   if (argc < 2) return 2;
   void* h = dlopen(argv[1], RTLD_NOW | RTLD_LOCAL);
@@ -40,6 +43,42 @@ int main(int argc, char** argv) {
       r |= 8;
   } catch (...) {
   }
-  std::printf("plugin %d\n", r);
+  auto sees = reinterpret_cast<plugin_sees_t>(dlsym(h, "plugin_sees_current_exception"));
+  auto term = reinterpret_cast<plugin_terminate_t>(dlsym(h, "plugin_terminate_handler"));
+  auto rethrow = reinterpret_cast<plugin_rethrow_t>(dlsym(h, "plugin_rethrow"));
+  int shared = 0;
+  try {
+    throw 7;
+  } catch (int) {
+    // Only a plugin that sees the handled exception can rethrow it; with two runtimes, `throw;`
+    // in the plugin finds no exception and calls std::terminate (DECISIONS §2).
+    if (sees())
+      shared |= 1;
+    try {
+      if (shared & 1)
+        rethrow();
+    } catch (int v) {
+      if (v == 7)
+        shared |= 4;
+    } catch (...) {
+    }
+  }
+  std::set_terminate([] { std::_Exit(3); });
+  if (term() == reinterpret_cast<void*>(std::get_terminate()))
+    shared |= 2;
+  struct probe {
+    plugin_uncaught_t f;
+    int* out;
+    ~probe() { *out = f(); }
+  };
+  int during = -1;
+  try {
+    probe p{uncaught, &during};
+    throw 1;
+  } catch (int) {
+  }
+  if (during == 1)
+    shared |= 8;
+  std::printf("plugin %d shared-state %d\n", r, shared);
   return r == 15 ? 0 : 1;
 }

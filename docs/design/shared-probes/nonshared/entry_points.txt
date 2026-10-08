@@ -1,0 +1,32 @@
+# The ABI runtime's entry points that code compiled against libycxx calls by name (nm of the
+# runtime archive, src/abi): in shared mode each image gets a hidden forwarder (forward.c) to the
+# one implementation in libycxx.so, exported there as __ycxx_abi_<name> (link option --defsym in
+# this probe). name return-kind (v: void, p: pointer, i: int, n: noreturn)
+__cxa_allocate_exception p
+__cxa_free_exception v
+__cxa_throw n
+__cxa_rethrow n
+__cxa_begin_catch p
+__cxa_end_catch v
+__cxa_get_exception_ptr p
+__cxa_current_exception_type p
+__cxa_get_globals p
+__cxa_get_globals_fast p
+__cxa_bad_cast n
+__cxa_bad_typeid n
+__cxa_throw_bad_array_new_length n
+__cxa_call_terminate n
+__cxa_call_unexpected n
+__cxa_pure_virtual n
+__cxa_deleted_virtual n
+__cxa_guard_acquire i
+__cxa_guard_release v
+__cxa_guard_abort v
+__cxa_thread_atexit i
+__cxa_demangle p
+__dynamic_cast p
+__gxx_personality_v0 i
+_ZSt9terminatev n
+ycxx_pal_abort n
+ycxx_pal_allocate p
+ycxx_pal_deallocate v

@@ -10,7 +10,10 @@
 //     implied lk.unlock() are sequenced after the destruction of all objects with thread storage
 //     duration associated with the current thread.
 // "All" includes objects first constructed AFTER the scheduling call (B below), and objects
-// constructed before it (A): neither order of registration may make the state ready early.
+// constructed before it (A): neither order of registration may make the state ready early. Each
+// destructor also asks whether the scheduled action has already happened (action_done) and logs
+// "early" if so: the order is checked where it happens, not only by what the waiting thread
+// observes once it wakes up.
 //   [thread.thread.member]/4: the completion of the thread synchronizes with join()'s return;
 //     the thread completes after returning from its initial function, i.e. after its
 //     thread-storage objects are destroyed ([basic.start.term]/2).
@@ -21,6 +24,8 @@
 // FLAGS: -pthread
 // REQUIRES: exceptions
 #include <algorithm>
+#include <atomic>
+#include <chrono>
 #include <condition_variable>
 #include <future>
 #include <map>
@@ -46,13 +51,29 @@ static std::vector<std::string> take_log() {
   return v;
 }
 
+// Whether the action scheduled by the current section has happened; null where none is scheduled.
+// Set before the section's thread starts.
+static std::atomic<bool (*)()> action_done{nullptr};
+template <class F>
+static bool is_ready(F& f) {
+  return f.wait_for(std::chrono::seconds(0)) == std::future_status::ready;
+}
+static std::future<int>* f_int;
+static std::future<void>* f_void;
+static std::future<std::string>* f_string;
+static std::mutex* notify_m;
+
 struct TL {
   std::string name;
   std::map<int, std::string> m{{1, "one"}};
   std::unordered_map<std::string, int> u{{"k", 1}};
   std::shared_ptr<int> sp;
   explicit TL(std::string n) : name(std::move(n)), sp(std::make_shared<int>(7)) {}
-  ~TL() { log("dtor " + name + " " + m.at(1) + std::to_string(u.at("k")) + std::to_string(*sp)); }
+  ~TL() {
+    if (bool (*done)() = action_done.load(); done != nullptr && done())
+      log("early " + name);
+    log("dtor " + name + " " + m.at(1) + std::to_string(u.at("k")) + std::to_string(*sp));
+  }
 };
 static TL& tl_a() {
   thread_local TL a("A");
@@ -70,6 +91,8 @@ int main() {
   {
     std::promise<int> p;
     std::future<int> f = p.get_future();
+    f_int = &f;
+    action_done = [] { return is_ready(*f_int); };
     std::thread([p = std::move(p)]() mutable {
       tl_a();
       p.set_value_at_thread_exit(42);
@@ -83,6 +106,8 @@ int main() {
   {
     std::promise<void> p;
     std::future<void> f = p.get_future();
+    f_void = &f;
+    action_done = [] { return is_ready(*f_void); };
     std::thread([p = std::move(p)]() mutable {
       tl_a();
       p.set_exception_at_thread_exit(std::make_exception_ptr(std::string("boom")));
@@ -104,6 +129,8 @@ int main() {
       return std::to_string(n) + tl_b().m.at(2);
     });
     std::future<std::string> f = task.get_future();
+    f_string = &f;
+    action_done = [] { return is_ready(*f_string); };
     std::thread([task = std::move(task)]() mutable {
       tl_a();
       task.make_ready_at_thread_exit(5);
@@ -116,6 +143,18 @@ int main() {
     std::mutex m;
     std::condition_variable cv;
     bool done = false;
+    notify_m = &m;
+    // The lock is held by the exiting thread until the notification: another thread's try_lock
+    // fails. (The exiting thread may not try it: [thread.mutex.requirements.mutex.general].)
+    action_done = [] {
+      bool unlocked = false;
+      std::thread([&] {
+        unlocked = notify_m->try_lock();
+        if (unlocked)
+          notify_m->unlock();
+      }).join();
+      return unlocked;
+    };
     std::thread([&] {
       tl_a();
       std::unique_lock lk(m);
@@ -127,6 +166,7 @@ int main() {
     cv.wait(lk, [&] { return done; });
     CHECK(take_log() == both);
   }
+  action_done = nullptr;
   // join.
   {
     std::weak_ptr<int> w;

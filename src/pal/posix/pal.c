@@ -258,11 +258,35 @@ int ycxx_pal_wait_until(const ycxx_pal_u32* __addr, ycxx_pal_u32 expected, int c
 }
 
 /* ---- threads ---- */
+static void pal_arm_end_sentinel(void);
+
+/* A thread started here registers the thread-end sentinel (below) before its initial function
+   runs, so before any of its thread_local destructors: also those the program registers with
+   the C library directly, out of libycxx's sight (Clang on Darwin calls _tlv_atexit itself). */
+struct pal_start {
+  void* (*start)(void*);
+  void* arg;
+};
+
+static void* pal_thread_main(void* p) {
+  struct pal_start s = *(struct pal_start*)p;
+  free(p);
+  pal_arm_end_sentinel();
+  return s.start(s.arg);
+}
+
 int ycxx_pal_thread_create(ycxx_pal_handle* thread, void* (*start)(void*), void* arg, ycxx_pal_size __stack_size) {
+  struct pal_start* s = (struct pal_start*)malloc(sizeof *s);
+  if (!s)
+    return EAGAIN;
+  s->start = start;
+  s->arg = arg;
   pthread_attr_t __attr;
   int r = pthread_attr_init(&__attr);
-  if (r != 0)
+  if (r != 0) {
+    free(s);
     return r;
+  }
   if (__stack_size != 0) {
     /* A size the system cannot use is a hint to adjust or ignore, not an error. At least the
        minimum, asked of sysconf (PTHREAD_STACK_MIN is not a constant in newer glibc, and which
@@ -276,10 +300,12 @@ int ycxx_pal_thread_create(ycxx_pal_handle* thread, void* (*start)(void*), void*
     (void)pthread_attr_setstacksize(&__attr, __stack_size);
   }
   pthread_t t;
-  r = pthread_create(&t, &__attr, start, arg);
+  r = pthread_create(&t, &__attr, &pal_thread_main, s);
   pthread_attr_destroy(&__attr);
   if (r == 0)
     *thread = (ycxx_pal_handle)t;
+  else
+    free(s);
   return r;
 }
 
@@ -372,11 +398,20 @@ static int pal_register_thread_dtor(void (*__f)(void*), void* __obj, void* __dso
 /* The thread-end list (std::notify_all_at_thread_exit, the *_at_thread_exit results, RCU's
    reader records): run after every thread_local destructor of the thread, when it ends and when it
    calls exit() (DECISIONS §3). The list is a thread_local pointer, run by the "sentinel", a
-   thread_local destructor of the PAL's own registered before the thread's first other one (by
-   ycxx_pal_thread_atexit, through which libycxx registers every thread_local destructor, or by
-   the first ycxx_pal_at_thread_end): destructors run in reverse order of registration, so the
-   sentinel comes last. Where no destructor can be registered, a pthread key destructor runs the
-   list instead (after the C++ thread_local destructors; never for a thread calling exit()). */
+   thread_local destructor of the PAL's own registered before the thread's first other one:
+   destructors run in reverse order of registration, so the sentinel comes last. It is registered
+   (armed) early, wherever a thread's first thread_local destructor may be registered without
+   libycxx seeing it (Clang on Darwin calls _tlv_atexit directly):
+     - by a thread ycxx_pal_thread_create starts (std::thread, std::jthread, std::async, ...),
+       before its initial function runs (pal_thread_main);
+     - for the main thread, by an initializer of this file (pal_arm_main_thread): on ELF before
+       the program's own static initializers (priority 100, which programs may not use); on
+       Mach-O, which has no priorities, in link order, after the program's object files;
+     - on any thread, by ycxx_pal_thread_atexit (__cxa_thread_atexit: every thread_local
+       destructor where the compiler calls it, ELF and GCC on Darwin) and the first
+       ycxx_pal_at_thread_end.
+   Where no destructor can be registered, a pthread key destructor runs the list instead (after
+   the C++ thread_local destructors; never for a thread calling exit()). */
 struct pal_end_entry {
   void (*__f)(void*);
   void* arg;
@@ -417,6 +452,17 @@ static void pal_end_sentinel(void* __unused_arg) {
 static void pal_arm_end_sentinel(void) {
   if (pal_end_armed == 0)
     pal_end_armed = pal_register_thread_dtor(&pal_end_sentinel, NULL, (void*)&pal_end_sentinel) == 0 ? 1 : 2;
+}
+
+/* The main thread's sentinel, before the program can construct a thread_local (but see above for
+   Mach-O). With nothing on the list it does nothing at exit. */
+#if defined(__ELF__)
+__attribute__((__constructor__(100)))
+#else
+__attribute__((__constructor__))
+#endif
+static void pal_arm_main_thread(void) {
+  pal_arm_end_sentinel();
 }
 
 int ycxx_pal_thread_atexit(void (*__f)(void*), void* __obj, void* __dso) {

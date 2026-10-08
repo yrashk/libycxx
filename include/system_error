@@ -119,7 +119,6 @@ static_assert(ENODATA == __errno_enodata && ENOSR == __errno_enosr && ENOSTR == 
 // tools/data/transitive-includes.txt; -DYCXX_NO_TRANSITIVE_INCLUDES leaves them out.
 #if _YCXX_TRANSITIVE_INCLUDES
 #  include <algorithm>
-#  include <cerrno>
 #  include <concepts>
 #  include <cstddef>
 #  include <cwchar>

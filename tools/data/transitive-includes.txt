@@ -92,7 +92,7 @@ string: cerrno | cerrno:errno spdlog (os-inl.h) and libstdc++ 21_strings/basic_s
 string_view: algorithm cctype concepts cstddef cstdio cwchar initializer_list iosfwd limits stdexcept type_traits utility
 syncstream: algorithm array bit cctype cerrno charconv clocale compare concepts cstddef cstdint cstdio cstdlib ctime cwchar cwctype initializer_list ios iosfwd iterator limits mutex optional ratio stdexcept streambuf string string_view system_error text_encoding tuple type_traits typeinfo utility
 syncstream: sstream | sstream:std::stringbuf libstdc++ 27_io/basic_ostream/emit/1.cc
-system_error: algorithm cctype cerrno concepts cstddef cstdio cwchar initializer_list iosfwd limits stdexcept string string_view tuple type_traits utility
+system_error: algorithm cctype concepts cstddef cstdio cwchar initializer_list iosfwd limits stdexcept string string_view tuple type_traits utility
 text_encoding: algorithm bit cctype compare concepts cstddef cstdint cstdio cwchar initializer_list iosfwd limits stdexcept string_view type_traits utility
 thread: algorithm array atomic bit cctype cerrno charconv clocale concepts cstddef cstdint cstdio cstdlib ctime cwchar cwctype initializer_list iosfwd iterator limits memory ratio stdexcept stop_token string string_view text_encoding tuple type_traits typeinfo utility
 tuple: concepts limits type_traits

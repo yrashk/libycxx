@@ -11,46 +11,43 @@ int probe() { return std::min(1, 2); }
 namespace probe_2 { // cctype:std::isspace
 int probe() { return std::isspace(' '); }
 }
-namespace probe_3 { // cerrno:errno
-int probe() { return errno; }
-}
-namespace probe_4 { // concepts:std::same_as
+namespace probe_3 { // concepts:std::same_as
 static_assert(std::same_as<int, int>);
 }
-namespace probe_5 { // cstddef:std::byte
+namespace probe_4 { // cstddef:std::byte
 std::byte probe_v{};
 }
-namespace probe_6 { // cstdio:std::printf
+namespace probe_5 { // cstdio:std::printf
 int probe() { return std::printf(""); }
 }
-namespace probe_7 { // cwchar:std::wcslen
+namespace probe_6 { // cwchar:std::wcslen
 std::size_t probe() { return std::wcslen(L""); }
 }
-namespace probe_8 { // initializer_list:std::initializer_list
+namespace probe_7 { // initializer_list:std::initializer_list
 std::initializer_list<int> probe_v;
 }
-namespace probe_9 { // iosfwd:std::ostream
+namespace probe_8 { // iosfwd:std::ostream
 std::ostream* probe_v = nullptr;
 }
-namespace probe_10 { // limits:std::numeric_limits
+namespace probe_9 { // limits:std::numeric_limits
 int probe() { return std::numeric_limits<int>::max(); }
 }
-namespace probe_11 { // stdexcept:std::runtime_error
+namespace probe_10 { // stdexcept:std::runtime_error
 void probe() { throw std::runtime_error("x"); }
 }
-namespace probe_12 { // string:std::string
+namespace probe_11 { // string:std::string
 std::string probe_v;
 }
-namespace probe_13 { // string_view:std::string_view
+namespace probe_12 { // string_view:std::string_view
 std::string_view probe_v;
 }
-namespace probe_14 { // tuple:std::tuple
+namespace probe_13 { // tuple:std::tuple
 std::tuple<int> probe_v;
 }
-namespace probe_15 { // type_traits:std::is_same_v
+namespace probe_14 { // type_traits:std::is_same_v
 static_assert(std::is_same_v<int, int>);
 }
-namespace probe_16 { // utility:std::pair
+namespace probe_15 { // utility:std::pair
 std::pair<int, int> probe_v;
 }
 

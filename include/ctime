@@ -18,6 +18,13 @@ extern "C" {
 [[deprecated("ctime is deprecated ([depr.ctime]); use strftime or std::format")]] decltype(::ctime) ctime;
 }
 
+// timegm (C23 7.29.3.5): Darwin's <time.h> declares it only without a strict POSIX
+// feature-test macro (_XOPEN_SOURCE 600 hides it, libstdc++'s PR 93151 test); [ctime.syn] has it
+// always. The same declaration as the C library's where that has one.
+#if _YCXX_TARGET_DARWIN
+extern "C" time_t timegm(tm* __timeptr);
+#endif
+
 // timespec_getres (C23 7.29.2.7) for C libraries without it, in the hosted runtime
 // (src/hosted/ctime.cpp): the resolution of TIME_UTC, from clock_getres(CLOCK_REALTIME).
 namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {

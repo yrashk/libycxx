@@ -169,6 +169,10 @@ OPTIONAL_CHEADER = {"cuchar": ("YCXX_C_HAS_UCHAR_H", "ycxx/hosted/c_wchar.hpp")}
 # above. COMMON holds what both modes share.
 FREESTANDING = {"cstdlib": "<ycxx/core/c_stdlib.hpp>", "cstring": "<ycxx/core/c_string.hpp>",
                 "cwchar": "<ycxx/core/c_string.hpp>", "cerrno": "<ycxx/core/cerrno_macros.hpp>"}
+# Of those, the ones whose core header is included in hosted mode too, after the C library's:
+# <cerrno>'s macros, which a C library may leave undefined under a strict feature-test macro
+# (ycxx/core/cerrno_macros.hpp defines only those).
+FREESTANDING_ALSO_HOSTED = {"cerrno"}
 COMMON = {
     "cstdlib": """// abs, labs, llabs ([c.math.abs]): constexpr, shared with <cmath> (ycxx/core/math_abs.hpp).
 // div, ldiv, lldiv are constexpr ([cstdlib.syn]), so they are not the C library's. Templates, as
@@ -293,6 +297,13 @@ GLOBAL = {"cstdlib": [
     '[[deprecated("ctime is deprecated ([depr.ctime]); use strftime or std::format")]] decltype(::ctime) ctime;',
     '}',
     "",
+    "// timegm (C23 7.29.3.5): Darwin's <time.h> declares it only without a strict POSIX",
+    "// feature-test macro (_XOPEN_SOURCE 600 hides it, libstdc++'s PR 93151 test); [ctime.syn] has it",
+    "// always. The same declaration as the C library's where that has one.",
+    "#if YCXX_TARGET_DARWIN",
+    "extern \"C\" time_t timegm(tm* timeptr);",
+    "#endif",
+    "",
     "// timespec_getres (C23 7.29.2.7) for C libraries without it, in the hosted runtime",
     "// (src/hosted/ctime.cpp): the resolution of TIME_UTC, from clock_getres(CLOCK_REALTIME).",
     "namespace ycxx::detail {",
@@ -414,7 +425,10 @@ for name, (cheader, names, extra) in HEADERS.items():
                 f"#  undef {n}" for n in renamed]
     else:
         inc = [f"#  include <{cheader}>"]
-    if fs:
+    if fs and name in FREESTANDING_ALSO_HOSTED:
+        # The core header follows the C library's in both modes (it fills in what that hides).
+        lines += ["#if YCXX_HOSTED"] + inc + ["#endif", f"#include {fs}", ""]
+    elif fs:
         lines += ["#if YCXX_HOSTED"] + inc + ["#else", f"#  include {fs}", "#endif", ""]
     else:
         opt = OPTIONAL_CHEADER.get(name)

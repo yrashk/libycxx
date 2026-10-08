@@ -5,169 +5,469 @@
 // C library's <errno.h>. They must be usable in #if, so they are literals here, one list per C
 // library family (_YCXX_TARGET_DARWIN, config.hpp), checked against errc below. errno itself is
 // not freestanding.
+// Hosted <cerrno> includes this after <errno.h> too: each macro is defined only if the C library
+// did not define it, which it may not do under a strict feature-test macro ([cerrno.syn] defines
+// them all; Darwin's <errno.h> hides EOWNERDEAD and ENOTRECOVERABLE under _XOPEN_SOURCE 600,
+// libstdc++'s PR 93151 test).
 #pragma once
 
 #include <ycxx/config.hpp>
 #include <ycxx/core/errc.hpp>
 
 #if _YCXX_TARGET_DARWIN
-#  define E2BIG 7
-#  define EACCES 13
-#  define EADDRINUSE 48
-#  define EADDRNOTAVAIL 49
-#  define EAFNOSUPPORT 47
-#  define EAGAIN 35
-#  define EALREADY 37
-#  define EBADF 9
-#  define EBADMSG 94
-#  define EBUSY 16
-#  define ECANCELED 89
-#  define ECHILD 10
-#  define ECONNABORTED 53
-#  define ECONNREFUSED 61
-#  define ECONNRESET 54
-#  define EDEADLK 11
-#  define EDESTADDRREQ 39
-#  define EDOM 33
-#  define EEXIST 17
-#  define EFAULT 14
-#  define EFBIG 27
-#  define EHOSTUNREACH 65
-#  define EIDRM 90
-#  define EILSEQ 92
-#  define EINPROGRESS 36
-#  define EINTR 4
-#  define EINVAL 22
-#  define EIO 5
-#  define EISCONN 56
-#  define EISDIR 21
-#  define ELOOP 62
-#  define EMFILE 24
-#  define EMLINK 31
-#  define EMSGSIZE 40
-#  define ENAMETOOLONG 63
-#  define ENETDOWN 50
-#  define ENETRESET 52
-#  define ENETUNREACH 51
-#  define ENFILE 23
-#  define ENOBUFS 55
+#  ifndef E2BIG
+#    define E2BIG 7
+#  endif
+#  ifndef EACCES
+#    define EACCES 13
+#  endif
+#  ifndef EADDRINUSE
+#    define EADDRINUSE 48
+#  endif
+#  ifndef EADDRNOTAVAIL
+#    define EADDRNOTAVAIL 49
+#  endif
+#  ifndef EAFNOSUPPORT
+#    define EAFNOSUPPORT 47
+#  endif
+#  ifndef EAGAIN
+#    define EAGAIN 35
+#  endif
+#  ifndef EALREADY
+#    define EALREADY 37
+#  endif
+#  ifndef EBADF
+#    define EBADF 9
+#  endif
+#  ifndef EBADMSG
+#    define EBADMSG 94
+#  endif
+#  ifndef EBUSY
+#    define EBUSY 16
+#  endif
+#  ifndef ECANCELED
+#    define ECANCELED 89
+#  endif
+#  ifndef ECHILD
+#    define ECHILD 10
+#  endif
+#  ifndef ECONNABORTED
+#    define ECONNABORTED 53
+#  endif
+#  ifndef ECONNREFUSED
+#    define ECONNREFUSED 61
+#  endif
+#  ifndef ECONNRESET
+#    define ECONNRESET 54
+#  endif
+#  ifndef EDEADLK
+#    define EDEADLK 11
+#  endif
+#  ifndef EDESTADDRREQ
+#    define EDESTADDRREQ 39
+#  endif
+#  ifndef EDOM
+#    define EDOM 33
+#  endif
+#  ifndef EEXIST
+#    define EEXIST 17
+#  endif
+#  ifndef EFAULT
+#    define EFAULT 14
+#  endif
+#  ifndef EFBIG
+#    define EFBIG 27
+#  endif
+#  ifndef EHOSTUNREACH
+#    define EHOSTUNREACH 65
+#  endif
+#  ifndef EIDRM
+#    define EIDRM 90
+#  endif
+#  ifndef EILSEQ
+#    define EILSEQ 92
+#  endif
+#  ifndef EINPROGRESS
+#    define EINPROGRESS 36
+#  endif
+#  ifndef EINTR
+#    define EINTR 4
+#  endif
+#  ifndef EINVAL
+#    define EINVAL 22
+#  endif
+#  ifndef EIO
+#    define EIO 5
+#  endif
+#  ifndef EISCONN
+#    define EISCONN 56
+#  endif
+#  ifndef EISDIR
+#    define EISDIR 21
+#  endif
+#  ifndef ELOOP
+#    define ELOOP 62
+#  endif
+#  ifndef EMFILE
+#    define EMFILE 24
+#  endif
+#  ifndef EMLINK
+#    define EMLINK 31
+#  endif
+#  ifndef EMSGSIZE
+#    define EMSGSIZE 40
+#  endif
+#  ifndef ENAMETOOLONG
+#    define ENAMETOOLONG 63
+#  endif
+#  ifndef ENETDOWN
+#    define ENETDOWN 50
+#  endif
+#  ifndef ENETRESET
+#    define ENETRESET 52
+#  endif
+#  ifndef ENETUNREACH
+#    define ENETUNREACH 51
+#  endif
+#  ifndef ENFILE
+#    define ENFILE 23
+#  endif
+#  ifndef ENOBUFS
+#    define ENOBUFS 55
+#  endif
 #  define ENODATA 96 // [depr.cerrno]
-#  define ENODEV 19
-#  define ENOENT 2
-#  define ENOEXEC 8
-#  define ENOLCK 77
-#  define ENOLINK 97
-#  define ENOMEM 12
-#  define ENOMSG 91
-#  define ENOPROTOOPT 42
-#  define ENOSPC 28
+#  ifndef ENODEV
+#    define ENODEV 19
+#  endif
+#  ifndef ENOENT
+#    define ENOENT 2
+#  endif
+#  ifndef ENOEXEC
+#    define ENOEXEC 8
+#  endif
+#  ifndef ENOLCK
+#    define ENOLCK 77
+#  endif
+#  ifndef ENOLINK
+#    define ENOLINK 97
+#  endif
+#  ifndef ENOMEM
+#    define ENOMEM 12
+#  endif
+#  ifndef ENOMSG
+#    define ENOMSG 91
+#  endif
+#  ifndef ENOPROTOOPT
+#    define ENOPROTOOPT 42
+#  endif
+#  ifndef ENOSPC
+#    define ENOSPC 28
+#  endif
 #  define ENOSR 98 // [depr.cerrno]
 #  define ENOSTR 99 // [depr.cerrno]
-#  define ENOSYS 78
-#  define ENOTCONN 57
-#  define ENOTDIR 20
-#  define ENOTEMPTY 66
-#  define ENOTRECOVERABLE 104
-#  define ENOTSOCK 38
-#  define ENOTSUP 45
-#  define ENOTTY 25
-#  define ENXIO 6
-#  define EOPNOTSUPP 102
-#  define EOVERFLOW 84
-#  define EOWNERDEAD 105
-#  define EPERM 1
-#  define EPIPE 32
-#  define EPROTO 100
-#  define EPROTONOSUPPORT 43
-#  define EPROTOTYPE 41
-#  define ERANGE 34
-#  define EROFS 30
-#  define ESPIPE 29
-#  define ESRCH 3
+#  ifndef ENOSYS
+#    define ENOSYS 78
+#  endif
+#  ifndef ENOTCONN
+#    define ENOTCONN 57
+#  endif
+#  ifndef ENOTDIR
+#    define ENOTDIR 20
+#  endif
+#  ifndef ENOTEMPTY
+#    define ENOTEMPTY 66
+#  endif
+#  ifndef ENOTRECOVERABLE
+#    define ENOTRECOVERABLE 104
+#  endif
+#  ifndef ENOTSOCK
+#    define ENOTSOCK 38
+#  endif
+#  ifndef ENOTSUP
+#    define ENOTSUP 45
+#  endif
+#  ifndef ENOTTY
+#    define ENOTTY 25
+#  endif
+#  ifndef ENXIO
+#    define ENXIO 6
+#  endif
+#  ifndef EOPNOTSUPP
+#    define EOPNOTSUPP 102
+#  endif
+#  ifndef EOVERFLOW
+#    define EOVERFLOW 84
+#  endif
+#  ifndef EOWNERDEAD
+#    define EOWNERDEAD 105
+#  endif
+#  ifndef EPERM
+#    define EPERM 1
+#  endif
+#  ifndef EPIPE
+#    define EPIPE 32
+#  endif
+#  ifndef EPROTO
+#    define EPROTO 100
+#  endif
+#  ifndef EPROTONOSUPPORT
+#    define EPROTONOSUPPORT 43
+#  endif
+#  ifndef EPROTOTYPE
+#    define EPROTOTYPE 41
+#  endif
+#  ifndef ERANGE
+#    define ERANGE 34
+#  endif
+#  ifndef EROFS
+#    define EROFS 30
+#  endif
+#  ifndef ESPIPE
+#    define ESPIPE 29
+#  endif
+#  ifndef ESRCH
+#    define ESRCH 3
+#  endif
 #  define ETIME 101 // [depr.cerrno]
-#  define ETIMEDOUT 60
-#  define ETXTBSY 26
-#  define EWOULDBLOCK 35
-#  define EXDEV 18
+#  ifndef ETIMEDOUT
+#    define ETIMEDOUT 60
+#  endif
+#  ifndef ETXTBSY
+#    define ETXTBSY 26
+#  endif
+#  ifndef EWOULDBLOCK
+#    define EWOULDBLOCK 35
+#  endif
+#  ifndef EXDEV
+#    define EXDEV 18
+#  endif
 #else
-#  define E2BIG 7
-#  define EACCES 13
-#  define EADDRINUSE 98
-#  define EADDRNOTAVAIL 99
-#  define EAFNOSUPPORT 97
-#  define EAGAIN 11
-#  define EALREADY 114
-#  define EBADF 9
-#  define EBADMSG 74
-#  define EBUSY 16
-#  define ECANCELED 125
-#  define ECHILD 10
-#  define ECONNABORTED 103
-#  define ECONNREFUSED 111
-#  define ECONNRESET 104
-#  define EDEADLK 35
-#  define EDESTADDRREQ 89
-#  define EDOM 33
-#  define EEXIST 17
-#  define EFAULT 14
-#  define EFBIG 27
-#  define EHOSTUNREACH 113
-#  define EIDRM 43
-#  define EILSEQ 84
-#  define EINPROGRESS 115
-#  define EINTR 4
-#  define EINVAL 22
-#  define EIO 5
-#  define EISCONN 106
-#  define EISDIR 21
-#  define ELOOP 40
-#  define EMFILE 24
-#  define EMLINK 31
-#  define EMSGSIZE 90
-#  define ENAMETOOLONG 36
-#  define ENETDOWN 100
-#  define ENETRESET 102
-#  define ENETUNREACH 101
-#  define ENFILE 23
-#  define ENOBUFS 105
+#  ifndef E2BIG
+#    define E2BIG 7
+#  endif
+#  ifndef EACCES
+#    define EACCES 13
+#  endif
+#  ifndef EADDRINUSE
+#    define EADDRINUSE 98
+#  endif
+#  ifndef EADDRNOTAVAIL
+#    define EADDRNOTAVAIL 99
+#  endif
+#  ifndef EAFNOSUPPORT
+#    define EAFNOSUPPORT 97
+#  endif
+#  ifndef EAGAIN
+#    define EAGAIN 11
+#  endif
+#  ifndef EALREADY
+#    define EALREADY 114
+#  endif
+#  ifndef EBADF
+#    define EBADF 9
+#  endif
+#  ifndef EBADMSG
+#    define EBADMSG 74
+#  endif
+#  ifndef EBUSY
+#    define EBUSY 16
+#  endif
+#  ifndef ECANCELED
+#    define ECANCELED 125
+#  endif
+#  ifndef ECHILD
+#    define ECHILD 10
+#  endif
+#  ifndef ECONNABORTED
+#    define ECONNABORTED 103
+#  endif
+#  ifndef ECONNREFUSED
+#    define ECONNREFUSED 111
+#  endif
+#  ifndef ECONNRESET
+#    define ECONNRESET 104
+#  endif
+#  ifndef EDEADLK
+#    define EDEADLK 35
+#  endif
+#  ifndef EDESTADDRREQ
+#    define EDESTADDRREQ 89
+#  endif
+#  ifndef EDOM
+#    define EDOM 33
+#  endif
+#  ifndef EEXIST
+#    define EEXIST 17
+#  endif
+#  ifndef EFAULT
+#    define EFAULT 14
+#  endif
+#  ifndef EFBIG
+#    define EFBIG 27
+#  endif
+#  ifndef EHOSTUNREACH
+#    define EHOSTUNREACH 113
+#  endif
+#  ifndef EIDRM
+#    define EIDRM 43
+#  endif
+#  ifndef EILSEQ
+#    define EILSEQ 84
+#  endif
+#  ifndef EINPROGRESS
+#    define EINPROGRESS 115
+#  endif
+#  ifndef EINTR
+#    define EINTR 4
+#  endif
+#  ifndef EINVAL
+#    define EINVAL 22
+#  endif
+#  ifndef EIO
+#    define EIO 5
+#  endif
+#  ifndef EISCONN
+#    define EISCONN 106
+#  endif
+#  ifndef EISDIR
+#    define EISDIR 21
+#  endif
+#  ifndef ELOOP
+#    define ELOOP 40
+#  endif
+#  ifndef EMFILE
+#    define EMFILE 24
+#  endif
+#  ifndef EMLINK
+#    define EMLINK 31
+#  endif
+#  ifndef EMSGSIZE
+#    define EMSGSIZE 90
+#  endif
+#  ifndef ENAMETOOLONG
+#    define ENAMETOOLONG 36
+#  endif
+#  ifndef ENETDOWN
+#    define ENETDOWN 100
+#  endif
+#  ifndef ENETRESET
+#    define ENETRESET 102
+#  endif
+#  ifndef ENETUNREACH
+#    define ENETUNREACH 101
+#  endif
+#  ifndef ENFILE
+#    define ENFILE 23
+#  endif
+#  ifndef ENOBUFS
+#    define ENOBUFS 105
+#  endif
 #  define ENODATA 61 // [depr.cerrno]
-#  define ENODEV 19
-#  define ENOENT 2
-#  define ENOEXEC 8
-#  define ENOLCK 37
-#  define ENOLINK 67
-#  define ENOMEM 12
-#  define ENOMSG 42
-#  define ENOPROTOOPT 92
-#  define ENOSPC 28
+#  ifndef ENODEV
+#    define ENODEV 19
+#  endif
+#  ifndef ENOENT
+#    define ENOENT 2
+#  endif
+#  ifndef ENOEXEC
+#    define ENOEXEC 8
+#  endif
+#  ifndef ENOLCK
+#    define ENOLCK 37
+#  endif
+#  ifndef ENOLINK
+#    define ENOLINK 67
+#  endif
+#  ifndef ENOMEM
+#    define ENOMEM 12
+#  endif
+#  ifndef ENOMSG
+#    define ENOMSG 42
+#  endif
+#  ifndef ENOPROTOOPT
+#    define ENOPROTOOPT 92
+#  endif
+#  ifndef ENOSPC
+#    define ENOSPC 28
+#  endif
 #  define ENOSR 63 // [depr.cerrno]
 #  define ENOSTR 60 // [depr.cerrno]
-#  define ENOSYS 38
-#  define ENOTCONN 107
-#  define ENOTDIR 20
-#  define ENOTEMPTY 39
-#  define ENOTRECOVERABLE 131
-#  define ENOTSOCK 88
-#  define ENOTSUP 95
-#  define ENOTTY 25
-#  define ENXIO 6
-#  define EOPNOTSUPP 95
-#  define EOVERFLOW 75
-#  define EOWNERDEAD 130
-#  define EPERM 1
-#  define EPIPE 32
-#  define EPROTO 71
-#  define EPROTONOSUPPORT 93
-#  define EPROTOTYPE 91
-#  define ERANGE 34
-#  define EROFS 30
-#  define ESPIPE 29
-#  define ESRCH 3
+#  ifndef ENOSYS
+#    define ENOSYS 38
+#  endif
+#  ifndef ENOTCONN
+#    define ENOTCONN 107
+#  endif
+#  ifndef ENOTDIR
+#    define ENOTDIR 20
+#  endif
+#  ifndef ENOTEMPTY
+#    define ENOTEMPTY 39
+#  endif
+#  ifndef ENOTRECOVERABLE
+#    define ENOTRECOVERABLE 131
+#  endif
+#  ifndef ENOTSOCK
+#    define ENOTSOCK 88
+#  endif
+#  ifndef ENOTSUP
+#    define ENOTSUP 95
+#  endif
+#  ifndef ENOTTY
+#    define ENOTTY 25
+#  endif
+#  ifndef ENXIO
+#    define ENXIO 6
+#  endif
+#  ifndef EOPNOTSUPP
+#    define EOPNOTSUPP 95
+#  endif
+#  ifndef EOVERFLOW
+#    define EOVERFLOW 75
+#  endif
+#  ifndef EOWNERDEAD
+#    define EOWNERDEAD 130
+#  endif
+#  ifndef EPERM
+#    define EPERM 1
+#  endif
+#  ifndef EPIPE
+#    define EPIPE 32
+#  endif
+#  ifndef EPROTO
+#    define EPROTO 71
+#  endif
+#  ifndef EPROTONOSUPPORT
+#    define EPROTONOSUPPORT 93
+#  endif
+#  ifndef EPROTOTYPE
+#    define EPROTOTYPE 91
+#  endif
+#  ifndef ERANGE
+#    define ERANGE 34
+#  endif
+#  ifndef EROFS
+#    define EROFS 30
+#  endif
+#  ifndef ESPIPE
+#    define ESPIPE 29
+#  endif
+#  ifndef ESRCH
+#    define ESRCH 3
+#  endif
 #  define ETIME 62 // [depr.cerrno]
-#  define ETIMEDOUT 110
-#  define ETXTBSY 26
-#  define EWOULDBLOCK 11
-#  define EXDEV 18
+#  ifndef ETIMEDOUT
+#    define ETIMEDOUT 110
+#  endif
+#  ifndef ETXTBSY
+#    define ETXTBSY 26
+#  endif
+#  ifndef EWOULDBLOCK
+#    define EWOULDBLOCK 11
+#  endif
+#  ifndef EXDEV
+#    define EXDEV 18
+#  endif
 #endif
 
 namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {

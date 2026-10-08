@@ -6,7 +6,6 @@
 #include <ycxx/core/cstddef.hpp>
 #if _YCXX_HOSTED
 #  include <errno.h>
-#else
-#  include <ycxx/core/cerrno_macros.hpp>
 #endif
+#include <ycxx/core/cerrno_macros.hpp>
 

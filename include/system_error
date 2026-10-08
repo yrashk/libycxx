@@ -15,7 +15,7 @@
 // hosted runtime, so a freestanding program that uses them gets a link error (like <string>'s
 // C-library parts, DECISIONS §3).
 #if _YCXX_HOSTED
-#  include <errno.h>
+#  include <cerrno> // EOWNERDEAD... even where <errno.h> hides them (ycxx/core/cerrno_macros.hpp)
 
 namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
 // [system.error.syn]/1: each errc enumerator equals the <cerrno> macro of the same meaning.

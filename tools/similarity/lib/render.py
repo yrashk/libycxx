@@ -219,8 +219,13 @@ def evaluate(d, ps, j, items, matches, findings) -> list[str]:
 # ------------------------------------------------------------------------------------- html helpers
 
 
+WHY_SHORT = ""
+
+
 def page(out: Path, name: str, title: str, body: str, meta: dict, description: str = "") -> None:
     tpl = (TEMPLATES / "page.html").read_text()
+    if WHY_SHORT and name != "index.html":
+        body = f'<p class="note why">{md_inline(WHY_SHORT)}</p>' + body
     nav = '<ul class="toc">' + "".join(
         '<li><a href="' + h + '"' + (' class="on"' if h == name else '') + f'><span>{n}</span>{esc(t)}</a></li>'
         for h, n, t in NAV) + '<li><a href="../index.html"><span>←</span>libycxx.org</a></li></ul>'
@@ -281,7 +286,7 @@ def markdown(text: str) -> str:
             ordered = bool(re.match(r"^\s*\d+\. ", l))
             items = []
             while i < len(lines) and (re.match(r"^\s*([-*]|\d+\.) ", lines[i]) or
-                                      (lines[i].startswith("   ") and lines[i].strip())):
+                                      (lines[i].startswith("  ") and lines[i].strip())):
                 if re.match(r"^\s*([-*]|\d+\.) ", lines[i]):
                     items.append(re.sub(r"^\s*([-*]|\d+\.) ", "", lines[i]))
                 else:
@@ -403,6 +408,8 @@ def build(work: Path, out: Path) -> dict:
     out.mkdir(parents=True, exist_ok=True)
     (out / "similarity.css").write_text((TEMPLATES / "similarity.css").read_text())
     r = roots()
+    global WHY_SHORT
+    WHY_SHORT = re.sub(r"\s+", " ", j["verdict"].get("why_short", "")).strip()
     disp = Counter(x["disposition"].split(":")[0] for x in items + matches)
     ctx = dict(d=d, meta=meta, j=j, findings=findings, matches=matches, items=items, ps=ps, crossed=crossed, roots=r)
     page(out, "index.html", "Overview", render_index(**ctx), meta,
@@ -430,6 +437,9 @@ def render_index(d, meta, j, findings, matches, items, ps, crossed, roots):
     h = ['<p class="label">Similarity analysis · libycxx ' + esc(meta.get("commit", "")[:12]) + "</p>",
          "<h1>How similar are the C++ standard libraries?</h1>",
          f'<p class="lede">{md_inline(v.get("lede", ""))}</p>']
+    why = REPO / "docs" / "similarity" / "why.md"
+    if why.exists():
+        h.append('<div class="why-box md">' + markdown(why.read_text()) + "</div>")
     if meta.get("dirty"):
         h.append('<div class="banner warn"><p>This build was made from a working tree with uncommitted changes to '
                  'include/ or src/.</p></div>')

@@ -5,6 +5,10 @@
 # implementations (the policy leak check enforces it). Placeholders in braces are filled from the
 # build's numbers (tools/similarity/lib/render.py, style_numbers); the wording stays as written.
 
+why_short = """libycxx was written by AI agents whose models were trained on public code that likely includes \
+these libraries, whose licences carry obligations; this analysis is the evidence of how close libycxx is \
+to them. [Why this exists](index.html#why-this-exists)."""
+
 lede = """libycxx is compared with libstdc++, libc++ and the MSVC STL, and those three with each other, \
 in 43 library areas and on whole-library fingerprints, against a positive control of known \
 derived code. Regenerated from pinned sources on every build of this site."""

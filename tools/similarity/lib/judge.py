@@ -10,8 +10,9 @@ gets exactly one disposition:
   unreviewed     none of these: it is listed openly on the site and counted in the CI log.
 
 Keys:
-  match:  sha256("match" | other | libycxx file | normalised libycxx region text)[:16] -- stable
-          under line moves, new when the libycxx code changes (so it is reviewed again);
+  match:  sha256("match2" | other | libycxx file | enclosing libycxx declaration | other file |
+          shared internal names)[:16] -- stable under edits inside the declaration and small
+          range shifts; new for another declaration, another file or a newly shared name;
   item:   sha256(category | other | value)[:16].
 """
 from __future__ import annotations
@@ -45,10 +46,31 @@ def item_key(category: str, other: str, value: str) -> str:
     return h16(category, other, str(value))
 
 
-def match_key(other: str, ycxx_file: str, lines: list[int]) -> str:
+_NOT_A_DECLARATION = re.compile(r"^(?:$|//|/\*|\*|#|\}|\{|template\b|requires\b|\[\[|\)|,)")
+
+
+def enclosing_anchor(ycxx_file: str, line: int) -> str:
+    """The libycxx declaration a match lies in: the nearest line at or above `line` that starts at
+    column 0 and opens a declaration (not a comment, directive, brace, template header or requires
+    clause), whitespace-normalised. Edits to statements inside the declaration leave it unchanged."""
     src = read(roots()["ycxx"] / ycxx_file).split("\n")
-    region = " ".join(re.sub(r"\s+", " ", l).strip() for l in src[lines[0] - 1:lines[1]])
-    return h16("match", other, ycxx_file, region)
+    for i in range(min(line, len(src)) - 1, -1, -1):
+        l = src[i]
+        if l[:1] in (" ", "\t") or _NOT_A_DECLARATION.match(l.strip()):
+            continue
+        return re.sub(r"\s+", " ", l).strip()
+    return ""
+
+
+def match_key(m: dict) -> str:
+    """Key of a long match for reviewed groups: the other library, the libycxx file, the enclosing
+    libycxx declaration (enclosing_anchor), the other library's file and the internal names the two
+    regions share. Stable under edits inside the declaration and under small shifts of the matched
+    range between runs; a match in another declaration, against another file, or sharing a new
+    internal name gets a new key and is reviewed again."""
+    y = m["ycxx"]
+    return h16("match2", m["other"], y["file"], enclosing_anchor(y["file"], y["lines"][0]), m["foreign"]["file"],
+               ",".join(sorted(m.get("internal", []))))
 
 
 def line_sha(line: str) -> str:
@@ -120,7 +142,7 @@ def dispose_matches(annotated: list[dict], findings: list[dict], groups: dict[st
         if d is None and m["triage"] in ("standard-shaped", "shape-only"):
             d = f"rule:{m['triage']}"
         if d is None:
-            k = match_key(m["other"], y["file"], y["lines"])
+            k = match_key(m)
             m["key"] = k
             d = f"group:{groups[k]}" if k in groups else "unreviewed"
         m["disposition"] = d

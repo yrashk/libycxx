@@ -144,10 +144,23 @@ gets exactly one disposition:
    - *standard-shaped*: the match shares no internal name, and at least 70% of libycxx's
      identifiers in it are standard vocabulary;
    - *shape-only*: no shared internal name, and a lexical ratio below 0.5.
-3. **A reviewed group** (`findings.toml`, `[[group]]`) lists its key. Keys are hashes of the
-   category, the other library and the value (for matches: of the libycxx region), so the
-   committed file names nothing. A change to the libycxx code gives a match a new key, and the
-   match is reviewed again.
+3. **A reviewed group** (`findings.toml`, `[[group]]`) lists its key. The keys are hashes, so
+   the committed file names nothing:
+   - for a fingerprint item, of its category, the other library and the value;
+   - for a long match, of the other library, the libycxx file, the libycxx declaration the match
+     lies in (the nearest line above it that starts a declaration at column 0, such as a class,
+     a function or an alias), the other library's file, and the internal names the two regions
+     share.
+
+   A match key deliberately ignores the exact line range and the statements inside the
+   declaration. Editing a statement in an already-reviewed declaration (a cast added, a
+   comma-expression rewritten) does not reopen the review. Neither does a small shift of the
+   matched range between runs: JPlag's match boundaries are not perfectly stable across machines.
+
+   A match still surfaces as new when any of these changes:
+   - it lies in another declaration;
+   - it is against another file of the other library;
+   - the two regions share an internal name they did not share before.
 4. Otherwise it is **unreviewed**. It is listed openly on the findings page with its excerpt,
    and counted in the CI log.
 

@@ -9,6 +9,7 @@
 #include <ycxx/core/compare.hpp>
 #include <ycxx/core/cstddef.hpp>
 #include <ycxx/core/cstdint.hpp>
+#include <ycxx/core/mem_builtins.hpp>
 #if _YCXX_HOSTED
 #  include <ycxx/hosted/c_wchar.hpp>
 // EOF (and the rest of <cstdio>) with the character traits, as libraries commonly provide them
@@ -60,7 +61,7 @@ struct __char_traits_base {
   static constexpr int compare(const char_type* __s1, const char_type* __s2, std::size_t n) {
     if constexpr (sizeof(char_type) == 1) {
       if !consteval {
-        return __builtin_memcmp(__s1, __s2, n); // compares as unsigned char, like lt()
+        return ::__ycxx::__detail::__rt_memcmp(__s1, __s2, n); // compares as unsigned char, like lt()
       }
     }
     for (std::size_t i = 0; i < n; ++i) {
@@ -87,7 +88,7 @@ struct __char_traits_base {
   static constexpr const char_type* find(const char_type* s, std::size_t n, const char_type& a) {
     if constexpr (sizeof(char_type) == 1 && __ycxx::__detail::__cfg::__hosted) {
       if !consteval {
-        return static_cast<const char_type*>(__builtin_memchr(s, static_cast<unsigned char>(a), n));
+        return static_cast<const char_type*>(::__ycxx::__detail::__rt_memchr(s, static_cast<unsigned char>(a), n));
       }
     }
     for (std::size_t i = 0; i < n; ++i)

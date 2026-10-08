@@ -237,6 +237,9 @@ constexpr auto __map_attrs(const _Data&, const _Child& __child) noexcept {
 
 // An environment's stand-in receiver: what connect is asked about when only the environment is
 // known (whether a connect can throw is a function of the environment, [exec.connect]/6).
+// It is only named in unevaluated operands, but a connect with a deduced return type is
+// instantiated there, and the operation state it builds can have virtual functions (task's) that
+// call the receiver: GCC at -O2 emits them, so the members are defined (never called).
 }}} // namespace __ycxx::__detail::__exec
 
 namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __adl_free {
@@ -244,11 +247,11 @@ template <class _Env>
 struct __exec_probe_receiver {
   using receiver_concept = std::execution::receiver_tag;
   template <class... _As>
-  void set_value(_As&&...) && noexcept;
+  [[noreturn]] void set_value(_As&&...) && noexcept { __builtin_trap(); }
   template <class _Ep>
-  void set_error(_Ep&&) && noexcept;
-  void set_stopped() && noexcept;
-  _Env get_env() const noexcept;
+  [[noreturn]] void set_error(_Ep&&) && noexcept { __builtin_trap(); }
+  [[noreturn]] void set_stopped() && noexcept { __builtin_trap(); }
+  [[noreturn]] _Env get_env() const noexcept { __builtin_trap(); }
 };
 }} // namespace __ycxx::__adl_free
 

@@ -2566,8 +2566,15 @@ mechanical).
    (static), plus `bench/` for throw, catch and `dynamic_cast` (no change expected). As
    implemented: `src/abi/entry.hpp` declares the `__ycxx_abi_*` names with `_YCXX_VISIBILITY`;
    `src/abi/entry/cxa_*.cpp` (and `src/hosted/cxa_demangle_entry.cpp`) are forwarders in every
-   mode, not aliases, because Mach-O has no symbol aliases (one call each; GCC does not turn a
-   call to a noreturn function into a jump); the `__cxxabiv1` vtables and the fundamental
+   mode, not aliases, because Mach-O has no symbol aliases. Each is a guaranteed tail call
+   (`__attribute__((__musttail__))`), so it leaves no frame: a first version that called
+   `__ycxx_abi_throw` made a throw and catch about 18% slower (`rtti_bench`: 0.97 against 0.82 µs),
+   since the unwinder stepped through the forwarder's frame in both phases. The compilers never
+   jump to a noreturn function, so `__ycxx_abi_throw` and `__ycxx_abi_rethrow` are not declared
+   `[[noreturn]]`, and their forwarders are in a file of their own (`cxa_throw.cpp`) that sees no
+   header declaring `__cxa_throw` noreturn; the cold noreturn helpers (`__cxa_bad_cast`,
+   `std::terminate`, ...) keep a call. With that, `rtti_bench` is unchanged (throw and catch
+   0.73-0.88 µs, `dynamic_cast` 40-49 ns, as before); the `__cxxabiv1` vtables and the fundamental
    type_info objects are `src/abi/rtti_classes.cpp`'s; the `src/`-private blocks are step 4's
    (above).
 4. **(M) CMake shared build.** `YCXX_STATIC`/`YCXX_SHARED`, `libycxx.so.0.1` with soname, the

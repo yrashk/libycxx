@@ -12,6 +12,6 @@ extern "C" {
   __ycxx_abi_throw_bad_array_new_length();
 }
 [[__gnu__::__visibility__("hidden")]] int __cxa_thread_atexit(void (*__dtor)(void*), void* __obj, void* __dso) noexcept {
-  return __ycxx_abi_thread_atexit(__dtor, __obj, __dso);
+  __attribute__((__musttail__)) return __ycxx_abi_thread_atexit(__dtor, __obj, __dso);
 }
 } // extern "C"

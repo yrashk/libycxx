@@ -230,7 +230,7 @@ void* __ycxx_abi_allocate_exception(std::size_t __thrown_size) noexcept {
 void __ycxx_abi_free_exception(void* __thrown) noexcept { free_header(__header_of_object(__thrown)); }
 
 // (GCC predeclares __cxa_throw with a void* type_info parameter.)
-[[noreturn]] void __ycxx_abi_throw(void* __thrown, void* __tinfo, void (*__dest)(void*)) {
+void __ycxx_abi_throw(void* __thrown, void* __tinfo, void (*__dest)(void*)) {
   __exception_header* h = __header_of_object(__thrown);
   h->__exception_type = static_cast<std::type_info*>(__tinfo);
   h->__exception_destructor = __dest;
@@ -288,7 +288,7 @@ void __ycxx_abi_end_catch() {
   }
 }
 
-[[noreturn]] void __ycxx_abi_rethrow() {
+void __ycxx_abi_rethrow() {
   __eh_globals* __g = __globals();
   __exception_header* h = __g->__caught_exceptions;
   if (!h)

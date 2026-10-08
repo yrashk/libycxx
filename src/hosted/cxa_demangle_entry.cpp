@@ -8,7 +8,7 @@
 namespace [[__gnu__::__visibility__("hidden")]] __cxxabiv1 {
 extern "C" {
 char* __cxa_demangle(const char* __mangled_name, char* __output_buffer, std::size_t* __length, int* __status) {
-  return __ycxx_abi_demangle(__mangled_name, __output_buffer, __length, __status);
+  __attribute__((__musttail__)) return __ycxx_abi_demangle(__mangled_name, __output_buffer, __length, __status);
 }
 } // extern "C"
 } // namespace __cxxabiv1

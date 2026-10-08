@@ -5,9 +5,13 @@
 #include "../entry.hpp"
 
 extern "C" {
-[[__gnu__::__visibility__("hidden")]] int __cxa_guard_acquire(std::int64_t* __g) { return __ycxx_abi_guard_acquire(__g); }
-[[__gnu__::__visibility__("hidden")]] void __cxa_guard_release(std::int64_t* __g) noexcept {
-  __ycxx_abi_guard_release(__g);
+[[__gnu__::__visibility__("hidden")]] int __cxa_guard_acquire(std::int64_t* __g) {
+  __attribute__((__musttail__)) return __ycxx_abi_guard_acquire(__g);
 }
-[[__gnu__::__visibility__("hidden")]] void __cxa_guard_abort(std::int64_t* __g) noexcept { __ycxx_abi_guard_abort(__g); }
+[[__gnu__::__visibility__("hidden")]] void __cxa_guard_release(std::int64_t* __g) noexcept {
+  __attribute__((__musttail__)) return __ycxx_abi_guard_release(__g);
+}
+[[__gnu__::__visibility__("hidden")]] void __cxa_guard_abort(std::int64_t* __g) noexcept {
+  __attribute__((__musttail__)) return __ycxx_abi_guard_abort(__g);
+}
 } // extern "C"

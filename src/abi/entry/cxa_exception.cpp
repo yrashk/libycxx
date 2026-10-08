@@ -9,6 +9,7 @@
 #include "../entry.hpp"
 #include "../internal.hpp"
 
+// (__cxa_throw and __cxa_rethrow are cxa_throw.cpp's.)
 // GCC declares the entry points that its exception-handling code calls itself, with default
 // visibility, and keeps that visibility for their definitions (a visibility attribute here is
 // ignored, with a warning). An assembler directive hides them, so that a shared object built with
@@ -18,7 +19,7 @@
 namespace {
 consteval __ycxx::__abi::__asm_text hide_compiler_declared_entry_points() {
   __ycxx::__abi::__asm_text a;
-  for (const char* name : {"__cxa_allocate_exception", "__cxa_free_exception", "__cxa_throw", "__cxa_begin_catch",
+  for (const char* name : {"__cxa_allocate_exception", "__cxa_free_exception", "__cxa_begin_catch",
                            "__cxa_end_catch", "__cxa_call_unexpected", "__cxa_call_terminate"}) {
     // Mach-O symbols carry the C prefix '_'.
     a.append(__ycxx::__detail::__cfg::__darwin ? ".private_extern _" : ".hidden ");
@@ -33,27 +34,30 @@ asm((hide_compiler_declared_entry_points()));
 extern "C" {
 
 void* __cxa_allocate_exception(std::size_t __thrown_size) noexcept {
-  return __ycxx_abi_allocate_exception(__thrown_size);
+  __attribute__((__musttail__)) return __ycxx_abi_allocate_exception(__thrown_size);
 }
-void __cxa_free_exception(void* __thrown) noexcept { __ycxx_abi_free_exception(__thrown); }
-// (GCC predeclares __cxa_throw with a void* type_info parameter.)
-[[noreturn]] void __cxa_throw(void* __thrown, void* __tinfo, void (*__dest)(void*)) {
-  __ycxx_abi_throw(__thrown, __tinfo, __dest);
+void __cxa_free_exception(void* __thrown) noexcept {
+  __attribute__((__musttail__)) return __ycxx_abi_free_exception(__thrown);
 }
-void* __cxa_begin_catch(void* __ue) noexcept { return __ycxx_abi_begin_catch(__ue); }
-void __cxa_end_catch() { __ycxx_abi_end_catch(); }
+void* __cxa_begin_catch(void* __ue) noexcept {
+  __attribute__((__musttail__)) return __ycxx_abi_begin_catch(__ue);
+}
+void __cxa_end_catch() { __attribute__((__musttail__)) return __ycxx_abi_end_catch(); }
 [[noreturn]] void __cxa_call_unexpected(void* __ue) noexcept { __ycxx_abi_call_unexpected(__ue); }
 [[noreturn]] void __cxa_call_terminate(void* __ue) noexcept { __ycxx_abi_call_terminate(__ue); }
 
-[[noreturn, __gnu__::__visibility__("hidden")]] void __cxa_rethrow() { __ycxx_abi_rethrow(); }
 [[__gnu__::__visibility__("hidden")]] void* __cxa_get_exception_ptr(void* __ue) noexcept {
-  return __ycxx_abi_get_exception_ptr(__ue);
+  __attribute__((__musttail__)) return __ycxx_abi_get_exception_ptr(__ue);
 }
 [[__gnu__::__visibility__("hidden")]] std::type_info* __cxa_current_exception_type() noexcept {
-  return __ycxx_abi_current_exception_type();
+  __attribute__((__musttail__)) return __ycxx_abi_current_exception_type();
 }
-[[__gnu__::__visibility__("hidden")]] void* __cxa_get_globals() noexcept { return __ycxx_abi_get_globals(); }
-[[__gnu__::__visibility__("hidden")]] void* __cxa_get_globals_fast() noexcept { return __ycxx_abi_get_globals_fast(); }
+[[__gnu__::__visibility__("hidden")]] void* __cxa_get_globals() noexcept {
+  __attribute__((__musttail__)) return __ycxx_abi_get_globals();
+}
+[[__gnu__::__visibility__("hidden")]] void* __cxa_get_globals_fast() noexcept {
+  __attribute__((__musttail__)) return __ycxx_abi_get_globals_fast();
+}
 
 } // extern "C"
 

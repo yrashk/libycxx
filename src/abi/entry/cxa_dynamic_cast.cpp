@@ -7,5 +7,5 @@
 extern "C" [[__gnu__::__visibility__("hidden")]] void* __dynamic_cast(const void* __sub, const void* __src,
                                                                       const void* __dst,
                                                                       std::ptrdiff_t __src2dst_offset) {
-  return __ycxx_abi_dynamic_cast(__sub, __src, __dst, __src2dst_offset);
+  __attribute__((__musttail__)) return __ycxx_abi_dynamic_cast(__sub, __src, __dst, __src2dst_offset);
 }

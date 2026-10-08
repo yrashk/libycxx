@@ -9,5 +9,5 @@
 extern "C" [[__gnu__::__visibility__("hidden")]] _Unwind_Reason_Code
 __gxx_personality_v0(int __version, _Unwind_Action __actions, std::uint64_t __cls, _Unwind_Exception* __ue,
                      _Unwind_Context* __ctx) {
-  return __ycxx_abi_personality(__version, __actions, __cls, __ue, __ctx);
+  __attribute__((__musttail__)) return __ycxx_abi_personality(__version, __actions, __cls, __ue, __ctx);
 }

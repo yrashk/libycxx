@@ -22,9 +22,12 @@ extern "C" {
 // Exception handling (exception.cpp; [ABI-EH] 2.4-2.5).
 [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] void* __ycxx_abi_allocate_exception(std::size_t __thrown_size) noexcept;
 [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] void __ycxx_abi_free_exception(void* __thrown) noexcept;
-[[noreturn, __gnu__::__visibility__(_YCXX_VISIBILITY)]] void __ycxx_abi_throw(void* __thrown, void* __tinfo,
-                                                                            void (*__dest)(void*));
-[[noreturn, __gnu__::__visibility__(_YCXX_VISIBILITY)]] void __ycxx_abi_rethrow();
+// __ycxx_abi_throw and __ycxx_abi_rethrow never return, but are not declared [[noreturn]]: the
+// compilers never turn a call to a noreturn function into a jump, and the forwarders of the throw
+// path must leave no frame of their own for the unwinder to step through (two more frame steps
+// per throw, about 20% of a throw and catch; src/abi/entry/cxa_exception.cpp).
+[[__gnu__::__visibility__(_YCXX_VISIBILITY)]] void __ycxx_abi_throw(void* __thrown, void* __tinfo, void (*__dest)(void*));
+[[__gnu__::__visibility__(_YCXX_VISIBILITY)]] void __ycxx_abi_rethrow();
 [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] void* __ycxx_abi_begin_catch(void* __ue) noexcept;
 [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] void __ycxx_abi_end_catch();
 [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] void* __ycxx_abi_get_exception_ptr(void* __ue) noexcept;

@@ -656,6 +656,14 @@ def nasty_tests():
 // defined as a macro (support/nasty_macros.hpp), every public header still compiles.
 #include "nasty_macros.hpp"
 """ + "".join(f"#include <{h}>\n" for h in headers) + "\nint main() {}\n"
+    out[TESTS / "nasty_macros_strict_includes.compile.pass.cpp"] = gen + """// [macro.names]/1, [lex.name]/4 in the strict-include mode (DECISIONS §19): the user-facing
+// YCXX_NO_TRANSITIVE_INCLUDES is only tested with defined(), so even a definition that is not a
+// valid expression selects the mode; every public header still compiles without its transitive
+// includes. (The per-header tests, nasty_macros_each/, run in both modes: the default suite and
+// its strict-includes configuration.)
+#define YCXX_NO_TRANSITIVE_INCLUDES NASTY_MACRO_YCXX_NO_TRANSITIVE_INCLUDES @
+#include "nasty_macros.hpp"
+""" + "".join(f"#include <{h}>\n" for h in headers) + "\nint main() {}\n"
     out[TESTS / "nasty_macros_import.compile.pass.cpp"] = gen + """// [macro.names]/1 with the standard library modules ([std.modules]): the program's macros do not
 // reach the modules' declarations. (No header after the import: GCC 16 does not merge a textual
 // definition that follows an import, modules/import_then_include.pass.cpp.)

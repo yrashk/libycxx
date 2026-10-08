@@ -13,7 +13,9 @@
 
 static volatile double one = 1.0, three = 3.0, zero = 0.0, big = 1e308;
 
-static double third() { return one / three; }
+// Not inlined: GCC 16.2 at -O2 moves the division of an inlined third() across the fesetround
+// calls even with -frounding-math (GCC PR 34678), so all four results were the same.
+[[gnu::noinline]] static double third() { return one / three; }
 
 int main() {
   CHECK(std::fegetround() == FE_TONEAREST);

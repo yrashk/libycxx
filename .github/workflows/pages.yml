@@ -32,8 +32,7 @@ jobs:
 
       - uses: actions/configure-pages@v5
 
-      # site/ is static HTML and CSS: no build step. The prototypes stay published under
-      # /prototypes/ until one is chosen.
+      # site/ is static HTML, CSS and self-hosted fonts: no build step.
       - uses: actions/upload-pages-artifact@v3
         with:
           path: site

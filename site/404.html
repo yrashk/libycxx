@@ -6,24 +6,35 @@
 <title>Not found — libycxx</title>
 <meta name="color-scheme" content="light dark">
 <meta name="robots" content="noindex">
+<link rel="preload" href="/fonts/anaheim-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
 <style>
-:root{--bg:#fff;--fg:#14171c;--muted:#5d6672;--accent:#1d5fd1}
-@media (prefers-color-scheme:dark){:root{--bg:#0f1215;--fg:#e6e9ed;--muted:#9aa3ad;--accent:#6aa5ff}}
-body{margin:0;min-height:100vh;display:grid;place-items:center;background:var(--bg);color:var(--fg);
-  font:17px/1.6 ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;padding:0 16px}
-main{max-width:30em}
-p.code{font:600 13px/1 ui-monospace,"SF Mono",Menlo,Consolas,monospace;color:var(--accent);letter-spacing:.08em;margin:0 0 12px}
-h1{font-size:30px;line-height:1.2;letter-spacing:-.02em;margin:0 0 12px}
+@font-face{font-family:"Anaheim";font-style:normal;font-weight:400 800;font-display:swap;src:url(/fonts/anaheim-latin-wght-normal.woff2) format("woff2-variations"),url(/fonts/anaheim-latin-wght-normal.woff2) format("woff2")}
+@font-face{font-family:"Lekton";font-style:normal;font-weight:700;font-display:swap;src:url(/fonts/lekton-latin-700-normal.woff2) format("woff2")}
+:root{--bg:#fff;--fg:#14171c;--muted:#5d6672;--rule:#e4e7eb;--side:#fafbfc;--accent:#1d5fd1;
+  --sans:"Anaheim",ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  --mono:"Lekton",ui-monospace,"SF Mono",SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace}
+@media (prefers-color-scheme:dark){:root{--bg:#0f1215;--fg:#e6e9ed;--muted:#9aa3ad;--rule:#252a30;--side:#12161a;--accent:#6aa5ff}}
+*{box-sizing:border-box}
+body{margin:0;min-height:100vh;display:flex;flex-direction:column;background:var(--bg);color:var(--fg);font:17px/1.6 var(--sans)}
+header{background:var(--side);border-bottom:1px solid var(--rule);padding:14px 24px}
+.brand{display:inline-flex;align-items:center;gap:10px;color:var(--fg);font:700 19px/1 var(--sans);text-decoration:none}
+.brand i{display:inline-grid;place-items:center;width:28px;height:28px;border-radius:6px;background:var(--accent);color:#fff;font:700 16px/1 Georgia,serif;font-style:normal}
+main{flex:1;display:grid;place-items:center;padding:48px 16px}
+main div{max-width:30em}
+.code{font:700 13px/1 var(--mono);color:var(--accent);letter-spacing:.08em;margin:0 0 12px}
+h1{font-size:34px;line-height:1.15;letter-spacing:-.02em;margin:0 0 12px}
 p{color:var(--muted);margin:0 0 20px}
-a{color:var(--accent)}
+a{color:var(--accent);text-decoration:none}
+a:hover{text-decoration:underline}
 </style>
 </head>
 <body>
-<main>
-<p class="code">404</p>
+<header><a class="brand" href="/"><i>y</i>libycxx</a></header>
+<main><div>
+<p class="code">404 · NOT FOUND</p>
 <h1>No such page</h1>
 <p>This address is not part of libycxx.org.</p>
 <p><a href="/">Back to libycxx.org</a> · <a href="https://github.com/yrashk/libycxx">github.com/yrashk/libycxx</a></p>
-</main>
+</div></main>
 </body>
 </html>

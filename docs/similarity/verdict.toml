@@ -1,0 +1,40 @@
+# The overview page's text (libycxx.org/similarity/). The verdict is written here, ahead of time;
+# it is shown only while every threshold below holds for the build's numbers, otherwise the page
+# shows `needs_review` and the list of crossed thresholds instead (docs/similarity/METHOD.md,
+# "The verdict and its thresholds"). Text only in libycxx's terms: nothing quoted from the other
+# implementations (the policy leak check enforces it).
+
+lede = """libycxx is compared with libstdc++, libc++ and the MSVC STL, and those three with each other, \
+in 43 library areas and on whole-library fingerprints, against a positive control of known \
+derived code. Regenerated from pinned sources on every build of this site."""
+
+verdict = """No evidence of copied code. On every metric, libycxx is about as similar to each established \
+library as those libraries are to each other, and far less similar than the positive control (known \
+derived code) is to its origin. Its similarity is spread across all three libraries rather than \
+concentrated on one.
+
+The longer token matches are code the standard specifies, data from registries and ABIs, or published \
+algorithms. Comment text, which copying usually carries along, is almost entirely distinct. The curated \
+findings are short, arbitrary matches (a few internal names, one small function's local names and \
+thresholds, some representation choices, one message string), consistent with diffuse influence from \
+the models' training data rather than derivation from one library."""
+
+verdict_condition = """This text was written in advance and is shown because this build's numbers are within the \
+thresholds stated in [METHOD.md](method.html#the-verdict-and-its-thresholds); the findings, \
+reviewed groups and rules are in [docs/similarity](https://github.com/yrashk/libycxx/tree/HEAD/docs/similarity)."""
+
+needs_review = """This build's numbers crossed a threshold stated in advance, so the verdict written for the \
+previous state is not shown. Until the results below are reviewed and the judgments in \
+docs/similarity are updated, read the matrices and findings without a summary."""
+
+separation_note = """Agents implementing libycxx do not read these pages: the findings, fingerprint-item and tuning \
+pages quote the other implementations. The repository holds no code from them; the tools \
+fetch the pinned sources at build time."""
+
+[thresholds]
+jplag_median_ratio = 2.0
+structural_median_ratio = 1.25
+lexical_median_ratio = 1.25
+positive_control_separation = true
+max_unreviewed = 0
+no_significant = true

@@ -17,9 +17,13 @@ were read to triage failures, and none is copied into this repository.
 This is not a clean-room claim in the legal sense. The models the agents run on were trained on
 public code that very likely includes those libraries, so no separation from them can be shown,
 only that no implementation source was consulted while libycxx was written. A similarity
-analysis against libstdc++, libc++ and the MSVC STL (token- and AST-level comparison, and
-fingerprints such as internal helper names, algorithm thresholds, hash-table size tables and
-container layouts) is planned; its method and results will be published here.
+analysis compares libycxx with libstdc++, libc++ and the MSVC STL, and those three with each
+other, by token and structure metrics and fingerprints, against known derived code as a positive
+control; it is regenerated from pinned sources on every build of
+[libycxx.org/similarity](https://libycxx.org/similarity/). Its method, thresholds and curated
+judgments are in [docs/similarity/METHOD.md](docs/similarity/METHOD.md). Agents implementing
+libycxx must not read the rendered pages or the Pages workflow's artifacts, which quote the
+other implementations.
 
 ## Quick start
 

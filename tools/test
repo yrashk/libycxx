@@ -8,8 +8,9 @@
 #   policy        preprocessor, include-layering, namespace-visibility and shell-portability
 #                 checks (tools/check_*.py), the headers' reserved names (tools/uglify.py --check)
 #                 the std modules' export lists (tools/gen_std_module.py --check), the
-#                 transitive includes (tools/gen_transitive_includes.py --check) and the website's
-#                 code samples (tools/gen-site-snippets --check)
+#                 transitive includes (tools/gen_transitive_includes.py --check), the website's
+#                 code samples (tools/gen-site-snippets --check) and the similarity leak check
+#                 (tools/similarity/leakcheck --quick)
 #   build         the library for each compiler, RelWithDebInfo (build/<cc>, what the suites
 #                 link) and Release (build/<cc>-release, -O3, as CMake consumers build it)
 #   freestanding  every core header with -ffreestanding -nostdinc, bare-metal smoke link
@@ -267,6 +268,9 @@ for stage in $stages; do
       step "std modules up to date with the headers" policy-std-modules python3 tools/gen_std_module.py --check || :
       # The website's code samples are the files tests/quickstart/run.sh runs (examples/quickstart).
       step "website code samples match their sources" policy-site-snippets python3 tools/gen-site-snippets --check || :
+      # The committed similarity tools and judgments contain nothing from the other implementations
+      # (docs/similarity/METHOD.md, "Leak check"); the hashed vocabulary is committed.
+      step "similarity files free of other implementations' code" policy-similarity-leak python3 tools/similarity/leakcheck --quick || :
       ;;
     build)
       for c in $compilers; do

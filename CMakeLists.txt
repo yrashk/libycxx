@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.28)
 project(libycxx VERSION 0.1.0
-        DESCRIPTION "A clean-room C++26 standard library for GCC 16 and Clang 23"
+        DESCRIPTION "An independent C++26 standard library, implemented from the working draft, for GCC 16 and Clang 23"
         LANGUAGES C CXX)
 
 # Use from another CMake project, either way:

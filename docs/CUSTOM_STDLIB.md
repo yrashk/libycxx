@@ -732,7 +732,7 @@ script compiles each with `-DLIBCPP_OSS_FUZZ` and the fuzzing engine, using
 
 **What libycxx does better.** Hermetic by default (no opt-in, no consumer link flags, tested with a
 second runtime in the process); one generated set of flags behind three delivery paths, with
-compiler provisioning; a clean-room own suite written from the draft alone, validated by reference
+compiler provisioning; an own suite written from the draft alone, validated by reference
 runs; external suites never vendored, pinned and fetched; no list of known failures: every FAIL
 fails CI and every skip or expected failure carries its reason into the output, with XPASS
 failing the run; reports that show the evidence for passing tests.

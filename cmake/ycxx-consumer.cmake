@@ -170,7 +170,7 @@ ${scan}${osx}")
     set(group_end " -Wl,--end-group")
   endif()
   set(pc_body "Name: libycxx
-Description: A clean-room C++26 standard library (for ${CMAKE_CXX_COMPILER_ID} ${CMAKE_CXX_COMPILER_VERSION}: ${CMAKE_CXX_COMPILER})
+Description: An independent C++26 standard library, implemented from the working draft (for ${CMAKE_CXX_COMPILER_ID} ${CMAKE_CXX_COMPILER_VERSION}: ${CMAKE_CXX_COMPILER})
 Version: ${PROJECT_VERSION}
 Cflags: -std=c++26 -nostdinc++ @PC_INCLUDES@${cflags_extra}
 Libs: -nostdlib++ ${opts} ${group_begin}\${libdir}/libycxx.a \${libdir}/libycxx-abi.a${group_end} -lm ${libgcc}${libs_extra}

@@ -1,9 +1,25 @@
 # libycxx
 
-A clean-room C++26 standard library for the newest GCC (16.2) and Clang (23.1), with its own
-Itanium C++ ABI runtime. It is layered: a freestanding core, a hosted layer, and a small
+An independent C++26 standard library for the newest GCC (16.2) and Clang (23.1), implemented
+from the working draft, with its own Itanium C++ ABI runtime. It is layered: a freestanding core, a hosted layer, and a small
 platform abstraction layer (PAL). See `STATUS.md` for what is implemented and `DECISIONS.md`
 for the design rules.
+
+## How it was written
+
+libycxx was implemented by AI agents (Claude, directed by the author) from the C++ working
+draft, WG21 papers, POSIX and the Itanium C++ ABI. During development the agents had no access
+to the sources or headers of other standard libraries or C++ runtimes (libstdc++, libc++, the
+MSVC STL, libsupc++, libc++abi, libcxxrt) or of glibc, and did not read their generated code.
+The libc++ and libstdc++ test suites are run unmodified as external oracles: their *test* files
+were read to triage failures, and none is copied into this repository.
+
+This is not a clean-room claim in the legal sense. The models the agents run on were trained on
+public code that very likely includes those libraries, so no separation from them can be shown,
+only that no implementation source was consulted while libycxx was written. A similarity
+analysis against libstdc++, libc++ and the MSVC STL (token- and AST-level comparison, and
+fingerprints such as internal helper names, algorithm thresholds, hash-table size tables and
+container layouts) is planned; its method and results will be published here.
 
 ## Quick start
 

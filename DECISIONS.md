@@ -1938,7 +1938,7 @@ representative name of a standard header G used as a program uses it: `std::min(
 names the projects and suites are known to rely on), it compiles `#include <H>` plus the item with
 `-fsyntax-only` against libstdc++ (GCC 16.2) and libc++ (23.1, `clang++ -stdlib=libc++`), and
 records only whether it compiled. It never reads either library's headers, preprocessed output,
-include trees or diagnostics (libycxx is a clean-room implementation). Controls: an item that does not compile after its
+include trees or diagnostics (libycxx is implemented without reading other implementations' sources). Controls: an item that does not compile after its
 own header is "n/a" for that library, and so is a header that does not compile alone.
 - **Baseline: what both libraries provide** (the primary item of G after H, on both): what
   portable code can depend on. Every baseline pair is listed in the data file, or excluded there

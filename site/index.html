@@ -3,11 +3,11 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>libycxx — a clean-room C++26 standard library</title>
-<meta name="description" content="libycxx is a clean-room C++26 standard library for the latest GCC and Clang on Linux and macOS, with its own Itanium C++ ABI runtime, a freestanding core and import std.">
+<title>libycxx — an independent C++26 standard library</title>
+<meta name="description" content="libycxx is an independent C++26 standard library, implemented from the working draft, for the latest GCC and Clang on Linux and macOS, with its own Itanium C++ ABI runtime, a freestanding core and import std.">
 <meta name="color-scheme" content="light dark">
 <meta property="og:title" content="libycxx">
-<meta property="og:description" content="libycxx is a clean-room C++26 standard library for the latest GCC and Clang on Linux and macOS, with its own Itanium C++ ABI runtime, a freestanding core and import std.">
+<meta property="og:description" content="libycxx is an independent C++26 standard library, implemented from the working draft, for the latest GCC and Clang on Linux and macOS, with its own Itanium C++ ABI runtime, a freestanding core and import std.">
 <meta property="og:url" content="https://libycxx.org/">
 <link rel="canonical" href="https://libycxx.org/">
 <link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%2032%2032%22%3E%3Crect%20width%3D%2232%22%20height%3D%2232%22%20rx%3D%227%22%20fill%3D%22%231d5fd1%22/%3E%3Ctext%20x%3D%2216%22%20y%3D%2222.5%22%20font-family%3D%22Georgia%2Cserif%22%20font-size%3D%2220%22%20font-weight%3D%22700%22%20text-anchor%3D%22middle%22%20fill%3D%22%23fff%22%3Ey%3C/text%3E%3C/svg%3E">
@@ -49,6 +49,7 @@ section .facts div:nth-last-child(2){border-bottom:0}
 .principles article{border:1px solid var(--rule);border-radius:10px;padding:20px 22px;background:var(--bg)}
 .principles h3{margin:0 0 8px;font-size:16px}
 .principles p{font-size:14.5px;color:var(--muted);margin:0}
+.principles p+p{margin-top:10px}
 table.projects td:nth-child(2){font:12.5px/1.6 var(--mono);color:var(--muted)}
 table.projects tbody tr:nth-child(even){background:var(--surface)}
 table.matrix{font-size:13.5px}
@@ -97,8 +98,8 @@ ol.footnotes sup{color:var(--accent);font-weight:700;margin-right:4px}
 </aside>
 <main>
 <p class="label">Spec sheet · libycxx 0.1.0</p>
-<h1>A clean-room C++26 standard library</h1>
-<p class="lede">libycxx is a new implementation of the whole C++26 standard library for the latest GCC and Clang, with its own Itanium C++ ABI runtime. It is written from the working draft, not from anyone else’s code, and tested against the standard rather than against itself.</p>
+<h1>An independent C++26 standard library</h1>
+<p class="lede">libycxx is a new implementation of the whole C++26 standard library for the latest GCC and Clang, with its own Itanium C++ ABI runtime. It is written from the working draft without access to other implementations’ sources, and tested against the standard rather than against itself.</p>
 <div class="sheet">
 <div class="cell"><dl class="facts"><div><dt>Standard</dt><dd>C++26 (the current working draft), C++26 only</dd></div><div><dt>Compilers</dt><dd>the latest GCC and Clang (<a href="#matrix">matrix</a>)</dd></div><div><dt>Platforms</dt><dd>Linux and macOS; bare-metal targets freestanding (<a href="#matrix">matrix</a>)</dd></div><div><dt>Layers</dt><dd>freestanding core · hosted library · platform abstraction layer</dd></div><div><dt>ABI runtime</dt><dd>its own: exceptions, RTTI, <code>dynamic_cast</code>, guards</dd></div><div><dt>Modules</dt><dd><code>import std;</code> and <code>import std.compat;</code></dd></div><div><dt>Version</dt><dd>0.1.0 — no stable ABI yet</dd></div><div><dt>Source</dt><dd><a href="https://github.com/yrashk/libycxx">github.com/yrashk/libycxx</a></dd></div></dl></div>
 <div class="cell"><figure class="code"><figcaption>hello.cpp</figcaption><!-- snippet: examples/quickstart/hello.cpp --><pre><code class="lang-cpp"><span class="t-k">import</span> std;
@@ -187,10 +188,15 @@ and the alternatives that were rejected.</p>
 
 <div class="principles">
 <article>
-<h3>Clean room</h3>
-<p>Written from the C++ working draft, WG21 papers, POSIX and the published Itanium C++ ABI —
-never from the source or headers of another standard library or C++ runtime. The libc++ and
-libstdc++ test suites are run as oracles, never copied into the repository and never edited.</p>
+<h3>How it was written</h3>
+<p>Implemented by AI agents (Claude, directed by the author) from the C++ working draft, WG21
+papers, POSIX and the published Itanium C++ ABI, with no access to the source or headers of
+another standard library or C++ runtime during development. The libc++ and libstdc++ test suites
+run unmodified as oracles; their test files were read to triage failures, never copied.</p>
+<p>Not a clean room in the legal sense: the models were trained on public code that very likely
+includes those libraries, so only the absence of source access can be shown, not separation. A
+similarity analysis against libstdc++, libc++ and the MSVC STL is planned, with its method and
+results published.</p>
 </article>
 
 <article>
@@ -488,7 +494,7 @@ on Linux and macOS. What libycxx is not yet, plainly:</p>
 defects noticed along the way, and what comes next.</p>
 
 </section>
-<footer><span>libycxx · a clean-room C++26 standard library</span><a href="https://github.com/yrashk/libycxx">github.com/yrashk/libycxx</a></footer>
+<footer><span>libycxx · an independent C++26 standard library</span><a href="https://github.com/yrashk/libycxx">github.com/yrashk/libycxx</a></footer>
 </main>
 </div>
 

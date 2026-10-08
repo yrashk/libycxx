@@ -59,6 +59,15 @@ _Complex _Imaginary _Bool _Atomic _Noreturn _Alignas _Alignof _Static_assert _Th
 _Generic _BitInt _Decimal32 _Decimal64 _Decimal128 _Float16 _Float32 _Float64 _Float128
 _Float32x _Float64x _Float128x _Nonnull _Nullable _Null_unspecified _Nullable_result _Pragma
 _Accum _Fract _Sat _Countof _Lengthof _Clang
+# Clang's predefined feature-test and SME keyword macros, and the macros of the compilers' own C
+# headers (<stddef.h>, <stdarg.h>, <stdint.h>, <stdbool.h>, <tgmath.h>); libycxx defines the
+# __need_ ones itself, before including <stddef.h>.
+re:__(cpp|arm)_\w+
+__has_attribute __has_builtin __has_c_attribute __has_cpp_attribute __has_constexpr_builtin
+__has_declspec_attribute __has_embed __has_extension __has_feature __has_include __has_include_next
+__has_warning
+re:__(u?int_least\d+_t|stdint_join\d|tg_promote\d|need_\w+)
+__arm64 __cplusplus __size_t __va_copy __bool_true_false_are_defined
 
 [c-library-macros]
 # Macros the C libraries' public headers define with reserved lowercase spellings: Darwin's
@@ -76,4 +85,16 @@ __extern_inline __extern_always_inline __errordecl __warndecl __flexarr __fortif
 __attribute_pure__ __attribute_const__ __attribute_malloc__ __attribute_noinline__
 __attribute_deprecated__ __attribute_artificial__ __glibc_likely __glibc_unlikely __P __CONCAT
 __STRING __BEGIN_DECLS __END_DECLS
-re:__(darwin|glibc|unsafe_forge|ptrcheck)_\w*
+# The rest of Darwin's (macOS 27 SDK): every lowercase reserved name that <sys/cdefs.h>,
+# <malloc/_ptrcheck.h>, <AvailabilityInternal.h>, <_types.h>, <_stdio.h>, <_stdlib.h>, <alloca.h>,
+# <dirent.h> and the <secure/*.h> fortify headers #define in any branch (found by collecting the
+# #define lines of every header the C headers libycxx includes pull in).
+__alloca __array_decay_dicards_count_in_parameters __compiler_barrier __counted_by_or_null
+__sized_by_or_null __deprecated_enum_msg __header_bidi_indexable __header_indexable __is_gcc
+__is_modern_darwin __null_terminated_to_indexable __terminated_by_to_indexable __stateful_pure
+__strfmonlike __strftimelike __supports_builtin __undef__has_builtin __has_ptrcheck
+__has_safe_buffers
+re:__(unsafe|swift|kpi|xnu|exported)_\w+
+re:__\w+_(chk_func|noescape)
+re:__(kernel_\w+_semantics|enum_(open|closed|options)|unreachable_ok_\w+)
+re:__s(clearerr|feof|ferror|fileno|getc|putc)

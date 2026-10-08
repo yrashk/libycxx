@@ -8,7 +8,8 @@ tests/common/skip.txt applies to every suite; tests/<suite>/skip.txt to one suit
 Expected failures (tests/<suite>/xfail.txt) have a cause outside the test and the library (a
 compiler gap or bug, a draft defect): the test still runs, and
 reports XFAIL when it fails, XPASS (which fails the run) once it passes. A line is
-`<path regex> | <gcc|clang|any> | <reason>`.
+`<path regex> | <gcc|clang|any>[-<linux|darwin>] | <reason>` (with the operating system, only
+there).
 
 Tests that do not apply in one configuration only (tests/libcxx/unsupported.txt) are reported
 UNSUPPORTED only while a lit feature names it: `root` when the tests run as root (permission
@@ -79,9 +80,10 @@ def load_xfails(path):
 
 def apply_xfail(result, xfails, rel, compiler):
     """FAIL -> XFAIL and PASS -> XPASS for a test expected to fail with this compiler."""
-    import lit.Test
+    import lit.Test, platform
+    osname = platform.system().lower()
     for pat, who, why in xfails:
-        if who in (compiler, 'any') and pat.fullmatch(rel):
+        if who in (compiler, 'any', f'{compiler}-{osname}', f'any-{osname}') and pat.fullmatch(rel):
             if result.code == lit.Test.FAIL:
                 result.code = lit.Test.XFAIL
                 result.output = f'expected failure ({who}): {why}\n' + (result.output or '')

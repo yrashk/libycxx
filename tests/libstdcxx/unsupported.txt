@@ -2,7 +2,8 @@
 # rely on that compiler's implementation-defined behaviour, predefined macros, attributes or
 # optional types, or on a behaviour the sanitizer's runtime replaces. Reported UNSUPPORTED, with
 # the reason, only with the named compiler or sanitizer; they run normally otherwise.
-# Format:  <path regex relative to the testsuite> | <gcc|clang|tsan|asan|ubsan> | <reason>   (tests/ycxxlit/skips.py)
+# Format:  <path regex relative to the testsuite> | <gcc|clang|tsan|asan|ubsan|linux|darwin> | <reason>   (tests/ycxxlit/skips.py)
+# (linux, darwin: the operating system; a compiler and a system together: gcc-darwin.)
 # A compiler bug or gap goes to xfail.txt instead; a test that applies to neither, to skip.txt.
 18_support/source_location/(1|consteval)\.cc | clang | asserts GCC's source_location::column() values; the column is implementation-defined ([support.srcloc.cons]: "An implementation-defined value denoting some offset from the start of the line")
 19_diagnostics/stacktrace/current\.cc | clang | counts frames of functions marked [[gnu::optimize("O0")]] so that they are not inlined; Clang ignores that GCC attribute and inlines them
@@ -10,3 +11,4 @@
 20_util/stdbit/1\.cc | clang | uses GCC's predefined macro __LONG_LONG_WIDTH__, which Clang does not define
 20_util/to_chars/float16_c\+\+23\.cc | clang | uses std::float32_t unconditionally; the extended floating-point types are optional ([basic.extended.fp]/1), and Clang 23 has no _Float32 (__STDCPP_FLOAT32_T__ is not defined)
 18_support/96817\.cc | tsan | expects recursive static-local initialization to be detected (std::terminate) rather than to deadlock; under ThreadSanitizer the sanitizer runtime's __cxa_guard_acquire serves the program instead of libycxx's (src/abi/guard.cpp, DECISIONS §6), and it waits forever on a guard its own thread holds; recursive initialization is undefined behaviour ([stmt.dcl]/3), the detection is a libstdc++ quality-of-implementation check (PR 96817)
+19_diagnostics/stacktrace/(entry|output)\.cc | darwin | implementation-specific: expect source_file() and source_line() of each entry; [stacktrace.entry.query]/4, /6 let them be "" and 0 when no information is available, and libycxx's Darwin runtime reads no Mach-O debug information (STATUS.md, macOS: the entries are named by dladdr only). Both pass on Linux

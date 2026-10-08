@@ -33,6 +33,8 @@ def _triplet():
 
 
 TRIPLET = _triplet()
+# The operating system (linux, darwin): tests/libstdcxx/unsupported.txt may name it.
+PLATFORM = __import__('platform').system().lower()
 # Effective targets we satisfy (besides c++NN selectors and the triplet).
 EFFECTIVE = {'hosted', 'cxx11_abi', 'gthreads', 'threads', 'pthread', 'std_allocator_new', 'tls',
              'tls_native', 'cstdint', 'string_conversions', 'c99_math', 'random_device',
@@ -250,7 +252,8 @@ class LibstdcxxFormat(lit.formats.FileBasedTest):
         why = extension_use(src)
         if why:
             return lit.Test.Result(lit.Test.UNSUPPORTED, f'skipped (extension): {why}')
-        why = match_unsupported(self.unsupported, rel, {self.compiler} | self.sanitizer_list)
+        why = match_unsupported(self.unsupported, rel,
+                                {self.compiler, PLATFORM} | {f'{self.compiler}-{PLATFORM}'} | self.sanitizer_list)
         if why:
             return lit.Test.Result(lit.Test.UNSUPPORTED, why)
 

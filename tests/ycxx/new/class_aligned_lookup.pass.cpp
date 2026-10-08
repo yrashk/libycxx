@@ -22,15 +22,19 @@
 #include <cstdlib>
 #include "check.hpp"
 
-static int global_aligned_new = 0, global_aligned_delete = 0;
+// The state the replaced allocation functions share with main is volatile: GCC assumes by
+// default (-fassume-sane-operators-new-delete) that the replaceable global allocation and
+// deallocation functions neither read nor change what their callers see, which a replacement
+// may ([replacement.functions]); volatile accesses are made as written.
+static volatile int global_aligned_new = 0, global_aligned_delete = 0;
 void* operator new(std::size_t n, std::align_val_t a) {
-  ++global_aligned_new;
+  global_aligned_new = global_aligned_new + 1;
   std::size_t al = static_cast<std::size_t>(a);
   if (void* p = std::aligned_alloc(al, (n + al - 1) / al * al)) return p;
   throw std::bad_alloc();
 }
 void operator delete(void* p, std::align_val_t) noexcept {
-  ++global_aligned_delete;
+  global_aligned_delete = global_aligned_delete + 1;
   std::free(p);
 }
 void operator delete(void* p, std::size_t, std::align_val_t a) noexcept { operator delete(p, a); }
@@ -86,11 +90,11 @@ int main() {
   delete b;
   CHECK(calls[5] == 1 && calls[4] == 0);
 
-  NoClassFns* c = new NoClassFns;
+  NoClassFns* c = unelided(new NoClassFns);
   CHECK(global_aligned_new == 1 && aligned(c, 64));
   delete c;
   CHECK(global_aligned_delete == 1);
-  NoClassFns* ca = new NoClassFns[3];   // operator new[](size_t, align_val_t) -> operator new(size, al)
+  NoClassFns* ca = unelided(new NoClassFns[3]);   // operator new[](size_t, align_val_t) -> operator new(size, al)
   CHECK(global_aligned_new == 2 && aligned(ca, 64) && aligned(ca + 1, 64));
   delete[] ca;
   CHECK(global_aligned_delete == 2);

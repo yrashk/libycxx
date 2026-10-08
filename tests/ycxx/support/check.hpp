@@ -24,3 +24,16 @@ extern "C" void abort(); // no [[noreturn]]: clang rejects it after <stdlib.h>'s
       abort();                                                                                       \
     }                                                                                                \
   } while (0)
+
+// unelided(p): p, through an empty asm statement that the compiler must assume reads and changes
+// it. The result of a new-expression passed through it is no longer known to be what the
+// delete-expression receives, so the compiler cannot omit the allocation ([expr.new]/14 allows
+// that, and both compilers do at -O2 when the pointer reaches only its delete-expression). For
+// tests that count the calls of replaced allocation functions. (Such tests also keep the state
+// the replacements share with main volatile: GCC assumes by default,
+// -fassume-sane-operators-new-delete, that those functions neither read nor change it.)
+template <class T>
+inline T* unelided(T* p) noexcept {
+  asm volatile("" : "+r"(p));
+  return p;
+}

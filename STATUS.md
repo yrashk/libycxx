@@ -615,6 +615,13 @@ a defect in a test.
   `compare` and the byte `find` of the algorithms call the builtins through non-constexpr inline
   functions (`ycxx/core/mem_builtins.hpp`), which the constant evaluator does not fold; own test
   `string_view/find_folded_offset`.
+- GCC 16.2 assumes by default (`-fassume-sane-operators-new-delete`) that the replaceable global
+  allocation and deallocation functions neither read nor change global state their callers see;
+  a program's replacements may ([replacement.functions]). At -O2 a counter a replacement
+  increments reads as unchanged after the new-expression (the nightly's -O2 job,
+  `new/class_aligned_lookup`, `memory/shared_ptr_ctor_exception`). Own tests that count such calls
+  keep the shared state volatile, and pass the result of a new-expression through `unelided`
+  (`check.hpp`) where the allocation could be omitted ([expr.new]/14, which both compilers do).
 - GCC 16.2, modules (`-fmodules`): one translation unit cannot both #include a standard header
   and `import std;`. Importing after an #include of some of the headers fails to read the module
   ("failed to read compiled module cluster N: Bad file data"; reduced: a module whose global

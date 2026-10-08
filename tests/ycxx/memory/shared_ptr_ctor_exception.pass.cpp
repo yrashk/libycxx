@@ -13,8 +13,12 @@
 #include "test_allocators.hpp"
 #include "check.hpp"
 
-static int fail_next_new = 0;  // when > 0, the next operator new call throws
-static long outstanding = 0;
+// The state the replaced allocation functions share with main is volatile: GCC assumes by
+// default (-fassume-sane-operators-new-delete) that the replaceable global allocation and
+// deallocation functions neither read nor change what their callers see, which a replacement
+// may ([replacement.functions]); volatile accesses are made as written.
+static volatile int fail_next_new = 0;  // when > 0, the next operator new call throws
+static volatile long outstanding = 0;
 
 void* operator new(std::size_t n) {
   if (fail_next_new > 0) {
@@ -23,12 +27,12 @@ void* operator new(std::size_t n) {
   }
   void* p = std::malloc(n ? n : 1);
   if (!p) throw std::bad_alloc();
-  ++outstanding;
+  outstanding = outstanding + 1;
   return p;
 }
 void operator delete(void* p) noexcept {
   if (p) {
-    --outstanding;
+    outstanding = outstanding - 1;
     std::free(p);
   }
 }
@@ -66,7 +70,7 @@ int main() {
   long base = outstanding;
   // shared_ptr(Y*): control block allocation fails -> delete p
   {
-    Obj* p = new Obj;
+    Obj* p = unelided(new Obj);
     CHECK(Obj::live == 1);
     fail_next_new = 1;
     bool threw = false;
@@ -84,7 +88,7 @@ int main() {
 
   // array form -> delete[] p
   {
-    Arr* p = new Arr[3];
+    Arr* p = unelided(new Arr[3]);
     CHECK(Arr::live == 3);
     fail_next_new = 1;
     try {
@@ -99,7 +103,7 @@ int main() {
   // shared_ptr(p, d, a) with an allocator that throws -> d(p) called
   {
     int calls = 0;
-    Obj* p = new Obj;
+    Obj* p = unelided(new Obj);
     alloc_counters.fail_after = 0;
     bool threw = false;
     try {
@@ -114,7 +118,7 @@ int main() {
 
   // shared_ptr(unique_ptr&&) failing: no effect, r still owns
   {
-    std::unique_ptr<Obj> u(new Obj);
+    std::unique_ptr<Obj> u(unelided(new Obj));
     Obj* raw = u.get();
     fail_next_new = 1;
     bool threw = false;

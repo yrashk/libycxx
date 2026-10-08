@@ -152,8 +152,8 @@ sstream:std::ostringstream | void probe() { std::ostringstream os; }
 sstream:std::stringbuf | void probe() { std::stringbuf b; }
 stack:std::stack | std::stack<int> probe_v;
 stacktrace:std::stacktrace | std::stacktrace probe();
-stdexcept:std::runtime_error | void probe() { throw std::runtime_error("x"); }
-stdexcept:std::out_of_range | void probe() { throw std::out_of_range("x"); }
+stdexcept:std::runtime_error | std::runtime_error probe() { return std::runtime_error("x"); }
+stdexcept:std::out_of_range | std::out_of_range probe() { return std::out_of_range("x"); }
 stdfloat:std::float64_t | std::float64_t probe_v = 1.0f64;
 stop_token:std::stop_token | std::stop_token probe_v;
 streambuf:std::streambuf | struct probe_t : std::streambuf {}; probe_t probe_v;
@@ -163,7 +163,7 @@ string_view:std::string_view | std::string_view probe_v;
 syncstream:std::syncbuf | void probe() { std::syncbuf b; }
 system_error:std::error_code | std::error_code probe_v;
 system_error:std::errc | std::errc probe_v = std::errc::invalid_argument;
-system_error:std::system_error | void probe() { throw std::system_error(std::error_code()); }
+system_error:std::system_error | std::system_error probe() { return std::system_error(std::error_code()); }
 text_encoding:std::text_encoding | std::text_encoding probe_v;
 thread:std::thread | std::thread probe_v;
 thread:std::this_thread::yield | void probe() { std::this_thread::yield(); }

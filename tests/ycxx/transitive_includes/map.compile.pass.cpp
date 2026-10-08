@@ -27,7 +27,7 @@ namespace probe_7 { // memory:std::unique_ptr
 std::unique_ptr<int> probe_v;
 }
 namespace probe_8 { // stdexcept:std::runtime_error
-void probe() { throw std::runtime_error("x"); }
+std::runtime_error probe() { return std::runtime_error("x"); }
 }
 namespace probe_9 { // tuple:std::tuple
 std::tuple<int> probe_v;

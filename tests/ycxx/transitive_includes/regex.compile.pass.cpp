@@ -54,7 +54,7 @@ namespace probe_16 { // memory:std::unique_ptr
 std::unique_ptr<int> probe_v;
 }
 namespace probe_17 { // stdexcept:std::runtime_error
-void probe() { throw std::runtime_error("x"); }
+std::runtime_error probe() { return std::runtime_error("x"); }
 }
 namespace probe_18 { // string_view:std::string_view
 std::string_view probe_v;

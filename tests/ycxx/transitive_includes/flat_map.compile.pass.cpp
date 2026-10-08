@@ -33,7 +33,7 @@ namespace probe_9 { // optional:std::optional
 std::optional<int> probe_v;
 }
 namespace probe_10 { // stdexcept:std::runtime_error
-void probe() { throw std::runtime_error("x"); }
+std::runtime_error probe() { return std::runtime_error("x"); }
 }
 namespace probe_11 { // tuple:std::tuple
 std::tuple<int> probe_v;

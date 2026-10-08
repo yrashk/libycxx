@@ -36,7 +36,7 @@ namespace probe_10 { // limits:std::numeric_limits
 int probe() { return std::numeric_limits<int>::max(); }
 }
 namespace probe_11 { // stdexcept:std::runtime_error
-void probe() { throw std::runtime_error("x"); }
+std::runtime_error probe() { return std::runtime_error("x"); }
 }
 namespace probe_12 { // string_view:std::string_view
 std::string_view probe_v;

@@ -45,7 +45,7 @@ namespace probe_13 { // numeric:std::accumulate
 int probe(int* p) { return std::accumulate(p, p + 2, 0); }
 }
 namespace probe_14 { // stdexcept:std::runtime_error
-void probe() { throw std::runtime_error("x"); }
+std::runtime_error probe() { return std::runtime_error("x"); }
 }
 namespace probe_15 { // string:std::string
 std::string probe_v;

@@ -84,7 +84,7 @@ namespace probe_26 { // sstream:std::stringbuf
 void probe() { std::stringbuf b; }
 }
 namespace probe_27 { // stdexcept:std::runtime_error
-void probe() { throw std::runtime_error("x"); }
+std::runtime_error probe() { return std::runtime_error("x"); }
 }
 namespace probe_28 { // streambuf:std::streambuf
 struct probe_t : std::streambuf {}; probe_t probe_v;

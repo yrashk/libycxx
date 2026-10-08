@@ -66,7 +66,7 @@ namespace probe_20 { // span:std::span
 std::span<int> probe_v;
 }
 namespace probe_21 { // stdexcept:std::runtime_error
-void probe() { throw std::runtime_error("x"); }
+std::runtime_error probe() { return std::runtime_error("x"); }
 }
 namespace probe_22 { // string:std::string
 std::string probe_v;

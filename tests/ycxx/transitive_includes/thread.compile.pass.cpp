@@ -72,7 +72,7 @@ namespace probe_22 { // ratio:std::ratio
 using probe_t = std::ratio<1, 2>; static_assert(probe_t::num == 1);
 }
 namespace probe_23 { // stdexcept:std::runtime_error
-void probe() { throw std::runtime_error("x"); }
+std::runtime_error probe() { return std::runtime_error("x"); }
 }
 namespace probe_24 { // stop_token:std::stop_token
 std::stop_token probe_v;

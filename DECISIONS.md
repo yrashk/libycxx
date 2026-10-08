@@ -1913,5 +1913,23 @@ with `<ranges>`, `<streambuf>` with `<iterator>`, and `<cstdio>` where the chara
 provided `EOF` before (`ycxx/core/char_traits.hpp` no longer includes `<cstdio>`, so the strict
 mode has no `EOF` with `<string>`). The result: 976 includes in 76 headers' blocks.
 
+**Compile-time cost** (2026-10-08; a translation unit that only includes <H>, for each of the 115
+C++ headers, best of 3, summed):
+
+| | GCC 16.2 `-E` | GCC `-c` | Clang 23.1 `-E` | Clang `-c` | preprocessed lines (GCC) |
+|---|---:|---:|---:|---:|---:|
+| before §19 | 2.53 s | 15.4 s | 3.34 s | 17.8 s | 1.21 M |
+| default (transitive includes) | 3.55 s | 24.4 s | 4.31 s | 28.8 s | 2.00 M |
+| `-DYCXX_NO_TRANSITIVE_INCLUDES` | 2.42 s | 15.0 s | 3.32 s | 17.9 s | 1.19 M |
+
+The default costs about 60% more over the headers taken one by one; the strict mode is as cheap
+as before (a little cheaper: `<cstdio>` left the character traits). The cost falls on the headers
+whose libstdc++/libc++ counterparts pull in iostreams or strings: with GCC `<complex>` 0.15 ->
+0.61 s (`<ostream>`, `<sstream>`, `<string>` in the baseline), `<stack>` and `<queue>` 0.14 ->
+0.55 s (`<deque>`, `<string>`), `<iterator>` 0.09 -> 0.48 s (`<string>`, `<iosfwd>`,
+`<streambuf>`); `<string>` 0.18 -> 0.29 s, `<vector>` 0.12 -> 0.30 s, `<memory>` 0.16 -> 0.28 s;
+`<algorithm>` and `<mutex>` unchanged. A real translation unit, which includes several headers,
+pays most of it once.
+
 `tools/probe_transitive.py && tools/gen_transitive_includes.py --propose` refreshes the probe
 (for new library releases or items) and prints the baseline pairs the data file lacks.

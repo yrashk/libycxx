@@ -480,6 +480,11 @@ libstdc++/libc++ or holding one of their symbols, and every image defining libyc
 library is rejected on all counts. Test counts are CTest tests (passed / skipped); a CTest test
 may be a whole suite (spdlog, libcoro, yaml-cpp: one binary each; taskflow: one per doctest case).
 
+Since DECISIONS §19 (2026-10-08) the projects build without their transitive-include patches:
+the 13 projects that had one (Abseil, benchmark, Catch2, doctest, glaze, json, libcoro,
+magic_enum, oneTBB, simdjson, spdlog, Taskflow, yaml-cpp) were rebuilt and tested with both
+compilers, with the results below.
+
 | project | ref | GCC | Clang | tests passed / skipped, GCC | Clang | notes |
 |---|---|---|---|---:|---:|---|
 | googletest | v1.18.0 | ok | ok | 63 / 1 | 63 / 0 | `GTEST_HAS_CXXABI_H_` set (it detects `<cxxabi.h>` by vendor macros); with GCC `gtest_dll_test_` not built (hidden visibility, per-image runtime) |

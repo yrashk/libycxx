@@ -1,0 +1,34 @@
+# MrDocs configuration of libycxx's API reference; tools/gen-apidocs fills the @...@ fields.
+source-root: @SOURCE_ROOT@
+compilation-database: @COMPILATION_DATABASE@
+generator: @GENERATOR@
+output: @OUTPUT@
+addons: @ADDONS@
+multipage: true
+concurrency: @JOBS@
+
+# Never the system's C++ library, nor MrDocs's bundled one: the translation unit has
+# -nostdinc++ and libycxx's include paths, and the C library is the system's (glibc).
+use-system-stdlib: true
+use-system-libc: true
+
+# The public API is what the std module exports (modules/std.cppm), with the members of what
+# it exports; nothing else in namespace std, and nothing in libycxx's own namespaces.
+include-symbols:
+@INCLUDE_SYMBOLS@
+# Internals that public declarations mention (base classes, the types of customization point
+# objects and niebloids, exposition-only helpers) are kept for the cross-references but shown
+# as the standard shows them: /* implementation-defined */.
+implementation-defined:
+  - '__ycxx::**'
+
+overloads: true
+extract-friends: true
+extract-private: false
+extract-private-bases: false
+sort-members: true
+# MrDocs 0.8.0 stops in this step on some of libycxx's declarations; the reference has no
+# doc comments to complete anyway.
+auto-function-metadata: false
+auto-brief: false
+warnings: false

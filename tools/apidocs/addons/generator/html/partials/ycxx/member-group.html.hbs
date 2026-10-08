@@ -1,0 +1,14 @@
+{{!-- One group of members as a table: name, kind, and a short declaration.
+      Parameters: members, title, gid --}}
+{{#if (any_of_by members "isRegular" "isSeeBelow")}}
+<section class="ref-sec" aria-labelledby="sec-{{gid}}">
+<h2 id="sec-{{gid}}">{{title}}</h2>
+<div class="table-wrap"><table class="data members">
+<thead><tr><th scope="col">Name</th><th scope="col">Declaration</th></tr></thead>
+<tbody>
+{{#each (filter_by members "isRegular" "isSeeBelow")}}
+<tr><td class="m-name"><a href="{{{relativize url}}}"><code>{{> symbol/name-text . }}</code></a><span class="m-kind">{{> ycxx/kind . }}</span></td><td class="m-decl">{{> ycxx/member-decl . }}</td></tr>
+{{/each}}
+</tbody></table></div>
+</section>
+{{/if}}

@@ -1,0 +1,35 @@
+{{!--
+    libycxx API reference: the page shell around one symbol (multipage output).
+
+    The shell is the main site's spec-sheet layout (site/assets/site.css): a sidebar with the
+    search box and the index by header and by namespace, and the reference in <main>.
+    tools/gen-apidocs fills the marked places afterwards, from what MrDocs's corpus does not
+    know: <!--ycxx:root--> becomes the relative path to the site's root, the facts row gets the
+    entity's header, draft section and cppreference page (tools/apidocs/render.py).
+--}}
+<!doctype html>
+<html lang="en" data-root="{{relativize "/"}}">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<title>{{#if symbol.name}}{{> symbol/qualified-name-text symbol }} — {{/if}}libycxx API reference</title>
+<link rel="stylesheet" href="<!--ycxx:root-->assets/site.css">
+<link rel="stylesheet" href="<!--ycxx:root-->assets/api.css">
+<link rel="icon" href="<!--ycxx:root-->assets/favicon.svg" type="image/svg+xml">
+<link rel="preload" href="<!--ycxx:root-->fonts/anaheim-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="<!--ycxx:root-->fonts/lekton-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin>
+</head>
+<body class="api" data-api="{{relativize "/"}}">
+{{> ycxx/mobile-bar }}
+<div class="layout">
+{{> ycxx/sidebar }}
+<main id="main">
+{{{contents}}}
+{{> ycxx/footer }}
+</main>
+</div>
+{{> ycxx/pane }}
+<script src="<!--ycxx:root-->assets/api.js" defer></script>
+</body>
+</html>

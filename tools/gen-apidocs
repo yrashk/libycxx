@@ -1,0 +1,240 @@
+#!/usr/bin/env python3
+"""Generate libycxx's API reference (site/api/) with MrDocs, and the cppreference pages it links.
+
+    tools/gen-apidocs [--install] [--mrdocs PATH] [--out DIR] [--cppref-out DIR] [--no-cppref]
+                      [--headers H,...] [-j N]
+    tools/gen-apidocs --refresh-draft     rewrite tools/apidocs/draft-map.json from the draft
+
+One translation unit includes every public header (the ones modules/std.cppm imports), with
+-nostdinc++ and libycxx's include paths only. MrDocs (https://www.mrdocs.com) parses it with its
+own Clang and renders one page per entity of the std module's export list through libycxx's
+Handlebars templates (tools/apidocs/addons, layered over MrDocs's stock ones); internal names
+(__ycxx::*, the implementation's base classes) are rendered "implementation-defined". Then
+tools/apidocs/render.py adds what the corpus does not know: each entity's header and draft
+section (tools/apidocs/draft-map.json), its cppreference page, the index pages, the sidebar's
+index and the search index; it highlights the synopses and writes everything to site/api/.
+
+cppreference: the official offline archive (github.com/PeterFeicht/cppreference-doc, pinned
+below) gives the symbol-to-page map, site/api/cppref-map.json, and the pages the reference links
+to, reduced to their article and styled like the site, in site/cppref/ (CC-BY-SA 3.0 and GFDL,
+attributed on every page; tools/apidocs/cppref.py).
+
+--install downloads the pinned MrDocs release into build/apidocs/tools (checked against its
+SHA-256); otherwise --mrdocs, $MRDOCS, a previous --install or `mrdocs` on PATH is used.
+--headers limits the translation unit to some headers, for a quick look while editing the
+templates. The Pages workflow (.github/workflows/pages.yml) runs `tools/gen-apidocs --install`.
+"""
+import argparse, hashlib, json, os, pathlib, re, shutil, subprocess, sys, tarfile, time, urllib.request
+
+HERE = pathlib.Path(__file__).resolve().parent
+REPO = HERE.parent
+APIDOCS = HERE / 'apidocs'
+sys.path.insert(0, str(APIDOCS))
+
+MRDOCS_VERSION = '0.8.0'
+MRDOCS_URL = f'https://github.com/cppalliance/mrdocs/releases/download/v{MRDOCS_VERSION}/MrDocs-{MRDOCS_VERSION}-Linux.tar.gz'
+MRDOCS_SHA256 = '75aead343ad5bf6f008efa439a09998fe175718876a05a951d6d6c60e79e671d'
+
+CPPREF_VERSION = '20250209'
+CPPREF_URL = f'https://github.com/PeterFeicht/cppreference-doc/releases/download/v{CPPREF_VERSION}/html-book-{CPPREF_VERSION}.tar.xz'
+CPPREF_SHA256 = 'ac50671a1f52d7f0ab0911d14450eb35e8c2f812edd0e426b2cd1e3d9db91d6f'
+
+BUILD = REPO / 'build' / 'apidocs'
+
+# MrDocs 0.8.0's Clang (LLVM 22, built with assertions) stops on two of libycxx's constructs that
+# Clang 23 compiles. The translation unit sees a copy of the header with the construct rewritten;
+# neither rewrite changes a declaration the reference shows (the first is in an internal base,
+# the second is a constraint the draft states in words, not in the synopsis). A pattern that no
+# longer matches stops the generator, so a fixed header or a newer MrDocs is noticed.
+WORKAROUNDS = [
+    # Assertion `isPRValue()` in DeduceAutoType: a compound assignment as the template argument
+    # of constant_wrapper<auto> in the pseudo-mutators' return types ([const.wrap.class]).
+    ('ycxx/core/constant_wrapper.hpp',
+     r'std::constant_wrapper<\(_Tp::value (\+|-|\*|/|%|&|\||\^|<<|>>)= _Rp::value\)>',
+     r'std::constant_wrapper<(_Tp::value \1 _Rp::value)>'),
+    # Assertion "declaration not instantiated in this scope" in MrDocs's USR generation: a
+    # requires-expression with a local parameter naming the function's parameter (duration's
+    # operator%=, [time.duration.arithmetic]).
+    ('ycxx/core/chrono_base.hpp',
+     r'\n[ \t]*requires requires\(rep& r\) \{ r %= __rhs(?:\.count\(\))?; \}(?=\n)',
+     ''),
+]
+
+# What <ycxx/generated/c_library.hpp> says for glibc (cmake/ycxx-c-library.cmake probes it at
+# configure time; the reference documents a glibc build).
+C_LIBRARY = """\
+// Written by tools/gen-apidocs: what glibc provides (cmake/ycxx-c-library.cmake probes this).
+#pragma once
+#define _YCXX_C_HAS_STRFROM 1
+#define _YCXX_C_HAS_MBRTOC8 1
+#define _YCXX_C_HAS_TIMESPEC_GETRES 1
+#define _YCXX_C_HAS_ERA_NUM_ENTRIES 1
+"""
+
+
+def log(*a):
+    print('gen-apidocs:', *a, file=sys.stderr, flush=True)
+
+
+def fetch(url, dest, sha256):
+    """Download url to dest (once) and check its SHA-256."""
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    if not dest.exists():
+        log('downloading', url)
+        tmp = dest.with_suffix(dest.suffix + '.part')
+        with urllib.request.urlopen(url) as r, open(tmp, 'wb') as o:
+            shutil.copyfileobj(r, o)
+        tmp.rename(dest)
+    h = hashlib.sha256(dest.read_bytes()).hexdigest()
+    if h != sha256:
+        dest.unlink()
+        sys.exit(f'gen-apidocs: {url}: SHA-256 {h}, expected {sha256}')
+    return dest
+
+
+def find_mrdocs(a):
+    installed = BUILD / 'tools' / f'MrDocs-{MRDOCS_VERSION}-Linux' / 'bin' / 'mrdocs'
+    if a.install and not installed.exists():
+        tgz = fetch(MRDOCS_URL, BUILD / 'cache' / pathlib.Path(MRDOCS_URL).name, MRDOCS_SHA256)
+        with tarfile.open(tgz) as t:
+            t.extractall(BUILD / 'tools', filter='tar' if hasattr(tarfile, 'tar_filter') else None)
+    for c in (a.mrdocs, os.environ.get('MRDOCS'), installed if installed.exists() else None, shutil.which('mrdocs')):
+        if c:
+            p = pathlib.Path(c).resolve()
+            v = subprocess.run([p, '--version'], capture_output=True, text=True).stdout
+            if f'version {MRDOCS_VERSION}' not in v:
+                log(f'warning: {p} is not MrDocs {MRDOCS_VERSION}: {v.splitlines()[:1]}')
+            return p
+    sys.exit('gen-apidocs: no MrDocs (pass --install, --mrdocs PATH or set $MRDOCS)')
+
+
+def std_module():
+    """The headers modules/std.cppm includes, and the names it exports (qualified)."""
+    text = (REPO / 'modules' / 'std.cppm').read_text()
+    frag = text[text.index('module;'):text.index('export module std;')]
+    headers = re.findall(r'^#include <([a-z_]+)>$', frag, re.M)
+    names, stack = [], []
+    for line in text[text.index('export module std;'):].splitlines():
+        s = line.strip()
+        m = re.match(r'(?:export )?(?:inline )?namespace (\w+) \{$', s)
+        if m:
+            stack.append(m.group(1))
+            continue
+        if s.startswith('}'):
+            if stack:
+                stack.pop()
+            continue
+        m = re.match(r'using (std::[\w:]+);$', s)
+        if m:
+            names.append(m.group(1))
+        m = re.match(r'namespace (\w+) = (std::[\w:]+);$', s)
+        if m:
+            names.append(m.group(2))
+    return headers, sorted(set(names))
+
+
+def multiarch():
+    for cc in ('gcc', 'cc'):
+        if shutil.which(cc):
+            r = subprocess.run([cc, '-print-multiarch'], capture_output=True, text=True)
+            if r.returncode == 0 and r.stdout.strip():
+                return r.stdout.strip()
+    return 'x86_64-linux-gnu'
+
+
+def prepare(work, mrdocs, headers, exported, a):
+    """The translation unit, its compilation database, the addons and mrdocs.yml."""
+    if work.exists():
+        shutil.rmtree(work)
+    (work / 'overlay').mkdir(parents=True)
+    for rel, pat, rep in WORKAROUNDS:
+        src = (REPO / 'include' / rel).read_text()
+        new, n = re.subn(pat, rep, src)
+        if not n:
+            sys.exit(f'gen-apidocs: workaround for include/{rel} no longer applies; remove it from WORKAROUNDS')
+        dst = work / 'overlay' / rel
+        dst.parent.mkdir(parents=True, exist_ok=True)
+        dst.write_text(new)
+    gen = work / 'generated' / 'ycxx' / 'generated'
+    gen.mkdir(parents=True)
+    (gen / 'c_library.hpp').write_text(C_LIBRARY)
+    (work / 'all.cpp').write_text('// Every public header of libycxx (the ones modules/std.cppm includes).\n' +
+                                 ''.join(f'#include <{h}>\n' for h in headers))
+    share = mrdocs.parent.parent / 'share' / 'mrdocs'
+    arch = multiarch()
+    args = ['clang++', '-std=c++26', '-nostdinc++',
+            '-isystem', str(work / 'overlay'), '-isystem', str(REPO / 'include'),
+            '-isystem', str(work / 'generated'),
+            # The compiler's own headers (stddef.h, stdarg.h…) from MrDocs's Clang, then the C library's.
+            '-isystem', str(share / 'headers' / 'clang'),
+            '-isystem', f'/usr/include/{arch}', '-isystem', '/usr/include',
+            '-c', 'all.cpp']
+    (work / 'compile_commands.json').write_text(json.dumps(
+        [{'directory': str(work), 'file': str(work / 'all.cpp'), 'arguments': args}], indent=1))
+    # The addons: MrDocs's stock templates with libycxx's on top (later files win).
+    addons = work / 'addons'
+    shutil.copytree(share / 'addons', addons)
+    shutil.copytree(APIDOCS / 'addons', addons, dirs_exist_ok=True)
+    cfg = (APIDOCS / 'mrdocs.yml.in').read_text()
+    include = ''.join(f"  - '{n}'\n" for n in exported)
+    cfg = (cfg.replace('@SOURCE_ROOT@', str(REPO / 'include'))
+              .replace('@COMPILATION_DATABASE@', str(work / 'compile_commands.json'))
+              .replace('@ADDONS@', str(addons))
+              .replace('@JOBS@', str(a.jobs))
+              .replace('@INCLUDE_SYMBOLS@\n', include))
+    for gen_name in ('html',):
+        d = work / f'cfg-{gen_name}'
+        d.mkdir()
+        (d / 'mrdocs.yml').write_text(cfg.replace('@GENERATOR@', gen_name)
+                                         .replace('@OUTPUT@', str(work / f'out-{gen_name}')))
+    return work
+
+
+def run_mrdocs(mrdocs, work, gen_name):
+    t = time.time()
+    cfg = work / f'cfg-{gen_name}' / 'mrdocs.yml'
+    r = subprocess.run([str(mrdocs), str(cfg)], cwd=work, capture_output=True, text=True)
+    (work / f'mrdocs-{gen_name}.log').write_text(r.stdout + r.stderr)
+    errors = [l for l in (r.stdout + r.stderr).splitlines() if re.search(r'\berror:', l)]
+    if r.returncode != 0 or errors:
+        sys.stderr.write((r.stdout + r.stderr)[-6000:])
+        sys.exit(f'gen-apidocs: MrDocs ({gen_name}) failed; log: {work}/mrdocs-{gen_name}.log')
+    log(f'MrDocs {gen_name}: {time.time() - t:.0f}s')
+
+
+def main():
+    ap = argparse.ArgumentParser(description=__doc__.split('\n\n')[0])
+    ap.add_argument('--install', action='store_true', help='download the pinned MrDocs release')
+    ap.add_argument('--mrdocs', help='the mrdocs executable')
+    ap.add_argument('--out', default=str(REPO / 'site' / 'api'), help='output directory (site/api)')
+    ap.add_argument('--cppref-out', default=str(REPO / 'site' / 'cppref'), help='hosted cppreference pages (site/cppref)')
+    ap.add_argument('--no-cppref', action='store_true', help='no cppreference map or pages')
+    ap.add_argument('--headers', help='only these headers (comma-separated), for a quick look')
+    ap.add_argument('--refresh-draft', action='store_true', help='rewrite tools/apidocs/draft-map.json')
+    ap.add_argument('-j', '--jobs', type=int, default=2)
+    a = ap.parse_args()
+
+    if a.refresh_draft:
+        import draftmap
+        draftmap.refresh(BUILD / 'cache' / 'draft', APIDOCS / 'draft-map.json', REPO)
+        return
+
+    mrdocs = find_mrdocs(a)
+    headers, exported = std_module()
+    if a.headers:
+        headers = [h for h in headers if h in a.headers.split(',')]
+    work = prepare(BUILD / 'work', mrdocs, headers, exported, a)
+    run_mrdocs(mrdocs, work, 'html')
+
+    import render
+    cppref = None
+    if not a.no_cppref:
+        import cppref as cppref_mod
+        archive = fetch(CPPREF_URL, BUILD / 'cache' / pathlib.Path(CPPREF_URL).name, CPPREF_SHA256)
+        cppref = cppref_mod.Archive(archive, BUILD / 'cache' / f'cppreference-{CPPREF_VERSION}', CPPREF_VERSION, CPPREF_URL)
+    render.render(work, pathlib.Path(a.out), json.loads((APIDOCS / 'draft-map.json').read_text()),
+                  cppref, pathlib.Path(a.cppref_out), headers)
+
+
+if __name__ == '__main__':
+    main()

@@ -37,7 +37,7 @@ features = {
     'c++26', 'std-at-least-c++11', 'std-at-least-c++14', 'std-at-least-c++17',
     'std-at-least-c++20', 'std-at-least-c++23', 'std-at-least-c++26',
     compiler, f'{compiler}-{ver[0]}', f'{compiler}-{ver[0]}.{ver[1]}',
-    'target=x86_64-pc-linux-gnu', 'linux', 'has-unix-headers', 'has-64-bit-atomics',
+    'has-unix-headers', 'has-64-bit-atomics',
     # Atomics of any size work without libatomic (lock-based in libycxx's runtime).
     'has-1024-bit-atomics',
     'stdlib=libycxx', 'can-create-symlinks', 'has-fblocks-off',
@@ -45,6 +45,14 @@ features = {
     # libc++ and its own messages.
     'libcpp-hardening-mode=none',
 }
+# The platform as libc++'s own configuration names it: the target triple (tests select on it,
+# e.g. target={{.+}}-apple-{{.+}}) and linux or darwin (REQUIRES: linux, UNSUPPORTED: darwin).
+import platform
+_machine = {'amd64': 'x86_64'}.get(platform.machine().lower(), platform.machine().lower())
+if platform.system() == 'Darwin':
+    features |= {f'target={_machine}-apple-macosx{platform.mac_ver()[0]}', 'darwin'}
+else:
+    features |= {f'target={_machine}-pc-linux-gnu', 'linux'}
 if compiler == 'clang':
     features |= {'verify-support', 'clang-diagnostics', 'has-fconstexpr-steps'}
 else:

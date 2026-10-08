@@ -11,3 +11,8 @@
 # instrumented too; tests/libcxx/TRIAGE.md, "ThreadSanitizer").
 atomics/atomics\.types\.generic/atomics\.types\.float/fetch_(add|sub)\.pass\.cpp | target={{x86_64-.*}} && tsan | libc++'s expected failure under ThreadSanitizer on x86-64 (llvm.org/PR72893) is about libc++'s implementation; libycxx's floating-point fetch_add/fetch_sub pass under ThreadSanitizer
 atomics/atomics\.ref/fetch_(add|sub)\.pass\.cpp | target={{x86_64-.*}} && tsan | libc++'s expected failure under ThreadSanitizer on x86-64 (llvm.org/PR72893) is about libc++'s implementation; libycxx's floating-point fetch_add/fetch_sub pass under ThreadSanitizer
+#
+# darwin: libc++ expects <cuchar> and <uchar.h> to fail on Apple platforms, whose C library has no
+# <uchar.h>; libycxx provides mbrtoc8 ... c32rtomb itself there (src/hosted/uchar.cpp), and both tests
+# pass on the macOS runners.
+strings/c\.strings/cuchar\.compile\.pass\.cpp|depr/depr\.c\.headers/uchar_h\.compile\.pass\.cpp | target={{.+}}-apple-{{.+}} | libc++'s expected failure on Apple platforms (no <uchar.h> in the C library) is about libc++; libycxx declares the <cuchar> functions itself there

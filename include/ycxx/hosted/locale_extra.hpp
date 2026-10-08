@@ -908,9 +908,9 @@ private:
       s = __match_name(s, end, __f, __err, __names, 2, __v);
     }
     if (!(__err & ios_base::failbit)) {
-      r.tm_hour %= 12;
-      if (__v == 1)
-        r.tm_hour += 12;
+      // an hour not read yet (out of range: a %p before the %I, as in ja_JP's "%p%I時%M分%S秒")
+      // is 0, so the %I that follows keeps the half of the day
+      r.tm_hour = (r.tm_hour >= 0 && r.tm_hour <= 23 ? r.tm_hour % 12 : 0) + (__v == 1 ? 12 : 0);
     }
     return s;
   }

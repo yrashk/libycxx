@@ -573,6 +573,45 @@ void load_alt_digits(locale_t __loc, __ycxx::__detail::__time_data<__charT>& d) 
     d.__alt_pos[k] = __pos[k];
 }
 
+// A locale's format (D_T_FMT and the like) in the conversions time_get and chrono::parse read:
+// the C library's flags and widths (GNU and BSD strftime: "%_m", "%-d", "%^a", "%10Y") are
+// dropped, a space-padding one ('_') as a white space before the conversion (which reads the
+// padding), and the space-padded hours %k and %l are " %H" and " %I". Darwin's ja_JP, for one,
+// has a D_T_FMT of "%a %_m/%e %T %Y".
+std::string reading_form(const char* f) {
+  std::string r;
+  while (*f != '\0') {
+    if (*f != '%' || f[1] == '\0') {
+      r += *f++;
+      continue;
+    }
+    ++f;
+    if (*f == '%') {
+      r += "%%";
+      ++f;
+      continue;
+    }
+    bool __pad = false;
+    while (*f == '_' || *f == '-' || *f == '0' || *f == '^' || *f == '#')
+      __pad = __pad || *f++ == '_';
+    while (*f >= '0' && *f <= '9')
+      ++f;
+    if (*f == 'k' || *f == 'l') {
+      r += *f == 'k' ? " %H" : " %I";
+      ++f;
+      continue;
+    }
+    if (__pad)
+      r += ' ';
+    r += '%';
+    if ((*f == 'E' || *f == 'O') && f[1] != '\0')
+      r += *f++;
+    if (*f != '\0')
+      r += *f++;
+  }
+  return r;
+}
+
 template <class __charT>
 bool load_time(const char* name, __ycxx::__detail::__time_data<__charT>& d) {
   named_ref h{__ycxx::__detail::__named_open(name, std::locale::time, "std::time_get_byname")};
@@ -612,12 +651,12 @@ bool load_time(const char* name, __ycxx::__detail::__time_data<__charT>& d) {
     if (__w != d.__names[i])
       d.__written[i] = static_cast<std::basic_string<__charT>&&>(__w);
   }
-  d.__d_t_fmt = __convert(__loc, ::nl_langinfo_l(D_T_FMT, __loc), __charT());
-  const char* __x = ::nl_langinfo_l(D_FMT, __loc);
-  d.__d_fmt = __convert(__loc, __x, __charT());
-  d.__t_fmt = __convert(__loc, ::nl_langinfo_l(T_FMT, __loc), __charT());
-  d.__t_fmt_ampm = __convert(__loc, ::nl_langinfo_l(T_FMT_AMPM, __loc), __charT());
-  d.__order = order_of(__x);
+  d.__d_t_fmt = __convert(__loc, reading_form(::nl_langinfo_l(D_T_FMT, __loc)).c_str(), __charT());
+  const std::string __x = reading_form(::nl_langinfo_l(D_FMT, __loc));
+  d.__d_fmt = __convert(__loc, __x.c_str(), __charT());
+  d.__t_fmt = __convert(__loc, reading_form(::nl_langinfo_l(T_FMT, __loc)).c_str(), __charT());
+  d.__t_fmt_ampm = __convert(__loc, reading_form(::nl_langinfo_l(T_FMT_AMPM, __loc)).c_str(), __charT());
+  d.__order = order_of(__x.c_str());
   // The era formats, where the C library writes %Ec, %Ex and %EX with them (checked on two
   // dates; POSIX: where the alternative representation is not available, the unmodified one is
   // used, and an empty format falls back to %c, %x and %X below). Darwin's libc, for one, may
@@ -642,7 +681,7 @@ bool load_time(const char* name, __ycxx::__detail::__time_data<__charT>& d) {
       for (const std::tm& t : __probe)
         __y_used = __y_used && ftime(__loc, e.conv, t) == ftime(__loc, __fmt, t);
       if (__y_used)
-        *e.out = __convert(__loc, __fmt, __charT());
+        *e.out = __convert(__loc, reading_form(__fmt).c_str(), __charT());
     }
   }
   load_eras(__loc, d);

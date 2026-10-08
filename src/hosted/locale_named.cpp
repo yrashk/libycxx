@@ -578,36 +578,36 @@ void load_alt_digits(locale_t __loc, __ycxx::__detail::__time_data<__charT>& d) 
 // dropped, a space-padding one ('_') as a white space before the conversion (which reads the
 // padding), and the space-padded hours %k and %l are " %H" and " %I". Darwin's ja_JP, for one,
 // has a D_T_FMT of "%a %_m/%e %T %Y".
-std::string reading_form(const char* f) {
+std::string reading_form(const char* __f) {
   std::string r;
-  while (*f != '\0') {
-    if (*f != '%' || f[1] == '\0') {
-      r += *f++;
+  while (*__f != '\0') {
+    if (*__f != '%' || __f[1] == '\0') {
+      r += *__f++;
       continue;
     }
-    ++f;
-    if (*f == '%') {
+    ++__f;
+    if (*__f == '%') {
       r += "%%";
-      ++f;
+      ++__f;
       continue;
     }
     bool __pad = false;
-    while (*f == '_' || *f == '-' || *f == '0' || *f == '^' || *f == '#')
-      __pad = __pad || *f++ == '_';
-    while (*f >= '0' && *f <= '9')
-      ++f;
-    if (*f == 'k' || *f == 'l') {
-      r += *f == 'k' ? " %H" : " %I";
-      ++f;
+    while (*__f == '_' || *__f == '-' || *__f == '0' || *__f == '^' || *__f == '#')
+      __pad = __pad || *__f++ == '_';
+    while (*__f >= '0' && *__f <= '9')
+      ++__f;
+    if (*__f == 'k' || *__f == 'l') {
+      r += *__f == 'k' ? " %H" : " %I";
+      ++__f;
       continue;
     }
     if (__pad)
       r += ' ';
     r += '%';
-    if ((*f == 'E' || *f == 'O') && f[1] != '\0')
-      r += *f++;
-    if (*f != '\0')
-      r += *f++;
+    if ((*__f == 'E' || *__f == 'O') && __f[1] != '\0')
+      r += *__f++;
+    if (*__f != '\0')
+      r += *__f++;
   }
   return r;
 }
@@ -676,13 +676,13 @@ bool load_time(const char* name, __ycxx::__detail::__time_data<__charT>& d) {
     __probe[1].tm_year = 1989 - 1900, __probe[1].tm_mon = 0, __probe[1].tm_mday = 7, __probe[1].tm_hour = 1;
     __probe[1].tm_min = 2, __probe[1].tm_sec = 3, __probe[1].tm_wday = 6, __probe[1].tm_yday = 6;
     const struct {
-      nl_item item;
+      nl_item __item;
       const char* conv;
       std::basic_string<__charT>* out;
     } __era_fmts[3] = {{ERA_D_T_FMT, "%Ec", &d.__era_d_t_fmt}, {ERA_D_FMT, "%Ex", &d.__era_d_fmt},
                        {ERA_T_FMT, "%EX", &d.__era_t_fmt}};
     for (const auto& e : __era_fmts) {
-      const char* __fmt = ::nl_langinfo_l(e.item, __loc);
+      const char* __fmt = ::nl_langinfo_l(e.__item, __loc);
       if (__fmt == nullptr || *__fmt == '\0')
         continue;
       bool __y_used = true;

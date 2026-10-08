@@ -2574,7 +2574,10 @@ mechanical).
    version script and exported-symbols list from `src/export.txt`, `-Bsymbolic-functions`, and
    `libycxx_nonshared.a`. The ELF linker script, the Mach-O install name and versions, targets
    `ycxx::static`/`ycxx::shared` with `COMPATIBLE_INTERFACE_STRING`, install rules and
-   `libycxxConfig.cmake`. The `PAL=posix` and no-sanitizer checks. Test: `tests/cmake/run.sh`
+   `libycxxConfig.cmake`. The `PAL=posix` and no-sanitizer checks. GCC on Darwin: libgcc's
+   emulated-TLS entry points (`___emutls_get_address`, `___emutls_register_common`), which
+   `-static-libgcc` puts in the dylib as weak exports, are left out of the exported-symbols list,
+   so each image keeps its own emulated TLS (20.12). Test: `tests/cmake/run.sh`
    (both kinds), the export-list test, and the own suite in shared mode (Linux).
 5. **(M) The consumers.**
    - `ycxx-c++` (`YCXX_LINKAGE`), the pkg-config files and the Meson native files;
@@ -2687,33 +2690,55 @@ later revisions.
 7. **The demangler** prints `std::__y1::` (as libc++abi prints `std::__1`).
 8. **Sanitizer builds** of the shared library are deferred.
 
-**The macOS run** (`run-macos.sh` at `shared-lib-design` 5ccf4959; macOS 26.6, Apple M5 Pro,
-SDK 27.0, Apple clang 21.0.0, Clang 23.1.2, Homebrew GCC 16.2.0).
-- **Part 1, the plain-std set:** as on Linux. In `std::__y1`, `align_val_t` is ambiguous with
-  Clang and GCC (and does not link with Apple's clang); `terminate` does not link with Clang 23 and
-  Apple's clang; `byte` gives the wrong result with GCC; `destroying_delete_t` and
-  `initializer_list` fail with GCC only; `meta` is ambiguous with GCC; `type_info` works
-  everywhere.
-- **Part 2, dyld:** every check passes. The control reproduces half of §2's hazard: a plain-std
-  `current_exception` with default visibility is coalesced with `/usr/lib/libc++.1.dylib`'s,
-  while the `type_info` object stays the image's own. The same names in `std::__y1` with default
-  visibility are not coalesced, and neither are hidden plain-std names. An inline variable in two
-  dylibs loaded with `RTLD_LOCAL` gives two objects in both modes, as on ELF.
-- **Part 3, Clang:** both trees build; `libycxx.0.1.dylib` loads through `@rpath` with
-  compatibility version 0.1.0; the 13 compiler-known probes pass in both modes; all seven
-  arrangements with Apple's libc++ pass ("mine 31 other 31"); plugins share the runtime state
-  only between a shared host and a shared plugin; a program exports 3 symbols (1 weak), a plugin
-  8 (1 weak). The two failures were the probe's: the `_Float16` type_info objects exported (fixed
-  by keeping `rtti_float16.cpp` per image) and the allocation table flagged as a weak export
-  (it is weak and exported by design).
-- **Part 3, GCC:** the dylib link failed with three duplicate symbols, the `_Float16` type_info
-  objects, defined both by `rtti.cpp.o` (GCC on Darwin emits them non-weak) and by
-  `rtti_float16.cpp.o`. Latent in the static archives too: a static link pulls only one of the
-  two members, a `-force_load` link both. Fixed: `rtti_float16.cpp` is built only where the
-  configure-time probe shows that the compiler does not emit them, and `tests/cmake/run.sh` links
-  the whole of both archives into a shared library. The GCC half of part 3 (coexistence with
-  Apple's libc++ and Homebrew's libstdc++, the plugins) is to be rerun (`run-macos.sh 3` at
-  `shared-lib-design` da858a15).
+**The macOS runs** (`run-macos.sh` on macOS 26.6, Apple M5 Pro, SDK 27.0, Apple clang 21.0.0,
+Clang 23.1.2, Homebrew GCC 16.2.0; parts 1-3 at `shared-lib-design` 5ccf4959, part 3 again at
+da858a15). It answered the design's questions about Darwin:
+1. **The plain-std set is the same.** Apple's clang and Homebrew GCC agree with Clang 23 and
+   GCC on Linux. In `std::__y1`:
+   - `align_val_t` is ambiguous with Clang and GCC, and does not link with Apple's clang;
+   - `terminate` does not link with Clang 23 or Apple's clang;
+   - `byte` gives the wrong result with GCC;
+   - `destroying_delete_t` and `initializer_list` fail with GCC only;
+   - `meta` is ambiguous with GCC;
+   - `type_info` works everywhere.
+2. **The control half-reproduces §2's hazard.** A plain-std `current_exception` with default
+   visibility is coalesced with `/usr/lib/libc++.1.dylib`'s; the `type_info` object stays the
+   image's own.
+3. **Names in `std::__y1` with default visibility are left alone.**
+4. **Hidden plain-std names are left alone.**
+5. **An inline variable in two dylibs loaded with `RTLD_LOCAL` gives two objects** in both modes,
+   as on ELF.
+6. **`libycxx.0.1.dylib` exports only `std::__y1`, `__ycxx`, `__ycxx_abi_*` and the table**, and
+   its weak exports are all `std::__y1`/`__ycxx` plus the allocation table, which is weak and
+   exported by design. Clang passes everything. Two findings, both fixed:
+   - The `_Float16` type_info objects were exported (Clang), and GCC's dylib link failed on them
+     as duplicates. The cause was `rtti_float16.cpp` next to GCC's own non-weak copies. Now
+     `rtti_float16.cpp` is per image and built only for a compiler that does not emit the
+     objects; `tests/cmake/run.sh` links both archives whole.
+   - With GCC, `-static-libgcc` puts libgcc's emulated-TLS runtime in the dylib. Its state is
+     private, but `___emutls_get_address` and `___emutls_register_common` stay weak exports,
+     which dyld could coalesce with another GCC image's copy, mixing one image's state with
+     another's entry points. **Decision: hidden.** Each image keeps its own emulated TLS, through
+     step 4's Mach-O exported-symbols list (the probe uses `-unexported_symbol`).
+7. **The forwarders and the personality routine work on arm64** with both compilers: the known
+   battery passes in shared mode, 13 probes with Clang and 14 with GCC (`-static-libgcc`,
+   emulated TLS).
+8. **Catching works across images** with arm64's non-unique type_info names. The plugins share
+   the runtime state only between a shared host and a shared plugin ("shared-state 15").
+9. **A shared-mode library coexists with Apple's libc++** in all seven arrangements, with both
+   compilers, so exceptions also cross dylibs with GCC's unwinder. Against Homebrew's libstdc++,
+   the three directly linked arrangements pass.
+   - In the C host using `dlopen()`, the libstdc++ dylib scores 27 even alone, with no libycxx
+     in the process. Its `operator new`/`delete` imports are weak-def-coalesce, so dyld binds
+     them to Apple's libc++abi, which libSystem loads. libc++abi's `new_handler` then runs, and
+     its `bad_alloc` does not match libstdc++'s handler.
+   - That is §2's Darwin hazard hitting libstdc++ itself, not libycxx's doing. A libc++ dylib
+     alone scores 31.
+   - The probe now runs this control first and passes when libycxx leaves the other side's
+     score as the control has it.
+10. **`@rpath` and the compatibility version behave as designed** (`libycxx.0.1.dylib`,
+    compatibility version 0.1.0).
+11. **A shared-mode program exports 3 symbols (1 weak), a plugin 8 (1 weak).**
 
 Not covered by the script: `ld-prime`'s handling of wildcard `-exported_symbols_list` patterns.
 Step 4 checks that when it adds the list.

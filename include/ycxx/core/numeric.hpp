@@ -8,11 +8,47 @@
 #include <ycxx/core/limits.hpp>
 #include <ycxx/core/utility_base.hpp>
 
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+// accumulate of a contiguous range of integers into an integer at least as wide: each step is
+// init = T(init + x) in the common type C, which is arithmetic modulo 2^width (conversions to an
+// integer type are modular, [conv.integral]/3; a signed overflow would be undefined), so the
+// result is (init + sum of the x) reduced to T, whatever the order of the additions. Four
+// independent sums (in unsigned 64-bit arithmetic) instead of one dependency chain.
+template <class _Ip, class _Tp>
+concept __int_accumulate = std::contiguous_iterator<_Ip> && std::is_integral_v<std::iter_value_t<_Ip>> &&
+                           !std::is_same_v<std::iter_value_t<_Ip>, bool> && std::is_integral_v<_Tp> &&
+                           !std::is_same_v<_Tp, bool> && sizeof(std::iter_value_t<_Ip>) <= sizeof(_Tp) &&
+                           sizeof(_Tp) <= sizeof(unsigned long long) &&
+                           std::is_lvalue_reference_v<std::iter_reference_t<_Ip>> &&
+                           !std::is_volatile_v<std::remove_reference_t<std::iter_reference_t<_Ip>>>;
+template <class _Ip, class _Tp>
+_Tp __int_accumulate_impl(_Ip first, _Ip last, _Tp init) noexcept {
+  using _Cp = decltype(init + *first);
+  using _Up = unsigned long long;
+  const auto* p = std::to_address(first);
+  const auto* const e = p + (last - first);
+  _Up __s0 = static_cast<_Up>(static_cast<_Cp>(init)), __s1 = 0, __s2 = 0, __s3 = 0;
+  for (; e - p >= 4; p += 4) {
+    __s0 += static_cast<_Up>(static_cast<_Cp>(p[0]));
+    __s1 += static_cast<_Up>(static_cast<_Cp>(p[1]));
+    __s2 += static_cast<_Up>(static_cast<_Cp>(p[2]));
+    __s3 += static_cast<_Up>(static_cast<_Cp>(p[3]));
+  }
+  for (; p != e; ++p)
+    __s0 += static_cast<_Up>(static_cast<_Cp>(*p));
+  return static_cast<_Tp>(static_cast<_Cp>(__s0 + __s1 + __s2 + __s3));
+}
+}} // namespace __ycxx::__detail
+
 namespace [[__gnu__::__visibility__("hidden")]] std {
 
 // [accumulate]
 template <class _InputIterator, class _Tp>
 constexpr _Tp accumulate(_InputIterator first, _InputIterator last, _Tp init) {
+  if constexpr (::__ycxx::__detail::__int_accumulate<_InputIterator, _Tp>)
+    if !consteval {
+      return ::__ycxx::__detail::__int_accumulate_impl(first, last, init);
+    }
   for (; first != last; ++first)
     init = std::move(init) + *first;
   return init;

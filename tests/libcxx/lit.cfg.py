@@ -50,7 +50,7 @@ features = {
 import platform
 _machine = {'amd64': 'x86_64'}.get(platform.machine().lower(), platform.machine().lower())
 if platform.system() == 'Darwin':
-    features |= {f'target={_machine}-apple-macosx{platform.mac_ver()[0]}', 'darwin'}
+    features |= {f'target={_machine}-apple-macosx{platform.mac_ver()[0]}', 'darwin', f'{compiler}-darwin'}
 else:
     features |= {f'target={_machine}-pc-linux-gnu', 'linux'}
 if compiler == 'clang':

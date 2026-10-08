@@ -252,6 +252,11 @@ function(_ycxx_install_clang)
     list(APPEND keep "${asset}/bin/${tool}")
   endforeach()
   list(APPEND keep "${asset}/lib/clang")
+  if(_ycxx_host STREQUAL "Darwin")
+    # Clang on Darwin passes -lto_library <prefix>/lib/libLTO.dylib to Apple's ld on every link
+    # (a warning when the file is missing, a failure with -flto).
+    list(APPEND keep "${asset}/lib/libLTO*")
+  endif()
   message(STATUS "libycxx toolchain: extracting Clang from ${asset} (a few minutes)")
   file(ARCHIVE_EXTRACT INPUT "${YCXX_TOOLCHAINS}/${asset}.tar.xz" DESTINATION "${YCXX_TOOLCHAINS}"
        PATTERNS ${keep})

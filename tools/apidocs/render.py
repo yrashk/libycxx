@@ -758,8 +758,8 @@ def render(work, out, draft, cppref, cppref_out, headers, repo=None, exported=No
         groups.setdefault(h[0] if not syn.get(h) else clause, []).append(h)
     body = ['<article class="ref ref-index">',
             '<header class="ref-head"><p class="label">API reference · libycxx</p><h1 class="ref-name"><span class="ref-leaf">The C++26 standard library, as libycxx declares it</span></h1>',
-            '<p class="lede">Every entity the <code>std</code> module exports, with its synopsis as libycxx declares it, '
-            'generated from the headers by MrDocs. Each page names the header, the section of the working draft '
+            '<p class="lede">Every entity the <code>std</code> module exports, with its synopsis as libycxx declares it. '
+            'Each page names the header, the section of the working draft '
             'and the cppreference page; the specification itself is the draft.</p>',
             f'<dl class="facts ref-facts"><div><dt>Headers</dt><dd>{len(public)}</dd></div>'
             f'<div><dt>Entities</dt><dd>{len(top):,} at namespace scope, {len(canonical):,} with members</dd></div>'

@@ -127,6 +127,10 @@ def std_module():
         m = re.match(r'using (std::[\w:]+);$', s)
         if m:
             names.append(m.group(1))
+            # An inline namespace's members are also named without it (std::ranges::begin,
+            # declared in std::ranges::__cpo).
+            if '::__cpo::' in m.group(1):
+                names.append(m.group(1).replace('::__cpo::', '::'))
         m = re.match(r'namespace (\w+) = (std::[\w:]+);$', s)
         if m:
             names.append(m.group(2))
@@ -176,7 +180,8 @@ def prepare(work, mrdocs, headers, exported, a):
     shutil.copytree(share / 'addons', addons)
     shutil.copytree(APIDOCS / 'addons', addons, dirs_exist_ok=True)
     cfg = (APIDOCS / 'mrdocs.yml.in').read_text()
-    include = ''.join(f"  - '{n}'\n" for n in exported)
+    cpo_scopes = sorted({n.split('::__cpo::')[0] + '::*' for n in exported if '::__cpo::' in n})
+    include = ''.join(f"  - '{n}'\n" for n in exported + cpo_scopes)
     cfg = (cfg.replace('@SOURCE_ROOT@', str(REPO / 'include'))
               .replace('@COMPILATION_DATABASE@', str(work / 'compile_commands.json'))
               .replace('@ADDONS@', str(addons))
@@ -233,7 +238,7 @@ def main():
         archive = fetch(CPPREF_URL, BUILD / 'cache' / pathlib.Path(CPPREF_URL).name, CPPREF_SHA256)
         cppref = cppref_mod.Archive(archive, BUILD / 'cache' / f'cppreference-{CPPREF_VERSION}', CPPREF_VERSION, CPPREF_URL)
     render.render(work, pathlib.Path(a.out), json.loads((APIDOCS / 'draft-map.json').read_text()),
-                  cppref, pathlib.Path(a.cppref_out), headers)
+                  cppref, pathlib.Path(a.cppref_out), headers, exported=exported)
 
 
 if __name__ == '__main__':

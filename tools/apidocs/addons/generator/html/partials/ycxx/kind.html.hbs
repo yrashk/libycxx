@@ -1,10 +1,10 @@
 {{!-- The kind of a symbol, in the words the standard uses. Expected context: {Symbol Object} --}}
 {{~#if (eq kind "namespace")}}namespace
 {{~else if (eq kind "record")~}}
-  {{~#if (eq template.kind "partial")}}{{tag}} template partial specialization
-  {{~else if (eq template.kind "explicit")}}{{tag}} template specialization
-  {{~else if template}}{{tag}} template
-  {{~else}}{{tag}}{{/if~}}
+  {{~#if (eq template.kind "partial")}}{{> ycxx/class-key . }} template partial specialization
+  {{~else if (eq template.kind "explicit")}}{{> ycxx/class-key . }} template specialization
+  {{~else if template}}{{> ycxx/class-key . }} template
+  {{~else}}{{> ycxx/class-key . }}{{/if~}}
   {{~#if (eq parent.kind "record")}} · nested{{/if~}}
 {{~else if (eq kind "overloads")~}}
   {{~#with (front members)~}}{{> ycxx/kind-function . }}{{~/with}} · {{size members}} overloads

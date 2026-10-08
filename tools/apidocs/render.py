@@ -29,18 +29,19 @@ KEEP_RESERVED = {'__ycxx', '__detail', '__adl_free', '__cpo'}
 _TAG = re.compile(r'(<[^>]+>)')
 _TOK = re.compile(r'''(?P<c>/\*.*?\*/|//[^\n]*)|(?P<s>"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*')|(?P<n>\b\d[\w.']*)|(?P<i>[A-Za-z_]\w*)|(?P<o>.)''', re.S)
 _ATTR = re.compile(r'\[\[[^\[\]]*\]\]\s*')
-# A reserved name of a parameter or template parameter (not one followed by :: or <, which names
-# one of libycxx's own types or templates and is left alone, so the leak check sees it).
-_RESERVED = re.compile(r'(?<![\w:])(?:_([A-Z]\w*)|__([a-z]\w*))\b(?!\s*(?:::|<))')
-# A name of libycxx's own namespaces in a declaration (a constraint, a default argument): shown as
-# the draft shows its exposition-only names, in italics and hyphenated (execution-policy).
+# Reserved names: libycxx spells a template parameter _Xp (the draft's X) and a function
+# parameter __x (the draft's x); both are shown as the draft spells them. Any other reserved name
+# that reaches a page (a private member type used in a public declaration, __traits::int_type)
+# is shown as the draft shows its exposition-only names: in italics and hyphenated.
+_RESERVED = re.compile(r'(?<![\w])(?:_([A-Z]\w*)|(?<!::)__([a-z]\w*)\b(?!\s*(?:::|<)))')
+_OTHER_RESERVED = re.compile(r'(?<![\w])__[a-z]\w*')
 _INTERNAL = re.compile(r'(?:::)?__ycxx::(?:\w+::)*(\w+)')
 
 
 def plain_name(m):
     """_Tp -> Tp... the standard's T: libycxx's reserved spellings of the draft's names."""
     whole = m.group(0)
-    if whole in KEEP_RESERVED or whole.startswith('__ycxx'):
+    if whole in KEEP_RESERVED or whole.startswith('__ycxx') or whole in ('_Exit',):
         return whole
     name = m.group(1) or m.group(2)
     return {'Tp': 'T', 'Up': 'U', 'Ip': 'I', 'Sp': 'S', 'Rp': 'R', 'Fp': 'F', 'Vp': 'V', 'Np': 'N',
@@ -145,15 +146,19 @@ def expo_name(name):
 
 
 def _expo(segs):
+    """Split out libycxx's internal names (shown in italics as exposition-only names)."""
     out = []
     for k, s in segs:
-        if k != 'text' or '__ycxx' not in s:
+        if k != 'text' or '__' not in s:
             out.append((k, s))
             continue
         pos = 0
-        for m in _INTERNAL.finditer(s):
-            out.append(('text', s[pos:m.start()]))
-            out.append(('expo', (expo_name(m.group(1)), m.group(0).lstrip(':'))))
+        for m in re.finditer(_INTERNAL.pattern + '|' + _OTHER_RESERVED.pattern, s):
+            whole = m.group(0).lstrip(':')
+            if whole in KEEP_RESERVED - {'__ycxx', '__detail', '__adl_free'}:
+                continue
+            out.append(('text', s[pos:m.start()] + (':: ' if False else '')))
+            out.append(('expo', (expo_name(m.group(1) or whole), whole)))
             pos = m.end()
         out.append(('text', s[pos:]))
     return out
@@ -206,14 +211,24 @@ _CODE = re.compile(r'(<code class="cpp">)(.*?)(</code>)', re.S)
 
 def clean_visible(text):
     """The reserved spellings in the page's visible text outside the synopses (titles, breadcrumbs)."""
-    def fix(seg):
-        return seg if seg.startswith('<') else _RESERVED.sub(plain_name, seg)
+    def fix(seg, tags=True):
+        if seg.startswith('<'):
+            return seg
+        seg = _RESERVED.sub(plain_name, seg)
+        rx = re.compile(_INTERNAL.pattern + '|' + _OTHER_RESERVED.pattern)
+        def rep(m):
+            whole = m.group(0).lstrip(':')
+            name = expo_name(m.group(1) or whole)
+            if not tags:
+                return name
+            return f'<i class="expo" title="exposition only; libycxx: {html.escape(whole)}">{html.escape(name)}</i>'
+        return rx.sub(rep, seg)
     a = text.find('<main id="main">')
     t0 = text.find('<title>')
     head = text[:a]
     if t0 >= 0:
         t1 = text.index('</title>', t0)
-        head = text[:t0] + ''.join(fix(x) for x in _TAG.split(text[t0:t1])) + text[t1:a]
+        head = text[:t0] + ''.join(fix(x, False) for x in _TAG.split(text[t0:t1])) + text[t1:a]
     return head + ''.join(fix(x) for x in _TAG.split(text[a:]))
 
 
@@ -424,18 +439,89 @@ def entity_list(items, depth):
         out.append(f'<section class="ref-sec" aria-labelledby="g-{gid}"><h2 id="g-{gid}">{g} <span class="count">{len(by[g])}</span></h2>'
                    '<ul class="entity-list">')
         for pg in sorted(by[g], key=lambda p: p.q.lower()):
-            leaf = pg.q.split('::')[-1]
-            scope = pg.q[:-len(leaf)]
+            scope, leaf = split_scope(pg.q)
             out.append(f'<li><a href="{root}{pg.rel}"><code><span class="ref-scope">{html.escape(scope)}</span>{html.escape(leaf)}</code></a>'
                        f'<span class="m-kind">{html.escape(pg.label)}</span></li>')
         out.append('</ul></section>')
     return ''.join(out)
 
 
-def render(work, out, draft, cppref, cppref_out, headers, repo=None):
+def display_q(q):
+    """A qualified name as the reader sees it (reserved spellings as the draft spells them)."""
+    q = _RESERVED.sub(plain_name, q)
+    return re.sub(_INTERNAL.pattern + '|' + _OTHER_RESERVED.pattern, lambda m: expo_name(m.group(1) or m.group(0)), q)
+
+
+def split_scope(q):
+    """('std::ranges::', 'sort'): q split after its last :: outside template arguments."""
+    depth, cut = 0, 0
+    for i, ch in enumerate(q):
+        if ch == '<':
+            depth += 1
+        elif ch == '>':
+            depth -= 1
+        elif depth == 0 and q.startswith('::', i):
+            cut = i + 2
+    return q[:cut], q[cut:]
+
+
+def _bare(q):
+    """q without template arguments: std::hash<vector<bool>>::operator() -> std::hash::operator()."""
+    out, depth = [], 0
+    for ch in q:
+        if ch == '<':
+            depth += 1
+        elif ch == '>':
+            depth -= 1
+        elif depth == 0:
+            out.append(ch)
+    return ''.join(out)
+
+
+_RESERVED_PART = re.compile(r'^(?:__|_[A-Z])')
+
+
+def public_pages(pages, exported):
+    """The pages of the std module's exports and their members; not members with reserved names
+    (a hook between libycxx's own classes) nor what the module does not export."""
+    if not exported:
+        return pages, set()
+    allowed = {n.replace('::__cpo::', '::') for n in exported}
+    scopes = set()
+    for n in allowed:
+        parts = n.split('::')
+        scopes.update('::'.join(parts[:i]) for i in range(1, len(parts)))
+    kinds = collections.defaultdict(set)
+    for pg in pages:
+        kinds[_bare(pg.q)].add(pg.kind)
+    memo = {}
+
+    def ok(q):
+        if q in memo:
+            return memo[q]
+        parts = q.split('::')
+        if not q.startswith('std'):
+            r = True                     # the global allocation functions, the C library's types
+        elif any(_RESERVED_PART.match(x) for x in parts):
+            r = False
+        elif q in allowed or q in scopes:
+            r = True
+        elif len(parts) > 1:
+            parent = '::'.join(parts[:-1])
+            r = bool(kinds[parent] & {'record', 'enum'}) and ok(parent)
+        else:
+            r = False
+        memo[q] = r
+        return r
+    keep = [pg for pg in pages if ok(_bare(pg.q))]
+    gone = {pg.rel for pg in pages if not ok(_bare(pg.q))}
+    return keep, gone
+
+
+def render(work, out, draft, cppref, cppref_out, headers, repo=None, exported=None):
     repo = repo or pathlib.Path(__file__).resolve().parents[2]
     src = work / 'out-html'
-    pages = load_pages(src)
+    pages, gone = public_pages(load_pages(src), exported)
     public = set(headers)
     users = include_graph(repo, public)
     resolve(pages, draft, public, users)
@@ -465,6 +551,8 @@ def render(work, out, draft, cppref, cppref_out, headers, repo=None):
                 return m.group(0)
             path, _, frag = href.partition('#')
             target = posixpath.normpath(posixpath.join(here, path))
+            if target in gone:
+                return 'href="#ycxx-gone"'
             if target in moved:
                 return 'href="' + posixpath.relpath(moved[target], here or '.') + ('#' + frag if frag else '') + '"'
             return m.group(0)
@@ -475,7 +563,12 @@ def render(work, out, draft, cppref, cppref_out, headers, repo=None):
     out.mkdir(parents=True)
     for pg in pages:
         depth = pg.rel.count('/')
-        text = relink(pg, pg.text) if moved else pg.text
+        text = relink(pg, pg.text) if (moved or gone) else pg.text
+        if '#ycxx-gone' in text:
+            # Rows of members that are not part of the API go; other mentions stay as text.
+            text = re.sub(r'<tr>(?:(?!</tr>).)*?href="#ycxx-gone".*?</tr>\n?', '', text, flags=re.S)
+            text = re.sub(r'<a href="#ycxx-gone">(.*?)</a>', r'\1', text, flags=re.S)
+            text = re.sub(r'<section class="ref-sec" aria-labelledby="[^"]*">\s*<h2[^>]*>[^<]*</h2>\s*<div class="table-wrap"><table class="data members">\s*<thead>.*?</thead>\s*<tbody>\s*</tbody></table></div>\s*</section>', '', text, flags=re.S)
         text = text.replace('<!--ycxx:facts-->', facts(pg, cpp_map.get(pg.q), draft))
         text = clean_visible(highlight_page(text))
         text = fill(text, depth, pg.header or '')
@@ -554,11 +647,11 @@ def render(work, out, draft, cppref, cppref_out, headers, repo=None):
     # The sidebar's index and the search index.
     nav = {'headers': {}, 'namespaces': []}
     for h in sorted(public):
-        nav['headers'][h] = [[pg.q, pg.rel, group_of(pg.label)[0]] for pg in sorted(by_header.get(h, []), key=lambda p: p.q.lower())
+        nav['headers'][h] = [[display_q(pg.q), pg.rel, group_of(pg.label)[0]] for pg in sorted(by_header.get(h, []), key=lambda p: p.q.lower())
                              if '<' not in pg.q]
     nav['namespaces'] = [[pg.q, pg.rel] for pg in namespaces]
     (out / 'nav.json').write_text(json.dumps(nav, separators=(',', ':')), encoding='utf-8')
-    search = [[pg.q, pg.label, pg.rel, pg.header or ''] for pg in sorted(canonical.values(), key=lambda p: (p.q.count('::'), len(p.q), p.q))
+    search = [[display_q(pg.q), pg.label, pg.rel, pg.header or ''] for pg in sorted(canonical.values(), key=lambda p: (p.q.count('::'), len(p.q), p.q))
               if pg.q and pg.rel != 'index.html' and '<' not in pg.q]
     (out / 'search.json').write_text(json.dumps(search, separators=(',', ':')), encoding='utf-8')
     if cpp_map:

@@ -94,6 +94,7 @@
 pre.cpp a,code.cpp a{color:inherit;text-decoration:underline;text-decoration-color:var(--rule);text-underline-offset:.2em}
 pre.cpp a:hover,code.cpp a:hover{color:var(--accent);text-decoration-color:currentColor}
 .t-t{color:var(--t-type)}
+i.expo{font-style:italic;color:var(--code-v);cursor:help}
 .t-n{color:var(--code-s)}
 
 /* members */

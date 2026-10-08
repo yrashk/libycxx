@@ -245,7 +245,7 @@ _ARTICLE = re.compile(r'<article class="ref" data-kind="([^"]*)" data-q="([^"]*)
 
 
 class Page:
-    __slots__ = ('path', 'rel', 'kind', 'q', 'file', 'label', 'header', 'headers', 'sec', 'cppref', 'text')
+    __slots__ = ('path', 'rel', 'orig', 'kind', 'q', 'file', 'label', 'header', 'headers', 'sec', 'cppref', 'text')
 
 
 def load_pages(src):
@@ -627,19 +627,62 @@ def render(work, out, draft, cppref, cppref_out, headers, repo=None, exported=No
              if pg.kind == 'function' and canonical[pg.q] is not pg and canonical[pg.q].kind == 'overloads'}
     pages = [pg for pg in pages if pg.rel not in moved]
 
+    # Plain URLs: MrDocs names a page name-xx.html when several symbols share its name (a class
+    # and its deduction guides, its specializations); the entity's own page takes name.html
+    # (and its members' directory name/) whenever nothing else has it.
+    for pg in pages:
+        pg.orig = pg.rel
+    taken = {pg.rel for pg in pages}
+    dirs = set()
+    for r in taken:
+        parts = r.split('/')
+        dirs.update('/'.join(parts[:i]) for i in range(1, len(parts)))
+    order = {'namespace': 0, 'record': 1, 'concept': 2, 'enum': 2, 'typedef': 3, 'overloads': 4, 'variable': 5, 'function': 6}
+    file_new, dir_new = {}, {}
+    for pg in sorted({id(p): p for p in canonical.values()}.values(), key=lambda p: (order.get(p.kind, 9), p.rel)):
+        if pg.rel in gone or pg.rel in moved:
+            continue
+        d, base = posixpath.split(pg.rel)
+        m = re.match(r'^(.+)-[0-9a-f]{2,4}\.html$', base)
+        if not m:
+            continue
+        clean = posixpath.join(d, m.group(1))
+        old_dir = pg.rel[:-5]
+        if clean + '.html' in taken or (clean in dirs and clean != old_dir):
+            continue
+        taken.add(clean + '.html')
+        dirs.add(clean)
+        file_new[pg.rel] = m.group(1) + '.html'
+        if old_dir in dirs:
+            dir_new[old_dir] = m.group(1)
+
+    def final(orig):
+        parts = orig.split('/')
+        for i in range(len(parts) - 1):
+            key = '/'.join(orig.split('/')[:i + 1])
+            if key in dir_new:
+                parts[i] = dir_new[key]
+        if orig in file_new:
+            parts[-1] = file_new[orig]
+        return '/'.join(parts)
+
+    for pg in pages:
+        pg.rel = final(pg.orig)
+
     def relink(pg, text):
-        here = posixpath.dirname(pg.rel)
+        here, new_here = posixpath.dirname(pg.orig), posixpath.dirname(pg.rel)
         def fix(m):
             href = m.group(1)
             if '://' in href or href.startswith(('#', 'mailto:', '<!--')):
                 return m.group(0)
             path, _, frag = href.partition('#')
+            if not path:
+                return m.group(0)
             target = posixpath.normpath(posixpath.join(here, path))
             if target in gone:
                 return 'href="#ycxx-gone"'
-            if target in moved:
-                return 'href="' + posixpath.relpath(moved[target], here or '.') + ('#' + frag if frag else '') + '"'
-            return m.group(0)
+            target = final(moved.get(target, target))
+            return 'href="' + posixpath.relpath(target, new_here or '.') + ('#' + frag if frag else '') + '"'
         return re.sub(r'href="([^"]+)"', fix, text)
 
     calls = call_signatures(work / 'out-fo', fobjs)
@@ -648,7 +691,7 @@ def render(work, out, draft, cppref, cppref_out, headers, repo=None, exported=No
     out.mkdir(parents=True)
     for pg in pages:
         depth = pg.rel.count('/')
-        text = relink(pg, pg.text) if (moved or gone) else pg.text
+        text = relink(pg, pg.text)
         if '#ycxx-gone' in text:
             # Rows of members that are not part of the API go; other mentions stay as text.
             text = re.sub(r'<tr>(?:(?!</tr>).)*?href="#ycxx-gone".*?</tr>\n?', '', text, flags=re.S)
@@ -732,7 +775,7 @@ def render(work, out, draft, cppref, cppref_out, headers, repo=None, exported=No
     # Global-namespace page of MrDocs (its index.html) moves aside.
     g = next((pg for pg in pages if pg.rel == 'index.html'), None)
     if g is not None:
-        (out / 'global.html').write_text(fill(highlight_page(g.text.replace('<!--ycxx:facts-->', '')), 0), encoding='utf-8')
+        (out / 'global.html').write_text(fill(clean_visible(highlight_page(relink(g, g.text).replace('<!--ycxx:facts-->', ''))), 0), encoding='utf-8')
 
     # The sidebar's index and the search index.
     nav = {'headers': {}, 'namespaces': []}

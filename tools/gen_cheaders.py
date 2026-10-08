@@ -253,7 +253,11 @@ MACROS = {"cwchar": version_macro("WCHAR") + [
               "// output of its printf, measured when libycxx is configured (cmake/ycxx-c-library.cmake).",
               "#if !defined(_PRINTF_NAN_LEN_MAX) && defined(YCXX_C_PRINTF_NAN_LEN_MAX)",
               "#  define _PRINTF_NAN_LEN_MAX YCXX_C_PRINTF_NAN_LEN_MAX", "#endif", ""], "ctime": version_macro("TIME"),
-          "cinttypes": version_macro("INTTYPES") + inttypes_binary(), "csetjmp": version_macro("SETJMP")}
+          "cinttypes": version_macro("INTTYPES") + inttypes_binary(), "csetjmp": version_macro("SETJMP") + [
+              "// [csetjmp.syn]: setjmp is a macro. C leaves it unspecified whether setjmp is a macro or",
+              "// an identifier with external linkage (C23 7.13), and Darwin's <setjmp.h> declares only the",
+              "// function: the macro then names it.",
+              "#ifndef setjmp", "#  define setjmp(env) setjmp(env)", "#endif", ""]}
 # Global-scope redeclarations, emitted before namespace std.
 GLOBAL = {"cstdlib": [
     "#if YCXX_HOSTED",

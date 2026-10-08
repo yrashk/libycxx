@@ -517,8 +517,9 @@ tooling.
   libycxx's, which goes through `ycxx_pal_thread_atexit`. Arming the sentinel only there and at
   the first action (the first G7 design) made a thread_local constructed before a thread's first
   `*_at_thread_exit` call outlive the actions on macOS with Clang, and only there (the macOS CI
-  failures of `at_thread_exit_by_*` and `review_at_thread_exit_retry`). So the POSIX PAL arms it
-  where no thread_local of the thread can have been constructed yet:
+  failures of `at_thread_exit_by_*`, `review_at_thread_exit_retry` and
+  `thread/many_at_thread_exit_registrations`, Clang only: CI run 240, where GCC passed them all).
+  So the POSIX PAL arms it where no thread_local of the thread can have been constructed yet:
   - a thread `ycxx_pal_thread_create` starts (`thread`, `jthread`, `async`, the parallel
     scheduler) arms it before its initial function runs (the PAL's start routine wraps the
     caller's; one more allocation and one registration per thread, about 0.2 µs on Linux against
@@ -542,8 +543,9 @@ tooling.
   `_by_exit` (the main thread) point at the initializer (it ran after the program's first
   thread_local, or `_tlv_atexit` before `main` does not reach the list `exit` runs); failures in
   `at_thread_exit_by_thread_exit` (a std::thread calling `exit`), `at_thread_exit`,
-  `review_at_thread_exit_retry`, `linkage/thread_local_at_thread_exit` or
-  `condition_variable/notify_all_at_thread_exit` point at the start routine's registration, and
+  `review_at_thread_exit_retry`, `thread/many_at_thread_exit_registrations` (300 thread_local
+  destructors per thread, so also the LIFO order at length), `linkage/thread_local_at_thread_exit`
+  or `condition_variable/notify_all_at_thread_exit` point at the start routine's registration, and
   failures everywhere, GCC included, at the LIFO premise itself.
   What remains ordered by first use only, on Darwin with Clang: a thread the program starts
   itself (`pthread_create`) and a thread_local of the main thread constructed by the program's

@@ -1,0 +1,144 @@
+diff -ruN orig/include/initializer_list edit/include/initializer_list
+--- orig/include/initializer_list	2026-10-08 13:34:12.000000000 +0000
++++ edit/include/initializer_list	2026-10-08 13:51:52.068607153 +0000
+@@ -5,7 +5,8 @@
+ #include <ycxx/core/cstddef.hpp>
+ #include <ycxx/core/version.hpp>
+ 
+-namespace [[__gnu__::__visibility__("hidden")]] std {
++namespace [[__gnu__::__visibility__("hidden")]] std { // y1:plain
++// GCC deduces auto from a braced list (range-for included) only with std::initializer_list.
+ 
+ // Layout {pointer, size} is what both GCC and Clang construct for braced-init-lists.
+ template <class _Ep>
+diff -ruN orig/include/ycxx/core/cstddef.hpp edit/include/ycxx/core/cstddef.hpp
+--- orig/include/ycxx/core/cstddef.hpp	2026-10-08 13:34:12.000000000 +0000
++++ edit/include/ycxx/core/cstddef.hpp	2026-10-08 13:59:57.265410837 +0000
+@@ -17,7 +17,8 @@
+ typedef decltype(static_cast<int*>(nullptr) - static_cast<int*>(nullptr)) ptrdiff_t;
+ typedef decltype(nullptr) nullptr_t;
+ 
+-namespace [[__gnu__::__visibility__("hidden")]] std {
++// GCC lets std::byte alias any object only in plain std (a may_alias rule by name).
++namespace [[__gnu__::__visibility__("hidden")]] std { // y1:plain
+ using ::size_t;
+ using ::ptrdiff_t;
+ using ::nullptr_t;
+diff -ruN orig/include/ycxx/core/exception.hpp edit/include/ycxx/core/exception.hpp
+--- orig/include/ycxx/core/exception.hpp	2026-10-08 13:34:12.000000000 +0000
++++ edit/include/ycxx/core/exception.hpp	2026-10-08 13:55:40.882483990 +0000
+@@ -21,7 +21,14 @@
+ using terminate_handler = void (*)();
+ terminate_handler get_terminate() noexcept;
+ terminate_handler set_terminate(terminate_handler __f) noexcept;
++} // namespace std
++
++// Clang's __clang_call_terminate calls std::terminate by its mangled name (_ZSt9terminatev).
++namespace [[__gnu__::__visibility__("hidden")]] std { // y1:plain
+ [[noreturn]] void terminate() noexcept;
++} // namespace std
++
++namespace [[__gnu__::__visibility__("hidden")]] std {
+ int uncaught_exceptions() noexcept;
+ 
+ } // namespace std
+diff -ruN orig/include/ycxx/core/meta_reflection.hpp edit/include/ycxx/core/meta_reflection.hpp
+--- orig/include/ycxx/core/meta_reflection.hpp	2026-10-08 13:34:12.000000000 +0000
++++ edit/include/ycxx/core/meta_reflection.hpp	2026-10-08 13:52:32.554468743 +0000
+@@ -35,7 +35,7 @@
+ #include <ycxx/core/variant.hpp>
+ #include <ycxx/core/vector.hpp>
+ 
+-namespace [[__gnu__::__visibility__("hidden")]] std { namespace meta {
++namespace [[__gnu__::__visibility__("hidden")]] std { namespace meta { // y1:plain
+ using info = decltype(^^::);
+ class exception;
+ }} // namespace std::meta
+@@ -107,6 +107,10 @@
+ consteval bool is_string_literal(const char16_t* p) { return __builtin_is_string_literal(p); }
+ consteval bool is_string_literal(const char32_t* p) { return __builtin_is_string_literal(p); }
+ 
++} // namespace std
++
++// GCC predeclares namespace std::meta (-freflection) and evaluates the metafunctions declared there.
++namespace [[__gnu__::__visibility__("hidden")]] std { // y1:plain
+ namespace meta {
+ 
+ // [meta.reflection.exception]
+@@ -555,6 +559,9 @@
+ }
+ 
+ } // namespace meta
++} // namespace std
++
++namespace [[__gnu__::__visibility__("hidden")]] std {
+ 
+ // [meta.define.static]
+ template <ranges::input_range _Rp>
+diff -ruN orig/include/ycxx/core/new.hpp edit/include/ycxx/core/new.hpp
+--- orig/include/ycxx/core/new.hpp	2026-10-08 13:34:12.000000000 +0000
++++ edit/include/ycxx/core/new.hpp	2026-10-08 13:48:25.489677917 +0000
+@@ -5,7 +5,8 @@
+ #include <ycxx/core/exception_base.hpp>
+ #include <ycxx/core/error.hpp>
+ 
+-namespace [[__gnu__::__visibility__("hidden")]] std {
++namespace [[__gnu__::__visibility__("hidden")]] std { // y1:plain
++// Named by the compilers (predeclared align_val_t) and by the replaceable functions' mangled names.
+ 
+ struct destroying_delete_t {
+   explicit destroying_delete_t() = default;
+@@ -19,6 +20,9 @@
+ };
+ // [new.syn]: declared extern. Defined by the ABI runtime (hosted) or libycxx-freestanding.a.
+ extern const nothrow_t nothrow;
++} // namespace std
++
++namespace [[__gnu__::__visibility__("hidden")]] std {
+ 
+ using new_handler = void (*)();
+ new_handler get_new_handler() noexcept;
+diff -ruN orig/src/abi/exception.cpp edit/src/abi/exception.cpp
+--- orig/src/abi/exception.cpp	2026-10-08 13:34:12.000000000 +0000
++++ edit/src/abi/exception.cpp	2026-10-08 13:55:40.882914607 +0000
+@@ -355,7 +355,11 @@
+ terminate_handler get_terminate() noexcept {
+   return __atomic_load_n(&__ycxx::__abi::terminate_handler_v, __ATOMIC_ACQUIRE);
+ }
++} // namespace std
++namespace [[__gnu__::__visibility__("hidden")]] std { // y1:plain
+ [[noreturn]] void terminate() noexcept { __ycxx::__abi::call_terminate_handler(get_terminate()); }
++} // namespace std
++namespace [[__gnu__::__visibility__("hidden")]] std {
+ 
+ int uncaught_exceptions() noexcept { return static_cast<int>(__ycxx::__abi::__globals()->uncaught_exceptions); }
+ 
+diff -ruN orig/src/abi/support.cpp edit/src/abi/support.cpp
+--- orig/src/abi/support.cpp	2026-10-08 13:34:12.000000000 +0000
++++ edit/src/abi/support.cpp	2026-10-08 13:55:40.883390597 +0000
+@@ -31,9 +31,11 @@
+ 
+ } // extern "C"
+ 
+-namespace [[__gnu__::__visibility__("hidden")]] std {
+-
++namespace [[__gnu__::__visibility__("hidden")]] std { // y1:plain
+ const nothrow_t nothrow{};
++} // namespace std
++
++namespace [[__gnu__::__visibility__("hidden")]] std {
+ 
+ new_handler set_new_handler(new_handler __f) noexcept { return __atomic_exchange_n(&new_handler_v, __f, __ATOMIC_ACQ_REL); }
+ new_handler get_new_handler() noexcept { return __atomic_load_n(&new_handler_v, __ATOMIC_ACQUIRE); }
+diff -ruN orig/src/freestanding/new/nothrow.cpp edit/src/freestanding/new/nothrow.cpp
+--- orig/src/freestanding/new/nothrow.cpp	2026-10-08 13:34:12.000000000 +0000
++++ edit/src/freestanding/new/nothrow.cpp	2026-10-08 13:55:40.883822434 +0000
+@@ -6,7 +6,7 @@
+ #include <ycxx/core/error.hpp>
+ 
+ // [new.syn]: the object std::nothrow (hosted builds get it from the ABI runtime).
+-namespace [[__gnu__::__visibility__("hidden")]] std {
++namespace [[__gnu__::__visibility__("hidden")]] std { // y1:plain
+ extern const nothrow_t nothrow;
+ const nothrow_t nothrow{};
+ } // namespace std

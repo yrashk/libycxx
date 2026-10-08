@@ -1,5 +1,6 @@
 // The inline ABI namespace std::__y1 (DECISIONS §20.4-20.5): a construct the compilers handle
 // specially still works with libycxx's declarations.
+// UNSUPPORTED-SANITIZER: asan  ASan replaces the global allocation functions: its operator new neither calls the new_handler nor throws for impossible sizes, and its other forms do not forward to a program's replacement ([new.delete])
 // REQUIRES: exceptions
 // The exception classes the runtime throws for the compiler: std::bad_array_new_length
 // (__cxa_throw_bad_array_new_length, GCC) and std::bad_alloc; std::terminate from a noexcept function

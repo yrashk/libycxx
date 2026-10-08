@@ -615,6 +615,14 @@ a defect in a test.
   `compare` and the byte `find` of the algorithms call the builtins through non-constexpr inline
   functions (`ycxx/core/mem_builtins.hpp`), which the constant evaluator does not fold; own test
   `string_view/find_folded_offset`.
+- GCC 16.2 at -O2 (C and C++; not -O1, not with `-fno-ipa-modref` or `-fno-tree-pta`, not
+  Clang) folds `f == a + 4` to false where `f` is the pointer a non-inlined function returns after
+  walking from `a` to `a + 4`, one past the end of the caller's local array `a`, although `f - a`
+  is 4: `__attribute__((noinline)) int* fill(int* p, int* e) { for (; p != e; ++p) *p = 1; return
+  p; }` and `int a[4]; fill(a, a + 4) == a + 4` is 0. The nightly's -O2 job met it in
+  `memory/ranges_uninitialized_parallel` (the returned end iterator of
+  `ranges::uninitialized_default_construct`), which now checks the distance. Not worked around in
+  the library: any function returning such a pointer is affected.
 - GCC 16.2 assumes by default (`-fassume-sane-operators-new-delete`) that the replaceable global
   allocation and deallocation functions neither read nor change global state their callers see;
   a program's replacements may ([replacement.functions]). At -O2 a counter a replacement

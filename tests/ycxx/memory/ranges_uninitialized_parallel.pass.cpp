@@ -76,7 +76,9 @@ void run(Pol&& pol) {
     const T four(4);
     CHECK(rg::uninitialized_fill_n(pol, s.p(), 2, four) == s.p() + 2 && live == 8 && s.p()[1].v == 4);
     rg::destroy_n(pol, s.p(), 2);
-    CHECK(rg::uninitialized_default_construct(pol, s.p(), s.p() + 4) == s.p() + 4 && s.p()[2].v == -7);
+    // The returned iterator is checked as a distance: GCC 16.2 at -O2 folds a returned pointer's
+    // == with one past the end of a local to false (STATUS.md, known compiler bugs).
+    CHECK(rg::uninitialized_default_construct(pol, s.p(), s.p() + 4) - s.p() == 4 && s.p()[2].v == -7);
     CHECK(live == 10);
     rg::destroy(pol, s.span());
     CHECK(rg::uninitialized_value_construct_n(pol, s.p(), 3) == s.p() + 3 && live == 9);

@@ -183,14 +183,27 @@ case " $parts " in *" 3 "*)
     [ $cc = gcc ] && libgcc=-static-libgcc
     python3 "$here/nonshared/gen_forward.py" "$so/ns"
     run $c -O2 -fPIC -fexceptions -c "$so/ns/export.c" -o "$so/export.o"
+    # tools/ycxx-cxx --libdir: Mach-O has no linker scripts; ld64 reads a file by its contents, so
+    # libycxx.a may be the dylib itself and libycxx-abi.a the per-image archive. Set up first: the
+    # later checks report their own failures if the dylib or the archive is missing.
+    ln -sf "$so/libycxx.0.1.dylib" "$so/libycxx.a"
+    ln -sf "$so/libycxx_nonshared.a" "$so/libycxx-abi.a"
+    ln -sf "$sh/generated" "$so/generated"
+    cp "$sh/ycxx-link-options" "$so/ycxx-link-options"
     # The shared library: install name and versions as the design proposes (absolute here, so that
-    # the probes need no rpath; @rpath is checked below).
+    # the probes need no rpath; @rpath is checked below). The ABI runtime's members are linked as
+    # objects, without rtti_float16.cpp.o: the _Float16 type_info objects are per image
+    # (libycxx_nonshared.a, DECISIONS §20.6), and GCC on Darwin also emits them, non-weak, with
+    # rtti.cpp.o (a duplicate a whole-archive link exposes; fixed on the shared-lib branch).
+    mkdir -p "$so/abi"
+    (cd "$so/abi" && ar x "$sh/libycxx-abi.a" && rm -f rtti_float16.cpp.o)
+    linked=0
     if run $cxx -dynamiclib -o "$so/libycxx.0.1.dylib" -install_name "$so/libycxx.0.1.dylib" \
          -compatibility_version 0.1 -current_version 0.1.0 "$so/export.o" \
-         -Wl,-force_load,"$sh/libycxx.a" -Wl,-force_load,"$sh/libycxx-abi.a" -nostdlib++ $libgcc; then
-      ok "[$cc] link libycxx.0.1.dylib"
+         -Wl,-force_load,"$sh/libycxx.a" "$so"/abi/*.o -nostdlib++ $libgcc; then
+      ok "[$cc] link libycxx.0.1.dylib"; linked=1
     else
-      bad "[$cc] link libycxx.0.1.dylib"; continue
+      bad "[$cc] link libycxx.0.1.dylib (the checks that need it fail too)"
     fi
     (cd "$so/ns" && ar x "$sh/libycxx.a" $(ar t "$sh/libycxx.a" | grep -E '^(new|delete)[a-z_]*\.cpp\.o$|^allocation_table\.cpp\.o$')) &&
     (cd "$so/ns" && ar x "$sh/libycxx-abi.a" rtti_float16.cpp.o)
@@ -198,19 +211,14 @@ case " $parts " in *" 3 "*)
       run "$work/y1-shared/tools/ycxx-cxx" $cc --libdir="$sh" -O2 -fPIC -frtti -I"$work/y1-shared/src/abi" \
         -I"$sh/generated" -c "$here/nonshared/rtti.cpp" -o "$so/ns/rtti.o" &&
       run ar rcs "$so/libycxx_nonshared.a" "$so"/ns/*.o && ok "[$cc] build libycxx_nonshared.a" || bad "[$cc] build libycxx_nonshared.a"
-    # tools/ycxx-cxx --libdir: Mach-O has no linker scripts; ld64 reads a file by its contents, so
-    # libycxx.a may be the dylib itself and libycxx-abi.a the per-image archive.
-    ln -sf "$so/libycxx.0.1.dylib" "$so/libycxx.a"
-    ln -sf "$so/libycxx_nonshared.a" "$so/libycxx-abi.a"
-    ln -sf "$sh/generated" "$so/generated"
-    cp "$sh/ycxx-link-options" "$so/ycxx-link-options"
+    [ $linked = 1 ] || continue
     n=$(nm -gU "$so/libycxx.0.1.dylib" | wc -l | tr -d ' ')
     foreign=$(nm -gU "$so/libycxx.0.1.dylib" | awk '{print $NF}' | grep -vE 'St4__y1|6__ycxx|^___ycxx_allocation_functions$|^___ycxx_abi_' | tr '\n' ' ')
     [ -z "$foreign" ] && ok "[$cc] libycxx.0.1.dylib exports $n symbols, all std::__y1, __ycxx, __ycxx_abi_* or the allocation table" ||
       bad "[$cc] libycxx.0.1.dylib also exports: $foreign"
     weak=$(nm -m "$so/libycxx.0.1.dylib" | grep -c 'weak external' | tr -d ' ')
-    weakforeign=$(nm -m "$so/libycxx.0.1.dylib" | grep 'weak external' | awk '{print $NF}' | grep -vE 'St4__y1|6__ycxx' | tr '\n' ' ')
-    [ -z "$weakforeign" ] && ok "[$cc] libycxx.0.1.dylib's $weak weak exports are all std::__y1 or __ycxx" ||
+    weakforeign=$(nm -m "$so/libycxx.0.1.dylib" | grep 'weak external' | awk '{print $NF}' | grep -vE 'St4__y1|6__ycxx|^___ycxx_allocation_functions$' | tr '\n' ' ')
+    [ -z "$weakforeign" ] && ok "[$cc] libycxx.0.1.dylib's $weak weak exports are all std::__y1, __ycxx or the allocation table (weak by design, DECISIONS §2)" ||
       bad "[$cc] libycxx.0.1.dylib exports weak definitions outside std::__y1: $weakforeign"
     # @rpath and the compatibility version: a program linked against an @rpath install name.
     cp "$so/libycxx.0.1.dylib" "$so/rp.dylib" && run install_name_tool -id @rpath/libycxx.0.1.dylib "$so/rp.dylib"

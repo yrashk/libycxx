@@ -87,8 +87,11 @@ for cc in $compilers; do
   if [ $variant = nonshared ]; then
     run $cc_c -O2 -fPIC -fexceptions -c "$so/ns/export.c" -o "$so/export.o" && exports=$so/export.o
   fi
+  # The ABI runtime's members as objects, without rtti_float16.cpp.o: the _Float16 type_info
+  # objects are per image (libycxx_nonshared.a, DECISIONS §20.6).
+  mkdir -p "$so/abi" && (cd "$so/abi" && ar x "$sh/libycxx-abi.a" && rm -f rtti_float16.cpp.o)
   run $cxx $extra -shared -o "$so/libycxx.so.0.1" -Wl,-soname,libycxx.so.0.1 $exports \
-    -Wl,--whole-archive "$sh/libycxx.a" "$sh/libycxx-abi.a" -Wl,--no-whole-archive -nostdlib++ -lm -shared-libgcc &&
+    -Wl,--whole-archive "$sh/libycxx.a" -Wl,--no-whole-archive "$so"/abi/*.o -nostdlib++ -lm -shared-libgcc &&
     ln -sf libycxx.so.0.1 "$so/libycxx.so" && ok "[$cc] link libycxx.so.0.1 ($variant)" || bad "[$cc] link libycxx.so.0.1 ($variant)"
   # libycxx_nonshared.a
   (cd "$so/ns" && ar x "$sh/libycxx.a" $(ar t "$sh/libycxx.a" | grep -E '^(new|delete)[a-z_]*\.cpp\.o$|^allocation_table\.cpp\.o$')) &&

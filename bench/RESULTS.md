@@ -33,13 +33,179 @@ callgrind instruction counts and, for the hot loops, by reading libycxx's genera
 | getline | one sgetc/snextc/push_back per character | append buffered runs found with traits::find | kept: istringstream 4.48 -> 0.65 (GCC), file 6.67 -> 0.85; vs libc++ 2.8 -> 0.73 |
 | condition_variable | notify always did a locked increment | return when no waiter is registered | kept: 2.9/3.2 -> 0.16/0.21 |
 | atomic notify | a seq_cst fence per notify | no fence while single-threaded | kept: 7.4 -> 0.33; a fetch_add(0) instead of fence + load was not faster (14 vs 10.6 ns), not kept |
-| vector emplace_back | the inlined reallocation made Clang refuse to inline emplace_back in larger callers (one call per element in flat_map's range constructor) | reallocation out of line; scalar arguments by value | kept (flat_map construction Clang 2.85 -> 1.16); trade-off: a local vector filled in a loop keeps its end pointer in memory on Clang |
+| vector emplace_back | the inlined reallocation made Clang refuse to inline emplace_back in larger callers (one call per element in flat_map's range constructor) | first: reallocation out of line (kept the loop variable out of memory) | not kept: Clang then kept a local vector's end pointer in memory (reserved push_back 2.3x); instead emplace_back is [[gnu::always_inline]] with the reallocation inline: 1.00 vs both, flat_map construction Clang 2.85 -> 0.96 |
 | flat_map range insert | geometric growth of both containers | reserve + emplace_back for std::vector containers | kept: GCC 2.26 -> 1.1..1.9, Clang 2.85 -> 1.16 |
 | hash<string> | 8-byte words read byte by byte (GCC does not merge them) | fixed-size loads at run time | kept: GCC 1.93 -> 0.70 (12 chars), 2.44 -> 1.11 (200 chars) |
-| accumulate int (Clang 1.5x) | — | none | the function's code is the same simple loop; the difference is placement in the benchmark |
+| accumulate int | one dependent add per element; neither compiler vectorizes the sign-extending sum at -O2 | four independent unsigned 64-bit sums for contiguous integers (modular arithmetic, any order) | kept: 1.06/1.66..2.23 -> 0.54/0.89; vs libc++ 0.72 |
 | move strings 1e5 | — | new benchmark | dominated by page faults of fresh 3 MB vectors (libc++ moved between 6 and 21 ns between runs); "move-assign strings (no allocation)" measures the moves |
 | shared_ptr copy+destroy, queue push/pop on GCC | — | none | instruction counts within 1.1x of libstdc++ (queue: Clang beats both); the wall-clock ratios moved between 0.97 and 2.4 between runs |
 
+
+### Full results, end of pass 2 (commit 906c1f8, -O2, median of 3 interleaved runs)
+
+One run on the shared machine (load 8 to 10 on 4 CPUs): single rows move by up to ±50% between runs (e.g. accumulate int on Clang read 0.89 and 1.49 within minutes); the per-change numbers above are medians of several runs and callgrind counts. This run is also `bench/baseline.json`.
+
+| benchmark | gcc libycxx | gcc libstdc++ | gcc ratio | clang libycxx | clang libstdc++ | clang ratio | clang libc++ | ratio libc++ |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|
+| algorithms: sort 1e6 int | 47.73 | 107.88 | 0.44 | 33.45 | 88.55 | 0.38 | 38.48 | 0.87 |
+| algorithms: sort 1e6 int (sorted) | 1.11 | 15.56 | 0.07 | 1.15 | 10.94 | 0.10 | 0.87 | 1.32 |
+| algorithms: sort 1e6 int (reversed) | 2.60 | 9.86 | 0.26 | 2.04 | 7.89 | 0.26 | 2.03 | 1.00 |
+| algorithms: stable_sort 1e6 int | 16.01 | 133.12 | 0.12 | 12.93 | 77.67 | 0.17 | 23.47 | 0.55 |
+| algorithms: nth_element 1e6 int | 13.48 | 14.18 | 0.95 | 13.00 | 14.48 | 0.90 | 11.13 | 1.17 |
+| algorithms: partial_sort 1e6 int (k=100) | 0.59 | 0.41 | 1.42 | 0.54 | 0.54 | 0.98 | 0.41 | 1.31 |
+| algorithms: make_heap+sort_heap 1e5 int | 78.11 | 76.61 | 1.02 | 53.46 | 109.84 | 0.49 | 60.23 | 0.89 |
+| algorithms: sort 2e5 string | 363.78 | 390.43 | 0.93 | 336.61 | 282.51 | 1.19 | 237.94 | 1.41 |
+| algorithms: stable_sort 2e5 string | 373.18 | 438.02 | 0.85 | 300.24 | 317.03 | 0.95 | 241.41 | 1.24 |
+| algorithms: nth_element 2e5 string | 36.87 | 43.55 | 0.85 | 35.66 | 31.41 | 1.14 | 29.21 | 1.22 |
+| algorithms: find int (miss) | 0.16 | 0.36 | 0.44 | 0.13 | 0.24 | 0.56 | 0.14 | 0.92 |
+| algorithms: find byte (miss) | 0.01 | 0.01 | 1.00 | 0.01 | 0.01 | 1.00 | 0.01 | 1.00 |
+| algorithms: count int | 0.56 | 0.54 | 1.03 | 0.35 | 0.26 | 1.35 | 0.26 | 1.35 |
+| algorithms: count_if int | 0.52 | 0.51 | 1.02 | 0.28 | 0.20 | 1.38 | 0.20 | 1.37 |
+| algorithms: copy int | 0.47 | 0.39 | 1.22 | 0.46 | 0.31 | 1.48 | 0.31 | 1.49 |
+| algorithms: copy_backward int | 0.42 | 0.35 | 1.21 | 0.43 | 0.31 | 1.39 | 0.30 | 1.43 |
+| algorithms: move strings 1e5 | 8.85 | 35.22 | 0.25 | 9.99 | 33.51 | 0.30 | 6.73 | 1.48 |
+| algorithms: move-assign strings 1e5 (no allocation) | 3.54 | 5.58 | 0.63 | 3.59 | 6.59 | 0.54 | 1.94 | **1.85** |
+| algorithms: fill int | 0.23 | 0.23 | 1.01 | 0.17 | 0.17 | 1.04 | 0.16 | 1.06 |
+| algorithms: fill byte | 0.02 | 0.02 | 1.00 | 0.02 | 0.02 | 1.00 | 0.02 | 1.00 |
+| algorithms: equal int | 0.29 | 0.29 | 1.01 | 0.46 | 0.30 | **1.54** | 0.30 | **1.55** |
+| algorithms: accumulate int | 0.30 | 0.42 | 0.72 | 0.32 | 0.21 | 1.49 | 0.21 | **1.51** |
+| algorithms: reverse int | 0.54 | 0.45 | 1.21 | 0.16 | 0.16 | 0.99 | 0.17 | 0.98 |
+| algorithms: min_element int | 3.51 | 3.50 | 1.00 | 0.73 | 0.74 | 0.99 | 0.74 | 0.99 |
+| algorithms: lower_bound int (1e6 lookups) | 236.54 | 252.28 | 0.94 | 124.20 | 103.59 | 1.20 | 100.90 | 1.23 |
+| algorithms: search bytes (5-byte needle, miss) | 0.02 | 0.37 | 0.05 | 0.02 | 0.36 | 0.05 | 0.36 | 0.05 |
+| algorithms: mismatch bytes | 0.06 | 0.51 | 0.11 | 0.05 | 0.26 | 0.20 | 0.04 | 1.24 |
+| algorithms: equal bytes | 0.05 | 0.03 | 1.48 | 0.05 | 0.04 | 1.35 | 0.04 | 1.39 |
+| algorithms: ranges filter|transform sum | 1.89 | 1.30 | 1.46 | 1.31 | 0.90 | 1.45 | 1.01 | 1.30 |
+| algorithms: remove_if int | 6.96 | 6.98 | 1.00 | 6.80 | 4.78 | 1.42 | 4.78 | 1.42 |
+| algorithms: partition int | 6.96 | 6.70 | 1.04 | 5.44 | 5.20 | 1.05 | 4.88 | 1.11 |
+| algorithms: rotate int | 1.02 | 0.82 | 1.25 | 0.41 | 0.58 | 0.71 | 0.81 | 0.51 |
+| algorithms: unique int | 1.50 | 1.50 | 1.00 | 0.63 | 0.63 | 1.00 | 0.65 | 0.97 |
+| containers: vector.push_back int | 4.75 | 4.69 | 1.01 | 3.28 | 2.94 | 1.12 | 2.99 | 1.10 |
+| containers: vector.push_back int (reserved) | 0.36 | 0.36 | 1.00 | 0.36 | 0.36 | 1.00 | 0.36 | 1.00 |
+| containers: vector.push_back string | 51.69 | 51.24 | 1.01 | 36.82 | 36.88 | 1.00 | 22.21 | **1.66** |
+| containers: vector.insert front int (n=2000) | 51.76 | 49.65 | 1.04 | 35.70 | 35.48 | 1.01 | 35.95 | 0.99 |
+| containers: vector.insert range int | 0.16 | 0.33 | 0.48 | 0.16 | 0.20 | 0.82 | 0.16 | 1.02 |
+| containers: vector.emplace_back 1e6 int (reserve 1000) | 0.66 | 0.67 | 0.99 | 0.66 | 0.68 | 0.97 | 3.40 | 0.19 |
+| containers: vector.copy 1e6 int | 0.43 | 0.43 | 0.99 | 0.31 | 0.31 | 1.02 | 0.31 | 1.01 |
+| containers: vector.copy 1e5 string | 3.59 | 5.01 | 0.72 | 4.33 | 5.46 | 0.79 | 3.26 | 1.33 |
+| containers: deque.push_back int | 0.61 | 1.88 | 0.33 | 1.06 | 1.68 | 0.63 | 1.14 | 0.93 |
+| containers: deque.push_front int | 0.90 | 1.46 | 0.62 | 1.08 | 1.69 | 0.64 | 1.54 | 0.70 |
+| containers: deque.push both+pop | 1.91 | 2.02 | 0.94 | 2.88 | 3.01 | 0.96 | 2.16 | 1.33 |
+| containers: deque.iterate sum | 0.43 | 0.37 | 1.16 | 0.60 | 0.71 | 0.85 | 0.48 | 1.25 |
+| containers: queue<int> push+pop (BFS-like) | 3.08 | 1.34 | **2.29** | 3.20 | 2.83 | 1.13 | 2.49 | 1.29 |
+| containers: priority_queue<int> push+pop | 38.53 | 65.27 | 0.59 | 40.33 | 46.87 | 0.86 | 44.81 | 0.90 |
+| containers: list.sort 1e5 int | 357.58 | 312.85 | 1.14 | 258.07 | 231.47 | 1.11 | 228.71 | 1.13 |
+| containers: list.push_back+clear | 23.89 | 25.71 | 0.93 | 23.82 | 28.35 | 0.84 | 16.26 | 1.46 |
+| containers: map<int>.insert | 465.60 | 406.25 | 1.15 | 267.20 | 251.22 | 1.06 | 422.19 | 0.63 |
+| containers: map<int>.find | 365.55 | 358.02 | 1.02 | 126.40 | 122.93 | 1.03 | 256.98 | 0.49 |
+| containers: map<int>.iterate | 54.48 | 51.17 | 1.06 | 38.39 | 39.73 | 0.97 | 35.25 | 1.09 |
+| containers: unordered_map<int>.insert | 156.96 | 161.86 | 0.97 | 117.13 | 119.57 | 0.98 | 109.79 | 1.07 |
+| containers: unordered_map<int>.insert (reserved) | 91.23 | 117.94 | 0.77 | 72.99 | 76.87 | 0.95 | 79.58 | 0.92 |
+| containers: unordered_map<int>.find hit | 19.55 | 21.70 | 0.90 | 14.47 | 12.99 | 1.11 | 20.02 | 0.72 |
+| containers: unordered_map<int>.find miss | 30.06 | 23.36 | 1.29 | 21.86 | 21.90 | 1.00 | 34.54 | 0.63 |
+| containers: unordered_map<int>.insert+erase | 155.26 | 167.59 | 0.93 | 122.72 | 147.61 | 0.83 | 125.68 | 0.98 |
+| containers: unordered_map<int>.operator[] small keys | 3.49 | 9.18 | 0.38 | 4.20 | 3.37 | 1.25 | 4.51 | 0.93 |
+| containers: unordered_map<int>.iterate | 12.23 | 19.71 | 0.62 | 11.73 | 18.70 | 0.63 | 21.33 | 0.55 |
+| containers: unordered_set<int>.insert | 147.97 | 162.09 | 0.91 | 118.40 | 119.44 | 0.99 | 108.14 | 1.09 |
+| containers: unordered_set<int>.contains hit | 17.49 | 21.91 | 0.80 | 14.34 | 13.87 | 1.03 | 21.21 | 0.68 |
+| containers: set<int>.insert | 444.22 | 316.25 | 1.40 | 294.61 | 245.33 | 1.20 | 310.12 | 0.95 |
+| containers: flat_map<int>.find | 157.76 | 161.39 | 0.98 | 56.88 | 49.57 | 1.15 | 49.49 | 1.15 |
+| containers: flat_map<int>.insert sorted range | 6.11 | 3.23 | **1.89** | 4.11 | 4.29 | 0.96 | 6.47 | 0.63 |
+| containers: flat_set<int>.insert (random, 1e4) | 210.10 | 206.90 | 1.02 | 125.10 | 119.98 | 1.04 | 117.71 | 1.06 |
+| containers: map<string>.insert | 635.82 | 770.48 | 0.83 | 641.77 | 656.53 | 0.98 | 553.75 | 1.16 |
+| containers: map<string>.find | 573.03 | 584.34 | 0.98 | 618.88 | 586.14 | 1.06 | 417.74 | 1.48 |
+| containers: unordered_map<string>.insert | 207.23 | 225.51 | 0.92 | 170.00 | 175.01 | 0.97 | 154.41 | 1.10 |
+| containers: unordered_map<string>.find | 36.85 | 46.20 | 0.80 | 35.60 | 45.58 | 0.78 | 46.75 | 0.76 |
+| containers: unordered_map<string>.find miss | 148.55 | 113.73 | 1.31 | 107.11 | 124.23 | 0.86 | 137.80 | 0.78 |
+| containers: unordered_map<string>.insert+erase | 259.24 | 274.94 | 0.94 | 188.78 | 200.55 | 0.94 | 181.42 | 1.04 |
+| runtime: shared_ptr copy+destroy | 4.15 | 2.82 | 1.47 | 1.96 | 10.56 | 0.19 | 17.01 | 0.12 |
+| runtime: make_shared<int> | 22.64 | 21.04 | 1.08 | 22.51 | 15.91 | 1.41 | 19.69 | 1.14 |
+| runtime: weak_ptr lock | 1.18 | 21.78 | 0.05 | 1.82 | 14.26 | 0.13 | 20.73 | 0.09 |
+| runtime: unique_ptr make+destroy | 14.46 | 18.61 | 0.78 | 16.34 | 13.74 | 1.19 | 13.43 | 1.22 |
+| runtime: make_shared<string> | 22.48 | 22.41 | 1.00 | 21.10 | 23.21 | 0.91 | 23.92 | 0.88 |
+| runtime: new/delete 16..4096 bytes | 30.52 | 29.32 | 1.04 | 20.75 | 21.64 | 0.96 | 22.09 | 0.94 |
+| runtime: vector<int>(1000) construct+destroy | 72.35 | 69.20 | 1.05 | 50.13 | 49.85 | 1.01 | 51.55 | 0.97 |
+| runtime: mt19937 raw | 3.63 | 3.54 | 1.03 | 2.50 | 2.50 | 1.00 | 8.95 | 0.28 |
+| runtime: mt19937 + uniform_int(0,999) | 4.51 | 6.22 | 0.73 | 4.63 | 4.32 | 1.07 | 11.91 | 0.39 |
+| runtime: mt19937 + uniform_real | 8.33 | 19.88 | 0.42 | 7.01 | 6.25 | 1.12 | 10.11 | 0.69 |
+| runtime: mt19937_64 + normal | 22.00 | 28.96 | 0.76 | 15.42 | 14.47 | 1.07 | 17.91 | 0.86 |
+| runtime: function call | 2.42 | 2.38 | 1.02 | 1.42 | 1.58 | 0.90 | 1.87 | 0.76 |
+| runtime: function construct small | 1.48 | 4.14 | 0.36 | 0.79 | 3.00 | 0.26 | 1.76 | 0.45 |
+| runtime: move_only_function call | 1.02 | 0.99 | 1.03 | 1.99 | 2.03 | 0.98 |  |  |
+| runtime: function construct large (5 captures) | 17.58 | 22.34 | 0.79 | 18.84 | 16.04 | 1.17 | 15.25 | 1.24 |
+| runtime: mt19937_64 + uniform_int<long long> | 3.90 | 4.95 | 0.79 | 5.58 | 4.00 | 1.39 | 45.44 | 0.12 |
+| runtime: hash<int> + hash<double> | 0.92 | 5.12 | 0.18 | 0.60 | 3.84 | 0.16 | 0.60 | 1.00 |
+| runtime: throw/catch int | 804.65 | 868.48 | 0.93 | 2387.43 | 2981.32 | 0.80 | 2198.30 | 1.09 |
+| runtime: throw/catch derived by base& | 982.02 | 1116.32 | 0.88 | 5766.74 | 3978.32 | 1.45 | 2670.59 | **2.16** |
+| runtime: throw/catch through 20 frames | 4011.03 | 4051.56 | 0.99 | 6284.21 | 6452.62 | 0.97 | 5791.57 | 1.09 |
+| runtime: dynamic_cast to most derived | 2.26 | 5.57 | 0.41 | 3.13 | 4.95 | 0.63 | 3.60 | 0.87 |
+| runtime: dynamic_cast to intermediate | 13.26 | 16.49 | 0.80 | 12.04 | 27.86 | 0.43 | 12.05 | 1.00 |
+| runtime: dynamic_cast virtual base -> left | 49.73 | 40.91 | 1.22 | 57.92 | 33.96 | **1.71** | 26.46 | **2.19** |
+| runtime: dynamic_cast cross cast | 38.33 | 33.00 | 1.16 | 53.67 | 30.88 | **1.74** | 21.34 | **2.51** |
+| runtime: dynamic_cast failure | 16.65 | 17.75 | 0.94 | 13.99 | 31.39 | 0.45 | 13.72 | 1.02 |
+| runtime: mutex lock/unlock | 0.99 | 8.97 | 0.11 | 0.90 | 9.13 | 0.10 | 12.34 | 0.07 |
+| runtime: atomic<int>.fetch_add seq_cst | 8.93 | 8.99 | 0.99 | 6.44 | 6.41 | 1.00 | 8.92 | 0.72 |
+| runtime: atomic<int>.load | 0.50 | 0.37 | 1.37 | 0.19 | 0.24 | 0.78 | 0.19 | 0.99 |
+| runtime: call_once (done) | 0.50 | 3.30 | 0.15 | 0.54 | 2.92 | 0.19 | 0.36 | **1.50** |
+| runtime: shared_mutex lock_shared/unlock | 2.86 | 29.77 | 0.10 | 7.05 | 22.56 | 0.31 | 23.55 | 0.30 |
+| runtime: condition_variable notify_one (no waiter) | 1.18 | 6.33 | 0.19 | 0.36 | 4.29 | 0.08 | 4.29 | 0.08 |
+| runtime: atomic notify_one (no waiter) | 2.25 | 5.13 | 0.44 | 1.51 | 3.47 | 0.43 | 7.10 | 0.21 |
+| runtime: mutex ping-pong 2 threads (per handoff) | 6396.99 | 4435.76 | 1.44 | 2223.94 | 2270.30 | 0.98 | 6455.02 | 0.34 |
+| runtime: atomic wait/notify ping-pong (per handoff) | 2836.68 | 2945.54 | 0.96 | 1096.57 | 850.28 | 1.29 | 1054.60 | 1.04 |
+| runtime: atomic<int> fetch_add 4 threads (contended) | 21.61 | 21.01 | 1.03 | 16.96 | 16.66 | 1.02 | 18.59 | 0.91 |
+| runtime: throw/catch runtime_error with what() | 681.37 | 756.66 | 0.90 | 761.66 | 822.49 | 0.93 | 977.28 | 0.78 |
+| strings: string.SSO construct | 5.11 | 11.09 | 0.46 | 4.93 | 8.14 | 0.61 | 6.41 | 0.77 |
+| strings: string.heap construct (40 chars) | 30.77 | 27.76 | 1.11 | 28.95 | 21.02 | 1.38 | 19.96 | 1.45 |
+| strings: string.copy SSO | 2.07 | 6.05 | 0.34 | 0.96 | 0.72 | 1.35 | 0.61 | **1.57** |
+| strings: string.append char | 1.39 | 1.39 | 1.00 | 1.36 | 1.37 | 1.00 | 4.60 | 0.30 |
+| strings: string.append 8-char literal | 10.72 | 9.82 | 1.09 | 7.56 | 6.84 | 1.11 | 16.41 | 0.46 |
+| strings: string.operator+ small | 23.73 | 24.85 | 0.95 | 1.52 | 8.22 | 0.18 | 17.63 | 0.09 |
+| strings: string.find char (1 MB, miss) | 0.01 | 0.01 | 1.00 | 0.01 | 0.01 | 1.00 | 0.01 | 0.92 |
+| strings: string.find substr (1 MB, miss) | 0.78 | 0.79 | 0.99 | 0.56 | 0.58 | 0.97 | 0.57 | 0.98 |
+| strings: string.find_first_of (1 MB, miss) | 4.52 | 4.49 | 1.01 | 3.24 | 3.21 | 1.01 | 1.99 | **1.63** |
+| strings: string.rfind char (1 MB, miss) | 0.55 | 0.50 | 1.09 | 0.54 | 0.54 | 1.00 | 0.54 | 1.00 |
+| strings: string.compare (1 MB, differ at end) | 0.04 | 0.03 | 1.12 | 0.03 | 0.03 | 0.97 | 0.04 | 0.92 |
+| strings: string.operator== (1 MB, differ at end) | 0.05 | 0.05 | 1.00 | 0.03 | 0.03 | 1.00 | 0.04 | 0.94 |
+| strings: string.compare short | 19.43 | 24.28 | 0.80 | 13.32 | 20.42 | 0.65 | 13.09 | 1.02 |
+| strings: string_view.find substr (1 MB, miss) | 0.80 | 0.74 | 1.09 | 0.56 | 0.55 | 1.02 | 0.57 | 0.99 |
+| strings: hash<string> (12 chars) | 4.25 | 5.82 | 0.73 | 4.25 | 5.86 | 0.72 | 5.37 | 0.79 |
+| strings: hash<string> (200 chars) | 55.27 | 50.95 | 1.08 | 58.16 | 50.40 | 1.15 | 52.33 | 1.11 |
+| strings: string.operator== short (equal) | 3.60 | 4.08 | 0.88 | 3.46 | 3.54 | 0.98 | 4.01 | 0.86 |
+| strings: string.append string (to 1e5) | 0.96 | 1.15 | 0.84 | 0.93 | 1.04 | 0.89 | 1.27 | 0.73 |
+| strings: string.find char (64 B) | 0.05 | 0.04 | 1.19 | 0.07 | 0.05 | 1.20 | 0.05 | 1.20 |
+| text: to_chars int | 27.00 | 20.04 | 1.35 | 17.73 | 17.73 | 1.00 | 12.38 | 1.43 |
+| text: to_chars double (shortest) | 71.48 | 57.73 | 1.24 | 66.85 | 45.53 | 1.47 | 34.44 | **1.94** |
+| text: to_chars double fixed .6 | 37.13 | 75.39 | 0.49 | 28.39 | 56.87 | 0.50 | 51.37 | 0.55 |
+| text: from_chars int | 28.36 | 28.66 | 0.99 | 18.90 | 21.61 | 0.87 | 25.21 | 0.75 |
+| text: from_chars double | 40.46 | 31.38 | 1.29 | 26.20 | 23.04 | 1.14 | 40.35 | 0.65 |
+| text: to_chars float (shortest) | 60.92 | 64.82 | 0.94 | 45.22 | 45.55 | 0.99 | 53.31 | 0.85 |
+| text: from_chars float | 43.10 | 31.82 | 1.35 | 38.14 | 23.98 | **1.59** | 92.74 | 0.41 |
+| text: to_chars double scientific .3 | 73.28 | 61.76 | 1.19 | 55.91 | 42.54 | 1.31 | 38.85 | 1.44 |
+| text: format {} int | 55.86 | 65.12 | 0.86 | 36.21 | 34.54 | 1.05 | 64.03 | 0.57 |
+| text: format {} double | 159.85 | 149.60 | 1.07 | 140.55 | 97.75 | 1.44 | 110.96 | 1.27 |
+| text: format {:.3f} double | 147.73 | 165.17 | 0.89 | 100.23 | 132.48 | 0.76 | 103.50 | 0.97 |
+| text: format mixed (str, int, pad) | 254.52 | 295.33 | 0.86 | 180.27 | 197.51 | 0.91 | 200.28 | 0.90 |
+| text: format_to buffer int | 52.63 | 51.41 | 1.02 | 32.59 | 27.38 | 1.19 | 58.89 | 0.55 |
+| text: to_string int | 22.00 | 21.57 | 1.02 | 16.22 | 21.23 | 0.76 | 18.92 | 0.86 |
+| text: to_string double | 91.33 | 118.10 | 0.77 | 76.05 | 86.82 | 0.88 | 304.58 | 0.25 |
+| text: format_to back_inserter (3 args) | 155.31 | 268.33 | 0.58 | 106.10 | 143.94 | 0.74 | 131.93 | 0.80 |
+| text: print to FILE (int, string) | 122.38 | 151.91 | 0.81 | 81.12 | 110.18 | 0.74 | 105.08 | 0.77 |
+| text: format chrono {:%F %T} | 268.70 | 175.70 | **1.53** | 163.02 | 125.44 | 1.30 | 629.70 | 0.26 |
+| text: ostringstream << int | 114.36 | 67.94 | **1.68** | 69.89 | 49.20 | 1.42 | 90.01 | 0.78 |
+| text: ostringstream << double | 188.29 | 386.10 | 0.49 | 179.60 | 348.82 | 0.51 | 329.03 | 0.55 |
+| text: ostringstream << string | 15.34 | 16.41 | 0.94 | 13.30 | 12.74 | 1.04 | 18.14 | 0.73 |
+| text: ostringstream construct+str | 129.39 | 161.34 | 0.80 | 98.85 | 118.73 | 0.83 | 118.58 | 0.83 |
+| text: istringstream >> int | 90.83 | 101.71 | 0.89 | 93.79 | 63.75 | 1.47 | 120.74 | 0.78 |
+| text: istringstream >> double | 101.82 | 150.28 | 0.68 | 68.91 | 138.80 | 0.50 | 184.56 | 0.37 |
+| text: getline (istringstream) | 24.62 | 23.84 | 1.03 | 19.78 | 16.61 | 1.19 | 35.67 | 0.55 |
+| text: ofstream << line (file write) | 145.14 | 119.55 | 1.21 | 120.92 | 122.02 | 0.99 | 168.51 | 0.72 |
+| text: ifstream getline (file read) | 29.24 | 24.22 | 1.21 | 23.15 | 25.02 | 0.93 | 49.87 | 0.46 |
+| text: regex_search literal (per char) | 14.73 | 36.02 | 0.41 | 10.99 | 65.73 | 0.17 | 55.83 | 0.20 |
+| text: regex_search email (per char) | 65.32 | 221.97 | 0.29 | 44.15 | 364.74 | 0.12 | 455.58 | 0.10 |
+| text: regex_search date (per char) | 29.46 | 53.65 | 0.55 | 24.81 | 71.38 | 0.35 | 96.98 | 0.26 |
+| text: regex_search alternation (per char) | 130.07 | 114.42 | 1.14 | 103.95 | 141.65 | 0.73 | 305.02 | 0.34 |
+| text: regex construct | 2847.66 | 3755.12 | 0.76 | 2619.46 | 4621.66 | 0.57 | 987.96 | **2.65** |
+| text: regex_match short | 180.58 | 449.24 | 0.40 | 199.81 | 761.20 | 0.26 | 696.43 | 0.29 |
 
 ## Performance pass 1 (2026-10-06): against libstdc++
 

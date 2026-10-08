@@ -42,6 +42,11 @@ static void check_locale(const char* name) {
       if (own.empty())
         continue;
       const std::string text = c_ftime(name, convs[k], t);
+      // a format the locale's data leaves empty, which strftime writes as nothing, has nothing to
+      // read back: Darwin's de_DE has no t_fmt_ampm (strftime "%r" writes ""), yet its
+      // nl_langinfo(T_FMT_AMPM) returns the C locale's "%I:%M:%S %p" for the empty field
+      if (text.empty())
+        continue;
       std::istringstream is(text);
       is.imbue(loc);
       std::tm r{};

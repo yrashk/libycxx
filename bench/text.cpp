@@ -2,7 +2,12 @@
 #include "bench.hpp"
 
 #include <charconv>
+#include <chrono>
+#include <cstdio>
 #include <format>
+#include <fstream>
+#include <iterator>
+#include <print>
 #include <regex>
 #include <sstream>
 #include <string>
@@ -50,6 +55,27 @@ int main(int argc, char** argv) {
       bench::sink(v);
     }
   });
+  {
+    std::vector<float> flts(dbls.begin(), dbls.end());
+    std::vector<std::string> ftexts;
+    for (float f : flts) {
+      auto r = std::to_chars(buf, buf + 64, f);
+      ftexts.emplace_back(buf, r.ptr);
+    }
+    bench::run("to_chars float (shortest)", N, [&] {
+      for (float f : flts) bench::sink(std::to_chars(buf, buf + 64, f).ptr);
+    });
+    bench::run("from_chars float", N, [&] {
+      float v;
+      for (auto& s : ftexts) {
+        std::from_chars(s.data(), s.data() + s.size(), v);
+        bench::sink(v);
+      }
+    });
+    bench::run("to_chars double scientific .3", N, [&] {
+      for (double d : dbls) bench::sink(std::to_chars(buf, buf + 64, d, std::chars_format::scientific, 3).ptr);
+    });
+  }
 
   bench::run("format {} int", N, [&] {
     for (int x : ints) bench::sink(std::format("{}", x));
@@ -69,6 +95,30 @@ int main(int argc, char** argv) {
   bench::run("to_string int", N, [&] {
     for (int x : ints) bench::sink(std::to_string(x));
   });
+  bench::run("to_string double", N, [&] {
+    for (double d : dbls) bench::sink(std::to_string(d));
+  });
+  bench::run("format_to back_inserter (3 args)", N, [&] {
+    std::string out;
+    for (int x : ints) {
+      out.clear();
+      std::format_to(std::back_inserter(out), "{}:{}:{}", x, x >> 3, "ab");
+      bench::sink(out);
+    }
+  });
+  {
+    std::FILE* devnull = std::fopen("/dev/null", "w");
+    bench::run("print to FILE (int, string)", N, [&] {
+      for (int x : ints) std::print(devnull, "{} {}\n", x, "abc");
+    });
+    std::fclose(devnull);
+  }
+  {
+    std::chrono::sys_seconds t{std::chrono::seconds{1759800000}};
+    bench::run("format chrono {:%F %T}", N / 10, [&] {
+      for (int i = 0; i < N / 10; ++i) bench::sink(std::format("{:%F %T}", t + std::chrono::seconds{i}));
+    });
+  }
 
   bench::run("ostringstream << int", N, [&] {
     std::ostringstream os;
@@ -112,6 +162,32 @@ int main(int argc, char** argv) {
       while (is >> v) s += v;
       bench::sink(s);
     });
+    std::string lines;
+    for (int i = 0; i < N; ++i) lines += "line number " + std::to_string(i) + " of some text\n";
+    bench::run("getline (istringstream)", N, [&] {
+      std::istringstream is(lines);
+      std::string l;
+      std::size_t s = 0;
+      while (std::getline(is, l)) s += l.size();
+      bench::sink(s);
+    });
+    const char* path = "/tmp/ycxx-bench-text.txt";
+    bench::run("ofstream << line (file write)", N, [&] {
+      std::ofstream os(path);
+      for (int i = 0; i < N; ++i) os << "line " << i << '\n';
+    });
+    {
+      std::ofstream os(path);
+      os << lines;
+    }
+    bench::run("ifstream getline (file read)", N, [&] {
+      std::ifstream is(path);
+      std::string l;
+      std::size_t s = 0;
+      while (std::getline(is, l)) s += l.size();
+      bench::sink(s);
+    });
+    std::remove(path);
   }
 
   {

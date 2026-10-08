@@ -5,6 +5,7 @@
 #pragma once
 
 #include <ycxx/core/type_traits.hpp>
+#include <ycxx/core/bit.hpp>
 #include <ycxx/core/cstdint.hpp>
 #include <ycxx/core/compare.hpp>
 
@@ -27,6 +28,28 @@ template <class _CharT>
 constexpr std::uint64_t __load_le(const _CharT* p, int __nbytes) noexcept {
   // Reads `__nbytes` (1..8) bytes worth of characters as a little-endian integer. Works on the
   // character values (not object representation) so it is usable in constant evaluation.
+  // At run time on a little-endian target, byte-sized characters are read with fixed-size loads:
+  // one word for 8 bytes, two overlapping half-words for 4..7 (the shared bytes are the same
+  // values at the same positions, so or-ing them is exact), three single bytes below 4.
+  if constexpr (sizeof(_CharT) == 1 && std::endian::native == std::endian::little) {
+    if !consteval {
+      const auto* __b = reinterpret_cast<const unsigned char*>(p);
+      const unsigned __n = static_cast<unsigned>(__nbytes);
+      if (__n == 8) {
+        std::uint64_t __w;
+        __builtin_memcpy(&__w, __b, 8);
+        return __w;
+      }
+      if (__n >= 4) {
+        std::uint32_t __lo, __hi;
+        __builtin_memcpy(&__lo, __b, 4);
+        __builtin_memcpy(&__hi, __b + __n - 4, 4);
+        return static_cast<std::uint64_t>(__lo) | (static_cast<std::uint64_t>(__hi) << (8 * (__n - 4)));
+      }
+      return static_cast<std::uint64_t>(__b[0]) | (static_cast<std::uint64_t>(__b[__n / 2]) << (8 * (__n / 2))) |
+             (static_cast<std::uint64_t>(__b[__n - 1]) << (8 * (__n - 1)));
+    }
+  }
   std::uint64_t __v = 0;
   if constexpr (sizeof(_CharT) == 1) {
     for (int i = 0; i < __nbytes; ++i)

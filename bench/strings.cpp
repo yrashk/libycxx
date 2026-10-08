@@ -1,8 +1,10 @@
 // basic_string and string_view hot paths.
 #include "bench.hpp"
 
+#include <functional>
 #include <string>
 #include <string_view>
+#include <vector>
 
 int main(int argc, char** argv) {
   bench::init(argc, argv);
@@ -81,5 +83,31 @@ int main(int argc, char** argv) {
   bench::run("string_view.find substr (1 MB, miss)", 1000000, [&] {
     std::string_view v = hay;
     bench::sink(v.find(bench::opaque("qqqqq")));
+  });
+  {
+    std::vector<std::string> keys;
+    bench::rng r;
+    for (int i = 0; i < 1000; ++i) keys.push_back("key_" + std::to_string(r() % 100000000));
+    bench::run("hash<string> (12 chars)", 1000, [&] {
+      std::size_t h = 0;
+      for (auto& k : keys) h += std::hash<std::string>{}(k);
+      bench::sink(h);
+    });
+    std::string long_key(200, 'x');
+    bench::run("hash<string> (200 chars)", 1, [&] { bench::sink(std::hash<std::string>{}(bench::opaque(long_key))); });
+    bench::run("string.operator== short (equal)", 1000, [&] {
+      int s = 0;
+      for (auto& k : keys) s += k == keys[0];
+      bench::sink(s);
+    });
+    bench::run("string.append string (to 1e5)", N, [&] {
+      std::string s;
+      for (int i = 0; i < N / 10; ++i) s += keys[static_cast<std::size_t>(i) % 1000].substr(0, 10);
+      bench::sink(s);
+    });
+  }
+  bench::run("string.find char (64 B)", 64, [&] {
+    std::string_view v(hay.data(), 64);
+    bench::sink(v.find(bench::opaque('z')));
   });
 }

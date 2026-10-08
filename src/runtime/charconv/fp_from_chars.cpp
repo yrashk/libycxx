@@ -171,6 +171,57 @@ bool eisel_lemire(__y_u64 __w, int __q, bool truncated, __rounded& out) {
   return true;
 }
 
+// The common case of Eisel-Lemire for binary32 and binary64, with one 64 x 64-bit product: the
+// value w * 10^q (w != 0, exact) when it is a normal number and its rounding is decided by the
+// product's top 128 bits; false otherwise (eisel_lemire and the exact path decide). With wn = w
+// normalised to bit 63 and t = t_hi * 2^64 + t_lo the truncated 5^q (t <= 5^q's significand
+// T < t + 1, fp_common.hpp), the exact product wn * T lies in [wn * t, wn * t + 2^64), so in
+// units of 2^64 it is hi:lo + d, where hi:lo = wn * t_hi and 0 <= d < 2^64 + 1 (wn * t_lo / 2^64
+// plus the truncation): at most one carry into hi. hi's top bit is bit 63 or 62; its top p + 1
+// bits are the significand and the rounding bit; below them:
+//   - all ones: the carry may reach the kept bits: undecided (one case in 2^(63 - p));
+//   - rounding bit 0: the value is below the halfway point: round down;
+//   - rounding bit 1 and a nonzero bit below it in hi or lo: above the halfway point: round up;
+//   - rounding bit 1 and nothing below it in hi and lo: possibly a tie: undecided.
+template <kind _Kp>
+bool eisel_lemire_fast(__y_u64 __w, int __q, bool __negative, __fp_raw& out) {
+  constexpr format __f = __fmt_of<_Kp>;
+  static_assert(!__f.__explicit_bit && __f.p <= 53);
+  if (__q < __pow10_min || __q > __pow10_max)
+    return false;
+  const __u128 t = __ycxx::__detail::__fpconv::__pow10_significand(__q);
+  const int __lz = __builtin_clzll(__w);
+  const __y_u64 __wn = __w << __lz;
+  const __u128 __prod = static_cast<__u128>(__wn) * static_cast<__y_u64>(t >> 64);
+  const __y_u64 __hi = static_cast<__y_u64>(__prod >> 64);
+  const __y_u64 __lo = static_cast<__y_u64>(__prod);
+  const int __upper = static_cast<int>(__hi >> 63);
+  const int __drop = 64 - (__f.p + 1) - (1 - __upper); // bits of hi below the kept p + 1
+  const __y_u64 __below = __hi & ((__y_u64(1) << __drop) - 1);
+  if (__below == (__y_u64(1) << __drop) - 1)
+    return false;
+  __y_u64 m = __hi >> __drop; // p + 1 bits
+  // One rarely taken branch (the rounding bit itself is unpredictable).
+  if (static_cast<bool>(m & 1) & ((__below | __lo) == 0))
+    return false;
+  m = (m >> 1) + (m & 1); // round: the rounding bit set means above the halfway point here
+  // value = V * 2^(q + floor(log2 5^q) - 127 - lz), V's top bit at 190 + upper.
+  long long __e = 63 + __upper + static_cast<long long>(__q) + __ycxx::__detail::__fpconv::__floor_log2_pow5(__q) - __lz;
+  if (m == (__y_u64(1) << __f.p)) { // rounded up to the next power of two
+    m >>= 1;
+    ++__e;
+  }
+  const long long __bias = (1LL << (__f.__exp_bits - 1)) - 1;
+  const long long __biased = __e + __bias;
+  if (__biased <= 0 || __biased >= (1LL << __f.__exp_bits) - 1)
+    return false; // subnormal, zero or overflow: decided elsewhere
+  const int __fb = __f.p - 1;
+  out = __fp_raw{(m & ((__y_u64(1) << __fb) - 1)) | (static_cast<__y_u64>(__biased) << __fb) |
+                     (static_cast<__y_u64>(__negative) << (__fb + __f.__exp_bits)),
+                 0};
+  return true;
+}
+
 // Exact conversion of D * 10^e10, D given by its decimal digits (no leading zeros; n >= 1).
 template <kind _Kp>
 __rounded decimal_exact(const char* d, int n, long long e10) {
@@ -391,9 +442,71 @@ struct decimal_scan {
 // The usual case first: the leading 19 significant digits are accumulated directly into w and
 // Eisel-Lemire decides. Anything else (an undecided product, an exponent beyond the table, a
 // malformed exponent) starts over in parse_decimal_digits, which keeps every digit.
+// The shortest path, for binary32 and binary64: at most 19 digits in all (so that every digit,
+// leading zeros included, fits in w), an optional exponent, and eisel_lemire_fast deciding.
+// Returns false (and nothing is stored) for anything else, which parse_decimal then handles.
+template <kind _Kp>
+bool parse_decimal_short(const char* p, const char* last, bool __negative, int __fmt, __fp_raw& out,
+                         std::from_chars_result& __res) {
+  __y_u64 __w = 0;
+  int __nd = 0;     // digits read
+  int __nfrac = 0;  // of which after the point
+  __y_u64 eight;
+  while (last - p >= 8 && __ycxx::__detail::__fpconv::eight_digits(p, eight) && __nd <= 11) {
+    __w = __w * 100000000 + eight;
+    __nd += 8;
+    p += 8;
+  }
+  for (unsigned d; p != last && (d = static_cast<unsigned char>(*p) - '0') <= 9; ++p, ++__nd)
+    __w = __w * 10 + d;
+  if (p != last && *p == '.') {
+    ++p;
+    const char* const __fs = p;
+    while (last - p >= 8 && __nd <= 11 && __ycxx::__detail::__fpconv::eight_digits(p, eight)) {
+      __w = __w * 100000000 + eight;
+      __nd += 8;
+      p += 8;
+    }
+    for (unsigned d; p != last && (d = static_cast<unsigned char>(*p) - '0') <= 9 && __nd < 19; ++p, ++__nd)
+      __w = __w * 10 + d;
+    if (p != last && static_cast<unsigned>(static_cast<unsigned char>(*p) - '0') <= 9)
+      return false; // more than 19 digits
+    __nfrac = static_cast<int>(p - __fs);
+    if (__nfrac == 0 && __nd == 0)
+      return false;
+  }
+  if (__nd == 0 || __nd > 19 || __w == 0)
+    return false;
+  long long e10 = -__nfrac;
+  const auto __cf = static_cast<std::chars_format>(__fmt);
+  const bool sci = (__cf & std::chars_format::scientific) == std::chars_format::scientific;
+  if (p != last && (*p == 'e' || *p == 'E')) {
+    if (!sci)
+      return false;
+    long long __x = 0;
+    const char* __q = __ycxx::__detail::__fpconv::parse_exponent(p + 1, last, __x);
+    if (__q == nullptr)
+      return false;
+    p = __q;
+    e10 += __x;
+  } else if (sci && (__cf & std::chars_format::fixed) != std::chars_format::fixed) {
+    return false;
+  }
+  if (e10 < __pow10_min || e10 > __pow10_max ||
+      !__ycxx::__detail::__fpconv::eisel_lemire_fast<_Kp>(__w, static_cast<int>(e10), __negative, out))
+    return false;
+  __res = {p, std::errc{}};
+  return true;
+}
+
 template <kind _Kp>
 std::from_chars_result parse_decimal(const char* first, const char* p, const char* last, bool __negative, int __fmt,
                                      __fp_raw& out) {
+  if constexpr (_Kp == kind::__binary64 || _Kp == kind::__binary32) {
+    std::from_chars_result __res;
+    if (__ycxx::__detail::__fpconv::parse_decimal_short<_Kp>(p, last, __negative, __fmt, out, __res))
+      return __res;
+  }
   const char* const start = p;
   decimal_scan d{p, last};
   d.run(false);
@@ -420,6 +533,11 @@ std::from_chars_result parse_decimal(const char* first, const char* p, const cha
     e10 += __x;
   } else if (sci && !fix) {
     return {first, std::errc::invalid_argument};
+  }
+  if constexpr (_Kp == kind::__binary64 || _Kp == kind::__binary32) {
+    if (!dropped && e10 >= __pow10_min && e10 <= __pow10_max &&
+        __ycxx::__detail::__fpconv::eisel_lemire_fast<_Kp>(__w, static_cast<int>(e10), __negative, out))
+      return {p, std::errc{}};
   }
   __rounded r;
   if (e10 >= __pow10_min && e10 <= __pow10_max &&

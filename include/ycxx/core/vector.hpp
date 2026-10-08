@@ -661,34 +661,16 @@ public:
 
   // ---- [vector.modifiers] ----
   template <class... _Args>
-  constexpr reference emplace_back(_Args&&... __args) {
-    if (__last_ != __cap_) [[__likely__]] {
+  [[__gnu__::__always_inline__]] constexpr reference emplace_back(_Args&&... __args) {
+    if (__last_ != __cap_) {
       __alloc_traits::construct(__alloc_, __last_, static_cast<_Args&&>(__args)...);
       ++__last_;
-    } else if constexpr (sizeof...(_Args) == 1 && is_scalar_v<_Tp> && is_same_v<_Allocator, allocator<_Tp>> &&
-                         (is_scalar_v<remove_cvref_t<_Args>> && ...)) {
-      // A scalar from a scalar: the slow path takes the argument's value, so that it need not
-      // live in memory (the new element only gets the value; nothing can observe the address).
-      __emplace_back_slow_value<_Args...>(__args...);
     } else {
-      __emplace_back_slow(static_cast<_Args&&>(__args)...);
+      __realloc_insert(size(), 1, __grow_to(1),
+                     [&](_Tp* d) { __alloc_traits::construct(__alloc_, d, static_cast<_Args&&>(__args)...); });
     }
     return __last_[-1];
   }
-
-private:
-  // The reallocating paths of emplace_back, out of line so that its fast path inlines.
-  template <class... _Args>
-  [[__gnu__::__noinline__]] constexpr void __emplace_back_slow(_Args&&... __args) {
-    __realloc_insert(size(), 1, __grow_to(1),
-                     [&](_Tp* d) { __alloc_traits::construct(__alloc_, d, static_cast<_Args&&>(__args)...); });
-  }
-  template <class _Arg>
-  [[__gnu__::__noinline__]] constexpr void __emplace_back_slow_value(remove_cvref_t<_Arg> __v) {
-    __realloc_insert(size(), 1, __grow_to(1), [&](_Tp* d) { __alloc_traits::construct(__alloc_, d, static_cast<_Arg&&>(__v)); });
-  }
-
-public:
   constexpr void push_back(const _Tp& __x) { emplace_back(__x); }
   constexpr void push_back(_Tp&& __x) { emplace_back(static_cast<_Tp&&>(__x)); }
   template <__ycxx::__detail::__container_compatible_range<_Tp> _Rp>

@@ -375,7 +375,7 @@ against Apple's SDK and libSystem (`tools/toolchain/provision`, `activate.sh`, `
 freestanding cmake ycxx`; nightly, `full.yml`'s `macos-suites` (libc++'s and libstdc++'s suites,
 both compilers). Run on a Mac on 2026-10-08 (macOS 26.6 on Apple M5 Pro, SDK 27.0, Homebrew
 GCC 16.2.0, Clang 23.1.2): `tools/test -c gcc -c clang policy build freestanding cmake ycxx`
-passes on both compilers (GCC: 2856 passed, 17 XFAIL, 80 UNSUPPORTED; Clang: 2832 passed, 43
+passes on both compilers (GCC: 2858 passed, 17 XFAIL, 80 UNSUPPORTED; Clang: 2832 passed, 43
 XFAIL, 80 UNSUPPORTED), the `cmake` stage with `pkg-config` installed (Homebrew's `pkgconf`; the
 moved-installation and `activate.sh --use` steps of `tests/integration/run.sh` need it, as the
 CI runners have it). x86_64 is compiled for (Clang `-target x86_64-apple-macos13

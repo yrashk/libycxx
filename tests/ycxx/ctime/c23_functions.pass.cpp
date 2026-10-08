@@ -74,7 +74,10 @@ int main() {
   CHECK(std::timespec_getres(&res, TIME_UTC) == TIME_UTC);
   CHECK(res.tv_sec >= 0 && res.tv_nsec >= 0 && (res.tv_sec > 0 || res.tv_nsec > 0));
   CHECK(std::timespec_getres(nullptr, TIME_UTC) == TIME_UTC);
-  CHECK(std::time(nullptr) >= ts.tv_sec);
+  // time() may read a coarser clock than timespec_get (glibc's reads CLOCK_REALTIME_COARSE, which
+  // lags by up to a timer tick), so just after a second boundary it can still give the previous
+  // second.
+  CHECK(std::time(nullptr) >= ts.tv_sec - 1);
   CHECK(std::clock() != static_cast<std::clock_t>(-1));
 
   // the C conversion specifiers named in [ctime.syn] (C locale)

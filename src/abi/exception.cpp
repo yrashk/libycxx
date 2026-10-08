@@ -326,7 +326,7 @@ std::type_info* __ycxx_abi_current_exception_type() noexcept {
   __ycxx_abi_terminate();
 }
 
-// std::terminate ([except.terminate]); std::terminate itself is src/abi/entry/cxa_exception.cpp's.
+// std::terminate ([except.terminate]); std::terminate itself is src/abi/entry/cxa_terminate.cpp's.
 [[noreturn]] void __ycxx_abi_terminate() noexcept {
   __ycxx::__abi::call_terminate_handler(std::get_terminate());
 }

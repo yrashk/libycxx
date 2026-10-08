@@ -2571,8 +2571,12 @@ mechanical).
    `__ycxx_abi_throw` made a throw and catch about 18% slower (`rtti_bench`: 0.97 against 0.82 µs),
    since the unwinder stepped through the forwarder's frame in both phases. The compilers never
    jump to a noreturn function, so `__ycxx_abi_throw` and `__ycxx_abi_rethrow` are not declared
-   `[[noreturn]]`, and their forwarders are in a file of their own (`cxa_throw.cpp`) that sees no
-   header declaring `__cxa_throw` noreturn; the cold noreturn helpers (`__cxa_bad_cast`,
+   `[[noreturn]]`, and their forwarders' file (`cxa_exception.cpp`) sees no header declaring
+   `__cxa_throw` noreturn (`std::terminate`'s forwarder is `cxa_terminate.cpp`'s). `__cxa_throw`
+   must stay in one archive member with `__cxa_allocate_exception`: AddressSanitizer's runtime
+   defines a weak `__cxa_throw` (an interceptor calling the "real" one), so a member holding
+   `__cxa_throw` alone was never linked under ASan, and the interceptor found no `__cxa_throw`
+   to call (206 own tests failed that way before the files were merged again); the cold noreturn helpers (`__cxa_bad_cast`,
    `std::terminate`, ...) keep a call. With that, `rtti_bench` is unchanged (throw and catch
    0.73-0.88 µs, `dynamic_cast` 40-49 ns, as before); the `__cxxabiv1` vtables and the fundamental
    type_info objects are `src/abi/rtti_classes.cpp`'s; the `src/`-private blocks are step 4's

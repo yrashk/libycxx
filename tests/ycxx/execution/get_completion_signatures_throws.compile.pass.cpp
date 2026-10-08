@@ -5,6 +5,7 @@
 // such an unspecified-exception is matched by a handler of type exception but not by one of
 // type dependent_sender_error.
 // XFAIL: clang Clang 23.1 cannot throw during constant evaluation (P3068): a throwing get_completion_signatures is only not a constant expression, so its exception cannot be told from dependent_sender_error nor caught (STATUS.md, known compiler gaps)
+// REQUIRES: exceptions
 #include <execution>
 #include <stdexcept>
 

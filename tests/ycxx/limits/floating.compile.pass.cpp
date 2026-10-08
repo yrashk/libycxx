@@ -51,3 +51,11 @@ static_assert(LD::min_exponent10 == LDBL_MIN_10_EXP && LD::max_exponent10 == LDB
 // IEC 60559 binary32/binary64 on this platform (x86-64)
 static_assert(F::is_iec559 && D::is_iec559);
 static_assert(F::digits == 24 && D::digits == 53);
+
+// tinyness_before: "true if tinyness is detected before rounding". The hardware decides: Arm
+// detects it before rounding, x86 after (the macOS arm64 nightly: libc++'s tinyness_before test).
+#if defined(__aarch64__) || defined(__arm__)
+static_assert(F::tinyness_before && D::tinyness_before && LD::tinyness_before);
+#elif defined(__x86_64__) || defined(__i386__)
+static_assert(!F::tinyness_before && !D::tinyness_before && !LD::tinyness_before);
+#endif

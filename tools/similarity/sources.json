@@ -1,0 +1,59 @@
+{
+  "_comment": "Pinned inputs of the similarity analysis (docs/similarity/METHOD.md). Bumping a version is a reviewed commit: re-check docs/similarity/*.toml (curated judgments and their pinned line ranges), tools/similarity/tuning-pins.json, and refresh tools/similarity/data/foreign-vocab.txt with `tools/similarity/run --refresh-vocab`.",
+  "libstdcxx": {
+    "name": "libstdc++",
+    "version": "GCC 16.2.0",
+    "url": "https://ftp.gnu.org/gnu/gcc/gcc-16.2.0/gcc-16.2.0.tar.xz",
+    "sha256": "e6738e29597f733270731aa90600f37ffdc045079dfc27ec7e8192cc81085c3e",
+    "top": "gcc-16.2.0",
+    "extract": ["libstdc++-v3/include", "libstdc++-v3/src", "libstdc++-v3/libsupc++", "libstdc++-v3/config",
+                "libiberty/cp-demangle.c", "libiberty/cp-demangle.h"],
+    "licence": "GNU GPL v3 with the GCC Runtime Library Exception (libiberty's demangler: GPL v2 or later with a linking exception, as stated in the file)"
+  },
+  "libcxx": {
+    "name": "libc++ and libc++abi",
+    "version": "LLVM 23.1.2",
+    "repo": "https://github.com/llvm/llvm-project.git",
+    "ref": "llvmorg-23.1.2",
+    "commit": "85ac560262434c9ccfc0c183ec22d4138ed647fb",
+    "paths": ["libcxx/include", "libcxx/src", "libcxxabi/include", "libcxxabi/src"],
+    "licence": "Apache License 2.0 with LLVM Exceptions"
+  },
+  "libcxx03": {
+    "name": "libc++'s C++03 fork (positive control)",
+    "version": "LLVM 23.1.2, libcxx/include/__cxx03 (forked from libc++ in 2024 and maintained separately since)",
+    "within": "libcxx",
+    "licence": "Apache License 2.0 with LLVM Exceptions"
+  },
+  "msvcstl": {
+    "name": "MSVC STL",
+    "version": "microsoft/STL main of 2026-10-06",
+    "repo": "https://github.com/microsoft/STL.git",
+    "commit": "da52dc0fcadbd83690cfd1ed32408d2847439493",
+    "paths": ["stl/inc", "stl/src"],
+    "licence": "Apache License 2.0 with LLVM Exceptions"
+  },
+  "libcxxrt": {
+    "name": "libcxxrt",
+    "version": "libcxxrt master of 2025-02-25",
+    "repo": "https://github.com/libcxxrt/libcxxrt.git",
+    "commit": "a6f71cbc3a1e1b8b9df241e081fa0ffdcde96249",
+    "paths": ["src"],
+    "licence": "BSD 2-clause"
+  },
+  "draft": {
+    "name": "C++ working draft sources",
+    "version": "cplusplus/draft of 2026-10-04",
+    "repo": "https://github.com/cplusplus/draft.git",
+    "commit": "4d8e364814c9b8ea4ce8d719ad87942ed4c63e24",
+    "paths": ["source"],
+    "licence": "used only to build the standard's vocabulary; nothing is shown"
+  },
+  "jplag": {
+    "name": "JPlag",
+    "version": "6.2.0",
+    "url": "https://github.com/jplag/JPlag/releases/download/v6.2.0/jplag-6.2.0-jar-with-dependencies.jar",
+    "sha256": "f2d2b98ce57018d074be023583ce5d1801240e67dd37344ef7834e63ba7e521f",
+    "java": "21"
+  }
+}

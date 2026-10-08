@@ -1,0 +1,46 @@
+# Curated classification of each fingerprint category (libycxx.org/similarity/fingerprints.html).
+# Counts are computed at build time; the text here is the judgment, written in libycxx's terms.
+
+lede = """Fingerprints are small details an implementation is free to choose, compared over whole libraries: \
+internal names, numbers, strings, comments, misspellings. Copying tends to carry them along; independent \
+work does not. Every pair of libraries is counted the same way."""
+
+[category.ident_exact]
+extraction = "Reserved (implementation-namespace) identifiers in their exact spelling. Removed: compiler builtins, predefined macros, ABI- and platform-specified names, template parameters, names shorter than six characters, and names whose core is the standard's own vocabulary (from the draft sources)."
+classification = "Exact spelling mostly measures naming conventions. libycxx spells internal names with a leading double underscore and members with a trailing one, as one established library does throughout and another does for local names, while the third uses a different convention that almost never coincides. Read the convention-free cores for content."
+severity = "expected"
+
+[category.ident_core]
+extraction = "The same identifiers reduced to a convention-free core (prefix and suffix underscores, member and static prefixes and a 'My' prefix removed, case folded), keeping cores of at least two words and eight characters."
+classification = "libycxx's exclusive overlap with each library is at or below the overlap between the established libraries themselves. Nearly all shared cores are descriptive compounds of standard names (an 'is_' test, an '_impl' helper, a '_fn' function object) or terms of art; the distinctive ones are findings F02 to F08, and the rest are a reviewed group."
+severity = "expected"
+
+[category.numbers]
+extraction = "Numeric literals outside tables, without small values, powers of two and ten, bit masks, and calendar and Unicode constants."
+classification = "libycxx's exclusive matches are standard-specified engine parameters and seeds, published-algorithm constants (Marsaglia and Tsang's gamma method, Hinnant's civil-date arithmetic), IEEE, ECMAScript and POSIX values and powers of small integers. No arbitrary tuning constant matches; see the tuning table."
+severity = "expected"
+
+[category.tables]
+extraction = "Literal tables of at least eight numbers, compared by their longest common contiguous run (at least eight), and tagged as primes, powers or code-point-like."
+classification = "libycxx's matching tables are the standard's engine parameters, month lengths and cumulative day counts, and powers of ten. libycxx has no prime-number table."
+severity = "expected"
+
+[category.strings]
+extraction = "String literals of at least six characters, case and whitespace normalised."
+classification = "Most strings libycxx shares with one library are IANA registry data (finding E03) and Itanium demangler output (finding E04); the rest are POSIX and platform names, environment variables and locale category names, plus one message string (finding F09)."
+severity = "expected"
+
+[category.comment_lines]
+extraction = "Comment lines of at least six words, punctuation and case normalised, licence text removed."
+classification = "libycxx shares almost no comment lines with any library (only Itanium ABI grammar productions and a list of the standard's section names), while the established libraries share tens to hundreds with each other."
+severity = "none"
+
+[category.comment_shingles]
+extraction = "All 8-word sequences of comment text; a calibration count only (shared lines are listed under comment lines)."
+classification = "The few shingles libycxx shares are formula fragments, paper titles, file formats and ABI grammar."
+severity = "none"
+
+[category.typos]
+extraction = "Comment words seen at most six times overall that are one edit away from a word seen at least twenty times as often, excluding inflections (a heuristic)."
+classification = "The heuristic's hits for libycxx are real words, spelling variants and identifiers: no shared misspelling."
+severity = "none"

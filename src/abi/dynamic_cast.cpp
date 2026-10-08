@@ -18,9 +18,9 @@ namespace {
 // them for a repetition anywhere in the hierarchy), every subobject lies on exactly one path,
 // and the walk stops once it has seen the source and a dst.
 struct cast_walk {
-  const __class_type_info* __src;
+  const __ycxx::__abi::__type_matcher& __src;
   const char* __sub;
-  const __class_type_info* __dst;
+  const __ycxx::__abi::__type_matcher& __dst;
   bool unique_bases;
 
   bool src_seen = false;
@@ -53,7 +53,7 @@ struct cast_walk {
     return true;
   }
 
-  cast_walk(const __class_type_info* s, const char* at, const __class_type_info* d, bool unique) noexcept
+  cast_walk(const __ycxx::__abi::__type_matcher& s, const char* at, const __ycxx::__abi::__type_matcher& d, bool unique) noexcept
       : __src(s), __sub(at), __dst(d), unique_bases(unique) {}
 
   // The subobject of type t at addr. pub: the path from the most derived object is public;
@@ -61,7 +61,7 @@ struct cast_walk {
   // below_src: the source is on this path. Returns true to end the walk.
   bool visit(const __class_type_info* t, const char* __addr, bool __pub, const char* in_dst, bool dst_pub,
              bool below_src) {
-    if (in_dst == nullptr && __ycxx::__abi::__same_type(*t, *__dst)) {
+    if (in_dst == nullptr && __dst.__matches(*t)) {
       if (across_count == 0) {
         across = __addr;
         across_count = 1;
@@ -73,7 +73,7 @@ struct cast_walk {
       }
       in_dst = __addr;
       dst_pub = true;
-    } else if (!below_src && __addr == __sub && __ycxx::__abi::__same_type(*t, *__src)) {
+    } else if (!below_src && __addr == __sub && __src.__matches(*t)) {
       src_seen = true;
       src_public = src_public || __pub;
       below_src = true;
@@ -155,26 +155,50 @@ extern "C" [[__gnu__::__visibility__("hidden")]] void* __dynamic_cast(const void
   // them, the cast succeeds there: a downcast when dst contains src, else dst is a public base of
   // src. A source below the chain (say, behind a private base of its last class) needs the full
   // walk. If the chain is the whole hierarchy and dst is not in it, dst is no base.
+  // A first pass compares addresses only: within one image a type has one type_info object, so
+  // this usually decides a successful cast without comparing names (a type_info object is the
+  // same type as itself, so a success found here is one the comparison by name would find too).
   const __class_type_info* t = mdo_type;
-  __rtti_kind k = __ycxx::__abi::__kind_of(*t);
-  bool dst_in_chain = false;
-  bool src_in_chain = false;
-  for (;;) {
-    dst_in_chain = dst_in_chain || __ycxx::__abi::__same_type(*t, *__dst);
-    src_in_chain = src_in_chain || (__source == mdo && __ycxx::__abi::__same_type(*t, *__src));
-    if (dst_in_chain && src_in_chain)
-      return const_cast<char*>(mdo);
-    if (k != __rtti_kind::__class_si)
-      break;
-    t = static_cast<const __si_class_type_info*>(t)->__base_type;
+  __rtti_kind k;
+  {
+    bool dst_in_chain = false;
+    bool src_in_chain = false;
+    for (;;) {
+      dst_in_chain = dst_in_chain || t == __dst;
+      src_in_chain = src_in_chain || (__source == mdo && t == __src);
+      if (dst_in_chain && src_in_chain)
+        return const_cast<char*>(mdo);
+      k = __ycxx::__abi::__kind_of(*t);
+      if (k != __rtti_kind::__class_si)
+        break;
+      t = static_cast<const __si_class_type_info*>(t)->__base_type;
+    }
+  }
+  // When src's and dst's type_info objects are the only ones of their types (type_matcher), that
+  // pass was the comparison by type; otherwise compare again by name.
+  const __ycxx::__abi::__type_matcher __dm(*__dst), __sm(*__src);
+  if (!(__dm.__by_address && __sm.__by_address)) {
+    t = mdo_type;
     k = __ycxx::__abi::__kind_of(*t);
+    bool dst_in_chain = false;
+    bool src_in_chain = false;
+    for (;;) {
+      dst_in_chain = dst_in_chain || __dm.__matches(*t);
+      src_in_chain = src_in_chain || (__source == mdo && __sm.__matches(*t));
+      if (dst_in_chain && src_in_chain)
+        return const_cast<char*>(mdo);
+      if (k != __rtti_kind::__class_si)
+        break;
+      t = static_cast<const __si_class_type_info*>(t)->__base_type;
+      k = __ycxx::__abi::__kind_of(*t);
+    }
   }
   if (k != __rtti_kind::__class_vmi)
     return nullptr;
 
   // The classes above t occur once each (none can be a base of t), so t's flags tell whether
   // any base class repeats.
-  cast_walk __w(__src, __source, __dst, static_cast<const __vmi_class_type_info*>(t)->__flags == 0);
+  cast_walk __w(__sm, __source, __dm, static_cast<const __vmi_class_type_info*>(t)->__flags == 0);
   __w.visit(mdo_type, mdo, true, nullptr, true, false);
   if (__w.down_count == 1 && __w.down_public)
     return const_cast<char*>(__w.down);

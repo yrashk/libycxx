@@ -5,6 +5,7 @@
 // (ycxx_pal_wait / ycxx_pal_wake_*); the freestanding archive's default PAL hooks return at
 // once, which turns every wait into a spin.
 #include <ycxx/core/atomic_base.hpp>
+#include <ycxx/core/single_threaded.hpp>
 #include <ycxx/pal.h>
 #include "wait_table.hpp"
 
@@ -81,6 +82,10 @@ void __atomic_wait_cancel(const volatile void* __addr) noexcept {
 }
 
 void __atomic_notify(const volatile void* __addr) noexcept {
+  // A process with one thread has nobody waiting (the flag is cleared before a second thread
+  // starts, DECISIONS §15): no fence.
+  if (::__ycxx::__detail::__single_threaded())
+    return;
   wait_entry& e = waits[slot_of(__addr)];
   __atomic_thread_fence(__ATOMIC_SEQ_CST);
   if (__atomic_load_n(&e.__waiters, __ATOMIC_RELAXED) == 0)

@@ -351,6 +351,33 @@ template <class _ForwardIterator1, class _ForwardIterator2>
 template <class _ForwardIterator1, class _ForwardIterator2, class _BinaryPredicate>
 [[nodiscard]] constexpr _ForwardIterator1 search(_ForwardIterator1 __first1, _ForwardIterator1 __last1,
                                                 _ForwardIterator2 __first2, _ForwardIterator2 __last2, _BinaryPredicate pred) {
+  // Byte-sized integers compared with ==: memchr finds each candidate for the first element,
+  // memcmp checks the rest (equal values are equal bytes, as for equal). Hosted only: memchr is
+  // not among the functions a freestanding program provides.
+  if constexpr (__ycxx::__detail::__memcmp_equal_args<_ForwardIterator1, _ForwardIterator2, _BinaryPredicate> &&
+                sizeof(iter_value_t<_ForwardIterator1>) == 1 && __ycxx::__detail::__cfg::__hosted)
+    if !consteval {
+      const auto __n1 = __last1 - __first1;
+      const auto __n2 = static_cast<iter_difference_t<_ForwardIterator1>>(__last2 - __first2);
+      if (__n2 == 0)
+        return __first1;
+      if (__n2 > __n1)
+        return __last1;
+      const auto* const h = ::__ycxx::__detail::__raw_address(__first1);
+      const auto* const __nd = ::__ycxx::__detail::__raw_address(__first2);
+      const auto* p = h;
+      const auto* const __last_start = h + (__n1 - __n2);
+      while (p <= __last_start) {
+        const void* c = __builtin_memchr(p, static_cast<unsigned char>(__nd[0]), static_cast<size_t>(__last_start - p + 1));
+        if (c == nullptr)
+          break;
+        p = static_cast<decltype(p)>(c);
+        if (__builtin_memcmp(p + 1, __nd + 1, static_cast<size_t>(__n2 - 1)) == 0)
+          return __first1 + (p - h);
+        ++p;
+      }
+      return __last1;
+    }
   return ::__ycxx::__detail::__search_impl(__first1, __last1, __first2, __last2, ::__ycxx::__detail::__ref_pred(pred)).first;
 }
 template <class _ForwardIterator1, class _ForwardIterator2>

@@ -11,7 +11,7 @@
 {{~else if (eq kind "function")}}{{> ycxx/kind-function . }}
 {{~else if (eq kind "typedef")}}{{#if template}}alias template{{else}}type alias{{/if}}{{#if (eq parent.kind "record")}} · member type{{/if}}
 {{~else if (eq kind "variable")~}}
-  {{~#if (eq parent.kind "record")}}static data member{{else}}{{#if template}}variable template{{else}}{{#if isConstexpr}}constant{{else}}variable{{/if}}{{/if}}{{/if~}}
+  {{~#if (eq parent.kind "record")}}static data member{{else}}{{#if template}}variable template{{else}}{{#if (and isConstexpr type.name.symbol.isImplementationDefined)}}function object{{else if isConstexpr}}constant{{else}}variable{{/if}}{{/if}}{{/if~}}
 {{~else if (eq kind "field")}}data member
 {{~else if (eq kind "concept")}}concept
 {{~else if (eq kind "enum")}}{{#if isScoped}}scoped enumeration{{else}}enumeration{{/if}}

@@ -10,7 +10,7 @@ standard's view of an entity, so this step adds it:
   - the index pages: api/index.html (by header and by namespace) and api/headers/<h>.html;
   - api/nav.json (the sidebar's index) and api/search.json (the search box's index).
 """
-import collections, html, json, os, pathlib, re, shutil
+import collections, html, json, os, pathlib, posixpath, re, shutil
 
 # ---------------------------------------------------------------------------------------------
 # Synopsis text: reserved names, attributes, wrapping, highlighting
@@ -29,7 +29,12 @@ KEEP_RESERVED = {'__ycxx', '__detail', '__adl_free', '__cpo'}
 _TAG = re.compile(r'(<[^>]+>)')
 _TOK = re.compile(r'''(?P<c>/\*.*?\*/|//[^\n]*)|(?P<s>"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*')|(?P<n>\b\d[\w.']*)|(?P<i>[A-Za-z_]\w*)|(?P<o>.)''', re.S)
 _ATTR = re.compile(r'\[\[[^\[\]]*\]\]\s*')
-_RESERVED = re.compile(r'\b(?:_([A-Z]\w*)|__([a-z]\w*))\b')
+# A reserved name of a parameter or template parameter (not one followed by :: or <, which names
+# one of libycxx's own types or templates and is left alone, so the leak check sees it).
+_RESERVED = re.compile(r'(?<![\w:])(?:_([A-Z]\w*)|__([a-z]\w*))\b(?!\s*(?:::|<))')
+# A name of libycxx's own namespaces in a declaration (a constraint, a default argument): shown as
+# the draft shows its exposition-only names, in italics and hyphenated (execution-policy).
+_INTERNAL = re.compile(r'(?:::)?__ycxx::(?:\w+::)*(\w+)')
 
 
 def plain_name(m):
@@ -65,49 +70,58 @@ def _segments(markup):
     return out
 
 
-def _wrap(segs, width=88):
-    """Break a long declaration after the commas of its parameter list."""
+def _opener(line):
+    """The index of the bracket that opens a declaration's list: a template head's "<", or the
+    parameter list's "(" (the first "(" after a name that is not decltype(…), noexcept(…)…)."""
+    if line.startswith('template<'):
+        return 8, '<', '>'
+    depth = 0
+    for i, ch in enumerate(line):
+        if ch == '<':
+            depth += 1
+        elif ch == '>' and depth and line[i - 1] != '-':
+            depth -= 1
+        elif ch == '(' and depth == 0 and i and (line[i - 1].isalnum() or line[i - 1] in '_>]=+-*/%^&|!~,[]'):
+            before = re.search(r'(\w+)\s*$', line[:i])
+            if before and before.group(1) in ('decltype', 'noexcept', 'requires', 'sizeof', 'alignof', 'explicit', 'alignas'):
+                continue
+            return i, '(', ')'
+    return None
+
+
+def _breaks(line, width):
+    """Offsets in line after which a long list breaks (after its opener and each comma)."""
+    if len(line) <= width:
+        return []
+    o = _opener(line)
+    if not o:
+        return []
+    i0, op, cl = o
+    out, depth = [i0 + 1], 0
+    pairs = {'(': ')', '[': ']', '{': '}', '<': '>'}
+    closers = set(pairs.values())
+    for i in range(i0 + 1, len(line)):
+        ch = line[i]
+        if ch == cl and depth == 0:
+            break
+        if ch in pairs and not (ch == '<' and line[i - 1:i + 1] == '<<'):
+            depth += 1
+        elif ch in closers and depth and not (ch == '>' and line[i - 1] == '-'):
+            depth -= 1
+        elif ch == ',' and depth == 0:
+            out.append(i + 1)
+    return out if len(out) > 1 or len(line) > width + 20 else []
+
+
+def _wrap(segs, width=76):
+    """Break a long declaration after the commas of its template head or parameter list."""
     text = ''.join(s for k, s in segs if k == 'text')
-    lines, pos, breaks = text.split('\n'), 0, []
-    for line in lines:
-        if len(line) > width and '(' in line:
-            depth_p = depth_a = 0
-            start = None
-            for i, ch in enumerate(line):
-                if ch == '<' and start is None:
-                    depth_a += 1
-                elif ch == '>' and start is None and depth_a and line[i - 1] != '-':
-                    depth_a -= 1
-                elif ch == '(':
-                    if start is None and depth_a == 0 and i and (line[i - 1].isalnum() or line[i - 1] in '_>]'):
-                        before = re.search(r'(\w+)\s*$', line[:i])
-                        if not before or before.group(1) not in ('decltype', 'noexcept', 'requires', 'sizeof', 'alignof', 'explicit'):
-                            start = i
-                            depth_p = 1
-                            breaks.append((pos + i + 1, False))
-                            continue
-                    if start is not None:
-                        depth_p += 1
-                elif ch == ')' and start is not None:
-                    depth_p -= 1
-                    if depth_p == 0:
-                        breaks.append((pos + i, True))
-                        break
-                elif start is not None and depth_p == 1:
-                    if ch == '<':
-                        depth_a += 1
-                    elif ch == '>' and depth_a:
-                        depth_a -= 1
-                    elif ch == ',' and depth_a == 0:
-                        breaks.append((pos + i + 1, False))
-            if len(breaks) <= 2:
-                breaks = [b for b in breaks if b[0] < pos]
+    bset, pos = set(), 0
+    for line in text.split('\n'):
+        bset.update(pos + b for b in _breaks(line, width))
         pos += len(line) + 1
-    if not breaks:
+    if not bset:
         return segs
-    # Apply: after "(" and each ",": newline + 4 spaces (the space after a comma is dropped);
-    # before the closing ")": nothing (cppreference style keeps ")" after the last parameter).
-    bset = {b for b, close in breaks if not close}
     out, pos = [], 0
     for k, s in segs:
         if k == 'tag':
@@ -126,12 +140,32 @@ def _wrap(segs, width=88):
     return out
 
 
+def expo_name(name):
+    return name.strip('_').replace('_', '-')
+
+
+def _expo(segs):
+    out = []
+    for k, s in segs:
+        if k != 'text' or '__ycxx' not in s:
+            out.append((k, s))
+            continue
+        pos = 0
+        for m in _INTERNAL.finditer(s):
+            out.append(('text', s[pos:m.start()]))
+            out.append(('expo', (expo_name(m.group(1)), m.group(0).lstrip(':'))))
+            pos = m.end()
+        out.append(('text', s[pos:]))
+    return out
+
+
 def highlight(markup, wrap=True):
     """Clean, wrap and highlight the C++ in markup (text and <a> tags)."""
     segs = _segments(markup)
     segs = [(k, _RESERVED.sub(plain_name, _drop_attributes(s)) if k == 'text' else s) for k, s in segs]
     if wrap:
         segs = _wrap(segs)
+    segs = _expo(segs)
     out, in_link = [], 0
     for k, s in segs:
         if k == 'tag':
@@ -140,6 +174,9 @@ def highlight(markup, wrap=True):
             elif s == '</a>':
                 in_link -= 1
             out.append(s)
+            continue
+        if k == 'expo':
+            out.append(f'<i class="expo" title="exposition only; libycxx: {html.escape(s[1])}">{html.escape(s[0])}</i>')
             continue
         toks = list(_TOK.finditer(s))
         for i, m in enumerate(toks):
@@ -165,6 +202,19 @@ def highlight(markup, wrap=True):
 
 _PRE = re.compile(r'(<pre class="cpp"><code>)(.*?)(</code></pre>)', re.S)
 _CODE = re.compile(r'(<code class="cpp">)(.*?)(</code>)', re.S)
+
+
+def clean_visible(text):
+    """The reserved spellings in the page's visible text outside the synopses (titles, breadcrumbs)."""
+    def fix(seg):
+        return seg if seg.startswith('<') else _RESERVED.sub(plain_name, seg)
+    a = text.find('<main id="main">')
+    t0 = text.find('<title>')
+    head = text[:a]
+    if t0 >= 0:
+        t1 = text.index('</title>', t0)
+        head = text[:t0] + ''.join(fix(x) for x in _TAG.split(text[t0:t1])) + text[t1:a]
+    return head + ''.join(fix(x) for x in _TAG.split(text[a:]))
 
 
 def highlight_page(text):
@@ -195,6 +245,12 @@ def load_pages(src):
         pg.kind, pg.q, pg.file, pg.label = m.group(1), html.unescape(m.group(2)), m.group(3), html.unescape(m.group(4))
         pg.q = pg.q.replace('__cpo::', '')
         pg.text = text
+        if pg.kind == 'variable' and re.search(r'<code>[^<]*(?:inline )?constexpr /\* implementation-defined \*/ ', text):
+            # A customization point object or an algorithm function object ([customization.point.object],
+            # [algorithms.requirements]/2): its type is the implementation's.
+            pg.label = 'function object'
+            text = text.replace('data-label="constant"', 'data-label="function object"').replace('<p class="label">constant</p>', '<p class="label">function object</p>')
+            pg.text = text
         pg.header, pg.headers, pg.sec, pg.cppref = None, [], '', None
         pages.append(pg)
     return pages
@@ -330,7 +386,9 @@ KIND_ORDER = ['namespace', 'concept', 'class template', 'class', 'struct templat
               'function', 'operator', 'variable template', 'constant', 'variable']
 
 
-def group_of(label):
+def group_of(label, q=''):
+    if '<' in q:
+        return 'Specializations'
     l = label.split(' · ')[0]
     if 'namespace' in l:
         return 'Namespaces'
@@ -349,7 +407,7 @@ def group_of(label):
     return 'Other'
 
 
-GROUPS = ['Namespaces', 'Concepts', 'Classes', 'Enumerations', 'Type aliases', 'Functions', 'Variables and constants', 'Other']
+GROUPS = ['Namespaces', 'Concepts', 'Classes', 'Enumerations', 'Type aliases', 'Functions', 'Variables and constants', 'Other', 'Specializations']
 
 
 def entity_list(items, depth):
@@ -357,7 +415,7 @@ def entity_list(items, depth):
     root = '../' * depth
     by = collections.defaultdict(list)
     for pg in items:
-        by[group_of(pg.label)].append(pg)
+        by[group_of(pg.label, pg.q)].append(pg)
     out = []
     for g in GROUPS:
         if not by.get(g):
@@ -393,13 +451,33 @@ def render(work, out, draft, cppref, cppref_out, headers, repo=None):
     if cppref is not None:
         cpp_map = cppref.build(canonical, cppref_out)
 
+    # MrDocs also gives each member of an overload set a page of its own; the set's page shows
+    # every overload, numbered, so those pages go, and links to them go to the set.
+    moved = {pg.rel: canonical[pg.q].rel for pg in pages
+             if pg.kind == 'function' and canonical[pg.q] is not pg and canonical[pg.q].kind == 'overloads'}
+    pages = [pg for pg in pages if pg.rel not in moved]
+
+    def relink(pg, text):
+        here = posixpath.dirname(pg.rel)
+        def fix(m):
+            href = m.group(1)
+            if '://' in href or href.startswith(('#', 'mailto:', '<!--')):
+                return m.group(0)
+            path, _, frag = href.partition('#')
+            target = posixpath.normpath(posixpath.join(here, path))
+            if target in moved:
+                return 'href="' + posixpath.relpath(moved[target], here or '.') + ('#' + frag if frag else '') + '"'
+            return m.group(0)
+        return re.sub(r'href="([^"]+)"', fix, text)
+
     if out.exists():
         shutil.rmtree(out)
     out.mkdir(parents=True)
     for pg in pages:
         depth = pg.rel.count('/')
-        text = pg.text.replace('<!--ycxx:facts-->', facts(pg, cpp_map.get(pg.q), draft))
-        text = highlight_page(text)
+        text = relink(pg, pg.text) if moved else pg.text
+        text = text.replace('<!--ycxx:facts-->', facts(pg, cpp_map.get(pg.q), draft))
+        text = clean_visible(highlight_page(text))
         text = fill(text, depth, pg.header or '')
         dst = out / pg.rel
         dst.parent.mkdir(parents=True, exist_ok=True)
@@ -440,7 +518,7 @@ def render(work, out, draft, cppref, cppref_out, headers, repo=None):
         body.append(entity_list(items, 2) if items else '<p class="note">This header declares macros only, or only what other headers declare as well.</p>')
         body.append('</article>')
         text = set_title(head, f'<{h}>') + '\n'.join(body) + tail
-        (out / 'headers' / f'{h}.html').write_text(highlight_page(fill(text, 1, h)), encoding='utf-8')
+        (out / 'headers' / f'{h}.html').write_text(clean_visible(fill(text, 1, h)), encoding='utf-8')
 
     # The index: headers grouped as the draft's clauses group them, and the namespaces.
     groups = collections.OrderedDict()
@@ -476,11 +554,12 @@ def render(work, out, draft, cppref, cppref_out, headers, repo=None):
     # The sidebar's index and the search index.
     nav = {'headers': {}, 'namespaces': []}
     for h in sorted(public):
-        nav['headers'][h] = [[pg.q, pg.rel, group_of(pg.label)[0]] for pg in sorted(by_header.get(h, []), key=lambda p: p.q.lower())]
+        nav['headers'][h] = [[pg.q, pg.rel, group_of(pg.label)[0]] for pg in sorted(by_header.get(h, []), key=lambda p: p.q.lower())
+                             if '<' not in pg.q]
     nav['namespaces'] = [[pg.q, pg.rel] for pg in namespaces]
     (out / 'nav.json').write_text(json.dumps(nav, separators=(',', ':')), encoding='utf-8')
     search = [[pg.q, pg.label, pg.rel, pg.header or ''] for pg in sorted(canonical.values(), key=lambda p: (p.q.count('::'), len(p.q), p.q))
-              if pg.q and pg.rel != 'index.html']
+              if pg.q and pg.rel != 'index.html' and '<' not in pg.q]
     (out / 'search.json').write_text(json.dumps(search, separators=(',', ':')), encoding='utf-8')
     if cpp_map:
         (out / 'cppref-map.json').write_text(json.dumps(cpp_map, separators=(',', ':'), sort_keys=True), encoding='utf-8')

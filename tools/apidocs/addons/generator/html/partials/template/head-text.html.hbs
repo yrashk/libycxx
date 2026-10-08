@@ -1,0 +1,2 @@
+{{!-- libycxx: a template head as text (MrDocs 0.8.0's stock partial includes itself). --}}
+template{{ str '<' }}{{#each params}}{{>template/param . link-components-impl=false ~}}{{#unless @last}}, {{/unless~}}{{/each}}{{ str '>' }}

@@ -176,23 +176,30 @@ class Archive:
             body = re.sub(r'<!--.*?-->', '', body, flags=re.S)
             body = re.sub(r'<span class="editsection">.*?</span>', '', body, flags=re.S)
             body = re.sub(r'<img\b[^>]*>', '', body)
+            # Smaller, same text: no tooltips repeating link targets, no spans around punctuation
+            # (GeSHi's brackets and symbols), no runs of blank space.
+            body = re.sub(r' title="[^"]*"', '', body)
+            body = re.sub(r'<span class="(?:br0|sy[0-9])">([^<]*)</span>', r'\1', body)
+            parts = re.split(r'(<pre\b.*?</pre>)', body, flags=re.S)
+            body = ''.join(x if x.startswith('<pre') else re.sub(r'\n\s*\n+', '\n', re.sub(r'[ \t]+', ' ', x)) for x in parts)
             here = pathlib.PurePosixPath(path).parent
             depth = path.count('/')
 
             def link(m):
                 href, frag = m.group(1), m.group(2) or ''
                 if href.startswith(('http:', 'https:', 'mailto:')):
-                    return f'href="{href}{frag}" target="_blank" rel="noopener"'
+                    return f'href="{href}{frag}"'
                 target = (here / href).as_posix()
                 target = re.sub(r'[^/]+/\.\./', '', target)
                 while '/../' in target:
                     target = re.sub(r'[^/]+/\.\./', '', target, count=1)
                 target = target[:-5] if target.endswith('.html') else target
                 if target in wanted:
-                    return f'href="{"../" * depth}{target}.html{frag}"'
-                return f'href="{LIVE}{target}{frag}" target="_blank" rel="noopener"'
+                    return f'href="{"../" * depth}{target}.html{frag}" target="_self"'
+                return f'href="{LIVE}{target}{frag}"'
             body = re.sub(r'href="([^"#]*\.html|https?:[^"#]*)(#[^"]*)?"', link, body)
-            body = re.sub(r'href="(#[^"]*)"', r'href="\1"', body)
+            body = re.sub(r'href="(#[^"]*)"', r'href="\1" target="_self"', body)
+            body = body.replace('<span class="mw-geshi cpp source-cpp">', '<span class="mw-geshi">')
             live = LIVE + path
             rev = f' (revision <a href="https://en.cppreference.com/mwiki/index.php?oldid={oldid}" target="_blank" rel="noopener">{oldid}</a>)' if oldid else ''
             root = '../' * (depth + 1)
@@ -207,9 +214,10 @@ class Archive:
 <link rel="canonical" href="{live}">
 <link rel="stylesheet" href="{root}assets/site.css">
 <link rel="stylesheet" href="{root}assets/cppref.css">
+<base target="_blank">
 </head>
 <body class="cppref">
-<p class="cppref-notice">{NOTICE}: <a href="{live}" target="_blank" rel="noopener">the original page ↗</a>{rev}, from the offline archive of {self.version[:4]}-{self.version[4:6]}-{self.version[6:]} (<a href="{root}cppref/LICENSE.txt">licence and attribution</a>).</p>
+<p class="cppref-notice">{NOTICE}: <a href="{live}" target="_blank" rel="noopener">the original page ↗</a>{rev}, from the offline archive of {self.version[:4]}-{self.version[4:6]}-{self.version[6:]} (<a href="{root}cppref/LICENSE.txt" target="_self">licence and attribution</a>).</p>
 <main class="cppref-article">
 <h1>{html.escape(title)}</h1>
 {body}

@@ -501,18 +501,65 @@ tooling.
   running when the program ends never exit and run none. A pthread key destructor (the previous
   design) runs only when a thread ends on its own, so the actions of the thread calling `exit`
   never ran. Now the POSIX PAL keeps a thread's list in a thread_local pointer and runs it from a
-  thread_local destructor of its own, the *sentinel*, registered (`__cxa_thread_atexit_impl`, Darwin's
-  `_tlv_atexit`) before the thread's first thread_local destructor or first action: the C library
-  runs a thread's thread_local destructors in reverse order of registration, also those registered
-  while they run, both when the thread ends and in `exit` (glibc's `__call_tls_dtors`, Darwin's
-  `_tlv_exit`, both before the static destructors), so the sentinel runs after every other
-  thread_local destructor of the thread. Every libycxx thread_local destructor is registered
-  through `ycxx_pal_thread_atexit` (the ABI's `__cxa_thread_atexit`), which arms the sentinel first.
-  An action registering another action (or constructing a thread_local) while the list runs is
-  run too: the list is drained, and a new registration re-arms the sentinel. Where a destructor
-  cannot be registered (a C library without `__cxa_thread_atexit_impl`) the list falls back to the
-  pthread key, as before. The `ycxx_pal_at_thread_end` contract (`pal.h`) says so for other
-  providers of the `threads` layer.
+  thread_local destructor of its own, the *sentinel*, registered with the C library's list of
+  thread_local destructors (`__cxa_thread_atexit_impl`, Darwin's `_tlv_atexit`) before every other
+  destructor of the thread. The C library runs that list in reverse order of registration, also
+  the destructors registered while it runs, both when the thread ends and in `exit` (glibc's
+  `__call_tls_dtors`, Darwin's `_tlv_exit`, both before the static destructors), so the sentinel
+  runs after every other thread_local destructor of the thread. An action registering another
+  action (or constructing a thread_local) while the list runs is run too: the list is drained, and
+  a new registration re-arms the sentinel. Where a destructor cannot be registered (a C library
+  without `__cxa_thread_atexit_impl`) the list falls back to the pthread key, as before.
+- **The sentinel is registered first, early (G7, Darwin).** "Before every other destructor" cannot
+  rely on libycxx seeing the others: Clang on Darwin (Darwin's TLV ABI; `clang -S` shows
+  `bl __tlv_atexit`) registers a program's thread_local destructors with `_tlv_atexit` itself,
+  while on ELF Clang and GCC, and GCC on Darwin (emulated TLS), call `__cxa_thread_atexit`,
+  libycxx's, which goes through `ycxx_pal_thread_atexit`. Arming the sentinel only there and at
+  the first action (the first G7 design) made a thread_local constructed before a thread's first
+  `*_at_thread_exit` call outlive the actions on macOS with Clang, and only there (the macOS CI
+  failures of `at_thread_exit_by_*`, `review_at_thread_exit_retry` and
+  `thread/many_at_thread_exit_registrations`, Clang only: CI run 240, where GCC passed them all).
+  So the POSIX PAL arms it where no thread_local of the thread can have been constructed yet:
+  - a thread `ycxx_pal_thread_create` starts (`thread`, `jthread`, `async`, the parallel
+    scheduler) arms it before its initial function runs (the PAL's start routine wraps the
+    caller's; one more allocation and one registration per thread, about 0.2 µs on Linux against
+    9 µs for a start and join, below the noise);
+  - the main thread arms it in an initializer of the PAL: on ELF with priority 100 (reserved to
+    the implementation), before every static initializer of the program; on Mach-O, which has no
+    priorities, in link order, after the program's object files (libycxx's archives come last);
+  - `ycxx_pal_thread_atexit` and the first `ycxx_pal_at_thread_end` still arm it, on any thread.
+  The order relied on is then one and the same everywhere: the sentinel is the first registration
+  of the thread's list, and the C library runs that list last-in first-out, in `exit` too. On
+  glibc, `__cxa_thread_atexit_impl` is the C library's side of the C++ ABI's
+  `__cxa_thread_atexit`, through which both compilers destroy thread_local objects in reverse
+  order of construction ([basic.start.term]/4), with no code of their own to order them. On
+  Darwin, `_tlv_atexit` is not in Apple's public documentation (no SDK header declares it; the
+  PAL declares it, with the signature Clang calls); libycxx relies on what Clang's code generation
+  requires of it in the same way (`clang -S`: one `_tlv_atexit` call per object, nothing else
+  orders the destructors), and on the macOS runs with GCC, where every registration, the
+  sentinel's included, has gone to `_tlv_atexit` through the PAL in program order, and every
+  order check passed, at thread end and in `exit`. What the next macOS run with Clang tells:
+  everything passing confirms the design. Failures only in `at_thread_exit_by_main_return` and
+  `_by_exit` (the main thread) point at the initializer (it ran after the program's first
+  thread_local, or `_tlv_atexit` before `main` does not reach the list `exit` runs); failures in
+  `at_thread_exit_by_thread_exit` (a std::thread calling `exit`), `at_thread_exit`,
+  `review_at_thread_exit_retry`, `thread/many_at_thread_exit_registrations` (300 thread_local
+  destructors per thread, so also the LIFO order at length), `linkage/thread_local_at_thread_exit`
+  or `condition_variable/notify_all_at_thread_exit` point at the start routine's registration, and
+  failures everywhere, GCC included, at the LIFO premise itself.
+  What remains ordered by first use only, on Darwin with Clang: a thread the program starts
+  itself (`pthread_create`) and a thread_local of the main thread constructed by the program's
+  own static initialization, both before their first `*_at_thread_exit` call. Their actions still
+  run after every thread_local constructed after that call
+  (`future/at_thread_exit_foreign_thread`). Everywhere else every order holds (ELF: libycxx's
+  `__cxa_thread_atexit` arms it first anyway).
+  The simulation on Linux: `tests/ycxx/support/tlv_bypass.hpp` and the `*_tlv_bypass` tests,
+  linked with `-Wl,--wrap=__cxa_thread_atexit`, send every thread_local destructor of the program
+  (and of libycxx's C++ code) straight to `__cxa_thread_atexit_impl`, as Clang does with
+  `_tlv_atexit` on Darwin, so that only the PAL's own registrations order the list; the
+  first G7 design fails them with the macOS CI messages, this one passes. The
+  `ycxx_pal_at_thread_end` contract (`pal.h`) says what other providers of the `threads` layer
+  must do.
 - **`<stop_token>` is core.** Its stop state needs only atomics and three PAL hooks: the address
   wait (through `<atomic>`'s tables), `ycxx_pal_thread_self` (a callback deregistered while
   `request_stop` runs it: on the requesting thread it is not waited for) and
@@ -660,7 +707,8 @@ tooling.
   statically into the executable and bound there (two-level namespace), so the two runtimes
   coexist with separate exception state; Apple's exceptions are foreign to libycxx's (only
   `catch (...)` catches them) and vice versa. Thread-local destructors go to `_tlv_atexit`
-  (Clang calls it directly; GCC, with emulated TLS, through `__cxa_thread_atexit` and the PAL).
+  (Clang calls it directly; GCC, with emulated TLS, through `__cxa_thread_atexit` and the PAL),
+  so the thread-end sentinel is registered at thread start and before `main` (§3).
 - **Constexpr `<stdexcept>` (P3068/P3378).** The nine classes keep one pointer to their
   message. At run time it points into a reference-counted heap block of the hosted runtime
   (`message_create`/`_retain`/`_release`, out of line as before, so a copy never throws and never

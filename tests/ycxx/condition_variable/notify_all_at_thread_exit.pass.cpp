@@ -3,7 +3,11 @@
 // current thread exits, after all objects with thread storage duration associated with the
 // current thread have been destroyed. This notification is equivalent to: lk.unlock();
 // cond.notify_all();"
+// The thread_local probe, constructed before the notification is scheduled, checks in its
+// destructor that the lock is still held: another thread's try_lock fails. (The exiting thread
+// itself may not try it: [thread.mutex.requirements.mutex.general].)
 // FLAGS: -pthread
+#include <atomic>
 #include <condition_variable>
 #include <mutex>
 #include <thread>
@@ -12,10 +16,19 @@
 static std::mutex m;
 static std::condition_variable cv;
 static bool ready = false;
-static int tls_destroyed = 0;
+static std::atomic<int> tls_destroyed(0);
 
 struct TlsProbe {
-  ~TlsProbe() { tls_destroyed = 1; }
+  ~TlsProbe() {
+    bool released = false;
+    std::thread([&] {
+      released = m.try_lock();
+      if (released)
+        m.unlock();
+    }).join();
+    CHECK(!released); // the lock is released only after this destructor
+    tls_destroyed = 1;
+  }
 };
 thread_local TlsProbe probe;
 

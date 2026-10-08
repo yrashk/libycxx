@@ -313,6 +313,10 @@ set_source_files_properties(src/abi/exception_classes.cpp src/hosted/stdexcept.c
 # defines an ios_base::Init per translation unit there (_YCXX_HAS_INIT_PRIORITY, config.hpp).
 set_source_files_properties(src/hosted/iostream.cpp src/hosted/locale.cpp PROPERTIES COMPILE_OPTIONS
   $<IF:$<CXX_COMPILER_ID:GNU>,-Wno-prio-ctor-dtor,-Wno-init-priority-reserved>)
+# Likewise the main thread's thread-end sentinel (src/pal/posix/pal.c, DECISIONS §3), registered
+# before the program can construct a thread_local.
+set_source_files_properties(src/pal/posix/pal.c PROPERTIES COMPILE_OPTIONS
+  $<$<C_COMPILER_ID:GNU>:-Wno-prio-ctor-dtor>)
 # The classic locale holds the Annex D codecvt facets ([depr.locale.category]), which are
 # declared [[deprecated]].
 set_property(SOURCE src/hosted/locale.cpp APPEND PROPERTY COMPILE_OPTIONS -Wno-deprecated-declarations)

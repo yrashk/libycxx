@@ -636,6 +636,7 @@ bool load_time(const char* name, __ycxx::__detail::__time_data<__charT>& d) {
       --__e;
     return __n.substr(__b, __e - __b);
   };
+  bool __ampm_written = false;
   for (int i = 0; i < 40; ++i) {
     d.__names[i] = __trim(__convert(__loc, ::nl_langinfo_l(items[i], __loc), __charT()));
     std::tm t{};
@@ -648,9 +649,16 @@ bool load_time(const char* name, __ycxx::__detail::__time_data<__charT>& d) {
       t.tm_hour = i == 38 ? 1 : 13;
     t.tm_mday = 1;
     std::basic_string<__charT> __w = __trim(__convert(__loc, ftime(__loc, __conv, t).c_str(), __charT()));
+    if (i >= 38)
+      __ampm_written = __ampm_written || !__w.empty();
     if (__w != d.__names[i])
       d.__written[i] = static_cast<std::basic_string<__charT>&&>(__w);
   }
+  // A locale whose strftime_l writes %p as nothing, morning and afternoon, has no AM/PM to read
+  // (what it writes reads back), whatever AM_STR and PM_STR hold: Darwin's de_DE has "AM" and
+  // "PM" there.
+  if (!__ampm_written)
+    d.__names[38].clear(), d.__names[39].clear();
   d.__d_t_fmt = __convert(__loc, reading_form(::nl_langinfo_l(D_T_FMT, __loc)).c_str(), __charT());
   const std::string __x = reading_form(::nl_langinfo_l(D_FMT, __loc));
   d.__d_fmt = __convert(__loc, __x.c_str(), __charT());

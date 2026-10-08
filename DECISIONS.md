@@ -2160,8 +2160,8 @@ types have default visibility there, so a program class with a `std::string` mem
 keeps its own visibility. Probed with GCC 16.2: a struct with a `std::string` member and a class
 derived from `std::runtime_error` give two warnings in static mode and none in shared mode. In
 static mode `std::string k(const std::string&)` is `HIDDEN`; in shared mode it is `DEFAULT`. A
-GCC-built plugin exports its unmarked functions in shared mode (7 of 7) and only the one whose
-signature names no library type in static mode (1 of 7). Static mode keeps both behaviours and
+GCC-built plugin exports all seven of its unmarked functions in shared mode. In static mode it
+exports only the four whose signatures name no library type (4 of 7). Static mode keeps both behaviours and
 its `-Wno-attributes`.
 
 ### 20.4 The inline ABI namespace

@@ -202,7 +202,7 @@ for cc in $compilers; do
   [ "$exported" = 7 ] && ok "[$cc] shared plugin without the export attribute exports its 7 functions" ||
     bad "[$cc] shared plugin without the export attribute exports $exported of its 7 functions"
   run $work/y1-static/tools/ycxx-cxx $cc --libdir=$work/y1-static/build/$cc -O2 -fPIC -shared "$here/plugin/plugin.cpp" -o "$d/plugin-static-noattr.so"
-  echo "[$cc] static plugin without the export attribute exports $(nm -D --defined-only "$d/plugin-static-noattr.so" | grep -c ' T plugin_') of its 7 functions (GCC: 1, plugin_uncaught, whose signature names no library type; Clang: all)"
+  echo "[$cc] static plugin without the export attribute exports $(nm -D --defined-only "$d/plugin-static-noattr.so" | grep -c ' T plugin_') of its 7 functions (GCC: 4, the three whose signatures name library types are hidden; Clang: all 7)"
   # What the images export besides their own functions: the shared plugin exports the inline
   # functions and template instantiations it emitted (std::__y1, default visibility), the static
   # one only the allocation table.

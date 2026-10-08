@@ -10,3 +10,4 @@
 20_util/stdbit/1\.cc | clang | uses GCC's predefined macro __LONG_LONG_WIDTH__, which Clang does not define
 20_util/to_chars/float16_c\+\+23\.cc | clang | uses std::float32_t unconditionally; the extended floating-point types are optional ([basic.extended.fp]/1), and Clang 23 has no _Float32 (__STDCPP_FLOAT32_T__ is not defined)
 18_support/96817\.cc | tsan | expects recursive static-local initialization to be detected (std::terminate) rather than to deadlock; under ThreadSanitizer the sanitizer runtime's __cxa_guard_acquire serves the program instead of libycxx's (src/abi/guard.cpp, DECISIONS §6), and it waits forever on a guard its own thread holds; recursive initialization is undefined behaviour ([stmt.dcl]/3), the detection is a libstdc++ quality-of-implementation check (PR 96817)
+std/time/clock/local/io\.cc | clang | calls GCC's __builtin_puts, which Clang does not declare

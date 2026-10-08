@@ -1,0 +1,18 @@
+Category: extension. unit-regression2.cpp's test of parsing a span of std::byte instantiates
+std::char_traits<std::byte>, which the standard does not define ([char.traits.specializations]):
+libstdc++'s generic char_traits is an extension; json already excludes the test with libc++. Runs
+it only with libstdc++ (__GLIBCXX__).
+
+diff --git a/tests/src/unit-regression2.cpp b/tests/src/unit-regression2.cpp
+index 2c3977f..e055fff 100644
+--- a/tests/src/unit-regression2.cpp
++++ b/tests/src/unit-regression2.cpp
+@@ -745,7 +745,7 @@ TEST_CASE("regression tests 2")
+     }
+ 
+ #ifdef JSON_HAS_CPP_20
+-#ifndef _LIBCPP_VERSION // see https://github.com/nlohmann/json/issues/4490
++#ifdef __GLIBCXX__ // see https://github.com/nlohmann/json/issues/4490: needs std::char_traits<std::byte>, a libstdc++ extension
+ #if __has_include(<span>)
+     SECTION("issue #2546 - parsing containers of std::byte")
+     {

@@ -6,6 +6,11 @@
   define standard-mandated macros such as INT_MAX or __cpp_lib_*).
 - Elsewhere, #if/#ifdef/#ifndef/#elif may only test _YCXX_HAS_* / _YCXX_* switches.
 - Every header starts with #pragma once.
+- The transitive includes (DECISIONS §19): _YCXX_TRANSITIVE_INCLUDES (config.hpp's form of the
+  user's YCXX_NO_TRANSITIVE_INCLUDES) is tested by exactly one pattern, the block at the end of a
+  public header that tools/gen_transitive_includes.py writes: `#if _YCXX_TRANSITIVE_INCLUDES`,
+  #include lines of public headers, at most one nested `#if _YCXX_HOSTED` ... `#endif` of the same,
+  `#endif`, and nothing after it. Nothing else may test it, and no other file may name it.
 """
 import pathlib, re, sys
 
@@ -26,6 +31,45 @@ MANDATED_MACRO_FILES = {
 }
 # Headers the standard requires to be re-includable with different effect.
 REINCLUDABLE = {"cassert"}
+TRANSITIVE = "_YCXX_TRANSITIVE_INCLUDES"
+TINC = re.compile(r"^#(  |    )include <([^<>]+)>$")
+
+
+def check_transitive_block(rel, lines, errors):
+    """The one sanctioned use of _YCXX_TRANSITIVE_INCLUDES (DECISIONS §19)."""
+    uses = [n for n, line in enumerate(lines) if not line.lstrip().startswith("//")
+            and (TRANSITIVE in line or "YCXX_NO_TRANSITIVE_INCLUDES" in line)]
+    if not uses:
+        return
+    if rel.startswith("ycxx/") or "/" in rel:
+        errors.append(f"{rel}:{uses[0] + 1}: {TRANSITIVE} outside a public header's transitive-include block")
+        return
+    start = uses[0]
+    if len(uses) > 1 or lines[start] != f"#if {TRANSITIVE}":
+        errors.append(f"{rel}:{start + 1}: {TRANSITIVE} may only be tested by one `#if {TRANSITIVE}` block")
+        return
+    hosted = None
+    for n in range(start + 1, len(lines)):
+        line = lines[n]
+        m = TINC.match(line)
+        if m and (m.group(1) == "  ") == (hosted is None or hosted is False):
+            if not (ROOT / m.group(2)).is_file() or m.group(2).startswith("ycxx/"):
+                errors.append(f"{rel}:{n + 1}: a transitive include must name a public header: {line}")
+        elif line == "#  if _YCXX_HOSTED" and hosted is None:
+            hosted = True
+        elif line == "#  endif" and hosted is True:
+            hosted = False
+        elif line == "#endif" and hosted is not True:
+            if any(l.strip() for l in lines[n + 1:]):
+                errors.append(f"{rel}:{n + 2}: nothing may follow the transitive-include block")
+            return
+        else:
+            errors.append(f"{rel}:{n + 1}: only #include lines (and one nested #if _YCXX_HOSTED) may "
+                          f"appear in the transitive-include block: {line}")
+            return
+    errors.append(f"{rel}:{start + 1}: unterminated transitive-include block")
+
+
 COND = re.compile(r"^\s*#\s*(if|ifdef|ifndef|elif|elifdef|elifndef)\b(.*)")
 DEFINE = re.compile(r"^\s*#\s*(define|undef)\s+(\w+)")
 SWITCH = re.compile(r"^\s*!?\s*(_YCXX_[A-Z0-9_]+)(\s*(&&|\|\|)\s*!?\s*_YCXX_[A-Z0-9_]+)*\s*$")
@@ -39,6 +83,7 @@ for path in sorted(p for p in ROOT.rglob("*") if p.is_file()):
     if "#pragma once" not in text and not rel.endswith(".h") and rel not in REINCLUDABLE:
         errors.append(f"{rel}: missing #pragma once")
     mandated = rel in MANDATED_MACRO_FILES
+    check_transitive_block(rel, text.splitlines(), errors)
     for n, line in enumerate(text.splitlines(), 1):
         m = DEFINE.match(line)
         if m and not mandated:

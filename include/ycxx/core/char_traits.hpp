@@ -11,9 +11,6 @@
 #include <ycxx/core/cstdint.hpp>
 #if _YCXX_HOSTED
 #  include <ycxx/hosted/c_wchar.hpp>
-// EOF (and the rest of <cstdio>) with the character traits, as libraries commonly provide them
-// with <string> ([res.on.headers]/1: a C++ header may include other C++ headers).
-#  include <cstdio>
 #else
 #  include <ycxx/core/mbstate.hpp>
 #endif

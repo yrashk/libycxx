@@ -890,3 +890,34 @@ triaged for counterparts test by test; the table below is the per-directory coun
 | 29_atomics | 32 |
 | 30_threads | 40 |
 | std | 91 |
+
+## Transitive includes (DECISIONS §19, 2026-10-07)
+
+libycxx's headers now provide, by default, what libstdc++ and libc++ both provide with them (and
+what the real-world projects and these suites are known to rely on; `-DYCXX_NO_TRANSITIVE_INCLUDES`
+turns that off). Every test of the F entries of `skip.txt` was run again in the default mode on
+both compilers (85 tests, `tools/run-conformance libstdcxx gcc|clang -- --filter ...`):
+- **62 pass** on both compilers; their skips are gone: `constant_wrapper/instantiate`,
+  `random_device/*` (`testsuite_random.h`'s `std::min`), the `<fstream>`/`<locale>` `mbstate_t`
+  tests and the C-library-name tests that only needed a declaration (`errno.cc`, `wcscmp`,
+  `wint_t`, `wmemset`, `WEOF`, `std::printf`/`std::puts`), `basic_ostream/emit/1` (`<sstream>`
+  through `<syncstream>`), `format/pr121765` (`<span>` through `<format>`), `clock/(local|tai)/io`,
+  `setlocale` with `<locale>`/`<regex>`, the whole-suite entry of 2026-10-05 (`std::same_as`,
+  braced `initializer_list`, `std::time_t`, `std::equal`/`fill`, `std::iota`, `numeric_limits`,
+  `std::string`), and the passing part of the extension entry (`memory_management_tools`,
+  `assign_range`, `codecvt/in/wchar_t/wrapped_*`, `time_put 17038`, `const_iterator`,
+  `ends_with`/`starts_with`, `sample`, `iota/2`). `std/time/clock/local/io.cc` calls GCC's
+  `__builtin_puts`: UNSUPPORTED with Clang (`unsupported.txt`).
+- **Still skipped, not provided by both libraries**: `std::vector`/`std::pmr::vector`/
+  `std::views` without their headers (map/set `from_range`, `insert_range`, `flat_multimap/1`,
+  `equal`/`lexicographical_compare` `constrained`, `vector/cons/108487`,
+  `polymorphic_allocator/construct_c++2a`, `substr/rvalue`), `std::iterator` after `<algorithm>`
+  (`copy/34595`), `std::ostringstream` after `<ostream>` (`basic_ostream/print/1`, `2`).
+- **Compile now, fail at run time for other reasons** (their entries rewritten):
+  `basic_filebuf/{overflow,sync}/char/9182-*` expect `close`/`pubsync` to throw when `codecvt::out`
+  fails (implementation-specific); `basic_stringbuf/setbuf/wchar_t/2`, `3` expect `setbuf` to use
+  the caller's array (implementation-defined, as `char/123100`); and three not triaged further
+  yet (STATUS, open items): `seekoff/*/11543` (`bad_cast` from a `basic_filebuf` with a program's
+  `codecvt<char, char, MyState>`), `underflow/wchar_t/11544-1`, `-2` (not `bad()` after an
+  incomplete character) and `codecvt_unicode_char8_t` (no `partial` from `codecvt<char16_t,
+  char8_t>::in` on a truncated sequence).

@@ -149,6 +149,7 @@ std/ranges/adaptors/adjacent/1\.cc | divergence | test01 indexes views::adjacent
 27_io/basic_filebuf/seekoff/(char|wchar_t)/11543\.cc | implementation-specific | uses std::min without including <algorithm>; with it the test compiles
 27_io/basic_ostream/print/(1|2)\.cc | implementation-specific | uses std::ostringstream/std::stringstream without including <sstream>; with it both pass
 27_io/basic_filebuf/(in_avail|setbuf)/char/1\.cc | extension | uses libstdc++'s basic_filebuf members _M_buf_size / _M_mode
+27_io/ios_base/storage/2\.cc | divergence | calls pword and iword with INT_MAX - 1 and INT_MAX, indices no xalloc() returned, and expects them to fail (libstdc++ caps the arrays); [ios.base.storage]/3, /6 make "idx is a value obtained by a call to xalloc" a precondition. libycxx extends the arrays as necessary (/4, /7), which succeeds wherever the 16 and 32 GB can be had (CI's Linux runners, after 100 s of zero-filling)
 # The remaining failures of 21_strings, 22_locale, 27_io, std/format and std/time (2026-10-05),
 # each triaged in TRIAGE.md (category (b)/C there); every one was checked to compile (and pass,
 # where it runs) once the missing include or qualification is added.

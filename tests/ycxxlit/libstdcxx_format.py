@@ -292,7 +292,7 @@ class LibstdcxxFormat(lit.formats.FileBasedTest):
                 while re.search(r'\[[^\[\]]*\]', text):
                     text = re.sub(r'\[[^\[\]]*\]', '', text)
                 for o in text.split():
-                    if o in ('-latomic', '-lstdc++exp'):  # libstdc++'s own extra libraries
+                    if o in ('-latomic', '-lstdc++exp', '-lstdc++fs', '-lsupc++'):  # libstdc++'s own extra libraries (libycxx is one library; macOS has none of them)
                         continue
                     sm = re.fullmatch(r'-std=(?:gnu|c)\+\+(\w+)', o)
                     if sm:

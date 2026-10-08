@@ -316,6 +316,9 @@ def resolve(pages, draft, public, users):
                 hs = [pg.file]
             elif len(users.get(pg.file, ())) >= 1:
                 hs = sorted(users[pg.file])
+                # ycxx/core/new.hpp: <new> first among the headers that include it.
+                stem = posixpath.splitext(posixpath.basename(pg.file))[0]
+                hs.sort(key=lambda h: h != stem)
         return hs, sec
 
     cache = {}
@@ -582,6 +585,8 @@ def call_signatures(fo_dir, fobjs):
         for cls in found:
             for b in ops.get(cls, []) if cls else []:
                 b = re.sub(r'</?a\b[^>]*>', '', b)
+                if b.lstrip().startswith('using '):
+                    continue        # using Base::operator(): the base's operators are listed already
                 b = re.sub(r'operator\(\)\(', name + '(', b, count=1)
                 b = re.sub(r'\) const(?=[ ;\n]|$)', ')', b, count=1)
                 key = re.sub(r'\s+', ' ', b)
@@ -788,7 +793,7 @@ def render(work, out, draft, cppref, cppref_out, headers, repo=None, exported=No
               if pg.q and pg.rel != 'index.html' and '<' not in pg.q]
     (out / 'search.json').write_text(json.dumps(search, separators=(',', ':')), encoding='utf-8')
     if cpp_map:
-        (out / 'cppref-map.json').write_text(json.dumps(cpp_map, separators=(',', ':'), sort_keys=True), encoding='utf-8')
+        (out / 'cppref-map.json').write_text(json.dumps({display_q(q): v for q, v in cpp_map.items()}, separators=(',', ':'), sort_keys=True), encoding='utf-8')
     tag = out / 'reference.tag.xml'
     if tag.exists():
         tag.unlink()

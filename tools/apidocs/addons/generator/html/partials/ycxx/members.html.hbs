@@ -1,21 +1,21 @@
 {{!-- The members of a class or namespace, grouped the way the draft's synopses group them.
       Parameters: tranche, label ("" or "Protected "), scope ("record" or "namespace") --}}
 {{#if (eq scope "namespace")}}
-{{> ycxx/member-group members=tranche.namespaces title="Namespaces" gid="namespaces"}}
-{{> ycxx/member-group members=tranche.namespaceAliases title="Namespace aliases" gid="namespace-aliases"}}
-{{> ycxx/member-group members=tranche.concepts title="Concepts" gid="concepts"}}
-{{> ycxx/member-group members=tranche.records title="Classes" gid="classes"}}
-{{> ycxx/member-group members=tranche.enums title="Enumerations" gid="enums"}}
-{{> ycxx/member-group members=tranche.typedefs title="Type aliases" gid="aliases"}}
-{{> ycxx/member-group members=tranche.functions title="Functions" gid="functions"}}
-{{> ycxx/member-group members=tranche.variables title="Variables and function objects" gid="variables"}}
-{{> ycxx/member-group members=tranche.usings title="Using-declarations" gid="usings"}}
-{{> ycxx/member-group members=tranche.guides title="Deduction guides" gid="guides"}}
+{{> ycxx/member-group members=(transform tranche.namespaces @root.mrdocs.corpus.get) title="Namespaces" gid="namespaces"}}
+{{> ycxx/member-group members=(transform tranche.namespaceAliases @root.mrdocs.corpus.get) title="Namespace aliases" gid="namespace-aliases"}}
+{{> ycxx/member-group members=(transform tranche.concepts @root.mrdocs.corpus.get) title="Concepts" gid="concepts"}}
+{{> ycxx/member-group members=(reject_by (transform tranche.records @root.mrdocs.corpus.get) "isListedOnPrimary") title="Classes" gid="classes"}}
+{{> ycxx/member-group members=(transform tranche.enums @root.mrdocs.corpus.get) title="Enumerations" gid="enums"}}
+{{> ycxx/member-group members=(transform tranche.typedefs @root.mrdocs.corpus.get) title="Type aliases" gid="aliases"}}
+{{> ycxx/member-group members=(reject_by (transform tranche.functions @root.mrdocs.corpus.get) "isListedOnPrimary") title="Functions" gid="functions"}}
+{{> ycxx/member-group members=(transform tranche.variables @root.mrdocs.corpus.get) title="Variables and function objects" gid="variables"}}
+{{> ycxx/member-group members=(transform tranche.usings @root.mrdocs.corpus.get) title="Using-declarations" gid="usings"}}
+{{> ycxx/member-group members=(transform tranche.guides @root.mrdocs.corpus.get) title="Deduction guides" gid="guides"}}
 {{else}}
-{{> ycxx/member-group members=(concat tranche.records tranche.typedefs tranche.enums) title=(concat label "Member types") gid=(concat label "types")}}
-{{> ycxx/member-group members=tranche.functions title=(concat label "Member functions") gid=(concat label "functions")}}
-{{> ycxx/member-group members=tranche.staticFunctions title=(concat label "Static member functions") gid=(concat label "static-functions")}}
-{{> ycxx/member-group members=tranche.variables title=(concat label "Data members") gid=(concat label "data")}}
-{{> ycxx/member-group members=tranche.staticVariables title=(concat label "Static data members") gid=(concat label "static-data")}}
-{{> ycxx/member-group members=tranche.usings title=(concat label "Using-declarations") gid=(concat label "usings")}}
+{{> ycxx/member-group members=(reject_by (transform (concat tranche.records tranche.typedefs tranche.enums) @root.mrdocs.corpus.get) "isListedOnPrimary") title=(concat label "Member types") gid=(concat label "types")}}
+{{> ycxx/member-group members=(reject_by (transform tranche.functions @root.mrdocs.corpus.get) "isListedOnPrimary") title=(concat label "Member functions") gid=(concat label "functions")}}
+{{> ycxx/member-group members=(reject_by (transform tranche.staticFunctions @root.mrdocs.corpus.get) "isListedOnPrimary") title=(concat label "Static member functions") gid=(concat label "static-functions")}}
+{{> ycxx/member-group members=(transform tranche.variables @root.mrdocs.corpus.get) title=(concat label "Data members") gid=(concat label "data")}}
+{{> ycxx/member-group members=(transform tranche.staticVariables @root.mrdocs.corpus.get) title=(concat label "Static data members") gid=(concat label "static-data")}}
+{{> ycxx/member-group members=(transform tranche.usings @root.mrdocs.corpus.get) title=(concat label "Using-declarations") gid=(concat label "usings")}}
 {{/if}}

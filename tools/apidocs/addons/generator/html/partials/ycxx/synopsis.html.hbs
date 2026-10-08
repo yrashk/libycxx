@@ -4,7 +4,7 @@
 {{#if (eq kind "overloads")}}
 <h2 id="sec-syn">Overloads</h2>
 <ol class="ovl">
-{{#each members}}
+{{#each (transform members @root.mrdocs.corpus.get)}}
 <li class="ovl-item" id="overload-{{add @index 1}}"><div class="ovl-code"><pre class="cpp"><code>{{> symbol/signature/function . }}</code></pre></div><span class="ovl-n" aria-label="overload {{add @index 1}}">({{add @index 1}})</span></li>
 {{/each}}
 </ol>

@@ -1,4 +1,4 @@
-{{!-- A function's parameters and result, without its template head: (const T& value) -> void --}}
-{{~#if (eq functionClass "normal")}}{{> type/declarator-text return }} {{/if~}}
+{{!-- A function's result, name and parameters, without its template head: void f(const T& value) --}}
+{{~#if (eq funcClass "normal")}}{{> type/declarator-text returnType }} {{/if~}}
 {{> symbol/name-text . }}({{#each params}}{{> type/declarator-text type decl-name=name }}{{#unless @last}}, {{/unless}}{{/each}}{{#if isVariadic}}{{#if params}}, {{/if}}{{str "..."}}{{/if}})
 {{~#if isConst}} const{{/if}}{{#if refQualifier}} {{refQualifier}}{{/if~}}

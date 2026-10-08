@@ -6,13 +6,14 @@
     (an overload set grouped and numbered (1), (2)… as the standard and cppreference show
     them), then the members, grouped as the draft's class synopses group them.
 
-    Expected Context: {Root Context Object}
+    Expected Context: {Root Context Object}. MrDocs 2026.9.29's DOM: symbols refer to each
+    other by id (@root.mrdocs.corpus.get, getUrl).
 --}}
-<article class="ref" data-kind="{{symbol.kind}}" data-q="{{> symbol/qualified-name-text symbol }}" data-file="{{#if (eq symbol.kind "overloads")}}{{#with (front symbol.members)}}{{loc.def.shortPath}}{{#unless loc.def}}{{#with (front loc.decl)}}{{shortPath}}{{/with}}{{/unless}}{{/with}}{{else}}{{symbol.loc.def.shortPath}}{{#unless symbol.loc.def}}{{#with (front symbol.loc.decl)}}{{shortPath}}{{/with}}{{/unless}}{{/if}}" data-label="{{> ycxx/kind symbol }}">
+<article class="ref" data-kind="{{symbol.kind}}" data-q="{{> symbol/qualified-name-text symbol }}" data-file="{{#with (primary_location symbol)}}{{shortPath}}{{/with}}" data-label="{{> ycxx/kind symbol }}">
 {{> ycxx/crumbs symbol }}
 <header class="ref-head">
 <p class="label">{{> ycxx/kind symbol }}</p>
-<h1 class="ref-name">{{#if (and symbol.parent symbol.parent.parent)}}<span class="ref-scope">{{> symbol/qualified-name-text symbol.parent }}::</span>{{/if}}<span class="ref-leaf">{{#if (eq symbol.kind "namespace")}}{{#if symbol.name}}{{symbol.name}}{{else}}Global namespace{{/if}}{{else}}{{> symbol/name-text symbol }}{{/if}}</span></h1>
+<h1 class="ref-name">{{#if (and symbol.parent (lookup (@root.mrdocs.corpus.get symbol.parent) "parent"))}}<span class="ref-scope">{{> symbol/qualified-name-text (@root.mrdocs.corpus.get symbol.parent) }}::</span>{{/if}}<span class="ref-leaf">{{#if (eq symbol.kind "namespace")}}{{#if symbol.name}}{{symbol.name}}{{else}}Global namespace{{/if}}{{else}}{{> symbol/name-text symbol }}{{/if}}</span></h1>
 <!--ycxx:facts-->
 </header>
 {{#if symbol.doc.brief}}
@@ -35,8 +36,8 @@
 <div class="table-wrap"><table class="data members">
 <thead><tr><th scope="col">Name</th><th scope="col">Value</th></tr></thead>
 <tbody>
-{{#each symbol.constants}}
-<tr><td><code class="m-name">{{name}}</code></td><td>{{#if initializer}}<code class="cpp">{{initializer}}</code>{{/if}}</td></tr>
+{{#each (transform symbol.constants @root.mrdocs.corpus.get)}}
+<tr><td><code class="m-name">{{name}}</code></td><td>{{#if initializer.written}}<code class="cpp">{{initializer.written}}</code>{{/if}}</td></tr>
 {{/each}}
 </tbody></table></div>
 </section>
@@ -46,7 +47,7 @@
 <section class="ref-sec" aria-labelledby="sec-derived">
 <h2 id="sec-derived">Derived classes</h2>
 <ul class="chips">
-{{#each symbol.derived}}<li>{{#if url}}<a href="{{{relativize url}}}"><code>{{> type/name-info-text . }}</code></a>{{else}}<code>{{> type/name-info-text . }}</code>{{/if}}</li>
+{{#each (transform symbol.derived @root.mrdocs.corpus.get)}}<li>{{#if (@root.mrdocs.corpus.getUrl this)}}<a href="{{{relativize (@root.mrdocs.corpus.getUrl this)}}}"><code>{{> symbol/qualified-name-text . }}</code></a>{{else}}<code>{{> symbol/qualified-name-text . }}</code>{{/if}}</li>
 {{/each}}
 </ul>
 </section>

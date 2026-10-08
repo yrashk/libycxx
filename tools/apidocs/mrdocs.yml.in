@@ -3,18 +3,22 @@ source-root: @SOURCE_ROOT@
 compilation-database: @COMPILATION_DATABASE@
 generator: @GENERATOR@
 output: @OUTPUT@
-addons: @ADDONS@
+# libycxx's templates, layered over MrDocs's stock ones.
+addons-supplemental:
+  - @ADDONS@
 multipage: true
 concurrency: @JOBS@
 
-# Never the system's C++ library, nor MrDocs's bundled one: the translation unit has
+# Never the system's C++ library, nor MrDocs's bundled libc++: the translation unit has
 # -nostdinc++ and libycxx's include paths, and the C library is the system's (glibc).
-use-system-stdlib: true
+use-system-stdlib: false
+stdlib-includes:
+  - @NO_STDLIB@
 use-system-libc: true
 
 # The public API is what the std module exports (modules/std.cppm), with the members of what
 # it exports; nothing in libycxx's own namespaces. A namespace that holds customization point
-# objects in an inline namespace (std::ranges::__cpo) is included whole, since MrDocs 0.8.0
+# objects in an inline namespace (std::ranges::__cpo) is included whole, since MrDocs (2026.9.29)
 # matches no literal pattern to its members; tools/apidocs/render.py then drops whatever
 # the module does not export and every member with a reserved name.
 include-symbols:
@@ -26,12 +30,11 @@ implementation-defined:
   - '__ycxx::**'
 
 overloads: true
-extract-friends: true
 extract-private: false
 extract-private-bases: false
 sort-members: true
-# MrDocs 0.8.0 stops in this step on some of libycxx's declarations; the reference has no
-# doc comments to complete anyway.
-auto-function-metadata: false
+# A variable whose type's only members are call operators is shown as the function it stands
+# for ([algorithms.requirements]/2); for the others tools/gen-apidocs adds their call signatures.
+auto-function-objects: true
 auto-brief: false
 warnings: false

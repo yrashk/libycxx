@@ -44,7 +44,7 @@ jobs:
       - uses: actions/cache@v4
         with:
           path: build/apidocs/cache
-          key: apidocs-downloads-${{ hashFiles('tools/gen-apidocs') }}
+          key: apidocs-downloads-mrdocs-2026.9.29-cppref-20250209-${{ hashFiles('tools/gen-apidocs') }}
 
       # site/ is static HTML, CSS and self-hosted fonts, plus the generated API reference
       # (site/api/) and cppreference pages (site/cppref/).

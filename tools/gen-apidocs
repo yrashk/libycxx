@@ -31,9 +31,11 @@ REPO = HERE.parent
 APIDOCS = HERE / 'apidocs'
 sys.path.insert(0, str(APIDOCS))
 
-MRDOCS_VERSION = '0.8.0'
-MRDOCS_URL = f'https://github.com/cppalliance/mrdocs/releases/download/v{MRDOCS_VERSION}/MrDocs-{MRDOCS_VERSION}-Linux.tar.gz'
-MRDOCS_SHA256 = '75aead343ad5bf6f008efa439a09998fe175718876a05a951d6d6c60e79e671d'
+# MrDocs's releases are named by date (the tag has no "v"); `mrdocs --version` prints
+# "Release: 2026.9.29" (and the library's own version, still 0.8.0).
+MRDOCS_VERSION = '2026.9.29'
+MRDOCS_URL = f'https://github.com/cppalliance/mrdocs/releases/download/{MRDOCS_VERSION}/MrDocs-{MRDOCS_VERSION}-Linux.tar.gz'
+MRDOCS_SHA256 = 'dc7e066cda9a16471d59ac5e72a41f8dc908af4ca544856bd9a2223c54c9ccfd'
 
 CPPREF_VERSION = '20250209'
 CPPREF_URL = f'https://github.com/PeterFeicht/cppreference-doc/releases/download/v{CPPREF_VERSION}/html-book-{CPPREF_VERSION}.tar.xz'
@@ -41,23 +43,17 @@ CPPREF_SHA256 = 'ac50671a1f52d7f0ab0911d14450eb35e8c2f812edd0e426b2cd1e3d9db91d6
 
 BUILD = REPO / 'build' / 'apidocs'
 
-# MrDocs 0.8.0's Clang (LLVM 22, built with assertions) stops on two of libycxx's constructs that
-# Clang 23 compiles. The translation unit sees a copy of the header with the construct rewritten;
-# neither rewrite changes a declaration the reference shows (the first is in an internal base,
-# the second is a constraint the draft states in words, not in the synopsis). A pattern that no
-# longer matches stops the generator, so a fixed header or a newer MrDocs is noticed.
+# MrDocs 2026.9.29's Clang (LLVM 23.0.0git, built with assertions) stops on one of libycxx's
+# constructs that Clang 23.1 compiles. The translation unit sees a copy of the header with the
+# construct rewritten; the rewrite changes no declaration the reference shows (it is in an
+# internal base). A pattern that no longer matches stops the generator, so a fixed header is
+# noticed; tools/gen-apidocs --check-workarounds tells whether MrDocs still needs it.
 WORKAROUNDS = [
     # Assertion `isPRValue()` in DeduceAutoType: a compound assignment as the template argument
     # of constant_wrapper<auto> in the pseudo-mutators' return types ([const.wrap.class]).
     ('ycxx/core/constant_wrapper.hpp',
      r'std::constant_wrapper<\(_Tp::value (\+|-|\*|/|%|&|\||\^|<<|>>)= _Rp::value\)>',
      r'std::constant_wrapper<(_Tp::value \1 _Rp::value)>'),
-    # Assertion "declaration not instantiated in this scope" in MrDocs's USR generation: a
-    # requires-expression with a local parameter naming the function's parameter (duration's
-    # operator%=, [time.duration.arithmetic]).
-    ('ycxx/core/chrono_base.hpp',
-     r'\n[ \t]*requires requires\(rep& r\) \{ r %= __rhs(?:\.count\(\))?; \}(?=\n)',
-     ''),
 ]
 
 # What <ycxx/generated/c_library.hpp> says for glibc (cmake/ycxx-c-library.cmake probes it at
@@ -93,17 +89,18 @@ def fetch(url, dest, sha256):
 
 
 def find_mrdocs(a):
-    installed = BUILD / 'tools' / f'MrDocs-{MRDOCS_VERSION}-Linux' / 'bin' / 'mrdocs'
-    if a.install and not installed.exists():
+    root = BUILD / 'tools' / f'mrdocs-{MRDOCS_VERSION}'
+    if a.install and not list(root.glob('*/bin/mrdocs')):
         tgz = fetch(MRDOCS_URL, BUILD / 'cache' / pathlib.Path(MRDOCS_URL).name, MRDOCS_SHA256)
         with tarfile.open(tgz) as t:
-            t.extractall(BUILD / 'tools', filter='tar' if hasattr(tarfile, 'tar_filter') else None)
-    for c in (a.mrdocs, os.environ.get('MRDOCS'), installed if installed.exists() else None, shutil.which('mrdocs')):
+            t.extractall(root, filter='tar' if hasattr(tarfile, 'tar_filter') else None)
+    installed = sorted(root.glob('*/bin/mrdocs'))
+    for c in (a.mrdocs, os.environ.get('MRDOCS'), installed[0] if installed else None, shutil.which('mrdocs')):
         if c:
             p = pathlib.Path(c).resolve()
             v = subprocess.run([p, '--version'], capture_output=True, text=True).stdout
-            if f'version {MRDOCS_VERSION}' not in v:
-                log(f'warning: {p} is not MrDocs {MRDOCS_VERSION}: {v.splitlines()[:1]}')
+            if f'Release: {MRDOCS_VERSION}' not in v:
+                log(f'warning: {p} is not MrDocs {MRDOCS_VERSION}: {" / ".join(v.splitlines()[:2])}')
             return p
     sys.exit('gen-apidocs: no MrDocs (pass --install, --mrdocs PATH or set $MRDOCS)')
 
@@ -131,6 +128,10 @@ def std_module():
             # declared in std::ranges::__cpo).
             if '::__cpo::' in m.group(1):
                 names.append(m.group(1).replace('::__cpo::', '::'))
+        # The global replaceable allocation functions ([std.modules]/2).
+        m = re.match(r'export using ::(operator (?:new|delete)(?:\[\])?);$', s)
+        if m:
+            names.append(m.group(1))
         m = re.match(r'namespace (\w+) = (std::[\w:]+);$', s)
         if m:
             names.append(m.group(2))
@@ -146,12 +147,14 @@ def multiarch():
     return 'x86_64-linux-gnu'
 
 
-def prepare(work, mrdocs, headers, exported, a):
+def prepare(work, mrdocs, headers, exported, a, skip=()):
     """The translation unit, its compilation database, the addons and mrdocs.yml."""
     if work.exists():
         shutil.rmtree(work)
     (work / 'overlay').mkdir(parents=True)
     for rel, pat, rep in WORKAROUNDS:
+        if rel in skip:
+            continue
         src = (REPO / 'include' / rel).read_text()
         new, n = re.subn(pat, rep, src)
         if not n:
@@ -164,27 +167,28 @@ def prepare(work, mrdocs, headers, exported, a):
     (gen / 'c_library.hpp').write_text(C_LIBRARY)
     (work / 'all.cpp').write_text('// Every public header of libycxx (the ones modules/std.cppm includes).\n' +
                                  ''.join(f'#include <{h}>\n' for h in headers))
-    share = mrdocs.parent.parent / 'share' / 'mrdocs'
     arch = multiarch()
     args = ['clang++', '-std=c++26', '-nostdinc++',
             '-isystem', str(work / 'overlay'), '-isystem', str(REPO / 'include'),
             '-isystem', str(work / 'generated'),
-            # The compiler's own headers (stddef.h, stdarg.h…) from MrDocs's Clang, then the C library's.
-            '-isystem', str(share / 'headers' / 'clang'),
+            # The C library's headers; the compiler's own (stddef.h…) are MrDocs's Clang's
+            # (its clang-resource-dir).
             '-isystem', f'/usr/include/{arch}', '-isystem', '/usr/include',
             '-c', 'all.cpp']
     (work / 'compile_commands.json').write_text(json.dumps(
         [{'directory': str(work), 'file': str(work / 'all.cpp'), 'arguments': args}], indent=1))
-    # The addons: MrDocs's stock templates with libycxx's on top (later files win).
-    addons = work / 'addons'
-    shutil.copytree(share / 'addons', addons)
-    shutil.copytree(APIDOCS / 'addons', addons, dirs_exist_ok=True)
+    # No C++ standard library on the include path but libycxx's: MrDocs adds the system's
+    # (use-system-stdlib) or its bundled libc++ (stdlib-includes, used when that list is empty),
+    # so the list names an empty directory.
+    (work / 'no-other-cxx-stdlib').mkdir()
     cfg = (APIDOCS / 'mrdocs.yml.in').read_text()
     cpo_scopes = sorted({n.split('::__cpo::')[0] + '::*' for n in exported if '::__cpo::' in n})
-    include = ''.join(f"  - '{n}'\n" for n in exported + cpo_scopes)
+    glob = lambda n: n.replace('[', '\\[').replace(']', '\\]')     # operator new[]: not a glob class
+    include = ''.join(f"  - '{glob(n)}'\n" for n in exported) + ''.join(f"  - '{n}'\n" for n in cpo_scopes)
     cfg = (cfg.replace('@SOURCE_ROOT@', str(REPO / 'include'))
               .replace('@COMPILATION_DATABASE@', str(work / 'compile_commands.json'))
-              .replace('@ADDONS@', str(addons))
+              .replace('@ADDONS@', str(APIDOCS / 'addons'))
+              .replace('@NO_STDLIB@', str(work / 'no-other-cxx-stdlib'))
               .replace('@JOBS@', str(a.jobs))
               .replace('@INCLUDE_SYMBOLS@\n', include))
     for gen_name in ('html', 'xml'):
@@ -198,25 +202,49 @@ def prepare(work, mrdocs, headers, exported, a):
 
 def function_objects(work):
     """The std variables whose type is libycxx's (customization point objects, algorithm
-    function objects, range adaptor objects): {qualified name: type}, from the XML corpus."""
+    function objects, range adaptor objects): {qualified name: type}, from the XML corpus
+    (MrDocs 2026.9.29: one element per symbol, referring to others by id)."""
     import xml.etree.ElementTree as ET
-    found = {}
+    root = ET.parse(work / 'out-xml' / 'reference.xml').getroot()
+    syms = {e.findtext('id'): e for e in root}
 
-    def walk(e, scope):
-        for c in e:
-            if c.tag == 'template':
-                walk(c, scope)
-                continue
-            name = c.get('name')
-            if c.tag == 'namespace':
-                walk(c, scope + [name] if name else scope)
-            elif c.tag in ('class', 'struct', 'union'):
-                walk(c, scope + [name])
-            elif c.tag == 'variable':
-                t = c.find('type')
-                if t is not None and (t.get('name') or '').startswith('__ycxx::'):
-                    found['::'.join(scope + [name])] = t.get('name')
-    walk(ET.parse(work / 'out-xml' / 'reference.xml').getroot(), [])
+    def qname(e):
+        parts = []
+        while e is not None:
+            n = e.findtext('name')
+            if n:
+                parts.append(n)
+            e = syms.get(e.findtext('parent'))
+        return '::'.join(reversed(parts))
+
+    def name_str(n):
+        """A Name element (identifier or specialization, with its prefix) as C++ text."""
+        if n is None:
+            return ''
+        kind = n.tag
+        pre = n.find('prefix')
+        text = (name_str(pre[0]) + '::' if pre is not None and len(pre) else '') + (n.findtext('identifier') or '')
+        if kind == 'specialization':
+            args = []
+            for a in n.find('templateArgs') or []:
+                if a.tag == 'type':
+                    named = a.find('type/named/name')
+                    args.append(name_str(named[0]) if named is not None and len(named) else '')
+                else:
+                    args.append(a.findtext('value') or a.findtext('name') or '')
+            text += '<' + ', '.join(args) + '>'
+        return text
+
+    found = {}
+    for e in root:
+        if e.tag != 'variable':
+            continue
+        named = e.find('type/named/name')
+        if named is None or not len(named):
+            continue
+        ty = name_str(named[0])
+        if ty.startswith('__ycxx::'):
+            found[qname(e).replace('::__cpo::', '::')] = ty
     return found
 
 
@@ -228,7 +256,7 @@ def prepare_call_operators(work, fobjs):
     for ty in fobjs.values():
         for m in re.finditer(r'__ycxx::[\w:]+', ty):
             names.add(m.group(0))
-        # A class template's partial specializations match no literal pattern in MrDocs 0.8.0:
+        # A class template's partial specializations match no literal pattern in MrDocs (2026.9.29):
         # take the template's namespace whole.
         head = ty.split('<', 1)[0]
         if '<' in ty and head.startswith('__ycxx::'):
@@ -263,6 +291,8 @@ def main():
     ap.add_argument('--no-cppref', action='store_true', help='no cppreference map or pages')
     ap.add_argument('--headers', help='only these headers (comma-separated), for a quick look')
     ap.add_argument('--refresh-draft', action='store_true', help='rewrite tools/apidocs/draft-map.json')
+    ap.add_argument('--check-workarounds', action='store_true',
+                    help='tell whether MrDocs still needs each of WORKAROUNDS (runs it without each)')
     ap.add_argument('-j', '--jobs', type=int, default=2)
     a = ap.parse_args()
 
@@ -275,6 +305,12 @@ def main():
     headers, exported = std_module()
     if a.headers:
         headers = [h for h in headers if h in a.headers.split(',')]
+    if a.check_workarounds:
+        for rel, _, _ in WORKAROUNDS:
+            work = prepare(BUILD / 'check', mrdocs, headers, exported, a, skip=(rel,))
+            r = subprocess.run([str(mrdocs), str(work / 'cfg-xml' / 'mrdocs.yml')], cwd=work, capture_output=True, text=True)
+            print(f'{rel}: {"still needed" if r.returncode else "no longer needed"} (MrDocs exit status {r.returncode})')
+        return
     work = prepare(BUILD / 'work', mrdocs, headers, exported, a)
     run_mrdocs(mrdocs, work, 'html')
     run_mrdocs(mrdocs, work, 'xml')

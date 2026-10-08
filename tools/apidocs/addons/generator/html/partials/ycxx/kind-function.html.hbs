@@ -1,9 +1,9 @@
-{{~#if (eq functionClass "constructor")}}constructor
-{{~else if (eq functionClass "destructor")}}destructor
-{{~else if (eq functionClass "conversion")}}conversion function
-{{~else if (eq parent.kind "record")~}}
+{{~#if functionObjectImpl}}function object
+{{~else if (eq funcClass "constructor")}}constructor
+{{~else if (eq funcClass "destructor")}}destructor
+{{~else if (eq funcClass "conversion")}}conversion function
+{{~else if isRecordMethod~}}
   {{~#if (eq storageClass "static")}}static {{/if~}}
-  {{~#if isFriend}}friend {{/if~}}
   {{~#if overloadedOperator}}operator{{else}}member function{{/if~}}
   {{~#if template}} template{{/if~}}
 {{~else~}}

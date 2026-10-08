@@ -1,2 +1,2 @@
-{{~#if parent}}{{> ycxx/crumb-chain parent }}{{/if~}}
-{{~#if name}}<li><a href="{{{relativize url}}}">{{name}}</a></li>{{/if~}}
+{{~#if parent}}{{> ycxx/crumb-chain (@root.mrdocs.corpus.get parent) }}{{/if~}}
+{{~#if name}}<li><a href="{{{relativize (@root.mrdocs.corpus.getUrl this)}}}">{{name}}</a></li>{{/if~}}

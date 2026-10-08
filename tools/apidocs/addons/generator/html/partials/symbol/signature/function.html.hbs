@@ -7,18 +7,18 @@
 {{#if template}}{{>template/head template}}
 {{/if~}}
 {{#if isFriend}}friend {{/if~}}
-{{#if attributes}}{{#unless isFriend}}{{ str "[[" }}{{join ", " attributes}}{{ str "]]" }} {{/unless}}{{/if~}}
-{{#if explicitSpec}}{{explicitSpec}} {{/if~}}
+{{#if attributes}}{{#unless isFriend}}{{>symbol/signature/attributes}} {{/unless}}{{/if~}}
+{{#if explicit}}{{explicit}} {{/if~}}
 {{#if isVirtual}}virtual {{/if~}}
 {{#if storageClass}}{{storageClass}} {{/if~}}
-{{#if constexprKind}}{{constexprKind}} {{/if~}}
-{{#if (eq functionClass "normal")}}{{>type/declarator-prefix return}} {{/if~}}
+{{#if constexpr}}{{constexpr}} {{/if~}}
+{{#if (eq funcClass "normal")}}{{>type/declarator-prefix returnType}} {{/if~}}
 {{~#if force-link~}}
 {{>symbol/name symbol }}
-{{~else if (eq functionClass "conversion")~}}
+{{~else if (eq funcClass "conversion")~}}
 {{>symbol/name symbol }}
-{{~else if (contains (arr "explicit" "partial") template.kind)~}}
-{{>symbol/name template.primary ~}}{{>template/args-text args=template.args ~}}
+{{~else if template.primary~}}
+{{>symbol/name (@root.mrdocs.corpus.get template.primary) ~}}{{>template/args-text args=template.args ~}}
 {{~else~}}
 {{>symbol/name-text symbol }}
 {{~/if~}}
@@ -29,8 +29,8 @@
 {{~#if isConst}} const{{/if~}}
 {{#if isVolatile}} volatile{{/if~}}
 {{#if refQualifier}} {{refQualifier}}{{/if~}}
-{{#if exceptionSpec}} {{exceptionSpec}}{{/if~}}
-{{#if (eq functionClass "normal")}}{{>type/declarator-suffix return}}{{/if~}}
+{{#if noexcept}} {{noexcept}}{{/if~}}
+{{#if (eq funcClass "normal")}}{{>type/declarator-suffix returnType}}{{/if~}}
 {{#if hasOverrideAttr}} override{{/if~}}
 {{#if isFinal}} final{{/if~}}
 {{#if isPure}} = 0{{/if~}}

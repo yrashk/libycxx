@@ -693,3 +693,19 @@ Tests skipped (or UNSUPPORTED) as tied to the other library's internals, extensi
 | `utilities/utility/utility.unreachable/assert.unreachable.pass.cpp` | calling unreachable() is undefined ([utility.undefined]/1), not a hardened precondition |
 
 <!-- counterparts:end -->
+
+## Transitive includes (DECISIONS §19, 2026-10-07)
+
+libycxx's headers now provide, by default, what libstdc++ and libc++ both provide with them (and
+what the real-world projects and these suites are known to rely on; `-DYCXX_NO_TRANSITIVE_INCLUDES`
+turns that off). The remaining F entries of `skip.txt` were run again in the default mode, on both
+compilers (`tools/run-conformance libcxx gcc|clang -- --filter ...`): all 21 tests compile and pass,
+so their skip entries are gone: `print.fun/*.file.pass` (`std::fwide` through `<print>`), the four
+stream-iterator `types.pass` (`<iterator>` provides `<iosfwd>` and `<streambuf>`), the 11
+mask_array tests (`std::count` through `<valarray>`), `ifstream.members/offset_range.pass`
+(`std::min` through `<fstream>`), and `equality_comparable_with.compile.pass` (`std::unique_ptr`
+through `<map>`/`<deque>`, as libc++ provides it). The last one still expects Clang's wrong
+answer for `nonmovable_equality_with_int` (llvm.org/PR171438): it passes with GCC and is an
+expected failure with Clang (`xfail.txt`, D). What is left of the F category is
+`make_from_tuple.pass` and `c.math/cmath.pass`, whose skips stay for their other reasons (the
+LWG 3528 part, C; `hypot`'s precision, C).

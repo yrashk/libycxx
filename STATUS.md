@@ -24,7 +24,9 @@ round: libc++ 210 / 214 failures, libstdc++ 139 / 173. Open libycxx bugs (A) fro
 does not include `<iosfwd>` ([bitset.syn]); plus the documented template-parameter name
 `C` (DECISIONS §2, six libstdc++ tests). (`<vector>` now declares
 `formatter<vector<bool>::reference>`, [vector.syn]; DECISIONS §11 "Formatters per header".) Most other failures are tests that rely on transitive
-includes (F: 121 libc++, 79 libstdc++), libc++/libstdc++ specifics and pre-C++26 values (C), and
+includes (F: 121 libc++, 79 libstdc++; since DECISIONS §19 libycxx's headers provide what both
+libstdc++ and libc++ provide, and the F tests that pass now are no longer skipped: TRIAGE.md,
+"Transitive includes"), libc++/libstdc++ specifics and pre-C++26 values (C), and
 running as root (27 filesystem tests).
 
 Counterparts of skipped tests: an external test skipped as implementation-specific, extension,
@@ -321,6 +323,7 @@ nightly TSan job runs both compilers.
 | default (the `precondition/` death tests UNSUPPORTED; 2457 tests, 2026-10-06, with `<execution>`'s senders) | 2391 pass / 0 fail / 12 xfail / 54 unsupported | 2384 pass / 0 fail / 19 xfail / 54 unsupported |
 | hardened (`-DYCXX_HARDENED=1`) | 2425 pass / 0 fail / 13 xfail | 2418 pass / 0 fail / 20 xfail |
 | noexcept (`-fno-exceptions`; tests `REQUIRES: exceptions` UNSUPPORTED) | 1941 pass / 0 fail / 7 xfail / 490 unsupported | 1941 pass / 0 fail / 7 xfail / 490 unsupported |
+| strict includes (`-DYCXX_NO_TRANSITIVE_INCLUDES`, DECISIONS §19; 2026-10-08, 2930 tests) | 2846 pass / 0 fail / 15 xfail / 69 unsupported | 2821 pass / 0 fail / 40 xfail / 69 unsupported |
 
 Every expected failure carries its reason in the test (`// XFAIL:` for causes outside the library
 and the test, `// XFAIL-COMPILER:` for a missing compiler feature): the draft defect
@@ -481,27 +484,32 @@ libstdc++/libc++ or holding one of their symbols, and every image defining libyc
 library is rejected on all counts. Test counts are CTest tests (passed / skipped); a CTest test
 may be a whole suite (spdlog, libcoro, yaml-cpp: one binary each; taskflow: one per doctest case).
 
+Since DECISIONS §19 (2026-10-08) the projects build without their transitive-include patches:
+the 13 projects that had one (Abseil, benchmark, Catch2, doctest, glaze, json, libcoro,
+magic_enum, oneTBB, simdjson, spdlog, Taskflow, yaml-cpp) were rebuilt and tested with both
+compilers, with the results below.
+
 | project | ref | GCC | Clang | tests passed / skipped, GCC | Clang | notes |
 |---|---|---|---|---:|---:|---|
 | googletest | v1.18.0 | ok | ok | 63 / 1 | 63 / 0 | `GTEST_HAS_CXXABI_H_` set (it detects `<cxxabi.h>` by vendor macros); with GCC `gtest_dll_test_` not built (hidden visibility, per-image runtime) |
-| Abseil | 20260817.0 | ok | ok | 242 / 0 | 242 / 0 | 2 patches (`std::min`'s header; `std::map` is constexpr in C++26); found the `assert` message bug and the GCC ICE |
-| benchmark | v1.9.5 | ok | ok | 83 / 2 | 83 / 2 | 1 patch (includes); `cxx11_test` asserts C++11 (pre-c++26) |
-| Catch2 | v3.16.0 | ok | ok | 81 / 0 | 81 / 0 | 2 patches (includes; `optional` is a range); thread-safe assertions on |
+| Abseil | 20260817.0 | ok | ok | 242 / 0 | 242 / 0 | 1 patch (`std::map` is constexpr in C++26); found the `assert` message bug and the GCC ICE |
+| benchmark | v1.9.5 | ok | ok | 83 / 2 | 83 / 2 | `cxx11_test` asserts C++11 (pre-c++26) |
+| Catch2 | v3.16.0 | ok | ok | 81 / 0 | 81 / 0 | 1 patch (`optional` is a range); thread-safe assertions on |
 | CLI11 | v2.7.2 | ok | ok | 82 / 0 | 82 / 0 | 1 patch (`optional` is a range); found the GCC ICE |
-| doctest | v2.5.3 | ok | ok | 191 / 3 | 191 / 3 | 1 patch (`<cerrno>`); the DLL/plugin tests rethrow across images (libycxx limitation); found the string I/O link bug |
+| doctest | v2.5.3 | ok | ok | 191 / 3 | 191 / 3 | the DLL/plugin tests rethrow across images (libycxx limitation); found the string I/O link bug |
 | EnTT | v4.0.0 | ok | ok | 15 / 0 | 15 / 0 | |
 | {fmt} | 12.2.0 | ok | ok | 21 / 0 | 21 / 0 | found the missing `<cxxabi.h>` |
-| glaze | v9.0.0 | ok | ok | 145 / 2 | 140 / 9 | CMake 4.1 (uvx); 4 patches (includes; `bfloat16` IEC 559; libstdc++/libc++ type-name spellings); `asio_repe` needs IPv6; GCC: `lib_test` (hidden `extern "C"` entry point); Clang: `inplace_vector_test` (Clang 23 bug), `msgpack`/`cbor` tests (incomplete type in `std::vector`, the project's) |
+| glaze | v9.0.0 | ok | ok | 145 / 2 | 140 / 9 | CMake 4.1 (uvx); 2 patches (`bfloat16` IEC 559; libstdc++/libc++ type-name spellings); `asio_repe` needs IPv6; GCC: `lib_test` (hidden `extern "C"` entry point); Clang: `inplace_vector_test` (Clang 23 bug), `msgpack`/`cbor` tests (incomplete type in `std::vector`, the project's) |
 | GSL | v5.0.1 | ok | ok | 15 / 0 | 15 / 0 | Clang 23's lifetime-safety suggestions off (its `-Weverything -Werror`) |
-| nlohmann/json | v3.12.0 | ok | ok | 101 / 0 | 101 / 0 | 2 patches (includes and `__GLIBCXX__`-guarded byte traits; `<ciso646>`) |
-| libcoro | v0.16.0 | ok | ok | 1 / 0 | 1 / 0 | one CTest test runs the whole suite; 2 patches (includes; a racy test case under TSan) |
-| magic_enum | v0.9.8 | ok | ok | 12 + 3 XFAIL / 0 | 15 / 0 | 1 patch (`<cstdlib>`); GCC 16 miscompiles `test_flags` at `-O1 -std=c++26` (XFAIL) |
-| oneTBB | v2023.1.0 | ok | ok | 141 / 3 | 141 / 1 | 3 patches (portability, a per-image terminate handler, its TSan flags with Clang); `test_malloc_new_handler` (per-image new handler); GCC: `test_openmp` (GCC's `<omp.h>` includes libstdc++) |
+| nlohmann/json | v3.12.0 | ok | ok | 101 / 0 | 101 / 0 | 2 patches (`__GLIBCXX__`-guarded byte traits; `<ciso646>`) |
+| libcoro | v0.16.0 | ok | ok | 1 / 0 | 1 / 0 | one CTest test runs the whole suite; 1 patch (a racy test case under TSan) |
+| magic_enum | v0.9.8 | ok | ok | 12 + 3 XFAIL / 0 | 15 / 0 | GCC 16 miscompiles `test_flags` at `-O1 -std=c++26` (XFAIL) |
+| oneTBB | v2023.1.0 | ok | ok | 141 / 3 | 141 / 1 | 3 patches (POSIX includes and portability, a per-image terminate handler, its TSan flags with Clang); `test_malloc_new_handler` (per-image new handler); GCC: `test_openmp` (GCC's `<omp.h>` includes libstdc++) |
 | range-v3 | 0.12.0 | ok | ok | 234 / 10 | 236 / 6 | 1 patch (C++23 `as_lvalue`); 5 tests not built: libstdc++/libc++ internals recognised (2), pre-C++26 rules (3; 2 of them GCC only) |
-| simdjson | v5.0.2 | ok | ok | 153 / 0 | 153 / 0 | 3 patches (includes; amalgamation, benchmarks, `bfloat16`; deprecated `unsigned char` insertion) |
-| spdlog | v1.17.0 | ok | ok | 1 / 0 | 1 / 0 | `std::format` back end; one CTest test runs the whole suite; 1 patch (`<cerrno>`) |
-| Taskflow | v4.1.0 | ok | ok | 2909 / 0 | 2909 / 0 | 1 patch (doctest's `<cerrno>`) |
-| yaml-cpp | 0.8.0 | ok | ok | 1 / 0 | 1 / 0 | one CTest test runs the whole suite; 2 patches (includes; its test allocator's `allocate_at_least`) |
+| simdjson | v5.0.2 | ok | ok | 153 / 0 | 153 / 0 | 2 patches (amalgamation, benchmarks, `bfloat16`; deprecated `unsigned char` insertion) |
+| spdlog | v1.17.0 | ok | ok | 1 / 0 | 1 / 0 | `std::format` back end; one CTest test runs the whole suite |
+| Taskflow | v4.1.0 | ok | ok | 2909 / 0 | 2909 / 0 |  |
+| yaml-cpp | 0.8.0 | ok | ok | 1 / 0 | 1 / 0 | one CTest test runs the whole suite; 1 patch (its test allocator's `allocate_at_least`) |
 
 Under AddressSanitizer (+LeakSanitizer, Clang, all 19 projects) everything passes with 10 more
 skips, all traced to the projects (stacks in the run's logs): leaks on purpose or by mistake
@@ -532,13 +540,13 @@ What the projects found in libycxx (each fixed with an own test):
 
 What the projects needed from themselves (patches, each with its category and reason in
 `tests/realworld/<name>/patches/`) is mostly not about the standard:
-- headers that libstdc++ and libc++ include from one another: `errno`/`E*` after `<string>`,
-  `<system_error>` or `<mutex>` (doctest, in four projects, json, Catch2, spdlog, benchmark,
-  simdjson), `std::abort`/`exit` after `<string>` or `<memory>`, `isspace`/`isdigit`/`tolower`
-  after `<string>`, `<iostream>` or `<locale>`, `std::ostream` after `<string>`, `std::min`/
-  `std::copy`/`std::equal` after `<vector>`, `<string>`, `<string_view>` or `<cstring>`,
-  `unordered_map` after `<functional>`, `PATH_MAX` after `<climits>`, pthread and `sched_*` after
-  `<thread>` or `<atomic>`;
+- headers that libstdc++ and libc++ include from one another (`errno`/`E*` after `<string>`,
+  `<system_error>` or `<mutex>`, `std::abort` after `<string>` or `<memory>`, `isspace` after
+  `<string>` or `<iostream>`, `std::ostream` after `<string>`, `std::min`/`std::copy`/`std::equal`
+  after `<vector>`, `<string>` or `<string_view>`, `unordered_map` after `<functional>`): no
+  longer patched, libycxx's headers provide them by default (DECISIONS §19; 12 patches of 11
+  projects dropped, and the include parts of json's and oneTBB's). Still patched: POSIX names (`PATH_MAX`, pthread, `cpu_set_t`; oneTBB), which
+  libycxx's headers never include;
 - rules older than C++26: `std::optional` is a range (Catch2, CLI11 printers), `<ciso646>` is
   gone (json's doctest), `unsigned char` stream insertion is deprecated (simdjson), `std::map` is
   constexpr (Abseil), `==` between arrays removed (range-v3, skipped);
@@ -1570,8 +1578,15 @@ levels: 29.7 s -> 0.01 s; libstdc++ 8.6 s). Remaining above 1.5x: deque push at 
   `-freflection`, `<contracts>` GCC's `-fcontracts`). Own suite: no failures on either compiler (configurations above); the expected
   failures carry their reasons in the tests.
 - **Decided (user, 2026-10-05): C names through `<string>` and `<cstdint>`.** Hosted `<string>`
-  (the character traits) provides `EOF` (it includes `<cstdio>`; `WEOF` comes with `<wchar.h>`),
+  provides `EOF` (its transitive includes have `<cstdio>`, DECISIONS §19; `WEOF` comes with `<wchar.h>`),
   and `<cstdint>` also declares the global `::int64_t`... names, as libstdc++, libc++ and MSVC do.
+- **Transitive includes (user decision, 2026-10-07; DECISIONS §19).** On by default (what
+  libstdc++ and libc++ both provide, measured by `tools/probe_transitive.py`, plus the reliances
+  of the real-world projects and suites); `-DYCXX_NO_TRANSITIVE_INCLUDES` turns them off. Three
+  libstdc++ tests that compile since then fail at run time and are not triaged yet (skipped with
+  that said): `27_io/basic_filebuf/seekoff/*/11543` (`bad_cast` from a `basic_filebuf` with a
+  program's `codecvt<char, char, MyState>`), `underflow/wchar_t/11544-1`, `-2` and
+  `22_locale/codecvt/codecvt_unicode_char8_t` (tests/libstdcxx/TRIAGE.md).
 - libstdc++ suite, still failing (tests/libstdcxx/TRIAGE.md, "Whole suite with the DejaGnu
   default"; every other failure is fixed, skipped or an expected compiler failure): the
   template-parameter name `C` vs. a user macro (bitset/cons/string_view{,_wide}.cc, DECISIONS §2).

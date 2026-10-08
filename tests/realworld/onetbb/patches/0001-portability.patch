@@ -1,10 +1,11 @@
-Categories: transitive-include, implementation-specific, pre-c++26.
+Categories: implementation-specific (POSIX names), pre-c++26.
 1. src/tbb/misc.h uses cpu_set_t without <sched.h>, and two tests call pthread_key_create without
 <pthread.h> (libstdc++ includes <pthread.h>, hence <sched.h>, from <thread>, <mutex> and
 <atomic>); dynamic_link.cpp and the tests' utils_concurrency_limit.h use POSIX's PATH_MAX without
 <limits.h> (libstdc++'s <climits> includes the C library's <limits.h>, which has POSIX's macros
-too; libycxx's <climits> defines the C standard's macros only); the vendored doctest uses errno
-without <cerrno> (declared through <system_error> by libstdc++ and libc++). Adds the includes.
+too; libycxx's <climits> defines the C standard's macros only). These are POSIX names, which
+libycxx's headers never include (DECISIONS §19: the platform layer is the only OS boundary).
+Adds the includes.
 2. detail/_config.h detects std::uncaught_exceptions by the library's vendor macros (__GLIBCXX__,
 _LIBCPP_VERSION) and otherwise calls std::uncaught_exception, removed in C++20 (P0619). Also uses
 uncaught_exceptions with another library that defines __cpp_lib_uncaught_exceptions.
@@ -67,18 +68,6 @@ index b3fdf34..637d6ab 100644
  )
  
  tbb_handle_ipo(tbbmalloc)
-diff --git a/test/common/doctest.h b/test/common/doctest.h
-index 7079b1c..542cb91 100644
---- a/test/common/doctest.h
-+++ b/test/common/doctest.h
-@@ -3245,6 +3245,7 @@ DOCTEST_MAKE_STD_HEADERS_CLEAN_FROM_WARNINGS_ON_WALL_BEGIN
- #include <csignal>
- #include <cfloat>
- #include <cctype>
-+#include <cerrno>
- #include <cstdint>
- #include <string>
- 
 diff --git a/test/common/tls_limit.h b/test/common/tls_limit.h
 index 694753d..bb4373c 100644
 --- a/test/common/tls_limit.h

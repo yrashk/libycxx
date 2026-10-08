@@ -104,8 +104,9 @@ sub                             # the key of fetch_key, a table's entry [atomics
 limits                          # a slip in the draft's markup: "max()numeric.limits" [istream.unformatted]/25.1
 
 [user]
-# libycxx's documented user-facing names (README, DECISIONS §1, §4).
+# libycxx's documented user-facing names (README, DECISIONS §1, §4, §19).
 YCXX_HARDENED                                                              # -DYCXX_HARDENED=1
+YCXX_NO_TRANSITIVE_INCLUDES                                                # strict includes (DECISIONS §19)
 ycxx_error_handler ycxx_error_kind                                         # -fno-exceptions hook
 re:ycxx_error_[a-z_]+                                                      # ycxx_error_kind's enumerators
 re:ycxx_pal_[a-z0-9_]+                                                     # the hosted layers' primitives,

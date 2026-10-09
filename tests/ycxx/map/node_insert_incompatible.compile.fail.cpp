@@ -1,3 +1,5 @@
+// EXPECT-ERROR-GCC: error: no matching function.*std::map<int, int>::insert\(
+// EXPECT-ERROR-CLANG: error: no matching member function for call to 'insert'
 // [associative.reqmts.general]/88-99: a_uniq.insert(nh) / a.insert(p, nh) take X::node_type;
 // [container.node.overview] Table 75: only map / multimap with the same Key, T and Allocator
 // have compatible nodes. A node handle of map<long, int> cannot be inserted into a

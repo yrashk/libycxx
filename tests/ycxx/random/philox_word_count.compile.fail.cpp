@@ -1,3 +1,4 @@
+// EXPECT-ERROR: error: static assertion failed[^\n]*philox_engine: n must be 2 or 4
 // [rand.eng.philox]/6.2: "Mandates: ... n == 2 || n == 4 is true".
 #include <random>
 #include <cstdint>

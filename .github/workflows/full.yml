@@ -191,13 +191,24 @@ jobs:
   # project's own non-standard code is patched with its reason (patches/).
   linux-realworld:
     runs-on: ubuntu-24.04
-    container: gcc:16
+    container:
+      image: gcc:16
+      # core_pattern belongs to the host kernel. Allow this job to disable its piped
+      # crash collector, which bypasses RLIMIT_CORE during expected test crashes.
+      options: --privileged
     timeout-minutes: 300
     strategy:
       fail-fast: false
       matrix:
         compiler: [gcc, clang]
     steps:
+      - name: Disable host core collector for death tests
+        shell: bash
+        run: |
+          # Piped core handlers ignore ulimit -c 0. A regular file pattern makes the
+          # zero core limit in tools/realworld effective for expected test crashes.
+          printf 'core\n' > /proc/sys/kernel/core_pattern
+          test "$(cat /proc/sys/kernel/core_pattern)" = core
       - uses: actions/checkout@v4
       - name: Toolchains
         uses: ./.github/actions/setup-linux

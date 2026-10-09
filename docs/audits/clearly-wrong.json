@@ -1399,7 +1399,8 @@
       "changes": "Replace bounded retry helper with blocking lock on released mutex; retain a non-required free try with conditional unlock.",
       "boundary_investigation": "Reviewed ownership synchronization and cross-thread held try failure; released acquisition on worker and main pass all comparisons. No actual defect found.",
       "revision": "c7015b485cc3db8efaa9dfb9ff0809c5394a4ed1",
-      "upstream": "Pending aggregate facility check; COUNTERPART mappings inspected where supplied."
+      "upstream": "Pending aggregate facility check; COUNTERPART mappings inspected where supplied.",
+      "commit": "2904466ce47d66de169fab167977a25e9cf998df"
     },
     {
       "id": "C30",
@@ -1417,7 +1418,7 @@
       ],
       "remedy": "Use std::lock to verify the released locks can all be acquired.",
       "priority": 2,
-      "disposition": "pending",
+      "disposition": "corrected",
       "validation": [
         {
           "library": "own-gcc",
@@ -1449,7 +1450,12 @@
           "exit": 0,
           "log": "build/test-logs/own-audit/C30-libcxx-clang.log"
         }
-      ]
+      ],
+      "normative_review": "thread.lock.algorithm/2-3 reports any underlying try failure; mutex.general/15 permits spurious failure even on six unlocked mutexes. lock.algorithm/5 locks all without deadlock.",
+      "changes": "Use std::lock for final six-mutex release verification; retain mixed types, reversed/rotated orders and overlapping contention.",
+      "boundary_investigation": "Reviewed lock algorithm rollback and complete 4*3000 counter stress, recursive subset and unique_lock ownership checks. No actual defect found; all libraries pass.",
+      "revision": "c7015b485cc3db8efaa9dfb9ff0809c5394a4ed1",
+      "upstream": "Pending aggregate facility check; COUNTERPART mappings inspected where supplied."
     },
     {
       "id": "C31",

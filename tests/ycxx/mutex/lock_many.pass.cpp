@@ -71,7 +71,7 @@ int main() {
   for (auto& t : ts) t.join();
   for (long c : counter) CHECK(c == 4L * iters);
   // everything is unlocked again
-  CHECK(std::try_lock(m0, m1, m2, m3, m4, m5) == -1);
+  std::lock(m0, m1, m2, m3, m4, m5);
   m0.unlock(); m1.unlock(); m2.unlock(); m3.unlock(); m4.unlock(); m5.unlock();
   return 0;
 }

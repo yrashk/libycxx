@@ -1288,7 +1288,8 @@
       "changes": "Acquire Spy before adoption, update counters and track held state to detect invalid unlock; blocking real lock verifies release.",
       "boundary_investigation": "Reviewed guard constructor/destructor, deduction and tag checks; held-state regression would reject original double unlock, and balanced normal/adopted scopes pass all libraries. No actual library defect found.",
       "revision": "c7015b485cc3db8efaa9dfb9ff0809c5394a4ed1",
-      "upstream": "Pending aggregate facility check; COUNTERPART mappings inspected where supplied."
+      "upstream": "Pending aggregate facility check; COUNTERPART mappings inspected where supplied.",
+      "commit": "ffe3977a3cdc3c2c1877c50f96b60273f8d70b87"
     },
     {
       "id": "C28",
@@ -1306,7 +1307,7 @@
       ],
       "remedy": "Exercise simultaneous readers on distinct threads; use lock() after release instead of requiring a try operation to succeed.",
       "priority": 2,
-      "disposition": "pending",
+      "disposition": "corrected",
       "validation": [
         {
           "library": "own-gcc",
@@ -1338,7 +1339,12 @@
           "exit": 0,
           "log": "build/test-logs/own-audit/C28-libcxx-clang.log"
         }
-      ]
+      ],
+      "normative_review": "sharedmutex.general/18 requires no calling-thread ownership for try_lock_shared; /19 permits spurious failure. Shared readers can hold ownership on distinct threads.",
+      "changes": "Move second real shared_lock acquisition to another thread; fall back to blocking shared_lock.lock if try fails; final exclusive lock verifies release.",
+      "boundary_investigation": "Reviewed complete recursive Spy contract separately (user Lockable permits it); real-reader overlap, CTAD, fallback ownership and release pass all comparisons. No actual defect found.",
+      "revision": "c7015b485cc3db8efaa9dfb9ff0809c5394a4ed1",
+      "upstream": "Pending aggregate facility check; COUNTERPART mappings inspected where supplied."
     },
     {
       "id": "C29",

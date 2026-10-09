@@ -1,3 +1,4 @@
+// EXPECT-ERROR: error: static assertion failed[^\n]*variant_alternative index out of range
 // [variant.helper]/4: variant_alternative<I, variant<Types...>>::type:
 // "Mandates: I < sizeof...(Types)."
 #include <variant>

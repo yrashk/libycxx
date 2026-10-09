@@ -159,6 +159,15 @@ sanitizers, failure categories, and CI.
 | Run or extend the test suites | [Testing guide](docs/TESTING.md) |
 | Compare custom standard-library workflows | [Custom standard library guide](docs/CUSTOM_STDLIB.md) |
 
+## License
+
+libycxx is licensed under the **Apache License 2.0 with LLVM Exceptions**
+(`Apache-2.0 WITH LLVM-exception`). See [LICENSE](LICENSE) for the full terms.
+
+Third-party material retains its own licenses, including the website fonts
+([site/fonts/README.txt](site/fonts/README.txt)) and the reference material
+attributed in the generated documentation and similarity analysis.
+
 ## How it was written
 
 libycxx was implemented by AI agents (Claude, directed by the author) from the C++ working

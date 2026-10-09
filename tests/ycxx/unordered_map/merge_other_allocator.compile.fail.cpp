@@ -1,3 +1,5 @@
+// EXPECT-ERROR-GCC: error: no matching function.*std::unordered_map[^\n]*::merge\(
+// EXPECT-ERROR-CLANG: error: no matching member function for call to 'merge'
 // [unord.map.overview] synopsis: merge takes only unordered_map<Key, T, H2, P2, Allocator>
 // and unordered_multimap<Key, T, H2, P2, Allocator> -- any hash and predicate, but the same
 // allocator type ([unord.req.general], [container.node.overview] Table 75). A source with

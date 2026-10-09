@@ -1,3 +1,5 @@
+// EXPECT-ERROR-GCC: error: conversion from 'std::errc' to non-scalar type 'std::error_code'
+// EXPECT-ERROR-CLANG: error: no viable conversion from 'std::errc' to 'std::error_code'
 // [syserr.errcode.constructors]/3: error_code's converting constructor template is constrained
 // on is_error_code_enum_v<ErrorCodeEnum>; is_error_code_enum<errc> is false ([system.error.syn]
 // specializes only is_error_condition_enum<errc>), so errc does not convert to error_code.

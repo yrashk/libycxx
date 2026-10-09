@@ -1,3 +1,7 @@
+// EXPECT-ERROR-GCC: error: call to non-'constexpr' function [^\n]*__fp_raise
+// EXPECT-ERROR-GCC: in 'constexpr' expansion of 'std::sqrt<>\(
+// EXPECT-ERROR-CLANG: error: constexpr variable 'bad' must be initialized by a constant expression
+// EXPECT-ERROR-CLANG: note: in call to 'sqrt<double>\(nan\)'
 // [library.c]/3: a call to a C standard library function that raises a floating-point exception
 // other than FE_INEXACT is a non-constant library call. ISO/IEC 9899:2024 F.10.4.10 / IEC 60559:
 // sqrt of a signaling NaN raises FE_INVALID (every computational operation does, F.2.1), so

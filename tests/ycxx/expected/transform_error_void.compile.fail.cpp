@@ -1,3 +1,4 @@
+// EXPECT-ERROR: error: static assertion failed[^\n]*std::expected::transform_error: invalid error type
 // [expected.object.monadic]/27: "Mandates: G is a valid template argument for unexpected"
 // (void is not an object type).
 #include <expected>

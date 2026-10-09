@@ -1,3 +1,9 @@
+// Statistical smoke test: finite sample moments, frequencies, tails and observed coverage
+// use chosen tolerances, not deterministic specification guarantees. Fixed seeds reproduce
+// one implementation; distribution/shuffle algorithms are implementation-defined.
+// Outlier estimates assume independent ideal draws; moment tolerances use normal/large-sample
+// approximations where applicable. No universal or family-wide false-positive rate is claimed.
+// Retained as a user-approved quality regression alongside independent deterministic checks.
 // [rand.dist.norm.chisq]: x > 0, chi-squared with n degrees of freedom (mean n, variance 2n).
 // [rand.dist.norm.cauchy]: p(x | a, b) = (pi b (1 + ((x - a)/b)^2))^-1: median a, quartiles a +- b.
 // [rand.dist.norm.f]: x >= 0, Fisher F with m and n degrees of freedom (mean n/(n-2) for n > 2).

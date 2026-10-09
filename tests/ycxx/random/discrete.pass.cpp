@@ -1,3 +1,9 @@
+// Statistical smoke test: finite sample moments, frequencies, tails and observed coverage
+// use chosen tolerances, not deterministic specification guarantees. Fixed seeds reproduce
+// one implementation; distribution/shuffle algorithms are implementation-defined.
+// Outlier estimates assume independent ideal draws; moment tolerances use normal/large-sample
+// approximations where applicable. No universal or family-wide false-positive rate is claimed.
+// Retained as a user-approved quality regression alongside independent deterministic checks.
 // [rand.dist.samp.discrete]: integers 0 <= i < n with P(i) = p_i = w_i / S. The default
 // constructor and an empty weight range give n = 1, p_0 = 1 (/3, /5); the (nw, xmin, xmax, fw)
 // constructor uses w_k = fw(xmin + k*delta + delta/2), delta = (xmax - xmin)/n, with n = 1 and

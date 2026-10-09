@@ -1,3 +1,5 @@
+// EXPECT-ERROR-GCC: error: use of deleted function [^\n]*operator,\([^\n]*std::constant_wrapper
+// EXPECT-ERROR-CLANG: error: overload resolution selected deleted operator ','
 // [const.wrap.class]: cw-operators declares
 // "template<constexpr-param L, constexpr-param R> friend constexpr auto operator,(L, R)
 // noexcept = delete;"

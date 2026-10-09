@@ -1,3 +1,4 @@
+// EXPECT-ERROR: error: static assertion failed[^\n]*std::function/move_only_function/copyable_function: Mandates: VT is the same type as T
 // [func.wrap.copy.ctor]/14: explicit copyable_function(in_place_type_t<T>, Args&&...):
 // "Mandates: VT is the same type as T" (VT = decay_t<T>; here T is const-qualified).
 #include <functional>

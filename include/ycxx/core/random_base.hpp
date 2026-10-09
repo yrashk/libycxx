@@ -101,9 +101,25 @@ template <class _Gp>
 __rand_u64 __rand_uniform_upto(_Gp& __g, __rand_u64 n) {
   using _GT = std::remove_cvref_t<_Gp>;
   using _Rp = std::invoke_result_t<_Gp&>;
-  constexpr __rand_u64 __gmin = static_cast<__rand_u64>(_GT::min());
-  constexpr __rand_u64 __grange = static_cast<__rand_u64>(_GT::max()) - __gmin;
-  auto __draw = [&__g] { return static_cast<__rand_u64>(static_cast<_Rp>(__g())) - __gmin; };
+  // Wider generators must be reduced without bias before the 64-bit integer mapping.
+  // Accept a whole number of 2^64-sized blocks, then take the low limb of each draw.
+  constexpr bool __wide = static_cast<_Rp>(_GT::max() - _GT::min()) > static_cast<_Rp>(~0ull);
+  constexpr __rand_u64 __gmin = __wide ? 0 : static_cast<__rand_u64>(_GT::min());
+  constexpr __rand_u64 __grange = __wide ? ~0ull : static_cast<__rand_u64>(_GT::max()) - __gmin;
+  auto __draw = [&__g] {
+    if constexpr (__wide) {
+      constexpr _Rp __wrange = static_cast<_Rp>(_GT::max() - _GT::min());
+      constexpr _Rp __base = static_cast<_Rp>(~0ull) + 1;
+      constexpr _Rp __limit = __wrange % __base == __base - 1 ? __wrange : __wrange / __base * __base - 1;
+      for (;;) {
+        const _Rp __value = static_cast<_Rp>(__g() - _GT::min());
+        if (__value <= __limit)
+          return static_cast<__rand_u64>(__value);
+      }
+    } else {
+      return static_cast<__rand_u64>(static_cast<_Rp>(__g())) - __gmin;
+    }
+  };
   if (n == 0)
     return 0;
   if (n == __grange)

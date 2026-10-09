@@ -1,3 +1,9 @@
+// Statistical smoke test: finite sample moments, frequencies, tails and observed coverage
+// use chosen tolerances, not deterministic specification guarantees. Fixed seeds reproduce
+// one implementation; distribution/shuffle algorithms are implementation-defined.
+// Outlier estimates assume independent ideal draws; moment tolerances use normal/large-sample
+// approximations where applicable. No universal or family-wide false-positive rate is claimed.
+// Retained as a user-approved quality regression alongside independent deterministic checks.
 // [rand.dist.uni.int]: produces integers i, a <= i <= b, with P(i | a, b) = 1 / (b - a + 1);
 // min() == a and max() == b ([rand.req.dist]: glb and lub); a() and b() return the constructor
 // arguments; d(g, p) uses p. Works for every IntType and any uniform random bit generator range.
@@ -26,7 +32,11 @@ void frequencies(G& g) {
   std::uniform_int_distribution<> d(-3, 3);
   int count[7] = {};
   const int N = 140000;
-  for (int i = 0; i < N; ++i) ++count[d(g) + 3];
+  for (int i = 0; i < N; ++i) {
+    int value = d(g);
+    CHECK(-3 <= value && value <= 3);
+    ++count[value + 3];
+  }
   for (int c : count) CHECK(rs::near(c, N / 7.0, 0.04 * N / 7.0));
 }
 

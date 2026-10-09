@@ -1,0 +1,84 @@
+{
+  "test": "tests/ycxx/memory/default_delete_incomplete.compile.fail.cpp",
+  "draft_revision": "c7015b485cc3db8efaa9dfb9ff0809c5394a4ed1",
+  "disposition": "repaired",
+  "normative_review": "The forbidden source operation was checked against the cited draft requirements. The named diagnostic enforces that rejection; the positive control isolates the offending operation.",
+  "clauses": [
+    "unique.ptr.dltr.dflt"
+  ],
+  "normative_text": {
+    "unique.ptr.dltr.dflt": "20.4.1.2.2 default_delete [unique.ptr.dltr.dflt]\nnamespace std {\n  template<class T> struct default_delete {\n    constexpr default_delete() noexcept = default;\n    template<class U> constexpr default_delete(const default_delete<U>&) noexcept;\n    constexpr void operator()(T*) const;\n  };\n}\n\ud83d\udd17\ntemplate<class U> constexpr default_delete(const default_delete<U>& other) noexcept;\n1\n#\nConstraints: U* is implicitly convertible to T*.\n2\n#\nEffects: Constructs a default_delete object\nfrom another default_delete<U> object.\n\ud83d\udd17\nconstexpr void operator()(T* ptr) const;\n3\n#\nMandates: T is a complete type.\n4\n#\nEffects: Calls delete on ptr.\n"
+  },
+  "changes": "Add diagnostic expectations; no semantic rewrite unless explicitly recorded below.",
+  "patterns": {
+    "both": [
+      "error: static assertion failed[^\\n]*std::default_delete: T must be a complete type"
+    ]
+  },
+  "validation": {
+    "gcc": {
+      "result": "PASS",
+      "log": "build/test-logs/negative-diagnostics/memory__default_delete_incomplete.compile.fail.cpp.validated.gcc.log"
+    },
+    "clang": {
+      "result": "PASS",
+      "log": "build/test-logs/negative-diagnostics/memory__default_delete_incomplete.compile.fail.cpp.validated.clang.log"
+    }
+  },
+  "controls": {
+    "positive": {
+      "diff": "--- negative\n+++ positive\n@@ -5,7 +5,6 @@\n struct Incomplete;\n \n void destroy(Incomplete* p) {\n-  std::unique_ptr<Incomplete> u(p);\n }\n \n int main() {}\n",
+      "results": {
+        "gcc": "build/test-logs/negative-diagnostics/memory__default_delete_incomplete.compile.fail.cpp.positive.gcc.log",
+        "clang": "build/test-logs/negative-diagnostics/memory__default_delete_incomplete.compile.fail.cpp.positive.clang.log"
+      }
+    },
+    "unrelated": {
+      "gcc": {
+        "compiler_exit": 1,
+        "harness_result": "FAIL (correctly rejected)",
+        "log": "build/test-logs/negative-diagnostics/memory__default_delete_incomplete.compile.fail.cpp.unrelated.gcc.log"
+      },
+      "clang": {
+        "compiler_exit": 1,
+        "harness_result": "FAIL (correctly rejected)",
+        "log": "build/test-logs/negative-diagnostics/memory__default_delete_incomplete.compile.fail.cpp.unrelated.clang.log"
+      }
+    }
+  },
+  "reference_comparison": {
+    "libcxx.clang": {
+      "exit": 1,
+      "command": [
+        "/Users/yrashk/.local/share/ycxx/toolchains/llvm-23.1.2/bin/clang++",
+        "-std=c++26",
+        "-stdlib=libc++",
+        "-fsyntax-only",
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/memory/default_delete_incomplete.compile.fail.cpp",
+        "-I/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/support",
+        "-Wall",
+        "-Wextra",
+        "-fdiagnostics-color=never"
+      ],
+      "log": "build/test-logs/negative-diagnostics/memory__default_delete_incomplete.compile.fail.cpp.libcxx.clang.log",
+      "first_error": "invalid application of 'sizeof' to an incomplete type 'Incomplete'"
+    },
+    "libstdcxx.gcc": {
+      "exit": 1,
+      "command": [
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tools/ref-cxx",
+        "gcc",
+        "-fsyntax-only",
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/memory/default_delete_incomplete.compile.fail.cpp",
+        "-I/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/support",
+        "-Wall",
+        "-Wextra",
+        "-fdiagnostics-color=never"
+      ],
+      "log": "build/test-logs/negative-diagnostics/memory__default_delete_incomplete.compile.fail.cpp.libstdcxx.gcc.log",
+      "first_error": "invalid application of 'sizeof' to incomplete type 'Incomplete'"
+    }
+  },
+  "counterpart_directives": [],
+  "commit": "See ../commits.json for this test (written after the commit)."
+}

@@ -1,3 +1,4 @@
+// EXPECT-ERROR: error: static assertion failed[^\n]*std::basic_string_view: traits::comparison_category must be a comparison category type
 // [string.view.comparison]/3: operator<=> "Mandates: R denotes a comparison category type."
 // Here traits::comparison_category is int, which is not a comparison category type.
 #include <string_view>

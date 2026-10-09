@@ -1,0 +1,84 @@
+{
+  "test": "tests/ycxx/chrono/hh_mm_ss_not_duration.compile.fail.cpp",
+  "draft_revision": "c7015b485cc3db8efaa9dfb9ff0809c5394a4ed1",
+  "disposition": "repaired",
+  "normative_review": "The forbidden source operation was checked against the cited draft requirements. The named diagnostic enforces that rejection; the positive control isolates the offending operation.",
+  "clauses": [
+    "time.hms.overview"
+  ],
+  "normative_text": {
+    "time.hms.overview": "30.9.1 Overview [time.hms.overview]\nnamespace std::chrono {\n  template<class Duration> class hh_mm_ss {\n  public:\n    static constexpr unsigned fractional_width = see below;\n    using precision                            = see below;\n    constexpr hh_mm_ss() noexcept : hh_mm_ss{Duration::zero()} {}\n    constexpr explicit hh_mm_ss(Duration d);\n    constexpr bool is_negative() const noexcept;\n    constexpr chrono::hours hours() const noexcept;\n    constexpr chrono::minutes minutes() const noexcept;\n    constexpr chrono::seconds seconds() const noexcept;\n    constexpr precision subseconds() const noexcept;\n    constexpr explicit operator precision() const noexcept;\n    constexpr precision to_duration() const noexcept;\n  private:\n    bool            is-neg;     // exposition only\n    chrono::hours   h_;         // exposition only\n    chrono::minutes m_;         // exposition only\n    chrono::seconds s_;         // exposition only\n    precision       ss_;        // exposition only\n  };\n}\n1\n#\nThe hh_mm_ss class template\nsplits a duration\ninto a multi-field time structure\nhours:minutes:seconds and\npossibly subseconds,\nwhere subseconds will be a duration unit\nbased on a non-positive power of 10.\n The Duration template parameter dictates the precision\nto which the time is split.\n A hh_mm_ss models negative durations\nwith a distinct is_negative getter\nthat returns true when the input duration is negative.\n The individual duration fields always return non-negative durations\neven when is_negative() indicates\nthe structure is representing a negative duration.\n2\n#\nIf Duration is not a specialization of duration,\nthe program is ill-formed.\n"
+  },
+  "changes": "Add diagnostic expectations; no semantic rewrite unless explicitly recorded below.",
+  "patterns": {
+    "both": [
+      "error: static assertion failed[^\\n]*hh_mm_ss: Duration must be a specialization of duration"
+    ]
+  },
+  "validation": {
+    "gcc": {
+      "result": "PASS",
+      "log": "build/test-logs/negative-diagnostics/chrono__hh_mm_ss_not_duration.compile.fail.cpp.validated.gcc.log"
+    },
+    "clang": {
+      "result": "PASS",
+      "log": "build/test-logs/negative-diagnostics/chrono__hh_mm_ss_not_duration.compile.fail.cpp.validated.clang.log"
+    }
+  },
+  "controls": {
+    "positive": {
+      "diff": "--- negative\n+++ positive\n@@ -2,6 +2,5 @@\n // ill-formed.\"\n #include <chrono>\n \n-std::chrono::hh_mm_ss<long long> h{};\n \n int main() {}\n",
+      "results": {
+        "gcc": "build/test-logs/negative-diagnostics/chrono__hh_mm_ss_not_duration.compile.fail.cpp.positive.gcc.log",
+        "clang": "build/test-logs/negative-diagnostics/chrono__hh_mm_ss_not_duration.compile.fail.cpp.positive.clang.log"
+      }
+    },
+    "unrelated": {
+      "gcc": {
+        "compiler_exit": 1,
+        "harness_result": "FAIL (correctly rejected)",
+        "log": "build/test-logs/negative-diagnostics/chrono__hh_mm_ss_not_duration.compile.fail.cpp.unrelated.gcc.log"
+      },
+      "clang": {
+        "compiler_exit": 1,
+        "harness_result": "FAIL (correctly rejected)",
+        "log": "build/test-logs/negative-diagnostics/chrono__hh_mm_ss_not_duration.compile.fail.cpp.unrelated.clang.log"
+      }
+    }
+  },
+  "reference_comparison": {
+    "libcxx.clang": {
+      "exit": 1,
+      "command": [
+        "/Users/yrashk/.local/share/ycxx/toolchains/llvm-23.1.2/bin/clang++",
+        "-std=c++26",
+        "-stdlib=libc++",
+        "-fsyntax-only",
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/chrono/hh_mm_ss_not_duration.compile.fail.cpp",
+        "-I/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/support",
+        "-Wall",
+        "-Wextra",
+        "-fdiagnostics-color=never"
+      ],
+      "log": "build/test-logs/negative-diagnostics/chrono__hh_mm_ss_not_duration.compile.fail.cpp.libcxx.clang.log",
+      "first_error": "static assertion failed due to requirement '__is_duration_v<long long>': template parameter of hh_mm_ss must be a std::chrono::duration"
+    },
+    "libstdcxx.gcc": {
+      "exit": 1,
+      "command": [
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tools/ref-cxx",
+        "gcc",
+        "-fsyntax-only",
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/chrono/hh_mm_ss_not_duration.compile.fail.cpp",
+        "-I/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/support",
+        "-Wall",
+        "-Wextra",
+        "-fdiagnostics-color=never"
+      ],
+      "log": "build/test-logs/negative-diagnostics/chrono__hh_mm_ss_not_duration.compile.fail.cpp.libstdcxx.gcc.log",
+      "first_error": "static assertion failed"
+    }
+  },
+  "counterpart_directives": [],
+  "commit": "See ../commits.json for this test (written after the commit)."
+}
